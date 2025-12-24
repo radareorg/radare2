@@ -6858,6 +6858,7 @@ toro:
 					r_cons_printf (ds->core->cons, "..\n");
 					ds->sparse = true;
 				}
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			ds->sparse = false;
@@ -6945,6 +6946,7 @@ toro:
 				if (bb->folded) {
 					r_cons_printf (core->cons, "[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
 					inc = bb->size;
+		r_anal_op_fini (&ds->analop);
 					continue;
 				}
 			}
@@ -6978,6 +6980,7 @@ toro:
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds) + 5);
 				// r_asm_set_syntax (core->rasm, os);
 				r_arch_config_set_syntax (core->anal->config, os);
+				r_anal_op_fini (&ao);
 			}
 #if 0
 			if (mi_type == R_META_TYPE_FORMAT) {
@@ -7024,13 +7027,14 @@ toro:
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
 			if (core->rasm->config->syntax != R_ARCH_SYNTAX_INTEL) {
-				RAnalOp ao; // disassemble for the vm ..
+				RAnalOp ao = {0}; // disassemble for the vm ..
 				int os = core->rasm->config->syntax;
 				// r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
 				r_arch_config_set_syntax (core->anal->config, R_ARCH_SYNTAX_INTEL);
 				r_asm_disassemble (core->rasm, &ao, ds_bufat (ds), ds_left (ds));
 				// r_asm_set_syntax (core->rasm, os);
 				r_arch_config_set_syntax (core->anal->config, os);
+				r_anal_op_fini (&ao);
 			}
 			if (ds->show_bytes_right && ds->show_bytes) {
 				const char *pfx = ds->show_bytes_ascmt? ";;": "";
@@ -7598,6 +7602,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 			k++;
 			j++;
 			result = true;
+			r_anal_op_fini (&asmop);
 			continue;
 		}
 
@@ -8111,6 +8116,7 @@ toro:
 				r_cons_printf (core->cons, "0x%08" PFMT64x " %s\n", addr + i, comment);
 			}
 			i += ret;
+			r_anal_op_fini (&asmop);
 			continue;
 		}
 		// r_cons_printf (core->cons, "0x%08"PFMT64x"  ", core->addr+i);

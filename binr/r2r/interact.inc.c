@@ -7,7 +7,7 @@ static void fixup_tests(RVecR2RTestResultInfoPtr *results, const char *edited_fi
 	R2RTestResultInfo **it;
 	R_VEC_FOREACH (results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
+		if (result->test->type != R2R_TEST_TYPE_CMD && result->test->type != R2R_TEST_TYPE_LEAK) {
 			continue;
 		}
 		if (result->test->path != edited_file) { // this works because all the paths come from the string pool
@@ -123,7 +123,7 @@ static void replace_cmd_kv_file(const char *path, ut64 line_begin, ut64 line_end
 }
 
 static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
-	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD || result->test->type == R2R_TEST_TYPE_LEAK);
 	R2RCmdTest *test = result->test->cmd_test;
 	ut64 line_begin, line_end;
 	if (test->broken.set) {
@@ -136,7 +136,7 @@ static void interact_break(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *
 }
 
 static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
-	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD || result->test->type == R2R_TEST_TYPE_LEAK);
 	R2RCmdTest *test = result->test->cmd_test;
 	if (!test->cmds.value) {
 		return;
@@ -194,7 +194,7 @@ static void interact_commands(R2RTestResultInfo *result, RVecR2RTestResultInfoPt
 }
 
 static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fixup_results) {
-	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD);
+	R_RETURN_IF_FAIL (result->test->type == R2R_TEST_TYPE_CMD || result->test->type == R2R_TEST_TYPE_LEAK);
 	R2RCmdTest *test = result->test->cmd_test;
 	R2RProcessOutput *out = result->proc_out;
 	if (test->expect.value && out->out) {
@@ -210,6 +210,9 @@ static void interact_fix(R2RTestResultInfo *result, RVecR2RTestResultInfoPtr *fi
 }
 
 static void interact_diffchar(R2RTestResultInfo *result) {
+	if (result->test->type != R2R_TEST_TYPE_CMD && result->test->type != R2R_TEST_TYPE_LEAK) {
+		return;
+	}
 	const char *actual = result->proc_out->out;
 	const char *expected = result->test->cmd_test->expect.value;
 	const char *regexp_out = result->test->cmd_test->regexp_out.value;
@@ -248,8 +251,8 @@ static void interact(R2RState *state) {
 
 	R_VEC_FOREACH (&failed_results, it) {
 		R2RTestResultInfo *result = *it;
-		if (result->test->type != R2R_TEST_TYPE_CMD) {
-			// TODO: other types of tests
+		if (result->test->type != R2R_TEST_TYPE_CMD && result->test->type != R2R_TEST_TYPE_LEAK) {
+			// TODO: other types of tests (asm, json, fuzz)
 			continue;
 		}
 		printf ("#####################\n\n");

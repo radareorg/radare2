@@ -882,21 +882,27 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 	} else {
 		switch (result->test->type) {
 		case R2R_TEST_TYPE_CMD:
-			r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL);
+			r2r_process_output_free (r2r_run_cmd_test (config, result->test->cmd_test, print_runner, NULL));
 			print_cmd_test_diff (result);
 			break;
 		case R2R_TEST_TYPE_FUZZ:
-			r2r_run_fuzz_test (config, result->test->path, print_runner, NULL);
+			r2r_process_output_free (r2r_run_fuzz_test (config, result->test->path, print_runner, NULL));
 			// TODO. maybe unify with print_cmd_test_diff
 			printf ("-- stdout\n%s\n", result->proc_out->out);
 			printf ("-- stderr\n%s\n", result->proc_out->err);
 			printf ("-- exit status: " Color_RED "%d" Color_RESET "\n", result->proc_out->ret);
 			break;
 		case R2R_TEST_TYPE_LEAK:
-			result->proc_out = r2r_run_leak_test (config, result->test->cmd_test, print_runner, NULL);
-			printf ("-- valgrind output\n%s\n", result->proc_out->out);
-			if (result->proc_out->err) {
-				printf ("-- stderr\n%s\n", result->proc_out->err);
+			// Print the command that was run (print_runner just prints, returns NULL)
+			r2r_process_output_free (r2r_run_leak_test (config, result->test->cmd_test, print_runner, NULL));
+			// Use the original proc_out which has the actual valgrind output
+			if (result->proc_out) {
+				printf ("-- valgrind output\n%s\n", result->proc_out->out);
+				if (result->proc_out->err) {
+					printf ("-- stderr\n%s\n", result->proc_out->err);
+				}
+			} else {
+				R_LOG_ERROR ("proc_out is null, test may have failed to run");
 			}
 			break;
 		case R2R_TEST_TYPE_ASM:

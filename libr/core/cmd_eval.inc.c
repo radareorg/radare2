@@ -169,8 +169,9 @@ static char *get_theme_path(RCore *core, const char *theme_name) {
 	}
 	free (theme_path);
 	// check system directory
-	const char *r2pfx = r_sys_prefix (NULL);
+	char *r2pfx = r_sys_prefix (NULL);
 	theme_path = r_file_new (r2pfx, R2_THEMES, theme_name, NULL);
+	free (r2pfx);
 	if (r_file_exists (theme_path)) {
 		return theme_path;
 	}

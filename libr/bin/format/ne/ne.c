@@ -55,7 +55,9 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	}
 	char *lower_module = strdup (module);
 	r_str_case (lower_module, false);
-	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), r_sys_prefix (NULL), lower_module);
+	char *pfx = r_sys_prefix (NULL);
+	char *path = r_str_newf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), pfx, lower_module);
+	free (pfx);
 	free (lower_module);
 	char *ord = r_str_newf ("%d", ordinal);
 	char *name;

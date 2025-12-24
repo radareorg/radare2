@@ -3,7 +3,10 @@
 #include <r_arch.h>
 
 static char *getroot(void) {
-	return r_file_new (r_sys_prefix (NULL), R2_PLATFORM, NULL);
+	char *pfx = r_sys_prefix (NULL);
+	char *res = r_file_new (pfx, R2_PLATFORM, NULL);
+	free (pfx);
+	return res;
 }
 
 R_API char *r_arch_platform_unset(RArch *arch, const char *name) {

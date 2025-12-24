@@ -307,6 +307,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
 	r_th_lock_free (cons->lock);
+	r_cons_pal_fini ();
 	RVecFdPairs_fini (&cons->fds);
 }
 

@@ -866,8 +866,10 @@ R_API RBin *r_bin_new(void) {
 	bin->sdb = sdb_new0 ();
 	{
 		Sdb *db = sdb_new0 ();
-		char *cs = r_file_new (r_sys_prefix (NULL), R2_SDB_FORMAT, "symclass.sdb", NULL);
+		char *pfx = r_sys_prefix (NULL);
+		char *cs = r_file_new (pfx, R2_SDB_FORMAT, "symclass.sdb", NULL);
 		bool res = sdb_open (db, cs);
+		free (pfx);
 		free (cs);
 		if (res) {
 			sdb_ns_set (bin->sdb, "symclass", db);
@@ -917,13 +919,6 @@ R_API RBin *r_bin_new(void) {
 		}
 	}
 	return bin;
-#if 0
-	r_list_free (bin->binldrs);
-	r_list_free (bin->binxtrs);
-	r_list_free (bin->binfiles);
-	r_id_storage_free (bin->ids);
-	r_str_constpool_fini (&bin->constpool);
-#endif
 trashbin:
 	free (bin);
 	return NULL;

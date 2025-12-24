@@ -559,6 +559,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 			r_list_append (names, strdup (name));
 		}
 	}
+	r_list_free (strings);
 	free (pdsfq);
 	bool use_getopt = false;
 	r_list_uniq_inplace (names, cmpstrings);

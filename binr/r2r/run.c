@@ -1431,51 +1431,50 @@ R_API bool r2r_check_fuzz_test(R2RProcessOutput *out) {
 // Returns true if no leaks detected (test passes)
 static bool parse_valgrind_leak_summary(const char *valgrind_out) {
 	if (!valgrind_out) {
+		R_LOG_INFO ("No output from valgrind");
 		return false;
 	}
 	// Find LEAK SUMMARY section
 	const char *leak_summary = strstr (valgrind_out, "LEAK SUMMARY:");
 	if (!leak_summary) {
 		// If no LEAK SUMMARY found, consider it a failure
-		return false;
+		leak_summary = strstr (valgrind_out, "HEAP SUMMARY:");
+		if (!leak_summary) {
+			R_LOG_INFO ("No leak or heap summaries");
+			return false;
+		}
 	}
 	// Look for the three leak categories (ignore "still reachable")
-	// Pattern: "definitely lost: X bytes"
-	// Pattern: "indirectly lost: X bytes"
-	// Pattern: "possibly lost: X bytes"
-	ut64 definitely_lost = 0;
-	ut64 indirectly_lost = 0;
-	ut64 possibly_lost = 0;
+	int definitely_lost = 0;
+	int indirectly_lost = 0;
+	int possibly_lost = 0;
+	int atexit_lost = 0;
 	// Extract "definitely lost" value
 	const char *p = strstr (leak_summary, "definitely lost:");
 	if (p) {
-		// Parse the number before " bytes"
-		p += 16; // strlen ("definitely lost:")
-		while (*p == ' ') {
-			p++;
-		}
+		p = r_str_trim_head_ro (p + strlen ("definitely lost:"));
 		definitely_lost = r_num_math (NULL, p);
+	}
+	// Extract "indirectly lost" value
+	p = strstr (leak_summary, "in use at exit:");
+	if (p) {
+		p = r_str_trim_head_ro (p + strlen ("in use at exit: "));
+		atexit_lost = atoi (p);
 	}
 	// Extract "indirectly lost" value
 	p = strstr (leak_summary, "indirectly lost:");
 	if (p) {
-		p += 16; // strlen ("indirectly lost:")
-		while (*p == ' ') {
-			p++;
-		}
+		p = r_str_trim_head_ro (p + strlen ("indirectly lost:"));
 		indirectly_lost = r_num_math (NULL, p);
 	}
 	// Extract "possibly lost" value
 	p = strstr (leak_summary, "possibly lost:");
 	if (p) {
-		p += 14; // strlen ("possibly lost:")
-		while (*p == ' ') {
-			p++;
-		}
+		p = r_str_trim_head_ro (p + strlen ("possibly lost:"));
 		possibly_lost = r_num_math (NULL, p);
 	}
 	// Test passes only if all three are 0
-	return definitely_lost == 0 && indirectly_lost == 0 && possibly_lost == 0;
+	return definitely_lost == 0 && indirectly_lost == 0 && possibly_lost == 0 && atexit_lost == 0;
 }
 
 #if __linux__
@@ -1487,8 +1486,9 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 	RList *envvals = r_list_new ();
 	// Add valgrind arguments
 	r_list_append (args, (void *)"--leak-check=full");
-#if 0
+	r_list_append (args, (void *)"-s");
 	r_list_append (args, (void *)"--show-leak-kinds=all");
+#if 0
 	r_list_append (args, (void *)"--track-origins=yes");
 #endif
 	r_list_append (args, (void *)config->r2_cmd);

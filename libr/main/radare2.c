@@ -260,7 +260,7 @@ static int main_help(int line) {
 	}
 	if (line == 2) {
 		char *datahome = r_xdg_datadir (NULL);
-		const char *dirPrefix = r_sys_prefix (NULL);
+		char *dirPrefix = r_sys_prefix (NULL);
 		RStrBuf *sb = r_strbuf_new ("");
 
 		r_strbuf_append (sb, "Scripts:\n");
@@ -269,22 +269,22 @@ static int main_help(int line) {
 		r_strbuf_append (sb, " file            ${filename}.r2\n");
 		r_strbuf_append (sb, "Plugins:\n");
 		r_strbuf_appendf (sb, " R2_LIBR_PLUGINS " R_JOIN_2_PATHS ("%s", R2_PLUGINS) "\n"
-											" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
-											" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
-											"Environment:\n"
-											" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
-											" R2_ARGS         ignore cli arguments and use these ones instead\n"
-											" R2_DEBUG        if defined, show error messages and crash signal\n"
-											" R2_CFLAGS       compiler flags to build against libr\n"
-											" R2_LDFLAGS      linker flags to build against libr\n"
-											" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
-											" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
-											" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
-											" R2_DEBUG_ASSERT set a breakpoint when hitting an assert\n"
-											" R2_IGNVER       load plugins ignoring the specified version (be careful)\n"
-											" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
-											" R2_MAGICPATH    %s/" R2_SDB_MAGIC "\n"
-											" R2_NOPLUGINS    do not load r2 shared plugins\n",
+										" R2_USER_PLUGINS ${XDG_DATA_DIR:=~/.local/share/radare2}/plugins\n"
+										" R2_USER_ZIGNS   ${XDG_DATA_DIR:=~/.local/share/radare2}/zigns\n"
+										"Environment:\n"
+										" R2_COLOR        sets the initial value for 'scr.color'. set to 0 for no color\n"
+										" R2_ARGS         ignore cli arguments and use these ones instead\n"
+										" R2_DEBUG        if defined, show error messages and crash signal\n"
+										" R2_CFLAGS       compiler flags to build against libr\n"
+										" R2_LDFLAGS      linker flags to build against libr\n"
+										" R2_PAPI_SCRIPT  path to the custom r2papi csript\n"
+										" R2_DEBUG_NOPAPI do not load r2papi in the -j qjs shell\n"
+										" R2_DEBUG_NOLANG do not load rlang plugins (except qjs)\n"
+										" R2_DEBUG_ASSERT set a breakpoint when hitting an assert\n"
+										" R2_IGNVER       load plugins ignoring the specified version (be careful)\n"
+										" R2_IGNABI       ignore abiversion field from the radare (be even more careful)\n"
+										" R2_MAGICPATH    %s/" R2_SDB_MAGIC "\n"
+										" R2_NOPLUGINS    do not load r2 shared plugins\n",
 			dirPrefix,
 			dirPrefix);
 		r_strbuf_append (sb, " R2_HISTORY      ${XDG_CACHE_DIR:=~/.cache/radare2}/history\n");
@@ -307,6 +307,7 @@ static int main_help(int line) {
 				" R2_PREFIX    " R2_PREFIX "\n",
 			datahome);
 		free (datahome);
+		free (dirPrefix);
 
 		char *helpmsg = r_strbuf_drain (sb);
 		if (helpmsg) {
@@ -343,7 +344,7 @@ static int main_print_var(const char *var_name) {
 	char *plugins = r_str_r2_prefix (R2_PLUGINS);
 	char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
 	char *historyhome = r_xdg_cachedir ("history");
-	const char *r2prefix = r_sys_prefix (NULL);
+	char *r2prefix = r_sys_prefix (NULL);
 	char *r2_cflags = NULL;
 	char *r2_ldflags = NULL;
 	r_main_r2_build_flags (&r2_cflags, &r2_ldflags);
@@ -409,6 +410,7 @@ static int main_print_var(const char *var_name) {
 	free (magicpath);
 	free (r2_cflags);
 	free (r2_ldflags);
+	free (r2prefix);
 	return 0;
 }
 

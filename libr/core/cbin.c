@@ -23,10 +23,6 @@
 #define IS_MODE_NORMAL(mode) (! (mode))
 #define IS_MODE_CLASSDUMP(mode) ((mode) & R_MODE_CLASSDUMP)
 
-// AITODO: remove those global variables!
-static R_TH_LOCAL int old_bits = -1;
-static R_TH_LOCAL char *old_arch = NULL;
-
 static void pair(RCore *core, const char *key, const char *val) {
 	if (R_STR_ISNOTEMPTY (val)) {
 		r_cons_printf (core->cons, "%-9s%s\n", key, val);
@@ -745,19 +741,20 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	if (!anal_arch) {
 		return;
 	}
+	RCorePriv *priv = core->priv;
 	const int bits = core->anal->config->bits;
 	r_str_after (anal_arch, '.');
-	if (old_bits != -1) {
-		if (old_bits == bits) {
-			if (!strcmp (old_arch, anal_arch)) {
+	if (priv->old_bits != -1) {
+		if (priv->old_bits == bits) {
+			if (!strcmp (priv->old_arch, anal_arch)) {
 				free (anal_arch);
 				return;
 			}
 		}
 	}
-	old_bits = bits;
-	free (old_arch);
-	old_arch = strdup (anal_arch);
+	priv->old_bits = bits;
+	free (priv->old_arch);
+	priv->old_arch = strdup (anal_arch);
 #if HAVE_GPERF
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
@@ -1736,8 +1733,9 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 				if (r_file_exists (filename)) {
 					*db = sdb_new (NULL, filename, 0);
 				} else {
-					const char *dirPrefix = r_sys_prefix (NULL);
+					char *dirPrefix = r_sys_prefix (NULL);
 					filename = r_strf (R_JOIN_4_PATHS ("%s", R2_SDB_FORMAT, "dll", "%s.sdb"), dirPrefix, module);
+					free (dirPrefix);
 					if (r_file_exists (filename)) {
 						*db = sdb_new (NULL, filename, 0);
 					}
