@@ -1,0 +1,10 @@
+NAME=pdsf leak
+FILE=bins/mach0/hello-osx-i386
+CMDS=<<EOF
+af
+pdsf
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
