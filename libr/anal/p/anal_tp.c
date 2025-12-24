@@ -1375,7 +1375,6 @@ static inline void tp_state_reset(TypePropState *state) {
 	state->str_flag = false;
 	state->prop = false;
 	state->prev_dest = NULL;
-	state->prev_var = NULL;
 	state->userfnc = false;
 	memset (state->prev_type, 0, sizeof (state->prev_type));
 }
