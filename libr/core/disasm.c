@@ -3140,6 +3140,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		ds->prev_ins = strdup (ds->asmop.mnemonic);
 	}
 	ds->oplen = ds->asmop.size;
+eprintf ("Pene\n");
 
 	if (ret < 1) {
 		ret = -1;
@@ -6858,7 +6859,7 @@ toro:
 					r_cons_printf (ds->core->cons, "..\n");
 					ds->sparse = true;
 				}
-		r_anal_op_fini (&ds->analop);
+				r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			ds->sparse = false;
