@@ -781,11 +781,9 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			if (!_is_fp_field) {
 				if (R_STR_ISNOTEMPTY (md)) {
-					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n",
-						struct_tag, mn, mt, off, md);
+					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,%s\n", struct_tag, mn, mt, off, md);
 				} else {
-					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n",
-						struct_tag, mn, mt, off);
+					r_strbuf_appendf (kvc->sb, "struct.%s.%s=%s,%d,0\n", struct_tag, mn, mt, off);
 				}
 				// TODO: this is for backward compat, but imho it should be removed
 				r_strbuf_appendf (kvc->sb, "struct.%s.%s.meta=0\n", struct_tag, mn);
@@ -994,11 +992,9 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			}
 			if (!_is_fp_field) {
 				if (R_STR_ISNOTEMPTY (md)) {
-					r_strbuf_appendf (kvc->sb, "union.%s.%s=%s,%d,%s\n",
-						union_tag, mn, mt, off, md);
+					r_strbuf_appendf (kvc->sb, "union.%s.%s=%s,%d,%s\n", union_tag, mn, mt, off, md);
 				} else {
-					r_strbuf_appendf (kvc->sb, "union.%s.%s=%s,%d,0\n",
-						union_tag, mn, mt, off);
+					r_strbuf_appendf (kvc->sb, "union.%s.%s=%s,%d,0\n", union_tag, mn, mt, off);
 				}
 				apply_attributes (kvc, "union", full_scope);
 				r_strbuf_appendf (args_sb, "%s%s", member_idx? ",": "", mn);
