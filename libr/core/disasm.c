@@ -6858,6 +6858,7 @@ toro:
 					r_cons_printf (ds->core->cons, "..\n");
 					ds->sparse = true;
 				}
+		r_anal_op_fini (&ds->analop);
 				continue;
 			}
 			ds->sparse = false;
@@ -6945,6 +6946,7 @@ toro:
 				if (bb->folded) {
 					r_cons_printf (core->cons, "[+] Folded BB [..0x%08"PFMT64x"]\n", ds->at + bb->size);
 					inc = bb->size;
+		r_anal_op_fini (&ds->analop);
 					continue;
 				}
 			}
@@ -7025,7 +7027,7 @@ toro:
 
 			ds_print_asmop_payload (ds, ds_bufat (ds));
 			if (core->rasm->config->syntax != R_ARCH_SYNTAX_INTEL) {
-				RAnalOp ao; // disassemble for the vm ..
+				RAnalOp ao = {0}; // disassemble for the vm ..
 				int os = core->rasm->config->syntax;
 				// r_asm_set_syntax (core->rasm, R_ARCH_SYNTAX_INTEL);
 				r_arch_config_set_syntax (core->anal->config, R_ARCH_SYNTAX_INTEL);

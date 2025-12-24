@@ -901,7 +901,7 @@ static void print_result_diff(R2RRunConfig *config, R2RTestResultInfo *result) {
 					printf ("-- stderr\n%s\n", result->proc_out->err);
 				}
 			} else {
-				R_LOG_ERROR ("proc_out is null");
+				R_LOG_ERROR ("proc_out is null, so let's assume it's leaking");
 			}
 			break;
 		case R2R_TEST_TYPE_ASM:
