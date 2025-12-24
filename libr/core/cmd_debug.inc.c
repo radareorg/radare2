@@ -4972,7 +4972,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 }
 
 static char *get_corefile_name(const char *raw_name, int pid) {
-	return (!*raw_name)?
+	return R_STR_ISEMPTY (raw_name)?
 		r_str_newf ("core.%u", pid) :
 		r_str_trim_dup (raw_name);
 }
