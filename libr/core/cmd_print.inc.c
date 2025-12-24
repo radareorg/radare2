@@ -3679,6 +3679,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			R_LOG_ERROR ("Cannot find function");
 			r_config_set_i (core->config, "scr.color", use_color);
 			r_config_set_i (core->config, "asm.cmt.right", asm_cmt_right);
+			r_cons_pop (core->cons);
 			goto restore_conf;
 		}
 	} else if (r_str_startswith (input, "ds ")) {
@@ -3992,11 +3993,11 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 		line += strlen (line) + 1;
 	}
 	// r_cons_printf (core->cons, "%s", s);
+restore_conf:
 	R_FREE (string2);
 	R_FREE (string);
 	R_FREE (s);
 	R_FREE (switchcmp);
-restore_conf:
 	r_config_set_b (core->config, "asm.addr", orig_show_offset);
 	r_config_set_b (core->config, "asm.dwarf", asm_dwarf);
 	r_config_set_b (core->config, "asm.bytes", asm_bytes);
@@ -5450,6 +5451,7 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (r_io_nread_at (core->io, b->addr, buf, b->size) < 0) {
 		r_cons_printf (core->cons, "Failed to read %" PFMT64u " bytes at 0x%" PFMT64x "\n",
 				b->size, b->addr);
+		free (buf);
 		return;
 	}
 
@@ -7194,12 +7196,14 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 			for (i = j = 0; i < core->blocksize && j < l; i += ret, j++) {
 				ret = r_asm_disassemble (core->rasm, &asmop, block + i, len - i);
 				if (r_cons_is_breaked (core->cons)) {
+					r_anal_op_fini (&asmop);
 					break;
 				}
 				r_cons_printf (core->cons, "%d\n", ret);
 				if (ret < 1) {
 					ret = 1;
 				}
+				r_anal_op_fini (&asmop);
 			}
 			r_cons_break_pop (core->cons);
 			pd_result = false;
