@@ -64,7 +64,7 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 		r_socket_read_block (s->fd, &s->buf[1], 2);
 		{
 		int len = (int)(ut8)s->buf[2];
-		if (len > sizeof (s->buf) - 3) {
+		if (len >= sizeof (s->buf) - 3) {
 			R_LOG_ERROR ("rap: filename too long %d", len);
 			r_socket_close (s->fd);
 			return false;

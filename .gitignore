@@ -162,4 +162,4 @@ libr/bin/d/dll/*.c
 .personal_files/
 a
 poc
-poc.zip
+*.zip
