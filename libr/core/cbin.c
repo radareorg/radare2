@@ -856,7 +856,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		r_config_set (core->config, "cfg.bigendian",
 			info->big_endian? "true": "false");
 		if (isvm) {
-			r_config_set_i (core->config, "asm.sub.varmin", 1);
+			r_config_set_i (core->config, "asm.sub.varmin", 16);
 		}
 		if (!info->rclass || strcmp (info->rclass, "fs")) {
 			if (info->lang && info->lang[0] != '?') {
