@@ -1067,38 +1067,40 @@ static void GH(print_heap_bin)(RCore *core, GHT m_arena, MallocState *main_arena
 	}
 }
 
-// TODO. return bool
-static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
-	R_RETURN_VAL_IF_FAIL (core && core->dbg, -1);
+// Returns true if the requested bin is empty, false otherwise.
+static bool GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena, GHT m_arena, GHT offset, GHT bin_num, bool demangle) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg, false);
 	if (!core->dbg->maps) {
-		return -1;
+		return false;
 	}
 	GHT next = GHT_MAX, brk_start = GHT_MAX, brk_end = GHT_MAX;
 	RConsPrintablePalette *pal = &core->cons->context->pal;
 
 	GH(RHeapChunk) *cnk = R_NEW0 (GH(RHeapChunk));
 	if (!cnk) {
-		return 0;
+		return false;
 	}
 
 	if (!GH(update_main_arena) (core, m_arena, main_arena)) {
 		free (cnk);
-		return 0;
+		return false;
 	}
 
 	GHT bin = main_arena->GH(fastbinsY)[bin_num];
 	if (!bin) {
 		free (cnk);
-		return -1;
+		return true;
 	}
 	bin = m_arena + offset + SZ * bin_num;
-	r_io_read_at (core->io, bin, (ut8 *)&next, SZ);
+	ut64 next_buf = 0;
+	r_io_read_at (core->io, bin, (ut8 *)&next_buf, SZ);
+	next = (GHT)next_buf;
 
 	GH(get_brks) (core, &brk_start, &brk_end);
 	if (brk_start == GHT_MAX || brk_end == GHT_MAX) {
 		R_LOG_ERROR ("No heap section found");
 		free (cnk);
-		return 0;
+		return false;
 	}
 
 	PRINTF_GA ("  fastbin %"PFMT64d" @ ", (ut64)bin_num + 1);
@@ -1128,7 +1130,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 			PRINT_RA (" Linked list corrupted\n");
 			PRINT_GA ("\n  }\n");
 			free (cnk);
-			return -1;
+			return false;
 		}
 
 		next_root = next_tmp = next;
@@ -1137,7 +1139,7 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 			PRINT_RA (" Double free detected\n");
 			PRINT_GA ("\n  }\n");
 			free (cnk);
-			return -1;
+			return false;
 		}
 	}
 
@@ -1146,12 +1148,12 @@ static int GH(print_single_linked_list_bin)(RCore *core, MallocState *main_arena
 		PRINT_RA (" Linked list corrupted\n");
 		PRINT_GA ("\n  }\n");
 		free (cnk);
-		return -1;
+		return false;
 	}
 
 	PRINT_GA ("\n  }\n");
 	free (cnk);
-	return 0;
+	return false;
 }
 
 void GH(print_heap_fastbin)(RCore *core, GHT m_arena, MallocState *main_arena, GHT global_max_fast, const char *input, bool demangle) {

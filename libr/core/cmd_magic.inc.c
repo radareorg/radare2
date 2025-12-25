@@ -76,7 +76,7 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 			char *tmp = strdup (file);
 			free (mc->ofile);
 			mc->ofile = tmp;
-			if (!r_magic_load (core->magic, file)) {
+			if (!r_magic_load (core->magic, mc->ofile)) {
 				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", file, r_magic_error (core->magic));
 				core->magic = NULL;
 				ret = -1;
