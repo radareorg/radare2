@@ -849,14 +849,14 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	}
 	bool havecode = is_executable (obj) | (!!obj->entries);
 	const char *compiled = get_compile_time (bf->sdb);
-	bool isvm = r_anal_archinfo (core->anal, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+	const bool isvm = r_anal_archinfo (core->anal, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (core->config, "file.type", info->rclass);
 		r_config_set (core->config, "cfg.bigendian",
 			info->big_endian? "true": "false");
 		if (isvm) {
-			r_config_set_i (core->config, "asm.sub.varmin", 0);
+			r_config_set_i (core->config, "asm.sub.varmin", 16);
 		}
 		if (!info->rclass || strcmp (info->rclass, "fs")) {
 			if (info->lang && info->lang[0] != '?') {
@@ -906,7 +906,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		r_cons_printf (core->cons, "endian %s\n", info->big_endian? "big": "little");
 	} else if (IS_MODE_RAD (mode)) {
 		if (isvm) {
-			r_cons_printf (core->cons, "'e asm.sub.varmin=0\n");
+			r_cons_printf (core->cons, "'e asm.sub.varmin=16\n");
 		}
 		if (info->type && !strcmp (info->type, "fs")) {
 			r_cons_printf (core->cons, "e file.type=fs\n");

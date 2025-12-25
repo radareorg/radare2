@@ -22,6 +22,6 @@ NAME=Dalvik HelloWorld func xref
 FILE=bins/dex/HelloWorld.dex
 CMDS=e io.va=0; aa; axt @ sym.LHello.method._init___V
 EXPECT=<<EOF
-entry0 0x26e [CALL:--x] invoke-direct {v0}, LHello.<init>()V ; segment.file
+entry0 0x26e [CALL:--x] invoke-direct {v0}, LHello.<init>()V ; 0x0
 EOF
 RUN
