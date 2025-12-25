@@ -586,10 +586,6 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 			break;
 		case 2:
 			ss = (STpiStream *)r_list_iter_get (it);
-			if (ss->free_) {
-				ss->free_(ss, ss);
-			}
-			free (ss);
 			break;
 		case 3:
 			dbi_stream = (SDbiStream *)r_list_iter_get (it);
@@ -628,6 +624,13 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 #endif
 	r_list_free (pdb->pdb_streams2);
 	// end of free pdb->streams2
+
+	if (ss) {
+		if (ss->free_) {
+			ss->free_(ss, ss);
+		}
+		free (ss);
+	}
 
 	free (pdb->stream_map);
 	r_buf_free (pdb->buf);
