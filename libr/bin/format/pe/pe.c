@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2008-2025 nibble, pancake, inisider */
 
+#include <limits.h>
 #include <r_hash.h>
 #include <r_util.h>
 #include <sdb/ht_uu.h>
@@ -1466,8 +1467,8 @@ static bool bin_pe_init_dotnet_version(RBinPEObj *pe) {
 	}
 
 	const ut8 *data = r_buf_data (pe->b, NULL);
-	size_t size = r_buf_size (pe->b);
-	if (!data || size == 0) {
+	st64 size = r_buf_size (pe->b);
+	if (!data || size <= 0 || size > INT_MAX) {
 		return false;
 	}
 

@@ -1,5 +1,6 @@
 /* radare - LGPL - Copyright 2009-2025 - nibble, pancake, alvarofe */
 
+#include <limits.h>
 #include <r_bin.h>
 #include "../i/private.h"
 #include "pe/pe.h"
@@ -200,9 +201,12 @@ static RList* classes(RBinFile *bf) {
 
 	RBuffer *buf = bf->buf;
 	const ut8 *data = r_buf_data (buf, NULL);
-	size_t size = r_buf_size (buf);
+	st64 size = r_buf_size (buf);
+	if (!data || size <= 0 || size > INT_MAX) {
+		return NULL;
+	}
 	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
+	RList *dotnet_symbols = dotnet_parse (data, (int)size, image_base);
 	if (r_list_empty (dotnet_symbols)) {
 		r_list_free (dotnet_symbols);
 		return NULL;
