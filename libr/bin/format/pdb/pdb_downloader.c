@@ -13,8 +13,10 @@ static bool checkExtract(void) {
 
 static bool download_and_write(SPDBDownloaderOpt *opt, const char *file) {
 	char *dir = r_str_newf ("%s%s%s%s%s",
-		opt->symbol_store_path, R_SYS_DIR,
-		opt->dbg_file, R_SYS_DIR,
+		opt->symbol_store_path,
+		R_SYS_DIR,
+		opt->dbg_file,
+		R_SYS_DIR,
 		opt->guid);
 	if (!r_sys_mkdirp (dir)) {
 		free (dir);
@@ -65,9 +67,12 @@ static int download(struct SPDBDownloader *pd) {
 	}
 
 	char *abspath_to_file = r_str_newf ("%s%s%s%s%s%s%s",
-		opt->symbol_store_path, R_SYS_DIR,
-		opt->dbg_file, R_SYS_DIR,
-		opt->guid, R_SYS_DIR,
+		opt->symbol_store_path,
+		R_SYS_DIR,
+		opt->dbg_file,
+		R_SYS_DIR,
+		opt->guid,
+		R_SYS_DIR,
 		opt->dbg_file);
 
 	if (r_file_exists (abspath_to_file)) {
@@ -81,9 +86,12 @@ static int download(struct SPDBDownloader *pd) {
 		char *archive_name = strdup (opt->dbg_file);
 		archive_name[strlen (archive_name) - 1] = '_';
 		char *abspath_to_archive = r_str_newf ("%s%s%s%s%s%s%s",
-			opt->symbol_store_path, R_SYS_DIR,
-			opt->dbg_file, R_SYS_DIR,
-			opt->guid, R_SYS_DIR,
+			opt->symbol_store_path,
+			R_SYS_DIR,
+			opt->dbg_file,
+			R_SYS_DIR,
+			opt->guid,
+			R_SYS_DIR,
 			archive_name);
 
 		R_LOG_INFO ("Attempting to download compressed pdb in %s", abspath_to_archive);
@@ -204,8 +212,7 @@ int r_bin_pdb_download(RCore *core, PJ *pj, SPDBOptions *options) {
 		pj_kb (pj, "download", (bool)ret);
 		pj_end (pj);
 	} else {
-		r_cons_printf (core->cons, "PDB \"%s\" download %s\n",
-			opt.dbg_file, ret? "success": "failed");
+		r_cons_printf (core->cons, "PDB \"%s\" download %s\n", opt.dbg_file, ret? "success": "failed");
 	}
 	deinit_pdb_downloader (&pdb_downloader);
 

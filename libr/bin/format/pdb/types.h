@@ -29,65 +29,24 @@
 ///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
-///////////////////////////////////////////////////////////////////////////////
-#define CAN_READ(curr_read_bytes, bytes_for_read, max_len) { \
-	if ((((curr_read_bytes) + (bytes_for_read)) > (max_len))) { \
-		return 0; \
-	} \
+static inline bool can_read(ut32 pos, ut32 n, ut32 len) {
+	return pos <= len && n <= len - pos;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-#define UPDATE_DATA(src, curr_read_bytes, bytes_for_read) { \
-	(src) += (bytes_for_read); \
-	(curr_read_bytes) += (bytes_for_read); \
+static inline bool can_read_array(ut32 pos, ut32 count, ut32 elem_size, ut32 len) {
+	return pos <= len && count <= (len - pos) / elem_size;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-#define PEEK_READ1(curr_read_bytes, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), 1, (max_len)); \
-	(dst) = *(type_name *) (src); \
-}
-#define PEEK_READ2(curr_read_bytes, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), 2, (max_len)); \
-	(dst) = (type_name) r_read_le16 (src); \
-}
-#define PEEK_READ4(curr_read_bytes, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), 4, (max_len)); \
-	(dst) = (type_name) r_read_le32 (src); \
-}
-#define PEEK_READ8(curr_read_bytes, max_len, dst, src, type_name) { \
-	CAN_READ((curr_read_bytes), 8, (max_len)); \
-	(dst) = (type_name) r_read_le64 (src); \
-}
-///////////////////////////////////////////////////////////////////////////////
-#define READ1(curr_read_bytes, max_len, dst, src, type_name) { \
-	PEEK_READ1((curr_read_bytes), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), 1); \
-}
-
-#define READ2(curr_read_bytes, max_len, dst, src, type_name) { \
-	PEEK_READ2((curr_read_bytes), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), 2); \
-}
-
-#define READ4(curr_read_bytes, max_len, dst, src, type_name) { \
-	PEEK_READ4((curr_read_bytes), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), 4); \
-}
-
-#define READ8(curr_read_bytes, max_len, dst, src, type_name) { \
-	PEEK_READ8((curr_read_bytes), (max_len), (dst), (src), type_name); \
-	UPDATE_DATA((src), (curr_read_bytes), 8); \
-}
-
-///////////////////////////////////////////////////////////////////////////////
-#define PAD_ALIGN(pad, curr_read_bytes, src, max_len) { \
-	int tmp = 0; \
-	if ((pad) > 0xF0) { \
-		tmp = (pad) & 0x0F; \
-		CAN_READ((curr_read_bytes), (tmp), (len)); \
-		UPDATE_DATA((src), (curr_read_bytes), (tmp)); \
-	} \
+static inline bool pad_align(ut8 pad, ut8 **src, ut32 *pos, ut32 len) {
+	if (pad > 0xF0) {
+		const ut32 skip = pad & 0x0F;
+		if (!can_read (*pos, skip, len)) {
+			return false;
+		}
+		*src += skip;
+		*pos += skip;
+	}
+	return true;
 }
 
 typedef struct R_STREAM_FILE_{

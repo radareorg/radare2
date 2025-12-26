@@ -44,52 +44,49 @@ static void parse_dbi_header(SDBIHeader *dbi_header, R_STREAM_FILE *stream_file)
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->resvd);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-static int parse_ssymbol_range(char *data, int max_len, SSymbolRange *symbol_range) {
-	int read_bytes = 0;
-
-	READ2 (read_bytes, max_len, symbol_range->section, data, st16);
-	READ2 (read_bytes, max_len, symbol_range->padding1, data, st16);
-	READ4 (read_bytes, max_len, symbol_range->offset, data, st32);
-	READ4 (read_bytes, max_len, symbol_range->size, data, st32);
-	READ4 (read_bytes, max_len, symbol_range->flags, data, ut32);
-	READ4 (read_bytes, max_len, symbol_range->module, data, st32);
-
-	// TODO: why not need to read this padding?
-	//	READ2 (read_bytes, max_len, symbol_range->padding2, data, short);
-	READ4 (read_bytes, max_len, symbol_range->data_crc, data, ut32);
-	READ4 (read_bytes, max_len, symbol_range->reloc_crc, data, ut32);
-
-	return read_bytes;
+static int parse_ssymbol_range(const ut8 *data, ut32 max_len, SSymbolRange *symbol_range) {
+	const ut32 size = 28;
+	if (!can_read (0, size, max_len)) {
+		return 0;
+	}
+	symbol_range->section = r_read_le16 (data);
+	symbol_range->padding1 = r_read_le16 (data + 2);
+	symbol_range->offset = (st32)r_read_le32 (data + 4);
+	symbol_range->size = (st32)r_read_le32 (data + 8);
+	symbol_range->flags = r_read_le32 (data + 12);
+	symbol_range->module = (st32)r_read_le32 (data + 16);
+	symbol_range->data_crc = r_read_le32 (data + 20);
+	symbol_range->reloc_crc = r_read_le32 (data + 24);
+	return size;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-static int parse_dbi_ex_header(char *data, int max_len, SDBIExHeader *dbi_ex_header) {
-	ut32 read_bytes = 0, before_read_bytes = 0;
-
-	READ4 (read_bytes, max_len, dbi_ex_header->opened, data, ut32);
-
-	before_read_bytes = read_bytes;
-	read_bytes += parse_ssymbol_range (data, max_len, &dbi_ex_header->range);
-	data += (read_bytes - before_read_bytes);
-
-	READ2 (read_bytes, max_len, dbi_ex_header->flags, data, ut16);
-	READ2 (read_bytes, max_len, dbi_ex_header->stream, data, st16);
-	READ4 (read_bytes, max_len, dbi_ex_header->symSize, data, ut32);
-	READ4 (read_bytes, max_len, dbi_ex_header->oldLineSize, data, ut32);
-	READ4 (read_bytes, max_len, dbi_ex_header->lineSize, data, ut32);
-	READ2 (read_bytes, max_len, dbi_ex_header->nSrcFiles, data, st16);
-	READ2 (read_bytes, max_len, dbi_ex_header->padding1, data, st16);
-	READ4 (read_bytes, max_len, dbi_ex_header->offsets, data, ut32);
-	READ4 (read_bytes, max_len, dbi_ex_header->niSource, data, ut32);
-	READ4 (read_bytes, max_len, dbi_ex_header->niCompiler, data, ut32);
-
-	before_read_bytes = read_bytes;
-	parse_sctring (&dbi_ex_header->modName, (unsigned char *)data, &read_bytes, max_len);
-	data += (read_bytes - before_read_bytes);
-
-	parse_sctring (&dbi_ex_header->objName, (unsigned char *)data, &read_bytes, max_len);
-
+static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_header) {
+	const ut32 fixed_size = 64;
+	if (!can_read (0, fixed_size, max_len)) {
+		return 0;
+	}
+	dbi_ex_header->opened = r_read_le32 (data);
+	const int range_sz = parse_ssymbol_range (data + 4, max_len - 4, &dbi_ex_header->range);
+	if (range_sz == 0) {
+		return 0;
+	}
+	const ut8 *p = data + 4 + range_sz;
+	dbi_ex_header->flags = r_read_le16 (p);
+	dbi_ex_header->stream = (st16)r_read_le16 (p + 2);
+	dbi_ex_header->symSize = r_read_le32 (p + 4);
+	dbi_ex_header->oldLineSize = r_read_le32 (p + 8);
+	dbi_ex_header->lineSize = r_read_le32 (p + 12);
+	dbi_ex_header->nSrcFiles = (st16)r_read_le16 (p + 16);
+	dbi_ex_header->padding1 = (st16)r_read_le16 (p + 18);
+	dbi_ex_header->offsets = r_read_le32 (p + 20);
+	dbi_ex_header->niSource = r_read_le32 (p + 24);
+	dbi_ex_header->niCompiler = r_read_le32 (p + 28);
+	ut32 read_bytes = fixed_size;
+	ut8 *str_data = data + fixed_size;
+	ut32 before = read_bytes;
+	parse_sctring (&dbi_ex_header->modName, str_data, &read_bytes, max_len);
+	str_data += (read_bytes - before);
+	parse_sctring (&dbi_ex_header->objName, str_data, &read_bytes, max_len);
 	return read_bytes;
 }
 
@@ -118,7 +115,7 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	SDbiStream *dbi_stream = (SDbiStream *)parsed_pdb_stream;
 	SDBIExHeader *dbi_ex_header = 0;
 	int pos = 0;
-	char *dbiexhdr_data = 0, *p_tmp = 0;
+	ut8 *dbiexhdr_data = NULL, *p_tmp = NULL;
 	int size = 0, sz = 0;
 	int i = 0;
 
@@ -128,11 +125,11 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	stream_file_seek (stream_file, pos, 0);
 
 	size = dbi_stream->dbi_header.module_size;
-	dbiexhdr_data = (char *)malloc (size);
+	dbiexhdr_data = malloc (size);
 	if (!dbiexhdr_data) {
 		return;
 	}
-	stream_file_read (stream_file, size, dbiexhdr_data);
+	stream_file_read (stream_file, size, (char *)dbiexhdr_data);
 
 	dbi_stream->dbiexhdrs = r_list_new ();
 	p_tmp = dbiexhdr_data;
