@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2016 - iniside, pancake */
+/* radare - LGPL - Copyright 2014-2025 - iniside, pancake */
 
 #include "types.h"
 #include "omap.h"
@@ -12,14 +12,16 @@ static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEnt
 }
 
 void parse_omap_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
-	int data_size;
-	char *data = NULL, *ptmp = NULL;
+	char *ptmp = NULL;
 	int curr_read_bytes = 0, read_bytes = 0;
 	SOmapEntry *omap_entry = 0;
 	SOmapStream *omap_stream = 0;
 
-	stream_file_get_size (stream_file, &data_size);
-	data = (char *)malloc (data_size);
+	int data_size = stream_file_get_size (stream_file);
+	if (data_size < 1) {
+		return;
+	}
+	char *data = (char *)malloc (data_size);
 	if (!data) {
 		return;
 	}

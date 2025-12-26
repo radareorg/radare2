@@ -6,8 +6,6 @@
 
 #define READ_PAGE_FAIL 0x01
 
-// TODO: Move to a general macros in r_util/r_types
-
 ///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size)	{ \
 	(pn) = (pos) / (page_size); \
@@ -25,9 +23,6 @@
 
 ///////////////////////////////////////////////////////////////////////////////
 #define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
-
-///////////////////////////////////////////////////////////////////////////////
-#define SWAP_UINT32(x) (((x) >> 24) | (((x) & 0x00FF0000) >> 8) | (((x) & 0x0000FF00) << 8) | ((x) << 24))
 
 static inline bool can_read(ut32 pos, ut32 n, ut32 len) {
 	return pos <= len && n <= len - pos;

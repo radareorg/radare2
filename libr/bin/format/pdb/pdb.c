@@ -122,7 +122,7 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	root_stream7 = pdb->root_stream;
 	pdb_stream = &(root_stream7->pdb_stream);
 
-	stream_file_get_size (&pdb_stream->stream_file, &data_size);
+	data_size = stream_file_get_size (&pdb_stream->stream_file);
 	if (data_size < 1) {
 		return 0;
 	}

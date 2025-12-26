@@ -105,10 +105,9 @@ void stream_file_get_data(R_STREAM_FILE *stream_file, char *data) {
 	stream_file_seek (stream_file, pos, 0);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void stream_file_get_size(R_STREAM_FILE *stream_file, int *data_size) {
+int stream_file_get_size(R_STREAM_FILE *stream_file) {
 	int pn_start = 0, off_start = 0;
 	GET_PAGE (pn_start, off_start, stream_file->pos, stream_file->page_size);
 	(void)pn_start; // hack for remove unused warning
-	*data_size = stream_file->end - off_start;
+	return stream_file->end - off_start;
 }
