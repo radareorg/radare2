@@ -2295,7 +2295,7 @@ static void init_stype_info(STypeInfo *type_info) {
 #define PARSE_LF2(lf_type, lf_func_name, type) \
 	{ \
 		STypeInfo *type_info = R_NEW0 (STypeInfo); \
-		lf_type *lf = R_NEW0 (lf_type); \
+		lf_type *lf = R_NEW0 (lf_type); \
 		curr_read_bytes = parse_ ## lf_func_name (lf, p, read_bytes, len); \
 		type_info->type_info = (void *)lf; \
 		type_info->leaf_type = type; \
