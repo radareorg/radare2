@@ -810,15 +810,13 @@ static int get_array_element_type(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
-
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_array_index_type(STpiStream *ss, void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ARRAY *lf_array = (SLF_ARRAY *)t->type_info;
@@ -831,16 +829,13 @@ static int get_array_index_type(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
-
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Again doesn't work for base types
 static int get_bitfield_base_type(STpiStream *ss, void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_BITFIELD *lf = (SLF_BITFIELD *)t->type_info;
@@ -853,15 +848,13 @@ static int get_bitfield_base_type(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
-
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_class_struct_derived(STpiStream *ss, void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_STRUCTURE *lf = (SLF_STRUCTURE *)t->type_info;
@@ -901,11 +894,10 @@ static int get_mfunction_return_type(STpiStream *ss, void *type, void **ret_type
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
-
 	return curr_idx;
 }
 
@@ -968,14 +960,13 @@ static int get_modifier_modified_type(STpiStream *ss, void *type, void **ret_typ
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
 	return curr_idx;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static int get_pointer_utype(STpiStream *ss, void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_POINTER *lf = (SLF_POINTER *)t->type_info;
@@ -988,11 +979,10 @@ static int get_pointer_utype(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
-
 	return curr_idx;
 }
 
@@ -1008,7 +998,7 @@ static int get_procedure_return_type(STpiStream *ss, void *type, void **ret_type
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1028,7 +1018,7 @@ static int get_procedure_arglist(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1048,7 +1038,7 @@ static int get_member_index(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1068,7 +1058,7 @@ static int get_nesttype_index(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1088,7 +1078,7 @@ static int get_onemethod_index(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1108,7 +1098,7 @@ static int get_method_mlist(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -1116,7 +1106,6 @@ static int get_method_mlist(STpiStream *ss, void *type, void **ret_type) {
 	return curr_idx;
 }
 
-// XXX this function returns bool and int at the same time wtf this is very wrong
 static int get_enum_utype(STpiStream *ss, void *type, void **ret_type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_ENUM *lf = (SLF_ENUM *)t->type_info;
@@ -1129,7 +1118,7 @@ static int get_enum_utype(STpiStream *ss, void *type, void **ret_type) {
 		base_ret_type->length = 0;
 		base_ret_type->type_data = base_type;
 		*ret_type = base_ret_type;
-		return true; // check what are the return values used for
+		return 0;
 	}
 	curr_idx -= ss->ctx.base_idx;
 	*ret_type = r_list_get_n (ss->ctx.types_list, curr_idx);
@@ -2305,14 +2294,8 @@ static void init_stype_info(STypeInfo *type_info) {
 
 #define PARSE_LF2(lf_type, lf_func_name, type) \
 	{ \
-		STypeInfo *type_info = (STypeInfo *)malloc (sizeof (STypeInfo)); \
-		if (!type_info) \
-			return 0; \
-		lf_type *lf = (lf_type *)malloc (sizeof (lf_type)); \
-		if (!lf) { \
-			free (type_info); \
-			return 0; \
-		} \
+		STypeInfo *type_info = R_NEW0 (STypeInfo); \
+		lf_type *lf = R_NEW0 (lf_type); \
 		curr_read_bytes = parse_ ## lf_func_name (lf, p, read_bytes, len); \
 		type_info->type_info = (void *)lf; \
 		type_info->leaf_type = type; \
@@ -2665,6 +2648,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		break;
 	case eLF_POINTER:
 		{
+			// PARSE_LF (SLF_POINTER, lf_pointer);
 			SLF_POINTER *lf = (SLF_POINTER *)malloc (sizeof (SLF_POINTER));
 			if (!lf) {
 				free (leaf_data);
@@ -2674,8 +2658,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 			type->type_data.type_info = (void *)lf;
 			init_stype_info (&type->type_data);
 		}
-	//		PARSE_LF (SLF_POINTER, lf_pointer);
-	break;
+		break;
 	case eLF_ARRAY:
 		PARSE_LF (SLF_ARRAY, lf_array);
 		break;
@@ -2715,32 +2698,28 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 }
 
 int parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
-	int i, ret = 1;
-
 	ss->types = r_list_new ();
-	if (!ss->types) {
-		return 0;
-	}
-
 	// Initialize context for parsing session
 	stream_file_read (stream, sizeof (STPIHeader), (char *)&ss->header);
 
 	ss->ctx.base_idx = ss->header.idx_begin;
 	ss->ctx.types_list = ss->types;
 
+	int i;
 	for (i = ss->header.idx_begin; i < ss->header.idx_end; i++) {
 		SType *type = R_NEW0 (SType);
 		type->tpi_idx = i;
 		type->type_data.type_info = 0;
 		type->type_data.leaf_type = eLF_MAX;
 		init_stype_info (&type->type_data);
-		if (!parse_tpi_stypes (stream, type)) {
-			R_FREE (type);
+		if (parse_tpi_stypes (stream, type)) {
+			r_list_append (ss->types, type);
+		} else {
+			free (type);
 		}
-		r_list_append (ss->types, type);
 	}
 
-	return ret;
+	return 1;
 }
 
 void init_tpi_stream(STpiStream *ss) {
