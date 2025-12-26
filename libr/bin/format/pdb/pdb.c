@@ -59,8 +59,7 @@ static char *create_type_name_from_offset(ut64 offset) {
 /// size - default value = -1
 /// page_size - default value = 0x1000
 ///////////////////////////////////////////////////////////////////////////////
-static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages,
-	int pages_amount, int index, int size, int page_size) {
+static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages, int pages_amount, int index, int size, int page_size) {
 	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
 	pdb_stream->indx = index;
@@ -103,8 +102,7 @@ static int count_pages(int length, int page_size) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount,
-	EStream indx, int root_size, int page_size) {
+static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount, EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = 0;
 	int tmp_data_max_size = 0;
 	char *tmp_data = NULL, *data_end;
@@ -119,13 +117,12 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	R_PDB7_ROOT_STREAM *root_stream7;
 
 	pdb->root_stream = R_NEW0 (R_PDB7_ROOT_STREAM);
-	init_r_pdb_stream (&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount,
-		indx, root_size, page_size);
+	init_r_pdb_stream (&pdb->root_stream->pdb_stream, pdb->buf, root_page_list, pages_amount, indx, root_size, page_size);
 
 	root_stream7 = pdb->root_stream;
 	pdb_stream = &(root_stream7->pdb_stream);
 
-	stream_file_get_size (&pdb_stream->stream_file, &data_size);
+	data_size = stream_file_get_size (&pdb_stream->stream_file);
 	if (data_size < 1) {
 		return 0;
 	}
@@ -301,20 +298,13 @@ static void add_index(RList *list, int index, int stream_size, EStream stream_ty
 
 ///////////////////////////////////////////////////////////////////////////////
 static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
-	add_index (l, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream),
-		ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream),
-		ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream),
-		ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream),
-		ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream),
-		ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream),
-		ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
-	add_index (l, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream),
-		ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
+	add_index (l, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
+	add_index (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
+	add_index (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream), ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
+	add_index (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
+	add_index (l, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream), ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
 
 	// unparsed, but know their names
 	add_index (l, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
@@ -358,10 +348,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 			i++;
 			continue;
 		}
-		init_r_stream_file (&stream_file, pdb->buf, (int *)page->stream_pages,
-			page->num_pages /*root_stream->pdb_stream.pages_amount*/,
-			page->stream_size,
-			root_stream->pdb_stream.page_size);
+		init_r_stream_file (&stream_file, pdb->buf, (int *)page->stream_pages, page->num_pages /*root_stream->pdb_stream.pages_amount*/, page->stream_size, root_stream->pdb_stream.page_size);
 		switch (i) {
 		// TODO: rewrite for style like for streams from dbg stream
 		// look default
@@ -398,9 +385,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 			}
 
 			pdb_stream = R_NEW0 (R_PDB_STREAM);
-			init_r_pdb_stream (pdb_stream, pdb->buf, (int *)page->stream_pages,
-				root_stream->pdb_stream.pages_amount, i,
-				page->stream_size, root_stream->pdb_stream.page_size);
+			init_r_pdb_stream (pdb_stream, pdb->buf, (int *)page->stream_pages, root_stream->pdb_stream.pages_amount, i, page->stream_size, root_stream->pdb_stream.page_size);
 			r_list_append (pList, pdb_stream);
 			break;
 		}
@@ -498,8 +483,7 @@ static bool pdb7_parse(RBinPdb *pdb) {
 		if (UT64_MUL_OVFCHK (root_index_pages[i], page_size)) {
 			break;
 		}
-		r_buf_seek (pdb->buf, root_index_pages[i] * page_size,
-			R_BUF_SET);
+		r_buf_seek (pdb->buf, root_index_pages[i] * page_size, R_BUF_SET);
 		r_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
 	}
@@ -516,8 +500,7 @@ static bool pdb7_parse(RBinPdb *pdb) {
 	}
 
 	pdb->pdb_streams2 = NULL;
-	if (!init_pdb7_root_stream (pdb, root_page_list, num_root_pages,
-		ePDB_STREAM_ROOT, root_size, page_size)) {
+	if (!init_pdb7_root_stream (pdb, root_page_list, num_root_pages, ePDB_STREAM_ROOT, root_size, page_size)) {
 		R_LOG_ERROR ("Could not initialize root stream");
 		goto error;
 	}
@@ -676,106 +659,106 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 		{
 			SimpleTypeKind kind = get_simple_type_kind (simple_type->simple_type);
 			switch (kind) {
-		case PDB_NONE:
-		case PDB_VOID:
-		case PDB_NOT_TRANSLATED:
-		case PDB_HRESULT:
+			case PDB_NONE:
+			case PDB_VOID:
+			case PDB_NOT_TRANSLATED:
+			case PDB_HRESULT:
 				return -1;
 				break;
-		case PDB_SIGNED_CHAR:
-		case PDB_NARROW_CHAR:
+			case PDB_SIGNED_CHAR:
+			case PDB_NARROW_CHAR:
 				*member_format = "c";
 				break;
-		case PDB_UNSIGNED_CHAR:
+			case PDB_UNSIGNED_CHAR:
 				*member_format = "b";
 				break;
-		case PDB_SBYTE:
+			case PDB_SBYTE:
 				*member_format = "n1";
 				break;
-		case PDB_BOOL8:
-		case PDB_BYTE:
+			case PDB_BOOL8:
+			case PDB_BYTE:
 				*member_format = "N1";
 				break;
-		case PDB_INT16_SHORT:
-		case PDB_INT16:
+			case PDB_INT16_SHORT:
+			case PDB_INT16:
 				*member_format = "n2";
 				break;
-		case PDB_UINT16_SHORT:
-		case PDB_UINT16:
-		case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
-		case PDB_CHAR16:
-		case PDB_BOOL16:
+			case PDB_UINT16_SHORT:
+			case PDB_UINT16:
+			case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
+			case PDB_CHAR16:
+			case PDB_BOOL16:
 				*member_format = "N2";
 				break;
-		case PDB_INT32_LONG:
-		case PDB_INT32:
+			case PDB_INT32_LONG:
+			case PDB_INT32:
 				*member_format = "n4";
 				break;
-		case PDB_UINT32_LONG:
-		case PDB_UINT32:
-		case PDB_CHAR32:
-		case PDB_BOOL32:
+			case PDB_UINT32_LONG:
+			case PDB_UINT32:
+			case PDB_CHAR32:
+			case PDB_BOOL32:
 				*member_format = "N4";
 				break;
-		case PDB_INT64_QUAD:
-		case PDB_INT64:
+			case PDB_INT64_QUAD:
+			case PDB_INT64:
 				*member_format = "n8";
 				break;
-		case PDB_UINT64_QUAD:
-		case PDB_UINT64:
-		case PDB_BOOL64:
+			case PDB_UINT64_QUAD:
+			case PDB_UINT64:
+			case PDB_BOOL64:
 				*member_format = "N8";
 				break;
-			// TODO these when formatting for them will exist
-		case PDB_INT128_OCT:
-		case PDB_UINT128_OCT:
-		case PDB_INT128:
-		case PDB_UINT128:
-		case PDB_BOOL128:
+				// TODO these when formatting for them will exist
+			case PDB_INT128_OCT:
+			case PDB_UINT128_OCT:
+			case PDB_INT128:
+			case PDB_UINT128:
+			case PDB_BOOL128:
 				*member_format = "::::";
 				return -2;
 				////////////////////////////////////
 				// TODO these when formatting for them will exist
 				// I assume complex are made up by 2 floats
-		case PDB_COMPLEX16:
+			case PDB_COMPLEX16:
 				*member_format = "..";
 				return -2;
-		case PDB_COMPLEX32:
-		case PDB_COMPLEX32_PP:
+			case PDB_COMPLEX32:
+			case PDB_COMPLEX32_PP:
 				*member_format = ":";
 				return -2;
-		case PDB_COMPLEX48:
+			case PDB_COMPLEX48:
 				*member_format = ":.";
 				return -2;
-		case PDB_COMPLEX64:
+			case PDB_COMPLEX64:
 				*member_format = "::";
 				return -2;
-		case PDB_COMPLEX80:
+			case PDB_COMPLEX80:
 				*member_format = "::..";
 				return -2;
-		case PDB_COMPLEX128:
+			case PDB_COMPLEX128:
 				*member_format = "::::";
 				return -2;
 
-		case PDB_FLOAT32:
-		case PDB_FLOAT32_PP:
+			case PDB_FLOAT32:
+			case PDB_FLOAT32_PP:
 				*member_format = "f";
 				break;
-		case PDB_FLOAT64:
+			case PDB_FLOAT64:
 				*member_format = "F";
 				break;
 				////////////////////////////////////
 				// TODO these when formatting for them will exist
-		case PDB_FLOAT16:
+			case PDB_FLOAT16:
 				*member_format = "..";
 				return -2;
-		case PDB_FLOAT48:
+			case PDB_FLOAT48:
 				*member_format = ":.";
 				return -2;
-		case PDB_FLOAT80:
+			case PDB_FLOAT80:
 				*member_format = "::..";
 				return -2;
-		case PDB_FLOAT128:
+			case PDB_FLOAT128:
 				*member_format = "::::";
 				return -2;
 			default:
@@ -1349,7 +1332,7 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 		r_strbuf_fini (&format);
 		r_strbuf_fini (&member_names);
 
-	fail: // if we can't print whole type correctly, don't print at all
+fail: // if we can't print whole type correctly, don't print at all
 		if (to_free_name) {
 			R_FREE (name);
 		}
@@ -1454,7 +1437,9 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
 					filtered_name,
 					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name);
+					gdata->symtype,
+					PDB_SIZEOF_SECTION_NAME,
+					sctn_header->name);
 				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
 				free (filtered_name);
 				break;
@@ -1462,7 +1447,10 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			default:
 				pdb->cb_printf ("0x%08" PFMT64x "  %d  %.*s  %s\n",
 					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype, PDB_SIZEOF_SECTION_NAME, sctn_header->name, name);
+					gdata->symtype,
+					PDB_SIZEOF_SECTION_NAME,
+					sctn_header->name,
+					name);
 				break;
 			}
 			free (name);

@@ -36,8 +36,7 @@ static void stream_file_read_pages(R_STREAM_FILE *stream_file, int start_indx, i
 			return;
 		}
 		r_buf_seek (stream_file->buf, page_offset, R_BUF_SET);
-		r_buf_read_at (stream_file->buf, page_offset,
-			(ut8 *)res, stream_file->page_size);
+		r_buf_read_at (stream_file->buf, page_offset, (ut8 *)res, stream_file->page_size);
 		res += stream_file->page_size;
 	}
 }
@@ -106,10 +105,9 @@ void stream_file_get_data(R_STREAM_FILE *stream_file, char *data) {
 	stream_file_seek (stream_file, pos, 0);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-void stream_file_get_size(R_STREAM_FILE *stream_file, int *data_size) {
+int stream_file_get_size(R_STREAM_FILE *stream_file) {
 	int pn_start = 0, off_start = 0;
 	GET_PAGE (pn_start, off_start, stream_file->pos, stream_file->page_size);
 	(void)pn_start; // hack for remove unused warning
-	*data_size = stream_file->end - off_start;
+	return stream_file->end - off_start;
 }

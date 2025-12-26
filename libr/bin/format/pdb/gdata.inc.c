@@ -3,26 +3,31 @@
 #include "tpi.h"
 
 ///////////////////////////////////////////////////////////////////////////////
-static int parse_global(char *data, int data_size, SGlobal *global) {
-	unsigned int read_bytes = 2;
-
-	READ4 (read_bytes, data_size, global->symtype, data, ut32);
-	READ4 (read_bytes, data_size, global->offset, data, ut32);
-	READ2 (read_bytes, data_size, global->segment, data, ut8);
-	if (global->leaf_type == 0x110E) {
-		parse_sctring (&global->name, (unsigned char *)data, &read_bytes, data_size);
-	} else {
-		READ1 (read_bytes, data_size, global->name.size, data, ut8);
-		init_scstring (&global->name, global->name.size, data);
+static int parse_global(const ut8 *data, ut32 data_size, SGlobal *global) {
+	const ut32 fixed_size = 10;
+	if (!can_read (0, fixed_size, data_size)) {
+		return 0;
 	}
-
+	global->symtype = r_read_le32 (data);
+	global->offset = r_read_le32 (data + 4);
+	global->segment = r_read_le16 (data + 8);
+	ut32 read_bytes = fixed_size;
+	if (global->leaf_type == 0x110E) {
+		parse_sctring (&global->name, (ut8 *) (data + fixed_size), &read_bytes, data_size);
+	} else {
+		if (!can_read (read_bytes, 1, data_size)) {
+			return 0;
+		}
+		global->name.size = data[read_bytes];
+		read_bytes++;
+		init_scstring (&global->name, global->name.size, (char *) (data + read_bytes));
+	}
 	return read_bytes;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
-	unsigned short len = 0;
-	unsigned short leaf_type = 0;
+	ut16 len = 0;
 	SGDATAStream *data_stream = (SGDATAStream *)stream;
 
 	data_stream->globals_list = r_list_new ();
@@ -31,17 +36,21 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 		if (len == 0) {
 			break;
 		}
-		char *data = (char *)malloc (len);
+		ut8 *data = malloc (len);
 		if (!data) {
 			return;
 		}
-		stream_file_read (stream_file, len, data);
+		stream_file_read (stream_file, len, (char *)data);
 
-		leaf_type = *(unsigned short *) (data);
+		const ut16 leaf_type = r_read_le16 (data);
 		if ((leaf_type == 0x110E) || (leaf_type == 0x1009)) {
 			SGlobal *global = R_NEW0 (SGlobal);
+			if (!global) {
+				free (data);
+				return;
+			}
 			global->leaf_type = leaf_type;
-			parse_global (data + 2, len, global);
+			parse_global (data + 2, len - 2, global);
 			r_list_append (data_stream->globals_list, global);
 		}
 		free (data);
