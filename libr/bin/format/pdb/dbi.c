@@ -8,8 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 static void free_dbi_stream(STpiStream *ss, void *stream) {
 	SDbiStream *t = (SDbiStream *)stream;
-	SDBIExHeader *dbi_ex_header = 0;
-
+	SDBIExHeader *dbi_ex_header = NULL;
 	RListIter *it = r_list_iterator (t->dbiexhdrs);
 	while (r_list_iter_next (it)) {
 		dbi_ex_header = (SDBIExHeader *)r_list_iter_get (it);
@@ -113,7 +112,7 @@ void init_dbi_stream(SDbiStream *dbi_stream) {
 ///////////////////////////////////////////////////////////////////////////////
 void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	SDbiStream *dbi_stream = (SDbiStream *)parsed_pdb_stream;
-	SDBIExHeader *dbi_ex_header = 0;
+	SDBIExHeader *dbi_ex_header = NULL;
 	int pos = 0;
 	ut8 *dbiexhdr_data = NULL, *p_tmp = NULL;
 	int size = 0, sz = 0;

@@ -738,7 +738,6 @@ static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
 				SVal_LF_CHAR *lf_char;
 				lf_char = (SVal_LF_CHAR *)val->name_or_val;
 				*name = lf_char->name.name;
-				//			strcpy (name, lf_uchar->name.name);
 				break;
 			}
 		case eLF_ULONG:
@@ -746,7 +745,6 @@ static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
 				SVal_LF_ULONG *lf_ulong;
 				lf_ulong = (SVal_LF_ULONG *)val->name_or_val;
 				*name = lf_ulong->name.name;
-				//			strcpy (name, lf_ulong->name.name);
 				break;
 			}
 		case eLF_LONG:
@@ -754,7 +752,6 @@ static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
 				SVal_LF_LONG *lf_long;
 				lf_long = (SVal_LF_LONG *)val->name_or_val;
 				*name = lf_long->name.name;
-				//			strcpy (name, lf_long->name.name);
 				break;
 			}
 		case eLF_USHORT:
@@ -762,7 +759,6 @@ static void get_sval_name(STpiStream *ss, SVal *val, char **name) {
 				SVal_LF_USHORT *lf_ushort;
 				lf_ushort = (SVal_LF_USHORT *)val->name_or_val;
 				*name = lf_ushort->name.name;
-				//			strcpy (name, lf_ushort->name.name);
 				break;
 			}
 		case eLF_SHORT:
@@ -1141,9 +1137,8 @@ static void get_union_members(STpiStream *ss, void *type, RList **l) {
 	if (!lf_union || lf_union->field_list == 0) {
 		*l = 0;
 	} else {
-		SType *tmp = 0;
 		indx = lf_union->field_list - ss->ctx.base_idx;
-		tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
+		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
 		*l = tmp? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs: NULL;
 	}
 }
@@ -1156,9 +1151,8 @@ static void get_struct_class_members(STpiStream *ss, void *type, RList **l) {
 	if (!lf || lf->field_list == 0) {
 		*l = 0;
 	} else {
-		SType *tmp = 0;
 		indx = lf->field_list - ss->ctx.base_idx;
-		tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
+		SType *tmp = (SType *)r_list_get_n (ss->ctx.types_list, indx);
 		*l = tmp? ((SLF_FIELDLIST *)tmp->type_data.type_info)->substructs: NULL;
 	}
 }
@@ -1510,7 +1504,7 @@ static void free_lf_member(STpiStream *ss, void *type_info) {
 static void free_lf_fieldlist(STpiStream *ss, void *type) {
 	STypeInfo *t = (STypeInfo *)type;
 	SLF_FIELDLIST *lf_fieldlist = (SLF_FIELDLIST *)t->type_info;
-	STypeInfo *type_info = 0;
+	STypeInfo *type_info = NULL;
 	RListIter *it = r_list_iterator (lf_fieldlist->substructs);
 	while (r_list_iter_next (it)) {
 		type_info = (STypeInfo *)r_list_iter_get (it);
@@ -1571,10 +1565,10 @@ static void free_lf_vtshape(STpiStream *ss, void *type) {
 }
 
 static void free_tpi_stream(STpiStream *ss, void *stream) {
-	SType *type = NULL;
 	RListIter *it = r_list_iterator (ss->types);
+	// TODO: is there any reason to use this ugly r_list_iter_next loop instead of r_list_foreach_safe? .. oh well maybe we can just call r_list_free if the iter data destructor callback is properly set we shouldnt be doing all those hacks
 	while (r_list_iter_next (it)) {
-		type = (SType *)r_list_iter_get (it);
+		SType *type = (SType *)r_list_iter_get (it);
 		if (!type) {
 			continue;
 		}
@@ -1632,7 +1626,6 @@ static void get_pointer_print_type(STpiStream *ss, void *type, char **name) {
 		ti = &t->type_data;
 		ti->get_print_type (ss, ti, &tmp_name);
 	}
-
 	*name = r_str_newf ("%s*", tmp_name? tmp_name: "");
 	free (tmp_name);
 }
@@ -1715,18 +1708,12 @@ static void get_enum_print_type(STpiStream *ss, void *type, char **name) {
 static void get_class_struct_print_type(STpiStream *ss, void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *)type;
 	char *tmp_name = NULL;
-	const char *tmp1 = NULL;
 
 	ELeafType lt = ti->leaf_type;
 	ti->get_name (ss, ti, &tmp_name);
 
-	if (lt == eLF_CLASS) {
-		tmp1 = "class ";
-	} else {
-		tmp1 = "struct ";
-	}
-
-	*name = r_str_newf ("%s%s", tmp1, tmp_name? tmp_name: "");
+	const char *tmp1 = (lt == eLF_CLASS)? "class": "struct";
+	*name = r_str_newf ("%s %s", tmp1, tmp_name? tmp_name: "");
 }
 
 static void get_arglist_print_type(STpiStream *ss, void *type, char **name) {
@@ -1836,7 +1823,7 @@ static void get_member_print_type(STpiStream *ss, void *type, char **name) {
 static void get_onemethod_print_type(STpiStream *ss, void *type, char **name) {
 	STypeInfo *ti = (STypeInfo *)type;
 	SType *t = 0;
-	char *tmp_name = 0;
+	char *tmp_name = NULL;
 
 	ti->get_index (ss, ti, (void **)&t);
 	if (t->type_data.leaf_type == eLF_SIMPLE_TYPE) {
@@ -2697,7 +2684,8 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	return read_bytes;
 }
 
-int parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
+// XXX this function never return false.. which is probably incorrect. needs review
+bool parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
 	ss->types = r_list_new ();
 	// Initialize context for parsing session
 	stream_file_read (stream, sizeof (STPIHeader), (char *)&ss->header);
@@ -2718,8 +2706,7 @@ int parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
 			free (type);
 		}
 	}
-
-	return 1;
+	return true;
 }
 
 void init_tpi_stream(STpiStream *ss) {
