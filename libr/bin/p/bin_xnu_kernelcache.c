@@ -726,16 +726,7 @@ beach:
 
 static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 	RList *kexts = r_list_newf ((RListFree) &r_kext_free);
-	if (!kexts) {
-		return NULL;
-	}
-
 	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
-	if (!cache_buf) {
-		r_list_free (kexts);
-		return NULL;
-	}
-
 	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
 	ut64 length = r_buf_size (cache_buf);
 
@@ -804,35 +795,25 @@ static void r_kext_free(RKext *kext) {
 	if (!kext) {
 		return;
 	}
-
 	r_list_free (kext->classes);
-
-	if (kext->mach0) {
-		MACH0_(mach0_free) (kext->mach0);
-		kext->mach0 = NULL;
-	}
-
+	MACH0_(mach0_free) (kext->mach0);
 	if (kext->own_name && kext->name) {
-		R_FREE (kext->name);
-		kext->name = NULL;
+		free (kext->name);
 	}
-
-	R_FREE (kext);
+	free (kext);
 }
 
 static void r_kext_fill_text_range(RKext *kext) {
 	const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
-	if (!sections) {
-		return;
-	}
-
-	struct section_t *section;
-	R_VEC_FOREACH (sections, section) {
-		if (strstr (section->name, "__TEXT_EXEC.__text")) {
-			kext->text_range.offset = section->paddr;
-			kext->text_range.size = section->size;
-			kext->vaddr = section->vaddr;
-			break;
+	if (sections) {
+		struct section_t *section;
+		R_VEC_FOREACH (sections, section) {
+			if (strstr (section->name, "__TEXT_EXEC.__text")) {
+				kext->text_range.offset = section->paddr;
+				kext->text_range.size = section->size;
+				kext->vaddr = section->vaddr;
+				break;
+			}
 		}
 	}
 }
@@ -1220,11 +1201,6 @@ static RList *sections(RBinFile *bf) {
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
 	ensure_kexts_initialized (kobj, bf);
 	RBuffer *cache_buf = r_buf_ref (kobj->cache_buf);
-	if (!cache_buf) {
-		r_list_free (ret);
-		return NULL;
-	}
-
 	int iter;
 	RKext *kext;
 	r_kext_index_foreach (kobj->kexts, iter, kext) {
@@ -1431,12 +1407,6 @@ static bool symbols_vec(RBinFile *bf) {
 				process_kmod_init_term_vec (&symbols, bf, kext, &inits, &terms);
 				RVecRBinSymbol_fini (kext->mach0->symbols_vec);
 				kext->mach0->symbols_loaded = false;
-#if 0
-				// causes UAF, because symbols name is not copied in an ownery way, so better leak than crash
-				// freeing this makes us lose the sections
-				MACH0_(mach0_free)(kext->mach0);
-				kext->mach0 = NULL;
-#endif
 			}
 
 			kext->classes = resolve_iokit_classes (&symbols, start_offset, bf, kext);
@@ -1846,10 +1816,6 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		return;
 	}
 	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
-	if (!cache_buf) {
-		R_FREE (stubs_info);
-		return;
-	}
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
