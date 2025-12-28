@@ -344,7 +344,11 @@ static int handle_exception_message(RDebug *dbg, exc_msg *msg, int *ret_code) {
 		R_LOG_ERROR ("EXC_EMULATION");
 		break;
 	case EXC_SOFTWARE:
+#if __POWERPC__
+		R_LOG_ERROR ("EXC_SOFTWARE retry dcu?");
+#else
 		R_LOG_ERROR ("EXC_SOFTWARE code %d retry dcu?", msg->code);
+#endif
 		ret = R_DEBUG_REASON_BREAKPOINT;
 		*ret_code = KERN_SUCCESS;
 		kr = task_suspend (msg->task.name);
