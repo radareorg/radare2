@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2024 - pancake */
+/* radare - LGPL - Copyright 2007-2025 - pancake */
 
 /* XXX : move to r_util??? rename method names.. to long? */
 /* proc IO is not related to socket io.. this is shitty!! */
@@ -15,16 +15,12 @@
 
 R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 #if R2__UNIX__ && LIBC_HAVE_FORK
-	RSocketProc *sp = R_NEW (RSocketProc);
+	RSocketProc *sp = R_NEW0 (RSocketProc);
 #ifdef O_CLOEXEC
 	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
 #else
 	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
 #endif
-	if (!sp) {
-		return NULL;
-	}
-
 	if (pipe (sp->fd0)==-1) {
 		r_sys_perror ("pipe");
 		goto error;
@@ -66,10 +62,8 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 	return sp;
 error:
 	free (sp);
-	return NULL;
-#else
-	return NULL;
 #endif
+	return NULL;
 }
 
 R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
@@ -90,35 +84,27 @@ R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 
 R_API int r_socket_proc_read(RSocketProc *sp, unsigned char *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (sp, -1);
-	RSocket s;
-	s.is_ssl = false;
-	s.fd = sp->fd1[0];
+	RSocket s = { .fd = sp->fd1[0] };
 	return r_socket_read (&s, buf, len);
 }
 
 R_API int r_socket_proc_gets(RSocketProc *sp, char *buf, int size) {
 	R_RETURN_VAL_IF_FAIL (sp, -1);
-	RSocket s;
-	s.is_ssl = false;
-	s.fd = sp->fd1[0];
+	RSocket s = { .fd = sp->fd1[0] };
 	return r_socket_gets (&s, buf, size);
 }
 
 R_API int r_socket_proc_write(RSocketProc *sp, void *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (sp, -1);
-	RSocket s;
-	s.is_ssl = false;
-	s.fd = sp->fd0[1];
+	RSocket s = { .fd = sp->fd0[1] };
 	return r_socket_write (&s, buf, len);
 }
 
 R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...) {
 	R_RETURN_IF_FAIL (sp);
-	RSocket s = {0};
 	char buf[BUFFER_SIZE];
 	va_list ap;
-	s.is_ssl = false;
-	s.fd = sp->fd0[1];
+	RSocket s = { .fd = sp->fd0[1] };
 	if (s.fd != R_INVALID_SOCKET) {
 		va_start (ap, fmt);
 		vsnprintf (buf, BUFFER_SIZE, fmt, ap);
@@ -129,8 +115,6 @@ R_API void r_socket_proc_printf(RSocketProc *sp, const char *fmt, ...) {
 
 R_API int r_socket_proc_ready(RSocketProc *sp, int secs, int usecs) {
 	R_RETURN_VAL_IF_FAIL (sp, -1);
-	RSocket s;
-	s.is_ssl = false;
-	s.fd = sp->fd1[0];
+	RSocket s = { .fd = sp->fd1[0] };
 	return r_socket_ready (&s, secs, usecs);
 }
