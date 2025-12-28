@@ -13,15 +13,15 @@
 
 #define BUFFER_SIZE 4096
 
-R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
+R_API struct r_socket_proc_t *r_socket_proc_open(char *const argv[]) {
 #if R2__UNIX__ && LIBC_HAVE_FORK
 	RSocketProc *sp = R_NEW0 (RSocketProc);
 #ifdef O_CLOEXEC
-	const int flags = O_CLOEXEC; //O_NONBLOCK|O_CLOEXEC;
+	const int flags = O_CLOEXEC; // O_NONBLOCK|O_CLOEXEC;
 #else
-	const int flags = 0; //O_NONBLOCK|O_CLOEXEC;
+	const int flags = 0; // O_NONBLOCK|O_CLOEXEC;
 #endif
-	if (pipe (sp->fd0)==-1) {
+	if (pipe (sp->fd0) == -1) {
 		r_sys_perror ("pipe");
 		goto error;
 	}
@@ -57,7 +57,7 @@ R_API struct r_socket_proc_t *r_socket_proc_open(char* const argv[]) {
 		r_sys_perror ("fork");
 		r_socket_proc_close (sp);
 		goto error;
-		//r_socket_block_time (sp, false, 0);
+		// r_socket_block_time (sp, false, 0);
 	}
 	return sp;
 error:
@@ -71,13 +71,13 @@ R_API int r_socket_proc_close(struct r_socket_proc_t *sp) {
 #if R2__UNIX__ && !__wasi__
 	/* this is wrong */
 	kill (sp->pid, SIGKILL);
-	waitpid (sp->pid, NULL, 0); //WNOHANG);
+	waitpid (sp->pid, NULL, 0); // WNOHANG);
 	close (sp->fd0[0]);
 	close (sp->fd0[1]);
-	//close(sp->fd1[0]);
+	// close (sp->fd1[0]);
 	close (sp->fd1[1]);
-	//sp->fd[0] = -1;
-	//sp->fd[1] = -1;
+	// sp->fd[0] = -1;
+	// sp->fd[1] = -1;
 #endif
 	return 0;
 }

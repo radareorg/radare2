@@ -730,13 +730,19 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		return NULL;
 	}
 
-	ut32 i, ncmds = r_buf_read_le32_at (obj->cache_buf, 16);
-	ut64 length = r_buf_size (obj->cache_buf);
+	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
+	if (!cache_buf) {
+		r_list_free (kexts);
+		return NULL;
+	}
+
+	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
+	ut64 length = r_buf_size (cache_buf);
 
 	ut32 cursor = sizeof (struct MACH0_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
-		ut32 cmdtype = r_buf_read_le32_at (obj->cache_buf, cursor);
-		ut32 cmdsize = r_buf_read_le32_at (obj->cache_buf, cursor + 4);
+		ut32 cmdtype = r_buf_read_le32_at (cache_buf, cursor);
+		ut32 cmdsize = r_buf_read_le32_at (cache_buf, cursor + 4);
 		if (!cmdsize || cmdsize + cursor < cursor) {
 			break;
 		}
@@ -745,10 +751,10 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 
-		ut64 vaddr = r_buf_read_le64_at (obj->cache_buf, cursor + 8);
-		ut64 paddr = r_buf_read_le64_at (obj->cache_buf, cursor + 16);
+		ut64 vaddr = r_buf_read_le64_at (cache_buf, cursor + 8);
+		ut64 paddr = r_buf_read_le64_at (cache_buf, cursor + 16);
 		st32 padded_name_length = (st32)cmdsize - 32;
-		if (padded_name_length <= 0 || cmdsize - 32 + cursor >= length) {
+		if (padded_name_length <= 0 || cmdsize - 32 + cursor >= length || padded_name_length > 0x1000) {
 			cursor += cmdsize;
 			continue;
 		}
@@ -757,7 +763,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		if (!padded_name) {
 			goto beach;
 		}
-		if (r_buf_read_at (obj->cache_buf, cursor + 32, (ut8 *)padded_name, padded_name_length)
+		if (r_buf_read_at (cache_buf, cursor + 32, (ut8 *)padded_name, padded_name_length)
 				!= padded_name_length) {
 			free (padded_name);
 			goto early;
@@ -786,8 +792,10 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		cursor += cmdsize;
 	}
 early:
+	r_buf_free (cache_buf);
 	return kexts;
 beach:
+	r_buf_free (cache_buf);
 	r_list_free (kexts);
 	return NULL;
 }
@@ -1211,13 +1219,18 @@ static RList *sections(RBinFile *bf) {
 
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
 	ensure_kexts_initialized (kobj, bf);
+	RBuffer *cache_buf = r_buf_ref (kobj->cache_buf);
+	if (!cache_buf) {
+		r_list_free (ret);
+		return NULL;
+	}
 
 	int iter;
 	RKext *kext;
 	r_kext_index_foreach (kobj->kexts, iter, kext) {
 		ut8 magicbytes[4];
 
-		r_buf_read_at (kobj->cache_buf, kext->range.offset, magicbytes, 4);
+		r_buf_read_at (cache_buf, kext->range.offset, magicbytes, 4);
 		int magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
@@ -1250,10 +1263,11 @@ static RList *sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-		ptr->perm = prot2perm (seg->initprot);
+			ptr->perm = prot2perm (seg->initprot);
 		r_list_append (ret, ptr);
 	}
 
+	r_buf_free (cache_buf);
 	return ret;
 }
 
@@ -1831,12 +1845,17 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 	if (!stubs_info) {
 		return;
 	}
+	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
+	if (!cache_buf) {
+		R_FREE (stubs_info);
+		return;
+	}
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
 	for (; stubs_cursor < stubs_end; stubs_cursor += 12) {
 		ut8 arm64_code[8];
-		if (r_buf_read_at (obj->cache_buf, stubs_cursor, arm64_code, 8) < 8) {
+		if (r_buf_read_at (cache_buf, stubs_cursor, arm64_code, 8) < 8) {
 			break;
 		}
 
@@ -1851,7 +1870,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		while (!found && level-- > 0) {
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
 			ut64 addr;
-			if (r_buf_read_at (obj->cache_buf, offset_in_got, (ut8*) &addr, 8) < 8) {
+			if (r_buf_read_at (cache_buf, offset_in_got, (ut8*) &addr, 8) < 8) {
 				break;
 			}
 
@@ -1915,6 +1934,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		RVecRBinSymbol_push_back (symbols, local_sym);
 	}
 
+	r_buf_free (cache_buf);
 	R_FREE (stubs_info);
 }
 

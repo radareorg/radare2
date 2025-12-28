@@ -177,12 +177,7 @@ static RDyldLocSym *r_dyld_locsym_new(RDyldCache *cache) {
 			entries = regular_entries;
 		}
 		RDyldLocSym * locsym = R_NEW0 (RDyldLocSym);
-		if (!locsym) {
-			goto beach;
-		}
-
 		match_bin_entries (cache, entries, entries_count, has_large_entries);
-
 		locsym->local_symbols_offset = hdr->localSymbolsOffset;
 		locsym->nlists_offset = info->nlistOffset;
 		locsym->nlists_count = info->nlistCount;
@@ -704,9 +699,6 @@ static void create_cache_bins(RBinFile *bf, RDyldCache *cache) {
 			{
 				char file[256];
 				RDyldBinImage *bin = R_NEW0 (RDyldBinImage);
-				if (!bin) {
-					goto next;
-				}
 				bin->header_at = pa;
 				bin->hdr_offset = hdr_offset;
 				bin->symbols_off = resolve_symbols_off (cache, pa);
@@ -772,10 +764,6 @@ static cache_hdr_t *read_cache_header(RBuffer *cache_buf, ut64 offset) {
 	}
 
 	cache_hdr_t *hdr = R_NEW0 (cache_hdr_t);
-	if (!hdr) {
-		return NULL;
-	}
-
 	ut64 size = sizeof (cache_hdr_t);
 	if (r_buf_fread_at (cache_buf, offset, (ut8*) hdr, "16c4i7l16clii4l", 1) != size) {
 		R_FREE (hdr);
@@ -980,10 +968,6 @@ static cache_accel_t *read_cache_accel(RBuffer *cache_buf, cache_hdr_t *hdr, cac
 
 	ut64 size = sizeof (cache_accel_t);
 	cache_accel_t *accel = R_NEW0 (cache_accel_t);
-	if (!accel) {
-		return NULL;
-	}
-
 	if (r_buf_fread_at (cache_buf, offset, (ut8*) accel, "16il", 1) != size) {
 		R_FREE (accel);
 		return NULL;
@@ -1140,9 +1124,6 @@ static objc_cache_opt_info *get_objc_opt_info(RBinFile *bf, RDyldCache *cache) {
 		}
 
 		result = R_NEW0 (objc_cache_opt_info);
-		if (!result) {
-			break;
-		}
 		result->sel_string_base = sel_string_base;
 	}
 beach:
@@ -1164,9 +1145,6 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	RDyldCache *cache = R_NEW0 (RDyldCache);
-	if (!cache) {
-		return false;
-	}
 	cache->buf = r_buf_ref (buf);
 	populate_cache_headers (cache);
 	if (!cache->hdr) {
@@ -1195,30 +1173,27 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	RBinAddr *ptr = NULL;
 	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		if (cache->n_maps > 0) {
-			size_t i;
-			for (i = 0; i < cache->n_maps; i++) {
-				cache_map_t * map = &cache->maps[i];
-				if (map->fileOffset == 0) {
-					ptr->paddr = 0;
-					ptr->vaddr = map->address;
-					break;
-				}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	if (cache->n_maps > 0) {
+		size_t i;
+		for (i = 0; i < cache->n_maps; i++) {
+			cache_map_t * map = &cache->maps[i];
+			if (map->fileOffset == 0) {
+				ptr->paddr = 0;
+				ptr->vaddr = map->address;
+				break;
 			}
 		}
-		r_list_append (ret, ptr);
 	}
+	r_list_append (ret, ptr);
 	return ret;
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
 
 	if (!bf || !bf->bo) {
 		return NULL;
@@ -1230,9 +1205,7 @@ static RBinInfo *info(RBinFile *bf) {
 	}
 
 	bool big_endian = 0;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("dyldcache");
 	ret->rclass = strdup ("ios");
@@ -1313,9 +1286,6 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 	struct section_t *section;
 	R_VEC_FOREACH (sections, section) {
 		RBinSection *ptr = R_NEW0 (RBinSection);
-		if (!ptr) {
-			break;
-		}
 		if (bin->file) {
 			ptr->name = r_str_newf ("%s.%s", bin->file, (char*)section->name);
 		} else {
@@ -1366,10 +1336,7 @@ static RList *sections(RBinFile *bf) {
 
 	RBinSection *ptr = NULL;
 	for (i = 0; i < cache->n_maps; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			r_list_free (ret);
-			return NULL;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
@@ -1416,10 +1383,7 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			r_list_free (ret);
-			break;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = r_str_newf ("STUBS_ISLAND.%d", j++);
 		ptr->size = first_map->size - 0x4000;
 		ptr->vsize = ptr->size;
