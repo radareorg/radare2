@@ -898,6 +898,15 @@ static void dotnet_parse_tilde_methoddef(
 }
 
 // Helper function to collect typedef metadata for method association
+static void dotnet_typedef_free(void *p) {
+	if (p) {
+		DotNetTypeDefInfo *td = (DotNetTypeDefInfo *)p;
+		free (td->class_name);
+		free (td->namespace);
+		free (td);
+	}
+}
+
 static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS streams, ROWS rows, INDEX_SIZES index_sizes) {
 	PTILDE_HEADER tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + streams->tilde->Offset);
 	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
@@ -905,7 +914,7 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	int j, bit_check, matched_bits = 0;
 	uint32_t num_rows;
-	RList *typedef_info = r_list_newf ((RListFree)free);
+	RList *typedef_info = r_list_newf ((RListFree)dotnet_typedef_free);
 
 	// Calculate offset to TypeDef table
 	// First count how many tables are present so we can skip the row-counts array
