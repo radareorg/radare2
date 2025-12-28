@@ -148,7 +148,7 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 #define PARSER_MAX_TOKENS 8
 R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (reg && str, false);
-	char *tok[PARSER_MAX_TOKENS];
+	char *tok[PARSER_MAX_TOKENS + 1];
 	char tmp[128];
 	int i, j, l;
 	const char *p = str;
@@ -225,7 +225,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			}
 			tmp[i] = '\0';
 			// Limit the number of tokens
-			if (j > PARSER_MAX_TOKENS - 1) {
+			if (j >= PARSER_MAX_TOKENS) {
 				break;
 			}
 			// Save the token
