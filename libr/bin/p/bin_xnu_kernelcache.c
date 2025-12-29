@@ -192,7 +192,6 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
-static int prot2perm(int x);
 static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static void r_iokit_class_free(void *_c);
@@ -1181,13 +1180,28 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
-		ut8 buf[4];
-		r_buf_read_at (b, 0, buf, sizeof (buf));
-		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return is_kernelcache_buffer (b);
+		ut8 buf[4] = { 0 };
+		if (r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf)) {
+			if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+				return is_kernelcache_buffer (b);
+			}
 		}
 	}
 	return false;
+}
+
+static int prot2perm(int x) {
+	int r = 0;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
+	return r;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -1204,8 +1218,7 @@ static RList *sections(RBinFile *bf) {
 	int iter;
 	RKext *kext;
 	r_kext_index_foreach (kobj->kexts, iter, kext) {
-		ut8 magicbytes[4];
-
+		ut8 magicbytes[4] = { 0 };
 		r_buf_read_at (cache_buf, kext->range.offset, magicbytes, 4);
 		int magic = r_read_le32 (magicbytes);
 		switch (magic) {
@@ -1239,20 +1252,12 @@ static RList *sections(RBinFile *bf) {
 		if (!ptr->vaddr) {
 			ptr->vaddr = ptr->paddr;
 		}
-			ptr->perm = prot2perm (seg->initprot);
+		ptr->perm = prot2perm (seg->initprot);
 		r_list_append (ret, ptr);
 	}
 
 	r_buf_free (cache_buf);
 	return ret;
-}
-
-static int prot2perm(int x) {
-	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
-	return r;
 }
 
 static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
