@@ -721,8 +721,6 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
-// XXX R2_600 use r_ref api instead
-// Reference-counted free: decrements refctr, cleans resources, frees struct when refctr==0
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
 		// If this buffer has references, just decrement and return
