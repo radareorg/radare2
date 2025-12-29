@@ -178,6 +178,7 @@ R_DEPRECATE R_API const ut8 *r_buf_data(RBuffer *b, ut64 *size);
 R_API ut64 r_buf_size(RBuffer *b);
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize);
 R_API RBuffer *r_buf_ref(RBuffer *b);
+R_API void r_buf_unref(RBuffer *b);
 R_API void r_buf_free(RBuffer *b);
 R_API void r_buf_fini(RBuffer *b);
 R_API RList *r_buf_nonempty_list(RBuffer *b);
