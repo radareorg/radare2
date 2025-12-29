@@ -192,7 +192,6 @@ static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
 static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *kernel_syms_by_addr, RKext *kext, int ordinal);
 static RStubsInfo *get_stubs_info(struct MACH0_(obj_t) *mach0, ut64 paddr, RKernelCacheObj *obj);
-static int prot2perm(int x);
 static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext);
 static void r_iokit_class_free(void *_c);
@@ -726,17 +725,14 @@ beach:
 
 static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 	RList *kexts = r_list_newf ((RListFree) &r_kext_free);
-	if (!kexts) {
-		return NULL;
-	}
-
-	ut32 i, ncmds = r_buf_read_le32_at (obj->cache_buf, 16);
-	ut64 length = r_buf_size (obj->cache_buf);
+	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
+	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
+	ut64 length = r_buf_size (cache_buf);
 
 	ut32 cursor = sizeof (struct MACH0_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
-		ut32 cmdtype = r_buf_read_le32_at (obj->cache_buf, cursor);
-		ut32 cmdsize = r_buf_read_le32_at (obj->cache_buf, cursor + 4);
+		ut32 cmdtype = r_buf_read_le32_at (cache_buf, cursor);
+		ut32 cmdsize = r_buf_read_le32_at (cache_buf, cursor + 4);
 		if (!cmdsize || cmdsize + cursor < cursor) {
 			break;
 		}
@@ -745,10 +741,10 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 			continue;
 		}
 
-		ut64 vaddr = r_buf_read_le64_at (obj->cache_buf, cursor + 8);
-		ut64 paddr = r_buf_read_le64_at (obj->cache_buf, cursor + 16);
+		ut64 vaddr = r_buf_read_le64_at (cache_buf, cursor + 8);
+		ut64 paddr = r_buf_read_le64_at (cache_buf, cursor + 16);
 		st32 padded_name_length = (st32)cmdsize - 32;
-		if (padded_name_length <= 0 || cmdsize - 32 + cursor >= length) {
+		if (padded_name_length <= 0 || cmdsize - 32 + cursor >= length || padded_name_length > 0x1000) {
 			cursor += cmdsize;
 			continue;
 		}
@@ -757,7 +753,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		if (!padded_name) {
 			goto beach;
 		}
-		if (r_buf_read_at (obj->cache_buf, cursor + 32, (ut8 *)padded_name, padded_name_length)
+		if (r_buf_read_at (cache_buf, cursor + 32, (ut8 *)padded_name, padded_name_length)
 				!= padded_name_length) {
 			free (padded_name);
 			goto early;
@@ -786,8 +782,10 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		cursor += cmdsize;
 	}
 early:
+	r_buf_free (cache_buf);
 	return kexts;
 beach:
+	r_buf_free (cache_buf);
 	r_list_free (kexts);
 	return NULL;
 }
@@ -796,35 +794,25 @@ static void r_kext_free(RKext *kext) {
 	if (!kext) {
 		return;
 	}
-
 	r_list_free (kext->classes);
-
-	if (kext->mach0) {
-		MACH0_(mach0_free) (kext->mach0);
-		kext->mach0 = NULL;
-	}
-
+	MACH0_(mach0_free) (kext->mach0);
 	if (kext->own_name && kext->name) {
-		R_FREE (kext->name);
-		kext->name = NULL;
+		free (kext->name);
 	}
-
-	R_FREE (kext);
+	free (kext);
 }
 
 static void r_kext_fill_text_range(RKext *kext) {
 	const RVecSection *sections = MACH0_(load_sections) (kext->mach0);
-	if (!sections) {
-		return;
-	}
-
-	struct section_t *section;
-	R_VEC_FOREACH (sections, section) {
-		if (strstr (section->name, "__TEXT_EXEC.__text")) {
-			kext->text_range.offset = section->paddr;
-			kext->text_range.size = section->size;
-			kext->vaddr = section->vaddr;
-			break;
+	if (sections) {
+		struct section_t *section;
+		R_VEC_FOREACH (sections, section) {
+			if (strstr (section->name, "__TEXT_EXEC.__text")) {
+				kext->text_range.offset = section->paddr;
+				kext->text_range.size = section->size;
+				kext->vaddr = section->vaddr;
+				break;
+			}
 		}
 	}
 }
@@ -1192,13 +1180,28 @@ static RBinAddr *newEntry(ut64 haddr, ut64 vaddr, int type) {
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
-		ut8 buf[4];
-		r_buf_read_at (b, 0, buf, sizeof (buf));
-		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return is_kernelcache_buffer (b);
+		ut8 buf[4] = { 0 };
+		if (r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf)) {
+			if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
+				return is_kernelcache_buffer (b);
+			}
 		}
 	}
 	return false;
+}
+
+static int prot2perm(int x) {
+	int r = 0;
+	if (x & 1) {
+		r |= 4;
+	}
+	if (x & 2) {
+		r |= 2;
+	}
+	if (x & 4) {
+		r |= 1;
+	}
+	return r;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -1211,13 +1214,12 @@ static RList *sections(RBinFile *bf) {
 
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
 	ensure_kexts_initialized (kobj, bf);
-
+	RBuffer *cache_buf = r_buf_ref (kobj->cache_buf);
 	int iter;
 	RKext *kext;
 	r_kext_index_foreach (kobj->kexts, iter, kext) {
-		ut8 magicbytes[4];
-
-		r_buf_read_at (kobj->cache_buf, kext->range.offset, magicbytes, 4);
+		ut8 magicbytes[4] = { 0 };
+		r_buf_read_at (cache_buf, kext->range.offset, magicbytes, 4);
 		int magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
@@ -1254,15 +1256,8 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
+	r_buf_free (cache_buf);
 	return ret;
-}
-
-static int prot2perm(int x) {
-	int r = 0;
-	if (x&1) r |= 4;
-	if (x&2) r |= 2;
-	if (x&4) r |= 1;
-	return r;
 }
 
 static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
@@ -1417,12 +1412,6 @@ static bool symbols_vec(RBinFile *bf) {
 				process_kmod_init_term_vec (&symbols, bf, kext, &inits, &terms);
 				RVecRBinSymbol_fini (kext->mach0->symbols_vec);
 				kext->mach0->symbols_loaded = false;
-#if 0
-				// causes UAF, because symbols name is not copied in an ownery way, so better leak than crash
-				// freeing this makes us lose the sections
-				MACH0_(mach0_free)(kext->mach0);
-				kext->mach0 = NULL;
-#endif
 			}
 
 			kext->classes = resolve_iokit_classes (&symbols, start_offset, bf, kext);
@@ -1831,12 +1820,13 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 	if (!stubs_info) {
 		return;
 	}
+	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
 	for (; stubs_cursor < stubs_end; stubs_cursor += 12) {
 		ut8 arm64_code[8];
-		if (r_buf_read_at (obj->cache_buf, stubs_cursor, arm64_code, 8) < 8) {
+		if (r_buf_read_at (cache_buf, stubs_cursor, arm64_code, 8) < 8) {
 			break;
 		}
 
@@ -1851,7 +1841,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		while (!found && level-- > 0) {
 			ut64 offset_in_got = addr_in_got - obj->pa2va_exec;
 			ut64 addr;
-			if (r_buf_read_at (obj->cache_buf, offset_in_got, (ut8*) &addr, 8) < 8) {
+			if (r_buf_read_at (cache_buf, offset_in_got, (ut8*) &addr, 8) < 8) {
 				break;
 			}
 
@@ -1915,6 +1905,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		RVecRBinSymbol_push_back (symbols, local_sym);
 	}
 
+	r_buf_free (cache_buf);
 	R_FREE (stubs_info);
 }
 
