@@ -32,8 +32,11 @@ EXPECT=<<EOF
 11  0x00002b0c 0x100002b0c LOCAL  FUNC 0        __ZN7MyClassD1Ev
 13  0x00002b44 0x100002b44 LOCAL  FUNC 0        __ZN7MyClassC2Ev
 41  0x00003150 0x100003150 LOCAL  FUNC 0        __ZN7MyClassD2Ev
+0x00000000 1 class.MyClass
 0x100002a20 0 sym.__ZN7MyClassC1Ev
+0x100002a20 1 method.MyClass.MyClass__
 0x100002b0c 0 sym.__ZN7MyClassD1Ev
+0x100002b0c 1 method.MyClass._MyClass__
 0x100002b44 0 sym.__ZN7MyClassC2Ev
 0x100003150 0 sym.__ZN7MyClassD2Ev
 EOF
