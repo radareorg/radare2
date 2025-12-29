@@ -4194,11 +4194,13 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		}
 		return false;
 	}
+#if 0
 	// XXX: support for classes is broken and needs more love
 	/* Don’t emit class flags when demangling is disabled; keeps “mangled-only” views clean */
 	if (!r_config_get_b (core->config, "bin.demangle")) {
 		return true; /* still fill JSON if needed, but skip flags/pretty names */
 	}
+#endif
 	const bool bin_filter = r_config_get_b (core->config, "bin.filter");
 	r_list_foreach (cs, iter, c) {
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
