@@ -900,18 +900,18 @@ static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext
 	opts.verbose = true;
 	opts.header_at = 0;
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
+	// MACH0_(new_buf) takes a ref, so free our local ref
 	r_buf_free (buf);
 	return mach0;
 }
 
 static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
-	RBuffer *buf = r_buf_ref (obj->cache_buf);
+	// Pass the buffer directly - MACH0_(new_buf) will call r_buf_ref() on it
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
-	// RESULTS IN UAF we should ref and unref instead r_buf_free (buf);
+	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, obj->cache_buf, &opts);
 	return mach0;
 }
 

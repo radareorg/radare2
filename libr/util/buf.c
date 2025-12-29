@@ -710,10 +710,6 @@ R_API void r_buf_fini(RBuffer *b) {
 	if (!b) {
 		return;
 	}
-	if (b->refctr > 0) {
-		b->refctr--;
-		return;
-	}
 	// free the whole_buf only if it was initially allocated by the buf types
 	if (b->methods->get_whole_buf) {
 		if (b->methods->free_whole_buf) {
@@ -726,13 +722,18 @@ R_API void r_buf_fini(RBuffer *b) {
 }
 
 // XXX R2_600 use r_ref api instead
+// Reference-counted free: decrements refctr, cleans resources, frees struct when refctr==0
 R_API void r_buf_free(RBuffer *b) {
 	if (b) {
-		bool unreferenced = b && b->refctr == 0;
-		r_buf_fini (b);
-		if (unreferenced) {
-			free (b);
+		// If this buffer has references, just decrement and return
+		// Resources will be cleaned when the last reference is freed
+		if (b->refctr > 0) {
+			b->refctr--;
+			return;
 		}
+		// refctr == 0, safe to clean everything
+		r_buf_fini (b);
+		free (b);
 	}
 }
 
@@ -752,6 +753,13 @@ R_API RBuffer *r_buf_ref(RBuffer *b) {
 		b->refctr++;
 	}
 	return b;
+}
+
+// Unref without freeing the struct - decrements reference counter
+R_API void r_buf_unref(RBuffer *b) {
+	if (b && b->refctr > 0) {
+		b->refctr--;
+	}
 }
 
 R_API RList *r_buf_nonempty_list(RBuffer *b) {

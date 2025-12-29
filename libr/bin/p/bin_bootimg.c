@@ -88,6 +88,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 	bio->buf = r_buf_ref (buf);
 	if (!bootimg_header_load (bio, bio->kv)) {
+		r_buf_free (bio->buf);
 		free (bio);
 		return false;
 	}
