@@ -725,27 +725,28 @@ beach:
 
 static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 	RList *kexts = r_list_newf ((RListFree) &r_kext_free);
-	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
+	RBuffer *cache_buf = obj->cache_buf;
 	ut32 i, ncmds = r_buf_read_le32_at (cache_buf, 16);
 	ut64 length = r_buf_size (cache_buf);
 
-	ut32 cursor = sizeof (struct MACH0_(mach_header));
+	ut64 cursor = sizeof (struct MACH0_(mach_header));
 	for (i = 0; i < ncmds && cursor < length; i++) {
 		ut32 cmdtype = r_buf_read_le32_at (cache_buf, cursor);
 		ut32 cmdsize = r_buf_read_le32_at (cache_buf, cursor + 4);
-		if (!cmdsize || cmdsize + cursor < cursor) {
+		ut64 cmd_end = cursor + (ut64)cmdsize;
+		if (!cmdsize || cmd_end < cursor || cmd_end > length) {
 			break;
 		}
 		if (cmdtype != LC_KEXT) {
-			cursor += cmdsize;
+			cursor = cmd_end;
 			continue;
 		}
 
 		ut64 vaddr = r_buf_read_le64_at (cache_buf, cursor + 8);
 		ut64 paddr = r_buf_read_le64_at (cache_buf, cursor + 16);
 		st32 padded_name_length = (st32)cmdsize - 32;
-		if (padded_name_length <= 0 || cmdsize - 32 + cursor >= length || padded_name_length > 0x1000) {
-			cursor += cmdsize;
+		if (padded_name_length <= 0 || padded_name_length > 0x1000) {
+			cursor = cmd_end;
 			continue;
 		}
 
@@ -767,7 +768,7 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		if (!kext->mach0) {
 			free (padded_name);
 			r_kext_free (kext);
-			cursor += cmdsize;
+			cursor = cmd_end;
 			continue;
 		}
 
@@ -779,13 +780,11 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 		free (padded_name);
 		r_list_push (kexts, kext);
 
-		cursor += cmdsize;
+		cursor = cmd_end;
 	}
 early:
-	r_buf_free (cache_buf);
 	return kexts;
 beach:
-	r_buf_free (cache_buf);
 	r_list_free (kexts);
 	return NULL;
 }
@@ -1820,7 +1819,7 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 	if (!stubs_info) {
 		return;
 	}
-	RBuffer *cache_buf = r_buf_ref (obj->cache_buf);
+	RBuffer *cache_buf = obj->cache_buf;
 	ut64 stubs_cursor = stubs_info->stubs.offset;
 	ut64 stubs_end = stubs_cursor + stubs_info->stubs.size;
 
@@ -1905,7 +1904,6 @@ static void symbols_from_stubs_vec(RVecRBinSymbol *symbols, RBinFile *bf, HtPP *
 		RVecRBinSymbol_push_back (symbols, local_sym);
 	}
 
-	r_buf_free (cache_buf);
 	R_FREE (stubs_info);
 }
 
