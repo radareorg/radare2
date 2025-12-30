@@ -40,6 +40,7 @@ if get_option('enable_tests')
     'intervaltree',
     'io',
     'json',
+    'kernelcache_cmdsize',
     'list',
     'ovf',
     'pdb',
