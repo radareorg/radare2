@@ -3,6 +3,7 @@
 // R2R db/cmd/types
 
 #include <r_util.h>
+#include <ctype.h>
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	char var[128];
@@ -765,4 +766,229 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 		return strdup (name);
 	}
 	return r_type_func_guess (types, fname);
+}
+
+// Parse fixed-width integer types like uint32_t, int64_t, ut8, st16, etc.
+static bool parse_bits_suffix(const char *name, const char *prefix, int *size_out) {
+	size_t plen = strlen (prefix);
+	if (strncasecmp (name, prefix, plen) != 0) {
+		return false;
+	}
+	const char *rest = name + plen;
+	// Skip optional _t suffix
+	size_t rlen = strlen (rest);
+	if (rlen >= 2 && !strcasecmp (rest + rlen - 2, "_t")) {
+		rlen -= 2;
+	}
+	if (rlen == 0) {
+		return false;
+	}
+	// Check all remaining chars are digits
+	size_t i;
+	for (i = 0; i < rlen; i++) {
+		if (!isdigit ((unsigned char)rest[i])) {
+			return false;
+		}
+	}
+	char *tmp = r_str_ndup (rest, rlen);
+	int bits = atoi (tmp);
+	free (tmp);
+	if (bits <= 0 || (bits % 8) != 0) {
+		return false;
+	}
+	*size_out = bits / 8;
+	return true;
+}
+
+// Parses C type specifiers like "unsigned long long", "uint32_t", "size_t", etc.
+// Returns true if the type is recognized, fills in info struct
+// ptr_size: size of pointer in bytes (4 for 32-bit, 8 for 64-bit)
+// long_size: size of long in bytes (4 for 32-bit, 8 for 64-bit Unix)
+// int_size: size of int in bytes (usually 4)
+R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_size, int long_size, int int_size) {
+	R_RETURN_VAL_IF_FAIL (ctype && info, false);
+	memset (info, 0, sizeof (*info));
+
+	// Normalize: trim and lowercase
+	char *lower = r_str_trim_dup (ctype);
+	if (!lower || !*lower) {
+		free (lower);
+		return false;
+	}
+	r_str_case (lower, false);
+
+	// Handle pointer-sized types first
+	if (!strcmp (lower, "size_t") || !strcmp (lower, "uintptr_t")) {
+		info->size = ptr_size;
+		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		info->is_pointer = true;
+		free (lower);
+		return true;
+	}
+	if (!strcmp (lower, "ssize_t") || !strcmp (lower, "intptr_t") || !strcmp (lower, "ptrdiff_t")) {
+		info->size = ptr_size;
+		info->tclass = R_TYPE_CTYPE_SIGNED;
+		info->is_pointer = true;
+		free (lower);
+		return true;
+	}
+
+	// Handle bool
+	if (!strcmp (lower, "bool") || !strcmp (lower, "_bool")) {
+		info->size = 1;
+		info->tclass = R_TYPE_CTYPE_BOOL;
+		free (lower);
+		return true;
+	}
+
+	// Handle wchar_t (platform dependent, usually 4 on Unix, 2 on Windows)
+	if (!strcmp (lower, "wchar_t")) {
+		info->size = 4; // Default to Unix wchar_t size
+		info->tclass = R_TYPE_CTYPE_SIGNED;
+		free (lower);
+		return true;
+	}
+
+	// Handle radare2 shorthand types
+	if (!strcmp (lower, "uchar")) {
+		info->size = 1;
+		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		free (lower);
+		return true;
+	}
+	if (!strcmp (lower, "schar")) {
+		info->size = 1;
+		info->tclass = R_TYPE_CTYPE_SIGNED;
+		free (lower);
+		return true;
+	}
+	if (!strcmp (lower, "ulonglong")) {
+		info->size = 8;
+		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		free (lower);
+		return true;
+	}
+	if (!strcmp (lower, "longlong")) {
+		info->size = 8;
+		info->tclass = R_TYPE_CTYPE_SIGNED;
+		free (lower);
+		return true;
+	}
+
+	// Handle fixed-width types like uint32_t, int64_t, ut8, st16
+	int size = 0;
+	if (parse_bits_suffix (lower, "uint", &size) ||
+		parse_bits_suffix (lower, "ut", &size) ||
+		parse_bits_suffix (lower, "u", &size)) {
+		info->size = size;
+		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		free (lower);
+		return true;
+	}
+	if (parse_bits_suffix (lower, "int", &size) ||
+		parse_bits_suffix (lower, "st", &size) ||
+		parse_bits_suffix (lower, "s", &size)) {
+		info->size = size;
+		info->tclass = R_TYPE_CTYPE_SIGNED;
+		free (lower);
+		return true;
+	}
+
+	// Parse C type specifiers: unsigned, signed, short, long, int, char, float, double
+	bool is_unsigned = false;
+	bool is_signed = false;
+	bool is_short = false;
+	bool is_char = false;
+	bool is_int = false;
+	bool is_float = false;
+	bool is_double = false;
+	bool is_void = false;
+	int long_count = 0;
+
+	RList *tokens = r_str_split_list (lower, " ", 0);
+	RListIter *iter;
+	char *token;
+	bool valid = true;
+	r_list_foreach (tokens, iter, token) {
+		r_str_trim (token);
+		if (!*token) {
+			continue;
+		}
+		// Skip qualifiers
+		if (!strcmp (token, "const") || !strcmp (token, "volatile") || !strcmp (token, "restrict")) {
+			continue;
+		}
+		if (!strcmp (token, "unsigned")) {
+			is_unsigned = true;
+		} else if (!strcmp (token, "signed")) {
+			is_signed = true;
+		} else if (!strcmp (token, "short")) {
+			is_short = true;
+		} else if (!strcmp (token, "long")) {
+			long_count++;
+		} else if (!strcmp (token, "char")) {
+			is_char = true;
+		} else if (!strcmp (token, "int")) {
+			is_int = true;
+		} else if (!strcmp (token, "float")) {
+			is_float = true;
+		} else if (!strcmp (token, "double")) {
+			is_double = true;
+		} else if (!strcmp (token, "void")) {
+			is_void = true;
+		} else {
+			// Unknown token
+			valid = false;
+			break;
+		}
+	}
+	r_list_free (tokens);
+	free (lower);
+
+	if (!valid) {
+		return false;
+	}
+
+	// Determine type from parsed specifiers
+	if (is_void) {
+		info->size = 0;
+		info->tclass = R_TYPE_CTYPE_VOID;
+		return true;
+	}
+	if (is_float) {
+		info->size = 4;
+		info->tclass = R_TYPE_CTYPE_FLOAT;
+		return true;
+	}
+	if (is_double) {
+		info->size = long_count > 0 ? 16 : 8; // long double = 16, double = 8
+		info->tclass = R_TYPE_CTYPE_FLOAT;
+		return true;
+	}
+	if (is_char) {
+		info->size = 1;
+		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
+		return true;
+	}
+	if (is_short) {
+		info->size = 2;
+		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
+		return true;
+	}
+	if (long_count >= 2) {
+		info->size = 8; // long long is always 8 bytes
+		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
+		return true;
+	}
+	if (long_count == 1) {
+		info->size = long_size;
+		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
+		return true;
+	}
+	if (is_int || is_unsigned || is_signed) {
+		info->size = int_size;
+		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
+		return true;
+	}
+	return false;
 }
