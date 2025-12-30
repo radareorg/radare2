@@ -206,7 +206,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 		}
 		return strdup ("Usage: mode [raw|flat]");
 	}
-	if (!strcmp (command, "mode ")) {
+	if (!strcmp (command, "mode")) {
 		return strdup (ri->mode? "flat": "raw");
 	}
 	if (!strcmp (command, "marks")) {

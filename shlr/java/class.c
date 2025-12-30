@@ -54,7 +54,7 @@ static R_TH_LOCAL RBinJavaObj *R_BIN_JAVA_GLOBAL_BIN = NULL;
 static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
 static const ut32 RBIN_JAVA_ATTRS_METAS_SZ = 20;
 static RBinJavaCPTypeObj R_BIN_JAVA_NULL_TYPE;
-static const ut8 R_BIN_JAVA_CP_METAS_SZ = 12;
+static const ut8 R_BIN_JAVA_CP_METAS_SZ = R_BIN_JAVA_CP_INVOKEDYNAMIC + 1;
 
 R_API char *U(r_bin_java_unmangle_method)(const char *flags, const char *name, const char *params, const char *r_value);
 R_API int r_bin_java_is_fm_type_private(RBinJavaField *fm_type);
@@ -4965,6 +4965,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_methodhandle_cp_new(RBinJavaObj *bin, ut8 *b
 
 R_API ut64 r_bin_java_methodhandle_cp_calc_size(RBinJavaCPTypeObj *obj) {
 	ut64 size = 0;
+	size += 1;
 	size += 1;
 	// obj->info.cp_method_handle.reference_index =  R_BIN_JAVA_USHORT (buffer, 2);
 	size += 2;
