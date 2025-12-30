@@ -560,7 +560,7 @@ EXPECT=<<EOF
 |      ::   0x00010180      93850700       mv a1, a5
 |      ::   0x00010184      b7170200       lui a5, 0x21
 |      ::   0x00010188      13850751       addi a0, a5, 1296
-|      ::   0x0001018c      ef00402f       jal ra, sym.scanf           ; int scanf(const char *format)
+|      ::   0x0001018c      ef00402f       jal ra, sym.scanf           ; int scanf(const char *format, ...)
 |      ::   0x00010190      032784fe       lw a4, -24(s0)
 |      ::   0x00010194      8327c4fe       lw a5, -20(s0)
 |     ,===< 0x00010198      631cf700       bne a4, a5, 0x101b0
@@ -689,7 +689,7 @@ EXPECT=<<EOF
 |      ::   0x00010184      b7170200       lui a5, 0x21                ; a5=0x21000
 |      ::   0x00010188      13850751       addi a0, a5, 1296           ; a0=0x21510 "%d"
 |      ::   0x0001018c      ef00402f       jal ra, sym.scanf           ; ra=0x10190 -> 0xfe842703 ; pc=0x10480 -> 0x8101b283
-|      ::                                                              ; int scanf("%d")
+|      ::                                                              ; int scanf("%d", 0x177fe8)
 |      ::   0x00010190      032784fe       lw a4, -24(s0)              ; a4=0x0
 |      ::   0x00010194      8327c4fe       lw a5, -20(s0)              ; a5=0x0
 |     ,===< 0x00010198      631cf700       bne a4, a5, 0x101b0         ; unlikely
