@@ -220,7 +220,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *command) {
 			if (obj->type == TYPE_MARK) {
 				r_strbuf_appendf (sb, "f tape_mark_%d @ 0x%"PFMT64x"\n", mark_idx++, addr);
 			} else if (obj->type == TYPE_DATA_GOOD || obj->type == TYPE_DATA_BAD) {
-				r_strbuf_appendf (sb, "f record_%d %llu @ 0x%"PFMT64x"\n", rec_idx++, (ut64)obj->size, addr);
+				r_strbuf_appendf (sb, "f record_%d %"PFMT64d" @ 0x%"PFMT64x"\n", rec_idx++, (ut64)obj->size, addr);
 			}
 			// Skip gaps and eom for flags
 		}
