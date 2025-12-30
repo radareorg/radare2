@@ -700,7 +700,7 @@ jobs:
     - uses: actions/upload-artifact@v6
       with:
         name: macos-xcframework
-        path: Radare2.xcframework.zip
+        path: dist/sdk/Radare2.xcframework.zip
 
   # Release creation
   check_release:
