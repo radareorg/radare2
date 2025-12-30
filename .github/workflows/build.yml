@@ -271,12 +271,18 @@ jobs:
         zip -r /tmp/r2ios-sdk.zip *
         popd
         mv /tmp/r2ios-sdk.zip dist/cydia/radare2/r2ios-sdk-${{ steps.r2v.outputs.branch }}.zip
-    - uses: actions/upload-artifact@v6
+    - if: ${{ matrix.sdk }}
+      uses: actions/upload-artifact@v6
       with:
         name: ios-${{ matrix.type }}
         path: |
           ./dist/cydia/radare2/r2ios-sdk-*.zip
           ./dist/cydia/radare2/*.deb
+    - if: ${{ !matrix.sdk }}
+      uses: actions/upload-artifact@v6
+      with:
+        name: ios-${{ matrix.type }}
+        path: ./dist/cydia/radare2/*.deb
 
   # Android
   android-acr:
@@ -700,7 +706,7 @@ jobs:
     - uses: actions/upload-artifact@v6
       with:
         name: macos-xcframework
-        path: Radare2.xcframework.zip
+        path: dist/sdk/Radare2.xcframework.zip
 
   # Release creation
   check_release:

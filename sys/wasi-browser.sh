@@ -35,7 +35,7 @@ make -j || exit 1
 
 # Build tools and package
 R2V=`./configure -qV`
-D="radare2-$R2V-wasm-browser"
+D="radare2-$R2V-wasi-browser"
 
 wasi_build_tools "$TOOLS" "$D"
 ERR=$?
