@@ -686,6 +686,7 @@ extern RIOPlugin r_io_plugin_pvm;
 extern RIOPlugin r_io_plugin_serial;
 extern RIOPlugin r_io_plugin_cyclic;
 extern RIOPlugin r_io_plugin_uf2;
+extern RIOPlugin r_io_plugin_tap;
 
 #if __cplusplus
 }
