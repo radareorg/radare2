@@ -1,6 +1,6 @@
 [package]
 name = "pancake/rax2"
-version = "6.0.8"
+version = "6.0.9"
 description = "Unix-Like Reverse Engineering Framework"
 readme = "README.md"
 license = "LGPL3"

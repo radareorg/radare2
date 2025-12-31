@@ -1,10 +1,10 @@
 %global         gituser         radareorg
 %global         gitname         radare2
-%global         commit          27af51763d1213102fda91d481133ec8a5aa9139
+%global         commit          151a020573abca7b926f71a801484dee830627d1
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        6.0.7
+Version:        6.0.8
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
