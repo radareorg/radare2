@@ -4140,9 +4140,6 @@ R_API char *r_str_version(const char *program) {
 #if R2_VERSION_COMMIT == 0
 	release = " release";
 #endif
-#if R2_USE_NEW_ABI
-	newabi = " newabi";
-#endif
 #ifdef _FORTIFY_SOURCE
 	// clang
 	optistr[3] = '0' + _FORTIFY_SOURCE;
