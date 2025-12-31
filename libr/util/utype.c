@@ -768,22 +768,19 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 	return r_type_func_guess (types, fname);
 }
 
-// Parse fixed-width integer types like uint32_t, int64_t, ut8, st16, etc.
 static bool parse_bits_suffix(const char *name, const char *prefix, int *size_out) {
 	size_t plen = strlen (prefix);
-	if (strncasecmp (name, prefix, plen) != 0) {
+	if (r_str_ncasecmp (name, prefix, plen) != 0) {
 		return false;
 	}
 	const char *rest = name + plen;
-	// Skip optional _t suffix
 	size_t rlen = strlen (rest);
-	if (rlen >= 2 && !strcasecmp (rest + rlen - 2, "_t")) {
+	if (rlen >= 2 && !r_str_casecmp (rest + rlen - 2, "_t")) {
 		rlen -= 2;
 	}
 	if (rlen == 0) {
 		return false;
 	}
-	// Check all remaining chars are digits
 	size_t i;
 	for (i = 0; i < rlen; i++) {
 		if (!isdigit ((unsigned char)rest[i])) {
@@ -800,101 +797,100 @@ static bool parse_bits_suffix(const char *name, const char *prefix, int *size_ou
 	return true;
 }
 
-// Parses C type specifiers like "unsigned long long", "uint32_t", "size_t", etc.
-// Returns true if the type is recognized, fills in info struct
-// ptr_size: size of pointer in bytes (4 for 32-bit, 8 for 64-bit)
-// long_size: size of long in bytes (4 for 32-bit, 8 for 64-bit Unix)
-// int_size: size of int in bytes (usually 4)
-R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_size, int long_size, int int_size) {
-	R_RETURN_VAL_IF_FAIL (ctype && info, false);
-	memset (info, 0, sizeof (*info));
-
-	// Normalize: trim and lowercase
+R_API RTypeCTypeInfo *r_type_parse_ctype(const char *ctype, int ptr_size, int long_size, int int_size) {
+	R_RETURN_VAL_IF_FAIL (ctype, NULL);
 	char *lower = r_str_trim_dup (ctype);
-	if (!lower || !*lower) {
+	if (R_STR_ISEMPTY (lower)) {
 		free (lower);
-		return false;
+		return NULL;
 	}
 	r_str_case (lower, false);
 
-	// Handle pointer-sized types first
+	RTypeCTypeInfo *info = R_NEW0 (RTypeCTypeInfo);
+	if (!info) {
+		free (lower);
+		return NULL;
+	}
+
 	if (!strcmp (lower, "size_t") || !strcmp (lower, "uintptr_t")) {
 		info->size = ptr_size;
-		info->tclass = R_TYPE_CTYPE_UNSIGNED;
-		info->is_pointer = true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		info->is_ptr = true;
 		free (lower);
-		return true;
+		return info;
 	}
 	if (!strcmp (lower, "ssize_t") || !strcmp (lower, "intptr_t") || !strcmp (lower, "ptrdiff_t")) {
 		info->size = ptr_size;
-		info->tclass = R_TYPE_CTYPE_SIGNED;
-		info->is_pointer = true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		info->is_ptr = true;
 		free (lower);
-		return true;
+		return info;
 	}
-
-	// Handle bool
 	if (!strcmp (lower, "bool") || !strcmp (lower, "_bool")) {
 		info->size = 1;
-		info->tclass = R_TYPE_CTYPE_BOOL;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
 		free (lower);
-		return true;
+		return info;
 	}
-
-	// Handle wchar_t (platform dependent, usually 4 on Unix, 2 on Windows)
 	if (!strcmp (lower, "wchar_t")) {
-		info->size = 4; // Default to Unix wchar_t size
-		info->tclass = R_TYPE_CTYPE_SIGNED;
+		info->size = 4;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
 		free (lower);
-		return true;
+		return info;
 	}
-
-	// Handle radare2 shorthand types
 	if (!strcmp (lower, "uchar")) {
 		info->size = 1;
-		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
 		free (lower);
-		return true;
+		return info;
 	}
 	if (!strcmp (lower, "schar")) {
 		info->size = 1;
-		info->tclass = R_TYPE_CTYPE_SIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
 		free (lower);
-		return true;
+		return info;
 	}
 	if (!strcmp (lower, "ulonglong")) {
 		info->size = 8;
-		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
 		free (lower);
-		return true;
+		return info;
 	}
 	if (!strcmp (lower, "longlong")) {
 		info->size = 8;
-		info->tclass = R_TYPE_CTYPE_SIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
 		free (lower);
-		return true;
+		return info;
 	}
 
-	// Handle fixed-width types like uint32_t, int64_t, ut8, st16
 	int size = 0;
 	if (parse_bits_suffix (lower, "uint", &size) ||
 		parse_bits_suffix (lower, "ut", &size) ||
 		parse_bits_suffix (lower, "u", &size)) {
 		info->size = size;
-		info->tclass = R_TYPE_CTYPE_UNSIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
 		free (lower);
-		return true;
+		return info;
 	}
 	if (parse_bits_suffix (lower, "int", &size) ||
 		parse_bits_suffix (lower, "st", &size) ||
 		parse_bits_suffix (lower, "s", &size)) {
 		info->size = size;
-		info->tclass = R_TYPE_CTYPE_SIGNED;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
 		free (lower);
-		return true;
+		return info;
 	}
 
-	// Parse C type specifiers: unsigned, signed, short, long, int, char, float, double
 	bool is_unsigned = false;
 	bool is_signed = false;
 	bool is_short = false;
@@ -911,10 +907,9 @@ R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_s
 	bool valid = true;
 	r_list_foreach (tokens, iter, token) {
 		r_str_trim (token);
-		if (!*token) {
+		if (R_STR_ISEMPTY (token)) {
 			continue;
 		}
-		// Skip qualifiers
 		if (!strcmp (token, "const") || !strcmp (token, "volatile") || !strcmp (token, "restrict")) {
 			continue;
 		}
@@ -937,7 +932,6 @@ R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_s
 		} else if (!strcmp (token, "void")) {
 			is_void = true;
 		} else {
-			// Unknown token
 			valid = false;
 			break;
 		}
@@ -946,49 +940,57 @@ R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_s
 	free (lower);
 
 	if (!valid) {
-		return false;
+		free (info);
+		return NULL;
 	}
 
-	// Determine type from parsed specifiers
 	if (is_void) {
 		info->size = 0;
-		info->tclass = R_TYPE_CTYPE_VOID;
-		return true;
+		info->base = R_TYPE_CTYPE_VOID;
+		return info;
 	}
 	if (is_float) {
 		info->size = 4;
-		info->tclass = R_TYPE_CTYPE_FLOAT;
-		return true;
+		info->base = R_TYPE_CTYPE_FLOAT;
+		info->sign = true;
+		return info;
 	}
 	if (is_double) {
-		info->size = long_count > 0 ? 16 : 8; // long double = 16, double = 8
-		info->tclass = R_TYPE_CTYPE_FLOAT;
-		return true;
+		info->size = long_count > 0 ? 16 : 8;
+		info->base = R_TYPE_CTYPE_FLOAT;
+		info->sign = true;
+		return info;
 	}
 	if (is_char) {
 		info->size = 1;
-		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
-		return true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
 	}
 	if (is_short) {
 		info->size = 2;
-		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
-		return true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
 	}
 	if (long_count >= 2) {
-		info->size = 8; // long long is always 8 bytes
-		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
-		return true;
+		info->size = 8;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
 	}
 	if (long_count == 1) {
 		info->size = long_size;
-		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
-		return true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
 	}
 	if (is_int || is_unsigned || is_signed) {
 		info->size = int_size;
-		info->tclass = is_unsigned ? R_TYPE_CTYPE_UNSIGNED : R_TYPE_CTYPE_SIGNED;
-		return true;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
 	}
-	return false;
+	free (info);
+	return NULL;
 }

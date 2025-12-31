@@ -39,25 +39,21 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr);
 R_API int r_type_link_offset(Sdb *TDB, const char *val, ut64 addr);
 R_API char *r_type_format(Sdb *TDB, const char *t);
 
-// Builtin C type specifier parsing
-// Parses types like "unsigned long long", "uint32_t", "size_t", etc.
-// Returns true if the type is recognized, fills in size (bytes) and is_signed
+// Builtin C type specifier parsing (uint32_t, size_t, unsigned long long, etc.)
 typedef enum {
-	R_TYPE_CTYPE_UNKNOWN = 0,
-	R_TYPE_CTYPE_SIGNED = 1,
-	R_TYPE_CTYPE_UNSIGNED = 2,
-	R_TYPE_CTYPE_FLOAT = 3,
-	R_TYPE_CTYPE_BOOL = 4,
-	R_TYPE_CTYPE_VOID = 5,
-} RTypeCTypeClass;
+	R_TYPE_CTYPE_INT = 0,
+	R_TYPE_CTYPE_FLOAT,
+	R_TYPE_CTYPE_VOID,
+} RTypeCTypeBase;
 
 typedef struct r_type_ctype_info {
-	int size;               // size in bytes (0 if unknown)
-	RTypeCTypeClass tclass; // type class (signed/unsigned/float/etc)
-	bool is_pointer;        // true if pointer-sized type (size_t, intptr_t)
+	int size;
+	RTypeCTypeBase base;
+	bool sign;
+	bool is_ptr;
 } RTypeCTypeInfo;
 
-R_API bool r_type_parse_ctype(const char *ctype, RTypeCTypeInfo *info, int ptr_size, int long_size, int int_size);
+R_API RTypeCTypeInfo *r_type_parse_ctype(const char *ctype, int ptr_size, int long_size, int int_size);
 
 // Function prototypes api
 R_API int r_type_func_exist(Sdb *TDB, const char *func_name);
