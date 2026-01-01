@@ -20,7 +20,7 @@ sudo apt install radare2
 
 The packages required to build r2 and most of the dependencies are:
 
-	sudo apt install make git python build-essential patch wget
+	sudo apt install make git python build-essential patch wget linux-headers
 
 Now you can clone the repo and build:
 
