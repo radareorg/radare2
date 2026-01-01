@@ -80,7 +80,6 @@ NOSUDO=1 make install DESTDIR=%{buildroot} LIBDIR=%{_libdir} PREFIX=%{_prefix}
 %{_datadir}/%{name}/%{version}/format
 %{_datadir}/%{name}/%{version}/fcnsign
 %{_datadir}/%{name}/%{version}/flag
-%{_datadir}/%{name}/%{version}/charsets
 %{_datadir}/%{name}/%{version}/platform
 %{_datadir}/%{name}/%{version}/scripts
 %{_datadir}/doc/%{name}
