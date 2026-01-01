@@ -1228,7 +1228,7 @@ R_API RBinJavaElementValueMetas *r_bin_java_get_ev_meta_from_tag(ut8 tag) {
 }
 
 R_API ut8 r_bin_java_quick_check(ut8 expected_tag, ut8 actual_tag, ut32 actual_len, const char *name) {
-	if (expected_tag > R_BIN_JAVA_CP_METAS_SZ) {
+	if (expected_tag >= R_BIN_JAVA_CP_METAS_SZ) {
 		R_LOG_WARN ("Invalid tag '%d' expected 0x%02x for %sn", actual_tag, expected_tag, name);
 		return 1;
 	}
@@ -1510,7 +1510,7 @@ R_API RBinJavaCPTypeObj *r_bin_java_read_next_constant_pool_item(RBinJavaObj *bi
 	ut32 str_len = 0;
 	RBinJavaCPTypeObj *java_obj = NULL;
 	tag = buf[offset];
-	if (tag > R_BIN_JAVA_CP_METAS_SZ) {
+	if (tag >= R_BIN_JAVA_CP_METAS_SZ) {
 		R_LOG_ERROR ("Invalid tag '%d' at offset 0x%08"PFMT64x, tag, (ut64) offset);
 		return NULL;
 #if 0
