@@ -93,6 +93,8 @@ NOSUDO=1 make install DESTDIR=%{buildroot} LIBDIR=%{_libdir} PREFIX=%{_prefix}
 %dir %{_datadir}/%{name}/%{version}/www
 %{_datadir}/%{name}/%{version}/www/*
 %{_datadir}/%{name}/%{version}/panels/*
+%dir %{_datadir}/%{name}/%{version}/fortunes
+%{_datadir}/%{name}/%{version}/fortunes/*
 
 %files devel
 %{_includedir}/libr

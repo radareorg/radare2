@@ -1706,27 +1706,6 @@ R_API char *r2r_test_name(R2RTest *test) {
 	return NULL;
 }
 
-// -1 = oldabi, 0 = no abi specific test, 1 = new abi required
-R_API int r2r_test_needsabi(R2RTest *test) {
-	switch (test->type) {
-	case R2R_TEST_TYPE_CMD:
-		// TODO only cmd tests cant have newabi mode
-		if (test->cmd_test->newabi.value) {
-			return 1;
-		}
-		if (test->cmd_test->oldabi.value) {
-			return -1;
-		}
-		break;
-	case R2R_TEST_TYPE_ASM:
-	case R2R_TEST_TYPE_JSON:
-	case R2R_TEST_TYPE_FUZZ:
-	case R2R_TEST_TYPE_LEAK:
-		break;
-	}
-	return 0;
-}
-
 R_API bool r2r_test_broken(R2RTest *test) {
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
@@ -1829,7 +1808,6 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 	ret->test = test;
 	bool success = false;
 	ut64 start_time = r_time_now_mono ();
-	int needsabi = r2r_test_needsabi (test);
 	switch (test->type) {
 	case R2R_TEST_TYPE_CMD:
 		if (config->skip_cmd) {
@@ -1847,23 +1825,11 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 #endif
 				break;
 			}
-#if R2_USE_NEW_ABI
-			bool mustrun = !needsabi || (needsabi > 0);
-#else
-			bool mustrun = !needsabi || (needsabi < 0);
-#endif
-			if (mustrun) {
-				R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
-				success = r2r_check_cmd_test (out, cmd_test);
-				ret->proc_out = out;
-				ret->timeout = out? out->timeout: false;
-				ret->run_failed = !out;
-			} else {
-				success = true;
-				ret->proc_out = NULL;
-				ret->timeout = false;
-				ret->run_failed = false;
-			}
+			R2RProcessOutput *out = r2r_run_cmd_test (config, cmd_test, subprocess_runner, NULL);
+			success = r2r_check_cmd_test (out, cmd_test);
+			ret->proc_out = out;
+			ret->timeout = out? out->timeout: false;
+			ret->run_failed = !out;
 		}
 		break;
 	case R2R_TEST_TYPE_ASM:

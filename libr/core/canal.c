@@ -3613,7 +3613,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	RTable *t = r_core_table_new (core, "fcns");
 	RTableColumnType *typeString = r_table_type ("string");
 	RTableColumnType *typeNumber = r_table_type ("number");
-#if 0 && R2_USE_NEW_ABI
+#if 0
 	RTableColumnType *typeFloat = r_table_type ("float");
 #endif
 	r_table_add_column (t, typeNumber, "addr", 0);
@@ -3626,7 +3626,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_table_add_column (t, typeNumber, "xref", 0);
 	r_table_add_column (t, typeNumber, "axref", 0);
 	r_table_add_column (t, typeNumber, "calls", 0);
-#if 0 && R2_USE_NEW_ABI
+#if 0
 	r_table_add_column (t, typeFloat, "maxbi", 0);
 	r_table_add_column (t, typeFloat, "midbi", 0);
 	r_table_add_column (t, typeFloat, "ratbi", 0);
@@ -3666,7 +3666,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 		if (!file) {
 			file = strdup ("");
 		}
-#if 0 && R2_USE_NEW_ABI
+#if 0
 		double _maxbbins = maxbbins (fcn);
 		double _midbbins = midbbins (fcn);
 		double _ratbbins = _maxbbins / _midbbins;
