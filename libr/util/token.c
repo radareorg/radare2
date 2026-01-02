@@ -394,14 +394,7 @@ bool callback(RTokenizer *tok) {
 				data->s = r_str_ndup (tok->buf + tok->begin, tok->end - tok->begin);
 			}
 		}
-		if (data->incase) {
-			char *s = r_str_ndup (tok->buf + tok->begin, tok->end - tok->begin);
-			// data->s = r_str_appendlen (data->s, tok->buf + tok->begin, tok->end - tok->begin);
-			R_LOG_DEBUG ("CASE (%s)%c", s, 10);
-			data->incase = false;
-			R_FREE (data->word);
-		}
-break;
+		break;
 		// fallthru
 	case R_TOKEN_MATH:
 		if (data->incase) {
