@@ -220,8 +220,6 @@ R_API void r_java_new_method(void) {
 }
 
 R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
-	// eprintf ("SET CP (%p) %d\n", cp, n);
-	//BIN_OBJ = obj;
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {

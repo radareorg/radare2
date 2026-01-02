@@ -34,6 +34,7 @@ static inline RBinName *__bin_name_clone(RBinName *bn) {
 	return nn;
 }
 
+// Maximum recursion depth when resolving constant pool references
 #define MAX_CPITEMS 16
 
 static const ut16 R_BIN_JAVA_ELEMENT_VALUE_METAS_SZ = 14;
@@ -2321,56 +2322,46 @@ R_API RBinField *r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_ty
 }
 
 R_API RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	if (!fm_type || !fm_type->field_ref_cp_obj || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
-		R_FREE (sym);
+		return NULL;
 	}
-	if (sym) {
-		sym->name = __bin_name_new (fm_type->name);
-		// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
-		if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
-			sym->type = R_BIN_TYPE_FUNC_STR;
-			sym->paddr = r_bin_java_get_method_code_offset (fm_type);
-			sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
-			sym->size = r_bin_java_get_method_code_size (fm_type);
-		} else {
-			sym->type = "FIELD";
-			sym->paddr = fm_type->file_offset;// r_bin_java_get_method_code_offset (fm_type);
-			sym->vaddr = fm_type->file_offset + baddr;
-			sym->size = fm_type->size;
-		}
-		if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = R_BIN_BIND_LOCAL_STR;
-		} else if (r_bin_java_is_fm_type_private (fm_type)) {
-			sym->bind = R_BIN_BIND_LOCAL_STR;
-		} else if (r_bin_java_is_fm_type_protected (fm_type)) {
-			sym->bind = R_BIN_BIND_GLOBAL_STR;
-		}
-		sym->forwarder = "NONE";
-		if (fm_type->class_name) {
-			sym->classname = strdup (fm_type->class_name);
-		} else {
-			sym->classname = strdup ("UNKNOWN"); // dupped names?
-		}
-		sym->ordinal = fm_type->metas->ord;
-		sym->attr = fm_type->flags;
-#if 0
-		if (fm_type->flags_str) {
-			sym->visibility_str = strdup (fm_type->flags_str);
-		}
-#endif
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	sym->name = __bin_name_new (fm_type->name);
+	// strncpy (sym->type, fm_type->descriptor, R_BIN_SIZEOF_STRINGS);
+	if (fm_type->type == R_BIN_JAVA_FIELD_TYPE_METHOD) {
+		sym->type = R_BIN_TYPE_FUNC_STR;
+		sym->paddr = r_bin_java_get_method_code_offset (fm_type);
+		sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
+		sym->size = r_bin_java_get_method_code_size (fm_type);
+	} else {
+		sym->type = "FIELD";
+		sym->paddr = fm_type->file_offset;// r_bin_java_get_method_code_offset (fm_type);
+		sym->vaddr = fm_type->file_offset + baddr;
+		sym->size = fm_type->size;
 	}
+	if (r_bin_java_is_fm_type_protected (fm_type)) {
+		sym->bind = R_BIN_BIND_LOCAL_STR;
+	} else if (r_bin_java_is_fm_type_private (fm_type)) {
+		sym->bind = R_BIN_BIND_LOCAL_STR;
+	} else if (r_bin_java_is_fm_type_protected (fm_type)) {
+		sym->bind = R_BIN_BIND_GLOBAL_STR;
+	}
+	sym->forwarder = "NONE";
+	if (fm_type->class_name) {
+		sym->classname = strdup (fm_type->class_name);
+	} else {
+		sym->classname = strdup ("UNKNOWN"); // dupped names?
+	}
+	sym->ordinal = fm_type->metas->ord;
+	sym->attr = fm_type->flags;
 	return sym;
 }
 
 R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *fm_type, ut64 baddr) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym || !fm_type || !fm_type->field_ref_cp_obj || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
-		free (sym);
+	if (!fm_type || !fm_type->field_ref_cp_obj || fm_type->field_ref_cp_obj == &R_BIN_JAVA_NULL_TYPE) {
 		return NULL;
 	}
-	// ut32 new_name_len = strlen (fm_type->name) + strlen ("_meta") + 1;
-	// char *new_name = malloc (new_name_len);
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	char *s = r_str_newf ("meta_%s", fm_type->name);
 	sym->name = __bin_name_new (s);
 	free (s);
@@ -2397,19 +2388,14 @@ R_API RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField *
 	sym->ordinal = fm_type->metas->ord;
 	sym->size = fm_type->size;
 	sym->attr = fm_type->flags;
-#if 0
-	if (fm_type->flags_str) {
-		sym->visibility_str = strdup (fm_type->flags_str);
-	}
-#endif
 	return sym;
 }
 
 R_API RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
-	if (!sym || !obj) {
+	if (!obj) {
 		return NULL;
 	}
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	switch (obj->tag) {
 	case R_BIN_JAVA_CP_METHODREF:
 	case R_BIN_JAVA_CP_INTERFACEMETHOD_REF:
@@ -2452,31 +2438,19 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 		section->name = strdup ("constant_pool");
 		section->paddr = bin->cp_offset + baddr;
 		section->size = bin->cp_size;
-#if 0
-		section->vsize = section->size;
-		section->vaddr = 0x10; // XXX // bin->cp_offset; //  + baddr;
-#endif
 		section->vaddr = baddr;
-		// section->vaddr = section->paddr;
-		// section->vsize = section->size;
 		section->perm = R_PERM_R;
 		section->add = true;
 		r_list_append (sections, section);
-		section = NULL;
 	}
 	if (bin->fields_count > 0) {
 		section = R_NEW0 (RBinSection);
 		section->name = strdup ("fields");
 		section->size = bin->fields_size;
 		section->paddr = bin->fields_offset + baddr;
-#if 0
-		section->vsize = section->size;
-		section->vaddr = section->paddr;
-#endif
 		section->perm = R_PERM_R;
 		section->add = true;
 		r_list_append (sections, section);
-		section = NULL;
 		r_list_foreach (bin->fields_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) {
 				continue;
@@ -2484,10 +2458,6 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 			section = R_NEW0 (RBinSection);
 			section->name = r_str_newf ("attrs.%s", fm_type->name);
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
-#if 0
-			section->vsize = section->size;
-			section->vaddr = section->paddr;
-#endif
 			section->paddr = fm_type->attr_offset + baddr;
 			section->perm = R_PERM_R;
 			section->add = true;
@@ -2499,27 +2469,20 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 		section->name = strdup ("methods");
 		section->paddr = bin->methods_offset + baddr;
 		section->size = bin->methods_size;
-		// section->vaddr = section->paddr;
-		// section->vsize = section->size;
 		section->perm = R_PERM_RX;
 		section->add = true;
 		r_list_append (sections, section);
-		section = NULL;
 		r_list_foreach (bin->methods_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) {
 				continue;
 			}
 			section = R_NEW0 (RBinSection);
-			if (section) {
-				section->name = r_str_newf ("attrs.%s", fm_type->name);
-				section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
-				// section->vsize = section->size;
-				// section->vaddr = section->paddr;
-				section->paddr = fm_type->attr_offset + baddr;
-				section->perm = R_PERM_R | R_PERM_X;
-				section->add = true;
-				r_list_append (sections, section);
-			}
+			section->name = r_str_newf ("attrs.%s", fm_type->name);
+			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
+			section->paddr = fm_type->attr_offset + baddr;
+			section->perm = R_PERM_RX;
+			section->add = true;
+			r_list_append (sections, section);
 		}
 	}
 	if (bin->interfaces_count > 0) {
@@ -2527,25 +2490,18 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 		section->name = strdup ("interfaces");
 		section->paddr = bin->interfaces_offset + baddr;
 		section->size = bin->interfaces_size;
-		// section->vaddr = section->paddr;
-		// section->vsize = section->size;
 		section->perm = R_PERM_R;
 		section->add = true;
 		r_list_append (sections, section);
-		section = NULL;
 	}
 	if (bin->attrs_count > 0) {
 		section = R_NEW0 (RBinSection);
 		section->name = strdup ("attributes");
 		section->paddr = bin->attrs_offset + baddr;
 		section->size = bin->attrs_size;
-		// section->vaddr = section->paddr;
-		// section->vsize = section->size;
-		section->perm = R_PERM_R;
 		section->perm = R_PERM_R;
 		section->add = true;
 		r_list_append (sections, section);
-		section = NULL;
 	}
 	return sections;
 }

@@ -15,35 +15,15 @@
 #define R_API
 #endif
 
-#define USHORT(x,y) ((ut16)(x[y+1]|(x[y]<<8)))
-#if 1
-#define UINT(x,y) (ut32)(((ut32)((x[y]&0xff))<<24) \
-| ((ut32)((x[y+1]&0xff))<<16)  \
-| ((ut32)((x[y+2]&0xff))<<8)   \
-| (x[y+3]&0xff))
-#else
-static inline ut32 UINT(const ut8 *x, const int y) {
-	ut32 ret = 0;
-	ret  = ((ut32)(x[y]&0xff))   << 24;
-	ret |= ((ut32)(x[y+1]&0xff)) << 16;
-	ret |= ((ut32)(x[y+2]&0xff)) << 8;
-	ret |= (x[y+3]&0xff);
-	return ret;
-}
-#endif
-
 #define R_BIN_JAVA_MAXSTR 256
 
-#define R_BIN_JAVA_USHORT(x,y) ((ut16)(((0xff&x[y+1])|((x[y]&0xff)<<8)) & 0xffff))
-
-// TODO: use r_read APIs instead!
-#define R_BIN_JAVA_UINT(x,y) ((ut32)((((ut32)(x[y]&0xff))<<24)|(((ut32)(x[y+1]&0xff))<<16)|((ut32)((x[y+2]&0xff))<<8)|(x[y+3]&0xff)))
+// Use r_read APIs for reading big-endian values
+#define USHORT(x,y) r_read_be16((x) + (y))
+#define UINT(x,y) r_read_be32((x) + (y))
+#define R_BIN_JAVA_USHORT(x,y) r_read_be16((x) + (y))
+#define R_BIN_JAVA_UINT(x,y) r_read_be32((x) + (y))
 #define R_BIN_JAVA_FLOAT(x,y) ((float)R_BIN_JAVA_UINT(x,y))
-
-#define R_BIN_JAVA_LONG(x,y) (((ut64) R_BIN_JAVA_UINT (x, y) << 32) | ((ut64)R_BIN_JAVA_UINT (x, y + 4) & UT32_MAX))
-//#define R_BIN_JAVA_DOUBLE(x,y) ((double)RBIN_JAVA_LONG(x,y))
-//#define R_BIN_JAVA_SWAPUSHORT(x) ((ut16)((x<<8)|((x>>8)&0x00FF)))
-
+#define R_BIN_JAVA_LONG(x,y) r_read_be64((x) + (y))
 #define R_BIN_JAVA_DOUBLE(x,y) rbin_java_raw_to_double(x, y)
 
 typedef enum {
@@ -962,11 +942,6 @@ R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_
 R_API RList * U(retrieve_all_method_access_string_and_value)(void);
 R_API RList * U(retrieve_all_field_access_string_and_value)(void);
 R_API RList * U(retrieve_all_class_access_string_and_value)(void);
-#if 0
-R_API char * retrieve_method_access_string(ut16 flags);
-R_API char * retrieve_field_access_string(ut16 flags);
-R_API char * retrieve_class_method_access_string(ut16 flags);
-#endif
 
 R_API char * U(r_bin_java_resolve)(RBinJavaObj *obj, int idx, ut8 space_bn_name_type);
 R_API char * r_bin_java_resolve_with_space(RBinJavaObj *obj, int idx);
