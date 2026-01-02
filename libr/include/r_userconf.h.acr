@@ -7,12 +7,13 @@ extern "C" {
 
 #include "r_version.h"
 
+#define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
+
 #if R_CHECKS_LEVEL == 0
 #define WANT_DEBUGSTUFF 0
 #else
 #define WANT_DEBUGSTUFF @WANT_DEBUGSTUFF@
 #endif
-#define R_CHECKS_LEVEL @R_CHECKS_LEVEL@
 #define R_CRITICAL_ENABLED @R_CRITICAL_ENABLED@
 #define DEBUGGER @DEBUGGER@
 #define WANT_ZIP @WANT_ZIP@
