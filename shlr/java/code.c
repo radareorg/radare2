@@ -5,8 +5,6 @@
 #include "code.h"
 #include "class.h"
 
-#define V if (verbose)
-
 #ifndef R_API
 #define R_API
 #endif
@@ -21,15 +19,13 @@ typedef struct current_table_switch_t {
 
 static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8* bytes, int len) {
 	CurrentTableSwitch sw = {0};
-	if (len < 16) {
-		return sw;
+	if (len >= 16) {
+		sw.addr = addr;
+		sw.def_jmp = (UINT (bytes, 4));
+		sw.min_val = (UINT (bytes, 8));
+		sw.max_val = (UINT (bytes, 12));
+		sw.sz = 16;
 	}
-	int sz = 4;
-	sw.addr = addr;
-	sw.def_jmp = (UINT (bytes, sz));
-	sw.min_val = (UINT (bytes, sz + 4));
-	sw.max_val = (UINT (bytes, sz + 8));
-	sw.sz = sz + 12;
 	return sw;
 }
 

@@ -1,4 +1,4 @@
-/* Apache 2.0 - Copyright 2007-2025 - pancake, dso */
+/* Apache 2.0 - Copyright 2007-2026 - pancake, dso */
 
 #define R_LOG_ORIGIN "java.class"
 
@@ -560,7 +560,7 @@ R_API char *r_bin_java_unmangle_method(const char *flags, const char *name, cons
 		r_strbuf_appendf (sb, "%s%s", comma, str);
 	}
 	char *pval = r_strbuf_drain (sb);
-	char *prototype = r_str_newf ("%s%s%s %s (%s)", fval, flags? " ": "", rval, name, pval);
+	char *prototype = r_str_newf ("%s%s%s %s (%s)", fval, *fval? " ": "", rval, name, pval);
 	free (fval);
 	free (rval);
 	free (pval);
@@ -4095,89 +4095,89 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		}
 		// eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
 		break;
-	case R_BIN_JAVA_STACK_FRAME_APPEND: ;
-		// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_APPEND.\n");
-		// 1. Calculate the max index we want to copy from the list of the
-		// previous frames locals
-		ut16 k = stack_frame->tag - 251;
-		ut32 i = 0;
-		// 2. Read the uoffset
-		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
-		offset += 2;
-		// Maybe? 3. Copy the previous frames locals to the current locals
-		// copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
-		// 4. Read off the rest of the appended locals types
-		for (i = 0; i < k; i++) {
-			if (offset >= sz) {
-				break;
+	case R_BIN_JAVA_STACK_FRAME_APPEND:
+		{
+			// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_APPEND.\n");
+			// 1. Calculate the max index we want to copy from the list of the
+			ut16 k = stack_frame->tag - 251; // previous frames locals
+			ut32 i = 0;
+			// 2. Read the uoffset
+			stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			offset += 2;
+			// Maybe? 3. Copy the previous frames locals to the current locals
+			// copy_type_info_to_stack_frame_list_up_to_idx (p_frame->local_items, stack_frame->local_items, idx);
+			// 4. Read off the rest of the appended locals types
+			for (i = 0; i < k; i++) {
+				if (offset >= sz) {
+					break;
+				}
+				// eprintf ("r_bin_java_stack_map_frame_new: Parsing verifying the k'th frame: %d of %d.\n", i, k);
+				se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
+				// eprintf ("r_bin_java_stack_map_frame_new: Completed Parsing\n");
+				if (se) {
+					offset += se->size;
+				} else {
+					eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame.\n");
+					r_bin_java_stack_frame_free (stack_frame);
+					return NULL;
+				}
+				r_list_append (stack_frame->local_items, (void *) se);
 			}
-			// eprintf ("r_bin_java_stack_map_frame_new: Parsing verifying the k'th frame: %d of %d.\n", i, k);
-			se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
-			// eprintf ("r_bin_java_stack_map_frame_new: Completed Parsing\n");
-			if (se) {
-				offset += se->size;
-			} else {
-				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame.\n");
-				r_bin_java_stack_frame_free (stack_frame);
-				return NULL;
+			// eprintf ("r_bin_java_stack_map_frame_new: Breaking out of loop");
+			// eprintf ("p_frame: %p\n", p_frame);
+			if (p_frame) {
+				stack_frame->number_of_locals = p_frame->number_of_locals + k;
 			}
-			r_list_append (stack_frame->local_items, (void *) se);
 		}
-		// eprintf ("r_bin_java_stack_map_frame_new: Breaking out of loop");
-		// eprintf ("p_frame: %p\n", p_frame);
-		if (p_frame) {
-			stack_frame->number_of_locals = p_frame->number_of_locals + k;
-		} else {
-			// IFINT eprintf ("><?><\n");
-			// eprintf ("Unable to set previous stackframe with the number of locals (current info.code_attr.implicit_frame was probably not set :/)");
-		}
-		// eprintf ("r_bin_java_stack_map_frame_new: TODO Stack Frame Same Locals Frame Stack 1 Extended Condition is untested, so there may be issues.\n");
 		break;
 	case R_BIN_JAVA_STACK_FRAME_FULL_FRAME:
-		// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_FULL_FRAME.\n");
-		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
-		offset += 2;
-		// // eprintf ("r_bin_java_stack_map_frame_new: Code Size > 65535, read(%d byte(s)), offset = 0x%08x.\n", var_sz, stack_frame->offset_delta);
-		// Read the number of variables based on the max # local variable
-		stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
-		offset += 2;
-		// // eprintf ("r_bin_java_stack_map_frame_new: Max ulocalvar > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_locals);
-		// r_bin_java_print_stack_map_frame_summary(stack_frame);
-		// read the number of locals off the stack
-		for (i = 0; i < stack_frame->number_of_locals; i++) {
-			if (offset >= sz) {
-				break;
+		{
+			int i;
+			// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_FULL_FRAME.\n");
+			stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
+			offset += 2;
+			// // eprintf ("r_bin_java_stack_map_frame_new: Code Size > 65535, read(%d byte(s)), offset = 0x%08x.\n", var_sz, stack_frame->offset_delta);
+			// Read the number of variables based on the max # local variable
+			stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
+			offset += 2;
+			// // eprintf ("r_bin_java_stack_map_frame_new: Max ulocalvar > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_locals);
+			// r_bin_java_print_stack_map_frame_summary(stack_frame);
+			// read the number of locals off the stack
+			for (i = 0; i < stack_frame->number_of_locals; i++) {
+				if (offset >= sz) {
+					break;
+				}
+				se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
+				if (se) {
+					offset += se->size;
+					// r_list_append (stack_frame->local_items, (void *) se);
+				} else {
+					R_LOG_ERROR ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame");
+					r_bin_java_stack_frame_free (stack_frame);
+					return NULL;
+				}
+				r_list_append (stack_frame->local_items, (void *) se);
 			}
-			se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (se) {
-				offset += se->size;
-				// r_list_append (stack_frame->local_items, (void *) se);
-			} else {
-				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame.\n");
-				r_bin_java_stack_frame_free (stack_frame);
-				return NULL;
+			// Read the number of stack items based on the max size of stack
+			stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
+			offset += 2;
+			// // eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
+			// read the stack items
+			for (i = 0; i < stack_frame->number_of_stack_items; i++) {
+				if (offset >= sz) {
+					break;
+				}
+				se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
+				if (se) {
+					offset += se->size;
+					// r_list_append (stack_frame->stack_items, (void *) se);
+				} else {
+					R_LOG_ERROR ("r_bin_java_stack_map_frame_new: Unable to parse the stack items for the stack frame");
+					r_bin_java_stack_frame_free (stack_frame);
+					return NULL;
+				}
+				r_list_append (stack_frame->local_items, (void *) se);
 			}
-			r_list_append (stack_frame->local_items, (void *) se);
-		}
-		// Read the number of stack items based on the max size of stack
-		stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
-		offset += 2;
-		// // eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
-		// read the stack items
-		for (i = 0; i < stack_frame->number_of_stack_items; i++) {
-			if (offset >= sz) {
-				break;
-			}
-			se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
-			if (se) {
-				offset += se->size;
-				// r_list_append (stack_frame->stack_items, (void *) se);
-			} else {
-				eprintf ("r_bin_java_stack_map_frame_new: Unable to parse the stack items for the stack frame.\n");
-				r_bin_java_stack_frame_free (stack_frame);
-				return NULL;
-			}
-			r_list_append (stack_frame->local_items, (void *) se);
 		}
 		break;
 	default:
@@ -6589,9 +6589,6 @@ R_API RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(RBinJavaObj *bin
 	ut32 i;
 	ut64 offset = 0;
 	RBinJavaAnnotationsArray *annotation_array = R_NEW0 (RBinJavaAnnotationsArray);
-	if (!annotation_array) {
-		return NULL;
-	}
 	annotation_array->num_annotations = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	annotation_array->annotations = r_list_new ();
@@ -8033,11 +8030,7 @@ R_API ConstJavaValue *U(r_bin_java_resolve_to_const_value)(RBinJavaObj * BIN_OBJ
 		result->type = "str";
 		result->value._str = R_NEW0 (struct  java_const_value_str_t);
 		result->value._str->len = length;
-		if (length > 0) {
-			result->value._str->str = r_str_ndup (string_str, length);
-		} else {
-			result->value._str->str = strdup ("");
-		}
+		result->value._str->str = (length > 0)? r_str_ndup (string_str, length): strdup ("");
 		if (string_str != empty) {
 			free (string_str);
 		}
