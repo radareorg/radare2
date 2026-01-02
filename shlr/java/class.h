@@ -675,7 +675,7 @@ typedef struct r_bin_java_lines_t {
 typedef struct r_bin_java_obj_t {
 	struct r_bin_java_classfile_t cf;
 	RBinJavaClass2 cf2;
-	const char *lang;
+	char lang[32];
 
 	ut64 cp_offset, fields_offset, interfaces_offset;
 	ut64 classes_offset, methods_offset, attrs_offset;

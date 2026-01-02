@@ -2782,22 +2782,19 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 			r_list_append (symbols, (void *) sym);
 		}
 	}
-	bin->lang = "java";
+	r_str_ncpy (bin->lang, "java", sizeof (bin->lang));
 	if (bin->cf.major[1] >= 46) {
-		static R_TH_LOCAL char lang[32];
 		int langid;
 		switch (bin->cf.major[1]) {
 		case 46:
 		case 47:
 		case 48:
 			langid = 2 + (bin->cf.major[1] - 46);
-			snprintf (lang, sizeof (lang) - 1, "java 1.%d", langid);
-			bin->lang = lang;
+			snprintf (bin->lang, sizeof (bin->lang), "java 1.%d", langid);
 			break;
 		default:
 			langid = 5 + (bin->cf.major[1] - 49);
-			snprintf (lang, sizeof (lang) - 1, "java %d", langid);
-			bin->lang = lang;
+			snprintf (bin->lang, sizeof (bin->lang), "java %d", langid);
 			break;
 		}
 	}
@@ -2805,7 +2802,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	r_list_foreach (imports, iter, imp) {
 		sym = R_NEW0 (RBinSymbol);
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
-			bin->lang = "kotlin";
+			r_str_ncpy (bin->lang, "kotlin", sizeof (bin->lang));
 		}
 		sym->name = __bin_name_clone (imp->name);
 		sym->is_imported = true;

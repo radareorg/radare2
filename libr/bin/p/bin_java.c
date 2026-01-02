@@ -71,7 +71,7 @@ static RBinInfo *info(RBinFile *bf) {
 	if (!ret) {
 		return NULL;
 	}
-	ret->lang = (jo && jo->lang) ? jo->lang : "java";
+	ret->lang = jo ? jo->lang : "java";
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("JAVA CLASS");
 	ret->bclass = r_bin_java_get_version (bf->bo->bin_obj);
