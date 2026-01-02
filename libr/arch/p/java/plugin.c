@@ -1,13 +1,10 @@
-/* radare - Apache 2.0 - Copyright 2010-2024 - pancake and dso */
+/* radare - Apache 2.0 - Copyright 2010-2026 - pancake and dso */
 
 #include <r_arch.h>
 
 #include "../../../shlr/java/ops.h"
 #include "../../../shlr/java/code.h"
 #include "../../../shlr/java/class.h"
-
-#define DO_THE_DBG 0
-#define IFDBG  if (DO_THE_DBG)
 
 static inline ut64 java_get_method_start(void) {
 	return 0;
@@ -183,10 +180,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!op) {
 		return sz > 0;
 	}
-	IFDBG {
-		R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
-		R_LOG_DEBUG ("Parsing op: (0x%02x) %s", op_byte, JAVA_OPS[op_byte].name);
-	}
+	R_LOG_DEBUG ("Extracting op from buffer (%d byte(s)) @ 0x%04x", (int)len, (ut32)addr);
+	R_LOG_DEBUG ("Parsing op: (0x%02x) %s", op_byte, JAVA_OPS[op_byte].name);
 	op->addr = addr;
 	op->size = sz;
 	op->id = data[0];
@@ -239,13 +234,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->eob = r_anal_java_is_op_type_eop (op->type2);
 #if 0
-	IFDBG {
-		const char *ot_str = r_anal_optype_tostring (op->type);
-		R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s",
-			JAVA_OPS[op_byte].name, addr, (ut64)op->type2, (ut64)op->type,  ot_str);
-		//eprintf ("op_eob: 0x%02x.\n", op->eob);
-		//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
-	}
+	const char *ot_str = r_anal_optype_tostring (op->type);
+	R_LOG_DEBUG ("op_type2: %s @ 0x%04"PFMT64x" 0x%08"PFMT64x" op_type: (0x%02"PFMT64x") %s",
+		JAVA_OPS[op_byte].name, addr, (ut64)op->type2, (ut64)op->type,  ot_str);
+	//eprintf ("op_eob: 0x%02x.\n", op->eob);
+	//eprintf ("op_byte @ 0: 0x%02x op_byte @ 0x%04x: 0x%02x.\n", data[0], addr, data[addr]);
 #endif
 
 	if (len < 4) {
@@ -264,15 +257,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (op->type == R_ANAL_OP_TYPE_CJMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
 		op->fail = addr + sz;
-		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x".\n",
+		R_LOG_DEBUG ("%s jmpto 0x%04"PFMT64x"  failto 0x%04"PFMT64x,
 			JAVA_OPS[op_byte].name, op->jump, op->fail);
 	} else if (op->type  == R_ANAL_OP_TYPE_JMP) {
 		op->jump = addr + (short)(USHORT (data, 1));
-		IFDBG eprintf ("%s jmpto 0x%04"PFMT64x".\n", JAVA_OPS[op_byte].name, op->jump);
+		R_LOG_DEBUG ("%s jmpto 0x%04"PFMT64x, JAVA_OPS[op_byte].name, op->jump);
 	} else if ((op->type & R_ANAL_OP_TYPE_CALL) == R_ANAL_OP_TYPE_CALL ) {
 		op->jump = (int)(short)(USHORT (data, 1));
 		op->fail = addr + sz;
-		//IFDBG eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
+		//eprintf ("%s callto 0x%04x  failto 0x%04x.\n", JAVA_OPS[op_byte].name, op->jump, op->fail);
 	}
 	return op->size > 0;
 }
@@ -304,7 +297,7 @@ static void java_update_anal_types(RAnal *anal, RBinJavaObj *bin_obj) {
 		RList * the_list = r_bin_java_extract_all_bin_type_values (bin_obj);
 		if (the_list) {
 			r_list_foreach (the_list, iter, str) {
-				IFDBG eprintf ("Adding type: %s to known types.\n", str);
+				// eprintf ("Adding type: %s to known types.\n", str);
 				if (str) {
 					sdb_set (D, str, "type", 0);
 				}

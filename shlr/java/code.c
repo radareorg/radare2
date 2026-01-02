@@ -1,108 +1,36 @@
-/* radare - LGPL - Copyright 2007-2023 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_anal.h>
 #include "ops.h"
 #include "code.h"
 #include "class.h"
 
-#define V if (verbose)
-
-#define DO_THE_DBG 0
-#define IFDBG if(DO_THE_DBG)
-
 #ifndef R_API
 #define R_API
 #endif
-
-static int enter_switch_op(ut64 addr, const ut8 * bytes, int len);
-static int update_switch_op(ut64 addr, const ut8 * bytes);
-static int update_bytes_consumed(int sz);
-
-static R_TH_LOCAL bool IN_SWITCH_OP = false;
 
 typedef struct current_table_switch_t {
 	ut64 addr;
 	int def_jmp;
 	int min_val;
 	int max_val;
-	int cur_val;
+	int sz;
 } CurrentTableSwitch;
 
-static R_TH_LOCAL CurrentTableSwitch SWITCH_OP;
-static R_TH_LOCAL ut64 BYTES_CONSUMED = 0LL;
-//static RBinJavaObj *BIN_OBJ = NULL;
-
-static void init_switch_op(void) {
-	memset (&SWITCH_OP, 0, sizeof (SWITCH_OP));
-}
-
-static int enter_switch_op(ut64 addr, const ut8* bytes, int len) {
-#if 0
-	int sz = ((BYTES_CONSUMED+1) % 4)
-		? (1 + 4 - (BYTES_CONSUMED+1) % 4)
-		: 1; // + (BYTES_CONSUMED+1)  % 4;
-#endif
-	if (len < 16) {
-		return 0;
+static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8* bytes, int len) {
+	CurrentTableSwitch sw = {0};
+	if (len >= 16) {
+		sw.addr = addr;
+		sw.def_jmp = (UINT (bytes, 4));
+		sw.min_val = (UINT (bytes, 8));
+		sw.max_val = (UINT (bytes, 12));
+		sw.sz = 16;
 	}
-	int sz = 4;
-
-	IFDBG {
-		int sz2 = (4 - (addr + 1) % 4) + (addr+1)  % 4;
-		eprintf ("Addr approach: 0x%04x and BYTES_CONSUMED approach: 0x%04"PFMT64x", BYTES_CONSUMED%%4 = 0x%04x\n",
-			sz2, BYTES_CONSUMED, sz);
-	}
-	init_switch_op ();
-	// TODO IN_SWITCH_OP = true;
-	SWITCH_OP.addr = addr;
-	SWITCH_OP.def_jmp = (UINT (bytes, sz));
-	SWITCH_OP.min_val = (UINT (bytes, sz + 4));
-	SWITCH_OP.max_val = (UINT (bytes, sz + 8));
-	sz += 12;
-	return sz;
+	return sw;
 }
 
 static bool isRelative(ut32 type) {
-	if (type & R_ANAL_JAVA_CODEOP_CJMP) {
-		return true;
-	}
-	if (type & R_ANAL_JAVA_CODEOP_JMP) {
-		return true;
-	}
-	return false;
-}
-
-static int update_bytes_consumed(int sz) {
-	BYTES_CONSUMED += sz;
-	return sz;
-}
-
-static int update_switch_op(ut64 addr, const ut8 * bytes) {
-	int sz = 4;
-	if (addr == SWITCH_OP.addr) {
-		SWITCH_OP.cur_val = 0;
-	} else {
-		SWITCH_OP.cur_val = (addr - SWITCH_OP.addr - 16) / 4;
-	}
-	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
-	if (ccase + 1 > SWITCH_OP.max_val) {
-		IN_SWITCH_OP = false;
-	}
-	R_LOG_DEBUG ("Addr approach: 0x%04"PFMT64x" and BYTES_CONSUMED approach: 0x%04"PFMT64x, addr, BYTES_CONSUMED);
-	return update_bytes_consumed (sz);
-}
-
-static int handle_switch_op(ut64 addr, const ut8 * bytes, int bytes_len, char *output, int outlen) {
-	if (bytes_len < 4) {
-		R_LOG_DEBUG ("truncated switch opcode");
-		return bytes_len;
-	}
-	int sz = 4;
-	ut32 jmp = (int)(UINT (bytes, 0)) + SWITCH_OP.addr;
-	update_switch_op (addr, bytes);
-	int ccase = SWITCH_OP.cur_val + SWITCH_OP.min_val;
-	snprintf (output, outlen, "case %d: goto 0x%04x", ccase, jmp);
-	return update_bytes_consumed (sz);
+	return (type & R_ANAL_JAVA_CODEOP_CJMP) || (type & R_ANAL_JAVA_CODEOP_JMP);
 }
 
 R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
@@ -110,28 +38,22 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		return -1;
 	}
 	char *arg = NULL;
-	int sz = 0;
 	ut32 val_one = 0;
 	ut32 val_two = 0;
 	ut8 op_byte = JAVA_OPS[idx].byte;
-	if (IN_SWITCH_OP) {
-		return handle_switch_op (addr, bytes, len, output, outlen);
-	}
-	R_LOG_DEBUG ("Handling the following opcode %s expects: %d byte(s), BYTES_CONSUMED: 0x%04"PFMT64x,
-			JAVA_OPS[idx].name, JAVA_OPS[idx].size, BYTES_CONSUMED);
 	switch (op_byte) {
 	case 0x10: // "bipush"
 		if (len > 1) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (char) bytes[1]);
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x11:
 		if (len > 2) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (int)USHORT (bytes, 1));
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x15: // "iload"
@@ -148,12 +70,9 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		if (len > 1) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 			output[outlen-1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
-		} else {
-			// ERROR
-			return 0;
+			return JAVA_OPS[idx].size;
 		}
-		break;
+		return 0;
 	case 0x12: // ldc
 		if (len > 1) {
 			arg = r_bin_java_resolve_without_space (obj, (ut16)bytes[1]);
@@ -165,7 +84,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, num);
 			}
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x13:
@@ -179,7 +98,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen-1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x84: // iinc
@@ -188,7 +107,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 			val_two = (ut32) bytes[2];
 			snprintf (output, outlen, "%s %d %d", JAVA_OPS[idx].name, val_one, val_two);
 			output[outlen-1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x99: // ifeq
@@ -211,17 +130,18 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 			const short delta = USHORT (bytes, 1);
 			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name, addr + delta);
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
-		// XXX - Figure out what constitutes the [<high>] value
 	case 0xab: // tableswitch
 	case 0xaa: // tableswitch
-		sz = enter_switch_op (addr, bytes, len);
-		snprintf (output, outlen, "%s default: 0x%04"PFMT64x,
-				JAVA_OPS[idx].name,
-				(ut64)(SWITCH_OP.def_jmp+SWITCH_OP.addr));
-		return update_bytes_consumed (sz);
+		{
+			CurrentTableSwitch sw = enter_switch_op (addr, bytes, len);
+			snprintf (output, outlen, "%s default: 0x%04"PFMT64x,
+					JAVA_OPS[idx].name,
+					(ut64)(sw.def_jmp + sw.addr));
+			return sw.sz;
+		}
 	case 0xb6: // invokevirtual
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
@@ -236,7 +156,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0xbb: // new
@@ -252,7 +172,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen-1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0xb2: // getstatic
@@ -268,7 +188,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
 			}
 			output[outlen - 1] = 0;
-			return update_bytes_consumed (JAVA_OPS[idx].size);
+			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	}
@@ -288,24 +208,18 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 5: snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 		break;
 	}
-	return update_bytes_consumed (JAVA_OPS[idx].size);
+	return JAVA_OPS[idx].size;
 }
 
 R_API void r_java_new_method(void) {
-	IFDBG eprintf ("Reseting the bytes consumed, they were: 0x%04"PFMT64x".\n", BYTES_CONSUMED);
-	init_switch_op ();
-	IN_SWITCH_OP = false;
-	BYTES_CONSUMED = 0;
+	// no-op: switch state is now local to each disasm call
 }
 
 R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
-	// eprintf ("SET CP (%p) %d\n", cp, n);
-	//BIN_OBJ = obj;
 }
 
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
 	R_RETURN_VAL_IF_FAIL (bytes && output && outlen > 0, -1);
-	//r_cons_printf ("r_java_disasm (allowed %d): 0x%02x, 0x%0x.\n", outlen, bytes[0], addr);
 	if (len > 0) {
 		return java_print_opcode (obj, addr, bytes[0], bytes, len, output, outlen);
 	}
