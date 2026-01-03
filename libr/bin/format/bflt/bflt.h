@@ -15,6 +15,15 @@
 #define FLAT_FLAG_GZDATA	0x8	/* only data/relocs are compressed (for XIP) */
 #define FLAT_FLAG_KTRACE	0x10	/* output useful kernel trace for debugging */
 
+/* CPU architecture constants */
+#define BFLT_CPU_68K		0x0001	/* Motorola 68000 */
+#define BFLT_CPU_386		0x0002	/* Intel x86 */
+#define BFLT_CPU_ARM		0x0004	/* ARM */
+#define BFLT_CPU_MIPS		0x0008	/* MIPS */
+#define BFLT_CPU_PPC		0x0010	/* PowerPC */
+#define BFLT_CPU_SH		0x0020	/* SuperH */
+#define BFLT_CPU_COLDFIRE	0x0040	/* ColdFire */
+
 typedef struct bflt_hdr {
 	ut8 magic[4];
 	ut32 rev;
@@ -44,6 +53,7 @@ typedef struct r_bin_bflt_obj {
 	ut8 endian;
 	size_t size;
 	ut32 n_got;
+	ut32 cpu_type;
 } RBinBfltObj;
 
 #define BFLT_HDR_SIZE sizeof (RBinBfltHeader)
