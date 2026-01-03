@@ -80,6 +80,8 @@ typedef enum {
 	R_BIN_JAVA_CLASS_ACC_SYNTHETIC = 0x1000,
 	R_BIN_JAVA_CLASS_ACC_ANNOTATION = 0x2000,
 	R_BIN_JAVA_CLASS_ACC_ENUM = 0x4000,
+	R_BIN_JAVA_CLASS_ACC_MODULE = 0x8000,
+	R_BIN_JAVA_CLASS_ACC_RECORD = 0x10000,
 
 	R_BIN_JAVA_CLASS_ACC_HIDDEN = 0x4000000
 } R_BIN_JAVA_CLASS_ACCESS;
@@ -121,8 +123,10 @@ typedef enum {
 	R_BIN_JAVA_CP_NOTHIN_14 = 14,
 	R_BIN_JAVA_CP_METHODHANDLE = 15,
 	R_BIN_JAVA_CP_METHODTYPE = 16,
-	R_BIN_JAVA_CP_NOTHIN_17 = 17,
+	R_BIN_JAVA_CP_DYNAMIC = 17,
 	R_BIN_JAVA_CP_INVOKEDYNAMIC = 18,
+	R_BIN_JAVA_CP_MODULE = 19,
+	R_BIN_JAVA_CP_PACKAGE = 20,
 } R_BIN_JAVA_CP_TYPE;
 
 typedef enum {
@@ -157,6 +161,10 @@ typedef enum {
 	R_BIN_JAVA_ATTR_TYPE_SOURCE_FILE_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_STACK_MAP_TABLE_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_SYNTHETIC_ATTR,
+	R_BIN_JAVA_ATTR_TYPE_NEST_HOST_ATTR,
+	R_BIN_JAVA_ATTR_TYPE_NEST_MEMBERS_ATTR,
+	R_BIN_JAVA_ATTR_TYPE_PERMITTED_SUBCLASSES_ATTR,
+	R_BIN_JAVA_ATTR_TYPE_RECORD_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_UNKNOWN_ATTR,
 	R_BIN_JAVA_ATTR_TYPE_FAILED_ATTR
 } R_BIN_JAVA_ATTR_TYPE;
@@ -222,6 +230,19 @@ typedef struct  r_bin_java_invokedynamic_info_t {
 	ut16 bootstrap_method_attr_index;
 	ut16 name_and_type_index;
 } RBinJavaCPTypeInvokeDynamic;
+
+typedef struct  r_bin_java_dynamic_info_t {
+	ut16 bootstrap_method_attr_index;
+	ut16 name_and_type_index;
+} RBinJavaCPTypeDynamic;
+
+typedef struct  r_bin_java_module_info_t {
+	ut16 name_index;
+} RBinJavaCPTypeModule;
+
+typedef struct  r_bin_java_package_info_t {
+	ut16 name_index;
+} RBinJavaCPTypePackage;
 
 /* Primitive Type Informations */
 
@@ -298,6 +319,9 @@ typedef struct  r_bin_java_cp_object_t {
 		RBinJavaCPTypeMethodHandle cp_method_handle;
 		RBinJavaCPTypeMethodType cp_method_type;
 		RBinJavaCPTypeInvokeDynamic cp_invoke_dynamic;
+		RBinJavaCPTypeDynamic cp_dynamic;
+		RBinJavaCPTypeModule cp_module;
+		RBinJavaCPTypePackage cp_package;
 	} info;
 	char* name;
 	ut8* value;
@@ -466,6 +490,37 @@ typedef struct r_bin_java_signature_attr_t {
 	char *signature;
 } RBinJavaSignatureAttr;
 
+typedef struct r_bin_java_nest_host_attr_t {
+	ut16 host_class_idx;
+	char *host_class_name;
+} RBinJavaNestHostAttr;
+
+typedef struct r_bin_java_nest_members_attr_t {
+	ut16 number_of_classes;
+	ut16 *classes;
+	RList *class_names; // list of char*
+} RBinJavaNestMembersAttr;
+
+typedef struct r_bin_java_permitted_subclasses_attr_t {
+	ut16 number_of_classes;
+	ut16 *classes;
+	RList *class_names; // list of char*
+} RBinJavaPermittedSubclassesAttr;
+
+typedef struct r_bin_java_record_component_t {
+	ut16 name_idx;
+	ut16 descriptor_idx;
+	char *name;
+	char *descriptor;
+	ut16 attributes_count;
+	RList *attributes;
+} RBinJavaRecordComponent;
+
+typedef struct r_bin_java_record_attr_t {
+	ut16 components_count;
+	RList *components; // list of RBinJavaRecordComponent*
+} RBinJavaRecordAttr;
+
 typedef struct r_bin_java_stack_verification_t{
 	ut64 file_offset;
 	ut64 size;
@@ -632,6 +687,10 @@ typedef struct r_bin_java_attr_t {
 		RBinJavaSourceFileAttribute source_file_attr;
 		RBinJavaStackMapTableAttr stack_map_table_attr;
 		RBinJavaSignatureAttr signature_attr;
+		RBinJavaNestHostAttr nest_host_attr;
+		RBinJavaNestMembersAttr nest_members_attr;
+		RBinJavaPermittedSubclassesAttr permitted_subclasses_attr;
+		RBinJavaRecordAttr record_attr;
 
 	} info;
 

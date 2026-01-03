@@ -1763,8 +1763,10 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		st32 *fieldmd = read_section (bf, &ms.fieldmd, &asize);
 
 		const int aligned_fieldmd_size = ms.fieldmd.size + (ms.fieldmd.size % 4);
+#if 0
 		const int fieldmd_count = asize / 4;
 		R_LOG_DEBUG ("swift5_fieldmd: pxd %d @ 0x%x", fieldmd_count, ms.fieldmd.addr);
+#endif
 		if (fieldmd) {
 			ut64 atsize = ms.types.size;
 			int aligned_types_count = atsize / 4;
