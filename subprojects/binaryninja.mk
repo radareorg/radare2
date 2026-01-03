@@ -6,7 +6,7 @@ WRAP_wrap_git_directory:=binaryninja
 WRAP_wrap_git_patch_directory:=binaryninja
 WRAP_wrap_git_depth:=1
 
-.PHONY: binaryninja_clean binaryninja_all
+.PHONY: binaryninja binaryninja_clean binaryninja_all
 
 binaryninja:
 	if [ ! -d "binaryninja" -o "ba13f6ec7d0ce9a18a03a1c895fb72d18e03014a" != "$(shell cd binaryninja 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "binaryninja"; ${MAKE} binaryninja_all; fi

@@ -6,7 +6,11 @@ WRAP_wrap_git_directory:=qjs
 WRAP_wrap_git_patch_directory:=qjs
 WRAP_wrap_git_depth:=1
 
+<<<<<<< HEAD
 .PHONY: qjs_clean qjs_all
+=======
+.PHONY: qjs qjs_clean qjs_all
+>>>>>>> bce843e5af (Import the zydis subproject - not yet used)
 
 qjs:
 	if [ ! -d "qjs" -o "d405777f7eefa22c17c12970317ef3d6e7658f5a" != "$(shell cd qjs 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "qjs"; ${MAKE} qjs_all; fi

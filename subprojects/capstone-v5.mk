@@ -7,7 +7,11 @@ WRAP_wrap_git_directory:=capstone-v5
 WRAP_wrap_git_diff_files:=capstone-v5/capstone-patches/fix-x86-16.patch
 WRAP_wrap_git_depth:=1
 
+<<<<<<< HEAD
 .PHONY: capstone-v5_clean capstone-v5_all
+=======
+.PHONY: capstone-v5 capstone-v5_clean capstone-v5_all
+>>>>>>> bce843e5af (Import the zydis subproject - not yet used)
 
 capstone-v5:
 	if [ ! -d "capstone-v5" -o "cd6dd7b75d126a855be1f9f76570ee5a850c6061" != "$(shell cd capstone-v5 2>/dev/null && git rev-parse HEAD)" ]; then rm -rf "capstone-v5"; ${MAKE} capstone-v5_all; fi
