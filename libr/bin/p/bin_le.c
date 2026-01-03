@@ -157,6 +157,7 @@ static RList* patch_relocs(RBinFile * bf) {
 		r->laddr = original->laddr;
 		r->addend = original->addend;
 		r->type = original->type;
+		r->ntype = original->ntype;
 
 		r_list_append (ret, r);
 
