@@ -1295,12 +1295,10 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 			return NULL;
 		}
 		if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
-			// This is necessary for determing the appropriate number of bytes when readin
-			// uoffset, ustack, ulocalvar values
 			bin->cur_method_code_length = attr->info.code_attr.code_length;
-			bin->offset_sz = 2;// (attr->info.code_attr.code_length > 65535) ? 4 : 2;
-			bin->ustack_sz = 2;// (attr->info.code_attr.max_stack > 65535) ? 4 : 2;
-			bin->ulocalvar_sz = 2;// (attr->info.code_attr.max_locals > 65535) ? 4 : 2;
+			bin->offset_sz = 2;
+			bin->ustack_sz = 2;
+			bin->ulocalvar_sz = 2;
 		}
 		R_LOG_DEBUG ("Parsing @ 0x%"PFMT64x " (%s) = 0x%"PFMT64x " bytes", attr->file_offset, attr->name, attr->size);
 		r_list_append (method->attributes, attr);
@@ -1390,12 +1388,10 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 			return NULL;
 		}
 		if ((r_bin_java_get_attr_type_by_name (attr->name))->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
-			// This is necessary for determing the appropriate number of bytes when readin
-			// uoffset, ustack, ulocalvar values
 			bin->cur_method_code_length = attr->info.code_attr.code_length;
-			bin->offset_sz = 2;// (attr->info.code_attr.code_length > 65535) ? 4 : 2;
-			bin->ustack_sz = 2;// (attr->info.code_attr.max_stack > 65535) ? 4 : 2;
-			bin->ulocalvar_sz = 2;// (attr->info.code_attr.max_locals > 65535) ? 4 : 2;
+			bin->offset_sz = 2;
+			bin->ustack_sz = 2;
+			bin->ulocalvar_sz = 2;
 		}
 		r_list_append (field->attributes, attr);
 		adv += attr->size;
@@ -1927,11 +1923,6 @@ R_API ut64 r_bin_java_parse_cp_pool(RBinJavaObj *bin, const ut64 offset, const u
 	adv += 2;
 	R_LOG_DEBUG ("ConstantPoolCount %d", bin->cp_count);
 	r_list_append (bin->cp_list, r_bin_java_get_java_null_cp ());
-	// Validate cp_count to prevent excessive looping
-	if (bin->cp_count > 65535) {
-		R_LOG_ERROR ("Invalid constant pool count: %d", bin->cp_count);
-		return adv;
-	}
 	for (ord = 1, bin->cp_idx = 0; bin->cp_idx < bin->cp_count && adv < len; ord++, bin->cp_idx++) {
 		obj = r_bin_java_read_next_constant_pool_item (bin, offset + adv, buf, len);
 		if (obj) {
@@ -2005,11 +1996,6 @@ R_API ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const ut
 	bin->fields_count = R_BIN_JAVA_USHORT (fm_buf, 0);
 	adv += 2;
 	R_LOG_DEBUG ("Fields count: %d 0x%"PFMT64x, bin->fields_count, bin->fields_offset);
-	// Validate fields_count to prevent excessive looping
-	if (bin->fields_count > 65535) {
-		R_LOG_ERROR ("Invalid fields count: %d", bin->fields_count);
-		return UT64_MAX;
-	}
 	for (i = 0; i < bin->fields_count; i++, bin->field_idx++) {
 		field = r_bin_java_read_next_field (bin, offset + adv, buf, len);
 		if (field) {
@@ -4148,22 +4134,10 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 	case R_BIN_JAVA_STACK_FRAME_FULL_FRAME:
 		{
 			int i;
-			// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_FULL_FRAME.\n");
 			stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
-			// // eprintf ("r_bin_java_stack_map_frame_new: Code Size > 65535, read(%d byte(s)), offset = 0x%08x.\n", var_sz, stack_frame->offset_delta);
-			// Read the number of variables based on the max # local variable
 			stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
-			// // eprintf ("r_bin_java_stack_map_frame_new: Max ulocalvar > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_locals);
-			// r_bin_java_print_stack_map_frame_summary(stack_frame);
-			// Validate number_of_locals to prevent excessive looping
-			if (stack_frame->number_of_locals > 65535) {
-				R_LOG_ERROR ("Invalid number of locals: %d", stack_frame->number_of_locals);
-				r_bin_java_stack_frame_free (stack_frame);
-				return NULL;
-			}
-			// read the number of locals off the stack
 			for (i = 0; i < stack_frame->number_of_locals; i++) {
 				if (offset >= sz) {
 					break;
@@ -4171,7 +4145,6 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 				se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
 				if (se) {
 					offset += se->size;
-					// r_list_append (stack_frame->local_items, (void *) se);
 				} else {
 					R_LOG_ERROR ("r_bin_java_stack_map_frame_new: Unable to parse the locals for the stack frame");
 					r_bin_java_stack_frame_free (stack_frame);
@@ -4179,11 +4152,8 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 				}
 				r_list_append (stack_frame->local_items, (void *) se);
 			}
-			// Read the number of stack items based on the max size of stack
 			stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
-			// // eprintf ("r_bin_java_stack_map_frame_new: Max ustack items > 65535, read(%d byte(s)), number_of_locals = 0x%08x.\n", var_sz, stack_frame->number_of_stack_items);
-			// read the stack items
 			for (i = 0; i < stack_frame->number_of_stack_items; i++) {
 				if (offset >= sz) {
 					break;
@@ -4191,7 +4161,6 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 				se = r_bin_java_read_from_buffer_verification_info_new (buffer + offset, sz - offset, buf_offset + offset);
 				if (se) {
 					offset += se->size;
-					// r_list_append (stack_frame->stack_items, (void *) se);
 				} else {
 					R_LOG_ERROR ("r_bin_java_stack_map_frame_new: Unable to parse the stack items for the stack frame");
 					r_bin_java_stack_frame_free (stack_frame);
@@ -4205,9 +4174,7 @@ R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz
 		R_LOG_ERROR ("Unknown type");
 		break;
 	}
-	// // eprintf ("Created a stack frame at offset(0x%08"PFMT64x") of size: %d\n", buf_offset, stack_frame->size);//r_bin_java_print_stack_map_frame_summary(stack_frame);
 	stack_frame->size = offset;
-	// // r_bin_java_print_stack_map_frame_summary(stack_frame);
 	return stack_frame;
 }
 
