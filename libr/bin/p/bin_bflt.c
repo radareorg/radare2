@@ -12,7 +12,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
 	if (ret) {
-		struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) R_UNWRAP3 (bf, bo, bin_obj);
+		struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *)R_UNWRAP3 (bf, bo, bin_obj);
 		RBinAddr *ptr = r_bflt_get_entry (obj);
 		if (ptr) {
 			r_list_append (ret, ptr);
@@ -45,7 +45,7 @@ static RList *patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	struct r_bin_bflt_obj *bin = obj->bin_obj;
-	RList *list = r_list_newf ((RListFree) free);
+	RList *list = r_list_newf ((RListFree)free);
 	if (!list) {
 		return NULL;
 	}
@@ -53,8 +53,7 @@ static RList *patch_relocs(RBinFile *bf) {
 		struct reloc_struct_t *got_table = bin->got_table;
 		int i;
 		for (i = 0; i < bin->n_got; i++) {
-			__patch_reloc (&b->iob, got_table[i].addr_to_patch,
-				got_table[i].data_offset);
+			__patch_reloc (&b->iob, got_table[i].addr_to_patch, got_table[i].data_offset);
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			reloc->type = R_BIN_RELOC_32;
 			reloc->paddr = got_table[i].addr_to_patch;
@@ -69,13 +68,12 @@ static RList *patch_relocs(RBinFile *bf) {
 		int i = 0;
 		for (i = 0; i < bin->hdr->reloc_count; i++) {
 			int found = search_old_relocation (reloc_table,
-				reloc_table[i].addr_to_patch, bin->hdr->reloc_count);
+				reloc_table[i].addr_to_patch,
+				bin->hdr->reloc_count);
 			if (found != -1) {
-				__patch_reloc (&b->iob, reloc_table[found].addr_to_patch,
-					reloc_table[i].data_offset);
+				__patch_reloc (&b->iob, reloc_table[found].addr_to_patch, reloc_table[i].data_offset);
 			} else {
-				__patch_reloc (&b->iob, reloc_table[i].addr_to_patch,
-					reloc_table[i].data_offset);
+				__patch_reloc (&b->iob, reloc_table[i].addr_to_patch, reloc_table[i].data_offset);
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			reloc->type = R_BIN_RELOC_32;
@@ -97,11 +95,10 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 	for (; i < data_size; i += 4, n_got++) {
 		ut32 entry, offset = obj->hdr->data_start;
 		if (offset + i + sizeof (ut32) > obj->size ||
-		    offset + i + sizeof (ut32) < offset) {
+			offset + i + sizeof (ut32) < offset) {
 			return 0;
 		}
-		int len = r_buf_read_at (obj->b, offset + i, (ut8 *) &entry,
-			sizeof (ut32));
+		int len = r_buf_read_at (obj->b, offset + i, (ut8 *)&entry, sizeof (ut32));
 		if (len != sizeof (ut32)) {
 			return 0;
 		}
@@ -113,11 +110,11 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *) bf->bo->bin_obj;
+	struct r_bin_bflt_obj *obj = (struct r_bin_bflt_obj *)bf->bo->bin_obj;
 	if (obj->relocs_list) {
 		return r_list_clone (obj->relocs_list, NULL);
 	}
-	RList *list = r_list_newf ((RListFree) free);
+	RList *list = r_list_newf ((RListFree)free);
 	ut32 i, len, n_got, amount;
 	if (!list || !obj) {
 		r_list_free (list);
@@ -136,11 +133,10 @@ static RList *relocs(RBinFile *bf) {
 				for (i = 0; i < n_got; offset += 4, i++) {
 					ut32 got_entry;
 					if (obj->hdr->data_start + offset + 4 > obj->size ||
-					    obj->hdr->data_start + offset + 4 < offset) {
+						obj->hdr->data_start + offset + 4 < offset) {
 						break;
 					}
-					len = r_buf_read_at (obj->b, obj->hdr->data_start + offset,
-						(ut8 *) &got_entry, sizeof (ut32));
+					len = r_buf_read_at (obj->b, obj->hdr->data_start + offset, (ut8 *)&got_entry, sizeof (ut32));
 					if (!VALID_GOT_ENTRY (got_entry) || len != sizeof (ut32)) {
 						break;
 					}
@@ -170,13 +166,12 @@ static RList *relocs(RBinFile *bf) {
 			goto out_error;
 		}
 		if (obj->hdr->reloc_start + amount > obj->size ||
-		    obj->hdr->reloc_start + amount < amount) {
+			obj->hdr->reloc_start + amount < amount) {
 			free (reloc_table);
 			free (reloc_pointer_table);
 			goto out_error;
 		}
-		len = r_buf_read_at (obj->b, obj->hdr->reloc_start,
-			(ut8 *) reloc_pointer_table, amount);
+		len = r_buf_read_at (obj->b, obj->hdr->reloc_start, (ut8 *)reloc_pointer_table, amount);
 		if (len != amount) {
 			free (reloc_table);
 			free (reloc_pointer_table);
@@ -190,13 +185,12 @@ static RList *relocs(RBinFile *bf) {
 				ut8 reloc_buf[4];
 				ut32 reloc_data_offset;
 				if (reloc_offset + sizeof (ut32) > obj->size ||
-				    reloc_offset + sizeof (ut32) < reloc_offset) {
+					reloc_offset + sizeof (ut32) < reloc_offset) {
 					free (reloc_table);
 					free (reloc_pointer_table);
 					goto out_error;
 				}
-				len = r_buf_read_at (obj->b, reloc_offset,
-					reloc_buf, sizeof (reloc_buf));
+				len = r_buf_read_at (obj->b, reloc_offset, reloc_buf, sizeof (reloc_buf));
 				if (len != sizeof (reloc_buf)) {
 					R_LOG_ERROR ("problem while reading relocation entries");
 					free (reloc_table);
@@ -240,9 +234,9 @@ static const char *bflt_cpu_to_arch(ut32 cpu_type) {
 	case BFLT_CPU_SH:
 		return "sh";
 	case BFLT_CPU_COLDFIRE:
-		return "m68k";	/* ColdFire is 68k variant */
+		return "m68k"; /* ColdFire is 68k variant */
 	default:
-		return "arm";	/* default to ARM */
+		return "arm"; /* default to ARM */
 	}
 }
 
@@ -251,7 +245,7 @@ static RBinInfo *info(RBinFile *bf) {
 	struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, bo, bin_obj);
 	info->file = bf->file? strdup (bf->file): NULL;
 	info->rclass = strdup ("bflt");
-	info->bclass = strdup ("bflt" );
+	info->bclass = strdup ("bflt");
 	info->type = strdup ("bFLT (Executable file)");
 	info->os = strdup ("Linux");
 	info->subsystem = strdup ("Linux");
@@ -266,7 +260,7 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	ut8 tmp[4] = {0};
+	ut8 tmp[4] = { 0 };
 	const int r = r_buf_read_at (buf, 0, tmp, sizeof (tmp));
 	return r == sizeof (tmp) && !memcmp (tmp, "bFLT", 4);
 }

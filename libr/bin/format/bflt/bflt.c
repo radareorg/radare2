@@ -3,7 +3,9 @@
 #include <r_util.h>
 #include "bflt.h"
 
-#define READ(x, i) r_read_be32 ((x) + (i)); (i) += 4;
+#define READ(x, i) \
+	r_read_be32 ((x) + (i)); \
+	(i) += 4;
 
 R_IPI RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 	if (!bin || !bin->hdr) {
@@ -17,7 +19,7 @@ R_IPI RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 }
 
 static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
-	ut8 bhdr[BFLT_HDR_SIZE] = {0};
+	ut8 bhdr[BFLT_HDR_SIZE] = { 0 };
 
 	int len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < BFLT_HDR_SIZE) {
@@ -43,9 +45,9 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	p_hdr->flags = READ (bhdr, i);
 	p_hdr->build_date = READ (bhdr, i);
 	/* cpu_type may be stored in filler[5] by some toolchains, read it separately */
-	bin->cpu_type = r_read_be32 (bhdr + 60);	/* offset 60 = filler[5] */
+	bin->cpu_type = r_read_be32 (bhdr + 60); /* offset 60 = filler[5] */
 	if (bin->cpu_type == 0 || bin->cpu_type > 0x100) {
-		bin->cpu_type = BFLT_CPU_ARM;	/* default to ARM if invalid */
+		bin->cpu_type = BFLT_CPU_ARM; /* default to ARM if invalid */
 	}
 
 	if (p_hdr->rev != FLAT_VERSION) {
