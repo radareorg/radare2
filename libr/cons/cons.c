@@ -17,9 +17,10 @@ static void __break_signal(int sig) {
 		R_LOG_WARN ("Global cons is null");
 	}
 }
+#endif
 
-#elif R2__WINDOWS__
-static HANDLE h;
+#if R2__WINDOWS__
+static HANDLE h = 0;
 static BOOL __w32_control(DWORD type) {
 	if (type == CTRL_C_EVENT) {
 		__break_signal (2); // SIGINT
