@@ -1,4 +1,4 @@
-/* radare - LGPL - 2022-2024 - terorie */
+/* radare - LGPL - 2022-2026 - terorie */
 
 #include <r_lib.h>
 #include <r_bin.h>
@@ -8,7 +8,7 @@
 #define MAX_IMP_COUNT 128
 #define MAX_RELOC_COUNT (1 << 26)
 
-R_PACKED (typedef struct {
+R_PACKED(typedef struct {
 	ut32 module_id;
 	ut32 next_module_vaddr;
 	ut32 prev_module_vaddr;
@@ -28,18 +28,21 @@ R_PACKED (typedef struct {
 	ut32 prolog_offset;
 	ut32 epilog_offset;
 	ut32 unresolved_offset;
-}) RelHeader;
+})
+RelHeader;
 
-R_PACKED (typedef struct {
+R_PACKED(typedef struct {
 	ut32 align;
 	ut32 bss_align;
 	ut32 bss_size;
-}) RelV3Ext;
+})
+RelV3Ext;
 
-R_PACKED (typedef struct {
+R_PACKED(typedef struct {
 	ut32 offset_packed;
 	ut32 size;
-}) RelSection;
+})
+RelSection;
 
 // Imp/Reloc handling
 //
@@ -64,38 +67,42 @@ R_PACKED (typedef struct {
 //  - <i>:    Relocs to other RELs (unsupported for now)
 //            Emits an import and a reloc.
 
-R_PACKED (typedef struct {
+R_PACKED(typedef struct {
 	ut32 module; // target lib (0 = main.dol, N = other REL)
 	ut32 relocs_paddr;
-}) RelImp;
+})
+RelImp;
 
-R_PACKED (typedef struct {
+R_PACKED(typedef struct {
 	ut16 offset;
 	ut8 type;
 	ut8 section;
 	ut32 addend;
-}) RelReloc;
+})
+RelReloc;
 
 #define REL_MODULE_MAIN_DOL 0
 
-#define R_PPC_NONE            0
-#define R_PPC_ADDR32          1
-#define R_PPC_ADDR24          2
-#define R_PPC_ADDR16          3
-#define R_PPC_ADDR16_LO       4
-#define R_PPC_ADDR16_HI       5
-#define R_PPC_ADDR16_HA       6
-#define R_PPC_ADDR14          7
-#define R_PPC_ADDR14_BRTAKEN  8
+#define R_PPC_NONE 0
+#define R_PPC_ADDR32 1
+#define R_PPC_ADDR24 2
+#define R_PPC_ADDR16 3
+#define R_PPC_ADDR16_LO 4
+#define R_PPC_ADDR16_HI 5
+#define R_PPC_ADDR16_HA 6
+#define R_PPC_ADDR14 7
+#define R_PPC_ADDR14_BRTAKEN 8
 #define R_PPC_ADDR14_BRNTAKEN 9
-#define R_PPC_REL24           10
-#define R_PPC_REL14           11
-#define R_PPC_REL14_BRTAKEN   12
-#define R_PPC_REL14_BRNTAKEN  13
-#define R_RVL_NONE            201
-#define R_RVL_SECT            202
-#define R_RVL_STOP            203
+#define R_PPC_REL24 10
+#define R_PPC_REL14 11
+#define R_PPC_REL14_BRTAKEN 12
+#define R_PPC_REL14_BRNTAKEN 13
+#define R_RVL_NONE 201
+#define R_RVL_SECT 202
+#define R_RVL_STOP 203
 
+#if DEBUG
+// TODO: we need a way to stringify the RBinReloc->ntype when listing it from cbin, for now just comment as its debug only
 static const char *reloc_str(int reloc) {
 	switch (reloc) {
 	case R_PPC_NONE: return "R_PPC_NONE";
@@ -118,6 +125,7 @@ static const char *reloc_str(int reloc) {
 	default: return "";
 	}
 }
+#endif
 
 typedef struct {
 	RelHeader hdr;
@@ -143,7 +151,7 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 	r_buf_seek (buf, addr, R_BUF_SET);
 	int i;
 	for (i = 0; i < MAX_RELOC_COUNT; i++) {
-		RelReloc reloc = {0};
+		RelReloc reloc = { 0 };
 		if (r_buf_fread (buf, (void *)&reloc, "SccI", 1) == -1) {
 			break;
 		}
@@ -162,7 +170,7 @@ static int load_reloc_table(RelReloc *out, RBuffer *buf, ut64 addr) {
 }
 
 static bool vread_at_be32(RBin *b, ut32 vaddr, ut32 *out) {
-	ut8 buf[4] = {0};
+	ut8 buf[4] = { 0 };
 	if (!b->iob.read_at (b->iob.io, vaddr, (void *)&buf, sizeof (buf))) {
 		return false;
 	}
@@ -171,26 +179,22 @@ static bool vread_at_be32(RBin *b, ut32 vaddr, ut32 *out) {
 }
 
 static bool vwriten_at_be32(RBin *b, ut32 vaddr, ut32 val, ut32 size) {
+	R_RETURN_VAL_IF_FAIL (size <= 4, false);
 	ut8 buf[4];
 	r_write_be32 (&buf, val);
-	assert (size <= sizeof (buf));
 	return b->iob.overlay_write_at (b->iob.io, vaddr, (void *)&buf, size);
 }
 
 static bool file_has_rel_ext(RBinFile *bf) {
-	if (!bf || !bf->file) {
-		return false;
+	if (R_LIKELY (bf && bf->file)) {
+		char *lowername = strdup (bf->file);
+		r_str_case (lowername, 0);
+		char *ext = strstr (lowername, ".rel");
+		bool ret = ext && ext[4] == '\0';
+		free (lowername);
+		return ret;
 	}
-	char *lowername = strdup (bf->file);
-	if (!lowername) {
-		return false;
-	}
-	r_str_case (lowername, 0);
-
-	char *ext = strstr (lowername, ".rel");
-	bool ret = ext && ext[4] == '\0';
-	free (lowername);
-	return ret;
+	return false;
 }
 
 static LoadedRel *load_rel_header(RBinFile *bf) {
@@ -198,9 +202,6 @@ static LoadedRel *load_rel_header(RBinFile *bf) {
 		return NULL;
 	}
 	LoadedRel *rel = R_NEW0 (LoadedRel);
-	if (!rel) {
-		return NULL;
-	}
 	if (r_buf_fread_at (bf->buf, 0, (void *)&rel->hdr, "12I4c3I", 1) == -1) {
 		free (rel);
 		return NULL;
@@ -361,7 +362,6 @@ static RList *sections(RBinFile *bf) {
 			}
 			has_bss = true;
 			s->name = strdup ("bss");
-			assert (s->name);
 			// Place after end of REL file
 			s->vaddr = bf->bo->baddr + bf->size + 0x3c;
 		} else if (executable) {
@@ -435,14 +435,14 @@ static bool reloc_step_vaddr(const LoadedRel *rel, const RelReloc *reloc, ut32 *
 	return true;
 }
 
-#define set_masked(v, mask, expr) ((v) & (~((ut32)(mask)))) | ((expr) & (mask))
+#define set_masked(v, mask, expr) ((v) &(~ ((ut32) (mask)))) | ((expr) &(mask))
 
-#define set_low24(v, expr)  set_masked (v, 0x03FFFFFC, (expr) << 2)
-#define set_half16(v, expr) set_masked (v, 0xFFFF0000, (expr) << 16)
+#define set_low24(v, expr) set_masked(v, 0x03FFFFFC,(expr) << 2)
+#define set_half16(v, expr) set_masked(v, 0xFFFF0000,(expr) << 16)
 
-#define lo(x) ((x)&0xffff)
+#define lo(x) ((x) & 0xffff)
 #define hi(x) (((x) >> 16) & 0xffff)
-#define ha(x) ((((x) >> 16) + (((x)&0x8000) ? 1 : 0)) & 0xffff)
+#define ha(x) ((((x) >> 16) + (((x) & 0x8000)? 1: 0)) & 0xffff)
 
 static bool _overlay_write_at_hack(RIO *io, ut64 addr, const ut8 *buf, int len) {
 	return true;
@@ -482,11 +482,11 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 	case R_RVL_SECT:
 		return NULL;
 	case R_PPC_ADDR32:     size = 4; value = S + A;                              break;
-	case R_PPC_ADDR24:     size = 4; value = set_low24(value, (S + A) >> 2);     break;
-	case R_PPC_REL24:      size = 4; value = set_low24(value, (S + A - P) >> 2); break;
-	case R_PPC_ADDR16_LO:  size = 2; value = set_half16(value, lo(S + A));       break;
-	case R_PPC_ADDR16_HI:  size = 2; value = set_half16(value, hi(S + A));       break;
-	case R_PPC_ADDR16_HA:  size = 2; value = set_half16(value, ha(S + A));       break;
+	case R_PPC_ADDR24:     size = 4; value = set_low24 (value, (S + A) >> 2);     break;
+	case R_PPC_REL24:      size = 4; value = set_low24 (value, (S + A - P) >> 2); break;
+	case R_PPC_ADDR16_LO:  size = 2; value = set_half16 (value, lo (S + A));       break;
+	case R_PPC_ADDR16_HI:  size = 2; value = set_half16 (value, hi (S + A));       break;
+	case R_PPC_ADDR16_HA:  size = 2; value = set_half16 (value, ha (S + A));       break;
 	default:
 		if (b->iob.overlay_write_at != _overlay_write_at_hack) {
 			R_LOG_ERROR ("REL: Unsupported reloc type %d", reloc->type);
@@ -502,7 +502,9 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 		fmt[2] = '0' + (2 * size);
 		snprintf (value_old_hex, sizeof (value_old_hex), fmt, value_old >> ((4 - size) * 8));
 		snprintf (value_new_hex, sizeof (value_new_hex), fmt, value >> ((4 - size) * 8));
+#if DEBUG
 		R_LOG_DEBUG ("REL: Reloc %-21s @%#08x: %s => %s", reloc_str (reloc->type), P, &value_old_hex, &value_new_hex);
+#endif
 	}
 
 	// Perform relocation
@@ -523,6 +525,7 @@ static RBinReloc *patch_reloc(RBin *b, const LoadedRel *rel, const RelReloc *rel
 		free (ret);
 		return NULL;
 	}
+	ret->ntype = reloc->type;
 	ret->addend = A;
 	ret->vaddr = P;
 	RBinSection *s = r_bin_get_section_at (b->cur->bo, P, true);
@@ -587,7 +590,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->bits = 32;
 	ret->cpu = strdup ("ps");
-	ret->file = bf->file ? strdup (bf->file) : NULL;
+	ret->file = bf->file? strdup (bf->file): NULL;
 	return ret;
 }
 
