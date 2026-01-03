@@ -693,7 +693,7 @@ static void edf_sf_constraint(RStrBuf *result, const char *new_node_str) {
 
 static bool edf_sf(REsil *esil) {
 	char *bitsize = r_esil_pop (esil);
-	R_LOG_DEBUG ("bitsize not yet implemented for sf (%s)", bitsize);
+	R_LOG_INFO ("bitsize not yet implemented for sf (%s)", bitsize);
 	return edf_use_new_push_1 (esil, "$s", edf_sf_constraint);
 }
 
