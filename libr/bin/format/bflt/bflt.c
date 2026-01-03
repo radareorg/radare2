@@ -3,21 +3,23 @@
 #include <r_util.h>
 #include "bflt.h"
 
-#define READ(x, i) r_read_be32 ((x) + (i)); (i) += 4;
+static inline ut32 rd32(const ut8 *buf, int *i) {
+	ut32 v = r_read_be32 (buf + *i);
+	*i += 4;
+	return v;
+}
 
 R_IPI RBinAddr *r_bflt_get_entry(struct r_bin_bflt_obj *bin) {
 	if (!bin || !bin->hdr) {
 		return NULL;
 	}
 	RBinAddr *addr = R_NEW0 (RBinAddr);
-	if (addr) {
-		addr->paddr = bin->hdr->entry;
-	}
+	addr->paddr = bin->hdr->entry;
 	return addr;
 }
 
 static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
-	ut8 bhdr[BFLT_HDR_SIZE] = {0};
+	ut8 bhdr[BFLT_HDR_SIZE] = { 0 };
 
 	int len = r_buf_read_at (bin->b, 0, bhdr, BFLT_HDR_SIZE);
 	if (len < BFLT_HDR_SIZE) {
@@ -32,20 +34,20 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 
 	struct bflt_hdr *p_hdr = R_NEW0 (struct bflt_hdr);
 	int i = 4;
-	p_hdr->rev = READ (bhdr, i);
-	p_hdr->entry = READ (bhdr, i);
-	p_hdr->data_start = READ (bhdr, i);
-	p_hdr->data_end = READ (bhdr, i);
-	p_hdr->bss_end = READ (bhdr, i);
-	p_hdr->stack_size = READ (bhdr, i);
-	p_hdr->reloc_start = READ (bhdr, i);
-	p_hdr->reloc_count = READ (bhdr, i);
-	p_hdr->flags = READ (bhdr, i);
-	p_hdr->build_date = READ (bhdr, i);
+	p_hdr->rev = rd32 (bhdr, &i);
+	p_hdr->entry = rd32 (bhdr, &i);
+	p_hdr->data_start = rd32 (bhdr, &i);
+	p_hdr->data_end = rd32 (bhdr, &i);
+	p_hdr->bss_end = rd32 (bhdr, &i);
+	p_hdr->stack_size = rd32 (bhdr, &i);
+	p_hdr->reloc_start = rd32 (bhdr, &i);
+	p_hdr->reloc_count = rd32 (bhdr, &i);
+	p_hdr->flags = rd32 (bhdr, &i);
+	p_hdr->build_date = rd32 (bhdr, &i);
 	/* cpu_type may be stored in filler[5] by some toolchains, read it separately */
-	bin->cpu_type = r_read_be32 (bhdr + 60);	/* offset 60 = filler[5] */
+	bin->cpu_type = r_read_be32 (bhdr + 60); /* offset 60 = filler[5] */
 	if (bin->cpu_type == 0 || bin->cpu_type > 0x100) {
-		bin->cpu_type = BFLT_CPU_ARM;	/* default to ARM if invalid */
+		bin->cpu_type = BFLT_CPU_ARM; /* default to ARM if invalid */
 	}
 
 	if (p_hdr->rev != FLAT_VERSION) {
