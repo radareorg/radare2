@@ -76,8 +76,7 @@ R_API int r_cons_pipe_open(RCons *cons, const char *file, int fd_src, int append
 		}
 	}
 #endif
-	// int res = dup2 (fdn, rfd);
-	int res;
+	int res = 0;
 	if (!is_dual) {
 #if USE_HACK
 		res = dup2 (fd_src, fd_bak);
@@ -87,6 +86,9 @@ R_API int r_cons_pipe_open(RCons *cons, const char *file, int fd_src, int append
 		R_LOG_DEBUG ("dup2 %d %d = %d", fd_src, fd_bak, res);
 		close (fd_src);
 		res = dup2 (fd_new, fd_src);
+	}
+	if (res == -1) {
+		perror ("dup2");
 	}
 	R_LOG_DEBUG ("dup2 %d %d = %d", fd_new, fd_src, res);
 	RConsFdPair newPair = {
@@ -131,7 +133,7 @@ R_API void r_cons_pipe_close(RCons *cons, int fd) {
 R_API void r_cons_pipe_close_all(RCons *cons) {
 #if !__wasi__
 	RConsFdPair *pair;
-	int res;
+	int res R_UNUSED;
 	R_VEC_FOREACH_PREV (&cons->fds, pair) {
 		res = dup2 (pair->fd_bak, pair->fd_src);
 		R_LOG_DEBUG ("dup2 %d -> %d = %d", pair->fd_bak, pair->fd_src, res);

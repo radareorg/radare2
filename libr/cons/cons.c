@@ -7,8 +7,29 @@ R_LIB_VERSION (r_cons);
 
 static RCons *I = NULL;
 
-static void __break_signal(int sig);
 #define MAX_PAGES 100
+
+#if R2__UNIX__ || R2__WINDOWS__
+static void __break_signal(int sig) {
+	if (I) {
+		r_cons_context_break (I->context);
+	} else {
+		R_LOG_WARN ("Global cons is null");
+	}
+}
+#endif
+
+#if R2__WINDOWS__
+static HANDLE h = 0;
+static BOOL __w32_control(DWORD type) {
+	if (type == CTRL_C_EVENT) {
+		__break_signal (2); // SIGINT
+		eprintf ("^C pressed\n");
+		return true;
+	}
+	return false;
+}
+#endif
 
 static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t len) {
 	int columns, rows;
@@ -77,7 +98,6 @@ static bool cons_palloc(RCons *cons, size_t moar) {
 	}
 	return true;
 }
-
 
 #include "thread.inc.c"
 #include "private.h"
@@ -195,17 +215,8 @@ static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	}
 	cons_grep_reset (&ctx->grep);
 }
-#if R2__WINDOWS__
-static HANDLE h;
-static BOOL __w32_control(DWORD type) {
-	if (type == CTRL_C_EVENT) {
-		__break_signal (2); // SIGINT
-		eprintf ("^C pressed\n");
-		return true;
-	}
-	return false;
-}
-#elif R2__UNIX__ && !__wasi__
+
+#if R2__UNIX__ && !__wasi__
 volatile sig_atomic_t sigwinchFlag;
 static void resize(int sig) {
 	sigwinchFlag = 1;
@@ -309,14 +320,6 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	r_th_lock_free (cons->lock);
 	r_cons_pal_fini ();
 	RVecFdPairs_fini (&cons->fds);
-}
-
-static void __break_signal(int sig) {
-	if (I) {
-		r_cons_context_break (I->context);
-	} else {
-		R_LOG_WARN ("Global cons is null");
-	}
 }
 
 R_API bool r_cons_is_initialized(void) {
@@ -436,7 +439,6 @@ R_API void r_cons_break_clear(RCons *cons) {
 
 R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	// eprintf ("Brk.push\n");
-#if WANT_DEBUGSTUFF
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -459,7 +461,6 @@ R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBr
 	// configure break
 	context->event_interrupt = cb;
 	context->event_interrupt_data = user;
-#endif
 }
 
 R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig) {

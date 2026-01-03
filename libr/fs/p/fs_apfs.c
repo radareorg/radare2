@@ -1135,16 +1135,13 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 	ut8 *unhashed_name = key_data + 10; // After 8-byte header + 2-byte name_len
 
 	// Check which format makes more sense based on available space
-	bool use_hashed = false;
 	ut16 name_len;
 	ut8 *name_data;
 
 	if (key_len >= 12 + hashed_name_len && hashed_name_len > 0 && hashed_name_len < 256) {
-		use_hashed = true;
 		name_len = hashed_name_len;
 		name_data = hashed_name;
 	} else if (key_len >= 10 + unhashed_name_len && unhashed_name_len > 0 && unhashed_name_len < 256) {
-		use_hashed = false;
 		name_len = unhashed_name_len;
 		name_data = unhashed_name;
 	} else {
@@ -1160,7 +1157,7 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 		}
 	}
 
-	R_LOG_DEBUG ("DIR_REC using %s format: name_len=%d", use_hashed? "hashed": "unhashed", name_len);
+	R_LOG_DEBUG ("DIR_REC using format: name_len=%d", name_len);
 	if (name_len == 0) {
 		R_LOG_DEBUG ("DIR_REC size check failed: name_len=%d", name_len);
 		return false;
