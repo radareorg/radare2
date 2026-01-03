@@ -444,6 +444,9 @@ static RList *relocs(RBinFile *bf) {
 					continue;
 				}
 				*clone = *rel;
+				if (!clone->ntype) {
+					clone->ntype = clone->type;
+				}
 				r_list_append (relocs, clone);
 			}
 		} else if (part->format == R_BIN_MDT_PART_ELF && part->obj.elf) {
@@ -459,6 +462,7 @@ static RList *relocs(RBinFile *bf) {
 					rel->vaddr = erel->rva + part->map->addr;
 					rel->paddr = erel->offset;
 					rel->type = erel->type;
+					rel->ntype = erel->type;
 					rel->addend = erel->addend;
 					// Skip complex symbol resolution for now
 					r_list_append (relocs, rel);

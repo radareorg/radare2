@@ -292,6 +292,7 @@ static RList *relocs(RBinFile *bf) {
 		r_list_foreach (mo->reloc_fixups, iter, r) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			ptr->type = R_BIN_RELOC_64;
+			ptr->ntype = r->type;
 			ut64 paddr = r->paddr + mo->baddr;
 			ptr->vaddr = paddr;
 			ptr->paddr = r->vaddr;
@@ -557,6 +558,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
 		ptr->type = reloc->type;
+		ptr->ntype = reloc->type;
 		ptr->additive = 0;
 		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
 		if (R_LIKELY (imp)) {

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2016-2025 - Oscar Salvador */
+/* radare - LGPL - Copyright 2016-2026 - Oscar Salvador */
 
 #include <r_bin.h>
 #include <r_io.h>
@@ -184,9 +184,7 @@ static RList *relocs(RBinFile *bf) {
 		}
 		for (i = 0; i < n_reloc; i++) {
 			// XXX it doesn't take endian as consideration when swapping
-			ut32 reloc_offset =
-				r_swap_ut32 (reloc_pointer_table[i]) +
-				BFLT_HDR_SIZE;
+			ut32 reloc_offset = r_swap_ut32 (reloc_pointer_table[i]) + BFLT_HDR_SIZE;
 
 			if (reloc_offset < obj->hdr->bss_end && reloc_offset < obj->size) {
 				ut32 reloc_fixed, reloc_data_offset;
