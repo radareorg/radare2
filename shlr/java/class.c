@@ -7263,7 +7263,7 @@ R_API void r_bin_java_print_rtvp_annotations_attr_summary(RBinJavaAttrInfo *attr
 	}
 }
 
-// AITODO: return char * instead of printing
+// TODO: return char * instead of printing
 R_API void r_bin_java_print_rtip_annotations_attr_summary(RBinJavaAttrInfo *attr) {
 	RBinJavaAnnotationsArray *annotation_array = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
