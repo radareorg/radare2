@@ -255,11 +255,8 @@ static RBinInfo *info(RBinFile *bf) {
 	info->type = strdup ("bFLT (Executable file)");
 	info->os = strdup ("Linux");
 	info->subsystem = strdup ("Linux");
-	
-	/* Get architecture from bFLT header cpu_type field */
 	const char *arch = obj? bflt_cpu_to_arch (obj->cpu_type): "arm";
 	info->arch = strdup (arch);
-	
 	info->big_endian = obj? obj->endian: R_SYS_ENDIAN_LITTLE;
 	info->bits = 32;
 	info->has_va = false;
