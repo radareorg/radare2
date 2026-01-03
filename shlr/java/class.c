@@ -369,6 +369,7 @@ static RBinJavaAccessFlags CLASS_ACCESS_FLAGS[] = {
 	{ "annotation", R_BIN_JAVA_CLASS_ACC_ANNOTATION, 10 },
 	{ "enum", R_BIN_JAVA_CLASS_ACC_ENUM, 4 },
 	{ "undefined.0x8000", 0x8000, 16 },
+	{ "hidden", R_BIN_JAVA_CLASS_ACC_HIDDEN, 6 },
 	{ NULL, 0, 0 }
 };
 
@@ -668,6 +669,7 @@ R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj) {
 		pj_kb (pj, "is_synthetic", ((klass->attr & R_BIN_JAVA_CLASS_ACC_SYNTHETIC) != 0));
 		pj_kb (pj, "is_annotation", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ANNOTATION) != 0));
 		pj_kb (pj, "is_enum", ((klass->attr & R_BIN_JAVA_CLASS_ACC_ENUM) != 0));
+		pj_kb (pj, "is_hidden", ((klass->attr & R_BIN_JAVA_CLASS_ACC_HIDDEN) != 0));
 		pj_ks (pj, "name", R_BIN_CLASSNAME (klass->name));
 		if (klass->super) {
 			RBinName *bn;
@@ -1082,6 +1084,38 @@ R_API ut16 calculate_access_value(const char *access_flags_str, const RBinJavaAc
 	return result;
 }
 
+R_API ut32 calculate_class_access_value(const char *access_flags_str, const RBinJavaAccessFlags *access_flags) {
+	ut32 result = 0;
+	ut16 size = strlen (access_flags_str) + 1;
+	char *p_flags, *my_flags = malloc (size);
+	const RBinJavaAccessFlags *iter = NULL;
+	char *save_ptr = NULL;
+	if (size < 5 || !my_flags) {
+		free (my_flags);
+		return result;
+	}
+	memcpy (my_flags, access_flags_str, size);
+	p_flags = r_str_tok_r (my_flags, " ", &save_ptr);
+	while (p_flags && access_flags) {
+		int idx = 0;
+		do {
+			iter = &access_flags[idx];
+			if (!iter || !iter->str) {
+				continue;
+			}
+			if (iter->len > 0 && iter->len != 16) {
+				if (!strncmp (iter->str, p_flags, iter->len)) {
+					result |= iter->value;
+				}
+			}
+			idx++;
+		} while (access_flags[idx].str != NULL);
+		p_flags = r_str_tok_r (NULL, " ", &save_ptr);
+	}
+	free (my_flags);
+	return result;
+}
+
 R_API RList *retrieve_all_access_string_and_value(const RBinJavaAccessFlags *access_flags) {
 	RList *result = r_list_newf (free);
 	ut32 i;
@@ -1105,6 +1139,20 @@ R_API char *retrieve_access_string(ut16 flags, const RBinJavaAccessFlags *access
 	return r_strbuf_drain (sb);
 }
 
+R_API char *retrieve_class_access_string(ut32 flags, const RBinJavaAccessFlags *access_flags) {
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
+	for (i = 0; access_flags[i].str; i++) {
+		if (flags & access_flags[i].value) {
+			if (!r_strbuf_is_empty (sb)) {
+				r_strbuf_append (sb, " ");
+			}
+			r_strbuf_append (sb, access_flags[i].str);
+		}
+	}
+	return r_strbuf_drain (sb);
+}
+
 R_API char *retrieve_method_access_string(ut16 flags) {
 	return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
 }
@@ -1113,8 +1161,8 @@ R_API char *retrieve_field_access_string(ut16 flags) {
 	return retrieve_access_string (flags, FIELD_ACCESS_FLAGS);
 }
 
-R_API char *retrieve_class_method_access_string(ut16 flags) {
-	return retrieve_access_string (flags, CLASS_ACCESS_FLAGS);
+R_API char *retrieve_class_method_access_string(ut32 flags) {
+	return retrieve_class_access_string (flags, CLASS_ACCESS_FLAGS);
 }
 
 R_API char *r_bin_java_build_obj_key(RBinJavaObj *bin) {
@@ -7667,8 +7715,8 @@ R_API ut16 r_bin_java_calculate_field_access_value(const char *access_flags_str)
 	return calculate_access_value (access_flags_str, FIELD_ACCESS_FLAGS);
 }
 
-R_API ut16 r_bin_java_calculate_class_access_value(const char *access_flags_str) {
-	return calculate_access_value (access_flags_str, CLASS_ACCESS_FLAGS);
+R_API ut32 r_bin_java_calculate_class_access_value(const char *access_flags_str) {
+	return calculate_class_access_value (access_flags_str, CLASS_ACCESS_FLAGS);
 }
 
 R_API ut16 r_bin_java_calculate_method_access_value(const char *access_flags_str) {

@@ -79,12 +79,14 @@ typedef enum {
 
 	R_BIN_JAVA_CLASS_ACC_SYNTHETIC = 0x1000,
 	R_BIN_JAVA_CLASS_ACC_ANNOTATION = 0x2000,
-	R_BIN_JAVA_CLASS_ACC_ENUM = 0x4000
+	R_BIN_JAVA_CLASS_ACC_ENUM = 0x4000,
+
+	R_BIN_JAVA_CLASS_ACC_HIDDEN = 0x4000000
 } R_BIN_JAVA_CLASS_ACCESS;
 
 typedef struct {
 	char *str;
-	ut16 value;
+	ut32 value;
 	ut8 len;
 } RBinJavaAccessFlags;
 
@@ -656,7 +658,7 @@ typedef struct r_bin_java_classfile_t {
 } RBinJavaClass;
 
 typedef struct r_bin_java_classfile2_t {
-	ut16 access_flags;
+	ut32 access_flags;
 	char *flags_str;
 	char *this_class_name;
 	ut16 this_class;
@@ -937,7 +939,7 @@ R_API RList * U(r_bin_java_get_method_offsets)(RBinJavaObj *bin);
 
 R_API ut16 U(r_bin_java_calculate_method_access_value)(const char * access_flags_str);
 R_API ut16 U(r_bin_java_calculate_field_access_value)(const char * access_flags_str);
-R_API ut16 U(r_bin_java_calculate_class_access_value)(const char * access_flags_str);
+R_API ut32 U(r_bin_java_calculate_class_access_value)(const char * access_flags_str);
 
 R_API RList * U(retrieve_all_method_access_string_and_value)(void);
 R_API RList * U(retrieve_all_field_access_string_and_value)(void);
@@ -1025,8 +1027,7 @@ R_API char *r_bin_java_get_bin_obj_json(RBinJavaObj *bin);
 R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size);
 R_API int r_bin_java_valid_class(const ut8 * buf, ut64 buf_sz);
 
-R_API char *retrieve_class_method_access_string(ut16 flags);
+R_API char *retrieve_class_method_access_string(ut32 flags);
 R_API char *retrieve_method_access_string(ut16 flags);
 R_API char *retrieve_field_access_string(ut16 flags);
-R_API char *retrieve_class_method_access_string(ut16 flags);
 #endif
