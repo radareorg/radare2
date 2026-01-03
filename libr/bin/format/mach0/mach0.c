@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - nibble, mrmacete, pancake */
+/* radare - LGPL - Copyright 2010-2026 - nibble, mrmacete, pancake */
 
 #define R_LOG_ORIGIN "bin.macho"
 
@@ -567,7 +567,7 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 error:
 	R_FREE (mo->symstr);
 	R_FREE (mo->symtab);
-	R_LOG_DEBUG ("%s", error_message);
+	R_LOG_ERROR ("parse.symtab: %s", error_message);
 	return false;
 }
 

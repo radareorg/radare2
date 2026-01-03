@@ -2,7 +2,7 @@ NAME=java prototypes in json
 FILE=bins/java/jdwpexeccmd.class
 CMDS=java prototypes j
 EXPECT=<<EOF
-{"access_flags":33,"is_public":true,"is_final":false,"is_super":true,"is_interface":false,"is_abstract":false,"is_synthetic":false,"is_annotation":false,"is_enum":false,"name":"JDWPExecCmd","super":["super":"java/lang/Object"],"interfaces":[],"methods":[{"access_flags":1,"is_method":true,"is_native":false,"is_synthetic":false,"is_private":false,"is_public":true,"is_static":false,"is_protected":false,"is_super":false,"addr":825,"offset":803,"class_name":"java/lang/Object","signature":"()V","name":"<init>","fq_name":"java/lang/Object.<init>.()V","prototype":"public void <init> ()"},{"access_flags":9,"is_method":true,"is_native":false,"is_synthetic":false,"is_private":false,"is_public":true,"is_static":true,"is_protected":false,"is_super":false,"addr":868,"offset":846,"class_name":"JDWPExecCmd","signature":"(Ljava/lang/String;)Ljava/lang/String;","name":"run","fq_name":"JDWPExecCmd.run.(Ljava/lang/String;)Ljava/lang/String;","prototype":"public static java.lang.String run (java.lang.String)"}],"fields":[],"imports":["java.lang.StringBuilder","java.io.BufferedReader","java.io.InputStreamReader","java.lang.Exception","JDWPExecCmd","java.lang.Object","java.lang.String","java.lang.Process","java.io.BufferedReader","java.lang.Exception","java.lang.Runtime","java.lang.Process","java.lang.String"]}
+{"access_flags":33,"is_public":true,"is_final":false,"is_super":true,"is_interface":false,"is_abstract":false,"is_synthetic":false,"is_annotation":false,"is_enum":false,"is_module":false,"is_record":false,"is_hidden":false,"is_sealed":false,"name":"JDWPExecCmd","super":["super":"java/lang/Object"],"interfaces":[],"methods":[{"access_flags":1,"is_method":true,"is_native":false,"is_synthetic":false,"is_private":false,"is_public":true,"is_static":false,"is_protected":false,"is_super":false,"addr":825,"offset":803,"class_name":"java/lang/Object","signature":"()V","name":"<init>","fq_name":"java/lang/Object.<init>.()V","prototype":"public void <init> ()"},{"access_flags":9,"is_method":true,"is_native":false,"is_synthetic":false,"is_private":false,"is_public":true,"is_static":true,"is_protected":false,"is_super":false,"addr":868,"offset":846,"class_name":"JDWPExecCmd","signature":"(Ljava/lang/String;)Ljava/lang/String;","name":"run","fq_name":"JDWPExecCmd.run.(Ljava/lang/String;)Ljava/lang/String;","prototype":"public static java.lang.String run (java.lang.String)"}],"fields":[],"imports":["java.lang.StringBuilder","java.io.BufferedReader","java.io.InputStreamReader","java.lang.Exception","JDWPExecCmd","java.lang.Object","java.lang.String","java.lang.Process","java.io.BufferedReader","java.lang.Exception","java.lang.Runtime","java.lang.Process","java.lang.String"]}
 EOF
 RUN
 
@@ -88,7 +88,9 @@ undefined.0x0800 = 0x0800
 synthetic = 0x1000
 annotation = 0x2000
 enum = 0x4000
-undefined.0x8000 = 0x8000
+module = 0x8000
+record = 0x10000
+hidden = 0x4000000
 [=] Methods Access Flags List
 public = 0x0001
 private = 0x0002
