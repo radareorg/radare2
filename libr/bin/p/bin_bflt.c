@@ -208,12 +208,11 @@ static RList *relocs(RBinFile *bf) {
 				reloc_table[i].data_offset = reloc_data_offset;
 
 				RBinReloc *reloc = R_NEW0 (RBinReloc);
-				if (reloc) {
-					reloc->type = R_BIN_RELOC_32;
-					reloc->paddr = reloc_table[i].addr_to_patch;
-					reloc->vaddr = reloc->paddr;
-					r_list_append (list, reloc);
-				}
+				reloc->type = R_BIN_RELOC_32;
+				// reloc->ntype = R_BIN_RELOC_32;
+				reloc->paddr = reloc_table[i].addr_to_patch;
+				reloc->vaddr = reloc->paddr;
+				r_list_append (list, reloc);
 			}
 		}
 		free (reloc_pointer_table);
@@ -226,6 +225,27 @@ out_error:
 	return NULL;
 }
 
+static const char *bflt_cpu_to_arch(ut32 cpu_type) {
+	switch (cpu_type) {
+	case BFLT_CPU_68K:
+		return "m68k";
+	case BFLT_CPU_386:
+		return "x86";
+	case BFLT_CPU_ARM:
+		return "arm";
+	case BFLT_CPU_MIPS:
+		return "mips";
+	case BFLT_CPU_PPC:
+		return "ppc";
+	case BFLT_CPU_SH:
+		return "sh";
+	case BFLT_CPU_COLDFIRE:
+		return "m68k";	/* ColdFire is 68k variant */
+	default:
+		return "arm";	/* default to ARM */
+	}
+}
+
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *info = R_NEW0 (RBinInfo);
 	struct r_bin_bflt_obj *obj = R_UNWRAP3 (bf, bo, bin_obj);
@@ -235,7 +255,8 @@ static RBinInfo *info(RBinFile *bf) {
 	info->type = strdup ("bFLT (Executable file)");
 	info->os = strdup ("Linux");
 	info->subsystem = strdup ("Linux");
-	info->arch = strdup ("arm");
+	const char *arch = obj? bflt_cpu_to_arch (obj->cpu_type): "arm";
+	info->arch = strdup (arch);
 	info->big_endian = obj? obj->endian: R_SYS_ENDIAN_LITTLE;
 	info->bits = 32;
 	info->has_va = false;

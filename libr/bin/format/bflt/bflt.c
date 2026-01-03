@@ -42,6 +42,11 @@ static int bflt_init_hdr(struct r_bin_bflt_obj *bin) {
 	p_hdr->reloc_count = READ (bhdr, i);
 	p_hdr->flags = READ (bhdr, i);
 	p_hdr->build_date = READ (bhdr, i);
+	/* cpu_type may be stored in filler[5] by some toolchains, read it separately */
+	bin->cpu_type = r_read_be32 (bhdr + 60);	/* offset 60 = filler[5] */
+	if (bin->cpu_type == 0 || bin->cpu_type > 0x100) {
+		bin->cpu_type = BFLT_CPU_ARM;	/* default to ARM if invalid */
+	}
 
 	if (p_hdr->rev != FLAT_VERSION) {
 		R_LOG_WARN ("only v4 is supported!");
