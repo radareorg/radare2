@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2024 - pancake */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
 // https://github.com/nesbox/TIC-80/wiki/tic-File-Format
 
@@ -81,8 +81,8 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 			break;
 		}
 		off++;
-		int bank_number = (hb >> 5) & 7;
-		int chunk_type = hb & 0x1f;
+		const int bank_number = (hb >> 5) & 7;
+		const int chunk_type = hb & 0x1f;
 		ut16 chunk_length = 0;
 		if (r_buf_read_at (buf, off, (ut8*)&chunk_length, 2) != 2) {
 			return false;
@@ -104,7 +104,7 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 		case CHUNK_CODE_ZIP:
 		case CHUNK_DEFAULT:
 		case CHUNK_SCREEN:
-			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
+			R_LOG_INFO ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
 			break;
@@ -141,10 +141,7 @@ static RList *strings(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->lang = NULL;
 	ret->file = bf->file? strdup (bf->file): NULL;
 	ret->type = strdup ("tic");
@@ -163,16 +160,14 @@ static RBinInfo *info(RBinFile *bf) {
 
 static void add_section(RList *list, const char *name, ut64 paddr, int size, ut64 vaddr) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
-	if (ptr) {
-		ptr->name = strdup (name);
-		ptr->vsize = ptr->size = size;
-		ptr->paddr = paddr;
-		ptr->vaddr = vaddr;
-		ptr->perm = R_PERM_RW;
-		ptr->add = true; // paddr != vaddr;
-		ptr->is_segment = paddr == vaddr;
-		r_list_append (list, ptr);
-	}
+	ptr->name = strdup (name);
+	ptr->vsize = ptr->size = size;
+	ptr->paddr = paddr;
+	ptr->vaddr = vaddr;
+	ptr->perm = R_PERM_RW;
+	ptr->add = true; // paddr != vaddr;
+	ptr->is_segment = paddr == vaddr;
+	r_list_append (list, ptr);
 }
 
 static RList *sections(RBinFile *bf) {
@@ -271,15 +266,9 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 	ret->free = free;
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	// begin of code section
 	ptr->paddr = 0; // 0x70000;
 	ptr->vaddr = 0xffff0;

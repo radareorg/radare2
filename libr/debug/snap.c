@@ -109,7 +109,7 @@ R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b) {
 R_API int r_debug_snap_delete(RDebug *dbg, int idx) {
 	ut32 count = 0;
 	RListIter *iter;
-	RDebugSnap *snap;
+	RDebugSnap *snap R_UNUSED;
 	if (idx == -1) {
 		r_list_free (dbg->snaps);
 		dbg->snaps = r_list_newf ((RListFree)r_debug_snap_free);

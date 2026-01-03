@@ -41,33 +41,12 @@ DEBUG: imp 5: 2 relocs
 DEBUG: imp 6: 7 relocs
 DEBUG: imp 7: 16 relocs
 DEBUG: bin object have no information
-DEBUG: Using uri bins/rel/d_profileNP.rel
 ERROR: Imports from other REL (00000002) not yet implemented
 ERROR: Imports from other REL (00000003) not yet implemented
 ERROR: Imports from other REL (00000004) not yet implemented
 ERROR: Imports from other REL (00000005) not yet implemented
 ERROR: Imports from other REL (00000006) not yet implemented
 ERROR: Imports from other REL (00000007) not yet implemented
-DEBUG: REL: Reloc R_PPC_ADDR16_HA       @0x805000da: 0000 => 8050
-DEBUG: REL: Reloc R_PPC_ADDR16_LO       @0x805000e2: 0000 => 0170
-DEBUG: REL: Reloc R_PPC_ADDR16_HA       @0x80500112: 0000 => 8050
-DEBUG: REL: Reloc R_PPC_ADDR16_LO       @0x80500116: 0000 => 0174
-DEBUG: REL: Reloc R_PPC_ADDR16_HA       @0x80500142: 0000 => 8050
-DEBUG: REL: Reloc R_PPC_ADDR16_LO       @0x8050014a: 0000 => 0178
-DEBUG: REL: Reloc R_PPC_REL24           @0x805000e4: 4800004d => 4bb1acbd
-DEBUG: REL: Reloc R_PPC_REL24           @0x80500118: 48000019 => 4bb1acd9
-DEBUG: REL: Reloc R_PPC_REL24           @0x80500130: 48000000 => 4bb1ac60
-DEBUG: REL: Reloc R_PPC_ADDR16_HA       @0x80500146: 0000 => 8024
-DEBUG: REL: Reloc R_PPC_ADDR16_LO       @0x8050014e: 0000 => ae10
-DEBUG: REL: Reloc R_PPC_ADDR16_HA       @0x80500162: 0000 => 8024
-DEBUG: REL: Reloc R_PPC_ADDR16_LO       @0x8050016a: 0000 => ae10
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x8050017c: 00000000 => 8023a580
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500180: 00000000 => 8023a588
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500184: 00000000 => 8023a590
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500188: 00000000 => 8023a598
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x8050018c: 00000000 => 8023a5b0
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500190: 00000000 => 8023a5e0
-DEBUG: REL: Reloc R_PPC_ADDR32          @0x80500194: 00000000 => 8023a600
 DEBUG: SLOW: cloning symbols list into a vec
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq

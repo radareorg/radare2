@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2025 - pancake */
+/* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include "r_io.h"
 #include "r_types.h"
@@ -1876,13 +1876,9 @@ static bool warn_if_dbg(RCore *core) {
 			desc = r_io_desc_get (core->io, fd);
 		}
 	}
-	if (desc) {
-		const char *uri = desc->uri;
-		R_LOG_DEBUG ("Using uri %s", uri);
-		if (r_io_desc_is_dbg (desc)) {
-			R_LOG_ERROR ("bin.relocs and io.cache should not be used with the current io plugin");
-			return false;
-		}
+	if (desc && r_io_desc_is_dbg (desc)) {
+		R_LOG_ERROR ("bin.relocs and io.cache should not be used for %s", desc->uri);
+		return false;
 	}
 	return true;
 }
