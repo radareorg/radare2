@@ -182,12 +182,13 @@ static RList *relocs(RBinFile *bf) {
 			free (reloc_pointer_table);
 			goto out_error;
 		}
+		ut8 *reloc_bytes = (ut8 *)reloc_pointer_table;
 		for (i = 0; i < n_reloc; i++) {
-			// XXX it doesn't take endian as consideration when swapping
-			ut32 reloc_offset = r_swap_ut32 (reloc_pointer_table[i]) + BFLT_HDR_SIZE;
+			ut32 reloc_offset = r_read_be32 (reloc_bytes + i * 4) + BFLT_HDR_SIZE;
 
 			if (reloc_offset < obj->hdr->bss_end && reloc_offset < obj->size) {
-				ut32 reloc_fixed, reloc_data_offset;
+				ut8 reloc_buf[4];
+				ut32 reloc_data_offset;
 				if (reloc_offset + sizeof (ut32) > obj->size ||
 				    reloc_offset + sizeof (ut32) < reloc_offset) {
 					free (reloc_table);
@@ -195,15 +196,14 @@ static RList *relocs(RBinFile *bf) {
 					goto out_error;
 				}
 				len = r_buf_read_at (obj->b, reloc_offset,
-					(ut8 *) &reloc_fixed,
-					sizeof (ut32));
-				if (len != sizeof (ut32)) {
-					eprintf ("problem while reading relocation entries\n");
+					reloc_buf, sizeof (reloc_buf));
+				if (len != sizeof (reloc_buf)) {
+					R_LOG_ERROR ("problem while reading relocation entries");
 					free (reloc_table);
 					free (reloc_pointer_table);
 					goto out_error;
 				}
-				reloc_data_offset = r_swap_ut32 (reloc_fixed) + BFLT_HDR_SIZE;
+				reloc_data_offset = r_read_be32 (reloc_buf) + BFLT_HDR_SIZE;
 				reloc_table[i].addr_to_patch = reloc_offset;
 				reloc_table[i].data_offset = reloc_data_offset;
 
