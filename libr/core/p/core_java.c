@@ -788,14 +788,13 @@ static bool r_cmd_java_handle_replace_classname_value(RCore *core, const char *c
 	char *class_name = NULL, *new_class_name = NULL;
 	ut32 class_name_len = 0, new_class_name_len = 0;
 	RAnal *anal = get_anal (core);
-	const char *p = cmd;
 	int res = false;
 	ut32 idx = -1;
 
 	if (!core || !anal || !cmd) {
 		return false;
 	}
-	R_LOG_DEBUG ("Function call made: %s", p);
+	R_LOG_DEBUG ("Function call made: %s", cmd);
 	obj = (RBinJavaObj *)r_cmd_java_get_bin_obj (anal);
 	if (!obj) {
 		eprintf ("The current binary is not a Java Bin Object.\n");
@@ -1666,17 +1665,14 @@ static bool r_cmd_java_print_method_access_flags_value(RCore *core, const char *
 }
 
 static bool r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag) {
-	char cmd_buf[50];
-
-	int res = false;
 	num_acc_flag = R_BIN_JAVA_USHORT (((ut8 *)&num_acc_flag), 0);
-	res = r_core_write_at (core, addr, (const ut8 *)&num_acc_flag, 2);
+	int res = r_core_write_at (core, addr, (const ut8 *)&num_acc_flag, 2);
 	if (!res) {
 		eprintf ("[X] r_cmd_java_set_acc_flags: Failed to write.\n");
 		return res;
 	}
 	res = true;
-	R_LOG_DEBUG ("Executed cmd: %s == %d", cmd_buf, res);
+	// R_LOG_DEBUG ("Executed cmd: %s == %d", cmd_buf, res);
 	return res;
 }
 static bool r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj) {
