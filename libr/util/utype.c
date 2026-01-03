@@ -3,6 +3,7 @@
 // R2R db/cmd/types
 
 #include <r_util.h>
+#include <ctype.h>
 
 R_API bool r_type_set(Sdb *TDB, ut64 at, const char *field, ut64 val) {
 	char var[128];
@@ -765,4 +766,231 @@ R_API char *r_type_func_name(Sdb *types, const char *fname) {
 		return strdup (name);
 	}
 	return r_type_func_guess (types, fname);
+}
+
+static bool parse_bits_suffix(const char *name, const char *prefix, int *size_out) {
+	size_t plen = strlen (prefix);
+	if (r_str_ncasecmp (name, prefix, plen) != 0) {
+		return false;
+	}
+	const char *rest = name + plen;
+	size_t rlen = strlen (rest);
+	if (rlen >= 2 && !r_str_casecmp (rest + rlen - 2, "_t")) {
+		rlen -= 2;
+	}
+	if (rlen == 0) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < rlen; i++) {
+		if (!isdigit ((unsigned char)rest[i])) {
+			return false;
+		}
+	}
+	char *tmp = r_str_ndup (rest, rlen);
+	int bits = atoi (tmp);
+	free (tmp);
+	if (bits <= 0 || (bits % 8) != 0) {
+		return false;
+	}
+	*size_out = bits / 8;
+	return true;
+}
+
+R_API RTypeCTypeInfo *r_type_parse_ctype(const char *ctype, int ptr_size, int long_size, int int_size) {
+	R_RETURN_VAL_IF_FAIL (ctype, NULL);
+	char *lower = r_str_trim_dup (ctype);
+	if (R_STR_ISEMPTY (lower)) {
+		free (lower);
+		return NULL;
+	}
+	r_str_case (lower, false);
+
+	RTypeCTypeInfo *info = R_NEW0 (RTypeCTypeInfo);
+	if (!info) {
+		free (lower);
+		return NULL;
+	}
+
+	if (!strcmp (lower, "size_t") || !strcmp (lower, "uintptr_t")) {
+		info->size = ptr_size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		info->is_ptr = true;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "ssize_t") || !strcmp (lower, "intptr_t") || !strcmp (lower, "ptrdiff_t")) {
+		info->size = ptr_size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		info->is_ptr = true;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "bool") || !strcmp (lower, "_bool")) {
+		info->size = 1;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "wchar_t")) {
+		info->size = 4;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "uchar")) {
+		info->size = 1;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "schar")) {
+		info->size = 1;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "ulonglong")) {
+		info->size = 8;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		free (lower);
+		return info;
+	}
+	if (!strcmp (lower, "longlong")) {
+		info->size = 8;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		free (lower);
+		return info;
+	}
+
+	int size = 0;
+	if (parse_bits_suffix (lower, "uint", &size) ||
+		parse_bits_suffix (lower, "ut", &size) ||
+		parse_bits_suffix (lower, "u", &size)) {
+		info->size = size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = false;
+		free (lower);
+		return info;
+	}
+	if (parse_bits_suffix (lower, "int", &size) ||
+		parse_bits_suffix (lower, "st", &size) ||
+		parse_bits_suffix (lower, "s", &size)) {
+		info->size = size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = true;
+		free (lower);
+		return info;
+	}
+
+	bool is_unsigned = false;
+	bool is_signed = false;
+	bool is_short = false;
+	bool is_char = false;
+	bool is_int = false;
+	bool is_float = false;
+	bool is_double = false;
+	bool is_void = false;
+	int long_count = 0;
+
+	RList *tokens = r_str_split_list (lower, " ", 0);
+	RListIter *iter;
+	char *token;
+	bool valid = true;
+	r_list_foreach (tokens, iter, token) {
+		r_str_trim (token);
+		if (R_STR_ISEMPTY (token)) {
+			continue;
+		}
+		if (!strcmp (token, "const") || !strcmp (token, "volatile") || !strcmp (token, "restrict")) {
+			continue;
+		}
+		if (!strcmp (token, "unsigned")) {
+			is_unsigned = true;
+		} else if (!strcmp (token, "signed")) {
+			is_signed = true;
+		} else if (!strcmp (token, "short")) {
+			is_short = true;
+		} else if (!strcmp (token, "long")) {
+			long_count++;
+		} else if (!strcmp (token, "char")) {
+			is_char = true;
+		} else if (!strcmp (token, "int")) {
+			is_int = true;
+		} else if (!strcmp (token, "float")) {
+			is_float = true;
+		} else if (!strcmp (token, "double")) {
+			is_double = true;
+		} else if (!strcmp (token, "void")) {
+			is_void = true;
+		} else {
+			valid = false;
+			break;
+		}
+	}
+	r_list_free (tokens);
+	free (lower);
+
+	if (!valid) {
+		free (info);
+		return NULL;
+	}
+
+	if (is_void) {
+		info->size = 0;
+		info->base = R_TYPE_CTYPE_VOID;
+		return info;
+	}
+	if (is_float) {
+		info->size = 4;
+		info->base = R_TYPE_CTYPE_FLOAT;
+		info->sign = true;
+		return info;
+	}
+	if (is_double) {
+		info->size = long_count > 0 ? 16 : 8;
+		info->base = R_TYPE_CTYPE_FLOAT;
+		info->sign = true;
+		return info;
+	}
+	if (is_char) {
+		info->size = 1;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
+	}
+	if (is_short) {
+		info->size = 2;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
+	}
+	if (long_count >= 2) {
+		info->size = 8;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
+	}
+	if (long_count == 1) {
+		info->size = long_size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
+	}
+	if (is_int || is_unsigned || is_signed) {
+		info->size = int_size;
+		info->base = R_TYPE_CTYPE_INT;
+		info->sign = !is_unsigned;
+		return info;
+	}
+	free (info);
+	return NULL;
 }
