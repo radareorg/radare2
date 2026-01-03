@@ -292,7 +292,7 @@ static RList *relocs(RBinFile *bf) {
 		r_list_foreach (mo->reloc_fixups, iter, r) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			ptr->type = R_BIN_RELOC_64;
-			ptr->ntype = r->type;
+			ptr->ntype = r->ntype;
 			ut64 paddr = r->paddr + mo->baddr;
 			ptr->vaddr = paddr;
 			ptr->paddr = r->vaddr;
@@ -558,7 +558,7 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
 		ptr->type = reloc->type;
-		ptr->ntype = reloc->type;
+		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
 		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
 		if (R_LIKELY (imp)) {
@@ -605,6 +605,7 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 
 static void add_fixup(RList *list, ut64 addr, ut64 value) {
 	RBinReloc *r = R_NEW0 (RBinReloc);
+	r->type = R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;
 	r_list_append (list, r);
