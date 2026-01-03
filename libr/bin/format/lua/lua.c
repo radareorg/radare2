@@ -319,9 +319,11 @@ RLuaHeader *r_lua_load_header(RBuffer *buf) {
 	// version
 	lh->ver = r_buf_read8 (buf);
 	if (lh->ver != 0x53) {
+#if 0
 		int mj = lh->ver >> 4;
 		int mn = lh->ver & 0xf;
 		R_LOG_DEBUG ("[0x%08" PFMT64x "] Reported lua version  %d.%d (0x%x) not supported", where, mj, mn, lh->ver);
+#endif
 		goto bad_header_ret; // TODO support more versions
 	}
 	where = add_symbol (lh, buf, "lua-version", where, "NOTYPE");
