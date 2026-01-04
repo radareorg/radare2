@@ -1223,11 +1223,8 @@ static void print_fpu(RCons *cons, void *f) {
 
 		r_cons_printf (cons, "\nSingle precision registers (f0-f31 as float):\n");
 		for (i = 0; i < 32; i++) {
-#if R_SYS_ENDIAN == R_SYS_ENDIAN_BIG
-			float *freg = (float *)(fpu_regs + i * 8 + 4);
-#else
+			// BE? float *freg = (float *)(fpu_regs + i * 8 + 4);
 			float *freg = (float *)(fpu_regs + i * 8);
-#endif
 			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
 				*freg, *(ut32 *)freg);
 		}
