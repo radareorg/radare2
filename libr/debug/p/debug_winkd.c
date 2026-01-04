@@ -125,6 +125,7 @@ static bool r_debug_winkd_attach(RDebug *dbg, int pid) {
 	}
 
 	pd->wctx = desc->data;
+	pd->wctx->mb = &dbg->mb;
 
 	// Handshake
 	if (!winkd_sync (pd->wctx)) {

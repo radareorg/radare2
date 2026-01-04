@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #ifndef R2_MUTA_H
 #define R2_MUTA_H
@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <r_th.h>
 #include <r_hash.h>
+#include <r_bind.h>
 #include <r_lib.h>
 #include <r_muta/r_sm4.h>
 
@@ -102,7 +103,7 @@ typedef ut64 RMutaSelector;
 #ifdef R_API
 R_API void r_muta_init(RMuta *cry);
 R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h);
-R_API RMuta *r_muta_new(void);
+R_API RMuta *R_NONNULL r_muta_new(void);
 R_API void r_muta_free(RMuta *cry);
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
 
@@ -130,6 +131,9 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 // Charset decoding helper
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
 R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
+
+/* Bindings API */
+R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 
 #endif
 

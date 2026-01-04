@@ -8,6 +8,7 @@
 #include <r_util.h>
 #include <r_cons.h>
 #include <r_list.h>
+#include <r_bind.h>
 #include "transport.h"
 #include "winkd.h"
 #include "kd.h"
@@ -69,22 +70,6 @@ Profile *winkd_get_profile(int bits, int build, int sp) {
 			(r)->ret					\
 		);							\
 }
-
-struct _WindCtx {
-	io_desc_t *desc;
-	uint32_t seq_id;
-	int syncd;
-	int cpu_count;
-	int cpu;
-	int pae;
-	int is_x64;
-	Profile *os_profile;
-	RList *plist_cache;
-	RList *tlist_cache;
-	ut64 dbg_addr;
-	WindProc *target;
-	RThreadLock *dontmix;
-};
 
 bool winkd_lock_enter(WindCtx *ctx) {
 	// r_cons_break_push (winkd_break, ctx);

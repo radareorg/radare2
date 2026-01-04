@@ -64,6 +64,7 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		R_LOG_ERROR ("Failed to initialize winkd context");
 		return NULL;
 	}
+	ctx->mb = &io->mb;
 	return r_io_desc_new (io, &r_io_plugin_winkd, file, rw, mode, ctx);
 }
 
@@ -103,7 +104,7 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 }
 
 static bool __close(RIODesc *fd) {
-	winkd_ctx_free ((WindCtx**)&fd->data);
+	winkd_ctx_free ((WindCtx **)&fd->data);
 	return true;
 }
 

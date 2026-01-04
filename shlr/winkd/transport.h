@@ -2,6 +2,7 @@
 #define _TRANSPORT_H_
 
 #include <r_types.h>
+#include <r_bind.h>
 #include <stdint.h>
 
 #ifndef eprintf
