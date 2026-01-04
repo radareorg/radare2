@@ -34,6 +34,9 @@ include serpent.mk
 include sip.mk
 include sm4.mk
 include strhash.mk
+include md5.mk
+include sha1.mk
+include sha256.mk
 include xor.mk
 include charset_pokemon.mk
 include charset_ascii.mk
