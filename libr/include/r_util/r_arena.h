@@ -33,7 +33,7 @@ static inline const uint8_t *r_slice_ptr(RSlice slice) {
 }
 
 static inline RSlice r_empty_slice(void) {
-	return (RSlice){ 0 };
+	return (RSlice){ NULL, 0, 0 };
 }
 
 static inline RSlice r_slice_to(RSlice slice, size_t to) {
