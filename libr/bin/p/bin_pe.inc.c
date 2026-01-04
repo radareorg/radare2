@@ -15,6 +15,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinPEObj *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->options.verbose);
 	if (res) {
+		res->mb = &bf->rbin->mb;
 		sdb_ns_set (bf->sdb, "info", res->kv);
 		bf->bo->bin_obj = res;
 		return true;
