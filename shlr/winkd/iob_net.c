@@ -34,9 +34,18 @@ typedef struct iobnet_t {
 // Constants to convert ASCII to its base36 value
 static const char d32[] = "[\\]^_`abcd$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$efghijklmnopqrstuvwxyz{|}~";
 // The powers of 36 up to the 13th for 64-bit values
-static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336,
-	78364164096, 2821109907456, 101559956668416, 3656158440062976,
-	131621703842267136, 4738381338321616896 };
+static const ut64 pow36[] = { 1, 36, 1296, 46656, 1679616, 60466176, 2176782336, 78364164096, 2821109907456, 101559956668416, 3656158440062976, 131621703842267136, 4738381338321616896 };
+
+static RMutaBind *_get_mb(iobnet_t *obj) {
+	if (!obj || !obj->ctx) {
+		return NULL;
+	}
+	WindCtx *ctx = (WindCtx *)obj->ctx;
+	if (!ctx->mb || !ctx->mb->hash) {
+		return NULL;
+	}
+	return ctx->mb;
+}
 
 static ut64 base36_decode(const char *str) {
 	ut64 ret = 0;
@@ -51,13 +60,13 @@ static ut64 base36_decode(const char *str) {
 		char c = str[len - i - 1];
 		// "01234567890abcdefghijklmnopqrstuvwxyz"
 		if (c < '0' || c > 'z' || ('9' < c && c < 'a')) {
-			eprintf ("Error: %s is not a valid base36 encoded string\n", str);
+			R_LOG_ERROR ("%s is not a valid base36 encoded string", str);
 			return 0;
-		}
-		ut8 v = d32[c - '0'];
-		// Character does not exist in base36 encoding
-		if (v == '$') {
-			eprintf ("Error: %s is not a valid base36 encoded string\n", str);
+			}
+			ut8 v = d32[c - '0'];
+			// Character does not exist in base36 encoding
+			if (v == '$') {
+			R_LOG_ERROR ("%s is not a valid base36 encoded string", str);
 			return 0;
 		}
 		v -= 91;
@@ -80,15 +89,14 @@ static ut64 base36_decode(const char *str) {
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
 	// Data Key = SHA256 (Key || resbuf)
-	ut8 combined[64 + 322];  // 32 (key) + 32 (max resbuf size)
-	if (size > 322 || !obj->ctx) {
+	ut8 combined[64 + 322]; // 32 (key) + 32 (max resbuf size)
+	if (size > 322) {
 		return false;
 	}
-	WindCtx *ctx = (WindCtx *)obj->ctx;
-	if (!ctx->mb->hash) {
+	RMutaBind *mb = _get_mb (obj);
+	if (!mb) {
 		return false;
 	}
-	RMutaBind *mb = ctx->mb;
 	memcpy (combined, obj->key, 32);
 	memcpy (combined + 32, resbuf, size);
 	{
@@ -115,7 +123,7 @@ static void *iob_net_open(const char *path) {
 	char *host = strdup (path);
 	char *port = strchr (host, ':');
 	if (R_STR_ISEMPTY (port)) {
-		eprintf ("Missing port. Use winkd://host:udp-port:x.x.x.x.\n");
+		R_LOG_ERROR ("Missing port. Use winkd://host:udp-port:x.x.x.x");
 		free (host);
 		free (obj);
 		return NULL;
@@ -123,7 +131,7 @@ static void *iob_net_open(const char *path) {
 	*port++ = 0;
 	char *key = strchr (port, ':');
 	if (R_STR_ISEMPTY (key)) {
-		eprintf ("Missing key. Use winkd://host:udp-port:x.x.x.x.\n");
+		R_LOG_ERROR ("Missing key. Use winkd://host:udp-port:x.x.x.x");
 		free (host);
 		free (obj);
 		return NULL;
@@ -142,7 +150,7 @@ static void *iob_net_open(const char *path) {
 
 	// HMAC Key is the negation of AES-256 Control Key bytes
 	for (i = 0; i < 32; i++) {
-		obj->hmackey[i] = ~(obj->key[i]);
+		obj->hmackey[i] = ~ (obj->key[i]);
 	}
 
 	RSocket *sock = r_socket_new (0);
@@ -173,14 +181,10 @@ static bool iob_net_close(void *p) {
 
 static bool _encrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	if (!obj->ctx) {
+	RMutaBind *mb = _get_mb (obj);
+	if (!mb) {
 		return false;
 	}
-	WindCtx *ctx = (WindCtx *)obj->ctx;
-	if (!ctx->mb->hash) {
-		return false;
-	}
-	RMutaBind *mb = ctx->mb;
 	RMutaSession *cj = mb->muta_use (mb->muta, "aes-cbc");
 	if (!cj) {
 		goto end;
@@ -239,7 +243,7 @@ end:
 static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osize, ut64 seqno, ut8 type) {
 	// Calculate the pad size for KD packet.
 	// The KD packet is 16-byte aligned in KDNet.
-	ut8 padsize = -(size + 8) & 0x0F;
+	ut8 padsize = - (size + 8) & 0x0F;
 
 	int encsize = sizeof (kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize + KDNET_HMAC_SIZE;
 	ut8 *encbuf = calloc (1, encsize);
@@ -264,11 +268,7 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 	int off = sizeof (kdnet_packet_t) + KDNET_DATA_SIZE + size + padsize;
 
 	// Get mb from context
-	RMutaBind *mb = NULL;
-	if (obj->ctx) {
-		WindCtx *ctx = (WindCtx *)obj->ctx;
-		mb = ctx->mb;
-	}
+	RMutaBind *mb = _get_mb (obj);
 	if (!mb) {
 		free (encbuf);
 		return NULL;
@@ -299,14 +299,10 @@ static ut8 *_createKDNetPacket(iobnet_t *obj, const ut8 *buf, int size, int *osi
 
 static bool _decrypt(iobnet_t *obj, ut8 *buf, int size, int type) {
 	bool ret = false;
-	if (!obj->ctx) {
+	RMutaBind *mb = _get_mb (obj);
+	if (!mb) {
 		return false;
 	}
-	WindCtx *ctx = (WindCtx *)obj->ctx;
-	if (!ctx->mb->hash) {
-		return false;
-	}
-	RMutaBind *mb = ctx->mb;
 	RMutaSession *cj = mb->muta_use (mb->muta, "aes-cbc");
 	if (!cj) {
 		goto end;
@@ -410,13 +406,13 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 	// Read KDNet Data to verify direction flag
 	ut64 kdnetdata = r_read_be64 (ctrlbuf);
 	if ((kdnetdata & 0x80) != 0) {
-		eprintf ("Error: KdNet wrong direction flag\n");
+		R_LOG_ERROR ("KdNet wrong direction flag");
 		return false;
 	}
 
 	// Respond to the control packet
 	if (!_sendResponsePacket (obj, ctrlbuf)) {
-		eprintf ("Error: KdNet sending the response packet\n");
+		R_LOG_ERROR ("KdNet sending the response packet");
 		return false;
 	}
 
@@ -424,14 +420,10 @@ static bool _processControlPacket(iobnet_t *obj, const ut8 *ctrlbuf, int size) {
 }
 
 bool _verifyhmac(iobnet_t *obj) {
-	if (!obj->ctx) {
+	RMutaBind *mb = _get_mb (obj);
+	if (!mb) {
 		return false;
 	}
-	WindCtx *ctx = (WindCtx *)obj->ctx;
-	if (!ctx->mb->hash) {
-		return false;
-	}
-	RMutaBind *mb = ctx->mb;
 
 	int hlen;
 	ut8 *hdigest = mb->hash_hmac (mb, "hmac-sha256", obj->buf, obj->size - KDNET_HMAC_SIZE, obj->hmackey, KDNET_HMACKEY_SIZE, &hlen);
@@ -445,7 +437,7 @@ bool _verifyhmac(iobnet_t *obj) {
 }
 
 static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int timeout) {
-	kdnet_packet_t pkt = {0};
+	kdnet_packet_t pkt = { 0 };
 	iobnet_t *obj = (iobnet_t *)p;
 
 	if (obj->size == 0) {
@@ -463,7 +455,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 			// Verify the KDNet Header magic
 			if (r_read_be32 (obj->buf) != KDNET_MAGIC) {
-				eprintf ("Error: KdNet bad magic\n");
+				R_LOG_ERROR ("KdNet bad magic");
 				obj->size = 0;
 				return -1;
 			}
@@ -476,7 +468,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 			// Verify the KDNet HMAC
 			if (!_verifyhmac (obj)) {
-				eprintf ("Error: KdNet failed authentication\n");
+				R_LOG_ERROR ("KdNet failed authentication");
 				obj->size = 0;
 				return -1;
 			}
@@ -485,7 +477,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 			if (pkt.type == KDNET_PACKET_TYPE_CONTROL) {
 				obj->version = pkt.version;
 				if (!_processControlPacket (obj, obj->buf + sizeof (kdnet_packet_t), obj->size)) {
-					eprintf ("Error: KdNet failed to process Control packet\n");
+					R_LOG_ERROR ("KdNet failed to process Control packet");
 					obj->size = 0;
 					return -1;
 				};
@@ -508,7 +500,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 	}
 
 	if (count + obj->off > obj->size) {
-		eprintf ("Error: KdNet out-of-bounds read\n");
+		R_LOG_ERROR ("KdNet out-of-bounds read");
 		obj->size = 0;
 		return -1;
 	}

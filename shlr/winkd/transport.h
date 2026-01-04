@@ -5,10 +5,7 @@
 #include <r_bind.h>
 #include <stdint.h>
 
-#ifndef eprintf
-#include <stdio.h>
-#define eprintf(...) { fprintf(stderr,##__VA_ARGS__); }
-#endif
+#include <r_util/r_log.h>
 
 #define KD_IO_PIPE 0
 #define KD_IO_NET 1
