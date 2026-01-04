@@ -651,8 +651,8 @@ R_API void r_debug_session_free(RDebugSession *session);
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map);
 R_API bool r_debug_snap_contains(RDebugSnap *snap, ut64 addr);
-R_API ut8 *r_debug_snap_get_hash(RDebugSnap *snap);
-R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b);
+R_API ut8 *r_debug_snap_get_hash(RDebug *dbg, RDebugSnap *snap, int *size);
+R_API bool r_debug_snap_is_equal(RDebug *dbg, RDebugSnap *a, RDebugSnap *b);
 R_API void r_debug_snap_free(RDebugSnap *snap);
 
 /* snap */

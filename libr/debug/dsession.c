@@ -205,9 +205,10 @@ R_API void r_debug_session_list_memory(RDebug *dbg) {
 			if (!snap) {
 				return;
 			}
-			ut8 *hash = r_debug_snap_get_hash (snap);
-			if (hash) {
-				char *hexstr = r_hex_bin2strdup (hash, R_HASH_SIZE_SHA256);
+			int hashsz = 0;
+			ut8 *hash = r_debug_snap_get_hash (dbg, snap, &hashsz);
+			if (hash && hashsz > 0) {
+				char *hexstr = r_hex_bin2strdup (hash, hashsz);
 				if (hexstr) {
 					dbg->cb_printf ("%s: %s\n", snap->name, hexstr);
 					free (hexstr);

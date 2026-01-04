@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2015-2024 - pancake, rkx1209 */
 
 #include <r_debug.h>
-#include <r_hash.h>
 
 R_API void r_debug_snap_free(RDebugSnap *snap) {
 	if (snap) {
@@ -55,54 +54,33 @@ R_API bool r_debug_snap_contains(RDebugSnap *snap, ut64 addr) {
 	return (snap->addr <= addr && addr >= snap->addr_end);
 }
 
-R_API ut8 *r_debug_snap_get_hash(RDebugSnap *snap) {
-	ut64 algobit = r_hash_name_to_bits ("sha256");
-	RHash *ctx = r_hash_new (true, algobit);
-	if (!ctx) {
+R_API ut8 *r_debug_snap_get_hash(RDebug *dbg, RDebugSnap *snap, int *size) {
+	R_RETURN_VAL_IF_FAIL (dbg && snap, NULL);
+	if (!dbg->mb.hash) {
 		return NULL;
 	}
-
-	r_hash_do_begin (ctx, algobit);
-	r_hash_calculate (ctx, algobit, snap->data, snap->size);
-	r_hash_do_end (ctx, algobit);
-
-	ut8 *ret = malloc (R_HASH_SIZE_SHA256);
-	if (!ret) {
-		r_hash_free (ctx);
-		return NULL;
+	int outlen = 0;
+	ut8 *digest = dbg->mb.hash (&dbg->mb, "sha256", snap->data, snap->size, &outlen);
+	if (size) {
+		*size = outlen;
 	}
-	memcpy (ret, ctx->digest, R_HASH_SIZE_SHA256);
-
-	r_hash_free (ctx);
-	return ret;
+	return digest;
 }
 
-R_API bool r_debug_snap_is_equal(RDebugSnap *a, RDebugSnap *b) {
+R_API bool r_debug_snap_is_equal(RDebug *dbg, RDebugSnap *a, RDebugSnap *b) {
+	R_RETURN_VAL_IF_FAIL (dbg && a && b, false);
+	if (!dbg->mb.hash) {
+		return false;
+	}
+	int alen = 0, blen = 0;
+	ut8 *ha = dbg->mb.hash (&dbg->mb, "sha256", a->data, a->size, &alen);
+	ut8 *hb = dbg->mb.hash (&dbg->mb, "sha256", b->data, b->size, &blen);
 	bool ret = false;
-	ut64 algobit = r_hash_name_to_bits ("sha256");
-	RHash *ctx = r_hash_new (true, algobit);
-	if (!ctx) {
-		return ret;
+	if (ha && hb && alen == blen) {
+		ret = memcmp (ha, hb, alen) == 0;
 	}
-
-	r_hash_do_begin (ctx, algobit);
-	r_hash_calculate (ctx, algobit, a->data, a->size);
-	r_hash_do_end (ctx, algobit);
-
-	ut8 *temp = malloc (R_HASH_SIZE_SHA256);
-	if (!temp) {
-		r_hash_free (ctx);
-		return ret;
-	}
-	memcpy (temp, ctx->digest, R_HASH_SIZE_SHA256);
-
-	r_hash_do_begin (ctx, algobit);
-	r_hash_calculate (ctx, algobit, b->data, b->size);
-	r_hash_do_end (ctx, algobit);
-
-	ret = memcmp (temp, ctx->digest, R_HASH_SIZE_SHA256) == 0;
-	free (temp);
-	r_hash_free (ctx);
+	free (ha);
+	free (hb);
 	return ret;
 }
 
