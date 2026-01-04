@@ -1087,10 +1087,10 @@ static void print_fpu(RCons *cons, void *f) {
 #endif
 #elif __arm64__ || __aarch64__
 	{
-		// ARM64 FPU registers are 512 bytes containing:
-		// - 32x 128-bit vector registers (v0-v31)
-		// - 32x 64-bit FP registers (d0-d31)
-		// - 32x 32-bit FP registers (s0-s31)
+		// ARM64/AArch64 FPSIMD state is typically 528 bytes:
+		// - 32x 128-bit vector registers (v0-v31), also viewed as d0-d31/s0-s31
+		// - FP status and control registers (FPSR, FPCR)
+		// The code below interprets the first 512 bytes as v0-v31 in various views.
 		ut8 *fpu_regs = (ut8 *)f;
 		int i;
 
