@@ -86,6 +86,7 @@ struct _WindCtx {
 	int cpu;
 	int pae;
 	bool is_x64;
+	int ptr_size; // 4 for 32-bit, 8 for 64-bit
 	Profile *os_profile;
 	RList *plist_cache;
 	RList *tlist_cache;

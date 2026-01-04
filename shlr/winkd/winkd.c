@@ -140,7 +140,7 @@ ut64 winkd_get_target_base(WindCtx *ctx) {
 		return 0;
 	}
 
-	if (!winkd_read_at_uva (ctx, (uint8_t *)&base, ctx->target->peb + O_(P_ImageBaseAddress), 4 << ctx->is_x64)) {
+	if (!winkd_read_at_uva (ctx, (uint8_t *)&base, ctx->target->peb + O_(P_ImageBaseAddress), ctx->ptr_size)) {
 		return 0;
 	}
 
@@ -342,13 +342,13 @@ RList *winkd_list_process(WindCtx *ctx) {
 
 	ptr = 0;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
-	winkd_read_at (ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_PsActiveProcessHead, 4 << ctx->is_x64);
+	winkd_read_at (ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_PsActiveProcessHead, ctx->ptr_size);
 
 	base = ptr;
 	WIND_DBG eprintf ("Process list head : 0x%016" PFMT64x "\n", ptr);
 
 	// Walk the LIST_ENTRY
-	winkd_read_at (ctx, (uint8_t *)&ptr, ptr, 4 << ctx->is_x64);
+	winkd_read_at (ctx, (uint8_t *)&ptr, ptr, ctx->ptr_size);
 
 	// Check for empty list
 	if (ptr == 0) {
@@ -362,7 +362,7 @@ RList *winkd_list_process(WindCtx *ctx) {
 
 		next = 0;
 		// Read the ActiveProcessLinks entry
-		winkd_read_at (ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
+		winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
 
 		// This points to the 'ActiveProcessLinks' list, adjust the ptr so that it point to the
 		// EPROCESS base
@@ -377,10 +377,10 @@ RList *winkd_list_process(WindCtx *ctx) {
 		ut64 peb = 0;
 		ut64 dir_base_table = 0;
 
-		winkd_read_at (ctx, (uint8_t *)&vadroot, ptr + O_(E_VadRoot), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *)&uniqueid, ptr + O_(E_UniqueProcessId), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *)&peb, ptr + O_(E_Peb), 4 << ctx->is_x64);
-		winkd_read_at (ctx, (uint8_t *)&dir_base_table, ptr + O_(P_DirectoryTableBase), 4 << ctx->is_x64);
+		winkd_read_at (ctx, (uint8_t *)&vadroot, ptr + O_(E_VadRoot), ctx->ptr_size);
+		winkd_read_at (ctx, (uint8_t *)&uniqueid, ptr + O_(E_UniqueProcessId), ctx->ptr_size);
+		winkd_read_at (ctx, (uint8_t *)&peb, ptr + O_(E_Peb), ctx->ptr_size);
+		winkd_read_at (ctx, (uint8_t *)&dir_base_table, ptr + O_(P_DirectoryTableBase), ctx->ptr_size);
 
 		WindProc *proc = calloc (1, sizeof (WindProc));
 
@@ -460,7 +460,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	ut64 ldroff = ctx->is_x64? 0x18: 0xC;
 
 	// Grab the _PEB_LDR_DATA from PEB
-	winkd_read_at_uva (ctx, (uint8_t *)&ptr, ctx->target->peb + ldroff, 4 << ctx->is_x64);
+	winkd_read_at_uva (ctx, (uint8_t *)&ptr, ctx->target->peb + ldroff, ctx->ptr_size);
 
 	WIND_DBG eprintf ("_PEB_LDR_DATA : 0x%016" PFMT64x "\n", ptr);
 
@@ -469,7 +469,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 
 	base = ptr + mlistoff;
 
-	winkd_read_at_uva (ctx, (uint8_t *)&ptr, base, 4 << ctx->is_x64);
+	winkd_read_at_uva (ctx, (uint8_t *)&ptr, base, ctx->ptr_size);
 
 	WIND_DBG eprintf ("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
 
@@ -482,7 +482,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	do {
 
 		ut64 next = 0;
-		winkd_read_at_uva (ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
+		winkd_read_at_uva (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
 		WIND_DBG eprintf ("_LDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", next);
 
 		if (!next) {
@@ -490,14 +490,14 @@ RList *winkd_list_modules(WindCtx *ctx) {
 			break;
 		}
 
-		ptr -= (4 << ctx->is_x64) * 2;
+		ptr -= ctx->ptr_size * 2;
 
 		WindModule *mod = R_NEW0 (WindModule);
 		if (!mod) {
 			break;
 		}
-		winkd_read_at_uva (ctx, (uint8_t *)&mod->addr, ptr + baseoff, 4 << ctx->is_x64);
-		winkd_read_at_uva (ctx, (uint8_t *)&mod->size, ptr + sizeoff, 4 << ctx->is_x64);
+		winkd_read_at_uva (ctx, (uint8_t *)&mod->addr, ptr + baseoff, ctx->ptr_size);
+		winkd_read_at_uva (ctx, (uint8_t *)&mod->size, ptr + sizeoff, ctx->ptr_size);
 
 		ut16 length = 0;
 		winkd_read_at_uva (ctx, (uint8_t *)&length, ptr + nameoff, sizeof (ut16));
@@ -507,7 +507,7 @@ RList *winkd_list_modules(WindCtx *ctx) {
 		}
 
 		ut64 bufferaddr = 0;
-		winkd_read_at_uva (ctx, (uint8_t *)&bufferaddr, ptr + nameoff + sizeof (ut32), 4 << ctx->is_x64);
+		winkd_read_at_uva (ctx, (uint8_t *)&bufferaddr, ptr + nameoff + sizeof (ut32), ctx->ptr_size);
 
 		wchar_t *unname = calloc ((ut64)length + 2, 1);
 		if (!unname) {
@@ -558,7 +558,7 @@ RList *winkd_list_threads(WindCtx *ctx) {
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
-	winkd_read_at (ctx, (uint8_t *)&ptr, ptr + O_(E_ThreadListHead), 4 << ctx->is_x64);
+	winkd_read_at (ctx, (uint8_t *)&ptr, ptr + O_(E_ThreadListHead), ctx->ptr_size);
 	if (!ptr) {
 		return NULL;
 	}
@@ -570,7 +570,7 @@ RList *winkd_list_threads(WindCtx *ctx) {
 	do {
 		ut64 next = 0;
 
-		winkd_read_at (ctx, (uint8_t *)&next, ptr, 4 << ctx->is_x64);
+		winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
 		if (!next) {
 			eprintf ("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
@@ -580,10 +580,10 @@ RList *winkd_list_threads(WindCtx *ctx) {
 		ptr -= O_(ET_ThreadListEntry);
 
 		ut64 entrypoint = 0;
-		winkd_read_at (ctx, (uint8_t *)&entrypoint, ptr + O_(ET_Win32StartAddress), 4 << ctx->is_x64);
+		winkd_read_at (ctx, (uint8_t *)&entrypoint, ptr + O_(ET_Win32StartAddress), ctx->ptr_size);
 
 		ut64 uniqueid = 0;
-		winkd_read_at (ctx, (uint8_t *)&uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), 4 << ctx->is_x64);
+		winkd_read_at (ctx, (uint8_t *)&uniqueid, ptr + O_(ET_Cid) + O_(C_UniqueThread), ctx->ptr_size);
 		if (uniqueid) {
 			WindThread *thread = calloc (1, sizeof (WindThread));
 			thread->uniqueid = uniqueid;
@@ -763,9 +763,10 @@ bool winkd_read_ver(WindCtx *ctx) {
 	}
 
 	ctx->is_x64 = (rr->r_ver.machine == KD_MACH_AMD64);
+	ctx->ptr_size = ctx->is_x64? 8: 4;
 
 	ut64 ptr = 0;
-	if (!winkd_read_at (ctx, (uint8_t *)&ptr, rr->r_ver.dbg_addr, 4 << ctx->is_x64)) {
+	if (!winkd_read_at (ctx, (uint8_t *)&ptr, rr->r_ver.dbg_addr, ctx->ptr_size)) {
 		free (pkt);
 		return false;
 	}
@@ -783,10 +784,10 @@ bool winkd_read_ver(WindCtx *ctx) {
 
 	// Grab the CmNtCSDVersion field to extract the Service Pack number
 	winkd_read_at (ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_CmNtCSDVersion, 8);
-	winkd_read_at (ctx, (uint8_t *)&ptr, ptr, 4 << ctx->is_x64);
+	winkd_read_at (ctx, (uint8_t *)&ptr, ptr, ctx->ptr_size);
 
 	ctx->pae = pae_enabled & 1;
-	ctx->os_profile = winkd_get_profile (32 << ctx->is_x64, rr->r_ver.minor, (ptr >> 8) & 0xff);
+	ctx->os_profile = winkd_get_profile (ctx->ptr_size * 8, rr->r_ver.minor, (ptr >> 8) & 0xff);
 	if (!ctx->os_profile) {
 		eprintf ("Could not find a suitable profile for the target OS\n");
 		free (pkt);
