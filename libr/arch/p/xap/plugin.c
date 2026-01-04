@@ -31,7 +31,7 @@ static int label_off(struct directive *d) {
 }
 
 static inline ut16 i2ut16(struct instruction *in) {
-	return *((uint16_t*)in);
+	return *((uint16_t *)in);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -39,8 +39,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *bytes = op->bytes;
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
-	struct directive d = {{0}};
-	struct state s = {0};
+	struct directive d = { { 0 } };
+	struct state s = { 0 };
 
 	if (!op) {
 		return 2;
@@ -83,7 +83,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	default:
 		switch (in->in_opcode) {
 		case 0:
-			switch (lol&0xf) {
+			switch (lol & 0xf) {
 			case 1:
 			case 2:
 			case 3:
@@ -118,7 +118,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 		case 9:
-			switch(in->in_reg) {
+			switch (in->in_reg) {
 			case 0:
 				op->type = R_ANAL_OP_TYPE_MUL;
 				break;
@@ -135,7 +135,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			}
@@ -153,7 +153,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			switch (in->in_reg) {
 			case 0: // BRA
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = label_off (&d)+4;
+				op->jump = label_off (&d) + 4;
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
@@ -202,7 +202,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				if (op->jump & 1) {
 					op->jump += 3;
 				}
-				op->fail = addr+2;
+				op->fail = addr + 2;
 				break;
 			}
 			break;
