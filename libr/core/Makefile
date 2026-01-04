@@ -15,6 +15,7 @@ OBJS+=vmatrix.o prompt.o
 
 CFLAGS+=-DR2_PLUGIN_INCORE -I../../shlr
 CFLAGS+=-I./p/heap
+LDFLAGS+=-lm
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=${CLOCK_LDFLAGS}
 

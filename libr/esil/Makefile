@@ -5,6 +5,7 @@ R2DEPS+=r_util r_reg
 
 CFLAGS+=-DR2_PLUGIN_INCORE
 CFLAGS:=-I.. -I$(LTOP)/asm/esil/include -DR2_PLUGIN_INCORE -Iesil -I$(TOP)/shlr $(CFLAGS)
+LDFLAGS+=-lm
 
 .PHONY: pre
 pre: libr_esil.$(EXT_SO) libr_esil.$(EXT_AR)
