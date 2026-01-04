@@ -1133,9 +1133,38 @@ static void print_fpu(RCons *cons, void *f) {
 
 		r_cons_printf (cons, "\nSingle precision registers (s0-s31):\n");
 		for (i = 0; i < 32; i++) {
-			float *freg = (float *)(fpu_regs + i * 4);
+			/* On ARM32, s-registers are views into the same
+			 * physical register file as the d-registers:
+			 *   d0 holds s0 (low 32) and s1 (high 32)
+			 *   d1 holds s2 (low 32) and s3 (high 32), etc.
+			 */
+			ut64 *dregs = (ut64 *)fpu_regs;
+			int d_index = i / 2;
+			ut64 dval = dregs[d_index];
+			ut32 sval;
+			union {
+				ut32 u;
+				float f;
+			} uval;
+
+#if R_SYS_ENDIAN
+			/* Little-endian: low 32 bits are the even s-regs */
+			if (i & 1) {
+				sval = (ut32)(dval >> 32);
+			} else {
+				sval = (ut32)(dval & 0xffffffffU);
+			}
+#else
+			/* Big-endian: high 32 bits are the even s-regs */
+			if (i & 1) {
+				sval = (ut32)(dval & 0xffffffffU);
+			} else {
+				sval = (ut32)(dval >> 32);
+			}
+#endif
+			uval.u = sval;
 			r_cons_printf (cons, "s%d = %g (0x%08x)\n", i,
-				*freg, *(ut32 *)freg);
+				uval.f, sval);
 		}
 	}
 #elif __riscv || __riscv__ || __riscv64__
