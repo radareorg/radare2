@@ -842,7 +842,7 @@ R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt);
 R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr);
-R_API bool r_bin_command(RBin *bin, const char *input);
+R_API bool r_bin_cmd(RBin *bin, const char *input);
 
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
 R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin);

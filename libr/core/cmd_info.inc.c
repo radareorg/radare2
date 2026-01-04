@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -2616,7 +2616,7 @@ static int cmd_info(void *data, const char *input) {
 		cmd_info_demangle (core, input, pj, mode);
 		break;
 	case ':': // "i:"
-		if (!r_bin_command (core->bin, input)) {
+		if (!r_bin_cmd (core->bin, input)) {
 			R_LOG_ERROR ("Unhandled RBinPlugin.cmd");
 		}
 		break;
