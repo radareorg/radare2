@@ -657,6 +657,16 @@ def main():
 	if args.version:
 		print(VERSION)
 		return 0
+
+	# Check for clang-format early to fail fast
+	clang_format = args.clang_format
+	if not shutil.which(clang_format):
+		print(
+			f"clang-format-radare2: cannot find clang-format ({clang_format})",
+			file=sys.stderr,
+		)
+		return 1
+
 	temp_dir = tempfile.gettempdir()
 	style_file = os.path.join(temp_dir, "clang-format-radare2.tmp")
 	try:
@@ -673,13 +683,6 @@ def main():
 				return 1
 		if not paths:
 			print("clang-format-radare2: no input files", file=sys.stderr)
-			return 1
-		clang_format = args.clang_format
-		if not shutil.which(clang_format):
-			print(
-				f"clang-format-radare2: cannot find clang-format ({clang_format})",
-				file=sys.stderr,
-			)
 			return 1
 		files = expand_targets(paths)
 		if not files:
