@@ -1085,6 +1085,170 @@ static void print_fpu(RCons *cons, void *f) {
 			"%0.3f (0x%08x)\n", i, d[0], b[0], f[0], c[0], f[1], c[1]);
 	}
 #endif
+#elif __arm64__ || __aarch64__
+	{
+		// ARM64/AArch64 FPSIMD state is typically 528 bytes:
+		// - 32x 128-bit vector registers (v0-v31), also viewed as d0-d31/s0-s31
+		// - FP status and control registers (FPSR, FPCR)
+		// The code below interprets the first 512 bytes as v0-v31 in various views.
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		// Print vector registers (128-bit)
+		r_cons_printf (cons, "Vector registers (v0-v31):\n");
+		for (i = 0; i < 32; i++) {
+			ut32 *reg = (ut32 *)(fpu_regs + i * 16);
+			r_cons_printf (cons, "v%d = 0x%08x %08x %08x %08x\n", i,
+				(int)reg[0], (int)reg[1], (int)reg[2], (int)reg[3]);
+		}
+
+		// Print FP registers as doubles (64-bit)
+		r_cons_printf (cons, "\nDouble precision FP registers (d0-d31):\n");
+		for (i = 0; i < 32; i++) {
+			double *dreg = (double *)(fpu_regs + i * 16);
+			r_cons_printf (cons, "d%d = %g (0x%016"PFMT64x")\n", i,
+				*dreg, *(ut64 *)dreg);
+		}
+
+		// Print FP registers as floats (32-bit)
+		r_cons_printf (cons, "\nSingle precision FP registers (s0-s31):\n");
+		for (i = 0; i < 32; i++) {
+			float *freg = (float *)(fpu_regs + i * 16);
+			r_cons_printf (cons, "s%d = %g (0x%08x)\n", i,
+				*freg, *(ut32 *)freg);
+		}
+	}
+#elif __arm__
+	{
+		// ARM32 VFP/NEON registers
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		r_cons_printf (cons, "VFP/NEON registers:\n");
+		for (i = 0; i < 32; i++) {
+			double *dreg = (double *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "d%d = %g (0x%016"PFMT64x")\n", i,
+				*dreg, *(ut64 *)dreg);
+		}
+
+		r_cons_printf (cons, "\nSingle precision registers (s0-s31):\n");
+		for (i = 0; i < 32; i++) {
+			/* On ARM32, s-registers are views into the same
+			 * physical register file as the d-registers:
+			 *   d0 holds s0 (low 32) and s1 (high 32)
+			 *   d1 holds s2 (low 32) and s3 (high 32), etc.
+			 */
+			ut64 *dregs = (ut64 *)fpu_regs;
+			int d_index = i / 2;
+			ut64 dval = dregs[d_index];
+			ut32 sval;
+			union {
+				ut32 u;
+				float f;
+			} uval;
+
+#if R_SYS_ENDIAN
+			/* Little-endian: low 32 bits are the even s-regs */
+			if (i & 1) {
+				sval = (ut32)(dval >> 32);
+			} else {
+				sval = (ut32)(dval & 0xffffffffU);
+			}
+#else
+			/* Big-endian: high 32 bits are the even s-regs */
+			if (i & 1) {
+				sval = (ut32)(dval & 0xffffffffU);
+			} else {
+				sval = (ut32)(dval >> 32);
+			}
+#endif
+			uval.u = sval;
+			r_cons_printf (cons, "s%d = %g (0x%08x)\n", i,
+				uval.f, sval);
+		}
+	}
+#elif __riscv || __riscv__ || __riscv64__
+	{
+		r_cons_printf (cons, "---- RISC-V ----\n");
+		// RISC-V FPU registers: 32x 64-bit double precision registers
+		// The layout follows the Linux kernel's fpregs_struct for RV64
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		for (i = 0; i < 32; i++) {
+			double *freg = (double *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
+				*freg, *(ut64 *)freg);
+		}
+
+		r_cons_printf (cons, "\nSingle precision registers (f0-f31 as float):\n");
+		for (i = 0; i < 32; i++) {
+			float *freg = (float *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
+				*freg, *(ut32 *)freg);
+		}
+	}
+#elif __mips__
+	{
+		r_cons_printf (cons, "---- MIPS ----\n");
+		// MIPS FPU registers: 32x 64-bit double precision registers
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		for (i = 0; i < 32; i++) {
+			double *freg = (double *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "$f%d = %g (0x%016"PFMT64x")\n", i,
+				*freg, *(ut64 *)freg);
+		}
+
+		r_cons_printf (cons, "\nSingle precision registers ($f0-$f31 as float):\n");
+		for (i = 0; i < 32; i++) {
+			float *freg = (float *)(fpu_regs + i * 4);
+			r_cons_printf (cons, "$f%d = %g (0x%08x)\n", i,
+				*freg, *(ut32 *)freg);
+		}
+	}
+#elif __POWERPC__
+	{
+		r_cons_printf (cons, "---- PowerPC ----\n");
+		// PowerPC FPU registers: 32x 64-bit double precision registers
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		for (i = 0; i < 32; i++) {
+			double *freg = (double *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
+				*freg, *(ut64 *)freg);
+		}
+
+		r_cons_printf (cons, "\nSingle precision registers (f0-f31 as float):\n");
+		for (i = 0; i < 32; i++) {
+			// BE? float *freg = (float *)(fpu_regs + i * 8 + 4);
+			float *freg = (float *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
+				*freg, *(ut32 *)freg);
+		}
+	}
+#elif __s390x__ || __s390__
+	{
+		r_cons_printf (cons, "---- s390x ----\n");
+		// s390x FPU registers: 16x 64-bit double precision registers
+		ut8 *fpu_regs = (ut8 *)f;
+		int i;
+
+		for (i = 0; i < 16; i++) {
+			double *freg = (double *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%016"PFMT64x")\n", i,
+				*freg, *(ut64 *)freg);
+		}
+
+		r_cons_printf (cons, "\nSingle precision registers (f0-f15 as float):\n");
+		for (i = 0; i < 16; i++) {
+			float *freg = (float *)(fpu_regs + i * 8);
+			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
+				*freg, *(ut32 *)freg);
+		}
+	}
 #else
 #warning print_fpu not implemented for this platform
 #endif
