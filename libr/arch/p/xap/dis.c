@@ -8,29 +8,21 @@
 #include <stdint.h>
 #include "dis.h"
 
-static struct state _state;
-
 #include <r_types.h>
 #include <r_util/r_assert.h>
+#include <r_util/r_str.h>
+#include <r_util/r_strbuf.h>
 
-static inline struct state *get_state(void) {
-	memset (&_state, 0, sizeof (struct state));
-	return &_state;
-}
-
-static uint16_t i2u16(struct instruction *in) {
-	return *((uint16_t*)in);
+static inline uint16_t i2u16(struct instruction *in) {
+	return *((uint16_t *)in);
 }
 
 static void decode_unknown(struct state *s, struct directive *d) {
-#if 0
-	printf("Opcode 0x%x reg %d mode %d operand 0x%x",
-	       in->in_opcode, in->in_reg, in->in_mode, in->in_operand);
-#endif
-	sprintf (d->d_asm, "DC 0x%4x", i2u16(&d->d_inst));
+	snprintf (d->d_asm, sizeof (d->d_asm), "DC 0x%04x", i2u16 (&d->d_inst));
 }
 
 static int decode_fixed(struct state *s, struct directive *d) {
+	const char *op = NULL;
 	*d->d_asm = '\0';
 	switch (i2u16 (&d->d_inst)) {
 	case INST_NOP:
@@ -38,40 +30,57 @@ static int decode_fixed(struct state *s, struct directive *d) {
 			return 0;
 		}
 		s->s_nop++;
-		strcpy (d->d_asm, "nop");
+		op = "nop";
 		break;
-	case INST_BRK: strcpy (d->d_asm, "brk"); break;
-	case INST_SLEEP: strcpy (d->d_asm, "sleep"); break;
-	case INST_SIF: strcpy (d->d_asm, "sif"); break;
-	case INST_BC: strcpy (d->d_asm, "bc"); break;
-	case INST_BRXL: strcpy (d->d_asm, "brxl"); break;
-	case INST_U: strcpy (d->d_asm, ""); s->s_u = 1; break;
-	case INST_RTS: strcpy (d->d_asm, "rts"); break;
+	case INST_BRK:
+		op = "brk";
+		break;
+	case INST_SLEEP:
+		op = "sleep";
+		break;
+	case INST_SIF:
+		op = "sif";
+		break;
+	case INST_BC:
+		op = "bc";
+		break;
+	case INST_BRXL:
+		op = "brxl";
+		break;
+	case INST_U:
+		op = "";
+		s->s_u = 1;
+		break;
+	case INST_RTS:
+		op = "rts";
+		break;
+	}
+	if (op) {
+		r_str_ncpy (d->d_asm, op, sizeof (d->d_asm));
 	}
 	return d->d_asm[0] != 0;
 }
 
 static char *regname(int reg) {
-	switch (reg) {
-	case REG_AH: return "AH";
-	case REG_AL: return "AL";
-	case REG_X: return "X";
-	case REG_Y: return "Y";
+	if (reg < 0 || reg > REG_Y) {
+		return NULL;
 	}
-	return NULL;
+	static const char *const regnames[] = { "AH", "AL", "X", "Y" };
+	return (char *)regnames[reg];
 }
 
-static int get_num(int num, int shift) {
-	char x = (char) ((num >> shift) & 0xff);
-	return (int)(x<<shift);
+static inline int get_num(int num, int shift) {
+	return ((signed char) ((num >> shift) & 0xff)) << shift;
 }
 
 static int get_operand(struct state *s, struct directive *d) {
-	int total = get_num(d->d_inst.in_operand, 0);
-	if (s->s_prefix)
-		total += get_num(s->s_prefix_val, 8);
-	if (s->s_prefix == 2)
-		total += get_num(s->s_prefix_val, 16);
+	int total = get_num (d->d_inst.in_operand, 0);
+	if (s->s_prefix) {
+		total += get_num (s->s_prefix_val, 8);
+	}
+	if (s->s_prefix == 2) {
+		total += get_num (s->s_prefix_val, 16);
+	}
 	return total;
 }
 
@@ -83,73 +92,67 @@ static int decode_known(struct state *s, struct directive *d) {
 	int idx = 1;
 	int imm = 0;
 	int rel = 0;
-	char fmt[128];
-	char tmp[128];
 	int fmtsz;
 	int branch = 0;
 	struct instruction *in = &d->d_inst;
-//	int operand;
+	//	int operand;
 	char *sign = "";
 	int rti = 0;
 
 	switch (in->in_opcode) {
 	case 0:
 		if (in->in_reg == 0 && in->in_mode == 0) {
-			if (s->s_prefix == 0)
+			if (s->s_prefix == 0) {
 				s->s_prefix_val = 0;
+			}
 			s->s_prefix++;
 
-			if (s->s_prefix == 2)
+			if (s->s_prefix == 2) {
 				s->s_prefix_val <<= 8;
-#if 0
-			/* XXX we need to look ahead more to see if we're
-			 * getting a branch instruction */
-			if (s->s_nopd && in->in_operand == 0x80)
-				strcpy(s->s_nopd->d_asm, "");
-#endif
+			}
 			s->s_prefix_val |= in->in_operand << 8;
 
-			strcpy(d->d_asm, "");
+			r_str_ncpy (d->d_asm, "", sizeof (d->d_asm));
 			return 1;
 		}
 
-		switch (i2u16(in) & 0xf) {
+		switch (i2u16 (in) & 0xf) {
 		case 1:
-			op	= "st";
-			regn	= "FLAGS";
+			op = "st";
+			regn = "FLAGS";
 			break;
 		case 2:
-			op	= "st";
-			regn	= "UX";
+			op = "st";
+			regn = "UX";
 			break;
 		case 3:
-			op	= "st";
-			regn	= "UY";
+			op = "st";
+			regn = "UY";
 			break;
 		case 5:
-			op	= "ld";
-			regn	= "FLAGS";
+			op = "ld";
+			regn = "FLAGS";
 			break;
 		case 6:
-			op	= "ld";
-			regn	= "UX";
+			op = "ld";
+			regn = "UX";
 			break;
 		case 7:
-			op	= "ld";
-			regn	= "UY";
+			op = "ld";
+			regn = "UY";
 			break;
 		case 0xa:
-			op	= "st";
-			regn	= "XH";
+			op = "st";
+			regn = "XH";
 			break;
 		case 0xd:
-			op	= "rti";
-			regn	= "";
-			rti	= 1;
+			op = "rti";
+			regn = "";
+			rti = 1;
 			break;
 		case 0xe:
-			op	= "ld";
-			regn	= "XH";
+			op = "ld";
+			regn = "XH";
 			break;
 		}
 		break;
@@ -218,16 +221,22 @@ static int decode_known(struct state *s, struct directive *d) {
 	case 0x9:
 		switch (in->in_reg) {
 		case 0:
-			if (s->s_u) op = "umult";
-			else op = "smult";
+			if (s->s_u) {
+				op = "umult";
+			} else {
+				op = "smult";
+			}
 			imm = 1;
 			s->s_u = 0;
 			idx = 1;
 			ptr = 1;
 			break;
 		case 1:
-			if (s->s_u) op = "udiv";
-			else op = "sdiv";
+			if (s->s_u) {
+				op = "udiv";
+			} else {
+				op = "sdiv";
+			}
 			s->s_u = 0;
 			imm = 1;
 			break;
@@ -242,8 +251,9 @@ static int decode_known(struct state *s, struct directive *d) {
 			op = "bsr";
 			ptr = 1;
 			idx = 1;
-			if (in->in_mode == ADDR_MODE_RELATIVE)
+			if (in->in_mode == ADDR_MODE_RELATIVE) {
 				rel = 1;
+			}
 			break;
 		}
 		break;
@@ -254,8 +264,11 @@ static int decode_known(struct state *s, struct directive *d) {
 			imm = 1;
 			break;
 		case 1:
-			if (s->s_u) op = "lsr";
-			else op = "asr";
+			if (s->s_u) {
+				op = "lsr";
+			} else {
+				op = "asr";
+			}
 			s->s_u = 0;
 			imm = 1;
 			idx = 1;
@@ -295,19 +308,14 @@ static int decode_known(struct state *s, struct directive *d) {
 		break;
 	case 0xe:
 		branch = 1;
-		if (in->in_mode == ADDR_MODE_RELATIVE)
+		if (in->in_mode == ADDR_MODE_RELATIVE) {
 			rel = 1;
+		}
 		switch (in->in_reg) {
 		case 0:
 			op = "bra";
 			ptr = 1;
 			idx = 1;
-#if 0
-			if (s->s_nopd) {
-				op = "bra2"; /* XXX need bra3 support */
-				strcpy(s->s_nopd->d_asm, "");
-			}
-#endif
 			break;
 
 		case 1:
@@ -323,27 +331,41 @@ static int decode_known(struct state *s, struct directive *d) {
 		break;
 	case 0xf:
 		branch = 1;
-		if (in->in_mode == ADDR_MODE_RELATIVE)
+		if (in->in_mode == ADDR_MODE_RELATIVE) {
 			rel = 1;
+		}
 		switch (in->in_reg) {
-		case 0: op = "bne"; break;
-		case 1: op = "beq"; break;
-		case 2: op = "bcc"; break;
-		case 3: op = "bcs"; break;
+		case 0:
+			op = "bne";
+			break;
+		case 1:
+			op = "beq";
+			break;
+		case 2:
+			op = "bcc";
+			break;
+		case 3:
+			op = "bcs";
+			break;
 		}
 		break;
 	}
 
-	if (!op) return 0;
+	if (!op) {
+		return 0;
+	}
 
-	if (ptr && in->in_mode == DATA_MODE_IMMEDIATE)
+	if (ptr && in->in_mode == DATA_MODE_IMMEDIATE) {
 		ptr = 0;
+	}
 
-	if (branch && in->in_mode == ADDR_MODE_X_RELATIVE)
+	if (branch && in->in_mode == ADDR_MODE_X_RELATIVE) {
 		ptr = 0;
+	}
 
-	if (idx && (!(in->in_mode & 2)))
+	if (idx && (! (in->in_mode & 2))) {
 		idx = 0;
+	}
 
 	if (regn) {
 		ptr = 1;
@@ -351,34 +373,34 @@ static int decode_known(struct state *s, struct directive *d) {
 		reg = 1;
 	}
 
-	sprintf (d->d_asm, "%s ", op);
+	char temp_asm[256];
+	snprintf (temp_asm, sizeof (temp_asm), "%s", op);
+
+	char *p = temp_asm + strlen (temp_asm);
+
 	if (reg) {
 		char *r = regn;
 		if (!r) {
 			r = regname (in->in_reg);
 		}
 		if (r && !rti) {
-			if ((strlen (r) + 4 + strlen (d->d_asm)) < sizeof (d->d_asm)) {
-				strcat (d->d_asm, r);
-				strcat (d->d_asm, ", ");
-			}
+			p += snprintf (p, temp_asm + sizeof (temp_asm) - p, " %s,", r);
 		}
 	}
 	if (ptr) {
-		strcat (d->d_asm, "@");
+		p += snprintf (p, temp_asm + sizeof (temp_asm) - p, "@");
 		rel = 0;
 	} else if (imm) {
-		strcat (d->d_asm, "#");
+		p += snprintf (p, temp_asm + sizeof (temp_asm) - p, "#");
 	}
 	if (idx && ptr) {
-		strcat (d->d_asm, "(");
+		p += snprintf (p, temp_asm + sizeof (temp_asm) - p, "(");
 	}
 
 	d->d_prefix = s->s_prefix;
-//	d->d_operand = get_operand(s, d);
-#if 1
+	//	d->d_operand = get_operand (s, d);
 	if ((branch && idx) || rti) {
-		d->d_operand = get_operand(s, d);
+		d->d_operand = get_operand (s, d);
 		if (d->d_operand < 0) {
 			d->d_operand *= -1;
 			sign = "-";
@@ -387,171 +409,66 @@ static int decode_known(struct state *s, struct directive *d) {
 		d->d_operand = s->s_prefix_val | in->in_operand;
 		if (d->d_operand & 0x80) {
 			if (d->d_prefix) {
-				if (!rel) d->d_operand -= 0x100;
-			} else d->d_operand |= 0xff00;
+				if (!rel) {
+					d->d_operand -= 0x100;
+				}
+			} else {
+				d->d_operand |= 0xff00;
+			}
 		}
 	}
-#endif
-#if 0
-	operand = d->d_operand;
-	if (operand < 0)
-		operand *= -1;
-#endif
 	fmtsz = 4;
-	if (d->d_operand & 0xff0000)
+	if (d->d_operand & 0xff0000) {
 		fmtsz += 2;
+	}
 
-	// can be cleaned, no need to fmtsz
-	snprintf (fmt, sizeof (fmt), "%s0x%%.%dX", sign, fmtsz);
-	snprintf (tmp, sizeof (tmp), fmt, d->d_operand);
-	strcat (d->d_asm, tmp);
+	p += snprintf (p, temp_asm + sizeof (temp_asm) - p, "%s0x%.*X", sign, fmtsz, d->d_operand);
 
 	if (idx) {
-		char *r = in->in_mode == DATA_MODE_INDEXED_X ? "X" : "Y";
-		if (regn) r = "Y";
-		snprintf(tmp, sizeof (tmp), ", %s", r);
-		strcat(d->d_asm, tmp);
-		if (ptr)
-			strcat(d->d_asm, ")");
-	}
-
-#if 0
-	/* XXX quirks */
-	if (!rel && in->in_mode == DATA_MODE_IMMEDIATE
-	    && ((d->d_operand & 0xff00) == 0x7F00) && d->d_operand & 0x80)
-		s->s_ff_quirk = 1;
-
-	if (rel && !s->s_prefix && d->d_operand == 0x7F) {
-		if (s->s_nopd) {
-			printf("w00t\n");
-			strcpy(s->s_nopd->d_asm, "nop");
+		char *r = in->in_mode == DATA_MODE_INDEXED_X? "X": "Y";
+		if (regn) {
+			r = "Y";
 		}
-		printf("Warning: fucking up a branch %x\n", d->d_off);
-		decode_unknown(s, d);
+		p += snprintf (p, temp_asm + sizeof (temp_asm) - p, ", %s", r);
+		if (ptr) {
+			p += snprintf (p, temp_asm + sizeof (temp_asm) - p, ")");
+		}
 	}
-#endif
+
+	r_str_ncpy (d->d_asm, temp_asm, sizeof (d->d_asm));
+
 	return 1;
 }
 
-static void xap_decode(struct state *s, struct directive *d) {
+void xap_decode(struct state *s, struct directive *d) {
 	int prefix = s->s_prefix;
-	if (!decode_fixed (s, d))
-		if (!decode_known (s, d))
+	if (!decode_fixed (s, d)) {
+		if (!decode_known (s, d)) {
 			decode_unknown (s, d);
-	if (s->s_prefix == prefix)
+		}
+	}
+	if (s->s_prefix == prefix) {
 		s->s_prefix_val = s->s_prefix = 0;
+	}
 }
 
-static int read_bin(struct state *s, struct directive *d) {
-	memcpy(&d->d_inst, s->s_buf, sizeof (d->d_inst));
+static inline int read_bin(struct state *s, struct directive *d) {
+	d->d_inst = *((struct instruction *)s->s_buf);
 	d->d_off = s->s_off++;
 	return 1;
 }
 
 static inline struct directive *next_inst(struct state *s) {
-	int rd;
-	struct directive *d = malloc (sizeof (*d));
+	struct directive *d = calloc (1, sizeof (*d));
 	if (!d) {
 		perror ("malloc()");
 		return NULL;
 	}
-	memset (d, 0, sizeof (*d));
-#if 0
-	if (s->s_format)
-		rd = read_text(s, d);
-	else
-#endif
-	rd = read_bin (s, d);
-	if (!rd) {
+
+	if (!read_bin (s, d)) {
 		free (d);
 		return NULL;
 	}
 
 	return d;
 }
-
-#if 0
-static void own(struct state *s)
-{
-	struct directive *d;
-	struct directive *last = &s->s_dirs;
-	struct label *l;
-	int flush = 0;
-	char fname[128];
-	char *fnamep;
-
-	snprintf(fname, sizeof (fname), "%s", s->s_fname);
-	fnamep = strchr(fname, '.');
-	if (fnamep)
-		*fnamep = 0;
-	output(s, "\tMODULE %s\n"
-	          "\t.CODE\n"
-		  "\t.LARGE\n"
-	          "\n", fname);
-
-	/* decode instructions */
-	s->s_off = 0;
-	while ((d = next_inst(s))) {
-		xap_decode(s, d);
-
-		if (s->s_ff_quirk) {
-			strcpy(last->d_asm, "DC\t0x8000");
-
-			sprintf(d->d_asm, "DC\t0x%.4x", i2u16(&d->d_inst));
-			s->s_ff_quirk = 0;
-		}
-
-		if (s->s_nopd) {
-			last->d_next = s->s_nopd;
-			last = s->s_nopd;
-			s->s_nopd = NULL;
-			s->s_nop = 0;
-		}
-
-		if (s->s_nop) {
-			R_RETURN_IF_FAIL (!s->s_nopd);
-			s->s_nopd = d;
-		} else {
-			last->d_next = d;
-			last = d;
-		}
-
-#if 1
-		if (flush++ > 10000) {
-			printf("@0x%.6x\r", d->d_off);
-			fflush(stdout);
-			flush = 0;
-		}
-#endif
-	}
-	if (s->s_nopd)
-		last->d_next = s->s_nopd;
-	printf("\n");
-
-	/* print them */
-	d = s->s_dirs.d_next;
-	l = s->s_labels.l_next;
-	while (d) {
-
-		/* print any labels first */
-		while (l) {
-			if (l->l_off > d->d_off)
-				break;
-
-			print_label(s, l);
-			l = l->l_next;
-		}
-
-		add_comment(s, d);
-		output(s, "\t%s\n", d->d_asm);
-
-		d = d->d_next;
-	}
-	if (l) {
-		print_label(s, l);
-		R_RETURN_IF_FAIL (!l->l_next);
-	}
-
-	output(s, "\n\tENDMOD\n");
-}
-#endif

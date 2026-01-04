@@ -30,8 +30,12 @@ static int label_off(struct directive *d) {
 	return d->d_off + off;
 }
 
+static inline int fix_jump_address(int jump) {
+	return (jump & 1)? jump + 3: jump;
+}
+
 static inline ut16 i2ut16(struct instruction *in) {
-	return *((uint16_t*)in);
+	return *((uint16_t *)in);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -39,27 +43,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *bytes = op->bytes;
 	struct instruction *in = (struct instruction *)bytes;
 	ut16 lol, ins;
-	struct directive d = {{0}};
-	struct state s = {0};
+	struct directive d = { { 0 } };
+	struct state s = { 0 };
 
 	if (!op) {
 		return 2;
 	}
 
 	memcpy (&ins, bytes, sizeof (ins));
-	memcpy (&lol, bytes, sizeof (ins));
+	lol = ins;
 	s.s_buf = (void *)bytes;
 	s.s_off = addr;
 	s.s_out = NULL;
 	s.s_prefix = 0;
-	memset (&d, '\0', sizeof (struct directive));
-	memcpy (&d.d_inst, s.s_buf, sizeof (d.d_inst));
+	memset (&d, 0, sizeof (struct directive));
+	d.d_inst = *((struct instruction *)s.s_buf);
 	s.s_off += 2;
 	d.d_off = s.s_off;
 	xap_decode (&s, &d);
 	d.d_operand = get_operand (&s, &d);
 
-	memset (op, 0, sizeof (RAnalOp));
 	op->type = R_ANAL_OP_TYPE_UNK;
 	op->size = 2;
 
@@ -83,7 +86,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	default:
 		switch (in->in_opcode) {
 		case 0:
-			switch (lol&0xf) {
+			switch (lol & 0xf) {
 			case 1:
 			case 2:
 			case 3:
@@ -118,7 +121,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CMP;
 			break;
 		case 9:
-			switch(in->in_reg) {
+			switch (in->in_reg) {
 			case 0:
 				op->type = R_ANAL_OP_TYPE_MUL;
 				break;
@@ -131,11 +134,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			case 3:
 				// BSR
 				op->type = R_ANAL_OP_TYPE_CALL;
-				op->jump = label_off (&d);
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
-				op->fail = addr+2;
+				op->jump = fix_jump_address (label_off (&d));
+				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			}
@@ -153,39 +153,27 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			switch (in->in_reg) {
 			case 0: // BRA
 				op->type = R_ANAL_OP_TYPE_JMP;
-				op->jump = label_off (&d)+4;
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
+				op->jump = fix_jump_address (label_off (&d) + 4);
 				op->eob = true;
 				break;
 			case 1:
 				// BLT
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
+				op->jump = fix_jump_address (label_off (&d));
 				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			case 2:
 				// BPL
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
+				op->jump = fix_jump_address (label_off (&d));
 				op->fail = addr + 2;
 				op->eob = true;
 				break;
 			case 3:
 				// BMI
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
+				op->jump = fix_jump_address (label_off (&d));
 				op->fail = addr + 2;
 				op->eob = true;
 				break;
@@ -198,11 +186,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			case 2: // BCC
 			case 3: // BCS
 				op->type = R_ANAL_OP_TYPE_CJMP;
-				op->jump = label_off (&d);
-				if (op->jump & 1) {
-					op->jump += 3;
-				}
-				op->fail = addr+2;
+				op->jump = fix_jump_address (label_off (&d));
+				op->fail = addr + 2;
 				break;
 			}
 			break;
