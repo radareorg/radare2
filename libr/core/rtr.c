@@ -1409,6 +1409,8 @@ R_API bool r_core_rtr_cmds(RCore *core, const char * R_NULLABLE port) {
 	return true;
 }
 
+#endif
+
 /* Session registration API - used to track HTTP sessions for r2agent -L */
 R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	if (!core || !uri) {
@@ -1456,5 +1458,3 @@ R_API bool r_core_session_unregister(RCore *core) {
 	core->sessionfile = NULL;
 	return true;
 }
-
-#endif
