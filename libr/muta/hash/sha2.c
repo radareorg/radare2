@@ -317,7 +317,7 @@ R_IPI void R_SHA2_API(r_sha256_init)(RSha256Context *context) {
 	(h) = T1 + Sigma0_256 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
+static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
 	ut32 a, b, c, d, e, f, g, h, s0, s1;
 	ut32 T1, *W256;
 	int j;
@@ -375,7 +375,7 @@ static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void SHA256_Transform(RSha256Context *context, const ut32 *data) {
+static void r_sha256_transform(RSha256Context *context, const ut32 *data) {
 	ut32 T1, T2, s0, s1;
 	int j;
 
@@ -480,7 +480,7 @@ R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context *context, const ut8 *data,
 			context->bitcount += freespace << 3;
 			len -= freespace;
 			data += freespace;
-			SHA256_Transform (context, (ut32 *) context->buffer);
+			r_sha256_transform (context, (ut32 *) context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy (&context->buffer[usedspace], data, len);
@@ -490,7 +490,7 @@ R_IPI void R_SHA2_API(r_sha256_update)(RSha256Context *context, const ut8 *data,
 	}
 	while (len >= SHA256_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA256_Transform (context, (ut32*)data);
+		r_sha256_transform (context, (ut32*)data);
 		context->bitcount += SHA256_BLOCK_LENGTH << 3;
 		len -= SHA256_BLOCK_LENGTH;
 		data += SHA256_BLOCK_LENGTH;
@@ -526,7 +526,7 @@ R_IPI void R_SHA2_API(r_sha256_final)(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha25
 					memset (&context->buffer[usedspace], 0, R_SHA256_BLOCK_LENGTH - usedspace);
 				}
 				/* Do second-to-last transform: */
-				SHA256_Transform (context, (ut32 *) context->buffer);
+				r_sha256_transform (context, (ut32 *) context->buffer);
 
 				/* And set-up for the last transform: */
 				memset (context->buffer, 0, R_SHA256_SHORT_BLOCK_LENGTH);
@@ -549,7 +549,7 @@ R_IPI void R_SHA2_API(r_sha256_final)(ut8 digest[R_SHA256_DIGEST_LENGTH], RSha25
 #endif
 
 		/* Final transform: */
-		SHA256_Transform (context, (ut32 *) context->buffer);
+		r_sha256_transform (context, (ut32 *) context->buffer);
 #if BYTE_ORDER == LITTLE_ENDIAN
 		{
 			/* Convert TO host byte order */
@@ -645,7 +645,7 @@ R_IPI void R_SHA2_API(r_sha512_init)(RSha512Context *context) {
 	(h) = T1 + Sigma0_512 (a) + Maj ((a), (b), (c));\
 	j++
 
-static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
+static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
 	ut64 a, b, c, d, e, f, g, h, s0, s1;
 	ut64 T1, *W512 = (ut64 *) context->buffer;
 	int j;
@@ -700,7 +700,7 @@ static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
 
 #else /* SHA2_UNROLL_TRANSFORM */
 
-static void SHA512_Transform(RSha512Context *context, const ut64 *data) {
+static void r_sha512_transform(RSha512Context *context, const ut64 *data) {
 	ut64 s0, s1, T1, T2, *W512 = (ut64 *) context->buffer;
 	int j;
 
@@ -794,7 +794,7 @@ R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context *context, const ut8 *data,
 			ADDINC128 (context->bitcount, freespace << 3);
 			len -= freespace;
 			data += freespace;
-			SHA512_Transform (context, (ut64 *) context->buffer);
+			r_sha512_transform (context, (ut64 *) context->buffer);
 		} else {
 			/* The buffer is not yet full */
 			memcpy (&context->buffer[usedspace], data, len);
@@ -806,7 +806,7 @@ R_IPI void R_SHA2_API(r_sha512_update)(RSha512Context *context, const ut8 *data,
 	}
 	while (len >= SHA512_BLOCK_LENGTH) {
 		/* Process as many complete blocks as we can */
-		SHA512_Transform (context, (ut64 *) data);
+		r_sha512_transform (context, (ut64 *) data);
 		ADDINC128 (context->bitcount, R_SHA512_BLOCK_LENGTH << 3);
 		len -= SHA512_BLOCK_LENGTH;
 		data += SHA512_BLOCK_LENGTH;
@@ -837,7 +837,7 @@ static void SHA512_Last(RSha512Context *context) {
 				memset (&context->buffer[usedspace], 0, R_SHA512_BLOCK_LENGTH - usedspace);
 			}
 			/* Do second-to-last transform: */
-			SHA512_Transform (context, (ut64 *) context->buffer);
+			r_sha512_transform (context, (ut64 *) context->buffer);
 
 			/* And set-up for the last transform: */
 			memset (context->buffer, 0, R_SHA512_BLOCK_LENGTH - 2);
@@ -863,7 +863,7 @@ static void SHA512_Last(RSha512Context *context) {
 #endif
 
 	/* Final transform: */
-	SHA512_Transform (context, (ut64 *) context->buffer);
+	r_sha512_transform (context, (ut64 *) context->buffer);
 }
 
 R_IPI void R_SHA2_API(r_sha512_final)(ut8 digest[R_SHA512_DIGEST_LENGTH], RSha512Context *context) {

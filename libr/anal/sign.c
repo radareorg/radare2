@@ -782,9 +782,9 @@ R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val
 		R_LOG_ERROR ("hash type unknown");
 		return false;
 	}
-	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
+	int digestsize = 32 * 2; // SHA256 digest is 32 bytes, hex is 64 chars
 	if (len != digestsize) {
-		R_LOG_ERROR ("invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
+		R_LOG_ERROR ("invalid hash size: %d (SHA256 digest size is %d)", len, digestsize);
 		return false;
 	}
 	return addHash (a, name, type, val);
@@ -2113,35 +2113,34 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
+// Include SHA256 implementation for standalone use
+#define R_CRYPTO_INTERNAL 1
+#include "../muta/hash/sha2.c"
+
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalBlock *bbi = NULL;
-	char *digest_hex = NULL;
-	RHash *ctx = r_hash_new (true, R_ZIGN_HASH);
-	if (!ctx) {
-		goto beach;
-	}
+
+	RSha256Context ctx;
+	R_SHA2_API (r_sha256_init) (&ctx);
+
 	r_list_sort (fcn->bbs, &cmpaddr);
-	r_hash_do_begin (ctx, R_ZIGN_HASH);
 	r_list_foreach (fcn->bbs, iter, bbi) {
 		ut8 *buf = malloc (bbi->size);
 		if (!buf) {
-			goto beach;
+			return NULL;
 		}
 		if (!a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size)) {
-			goto beach;
+			free (buf);
+			return NULL;
 		}
-		if (!r_hash_do_sha256 (ctx, buf, bbi->size)) {
-			goto beach;
-		}
+		R_SHA2_API (r_sha256_update) (&ctx, buf, bbi->size);
 		free (buf);
 	}
-	r_hash_do_end (ctx, R_ZIGN_HASH);
 
-	digest_hex = r_hex_bin2strdup (ctx->digest, r_hash_size (R_ZIGN_HASH));
-beach:
-	free (ctx);
-	return digest_hex;
+	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
+	R_SHA2_API (r_sha256_end) (&ctx, textdigest);
+	return strdup (textdigest);
 }
 
 static bool countForCB(RSignItem *it, void *user) {
