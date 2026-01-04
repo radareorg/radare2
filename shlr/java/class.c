@@ -3987,7 +3987,7 @@ R_API RBinJavaAttrInfo *r_bin_java_nest_members_attr_new(RBinJavaObj *bin, ut8 *
 	offset += 2;
 
 	ut16 num = attr->info.nest_members_attr.number_of_classes;
-	if (num > 0 && offset + num * 2 <= sz) {
+	if (num > 0 && num < UT16_MAX / 2 && offset + num * 2 <= sz) {
 		attr->info.nest_members_attr.classes = R_NEWS0 (ut16, num);
 		attr->info.nest_members_attr.class_names = r_list_newf (free);
 		ut32 i;
@@ -4052,7 +4052,7 @@ R_API RBinJavaAttrInfo *r_bin_java_permitted_subclasses_attr_new(RBinJavaObj *bi
 	offset += 2;
 
 	ut16 num = attr->info.permitted_subclasses_attr.number_of_classes;
-	if (num > 0 && offset + num * 2 <= sz) {
+	if (num > 0 && num < UT16_MAX / 2 && offset + num * 2 <= sz) {
 		attr->info.permitted_subclasses_attr.classes = R_NEWS0 (ut16, num);
 		attr->info.permitted_subclasses_attr.class_names = r_list_newf (free);
 		ut32 i;
@@ -4127,7 +4127,7 @@ R_API RBinJavaAttrInfo *r_bin_java_record_attr_new(RBinJavaObj *bin, ut8 *buffer
 	offset += 2;
 
 	attr->info.record_attr.components = r_list_newf (r_bin_java_record_component_free);
-	ut16 num = attr->info.record_attr.components_count;
+	ut16 num = R_MIN (attr->info.record_attr.components_count, UT16_MAX / 8);
 	ut32 i;
 	for (i = 0; i < num && offset + 6 <= sz; i++) {
 		RBinJavaRecordComponent *comp = R_NEW0 (RBinJavaRecordComponent);
@@ -4141,7 +4141,8 @@ R_API RBinJavaAttrInfo *r_bin_java_record_attr_new(RBinJavaObj *bin, ut8 *buffer
 		offset += 2;
 		comp->attributes = r_list_newf (r_bin_java_attribute_free);
 		ut32 j;
-		for (j = 0; j < comp->attributes_count && offset < sz; j++) {
+		ut16 attr_count = R_MIN (comp->attributes_count, UT16_MAX / 8);
+		for (j = 0; j < attr_count && offset < sz; j++) {
 			RBinJavaAttrInfo *cattr = r_bin_java_read_next_attr (bin, buf_offset + offset, buffer, sz);
 			if (cattr) {
 				r_list_append (comp->attributes, cattr);
@@ -4908,6 +4909,9 @@ static RBinJavaCPTypeObj *utf8_cp_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz) {
 		obj->metas->type_info = (void *) &R_BIN_JAVA_CP_METAS[tag];
 		obj->name = strdup ((const char *) R_BIN_JAVA_CP_METAS[tag].name);
 		obj->info.cp_utf8.length = R_BIN_JAVA_USHORT (buffer, 1);
+		if (obj->info.cp_utf8.length > sz - 3) {
+			obj->info.cp_utf8.length = (sz > 3) ? sz - 3 : 0;
+		}
 		obj->info.cp_utf8.bytes = (ut8 *) malloc (obj->info.cp_utf8.length + 1);
 		if (obj->info.cp_utf8.bytes) {
 			memset (obj->info.cp_utf8.bytes, 0, obj->info.cp_utf8.length + 1);
