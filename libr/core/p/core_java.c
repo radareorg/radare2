@@ -1313,9 +1313,9 @@ static bool r_cmd_java_handle_flags_str(RCore *core, const char *cmd) {
 
 	if (p && f_type) {
 		switch (f_type) {
-		case 'm': flags_str = retrieve_method_access_string ((ut16)flag_value); break;
-		case 'f': flags_str = retrieve_field_access_string ((ut16)flag_value); break;
-		case 'c': flags_str = retrieve_class_method_access_string ((ut16)flag_value); break;
+		case 'm': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_METHOD); break;
+		case 'f': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_FIELD); break;
+		case 'c': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_CLASS); break;
 		default: flags_str = NULL;
 		}
 	}
@@ -1361,9 +1361,9 @@ static bool r_cmd_java_handle_flags_str_at(RCore *core, const char *cmd) {
 
 	if (p && f_type) {
 		switch (f_type) {
-		case 'm': flags_str = retrieve_method_access_string ((ut16)flag_value); break;
-		case 'f': flags_str = retrieve_field_access_string ((ut16)flag_value); break;
-		case 'c': flags_str = retrieve_class_method_access_string ((ut16)flag_value); break;
+		case 'm': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_METHOD); break;
+		case 'f': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_FIELD); break;
+		case 'c': flags_str = r_bin_java_accessflags_tostring ((ut32)flag_value, JAVA_FLAG_TYPE_CLASS); break;
 		default: flags_str = NULL;
 		}
 	}
