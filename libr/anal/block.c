@@ -58,7 +58,7 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 	return 0;
 }
 
-#define D if (anal && anal->verbose)
+#define D if(anal && anal->verbose)
 
 R_API void r_anal_block_ref(RAnalBlock *bb) {
 	// XXX we have R_REF for this
@@ -825,6 +825,18 @@ beach:
 	return ret;
 }
 
+static ut32 block_xxhash(RAnalBlock *block, ut8 *buf) {
+	R_RETURN_VAL_IF_FAIL (block && buf, 0);
+	int digest_len = 0;
+	ut8 *digest = block->anal->mb.hash (&block->anal->mb, "xxhash", buf, block->size, &digest_len);
+	if (!digest || digest_len < 4) {
+		return 0;
+	}
+	ut32 hash = r_read_le32 (digest);
+	free (digest);
+	return hash;
+}
+
 R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 	R_RETURN_VAL_IF_FAIL (block, false);
 	if (!block->bbhash) {
@@ -841,15 +853,8 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 		free (buf);
 		return false;
 	}
-	int digest_len = 0;
-	ut8 *digest = block->anal->mb.hash (&block->anal->mb, "xxhash", buf, block->size, &digest_len);
+	ut32 cur_hash = block_xxhash (block, buf);
 	free (buf);
-	if (!digest || digest_len < 4) {
-		free (digest);
-		return false;
-	}
-	ut32 cur_hash = r_read_le32 (digest);
-	free (digest);
 	return block->bbhash != cur_hash;
 }
 
@@ -867,13 +872,11 @@ R_API void r_anal_block_update_hash(RAnalBlock *block) {
 			free (buf);
 			return;
 		}
-		int digest_len = 0;
-		ut8 *digest = block->anal->mb.hash (&block->anal->mb, "xxhash", buf, block->size, &digest_len);
-		free (buf);
-		if (digest && digest_len >= 4) {
-			block->bbhash = r_read_le32 (digest);
+		ut32 hash = block_xxhash (block, buf);
+		if (hash) {
+			block->bbhash = hash;
 		}
-		free (digest);
+		free (buf);
 	}
 }
 
