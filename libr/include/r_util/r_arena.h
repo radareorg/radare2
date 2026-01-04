@@ -17,7 +17,11 @@ typedef struct r_slice_t {
 } RSlice;
 
 static inline RSlice r_slice(const void *ptr, size_t len) {
-	return (RSlice){ .ptr = (const uint8_t *)ptr, .len = len, .cap = len };
+	RSlice r;
+	r.ptr = (const uint8_t *)ptr;
+	r.len = len;
+	r.cap = len;
+	return r;
 }
 
 static inline bool r_slice_is_empty(RSlice slice) {
@@ -33,35 +37,46 @@ static inline const uint8_t *r_slice_ptr(RSlice slice) {
 }
 
 static inline RSlice r_empty_slice(void) {
-	return (RSlice){ NULL, 0, 0 };
+	RSlice r;
+	r.ptr = NULL;
+	r.len = 0;
+	r.cap = 0;
+	return r;
 }
 
 static inline RSlice r_slice_to(RSlice slice, size_t to) {
+	RSlice r;
 	if (to >= slice.len) {
 		to = slice.len;
 	}
-	return (RSlice){ .ptr = slice.ptr, .len = to, .cap = slice.cap };
+	r.ptr = slice.ptr;
+	r.len = to;
+	r.cap = slice.cap;
+	return r;
 }
 
 static inline RSlice r_slice_from(RSlice slice, size_t from) {
+	RSlice r;
 	if (from >= slice.len) {
 		return r_empty_slice ();
 	}
-	return (RSlice){ .ptr = slice.ptr + from, .len = slice.len - from, .cap = slice.cap };
+	r.ptr = slice.ptr + from;
+	r.len = slice.len - from;
+	r.cap = slice.cap;
+	return r;
 }
 
 static inline RSlice r_slice_from_to(RSlice slice, size_t from, size_t to) {
+	RSlice r;
 	if (from >= slice.len || from > to) {
 		return r_empty_slice ();
 	}
 	if (to >= slice.len) {
 		to = slice.len;
 	}
-	RSlice r = {
-		.ptr = slice.ptr + from,
-		.len = to - from,
-		.cap = slice.cap
-	};
+	r.ptr = slice.ptr + from;
+	r.len = to - from;
+	r.cap = slice.cap;
 	return r;
 }
 
