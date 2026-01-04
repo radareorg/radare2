@@ -841,8 +841,15 @@ R_API bool r_anal_block_was_modified(RAnalBlock *block) {
 		free (buf);
 		return false;
 	}
-	ut32 cur_hash = r_hash_xxhash (buf, block->size);
+	int digest_len = 0;
+	ut8 *digest = block->anal->mb.hash (&block->anal->mb, "xxhash", buf, block->size, &digest_len);
 	free (buf);
+	if (!digest || digest_len < 4) {
+		free (digest);
+		return false;
+	}
+	ut32 cur_hash = r_read_le32 (digest);
+	free (digest);
 	return block->bbhash != cur_hash;
 }
 
@@ -860,8 +867,13 @@ R_API void r_anal_block_update_hash(RAnalBlock *block) {
 			free (buf);
 			return;
 		}
-		block->bbhash = r_hash_xxhash (buf, block->size);
+		int digest_len = 0;
+		ut8 *digest = block->anal->mb.hash (&block->anal->mb, "xxhash", buf, block->size, &digest_len);
 		free (buf);
+		if (digest && digest_len >= 4) {
+			block->bbhash = r_read_le32 (digest);
+		}
+		free (digest);
 	}
 }
 
