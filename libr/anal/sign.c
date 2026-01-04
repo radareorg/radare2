@@ -2150,7 +2150,6 @@ R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 		free (block_data);
 	}
 
-	// Hash all data at once using RMutaBind
 	char *digest_hex = r_sign_hash_data (a, ZIGN_HASH, r_buf_get_data (buf), r_buf_size (buf));
 	r_buf_free (buf);
 	return digest_hex;
