@@ -519,8 +519,6 @@ R_API void r_bin_free(RBin *bin) {
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
 		r_str_constpool_fini (&bin->constpool);
-		/* Free per-RBin RMuta instance */
-		r_muta_free (bin->muta);
 		free (bin);
 	}
 }
@@ -858,7 +856,6 @@ R_API RBin *r_bin_new(void) {
 	if (!r_str_constpool_init (&bin->constpool)) {
 		goto trashbin;
 	}
-	bin->muta = r_muta_new ();
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
 	bin->sdb = sdb_new0 ();

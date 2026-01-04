@@ -532,7 +532,7 @@ struct r_bin_t {
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
 	RIDStorage *ids;
-	RMuta *muta;
+	RMutaBind mb;
 	RList/*<RBinPlugin>*/ *plugins;
 	RList/*<RBinXtrPlugin>*/ *binxtrs;
 	RList/*<RBinLdrPlugin>*/ *binldrs;
