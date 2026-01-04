@@ -559,12 +559,18 @@ static int iob_net_write(void *p, const uint8_t *buf, const uint64_t count, cons
 	return count;
 }
 
+static int iob_net_config(void *p, void *cfg) {
+	iobnet_t *obj = (iobnet_t *)p;
+	obj->ctx = cfg;
+	return 0;
+}
+
 io_backend_t iob_net = {
 	.name = "kdnet",
 	.type = KD_IO_NET,
 	.init = NULL,
 	.deinit = NULL,
-	.config = NULL,
+	.config = &iob_net_config,
 	.open = &iob_net_open,
 	.close = &iob_net_close,
 	.read = &iob_net_read,

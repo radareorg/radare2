@@ -65,6 +65,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		return NULL;
 	}
 	ctx->mb = &io->mb;
+	// Set back-reference for network backend to access crypto functions
+	if (iob->config) {
+		iob->config (io_ctx, ctx);
+	}
 	return r_io_desc_new (io, &r_io_plugin_winkd, file, rw, mode, ctx);
 }
 
