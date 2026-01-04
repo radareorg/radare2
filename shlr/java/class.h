@@ -1038,17 +1038,7 @@ R_API int U(r_bin_java_print_idx_summary)(RBinJavaObj *bin_obj, ut32 idx, bool i
 R_API ut32 U(r_bin_java_get_count)(RBinJavaObj *bin_obj, bool is_method);
 R_API RList * U(r_bin_java_get_num_names)(RBinJavaObj *bin_obj, bool is_method);
 
-// Method-specific (backward compat)
-R_API char * U(r_bin_java_get_method_name)(RBinJavaObj *bin_obj, ut32 idx);
-R_API int U(r_bin_java_print_method_idx_summary)(RBinJavaObj *bin_obj, ut32 idx);
-R_API ut32 U(r_bin_java_get_method_count)(RBinJavaObj *bin_obj);
-R_API RList * U(r_bin_java_get_method_num_name)(RBinJavaObj *bin_obj);
 
-// Field-specific (backward compat)
-R_API char * U(r_bin_java_get_field_name)(RBinJavaObj *bin_obj, ut32 idx);
-R_API int U(r_bin_java_print_field_idx_summary)(RBinJavaObj *bin_obj, ut32 idx);
-R_API ut32 U(r_bin_java_get_field_count)(RBinJavaObj *bin_obj);
-R_API RList * U(r_bin_java_get_field_num_name)(RBinJavaObj *bin_obj);
 
 R_API RList * U(r_bin_java_find_cp_const_by_val)(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len, const char t);
 R_API char U(r_bin_java_resolve_cp_idx_tag)(RBinJavaObj *BIN_OBJ, int idx);

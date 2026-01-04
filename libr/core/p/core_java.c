@@ -1676,7 +1676,7 @@ static bool r_cmd_java_set_acc_flags(RCore *core, ut64 addr, ut16 num_acc_flag) 
 	return res;
 }
 static bool r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj) {
-	RList *the_list = r_bin_java_get_field_num_name (obj);
+	RList *the_list = r_bin_java_get_num_names (obj, false);
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
@@ -1687,7 +1687,7 @@ static bool r_cmd_java_print_field_num_name(RCore *core, RBinJavaObj *obj) {
 }
 
 static bool r_cmd_java_print_method_num_name(RCore *core, RBinJavaObj *obj) {
-	RList *the_list = r_bin_java_get_method_num_name (obj);
+	RList *the_list = r_bin_java_get_num_names (obj, true);
 	char *str;
 	RListIter *iter = NULL;
 	r_list_foreach (the_list, iter, str) {
@@ -1698,7 +1698,7 @@ static bool r_cmd_java_print_method_num_name(RCore *core, RBinJavaObj *obj) {
 }
 
 static bool r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
-	int res = r_bin_java_print_field_idx_summary (obj, idx);
+	int res = r_bin_java_print_idx_summary (obj, idx, false);
 	if (res == false) {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 		res = true;
@@ -1708,14 +1708,14 @@ static bool r_cmd_java_print_field_summary(RBinJavaObj *obj, ut16 idx) {
 
 #if 0
 static bool UNUSED_FUNCTION(r_cmd_java_print_field_count)(RBinJavaObj *obj) {
-	ut32 res = r_bin_java_get_field_count (obj);
+	ut32 res = r_bin_java_get_count (obj, false);
 	r_cons_printf ("%d\n", res);
 	r_cons_flush ();
 	return true;
 }
 
 static bool _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
-	ut32 res = r_bin_java_get_method_count (obj);
+	ut32 res = r_bin_java_get_count (obj, true);
 	r_cons_printf ("%d\n", res);
 	r_cons_flush ();
 	return true;
@@ -1723,7 +1723,7 @@ static bool _(r_cmd_java_print_method_count)(RBinJavaObj *obj) {
 #endif
 
 static bool r_cmd_java_print_field_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
-	char *res = r_bin_java_get_field_name (obj, idx);
+	char *res = r_bin_java_get_name (obj, idx, false);
 	if (res) {
 		r_cons_println (core->cons, res);
 	} else {
@@ -1734,7 +1734,7 @@ static bool r_cmd_java_print_field_name(RCore *core, RBinJavaObj *obj, ut16 idx)
 }
 
 static bool r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
-	int res = r_bin_java_print_method_idx_summary (obj, idx);
+	int res = r_bin_java_print_idx_summary (obj, idx, true);
 	if (res == false) {
 		R_LOG_ERROR ("Field or Method @ index (%d) not found in the RBinJavaObj", idx);
 		res = true;
@@ -1743,7 +1743,7 @@ static bool r_cmd_java_print_method_summary(RBinJavaObj *obj, ut16 idx) {
 }
 
 static bool r_cmd_java_print_method_name(RCore *core, RBinJavaObj *obj, ut16 idx) {
-	char *res = r_bin_java_get_method_name (obj, idx);
+	char *res = r_bin_java_get_name (obj, idx, true);
 	if (res) {
 		r_cons_println (core->cons, res);
 	} else {
