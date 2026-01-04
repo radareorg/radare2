@@ -17,8 +17,8 @@ typedef struct current_table_switch_t {
 	int sz;
 } CurrentTableSwitch;
 
-static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8* bytes, int len) {
-	CurrentTableSwitch sw = {0};
+static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8 *bytes, int len) {
+	CurrentTableSwitch sw = { 0 };
 	if (len >= 16) {
 		sw.addr = addr;
 		sw.def_jmp = (UINT (bytes, 4));
@@ -44,7 +44,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	switch (op_byte) {
 	case 0x10: // "bipush"
 		if (len > 1) {
-			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (char) bytes[1]);
+			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, (char)bytes[1]);
 			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
@@ -69,7 +69,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xa9: // ret <var-num>
 		if (len > 1) {
 			snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
 		return 0;
@@ -97,16 +97,16 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 			} else {
 				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0x84: // iinc
 		if (len > 2) {
 			val_one = (ut32)bytes[1];
-			val_two = (ut32) bytes[2];
+			val_two = (ut32)bytes[2];
 			snprintf (output, outlen, "%s %d %d", JAVA_OPS[idx].name, val_one, val_two);
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
 		return -1;
@@ -128,20 +128,18 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	case 0xa8: // jsr
 		if (len > 2) {
 			const short delta = USHORT (bytes, 1);
-			snprintf (output, outlen, "%s 0x%04"PFMT64x, JAVA_OPS[idx].name, addr + delta);
+			snprintf (output, outlen, "%s 0x%04" PFMT64x, JAVA_OPS[idx].name, addr + delta);
 			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
 		return -1;
 	case 0xab: // tableswitch
 	case 0xaa: // tableswitch
-		{
-			CurrentTableSwitch sw = enter_switch_op (addr, bytes, len);
-			snprintf (output, outlen, "%s default: 0x%04"PFMT64x,
-					JAVA_OPS[idx].name,
-					(ut64)(sw.def_jmp + sw.addr));
-			return sw.sz;
-		}
+	{
+		CurrentTableSwitch sw = enter_switch_op (addr, bytes, len);
+		snprintf (output, outlen, "%s default: 0x%04" PFMT64x, JAVA_OPS[idx].name, (ut64) (sw.def_jmp + sw.addr));
+		return sw.sz;
+	}
 	case 0xb6: // invokevirtual
 	case 0xb7: // invokespecial
 	case 0xb8: // invokestatic
@@ -153,7 +151,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			} else {
-				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
@@ -169,9 +167,9 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			} else {
-				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
-			output[outlen-1] = 0;
+			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
 		}
 		return -1;
@@ -185,7 +183,7 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 				snprintf (output, outlen, "%s %s", JAVA_OPS[idx].name, arg);
 				free (arg);
 			} else {
-				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1) );
+				snprintf (output, outlen, "%s #%d", JAVA_OPS[idx].name, USHORT (bytes, 1));
 			}
 			output[outlen - 1] = 0;
 			return JAVA_OPS[idx].size;
@@ -199,13 +197,17 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 		return -1;
 	}
 	switch (JAVA_OPS[idx].size) {
-	case 1: snprintf (output, outlen, "%s", JAVA_OPS[idx].name);
+	case 1:
+		snprintf (output, outlen, "%s", JAVA_OPS[idx].name);
 		break;
-	case 2: snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
+	case 2:
+		snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 		break;
-	case 3: snprintf (output, outlen, "%s 0x%04x 0x%04x", JAVA_OPS[idx].name, bytes[0], bytes[1]);
+	case 3:
+		snprintf (output, outlen, "%s 0x%04x 0x%04x", JAVA_OPS[idx].name, bytes[0], bytes[1]);
 		break;
-	case 5: snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
+	case 5:
+		snprintf (output, outlen, "%s %d", JAVA_OPS[idx].name, bytes[1]);
 		break;
 	}
 	return JAVA_OPS[idx].size;
@@ -231,9 +233,9 @@ static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
 	char *q, *p = strchr (str, ' ');
 	if (p) {
 		*p++ = 0;
-		nargs ++;
+		nargs++;
 		for (i = 0; i < args_sz; i++) {
-			nargs ++;
+			nargs++;
 			q = strchr (p, ' ');
 			if (q) {
 				*q++ = 0;
@@ -252,7 +254,7 @@ static int parseJavaArgs(char *str, ut64 *args, int args_sz) {
 R_API int r_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
 	char *name = strdup (string);
 
-	ut64 args[4] = {0};
+	ut64 args[4] = { 0 };
 	int i, nargs = parseJavaArgs (name, args, 4);
 	int a = args[0];
 	int b = args[1];
@@ -262,7 +264,8 @@ R_API int r_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
 		if (!strcmp (name, JAVA_OPS[i].name)) {
 			bytes[0] = JAVA_OPS[i].byte;
 			switch (JAVA_OPS[i].size) {
-			case 2: bytes[1] = a;
+			case 2:
+				bytes[1] = a;
 				break;
 			case 3:
 				if (nargs == 2) {
@@ -277,7 +280,8 @@ R_API int r_java_assemble(ut64 addr, ut8 *bytes, const char *string) {
 					bytes[2] = a & 0xff;
 				}
 				break;
-			case 5: bytes[1] = a;
+			case 5:
+				bytes[1] = a;
 				bytes[2] = b;
 				bytes[3] = c;
 				bytes[4] = d;
