@@ -89,7 +89,7 @@ static ut64 base36_decode(const char *str) {
  */
 static bool _initializeDatakey(iobnet_t *obj, ut8 *resbuf, int size) {
 	// Data Key = SHA256 (Key || resbuf)
-	ut8 combined[64 + 322]; // 32 (key) + 32 (max resbuf size)
+	ut8 combined[32 + 322]; // 32 (key) + 322 (max resbuf size)
 	if (size > 322) {
 		return false;
 	}
@@ -382,7 +382,8 @@ static bool _sendResponsePacket(iobnet_t *obj, const ut8 *pokedata) {
 	ut64 seqno = r_read_be64 (pokedata) >> 8;
 	ut8 *pkt = _createKDNetPacket (obj, resbuf, 322, &size, seqno, 1);
 	if (!pkt) {
-		R_FREE (resbuf);
+		free (resbuf);
+		return false;
 	}
 
 	if (r_socket_write (obj->sock, (void *)pkt, size) < 0) {
@@ -442,12 +443,17 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 	if (obj->size == 0) {
 		do {
-			obj->size = r_socket_read (obj->sock, obj->buf, 4096);
+			obj->size = r_socket_read (obj->sock, obj->buf, sizeof (obj->buf));
 			if (obj->size < 0) {
 				// Continue if RCons breaks
 				if (errno == EINTR) {
 					continue;
 				}
+				obj->size = 0;
+				return -1;
+			}
+			if (obj->size < (int)sizeof (kdnet_packet_t)) {
+				R_LOG_ERROR ("KdNet packet too small");
 				obj->size = 0;
 				return -1;
 			}
@@ -499,7 +505,7 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 		}
 	}
 
-	if (count + obj->off > obj->size) {
+	if ((ut64)count + obj->off > obj->size) {
 		R_LOG_ERROR ("KdNet out-of-bounds read");
 		obj->size = 0;
 		return -1;
@@ -527,15 +533,29 @@ static int iob_net_write(void *p, const uint8_t *buf, const uint64_t count, cons
 			kd_packet_t pkt;
 			memcpy (&pkt, buf, sizeof (kd_packet_t));
 
-			obj->size = sizeof (kd_packet_t) + pkt.length;
+			int total = sizeof (kd_packet_t) + pkt.length;
+			if (total > (int)sizeof (obj->buf)) {
+				R_LOG_ERROR ("KdNet packet too large");
+				return -1;
+			}
+			obj->size = total;
 			obj->off = count;
 			memcpy (obj->buf, buf, count);
 		} else { // breakin packet "b"
+			if (count > sizeof (obj->buf)) {
+				R_LOG_ERROR ("KdNet write too large");
+				return -1;
+			}
 			memcpy (obj->buf, buf, count);
 			obj->size = count;
 			obj->off = count;
 		}
 	} else {
+		if (obj->off + count > sizeof (obj->buf)) {
+			R_LOG_ERROR ("KdNet write overflow");
+			obj->size = 0;
+			return -1;
+		}
 		memcpy (obj->buf + obj->off, buf, count);
 		obj->off += count;
 	}
