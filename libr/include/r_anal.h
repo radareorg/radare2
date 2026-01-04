@@ -517,6 +517,7 @@ typedef struct r_anal_t {
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;
+	RMutaBind mb;
 	RAnalBacktraces btstore;
 	/* private */
 	RThreadLock *lock;

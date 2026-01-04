@@ -782,9 +782,9 @@ R_API bool r_sign_add_hash(RAnal *a, const char *name, int type, const char *val
 		R_LOG_ERROR ("hash type unknown");
 		return false;
 	}
-	int digestsize = r_hash_size (R_ZIGN_HASH) * 2;
+	int digestsize = 32 * 2; // SHA256 digest is 32 bytes, hex is 64 chars
 	if (len != digestsize) {
-		R_LOG_ERROR ("invalid hash size: %d (%s digest size is %d)", len, ZIGN_HASH, digestsize);
+		R_LOG_ERROR ("invalid hash size: %d (SHA256 digest size is %d)", len, digestsize);
 		return false;
 	}
 	return addHash (a, name, type, val);
@@ -2113,34 +2113,46 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
+static char *r_sign_hash_data(RAnal *a, const char *algo, const ut8 *data, int len) {
+	int digest_len = 0;
+	ut8 *digest = a->mb.hash (&a->mb, algo, data, len, &digest_len);
+	if (!digest) {
+		return NULL;
+	}
+	char *hex = r_hex_bin2strdup (digest, digest_len);
+	free (digest);
+	return hex;
+}
+
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalBlock *bbi = NULL;
-	char *digest_hex = NULL;
-	RHash *ctx = r_hash_new (true, R_ZIGN_HASH);
-	if (!ctx) {
-		goto beach;
+	RBuffer *buf = r_buf_new ();
+	if (!buf) {
+		return NULL;
 	}
-	r_list_sort (fcn->bbs, &cmpaddr);
-	r_hash_do_begin (ctx, R_ZIGN_HASH);
-	r_list_foreach (fcn->bbs, iter, bbi) {
-		ut8 *buf = malloc (bbi->size);
-		if (!buf) {
-			goto beach;
-		}
-		if (!a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size)) {
-			goto beach;
-		}
-		if (!r_hash_do_sha256 (ctx, buf, bbi->size)) {
-			goto beach;
-		}
-		free (buf);
-	}
-	r_hash_do_end (ctx, R_ZIGN_HASH);
 
-	digest_hex = r_hex_bin2strdup (ctx->digest, r_hash_size (R_ZIGN_HASH));
-beach:
-	free (ctx);
+	r_list_sort (fcn->bbs, &cmpaddr);
+
+	// Collect all block data
+	r_list_foreach (fcn->bbs, iter, bbi) {
+		ut8 *block_data = malloc (bbi->size);
+		if (!block_data) {
+			r_buf_free (buf);
+			return NULL;
+		}
+		if (!a->iob.read_at (a->iob.io, bbi->addr, block_data, bbi->size)) {
+			free (block_data);
+			r_buf_free (buf);
+			return NULL;
+		}
+		r_buf_append (buf, block_data, bbi->size);
+		free (block_data);
+	}
+
+	// Hash all data at once using RMutaBind
+	char *digest_hex = r_sign_hash_data (a, ZIGN_HASH, r_buf_get_data (buf), r_buf_size (buf));
+	r_buf_free (buf);
 	return digest_hex;
 }
 
