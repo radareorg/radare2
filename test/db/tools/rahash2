@@ -195,6 +195,7 @@ cryp         cps2  Capcom Play System 2
 cryp      des-ecb  DES with with Electronic Code Book mode
 sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
 hash      entropy  Shannon entropy
+hash          md5  MD5 hash
 hash         null  mutate nothing
 char     punycode  Unicoded represented in plain ascii
 cryp          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
@@ -204,6 +205,8 @@ cryp          rol  Rotate Left N bits
 cryp          ror  Rotate Right N bits
 cryp          rot  Rotate Encryption
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
+hash         sha1  SHA1 hash
+hash       sha256  SHA256 hash
 hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash      strhash  String hash using a modified DJB2 xor
