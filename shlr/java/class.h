@@ -989,6 +989,7 @@ R_API int r_bin_java_extract_reference_name(const char * input_str, char ** ref_
 R_API RList * r_bin_java_extract_all_bin_type_values(RBinJavaObj * bin_obj);
 
 R_API RList * r_bin_java_get_method_definitions(RBinJavaObj *bin);
+R_API char * r_bin_java_get_definition(RBinJavaField *fm_type);
 R_API char * r_bin_java_get_method_definition(RBinJavaField *fm_type);
 R_API RList * r_bin_java_get_field_definitions(RBinJavaObj *bin);
 R_API char * r_bin_java_get_field_definition(RBinJavaField *fm_type);
@@ -1031,11 +1032,19 @@ R_API int U(r_bin_java_is_method_protected)(RBinJavaObj *bin_obj, ut64 addr);
 R_API int U(r_bin_java_is_method_private)(RBinJavaObj *bin_obj, ut64 addr);
 R_API RBinJavaAttrInfo* r_bin_java_get_method_code_attribute(const RBinJavaField *method);
 
+// Generic getters (methods and fields)
+R_API char * U(r_bin_java_get_name)(RBinJavaObj *bin_obj, ut32 idx, bool is_method);
+R_API int U(r_bin_java_print_idx_summary)(RBinJavaObj *bin_obj, ut32 idx, bool is_method);
+R_API ut32 U(r_bin_java_get_count)(RBinJavaObj *bin_obj, bool is_method);
+R_API RList * U(r_bin_java_get_num_names)(RBinJavaObj *bin_obj, bool is_method);
+
+// Method-specific (backward compat)
 R_API char * U(r_bin_java_get_method_name)(RBinJavaObj *bin_obj, ut32 idx);
 R_API int U(r_bin_java_print_method_idx_summary)(RBinJavaObj *bin_obj, ut32 idx);
 R_API ut32 U(r_bin_java_get_method_count)(RBinJavaObj *bin_obj);
 R_API RList * U(r_bin_java_get_method_num_name)(RBinJavaObj *bin_obj);
 
+// Field-specific (backward compat)
 R_API char * U(r_bin_java_get_field_name)(RBinJavaObj *bin_obj, ut32 idx);
 R_API int U(r_bin_java_print_field_idx_summary)(RBinJavaObj *bin_obj, ut32 idx);
 R_API ut32 U(r_bin_java_get_field_count)(RBinJavaObj *bin_obj);
@@ -1078,6 +1087,7 @@ R_API void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj);
 R_API void r_bin_java_get_interface_json_definitions(RBinJavaObj *bin, PJ *pj);
 
 R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
+R_API void r_bin_java_get_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
 R_API void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 R_API void r_bin_java_get_class_info_json(RBinJavaObj *bin, PJ *pj);
@@ -1086,7 +1096,9 @@ R_API char *r_bin_java_get_bin_obj_json(RBinJavaObj *bin);
 R_API ut64 r_bin_java_calc_class_size(ut8* bytes, ut64 size);
 R_API int r_bin_java_valid_class(const ut8 * buf, ut64 buf_sz);
 
-R_API char *retrieve_class_method_access_string(ut32 flags);
-R_API char *retrieve_method_access_string(ut16 flags);
-R_API char *retrieve_field_access_string(ut16 flags);
+/* Access flag type constants */
+#define JAVA_FLAG_TYPE_METHOD 0
+#define JAVA_FLAG_TYPE_FIELD  1
+#define JAVA_FLAG_TYPE_CLASS  2
+R_API char *r_bin_java_accessflags_tostring(ut32 flags, int flag_type);
 #endif

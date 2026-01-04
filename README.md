@@ -7,8 +7,6 @@
 
 Current git `master` branch is `6.0.9`, next release will be `6.1.0`.
 
-* See [abi stability](doc/abi.md) documentation.
-
 ### Description
 
 r2 is a complete rewrite of radare. It provides a set of libraries, tools and

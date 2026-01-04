@@ -866,20 +866,32 @@ R_API void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaFiel
 	pj_end (pj);
 }
 
-R_API char *r_bin_java_get_method_definition(RBinJavaField *fm_type) {
+// Generic definition getter (used by both methods and fields)
+R_API char *r_bin_java_get_definition(RBinJavaField *fm_type) {
 	return r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
+}
+
+// Backward compatibility wrappers
+R_API char *r_bin_java_get_method_definition(RBinJavaField *fm_type) {
+	return r_bin_java_get_definition (fm_type);
 }
 
 R_API char *r_bin_java_get_field_definition(RBinJavaField *fm_type) {
-	return r_bin_java_unmangle (fm_type->flags_str, fm_type->name, fm_type->descriptor);
+	return r_bin_java_get_definition (fm_type);
 }
 
+// Generic JSON definition getter with type parameter
+R_API void r_bin_java_get_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method) {
+	r_bin_java_get_fm_type_definition_json (bin, fm_type, pj, is_method);
+}
+
+// Backward compatibility wrappers
 R_API void r_bin_java_get_method_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj) {
-	r_bin_java_get_fm_type_definition_json (bin, fm_type, pj, true);
+	r_bin_java_get_definition_json (bin, fm_type, pj, true);
 }
 
 R_API void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj) {
-	r_bin_java_get_fm_type_definition_json (bin, fm_type, pj, false);
+	r_bin_java_get_definition_json (bin, fm_type, pj, false);
 }
 
 R_API int r_bin_java_extract_reference_name(const char *input_str, char **ref_str, ut8 array_cnt) {
@@ -1183,16 +1195,17 @@ static char *retrieve_access_string(ut32 flags, const RBinJavaAccessFlags *acces
 	return r_strbuf_drain (sb);
 }
 
-R_API char *retrieve_method_access_string(ut16 flags) {
-	return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
-}
-
-R_API char *retrieve_field_access_string(ut16 flags) {
-	return retrieve_access_string (flags, FIELD_ACCESS_FLAGS);
-}
-
-R_API char *retrieve_class_method_access_string(ut32 flags) {
-	return retrieve_access_string (flags, CLASS_ACCESS_FLAGS);
+R_API char *r_bin_java_accessflags_tostring(ut32 flags, int flag_type) {
+	switch (flag_type) {
+	case JAVA_FLAG_TYPE_METHOD:
+		return retrieve_access_string (flags, METHOD_ACCESS_FLAGS);
+	case JAVA_FLAG_TYPE_FIELD:
+		return retrieve_access_string (flags, FIELD_ACCESS_FLAGS);
+	case JAVA_FLAG_TYPE_CLASS:
+		return retrieve_access_string (flags, CLASS_ACCESS_FLAGS);
+	default:
+		return NULL;
+	}
 }
 
 R_API char *r_bin_java_build_obj_key(RBinJavaObj *bin) {
@@ -1319,7 +1332,7 @@ R_API RBinJavaField *r_bin_java_read_next_method(RBinJavaObj *bin, const ut64 of
 	method->metas = (RBinJavaMetaInfo *) R_NEW0 (RBinJavaMetaInfo);
 	method->file_offset = offset;
 	method->flags = R_BIN_JAVA_USHORT (f_buf, 0);
-	method->flags_str = retrieve_method_access_string (method->flags);
+	method->flags_str = r_bin_java_accessflags_tostring (method->flags, JAVA_FLAG_TYPE_METHOD);
 	// need to subtract 1 for the idx
 	method->name_idx = R_BIN_JAVA_USHORT (f_buf, 2);
 	method->descriptor_idx = R_BIN_JAVA_USHORT (f_buf, 4);
@@ -1408,7 +1421,7 @@ R_API RBinJavaField *r_bin_java_read_next_field(RBinJavaObj *bin, const ut64 off
 	memcpy (buf, f_buf, 8);
 	field->file_offset = offset;
 	field->flags = R_BIN_JAVA_USHORT (buf, 0);
-	field->flags_str = retrieve_field_access_string (field->flags);
+	field->flags_str = r_bin_java_accessflags_tostring (field->flags, JAVA_FLAG_TYPE_FIELD);
 	field->name_idx = R_BIN_JAVA_USHORT (buf, 2);
 	field->descriptor_idx = R_BIN_JAVA_USHORT (buf, 4);
 	field->attr_count = R_BIN_JAVA_USHORT (buf, 6);
@@ -1981,7 +1994,7 @@ R_API ut64 r_bin_java_read_class_file2(RBinJavaObj *bin, const ut64 offset, cons
 	bin->cf2.super_class = R_BIN_JAVA_USHORT (cf2_buf, 4);
 	free (bin->cf2.flags_str);
 	free (bin->cf2.this_class_name);
-	bin->cf2.flags_str = retrieve_class_method_access_string (bin->cf2.access_flags);
+	bin->cf2.flags_str = r_bin_java_accessflags_tostring (bin->cf2.access_flags, JAVA_FLAG_TYPE_CLASS);
 	this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, bin->cf2.this_class);
 	bin->cf2.this_class_name = r_bin_java_get_item_name_from_bin_cp_list (bin, this_class_cp_obj);
 	R_LOG_DEBUG ("This class flags are: %s", bin->cf2.flags_str);
@@ -3551,7 +3564,7 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8 
 		offset += 2;
 		icattr->inner_class_access_flags = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
-		icattr->flags_str = retrieve_class_method_access_string (icattr->inner_class_access_flags);
+		icattr->flags_str = r_bin_java_accessflags_tostring (icattr->inner_class_access_flags, JAVA_FLAG_TYPE_CLASS);
 		icattr->file_offset = curpos;
 		icattr->size = 8;
 
@@ -7458,26 +7471,36 @@ R_API ut8 r_bin_java_does_cp_idx_ref_field(RBinJavaObj *BIN_OBJ, int idx) {
 	return res;
 }
 
-R_API char *r_bin_java_get_method_name(RBinJavaObj *bin_obj, ut32 idx) {
+R_API char *r_bin_java_get_name(RBinJavaObj *bin_obj, ut32 idx, bool is_method) {
 	char *name = NULL;
-	if (idx < r_list_length (bin_obj->methods_list)) {
-		RBinJavaField *fm_type = r_list_get_n (bin_obj->methods_list, idx);
+	RList *list = is_method ? bin_obj->methods_list : bin_obj->fields_list;
+	if (idx < r_list_length (list)) {
+		RBinJavaField *fm_type = r_list_get_n (list, idx);
 		name = strdup (fm_type->name);
 	}
 	return name;
 }
 
-R_API RList *r_bin_java_get_method_num_name(RBinJavaObj *bin_obj) {
+R_API char *r_bin_java_get_method_name(RBinJavaObj *bin_obj, ut32 idx) {
+	return r_bin_java_get_name (bin_obj, idx, true);
+}
+
+R_API RList *r_bin_java_get_num_names(RBinJavaObj *bin_obj, bool is_method) {
 	ut32 i = 0;
 	RListIter *iter;
 	RBinJavaField *fm_type;
+	RList *list = is_method ? bin_obj->methods_list : bin_obj->fields_list;
 	RList *res = r_list_newf (free);
-	r_list_foreach (bin_obj->methods_list, iter, fm_type) {
+	r_list_foreach (list, iter, fm_type) {
 		char *str = r_str_newf ("%d %s", i, fm_type->name);
 		r_list_append (res, str);
 		i++;
 	}
 	return res;
+}
+
+R_API RList *r_bin_java_get_method_num_name(RBinJavaObj *bin_obj) {
+	return r_bin_java_get_num_names (bin_obj, true);
 }
 
 /*
@@ -7857,18 +7880,28 @@ R_API int U(r_bin_java_is_method_protected)(RBinJavaObj * bin_obj, ut64 addr) {
 		r_bin_java_get_method_code_attribute_with_addr (bin_obj, addr));
 }
 
-R_API int r_bin_java_print_method_idx_summary(RBinJavaObj *bin_obj, ut32 idx) {
+R_API int r_bin_java_print_idx_summary(RBinJavaObj *bin_obj, ut32 idx, bool is_method) {
 	int res = false;
-	if (idx < r_list_length (bin_obj->methods_list)) {
-		RBinJavaField *fm_type = r_list_get_n (bin_obj->methods_list, idx);
-		r_bin_java_print_method_summary (fm_type);
+	RList *list = is_method ? bin_obj->methods_list : bin_obj->fields_list;
+	if (idx < r_list_length (list)) {
+		RBinJavaField *fm_type = r_list_get_n (list, idx);
+		is_method ? r_bin_java_print_method_summary (fm_type) : r_bin_java_print_field_summary (fm_type);
 		res = true;
 	}
 	return res;
 }
 
+R_API int r_bin_java_print_method_idx_summary(RBinJavaObj *bin_obj, ut32 idx) {
+	return r_bin_java_print_idx_summary (bin_obj, idx, true);
+}
+
+R_API ut32 r_bin_java_get_count(RBinJavaObj *bin_obj, bool is_method) {
+	RList *list = is_method ? bin_obj->methods_list : bin_obj->fields_list;
+	return r_list_length (list);
+}
+
 R_API ut32 r_bin_java_get_method_count(RBinJavaObj *bin_obj) {
-	return r_list_length (bin_obj->methods_list);
+	return r_bin_java_get_count (bin_obj, true);
 }
 
 R_API RList *r_bin_java_get_interface_names(RBinJavaObj *bin) {
@@ -8505,45 +8538,19 @@ R_API void U(r_bin_java_free_const_value)(ConstJavaValue * cp_value) {
 }
 
 R_API char *r_bin_java_get_field_name(RBinJavaObj *bin_obj, ut32 idx) {
-	char *name = NULL;
-	if (idx < r_list_length (bin_obj->fields_list)) {
-		RBinJavaField *fm_type = r_list_get_n (bin_obj->fields_list, idx);
-		name = strdup (fm_type->name);
-	}
-	return name;
+	return r_bin_java_get_name (bin_obj, idx, false);
 }
 
 R_API int r_bin_java_print_field_idx_summary(RBinJavaObj *bin_obj, ut32 idx) {
-	int res = false;
-	if (idx < r_list_length (bin_obj->fields_list)) {
-		RBinJavaField *fm_type = r_list_get_n (bin_obj->fields_list, idx);
-		r_bin_java_print_field_summary (fm_type);
-		res = true;
-	}
-	return res;
+	return r_bin_java_print_idx_summary (bin_obj, idx, false);
 }
 
 R_API ut32 r_bin_java_get_field_count(RBinJavaObj *bin_obj) {
-	return r_list_length (bin_obj->fields_list);
+	return r_bin_java_get_count (bin_obj, false);
 }
 
 R_API RList *r_bin_java_get_field_num_name(RBinJavaObj *bin_obj) {
-	ut32 i = 0;
-	RBinJavaField *fm_type;
-	RListIter *iter = NULL;
-	RList *res = r_list_newf (free);
-	r_list_foreach (bin_obj->fields_list, iter, fm_type) {
-		ut32 len = strlen (fm_type->name) + 30;
-		char *str = malloc (len);
-		if (!str) {
-			r_list_free (res);
-			return NULL;
-		}
-		snprintf (str, len, "%d %s", i, fm_type->name);
-		++i;
-		r_list_append (res, str);
-	}
-	return res;
+	return r_bin_java_get_num_names (bin_obj, false);
 }
 R_API RList *r_bin_java_find_cp_const_by_val_utf8(RBinJavaObj *bin_obj, const ut8 *bytes, ut32 len) {
 	RList *res = r_list_newf (free);
