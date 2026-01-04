@@ -160,14 +160,14 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 	}
 	r_buf_read_at (bf->buf, from, buf, len);
 	const char *charset = getenv ("RABIN2_CHARSET");
-	if (R_STR_ISNOTEMPTY (charset)) {
+	if (R_STR_ISNOTEMPTY (charset) && bin->mb.muta) {
 		// Decode the buffer using the specified charset
-		RMutaSession *ms = r_muta_use (bin->muta, charset);
+		RMutaSession *ms = bin->mb.muta_use (bin->mb.muta, charset);
 		if (ms) {
 			ms->dir = R_CRYPTO_DIR_DECRYPT;
 			r_muta_session_update (ms, buf, len);
 			int outlen = 0;
-			ut8 *obuf = r_muta_session_get_output (ms, &outlen);
+			ut8 *obuf = bin->mb.muta_session_get_output (ms, &outlen);
 			if (outlen > 0 && obuf) {
 				ut8 *out = calloc (len, 1);
 				if (out) {
@@ -185,7 +185,7 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 				}
 			}
 			free (obuf);
-			r_muta_session_free (ms);
+			bin->mb.muta_session_free (ms);
 		} else {
 			R_LOG_ERROR ("Invalid value for RABIN2_CHARSET");
 		}

@@ -2883,6 +2883,7 @@ R_API bool r_core_init(RCore *core) {
 	r_muta_bind (core->muta, &core->io->mb);
 	r_muta_bind (core->muta, &core->dbg->mb);
 	r_muta_bind (core->muta, &core->anal->mb);
+	r_muta_bind (core->muta, &core->bin->mb);
 	core->dbg->egg = core->egg;
 	core->dbg->anal = core->anal; // XXX: dupped instance.. can cause lost pointerz
 	// r_debug_use (core->dbg, "native");

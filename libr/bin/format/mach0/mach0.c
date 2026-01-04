@@ -2,7 +2,6 @@
 
 #define R_LOG_ORIGIN "bin.macho"
 
-#include <r_hash.h>
 #include "mach0.h"
 
 // R2R db/formats/mach0/strip
@@ -743,7 +742,7 @@ static char *readString(ut8 *p, int off, int len) {
 	return r_str_ndup ((const char *)p + off, len - off);
 }
 
-static void parseCodeDirectory(RBuffer *b, int offset, int datasize) {
+static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasize) {
 	typedef struct __CodeDirectory {
 		uint32_t magic;		/* magic number (CSMAGIC_CODEDIRECTORY) */
 		uint32_t length;	/* total length of CodeDirectory blob */
@@ -808,81 +807,72 @@ static void parseCodeDirectory(RBuffer *b, int offset, int datasize) {
 	free (teamId);
 
 	int hashSize = 20; // SHA1 is default
-	int algoType = R_HASH_SHA1;
 	const char *hashName = "sha1";
 	switch (cscd.hashType) {
 	case 0: // SHA1 == 20 bytes
 	case 1: // SHA1 == 20 bytes
 		hashSize = 20;
 		hashName = "sha1";
-		algoType = R_HASH_SHA1;
 		break;
 	case 2: // SHA256 == 32 bytes
 		hashSize = 32;
-		algoType = R_HASH_SHA256;
 		hashName = "sha256";
 		break;
 	}
 	// computed cdhash
-	RHash *ctx = r_hash_new (true, algoType);
 	int fofsz = cscd.length;
 	if (fofsz > 0 && fofsz < (r_buf_size (b) - off)) {
 		ut8 *fofbuf = calloc (fofsz, 1);
 		if (fofbuf) {
-			int i;
 			if (r_buf_read_at (b, off, fofbuf, fofsz) != fofsz) {
 				R_LOG_WARN ("Invalid cdhash offset/length values");
 			}
-			r_hash_do_begin (ctx, algoType);
-			if (algoType == R_HASH_SHA1) {
-				r_hash_do_sha1 (ctx, fofbuf, fofsz);
-			} else {
-				r_hash_do_sha256 (ctx, fofbuf, fofsz);
+			int outlen = 0;
+			ut8 *digest = mb->hash (mb, hashName, fofbuf, fofsz, &outlen);
+			if (digest) {
+				eprintf ("ph %s @ 0x%"PFMT64x"!%d\n", hashName, off, fofsz);
+				eprintf ("ComputedCDHash: ");
+				int i;
+				for (i = 0; i < hashSize; i++) {
+					eprintf ("%02x", digest[i]);
+				}
+				eprintf ("\n");
+				free (digest);
 			}
-			r_hash_do_end (ctx, algoType);
-			eprintf ("ph %s @ 0x%"PFMT64x"!%d\n", hashName, off, fofsz);
-			eprintf ("ComputedCDHash: ");
-			for (i = 0; i < hashSize;i++) {
-				eprintf ("%02x", ctx->digest[i]);
-			}
-			eprintf ("\n");
 			free (fofbuf);
 		}
 	}
 	// show and check the rest of hashes
 	ut8 *hash = p + cscd.hashOffset;
-	int j = 0;
-	int k = 0;
+	int j;
 	eprintf ("Hashed region: 0x%08"PFMT64x" - 0x%08"PFMT64x"\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		int fof = 4096 * j;
 		int idx = j * hashSize;
 		eprintf ("0x%08"PFMT64x"  ", off + cscd.hashOffset + idx);
+		int k;
 		for (k = 0; k < hashSize; k++) {
 			eprintf ("%02x", hash[idx + k]);
 		}
 		ut8 fofbuf[4096];
 		int fofsz = R_MIN (sizeof (fofbuf), cscd.codeLimit - fof);
 		r_buf_read_at (b, fof, fofbuf, sizeof (fofbuf));
-		r_hash_do_begin (ctx, algoType);
-		if (algoType == R_HASH_SHA1) {
-			r_hash_do_sha1 (ctx, fofbuf, fofsz);
-		} else {
-			r_hash_do_sha256 (ctx, fofbuf, fofsz);
-		}
-		r_hash_do_end (ctx, algoType);
-		if (memcmp (hash + idx, ctx->digest, hashSize)) {
-			eprintf ("  wx ");
-			int i;
-			for (i = 0; i < hashSize;i++) {
-				eprintf ("%02x", ctx->digest[i]);
+		int outlen = 0;
+		ut8 *digest = mb->hash (mb, hashName, fofbuf, fofsz, &outlen);
+		if (digest) {
+			if (memcmp (hash + idx, digest, hashSize)) {
+				eprintf ("  wx ");
+				int i;
+				for (i = 0; i < hashSize; i++) {
+					eprintf ("%02x", digest[i]);
+				}
+			} else {
+				eprintf ("  OK");
 			}
-		} else {
-			eprintf ("  OK");
+			free (digest);
 		}
 		eprintf ("\n");
 	}
-	r_hash_free (ctx);
 	free (p);
 }
 
@@ -972,7 +962,10 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 			break;
 		case CSSLOT_CODEDIRECTORY:
 			if (isVerbose) {
-				parseCodeDirectory (mo->b, data + idx.offset, link.datasize);
+				RBinFile *bf = mo->options.bf;
+				if (bf && bf->rbin && bf->rbin->mb.hash) {
+					parseCodeDirectory (&bf->rbin->mb, mo->b, data + idx.offset, link.datasize);
+				}
 			}
 			break;
 		case 0x1000:
