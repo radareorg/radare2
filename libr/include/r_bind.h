@@ -3,6 +3,8 @@
 #ifndef R2_BIND_H
 #define R2_BIND_H
 
+#include <r_types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -55,6 +57,35 @@ typedef struct r_core_bind_t {
 	RCoreDebugMapsSync syncDebugMaps;
 	RCorePJWithEncoding pjWithEncoding;
 } RCoreBind;
+
+/* Muta/Crypto bindings for hash and encryption */
+typedef struct r_muta_t RMuta;
+typedef struct r_muta_session_t RMutaSession;
+typedef struct r_muta_bind_t RMutaBind;
+
+typedef RMuta *(*RMutaNew)(void);
+typedef void (*RMutaFree)(RMuta *cry);
+typedef RMutaSession *(*RMutaUse)(RMuta *cry, const char *algo);
+typedef bool (*RMutaSessionSetKey)(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction);
+typedef bool (*RMutaSessionSetIV)(RMutaSession *cj, const ut8 *iv, int ivlen);
+typedef int (*RMutaSessionEnd)(RMutaSession *cj, const ut8 *buf, int len);
+typedef ut8 *(*RMutaSessionGetOutput)(RMutaSession *cj, int *size);
+typedef void (*RMutaSessionFree)(RMutaSession *cj);
+typedef ut8 *(*RMutaBindHashHmac)(RMutaBind *mb, const char *algo, const ut8 *buf, int buflen, const ut8 *key, int keylen, int *outlen);
+typedef ut8 *(*RMutaBindHash)(RMutaBind *mb, const char *algo, const ut8 *buf, int buflen, int *outlen);
+
+typedef struct r_muta_bind_t {
+	RMuta *muta;
+	RMutaUse muta_use;
+	RMutaSessionSetKey muta_session_set_key;
+	RMutaSessionSetIV muta_session_set_iv;
+	RMutaSessionEnd muta_session_end;
+	RMutaSessionGetOutput muta_session_get_output;
+	RMutaSessionFree muta_session_free;
+	/* helper methods - parameterized hash helpers */
+	RMutaBindHashHmac hash_hmac;
+	RMutaBindHash hash;
+} RMutaBind;
 
 #ifdef __cplusplus
 }

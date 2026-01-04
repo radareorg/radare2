@@ -4,7 +4,7 @@
 #include <string.h>
 #include "kd.h"
 
-#define KD_DBG if (false)
+#define KD_DBG if(false)
 
 uint32_t kd_data_checksum(const uint8_t *buf, const uint64_t buf_len) {
 	uint32_t i, acc;
@@ -36,16 +36,15 @@ int kd_send_ctrl_packet(io_desc_t *desc, const uint32_t type, const uint32_t id)
 	return KD_E_OK;
 }
 
-int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id, const uint8_t *req,
-	const int req_len, const uint8_t *buf, const uint32_t buf_len) {
+int kd_send_data_packet(io_desc_t *desc, const uint32_t type, const uint32_t id, const uint8_t *req, const int req_len, const uint8_t *buf, const uint32_t buf_len) {
 	kd_packet_t pkt;
 
 	if (req_len + buf_len > KD_MAX_PAYLOAD) {
 		return KD_E_MALFORMED;
 	}
 
-	//kd_req_t *r = (kd_req_t*) req;
-	//eprintf ("==== Send ====\n%08x\n", r->req);
+	// kd_req_t *r = (kd_req_t*) req;
+	// R_LOG_DEBUG ("==== Send ==== %08x", r->req);
 
 	pkt.leader = KD_PACKET_DATA;
 	pkt.length = req_len + buf_len;
@@ -85,7 +84,7 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 	}
 
 	if (!kd_packet_is_valid (&pkt)) {
-		KD_DBG eprintf ("invalid leader %08x, trying to recover\n", pkt.leader);
+		KD_DBG R_LOG_DEBUG ("invalid leader %08x, trying to recover", pkt.leader);
 		while (!kd_packet_is_valid (&pkt)) {
 			kd_send_ctrl_packet (desc, KD_PACKET_TYPE_RESEND, 0);
 			char sig[4];
@@ -124,7 +123,7 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 	}
 
 	if (pkt.checksum != kd_data_checksum (buf + sizeof (kd_packet_t), pkt.length)) {
-		KD_DBG eprintf ("Checksum mismatch!\n");
+		KD_DBG R_LOG_DEBUG ("Checksum mismatch");
 		free (buf);
 		return KD_E_MALFORMED;
 	}
@@ -135,15 +134,15 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 			iob_read (desc, (uint8_t *)&trailer, 1);
 
 			if (trailer != 0xAA) {
-				KD_DBG eprintf ("Missing trailer 0xAA\n");
+				KD_DBG R_LOG_DEBUG ("Missing trailer 0xAA");
 				free (buf);
 				return KD_E_MALFORMED;
 			}
 		}
-		kd_send_ctrl_packet (desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~(0x800));
+		kd_send_ctrl_packet (desc, KD_PACKET_TYPE_ACKNOWLEDGE, ((kd_packet_t *)buf)->id & ~ (0x800));
 	}
 
-	*p = (kd_packet_t *) buf;
+	*p = (kd_packet_t *)buf;
 
 	return KD_E_OK;
 }

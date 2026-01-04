@@ -7,7 +7,6 @@ CFLAGS:=-I../../libr/include $(CFLAGS)
 CFLAGS+=${PIC_CFLAGS}
 
 LIBAR=libr_winkd.${EXT_AR}
-LDFLAGS+=-L../../libr/muta -lr_muta
 LDFLAGS+=-L../../libr/socket -lr_socket
 LDFLAGS+=-L../../libr/util -lr_util
 

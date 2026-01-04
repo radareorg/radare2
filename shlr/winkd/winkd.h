@@ -17,9 +17,10 @@
 #define _winkd_H_
 
 #include <stdint.h>
+#include <r_bind.h>
+#include <r_th.h>
+#include <r_list.h>
 #include "kd.h"
-
-typedef struct _WindCtx WindCtx;
 
 typedef struct WindProc {
 	ut64 eprocess;
@@ -76,6 +77,26 @@ typedef struct {
 	int flags;
 	int f[O_Max];
 } Profile;
+
+struct _WindCtx {
+	io_desc_t *desc;
+	uint32_t seq_id;
+	int syncd;
+	int cpu_count;
+	int cpu;
+	int pae;
+	bool is_x64;
+	int ptr_size; // 4 for 32-bit, 8 for 64-bit
+	Profile *os_profile;
+	RList *plist_cache;
+	RList *tlist_cache;
+	ut64 dbg_addr;
+	WindProc *target;
+	RThreadLock *dontmix;
+	RMutaBind *mb;
+};
+
+typedef struct _WindCtx WindCtx;
 
 // grep -e "^winkd_" shlr/wind/wind.c | sed -e 's/ {$/;/' -e 's/^/int /'
 int winkd_get_bits(WindCtx *ctx);

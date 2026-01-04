@@ -27,11 +27,6 @@ Plugins are used via sessions. A session is an instance of a plugin (for example
 .Pp
 Creates a session for a plugin selected by name (example names: "aes-ecb", "aes-cbc", "base64", "xor", "sha1"). Returns NULL if the plugin is not found.
 .Pp
-.Ft RMutaSession *
-.Fn r_muta_new_session "RMuta *mu" "const char *algo" "RMutaOptions *opt"
-.Pp
-Like `r_muta_use`, but accepts an `RMutaOptions` structure to provide plugin-specific options during session creation.
-.Pp
 .Ft void
 .Fn r_muta_session_free "RMutaSession *cj"
 .Pp

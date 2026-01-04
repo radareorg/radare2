@@ -1,9 +1,9 @@
-/* radare2 - LGPL - Copyright 2017-2025 - condret, pancake */
+/* radare2 - LGPL - Copyright 2017-2026 - condret, pancake */
 
 #ifndef R2_IO_H
 #define R2_IO_H
 
-#include <r_list.h>
+#include <r_bind.h>
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_socket.h>
@@ -163,6 +163,7 @@ typedef struct r_io_t {
 	REvent *event;
 	PrintfCallback cb_printf;
 	RCoreBind coreb;
+	RMutaBind mb;
 	// TODO Wrap ... well its more like a proxy, should unify across OS instead of using separate apis
 	bool want_ptrace_wrap;
 #if R2__WINDOWS__
