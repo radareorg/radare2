@@ -5,6 +5,7 @@ LIB_PATH=$(SHLR)/winkd/
 -include ../../../global.mk
 LDFLAGS+=-L$(LTOP)/util -lr_util
 LDFLAGS+=-L$(LTOP)/cons -lr_cons
+LDFLAGS+=-L$(LTOP)/muta -lr_muta
 LDFLAGS+=-L$(LTOP)/anal -lr_anal
 LDFLAGS+=-L$(LTOP)/reg -lr_reg
 LDFLAGS+=-L$(LTOP)/bp -lr_bp

@@ -1,6 +1,7 @@
 NAME=r_muta
 R2DEPS=r_util
 CFLAGS+=-DR2_PLUGIN_INCORE
+LDFLAGS+=-lm
 
 include ../config.mk
 
