@@ -2146,11 +2146,13 @@ R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 			r_buf_free (buf);
 			return NULL;
 		}
-		r_buf_append (buf, block_data, bbi->size);
+		r_buf_append_bytes (buf, block_data, bbi->size);
 		free (block_data);
 	}
 
-	char *digest_hex = r_sign_hash_data (a, ZIGN_HASH, r_buf_get_data (buf), r_buf_size (buf));
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (buf, &size);
+	char *digest_hex = r_sign_hash_data (a, ZIGN_HASH, data, (int)size);
 	r_buf_free (buf);
 	return digest_hex;
 }
