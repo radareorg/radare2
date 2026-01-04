@@ -2113,48 +2113,34 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr - b->addr);
 }
 
-static char *r_sign_hash_data(RAnal *a, const char *algo, const ut8 *data, int len) {
-	int digest_len = 0;
-	ut8 *digest = a->mb.hash (&a->mb, algo, data, len, &digest_len);
-	if (!digest) {
-		return NULL;
-	}
-	char *hex = r_hex_bin2strdup (digest, digest_len);
-	free (digest);
-	return hex;
-}
+// Include SHA256 implementation for standalone use
+#define R_CRYPTO_INTERNAL 1
+#include "../muta/hash/sha2.c"
 
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
 	RListIter *iter = NULL;
 	RAnalBlock *bbi = NULL;
-	RBuffer *buf = r_buf_new ();
-	if (!buf) {
-		return NULL;
-	}
+
+	RSha256Context ctx;
+	R_SHA2_API (r_sha256_init) (&ctx);
 
 	r_list_sort (fcn->bbs, &cmpaddr);
-
-	// Collect all block data
 	r_list_foreach (fcn->bbs, iter, bbi) {
-		ut8 *block_data = malloc (bbi->size);
-		if (!block_data) {
-			r_buf_free (buf);
+		ut8 *buf = malloc (bbi->size);
+		if (!buf) {
 			return NULL;
 		}
-		if (!a->iob.read_at (a->iob.io, bbi->addr, block_data, bbi->size)) {
-			free (block_data);
-			r_buf_free (buf);
+		if (!a->iob.read_at (a->iob.io, bbi->addr, buf, bbi->size)) {
+			free (buf);
 			return NULL;
 		}
-		r_buf_append_bytes (buf, block_data, bbi->size);
-		free (block_data);
+		R_SHA2_API (r_sha256_update) (&ctx, buf, bbi->size);
+		free (buf);
 	}
 
-	ut64 size = 0;
-	const ut8 *data = r_buf_data (buf, &size);
-	char *digest_hex = r_sign_hash_data (a, ZIGN_HASH, data, (int)size);
-	r_buf_free (buf);
-	return digest_hex;
+	char textdigest[R_SHA256_DIGEST_STRING_LENGTH] = {0};
+	R_SHA2_API (r_sha256_end) (&ctx, textdigest);
+	return strdup (textdigest);
 }
 
 static bool countForCB(RSignItem *it, void *user) {
