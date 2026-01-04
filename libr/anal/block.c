@@ -58,8 +58,6 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 	return 0;
 }
 
-#define D if(anal && anal->verbose)
-
 R_API void r_anal_block_ref(RAnalBlock *bb) {
 	// XXX we have R_REF for this
 	if (bb) {
