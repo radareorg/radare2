@@ -57,8 +57,12 @@ static inline RSlice r_slice_from_to(RSlice slice, size_t from, size_t to) {
 	if (to >= slice.len) {
 		to = slice.len;
 	}
-
-	return (RSlice){ .ptr = slice.ptr + from, .len = to - from, .cap = slice.cap };
+	RSlice r = {
+		.ptr = slice.ptr + from,
+		.len = to - from,
+		.cap = slice.cap
+	};
+	return r;
 }
 
 // Arena Allocator - Linked list of fixed-size blocks, backed with malloc/free

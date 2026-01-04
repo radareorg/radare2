@@ -1228,7 +1228,25 @@ const char *PE_(bin_pe_get_authentihash)(RBinPEObj *pe) {
 }
 
 int PE_(bin_pe_is_authhash_valid)(RBinPEObj *pe) {
-	return pe? pe->is_authhash_valid: false;
+	if (!pe) {
+		return false;
+	}
+	// Lazy computation of authentihash validation
+	if (!pe->authhash_computed && pe->cms && pe->spcinfo) {
+		const char *actual_authentihash = PE_(bin_pe_compute_authentihash) (pe);
+		const char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (pe);
+		if (actual_authentihash && claimed_authentihash) {
+			pe->is_authhash_valid = !strcmp (actual_authentihash, claimed_authentihash);
+		} else {
+			pe->is_authhash_valid = false;
+		}
+		if (actual_authentihash) {
+			free ((void *)actual_authentihash);
+		}
+		free ((void *)claimed_authentihash);
+		pe->authhash_computed = true;
+	}
+	return pe->is_authhash_valid;
 }
 
 static void computeOverlayOffset(ut64 offset, ut64 size, ut64 file_size, ut64 *largest_offset, ut64 *largest_size) {
@@ -3380,7 +3398,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		offset += cert->dwLength;
 	}
 
-	if (pe->cms && pe->spcinfo) {
+	if (pe->cms && pe->spcinfo && pe->mb) {
 		const char *actual_authentihash = PE_(bin_pe_compute_authentihash) (pe);
 		const char *claimed_authentihash = PE_(bin_pe_get_claimed_authentihash) (pe);
 		if (actual_authentihash && claimed_authentihash) {
@@ -3392,6 +3410,7 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 			free ((void *)actual_authentihash);
 		}
 		free ((void *)claimed_authentihash);
+		pe->authhash_computed = true;
 	}
 	pe->is_signed = pe->cms;
 	return true;
