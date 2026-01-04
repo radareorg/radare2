@@ -1247,7 +1247,7 @@ static void print_fpu(RCons *cons, void *f) {
 
 		r_cons_printf (cons, "\nSingle precision registers (f0-f15 as float):\n");
 		for (i = 0; i < 16; i++) {
-			float *freg = (float *)(fpu_regs + i * 4);
+			float *freg = (float *)(fpu_regs + i * 8);
 			r_cons_printf (cons, "f%d = %g (0x%08x)\n", i,
 				*freg, *(ut32 *)freg);
 		}
