@@ -23,6 +23,7 @@ R_API void r_io_init(RIO* io) {
 	r_io_cache_init (io);
 	r_io_plugin_init (io);
 	r_io_undo_init (io);
+	r_io_valid_cache_init (io);  // Initialize validation cache
 	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");
 	if (bank) {
@@ -674,6 +675,7 @@ R_API void r_io_fini(RIO* io) {
 	r_io_desc_fini (io);
 	ls_free (io->plugins);
 	r_io_cache_fini (io);
+	r_io_valid_cache_fini (io);  // Cleanup validation cache
 	r_list_free (io->undo.w_list);
 	R_FREE (io->runprofile);
 	r_event_free (io->event);

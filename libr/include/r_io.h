@@ -130,6 +130,22 @@ typedef struct r_io_cache_t {
 	bool enabled;
 } RIOCache;
 
+// Range-based validation cache for is_valid_offset optimization
+typedef struct r_io_range_cache_t {
+	ut64 start_addr;
+	ut64 end_addr;
+	bool is_valid;
+	ut32 map_id;  // For cache invalidation tracking
+} RIOVALIDRangeCache;
+
+typedef struct r_io_valid_cache_t {
+	RIOVALIDRangeCache *ranges;
+	int count;
+	int capacity;
+	ut64 last_query_addr;  // Last queried address for optimization
+	bool last_query_result;
+} RIOVALIDCache;
+
 // -io-cache-
 
 typedef struct r_io_t {
@@ -151,6 +167,7 @@ typedef struct r_io_t {
 	RIDStorage maps;  // RIOMaps accessible by their id
 	RIDStorage banks; // RIOBanks accessible by their id
 	RIOCache cache;
+	RIOVALIDCache valid_cache;  // Range-based validation cache
 	ut8 *write_mask;
 	int write_mask_len;
 	ut64 mask;
@@ -632,6 +649,9 @@ R_API char *r_io_map_getattr(RIOMap *map);
 
 /* io/ioutils.c */
 R_API bool r_io_is_valid_offset(RIO *io, ut64 offset, int hasperm);
+R_API void r_io_valid_cache_init(RIO *io);
+R_API void r_io_valid_cache_fini(RIO *io);
+R_API void r_io_valid_cache_invalidate(RIO *io);
 R_API bool r_io_addr_is_mapped(RIO *io, ut64 vaddr);
 R_API bool r_io_read_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian);
 R_API bool r_io_write_i(RIO* io, ut64 addr, ut64 *val, int size, bool endian);

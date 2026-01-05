@@ -169,6 +169,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 			free (map[1]);
 			return NULL;
 		}
+		r_io_valid_cache_invalidate (io);  // Invalidate validation cache
 		return map[1];
 	}
 	return NULL;
@@ -216,6 +217,7 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 			free (map[1]);
 			return NULL;
 		}
+		r_io_valid_cache_invalidate (io);  // Invalidate validation cache
 		return map[1];
 	}
 	return NULL;
@@ -271,6 +273,7 @@ R_API void r_io_map_del(RIO *io, ut32 id) {
 	} while (r_id_storage_get_next (&io->banks, &bankid));
 	r_id_storage_delete (&io->maps, id);
 	_map_free_cb (NULL, map, id);
+	r_io_valid_cache_invalidate (io);  // Invalidate validation cache
 }
 
 //delete all maps with specified fd
