@@ -1,20 +1,18 @@
-/* radare - LGPL - Copyright 2024-2025 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
-#include <r_lib.h>
 #include <r_muta.h>
-#include <r_hash.h>
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_SHA384);
-	if (!ctx) {
-		return false;
+	if (R_LIKELY (ctx)) {
+		r_hash_do_begin (ctx, R_HASH_SHA384);
+		r_hash_do_sha384 (ctx, buf, len);
+		r_hash_do_end (ctx, R_HASH_SHA384);
+		r_muta_session_append (cj, ctx->digest, R_HASH_SIZE_SHA384);
+		r_hash_free (ctx);
+		return true;
 	}
-	r_hash_do_begin (ctx, R_HASH_SHA384);
-	r_hash_do_sha384 (ctx, buf, len);
-	r_hash_do_end (ctx, R_HASH_SHA384);
-	r_muta_session_append (cj, ctx->digest, R_HASH_SIZE_SHA384);
-	r_hash_free (ctx);
-	return true;
+	return false;
 }
 
 RMutaPlugin r_muta_plugin_sha384 = {
