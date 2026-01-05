@@ -207,6 +207,8 @@ cryp          rot  Rotate Encryption
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
 hash         sha1  SHA1 hash
 hash       sha256  SHA256 hash
+hash       sha384  SHA384 hash
+hash       sha512  SHA512 hash
 hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash      strhash  String hash using a modified DJB2 xor
