@@ -171,6 +171,8 @@ extern RMutaPlugin r_muta_plugin_rol;
 extern RMutaPlugin r_muta_plugin_md5;
 extern RMutaPlugin r_muta_plugin_sha1;
 extern RMutaPlugin r_muta_plugin_sha256;
+extern RMutaPlugin r_muta_plugin_sha384;
+extern RMutaPlugin r_muta_plugin_sha512;
 extern RMutaPlugin r_muta_plugin_ror;
 extern RMutaPlugin r_muta_plugin_serpent;
 extern RMutaPlugin r_muta_plugin_sip;

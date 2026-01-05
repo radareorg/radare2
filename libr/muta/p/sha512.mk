@@ -1,0 +1,15 @@
+OBJ_SHA512=muta_sha512.o
+SRC_SHA512=muta_sha512.c
+
+STATIC_OBJ+=${OBJ_SHA512}
+SHARED_SHA512=$(SHLIBDIR)$(LDFLAGS) $(LIBOBJ)
+
+TARGET_SHA512=muta_sha512.${EXT_SO}
+
+all: $(TARGET_SHA512)
+
+$(TARGET_SHA512): $(OBJ_SHA512)
+	$(CC) $(call libname,muta_sha512) ${LDFLAGS} ${CFLAGS} -o ${TARGET_SHA512} ${OBJ_SHA512}
+
+clean::
+	rm -f *.o *.${EXT_SO} *.a
