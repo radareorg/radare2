@@ -1,0 +1,15 @@
+OBJ_SHA384=muta_sha384.o
+SRC_SHA384=muta_sha384.c
+
+STATIC_OBJ+=${OBJ_SHA384}
+SHARED_SHA384=$(SHLIBDIR)$(LDFLAGS) $(LIBOBJ)
+
+TARGET_SHA384=muta_sha384.${EXT_SO}
+
+all: $(TARGET_SHA384)
+
+$(TARGET_SHA384): $(OBJ_SHA384)
+	$(CC) $(call libname,muta_sha384) ${LDFLAGS} ${CFLAGS} -o ${TARGET_SHA384} ${OBJ_SHA384}
+
+clean::
+	rm -f *.o *.${EXT_SO} *.a

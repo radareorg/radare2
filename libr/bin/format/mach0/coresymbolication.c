@@ -1,7 +1,6 @@
-/* radare - LGPL - Copyright 2020-2025 - mrmacete */
+/* radare - LGPL - Copyright 2020-2026 - mrmacete */
 
 #include <r_util.h>
-#include <r_hash.h>
 #include "coresymbolication.h"
 
 #define R_CS_EL_OFF_SEGS 0x58
@@ -126,7 +125,7 @@ static void meta_add_fileline(RBinFile *bf, ut64 vaddr, ut32 size, RCoreSymCache
 static char *str_dup_safe(const ut8 *b, const ut8 *str, const ut8 *end) {
 	if (str >= b && str < end) {
 		int len = r_str_nlen ((const char *)str, end - str);
-		if (len) {
+		if (len > 0) {
 			return r_str_ndup ((const char *)str, len);
 		}
 	}
