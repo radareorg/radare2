@@ -60,9 +60,10 @@ jobs:
       uses: actions/checkout@v6
     - name: Installing with symlinks
       run: |
+          export CFLAGS=-Wl,--no-undefined
           cp -f dist/plugins-cfg/plugins.cs6.cfg plugins.cfg
           ./configure-plugins
-          sys/install.sh --with-capstone-next
+          sys/install.sh --with-capstone-next --with-libuv
   # Source Tarballs
   tarball:
     runs-on: ubuntu-22.04
