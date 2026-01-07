@@ -65,7 +65,7 @@ jobs:
           export LDFLAGS=-Wl,--no-undefined
           cp -f dist/plugins-cfg/plugins.cs6.cfg plugins.cfg
           ./configure-plugins
-          sys/install.sh --with-capstone-next --with-libuv --with-ssl-crypto
+          sys/install.sh --with-capstone-next --with-libuv --with-ssl --with-ssl-crypto
     - name: Running rahash2 tests
       run: r2r test/db/tools/rahash2
   # Source Tarballs
