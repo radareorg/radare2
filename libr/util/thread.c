@@ -47,8 +47,15 @@ static void *_r_th_launcher(void *_th) {
 		}
 		r_th_lock_enter (th->lock);
 		if (th->delay) {
-			r_sys_sleep (th->delay);
+			ut32 delay = th->delay;
 			th->delay = 0;
+			r_th_lock_leave (th->lock);
+			// Sleep in small intervals to check breaked flag
+			while (delay > 0 && !th->breaked) {
+				r_sys_usleep (10000); // 10ms intervals
+				delay = (delay > 10) ? delay - 10 : 0;
+			}
+			r_th_lock_enter (th->lock);
 		}
 		if (th->breaked) {
 			th->running = false;
