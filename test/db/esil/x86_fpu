@@ -1,0 +1,292 @@
+NAME=fld dword [rsp+8] esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9442408
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fld dword [rsp + 8]
+esil: st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,st2,st3,=,st1,st2,=,st0,st1,=,32,0x8,rsp,+,[4],F2D,st0,=
+EOF
+RUN
+
+NAME=fst dword [rsp] esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d91424
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fst dword [rsp]
+esil: 32,st0,D2F,rsp,=[4]
+EOF
+RUN
+
+NAME=fstp dword [rsp] esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d91c24
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fstp dword [rsp]
+esil: 32,st0,D2F,rsp,=[4],st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,st5,st4,=,st6,st5,=,st7,st6,=
+EOF
+RUN
+
+NAME=fld1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9e8
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fld1
+esil: st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,st2,st3,=,st1,st2,=,st0,st1,=,0x3ff0000000000000,st0,=
+EOF
+RUN
+
+NAME=fldz esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9ee
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fldz
+esil: st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,st2,st3,=,st1,st2,=,st0,st1,=,0x0,st0,=
+EOF
+RUN
+
+NAME=fadd st0, st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8c1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fadd st(1)
+esil: st1,st0,F+,st0,=
+EOF
+RUN
+
+NAME=fadd st1, st0 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx dcc1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fadd st(1), st(0)
+esil: st0,st1,F+,st1,=
+EOF
+RUN
+
+NAME=faddp st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx dec1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: faddp st(1)
+esil: st0,st1,F+,st1,=,st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,st5,st4,=,st6,st5,=,st7,st6,=
+EOF
+RUN
+
+NAME=fsub st0, st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8e1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fsub st(1)
+esil: st1,st0,F-,st0,=
+EOF
+RUN
+
+NAME=fmul st0, st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8c9
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fmul st(1)
+esil: st1,st0,F*,st0,=
+EOF
+RUN
+
+NAME=fmulp st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx dec9
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fmulp st(1)
+esil: st0,st1,F*,st1,=,st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,st5,st4,=,st6,st5,=,st7,st6,=
+EOF
+RUN
+
+NAME=fdiv st0, st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8f1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fdiv st(1)
+esil: st1,st0,F/,st0,=
+EOF
+RUN
+
+NAME=fdivrp st1 esil
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx def1
+ao~opcode:,esil:
+EOF
+EXPECT=<<EOF
+opcode: fdivrp st(1)
+esil: st1,st0,F/,st1,=,st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,st5,st4,=,st6,st5,=,st7,st6,=
+EOF
+RUN
+
+NAME=fpu emulation fld1 fld1 faddp (1.0 + 1.0 = 2.0)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9e8d9e8dec1
+aei
+aeim
+3 aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x4000000000000000
+EOF
+RUN
+
+NAME=fpu emulation fld1 fldz fmul (1.0 * 0.0 = 0.0)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9e8d9eed8c9
+aei
+aeim
+3 aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x00000000
+EOF
+RUN
+
+NAME=fpu emulation fdiv (1.0 / 2.0 = 0.5)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8f1
+aei
+aeim
+aer st0=0x3ff0000000000000
+aer st1=0x4000000000000000
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x3fe0000000000000
+EOF
+RUN
+
+NAME=fpu emulation fsub (3.0 - 1.0 = 2.0)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d8e1
+aei
+aeim
+aer st0=0x4008000000000000
+aer st1=0x3ff0000000000000
+aes
+ar st0
+EOF
+EXPECT=<<EOF
+0x4000000000000000
+EOF
+RUN
+
+NAME=fpu stack push (fld1)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d9e8
+aei
+aeim
+aer st0=0x4000000000000000
+aer st1=0x4010000000000000
+aes
+ar st0
+ar st1
+ar st2
+EOF
+EXPECT=<<EOF
+0x3ff0000000000000
+0x4000000000000000
+0x4010000000000000
+EOF
+RUN
+
+NAME=fpu stack pop (fstp)
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx d91c24
+aei
+aeim
+aer st0=0x3ff0000000000000
+aer st1=0x4000000000000000
+aer st2=0x4008000000000000
+aes
+ar st0
+ar st1
+EOF
+EXPECT=<<EOF
+0x4000000000000000
+0x4008000000000000
+EOF
+RUN
