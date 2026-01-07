@@ -142,6 +142,10 @@ static inline bool is_debug_or_control(Operand op) {
 	return (op.type & OT_REGTYPE) & (OT_CONTROLREG | OT_DEBUGREG);
 }
 
+static inline bool exactmatch(const char *reg, const char *token, size_t length) {
+	return strlen (reg) == length && !r_str_ncasecmp (reg, token, length);
+}
+
 static ut8 getsib(const ut8 sib) {
 	if (!sib) {
 		return 0;
@@ -5488,7 +5492,7 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 	// General purpose registers
 	if (length == 3 && token[0] == 'e') {
 		for (i = 0; regs[i]; i++) {
-			if (!r_str_ncasecmp (regs[i], token, length)) {
+			if (exactmatch (regs[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				return i;
 			}
@@ -5528,21 +5532,21 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 	if (length == 2) {
 		if (token[1] == 'l' || token[1] == 'h') {
 			for (i = 0; regs8[i]; i++) {
-				if (!r_str_ncasecmp (regs8[i], token, length)) {
+				if (exactmatch (regs8[i], token, length)) {
 					*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 					return i;
 				}
 			}
 		}
 		for (i = 0; regs16[i]; i++) {
-			if (!r_str_ncasecmp (regs16[i], token, length)) {
+			if (exactmatch (regs16[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
 		}
 		// This isn't working properly yet
 		for (i = 0; sregs[i]; i++) {
-			if (!r_str_ncasecmp (sregs[i], token, length)) {
+			if (exactmatch (sregs[i], token, length)) {
 				*type = (OT_SEGMENTREG & OT_REG (i)) | OT_WORD;
 				return i;
 			}
@@ -5550,14 +5554,14 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 	}
 	if (token[0] == 'r') {
 		for (i = 0; regs64[i]; i++) {
-			if (!r_str_ncasecmp (regs64[i], token, length)) {
+			if (exactmatch (regs64[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->config->bits = 64;
 				return i;
 			}
 		}
 		for (i = 0; regs64ext[i]; i++) {
-			if (!r_str_ncasecmp (regs64ext[i], token, length)) {
+			if (exactmatch (regs64ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_QWORD;
 				a->config->bits = 64;
 				*extended = true;
@@ -5565,7 +5569,7 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			}
 		}
 		for (i = 0; regsext[i]; i++) {
-			if (!r_str_ncasecmp (regsext[i], token, length)) {
+			if (exactmatch (regsext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_DWORD;
 				if (a->config->bits < 32) {
 					a->config->bits = 32;
@@ -5575,14 +5579,14 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			}
 		}
 		for (i = 0; regs16ext[i]; i++) {
-			if (!r_str_ncasecmp (regs16ext[i], token, length)) {
+			if (exactmatch (regs16ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_WORD;
 				*extended = true;
 				return i;
 			}
 		}
 		for (i = 0; regs8ext[i]; i++) {
-			if (!r_str_ncasecmp (regs8ext[i], token, length)) {
+			if (exactmatch (regs8ext[i], token, length)) {
 				*type = (OT_GPREG & OT_REG (i)) | OT_BYTE;
 				*extended = true;
 				return i;
