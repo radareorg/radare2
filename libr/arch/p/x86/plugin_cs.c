@@ -329,6 +329,11 @@ static char *getarg(struct Getarg* gop, int n, int set, char *setop, ut32 *bitsi
 		{
 			const char *rn = cs_reg_name (handle, op.reg);
 			if (rn) {
+				char stbuf[8];
+				if (r_str_startswith (rn, "st(") && strlen (rn) == 5 && rn[4] == ')') {
+					snprintf (stbuf, sizeof (stbuf), "st%c", rn[3]);
+					rn = stbuf;
+				}
 				if (set == 1) {
 					return r_str_newf ("%s,%s=", rn, setarg);
 				}
@@ -560,40 +565,233 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 		break;
 	case X86_INS_FLDCW:
 	case X86_INS_FLDENV:
+		break;
+	case X86_INS_FLD:
+		{
+			ut32 bitsize;
+			src = getarg (&gop, 0, 0, NULL, &bitsize);
+			if (src) {
+				esilprintf (op,
+					"st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,"
+					"st2,st3,=,st1,st2,=,st0,st1,=,"
+					"%u,%s,F2D,st0,=", bitsize, src);
+			}
+			free (src);
+		}
+		break;
+	case X86_INS_FLD1:
+		esilprintf (op,
+			"st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,"
+			"st2,st3,=,st1,st2,=,st0,st1,=,"
+			"0x3ff0000000000000,st0,=");
+		break;
+	case X86_INS_FLDZ:
+		esilprintf (op,
+			"st6,st7,=,st5,st6,=,st4,st5,=,st3,st4,=,"
+			"st2,st3,=,st1,st2,=,st0,st1,=,"
+			"0x0,st0,=");
+		break;
 	case X86_INS_FLDL2E:
 	case X86_INS_FLDL2T:
 	case X86_INS_FLDLG2:
 	case X86_INS_FLDLN2:
 	case X86_INS_FLDPI:
-	case X86_INS_FLDZ:
-	case X86_INS_FLD1:
-	case X86_INS_FLD:
 		break;
 	case X86_INS_FIST:
 	case X86_INS_FISTP:
+		break;
 	case X86_INS_FST:
+		{
+			ut32 bitsize;
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (dst) {
+				esilprintf (op, "%u,st0,D2F,%s", bitsize, dst);
+			}
+			free (dst);
+		}
+		break;
 	case X86_INS_FSTP:
 	case X86_INS_FSTPNCE:
+		{
+			ut32 bitsize;
+			dst = getarg (&gop, 0, 1, NULL, &bitsize);
+			if (dst) {
+				esilprintf (op,
+					"%u,st0,D2F,%s,"
+					"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+					"st5,st4,=,st6,st5,=,st7,st6,=", bitsize, dst);
+			}
+			free (dst);
+		}
+		break;
 	case X86_INS_FXRSTOR:
 	case X86_INS_FXRSTOR64:
 		break;
+	case X86_INS_FDIV:
+		{
+			ut32 bitsize;
+			if (INSOPS == 0) {
+				esilprintf (op, "st1,st0,F/,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "%u,%s,F2D,st0,F/,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,F/,%s,=", src, dst, dst);
+				}
+				free (src);
+				free (dst);
+			} else {
+				src = getarg (&gop, 0, 0, NULL, NULL);
+				if (src) {
+					esilprintf (op, "%s,st0,F/,st0,=", src);
+				}
+				free (src);
+			}
+		}
+		break;
+	case X86_INS_FDIVP:
+		esilprintf (op,
+			"st0,st1,F/,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=");
+		break;
+	case X86_INS_FDIVR:
+		{
+			ut32 bitsize;
+			if (INSOPS == 0) {
+				esilprintf (op, "st0,st1,SWAP,F/,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "st0,%u,%s,F2D,F/,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,SWAP,F/,%s,=", dst, src, dst);
+				}
+				free (src);
+				free (dst);
+			}
+		}
+		break;
+	case X86_INS_FDIVRP:
+		esilprintf (op,
+			"st1,st0,F/,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=");
+		break;
 	case X86_INS_FIDIV:
 	case X86_INS_FIDIVR:
-	case X86_INS_FDIV:
-	case X86_INS_FDIVP:
-	case X86_INS_FDIVR:
-	case X86_INS_FDIVRP:
+		break;
+	case X86_INS_FSUB:
+		{
+			ut32 bitsize;
+			if (INSOPS == 0) {
+				esilprintf (op, "st1,st0,F-,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "%u,%s,F2D,st0,F-,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,F-,%s,=", src, dst, dst);
+				}
+				free (src);
+				free (dst);
+			} else {
+				src = getarg (&gop, 0, 0, NULL, NULL);
+				if (src) {
+					esilprintf (op, "%s,st0,F-,st0,=", src);
+				}
+				free (src);
+			}
+		}
+		break;
+	case X86_INS_FSUBP:
+		esilprintf (op,
+			"st0,st1,F-,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=");
 		break;
 	case X86_INS_FSUBR:
-	case X86_INS_FISUBR:
+		{
+			ut32 bitsize;
+			if (INSOPS == 0) {
+				esilprintf (op, "st0,st1,SWAP,F-,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "st0,%u,%s,F2D,F-,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,SWAP,F-,%s,=", dst, src, dst);
+				}
+				free (src);
+				free (dst);
+			}
+		}
+		break;
 	case X86_INS_FSUBRP:
-	case X86_INS_FSUB:
+		esilprintf (op,
+			"st1,st0,F-,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=");
+		break;
 	case X86_INS_FISUB:
-	case X86_INS_FSUBP:
+	case X86_INS_FISUBR:
 		break;
 	case X86_INS_FMUL:
-	case X86_INS_FIMUL:
+		{
+			ut32 bitsize;
+			if (INSOPS == 0) {
+				esilprintf (op, "st1,st0,F*,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "%u,%s,F2D,st0,F*,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,F*,%s,=", src, dst, dst);
+				}
+				free (src);
+				free (dst);
+			} else {
+				src = getarg (&gop, 0, 0, NULL, NULL);
+				if (src) {
+					esilprintf (op, "%s,st0,F*,st0,=", src);
+				}
+				free (src);
+			}
+		}
+		break;
 	case X86_INS_FMULP:
+		esilprintf (op,
+			"st0,st1,F*,st1,=,"
+			"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+			"st5,st4,=,st6,st5,=,st7,st6,=");
+		break;
+	case X86_INS_FIMUL:
 		break;
 	case X86_INS_CLI:
 		esilprintf (op, "0,if,:=");
@@ -2192,20 +2390,49 @@ static void anop_esil(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, 
 	case X86_INS_FADD:
 #if CS_API_MAJOR > 4
 	case X86_INS_PFADD:
-#else
-	case X86_INS_FADDP:
 #endif
 		{
 			ut32 bitsize;
-			src = getarg (&gop, 1, 0, NULL, NULL);
-			dst = getarg (&gop, 0, 0, NULL, &bitsize);
-			if (src && dst) {
-				esilprintf (op, "%u,%u,%s,F2D,%u,%s,F2D,F+,D2F,%s,=",
-					bitsize, bitsize, src, bitsize, dst, dst);
+			bool is_faddp = !strcmp (insn->mnemonic, "faddp");
+			if (is_faddp) {
+				if (INSOPS > 0) {
+					dst = getarg (&gop, 0, 0, NULL, NULL);
+					if (dst) {
+						esilprintf (op,
+							"st0,%s,F+,%s,=,"
+							"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+							"st5,st4,=,st6,st5,=,st7,st6,=", dst, dst);
+					}
+					free (dst);
+				} else {
+					esilprintf (op,
+						"st0,st1,F+,st1,=,"
+						"st1,st0,=,st2,st1,=,st3,st2,=,st4,st3,=,"
+						"st5,st4,=,st6,st5,=,st7,st6,=");
+				}
+			} else if (INSOPS == 0) {
+				esilprintf (op, "st1,st0,F+,st0,=");
+			} else if (INSOP(0).type == X86_OP_MEM) {
+				src = getarg (&gop, 0, 0, NULL, &bitsize);
+				if (src) {
+					esilprintf (op, "%u,%s,F2D,st0,F+,st0,=", bitsize, src);
+				}
+				free (src);
+			} else if (INSOPS > 1) {
+				src = getarg (&gop, 1, 0, NULL, NULL);
+				dst = getarg (&gop, 0, 0, NULL, NULL);
+				if (src && dst) {
+					esilprintf (op, "%s,%s,F+,%s,=", src, dst, dst);
+				}
+				free (src);
+				free (dst);
+			} else {
+				src = getarg (&gop, 0, 0, NULL, NULL);
+				if (src) {
+					esilprintf (op, "%s,st0,F+,st0,=", src);
+				}
+				free (src);
 			}
-			free (src);
-			free (dst);
-			break;
 		}
 		break;
 	case X86_INS_ADDPS:
