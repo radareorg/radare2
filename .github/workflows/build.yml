@@ -52,19 +52,22 @@ jobs:
       with:
         name: linux-wasi-browser
         path: radare2-*-wasi-browser.zip
-  # capstone-next
-  linux-csnext:
-    runs-on: ubuntu-22.04
+
+  # merged build with capstone, libuv and openssl
+  linux-deps:
+    runs-on: ubuntu-24.04
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - name: Installing with symlinks
+    - name: Installing with capstone, libuv and openssl
       run: |
           export CFLAGS=-Wl,--no-undefined
           export LDFLAGS=-Wl,--no-undefined
           cp -f dist/plugins-cfg/plugins.cs6.cfg plugins.cfg
           ./configure-plugins
-          sys/install.sh --with-capstone-next --with-libuv
+          sys/install.sh --with-capstone-next --with-libuv --with-ssl --with-ssl-crypto
+    - name: Running rahash2 tests
+      run: r2r test/db/tools/rahash2
   # Source Tarballs
   tarball:
     runs-on: ubuntu-22.04

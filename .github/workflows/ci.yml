@@ -50,12 +50,12 @@ jobs:
       uses: actions/checkout@v6
     - name: Linting
       run: sys/lint.sh
-    - name: Building without capstone but with ssl
+    - name: Building without capstone
       env:
         CFLAGS: -O0
       run: |
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
-        ./configure --without-capstone --with-rpath --with-ssl && make -j
+        ./configure --without-capstone --with-rpath && make -j
         sudo make install
     - name: Running c/m with self-hosted libmagic
       run:
@@ -157,15 +157,6 @@ jobs:
       with:
         name: results.json
         path: test/results.json
-  linux-ssl-crypto:
-    runs-on: ubuntu-24.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Installing with ssl crypto
-      run: sys/install.sh --with-ssl-crypto
-    - name: Running rahash2 tests
-      run: r2r test/db/tools/rahash2
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true
