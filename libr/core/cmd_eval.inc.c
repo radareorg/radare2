@@ -221,7 +221,8 @@ static bool cmd_load_theme(RCore *core, const char *_arg) {
 		core->cons->context->pal_batch = false;
 		// Single reload after all color changes
 		r_cons_pal_reload (core->cons);
-		core->cons->context->pal_dirty = false;
+		// Note: Do NOT clear pal_dirty here - it needs to remain set so that
+		// r_cons_pop() will propagate the cpal changes to the parent context
 		core->cmdfilter = NULL;
 		ret = true; // maybe the script fails?
 	} else {
