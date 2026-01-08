@@ -267,7 +267,7 @@ SHLRS+=winkd/libr_winkd.a
 # When USE_LIB_ZIP=1, system libzip is used instead
 # See shlr/zip/Makefile for build rules
 
-libr_shlr.${EXT_AR}:
+libr_shlr.${EXT_AR}: preall
 ifeq ($(OSTYPE),darwin)
 	@LIBS=""; \
 	for LIB in $(SHLRS); do \
