@@ -55,7 +55,7 @@ include ../../shlr/sdb.mk
 include ../../shlr/capstone.mk
 
 .PHONY: all symlinks build install blobclean
-all: symlinks
+all:: symlinks
 
 symlinks: build
 	echo make
