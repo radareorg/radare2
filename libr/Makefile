@@ -97,7 +97,7 @@ ifeq (${COMPILER},wasi)
 else
 	$(CC) -fvisibility=hidden $(MLFLAGS) ${LINK} ${CFLAGS} ${CPPFLAGS} ${LDFLAGS} -shared -o libr.${EXT_SO}  \
 		libr.${EXT_AR} ../shlr/gdb/lib/libgdbr.${EXT_AR} ../shlr/java/libr_java.${EXT_AR} \
-		../shlr/libr_shlr.${EXT_AR} ../libr/util/libr_util.${EXT_AR}
+		../shlr/libr_shlr.${EXT_AR} ../subprojects/otezip/libotezip.${EXT_AR} ../libr/util/libr_util.${EXT_AR}
 endif
 endif
 

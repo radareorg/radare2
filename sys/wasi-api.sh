@@ -12,7 +12,7 @@ wasi_setup_sdk
 wasi_setup_plugins
 
 # Configure and build
-./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi-api --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl || exit 1
+./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi-api --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl --without-zip || exit 1
 
 make -j || exit 1
 
