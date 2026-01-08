@@ -120,7 +120,7 @@ endif
 
 r_util_deps = [ldl, mth, spp_dep, pth, sdb_dep, lz4_dep, platform_deps]
 if get_option('use_zip')
-  r_util_deps += [ zlib_dep ]
+  r_util_deps += [ zlib_dep, zip_dep ]
 endif
 
 if host_machine.system().startswith('freebsd') or host_machine.system().startswith('netbsd') or host_machine.system().startswith('haiku')

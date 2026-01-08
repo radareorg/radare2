@@ -8,7 +8,6 @@ include ../../mk/platform.mk
 _INCLUDE_MK_GCC_=
 include ../../mk/${COMPILER}.mk
 SHLR?=..
-include ../zip/deps.mk
 LIBAR=libr_java.$(EXT_AR)
 CC_AR=$(AR) -r $(LIBAR)
 
@@ -29,9 +28,10 @@ CFLAGS:=-I../../libr/include $(CFLAGS)
 LDFLAGS+=-L../../libr/util
 OBJS=code.o class.o ops.o
 
-include ../../shlr/sdb.mk
-
 all: $(LIBAR)
+
+include ../../shlr/sdb.mk
+include ../zip/deps.mk
 
 RANLIB?=ranlib
 

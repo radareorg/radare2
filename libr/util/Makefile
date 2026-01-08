@@ -36,9 +36,10 @@ LDFLAGS+=${BN_LIBS}
 LDFLAGS+=${TH_LIBS}
 LDFLAGS+=${DL_LIBS}
 
+# Ensure zip library is linked when building shared library
+
 EXTRA_PRE+=spp_config
 #EXTRA_TARGETS=$(EXTRA_PRE)
-EXTRA_CLEAN=doclean
 
 myall: all
 
@@ -46,18 +47,17 @@ include ../rules.mk
 include deps.mk
 include sdb.mk
 include spp.mk
+include $(SHLR)/zip/deps.mk
+LINK+=$(OTEZIP_LIBA)
 
 f fast:
 	rm -f sasa.c ; cat $(shell ls *.c| grep -v buf_| grep -v sasa) > sasa.c
 	$(CC_LIB) $(LIBNAME) $(CFLAGS) sasa.c $(SHARED_OBJ) $(LINK) $(LDFLAGS)
 	rm -f sasa.c
 
-doclean:
-	$(MAKE) -C d clean
-
 sync-regex regex-sync:
 	-rm -rf src/
 	cvs -qd anoncvs@anoncvs.ca.openbsd.org:/cvs get -P src/lib/libc/regex
 	cp src/lib/libc/regex/* regex
 
-.PHONY: doclean sync-regex regex-sync
+.PHONY: sync-regex regex-sync

@@ -37,3 +37,7 @@ plugins:
 	$(MAKE) -C p all
 
 include ../rules.mk
+
+# Ensure zip library is linked when building shared library
+include $(SHLR)/zip/deps.mk
+LINK+=$(OTEZIP_LIBA)

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2024 - dso, pancake */
+/* radare - LGPL - Copyright 2012-2026 - dso, pancake */
 
 // TODO: wrap with r_sandbox api
 

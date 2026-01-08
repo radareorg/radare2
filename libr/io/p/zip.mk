@@ -4,7 +4,8 @@ STATIC_OBJ+=${OBJ_ZIP}
 TARGET_ZIP=io_zip.${EXT_SO}
 ALL_TARGETS+=${TARGET_ZIP}
 
-CFLAGS+=-I../../shlr/zip/include
+# XXX must use shlr/zip/deps.mk
+CFLAGS+=-I../../subprojects/otezip/src/include/otezip
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
@@ -13,7 +14,13 @@ else
 LINKFLAGS+=-L../../util -lr_util
 LINKFLAGS+=-L.. -lr_io
 endif
-#LINKFLAGS+=../../../shlr/zip/librz.a
+
+# Link against system libzip when USE_LIB_ZIP=1, otherwise otezip
+ifeq ($(USE_LIB_ZIP),1)
+LINKFLAGS+=$(LIBZIP)
+else
+LINKFLAGS+=../../../subprojects/otezip/libotezip.a
+endif
 
 ${TARGET_ZIP}: ${OBJ_ZIP}
 	${CC_LIB} $(call libname,io_zip) ${CFLAGS} -o ${TARGET_ZIP} ${OBJS} ${LINKFLAGS}
