@@ -10,7 +10,7 @@ OTEZIP_ROOT=$(SHLR)/../subprojects/otezip
 OTEZIP_LIBA=$(OTEZIP_ROOT)/libotezip.a
 CFLAGS+=-I$(OTEZIP_ROOT)/src/include/otezip
 $(OTEZIP_LIBA):
-	$(MAKE) -C $(OTEZIP_ROOT) CFLAGS="-fPIC" libotezip.a
+	$(MAKE) -C $(OTEZIP_ROOT) CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" CFLAGS="$(CFLAGS) -fPIC" libotezip.a
 endif
 LINK+=$(OTEZIP_LIBA)
 endif
