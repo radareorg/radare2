@@ -23,15 +23,16 @@ else
 LDFLAGS_SHARED=-shared
 endif
 #OSTYPE=windows
-include ../../libr/socket/deps.mk
-include ../../shlr/zip/deps.mk
-include ../../shlr/sdb.mk
 
 SRC_D=src
 SRC_C=$(wildcard $(SRC_D)/*.c)
 SRC_O=$(SRC_C:.c=.o)
 
 all: lib/$(LIBNAME).$(EXT_AR)
+
+include ../../libr/socket/deps.mk
+include ../../shlr/zip/deps.mk
+include ../../shlr/sdb.mk
 
 #$(LD) -shared -Wl,-soname,$(LIBNAME).so -o lib/$(LIBNAME).so $(SRC_O)
 lib:

@@ -263,9 +263,11 @@ SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=winkd/libr_winkd.a
-SHLRS+=zip/librz.a
+# librz.a removed from SHLRS - it's now conditionally built only when USE_LIB_ZIP=0
+# When USE_LIB_ZIP=1, system libzip is used instead
+# See shlr/zip/Makefile for build rules
 
-libr_shlr.${EXT_AR}:
+libr_shlr.${EXT_AR}: preall
 ifeq ($(OSTYPE),darwin)
 	@LIBS=""; \
 	for LIB in $(SHLRS); do \

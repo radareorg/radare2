@@ -5,8 +5,6 @@ R2DEPS=r_reg r_anal r_bp r_io r_cons r_syscall r_arch
 R2DEPS+=r_socket r_flag r_util r_egg r_muta r_esil r_bin
 CFLAGS+=-DR2_PLUGIN_INCORE
 
-include ../util/deps.mk
-
 foo:
 	@${MAKE} libs
 	@${MAKE} plugins
@@ -58,6 +56,7 @@ ios:
 	cd ../.. && sys/rebuild.sh iosdbg
 
 include ../rules.mk
+include ../util/deps.mk
 
 libs: ${LIBSO} ${LIBAR}
 

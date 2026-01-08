@@ -1,6 +1,6 @@
 .PHONY: default all clean
 
-DEPS=sdb qjs
+DEPS=sdb qjs otezip
 
 ifeq ($(WANT_V35),1)
   DEPS += binaryninja

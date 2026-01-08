@@ -3,7 +3,6 @@ include config.mk
 include ../config-user.mk
 include ../mk/platform.mk
 include ../mk/${COMPILER}.mk
-include ${SHLR}/zip/deps.mk
 
 DESTDIR:=$(DESTDIR)
 PREFIX?=${PWD}/../prefix
@@ -33,6 +32,8 @@ ifeq ($(WITH_LIBR),1)
 	$(MAKE) libr.${EXT_AR}
 	$(MAKE) libr.${EXT_SO}
 endif
+
+include ${SHLR}/zip/deps.mk
 
 ifeq ($(WITH_LIBR),1)
 

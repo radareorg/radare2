@@ -305,6 +305,17 @@ else
   message('Using bundled xxhash library')
 endif
 
+# handle zlib library
+sys_zlib = dependency('zlib', required: false)
+use_sys_zlib = false
+
+if sys_zlib.found() and get_option('use_sys_zlib')
+  message('Using system zlib library')
+  use_sys_zlib = true
+else
+  message('Using bundled zlib library')
+endif
+
 # handle openssl library
 use_ssl_crypto = get_option('use_ssl_crypto')
 if get_option('use_ssl')
@@ -383,6 +394,8 @@ userconf.set10('HAVE_LIB_MAGIC', sys_magic.found())
 userconf.set10('USE_LIB_MAGIC', use_syslib_magic)
 userconf.set10('HAVE_LIB_XXHASH', sys_xxhash.found())
 userconf.set10('USE_LIB_XXHASH', use_sys_xxhash)
+userconf.set10('HAVE_LIB_Z', sys_zlib.found())
+userconf.set10('USE_LIB_Z', use_sys_zlib)
 userconf.set10('HAVE_LINUX_CAN_H', false)
 userconf.set10('DEBUGGER', has_debugger)
 userconf.set10('WANT_ZIP', get_option('use_zip'))

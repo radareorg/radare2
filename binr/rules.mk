@@ -1,4 +1,5 @@
 BINR_PROGRAM=1
+all::
 include ../../libr/config.mk
 include ../../shlr/zip/deps.mk
 include ../../shlr/sdb.mk
@@ -29,7 +30,11 @@ LDFLAGS+=-flto
 endif
 
 ifeq (${COMPILER},wasi)
-LINK+=$(SHLR)/zip/librz.a
+ifeq ($(USE_LIB_ZIP),1)
+LINK+=$(LIBZIP)
+else
+LINK+=$(SHLR)/../subprojects/otezip/libotezip.a
+endif
 LINK+=$(SHLR)/gdb/lib/libgdbr.a
 LINK+=$(CS_ROOT)/libcapstone.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
@@ -108,7 +113,7 @@ ifeq ($(OSTYPE),linux)
 LDFLAGS+=-static
 endif
 
-all: ${BEXE} ${BINS}
+all:: ${BEXE} ${BINS}
 
 ifeq ($(WITH_LIBR),1)
 ${BINS}: ${OBJS}

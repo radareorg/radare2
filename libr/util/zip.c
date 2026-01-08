@@ -17,6 +17,7 @@
 #include <lz4.h>
 #endif
 
+#if WANT_ZIP
 static const char *gzerr(int n) {
 	const char *const errors[] = {
 		"",
@@ -91,6 +92,7 @@ err_exit:
 	free (dst);
 	return NULL;
 }
+#endif
 
 R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *R_NULLABLE consumed, int *dstLen) {
 	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
@@ -143,11 +145,19 @@ R_API ut8 *r_inflate_lz4(const ut8 *src, int srcLen, int *R_NULLABLE consumed, i
 }
 
 R_API ut8 *r_inflate(const ut8 *src, int srcLen, int *R_NULLABLE consumed, int *dstLen) {
-	R_RETURN_VAL_IF_FAIL(src && dstLen, NULL);
-	return inflatew(src, srcLen, consumed, dstLen, MAX_WBITS + 32);
+	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
+#if WANT_ZIP
+	return inflatew (src, srcLen, consumed, dstLen, MAX_WBITS + 32);
+#else
+	return NULL;
+#endif
 }
 
 R_API ut8 *r_inflate_raw(const ut8 *src, int srcLen, int *R_NULLABLE consumed, int *dstLen) {
-	R_RETURN_VAL_IF_FAIL(src && dstLen, NULL);
-	return inflatew(src, srcLen, consumed, dstLen, -MAX_WBITS);
+	R_RETURN_VAL_IF_FAIL (src && dstLen, NULL);
+#if WANT_ZIP
+	return inflatew (src, srcLen, consumed, dstLen, -MAX_WBITS);
+#else
+	return NULL;
+#endif
 }

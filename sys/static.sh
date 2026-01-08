@@ -81,6 +81,7 @@ ${MAKE} -j 8 || exit 1
 BINS="rarun2 r2pm rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
 # shellcheck disable=SC2086
 export CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
+STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a subprojects/capstone-v5/libcapstone.a"
 for a in ${BINS} ; do
 (
 	cd binr/$a
@@ -89,7 +90,7 @@ for a in ${BINS} ; do
 		${MAKE} -j4 || exit 1
 	else
 		if [ "${STATIC_BINS}" = 1 ]; then
-			CFLAGS=${CFLAGS_STATIC} LDFLAGS=${CFLAGS_STATIC} ${MAKE} -j4 || exit 1
+			CFLAGS=${CFLAGS_STATIC} LDFLAGS=${CFLAGS_STATIC}" ${STATIC_LIBS}" ${MAKE} -j4 || exit 1
 		else
 			${MAKE} -j4 || exit 1
 		fi
@@ -145,7 +146,7 @@ ${CC} .test.c \
 	${CFLAGS} \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
-	r2-static/usr/lib/libr.a ${LDFLAGS}
+	r2-static/usr/lib/libr.a ${LDFLAGS} ${STATIC_LIBS}
 res2=$?
 du -hs r2-static/usr/bin/radare2
 du -hs a.out

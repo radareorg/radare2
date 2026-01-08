@@ -3,7 +3,8 @@ OBJ_ZIP=fs_zip.o
 STATIC_OBJ+=${OBJ_ZIP}
 TARGET_ZIP=fs_zip.${EXT_SO}
 
-CFLAGS+=-I../../shlr/zip/include
+# XXX must use shlr/zip/deps.mk
+CFLAGS+=-I../../subprojects/otezip/src/include/otezip
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a
 LINKFLAGS+=../../io/libr_io.a
