@@ -9,7 +9,7 @@ ec flow green
 ec flow2 yellow
 ec floc green
 ec prompt green
-ec offset yellow
+ec addr yellow
 ec input green
 ec other green
 ec b0x00 yellow

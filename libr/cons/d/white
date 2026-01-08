@@ -30,7 +30,7 @@ ec b0x7f gray
 ec b0xff red
 ec b0x00 rgb:777
 ec btext black
-ec offset black
+ec addr black
 ec flow blue
 ec flow2 green
 ec mov black

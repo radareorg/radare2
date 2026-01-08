@@ -11,7 +11,7 @@ ec help cyan
 ec flow cyan
 ec flow2 blue
 ec prompt green
-ec offset yellow
+ec addr yellow
 ec input rgb:f03030
 ec invalid red
 ec other rgb:c0c0c0
