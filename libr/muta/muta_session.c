@@ -7,6 +7,7 @@ R_API void r_muta_session_free(RMutaSession *R_NULLABLE cj) {
 		if (cj->h->fini) {
 			cj->h->fini (cj);
 		}
+		free (cj->subtype);
 		free (cj->output);
 		free (cj->key);
 		free (cj->iv);

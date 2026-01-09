@@ -5,7 +5,7 @@
 
 #define MAX_ROT_KEY_SIZE 32768
 
-static int rot_mod(int a, int b) {
+static inline int rot_mod(int a, int b) {
 	if (b < 0) {
 		return rot_mod (-a, -b);
 	}
@@ -33,15 +33,13 @@ static bool rot_check(const char *algo) {
 	return !strcmp (algo, "rot") || !strcmp (algo, "rol") || !strcmp (algo, "ror");
 }
 
-
-
 static bool rot_init(RRotState *state, const ut8 *key, int keylen, RRotType type) {
 	if (!state || !key || keylen < 1) {
 		return false;
 	}
 	state->type = type;
 	if (type == R_ROT_TYPE_ROT) {
-		int shift = atoi ((const char *)key);
+		const int shift = atoi ((const char *)key);
 		state->rot_shift = (ut8)rot_mod (shift, 26);
 	} else {
 		if (keylen > MAX_ROT_KEY_SIZE) {
@@ -56,50 +54,50 @@ static bool rot_init(RRotState *state, const ut8 *key, int keylen, RRotType type
 	return true;
 }
 
-static void rot_crypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void rot_crypt(ut8 key, const ut8 *ibuf, ut8 *obuf, int obuf_len) {
 	int i;
-	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i];
-		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
+	for (i = 0; i < obuf_len; i++) {
+		obuf[i] = ibuf[i];
+		if ((ibuf[i] < 'a' || ibuf[i] > 'z') && (ibuf[i] < 'A' || ibuf[i] > 'Z')) {
 			continue;
 		}
-		outbuf[i] += key;
-		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
-		outbuf[i] = rot_mod (outbuf[i], 26);
-		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
+		obuf[i] += key;
+		obuf[i] -= (ibuf[i] >= 'a' && ibuf[i] <= 'z')? 'a': 'A';
+		obuf[i] = rot_mod (obuf[i], 26);
+		obuf[i] += (ibuf[i] >= 'a' && ibuf[i] <= 'z')? 'a': 'A';
 	}
 }
 
-static void rot_decrypt(ut8 key, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void rot_decrypt(ut8 key, const ut8 *ibuf, ut8 *obuf, int obuf_len) {
 	int i;
-	for (i = 0; i < buflen; i++) {
-		outbuf[i] = inbuf[i];
-		if ((inbuf[i] < 'a' || inbuf[i] > 'z') && (inbuf[i] < 'A' || inbuf[i] > 'Z')) {
+	for (i = 0; i < obuf_len; i++) {
+		obuf[i] = ibuf[i];
+		if ((ibuf[i] < 'a' || ibuf[i] > 'z') && (ibuf[i] < 'A' || ibuf[i] > 'Z')) {
 			continue;
 		}
-		outbuf[i] += 26;
-		outbuf[i] -= key;
-		outbuf[i] -= (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
-		outbuf[i] = rot_mod (outbuf[i], 26);
-		outbuf[i] += (inbuf[i] >= 'a' && inbuf[i] <= 'z')? 'a': 'A';
+		obuf[i] += 26;
+		obuf[i] -= key;
+		obuf[i] -= (ibuf[i] >= 'a' && ibuf[i] <= 'z')? 'a': 'A';
+		obuf[i] = rot_mod (obuf[i], 26);
+		obuf[i] += (ibuf[i] >= 'a' && ibuf[i] <= 'z')? 'a': 'A';
 	}
 }
 
-static void rol_crypt(RRotState *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void rol_crypt(RRotState *state, const ut8 *ibuf, ut8 *obuf, int obuf_len) {
 	int i;
-	for (i = 0; i < buflen; i++) {
-		ut8 count = state->key[i % state->key_size] & 7;
-		ut8 inByte = inbuf[i];
-		outbuf[i] = (inByte << count) | (inByte >> ((8 - count) & 7));
+	for (i = 0; i < obuf_len; i++) {
+		const ut8 count = state->key[i % state->key_size] & 7;
+		const ut8 b = ibuf[i];
+		obuf[i] = (b << count) | (b >> ((8 - count) & 7));
 	}
 }
 
-static void ror_crypt(RRotState *state, const ut8 *inbuf, ut8 *outbuf, int buflen) {
+static void ror_crypt(RRotState *state, const ut8 *ibuf, ut8 *obuf, int obuf_len) {
 	int i;
-	for (i = 0; i < buflen; i++) {
-		ut8 count = state->key[i % state->key_size] & 7;
-		ut8 inByte = inbuf[i];
-		outbuf[i] = (inByte >> count) | (inByte << ((8 - count) & 7));
+	for (i = 0; i < obuf_len; i++) {
+		const ut8 count = state->key[i % state->key_size] & 7;
+		const ut8 b = ibuf[i];
+		obuf[i] = (b >> count) | (b << ((8 - count) & 7));
 	}
 }
 
@@ -126,10 +124,7 @@ static bool rot_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, 
 
 static int rot_get_key_size(RMutaSession *cj) {
 	RRotState *state = (RRotState *)cj->data;
-	if (!state) {
-		return 1;
-	}
-	if (state->type == R_ROT_TYPE_ROT) {
+	if (!state || state->type == R_ROT_TYPE_ROT) {
 		return 1;
 	}
 	return state->key_size;
@@ -141,12 +136,14 @@ static bool rot_fini(RMutaSession *cj) {
 }
 
 static bool rot_update(RMutaSession *cj, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (cj, false);
 	RRotState *state = (RRotState *)cj->data;
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (state->type == R_ROT_TYPE_ROT) {
+	switch (state->type) {
+	case R_ROT_TYPE_ROT:
 		switch (cj->flag) {
 		case R_CRYPTO_DIR_ENCRYPT:
 			rot_crypt (state->rot_shift, buf, obuf, len);
@@ -158,19 +155,22 @@ static bool rot_update(RMutaSession *cj, const ut8 *buf, int len) {
 			free (obuf);
 			return false;
 		}
-	} else if (state->type == R_ROT_TYPE_ROL) {
+		break;
+	case R_ROT_TYPE_ROL:
 		if (cj->flag == R_CRYPTO_DIR_DECRYPT) {
 			R_LOG_ERROR ("Use ROR instead of ROL for decryption");
 			free (obuf);
 			return false;
 		}
 		rol_crypt (state, buf, obuf, len);
-	} else {
+		break;
+	default:
 		if (cj->flag != R_CRYPTO_DIR_ENCRYPT) {
 			free (obuf);
 			return false;
 		}
 		ror_crypt (state, buf, obuf, len);
+		break;
 	}
 	r_muta_session_append (cj, obuf, len);
 	free (obuf);

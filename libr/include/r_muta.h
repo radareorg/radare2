@@ -55,8 +55,8 @@ typedef struct r_muta_session_t {
 	ut32 cps2key[2];
 	ut8 rot_key;
 	double entropy;
-	const char *subtype;
-} RMutaSession; // rename to CryptoState
+	char *subtype;
+} RMutaSession;
 
 typedef enum {
 	R_MUTA_TYPE_HASH,
