@@ -32,6 +32,7 @@ include serpent.mk
 include sip.mk
 include sm4.mk
 include strhash.mk
+include crc.mk
 include md5.mk
 include sha.mk
 include xor.mk

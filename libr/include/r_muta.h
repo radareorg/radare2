@@ -164,6 +164,7 @@ extern RMutaPlugin r_muta_plugin_cps2;
 extern RMutaPlugin r_muta_plugin_des;
 extern RMutaPlugin r_muta_plugin_md5;
 extern RMutaPlugin r_muta_plugin_rot;
+extern RMutaPlugin r_muta_plugin_crc;
 extern RMutaPlugin r_muta_plugin_sha;
 extern RMutaPlugin r_muta_plugin_ed25519;
 extern RMutaPlugin r_muta_plugin_entropy;
