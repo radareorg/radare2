@@ -119,7 +119,17 @@ static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {
 	r_str_ncpy (type4, typestr, sizeof (type4));
 
 	if (R_STR_ISNOTEMPTY (cp->implements)) {
-		r_strbuf_appendf (sb, "%s %12s  %s (implements: %s)\n", type4, cp->meta.name, desc, cp->implements);
+		char *impls = strdup (cp->implements);
+		RList *l = r_str_split_list (impls, ",", 0);
+		bool multiple = r_list_length (l) > 1;
+		r_list_free (l);
+		free (impls);
+
+		if (multiple) {
+			r_strbuf_appendf (sb, "%s %12s  %s (implements: %s)\n", type4, cp->meta.name, desc, cp->implements);
+		} else {
+			r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+		}
 	} else {
 		r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
 	}
