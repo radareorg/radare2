@@ -48,9 +48,7 @@ include fletcher.mk
 include md5.mk
 include null.mk
 include punycode.mk
-include rc2.mk
-include rc4.mk
-include rc6.mk
+include rc.mk
 include rot.mk
 include serpent.mk
 include sha.mk
