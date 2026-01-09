@@ -1052,19 +1052,18 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		}
 		for (i = 0; info->sum[i].type; i++) {
 			RBinHash *h = &info->sum[i];
-			ut64 hash = r_hash_name_to_bits (h->type);
-			RHash *rh = r_hash_new (true, hash);
 			ut8 *tmp = R_NEWS (ut8, h->to);
 			if (!tmp) {
 				return false;
 			}
 			r_buf_read_at (bf->buf, h->from, tmp, h->to);
-			int len = r_hash_calculate (rh, hash, tmp, h->to);
+			int outlen = 0;
+			ut8 *digest = core->bin->mb.hash (&core->bin->mb, h->type, tmp, h->to, &outlen);
 			free (tmp);
-			if (len < 1) {
+			if (!digest || outlen < 1) {
 				R_LOG_ERROR ("Invalid checksum length");
 			}
-			r_hash_free (rh);
+			free (digest);
 			if (IS_MODE_JSON (mode)) {
 				pj_ko (pj, h->type);
 				char *buf = malloc (2 * h->len + 1);
@@ -3049,13 +3048,40 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 	return true;
 }
 
-static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
+static bool is_valid_hash_algo(RMuta *muta, const char *name) {
+	return r_muta_algo_supports (muta, name, R_MUTA_TYPE_HASH);
+}
+
+static char *compute_hash_string(RMutaBind *mb, const char *algo, const ut8 *data, int len) {
+	int outlen = 0;
+	ut8 *digest = mb->hash (mb, algo, data, len, &outlen);
+	if (!digest || outlen < 1) {
+		free (digest);
+		return NULL;
+	}
+	// check if this algo produces text output (e.g., entropy, ssdeep)
+	if (mb->text_output && mb->text_output (mb, algo)) {
+		char *str = r_str_ndup ((const char *)digest, outlen);
+		free (digest);
+		return str;
+	}
+	char *hex = malloc ((outlen * 2) + 1);
+	if (!hex) {
+		free (digest);
+		return NULL;
+	}
+	r_hex_bin2str (digest, outlen, hex);
+	free (digest);
+	return hex;
+}
+
+static char *build_hash_string(RCore *core, PJ *pj, int mode, const char *chksum, ut8 *data, ut32 datalen) {
 	char *aux = NULL, *ret = NULL;
 	RList *hashlist = r_str_split_duplist (chksum, ",", true);
 	RListIter *iter;
 	const char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
-		char *chkstr = r_hash_tostring (NULL, hashname, data, datalen);
+		char *chkstr = compute_hash_string (&core->bin->mb, hashname, data, datalen);
 		if (!chkstr) {
 			continue;
 		}
@@ -3074,7 +3100,7 @@ static char *build_hash_string(PJ *pj, int mode, const char *chksum, ut8 *data, 
 	return ret;
 }
 
-static char *filter_hash_string(const char *chksum) {
+static char *filter_hash_string(RMuta *muta, const char *chksum) {
 	if (!chksum) {
 		return NULL;
 	}
@@ -3084,7 +3110,7 @@ static char *filter_hash_string(const char *chksum) {
 	RListIter *iter;
 	char *hashname;
 	r_list_foreach (hashlist, iter, hashname) {
-		if (r_hash_name_to_bits (hashname)) {
+		if (is_valid_hash_algo (muta, hashname)) {
 			char *aux = r_str_newf (isFirst? "%s": ", %s", hashname);
 			ret = r_str_append (ret, aux);
 			free (aux);
@@ -3312,7 +3338,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		printHere = true;
 		chksum++;
 	}
-	char *hashtypes = filter_hash_string (chksum);
+	char *hashtypes = filter_hash_string (core->muta, chksum);
 	if (IS_MODE_EQUAL (mode)) {
 		int cols = r_cons_get_size (core->cons, NULL);
 		RList *list = r_list_newf ((RListFree)r_listinfo_free);
@@ -3509,7 +3535,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					}
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
-						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
+						hashstr = build_hash_string (core, pj, mode, hashtypes, data, datalen);
 					} else if (core->bin->options.verbose) {
 						R_LOG_ERROR ("Cannot read section at 0x%08" PFMT64x, section->paddr);
 					}
@@ -3545,7 +3571,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					}
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
-						free (build_hash_string (pj, mode, hashtypes, data, datalen));
+						free (build_hash_string (core, pj, mode, hashtypes, data, datalen));
 					} else if (core->bin->options.verbose) {
 						R_LOG_ERROR ("Cannot read section at 0x%08" PFMT64x, section->paddr);
 					}
@@ -3568,7 +3594,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 					}
 					int dl = r_io_pread_at (core->io, section->paddr, data, datalen);
 					if (dl == datalen) {
-						hashstr = build_hash_string (pj, mode, hashtypes, data, datalen);
+						hashstr = build_hash_string (core, pj, mode, hashtypes, data, datalen);
 					} else if (core->bin->options.verbose) {
 						hashstr = strdup ("*error*");
 						R_LOG_WARN ("Cannot read section at 0x%08" PFMT64x, section->paddr);

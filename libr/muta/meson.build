@@ -48,6 +48,7 @@ r_muta_sources = files(
   'p/muta_serpent.c',
   'p/muta_sip.c',
   'p/muta_sm4.c',
+  'p/muta_ssdeep.c',
   'p/muta_strhash.c',
   'p/algo/sm4.c',
   'p/algo/serpent.c',

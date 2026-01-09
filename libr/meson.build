@@ -331,6 +331,7 @@ if get_option('plugins') == ''
     'sha',
     'sip',
     'sm4',
+    'ssdeep',
     'strhash',
     'xor',
   ]

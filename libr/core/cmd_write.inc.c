@@ -264,37 +264,38 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
+	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_CRYPTO)) {
+		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_CRYPTO_DIR_ENCRYPT)? "encryption": "decryption"), algo);
+		free (binkey);
+		return;
+	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_MUTA_TYPE_CRYPTO) {
-		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
-			if (iv) {
-				ut8 *biniv = malloc (strlen (iv) + 1);
-				int ivlen = r_hex_str2bin (iv, biniv);
-				if (ivlen < 1) {
-					ivlen = strlen(iv);
-					strcpy ((char *)biniv, iv);
-				}
-				if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
-					R_LOG_ERROR ("Invalid IV");
-					return;
-				}
+	if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
+		if (iv) {
+			ut8 *biniv = malloc (strlen (iv) + 1);
+			int ivlen = r_hex_str2bin (iv, biniv);
+			if (ivlen < 1) {
+				ivlen = strlen(iv);
+				strcpy ((char *)biniv, iv);
 			}
-			r_muta_session_update (cj, (const ut8*)core->block, core->blocksize);
-
-			int result_size = 0;
-			ut8 *result = r_muta_session_get_output (cj, &result_size);
-			if (result) {
-				if (!r_core_write_at (core, core->addr, result, result_size)) {
-					R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
-				}
-				R_LOG_INFO ("Written %d byte(s)", result_size);
-				free (result);
+			if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
+				R_LOG_ERROR ("Invalid IV");
+				return;
 			}
 		}
-		free (cj);
-	} else {
-		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_CRYPTO_DIR_ENCRYPT)? "encryption": "decryption"), algo);
+		r_muta_session_update (cj, (const ut8*)core->block, core->blocksize);
+
+		int result_size = 0;
+		ut8 *result = r_muta_session_get_output (cj, &result_size);
+		if (result) {
+			if (!r_core_write_at (core, core->addr, result, result_size)) {
+				R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
+			}
+			R_LOG_INFO ("Written %d byte(s)", result_size);
+			free (result);
+		}
 	}
+	r_muta_session_free (cj);
 	free (binkey);
 	return;
 }
@@ -317,25 +318,26 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_MUTA_TYPE_SIGN) {
-		if (r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
-			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
-			int result_size = 0;
-			ut8 *result = r_muta_session_get_output (cj, &result_size);
-			if (result) {
-				if (!r_core_write_at (core, core->addr, result, result_size)) {
-					R_LOG_ERROR ("write failed at 0x%08" PFMT64x, core->addr);
-				}
-				R_LOG_INFO ("Written %d byte(s)", result_size);
-				free (result);
-			}
-		}
+	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_SIGN)) {
+		R_LOG_ERROR ("Unknown signature algorithm '%s'", algo);
 		free (binkey);
 		return;
-	} else {
-		R_LOG_ERROR ("Unknown signature algorithm '%s'", algo);
 	}
+	RMutaSession *cj = r_muta_use (core->muta, algo);
+	if (r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+		r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
+		int result_size = 0;
+		ut8 *result = r_muta_session_get_output (cj, &result_size);
+		if (result) {
+			if (!r_core_write_at (core, core->addr, result, result_size)) {
+				R_LOG_ERROR ("write failed at 0x%08" PFMT64x, core->addr);
+			}
+			R_LOG_INFO ("Written %d byte(s)", result_size);
+			free (result);
+		}
+	}
+	r_muta_session_free (cj);
+	free (binkey);
 	return;
 }
 

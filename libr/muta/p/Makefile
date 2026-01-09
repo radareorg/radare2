@@ -54,6 +54,7 @@ include serpent.mk
 include sha.mk
 include sip.mk
 include sm4.mk
+include ssdeep.mk
 include strhash.mk
 include xor.mk
 

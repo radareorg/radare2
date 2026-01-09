@@ -49,7 +49,7 @@ R_API void r_muta_free(RMuta *cry) {
 	}
 }
 
-R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
+R_API RMutaPlugin *r_muta_find(RMuta *cry, const char *algo) {
 	R_RETURN_VAL_IF_FAIL (cry && cry->plugins && algo, NULL);
 	RListIter *iter;
 	RMutaPlugin *h;
@@ -59,18 +59,12 @@ R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 		}
 		if (h->check) {
 			if (h->check (algo)) {
-				cry->h = h;
-				RMutaSession *s = r_muta_session_new (cry, h);
-				if (s) {
-					s->subtype = strdup (algo);
-				}
-				return s;
+				return h;
 			}
 			continue;
 		}
 		if (R_STR_ISNOTEMPTY (h->meta.name) && !strcmp (h->meta.name, algo)) {
-			cry->h = h;
-			return r_muta_session_new (cry, h);
+			return h;
 		}
 		if (R_STR_ISNOTEMPTY (h->implements)) {
 			char *impls = strdup (h->implements);
@@ -87,12 +81,35 @@ R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 			r_list_free (l);
 			free (impls);
 			if (found) {
-				cry->h = h;
-				return r_muta_session_new (cry, h);
+				return h;
 			}
 		}
 	}
 	return NULL;
+}
+
+R_API RMutaType r_muta_algo_type(RMuta *cry, const char *algo) {
+	RMutaPlugin *h = r_muta_find (cry, algo);
+	return h ? h->type : R_MUTA_TYPE_ALL;
+}
+
+R_API bool r_muta_algo_supports(RMuta *cry, const char *algo, RMutaType type) {
+	RMutaPlugin *h = r_muta_find (cry, algo);
+	return h && h->type == type;
+}
+
+R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
+	R_RETURN_VAL_IF_FAIL (cry && algo, NULL);
+	RMutaPlugin *h = r_muta_find (cry, algo);
+	if (!h) {
+		return NULL;
+	}
+	cry->h = h;
+	RMutaSession *s = r_muta_session_new (cry, h);
+	if (s && h->check) {
+		s->subtype = strdup (algo);
+	}
+	return s;
 }
 
 static const char *mutatype_tostring(int type) {
