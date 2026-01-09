@@ -12,7 +12,7 @@ all:
 ifeq ($(USE_LIB_ZIP),1)
 	@echo no bundled zip to build
 else
-	$(MAKE) -C ../../subprojects/otezip
+	$(MAKE) -C ../../subprojects/otezip CC="$(CC)" AR="$(AR)" RANLIB="$(RANLIB)" CFLAGS="$(CFLAGS) -fPIC" libotezip.$(EXT_AR)
 endif
 
 clean:
