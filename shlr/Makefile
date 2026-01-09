@@ -39,7 +39,7 @@ SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
 MODS=zip java
-MODS+=gdb qnx ar
+MODS+=gdb qnx
 # lz4
 SPP_URL=https://github.com/trufae/spp
 PWD=$(shell pwd)
