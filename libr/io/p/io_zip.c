@@ -190,19 +190,23 @@ int r_io_zip_flush_file(RIOZipFileObj *zfo) {
 	ut64 tmpsz;
 	const ut8 *tmp = r_buf_data (zfo->b, &tmpsz);
 	struct zip_source *s = zip_source_buffer (za, tmp, tmpsz, 0);
+	bool source_owned = true; /* Track whether source ownership was transferred to archive */
 	if (s && zfo->entry != -1) {
 		if (zip_replace(za, zfo->entry, s) == 0) {
+			source_owned = false; /* Ownership transferred to archive */
 			res = true;
 		}
 	} else if (s && zfo->name) {
 		if (zip_add (za, zfo->name, s) == 0) {
+			source_owned = false; /* Ownership transferred to archive */
 			zfo->entry = zip_name_locate (za, zfo->name, 0);
 			res = true;
 		}
 	}
-	// s (zip_source) is freed when the archive is closed, i think - dso
+	/* zip_close will free the archive and any sources owned by it */
 	zip_close (za);
-	if (s) {
+	/* Only free the source if its ownership was not transferred to the archive */
+	if (s && source_owned) {
 		zip_source_free (s);
 	}
 	return res;
@@ -332,6 +336,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 		}
 	}
 
+	zip_close (za);
 	free (zip_uri);
 	return list_fds;
 }

@@ -58,13 +58,14 @@ static bool crc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 	utcrc result = r_hash_crc_preset (buf, len, algo->preset);
-	ut8 digest[8];
+	ut8 digest[8] = {0};
 	switch (algo->digest_size) {
 	case 1: digest[0] = (ut8)result; break;
 	case 2: r_write_be16 (digest, (ut16)result); break;
 	case 3: r_write_be24 (digest, (ut32)result); break;
 	case 4: r_write_be32 (digest, (ut32)result); break;
 	case 8: r_write_be64 (digest, (ut64)result); break;
+	default: return false; /* Invalid digest size */
 	}
 	r_muta_session_append (cj, digest, algo->digest_size);
 	return true;

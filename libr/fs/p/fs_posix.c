@@ -18,7 +18,11 @@ static RFSFile* fs_posix_open(RFSRoot *root, const char *path, bool create) {
 	file->p = root->p;
 	FILE *fd = r_sandbox_fopen (path, create? "wb": "rb");
 	if (fd) {
-		fseek (fd, 0, SEEK_END);
+		if (fseek (fd, 0, SEEK_END) != 0) {
+			fclose (fd);
+			r_fs_file_free (file);
+			return NULL;
+		}
 		file->size = ftell (fd);
 		fclose (fd);
 	} else {
