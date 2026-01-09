@@ -42,8 +42,6 @@ r_muta_sources = files(
   'p/muta_rc2.c',
   'p/muta_rc4.c',
   'p/muta_rc6.c',
-  'p/muta_rol.c',
-  'p/muta_ror.c',
   'p/muta_rot.c',
   'p/muta_serpent.c',
   'p/muta_sip.c',

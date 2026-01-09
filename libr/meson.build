@@ -327,8 +327,6 @@ if get_option('plugins') == ''
     'rc2',
     'rc4',
     'rc6',
-    'rol',
-    'ror',
     'rot',
     'serpent',
     'sip',

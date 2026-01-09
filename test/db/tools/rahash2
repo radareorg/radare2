@@ -201,9 +201,7 @@ char     punycode  Unicoded represented in plain ascii
 cryp          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
 cryp          rc4  Rivest Cipher 4
 cryp          rc6  Rivest's Cipher 6
-cryp          rol  Rotate Left N bits
-cryp          ror  Rotate Right N bits
-cryp          rot  Rotate Encryption
+cryp          rot  Rotate algorithms (rot13, rol, ror) (implements: rot,rol,ror)
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
 hash         sha1  SHA1 hash
 hash       sha256  SHA256 hash

@@ -50,28 +50,46 @@ R_API void r_muta_free(RMuta *cry) {
 }
 
 R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (cry && algo, NULL);
-	RListIter *iter, *iter2;
+	R_RETURN_VAL_IF_FAIL (cry && cry->plugins && algo, NULL);
+	RListIter *iter;
 	RMutaPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
-		if (h && R_STR_ISNOTEMPTY (h->meta.name) && !strcmp (h->meta.name, algo)) {
+		if (!h) {
+			continue;
+		}
+		if (h->check) {
+			if (h->check (algo)) {
+				cry->h = h;
+				RMutaSession *s = r_muta_session_new (cry, h);
+				if (s) {
+					s->subtype = strdup (algo);
+				}
+				return s;
+			}
+			continue;
+		}
+		if (R_STR_ISNOTEMPTY (h->meta.name) && !strcmp (h->meta.name, algo)) {
 			cry->h = h;
 			return r_muta_session_new (cry, h);
 		}
-		if (h && R_STR_ISNOTEMPTY (h->implements)) {
+		if (R_STR_ISNOTEMPTY (h->implements)) {
 			char *impls = strdup (h->implements);
 			RList *l = r_str_split_list (impls, ",", 0);
 			const char *s;
-			r_list_foreach (l, iter2, s) {
+			bool found = false;
+			RListIter *it2;
+			r_list_foreach (l, it2, s) {
 				if (!strcmp (s, algo)) {
-					cry->h = h;
-					r_list_free (l);
-					free (impls);
-					return r_muta_session_new (cry, h);
+					found = true;
+					break;
 				}
 			}
 			r_list_free (l);
 			free (impls);
+			if (found) {
+				cry->h = h;
+				return r_muta_session_new (cry, h);
+			}
 		}
 	}
 	return NULL;
@@ -99,7 +117,22 @@ static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {
 	const char *desc = r_str_get (cp->meta.desc);
 	char type4[5];
 	r_str_ncpy (type4, typestr, sizeof (type4));
-	r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+
+	if (R_STR_ISNOTEMPTY (cp->implements)) {
+		char *impls = strdup (cp->implements);
+		RList *l = r_str_split_list (impls, ",", 0);
+		bool multiple = r_list_length (l) > 1;
+		r_list_free (l);
+		free (impls);
+
+		if (multiple) {
+			r_strbuf_appendf (sb, "%s %12s  %s (implements: %s)\n", type4, cp->meta.name, desc, cp->implements);
+		} else {
+			r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+		}
+	} else {
+		r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+	}
 }
 
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
@@ -129,6 +162,9 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			pj_ks (pj, "name", cp->meta.name);
 			const char *ts = mutatype_tostring (cp->type);
 			pj_ks (pj, "type", ts);
+			if (R_STR_ISNOTEMPTY (cp->implements)) {
+				pj_ks (pj, "implements", cp->implements);
+			}
 			r_lib_meta_pj (pj, &cp->meta);
 			pj_end (pj);
 			break;
