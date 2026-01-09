@@ -177,6 +177,7 @@ extern RMutaPlugin r_muta_plugin_serpent;
 extern RMutaPlugin r_muta_plugin_sha;
 extern RMutaPlugin r_muta_plugin_sip;
 extern RMutaPlugin r_muta_plugin_sm4;
+extern RMutaPlugin r_muta_plugin_ssdeep;
 extern RMutaPlugin r_muta_plugin_strhash;
 extern RMutaPlugin r_muta_plugin_xor;
 extern RMutaPlugin r_muta_plugin_add;
