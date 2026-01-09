@@ -108,6 +108,9 @@ R_API RMuta *R_NONNULL r_muta_new(void);
 R_API void r_muta_free(RMuta *cry);
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
 
+R_API RMutaPlugin *r_muta_find(RMuta *cry, const char *algo);
+R_API RMutaType r_muta_algo_type(RMuta *cry, const char *algo);
+R_API bool r_muta_algo_supports(RMuta *cry, const char *algo, RMutaType type);
 R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo);
 R_API bool r_muta_session_set_subtype(RMutaSession *cry, const char *subtype);
 R_API bool r_muta_session_set_key(RMutaSession *cry, const ut8* key, int keylen, int mode, int direction);

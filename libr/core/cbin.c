@@ -3049,13 +3049,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 }
 
 static bool is_valid_hash_algo(RMuta *muta, const char *name) {
-	RMutaSession *ms = r_muta_use (muta, name);
-	if (ms) {
-		bool is_hash = ms->h && ms->h->type == R_MUTA_TYPE_HASH;
-		r_muta_session_free (ms);
-		return is_hash;
-	}
-	return false;
+	return r_muta_algo_supports (muta, name, R_MUTA_TYPE_HASH);
 }
 
 static char *compute_hash_string(RMutaBind *mb, const char *algo, const ut8 *data, int len) {

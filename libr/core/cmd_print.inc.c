@@ -3408,34 +3408,35 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
+	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_CRYPTO)) {
+		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+		free (binkey);
+		return;
+	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (cj && cj->h->type == R_MUTA_TYPE_CRYPTO) {
-		if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
-			if (iv) {
-				ut8 *biniv = malloc (strlen (iv) + 1);
-				int ivlen = r_hex_str2bin (iv, biniv);
-				if (ivlen < 1) {
-					ivlen = strlen (iv);
-					strcpy ((char *)biniv, iv);
-				}
-				if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
-					R_LOG_ERROR ("Invalid IV");
-					return;
-				}
+	if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
+		if (iv) {
+			ut8 *biniv = malloc (strlen (iv) + 1);
+			int ivlen = r_hex_str2bin (iv, biniv);
+			if (ivlen < 1) {
+				ivlen = strlen (iv);
+				strcpy ((char *)biniv, iv);
 			}
-			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
-
-			int result_size = 0;
-			ut8 *result = r_muta_session_get_output (cj, &result_size);
-			if (result) {
-				r_print_bytes (core->print, result, result_size, "%02x", 0);
-				free (result);
+			if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
+				R_LOG_ERROR ("Invalid IV");
+				return;
 			}
 		}
-		free (cj);
-	} else {
-		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((!direction)? "encryption": "decryption"), algo);
+		r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
+
+		int result_size = 0;
+		ut8 *result = r_muta_session_get_output (cj, &result_size);
+		if (result) {
+			r_print_bytes (core->print, result, result_size, "%02x", 0);
+			free (result);
+		}
 	}
+	r_muta_session_free (cj);
 	free (binkey);
 	return;
 }
@@ -3487,29 +3488,32 @@ static void cmd_print_op(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_po, "poS");
 			break;
 		}
-		RMutaSession *cj = r_muta_use (core->muta, algo);
-		if (cj && cj->h->type == R_MUTA_TYPE_SIGN) {
-			char *key = r_list_get_n (args, 2);
-			ut8 *binkey = (ut8 *)strdup (key);
-			int keylen = r_hex_str2bin (key, binkey);
-			if (!keylen) {
-				R_LOG_ERROR ("Invalid key");
-				break;
-			}
-			if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
-				break;
-			}
-			r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
-
-			int result_size = 0;
-			ut8 *result = r_muta_session_get_output (cj, &result_size);
-			if (result) {
-				r_print_bytes (core->print, result, result_size, "%02x", 0);
-				free (result);
-			}
-		} else {
+		if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_SIGN)) {
 			R_LOG_ERROR ("Unsupported signature algorithm: %s", algo);
+			break;
 		}
+		RMutaSession *cj = r_muta_use (core->muta, algo);
+		char *key = r_list_get_n (args, 2);
+		ut8 *binkey = (ut8 *)strdup (key);
+		int keylen = r_hex_str2bin (key, binkey);
+		if (!keylen) {
+			R_LOG_ERROR ("Invalid key");
+			r_muta_session_free (cj);
+			break;
+		}
+		if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+			r_muta_session_free (cj);
+			break;
+		}
+		r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
+
+		int result_size = 0;
+		ut8 *result = r_muta_session_get_output (cj, &result_size);
+		if (result) {
+			r_print_bytes (core->print, result, result_size, "%02x", 0);
+			free (result);
+		}
+		r_muta_session_free (cj);
 		break;
 	}
 	case 'D': // "poD"

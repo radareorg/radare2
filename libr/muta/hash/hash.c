@@ -366,14 +366,13 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 	size_t digest_hex_size = 0;
 
 	RMuta *cry = r_muta_new ();
-	RMutaSession *cj = r_muta_use (cry, name);
-
 	ut64 algo = r_hash_name_to_bits (name);
 	if (!ctx) {
 		ctx = r_hash_new (true, algo);
 	}
 
-	if (cj && cj->h->type == R_MUTA_TYPE_HASH) {
+	if (r_muta_algo_supports (cry, name, R_MUTA_TYPE_HASH)) {
+		RMutaSession *cj = r_muta_use (cry, name);
 		if (cj->h->end) {
 			r_muta_session_end (cj, data, len);
 		} else {
@@ -385,9 +384,9 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		ut8 *result = r_muta_session_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);
 		free (result);
+		r_muta_session_free (cj);
 	} else {
 		if (!algo) {
-			r_muta_session_free (cj);
 			R_LOG_ERROR ("Hash algorithm %s not found", name);
 			return NULL;
 		}
@@ -395,7 +394,6 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		digest_size = r_hash_calculate (ctx, algo, data, len);
 		r_hash_do_end (ctx, algo);
 	}
-	r_muta_session_free (cj);
 	r_muta_free (cry);
 	if (digest_size == 0) {
 		digest_hex_size = 16;
