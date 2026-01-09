@@ -10,6 +10,7 @@ r_muta_sources = files(
   'p/muta_null.c',
   'p/muta_aes_wrap.c',
   'p/muta_bech32.c',
+  'p/muta_md5.c',
   'p/muta_base64.c',
   'p/muta_base91.c',
   'p/muta_blowfish.c',
