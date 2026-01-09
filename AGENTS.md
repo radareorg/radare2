@@ -21,7 +21,7 @@
 - The `r_json_parse` does not own the string passed, we must free it after freeing the parser
 - Use `R_RETURN_*` macros in the public `R_API` functions
 - Do not check for NULL before calling `free` or any other `*_free` function
-- The `R_NEW`/`R_NEW0` macros never return NULL
+- Assume `R_NEW`/`R_NEW0` calls will never return NULL or fail
 - Keep changes minimal and take smart decisions
 - When implementing commands, handle the `?` subcommand to show its help
 - Define and assign the variables in the same line if possible

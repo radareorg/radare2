@@ -46,10 +46,7 @@ static bool rot_init(RRotState *state, const ut8 *key, int keylen, RRotType type
 			keylen = MAX_ROT_KEY_SIZE;
 		}
 		state->key_size = keylen;
-		int i;
-		for (i = 0; i < keylen; i++) {
-			state->key[i] = key[i];
-		}
+		memcpy (state->key, key, keylen);
 	}
 	return true;
 }
