@@ -1,7 +1,6 @@
 /* radare2 - LGPL - Copyright 2009-2025 - pancake, nibble, dso */
 
 #include <r_bin.h>
-#include <r_hash.h>
 #include <r_muta.h>
 #include "i/private.h"
 
@@ -1180,10 +1179,29 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 	return false;
 }
 
+static RBinFileHash *compute_hash(RMutaBind *mb, const char *algo, const ut8 *buf, int len) {
+	int outlen = 0;
+	ut8 *digest = mb->hash (mb, algo, buf, len, &outlen);
+	if (!digest || outlen < 1) {
+		free (digest);
+		return NULL;
+	}
+	char *hex = malloc ((outlen * 2) + 1);
+	if (!hex) {
+		free (digest);
+		return NULL;
+	}
+	r_hex_bin2str (digest, outlen, hex);
+	free (digest);
+	RBinFileHash *fh = R_NEW0 (RBinFileHash);
+	fh->type = strdup (algo);
+	fh->hex = hex;
+	return fh;
+}
+
 // TODO: do not compute md5 or sha1, those are weak and vulnerable hashes
 R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->cur && bin->cur->bo, NULL);
-	ut64 buf_len = 0, r = 0;
 	RBinFile *bf = bin->cur;
 	RBinObject *o = bf->bo;
 
@@ -1192,69 +1210,35 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 		return NULL;
 	}
 
-	buf_len = r_io_desc_size (iod);
-	// By SLURP_LIMIT normally cannot compute ...
+	ut64 buf_len = r_io_desc_size (iod);
 	if (buf_len > limit) {
 		if (bin->options.verbose) {
 			R_LOG_WARN ("file size exceeds bin.hashlimit");
 		}
 		return NULL;
 	}
-	const size_t blocksize = 64000;
-	ut8 *buf = malloc (blocksize);
+	ut8 *buf = malloc (buf_len);
 	if (!buf) {
 		return NULL;
 	}
-
-	char hash[128];
-	RHash *ctx = r_hash_new (false, R_HASH_MD5 | R_HASH_SHA1 | R_HASH_SHA256);
-	while (r + blocksize < buf_len) {
-		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
-		int b = r_io_desc_read (iod, buf, blocksize);
-		(void)r_hash_do_md5 (ctx, buf, blocksize);
-		(void)r_hash_do_sha1 (ctx, buf, blocksize);
-		(void)r_hash_do_sha256 (ctx, buf, blocksize);
-		r += b;
+	r_io_desc_seek (iod, 0, R_IO_SEEK_SET);
+	int bytes_read = r_io_desc_read (iod, buf, buf_len);
+	if (bytes_read < 1) {
+		R_LOG_ERROR ("cannot read from descriptor");
+		free (buf);
+		return NULL;
 	}
-	if (r < buf_len) {
-		r_io_desc_seek (iod, r, R_IO_SEEK_SET);
-		const size_t rem_len = buf_len-r;
-		int b = r_io_desc_read (iod, buf, rem_len);
-		if (b < 1) {
-			R_LOG_ERROR ("cannot read from descriptor");
-		} else {
-			(void)r_hash_do_md5 (ctx, buf, b);
-			(void)r_hash_do_sha1 (ctx, buf, b);
-			(void)r_hash_do_sha256 (ctx, buf, b);
-		}
-	}
-	r_hash_do_end (ctx, R_HASH_MD5);
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_MD5, hash);
 
 	RList *file_hashes = r_list_newf ((RListFree) r_bin_file_hash_free);
-	RBinFileHash *md5h = R_NEW0 (RBinFileHash);
-	if (md5h) {
-		md5h->type = strdup ("md5");
-		md5h->hex = strdup (hash);
-		r_list_push (file_hashes, md5h);
+	RBinFileHash *h;
+	if ((h = compute_hash (&bin->mb, "md5", buf, bytes_read))) {
+		r_list_push (file_hashes, h);
 	}
-	r_hash_do_end (ctx, R_HASH_SHA1);
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA1, hash);
-
-	RBinFileHash *sha1h = R_NEW0 (RBinFileHash);
-	if (sha1h) {
-		sha1h->type = strdup ("sha1");
-		sha1h->hex = strdup (hash);
-		r_list_push (file_hashes, sha1h);
+	if ((h = compute_hash (&bin->mb, "sha1", buf, bytes_read))) {
+		r_list_push (file_hashes, h);
 	}
-	r_hash_do_end (ctx, R_HASH_SHA256);
-	r_hex_bin2str (ctx->digest, R_HASH_SIZE_SHA256, hash);
-
-	RBinFileHash *sha256h = R_NEW0 (RBinFileHash);
-	if (sha256h) {
-		sha256h->type = strdup ("sha256");
-		sha256h->hex = strdup (hash);
-		r_list_push (file_hashes, sha256h);
+	if ((h = compute_hash (&bin->mb, "sha256", buf, bytes_read))) {
+		r_list_push (file_hashes, h);
 	}
 
 	if (o->plugin && o->plugin->hashes) {
@@ -1262,10 +1246,8 @@ R_API RList *r_bin_file_compute_hashes(RBin *bin, ut64 limit) {
 		r_list_join (file_hashes, plugin_hashes);
 		free (plugin_hashes);
 	}
-	// TODO: add here more rows
 
 	free (buf);
-	r_hash_free (ctx);
 	return file_hashes;
 }
 
