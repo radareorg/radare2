@@ -109,9 +109,7 @@ r_util_sources = [
   'zip.c',
 ]
 
-if get_option('sdb_cgen')
-  r_util_sources += r_util_d_sources
-endif
+# No d subdirectory for util, so no r_util_d_sources to include
 
 lz4_dep = dependency('liblz4', required: false)
 if not get_option('use_sys_lz4')
