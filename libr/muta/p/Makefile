@@ -33,10 +33,7 @@ include sip.mk
 include sm4.mk
 include strhash.mk
 include md5.mk
-include sha1.mk
-include sha256.mk
-include sha384.mk
-include sha512.mk
+include sha.mk
 include xor.mk
 include charset_pokemon.mk
 include charset_ascii.mk
