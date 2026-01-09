@@ -1,0 +1,8 @@
+OBJ_MUTA_CRC=muta_crc.o
+STATIC_OBJ+=${OBJ_MUTA_CRC}
+TARGET_MUTA_CRC=muta_crc.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_MUTA_CRC}
+
+${TARGET_MUTA_CRC}: ${OBJ_MUTA_CRC}
+	${CC} $(call libname,muta_crc) ${OBJ_MUTA_CRC} ${CFLAGS} ${LDFLAGS} ${LINK}
