@@ -55,6 +55,7 @@ typedef struct r_muta_session_t {
 	ut32 cps2key[2];
 	ut8 rot_key;
 	double entropy;
+	const char *subtype;
 } RMutaSession; // rename to CryptoState
 
 typedef enum {
@@ -72,8 +73,9 @@ typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int
 typedef struct r_muta_plugin_t {
 	RPluginMeta meta;
 	const char *implements;
+	const char *(*get_subtypes)(void);
+	bool (*check)(const char *algo);
 	RMutaType type;
-	bool (*check)(const char *algo); // DEPRECATED: use .implements instead
 
 	int (*get_key_size)(RMutaSession *cry);
 	RMutaSessionSetIVCallback set_iv;
@@ -108,6 +110,7 @@ R_API void r_muta_free(RMuta *cry);
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
 
 R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo);
+R_API bool r_muta_session_set_subtype(RMutaSession *cry, const char *subtype);
 R_API bool r_muta_session_set_key(RMutaSession *cry, const ut8* key, int keylen, int mode, int direction);
 R_API bool r_muta_session_set_iv(RMutaSession *cry, const ut8 *iv, int ivlen);
 
@@ -166,14 +169,6 @@ extern RMutaPlugin r_muta_plugin_punycode;
 extern RMutaPlugin r_muta_plugin_rc2;
 extern RMutaPlugin r_muta_plugin_rc4;
 extern RMutaPlugin r_muta_plugin_rc6;
-extern RMutaPlugin r_muta_plugin_rot;
-extern RMutaPlugin r_muta_plugin_rol;
-extern RMutaPlugin r_muta_plugin_md5;
-extern RMutaPlugin r_muta_plugin_sha1;
-extern RMutaPlugin r_muta_plugin_sha256;
-extern RMutaPlugin r_muta_plugin_sha384;
-extern RMutaPlugin r_muta_plugin_sha512;
-extern RMutaPlugin r_muta_plugin_ror;
 extern RMutaPlugin r_muta_plugin_serpent;
 extern RMutaPlugin r_muta_plugin_sip;
 extern RMutaPlugin r_muta_plugin_sm4;

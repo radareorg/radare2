@@ -51,6 +51,13 @@ R_API RMutaSession *r_muta_session_new(RMuta *cry, RMutaPlugin *cp) {
 	cj->c = cry;
 	return cj;
 }
+
+R_API bool r_muta_session_set_subtype(RMutaSession *cj, const char *subtype) {
+	R_RETURN_VAL_IF_FAIL (cj, false);
+	free ((void *)cj->subtype);
+	cj->subtype = strdup (subtype);
+	return true;
+}
 R_API bool r_muta_session_end(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && buf, false);
 	return (cj->h && cj->h->end)? cj->h->end (cj, buf, len): 0;
