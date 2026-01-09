@@ -21,6 +21,7 @@ RMutaPlugin r_muta_plugin_entropy = {
 		.license = "MIT",
 	},
 	.type = R_MUTA_TYPE_HASH,
+	.text_output = true,
 	.implements = "entropy",
 	.update = update,
 	.end = update

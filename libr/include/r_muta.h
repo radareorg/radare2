@@ -75,6 +75,7 @@ typedef struct r_muta_plugin_t {
 	const char *implements;
 	bool (*check)(const char *algo);
 	RMutaType type;
+	bool text_output; // true if output is string, not binary
 
 	int (*get_key_size)(RMutaSession *cry);
 	RMutaSessionSetIVCallback set_iv;

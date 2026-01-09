@@ -42,6 +42,12 @@ static ut8 *_hash(RMutaBind *mb, const char *algo, const ut8 *buf, int buflen, i
 	return digest;
 }
 
+static bool _text_output(RMutaBind *mb, const char *algo) {
+	R_RETURN_VAL_IF_FAIL (mb && mb->muta && algo, false);
+	RMutaPlugin *p = r_muta_find (mb->muta, algo);
+	return p ? p->text_output : false;
+}
+
 R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd) {
 	R_RETURN_IF_FAIL (muta && bnd);
 	bnd->muta = muta;
@@ -53,4 +59,5 @@ R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd) {
 	bnd->muta_session_free = (RMutaSessionFree)r_muta_session_free;
 	bnd->hash_hmac = _hash_hmac;
 	bnd->hash = _hash;
+	bnd->text_output = _text_output;
 }

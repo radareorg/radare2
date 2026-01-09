@@ -24,6 +24,7 @@ RMutaPlugin r_muta_plugin_ssdeep = {
 		.license = "MIT",
 	},
 	.type = R_MUTA_TYPE_HASH,
+	.text_output = true,
 	.implements = "ssdeep",
 	.update = update,
 	.end = update

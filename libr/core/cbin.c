@@ -3059,6 +3059,12 @@ static char *compute_hash_string(RMutaBind *mb, const char *algo, const ut8 *dat
 		free (digest);
 		return NULL;
 	}
+	// check if this algo produces text output (e.g., entropy, ssdeep)
+	if (mb->text_output && mb->text_output (mb, algo)) {
+		char *str = r_str_ndup ((const char *)digest, outlen);
+		free (digest);
+		return str;
+	}
 	char *hex = malloc ((outlen * 2) + 1);
 	if (!hex) {
 		free (digest);

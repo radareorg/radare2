@@ -73,6 +73,7 @@ typedef ut8 *(*RMutaSessionGetOutput)(RMutaSession *cj, int *size);
 typedef void (*RMutaSessionFree)(RMutaSession *cj);
 typedef ut8 *(*RMutaBindHashHmac)(RMutaBind *mb, const char *algo, const ut8 *buf, int buflen, const ut8 *key, int keylen, int *outlen);
 typedef ut8 *(*RMutaBindHash)(RMutaBind *mb, const char *algo, const ut8 *buf, int buflen, int *outlen);
+typedef bool (*RMutaBindTextOutput)(RMutaBind *mb, const char *algo);
 
 typedef struct r_muta_bind_t {
 	RMuta *muta;
@@ -85,6 +86,7 @@ typedef struct r_muta_bind_t {
 	/* helper methods - parameterized hash helpers */
 	RMutaBindHashHmac hash_hmac;
 	RMutaBindHash hash;
+	RMutaBindTextOutput text_output;
 } RMutaBind;
 
 #ifdef __cplusplus
