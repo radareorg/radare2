@@ -58,6 +58,7 @@ ifeq ($(OSTYPE),darwin)
 
 LIBR_COMPONENTS_AR := $(sort $(wildcard */libr_*.$(EXT_AR)))
 LIBR_SHLR_AR := ../shlr/libr_shlr.$(EXT_AR)
+LIBR_SHLR_AR += ../subprojects/otezip/libotezip.a
 
 libr.$(EXT_AR): $(LIBR_COMPONENTS_AR) $(LIBR_SHLR_AR)
 	xcrun libtool -static -o $@ \
