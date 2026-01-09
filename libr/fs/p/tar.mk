@@ -1,6 +1,6 @@
 OBJ_TAR=fs_tar.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_TAR}
 #STATIC_OBJ+=${EXTRA}

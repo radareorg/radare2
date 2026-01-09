@@ -1,6 +1,6 @@
 OBJ_ISO9660=fs_iso9660.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_ISO9660}
 #STATIC_OBJ+=${EXTRA}

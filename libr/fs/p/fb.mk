@@ -1,6 +1,6 @@
 OBJ_FB=fs_fb.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_FB}
 #STATIC_OBJ+=${EXTRA}

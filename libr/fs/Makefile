@@ -2,12 +2,10 @@ NAME=r_fs
 R2DEPS=r_util r_io r_socket r_cons r_muta
 CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 
-SHLR=../../shlr/
-
 include ../config.mk
-CFLAGS:=-I$(SHLR)/grub/include $(CFLAGS)
+CFLAGS:=-Ip/grub/include $(CFLAGS)
 ifeq ($(WITH_GPL),1)
-LDFLAGS+=$(SHLR)/grub/libgrubfs.a
+# grub sources are now compiled directly into libr_fs
 endif
 ifeq ($(R2_USE_SQSH),1)
 CFLAGS+=$(SQSH_CFLAGS)

@@ -1,6 +1,6 @@
 OBJ_UDF=fs_udf.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_UDF}
 #STATIC_OBJ+=${EXTRA}

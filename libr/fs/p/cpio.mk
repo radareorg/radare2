@@ -1,6 +1,6 @@
 OBJ_CPIO=fs_cpio.o
 EXTRA=$(GRUB)
-CFLAGS+=-I$(SHLR)/grub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_CPIO}
 #STATIC_OBJ+=${EXTRA}

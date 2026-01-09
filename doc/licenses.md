@@ -88,7 +88,7 @@ should be copied to `./plugins.cfg` before calling `./configure-plugins` to take
 * shlr/zip/zlib: BSD
 * shlr/java: Apache2.0
 * shlr/qnx: GPL (will be moved to extras soon)
-* shlr/grub: GPL (used by some fs plugins)
+* libr/fs/p/grub: GPL (used by fs plugins)
 * shlr/lz4: simplified BSD license
 
 ### The rest of code in shlr/ follows the LGPL

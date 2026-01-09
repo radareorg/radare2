@@ -1,6 +1,6 @@
 OBJ_REISERFS=fs_reiserfs.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_REISERFS}
 #STATIC_OBJ+=${EXTRA}

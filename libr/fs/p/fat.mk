@@ -1,6 +1,6 @@
 OBJ_FAT=fs_fat.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_FAT}
 #STATIC_OBJ+=${EXTRA}

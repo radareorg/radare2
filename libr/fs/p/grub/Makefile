@@ -1,12 +1,12 @@
 NAME=grubfs
 
-include ../../config-user.mk
-include ../../global.mk
-include ../../mk/platform.mk
+include ../../../../config-user.mk
+include ../../../../global.mk
+include ../../../../mk/platform.mk
 NAME=grubfs
 _INCLUDE_MK_GCC_=
-include ../../libr/config.mk
-include ../../mk/${COMPILER}.mk
+include ../../../../libr/config.mk
+include ../../../../mk/${COMPILER}.mk
 
 EXT_AR?=a
 LIBAR=libgrubfs.${EXT_AR}
@@ -60,7 +60,7 @@ KERNFILES+=partmap/bsdlabel.c
 KERNFILES+=partmap/sunpc.c
 
 KERNOBJS=$(subst .c,.o,${KERNFILES})
-CFLAGS:=-I../../libr/include -DGRUB_TARGET_NO_MODULES $(CFLAGS)
+CFLAGS:=-I../../../../libr/include -DGRUB_TARGET_NO_MODULES $(CFLAGS)
 CFLAGS+=-Iinclude
 # CFLAGS+=-g
 
@@ -83,7 +83,7 @@ ifeq (${OSTYPE},darwin)
 CFLAGS+=-DAPPLE_CC
 endif
 
-include ../../shlr/sdb.mk
+include ../../../../shlr/sdb.mk
 
 BIN=test${EXT_EXE}
 
