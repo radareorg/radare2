@@ -196,6 +196,7 @@ hash          crc  CRC8/CRC15/CRC16/CRC24/CRC32/CRC64 hash algorithms (implement
 cryp      des-ecb  DES with with Electronic Code Book mode
 sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
 hash      entropy  Shannon entropy
+hash     fletcher  Fletcher hash algorithms (implements: fletcher8,fletcher16,fletcher32,fletcher64)
 hash          md5  MD5 hash
 hash         null  mutate nothing
 char     punycode  Unicoded represented in plain ascii

@@ -44,6 +44,7 @@ include crc.mk
 include des.mk
 include ed25519.mk
 include entropy.mk
+include fletcher.mk
 include md5.mk
 include null.mk
 include punycode.mk

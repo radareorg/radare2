@@ -40,6 +40,7 @@ r_muta_sources = files(
    'p/muta_des.c',
    'p/muta_ed25519.c',
   'p/muta_entropy.c',
+  'p/muta_fletcher.c',
   'p/muta_punycode.c',
   'p/muta_rc2.c',
   'p/muta_rc4.c',
