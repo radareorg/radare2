@@ -145,6 +145,8 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	bool hasfailed = false;
 	RList *list = r_list_new ();
 	if (!list) {
+		zip_close (za);
+		free (buf);
 		return NULL;
 	}
 	for (i = 0; i < num_entries; i++) {
