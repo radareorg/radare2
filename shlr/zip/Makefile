@@ -7,6 +7,10 @@ include ../../mk/platform.mk
 include ../../mk/$(COMPILER).mk
 include ../../shlr/sdb.mk
 
+pre: all
+
+include deps.mk
+
 all:
 	rm -f librz.$(EXT_AR)
 ifeq ($(USE_LIB_ZIP),1)
@@ -14,8 +18,6 @@ ifeq ($(USE_LIB_ZIP),1)
 else
 	$(MAKE) $(OTEZIP_LIBA)
 endif
-
-include deps.mk
 
 clean:
 	rm -f *.$(EXT_AR) *.${EXT_SO} $(OTEZIP_LIBA)
