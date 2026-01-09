@@ -1026,7 +1026,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 		r_cons_newline (core->cons);
 	}
 	r_list_free (regions);
-	free (region)
+	free (region);
 }
 
 static void cmd_printmsg(RCore *core, const char *input) {
