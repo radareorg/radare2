@@ -1,3 +1,4 @@
+CFLAGS+=-Ip/grub/include
 ifeq (1,$(WITH_GPL))
 OBJS+=p/grub/grubfs.o
 OBJS+=p/grub/kern/device.o
