@@ -2,6 +2,7 @@
 
 #include <r_fs.h>
 #include <r_lib.h>
+#include <r_sandbox.h>
 #include <zip.h>
 #include <sys/stat.h>
 
