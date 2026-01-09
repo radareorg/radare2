@@ -30,7 +30,7 @@ static CurrentTableSwitch enter_switch_op(ut64 addr, const ut8 *bytes, int len) 
 }
 
 static bool isRelative(ut32 type) {
-	return (type & R_ANAL_JAVA_CODEOP_CJMP) || (type & R_ANAL_JAVA_CODEOP_JMP);
+	return (type & (ut32)R_ANAL_JAVA_CODEOP_CJMP) || (type & (ut32)R_ANAL_JAVA_CODEOP_JMP);
 }
 
 R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *bytes, int len, char *output, int outlen) {
