@@ -474,12 +474,10 @@ static int readchar_utf8(RCons *cons, ut8 *s, int slen) {
 
 #if R2__WINDOWS__
 static int r_line_readchar_win(RCons *cons, ut8 *s, int slen) {
-	INPUT_RECORD irInBuf = { { 0 } };
+	INPUT_RECORD irInBuf = { 0 };
 	BOOL ret;
 	DWORD mode, out;
-	char buf[5] = {
-		0
-	};
+	char buf[5] = { 0 };
 	void *bed;
 
 	HANDLE h = GetStdHandle (STD_INPUT_HANDLE);
