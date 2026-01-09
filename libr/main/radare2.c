@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake */
 
-#include <r_userconf.h>
+#include "r_userconf.h"
 #ifndef R2_DOCDIR
 #define R2_DOCDIR "share/doc/radare2"
 #endif

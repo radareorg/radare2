@@ -7,7 +7,7 @@
 // defines like isdigit, etc'
 #include "r_types_base.h"
 #include "r_util/r_str_util.h"
-#include <r_userconf.h>
+#include "r_userconf.h"
 #include <stddef.h>
 #include <stdlib.h>
 #include <assert.h>
