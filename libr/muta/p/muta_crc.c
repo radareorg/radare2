@@ -37,7 +37,9 @@ static const CrcAlgorithm crc_algorithms[] = {
 };
 
 static const CrcAlgorithm *crc_find(const char *algo) {
-	for (size_t i = 0; i < sizeof (crc_algorithms) / sizeof (crc_algorithms[0]); i++) {
+	const size_t amount = sizeof (crc_algorithms) / sizeof (crc_algorithms[0]);
+	size_t i;
+	for (i = 0; i < amount; i++) {
 		if (!strcmp (algo, crc_algorithms[i].name)) {
 			return &crc_algorithms[i];
 		}
