@@ -1,0 +1,9 @@
+OBJ_FLETCHER=muta_fletcher.o
+
+STATIC_OBJ+=${OBJ_FLETCHER}
+TARGET_FLETCHER=muta_fletcher.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_FLETCHER}
+
+${TARGET_FLETCHER}: ${OBJ_FLETCHER}
+	${CC} $(call libname,muta_fletcher) ${LDFLAGS} ${CFLAGS} -o ${TARGET_FLETCHER} ${OBJ_FLETCHER}
