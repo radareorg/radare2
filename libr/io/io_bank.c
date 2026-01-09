@@ -1288,7 +1288,7 @@ R_API RList *r_io_bank_get_regions(RIO *io, const ut32 bankid, RInterval itv) {
 		return false;
 	}
 	r_io_bank_drain (io, bankid);
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf ((RListFree)free);
 	if ((r_itv_end (itv) - 1) < itv.addr) {
 		RInterval itv0 = {itv.addr, UT64_MAX - itv.addr + 1};
 		if (!io_bank_get_regions (io, bank, ret, itv0)) {
