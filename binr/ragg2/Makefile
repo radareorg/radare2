@@ -7,7 +7,6 @@ BINDEPS+=r_magic r_util r_main r_cons
 
 include ../rules.mk
 include ../../libr/main/deps.mk
-include ../../shlr/ar/deps.mk
 include ../../libr/socket/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/gdb/deps.mk

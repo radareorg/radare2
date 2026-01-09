@@ -16,7 +16,6 @@ include ${STATIC_BIN_PLUGINS}
 include ${STATIC_BIN_XTR_PLUGINS}
 include ${STATIC_BIN_LDR_PLUGINS}
 include $(SHLR)/java/deps.mk
-include $(SHLR)/ar/deps.mk
 include $(LIBR)/magic/deps.mk
 
 STATIC_OBJS=$(addprefix $(LTOP)/bin/p/, $(STATIC_OBJ))
