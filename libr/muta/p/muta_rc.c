@@ -462,38 +462,7 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	enum rc_type type;
-	switch (strlen (cj->subtype)) {
-	case 3:
-		type = RC_TYPE_RC2;
-		break;
-	case 4:
-		type = RC_TYPE_RC6;
-		break;
-	case 5:
-		type = RC_TYPE_RC4;
-		break;
-	default:
-		free (obuf);
-		return false;
-	}
-
-	if (type == RC_TYPE_RC2) {
-		struct rc2_state *state = cj->data;
-		switch (cj->flag) {
-		case R_CRYPTO_DIR_ENCRYPT:
-			rc2_crypt (state, buf, obuf, len);
-			break;
-		case R_CRYPTO_DIR_DECRYPT:
-			rc2_dcrypt (state, buf, obuf, len);
-			break;
-		default:
-			break;
-		}
-	} else if (type == RC_TYPE_RC4) {
-		struct rc4_state *st = cj->data;
-		rc4_crypt (st, buf, obuf, len);
-	} else if (type == RC_TYPE_RC6) {
+	if (!strcmp (cj->subtype, "rc6")) {
 		if (len % RC6_BLOCK_SIZE != 0) {
 			R_LOG_ERROR ("Input should be multiple of 128bit");
 			free (obuf);
@@ -510,6 +479,21 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 			for (i = 0; i < blocks; i++) {
 				rc6_encrypt (st, buf + RC6_BLOCK_SIZE * i, obuf + RC6_BLOCK_SIZE * i);
 			}
+		}
+	} else if (!strcmp (cj->subtype, "rc4")) {
+		struct rc4_state *st = cj->data;
+		rc4_crypt (st, buf, obuf, len);
+	} else if (!strcmp (cj->subtype, "rc2")) {
+		struct rc2_state *state = cj->data;
+		switch (cj->flag) {
+		case R_CRYPTO_DIR_ENCRYPT:
+			rc2_crypt (state, buf, obuf, len);
+			break;
+		case R_CRYPTO_DIR_DECRYPT:
+			rc2_dcrypt (state, buf, obuf, len);
+			break;
+		default:
+			break;
 		}
 	} else {
 		free (obuf);
