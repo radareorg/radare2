@@ -27,8 +27,6 @@ include punycode.mk
 include rc2.mk
 include rc4.mk
 include rc6.mk
-include rol.mk
-include ror.mk
 include rot.mk
 include serpent.mk
 include sip.mk
