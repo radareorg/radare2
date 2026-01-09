@@ -1,4 +1,4 @@
-OBJ_AR=io_ar.o ar/ar.o
+OBJ_AR=io_ar.o ../p/ar/ar.o
 
 STATIC_OBJ+=${OBJ_AR}
 TARGET_AR=io_ar.${EXT_SO}
