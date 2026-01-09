@@ -894,6 +894,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 		}
 		r_cons_newline (cons);
 	}
+	R_FREE (region);
 	r_list_free (regions);
 	free (region);
 }
@@ -985,8 +986,8 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 							} else {
 								ch = strchr (chars, ch) ? '?' : ch;
 							}
-						} else if ((core->addr + j) == (r_itv_end (region->itv) - 1)) {
-							//last addr in the region, free the region and set it to NULL, to pop-head next region on next iteration
+						} else if ((core->addr + j) >= r_itv_end (region->itv)) {
+							// passed the end of the region, free the region and set it to NULL, to pop-head next region on next iteration
 							R_FREE (region);
 						}
 					}
@@ -1025,6 +1026,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 		}
 		r_cons_newline (core->cons);
 	}
+	R_FREE (region);
 	r_list_free (regions);
 	free (region);
 }
@@ -1150,8 +1152,8 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 							} else {
 								ch = strchr (chars, ch) ? '?' : ch;
 							}
-						} else if ((core->addr + j) == (r_itv_end (region->itv) - 1)) {
-							//last addr in the region, free the region and set it to NULL, to pop-head next region on next iteration
+						} else if ((core->addr + j) >= r_itv_end (region->itv)) {
+							// reached or passed end of region, free the region and set it to NULL, to pop-head next region on next iteration
 							R_FREE (region);
 						}
 					}
