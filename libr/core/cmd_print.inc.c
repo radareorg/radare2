@@ -1123,7 +1123,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 			if (show_unalloc) {
 				if (core->io->va && regions) {
 					if (!region) {
-						if (r_list_empty  (regions))) {
+						if (r_list_empty  (regions)) {
 							ch = core->print->io_unalloc_ch;
 							if (show_color) {
 								free (color);
