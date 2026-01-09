@@ -1,4 +1,4 @@
-/* radare - LGPLv3 - Copyright 2017 - xarkes */
+/* radare - LGPLv3 - Copyright 2017-2026 - xarkes */
 
 #include <stdio.h>
 #include <r_util.h>
@@ -68,12 +68,12 @@ static char *name_from_table(ut64 off, filetable *tbl) {
 	return R_STR_NDUP (buf + off, i - off - 1);
 }
 
-#define VERIFY_AR_NUM_FIELD(x, s)                                                                \
-	x[sizeof (x) - 1] = '\0';                                                                \
-	r_str_trim_tail (x);                                                                     \
-	if (x[0] != '\0' && (x[0] == '-' || !r_str_isnumber (x))) {                              \
+#define VERIFY_AR_NUM_FIELD(x, s) \
+	x[sizeof (x) - 1] = '\0'; \
+	r_str_trim_tail (x); \
+	if (x[0] != '\0' && (x[0] == '-' || !r_str_isnumber (x))) { \
 		R_LOG_ERROR ("Malformed AR: bad %s in header at offset 0x%" PFMT64x, s, h_off); \
-		return -1;                                                                       \
+		return -1; \
 	}
 
 /* -1 error, 0 continue, 1 finished */
@@ -137,7 +137,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 
 	/*
 	 * handle fake files
-	*/
+	 */
 	if (!strcmp (h.name, "/")) {
 		// skip over symbol table
 		if (r_buf_seek (b, size, R_BUF_CUR) <= 0 || r_buf_tell (b) > arsize) {
@@ -166,7 +166,7 @@ static int ar_parse_header(RArFp *arf, filetable *tbl, ut64 arsize) {
 
 	/*
 	 * handle real files
-	*/
+	 */
 	RList *list = r_str_split_duplist (h.name, "/", false); // don't strip spaces
 	if (r_list_length (list) != 2) {
 		r_list_free (list);

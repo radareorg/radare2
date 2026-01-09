@@ -166,33 +166,3 @@ winkd_dep = declare_dependency()
 winkd_static_dep = declare_dependency()
 endif
 
-# handle ar dependency
-ar_files = [
-  'ar/ar.c'
-]
-
-ar_inc = [platform_inc, include_directories(['ar'])]
-
-libr2ar = static_library('r2ar', ar_files,
-  dependencies: [r_util_dep],
-  include_directories: ar_inc,
-  implicit_include_directories: false
-)
-
-ar_dep = declare_dependency(
-  link_with: libr2ar,
-  include_directories: ar_inc
-)
-
-if get_option('blob')
-libr2ar_static = static_library('r2ar_static', ar_files,
-  dependencies: [r_util_static_dep],
-  include_directories: ar_inc,
-  implicit_include_directories: false
-)
-
-ar_static_dep = declare_dependency(
-  link_with: libr2ar_static,
-  include_directories: ar_inc
-)
-endif

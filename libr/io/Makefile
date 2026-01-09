@@ -28,7 +28,6 @@ include ${STATIC_IO_PLUGINS}
 include $(LTOP)/rules.mk
 
 include ../socket/deps.mk
-include $(SHLR)/ar/deps.mk
 include $(SHLR)/zip/deps.mk
 include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk

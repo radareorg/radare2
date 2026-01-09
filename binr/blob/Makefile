@@ -49,7 +49,6 @@ include ../../shlr/gdb/deps.mk
 include ../../shlr/java/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
-include ../../shlr/ar/deps.mk
 include ../../shlr/sdb.mk
 include ../../shlr/capstone.mk
 
