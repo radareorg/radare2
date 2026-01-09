@@ -91,11 +91,7 @@ grub_strncat (char *dest, const char *src, int c)
   return dest;
 }
 
-int memcmp (const void *s1, const void *s2, grub_size_t n);
-int strcmp (const char *s1, const char *s2);
-int strncmp (const char *s1, const char *s2, grub_size_t n);
-
-char *strchr (const char *s, int c);
+// TODO: redefine
 char *grub_strrchr (const char *s, int c);
 int grub_strword (const char *s, const char *w);
 char *grub_strstr (const char *haystack, const char *needle);
