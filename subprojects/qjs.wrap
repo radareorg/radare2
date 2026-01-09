@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/quickjs-ng/quickjs.git
-revision = d405777f7eefa22c17c12970317ef3d6e7658f5a
+revision = a3f3bef1cc4522df43f5b55278833565577931fd
 directory = qjs
 patch_directory = qjs
 depth = 1
