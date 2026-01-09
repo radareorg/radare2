@@ -5,99 +5,66 @@
 #include <r_hash.h>
 #include <r_endian.h>
 
+typedef struct {
+	const char *name;
+	enum CRC_PRESETS preset;
+	int digest_size;
+} CrcAlgorithm;
+
+static const CrcAlgorithm crc_algorithms[] = {
+	{ "crc8smbus",    CRC_PRESET_8_SMBUS,       1 },
+	{ "crc15can",     CRC_PRESET_15_CAN,        2 },
+	{ "crc16",        CRC_PRESET_16,            2 },
+	{ "crc16hdlc",    CRC_PRESET_16_HDLC,       2 },
+	{ "crc16usb",     CRC_PRESET_16_USB,        2 },
+	{ "crc16citt",    CRC_PRESET_16_CITT,       2 },
+	{ "crc24",        CRC_PRESET_24,            3 },
+	{ "crc32",        CRC_PRESET_32,            4 },
+	{ "crc32c",       CRC_PRESET_32C,           4 },
+	{ "crc32ecma267", CRC_PRESET_32_ECMA_267,   4 },
+	{ "crc32bzip2",   CRC_PRESET_CRC32_BZIP2,   4 },
+	{ "crc32d",       CRC_PRESET_CRC32D,        4 },
+	{ "crc32mpeg2",   CRC_PRESET_CRC32_MPEG2,   4 },
+	{ "crc32posix",   CRC_PRESET_CRC32_POSIX,   4 },
+	{ "crc32q",       CRC_PRESET_CRC32Q,        4 },
+	{ "crc32jamcrc",  CRC_PRESET_CRC32_JAMCRC,  4 },
+	{ "crc32xfer",    CRC_PRESET_CRC32_XFER,    4 },
+	{ "crc64",        CRC_PRESET_CRC64,         8 },
+	{ "crc64ecma",    CRC_PRESET_CRC64_ECMA182, 8 },
+	{ "crc64we",      CRC_PRESET_CRC64_WE,      8 },
+	{ "crc64xz",      CRC_PRESET_CRC64_XZ,      8 },
+	{ "crc64iso",     CRC_PRESET_CRC64_ISO,     8 },
+};
+
+static const CrcAlgorithm *crc_find(const char *algo) {
+	for (size_t i = 0; i < sizeof (crc_algorithms) / sizeof (crc_algorithms[0]); i++) {
+		if (!strcmp (algo, crc_algorithms[i].name)) {
+			return &crc_algorithms[i];
+		}
+	}
+	return NULL;
+}
+
 static bool crc_check(const char *algo) {
-	return !strcmp (algo, "crc8smbus") ||
-		!strcmp (algo, "crc15can") ||
-		!strcmp (algo, "crc16") ||
-		!strcmp (algo, "crc16hdlc") ||
-		!strcmp (algo, "crc16usb") ||
-		!strcmp (algo, "crc16citt") ||
-		!strcmp (algo, "crc24") ||
-		!strcmp (algo, "crc32") ||
-		!strcmp (algo, "crc32c") ||
-		!strcmp (algo, "crc32ecma267") ||
-		!strcmp (algo, "crc32bzip2") ||
-		!strcmp (algo, "crc32d") ||
-		!strcmp (algo, "crc32mpeg2") ||
-		!strcmp (algo, "crc32posix") ||
-		!strcmp (algo, "crc32q") ||
-		!strcmp (algo, "crc32jamcrc") ||
-		!strcmp (algo, "crc32xfer") ||
-		!strcmp (algo, "crc64") ||
-		!strcmp (algo, "crc64ecma") ||
-		!strcmp (algo, "crc64we") ||
-		!strcmp (algo, "crc64xz") ||
-		!strcmp (algo, "crc64iso");
+	return crc_find (algo) != NULL;
 }
 
 static bool crc_update(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && buf, false);
-	enum CRC_PRESETS preset = 0;
-	if (cj->subtype) {
-		if (!strcmp (cj->subtype, "crc8smbus")) {
-			preset = CRC_PRESET_8_SMBUS;
-		} else if (!strcmp (cj->subtype, "crc15can")) {
-			preset = CRC_PRESET_15_CAN;
-		} else if (!strcmp (cj->subtype, "crc16")) {
-			preset = CRC_PRESET_16;
-		} else if (!strcmp (cj->subtype, "crc16hdlc")) {
-			preset = CRC_PRESET_16_HDLC;
-		} else if (!strcmp (cj->subtype, "crc16usb")) {
-			preset = CRC_PRESET_16_USB;
-		} else if (!strcmp (cj->subtype, "crc16citt")) {
-			preset = CRC_PRESET_16_CITT;
-		} else if (!strcmp (cj->subtype, "crc24")) {
-			preset = CRC_PRESET_24;
-		} else if (!strcmp (cj->subtype, "crc32")) {
-			preset = CRC_PRESET_32;
-		} else if (!strcmp (cj->subtype, "crc32c")) {
-			preset = CRC_PRESET_32C;
-		} else if (!strcmp (cj->subtype, "crc32ecma267")) {
-			preset = CRC_PRESET_32_ECMA_267;
-		} else if (!strcmp (cj->subtype, "crc32bzip2")) {
-			preset = CRC_PRESET_CRC32_BZIP2;
-		} else if (!strcmp (cj->subtype, "crc32d")) {
-			preset = CRC_PRESET_CRC32D;
-		} else if (!strcmp (cj->subtype, "crc32mpeg2")) {
-			preset = CRC_PRESET_CRC32_MPEG2;
-		} else if (!strcmp (cj->subtype, "crc32posix")) {
-			preset = CRC_PRESET_CRC32_POSIX;
-		} else if (!strcmp (cj->subtype, "crc32q")) {
-			preset = CRC_PRESET_CRC32Q;
-		} else if (!strcmp (cj->subtype, "crc32jamcrc")) {
-			preset = CRC_PRESET_CRC32_JAMCRC;
-		} else if (!strcmp (cj->subtype, "crc32xfer")) {
-			preset = CRC_PRESET_CRC32_XFER;
-		} else if (!strcmp (cj->subtype, "crc64")) {
-			preset = CRC_PRESET_CRC64;
-		} else if (!strcmp (cj->subtype, "crc64ecma")) {
-			preset = CRC_PRESET_CRC64_ECMA182;
-		} else if (!strcmp (cj->subtype, "crc64we")) {
-			preset = CRC_PRESET_CRC64_WE;
-		} else if (!strcmp (cj->subtype, "crc64xz")) {
-			preset = CRC_PRESET_CRC64_XZ;
-		} else if (!strcmp (cj->subtype, "crc64iso")) {
-			preset = CRC_PRESET_CRC64_ISO;
-		}
-	}
-	if (!preset) {
+	const CrcAlgorithm *algo = cj->subtype ? crc_find (cj->subtype) : NULL;
+	if (!algo) {
 		return false;
 	}
-	utcrc result = r_hash_crc_preset (buf, len, preset);
-	int digest_size = r_hash_size (r_hash_name_to_bits (cj->subtype));
-	ut8 digest[8]; // max crc64 is 8 bytes
-	if (digest_size == 1) {
-		digest[0] = (ut8)result;
-	} else if (digest_size == 2) {
-		r_write_be16 (digest, (ut16)result);
-	} else if (digest_size == 3) {
-		r_write_be24 (digest, (ut32)result);
-	} else if (digest_size == 4) {
-		r_write_be32 (digest, (ut32)result);
-	} else if (digest_size == 8) {
-		r_write_be64 (digest, (ut64)result);
+	utcrc result = r_hash_crc_preset (buf, len, algo->preset);
+	ut8 digest[8];
+	switch (algo->digest_size) {
+	case 1: digest[0] = (ut8)result; break;
+	case 2: r_write_be16 (digest, (ut16)result); break;
+	case 3: r_write_be24 (digest, (ut32)result); break;
+	case 4: r_write_be32 (digest, (ut32)result); break;
+	case 8: r_write_be64 (digest, (ut64)result); break;
 	}
-	r_muta_session_append (cj, digest, digest_size);
+	r_muta_session_append (cj, digest, algo->digest_size);
 	return true;
 }
 
