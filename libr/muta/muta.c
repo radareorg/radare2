@@ -116,7 +116,12 @@ static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {
 	const char *desc = r_str_get (cp->meta.desc);
 	char type4[5];
 	r_str_ncpy (type4, typestr, sizeof (type4));
-	r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+
+	if (R_STR_ISNOTEMPTY (cp->implements)) {
+		r_strbuf_appendf (sb, "%s %12s  %s (implements: %s)\n", type4, cp->meta.name, desc, cp->implements);
+	} else {
+		r_strbuf_appendf (sb, "%s %12s  %s\n", type4, cp->meta.name, desc);
+	}
 }
 
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
@@ -146,6 +151,9 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			pj_ks (pj, "name", cp->meta.name);
 			const char *ts = mutatype_tostring (cp->type);
 			pj_ks (pj, "type", ts);
+			if (R_STR_ISNOTEMPTY (cp->implements)) {
+				pj_ks (pj, "implements", cp->implements);
+			}
 			r_lib_meta_pj (pj, &cp->meta);
 			pj_end (pj);
 			break;
