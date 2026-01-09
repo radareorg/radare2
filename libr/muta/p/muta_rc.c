@@ -275,11 +275,7 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	int u = RC6_w / 8;
 	int c = keylen / u;
 	int t = 2 * RC6_r + 4;
-#ifdef _MSC_VER
-	ut32 *L = (ut32 *)malloc (sizeof (ut32) * c);
-#else
-	ut32 L[c];
-#endif
+	ut32 L[8];
 	ut32 A = 0, B = 0, k = 0, j = 0;
 	ut32 v = 3 * t; // originally v = 2 *((c > t)? c: t);
 
@@ -305,9 +301,6 @@ static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, 
 	}
 
 	state->key_size = keylen / 8;
-#ifdef _MSC_VER
-	free (L);
-#endif
 	return true;
 }
 
@@ -315,8 +308,7 @@ static void rc6_encrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	ut32 t, u;
 	ut32 aux;
 	ut32 data[RC6_BLOCK_SIZE / 4];
-	int i;
-	int off = 0;
+	int i, off = 0;
 	for (i = 0; i < RC6_BLOCK_SIZE / 4; i++) {
 		data[i] = ((inbuf[off++] & 0xff));
 		data[i] |= ((inbuf[off++] & 0xff) << 8);
@@ -359,8 +351,7 @@ static void rc6_decrypt(struct rc6_state *const state, const ut8 *inbuf, ut8 *ou
 	ut32 t, u;
 	ut32 aux;
 	ut32 data[RC6_BLOCK_SIZE / 4];
-	int i;
-	int off = 0;
+	int i, off = 0;
 
 	for (i = 0; i < RC6_BLOCK_SIZE / 4; i++) {
 		data[i] = ((inbuf[off++] & 0xff));
@@ -414,10 +405,12 @@ static bool rc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, i
 		cj->flag = direction;
 		state->key_size = RC2_BITS;
 		return rc2_expandKey ((struct rc2_state *)cj->data, key, keylen);
-	} else if (!strcmp (cj->subtype, "rc4")) {
+	}
+	if (!strcmp (cj->subtype, "rc4")) {
 		cj->data = R_NEW0 (struct rc4_state);
 		return rc4_init ((struct rc4_state *)cj->data, key, keylen);
-	} else if (!strcmp (cj->subtype, "rc6")) {
+	}
+	if (!strcmp (cj->subtype, "rc6")) {
 		cj->data = R_NEW0 (struct rc6_state);
 		cj->flag = (direction == R_CRYPTO_DIR_DECRYPT);
 		return rc6_init ((struct rc6_state *)cj->data, key, keylen, direction);
@@ -430,18 +423,18 @@ static int rc_get_key_size(RMutaSession *cj) {
 	if (!cj->data) {
 		return 0;
 	}
-
 	if (!strcmp (cj->subtype, "rc2")) {
 		struct rc2_state *state = cj->data;
 		return state->key_size;
-	} else if (!strcmp (cj->subtype, "rc4")) {
+	}
+	if (!strcmp (cj->subtype, "rc4")) {
 		struct rc4_state *st = cj->data;
 		return st->key_size;
-	} else if (!strcmp (cj->subtype, "rc6")) {
+	}
+	if (!strcmp (cj->subtype, "rc6")) {
 		struct rc6_state *st = cj->data;
 		return st->key_size;
 	}
-
 	return 0;
 }
 
@@ -451,6 +444,7 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
+	// AITODO: do not strcmp on every updoate! thisi s very slow, we should have the rc version or the keysize stored somewhere, and reuse that logic for keysize callbacks (to remove as much strcmps as possible in this file)
 	if (!strcmp (cj->subtype, "rc2")) {
 		struct rc2_state *state = cj->data;
 		if (!state) {
@@ -512,7 +506,7 @@ static bool rc_fini(RMutaSession *cj) {
 RMutaPlugin r_muta_plugin_rc = {
 	.meta = {
 		.name = "rc",
-		.desc = "Rivest Cipher (RC2, RC4, RC6)",
+		.desc = "Rivest Cipher",
 		.author = "pancake",
 		.license = "LGPL-3.0-only",
 	},
