@@ -73,7 +73,6 @@ typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int
 typedef struct r_muta_plugin_t {
 	RPluginMeta meta;
 	const char *implements;
-	const char *(*get_subtypes)(void);
 	bool (*check)(const char *algo);
 	RMutaType type;
 

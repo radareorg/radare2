@@ -33,9 +33,7 @@ static bool rot_check(const char *algo) {
 	return !strcmp (algo, "rot") || !strcmp (algo, "rol") || !strcmp (algo, "ror");
 }
 
-static const char *rot_get_subtypes(void) {
-	return "rot,rol,ror";
-}
+
 
 static bool rot_init(RRotState *state, const ut8 *key, int keylen, RRotType type) {
 	if (!state || !key || keylen < 1) {
@@ -188,7 +186,6 @@ RMutaPlugin r_muta_plugin_rot = {
 		.license = "MIT",
 	},
 	.implements = "rot,rol,ror",
-	.get_subtypes = rot_get_subtypes,
 	.check = rot_check,
 	.set_key = rot_set_key,
 	.get_key_size = rot_get_key_size,
