@@ -163,7 +163,17 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			const char *ts = mutatype_tostring (cp->type);
 			pj_ks (pj, "type", ts);
 			if (R_STR_ISNOTEMPTY (cp->implements)) {
-				pj_ks (pj, "implements", cp->implements);
+				pj_ka (pj, "implements");
+				char *impls = strdup (cp->implements);
+				RList *l = r_str_split_list (impls, ",", 0);
+				RListIter *it2;
+				const char *s;
+				r_list_foreach (l, it2, s) {
+					pj_s (pj, s);
+				}
+				r_list_free (l);
+				free (impls);
+				pj_end (pj);
 			}
 			r_lib_meta_pj (pj, &cp->meta);
 			pj_end (pj);
