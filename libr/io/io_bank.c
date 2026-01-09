@@ -1239,6 +1239,72 @@ R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region
 	return true;
 }
 
+static RList *io_bank_get_regions(RIO *io, RIOBank *bank, RList *list, RInterval itv) {
+	RIOSubMap fake_sm;
+	fake_sm.itv = itv;
+	fake_sm.mapref = (const RIOMapRef) {0};
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), itv.addr)) {
+		node = bank->last_used;
+	} else {
+		if (!(node = _find_entry_submap_node (bank, &fake_sm))) {
+			goto beach;
+		}
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	do {
+		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+		if (!map) {
+			//corrupted bank
+			return NULL;
+		}
+		RIORegion *region = R_NEW (RIORegion);
+		region->itv = sm->itv;
+		region->perm = map->perm;
+		if (!r_list_append (list, region)) {
+			//allocation failed
+			free (region);
+			return NULL;
+		}
+		node = r_rbnode_next (node);
+		if (!node) {
+			//end of tree
+			goto beach;
+		}
+		sm = (RIOSubMap *)node->data;
+		if (!sm) {
+			//corrupted leaf data
+			return NULL;
+		}
+	} while (r_itv_overlap (itv, sm->itv));
+beach:
+	return list;
+}
+
+R_API RList *r_io_bank_get_regions(RIO *io, const ut32 bankid, RInterval itv) {
+	R_RETURN_VAL_IF_FAIL (io, NULL);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank) {
+		return false;
+	}
+	r_io_bank_drain (io, bankid);
+	RList *ret = r_list_newf (free);
+	if ((r_itv_end (itv) - 1) < itv.addr) {
+		RInterval itv0 = {itv.addr, UT64_MAX - itv.addr + 1};
+		if (!io_bank_get_regions (io, bank, ret, itv0)) {
+			r_list_free (ret);
+			return NULL;
+		}
+		itv.size = itv.addr + itv.size;	//intentional overflow hack
+		itv.addr = 0ULL;
+	}
+	if (!io_bank_get_regions (io, bank, ret, itv)) {
+		r_list_free (ret);
+		return NULL;
+	}
+	return ret;
+}
+
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
 	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOBank *bank = r_io_bank_get (io, bankid);

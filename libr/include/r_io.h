@@ -467,6 +467,7 @@ R_API int r_io_bank_read_from_submap_at(RIO *io, const ut32 bankid, ut64 addr, u
 R_API int r_io_bank_write_to_submap_at(RIO *io, const ut32 bankid, ut64 addr, const ut8 *buf, int len);
 R_API void r_io_bank_drain(RIO *io, const ut32 bankid);
 R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region, ut64 addr);
+R_API RList *r_io_bank_get_regions(RIO *io, const ut32 bankid, RInterval itv);
 
 //io.c
 R_API RIO *r_io_new(void);
