@@ -371,6 +371,7 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		ctx = r_hash_new (true, algo);
 	}
 
+	bool is_text_output = false;
 	if (r_muta_algo_supports (cry, name, R_MUTA_TYPE_HASH)) {
 		RMutaSession *cj = r_muta_use (cry, name);
 		if (cj->h->end) {
@@ -383,6 +384,7 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		}
 		ut8 *result = r_muta_session_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);
+		is_text_output = cj->h->text_output;
 		free (result);
 		r_muta_session_free (cj);
 	} else {
@@ -400,7 +402,7 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		digest_hex = calloc (digest_hex_size, 1);
 		snprintf (digest_hex, digest_hex_size, "%02.8f", ctx->entropy);
 	} else if (digest_size > 0) {
-		if (algo & R_HASH_SSDEEP) {
+		if (algo & R_HASH_SSDEEP || is_text_output) {
 			digest_hex = malloc (digest_size + 1);
 			snprintf (digest_hex, digest_size + 1, "%s", ctx->digest);
 		} else if (digest_size * 2 < digest_size) {
