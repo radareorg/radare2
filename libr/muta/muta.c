@@ -50,7 +50,7 @@ R_API void r_muta_free(RMuta *cry) {
 }
 
 R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (cry && algo, NULL);
+	R_RETURN_VAL_IF_FAIL (cry && cry->plugins && algo, NULL);
 	RListIter *iter;
 	RMutaPlugin *h;
 	r_list_foreach (cry->plugins, iter, h) {
@@ -77,7 +77,8 @@ R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo) {
 			RList *l = r_str_split_list (impls, ",", 0);
 			const char *s;
 			bool found = false;
-			r_list_foreach (l, iter, s) {
+			RListIter *it2;
+			r_list_foreach (l, it2, s) {
 				if (!strcmp (s, algo)) {
 					found = true;
 					break;
