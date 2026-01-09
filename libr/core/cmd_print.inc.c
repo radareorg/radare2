@@ -836,7 +836,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 						if ((core->addr + j) < region->itv.addr) {
 							ch0 = core->print->io_unalloc_ch;
 							ch1 = core->print->io_unalloc_ch;
-						} else if ((core->addr + j) == (r_itv_end (region->itv) - 1)) {
+						} else if ((core->addr + j) >= r_itv_end (region->itv)) {
 							//last addr in the region, free the region and set it to NULL, to pop-head next region on next iteration
 							R_FREE (region);
 						}
