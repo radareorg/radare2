@@ -206,6 +206,7 @@ cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
 hash          sha  Secure Hash Algorithm (SHA) (implements: sha1,sha256,sha384,sha512)
 hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
+hash       ssdeep  ssdeep fuzzy hash
 hash      strhash  String hash using a modified DJB2 xor
 cryp          xor  Byte level Exclusive Or
 hash          md5
