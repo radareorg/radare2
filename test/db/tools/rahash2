@@ -200,9 +200,7 @@ hash     fletcher  Fletcher hash algorithms (implements: fletcher8,fletcher16,fl
 hash          md5  MD5 hash
 hash         null  mutate nothing
 char     punycode  Unicoded represented in plain ascii
-cryp          rc2  Ron Rivest's Code symmetric key encryption also known as ARC2
-cryp          rc4  Rivest Cipher 4
-cryp          rc6  Rivest's Cipher 6
+cryp           rc  Rivest Cipher (RC2, RC4, RC6) (implements: rc2,rc4,rc6)
 cryp          rot  Rotate algorithms (rot13, rol, ror) (implements: rot,rol,ror)
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
 hash          sha  SHA1/SHA256/SHA384/SHA512 hash (implements: sha1,sha256,sha384,sha512)
