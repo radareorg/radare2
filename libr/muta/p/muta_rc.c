@@ -29,9 +29,16 @@ static const ut8 PITABLE[256] = {
 #define RC2_KEY_SIZE 64
 #define RC2_BLOCK_SIZE 8
 
+enum rc_type {
+	RC_TYPE_RC2,
+	RC_TYPE_RC4,
+	RC_TYPE_RC6
+};
+
 struct rc2_state {
 	ut16 ekey[RC2_KEY_SIZE];
 	int key_size;
+	enum rc_type type;
 };
 
 static bool rc2_expandKey(struct rc2_state *state, const ut8 *key, int key_len) {
@@ -201,6 +208,7 @@ struct rc4_state {
 	ut8 index1;
 	ut8 index2;
 	int key_size;
+	enum rc_type type;
 };
 
 static __inline void swap_bytes(ut8 *a, ut8 *b) {
@@ -265,6 +273,7 @@ static void rc4_crypt(struct rc4_state *const state, const ut8 *inbuf, ut8 *outb
 struct rc6_state {
 	ut32 S[2 * RC6_r + 4];
 	int key_size;
+	enum rc_type type;
 };
 
 static bool rc6_init(struct rc6_state *const state, const ut8 *key, int keylen, int direction) {
@@ -400,20 +409,25 @@ static bool rc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, i
 	free (cj->data);
 
 	if (!strcmp (cj->subtype, "rc2")) {
-		cj->data = R_NEW0 (struct rc2_state);
-		struct rc2_state *state = cj->data;
+		struct rc2_state *state = R_NEW0 (struct rc2_state);
+		cj->data = state;
 		cj->flag = direction;
 		state->key_size = RC2_BITS;
-		return rc2_expandKey ((struct rc2_state *)cj->data, key, keylen);
+		state->type = RC_TYPE_RC2;
+		return rc2_expandKey (state, key, keylen);
 	}
 	if (!strcmp (cj->subtype, "rc4")) {
-		cj->data = R_NEW0 (struct rc4_state);
-		return rc4_init ((struct rc4_state *)cj->data, key, keylen);
+		struct rc4_state *st = R_NEW0 (struct rc4_state);
+		cj->data = st;
+		st->type = RC_TYPE_RC4;
+		return rc4_init (st, key, keylen);
 	}
 	if (!strcmp (cj->subtype, "rc6")) {
-		cj->data = R_NEW0 (struct rc6_state);
+		struct rc6_state *st = R_NEW0 (struct rc6_state);
+		cj->data = st;
 		cj->flag = (direction == R_CRYPTO_DIR_DECRYPT);
-		return rc6_init ((struct rc6_state *)cj->data, key, keylen, direction);
+		st->type = RC_TYPE_RC6;
+		return rc6_init (st, key, keylen, direction);
 	}
 
 	return false;
@@ -424,33 +438,48 @@ static int rc_get_key_size(RMutaSession *cj) {
 		return 0;
 	}
 	if (!strcmp (cj->subtype, "rc2")) {
-		struct rc2_state *state = cj->data;
+		const struct rc2_state *state = cj->data;
 		return state->key_size;
 	}
 	if (!strcmp (cj->subtype, "rc4")) {
-		struct rc4_state *st = cj->data;
+		const struct rc4_state *st = cj->data;
 		return st->key_size;
 	}
 	if (!strcmp (cj->subtype, "rc6")) {
-		struct rc6_state *st = cj->data;
+		const struct rc6_state *st = cj->data;
 		return st->key_size;
 	}
 	return 0;
 }
 
 static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
+	if (!cj->data) {
+		return false;
+	}
+
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 
-	// AITODO: do not strcmp on every updoate! thisi s very slow, we should have the rc version or the keysize stored somewhere, and reuse that logic for keysize callbacks (to remove as much strcmps as possible in this file)
-	if (!strcmp (cj->subtype, "rc2")) {
+	enum rc_type type;
+	switch (strlen (cj->subtype)) {
+	case 3:
+		type = RC_TYPE_RC2;
+		break;
+	case 4:
+		type = RC_TYPE_RC6;
+		break;
+	case 5:
+		type = RC_TYPE_RC4;
+		break;
+	default:
+		free (obuf);
+		return false;
+	}
+
+	if (type == RC_TYPE_RC2) {
 		struct rc2_state *state = cj->data;
-		if (!state) {
-			free (obuf);
-			return false;
-		}
 		switch (cj->flag) {
 		case R_CRYPTO_DIR_ENCRYPT:
 			rc2_crypt (state, buf, obuf, len);
@@ -461,21 +490,16 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		default:
 			break;
 		}
-	} else if (!strcmp (cj->subtype, "rc4")) {
+	} else if (type == RC_TYPE_RC4) {
 		struct rc4_state *st = cj->data;
 		rc4_crypt (st, buf, obuf, len);
-	} else if (!strcmp (cj->subtype, "rc6")) {
+	} else if (type == RC_TYPE_RC6) {
 		if (len % RC6_BLOCK_SIZE != 0) {
 			R_LOG_ERROR ("Input should be multiple of 128bit");
 			free (obuf);
 			return false;
 		}
 		struct rc6_state *st = cj->data;
-		if (!st) {
-			R_LOG_ERROR ("No key set for rc6");
-			free (obuf);
-			return false;
-		}
 		const int blocks = len / RC6_BLOCK_SIZE;
 		int i;
 		if (cj->flag) {
@@ -487,6 +511,9 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 				rc6_encrypt (st, buf + RC6_BLOCK_SIZE * i, obuf + RC6_BLOCK_SIZE * i);
 			}
 		}
+	} else {
+		free (obuf);
+		return false;
 	}
 
 	r_muta_session_append (cj, obuf, len);
