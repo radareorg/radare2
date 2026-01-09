@@ -1,8 +1,5 @@
-/* radare - LGPL - Copyright 2009-2021 - pancake, nibble */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
-#include <stdio.h>
-#include <r_types.h>
-#include <r_util.h>
 #include <r_syscall.h>
 
 #if HAVE_GPERF
