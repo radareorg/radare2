@@ -55,7 +55,7 @@ static bool sha_update(RMutaSession *cj, const ut8 *buf, int len) {
 RMutaPlugin r_muta_plugin_sha = {
 	.meta = {
 		.name = "sha",
-		.desc = "SHA1/SHA256/SHA384/SHA512 hash",
+		.desc = "Secure Hash Algorithm (SHA)",
 		.author = "pancake",
 		.license = "MIT",
 	},

@@ -200,10 +200,10 @@ hash     fletcher  Fletcher hash algorithms (implements: fletcher8,fletcher16,fl
 hash          md5  MD5 hash
 hash         null  mutate nothing
 char     punycode  Unicoded represented in plain ascii
-cryp           rc  Rivest Cipher (RC2, RC4, RC6) (implements: rc2,rc4,rc6)
+cryp           rc  Rivest Cipher (implements: rc2,rc4,rc6)
 cryp          rot  Rotate algorithms (rot13, rol, ror) (implements: rot,rol,ror)
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
-hash          sha  SHA1/SHA256/SHA384/SHA512 hash (implements: sha1,sha256,sha384,sha512)
+hash          sha  Secure Hash Algorithm (SHA) (implements: sha1,sha256,sha384,sha512)
 hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash      strhash  String hash using a modified DJB2 xor
