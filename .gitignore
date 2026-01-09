@@ -79,6 +79,7 @@ shlr/java/out
 shlr/java/out.exe
 shlr/spp/config.h
 subprojects/.wraplock
+subprojects/otezip
 subprojects/sdb
 subprojects/capstone
 subprojects/capstone-v5
