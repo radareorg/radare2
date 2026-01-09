@@ -117,9 +117,9 @@ static int decode_index64(const ut8 *data, ebc_index_t *index) {
 	ut64 tmp = r_read_le64 (data);
 	index->type = EBC_INDEX64;
 	index->sign = tmp & EBC_NTH_BIT(63) ? EBC_INDEX_PLUS : EBC_INDEX_MINUS;
-	index->a_width = ((tmp >> 60) & EBC_N_BIT_MASK(2)) * 8;
-	index->n = tmp & EBC_N_BIT_MASK(index->a_width);
-	index->c = (tmp >> index->a_width) & EBC_N_BIT_MASK(60- index->a_width);
+	index->a_width = ((tmp >> 60) & (ut64)EBC_N_BIT_MASK(2)) * 8;
+	index->n = tmp & (ut64)EBC_N_BIT_MASK(index->a_width);
+	index->c = (tmp >> index->a_width) & (ut64)EBC_N_BIT_MASK(60- index->a_width);
 	return 0;
 }
 
