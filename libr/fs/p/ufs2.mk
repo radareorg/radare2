@@ -1,6 +1,6 @@
 OBJ_UFS2=fs_ufs2.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_UFS2}
 #STATIC_OBJ+=${EXTRA}

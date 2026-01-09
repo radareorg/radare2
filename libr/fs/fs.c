@@ -12,8 +12,8 @@
 #endif
 
 #if WITH_GPL && USE_GRUB
-#include "../../shlr/grub/include/grubfs.h"
-#include "../../shlr/grub/include/grub/msdos_partition.h"
+#include "p/grub/include/grubfs.h"
+#include "p/grub/include/grub/msdos_partition.h"
 #endif
 
 R_LIB_VERSION(r_fs);

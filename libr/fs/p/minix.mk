@@ -1,6 +1,6 @@
 OBJ_MINIX=fs_minix.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_MINIX}
 #STATIC_OBJ+=${EXTRA}

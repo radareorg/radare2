@@ -1,6 +1,6 @@
 OBJ_SFS=fs_sfs.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_SFS}
 #STATIC_OBJ+=${EXTRA}

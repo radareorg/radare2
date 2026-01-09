@@ -1,6 +1,6 @@
 OBJ_EXT2=fs_ext2.o
 EXTRA=$(GRUB)
-CFLAGS+=-Igrub/include
+CFLAGS+=-Ip/grub/include
 
 STATIC_OBJ+=${OBJ_EXT2}
 #STATIC_OBJ+=${EXTRA}

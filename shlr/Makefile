@@ -41,11 +41,6 @@ RANLIB?=ranlib
 MODS=zip java
 MODS+=gdb qnx ar
 # lz4
-ifneq ($(CC),cccl)
-ifeq (1,$(WITH_GPL))
-MODS+=grub
-endif
-endif
 SPP_URL=https://github.com/trufae/spp
 PWD=$(shell pwd)
 
@@ -259,7 +254,6 @@ SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=$(CS_ROOT)/libcapstone.a
 SHLRS+=gdb/lib/libgdbr.a
-SHLRS+=grub/libgrubfs.a
 SHLRS+=java/libr_java.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=winkd/libr_winkd.a

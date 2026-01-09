@@ -78,7 +78,7 @@ RebuildSdb() {
 }
 
 RebuildFs() {
-	Rebuild shlr/grub
+	Rebuild libr/fs/p/grub
 	Rebuild libr/fs
 }
 

@@ -7,13 +7,17 @@ include ../../mk/platform.mk
 include ../../mk/$(COMPILER).mk
 include ../../shlr/sdb.mk
 
+pre: all
+
+include deps.mk
+
 all:
 	rm -f librz.$(EXT_AR)
 ifeq ($(USE_LIB_ZIP),1)
 	@echo no bundled zip to build
 else
-	$(MAKE) -C ../../subprojects/otezip
+	$(MAKE) $(OTEZIP_LIBA)
 endif
 
 clean:
-	rm -f *.$(EXT_AR) *.${EXT_SO}
+	rm -f *.$(EXT_AR) *.${EXT_SO} $(OTEZIP_LIBA)

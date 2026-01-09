@@ -1037,7 +1037,6 @@ R_API int r_file_mkstemp(const char * R_NULLABLE prefix, char **oname) {
 		prefix = "r2";
 	}
 #if R2__WINDOWS__
-	LPTSTR name = NULL;
 	char *path = r_file_tmpdir ();
 	if (!path) {
 		return -1;
@@ -1046,7 +1045,7 @@ R_API int r_file_mkstemp(const char * R_NULLABLE prefix, char **oname) {
 	free (path);
 	LPTSTR prefix_ = r_sys_conv_utf8_to_win (prefix);
 
-	name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
+	LPTSTR name = (LPTSTR)malloc (sizeof (TCHAR) * (MAX_PATH + 1));
 	if (!name) {
 		goto err_r_file_mkstemp;
 	}
@@ -1087,11 +1086,10 @@ err_r_file_mkstemp:
 
 R_API char *r_file_tmpdir(void) {
 #if R2__WINDOWS__
-	LPTSTR tmpdir;
 	char *path = NULL;
 	DWORD len = 0;
 
-	tmpdir = (LPTSTR)calloc (1, sizeof (TCHAR) * (MAX_PATH + 1));
+	LPTSTR tmpdir = (LPTSTR)calloc (1, sizeof (TCHAR) * (MAX_PATH + 1));
 	if (!tmpdir) {
 		return NULL;
 	}
