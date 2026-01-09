@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://github.com/trufae/otezip.git
-revision = 33fe20308bd1474218d42c7e365c1512c1c2eb4b
+revision = 66276fbac8819bd618fcc283b621c157f7024cac
 # patch_directory = otezip
 directory = otezip
 depth = 1
