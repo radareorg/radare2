@@ -769,20 +769,17 @@ grub_ufs_uuid(grub_device_t device, char **uuid) {
 /* Get mtime.  */
 static grub_err_t
 grub_ufs_mtime(grub_device_t device, grub_int32_t *tm) {
-	struct grub_ufs_data *data = 0;
-
-	data = grub_ufs_mount (device->disk);
+	struct grub_ufs_data *data = grub_ufs_mount (device->disk);
 	if (!data) {
 		*tm = 0;
-	} else
+	} else {
 #ifdef MODE_UFS2
 		*tm = grub_num_to_cpu64 (data->sblock.mtime2, data->be);
 #else
 		*tm = grub_num_to_cpu32 (data->sblock.mtime, data->be);
 #endif
-
+	}
 	grub_free (data);
-
 	return grub_errno;
 }
 

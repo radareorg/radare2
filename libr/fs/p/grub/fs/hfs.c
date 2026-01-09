@@ -353,7 +353,7 @@ grub_hfs_mount(grub_disk_t disk) {
 	int depth = 0;
 	if (grub_hfs_find_node (data, (char *)&key, data->cat_root, 0, (char *)&dir, sizeof (dir), depth) == 0) {
 		grub_error (GRUB_ERR_BAD_FS, "cannot find the HFS root directory");
-		eprintf ("Cannot find the HFS root directory\n");
+		fprintf (stderr, "Cannot find the HFS root directory\n");
 		goto fail;
 	}
 
