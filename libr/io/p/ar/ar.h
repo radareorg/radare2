@@ -10,7 +10,7 @@ typedef struct RARFP {
 	ut32 *refcount;
 } RArFp;
 
-typedef int (*RArOpenManyCB) (RArFp *arf, void *user);
+typedef int(*RArOpenManyCB)(RArFp *arf, void *user);
 
 /* Offset passed is always the real io->off of the inspected file,
  * the functions automatically translate it to relative offset within the archive */

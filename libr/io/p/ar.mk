@@ -1,12 +1,10 @@
-OBJ_AR=io_ar.o
+OBJ_AR=io_ar.o ar/ar.o
 
 STATIC_OBJ+=${OBJ_AR}
 TARGET_AR=io_ar.${EXT_SO}
 ALL_TARGETS+=${TARGET_AR}
 
-LIB_PATH=$(SHLR)/ar
-CFLAGS+=-I$(SHLR)/ar
-LDFLAGS+=$(SHLR)/ar/libr_ar.$(EXT_AR)
+CFLAGS+=-Iar
 
 ifeq (${WITHPIC},0)
 LINKFLAGS+=../../util/libr_util.a

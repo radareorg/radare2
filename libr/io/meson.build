@@ -13,6 +13,7 @@ r_io_sources = [
   'ioutils.c',
   'undo.c',
   'p_cache.c',
+  'p/ar/ar.c',
   'p/io_ar.c',
   'p/io_reg.c',
   'p/io_fd.c',
@@ -79,7 +80,6 @@ r_io_deps = [
   winkd_dep,
   qnx_dep,
   get_option('use_zip') ? zip_dep : declare_dependency(),
-  ar_dep,
   pth
 ]
 
@@ -125,7 +125,6 @@ r_io_static_deps = [
   bochs_static_dep,
   gdb_static_dep,
   qnx_static_dep,
-  ar_static_dep,
   get_option('use_zip') ? zip_dep : declare_dependency(),
   pth
 ]
