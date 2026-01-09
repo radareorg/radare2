@@ -60,7 +60,7 @@ grub_env_find(const char *name) {
 
 	/* Look for the variable in the current context.  */
 	for (var = grub_current_context->vars[idx]; var; var = var->next) {
-		if (grub_strcmp (var->name, name) == 0) {
+		if (strcmp (var->name, name) == 0) {
 			return var;
 		}
 	}
@@ -203,7 +203,7 @@ void grub_env_iterate(int(*func)(struct grub_env_var *var, void *closure),
 			sorted_var->var = var;
 
 			for (q = &sorted_list, p = *q; p; q = &((*q)->next), p = *q) {
-				if (grub_strcmp (p->var->name, var->name) > 0) {
+				if (strcmp (p->var->name, var->name) > 0) {
 					break;
 				}
 			}

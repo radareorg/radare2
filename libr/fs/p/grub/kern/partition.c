@@ -96,7 +96,7 @@ grub_partition_probe(struct grub_disk *disk, const char *str) {
 		/* Use the first partition map type found.  */
 		FOR_PARTITION_MAPS (partmap) {
 			if (partname_end != partname &&
-				(grub_strncmp (partmap->name, partname, partname_end - partname) != 0 || partmap->name[partname_end - partname] != 0)) {
+				(strncmp (partmap->name, partname, partname_end - partname) != 0 || partmap->name[partname_end - partname] != 0)) {
 				continue;
 			}
 

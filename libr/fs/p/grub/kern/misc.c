@@ -30,10 +30,10 @@ GRUB_EXPORT(grub_strcpy);
 GRUB_EXPORT(grub_strncpy);
 GRUB_EXPORT(grub_stpcpy);
 
-GRUB_EXPORT(grub_memcmp);
-GRUB_EXPORT(grub_strcmp);
-GRUB_EXPORT(grub_strncmp);
-GRUB_EXPORT(grub_strchr);
+GRUB_EXPORT(memcmp);
+GRUB_EXPORT(strcmp);
+GRUB_EXPORT(strncmp);
+GRUB_EXPORT(strchr);
 GRUB_EXPORT(grub_strrchr);
 GRUB_EXPORT(grub_strword);
 GRUB_EXPORT(grub_strstr);
@@ -196,67 +196,7 @@ void grub_real_dprintf(const char *file, const int line, const char *condition, 
 }
 
 int grub_vprintf(const char *fmt, va_list args) {
-	int ret;
-
-	ret = grub_vsnprintf_real (0, 0, fmt, args);
-	return ret;
-}
-
-int grub_memcmp(const void *s1, const void *s2, grub_size_t n) {
-	const char *t1 = s1;
-	const char *t2 = s2;
-
-	while (n--) {
-		if (*t1 != *t2) {
-			return (int)*t1 - (int)*t2;
-		}
-
-		t1++;
-		t2++;
-	}
-
-	return 0;
-}
-
-int grub_strcmp(const char *s1, const char *s2) {
-	while (*s1 && *s2) {
-		if (*s1 != *s2) {
-			break;
-		}
-
-		s1++;
-		s2++;
-	}
-
-	return (int)*s1 - (int)*s2;
-}
-
-int grub_strncmp(const char *s1, const char *s2, grub_size_t n) {
-	if (n == 0) {
-		return 0;
-	}
-
-	while (*s1 && *s2 && --n) {
-		if (*s1 != *s2) {
-			break;
-		}
-
-		s1++;
-		s2++;
-	}
-
-	return (int)*s1 - (int)*s2;
-}
-
-char *
-grub_strchr(const char *s, int c) {
-	do {
-		if (*s == c) {
-			return (char *)s;
-		}
-	} while (*s++);
-
-	return 0;
+	return grub_vsnprintf_real (0, 0, fmt, args);
 }
 
 char *

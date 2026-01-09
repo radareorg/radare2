@@ -85,7 +85,7 @@ void grub_list_insert(grub_list_t *head, grub_list_t item, grub_list_test_t test
 void *
 grub_named_list_find(grub_named_list_t head, const char *name) {
 	while (head) {
-		if (!grub_strcmp (head->name, name)) {
+		if (!strcmp (head->name, name)) {
 			return head;
 		}
 
@@ -104,7 +104,7 @@ grub_prio_list_insert_test(grub_prio_list_t new_item, grub_prio_list_t item, voi
 	struct grub_prio_list_insert_closure *c = closure;
 	int r;
 
-	r = grub_strcmp (new_item->name, item->name);
+	r = strcmp (new_item->name, item->name);
 	if (r) {
 		return (r < 0);
 	}

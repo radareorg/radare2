@@ -85,7 +85,7 @@ amiga_partition_map_iterate(grub_disk_t disk,
 			return grub_errno;
 		}
 
-		if (grub_strcmp ((char *)rdsk.magic, "RDSK") == 0) {
+		if (strcmp ((char *)rdsk.magic, "RDSK") == 0) {
 			/* Found the first PART block.  */
 			next = grub_be_to_cpu32 (rdsk.partitionlst);
 			break;

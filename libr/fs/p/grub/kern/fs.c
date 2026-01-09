@@ -120,7 +120,7 @@ grub_fs_blocklist_open(grub_file_t file, const char *name) {
 	/* First, count the number of blocks.  */
 	do {
 		num++;
-		p = grub_strchr (p, ',');
+		p = strchr (p, ',');
 		if (p) {
 			p++;
 		}

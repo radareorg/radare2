@@ -67,7 +67,7 @@ gpt_partition_map_iterate(grub_disk_t disk,
 		return grub_errno;
 	}
 
-	if (grub_memcmp (gpt.magic, grub_gpt_magic, sizeof (grub_gpt_magic))) {
+	if (memcmp (gpt.magic, grub_gpt_magic, sizeof (grub_gpt_magic))) {
 		return grub_error (GRUB_ERR_BAD_PART_TABLE, "no valid GPT header");
 	}
 
@@ -79,7 +79,7 @@ gpt_partition_map_iterate(grub_disk_t disk,
 			return grub_errno;
 		}
 
-		if (grub_memcmp (&grub_gpt_partition_type_empty, &entry.type, sizeof (grub_gpt_partition_type_empty))) {
+		if (memcmp (&grub_gpt_partition_type_empty, &entry.type, sizeof (grub_gpt_partition_type_empty))) {
 			/* Calculate the first block and the size of the partition.  */
 			memset (&part, 0, sizeof (struct grub_partition));
 			part.start = grub_le_to_cpu64 (entry.start);
