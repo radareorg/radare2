@@ -35,8 +35,8 @@ bool test_r_debug_use(void) {
 	mu_end;
 }
 
-static int pick_free_port(void) {
 #if __linux__
+static int pick_free_port(void) {
 	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
 	if (sockfd < 0) {
 		return -1;
@@ -58,10 +58,8 @@ static int pick_free_port(void) {
 	int port = ntohs (addr.sin_port);
 	close (sockfd);
 	return port;
-#else
-	return -1;
-#endif
 }
+#endif
 
 bool test_r2_gdb_remote_open(void) {
 #if __linux__
