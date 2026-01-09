@@ -185,7 +185,8 @@ ifneq ($(ZIPWINDIST),NO)
 endif
 
 clean:
-	rm -f libr/libr.a libr/libr.dylib libr/include/r_version.h
+	rm -f libr/libr.a libr/libr.dylib
+	rm -f libr/include/r_userconf.h libr/include/r_version.h
 	rm -rf libr/.libr
 	-rm -f `find * | grep arm | grep dis.a$$`
 	for DIR in shlr libr binr ; do $(MAKE) -C "$$DIR" clean ; done
