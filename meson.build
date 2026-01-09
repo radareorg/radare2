@@ -142,12 +142,10 @@ else
 endif
 
 platform_deps = []
-platform_inc = ['.', 'libr/include']
 if host_machine.system() == 'windows'
   platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
 endif
-platform_inc = include_directories(platform_inc)
-
+platform_inc = include_directories(['.', 'libr/include'])
 
 if get_option('threadsafety')
   r2_critical_enabled = 1
