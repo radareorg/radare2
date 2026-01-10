@@ -4253,6 +4253,13 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("zign.threshold", "0.0", "minimum similarity required for inclusion in zb output");
 	SETB ("zign.mangled", "false", "use the manged name for zignatures (EXPERIMENTAL)");
 
+	/* flirt sigdb */
+	{
+		char *sigdbdir = r_xdg_datadir ("sigdb");
+		SETS ("dir.flirt", r_str_get (sigdbdir), "path to FLIRT signature database");
+		free (sigdbdir);
+	}
+
 	/* diff */
 	SETCB ("diff.sort", "addr", &cb_diff_sort, "specify function diff sorting column see (e diff.sort=?)");
 	SETI ("diff.from", 0, "set source diffing address for px (uses cc command)");

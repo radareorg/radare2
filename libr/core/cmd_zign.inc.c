@@ -53,10 +53,12 @@ static RCoreHelpMessage help_msg_za = {
 };
 
 static RCoreHelpMessage help_msg_zf = {
-	"Usage:", "zf[dsz] filename ", "# Manage FLIRT signatures",
+	"Usage:", "zf[dlsz] filename ", "# Manage FLIRT signatures",
 	"zfd ", "filename", "open FLIRT file and dump",
-	"zfs ", "filename", "open FLIRT file and scan",
-	"zfs ", "/path/**.sig", "recursively search for FLIRT files and scan them (see dir.depth)",
+	"zfl", "", "list FLIRT signature files from sigdb (see dir.flirt)",
+	"zfs ", "elf/x86/64/libc.sig", "scan FLIRT file (relative to dir.flirt)",
+	"zfs ", "/path/to/file.sig", "scan FLIRT file (absolute path)",
+	"zfs ", "/path/**.sig", "recursively scan FLIRT files (glob pattern)",
 	"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
 	NULL
 };
@@ -439,20 +441,70 @@ static int cmd_zf(void *data, const char *input) {
 		}
 		r_sign_flirt_dump (core->anal, input + 2);
 		break;
+	case 'l': // "zfl"
+		{
+			const char *sigdb_path = r_config_get (core->config, "dir.flirt");
+			if (R_STR_ISEMPTY (sigdb_path)) {
+				R_LOG_ERROR ("dir.flirt is not set");
+				return false;
+			}
+			char *basepath = r_file_new (sigdb_path, "", NULL);
+			char *pattern = r_str_newf ("%s**.sig", basepath);
+			int depth = r_config_get_i (core->config, "dir.depth");
+			RList *files = r_file_glob (pattern, depth);
+			if (!files) {
+				R_LOG_ERROR ("Cannot list FLIRT signatures");
+				free (pattern);
+				free (basepath);
+				return false;
+			}
+			RListIter *iter;
+			char *file;
+			size_t baselen = strlen (basepath);
+			r_list_foreach (files, iter, file) {
+				r_cons_println (core->cons, file + baselen);
+			}
+			r_list_free (files);
+			free (pattern);
+			free (basepath);
+		}
+		break;
 	case 's': // "zfs"
-		// TODO
 		if (input[1] != ' ') {
 			r_core_cmd_help_contains (core, help_msg_zf, "zfs");
 			return false;
 		}
-		int depth = r_config_get_i (core->config, "dir.depth");
-		char *file;
-		RListIter *iter;
-		RList *files = r_file_glob (input + 2, depth);
-		r_list_foreach (files, iter, file) {
-			r_sign_flirt_scan (core->anal, file);
+		{
+			const char *arg = input + 2;
+			char *path = NULL;
+			int depth = r_config_get_i (core->config, "dir.depth");
+			char *file;
+			RListIter *iter;
+			// First try the path as-is
+			RList *files = r_file_glob (arg, depth);
+			// If no matches and path is relative, try prepending sigdb path
+			if (r_list_empty (files) && !r_file_is_abspath (arg)) {
+				r_list_free (files);
+				const char *sigdb_path = r_config_get (core->config, "dir.flirt");
+				if (R_STR_ISNOTEMPTY (sigdb_path)) {
+					path = r_file_new (sigdb_path, arg, NULL);
+					files = r_file_glob (path, depth);
+				} else {
+					files = NULL;
+				}
+			}
+			if (!files || r_list_empty (files)) {
+				R_LOG_ERROR ("Cannot find FLIRT signature: %s", arg);
+				r_list_free (files);
+				free (path);
+				return false;
+			}
+			r_list_foreach (files, iter, file) {
+				r_sign_flirt_scan (core->anal, file);
+			}
+			r_list_free (files);
+			free (path);
 		}
-		r_list_free (files);
 		break;
 	case 'z': // "zfz"
 		// TODO
