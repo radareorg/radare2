@@ -92,6 +92,12 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		r_cons_println (c->cons, res);
 		free (res);
 	}
+	if (ro->arch) {
+		r_config_set (c->config, "asm.arch", ro->arch);
+	}
+	if (ro->bits) {
+		r_config_set_i (c->config, "asm.bits", ro->bits);
+	}
 	if (f) {
 		RIODesc *rfile = NULL;
 #if R2__WINDOWS__
@@ -271,12 +277,6 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			printf ("--- 0x%08" PFMT64x "  ", op->a_off + ro->baddr);
 			if (!ro->core) {
 				ro->core = opencore (ro, ro->file);
-				if (ro->arch) {
-					r_config_set (ro->core->config, "asm.arch", ro->arch);
-				}
-				if (ro->bits) {
-					r_config_set_i (ro->core->config, "asm.bits", ro->bits);
-				}
 			}
 			for (i = 0; i < op->a_len; i++) {
 				printf ("%02x", op->a_buf[i]);
@@ -308,7 +308,7 @@ static int cb(RDiff *d, void *user, RDiffOp *op) {
 			int i;
 			printf ("+++ 0x%08" PFMT64x "  ", op->b_off + ro->baddr);
 			if (!ro->core) {
-				ro->core = opencore (ro, NULL);
+				ro->core = opencore (ro, ro->file);
 			}
 			for (i = 0; i < op->b_len; i++) {
 				printf ("%02x", op->b_buf[i]);
@@ -718,60 +718,53 @@ static void dump_cols_hexii(RadiffOptions *ro, ut8 *a, int as, ut8 *b, int bs, i
 	}
 }
 
-static char *handle_sha256(const ut8 *block, int len) {
-	int i = 0;
-	char *p = malloc (128);
-	RHash *ctx = r_hash_new (true, R_HASH_SHA256);
-	const ut8 *c = r_hash_do_sha256 (ctx, block, len);
-	if (!c) {
-		r_hash_free (ctx);
-		free (p);
-		return NULL;
+static char *handle_sha256(RadiffOptions *ro, const ut8 *block, int len) {
+	char *res = NULL;
+	if (ro->core && ro->core->bin && ro->core->bin->mb.hash) {
+		int outlen = 0;
+		ut8 *digest = ro->core->bin->mb.hash (&ro->core->bin->mb, "sha256", block, len, &outlen);
+		if (digest && outlen >= R_HASH_SIZE_SHA256) {
+			res = r_hex_bin2strdup (digest, R_HASH_SIZE_SHA256);
+		}
+		free (digest);
 	}
-	char *r = p;
-	for (i = 0; i < R_HASH_SIZE_SHA256; i++) {
-		snprintf (r + (i * 2), 3, "%02x", c[i]);
-	}
-	r_hash_free (ctx);
-	return p;
+	return res;
 }
 
-static ut8 *slurp(RadiffOptions *ro, RCore **c, const char *file, size_t *sz) {
-	int fd;
-	RIO *io;
-	if (c && file && strstr (file, "://")) {
-		ut8 *data = NULL;
-		ut64 size;
-		if (!*c) {
-			*c = opencore (ro, NULL);
-		}
-		if (!*c) {
+static ut8 *slurp(RadiffOptions *ro, const char *file, size_t *sz) {
+	if (!strstr (file, "://")) {
+		return (ut8 *)r_file_slurp (file, sz);
+	}
+	ut8 *data = NULL;
+	ut64 size;
+	if (!ro->core) {
+		ro->core = opencore (ro, ro->file);
+		if (!ro->core) {
 			R_LOG_ERROR ("opencore failed");
 			return NULL;
 		}
-		io = (*c)->io;
-		fd = r_io_fd_open (io, file, R_PERM_R, 0);
-		if (fd < 1) {
-			return NULL;
-		}
-		size = r_io_fd_size (io, fd);
-		if (size > 0 && size < ST32_MAX) {
-			data = calloc (1, size);
-			if (r_io_fd_read_at (io, fd, 0, data, size)) {
-				if (sz) {
-					*sz = size;
-				}
-			} else {
-				R_LOG_ERROR ("slurp: read error");
-				R_FREE (data);
+	}
+	RIO *io = ro->core->io;
+	int fd = r_io_fd_open (io, file, R_PERM_R, 0);
+	if (fd < 1) {
+		return NULL;
+	}
+	size = r_io_fd_size (io, fd);
+	if (size > 0 && size < ST32_MAX) {
+		data = calloc (1, size);
+		if (r_io_fd_read_at (io, fd, 0, data, size)) {
+			if (sz) {
+				*sz = size;
 			}
 		} else {
-			R_LOG_ERROR ("slurp: Invalid file size");
+			R_LOG_ERROR ("slurp: read error");
+			R_FREE (data);
 		}
-		r_io_fd_close (io, fd);
-		return data;
+	} else {
+		R_LOG_ERROR ("slurp: Invalid file size");
 	}
-	return (ut8 *)r_file_slurp (file, sz);
+	r_io_fd_close (io, fd);
+	return data;
 }
 
 static int import_cmp(const RBinImport *a, const RBinImport *b) {
@@ -1088,9 +1081,11 @@ static void fileobj(RadiffOptions *ro, const char *ro_file, const ut8 *buf, size
 	pj_o (pj);
 	pj_ks (pj, "filename", ro_file);
 	pj_kn (pj, "size", sz);
-	char *hasha = handle_sha256 (buf, (int)sz);
-	pj_ks (pj, "sha256", hasha);
-	free (hasha);
+	char *hasha = handle_sha256 (ro, buf, (int)sz);
+	if (hasha) {
+		pj_ks (pj, "sha256", hasha);
+		free (hasha);
+	}
 	pj_end (pj);
 }
 
@@ -1687,13 +1682,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 	default:
 		{
 			size_t fsz = 0;
-			bufa_orig = bufa = slurp (&ro, &c, ro.file, &fsz);
+			bufa_orig = bufa = slurp (&ro, ro.file, &fsz);
 			sza = fsz;
 			if (!bufa) {
 				R_LOG_ERROR ("Cannot open %s", r_str_getf (ro.file));
 				return 1;
 			}
-			bufb_orig = bufb = slurp (&ro, &c, ro.file2, &fsz);
+			bufb_orig = bufb = slurp (&ro, ro.file2, &fsz);
 			szb = fsz;
 			if (!bufb) {
 				R_LOG_ERROR ("Cannot open: %s", r_str_getf (ro.file2));
@@ -1746,13 +1741,13 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		break;
 	case MODE_COLSII:
 		if (!c && !r_list_empty (ro.evals)) {
-			c = opencore (&ro, NULL);
+			c = opencore (&ro, NULL);  // keep separate core instance
 		}
 		dump_cols_hexii (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
 	case MODE_COLS:
 		if (!c && !r_list_empty (ro.evals)) {
-			c = opencore (&ro, NULL);
+			c = opencore (&ro, NULL);  // keep separate core instance
 		}
 		dump_cols (&ro, bufa, (int)sza, bufb, (int)szb, (r_cons_get_size (ro.cons, NULL) > 112)? 16: 8);
 		break;
@@ -1768,6 +1763,9 @@ R_API int r_main_radiff2(int argc, const char **argv) {
 		if (ro.diffmode == 'j') {
 			pj_o (ro.pj);
 			pj_ka (ro.pj, "files");
+			if (!ro.core) {
+				ro.core = opencore (&ro, ro.file);
+			}
 			fileobj (&ro, ro.file, bufa, sza);
 			fileobj (&ro, ro.file2, bufb, szb);
 			pj_end (ro.pj);
