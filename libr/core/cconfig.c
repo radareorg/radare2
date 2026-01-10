@@ -4256,7 +4256,7 @@ R_API int r_core_config_init(RCore *core) {
 	/* flirt sigdb */
 	{
 		char *sigdbdir = r_xdg_datadir ("sigdb");
-		SETS ("flirt.sigdb.path", r_str_get (sigdbdir), "path to FLIRT signature database");
+		SETS ("dir.flirt", r_str_get (sigdbdir), "path to FLIRT signature database");
 		free (sigdbdir);
 	}
 

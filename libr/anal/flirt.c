@@ -653,7 +653,7 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	 * and the analyzed functions in anal
 	 * Returns false on error. */
 
-	if (r_list_length (anal->fcns) == 0) {
+	if (r_list_empty (anal->fcns)) {
 		R_LOG_INFO ("No functions to match against FLIRT signatures. Try running `aa`");
 		return true; // Not an error, just nothing to do
 	}

@@ -1950,8 +1950,8 @@ CMDS=zf?
 EXPECT=<<EOF
 Usage: zf[dlsz] filename   # Manage FLIRT signatures
 | zfd filename             open FLIRT file and dump
-| zfl                      list FLIRT signature files from sigdb (see flirt.sigdb.path)
-| zfs elf/x86/64/libc.sig  scan FLIRT file (relative to flirt.sigdb.path)
+| zfl                      list FLIRT signature files from sigdb (see dir.flirt)
+| zfs elf/x86/64/libc.sig  scan FLIRT file (relative to dir.flirt)
 | zfs /path/to/file.sig    scan FLIRT file (absolute path)
 | zfs /path/**.sig         recursively scan FLIRT files (glob pattern)
 | zfz filename             open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)

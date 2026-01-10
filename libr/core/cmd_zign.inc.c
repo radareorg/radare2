@@ -55,8 +55,8 @@ static RCoreHelpMessage help_msg_za = {
 static RCoreHelpMessage help_msg_zf = {
 	"Usage:", "zf[dlsz] filename ", "# Manage FLIRT signatures",
 	"zfd ", "filename", "open FLIRT file and dump",
-	"zfl", "", "list FLIRT signature files from sigdb (see flirt.sigdb.path)",
-	"zfs ", "elf/x86/64/libc.sig", "scan FLIRT file (relative to flirt.sigdb.path)",
+	"zfl", "", "list FLIRT signature files from sigdb (see dir.flirt)",
+	"zfs ", "elf/x86/64/libc.sig", "scan FLIRT file (relative to dir.flirt)",
 	"zfs ", "/path/to/file.sig", "scan FLIRT file (absolute path)",
 	"zfs ", "/path/**.sig", "recursively scan FLIRT files (glob pattern)",
 	"zfz ", "filename", "open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)",
@@ -443,14 +443,12 @@ static int cmd_zf(void *data, const char *input) {
 		break;
 	case 'l': // "zfl"
 		{
-			const char *sigdb_path = r_config_get (core->config, "flirt.sigdb.path");
+			const char *sigdb_path = r_config_get (core->config, "dir.flirt");
 			if (R_STR_ISEMPTY (sigdb_path)) {
-				R_LOG_ERROR ("flirt.sigdb.path is not set");
+				R_LOG_ERROR ("dir.flirt is not set");
 				return false;
 			}
-			size_t sigdb_len = strlen (sigdb_path);
-			char *basepath = r_str_newf ("%s%s", sigdb_path,
-				sigdb_path[sigdb_len - 1] == R_SYS_DIR[0]? "": R_SYS_DIR);
+			char *basepath = r_file_new (sigdb_path, "", NULL);
 			char *pattern = r_str_newf ("%s**.sig", basepath);
 			int depth = r_config_get_i (core->config, "dir.depth");
 			RList *files = r_file_glob (pattern, depth);
@@ -464,7 +462,7 @@ static int cmd_zf(void *data, const char *input) {
 			char *file;
 			size_t baselen = strlen (basepath);
 			r_list_foreach (files, iter, file) {
-				r_cons_printf (core->cons, "%s\n", file + baselen);
+				r_cons_println (core->cons, file + baselen);
 			}
 			r_list_free (files);
 			free (pattern);
@@ -485,13 +483,11 @@ static int cmd_zf(void *data, const char *input) {
 			// First try the path as-is
 			RList *files = r_file_glob (arg, depth);
 			// If no matches and path is relative, try prepending sigdb path
-			if (r_list_empty (files) && arg[0] != '/' && arg[0] != '~') {
+			if (r_list_empty (files) && !r_file_is_abspath (arg)) {
 				r_list_free (files);
-				const char *sigdb_path = r_config_get (core->config, "flirt.sigdb.path");
+				const char *sigdb_path = r_config_get (core->config, "dir.flirt");
 				if (R_STR_ISNOTEMPTY (sigdb_path)) {
-					size_t sigdb_len = strlen (sigdb_path);
-					path = r_str_newf ("%s%s%s", sigdb_path,
-						sigdb_path[sigdb_len - 1] == R_SYS_DIR[0]? "": R_SYS_DIR, arg);
+					path = r_file_new (sigdb_path, arg, NULL);
 					files = r_file_glob (path, depth);
 				} else {
 					files = NULL;
