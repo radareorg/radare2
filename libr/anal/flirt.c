@@ -654,8 +654,8 @@ static bool node_match_functions(RAnal *anal, const RFlirtNode *root_node) {
 	 * Returns false on error. */
 
 	if (r_list_length (anal->fcns) == 0) {
-		R_LOG_INFO ("Nothing to do when no functions have been analyzed. Try running `aa`");
-		return false;
+		R_LOG_INFO ("No functions to match against FLIRT signatures. Try running `aa`");
+		return true; // Not an error, just nothing to do
 	}
 
 	anal->flb.push_fs (anal->flb.f, "flirt");
@@ -862,7 +862,7 @@ static ut8 read_module_public_functions(RFlirt *f, RFlirtModule *module, ut8 *fl
 		} else {
 			function->name[i] = '\0';
 		}
-		R_LOG_ERROR ("%04X:%s ", function->offset, function->name);
+		R_LOG_DEBUG ("flirt: %04X:%s", function->offset, function->name);
 		*flags = current_byte;
 		r_list_append (module->public_functions, function);
 	} while (*flags & IDASIG__PARSE__MORE_PUBLIC_NAMES);
