@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -769,6 +769,44 @@ static void __cmd_pad(RCore *core, const char *arg) {
 	}
 }
 
+static bool is_unalloc(RCore *core, ut64 addr, RVecRIORegion *regions,
+		       RIORegion **region, size_t *region_idx) {
+	if (core->io->va && regions) {
+		if (!*region) {
+			if (*region_idx >= RVecRIORegion_length (regions)) {
+				return true;
+			}
+			*region = RVecRIORegion_at (regions, *region_idx);
+		}
+		if (*region) {
+			if (addr < (*region)->itv.addr) {
+				return true;
+			}
+			if (addr >= r_itv_end ((*region)->itv)) {
+				*region = NULL;
+				(*region_idx)++;
+				return is_unalloc(core, addr, regions, region, region_idx);
+			}
+		}
+	} else if (!core->print->iob.is_valid_offset(core->print->iob.io, addr, false)) {
+		return true;
+	}
+	return false;
+}
+
+static void apply_unalloc_color(RCore *core, char **color, char *ch,
+				bool show_color, const char *chars) {
+	if (show_color) {
+		free (*color);
+		*color = strdup (Color_RESET);
+		if (*ch == ' ') {
+			*ch = '.';
+		}
+	} else if (chars && strchr (chars, *ch)) {
+		*ch = '?';
+	}
+}
+
 static void first_flag_chars(const char *name, char *ch, char *ch2) {
 	name = r_name_filter_ro (name);
 	const bool two = name[0] && name[1];
@@ -802,6 +840,13 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 		cols = 32;
 	}
 	RCons *cons = core->cons;
+	RVecRIORegion *regions = NULL;
+	RIORegion *region = NULL;
+	size_t region_idx = 0;
+	if (show_unalloc && core->io->va) {
+		RInterval itv = {core->addr, (ut64)len};
+		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
+	}
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char * name = r_core_get_section_name (core, core->addr + i);
@@ -816,31 +861,16 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 			}
 			ut8 ch0 = (block[j] >> 4) & 0xf;
 			ut8 ch1 = block[j] & 0xf;
-			if (show_unalloc && !core->print->iob.is_valid_offset (core->print->iob.io, core->addr + j, false)) {
+			if (show_unalloc && is_unalloc (core, core->addr + j, regions, &region, &region_idx)) {
 				ch0 = core->print->io_unalloc_ch;
 				ch1 = core->print->io_unalloc_ch;
 			}
 			if (show_color) {
 				color0 = get_color (cons, ch0);
 				color1 = get_color (cons, ch1);
-#if 0
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					ch = ' ';
-				}
-#endif
 			} else {
 				color0 = strdup ("");
 				color1 = strdup ("");
-#if 0
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					const int idx = (int)(((double)block[j] / 255) * (strlen (chars) - 1));
-					ch = chars[idx];
-				}
-#endif
 			}
 			if (bitsmode) {
 				char color0bits[8] = {0};
@@ -867,6 +897,7 @@ static void cmd_prcn(RCore *core, const ut8* block, int len, bool bitsmode) {
 		}
 		r_cons_newline (cons);
 	}
+	RVecRIORegion_free (regions);
 }
 
 // colordump
@@ -882,6 +913,13 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 	const bool show_offset = r_config_get_b (core->config, "hex.addr");
 	const bool show_cursor = core->print->cur_enabled;
 	const bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	RVecRIORegion *regions = NULL;
+	RIORegion *region = NULL;
+	size_t region_idx = 0;
+	if (show_unalloc && core->io->va) {
+		RInterval itv = {core->addr, (ut64)len};
+		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
+	}
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
@@ -920,18 +958,9 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 					ch = chars[idx];
 				}
 			}
-			if (show_unalloc &&
-			    !core->print->iob.is_valid_offset (core->print->iob.io, core->addr + j, false)) {
+			if (show_unalloc && is_unalloc (core, core->addr + j, regions, &region, &region_idx)) {
 				ch = core->print->io_unalloc_ch;
-				if (show_color) {
-					free (color);
-					color = strdup (Color_RESET);
-					if (ch == ' ') {
-						ch = '.';
-					}
-				} else {
-					ch = strchr (chars, ch) ? '?' : ch;
-				}
+				apply_unalloc_color (core, &color, &ch, show_color, chars);
 			}
 			if (square) {
 				if (show_flags) {
@@ -955,6 +984,7 @@ static void cmd_prc(RCore *core, const ut8* block, int len) {
 		}
 		r_cons_newline (core->cons);
 	}
+	RVecRIORegion_free (regions);
 }
 
 static void cmd_printmsg(RCore *core, const char *input) {
@@ -984,8 +1014,15 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	bool show_cursor = core->print->cur_enabled;
 	bool show_offset = r_config_get_i (core->config, "hex.addr");
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
+	RVecRIORegion *regions = NULL;
+	RIORegion *region = NULL;
+	size_t region_idx = 0;
 	ut8 *block = core->block;
 	int len = core->blocksize;
+	if (show_unalloc && core->io->va) {
+		RInterval itv = {core->addr, (ut64)len};
+		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
+	}
 	ut64 from = 0;
 	ut64 to = 0;
 	RIOMap* map;
@@ -1042,18 +1079,9 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 					ch = chars[idx];
 				}
 			}
-			if (show_unalloc &&
-			    !core->print->iob.is_valid_offset (core->print->iob.io, core->addr + j, false)) {
+			if (show_unalloc && is_unalloc (core, core->addr + j, regions, &region, &region_idx)) {
 				ch = core->print->io_unalloc_ch;
-				if (show_color) {
-					free (color);
-					color = strdup (Color_RESET);
-					if (ch == ' ') {
-						ch = '.';
-					}
-				} else {
-					ch = strchr (chars, ch) ? '?' : ch;
-				}
+				apply_unalloc_color (core, &color, &ch, show_color, chars);
 			}
 			if (square) {
 				if (show_flags) {
@@ -1083,6 +1111,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		}
 		r_cons_newline (core->cons);
 	}
+	RVecRIORegion_free (regions);
 }
 
 static void cmd_pCd(RCore *core, const char *input) {
