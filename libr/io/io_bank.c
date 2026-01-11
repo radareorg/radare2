@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2021-2025 - condret */
+/* radare2 - LGPL - Copyright 2021-2026 - condret */
 
 #include <r_io.h>
 
@@ -1237,6 +1237,73 @@ R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region
 	region->perm = map->perm;
 	region->itv = sm->itv;
 	return true;
+}
+
+static RVecRIORegion *io_bank_get_regions(RIO *io, RIOBank *bank, RVecRIORegion *list, RInterval itv) {
+	RIOSubMap fake_sm = {
+		.itv = itv,
+		.mapref = (const RIOMapRef) {0}
+	};
+	RRBNode *node;
+	if (bank->last_used && r_io_submap_contain (((RIOSubMap *)bank->last_used->data), itv.addr)) {
+		node = bank->last_used;
+	} else {
+		if (!(node = _find_entry_submap_node (bank, &fake_sm))) {
+			return list;
+		}
+	}
+	RIOSubMap *sm = (RIOSubMap *)node->data;
+	do {
+		RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
+		if (!map) {
+			// corrupted bank
+			return NULL;
+		}
+		RIORegion *region = RVecRIORegion_emplace_back (list);
+		if (!region) {
+			// allocation failed
+			return NULL;
+		}
+		region->itv = sm->itv;
+		region->perm = map->perm;
+		node = r_rbnode_next (node);
+		if (!node) {
+			break;
+		}
+		sm = (RIOSubMap *)node->data;
+		if (!sm) {
+			// corrupted leaf data
+			return NULL;
+		}
+	} while (r_itv_overlap (itv, sm->itv));
+	return list;
+}
+
+R_API RVecRIORegion *r_io_bank_get_regions(RIO *io, const ut32 bankid, RInterval itv) {
+	R_RETURN_VAL_IF_FAIL (io, NULL);
+	RIOBank *bank = r_io_bank_get (io, bankid);
+	if (!bank) {
+		return NULL;
+	}
+	r_io_bank_drain (io, bankid);
+	RVecRIORegion *ret = RVecRIORegion_new ();
+	if (!ret) {
+		return NULL;
+	}
+	if ((r_itv_end (itv) - 1) < itv.addr) {
+		RInterval itv0 = {itv.addr, UT64_MAX - itv.addr + 1};
+		if (!io_bank_get_regions (io, bank, ret, itv0)) {
+			RVecRIORegion_free (ret);
+			return NULL;
+		}
+		itv.size = itv.addr + itv.size;	//intentional overflow hack
+		itv.addr = 0ULL;
+	}
+	if (!io_bank_get_regions (io, bank, ret, itv)) {
+		RVecRIORegion_free (ret);
+		return NULL;
+	}
+	return ret;
 }
 
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid) {
