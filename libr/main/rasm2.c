@@ -215,6 +215,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		if (arch && strcmp (arch, h->meta.name)) {
 			continue;
 		}
+		char featbuf[5];
 		const char *feat = "____";
 		if (h->encode) {
 			feat = h->decode? "ade_": "a___";
@@ -232,9 +233,9 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 			}
 		}
 		if (has_parse) {
-			char *new_feat = r_str_newf ("%c%c%c%c",
+			snprintf (featbuf, sizeof (featbuf), "%c%c%c%c",
 				feat[0], feat[1], feat[2], 'p');
-			feat = new_feat;
+			feat = featbuf;
 		}
 		ut64 bits = h->bits;
 		RList *bitslist = r_list_newf (NULL);

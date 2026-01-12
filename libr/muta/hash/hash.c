@@ -390,6 +390,7 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 	} else {
 		if (!algo) {
 			R_LOG_ERROR ("Hash algorithm %s not found", name);
+			r_muta_free (cry);
 			return NULL;
 		}
 		r_hash_do_begin (ctx, algo);
