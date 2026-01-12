@@ -13,7 +13,8 @@ static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
 	RMutaResult res = r_muta_process_simple (core->muta, "entropy", data, len);
 	double entropy = res.entropy;
 	r_muta_result_free (&res);
-	return entropy;
+	// Normalize entropy from 0-8 to 0-1
+	return len? entropy / log2 ((double)R_MIN (len, 256)): 0;
 }
 
 static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
