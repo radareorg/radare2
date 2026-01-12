@@ -30,6 +30,7 @@ static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int 
 	return r_hash_tostring (NULL, algo, data, len);
 }
 
+// clang-format off
 static RCoreHelpMessage help_msg_pa = {
 	"Usage: pa[edD]", "[asm|hex]", "Print (dis)assembly",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -774,6 +775,8 @@ static const ut32 colormap[256] = {
 	0x4c004c, 0x560056, 0x640064, 0x750075, 0x870087, 0x9b009b, 0xb000b0, 0xc600c6, 0xdd00dd, 0xf500f5, 0xfe0fff, 0xfe28ff, 0xfe43ff, 0xfe5eff, 0xfe79ff, 0xfe95fe,
 	0x4c0032, 0x560039, 0x640042, 0x75004e, 0x87005a, 0x9b0067, 0xb00075, 0xc60084, 0xdd0093, 0xf500a3, 0xff0faf, 0xff28b7, 0xff43c0, 0xff5ec9, 0xff79d2, 0xffffff,
 };
+
+// clang-format on
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
