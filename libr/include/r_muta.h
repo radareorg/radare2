@@ -31,6 +31,16 @@ enum {
 	R_CRYPTO_DIR_ENCRYPT = 2,
 };
 
+typedef struct r_muta_result_t {
+	ut8 *output;          // binary output (for hash, crypto, etc)
+	int output_len;       // length of output
+	int output_size;      // allocated size of output buffer
+	double entropy;       // entropy value (if entropy operation)
+	char *hex;            // hex-encoded output (optional, computed on demand)
+	bool success;         // operation succeeded
+	bool text_output;     // output is text, not binary
+} RMutaResult;
+
 typedef struct r_muta_t {
 	struct r_muta_plugin_t* h;
 	bool bigendian;
@@ -45,17 +55,14 @@ typedef struct r_muta_session_t {
 	ut8 *key;
 	ut8 *iv;
 	int key_len;
-	ut8 *output;
-	int output_len;
-	int output_size;
 	int dir;
 	RList *plugins;
 	ut32 sm4_sk[32];
 	void *data;
 	ut32 cps2key[2];
 	ut8 rot_key;
-	double entropy;
 	char *subtype;
+	RMutaResult *result;
 } RMutaSession;
 
 typedef enum {
@@ -129,6 +136,14 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 // Charset decoding helper
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
 R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
+
+// Simple wrapper for hash and entropy operations
+R_API RMutaResult r_muta_process_simple(RMuta *cry, const char *algo, const ut8 *data, int len);
+
+// Unified processing function for all operations (use r_muta_process_simple for simple cases)
+R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, int len,
+	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
+R_API void r_muta_result_free(RMutaResult *res);
 
 R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 
