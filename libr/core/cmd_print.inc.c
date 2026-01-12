@@ -8,6 +8,55 @@
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static int cmd_print(void *data, const char *input);
 
+// Helper to get entropy value via RMuta
+static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
+	RMutaSession *cj = r_muta_use (core->muta, "entropy");
+	if (cj) {
+		r_muta_session_update (cj, data, len);
+		double ent = cj->entropy;
+		r_muta_session_free (cj);
+		return ent;
+	}
+	return 0.0;
+}
+
+// Helper to compute hash via RMuta (with fallback to r_hash for unsupported algos)
+static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
+	if (r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_HASH)) {
+		RMutaSession *cj = r_muta_use (core->muta, algo);
+		if (cj) {
+			if (cj->h->end) {
+				r_muta_session_end (cj, data, len);
+			} else {
+				r_muta_session_update (cj, data, len);
+			}
+			int result_size = 0;
+			ut8 *result = r_muta_session_get_output (cj, &result_size);
+			char *hex = NULL;
+			if (result) {
+				// Handle text output (ssdeep, entropy, etc)
+				if (cj->h->text_output) {
+					hex = malloc (result_size + 1);
+					memcpy (hex, result, result_size);
+					hex[result_size] = 0;
+				} else {
+					// Convert binary to hex
+					hex = malloc (result_size * 2 + 1);
+					int i;
+					for (i = 0; i < result_size; i++) {
+						snprintf (hex + (i * 2), 3, "%02x", result[i]);
+					}
+				}
+				free (result);
+			}
+			r_muta_session_free (cj);
+			return hex;
+		}
+	}
+	// Fallback to old r_hash API for algorithms not yet in muta
+	return r_hash_tostring (NULL, algo, data, len);
+}
+
 static RCoreHelpMessage help_msg_pa = {
 	"Usage: pa[edD]", "[asm|hex]", "Print (dis)assembly",
 	"pa", " [assembly]", "print hexpairs of the given assembly expression",
@@ -1523,7 +1572,7 @@ static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
 		return;
 	}
 	if (r_io_read_at (core->io, at, blockptr, (ate - at))) {
-		ut8 entropy = (ut8)(r_hash_entropy_fraction (blockptr, (ate - at)) * 255);
+		ut8 entropy = (ut8)(cmd_print_entropy (core, blockptr, (ate - at)) * 255);
 		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
 		if (r_config_get_i (core->config, "scr.color")) {
 			const char *color =
@@ -3096,7 +3145,7 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 		}
 		break;
 	case 'e': // "pze"
-		ret = (ut8) (r_hash_entropy_fraction (bufz, size) * 255);
+		ret = (ut8) (cmd_print_entropy (core, bufz, size) * 255);
 		break;
 	case 'f': // "pzf"
 		u.addr = addr;
@@ -4091,7 +4140,11 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (!buf) {
 		return false;
 	}
-	r_cons_printf (core->cons, "%s\n", r_hash_tostring (NULL, algo, buf, len));
+	char *hash_result = cmd_print_hash (core, algo, buf, len);
+	if (hash_result) {
+		r_cons_printf (core->cons, "%s\n", hash_result);
+		free (hash_result);
+	}
 	free (buf);
 	return handled_cmd;
 }
@@ -5002,7 +5055,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			for (i = 0; i < nblocks; i++) {
 				ut64 off = from + (blocksize * (i + skipblocks));
 				r_io_read_at (core->io, off, p, blocksize);
-				ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
+				ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
 			}
 			free (p);
 			r_print_columns (core->print, ptr, nblocks, 14);
@@ -5103,7 +5156,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		for (i = 0; i < nblocks; i++) {
 			ut64 off = from + (blocksize * (i + skipblocks));
 			r_io_read_at (core->io, off, p, blocksize);
-			ptr[i] = (ut8) (255 * r_hash_entropy_fraction (p, blocksize));
+			ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
 		}
 		free (p);
 		print_bars = true;
