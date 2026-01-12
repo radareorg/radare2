@@ -16,22 +16,17 @@ static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
 	return entropy;
 }
 
-// Helper to compute hash via RMuta (with fallback to r_hash for unsupported algos)
 static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
 	RMutaResult res = r_muta_process_simple (core->muta, algo, data, len);
 	char *hex = NULL;
-	
 	if (res.success && res.output) {
-		// Convert binary to hex using r_util function
 		hex = r_hex_bin2strdup (res.output, res.output_len);
 	}
 	r_muta_result_free (&res);
-	
-	// Fallback to old r_hash API if muta failed
-	if (!hex) {
-		hex = r_hash_tostring (NULL, algo, data, len);
+	if (hex) {
+		return hex;
 	}
-	return hex;
+	return r_hash_tostring (NULL, algo, data, len);
 }
 
 static RCoreHelpMessage help_msg_pa = {
