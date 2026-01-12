@@ -22,15 +22,8 @@ static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int 
 	char *hex = NULL;
 	
 	if (res.success && res.output) {
-		// Convert binary to hex
-		hex = malloc (res.output_len * 2 + 1);
-		if (hex) {
-			int i;
-			for (i = 0; i < res.output_len; i++) {
-				snprintf (hex + (i * 2), 3, "%02x", res.output[i]);
-			}
-			hex[res.output_len * 2] = 0;
-		}
+		// Convert binary to hex using r_util function
+		hex = r_hex_bin2strdup (res.output, res.output_len);
 	}
 	r_muta_result_free (&res);
 	
