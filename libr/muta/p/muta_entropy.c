@@ -6,9 +6,12 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return false;
 	}
-	cj->result.entropy = r_hash_entropy (buf, len);
+	if (!cj || !cj->result) {
+		return false;
+	}
+	cj->result->entropy = r_hash_entropy (buf, len);
 	char str[32];
-	int slen = snprintf (str, sizeof (str), "%.8f", cj->result.entropy);
+	int slen = snprintf (str, sizeof (str), "%.8f", cj->result->entropy);
 	r_muta_session_append (cj, (const ut8 *)str, slen);
 	return true;
 }

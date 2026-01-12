@@ -61,7 +61,7 @@ typedef struct r_muta_session_t {
 	ut32 cps2key[2];
 	ut8 rot_key;
 	char *subtype;
-	RMutaResult result;
+	RMutaResult *result;
 } RMutaSession;
 
 typedef enum {

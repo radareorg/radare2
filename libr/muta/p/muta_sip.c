@@ -6,7 +6,9 @@
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	ut8 obuf[R_HASH_SIZE_SIP];
 	uint64_t h = r_hash_sip (buf, len);
-	cj->result.output = malloc (cj->result.output_size);
+	if (cj && cj->result) {
+		cj->result->output = malloc (cj->result->output_size);
+	}
 	r_write_ble64 (obuf, h, cj->c->bigendian);
 	r_muta_session_append (cj, obuf, R_HASH_SIZE_SIP);
 	return true;

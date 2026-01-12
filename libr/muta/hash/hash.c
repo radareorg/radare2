@@ -379,8 +379,8 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash *R_NULLABLE ctx, const char *name, c
 		} else {
 			r_muta_session_update (cj, data, len);
 		}
-		if (cj->result.entropy != 0) {
-			ctx->entropy = cj->result.entropy;
+		if (cj->result && cj->result->entropy != 0) {
+			ctx->entropy = cj->result->entropy;
 		}
 		ut8 *result = r_muta_session_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);

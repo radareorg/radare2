@@ -93,12 +93,14 @@ R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, 
 	}
 
 	// Copy result from session
-	res = session->result;
-	res.success = (res.output != NULL || res.entropy != 0.0);
+	if (session->result) {
+		res = *session->result;
+		res.success = (res.output != NULL || res.entropy != 0.0);
 
-	// Detach result from session so it doesn't get freed
-	session->result.output = NULL;
-	session->result.hex = NULL;
+		// Detach result from session so it doesn't get freed
+		session->result->output = NULL;
+		session->result->hex = NULL;
+	}
 
 	r_muta_session_free (session);
 
