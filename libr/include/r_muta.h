@@ -38,6 +38,7 @@ typedef struct r_muta_result_t {
 	double entropy;       // entropy value (if entropy operation)
 	char *hex;            // hex-encoded output (optional, computed on demand)
 	bool success;         // operation succeeded
+	bool text_output;     // output is text, not binary
 } RMutaResult;
 
 typedef struct r_muta_t {
