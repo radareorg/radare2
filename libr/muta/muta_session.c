@@ -8,7 +8,7 @@ R_API void r_muta_session_free(RMutaSession *R_NULLABLE cj) {
 			cj->h->fini (cj);
 		}
 		free (cj->subtype);
-		free (cj->output);
+		r_muta_result_free (&cj->result);
 		free (cj->key);
 		free (cj->iv);
 		free (cj);
@@ -67,35 +67,35 @@ R_API bool r_muta_session_end(RMutaSession *cj, const ut8 *buf, int len) {
 // TODO: internal api?? used from plugins? TODO: use r_buf here
 R_API int r_muta_session_append(RMutaSession *cj, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (cj && buf, -1);
-	if (cj->output_len + len > cj->output_size) {
-		cj->output_size += 4096 + len;
-		cj->output = realloc (cj->output, cj->output_size);
+	if (cj->result.output_len + len > cj->result.output_size) {
+		cj->result.output_size += 4096 + len;
+		cj->result.output = realloc (cj->result.output, cj->result.output_size);
 	}
-	memcpy (cj->output + cj->output_len, buf, len);
-	cj->output_len += len;
-	return cj->output_len;
+	memcpy (cj->result.output + cj->result.output_len, buf, len);
+	cj->result.output_len += len;
+	return cj->result.output_len;
 }
 
 R_API ut8 *r_muta_session_get_output(RMutaSession *cj, int *size) {
 	R_RETURN_VAL_IF_FAIL (cj, NULL);
-	if (cj->output_size < 1) {
+	if (cj->result.output_size < 1) {
 		return NULL;
 	}
-	ut8 *buf = calloc (1, cj->output_size);
+	ut8 *buf = calloc (1, cj->result.output_size);
 	if (!buf) {
 		return NULL;
 	}
 	if (size) {
-		*size = cj->output_len;
-		memcpy (buf, cj->output, *size);
+		*size = cj->result.output_len;
+		memcpy (buf, cj->result.output, *size);
 	} else {
 		size_t newlen = 4096;
 		ut8 *newbuf = realloc (buf, newlen);
 		if (newbuf) {
 			buf = newbuf;
-			cj->output = newbuf;
-			cj->output_len = 0;
-			cj->output_size = newlen;
+			cj->result.output = newbuf;
+			cj->result.output_len = 0;
+			cj->result.output_size = newlen;
 		} else {
 			R_FREE (buf);
 		}

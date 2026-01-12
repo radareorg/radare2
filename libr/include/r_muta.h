@@ -31,6 +31,15 @@ enum {
 	R_CRYPTO_DIR_ENCRYPT = 2,
 };
 
+typedef struct r_muta_result_t {
+	ut8 *output;          // binary output (for hash, crypto, etc)
+	int output_len;       // length of output
+	int output_size;      // allocated size of output buffer
+	double entropy;       // entropy value (if entropy operation)
+	char *hex;            // hex-encoded output (optional, computed on demand)
+	bool success;         // operation succeeded
+} RMutaResult;
+
 typedef struct r_muta_t {
 	struct r_muta_plugin_t* h;
 	bool bigendian;
@@ -45,17 +54,14 @@ typedef struct r_muta_session_t {
 	ut8 *key;
 	ut8 *iv;
 	int key_len;
-	ut8 *output;
-	int output_len;
-	int output_size;
 	int dir;
 	RList *plugins;
 	ut32 sm4_sk[32];
 	void *data;
 	ut32 cps2key[2];
 	ut8 rot_key;
-	double entropy;
 	char *subtype;
+	RMutaResult result;
 } RMutaSession;
 
 typedef enum {
@@ -99,14 +105,6 @@ typedef struct {
 	// iv
 	// ..
 } RMutaOptions;
-
-typedef struct r_muta_result_t {
-	ut8 *output;          // binary output (for hash, crypto, etc)
-	int output_len;       // length of output
-	double entropy;       // entropy value (if entropy operation)
-	char *hex;            // hex-encoded output (optional, computed on demand)
-	bool success;         // operation succeeded
-} RMutaResult;
 
 typedef ut64 RMutaSelector;
 

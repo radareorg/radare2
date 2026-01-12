@@ -9,10 +9,10 @@
 #include "xxhash.h"
 #endif
 
-R_LIB_VERSION (r_hash);
+R_LIB_VERSION(r_hash);
 
 static const struct {
-	const char * const name;
+	const char *const name;
 	ut64 bit;
 } hash_name_bytes[] = {
 	{ "all", UT64_MAX },
@@ -137,8 +137,8 @@ R_API int r_hash_parity(const ut8 *buf, ut64 len) {
 	ut32 ones = 0;
 	for (; buf < end; buf++) {
 		ut8 x = buf[0];
-		ones += ((x & 128) ? 1 : 0) + ((x & 64) ? 1 : 0) + ((x & 32) ? 1 : 0) + ((x & 16) ? 1 : 0) +
-			((x & 8) ? 1 : 0) + ((x & 4) ? 1 : 0) + ((x & 2) ? 1 : 0) + ((x & 1) ? 1 : 0);
+		ones += ((x & 128)? 1: 0) + ((x & 64)? 1: 0) + ((x & 32)? 1: 0) + ((x & 16)? 1: 0) +
+			((x & 8)? 1: 0) + ((x & 4)? 1: 0) + ((x & 2)? 1: 0) + ((x & 1)? 1: 0);
 	}
 	return ones % 2;
 }
@@ -174,7 +174,7 @@ R_API ut32 r_hash_xxhash(const ut8 *buf, ut64 len) {
 	return XXH32 (buf, (size_t)len, 0);
 }
 
-// XXX unused what is a hash deviation? :D how can we expose that . this is unused code from 2010!
+// XXX unused what is a hash deviation?: D how can we expose that . this is unused code from 2010!
 R_API ut8 r_hash_deviation(const ut8 *b, ut64 len) {
 	int i, c;
 	for (c = i = 0, len--; i < len; i++) {
@@ -195,9 +195,9 @@ R_API const char *r_hash_name(ut64 bit) {
 }
 
 R_API int r_hash_size(ut64 algo) {
-#define ALGOBIT(x)\
-	if (algo & R_HASH_##x) {\
-		return R_HASH_SIZE_##x;\
+#define ALGOBIT(x) \
+	if (algo & R_HASH_ ## x) { \
+		return R_HASH_SIZE_ ## x; \
 	}
 	ALGOBIT (FLETCHER8);
 	ALGOBIT (FLETCHER16);
@@ -310,7 +310,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	do {
 		/* Eat everything up to the comma */
 		for (i = 0; *ptr && *ptr != ',' && i < sizeof (tmp) - 1; i++) {
- 			tmp[i] = tolower ((ut8)*ptr++);
+			tmp[i] = tolower ((ut8)*ptr++);
 		}
 
 		/* Safety net */
@@ -332,7 +332,7 @@ R_API ut64 r_hash_name_to_bits(const char *name) {
 	return ret;
 }
 
-R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed * R_NULLABLE seed) {
+R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed *R_NULLABLE seed) {
 	R_RETURN_IF_FAIL (ctx);
 	int i, len, hlen = r_hash_size (algo);
 	size_t buf_len = hlen + (seed? seed->len: 0);
@@ -359,7 +359,7 @@ R_API void r_hash_do_spice(RHash *ctx, ut64 algo, int loops, RHashSeed * R_NULLA
 	free (buf);
 }
 
-R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, const ut8 *data, int len) {
+R_API R_MUSTUSE char *r_hash_tostring(RHash *R_NULLABLE ctx, const char *name, const ut8 *data, int len) {
 	R_RETURN_VAL_IF_FAIL (name && len >= 0 && data, NULL);
 	char *digest_hex = NULL;
 	int digest_size = 0;
@@ -379,8 +379,8 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash * R_NULLABLE ctx, const char *name, 
 		} else {
 			r_muta_session_update (cj, data, len);
 		}
-		if (cj->entropy != 0) {
-			ctx->entropy = cj->entropy;
+		if (cj->result.entropy != 0) {
+			ctx->entropy = cj->result.entropy;
 		}
 		ut8 *result = r_muta_session_get_output (cj, &digest_size);
 		memcpy (ctx->digest, result, digest_size);
