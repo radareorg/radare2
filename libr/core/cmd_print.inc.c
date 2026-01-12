@@ -10,7 +10,7 @@ static int cmd_print(void *data, const char *input);
 
 // Helper to get entropy value via RMuta
 static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
-	RMutaResult res = r_muta_process (core->muta, "entropy", data, len, NULL, 0, NULL, 0, 0);
+	RMutaResult res = r_muta_process_simple (core->muta, "entropy", data, len);
 	double entropy = res.entropy;
 	r_muta_result_free (&res);
 	return entropy;
@@ -18,7 +18,7 @@ static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
 
 // Helper to compute hash via RMuta (with fallback to r_hash for unsupported algos)
 static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
-	RMutaResult res = r_muta_process (core->muta, algo, data, len, NULL, 0, NULL, 0, 0);
+	RMutaResult res = r_muta_process_simple (core->muta, algo, data, len);
 	char *hex = NULL;
 	
 	if (res.success && res.output) {

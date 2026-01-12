@@ -136,7 +136,10 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
 R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
 
-// Unified processing function for all operations
+// Simple wrapper for hash and entropy operations
+R_API RMutaResult r_muta_process_simple(RMuta *cry, const char *algo, const ut8 *data, int len);
+
+// Unified processing function for all operations (use r_muta_process_simple for simple cases)
 R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, int len,
 	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
 R_API void r_muta_result_free(RMutaResult *res);
