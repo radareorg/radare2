@@ -1391,6 +1391,7 @@ R_API void r_bin_field_free(void *_field) {
 	RBinField *field = (RBinField *)_field;
 	if (field) {
 		r_bin_name_free (field->name);
+		r_bin_name_free (field->type);
 		free (field->comment);
 		free (field->format);
 		free (field);

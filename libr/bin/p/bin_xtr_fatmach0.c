@@ -74,6 +74,8 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 			free (hdr);
 			return res;
 		}
+		free (metadata);
+		free (arch);
 	}
 	return NULL;
 }

@@ -1611,6 +1611,9 @@ static ut32 bitfield(ArmOp *op, int k) {
 
 static bool parseOperands(char *str, ArmOp *op) {
 	char *t = strdup (str);
+	if (!t) {
+		return false;
+	}
 	int operand = 0;
 	char *token = t;
 	char *x;
@@ -1618,9 +1621,6 @@ static bool parseOperands(char *str, ArmOp *op) {
 	int mem_opt = 0;
 	int msr_op_index = 0;
 	size_t index_bound = strcspn (t, "]");
-	if (!t) {
-		return false;
-	}
 
 	while (token) {
 		char *next = strchr (token, ',');
