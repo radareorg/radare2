@@ -10,51 +10,35 @@ static int cmd_print(void *data, const char *input);
 
 // Helper to get entropy value via RMuta
 static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
-	RMutaSession *cj = r_muta_use (core->muta, "entropy");
-	if (cj) {
-		r_muta_session_update (cj, data, len);
-		double ent = cj->entropy;
-		r_muta_session_free (cj);
-		return ent;
-	}
-	return 0.0;
+	RMutaResult res = r_muta_process (core->muta, "entropy", data, len, NULL, 0, NULL, 0, 0);
+	double entropy = res.entropy;
+	r_muta_result_free (&res);
+	return entropy;
 }
 
 // Helper to compute hash via RMuta (with fallback to r_hash for unsupported algos)
 static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
-	if (r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_HASH)) {
-		RMutaSession *cj = r_muta_use (core->muta, algo);
-		if (cj) {
-			if (cj->h->end) {
-				r_muta_session_end (cj, data, len);
-			} else {
-				r_muta_session_update (cj, data, len);
+	RMutaResult res = r_muta_process (core->muta, algo, data, len, NULL, 0, NULL, 0, 0);
+	char *hex = NULL;
+	
+	if (res.success && res.output) {
+		// Convert binary to hex
+		hex = malloc (res.output_len * 2 + 1);
+		if (hex) {
+			int i;
+			for (i = 0; i < res.output_len; i++) {
+				snprintf (hex + (i * 2), 3, "%02x", res.output[i]);
 			}
-			int result_size = 0;
-			ut8 *result = r_muta_session_get_output (cj, &result_size);
-			char *hex = NULL;
-			if (result) {
-				// Handle text output (ssdeep, entropy, etc)
-				if (cj->h->text_output) {
-					hex = malloc (result_size + 1);
-					memcpy (hex, result, result_size);
-					hex[result_size] = 0;
-				} else {
-					// Convert binary to hex
-					hex = malloc (result_size * 2 + 1);
-					int i;
-					for (i = 0; i < result_size; i++) {
-						snprintf (hex + (i * 2), 3, "%02x", result[i]);
-					}
-				}
-				free (result);
-			}
-			r_muta_session_free (cj);
-			return hex;
+			hex[res.output_len * 2] = 0;
 		}
 	}
-	// Fallback to old r_hash API for algorithms not yet in muta
-	return r_hash_tostring (NULL, algo, data, len);
+	r_muta_result_free (&res);
+	
+	// Fallback to old r_hash API if muta failed
+	if (!hex) {
+		hex = r_hash_tostring (NULL, algo, data, len);
+	}
+	return hex;
 }
 
 static RCoreHelpMessage help_msg_pa = {

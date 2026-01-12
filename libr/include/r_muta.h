@@ -100,6 +100,14 @@ typedef struct {
 	// ..
 } RMutaOptions;
 
+typedef struct r_muta_result_t {
+	ut8 *output;          // binary output (for hash, crypto, etc)
+	int output_len;       // length of output
+	double entropy;       // entropy value (if entropy operation)
+	char *hex;            // hex-encoded output (optional, computed on demand)
+	bool success;         // operation succeeded
+} RMutaResult;
+
 typedef ut64 RMutaSelector;
 
 #ifdef R_API
@@ -129,6 +137,11 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
 // Charset decoding helper
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
 R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
+
+// Unified processing function for all operations
+R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, int len,
+	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
+R_API void r_muta_result_free(RMutaResult *res);
 
 R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 

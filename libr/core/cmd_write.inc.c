@@ -269,35 +269,32 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		free (binkey);
 		return;
 	}
-	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (r_muta_session_set_key (cj, binkey, keylen, 0, direction)) {
-		if (iv) {
-			ut8 *biniv = malloc (strlen (iv) + 1);
-			int ivlen = r_hex_str2bin (iv, biniv);
-			if (ivlen < 1) {
-				ivlen = strlen(iv);
-				strcpy ((char *)biniv, iv);
-			}
-			if (!r_muta_session_set_iv (cj, biniv, ivlen)) {
-				R_LOG_ERROR ("Invalid IV");
-				return;
-			}
-		}
-		r_muta_session_update (cj, (const ut8*)core->block, core->blocksize);
 
-		int result_size = 0;
-		ut8 *result = r_muta_session_get_output (cj, &result_size);
-		if (result) {
-			if (!r_core_write_at (core, core->addr, result, result_size)) {
-				R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
-			}
-			R_LOG_INFO ("Written %d byte(s)", result_size);
-			free (result);
+	// Convert IV if provided
+	ut8 *biniv = NULL;
+	int ivlen = 0;
+	if (iv) {
+		biniv = malloc (strlen (iv) + 1);
+		ivlen = r_hex_str2bin (iv, biniv);
+		if (ivlen < 1) {
+			ivlen = strlen (iv);
+			strcpy ((char *)biniv, iv);
 		}
 	}
-	r_muta_session_free (cj);
+
+	RMutaResult res = r_muta_process (core->muta, algo, (const ut8*)core->block, core->blocksize,
+		binkey, keylen, biniv, ivlen, direction);
+
+	if (res.success && res.output) {
+		if (!r_core_write_at (core, core->addr, res.output, res.output_len)) {
+			R_LOG_ERROR ("write failed at 0x%08"PFMT64x, core->addr);
+		}
+		R_LOG_INFO ("Written %d byte(s)", res.output_len);
+	}
+
+	r_muta_result_free (&res);
+	free (biniv);
 	free (binkey);
-	return;
 }
 
 static void write_block_signature(RCore *core, const char *algo, const char *key) {
