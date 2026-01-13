@@ -5360,7 +5360,7 @@ static x86newTokenType getToken(const char *str, size_t *begin, size_t *end) {
 		return TT_EOF;
 	}
 	// Skip whitespace
-	while (begin && str[*begin] && isspace ((ut8)str[*begin])) {
+	while (str[*begin] && isspace ((ut8)str[*begin])) {
 		(*begin)++;
 	}
 
