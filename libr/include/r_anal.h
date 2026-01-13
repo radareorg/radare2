@@ -819,6 +819,7 @@ typedef struct r_anal_esil_dfg_node_t {
 	ut32 /*RAnalEsilDFGTagType*/ type;
 } RAnalEsilDFGNode;
 
+// TODO: must return char * so we can get rid of the need to use core->cons to print stuff
 typedef bool (*RAnalCmdCallback)(/* Rcore */RAnal *anal, const char* input);
 
 typedef struct {
@@ -901,6 +902,7 @@ R_API RAnalType *r_anal_str_to_type(RAnal *a, const char* s);
 R_API RAnalType *r_anal_type_free(RAnalType *t);
 R_API RAnalType *r_anal_type_loadfile(RAnal *a, const char *path);
 
+// TODO: lets return char * instead of bool
 R_API bool r_anal_cmd(RAnal *a, const char *cmd);
 
 /* block.c */
