@@ -12,7 +12,7 @@ R_API bool r_io_fd_close(RIO *io, int fd) {
 	if (desc) {
 		return r_io_desc_close (desc);
 	}
-	R_LOG_DEBUG ("Descriptor for fd %d was already closed");
+	R_LOG_DEBUG ("Descriptor for fd %d was already closed", fd);
 	return false;
 }
 
