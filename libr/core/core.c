@@ -1053,6 +1053,20 @@ static void autocomplete_ms_file(RCore *core, RLineCompletion *completion, const
 	free (path);
 }
 
+static void autocomplete_analysis_plugins(RCore *core, RLineCompletion *completion, const char *str) {
+	R_RETURN_IF_FAIL (core && completion && str);
+	size_t len = strlen (str);
+	RListIter *iter;
+	RAnalPlugin *ap;
+	r_list_foreach (core->anal->plugins, iter, ap) {
+		if (!len || !strncmp (str, ap->meta.name, len)) {
+			char *cmd = r_str_newf ("a:%s", ap->meta.name);
+			r_line_completion_push (completion, cmd);
+			free (cmd);
+		}
+	}
+}
+
 static void autocomplete_charsets(RCore *core, RLineCompletion *completion, const char *str) {
 	R_RETURN_IF_FAIL (str);
 	int len = strlen (str);
@@ -1338,9 +1352,16 @@ R_API void r_core_autocomplete(RCore *R_NULLABLE core, RLineCompletion *completi
 			if (!s) {
 				return;
 			}
-			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
 			r_str_ansi_filter (s, NULL, NULL, -1);
 			r_str_trim (s);
+			// Handle a: commands specially - suggest analysis plugins instead of help
+			if (r_str_startswith (buf->data, "a:")) {
+				const char *plugin_prefix = buf->data + 2;
+				autocomplete_analysis_plugins (core, completion, plugin_prefix);
+				free (s);
+				return;
+			}
+			eprintf ("%s%s\n%s", core->cons->line->prompt, buf->data, s);
 			RList *list = r_str_split_list (s, "\n", 0);
 			RListIter *iter;
 			char *line;

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2025 - Analysis plugin for Solana BPF */
+/* radare2 - LGPL - Copyright 2025-2026 - Analysis plugin for Solana BPF */
 
 #include <r_anal.h>
 #include <r_core.h>
@@ -754,8 +754,8 @@ static bool sbpfcmd(RAnal *anal, const char *cmd) {
 			RCore *core = anal->coreb.core;
 			RCons *cons = core->cons;
 			// eprintf ("sBPF analysis plugin commands:\n");
-			r_cons_println (cons, "| a:sbpf.analyze  - Analyze sBPF strings and create flags\n");
-			r_cons_println (cons, "| a:sbpf.strings  - Display sBPF strings\n");
+			r_cons_println (cons, "| a:sbpf.analyze  - Analyze sBPF strings and create flags");
+			r_cons_println (cons, "| a:sbpf.strings  - Display sBPF strings");
 			return true;
 		}
 		R_LOG_ERROR ("Unknown subcommand. See 'a:sbpf?' for more details");
