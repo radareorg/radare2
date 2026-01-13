@@ -1,6 +1,5 @@
 /* radare2 - LGPL - Copyright 2007-2025 pancake */
 
-#include <r_muta.h>
 #include <r_hash.h>
 #include <r_util.h>
 #if USE_LIB_XXHASH
@@ -365,60 +364,50 @@ R_API R_MUSTUSE char *r_hash_tostring(RHash *R_NULLABLE ctx, const char *name, c
 	int digest_size = 0;
 	size_t digest_hex_size = 0;
 
-	RMuta *cry = r_muta_new ();
 	ut64 algo = r_hash_name_to_bits (name);
+	if (!algo) {
+		R_LOG_ERROR ("Hash algorithm %s not found", name);
+		return NULL;
+	}
+
 	if (!ctx) {
 		ctx = r_hash_new (true, algo);
 	}
 
-	bool is_text_output = false;
-	if (r_muta_algo_supports (cry, name, R_MUTA_TYPE_HASH)) {
-		RMutaSession *cj = r_muta_use (cry, name);
-		if (cj->h->end) {
-			r_muta_session_end (cj, data, len);
-		} else {
-			r_muta_session_update (cj, data, len);
-		}
-		if (cj->result && cj->result->entropy != 0) {
-			ctx->entropy = cj->result->entropy;
-		}
-		ut8 *result = r_muta_session_get_output (cj, &digest_size);
-		memcpy (ctx->digest, result, digest_size);
-		is_text_output = cj->h->text_output;
-		free (result);
-		r_muta_session_free (cj);
-	} else {
-		if (!algo) {
-			R_LOG_ERROR ("Hash algorithm %s not found", name);
-			r_muta_free (cry);
-			return NULL;
-		}
-		r_hash_do_begin (ctx, algo);
-		digest_size = r_hash_calculate (ctx, algo, data, len);
-		r_hash_do_end (ctx, algo);
-	}
-	r_muta_free (cry);
-	if (digest_size == 0) {
+	r_hash_do_begin (ctx, algo);
+	digest_size = r_hash_calculate (ctx, algo, data, len);
+	r_hash_do_end (ctx, algo);
+
+	// Special case for entropy which returns a double
+	if (algo & R_HASH_ENTROPY) {
 		digest_hex_size = 16;
 		digest_hex = calloc (digest_hex_size, 1);
 		snprintf (digest_hex, digest_hex_size, "%02.8f", ctx->entropy);
-	} else if (digest_size > 0) {
-		if (algo & R_HASH_SSDEEP || is_text_output) {
-			digest_hex = malloc (digest_size + 1);
-			snprintf (digest_hex, digest_size + 1, "%s", ctx->digest);
-		} else if (digest_size * 2 < digest_size) {
-			digest_hex = NULL;
-		} else {
-			digest_hex_size = (digest_size * 2) + 1;
-			digest_hex = malloc (digest_hex_size);
-			if (digest_hex) {
-				int i;
-				for (i = 0; i < digest_size; i++) {
-					size_t id = (i * 2);
-					snprintf (digest_hex + id, digest_hex_size - id, "%02x", ctx->digest[i]);
-				}
-				digest_hex[digest_size * 2] = 0;
+		return digest_hex;
+	}
+
+	if (digest_size <= 0) {
+		return NULL;
+	}
+
+	// Handle text-based hashes like ssdeep
+	if (algo & (R_HASH_SSDEEP)) {
+		digest_hex = malloc (digest_size + 1);
+		if (digest_hex) {
+			memcpy (digest_hex, ctx->digest, digest_size);
+			digest_hex[digest_size] = 0;
+		}
+	} else {
+		// Binary hashes - convert to hex
+		digest_hex_size = (digest_size * 2) + 1;
+		digest_hex = malloc (digest_hex_size);
+		if (digest_hex) {
+			int i;
+			for (i = 0; i < digest_size; i++) {
+				size_t id = (i * 2);
+				snprintf (digest_hex + id, digest_hex_size - id, "%02x", ctx->digest[i]);
 			}
+			digest_hex[digest_size * 2] = 0;
 		}
 	}
 	return digest_hex;
