@@ -273,7 +273,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	char *ptr1, *ptr2;
 	char *save_ptr = NULL;
 	g->data[g->data_len] = '\0';
-	free (g->stop_reason.exec.path);
+	R_FREE (g->stop_reason.exec.path);
 	memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
 	g->stop_reason.core = -1;
 	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
