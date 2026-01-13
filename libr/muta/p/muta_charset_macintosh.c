@@ -73,7 +73,7 @@ RMutaPlugin r_muta_plugin_charset_macintosh = {
 	.meta = { .name = "macintosh", .license = "MIT", .desc = "Macintosh Roman (partial)" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "macintosh",
-		.update = update,
+	.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

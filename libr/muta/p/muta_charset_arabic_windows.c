@@ -2,10 +2,10 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 RMutaPlugin r_muta_plugin_charset_arabic_windows = {
-	.meta = { .name = "arabic_windows", .license = "MIT", .desc = "arabic Windows stub" },
+	.meta = { .name = "arabic.win", .license = "MIT", .desc = "arabic Windows stub" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.implements = "arabic_windows",
-		.update = r_muta_charset_stub_update,
+	.implements = "arabic.win",
+	.update = r_muta_charset_stub_update,
 	.end = r_muta_charset_stub_end
 };
 #ifndef R2_PLUGIN_INCORE

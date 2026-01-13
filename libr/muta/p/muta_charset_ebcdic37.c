@@ -69,7 +69,7 @@ RMutaPlugin r_muta_plugin_charset_ebcdic37 = {
 	.meta = { .name = "ebcdic37", .license = "MIT", .desc = "EBCDIC CP37 charset" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "ebcdic37",
-		.decode = decode,
+	.decode = decode,
 	.update = update,
 	.end = end
 };

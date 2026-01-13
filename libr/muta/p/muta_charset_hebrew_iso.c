@@ -2,10 +2,10 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 RMutaPlugin r_muta_plugin_charset_hebrew_iso = {
-	.meta = { .name = "hebrew_iso", .license = "MIT", .desc = "Hebrew ISO stub" },
+	.meta = { .name = "hebrew.iso", .license = "MIT", .desc = "Hebrew ISO stub" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.implements = "hebrew_iso",
-		.update = r_muta_charset_stub_update,
+	.implements = "hebrew.iso",
+	.update = r_muta_charset_stub_update,
 	.end = r_muta_charset_stub_end
 };
 #ifndef R2_PLUGIN_INCORE

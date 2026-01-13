@@ -52,10 +52,10 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 }
 
 RMutaPlugin r_muta_plugin_charset_greek_windows = {
-	.meta = { .name = "greek_windows", .license = "MIT", .desc = "Windows-1253 (partial)" },
+	.meta = { .name = "greek.win", .license = "MIT", .desc = "Windows-1253 (partial)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.implements = "greek_windows",
-		.update = update,
+	.implements = "greek.win",
+	.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

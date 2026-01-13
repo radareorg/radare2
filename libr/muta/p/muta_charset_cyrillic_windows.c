@@ -53,10 +53,10 @@ static bool end(RMutaSession *cj, const ut8 *b, int l) {
 }
 
 RMutaPlugin r_muta_plugin_charset_cyrillic_windows = {
-	.meta = { .name = "cyrillic_windows", .license = "MIT", .desc = "Windows-1251 (partial)" },
+	.meta = { .name = "cyrillic.win", .license = "MIT", .desc = "Windows-1251 (partial)" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.implements = "cyrillic_windows",
-		.update = update,
+	.implements = "cyrillic.win",
+	.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

@@ -200,7 +200,8 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			break;
 		}
 	}
-	// TODO: R2_600 move all those static hashes into muta plugins and remove the code below
+#if 1
+	// TODO: R2_610 move all those static hashes into muta plugins and remove the code below
 	if (type == R_MUTA_TYPE_HASH || type == R_MUTA_TYPE_ALL) {
 		int i;
 		for (i = 0; i < 64; i++) {
@@ -228,6 +229,7 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 			}
 		}
 	}
+#endif
 	if (mode == 'j' || mode == 'J') {
 		pj_end (pj);
 		char *s = pj_drain (pj);

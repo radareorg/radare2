@@ -2,10 +2,10 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 RMutaPlugin r_muta_plugin_charset_hebrew_windows = {
-	.meta = { .name = "hebrew_windows", .license = "MIT", .desc = "Hebrew Windows stub" },
+	.meta = { .name = "hebrew.win", .license = "MIT", .desc = "Hebrew Windows stub" },
 	.type = R_MUTA_TYPE_CHARSET,
-	.implements = "hebrew_windows",
-		.update = r_muta_charset_stub_update,
+	.implements = "hebrew.win",
+	.update = r_muta_charset_stub_update,
 	.end = r_muta_charset_stub_end
 };
 #ifndef R2_PLUGIN_INCORE
