@@ -170,19 +170,19 @@ cryp       base64  Binary to text encoding scheme using 64 ascii characters
 base       base91  Binary to text encoding scheme using 91 ascii characters
 base       bech32  
 cryp     blowfish  Bruce Schneier's symetric-key block cipher
-char   arabic_iso  arabic ISO stub
-char arabic_windows  arabic Windows stub
+char   arabic.iso  arabic ISO stub
+char   arabic.win  arabic Windows stub
 char        ascii  ASCII character set encoding/decoding
-char   ascii_ansi  ASCII ANSI stub
-char    ascii_oem  ASCII OEM stub
+char   ascii.ansi  ASCII ANSI stub
+char    ascii.oem  ASCII OEM stub
 char         big5  Big5 stub
-char cyrillic_iso  Cyrillic ISO stub
-char cyrillic_windows  Windows-1251 (partial)
+char cyrillic.iso  Cyrillic ISO stub
+char cyrillic.win  Windows-1251 (partial)
 char     ebcdic37  EBCDIC CP37 charset
-char    greek_iso  Greek ISO stub
-char greek_windows  Windows-1253 (partial)
-char   hebrew_iso  Hebrew ISO stub
-char hebrew_windows  Hebrew Windows stub
+char    greek.iso  Greek ISO stub
+char    greek.win  Windows-1253 (partial)
+char   hebrew.iso  Hebrew ISO stub
+char   hebrew.win  Hebrew Windows stub
 char     hiragana  Hiragana stub
 char    iso8859_1  ISO-8859-1 charset
 char      iso_646  ISO 646 (IRV)
