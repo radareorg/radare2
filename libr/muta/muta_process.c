@@ -54,6 +54,11 @@ R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, 
 		res.success = (res.output != NULL || res.entropy != 0.0);
 		res.text_output = session->h->text_output;
 
+		// Generate hex string from binary output if available
+		if (res.output && res.output_len > 0 && !res.text_output) {
+			res.hex = r_hex_bin2strdup (res.output, res.output_len);
+		}
+
 		// Detach result from session so it doesn't get freed
 		session->result->output = NULL;
 		session->result->hex = NULL;

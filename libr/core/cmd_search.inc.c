@@ -323,10 +323,12 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 				if (r_cons_is_breaked (core->cons)) {
 					break;
 				}
-				char *s = r_hash_tostring (NULL, hashname, buf + i, len);
+				RMutaResult res = r_muta_process_simple (core->muta, hashname, buf + i, len);
+				char *s = res.hex;
 				print_search_progress (i, to, 0, param);
 				if (!s) {
 					R_LOG_ERROR ("Hash fail");
+					r_muta_result_free (&res);
 					break;
 				}
 				if (!strcmp (s, hashstr)) {
@@ -340,11 +342,13 @@ static int search_hash(RCore *core, const char *hashname, const char *hashstr, u
 						r_cons_printf (core->cons, "f hash.%s.%s = 0x%" PFMT64x "\n", hashname, hashstr, from + i);
 					}
 
-					free (s);
+					// The hex string is owned by the result, don't free separately
+					r_muta_result_free (&res);
 					free (buf);
 					return 1;
 				}
-				free (s);
+				// The hex string is owned by the result, don't free separately
+				r_muta_result_free (&res);
 			}
 			free (buf);
 		}
@@ -3144,7 +3148,9 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 				begin = at;
 			}
 			r_io_read_at (core->io, at, buf, buf_size);
-			double e = r_hash_entropy (buf, buf_size);
+			RMutaResult res = r_muta_process_simple (core->muta, "entropy", buf, buf_size);
+			double e = res.entropy;
+			r_muta_result_free (&res);
 			double diff = oe - e;
 			diff = R_ABS (diff);
 			end = at + buf_size;
@@ -3705,7 +3711,7 @@ static void incDigitBuffer(ut8 *buf, int bufsz) {
 
 static void search_collisions(RCore *core, const char *hashName, const ut8 *hashValue, int hashLength, int mode) {
 	ut8 R_ALIGNED(8) cmphash[128];
-	int i, algoType = R_HASH_CRC32;
+	int i;
 	int bufsz = core->blocksize;
 	ut8 *buf = calloc (1, bufsz);
 	if (!buf) {
@@ -3719,16 +3725,9 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	}
 	memcpy (cmphash, hashValue, hashLength);
 
-	ut64 hashBits = r_hash_name_to_bits (hashName);
-	int hashSize = r_hash_size (hashBits);
-	if (hashLength != hashSize) {
-		R_LOG_ERROR ("Invalid hash size %d vs %d", hashLength, hashSize);
-		free (buf);
-		return;
-	}
-
-	RHash *ctx = r_hash_new (true, algoType);
-	if (!ctx) {
+	// Use RMuta session for better performance (reuse the session across iterations)
+	RMutaSession *cj = r_muta_use (core->muta, hashName);
+	if (!cj) {
 		free (buf);
 		return;
 	}
@@ -3776,25 +3775,27 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 			eprintf (" \"%s\"", buf);
 		}
 
-		r_hash_do_begin (ctx, hashBits);
-		(void)r_hash_calculate (ctx, hashBits, buf, bufsz);
-		r_hash_do_end (ctx, hashBits);
+		r_muta_session_update (cj, buf, bufsz);
+		int out_size = 0;
+		ut8 *out = r_muta_session_get_output (cj, &out_size);
 
 		eprintf (" digest:");
-		for (i = 0; i < hashLength; i++) {
-			eprintf ("%02x", ctx->digest[i]);
+		if (out && out_size >= hashLength) {
+			for (i = 0; i < hashLength; i++) {
+				eprintf ("%02x", out[i]);
+			}
+			if (!memcmp (hashValue, out, hashLength)) {
+				eprintf ("\nCOLLISION FOUND!\n");
+				r_print_hexdump (core->print, core->addr, buf, bufsz, 0, 16, 0);
+				r_cons_flush (core->cons);
+			}
 		}
 		eprintf (" (%d h/s)  \r", mount);
-		if (!memcmp (hashValue, ctx->digest, hashLength)) {
-			eprintf ("\nCOLLISION FOUND!\n");
-			r_print_hexdump (core->print, core->addr, buf, bufsz, 0, 16, 0);
-			r_cons_flush (core->cons);
-		}
 		inc++;
 	}
 	r_cons_break_pop (core->cons);
 	free (buf);
-	r_hash_free (ctx);
+	r_muta_session_free (cj);
 }
 
 static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {
