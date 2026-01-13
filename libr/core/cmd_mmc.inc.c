@@ -590,8 +590,7 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 		int line_offset, remaining, line_bytes;
 		int chars_per_line, char_offset, text_pos, spaces;
 		int num_shortcuts, footer_len, ch;
-		char hex[64], ascii[20], text_line[512];
-		char *hex_ptr, *ascii_ptr;
+		char text_line[512];
 		ut8 byte;
 		RConsCanvas *canvas;
 		char *title, *info1, *info2, *pline;
@@ -646,11 +645,9 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 			memset (time_str, 0, sizeof (time_str));
 			tm_info = localtime (&file_time);
 			strftime (time_str, sizeof (time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " | Date: %s ", state->colors.bg, state->colors.fg,
-				size, start_addr, end_addr, time_str);
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " | Date: %s ", state->colors.bg, state->colors.fg, size, start_addr, end_addr, time_str);
 		} else {
-			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " ", state->colors.bg, state->colors.fg,
-				size, start_addr, end_addr);
+			info2 = r_str_newf ("%s%s Size: %zu bytes | Start: 0x%08" PFMT64x " | End: 0x%08" PFMT64x " ", state->colors.bg, state->colors.fg, size, start_addr, end_addr);
 		}
 
 		r_cons_canvas_write_at (canvas, info1, pane_x + 1, pane_y + 1);
@@ -668,22 +665,23 @@ static void mmc_view_file(RCore *core, MMCState *state) {
 				remaining = size - line_offset;
 				line_bytes = (remaining < bytes_per_line)? remaining: bytes_per_line;
 
-				memset (hex, 0, sizeof (hex));
-				memset (ascii, 0, sizeof (ascii));
-				hex_ptr = hex;
-				ascii_ptr = ascii;
+				RStrBuf hex_sb, ascii_sb;
+				r_strbuf_init (&hex_sb);
+				r_strbuf_init (&ascii_sb);
 
 				for (j = 0; j < line_bytes; j++) {
 					byte = data[line_offset + j];
-					hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "%02x ", byte);
-					ascii_ptr += snprintf (ascii_ptr, sizeof (ascii) - (ascii_ptr - ascii), "%c", IS_PRINTABLE (byte)? byte: '.');
+					r_strbuf_appendf (&hex_sb, "%02x ", byte);
+					char c = IS_PRINTABLE (byte)? byte: '.';
+					r_strbuf_append_n (&ascii_sb, &c, 1);
 				}
 
-				pline = r_str_newf ("%s%s%08x%s: %s%-48s %s%s", state->colors.bg, state->colors.title,
-					line_offset, state->colors.dir, state->colors.bold_cyan, hex, state->colors.dir, ascii);
+				pline = r_str_newf ("%s%s%08x%s: %s%-48s %s%s", state->colors.bg, state->colors.title, line_offset, state->colors.dir, state->colors.bold_cyan, r_strbuf_get (&hex_sb), state->colors.dir, r_strbuf_get (&ascii_sb));
 
 				r_cons_canvas_write_at (canvas, pline, pane_x + 1, content_y + i);
 				free (pline);
+				r_strbuf_fini (&hex_sb);
+				r_strbuf_fini (&ascii_sb);
 			}
 		} else {
 			chars_per_line = pane_w - 2;
@@ -1036,8 +1034,6 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 	size_t size = 0;
 	ut64 addr = 0;
 	int i, content_y, max_lines, line, bytes_per_line;
-	char hex[64], ascii[20];
-	char *hex_ptr, *ascii_ptr;
 	ut8 byte;
 	char *title;
 	RFSFile *file;
@@ -1103,10 +1099,18 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 	mode_str = state->preview_hex_mode? "Hex": "Text";
 	if (is_active) {
 		title = r_str_newf ("%s%s Preview: %s [%s] (arrows:scroll t:text x:hex) %s",
-			state->colors.sel_bg, state->colors.fg_black, selected_name, mode_str, state->colors.reset);
+			state->colors.sel_bg,
+			state->colors.fg_black,
+			selected_name,
+			mode_str,
+			state->colors.reset);
 	} else {
 		title = r_str_newf ("%s%s Preview: %s [%s] %s",
-			state->colors.bg, state->colors.title, selected_name, mode_str, state->colors.reset);
+			state->colors.bg,
+			state->colors.title,
+			selected_name,
+			mode_str,
+			state->colors.reset);
 	}
 	r_cons_canvas_write_at (canvas, title, x + 1, y);
 	free (title);
@@ -1127,26 +1131,36 @@ static void mmc_draw_file_preview(RCore *core, RConsCanvas *canvas, MMCState *st
 			remaining = (int)size - line_offset;
 			line_bytes = (remaining < bytes_per_line)? remaining: bytes_per_line;
 
-			hex_ptr = hex;
-			ascii_ptr = ascii;
+			RStrBuf hex_sb, ascii_sb;
+			r_strbuf_init (&hex_sb);
+			r_strbuf_init (&ascii_sb);
 
 			for (i = 0; i < line_bytes; i++) {
 				byte = data[line_offset + i];
-				hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "%02x ", byte);
-				*ascii_ptr++ = (byte >= 32 && byte <= 126)? byte: '.';
+				r_strbuf_appendf (&hex_sb, "%02x ", byte);
+				char c = (byte >= 32 && byte <= 126)? byte: '.';
+				r_strbuf_append_n (&ascii_sb, &c, 1);
 			}
-			*ascii_ptr = '\0';
 
 			for (i = line_bytes; i < bytes_per_line; i++) {
-				hex_ptr += snprintf (hex_ptr, sizeof (hex) - (hex_ptr - hex), "   ");
+				r_strbuf_append (&hex_sb, "   ");
 			}
 
 			line_str = r_str_newf ("%s%s%08" PFMT64x "%s  %s%s%s %s%s%s",
-				state->colors.bg_pane, state->colors.bold_cyan, addr + line_offset, state->colors.reset,
-				state->colors.bg_pane, state->colors.fg, hex,
-				state->colors.bg_pane, state->colors.fg_yellow, ascii);
+				state->colors.bg_pane,
+				state->colors.bold_cyan,
+				addr + line_offset,
+				state->colors.reset,
+				state->colors.bg_pane,
+				state->colors.fg,
+				r_strbuf_get (&hex_sb),
+				state->colors.bg_pane,
+				state->colors.fg_yellow,
+				r_strbuf_get (&ascii_sb));
 			r_cons_canvas_write_at (canvas, line_str, x + 2, content_y + line);
 			free (line_str);
+			r_strbuf_fini (&hex_sb);
+			r_strbuf_fini (&ascii_sb);
 		}
 	} else {
 		chars_per_line = w - 4;
@@ -1747,8 +1761,7 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 	r_cons_canvas_free (canvas);
 
 	const char *shortcuts[] = {
-		"h:Help", "i:Info", "v:View", "c:Copy", "m:Mkdir",
-		"d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
+		"h:Help", "i:Info", "v:View", "c:Copy", "m:Mkdir", "d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
 	};
 
 	r_cons_printf (core->cons, "%s%s", state->colors.sel_bg, state->colors.fg_black);
@@ -1764,12 +1777,7 @@ static bool mmc_handle_mouse_click(RCore *core, MMCState *state, int click_x, in
 
 	r_cons_visual_flush (core->cons);
 
-	snprintf (prompt_msg, sizeof (prompt_msg),
-		"\r%s%sAction for '%s'? [i:Info v:View c:Copy m:Mkdir d:Delete s:Seek q:Cancel]%s ",
-		core->cons->context->pal.reset,
-		state->colors.sel_bg,
-		clicked_panel->entries[clicked_index],
-		core->cons->context->pal.reset);
+	snprintf (prompt_msg, sizeof (prompt_msg), "\r%s%sAction for '%s'? [i:Info v:View c:Copy m:Mkdir d:Delete s:Seek q:Cancel]%s ", core->cons->context->pal.reset, state->colors.sel_bg, clicked_panel->entries[clicked_index], core->cons->context->pal.reset);
 
 	r_cons_gotoxy (core->cons, 0, state->height - 1);
 	r_cons_printf (core->cons, "%s", prompt_msg);
@@ -1973,8 +1981,7 @@ static int cmd_mmc(void *data, const char *input) {
 		r_cons_canvas_free (canvas);
 
 		const char *shortcuts[] = {
-			"h:Help", "i:Info", "v:View", "c:Copy", "m:Mkdir",
-			"d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
+			"h:Help", "i:Info", "v:View", "c:Copy", "m:Mkdir", "d:Delete", "r:Refresh", "s:Seek", "o:Order", "q:Quit"
 		};
 
 		r_cons_printf (core->cons, "%s%s", state.colors.sel_bg, state.colors.fg_black);
