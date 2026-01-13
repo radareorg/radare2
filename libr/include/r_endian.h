@@ -1,7 +1,14 @@
 #ifndef R_ENDIAN_H
 #define R_ENDIAN_H
 
-#include <r_types.h>
+#include "r_types.h"
+
+
+#if R_CHECKS_LEVEL == 0
+#define R_QUIET_FAIL(expr) do { ; } while(0)
+#else
+#define R_QUIET_FAIL(expr) if (!(expr)) { assert (false); }
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -9,10 +16,8 @@ extern "C" {
 
 /* Endian agnostic functions working on single byte. */
 
-static inline ut8 r_read_ble8(const void *src) {
-	if (!src) {
-		return UT8_MAX;
-	}
+static inline ut8 r_read_ble8(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	return *(const ut8 *)src;
 }
 
@@ -47,7 +52,8 @@ static inline void r_write_at_be8(void *dest, ut8 val, size_t offset) {
 	r_write_at_ble8 (dest, val, offset);
 }
 
-static inline ut16 r_read_be16(const void *src) {
+static inline ut16 r_read_be16(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut16)s[0]) << 8) | (((ut16)s[1]) << 0);
 }
@@ -67,7 +73,21 @@ static inline void r_write_at_be16(void *dest, ut16 val, size_t offset) {
 	r_write_be16 (d, val);
 }
 
-static inline ut32 r_read_be32(const void *src) {
+static inline ut32 r_read_be24(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
+	const ut8 *s = (const ut8*)src;
+	return (((ut32)s[0]) << 16) | (((ut32)s[1]) << 8) | (((ut32)s[2]) << 0);
+}
+
+static inline void r_write_be24(void *_dest, ut32 val) {
+	ut8 *dest = (ut8*)_dest;
+	r_write_be8 (dest++, val >> 16);
+	r_write_be8 (dest++, val >> 8);
+	r_write_be8 (dest, val);
+}
+
+static inline ut32 r_read_be32(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[0]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[2]) << 8) | (((ut32)s[3]) << 0);
@@ -83,19 +103,13 @@ static inline void r_write_be32(void *dest, ut32 val) {
 	r_write_at_be16 (dest, val, sizeof (ut16));
 }
 
-static inline void r_write_be24(void *_dest, ut32 val) {
-	ut8 *dest = (ut8*)_dest;
-	r_write_be8 (dest++, val >> 16);
-	r_write_be8 (dest++, val >> 8);
-	r_write_be8 (dest, val);
-}
-
 static inline void r_write_at_be32(void *dest, ut32 val, size_t offset) {
 	ut8 *d = (ut8*)dest + offset;
 	r_write_be32 (d, val);
 }
 
-static inline ut64 r_read_be64(const void *src) {
+static inline ut64 r_read_be64(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	ut64 val = ((ut64)(r_read_be32 (src))) << 32;
 	val |= r_read_at_be32 (src, sizeof (ut32));
 	return val;
@@ -118,10 +132,8 @@ static inline void r_write_at_be64(void *dest, ut64 val, size_t offset) {
 
 /* Little Endian functions. */
 
-static inline ut8 r_read_le8(const void *src) {
-	if (!src) {
-		return UT8_MAX;
-	}
+static inline ut8 r_read_le8(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	return r_read_ble8 (src);
 }
 
@@ -137,18 +149,13 @@ static inline void r_write_at_le8(void *dest, ut8 val, size_t offset) {
 	r_write_at_ble8 (dest, val, offset);
 }
 
-static inline ut16 r_read_le16(const void *src) {
-	if (!src) {
-		return UT16_MAX;
-	}
+static inline ut16 r_read_le16(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut16)s[1]) << 8) | (((ut16)s[0]) << 0);
 }
 
 static inline ut16 r_read_at_le16(const void *src, size_t offset) {
-	if (!src) {
-		return UT16_MAX;
-	}
 	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le16 (s);
 }
@@ -170,35 +177,20 @@ static inline void r_write_le24(void *_dest, ut32 val) {
 	r_write_le8 (dest,   val >> 16);
 }
 
-static inline ut32 r_read_le24(const void *src) {
-	if (!src) {
-		return UT32_MAX;
-	}
+static inline ut32 r_read_le24(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[2]) << 16) | (((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
 }
 
-static inline ut32 r_read_be24(const void *src) {
-	if (!src) {
-		return UT32_MAX;
-	}
-	const ut8 *s = (const ut8*)src;
-	return (((ut32)s[0]) << 16) | (((ut32)s[1]) << 8) | (((ut32)s[2]) << 0);
-}
-
-static inline ut32 r_read_le32(const void *src) {
-	if (!src) {
-		return UT32_MAX;
-	}
+static inline ut32 r_read_le32(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[3]) << 24) | (((ut32)s[2]) << 16) |
 		(((ut32)s[1]) << 8) | (((ut32)s[0]) << 0);
 }
 
 static inline ut32 r_read_at_le32(const void *src, size_t offset) {
-	if (!src) {
-		return UT32_MAX;
-	}
 	const ut8 *s = (const ut8*)src + offset;
 	return r_read_le32 (s);
 }
@@ -213,7 +205,8 @@ static inline void r_write_at_le32(void *dest, ut32 val, size_t offset) {
 	r_write_le32 (d, val);
 }
 
-static inline ut64 r_read_le64(const void *src) {
+static inline ut64 r_read_le64(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	ut64 val = ((ut64)(r_read_at_le32 (src, sizeof (ut32)))) <<  32;
 	val |= r_read_le32 (src);
 	return val;
@@ -237,7 +230,7 @@ static inline void r_write_at_le64(void *dest, ut64 val, size_t offset) {
 /* Middle Endian functions. */
 
 static inline ut8 r_read_me8(const void *src) {
-	return src ? r_read_ble8 (src): UT8_MAX;
+	return r_read_ble8 (src);
 }
 
 static inline ut8 r_read_at_me8(const void *src, size_t offset) {
@@ -253,19 +246,11 @@ static inline void r_write_at_me8(void *dest, ut8 val, size_t offset) {
 }
 
 static inline ut16 r_read_me16(const void *src) {
-	if (!src) {
-		return UT16_MAX;
-	}
-	const ut8 *s = (const ut8*)src;
-	return (((ut16)s[0]) << 8) | (((ut16)s[1]) << 0);
+	return r_read_be16 (src);
 }
 
 static inline ut16 r_read_at_me16(const void *src, size_t offset) {
-	if (!src) {
-		return UT16_MAX;
-	}
-	const ut8 *s = (const ut8*)src + offset;
-	return r_read_me16 (s);
+	return r_read_me16 (src);
 }
 
 static inline void r_write_me16(void *dest, ut16 val) {
@@ -278,19 +263,14 @@ static inline void r_write_at_me16(void *dest, ut16 val, size_t offset) {
 	r_write_me16 (d, val);
 }
 
-static inline ut32 r_read_me32(const void *src) {
-	if (!src) {
-		return UT32_MAX;
-	}
+static inline ut32 r_read_me32(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	const ut8 *s = (const ut8*)src;
 	return (((ut32)s[2]) << 24) | (((ut32)s[1]) << 16) |
 		(((ut32)s[0]) << 8) | (((ut32)s[1]) << 0);
 }
 
 static inline ut32 r_read_at_me32(const void *src, size_t offset) {
-	if (!src) {
-		return UT32_MAX;
-	}
 	const ut8 *s = (const ut8*)src + offset;
 	return r_read_me32 (s);
 }
@@ -305,7 +285,8 @@ static inline void r_write_at_me32(void *dest, ut32 val, size_t offset) {
 	r_write_me32 (d, val);
 }
 
-static inline ut64 r_read_me64(const void *src) {
+static inline ut64 r_read_me64(const void * R_NONNULL src) {
+	R_QUIET_FAIL (src);
 	ut64 val = ((ut64)(r_read_at_me32 (src, sizeof (ut32)))) <<  32;
 	val |= r_read_me32 (src);
 	return val;
@@ -328,81 +309,81 @@ static inline void r_write_at_me64(void *dest, ut64 val, size_t offset) {
 
 /* Helper functions --- this is all spaguetti that can be rewritten with 1 line macro */
 
-static inline ut16 r_read_ble16(const void *src, bool big_endian) {
-	return big_endian? r_read_be16 (src): r_read_le16 (src);
+static inline ut16 r_read_ble16(const void *src, bool be) {
+	return be? r_read_be16 (src): r_read_le16 (src);
 }
 
-static inline ut32 r_read_ble24(const void *src, bool big_endian) {
-	return big_endian? r_read_be24 (src): r_read_le24 (src);
+static inline ut32 r_read_ble24(const void *src, bool be) {
+	return be? r_read_be24 (src): r_read_le24 (src);
 }
 
-static inline ut32 r_read_ble32(const void *src, bool big_endian) {
-	return big_endian? r_read_be32 (src): r_read_le32 (src);
+static inline ut32 r_read_ble32(const void *src, bool be) {
+	return be? r_read_be32 (src): r_read_le32 (src);
 }
 
-static inline ut64 r_read_ble64(const void *src, bool big_endian) {
-	return big_endian? r_read_be64 (src): r_read_le64 (src);
+static inline ut64 r_read_ble64(const void *src, bool be) {
+	return be? r_read_be64 (src): r_read_le64 (src);
 }
 
-static inline ut16 r_read_at_ble16(const void *src, size_t offset, bool big_endian) {
-	return big_endian ? r_read_at_be16 (src, offset) : r_read_at_le16 (src, offset);
+static inline ut16 r_read_at_ble16(const void *src, size_t offset, bool be) {
+	return be ? r_read_at_be16 (src, offset) : r_read_at_le16 (src, offset);
 }
 
-static inline ut32 r_read_at_ble32(const void *src, size_t offset, bool big_endian) {
-	return big_endian ? r_read_at_be32 (src, offset) : r_read_at_le32 (src, offset);
+static inline ut32 r_read_at_ble32(const void *src, size_t offset, bool be) {
+	return be ? r_read_at_be32 (src, offset) : r_read_at_le32 (src, offset);
 }
 
-static inline ut64 r_read_at_ble64(const void *src, size_t offset, bool big_endian) {
-	return big_endian ? r_read_at_be64 (src, offset) : r_read_at_le64 (src, offset);
+static inline ut64 r_read_at_ble64(const void *src, size_t offset, bool be) {
+	return be ? r_read_at_be64 (src, offset) : r_read_at_le64 (src, offset);
 }
 
-static inline ut64 r_read_ble(const void *src, bool big_endian, int size) {
+static inline ut64 r_read_ble(const void *src, bool be, int size) {
 	switch (size) {
 	case 8:
 		return (ut64) ((const ut8*)src)[0];
 	case 16:
-		return r_read_ble16 (src, big_endian);
+		return r_read_ble16 (src, be);
 	case 32:
-		return r_read_ble32 (src, big_endian);
+		return r_read_ble32 (src, be);
 	case 64:
-		return r_read_ble64 (src, big_endian);
+		return r_read_ble64 (src, be);
 	default:
 		return UT64_MAX;
 	}
 }
 
-static inline void r_write_ble16(void *dest, ut16 val, bool big_endian) {
-	big_endian? r_write_be16 (dest, val): r_write_le16 (dest, val);
+static inline void r_write_ble16(void *dest, ut16 val, bool be) {
+	be? r_write_be16 (dest, val): r_write_le16 (dest, val);
 }
 
-static inline void r_write_ble24(void *dest, ut32 val, bool big_endian) {
-	big_endian? r_write_be24 (dest, val): r_write_le24 (dest, val);
+static inline void r_write_ble24(void *dest, ut32 val, bool be) {
+	be? r_write_be24 (dest, val): r_write_le24 (dest, val);
 }
 
-static inline void r_write_ble32(void *dest, ut32 val, bool big_endian) {
-	big_endian? r_write_be32 (dest, val): r_write_le32 (dest, val);
+static inline void r_write_ble32(void *dest, ut32 val, bool be) {
+	be? r_write_be32 (dest, val): r_write_le32 (dest, val);
 }
 
-static inline void r_write_ble64(void *dest, ut64 val, bool big_endian) {
-	big_endian? r_write_be64 (dest, val): r_write_le64 (dest, val);
+static inline void r_write_ble64(void *dest, ut64 val, bool be) {
+	be? r_write_be64 (dest, val): r_write_le64 (dest, val);
 }
 
-static inline void r_write_ble(void *dst, ut64 val, bool big_endian, int size) {
+static inline void r_write_ble(void *dst, ut64 val, bool be, int size) {
 	switch (size) {
 	case 8:
 		((ut8*)dst)[0] = (ut8) val;
 		break;
 	case 16:
-		r_write_ble16 (dst, (ut16) val, big_endian);
+		r_write_ble16 (dst, (ut16) val, be);
 		break;
 	case 24:
-		r_write_ble24 (dst, (ut32) val, big_endian);
+		r_write_ble24 (dst, (ut32) val, be);
 		break;
 	case 32:
-		r_write_ble32 (dst, (ut32) val, big_endian);
+		r_write_ble32 (dst, (ut32) val, be);
 		break;
 	case 64:
-		r_write_ble64 (dst, val, big_endian);
+		r_write_ble64 (dst, val, be);
 		break;
 	default:
 		break;

@@ -38,7 +38,6 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 
 #define R_WARN_IF_REACHED() do { ; } while(0)
 #define R_WARN_IF_FAIL(expr) do { ; } while(0)
-#define R_QUIET_FAIL(expr) do { ; } while(0)
 
 #else
 
@@ -55,8 +54,6 @@ R_API void r_assert_log(RLogLevel level, const char *origin, const char *fmt, ..
 				__FILE__, __LINE__, R_FUNCTION, R_FUNCTION[0] ? ":" : "", #expr); \
 		} \
 	} while (0)
-
-#define R_QUIET_FAIL(expr) if (!(expr)) { assert (false); }
 
 #endif
 
