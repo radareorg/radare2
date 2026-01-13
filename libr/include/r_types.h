@@ -254,6 +254,34 @@
 #define R_PRINTF_CHECK(fmt, dots)
 #endif
 
+#ifdef R_IPI
+#undef R_IPI
+#endif
+
+#define R_IPI
+
+#ifdef R_HEAP
+#undef R_HEAP
+#endif
+#define R_HEAP
+
+#ifdef R_API
+#undef R_API
+#endif
+#if R_SWIG
+  #define R_API export
+#elif R_INLINE
+  #define R_API inline
+#else
+  #if R2__WINDOWS__
+    #define R_API __declspec(dllexport)
+  #elif defined(__GNUC__) && __GNUC__ >= 4
+    #define R_API __attribute__((visibility("default")))
+  #else
+    #define R_API
+  #endif
+#endif
+
 #undef _FILE_OFFSET_BITS
 #define _FILE_OFFSET_BITS 64
 #undef _GNU_SOURCE
@@ -323,35 +351,6 @@ typedef int (*PrintfCallback)(const char *str, ...) R_PRINTF_CHECK(1, 2);
 #define CTA(x,y,z) (x+CTO(y,z))
 #define CTI(x,y,z) (*((size_t*)(CTA(x,y,z))))
 #define CTS(x,y,z,t,v) {t* _=(t*)CTA(x,y,z);*_=v;}
-
-#ifdef R_IPI
-#undef R_IPI
-#endif
-
-#define R_IPI
-
-#ifdef R_HEAP
-#undef R_HEAP
-#endif
-#define R_HEAP
-
-#ifdef R_API
-#undef R_API
-#endif
-#if R_SWIG
-  #define R_API export
-#elif R_INLINE
-  #define R_API inline
-#else
-  #if R2__WINDOWS__
-    #define R_API __declspec(dllexport)
-  #elif defined(__GNUC__) && __GNUC__ >= 4
-    #define R_API __attribute__((visibility("default")))
-  #else
-    #define R_API
-  #endif
-#endif
-
 
 #define R_HIDDEN __attribute__((visibility("hidden")))
 
