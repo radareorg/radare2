@@ -15750,7 +15750,7 @@ static void cmd_ab(RCore *core, const char *input) {
 				RAnalBlock *bb;
 				RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
 				r_list_foreach (blocks, iter, bb) {
-					if (arg && *arg) {
+					if (*arg) {
 						free (bb->esil);
 						bb->esil = strdup (arg);
 					} else {
