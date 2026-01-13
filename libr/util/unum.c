@@ -352,13 +352,13 @@ R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 		}
 		switch (lch) {
 		case 'h': // hexa
-			if (!sscanf (str, "%"PFMT64x"%n", &ret, &chars_read)
+			if (sscanf (str, "%"PFMT64x"%n", &ret, &chars_read) != 1
 			    || chars_read != len_num) {
 				error (num, "invalid hex number");
 			}
 			break;
 		case 'o': // octal
-			if (!sscanf (str, "%"PFMT64o"%n", &ret, &chars_read)
+			if (sscanf (str, "%"PFMT64o"%n", &ret, &chars_read) != 1
 			    || chars_read != len_num) {
 				error (num, "invalid octal number");
 			}
@@ -403,13 +403,13 @@ R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 		case 'K': case 'k':
 			if (strchr (str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf (str, "%lf%n", &d, &chars_read) == 1) {
 					ret = (ut64)(d * KB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read) == 1) {
 					ret *= KB;
 				} else {
 					zero_read = true;
@@ -422,13 +422,13 @@ R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 		case 'M': case 'm':
 			if (strchr (str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf (str, "%lf%n", &d, &chars_read) == 1) {
 					ret = (ut64)(d * MB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read) == 1) {
 					ret *= MB;
 				} else {
 					zero_read = true;
@@ -441,13 +441,13 @@ R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 		case 'G': case 'g':
 			if (strchr (str, '.')) {
 				double d = 0;
-				if (sscanf (str, "%lf%n", &d, &chars_read)) {
+				if (sscanf (str, "%lf%n", &d, &chars_read) == 1) {
 					ret = (ut64)(d * GB);
 				} else {
 					zero_read = true;
 				}
 			} else {
-				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read)) {
+				if (sscanf (str, "%"PFMT64d"%n", &ret, &chars_read) == 1) {
 					ret *= GB;
 				} else {
 					zero_read = true;
