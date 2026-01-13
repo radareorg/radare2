@@ -2286,7 +2286,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(
 		// mo->nofuncstarts = options->nofuncstarts;
 		// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 		ut64 sz = r_buf_size (buf);
-		if (options) {
+		{
 #if 0
 			if (options->bf->loadaddr == UT64_MAX - sz) {
 				// handle the negative binsize problem when source io returns -1 as size. assume its 2MB

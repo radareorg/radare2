@@ -1773,7 +1773,7 @@ static bool r_cmd_java_handle_yara_code_extraction_refs(RCore *core, const char 
 	}
 
 	n = *p? r_cmd_java_strtok (core, p, ' ', -1): NULL;
-	name = n && p && p != n? malloc (n - p + 2): NULL;
+	name = n && n != p? malloc (n - p + 2): NULL;
 
 	if (!name) {
 		return res;

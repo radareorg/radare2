@@ -3770,7 +3770,7 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 		r_list_free (fcns);
 		return 0;
 	}
-	switch (*rad) {
+	switch (rad[0]) {
 	case '+':
 		r_core_anal_fcn_list_size (core);
 		break;
