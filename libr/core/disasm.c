@@ -6209,9 +6209,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					}
 					free (comment);
 				} else {
-					if (comment) {
-						r_cons_print (core->cons, comment);
-					}
+					r_cons_print (core->cons, comment);
 				}
 			}
 			// r_cons_print_justify (core->cons, comment, strlen (ds->refline) + 5, ';');

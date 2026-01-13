@@ -994,7 +994,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	if (R_STR_ISNOTEMPTY (match)) {
 		r_list_foreach (obj->classes, iter, cls) {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
-			if (!match || !strstr (kname, match)) {
+			if (!strstr (kname, match)) {
 				continue;
 			}
 			r_cons_printf (core->cons, "'agn %s\n", kname);
@@ -1002,7 +1002,7 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 				RBinName *bn;
 				r_list_foreach (cls->super, iter2, bn) {
 					const char *sk = r_bin_name_tostring2 (bn, pref);
-					if (match && strstr (sk, match)) {
+					if (strstr (sk, match)) {
 						r_cons_printf (core->cons, "'agn %s\n", sk);
 						r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
 					}
