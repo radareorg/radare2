@@ -157,7 +157,7 @@ RMutaPlugin r_muta_plugin_charset_pokered = {
 	},
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "pokered",
-		.update = update,
+	.update = update,
 	.end = end
 };
 

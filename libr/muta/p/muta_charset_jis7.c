@@ -76,7 +76,7 @@ RMutaPlugin r_muta_plugin_charset_jis7 = {
 	.meta = { .name = "jis7", .license = "MIT", .desc = "JIS 7-bit Roman (ASCII-like)" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "jis7",
-		.decode = decode,
+	.decode = decode,
 	.update = update,
 	.end = end
 };

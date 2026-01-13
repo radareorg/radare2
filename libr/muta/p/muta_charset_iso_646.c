@@ -48,7 +48,7 @@ RMutaPlugin r_muta_plugin_charset_iso_646 = {
 	.meta = { .name = "iso_646", .license = "MIT", .desc = "ISO 646 (IRV)" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "iso_646",
-		.update = update,
+	.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

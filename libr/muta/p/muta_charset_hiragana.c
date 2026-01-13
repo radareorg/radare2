@@ -8,7 +8,7 @@ RMutaPlugin r_muta_plugin_charset_hiragana = {
 	.meta = { .name = "hiragana", .license = "MIT", .desc = "Hiragana stub" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "hiragana",
-		.update = r_muta_charset_stub_update,
+	.update = r_muta_charset_stub_update,
 	.end = r_muta_charset_stub_end
 };
 #ifndef R2_PLUGIN_INCORE

@@ -61,7 +61,7 @@ RMutaPlugin r_muta_plugin_charset_iso8859_1 = {
 	.meta = { .name = "iso8859_1", .license = "MIT", .desc = "ISO-8859-1 charset" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "iso8859_1",
-		.update = update,
+	.update = update,
 	.end = end
 };
 #ifndef R2_PLUGIN_INCORE

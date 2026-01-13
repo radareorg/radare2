@@ -113,7 +113,7 @@ RMutaPlugin r_muta_plugin_charset_pokemon = {
 	},
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "pokemon",
-		.update = update,
+	.update = update,
 	.end = end
 };
 

@@ -84,7 +84,7 @@ RMutaPlugin r_muta_plugin_charset_katakana = {
 	.meta = { .name = "katakana", .license = "MIT", .desc = "Katakana mapping (legacy-compatible)" },
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "katakana",
-		.decode = decode,
+	.decode = decode,
 	.update = update,
 	.end = end
 };
