@@ -1,8 +1,10 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
 static void __core_cmd_search_backward_prelude(RCore *core, bool doseek, bool forward);
+
+// clang-format off
 
 static RCoreHelpMessage help_msg_s = {
 	"Usage: s", "", " # Help for the seek commands. See ?$? to see all variables",
@@ -105,11 +107,13 @@ static RCoreHelpMessage help_msg_ss = {
 	NULL
 };
 
+// clang-format off
+
 static void __init_seek_line(RCore *core) {
 	r_config_bump (core->config, "lines.to");
-	ut64 from = r_config_get_i (core->config, "lines.from");
+	const ut64 from = r_config_get_i (core->config, "lines.from");
 	const char *to_str = r_config_get (core->config, "lines.to");
-	ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
+	const ut64 to = r_num_math (core->num, (to_str && *to_str) ? to_str : "$s");
 	if (r_core_lines_initcache (core, from, to) == -1) {
 		R_LOG_ERROR ("lines.from and lines.to are not defined");
 	}
