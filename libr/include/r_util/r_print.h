@@ -284,8 +284,6 @@ R_API char *r_print_treemap(int n, int *values, const char **labels, int width, 
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
 
 // WIP
-R_API char *r_print_unpack7bit(const char *src);
-R_API char *r_print_pack7bit(const char *src);
 R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);
 R_API char *r_print_stereogram(const char *bump, int w, int h);
 R_API char *r_print_stereogram_render(RPrint *p, const char *buf);
