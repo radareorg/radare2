@@ -1722,14 +1722,6 @@ R_API bool r2r_test_broken(R2RTest *test) {
 	return false;
 }
 
-#if R2R_ASAN
-static bool check_cmd_asan_result(R2RProcessOutput *out) {
-	bool stdout_success = !out->out || (!strstr (out->out, "WARNING:") && !strstr (out->out, "ERROR:") && !strstr (out->out, "FATAL:"));
-	bool stderr_success = !out->err || (!strstr (out->err, "Sanitizer") && !strstr (out->err, "runtime error:"));
-	return stdout_success && stderr_success;
-}
-#endif
-
 static bool require_check(const char *require) {
 	if (R_STR_ISEMPTY (require)) {
 		return true;
