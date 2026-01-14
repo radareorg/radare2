@@ -1,2 +1,8 @@
 OBJ_CHARSET_SEVEN+=muta_charset_seven.o
-SRC_CHARSET_SEVEN+=muta/p/muta_charset_seven.c
+STATIC_OBJ+=${OBJ_CHARSET_SEVEN}
+TARGET_CHARSET_SEVEN=muta_charset_seven.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_CHARSET_SEVEN}
+
+${TARGET_CHARSET_SEVEN}: ${OBJ_CHARSET_SEVEN}
+	${CC} $(call libname,muta_charset_seven) ${LDFLAGS} ${CFLAGS} -o ${TARGET_CHARSET_SEVEN} ${OBJ_CHARSET_SEVEN}

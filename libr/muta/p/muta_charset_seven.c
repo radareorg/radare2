@@ -3,14 +3,14 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
-static bool decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
 	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
 	if (len < 2) {
 		return 0;
 	}
 
 	char buf[3] = { 0 };
-	int i, j, shift = 0;
+	int i, shift = 0;
 	ut8 ch1, ch2 = '\0';
 
 	char *dest = malloc ((len / 2) * 8 / 7 + 2);
@@ -29,7 +29,7 @@ static bool decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *con
 		buf[1] = in[i + 1];
 		buf[2] = 0;
 		ch1 = strtol (buf, NULL, 16);
-		j = out_len;
+		int j = out_len;
 		dest[j++] = ((ch1 &(0x7F >> shift)) << shift) | ch2;
 		dest[j++] = '\0';
 		ch2 = ch1 >> (7 - shift);
@@ -54,14 +54,13 @@ static bool encode(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	int i, j = 0, shift = 0;
+	int i, shift = 0;
 	ut8 ch1, ch2;
-	char tmp[4];
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
 		return false;
 	}
-	ut8 *src = buf;
+	const ut8 *src = buf;
 	for (i = 0; i < len; i++) {
 		ch1 = src[i] & 0x7F;
 		ch1 = ch1 >> shift;
