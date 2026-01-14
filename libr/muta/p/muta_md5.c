@@ -4,7 +4,7 @@
 #include <r_muta.h>
 #include <r_hash.h>
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	RHash *ctx = r_hash_new (true, R_HASH_MD5);
 	if (!ctx) {
 		return false;
@@ -12,7 +12,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	r_hash_do_begin (ctx, R_HASH_MD5);
 	r_hash_do_md5 (ctx, buf, len);
 	r_hash_do_end (ctx, R_HASH_MD5);
-	r_muta_session_append (cj, ctx->digest, R_HASH_SIZE_MD5);
+	r_muta_session_append (ms, ctx->digest, R_HASH_SIZE_MD5);
 	r_hash_free (ctx);
 	return true;
 }

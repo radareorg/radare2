@@ -2,102 +2,103 @@
 
 #include <r_muta.h>
 
-R_API void r_muta_session_free(RMutaSession *R_NULLABLE cj) {
-	if (cj) {
-		if (cj->h->fini) {
-			cj->h->fini (cj);
+R_API void r_muta_session_free(RMutaSession *R_NULLABLE ms) {
+	if (ms) {
+		if (ms->h->fini) {
+			ms->h->fini (ms);
 		}
-		free (cj->subtype);
-		r_muta_result_free (cj->result);
-		free (cj->result);
-		free (cj->key);
-		free (cj->iv);
-		free (cj);
+		free (ms->subtype);
+		r_muta_result_free (ms->result);
+		free (ms->result);
+		free (ms->key);
+		free (ms->iv);
+		free (ms->plugin_data);
+		free (ms);
 	}
 }
-R_API bool r_muta_session_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
+R_API bool r_muta_session_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	R_RETURN_VAL_IF_FAIL (ms, false);
 	if (keylen < 0) {
 		keylen = strlen ((const char *)key);
 	}
-	if (!cj->h || !cj->h->set_key) {
+	if (!ms->h || !ms->h->set_key) {
 		return true;
 	}
-	cj->key_len = keylen;
-	cj->key = calloc (1, cj->key_len);
-	return cj->h->set_key (cj, key, keylen, mode, direction);
+	ms->key_len = keylen;
+	ms->key = calloc (1, ms->key_len);
+	return ms->h->set_key (ms, key, keylen, mode, direction);
 }
 
-R_API int r_muta_session_get_key_size(RMutaSession *cj) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	return (cj->h && cj->h->get_key_size)? cj->h->get_key_size (cj): 0;
+R_API int r_muta_session_get_key_size(RMutaSession *ms) {
+	R_RETURN_VAL_IF_FAIL (ms, false);
+	return (ms->h && ms->h->get_key_size)? ms->h->get_key_size (ms): 0;
 }
 
-R_API bool r_muta_session_set_iv(RMutaSession *cj, const ut8 *iv, int ivlen) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	RMutaSessionSetIVCallback set_iv = R_UNWRAP3 (cj, h, set_iv);
-	return set_iv? set_iv (cj, iv, ivlen): 0;
+R_API bool r_muta_session_set_iv(RMutaSession *ms, const ut8 *iv, int ivlen) {
+	R_RETURN_VAL_IF_FAIL (ms, false);
+	RMutaSessionSetIVCallback set_iv = R_UNWRAP3 (ms, h, set_iv);
+	return set_iv? set_iv (ms, iv, ivlen): 0;
 }
 
 // return the number of bytes written in the output buffer
-R_API bool r_muta_session_update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj, 0);
-	RMutaSessionUpdateCallback update = R_UNWRAP3 (cj, h, update);
-	return update? update (cj, buf, len): 0;
+R_API bool r_muta_session_update(RMutaSession *ms, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (ms, 0);
+	RMutaSessionUpdateCallback update = R_UNWRAP3 (ms, h, update);
+	return update? update (ms, buf, len): 0;
 }
 
-R_API RMutaSession *r_muta_session_new(RMuta *cry, RMutaPlugin *cp) {
-	R_RETURN_VAL_IF_FAIL (cry && cp, NULL);
-	RMutaSession *cj = R_NEW0 (RMutaSession);
-	cj->h = cp;
-	cj->c = cry;
-	cj->result = R_NEW0 (RMutaResult);
-	return cj;
+R_API RMutaSession *r_muta_session_new(RMuta *muta, RMutaPlugin *cp) {
+	R_RETURN_VAL_IF_FAIL (muta && cp, NULL);
+	RMutaSession *ms = R_NEW0 (RMutaSession);
+	ms->h = cp;
+	ms->c = muta;
+	ms->result = R_NEW0 (RMutaResult);
+	return ms;
 }
 
-R_API bool r_muta_session_set_subtype(RMutaSession *cj, const char *subtype) {
-	R_RETURN_VAL_IF_FAIL (cj, false);
-	free ((void *)cj->subtype);
-	cj->subtype = strdup (subtype);
+R_API bool r_muta_session_set_subtype(RMutaSession *ms, const char *subtype) {
+	R_RETURN_VAL_IF_FAIL (ms, false);
+	free ((void *)ms->subtype);
+	ms->subtype = strdup (subtype);
 	return true;
 }
-R_API bool r_muta_session_end(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
-	return (cj->h && cj->h->end)? cj->h->end (cj, buf, len): 0;
+R_API bool r_muta_session_end(RMutaSession *ms, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (ms && buf, false);
+	return (ms->h && ms->h->end)? ms->h->end (ms, buf, len): 0;
 }
 
 // TODO: internal api?? used from plugins? TODO: use r_buf here
-R_API int r_muta_session_append(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && cj->result && buf, -1);
-	if (cj->result->output_len + len > cj->result->output_size) {
-		cj->result->output_size += 4096 + len;
-		cj->result->output = realloc (cj->result->output, cj->result->output_size);
+R_API int r_muta_session_append(RMutaSession *ms, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (ms && ms->result && buf, -1);
+	if (ms->result->output_len + len > ms->result->output_size) {
+		ms->result->output_size += 4096 + len;
+		ms->result->output = realloc (ms->result->output, ms->result->output_size);
 	}
-	memcpy (cj->result->output + cj->result->output_len, buf, len);
-	cj->result->output_len += len;
-	return cj->result->output_len;
+	memcpy (ms->result->output + ms->result->output_len, buf, len);
+	ms->result->output_len += len;
+	return ms->result->output_len;
 }
 
-R_API ut8 *r_muta_session_get_output(RMutaSession *cj, int *size) {
-	R_RETURN_VAL_IF_FAIL (cj && cj->result, NULL);
-	if (cj->result->output_size < 1) {
+R_API ut8 *r_muta_session_get_output(RMutaSession *ms, int *size) {
+	R_RETURN_VAL_IF_FAIL (ms && ms->result, NULL);
+	if (ms->result->output_size < 1) {
 		return NULL;
 	}
-	ut8 *buf = calloc (1, cj->result->output_size);
+	ut8 *buf = calloc (1, ms->result->output_size);
 	if (!buf) {
 		return NULL;
 	}
 	if (size) {
-		*size = cj->result->output_len;
-		memcpy (buf, cj->result->output, *size);
+		*size = ms->result->output_len;
+		memcpy (buf, ms->result->output, *size);
 	} else {
 		size_t newlen = 4096;
 		ut8 *newbuf = realloc (buf, newlen);
 		if (newbuf) {
 			buf = newbuf;
-			cj->result->output = newbuf;
-			cj->result->output_len = 0;
-			cj->result->output_size = newlen;
+			ms->result->output = newbuf;
+			ms->result->output_len = 0;
+			ms->result->output_size = newlen;
 		} else {
 			R_FREE (buf);
 		}
@@ -106,8 +107,8 @@ R_API ut8 *r_muta_session_get_output(RMutaSession *cj, int *size) {
 }
 
 // Decode input string using the provided charset decode function
-R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx) {
-	R_RETURN_VAL_IF_FAIL (session && input && decode_fn, NULL);
+R_API ut8 *r_muta_session_decode_string(RMutaSession *ms, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx) {
+	R_RETURN_VAL_IF_FAIL (ms && input && decode_fn, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	int pos = 0;
 	while (pos < len) {

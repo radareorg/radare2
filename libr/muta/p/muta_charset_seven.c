@@ -3,8 +3,7 @@
 #include <r_muta.h>
 #include <r_muta/charset.h>
 
-static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
-	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
+static int decode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed) {
 	if (len < 2) {
 		return 0;
 	}
@@ -49,8 +48,8 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 	return out_len;
 }
 
-static bool encode(RMutaSession *cj, const ut8 *buf, int len) {
-	if (!cj || !buf || len < 0) {
+static bool encode(RMutaSession *ms, const ut8 *buf, int len) {
+	if (!ms || !buf || len < 0) {
 		return false;
 	}
 
@@ -78,26 +77,26 @@ static bool encode(RMutaSession *cj, const ut8 *buf, int len) {
 		}
 	}
 	char *result = r_strbuf_drain (sb);
-	r_muta_session_append (cj, (const ut8 *)result, strlen (result));
+	r_muta_session_append (ms, (const ut8 *)result, strlen (result));
 	free (result);
 	return true;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	if (!cj || !buf || len < 0) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	if (!ms || !buf || len < 0) {
 		return false;
 	}
 
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
-		return encode (cj, buf, len);
-	case R_CRYPTO_DIR_DECRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OP_ENCRYPT:
+		return encode (ms, buf, len);
+	case R_MUTA_OP_DECRYPT:
 		{
 			ut8 *out = NULL;
 			int consumed = 0;
-			int out_len = decode (cj, buf, len, &out, &consumed);
-			if (out && out_len > 0) {
-				r_muta_session_append (cj, out, out_len);
+			int out_len = decode (ms, buf, len, &out, &consumed);
+		if (out && out_len > 0) {
+				r_muta_session_append (ms, out, out_len);
 				free (out);
 				return true;
 			}
@@ -108,8 +107,8 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	return false;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_charset_seven = {

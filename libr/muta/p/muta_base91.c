@@ -6,32 +6,32 @@
 
 #define INSIZE 32768
 
-static bool base91_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->dir = direction;
+static bool base91_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	ms->dir = direction;
 	return true;
 }
 
-static int base91_get_key_size(RMutaSession *cj) {
+static int base91_get_key_size(RMutaSession *ms) {
 	return 0;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf && len > 0, false);
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (ms && buf && len > 0, false);
 
 	int olen = INSIZE;
 	ut8 *obuf = calloc (1, olen);
 	if (!obuf) {
 		return false;
 	}
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OP_ENCRYPT:
 		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		olen = r_base91_decode (obuf, (const char *)buf, len);
 		break;
 	}
-	r_muta_session_append (cj, obuf, olen);
+	r_muta_session_append (ms, obuf, olen);
 	free (obuf);
 	return true;
 }

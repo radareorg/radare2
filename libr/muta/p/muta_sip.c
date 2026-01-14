@@ -3,17 +3,17 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	if (!cj || !cj->result || !cj->c) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	if (!ms || !ms->result || !ms->c) {
 		return false;
 	}
 	ut8 obuf[R_HASH_SIZE_SIP];
 	uint64_t h = r_hash_sip (buf, len);
-	if (cj && cj->result) {
-		cj->result->output = malloc (cj->result->output_size);
+	if (ms && ms->result) {
+		ms->result->output = malloc (ms->result->output_size);
 	}
-	r_write_ble64 (obuf, h, cj->c->bigendian);
-	r_muta_session_append (cj, obuf, R_HASH_SIZE_SIP);
+	r_write_ble64 (obuf, h, ms->c->bigendian);
+	r_muta_session_append (ms, obuf, R_HASH_SIZE_SIP);
 	return true;
 }
 

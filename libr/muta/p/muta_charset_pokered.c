@@ -121,17 +121,17 @@ static const RMutaCharsetMap pokered_table[] = {
 	{ NULL, { 0 }, 0 }
 };
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
-	if (!cj || !buf || len < 0) {
+	if (!ms || !buf || len < 0) {
 		return false;
 	}
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OP_ENCRYPT:
 		obuf = r_muta_charset_encode (buf, len, &olen, pokered_table, r_muta_charset_parse_default);
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		obuf = r_muta_charset_decode (buf, len, &olen, pokered_table, "\\x%02x");
 		break;
 	}
@@ -139,14 +139,14 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 	if (olen > 0) {
-		r_muta_session_append (cj, obuf, olen);
+		r_muta_session_append (ms, obuf, olen);
 	}
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_charset_pokered = {

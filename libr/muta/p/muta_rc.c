@@ -405,27 +405,27 @@ static bool rc_check(const char *algo) {
 	return algo && (!strcmp (algo, "rc2") || !strcmp (algo, "rc4") || !strcmp (algo, "rc6"));
 }
 
-static bool rc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	free (cj->data);
+static bool rc_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	free (ms->data);
 
-	if (!strcmp (cj->subtype, "rc2")) {
+	if (!strcmp (ms->subtype, "rc2")) {
 		struct rc2_state *state = R_NEW0 (struct rc2_state);
-		cj->data = state;
-		cj->flag = direction;
+		ms->data = state;
+		ms->flag = direction;
 		state->key_size = RC2_BITS;
 		state->type = RC_TYPE_RC2;
 		return rc2_expandKey (state, key, keylen);
 	}
-	if (!strcmp (cj->subtype, "rc4")) {
+	if (!strcmp (ms->subtype, "rc4")) {
 		struct rc4_state *st = R_NEW0 (struct rc4_state);
-		cj->data = st;
+		ms->data = st;
 		st->type = RC_TYPE_RC4;
 		return rc4_init (st, key, keylen);
 	}
-	if (!strcmp (cj->subtype, "rc6")) {
+	if (!strcmp (ms->subtype, "rc6")) {
 		struct rc6_state *st = R_NEW0 (struct rc6_state);
-		cj->data = st;
-		cj->flag = (direction == R_CRYPTO_DIR_DECRYPT);
+		ms->data = st;
+		ms->flag = (direction == R_MUTA_OP_DECRYPT);
 		st->type = RC_TYPE_RC6;
 		return rc6_init (st, key, keylen, direction);
 	}
@@ -433,27 +433,27 @@ static bool rc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, i
 	return false;
 }
 
-static int rc_get_key_size(RMutaSession *cj) {
-	if (!cj->data) {
+static int rc_get_key_size(RMutaSession *ms) {
+	if (!ms->data) {
 		return 0;
 	}
-	if (!strcmp (cj->subtype, "rc2")) {
-		const struct rc2_state *state = cj->data;
+	if (!strcmp (ms->subtype, "rc2")) {
+		const struct rc2_state *state = ms->data;
 		return state->key_size;
 	}
-	if (!strcmp (cj->subtype, "rc4")) {
-		const struct rc4_state *st = cj->data;
+	if (!strcmp (ms->subtype, "rc4")) {
+		const struct rc4_state *st = ms->data;
 		return st->key_size;
 	}
-	if (!strcmp (cj->subtype, "rc6")) {
-		const struct rc6_state *st = cj->data;
+	if (!strcmp (ms->subtype, "rc6")) {
+		const struct rc6_state *st = ms->data;
 		return st->key_size;
 	}
 	return 0;
 }
 
-static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
-	if (!cj->data) {
+static bool rc_update(RMutaSession *ms, const ut8 *buf, int len) {
+	if (!ms->data) {
 		return false;
 	}
 
@@ -462,16 +462,16 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	if (!strcmp (cj->subtype, "rc6")) {
+	if (!strcmp (ms->subtype, "rc6")) {
 		if (len % RC6_BLOCK_SIZE != 0) {
 			R_LOG_ERROR ("Input should be multiple of 128bit");
 			free (obuf);
 			return false;
 		}
-		struct rc6_state *st = cj->data;
+		struct rc6_state *st = ms->data;
 		const int blocks = len / RC6_BLOCK_SIZE;
 		int i;
-		if (cj->flag) {
+		if (ms->flag) {
 			for (i = 0; i < blocks; i++) {
 				rc6_decrypt (st, buf + RC6_BLOCK_SIZE * i, obuf + RC6_BLOCK_SIZE * i);
 			}
@@ -480,16 +480,16 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 				rc6_encrypt (st, buf + RC6_BLOCK_SIZE * i, obuf + RC6_BLOCK_SIZE * i);
 			}
 		}
-	} else if (!strcmp (cj->subtype, "rc4")) {
-		struct rc4_state *st = cj->data;
+	} else if (!strcmp (ms->subtype, "rc4")) {
+		struct rc4_state *st = ms->data;
 		rc4_crypt (st, buf, obuf, len);
-	} else if (!strcmp (cj->subtype, "rc2")) {
-		struct rc2_state *state = cj->data;
-		switch (cj->flag) {
-		case R_CRYPTO_DIR_ENCRYPT:
+	} else if (!strcmp (ms->subtype, "rc2")) {
+		struct rc2_state *state = ms->data;
+		switch (ms->flag) {
+		case R_MUTA_OP_ENCRYPT:
 			rc2_crypt (state, buf, obuf, len);
 			break;
-		case R_CRYPTO_DIR_DECRYPT:
+		case R_MUTA_OP_DECRYPT:
 			rc2_dcrypt (state, buf, obuf, len);
 			break;
 		default:
@@ -500,17 +500,17 @@ static bool rc_update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	r_muta_session_append (cj, obuf, len);
+	r_muta_session_append (ms, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool rc_end(RMutaSession *cj, const ut8 *buf, int len) {
-	return rc_update (cj, buf, len);
+static bool rc_end(RMutaSession *ms, const ut8 *buf, int len) {
+	return rc_update (ms, buf, len);
 }
 
-static bool rc_fini(RMutaSession *cj) {
-	R_FREE (cj->data);
+static bool rc_fini(RMutaSession *ms) {
+	R_FREE (ms->data);
 	return true;
 }
 

@@ -16,19 +16,11 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_muta);
 
-enum { // this is aes-specific and should be part of options
-	R_CRYPTO_MODE_ECB,
-	R_CRYPTO_MODE_CBC,
-	R_CRYPTO_MODE_OFB,
-	R_CRYPTO_MODE_CFB,
-};
-
-// TODO: use encode/decode wordings? or just a bool?
 enum {
-	R_CRYPTO_DIR_NONE = -1,
-	R_CRYPTO_DIR_HASH = 0,
-	R_CRYPTO_DIR_DECRYPT = 1,
-	R_CRYPTO_DIR_ENCRYPT = 2,
+	R_MUTA_OP_NONE = -1,
+	R_MUTA_OP_HASH = 0,
+	R_MUTA_OP_DECRYPT = 1,
+	R_MUTA_OP_ENCRYPT = 2,
 };
 
 typedef struct r_muta_result_t {
@@ -59,7 +51,7 @@ typedef struct r_muta_session_t {
 	RList *plugins;
 	ut32 sm4_sk[32];
 	void *data;
-	ut32 cps2key[2];
+	void *plugin_data; // Plugin-specific data (e.g., CPS2 keys)
 	ut8 rot_key;
 	char *subtype;
 	RMutaResult *result;
@@ -74,8 +66,8 @@ typedef enum {
 	R_MUTA_TYPE_ALL = -1,
 } RMutaType;
 
-typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ci, const ut8 *iv, int ivlen);
-typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ci, const ut8 *buf, int len);
+typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ms, const ut8 *iv, int ivlen);
+typedef bool (*RMutaSessionUpdateCallback)(RMutaSession *ms, const ut8 *buf, int len);
 
 typedef struct r_muta_plugin_t {
 	RPluginMeta meta;
@@ -84,18 +76,18 @@ typedef struct r_muta_plugin_t {
 	RMutaType type;
 	bool text_output; // true if output is string, not binary
 
-	int (*get_key_size)(RMutaSession *cry);
+	int (*get_key_size)(RMutaSession *ms);
 	RMutaSessionSetIVCallback set_iv;
-	bool (*set_key)(RMutaSession *ci, const ut8 *key, int keylen, int mode, int direction);
+	bool (*set_key)(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction);
 
-	RMutaSession* (*begin)(RMuta *cry);
+	RMutaSession* (*begin)(RMuta *muta);
 	RMutaSessionUpdateCallback update;
-	bool (*end)(RMutaSession *ci, const ut8 *buf, int len);
+	bool (*end)(RMutaSession *ms, const ut8 *buf, int len);
 #if 0
-	bool (*init)(RMuta *cry, struct r_muta_plugin_t *cp);
+	bool (*init)(RMuta *muta, struct r_muta_plugin_t *cp);
 #endif
-	int (*decode)(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed);
-	bool (*fini)(RMutaSession *cj);
+	int (*decode)(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed);
+	bool (*fini)(RMutaSession *ms);
 } RMutaPlugin;
 
 typedef struct {
@@ -103,69 +95,45 @@ typedef struct {
 	ut8 *key;
 	size_t key_len;
 	int direction;
-	// iv
-	// ..
 } RMutaOptions;
 
-typedef ut64 RMutaSelector;
-
 #ifdef R_API
-R_API void r_muta_init(RMuta *cry);
-R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h);
+R_API void r_muta_init(RMuta *muta);
+R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h);
+R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h);
 R_API RMuta *R_NONNULL r_muta_new(void);
-R_API void r_muta_free(RMuta *cry);
-R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
+R_API void r_muta_free(RMuta *muta);
+R_API char *r_muta_list(RMuta *muta, RMutaType type, int mode);
 R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 
-R_API RMutaPlugin *r_muta_find(RMuta *cry, const char *algo);
-R_API RMutaType r_muta_algo_type(RMuta *cry, const char *algo);
-R_API bool r_muta_algo_supports(RMuta *cry, const char *algo, RMutaType type);
-R_API RMutaSession *r_muta_use(RMuta *cry, const char *algo);
-R_API bool r_muta_session_set_subtype(RMutaSession *cry, const char *subtype);
-R_API bool r_muta_session_set_key(RMutaSession *cry, const ut8* key, int keylen, int mode, int direction);
-R_API bool r_muta_session_set_iv(RMutaSession *cry, const ut8 *iv, int ivlen);
+R_API RMutaPlugin *r_muta_find(RMuta *muta, const char *algo);
+R_API RMutaType r_muta_algo_type(RMuta *muta, const char *algo);
+R_API bool r_muta_algo_supports(RMuta *muta, const char *algo, RMutaType type);
+R_API RMutaSession *r_muta_use(RMuta *muta, const char *algo);
+R_API bool r_muta_session_set_subtype(RMutaSession *ms, const char *subtype);
+R_API bool r_muta_session_set_key(RMutaSession *ms, const ut8* key, int keylen, int mode, int direction);
+R_API bool r_muta_session_set_iv(RMutaSession *ms, const ut8 *iv, int ivlen);
 
-R_API RMutaSession *r_muta_session_new(RMuta *cry, RMutaPlugin *cp);
-R_API void r_muta_session_free(RMutaSession *cj);
+R_API RMutaSession *r_muta_session_new(RMuta *muta, RMutaPlugin *cp);
+R_API void r_muta_session_free(RMutaSession *ms);
 
-R_API bool r_muta_session_update(RMutaSession *cry, const ut8 *buf, int len);
-R_API bool r_muta_session_end(RMutaSession *cry, const ut8 *buf, int len);
-R_API int r_muta_session_append(RMutaSession *cry, const ut8 *buf, int len);
-R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
+R_API bool r_muta_session_update(RMutaSession *ms, const ut8 *buf, int len);
+R_API bool r_muta_session_end(RMutaSession *ms, const ut8 *buf, int len);
+R_API int r_muta_session_append(RMutaSession *ms, const ut8 *buf, int len);
+R_API ut8 *r_muta_session_get_output(RMutaSession *ms, int *size);
 R_API void r_muta_result_free(RMutaResult *res);
 
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
-R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
+R_API ut8 *r_muta_session_decode_string(RMutaSession *ms, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
 
 // Simple wrapper for hash and entropy operations
-R_API RMutaResult r_muta_process_simple(RMuta *cry, const char *algo, const ut8 *data, int len);
+R_API RMutaResult r_muta_process_simple(RMuta *muta, const char *algo, const ut8 *data, int len);
 
 // Unified processing function for all operations (use r_muta_process_simple for simple cases)
-R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, int len,
+R_API RMutaResult r_muta_process(RMuta *muta, const char *algo, const ut8 *data, int len,
 	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
 
 #endif
-
-// TODO: deprecate
-#define R_CRYPTO_NONE 0ULL
-#define R_CRYPTO_RC2 1ULL
-#define R_CRYPTO_RC4 1ULL<<1
-#define R_CRYPTO_RC6 1ULL<<2
-#define R_CRYPTO_AES_ECB 1ULL<<3
-#define R_CRYPTO_AES_CBC 1ULL<<4
-#define R_CRYPTO_AES_WRAP 1ULL<<5
-#define R_CRYPTO_ROR 1ULL<<6
-#define R_CRYPTO_ROL 1ULL<<7
-#define R_CRYPTO_ROT 1ULL<<8
-#define R_CRYPTO_BLOWFISH 1ULL<<9
-#define R_CRYPTO_CPS2 1ULL<<10
-#define R_CRYPTO_DES_ECB 1ULL<<11
-#define R_CRYPTO_XOR 1ULL<<12
-#define R_CRYPTO_SERPENT 1ULL<<13
-#define R_CRYPTO_SM4_ECB 1ULL << 14
-#define R_CRYPTO_BECH32 1ULL << 15
-#define R_CRYPTO_ALL 0xFFFF
-
 
 /* plugin pointers */
 extern RMutaPlugin r_muta_plugin_null;

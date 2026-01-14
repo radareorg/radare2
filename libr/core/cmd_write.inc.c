@@ -259,13 +259,13 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 		return;
 	}
 	if (keylen < 1) {
-		const char *mode = (direction == R_CRYPTO_DIR_ENCRYPT)? "Encryption": "Decryption";
+		const char *mode = (direction == R_MUTA_OP_ENCRYPT)? "Encryption": "Decryption";
 		R_LOG_ERROR ("%s key not defined. Use -S [key]", mode);
 		free (binkey);
 		return;
 	}
 	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_CRYPTO)) {
-		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_CRYPTO_DIR_ENCRYPT)? "encryption": "decryption"), algo);
+		R_LOG_ERROR ("Unknown %s algorithm '%s'", ((direction == R_MUTA_OP_ENCRYPT)? "encryption": "decryption"), algo);
 		free (binkey);
 		return;
 	}
@@ -321,7 +321,7 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 		return;
 	}
 	RMutaSession *cj = r_muta_use (core->muta, algo);
-	if (r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+	if (r_muta_session_set_key (cj, binkey, keylen, 0, R_MUTA_OP_ENCRYPT)) {
 		r_muta_session_update (cj, (const ut8 *)core->block, core->blocksize);
 		int result_size = 0;
 		ut8 *result = r_muta_session_get_output (cj, &result_size);
@@ -414,7 +414,7 @@ static int cmd_wo(void *data, const char *input) {
 	case 'E': // "woE" encrypt
 	case 'D': // "woD" decrypt
 		{
-			int direction = (input[0] == 'E') ? R_CRYPTO_DIR_ENCRYPT : R_CRYPTO_DIR_DECRYPT;
+			int direction = (input[0] == 'E') ? R_MUTA_OP_ENCRYPT : R_MUTA_OP_DECRYPT;
 			const char *algo = NULL;
 			const char *key = NULL;
 			const char *iv = NULL;

@@ -23,17 +23,17 @@ static const RMutaCharsetMap cp1253_table[] = {
 };
 // clang-format on
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
-	if (!cj || !buf || len < 0) {
+	if (!ms || !buf || len < 0) {
 		return false;
 	}
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_DECRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OP_DECRYPT:
 		obuf = r_muta_charset_decode (buf, len, &olen, cp1253_table, ".");
 		break;
-	case R_CRYPTO_DIR_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		obuf = r_muta_charset_encode (buf, len, &olen, cp1253_table, r_muta_charset_parse_default);
 		break;
 	}
@@ -41,14 +41,14 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 	if (olen > 0) {
-		r_muta_session_append (cj, obuf, olen);
+		r_muta_session_append (ms, obuf, olen);
 	}
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *b, int l) {
-	return update (cj, b, l);
+static bool end(RMutaSession *ms, const ut8 *b, int l) {
+	return update (ms, b, l);
 }
 
 RMutaPlugin r_muta_plugin_charset_greek_windows = {

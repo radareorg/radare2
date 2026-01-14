@@ -163,7 +163,7 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 		// Decode the buffer using the specified charset
 		RMutaSession *ms = bin->mb.muta_use (bin->mb.muta, charset);
 		if (ms) {
-			ms->dir = R_CRYPTO_DIR_DECRYPT;
+			ms->dir = R_MUTA_OP_DECRYPT;
 			r_muta_session_update (ms, buf, len);
 			int outlen = 0;
 			ut8 *obuf = bin->mb.muta_session_get_output (ms, &outlen);

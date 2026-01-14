@@ -289,49 +289,48 @@ static bool blowfish_init(struct blowfish_state *const state, const ut8 *key, in
 	return true;
 }
 
-static struct blowfish_state *get_st(RMutaSession *cj) {
-	if (cj) {
-		struct blowfish_state *st = cj->data;
-		if (!cj->data) {
-			cj->data = R_NEW0 (struct blowfish_state);
-			st = cj->data;
+static struct blowfish_state *get_st(RMutaSession *ms) {
+	if (ms) {
+		struct blowfish_state *st = ms->data;
+		if (!ms->data) {
+			ms->data = R_NEW0 (struct blowfish_state);
+			st = ms->data;
 		}
 		return st;
 	}
 	return NULL;
 }
 
-static bool blowfish_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	struct blowfish_state *st = get_st (cj);
-	cj->dir = direction;
+static bool blowfish_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	struct blowfish_state *st = get_st (ms);
+	ms->dir = direction;
 	return blowfish_init (st, key, keylen);
 }
 
-static int blowfish_get_key_size(RMutaSession *cj) {
-	struct blowfish_state *st = get_st (cj);
+static int blowfish_get_key_size(RMutaSession *ms) {
+	struct blowfish_state *st = get_st (ms);
 	return st? st->key_size: -1;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && cj->data && buf, false);
-	struct blowfish_state *st = get_st (cj);
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	struct blowfish_state *st = get_st (ms);
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
-	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
+	if (ms->dir == R_MUTA_OP_ENCRYPT) {
 		blowfish_crypt (st, buf, obuf, len);
 	} else {
 		blowfish_decrypt (st, buf, obuf, len);
 	}
-	r_muta_session_append (cj, obuf, len);
+	r_muta_session_append (ms, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	bool res = update (cj, buf, len);
-	R_FREE (cj->data);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	bool res = update (ms, buf, len);
+	R_FREE (ms->data);
 	return res;
 }
 

@@ -12,18 +12,18 @@ static int punycode_get_key_size(RMutaSession *cry) {
 	return 0;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	char *obuf = NULL;
 	int olen = 0;
-	switch (cj->flag) {
-	case R_CRYPTO_DIR_DECRYPT:
+	switch (ms->flag) {
+	case R_MUTA_OP_DECRYPT:
 		obuf = r_punycode_decode ((const char *)buf, len, &olen);
 		break;
-	case R_CRYPTO_DIR_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		obuf = r_punycode_encode (buf, len, &olen);
 		break;
 	}
-	r_muta_session_append (cj, (ut8 *)obuf, olen);
+	r_muta_session_append (ms, (ut8 *)obuf, olen);
 	free (obuf);
 	return true;
 }

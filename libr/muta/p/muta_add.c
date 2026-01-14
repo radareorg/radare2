@@ -12,13 +12,13 @@ static void addsum(const ut8 *inbuf, ut8 *outbuf, int buflen) {
 	r_write_le32 (outbuf, v);
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	addsum (buf, obuf, len);
-	r_muta_session_append (cj, obuf, len);
+	r_muta_session_append (ms, obuf, len);
 	free (obuf);
 	return true;
 }

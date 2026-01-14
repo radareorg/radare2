@@ -2,14 +2,14 @@
 
 #include <r_muta.h>
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return false;
 	}
 	char *s = r_hash_ssdeep (buf, len);
 	if (s) {
 		int slen = strlen (s);
-		r_muta_session_append (cj, (const ut8 *)s, slen);
+		r_muta_session_append (ms, (const ut8 *)s, slen);
 		free (s);
 		return true;
 	}

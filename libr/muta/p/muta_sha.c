@@ -6,20 +6,19 @@
 
 static bool sha_check(const char *algo) {
 	return !strcmp (algo, "sha1") || !strcmp (algo, "sha256") ||
-	       !strcmp (algo, "sha384") || !strcmp (algo, "sha512");
+		!strcmp (algo, "sha384") || !strcmp (algo, "sha512");
 }
 
-static bool sha_update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
+static bool sha_update(RMutaSession *ms, const ut8 *buf, int len) {
 	ut64 type = 0;
-	if (cj->subtype) {
-		if (!strcmp (cj->subtype, "sha1")) {
+	if (ms->subtype) {
+		if (!strcmp (ms->subtype, "sha1")) {
 			type = R_HASH_SHA1;
-		} else if (!strcmp (cj->subtype, "sha256")) {
+		} else if (!strcmp (ms->subtype, "sha256")) {
 			type = R_HASH_SHA256;
-		} else if (!strcmp (cj->subtype, "sha384")) {
+		} else if (!strcmp (ms->subtype, "sha384")) {
 			type = R_HASH_SHA384;
-		} else if (!strcmp (cj->subtype, "sha512")) {
+		} else if (!strcmp (ms->subtype, "sha512")) {
 			type = R_HASH_SHA512;
 		}
 	}
@@ -47,7 +46,7 @@ static bool sha_update(RMutaSession *cj, const ut8 *buf, int len) {
 	}
 	r_hash_do_end (ctx, type);
 	int digest_size = r_hash_size (type);
-	r_muta_session_append (cj, ctx->digest, digest_size);
+	r_muta_session_append (ms, ctx->digest, digest_size);
 	r_hash_free (ctx);
 	return true;
 }
