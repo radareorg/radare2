@@ -3,15 +3,14 @@
 #include <r_anal.h>
 #include <r_core.h>
 
-static bool nullcmd(RAnal *anal, const char *cmd) {
+static char *nullcmd(RAnal *anal, const char *cmd) {
 	if (r_str_startswith (cmd, "null")) {
 		if (cmd[4] == '?') {
-			RCore *core = anal->coreb.core;
-			r_cons_println (core->cons, "| a:null    do nothing");
+			return strdup ("| a:null    do nothing");
 		}
-		return true;
+		return strdup ("");
 	}
-	return false;
+	return NULL;
 }
 
 RAnalPlugin r_anal_plugin_null = {

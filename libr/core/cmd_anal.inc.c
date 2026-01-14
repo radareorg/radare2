@@ -16301,7 +16301,13 @@ static int cmd_anal(void *data, const char *input) {
 				r_cons_println (core->cons, ap->meta.name);
 			}
 		} else {
-			r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
+			char *res = r_anal_cmd (core->anal, r_str_trim_head_ro (input + 1));
+			if (res) {
+				if (res[0]) {
+					r_cons_println (core->cons, res);
+				}
+				free (res);
+			}
 		}
 		break;
 	case 'j': // "aj"

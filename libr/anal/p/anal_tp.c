@@ -1865,10 +1865,10 @@ static RCoreHelpMessage help_msg_tp = {
 	NULL
 };
 
-static bool tp_cmd(RAnal *anal, const char *input) {
-	R_RETURN_VAL_IF_FAIL (anal && input, false);
+static char *tp_cmd(RAnal *anal, const char *input) {
+	R_RETURN_VAL_IF_FAIL (anal && input, NULL);
 	if (!r_str_startswith (input, "tp")) {
-		return false;
+		return NULL;
 	}
 	const char *args = r_str_trim_head_ro (input + 2);
 	void *core = anal->coreb.core;
@@ -1876,26 +1876,26 @@ static bool tp_cmd(RAnal *anal, const char *input) {
 		if (anal->coreb.help && core) {
 			anal->coreb.help (core, help_msg_tp);
 		}
-		return true;
+		return strdup ("");
 	}
 	if (!core) {
-		return true;
+		return strdup ("");
 	}
 	if (!tp_requirements_met (anal, true)) {
-		return true;
+		return strdup ("");
 	}
 	if (!*args) {
 		ut64 cur_addr = anal->coreb.numGet? anal->coreb.numGet (core, "$$"): 0;
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, cur_addr, -1);
 		if (!fcn) {
 			R_LOG_WARN ("Cannot find function at current offset");
-			return true;
+			return strdup ("");
 		}
 		r_cons_break_push (r_cons_singleton (), NULL, NULL);
 		r_esil_set_pc (anal->esil, fcn->addr);
 		r_anal_type_match (anal, fcn);
 		r_cons_break_pop (r_cons_singleton ());
-		return true;
+		return strdup ("");
 	}
 	if (!strcmp (args, "all")) {
 		if (anal->coreb.cmd) {
@@ -1903,12 +1903,12 @@ static bool tp_cmd(RAnal *anal, const char *input) {
 		} else {
 			R_LOG_WARN ("Cannot run 'aaft' because core bindings are missing");
 		}
-		return true;
+		return strdup ("");
 	}
 	if (anal->coreb.help && core) {
 		anal->coreb.help (core, help_msg_tp);
 	}
-	return true;
+	return strdup ("");
 }
 
 static bool tp_plugin_eligible(RAnal *anal) {

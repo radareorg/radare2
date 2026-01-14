@@ -737,33 +737,31 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	r_list_free (refs);
 }
 
-static bool sbpfcmd(RAnal *anal, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
+static char *sbpfcmd(RAnal *anal, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (anal && cmd, NULL);
 
 	if (r_str_startswith (cmd, "sbpf")) {
 		if (r_str_startswith (cmd, "sbpf.analyze")) {
 			const char *result = sbpf_analyze_strings (anal)? "completed": "failed";
 			R_LOG_INFO ("sBPF string analysis %s", result);
-			return true;
+			return strdup ("");
 		}
 		if (r_str_startswith (cmd, "sbpf.strings")) {
-			sbpf_print_string_xrefs (anal);
-			return true;
+			char *res = r_strbuf_drain_nofree (sbpf_print_string_xrefs (anal));
+			return res ? res : strdup ("");
 		}
 		if (cmd[4] == '?') {
-			RCore *core = anal->coreb.core;
-			RCons *cons = core->cons;
-			// eprintf ("sBPF analysis plugin commands:\n");
-			r_cons_println (cons, "| a:sbpf.analyze  - Analyze sBPF strings and create flags");
-			r_cons_println (cons, "| a:sbpf.strings  - Display sBPF strings");
-			return true;
+			RStrBuf *sb = r_strbuf_new ("");
+			r_strbuf_append (sb, "| a:sbpf.analyze  - Analyze sBPF strings and create flags\n");
+			r_strbuf_append (sb, "| a:sbpf.strings  - Display sBPF strings\n");
+			return r_strbuf_drain (sb);
 		}
 		R_LOG_ERROR ("Unknown subcommand. See 'a:sbpf?' for more details");
-		return true;
+		return strdup ("");
 	}
 
 
-	return false;
+	return NULL;
 }
 
 RAnalPlugin r_anal_plugin_sbpf = {
