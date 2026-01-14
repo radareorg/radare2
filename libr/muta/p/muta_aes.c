@@ -59,8 +59,8 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_aes = {

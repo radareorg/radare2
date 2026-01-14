@@ -32,9 +32,8 @@ static bool fletcher_check(const char *algo) {
 	return fletcher_find (algo) != NULL;
 }
 
-static bool fletcher_update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
-	const FletcherAlgorithm *algo = cj->subtype ? fletcher_find (cj->subtype) : NULL;
+static bool fletcher_update(RMutaSession *ms, const ut8 *buf, int len) {
+	const FletcherAlgorithm *algo = ms->subtype ? fletcher_find (ms->subtype) : NULL;
 	if (!algo) {
 		return false;
 	}
@@ -53,7 +52,7 @@ static bool fletcher_update(RMutaSession *cj, const ut8 *buf, int len) {
 		r_write_be64 (digest, r_hash_fletcher64 (buf, len));
 		break;
 	}
-	r_muta_session_append (cj, digest, algo->digest_size);
+	r_muta_session_append (ms, digest, algo->digest_size);
 	return true;
 }
 

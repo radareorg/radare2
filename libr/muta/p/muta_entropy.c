@@ -2,17 +2,17 @@
 
 #include <r_muta.h>
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	if (!buf || len < 1) {
 		return false;
 	}
-	if (!cj || !cj->result) {
+	if (!ms || !ms->result) {
 		return false;
 	}
-	cj->result->entropy = r_hash_entropy (buf, len);
+	ms->result->entropy = r_hash_entropy (buf, len);
 	char str[32];
-	int slen = snprintf (str, sizeof (str), "%.8f", cj->result->entropy);
-	r_muta_session_append (cj, (const ut8 *)str, slen);
+	int slen = snprintf (str, sizeof (str), "%.8f", ms->result->entropy);
+	r_muta_session_append (ms, (const ut8 *)str, slen);
 	return true;
 }
 

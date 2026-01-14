@@ -6,32 +6,32 @@
 #include <r_util/r_log.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_wrap_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_wrap_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
 	if (! (keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	cj->key_len = keylen;
-	memcpy (cj->key, key, keylen);
-	cj->dir = direction;
+	ms->key_len = keylen;
+	memcpy (ms->key, key, keylen);
+	ms->dir = direction;
 	return true;
 }
 
-static int aes_wrap_get_key_size(RMutaSession *cj) {
-	return cj->key_len;
+static int aes_wrap_get_key_size(RMutaSession *ms) {
+	return ms->key_len;
 }
 
-static bool aes_wrap_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
+static bool aes_wrap_set_iv(RMutaSession *ms, const ut8 *iv_src, int ivlen) {
 	if (ivlen != AES_WRAP_BLOCK_SIZE) {
 		return false;
 	}
-	cj->iv = malloc (AES_WRAP_BLOCK_SIZE);
-	if (cj->iv) {
-		memcpy (cj->iv, iv_src, AES_WRAP_BLOCK_SIZE);
+	ms->iv = malloc (AES_WRAP_BLOCK_SIZE);
+	if (ms->iv) {
+		memcpy (ms->iv, iv_src, AES_WRAP_BLOCK_SIZE);
 	}
 	return true;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	struct aes_state st;
 	const ut64 blocks = len / AES_WRAP_BLOCK_SIZE;
 
@@ -40,12 +40,12 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	if (len < 16 && cj->dir == R_CRYPTO_DIR_ENCRYPT) {
+	if (len < 16 && ms->dir == R_MUTA_OPERATION_ENCRYPT) {
 		R_LOG_ERROR ("Length must be at least 16");
 		return false;
 	}
 
-	if (len < 24 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
+	if (len < 24 && ms->dir == R_MUTA_OPERATION_DECRYPT) {
 		R_LOG_ERROR ("Length must be at least 24");
 		return false;
 	}
@@ -55,22 +55,22 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 
-	if (!cj->iv) {
-		cj->iv = malloc (AES_WRAP_BLOCK_SIZE);
-		memset (cj->iv, 0xa6, AES_WRAP_BLOCK_SIZE);
+	if (!ms->iv) {
+		ms->iv = malloc (AES_WRAP_BLOCK_SIZE);
+		memset (ms->iv, 0xa6, AES_WRAP_BLOCK_SIZE);
 	}
 
-	st.key_size = cj->key_len;
+	st.key_size = ms->key_len;
 	st.rounds = 6 + (st.key_size / 4);
 	st.columns = st.key_size / 4;
-	memcpy (st.key, cj->key, st.key_size);
+	memcpy (st.key, ms->key, st.key_size);
 
-	bool ret = aes_wrap (&st, buf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks);
-	if (cj->dir == R_CRYPTO_DIR_ENCRYPT) {
-		r_muta_session_append (cj, obuf, len + AES_WRAP_BLOCK_SIZE);
+	bool ret = aes_wrap (&st, buf, obuf, ms->iv, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks);
+	if (ms->dir == R_MUTA_OPERATION_ENCRYPT) {
+		r_muta_session_append (ms, obuf, len + AES_WRAP_BLOCK_SIZE);
 	} else {
 		if (ret) {
-			r_muta_session_append (cj, obuf, len - AES_WRAP_BLOCK_SIZE);
+			r_muta_session_append (ms, obuf, len - AES_WRAP_BLOCK_SIZE);
 		}
 	}
 
@@ -78,8 +78,8 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_aes_wrap = {

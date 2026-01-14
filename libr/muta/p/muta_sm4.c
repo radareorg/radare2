@@ -15,30 +15,29 @@ static void sm4_crypt(const ut32 *sk, const ut8 *inbuf, ut8 *outbuf, int buflen)
 	}
 }
 
-static bool sm4_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->dir = direction;
-	return sm4_init (cj->sm4_sk, key, keylen, direction);
+static bool sm4_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	ms->dir = direction;
+	return sm4_init (ms->sm4_sk, key, keylen, direction);
 }
 
 static int sm4_get_key_size(RMutaSession *cry) {
 	return SM4_KEY_SIZE;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	ut8 *obuf = calloc (1, len);
 	if (!obuf) {
 		return false;
 	}
 	/* SM4 encryption or decryption */
-	sm4_crypt (cj->sm4_sk, buf, obuf, len);
-	r_muta_session_append (cj, obuf, len);
+	sm4_crypt (ms->sm4_sk, buf, obuf, len);
+	r_muta_session_append (ms, obuf, len);
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_sm4 = {

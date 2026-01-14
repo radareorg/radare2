@@ -3,10 +3,10 @@
 #include <r_muta.h>
 #include "algo/serpent.h"
 
-static bool serpent_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	free (cj->data);
-	cj->data = R_NEW0 (struct serpent_state);
-	struct serpent_state *st = cj->data;
+static bool serpent_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	free (ms->data);
+	ms->data = R_NEW0 (struct serpent_state);
+	struct serpent_state *st = ms->data;
 	if (!st) {
 		return false;
 	}
@@ -17,18 +17,18 @@ static bool serpent_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mo
 	st->key_size = keylen * 8;
 	R_LOG_INFO ("key_size: %d", st->key_size);
 	memcpy (st->key, key, keylen);
-	cj->dir = direction;
+	ms->dir = direction;
 	return true;
 }
 
-static int serpent_get_key_size(RMutaSession *cj) {
-	struct serpent_state *st = cj->data;
+static int serpent_get_key_size(RMutaSession *ms) {
+	struct serpent_state *st = ms->data;
 	return st? st->key_size: 0;
 }
 
 #define BLOCK_SIZE 16
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	// Pad to the block size, do not append dummy block
 	const int diff = (BLOCK_SIZE - (len % BLOCK_SIZE)) % BLOCK_SIZE;
 	const int size = len + diff;
@@ -61,7 +61,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		ibuf[len / 4] = r_read_le32 (tail);
 	}
 
-	struct serpent_state *st = cj->data;
+	struct serpent_state *st = ms->data;
 	if (!st) {
 		R_LOG_ERROR ("No state");
 		free (obuf);
@@ -69,15 +69,15 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		free (tmp);
 		return false;
 	}
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OPERATION_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
 			serpent_encrypt (st, ibuf + delta, tmp + delta);
 		}
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OPERATION_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			// delta in number of ut32
 			const int delta = (BLOCK_SIZE * i) / 4;
@@ -96,15 +96,15 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		obuf[k + 3] = (tmp[j] >> 24) & 0xff;
 	}
 
-	r_muta_session_append (cj, obuf, size);
+	r_muta_session_append (ms, obuf, size);
 	free (obuf);
 	free (ibuf);
 	free (tmp);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_serpent = {

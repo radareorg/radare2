@@ -72,7 +72,7 @@ static bool des_decrypt(struct des_state *st, const ut8 *input, ut8 *output) {
 	return true;
 }
 
-static bool des_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool des_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
 	ut32 keylo, keyhi, i;
 	if (keylen != DES_KEY_SIZE) {
 		return false;
@@ -81,12 +81,12 @@ static bool des_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, 
 	keylo = be32 (key);
 	keyhi = be32 (key + 4);
 
-	free (cj->data);
-	cj->data = R_NEW0 (struct des_state);
-	struct des_state *st = cj->data;
+	free (ms->data);
+	ms->data = R_NEW0 (struct des_state);
+	struct des_state *st = ms->data;
 	st->key_size = DES_KEY_SIZE;
 	st->rounds = 16;
-	cj->dir = direction; // = direction == 0;
+	ms->dir = direction; // = direction == 0;
 	// key permutation to derive round keys
 	r_des_permute_key (&keylo, &keyhi);
 
@@ -98,16 +98,16 @@ static bool des_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, 
 	return true;
 }
 
-static int des_get_key_size(RMutaSession *cj) {
-	struct des_state *st = cj->data;
+static int des_get_key_size(RMutaSession *ms) {
+	struct des_state *st = ms->data;
 	return st? st->key_size: 0;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	if (len <= 0) {
 		return false;
 	}
-	struct des_state *st = cj->data;
+	struct des_state *st = ms->data;
 	if (!st) {
 		R_LOG_ERROR ("No key set");
 		return false;
@@ -138,14 +138,14 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	//  }
 
 	int i;
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OPERATION_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_encrypt (st, ibuf + next, obuf + next);
 		}
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OPERATION_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_decrypt (st, ibuf + next, obuf + next);
@@ -153,14 +153,14 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		break;
 	}
 
-	r_muta_session_append (cj, obuf, size);
+	r_muta_session_append (ms, obuf, size);
 	free (obuf);
 	free (ibuf);
 	return 0;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_des = {

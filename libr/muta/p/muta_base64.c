@@ -38,14 +38,14 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		break;
 	}
 	if (olen > 0) {
-		r_muta_session_append (cj, obuf, olen);
+		r_muta_session_append (ms, obuf, olen);
 	}
 	free (obuf);
 	return true;
 }
 
 static bool end(RMutaSession *ms, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_base64 = {

@@ -149,32 +149,32 @@ static bech32_encoding bech32_decode(char *hrp, uint8_t *data, int data_len, con
 	return BECH32_ENCODING_NONE;
 }
 
-static bool bech32_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->key_len = keylen;
-	memcpy (cj->key, key, keylen);
-	cj->dir = direction;
+static bool bech32_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	ms->key_len = keylen;
+	memcpy (ms->key, key, keylen);
+	ms->dir = direction;
 	return true;
 }
 
-static int bech32_get_key_size(RMutaSession *cj) {
-	return cj->key_len;
+static int bech32_get_key_size(RMutaSession *ms) {
+	return ms->key_len;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	const int enc = BECH32_ENCODING_BECH32;
-	char *hrp = malloc (cj->key_len + 1); // HRP need to be null-terminated
+	char *hrp = malloc (ms->key_len + 1); // HRP need to be null-terminated
 	if (!hrp) {
 		return false;
 	}
-	hrp[cj->key_len] = 0;
-	memcpy (hrp, cj->key, cj->key_len);
+	hrp[ms->key_len] = 0;
+	memcpy (hrp, ms->key, ms->key_len);
 	char *in_out = r_str_ndup ((const char *)buf, len);
 	char *data = r_str_ndup ((const char *)buf, len);
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OPERATION_ENCRYPT:
 		bech32_encode (in_out, hrp, buf, len, enc);
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OPERATION_DECRYPT:
 		bech32_decode (hrp, (ut8 *)data, len, in_out);
 		break;
 	default:
@@ -187,8 +187,8 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
-	return update (cj, buf, len);
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
+	return update (ms, buf, len);
 }
 
 RMutaPlugin r_muta_plugin_bech32 = {

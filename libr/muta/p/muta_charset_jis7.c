@@ -9,10 +9,9 @@ static const RMutaCharsetMap jis7_table[] = {
 	{ NULL, { 0 }, 0 }
 };
 
-static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+static int decode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed) {
 	const char *s = NULL;
 	int clen = 0;
-	R_RETURN_VAL_IF_FAIL (cj && in && out && consumed, 0);
 	if (len < 1) {
 		return 0;
 	}
@@ -41,20 +40,20 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 	return (int)strlen (cpy);
 }
 
-static bool update(RMutaSession *cj, const ut8 *b, int l) {
-	if (!cj || !b || l < 0) {
+static bool update(RMutaSession *ms, const ut8 *b, int l) {
+	if (!ms || !b || l < 0) {
 		return false;
 	}
-	if (cj->dir == R_CRYPTO_DIR_DECRYPT) {
+	if (ms->dir == R_MUTA_OPERATION_DECRYPT) {
 		int i = 0;
 		while (i < l) {
 			ut8 *out = NULL;
 			int consumed = 0;
-			int olen = decode (cj, b + i, l - i, &out, &consumed);
+			int olen = decode (ms, b + i, l - i, &out, &consumed);
 			if (olen > 0 && out) {
-				r_muta_session_append (cj, out, olen);
+				r_muta_session_append (ms, out, olen);
 			} else {
-				r_muta_session_append (cj, (const ut8 *)"?", 1);
+				r_muta_session_append (ms, (const ut8 *)"?", 1);
 			}
 			free (out);
 			if (consumed < 1) {
@@ -63,13 +62,13 @@ static bool update(RMutaSession *cj, const ut8 *b, int l) {
 			i += consumed;
 		}
 	} else {
-		r_muta_session_append (cj, b, l);
+		r_muta_session_append (ms, b, l);
 	}
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *b, int l) {
-	return update (cj, b, l);
+static bool end(RMutaSession *ms, const ut8 *b, int l) {
+	return update (ms, b, l);
 }
 
 RMutaPlugin r_muta_plugin_charset_jis7 = {

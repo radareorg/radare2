@@ -23,9 +23,9 @@ static const RMutaCharsetMap ebcdic37_table[] = {
 };
 // clang-format on
 
-static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *consumed) {
+static int decode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *consumed) {
 	const char *s;
-	if (!cj || !in || !out || !consumed || len < 1) {
+	if (!ms || !in || !out || !consumed || len < 1) {
 		return 0;
 	}
 	s = r_muta_charset_lookup_decode (ebcdic37_table, in, len, consumed);
@@ -37,17 +37,17 @@ static int decode(RMutaSession *cj, const ut8 *in, int len, ut8 **out, int *cons
 	return *out? (int)strlen ((const char *)*out): 0;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
-	if (!cj || !buf || len < 0) {
+	if (!ms || !buf || len < 0) {
 		return false;
 	}
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_DECRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OPERATION_DECRYPT:
 		obuf = r_muta_charset_decode (buf, len, &olen, ebcdic37_table, "?");
 		break;
-	case R_CRYPTO_DIR_ENCRYPT:
+	case R_MUTA_OPERATION_ENCRYPT:
 		obuf = r_muta_charset_encode_ex (buf, len, &olen, ebcdic37_table, r_muta_charset_parse_default, 0x6F);
 		break;
 	}
@@ -55,14 +55,14 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		return false;
 	}
 	if (olen > 0) {
-		r_muta_session_append (cj, obuf, olen);
+		r_muta_session_append (ms, obuf, olen);
 	}
 	free (obuf);
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *b, int l) {
-	return update (cj, b, l);
+static bool end(RMutaSession *ms, const ut8 *b, int l) {
+	return update (ms, b, l);
 }
 
 RMutaPlugin r_muta_plugin_charset_ebcdic37 = {

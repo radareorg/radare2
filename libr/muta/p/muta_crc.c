@@ -51,9 +51,8 @@ static bool crc_check(const char *algo) {
 	return crc_find (algo) != NULL;
 }
 
-static bool crc_update(RMutaSession *cj, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (cj && buf, false);
-	const CrcAlgorithm *algo = cj->subtype ? crc_find (cj->subtype) : NULL;
+static bool crc_update(RMutaSession *ms, const ut8 *buf, int len) {
+	const CrcAlgorithm *algo = ms->subtype ? crc_find (ms->subtype) : NULL;
 	if (!algo) {
 		return false;
 	}
@@ -67,7 +66,7 @@ static bool crc_update(RMutaSession *cj, const ut8 *buf, int len) {
 	case 8: r_write_be64 (digest, (ut64)result); break;
 	default: return false; /* Invalid digest size */
 	}
-	r_muta_session_append (cj, digest, algo->digest_size);
+	r_muta_session_append (ms, digest, algo->digest_size);
 	return true;
 }
 

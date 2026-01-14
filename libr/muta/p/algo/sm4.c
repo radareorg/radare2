@@ -63,7 +63,7 @@ bool sm4_init(ut32 *sk, const ut8 *key, int keylen, int dir) {
 	for (i = 0; i < 32; i++) {
 		k[i + 4] = k[i] ^ (sm4_RK (k[i + 1] ^ k[i + 2] ^ k[i + 3] ^ sm4_CK[i]));
 
-		if (dir == R_CRYPTO_DIR_ENCRYPT) {
+		if (dir == R_MUTA_OPERATION_ENCRYPT) {
 			sk[i] = k[i + 4];
 		} else {
 			sk[31 - i] = k[i + 4];
