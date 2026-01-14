@@ -1,6 +1,9 @@
 use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
 
+r_core_sources = []
+core_plugins = []
+
 esil_plugins = [ 'dummy', 'forth', 'null' ]
 asm_plugins = [ 'null', 'att2intel' ]
 anal_plugins = [ 'null', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path' ]
@@ -17,7 +20,7 @@ if get_option('use_zip')
 endif
 bp_plugins = [ 'null' ]
 muta_plugins = [ 'null' ]
-core_plugins = [ 'prj', 'writedwarf', 'agD' ]
+core_plugins += [ 'prj', 'writedwarf', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]
@@ -456,6 +459,8 @@ io_plugins += [
     'msp430',
   ]
 endif
+
+subdir('plugins')
 
 include_files = [
   'include/r2naked.h',

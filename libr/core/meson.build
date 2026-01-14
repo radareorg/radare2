@@ -1,4 +1,4 @@
-r_core_sources = [
+r_core_sources += [
   'anal_objc.c',
   'casm.c',
   'vmatrix.c',
