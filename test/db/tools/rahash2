@@ -191,6 +191,7 @@ char     katakana  Katakana mapping (legacy-compatible)
 char    macintosh  Macintosh Roman (partial)
 char      pokemon  Transcode from/to Pokémon charset used in Gen 1 games
 char      pokered  Pokemon Red charset
+char        seven  7-bit character set encoding/decoding
 cryp         cps2  Capcom Play System 2
 hash          crc  CRC8/CRC15/CRC16/CRC24/CRC32/CRC64 hash algorithms (implements: crc8smbus,crc15can,crc16,crc16hdlc,crc16usb,crc16citt,crc24,crc32,crc32c,crc32ecma267,crc32bzip2,crc32d,crc32mpeg2,crc32posix,crc32q,crc32jamcrc,crc32xfer,crc64,crc64ecma,crc64we,crc64xz,crc64iso)
 cryp      des-ecb  DES with with Electronic Code Book mode
