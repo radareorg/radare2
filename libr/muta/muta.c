@@ -11,7 +11,7 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-R_API void r_muta_init(RMuta *muta) {
+static void r_muta_init(RMuta *muta) {
 	R_RETURN_IF_FAIL (muta);
 	int i;
 	muta->user = NULL;
