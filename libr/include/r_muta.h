@@ -103,8 +103,6 @@ typedef struct {
 	ut8 *key;
 	size_t key_len;
 	int direction;
-	// iv
-	// ..
 } RMutaOptions;
 
 #ifdef R_API
@@ -144,27 +142,6 @@ R_API RMutaResult r_muta_process(RMuta *muta, const char *algo, const ut8 *data,
 	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
 
 #endif
-
-// TODO: deprecate
-#define R_CRYPTO_NONE 0ULL
-#define R_CRYPTO_RC2 1ULL
-#define R_CRYPTO_RC4 1ULL<<1
-#define R_CRYPTO_RC6 1ULL<<2
-#define R_CRYPTO_AES_ECB 1ULL<<3
-#define R_CRYPTO_AES_CBC 1ULL<<4
-#define R_CRYPTO_AES_WRAP 1ULL<<5
-#define R_CRYPTO_ROR 1ULL<<6
-#define R_CRYPTO_ROL 1ULL<<7
-#define R_CRYPTO_ROT 1ULL<<8
-#define R_CRYPTO_BLOWFISH 1ULL<<9
-#define R_CRYPTO_CPS2 1ULL<<10
-#define R_CRYPTO_DES_ECB 1ULL<<11
-#define R_CRYPTO_XOR 1ULL<<12
-#define R_CRYPTO_SERPENT 1ULL<<13
-#define R_CRYPTO_SM4_ECB 1ULL << 14
-#define R_CRYPTO_BECH32 1ULL << 15
-#define R_CRYPTO_ALL 0xFFFF
-
 
 /* plugin pointers */
 extern RMutaPlugin r_muta_plugin_null;
