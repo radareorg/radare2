@@ -3765,11 +3765,6 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 	}
 
 	// Use afls[asn] to sort by address, size or name, dont sort it here .. r_list_sort (fcns, &cmpfcn);
-	if (!rad) {
-		fcn_list_default (core, fcns, false, dorefs);
-		r_list_free (fcns);
-		return 0;
-	}
 	switch (rad[0]) {
 	case '+':
 		r_core_anal_fcn_list_size (core);

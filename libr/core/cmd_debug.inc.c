@@ -6173,7 +6173,7 @@ static int cmd_debug(void *data, const char *input) {
 				if (out) {
 					free (core->io->envprofile);
 					core->io->envprofile = out;
-					eprintf ("%s\n", core->io->envprofile);
+					eprintf ("%s\n", out);
 				}
 			} break;
 			default:

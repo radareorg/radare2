@@ -4376,7 +4376,7 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 				continue;
 			}
 			char op0 = 0;
-			if (p && *p) {
+			if (*p) {
 				while (IS_WHITESPACE (*p)) {
 					p++;
 				}
@@ -4855,9 +4855,7 @@ next2:
 			free (str);
 			goto fail;
 		}
-		if (str) {
-			r_str_replace_ch (str, '\n', ' ', true);
-		}
+		r_str_replace_ch (str, '\n', ' ', true);
 		str = r_str_append (str, ptr2 + 1);
 		cmd = r_str_append (strdup (cmd), str);
 		r_core_return_value (core, value);

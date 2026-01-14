@@ -3963,7 +3963,7 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 				}
 			}
 			if (R_STR_ISNOTEMPTY (string)) {
-				if (string && r_str_startswith (string, "0x")) {
+				if (r_str_startswith (string, "0x")) {
 					str = string;
 				}
 				if (string2 && r_str_startswith (string2, "0x")) {

@@ -2324,8 +2324,7 @@ static bool is_flag(const char *p) {
 	if (*p == 'r' && isdigit (p[1] & 0xff)) {
 		p++;
 	}
-	size_t len = e? e - p: strlen (p);
-	return len > 3;
+	return (e - p) > 3;
 }
 
 R_IPI bool r_print_reg_rainbow_enabled (RPrint *print);

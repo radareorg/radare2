@@ -4730,7 +4730,9 @@ static void __print_decompiler_cb(void *user, void *p) {
 		if (cmdstr) {
 			free (panel->model->cmdStrCache);
 			panel->model->cmdStrCache = strdup (cmdstr);
-			__update_pdc_contents (core, panel, cmdstr);
+			if (panel->model->cmdStrCache) {
+				__update_pdc_contents (core, panel, cmdstr);
+			}
 			free (cmdstr);
 		}
 	} else {
@@ -4738,12 +4740,18 @@ static void __print_decompiler_cb(void *user, void *p) {
 		if (cmdstr) {
 			free (panel->model->cmdStrCache);
 			panel->model->cmdStrCache = strdup (cmdstr);
-		//	free (cmdstr);
-			cmdstr = strdup (panel->model->cmdStrCache);
-			if (R_STR_ISNOTEMPTY (cmdstr)) {
-				__update_pdc_contents (core, panel, cmdstr);
+			if (panel->model->cmdStrCache) {
+				// Use a temporary variable to avoid accessing potentially freed memory
+				char *cached_cmd = panel->model->cmdStrCache;
+				cmdstr = strdup (cached_cmd);
+				if (R_STR_ISNOTEMPTY (cmdstr)) {
+					__update_pdc_contents (core, panel, cmdstr);
+				}
+				free (cmdstr);
+			} else {
+				// Handle allocation failure - cmdstrCache is NULL or invalid
+				cmdstr = NULL;
 			}
-			free (cmdstr);
 		}
 	}
 	return;

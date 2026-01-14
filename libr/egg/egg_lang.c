@@ -616,12 +616,15 @@ static void rcc_fun(REgg *egg, const char *str) {
 					egg->lang.dstvar = r_str_trim_dup (str);
 				} else {
 					egg->lang.mode = LANG_MODE_INLINE;
-					free (egg->lang.syscallbody);
+					char *old_syscallbody = egg->lang.syscallbody;
 					egg->lang.syscallbody = malloc (4096); // XXX hardcoded size
-					egg->lang.dstval = egg->lang.syscallbody;
+					if (egg->lang.syscallbody) {
+						egg->lang.dstval = egg->lang.syscallbody;
+						*egg->lang.syscallbody = '\0';
+					}
+					free (old_syscallbody);
 					R_FREE (egg->lang.dstvar);
 					egg->lang.ndstval = 0;
-					*egg->lang.syscallbody = '\0';
 				}
 			} else if (strstr (ptr, "include")) {
 				egg->lang.mode = LANG_MODE_INCLUDE;

@@ -1416,9 +1416,7 @@ static bool r_cmd_java_handle_set_flags(RCore *core, const char *input) {
 		flag_value = -1;
 	}
 	R_LOG_DEBUG ("Converting %s to flags", p);
-	if (p) {
-		p += 2;
-	}
+	p += 2;
 	if (flag_value == -1) {
 		flag_value = r_cmd_java_is_valid_input_num_value (core, p)? r_cmd_java_get_input_num_value (core, p): -1;
 	}

@@ -991,6 +991,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			for (;;) {
 				file = stdin_gets (&state);
 				if (R_STR_ISEMPTY (file)) {
+					free (file);
 					break;
 				}
 				res = __demangleAs (bin, type, file);
@@ -1002,7 +1003,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				}
 				if (R_STR_ISNOTEMPTY (res)) {
 					printf ("%s\n", res);
-				} else if (file && *file) {
+				} else if (*file) {
 					printf ("%s\n", file);
 				}
 				R_FREE (res);
