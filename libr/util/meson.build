@@ -65,7 +65,6 @@ r_util_sources = [
   'rxml.c',
   'rxmldom.c',
   'sandbox.c',
-  'seven.c',
   'signal.c',
   'skiplist.c',
   'spaces.c',

@@ -989,12 +989,12 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		bin->options.demangle_trylib = (type == R_BIN_LANG_SWIFT && r_sys_getenv_asbool ("RABIN2_DEMAN_TRYLIB"));
 		if (!strcmp (file, "-")) {
 			for (;;) {
-				file = stdin_gets (&state);
-				if (R_STR_ISEMPTY (file)) {
-					free (file);
+				char *s = stdin_gets (&state);
+				if (R_STR_ISEMPTY (s)) {
+					free (s);
 					break;
 				}
-				res = __demangleAs (bin, type, file);
+				res = __demangleAs (bin, type, s);
 				if (!res) {
 					R_LOG_ERROR ("Unknown lang to demangle. Use: cxx, msvc, dlang, rust, pascal, java, objc, swift");
 					r_core_fini (&core);
@@ -1003,11 +1003,11 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				}
 				if (R_STR_ISNOTEMPTY (res)) {
 					printf ("%s\n", res);
-				} else if (*file) {
-					printf ("%s\n", file);
+				} else if (*s) {
+					printf ("%s\n", s);
 				}
 				R_FREE (res);
-				R_FREE (file);
+				free (s);
 			}
 			free (stdin_gets (&state));
 		} else {
@@ -1026,7 +1026,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		free (state.stdin_buf);
 		return 1;
 	}
-	file = argv[opt.ind];
+	file = (char *)argv[opt.ind];
 
 	if (file && !*file) {
 		R_LOG_ERROR ("Cannot open empty path");
