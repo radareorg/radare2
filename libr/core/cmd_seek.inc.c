@@ -221,12 +221,13 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 				} else {
 					R_FREE (core->print->lines_cache);
 					line_count = -1;
-					break;
+					goto cleanup_and_return;
 				}
 			}
 		}
 		off += bsz;
 	}
+cleanup_and_return:
 	free (buf);
 	r_cons_break_pop (core->cons);
 	return line_count;
