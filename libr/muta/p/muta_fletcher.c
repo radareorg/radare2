@@ -11,7 +11,7 @@ typedef struct {
 } FletcherAlgorithm;
 
 static const FletcherAlgorithm fletcher_algorithms[] = {
-	{ "fletcher8",  1 },
+	{ "fletcher8", 1 },
 	{ "fletcher16", 2 },
 	{ "fletcher32", 4 },
 	{ "fletcher64", 8 },
@@ -33,11 +33,11 @@ static bool fletcher_check(const char *algo) {
 }
 
 static bool fletcher_update(RMutaSession *ms, const ut8 *buf, int len) {
-	const FletcherAlgorithm *algo = ms->subtype ? fletcher_find (ms->subtype) : NULL;
+	const FletcherAlgorithm *algo = ms->subtype? fletcher_find (ms->subtype): NULL;
 	if (!algo) {
 		return false;
 	}
-	ut8 digest[8] = {0};
+	ut8 digest[8] = { 0 };
 	switch (algo->digest_size) {
 	case 1:
 		r_write_be8 (digest, r_hash_fletcher8 (buf, len));

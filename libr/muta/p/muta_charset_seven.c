@@ -95,7 +95,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 			ut8 *out = NULL;
 			int consumed = 0;
 			int out_len = decode (ms, buf, len, &out, &consumed);
-			if (out && out_len > 0) {
+		if (out && out_len > 0) {
 				r_muta_session_append (ms, out, out_len);
 				free (out);
 				return true;

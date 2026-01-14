@@ -12,28 +12,28 @@ typedef struct {
 } CrcAlgorithm;
 
 static const CrcAlgorithm crc_algorithms[] = {
-	{ "crc8smbus",    CRC_PRESET_8_SMBUS,       1 },
-	{ "crc15can",     CRC_PRESET_15_CAN,        2 },
-	{ "crc16",        CRC_PRESET_16,            2 },
-	{ "crc16hdlc",    CRC_PRESET_16_HDLC,       2 },
-	{ "crc16usb",     CRC_PRESET_16_USB,        2 },
-	{ "crc16citt",    CRC_PRESET_16_CITT,       2 },
-	{ "crc24",        CRC_PRESET_24,            3 },
-	{ "crc32",        CRC_PRESET_32,            4 },
-	{ "crc32c",       CRC_PRESET_32C,           4 },
-	{ "crc32ecma267", CRC_PRESET_32_ECMA_267,   4 },
-	{ "crc32bzip2",   CRC_PRESET_CRC32_BZIP2,   4 },
-	{ "crc32d",       CRC_PRESET_CRC32D,        4 },
-	{ "crc32mpeg2",   CRC_PRESET_CRC32_MPEG2,   4 },
-	{ "crc32posix",   CRC_PRESET_CRC32_POSIX,   4 },
-	{ "crc32q",       CRC_PRESET_CRC32Q,        4 },
-	{ "crc32jamcrc",  CRC_PRESET_CRC32_JAMCRC,  4 },
-	{ "crc32xfer",    CRC_PRESET_CRC32_XFER,    4 },
-	{ "crc64",        CRC_PRESET_CRC64,         8 },
-	{ "crc64ecma",    CRC_PRESET_CRC64_ECMA182, 8 },
-	{ "crc64we",      CRC_PRESET_CRC64_WE,      8 },
-	{ "crc64xz",      CRC_PRESET_CRC64_XZ,      8 },
-	{ "crc64iso",     CRC_PRESET_CRC64_ISO,     8 },
+	{ "crc8smbus", CRC_PRESET_8_SMBUS, 1 },
+	{ "crc15can", CRC_PRESET_15_CAN, 2 },
+	{ "crc16", CRC_PRESET_16, 2 },
+	{ "crc16hdlc", CRC_PRESET_16_HDLC, 2 },
+	{ "crc16usb", CRC_PRESET_16_USB, 2 },
+	{ "crc16citt", CRC_PRESET_16_CITT, 2 },
+	{ "crc24", CRC_PRESET_24, 3 },
+	{ "crc32", CRC_PRESET_32, 4 },
+	{ "crc32c", CRC_PRESET_32C, 4 },
+	{ "crc32ecma267", CRC_PRESET_32_ECMA_267, 4 },
+	{ "crc32bzip2", CRC_PRESET_CRC32_BZIP2, 4 },
+	{ "crc32d", CRC_PRESET_CRC32D, 4 },
+	{ "crc32mpeg2", CRC_PRESET_CRC32_MPEG2, 4 },
+	{ "crc32posix", CRC_PRESET_CRC32_POSIX, 4 },
+	{ "crc32q", CRC_PRESET_CRC32Q, 4 },
+	{ "crc32jamcrc", CRC_PRESET_CRC32_JAMCRC, 4 },
+	{ "crc32xfer", CRC_PRESET_CRC32_XFER, 4 },
+	{ "crc64", CRC_PRESET_CRC64, 8 },
+	{ "crc64ecma", CRC_PRESET_CRC64_ECMA182, 8 },
+	{ "crc64we", CRC_PRESET_CRC64_WE, 8 },
+	{ "crc64xz", CRC_PRESET_CRC64_XZ, 8 },
+	{ "crc64iso", CRC_PRESET_CRC64_ISO, 8 },
 };
 
 static const CrcAlgorithm *crc_find(const char *algo) {
@@ -52,12 +52,12 @@ static bool crc_check(const char *algo) {
 }
 
 static bool crc_update(RMutaSession *ms, const ut8 *buf, int len) {
-	const CrcAlgorithm *algo = ms->subtype ? crc_find (ms->subtype) : NULL;
+	const CrcAlgorithm *algo = ms->subtype? crc_find (ms->subtype): NULL;
 	if (!algo) {
 		return false;
 	}
 	utcrc result = r_hash_crc_preset (buf, len, algo->preset);
-	ut8 digest[8] = {0};
+	ut8 digest[8] = { 0 };
 	switch (algo->digest_size) {
 	case 1: digest[0] = (ut8)result; break;
 	case 2: r_write_be16 (digest, (ut16)result); break;

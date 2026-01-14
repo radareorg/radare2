@@ -708,7 +708,7 @@ static bool set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int 
 
 	// Allocate plugin data if not already allocated
 	if (!ms->plugin_data) {
-		ms->plugin_data = calloc(1, sizeof(CPS2PluginData));
+		ms->plugin_data = calloc (1, sizeof (CPS2PluginData));
 		if (!ms->plugin_data) {
 			return false;
 		}

@@ -6,7 +6,7 @@
 
 static bool sha_check(const char *algo) {
 	return !strcmp (algo, "sha1") || !strcmp (algo, "sha256") ||
-	       !strcmp (algo, "sha384") || !strcmp (algo, "sha512");
+		!strcmp (algo, "sha384") || !strcmp (algo, "sha512");
 }
 
 static bool sha_update(RMutaSession *ms, const ut8 *buf, int len) {
