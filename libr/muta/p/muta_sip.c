@@ -4,6 +4,9 @@
 #include <r_muta.h>
 
 static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+	if (!cj || !cj->result || !cj->c) {
+		return false;
+	}
 	ut8 obuf[R_HASH_SIZE_SIP];
 	uint64_t h = r_hash_sip (buf, len);
 	if (cj && cj->result) {

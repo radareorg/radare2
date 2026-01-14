@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2025 - pancake */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -14,6 +14,8 @@ static int cmd_search(void *data, const char *input);
 #define ASN1_PRIVATE_KEY_SEARCH_LENGTH 11
 #define RAW_PRIVATE_KEY_SEARCH_LENGTH 32
 #define ED25519_PUBKEY_LENGTH 32*2
+
+// clang-format off
 
 static RCoreHelpMessage help_msg_slash_wide_string = {
 	"Usage: /w[ij]", "[str]", "Wide string search subcommands",
@@ -240,6 +242,8 @@ static RCoreHelpMessage help_msg_slash_x = {
 	"/xv", "[1|2|4|8] v0 v1 v2 v3 ..", "search for an array of values with given size and endian",
 	NULL
 };
+
+// clang-format on
 
 struct search_parameters {
 	RCore *core;
@@ -3790,6 +3794,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 				r_cons_flush (core->cons);
 			}
 		}
+		free (out);
 		eprintf (" (%d h/s)  \r", mount);
 		inc++;
 	}
