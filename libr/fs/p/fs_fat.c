@@ -63,6 +63,10 @@ static void details_fat(RFSRoot *root, RStrBuf *sb) {
 	}
 
 	ut16 bytes_per_sector = r_read_le16 ((ut8 *)&bpb.bytes_per_sector);
+	if (bytes_per_sector == 0) {
+		r_strbuf_append (sb, "ERROR: Invalid bytes per sector\n");
+		return;
+	}
 	ut8 sectors_per_cluster = bpb.sectors_per_cluster;
 	ut16 reserved_sectors = r_read_le16 ((ut8 *)&bpb.num_reserved_sectors);
 	ut16 root_entries = r_read_le16 ((ut8 *)&bpb.num_root_entries);

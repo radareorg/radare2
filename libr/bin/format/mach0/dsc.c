@@ -43,7 +43,7 @@ static void dsc_header_free(RDSCHeader * self) {
 
 static bool dsc_header_get_field(RDSCHeader *self, const char *name, ut8 *out_value, size_t size) {
 	const RDSCField * field;
-	ut8 tmp[32];
+	ut8 tmp[32] = {0};
 
 	ut64 data_len = r_buf_size (self->buf);
 	ut64 cursor = 0;

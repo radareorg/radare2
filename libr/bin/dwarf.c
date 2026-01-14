@@ -492,6 +492,10 @@ static const ut8 *get_section_bytes(RBin *bin, RBinSection *section) {
 			free (rawbuf);
 			return NULL;
 		}
+		if (raw_size <= header_size) {
+			free (rawbuf);
+			return NULL;
+		}
 		/* Decompress data after header */
 		int dst_len = 0;
 		ut8 *decomp = r_inflate (rawbuf + header_size, (int) (raw_size - header_size), NULL, &dst_len);

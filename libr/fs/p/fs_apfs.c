@@ -133,10 +133,13 @@ static bool fs_apfs_mount(RFSRoot *root) {
 	ut64 vol_paddr = 0;
 	ut64 vol_xid = 0;
 	ut64 block_count = apfs_read64 (ctx, (ut8 *)&nx_sb->nx_block_count);
+	if (block_count > 512) {
+		block_count = 512;
+	}
 	R_LOG_DEBUG ("Container has %" PFMT64u " blocks, delta=0x%" PFMT64x ", block_size=%u", block_count, ctx->delta, ctx->block_size);
 
 	ut64 block;
-	for (block = 0; block < block_count && block < 512; block++) {
+	for (block = 0; block < block_count; block++) {
 		ut8 header[64];
 		ut64 offset = apfs_block_to_offset (ctx, block);
 		if (offset == UT64_MAX) {
