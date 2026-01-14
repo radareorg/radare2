@@ -17,7 +17,7 @@ static bool aes_cbc_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mo
 }
 
 static int aes_cbc_get_key_size(RMutaSession *ms) {
-	R_RETURN_VAL_IF_FAIL (cj, -1);
+	R_RETURN_VAL_IF_FAIL (ms, -1);
 	return ms->key_len;
 }
 
@@ -69,7 +69,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	memcpy (st.key, ms->key, st.key_size);
 
 	if (aes_cbc (&st, ibuf, obuf, ms->iv, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks)) {
-		r_muta_session_append (cj, obuf, size);
+		r_muta_session_append (ms, obuf, size);
 	}
 
 	free (obuf);
