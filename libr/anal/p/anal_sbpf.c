@@ -555,22 +555,24 @@ static bool already_processed(RList *processed, ut64 addr) {
 	return false;
 }
 
-static void sbpf_print_string_xrefs(RAnal *anal) {
-	R_RETURN_IF_FAIL (anal);
+static char *sbpf_print_string_xrefs(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+
+	RStrBuf *sb = r_strbuf_new ("");
 
 	ut64 code_start, code_end;
 	if (!sbpf_find_segment_bounds (anal, 0, &code_start, &code_end)) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	ut64 data_start, data_end;
 	if (!sbpf_find_segment_bounds (anal, 1, &data_start, &data_end)) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	RList *refs = sbpf_find_string_xrefs (anal, code_start, code_end, data_start, data_end);
 	if (!refs) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	r_list_sort (refs, sbpf_string_ref_cmp);
@@ -581,7 +583,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	if (!table) {
 		r_list_free (processed);
 		r_list_free (refs);
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	RTableColumnType *n = r_table_type ("number");
@@ -718,52 +720,45 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 		}
 	}
 
-	// Print the table
+	// Append the table to the string buffer
 	char *table_str = r_table_tostring (table);
 	if (table_str) {
-		if (anal->coreb.core) {
-			void *core = anal->coreb.core;
-			// Use r_cons_printf if we have access to core
-			r_cons_printf (((RCore*)core)->cons, "%s", table_str);
-		} else {
-			// Fallback to printf
-			printf ("%s", table_str);
-		}
+		r_strbuf_append (sb, table_str);
 		free (table_str);
 	}
 
 	r_table_free (table);
 	r_list_free (processed);
 	r_list_free (refs);
+
+	return r_strbuf_drain (sb);
 }
 
-static bool sbpfcmd(RAnal *anal, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
+static char *sbpfcmd(RAnal *anal, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (anal && cmd, NULL);
 
 	if (r_str_startswith (cmd, "sbpf")) {
 		if (r_str_startswith (cmd, "sbpf.analyze")) {
 			const char *result = sbpf_analyze_strings (anal)? "completed": "failed";
 			R_LOG_INFO ("sBPF string analysis %s", result);
-			return true;
+			return strdup ("");
 		}
 		if (r_str_startswith (cmd, "sbpf.strings")) {
-			sbpf_print_string_xrefs (anal);
-			return true;
+			char *res = sbpf_print_string_xrefs (anal);
+			return res ? res : strdup ("");
 		}
 		if (cmd[4] == '?') {
-			RCore *core = anal->coreb.core;
-			RCons *cons = core->cons;
-			// eprintf ("sBPF analysis plugin commands:\n");
-			r_cons_println (cons, "| a:sbpf.analyze  - Analyze sBPF strings and create flags");
-			r_cons_println (cons, "| a:sbpf.strings  - Display sBPF strings");
-			return true;
+			RStrBuf *sb = r_strbuf_new ("");
+			r_strbuf_append (sb, "| a:sbpf.analyze  - Analyze sBPF strings and create flags\n");
+			r_strbuf_append (sb, "| a:sbpf.strings  - Display sBPF strings\n");
+			return r_strbuf_drain (sb);
 		}
 		R_LOG_ERROR ("Unknown subcommand. See 'a:sbpf?' for more details");
-		return true;
+		return strdup ("");
 	}
 
 
-	return false;
+	return NULL;
 }
 
 RAnalPlugin r_anal_plugin_sbpf = {

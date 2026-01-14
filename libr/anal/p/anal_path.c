@@ -143,10 +143,10 @@ beach:
 	 return ret;
 }
 
-static bool pathcmd (RAnal *anal, const char *input) {
+static char *pathcmd (RAnal *anal, const char *input) {
 	RCore *core = (RCore *)anal->coreb.core;
 	if (!r_str_startswith (input, "path")) {
-		return false;
+		return NULL;
 	}
 	static RCoreHelpMessage help_msg_path = {
 		"Usage:", "a:path", "[src] [dst]",
@@ -155,14 +155,14 @@ static bool pathcmd (RAnal *anal, const char *input) {
 	};
 	if (input[4] == '?' || !input[4]) {
 		anal->coreb.help (core, help_msg_path);
-		return true;
+		return strdup ("");
 	}
 	char *args = (char *)(input + 4);
 	while (*args == ' ') { args++; }
 	char *sp = strchr (args, ' ');
 	if (!sp) {
 		anal->coreb.help (core, help_msg_path);
-		return true;
+		return strdup ("");
 	}
 	*sp = 0;
 	ut64 src = r_num_math (core->num, args);
@@ -170,20 +170,21 @@ static bool pathcmd (RAnal *anal, const char *input) {
 	*sp = ' ';
 	if (src == UT64_MAX || dst == UT64_MAX) {
 		R_LOG_ERROR ("Invalid addresses");
-		return true;
+		return strdup ("");
 	}
 	RList *path = shortest_path_blocks (anal, src, dst);
 	if (!path) {
 		R_LOG_ERROR ("No path or no basic block at source");
-		return true;
+		return strdup ("");
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	RAnalBlock *bb;
 	RListIter *it;
 	r_list_foreach (path, it, bb) {
-		r_cons_printf (core->cons, "0x%08"PFMT64x"\n", bb->addr);
+		r_strbuf_appendf (sb, "0x%08"PFMT64x"\n", bb->addr);
 	}
 	r_list_free (path);
-	return true;
+	return r_strbuf_drain (sb);
 }
 
 RAnalPlugin r_anal_plugin_path = {

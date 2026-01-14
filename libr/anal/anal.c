@@ -820,14 +820,18 @@ R_API void r_anal_purge_imports(RAnal *anal) {
 	R_DIRTY_SET (anal);
 }
 
-R_API bool r_anal_cmd(RAnal *anal, const char *cmd) {
-	R_RETURN_VAL_IF_FAIL (anal && cmd, false);
+R_API char *r_anal_cmd(RAnal *anal, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (anal && cmd, NULL);
 	RListIter *iter;
 	RAnalPlugin *ap;
+	char *res = NULL;
 	r_list_foreach (anal->plugins, iter, ap) {
-		if (ap->cmd && ap->cmd (anal, cmd)) {
-			return true;
+		if (ap->cmd) {
+			res = ap->cmd (anal, cmd);
+			if (res) {
+				return res;
+			}
 		}
 	}
-	return false;
+	return NULL;
 }

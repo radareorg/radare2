@@ -708,20 +708,21 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 	return true;
 }
 
-static bool blazecmd(RAnal *anal, const char *input) {
+static char *blazecmd(RAnal *anal, const char *input) {
 	RCore *core = (RCore *)anal->coreb.core;
 	if (!r_str_startswith (input, "blaze")) {
-		return false;
+		return NULL;
 	}
 	const char ch = input[5];
 	if (ch == '?') {
-		R_LOG_INFO ("Usage: a:blaze [size] - analyze all basic blocks in range to create functions using the blaze algorithm");
-		R_LOG_INFO ("Usage: a:blaze2 [size] - experimental non linear advanced scan");
+		return strdup ("Usage: a:blaze [size] - analyze all basic blocks in range to create functions using the blaze algorithm\nUsage: a:blaze2 [size] - experimental non linear advanced scan\n");
 	} else if (ch == '2') {
-		return anal_bbs_range (core, r_str_trim_head_ro (input + 6));
+		anal_bbs_range (core, r_str_trim_head_ro (input + 6));
+		return strdup ("");
 	}
 	const bool nopskip = anal->coreb.cfgGetB (anal->coreb.core, "anal.nopskip");
-	return anal_bbs (core, r_str_trim_head_ro (input + 6), nopskip);
+	anal_bbs (core, r_str_trim_head_ro (input + 6), nopskip);
+	return strdup ("");
 }
 
 RAnalPlugin r_anal_plugin_blaze = {

@@ -441,10 +441,10 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 }
 
 // static int r_cmd_anal_call(void *user, const char *input) {
-static bool analcall(RAnal *anal, const char *input) {
+static char *analcall(RAnal *anal, const char *input) {
 	RCore *core = (RCore *) anal->coreb.core;
 	if (!r_str_startswith (input, "a2f")) {
-		return false;
+		return NULL;
 	}
 	static RCoreHelpMessage help_msg_a2f = {
 		"Usage:", "a2f", "Experimental function analysis",
@@ -456,7 +456,7 @@ static bool analcall(RAnal *anal, const char *input) {
 		case 'f':
 			if (input[3] == '?') {
 				anal->coreb.help (core, help_msg_a2f);
-				return true;
+				return strdup ("");
 			}
 
 			if (!analyzeFunction (core, core->addr)) {
@@ -467,9 +467,9 @@ static bool analcall(RAnal *anal, const char *input) {
 			anal->coreb.help (core, help_msg_a2f);
 			break;
 		}
-		return true;
+		return strdup ("");
 	}
-	return false;
+	return NULL;
 }
 
 // PLUGIN Definition Info
