@@ -213,6 +213,7 @@ extern RMutaPlugin r_muta_plugin_charset_greek_windows;
 extern RMutaPlugin r_muta_plugin_charset_hebrew_iso;
 extern RMutaPlugin r_muta_plugin_charset_hebrew_windows;
 extern RMutaPlugin r_muta_plugin_charset_hiragana;
+extern RMutaPlugin r_muta_plugin_charset_seven;
 extern RMutaPlugin r_muta_plugin_charset_iso_646;
 extern RMutaPlugin r_muta_plugin_charset_jis7;
 extern RMutaPlugin r_muta_plugin_charset_katakana;
