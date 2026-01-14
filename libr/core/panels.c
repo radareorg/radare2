@@ -4740,6 +4740,7 @@ static void __print_decompiler_cb(void *user, void *p) {
 		if (cmdstr) {
 			free (panel->model->cmdStrCache);
 			panel->model->cmdStrCache = strdup (cmdstr);
+			free (cmdstr);  // Free the original cmdstr to avoid use-after-free
 			if (panel->model->cmdStrCache) {
 				// Use a temporary variable to avoid accessing potentially freed memory
 				char *cached_cmd = panel->model->cmdStrCache;

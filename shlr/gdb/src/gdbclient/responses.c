@@ -315,7 +315,7 @@ int handle_stop_reason(libgdbr_t *g) {
 					continue;
 				}
 				ptr2++;
-				if (!isxdigit ((unsigned char)*ptr2)) {
+				if (!isxdigit ((ut8)*ptr2)) {
 					continue;
 				}
 				g->stop_reason.watchpoint.addr = strtoll (ptr2, NULL, 16);
@@ -327,6 +327,7 @@ int handle_stop_reason(libgdbr_t *g) {
 					continue;
 				}
 				ptr2++;
+				R_FREE (g->stop_reason.exec.path);
 				if (!(g->stop_reason.exec.path = calloc (strlen (ptr1) / 2, 1))) {
 					continue;
 				}
@@ -335,6 +336,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				continue;
 			}
 			if (r_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
+				// AITODO: reverse the conditions to add more nesting and reduce the amount of 'continue' statements. do the same in every other similar pattern you can find in this file
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}

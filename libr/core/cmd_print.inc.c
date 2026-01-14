@@ -3975,14 +3975,14 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					flag = r_core_flag_get_by_spaces (core->flags, false, ptr);
 				}
 				if (!flag) {
-					if (string && r_str_startswith (string, "0x")) {
+					if (r_str_startswith (string, "0x")) {
 						R_FREE (string);
 					}
 					if (string2 && r_str_startswith (string2, "0x")) {
 						R_FREE (string2);
 					}
 				}
-				if (string && addr != UT64_MAX && addr != UT32_MAX) {
+				if (addr != UT64_MAX && addr != UT32_MAX) {
 					r_str_trim (string);
 					if (string2) {
 						r_str_trim (string2);
@@ -3998,7 +3998,6 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 							string = ns;
 						}
 					}
-					//// TODO implememnt avoid duplicated strings
 					// eprintf ("---> %s\n", string);
 					if (pj) {
 						pj_o (pj);
