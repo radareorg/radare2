@@ -115,6 +115,7 @@ R_API bool r_muta_add(RMuta *cry, RMutaPlugin *h);
 R_API RMuta *R_NONNULL r_muta_new(void);
 R_API void r_muta_free(RMuta *cry);
 R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode);
+R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 
 R_API RMutaPlugin *r_muta_find(RMuta *cry, const char *algo);
 R_API RMutaType r_muta_algo_type(RMuta *cry, const char *algo);
@@ -127,13 +128,12 @@ R_API bool r_muta_session_set_iv(RMutaSession *cry, const ut8 *iv, int ivlen);
 R_API RMutaSession *r_muta_session_new(RMuta *cry, RMutaPlugin *cp);
 R_API void r_muta_session_free(RMutaSession *cj);
 
-R_API RMutaSession *r_muta_begin(RMuta *cry);
 R_API bool r_muta_session_update(RMutaSession *cry, const ut8 *buf, int len);
 R_API bool r_muta_session_end(RMutaSession *cry, const ut8 *buf, int len);
 R_API int r_muta_session_append(RMutaSession *cry, const ut8 *buf, int len);
 R_API ut8 *r_muta_session_get_output(RMutaSession *cry, int *size);
+R_API void r_muta_result_free(RMutaResult *res);
 
-// Charset decoding helper
 typedef int (*RMutaDecodeCallback)(void *, const ut8 *, int, ut8 **, int *);
 R_API ut8 *r_muta_session_decode_string(RMutaSession *session, const ut8 *input, int len, RMutaDecodeCallback decode_fn, void *decode_ctx);
 
@@ -143,9 +143,6 @@ R_API RMutaResult r_muta_process_simple(RMuta *cry, const char *algo, const ut8 
 // Unified processing function for all operations (use r_muta_process_simple for simple cases)
 R_API RMutaResult r_muta_process(RMuta *cry, const char *algo, const ut8 *data, int len,
 	const ut8 *key, int key_len, const ut8 *iv, int iv_len, int direction);
-R_API void r_muta_result_free(RMutaResult *res);
-
-R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);
 
 #endif
 
