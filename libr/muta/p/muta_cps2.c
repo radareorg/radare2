@@ -658,12 +658,12 @@ static void cps2_crypt(int dir, const ut16 *rom, ut16 *dec, int length, const ut
 		// de/en-crypt the opcodes
 		for (a = i; a < length / 2 && a < upper_limit / 2; a += 0x10000) {
 			switch (dir) {
-			case R_MUTA_OPERATION_DECRYPT:
+			case R_MUTA_OP_DECRYPT:
 				/* decrypt */
 				dec[a] = feistel (rom[a], fn2_groupA, fn2_groupB, &sboxes2[0 * 4], &sboxes2[1 * 4], &sboxes2[2 * 4], &sboxes2[3 * 4], key2[0], key2[1], key2[2], key2[3]);
 				dec[a] = r_read_be16 (&dec[a]);
 				break;
-			case R_MUTA_OPERATION_ENCRYPT:
+			case R_MUTA_OP_ENCRYPT:
 				/* encrypt */
 				dec[a] = r_read_be16 (&rom[a]);
 				dec[a] = feistel (dec[a], fn2_groupA, fn2_groupB, &sboxes2[3 * 4], &sboxes2[2 * 4], &sboxes2[1 * 4], &sboxes2[0 * 4], key2[3], key2[2], key2[1], key2[0]);

@@ -13,13 +13,13 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		for (i = 0; i < len; i++) {
 			ut8 out = is_visible (buf[i])? buf[i]: '?';
 			r_muta_session_append (ms, &out, 1);
 		}
 		break;
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		for (i = 0; i < len; i++) {
 			if (is_visible (buf[i])) {
 				r_muta_session_append (ms, &buf[i], 1);

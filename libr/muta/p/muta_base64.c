@@ -17,7 +17,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		olen = ((len + 2) / 3) * 4;
 		obuf = malloc (olen + 1);
 		if (!obuf) {
@@ -25,7 +25,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		}
 		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
 		break;
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		olen = 4 + ((len / 4) * 3);
 		if (len > 0) {
 			olen -= (buf[len - 1] == '=')? ((buf[len - 2] == '=')? 2: 1): 0;

@@ -24,10 +24,10 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		olen = r_base91_encode ((char *)obuf, (const ut8 *)buf, len);
 		break;
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		olen = r_base91_decode (obuf, (const char *)buf, len);
 		break;
 	}

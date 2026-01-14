@@ -45,7 +45,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	ut8 signature[64] = { 0 };
 
 	// Signature (R, S)
-	if (ms->dir == R_MUTA_OPERATION_ENCRYPT) {
+	if (ms->dir == R_MUTA_OP_ENCRYPT) {
 		// r = H ( ms->key[32:64] || buf)
 		RHash *ctx = r_hash_new (true, R_HASH_SHA512);
 		r_sha512_init (&ctx->sha512);

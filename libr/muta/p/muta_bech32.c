@@ -171,10 +171,10 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	char *in_out = r_str_ndup ((const char *)buf, len);
 	char *data = r_str_ndup ((const char *)buf, len);
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		bech32_encode (in_out, hrp, buf, len, enc);
 		break;
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		bech32_decode (hrp, (ut8 *)data, len, in_out);
 		break;
 	default:

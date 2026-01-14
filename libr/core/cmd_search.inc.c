@@ -1567,7 +1567,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 }
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const char *grep, int regexp, struct search_parameters *param) {
-	const ut8 crop = r_config_get_i (core->config, "rop.conditional");      // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 crop = r_config_get_i (core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -3730,8 +3730,8 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	memcpy (cmphash, hashValue, hashLength);
 
 	// Use RMuta session for better performance (reuse the session across iterations)
-	RMutaSession *cj = r_muta_use (core->muta, hashName);
-	if (!cj) {
+	RMutaSession *ms = r_muta_use (core->muta, hashName);
+	if (!ms) {
 		free (buf);
 		return;
 	}
@@ -3779,9 +3779,9 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 			eprintf (" \"%s\"", buf);
 		}
 
-		r_muta_session_update (cj, buf, bufsz);
+		r_muta_session_update (ms, buf, bufsz);
 		int out_size = 0;
-		ut8 *out = r_muta_session_get_output (cj, &out_size);
+		ut8 *out = r_muta_session_get_output (ms, &out_size);
 
 		eprintf (" digest:");
 		if (out && out_size >= hashLength) {
@@ -3800,7 +3800,7 @@ static void search_collisions(RCore *core, const char *hashName, const ut8 *hash
 	}
 	r_cons_break_pop (core->cons);
 	free (buf);
-	r_muta_session_free (cj);
+	r_muta_session_free (ms);
 }
 
 static void __core_cmd_search_asm_infinite(RCore *core, const char *arg) {

@@ -425,7 +425,7 @@ static bool rc_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, i
 	if (!strcmp (ms->subtype, "rc6")) {
 		struct rc6_state *st = R_NEW0 (struct rc6_state);
 		ms->data = st;
-		ms->flag = (direction == R_MUTA_OPERATION_DECRYPT);
+		ms->flag = (direction == R_MUTA_OP_DECRYPT);
 		st->type = RC_TYPE_RC6;
 		return rc6_init (st, key, keylen, direction);
 	}
@@ -486,10 +486,10 @@ static bool rc_update(RMutaSession *ms, const ut8 *buf, int len) {
 	} else if (!strcmp (ms->subtype, "rc2")) {
 		struct rc2_state *state = ms->data;
 		switch (ms->flag) {
-		case R_MUTA_OPERATION_ENCRYPT:
+		case R_MUTA_OP_ENCRYPT:
 			rc2_crypt (state, buf, obuf, len);
 			break;
-		case R_MUTA_OPERATION_DECRYPT:
+		case R_MUTA_OP_DECRYPT:
 			rc2_dcrypt (state, buf, obuf, len);
 			break;
 		default:

@@ -16,7 +16,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		for (i = 0; i < len; i++) {
 			if (iso646_is_visible (buf[i])) {
 				r_muta_session_append (ms, &buf[i], 1);
@@ -25,7 +25,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 			}
 		}
 		break;
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		for (i = 0; i < len; i++) {
 			ut8 out = '?';
 			if (buf[i] == '\n' || buf[i] == '\t') {

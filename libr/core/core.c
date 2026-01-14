@@ -1097,7 +1097,7 @@ int r_core_charset_decode_cb(void *ctx, const ut8 *in, int len, ut8 **out, int *
 	}
 	/* Fallback: decode 1 byte using streaming update. */
 	*consumed = 1;
-	core->charset_session->dir = R_CRYPTO_DIR_DECRYPT;
+	core->charset_session->dir = R_MUTA_OP_DECRYPT;
 	if (core->charset_session->result) {
 		core->charset_session->result->output_len = 0;
 	}
@@ -1136,7 +1136,7 @@ int r_core_charset_encode_cb(void *ctx, const ut8 *in, int len, ut8 **out) {
 	if (!c || !c->charset_session || !out || !in || len < 1) {
 		return 0;
 	}
-	c->charset_session->dir = R_CRYPTO_DIR_ENCRYPT;
+	c->charset_session->dir = R_MUTA_OP_ENCRYPT;
 	if (c->charset_session->result) {
 		c->charset_session->result->output_len = 0;
 	}

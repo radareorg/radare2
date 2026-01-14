@@ -16,19 +16,11 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_muta);
 
-enum { // Cipher modes for encryption algorithms
-	R_MUTA_CIPHER_MODE_ECB,
-	R_MUTA_CIPHER_MODE_CBC,
-	R_MUTA_CIPHER_MODE_OFB,
-	R_MUTA_CIPHER_MODE_CFB,
-};
-
-// Operation types for muta processing
 enum {
-	R_MUTA_OPERATION_NONE = -1,
-	R_MUTA_OPERATION_HASH = 0,
-	R_MUTA_OPERATION_DECRYPT = 1,
-	R_MUTA_OPERATION_ENCRYPT = 2,
+	R_MUTA_OP_NONE = -1,
+	R_MUTA_OP_HASH = 0,
+	R_MUTA_OP_DECRYPT = 1,
+	R_MUTA_OP_ENCRYPT = 2,
 };
 
 typedef struct r_muta_result_t {

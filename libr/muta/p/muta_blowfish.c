@@ -318,7 +318,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	if (!obuf) {
 		return false;
 	}
-	if (ms->dir == R_MUTA_OPERATION_ENCRYPT) {
+	if (ms->dir == R_MUTA_OP_ENCRYPT) {
 		blowfish_crypt (st, buf, obuf, len);
 	} else {
 		blowfish_decrypt (st, buf, obuf, len);

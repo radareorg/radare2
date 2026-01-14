@@ -88,9 +88,9 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	}
 
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		return encode (ms, buf, len);
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		{
 			ut8 *out = NULL;
 			int consumed = 0;

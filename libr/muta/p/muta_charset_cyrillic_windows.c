@@ -31,10 +31,10 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		obuf = r_muta_charset_decode (buf, len, &olen, cp1251_table, ".");
 		break;
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		obuf = r_muta_charset_encode (buf, len, &olen, cp1251_table, r_muta_charset_parse_default);
 		break;
 	}

@@ -50,7 +50,7 @@ static bool update(RMutaSession *ms, const ut8 *b, int l) {
 	if (!ms || !b || l < 0) {
 		return false;
 	}
-	if (ms->dir == R_MUTA_OPERATION_DECRYPT) {
+	if (ms->dir == R_MUTA_OP_DECRYPT) {
 		int i = 0;
 		while (i < l) {
 			ut8 *out = NULL;

@@ -139,13 +139,13 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 
 	int i;
 	switch (ms->dir) {
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_encrypt (st, ibuf + next, obuf + next);
 		}
 		break;
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		for (i = 0; i < blocks; i++) {
 			ut32 next = (DES_BLOCK_SIZE * i);
 			des_decrypt (st, ibuf + next, obuf + next);

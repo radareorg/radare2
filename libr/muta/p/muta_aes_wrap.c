@@ -40,12 +40,12 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		return false;
 	}
 
-	if (len < 16 && ms->dir == R_MUTA_OPERATION_ENCRYPT) {
+	if (len < 16 && ms->dir == R_MUTA_OP_ENCRYPT) {
 		R_LOG_ERROR ("Length must be at least 16");
 		return false;
 	}
 
-	if (len < 24 && ms->dir == R_MUTA_OPERATION_DECRYPT) {
+	if (len < 24 && ms->dir == R_MUTA_OP_DECRYPT) {
 		R_LOG_ERROR ("Length must be at least 24");
 		return false;
 	}
@@ -65,8 +65,8 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	st.columns = st.key_size / 4;
 	memcpy (st.key, ms->key, st.key_size);
 
-	bool ret = aes_wrap (&st, buf, obuf, ms->iv, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks);
-	if (ms->dir == R_MUTA_OPERATION_ENCRYPT) {
+	bool ret = aes_wrap (&st, buf, obuf, ms->iv, ms->dir == R_MUTA_OP_ENCRYPT, blocks);
+	if (ms->dir == R_MUTA_OP_ENCRYPT) {
 		r_muta_session_append (ms, obuf, len + AES_WRAP_BLOCK_SIZE);
 	} else {
 		if (ret) {

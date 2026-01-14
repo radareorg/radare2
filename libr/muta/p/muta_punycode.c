@@ -16,10 +16,10 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	char *obuf = NULL;
 	int olen = 0;
 	switch (ms->flag) {
-	case R_MUTA_OPERATION_DECRYPT:
+	case R_MUTA_OP_DECRYPT:
 		obuf = r_punycode_decode ((const char *)buf, len, &olen);
 		break;
-	case R_MUTA_OPERATION_ENCRYPT:
+	case R_MUTA_OP_ENCRYPT:
 		obuf = r_punycode_encode (buf, len, &olen);
 		break;
 	}

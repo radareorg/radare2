@@ -3542,7 +3542,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 				r_muta_session_free (cj);
 				break;
 			}
-			if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_CRYPTO_DIR_ENCRYPT)) {
+			if (!r_muta_session_set_key (cj, binkey, keylen, 0, R_MUTA_OP_ENCRYPT)) {
 				r_muta_session_free (cj);
 				break;
 			}
@@ -3560,7 +3560,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 	case 'D': // "poD"
 	case 'E': // "poE"
 		{
-			int direction = (input[1] == 'E')? R_CRYPTO_DIR_ENCRYPT: R_CRYPTO_DIR_DECRYPT;
+			int direction = (input[1] == 'E')? R_MUTA_OP_ENCRYPT: R_MUTA_OP_DECRYPT;
 			char *cmd = strdup (input);
 			RList *args = r_str_split_list (cmd, " ", 0);
 			char *algo = NULL;
@@ -3576,7 +3576,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 			}
 			char *key = r_list_get_n (args, 2);
 			if (!key) {
-				const char *mode = (direction == R_CRYPTO_DIR_ENCRYPT)? "Encryption": "Decryption";
+				const char *mode = (direction == R_MUTA_OP_ENCRYPT)? "Encryption": "Decryption";
 				R_LOG_ERROR ("%s key not defined", mode);
 				return;
 			}

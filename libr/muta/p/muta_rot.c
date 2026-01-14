@@ -114,7 +114,7 @@ static bool rot_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, 
 	}
 	ms->flag = direction;
 	if (type == R_ROT_TYPE_ROT) {
-		ms->flag = direction == R_MUTA_OPERATION_ENCRYPT;
+		ms->flag = direction == R_MUTA_OP_ENCRYPT;
 	}
 	return rot_init (state, key, keylen, type);
 }
@@ -142,10 +142,10 @@ static bool rot_update(RMutaSession *ms, const ut8 *buf, int len) {
 	switch (state->type) {
 	case R_ROT_TYPE_ROT:
 		switch (ms->flag) {
-		case R_MUTA_OPERATION_ENCRYPT:
+		case R_MUTA_OP_ENCRYPT:
 			rot_crypt (state->rot_shift, buf, obuf, len);
 			break;
-		case R_MUTA_OPERATION_DECRYPT:
+		case R_MUTA_OP_DECRYPT:
 			rot_decrypt (state->rot_shift, buf, obuf, len);
 			break;
 		default:
@@ -154,7 +154,7 @@ static bool rot_update(RMutaSession *ms, const ut8 *buf, int len) {
 		}
 		break;
 	case R_ROT_TYPE_ROL:
-		if (ms->flag == R_MUTA_OPERATION_DECRYPT) {
+		if (ms->flag == R_MUTA_OP_DECRYPT) {
 			R_LOG_ERROR ("Use ROR instead of ROL for decryption");
 			free (obuf);
 			return false;
@@ -162,7 +162,7 @@ static bool rot_update(RMutaSession *ms, const ut8 *buf, int len) {
 		rol_crypt (state, buf, obuf, len);
 		break;
 	default:
-		if (ms->flag != R_MUTA_OPERATION_ENCRYPT) {
+		if (ms->flag != R_MUTA_OP_ENCRYPT) {
 			free (obuf);
 			return false;
 		}

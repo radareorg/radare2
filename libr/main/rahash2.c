@@ -521,8 +521,8 @@ static void add_algo(RList *algos, const char *a) {
 static bool check_base_flags(RahashOptions *ro) {
 	const char *algo = ro->algorithm;
 	switch (ro->direction) {
-	case R_CRYPTO_DIR_ENCRYPT:
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OP_ENCRYPT:
+	case R_MUTA_OP_DECRYPT:
 		return !strcmp (algo, "base64") || !strcmp (algo, "base91");
 	}
 	return false;
@@ -586,7 +586,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				R_LOG_ERROR ("Cannot use -D and -E at the same time");
 				ret (1);
 			}
-			ro->direction = R_CRYPTO_DIR_DECRYPT;
+			ro->direction = R_MUTA_OP_DECRYPT;
 			ro->algorithm = opt.arg;
 			break;
 		case 'E':
@@ -594,7 +594,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 				R_LOG_ERROR ("Cannot use -D and -E at the same time");
 				ret (1);
 			}
-			ro->direction = R_CRYPTO_DIR_ENCRYPT;
+			ro->direction = R_MUTA_OP_ENCRYPT;
 			ro->algorithm = opt.arg;
 			break;
 		case 'L': listplugins = true; break;

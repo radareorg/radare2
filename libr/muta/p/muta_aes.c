@@ -21,7 +21,7 @@ static int aes_get_key_size(RMutaSession *ms) {
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	struct aes_state st;
 
-	if (len % AES_BLOCK_SIZE != 0 && ms->dir == R_MUTA_OPERATION_DECRYPT) {
+	if (len % AES_BLOCK_SIZE != 0 && ms->dir == R_MUTA_OP_DECRYPT) {
 		R_LOG_ERROR ("Length must be a multiple of %d for decryption", AES_BLOCK_SIZE);
 		return false;
 	}
@@ -50,7 +50,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	st.columns = (st.key_size / 4);
 	memcpy (st.key, ms->key, st.key_size);
 
-	if (aes_ecb (&st, ibuf, obuf, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks)) {
+	if (aes_ecb (&st, ibuf, obuf, ms->dir == R_MUTA_OP_ENCRYPT, blocks)) {
 		r_muta_session_append (ms, obuf, size);
 	}
 
