@@ -6,40 +6,40 @@
 #include <r_muta.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_cbc_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_cbc_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
 	if (! (keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	cj->key_len = keylen;
-	memcpy (cj->key, key, keylen);
-	cj->dir = direction;
+	ms->key_len = keylen;
+	memcpy (ms->key, key, keylen);
+	ms->dir = direction;
 	return true;
 }
 
-static int aes_cbc_get_key_size(RMutaSession *cj) {
+static int aes_cbc_get_key_size(RMutaSession *ms) {
 	R_RETURN_VAL_IF_FAIL (cj, -1);
-	return cj->key_len;
+	return ms->key_len;
 }
 
-static bool aes_cbc_set_iv(RMutaSession *cj, const ut8 *iv_src, int ivlen) {
+static bool aes_cbc_set_iv(RMutaSession *ms, const ut8 *iv_src, int ivlen) {
 	if (ivlen != AES_BLOCK_SIZE) {
 		return false;
 	}
-	cj->iv = calloc (1, AES_BLOCK_SIZE);
-	if (!cj->iv) {
+	ms->iv = calloc (1, AES_BLOCK_SIZE);
+	if (!ms->iv) {
 		return false;
 	}
-	memcpy (cj->iv, iv_src, AES_BLOCK_SIZE);
+	memcpy (ms->iv, iv_src, AES_BLOCK_SIZE);
 	return true;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
-	if (!cj->iv) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
+	if (!ms->iv) {
 		R_LOG_ERROR ("AES CBC IV is not defined");
 		return false;
 	}
 
-	if (len % AES_BLOCK_SIZE != 0 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
+	if (len % AES_BLOCK_SIZE != 0 && ms->dir == R_MUTA_OPERATION_DECRYPT) {
 		R_LOG_ERROR ("Length must be a multiple of %d for decryption", AES_BLOCK_SIZE);
 		return false;
 	}
@@ -63,12 +63,12 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	memset (ibuf, 0, size);
 	memcpy (ibuf, buf, len);
 
-	st.key_size = cj->key_len;
+	st.key_size = ms->key_len;
 	st.rounds = 6 + (int) (st.key_size / 4);
 	st.columns = (int) (st.key_size / 4);
-	memcpy (st.key, cj->key, st.key_size);
+	memcpy (st.key, ms->key, st.key_size);
 
-	if (aes_cbc (&st, ibuf, obuf, cj->iv, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {
+	if (aes_cbc (&st, ibuf, obuf, ms->iv, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks)) {
 		r_muta_session_append (cj, obuf, size);
 	}
 

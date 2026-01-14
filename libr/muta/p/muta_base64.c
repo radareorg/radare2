@@ -4,20 +4,20 @@
 #include <r_muta.h>
 #include <r_util.h>
 
-static bool base64_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->dir = direction;
+static bool base64_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	ms->dir = direction;
 	return true;
 }
 
-static int base64_get_key_size(RMutaSession *cj) {
+static int base64_get_key_size(RMutaSession *ms) {
 	return 0;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	int olen = 0;
 	ut8 *obuf = NULL;
-	switch (cj->dir) {
-	case R_CRYPTO_DIR_ENCRYPT:
+	switch (ms->dir) {
+	case R_MUTA_OPERATION_ENCRYPT:
 		olen = ((len + 2) / 3) * 4;
 		obuf = malloc (olen + 1);
 		if (!obuf) {
@@ -25,7 +25,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 		}
 		r_base64_encode ((char *)obuf, (const ut8 *)buf, len);
 		break;
-	case R_CRYPTO_DIR_DECRYPT:
+	case R_MUTA_OPERATION_DECRYPT:
 		olen = 4 + ((len / 4) * 3);
 		if (len > 0) {
 			olen -= (buf[len - 1] == '=')? ((buf[len - 2] == '=')? 2: 1): 0;
@@ -44,7 +44,7 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	return true;
 }
 
-static bool end(RMutaSession *cj, const ut8 *buf, int len) {
+static bool end(RMutaSession *ms, const ut8 *buf, int len) {
 	return update (cj, buf, len);
 }
 

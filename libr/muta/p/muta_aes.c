@@ -4,24 +4,24 @@
 #include <r_muta.h>
 #include "algo/crypto_aes.h"
 
-static bool aes_set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
+static bool aes_set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
 	if (! (keylen == 128 / 8 || keylen == 192 / 8 || keylen == 256 / 8)) {
 		return false;
 	}
-	cj->key_len = keylen;
-	memcpy (cj->key, key, keylen);
-	cj->dir = direction;
+	ms->key_len = keylen;
+	memcpy (ms->key, key, keylen);
+	ms->dir = direction;
 	return true;
 }
 
-static int aes_get_key_size(RMutaSession *cj) {
-	return cj->key_len;
+static int aes_get_key_size(RMutaSession *ms) {
+	return ms->key_len;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	struct aes_state st;
 
-	if (len % AES_BLOCK_SIZE != 0 && cj->dir == R_CRYPTO_DIR_DECRYPT) {
+	if (len % AES_BLOCK_SIZE != 0 && ms->dir == R_MUTA_OPERATION_DECRYPT) {
 		R_LOG_ERROR ("Length must be a multiple of %d for decryption", AES_BLOCK_SIZE);
 		return false;
 	}
@@ -45,13 +45,13 @@ static bool update(RMutaSession *cj, const ut8 *buf, int len) {
 	memset (ibuf, 0, size);
 	memcpy (ibuf, buf, len);
 
-	st.key_size = cj->key_len;
+	st.key_size = ms->key_len;
 	st.rounds = 6 + (st.key_size / 4);
 	st.columns = (st.key_size / 4);
-	memcpy (st.key, cj->key, st.key_size);
+	memcpy (st.key, ms->key, st.key_size);
 
-	if (aes_ecb (&st, ibuf, obuf, cj->dir == R_CRYPTO_DIR_ENCRYPT, blocks)) {
-		r_muta_session_append (cj, obuf, size);
+	if (aes_ecb (&st, ibuf, obuf, ms->dir == R_MUTA_OPERATION_ENCRYPT, blocks)) {
+		r_muta_session_append (ms, obuf, size);
 	}
 
 	free (obuf);

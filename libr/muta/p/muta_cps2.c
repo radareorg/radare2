@@ -11,6 +11,10 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
+typedef struct cps2_plugin_data_t {
+	ut32 cps2key[2];
+} CPS2PluginData;
+
 // license:BSD-3-Clause
 // copyright-holders:Paul Leaman, Andreas Naive, Nicola Salmoria,Charles MacDonald
 /******************************************************************************
@@ -699,13 +703,24 @@ main(cps_state,cps2crypt) {
 }
 #endif
 
-static bool set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int direction) {
-	cj->dir = direction;
+static bool set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int direction) {
+	ms->dir = direction;
+
+	// Allocate plugin data if not already allocated
+	if (!ms->plugin_data) {
+		ms->plugin_data = calloc(1, sizeof(CPS2PluginData));
+		if (!ms->plugin_data) {
+			return false;
+		}
+	}
+
+	CPS2PluginData *cps2_data = (CPS2PluginData *)ms->plugin_data;
+
 	if (keylen == 8) { // old hardcoded MAME keys
 		/* fix key endianness */
 		const ut32 *key32 = (const ut32 *)key;
-		cj->cps2key[0] = r_read_be32 (key32);
-		cj->cps2key[1] = r_read_be32 (key32 + 1);
+		cps2_data->cps2key[0] = r_read_be32 (key32);
+		cps2_data->cps2key[1] = r_read_be32 (key32 + 1);
 		return true;
 	} else if (keylen == 20) {
 		const ut8 *key8 = (const ut8 *)key;
@@ -717,27 +732,42 @@ static bool set_key(RMutaSession *cj, const ut8 *key, int keylen, int mode, int 
 				decoded[b / 16] |= (0x8000 >> (b % 16));
 			}
 		}
-		cj->cps2key[0] = ((uint32_t)decoded[0] << 16) | decoded[1];
-		cj->cps2key[1] = ((uint32_t)decoded[2] << 16) | decoded[3];
+		cps2_data->cps2key[0] = ((uint32_t)decoded[0] << 16) | decoded[1];
+		cps2_data->cps2key[1] = ((uint32_t)decoded[2] << 16) | decoded[3];
 		return true;
 	}
 	return false;
 }
 
-static int get_key_size(RMutaSession *cj) {
+static int get_key_size(RMutaSession *ms) {
 	/* 64bit key */
 	return 8;
 }
 
-static bool update(RMutaSession *cj, const ut8 *buf, int len) {
+static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	ut8 *output = calloc (1, len);
 	if (!output) {
 		return false;
 	}
+
+	CPS2PluginData *cps2_data = (CPS2PluginData *)ms->plugin_data;
+	if (!cps2_data) {
+		free (output);
+		return false;
+	}
+
 	/* TODO : handle decryption errors */
-	cps2_crypt (cj->dir, (const ut16 *)buf, (ut16 *)output, len, cj->cps2key, UPPER_LIMIT);
-	r_muta_session_append (cj, output, len);
+	cps2_crypt (ms->dir, (const ut16 *)buf, (ut16 *)output, len, cps2_data->cps2key, UPPER_LIMIT);
+	r_muta_session_append (ms, output, len);
 	free (output);
+	return true;
+}
+
+static bool fini(RMutaSession *ms) {
+	if (ms->plugin_data) {
+		free (ms->plugin_data);
+		ms->plugin_data = NULL;
+	}
 	return true;
 }
 
@@ -752,7 +782,8 @@ RMutaPlugin r_muta_plugin_cps2 = {
 	},
 	.set_key = set_key,
 	.get_key_size = get_key_size,
-	.update = update
+	.update = update,
+	.fini = fini
 };
 
 #ifndef R2_PLUGIN_INCORE
