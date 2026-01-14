@@ -2457,6 +2457,9 @@ char* Elf_(get_arch)(ELFOBJ *eo) {
 	case EM_68K:
 		arch = "m68k";
 		break;
+	case EM_CUDA:
+		arch = "ptx";
+		break;
 	case EM_MIPS:
 	case EM_MIPS_RS3_LE:
 	case EM_MIPS_X:
