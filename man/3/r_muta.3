@@ -1,4 +1,4 @@
-.Dd September 20, 2025
+.Dd January 14, 2026
 .Dt R_MUTA 3
 .Os
 .Sh NAME
@@ -8,7 +8,7 @@
 .In r_muta.h
 .Pp
 .Sh DESCRIPTION
-The r_muta facility implements a small plugin-based framework for data transformations used across radare2. It exposes a thin, consistent API to list available plugins (hashers, encoders, ciphers, small transforms), create sessions, configure keys/IVs and stream data through plugins to produce outputs. The design focuses on reusability from other core libraries (for example, the hashing helper in `libr/muta/hash/hash.c`) so callers can treat most algorithms uniformly.
+The r_muta facility implements a comprehensive plugin-based framework for data transformations used across radare2. It exposes a thin, consistent API to list available plugins (hashers, encoders, ciphers, charset conversions, signature algorithms), create sessions, configure keys/IVs and stream data through plugins to produce outputs. The design focuses on reusability from other core libraries (for example, the hashing helper in `libr/muta/hash/hash.c`) so callers can treat most algorithms uniformly.
 .Sh INITIALIZATION
 The context object represents the global registry of available mutation plugins. Allocate it once when you need to query or create plugin sessions, and free it after all sessions are released.
 .Ft RMuta *
@@ -20,12 +20,53 @@ Creates and returns a new mutation context with bundled plugins registered.
 .Fn r_muta_free "RMuta *cry"
 .Pp
 Releases the context and all internal resources. Do not use a session after its parent context has been freed.
+.Pp
+.Ft bool
+.Fn r_muta_add "RMuta *cry" "RMutaPlugin *h"
+.Pp
+Registers a plugin into the context. Plugins provided in the tree are automatically added during context creation by `r_muta_new`.
+.Pp
+.Ft bool
+.Fn r_muta_del "RMuta *cry" "RMutaPlugin *h"
+.Pp
+Removes a plugin from the context's plugin list.
+.Pp
+.Ft void
+.Fn r_muta_bind "RMuta *cry" "RMutaBind *bnd"
+.Pp
+Binds RMuta functions to a RMutaBind structure for language bindings.
+.Sh PLUGIN DISCOVERY
+The context provides functions to discover and query available plugins.
+.Ft RMutaPlugin *
+.Fn r_muta_find "RMuta *cry" "const char *algo"
+.Pp
+Finds a plugin by algorithm name, supports both exact name matching and implements field checking. Returns NULL if not found.
+.Pp
+.Ft RMutaType
+.Fn r_muta_algo_type "RMuta *cry" "const char *algo"
+.Pp
+Returns the type (hash, crypto, charset, etc.) of a specific algorithm.
+.Pp
+.Ft bool
+.Fn r_muta_algo_supports "RMuta *cry" "const char *algo" "RMutaType type"
+.Pp
+Checks if an algorithm supports a specific type.
+.Pp
+.Ft char *
+.Fn r_muta_list "RMuta *cry" "RMutaType type" "int mode"
+.Pp
+Returns a new string listing available plugins of `type` (for example `R_MUTA_TYPE_CRYPTO` or `R_MUTA_TYPE_HASH`). The `mode` parameter controls output format: 'j' for JSON, 'J' for JSON array, 'q' for quiet, default for verbose. The returned string must be freed by the caller.
 .Sh SESSIONS
 Plugins are used via sessions. A session is an instance of a plugin (for example, an AES or a hash) and keeps per-operation state. Typical lifecycle: create session -> set key/iv (if applicable) -> update() -> end() -> get_output() -> free session.
 .Ft RMutaSession *
 .Fn r_muta_use "RMuta *cry" "const char *algo"
 .Pp
 Creates a session for a plugin selected by name (example names: "aes-ecb", "aes-cbc", "base64", "xor", "sha1"). Returns NULL if the plugin is not found.
+.Pp
+.Ft RMutaSession *
+.Fn r_muta_session_new "RMuta *cry" "RMutaPlugin *cp"
+.Pp
+Creates a new session for a specific plugin instance.
 .Pp
 .Ft void
 .Fn r_muta_session_free "RMutaSession *cj"
@@ -38,10 +79,20 @@ Most symmetric ciphers require a key and many block-based modes require an IV. S
 .Pp
 Configures the cryptographic key and direction (encrypt/decrypt) for the session. Return value indicates whether the plugin accepted the key (for example invalid key size will fail).
 .Pp
+.Ft int
+.Fn r_muta_session_get_key_size "RMutaSession *cj"
+.Pp
+Returns the key size required by the current algorithm.
+.Pp
 .Ft bool
 .Fn r_muta_session_set_iv "RMutaSession *cj" "const ut8 *iv" "int ivlen"
 .Pp
 Sets the initialization vector used by block cipher modes such as CBC.
+.Pp
+.Ft bool
+.Fn r_muta_session_set_subtype "RMutaSession *cj" "const char *subtype"
+.Pp
+Sets a subtype for the session (used for algorithm variants).
 .Sh PROCESSING
 Streaming APIs allow sending data in chunks. Use `r_muta_session_update` for intermediate chunks and `r_muta_session_end` for the last chunk; some plugins treat `end` as a way to finalize padding or state.
 .Ft bool
@@ -58,29 +109,137 @@ Finalizes processing. Can accept a final chunk (or `NULL, 0`) to finish and flus
 .Fn r_muta_session_append "RMutaSession *cj" "const ut8 *buf" "int len"
 .Pp
 Internal helper used by plugins to append produced bytes to the session output buffer. Callers usually do not need to use this directly.
+.Pp
+.Ft ut8 *
+.Fn r_muta_session_decode_string "RMutaSession *cj" "const ut8 *input" "int len" "RMutaDecodeCallback decode_fn" "void *decode_ctx"
+.Pp
+Decodes a string using a custom decode callback function.
 .Sh OUTPUT
 After the session ends (or at any point the plugin exposes output), retrieve the produced bytes with `r_muta_session_get_output`. The returned buffer is heap allocated and must be freed by the caller.
 .Ft ut8 *
 .Fn r_muta_session_get_output "RMutaSession *cj" "int *size"
 .Pp
 Returns a newly allocated buffer containing the processed output and sets `*size` to the buffer length. The caller is responsible for `free()`ing it.
-.Sh PLUGINS
-The context can be extended with plugins or inspected to enumerate supported algorithms. Plugins implement a small vtable of callbacks (set_key, update, end, etc.).
+.Sh HIGH-LEVEL PROCESSING
+For simple use cases, the library provides unified processing functions that handle session creation and cleanup automatically.
+.Ft RMutaResult
+.Fn r_muta_process "RMuta *cry" "const char *algo" "const ut8 *data" "int len" "const ut8 *key" "int key_len" "const ut8 *iv" "int iv_len" "int direction"
+.Pp
+Unified processing function for all operations (hash, crypto, encode/decode). Returns an RMutaResult structure containing the output and metadata.
+.Pp
+.Ft RMutaResult
+.Fn r_muta_process_simple "RMuta *cry" "const char *algo" "const ut8 *data" "int len"
+.Pp
+Simple wrapper for hash and entropy operations without keys/IVs.
+.Pp
+.Ft void
+.Fn r_muta_result_free "RMutaResult *res"
+.Pp
+Frees resources allocated in an RMutaResult structure.
+.Sh CHARSET FUNCTIONS
+The library provides specialized functions for charset encoding and decoding operations.
+.Ft int
+.Fn r_muta_charset_parse_default "const char *str" "const char *end" "char *token" "int token_max"
+.Pp
+Default parser for charset tokens, handles escape sequences, UTF-8, and special tokens.
+.Pp
+.Ft ut8 *
+.Fn r_muta_charset_decode "const ut8 *in" "int in_len" "int *out_len" "const RMutaCharsetMap *table" "const char *unknown_fmt"
+.Pp
+Decodes binary data to UTF-8 using a charset mapping table.
+.Pp
+.Ft ut8 *
+.Fn r_muta_charset_encode "const ut8 *in" "int in_len" "int *out_len" "const RMutaCharsetMap *table" "RMutaCharsetParserFn parser"
+.Pp
+Encodes UTF-8 data to binary using a charset mapping table.
+.Pp
+.Ft ut8 *
+.Fn r_muta_charset_encode_ex "const ut8 *in" "int in_len" "int *out_len" "const RMutaCharsetMap *table" "RMutaCharsetParserFn parser" "ut8 unknown_byte"
+.Pp
+Extended version of charset encode with custom unknown byte handling.
+.Pp
 .Ft bool
-.Fn r_muta_add "RMuta *cry" "RMutaPlugin *h"
+.Fn r_muta_charset_stub_update "RMutaSession *cj" "const ut8 *b" "int l"
 .Pp
-Registers a plugin into the context. Plugins provided in the tree are automatically added by `r_muta_init` called from `r_muta_new`.
+Stub update function that simply appends data to output.
 .Pp
-.Ft char *
-.Fn r_muta_list "RMuta *cry" "RMutaType type" "int mode"
+.Ft bool
+.Fn r_muta_charset_stub_end "RMutaSession *cj" "const ut8 *b" "int l"
 .Pp
-Returns a new string listing available plugins of `type` (for example `R_MUTA_TYPE_CRYPTO` or `R_MUTA_TYPE_HASH`). The returned string must be freed by the caller.
+Stub end function that calls the stub update function.
+.Pp
+.Ft bool
+.Fn r_muta_charset_tr_update "RMutaSession *cj" "const ut8 *buf" "int len" "const ut8 tr[256]"
+.Pp
+Translation table update function for simple charset transformations.
+.Sh CRYPTOGRAPHIC FUNCTIONS
+Specialized cryptographic functions for specific algorithms.
+.Ft void
+.Fn r_muta_ed25519_keypair "const ut8 *seed" "ut8 *privkey" "ut8 *pubkey"
+.Pp
+Generates Ed25519 keypair from a 32-byte seed.
+.Sh DATA STRUCTURES
+.Ss RMutaType Enum
+Enumeration of plugin types:
+.Bl -tag -width "R_MUTA_TYPE_CHARSET"
+.It R_MUTA_TYPE_HASH
+Hash algorithms (MD5, SHA family, CRC, etc.)
+.It R_MUTA_TYPE_BASE
+Base encoding algorithms (Base64, Base91, Bech32)
+.It R_MUTA_TYPE_CRYPTO
+Symmetric ciphers (AES, DES, Blowfish, etc.)
+.It R_MUTA_TYPE_SIGN
+Signature algorithms (Ed25519)
+.It R_MUTA_TYPE_CHARSET
+Charset conversions (ASCII, international charsets)
+.It R_MUTA_TYPE_ALL
+Special value to match all plugin types
+.El
+.Ss RMutaResult Structure
+Result structure returned by high-level processing functions:
+.Bd -literal
+typedef struct r_muta_result_t {
+    ut8 *output;          // binary output
+    int output_len;       // length of output
+    int output_size;      // allocated size of output buffer
+    double entropy;       // entropy value
+    char *hex;            // hex-encoded output
+    bool success;         // operation succeeded
+    bool text_output;     // output is text, not binary
+} RMutaResult;
+.Ed
+.Ss Operation Constants
+.Bl -tag -width "R_MUTA_OP_ENCRYPT"
+.It R_MUTA_OP_NONE
+No operation specified
+.It R_MUTA_OP_HASH
+Hash operation
+.It R_MUTA_OP_DECRYPT
+Decryption operation
+.It R_MUTA_OP_ENCRYPT
+Encryption operation
+.El
 .Sh MODES AND DIRECTIONS
 Plugins accept modes and directions to control behavior; common values are `R_CRYPTO_DIR_ENCRYPT` and `R_CRYPTO_DIR_DECRYPT`. Modes cover block cipher modes such as ECB, CBC, OFB, and CFB. Choose the direction consistently when calling `r_muta_session_set_key`.
 .Sh ALGORITHMS
-A number of built-in plugins are available (AES, DES, Blowfish, RC2/4/6, XOR, ROT/ROL/ROR, base64/base91, bech32, punycode, ed25519, entropy, various hash algorithms). Use `r_muta_list()` to discover what is available in the running build.
+A comprehensive set of built-in plugins is available:
+.Bl -tag -width "Signature"
+.It Hash
+MD5, SHA family (SHA1, SHA224, SHA256, SHA384, SHA512), CRC variants, entropy calculations, ssdeep, strhash, fletcher
+.It Crypto
+AES (ECB, CBC, WRAP), DES, Blowfish, Serpent, SM4, XOR, RC algorithms
+.It Base Encoding
+Base64, Base91, Bech32, punycode
+.It Signature
+Ed25519 digital signatures
+.It Charset
+ASCII, various international charsets (Arabic ISO/Windows, Cyrillic ISO/Windows, Greek ISO/Windows, Hebrew ISO/Windows, Asian charsets like JIS7, Hiragana, Katakana), gaming charsets (Pokemon, Pokemon Red)
+.It Transformations
+ROT, ROL, ROR, ADD, translation tables
+.El
+Use `r_muta_list()` to discover what is available in the running build.
 .Sh EXAMPLES
-This section shows idiomatic, real-world usages of the API. The first example demonstrates how `libr/muta/hash/hash.c` uses r_muta to implement algorithm-agnostic hashing in `r_hash_tostring` (see `libr/muta/hash/hash.c`).
+This section shows idiomatic, real-world usages of the API. The first example demonstrates how `libr/muta/hash/hash.c` uses r_muta to implement algorithm-agnostic hashing.
 .Bd -literal -offset indent
 /* Example: computing a hash using a plugin when available
  * See: libr/muta/hash/hash.c
@@ -102,7 +261,7 @@ r_muta_session_free (cj);
 r_muta_free (cry);
 .Ed
 .Pp
-The AES example below follows the lifecycle for a cipher plugin, showing key and IV setup, streaming update and finalization. The pattern is taken from `libr/muta/p/muta_aes.c` and how sessions are consumed by callers.
+The AES example below follows the lifecycle for a cipher plugin, showing key and IV setup, streaming update and finalization.
 .Bd -literal -offset indent
 RMuta *cry = r_muta_new();
 RMutaSession *s = r_muta_use (cry, "aes-cbc");
@@ -142,11 +301,41 @@ free (out);
 r_muta_session_free (s);
 r_muta_free (cry);
 .Ed
+.Pp
+For simple one-shot operations, the high-level processing functions provide a more convenient API:
+.Bd -literal -offset indent
+RMuta *cry = r_muta_new();
+RMutaResult result = r_muta_process_simple (cry, "sha256", data, len);
+if (result.success) {
+    printf("Hash: %s\\n", result.hex);
+    free (result.output);
+    free (result.hex);
+}
+r_muta_free (cry);
+.Ed
+.Pp
+Charset encoding example for converting UTF-8 to a specific charset:
+.Bd -literal -offset indent
+RMuta *cry = r_muta_new();
+RMutaSession *s = r_muta_use (cry, "charset-ascii");
+if (s) {
+    r_muta_session_update (s, utf8_text, utf8_len);
+    r_muta_session_end (s, NULL, 0);
+    int outlen = 0;
+    ut8 *ascii = r_muta_session_get_output (s, &outlen);
+    // use ascii output
+    free (ascii);
+    r_muta_session_free (s);
+}
+r_muta_free (cry);
+.Ed
 .Sh NOTES
 Plugins follow a vtable pattern: `RMutaPlugin` exposes callbacks such as `set_key`, `update`, `end` and `get_key_size`. Callers should:
 - Create a single `RMuta` context per scope and reuse it for multiple sessions.
 - Always call `r_muta_session_free` after finishing with a session.
 - Free the buffer returned by `r_muta_session_get_output`.
+- For high-level one-shot operations, prefer `r_muta_process()` or `r_muta_process_simple()` over manual session management.
+- The library supports a wide variety of algorithms including modern ciphers (AES, Serpent, SM4), classical ciphers (DES, Blowfish), hash functions (SHA family, MD5, CRC), base encodings (Base64, Base91, Bech32), signature algorithms (Ed25519), and extensive charset support including international and gaming charsets.
 .Sh SEE ALSO
 .Xr r_hash 3
 

@@ -98,7 +98,6 @@ typedef struct {
 } RMutaOptions;
 
 #ifdef R_API
-R_API void r_muta_init(RMuta *muta);
 R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h);
 R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h);
 R_API RMuta *R_NONNULL r_muta_new(void);
