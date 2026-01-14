@@ -555,22 +555,24 @@ static bool already_processed(RList *processed, ut64 addr) {
 	return false;
 }
 
-static void sbpf_print_string_xrefs(RAnal *anal) {
-	R_RETURN_IF_FAIL (anal);
+static char *sbpf_print_string_xrefs(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
+
+	RStrBuf *sb = r_strbuf_new ("");
 
 	ut64 code_start, code_end;
 	if (!sbpf_find_segment_bounds (anal, 0, &code_start, &code_end)) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	ut64 data_start, data_end;
 	if (!sbpf_find_segment_bounds (anal, 1, &data_start, &data_end)) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	RList *refs = sbpf_find_string_xrefs (anal, code_start, code_end, data_start, data_end);
 	if (!refs) {
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	r_list_sort (refs, sbpf_string_ref_cmp);
@@ -581,7 +583,7 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 	if (!table) {
 		r_list_free (processed);
 		r_list_free (refs);
-		return;
+		return r_strbuf_drain (sb);
 	}
 
 	RTableColumnType *n = r_table_type ("number");
@@ -718,23 +720,18 @@ static void sbpf_print_string_xrefs(RAnal *anal) {
 		}
 	}
 
-	// Print the table
+	// Append the table to the string buffer
 	char *table_str = r_table_tostring (table);
 	if (table_str) {
-		if (anal->coreb.core) {
-			void *core = anal->coreb.core;
-			// Use r_cons_printf if we have access to core
-			r_cons_printf (((RCore*)core)->cons, "%s", table_str);
-		} else {
-			// Fallback to printf
-			printf ("%s", table_str);
-		}
+		r_strbuf_append (sb, table_str);
 		free (table_str);
 	}
 
 	r_table_free (table);
 	r_list_free (processed);
 	r_list_free (refs);
+
+	return r_strbuf_drain (sb);
 }
 
 static char *sbpfcmd(RAnal *anal, const char *cmd) {
@@ -747,7 +744,7 @@ static char *sbpfcmd(RAnal *anal, const char *cmd) {
 			return strdup ("");
 		}
 		if (r_str_startswith (cmd, "sbpf.strings")) {
-			char *res = r_strbuf_drain_nofree (sbpf_print_string_xrefs (anal));
+			char *res = sbpf_print_string_xrefs (anal);
 			return res ? res : strdup ("");
 		}
 		if (cmd[4] == '?') {
