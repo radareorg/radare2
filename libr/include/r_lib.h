@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // double-indirection required because cpp is crap
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
-#define R2_ABIVERSION 57
+#define R2_ABIVERSION 58
 #define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
@@ -76,8 +76,8 @@ typedef bool (*RLibCallback)(RLibPlugin *, void *user, void *data);
 /* store list of initialized plugin handlers */
 typedef struct r_lib_handler_t {
 	int type;
-	char desc[128]; // TODO: use char *
-	void *user; /* user pointer */
+	char desc[128]; // XXX: delete this field, we dont really need this
+	void *user; /* user pointer */ /// TODO cant be just a pointer to RLibStruct instead?
 	RLibCallback constructor;
 	RLibCallback destructor;
 } RLibHandler;
@@ -152,8 +152,9 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru);
 R_API RList *r_lib_get_loaded_plugins(RLib *lib);
 R_API char *r_lib_path(const char *libname);
 R_API void r_lib_list(RLib *lib);
+R_API const char *r_lib_type_tostring(int idx);
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback ct, RLibCallback dt, void *user);
-R_API bool r_lib_del_handler(RLib *lib, int type);
+R_API bool r_lib_del_handler(RLib *lib, int type, RLibCallback constructor, RLibCallback destructor, void *user);
 R_API bool r_lib_close(RLib *lib, const char *file);
 
 #include <r_util/pj.h>

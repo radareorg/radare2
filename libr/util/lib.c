@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_util.h>
 #include <r_lib.h>
@@ -542,10 +542,9 @@ R_API bool r_lib_opendir(RLib *lib, const char *path) {
 
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback cb, RLibCallback dt, void *user) {
 	R_RETURN_VAL_IF_FAIL (lib && desc, false);
-	// TODO r2_590 resolve using lib->handlers_ht
 	RLibHandler *handler = NULL;
 	if (lib->handlers_bytype[type]) {
-		R_LOG_DEBUG ("Redefining library handler constructor for %d", type);
+		R_LOG_DEBUG ("Redefining library handler constructor for %s (%d)", type, r_lib_type_tostring (type));
 		handler = lib->handlers_bytype[type];
 	}
 	if (!handler) {
@@ -567,35 +566,42 @@ R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback
 	return true;
 }
 
-// R2_590 - delete handler by type doesnt make sense. lets do it by plug name instead
-R_API bool r_lib_del_handler(RLib *lib, int type) {
+R_API bool r_lib_del_handler(RLib *lib, int type, RLibCallback constructor, RLibCallback destructor, void *user) {
+	R_RETURN_VAL_IF_FAIL (lib, false);
+	if (type < 0 || type >= R_LIB_TYPE_LAST) {
+		return false;
+	}
+
 	RLibHandler *h = NULL;
 	RListIter *iter;
-#if R2_600
-	// XXX slow - delete plugin by name, by filename or by type >? wtf this function is broken
-	{
-		bool found;
-		h = ht_pp_find (lib->plugins_ht, fileName, &found);
-		if (found && h) {
-			// ht_pp_delete (lib->plugins_ht, fileName);
-			return true;
-		}
-	}
-#endif
-	// TODO: remove all handlers for that type? or only one?
-	/* No _safe loop necessary because we return immediately after the delete. */
-	lib->handlers_bytype[type] = NULL;
+
+	/* Use _safe loop because we may delete and continue searching */
 	r_list_foreach (lib->handlers, iter, h) {
-		if (type == h->type) {
-			r_list_delete (lib->handlers, iter);
-// TODOL delete handler from hashtable
-			return true;
+		if (type != h->type) {
+			continue;
 		}
+		/* If any matching criteria is specified, check if it matches */
+		if (constructor && constructor != h->constructor) {
+			continue;
+		}
+		if (destructor && destructor != h->destructor) {
+			continue;
+		}
+		if (user && user != h->user) {
+			continue;
+		}
+
+		/* Found matching handler, delete it */
+		if (lib->handlers_bytype[type] == h) {
+			lib->handlers_bytype[type] = NULL;
+		}
+		r_list_delete (lib->handlers, iter);
+		return true;
 	}
 	return false;
 }
 
-static inline const char *libtype_byidx(int idx) {
+R_API const char *r_lib_type_tostring(int idx) {
 	if (idx < 0 || idx > R_LIB_TYPE_LAST - 1) {
 		return "unk";
 	}
@@ -607,7 +613,7 @@ R_API void r_lib_list(RLib *lib) {
 	RListIter *iter;
 	RLibPlugin *p;
 	r_list_foreach (lib->plugins, iter, p) {
-		printf (" %5s %p %s \n", libtype_byidx (p->type),
+		printf (" %5s %p %s \n", r_lib_type_tostring (p->type),
 			p->dl_handler, p->file);
 	}
 }
