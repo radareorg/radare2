@@ -2,7 +2,10 @@
 
 #include <config.h>
 #include "../include/r_core.h"
+// C23 and msvc supports that in theory
+#if __has_include("../plugins/deps.h")
 #include "../plugins/deps.h"
+#endif
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
