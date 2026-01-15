@@ -2,10 +2,7 @@
 
 #include <config.h>
 #include "../include/r_core.h"
-// C23 and msvc supports that in theory
-#if __has_include("../plugins/deps.h")
 #include "../plugins/deps.h"
-#endif
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
@@ -39,33 +36,24 @@ R_API void r_core_plugin_fini(RCmd *cmd) {
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (cmd && plugin, false);
 	RCorePluginSession *ctx = R_NEW0 (RCorePluginSession);
-	if (!ctx) {
-		return false;
-	}
 	ctx->core = cmd->data;
 	ctx->plugin = plugin;
-	if (plugin->init) {
-		if (!plugin->init (ctx)) {
-			free (ctx);
-			return false;
-		}
+	if (plugin->init && !plugin->init (ctx)) {
+		free (ctx);
+		return false;
 	}
 	r_list_append (cmd->lcmds, ctx);
 	r_list_append (cmd->plist, plugin);
-	{
-		REventPlugin ep = {
-			.name = plugin->meta.name,
-			.type = R_LIB_TYPE_CORE,
-		};
-		r_event_send (ctx->core->ev, R_EVENT_PLUGIN_LOAD, &ep);
-	}
+	REventPlugin ep = {
+		.name = plugin->meta.name,
+		.type = R_LIB_TYPE_CORE,
+	};
+	r_event_send (ctx->core->ev, R_EVENT_PLUGIN_LOAD, &ep);
 	return true;
 }
 
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
-	if (!cmd) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (cmd, false);
 	const char *name = plugin->meta.name;
 	RListIter *iter, *iter2;
 	RCorePluginSession *cps;

@@ -3,9 +3,9 @@ TEAPARTY=
 
 all: deps.h deps.mk meson.build static.cfg
 
-meson.build:
-	:> meson.build
-	for a in $(TEAPARTY) ; do echo "subdir('p/$$a')" >> meson.build ; done
+meson2.build:
+	:> meson2.build
+	for a in $(TEAPARTY) ; do echo "subdir('p/$$a')" >> meson2.build ; done
 
 static.cfg:
 	:> static.cfg
