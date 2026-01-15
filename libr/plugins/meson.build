@@ -1,4 +1,5 @@
 fs = import('fs')
+
 if not fs.is_file('deps.h')
   deps_h = configure_file(
     input: 'deps.h.in',
@@ -8,5 +9,5 @@ if not fs.is_file('deps.h')
 endif
 
 if fs.is_file('p/meson.build')
-  subdir('deps')
+  subdir('p')
 endif
