@@ -188,6 +188,8 @@ typedef struct {
 	coredump_thread_state_flavor_t *flavors;
 } tir_t;
 
+#include "xnu_threads.h"
+
 task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
 char *xnu_corefile_default_location(void);
