@@ -145,7 +145,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		wrap->params.type = W32_ATTACH;
 		r_w32dw_waitret (wrap);
 		if (!r_w32dw_ret (wrap)) {
-			r_w32dw_err (wrap);
+			(void)r_w32dw_err (wrap);
 			r_sys_perror ("__open_proc/DebugActiveProcess");
 			goto att_exit;
 		}
@@ -155,7 +155,7 @@ static int __open_proc(RIO *io, int pid, bool attach) {
 		wrap->params.wait.de = &de;
 		r_w32dw_waitret (wrap);
 		if (!r_w32dw_ret (wrap)) {
-			r_w32dw_err (wrap);
+			(void)r_w32dw_err (wrap);
 			r_sys_perror ("__open_proc/WaitForDebugEvent");
 			goto att_exit;
 		}

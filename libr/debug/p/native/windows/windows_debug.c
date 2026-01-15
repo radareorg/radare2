@@ -376,7 +376,7 @@ int w32_attach(RDebug *dbg, int pid) {
 	wrap->params.type = W32_ATTACH;
 	r_w32dw_waitret (wrap);
 	if (!wrap->params.ret) {
-		r_w32dw_err (wrap);
+		(void)r_w32dw_err (wrap);
 		r_sys_perror ("DebugActiveProcess");
 		CloseHandle (ph);
 		return -1;
@@ -1042,7 +1042,7 @@ bool w32_continue(RDebug *dbg, int pid, int tid, int sig) {
 
 	r_w32dw_waitret (wrap);
 	if (!r_w32dw_ret (wrap)) {
-		r_w32dw_err (wrap);
+		(void)r_w32dw_err (wrap);
 		r_sys_perror ("w32_continue/ContinueDebugEvent");
 		return false;
 	}
