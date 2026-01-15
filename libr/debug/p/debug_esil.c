@@ -100,7 +100,7 @@ static char *__esil_reg_profile(RDebug *dbg) {
 	return r_anal_get_reg_profile (dbg->anal);
 }
 
-static int __esil_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool __esil_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

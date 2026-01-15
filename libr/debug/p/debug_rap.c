@@ -60,7 +60,7 @@ static char *__rap_reg_profile(RDebug *dbg) {
 	return out;
 }
 
-static int __rap_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool __rap_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

@@ -509,7 +509,7 @@ static int r_debug_gdb_set_reg_profile(RDebug *dbg, const char *str) {
 	return false;
 }
 
-static int r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool r_debug_gdb_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	int ret = 0, bpsize;
 	RDebug *dbg = bp->user;
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);

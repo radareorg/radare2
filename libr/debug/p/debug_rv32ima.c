@@ -174,7 +174,7 @@ static char *__rv32ima_reg_profile(RDebug *dbg) {
 	return strdup (p);
 }
 
-static int __rv32ima_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool __rv32ima_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	//r_io_system (dbg->iob.io, "db");
 	return false;
 }

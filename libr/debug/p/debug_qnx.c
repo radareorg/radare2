@@ -357,7 +357,7 @@ static char *r_debug_qnx_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_qnx_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool r_debug_qnx_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	RDebug *dbg = bp->user;
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd || !b) {
