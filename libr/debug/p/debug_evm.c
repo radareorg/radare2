@@ -182,7 +182,7 @@ static int compare_addrs(const void *a1, const void *a2) {
 	return *(ut64*)a1 - *(ut64*)a2;
 }
 
-static int r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool set) {
+static bool r_debug_evm_breakpoint (struct r_bp_t *bp, RBreakpointItem *b, bool set) {
 	if (!b || !rio->ops_size) {
 		return false;
 	}

@@ -210,12 +210,12 @@ static bool windbg_step_over(RDebug *dbg) {
 	return false;
 }
 
-static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	static volatile LONG bp_idx = 0;
 	RDebug *dbg = bp->user;
-	R_RETURN_VAL_IF_FAIL (dbg, 0);
+	R_RETURN_VAL_IF_FAIL (dbg, false);
 	DbgEngContext *idbg = dbg->user;
-	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, 0);
+	R_RETURN_VAL_IF_FAIL (idbg && idbg->initialized, false);
 	ULONG type = b->hw ? DEBUG_BREAKPOINT_DATA : DEBUG_BREAKPOINT_CODE;
 	PDEBUG_BREAKPOINT bkpt;
 	if (FAILED (ITHISCALL (dbgCtrl, GetBreakpointById, b->internal, &bkpt))) {
@@ -225,7 +225,7 @@ static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 			hr = ITHISCALL (dbgCtrl, AddBreakpoint, type, b->internal, &bkpt);
 		} while (hr == E_INVALIDARG);
 		if (FAILED (hr)) {
-			return 0;
+			return false;
 		}
 	}
 	ULONG flags;
@@ -251,7 +251,7 @@ static int windbg_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	THISCALL (bkpt, SetFlags, flags);
 	THISCALL (bkpt, GetCurrentPassCount, (PULONG)&b->togglehits);
 	THISCALL (bkpt, SetOffset, b->addr);
-	return 1;
+	return true;
 }
 
 static char *windbg_reg_profile(RDebug *dbg) {

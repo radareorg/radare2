@@ -162,7 +162,7 @@ static char *r_debug_winkd_reg_profile(RDebug *dbg) {
 	return NULL;
 }
 
-static int r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+static bool r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	RDebug *dbg = bp->user;
 	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
 	if (!pd || !b) {
@@ -172,11 +172,11 @@ static int r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool se
 	if (!b->data) {
 		b->data = (char *)R_NEW0 (int);
 		if (!b->data) {
-			return 0;
+			return false;
 		}
 	}
 	int *tag = (int *) b->data;
-	return winkd_bkpt (pd->wctx, b->addr, set, b->hw, tag);
+	return !!winkd_bkpt (pd->wctx, b->addr, set, b->hw, tag);
 }
 
 static bool r_debug_winkd_init(RDebug *dbg) {
