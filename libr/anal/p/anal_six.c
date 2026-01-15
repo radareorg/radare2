@@ -307,9 +307,8 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	}
 	input = r_str_trim_head_ro (input + strlen ("six"));
 
-	RCore *core = (RCore *)anal->coreb.core;
-	const char *arch = r_config_get (core->config, "asm.arch");
-	const int bits = r_config_get_i (core->config, "asm.bits");
+	const char *arch = anal->coreb.cfgGet (anal->coreb.core, "asm.arch");
+	const int bits = anal->coreb.cfgGetI (anal->coreb.core, "asm.bits");
 
 	if (*input == '?') {
 		const char *help = "Usage: a:six [addr] [len] - Find xrefs in arm64 executable sections\n"
@@ -325,14 +324,15 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 
 	ut64 search = 0;
 	int len = 0;
+	void *core = anal->coreb.core;
 
 	char *args = strdup (input);
 	char *space = strchr (args, ' ');
 	if (space) {
 		*space++ = 0;
-		len = r_num_math (core->num, space);
+		len = anal->coreb.numGet (core, space);
 	}
-	search = r_num_math (core->num, args);
+	search = anal->coreb.numGet (core, args);
 	free (args);
 
 	if (len == 0) {
@@ -356,7 +356,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			siguza_xrefs (anal, search, s->vaddr, s->vsize);
 		}
 	} else {
-		ut64 offset = core->addr;
+		ut64 offset = anal->coreb.numGet (core, "$$");
 		if (offset & 3) {
 			offset -= offset % 4;
 			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%" PFMT64x " instaed", offset);
