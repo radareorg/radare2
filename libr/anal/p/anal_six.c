@@ -141,20 +141,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 											}
 											if (aoff) // Have add
 											{
-												r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %s%" PFMT64d "]\n",
-													addr,
-													is_adrp? "adrp": "adr",
-													reg,
-													target,
-													reg2,
-													reg,
-													aoff,
-													inst,
-													rs,
-													v & 0x1f,
-													reg2,
-													sign,
-													(st64)soff);
+												r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %s%" PFMT64d "]\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
 											} else // Have no add
 											{
 												r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %s%" PFMT64d "]\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
@@ -276,7 +263,7 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, ut64 search, ut64 start, int 
 		R_LOG_ERROR ("Failed to allocate buffer");
 		return;
 	}
-	
+
 	int total_read = 0;
 	while (lenbytes_rem > 0 && total_read < lenbytes) {
 		int to_read = R_MIN (lenbytes_rem, 0x1000);
@@ -288,7 +275,7 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, ut64 search, ut64 start, int 
 		lenbytes_rem -= read_len;
 		cursor += read_len;
 	}
-	
+
 	if (total_read > 0) {
 		siguza_xrefs_chunked (anal, sb, search, big_buf, start, total_read);
 	}
@@ -363,7 +350,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%" PFMT64x " instaed", offset);
 		}
 
-		RBinSection *s = anal->binb.get_vsect_at ? anal->binb.get_vsect_at (anal->binb.bin, offset) : NULL;
+		RBinSection *s = anal->binb.get_vsect_at? anal->binb.get_vsect_at (anal->binb.bin, offset): NULL;
 		if (!s || ! (s->perm & R_PERM_X)) {
 			R_LOG_WARN ("Current section is not executable");
 			r_strbuf_free (sb);
