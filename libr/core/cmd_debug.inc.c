@@ -3653,8 +3653,12 @@ static void add_breakpoint(RCore *core, const char *input, bool hwbp, bool watch
 	RBreakpointItem *bpi;
 	ut64 addr;
 	int i = 0;
-
-	char *str = strdup (r_str_trim_head_ro (input + 1));
+	const char *inp = r_str_trim_head_ro (input + 1);
+	if (R_STR_ISEMPTY (inp)) {
+		R_LOG_ERROR ("No argument provided, use: dbH [addr] [rwx]");
+		return;
+	}
+	char *str = strdup (inp);
 	int sl = r_str_word_set0 (str);
 	// For dbw every second argument is 'rw', so we need to skip it.
 	for (; i < sl; i += 1 + (watch ? 1 : 0)) {

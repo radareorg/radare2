@@ -188,6 +188,8 @@ typedef struct {
 	coredump_thread_state_flavor_t *flavors;
 } tir_t;
 
+#include "xnu_threads.h"
+
 task_t pid_to_task (int pid);
 int xnu_get_vmmap_entries_for_pid (pid_t pid);
 char *xnu_corefile_default_location(void);
@@ -209,5 +211,7 @@ RDebugPid *xnu_get_pid(int pid);
 RList *xnu_dbg_maps(RDebug *dbg, int only_modules);
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list);
 RDebugInfo *xnu_info(RDebug *dbg, const char *arg);
+bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread);
+bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread);
 
 #endif

@@ -1469,6 +1469,110 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 #endif //  __arm64__
 #endif // __linux__
 
+#if (__arm64__ || __arm64e__ || __aarch64__) && __APPLE__
+
+#include "native/xnu/xnu_debug.h"
+#include "native/xnu/xnu_threads.h"
+
+// BCR definitions for ARM64
+#define BCR_M_IMVA_MATCH        ((uint32_t)(0u << 21))
+#define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
+#define BCR_ENABLE              ((uint32_t)(1u))
+#define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+#define S_USER                  ((uint32_t)(2u << 1))
+
+static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+	RList *threads = xnu_thread_list (dbg, dbg->pid, NULL);
+	if (!threads) {
+		return false;
+	}
+	RListIter *it;
+	xnu_thread_t *thread;
+	bool ret = false;
+	// Find an available breakpoint slot that is free on all threads
+	int slot = -1;
+	int i;
+	for (i = 0; i < 16; i++) {
+		bool available = true;
+		r_list_foreach (threads, it, thread) {
+			if (!xnu_thread_get_drx (dbg, thread)) {
+				available = false;
+				break;
+			}
+			if (thread->debug.drx64.__bcr[i] != 0) {
+				available = false;
+				break;
+			}
+		}
+		if (available) {
+			slot = i;
+			break;
+		}
+	}
+	if (slot == -1) {
+		r_list_free (threads);
+		return false; // No available slots
+	}
+	// Set breakpoint on all threads
+	r_list_foreach (threads, it, thread) {
+		if (!xnu_thread_get_drx (dbg, thread)) {
+			continue;
+		}
+		arm_debug_state64_t *state = &thread->debug.drx64;
+		state->__bvr[slot] = b->addr;
+		state->__bcr[slot] = BCR_M_IMVA_MATCH | S_USER | BCR_ENABLE | BAS_IMVA_ALL;
+		if (xnu_thread_set_drx (dbg, thread)) {
+			ret = true;
+		}
+	}
+	r_list_free (threads);
+	return ret;
+}
+
+static bool darwin_arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
+	RList *threads = xnu_thread_list (dbg, dbg->pid, NULL);
+	if (!threads) {
+		return false;
+	}
+	RListIter *it;
+	xnu_thread_t *thread;
+	bool ret = false;
+	// Find the breakpoint slot with matching address
+	int i, slot = -1;
+	r_list_foreach (threads, it, thread) {
+		if (!xnu_thread_get_drx (dbg, thread)) {
+			continue;
+		}
+		for (i = 0; i < 16; i++) {
+			if (thread->debug.drx64.__bvr[i] == b->addr && (thread->debug.drx64.__bcr[i] & BCR_ENABLE)) {
+				slot = i;
+				goto found;
+			}
+		}
+	}
+found:
+	if (slot == -1) {
+		r_list_free (threads);
+		return false; // Breakpoint not found
+	}
+	// Clear breakpoint on all threads
+	r_list_foreach (threads, it, thread) {
+		if (!xnu_thread_get_drx (dbg, thread)) {
+			continue;
+		}
+		arm_debug_state64_t *state = &thread->debug.drx64;
+		state->__bvr[slot] = 0;
+		state->__bcr[slot] = 0;
+		if (xnu_thread_set_drx (dbg, thread)) {
+			ret = true;
+		}
+	}
+	r_list_free (threads);
+	return ret;
+}
+
+#endif // __APPLE__
+
 // Set or unset breakpoints... only handle hardware breakpoints here. otherwise, the caller must do the work
 static bool r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (b && b->hw) {
@@ -1490,6 +1594,11 @@ static bool r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 #elif __riscv && __linux__
 		// no hw bps afaik
 		return false;
+#elif (__arm64__ || __arm64e__ || __aarch64__) && __APPLE__
+	RDebug *dbg = bp->user;
+	return set
+		? darwin_arm64_hwbp_add (dbg, bp, b)
+		: darwin_arm64_hwbp_del (dbg, bp, b);
 #else
 #ifdef _MSC_VER
 #pragma message ( "r_debug_native_bp not implemented for this platform" )

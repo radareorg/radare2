@@ -52,7 +52,7 @@ fallback:
 }
 
 // XXX this should work as long as in arm trace bit relies on this
-static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
+bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	kern_return_t rc;
 #if __x86_64__ || __i386__
@@ -96,7 +96,7 @@ static bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread) {
 	return true;
 }
 
-static bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
+bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread) {
 	R_RETURN_VAL_IF_FAIL (dbg && thread, false);
 	kern_return_t rc;
 #if __i386__ || __x86_64__
