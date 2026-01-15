@@ -216,7 +216,7 @@ e search.in=io.map
 s $S
 b $SS
 f target=0x1000ff5a0
-sixref target
+a:six target
 axq
 /r target
 EOF
@@ -242,7 +242,7 @@ CMDS=<<EOF
 e search.in=io.map
 s $S
 b $SS
-sixref
+a:six
 axq
 EOF
 EXPECT=<<EOF
