@@ -1491,7 +1491,8 @@ static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem 
 	bool ret = false;
 	// Find an available breakpoint slot that is free on all threads
 	int slot = -1;
-	for (int i = 0; i < 16; i++) {
+	int i;
+	for (i = 0; i < 16; i++) {
 		bool available = true;
 		r_list_foreach (threads, it, thread) {
 			if (!xnu_thread_get_drx (dbg, thread)) {
@@ -1537,12 +1538,12 @@ static bool darwin_arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem 
 	xnu_thread_t *thread;
 	bool ret = false;
 	// Find the breakpoint slot with matching address
-	int slot = -1;
+	int i, slot = -1;
 	r_list_foreach (threads, it, thread) {
 		if (!xnu_thread_get_drx (dbg, thread)) {
 			continue;
 		}
-		for (int i = 0; i < 16; i++) {
+		for (i = 0; i < 16; i++) {
 			if (thread->debug.drx64.__bvr[i] == b->addr && (thread->debug.drx64.__bcr[i] & BCR_ENABLE)) {
 				slot = i;
 				goto found;
