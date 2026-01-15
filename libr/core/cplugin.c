@@ -2,9 +2,7 @@
 
 #include <config.h>
 #include "../include/r_core.h"
-#if defined(__has_include)
-#include "../plugins/deps.h"
-#endif
+#include "deps.h"
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
