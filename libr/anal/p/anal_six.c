@@ -9,6 +9,82 @@ static void addref(RAnal *anal, ut64 from, ut64 to, RAnalRefType type) {
 	r_anal_xrefs_set (anal, from, to, type);
 }
 
+static const char *lookup_inst_name(uint32_t opc_size) {
+	static const char *inst_names[] = {
+		[0x00] = "strb",
+		[0x01] = "strh",
+		[0x02] = "str",
+		[0x03] = "str",
+		[0x10] = "ldrb",
+		[0x11] = "ldrh",
+		[0x12] = "ldr",
+		[0x13] = "ldr",
+		[0x20] = "ldrsb",
+		[0x21] = "ldrsh",
+		[0x22] = "ldrsw",
+		[0x30] = "ldrsb",
+		[0x31] = "ldrsh",
+	};
+	return (opc_size < R_ARRAY_SIZE (inst_names))? inst_names[opc_size]: NULL;
+}
+
+static const char *lookup_unscaled_inst_name(uint32_t opc_size) {
+	static const char *inst_names[] = {
+		[0x00] = "sturb",
+		[0x01] = "sturh",
+		[0x02] = "stur",
+		[0x03] = "stur",
+		[0x10] = "ldurb",
+		[0x11] = "ldurh",
+		[0x12] = "ldur",
+		[0x13] = "ldur",
+		[0x20] = "ldursb",
+		[0x21] = "ldursh",
+		[0x22] = "ldursw",
+		[0x30] = "ldursb",
+		[0x31] = "ldursh",
+	};
+	return (opc_size < R_ARRAY_SIZE (inst_names))? inst_names[opc_size]: NULL;
+}
+
+static const char *lookup_unprivileged_inst_name(uint32_t opc_size) {
+	static const char *inst_names[] = {
+		[0x00] = "sttrb",
+		[0x01] = "sttrh",
+		[0x02] = "sttr",
+		[0x03] = "sttr",
+		[0x10] = "ldtrb",
+		[0x11] = "ldtrh",
+		[0x12] = "ldtr",
+		[0x13] = "ldtr",
+		[0x20] = "ldtrsb",
+		[0x21] = "ldtrsh",
+		[0x22] = "ldtrsw",
+		[0x30] = "ldtrsb",
+		[0x31] = "ldtrsh",
+	};
+	return (opc_size < R_ARRAY_SIZE (inst_names))? inst_names[opc_size]: NULL;
+}
+
+// Helper to append memory instruction with optional add prefix
+static void append_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 reg, ut64 target, ut32 reg2, ut32 aoff, const char *inst, const char *rs, ut32 dest_reg, ut64 offset, const char *suffix) {
+	if (aoff) {
+		r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %#" PFMT64x "%s\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, dest_reg, reg2, offset, suffix);
+	} else {
+		r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %#" PFMT64x "%s\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, dest_reg, reg2, offset, suffix);
+	}
+}
+
+// Helper to append signed offset memory instruction
+static void append_signed_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 reg, ut64 target, ut32 reg2, ut32 aoff, const char *inst, const char *rs, ut32 dest_reg, int64_t soff, const char *suffix) {
+	const char *sign = soff < 0? "-": "";
+	if (aoff) {
+		r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %s%" PFMT64d "%s\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, dest_reg, reg2, sign, (st64)soff, suffix);
+	} else {
+		r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %s%" PFMT64d "%s\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, dest_reg, reg2, sign, (st64)soff, suffix);
+	}
+}
+
 static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut8 *mem, ut64 addr, int lenbytes) {
 	ut32 *p = (ut32 *) ((uint8_t *)mem);
 	ut32 *e = (ut32 *) (p + (lenbytes / 4));
@@ -29,8 +105,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			} else {
 				// More complicated cases - up to 3 instr
 				ut32 *q = p + 1;
-				while (q < e && *q == 0xd503201f) // nop
-				{
+				while (q < e && *q == 0xd503201f) { // nop
 					q++;
 				}
 				if (q < e) {
@@ -38,8 +113,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 					ut32 reg2 = reg;
 					ut32 aoff = 0;
 					bool found = false;
-					if ((v & 0xff8003e0) == (0x91000000 | (reg << 5))) // 64bit add, match reg
-					{
+					if ((v & 0xff8003e0) == (0x91000000 | (reg << 5))) { // 64bit add, match reg
 						reg2 = v & 0x1f;
 						aoff = (v >> 10) & 0xfff;
 						if (v & 0x400000) {
@@ -56,8 +130,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 					}
 					if (!found && q < e) {
 						v = *q;
-						if ((v & 0xff8003e0) == (0x91000000 | (reg2 << 5))) // 64bit add, match reg
-						{
+						if ((v & 0xff8003e0) == (0x91000000 | (reg2 << 5))) { // 64bit add, match reg
 							ut32 xoff = (v >> 10) & 0xfff;
 							if (v & 0x400000) {
 								xoff <<= 12;
@@ -66,105 +139,35 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 								// If we get here, we know the previous add matched
 								r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; add x%u, x%u, %#x\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, v & 0x1f, reg2, xoff);
 							}
-						} else if ((v & 0x3e0003e0) == (0x38000000 | (reg2 << 5))) // all of str[hb]/ldr[hb], match reg
-						{
-							const char *inst = NULL;
-							uint8_t size;
-							size = (v >> 30) & 0x3;
+						} else if ((v & 0x3e0003e0) == (0x38000000 | (reg2 << 5))) { // all of str[hb]/ldr[hb], match reg
+							uint8_t size = (v >> 30) & 0x3;
 							uint8_t opc = (v >> 22) & 0x3;
-							switch ((opc << 4) | size) {
-							case 0x00: inst = "strb"; break;
-							case 0x01: inst = "strh"; break;
-							case 0x02:
-							case 0x03: inst = "str"; break;
-							case 0x10: inst = "ldrb"; break;
-							case 0x11: inst = "ldrh"; break;
-							case 0x12:
-							case 0x13: inst = "ldr"; break;
-							case 0x20:
-							case 0x30: inst = "ldrsb"; break;
-							case 0x21:
-							case 0x31: inst = "ldrsh"; break;
-							case 0x22: inst = "ldrsw"; break;
-							}
+							uint32_t opc_size = (opc << 4) | size;
+							const char *inst = lookup_inst_name (opc_size);
+
 							if (inst) {
 								uint8_t regsize = opc == 2 && size < 2? 3: size;
 								const char *rs = regsize == 3? "x": "w";
-								if ((v & 0x1000000) != 0) // unsigned offset
-								{
+								if ((v & 0x1000000) != 0) { // unsigned offset
 									ut64 uoff = ((v >> 10) & 0xfff) << size;
 									if (target + aoff + uoff == search) {
-										if (aoff) { // Have add
-											r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %#" PFMT64x "]\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, uoff);
-										} else { // Have no add
-											r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %#" PFMT64x "]\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, v & 0x1f, reg2, uoff);
-										}
+										append_mem_instr (sb, addr, is_adrp, reg, target, reg2, aoff, inst, rs, v & 0x1f, uoff, "]");
 									}
 								} else if ((v & 0x00200000) == 0) {
 									int64_t soff = (int64_t) ((uint64_t) ((v >> 12) & 0x1ff) << 55) >> 55;
-									const char *sign = soff < 0? "-": "";
 									if (target + aoff + soff == search) {
 										if ((v & 0x400) == 0) {
-											if ((v & 0x800) == 0) // unscaled
-											{
-												switch ((opc << 4) | size) {
-												case 0x00: inst = "sturb"; break;
-												case 0x01: inst = "sturh"; break;
-												case 0x02:
-												case 0x03: inst = "stur"; break;
-												case 0x10: inst = "ldurb"; break;
-												case 0x11: inst = "ldurh"; break;
-												case 0x12:
-												case 0x13: inst = "ldur"; break;
-												case 0x20:
-												case 0x30: inst = "ldursb"; break;
-												case 0x21:
-												case 0x31: inst = "ldursh"; break;
-												case 0x22: inst = "ldursw"; break;
-												}
+											if ((v & 0x800) == 0) { // unscaled
+												inst = lookup_unscaled_inst_name (opc_size);
 											} else { // unprivileged
-												switch ((opc << 4) | size) {
-												case 0x00: inst = "sttrb"; break;
-												case 0x01: inst = "sttrh"; break;
-												case 0x02:
-												case 0x03: inst = "sttr"; break;
-												case 0x10: inst = "ldtrb"; break;
-												case 0x11: inst = "ldtrh"; break;
-												case 0x12:
-												case 0x13: inst = "ldtr"; break;
-												case 0x20:
-												case 0x30: inst = "ldtrsb"; break;
-												case 0x21:
-												case 0x31: inst = "ldtrsh"; break;
-												case 0x22: inst = "ldtrsw"; break;
-												}
+												inst = lookup_unprivileged_inst_name (opc_size);
 											}
-											if (aoff) // Have add
-											{
-												r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %s%" PFMT64d "]\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-											} else // Have no add
-											{
-												r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %s%" PFMT64d "]\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-											}
-										} else // pre/post-index
-										{
-											if ((v & 0x800) != 0) // pre
-											{
-												if (aoff) // Have add
-												{
-													r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u, %s%" PFMT64d "]!\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-												} else // Have no add
-												{
-													r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u, %s%" PFMT64d "]!\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-												}
-											} else // post
-											{
-												if (aoff) // Have add
-												{
-													r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; add x%u, x%u, %#x; %s %s%u, [x%u], %s%" PFMT64d "\n", addr, is_adrp? "adrp": "adr", reg, target, reg2, reg, aoff, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
-												} else // Have no add
-												{
-													r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "; %s %s%u, [x%u], %s%" PFMT64d "\n", addr, is_adrp? "adrp": "adr", reg, target, inst, rs, v & 0x1f, reg2, sign, (st64)soff);
+											if (inst) {
+												if ((v & 0x400) != 0) { // pre/post-index
+													const char *suffix = (v & 0x800) != 0? "]!": "]";
+													append_signed_mem_instr (sb, addr, is_adrp, reg, target, reg2, aoff, inst, rs, v & 0x1f, soff, suffix);
+												} else { // unscaled/unprivileged
+													append_signed_mem_instr (sb, addr, is_adrp, reg, target, reg2, aoff, inst, rs, v & 0x1f, soff, "]");
 												}
 											}
 										}
@@ -176,8 +179,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 					}
 				}
 			}
-		} else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) // ldr and ldrsw literal
-		{
+		} else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) { // ldr and ldrsw literal
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_DATA);
@@ -187,8 +189,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 				bool is_64bit = (v & 0x40000000) != 0 && !is_ldrsw;
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %s%u, %#" PFMT64x "\n", addr, is_ldrsw? "ldrsw": "ldr", is_64bit? "x": "w", reg, search);
 			}
-		} else if ((v & 0x7c000000) == 0x14000000) // b and bl
-		{
+		} else if ((v & 0x7c000000) == 0x14000000) { // b and bl
 			int64_t off = (int64_t) ((uint64_t) (v & 0x3ffffff) << 38) >> 36;
 			bool is_bl = (v & 0x80000000) != 0;
 			if (!search) {
@@ -196,35 +197,18 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			} else if (addr + off == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %#" PFMT64x "\n", addr, is_bl? "bl": "b", search);
 			}
-		} else if ((v & 0xff000010) == 0x54000000) // b.cond
-		{
+		} else if ((v & 0xff000010) == 0x54000000) { // b.cond
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
-				const char *cond = "al";
-				switch (v & 0xf) {
-				case 0x0: cond = "eq"; break;
-				case 0x1: cond = "ne"; break;
-				case 0x2: cond = "hs"; break;
-				case 0x3: cond = "lo"; break;
-				case 0x4: cond = "mi"; break;
-				case 0x5: cond = "pl"; break;
-				case 0x6: cond = "vs"; break;
-				case 0x7: cond = "vc"; break;
-				case 0x8: cond = "hi"; break;
-				case 0x9: cond = "ls"; break;
-				case 0xa: cond = "ge"; break;
-				case 0xb: cond = "lt"; break;
-				case 0xc: cond = "gt"; break;
-				case 0xd: cond = "le"; break;
-				case 0xe: cond = "al"; break;
-				case 0xf: cond = "nv"; break;
-				}
+				static const char *cond_names[] = {
+					"eq", "ne", "hs", "lo", "mi", "pl", "vs", "vc", "hi", "ls", "ge", "lt", "gt", "le", "al", "nv"
+				};
+				const char *cond = cond_names[v & 0xf];
 				r_strbuf_appendf (sb, "%#" PFMT64x ": b.%s %#" PFMT64x "\n", addr, cond, search);
 			}
-		} else if ((v & 0x7e000000) == 0x34000000) // cbz and cbnz
-		{
+		} else if ((v & 0x7e000000) == 0x34000000) { // cbz and cbnz
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
 			if (!search) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
@@ -234,8 +218,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 				bool is_nz = (v & 0x01000000) != 0;
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %s%u, %#" PFMT64x "\n", addr, is_nz? "cbnz": "cbz", is_64bit? "x": "w", reg, search);
 			}
-		} else if ((v & 0x7e000000) == 0x36000000) // tbz and tbnz
-		{
+		} else if ((v & 0x7e000000) == 0x36000000) { // tbz and tbnz
 			int64_t off = ((int64_t) ((v >> 5) & 0x3fff) << 50) >> 48;
 			if (!search) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
@@ -282,14 +265,17 @@ static void siguza_xrefs(RAnal *anal, RStrBuf *sb, ut64 search, ut64 start, int 
 	free (big_buf);
 }
 
+static bool is_arm64(RAnal *anal) {
+	const char *arch = anal->coreb.cfgGet (anal->coreb.core, "asm.arch");
+	const int bits = anal->coreb.cfgGetI (anal->coreb.core, "asm.bits");
+	return strstr (arch, "arm") && bits == 64;
+}
+
 static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	if (!r_str_startswith (input, "six")) {
 		return NULL;
 	}
 	input = r_str_trim_head_ro (input + strlen ("six"));
-
-	const char *arch = anal->coreb.cfgGet (anal->coreb.core, "asm.arch");
-	const int bits = anal->coreb.cfgGetI (anal->coreb.core, "asm.bits");
 
 	if (*input == '?') {
 		const char *help = "Usage: a:six [addr] [len] - Find xrefs in arm64 executable sections\n"
@@ -298,7 +284,7 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		return strdup (help);
 	}
 
-	if (!strstr (arch, "arm") || bits != 64) {
+	if (!is_arm64 (anal)) {
 		R_LOG_ERROR ("This command only works on arm64. Please check your asm.{arch,bits}");
 		return strdup ("");
 	}
