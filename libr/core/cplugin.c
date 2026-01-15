@@ -1,8 +1,8 @@
 /* radare - LGPL - Copyright 2010-2026 - pancake */
 
-#include <config.h>
+#include "../config.h"
 #include "../include/r_core.h"
-#include "deps.h"
+#include "r2plugins.h"
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
