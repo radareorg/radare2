@@ -460,10 +460,7 @@ io_plugins += [
   ]
 endif
 
-fs = import('fs')
-if fs.is_file('plugins/meson.build')
-  subdir('plugins')
-endif
+subdir('plugins')
 
 include_files = [
   'include/r2naked.h',

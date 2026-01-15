@@ -1,11 +1,13 @@
 TEAPARTY=
 # TEAPARTY+=corehi
 
-all: deps.h deps.mk meson.build static.cfg
+PONIS=deps.mk deps.h p/meson.build static.cfg
 
-meson2.build:
-	:> meson2.build
-	for a in $(TEAPARTY) ; do echo "subdir('p/$$a')" >> meson2.build ; done
+all: $(PONIS)
+
+p/meson.build:
+	:> p/meson.build
+	for a in $(TEAPARTY) ; do echo "subdir('p/$$a')" >> p/meson.build ; done
 
 static.cfg:
 	:> static.cfg
@@ -19,4 +21,7 @@ deps.h:
 	:> deps.h
 	for a in $(TEAPARTY) ; do echo "#include \"p/$$a/deps.h\"" >> deps.h ; done
 
-.PHONY: deps.mk deps.h meson.build static.cfg
+clean:
+	rm -f $(PONIS)
+
+.PHONY: $(PONIS) clean all
