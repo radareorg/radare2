@@ -1,10 +1,12 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_userconf.h>
 #include <r_drx.h>
 #include <r_core.h>
 #include <signal.h>
 #include <sys/types.h>
+
+#define NUM_DRX_REGISTERS 8
 
 #if DEBUGGER
 
@@ -285,12 +287,8 @@ static bool tracelib(RDebug *dbg, const char *mode, PLIB_ITEM item) {
 }
 #endif
 
-/*
- * Wait for an event and start trying to figure out what to do with it.
- *
- * Returns R_DEBUG_REASON_*
- */
 #if R2__WINDOWS__
+// Wait for an event and start trying to figure out what to do with it. Returns R_DEBUG_REASON_*
 static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	RDebugReasonType reason = R_DEBUG_REASON_UNKNOWN;
 	// Store the original TID to attempt to switch back after handling events that
@@ -1289,20 +1287,19 @@ static void sync_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
-
+	RReg *r = dbg->reg;
 	// sync drx regs
-#define R dbg->reg
-	regs[0] = r_reg_getv (R, "dr0");
-	regs[1] = r_reg_getv (R, "dr1");
-	regs[2] = r_reg_getv (R, "dr2");
-	regs[3] = r_reg_getv (R, "dr3");
+	regs[0] = r_reg_getv (r, "dr0");
+	regs[1] = r_reg_getv (r, "dr1");
+	regs[2] = r_reg_getv (r, "dr2");
+	regs[3] = r_reg_getv (r, "dr3");
 /*
 	RESERVED
-	regs[4] = r_reg_getv (R, "dr4");
-	regs[5] = r_reg_getv (R, "dr5");
+	regs[4] = r_reg_getv (r, "dr4");
+	regs[5] = r_reg_getv (r, "dr5");
 */
-	regs[6] = r_reg_getv (R, "dr6");
-	regs[7] = r_reg_getv (R, "dr7");
+	regs[6] = r_reg_getv (r, "dr6");
+	regs[7] = r_reg_getv (r, "dr7");
 }
 #endif
 
@@ -1313,14 +1310,13 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 		R_LOG_ERROR ("drx: Unsupported number of registers for get_debug_regs");
 		return;
 	}
-
-#define R dbg->reg
- 	r_reg_setv (R, "dr0", regs[0]);
-	r_reg_setv (R, "dr1", regs[1]);
-	r_reg_setv (R, "dr2", regs[2]);
-	r_reg_setv (R, "dr3", regs[3]);
-	r_reg_setv (R, "dr6", regs[6]);
-	r_reg_setv (R, "dr7", regs[7]);
+	RReg *r = dbg->reg;
+	r_reg_setv (r, "dr0", regs[0]);
+	r_reg_setv (r, "dr1", regs[1]);
+	r_reg_setv (r, "dr2", regs[2]);
+	r_reg_setv (r, "dr3", regs[3]);
+	r_reg_setv (r, "dr6", regs[6]);
+	r_reg_setv (r, "dr7", regs[7]);
 }
 #endif
 
@@ -1473,14 +1469,8 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 #endif //  __arm64__
 #endif // __linux__
 
-/*
- * set or unset breakpoints...
- *
- * we only handle the case for hardware breakpoints here. otherwise,
- * we let the caller handle the work.
- */
-// TODO should return bool
-static int r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
+// Set or unset breakpoints... only handle hardware breakpoints here. otherwise, the caller must do the work
+static bool r_debug_native_bp(RBreakpoint *bp, RBreakpointItem *b, bool set) {
 	if (b && b->hw) {
 #if __i386__ || __x86_64__
 		RDebug *dbg = bp->user;

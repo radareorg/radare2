@@ -12,12 +12,6 @@ enum {
   DRX_API_REMOVE_BP = 3,
 };
 
-#if __i386__ || __x86_64__
-#define NUM_DRX_REGISTERS 8
-#else
-#define NUM_DRX_REGISTERS 0
-#endif
-
 #ifdef __cplusplus
 }
 #endif

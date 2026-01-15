@@ -62,7 +62,7 @@ typedef struct r_bp_item_t {
 } RBreakpointItem;
 
 struct r_bp_t;
-typedef int (*RBreakpointCallback)(struct r_bp_t *bp, RBreakpointItem *b, bool set);
+typedef bool (*RBreakpointCallback)(struct r_bp_t *bp, RBreakpointItem *b, bool set);
 
 typedef struct r_bp_t {
 	void *user;
