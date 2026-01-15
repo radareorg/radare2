@@ -4,7 +4,6 @@
 
 #include "../include/r_core.h"
 #include <r_vec.h>
-#include "../plugins/deps.h"
 
 R_LIB_VERSION(r_core);
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
