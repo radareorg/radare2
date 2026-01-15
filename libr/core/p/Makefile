@@ -26,7 +26,7 @@ ifeq ($(WITHPIC),1)
 all: ${ALL_TARGETS}
 
 ALL_TARGETS=
-PLUGS=java.mk sixref.mk agD.mk
+PLUGS=java.mk agD.mk
 include $(PLUGS)
 
 clean:
