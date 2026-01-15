@@ -1327,12 +1327,8 @@ static void set_drx_regs(RDebug *dbg, drxt *regs, size_t num_regs) {
 static bool r_debug_native_drx(RDebug *dbg, int n, ut64 addr, int sz, int rwx, int g, int api_type) {
 #if __i386__ || __x86_64__
 	int retval = false;
-#if NUM_DRX_REGISTERS > 0
 	drxt regs[NUM_DRX_REGISTERS] = {0};
 	sync_drx_regs (dbg, regs, NUM_DRX_REGISTERS);
-#else
-	drxt regs[1] = {0};
-#endif
 	switch (api_type) {
 	case DRX_API_LIST:
 		drx_list (regs);
