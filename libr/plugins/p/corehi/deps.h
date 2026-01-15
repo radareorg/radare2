@@ -1,0 +1,1 @@
+extern RCorePlugin r_core_plugin_corehi;

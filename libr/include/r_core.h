@@ -150,6 +150,7 @@ typedef struct r_core_times_t {
 	ut64 file_anal_time;
 } RCoreTimes;
 
+// XXX this asmqjmps stuff looks very sketchy
 #define R_CORE_ASMQJMPS_NUM 10
 #define R_CORE_ASMQJMPS_LETTERS 26
 #define R_CORE_ASMQJMPS_MAX_LETTERS (26 * 26 * 26 * 26 * 26)

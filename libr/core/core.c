@@ -1,8 +1,8 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "core"
 
-#include <r_core.h>
+#include "../include/r_core.h"
 #include <r_vec.h>
 
 R_LIB_VERSION(r_core);
@@ -11,7 +11,7 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 static ut64 letter_divs[R_CORE_ASMQJMPS_LEN_LETTERS - 1] = {
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
 	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
-	R_CORE_ASMQJMPS_LETTERS *R_CORE_ASMQJMPS_LETTERS,
+	R_CORE_ASMQJMPS_LETTERS * R_CORE_ASMQJMPS_LETTERS,
 	R_CORE_ASMQJMPS_LETTERS
 };
 

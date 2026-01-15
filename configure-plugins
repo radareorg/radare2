@@ -2,7 +2,7 @@
 #
 # Script to configure "staticability" of plugins
 # author: pancake // nopcode
-# update: 2010-01-14
+# update: 2026-01-15
 #
 
 LANG=C
@@ -53,6 +53,15 @@ load () {
   fi
 }
 
+
+if [ -f libr/plugins/static.cfg ]; then
+  TEA_STATIC=$(cat libr/plugins/static.cfg)
+  echo "[INFO] Statically linking third-party plugins: ${TEA_STATIC}"
+else
+  TEA_STATIC=""
+  echo "[INFO] No third-party static plugins"
+fi
+
 generate_configh () {
   plugins=""
   oldlib=""
@@ -66,6 +75,14 @@ generate_configh () {
       echo
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
+      # the third party static plugins goes here
+      for b in ${TEA_STATIC} ; do
+        tealib=$(echo $b | cut -d . -f 1) # library
+        if [ "$lib" = "$tealib" ]; then
+          teaplg=$(echo $b | cut -d . -f 2) # plugin name
+          echo "     &r_${tealib}_plugin_${teaplg}, \\"
+        fi
+      done
     fi
     echo "     &r_${lib}_plugin_${plg}, \\"
   done
@@ -110,6 +127,13 @@ generate_configmk () {
       uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       printf "STATIC_${uclib}_PLUGINS="
       plugins="${plugins} __${uclib}"
+      for b in ${TEA_STATIC} ; do
+        tealib=$(echo $b | cut -d . -f 1) # library
+        if [ "$lib" = "$tealib" ]; then
+          teaplg=$(echo $b | cut -d . -f 2) # plugin name
+          printf " ../plugins/p/${teaplg}/deps.mk"
+        fi
+      done
     fi
     printf " p/${plg}.mk"
   done
@@ -216,7 +240,7 @@ rmstatic() {
       f="$b.$ext"
       if [ -f "$f" ]; then
         C=$(($C+1))
-	printf "  $C found\r"
+        printf "  $C found\r"
         #echo "rm -f $f"
         rm -f "$f"
       fi
@@ -263,6 +287,5 @@ check_conflicts || exit 1
 
 echo SHARED: ${SHARED}
 echo STATIC: ${STATIC}
-
 
 exit 0
