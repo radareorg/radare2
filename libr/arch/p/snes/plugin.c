@@ -48,9 +48,9 @@ static char *snes_disass(struct snes_asm_flags snesflags, ut64 pc, const ut8 *bu
 		if (*buf == 0x44 || *buf == 0x54) { // mvp and mvn
 			buf_asm = r_strf (s_op->name, buf[1], buf[2]);
 		} else if (*buf == 0x82) { // brl
-			buf_asm = r_strf (s_op->name, pc + 3 + (st16)ut8p_bw(buf + 1));
+			buf_asm = r_strf (s_op->name, pc + 3 + (st16)r_read_le16(buf + 1));
 		} else {
-			buf_asm = r_strf (s_op->name, ut8p_bw (buf + 1));
+			buf_asm = r_strf (s_op->name, r_read_le16 (buf + 1));
 		}
 		break;
 	case SNES_OP_32BIT:
@@ -60,14 +60,14 @@ static char *snes_disass(struct snes_asm_flags snesflags, ut64 pc, const ut8 *bu
 		if (M_flag) {
 			buf_asm = r_strf ("%s #0x%02x", s_op->name, buf[1]);
 		} else {
-			buf_asm = r_strf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
+			buf_asm = r_strf ("%s #0x%04x", s_op->name, r_read_le16 (buf + 1));
 		}
 		break;
 	case SNES_OP_IMM_X:
 		if (X_flag) {
 			buf_asm = r_strf ("%s #0x%02x", s_op->name, buf[1]);
 		} else {
-			buf_asm = r_strf ("%s #0x%04x", s_op->name, ut8p_bw (buf + 1));
+			buf_asm = r_strf ("%s #0x%04x", s_op->name, r_read_le16 (buf + 1));
 		}
 		break;
 	}
@@ -248,7 +248,7 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x4c: // jmp addr
 		op->eob = true;
-		op->jump = (addr & 0xFF0000) | ut8p_bw (data + 1);
+		op->jump = (addr & 0xFF0000) | r_read_le16 (data + 1);
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case 0x5c: // jmp long
@@ -263,7 +263,7 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x82: // brl
 		op->eob = true;
-		op->jump = addr + 3 + (st16)ut8p_bw (data + 1);
+		op->jump = addr + 3 + (st16)r_read_le16 (data + 1);
 		op->type = R_ANAL_OP_TYPE_JMP;
 		break;
 	case 0x6c: // jmp (addr)
@@ -298,7 +298,7 @@ static bool snes_anop(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		break;
 	case 0x20: // jsr addr
-		op->jump = (addr & 0xFF0000) | ut8p_bw (data+1);
+		op->jump = (addr & 0xFF0000) | r_read_le16 (data+1);
 		op->type = R_ANAL_OP_TYPE_CALL;
 		break;
 	case 0x22: // jsr long

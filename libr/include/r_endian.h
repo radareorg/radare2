@@ -390,14 +390,6 @@ static inline void r_write_ble(void *dst, ut64 val, bool be, int size) {
 	}
 }
 
-// TODO: find better names and write vapis
-#define ut8p_b(x) ((x)[0])
-#define ut8p_bw(x) ((x)[0]|((x)[1]<<8))
-#define ut8p_bd(x) ((x)[0]|((x)[1]<<8)|((x)[2]<<16)|((x)[3]<<24))
-#define ut8p_bq(x) ((x)[0]|((x)[1]<<8)|((x)[2]<<16)|((x)[3]<<24)|((x)[4]<<32)|((x)[5]<<40)|((x)[6]<<48)|((x)[7]<<56))
-#define ut8p_lw(x) ((x)[1]|((x)[0]<<8))
-#define ut8p_ld(x) ((x)[3]|((x)[2]<<8)|((x)[1]<<16)|((x)[0]<<24))
-#define ut8p_lq(x) ((x)[7]|((x)[6]<<8)|((x)[5]<<16)|((x)[4]<<24)|((x)[3]<<32)|((x)[2]<<40)|((x)[1]<<48)|((x)[0]<<56))
 
 /*swap*/
 static inline ut16 r_swap_ut16(ut16 val) {
