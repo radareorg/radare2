@@ -21,7 +21,7 @@ armv7v35 Apache-2.0 OK
   - agD : LGPL-3.0-only    OK
   - java : Apache-2.0    OK
   - prj : MIT    OK
-  - sixref : MIT    OK
+  - six : MIT    OK
   - r2ai-client : MIT    OK
   - r2dec : BSD-3    OK
   - r2ghidra : GPL3    OK

@@ -83,8 +83,8 @@ if user_plugins.contains('web')
   io_plugins += [ 'r2web' ]
 endif
 if user_plugins.contains('arm')
-  anal_plugins += [] # sixref should be an analysis plugin
-  core_plugins += [ 'sixref' ]
+  anal_plugins += [ 'six' ]
+  core_plugins += []
   arch_plugins += [ 'arm', 'arm_cs'  ]
   bp_plugins += [ 'arm' ]
   asm_plugins += [ 'arm' ]
@@ -215,8 +215,6 @@ if get_option('plugins') == ''
     # 'hppa_gnu',
     ]
   endif
-
-  core_plugins += [ 'sixref' ]
 
   if get_option('use_v35')
     arch_plugins += ['arm_v35']
