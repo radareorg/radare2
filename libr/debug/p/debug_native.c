@@ -1479,6 +1479,7 @@ static bool arm64_hwbp_del(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 #define BCR_M_IMVA_MISMATCH     ((uint32_t)(2u << 21))
 #define BCR_ENABLE              ((uint32_t)(1u))
 #define BAS_IMVA_ALL            ((uint32_t)(0xfu << 5))
+#define S_USER                  ((uint32_t)(2u << 1))
 
 static bool darwin_arm64_hwbp_add(RDebug *dbg, RBreakpoint *bp, RBreakpointItem *b) {
 	RList *threads = xnu_thread_list (dbg, dbg->pid, NULL);
