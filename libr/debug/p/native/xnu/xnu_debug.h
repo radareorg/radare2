@@ -209,5 +209,7 @@ RDebugPid *xnu_get_pid(int pid);
 RList *xnu_dbg_maps(RDebug *dbg, int only_modules);
 RList *xnu_thread_list(RDebug *dbg, int pid, RList *list);
 RDebugInfo *xnu_info(RDebug *dbg, const char *arg);
+bool xnu_thread_get_drx(RDebug *dbg, xnu_thread_t *thread);
+bool xnu_thread_set_drx(RDebug *dbg, xnu_thread_t *thread);
 
 #endif
