@@ -51,6 +51,8 @@ r_core_sources += [
   'p/core_java.c'
 ]
 
+r_core_sources += r_core_additional_sources
+
 r_core_inc = [
   'i/heap/jemalloc',
   'i/heap/windows',

@@ -2,6 +2,7 @@ use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
 
 r_core_sources = []
+r_core_additional_sources = []
 core_plugins = []
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
