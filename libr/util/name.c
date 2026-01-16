@@ -2,6 +2,36 @@
 
 #include <r_util.h>
 
+// lookup table for r_name_validate_char: true = valid (alnum or . : _)
+static const bool valid_name_char[256] = {
+	['.'] = true,
+	['0'] = true, ['1'] = true, ['2'] = true, ['3'] = true, ['4'] = true,
+	['5'] = true, ['6'] = true, ['7'] = true, ['8'] = true, ['9'] = true,
+	[':'] = true,
+	['A'] = true, ['B'] = true, ['C'] = true, ['D'] = true, ['E'] = true, ['F'] = true, ['G'] = true,
+	['H'] = true, ['I'] = true, ['J'] = true, ['K'] = true, ['L'] = true, ['M'] = true, ['N'] = true,
+	['O'] = true, ['P'] = true, ['Q'] = true, ['R'] = true, ['S'] = true, ['T'] = true, ['U'] = true,
+	['V'] = true, ['W'] = true, ['X'] = true, ['Y'] = true, ['Z'] = true,
+	['_'] = true,
+	['a'] = true, ['b'] = true, ['c'] = true, ['d'] = true, ['e'] = true, ['f'] = true, ['g'] = true,
+	['h'] = true, ['i'] = true, ['j'] = true, ['k'] = true, ['l'] = true, ['m'] = true, ['n'] = true,
+	['o'] = true, ['p'] = true, ['q'] = true, ['r'] = true, ['s'] = true, ['t'] = true, ['u'] = true,
+	['v'] = true, ['w'] = true, ['x'] = true, ['y'] = true, ['z'] = true,
+};
+
+// lookup table for r_name_validate_dash: true = dash-like (replace with _)
+static const bool dash_char[256] = {
+	['!'] = true, ['"'] = true, ['$'] = true, ['%'] = true, ['('] = true, [')'] = true,
+	[','] = true, ['-'] = true, ['/'] = true, [';'] = true, ['<'] = true, ['>'] = true,
+	['?'] = true, ['@'] = true, ['['] = true, ['\\'] = true, [']'] = true, ['_'] = true,
+	['`'] = true, ['~'] = true, [' '] = true,
+};
+
+// lookup table for shell filter: true = skip char
+static const bool shell_skip_char[256] = {
+	['\n'] = true, ['\r'] = true, [' '] = true, ['"'] = true, ['='] = true, ['\\'] = true,
+};
+
 /* Validate if char is printable , why not use ISPRINTABLE() ?? */
 R_API bool r_name_validate_print(const char ch) {
 	// TODO: support utf8
@@ -17,15 +47,11 @@ R_API bool r_name_validate_print(const char ch) {
 
 // used to determine if we want to replace those chars with '_' in r_name_filter()
 R_API bool r_name_validate_dash(const char ch) {
-	const char chars[] = " -_/\\()~[]<>!?$;%@`,\"";
-	return strchr (chars, ch);
+	return dash_char[(ut8)ch];
 }
 
 R_API bool r_name_validate_char(const char ch) {
-	if (isalpha (ch & 0xff) || isdigit (ch & 0xff)) {
-		return true;
-	}
-	return (ch == '.' || ch == ':' || ch == '_');
+	return valid_name_char[(ut8)ch];
 }
 
 R_API bool r_name_validate_first(const char ch) {
@@ -46,7 +72,7 @@ R_API bool r_name_check(const char *s) {
 		return false;
 	}
 	for (s++; *s; s++) {
-		if (!r_name_validate_char (*s)) {
+		if (!valid_name_char[(ut8)*s]) {
 			return false;
 		}
 	}
@@ -166,17 +192,8 @@ R_API char *r_name_filter_quoted_shell(const char *s) {
 	}
 	char *b = a;
 	while (*s) {
-		switch (*s) {
-		case ' ':
-		case '=':
-		case '"':
-		case '\\':
-		case '\r':
-		case '\n':
-			break;
-		default:
+		if (!shell_skip_char[(ut8)*s]) {
 			*b++ = *s;
-			break;
 		}
 		s++;
 	}

@@ -932,11 +932,12 @@ beach:
 		const char *basename = r_file_basename (filenameuri);
 		char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", filenameuri, basename);
 		if (r_file_exists (macdwarf)) {
-			// RBinObject *obj = r_bin_cur_object (r->bin);
-			// ut64 nbaddr = obj? obj->baddr: baddr;
+			// Skip symbols for dSYM since they duplicate main binary
+			bool old_skipsyms = r->bin->options.skip_symbols;
+			r->bin->options.skip_symbols = true;
 			r_core_cmd_callf (r, "o %s", macdwarf);
+			r->bin->options.skip_symbols = old_skipsyms;
 			r_core_cmd_call (r, "obm-");
-			// r_core_cmd_callf (r, "o-."); // causes uaf
 		}
 		free (macdwarf);
 	}
