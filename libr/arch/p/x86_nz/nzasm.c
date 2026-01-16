@@ -1741,6 +1741,9 @@ static int opdec(RArchSession *a, ut8 *data, const Opcode *op) {
 		use_rex = true;
 		rex |= 1;
 	}
+	if (op->operands[0].rex_prefixed) {	// need REX for sil/dil/spl/bpl
+		use_rex = true;
+	}
 
 	//opcode selection
 	int opcode;
@@ -2154,6 +2157,9 @@ static int opinc(RArchSession *a, ut8 *data, const Opcode *op) {
 	if (op->operands[0].extended) {		//B field
 		use_rex = true;
 		rex |= 1;
+	}
+	if (op->operands[0].rex_prefixed) {	// need REX for sil/dil/spl/bpl
+		use_rex = true;
 	}
 
 	//opcode selection
@@ -5498,13 +5504,19 @@ static Register parseReg(RArchSession *a, const char *str, size_t *pos, ut32 *ty
 			}
 		}
 	}
-	// General purpose registers: sil, dil
-	if (length == 3 && token[1] == 'i' && token[2] == 'l') {
+	// General purpose registers: spl, bpl, sil, dil
+	if (length == 3 && token[2] == 'l') {
 		*rex_prefixed = true;
-		if (token[0] == 's') {
+		if (token[0] == 's' && token[1] == 'p') {
+			*type = (OT_GPREG & OT_REG (X86R_SPL)) | OT_BYTE;
+			return X86R_SPL;
+		} else if (token[0] == 'b' && token[1] == 'p') {
+			*type = (OT_GPREG & OT_REG (X86R_BPL)) | OT_BYTE;
+			return X86R_BPL;
+		} else if (token[0] == 's' && token[1] == 'i') {
 			*type = (OT_GPREG & OT_REG (X86R_SIL)) | OT_BYTE;
 			return X86R_SIL;
-		} else if (token[0] == 'd') {
+		} else if (token[0] == 'd' && token[1] == 'i') {
 			*type = (OT_GPREG & OT_REG (X86R_DIL)) | OT_BYTE;
 			return X86R_DIL;
 		} else {
