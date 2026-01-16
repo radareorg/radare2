@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin"
 
