@@ -433,6 +433,7 @@ typedef struct r_bin_file_options_t {
 	int fd;
 	int rawstr;
 	bool nofuncstarts;
+	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	const char *filename;
 } RBinFileOptions;
 
@@ -514,6 +515,7 @@ typedef struct r_bin_options_t {
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;
+	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	int minstrlen;
 	int maxstrlen;
 	int maxsymlen;

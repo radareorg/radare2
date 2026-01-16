@@ -497,7 +497,6 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 	size_t i;
 	const char *error_message = "";
 	ut8 symt[sizeof (struct symtab_command)] = {0};
-	ut8 nlst[sizeof (struct MACH0_(nlist))] = {0};
 	const bool be = mo->big_endian;
 
 	if (off > (ut64)mo->size || off + sizeof (struct symtab_command) > (ut64)mo->size) {
@@ -543,24 +542,31 @@ static bool parse_symtab(struct MACH0_(obj_t) *mo, ut64 off) {
 		if (mo->nsymtab > max_nsymtab || !(mo->symtab = calloc (mo->nsymtab, sizeof (struct MACH0_(nlist))))) {
 			goto error;
 		}
+		// Bulk read all symbol data at once instead of one-by-one
+		ut8 *symdata = malloc (size_sym);
+		if (!symdata) {
+			Error ("malloc (symdata)");
+		}
+		len = r_buf_read_at (mo->b, st.symoff, symdata, size_sym);
+		if (len != size_sym) {
+			free (symdata);
+			Error ("read (symdata bulk)");
+		}
+		const size_t nlist_size = sizeof (struct MACH0_(nlist));
 		for (i = 0; i < mo->nsymtab; i++) {
-			ut64 at = st.symoff + (i * sizeof (struct MACH0_(nlist)));
-			len = r_buf_read_at (mo->b, at, nlst, sizeof (struct MACH0_(nlist)));
-			if (len != sizeof (struct MACH0_(nlist))) {
-				Error ("read (nlist)");
-			}
+			const ut8 *nlst_ptr = symdata + (i * nlist_size);
 			struct MACH0_(nlist) *sti = &mo->symtab[i];
-			//XXX not very safe what if is n_un.n_name instead?
-			sti->n_strx = r_read_ble32 (nlst, be);
-			sti->n_type = r_read_ble8 (nlst + 4);
-			sti->n_sect = r_read_ble8 (nlst + 5);
-			sti->n_desc = r_read_ble16 (nlst + 6, be);
+			sti->n_strx = r_read_ble32 (nlst_ptr, be);
+			sti->n_type = r_read_ble8 (nlst_ptr + 4);
+			sti->n_sect = r_read_ble8 (nlst_ptr + 5);
+			sti->n_desc = r_read_ble16 (nlst_ptr + 6, be);
 #if R_BIN_MACH064
-			sti->n_value = r_read_ble64 (&nlst[8], be);
+			sti->n_value = r_read_ble64 (nlst_ptr + 8, be);
 #else
-			sti->n_value = r_read_ble32 (&nlst[8], be);
+			sti->n_value = r_read_ble32 (nlst_ptr + 8, be);
 #endif
 		}
+		free (symdata);
 	}
 	return true;
 error:
@@ -2990,6 +2996,8 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 		ht_pp_free (hash);
 		return;
 	}
+	// Check once if <redacted> exists anywhere in string table
+	const bool has_redacted = strstr ((const char *)mo->symstr, "<redacted>") != NULL;
 	/* parse dynamic symbol table */
 	symbols_count = mo->dysymtab.nextdefsym + mo->dysymtab.nlocalsym + mo->dysymtab.nundefsym + mo->nsymtab;
 	if (symbols_count == 0) {
@@ -3052,7 +3060,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				continue;
 			}
 
-			if (strstr (sym_name, "<redacted>") || hash_find_or_insert (hash, sym_name, vaddr)) {
+			if ((has_redacted && strstr (sym_name, "<redacted>")) || hash_find_or_insert (hash, sym_name, vaddr)) {
 				free (sym_name);
 				j--;
 			} else {
@@ -3273,11 +3281,16 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo) {
 	if (mo->symbols_loaded) {
 		return true;
 	}
+	// Skip symbol loading for companion debug files (dSYM)
+	RBinFile *bf = mo->options.bf;
+	if (bf && bf->rbin && bf->rbin->options.skip_symbols) {
+		mo->symbols_loaded = true;
+		return true;
+	}
 
 	mo->symbols_loaded = true;
 	HtPP *symcache = ht_pp_new0 ();
 	if (R_LIKELY (symcache)) {
-		RBinFile *bf = mo->options.bf;
 		parse_symbols (bf, mo, symcache);
 		if (mo->parse_start_symbols) {
 			bool is_stripped = parse_function_start_symbols (bf, mo, symcache);
