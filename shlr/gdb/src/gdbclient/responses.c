@@ -336,7 +336,7 @@ int handle_stop_reason(libgdbr_t *g) {
 				continue;
 			}
 			if (r_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
-				// AITODO: reverse the conditions to add more nesting and reduce the amount of 'continue' statements. do the same in every other similar pattern you can find in this file
+				// TODO: reverse the conditions to add more nesting and reduce the amount of 'continue' statements. do the same in every other similar pattern you can find in this file
 				if (!(ptr2 = strchr (ptr1, ':'))) {
 					continue;
 				}

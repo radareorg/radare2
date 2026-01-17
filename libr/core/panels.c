@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2014-2025 - pancake, vane11ope */
+/* radare2 - LGPL - Copyright 2014-2026 - pancake, vane11ope */
 
 #include <r_core.h>
 
@@ -2246,27 +2246,20 @@ static void __step_modal_cb(void *user, R_UNUSED RPanel *panel, R_UNUSED const R
 	__step_cb (user);
 }
 
-static void __panel_prompt(RCore *core, const char *prompt, char *buf, int len) {
-	r_line_set_prompt (core->cons->line, prompt);
-	*buf = 0;
-	r_cons_fgets (core->cons, buf, len, 0, NULL);
-}
-
 static int __break_points_cb(void *user) {
 	RCore *core = (RCore *)user;
-	char buf[128];
-	const char *prompt = "addr: ";
 
 	core->cons->line->prompt_type = R_LINE_PROMPT_OFFSET;
 	r_line_set_hist_callback (core->cons->line,
 		&r_line_hist_offset_up,
 		&r_line_hist_offset_down);
-	__panel_prompt (core, prompt, buf, sizeof (buf));
+	const char *buf = r_cons_visual_readln (core->cons, "addr: ", NULL);
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
-
-	ut64 addr = r_num_math (core->num, buf);
-	r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
+	if (buf) {
+		ut64 addr = r_num_math (core->num, buf);
+		r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
+	}
 	return 0;
 }
 
@@ -3698,7 +3691,6 @@ static void __insert_value(RCore *core, int wat) {
 	}
 	RPanels *panels = core->panels;
 	RPanel *cur = __get_cur_panel (panels);
-	char buf[128];
 	switch (wat) {
 	case 'a': // asm
 		r_core_visual_asm (core, cur->model->addr + core->print->cur);
@@ -3706,36 +3698,41 @@ static void __insert_value(RCore *core, int wat) {
 		return;
 	case 'x': // hex
 		{
-		const char *prompt = "insert hex: ";
-		__panel_prompt (core, prompt, buf, sizeof (buf));
-		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
-		cur->view->refresh = true;
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		if (buf) {
+			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
+			cur->view->refresh = true;
+		}
 		}
 		return;
 	}
 	if (__check_panel_type (cur, PANEL_CMD_STACK)) {
-		const char *prompt = "insert hex: ";
-		__panel_prompt (core, prompt, buf, sizeof (buf));
-		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
-		cur->view->refresh = true;
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		if (buf) {
+			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
+			cur->view->refresh = true;
+		}
 	} else if (__check_panel_type (cur, PANEL_CMD_REGISTERS)) {
 		const char *creg = core->dbg->creg;
 		if (creg) {
-			const char *prompt = "new-reg-value> ";
-			__panel_prompt (core, prompt, buf, sizeof (buf));
-			r_core_cmdf (core, "dr %s = %s", creg, buf);
-			cur->view->refresh = true;
+			const char *buf = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
+			if (buf) {
+				r_core_cmdf (core, "dr %s = %s", creg, buf);
+				cur->view->refresh = true;
+			}
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-		const char *prompt = "insert asm: ";
-		__panel_prompt (core, prompt, buf, sizeof (buf));
-		r_core_visual_asm (core, cur->model->addr + core->print->cur);
-		cur->view->refresh = true;
+		const char *buf = r_cons_visual_readln (core->cons, "insert asm: ", NULL);
+		if (buf) {
+			r_core_visual_asm (core, cur->model->addr + core->print->cur);
+			cur->view->refresh = true;
+		}
 	} else if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
-		const char *prompt = "insert hex: ";
-		__panel_prompt (core, prompt, buf, sizeof (buf));
-		r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
-		cur->view->refresh = true;
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		if (buf) {
+			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
+			cur->view->refresh = true;
+		}
 	}
 }
 
@@ -5719,12 +5716,16 @@ static int __calls_cb(void *user) {
 
 static int __watch_points_cb(void *user) {
 	RCore *core = (RCore *)user;
-	char addrBuf[128], rw[128];
-	const char *addrPrompt = "addr: ", *rwPrompt = "<r/w/rw>: ";
-	__panel_prompt (core, addrPrompt, addrBuf, sizeof (addrBuf));
-	__panel_prompt (core, rwPrompt, rw, sizeof (rw));
-	ut64 addr = r_num_math (core->num, addrBuf);
-	r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
+	const char *addrstr = r_cons_visual_readln (core->cons, "addr: ", NULL);
+	if (R_STR_ISNOTEMPTY (addrstr)) {
+		ut64 addr = r_num_math (core->num, addrstr);
+		const char *rw = r_cons_visual_readln (core->cons, "<r/w/rw>: ", NULL);
+		if (R_STR_ISNOTEMPTY (rw)) {
+			r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
+			return 1;
+		}
+	}
+	// show error here or something?
 	return 0;
 }
 
@@ -6564,10 +6565,9 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 	switch (key) {
 	case 'i':
 		{
-			char cmd[128] = {0};
 			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->addr);
-			__panel_prompt (core, prompt, cmd, sizeof (cmd));
-			if (*cmd) {
+			const char *cmd = r_cons_visual_readln (core->cons, prompt, NULL);
+			if (R_STR_ISNOTEMPTY (cmd)) {
 				if (!strcmp (cmd, "clear")) {
 					r_core_cmd0 (core, ":>$console");
 				} else {
@@ -6575,8 +6575,8 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 					r_core_cmdf (core, "%s >>$console", cmd);
 				}
 			}
-			panel->view->refresh = true;
 			free (prompt);
+			panel->view->refresh = true;
 		}
 		return true;
 	case 'l':

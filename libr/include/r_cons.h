@@ -1209,8 +1209,6 @@ R_API void r_cons_push(RCons *cons);
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
 R_API void r_cons_echo(RCons *cons, const char *msg);
 R_API char *r_cons_drain(RCons *cons);
-R_API void r_cons_visual_flush(RCons *cons);
-R_API void r_cons_visual_write(RCons *cons, char *buffer);
 R_API int r_cons_get_column(RCons *cons);
 R_API int r_cons_get_cursor(RCons *cons, int *rows);
 R_API void r_cons_show_cursor(RCons *cons, int cursor);
@@ -1228,6 +1226,10 @@ R_API bool r_cons_is_breaked(RCons *cons);
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user);
 R_API void r_cons_break_pop(RCons *cons);
 
+// visual
+R_API void r_cons_visual_flush(RCons *cons);
+R_API void r_cons_visual_write(RCons *cons, char *buffer);
+R_API const char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill);
 #endif
 
 // bind

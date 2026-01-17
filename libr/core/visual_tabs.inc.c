@@ -160,11 +160,12 @@ static void visual_tabname(RCore *core) {
 	if (!core->visual.tabs) {
 		return;
 	}
-	char name[32] = { 0 };
-	prompt_read (core, "tab name: ", name, sizeof (name));
-	RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
-	if (tab) {
-		strcpy (tab->name, name);
+	const char *tmp = r_cons_visual_readln (core->cons, "tab name: ", NULL);
+	if (R_STR_ISNOTEMPTY (tmp)) {
+		RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
+		if (tab) {
+			r_str_ncpy (tab->name, tmp, sizeof (tab->name));
+		}
 	}
 }
 
