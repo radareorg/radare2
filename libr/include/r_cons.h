@@ -505,6 +505,8 @@ typedef struct r_cons_t {
 	FILE *fdin; // FILE? and then int ??
 	int fdout; // only used in pipe.c :?? remove?
 	const char *teefile;
+	char *wasm_redirect_file; // for WASM output redirection
+	bool wasm_redirect_append; // for WASM redirect append mode
 	int (*user_fgets)(struct r_cons_t * cons, char *buf, int len);
 	RConsEvent event_resize;
 	void *event_data;

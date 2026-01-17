@@ -317,6 +317,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
+	R_FREE (cons->wasm_redirect_file);
 	r_th_lock_free (cons->lock);
 	r_cons_pal_fini ();
 	RVecFdPairs_fini (&cons->fds);
@@ -817,6 +818,18 @@ R_API void r_cons_flush(RCons *cons) {
 			R_LOG_ERROR ("Cannot write on '%s'", tee);
 		}
 	}
+#if __wasi__
+	// TODO: this is a workaround, needs further investigation and wasm testsuite before removing this code
+	if (cons->wasm_redirect_file) {
+		bool res = r_file_dump (cons->wasm_redirect_file, (const ut8*)ctx->buffer, ctx->buffer_len, cons->wasm_redirect_append);
+		if (!res) {
+			R_LOG_ERROR ("r_cons_flush: r_file_dump: error (%s)", cons->wasm_redirect_file);
+		}
+		R_FREE (cons->wasm_redirect_file);
+		r_cons_reset (cons);
+		return;
+	}
+#endif
 	r_cons_highlight (cons, cons->highlight);
 
 	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
