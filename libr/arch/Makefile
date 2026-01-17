@@ -20,5 +20,6 @@ STATIC_OBJS=$(subst ..,p/..,$(subst arch_,p/arch_,$(STATIC_OBJ)))
 OBJS=arch.o arch_config.o arch_switch.o arch_op.o
 OBJS+=arch_value.o arch_cond.o arch_session.o arch_platform.o
 OBJS+=${STATIC_OBJS}
+OBJS+=${EXTERNAL_STATIC_OBJS}
 
 include ../rules.mk

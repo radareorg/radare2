@@ -78,5 +78,6 @@ OBJS+=d/v850.o
 OBJS+=d/x86.o
 OBJS+=d/z80.o
 endif
+OBJS+=${EXTERNAL_STATIC_OBJS}
 
 include $(TOP)/libr/rules.mk

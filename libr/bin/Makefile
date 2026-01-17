@@ -29,6 +29,7 @@ OBJS+=mangling/swift.o mangling/swift-sd.o
 OBJS+=mangling/java.o
 OBJS+=mangling/pascal.o
 OBJS+=mangling/rust.o
+OBJS+=$(EXTERNAL_STATIC_OBJS)
 
 include $(TOP)/libr/bin/format/pdb/deps.mk
 include $(TOP)/libr/rules.mk

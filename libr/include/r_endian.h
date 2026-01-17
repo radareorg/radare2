@@ -250,7 +250,7 @@ static inline ut16 r_read_me16(const void *src) {
 }
 
 static inline ut16 r_read_at_me16(const void *src, size_t offset) {
-	return r_read_me16 (src);
+	return r_read_me16 (((ut8*)src) + offset);
 }
 
 static inline void r_write_me16(void *dest, ut16 val) {

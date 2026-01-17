@@ -2,6 +2,8 @@ use_gpl = not get_option('nogpl')
 user_plugins = get_option('plugins').split(',')
 
 r_core_sources = []
+r_core_additional_sources = []
+r_core_additional_inc = []
 core_plugins = []
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
@@ -458,7 +460,6 @@ io_plugins += [
   ]
 endif
 
-subdir('plugins')
 
 include_files = [
   'include/r2naked.h',
@@ -587,6 +588,7 @@ r_util_files = [
   'include/r_util/r_xml.h',
 ]
 
+subdir('plugs')
 
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 

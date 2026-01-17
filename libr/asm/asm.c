@@ -1,10 +1,11 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble */
 
 // needed for spp
 #define USE_R2 1
 #include <r_core.h>
 #include <spp/spp.h>
 #include <config.h>
+#include "r2plugins.h"
 
 R_LIB_VERSION(r_asm);
 

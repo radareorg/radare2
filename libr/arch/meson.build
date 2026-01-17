@@ -213,7 +213,7 @@ deps =  [
   ]
 
 links = []
-incs = [platform_inc]
+incs = [platform_inc, '../plugs']
 if get_option('use_v35')
 r_arch_sources += 'p/arm/plugin_v35.c'
 binaryninja = subproject('binaryninja')

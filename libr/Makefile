@@ -17,7 +17,7 @@ include libs.mk
 .PHONY: $(LIBS)
 
 all:
-	$(MAKE) -C plugins
+	$(MAKE) -C plugs
 	$(MAKE) $(LIBS0)
 	$(MAKE) $(LIBS1)
 	$(MAKE) $(LIBS2)
@@ -197,7 +197,6 @@ install: install-includes install-pkgconfig
 	# object archives
 	@for FILE in `find * -type f -iname "*.${EXT_AR}" | grep -v dis.a | grep -v fs/p` ; do \
 	  echo " ${DESTDIR}${LIBDIR}/$$FILE"; ${INSTALL_DATA} $$FILE "${DESTDIR}${LIBDIR}" ; done || true
-	# plugins
 	@${INSTALL_DIR} "${DESTDIR}${LIBDIR}/radare2/${VERSION}"
 	@for FILE in `find */p -perm -u+x -type f | grep -v exe | grep -v dll | grep ${EXT_SO}`; \
 	  do echo " ${DESTDIR}${LIBDIR}/radare2/${VERSION}/$$FILE"; \
@@ -223,7 +222,6 @@ deinstall uninstall:
 	-@for FILE in `find */t -perm -u+x -type f | grep 2`; do \
 	FILE=`echo $$FILE|awk -F / '{ print $$NF; }'`; \
 	echo "${DESTDIR}${BINDIR}/$$FILE" ; rm -f "${DESTDIR}${BINDIR}/$$FILE" ; done
-	# plugins
 	-@for FILE in `find */p -perm -u+x -type f`; do \
 	FILE="${DESTDIR}${LIBDIR}/radare2/${VERSION}/`echo $$FILE|awk -F / '{ print $$NF; }'`"; \
 	echo $$FILE ; rm -f $$FILE ; done
