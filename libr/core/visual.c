@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
 #include <r_vec.h>
@@ -7,6 +7,10 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 
 #define NPF 5
 #define PIDX (R_ABS (core->visual.printidx % NPF))
+#define KEY_ALTQ 0xc5
+
+#undef USE_THREADS
+#define USE_THREADS 1
 
 R_IPI void visual_refresh(RCore *core);
 R_IPI void visual_add_comment(RCore *core, ut64 at);
@@ -16,7 +20,89 @@ typedef struct {
 	int y;
 } Snow;
 
-#define KEY_ALTQ 0xc5
+// clang-format on
+static RCoreHelpMessage help_visual = {
+	"?", "full help",
+	"!", "enter panels",
+	"a", "code analysis",
+	"c", "toggle cursor",
+	"d", "debugger / emulator",
+	"e", "toggle configurations",
+	"i", "insert / write",
+	"m", "moving around (seeking)",
+	"p", "print commands and modes",
+	"v", "view management",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_visual = {
+	"?", "show visual mode help (short)",
+	"??", "show visual mode help (full)",
+	"$", "set the program counter to the current offset + cursor",
+	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
+	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
+	"0", "reset print mode (V0pp)",
+	"^", "seek to the beginning of the function",
+	"!", "swap into visual panels mode",
+	"TAB", "switch to the next print mode (or element in cursor mode)",
+	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
+	"=", "set cmd.vprompt (top row)",
+	"|", "set cmd.cprompt (right column)",
+	".", "seek to program counter",
+	"#", "toggle decompiler comments in disasm (see pdd* from r2dec)",
+	"\\", "toggle visual split mode",
+	"\"", "toggle the column mode (uses pC..)",
+	"/", "in cursor mode search in current block",
+	"(", "toggle snow",
+	")", "toggle emu.str",
+	":cmd", "run radare command",
+	";[-]cmt", "add/remove comment",
+	"0", "seek to beginning of current function",
+	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
+	",file", "add a link to the text file",
+	"/*+-[]", "change block size, [] = resize hex.cols",
+	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
+	"a/A", "(a)ssemble code, visual (A)ssembler",
+	"b", "browse evals, symbols, flags, mountpoints, evals, classes, ...",
+	"B", "toggle breakpoint",
+	"c/C", "toggle (c)ursor and (C)olors",
+	"d[f?]", "define function, data, code, ..",
+	"D", "enter visual diff mode (set diff.from/to)",
+	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
+	"hjkl", "move around (or HJKL) (left-down-up-right)",
+	"i", "insert hex or string (in hexdump) use tab to toggle",
+	"I", "insert hexpair block ",
+	"mK/'K", "mark/go to Key (any key)",
+	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
+	"g", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
+	"O", "toggle asm.pseudo and asm.esil",
+	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
+	"q", "back to radare shell",
+	"r", "toggle callhints/jmphints/leahints",
+	"R", "randomize color palette (ecr)",
+	"sS", "step / step over",
+	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
+	"uU", "undo/redo seek",
+	"v", "visual function/vars code analysis mode",
+	"V", "(V)iew interactive ascii art graph (agfv)",
+	"wW", "seek cursor to next/prev word",
+	"xX", "show xrefs/refs of current function from/to data/code",
+	"yY", "copy and paste selection",
+	"z", "fold/unfold comments in disassembly",
+	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
+	"Enter", "follow address of jump/call",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_visual_fn = {
+	"F2", "toggle breakpoint",
+	"F4", "run to cursor",
+	"F7", "single step",
+	"F8", "step over",
+	"F9", "continue",
+	NULL
+};
+// clang-format off
 
 static const char *printfmtSingle[NPF] = {
 	"xc",  // HEXDUMP
@@ -223,10 +309,8 @@ static const char *__core_visual_print_command(RCore *core) {
 		core->stkcmd = strdup (stackPrintCommand (core));
 		return printfmtColumns[PIDX];
 	}
-	if (PIDX == 1) {
-		if (r_config_get_b (core->config, "asm.pseudo.linear")) {
-			return "afsQ;pdcl";
-		}
+	if (PIDX == 1 && r_config_get_b (core->config, "asm.pseudo.linear")) {
+		return "afsQ;pdcl";
 	}
 	return printfmtSingle[PIDX];
 }
@@ -280,90 +364,6 @@ static bool __core_visual_gogo(RCore *core, int ch) {
 	return false;
 }
 
-static RCoreHelpMessage help_visual = {
-	"?", "full help",
-	"!", "enter panels",
-	"a", "code analysis",
-	"c", "toggle cursor",
-	"d", "debugger / emulator",
-	"e", "toggle configurations",
-	"i", "insert / write",
-	"m", "moving around (seeking)",
-	"p", "print commands and modes",
-	"v", "view management",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_visual = {
-	"?", "show visual mode help (short)",
-	"??", "show visual mode help (full)",
-	"$", "set the program counter to the current offset + cursor",
-	"&", "rotate asm.bits between 8, 16, 32 and 64 applying hints",
-	"%", "in cursor mode finds matching pair, otherwise toggle autoblocksz",
-	"0", "reset print mode (V0pp)",
-	"^", "seek to the beginning of the function",
-	"!", "swap into visual panels mode",
-	"TAB", "switch to the next print mode (or element in cursor mode)",
-	"_", "enter the flag/comment/functions/.. hud (same as VF_)",
-	"=", "set cmd.vprompt (top row)",
-	"|", "set cmd.cprompt (right column)",
-	".", "seek to program counter",
-	"#", "toggle decompiler comments in disasm (see pdd* from r2dec)",
-	"\\", "toggle visual split mode",
-	"\"", "toggle the column mode (uses pC..)",
-	"/", "in cursor mode search in current block",
-	"(", "toggle snow",
-	")", "toggle emu.str",
-	":cmd", "run radare command",
-	";[-]cmt", "add/remove comment",
-	"0", "seek to beginning of current function",
-	"[1-9]", "follow jmp/call identified by shortcut (like ;[1])",
-	",file", "add a link to the text file",
-	"/*+-[]", "change block size, [] = resize hex.cols",
-	"<,>", "seek aligned to block size (in cursor slurp or dump files)",
-	"a/A", "(a)ssemble code, visual (A)ssembler",
-	"b", "browse evals, symbols, flags, mountpoints, evals, classes, ...",
-	"B", "toggle breakpoint",
-	"c/C", "toggle (c)ursor and (C)olors",
-	"d[f?]", "define function, data, code, ..",
-	"D", "enter visual diff mode (set diff.from/to)",
-	"f/F", "set/unset or browse flags. f- to unset, F to browse, ..",
-	"hjkl", "move around (or HJKL) (left-down-up-right)",
-	"i", "insert hex or string (in hexdump) use tab to toggle",
-	"I", "insert hexpair block ",
-	"mK/'K", "mark/go to Key (any key)",
-	"n/N", "seek next/prev function/flag/hit (scr.nkey)",
-	"g", "go/seek to given offset (g[g/G]<enter> to seek begin/end of file)",
-	"O", "toggle asm.pseudo and asm.esil",
-	"p/P", "rotate print modes (hex, disasm, debug, words, buf)",
-	"q", "back to radare shell",
-	"r", "toggle callhints/jmphints/leahints",
-	"R", "randomize color palette (ecr)",
-	"sS", "step / step over",
-	"tT", "tt new tab, t[1-9] switch to nth tab, t= name tab, t- close tab",
-	"uU", "undo/redo seek",
-	"v", "visual function/vars code analysis mode",
-	"V", "(V)iew interactive ascii art graph (agfv)",
-	"wW", "seek cursor to next/prev word",
-	"xX", "show xrefs/refs of current function from/to data/code",
-	"yY", "copy and paste selection",
-	"z", "fold/unfold comments in disassembly",
-	"Z", "shift-tab rotate print modes", // ctoggle zoom mode",
-	"Enter", "follow address of jump/call",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_visual_fn = {
-	"F2", "toggle breakpoint",
-	"F4", "run to cursor",
-	"F7", "single step",
-	"F8", "step over",
-	"F9", "continue",
-	NULL
-};
-
-#undef USE_THREADS
-#define USE_THREADS 1
 
 #if USE_THREADS
 
@@ -912,12 +912,10 @@ static int visual_nkey(RCore *core, int ch) {
 		cmd = r_config_get (core->config, "key.f4");
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			ch = r_core_cmd0 (core, cmd);
-		} else {
-			if (core->print->cur_enabled) {
-				// dcu 0xaddr
-				r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->addr + core->print->cur);
-				core->print->cur_enabled = 0;
-			}
+		} else if (core->print->cur_enabled) {
+			// dcu 0xaddr
+			r_core_cmdf (core, "dcu 0x%08"PFMT64x, core->addr + core->print->cur);
+			core->print->cur_enabled = 0;
 		}
 		break;
 	case R_CONS_KEY_F5:
@@ -985,14 +983,11 @@ static int visual_nkey(RCore *core, int ch) {
 }
 
 static void setdiff(RCore *core) {
-	{
-		const char *tmp = r_cons_visual_readln (core->cons, "diff from: ", NULL);
-		if (R_STR_ISNOTEMPTY (tmp)) {
-			r_config_set (core->config, "diff.from", tmp);
-		}
-	}
-	{
-		const char *tmp = r_cons_visual_readln (core->cons, "diff to: ", NULL);
+	const char *tmp = r_cons_visual_readln (core->cons, "diff from: ", NULL);
+	if (R_STR_ISNOTEMPTY (tmp)) {
+		r_config_set (core->config, "diff.from", tmp);
+	} else {
+		tmp = r_cons_visual_readln (core->cons, "diff to: ", NULL);
 		if (R_STR_ISNOTEMPTY (tmp)) {
 			r_config_set (core->config, "diff.to", tmp);
 		}
