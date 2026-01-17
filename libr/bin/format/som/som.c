@@ -509,10 +509,10 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 	RListIter *iter;
 	RSomImportListEntry *import_entry;
 	r_list_foreach (obj->imports, iter, import_entry) {
-		RBinImport *imp = R_NEW0 (RBinImport);
-		if (import_entry->import_name == -1) {
+		if (import_entry->import_name == (ut32)-1) {
 			continue;
 		}
+		RBinImport *imp = R_NEW0 (RBinImport);
 		const char *name;
 		if (obj->dl_strings && import_entry->import_name < obj->dl_hdr->string_table_size) {
 			const char *name_str = obj->dl_strings + import_entry->import_name;
