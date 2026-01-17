@@ -164,9 +164,8 @@ libr/bin/d/dll/*.c
 a
 poc
 *.zip
-libr/plugins/deps.mk
-libr/plugins/deps.h
-# libr/plugins/meson.build
-libr/plugins/static.cfg
-libr/plugins/p/meson.build
-libr/plugins/r2plugins.h
+libr/plugs/deps.mk
+libr/plugs/deps.h
+libr/plugs/static.cfg
+libr/plugs/p/meson.build
+libr/plugs/r2plugins.h

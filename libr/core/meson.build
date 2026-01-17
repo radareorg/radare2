@@ -1,3 +1,4 @@
+
 r_core_sources += [
   'anal_objc.c',
   'casm.c',
@@ -56,8 +57,10 @@ r_core_sources += r_core_additional_sources
 r_core_inc = [
   'i/heap/jemalloc',
   'i/heap/windows',
-  '../plugins'
+  '../plugs'
 ]
+r_core_additional_inc = []
+r_core_inc += r_core_additional_inc
 r_core_inc = [platform_inc, include_directories(r_core_inc)]
 
 r_core_deps = [
