@@ -1,6 +1,5 @@
 EXTERNAL_PLUGINS=
-EXTERNAL_PLUGINS+=r2hermes
-# EXTERNAL_PLUGINS+=corehi
+-include config.mk
 
 PONIS=deps.mk r2plugins.h p/meson.build static.cfg
 
