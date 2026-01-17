@@ -6,6 +6,7 @@
 #include <r_muta.h>
 #include <config.h>
 #include "i/private.h"
+#include <r2plugins.h>
 
 R_LIB_VERSION(r_bin);
 
@@ -963,7 +964,7 @@ R_API int r_bin_select_object(RBinFile *binfile, const char *arch, int bits, con
 	return r_bin_file_set_obj (binfile->rbin, binfile, obj);
 }
 
-// NOTE: this functiona works as expected, but  we need to merge bfid and boid
+// NOTE: this functiona works as expected, but we need to merge bfid and boid
 R_API bool r_bin_select_bfid(RBin *bin, ut32 bf_id) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *bf = r_bin_file_find_by_id (bin, bf_id);
@@ -1208,7 +1209,6 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 }
 
 R_API RBuffer *r_bin_create(RBin *bin, const char *p, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
-
 	R_RETURN_VAL_IF_FAIL (bin && p && opt, NULL);
 
 	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
@@ -1346,7 +1346,7 @@ R_API RBinObject *r_bin_cur_object(RBin *bin) {
 R_API void r_bin_force_plugin(RBin *bin, const char *name) {
 	R_RETURN_IF_FAIL (bin);
 	free (bin->force);
-	bin->force = (name && *name)? strdup (name): NULL;
+	bin->force = R_STR_ISNOTEMPTY (name)? strdup (name): NULL;
 }
 
 R_API const char *r_bin_entry_type_string(int etype) {
@@ -1468,10 +1468,6 @@ R_API const char *r_bin_field_kindstr(RBinField *f) {
 R_API RBinName *r_bin_name_new_from(R_OWNED char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	if (!bn) {
-		free (name);
-		return NULL;
-	}
 	bn->oname = name;
 	return bn;
 }
@@ -1479,9 +1475,7 @@ R_API RBinName *r_bin_name_new_from(R_OWNED char *name) {
 R_API RBinName *r_bin_name_new(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	RBinName *bn = R_NEW0 (RBinName);
-	if (bn) {
-		bn->oname = strdup (name);
-	}
+	bn->oname = strdup (name);
 	return bn;
 }
 

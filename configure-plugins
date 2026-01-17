@@ -55,10 +55,10 @@ load () {
 
 
 if [ -f libr/plugins/static.cfg ]; then
-  TEA_STATIC=$(cat libr/plugins/static.cfg)
-  echo "[INFO] Statically linking third-party plugins: ${TEA_STATIC}"
+  EXTERNAL_STATIC=$(cat libr/plugins/static.cfg)
+  echo "[INFO] Statically linking third-party plugins: `echo ${EXTERNAL_STATIC}`"
 else
-  TEA_STATIC=""
+  EXTERNAL_STATIC=""
   echo "[INFO] No third-party static plugins"
 fi
 
@@ -76,11 +76,11 @@ generate_configh () {
       echo "#define R_${uclib}_STATIC_PLUGINS \\"
       plugins="${plugins} __${uclib}"
       # the third party static plugins goes here
-      for b in ${TEA_STATIC} ; do
-        tealib=$(echo $b | cut -d . -f 1) # library
-        if [ "$lib" = "$tealib" ]; then
-          teaplg=$(echo $b | cut -d . -f 2) # plugin name
-          echo "     &r_${tealib}_plugin_${teaplg}, \\"
+      for b in ${EXTERNAL_STATIC} ; do
+        extlib=$(echo $b | cut -d . -f 1) # library
+        if [ "$lib" = "$extlib" ]; then
+          extplg=$(echo $b | cut -d . -f 2) # plugin name
+          echo "     &r_${extlib}_plugin_${extplg}, \\"
         fi
       done
     fi
@@ -127,11 +127,11 @@ generate_configmk () {
       uclib=$(echo $lib | tr '[a-z]' '[A-Z]')
       printf "STATIC_${uclib}_PLUGINS="
       plugins="${plugins} __${uclib}"
-      for b in ${TEA_STATIC} ; do
-        tealib=$(echo $b | cut -d . -f 1) # library
-        if [ "$lib" = "$tealib" ]; then
-          teaplg=$(echo $b | cut -d . -f 2) # plugin name
-          printf " ../plugins/p/${teaplg}/deps.mk"
+      for b in ${EXTERNAL_STATIC} ; do
+        extlib=$(echo $b | cut -d . -f 1)
+        if [ "$lib" = "$extlib" ]; then
+          extplg=$(echo $b | cut -d . -f 2) # plugin name
+          printf " ../plugins/p/${extplg}/r2plugin/deps-${lib}.mk"
         fi
       done
     fi
