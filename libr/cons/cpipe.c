@@ -33,7 +33,10 @@ static bool mydup(const int fd, const int fdn) {
 
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fd_src, int append) {
 #if __wasi__
-	return -1;
+	cons->wasm_redirect_append = append;
+	free (cons->wasm_redirect_file);
+	cons->wasm_redirect_file = strdup (file);
+	return 0;
 #else
 	if (fd_src < 1) {
 		return -1;
@@ -148,5 +151,7 @@ R_API void r_cons_pipe_close_all(RCons *cons) {
 	}
 	RVecFdPairs_fini (&cons->fds);
 	RVecFdPairs_init (&cons->fds);
+#else
+	R_FREE (cons->wasm_redirect_file);
 #endif
 }

@@ -317,6 +317,7 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
+	R_FREE (cons->wasm_redirect_file);
 	r_th_lock_free (cons->lock);
 	r_cons_pal_fini ();
 	RVecFdPairs_fini (&cons->fds);
@@ -817,6 +818,23 @@ R_API void r_cons_flush(RCons *cons) {
 			R_LOG_ERROR ("Cannot write on '%s'", tee);
 		}
 	}
+#if __wasi__
+	if (cons->wasm_redirect_file) {
+		const char *mode = cons->wasm_redirect_append ? "a+" : "w";
+		FILE *d = r_sandbox_fopen (cons->wasm_redirect_file, mode);
+		if (d) {
+			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
+				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", cons->wasm_redirect_file);
+			}
+			fclose (d);
+		} else {
+			R_LOG_ERROR ("Cannot write on '%s'", cons->wasm_redirect_file);
+		}
+		R_FREE (cons->wasm_redirect_file);
+		r_cons_reset (cons);
+		return;
+	}
+#endif
 	r_cons_highlight (cons, cons->highlight);
 
 	if (r_cons_is_interactive (cons) && !r_sandbox_enable (false)) {
