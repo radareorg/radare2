@@ -30,10 +30,7 @@ static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int 
 		}
 	}
 	r_muta_result_free (&res);
-	if (result) {
-		return result;
-	}
-	return r_hash_tostring (NULL, algo, data, len);
+	return result? result: r_hash_tostring (NULL, algo, data, len);
 }
 
 // clang-format off
@@ -176,8 +173,11 @@ static RCoreHelpMessage help_msg_pri = {
 	"pri4", "", "RGBA image",
 	NULL
 };
+
 static RCoreHelpMessage help_msg_pr = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
+	"pr2", " [len]", "8x8 2bpp-tiles",
+	"pr3", " [file]", "print 3D stereogram image of current block",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
 	"pri", "[aA12r]", "print raw image, 1bit image, honor hex.cols",
@@ -222,8 +222,6 @@ static RCoreHelpMessage help_msg_p = {
 	// "p", "[iI][df] [len]", "print N ops/bytes (f=func) (see pi? and pdi)",
 	//"p", "[kK] [len]", "print key in randomart (K is for mosaic)",
 	"p-", "[?][jh] [mode]", "bar|json|histogram blocks (mode: e?search.in)",
-	"p2", " [len]", "8x8 2bpp-tiles",
-	"p3", " [file]", "print 3D stereogram image of current block",
 	"p6", "[de] [len]", "base64 decode/encode",
 	"p8", "[?][bdfsjx] [len]", "8bit hexpair list of bytes",
 	"p=", "[?][bep] [N] [L] [b]", "show entropy/printable chars/chars bars",
@@ -291,6 +289,7 @@ static RCoreHelpMessage help_msg_prc = {
 	"prc=e", "", "entropy",
 	NULL
 };
+
 static RCoreHelpMessage help_msg_p_equal = {
 	"Usage:", "p=[=bep?][qj] [N] ([len]) ([offset]) ", "show entropy/printable chars/chars bars",
 	"e ", "zoom.in", "specify range for zoom",
@@ -8330,6 +8329,46 @@ static int cmd_print(void *data, const char *input) {
 		case 'i':
 			cmd_pri (core, input);
 			break;
+		case '2': // "pr2"
+			if (l) {
+				if (input[2] == '?') {
+					r_core_cmd_help_match (core, help_msg_p, "pr2");
+				} else {
+					RConsContext *c = core->cons->context;
+					const char **colors = (const char *[]){
+						c->pal.mov, // black
+						c->pal.nop, // dark
+						c->pal.cmp, // light
+						c->pal.jmp, // white
+					};
+					const int cols = r_config_get_i (core->config, "hex.cols");
+					r_print_2bpp_tiles (core->print, core->block, len - 1, cols / 4, colors);
+				}
+			}
+			break;
+		case '3': // "pr3" [file]
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_p, "pr3");
+			} else if (input[2] == ' ') {
+				char *data = r_file_slurp (input + 3, NULL);
+				if (data) {
+					char *res = r_print_stereogram (data, 78, 20);
+					char *out = r_print_stereogram_render (core->print, res);
+					r_cons_println (core->cons, out);
+					free (out);
+					free (res);
+					free (data);
+				} else {
+					R_LOG_ERROR ("Could not open '%s'", input + 2);
+				}
+			} else {
+				char *res = r_print_stereogram_bytes (block, core->blocksize);
+				char *out = r_print_stereogram_render (core->print, res);
+				r_cons_println (core->cons, out);
+				free (out);
+				free (res);
+			}
+			break;
 		case 'c': // "prc" // color raw dump
 			switch (input[2]) {
 			case '?':
@@ -8470,29 +8509,6 @@ static int cmd_print(void *data, const char *input) {
 				printraw (core, len, 0);
 			}
 			break;
-		}
-		break;
-	case '3': // "p3" [file]
-		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_p, "p3");
-		} else if (input[1] == ' ') {
-			char *data = r_file_slurp (input + 2, NULL);
-			if (!data) {
-				R_LOG_ERROR ("Could not open '%s'", input + 2);
-				break;
-			}
-			char *res = r_print_stereogram (data, 78, 20);
-			char *out = r_print_stereogram_render (core->print, res);
-			r_cons_println (core->cons, out);
-			free (out);
-			free (res);
-			free (data);
-		} else {
-			char *res = r_print_stereogram_bytes (block, core->blocksize);
-			char *out = r_print_stereogram_render (core->print, res);
-			r_cons_println (core->cons, out);
-			free (out);
-			free (res);
 		}
 		break;
 	case 'y': // "py"
@@ -9004,23 +9020,6 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		}
 		r_cons_break_pop (core->cons);
-		break;
-	case '2': // "p2"
-		if (l) {
-			if (input[1] == '?') {
-				r_core_cmd_help_match (core, help_msg_p, "p2");
-			} else {
-				RConsContext *c = core->cons->context;
-				const char **colors = (const char *[]){
-					c->pal.mov, // black
-					c->pal.nop, // dark
-					c->pal.cmp, // light
-					c->pal.jmp, // white
-				};
-				const int cols = r_config_get_i (core->config, "hex.cols");
-				r_print_2bpp_tiles (core->print, core->block, len - 1, cols / 4, colors);
-			}
-		}
 		break;
 	case '6': // "p6"
 		if (1) {
