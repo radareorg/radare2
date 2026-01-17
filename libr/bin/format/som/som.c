@@ -509,7 +509,7 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 	RListIter *iter;
 	RSomImportListEntry *import_entry;
 	r_list_foreach (obj->imports, iter, import_entry) {
-		if (import_entry->import_name == (ut32)-1) {
+		if (import_entry->import_name == UT32_MAX) {
 			continue;
 		}
 		RBinImport *imp = R_NEW0 (RBinImport);
