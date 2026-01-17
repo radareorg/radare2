@@ -820,15 +820,9 @@ R_API void r_cons_flush(RCons *cons) {
 	}
 #if __wasi__
 	if (cons->wasm_redirect_file) {
-		const char *mode = cons->wasm_redirect_append ? "a+" : "w";
-		FILE *d = r_sandbox_fopen (cons->wasm_redirect_file, mode);
-		if (d) {
-			if (ctx->buffer_len != fwrite (ctx->buffer, 1, ctx->buffer_len, d)) {
-				R_LOG_ERROR ("r_cons_flush: fwrite: error (%s)", cons->wasm_redirect_file);
-			}
-			fclose (d);
-		} else {
-			R_LOG_ERROR ("Cannot write on '%s'", cons->wasm_redirect_file);
+		bool res = r_file_dump (cons->wasm_redirect_file, (const ut8*)ctx->buffer, ctx->buffer_len, cons->wasm_redirect_append);
+		if (!res) {
+			R_LOG_ERROR ("r_cons_flush: r_file_dump: error (%s)", cons->wasm_redirect_file);
 		}
 		R_FREE (cons->wasm_redirect_file);
 		r_cons_reset (cons);
