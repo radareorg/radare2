@@ -588,7 +588,7 @@ r_util_files = [
   'include/r_util/r_xml.h',
 ]
 
-subdir('plugs')
+subdir('xps')
 
 install_headers(r_util_files, install_dir: join_paths(r2_incdir, 'r_util'))
 
