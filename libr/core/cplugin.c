@@ -2,7 +2,7 @@
 
 #include "../config.h"
 #include "../include/r_core.h"
-#include "r2plugins.h"
+#include "../xps/r2plugins.h"
 
 static RCorePlugin *cmd_static_plugins[] = {
 	R_CORE_STATIC_PLUGINS
