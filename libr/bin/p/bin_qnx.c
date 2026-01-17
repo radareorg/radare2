@@ -81,10 +81,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			break;
 		} else if (lrec.rec_type == LMF_RESOURCE_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
-			if (!ptr) {
-				goto beach;
-			}
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&lres, "ssss", 1) != sizeof (lmf_resource)) {
+				free (ptr);
 				goto beach;
 			}
 			ptr->name = strdup ("LMF_RESOURCE");
@@ -96,9 +94,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
-				goto beach;
-			}
-			if (!ptr) {
+				free (ptr);
 				goto beach;
 			}
 			ptr->name = strdup ("LMF_LOAD");
@@ -110,7 +106,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		 	r_list_append (sections, ptr);
 		} else if (lrec.rec_type == LMF_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
+				free (ptr);
 				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata.offset;
@@ -118,7 +115,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			r_list_append (fixups, ptr);
 		} else if (lrec.rec_type == LMF_8087_FIXUP_REC) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
-			if (!ptr || r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
+			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
+				free (ptr);
 				goto beach;
 			}
 			ptr->vaddr = ptr->paddr = ldata.offset;
@@ -135,7 +133,10 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	bf->bo->bin_obj = qo;
 	return true;
 beach:
-	free (qo);
+	if (qo) {
+		sdb_free (qo->kv);
+		free (qo);
+	}
 	r_list_free (fixups);
 	r_list_free (sections);
 	return false;
