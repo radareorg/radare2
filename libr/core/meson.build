@@ -57,7 +57,7 @@ r_core_sources += r_core_additional_sources
 r_core_inc = [
   'i/heap/jemalloc',
   'i/heap/windows',
-  '../plugs'
+  '../xps'
 ]
 r_core_additional_inc = []
 r_core_inc += r_core_additional_inc

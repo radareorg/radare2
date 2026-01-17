@@ -1,9 +1,10 @@
 EXTERNAL_PLUGINS=
--include config.mk
 
 PONIS=deps.mk r2plugins.h p/meson.build static.cfg
 
 all: $(PONIS)
+
+-include config.mk
 
 p/meson.build:
 	:> p/meson.build
@@ -24,7 +25,7 @@ r2plugins.h:
 		echo "// includes for $$a" >> r2plugins.h ; \
 		for b in $$T ; do \
 			echo "// $b" >> r2plugins.h ; \
-			echo "#include \"p/$$a/r2plugin/$$b/r2plugins.h\"" >> r2plugins.h ; \
+			echo "#include \"p/$$a/r2plugin/$$b/deps.h\"" >> r2plugins.h ; \
 		done ; \
 	done
 

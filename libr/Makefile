@@ -17,7 +17,7 @@ include libs.mk
 .PHONY: $(LIBS)
 
 all:
-	$(MAKE) -C plugs
+	$(MAKE) -C xps
 	$(MAKE) $(LIBS0)
 	$(MAKE) $(LIBS1)
 	$(MAKE) $(LIBS2)

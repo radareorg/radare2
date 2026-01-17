@@ -156,7 +156,7 @@ endif
 
 r_bin_sources += r_bin_d_sources
 
-r_bin_inc = [platform_inc, '../plugs', include_directories('mangling', 'format')]
+r_bin_inc = [platform_inc, '../xps', include_directories('mangling', 'format')]
 
 if not get_option('use_sys_lz4')
   library_cflags += ['-DUSE_RLZ4']
