@@ -131,7 +131,7 @@ generate_configmk () {
         extlib=$(echo $b | cut -d . -f 1)
         if [ "$lib" = "$extlib" ]; then
           extplg=$(echo $b | cut -d . -f 2) # plugin name
-          printf " ../plugs/p/${extplg}/r2plugin/deps-${lib}.mk"
+          printf " ../plugs/p/${extplg}/r2plugin/${lib}/deps.mk"
         fi
       done
     fi

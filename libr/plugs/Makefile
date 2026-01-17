@@ -20,7 +20,14 @@ deps.mk:
 
 r2plugins.h:
 	:> r2plugins.h
-	for a in $(EXTERNAL_PLUGINS) ; do echo "#include \"p/$$a/r2plugin/r2plugins.h\"" >> r2plugins.h ; done
+	for a in $(EXTERNAL_PLUGINS) ; do \
+		T=`cat p/$$a/r2plugin/static.cfg | cut -d . -f 1` ; \
+		echo "// includes for $$a" >> r2plugins.h ; \
+		for b in $$T ; do \
+			echo "// $b" >> r2plugins.h ; \
+			echo "#include \"p/$$a/r2plugin/$$b/r2plugins.h\"" >> r2plugins.h ; \
+		done ; \
+	done
 
 clean:
 	rm -f $(PONIS)
