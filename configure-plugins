@@ -54,8 +54,8 @@ load () {
 }
 
 
-if [ -f libr/plugins/static.cfg ]; then
-  EXTERNAL_STATIC=$(cat libr/plugins/static.cfg)
+if [ -f libr/plugs/static.cfg ]; then
+  EXTERNAL_STATIC=$(cat libr/plugs/static.cfg)
   echo "[INFO] Statically linking third-party plugins: `echo ${EXTERNAL_STATIC}`"
 else
   EXTERNAL_STATIC=""
@@ -131,7 +131,7 @@ generate_configmk () {
         extlib=$(echo $b | cut -d . -f 1)
         if [ "$lib" = "$extlib" ]; then
           extplg=$(echo $b | cut -d . -f 2) # plugin name
-          printf " ../plugins/p/${extplg}/r2plugin/deps-${lib}.mk"
+          printf " ../plugs/p/${extplg}/r2plugin/deps-${lib}.mk"
         fi
       done
     fi
