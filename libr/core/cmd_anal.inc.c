@@ -4824,7 +4824,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		/* ensure we use a proper name */
 		__setFunctionName (core, addr, fcn->name, false);
 		if (core->anal->opt.vars) {
-			r_core_recover_vars (core, fcn, true);
+			r_core_recover_vars (core, fcn, false);
 		}
 		__add_vars_sdb (core, fcn);
 	} else {
@@ -14170,6 +14170,8 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);
 	if (v) {
+		SetU *seen_addrs = set_u_new ();
+		int yield_counter = 0;
 		if (anal_symsort != 0) {
 			RSkipList *symbols = r_skiplist_new (NULL, (anal_symsort > 0)? cmpfn_fw: cmpfn_bw);
 			R_VEC_FOREACH (v, symbol) {
@@ -14184,10 +14186,14 @@ static bool cmd_aa(RCore *core, bool aaa) {
 					break;
 				}
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
+				if (set_u_contains (seen_addrs, addr)) {
+					continue;
+				}
+				set_u_add (seen_addrs, addr);
 				r_core_af (core, addr, NULL, anal_calls);
-				r_core_task_yield (&core->tasks);
+				if (++yield_counter % 1024 == 0) {
+					r_core_task_yield (&core->tasks);
+				}
 			}
 			r_skiplist_free (symbols);
 		} else {
@@ -14199,12 +14205,17 @@ static bool cmd_aa(RCore *core, bool aaa) {
 					continue;
 				}
 				ut64 addr = r_bin_get_vaddr (core->bin, symbol->paddr, symbol->vaddr);
-				// TODO: uncomment to: fcn.name = symbol.name, problematic for imports
-				// r_core_af (core, addr, symbol->name, anal_calls);
+				if (set_u_contains (seen_addrs, addr)) {
+					continue;
+				}
+				set_u_add (seen_addrs, addr);
 				r_core_af (core, addr, NULL, anal_calls);
-				r_core_task_yield (&core->tasks);
+				if (++yield_counter % 1024 == 0) {
+					r_core_task_yield (&core->tasks);
+				}
 			}
 		}
+		set_u_free (seen_addrs);
 	}
 	r_core_task_yield (&core->tasks);
 	/* Main */
@@ -14231,23 +14242,18 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	}
 	r_core_task_yield (&core->tasks);
 	if (!aaa) {
-		// R2_600 - drop this code? we already recover vars later in aaa. should be fine to if 0
-		if (anal_vars) {
-			logline (core, 22, "Recovering variables (afva@@F)");
-			/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
-			r_list_foreach_prev (core->anal->fcns, iter, fcni) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
-				r_core_recover_vars (core, fcni, true);
-				const char *fname = fcni->name;
-				if (r_str_startswith (fname, "dbg.")
-				||  r_str_startswith (fname, "rsym.")
-				||  r_str_startswith (fname, "sym.")
-				||  r_str_startswith (fname, "func.")
-				||  r_str_startswith (fname, "main")) {
-					fcni->type = R_ANAL_FCN_TYPE_SYM;
-				}
+		/* Set fcn type to R_ANAL_FCN_TYPE_SYM for symbols */
+		r_list_foreach_prev (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			const char *fname = fcni->name;
+			if (r_str_startswith (fname, "dbg.")
+			||  r_str_startswith (fname, "rsym.")
+			||  r_str_startswith (fname, "sym.")
+			||  r_str_startswith (fname, "func.")
+			||  r_str_startswith (fname, "main")) {
+				fcni->type = R_ANAL_FCN_TYPE_SYM;
 			}
 		}
 	}
@@ -14309,15 +14315,6 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
-#if 1
-	// TODO: should not be run sometimes
-	// Run afvn in all fcns
-	if (r_config_get_b (core->config, "anal.vars")) {
-		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
-		// r_core_cmd0 (core, "afva@@f");
-		r_core_cmd0 (core, "afva@@F");
-	}
-#endif
 	// Run pending analysis immediately after analysis
 	// Usefull when running commands with ";" or via r2 -c,-i
 	dh_orig = (core->dbg->current && core->dbg->current->plugin)

@@ -561,10 +561,10 @@ static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const ch
 	return false;
 }
 
-static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (r_str_startswith (arch, "arm") ||
-			r_str_startswith (arch, "riscv") ||
-			r_str_startswith (arch, "ppc"));
+static inline bool does_arch_destroys_dst(RAnalArchType arch_type) {
+	return arch_type == R_ANAL_ARCHTYPE_ARM ||
+		arch_type == R_ANAL_ARCHTYPE_RISCV ||
+		arch_type == R_ANAL_ARCHTYPE_PPC;
 }
 
 static inline bool has_vars(RAnal *anal, ut64 addr) {
@@ -626,16 +626,19 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	};
 	RCore *core = anal->coreb.core;
 	RCons *cons = core->cons;
-	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
-	bool arch_destroys_dst = does_arch_destroys_dst (arch);
+	if (anal->arch_type == R_ANAL_ARCHTYPE_UNKNOWN && anal->config && anal->config->arch) {
+		r_anal_update_arch_type (anal);
+	}
+	const RAnalArchType arch_type = anal->arch_type;
+	const bool arch_destroys_dst = does_arch_destroys_dst (arch_type);
 	const bool flagends = anal->opt.flagends;
-	const bool is_arm = r_str_startswith (arch, "arm");
-	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
-	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (core, "asm.cpu"), "v850", 4)));
-	const bool is_x86 = is_arm ? false: arch && !strncmp (arch, "x86", 3);
-	const bool is_amd64 = is_x86 ? fcn->callconv && !strcmp (fcn->callconv, "amd64") : false;
-	const bool is_dalvik = is_x86 ? false : arch && !strncmp (arch, "dalvik", 6);
-	const bool is_stm8 = (is_x86 || is_arm || is_dalvik || is_mips) ? false : arch && r_str_startswith (arch, "stm8");
+	const bool is_arm = (arch_type == R_ANAL_ARCHTYPE_ARM);
+	const bool is_mips = (arch_type == R_ANAL_ARCHTYPE_MIPS);
+	const bool is_v850 = (arch_type == R_ANAL_ARCHTYPE_V850);
+	const bool is_x86 = (arch_type == R_ANAL_ARCHTYPE_X86);
+	const bool is_amd64 = is_x86 && fcn->callconv && !strcmp (fcn->callconv, "amd64");
+	const bool is_dalvik = (arch_type == R_ANAL_ARCHTYPE_DALVIK);
+	const bool is_stm8 = (arch_type == R_ANAL_ARCHTYPE_STM8);
 	const bool propagate_noreturn = anal->opt.propagate_noreturn;
 	ut64 v1 = UT64_MAX;
 
@@ -2008,22 +2011,24 @@ R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn) {
 /* Does NOT invalidate read-ahead cache. */
 R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftype) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
-	RVecIntervalNodePtr *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
-	if (metas) {
-		RIntervalNode **it;
-		R_VEC_FOREACH (metas, it) {
-			RAnalMetaItem *meta = (*it)->data;
-			switch (meta->type) {
-			case R_META_TYPE_DATA:
-			case R_META_TYPE_STRING:
-			case R_META_TYPE_FORMAT:
-				RVecIntervalNodePtr_free (metas);
-				return 0;
-			default:
-				break;
+	if (anal->meta.root) {
+		RVecIntervalNodePtr *metas = r_meta_get_all_in (anal, addr, R_META_TYPE_ANY);
+		if (metas) {
+			RIntervalNode **it;
+			R_VEC_FOREACH (metas, it) {
+				RAnalMetaItem *meta = (*it)->data;
+				switch (meta->type) {
+				case R_META_TYPE_DATA:
+				case R_META_TYPE_STRING:
+				case R_META_TYPE_FORMAT:
+					RVecIntervalNodePtr_free (metas);
+					return 0;
+				default:
+					break;
+				}
 			}
+			RVecIntervalNodePtr_free (metas);
 		}
-		RVecIntervalNodePtr_free (metas);
 	}
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {

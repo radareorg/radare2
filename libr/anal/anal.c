@@ -105,6 +105,31 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
+R_API void r_anal_update_arch_type(RAnal *anal) {
+	const char *arch = anal->config ? anal->config->arch : NULL;
+	if (R_STR_ISEMPTY (arch)) {
+		anal->arch_type = R_ANAL_ARCHTYPE_UNKNOWN;
+	} else if (r_str_startswith (arch, "arm")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_ARM;
+	} else if (r_str_startswith (arch, "mips")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_MIPS;
+	} else if (r_str_startswith (arch, "x86")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_X86;
+	} else if (r_str_startswith (arch, "v850")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_V850;
+	} else if (r_str_startswith (arch, "dalvik")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_DALVIK;
+	} else if (r_str_startswith (arch, "stm8")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_STM8;
+	} else if (r_str_startswith (arch, "riscv")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_RISCV;
+	} else if (r_str_startswith (arch, "ppc")) {
+		anal->arch_type = R_ANAL_ARCHTYPE_PPC;
+	} else {
+		anal->arch_type = R_ANAL_ARCHTYPE_UNKNOWN;
+	}
+}
+
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	int i;
@@ -120,6 +145,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->ht_name_fun = ht_pp_new0 ();
 	anal->config = r_arch_config_new ();
 	anal->arch = r_arch_new ();
+	anal->arch_type = R_ANAL_ARCHTYPE_UNKNOWN;
 	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`

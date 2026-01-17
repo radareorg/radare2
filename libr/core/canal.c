@@ -2196,18 +2196,19 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	if (r_cons_is_breaked (core->cons)) {
 		return false;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, at);
 	if (fcn) {
-		if (fcn->addr == at) {
-			// if the function was already analyzed as a "loc.",
-			// convert it to function and rename it to "fcn.",
-			// because we found a call to this address
-			const int rt = R_ANAL_REF_TYPE_MASK (reftype);
-			if (rt == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
-				function_rename (core->flags, fcn);
-			}
-			return 0;  // already analyzed function
+		// if the function was already analyzed as a "loc.",
+		// convert it to function and rename it to "fcn.",
+		// because we found a call to this address
+		const int rt = R_ANAL_REF_TYPE_MASK (reftype);
+		if (rt == R_ANAL_REF_TYPE_CALL && fcn->type == R_ANAL_FCN_TYPE_LOC) {
+			function_rename (core->flags, fcn);
 		}
+		return 0;
+	}
+	fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	if (fcn) {
 		if (r_anal_function_contains (fcn, from)) { // inner function
 			if (r_anal_xrefs_has_xrefs_at (core->anal, from)) {
 				return true;

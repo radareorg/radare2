@@ -83,6 +83,18 @@ enum {
 	R_ANAL_DATA_TYPE_ZERO = 10,
 };
 
+typedef enum {
+	R_ANAL_ARCHTYPE_UNKNOWN = 0,
+	R_ANAL_ARCHTYPE_ARM,
+	R_ANAL_ARCHTYPE_MIPS,
+	R_ANAL_ARCHTYPE_X86,
+	R_ANAL_ARCHTYPE_V850,
+	R_ANAL_ARCHTYPE_DALVIK,
+	R_ANAL_ARCHTYPE_STM8,
+	R_ANAL_ARCHTYPE_RISCV,
+	R_ANAL_ARCHTYPE_PPC,
+} RAnalArchType;
+
 // used from core/anal.c
 #define R_ANAL_ADDR_TYPE_EXEC      1
 #define R_ANAL_ADDR_TYPE_READ      1 << 1
@@ -451,6 +463,7 @@ typedef struct r_ref_manager_t RefManager;
 
 typedef struct r_anal_t {
 	RArchConfig *config;
+	RAnalArchType arch_type;
 	int lineswidth; // asm.lines.width
 	int sleep;      // anal.sleep, sleep some usecs before analyzing more (avoid 100% cpu usages)
 	RAnalCPPABI cxxabi; // anal.cpp.abi
@@ -1086,6 +1099,7 @@ R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int dep
 R_API void r_anal_bind(RAnal *b, RAnalBind *bnd);
 R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn);
 R_API bool r_anal_set_triplet(RAnal *anal, const char *os, const char *arch, int bits);
+R_API void r_anal_update_arch_type(RAnal *anal);
 R_API void r_anal_add_import(RAnal *anal, const char *imp);
 R_API void r_anal_remove_import(RAnal *anal, const char *imp);
 R_API void r_anal_purge_imports(RAnal *anal);
