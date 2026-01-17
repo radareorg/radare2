@@ -2253,13 +2253,12 @@ static int __break_points_cb(void *user) {
 	r_line_set_hist_callback (core->cons->line,
 		&r_line_hist_offset_up,
 		&r_line_hist_offset_down);
-	char *buf = r_cons_visual_readln (core->cons, "addr: ", NULL);
+	const char *buf = r_cons_visual_readln (core->cons, "addr: ", NULL);
 	r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 	core->cons->line->prompt_type = R_LINE_PROMPT_DEFAULT;
 	if (buf) {
 		ut64 addr = r_num_math (core->num, buf);
 		r_core_cmdf (core, "dbs 0x%08"PFMT64x, addr);
-		free (buf);
 	}
 	return 0;
 }
@@ -3699,45 +3698,40 @@ static void __insert_value(RCore *core, int wat) {
 		return;
 	case 'x': // hex
 		{
-		char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
 		if (buf) {
 			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
 			cur->view->refresh = true;
-			free (buf);
 		}
 		}
 		return;
 	}
 	if (__check_panel_type (cur, PANEL_CMD_STACK)) {
-		char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
 		if (buf) {
 			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr);
 			cur->view->refresh = true;
-			free (buf);
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_REGISTERS)) {
 		const char *creg = core->dbg->creg;
 		if (creg) {
-			char *buf = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
+			const char *buf = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
 			if (buf) {
 				r_core_cmdf (core, "dr %s = %s", creg, buf);
 				cur->view->refresh = true;
-				free (buf);
 			}
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_DISASSEMBLY)) {
-		char *buf = r_cons_visual_readln (core->cons, "insert asm: ", NULL);
+		const char *buf = r_cons_visual_readln (core->cons, "insert asm: ", NULL);
 		if (buf) {
 			r_core_visual_asm (core, cur->model->addr + core->print->cur);
 			cur->view->refresh = true;
-			free (buf);
 		}
 	} else if (__check_panel_type (cur, PANEL_CMD_HEXDUMP)) {
-		char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
+		const char *buf = r_cons_visual_readln (core->cons, "insert hex: ", NULL);
 		if (buf) {
 			r_core_cmdf (core, "wx %s @ 0x%08" PFMT64x, buf, cur->model->addr + core->print->cur);
 			cur->view->refresh = true;
-			free (buf);
 		}
 	}
 }
@@ -5722,16 +5716,16 @@ static int __calls_cb(void *user) {
 
 static int __watch_points_cb(void *user) {
 	RCore *core = (RCore *)user;
-	char *addrBuf = r_cons_visual_readln (core->cons, "addr: ", NULL);
-	if (addrBuf) {
-		char *rw = r_cons_visual_readln (core->cons, "<r/w/rw>: ", NULL);
-		if (rw) {
-			ut64 addr = r_num_math (core->num, addrBuf);
+	const char *addrstr = r_cons_visual_readln (core->cons, "addr: ", NULL);
+	if (R_STR_ISNOTEMPTY (addrstr)) {
+		ut64 addr = r_num_math (core->num, addrstr);
+		const char *rw = r_cons_visual_readln (core->cons, "<r/w/rw>: ", NULL);
+		if (R_STR_ISNOTEMPTY (rw)) {
 			r_core_cmdf (core, "dbw 0x%08"PFMT64x" %s", addr, rw);
-			free (rw);
+			return 1;
 		}
-		free (addrBuf);
 	}
+	// show error here or something?
 	return 0;
 }
 
@@ -6572,7 +6566,7 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 	case 'i':
 		{
 			char *prompt = r_str_newf ("[0x%08"PFMT64x"]) ", core->addr);
-			char *cmd = r_cons_visual_readln (core->cons, prompt, NULL);
+			const char *cmd = r_cons_visual_readln (core->cons, prompt, NULL);
 			if (R_STR_ISNOTEMPTY (cmd)) {
 				if (!strcmp (cmd, "clear")) {
 					r_core_cmd0 (core, ":>$console");
@@ -6582,7 +6576,6 @@ static bool __handle_console(RCore *core, RPanel *panel, const int key) {
 				}
 			}
 			free (prompt);
-			free (cmd);
 			panel->view->refresh = true;
 		}
 		return true;

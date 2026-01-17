@@ -1229,7 +1229,7 @@ R_API void r_cons_break_pop(RCons *cons);
 // visual
 R_API void r_cons_visual_flush(RCons *cons);
 R_API void r_cons_visual_write(RCons *cons, char *buffer);
-R_API char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill);
+R_API const char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill);
 #endif
 
 // bind

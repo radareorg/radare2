@@ -986,17 +986,15 @@ static int visual_nkey(RCore *core, int ch) {
 
 static void setdiff(RCore *core) {
 	{
-		char *tmp = r_cons_visual_readln (core->cons, "diff from: ", NULL);
+		const char *tmp = r_cons_visual_readln (core->cons, "diff from: ", NULL);
 		if (R_STR_ISNOTEMPTY (tmp)) {
 			r_config_set (core->config, "diff.from", tmp);
-			free (tmp);
 		}
 	}
 	{
-		char *tmp = r_cons_visual_readln (core->cons, "diff to: ", NULL);
+		const char *tmp = r_cons_visual_readln (core->cons, "diff to: ", NULL);
 		if (R_STR_ISNOTEMPTY (tmp)) {
 			r_config_set (core->config, "diff.to", tmp);
-			free (tmp);
 		}
 	}
 }
@@ -3175,10 +3173,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case '@':
 			if (core->print->cur_enabled) {
-				char *tmp = r_cons_visual_readln (core->cons, "cursor at:", NULL);
+				const char *tmp = r_cons_visual_readln (core->cons, "cursor at:", NULL);
 				if (R_STR_ISNOTEMPTY (tmp)) {
 					core->print->cur = (st64) r_num_math (core->num, tmp);
-					free (tmp);
 				}
 			}
 			break;
@@ -3335,13 +3332,12 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->seltab == 0) {
 					addr = r_debug_reg_get (core->dbg, "SP") + delta;
 				} else if (core->seltab == 1) {
-					char *tmp = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
+					const char *tmp = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
 					if (R_STR_ISNOTEMPTY (tmp)) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
 							r_core_cmdf (core, "dr %s = %s", creg, tmp);
 						}
-						free (tmp);
 					}
 					return true;
 				}
@@ -3992,12 +3988,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					break;
 				}
 				// TODO autocomplete filenames
-				char *tmp = r_cons_visual_readln (core->cons, "dump to file: ", NULL);
+				const char *tmp = r_cons_visual_readln (core->cons, "dump to file: ", NULL);
 				if (R_STR_ISNOTEMPTY (tmp)) {
 					ut64 from = core->addr + core->print->ocur;
 					ut64 size = R_ABS (core->print->cur - core->print->ocur) + 1;
 					r_core_dump (core, tmp, from, size, false);
-					free (tmp);
 				}
 			} else {
 				r_core_seek (core, core->addr + core->blocksize, false);
@@ -4007,7 +4002,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '<': // "V<"
 			if (core->print->cur_enabled) {
 				// TODO autocomplete filenames
-				char *tmp = r_cons_visual_readln (core->cons, "load from file: ", NULL);
+				const char *tmp = r_cons_visual_readln (core->cons, "load from file: ", NULL);
 				if (R_STR_ISNOTEMPTY (tmp)) {
 					size_t sz;
 					char *data = r_file_slurp (tmp, &sz);
@@ -4024,7 +4019,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						r_io_write_at (core->io, from, (const ut8*)data, s);
 						free (data);
 					}
-					free (tmp);
 				}
 			} else {
 				r_core_seek (core, core->addr - core->blocksize, false);

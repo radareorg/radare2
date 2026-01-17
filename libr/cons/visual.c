@@ -133,17 +133,16 @@ R_API void r_cons_visual_flush(RCons *cons) {
 	}
 }
 
-R_API char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill) {
-	if (prefill && *prefill) {
+R_API const char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill) {
+	if (R_STR_ISNOTEMPTY (prefill)) {
 		R_FREE (cons->line->contents);
 		cons->line->contents = strdup (prefill);
 	}
 	r_cons_show_cursor (cons, true);
 	r_cons_set_raw (cons, false);
 	r_line_set_prompt (cons->line, prompt);
-	char *res = strdup (r_line_readline (cons));
+	const char *res = r_line_readline (cons);
 	r_cons_set_raw (cons, true);
 	r_cons_show_cursor (cons, false);
-	R_FREE (cons->line->contents);
 	return res;
 }
