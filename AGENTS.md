@@ -33,6 +33,8 @@
 ## Actions
 
 - Compile your changes with: `make -j > /dev/null`
+  - Never run 'gcc' directly, always use 'make -C path/to/directory'
+  - Do not build the .o files separately
   - Run `make` in the working directory to compile just this part.
   - Assume system-wide installations via symlinks (do not install after every change)
 - Run tests with `r2r`. For example: `r2r test/db/cmd/cmd_print`

@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2025 - pancake */
+/* radare2 - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_time.h>
@@ -131,4 +131,19 @@ R_API void r_cons_visual_flush(RCons *cons) {
 	if (cons->fps) {
 		print_fps (cons, 0);
 	}
+}
+
+R_API char *r_cons_visual_readln(RCons *cons, const char *prompt, const char *prefill) {
+	if (prefill && *prefill) {
+		R_FREE (cons->line->contents);
+		cons->line->contents = strdup (prefill);
+	}
+	r_cons_show_cursor (cons, true);
+	r_cons_set_raw (cons, false);
+	r_line_set_prompt (cons->line, prompt);
+	char *res = strdup (r_line_readline (cons));
+	r_cons_set_raw (cons, true);
+	r_cons_show_cursor (cons, false);
+	R_FREE (cons->line->contents);
+	return res;
 }
