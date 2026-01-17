@@ -165,6 +165,7 @@ a
 poc
 *.zip
 libr/xps/deps.mk
+libr/xps/config.mk
 libr/xps/deps.h
 libr/xps/static.cfg
 libr/xps/p/meson.build

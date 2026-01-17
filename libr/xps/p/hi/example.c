@@ -14,7 +14,7 @@ static bool hello_call(RCorePluginSession *cps, const char *input) {
 }
 
 // PLUGIN Definition Info
-RCorePlugin r_core_plugin_corehi = {
+RCorePlugin r_core_plugin_hi = {
 	.meta = {
 		.name = "corehi",
 		.desc = "sample third party core plugin",
@@ -27,7 +27,7 @@ RCorePlugin r_core_plugin_corehi = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_CORE,
-	.data = &r_core_plugin_corehi,
+	.data = &r_core_plugin_hi,
 	.version = R2_VERSION,
 	.abiversion = R2_ABIVERSION
 };
