@@ -819,6 +819,7 @@ R_API void r_cons_flush(RCons *cons) {
 		}
 	}
 #if __wasi__
+	// TODO: this is a workaround, needs further investigation and wasm testsuite before removing this code
 	if (cons->wasm_redirect_file) {
 		bool res = r_file_dump (cons->wasm_redirect_file, (const ut8*)ctx->buffer, ctx->buffer_len, cons->wasm_redirect_append);
 		if (!res) {
