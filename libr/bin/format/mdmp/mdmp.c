@@ -120,6 +120,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 
 	r_buf_free (obj->b);
 	free (obj->hdr);
+	sdb_free (obj->kv);
 	obj->b = NULL;
 	free (obj);
 
