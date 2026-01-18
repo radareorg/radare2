@@ -894,7 +894,7 @@ static RCoreHelpMessage help_msg_ag = {
 	"g", "", "graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",
 	"k", "", "sdb key-value",
-	"m", "", "mermaid (block names)",
+	"m", "[a]", "mermaid (append 'a' to include asm)",
 	"t", "", "tiny ascii art",
 	"v", "", "interactive ascii art",
 	"w", " [path]", "write to path or display graph image (see graph.gv.format)",
@@ -12139,7 +12139,7 @@ static char *mermaid_sanitize_str(const char *str) {
 		size_t i;
 		for (i = 0; i < len - 5 && *str;) {
 			char c = *str++;
-			if (c < ' ' || c > '~' || c == '\\' || c == '"' || c == '<') {
+			if ((c < ' ' && c != '\n') || c > '~' || c == '\\' || c == '"' || c == '<') {
 				snprintf (buf + i, 5, "\\x%02x", c); // 5 b/c null byte
 				i += 4;
 			} else {
@@ -12164,17 +12164,54 @@ static inline char *mermaid_title_body_node_str(const char *title, const char *b
 	return t? t: b;
 }
 
-static char *mermaid_anod_body(RGraphNode *n) {
+static char *mermaid_anod_body(RCore *core, RGraphNode *n) {
 	RANode *an = (RANode *)n->data;
 	return mermaid_title_body_node_str (an->title, an->body);
 }
 
-static char *mermaid_nodeinfo_body(RGraphNode *n) {
+static char *mermaid_nodeinfo_body(RCore *core, RGraphNode *n) {
 	RGraphNodeInfo *nfo = (RGraphNodeInfo *)n->data;
 	return mermaid_title_body_node_str (nfo->title, nfo->body);
 }
 
-typedef char *(*node_content_cb) (RGraphNode *);
+static char *mermaid_nodeinfo_disasm(RCore *core, RGraphNode *n) {
+	RGraphNodeInfo *nfo = (RGraphNodeInfo *)n->data;
+	RStrBuf *buf = r_strbuf_new ("");
+	ut64 addr = 0;
+	if (sscanf (nfo->title, "[0x%"PFMT64x, &addr) == 1) {
+		RAnalBlock *b = r_anal_bb_from_offset (core->anal, addr);
+		if (b) {
+			ut8 *bb_buf = calloc (1, b->size);
+			if (bb_buf && r_io_read_at (core->io, b->addr, bb_buf, b->size)) {
+				RAnalOpMask mask = R_ARCH_OP_MASK_DISASM;
+				RAnalOp op = {0};
+				r_strbuf_append (buf, "\\n"); // escaped newline
+				int i;
+				for (i = 0; i < b->ninstr; i++) {
+					const ut64 prev_pos = r_anal_bb_offset_inst (b, i);
+					const ut64 op_addr = r_anal_bb_opaddr_i (b, i);
+					if (prev_pos >= b->size) continue;
+					int buflen = b->size - prev_pos;
+					ut8 *loc = bb_buf + prev_pos;
+					if (r_anal_op (core->anal, &op, op_addr, loc, buflen, mask) > 0) {
+						r_strbuf_appendf (buf, "%s\\n", op.mnemonic);
+					} else {
+						r_strbuf_append (buf, "...\\n");
+					}
+					r_anal_op_fini (&op);
+				}
+			}
+			free (bb_buf);
+		}
+	}
+	char *body = r_strbuf_drain_nofree (buf);
+	r_strbuf_free (buf);
+	char *result = mermaid_title_body_node_str (nfo->title, body);
+	free (body);
+	return result;
+}
+
+typedef char *(*node_content_cb) (RCore *, RGraphNode *);
 static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) {
 	if (!graph) {
 		return;
@@ -12184,14 +12221,14 @@ static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) 
 		return;
 	}
 	bool printit = true;
-	RStrBuf *nodes = r_strbuf_new ("stateDiagram-v2\n");
+	RStrBuf *nodes = r_strbuf_new ("flowchart TD\n");
 	RStrBuf *edges = r_strbuf_new ("");
 	RGraphNode *n;
 	RListIter *it;
 	r_list_foreach (graph->nodes, it, n) {
-		char *free_body = get_body (n);
+		char *free_body = get_body (core, n);
 		char *body = free_body? free_body: "";
-		printit &= r_strbuf_appendf (nodes, "  state \"%s\" as node_%u\n", body, n->idx);
+		printit &= r_strbuf_appendf (nodes, "  node_%u[\"%s\"]\n", n->idx, body);
 		free (free_body);
 
 		// edgdes
@@ -12675,6 +12712,9 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 	case 'm':
 		mermaid_graph (core, graph, mermaid_nodeinfo_body);
 		break;
+	case 'M':
+		mermaid_graph (core, graph, mermaid_nodeinfo_disasm);
+		break;
 	default:
 		r_core_cmd_help (core, help_msg_ag);
 		break;
@@ -12769,8 +12809,8 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 	RAnalOpMask mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM | R_ANAL_OP_HINT_MASK;
 	RAnalOp op = {0};
 
-	// escaped newline to get out of title line
-	bool ret = r_strbuf_append (nodes, "\\n");
+	// newline to get out of title line
+	bool ret = r_strbuf_append (nodes, "\n");
 	int i;
 	for (i = 0; i < bb->ninstr; i++) {
 		const ut64 prev_pos = r_anal_bb_offset_inst (bb, i);
@@ -12781,9 +12821,9 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 		int buflen = bb->size - prev_pos;
 		ut8 *loc = bb_buf + prev_pos;
 		if (r_anal_op (a, &op, op_addr, loc, buflen, mask) > 0) {
-			ret &= r_strbuf_appendf (nodes, "%s\\n", op.mnemonic);
+			ret &= r_strbuf_appendf (nodes, "%s\n", op.mnemonic);
 		} else {
-			ret &= r_strbuf_append (nodes, "...\\n");
+			ret &= r_strbuf_append (nodes, "...\n");
 		}
 		if (!ret) {
 			break;
@@ -12794,14 +12834,19 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 	return ret;
 }
 
-static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf) {
+static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf, bool add_asm) {
 	if (b->switch_op) {
 		R_RETURN_VAL_IF_FAIL (b->switch_op->cases, false);
 		RListIter *itt;
 		RAnalCaseOp *c;
 		r_list_foreach (b->switch_op->cases, itt, c) {
-			r_strbuf_appendf (buf, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": Case %" PFMT64d "\n",
-					b->addr, c->addr, c->value);
+			if (add_asm) {
+				r_strbuf_appendf (buf, "  _%" PFMT64x " --> _%" PFMT64x "\n",
+						b->addr, c->addr);
+			} else {
+				r_strbuf_appendf (buf, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": Case %" PFMT64d "\n",
+						b->addr, c->addr, c->value);
+			}
 		}
 	}
 	return true;
@@ -12815,8 +12860,8 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 
 	bool ret = true;
 
-	// for info on mermaid syntax: https://mermaid-js.github.io/mermaid/#/stateDiagram
-	RStrBuf *nodes = r_strbuf_new ("stateDiagram-v2\n");
+	// for info on mermaid syntax: https://mermaid-js.github.io/mermaid/#/flowchart
+	RStrBuf *nodes = r_strbuf_new (add_asm ? "flowchart TD\n" : "stateDiagram-v2\n");
 	RStrBuf *edges = r_strbuf_new ("");
 
 	// TODO: add themeing to nodes buff here -> https://mermaid-js.github.io/mermaid/#/theming
@@ -12824,32 +12869,50 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	RAnalBlock *b;
 	RListIter *iter;
 
+	int edgecount = 0;
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
-		ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
-		if (b->addr == fcn->addr) {
-			ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
-		}
 		if (add_asm) {
+			ret &= r_strbuf_appendf (nodes, "  _%" PFMT64x "[\"[0x%" PFMT64x "]", b->addr, b->addr);
+			if (b->addr == fcn->addr) {
+				ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
+			}
 			ret &= mermaid_add_node_asm (core->anal, b, nodes);
+			// ending of nodes string
+			ret &= r_strbuf_append (nodes, "\"]\n");
+		} else {
+			ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
+			if (b->addr == fcn->addr) {
+				ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
+			}
+			ret &= r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
 		}
-		// ending of nodes string `... " as _0xfffff`
-		// node names start with _0x b/c 0x makes mermaids mad somehow
-		ret &= r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
 
 		if (b->jump != UT64_MAX) {
 			if (b->fail != UT64_MAX) {
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": true\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x ": false\n", b->addr, b->fail);
+				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->fail);
+				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#00C853,fill:none\n", edgecount++);
+				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#d50000,fill:none\n", edgecount++);
 			} else {
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 			}
 		} else if (b->fail != UT64_MAX) {
-			ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
+			ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->fail);
+			ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 		}
-		ret &= fcn_siwtch_mermaid (b, edges);
+		ret &= fcn_siwtch_mermaid (b, edges, add_asm);
 		if (!ret) {
 			break;
+		}
+	}
+
+	// Add left-align styles for nodes with disasm
+	if (add_asm) {
+		r_list_sort (fcn->bbs, bb_cmp);
+		r_list_foreach (fcn->bbs, iter, b) {
+			ret &= r_strbuf_appendf (nodes, "style _%" PFMT64x " text-align:left\n", b->addr);
 		}
 	}
 

@@ -111,26 +111,112 @@ af
 agfma
 EOF
 EXPECT=<<EOF
-stateDiagram-v2
-  state "[0x15cc0] sym._obstack_newchunk\npush r14\nxor eax, eax\npush r13\npush r12\npush rbp\npush rbx\nmov r13, qword [rdi + 0x18]\nsub r13, qword [rdi + 0x10]\nmov rbp, qword [rdi + 8]\nadd rsi, r13\nmov rdx, r13\nsetb al\nadd rsi, qword [rdi + 0x30]\nsetb cl\nshr rdx, 3\ncmp qword [rdi], rsi\nlea rbx, [rsi + rdx + 0x64]\ncmovae rsi, qword [rdi]\ncmp rsi, rbx\ncmovae rbx, rsi\ntest rax, rax\njne 0x15db5\n" as _0x15cc0
-  state "[0x15d06]\nmovzx ecx, cl\ntest rcx, rcx\njne 0x15db5\n" as _0x15d06
-  state "[0x15d12]\nmov rsi, rbx\nmov r12, rdi\ncall 0x15bb0\nmov r14, rax\ntest rax, rax\nje 0x15db5\n" as _0x15d12
-  state "[0x15d29]\nlea rsi, [rax + rbx]\nmov qword [r12 + 8], rax\nmov rdx, r13\nmov qword [rax + 8], rbp\nmov qword [r12 + 0x20], rsi\nmov qword [rax], rsi\nmov rax, qword [r12 + 0x30]\nmov rsi, qword [r12 + 0x10]\nlea rbx, [r14 + rax + 0x10]\nnot rax\nand rbx, rax\nmov rdi, rbx\ncall qword [rip + 0xc119]\ntest byte [r12 + 0x50], 2\njne 0x15d7e\n" as _0x15d29
-  state "[0x15d67]\nmov rax, qword [r12 + 0x30]\nlea rdx, [rbp + rax + 0x10]\nnot rax\nand rax, rdx\ncmp qword [r12 + 0x10], rax\nje 0x15da0\n" as _0x15d67
-  state "[0x15d7e]\nadd r13, rbx\nmov qword [r12 + 0x10], rbx\nmov qword [r12 + 0x18], r13\nand byte [r12 + 0x50], 0xfd\npop rbx\npop rbp\npop r12\npop r13\npop r14\nret\n" as _0x15d7e
-  state "[0x15da0]\nmov rax, qword [rbp + 8]\nmov rsi, rbp\nmov rdi, r12\nmov qword [r14 + 8], rax\ncall 0x15bd0\njmp 0x15d7e\n" as _0x15da0
-  state "[0x15db5]\ncall qword [rip + 0xc4a5]\nnop dword [rax + rax]\n" as _0x15db5
-  _0x15cc0 --> _0x15db5: true
-  _0x15cc0 --> _0x15d06: false
-  _0x15d06 --> _0x15db5: true
-  _0x15d06 --> _0x15d12: false
-  _0x15d12 --> _0x15db5: true
-  _0x15d12 --> _0x15d29: false
-  _0x15d29 --> _0x15d7e: true
-  _0x15d29 --> _0x15d67: false
-  _0x15d67 --> _0x15da0: true
-  _0x15d67 --> _0x15d7e: false
-  _0x15da0 --> _0x15d7e
+flowchart TD
+  _15cc0["[0x15cc0] sym._obstack_newchunk
+push r14
+xor eax, eax
+push r13
+push r12
+push rbp
+push rbx
+mov r13, qword [rdi + 0x18]
+sub r13, qword [rdi + 0x10]
+mov rbp, qword [rdi + 8]
+add rsi, r13
+mov rdx, r13
+setb al
+add rsi, qword [rdi + 0x30]
+setb cl
+shr rdx, 3
+cmp qword [rdi], rsi
+lea rbx, [rsi + rdx + 0x64]
+cmovae rsi, qword [rdi]
+cmp rsi, rbx
+cmovae rbx, rsi
+test rax, rax
+jne 0x15db5
+"]
+  _15d06["[0x15d06]
+movzx ecx, cl
+test rcx, rcx
+jne 0x15db5
+"]
+  _15d12["[0x15d12]
+mov rsi, rbx
+mov r12, rdi
+call 0x15bb0
+mov r14, rax
+test rax, rax
+je 0x15db5
+"]
+  _15d29["[0x15d29]
+lea rsi, [rax + rbx]
+mov qword [r12 + 8], rax
+mov rdx, r13
+mov qword [rax + 8], rbp
+mov qword [r12 + 0x20], rsi
+mov qword [rax], rsi
+mov rax, qword [r12 + 0x30]
+mov rsi, qword [r12 + 0x10]
+lea rbx, [r14 + rax + 0x10]
+not rax
+and rbx, rax
+mov rdi, rbx
+call qword [rip + 0xc119]
+test byte [r12 + 0x50], 2
+jne 0x15d7e
+"]
+  _15d67["[0x15d67]
+mov rax, qword [r12 + 0x30]
+lea rdx, [rbp + rax + 0x10]
+not rax
+and rax, rdx
+cmp qword [r12 + 0x10], rax
+je 0x15da0
+"]
+  _15d7e["[0x15d7e]
+add r13, rbx
+mov qword [r12 + 0x10], rbx
+mov qword [r12 + 0x18], r13
+and byte [r12 + 0x50], 0xfd
+pop rbx
+pop rbp
+pop r12
+pop r13
+pop r14
+ret
+"]
+  _15da0["[0x15da0]
+mov rax, qword [rbp + 8]
+mov rsi, rbp
+mov rdi, r12
+mov qword [r14 + 8], rax
+call 0x15bd0
+jmp 0x15d7e
+"]
+  _15db5["[0x15db5]
+call qword [rip + 0xc4a5]
+nop dword [rax + rax]
+"]
+style _15cc0 text-align:left
+style _15d06 text-align:left
+style _15d12 text-align:left
+style _15d29 text-align:left
+style _15d67 text-align:left
+style _15d7e text-align:left
+style _15da0 text-align:left
+style _15db5 text-align:left
+  _15cc0 --> _15db5
+  _15cc0 --> _15d06
+  _15d06 --> _15db5
+  _15d06 --> _15d12
+  _15d12 --> _15db5
+  _15d12 --> _15d29
+  _15d29 --> _15d7e
+  _15d29 --> _15d67
+  _15d67 --> _15da0
+  _15d67 --> _15d7e
+  _15da0 --> _15d7e
 EOF
 RUN
 
