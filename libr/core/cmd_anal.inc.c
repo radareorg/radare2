@@ -12873,7 +12873,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
 		if (add_asm) {
-			ret &= r_strbuf_appendf (nodes, "  _%" PFMT64x "[\"[0x%" PFMT64x "]", b->addr, b->addr);
+			ret &= r_strbuf_appendf (nodes, "  _0x%" PFMT64x "[\"[0x%" PFMT64x "]", b->addr, b->addr);
 			if (b->addr == fcn->addr) {
 				ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
 			}
@@ -12890,16 +12890,16 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 
 		if (b->jump != UT64_MAX) {
 			if (b->fail != UT64_MAX) {
-				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->fail);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#00C853,fill:none\n", edgecount++);
 				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#d50000,fill:none\n", edgecount++);
 			} else {
-				ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->jump);
+				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
 				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 			}
 		} else if (b->fail != UT64_MAX) {
-			ret &= r_strbuf_appendf (edges, "  _%" PFMT64x " --> _%" PFMT64x "\n", b->addr, b->fail);
+			ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 			ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 		}
 		ret &= fcn_siwtch_mermaid (b, edges, add_asm);
@@ -12912,7 +12912,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 	if (add_asm) {
 		r_list_sort (fcn->bbs, bb_cmp);
 		r_list_foreach (fcn->bbs, iter, b) {
-			ret &= r_strbuf_appendf (nodes, "style _%" PFMT64x " text-align:left\n", b->addr);
+			ret &= r_strbuf_appendf (nodes, "style _0x%" PFMT64x " text-align:left\n", b->addr);
 		}
 	}
 

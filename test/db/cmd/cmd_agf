@@ -89,17 +89,28 @@ stateDiagram-v2
   state "[0x15d7e]" as _0x15d7e
   state "[0x15da0]" as _0x15da0
   state "[0x15db5]" as _0x15db5
-  _0x15cc0 --> _0x15db5: true
-  _0x15cc0 --> _0x15d06: false
-  _0x15d06 --> _0x15db5: true
-  _0x15d06 --> _0x15d12: false
-  _0x15d12 --> _0x15db5: true
-  _0x15d12 --> _0x15d29: false
-  _0x15d29 --> _0x15d7e: true
-  _0x15d29 --> _0x15d67: false
-  _0x15d67 --> _0x15da0: true
-  _0x15d67 --> _0x15d7e: false
+  _0x15cc0 --> _0x15db5
+  _0x15cc0 --> _0x15d06
+  linkStyle 0 stroke:#00C853,fill:none
+  linkStyle 1 stroke:#d50000,fill:none
+  _0x15d06 --> _0x15db5
+  _0x15d06 --> _0x15d12
+  linkStyle 2 stroke:#00C853,fill:none
+  linkStyle 3 stroke:#d50000,fill:none
+  _0x15d12 --> _0x15db5
+  _0x15d12 --> _0x15d29
+  linkStyle 4 stroke:#00C853,fill:none
+  linkStyle 5 stroke:#d50000,fill:none
+  _0x15d29 --> _0x15d7e
+  _0x15d29 --> _0x15d67
+  linkStyle 6 stroke:#00C853,fill:none
+  linkStyle 7 stroke:#d50000,fill:none
+  _0x15d67 --> _0x15da0
+  _0x15d67 --> _0x15d7e
+  linkStyle 8 stroke:#00C853,fill:none
+  linkStyle 9 stroke:#d50000,fill:none
   _0x15da0 --> _0x15d7e
+  linkStyle 10 stroke:#3030a3,fill:none
 EOF
 RUN
 
@@ -112,7 +123,7 @@ agfma
 EOF
 EXPECT=<<EOF
 flowchart TD
-  _15cc0["[0x15cc0] sym._obstack_newchunk
+  _0x15cc0["[0x15cc0] sym._obstack_newchunk
 push r14
 xor eax, eax
 push r13
@@ -136,12 +147,12 @@ cmovae rbx, rsi
 test rax, rax
 jne 0x15db5
 "]
-  _15d06["[0x15d06]
+  _0x15d06["[0x15d06]
 movzx ecx, cl
 test rcx, rcx
 jne 0x15db5
 "]
-  _15d12["[0x15d12]
+  _0x15d12["[0x15d12]
 mov rsi, rbx
 mov r12, rdi
 call 0x15bb0
@@ -149,7 +160,7 @@ mov r14, rax
 test rax, rax
 je 0x15db5
 "]
-  _15d29["[0x15d29]
+  _0x15d29["[0x15d29]
 lea rsi, [rax + rbx]
 mov qword [r12 + 8], rax
 mov rdx, r13
@@ -166,7 +177,7 @@ call qword [rip + 0xc119]
 test byte [r12 + 0x50], 2
 jne 0x15d7e
 "]
-  _15d67["[0x15d67]
+  _0x15d67["[0x15d67]
 mov rax, qword [r12 + 0x30]
 lea rdx, [rbp + rax + 0x10]
 not rax
@@ -174,7 +185,7 @@ and rax, rdx
 cmp qword [r12 + 0x10], rax
 je 0x15da0
 "]
-  _15d7e["[0x15d7e]
+  _0x15d7e["[0x15d7e]
 add r13, rbx
 mov qword [r12 + 0x10], rbx
 mov qword [r12 + 0x18], r13
@@ -186,7 +197,7 @@ pop r13
 pop r14
 ret
 "]
-  _15da0["[0x15da0]
+  _0x15da0["[0x15da0]
 mov rax, qword [rbp + 8]
 mov rsi, rbp
 mov rdi, r12
@@ -194,29 +205,40 @@ mov qword [r14 + 8], rax
 call 0x15bd0
 jmp 0x15d7e
 "]
-  _15db5["[0x15db5]
+  _0x15db5["[0x15db5]
 call qword [rip + 0xc4a5]
 nop dword [rax + rax]
 "]
-style _15cc0 text-align:left
-style _15d06 text-align:left
-style _15d12 text-align:left
-style _15d29 text-align:left
-style _15d67 text-align:left
-style _15d7e text-align:left
-style _15da0 text-align:left
-style _15db5 text-align:left
-  _15cc0 --> _15db5
-  _15cc0 --> _15d06
-  _15d06 --> _15db5
-  _15d06 --> _15d12
-  _15d12 --> _15db5
-  _15d12 --> _15d29
-  _15d29 --> _15d7e
-  _15d29 --> _15d67
-  _15d67 --> _15da0
-  _15d67 --> _15d7e
-  _15da0 --> _15d7e
+style _0x15cc0 text-align:left
+style _0x15d06 text-align:left
+style _0x15d12 text-align:left
+style _0x15d29 text-align:left
+style _0x15d67 text-align:left
+style _0x15d7e text-align:left
+style _0x15da0 text-align:left
+style _0x15db5 text-align:left
+  _0x15cc0 --> _0x15db5
+  _0x15cc0 --> _0x15d06
+  linkStyle 0 stroke:#00C853,fill:none
+  linkStyle 1 stroke:#d50000,fill:none
+  _0x15d06 --> _0x15db5
+  _0x15d06 --> _0x15d12
+  linkStyle 2 stroke:#00C853,fill:none
+  linkStyle 3 stroke:#d50000,fill:none
+  _0x15d12 --> _0x15db5
+  _0x15d12 --> _0x15d29
+  linkStyle 4 stroke:#00C853,fill:none
+  linkStyle 5 stroke:#d50000,fill:none
+  _0x15d29 --> _0x15d7e
+  _0x15d29 --> _0x15d67
+  linkStyle 6 stroke:#00C853,fill:none
+  linkStyle 7 stroke:#d50000,fill:none
+  _0x15d67 --> _0x15da0
+  _0x15d67 --> _0x15d7e
+  linkStyle 8 stroke:#00C853,fill:none
+  linkStyle 9 stroke:#d50000,fill:none
+  _0x15da0 --> _0x15d7e
+  linkStyle 10 stroke:#3030a3,fill:none
 EOF
 RUN
 
@@ -243,8 +265,10 @@ stateDiagram-v2
   state "[0x7e]" as _0x7e
   state "[0x8a]" as _0x8a
   state "[0x91]" as _0x91
-  _0x10 --> _0x8a: true
-  _0x10 --> _0x34: false
+  _0x10 --> _0x8a
+  _0x10 --> _0x34
+  linkStyle 0 stroke:#00C853,fill:none
+  linkStyle 1 stroke:#d50000,fill:none
   _0x34 --> _0x42: Case 0
   _0x34 --> _0x4e: Case 1
   _0x34 --> _0x5a: Case 2
@@ -252,11 +276,18 @@ stateDiagram-v2
   _0x34 --> _0x72: Case 4
   _0x34 --> _0x7e: Case 5
   _0x42 --> _0x91
+  linkStyle 2 stroke:#3030a3,fill:none
   _0x4e --> _0x91
+  linkStyle 3 stroke:#3030a3,fill:none
   _0x5a --> _0x91
+  linkStyle 4 stroke:#3030a3,fill:none
   _0x66 --> _0x91
+  linkStyle 5 stroke:#3030a3,fill:none
   _0x72 --> _0x91
+  linkStyle 6 stroke:#3030a3,fill:none
   _0x7e --> _0x91
+  linkStyle 7 stroke:#3030a3,fill:none
   _0x8a --> _0x91
+  linkStyle 8 stroke:#3030a3,fill:none
 EOF
 RUN
