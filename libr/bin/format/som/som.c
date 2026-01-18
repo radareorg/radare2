@@ -513,7 +513,7 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 			continue;
 		}
 		RBinImport *imp = R_NEW0 (RBinImport);
-		const char *name;
+		char *name;
 		if (obj->dl_strings && import_entry->import_name < obj->dl_hdr->string_table_size) {
 			const char *name_str = obj->dl_strings + import_entry->import_name;
 			size_t len = strnlen (name_str, obj->dl_hdr->string_table_size - import_entry->import_name);
