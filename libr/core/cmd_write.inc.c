@@ -215,34 +215,32 @@ static void cmd_write_fail(RCore *core) {
 
 R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 	R_RETURN_VAL_IF_FAIL (core && pairs, 0);
-	ut8 *buf = malloc (strlen (pairs) + 1);
-	if (!buf) {
-		return 0;
-	}
+
+	const ut64 addr = core->addr;
+	ut8 *buf = (ut8*)strdup (pairs);
 	int len = r_hex_str2bin (pairs, buf);
 	if (len != 0) {
 		if (len < 0) {
 			len = -len;
-			if (len < core->blocksize) {
-				buf[len - 1] |= core->block[len - 1] & 0xf;
+			ut8 byte = 0;
+			if (r_io_read_at (core->io, addr + len - 1, &byte, 1)) {
+				buf[len - 1] |= byte & 0xf;
 			}
 		}
-		r_core_return_value (core, R_CMD_RC_SUCCESS);
-		if (!r_core_write_at (core, core->addr, buf, len)) {
-			cmd_write_fail (core);
-			r_core_return_value (core, R_CMD_RC_FAILURE);
+		if (r_core_write_at (core, addr, buf, len)) {
+			WSEEK (core, len);
+			r_core_block_read (core);
+			r_free (buf);
+			r_core_return_value (core, R_CMD_RC_SUCCESS);
+			return len;
 		}
-		// call WSEEK for consistency?
-		if (r_config_get_b (core->config, "cfg.wseek")) {
-			r_core_seek_delta (core, len);
-		}
-		r_core_block_read (core);
+		cmd_write_fail (core);
 	} else {
 		R_LOG_ERROR ("invalid hexpair string");
-		r_core_return_value (core, R_CMD_RC_FAILURE);
 	}
-	free (buf);
-	return len;
+	r_core_return_value (core, R_CMD_RC_FAILURE);
+	r_free (buf);
+	return 0;
 }
 
 static void write_encrypted_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
