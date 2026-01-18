@@ -34,6 +34,24 @@ static inline RBinName *__bin_name_clone(RBinName *bn) {
 	return nn;
 }
 
+static inline void __bin_string_free(void *_str) {
+        RBinString *str = (RBinString *)_str;
+        if (str) {
+                free (str->string);
+                free (str);
+        }
+}
+
+static inline void __bin_symbol_free(void *_sym) {
+        RBinSymbol *sym = (RBinSymbol *)_sym;
+        if (sym) {
+                __bin_name_free (sym->name);
+                free (sym->libname);
+                free (sym->classname);
+                free (sym);
+        }
+}
+
 // Maximum recursion depth when resolving constant pool references
 #define MAX_CPITEMS 16
 
@@ -2693,8 +2711,8 @@ static inline void __bin_class_free(void /*RBinClass*/ *k) {
 	if (klass) {
 		r_list_free (klass->methods);
 		r_list_free (klass->fields);
-		free (klass->name);
-		free (klass->super);
+		__bin_name_free (klass->name);
+		r_list_free (klass->super);
 		// free (klass->visibility_str);
 		free (klass);
 	}
@@ -2842,7 +2860,7 @@ R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
 
 R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
-	RList *imports, *symbols = r_list_newf (free);
+	RList *imports, *symbols = r_list_newf (__bin_symbol_free);
 	RBinSymbol *sym = NULL;
 	RBinImport *imp;
 	RBinJavaField *fm_type;
@@ -2895,10 +2913,6 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 			break;
 		}
 		sym->type = "import";
-		if (!sym->type) {
-			free (sym);
-			break;
-		}
 		sym->vaddr = sym->paddr = imp->ordinal;
 		sym->ordinal = imp->ordinal;
 		r_list_append (symbols, (void *)sym);
@@ -2908,7 +2922,7 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 }
 
 R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {
-	RList *strings = r_list_newf (free);
+	RList *strings = r_list_newf (__bin_string_free);
 	RBinString *str = NULL;
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RBinJavaCPTypeObj *cp_obj = NULL;
