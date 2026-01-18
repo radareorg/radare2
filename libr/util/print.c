@@ -617,7 +617,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool is_interactive = cons ? cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
-	RConsIsBreaked is_breaked = p && p->consb.is_breaked;
+	RConsIsBreaked is_breaked = p? p->consb.is_breaked: false;
 	int col = 0;
 
 	i = 0;
