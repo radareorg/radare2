@@ -230,6 +230,7 @@ static RList *sections(RBinFile *bf) {
 		str = (struct minidump_string *)b;
 		int ptr_name_len = (str->length + 2) * 4;
 		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
+			free (ptr);
 			continue;
 		}
 		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {

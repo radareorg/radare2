@@ -14,6 +14,7 @@ R_API void r_bin_mem_free(void *data) {
 		r_list_free (mem->mirrors);
 		mem->mirrors = NULL;
 	}
+	free (mem->name);
 	free (mem);
 }
 
