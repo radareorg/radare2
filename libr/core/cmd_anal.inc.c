@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, maijin */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
 #define MAX_SCAN_SIZE 0x7ffffff
 
-R_VEC_TYPE (RVecUT64, ut64);
-R_VEC_TYPE (RVecAddr, ut64); // DUPE
+R_VEC_TYPE (RVecAddr, ut64);
 
 static RCoreHelpMessage help_msg_af_plus = {
 	"Usage:", "af+", " [addr] ([name] ([type] [diff]))",
@@ -895,7 +894,7 @@ static RCoreHelpMessage help_msg_ag = {
 	"g", "", "graph Modelling Language (gml)",
 	"j", "", "json ('J' for formatted disassembly)",
 	"k", "", "sdb key-value",
-	"m", "", "mermaid",
+	"m", "", "mermaid (block names)",
 	"t", "", "tiny ascii art",
 	"v", "", "interactive ascii art",
 	"w", " [path]", "write to path or display graph image (see graph.gv.format)",
@@ -3058,8 +3057,8 @@ static ut64 __opaddr(const RAnalBlock *b, ut64 addr) {
 	return UT64_MAX;
 }
 
-static RVecUT64 *get_xrefs(RAnalBlock *bb) {
-	RVecUT64 *result = RVecUT64_new ();
+static RVecAddr *get_xrefs(RAnalBlock *bb) {
+	RVecAddr *result = RVecAddr_new ();
 
 	size_t i;
 	for (i = 0; i < bb->ninstr; i++) {
@@ -3072,9 +3071,9 @@ static RVecUT64 *get_xrefs(RAnalBlock *bb) {
 		if (xrefs) {
 			RAnalRef *ref;
 			R_VEC_FOREACH (xrefs, ref) {
-				ut64 *addr = RVecUT64_emplace_back (result);
+				ut64 *addr = RVecAddr_emplace_back (result);
 				if (R_UNLIKELY (!addr)) {
-					RVecUT64_free (result);
+					RVecAddr_free (result);
 					return NULL;
 				}
 				*addr = ref->addr;
@@ -3176,7 +3175,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 	}
 
 	r_rbtree_foreach (core->anal->bb_tree, iter, block, RAnalBlock, _rb) {
-		RVecUT64 *xrefs = get_xrefs (block);
+		RVecAddr *xrefs = get_xrefs (block);
 		RList *calls = get_calls (block);
 		switch (mode) {
 		case 'j':
@@ -3282,7 +3281,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 			r_cons_printf (core->cons, " size=%" PFMT64d "\n", block->size);
 		}
 		r_list_free (calls);
-		RVecUT64_free (xrefs);
+		RVecAddr_free (xrefs);
 	}
 	if (mode == 'j') {
 		pj_end (pj);
@@ -12129,7 +12128,6 @@ R_API void cmd_agfb2(RCore *core, const char *s) {
 	r_cons_printf (core->cons, "%s\n", pix);
 	free (pix);
 }
-
 
 static char *mermaid_sanitize_str(const char *str) {
 	if (!str) {
