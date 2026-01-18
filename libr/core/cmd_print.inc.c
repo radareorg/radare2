@@ -167,6 +167,8 @@ static RCoreHelpMessage help_msg_pri = {
 	"Usage: pri", "[n1sg]", "print raw images",
 	"prin", "t [msg]", "print a message",
 	"pri1", "", "1 bitmap image",
+	"pri2", " [len]", "8x8 2bpp-tiles",
+	"pri3", " [file]", "print 3D stereogram image of current block",
 	"pris", "", "sixel image",
 	"prig", "", "greyscale image",
 	"prir", "", "RGB image (same as pri)",
@@ -176,8 +178,6 @@ static RCoreHelpMessage help_msg_pri = {
 
 static RCoreHelpMessage help_msg_pr = {
 	"Usage: pr[glx]", "[size]", "print N raw bytes",
-	"pr2", " [len]", "8x8 2bpp-tiles",
-	"pr3", " [file]", "print 3D stereogram image of current block",
 	"prc", "[=fep..]", "print bytes as colors in palette",
 	"prg", "[?]", "print raw GUNZIPped block",
 	"pri", "[aA12r]", "print raw image, 1bit image, honor hex.cols",
@@ -6448,7 +6448,7 @@ static void bitimage(RCore *core, int cols) {
 	}
 }
 
-static void cmd_pri(RCore *core, const char *input) {
+static void cmd_pri(RCore *core, const char *input, int l) {
 	int cols = r_config_get_i (core->config, "hex.cols");
 	bool has_color = r_config_get_i (core->config, "scr.color") > 0;
 	ut8 *buf = r_core_readblock (core, 0);
@@ -6464,6 +6464,46 @@ static void cmd_pri(RCore *core, const char *input) {
 		break;
 	case '1':
 		bitimage (core, 1);
+		break;
+	case '2': // "pri2"
+		if (l) {
+			if (input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_p, "pr2");
+			} else {
+				RConsContext *c = core->cons->context;
+				const char **colors = (const char *[]){
+					c->pal.mov, // black
+					c->pal.nop, // dark
+					c->pal.cmp, // light
+					c->pal.jmp, // white
+				};
+				const int cols = r_config_get_i (core->config, "hex.cols");
+				r_print_2bpp_tiles (core->print, buf, l - 1, cols / 4, colors);
+			}
+		}
+		break;
+	case '3': // "pri3" [file]
+		if (input[3] == '?') {
+			r_core_cmd_help_match (core, help_msg_p, "pr3");
+		} else if (input[3] == ' ') {
+			char *data = r_file_slurp (input + 4, NULL);
+			if (data) {
+				char *res = r_print_stereogram (data, 78, 20);
+				char *out = r_print_stereogram_render (core->print, res);
+				r_cons_println (core->cons, out);
+				free (out);
+				free (res);
+				free (data);
+			} else {
+				R_LOG_ERROR ("Could not open '%s'", input + 2);
+			}
+		} else {
+			char *res = r_print_stereogram_bytes (buf, l);
+			char *out = r_print_stereogram_render (core->print, res);
+			r_cons_println (core->cons, out);
+			free (out);
+			free (res);
+		}
 		break;
 	case 'g': // gresycale
 		r_cons_image (buf, core->blocksize, cols, 'g', 3);
@@ -8327,47 +8367,7 @@ static int cmd_print(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case 'i':
-			cmd_pri (core, input);
-			break;
-		case '2': // "pr2"
-			if (l) {
-				if (input[2] == '?') {
-					r_core_cmd_help_match (core, help_msg_p, "pr2");
-				} else {
-					RConsContext *c = core->cons->context;
-					const char **colors = (const char *[]){
-						c->pal.mov, // black
-						c->pal.nop, // dark
-						c->pal.cmp, // light
-						c->pal.jmp, // white
-					};
-					const int cols = r_config_get_i (core->config, "hex.cols");
-					r_print_2bpp_tiles (core->print, core->block, len - 1, cols / 4, colors);
-				}
-			}
-			break;
-		case '3': // "pr3" [file]
-			if (input[2] == '?') {
-				r_core_cmd_help_match (core, help_msg_p, "pr3");
-			} else if (input[2] == ' ') {
-				char *data = r_file_slurp (input + 3, NULL);
-				if (data) {
-					char *res = r_print_stereogram (data, 78, 20);
-					char *out = r_print_stereogram_render (core->print, res);
-					r_cons_println (core->cons, out);
-					free (out);
-					free (res);
-					free (data);
-				} else {
-					R_LOG_ERROR ("Could not open '%s'", input + 2);
-				}
-			} else {
-				char *res = r_print_stereogram_bytes (block, core->blocksize);
-				char *out = r_print_stereogram_render (core->print, res);
-				r_cons_println (core->cons, out);
-				free (out);
-				free (res);
-			}
+			cmd_pri (core, input, l);
 			break;
 		case 'c': // "prc" // color raw dump
 			switch (input[2]) {

@@ -33,14 +33,14 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pr2 0
+NAME=pri2 0
 FILE=malloc://1024
 CMDS=pr2 0
 EXPECT=<<EOF
 EOF
 RUN
 
-NAME=pr3 0
+NAME=pri3 0
 FILE=malloc://1024
 CMDS=pr3 0
 EXPECT=<<EOF
