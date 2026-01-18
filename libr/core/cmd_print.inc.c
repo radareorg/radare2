@@ -9131,7 +9131,7 @@ static int cmd_print(void *data, const char *input) {
 			} else if (input[1] == ',') { // "p8,"
 				r_core_block_read (core);
 				block = core->block;
-				r_print_bytes (core->print, block, l, "%02x", ',');
+				r_print_bytes (core->print, block, l, "0x%02x", ',');
 			} else if (input[1] == 'x') { // "p8x"
 				r_core_block_read (core);
 				block = core->block;
