@@ -12190,7 +12190,9 @@ static char *mermaid_nodeinfo_disasm(RCore *core, RGraphNode *n) {
 				for (i = 0; i < b->ninstr; i++) {
 					const ut64 prev_pos = r_anal_bb_offset_inst (b, i);
 					const ut64 op_addr = r_anal_bb_opaddr_i (b, i);
-					if (prev_pos >= b->size) continue;
+					if (prev_pos >= b->size) {
+						continue;
+					}
 					int buflen = b->size - prev_pos;
 					ut8 *loc = bb_buf + prev_pos;
 					if (r_anal_op (core->anal, &op, op_addr, loc, buflen, mask) > 0) {
@@ -12204,8 +12206,7 @@ static char *mermaid_nodeinfo_disasm(RCore *core, RGraphNode *n) {
 			free (bb_buf);
 		}
 	}
-	char *body = r_strbuf_drain_nofree (buf);
-	r_strbuf_free (buf);
+	char *body = r_strbuf_drain (buf);
 	char *result = mermaid_title_body_node_str (nfo->title, body);
 	free (body);
 	return result;
@@ -12220,40 +12221,31 @@ static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) 
 		R_LOG_INFO ("The graph is empty");
 		return;
 	}
-	bool printit = true;
 	RStrBuf *nodes = r_strbuf_new ("flowchart TD\n");
 	RStrBuf *edges = r_strbuf_new ("");
-	RGraphNode *n;
+	RGraphNode *node;
 	RListIter *it;
-	r_list_foreach (graph->nodes, it, n) {
-		char *free_body = get_body (core, n);
+	r_list_foreach (graph->nodes, it, node) {
+		char *free_body = get_body (core, node);
 		char *body = free_body? free_body: "";
-		printit &= r_strbuf_appendf (nodes, "  node_%u[\"%s\"]\n", n->idx, body);
+		r_strbuf_appendf (nodes, "  node_%u[\"%s\"]\n", node->idx, body);
 		free (free_body);
 
 		// edgdes
 		RGraphNode *nxt;
 		RListIter *itt;
-		r_list_foreach (n->out_nodes, itt, nxt) {
-			printit &= r_strbuf_appendf (edges, "  node_%u --> node_%u\n", n->idx, nxt->idx);
-		}
-		if (!printit) {
-			break;
+		r_list_foreach (node->out_nodes, itt, nxt) {
+			r_strbuf_appendf (edges, "  node_%u --> node_%u\n", node->idx, nxt->idx);
 		}
 	}
-
-	if (printit) {
-		char *n = r_strbuf_drain_nofree (nodes);
-		char *e = r_strbuf_drain_nofree (edges);
-		if (n && e) {
-			r_cons_print (core->cons, n);
-			r_cons_print (core->cons, e);
-		}
-		free (n);
-		free (e);
+	char *n = r_strbuf_drain (nodes);
+	char *e = r_strbuf_drain (edges);
+	if (n && e) {
+		r_cons_print (core->cons, n);
+		r_cons_print (core->cons, e);
 	}
-	r_strbuf_free (nodes);
-	r_strbuf_free (edges);
+	free (n);
+	free (e);
 }
 
 typedef struct {
@@ -12853,82 +12845,71 @@ static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf, bool add_asm)
 }
 
 static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
+	// TODO: support custom theming (not hardcoded colors like we do now)
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	if (!fcn || !fcn->bbs) {
 		return false;
 	}
 
-	bool ret = true;
-
 	// for info on mermaid syntax: https://mermaid-js.github.io/mermaid/#/flowchart
 	RStrBuf *nodes = r_strbuf_new (add_asm ? "flowchart TD\n" : "stateDiagram-v2\n");
 	RStrBuf *edges = r_strbuf_new ("");
 
-	// TODO: add themeing to nodes buff here -> https://mermaid-js.github.io/mermaid/#/theming
-
 	RAnalBlock *b;
 	RListIter *iter;
-
 	int edgecount = 0;
 	r_list_sort (fcn->bbs, bb_cmp);
 	r_list_foreach (fcn->bbs, iter, b) {
 		if (add_asm) {
-			ret &= r_strbuf_appendf (nodes, "  _0x%" PFMT64x "[\"[0x%" PFMT64x "]", b->addr, b->addr);
+			r_strbuf_appendf (nodes, "  _0x%" PFMT64x "[\"[0x%" PFMT64x "]", b->addr, b->addr);
 			if (b->addr == fcn->addr) {
-				ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
+				r_strbuf_appendf (nodes, " %s", fcn->name);
 			}
-			ret &= mermaid_add_node_asm (core->anal, b, nodes);
+			if (!mermaid_add_node_asm (core->anal, b, nodes)) {
+				R_LOG_WARN ("Cannot add node at 0x%08"PFMT64x, b->addr);
+			}
 			// ending of nodes string
-			ret &= r_strbuf_append (nodes, "\"]\n");
+			r_strbuf_append (nodes, "\"]\n");
 		} else {
-			ret &= r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
+			r_strbuf_appendf (nodes, "  state \"[0x%" PFMT64x "]", b->addr);
 			if (b->addr == fcn->addr) {
-				ret &= r_strbuf_appendf (nodes, " %s", fcn->name);
+				r_strbuf_appendf (nodes, " %s", fcn->name);
 			}
-			ret &= r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
+			r_strbuf_appendf (nodes, "\" as _0x%" PFMT64x "\n", b->addr);
 		}
 
 		if (b->jump != UT64_MAX) {
 			if (b->fail != UT64_MAX) {
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
-				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#00C853,fill:none\n", edgecount++);
-				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#d50000,fill:none\n", edgecount++);
+				r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
+				r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
+				r_strbuf_appendf (edges, "  linkStyle %d stroke:#00C853,fill:none\n", edgecount++);
+				r_strbuf_appendf (edges, "  linkStyle %d stroke:#d50000,fill:none\n", edgecount++);
 			} else {
-				ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
-				ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
+				r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->jump);
+				r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 			}
 		} else if (b->fail != UT64_MAX) {
-			ret &= r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
-			ret &= r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
+			r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
+			r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 		}
-		ret &= fcn_siwtch_mermaid (b, edges, add_asm);
-		if (!ret) {
-			break;
-		}
+		fcn_siwtch_mermaid (b, edges, add_asm);
 	}
-
-	// Add left-align styles for nodes with disasm
 	if (add_asm) {
 		r_list_sort (fcn->bbs, bb_cmp);
 		r_list_foreach (fcn->bbs, iter, b) {
-			ret &= r_strbuf_appendf (nodes, "style _0x%" PFMT64x " text-align:left\n", b->addr);
+			r_strbuf_appendf (nodes, "style _0x%" PFMT64x " text-align:left\n", b->addr);
 		}
 	}
 
-	if (ret) {
-		char *n = r_strbuf_drain_nofree (nodes);
-		char *e = r_strbuf_drain_nofree (edges);
-		if (n && e) {
-			r_cons_print (core->cons, n);
-			r_cons_print (core->cons, e);
-		}
-		free (n);
-		free (e);
+	char *n = r_strbuf_drain (nodes);
+	char *e = r_strbuf_drain (edges);
+	if (n && e) {
+		r_cons_print (core->cons, n);
+		r_cons_print (core->cons, e);
 	}
-	r_strbuf_free (nodes);
-	r_strbuf_free (edges);
-	return ret;
+	free (n);
+	free (e);
+	return true;
 }
 
 static void cmd_anal_graph(RCore *core, const char *input) {
