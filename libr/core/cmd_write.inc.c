@@ -1,6 +1,10 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
+
+#define WSEEK(x,y) if (r_config_get_b (core->config, "cfg.wseek")) { r_core_seek_delta ((x),(y)); }
+
+// clang-format off
 
 static RCoreHelpMessage help_msg_w = {
 	"Usage:", "w[x] [str] [<file] [<<EOF] [@addr]", "",
@@ -208,6 +212,8 @@ static RCoreHelpMessage help_msg_wx = {
 	NULL
 };
 
+// clang-format off
+
 static void cmd_write_fail(RCore *core) {
 	R_LOG_ERROR ("Cannot write. Use `omp`, `io.cache` or reopen the file in rw with `oo+`");
 	r_core_return_value (core, R_CMD_RC_FAILURE);
@@ -246,9 +252,10 @@ R_API int cmd_write_hexpair(RCore* core, const char* pairs) {
 static void write_encrypted_block(RCore *core, const char *algo, const char *key, int direction, const char *iv) {
 	int keylen = 0;
 	ut8 *binkey = NULL;
-	if (!strncmp (key, "s:", 2)) {
+	if (r_str_startswith (key, "s:")) {
 		binkey = (ut8*)strdup (key + 2);
 		keylen = strlen (key + 2);
+	// AITODO: support base64: prefix
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -298,9 +305,10 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 static void write_block_signature(RCore *core, const char *algo, const char *key) {
 	int keylen = 0;
 	ut8 *binkey = NULL;
-	if (!strncmp (key, "s:", 2)) {
+	if (r_str_startswith (key, "s:")) {
 		binkey = (ut8 *)strdup (key + 2);
 		keylen = strlen (key + 2);
+	// AITODO: support base64: prefix
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -518,8 +526,6 @@ static int cmd_wo(void *data, const char *input) {
 	return 0;
 }
 
-#define WSEEK(x,y) if (r_config_get_b (core->config, "cfg.wseek")) { r_core_seek_delta ((x),(y)); }
-
 static void cmd_write_value_float(RCore *core, const char *input) {
 	float v = 0.0;
 	sscanf (input, "%f", &v);
@@ -669,8 +675,8 @@ static bool cmd_wff(RCore *core, const char *input) {
 	ut8 *buf = NULL;
 	size_t size = 0;
 	const char *arg = input + ((input[0] == ' ') ? 1 : 0);
-	char *p, *a = r_str_trim_dup (arg);
-	p = strchr (a, ' ');
+	char *a = r_str_trim_dup (arg);
+	char *p = strchr (a, ' ');
 	if (p) {
 		*p++ = 0;
 	}
@@ -758,7 +764,7 @@ static bool ioMemcpy(RCore *core, ut64 dst, ut64 src, int len) {
 }
 
 static bool cmd_wfx(RCore *core, const char *input) {
-	char * args = r_str_trim_dup (input);
+	char *args = r_str_trim_dup (input);
 	char *arg = strchr (args, ' ');
 	int len = core->blocksize;
 	if (arg) {
@@ -880,10 +886,6 @@ static int cmd_wf(void *data, const char *input) {
 	free (args);
 	r_core_block_read (core);
 	return 0;
-}
-
-static void squash_write_cache(RCore *core, const char *input) {
-	R_LOG_TODO ("Squash is not implemented for the for the new io-cache");
 }
 
 static void cmd_write_pcache(RCore *core, const char *input) {
@@ -1641,7 +1643,7 @@ static int cmd_wc(void *data, const char *input) {
 		r_core_block_read (core);
 		break;
 	case 's': // "wcs" -- write cache squash
-		squash_write_cache (core, input + 1);
+		R_LOG_TODO ("Squash is not implemented for the for the new io-cache");
 		break;
 	default:
 		r_core_return_invalid_command (core, "wc", input[0]);
