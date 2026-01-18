@@ -85,22 +85,21 @@ R_API RCmd *r_cmd_new(void *data) {
 	cmd->nullcallback = NULL;
 	cmd->ht_cmds = ht_pp_new0 ();
 	// cmd->root_cmd_desc = create_cmd_desc (cmd, NULL, R_CMD_DESC_TYPE_ARGV, "", &root_help, true);
-	r_core_plugin_init (cmd);
 	r_cmd_macro_init (&cmd->macro);
 	r_cmd_alias_init (cmd);
 	return cmd;
 }
 
-R_API RCmd *r_cmd_free(RCmd *cmd) {
+R_API void r_cmd_free(RCmd *cmd) {
 	int i;
 	if (!cmd) {
-		return NULL;
+		return;
 	}
 	ht_up_free (cmd->ts_symbols_ht);
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
 	ht_pp_free (cmd->ht_cmds);
-	// dinitialize plugin commands
+	// de-initialize plugin commands
 	r_core_plugin_fini (cmd);
 	r_list_free (cmd->plist);
 	r_list_free (cmd->lcmds);
@@ -111,7 +110,6 @@ R_API RCmd *r_cmd_free(RCmd *cmd) {
 	}
 	// cmd_desc_free (cmd->root_cmd_desc);
 	free (cmd);
-	return NULL;
 }
 
 // This struct exists to store the index during hashtable foreach.

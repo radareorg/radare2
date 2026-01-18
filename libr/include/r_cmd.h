@@ -77,7 +77,7 @@ typedef struct r_cmd_t {
 
 #ifdef R_API
 R_API RCmd *r_cmd_new(void *data);
-R_API RCmd *r_cmd_free(RCmd *cmd);
+R_API void r_cmd_free(RCmd *cmd);
 R_API int r_cmd_call(RCmd *cmd, const char *command);
 R_API void r_cmd_set_data(RCmd *cmd, void *data);
 R_API bool r_cmd_add(RCmd *cmd, const char *command, RCmdCb callback);

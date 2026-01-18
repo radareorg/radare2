@@ -106,6 +106,8 @@ R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 
 #undef R_INCLUDE_BEGIN
 
+// clang-format off
+
 static RCoreHelpMessage help_msg_equal_l = {
 	"Usage:", "=l", " [..] list, create and destroy r2 sessions",
 	"=l", "", "list all available sessions",
@@ -454,6 +456,8 @@ static RCoreHelpMessage help_msg_v = {
 	"vi", " test", "open the file test in 'cfg.editor'",
 	NULL
 };
+
+// clang-format on
 
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help) {
 	r_cons_cmd_help (core->cons, help, core->print->flags & R_PRINT_FLAGS_COLOR);

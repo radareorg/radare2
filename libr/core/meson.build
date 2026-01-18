@@ -59,9 +59,7 @@ r_core_inc = [
   'i/heap/windows',
   '../xps'
 ]
-r_core_additional_inc = []
-r_core_inc += r_core_additional_inc
-r_core_inc = [platform_inc, include_directories(r_core_inc)]
+r_core_inc = [r_core_additional_inc, platform_inc, include_directories(r_core_inc)]
 
 r_core_deps = [
   r_util_dep,
