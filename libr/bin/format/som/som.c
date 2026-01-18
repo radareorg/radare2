@@ -370,7 +370,7 @@ R_IPI RList *r_bin_som_get_sections(void *o) {
 	if (!obj || !obj->subspaces) {
 		return NULL;
 	}
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf ((RListFree)r_bin_section_free);
 	RListIter *iter;
 	RSomSubspace *subspace;
 	const ut64 baddr = obj->baddr;
@@ -406,7 +406,7 @@ R_IPI RList *r_bin_som_get_symbols(void *o) {
 	if (!obj || !obj->symbols) {
 		return NULL;
 	}
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
 	RListIter *iter;
 	RSomSymbol *sym;
 	r_list_foreach (obj->symbols, iter, sym) {
@@ -414,9 +414,9 @@ R_IPI RList *r_bin_som_get_symbols(void *o) {
 		if (obj->symbol_strings && sym->name < obj->hdr.symbol_strings_size) {
 			const char *name_str = obj->symbol_strings + sym->name;
 			size_t len = strnlen (name_str, obj->hdr.symbol_strings_size - sym->name);
-			bs->name = r_bin_name_new (r_str_ndup (name_str, len));
+			bs->name = r_bin_name_new_from (r_str_ndup (name_str, len));
 		} else {
-			bs->name = r_bin_name_new (r_str_newf ("sym_%d", sym->name));
+			bs->name = r_bin_name_new_from (r_str_newf ("sym_%d", sym->name));
 		}
 		bs->paddr = sym->symbol_value;
 		bs->vaddr = sym->symbol_value + obj->baddr;
@@ -505,7 +505,7 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 	if (!obj || !obj->imports || !obj->dl_strings) {
 		return NULL;
 	}
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf ((RListFree)r_bin_import_free);
 	RListIter *iter;
 	RSomImportListEntry *import_entry;
 	r_list_foreach (obj->imports, iter, import_entry) {
@@ -521,7 +521,7 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 		} else {
 			name = r_str_newf ("import_%d", import_entry->import_name);
 		}
-		imp->name = r_bin_name_new (name);
+		imp->name = r_bin_name_new_from (name);
 		imp->bind = "GLOBAL"; // assume global
 		switch (import_entry->import_type) {
 		case 0: // data
