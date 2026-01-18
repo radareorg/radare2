@@ -373,6 +373,15 @@ static inline void * R_NONNULL r_new(size_t s) {
 #define R_NEWS(x,y) (x*)malloc(sizeof (x)*(y))
 #define R_NEW0(x) (x*)r_new0(sizeof (x))
 #define R_NEW(x) (x*)r_new(sizeof (x))
+#define R_NEWCOPY(x,y) (x*)r_new_copy(sizeof (x), y)
+
+static inline void *r_new_copy(int size, void *data) {
+	void *a = malloc (size);
+	if (a) {
+		memcpy (a, data, size);
+	}
+	return a;
+}
 
 #define R_MEM_ALIGN(x) ((void *)(size_t)(((ut64)(size_t)x) & 0xfffffffffffff000LL))
 #define R_ARRAY_SIZE(x) (sizeof (x) / sizeof ((x)[0]))
