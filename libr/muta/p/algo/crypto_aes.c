@@ -47,6 +47,12 @@ void aes_expkey(const RCryptoAESState *st, RCryptoAESExponent *exp) {
 	if (!tk) {
 		return;
 	}
+	// Initialize tk array to prevent use of uninitialized values
+	if (st->columns > 0) {
+		for (i = 0; i < st->columns; i++) {
+			tk[i] = 0;
+		}
+	}
 
 	for (i = 0; i <= st->rounds; i++) {
 		for (j = 0; j < Nb; j++) {
@@ -76,24 +82,26 @@ void aes_expkey(const RCryptoAESState *st, RCryptoAESExponent *exp) {
 
 	while (t < ROUND_KEY_COUNT) {
 		// Extrapolate using phi (the round key evolution function)
-		tt = tk[st->columns - 1];
-		tk[0] ^= Sbox[(ut8)(tt >> 16)] << 24 ^ Sbox[(ut8)(tt >> 8)] << 16 ^
-			Sbox[(ut8)tt] << 8 ^ Sbox[(ut8)(tt >> 24)] ^ Rcon[idx++] << 24;
+		if (st->columns > 0) {
+			tt = tk[st->columns - 1];
+			tk[0] ^= Sbox[(ut8)(tt >> 16)] << 24 ^ Sbox[(ut8)(tt >> 8)] << 16 ^
+				Sbox[(ut8)tt] << 8 ^ Sbox[(ut8)(tt >> 24)] ^ Rcon[idx++] << 24;
 
-		if (st->columns != 8) {
-			for (i = 1, j = 0; i < st->columns;) {
-				tk[i++] ^= tk[j++];
-			}
-		} else {
-			for (i = 1, j = 0; i < st->columns / 2;) {
-				tk[i++] ^= tk[j++];
-			}
-			tt = tk[st->columns / 2 - 1];
-			tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8)(tt >> 8)] << 8 ^
-				Sbox[(ut8)(tt >> 16)] << 16 ^
-				Sbox[(ut8)(tt >> 24)] << 24;
-			for (j = st->columns / 2, i = j + 1; i < st->columns;) {
-				tk[i++] ^= tk[j++];
+			if (st->columns != 8) {
+				for (i = 1, j = 0; i < st->columns;) {
+					tk[i++] ^= tk[j++];
+				}
+			} else {
+				for (i = 1, j = 0; i < st->columns / 2;) {
+					tk[i++] ^= tk[j++];
+				}
+				tt = tk[st->columns / 2 - 1];
+				tk[st->columns / 2] ^= Sbox[(ut8)tt] ^ Sbox[(ut8)(tt >> 8)] << 8 ^
+					Sbox[(ut8)(tt >> 16)] << 16 ^
+					Sbox[(ut8)(tt >> 24)] << 24;
+				for (j = st->columns / 2, i = j + 1; i < st->columns;) {
+					tk[i++] ^= tk[j++];
+				}
 			}
 		}
 
