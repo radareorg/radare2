@@ -255,7 +255,8 @@ static void write_encrypted_block(RCore *core, const char *algo, const char *key
 	if (r_str_startswith (key, "s:")) {
 		binkey = (ut8*)strdup (key + 2);
 		keylen = strlen (key + 2);
-	// AITODO: support base64: prefix
+	} else if (r_str_startswith (key, "base64:")) {
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
@@ -308,7 +309,8 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 	if (r_str_startswith (key, "s:")) {
 		binkey = (ut8 *)strdup (key + 2);
 		keylen = strlen (key + 2);
-	// AITODO: support base64: prefix
+	} else if (r_str_startswith (key, "base64:")) {
+		binkey = r_base64_decode_dyn (key + 7, -1, (int *)&keylen);
 	} else {
 		binkey = (ut8 *)strdup (key);
 		keylen = r_hex_str2bin (key, binkey);
