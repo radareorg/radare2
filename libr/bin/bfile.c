@@ -362,7 +362,7 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 					actual_ascii = 0;
 					for (j = 0; freq_list[j] != -1; j++) {
 						num_chars += freq_list[j];
-						if (!block_list[j]) { // ASCII
+						if (block_list && !block_list[j]) { // ASCII
 							actual_ascii = freq_list[j];
 						}
 					}

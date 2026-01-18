@@ -617,7 +617,7 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 	bool is_interactive = cons ? cons->context->is_interactive: false;
 	bool esc_nl = (options & R_PRINT_STRING_ESC_NL);
 	bool use_color = p && (p->flags & R_PRINT_FLAGS_COLOR);
-	RConsIsBreaked is_breaked = p->consb.is_breaked;
+	RConsIsBreaked is_breaked = p && p->consb.is_breaked;
 	int col = 0;
 
 	i = 0;
@@ -1589,16 +1589,15 @@ static ut8* M(const ut8 *b, int len) {
 
 // TODO: add support for cursor
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8 *_b, int len, int scndcol) {
-	ut8 *a, *b;
 	char linediff, fmt[64];
-	int color = p->flags & R_PRINT_FLAGS_COLOR;
-	int diffskip = p->flags & R_PRINT_FLAGS_DIFFOUT;
+	int color = (p && (p->flags & R_PRINT_FLAGS_COLOR));
+	int diffskip = (p && (p->flags & R_PRINT_FLAGS_DIFFOUT));
 	int i, j, min;
-	if (!((a = M (_a, len)))) {
-		return;
-	}
-	if (!((b = M (_b, len)))) {
+	ut8 *a = M (_a, len);
+	ut8 *b = M (_b, len);
+	if (!a || !b) {
 		free (a);
+		free (b);
 		return;
 	}
 	for (i = 0; i < len; i += 16) {

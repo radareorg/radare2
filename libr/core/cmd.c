@@ -5221,7 +5221,8 @@ repeat_arroba:
 				break;
 			case 'o': // "@o:3"
 				if (ptr[1] == ':') {
-					tmpfd = core->io->desc ? core->io->desc->fd : -1;
+					RIODesc *desc = core->io->desc;
+					tmpfd = desc ? desc->fd : -1;
 					r_io_use_fd (core->io, atoi (ptr + 2));
 				}
 				break;

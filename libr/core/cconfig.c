@@ -789,7 +789,8 @@ static bool cb_asmarch(void *user, void *data) {
 	if (core->anal) {
 		const char *asmcpu = r_config_get (core->config, "asm.cpu");
 		const char *asmos = r_config_get (core->config, "asm.os");
-		if (!r_syscall_setup (core->anal->syscall, node->value, core->anal->config->bits, asmcpu, asmos)) {
+		int bits = (core->anal->config)? core->anal->config->bits: r_config_get_i (core->config, "asm.bits");
+		if (!r_syscall_setup (core->anal->syscall, node->value, bits, asmcpu, asmos)) {
 			// R_LOG_ERROR ("asm.arch: Cannot setup syscall '%s/%s' from '%s'",
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
