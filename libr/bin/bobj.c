@@ -9,13 +9,14 @@
 
 R_API void r_bin_mem_free(void *data) {
 	RBinMem *mem = (RBinMem *)data;
-	if (mem && mem->mirrors) {
-		mem->mirrors->free = r_bin_mem_free;
-		r_list_free (mem->mirrors);
-		mem->mirrors = NULL;
+	if (mem) {
+		if (mem->mirrors) {
+			mem->mirrors->free = r_bin_mem_free;
+			r_list_free (mem->mirrors);
+		}
+		free (mem->name);
+		free (mem);
 	}
-	free (mem->name);
-	free (mem);
 }
 
 static int reloc_cmp(void *incoming, void *in, void *user) {

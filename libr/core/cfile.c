@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "cfile"
 
@@ -181,7 +181,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			origoff = r_num_math (core->num, "entry0");
 		}
 
-		if (core->bin->cur && core->io && r_io_desc_get (core->io, file->fd) && !loadbin) {
+		if (core->bin->cur && r_io_desc_get (core->io, file->fd) && !loadbin) {
 			//force here NULL because is causing uaf look this better in future XXX @alvarofe
 			core->bin->cur = NULL;
 		}
