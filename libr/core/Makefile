@@ -37,6 +37,7 @@ include ${STATIC_CORE_PLUGINS}
 
 STATIC_OBJS=$(addprefix $(LTOP)/core/p/,$(STATIC_OBJ))
 OBJS+=$(STATIC_OBJS)
+OBJS+=$(EXTERNAL_STATIC_OBJS)
 
 include $(TOP)/shlr/gdb/deps.mk
 # include $(LIBR)/util/spp.mk

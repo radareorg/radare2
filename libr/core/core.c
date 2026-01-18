@@ -2722,6 +2722,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
+	r_core_plugin_init (core->rcmd);
 	r_core_loadlibs_init (core);
 	// r_core_loadlibs (core);
 	//  TODO: get arch from r_bin or from native arch
@@ -2823,12 +2824,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
 	r_event_free (c->ev);
-	// Free cmd and its plugins before freeing event system
-	c->rcmd = r_cmd_free (c->rcmd);
 	r_lib_free (c->lib);
-	/*
-	r_unref (c->anal->config);
-	 */
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}
@@ -2864,6 +2860,9 @@ R_API void r_core_fini(RCore *c) {
 	r_fs_shell_free (c->rfs);
 	free (c->times);
 	free (((RCorePriv *)c->priv)->old_arch);
+	// Free cmd and its plugins before freeing event system
+	r_cmd_free (c->rcmd);
+	c->rcmd = NULL;
 	free (c->priv);
 }
 
