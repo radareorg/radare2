@@ -17,10 +17,10 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc
           git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
@@ -60,10 +60,10 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc
           git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
@@ -103,9 +103,9 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc && git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
           sudo apt update --assume-yes
           sudo apt-get --assume-yes install gperf || true
           sudo pip install r2pipe --break-system-packages
@@ -143,10 +143,10 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc
           git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
@@ -185,9 +185,9 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc && git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
           sudo apt-get update --assume-yes
           sudo apt-get --assume-yes install gperf || true
           sudo pip install r2pipe --break-system-packages
@@ -234,10 +234,10 @@ jobs:
     steps:
     - name: Checkout TinyCC repository
       run: |
-          git clone https://github.com/mirror/tinycc.git
+          git clone https://github.com/TinyCC/tinycc
           cd tinycc
           git checkout mob
-          git reset --hard 560526a49dfffef118bcb7fba83c727639ec0a1d
+          git reset --hard 4fccaf61241a5eb72b0777b3a44bd7abbea48604
     - name: Compiling and installing TinyCC
       working-directory: tinycc
       run: |
