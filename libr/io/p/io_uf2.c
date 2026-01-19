@@ -115,14 +115,14 @@ static UF2_Family uf2families[] = {
 	{ 0x4b684d71, "MaixPlay-U4", "Sipeed MaixPlay-U4(BL618)", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x4c71240a, "STM32G4", "ST STM32G4xx", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x4e8f1c5d, "STM32H5", "ST STM32H5xx", "arm", "cortex", 32 }, // Arm Cortex-M33 32-bit
-	{ 0x4f6ace52, "CSK4", "LISTENAI CSK300x/400x", NULL, NULL, -1 },
+	{ 0x4f6ace52, "CSK4", "LISTENAI CSK300x/400x", "riscv", NULL, 32 }, // ???
 	{ 0x4fb2d5bd, "MIMXRT10XX", "NXP i.MX RT10XX", "arm", "cortex", 32 }, // Arm Cortex-M7 32-bit
 	{ 0x51e903a8, "XR809", "Xradiotech 809", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x53b80f00, "STM32F7", "ST STM32F7xx", "arm", "cortex", 32 }, // Arm Cortex-M7 32-bit
 	{ 0x540ddf62, "ESP32C6", "ESP32-C6", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x55114460, "SAMD51", "Microchip (Atmel) SAMD51", "arm", "cortex", 32 }, // Arm Cortex-M4F 32-bit
 	{ 0x57755a57, "STM32F4", "ST STM32F4xx", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
-	{ 0x5a18069b, "FX2", "Cypress FX2", NULL, NULL, -1 }, // 8051 8-bit
+	{ 0x5a18069b, "FX2", "Cypress FX2", "8051", NULL, 8 }, // 8051 8-bit
 	{ 0x5d1a0a2e, "STM32F2", "ST STM32F2xx", "arm", "cortex", 32 }, // Arm Cortex-M3 32-bit
 	{ 0x5ee21072, "STM32F1", "ST STM32F103", "arm", "cortex", 32 }, // Arm Cortex-M3 32-bit
 	{ 0x621e937a, "NRF52833", "Nordic NRF52833", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
@@ -130,21 +130,24 @@ static UF2_Family uf2families[] = {
 	{ 0x675a40b0, "BK7231U", "Beken 7231U/7231T", "arm", NULL, 32 }, // ARM968E-S (ARMv5TE) 32-bit
 	{ 0x68ed2b88, "SAMD21", "Microchip (Atmel) SAMD21", "arm", "cortex", 32 }, // Arm Cortex-M0+ 32-bit
 	{ 0x699b62ec, "CH32V", "WCH CH32V2xx and CH32V3xx", "riscv", NULL, 32 }, // RISC-V 32-bit
-	{ 0x6a82cc42, "BK7251", "Beken 7251/7252", NULL, NULL, -1 },
+	{ 0x6a82cc42, "BK7251", "Beken 7251/7252", "arm", NULL, 32 }, // ARM968E-S (ARMv5TE) 32-bit
 	{ 0x6b846188, "STM32F3", "ST STM32F3xx", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x6d0922fa, "STM32F407", "ST STM32F407", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x6db66082, "STM32H7", "ST STM32H7xx", "arm", "cortex", 32 }, // Arm Cortex-M7 32-bit
-	{ 0x6e7348a8, "CSK6", "LISTENAI CSK60xx", NULL, NULL, -1 },
+	{ 0x6e7348a8, "CSK6", "LISTENAI CSK60xx", "arm", NULL, 32 }, // Arm STAR 32-bits + VENUS NPU
 	{ 0x6f752678, "NRF52832xxAB", "Nordic NRF52832xxAB", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x70d16653, "STM32WB", "ST STM32WBxx", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit + Arm Cortex-M0+ 32-bit
 	{ 0x72721d4e, "NRF52832xxAA", "Nordic NRF52832xxAA", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
+	{ 0x7410520a, "MAX32690", "Analog Devices MAX32690", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x77d850c4, "ESP32C61", "ESP32-C61", "riscv", NULL, 32 }, // RISC-V 32-bit
-	{ 0x7b3ef230, "BK7231N", "Beken 7231N", NULL, NULL, -1 },
+	{ 0x7b3ef230, "BK7231N", "Beken 7231N", "arm", NULL, 32 }, // ARM968E-S (ARMv5TE) 32-bit
 	{ 0x7be8976d, "RA4M1", "Renesas RA4M1", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
+	{ 0x7d7a66ef, "PY32F071-UVK5-V3", "Quansheng UV-K5 V3 amateur radio based on Puya Semiconductor PY32F071", "arm", "cortex", 32 }, // Arm Cortex-M0+ 32-bit
 	{ 0x7eab61ed, "ESP8266", "ESP8266", "xtensa", NULL, 32 }, // L106 32-bit
 	{ 0x7f83e793, "KL32L2", "NXP KL32L2x", "arm", "cortex", 32 }, // Arm Cortex-M0+ 32-bit
 	{ 0x820d9a5f, "NRF52820", "Nordic NRF52820_xxAA", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x8fb060fe, "STM32F407VG", "ST STM32F407VG", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
+	{ 0x91d3fd18, "MAX78002", "Analog Devices MAX78002", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit + CNN Accelerator
 	{ 0x9517422f, "RZA1LU", "Renesas RZ/A1LU (R7S7210xx)", "arm", "cortex", 32 }, // Arm Cortex-A9 32-bit
 	{ 0x9af03e33, "GD32VF103", "GigaDevice GD32VF103", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x9e0baa8a, "ESP32H4", "ESP32-H4", "riscv", NULL, 32 }, // RISC-V 32-bit
@@ -155,6 +158,7 @@ static UF2_Family uf2families[] = {
 	{ 0xbfdd4eee, "ESP32S2", "ESP32-S2", "xtensa", NULL, 32 }, // Xtensa LX7 32-bit
 	{ 0xc47e5767, "ESP32S3", "ESP32-S3", "xtensa", NULL, 32 }, // Xtensa LX7 32-bit
 	{ 0xd42ba06c, "ESP32C3", "ESP32-C3", "riscv", NULL, 32 }, // RISC-V 32-bit
+	{ 0xd63f8632, "MAX32650", "Analog Devices MAX32650/1/2", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0xde1270b7, "BL602", "Boufallo 602", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0xe08f7564, "RTL8720C", "Realtek AmebaZ2 RTL8720C", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0xe48bff56, "RP2040", "Raspberry Pi RP2040", "arm", "cortex", 32 }, // Arm Cortex-M0+ 32-bit
@@ -163,6 +167,7 @@ static UF2_Family uf2families[] = {
 	{ 0xe48bff59, "RP2350_ARM_S", "Raspberry Pi RP2350, Secure Arm image", "arm", "cortex", 32 }, // Arm Cortex-M33 32-bit
 	{ 0xe48bff5a, "RP2350_RISCV", "Raspberry Pi RP2350, RISC-V image", "riscv", NULL, 32 }, // Hazard3 RISC-V 32-bit
 	{ 0xe48bff5b, "RP2350_ARM_NS", "Raspberry Pi RP2350, Non-secure Arm image", "arm", "cortex", 32 }, // Arm Cortex-M33 32-bit
+	{ 0xf0c30d71, "MAX32666", "Analog Devices MAX32665/6", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0xf71c0343, "ESP32C5", "ESP32-C5", "riscv", NULL, 32 }, // RISC-V 32-bit
 };
 
