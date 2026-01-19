@@ -676,6 +676,7 @@ R_API ut64 r_buf_at(RBuffer *b) {
 	return r_buf_seek (b, 0, R_BUF_CUR);
 }
 
+// returns the amount of bytes read
 R_API st64 r_buf_read_at(RBuffer *b, ut64 addr, ut8 *buf, ut64 len) {
 	R_RETURN_VAL_IF_FAIL (b && buf, -1);
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, ret2libc */
+/* radare - LGPL - Copyright 2009-2026 - pancake, ret2libc */
 
 #include <r_util.h>
 #include <r_io.h>
@@ -21,8 +21,6 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 
 	R_WARN_IF_FAIL (b->rb_io);
 	switch (whence) {
-	default:
-		R_WARN_IF_REACHED ();
 	case R_BUF_SET:
 		io_whence = R_IO_SEEK_SET;
 		break;
@@ -31,6 +29,10 @@ static st64 buf_io_seek(RBuffer *b, st64 addr, int whence) {
 		break;
 	case R_BUF_CUR:
 		io_whence = R_IO_SEEK_CUR;
+		break;
+	default:
+		io_whence = R_IO_SEEK_SET;
+		R_WARN_IF_REACHED ();
 		break;
 	}
 	return b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, addr, io_whence);
@@ -50,10 +52,7 @@ static bool buf_io_resize(RBuffer *b, ut64 newsize) {
 static st64 buf_io_read(RBuffer *b, ut8 *buf, ut64 len) {
 	R_WARN_IF_FAIL (b->rb_io);
 	RIOBind *iob = b->rb_io->iob;
-	// ut64 cur = b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, 0, R_IO_SEEK_CUR);
-	st64 res = iob->fd_read (iob->io, b->rb_io->fd, buf, len);
-	// b->rb_io->iob->fd_seek (b->rb_io->iob->io, b->rb_io->fd, cur, R_IO_SEEK_SET);
-	return res;
+	return iob->fd_read (iob->io, b->rb_io->fd, buf, len);
 }
 
 static st64 buf_io_write(RBuffer *b, const ut8 *buf, ut64 len) {
