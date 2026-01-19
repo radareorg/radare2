@@ -172,18 +172,27 @@ retry:
 			if (ptrr < ptr2) {
 				char *p = strdup (ptr2 + 2);
 				char *s = spp_run_str (ptrr + strlen (proc->tag_pre), NULL);
-				D fprintf (stderr, "strcpy(%s)(%s)\n", ptrr, s);
-				strcpy (ptrr, s);
+				if (s && p) {
+					size_t prefix_len = ptrr - buf;
+					size_t s_len = strlen (s);
+					size_t p_len = strlen (p);
+					if (s_len < SIZE_MAX - p_len - prefix_len - 1) {
+						size_t newlen = prefix_len + s_len + p_len + 1;
+						char *newbuf = malloc (newlen);
+						if (newbuf) {
+							memcpy (newbuf, buf, prefix_len);
+							memcpy (newbuf + prefix_len, s, s_len);
+							memcpy (newbuf + prefix_len + s_len, p, p_len + 1);
+							free (s);
+							free (p);
+							buf = newbuf;
+							ptrr = NULL;
+							goto retry;
+						}
+					}
+				}
 				free (s);
-				ptr[-2] = proc->tag_pre[0]; // XXX -2 check underflow?
-
-				D fprintf (stderr, "strcat(%s)(%s)\n", ptrr, p);
-				strcat (ptrr, p);
-				buf = ptr - 2;
-				D fprintf (stderr, "CONTINUE (%s)\n", buf);
 				free (p);
-				ptrr = NULL;
-				goto retry;
 			}
 		}
 		if (proc->buf.lbuf && proc->buf.lbuf[0]) {
