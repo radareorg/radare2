@@ -298,44 +298,53 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 		const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 		const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 		const int bufsize = maxinstrsize * numinstr;
-		ut8 *buf = malloc (bufsize);
-		if (!buf) {
-			return 0;
-		}
-
-		ut64 start_addr = (addr >= bufsize) ? addr - bufsize : 0;
-		if (!r_io_read_at (core->io, start_addr, buf, bufsize)) {
+		if (maxinstrsize == mininstrsize) {
+			ut64 delta = mininstrsize * numinstr;
+			if (delta > addr) {
+				val = addr;
+				addr = 0;
+			} else {
+				val = delta;
+				addr -= val;
+			}
+		} else {
+			ut8 *buf = malloc (bufsize);
+			if (!buf) {
+				return 0;
+			}
+			ut64 start_addr = (addr >= bufsize) ? addr - bufsize : 0;
+			if (!r_io_read_at (core->io, start_addr, buf, bufsize)) {
+				free (buf);
+				return 0;
+			}
+			int i;
+			for (i = 0; i < numinstr; i++) {
+				ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
+				if (prev_addr == UT64_MAX) {
+					prev_addr = addr - mininstrsize;
+				}
+				if (prev_addr >= core->addr) {
+					break;
+				}
+				ut64 buf_offset = prev_addr - start_addr;
+				int buf_left = bufsize - buf_offset;
+				if (buf_offset >= bufsize || buf_left < mininstrsize) {
+					break;
+				}
+				RAnalOp op;
+				r_anal_op_init (&op);
+				r_anal_op_set_bytes (&op, prev_addr, buf + buf_offset, buf_left);
+				bool ok = r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC);
+				if (!ok || op.size < mininstrsize) {
+					// TODO: maybe we can use the RAnalBlock info to know the opsize
+					op.size = mininstrsize;
+				}
+				val += op.size;
+				addr = prev_addr;
+				r_anal_op_fini (&op);
+			}
 			free (buf);
-			return 0;
 		}
-
-		int i;
-		for (i = 0; i < numinstr; i++) {
-			ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
-			if (prev_addr == UT64_MAX) {
-				prev_addr = addr - mininstrsize;
-			}
-			if (prev_addr >= core->addr) {
-				break;
-			}
-			ut64 buf_offset = prev_addr - start_addr;
-			int buf_left = bufsize - buf_offset;
-			if (buf_offset >= bufsize || buf_left < mininstrsize) {
-				break;
-			}
-			RAnalOp op;
-			r_anal_op_init (&op);
-			r_anal_op_set_bytes (&op, prev_addr, buf + buf_offset, buf_left);
-			bool ok = r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC);
-			if (!ok || op.size < mininstrsize) {
-				// TODO: maybe we can use the RAnalBlock info to know the opsize
-				op.size = mininstrsize;
-			}
-			val += op.size;
-			addr = prev_addr;
-			r_anal_op_fini (&op);
-		}
-		free (buf);
 	}
 	r_core_seek (core, addr, true);
 	val += ret;
