@@ -482,8 +482,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			bool found = false;
 			RRegItem *item = ht_pp_find (pp, name, &found);
 			if (found) {
-				r_ref (item);
-				return item;
+				return r_ref (item);
 			}
 		}
 	}

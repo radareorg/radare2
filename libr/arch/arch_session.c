@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2022-2025 - pancake */
+/* radare2 - LGPL - Copyright 2022-2026 - pancake */
 
 #include <r_arch.h>
 
@@ -19,8 +19,7 @@ R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *a
 	RArchSession *ai = R_NEW0 (RArchSession);
 	r_ref_init (ai, _arch_session_free);
 	ai->arch = arch;
-	ai->config = cfg;
-	r_ref (ai->config);
+	ai->config = r_ref (cfg);
 	ai->plugin = ap;
 	ai->user = arch->user;
 	RArchPluginInitCallback init = R_UNWRAP3 (ai, plugin, init);
@@ -80,3 +79,4 @@ R_API int r_arch_session_info(RArchSession *s, int query) {
 	}
 	return -1;
 }
+

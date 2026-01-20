@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022-2024 - pancake */
+/* radare - LGPL - Copyright 2022-2026 - pancake */
 
 #include <r_anal.h>
 
@@ -78,8 +78,7 @@ R_API bool r_anal_tid_select(RAnal *anal, int tid) {
 			anal->thread = tid;
 			RReg *or = anal->reg;
 			if (th->reg) {
-				r_ref (th->reg);
-				anal->reg = th->reg;
+				anal->reg = r_ref (th->reg);
 			}
 			r_unref (or);
 			return true;

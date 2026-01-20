@@ -199,6 +199,7 @@ R_API bool r_arch_session_patch(RArchSession *as, RAnalOp *op, RArchModifyMask m
 R_API int r_arch_session_info(RArchSession *as, int q);
 R_API RList *r_arch_session_preludes(RArchSession *as);
 
+
 // arch.c
 R_API RArch *r_arch_new(void);
 R_API RArchPlugin *r_arch_find(RArch *arch, const char *name);
