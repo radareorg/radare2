@@ -4839,6 +4839,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("lines.from", 0, "start address for line seek");
 	SETCB ("lines.to", "$s", &cb_linesto, "end address for line seek");
 	SETCB ("lines.abs", "false", &cb_linesabs, "enable absolute line numbers");
+	/* tasks */
+	SETB ("tasks.isolate", "false", "isolate task cores with separate block buffer");
 	/* RVC */
 	{
 		char *p = r_file_path ("git");
