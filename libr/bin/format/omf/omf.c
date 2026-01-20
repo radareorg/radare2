@@ -704,7 +704,7 @@ bool r_bin_omf_get_entry(r_bin_omf_obj *obj, RBinAddr *addr) {
 	}
 	while (ct_sym < obj->nb_symbol) {
 		if (!strcmp (obj->symbols[ct_sym]->name, "_start")) {
-			if (obj->symbols[ct_sym]->seg_idx - 1 > obj->nb_section) {
+			if (obj->symbols[ct_sym]->seg_idx - 1 >= obj->nb_section) {
 				eprintf ("Invalid segment index for symbol _start\n");
 				return false;
 			}
@@ -773,7 +773,7 @@ ut64 r_bin_omf_get_paddr_sym(r_bin_omf_obj *obj, OMF_symbol *sym) {
 	if (!obj->sections) {
 		return 0LL;
 	}
-	if (sym->seg_idx - 1 > obj->nb_section) {
+	if (sym->seg_idx - 1 >= obj->nb_section) {
 		return 0LL;
 	}
 	int sidx = sym->seg_idx - 1;
