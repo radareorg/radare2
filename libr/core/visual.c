@@ -2949,10 +2949,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (r_config_get_b (core->config, "scr.cursor")) {
 				RConsCursorPos cpos = core->cons->cpos;
 				r_cons_set_click (core->cons, cpos.x, cpos.y);
-				char buf[10];
-				int ch = process_get_click (core, 0);
-				buf[0] = ch;
-				buf[1] = 0;
+				char buf[2] = { process_get_click (core, 0), 0};
 				r_core_visual_cmd (core, buf);
 			} else {
 				RAnalOp *op;
@@ -3041,18 +3038,16 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'a':
 		{
-			{
-				ut64 addr = core->addr;
-				if (PIDX == 2) {
-					if (core->seltab == 0) {
-						addr = r_debug_reg_get (core->dbg, "SP");
-					}
+			ut64 addr = core->addr;
+			if (PIDX == 2) {
+				if (core->seltab == 0) {
+					addr = r_debug_reg_get (core->dbg, "SP");
 				}
-				if (!canWrite (core, addr)) {
-					r_cons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
-					r_cons_any_key (core->cons, NULL);
-					return true;
-				}
+			}
+			if (!canWrite (core, addr)) {
+				r_cons_printf (core->cons, "\nFile has been opened in read-only mode. Use -w flag, oo+ or e io.cache=true\n");
+				r_cons_any_key (core->cons, NULL);
+				return true;
 			}
 			r_cons_printf (core->cons, "Enter assembler opcodes separated with ';':\n");
 			r_core_visual_showcursor (core, true);
@@ -3087,12 +3082,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '=':
 		{ // TODO: edit
 			r_core_visual_showcursor (core, true);
-			const char *buf = NULL;
-			#define I core->cons
 			const char *cmd = r_config_get (core->config, "cmd.vprompt");
 			r_line_set_prompt (core->cons->line, "cmd.vprompt> ");
 			core->cons->line->contents = strdup (cmd);
-			buf = r_line_readline (core->cons);
+			const char *buf = r_line_readline (core->cons);
 			core->cons->line->contents = NULL;
 			(void)r_config_set (core->config, "cmd.vprompt", buf);
 			r_core_visual_showcursor (core, false);
@@ -3101,18 +3094,18 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case '|':
 		{ // TODO: edit
 			r_core_visual_showcursor (core, true);
-			#define I core->cons
+			RCons *cons = core->cons;
 			const char *cmd = r_config_get (core->config, "cmd.cprompt");
-			r_line_set_prompt (core->cons->line, "cmd.cprompt> ");
+			r_line_set_prompt (cons->line, "cmd.cprompt> ");
 			I->line->contents = strdup (cmd);
-			const char *buf = r_line_readline (core->cons);
+			const char *buf = r_line_readline (cons);
 			if (buf && !strcmp (buf, "|")) {
 				R_FREE (I->line->contents);
 				core->print->cur_enabled = true;
 				core->print->cur = 0;
 				(void)r_config_set (core->config, "cmd.cprompt", "p=e $r-2");
 			} else {
-				R_FREE (I->line->contents);
+				R_FREE (cons->line->contents);
 				(void)r_config_set (core->config, "cmd.cprompt", r_str_get (buf));
 			}
 			r_core_visual_showcursor (core, false);
@@ -3738,12 +3731,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				r_config_set_i (core->config, "hex.cols", scrcols + 1);
 			}
 			break;
-#if 0
-		case 'I':
-			r_core_cmd (core, "dsp", 0);
-			r_core_cmd (core, ".dr*", 0);
-			break;
-#endif
 		case 's':
 			key_s = r_config_get (core->config, "key.s");
 			if (key_s && *key_s) {
@@ -3794,33 +3781,26 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			//r_core_cmd0 (core, "=H");
 			break;
 		case 'm':
-			{
-				r_cons_gotoxy (core->cons, 0, 0);
-				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
-				r_cons_flush (core->cons);
-				const int ch = r_cons_readchar (core->cons);
-				r_core_vmark (core, ch);
-			}
+			r_cons_gotoxy (core->cons, 0, 0);
+			r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Set shortcut key for 0x%"PFMT64x"\n", core->addr);
+			r_cons_flush (core->cons);
+			r_core_vmark (core, r_cons_readchar (core->cons));
 			break;
 		case 'M':
-			{
-				r_cons_gotoxy (core->cons, 0, 0);
-				if (r_core_vmark_dump (core, 'v')) {
-					r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
-					r_cons_flush (core->cons);
-					const int ch = r_cons_readchar (core->cons);
-					r_core_vmark_del (core, ch);
-				}
+			r_cons_gotoxy (core->cons, 0, 0);
+			if (r_core_vmark_dump (core, 'v')) {
+				r_cons_printf (core->cons, R_CONS_CLEAR_LINE"Remove a shortcut key from the list\n");
+				r_cons_flush (core->cons);
+				const int ch = r_cons_readchar (core->cons);
+				r_core_vmark_del (core, ch);
 			}
 			break;
 		case '\'':
-			{
-				r_cons_gotoxy (core->cons, 0, 2);
-				if (r_core_vmark_dump (core, 'v')) {
-					r_cons_flush (core->cons);
-					const int ch = r_cons_readchar (core->cons);
-					r_core_vmark_seek (core, ch, NULL);
-				}
+			r_cons_gotoxy (core->cons, 0, 2);
+			if (r_core_vmark_dump (core, 'v')) {
+				r_cons_flush (core->cons);
+				const int ch = r_cons_readchar (core->cons);
+				r_core_vmark_seek (core, ch, NULL);
 			}
 			break;
 		case 'y':
@@ -4155,12 +4135,16 @@ static void visual_title(RCore *core, int color) {
 	if (core->visual.autoblocksize) {
 		switch (core->visual.printidx) {
 		case R_CORE_VISUAL_MODE_PX: // x
-			if (core->visual.currentFormat == 3 || core->visual.currentFormat == 9 || core->visual.currentFormat == 5) { // prx
-				r_core_block_size (core, (int)(core->cons->rows * hexcols * 4));
-			} else if ((R_ABS (core->visual.hexMode) % 3) == 0) { // prx
-				r_core_block_size (core, (int)(core->cons->rows * hexcols));
-			} else {
-				r_core_block_size (core, (int)(core->cons->rows * hexcols * 2));
+			{
+				int bs;
+				if (core->visual.currentFormat == 3 || core->visual.currentFormat == 9 || core->visual.currentFormat == 5) { // prx
+					bs = core->cons->rows * hexcols * 4;
+				} else if ((R_ABS (core->visual.hexMode) % 3) == 0) { // prx
+					bs = core->cons->rows * hexcols;
+				} else {
+					bs = core->cons->rows * hexcols * 2;
+				}
+				r_core_block_size (core, bs);
 			}
 			break;
 		case R_CORE_VISUAL_MODE_OV:
@@ -4172,8 +4156,7 @@ static void visual_title(RCore *core, int color) {
 		{
 			int bsize = core->cons->rows * 5;
 			if (core->print->screen_bounds > 1) {
-				// estimate new blocksize with the size of the last
-				// printed instructions
+				// estimate new blocksize with the size of the last printed instructions
 				int new_sz = core->print->screen_bounds - core->addr + 32;
 				new_sz = R_MIN (new_sz, 16 * 1024);
 				if (new_sz > bsize) {
@@ -4368,11 +4351,11 @@ static void visual_title(RCore *core, int color) {
 
 static int visual_responsive(RCore *core) {
 	int h, w = r_cons_get_size (core->cons, &h);
-	if (r_config_get_i (core->config, "scr.responsive")) {
+	if (r_config_get_b (core->config, "scr.responsive")) {
 		if (w < 110) {
-			r_config_set_i (core->config, "asm.cmt.right", 0);
+			r_config_set_b (core->config, "asm.cmt.right", false);
 		} else {
-			r_config_set_i (core->config, "asm.cmt.right", 1);
+			r_config_set_b (core->config, "asm.cmt.right", true);
 		}
 		if (w < 68) {
 			r_config_set_i (core->config, "hex.cols", (int)(w / 5.2));
@@ -4393,9 +4376,9 @@ static int visual_responsive(RCore *core) {
 		}
 		if (w < 70) {
 			r_config_set_i (core->config, "asm.lines.width", 1);
-			r_config_set_i (core->config, "asm.bytes", 0);
+			r_config_set_b (core->config, "asm.bytes", false);
 		} else {
-			r_config_set_i (core->config, "asm.bytes", 1);
+			r_config_set_b (core->config, "asm.bytes", true);
 		}
 	}
 	return w;

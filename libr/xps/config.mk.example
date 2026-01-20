@@ -3,6 +3,8 @@
 
 .PHONY: r2hermes
 
+nope:
+
 r2hermes: p/r2hermes
 
 p/r2hermes:
