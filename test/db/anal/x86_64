@@ -9,6 +9,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=anal.pushret bin
+FILE=bins/other/pushret.bin
+ARGS=-n -m 0x1000 -a x86 -b 64
+CMDS=<<EOF
+e anal.pushret=true
+s 0x1000
+af
+afbj~jump
+EOF
+EXPECT=<<EOF
+[{"addr":4096,"size":6,"jump":4112,"opaddr":4096,"inputs":0,"outputs":1,"ninstr":2,"instrs":[4096,4101],"traced":0},{"addr":4112,"size":3,"opaddr":18446744073709551615,"inputs":1,"outputs":0,"ninstr":2,"instrs":[4112,4114],"traced":0}]
+EOF
+RUN
+
 NAME=got switch cases 2
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
