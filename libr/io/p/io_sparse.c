@@ -84,7 +84,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return r_io_desc_new (io, &r_io_plugin_sparse,
 				pathname, rw, mode, mal);
 		}
-		r_buf_free (mal->buf);
+		r_unref (mal->buf);
 		free (mal);
 	}
 	return NULL;

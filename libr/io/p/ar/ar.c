@@ -304,7 +304,7 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 	r_buf_seek (b, 0, R_BUF_SET);
 
 	if (!ar_check_magic (b)) {
-		r_buf_free (b);
+		r_unref (b);
 		return -1;
 	}
 
@@ -332,7 +332,7 @@ R_API int ar_open_all_cb(const char *arname, RArOpenManyCB cb, void *user) {
 
 	if (*refc == 1) {
 		// the cb closed all the RArFp's, so we free these resources
-		r_buf_free (b);
+		r_unref (b);
 	} else {
 		// return recf to true value
 		refc--;
@@ -348,7 +348,7 @@ R_API int ar_close(RArFp *f) {
 
 		// no more files open, clean underlying buffer
 		if (*f->refcount == 0) {
-			r_buf_free (f->buf);
+			r_unref (f->buf);
 			free (f->refcount);
 		}
 		free (f);

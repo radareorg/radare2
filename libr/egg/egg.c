@@ -23,7 +23,7 @@ struct egg_patch_t {
 void egg_patch_free(void *p) {
 	struct egg_patch_t *ep = (struct egg_patch_t *)p;
 	if (ep) {
-		r_buf_free (ep->b);
+		r_unref (ep->b);
 		free (ep);
 	}
 }
@@ -112,9 +112,9 @@ R_API char *r_egg_tostring(REgg *egg) {
 
 R_API void r_egg_free(REgg *egg) {
 	if (egg) {
-		r_buf_free (egg->src);
-		r_buf_free (egg->buf);
-		r_buf_free (egg->bin);
+		r_unref (egg->src);
+		r_unref (egg->buf);
+		r_unref (egg->bin);
 		r_list_free (egg->list);
 		r_asm_free (egg->rasm);
 		//	r_anal_free (egg->anal);
@@ -131,9 +131,9 @@ R_API void r_egg_reset(REgg *egg) {
 	R_RETURN_IF_FAIL (egg);
 	r_egg_lang_include_init (egg);
 	// TODO: use r_list_purge instead of free/new here
-	r_buf_free (egg->src);
-	r_buf_free (egg->buf);
-	r_buf_free (egg->bin);
+	r_unref (egg->src);
+	r_unref (egg->buf);
+	r_unref (egg->bin);
 	egg->src = r_buf_new ();
 	egg->buf = r_buf_new ();
 	egg->bin = r_buf_new ();
@@ -557,7 +557,7 @@ R_API bool r_egg_encode(REgg *egg, const char *name) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {
-				r_buf_free (egg->bin);
+				r_unref (egg->bin);
 				egg->bin = b;
 				return true;
 			}
@@ -586,7 +586,7 @@ R_API void r_egg_finalize(REgg *egg) {
 	struct egg_patch_t *ep;
 	RListIter *iter;
 	if (!egg->bin) {
-		r_buf_free (egg->bin);
+		r_unref (egg->bin);
 		egg->bin = r_buf_new ();
 	}
 	r_list_foreach (egg->patches, iter, ep) {

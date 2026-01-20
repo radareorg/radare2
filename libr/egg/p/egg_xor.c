@@ -82,10 +82,10 @@ static RBuffer *build(REgg *egg) {
 		r_buf_append_buf (buf, sc);
 	} else {
 		R_LOG_ERROR ("Invalid arch for egg.xor which is x86-only for now");
-		r_buf_free (buf);
+		r_unref (buf);
 		buf = NULL;
 	}
-	r_buf_free (sc);
+	r_unref (sc);
 	free (key);
 	return buf;
 }

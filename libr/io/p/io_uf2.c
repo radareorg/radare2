@@ -386,7 +386,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!uf2_read (io, mal->rbuf, buf)) {
 		R_LOG_ERROR ("uf2: Failed to read UF2 file");
 		free (buf);
-		r_buf_free (mal->rbuf);
+		r_unref (mal->rbuf);
 		free (mal);
 		return NULL;
 	}
@@ -414,7 +414,7 @@ static bool __close(RIODesc *desc) {
 		return false;
 	}
 	Ruf2 *mal = desc->data;
-	r_buf_free (mal->rbuf);
+	r_unref (mal->rbuf);
 	free (mal);
 	desc->data = NULL;
 	return true;

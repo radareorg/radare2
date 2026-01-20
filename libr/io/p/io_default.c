@@ -157,7 +157,7 @@ static bool mmap_refresh(RIOMMapFileObj *mmo) {
 	ut64 cur = 0;
 	if (mmo->buf) {
 		cur = r_buf_tell (mmo->buf);
-		r_buf_free (mmo->buf);
+		r_unref (mmo->buf);
 		mmo->buf = NULL;
 	}
 
@@ -204,7 +204,7 @@ done:
 static void mmap_free(RIOMMapFileObj *R_NULLABLE mmo) {
 	if (mmo) {
 		free (mmo->filename);
-		r_buf_free (mmo->buf);
+		r_unref (mmo->buf);
 		if (mmo->fd >= 0) {
 			close (mmo->fd);
 		}

@@ -3,6 +3,9 @@
 #include <r_util.h>
 #include <r_io.h>
 
+// Forward declaration for internal use
+static void r_buf_free(RBuffer *b);
+
 #include "buf_file.inc.c"
 #include "buf_sparse.inc.c"
 #include "buf_bytes.inc.c"
@@ -760,7 +763,7 @@ R_API void r_buf_fini(RBuffer *b) {
 	buf_fini (b);
 }
 
-R_API void r_buf_free(RBuffer *b) {
+static void r_buf_free(RBuffer *b) {
 	r_unref (b);
 }
 
@@ -772,17 +775,6 @@ R_API st64 r_buf_append_string(RBuffer *b, const char *str) {
 R_API bool r_buf_resize(RBuffer *b, ut64 newsize) {
 	R_RETURN_VAL_IF_FAIL (b, false);
 	return buf_resize (b, newsize);
-}
-
-R_API RBuffer *r_buf_ref(RBuffer *b) {
-	return r_ref (b);
-}
-
-// Unref without freeing the struct - decrements reference counter
-R_API void r_buf_unref(RBuffer *b) {
-	if (b && r_ref_count (b) > 1) {
-		b->refcount--;
-	}
 }
 
 R_API RList *r_buf_nonempty_list(RBuffer *b) {

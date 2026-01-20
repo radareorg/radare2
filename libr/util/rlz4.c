@@ -264,7 +264,7 @@ R_API ut8 *r_lz4_decompress(const ut8* input, size_t input_size, size_t *output_
 		if (is_compressed) {
 			int error = r_lz4_decompress_block (g_buf, comp_len, &p, NULL, 0);
 			if (error != 0) {
-				r_buf_free (b);
+				r_unref (b);
 				return NULL;
 			}
 		} else {

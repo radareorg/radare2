@@ -475,14 +475,14 @@ R_API char *r_axml_decode(const ut8 *data, const ut64 data_size, PJ *pj) {
 		pj_end (pj);
 	}
 
-	r_buf_free (buffer);
+	r_unref (buffer);
 	free (pool);
 	free (namespace);
 	return r_strbuf_drain (sb);
 bad:
 	R_LOG_ERROR ("Invalid Android Binary XML");
 error:
-	r_buf_free (buffer);
+	r_unref (buffer);
 	free (pool);
 	r_strbuf_free (sb);
 	return NULL;
