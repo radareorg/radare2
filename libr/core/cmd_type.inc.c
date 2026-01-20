@@ -337,6 +337,10 @@ R_API char *r_core_slurp(RCore *core, const char *path, size_t *len) {
 		}
 		return r;
 	}
+	char *drcov = r_anal_drcov_slurp (core->anal, path, len);
+	if (drcov) {
+		return drcov;
+	}
 	return r_file_slurp (path, len);
 }
 

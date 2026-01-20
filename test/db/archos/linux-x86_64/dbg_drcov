@@ -1,0 +1,13 @@
+NAME=import drcov coverage via analysis
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+aa
+a:drcov bins/other/drcov.sample
+s 0x400410
+abj
+EOF
+EXPECT=<<EOF
+drcov: 2 entries
+[{"addr":4195344,"size":41,"opaddr":4195344,"inputs":0,"outputs":0,"ninstr":11,"instrs":[4195344,4195346,4195349,4195350,4195353,4195357,4195358,4195359,4195366,4195373,4195380],"traced":1}]
+EOF
+RUN

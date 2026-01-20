@@ -1680,10 +1680,15 @@ R_API void r_anal_backtrace_init(RAnal *a);
 R_API void r_anal_backtrace_fini(RAnal *a);
 R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt);
 
+/* drcov */
+R_API int r_anal_drcov_apply(RAnal *anal, const char *path);
+R_API char *r_anal_drcov_slurp(RAnal *anal, const char *path, size_t *len);
+
 /* plugin pointers */
 extern RAnalPlugin r_anal_plugin_blaze;
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_a2f;
+extern RAnalPlugin r_anal_plugin_drcov;
 extern RAnalPlugin r_anal_plugin_path;
 extern RAnalPlugin r_anal_plugin_sbpf;
 extern RAnalPlugin r_anal_plugin_tcc;

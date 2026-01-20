@@ -1,0 +1,10 @@
+NAME=foreach drcov offsets
+FILE=bins/elf/analysis/calls_x64
+CMDS=<<EOF
+s @@.bins/other/drcov.sample
+EOF
+EXPECT=<<EOF
+0x400410
+0x400420
+EOF
+RUN
