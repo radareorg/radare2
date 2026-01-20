@@ -953,7 +953,7 @@ const RArchPlugin r_arch_plugin_m68k_cs = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
-	.data = &r_anal_plugin_m68k_cs,
+	.data = &r_arch_plugin_m68k_cs,
 	.version = R2_VERSION
 };
 #endif

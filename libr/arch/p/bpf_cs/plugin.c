@@ -1009,7 +1009,7 @@ const RArchPlugin r_arch_plugin_bpf_cs = {0};
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
 #if CS_API_MAJOR >= 5
-	.data = &r_anal_plugin_bpf_cs,
+	.data = &r_arch_plugin_bpf_cs,
 #endif
 	.version = R2_VERSION
 };

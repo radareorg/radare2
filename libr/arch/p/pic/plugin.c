@@ -1202,7 +1202,7 @@ const RArchPlugin r_arch_plugin_pic = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
-	.data = &r_anal_plugin_pic,
+	.data = &r_arch_plugin_pic,
 	.version = R2_VERSION
 };
 #endif

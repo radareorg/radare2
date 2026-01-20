@@ -693,7 +693,7 @@ const RArchPlugin r_arch_plugin_m680x_cs = {
 	.fini = fini,
 };
 #else
-const RArchPlugin r_anal_plugin_m680x_cs = {
+const RArchPlugin r_arch_plugin_m680x_cs = {
 	.meta = {
 		.name = "m680x (unsupported)",
 		.desc = "Capstone M680X (unsupported)",
@@ -707,7 +707,7 @@ const RArchPlugin r_anal_plugin_m680x_cs = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ARCH,
-	.data = &r_anal_plugin_m680x_cs,
+	.data = &r_arch_plugin_m680x_cs,
 	.version = R2_VERSION
 };
 #endif
