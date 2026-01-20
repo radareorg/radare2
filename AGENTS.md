@@ -20,6 +20,7 @@
 
 - The `r_json_parse` does not own the string passed, we must free it after freeing the parser
 - Use `R_RETURN_*` macros in the public `R_API` functions
+- Never use `alloca` or other unsafe functions from the libc
 - Do not check for NULL before calling `free` or any other `*_free` function
 - The `R_NEW`/`R_NEW0` macros **NEVER** return NULL, there is no need to check allocation
 - Keep changes minimal and take smart decisions
