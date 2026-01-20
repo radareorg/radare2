@@ -854,7 +854,7 @@ static const char *buffer_type_strings[] = {
 };
 
 #define STATIC_ASSERT(cond, msg) typedef char static_assertion_ ## msg[(cond)? 1: -1]
-STATIC_ASSERT(sizeof(buffer_type_strings) / sizeof(buffer_type_strings[0]) == R_BUFFER_COUNT,
+STATIC_ASSERT(sizeof (buffer_type_strings) / sizeof (buffer_type_strings[0]) == R_BUFFER_COUNT,
 	buffer_type_strings_mismatch_with_enum);
 
 R_API char *r_buf_describe(RBuffer *b) {
