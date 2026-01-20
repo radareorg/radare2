@@ -308,6 +308,11 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 				addr -= val;
 			}
 		} else {
+			RArchSession *as = r_ref (core->anal->arch->session);
+			if (!as) {
+				R_LOG_DEBUG ("Cannot find arch session");
+				return 0;
+			}
 			ut8 *buf = malloc (bufsize);
 			if (!buf) {
 				return 0;
@@ -334,7 +339,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 				RAnalOp op;
 				r_anal_op_init (&op);
 				r_anal_op_set_bytes (&op, prev_addr, buf + buf_offset, buf_left);
-				bool ok = r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC);
+				bool ok = r_arch_session_decode (as, &op, R_ARCH_OP_MASK_BASIC);
 				if (!ok || op.size < mininstrsize) {
 					// TODO: maybe we can use the RAnalBlock info to know the opsize
 					op.size = mininstrsize;
@@ -343,6 +348,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 				addr = prev_addr;
 				r_anal_op_fini (&op);
 			}
+			r_unref (as);
 			free (buf);
 		}
 	}

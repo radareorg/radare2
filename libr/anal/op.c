@@ -185,7 +185,7 @@ R_API int r_anal_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *data, int le
 	int ret = R_MIN (2, len);
 	if (len > 0 && anal->arch->session) {
 		r_anal_op_set_bytes (op, addr, data, len);
-		if (!r_arch_decode (anal->arch, op, mask) || op->size <= 0) {
+		if (!r_arch_session_decode (anal->arch->session, op, mask) || op->size <= 0) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			op->size = r_anal_archinfo (anal, R_ARCH_INFO_INVOP_SIZE);
 			if (op->size < 0) {

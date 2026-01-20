@@ -245,15 +245,19 @@ R_API void r_core_esil_single_step(RCore *core) {
 		R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, pc);
 		return;
 	}
+	// intentionally not using r_anal_op here, because this function is a fucking fever dream
+	RArchSession *as = r_ref (core->anal->arch->session);
+	if (!as) {
+		return;
+	}
 	RAnalOp op;
 	r_anal_op_init (&op);
-	//cannot fail, because max size here is 64
 	r_anal_op_set_bytes (&op, pc, buf, max_opsize);
-	//intentionally not using r_anal_op here, because this function is a fucking fever dream
-	if (!r_arch_decode (core->anal->arch, &op,
+	if (!r_arch_session_decode (as, &op,
 		R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
 		R_LOG_ERROR ("COuldn't decode instruction at 0x%"PFMT64x, pc);
 		r_anal_op_fini (&op);
+		r_unref (as);
 		return;
 	}
 	RAnalHint *hint = r_anal_hint_get (core->anal, pc);
@@ -298,6 +302,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 			r_strbuf_fini (&core->esil.trap_revert);
 		}
+		r_unref (as);
 		return;
 	}
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
@@ -315,6 +320,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 	//TODO: check trap codes here
 	goto trap;
 op_trap:
+	r_unref (as);
 	r_anal_op_fini (&op);
 trap:
 	if (core->esil.cmd_trap) {

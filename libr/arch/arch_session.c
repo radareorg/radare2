@@ -18,6 +18,7 @@ static void _arch_session_free(RArchSession *s) {
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
 	RArchSession *ai = R_NEW0 (RArchSession);
 	r_ref_init (ai, _arch_session_free);
+	r_ref (ai);
 	ai->arch = arch;
 	ai->config = cfg;
 	r_ref (ai->config);
@@ -80,3 +81,4 @@ R_API int r_arch_session_info(RArchSession *s, int query) {
 	}
 	return -1;
 }
+

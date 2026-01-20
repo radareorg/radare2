@@ -369,7 +369,7 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 				ret = true;
 				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
 			} else {
-				R_LOG_ERROR ("r_asm_massemble has failed %s", code);
+				R_LOG_ERROR ("r_asm_assemble has failed %s", code);
 			}
 			r_asm_code_free (asmcode);
 			free (code);

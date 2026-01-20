@@ -43,7 +43,7 @@ static inline void *r_ref_(void *p, RRef *ref) {
 	}
 	return p;
 }
-#define r_ref(x) r_ref_((x), (x)?&(x)->R_REF_NAME: NULL)
+#define r_ref(x) r_ref_((x), (x)?&(x)->R_REF_NAME: NULL), (x)
 
 static inline void *r_unref_(void *p, RRef *ref) {
 	if (!p || !ref) {
@@ -74,7 +74,7 @@ typedef int RRef;
 #define r_ref(x) do { eprintf ("REF %p %d\n", (x), (x)->R_REF_NAME); r_sys_backtrace (); if (USE_DEBUG_REFS_MAX) { (x)->R_REF_NAME > USE_DEBUG_REFS_MAX) { kill(getpid(), SIGINT); } } (x)->R_REF_NAME++; } while (0)
 #define r_unref(x) { eprintf ("UNREF %p %d\n", (x), ((x)?(x)->R_REF_NAME: 0)); if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { eprintf ("unref.free %p\n", (x)); if ((x)->free) { (x)->free(x); } (x) = NULL; } }
 #else
-#define r_ref(x) do { (x)->R_REF_NAME++; } while (0)
+#define r_ref(x) ((x)->R_REF_NAME++, (x))
 #define r_unref(x) { if ((x) != NULL && (x)->R_REF_NAME > 0 && !--((x)->R_REF_NAME)) { if ((x)->free) { (x)->free(x); } (x) = NULL; } }
 #endif
 #define r_ref_ptr(x) ((x)->R_REF_NAME++, (x));
