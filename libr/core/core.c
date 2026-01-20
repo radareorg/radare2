@@ -2621,13 +2621,11 @@ R_API bool r_core_init(RCore *core) {
 	r_egg_setup (core->egg, R_SYS_ARCH, R_SYS_BITS, 0, R_SYS_OS);
 #if 1
 	// TODO: use r_ref_set
-	r_ref (core->rasm->config);
 	r_unref (core->print->config);
-	core->print->config = core->rasm->config;
+	core->print->config = r_ref (core->rasm->config);
 
-	r_ref (core->rasm->config);
 	r_unref (core->anal->config);
-	core->anal->config = core->rasm->config;
+	core->anal->config = r_ref (core->rasm->config);
 
 	core->anal->reg->endian = core->rasm->config->endian;
 #else

@@ -143,13 +143,6 @@ R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name) {
 			}
 		}
 	}
-#if 0
-	RArchConfig *oconfig = arch->cfg;
-	r_unref (arch->cfg);
-	arch->cfg = config;
-	r_ref (arch->cfg);
-	r_unref (oconfig);
-#endif
 	return true;
 }
 
