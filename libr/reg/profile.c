@@ -128,12 +128,10 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		r_list_free(reg->regset[type2].regs);
 		reg->regset[type2].regs = r_list_newf ((RListFree)r_reg_item_free);
 	}
-	r_ref (item);
-	r_list_append (reg->regset[type2].regs, item);
+	r_list_append (reg->regset[type2].regs, r_ref (item));
 	if (!reg->regset[type2].ht_regs) {
 		reg->regset[type2].ht_regs = ht_pp_new0 ();
 	}
-	// r_ref (item);
 	ht_pp_insert (reg->regset[type2].ht_regs, item->name, item);
 
 	// Update the overall profile size
