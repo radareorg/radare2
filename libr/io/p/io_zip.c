@@ -223,7 +223,7 @@ static void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	}
 	free (zfo->name);
 	free (zfo->password);
-	r_buf_free (zfo->b);
+	r_unref (zfo->b);
 	free (zfo);
 }
 

@@ -95,7 +95,7 @@ static char *stream_art(RIOStream *s) {
 }
 
 static void update_buffer(RIOStream *s) {
-	r_buf_free (s->buf);
+	r_unref (s->buf);
 	s->buf = r_buf_new ();
 	RIOStreamItem *si;
 	RListIter *iter;

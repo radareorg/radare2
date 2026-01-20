@@ -215,7 +215,7 @@ static bool __close(RIODesc *fd) {
 		return false;
 	}
 	Rihex *rih = fd->data;
-	r_buf_free (rih->rbuf);
+	r_unref (rih->rbuf);
 	r_range_free (rih->range);
 	free (rih);
 	fd->data = NULL;
@@ -430,7 +430,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!ihex_parse (rih, str)) {
 		R_LOG_ERROR ("ihex: failed to parse file");
 		free (str);
-		r_buf_free (rih->rbuf);
+		r_unref (rih->rbuf);
 		free (rih);
 		return NULL;
 	}

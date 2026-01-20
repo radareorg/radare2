@@ -616,7 +616,7 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 	}
 
 	free (pdb->stream_map);
-	r_buf_free (pdb->buf);
+	r_unref (pdb->buf);
 
 	// fclose (pdb->fp);
 	// printf ("finish_pdb_parse()\n");

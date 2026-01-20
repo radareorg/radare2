@@ -36,7 +36,7 @@ static void dsc_header_free(RDSCHeader * self) {
 		return;
 	}
 
-	r_buf_free (self->buf);
+	r_unref (self->buf);
 	free (self->data);
 	free (self);
 }

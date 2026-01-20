@@ -83,7 +83,7 @@ static int cmd_egg_compile(RCore *core, REgg *egg) {
 		ret = true;
 	}
 	// we do not own this buffer!!
-	// r_buf_free (b);
+	// r_unref (b);
 	r_egg_option_set (egg, "egg.shellcode", "");
 	r_egg_option_set (egg, "egg.padding", "");
 	r_egg_option_set (egg, "egg.encoder", "");

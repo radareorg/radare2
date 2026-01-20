@@ -263,7 +263,7 @@ pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 
 	pcap_obj_t *obj = R_NEW0 (pcap_obj_t);
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 	if (!pcap_obj_init (obj)) {
 		pcap_obj_free (obj);
 		return NULL;

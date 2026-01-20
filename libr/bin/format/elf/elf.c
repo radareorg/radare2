@@ -5002,7 +5002,7 @@ static RVecRBinElfSymbol *parse_gnu_debugdata(ELFOBJ *eo, size_t *ret_size) {
 		if (ret_size) {
 			*ret_size = rs;
 		}
-		r_buf_free (newelf);
+		r_unref (newelf);
 		free (odata);
 		free (data);
 		return symbols;
@@ -5506,7 +5506,7 @@ void Elf_(free)(ELFOBJ* eo) {
 		}
 		free (eo->symbols_by_ord);
 	}
-	r_buf_free (eo->b);
+	r_unref (eo->b);
 	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
 	eo->phdr_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
@@ -5560,7 +5560,7 @@ ELFOBJ* Elf_(new_buf)(RBuffer *buf, ut64 baddr, bool verbose) {
 	eo->kv = sdb_new0 ();
 	eo->size = r_buf_size (buf);
 	eo->verbose = verbose;
-	eo->b = r_buf_ref (buf);
+	eo->b = r_ref (buf);
 	eo->user_baddr = baddr;
 	if (!elf_init (eo)) {
 		Elf_(free) (eo);

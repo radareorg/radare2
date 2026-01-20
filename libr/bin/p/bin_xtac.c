@@ -554,7 +554,7 @@ static void r_bin_xtac_free(RBinXtacObj *bin) {
 	free (bin->mod_name_u8);
 	free (bin->nt_path_name_u16);
 	free (bin->nt_path_name_u8);
-	r_buf_free (bin->b);
+	r_unref (bin->b);
 	bin->b = NULL;
 	r_list_free (bin->blck_stubs);
 	r_list_free (bin->xtac_linked_list);
@@ -565,7 +565,7 @@ static void r_bin_xtac_free(RBinXtacObj *bin) {
 
 static RBinXtacObj *r_bin_xtac_new_buf(RBuffer *buf, bool verbose) {
 	RBinXtacObj *bin = R_NEW0 (RBinXtacObj);
-	bin->b = r_buf_ref (buf);
+	bin->b = r_ref (buf);
 	bin->size = r_buf_size (buf);
 	bin->verbose = verbose;
 	if (!r_bin_xtac_init (bin)) {

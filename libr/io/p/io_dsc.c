@@ -153,7 +153,7 @@ typedef struct {
 				check = false; \
 			} else { \
 				check = r_buf_fread_at (buf, 0, (ut8*)&store, fmt, 1) == sizeof (store); \
-				r_buf_free (buf); \
+				r_unref (buf); \
 			} \
 		} \
 	} \
@@ -171,7 +171,7 @@ typedef struct {
 				check = false; \
 			} else { \
 				check = r_buf_fread_at (buf, 0, (ut8*)store, fmt, n) == size; \
-				r_buf_free (buf); \
+				r_unref (buf); \
 			} \
 		} \
 	} \

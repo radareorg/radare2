@@ -398,8 +398,8 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	r_list_foreach (lvls, iter, ref) {
 		if (ctx->breaked) {
 			r_list_free (lvls);
-			r_buf_free (b);
-			r_buf_free (c);
+			r_unref (b);
+			r_unref (c);
 			return NULL;
 		}
 		if ((ref->from == addr || ref->to == addr) && !middle_after) {
@@ -453,17 +453,17 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	add_spaces (b, 0, pos, wide);
 	str = r_buf_tostring (b);
 	col_str = r_buf_tostring (c);
-	r_buf_free (b);
-	r_buf_free (c);
+	r_unref (b);
+	r_unref (c);
 	b = NULL;
 	c = NULL;
 	if (!str || !col_str) {
 		r_list_free (lvls);
-		// r_buf_free_tostring already free b and if that is the case
-		// b will be NULL and r_buf_free will return but if there was
+		// r_unref_tostring already free b and if that is the case
+		// b will be NULL and r_unref will return but if there was
 		// an error we free b here so in other words is safe
-		r_buf_free (b);
-		r_buf_free (c);
+		r_unref (b);
+		r_unref (c);
 		return NULL;
 	}
 	if (core->anal->lineswidth > 0) {

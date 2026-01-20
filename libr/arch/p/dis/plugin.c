@@ -100,7 +100,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->mnemonic = mnemonic (&instr);
 	}
 	op->size = r_buf_tell (buf);
-	r_buf_free (buf);
+	r_unref (buf);
 
 	bool found;
 	ut64 addr;

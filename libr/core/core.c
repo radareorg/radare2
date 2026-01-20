@@ -2850,7 +2850,7 @@ R_API void r_core_fini(RCore *c) {
 	r_flag_free (c->flags);
 	r_fs_free (c->fs);
 	r_egg_free (c->egg);
-	r_buf_free (c->yank_buf);
+	r_unref (c->yank_buf);
 	r_agraph_free (c->graph);
 	free (c->asmqjmps);
 	sdb_free (c->sdb);

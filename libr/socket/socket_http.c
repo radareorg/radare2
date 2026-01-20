@@ -131,7 +131,7 @@ static char *socket_http_answer(RSocket *s, const char *headers[], int *code, in
 	}
 exit:
 	free (buf);
-	r_buf_free (b);
+	r_unref (b);
 	r_socket_close (s);
 	if (rlen) {
 		*rlen = len;

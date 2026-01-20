@@ -75,7 +75,7 @@ static RList *off_fields(RBinFile *bf) {
 
 static void destroy(RBinFile *bf) {
 	OffObj *obj = bf->bo->bin_obj;
-	r_buf_free (obj->buf);
+	r_unref (obj->buf);
 	free (obj);
 }
 

@@ -20,7 +20,7 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 	// referencer. Copy-on-write? Write to the buffer underneath?
 	ut64 parent_sz = r_buf_size (u->parent);
 	b->readonly = true;
-	b->rb_ref->parent = r_buf_ref (u->parent);
+	b->rb_ref->parent = r_ref (u->parent);
 	b->rb_ref->base = R_MIN (u->offset, parent_sz);
 	b->rb_ref->size = R_MIN (parent_sz - b->rb_ref->base, u->size);
 	return true;
@@ -28,7 +28,7 @@ static bool buf_ref_init(RBuffer *b, const void *user) {
 
 static bool buf_ref_fini(RBuffer *b) {
 	R_WARN_IF_FAIL (b->rb_ref);
-	r_buf_free (b->rb_ref->parent);
+	r_unref (b->rb_ref->parent);
 	R_FREE (b->rb_ref);
 	return true;
 }

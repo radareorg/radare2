@@ -171,7 +171,7 @@ static bool r_bin_xcoff64_init(RBinXCoff64Obj *obj, RBuffer *buf, bool verbose) 
 	if (!obj || !buf) {
 		return false;
 	}
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new0 ();
@@ -203,7 +203,7 @@ R_IPI void r_bin_xcoff64_free(RBinXCoff64Obj *obj) {
 		free (obj->scn_va);
 		free (obj->scn_hdrs);
 		free (obj->symbols);
-		r_buf_free (obj->b);
+		r_unref (obj->b);
 		free (obj);
 	}
 }

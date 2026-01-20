@@ -159,7 +159,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	RBinXtrData * res = r_bin_xtrdata_new (slice->buf, slice->nominal_offset,
 			slice->total_size, 3 + ctx->hdr->n_apps, slice->meta);
 
-	r_buf_free (slice->buf);
+	r_unref (slice->buf);
 	free (slice);
 	return res;
 }
@@ -331,7 +331,7 @@ static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer *whole, 
 
 	return slice;
 beach:
-	r_buf_free (slice_buf);
+	r_unref (slice_buf);
 	free (name);
 	free (slice);
 	if (meta) {

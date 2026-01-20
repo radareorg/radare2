@@ -1218,7 +1218,7 @@ const char *PE_(bin_pe_compute_authentihash)(RBinPEObj *pe) {
 		hashstr = r_hex_bin2strdup (digest, outlen);
 		free (digest);
 	}
-	r_buf_free (buf);
+	r_unref (buf);
 	free (hashtype);
 	return hashstr;
 }
@@ -4582,7 +4582,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	r_list_free (pe->dotnet_symbols);
 	r_pkcs7_cms_free (pe->cms);
 	r_pkcs7_spcinfo_free (pe->spcinfo);
-	r_buf_free (pe->b);
+	r_unref (pe->b);
 	pe->b = NULL;
 	free (pe);
 	return NULL;
@@ -4619,7 +4619,7 @@ R_API RBinPEObj *PE_(r_bin_pe_new_buf)(RBuffer *buf, bool verbose) {
 		return NULL;
 	}
 	pe->kv = sdb_new0 ();
-	pe->b = r_buf_ref (buf);
+	pe->b = r_ref (buf);
 	pe->verbose = verbose;
 	pe->size = r_buf_size (buf);
 	// buffer can be a lot larger so we might overflow

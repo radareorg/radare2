@@ -86,14 +86,14 @@ RBinPEObj *r_bin_pemixed_init_native(RBinPEObj *pe) {
 		// can't call PE_(r_bin_pe_free) since this will free the underlying pe
 		// object which we may need for later
 		// PE_(r_bin_pe_free) (sub_bin_native);
-		r_buf_free (sub_bin_native->b);
+		r_unref (sub_bin_native->b);
 		free (sub_bin_native);
 		return NULL;
 	}
 
 	if (r_buf_write_at (sub_bin_native->b, dotnet_offset, zero_out, sizeof (PE_(image_data_directory))) < -1) {
 		eprintf ("Zeroing out dotnet offset failed\n");
-		r_buf_free (sub_bin_native->b);
+		r_unref (sub_bin_native->b);
 		free (sub_bin_native);
 		free (zero_out);
 		return NULL;
@@ -139,14 +139,14 @@ void* r_bin_pemixed_free(struct r_bin_pemixed_obj_t* bin) {
 	//possible memleak here
 	PE_(r_bin_pe_free)(bin->sub_bin_net);
 	if (bin->sub_bin_dos) {
-		r_buf_free (bin->sub_bin_dos->b); //dos is the only one with its own buf
+		r_unref (bin->sub_bin_dos->b); //dos is the only one with its own buf
 	}
 	free (bin->sub_bin_dos);
 	free (bin->sub_bin_native);
 
 	// PE_(r_bin_pe_free)(bin->sub_bin_native);
 	// PE_(r_bin_pe_free)(bin->sub_bin_net);
-	r_buf_free (bin->b);
+	r_unref (bin->b);
 	R_FREE(bin);
 	return NULL;
 }

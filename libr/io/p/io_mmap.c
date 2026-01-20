@@ -39,7 +39,7 @@ static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 	RIO* io = mmo->io_backref;
 	ut64 cur = mmo->buf? r_buf_tell (mmo->buf): 0;
 	if (mmo->buf) {
-		r_buf_free (mmo->buf);
+		r_unref (mmo->buf);
 		mmo->buf = NULL;
 	}
 	mmo->buf = r_buf_new_mmap (mmo->filename, mmo->flags);
@@ -52,7 +52,7 @@ static bool r_io_mmap_refresh_buf(RIOMMapFileObj *mmo) {
 static void r_io_mmap_free(RIOMMapFileObj *mmo) {
 	if (mmo) {
 		free (mmo->filename);
-		r_buf_free (mmo->buf);
+		r_unref (mmo->buf);
 		free (mmo);
 	}
 }

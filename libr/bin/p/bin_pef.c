@@ -189,7 +189,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 #define dbg(name, format, ...) \
 	if (0) { \
 		char buf[50]; \
-		sprintf (buf, format, __VA_ARGS__); \
+		snprintf (buf, sizeof (buf), format, __VA_ARGS__); \
 		printf ("%05X [% 2d] %04X      %-5s %-19s %d %5d %5d   %08X\n", \
 			at + 2 * printpc, printpc, r_buf_read_be16_at (b, at + 2 * printpc), name, buf, codeA, dataA, rSymI, rAddr); \
 	}

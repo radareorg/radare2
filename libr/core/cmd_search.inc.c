@@ -406,10 +406,10 @@ static void cmd_search_bin(RCore *core, RInterval itv) {
 			}
 		}
 next:;
-		r_buf_free (ref);
+		r_unref (ref);
 		from++;
 	}
-	r_buf_free (b);
+	r_unref (b);
 	r_cons_break_pop (core->cons);
 }
 

@@ -367,7 +367,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 			goto error;
 		}
 		RBuffer *nb = r_buf_new_with_buf (bf->buf);
-		r_buf_free (bf->buf);
+		r_unref (bf->buf);
 		bf->buf = nb;
 	}
 
@@ -1094,7 +1094,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			} else {
 				R_LOG_ERROR ("Cannot dump bytes into a.out");
 			}
-			r_buf_free (b);
+			r_unref (b);
 		} else {
 			R_LOG_ERROR ("Cannot create binary for this format '%s'", create);
 		}
@@ -1163,7 +1163,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		/* TODO: return bool or something to catch errors\n") */
 		if (buf) {
 			bool ret = r_buf_dump (buf, file);
-			r_buf_free (buf);
+			r_unref (buf);
 			if (!ret) {
 				rc = 1;
 			}

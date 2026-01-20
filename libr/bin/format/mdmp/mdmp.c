@@ -118,7 +118,7 @@ void r_bin_mdmp_free(struct r_bin_mdmp_obj *obj) {
 	r_list_free (obj->pe32_bins);
 	r_list_free (obj->pe64_bins);
 
-	r_buf_free (obj->b);
+	r_unref (obj->b);
 	free (obj->hdr);
 	sdb_free (obj->kv);
 	obj->b = NULL;
@@ -1002,7 +1002,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		}
 		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
 		//r_unref (buf);
-		// r_buf_free (buf); - still uaf, it could be freed if pe parsing fails
+		// r_unref (buf); - still uaf, it could be freed if pe parsing fails
 		buf = r_buf_new_with_bytes (b, r);
 		dup = false;
 		if (check_pe32_buf (buf, module->size_of_image)) {
@@ -1050,7 +1050,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 		}
 	}
 	//r_unref (buf);
-	// r_unref (buf); // r_buf_free (buf);
+	// r_unref (buf); // r_unref (buf);
 	buf = NULL;
 	return true;
 }
@@ -1104,7 +1104,7 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 		return NULL;
 	}
 
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 	if (!r_bin_mdmp_init (obj)) {
 		r_bin_mdmp_free (obj);
 		return NULL;

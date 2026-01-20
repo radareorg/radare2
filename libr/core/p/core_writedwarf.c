@@ -194,7 +194,7 @@ RBuffer *create_macho_with_dwarf(RList *lines, RList *symbols) {
 	// Patch the compile unit length
 	ut64 cu_end = r_buf_size (buf);
 	if (cu_end == (ut64)-1 || cu_length_off == (ut64)-1) {
-		r_buf_free (buf);
+		r_unref (buf);
 		return NULL;
 	}
 	ut32 cu_length_val = (ut32)(cu_end - (cu_length_off + 4));
@@ -466,7 +466,7 @@ RBuffer *create_elf_with_dwarf(RList *lines, RList *symbols) {
 	U8(0);
 	ut64 cu_end = r_buf_size (buf);
 	if (cu_end == (ut64)-1 || cu_len_off == (ut64)-1) {
-		r_buf_free (buf);
+		r_unref (buf);
 		return NULL;
 	}
 	ut32 cu_len = (ut32)(cu_end - (cu_len_off + 4));
@@ -688,7 +688,7 @@ int main() {
 	ut8 *outbuf = r_buf_read_all (b, &sz);
 	r_file_dump ("gen", outbuf, sz, false);
 	free (outbuf);
-	r_buf_free (b);
+	r_unref (b);
 	return 0;
 }
 #endif
@@ -796,7 +796,7 @@ static void writedwarf(RCore *core, const char *format, const char *arg) {
 		R_LOG_ERROR ("Cannot write to %s", filename);
 	}
 	free (outbuf);
-	r_buf_free (b);
+	r_unref (b);
 	// Free the RLists
 	RListIter *it;
 	void *item;

@@ -62,7 +62,7 @@ fail:
 }
 
 static bool r_bin_bflt_init(RBinBfltObj *obj, RBuffer *buf) {
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->endian = false;
 	obj->reloc_table = NULL;
@@ -83,7 +83,7 @@ R_IPI void r_bin_bflt_free(RBinBfltObj *o) {
 			r_list_free (o->relocs_list);
 		}
 		R_FREE (o->hdr);
-		r_buf_free (o->b);
+		r_unref (o->b);
 		free (o);
 	}
 }

@@ -60,7 +60,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 laddr) {
 			RIO *io = bf->rbin->iob.io;
 			RBuffer *nb = swizzle_io_read (bf, mo, io);
 			if (nb != bf->buf) {
-				r_buf_free (bf->buf);
+				r_unref (bf->buf);
 			}
 			bf->buf = nb;
 		}

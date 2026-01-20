@@ -97,10 +97,10 @@ static RBuffer *build(REgg *egg) {
 		r_buf_append_buf (buf, sc);
 	} else {
 		R_LOG_ERROR ("Selected architecture not supported by egg.nullby, try x86 or submit patch");
-		r_buf_free (buf);
+		r_unref (buf);
 		buf = NULL;
 	}
-	r_buf_free (sc);
+	r_unref (sc);
 	free (key);
 	return buf;
 }

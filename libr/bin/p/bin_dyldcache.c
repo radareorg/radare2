@@ -269,7 +269,7 @@ static void r_dyldcache_free(RDyldCache *cache) {
 	ht_up_free (cache->bin_by_pa);
 	r_list_free (cache->bins);
 	cache->bins = NULL;
-	r_buf_free (cache->buf);
+	r_unref (cache->buf);
 	cache->buf = NULL;
 	R_FREE (cache->hdr);
 	R_FREE (cache->maps);
@@ -328,7 +328,7 @@ static struct MACH0_(obj_t) *bin_to_mach0(RBinFile *bf, RDyldBinImage *bin) {
 		mach0->user = cache;
 		mach0->va2pa = &bin_obj_va2pa;
 	}
-	r_buf_free (buf);
+	r_unref (buf);
 
 	return mach0;
 }
@@ -1145,7 +1145,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	RDyldCache *cache = R_NEW0 (RDyldCache);
-	cache->buf = r_buf_ref (buf);
+	cache->buf = r_ref (buf);
 	populate_cache_headers (cache);
 	if (!cache->hdr) {
 		r_dyldcache_free (cache);

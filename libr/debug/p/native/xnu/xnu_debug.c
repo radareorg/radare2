@@ -1123,7 +1123,7 @@ bool xnu_generate_corefile (RDebug *dbg, RBuffer *dest, bool fulldump) {
 
 cleanup:
 	//if (corefile_fd > 0) close (corefile_fd);
-	r_buf_free (mem_maps_buffer);
+	r_unref (mem_maps_buffer);
 	free ((void *)header);
 	free ((void *)padding);
 	r_list_free (threads_list);

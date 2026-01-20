@@ -194,7 +194,7 @@ static bool buf_cache_init(RBuffer *b, const void *user) {
 static bool buf_cache_fini(RBuffer *b) {
 	R_WARN_IF_FAIL (b->rb_cache);
 	if (b->rb_cache->is_bufowner) {
-		r_buf_free (b->rb_cache->sb);
+		r_unref (b->rb_cache->sb);
 	}
 	iocache_layer_free (b->rb_cache->cl);
 	R_FREE (b->rb_cache->buf);

@@ -2261,7 +2261,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		}
 		free (mo->chained_starts);
 	}
-	r_buf_free (mo->b);
+	r_unref (mo->b);
 	free (mo);
 	return NULL;
 }
@@ -2280,7 +2280,7 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(
 	R_RETURN_VAL_IF_FAIL (buf && options->bf->bo, NULL);
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
 	if (mo) {
-		mo->b = r_buf_ref (buf);
+		mo->b = r_ref (buf);
 		mo->main_addr = UT64_MAX;
 		mo->kv = sdb_new (NULL, "bin.mach0", 0);
 		mo->imports_by_name = ht_pp_new0 ();

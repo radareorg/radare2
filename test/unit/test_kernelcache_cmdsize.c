@@ -123,7 +123,7 @@ bool test_kernelcache_cmdsize(void) {
 
 	r_bin_free (bin);
 	r_io_free (io);
-	r_buf_free (buf);
+	r_unref (buf);
 	mu_end;
 }
 

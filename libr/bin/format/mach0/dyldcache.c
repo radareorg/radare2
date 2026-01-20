@@ -225,7 +225,7 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	return ret;
 
 dbuf_err:
-	r_buf_free (dbuf);
+	r_unref (dbuf);
 ret_err:
 	free (ret);
 	return NULL;
@@ -235,7 +235,7 @@ void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 	if (!bin) {
 		return NULL;
 	}
-	r_buf_free (bin->b);
+	r_unref (bin->b);
 	free (bin);
 	return NULL;
 }

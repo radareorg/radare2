@@ -730,7 +730,7 @@ static int get_reply(struct gport *port, ut8 cmd, RBuffer **reply_ret) {
 		if (res == GPROBE_PRINT) {
 			gprobe_print (reply);
 		}
-		r_buf_free (reply);
+		r_unref (reply);
 	}
 
 	*reply_ret = reply;
@@ -747,8 +747,8 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 	int res;
 
 	if (!request) {
-		r_buf_free (request);
-		r_buf_free (reply);
+		r_unref (request);
+		r_unref (reply);
 		return -1;
 	}
 
@@ -773,14 +773,14 @@ static int gprobe_read(struct gport *port, ut32 addr, ut8 *buf, ut32 count) {
 
 	res = r_buf_read_at (reply, 0, buf, r_buf_size (reply));
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return res;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -792,8 +792,8 @@ static int gprobe_write(struct gport *port, ut32 addr, const ut8 *buf, ut32 coun
 	ut8 count_be[4];
 
 	if (!request) {
-		r_buf_free (request);
-		r_buf_free (reply);
+		r_unref (request);
+		r_unref (reply);
 		return -1;
 	}
 
@@ -818,14 +818,14 @@ static int gprobe_write(struct gport *port, ut32 addr, const ut8 *buf, ut32 coun
 		goto fail;
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return count;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -856,14 +856,14 @@ static int gprobe_reset(struct gport *port, ut8 code) {
 		goto fail;
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -890,14 +890,14 @@ static int gprobe_debugon(struct gport *port) {
 		goto fail;
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -917,12 +917,12 @@ static int gprobe_debugoff(struct gport *port) {
 	if (get_reply (port, GPROBE_ACK, &reply)) {
 		goto fail;
 	}
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return 0;
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -954,14 +954,14 @@ static int gprobe_runcode(struct gport *port, ut32 addr) {
 		goto fail;
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -990,7 +990,7 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 	while (1) {
 		RBuffer *reply = NULL;
 		int res = get_reply (port, GPROBE_ACK, &reply);
-		r_buf_free (reply);
+		r_unref (reply);
 		if (!res) {
 			break;
 		}
@@ -999,14 +999,14 @@ static int gprobe_flasherase(struct gport *port, ut16 sector) {
 		}
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1041,14 +1041,14 @@ static int gprobe_flashid(struct gport *port) {
 	ut16 id = r_buf_read_be16_at (reply, 0);
 	printf ("%04x\n", id);
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1085,14 +1085,14 @@ static int gprobe_flashcrc(struct gport *port, ut32 address, ut32 count) {
 	ut16 id = r_buf_read_be16_at (reply, 0);
 	printf ("0x%04x\n", id);
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1136,7 +1136,7 @@ static int fast_flash_write(struct gport *port, ut32 address, ut8 *buf, size_t s
 		goto fail;
 	}
 
-	r_buf_free (request);
+	r_unref (request);
 
 	r_sys_usleep (5000);
 
@@ -1177,14 +1177,14 @@ static int fast_flash_write(struct gport *port, ut32 address, ut8 *buf, size_t s
 		goto fail;
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1254,14 +1254,14 @@ static int gprobe_getdeviceid(struct gport *port, ut8 index) {
 		free (s);
 	}
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1295,14 +1295,14 @@ static int gprobe_getinformation(struct gport *port) {
 	const ut8 *tmp = r_buf_data (reply, &tmpsz);
 	r_print_hexdump (NULL, 0, tmp, tmpsz, 16, 1, 1);
 
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 
 	return 0;
 
 fail:
-	r_buf_free (request);
-	r_buf_free (reply);
+	r_unref (request);
+	r_unref (reply);
 	return -1;
 }
 
@@ -1316,7 +1316,7 @@ static int gprobe_listen(struct gport *port) {
 	while (true) {
 		RBuffer *reply = NULL;
 		get_reply (port, GPROBE_RESET, &reply);
-		r_buf_free (reply);
+		r_unref (reply);
 		if (r_cons_is_breaked (cons)) {
 			break;
 		}

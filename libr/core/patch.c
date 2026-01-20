@@ -52,7 +52,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	}
 	p = off = strdup (str);
 	if (!p) {
-		r_buf_free (b);
+		r_unref (b);
 		return false;
 	}
 	for (;*p;) {
@@ -88,7 +88,7 @@ static bool __core_patch_bracket(RCore *core, const char *str, ut64 *noff) {
 	(void)r_egg_compile (core->egg);
 	(void)r_egg_assemble (core->egg);
 
-	r_buf_free (b);
+	r_unref (b);
 	b = r_egg_get_bin (core->egg);
 
 	if (strcmp (off, "+")) {

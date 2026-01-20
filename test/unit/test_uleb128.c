@@ -21,7 +21,7 @@ bool test_uleb128_small(void) {
 	int r = r_buf_uleb128 (b, &val);
 	mu_assert_eq (r, 3, "buf_uleb128 decode worked");
 	mu_assert_eq (val, 0xbeef, "buf_uleb128 right val");
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -35,7 +35,7 @@ bool test_sleb128_small(void) {
 	int r = r_buf_sleb128 (b, &val);
 	mu_assert_eq (r, 3, "buf_sleb128 decode worked");
 	mu_assert_eq (val, -0xdead, "buf_sleb128 right val");
-	r_buf_free (b);
+	r_unref (b);
 
 	mu_end;
 }
@@ -58,7 +58,7 @@ bool test_uleb128_big(void) {
 	int r = r_buf_uleb128 (b, &val);
 	mu_assert_eq (r, 7, "buf_uleb128 decode worked");
 	mu_assert_eq (val, 9019283812387, "buf_uleb128 right val");
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -72,7 +72,7 @@ bool test_sleb128_big(void) {
 	int r = r_buf_sleb128 (b, &val);
 	mu_assert_eq (r, 7, "buf_sleb128 decode worked");
 	mu_assert_eq (val, -9019283812387, "buf_sleb128 right val");
-	r_buf_free (b);
+	r_unref (b);
 
 	mu_end;
 }

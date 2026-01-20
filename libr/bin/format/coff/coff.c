@@ -586,7 +586,7 @@ static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 
 static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (obj && buf, false);
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
 	obj->sym_ht = ht_up_new0 ();
@@ -645,7 +645,7 @@ R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 		} else {
 			free (obj->symbols);
 		}
-		r_buf_free (obj->b);
+		r_unref (obj->b);
 		free (obj);
 	}
 }

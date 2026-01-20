@@ -61,7 +61,7 @@ static RBuffer *build(REgg *egg) {
 			}
 		} else {
 			R_LOG_ERROR ("Cannot pull shellcode");
-			r_buf_free (buf);
+			r_unref (buf);
 			buf = NULL;
 		}
 	}

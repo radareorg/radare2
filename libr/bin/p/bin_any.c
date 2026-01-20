@@ -33,7 +33,8 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static void fini(RBinFile *bf) {
-	r_buf_free (bf->bo->bin_obj);
+	RBuffer *buf = (RBuffer *)bf->bo->bin_obj;
+	r_unref (buf);
 }
 
 RBinPlugin r_bin_plugin_any = {

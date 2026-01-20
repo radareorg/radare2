@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2013-2025 - pancake */
+/* radare - LGPL - Copyright 2013-2026 - pancake */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -34,12 +34,13 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!check (bf, buf)) {
 		return false;
 	}
-	bf->bo->bin_obj = r_buf_ref (buf);
+	bf->bo->bin_obj = r_ref (buf);
 	return true;
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->bo->bin_obj);
+	RBuffer *buf = bf->bo->bin_obj;
+	r_unref (buf);
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -70,12 +71,8 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
 	RBuffer *obj = bf->bo->bin_obj;
-
-	if (!(ret = r_list_newf ((RListFree) r_bin_section_free))) {
-		return NULL;
-	}
+	RList *ret = r_list_newf ((RListFree) r_bin_section_free);
 	// program headers is another section
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
@@ -100,8 +97,8 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
 	ret->free = free;

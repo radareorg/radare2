@@ -57,7 +57,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		sdb_ns_set (bf->sdb, "info", wo->kv);
 	}
 #endif
-	wo->buf = r_buf_ref (buf);
+	wo->buf = r_ref (buf);
 	bf->bo->bin_obj = wo;
 	return true;
 }
@@ -134,7 +134,7 @@ static RList *wad_fields(RBinFile *bf) {
 
 static void destroy(RBinFile *bf) {
 	WadObj *obj = bf->bo->bin_obj;
-	r_buf_free (obj->buf);
+	r_unref (obj->buf);
 	free (obj);
 }
 
