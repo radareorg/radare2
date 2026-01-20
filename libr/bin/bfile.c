@@ -767,7 +767,7 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 	ut64 sz = data->size;
 
 	RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, NULL, data->buf);
-	bf->buf = r_buf_ref (data->buf);
+	bf->buf = r_ref (data->buf);
 	bf->user_baddr = baseaddr;
 
 	RBinObject *o = r_bin_object_new (bf, plugin, baseaddr, loadaddr, offset, sz);
@@ -821,7 +821,7 @@ R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer 
 	RBinFile *bf = r_bin_file_new (bin, file, r_buf_size (buf), opt, NULL, false);
 	if (bf) {
 		RListIter *item = r_list_append (bin->binfiles, bf);
-		bf->buf = r_buf_ref (buf);
+		bf->buf = r_ref (buf);
 		bf->user_baddr = opt->baseaddr;
 		RBinPlugin *plugin = get_plugin_from_buffer (bin, bf, opt->pluginname, bf->buf);
 		RBinObject *o = r_bin_object_new (bf, plugin, opt->baseaddr, opt->loadaddr, 0, r_buf_size (bf->buf));
@@ -1007,7 +1007,7 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		plugin->destroy (bf);
 	}
 	addrline_store_fini (&bf->addrline);
-	r_buf_free (bf->buf);
+	r_unref (bf->buf);
 	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
@@ -1075,7 +1075,7 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 // XXX deprecate this function imho.. wee can just access bf->buf directly
 R_IPI bool r_bin_file_set_bytes(RBinFile *bf, const ut8 *bytes, ut64 sz, bool steal_ptr) {
 	R_RETURN_VAL_IF_FAIL (bf && bytes, false);
-	r_buf_free (bf->buf);
+	r_unref (bf->buf);
 	if (steal_ptr) {
 		bf->buf = r_buf_new_with_pointers (bytes, sz, true);
 	} else {

@@ -90,7 +90,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 		metadata->libname = strdup (libname);
 
 		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata);
-		r_buf_free (lib->b);
+		r_unref (lib->b);
 		free (lib);
 		free (hdr);
 	}
@@ -128,7 +128,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	metadata->libname = strdup (libname);
 
 	RBinXtrData *res = r_bin_xtrdata_new (lib->b, lib->offset, r_buf_size (lib->b), nlib, metadata);
-	r_buf_free (lib->b);
+	r_unref (lib->b);
 	free (hdr);
 	free (lib);
 	return res;

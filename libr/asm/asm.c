@@ -230,7 +230,7 @@ static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	}
 #if 0
 	// Need to handle arbitrary amount of data
-	r_buf_free (op->buf_inc);
+	r_unref (op->buf_inc);
 	op->buf_inc = r_buf_new_with_string (content + skip);
 #endif
 	// Terminate the original buffer
@@ -1281,7 +1281,7 @@ R_API RAsmCode *r_asm_assemble(RAsm *a, const char *assembly) {
 #if 0
 				if (op.buf_inc && r_buf_size (op.buf_inc) > 1) {
 					char *inc = r_buf_tostring (op.buf_inc);
-					r_buf_free (op.buf_inc);
+					r_unref (op.buf_inc);
 					op.buf_inc = NULL;
 					if (inc) {
 						ret += r_hex_str2bin (inc, acode->bytes + idx + ret);

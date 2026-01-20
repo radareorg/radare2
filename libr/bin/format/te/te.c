@@ -387,7 +387,7 @@ void* r_bin_te_free(struct r_bin_te_obj_t* bin) {
 	}
 	free (bin->header);
 	free (bin->section_header);
-	r_buf_free (bin->b);
+	r_unref (bin->b);
 	free (bin);
 	return NULL;
 }

@@ -136,12 +136,12 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr) {
 	RBinNXOObj *bin = nso_new ();
 	R_LOG_INFO ("MOD Offset = 0x%"PFMT64x, (ut64)modoff);
 	parseMod (newbuf, bin, modoff, ba);
-	r_buf_free (newbuf);
+	r_unref (newbuf);
 	bf->bo->bin_obj = bin;
 	return true;
 fail:
 	free (tmp);
-	r_buf_free (newbuf);
+	r_unref (newbuf);
 	return false;
 }
 

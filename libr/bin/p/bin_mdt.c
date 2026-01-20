@@ -245,7 +245,7 @@ static RBinMdtPart *load_segment_part(ELFOBJ *header, int idx) {
 
 error:
 	r_bin_mdt_part_free (part);
-	r_buf_free (vfile_buffer);
+	r_unref (vfile_buffer);
 	free (segment_file_path);
 	free (base_name);
 	return NULL;

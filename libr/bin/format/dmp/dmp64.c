@@ -186,7 +186,7 @@ R_IPI void r_bin_dmp64_free(struct r_bin_dmp64_obj_t *obj) {
 	if (!obj) {
 		return;
 	}
-	r_buf_free (obj->b);
+	r_unref (obj->b);
 	obj->b = NULL;
 	free (obj->header);
 	free (obj->bmp_header);
@@ -203,7 +203,7 @@ R_IPI struct r_bin_dmp64_obj_t *r_bin_dmp64_new_buf(RBuffer* buf) {
 	}
 	obj->kv = sdb_new0 ();
 	obj->size = (ut32) r_buf_size (buf);
-	obj->b = r_buf_ref (buf);
+	obj->b = r_ref (buf);
 
 	if (!r_bin_dmp64_init (obj)) {
 		r_bin_dmp64_free (obj);

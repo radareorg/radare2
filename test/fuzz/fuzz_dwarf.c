@@ -100,6 +100,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	r_bin_free (bin);
 	R_FREE (bo.filename);
 	r_io_free (io);
-	r_buf_free (buf);
+	r_unref (buf);
 	return 0;
 }

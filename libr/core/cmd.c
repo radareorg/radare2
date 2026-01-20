@@ -4761,7 +4761,7 @@ repeat:;
 					r_cmd_alias_set_raw (core->rcmd, arg, alias_data, alias_len);
 				}
 				ret = 0;
-				r_buf_free (cmd_out);
+				r_unref (cmd_out);
 				free (alias_data);
 			}
 		} else if (fdn > 0) {

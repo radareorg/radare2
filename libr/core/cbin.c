@@ -614,7 +614,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 	_print_strings (core, l, pj, mode, va);
 	r_list_free (l);
 	if (new_bf) {
-		r_buf_free (bf->buf);
+		r_unref (bf->buf);
 		bf->buf = NULL;
 		bf->id = -1;
 		r_bin_file_free (bf);

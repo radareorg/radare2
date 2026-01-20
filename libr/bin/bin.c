@@ -55,7 +55,7 @@ R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 
 	data->metadata = metadata;
 	data->loaded = false;
 	// don't slice twice TODO. review this
-	data->buf = r_buf_ref (buf); // r_buf_new_slice (buf, offset, size);
+	data->buf = r_ref (buf); // r_buf_new_slice (buf, offset, size);
 	return data;
 }
 
@@ -80,7 +80,7 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 			free (data->metadata);
 		}
 		free (data->file);
-		r_buf_free (data->buf);
+		r_unref (data->buf);
 		free (data);
 	}
 }
@@ -366,12 +366,12 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 		slice = r_buf_new_slice (buf, opt->baseaddr, opt->sz);
 	}
 	if (slice != buf) {
-		r_buf_free (buf);
+		r_unref (buf);
 		buf = slice;
 	}
 	opt->filename = fname;
 	bool res = r_bin_open_buf (bin, buf, opt);
-	r_buf_free (buf);
+	r_unref (buf);
 	return res;
 }
 
@@ -1280,7 +1280,7 @@ R_API RBuffer *r_bin_package(RBin *bin, const char *type, const char *file, RLis
 			from += f_len + (f_len % 0x1000);
 			free (f_buf);
 		}
-		r_buf_free (buf);
+		r_unref (buf);
 		return NULL;
 	} else {
 		R_LOG_ERROR ("Use `rabin2 -X [fat|zip] [filename] [files ...]`");

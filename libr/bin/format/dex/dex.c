@@ -243,7 +243,7 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->types);
 	free (dex->fields);
 	free (dex->protos);
-	r_buf_free (dex->b);
+	r_unref (dex->b);
 	free (dex);
 }
 
@@ -255,7 +255,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		goto fail;
 	}
 	dex->size = r_buf_size (buf);
-	dex->b = r_buf_ref (buf);
+	dex->b = r_ref (buf);
 	dex->verbose = verbose;
 	/* header */
 	if (dex->size < sizeof (struct dex_header_t)) {

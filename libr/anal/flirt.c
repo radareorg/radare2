@@ -1319,7 +1319,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 	node = R_NEW0 (RFlirtNode);
 	f->buf_eof = false;
 	f->buf_err = false;
-	r_buf_free (f->b);
+	r_unref (f->b);
 	f->b = r_buf_new_with_pointers (buf, size, false);
 	// DEBUG r_file_dump ("sig_dump", f->b, size, false);
 	if (parse_tree (f, node)) {
@@ -1330,7 +1330,7 @@ static RFlirtNode *flirt_parse(RFlirt *f) {
 	}
 beach:
 	free (buf);
-	r_buf_free (f->b);
+	r_unref (f->b);
 	f->b = NULL;
 	free (header);
 	free (name);
@@ -1363,7 +1363,7 @@ static inline RFlirt *flirt_new(const RAnal *anal, RBuffer *flirt_buf) {
 
 static inline void flirt_free(RFlirt *f) {
 	if (f) {
-		r_buf_free (f->b);
+		r_unref (f->b);
 		free (f);
 	}
 }

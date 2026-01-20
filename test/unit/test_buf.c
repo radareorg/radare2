@@ -97,7 +97,7 @@ static bool test_buf(RBuffer *b) {
 	char *st3 = r_buf_tostring (b);
 	mu_assert_streq (st3, "Hello second", "append buf correctly");
 	free (st3);
-	r_buf_free (sec_buf);
+	r_unref (sec_buf);
 
 	sec_buf = r_buf_new_with_bytes ((ut8 *)"123456789", 9);
 	res = r_buf_append_buf_slice (b, sec_buf, 5, 3);
@@ -105,7 +105,7 @@ static bool test_buf(RBuffer *b) {
 	char *st4 = r_buf_tostring (b);
 	mu_assert_streq (st4, "Hello second678", "append buf slice correctly");
 	free (st4);
-	r_buf_free (sec_buf);
+	r_unref (sec_buf);
 
 	return MU_PASSED;
 }
@@ -123,8 +123,8 @@ static bool test_r_buf_cache(void) {
 	r_buf_read_at (b1, 2, (ut8*)buf, 4);
 	mu_assert_streq (buf, "XYEF", "read patched cache buffer");
 
-	r_buf_free (b0);
-	r_buf_free (b1);
+	r_unref (b0);
+	r_unref (b1);
 	mu_end;
 }
 
@@ -150,7 +150,7 @@ static bool test_r_buf_file(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	unlink (filename);
 	free (filename);
 	mu_end;
@@ -168,7 +168,7 @@ static bool test_r_buf_bytes(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -194,7 +194,7 @@ static bool test_r_buf_mmap(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	unlink (filename);
 	free (filename);
 	mu_end;
@@ -223,7 +223,7 @@ static bool test_r_buf_io(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	r_io_close (io);
 	r_io_free (io);
 	mu_end;
@@ -252,7 +252,7 @@ static bool test_r_buf_io2(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	r_io_close (io);
 	r_io_free (io);
 	mu_end;
@@ -274,7 +274,7 @@ static bool test_r_buf_sparse(void) {
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -320,7 +320,7 @@ static bool test_r_buf_sparse2(void) {
 	sz = r_buf_size (b);
 	mu_assert_eq (sz, 0x106, "size is 0x106");
 
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -334,7 +334,7 @@ bool test_r_buf_bytes_steal(void) {
 	free (s);
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -353,7 +353,7 @@ bool test_r_buf_format(void) {
 	mu_assert_eq (a[2], 0xfeca, "third");
 	mu_assert_eq (a[3], 0xbeba, "fourth");
 
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -364,14 +364,14 @@ static bool test_r_buf_with_buf(void) {
 
 	RBuffer *b = r_buf_new_with_buf (buf);
 	mu_assert_notnull (b, "r_buf_new_with_buf failed");
-	r_buf_free (buf);
+	r_unref (buf);
 
 	if (test_buf (b) != MU_PASSED) {
 		mu_fail ("r_buf_with_buf failed");
 	}
 
 	// Cleanup
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -405,8 +405,8 @@ static bool test_r_buf_slice(void) {
 	mu_assert_eq (buf_sz, 30, "file size should be 30");
 
 	// Cleanup
-	r_buf_free (b);
-	r_buf_free (buf);
+	r_unref (b);
+	r_unref (buf);
 	mu_end;
 }
 
@@ -424,7 +424,7 @@ static bool test_r_buf_get_string(void) {
 	s = r_buf_get_string (b, 127);
 	mu_assert_streq (s, "\x00", "the string is empty");
 	free (s);
-	r_buf_free (b);
+	r_unref (b);
 	free (ch);
 	mu_end;
 }
@@ -437,7 +437,7 @@ bool test_r_buf_get_string_nothing(void) {
 	s = r_buf_get_string (b, 0);
 	mu_assert_streq (s, "\x33\x22", "now there is a string because of the null terminator");
 	free (s);
-	r_buf_free (b);
+	r_unref (b);
 	mu_end;
 }
 
@@ -453,8 +453,8 @@ bool test_r_buf_slice_too_big(void) {
 	mu_assert ("the resize should be successful", res);
 	sz = r_buf_size (sl);
 	mu_assert_eq (sz, 3, "but it should just use the biggest value");
-	r_buf_free (sl);
-	r_buf_free (buf);
+	r_unref (sl);
+	r_unref (buf);
 	mu_end;
 }
 

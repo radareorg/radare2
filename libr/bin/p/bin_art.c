@@ -71,7 +71,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 			free (ao);
 			return false;
 		}
-		ao->buf = r_buf_ref (buf);
+		ao->buf = r_ref (buf);
 		art_header_load (ao, ao->kv);
 		sdb_ns_set (bf->sdb, "info", ao->kv);
 		bf->bo->bin_obj = ao;
@@ -82,7 +82,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static void destroy(RBinFile *bf) {
 	ArtObj *obj = bf->bo->bin_obj;
-	r_buf_free (obj->buf);
+	r_unref (obj->buf);
 	free (obj);
 }
 

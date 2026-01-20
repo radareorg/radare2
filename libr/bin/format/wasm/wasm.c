@@ -963,7 +963,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 	RBinWasmObj *bin = R_NEW0 (RBinWasmObj);
 	if (bin) {
 		bin->g_start = UT32_MAX;
-		bin->buf = r_buf_ref (buf);
+		bin->buf = r_ref (buf);
 		bin->size = (ut32)r_buf_size (bf->buf);
 		bin->g_sections = r_bin_wasm_get_sections (bin);
 		// TODO: recursive invocation more natural with streamed parsing
@@ -989,7 +989,7 @@ RBinWasmObj *r_bin_wasm_init(RBinFile *bf, RBuffer *buf) {
 
 void wasm_obj_free(RBinWasmObj *bin) {
 	if (bin) {
-		r_buf_free (bin->buf);
+		r_unref (bin->buf);
 		r_list_free (bin->g_sections);
 		free_vec_entries (bin->g_types, (WasmEntryFree)free_type_entry);
 		free_all_imports (bin);

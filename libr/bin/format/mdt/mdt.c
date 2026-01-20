@@ -21,7 +21,7 @@ R_IPI void r_bin_mdt_part_free(RBinMdtPart *part) {
 	if (!part) {
 		return;
 	}
-	r_buf_free (part->vfile_buf);
+	r_unref (part->vfile_buf);
 	free (part->vfile_name);
 	switch (part->format) {
 	default:

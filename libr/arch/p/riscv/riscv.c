@@ -31,6 +31,7 @@ see <https://www.gnu.org/licenses/>.
 const char * const * const riscv_gpr_names = riscv_gpr_names_abi;
 const char * const * const riscv_fpr_names = riscv_fpr_names_abi;
 
+// TODO: use snprintf instead of sprintf!
 static void arg_p(char *buf, unsigned long val, const char* const* array, size_t size) {
 	const char *s = (val >= size || array[val]) ? array[val] : "unknown";
 	sprintf (buf + strlen (buf), "%s", s);
@@ -250,12 +251,11 @@ static void get_insn_args(char *buf, const char *d, insn_t l, uint64_t pc) {
 				break;
 			}
 		case 'Z':
-			sprintf (buf+strlen (buf), "%d", rs1);
+			sprintf (buf + strlen (buf), "%d", rs1);
 			break;
 		default:
 			/* xgettext:c-format */
-			sprintf (buf + strlen (buf), "# internal error, undefined modifier (%c)",
-			  *d);
+			sprintf (buf + strlen (buf), "# internal error, undefined modifier (%c)", *d);
 			return;
 		}
 	}

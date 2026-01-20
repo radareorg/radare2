@@ -814,7 +814,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 	if (mode & MODE_LOG) {
 		r_cons_printf (core->cons, "}\n");
 	}
-	r_buf_free (b);
+	r_unref (b);
 }
 
 static void prjcmd(RCore *core, const char *mod, const char *arg) {

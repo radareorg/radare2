@@ -272,7 +272,7 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->size = size + op->payload;
 		dalvik_payload_fini (&payload);
 	}
-	r_buf_free (buf);
+	r_unref (buf);
 	// TODO:
 	// for each op, add analysis info (e.g. jump destination)
 	// add ESIL info

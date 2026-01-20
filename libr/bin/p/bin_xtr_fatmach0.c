@@ -69,7 +69,7 @@ static RBinXtrData *extract(RBin *bin, int idx) {
 		if (hdr) {
 			fill_metadata_info_from_hdr (metadata, hdr);
 			RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
-			r_buf_free (arch->b);
+			r_unref (arch->b);
 			free (arch);
 			free (hdr);
 			return res;
@@ -98,7 +98,7 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 		if (hdr) {
 			fill_metadata_info_from_hdr (metadata, hdr);
 			RBinXtrData *res = r_bin_xtrdata_new (arch->b, arch->offset, arch->size, narch, metadata);
-			r_buf_free (arch->b);
+			r_unref (arch->b);
 			free (arch);
 			free (hdr);
 			return res;

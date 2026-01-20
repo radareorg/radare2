@@ -194,7 +194,7 @@ void *r_bin_mz_free (struct r_bin_mz_obj_t *bin) {
 	free ((void *)bin->dos_header);
 	free ((void *)bin->dos_extended_header);
 	free ((void *)bin->relocation_entries);
-	r_buf_free (bin->b);
+	r_unref (bin->b);
 	bin->b = NULL;
 	free (bin);
 	return NULL;

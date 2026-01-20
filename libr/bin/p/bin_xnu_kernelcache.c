@@ -245,7 +245,7 @@ static void r_kernel_cache_free(RKernelCacheObj *obj);
 static R_TH_LOCAL RList *pending_bin_files = NULL;
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	RBuffer *fbuf = r_buf_ref (buf);
+	RBuffer *fbuf = r_ref (buf);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	struct MACH0_(obj_t) *main_mach0 = MACH0_(new_buf) (bf, fbuf, &opts);
@@ -321,7 +321,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 
 beach:
-	r_buf_free (fbuf);
+	r_unref (fbuf);
 	r_rebase_info_free (rebase_info);
 	MACH0_(mach0_free) (main_mach0);
 	return false;
@@ -900,12 +900,12 @@ static struct MACH0_(obj_t) *create_kext_mach0(RKernelCacheObj *obj, RKext *kext
 	opts.header_at = 0;
 	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
 	// MACH0_(new_buf) takes a ref, so free our local ref
-	r_buf_free (buf);
+	r_unref (buf);
 	return mach0;
 }
 
 static struct MACH0_(obj_t) *create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
-	// Pass the buffer directly - MACH0_(new_buf) will call r_buf_ref() on it
+	// Pass the buffer directly - MACH0_(new_buf) will call r_ref() on it
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.verbose = false;
@@ -1213,7 +1213,7 @@ static RList *sections(RBinFile *bf) {
 
 	RKernelCacheObj *kobj = (RKernelCacheObj*) obj->bin_obj;
 	ensure_kexts_initialized (kobj, bf);
-	RBuffer *cache_buf = r_buf_ref (kobj->cache_buf);
+	RBuffer *cache_buf = r_ref (kobj->cache_buf);
 	int iter;
 	RKext *kext;
 	r_kext_index_foreach (kobj->kexts, iter, kext) {
@@ -1255,7 +1255,7 @@ static RList *sections(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 
-	r_buf_free (cache_buf);
+	r_unref (cache_buf);
 	return ret;
 }
 
@@ -2664,7 +2664,7 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	}
 
 	if (obj->cache_buf) {
-		r_buf_free (obj->cache_buf);
+		r_unref (obj->cache_buf);
 		obj->cache_buf = NULL;
 	}
 

@@ -158,7 +158,7 @@ static int create(const char *format, const char *arch, int bits, const ut8 *cod
 		if (write (1, tmp, blen) != blen) {
 			R_LOG_ERROR ("Failed to write buffer");
 		}
-		r_buf_free (b);
+		r_unref (b);
 	} else {
 		R_LOG_ERROR ("Cannot create binary for this format '%s'", format);
 	}

@@ -31,7 +31,7 @@ static Sdb *get_sdb(RBinFile *bf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	RBuffer *tbuf = r_buf_ref (buf);
+	RBuffer *tbuf = r_ref (buf);
 	struct r_bin_java_obj_t *tbo = r_bin_java_new_buf (tbuf, loadaddr, bf->sdb);
 	if (tbo) {
 		bf->bo->bin_obj = tbo;
@@ -39,7 +39,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		if (bf && bf->file) {
 			tbo->file = strdup (bf->file);
 		}
-		r_buf_free (tbuf);
+		r_unref (tbuf);
 		return true;
 	}
 	return false;

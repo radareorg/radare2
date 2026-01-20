@@ -120,15 +120,16 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
-	if (!check (bf, buf)) {
-		return false;
+	if (check (bf, buf)) {
+		bf->bo->bin_obj = r_ref (buf);
+		return true;
 	}
-	bf->bo->bin_obj = r_buf_ref (buf);
-	return true;
+	return false;
 }
 
 static void destroy(RBinFile *bf) {
-	r_buf_free (bf->bo->bin_obj);
+	RBuffer *buf = bf->bo->bin_obj;
+	r_unref (buf);
 }
 
 static ut64 baddr(RBinFile *bf) {

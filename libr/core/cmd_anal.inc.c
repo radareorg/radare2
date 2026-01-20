@@ -8445,7 +8445,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 	r_cons_printf (core->cons, "wx %s\n", x);
 	free (x);
 	free (s);
-	r_buf_free (b);
+	r_unref (b);
 }
 
 R_IPI void cmd_aei(RCore *core) {

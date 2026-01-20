@@ -5587,7 +5587,7 @@ static void cmd_dg(RCore *core, const char *input) {
 			if (!gcore (core->dbg, dst, fulldump)) {
 				R_LOG_ERROR ("dg: coredump failed");
 			}
-			r_buf_free (dst);
+			r_unref (dst);
 		} else {
 			perror ("r_buf_new_file");
 		}

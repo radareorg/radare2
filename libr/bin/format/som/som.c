@@ -158,7 +158,7 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s) 
 		return NULL;
 	}
 	RSomFile *obj = R_NEW0 (RSomFile);
-	obj->buf = r_buf_ref (b);
+	obj->buf = r_ref (b);
 	obj->baddr = laddr? laddr: SOM_BADDR;
 	parse_som_header (obj, b, header);
 
@@ -592,6 +592,6 @@ void r_bin_som_free(RSomFile *obj) {
 	free (obj->dl_strings);
 	free (obj->interp);
 	free (obj->dl_hdr);
-	r_buf_free (obj->buf);
+	r_unref (obj->buf);
 	R_FREE (obj);
 }
