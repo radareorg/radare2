@@ -482,6 +482,14 @@ beach:
 	return ret;
 }
 
+R_API bool r_core_read_at_buf(RCore *core, ut64 addr, ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (core && buf && len > 0, false);
+	R_CRITICAL_ENTER (core);
+	bool ret = r_io_read_at (core->io, addr, buf, len);
+	R_CRITICAL_LEAVE (core);
+	return ret;
+}
+
 R_API bool r_core_extend_at(RCore *core, ut64 addr, int size) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	if (!core->io->desc || size < 1 || addr == UT64_MAX) {
