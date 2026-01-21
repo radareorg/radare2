@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2025 - pancake */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
 #define R_LOG_ORIGIN "r2pm"
 
@@ -521,6 +521,15 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	const char *ldpathvar = "DYLD_LIBRARY_PATH";
 #else
 	const char *ldpathvar = "LD_LIBRARY_PATH";
+#endif
+	// For Termux, prioritize system libraries over Termux libraries to avoid conflicts
+#if defined(__ANDROID__)
+	// Add system library paths first to prevent Termux library conflicts
+#if defined(__LP64__)
+	r_sys_setenv_sep (ldpathvar, "/system/lib64", true);
+#else
+	r_sys_setenv_sep (ldpathvar, "/system/lib", true);
+#endif
 #endif
 	r_sys_setenv_sep (ldpathvar, r2pm_libdir, false);
 	r_sys_setenv_sep (ldpathvar, R2_LIBDIR, false);
