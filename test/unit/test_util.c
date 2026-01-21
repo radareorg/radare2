@@ -213,7 +213,7 @@ static TypeTest *r_type_test_new(const char *name) {
 bool test_references(void) {
 	TypeTest *tt = r_type_test_new ("foo");
 	mu_assert_eq (r_ref_count (tt), 1, "reference count issue");
-	r_ref (tt);
+	tt = r_ref (tt);
 	mu_assert_eq (r_ref_count (tt), 2, "reference count issue");
 	r_unref (tt);
 	mu_assert_streq (tt->name, "foo", "typetest name should be foo");
