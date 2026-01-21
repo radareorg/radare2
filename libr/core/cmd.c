@@ -6770,6 +6770,9 @@ R_API int r_core_cmd0(RCore *core, const char *cmd) {
 }
 
 R_API char *r_core_cmd_str_pipe(RCore *core, const char *cmd) {
+	if (!cmd) {
+		return r_core_cmd_str (core, "");
+	}
 	char *tmp = NULL;
 	char *p = (*cmd != '"')? strchr (cmd, '|'): NULL;
 	if (!p && *cmd != '!' && *cmd != '.') {
