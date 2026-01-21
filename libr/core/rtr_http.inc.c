@@ -43,7 +43,8 @@ static char * R_NONNULL guess_filetype(const char *path) {
 	return strdup ("Content-Type: application/octet-stream\n");
 }
 
-static char *cmdstr (RCore *core, const char *cmd) {
+static char *cmdstr(RCore *core, const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (core && cmd, NULL);
 	char *out;
 	RConsContext *ctx = core->cons->context;
 	ctx->noflush = false;
@@ -536,7 +537,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 			int retlen;
 			char buf[128];
 			if (r_str_startswith (rs->path, "/cmd")) {
-				char *out = cmdstr (core, (const char *)rs->data);
+				char *out = NULL;
+				if (rs->data && rs->data_length > 0) {
+					out = cmdstr (core, (const char *)rs->data);
+				}
 				if (out) {
 					char *res = r_str_uri_encode (out);
 					char *newheaders = r_str_newf ("Content-Type: text/plain\n%s", headers);
