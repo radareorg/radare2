@@ -1244,6 +1244,9 @@ typedef struct
 /* Note entries for GNU systems have this name.  */
 #define ELF_NOTE_GNU		"GNU"
 
+/* Note entries for QNX systems have this name.  */
+#define ELF_NOTE_QNX		"QNX"
+
 
 /* Defined types of notes for Solaris.  */
 
@@ -1346,6 +1349,9 @@ typedef struct
 /* This indicates that all executable sections are compatible with
 //   SHSTK.  */
 #define GNU_PROPERTY_X86_FEATURE_1_SHSTK	(1U << 1)
+
+/* Defined note types for QNX systems.  */
+#define QNT_STACK	3
 
 /* Move records.  */
 typedef struct

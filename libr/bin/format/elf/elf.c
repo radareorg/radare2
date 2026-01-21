@@ -1989,6 +1989,58 @@ bool Elf_(has_nobtcfi)(ELFOBJ *eo) {
 	return eo->has_nobtcfi;
 }
 
+static bool qnx_has_nx(ELFOBJ *eo) {
+	if (!eo->shdr || eo->ehdr.e_shnum < 1) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_shnum; i++) {
+		Elf_(Shdr) *sh = &eo->shdr[i];
+		if (sh->sh_type != SHT_NOTE) {
+			continue;
+		}
+		if (!sh->sh_size
+			|| sh->sh_offset > eo->size
+			|| sh->sh_size > eo->size - sh->sh_offset) {
+			continue;
+		}
+		ut64 pos = sh->sh_offset;
+		const ut64 end = pos + sh->sh_size;
+		while (pos + sizeof (Elf_(Nhdr)) <= end) {
+			Elf_(Nhdr) nhdr = {0};
+			if (r_buf_fread_at (eo->b, pos, (ut8 *)&nhdr, "iii", 1) != sizeof (nhdr)) {
+				break;
+			}
+			if (!nhdr.n_namesz && !nhdr.n_descsz) {
+				break;
+			}
+			pos += sizeof (nhdr);
+			const ut64 name_off = pos;
+			const ut64 desc_off = name_off + round_up (nhdr.n_namesz);
+			const ut64 next = desc_off + round_up (nhdr.n_descsz);
+			if (next > end || desc_off < name_off || next <= pos) {
+				break;
+			}
+			if (nhdr.n_namesz != sizeof (ELF_NOTE_QNX)) {
+				continue;
+			}
+			char owner[sizeof (ELF_NOTE_QNX)] = {0};
+			ut32 readsz = R_MIN ((ut32)(sizeof (owner) - 1), nhdr.n_namesz);
+			r_buf_read_at (eo->b, name_off, (ut8 *)owner, readsz);
+			if (!memcmp (owner, ELF_NOTE_QNX, sizeof (ELF_NOTE_QNX)) && nhdr.n_type == QNT_STACK && nhdr.n_descsz >= 12) {
+				ut8 desc[12];
+				if (r_buf_read_at (eo->b, desc_off, desc, sizeof (desc)) == sizeof (desc)) {
+					ut32 stack_flags = *(ut32 *)(desc + 8);
+					// QNX QNT_STACK notes use the last word to flag non-executable stacks
+					return stack_flags != 0;
+				}
+			}
+			pos = next;
+		}
+	}
+	return false;
+}
+
 /// XXX this is O(n) and can be cached to avoid walking the sections again
 bool Elf_(has_nx)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, 0);
@@ -2001,7 +2053,7 @@ bool Elf_(has_nx)(ELFOBJ *eo) {
 			}
 		}
 	}
-	return 0;
+	return qnx_has_nx (eo);
 }
 
 int Elf_(has_relro)(ELFOBJ *bin) {
