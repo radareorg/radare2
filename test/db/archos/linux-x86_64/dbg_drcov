@@ -2,7 +2,7 @@ NAME=import drcov coverage via analysis
 FILE=bins/elf/analysis/calls_x64
 CMDS=<<EOF
 aa
-a:drcov bins/other/drcov.sample
+a:drcov bins/drcov/drcov.sample
 s 0x400410
 abj
 EOF
