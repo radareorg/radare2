@@ -17,7 +17,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 		{ 0, "and", "# = # & #", { 1, 2, 3 } },
 		{ 0, "andi", "# = # & #", { 1, 2, 3 } },
 		{ 0, "beq", "if (# == #) goto #", { 1, 2, 3 } },
-		{ 0, "auipc", "# = pc + #", {1, 2} },
+		{ 0, "auipc", "# = pc + #", { 1, 2 } },
 		{ 0, "bleu", "if (unsigned)# <= # goto #", { 1, 2, 3 } },
 		{ 0, "bltu", "if (unsigned)# < # goto #", { 1, 2, 3 } },
 		{ 0, "blt", "if (# < #) goto #", { 1, 2, 3 } },
@@ -96,7 +96,7 @@ static int replace(int argc, const char *argv[], char *newstr) {
 	newstr[0] = '\0';
 	for (i = 0; i < argc; i++) {
 		strcat (newstr, argv[i]);
-		strcat (newstr, (!i || i == argc - 1)? " " : ",");
+		strcat (newstr, (!i || i == argc - 1)? " ": ",");
 	}
 	r_str_replace_char (newstr, '{', '(');
 	r_str_replace_char (newstr, '}', ')');
@@ -115,7 +115,7 @@ static char *patch(RAsmPluginSession *aps, RAnalOp *aop, const char *op) {
 		if (size < 4) {
 			cmd = "wx 0100";
 		} else {
-		       cmd = "wx 13000000";
+			cmd = "wx 13000000";
 		}
 	} else if (!strcmp (op, "jinf")) {
 		if (size < 2) {
@@ -159,10 +159,10 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 
 			optr = ptr;
 			if (*ptr == '(') {
-				ptr = strchr (ptr+1, ')');
+				ptr = strchr (ptr + 1, ')');
 			}
 			if (ptr && *ptr == '[') {
-				ptr = strchr (ptr+1, ']');
+				ptr = strchr (ptr + 1, ']');
 			}
 			if (ptr && *ptr == '{') {
 				ptr = strchr (ptr + 1, '}');
@@ -195,7 +195,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 			ptr = strchr (buf, '(');
 			if (ptr) {
 				*ptr = 0;
-				num = (char*)r_str_lchr (buf, ' ');
+				num = (char *)r_str_lchr (buf, ' ');
 				if (!num) {
 					num = (char *)r_str_lchr (buf, ',');
 				}
@@ -203,7 +203,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 					n = atoi (num + 1);
 					*ptr = '[';
 					r_str_cpy (num + 1, ptr);
-					ptr = (char*)r_str_lchr (buf, ']');
+					ptr = (char *)r_str_lchr (buf, ']');
 					if (n && ptr) {
 						char *rest = strdup (ptr + 1);
 						size_t dist = len + 1 - (ptr - buf);
@@ -256,5 +256,6 @@ RAsmPlugin r_asm_plugin_riscv = {
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
 	.data = &r_asm_plugin_riscv,
-	.version = R2_VERSION};
+	.version = R2_VERSION
+};
 #endif

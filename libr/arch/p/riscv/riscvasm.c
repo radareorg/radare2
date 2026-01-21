@@ -7,7 +7,7 @@
 // hello world writing into the serial console. that should compile
 addi a0, x0, 0x68
 li a1, 0x10000000
-sb a0, (a1) # 'h'
+sb a0,(a1) # 'h'
 loop:
 j loop
 #endif
@@ -110,20 +110,20 @@ static struct {
 	// Type 'J' not yet implemented
 	{ 0x67, "jr", 'I', 2, 0, 0 }, // alias for jalr zero, rX
 	{ 0x67, "jalr", 'I', 2, 0, 0 },
-	{0}
+	{ 0 }
 };
 
 // lui
 static int riscv_ri(ut8 *b, int op, int rt, int imm) {
-	ut32 *insn = (ut32*)b;
+	ut32 *insn = (ut32 *)b;
 	*insn |= op;
 	*insn |= (rt << 7);
-	*insn |= ((ut32)(imm & 0xfffff) << 12);
+	*insn |= ((ut32) (imm & 0xfffff) << 12);
 	return 4;
 }
 
 static int riscv_rri(ut8 *b, int op, int rs, int rt, int imm) {
-	ut32 *insn = (ut32*)b;
+	ut32 *insn = (ut32 *)b;
 	*insn |= op;
 	*insn |= (rt << 7);
 	*insn |= (rs << 15);
@@ -151,10 +151,10 @@ static int getreg(const char *p) {
 	}
 	/* try to convert it into a number */
 	if (p[0] == '-') {
-		n = (int) r_num_get (NULL, p + 1);
+		n = (int)r_num_get (NULL, p + 1);
 		n = -n;
 	} else {
-		n = (int) r_num_get (NULL, p);
+		n = (int)r_num_get (NULL, p);
 	}
 	if (n != 0 || p[0] == '0') {
 		return n;
@@ -205,28 +205,29 @@ R_IPI int riscv_assemble(const char *str, ut64 pc, ut8 *out) {
 				strcpy (w3, tmp);
 			}
 			switch (ops[i].type) {
-			case 'I': {
-				int op = 0, rs = 0, rt = 0, imm = 0;
-				switch (ops[i].args) {
-				case 2: // lui x0, 33
-					rt = getreg (w1);
-					imm = getreg (w2);
-					free (s);
-					return riscv_ri (out, ops[i].op, rt, imm);
-				case 3: // addi x1, x2, 3
-					rs = getreg (w2);
-					rt = getreg (w1);
-					imm = getreg (w3);
-					free (s);
-					return riscv_rri (out, ops[i].op, rs, rt, imm);
-				default:
-					// invalid
-					op = ops[i].op;
-					free (s);
-					return riscv_ri (out, op, rs, imm);
+			case 'I':
+				{
+					int op = 0, rs = 0, rt = 0, imm = 0;
+					switch (ops[i].args) {
+					case 2: // lui x0, 33
+						rt = getreg (w1);
+						imm = getreg (w2);
+						free (s);
+						return riscv_ri (out, ops[i].op, rt, imm);
+					case 3: // addi x1, x2, 3
+						rs = getreg (w2);
+						rt = getreg (w1);
+						imm = getreg (w3);
+						free (s);
+						return riscv_rri (out, ops[i].op, rs, rt, imm);
+					default:
+						// invalid
+						op = ops[i].op;
+						free (s);
+						return riscv_ri (out, op, rs, imm);
+					}
+					break;
 				}
-				break;
-			}
 			case 'N': // nop
 				memset (out, 0, 4);
 				out[0] = ops[i].op;
