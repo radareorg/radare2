@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2025 - pancake, qnix */
+/* radare - LGPL - Copyright 2015-2026 - pancake, qnix */
 
 #include <r_arch.h>
 #include "./riscv-opc.c"
@@ -322,10 +322,9 @@ static char *riscv_disassemble(RArchSession *s, ut64 addr, const ut8 *buf, int l
 			continue;
 		}
 		if (op->name && op->args) {
-			char opasm [128];
-			r_str_ncpy (opasm, op->name, sizeof (opasm));
-			get_insn_args (opasm, op->args, word, addr);
-			return strdup (opasm);
+			RStrBuf *sb = r_strbuf_new (op->name);
+			get_insn_args (sb, op->args, word, addr);
+			return r_strbuf_drain (sb);
 		}
 		break;
 	}
