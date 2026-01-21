@@ -4269,7 +4269,7 @@ R_API RBinJavaVerificationObj *r_bin_java_verification_info_from_type(RBinJavaOb
 }
 
 R_API RBinJavaVerificationObj *r_bin_java_read_from_buffer_verification_info_new(ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	if (sz < 8) {
+	if (sz < 1) {
 		return NULL;
 	}
 	ut64 offset = 0;
@@ -4278,9 +4278,17 @@ R_API RBinJavaVerificationObj *r_bin_java_read_from_buffer_verification_info_new
 	se->tag = buffer[offset];
 	offset += 1;
 	if (se->tag == R_BIN_JAVA_STACKMAP_OBJECT) {
+		if (sz < 3) {
+			r_bin_java_verification_info_free (se);
+			return NULL;
+		}
 		se->info.obj_val_cp_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	} else if (se->tag == R_BIN_JAVA_STACKMAP_UNINIT) {
+		if (sz < 3) {
+			r_bin_java_verification_info_free (se);
+			return NULL;
+		}
 		se->info.uninit_offset = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 	}
@@ -4388,7 +4396,7 @@ R_API ut64 r_bin_java_stack_map_frame_calc_size(RBinJavaStackMapFrame *sf) {
 }
 
 R_API RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 sz, RBinJavaStackMapFrame *p_frame, ut64 buf_offset) {
-	if (sz < 8) {
+	if (sz < 1) {
 		return NULL;
 	}
 	RBinJavaStackMapFrame *stack_frame = r_bin_java_default_stack_frame ();
