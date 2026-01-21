@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2021-2025 - pancake */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
 #define R_LOG_ORIGIN "r2pm"
 
@@ -526,9 +526,9 @@ static void r2pm_setenv(R2Pm *r2pm) {
 #if defined(__ANDROID__)
 	// Add system library paths first to prevent Termux library conflicts
 #if defined(__LP64__)
-	r_sys_setenv_sep (ldpathvar, "/system/lib64", false);
+	r_sys_setenv_sep (ldpathvar, "/system/lib64", true);
 #else
-	r_sys_setenv_sep (ldpathvar, "/system/lib", false);
+	r_sys_setenv_sep (ldpathvar, "/system/lib", true);
 #endif
 #endif
 	r_sys_setenv_sep (ldpathvar, r2pm_libdir, false);
