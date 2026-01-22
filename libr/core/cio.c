@@ -113,12 +113,14 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	int i, j;
 	ut64 len;
+	size_t bsz = core->blocksize;
 	char *str = NULL;
-	ut8 *buf = (ut8 *)malloc (core->blocksize);
+	ut8 *buf = (ut8 *)malloc (bsz);
 	if (!buf) {
 		return NULL;
 	}
 	bool isnum = false;
+	r_io_read_at (core->io, core->addr, buf, bsz);
 	const char *plus = arg? strchr (arg, '+'): NULL;
 	int numsize = 1;
 	if (plus) {
@@ -130,15 +132,15 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 		arg = r_str_trim_head_ro (plus + 1);
 	}
 	if (op == 'i') { // "woi"
-		int hbs = core->blocksize / 2;
-		int j = core->blocksize - 1;
+		int hbs = bsz / 2;
+		int j = bsz - 1;
 		for (i = 0; i < hbs; i++, j--) {
-			buf[i] = core->block[j];
-			buf[j] = core->block[i];
+			ut8 tmp = buf[i];
+			buf[i] = buf[j];
+			buf[j] = tmp;
 		}
 		return buf;
 	}
-	memcpy (buf, core->block, core->blocksize);
 
 	if (op != 'e') {
 		// fill key buffer either from arg or from clipboard
@@ -213,22 +215,22 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			wordsize = 1;
 		}
 		if (wordsize == 1) {
-			for (i = n = 0; i < core->blocksize; i++, n += step) {
+			for (i = n = 0; i < bsz; i++, n += step) {
 				buf[i] = (ut8)(n % dif) + from;
 			}
 		} else if (wordsize == 2) {
 			ut16 num16 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num16 += step) {
+			for (i = 0; i < bsz; i += wordsize, num16 += step) {
 				r_write_le16 (buf + i, num16);
 			}
 		} else if (wordsize == 4) {
 			ut32 num32 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num32 += step) {
+			for (i = 0; i < bsz; i += wordsize, num32 += step) {
 				r_write_le32 (buf + i, num32);
 			}
 		} else if (wordsize == 8) {
 			ut64 num64 = from;
-			for (i = 0; i < core->blocksize; i += wordsize, num64 += step) {
+			for (i = 0; i < bsz; i += wordsize, num64 += step) {
 				r_write_le64 (buf + i, num64);
 			}
 		} else {
@@ -237,7 +239,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 	} else if (op == '2' || op == '4' || op == '8') { // "wo2" "wo4" "wo8"
 		int inc = op - '0';
 		ut8 tmp;
-		for (i = 0; (i + inc) <= core->blocksize; i += inc) {
+		for (i = 0; (i + inc) <= bsz; i += inc) {
 			if (inc == 2) {
 				tmp = buf[i];
 				buf[i] = buf[i+1];
@@ -308,7 +310,7 @@ R_API ut8* r_core_transform_op(RCore *core, const char *arg, char op) {
 			}
 		}
 		if (str) {
-			for (i = j = 0; i < core->blocksize; i++) {
+			for (i = j = 0; i < bsz; i++) {
 				switch (op) {
 				case 'x': buf[i] ^= str[j]; break;
 				case 'a': buf[i] += str[j]; break;
