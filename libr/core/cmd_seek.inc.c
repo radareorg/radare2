@@ -299,7 +299,7 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 		const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 		const int bufsize = maxinstrsize * numinstr;
 		if (maxinstrsize == mininstrsize) {
-			ut64 delta = mininstrsize * numinstr;
+			ut64 delta = (ut64)mininstrsize * numinstr;
 			if (delta > addr) {
 				val = addr;
 				addr = 0;
