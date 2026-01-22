@@ -3504,28 +3504,44 @@ static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
 }
 
 static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to) {
+	const ut64 bsz = core->blocksize;
 	ut64 addr = from;
-	ut8 *block = calloc (core->blocksize, 1);
+	if (bsz < 1 || from >= to) {
+		return;
+	}
+	ut8 *block = calloc (bsz, 1);
 	if (!block) {
 		return;
 	}
+	ut8 *curblock = malloc (bsz);
+	if (!curblock) {
+		free (block);
+		return;
+	}
+	if (!r_io_read_at (core->io, core->addr, curblock, bsz)) {
+		goto beach;
+	}
 	while (addr < to) {
-		(void) r_io_read_at (core->io, addr, block, core->blocksize);
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
-		int diff = memcmpdiff (core->block, block, core->blocksize);
+		if (!r_io_read_at (core->io, addr, block, bsz)) {
+			break;
+		}
+		int diff = memcmpdiff (curblock, block, bsz);
 		int equal = core->blocksize - diff;
 		if (equal >= count) {
 			int pc = (equal * 100) / core->blocksize;
-			r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, core->blocksize, pc);
+			r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, bsz, pc);
 			ut8 ptr[2] = {
 				(ut8)(pc * 2.5), 0
 			};
-			r_print_fill (core->print, ptr, 1, UT64_MAX, core->blocksize);
+			r_print_fill (core->print, ptr, 1, UT64_MAX, bsz);
 		}
-		addr += core->blocksize;
+		addr += bsz;
 	}
+beach:
+	free (curblock);
 	free (block);
 }
 
