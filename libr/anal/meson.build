@@ -48,6 +48,7 @@ r_anal_sources = [
   'p/anal_a2f.c',
   'p/anal_blaze.c',
   'p/anal_path.c',
+  'p/anal_drcov.c',
 ]
 
 r_anal_sources += r_anal_d_sources

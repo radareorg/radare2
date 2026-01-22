@@ -30,7 +30,7 @@ include ${STATIC_ANAL_PLUGINS}
 STATIC_OBJS=$(addprefix $(LTOP)/anal/p/,$(STATIC_OBJ))
 OBJLIBS=meta.o reflines.o op.o fcn.o bb.o var.o block.o c2/kv.o
 OBJLIBS+=value.o class.o type.o type_pdb.o dwarf_process.o
-OBJLIBS+=hint.o anal.o data.o xrefs.o sign.o btrace.o drcov.o
+OBJLIBS+=hint.o anal.o data.o xrefs.o sign.o btrace.o
 OBJLIBS+=switch.o cycles.o esil_dfg.o esil_cfg.o cond.o
 OBJLIBS+=flirt.o labels.o cparse.o tid.o diff.o cc.o
 OBJLIBS+=pin.o vtable.o rtti.o codemeta.o anplugs.o global.o
