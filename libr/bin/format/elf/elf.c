@@ -317,11 +317,13 @@ static int init_phdr(ELFOBJ *eo) {
 		return false;
 	}
 	ut64 phnum = Elf_(get_phnum) (eo);
-#if 0
 	if (phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
 		return false;
 	}
-#endif
+	// Ensure phnum-based allocation doesn't exceed file size
+	if (phnum * sizeof (Elf_(Phdr)) > eo->size) {
+		return false;
+	}
 	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
 		r_sys_perror ("malloc (phdr)");
 		return false;
