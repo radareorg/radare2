@@ -4582,6 +4582,7 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	r_list_free (pe->dotnet_symbols);
 	r_pkcs7_cms_free (pe->cms);
 	r_pkcs7_spcinfo_free (pe->spcinfo);
+	sdb_free (pe->kv);
 	r_unref (pe->b);
 	pe->b = NULL;
 	free (pe);
