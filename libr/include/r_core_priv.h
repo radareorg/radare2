@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2024-2025 - pancake */
 
-#include <r_core.h>
+#include "r_core.h"
 
 #ifndef R2_CORE_PRIV_H
 #define R2_CORE_PRIV_H
@@ -20,6 +20,9 @@ typedef struct r_core_priv_t {
 	char *errmsg_tmpfile;
 	int errmsg_fd; // -1
 	bool regnums;
+	// disasm cache
+	ut64 goaddr;
+	char *section;
 } RCorePriv;
 
 #ifdef __cplusplus

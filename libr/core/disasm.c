@@ -21,10 +21,6 @@ R_VEC_TYPE(RVecAnalRef, RAnalRef);
 #define ds_bufat(ds)  ((ds)->buf + ds_offset (ds))
 #define ds_left(ds)   ((ds)->len - ds_offset (ds))
 
-// global cache
-static R_TH_LOCAL ut64 Goaddr = UT64_MAX;
-static R_TH_LOCAL char *Gsection = NULL; // maybe as a fixed array size is less racy, but still incorrect as its not guarded and its global
-
 static bool isarm(RCore *core) {
 	return r_str_startswith (r_config_get (core->config, "asm.arch"), "arm");
 }
@@ -507,41 +503,42 @@ static void get_bits_comment(RCore *core, RAnalFunction *f, char *cmt, int cmt_s
 }
 
 R_API const char *r_core_get_section_name(RCore *core, ut64 addr) {
+	RCorePriv *priv = core->priv;
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	if (Gsection && Goaddr == addr) {
-		return Gsection;
+	if (priv->section && priv->goaddr == addr) {
+		return priv->section;
 	}
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		char *rv = r_core_cmd_str_at (core, addr, "dmi.");
 		if (rv) {
 			r_str_replace_char (rv, '\n', ' ');
-			free (Gsection);
-			Gsection = r_str_trim_dup (rv);
-			return Gsection;
+			free (priv->section);
+			priv->section = r_str_trim_dup (rv);
+			return priv->section;
 		}
 		return NULL;
 	}
 	RBinObject *bo = r_bin_cur_object (core->bin);
 	RBinSection *s = bo? r_bin_get_section_at (bo, addr, core->io->va): NULL;
 	if (s && R_STR_ISNOTEMPTY (s->name)) {
-		free (Gsection);
-		Gsection = r_str_newf ("%10s ", s->name);
+		free (priv->section);
+		priv->section = r_str_newf ("%10s ", s->name);
 	} else {
 		RListIter *iter;
 		RDebugMap *map;
-		R_FREE (Gsection);
+		R_FREE (priv->section);
 		r_list_foreach (core->dbg->maps, iter, map) {
 			if (addr >= map->addr && addr < map->addr_end) {
 				const char *mn = r_str_lchr (map->name, '/');
-				Gsection = strdup (mn? mn + 1: map->name);
+				priv->section = strdup (mn? mn + 1: map->name);
 				break;
 			}
 		}
 	}
-	Goaddr = addr;
-	return Gsection? Gsection: NULL;
+	priv->goaddr = addr;
+	return priv->section? priv->section: NULL;
 }
 
 static const char *get_section_name(RDisasmState *ds) {
