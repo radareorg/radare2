@@ -288,25 +288,24 @@ static int cmd_sort(void *data, const char *input) { // "sort"
 }
 
 static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
+	if (numinstr < 0) {
+		R_LOG_DEBUG ("Invalid instruction number");
+		return 0;
+	}
 	ut64 addr = core->addr;
-	int ret = 0;
+	const ut64 oaddr = addr;
+	ut64 addr2 = addr;
 	int val = 0;
-	if (r_core_prevop_addr (core, core->addr, numinstr, &addr)) {
-		ret = core->addr - addr;
+	if (r_core_prevop_addr (core, addr, numinstr, &addr2)) {
+		val = addr - addr2;
+		addr = addr2;
 	} else {
-		addr = core->addr;
 		const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
 		const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-		const int bufsize = maxinstrsize * numinstr;
+		const ut64 bufsize = (ut64)maxinstrsize * numinstr;
 		if (maxinstrsize == mininstrsize) {
-			ut64 delta = (ut64)mininstrsize * numinstr;
-			if (delta > addr) {
-				val = addr;
-				addr = 0;
-			} else {
-				val = delta;
-				addr -= val;
-			}
+			val = bufsize;
+			addr = (bufsize >= addr)? 0: addr - bufsize;
 		} else {
 			RArchSession *as = r_ref (core->anal->arch->session);
 			if (!as) {
@@ -352,25 +351,61 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 			free (buf);
 		}
 	}
+	r_io_sundo_push (core->io, oaddr, r_print_get_cursor (core->print));
 	r_core_seek (core, addr, true);
-	val += ret;
 	return val;
 }
 
-static int cmd_seek_opcode_forward(RCore *core, int n) {
+static int cmd_seek_opcode_forward(RCore *core, int numinstr) {
+	R_RETURN_VAL_IF_FAIL (core && numinstr > 0, 0);
+	ut64 addr = core->addr;
+	const ut64 oaddr = addr;
+	int val = 0;
 	// N forward instructions
-	int i, val = 0;
-	for (val = i = 0; i < n; i++) {
-		RAnalOp op;
-		int ret = r_anal_op (core->anal, &op, core->addr, core->block,
-			core->blocksize, R_ARCH_OP_MASK_BASIC);
-		if (ret < 1) {
-			ret = 1;
+	const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	ut64 bufsize = (ut64)maxinstrsize * numinstr;
+	if (maxinstrsize == mininstrsize) {
+		val = bufsize;
+		if (addr > (UT64_MAX - bufsize)) {
+			bufsize = UT64_MAX - addr + 1;
 		}
-		r_core_seek_delta (core, ret);
-		r_anal_op_fini (&op);
-		val += ret;
+		addr += bufsize;
+	} else  {
+		RArchSession *as = r_ref (core->anal->arch->session);
+		if (!as) {
+			R_LOG_DEBUG ("Cannot find arch session");
+			return 0;
+		}
+		ut8 *buf = malloc (bufsize);
+		if (!buf) {
+			return 0;
+		}
+		if (!r_io_read_at (core->io, addr, buf, bufsize)) {
+			free (buf);
+			return 0;
+		}
+		int i;
+		for (i = 0; i < numinstr; i++) {
+			RAnalOp op;
+			ut64 buf_left = bufsize - val;
+			r_anal_op_init (&op);
+			r_anal_op_set_bytes (&op, addr, buf + val, buf_left);
+			bool ok = r_arch_session_decode (as, &op, R_ARCH_OP_MASK_BASIC);
+			if (!ok || op.size < mininstrsize) {
+				// TODO: maybe we can use the RAnalBlock info to know the opsize
+				op.size = mininstrsize;
+			}
+			val += op.size;
+			addr += op.size;
+			r_anal_op_fini (&op);
+
+		}
+		r_unref (as);
+		free (buf);
 	}
+	r_io_sundo_push (core->io, oaddr, r_print_get_cursor (core->print));
+	r_core_seek (core, addr, true);
 	return val;
 }
 
@@ -549,7 +584,7 @@ static void cmd_seek_opcode(RCore *core, const char *input) {
 	if (n == 0) {
 		n = 1;
 	}
-	int val = (n < 0)
+	const int val = (n < 0)
 		? cmd_seek_opcode_backward (core, -n)
 		: cmd_seek_opcode_forward (core, n);
 	r_core_return_value (core, val);

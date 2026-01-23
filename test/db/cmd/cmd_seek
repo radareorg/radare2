@@ -2,6 +2,7 @@ NAME=prev seek opcode mill bug
 FILE=bins/elf/runofthemill
 CMDS=<<EOF
 s 0x4117e4
+s
 so+1
 s
 so-1
@@ -11,6 +12,7 @@ s
 aa
 ?e --
 s 0x4117e4
+s
 so+1
 s
 so-1
@@ -19,10 +21,12 @@ so-1
 s
 EOF
 EXPECT=<<EOF
+0x4117e4
 0x4117ef
 0x4117e4
 0x4117dc
 --
+0x4117e4
 0x4117ef
 0x4117e4
 0x4117dc
@@ -476,5 +480,36 @@ EXPECT=<<EOF
 0x44
 0x33
 0x0
+EOF
+RUN
+
+NAME=seek opcode history
+FILE=bins/elf/runofthemill
+CMDS=<<EOF
+so+1
+s
+so+2
+s
+so-3
+s
+echo ---
+s!
+echo ---
+s-
+s
+EOF
+EXPECT=<<EOF
+0x401007
+0x401012
+0x401000
+---
+0x401000 entry0
+0x401007 entry0 + 7
+
+0x401012 entry0 + 18
+
+0x401000 entry0
+---
+0x401012
 EOF
 RUN
