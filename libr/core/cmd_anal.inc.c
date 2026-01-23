@@ -3882,7 +3882,7 @@ static void rename_fcnsig(RAnal *anal, const char *oname, const char *nname) {
 #undef DB
 }
 
-/* TODO: move into r_anal_function_rename (); */
+/* TODO: merge logic into r_anal_function_rename (); */
 static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool prefix) {
 	R_RETURN_VAL_IF_FAIL (core && _name, false);
 	bool ret = false;
@@ -3912,6 +3912,92 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 	free (name);
 	free (fname);
 	return ret;
+}
+
+static void cmd_afn(RCore *core, const char *input, bool quiet) {
+	ut64 addr = core->addr;
+	RAnalFunction *fcn;
+	switch (input[0]) {
+	case 's': // "afns"
+		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+		if (fcn) {
+			const char ch = (input[1] == 'j')? 'j': 's'; // "afnsj"
+			free (r_core_anal_fcn_autoname (core, fcn, ch));
+		} else {
+			R_LOG_ERROR ("No function at 0x%08"PFMT64x, addr);
+		}
+		break;
+	case '*': // "afn*"
+		fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+		if (fcn) {
+			r_cons_printf (core->cons, "'f %s=0x%08"PFMT64x"\n", fcn->name, addr);
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afnq %s\n", fcn->addr, fcn->name);
+			char *sig = r_core_cmd_str (core, "afs");
+			r_str_trim (sig);
+			r_str_replace_char (sig, ',', 0);
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afs %s\n", fcn->addr, sig);
+			free (sig);
+		}
+		break;
+	case 'a': // "afna"
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_afna);
+		} else {
+			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
+			if (fcn) {
+				char *name = r_core_anal_fcn_autoname (core, fcn, 'v');
+				if (name) {
+					r_cons_printf (core->cons, "'0x%08"PFMT64x"'afnq %s\n", fcn->addr, name);
+					free (name);
+				}
+			} else {
+				R_LOG_ERROR ("No function at 0x%08"PFMT64x, addr);
+			}
+		}
+		break;
+	case '.': // "afn."
+	case 0: // "afn"
+		fcn = r_anal_get_fcn_in (core->anal, addr, -1);
+		if (fcn) {
+			r_cons_printf (core->cons, "%s\n", fcn->name);
+		}
+		break;
+	case '?':
+		r_core_cmd_help_match (core, help_msg_afn, "afn");
+		break;
+	case 'q':
+		if (input[1] == ' ') {
+			cmd_afn (core, input + 1, true);
+		} else {
+			R_LOG_ERROR ("Missing argument");
+		}
+		break;
+	case ' ': // "afn "
+		{
+			char *p, *name = strdup (r_str_trim_head_ro (input + 1));
+			if ((p = strchr (name, ' '))) {
+				*p++ = 0;
+				addr = r_num_math (core->num, p);
+			}
+			if (r_str_startswith (name, "base64:")) {
+				char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL);
+				if (res) {
+					free (name);
+					name = res;
+				}
+			}
+			if (!*name || !__setFunctionName (core, addr, name, false)) {
+				if (!quiet) {
+					R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, addr);
+				}
+			}
+			free (name);
+		}
+		break;
+	default:
+		r_core_return_invalid_command (core, "afn", input[3]);
+		break;
+	}
 }
 
 static void afCc(RCore *core, const char *input) {
@@ -5446,23 +5532,6 @@ static void cmd_afla(RCore *core, const char *input) {
 	ht_up_free (ht);
 }
 
-#if 0
-static void afe(void) {
-}
-
-static void cmd_afe(RCore *core, const char *input) {
-	switch (input[2]) {
-	case '?':
-		break;
-	case '*':
-		break;
-	default:
-		break;
-	}
-
-}
-#endif
-
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
@@ -6374,136 +6443,27 @@ static int cmd_af(RCore *core, const char *input) {
 		case 'd': // "afbd"
 			cmd_afbd (core, r_str_trim_head_ro (input + 3));
 			break;
-		default:
+		case '?':
 			r_core_cmd_help (core, help_msg_afb);
+			break;
+		default:
+			r_core_return_invalid_command (core, "afb", input[3]);
 			break;
 		}
 		break;
 	case 'n': // "afn"
-		switch (input[2]) {
-		case 's': // "afns"
-			{
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					const char ch = (input[3] == 'j')? 'j': 's'; // "afnsj"
-					free (r_core_anal_fcn_autoname (core, fcn, ch));
-				} else {
-					R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
-				}
-			}
-			break;
-		case '*': // "afn*"
-			{
-				ut64 addr = core->addr;
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
-				if (fcn) {
-					r_cons_printf (core->cons, "'f %s=0x%08"PFMT64x"\n", fcn->name, addr);
-					r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", addr, fcn->name);
-					char *sig = r_core_cmd_str (core, "afs");
-					r_str_trim (sig);
-					r_str_replace_char (sig, ',', 0);
-					r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afs %s\n", addr, sig);
-					free (sig);
-				}
-				}
-			break;
-		case 'a': // "afna"
-			if (input[3] == '?') {
-				r_core_cmd_help (core, help_msg_afna);
-			} else {
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
-				if (fcn) {
-					char *name = r_core_anal_fcn_autoname (core, fcn, 'v');
-					if (name) {
-						r_cons_printf (core->cons, "'0x%08"PFMT64x"'afn %s\n", core->addr, name);
-						free (name);
-					}
-				} else {
-					R_LOG_ERROR ("No function at 0x%08"PFMT64x, core->addr);
-				}
-			}
-			break;
-		case '.': // "afn."
-		case 0: { // "afn"
+		cmd_afn (core, input + 2, false);
+		break;
+	case 'S': // afS"
+		{
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 			if (fcn) {
-				r_cons_printf (core->cons, "%s\n", fcn->name);
-			}
-			}
-			break;
-		case ' ': { // "afn "
-			ut64 off = core->addr;
-			char *p, *name = strdup (r_str_trim_head_ro (input + 3));
-			if ((p = strchr (name, ' '))) {
-				*p++ = 0;
-				off = r_num_math (core->num, p);
-			}
-			if (*name == '?') {
-				r_core_cmd_help_match (core, help_msg_afn, "afn");
+				fcn->maxstack = r_num_math (core->num, input + 3);
 			} else {
-				if (r_str_startswith (name, "base64:")) {
-					char *res = (char *)r_base64_decode_dyn (name + 7, -1, NULL);
-					if (res) {
-						free (name);
-						name = res;
-					}
-				}
-				if (!*name || !__setFunctionName (core, off, name, false)) {
-					R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, off);
-				}
+				R_LOG_ERROR ("Cannot find function at 0x%08"PFMT64x, core->addr);
 			}
-			free (name);
-			}
-			break;
-		default:
-			r_core_cmd_help (core, help_msg_afn);
-			break;
-		} // end of switch (input[2])
-		break;
-	case 'S': { // afS"
-		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
-		if (fcn) {
-			fcn->maxstack = r_num_math (core->num, input + 3);
-			//fcn->stack = fcn->maxstack;
 		}
 		break;
-	}
-#if 0
-	/* this is undocumented, broken and probably have no uses. plz discuss */
-	case 'e': // "afe"
-		{
-		RAnalFunction *fcn;
-		ut64 off = core->addr;
-		char *p, *name = strdup ((input[2]&&input[3])? input + 3: "");
-		if ((p = strchr (name, ' '))) {
-			*p = 0;
-			off = r_num_math (core->num, p + 1);
-		}
-		fcn = r_anal_get_fcn_in (core->anal, off, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
-		if (fcn) {
-			RAnalBlock *b;
-			RListIter *iter;
-			RAnalRef *r;
-			r_list_foreach (fcn->refs, iter, r) {
-				r_cons_printf (core->cons, "0x%08" PFMT64x " -%c 0x%08" PFMT64x "\n", r->at, r->type, r->addr);
-			}
-			r_list_foreach (fcn->bbs, iter, b) {
-				int ok = 0;
-				if (b->type == R_ANAL_BB_TYPE_LAST) ok = 1;
-				if (b->type == R_ANAL_BB_TYPE_FOOT) ok = 1;
-				if (b->jump == UT64_MAX && b->fail == UT64_MAX) ok = 1;
-				if (ok) {
-					r_cons_printf (core->cons, "0x%08" PFMT64x " -r\n", b->addr);
-					// TODO: check if destination is outside the function boundaries
-				}
-			}
-		} else {
-			R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, core->addr);
-		}
-		free (name);
-		}
-		break;
-#endif
 	case 'x': // "afx"
 		switch (input[2]) {
 		case 'm': // "afxm"
@@ -6654,7 +6614,8 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 	if (mode == 'i') {
 		r_core_debug_ri (core, core->anal->reg, 0);
 		return;
-	} else if (mode == 'j') {
+	}
+	if (mode == 'j') {
 		pj = r_core_pj_new (core);
 		if (!pj) {
 			return;
@@ -6721,28 +6682,11 @@ static void __anal_reg_list(RCore *core, int type, int bits, char mode) {
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
-
 	core->dbg->reg = hack;
 }
 
-#if 0
-static RRegItem *reg_by_name_role(RCore *core, const char *n) {
-	RRegItem *r = r_reg_get (core->anal->reg, n, -1);
-	if (!r) {
-		int role = r_reg_get_name_idx (n);
-		if (role != -1) {
-			const char *alias = r_reg_get_name (core->anal->reg, role);
-			if (alias) {
-				r = r_reg_get (core->anal->reg, alias, -1);
-			}
-		}
-	}
-	return r;
-}
-#endif
-
 static bool reg_name_role_set(RCore *core, const char *name, ut64 n) {
-	RRegItem *r = r_reg_get (core->anal->reg, name, -1); // reg_by_name_role (core, name);
+	RRegItem *r = r_reg_get (core->anal->reg, name, -1);
 	if (r) {
 		r_reg_set_value (core->anal->reg, r, n);
 		r_debug_reg_sync (core->dbg, R_REG_TYPE_ALL, true);
@@ -6873,10 +6817,9 @@ void cmd_anal_reg(RCore *core, const char *str) {
 		break;
 	case 'w': // "arw"
 		switch (str[1]) {
-		case '?': {
+		case '?':
 			r_core_cmd_help (core, help_msg_arw);
 			break;
-		}
 		case ' ':
 			r_reg_arena_set_bytes (core->anal->reg, str + 1);
 			break;
@@ -7000,7 +6943,7 @@ void cmd_anal_reg(RCore *core, const char *str) {
 						r_cons_printf (core->cons, "%d\n", o);
 						free (rf);
 					} else {
-						R_LOG_ERROR ("unknown conditional or flag register");
+						R_LOG_ERROR ("Unknown conditional or flag register");
 					}
 				}
 			} else {
