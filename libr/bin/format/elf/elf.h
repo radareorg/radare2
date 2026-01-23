@@ -159,6 +159,7 @@ struct Elf_(obj_t) {
 	int endian;
 	bool verbose;
 	bool has_nobtcfi;
+	bool has_nx;
 	const char* file;
 	RBuffer *b;
 	Sdb *kv;
