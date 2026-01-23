@@ -1,0 +1,8 @@
+NAME=qnx note sets nx
+FILE=bins/elf/hello_world_qnx_nx
+ARGS=-e bin.relocs.apply=true
+CMDS=iI~nx
+EXPECT=<<EOF
+nx       true
+EOF
+RUN
