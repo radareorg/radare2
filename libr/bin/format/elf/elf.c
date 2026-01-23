@@ -1580,12 +1580,12 @@ static bool elf_init(ELFOBJ *eo) {
 	if (!init_phdr (eo) && !is_bin_etrel (eo)) {
 		R_LOG_DEBUG ("Cannot initialize program headers");
 	}
-	eo->has_nx = compute_has_nx (eo);
 
 	if (eo->ehdr.e_type != ET_CORE) {
 		if (!init_shdr (eo)) {
 			R_LOG_DEBUG ("Cannot initialize section headers");
 		}
+		eo->has_nx = compute_has_nx (eo);
 		if (!init_strtab (eo)) {
 			R_LOG_DEBUG ("Cannot initialize strings table");
 		}
