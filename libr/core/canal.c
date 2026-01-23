@@ -405,6 +405,28 @@ static bool blacklisted_word(const char* name) {
 	return false;
 }
 
+static bool is_valid_function_name(const char* name) {
+	if (R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	const char *p = name;
+	while (*p) {
+		if (!IS_PRINTABLE (*p)) {
+			return false;
+		}
+		p++;
+	}
+	if (r_str_startswith (name, "str.") ||
+			r_str_startswith (name, "func.") ||
+			r_str_startswith (name, "fcn.")) {
+		return false;
+	}
+	if (blacklisted_word (name)) {
+		return false;
+	}
+	return true;
+}
+
 static inline ut64 cmpstrings(const void *a) {
 	return r_str_hash64 (a);
 }
@@ -477,19 +499,34 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 	r_list_uniq_inplace (names, cmpstrings);
 	if (mode == 'l') {
 		r_list_foreach (names, iter, n) {
-			r_cons_printf (core->cons, "%s\n", n);
+			r_cons_println (core->cons, n);
 		}
 	} else {
+		// Better name selection logic with validation
+		char *best_name = NULL;
 		r_list_foreach (names, iter, n) {
-			/// XXX: improve guessing here
-			final_name = strdup (n);
-			break;
+			if (is_valid_function_name (n)) {
+				if (best_name) {
+					if (strlen (n) < strlen (best_name)) {
+						free (best_name);
+						best_name = strdup (n);
+					}
+				} else {
+					best_name = strdup (n);
+				}
+			}
+		}
+		if (!best_name) {
+			best_name = r_list_first (names);
+		}
+		if (best_name) {
+			final_name = best_name;
 		}
 	}
 	r_list_free (names);
 	if (pj) {
 		pj_end (pj);
-		r_cons_printf (core->cons, "%s\n", pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	return final_name;
@@ -565,7 +602,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	r_list_uniq_inplace (names, cmpstrings);
 	r_list_foreach (names, iter, name) {
 		if (mode == 'l') {
-			r_cons_printf (core->cons, "%s\n", name);
+			r_cons_println (core->cons, name);
 		}
 		if (strstr (name, "getopt") || strstr (name, "optind")) {
 			use_getopt = true;
@@ -582,7 +619,7 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 			bestname = strdup (name);
 		}
 		if (mode == 's') {
-			r_cons_printf (core->cons, "%s\n", name);
+			r_cons_println (core->cons, name);
 		} else if (pj) {
 			pj_s (pj, name);
 		}
@@ -593,14 +630,13 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 		pj_end (pj);
 	}
 	if (pj) {
-		r_cons_printf (core->cons, "%s\n", pj_string (pj));
+		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
 	// TODO: append counter if name already exists
 	if (use_getopt) {
 		if (!strcmp (bestname, "main")) {
-			free (bestname);
-			return strdup ("main");
+			return bestname;
 		}
 		free (bestname);
 		return strdup ("main_args");
