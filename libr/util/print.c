@@ -125,8 +125,8 @@ R_API int r_util_lines_getline(ut64 *lines_cache, int lines_cache_sz, ut64 off) 
 }
 
 static void r_print_stereogram_private(const char *bump, int w, int h, char *out, int size) {
-	static R_TH_LOCAL char data[32768]; // ???
-	const char *string = "Az+|.-=/^@_pT";
+	char data[32768] = {0};
+	const char string[] = "Az+|.-=/^@_pT";
 	const int string_len = strlen (string);
 
 	int x, s, l = 0, l2 = 0, ch;
