@@ -481,15 +481,19 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 				continue;
 			}
 			const char *last_dot = r_str_rchr (name, NULL, '.');
-			if (last_dot) {
-				r_list_append (names, r_str_newf ("auto.sub.%s", last_dot + 1));
-			} else {
-				r_list_append (names, r_str_newf ("auto.sub.%s", name));
+			const char *base_name = last_dot ? last_dot + 1 : name;
+			char *filtered = r_name_filter_dup (base_name);
+			if (filtered) {
+				r_list_append (names, r_str_newf ("auto.sub.%s", filtered));
+				free (filtered);
 			}
 		}
 	}
 	if (!blacklisted_word (fcn->name)) {
-		r_list_append (names, strdup (fcn->name));
+		char *filtered = r_name_filter_dup (fcn->name);
+		if (filtered) {
+			r_list_append (names, filtered);
+		}
 	}
 
 	RVecAnalRef_free (refs);
@@ -536,7 +540,10 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	RList *names = r_list_newf (free);
 	if (!blacklisted_word (fcn->name)) {
-		r_list_append (names, strdup (fcn->name));
+		char *filtered = r_name_filter_dup (fcn->name);
+		if (filtered) {
+			r_list_append (names, filtered);
+		}
 	}
 	PJ *pj = NULL;
 	if (mode == 'j') {
@@ -548,11 +555,13 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 	char *fd = r_core_cmd_str_at (core, fcn->addr, "fd");
 	if (r_str_startswith (fd, "sym.") && !r_str_startswith (fd, "sym.func.")) {
 		r_str_trim (fd);
-		r_list_append (names, fd);
-		bestname = strdup (fd);
-	} else {
-		free (fd);
+		char *filtered = r_name_filter_dup (fd);
+		if (filtered) {
+			r_list_append (names, filtered);
+			bestname = strdup (filtered);
+		}
 	}
+	free (fd);
 	// TODO: check if import, if its in plt, by name, by rbin...
 	int scr_color = r_config_get_i (core->config, "scr.color");
 	r_config_set_i (core->config, "scr.color", 0);
@@ -579,21 +588,11 @@ static char *autoname_slow(RCore *core, RAnalFunction *fcn, int mode) {
 				name = dot + 1;
 			}
 		}
-		if (*name == '"') {
-			r_str_replace_char (name, '"', '_');
-		}
-		r_str_replace_char (name, ';', '_');
-		char *sp = strchr (name, ' ');
-		if (sp && !strchr (name, ']')) {
-			name = sp + 1;
-			char *sp2 = strchr (name, ' ');
-			if (sp2) {
-				*sp2 = 0;
-			}
-		}
-		r_str_replace_char (name, ']', '_');
 		if (*name) {
-			r_list_append (names, strdup (name));
+			char *filtered = r_name_filter_dup (name);
+			if (filtered) {
+				r_list_append (names, strdup (filtered));
+			}
 		}
 	}
 	r_list_free (strings);
@@ -2600,7 +2599,7 @@ repeat:
 			break;
 		case R_GRAPH_FORMAT_GML:
 		case R_GRAPH_FORMAT_GMLFCN: {
-			RFlagItem *flag = r_flag_get_in (core->flags, fcni->addr);
+			RFlagItem *flag = r_flag_get_at (core->flags, fcni->addr, false);
 			if (iteration == 0) {
 				char *msg = flag? strdup (flag->name): r_str_newf ("0x%08"PFMT64x, fcni->addr);
 				r_cons_printf (core->cons, "  node [\n"
@@ -2632,7 +2631,7 @@ repeat:
 		}
 		r_list_foreach (calls, iter2, fcnr) {
 			// TODO: display only code or data refs?
-			RFlagItem *flag = r_flag_get_in (core->flags, fcnr->addr);
+			RFlagItem *flag = r_flag_get_at (core->flags, fcnr->addr, false);
 			char *fcnr_name = (flag && flag->name) ? flag->name : r_str_newf ("unk.0x%"PFMT64x, fcnr->addr);
 			switch (fmt) {
 			case R_GRAPH_FORMAT_GMLFCN:

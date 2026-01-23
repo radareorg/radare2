@@ -642,6 +642,10 @@ static int flagItemPriority(const RFlagItem *item) {
 	if (r_str_startswith (n, "fcn.")) {
 		return 6;
 	}
+	// Also filter out section names
+	if (r_str_startswith (item->name, "section.")) {
+		return 10;
+	}
 	return 6;
 }
 

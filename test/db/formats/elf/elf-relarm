@@ -55,8 +55,8 @@ vaddr      paddr      type   ntype name
 0x10020064 0x10020064 ADD_32 21    printf
 0x1002006c 0x1002006c ADD_32 21    __gmon_start__
 0x10020074 0x10020074 ADD_32 21    __libc_start_main
-0x100004a0 str.Simple_PPC_program. str.Simple_PPC_program.
-0x100004a4 reloc.printf reloc.printf
+0x100004a0 str.Simple_PPC_program.
+0x100004a4 reloc.printf
 0x100004a4 "Simple PPC program."
 EOF
 RUN
