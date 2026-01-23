@@ -4012,15 +4012,16 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 						if (show_offset) {
 							r_cons_printf (core->cons, "%s0x%08" PFMT64x " " Color_RESET, use_color? pal->addr: "", addr);
 						}
-						if (string2) {
-							if (!strcmp (string, string2)) {
-								string2 = NULL;
-							}
+						if (string2 && strstr (string2, string)) {
+							R_FREE (string2);
 						}
 						r_cons_printf (core->cons, "%s%s%s%s%s%s%s\n", r_str_get (linecolor), r_str_get (string2), string2? " ": "", string, flag? " ": "", flag? flag->name: "", Color_RESET);
 					} else {
 						if (show_offset) {
 							r_cons_printf (core->cons, "0x%08" PFMT64x " ", addr);
+						}
+						if (string2 && strstr (string2, string)) {
+							R_FREE (string2);
 						}
 						r_cons_printf (core->cons, "%s%s%s%s%s\n", r_str_get (string2), string2? " ": "", string, flag? " ": "", flag? flag->name: "");
 					}

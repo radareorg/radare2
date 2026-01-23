@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_util.h>
 
@@ -154,7 +154,11 @@ R_API char *r_name_filter_dup(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	char *s = strdup (name);
 	r_name_filter (s, -1);
-	return s;
+	if (*s) {
+		return s;
+	}
+	free (s);
+	return NULL;
 }
 
 // filter out shell special chars
