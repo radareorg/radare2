@@ -8,7 +8,7 @@ core_plugins = []
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
 asm_plugins = [ 'null', 'att2intel' ]
-anal_plugins = [ 'null', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path' ]
+anal_plugins = [ 'null', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path', 'drcov' ]
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]

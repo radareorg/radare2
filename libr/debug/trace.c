@@ -2,7 +2,6 @@
 
 #include <r_debug.h>
 #include <r_core.h>
-#include <r_util/r_str.h>
 #include <sdb/ht_pu.h>
 
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
