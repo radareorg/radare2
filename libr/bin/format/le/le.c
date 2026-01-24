@@ -656,6 +656,11 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
 				RBinReloc *new = R_NEW0 (RBinReloc);
 				*new = *rel;
+				if (rel->import) {
+					new->import = R_NEW0 (RBinImport);
+					new->import->name = rel->import->name ? r_bin_name_clone (rel->import->name) : NULL;
+					new->import->ordinal = rel->import->ordinal;
+				}
 				new->addend = base_target_address + (fixupinfo & 0xFFFFF);
 				r_list_append (l, new);
 				source = (fixupinfo >> 20) & 0xFFF;
@@ -668,6 +673,11 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			rel->paddr = cur_section ? cur_section->paddr + off : 0;
 			RBinReloc *new = R_NEW0 (RBinReloc);
 			*new = *rel;
+			if (rel->import) {
+				new->import = R_NEW0 (RBinImport);
+				new->import->name = rel->import->name ? r_bin_name_clone (rel->import->name) : NULL;
+				new->import->ordinal = rel->import->ordinal;
+			}
 			r_list_append (l, new);
 			offset += sizeof (ut16);
 			repeat--;
