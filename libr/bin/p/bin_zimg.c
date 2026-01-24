@@ -17,6 +17,15 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return bf->bo->bin_obj != NULL;
 }
 
+
+static void destroy(RBinFile *bf) {
+	struct r_bin_zimg_obj_t *obj = bf->bo->bin_obj;
+	if (obj) {
+		r_unref (obj->b);
+		free (obj);
+	}
+}
+
 static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
@@ -62,6 +71,7 @@ RBinPlugin r_bin_plugin_zimg = {
 	},
 	.get_sdb = &get_sdb,
 	.load = &load,
+	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
 	.info = &info,
