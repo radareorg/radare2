@@ -11,15 +11,14 @@ $ sudo ln -fs /Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB
 $ while : ; do debugserver 0.0.0.0:9999 /bin/ls ; done
 #endif
 
-#define DEBUG 0
 
 typedef struct {
 	RSocket *gs;
-	int use_lldb;
-	int usefirst;
-	int lastbroken;
-	int use_pwndbg;
-	int use_connect;
+		bool use_lldb;
+	bool usefirst;
+	bool lastbroken;
+	bool use_pwndbg;
+	bool use_connect;
 } RIOSysGdb;
 
 // TODO: make it vargarg...
@@ -27,7 +26,7 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 	char buf[4096] = { 0 };
 	if (cmd) {
 		if (state->usefirst) {
-			state->usefirst = 0;
+			state->usefirst = false;
 			free (runcmd (state, "starti"));
 		}
 		r_socket_printf (state->gs, "%s\n", cmd);
@@ -40,20 +39,18 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 			}
 			r_socket_write (state->gs, cmd, strlen (cmd));
 		} else {
-			state->usefirst = 1;
+			state->usefirst = true;
 		}
 	}
 	if (state->lastbroken) {
 		r_socket_read (state->gs, (ut8 *)buf, sizeof (buf) - 1);
-		state->lastbroken = 0;
+		state->lastbroken = false;
 	}
 	int timeout = 10000;
 	char *str = NULL;
 	r_socket_block_time (state->gs, 1, timeout, 0);
 	while (1) {
-#if DEBUG
-		eprintf ("LOOP\n");
-#endif
+		R_LOG_DEBUG ("LOOP");
 		memset (buf, 0, sizeof (buf));
 #
 		if (state->use_lldb && !r_socket_ready (state->gs, 0, 2500)) {
@@ -67,11 +64,9 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 		}
 		int rc = r_socket_read (state->gs, (ut8 *)buf, sizeof (buf) - 1); // always NULL-terminate the string
 		if (rc < 0) {
-#if DEBUG
-			eprintf ("socket-read-break\n");
-#endif
+			R_LOG_DEBUG ("socket-read-break");
 			r_socket_read (state->gs, (ut8 *)buf, sizeof (buf) - 1);
-			state->lastbroken = 1;
+			state->lastbroken = true;
 			free (str);
 			return NULL;
 		}
@@ -80,20 +75,16 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 		}
 		buf[sizeof (buf) - 1] = 0;
 		r_str_ansi_strip (buf);
-#if DEBUG
-		write (1, "READ: (", 7);
-		write (1, buf, strlen (buf));
-		write (1, ")\n", 2);
-#endif
+		R_LOG_DEBUG ("READ: (%s)", buf);
 		if (state->use_lldb) {
 			if (!cmd) {
-				state->usefirst = 1;
+				state->usefirst = true;
 				return r_str_append (str, buf);
 			}
 			if (0 && state->usefirst) {
 				str = r_str_append (str, buf);
 				int rc = r_socket_read (state->gs, (ut8 *)buf, sizeof (buf) - 1); // always NULL-terminate the string
-				state->usefirst = 0;
+				state->usefirst = false;
 				if (rc < 1) {
 					return str;
 				}
@@ -106,7 +97,7 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 		} else {
 			char *promptFound;
 			if (!state->use_pwndbg && state->usefirst) {
-				state->use_pwndbg = strstr (buf, "pwndbg>")? 1: 0;
+				state->use_pwndbg = strstr (buf, "pwndbg>")? true: false;
 			}
 			if (state->use_pwndbg) {
 				promptFound = strstr (buf, "pwndbg>");
@@ -271,15 +262,15 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 
 		// Initialize state with platform-specific defaults
 #if __APPLE__
-		state->use_lldb = 1;
-		state->usefirst = 1;
+		state->use_lldb = true;
+		state->usefirst = true;
 #else
-		state->use_lldb = 0;
-		state->usefirst = 0;
+		state->use_lldb = false;
+		state->usefirst = false;
 #endif
-		state->lastbroken = 0;
-		state->use_pwndbg = 0;
-		state->use_connect = 0;
+		state->lastbroken = false;
+		state->use_pwndbg = false;
+		state->use_connect = false;
 
 		// runcmd (state, "gdb-remote localhost:9999");
 		state->gs = r_socket_new (0);
@@ -294,10 +285,8 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 			return NULL;
 		}
 		char *reply = runcmd (state, NULL);
-		state->use_connect = strchr (pathname + 9, ':')? 1: 0;
-#if DEBUG
-		eprintf ("REPLY (%s)\n", reply);
-#endif
+		state->use_connect = strchr (pathname + 9, ':')? true: false;
+		R_LOG_DEBUG ("REPLY (%s)", reply);
 		if (reply) {
 			int rw = 7;
 			free (reply);
