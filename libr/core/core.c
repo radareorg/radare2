@@ -2821,8 +2821,8 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
-	r_event_free (c->ev);
 	r_lib_free (c->lib);
+	r_event_free (c->ev);
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}

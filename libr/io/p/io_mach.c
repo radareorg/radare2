@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_userconf.h>
 
@@ -54,15 +54,16 @@ typedef struct r_io_mach_data_t {
 	ut32 magic;
 	int pid;
 	int tid;
+	task_t old_task;
+	int old_pid;
+	ut64 the_lower;
+	vm_size_t pagesize;
 	void *data;
 } RIOMachData;
 
 typedef struct {
 	task_t task;
 } RIOMach;
-
-#undef R_IO_NFDS
-#define R_IO_NFDS 2
 
 static task_t task_for_pid_workaround(int pid) {
 	host_t myhost = mach_host_self ();
@@ -114,8 +115,6 @@ static task_t task_for_pid_ios9pangu(int pid) {
 
 static task_t pid_to_task(RIODesc *fd, int pid) {
 	task_t task = 0;
-	static R_TH_LOCAL task_t old_task = 0;
-	static R_TH_LOCAL int old_pid = -1;
 	kern_return_t kr;
 
 	RIOMachData *iodd = fd? (RIOMachData *)fd->data: NULL;
@@ -123,21 +122,21 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 	if (iodd) {
 		riom = iodd->data;
 		if (riom && riom->task) {
-			old_task = riom->task;
+			iodd->old_task = riom->task;
 			riom->task = 0;
-			old_pid = iodd->pid;
+			iodd->old_pid = iodd->pid;
 		}
-	}
-	if (old_task != 0) {
-		if (old_pid == pid) {
-			return old_task;
-		}
-		// we changed the process pid so deallocate a ref from the old_task
-		// since we are going to get a new task
-		kr = mach_port_deallocate (mach_task_self (), old_task);
-		if (kr != KERN_SUCCESS) {
-			R_LOG_ERROR ("pid_to_task: fail to deallocate port");
-			return 0;
+		if (iodd->old_task != 0) {
+			if (iodd->old_pid == pid) {
+				return iodd->old_task;
+			}
+			// we changed the process pid so deallocate a ref from the old_task
+			// since we are going to get a new task
+			kr = mach_port_deallocate (mach_task_self (), iodd->old_task);
+			if (kr != KERN_SUCCESS) {
+				R_LOG_ERROR ("pid_to_task: fail to deallocate port");
+				return 0;
+			}
 		}
 	}
 	int err = task_for_pid (mach_task_self (), (pid_t)pid, &task);
@@ -152,8 +151,10 @@ static task_t pid_to_task(RIODesc *fd, int pid) {
 			}
 		}
 	}
-	old_task = task;
-	old_pid = pid;
+	if (iodd) {
+		iodd->old_task = task;
+		iodd->old_pid = pid;
+	}
 	return task;
 }
 
@@ -168,16 +169,12 @@ static int __get_pid(RIODesc *desc) {
 	// dupe for? r_io_desc_get_pid (desc);
 	if (desc) {
 		RIOMachData *iodd = desc->data;
-		if (iodd) {
-			if (iodd->magic == R_MACH_MAGIC) {
-				return iodd->pid;
-			}
+		if (iodd && iodd->magic == R_MACH_MAGIC) {
+			return iodd->pid;
 		}
 	}
 	return -1;
 }
-
-static R_TH_LOCAL ut64 the_lower = UT64_MAX;
 
 static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	struct vm_region_submap_info_64 info;
@@ -189,13 +186,14 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 	int tid = __get_pid (fd);
 	task_t task = pid_to_task (fd, tid);
 	ut64 lower = addr;
+	RIOMachData *iodd = fd? (RIOMachData *)fd->data: NULL;
 #if __arm64__ || __aarch64__ || __arm64e__
 	size = osize = 16384; // acording to frida
 #else
 	size = osize = 4096;
 #endif
-	if (the_lower != UT64_MAX) {
-		return R_MAX (addr, the_lower);
+	if (iodd && iodd->the_lower != UT64_MAX) {
+		return R_MAX (addr, iodd->the_lower);
 	}
 
 	for (;;) {
@@ -226,7 +224,9 @@ static ut64 getNextValid(RIO *io, RIODesc *fd, ut64 addr) {
 		address += size;
 		size = 0;
 	}
-	the_lower = lower;
+	if (iodd) {
+		iodd->the_lower = lower;
+	}
 	return lower;
 }
 
@@ -305,12 +305,18 @@ static int tsk_getperm(RIO *io, task_t task, vm_address_t addr) {
 static int tsk_pagesize(RIODesc *desc) {
 	int tid = __get_pid (desc);
 	task_t task = pid_to_task (desc, tid);
-	static R_TH_LOCAL vm_size_t pagesize = 0;
-	return pagesize
-		? pagesize
-		: (host_page_size (task, &pagesize) == KERN_SUCCESS)
-		? pagesize
-		: 4096;
+	RIOMachData *iodd = desc? (RIOMachData *)desc->data: NULL;
+	if (iodd && iodd->pagesize) {
+		return iodd->pagesize;
+	}
+	vm_size_t pagesize = 0;
+	if (host_page_size (task, &pagesize) == KERN_SUCCESS) {
+		if (iodd) {
+			iodd->pagesize = pagesize;
+		}
+		return pagesize;
+	}
+	return 4096;
 }
 
 static vm_address_t tsk_getpagebase(RIODesc *desc, ut64 addr) {
@@ -427,6 +433,10 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	RIOMachData *iodd = R_NEW0 (RIOMachData);
 	iodd->pid = pid;
 	iodd->tid = pid;
+	iodd->old_task = 0;
+	iodd->old_pid = -1;
+	iodd->the_lower = UT64_MAX;
+	iodd->pagesize = 0;
 	iodd->data = NULL;
 	riom = R_NEW0 (RIOMach);
 	riom->task = task;
