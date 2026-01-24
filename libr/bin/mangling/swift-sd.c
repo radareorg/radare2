@@ -61,7 +61,7 @@ static const SwiftType types[] = {
 };
 
 /* attributes */
-static const SwiftType metas [] = {
+static const SwiftType metas[] = {
 	{ "FC", "ClassFunc" },
 	{ "S0_FT", "?" },
 	{ "RxC", ".." },
@@ -81,10 +81,10 @@ static const SwiftType flags[] = {
 	{ "D", "deallocator" },
 	{ "c", "constructor" },
 	{ "C", "allocator" },
-	{ NULL, NULL}
+	{ NULL, NULL }
 };
 
-static const char *getnum(const char* n, int *num) {
+static const char *getnum(const char *n, int *num) {
 	if (num && *n) {
 		int snum = atoi (n);
 		if (snum > 0) {
@@ -93,20 +93,20 @@ static const char *getnum(const char* n, int *num) {
 			*num = 0;
 		}
 	}
-	while (*n && *n >= '0' && *n <='9') {
+	while (*n && *n >= '0' && *n <= '9') {
 		n++;
 	}
 	return n;
 }
 
-static const char *numpos(const char* n) {
+static const char *numpos(const char *n) {
 	while (*n && (*n < '0' || *n > '9')) {
 		n++;
 	}
 	return n;
 }
 
-static const char *hasdigit(const char* n) {
+static const char *hasdigit(const char *n) {
 	while (*n) {
 		if (isdigit (*n)) {
 			return n;
@@ -146,46 +146,43 @@ static const char *resolve(const SwiftType *t, const char *foo, const char **bar
 	return NULL;
 }
 
-static char *swift_demangle_cmd(const char *s) {
-	/* XXX: command injection issue here */
-	static R_TH_LOCAL char *swift_demangle = NULL;
-	if (have_swift_demangle == -1) {
-		if (!swift_demangle) {
-			have_swift_demangle = 0;
-			swift_demangle = r_file_path ("swift-demangle");
-			if (!swift_demangle) {
-				char *xcrun = r_file_path ("xcrun");
-				if (xcrun) {
-					swift_demangle = r_str_newf ("%s swift-demangle", xcrun);
-					have_swift_demangle = 1;
-					free (xcrun);
-				} else {
-					char *found = r_file_path ("swift");
-					if (found) {
-						swift_demangle = r_str_newf ("%s demangle", found);
-						free (found);
-					}
-					have_swift_demangle = 1;
+static R_TH_LOCAL char *swift_demangle_cmd_str = NULL;
 
+static char *swift_demangle_cmd(const char *s) {
+	if (have_swift_demangle == -1) {
+		have_swift_demangle = 0;
+		char *sd = r_file_path ("swift-demangle");
+		if (sd) {
+			swift_demangle_cmd_str = r_str_newf ("%s -compact", sd);
+			free (sd);
+		} else {
+			char *xcrun = r_file_path ("xcrun");
+			if (xcrun) {
+				swift_demangle_cmd_str = r_str_newf ("%s swift-demangle -compact", xcrun);
+				free (xcrun);
+			} else {
+				char *sw = r_file_path ("swift");
+				if (sw) {
+					swift_demangle_cmd_str = r_str_newf ("%s demangle -compact", sw);
+					free (sw);
 				}
 			}
 		}
-	}
-	if (swift_demangle) {
-		if (strchr (s, '\'') || strchr (s, '\\')) {
-			/* nice try */
-			return NULL;
+		if (swift_demangle_cmd_str) {
+			have_swift_demangle = 1;
 		}
-		//char *res = r_sys_cmd_strf ("%s -compact -simplified '%s'",
-		char *res = r_sys_cmd_strf ("%s -compact '%s'", swift_demangle, s);
-		if (res && !*res) {
-			free (res);
-			res = NULL;
-		}
-		r_str_trim (res);
-		return res;
 	}
-	return NULL;
+	if (!swift_demangle_cmd_str) {
+		return NULL;
+	}
+	char *res = NULL;
+	r_sys_cmd_str_full (swift_demangle_cmd_str, s, -1, &res, NULL, NULL);
+	if (res && !*res) {
+		free (res);
+		return NULL;
+	}
+	r_str_trim (res);
+	return res;
 }
 
 static char *swift_demangle_lib(const char *s) {
@@ -368,7 +365,7 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 
 static char *my_swift_demangler(const char *s) {
 	// SwiftState ss = { 0 };
-	SwiftCheck is = {0};
+	SwiftCheck is = { 0 };
 	is.first = true;
 #if 0
 	if (r_str_startswith (s, "$s")) {
@@ -412,7 +409,8 @@ static char *my_swift_demangler(const char *s) {
 		}
 		// do nothing
 	} else {
-		p = str_seek (p, tail? 1: (p[0] && p[1])? 2: 0);
+		p = str_seek (p, tail? 1: (p[0] && p[1])? 2
+							: 0);
 	}
 	q = getnum (p, NULL);
 
@@ -422,12 +420,12 @@ static char *my_swift_demangler(const char *s) {
 			r_strbuf_append (out, "Swift.String.init(");
 			p += 3;
 		}
-		// TODO: move into get_tail()
+		// TODO: move into get_tail ()
 		if (r_str_startswith (p, "vdv")) {
 			tail = "..field";
 			p += 3;
 		}
-		// TODO: move into get_tail()
+		// TODO: move into get_tail ()
 		if (r_str_startswith (p, "oFC")) {
 			tail = "..init.witnesstable";
 			p = str_seek (p, 4); // XXX
@@ -478,9 +476,9 @@ static char *my_swift_demangler(const char *s) {
 			if (attr && *q == 'R') {
 				attr = NULL;
 				q += 3;
-//				//printf ("Template (%s)\n", attr);
+				//				//printf ("Template (%s)\n", attr);
 			}
-//			return 0;
+			//			return 0;
 		}
 		/* parse accessors */
 		if (attr) {
@@ -603,7 +601,7 @@ moreitems:
 						q++;
 					}
 					if (*q == 'S') {
-					//	r_strbuf_append (out, ".String");
+						//	r_strbuf_append (out, ".String");
 					}
 					switch (q[1]) {
 					case 'g':
@@ -679,7 +677,7 @@ moreitems:
 					p = resolve (types, q + 1, &attr); // type
 					if (!p) {
 						int n = 0;
-repeat:;
+					repeat:;
 						const char *Q = getnum (q + 1, &n);
 						if (str_isnotempty_n (Q, n)) {
 							r_strbuf_append (out, ".");
@@ -770,7 +768,7 @@ repeat:;
 					if (attr && !strcmp (attr, "generic")) {
 						is.generic = true;
 					}
-					//printf ("TYPE: %s LEN %d VALUE %s\n",
+					// printf ("TYPE: %s LEN %d VALUE %s\n",
 					//	attr, len, getstring (q, len));
 					if (!len) {
 						if (is.retmode) {
@@ -808,16 +806,16 @@ repeat:;
 									r_strbuf_append (out, ", ");
 								}
 							}
-								if (!str_equals_n (q, len, "_")) {
-									strbuf_append_n (out, q, len);
-									r_strbuf_append (out, is.generic? ">": "");
-									is.first = (*q != '_');
-									if (is.generic && !is.first) {
-										break;
-									}
-								} else {
-									r_strbuf_append (out, ")");
+							if (!str_equals_n (q, len, "_")) {
+								strbuf_append_n (out, q, len);
+								r_strbuf_append (out, is.generic? ">": "");
+								is.first = (*q != '_');
+								if (is.generic && !is.first) {
+									break;
 								}
+							} else {
+								r_strbuf_append (out, ")");
+							}
 						} else {
 							if (attr) {
 								r_strbuf_appendf (out, " -> %s", attr);
@@ -865,11 +863,11 @@ repeat:;
 		r_strbuf_prepend (out, "dynamic variable ");
 	} else if (r_str_endswith (s, "FTx")) {
 		r_strbuf_prepend (out, "dynamic key ");
-	} else if (r_str_endswith (s, "FTI"))  {
+	} else if (r_str_endswith (s, "FTI")) {
 		r_strbuf_prepend (out, "dynamic thunk ");
-	} else if (r_str_endswith (s, "ivs"))  {
+	} else if (r_str_endswith (s, "ivs")) {
 		r_strbuf_prepend (out, "setter ");
-	} else if (r_str_endswith (s, "ivg"))  {
+	} else if (r_str_endswith (s, "ivg")) {
 		r_strbuf_prepend (out, "getter ");
 	}
 
