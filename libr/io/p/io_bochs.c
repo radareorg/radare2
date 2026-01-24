@@ -1,4 +1,4 @@
-// Copyright (c) 2016-2024 - LGPL, SkUaTeR, All rights reserved.
+/* Copyright (c) 2016-2026 - LGPL, SkUaTeR, All rights reserved. */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -8,8 +8,14 @@ typedef struct {
 	libbochs_t desc;
 } RIOBochs;
 
-static R_TH_LOCAL libbochs_t *desc = NULL;
-static R_TH_LOCAL RIODesc *riobochs = NULL;
+static libbochs_t *get_desc_from_fd(RIODesc *fd) {
+	if (!fd || !fd->data) {
+		return NULL;
+	}
+	RIOBochs *riob = fd->data;
+	return &riob->desc;
+}
+
 extern RIOPlugin r_io_plugin_bochs; // forward declaration
 
 static bool __plugin_open(RIO *io, const char *file, bool many) {
@@ -20,9 +26,6 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 	char *fileBochs = NULL;
 	char *fileCfg = NULL;
 	int l;
-	if (riobochs) {
-		return riobochs;
-	}
 	if (!__plugin_open (io, file, 0)) {
 		return NULL;
 	}
@@ -40,14 +43,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 		R_LOG_ERROR ("can't find :");
 		return NULL;
 	}
-	RIOBochs  *riob = R_NEW0 (RIOBochs);
+	RIOBochs *riob = R_NEW0 (RIOBochs);
 	if (bochs_open (&riob->desc, fileBochs, fileCfg) == true) {
-		desc = &riob->desc;
-		riobochs = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
-		//riogdb = r_io_desc_new (&r_io_plugin_gdb, riog->desc.sock->fd, file, rw, mode, riog);
+		RIODesc *riod = r_io_desc_new (io, &r_io_plugin_bochs, file, rw, mode, riob);
 		free (fileBochs);
 		free (fileCfg);
-		return riobochs;
+		return riod;
 	}
 	free (riob);
 	free (fileBochs);
@@ -64,21 +65,28 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	memset (buf, io->Oxff, count);
-	ut64 addr = io->off;
+	libbochs_t *desc = get_desc_from_fd (fd);
 	if (!desc || !desc->data) {
 		return -1;
 	}
-	bochs_read (desc,addr,count,buf);
+	memset (buf, io->Oxff, count);
+	ut64 addr = io->off;
+	bochs_read (desc, addr, count, buf);
 	return count;
 }
 
 static bool __close(RIODesc *fd) {
+	libbochs_t *desc = get_desc_from_fd (fd);
 	bochs_close (desc);
+	R_FREE (fd->data);
 	return true;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
+	libbochs_t *desc = get_desc_from_fd (fd);
+	if (!desc) {
+		return NULL;
+	}
 	if (*cmd == '?' || !strcmp (cmd, "help")) {
 		eprintf ("Usage: :cmd args\n"
 			" ::<bochscmd>      - Send a bochs command.\n"
