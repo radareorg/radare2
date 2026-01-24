@@ -246,19 +246,27 @@ R_API ut64 r_num_from_ternary(const char *inp) {
 
 // TODO: try to avoid the use of sscanf
 /* old get_offset */
-R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
+R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **err) {
 	int i, j;
 	char lch;
 	ut64 ret = 0LL;
 	ut32 s, a;
+	RNum num_local = {0};
 
-	if (num && !num->nc.under_calc) {
-		error (num, NULL);
-	}
-	str = r_str_trim_head_ro (str);
 	if (R_STR_ISEMPTY (str)) {
+		if (err) {
+			*err = NULL;
+		}
 		return 0;
 	}
+	if (num) {
+		if (!num->nc.under_calc) {
+			error (num, NULL);
+		}
+	} else {
+		num = &num_local;
+	}
+	str = r_str_trim_head_ro (str);
 	if (r_str_startswith (str, "1u")) { // '1' is captured by op :(
 		if (num && num->value == UT64_MAX) {
 			num->value = 0;
@@ -487,7 +495,14 @@ R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
 	if (num) {
 		num->value = ret;
 	}
+	if (err) {
+		*err = num ? num->nc.calc_err : NULL;
+	}
 	return ret;
+}
+
+R_API ut64 r_num_get(RNum * R_NULLABLE num, const char *str) {
+	return r_num_get_err (num, str, NULL);
 }
 
 R_API int r_num_is_float(RNum *num, const char *str) {
