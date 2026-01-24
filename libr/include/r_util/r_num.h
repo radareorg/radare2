@@ -88,6 +88,7 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
 R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 
 R_API ut64 r_num_get(RNum *num, const char *str);
+R_API ut64 r_num_get_err(RNum *num, const char *str, const char **err);
 R_API ut64 r_num_math(RNum *num, const char *str);
 R_API ut64 r_num_math_err(RNum *num, const char *str, const char **err);
 R_API const char *r_num_math_index(RNum *num, const char *p);
