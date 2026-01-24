@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2023-2024 - pancake */
+/* radare - LGPL - Copyright 2023-2026 - pancake */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -11,10 +11,9 @@ $ sudo ln -fs /Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB
 $ while : ; do debugserver 0.0.0.0:9999 /bin/ls ; done
 #endif
 
-
 typedef struct {
 	RSocket *gs;
-		bool use_lldb;
+	bool use_lldb;
 	bool usefirst;
 	bool lastbroken;
 	bool use_pwndbg;
@@ -52,7 +51,6 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 	while (1) {
 		R_LOG_DEBUG ("LOOP");
 		memset (buf, 0, sizeof (buf));
-#
 		if (state->use_lldb && !r_socket_ready (state->gs, 0, 2500)) {
 			// cmd = "process launch --stop-at-entry\n";
 			//	cmd = "gdb-remote localhost:9999\n";
@@ -91,9 +89,11 @@ static char *runcmd(RIOSysGdb *state, const char *cmd) {
 			}
 			// (lldb ) goes first, so we skip it
 			str = r_str_append (str, buf);
+#if 0
 			if (strstr (buf, "(lldb")) {
 				// return str;
 			}
+#endif
 		} else {
 			char *promptFound;
 			if (!state->use_pwndbg && state->usefirst) {
@@ -135,7 +135,6 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		free (runcmd (state, cmd));
 		free (cmd);
 	}
-
 	return count;
 }
 
@@ -259,8 +258,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		if (!state) {
 			return NULL;
 		}
-
-		// Initialize state with platform-specific defaults
 #if __APPLE__
 		state->use_lldb = true;
 		state->usefirst = true;
