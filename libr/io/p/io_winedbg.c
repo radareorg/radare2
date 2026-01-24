@@ -254,6 +254,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (R_STR_ISEMPTY (cmd)) {
 		return NULL;
 	}
+	RIOWinedbg *wd = fd? fd->data: NULL;
 	if (*cmd == '?') {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
@@ -340,17 +341,14 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "db ")) {
 		int n = r_num_get (NULL, cmd + 3) || io->off;
 		r_strf_var (brkcmd, 32, "break *%x", n);
-		RIOWinedbg *wd = fd->data;
 		if (wd) {
 			free (runcmd (wd, brkcmd));
 		}
 	} else if (r_str_startswith (cmd, "ds")) {
-		wd = fd->data;
 		if (wd) {
 			free (runcmd (wd, "stepi"));
 		}
 	} else if (r_str_startswith (cmd, "dc")) {
-		wd = fd->data;
 		if (wd) {
 			free (runcmd (wd, "cont"));
 		}
@@ -359,7 +357,6 @@ const char *msg =
 	} else if (r_str_startswith (cmd, "dp")) {
 		printcmd (io, fd, "info thread");
 	} else if (r_str_startswith (cmd, "dm")) {
-		RIOWinedbg *wd = fd->data;
 		char *wineDbgMaps = wd? runcmd (wd, "info maps"): NULL;
 		char *res = NULL;
 		if (wineDbgMaps) {
