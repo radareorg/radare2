@@ -633,10 +633,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 			RList *list = r_str_split_list (regs, "\n", 0);
 			RListIter *iter;
 			char *line;
-#define IFREG(rn, pos) \
-	if (r_str_startswith (line, rn)) { \
-		arena[pos / 8] = r_num_get (NULL, line + strlen (rn) + 3); \
-	} else
+#define IFREG(rn, pos) if (r_str_startswith (line, rn)) { arena[pos / 8] = r_num_get (NULL, line + strlen (rn) + 3); } else
 			r_list_foreach (list, iter, line) {
 				// x86-64
 				IFREG ("rax", 80)
@@ -697,10 +694,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		RList *list = r_str_split_list (regs, "\n", 0);
 		RListIter *iter;
 		char *line;
-#define IFREG(rn, pos) \
-	if (r_str_startswith (line, rn)) { \
-		arena[pos / 8] = r_num_get (NULL, line + strlen (rn)); \
-	} else
+#define IFREG(rn, pos) if (r_str_startswith (line, rn)) { arena[pos / 8] = r_num_get (NULL, line + strlen (rn)); } else
 		r_list_foreach (list, iter, line) {
 			// arm64
 			IFREG ("x0", 0)
