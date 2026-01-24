@@ -7,6 +7,8 @@
 // R2R db/formats/mangling/swift
 // R2R db/tools/rabin2
 
+// AITODO: Re-evaluate the newly introduced helper functions: `str_equals_n`, `str_isnotempty_n`, and `is_valid_strlen`. Becuase all those functions seems like they can be replaced by apis from libr/util/str.c or plain libc functions, focus on making the code cleaner, shorter and easier to read.
+
 // set this to true for debugging purposes
 #define USE_THIS_CODE 0
 
@@ -116,13 +118,22 @@ static const char *hasdigit(const char* n) {
 	return NULL;
 }
 
-static const char *getstring(const char *s, int len) {
-	static R_TH_LOCAL char buf[256] = {0};
-	if (len < 0 || len > sizeof (buf) - 1) {
-		return "";
+static inline bool is_valid_strlen(const char *s, int len) {
+	return len >= 0 && len <= strlen (s);
+}
+
+static inline void strbuf_append_n(RStrBuf *sb, const char *s, int len) {
+	if (len > 0 && is_valid_strlen (s, len)) {
+		r_strbuf_append_n (sb, s, (size_t)len);
 	}
-	r_str_ncpy (buf, s, len + 1);
-	return buf;
+}
+
+static inline bool str_equals_n(const char *s, int len, const char *cmp) {
+	return len == strlen (cmp) && !strncmp (s, cmp, len);
+}
+
+static inline bool str_isnotempty_n(const char *s, int len) {
+	return len > 0 && is_valid_strlen (s, len) && *s;
 }
 
 static const char *resolve(const SwiftType *t, const char *foo, const char **bar) {
@@ -438,22 +449,20 @@ static char *my_swift_demangler(const char *s) {
 		// printf ("(%s)\n", getstring (p, (q-p)));
 		for (i = 0, len = 1; len && q < q_end; q += len, i++) {
 			if (*q == 'P') {
-		//		printf ("PUBLIC: ");
 				q++;
 			}
 			q = getnum (q, &len);
 			if (!len) {
 				break;
 			}
-			const char *str = getstring (q, len);
-			if (len == 2 && !strcmp (str, "ee")) {
+			if (str_equals_n (q, len, "ee")) {
 				r_strbuf_append (out, "Swift");
 			} else {
 				if (i && r_strbuf_length (out) > 0) {
 					r_strbuf_append (out, ".");
 				}
 				len = R_MIN (len, strlen (q));
-				r_strbuf_append (out, getstring (q, len));
+				strbuf_append_n (out, q, len);
 			}
 		}
 		if (q > q_end) {
@@ -488,20 +497,13 @@ static char *my_swift_demangler(const char *s) {
 			/* get field name and then type */
 			resolve (types, q, &attr);
 
-			//printf ("Accessor: %s\n", attr);
 			q = getnum (q + 1, &len);
-			const char *name = getstring (q, len);
-#if 0
-			if (R_STR_ISNOTEMPTY (name)) {
-				printf ("Field Name: %s\n", name);
-			}
-#endif
 			const char *arg = (len < strlen (q))? q + len: q;
 			resolve (types, arg, &attr2);
-//			printf ("Field Type: %s\n", attr2);
 
-			if (R_STR_ISNOTEMPTY (name)) {
-				r_strbuf_appendf (out, ".%s", name);
+			if (str_isnotempty_n (q, len)) {
+				r_strbuf_append (out, ".");
+				strbuf_append_n (out, q, len);
 			}
 			if (R_STR_ISNOTEMPTY (attr)) {
 				r_strbuf_appendf (out, ".%s", attr);
@@ -566,10 +568,7 @@ moreitems:
 					if (isdigit (q[1])) {
 						int n = 0;
 						const char *Q = getnum (q + 1, &n);
-						const char *res = getstring (Q, n);
-						if (res) {
-							r_strbuf_append (out, res);
-						}
+						strbuf_append_n (out, Q, n);
 						q = Q + n;
 						if (q >= q_end) {
 							continue;
@@ -578,10 +577,7 @@ moreitems:
 							r_strbuf_append (out, ".");
 							n = 0;
 							const char *Q = getnum (q, &n);
-							const char *res = getstring (Q, n);
-							if (res) {
-								r_strbuf_append (out, res);
-							}
+							strbuf_append_n (out, Q, n);
 							q = Q + n;
 						}
 						continue;
@@ -593,10 +589,7 @@ moreitems:
 					{
 						int n = 0;
 						const char *Q = getnum (q + 1, &n);
-						const char *res = getstring (Q, n);
-						if (res) {
-							r_strbuf_append (out, res);
-						}
+						strbuf_append_n (out, Q, n);
 						q = Q + n + 1;
 						continue;
 					}
@@ -605,7 +598,8 @@ moreitems:
 					if (r_str_startswith (q, "uRxs")) {
 						int n = 0;
 						const char *Q = getnum (q + 4, &n);
-						r_strbuf_appendf (out, "..%s", getstring (Q, n));
+						r_strbuf_append (out, "..");
+						strbuf_append_n (out, Q, n);
 						q = Q + n + 1;
 						continue;
 					}
@@ -659,7 +653,8 @@ moreitems:
 						if (q[0] && q[1] && q[2]) {
 							int n = 0;
 							const char *Q = getnum (q + 2, &n);
-							r_strbuf_appendf (out, "..%s", getstring (Q, n));
+							r_strbuf_append (out, "..");
+							strbuf_append_n (out, Q, n);
 							q = Q + n + 1;
 							continue;
 						}
@@ -692,9 +687,9 @@ moreitems:
 						int n = 0;
 repeat:;
 						const char *Q = getnum (q + 1, &n);
-						const char *res = getstring (Q, n);
-						if (R_STR_ISNOTEMPTY (res)) {
-							r_strbuf_appendf (out, ".%s", res);
+						if (str_isnotempty_n (Q, n)) {
+							r_strbuf_append (out, ".");
+							strbuf_append_n (out, Q, n);
 						} else {
 							if (*q) {
 								r_strbuf_appendf (out, "...%s", q);
@@ -744,10 +739,9 @@ repeat:;
 					if (!p) {
 						int n = 0;
 						const char *Q = getnum (q + 1, &n);
-						const char *res = getstring (Q, n);
-						if (res) {
+						if (str_isnotempty_n (Q, n)) {
 							r_strbuf_append (out, ".");
-							r_strbuf_append (out, res);
+							strbuf_append_n (out, Q, n);
 						}
 						q = Q + n;
 						if (q >= q_end) {
@@ -756,10 +750,9 @@ repeat:;
 						if (isdigit (*q)) {
 							int n = 0;
 							const char *Q = getnum (q, &n);
-							const char *res = getstring (Q, n);
-							if (res) {
+							if (str_isnotempty_n (Q, n)) {
 								r_strbuf_append (out, ".");
-								r_strbuf_append (out, res);
+								strbuf_append_n (out, Q, n);
 							}
 							q = Q + n;
 						} else {
@@ -809,8 +802,7 @@ repeat:;
 						break;
 					}
 					if (len <= (q_end - q) && q[len]) {
-						const char *s = getstring (q, len);
-						if (R_STR_ISNOTEMPTY (s)) {
+						if (str_isnotempty_n (q, len)) {
 							if (is.first) {
 								r_strbuf_append (out, is.generic? "<": ": ");
 								is.first = false;
@@ -822,9 +814,10 @@ repeat:;
 									r_strbuf_append (out, ", ");
 								}
 							}
-								if (strcmp (s, "_")) {
-									r_strbuf_appendf (out, "%s%s", s, is.generic? ">": "");
-									is.first = (*s != '_');
+								if (!str_equals_n (q, len, "_")) {
+									strbuf_append_n (out, q, len);
+									r_strbuf_append (out, is.generic? ">": "");
+									is.first = (*q != '_');
 									if (is.generic && !is.first) {
 										break;
 									}
