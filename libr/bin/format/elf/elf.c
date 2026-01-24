@@ -57,6 +57,7 @@
 #define EF_MIPS_ARCH_ASE       0x0f000000 /* Mask for EF_MIPS_ARCH_ASE_xxx flags */
 
 static bool reloc_fill_local_address(ELFOBJ *eo);
+static bool compute_has_nx(ELFOBJ *eo);
 static inline bool is_elfclass64(Elf_(Ehdr) * h) {
 	return h->e_ident[EI_CLASS] == ELFCLASS64;
 }
@@ -265,11 +266,6 @@ static bool read_phdr(ELFOBJ *eo) {
 	const bool is_elf64 = false;
 #endif
 	int i;
-#if 0
-	if (phnum > UT16_MAX) {
-		return false;
-	}
-#endif
 	for (i = 0; i < phnum; i++) {
 		ut8 phdr[sizeof (Elf_(Phdr))] = {0};
 		const size_t rsize = eo->ehdr.e_phoff + i * sizeof (Elf_(Phdr));
@@ -1589,6 +1585,7 @@ static bool elf_init(ELFOBJ *eo) {
 		if (!init_shdr (eo)) {
 			R_LOG_DEBUG ("Cannot initialize section headers");
 		}
+		eo->has_nx = compute_has_nx (eo);
 		if (!init_strtab (eo)) {
 			R_LOG_DEBUG ("Cannot initialize strings table");
 		}
@@ -2043,19 +2040,21 @@ static bool qnx_has_nx(ELFOBJ *eo) {
 	return false;
 }
 
-/// XXX this is O(n) and can be cached to avoid walking the sections again
-bool Elf_(has_nx)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, 0);
-
+static bool compute_has_nx(ELFOBJ *eo) {
 	if (eo && eo->phdr) {
 		size_t i;
 		for (i = 0; i < eo->ehdr.e_phnum; i++) {
 			if (eo->phdr[i].p_type == PT_GNU_STACK) {
-				return (!(eo->phdr[i].p_flags & 1))? 1: 0;
+				return !(eo->phdr[i].p_flags & 1);
 			}
 		}
 	}
 	return qnx_has_nx (eo);
+}
+
+bool Elf_(has_nx)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, 0);
+	return eo->has_nx;
 }
 
 int Elf_(has_relro)(ELFOBJ *bin) {
