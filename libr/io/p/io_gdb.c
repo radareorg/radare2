@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 pancake, defragger */
+/* radare - LGPL - Copyright 2010-2026 - pancake, defragger */
 
 #include <r_io.h>
 #include <r_lib.h>
@@ -13,15 +13,24 @@ typedef struct {
 
 #define R_GDB_MAGIC r_str_hash ("gdb")
 
-static R_TH_LOCAL libgdbr_t *desc = NULL;
+static libgdbr_t *get_desc_from_fd(RIODesc *fd) {
+	if (!fd || !fd->data) {
+		return NULL;
+	}
+	RIOGdb *riog = fd->data;
+	return &riog->desc;
+}
 
 static bool __close(RIODesc *fd) {
+	libgdbr_t *desc = get_desc_from_fd (fd);
 	if (fd) {
 		R_FREE (fd->name);
 	}
-	gdbr_disconnect (desc);
-	gdbr_cleanup (desc);
-	R_FREE (desc);
+	if (desc) {
+		gdbr_disconnect (desc);
+		gdbr_cleanup (desc);
+	}
+	R_FREE (fd->data);
 	return true;
 }
 
@@ -29,14 +38,14 @@ static bool __plugin_open(RIO *io, const char *file, bool many) {
 	return r_str_startswith (file, "gdb://");
 }
 
-static int debug_gdb_read_at(ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_read_at(libgdbr_t *desc, ut8 *buf, int sz, ut64 addr) {
 	if (sz < 1 || addr >= UT64_MAX || !desc) {
 		return -1;
 	}
 	return gdbr_read_memory (desc, addr, buf, sz);
 }
 
-static int debug_gdb_write_at(const ut8 *buf, int sz, ut64 addr) {
+static int debug_gdb_write_at(libgdbr_t *desc, const ut8 *buf, int sz, ut64 addr) {
 	ut32 x, size_max;
 	ut32 packets;
 	ut32 last;
@@ -116,22 +125,21 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 	if (gdbr_connect (&riog->desc, host, i_port) == 0) {
 		__close (NULL);
-		// R_FREE (desc);
-		desc = &riog->desc;
 		if (pid > 0) { // FIXME this is here for now because RDebug's pid and libgdbr's aren't properly synced.
-			desc->pid = i_pid;
-			if (gdbr_attach (desc, i_pid) < 0) {
+			riog->desc.pid = i_pid;
+			if (gdbr_attach (&riog->desc, i_pid) < 0) {
 				R_LOG_ERROR ("gdbr: Failed to attach to PID %i", i_pid);
+				R_FREE (riog);
 				return NULL;
 			}
-		} else if ((i_pid = desc->pid) < 0) {
+		} else if ((i_pid = riog->desc.pid) < 0) {
 			i_pid = -1;
 		}
 		riogdb = r_io_desc_new (io, &r_io_plugin_gdb, file, R_PERM_RWX, mode, riog);
 	}
 	// Get name
 	if (riogdb) {
-		riogdb->name = gdbr_exec_file_read (desc, i_pid);
+		riogdb->name = gdbr_exec_file_read (&riog->desc, i_pid);
 	} else {
 		R_LOG_ERROR ("gdb.io.open: Cannot connect to host");
 		free (riog);
@@ -141,10 +149,11 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 	const ut64 addr = io->off;
-	if (!desc || !desc->data) {
+	libgdbr_t *desc = get_desc_from_fd (fd);
+	if (!desc) {
 		return -1;
 	}
-	return debug_gdb_write_at (buf, count, addr);
+	return debug_gdb_write_at (desc, buf, count, addr);
 }
 
 static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
@@ -166,34 +175,22 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (!io || !fd || !buf || count < 1) {
 		return -1;
 	}
-	memset (buf, io->Oxff, count);
-	ut64 addr = io->off;
-	if (!desc || !desc->data) {
+	libgdbr_t *desc = get_desc_from_fd (fd);
+	if (!desc) {
 		return -1;
 	}
-	return debug_gdb_read_at (buf, count, addr);
+	memset (buf, io->Oxff, count);
+	ut64 addr = io->off;
+	return debug_gdb_read_at (desc, buf, count, addr);
 }
 
 static int __getpid(RIODesc *fd) {
-	// XXX don't use globals
+	libgdbr_t *desc = get_desc_from_fd (fd);
 	return desc ? desc->pid : -1;
-#if 0
-	// dupe for ? r_io_desc_get_pid (desc);
-	if (!desc || !desc->data) {
-		return -1;
-	}
-	RIODescData *iodd = desc->data;
-	if (iodd) {
-		if (iodd->magic != R_GDB_MAGIC) {
-			return -1;
-		}
-		return iodd->pid;
-	}
-	return -1;
-#endif
 }
 
 static int __gettid(RIODesc *fd) {
+	libgdbr_t *desc = get_desc_from_fd (fd);
 	return desc ? desc->tid : -1;
 }
 
@@ -201,10 +198,8 @@ extern int send_msg(libgdbr_t *g, const char *command);
 extern int read_packet(libgdbr_t *instance, bool vcont);
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (!desc) {
-		return NULL;
-	}
-	if (!*cmd) {
+	libgdbr_t *desc = get_desc_from_fd (fd);
+	if (!desc || !*cmd) {
 		return NULL;
 	}
 	if (cmd[0] == '?' || !strcmp (cmd, "help")) {
@@ -349,9 +344,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		if (!isspace ((ut8)*ptr)) {
 			file = gdbr_exec_file_read (desc, 0);
 		} else {
-			while (isspace ((ut8)*ptr)) {
-				ptr++;
-			}
+			ptr = r_str_trim_head_ro (ptr);
 			if (isdigit ((ut8)*ptr)) {
 				int pid = atoi (ptr);
 				file = gdbr_exec_file_read (desc, pid);
