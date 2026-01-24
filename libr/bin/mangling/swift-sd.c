@@ -1,13 +1,11 @@
 /* work-in-progress reverse engineered swift-demangler in C
- * Copyright MIT 2015-2024 by pancake@nopcode.org */
+ * Copyright MIT 2015-2026 by pancake@nopcode.org */
 
 #include <r_cons.h>
 #include <r_lib.h>
 
 // R2R db/formats/mangling/swift
 // R2R db/tools/rabin2
-
-// AITODO: Re-evaluate the newly introduced helper functions: `str_equals_n`, `str_isnotempty_n`, and `is_valid_strlen`. Becuase all those functions seems like they can be replaced by apis from libr/util/str.c or plain libc functions, focus on making the code cleaner, shorter and easier to read.
 
 // set this to true for debugging purposes
 #define USE_THIS_CODE 0
@@ -118,22 +116,18 @@ static const char *hasdigit(const char* n) {
 	return NULL;
 }
 
-static inline bool is_valid_strlen(const char *s, int len) {
-	return len >= 0 && len <= strlen (s);
-}
-
 static inline void strbuf_append_n(RStrBuf *sb, const char *s, int len) {
-	if (len > 0 && is_valid_strlen (s, len)) {
+	if (len > 0 && s && r_str_nlen (s, len) == (size_t)len) {
 		r_strbuf_append_n (sb, s, (size_t)len);
 	}
 }
 
 static inline bool str_equals_n(const char *s, int len, const char *cmp) {
-	return len == strlen (cmp) && !strncmp (s, cmp, len);
+	return cmp && len == (int)strlen (cmp) && !strncmp (s, cmp, len);
 }
 
 static inline bool str_isnotempty_n(const char *s, int len) {
-	return len > 0 && is_valid_strlen (s, len) && *s;
+	return *s && len > 0;
 }
 
 static const char *resolve(const SwiftType *t, const char *foo, const char **bar) {
