@@ -1,13 +1,6 @@
 /* radare - LGPL - Copyright 2026 - seifreed */
 
 #include <r_anal.h>
-#include <r_io.h>
-#include <r_types_overflow.h>
-#include <r_util/r_file.h>
-#include <r_util/r_num.h>
-#include <r_util/r_sandbox.h>
-#include <r_util/r_str.h>
-#include <r_util/r_strbuf.h>
 
 typedef struct drcov_module_t {
 	ut64 base;
@@ -22,29 +15,23 @@ enum {
 	DRCOV_PARSE_NOT_DRCOV = -2
 };
 
-static char *drcov_read_line(FILE *fd) {
-	RStrBuf *sb = r_strbuf_new (NULL);
-	bool saw_data = false;
-	int ch;
-
-	if (!sb) {
+static char *drcov_next_line(char *buf, size_t len, size_t *off) {
+	if (!buf || !off || *off >= len) {
 		return NULL;
 	}
-	while ((ch = fgetc (fd)) != EOF) {
-		saw_data = true;
-		if (ch == '\n') {
-			break;
-		}
-		if (ch != '\r') {
-			char c = (char)ch;
-			r_strbuf_append_n (sb, &c, 1);
-		}
+	char *line = buf + *off;
+	char *end = memchr (line, '\n', len - *off);
+	if (end) {
+		*end = '\0';
+		*off = (size_t)(end - buf) + 1;
+	} else {
+		*off = len;
 	}
-	if (!saw_data && ch == EOF) {
-		r_strbuf_free (sb);
-		return NULL;
+	size_t line_len = strlen (line);
+	if (line_len && line[line_len - 1] == '\r') {
+		line[line_len - 1] = '\0';
 	}
-	return r_strbuf_drain (sb);
+	return line;
 }
 
 static void drcov_free_modules(DrcovModule *modules, ut32 count) {
@@ -114,52 +101,39 @@ static void drcov_remap_modules(RAnal *anal, DrcovModule *modules, ut32 count) {
 	r_list_free (map_list);
 }
 
-static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user, bool log_errors) {
-	FILE *fd = r_sandbox_fopen (path, "rb");
-	if (!fd) {
-		if (log_errors) {
-			R_LOG_ERROR ("Cannot open drcov file '%s'", path);
-		}
+static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) {
+	size_t fsz = 0;
+	char *buf = r_file_slurp (path, &fsz);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot open drcov file '%s'", path);
 		return -1;
 	}
 
+	size_t off = 0;
 	int loaded = 0;
-	char *line = drcov_read_line (fd);
+	char *line = drcov_next_line (buf, fsz, &off);
 	if (!line || !r_str_startswith (line, "DRCOV VERSION:")) {
-		free (line);
-		fclose (fd);
+		free (buf);
 		return DRCOV_PARSE_NOT_DRCOV;
 	}
 	ut32 version = (ut32)r_num_get (NULL, line + strlen ("DRCOV VERSION:"));
-	free (line);
-	line = NULL;
 	if (version != 2) {
-		if (log_errors) {
-			R_LOG_ERROR ("Unsupported drcov version %u in '%s'", version, path);
-		}
-		fclose (fd);
+		R_LOG_ERROR ("Unsupported drcov version %u in '%s'", version, path);
+		free (buf);
 		return -1;
 	}
 
-	line = drcov_read_line (fd);
+	line = drcov_next_line (buf, fsz, &off);
 	if (!line || !r_str_startswith (line, "DRCOV FLAVOR:")) {
-		if (log_errors) {
-			R_LOG_ERROR ("Missing drcov flavor in '%s'", path);
-		}
-		free (line);
-		fclose (fd);
+		R_LOG_ERROR ("Missing drcov flavor in '%s'", path);
+		free (buf);
 		return -1;
 	}
-	free (line);
-	line = NULL;
 
-	line = drcov_read_line (fd);
+	line = drcov_next_line (buf, fsz, &off);
 	if (!line || !r_str_startswith (line, "Module Table:")) {
-		if (log_errors) {
-			R_LOG_ERROR ("Missing module table in '%s'", path);
-		}
-		free (line);
-		fclose (fd);
+		R_LOG_ERROR ("Missing module table in '%s'", path);
+		free (buf);
 		return -1;
 	}
 	ut32 module_count = 0;
@@ -170,61 +144,45 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user, 
 			module_count = (ut32)r_num_get (NULL, count_ptr);
 		}
 	}
-	free (line);
-	line = NULL;
 	if (!module_count) {
-		if (log_errors) {
-			R_LOG_ERROR ("Invalid module count in '%s'", path);
-		}
-		fclose (fd);
+		R_LOG_ERROR ("Invalid module count in '%s'", path);
+		free (buf);
 		return -1;
 	}
 
-	line = drcov_read_line (fd);
+	line = drcov_next_line (buf, fsz, &off);
 	if (!line || !r_str_startswith (line, "Columns:")) {
-		if (log_errors) {
-			R_LOG_ERROR ("Missing module columns in '%s'", path);
-		}
-		free (line);
-		fclose (fd);
+		R_LOG_ERROR ("Missing module columns in '%s'", path);
+		free (buf);
 		return -1;
 	}
-	free (line);
-	line = NULL;
 
 	if (SZT_MUL_OVFCHK (module_count, sizeof (DrcovModule))) {
-		if (log_errors) {
-			R_LOG_ERROR ("Module table too large in '%s'", path);
-		}
-		fclose (fd);
+		R_LOG_ERROR ("Module table too large in '%s'", path);
+		free (buf);
 		return -1;
 	}
 	DrcovModule *modules = R_NEWS0 (DrcovModule, module_count);
 	if (!modules) {
-		fclose (fd);
+		free (buf);
 		return -1;
 	}
 
 	ut32 i;
 	for (i = 0; i < module_count; i++) {
-		line = drcov_read_line (fd);
+		line = drcov_next_line (buf, fsz, &off);
 		if (!line) {
-			if (log_errors) {
-				R_LOG_ERROR ("Unexpected EOF in module table of '%s'", path);
-			}
+			R_LOG_ERROR ("Unexpected EOF in module table of '%s'", path);
 			drcov_free_modules (modules, module_count);
-			fclose (fd);
+			free (buf);
 			return -1;
 		}
 		RList *tokens = r_str_split_list (line, ",", 5);
 		if (!tokens || r_list_length (tokens) < 5) {
 			r_list_free (tokens);
-			if (log_errors) {
-				R_LOG_ERROR ("Malformed module entry in '%s'", path);
-			}
-			free (line);
+			R_LOG_ERROR ("Malformed module entry in '%s'", path);
 			drcov_free_modules (modules, module_count);
-			fclose (fd);
+			free (buf);
 			return -1;
 		}
 		char *id_s = r_list_get_n (tokens, 0);
@@ -237,43 +195,36 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user, 
 			modules[mod_id].end = r_num_get (NULL, end_s);
 			modules[mod_id].path = path_s? strdup (path_s): NULL;
 			modules[mod_id].valid = true;
-		} else if (log_errors) {
+		} else {
 			R_LOG_WARN ("Skipping out-of-range module id %u", mod_id);
 		}
 		r_list_free (tokens);
-		free (line);
-		line = NULL;
 	}
 
 	drcov_remap_modules (anal, modules, module_count);
 
-	line = drcov_read_line (fd);
+	line = drcov_next_line (buf, fsz, &off);
 	if (!line || !r_str_startswith (line, "BB Table:")) {
-		if (log_errors) {
-			R_LOG_ERROR ("Missing BB table in '%s'", path);
-		}
-		free (line);
+		R_LOG_ERROR ("Missing BB table in '%s'", path);
 		drcov_free_modules (modules, module_count);
-		fclose (fd);
+		free (buf);
 		return -1;
 	}
 	ut32 bb_count = (ut32)r_num_get (NULL, line + strlen ("BB Table:"));
-	free (line);
-	line = NULL;
 
-	ut8 entry[8];
+	size_t remaining = fsz > off? (fsz - off): 0;
+	if (remaining < (size_t)bb_count * 8) {
+		R_LOG_ERROR ("Unexpected EOF in BB table of '%s'", path);
+		drcov_free_modules (modules, module_count);
+		free (buf);
+		return -1;
+	}
+	const ut8 *entry = (const ut8 *)(buf + off);
 	for (i = 0; i < bb_count; i++) {
-		if (fread (entry, 1, sizeof (entry), fd) != sizeof (entry)) {
-			if (log_errors) {
-				R_LOG_ERROR ("Unexpected EOF in BB table of '%s'", path);
-			}
-			drcov_free_modules (modules, module_count);
-			fclose (fd);
-			return -1;
-		}
-		ut32 start = r_read_le32 (entry);
-		ut16 size = r_read_le16 (entry + 4);
-		ut16 mod_id = r_read_le16 (entry + 6);
+		const ut8 *cur = entry + (i * 8);
+		ut32 start = r_read_le32 (cur);
+		ut16 size = r_read_le16 (cur + 4);
+		ut16 mod_id = r_read_le16 (cur + 6);
 		if (mod_id >= module_count || !modules[mod_id].valid) {
 			continue;
 		}
@@ -297,7 +248,7 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user, 
 	}
 
 	drcov_free_modules (modules, module_count);
-	fclose (fd);
+	free (buf);
 	return loaded;
 }
 
@@ -310,7 +261,7 @@ static bool drcov_apply_cb(void *user, ut64 addr, ut16 size) {
 
 static int drcov_apply(RAnal *anal, const char *path) {
 	R_RETURN_VAL_IF_FAIL (anal && path, -1);
-	int loaded = drcov_parse (anal, path, drcov_apply_cb, anal, true);
+	int loaded = drcov_parse (anal, path, drcov_apply_cb, anal);
 	if (loaded == DRCOV_PARSE_NOT_DRCOV) {
 		R_LOG_ERROR ("Invalid drcov header in '%s'", path);
 		return -1;
