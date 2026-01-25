@@ -353,22 +353,30 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		}
 		free (abspath);
 		free (data);
-	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ")) {
+	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ") || r_str_startswith (buf, "r2 ")) {
 		char *data = strdup (buf);
 		const char *input = r_str_nextword (data, ' ');
 		input = (char *)r_str_trim_head_ro (input);
-		file = r_fs_open (fs, input, false);
-		if (file) {
-			r_fs_read (fs, file, 0, file->size);
-			char *uri = r_str_newf ("malloc://%d", file->size);
-			RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
-			free (uri);
-			if (fd) {
-				fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
-				return true;
+		char *abspath = fs_abspath (shell, input);
+		if (abspath) {
+			file = r_fs_open (fs, abspath, false);
+			if (file) {
+				r_fs_read (fs, file, 0, file->size);
+				char *uri = r_str_newf ("malloc://%d", file->size);
+				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
+				free (uri);
+				if (fd) {
+					fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
+					free (abspath);
+					free (data);
+					return true;
+				}
+			} else {
+				R_LOG_ERROR ("Cannot open file");
 			}
+			free (abspath);
 		} else {
-			R_LOG_ERROR ("Cannot open file");
+			R_LOG_ERROR ("Cannot resolve path");
 		}
 		free (data);
 	} else if (r_str_startswith (buf, "help") || r_str_startswith (buf, "?")) {
@@ -386,6 +394,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			" set64 file b; write base64 contents\n"
 			" getall      ; fetch all files in current rfs directory to local cwd\n"
 			" o/open file ; open file with r2\n"
+			" r2 file     ; alias for o/open\n"
 			" mount       ; show mount points\n"
 			" q/exit      ; leave prompt mode\n"
 			" ?/help      ; show this help\n");
