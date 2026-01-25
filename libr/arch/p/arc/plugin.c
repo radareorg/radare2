@@ -62,7 +62,27 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
+
+	/* Set the machine type based on CPU configuration */
+	const char *cpu = as->config->cpu;
 	disasm_obj.mach = 8; /* bfd_mach_arc_arcv2 for modern ARC */
+	if (cpu) {
+		if (r_str_casecmp (cpu, "arc600") == 0 ||
+		    r_str_casecmp (cpu, "arc600_norm") == 0 ||
+		    r_str_casecmp (cpu, "arc600_mul64") == 0 ||
+		    r_str_casecmp (cpu, "arc600_mul32x16") == 0 ||
+		    r_str_casecmp (cpu, "arc601") == 0 ||
+		    r_str_casecmp (cpu, "arc601_norm") == 0 ||
+		    r_str_casecmp (cpu, "arc601_mul64") == 0 ||
+		    r_str_casecmp (cpu, "arc601_mul32x16") == 0) {
+			disasm_obj.mach = 6; /* bfd_mach_arc_arc600 */
+		} else if (r_str_casecmp (cpu, "arc700") == 0 ||
+		           r_str_casecmp (cpu, "nps400") == 0) {
+			disasm_obj.mach = 7; /* bfd_mach_arc_arc700 */
+		}
+		/* For ARC EM and HS variants, keep default mach=8 (arcv2) */
+	}
+
 	if (as->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
@@ -1233,9 +1253,9 @@ const RArchPlugin r_arch_plugin_arc = {
 		.license = "LGPL-3.0-only",
 		.desc = "Argonaut RISC Core",
 	},
-	// AITODO: see the parse_option function from arc-dis.c and put the list of .cpus and handle it properly in the decode callback for disassebling the right architecture
 	.arch = "arc",
 	.bits = R_SYS_BITS_PACK2 (16, 32),
+	.cpus = "arc600,arc600_norm,arc600_mul64,arc600_mul32x16,arc601,arc601_norm,arc601_mul64,arc601_mul32x16,arc700,nps400,arcem,em,em_mini,em4,em4_dmips,em4_fpus,em4_fpuda,quarkse_em,archs,hs,hs34,hs38,hs38_linux,hs4x,hs4xd,hs4x_rel31",
 	.decode = decode,
 	.info = archinfo,
 	.regs = regs
