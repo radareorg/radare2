@@ -6,6 +6,8 @@
 #include <r_util.h>
 #include <r_types.h>
 #include <r_io.h>
+#include <sdb/ht_pp.h>
+#include <sdb/ht_up.h>
 #include <r_muta.h>
 #include <r_cons.h>
 #include <r_list.h>
@@ -418,10 +420,15 @@ typedef struct r_bin_object_t {
 	int lang;
 	Sdb *kv;
 	HtUP *addr2klassmethod;
+	HtPP *import_name_ht;
+	HtUP *import_addr_ht;
+	RVecRBinSymbol *import_symbols;
 	void *filters; // symbol/section filter tables (HtPP/HtSU) owned by object
 	void *bin_obj; // internal pointer used by formats... TODO: RENAME TO internal object or sthg
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
+
+R_IPI void r_bin_object_import_cache_cleanup(RBinObject *obj);
 
 typedef struct r_bin_file_options_t {
 	const char *pluginname;
