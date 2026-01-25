@@ -2122,51 +2122,36 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-/* R2_600 - avoid using globals to resolve symbols and imports without making it expensive */
-R_DEPRECATE static R_TH_LOCAL Sdb *mydb = NULL;
-R_DEPRECATE static R_TH_LOCAL RVecRBinSymbol *osymbols = NULL;
+typedef struct {
+	Sdb *import_cache;
+	RVecRBinSymbol *cached_symbols;
+} ImportCache;
 
-R_DEPRECATE static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
+static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr, ImportCache *cache) {
 	r_strf_buffer (64);
 	RBinSymbol *symbol, *res = NULL;
-	if (mydb && symbols && symbols != osymbols) {
-		sdb_free (mydb);
-		mydb = NULL;
-		osymbols = symbols;
+	if (!cache) {
+		return NULL;
 	}
-	if (mydb) {
-		if (name) {
-			res = (RBinSymbol *) (void *) (size_t)
-				sdb_num_get (mydb, r_strf ("%x", sdb_hash (name)), NULL);
-		} else {
-			res = (RBinSymbol *) (void *) (size_t)
-				sdb_num_get (mydb, r_strf ("0x%08" PFMT64x, addr), NULL);
-		}
-	} else {
-		mydb = sdb_new0 ();
+	if (cache->import_cache && symbols != cache->cached_symbols) {
+		sdb_free (cache->import_cache);
+		cache->import_cache = NULL;
+	}
+	if (!cache->import_cache) {
+		cache->import_cache = sdb_new0 ();
 		R_VEC_FOREACH (symbols, symbol) {
 			if (!symbol->name || !symbol->is_imported) {
 				continue;
 			}
-			/* ${name}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, r_strf ("%x", sdb_hash (r_bin_name_tostring (symbol->name))), (ut64) (size_t)symbol, 0)) {
-				//	eprintf ("DUP (%s)\n", symbol->name);
-			}
-			/* 0x${vaddr}=${ptrToSymbol} */
-			if (!sdb_num_add (mydb, r_strf ("0x%08" PFMT64x, symbol->vaddr), (ut64) (size_t)symbol, 0)) {
-				//	eprintf ("DUP (%s)\n", symbol->name);
-			}
-			if (name) {
-				if (!res && !strcmp (r_bin_name_tostring (symbol->name), name)) {
-					res = symbol;
-				}
-			} else {
-				if (symbol->vaddr == addr) {
-					res = symbol;
-				}
-			}
+			sdb_num_add (cache->import_cache, r_strf ("%x", sdb_hash (r_bin_name_tostring (symbol->name))), (ut64)(size_t)symbol, 0);
+			sdb_num_add (cache->import_cache, r_strf ("0x%08" PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0);
 		}
-		osymbols = symbols;
+		cache->cached_symbols = symbols;
+	}
+	if (name) {
+		res = (RBinSymbol *)(size_t)sdb_num_get (cache->import_cache, r_strf ("%x", sdb_hash (name)), NULL);
+	} else {
+		res = (RBinSymbol *)(size_t)sdb_num_get (cache->import_cache, r_strf ("0x%08" PFMT64x, addr), NULL);
 	}
 	return res;
 }
@@ -2182,7 +2167,8 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!symbols) {
 		return addr;
 	}
-	RBinSymbol *s = get_import (bin, symbols, name, 0LL);
+	ImportCache cache = {0};
+	RBinSymbol *s = get_import (bin, symbols, name, 0LL, &cache);
 	// maybe ut64_MAX to indicate import not found?
 	if (s) {
 		if (va) {
@@ -2194,6 +2180,9 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 		} else {
 			addr = s->paddr;
 		}
+	}
+	if (cache.import_cache) {
+		sdb_free (cache.import_cache);
 	}
 	return addr;
 }
@@ -2322,11 +2311,6 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	}
 
 	r_table_free (table);
-	// NOTE: if we comment out this, it will leak.. but it will be faster
-	// because it will keep the cache across multiple RBin calls
-	osymbols = NULL;
-	sdb_free (mydb);
-	mydb = NULL;
 	return true;
 }
 

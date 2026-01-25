@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_muta.h>
 #include <r_hash.h>
@@ -112,21 +112,17 @@ R_API RMutaSession *r_muta_use(RMuta *muta, const char *algo) {
 	return s;
 }
 
+static const char *muta_type_strings[] = {
+	"hash", "base", "crypto", "sign", "charset",
+};
 static const char *mutatype_tostring(int type) {
-	switch (type) {
-	case R_MUTA_TYPE_HASH:
-		return "hash";
-	case R_MUTA_TYPE_CRYPTO:
-		return "crypto";
-	case R_MUTA_TYPE_CHARSET:
-		return "charset";
-	case R_MUTA_TYPE_BASE:
-		return "base";
-	case R_MUTA_TYPE_SIGN:
-		return "sign";
-	default:
-		return "unknown";
+	if (type < 0) {
+		return "all";
 	}
+	if (type < R_MUTA_TYPE_LAST) {
+		return muta_type_strings[type];
+	}
+	return "unknown";
 }
 
 static inline void print_plugin_verbose(RStrBuf *sb, RMutaPlugin *cp) {

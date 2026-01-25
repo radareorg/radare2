@@ -530,11 +530,10 @@ R_API void r_io_sundo_reset(RIO *io);
 R_API RList *r_io_sundo_list(RIO *io, int mode);
 /* write undo */
 R_API void r_io_wundo_new(RIO *io, ut64 off, const ut8 *data, int len);
-R_API void r_io_wundo_apply_all(RIO *io, int set);
-R_API int r_io_wundo_apply(RIO *io, struct r_io_undo_w_t *u, int set);
+R_API bool r_io_wundo_apply_all(RIO *io, bool set);
+R_API bool r_io_wundo_apply(RIO *io, RIOUndoWrite *u, bool set);
 R_API void r_io_wundo_clear(RIO *io);
 R_API int r_io_wundo_size(RIO *io);
-R_API void r_io_wundo_list(RIO *io);
 R_API int r_io_wundo_set_t(RIO *io, RIOUndoWrite *u, int set) ;
 R_API void r_io_wundo_set_all(RIO *io, int set);
 R_API int r_io_wundo_set(RIO *io, int n, int set);
