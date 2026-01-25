@@ -2857,14 +2857,22 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 #if CS_API_MAJOR >= 4
 				switch (INSOP (i).access) {
 				case CS_AC_READ:
-				    val->access = R_PERM_R;
-				    break;
+					val->access = R_PERM_R;
+					break;
 				case CS_AC_WRITE:
-				    val->access = R_PERM_W;
-				    break;
+					val->access = R_PERM_W;
+					break;
+#if CS_API_MAJOR >= 6
+				case CS_AC_READ_WRITE:
+					val->access = R_PERM_RW;
+					break;
+#endif
 				case CS_AC_INVALID:
-				    val->access = 0;
-				    break;
+					val->access = 0;
+					break;
+				default:
+					// ignored
+					break;
 				}
 #else
 				val->access = 0;
