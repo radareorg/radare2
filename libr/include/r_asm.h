@@ -167,6 +167,7 @@ R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin);
 
 extern RAsmPlugin r_asm_plugin_6502;
 extern RAsmPlugin r_asm_plugin_8051;
+extern RAsmPlugin r_asm_plugin_arc;
 extern RAsmPlugin r_asm_plugin_arm;
 extern RAsmPlugin r_asm_plugin_att2intel;
 extern RAsmPlugin r_asm_plugin_avr;
@@ -194,9 +195,10 @@ extern RAsmPlugin r_asm_plugin_stm8;
 extern RAsmPlugin r_asm_plugin_tms320;
 extern RAsmPlugin r_asm_plugin_tricore;
 extern RAsmPlugin r_asm_plugin_v850;
+extern RAsmPlugin r_asm_plugin_vax;
 extern RAsmPlugin r_asm_plugin_wasm;
 extern RAsmPlugin r_asm_plugin_x86;
-extern RAsmPlugin r_asm_plugin_vax;
+extern RAsmPlugin r_asm_plugin_xarc;
 extern RAsmPlugin r_asm_plugin_z80;
 
 #endif

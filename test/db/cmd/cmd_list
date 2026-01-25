@@ -6,6 +6,7 @@ EOF
 EXPECT=<<EOF
 6502
 8051
+arc
 arm
 att2intel
 avr
