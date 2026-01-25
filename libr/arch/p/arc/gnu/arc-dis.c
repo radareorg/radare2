@@ -759,6 +759,7 @@ operand_iterator_next (struct arc_operand_iterator *iter,
 
 /* Helper for parsing the options.  */
 
+#if 0
 static void
 parse_option (struct arc_disassemble_info *arc_infop, const char *option)
 {
@@ -816,6 +817,7 @@ parse_option (struct arc_disassemble_info *arc_infop, const char *option)
     /* xgettext:c-format */
     opcodes_error_handler (_("unrecognised disassembler option: %s"), option);
 }
+#endif
 
 #define ARC_CPU_TYPE_A6xx(NAME,EXTRA)			\
   { #NAME, ARC_OPCODE_ARC600, "ARC600" }
