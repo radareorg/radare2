@@ -376,6 +376,7 @@ io_plugins += [
     'gzip',
     'http',
     'ihex',
+    'srec',
     'mach',
     'mmap',
     'procpid',
