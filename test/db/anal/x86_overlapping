@@ -1,0 +1,44 @@
+NAME=overlapping jmp -1
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e anal.jmp.mid=true
+wx ebffc0c3
+af @ 0
+afbj
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":2,"jump":1,"opaddr":0,"inputs":0,"outputs":1,"ninstr":1,"instrs":[0],"traced":0},{"addr":1,"size":3,"opaddr":18446744073709551615,"inputs":1,"outputs":0,"ninstr":2,"instrs":[1,3],"traced":0}]
+EOF
+RUN
+
+NAME=overlapping jmp into middle (stackexchange)
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e anal.jmp.mid=true
+wx b80003c1bbb90000000503c1ebf403c3c3
+af @ 0
+afbj
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":14,"jump":2,"opaddr":0,"inputs":0,"outputs":1,"ninstr":4,"instrs":[0,5,10,12],"traced":0},{"addr":2,"size":15,"opaddr":18446744073709551615,"inputs":1,"outputs":0,"ninstr":5,"instrs":[2,4,9,14,16],"traced":0}]
+EOF
+RUN
+
+NAME=overlapping wrapping jump into imm64
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e anal.jmp.mid=true
+wx 48b890909090eb029090ebf6c3
+af @ 0
+afbj
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":10,"jump":10,"opaddr":0,"inputs":0,"outputs":1,"ninstr":1,"instrs":[0],"traced":0},{"addr":2,"size":6,"jump":10,"opaddr":18446744073709551615,"inputs":1,"outputs":1,"ninstr":5,"instrs":[2,3,4,5,6],"traced":0},{"addr":10,"size":2,"jump":2,"opaddr":18446744073709551615,"inputs":2,"outputs":1,"ninstr":1,"instrs":[10],"traced":0}]
+EOF
+RUN
