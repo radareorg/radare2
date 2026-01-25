@@ -5,6 +5,7 @@
 - Header files are located in the `./libr/include` directory
 - Manpages documenting the most common APIs in radare2 are in `./man/3`
 - Plugins are located under the `/p` subdirectories on each `./libr/*`
+- Large test binaries live in the separate `radare2-testbins` repo (mounted under `test/bins`)
 
 ## Formatting Style
 
@@ -38,6 +39,12 @@
   - Do not build the .o files separately
   - Run `make` in the working directory to compile just this part.
   - Assume system-wide installations via symlinks (do not install after every change)
+- If you add new library dependencies, update both `Makefile` and `meson.build` (and pkg-config `requires`)
+- If you add a new plugin, register it in:
+  - `dist/plugins-cfg/plugins.def.cfg`
+  - `dist/plugins-cfg/plugins.static.cfg`
+  - the relevant `libr/*/meson.build` plugin list
+- Keep large/binary fixtures out of this repo; add them to `radare2-testbins` and reference them in tests
 - Run tests with `r2r`. For example: `r2r test/db/cmd/cmd_print`
   - Source files can reference tests with `// R2R` comments (so you can also run against C files: `r2r foo.c`)
 - Verify syntax and indentation with `sys/lint.sh` and `clang-format-radare2`
