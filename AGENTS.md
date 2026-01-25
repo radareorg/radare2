@@ -5,7 +5,7 @@
 - Header files are located in the `./libr/include` directory
 - Manpages documenting the most common APIs in radare2 are in `./man/3`
 - Plugins are located under the `/p` subdirectories on each `./libr/*`
-- Large test binaries live in the separate `radare2-testbins` repo (mounted under `test/bins`)
+- Large test binaries are located in the separate `radare2-testbins` repository (cloned in ./test/bins by the r2r during the test execution)
 
 ## Formatting Style
 
