@@ -78,6 +78,11 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 	return len;
 }
 
+static bool cond_is_inverse(RAnalCondType a, RAnalCondType b) {
+	return (a == R_ANAL_CONDTYPE_EQ && b == R_ANAL_CONDTYPE_NE)
+		|| (a == R_ANAL_CONDTYPE_NE && b == R_ANAL_CONDTYPE_EQ);
+}
+
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -1356,6 +1361,21 @@ noskip:
 		case R_ANAL_OP_TYPE_MCJMP:
 		case R_ANAL_OP_TYPE_RCJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
+			if (is_x86 && op->jump != UT64_MAX && op->fail == op->addr + op->size) {
+				ut8 next_buf[32];
+				int next_read = read_ahead (&ra, anal, op->fail, next_buf, sizeof (next_buf));
+				if (next_read > 0) {
+					RAnalOp next = {0};
+					int next_len = r_anal_op (anal, &next, op->fail, next_buf, next_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+					if (next_len > 0
+						&& (next.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CJMP
+						&& next.jump == op->jump
+						&& cond_is_inverse (op->cond, next.cond)) {
+						r_anal_hint_set_fail (anal, next.addr, op->jump);
+					}
+					r_anal_op_fini (&next);
+				}
+			}
 			if (anal->opt.cjmpref) {
 				const bool is_success = r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
 				if (!is_success) {

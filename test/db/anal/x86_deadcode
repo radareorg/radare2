@@ -1,0 +1,13 @@
+NAME=antidisasm deadcode jcc pair
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 557403750121b821000000cd80c3
+af @ 0
+afbj
+EOF
+EXPECT=<<EOF
+[{"addr":0,"size":3,"jump":6,"fail":3,"opaddr":0,"inputs":0,"outputs":2,"ninstr":2,"instrs":[0,1],"traced":0},{"addr":3,"size":2,"jump":6,"fail":6,"opaddr":18446744073709551615,"inputs":1,"outputs":2,"ninstr":1,"instrs":[3],"traced":0},{"addr":6,"size":8,"opaddr":18446744073709551615,"inputs":3,"outputs":0,"ninstr":3,"instrs":[6,11,13],"traced":0}]
+EOF
+RUN
