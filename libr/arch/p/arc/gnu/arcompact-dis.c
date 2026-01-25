@@ -27,8 +27,22 @@
 #include "arc-dis.h"
 #include "arcompact-dis.h"
 #include "../../../include/elf-bfd.h"
-#include "r_types.h"
-#include "r_util.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <stdarg.h>
+
+/* Compatibility definitions for arcompact-dis.c */
+#define E_ARC_MACH_A4     0
+#define ARC_MACH_ARC7     7
+#define AC_SYNTAX_3OP     1
+#define AC_SYNTAX_2OP     2
+#define AC_SYNTAX_1OP     3
+#define AC_SYNTAX_NOP     4
+#define AC_SYNTAX_SIMD    5
+
+/* Functions from arc-ext that are needed */
+const char *arc_aux_reg_name (int regnum);
+const char *arcExtMap_instName (int opcode, int minor, int *flags);
 
 static bfd_vma bfd_getm32(unsigned int);
 static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;

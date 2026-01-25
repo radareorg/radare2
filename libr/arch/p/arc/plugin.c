@@ -62,12 +62,11 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
-	disasm_obj.mach = 0;
+	disasm_obj.mach = 8; /* bfd_mach_arc_arcv2 for modern ARC */
 	if (as->config->bits == 16) {
 		op->size = ARCompact_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	} else {
-		ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
-		//op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
+		op->size = ARCTangent_decodeInstr ((bfd_vma)op->addr, &disasm_obj);
 	}
 	if (op->size == -1) {
 		r_strbuf_set (sb, "(data)");
