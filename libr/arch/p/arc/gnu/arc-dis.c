@@ -271,10 +271,8 @@ find_format_from_table (struct disassemble_info *info,
 {
   unsigned int i = 0;
   const struct arc_opcode *opcode = NULL;
-  const struct arc_opcode *t_op = NULL;
   const unsigned char *opidx;
   const unsigned char *flgidx;
-  bool warn_p = false;
 
   do
     {
@@ -373,8 +371,12 @@ find_format_from_table (struct disassemble_info *info,
       if (insn_len == 4
 	  && overlaps)
 	{
+#if 0
+	  const struct arc_opcode *t_op = NULL;
+	  bool warn_p = false;
 	  warn_p = true;
 	  t_op = opcode;
+#endif
 	  if (skip_this_opcode (info, opcode))
 	    continue;
 	}
@@ -833,6 +835,7 @@ parse_option (struct arc_disassemble_info *arc_infop, const char *option)
   { 0, 0, 0 }
 
 /* A table of CPU names and opcode sets.  */
+#if 0
 static const struct cpu_type
 {
   const char *name;
@@ -843,6 +846,7 @@ static const struct cpu_type
 {
   #include "./arc-cpu.def"
 };
+#endif
 
 /* Helper for parsing the CPU options.  Accept any of the ARC architectures
    values.  OPTION should be a value passed to cpu=.  */
