@@ -91,7 +91,7 @@ static bool srec_parse(Rsrec *rs, char *str) {
 				line[len - 1] = 0;
 			}
 		}
-		char *cur = r_str_trim_head (line);
+		const char *cur = r_str_trim_head_ro (line);
 		if (*cur == 0) {
 			line = eol? eol + 1: NULL;
 			continue;
