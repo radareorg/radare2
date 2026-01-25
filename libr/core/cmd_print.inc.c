@@ -1026,32 +1026,145 @@ static char *print_unescape_dup(const char *input) {
 	return msg;
 }
 
+typedef struct {
+	bool left;
+	bool zero;
+	bool has_precision;
+	int width;
+	int precision;
+} PrintFmt;
+
+static void print_format_parse(const char *spec, PrintFmt *pf) {
+	const char *p = spec;
+	memset (pf, 0, sizeof (*pf));
+	if (*p == '%') {
+		p++;
+	}
+	for (;;) {
+		switch (*p) {
+		case '-':
+			pf->left = true;
+			p++;
+			continue;
+		case '0':
+			pf->zero = true;
+			p++;
+			continue;
+		case '+':
+		case ' ':
+		case '#':
+			p++;
+			continue;
+		}
+		break;
+	}
+	if (isdigit ((ut8)*p)) {
+		pf->width = atoi (p);
+		while (isdigit ((ut8)*p)) {
+			p++;
+		}
+	}
+	if (*p == '.') {
+		p++;
+		pf->has_precision = true;
+		pf->precision = atoi (p);
+		while (isdigit ((ut8)*p)) {
+			p++;
+		}
+	}
+}
+
+static void print_format_write(RStrBuf *sb, const char *fmt, ...) {
+	va_list ap;
+	char tmp[256];
+	va_start (ap, fmt);
+	int n = vsnprintf (tmp, sizeof (tmp), fmt, ap);
+	va_end (ap);
+	if (n > 0) {
+		r_strbuf_append_n (sb, tmp, n);
+	}
+}
+
 static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char conv, const char *arg) {
-	ut64 val = 0;
+	PrintFmt pf;
+	print_format_parse (spec, &pf);
+	if (pf.left) {
+		pf.zero = false;
+	}
 	switch (conv) {
-	case 's':
-		r_strbuf_appendf (sb, spec, arg? arg: "");
+	case 's': {
+		const char *s = arg? arg: "";
+		if (pf.has_precision) {
+			if (pf.width) {
+				print_format_write (sb, pf.left? "%-*.*s": "%*.*s", pf.width, pf.precision, s);
+			} else {
+				print_format_write (sb, "%.*s", pf.precision, s);
+			}
+		} else if (pf.width) {
+			print_format_write (sb, pf.left? "%-*s": "%*s", pf.width, s);
+		} else {
+			r_strbuf_append (sb, s);
+		}
 		return true;
-	case 'c':
-		val = (ut64)r_num_math (core->num, arg);
-		r_strbuf_appendf (sb, spec, (int)val);
+	}
+	case 'c': {
+		ut64 val = (ut64)r_num_math (core->num, arg);
+		if (pf.width) {
+			print_format_write (sb, pf.left? "%-*c": "%*c", pf.width, (int)val);
+		} else {
+			print_format_write (sb, "%c", (int)val);
+		}
 		return true;
-	case 'p':
-		val = (ut64)r_num_math (core->num, arg);
-		r_strbuf_appendf (sb, spec, (void *)(uintptr_t)val);
+	}
+	case 'p': {
+		ut64 val = (ut64)r_num_math (core->num, arg);
+		if (pf.width) {
+			print_format_write (sb, pf.left? "%-*p": "%*p", pf.width, (void *)(uintptr_t)val);
+		} else {
+			print_format_write (sb, "%p", (void *)(uintptr_t)val);
+		}
 		return true;
+	}
 	case 'd':
-	case 'i':
-		val = (ut64)r_num_math (core->num, arg);
-		r_strbuf_appendf (sb, spec, (long long)(st64)val);
+	case 'i': {
+		st64 sval = (st64)r_num_math (core->num, arg);
+		if (pf.width) {
+			print_format_write (sb, pf.left? "%-*lld": (pf.zero? "%0*lld": "%*lld"), pf.width, (long long)sval);
+		} else {
+			print_format_write (sb, "%lld", (long long)sval);
+		}
 		return true;
-	case 'u':
+	}
+	case 'u': {
+		ut64 val = (ut64)r_num_math (core->num, arg);
+		if (pf.width) {
+			print_format_write (sb, pf.left? "%-*llu": (pf.zero? "%0*llu": "%*llu"), pf.width, (unsigned long long)val);
+		} else {
+			print_format_write (sb, "%llu", (unsigned long long)val);
+		}
+		return true;
+	}
 	case 'x':
 	case 'X':
-	case 'o':
-		val = (ut64)r_num_math (core->num, arg);
-		r_strbuf_appendf (sb, spec, (unsigned long long)val);
+	case 'o': {
+		ut64 val = (ut64)r_num_math (core->num, arg);
+		if (pf.width) {
+			if (conv == 'x') {
+				print_format_write (sb, pf.left? "%-*llx": (pf.zero? "%0*llx": "%*llx"), pf.width, (unsigned long long)val);
+			} else if (conv == 'X') {
+				print_format_write (sb, pf.left? "%-*llX": (pf.zero? "%0*llX": "%*llX"), pf.width, (unsigned long long)val);
+			} else {
+				print_format_write (sb, pf.left? "%-*llo": (pf.zero? "%0*llo": "%*llo"), pf.width, (unsigned long long)val);
+			}
+		} else if (conv == 'x') {
+			print_format_write (sb, "%llx", (unsigned long long)val);
+		} else if (conv == 'X') {
+			print_format_write (sb, "%llX", (unsigned long long)val);
+		} else {
+			print_format_write (sb, "%llo", (unsigned long long)val);
+		}
 		return true;
+	}
 	case 'f':
 	case 'F':
 	case 'e':
@@ -1059,9 +1172,49 @@ static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char 
 	case 'g':
 	case 'G':
 	case 'a':
-	case 'A':
-		r_strbuf_appendf (sb, spec, r_num_get_double (core->num, arg));
+	case 'A': {
+		double d = r_num_get_double (core->num, arg);
+		if (pf.has_precision) {
+			if (pf.width) {
+				if (conv == 'f' || conv == 'F') {
+					print_format_write (sb, pf.left? "%-*.*f": (pf.zero? "%0*.*f": "%*.*f"), pf.width, pf.precision, d);
+				} else if (conv == 'e' || conv == 'E') {
+					print_format_write (sb, pf.left? "%-*.*e": (pf.zero? "%0*.*e": "%*.*e"), pf.width, pf.precision, d);
+				} else if (conv == 'g' || conv == 'G') {
+					print_format_write (sb, pf.left? "%-*.*g": (pf.zero? "%0*.*g": "%*.*g"), pf.width, pf.precision, d);
+				} else {
+					print_format_write (sb, pf.left? "%-*.*a": (pf.zero? "%0*.*a": "%*.*a"), pf.width, pf.precision, d);
+				}
+			} else if (conv == 'f' || conv == 'F') {
+				print_format_write (sb, "%.*f", pf.precision, d);
+			} else if (conv == 'e' || conv == 'E') {
+				print_format_write (sb, "%.*e", pf.precision, d);
+			} else if (conv == 'g' || conv == 'G') {
+				print_format_write (sb, "%.*g", pf.precision, d);
+			} else {
+				print_format_write (sb, "%.*a", pf.precision, d);
+			}
+		} else if (pf.width) {
+			if (conv == 'f' || conv == 'F') {
+				print_format_write (sb, pf.left? "%-*f": (pf.zero? "%0*f": "%*f"), pf.width, d);
+			} else if (conv == 'e' || conv == 'E') {
+				print_format_write (sb, pf.left? "%-*e": (pf.zero? "%0*e": "%*e"), pf.width, d);
+			} else if (conv == 'g' || conv == 'G') {
+				print_format_write (sb, pf.left? "%-*g": (pf.zero? "%0*g": "%*g"), pf.width, d);
+			} else {
+				print_format_write (sb, pf.left? "%-*a": (pf.zero? "%0*a": "%*a"), pf.width, d);
+			}
+		} else if (conv == 'f' || conv == 'F') {
+			print_format_write (sb, "%f", d);
+		} else if (conv == 'e' || conv == 'E') {
+			print_format_write (sb, "%e", d);
+		} else if (conv == 'g' || conv == 'G') {
+			print_format_write (sb, "%g", d);
+		} else {
+			print_format_write (sb, "%a", d);
+		}
 		return true;
+	}
 	}
 	return false;
 }
