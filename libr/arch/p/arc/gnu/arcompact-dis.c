@@ -27,8 +27,22 @@
 #include "arc-dis.h"
 #include "arcompact-dis.h"
 #include "../../../include/elf-bfd.h"
-#include "r_types.h"
-#include "r_util.h"
+#include <r_types.h>
+#include <r_util.h>
+#include <stdarg.h>
+
+/* Compatibility definitions for arcompact-dis.c */
+#define E_ARC_MACH_A4     0
+#define ARC_MACH_ARC7     7
+#define AC_SYNTAX_3OP     1
+#define AC_SYNTAX_2OP     2
+#define AC_SYNTAX_1OP     3
+#define AC_SYNTAX_NOP     4
+#define AC_SYNTAX_SIMD    5
+
+/* Functions from arc-ext that are needed */
+const char *arc_aux_reg_name (int regnum);
+const char *arcExtMap_instName (int opcode, int minor, int *flags);
 
 static bfd_vma bfd_getm32(unsigned int);
 static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
@@ -46,6 +60,10 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #define BITS(word,s,e)    (((word) << (sizeof (word)*8-1 - (e))) >> ((s)+(sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
+/* Undef macros from arc.h to avoid redefinition warnings */
+#undef FIELDA
+#undef FIELDB
+#undef FIELDC
 #define FIELDA(word)      (BITS ((word), 0, 5))
 #define FIELDb(word)      (BITS ((word), 24, 26))
 #define FIELDB(word)      (BITS ((word), 12, 14))
@@ -452,7 +470,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	  /* Aux Register. */
 	    int val = va_arg(ap,int);
-	    char *ret;
+	    const char *ret;
 	    ret = arc_aux_reg_name(val);
 	    if (ret) {
 		    sprintf (bp, "%s", ret);
@@ -965,7 +983,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  {
 	  case 0: instrName = "swap"; decodingClass = 1; break;
 	  case 1: instrName = "norm"; decodingClass = 1; break;
-	    /* ARC A700 DSP Extensions */
+	    /* ARC A700 ARC_DSP Extensions */
 	  case 2: instrName = "sat16"; decodingClass = 1; break;
 	  case 3: instrName = "rnd16"; decodingClass = 1; break;
 	  case 4: instrName = "abssw"; decodingClass = 1; break;
@@ -2857,7 +2875,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       break;
 
     case 9:
-      /* BBIT0/BBIT1 Instruction */
+      /* ARC_BBIT0/ARC_BBIT1 Instruction */
 
       CHECK_FIELD_C();
       if (is_limm || BIT(state->words[0],4))

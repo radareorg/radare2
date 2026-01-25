@@ -1,0 +1,53 @@
+/* ARC processor types
+   Copyright (C) 2017-2026 Free Software Foundation, Inc.
+
+   This file is part of GAS, the GNU Assembler.
+
+   GAS is free software; you can redistribute it and/or modify
+   it under the terms of the GNU General Public License as published by
+   the Free Software Foundation; either version 3, or (at your option)
+   any later version.
+
+   GAS is distributed in the hope that it will be useful,
+   but WITHOUT ANY WARRANTY; without even the implied warranty of
+   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+   GNU General Public License for more details.
+
+   You should have received a copy of the GNU General Public License
+   along with GAS; see the file COPYING.  If not, write to the Free
+   Software Foundation, 51 Franklin Street - Fifth Floor, Boston, MA
+   02110-1301, USA.  */
+
+
+ARC_CPU_TYPE_A7xx (arc700, 0x00),
+ARC_CPU_TYPE_A7xx (nps400, NPS400),
+
+ARC_CPU_TYPE_AV2EM (arcem,	0x00),
+ARC_CPU_TYPE_AV2EM (em,		0x00),
+ARC_CPU_TYPE_AV2EM (em_mini,	0x00),
+ARC_CPU_TYPE_AV2EM (em4,	CD),
+ARC_CPU_TYPE_AV2EM (em4_dmips,  CD),
+ARC_CPU_TYPE_AV2EM (em4_fpus,	CD),
+ARC_CPU_TYPE_AV2EM (em4_fpuda,  CD | DPA),
+ARC_CPU_TYPE_AV2EM (quarkse_em, CD | SPX | DPX),
+
+ARC_CPU_TYPE_AV2HS (archs,	CD),
+ARC_CPU_TYPE_AV2HS (hs,		CD),
+ARC_CPU_TYPE_AV2HS (hs34,	CD),
+ARC_CPU_TYPE_AV2HS (hs38,	CD),
+ARC_CPU_TYPE_AV2HS (hs38_linux, CD),
+ARC_CPU_TYPE_AV2HS (hs4x,	CD),
+ARC_CPU_TYPE_AV2HS (hs4xd,	CD),
+ARC_CPU_TYPE_AV2HS (hs4x_rel31, CD),
+
+ARC_CPU_TYPE_A6xx (arc600, 0x00),
+ARC_CPU_TYPE_A6xx (arc600_norm,     0x00),
+ARC_CPU_TYPE_A6xx (arc600_mul64,    0x00),
+ARC_CPU_TYPE_A6xx (arc600_mul32x16, 0x00),
+ARC_CPU_TYPE_A6xx (arc601,	    0x00),
+ARC_CPU_TYPE_A6xx (arc601_norm,     0x00),
+ARC_CPU_TYPE_A6xx (arc601_mul64,    0x00),
+ARC_CPU_TYPE_A6xx (arc601_mul32x16, 0x00),
+
+ARC_CPU_TYPE_NONE
+

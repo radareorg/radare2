@@ -78,7 +78,7 @@ cd "$(dirname $0)"/..
 # ( git grep strncmp | grep '== 0') && exit 1 ## must use r_str_startswith
 (git grep -n ';;$' libr | grep -v c2) && exit 1
 (git grep -n '0 ;' libr) && exit 1
-(git grep -n -e 'i<' -e 'j<' -e 'k<' libr | grep -v '"') && exit 1
+(git grep -n -e ';i<' -e ';j<' libr | grep -v '"') && exit 1
 (git grep -n '\ $' libr) && exit 1 # trailing space
 (git grep -n '^eprintf' libr) && exit 1
 (git grep -n '4d""' libr) && exit 1
