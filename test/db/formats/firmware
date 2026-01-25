@@ -211,3 +211,49 @@ EXPECT=<<EOF
 ljmp 0xf000:0xffaa
 EOF
 RUN
+
+NAME=apple baseband
+FILE=bins/firmware/gns1_test.bin
+CMDS=i;iS
+EXPECT=<<EOF
+fd       3
+file     bins/firmware/gns1_test.bin
+size     0x94
+humansz  148
+mode     r-x
+format   gns1
+iorw     false
+block    0x100
+type     GNS1
+arch     arc
+cpu      ARC700
+baddr    0x10000000
+binsz    148
+bintype  firmware
+bits     16
+canary   false
+injprot  false
+retguard false
+crypto   false
+endian   little
+havecode true
+laddr    0x0
+linenum  false
+lsyms    false
+machine  Apple C4000 Baseband
+nx       false
+pic      false
+relocs   false
+sanitize false
+static   true
+stripped false
+subsys   baseband
+va       true
+nth paddr       size vaddr       vsize perm flags type name
+-----------------------------------------------------------
+0   0x00000064  0x10 0x10000000   0x10 -r-x 0x0   ---- region_a_text_0
+1   0x00000074   0x8 0x10001000    0x8 -rw- 0x0   ---- region_a_data_1
+2   0x0000007c  0x10 0x15000000   0x10 -r-x 0x0   ---- region_b_text_2
+3   0x0000008c   0x8 0x15001000    0x8 -rw- 0x0   ---- region_b_data_3
+EOF
+RUN
