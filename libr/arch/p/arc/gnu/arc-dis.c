@@ -384,6 +384,7 @@ find_format_from_table (struct disassemble_info *info,
     }
   while (opcode->mask);
 
+#if 0
   if (warn_p)
     {
       info->fprintf_func
@@ -394,6 +395,7 @@ find_format_from_table (struct disassemble_info *info,
 	   "opcode class(es).\n\t\t\t\t"));
       return t_op;
     }
+#endif
 
   return NULL;
 }
@@ -845,6 +847,7 @@ static const struct cpu_type
 /* Helper for parsing the CPU options.  Accept any of the ARC architectures
    values.  OPTION should be a value passed to cpu=.  */
 
+#if 0 /* Disabled for radare2 - unused function */
 static unsigned
 parse_cpu_option (const char *option)
 {
@@ -859,7 +862,6 @@ parse_cpu_option (const char *option)
   return ARC_OPCODE_NONE;
 }
 
-#if 0 /* Disabled for radare2 - unused function */
 static bool
 arc_parse_option (const char *option, void *data)
 {
