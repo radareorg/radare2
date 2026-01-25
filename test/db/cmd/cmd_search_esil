@@ -1,0 +1,29 @@
+NAME=ESIL /re x86_64 lea
+FILE=malloc://0x200
+CMDS=<<EOFCMDS
+e asm.arch=x86
+e asm.bits=64
+wx 488d3d69000000 @ 0x10
+aa
+/re 0x80
+axtq @ 0x80
+EOFCMDS
+EXPECT=<<EOFEXP
+0x10
+EOFEXP
+RUN
+
+NAME=ESIL /re arm64 adr
+FILE=malloc://0x200
+CMDS=<<EOFCMDS
+e asm.arch=arm
+e asm.bits=64
+wx 80030010 @ 0x10
+aa
+/re 0x80
+axtq @ 0x80
+EOFCMDS
+EXPECT=<<EOFEXP
+0x10
+EOFEXP
+RUN
