@@ -79,7 +79,7 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	const char *cpu = as->config->cpu;
 	disasm_obj.mach = 8; /* bfd_mach_arc_arcv2 for modern ARC */
 	if (cpu) {
-		if (r_str_startswith (cpu, "arch60")) {
+		if (r_str_startswith (cpu, "arc60")) {
 			disasm_obj.mach = 6; /* bfd_mach_arc_arc600 */
 		} else if (r_str_casecmp (cpu, "arc700") == 0 ||
 		           r_str_casecmp (cpu, "nps400") == 0) {
