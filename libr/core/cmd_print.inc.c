@@ -1026,29 +1026,44 @@ static char *print_unescape_dup(const char *input) {
 	return msg;
 }
 
-static bool print_format_append(RStrBuf *sb, const char *fmt, const char *arg, ut64 val, bool is_signed) {
-	char tmp[128];
-	if (fmt[strlen (fmt) - 1] == 's') {
-		r_strbuf_append (sb, arg? arg: "");
+static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char conv, const char *arg) {
+	ut64 val = 0;
+	switch (conv) {
+	case 's':
+		r_strbuf_appendf (sb, spec, arg? arg: "");
+		return true;
+	case 'c':
+		val = (ut64)r_num_math (core->num, arg);
+		r_strbuf_appendf (sb, spec, (int)val);
+		return true;
+	case 'p':
+		val = (ut64)r_num_math (core->num, arg);
+		r_strbuf_appendf (sb, spec, (void *)(uintptr_t)val);
+		return true;
+	case 'd':
+	case 'i':
+		val = (ut64)r_num_math (core->num, arg);
+		r_strbuf_appendf (sb, spec, (long long)(st64)val);
+		return true;
+	case 'u':
+	case 'x':
+	case 'X':
+	case 'o':
+		val = (ut64)r_num_math (core->num, arg);
+		r_strbuf_appendf (sb, spec, (unsigned long long)val);
+		return true;
+	case 'f':
+	case 'F':
+	case 'e':
+	case 'E':
+	case 'g':
+	case 'G':
+	case 'a':
+	case 'A':
+		r_strbuf_appendf (sb, spec, r_num_get_double (core->num, arg));
 		return true;
 	}
-	if (fmt[strlen (fmt) - 1] == 'c') {
-		snprintf (tmp, sizeof (tmp), fmt, (int)val);
-		r_strbuf_append (sb, tmp);
-		return true;
-	}
-	if (fmt[strlen (fmt) - 1] == 'p') {
-		snprintf (tmp, sizeof (tmp), fmt, (void *)(uintptr_t)val);
-		r_strbuf_append (sb, tmp);
-		return true;
-	}
-	if (is_signed) {
-		snprintf (tmp, sizeof (tmp), fmt, (long long)(st64)val);
-	} else {
-		snprintf (tmp, sizeof (tmp), fmt, (unsigned long long)val);
-	}
-	r_strbuf_append (sb, tmp);
-	return true;
+	return false;
 }
 
 static char *print_format_string(RCore *core, const char *input) {
@@ -1064,12 +1079,11 @@ static char *print_format_string(RCore *core, const char *input) {
 		return NULL;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	int argi = 1;
 	const char *p = fmt;
+	int argi = 1;
 	while (*p) {
 		if (*p != '%') {
-			r_strbuf_append_n (sb, p, 1);
-			p++;
+			r_strbuf_append_n (sb, p++, 1);
 			continue;
 		}
 		if (p[1] == '%') {
@@ -1077,8 +1091,7 @@ static char *print_format_string(RCore *core, const char *input) {
 			p += 2;
 			continue;
 		}
-		const char *spec_start = p;
-		p++;
+		const char *spec_start = p++;
 		while (*p && !((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '%')) {
 			p++;
 		}
@@ -1091,56 +1104,20 @@ static char *print_format_string(RCore *core, const char *input) {
 			p++;
 			continue;
 		}
-		size_t spec_len = (size_t)(p - spec_start + 1);
-		char *spec = r_str_ndup (spec_start, (int)spec_len);
+		char conv = *p++;
+		char *spec = r_str_ndup (spec_start, (int)(p - spec_start));
 		if (!spec) {
 			break;
 		}
-		char conv = *p;
-		p++;
-		if (strchr (spec, '*')) {
+		if (strchr (spec, '*') || conv == 'n' || argi >= argc) {
 			r_strbuf_append (sb, spec);
 			free (spec);
 			continue;
 		}
-		if (conv == 'n') {
+		char *arg = print_unescape_dup (argv[argi++]);
+		if (!arg || !print_format_apply (core, sb, spec, conv, arg)) {
 			r_strbuf_append (sb, spec);
-			free (spec);
-			continue;
 		}
-		if (argi >= argc) {
-			r_strbuf_append (sb, spec);
-			free (spec);
-			continue;
-		}
-		char *arg = print_unescape_dup (argv[argi]);
-		argi++;
-		ut64 val = 0;
-		bool is_signed = false;
-		if (conv == 'd' || conv == 'i') {
-			val = (ut64)r_num_math (core->num, arg);
-			is_signed = true;
-		} else if (conv == 'u' || conv == 'x' || conv == 'X' || conv == 'o') {
-			val = (ut64)r_num_math (core->num, arg);
-		} else if (conv == 'p' || conv == 'c') {
-			val = (ut64)r_num_math (core->num, arg);
-		} else if (conv == 's') {
-			/* handled inside print_format_append */
-		} else if (conv == 'f' || conv == 'F' || conv == 'e' || conv == 'E' || conv == 'g' || conv == 'G' || conv == 'a' || conv == 'A') {
-			double d = r_num_get_double (core->num, arg);
-			char tmp[128];
-			snprintf (tmp, sizeof (tmp), spec, d);
-			r_strbuf_append (sb, tmp);
-			free (spec);
-			free (arg);
-			continue;
-		} else {
-			r_strbuf_append (sb, spec);
-			free (spec);
-			free (arg);
-			continue;
-		}
-		print_format_append (sb, spec, arg, val, is_signed);
 		free (spec);
 		free (arg);
 	}
