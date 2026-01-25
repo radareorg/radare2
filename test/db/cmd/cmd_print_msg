@@ -1,0 +1,31 @@
+NAME=print escapes
+FILE=-
+CMDS=<<EOF
+print "hello\n\nworld\n"
+EOF
+EXPECT=<<EOF
+hello
+
+world
+EOF
+RUN
+
+NAME=printf formatting
+FILE=-
+CMDS=<<EOF
+printf "%02x %d %s" 10 20 hello;println
+EOF
+EXPECT=<<EOF
+0a 20 hello
+EOF
+RUN
+
+NAME=printfln formatting
+FILE=-
+CMDS=<<EOF
+printfln "%04x:%s" 0x2a test
+EOF
+EXPECT=<<EOF
+002a:test
+EOF
+RUN

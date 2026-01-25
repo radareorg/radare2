@@ -1014,20 +1014,183 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 	RVecRIORegion_free (regions);
 }
 
+static char *print_unescape_dup(const char *input) {
+	char *msg = r_str_trim_dup (input);
+	if (!msg) {
+		return NULL;
+	}
+	if (*msg == '"' || *msg == '\'') {
+		r_str_trim_args (msg);
+	}
+	r_str_unescape (msg);
+	return msg;
+}
+
+static bool print_format_append(RStrBuf *sb, const char *fmt, const char *arg, ut64 val, bool is_signed) {
+	char tmp[128];
+	if (fmt[strlen (fmt) - 1] == 's') {
+		r_strbuf_append (sb, arg? arg: "");
+		return true;
+	}
+	if (fmt[strlen (fmt) - 1] == 'c') {
+		snprintf (tmp, sizeof (tmp), fmt, (int)val);
+		r_strbuf_append (sb, tmp);
+		return true;
+	}
+	if (fmt[strlen (fmt) - 1] == 'p') {
+		snprintf (tmp, sizeof (tmp), fmt, (void *)(uintptr_t)val);
+		r_strbuf_append (sb, tmp);
+		return true;
+	}
+	if (is_signed) {
+		snprintf (tmp, sizeof (tmp), fmt, (long long)(st64)val);
+	} else {
+		snprintf (tmp, sizeof (tmp), fmt, (unsigned long long)val);
+	}
+	r_strbuf_append (sb, tmp);
+	return true;
+}
+
+static char *print_format_string(RCore *core, const char *input) {
+	int argc = 0;
+	char **argv = r_str_argv (input, &argc);
+	if (!argv || argc < 1) {
+		r_str_argv_free (argv);
+		return NULL;
+	}
+	char *fmt = print_unescape_dup (argv[0]);
+	if (!fmt) {
+		r_str_argv_free (argv);
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	int argi = 1;
+	const char *p = fmt;
+	while (*p) {
+		if (*p != '%') {
+			r_strbuf_append_n (sb, p, 1);
+			p++;
+			continue;
+		}
+		if (p[1] == '%') {
+			r_strbuf_append_n (sb, "%", 1);
+			p += 2;
+			continue;
+		}
+		const char *spec_start = p;
+		p++;
+		while (*p && !((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '%')) {
+			p++;
+		}
+		if (!*p) {
+			r_strbuf_append (sb, spec_start);
+			break;
+		}
+		if (*p == '%') {
+			r_strbuf_append_n (sb, "%", 1);
+			p++;
+			continue;
+		}
+		size_t spec_len = (size_t)(p - spec_start + 1);
+		char *spec = r_str_ndup (spec_start, (int)spec_len);
+		if (!spec) {
+			break;
+		}
+		char conv = *p;
+		p++;
+		if (strchr (spec, '*')) {
+			r_strbuf_append (sb, spec);
+			free (spec);
+			continue;
+		}
+		if (conv == 'n') {
+			r_strbuf_append (sb, spec);
+			free (spec);
+			continue;
+		}
+		if (argi >= argc) {
+			r_strbuf_append (sb, spec);
+			free (spec);
+			continue;
+		}
+		char *arg = print_unescape_dup (argv[argi]);
+		argi++;
+		ut64 val = 0;
+		bool is_signed = false;
+		if (conv == 'd' || conv == 'i') {
+			val = (ut64)r_num_math (core->num, arg);
+			is_signed = true;
+		} else if (conv == 'u' || conv == 'x' || conv == 'X' || conv == 'o') {
+			val = (ut64)r_num_math (core->num, arg);
+		} else if (conv == 'p' || conv == 'c') {
+			val = (ut64)r_num_math (core->num, arg);
+		} else if (conv == 's') {
+			/* handled inside print_format_append */
+		} else if (conv == 'f' || conv == 'F' || conv == 'e' || conv == 'E' || conv == 'g' || conv == 'G' || conv == 'a' || conv == 'A') {
+			double d = r_num_get_double (core->num, arg);
+			char tmp[128];
+			snprintf (tmp, sizeof (tmp), spec, d);
+			r_strbuf_append (sb, tmp);
+			free (spec);
+			free (arg);
+			continue;
+		} else {
+			r_strbuf_append (sb, spec);
+			free (spec);
+			free (arg);
+			continue;
+		}
+		print_format_append (sb, spec, arg, val, is_signed);
+		free (spec);
+		free (arg);
+	}
+	free (fmt);
+	r_str_argv_free (argv);
+	return r_strbuf_drain (sb);
+}
+
 static void cmd_printmsg(RCore *core, const char *input) {
 	if (!strcmp (input, "ln")) {
 		r_cons_newline (core->cons);
-	} else if (r_str_startswith (input, "ln ")) {
-		r_cons_println (core->cons, input + 3);
-	} else if (r_str_startswith (input, " ")) {
-		r_cons_print (core->cons, input + 1);
-	} else if (r_str_startswith (input, "f ")) {
-		R_LOG_TODO ("printf not implemented. use ?e, echo or print");
-	} else if (r_str_startswith (input, "fln ")) {
-		R_LOG_TODO ("printfln not implemented. use ?e, echo or print");
-	} else {
-		r_core_cmd_help_match (core, help_msg_pr, "print");
+		return;
 	}
+	if (r_str_startswith (input, "ln ")) {
+		char *msg = print_unescape_dup (input + 3);
+		if (msg) {
+			r_cons_println (core->cons, msg);
+			free (msg);
+		}
+		return;
+	}
+	if (r_str_startswith (input, " ")) {
+		char *msg = print_unescape_dup (input + 1);
+		if (msg) {
+			r_cons_print (core->cons, msg);
+			free (msg);
+		}
+		return;
+	}
+	if (r_str_startswith (input, "f ")) {
+		char *out = print_format_string (core, input + 2);
+		if (out) {
+			r_cons_print (core->cons, out);
+			free (out);
+		} else {
+			r_core_cmd_help_match (core, help_msg_pr, "print");
+		}
+		return;
+	}
+	if (r_str_startswith (input, "fln ")) {
+		char *out = print_format_string (core, input + 4);
+		if (out) {
+			r_cons_println (core->cons, out);
+			free (out);
+		} else {
+			r_core_cmd_help_match (core, help_msg_pr, "print");
+		}
+		return;
+	}
+	r_core_cmd_help_match (core, help_msg_pr, "print");
 }
 
 static void cmd_prc_zoom(RCore *core, const char *input) {
