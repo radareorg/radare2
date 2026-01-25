@@ -664,6 +664,7 @@ extern RIOPlugin r_io_plugin_mmap;
 extern RIOPlugin r_io_plugin_default;
 extern RIOPlugin r_io_plugin_dsc;
 extern RIOPlugin r_io_plugin_ihex;
+extern RIOPlugin r_io_plugin_srec;
 extern RIOPlugin r_io_plugin_self;
 extern RIOPlugin r_io_plugin_gzip;
 extern RIOPlugin r_io_plugin_winkd;

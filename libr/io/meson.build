@@ -30,6 +30,7 @@ r_io_sources = [
   'p/io_gzip.c',
   'p/io_http.c',
   'p/io_ihex.c',
+  'p/io_srec.c',
   'p/io_mach.c',
   'p/io_malloc.c',
   'p/io_cyclic.c',
