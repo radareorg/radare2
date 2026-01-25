@@ -31,6 +31,7 @@ r_bin_sources = [
   'p/bin_elf.c',
   'p/bin_elf64.c',
   'p/bin_fs.c',
+  'p/bin_gns1.c',
   'p/bin_java.c',
   'p/bin_ldr_linux.c',
   'p/bin_le.c',
