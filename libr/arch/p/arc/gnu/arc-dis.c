@@ -53,7 +53,7 @@
 #define arc_fprintf_styled(info, stream, style, ...) (info)->fprintf_func(stream, __VA_ARGS__)
 
 #define startswith(str, prefix) (strncmp ((str), (prefix), strlen (prefix)) == 0)
-#define _bfd_error_handler(...) do {} while(0)
+#define _bfd_error_handler(...) do {} while (0)
 
 /* Structure used to iterate over, and extract the values for, operands of
    an opcode.  */
@@ -244,7 +244,7 @@ special_flag_p (const char *opname,
 	continue;
 
       /* Found potential special case instruction.  */
-      for (j=0;; ++j)
+      for (j = 0;; j++)
 	{
 	  flgidx = flg_spec->flags[j];
 	  if (flgidx == 0)
@@ -1022,7 +1022,7 @@ print_insn_arc (bfd_vma memaddr,
      the number of bytes objdump should display on a single line.  If
      the instruction decoder sets this, it should always set it to
      the same value in order to get reasonable looking output.  */
-  info->bytes_per_line  = 8;
+  info->bytes_per_line = 8;
 
   /* In the next lines, we set two info variables control the way
      objdump displays the raw data.  For example, if bytes_per_line is
@@ -1157,12 +1157,12 @@ print_insn_arc (bfd_vma memaddr,
   pr_debug ("instruction value = %llx\n", insn);
 
   /* Set some defaults for the insn info.  */
-  info->insn_info_valid    = 1;
+  info->insn_info_valid = 1;
   info->branch_delay_insns = 0;
-  info->data_size	   = 4;
-  info->insn_type	   = dis_nonbranch;
-  info->target		   = 0;
-  info->target2		   = 0;
+  info->data_size = 4;
+  info->insn_type = dis_nonbranch;
+  info->target = 0;
+  info->target2	= 0;
 
   /* FIXME to be moved in dissasemble_init_for_target.  */
   info->disassembler_needs_relocs = true;
@@ -1289,7 +1289,7 @@ print_insn_arc (bfd_vma memaddr,
 	{
 	  const char *rname;
 
-	  assert (value >=0 && value < 64);
+	  assert (value >= 0 && value < 64);
 	  rname = arcExtMap_coreRegName (value);
 	  if (!rname)
 	    rname = regnames[value];
@@ -1601,7 +1601,7 @@ print_arc_disassembler_options (FILE *stream)
       fprintf (stream, _("\n\
   For the options above, the following values are supported for \"%s\":\n   "),
 	       args[i].name);
-      for (j = 0; args[i].values[j] != NULL; ++j)
+      for (j = 0; args[i].values[j] != NULL; j++)
 	{
 	  fprintf (stream, " %s", args[i].values[j]);
 	  len += strlen (args[i].values[j]) + 1;
@@ -1640,7 +1640,7 @@ void arc_insn_decode (bfd_vma addr,
   assert (info->private_data != NULL);
   arc_infop = info->private_data;
 
-  insn->length  = arc_infop->insn_len;;
+  insn->length  = arc_infop->insn_len;
   insn->address = addr;
 
   /* Quick exit if memory at this address is not an instruction.  */
@@ -1655,7 +1655,7 @@ void arc_insn_decode (bfd_vma addr,
   opcode = (const struct arc_opcode *) arc_infop->opcode;
   insn->insn_class = opcode->insn_class;
   insn->limm_value = arc_infop->limm;
-  insn->limm_p     = arc_infop->limm_p;
+  insn->limm_p = arc_infop->limm_p;
 
   insn->is_control_flow = (info->insn_type == dis_branch
 			   || info->insn_type == dis_condbranch
@@ -1663,8 +1663,7 @@ void arc_insn_decode (bfd_vma addr,
 			   || info->insn_type == dis_condjsr);
 
   insn->has_delay_slot = info->branch_delay_insns;
-  insn->writeback_mode
-    = (enum arc_ldst_writeback_mode) arc_infop->writeback_mode;
+  insn->writeback_mode = (enum arc_ldst_writeback_mode) arc_infop->writeback_mode;
   insn->data_size_mode = info->data_size;
   insn->condition_code = arc_infop->condition_code;
   memcpy (insn->operands, arc_infop->operands,
