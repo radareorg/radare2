@@ -428,6 +428,8 @@ typedef struct r_bin_object_t {
 	bool is_reloc_patched; // used to indicate whether relocations were patched or not
 } RBinObject;
 
+R_IPI void r_bin_object_import_cache_cleanup(RBinObject *obj);
+
 typedef struct r_bin_file_options_t {
 	const char *pluginname;
 	ut64 baseaddr; // where the linker maps the binary in memory

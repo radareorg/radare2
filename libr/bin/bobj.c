@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.obj"
 
@@ -29,6 +29,20 @@ static int reloc_cmp(void *incoming, void *in, void *user) {
 		return -1;
 	}
 	return 0;
+}
+
+R_API void r_bin_object_import_cache_cleanup(RBinObject *o) {
+	if (o) {
+		ht_pp_free (o->import_name_ht);
+		ht_up_free (o->import_addr_ht);
+		o->import_name_ht = NULL;
+		o->import_addr_ht = NULL;
+		o->import_symbols = NULL;
+	}
+}
+
+static void import_cache_cleanup(RBinObject *o) {
+	r_bin_object_import_cache_cleanup (o);
 }
 
 static void object_delete_items(RBinObject *o) {
@@ -81,6 +95,8 @@ static void object_delete_items(RBinObject *o) {
 	}
 	ht_pp_free (o->import_name_ht);
 	ht_up_free (o->import_addr_ht);
+	o->import_name_ht = NULL;
+	o->import_addr_ht = NULL;
 	o->import_symbols = NULL;
 	/* free optional filter hashtables if present */
 	if (o->filters) {
@@ -297,12 +313,8 @@ fail:
 		}
 	}
 	if (bo->import_name_ht || bo->import_addr_ht) {
-		ht_pp_free (bo->import_name_ht);
-		bo->import_name_ht = NULL;
-		ht_up_free (bo->import_addr_ht);
-		bo->import_addr_ht = NULL;
+		import_cache_cleanup (bo);
 	}
-	bo->import_symbols = NULL;
 	ht_pp_free (bo->methods_ht);
 	ht_pp_free (bo->classes_ht);
 	r_list_free (bo->classes);
@@ -439,19 +451,11 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->imports) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
-		ht_pp_free (bo->import_name_ht);
-		bo->import_name_ht = NULL;
-		ht_up_free (bo->import_addr_ht);
-		bo->import_addr_ht = NULL;
-		bo->import_symbols = NULL;
+		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
-		ht_pp_free (bo->import_name_ht);
-		bo->import_name_ht = NULL;
-		ht_up_free (bo->import_addr_ht);
-		bo->import_addr_ht = NULL;
-		bo->import_symbols = NULL;
+		import_cache_cleanup (bo);
 		if (bin->filter) {
 			RBinSymbol *sym;
 			HtPP *ht = ht_pp_new0 ();
@@ -467,11 +471,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->symbols) {
 			bo->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
-			ht_pp_free (bo->import_name_ht);
-			bo->import_name_ht = NULL;
-			ht_up_free (bo->import_addr_ht);
-			bo->import_addr_ht = NULL;
-			bo->import_symbols = NULL;
+			import_cache_cleanup (bo);
 			if (bin->filter) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}

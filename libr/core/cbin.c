@@ -2122,31 +2122,21 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static void import_cache_reset(RBinObject *obj) {
-	if (obj) {
-		ht_pp_free (obj->import_name_ht);
-		obj->import_name_ht = NULL;
-		ht_up_free (obj->import_addr_ht);
-		obj->import_addr_ht = NULL;
-		obj->import_symbols = NULL;
-	}
-}
-
 static bool import_cache_fill(RBinObject *obj, RVecRBinSymbol *symbols) {
 	R_RETURN_VAL_IF_FAIL (obj && symbols, false);
 	if (obj->import_symbols && obj->import_symbols != symbols) {
-		import_cache_reset (obj);
+		r_bin_object_import_cache_cleanup (obj);
 	}
 	if (obj->import_name_ht && obj->import_addr_ht) {
 		return true;
 	}
 	if (obj->import_name_ht || obj->import_addr_ht) {
-		import_cache_reset (obj);
+		r_bin_object_import_cache_cleanup (obj);
 	}
 	obj->import_name_ht = ht_pp_new0 ();
 	obj->import_addr_ht = ht_up_new0 ();
 	if (!obj->import_name_ht || !obj->import_addr_ht) {
-		import_cache_reset (obj);
+		r_bin_object_import_cache_cleanup (obj);
 		return false;
 	}
 	RBinSymbol *symbol;
@@ -2226,7 +2216,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 		r_table_free (table);
 		return false;
 	}
-	import_cache_reset (r_bin_cur_object (core->bin));
+	r_bin_object_import_cache_cleanup (r_bin_cur_object (core->bin));
 	const RList *imports = r_bin_get_imports (core->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4
 					: info->bits == 16? 4
