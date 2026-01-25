@@ -42,52 +42,52 @@ extern "C" {
 /* Instruction Class.  */
 typedef enum
 {
-  ACL,
-  ARITH,
-  AUXREG,
-  BBIT0,
-  BBIT1,
-  BI,
-  BIH,
-  BITOP,
-  BITSTREAM,
-  BMU,
-  BRANCH,
-  BRCC,
-  CONTROL,
-  DBNZ,
-  DIVREM,
-  DMA,
-  DPI,
-  DSP,
-  EI,
-  ENTER,
-  FLOAT,
-  INVALID,
-  JLI,
-  JUMP,
-  KERNEL,
-  LEAVE,
-  LLOCK,
-  LOAD,
-  LOGICAL,
-  LOOP,
-  MEMORY,
-  MISC,
-  MOVE,
-  MPY,
-  NET,
-  PROTOCOL_DECODE,
-  PMU,
-  POP,
-  PUSH,
-  SCOND,
-  SJLI,
-  STORE,
-  SUB,
-  SWITCH,
-  ULTRAIP,
-  XY
+  ARC_ACL,
+  ARC_ARITH,
+  ARC_AUXREG,
+  ARC_BBIT0,
+  ARC_BBIT1,
+  ARC_BI,
+  ARC_BIH,
+  ARC_BITOP,
+  ARC_BITSTREAM,
+  ARC_BMU,
+  ARC_BRANCH,
+  ARC_BRCC,
+  ARC_CONTROL,
+  ARC_DBNZ,
+  ARC_DIVREM,
+  ARC_DMA,
+  ARC_DPI,
+  ARC_DSP,
+  ARC_EI,
+  ARC_ENTER,
+  ARC_FLOAT,
+  ARC_INVALID,
+  ARC_JLI,
+  ARC_JUMP,
+  ARC_KERNEL,
+  ARC_LEAVE,
+  ARC_LLOCK,
+  ARC_LOAD,
+  ARC_LOGICAL,
+  ARC_LOOP,
+  ARC_MEMORY,
+  ARC_MISC,
+  ARC_MOVE,
+  ARC_MPY,
+  ARC_NET,
+  ARC_PROTOCOL_DECODE,
+  ARC_PMU,
+  ARC_POP,
+  ARC_PUSH,
+  ARC_SCOND,
+  ARC_SJLI,
+  ARC_STORE,
+  ARC_SUB,
+  ARC_SWITCH,
+  ARC_ULTRAIP,
+  ARC_XY
 } insn_class_t;
 
 /* Instruction Subclass.  */
@@ -260,10 +260,10 @@ struct arc_operand
 
      If this field is not NULL, then simply call it with the
      instruction value.	 It will return the value of the operand.  If
-     the INVALID argument is not NULL, *INVALID will be set to
+     the ARC_INVALID argument is not NULL, *ARC_INVALID will be set to
      TRUE if this operand type can not actually be extracted from
      this operand (i.e., the instruction does not match).  If the
-     operand is valid, *INVALID will not be changed.  */
+     operand is valid, *ARC_INVALID will not be changed.  */
   long long int (*extract) (unsigned long long instruction, bool *invalid);
 };
 

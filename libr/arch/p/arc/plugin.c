@@ -1011,7 +1011,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 				break;
 			}
 			break;
-		case 6: /* POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
+		case 6: /* ARC_POP Register from Stack, 0x18, [0x06, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
 			case 1:    /* Pop register from stack */
@@ -1023,7 +1023,7 @@ static int arcompact_op(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *dat
 				break;
 			}
 			break;
-		case 7: /* PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
+		case 7: /* ARC_PUSH Register to Stack, 0x18, [0x07, 0x00-0x1F] */
 			fields.c = (words[0] & 0x001f0000) >> 16;
 			switch (fields.c) {
 			case 1:    /* Push register to stack */

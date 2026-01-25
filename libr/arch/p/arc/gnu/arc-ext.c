@@ -266,7 +266,7 @@ ExtReadWrite_image (enum ExtReadWrite val)
 {
     switch (val)
     {
-	case REG_INVALID  : return "INVALID";
+	case REG_INVALID  : return "ARC_INVALID";
 	case REG_READ	  : return "RO";
 	case REG_WRITE	  : return "WO";
 	case REG_READWRITE: return "R/W";

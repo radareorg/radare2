@@ -983,7 +983,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	  {
 	  case 0: instrName = "swap"; decodingClass = 1; break;
 	  case 1: instrName = "norm"; decodingClass = 1; break;
-	    /* ARC A700 DSP Extensions */
+	    /* ARC A700 ARC_DSP Extensions */
 	  case 2: instrName = "sat16"; decodingClass = 1; break;
 	  case 3: instrName = "rnd16"; decodingClass = 1; break;
 	  case 4: instrName = "abssw"; decodingClass = 1; break;
@@ -2875,7 +2875,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       break;
 
     case 9:
-      /* BBIT0/BBIT1 Instruction */
+      /* ARC_BBIT0/ARC_BBIT1 Instruction */
 
       CHECK_FIELD_C();
       if (is_limm || BIT(state->words[0],4))

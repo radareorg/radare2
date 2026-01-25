@@ -201,10 +201,10 @@ skip_this_opcode (struct disassemble_info *info, const struct arc_opcode *opcode
   /* or not a known truble class.  */
   switch (opcode->insn_class)
     {
-    case FLOAT:
-    case DSP:
-    case ARITH:
-    case MPY:
+    case ARC_FLOAT:
+    case ARC_DSP:
+    case ARC_ARITH:
+    case ARC_MPY:
       break;
     default:
       return false;
@@ -614,7 +614,7 @@ get_auxreg (const struct arc_opcode *opcode,
   unsigned int i;
   const struct arc_aux_reg *auxr = &arc_aux_regs[0];
 
-  if (opcode->insn_class != AUXREG)
+  if (opcode->insn_class != ARC_AUXREG)
     return NULL;
 
   name = arcExtMap_auxRegName (value);
@@ -768,52 +768,52 @@ static void
 parse_option (struct arc_disassemble_info *arc_infop, const char *option)
 {
   if (strcmp (option, "dsp") == 0)
-    add_to_decode (arc_infop, DSP, NONE);
+    add_to_decode (arc_infop, ARC_DSP, NONE);
 
   else if (strcmp (option, "spfp") == 0)
-    add_to_decode (arc_infop, FLOAT, SPX);
+    add_to_decode (arc_infop, ARC_FLOAT, SPX);
 
   else if (strcmp (option, "dpfp") == 0)
-    add_to_decode (arc_infop, FLOAT, DPX);
+    add_to_decode (arc_infop, ARC_FLOAT, DPX);
 
   else if (strcmp (option, "quarkse_em") == 0)
     {
-      add_to_decode (arc_infop, FLOAT, DPX);
-      add_to_decode (arc_infop, FLOAT, SPX);
-      add_to_decode (arc_infop, FLOAT, QUARKSE1);
-      add_to_decode (arc_infop, FLOAT, QUARKSE2);
+      add_to_decode (arc_infop, ARC_FLOAT, DPX);
+      add_to_decode (arc_infop, ARC_FLOAT, SPX);
+      add_to_decode (arc_infop, ARC_FLOAT, QUARKSE1);
+      add_to_decode (arc_infop, ARC_FLOAT, QUARKSE2);
     }
 
   else if (strcmp (option, "fpuda") == 0)
-    add_to_decode (arc_infop, FLOAT, DPA);
+    add_to_decode (arc_infop, ARC_FLOAT, DPA);
 
   else if (strcmp (option, "nps400") == 0)
     {
-      add_to_decode (arc_infop, ACL, NPS400);
-      add_to_decode (arc_infop, ARITH, NPS400);
-      add_to_decode (arc_infop, BITOP, NPS400);
-      add_to_decode (arc_infop, BMU, NPS400);
-      add_to_decode (arc_infop, CONTROL, NPS400);
-      add_to_decode (arc_infop, DMA, NPS400);
-      add_to_decode (arc_infop, DPI, NPS400);
-      add_to_decode (arc_infop, MEMORY, NPS400);
-      add_to_decode (arc_infop, MISC, NPS400);
-      add_to_decode (arc_infop, NET, NPS400);
-      add_to_decode (arc_infop, PMU, NPS400);
-      add_to_decode (arc_infop, PROTOCOL_DECODE, NPS400);
-      add_to_decode (arc_infop, ULTRAIP, NPS400);
+      add_to_decode (arc_infop, ARC_ACL, NPS400);
+      add_to_decode (arc_infop, ARC_ARITH, NPS400);
+      add_to_decode (arc_infop, ARC_BITOP, NPS400);
+      add_to_decode (arc_infop, ARC_BMU, NPS400);
+      add_to_decode (arc_infop, ARC_CONTROL, NPS400);
+      add_to_decode (arc_infop, ARC_DMA, NPS400);
+      add_to_decode (arc_infop, ARC_DPI, NPS400);
+      add_to_decode (arc_infop, ARC_MEMORY, NPS400);
+      add_to_decode (arc_infop, ARC_MISC, NPS400);
+      add_to_decode (arc_infop, ARC_NET, NPS400);
+      add_to_decode (arc_infop, ARC_PMU, NPS400);
+      add_to_decode (arc_infop, ARC_PROTOCOL_DECODE, NPS400);
+      add_to_decode (arc_infop, ARC_ULTRAIP, NPS400);
     }
 
   else if (strcmp (option, "fpus") == 0)
     {
-      add_to_decode (arc_infop, FLOAT, SP);
-      add_to_decode (arc_infop, FLOAT, CVT);
+      add_to_decode (arc_infop, ARC_FLOAT, SP);
+      add_to_decode (arc_infop, ARC_FLOAT, CVT);
     }
 
   else if (strcmp (option, "fpud") == 0)
     {
-      add_to_decode (arc_infop, FLOAT, DP);
-      add_to_decode (arc_infop, FLOAT, CVT);
+      add_to_decode (arc_infop, ARC_FLOAT, DP);
+      add_to_decode (arc_infop, ARC_FLOAT, CVT);
     }
   else if (startswith (option, "hex"))
     arc_infop->print_hex = true;
@@ -924,9 +924,9 @@ parse_disassembler_options (struct disassemble_info *info)
   if (arc_infop->isa_mask == ARC_OPCODE_ARCv2HS)
     {
       /* FPU instructions are not extensions for HS.  */
-      add_to_decode (arc_infop, FLOAT, SP);
-      add_to_decode (arc_infop, FLOAT, DP);
-      add_to_decode (arc_infop, FLOAT, CVT);
+      add_to_decode (arc_infop, ARC_FLOAT, SP);
+      add_to_decode (arc_infop, ARC_FLOAT, DP);
+      add_to_decode (arc_infop, ARC_FLOAT, CVT);
     }
 }
 
@@ -939,17 +939,17 @@ arc_opcode_to_insn_type (const struct arc_opcode *opcode)
 
   switch (opcode->insn_class)
     {
-    case BRANCH:
-    case BBIT0:
-    case BBIT1:
-    case BI:
-    case BIH:
-    case BRCC:
-    case DBNZ:
-    case EI:
-    case JLI:
-    case JUMP:
-    case LOOP:
+    case ARC_BRANCH:
+    case ARC_BBIT0:
+    case ARC_BBIT1:
+    case ARC_BI:
+    case ARC_BIH:
+    case ARC_BRCC:
+    case ARC_DBNZ:
+    case ARC_EI:
+    case ARC_JLI:
+    case ARC_JUMP:
+    case ARC_LOOP:
       if (!strncmp (opcode->name, "bl", 2)
 	  || !strncmp (opcode->name, "jl", 2))
 	{
@@ -966,15 +966,15 @@ arc_opcode_to_insn_type (const struct arc_opcode *opcode)
 	    insn_type = dis_branch;
 	}
       break;
-    case LOAD:
-    case STORE:
-    case MEMORY:
-    case ENTER:
-    case PUSH:
-    case POP:
+    case ARC_LOAD:
+    case ARC_STORE:
+    case ARC_MEMORY:
+    case ARC_ENTER:
+    case ARC_PUSH:
+    case ARC_POP:
       insn_type = dis_dref;
       break;
-    case LEAVE:
+    case ARC_LEAVE:
       insn_type = dis_branch;
       break;
     default:
@@ -1471,7 +1471,7 @@ static struct
 {
   { "cpu=",       N_("Enforce the designated architecture while decoding."),
 		  ARC_OPTION_ARG_ARCH },
-  { "dsp",	  N_("Recognize DSP instructions."),
+  { "dsp",	  N_("Recognize ARC_DSP instructions."),
 		  ARC_OPTION_ARG_NONE },
   { "spfp",	  N_("Recognize FPX SP instructions."),
 		  ARC_OPTION_ARG_NONE },

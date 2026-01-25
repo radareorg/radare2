@@ -84,7 +84,7 @@ enum ExtReadWrite
     (OP)->opcode = CODE;				\
     (OP)->mask   = MASK;				\
     (OP)->cpu    = CPU;					\
-    (OP)->insn_class  = ARITH;				\
+    (OP)->insn_class  = ARC_ARITH;				\
     (OP)->subclass = NONE;				\
     memcpy ((OP)->operands, (ARG), MAX_INSN_ARGS);	\
     memcpy ((OP)->flags, (FLG), MAX_INSN_FLGS);		\
