@@ -113,7 +113,7 @@ R_API RMutaSession *r_muta_use(RMuta *muta, const char *algo) {
 }
 
 static const char *muta_type_strings[] = {
-	"hash", "base", "crypto", "sign",
+	"hash", "base", "crypto", "sign", "charset",
 };
 static const char *mutatype_tostring(int type) {
 	if (type < 0) {
