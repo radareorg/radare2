@@ -2863,7 +2863,7 @@ static void set_access_info(RArchSession *as, RAnalOp *op, csh handle, cs_insn *
 					val->access = R_PERM_W;
 					break;
 #if CS_API_MAJOR >= 6
-				case CS_AC_READ_WRITE
+				case CS_AC_READ_WRITE:
 					val->access = R_PERM_RW;
 					break;
 #endif
