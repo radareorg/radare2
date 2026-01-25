@@ -185,7 +185,7 @@ static char *parse(RAsmPluginSession *aps, const char *data) {
 	return r_str_pseudo_transform (pseudo_rules, data);
 }
 
-RAsmPlugin r_asm_plugin_arc_pseudo = {
+RAsmPlugin r_asm_plugin_arc = {
 	.meta = {
 		.name = "arc",
 		.desc = "ARC pseudo syntax",
@@ -196,7 +196,7 @@ RAsmPlugin r_asm_plugin_arc_pseudo = {
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
 	.type = R_LIB_TYPE_ASM,
-	.data = &r_asm_plugin_arc_pseudo,
+	.data = &r_asm_plugin_arc,
 	.version = R2_VERSION
 };
 #endif
