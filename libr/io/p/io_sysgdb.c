@@ -278,6 +278,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		int res = r_socket_spawn (state->gs, cmd, 1000);
 		free (cmd);
 		if (!res) {
+			r_socket_free (state->gs);
 			free (state);
 			return NULL;
 		}

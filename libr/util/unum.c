@@ -496,7 +496,7 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		num->value = ret;
 	}
 	if (err) {
-		*err = num ? num->nc.calc_err : NULL;
+		*err = num->nc.calc_err;
 	}
 	return ret;
 }

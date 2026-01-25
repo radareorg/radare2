@@ -2041,7 +2041,7 @@ static bool qnx_has_nx(ELFOBJ *eo) {
 }
 
 static bool compute_has_nx(ELFOBJ *eo) {
-	if (eo && eo->phdr) {
+	if (eo->phdr) {
 		size_t i;
 		for (i = 0; i < eo->ehdr.e_phnum; i++) {
 			if (eo->phdr[i].p_type == PT_GNU_STACK) {
