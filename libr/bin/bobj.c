@@ -79,6 +79,9 @@ static void object_delete_items(RBinObject *o) {
 	for (i = 0; i < R_BIN_SYM_LAST; i++) {
 		free (o->binsym[i]);
 	}
+	ht_pp_free (o->import_name_ht);
+	ht_up_free (o->import_addr_ht);
+	o->import_symbols = NULL;
 	/* free optional filter hashtables if present */
 	if (o->filters) {
 		/* Attempt to free as HtPP first; if type mismatch, free as HtSU */
@@ -232,6 +235,9 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->classes = r_list_newf ((RListFree)r_bin_class_free);
 	bo->classes_ht = ht_pp_new0 ();
 	bo->methods_ht = ht_pp_new0 ();
+	bo->import_name_ht = NULL;
+	bo->import_addr_ht = NULL;
+	bo->import_symbols = NULL;
 	bo->baddr_shift = 0;
 	bo->plugin = plugin;
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
@@ -290,6 +296,13 @@ fail:
 			bo->symbols->free = NULL;
 		}
 	}
+	if (bo->import_name_ht || bo->import_addr_ht) {
+		ht_pp_free (bo->import_name_ht);
+		bo->import_name_ht = NULL;
+		ht_up_free (bo->import_addr_ht);
+		bo->import_addr_ht = NULL;
+	}
+	bo->import_symbols = NULL;
 	ht_pp_free (bo->methods_ht);
 	ht_pp_free (bo->classes_ht);
 	r_list_free (bo->classes);
@@ -426,9 +439,19 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->imports) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
+		ht_pp_free (bo->import_name_ht);
+		bo->import_name_ht = NULL;
+		ht_up_free (bo->import_addr_ht);
+		bo->import_addr_ht = NULL;
+		bo->import_symbols = NULL;
 	}
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
+		ht_pp_free (bo->import_name_ht);
+		bo->import_name_ht = NULL;
+		ht_up_free (bo->import_addr_ht);
+		bo->import_addr_ht = NULL;
+		bo->import_symbols = NULL;
 		if (bin->filter) {
 			RBinSymbol *sym;
 			HtPP *ht = ht_pp_new0 ();
@@ -444,6 +467,11 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->symbols) {
 			bo->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
+			ht_pp_free (bo->import_name_ht);
+			bo->import_name_ht = NULL;
+			ht_up_free (bo->import_addr_ht);
+			bo->import_addr_ht = NULL;
+			bo->import_symbols = NULL;
 			if (bin->filter) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}

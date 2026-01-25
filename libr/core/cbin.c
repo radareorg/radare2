@@ -2122,38 +2122,62 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-typedef struct {
-	Sdb *import_cache;
-	RVecRBinSymbol *cached_symbols;
-} ImportCache;
+static void import_cache_reset(RBinObject *obj) {
+	if (obj) {
+		ht_pp_free (obj->import_name_ht);
+		obj->import_name_ht = NULL;
+		ht_up_free (obj->import_addr_ht);
+		obj->import_addr_ht = NULL;
+		obj->import_symbols = NULL;
+	}
+}
 
-static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr, ImportCache *cache) {
-	r_strf_buffer (64);
-	RBinSymbol *symbol, *res = NULL;
-	if (!cache) {
+static bool import_cache_fill(RBinObject *obj, RVecRBinSymbol *symbols) {
+	R_RETURN_VAL_IF_FAIL (obj && symbols, false);
+	if (obj->import_symbols && obj->import_symbols != symbols) {
+		import_cache_reset (obj);
+	}
+	if (obj->import_name_ht && obj->import_addr_ht) {
+		return true;
+	}
+	if (obj->import_name_ht || obj->import_addr_ht) {
+		import_cache_reset (obj);
+	}
+	obj->import_name_ht = ht_pp_new0 ();
+	obj->import_addr_ht = ht_up_new0 ();
+	if (!obj->import_name_ht || !obj->import_addr_ht) {
+		import_cache_reset (obj);
+		return false;
+	}
+	RBinSymbol *symbol;
+	R_VEC_FOREACH (symbols, symbol) {
+		if (!symbol->name || !symbol->is_imported) {
+			continue;
+		}
+		const char *sname = r_bin_name_tostring (symbol->name);
+		if (R_STR_ISNOTEMPTY (sname)) {
+			ht_pp_insert (obj->import_name_ht, sname, symbol);
+		}
+		if (symbol->vaddr != UT64_MAX) {
+			ht_up_insert (obj->import_addr_ht, symbol->vaddr, symbol);
+		}
+	}
+	obj->import_symbols = symbols;
+	return true;
+}
+
+static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
+	RBinObject *obj = r_bin_cur_object (bin);
+	if (!obj) {
 		return NULL;
 	}
-	if (cache->import_cache && symbols != cache->cached_symbols) {
-		sdb_free (cache->import_cache);
-		cache->import_cache = NULL;
-	}
-	if (!cache->import_cache) {
-		cache->import_cache = sdb_new0 ();
-		R_VEC_FOREACH (symbols, symbol) {
-			if (!symbol->name || !symbol->is_imported) {
-				continue;
-			}
-			sdb_num_add (cache->import_cache, r_strf ("%x", sdb_hash (r_bin_name_tostring (symbol->name))), (ut64)(size_t)symbol, 0);
-			sdb_num_add (cache->import_cache, r_strf ("0x%08" PFMT64x, symbol->vaddr), (ut64)(size_t)symbol, 0);
-		}
-		cache->cached_symbols = symbols;
+	if (!import_cache_fill (obj, symbols)) {
+		return NULL;
 	}
 	if (name) {
-		res = (RBinSymbol *)(size_t)sdb_num_get (cache->import_cache, r_strf ("%x", sdb_hash (name)), NULL);
-	} else {
-		res = (RBinSymbol *)(size_t)sdb_num_get (cache->import_cache, r_strf ("0x%08" PFMT64x, addr), NULL);
+		return ht_pp_find (obj->import_name_ht, name, NULL);
 	}
-	return res;
+	return ht_up_find (obj->import_addr_ht, addr, NULL);
 }
 
 /* XXX: This is a hack to get PLT references in rabin2 -i */
@@ -2167,8 +2191,7 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	if (!symbols) {
 		return addr;
 	}
-	ImportCache cache = {0};
-	RBinSymbol *s = get_import (bin, symbols, name, 0LL, &cache);
+	RBinSymbol *s = get_import (bin, symbols, name, 0LL);
 	// maybe ut64_MAX to indicate import not found?
 	if (s) {
 		if (va) {
@@ -2180,9 +2203,6 @@ R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 		} else {
 			addr = s->paddr;
 		}
-	}
-	if (cache.import_cache) {
-		sdb_free (cache.import_cache);
 	}
 	return addr;
 }
@@ -2206,11 +2226,11 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 		r_table_free (table);
 		return false;
 	}
-
+	import_cache_reset (r_bin_cur_object (core->bin));
 	const RList *imports = r_bin_get_imports (core->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4
 					: info->bits == 16? 4
-								: 0)
+							: 0)
 			: 0;
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
