@@ -60,6 +60,10 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #define BITS(word,s,e)    (((word) << (sizeof (word)*8-1 - (e))) >> ((s)+(sizeof (word)*8-1 - (e))))
 /* END ARC LOCAL */
 #define OPCODE(word)      (BITS ((word), 27, 31))
+/* Undef macros from arc.h to avoid redefinition warnings */
+#undef FIELDA
+#undef FIELDB
+#undef FIELDC
 #define FIELDA(word)      (BITS ((word), 0, 5))
 #define FIELDb(word)      (BITS ((word), 24, 26))
 #define FIELDB(word)      (BITS ((word), 12, 14))
@@ -466,7 +470,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	  /* Aux Register. */
 	    int val = va_arg(ap,int);
-	    char *ret;
+	    const char *ret;
 	    ret = arc_aux_reg_name(val);
 	    if (ret) {
 		    sprintf (bp, "%s", ret);

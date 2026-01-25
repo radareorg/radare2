@@ -857,6 +857,7 @@ parse_cpu_option (const char *option)
   return ARC_OPCODE_NONE;
 }
 
+#if 0 /* Disabled for radare2 - unused function */
 static bool
 arc_parse_option (const char *option, void *data)
 {
@@ -869,6 +870,7 @@ arc_parse_option (const char *option, void *data)
     parse_option (arc_infop, option);
   return true;
 }
+#endif
 
 /* Go over the options list and parse it.  */
 
@@ -1451,6 +1453,7 @@ typedef enum
 } arc_option_arg_t;
 
 /* Valid ARC disassembler options.  */
+#if 0 /* Disabled for radare2 - unused variable */
 static struct
 {
   const char *name;
@@ -1479,6 +1482,7 @@ static struct
   { "hex",	  N_("Use only hexadecimal number to print immediates."),
 		  ARC_OPTION_ARG_NONE }
 };
+#endif
 
 /* Populate the structure for representing ARC's disassembly options.
    Such a dynamic initialization is desired, because it makes the maintenance
