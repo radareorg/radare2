@@ -63,18 +63,23 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 
+#if 0
+      - ARC600 family: arc600, arc600_norm, arc600_mul64, arc600_mul32x16
+      - ARC601 family: arc601, arc601_norm, arc601_mul64, arc601_mul32x16
+      - ARC700 family: arc700, nps400
+      - ARC EM variants: arcem, em, em_mini, em4, em4_dmips, em4_fpus, em4_fpuda, quarkse_em
+      - ARC HS variants: archs, hs, hs34, hs38, hs38_linux, hs4x, hs4xd, hs4x_rel31
+
+      - Setting the appropriate machine type (disasm_obj.mach) based on CPU:
+        - mach=6 for ARC600/ARC601 variants (legacy)
+        - mach=7 for ARC700/NPS400
+        - mach=8 (default) for ARC EM and HS variants (ARCv2)
+#endif
 	/* Set the machine type based on CPU configuration */
 	const char *cpu = as->config->cpu;
 	disasm_obj.mach = 8; /* bfd_mach_arc_arcv2 for modern ARC */
 	if (cpu) {
-		if (r_str_casecmp (cpu, "arc600") == 0 ||
-		    r_str_casecmp (cpu, "arc600_norm") == 0 ||
-		    r_str_casecmp (cpu, "arc600_mul64") == 0 ||
-		    r_str_casecmp (cpu, "arc600_mul32x16") == 0 ||
-		    r_str_casecmp (cpu, "arc601") == 0 ||
-		    r_str_casecmp (cpu, "arc601_norm") == 0 ||
-		    r_str_casecmp (cpu, "arc601_mul64") == 0 ||
-		    r_str_casecmp (cpu, "arc601_mul32x16") == 0) {
+		if (r_str_startswith (cpu, "arch60")) {
 			disasm_obj.mach = 6; /* bfd_mach_arc_arc600 */
 		} else if (r_str_casecmp (cpu, "arc700") == 0 ||
 		           r_str_casecmp (cpu, "nps400") == 0) {

@@ -142,9 +142,9 @@ static const char * const addrtypenames[ARC_NUM_ADDRTYPES] =
 /* Macros section.  */
 
 #ifdef DEBUG
-# define pr_debug(fmt, args...) fprintf (stderr, fmt, ##args)
+# define pr_debug(fmt, ...) fprintf (stderr, fmt, __VA_ARGS__)
 #else
-# define pr_debug(fmt, args...)
+# define pr_debug(fmt, ...)
 #endif
 
 #define ARRANGE_ENDIAN(info, buf)					\
