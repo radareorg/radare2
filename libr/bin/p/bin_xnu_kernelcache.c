@@ -2843,16 +2843,16 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RBinFile *bf;
 	RBinFile *bf2;
 	RListIter *iter2;
-		r_list_foreach (core->bin->binfiles, iter, bf) {
-			if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
-				cache = bf->bo->bin_obj;
-				if (cache->pending_bin_files) {
-					RListIter *to_remove = r_list_contains (cache->pending_bin_files, bf);
-					if (to_remove) {
-						r_list_delete (cache->pending_bin_files, to_remove);
-					}
+	r_list_foreach (core->bin->binfiles, iter, bf) {
+		if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+			cache = bf->bo->bin_obj;
+			if (cache->pending_bin_files) {
+				RListIter *to_remove = r_list_contains (cache->pending_bin_files, bf);
+				if (to_remove) {
+					r_list_delete (cache->pending_bin_files, to_remove);
 				}
-				break;
+			}
+			break;
 		}
 	}
 
@@ -2869,8 +2869,6 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 					}
 					if (cache) break;
 				}
-			}
-		}
 			}
 		}
 	}
