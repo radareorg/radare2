@@ -63,7 +63,8 @@ typedef enum {
 	R_MUTA_TYPE_CRYPTO,
 	R_MUTA_TYPE_SIGN,
 	R_MUTA_TYPE_CHARSET,
-	R_MUTA_TYPE_ALL = -1,
+	R_MUTA_TYPE_LAST,
+	R_MUTA_TYPE_ALL = UT32_MAX,
 } RMutaType;
 
 typedef bool (*RMutaSessionSetIVCallback)(RMutaSession *ms, const ut8 *iv, int ivlen);

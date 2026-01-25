@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_muta.h>
 #include <r_hash.h>
@@ -113,6 +113,7 @@ R_API RMutaSession *r_muta_use(RMuta *muta, const char *algo) {
 }
 
 static const char *mutatype_tostring(int type) {
+	// AITODO: define an array of those strings and return the index, considering the type RMutaType from r_muta.h, check boundaries against 0 and R_MUTA_TYPE_ALL
 	switch (type) {
 	case R_MUTA_TYPE_HASH:
 		return "hash";
