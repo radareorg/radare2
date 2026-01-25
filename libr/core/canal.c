@@ -5838,7 +5838,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	int iend;
 	int minopsize = 4; // XXX this depends on asm->mininstrsize
 	bool archIsArm = false;
-	const bool archIsX86 = !strcmp (core->anal->config->arch, "x86");
+	const bool archIsX86 = r_str_startswith (core->anal->config->arch, "x86");
 	// ut64 addr = core->addr;
 	ut64 start = core->addr;
 	ut64 end = 0LL;
