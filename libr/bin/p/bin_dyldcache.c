@@ -35,6 +35,7 @@ typedef struct _r_dyldcache {
 	objc_cache_opt_info *oi;
 	bool objc_opt_info_loaded;
 	bool images_are_global;
+	ut32 unk_local_counter;
 } RDyldCache;
 
 typedef struct _r_bin_image {
@@ -251,13 +252,11 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 		if (symstr) {
 			sym->name = r_bin_name_new (symstr);
 		} else {
-			static R_TH_LOCAL ut32 k = 0;
-			char *s = r_str_newf ("unk_local%d", k++);
+			char *s = r_str_newf ("unk_local%d", cache->unk_local_counter++);
 			sym->name = r_bin_name_new (s);
 			free (s);
 		}
 	}
-
 	free (nlists);
 }
 

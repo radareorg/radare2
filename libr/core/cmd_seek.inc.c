@@ -404,6 +404,9 @@ static int cmd_seek_opcode_forward(RCore *core, int numinstr) {
 		r_unref (as);
 		free (buf);
 	}
+	if (addr < oaddr || val < 0) {
+		return 0;
+	}
 	r_io_sundo_push (core->io, oaddr, r_print_get_cursor (core->print));
 	r_core_seek (core, addr, true);
 	return val;

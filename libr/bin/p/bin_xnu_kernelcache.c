@@ -27,6 +27,7 @@ typedef struct _RKernelCacheObj {
 	int internal_buffer_size;
 	ut64 kernel_base;
 	HtUP *class_by_handle;
+	RList *pending_bin_files;
 } RKernelCacheObj;
 
 typedef struct _RFileRange {
@@ -242,8 +243,6 @@ static void ensure_kexts_initialized(RKernelCacheObj *obj, RBinFile *bf);
 
 static void r_kernel_cache_free(RKernelCacheObj *obj);
 
-static R_TH_LOCAL RList *pending_bin_files = NULL;
-
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *fbuf = r_ref (buf);
 	struct MACH0_(opts_t) opts;
@@ -275,15 +274,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		}
 	}
 
-	if (!pending_bin_files) {
-		pending_bin_files = r_list_new ();
-		if (!pending_bin_files) {
-			R_FREE (prelink_range);
-			R_FREE (obj);
-			R_FREE (prelink_info);
-			goto beach;
-		}
-	}
+	obj->pending_bin_files = r_list_new (); // R_NEW0 cannot return NULL, so this cannot fail
 
 	obj->mach0 = main_mach0;
 	obj->rebase_info = rebase_info;
@@ -294,7 +285,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	obj->class_by_handle = ht_up_new0 ();
 	R_FREE (prelink_range);
 	bf->bo->bin_obj = obj;
-	r_list_push (pending_bin_files, bf);
+	r_list_push (obj->pending_bin_files, bf);
 
 	if (rebase_info) {
 		obj->kernel_base = rebase_info->kernel_base;
@@ -2850,28 +2841,36 @@ static int kernelcache_io_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	RKernelCacheObj *cache = NULL;
 	RListIter *iter;
 	RBinFile *bf;
-	r_list_foreach (core->bin->binfiles, iter, bf) {
-		if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
-			cache = bf->bo->bin_obj;
-			if (pending_bin_files) {
-				RListIter *to_remove = r_list_contains (pending_bin_files, bf);
-				if (to_remove) {
-					r_list_delete (pending_bin_files, to_remove);
-					if (r_list_empty (pending_bin_files)) {
-						r_list_free (pending_bin_files);
-						pending_bin_files = NULL;
+	RBinFile *bf2;
+	RListIter *iter2;
+		r_list_foreach (core->bin->binfiles, iter, bf) {
+			if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+				cache = bf->bo->bin_obj;
+				if (cache->pending_bin_files) {
+					RListIter *to_remove = r_list_contains (cache->pending_bin_files, bf);
+					if (to_remove) {
+						r_list_delete (cache->pending_bin_files, to_remove);
 					}
 				}
-			}
-			break;
+				break;
 		}
 	}
 
 	if (!cache) {
-		r_list_foreach (pending_bin_files, iter, bf) {
-			if (bf->fd == fd->fd && bf->bo) {
-				cache = bf->bo->bin_obj;
-				break;
+		r_list_foreach (core->bin->binfiles, iter, bf) {
+			if (bf->fd == fd->fd && bf->bo && bf->bo->bin_obj) {
+				RKernelCacheObj *obj = bf->bo->bin_obj;
+				if (obj->pending_bin_files) {
+					r_list_foreach (obj->pending_bin_files, iter2, bf2) {
+						if (bf2->fd == fd->fd) {
+							cache = obj;
+							break;
+						}
+					}
+					if (cache) break;
+				}
+			}
+		}
 			}
 		}
 	}
