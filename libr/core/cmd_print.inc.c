@@ -1027,42 +1027,33 @@ static char *print_unescape_dup(const char *input) {
 }
 
 static bool print_format_apply(RCore *core, RStrBuf *sb, char conv, const char *arg) {
+	st64 sval = (st64)r_num_math (core->num, arg);
+	ut64 val = (ut64)sval;
 	switch (conv) {
-	case 's': {
+	case 's':
 		r_strbuf_append (sb, arg? arg: "");
 		return true;
-	}
-	case 'c': {
-		ut64 val = (ut64)r_num_math (core->num, arg);
+	case 'c':
 		r_strbuf_appendf (sb, "%c", (int)val);
 		return true;
-	}
-	case 'p': {
-		ut64 val = (ut64)r_num_math (core->num, arg);
+	case 'p':
 		r_strbuf_appendf (sb, "%p", (void *)(uintptr_t)val);
 		return true;
-	}
 	case 'd':
-	case 'i': {
-		st64 sval = (st64)r_num_math (core->num, arg);
+	case 'i':
 		r_strbuf_appendf (sb, "%" PFMT64d, sval);
 		return true;
-	}
-	case 'u': {
-		ut64 val = (ut64)r_num_math (core->num, arg);
+	case 'u':
 		r_strbuf_appendf (sb, "%" PFMT64u, val);
 		return true;
-	}
 	case 'x':
-	case 'o': {
-		ut64 val = (ut64)r_num_math (core->num, arg);
+	case 'o':
 		if (conv == 'o') {
 			r_strbuf_appendf (sb, "%" PFMT64o, val);
 		} else {
 			r_strbuf_appendf (sb, "%" PFMT64x, val);
 		}
 		return true;
-	}
 	}
 	return false;
 }
@@ -1093,7 +1084,7 @@ static char *print_format_string(RCore *core, const char *input) {
 			continue;
 		}
 		const char *spec_start = p++;
-		while (*p && !((*p >= 'a' && *p <= 'z') || (*p >= 'A' && *p <= 'Z') || *p == '%')) {
+		while (*p && !(isalpha ((ut8)*p) || *p == '%')) {
 			p++;
 		}
 		if (!*p) {
