@@ -9,6 +9,7 @@ extern "C" {
 #include <r_th.h>
 #include <r_util/pj.h>
 #include <r_util/r_graph.h>
+#include <r_util/r_ref.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_log.h>
 #include <r_util/r_num.h>
@@ -422,9 +423,10 @@ typedef void (*RConsFunctionKey)(void *core, int fkey);
 typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RConsColorMode;
 
 typedef struct r_cons_context_t {
+	R_REF_TYPE;
 	RConsGrep grep;
 	// RStack *cons_stack;
-	char *buffer; // TODO: replace with RStrBuf
+	char *buffer; // TODO: maybe replace with RStrBuf to avoid duplicated logics
 	size_t buffer_len;
 	size_t buffer_sz;
 	size_t buffer_limit;
@@ -794,18 +796,6 @@ typedef struct r_cons_canvas_line_style_t {
 
 // UTF-8 symbols indexes
 // XXX. merge with RUNE/RUNECODE/RUNECODESTR
-#if 0
-#define LINE_VERT 0
-#define LINE_CROSS 1
-#define LINE_HORIZ 2
-#define LINE_UP 3
-#define CORNER_BR 4
-#define CORNER_BL 5
-#define CORNER_TL 6
-#define CORNER_TR 7
-#define ARROW_RIGHT 8
-#define ARROW_LEFT 9
-#else
 #define LINE_VERT 0
 #define LINE_CROSS 1
 #define LINE_HORIZ 2
@@ -816,7 +806,6 @@ typedef struct r_cons_canvas_line_style_t {
 #define CORNER_TR 6
 #define ARROW_RIGHT 8
 #define ARROW_LEFT 9
-#endif
 
 #ifdef R_API
 R_API void r_cons_image(const ut8 *buf, int bufsz, int width, int mode, int components);
