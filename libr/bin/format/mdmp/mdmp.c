@@ -6,6 +6,16 @@
 // XXX: this is a random number, no idea how long it should be.
 #define COMMENTS_SIZE 32
 
+static ut32 safe_loop_count(ut64 offset, ut32 count, size_t item_size, ut64 obj_size, const char *item_name) {
+	if (offset + (ut64)count * item_size > obj_size) {
+		ut32 max_count = (obj_size - offset) / item_size;
+		R_LOG_WARN ("%s descriptor out of bounds, reducing from %d to %d",
+			item_name, count, max_count);
+		return max_count;
+	}
+	return count;
+}
+
 ut64 r_bin_mdmp_get_paddr(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
 	/* FIXME: Will only resolve exact matches, probably no need to fix as
 	** this function will become redundant on the optimisation stage */
@@ -484,7 +494,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			0);
 
 		offset = entry->location.rva + sizeof (module_list);
-		for (i = 0; i < module_list.number_of_modules && offset < obj->size; i++) {
+		ut32 max_modules = safe_loop_count (offset, module_list.number_of_modules,
+			sizeof (struct minidump_module), obj->size, "Module");
+		for (i = 0; i < max_modules; i++) {
 			struct minidump_module *module = read_module (obj->b, offset);
 			if (!module) {
 				break;
@@ -509,7 +521,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			0);
 
 		offset = entry->location.rva + sizeof (memory_list);
-		for (i = 0; i < memory_list.number_of_memory_ranges && offset < obj->size; i++) {
+		ut32 max_memory_ranges = safe_loop_count (offset, memory_list.number_of_memory_ranges,
+			sizeof (struct minidump_memory_descriptor), obj->size, "Memory");
+		for (i = 0; i < max_memory_ranges; i++) {
 			struct minidump_memory_descriptor *desc = R_NEW (struct minidump_memory_descriptor);
 			if (!desc) {
 				break;
@@ -591,7 +605,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			0);
 
 		offset = entry->location.rva + sizeof (thread_ex_list);
-		for (i = 0; i < thread_ex_list.number_of_threads && offset < obj->size; i++) {
+		ut32 max_threads = safe_loop_count (offset, thread_ex_list.number_of_threads,
+			sizeof (struct minidump_thread_ex), obj->size, "Thread");
+		for (i = 0; i < max_threads; i++) {
 			struct minidump_thread_ex *thread = R_NEW (struct minidump_thread_ex);
 			if (!thread) {
 				break;
@@ -618,7 +634,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		offset = entry->location.rva + sizeof (memory64_list);
-		for (i = 0; i < memory64_list.number_of_memory_ranges && offset < obj->size; i++) {
+		ut32 max_memory64_ranges = safe_loop_count (offset, memory64_list.number_of_memory_ranges,
+			sizeof (struct minidump_memory_descriptor64), obj->size, "Memory64");
+		for (i = 0; i < max_memory64_ranges; i++) {
 			struct minidump_memory_descriptor64 *desc = R_NEW (struct minidump_memory_descriptor64);
 			if (!desc) {
 				break;
@@ -997,9 +1015,6 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			continue;
 		}
 		ut8 *b = R_NEWS (ut8, module->size_of_image);
-		if (!b) {
-			continue;
-		}
 		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
 		//r_unref (buf);
 		// r_unref (buf); - still uaf, it could be freed if pe parsing fails
@@ -1015,9 +1030,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			if (dup) {
 				continue;
 			}
-			if (!(pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin))) {
-				continue;
-			}
+			pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
 			r_bin_mdmp_patch_pe_headers (buf);
 			pe32_bin->vaddr = module->base_of_image;
 			pe32_bin->paddr = paddr;
@@ -1037,9 +1050,7 @@ static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
 			if (dup) {
 				continue;
 			}
-			if (!(pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin))) {
-				continue;
-			}
+			pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
 			r_bin_mdmp_patch_pe_headers (buf);
 			pe64_bin->vaddr = module->base_of_image;
 			pe64_bin->paddr = paddr;
@@ -1079,9 +1090,6 @@ static int r_bin_mdmp_init(struct r_bin_mdmp_obj *obj) {
 struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	bool fail = false;
 	struct r_bin_mdmp_obj *obj = R_NEW0 (struct r_bin_mdmp_obj);
-	if (!obj) {
-		return NULL;
-	}
 	obj->kv = sdb_new0 ();
 	obj->size = (ut32) r_buf_size (buf);
 
