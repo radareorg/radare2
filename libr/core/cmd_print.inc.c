@@ -1026,157 +1026,40 @@ static char *print_unescape_dup(const char *input) {
 	return msg;
 }
 
-typedef struct {
-	bool left;
-	bool zero;
-	bool has_precision;
-	int width;
-	int precision;
-} PrintFmt;
-
-static void print_format_parse(const char *spec, PrintFmt *pf) {
-	const char *p = spec;
-	memset (pf, 0, sizeof (*pf));
-	if (*p == '%') {
-		p++;
-	}
-	for (;;) {
-		switch (*p) {
-		case '-':
-			pf->left = true;
-			p++;
-			continue;
-		case '0':
-			pf->zero = true;
-			p++;
-			continue;
-		case '+':
-		case ' ':
-		case '#':
-			p++;
-			continue;
-		}
-		break;
-	}
-	if (isdigit ((ut8)*p)) {
-		pf->width = atoi (p);
-		while (isdigit ((ut8)*p)) {
-			p++;
-		}
-	}
-	if (*p == '.') {
-		p++;
-		pf->has_precision = true;
-		pf->precision = atoi (p);
-		while (isdigit ((ut8)*p)) {
-			p++;
-		}
-	}
-}
-
-static void print_format_write(RStrBuf *sb, const char *fmt, ...) {
-	va_list ap;
-	char tmp[256];
-	va_start (ap, fmt);
-	int n = vsnprintf (tmp, sizeof (tmp), fmt, ap);
-	va_end (ap);
-	if (n > 0) {
-		r_strbuf_append_n (sb, tmp, n);
-	}
-}
-
-static void print_format_str(RStrBuf *sb, const PrintFmt *pf, const char *s) {
-	if (pf->has_precision) {
-		if (pf->width) {
-			print_format_write (sb, pf->left? "%-*.*s": "%*.*s", pf->width, pf->precision, s);
-		} else {
-			print_format_write (sb, "%.*s", pf->precision, s);
-		}
-	} else if (pf->width) {
-		print_format_write (sb, pf->left? "%-*s": "%*s", pf->width, s);
-	} else {
-		r_strbuf_append (sb, s);
-	}
-}
-
-static void print_format_chr(RStrBuf *sb, const PrintFmt *pf, int c) {
-	if (pf->width) {
-		print_format_write (sb, pf->left? "%-*c": "%*c", pf->width, c);
-	} else {
-		print_format_write (sb, "%c", c);
-	}
-}
-
-static void print_format_ptr(RStrBuf *sb, const PrintFmt *pf, void *p) {
-	if (pf->width) {
-		print_format_write (sb, pf->left? "%-*p": "%*p", pf->width, p);
-	} else {
-		print_format_write (sb, "%p", p);
-	}
-}
-
-static void print_format_int(RStrBuf *sb, const PrintFmt *pf, long long val,
-		const char *fmt_plain, const char *fmt_left, const char *fmt_right, const char *fmt_zero) {
-	if (pf->width) {
-		const char *fmt = pf->left? fmt_left: (pf->zero? fmt_zero: fmt_right);
-		print_format_write (sb, fmt, pf->width, val);
-	} else {
-		print_format_write (sb, fmt_plain, val);
-	}
-}
-
-static void print_format_uint(RStrBuf *sb, const PrintFmt *pf, unsigned long long val,
-		const char *fmt_plain, const char *fmt_left, const char *fmt_right, const char *fmt_zero) {
-	if (pf->width) {
-		const char *fmt = pf->left? fmt_left: (pf->zero? fmt_zero: fmt_right);
-		print_format_write (sb, fmt, pf->width, val);
-	} else {
-		print_format_write (sb, fmt_plain, val);
-	}
-}
-
-static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char conv, const char *arg) {
-	PrintFmt pf;
-	print_format_parse (spec, &pf);
-	if (pf.left) {
-		pf.zero = false;
-	}
+static bool print_format_apply(RCore *core, RStrBuf *sb, char conv, const char *arg) {
 	switch (conv) {
 	case 's': {
-		print_format_str (sb, &pf, arg? arg: "");
+		r_strbuf_append (sb, arg? arg: "");
 		return true;
 	}
 	case 'c': {
 		ut64 val = (ut64)r_num_math (core->num, arg);
-		print_format_chr (sb, &pf, (int)val);
+		r_strbuf_appendf (sb, "%c", (int)val);
 		return true;
 	}
 	case 'p': {
 		ut64 val = (ut64)r_num_math (core->num, arg);
-		print_format_ptr (sb, &pf, (void *)(uintptr_t)val);
+		r_strbuf_appendf (sb, "%p", (void *)(uintptr_t)val);
 		return true;
 	}
 	case 'd':
 	case 'i': {
 		st64 sval = (st64)r_num_math (core->num, arg);
-		print_format_int (sb, &pf, (long long)sval, "%lld", "%-*lld", "%*lld", "%0*lld");
+		r_strbuf_appendf (sb, "%" PFMT64d, sval);
 		return true;
 	}
 	case 'u': {
 		ut64 val = (ut64)r_num_math (core->num, arg);
-		print_format_uint (sb, &pf, (unsigned long long)val, "%llu", "%-*llu", "%*llu", "%0*llu");
+		r_strbuf_appendf (sb, "%" PFMT64u, val);
 		return true;
 	}
 	case 'x':
-	case 'X':
 	case 'o': {
 		ut64 val = (ut64)r_num_math (core->num, arg);
-		if (conv == 'x') {
-			print_format_uint (sb, &pf, (unsigned long long)val, "%llx", "%-*llx", "%*llx", "%0*llx");
-		} else if (conv == 'X') {
-			print_format_uint (sb, &pf, (unsigned long long)val, "%llX", "%-*llX", "%*llX", "%0*llX");
+		if (conv == 'o') {
+			r_strbuf_appendf (sb, "%" PFMT64o, val);
 		} else {
-			print_format_uint (sb, &pf, (unsigned long long)val, "%llo", "%-*llo", "%*llo", "%0*llo");
+			r_strbuf_appendf (sb, "%" PFMT64x, val);
 		}
 		return true;
 	}
@@ -1233,7 +1116,7 @@ static char *print_format_string(RCore *core, const char *input) {
 			continue;
 		}
 		char *arg = print_unescape_dup (argv[argi++]);
-		if (!arg || !print_format_apply (core, sb, spec, conv, arg)) {
+		if (!arg || !print_format_apply (core, sb, conv, arg)) {
 			r_strbuf_append (sb, spec);
 		}
 		free (spec);

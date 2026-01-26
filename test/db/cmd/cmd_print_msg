@@ -13,10 +13,10 @@ RUN
 NAME=printf formatting
 FILE=-
 CMDS=<<EOF
-printf "%02x %d %s" 10 20 hello;println
+printf "%x %d %s" 10 20 hello;println
 EOF
 EXPECT=<<EOF
-0a 20 hello
+a 20 hello
 EOF
 RUN
 
@@ -34,9 +34,9 @@ RUN
 NAME=printfln formatting
 FILE=-
 CMDS=<<EOF
-printfln "%04x:%s" 0x2a test
+printfln "%x:%s" 0x2a test
 EOF
 EXPECT=<<EOF
-002a:test
+2a:test
 EOF
 RUN
