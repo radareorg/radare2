@@ -112,9 +112,6 @@ static char *findNextNumber(char *op) {
 					if (*p == '-') {
 						p++;
 					}
-					if (isdigit ((ut8)*p)) {
-						return p;
-					}
 				}
 				if (isdigit (*p)) {
 					return p;
@@ -127,36 +124,6 @@ static char *findNextNumber(char *op) {
 		}
 	}
 	return NULL;
-}
-
-static bool is_num_suffix(const char *s, const char **end) {
-	const char *p = s;
-	if (!p) {
-		return false;
-	}
-	if (*p == '-') {
-		p++;
-	}
-	if (p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
-		p += 2;
-		if (!IS_HEXCHAR (*p)) {
-			return false;
-		}
-		while (IS_HEXCHAR (*p)) {
-			p++;
-		}
-	} else {
-		if (!isdigit ((ut8)*p)) {
-			return false;
-		}
-		while (isdigit ((ut8)*p)) {
-			p++;
-		}
-	}
-	if (end) {
-		*end = p;
-	}
-	return true;
 }
 
 static void __replaceRegisters(RReg *reg, char *s, bool x86) {
@@ -245,8 +212,12 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 		char *colon = strstr (ptr, ":");
 		bool size_suffix = false;
 		if (colon && !(x86 && bits == 16)) {
-			const char *e = NULL;
-			if (is_num_suffix (colon + 1, &e)) {
+			char *s = colon + 1;
+			if (s && isdigit ((ut8)*s)) {
+				char *e = s;
+				while (*e && isdigit ((ut8)*e)) {
+					e++;
+				}
 				if (!*e || IS_SEPARATOR (*e) || *e == '\x1b') {
 					size_suffix = true;
 				}
@@ -259,6 +230,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			off = (s << seggrn) + o;
 			*colon = ':';
 		} else if (size_suffix && colon) {
+			if (ptr2 > colon) {
+				ptr2 = colon;
+			}
 			*colon = '\0';
 			off = r_num_get (NULL, ptr);
 			*colon = ':';
