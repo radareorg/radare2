@@ -1014,20 +1014,152 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 	RVecRIORegion_free (regions);
 }
 
+static char *print_unescape_dup(const char *input) {
+	char *msg = r_str_trim_dup (input);
+	if (!msg) {
+		return NULL;
+	}
+	if (*msg == '"' || *msg == '\'') {
+		r_str_trim_args (msg);
+	}
+	r_str_unescape (msg);
+	return msg;
+}
+
+static bool print_format_apply(RCore *core, RStrBuf *sb, char conv, const char *arg) {
+	st64 sval = (st64)r_num_math (core->num, arg);
+	ut64 val = (ut64)sval;
+	switch (conv) {
+	case 's':
+		r_strbuf_append (sb, arg? arg: "");
+		return true;
+	case 'c':
+		r_strbuf_appendf (sb, "%c", (int)val);
+		return true;
+	case 'p':
+		r_strbuf_appendf (sb, "%p", (void *)(uintptr_t)val);
+		return true;
+	case 'd':
+	case 'i':
+		r_strbuf_appendf (sb, "%" PFMT64d, sval);
+		return true;
+	case 'u':
+		r_strbuf_appendf (sb, "%" PFMT64u, val);
+		return true;
+	case 'x':
+	case 'o':
+		if (conv == 'o') {
+			r_strbuf_appendf (sb, "%" PFMT64o, val);
+		} else {
+			r_strbuf_appendf (sb, "%" PFMT64x, val);
+		}
+		return true;
+	}
+	return false;
+}
+
+static char *print_format_string(RCore *core, const char *input) {
+	int argc = 0;
+	char **argv = r_str_argv (input, &argc);
+	if (!argv || argc < 1) {
+		r_str_argv_free (argv);
+		return NULL;
+	}
+	char *fmt = print_unescape_dup (argv[0]);
+	if (!fmt) {
+		r_str_argv_free (argv);
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	const char *p = fmt;
+	int argi = 1;
+	while (*p) {
+		if (*p != '%') {
+			r_strbuf_append_n (sb, p++, 1);
+			continue;
+		}
+		if (p[1] == '%') {
+			r_strbuf_append_n (sb, "%", 1);
+			p += 2;
+			continue;
+		}
+		const char *spec_start = p++;
+		while (*p && !(isalpha ((ut8)*p) || *p == '%')) {
+			p++;
+		}
+		if (!*p) {
+			r_strbuf_append (sb, spec_start);
+			break;
+		}
+		if (*p == '%') {
+			r_strbuf_append_n (sb, "%", 1);
+			p++;
+			continue;
+		}
+		char conv = *p++;
+		char *spec = r_str_ndup (spec_start, (int)(p - spec_start));
+		if (!spec) {
+			break;
+		}
+		if (strchr (spec, '*') || conv == 'n' || argi >= argc) {
+			r_strbuf_append (sb, spec);
+			free (spec);
+			continue;
+		}
+		char *arg = print_unescape_dup (argv[argi++]);
+		if (!arg || !print_format_apply (core, sb, conv, arg)) {
+			r_strbuf_append (sb, spec);
+		}
+		free (spec);
+		free (arg);
+	}
+	free (fmt);
+	r_str_argv_free (argv);
+	return r_strbuf_drain (sb);
+}
+
 static void cmd_printmsg(RCore *core, const char *input) {
 	if (!strcmp (input, "ln")) {
 		r_cons_newline (core->cons);
-	} else if (r_str_startswith (input, "ln ")) {
-		r_cons_println (core->cons, input + 3);
-	} else if (r_str_startswith (input, " ")) {
-		r_cons_print (core->cons, input + 1);
-	} else if (r_str_startswith (input, "f ")) {
-		R_LOG_TODO ("printf not implemented. use ?e, echo or print");
-	} else if (r_str_startswith (input, "fln ")) {
-		R_LOG_TODO ("printfln not implemented. use ?e, echo or print");
-	} else {
-		r_core_cmd_help_match (core, help_msg_pr, "print");
+		return;
 	}
+	if (r_str_startswith (input, "ln ")) {
+		char *msg = print_unescape_dup (input + 3);
+		if (msg) {
+			r_cons_println (core->cons, msg);
+			free (msg);
+		}
+		return;
+	}
+	if (r_str_startswith (input, " ")) {
+		char *msg = print_unescape_dup (input + 1);
+		if (msg) {
+			r_cons_print (core->cons, msg);
+			free (msg);
+		}
+		return;
+	}
+	if (r_str_startswith (input, "f ")) {
+		char *out = print_format_string (core, input + 2);
+		if (out) {
+			r_cons_print (core->cons, out);
+			free (out);
+		} else {
+			r_core_cmd_help_match (core, help_msg_pr, "print");
+		}
+		return;
+	}
+	if (r_str_startswith (input, "fln ")) {
+		char *out = print_format_string (core, input + 4);
+		if (out) {
+			r_cons_println (core->cons, out);
+			free (out);
+		} else {
+			r_core_cmd_help_match (core, help_msg_pr, "print");
+		}
+		return;
+	}
+	r_core_cmd_help_match (core, help_msg_pr, "print");
 }
 
 static void cmd_prc_zoom(RCore *core, const char *input) {
