@@ -198,20 +198,10 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 	/* Register this HTTP session so r2agent -L can discover it */
 	r_core_session_register (core, "r2web", atoi (port));
 
-	ut64 newoff, origoff = core->addr;
-	int newblksz, origblksz = core->blocksize;
-	ut8 *newblk, *origblk = core->block;
-
-	newblk = malloc (core->blocksize);
-	if (!newblk) {
-		r_socket_free (s);
-		r_list_free (so.authtokens);
-		free (pfile);
-		return 1;
-	}
-	memcpy (newblk, core->block, core->blocksize);
-
-	core->block = newblk;
+	ut64 origoff = core->addr;
+	ut64 newoff = origoff;
+	ut32 origblksz = core->blocksize;
+	ut32 newblksz = origblksz;
 // TODO: handle mutex lock/unlock here
 	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	while (!r_cons_is_breaked (core->cons) && core->http_up) {
@@ -224,12 +214,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 #endif
 
 		newoff = core->addr;
-		newblk = core->block;
 		newblksz = core->blocksize;
-
-		core->addr = origoff;
-		core->block = origblk;
 		core->blocksize = origblksz;
+		r_core_seek (core, origoff, true);
 
 		// backup and restore offset and blocksize
 		/* this is blocking */
@@ -274,11 +261,9 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		}
 
 		origoff = core->addr;
-		origblk = core->block;
 		origblksz = core->blocksize;
-		core->addr = newoff;
-		core->block = newblk;
 		core->blocksize = newblksz;
+		r_core_seek (core, newoff, true);
 		/* set environment */
 		// backup and restore offset and blocksize
 		core->http_up = true;
