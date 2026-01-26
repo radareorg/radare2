@@ -23,14 +23,14 @@ static libgdbr_t *get_desc_from_fd(RIODesc *fd) {
 
 static bool __close(RIODesc *fd) {
 	libgdbr_t *desc = get_desc_from_fd (fd);
-	if (fd) {
-		R_FREE (fd->name);
-	}
 	if (desc) {
 		gdbr_disconnect (desc);
 		gdbr_cleanup (desc);
 	}
-	R_FREE (fd->data);
+	if (fd) {
+		R_FREE (fd->name);
+		R_FREE (fd->data);
+	}
 	return true;
 }
 
@@ -317,11 +317,11 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 		return NULL;
 	}
 	if (r_str_startswith (cmd, "pid")) {
-		int pid = desc ? desc->pid : -1;
+		char *spid = r_str_newf ("%d", desc->pid);
 		if (!cmd[3]) {
-			io->cb_printf ("%d\n", pid);
+			io->cb_printf ("%s\n", spid);
 		}
-		return r_str_newf ("%d", pid);
+		return spid;
 	}
 	if (r_str_startswith (cmd, "monitor")) {
 		const char *qrcmd = cmd + 8;
