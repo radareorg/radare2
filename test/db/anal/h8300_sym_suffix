@@ -18,7 +18,7 @@ EXPECT=<<EOC
 address: 0x0
 opcode: jmp @0x1234:16
 esilcost: 0
-disasm: jmp sym.target:16
+disasm: jmp @sym.target:16
 mnemonic: jmp
 mask: ff000000
 id: 0
