@@ -29,6 +29,6 @@ type: jmp
 cycles: 0
 jump: 0x00001234
 family: cpu
-    + 0          ,=< 0x00000000      5a001234       jmp sym.target:16
+    + 0          ,=< 0x00000000      5a001234       jmp @sym.target:16
 EOC
 RUN
