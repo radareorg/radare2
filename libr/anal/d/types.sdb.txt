@@ -30,6 +30,10 @@ size_t=type
 type.size_t=d
 type.size_t.size=32
 
+time_t=type
+type.time_t=x
+type.time_t.size=64
+
 long=type
 type.long=x
 type.long.size=64
