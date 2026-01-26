@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2008-2025 - pancake */
+/* radare2 - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_cons.h>
 #include <r_util/r_print.h>
@@ -115,12 +115,8 @@ static void break_stack_free(void *ptr) {
 	free (b);
 }
 
-// Custom free function for stack to decrement refcount when freeing context
-static void context_stack_free(void *ptr) {
-	if (ptr) {
-		RConsContext *ctx = (RConsContext*)ptr;
-		r_unref (ctx);
-	}
+static void consctx_unref(void *ptr) {
+	r_unref ((RConsContext*)ptr);
 }
 
 static void grep_word_free(RConsGrepWord *gw) {
@@ -197,7 +193,6 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 
 static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
-	// Initialize reference counting for safe cross-thread access
 	r_ref_init (ctx, r_cons_context_free_internal);
 	ctx->marks = r_list_newf ((RListFree)mark_free);
 	ctx->breaked = false;
@@ -214,7 +209,6 @@ static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	ctx->log_callback = NULL;
 	ctx->cmd_str_depth = 0;
 	ctx->noflush = false;
-
 	if (parent) {
 		ctx->color_mode = parent->color_mode;
 		ctx->color_limit = parent->color_limit;
@@ -244,7 +238,7 @@ static inline void init_cons_input(InputState *state) {
 R_API RCons *r_cons_new2(void) {
 	RCons *cons = R_NEW0 (RCons);
 	cons->context = R_NEW0 (RConsContext);
-	cons->ctx_stack = r_list_newf ((RListFree)context_stack_free);
+	cons->ctx_stack = r_list_newf ((RListFree)consctx_unref);
 	init_cons_context (cons, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
@@ -443,7 +437,6 @@ R_API RCons *r_cons_singleton(void) {
 	if (!I) {
 		r_cons_new ();
 	}
-	// eprintf ("INIT CONS\n");
 	return I;
 }
 
@@ -454,7 +447,6 @@ R_API void r_cons_break_clear(RCons *cons) {
 }
 
 R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
-	// eprintf ("Brk.push\n");
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -527,17 +519,13 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 		cons->cb_break (cons->user);
 	}
 	if (R_UNLIKELY (cons->timeout)) {
-		// if (r_stack_size (C->break_stack) > 0) {
 		const ut64 now = r_time_now_mono();
 		if (now > cons->timeout) {
-			// eprintf ("%lld - %lld\n", now, cons->timeout);
 			R_LOG_INFO ("Timeout interruption after %ds", (now - cons->timeout) / 1000);
 			C->breaked = true;
 			C->was_breaked = true;
 			cons->timeout_break = true;
-			// r_cons_break_timeout (cons, cons->otimeout); // don't reset
 		}
-		// }
 	}
 	if (R_UNLIKELY (!C->was_breaked)) {
 		C->was_breaked = C->breaked;
@@ -554,7 +542,7 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 #endif
 }
 
-// UNUSED
+// UNUSED. but maybe fancy for visual magic imho
 R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
 	char chstr[2] = {ch, 0};
 	int X, Y;
@@ -746,7 +734,6 @@ R_API void r_cons_filter(RCons *cons) {
 }
 
 R_API void r_cons_context_break(RConsContext *context) {
-	// eprintf ("ctx.brk\n");
 	if (R_LIKELY (context)) {
 		context->breaked = true;
 		context->was_breaked = true;
@@ -776,12 +763,6 @@ R_API void r_cons_flush(RCons *cons) {
 		r_cons_reset (cons);
 		return;
 	}
-#if 0
-	if (!r_list_empty (ctx->marks)) {
-		r_list_free (ctx->marks);
-		ctx->marks = r_list_newf ((RListFree)r_cons_mark_free);
-	}
-#endif
 	if (lastMatters (ctx)) {
 		// snapshot of the output
 		if (ctx->buffer_len > ctx->lastLength) {
@@ -881,20 +862,6 @@ R_API void r_cons_flush(RCons *cons) {
 		ctx->was_html = false;
 	}
 }
-
-
-#if 0
-// UNUSED
-R_API int r_cons_get_column(RCons *cons) {
-	RConsContext *C = cons->context;
-	char *line = strrchr (C->buffer, '\n');
-	if (!line) {
-		line = C->buffer;
-	}
-	C->buffer[C->buffer_len] = 0;
-	return r_str_ansi_len (line);
-}
-#endif
 
 R_API bool r_cons_is_windows(void) {
 #if R2__WINDOWS__
@@ -1155,20 +1122,16 @@ R_API char *r_cons_swap_ground(const char *col) {
 	if (!col) {
 		return NULL;
 	}
-	if (r_str_startswith (col, "\x1b[48;5;")) {
-		/* rgb background */
+	if (r_str_startswith (col, "\x1b[48;5;")) { // BG
 		return r_str_newf ("\x1b[38;5;%s", col + 7);
 	}
-	if (r_str_startswith (col, "\x1b[38;5;")) {
-		/* rgb foreground */
+	if (r_str_startswith (col, "\x1b[38;5;")) { // FG
 		return r_str_newf ("\x1b[48;5;%s", col + 7);
 	}
-	if (r_str_startswith (col, "\x1b[4")) {
-		/* is background */
+	if (r_str_startswith (col, "\x1b[4")) { // ISBG
 		return r_str_newf ("\x1b[3%s", col + 3);
 	}
-	if (r_str_startswith (col, "\x1b[3")) {
-		/* is foreground */
+	if (r_str_startswith (col, "\x1b[3")) { // ISFG
 		return r_str_newf ("\x1b[4%s", col + 3);
 	}
 	return strdup (col);
@@ -1259,6 +1222,7 @@ static int kons_chop(RCons *cons, int len) {
 }
 
 R_API void r_cons_memset(RCons *cons, char ch, int len) {
+	R_RETURN_IF_FAIL (cons && len > 0);
 	RConsContext *C = cons->context;
 	if (C->breaked) {
 		return;
@@ -1418,19 +1382,6 @@ R_API void r_cons_newline(RCons *cons) {
 	if (!cons->null) {
 		r_cons_print (cons, "\n");
 	}
-#if 0
-This place is wrong to manage the color reset, can interfire with r2pipe output sending resetchars
-and break json output appending extra chars.
-this code now is managed into output.c:118 at function r_cons_win_print
-now the console color is reset with each \n (same stuff do it here but in correct place ... i think)
-
-#if R2__WINDOWS__
-	r_cons_reset_colors();
-#else
-	r_cons_print (cons, Color_RESET_ALL"\n");
-#endif
-	if (cons->is_html) r_cons_print (cons, "<br />\n");
-#endif
 }
 
 R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
@@ -1522,18 +1473,10 @@ R_API void r_cons_reset_colors(RCons *cons) {
 static void r_cons_context_free_internal(RConsContext *ctx) {
 	r_cons_context_pal_free (ctx);
 	r_stack_free (ctx->break_stack);
-
-	// Free the marks list
 	r_list_free (ctx->marks);
-
-	// Free the grep strings list
 	r_list_free (ctx->grep.strings);
-
-	// Free sorted and unsorted lines
 	r_list_free (ctx->sorted_lines);
 	r_list_free (ctx->unsorted_lines);
-
-	// Free the buffer and lastOutput
 	free (ctx->buffer);
 	free (ctx->lastOutput);
 	free (ctx);
@@ -1578,6 +1521,7 @@ R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 }
 
 R_API bool r_cons_context_is_main(RCons *cons, RConsContext *ctx) {
+	R_RETURN_VAL_IF_FAIL (cons && ctx, false);
 	if (r_list_length (cons->ctx_stack) == 0) {
 		return true;
 	}
@@ -1595,9 +1539,8 @@ R_API void r_cons_break_end(RCons *cons) {
 	}
 #endif
 	if (!r_stack_is_empty (C->break_stack)) {
-		// free all the stack
+		// recreate another a new break stack
 		r_stack_free (C->break_stack);
-		// create another one
 		C->break_stack = r_stack_newf (6, break_stack_free);
 		C->event_interrupt_data = NULL;
 		C->event_interrupt = NULL;
@@ -1670,20 +1613,6 @@ R_API void r_cons_push(RCons *cons) {
 		Gcons->context = nc;
 	}
 	r_cons_reset (cons);
-#if 0
-	// memcpy (&tc, cons->context, sizeof (tc));
-	if (!ctx->cons_stack) {
-		return;
-	}
-	RConsStack *data = cons_stack_dump (cons, true);
-	if (data) {
-		r_stack_push (ctx->cons_stack, data);
-		ctx->buffer_len = 0;
-		if (ctx->buffer) {
-			memset (ctx->buffer, 0, ctx->buffer_sz);
-		}
-	}
-#endif
 }
 
 R_API bool r_cons_pop(RCons *cons) {
@@ -1708,16 +1637,6 @@ R_API bool r_cons_pop(RCons *cons) {
 		Gcons->context = parent;
 	}
 	return true;
-#if 0
-	if (ctx->cons_stack) {
-		RConsStack *data = (RConsStack *)r_stack_pop (ctx->cons_stack);
-		if (data) {
-			cons_stack_load (ctx, data, true);
-			cons_stack_free ((void *)data);
-		}
-	}
-	memcpy (cons->context, &tc, sizeof (tc));
-#endif
 }
 
 R_API void r_cons_echo(RCons *cons, const char *msg) {
@@ -1787,6 +1706,7 @@ R_API char *r_cons_lastline(RCons *cons, int *len) {
 	}
 	return b;
 }
+
 #if 0
 // same as r_cons_lastline(), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
@@ -1908,10 +1828,10 @@ R_API void r_cons_last(RCons *cons) {
 	}
 }
 
-R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush) {
+R_API void r_cons_clear_line(RCons *cons, bool err, bool flush) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
-		fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+		fprintf (err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 	} else {
 		int len = cons->columns;
 		if (len > 0) {
@@ -1919,16 +1839,16 @@ R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush) {
 			if (white) {
 				memset (white, ' ', len);
 				white[len] = 0;
-				fprintf (std_err? stderr: stdout, "\r%s\r", white);
+				fprintf (err? stderr: stdout, "\r%s\r", white);
 				free (white);
 			}
 		}
 	}
 #else
-	fprintf (std_err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+	fprintf (err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
 #endif
 	if (flush) {
-		fflush (std_err? stderr: stdout);
+		fflush (err? stderr: stdout);
 	}
 }
 
@@ -1942,6 +1862,7 @@ R_API void r_cons_clear(RCons *cons) {
 }
 
 R_API void r_cons_clear00(RCons *cons) {
+	R_RETURN_IF_FAIL (cons);
 	r_cons_clear (cons);
 	r_cons_gotoxy (cons, 0, 0);
 }
@@ -1953,20 +1874,18 @@ R_API char *r_cons_drain(RCons *cons) {
 	r_cons_reset (cons);
 	return s;
 }
+
+#define ENABLE_GETCURSOR 0
+
 /* return the aproximated x,y of cursor before flushing */
-// XXX this function is a huge bottleneck
 R_API int r_cons_get_cursor(RCons *cons, int *rows) {
-	// This implementation is very slow
-	if (rows) {
-		*rows = 0;
-	}
-	return 0;
-#if 0
-	// TODO: this is too slow and not really useful
+#if ENABLE_GETCURSOR
+	// TODO: this is too slow and not really useful, rewrite this function with the most optimized possible way
+	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
+	// This implementation is very slow and a bottleneck when enable-getcursor is set
 	RConsContext *c = C;
 	int i, col = 0;
 	int row = 0;
-	// TODO: we need to handle GOTOXY and CLRSCR ansi escape code too
 	for (i = 0; i < c->buffer_len; i++) {
 		// ignore ansi chars, copypasta from r_str_ansi_len
 		if (c->buffer[i] == 0x1b) {
@@ -1994,6 +1913,11 @@ R_API int r_cons_get_cursor(RCons *cons, int *rows) {
 		*rows = row;
 	}
 	return col;
+#else
+	if (rows) {
+		*rows = 0;
+	}
+	return 0;
 #endif
 }
 
