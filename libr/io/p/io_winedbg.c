@@ -251,7 +251,7 @@ static struct winedbg_x86_32 regState(RIODesc *fd) {
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
-	if (R_STR_ISEMPTY (cmd)) {
+	if (!fd || R_STR_ISEMPTY (cmd)) {
 		return NULL;
 	}
 	RIOWinedbg *wd = fd? fd->data: NULL;
@@ -388,9 +388,8 @@ const char *msg =
 		}
 	} else if (r_str_startswith (cmd, "pid")) {
 		return r_str_newf ("%d", fd->fd);
-	} else {
-		printcmd (io, fd, cmd);
 	}
+	printcmd (io, fd, cmd);
 	return NULL;
 }
 
