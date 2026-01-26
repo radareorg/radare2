@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_cons.h>
 #include <ctype.h>
@@ -13,6 +13,27 @@ typedef struct {
 	int current_entry_n;
 	RListIter iter;
 } RHudData;
+
+// TODO: move this into a libr/util/str.c
+static void trim_repeated_spaces(char *str) {
+	char *src = str;
+	char *dst = str;
+	bool in_space = false;
+
+	while (*src) {
+		if (isspace (*src)) {
+			if (!in_space) {
+				*dst++ = *src;
+				in_space = true;
+			}
+		} else {
+			*dst++ = *src;
+			in_space = false;
+		}
+		src++;
+	}
+	*dst = '\0';
+}
 
 // Display the content of a file in the hud
 R_API char *r_cons_hud_file(RCons *cons, const char *f) {
@@ -81,9 +102,7 @@ R_API char *r_cons_hud_string(RCons *cons, const char *s) {
 		return NULL;
 	}
 	r_str_ansi_strip (o);
-	r_str_replace_ch (o, '\r', ' ', true);
-	r_str_replace_ch (o, '\t', ' ', true);
-	// TODO: trim all repeated spaces in strings too
+	trim_repeated_spaces (o);
 	RList *fl = r_list_new ();
 	int i;
 	if (!fl) {
@@ -209,7 +228,7 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 				if (data->cons->context->color_mode) {
 					int last_color_change = 0;
 					int last_mask = 0;
-					char *str = r_str_newf (" %c ", marker);
+					RStrBuf *sb = r_strbuf_newf (" %c ", marker);
 					// Instead of printing one char at the time
 					// (which would be slow), we group substrings of the same color
 					for (j = 0; p[j] && j < HUD_BUF_SIZE; j++) {
@@ -217,9 +236,9 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 							char tmp = p[j];
 							p[j] = 0;
 							if (mask[j]) {
-								str = r_str_appendf (str, Color_RESET "%s", p + last_color_change);
+								r_strbuf_appendf (sb, Color_RESET "%s", p + last_color_change);
 							} else {
-								str = r_str_appendf (str, Color_GREEN "%s", p + last_color_change);
+								r_strbuf_appendf (sb, Color_GREEN "%s", p + last_color_change);
 							}
 							p[j] = tmp;
 							last_color_change = j;
@@ -227,11 +246,11 @@ static RList *hud_filter(RHudData *data, bool simple, int selected_index) {
 						}
 					}
 					if (last_mask) {
-						str = r_str_appendf (str, Color_GREEN "%s" Color_RESET, p + last_color_change);
+						r_strbuf_appendf (sb, Color_GREEN "%s" Color_RESET, p + last_color_change);
 					} else {
-						str = r_str_appendf (str, Color_RESET "%s", p + last_color_change);
+						r_strbuf_appendf (sb, Color_RESET "%s", p + last_color_change);
 					}
-					r_list_append (res, str);
+					r_list_append (res, r_strbuf_drain (sb));
 				} else {
 					// Otherwise we print the matching characters uppercase
 					for (j = 0; p[j]; j++) {
