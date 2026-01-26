@@ -3,7 +3,7 @@
 #include <r_cons.h>
 #include <r_util/r_print.h>
 
-R_LIB_VERSION (r_cons);
+R_LIB_VERSION(r_cons);
 
 static void r_cons_context_free_internal(RConsContext *ctx);
 
@@ -53,7 +53,7 @@ static unsigned int count_display_lines(RCons *cons, const char *buffer, size_t 
 			nl = end;
 		}
 		size_t line_len = nl - ptr;
-		lines += line_len ? ((line_len + columns - 1) / columns) : 1;
+		lines += line_len? ((line_len + columns - 1) / columns): 1;
 		ptr = nl + 1;
 		if (nl == end) {
 			break;
@@ -111,12 +111,13 @@ typedef struct {
 } RConsBreakStack;
 
 static void break_stack_free(void *ptr) {
-	RConsBreakStack *b = (RConsBreakStack*)ptr;
+	RConsBreakStack *b = (RConsBreakStack *)ptr;
 	free (b);
 }
 
 static void consctx_unref(void *ptr) {
-	r_unref ((RConsContext*)ptr);
+	RConsContext *ctx = ptr;
+	r_unref (ctx);
 }
 
 static void grep_word_free(RConsGrepWord *gw) {
@@ -171,8 +172,8 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 		if (!strcmp (term, "dumb")) {
 			limit = COLOR_MODE_DISABLED;
 		} else if (!strcmp (term, "vt100") || !strcmp (term, "vt102") ||
-			   !strcmp (term, "vt220") || !strcmp (term, "vt200") ||
-			   r_str_startswith (term, "vt2")) {
+			!strcmp (term, "vt220") || !strcmp (term, "vt200") ||
+			r_str_startswith (term, "vt2")) {
 			limit = COLOR_MODE_DISABLED;
 		} else if (!strcmp (term, "cons25")) {
 			limit = COLOR_MODE_DISABLED;
@@ -191,7 +192,7 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 	free (term);
 }
 
-static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
+static void init_cons_context(RCons *cons, RConsContext *R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
 	r_ref_init (ctx, r_cons_context_free_internal);
 	ctx->marks = r_list_newf ((RListFree)mark_free);
@@ -281,9 +282,9 @@ R_API RCons *r_cons_new2(void) {
 #elif R2__UNIX__
 	tcgetattr (0, &cons->term_buf);
 	memcpy (&cons->term_raw, &cons->term_buf, sizeof (cons->term_raw));
-	cons->term_raw.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
-	cons->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
-	cons->term_raw.c_cflag &= ~(CSIZE|PARENB);
+	cons->term_raw.c_iflag &= ~ (BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+	cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+	cons->term_raw.c_cflag &= ~ (CSIZE | PARENB);
 	cons->term_raw.c_cflag |= CS8;
 	cons->term_raw.c_cc[VMIN] = 1; // Solaris stuff hehe
 	r_sys_signal (SIGWINCH, resize);
@@ -304,7 +305,7 @@ R_API RCons *r_cons_new2(void) {
 	return cons;
 }
 
-R_API void r_cons_free2(RCons * R_NULLABLE cons) {
+R_API void r_cons_free2(RCons *R_NULLABLE cons) {
 	if (!cons) {
 		return;
 	}
@@ -337,7 +338,7 @@ R_API bool r_cons_is_initialized(void) {
 }
 
 R_API RColor r_cons_color_random(RCons *cons, ut8 alpha) {
-	RColor rcolor = {0};
+	RColor rcolor = { 0 };
 	RConsContext *ctx = cons->context;
 	if (ctx->color_mode > COLOR_MODE_16) {
 		rcolor.r = r_num_rand (0xff);
@@ -348,14 +349,22 @@ R_API RColor r_cons_color_random(RCons *cons, ut8 alpha) {
 	}
 	int r = r_num_rand (16);
 	switch (r) {
-	case 0: case 1: rcolor = (RColor) RColor_RED; break;
-	case 2: case 3: rcolor = (RColor) RColor_WHITE; break;
-	case 4: case 5: rcolor = (RColor) RColor_GREEN; break;
-	case 6: case 7: rcolor = (RColor) RColor_MAGENTA; break;
-	case 8: case 9: rcolor = (RColor) RColor_YELLOW; break;
-	case 10: case 11: rcolor = (RColor) RColor_CYAN; break;
-	case 12: case 13: rcolor = (RColor) RColor_BLUE; break;
-	case 14: case 15: rcolor = (RColor) RColor_GRAY; break;
+	case 0:
+	case 1: rcolor = (RColor)RColor_RED; break;
+	case 2:
+	case 3: rcolor = (RColor)RColor_WHITE; break;
+	case 4:
+	case 5: rcolor = (RColor)RColor_GREEN; break;
+	case 6:
+	case 7: rcolor = (RColor)RColor_MAGENTA; break;
+	case 8:
+	case 9: rcolor = (RColor)RColor_YELLOW; break;
+	case 10:
+	case 11: rcolor = (RColor)RColor_CYAN; break;
+	case 12:
+	case 13: rcolor = (RColor)RColor_BLUE; break;
+	case 14:
+	case 15: rcolor = (RColor)RColor_GRAY; break;
 	}
 	if (r & 1) {
 		rcolor.attr = R_CONS_ATTR_BOLD;
@@ -398,7 +407,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 			y += H;
 		}
 	}
-	// TODO: what happens if w == 0 || h == 0 ?
+	// TODO: what happens if w == 0 || h == 0?
 	char *str = r_str_ansi_crop (_str, 0, 0, w + 1, h);
 	r_cons_print (cons, R_CONS_CURSOR_SAVE);
 	for (o = i = len = 0; str[i]; i++, len++) {
@@ -446,7 +455,7 @@ R_API void r_cons_break_clear(RCons *cons) {
 	ctx->breaked = false;
 }
 
-R_API void r_cons_context_break_push(RCons* cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
+R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBreak cb, void *user, bool sig) {
 	if (!context || !context->break_stack) {
 		return;
 	}
@@ -483,7 +492,7 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 		context->event_interrupt_data = b->event_interrupt_data;
 		break_stack_free (b);
 	} else {
-		//there is not more elements in the stack
+		// there is not more elements in the stack
 #if R2__UNIX__ && !__wasi__
 		if (sig && r_cons_context_is_main (cons, context)) {
 			if (!context->unbreakable) {
@@ -519,7 +528,7 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 		cons->cb_break (cons->user);
 	}
 	if (R_UNLIKELY (cons->timeout)) {
-		const ut64 now = r_time_now_mono();
+		const ut64 now = r_time_now_mono ();
 		if (now > cons->timeout) {
 			R_LOG_INFO ("Timeout interruption after %ds", (now - cons->timeout) / 1000);
 			C->breaked = true;
@@ -544,7 +553,7 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 
 // UNUSED. but maybe fancy for visual magic imho
 R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
-	char chstr[2] = {ch, 0};
+	char chstr[2] = { ch, 0 };
 	int X, Y;
 	for (X = x; X < x2; X++) {
 		for (Y = y; Y < y2; Y++) {
@@ -565,35 +574,36 @@ R_API int r_cons_get_cur_line(void) {
 #endif
 
 #ifdef __sun
-static inline void cfmakeraw(struct termios *tm) {
-	tm->c_cflag &= ~(CSIZE | PARENB);
-	tm->c_cflag |= CS8;
-	tm->c_iflag &= ~(IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-	tm->c_oflag &= ~OPOST;
-	tm->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-}
+	static inline void cfmakeraw (struct termios * tm) {
+		tm->c_cflag &= ~ (CSIZE | PARENB);
+		tm->c_cflag |= CS8;
+		tm->c_iflag &= ~ (IMAXBEL | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+		tm->c_oflag &= ~OPOST;
+		tm->c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+	}
 #endif
 
 #if R2__UNIX__ && !__wasi__
 	char buf[8];
-	struct termios save,raw;
+	struct termios save, raw;
 	// flush the Arrow keys escape keys which was messing up the output
 	fflush (stdout);
-	(void) tcgetattr (0, &save);
+	(void)tcgetattr (0, &save);
 	cfmakeraw (&raw);
-	(void) tcsetattr (0, TCSANOW, &raw);
+	(void)tcsetattr (0, TCSANOW, &raw);
 	if (isatty (fileno (stdin))) {
 		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
 				if (isdigit ((ut8)buf[2])) {
 					curline = (buf[2] - '0');
-				} if (isdigit ((ut8)buf[3])) {
+				}
+				if (isdigit ((ut8)buf[3])) {
 					curline = curline * 10 + (buf[3] - '0');
 				}
 			}
 		}
 	}
-	(void) tcsetattr (0, TCSANOW, &save);
+	(void)tcsetattr (0, TCSANOW, &save);
 #endif
 	return curline;
 }
@@ -612,11 +622,11 @@ R_API void r_cons_break_timeout(RCons *cons, int timeout) {
 	}
 #if 0
 	I->timeout = (timeout && !I->timeout)
-		? r_time_now_mono () + ((ut64) timeout << 20) : 0;
+		? r_time_now_mono () + ((ut64) timeout << 20): 0;
 #endif
 }
 
-R_API void r_cons_set_click(RCons * R_NONNULL cons, int x, int y) {
+R_API void r_cons_set_click(RCons *R_NONNULL cons, int x, int y) {
 	R_RETURN_IF_FAIL (cons);
 	cons->click_x = x;
 	cons->click_y = y;
@@ -624,7 +634,7 @@ R_API void r_cons_set_click(RCons * R_NONNULL cons, int x, int y) {
 	cons->mouse_event = true;
 }
 
-R_API bool r_cons_get_click(RCons * R_NONNULL cons, int *x, int *y) {
+R_API bool r_cons_get_click(RCons *R_NONNULL cons, int *x, int *y) {
 	R_RETURN_VAL_IF_FAIL (cons, false);
 	if (x) {
 		*x = cons->click_x;
@@ -707,9 +717,7 @@ R_API void r_cons_fill_line(RCons *cons) {
 R_API void r_cons_filter(RCons *cons) {
 	RConsContext *ctx = cons->context;
 	/* grep */
-	if (ctx->filter || ctx->grep.tokens_used \
-			|| (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) \
-			|| ctx->grep.less || ctx->grep.json) {
+	if (ctx->filter || ctx->grep.tokens_used || (ctx->grep.strings && r_list_length (ctx->grep.strings) > 0) || ctx->grep.less || ctx->grep.json) {
 		(void)r_cons_grepbuf (cons);
 		ctx->filter = false;
 	}
@@ -748,9 +756,7 @@ static bool lastMatters(RConsContext *C) {
 		return false;
 	}
 	return (C->buffer_len > 0 &&
-		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings)) \
-		&& !C->grep.tokens_used && !C->grep.less \
-		&& !C->grep.json && !C->is_html);
+		(C->lastEnabled && !C->filter && r_list_empty (C->grep.strings)) && !C->grep.tokens_used && !C->grep.less && !C->grep.json && !C->is_html);
 }
 
 R_API void r_cons_flush(RCons *cons) {
@@ -795,7 +801,7 @@ R_API void r_cons_flush(RCons *cons) {
 			r_cons_reset (cons);
 		} else if (cons->maxpage > 0 && ctx->buffer_len > cons->maxpage) {
 			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
-			if (lines > 0 && !r_cons_yesno (cons, 'n',"Do you want to print %u lines? (y/N)", lines)) {
+			if (lines > 0 && !r_cons_yesno (cons, 'n', "Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
 				return;
 			}
@@ -817,7 +823,7 @@ R_API void r_cons_flush(RCons *cons) {
 #if __wasi__
 	// TODO: this is a workaround, needs further investigation and wasm testsuite before removing this code
 	if (cons->wasm_redirect_file) {
-		bool res = r_file_dump (cons->wasm_redirect_file, (const ut8*)ctx->buffer, ctx->buffer_len, cons->wasm_redirect_append);
+		bool res = r_file_dump (cons->wasm_redirect_file, (const ut8 *)ctx->buffer, ctx->buffer_len, cons->wasm_redirect_append);
 		if (!res) {
 			R_LOG_ERROR ("r_cons_flush: r_file_dump: error (%s)", cons->wasm_redirect_file);
 		}
@@ -839,7 +845,7 @@ R_API void r_cons_flush(RCons *cons) {
 			r_cons_break_push (cons, NULL, NULL);
 			while (nl && !r_cons_is_breaked (cons)) {
 				__cons_write (cons, ptr, nl - ptr + 1);
-				if (cons->linesleep && !(i % pagesize)) {
+				if (cons->linesleep && ! (i % pagesize)) {
 					r_sys_usleep (cons->linesleep * 1000);
 				}
 				ptr = nl + 1;
@@ -877,15 +883,15 @@ R_API bool r_cons_is_windows(void) {
 R_API bool r_cons_is_tty(void) {
 #if R2_WASM_BROWSER
 	/* Check if WASM import is available */
-	extern int r2_js_is_tty(void) __attribute__((import_module("r2"), import_name("is_tty")));
-	if ((void*)r2_js_is_tty != NULL) {
-		return r2_js_is_tty() != 0;
+	extern int r2_js_is_tty (void) __attribute__((import_module ("r2"), import_name ("is_tty")));
+	if ((void *)r2_js_is_tty != NULL) {
+		return r2_js_is_tty () != 0;
 	}
 	/* Fallback to false if import not available */
 	return false;
 #elif R2__UNIX__ && !defined(__wasi__)
-	struct winsize win = {0};
-	struct stat sb = {0};
+	struct winsize win = { 0 };
+	struct stat sb = { 0 };
 
 	if (!isatty (1)) {
 		return false;
@@ -950,7 +956,7 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 		for (i = 0; i < R_ARRAY_SIZE (pos) - 1; i++) {
 			ch = r_cons_readchar (cons);
 			if ((!i && !isdigit (ch)) || // dumps arrow keys etc.
-			    (i == 1 && ch == '~')) {  // dumps PgUp, PgDn etc.
+				(i == 1 && ch == '~')) { // dumps PgUp, PgDn etc.
 				is_reply = false;
 				break;
 			}
@@ -998,7 +1004,7 @@ static bool w32_xterm_get_size(RCons *cons) {
 #endif
 
 // This function will never return rows or cols lower than 0
-R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
+R_API int r_cons_get_size(RCons *cons, int *R_NULLABLE rows) {
 	R_RETURN_VAL_IF_FAIL (cons, 0);
 	bool pick_defaults = false;
 #if R2__WINDOWS__
@@ -1016,7 +1022,7 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 		}
 	}
 #elif R2__UNIX__ && !__wasi__
-	struct winsize win = {0};
+	struct winsize win = { 0 };
 	if (isatty (0) && !ioctl (0, TIOCGWINSZ, &win)) {
 		if ((!win.ws_col) || (!win.ws_row)) {
 			char ttybuf[64];
@@ -1087,14 +1093,19 @@ R_API int r_cons_get_size(RCons *cons, int * R_NULLABLE rows) {
 #if 0
 Enable/Disable scrolling in terminal:
 FMI: cd libr/cons/t ; make ti ; ./ti
-smcup: disable terminal scrolling (fullscreen mode)
-rmcup: enable terminal scrolling (normal mode)
+smcup: disable terminal scrolling(fullscreen mode)
+rmcup: enable terminal scrolling(normal mode)
 #endif
 R_API bool r_cons_set_cup(bool enable) {
 #if R2__UNIX__
 	const char *code = enable
-		? "\x1b[?1049h" "\x1b" "7\x1b[?47h"
-		: "\x1b[?1049l" "\x1b[?47l" "\x1b" "8";
+		? "\x1b[?1049h"
+		"\x1b"
+		"7\x1b[?47h"
+		: "\x1b[?1049l"
+		"\x1b[?47l"
+		"\x1b"
+		"8";
 	const size_t code_len = strlen (code);
 	if (write (2, code, code_len) != code_len) {
 		return false;
@@ -1104,8 +1115,11 @@ R_API bool r_cons_set_cup(bool enable) {
 	if (I->vtmode) {
 		if (enable) {
 			const char *code = enable // xterm + xterm-color
-			? "\x1b[?1049h\x1b" "7\x1b[?47h"
-			: "\x1b[?1049l\x1b[?47l""\x1b""8";
+				? "\x1b[?1049h\x1b"
+				"7\x1b[?47h"
+				: "\x1b[?1049l\x1b[?47l"
+				"\x1b"
+				"8";
 			const size_t code_len = strlen (code);
 			if (write (2, code, code_len) != code_len) {
 				return false;
@@ -1157,12 +1171,12 @@ R_API void r_cons_bind(RCons *cons, RConsBind *bind) {
 #if WITH_STATIC_THEMES
 #include "d_themes.inc.c"
 
-R_API const RConsTheme* r_cons_themes(void) {
+R_API const RConsTheme *r_cons_themes(void) {
 	return (const RConsTheme *)d_themes;
 }
 
 #else
-R_API const RConsTheme* r_cons_themes(void) {
+R_API const RConsTheme *r_cons_themes(void) {
 	return NULL;
 }
 #endif
@@ -1274,7 +1288,7 @@ R_API int r_cons_write(RCons *cons, const void *data, int len) {
 		r_cons_flush (cons);
 	}
 	if (cons->break_word && str && len > 0) {
-		if (r_mem_mem ((const ut8*)str, len, (const ut8*)cons->break_word, cons->break_word_len)) {
+		if (r_mem_mem ((const ut8 *)str, len, (const ut8 *)cons->break_word, cons->break_word_len)) {
 			ctx->breaked = true;
 		}
 	}
@@ -1311,7 +1325,7 @@ R_API RConsMark *r_cons_mark_at(RCons *cons, ut64 addr, const char *name) {
 	return NULL;
 }
 
-R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s) {
+R_API void r_cons_breakword(RCons *cons, const char *R_NULLABLE s) {
 	free (cons->break_word);
 	if (s) {
 		cons->break_word = strdup (s);
@@ -1325,7 +1339,9 @@ R_API void r_cons_breakword(RCons *cons, const char * R_NULLABLE s) {
 R_API void r_cons_clear_buffer(RCons *cons) {
 	if (cons->vtmode) {
 		// not implemented or ignored by most terminals out there...
-		if (write (1, "\x1b" "c\x1b[3J", 6) != 6) {
+		if (write (1, "\x1b"
+			"c\x1b[3J",
+			6) != 6) {
 			cons->context->breaked = true;
 		}
 	}
@@ -1339,14 +1355,14 @@ R_API void r_cons_set_raw(RCons *cons, bool is_raw) {
 	}
 #if R2_WASM_BROWSER
 	/* Notify JS side about terminal mode change */
-	extern void r2_js_set_raw_mode(int raw) __attribute__((import_module("r2"), import_name("set_raw_mode")));
-	if ((void*)r2_js_set_raw_mode != NULL) {
-		r2_js_set_raw_mode(is_raw ? 1 : 0);
+	extern void r2_js_set_raw_mode (int raw) __attribute__((import_module ("r2"), import_name ("set_raw_mode")));
+	if ((void *)r2_js_set_raw_mode != NULL) {
+		r2_js_set_raw_mode (is_raw? 1: 0);
 	}
 #elif R2__UNIX__ && !defined(__wasi__)
 	struct termios *term_mode;
 	if (is_raw) {
-		cons->term_raw.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
+		cons->term_raw.c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 		term_mode = &cons->term_raw;
 	} else {
 		term_mode = &cons->term_buf;
@@ -1408,7 +1424,7 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 						need_retry = true; // Retry with larger buffer
 					} else {
 						// Allocation failed, use available space
-						size_t added = (left > 0) ? left - 1 : 0;
+						size_t added = (left > 0)? left - 1: 0;
 						cons->context->buffer_len += added;
 						cons->context->breaked = true; // Indicate truncation
 					}
@@ -1426,7 +1442,7 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 	va_end (ap3);
 }
 
-R_API void r_cons_println(RCons *cons, const char* str) {
+R_API void r_cons_println(RCons *cons, const char *str) {
 	r_cons_print (cons, str);
 	r_cons_newline (cons);
 }
@@ -1482,7 +1498,7 @@ static void r_cons_context_free_internal(RConsContext *ctx) {
 	free (ctx);
 }
 
-R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
+R_API void r_cons_context_free(RConsContext *R_NULLABLE ctx) {
 	if (ctx) {
 		r_unref (ctx);
 	}
@@ -1663,7 +1679,7 @@ R_API void r_cons_show_cursor(RCons *cons, int cursor) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
 #endif
-		if (write (1, cursor ? "\x1b[?25h" : "\x1b[?25l", 6) != 6) {
+		if (write (1, cursor? "\x1b[?25h": "\x1b[?25l", 6) != 6) {
 			C->breaked = true;
 		}
 #if R2__WINDOWS__
@@ -1679,7 +1695,7 @@ R_API void r_cons_show_cursor(RCons *cons, int cursor) {
 			size = cursor_info.dwSize;
 		}
 		cursor_info.dwSize = size;
-		cursor_info.bVisible = cursor ? TRUE : FALSE;
+		cursor_info.bVisible = cursor? TRUE: FALSE;
 		SetConsoleCursorInfo (hStdout, &cursor_info);
 	}
 #endif
@@ -1708,7 +1724,7 @@ R_API char *r_cons_lastline(RCons *cons, int *len) {
 }
 
 #if 0
-// same as r_cons_lastline(), but len will be the number of
+// same as r_cons_lastline (), but len will be the number of
 // utf-8 characters excluding ansi escape sequences as opposed to just bytes
 R_API char *r_cons_lastline_utf8_ansi_len(RCons *cons, int *len) {
 	RConsContext *c = cons->context;
@@ -1793,8 +1809,7 @@ R_API void r_cons_highlight(RCons *cons, const char *word) {
 		strcpy (rword, inv[0]);
 		strcpy (rword + linv[0], word);
 		strcpy (rword + linv[0] + word_len, inv[1]);
-		res = r_str_replace_thunked (C->buffer, clean, cpos,
-					l, word, rword, 1);
+		res = r_str_replace_thunked (C->buffer, clean, cpos, l, word, rword, 1);
 		if (res) {
 			C->buffer = res;
 			C->buffer_len = C->buffer_sz = strlen (res);
@@ -1831,7 +1846,7 @@ R_API void r_cons_last(RCons *cons) {
 R_API void r_cons_clear_line(RCons *cons, bool err, bool flush) {
 #if R2__WINDOWS__
 	if (cons->vtmode) {
-		fprintf (err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+		fprintf (err? stderr: stdout, "%s", R_CONS_CLEAR_LINE);
 	} else {
 		int len = cons->columns;
 		if (len > 0) {
@@ -1845,7 +1860,7 @@ R_API void r_cons_clear_line(RCons *cons, bool err, bool flush) {
 		}
 	}
 #else
-	fprintf (err? stderr: stdout,"%s", R_CONS_CLEAR_LINE);
+	fprintf (err? stderr: stdout, "%s", R_CONS_CLEAR_LINE);
 #endif
 	if (flush) {
 		fflush (err? stderr: stdout);
@@ -1927,7 +1942,7 @@ R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len) {
 		*buffer_len = ctx->buffer_len;
 	}
 	// check len otherwise it will return trash
-	return (ctx->buffer_len > 0)? ctx->buffer : NULL;
+	return (ctx->buffer_len > 0)? ctx->buffer: NULL;
 }
 
 #if 0
@@ -1992,15 +2007,15 @@ R_IPI int r_cons_is_vtcompat(RCons *cons) {
 
 R_API void r_cons_set_title(RCons *cons, const char *str) {
 #if R2__WINDOWS__
-#  if defined(_UNICODE)
-	wchar_t* wstr = r_utf8_to_utf16_l (str, strlen (str));
+#if defined(_UNICODE)
+	wchar_t *wstr = r_utf8_to_utf16_l (str, strlen (str));
 	if (wstr) {
 		SetConsoleTitleW (wstr);
 		R_FREE (wstr);
 	}
-#  else // defined(_UNICODE)
+#else // defined(_UNICODE)
 	SetConsoleTitle (str);
-#  endif // defined(_UNICODE)
+#endif // defined(_UNICODE)
 #else
 	r_cons_printf (cons, "\x1b]0;%s\007", str);
 #endif
