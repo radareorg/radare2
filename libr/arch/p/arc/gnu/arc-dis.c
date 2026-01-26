@@ -386,19 +386,6 @@ find_format_from_table (struct disassemble_info *info,
     }
   while (opcode->mask);
 
-#if 0
-  if (warn_p)
-    {
-      info->fprintf_func
-	(info->stream, dis_style_text,
-	 _("\nWarning: disassembly may be wrong due to "
-	   "guessed opcode class choice.\n"
-	   "Use -M<class[,class]> to select the correct "
-	   "opcode class(es).\n\t\t\t\t"));
-      return t_op;
-    }
-#endif
-
   return NULL;
 }
 
@@ -1074,19 +1061,13 @@ print_insn_arc (bfd_vma memaddr,
       switch (size)
 	{
 	case 1:
-	  info->fprintf_func (info->stream, ".byte");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%02lx", data);
+	  info->fprintf_func (info->stream, ".byte 0x%02lx", data);
 	  break;
 	case 2:
-	  info->fprintf_func (info->stream, ".short");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%04lx", data);
+	  info->fprintf_func (info->stream, ".short 0x%04lx", data);
 	  break;
 	case 4:
-	  info->fprintf_func (info->stream, ".word");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%08lx", data);
+	  info->fprintf_func (info->stream, ".word 0x%08lx", data);
 	  break;
 	default:
 	  return -1;
@@ -1177,31 +1158,22 @@ print_insn_arc (bfd_vma memaddr,
       switch (insn_len)
 	{
 	case 2:
-	  info->fprintf_func (info->stream, ".short");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%04llx", insn & 0xffff);
+	  info->fprintf_func (info->stream, ".short 0x%04llx", insn & 0xffff);
 	  break;
 
 	case 4:
-	  info->fprintf_func (info->stream, ".word");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%08llx", insn & 0xffffffff);
+	  info->fprintf_func (info->stream, ".word 0x%08llx", insn & 0xffffffff);
 	  break;
 
 	case 6:
-	  info->fprintf_func (info->stream, ".long");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%08llx", insn & 0xffffffff);
+	  info->fprintf_func (info->stream, ".long 0x%08llx", insn & 0xffffffff);
 	  info->fprintf_func (info->stream, " ");
 	  info->fprintf_func (info->stream, "0x%04llx", (insn >> 32) & 0xffff);
 	  break;
 
 	case 8:
-	  info->fprintf_func (info->stream, ".long");
-	  info->fprintf_func (info->stream, "\t");
-	  info->fprintf_func (info->stream, "0x%08llx", insn & 0xffffffff);
-	  info->fprintf_func (info->stream, " ");
-	  info->fprintf_func (info->stream, "0x%08llx", (insn >> 32));
+	  info->fprintf_func (info->stream, ".long 0x%08llx", insn & 0xffffffff);
+	  info->fprintf_func (info->stream, " 0x%08llx", (insn >> 32));
 	  break;
 
 	default:
@@ -1224,7 +1196,7 @@ print_insn_arc (bfd_vma memaddr,
   print_flags (opcode, &insn, info);
 
   if (opcode->operands[0] != 0)
-    info->fprintf_func (info->stream, "\t");
+    info->fprintf_func (info->stream, " ");
 
   need_comma = false;
   open_braket = false;
@@ -1326,7 +1298,7 @@ print_insn_arc (bfd_vma memaddr,
 	  else
 	    {
 	      info->fprintf_func (info->stream,
-					    "%#x", value);
+					    "0x%#x", value);
 	      if (info->insn_type == dis_branch
 		  || info->insn_type == dis_jsr)
 		info->target = (bfd_vma) value;
@@ -1342,7 +1314,7 @@ print_insn_arc (bfd_vma memaddr,
 	    {
 	      if (arc_infop->print_hex)
 		info->fprintf_func (info->stream,
-					      "%#x", value);
+					      "0x%#x", value);
 	      else
 		info->fprintf_func (info->stream,
 					      "%d", value);
@@ -1391,7 +1363,7 @@ print_insn_arc (bfd_vma memaddr,
 					      "%s", rname);
 	      else
 		info->fprintf_func (info->stream,
-					      "%#x", value);
+					      "0x%#x", value);
 	    }
 	}
 
@@ -1425,7 +1397,7 @@ print_insn_arc (bfd_vma memaddr,
 	   the addend is not currently pc-relative.  */
 	memaddr = 0;
 
-      info->fprintf_func (info->stream, "\t;");
+      info->fprintf_func (info->stream, " ;");
       (*info->print_address_func) ((memaddr & ~3) + vpcl, info);
     }
 

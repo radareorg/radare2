@@ -414,12 +414,12 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    int val = va_arg(ap,int);
 	    if (size != 0) {
 		    if (leading_zero) {
-			    sprintf (bp, "%0*x", size, val);
+			    sprintf (bp, "0x%0*x", size, val);
 		    } else {
 			    sprintf (bp, "%*x", size, val);
 		    }
 	    } else {
-		    sprintf (bp, "%x", val);
+		    sprintf (bp, "0x%x", val);
 	    }
 	    inc_bp();
 	  }

@@ -59,7 +59,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 	disasm_obj.symbol_at_address_func = &symbol_at_address;
 	disasm_obj.memory_error_func = &memory_error_func;
 	disasm_obj.print_address_func = &generic_print_address_func;
-	disasm_obj.endian = !R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config);
+	/* Set disasm_obj.endian to the BFD constant matching the arch config endian */
+	disasm_obj.endian = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) ? BFD_ENDIAN_BIG : BFD_ENDIAN_LITTLE;
 	disasm_obj.fprintf_func = &generic_fprintf_func;
 	disasm_obj.stream = sb;
 
@@ -77,6 +78,8 @@ static int disassemble(RArchSession *as, RAnalOp *op, const ut8 *buf, int len) {
 #endif
 	/* Set the machine type based on CPU configuration */
 	const char *cpu = as->config->cpu;
+	/* Default machine: prefer ARCv2 (8). Some tests expect older encodings; try matching ARC600/ARC601 when CPU unset? */
+	/* Default machine: prefer ARCv2 (8). Some tests expect older encodings; try matching ARC600/ARC601 when CPU unset? */
 	disasm_obj.mach = 8; /* bfd_mach_arc_arcv2 for modern ARC */
 	if (cpu) {
 		if (r_str_startswith (cpu, "arc60")) {
