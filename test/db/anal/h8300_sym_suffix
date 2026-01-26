@@ -11,9 +11,24 @@ e asm.sub.jmp=true
 e asm.sub.varmin=0
 e asm.symbol=true
 wx 5a001234
+ao
 pd 1
 EOC
 EXPECT=<<EOC
-    + 0          ,=< 0x00000000      5a001234       jmp @sym.target:16
+address: 0x0
+opcode: jmp @0x1234:16
+esilcost: 0
+disasm: jmp @0x1234:16
+mnemonic: jmp
+mask: ff000000
+id: 0
+bytes: 5a001234
+size: 4
+sign: false
+type: jmp
+cycles: 0
+jump: 0x00001234
+family: cpu
+    + 0          ,=< 0x00000000      5a001234       jmp @0x1234:16     ; sym.target
 EOC
 RUN
