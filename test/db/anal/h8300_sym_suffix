@@ -1,0 +1,19 @@
+NAME=h8300 asm.symbol with :16 suffix
+FILE=malloc://16
+CMDS=<<EOC
+fs sym
+f sym.target @ 0x1234
+e asm.arch=h8300
+e asm.bits=16
+e asm.flags=false
+e asm.sub.names=true
+e asm.sub.jmp=true
+e asm.sub.varmin=0
+e asm.symbol=true
+wx 5a001234
+pd 1
+EOC
+EXPECT=<<EOC
+    + 0          ,=< 0x00000000      5a001234       jmp @sym.target:16
+EOC
+RUN

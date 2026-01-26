@@ -107,6 +107,15 @@ static char *findNextNumber(char *op) {
 				}
 			}
 			if (isSpace) {
+				if (*p == '@') {
+					p++;
+					if (isdigit (*p)) {
+						return p;
+					}
+					if ((*p == '-') && isdigit (p[1])) {
+						return p + 1;
+					}
+				}
 				if (isdigit (*p)) {
 					return p;
 				}
@@ -204,11 +213,28 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			}
 		}
 		char *colon = strstr (ptr, ":");
+		bool size_suffix = false;
+		if (colon && !(x86 && bits == 16)) {
+			char *s = colon + 1;
+			if (s && isdigit ((ut8)*s)) {
+				char *e = s;
+				while (*e && isdigit ((ut8)*e)) {
+					e++;
+				}
+				if (!*e || IS_SEPARATOR (*e) || *e == '\x1b') {
+					size_suffix = true;
+				}
+			}
+		}
 		if (x86 && bits == 16 && colon) {
 			*colon = '\0';
 			ut64 s = r_num_get (NULL, ptr);
 			ut64 o = r_num_get (NULL, colon + 1);
 			off = (s << seggrn) + o;
+			*colon = ':';
+		} else if (size_suffix && colon) {
+			*colon = '\0';
+			off = r_num_get (NULL, ptr);
 			*colon = ':';
 		} else {
 			off = r_num_get (NULL, ptr);

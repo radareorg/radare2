@@ -6268,6 +6268,9 @@ static char *_find_next_number(char *op) {
 					p++;
 				}
 			}
+			if (*p == '@') {
+				p++;
+			}
 			if (isdigit (*p)) {
 				// we found the start of the next number
 				return p;
@@ -6426,21 +6429,49 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		const int seggrn = ds->core->rasm->config->seggrn;
 		while ((nptr = _find_next_number (ptr))) {
 			ptr = nptr;
-			char* colon = strchr (ptr, ':');
+			char *colon = strchr (ptr, ':');
+			bool size_suffix = false;
+			char *suffix_end = NULL;
+			if (colon && !(x86 && bits == 16)) {
+				char *s = colon + 1;
+				if (s && isdigit ((ut8)*s)) {
+					char *e = s;
+					while (*e && isdigit ((ut8)*e)) {
+						e++;
+					}
+					if (!*e || IS_SEPARATOR (*e) || *e == 0x1b) {
+						size_suffix = true;
+						suffix_end = e;
+					}
+				}
+			}
 			if (x86 && bits == 16 && colon) {
 				*colon = '\0';
 				ut64 seg = r_num_get (NULL, ptr);
 				ut64 off = r_num_get (NULL, colon + 1);
 				*colon = ':';
 				numval = (seg << seggrn) + off;
+			} else if (size_suffix && colon) {
+				*colon = '\0';
+				numval = r_num_get (NULL, ptr);
+				*colon = ':';
 			} else {
 				numval = r_num_get (NULL, ptr);
 			}
 			if (numval == addr) {
-				while ((*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) || (x86 && bits == 16 && colon && *nptr == ':')) {
-					nptr++;
+				if (size_suffix && suffix_end) {
+					nptr = suffix_end;
+				} else {
+					while ((*nptr && !IS_SEPARATOR (*nptr) && *nptr != 0x1b) || (x86 && bits == 16 && colon && *nptr == ':')) {
+						nptr++;
+					}
 				}
-				char *kwname = r_str_newf ("%s%s", kw, name);
+				char *kwname = NULL;
+				if (size_suffix && colon && suffix_end) {
+					kwname = r_str_newf ("%s%s%.*s", kw, name, (int)(suffix_end - colon), colon);
+				} else {
+					kwname = r_str_newf ("%s%s", kw, name);
+				}
 				if (kwname) {
 					char* numstr = r_str_ndup (ptr, nptr - ptr);
 					if (numstr) {
