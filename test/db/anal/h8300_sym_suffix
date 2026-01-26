@@ -1,7 +1,7 @@
 NAME=h8300 asm.symbol with :16 suffix
 FILE=malloc://16
 CMDS=<<EOC
-fs sym
+fs symbols
 f sym.target @ 0x1234
 e asm.arch=h8300
 e asm.bits=16
@@ -18,7 +18,7 @@ EXPECT=<<EOC
 address: 0x0
 opcode: jmp @0x1234:16
 esilcost: 0
-disasm: jmp @0x1234:16
+disasm: jmp sym.target:16
 mnemonic: jmp
 mask: ff000000
 id: 0
@@ -29,6 +29,6 @@ type: jmp
 cycles: 0
 jump: 0x00001234
 family: cpu
-    + 0          ,=< 0x00000000      5a001234       jmp @0x1234:16     ; sym.target
+    + 0          ,=< 0x00000000      5a001234       jmp sym.target:16
 EOC
 RUN

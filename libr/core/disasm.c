@@ -6473,7 +6473,11 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 					kwname = r_str_newf ("%s%s", kw, name);
 				}
 				if (kwname) {
-					char* numstr = r_str_ndup (ptr, nptr - ptr);
+					char *numstart = ptr;
+					if (numstart > hstr && numstart[-1] == '@') {
+						numstart--;
+					}
+					char* numstr = r_str_ndup (numstart, nptr - numstart);
 					if (numstr) {
 						hstr = r_str_replace (hstr, numstr, kwname, 0);
 						free (numstr);
