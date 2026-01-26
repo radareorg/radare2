@@ -9,6 +9,7 @@ extern "C" {
 #include <r_th.h>
 #include <r_util/pj.h>
 #include <r_util/r_graph.h>
+#include <r_util/r_ref.h>
 #include <r_util/r_hex.h>
 #include <r_util/r_log.h>
 #include <r_util/r_num.h>
@@ -422,6 +423,7 @@ typedef void (*RConsFunctionKey)(void *core, int fkey);
 typedef enum { COLOR_MODE_DISABLED = 0, COLOR_MODE_16, COLOR_MODE_256, COLOR_MODE_16M } RConsColorMode;
 
 typedef struct r_cons_context_t {
+	R_REF_TYPE; // reference counting for safe access across threads
 	RConsGrep grep;
 	// RStack *cons_stack;
 	char *buffer; // TODO: replace with RStrBuf

@@ -5,6 +5,8 @@
 
 R_LIB_VERSION (r_cons);
 
+static void r_cons_context_free_internal(RConsContext *ctx);
+
 static RCons *I = NULL;
 
 #define MAX_PAGES 100
@@ -113,6 +115,14 @@ static void break_stack_free(void *ptr) {
 	free (b);
 }
 
+// Custom free function for stack to decrement refcount when freeing context
+static void context_stack_free(void *ptr) {
+	if (ptr) {
+		RConsContext *ctx = (RConsContext*)ptr;
+		r_unref (ctx);
+	}
+}
+
 static void grep_word_free(RConsGrepWord *gw) {
 	if (gw) {
 		free (gw->str);
@@ -187,6 +197,8 @@ static void rcons_update_color_limit_from_term(RCons *cons) {
 
 static void init_cons_context(RCons *cons, RConsContext * R_NULLABLE parent) {
 	RConsContext *ctx = cons->context;
+	// Initialize reference counting for safe cross-thread access
+	r_ref_init (ctx, r_cons_context_free_internal);
 	ctx->marks = r_list_newf ((RListFree)mark_free);
 	ctx->breaked = false;
 	// ctx->cmd_depth = R_CONS_CMD_DEPTH + 1;
@@ -232,7 +244,7 @@ static inline void init_cons_input(InputState *state) {
 R_API RCons *r_cons_new2(void) {
 	RCons *cons = R_NEW0 (RCons);
 	cons->context = R_NEW0 (RConsContext);
-	cons->ctx_stack = r_list_newf ((RListFree)r_cons_context_free);
+	cons->ctx_stack = r_list_newf ((RListFree)context_stack_free);
 	init_cons_context (cons, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
@@ -314,6 +326,9 @@ R_API void r_cons_free2(RCons * R_NULLABLE cons) {
 	while (!r_list_empty (cons->ctx_stack)) {
 		r_cons_pop (cons);
 	}
+	// Call r_cons_context_free which will handle the refcount properly.
+	// If the context has extra refcounts due to pending operations,
+	// they will be handled when the refcount reaches zero.
 	r_cons_context_free (cons->context);
 	r_list_free (cons->ctx_stack);
 	R_FREE (cons->pager);
@@ -1504,30 +1519,36 @@ R_API void r_cons_reset_colors(RCons *cons) {
 	r_cons_print (cons, Color_RESET_BG Color_RESET);
 }
 
+static void r_cons_context_free_internal(RConsContext *ctx) {
+	r_cons_context_pal_free (ctx);
+	r_stack_free (ctx->break_stack);
+
+	// Free the marks list
+	r_list_free (ctx->marks);
+
+	// Free the grep strings list
+	r_list_free (ctx->grep.strings);
+
+	// Free sorted and unsorted lines
+	r_list_free (ctx->sorted_lines);
+	r_list_free (ctx->unsorted_lines);
+
+	// Free the buffer and lastOutput
+	free (ctx->buffer);
+	free (ctx->lastOutput);
+	free (ctx);
+}
+
 R_API void r_cons_context_free(RConsContext * R_NULLABLE ctx) {
 	if (ctx) {
-		r_cons_context_pal_free (ctx);
-		r_stack_free (ctx->break_stack);
-
-		// Free the marks list
-		r_list_free (ctx->marks);
-
-		// Free the grep strings list
-		r_list_free (ctx->grep.strings);
-
-		// Free sorted and unsorted lines
-		r_list_free (ctx->sorted_lines);
-		r_list_free (ctx->unsorted_lines);
-
-		// Free the buffer and lastOutput
-		free (ctx->buffer);
-		free (ctx->lastOutput);
-		free (ctx);
+		r_unref (ctx);
 	}
 }
 
 R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
+	// Initialize independent refcount for the cloned context
+	r_ref_init (c, r_cons_context_free_internal);
 	if (ctx->buffer) {
 		c->buffer = r_mem_dup (ctx->buffer, ctx->buffer_sz);
 	}
@@ -1633,6 +1654,8 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 }
 
 R_API void r_cons_push(RCons *cons) {
+	// Push the current context to the stack.
+	// The stack's free function will handle the refcount.
 	r_list_push (cons->ctx_stack, cons->context);
 	RConsContext *nc = r_cons_context_clone (cons->context);
 	// Free the buffer in the cloned context since we're going to reset it anyway
@@ -1674,13 +1697,11 @@ R_API bool r_cons_pop(RCons *cons) {
 		memcpy (&parent->cpal, &cons->context->cpal, sizeof (parent->cpal));
 		parent->pal_dirty = true;
 	}
-	r_cons_context_free (cons->context);
+	// Unref the current context we're done with
+	r_unref (cons->context);
 	cons->context = parent;
-	// Refresh palette if changes were propagated
-	if (parent->pal_dirty && !parent->pal_batch) {
-		r_cons_pal_reload (cons);
-		parent->pal_dirty = false;
-	}
+	// The parent context is now the current context with original refcount
+
 	// global hacks
 	RCons *Gcons = r_cons_singleton ();
 	if (cons == Gcons) {
