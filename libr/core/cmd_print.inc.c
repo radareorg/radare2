@@ -1135,42 +1135,6 @@ static void print_format_uint(RStrBuf *sb, const PrintFmt *pf, unsigned long lon
 	}
 }
 
-static void print_format_float(RStrBuf *sb, const PrintFmt *pf, double d, char conv) {
-	const char *plain = NULL, *w_left = NULL, *w_right = NULL, *w_zero = NULL;
-	const char *p = NULL, *pw_left = NULL, *pw_right = NULL, *pw_zero = NULL;
-	switch (conv) {
-	case 'f':
-		plain = "%f"; w_left = "%-*f"; w_right = "%*f"; w_zero = "%0*f";
-		p = "%.*f"; pw_left = "%-*.*f"; pw_right = "%*.*f"; pw_zero = "%0*.*f";
-		break;
-	case 'e':
-		plain = "%e"; w_left = "%-*e"; w_right = "%*e"; w_zero = "%0*e";
-		p = "%.*e"; pw_left = "%-*.*e"; pw_right = "%*.*e"; pw_zero = "%0*.*e";
-		break;
-	case 'g':
-		plain = "%g"; w_left = "%-*g"; w_right = "%*g"; w_zero = "%0*g";
-		p = "%.*g"; pw_left = "%-*.*g"; pw_right = "%*.*g"; pw_zero = "%0*.*g";
-		break;
-	default:
-		plain = "%a"; w_left = "%-*a"; w_right = "%*a"; w_zero = "%0*a";
-		p = "%.*a"; pw_left = "%-*.*a"; pw_right = "%*.*a"; pw_zero = "%0*.*a";
-		break;
-	}
-	if (pf->has_precision) {
-		if (pf->width) {
-			const char *fmt = pf->left? pw_left: (pf->zero? pw_zero: pw_right);
-			print_format_write (sb, fmt, pf->width, pf->precision, d);
-		} else {
-			print_format_write (sb, p, pf->precision, d);
-		}
-	} else if (pf->width) {
-		const char *fmt = pf->left? w_left: (pf->zero? w_zero: w_right);
-		print_format_write (sb, fmt, pf->width, d);
-	} else {
-		print_format_write (sb, plain, d);
-	}
-}
-
 static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char conv, const char *arg) {
 	PrintFmt pf;
 	print_format_parse (spec, &pf);
@@ -1214,18 +1178,6 @@ static bool print_format_apply(RCore *core, RStrBuf *sb, const char *spec, char 
 		} else {
 			print_format_uint (sb, &pf, (unsigned long long)val, "%llo", "%-*llo", "%*llo", "%0*llo");
 		}
-		return true;
-	}
-	case 'f':
-	case 'F':
-	case 'e':
-	case 'E':
-	case 'g':
-	case 'G':
-	case 'a':
-	case 'A': {
-		double d = r_num_get_double (core->num, arg);
-		print_format_float (sb, &pf, d, (char)tolower ((ut8)conv));
 		return true;
 	}
 	}
