@@ -254,7 +254,7 @@ static char *__system(RIO *io, RIODesc *fd, const char *cmd) {
 	if (!fd || R_STR_ISEMPTY (cmd)) {
 		return NULL;
 	}
-	RIOWinedbg *wd = fd? fd->data: NULL;
+	RIOWinedbg *wd = fd->data;
 	if (*cmd == '?') {
 		eprintf ("dr  : show registers\n");
 		eprintf ("dr* : show registers as flags\n");
