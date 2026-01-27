@@ -1833,6 +1833,11 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (r_str_startswith (finame, "hit.")) { // use search.prefix ?
 				i = 0;
 			} else if (r_str_startswith (finame, "str.")) {
+				ut64 meta_size = 0;
+				RAnalMetaItem *mi = r_meta_get_at (core->anal, ds->at, R_META_TYPE_STRING, &meta_size);
+				if (mi && meta_size > 0 && (ds->at + i) < (ds->at + meta_size)) {
+					continue;
+				}
 				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (r_str_startswith (finame, "reloc.")) {
 				continue;
