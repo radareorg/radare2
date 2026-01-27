@@ -242,6 +242,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 		if (off >= p->minval) {
 			fcn = a->analb.get_fcn_in (a->analb.anal, off, 0);
 			if (fcn && fcn->addr == off) {
+				if (ptr > hdata && ptr[-1] == '@') {
+					ptr--;
+				}
 				*ptr = 0;
 				// hack to realign pointer for colours
 				if (ptr2 > ptr) {
@@ -258,7 +261,14 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 						name = flag->realname;
 					}
 				}
-				char *res = r_str_newf ("%s%s%s", hdata, name, (ptr != ptr2)? ptr2: "");
+				const char *suffix = (ptr != ptr2)? ptr2: "";
+				char *spaced_suffix = NULL;
+				if (size_suffix && colon) {
+					spaced_suffix = r_str_newf (" %s", colon);
+					suffix = spaced_suffix;
+				}
+				char *res = r_str_newf ("%s%s%s", hdata, name, suffix);
+				free (spaced_suffix);
 				free (hdata);
 				return res;
 			}
@@ -308,6 +318,9 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							}
 						}
 					}
+					if (ptr > hdata && ptr[-1] == '@') {
+						ptr--;
+					}
 					*ptr = 0;
 					char *flagname = label
 						? r_str_newf (".%s", label)
@@ -336,7 +349,14 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							flagname = newstr;
 						}
 					}
-					char *str = r_str_newf ("%s%s%s", hdata, flagname, (ptr != ptr2)? ptr2: "");
+					const char *suffix = (ptr != ptr2)? ptr2: "";
+					char *spaced_suffix = NULL;
+					if (size_suffix && colon) {
+						spaced_suffix = r_str_newf (" %s", colon);
+						suffix = spaced_suffix;
+					}
+					char *str = r_str_newf ("%s%s%s", hdata, flagname, suffix);
+					free (spaced_suffix);
 					free (flagname);
 					bool banned = false;
 					{

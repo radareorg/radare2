@@ -6432,29 +6432,33 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 			char *colon = strchr (ptr, ':');
 			bool size_suffix = false;
 			char *suffix_end = NULL;
-			if (colon && !(x86 && bits == 16)) {
-				char *s = colon + 1;
-				if (s && isdigit ((ut8)*s)) {
-					char *e = s;
-					while (*e && isdigit ((ut8)*e)) {
-						e++;
+			if (colon) {
+				if (x86 && bits == 16) {
+					*colon = '\0';
+					ut64 seg = r_num_get (NULL, ptr);
+					ut64 off = r_num_get (NULL, colon + 1);
+					*colon = ':';
+					numval = (seg << seggrn) + off;
+				} else {
+					char *s = colon + 1;
+					if (s && isdigit ((ut8)*s)) {
+						char *e = s;
+						while (*e && isdigit ((ut8)*e)) {
+							e++;
+						}
+						if (!*e || IS_SEPARATOR (*e) || *e == 0x1b) {
+							size_suffix = true;
+							suffix_end = e;
+						}
 					}
-					if (!*e || IS_SEPARATOR (*e) || *e == 0x1b) {
-						size_suffix = true;
-						suffix_end = e;
+					if (size_suffix) {
+						*colon = '\0';
+						numval = r_num_get (NULL, ptr);
+						*colon = ':';
+					} else {
+						numval = r_num_get (NULL, ptr);
 					}
 				}
-			}
-			if (x86 && bits == 16 && colon) {
-				*colon = '\0';
-				ut64 seg = r_num_get (NULL, ptr);
-				ut64 off = r_num_get (NULL, colon + 1);
-				*colon = ':';
-				numval = (seg << seggrn) + off;
-			} else if (size_suffix && colon) {
-				*colon = '\0';
-				numval = r_num_get (NULL, ptr);
-				*colon = ':';
 			} else {
 				numval = r_num_get (NULL, ptr);
 			}
@@ -6468,7 +6472,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 				}
 				char *kwname = NULL;
 				if (size_suffix && colon && suffix_end) {
-					kwname = r_str_newf ("%s%s%.*s", kw, name, (int)(suffix_end - colon), colon);
+					kwname = r_str_newf ("%s%s %.*s", kw, name, (int)(suffix_end - colon), colon);
 				} else {
 					kwname = r_str_newf ("%s%s", kw, name);
 				}
