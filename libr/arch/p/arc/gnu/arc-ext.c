@@ -149,6 +149,9 @@ create_map (unsigned char *block,
 	    unsigned char number = p[2];
 	    char*	  name	 = (char *) (p + 3);
 
+	    if (number < FIRST_EXTENSION_CORE_REGISTER
+		|| number > LAST_EXTENSION_CORE_REGISTER)
+	      break;
 	    arc_extension_map.
 	      coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].number
 	      = number;
@@ -167,6 +170,9 @@ create_map (unsigned char *block,
 	    char*	      name   = (char *) (p + 7);
 	    enum ExtReadWrite rw     = p[6];
 
+	    if (number < FIRST_EXTENSION_CORE_REGISTER
+		|| number > LAST_EXTENSION_CORE_REGISTER)
+	      break;
 	    arc_extension_map.
 	      coreRegisters[number - FIRST_EXTENSION_CORE_REGISTER].number
 	      = number;
@@ -181,10 +187,15 @@ create_map (unsigned char *block,
 
 	case EXT_COND_CODE:
 	  {
-	    char *cc_name = xstrdup ((char *) (p + 3));
+	    unsigned char code = p[2];
+	    char *cc_name;
 
+	    if (code < FIRST_EXTENSION_CONDITION_CODE
+		|| code > LAST_EXTENSION_CONDITION_CODE)
+	      break;
+	    cc_name = xstrdup ((char *) (p + 3));
 	    arc_extension_map.
-	      condCodes[p[2] - FIRST_EXTENSION_CONDITION_CODE]
+	      condCodes[code - FIRST_EXTENSION_CONDITION_CODE]
 	      = cc_name;
 	    break;
 	  }
@@ -806,6 +817,7 @@ arcExtMap_genOpcode (const extInstruction_t *einsn,
   else
     {
       *errmsg = "Unknown syntax";
+      free (arc_ext_opcodes);
       return NULL;
     }
 
