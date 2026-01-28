@@ -1361,7 +1361,7 @@ noskip:
 		case R_ANAL_OP_TYPE_MCJMP:
 		case R_ANAL_OP_TYPE_RCJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
-			if (is_x86 && op->jump != UT64_MAX && op->fail == op->addr + op->size) {
+			if (anal->opt.jmppair && is_x86 && op->jump != UT64_MAX && op->fail == op->addr + op->size) {
 				ut8 next_buf[32];
 				int next_read = read_ahead (&ra, anal, op->fail, next_buf, sizeof (next_buf));
 				if (next_read > 0) {

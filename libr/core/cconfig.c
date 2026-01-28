@@ -3455,6 +3455,13 @@ static bool cb_anal_jmpmid(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_jmppair(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.jmppair = node->i_value;
+	return true;
+}
+
 static bool cb_anal_searchstringrefs(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -3892,6 +3899,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.datarefs", "false", &cb_anal_followdatarefs, "follow data references for code coverage");
 	SETCB ("anal.brokenrefs", "false", &cb_anal_brokenrefs, "follow function references as well if function analysis was failed");
 	SETCB ("anal.jmp.mid", "true", &cb_anal_jmpmid, "continue analysis after jump to middle of instruction (x86 only)");
+	SETCB ("anal.jmp.pair", "false", &cb_anal_jmppair, "treat inverse jcc pairs as obfuscation (x86 only)");
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "search string references in data references");
 	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
