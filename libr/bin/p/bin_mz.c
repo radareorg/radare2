@@ -142,7 +142,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	return r_bin_mz_get_segments (bf->bo->bin_obj);
+	return r_bin_mz_get_segments (bf->bo->bin_obj, bf->size);
 }
 
 static RBinInfo *info(RBinFile *bf) {

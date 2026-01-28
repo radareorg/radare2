@@ -45,7 +45,7 @@ static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin, ut64
 	return section;
 }
 
-RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
+RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
 	RListIter *iter;
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs;
@@ -149,7 +149,8 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 	section->name = strdup (".text");
 	section->paddr = hdroff;
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);
-	section->size = section->vsize; // TODO: enforce file size boundaries
+	section->size = section->vsize;
+	section->size = R_MIN(filesize - hdroff, section->size); // enforce file size boundaries
 	section->perm = R_PERM_R;
 	r_list_append (res, section);
 
