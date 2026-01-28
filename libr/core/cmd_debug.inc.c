@@ -92,6 +92,7 @@ static RCoreHelpMessage help_msg_db = {
 	"dbh", "[-| x86]", "use/remove/list breakpoint plugin handlers",
 	"dbH", " [addr]", "add hardware breakpoint",
 	"dbi", "[?]", "manipulate breakpoints by index",
+	"dbl", " file:line", "add breakpoint by source line (dwarf)",
 	"dbm", " <module> <offset>", "add a breakpoint at an offset from a module's base",
 	"dbn", " [<name>]", "show or set name for current breakpoint",
 	"dbs", " <addr>", "toggle breakpoint",
@@ -3763,6 +3764,43 @@ static void r_core_cmd_bp(RCore *core, const char *input) {
 				}
 			}
 		}
+		}
+		break;
+	case 'l': // "dbl"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_db, "dbl");
+			break;
+		}
+		{
+			const char *spec = r_str_trim_head_ro (input + 2);
+			if (R_STR_ISEMPTY (spec)) {
+				r_core_cmd_help_match (core, help_msg_db, "dbl");
+				break;
+			}
+			char *dup = strdup (spec);
+			char *colon = strrchr (dup, ':');
+			if (!colon) {
+				R_LOG_ERROR ("Expected file:line");
+				free (dup);
+				break;
+			}
+			*colon++ = 0;
+			int line = atoi (colon);
+			if (line <= 0) {
+				R_LOG_ERROR ("Invalid line: %s", colon);
+				free (dup);
+				break;
+			}
+			ut64 addr = r_bin_addrline_find (core->bin, dup, line);
+			if (addr == UT64_MAX) {
+				R_LOG_ERROR ("Cannot find %s:%d", dup, line);
+			} else {
+				bpi = r_debug_bp_add (core->dbg, addr, hwbp, false, 0, NULL, 0);
+				if (!bpi) {
+					R_LOG_ERROR ("Cannot set breakpoint at 0x%" PFMT64x, addr);
+				}
+			}
+			free (dup);
 		}
 		break;
 	case 'x': // "dbx"

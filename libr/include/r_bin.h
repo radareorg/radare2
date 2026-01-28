@@ -445,6 +445,7 @@ typedef struct r_bin_file_options_t {
 typedef struct r_bin_addrline_store_t RBinAddrLineStore;
 typedef bool (*RBinAddrLineAdd)(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column);
 typedef const RBinAddrline *(*RBinAddrLineGet)(RBinAddrLineStore *als, ut64 addr);
+typedef ut64 (*RBinAddrLineFind)(RBinAddrLineStore *als, const char *file, ut32 line);
 typedef void (*RBinAddrLineReset)(RBinAddrLineStore *als);
 typedef void (*RBinAddrLineResetAt)(RBinAddrLineStore *als, ut64 addr);
 typedef void (*RBinAddrLineDel)(RBinAddrLineStore *als, ut64 addr);
@@ -459,6 +460,7 @@ struct r_bin_addrline_store_t {
 	RBinAddrLineAdd al_add;
 	RBinAddrLineAdd al_add_cu;
 	RBinAddrLineGet al_get;
+	RBinAddrLineFind al_find;
 	RBinAddrLineDel al_del;
 	RBinAddrLineReset al_reset;
 	RBinAddrLineFiles al_files;
@@ -983,6 +985,7 @@ R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback item, void *use
 R_API RList *r_bin_addrline_files(RBin *bin);
 R_API const RBinAddrline *r_bin_addrline_at(RBin *bin, ut64 addr);
 R_API const RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr);
+R_API ut64 r_bin_addrline_find(RBin *bin, const char *file, int line);
 R_API const char *r_bin_addrline_str(RBin *bin, ut32 idx);
 R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 
