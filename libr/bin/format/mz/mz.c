@@ -45,7 +45,7 @@ static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin, ut64
 	return section;
 }
 
-RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
+RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
 	RListIter *iter;
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs;
@@ -149,7 +149,8 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 	section->name = strdup (".text");
 	section->paddr = hdroff;
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);
-	section->size = section->vsize; // TODO: enforce file size boundaries
+	section->size = section->vsize;
+	section->size = R_MIN(filesize - hdroff, section->size); // enforce file size boundaries
 	section->perm = R_PERM_R;
 	r_list_append (res, section);
 
@@ -241,10 +242,12 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 			mz->bytes_in_last_block;
 	}
 
-	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {
-		return false;
-	}
+		// Old DOS files e.g. QuickBasic-compiled programs will declare
+		// a bigger size than the size on disk. Trim it.
+		dos_file_size = bin->size;
+    }
+	bin->dos_file_size = dos_file_size;
 	// eprintf ("ii %d %d\n", dos_file_size , (mz->header_paragraphs << 4));
 	if (dos_file_size < (mz->header_paragraphs << 4)) {
 		bin->load_module_size = dos_file_size;

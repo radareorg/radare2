@@ -38,7 +38,7 @@ struct r_bin_mz_obj_t {
 };
 
 RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin);
-RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin);
+RList *r_bin_mz_get_segments (const struct r_bin_mz_obj_t *bin, ut64 filesize);
 struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin);
 void *r_bin_mz_free (struct r_bin_mz_obj_t *bin);
 struct r_bin_mz_obj_t *r_bin_mz_new (const char *file);
