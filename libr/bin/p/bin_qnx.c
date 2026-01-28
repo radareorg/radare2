@@ -85,6 +85,10 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 				free (ptr);
 				goto beach;
 			}
+			if (lrec.data_nbytes < sizeof (lmf_resource)) {
+				free (ptr);
+				goto beach;
+			}
 			ptr->name = strdup ("LMF_RESOURCE");
 			ptr->paddr = offset;
 			ptr->vsize = lrec.data_nbytes - sizeof (lmf_resource);
@@ -94,6 +98,10 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		} else if (lrec.rec_type == LMF_LOAD_REC) {
 			RBinSection *ptr = R_NEW0 (RBinSection);
 			if (r_buf_fread_at (bf->buf, offset, (ut8 *)&ldata, "si", 1) != sizeof (lmf_data)) {
+				free (ptr);
+				goto beach;
+			}
+			if (lrec.data_nbytes < sizeof (lmf_data)) {
 				free (ptr);
 				goto beach;
 			}
