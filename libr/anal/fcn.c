@@ -616,6 +616,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END;
 	bool overlapped = false;
+	bool skip_fail = false;
 	int oplen, idx = 0;
 	int lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
@@ -809,6 +810,7 @@ repeat:
 		op_src = (src0 && src0->reg)? strdup (src0->reg): NULL;
 		src1 = RVecRArchValue_at (&op->srcs, 1);
 
+		skip_fail = false;
 		if (nopskip && fcn->addr == at) {
 			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
 			if (codealign > 1) {
@@ -1372,6 +1374,8 @@ noskip:
 						&& next.jump == op->jump
 						&& cond_is_inverse (op->cond, next.cond)) {
 						r_anal_hint_set_fail (anal, next.addr, op->jump);
+						op->fail = UT64_MAX;
+						skip_fail = true;
 					}
 					r_anal_op_fini (&next);
 				}
@@ -1434,7 +1438,9 @@ noskip:
 			// depth = 999;
 			r_anal_function_bb (anal, fcn, op->jump, depth);
 			fcn->stack = saved_stack;
-			ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+			if (!skip_fail && op->fail != UT64_MAX) {
+				ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+			}
 			fcn->stack = saved_stack;
 			// XXX breaks mips analysis too !op->delay
 			// this will be all x86, arm (at least)
