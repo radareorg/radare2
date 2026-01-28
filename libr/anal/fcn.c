@@ -78,6 +78,11 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 	return len;
 }
 
+static bool cond_is_inverse(RAnalCondType a, RAnalCondType b) {
+	return (a == R_ANAL_CONDTYPE_EQ && b == R_ANAL_CONDTYPE_NE)
+		|| (a == R_ANAL_CONDTYPE_NE && b == R_ANAL_CONDTYPE_EQ);
+}
+
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -611,6 +616,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalBlock *bbg = NULL;
 	int ret = R_ANAL_RET_END;
 	bool overlapped = false;
+	bool skip_fail = false;
 	int oplen, idx = 0;
 	int lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
@@ -804,6 +810,7 @@ repeat:
 		op_src = (src0 && src0->reg)? strdup (src0->reg): NULL;
 		src1 = RVecRArchValue_at (&op->srcs, 1);
 
+		skip_fail = false;
 		if (nopskip && fcn->addr == at) {
 			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
 			if (codealign > 1) {
@@ -1356,6 +1363,23 @@ noskip:
 		case R_ANAL_OP_TYPE_MCJMP:
 		case R_ANAL_OP_TYPE_RCJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
+			if (anal->opt.jmppair && is_x86 && op->jump != UT64_MAX && op->fail == op->addr + op->size) {
+				ut8 next_buf[32];
+				int next_read = read_ahead (&ra, anal, op->fail, next_buf, sizeof (next_buf));
+				if (next_read > 0) {
+					RAnalOp next = {0};
+					int next_len = r_anal_op (anal, &next, op->fail, next_buf, next_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+					if (next_len > 0
+						&& (next.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_CJMP
+						&& next.jump == op->jump
+						&& cond_is_inverse (op->cond, next.cond)) {
+						r_anal_hint_set_fail (anal, next.addr, op->jump);
+						op->fail = UT64_MAX;
+						skip_fail = true;
+					}
+					r_anal_op_fini (&next);
+				}
+			}
 			if (anal->opt.cjmpref) {
 				const bool is_success = r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
 				if (!is_success) {
@@ -1414,7 +1438,9 @@ noskip:
 			// depth = 999;
 			r_anal_function_bb (anal, fcn, op->jump, depth);
 			fcn->stack = saved_stack;
-			ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+			if (!skip_fail && op->fail != UT64_MAX) {
+				ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+			}
 			fcn->stack = saved_stack;
 			// XXX breaks mips analysis too !op->delay
 			// this will be all x86, arm (at least)

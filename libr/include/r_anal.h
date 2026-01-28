@@ -390,6 +390,7 @@ typedef struct r_anal_options_t {
 	int jmpabove;
 	bool ijmp;
 	bool jmpmid; // continue analysis after jmp into middle of insn
+	bool jmppair; // treat inverse jcc pairs as obfuscation (x86 only)
 	bool loads;
 	bool ignbithints;
 	int followdatarefs;
