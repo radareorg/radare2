@@ -4866,7 +4866,19 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 		}
 	}
 	const char *prefix = "";
-	char *escstr = ds_getstring (ds, str, len, &prefix);
+	char *escstr = NULL;
+	// Use Cs metadata string if available (highest priority)
+	const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
+	if (R_STR_ISNOTEMPTY (meta_str)) {
+		escstr = ds_getstring (ds, meta_str, strlen (meta_str), &prefix);
+	} else {
+		// Fall back to flag size if available
+		RFlagItem *fi = r_flag_get_at (ds->core->flags, refaddr, false);
+		if (fi && fi->size > 1 && (int)fi->size < len) {
+			len = (int)fi->size;
+		}
+		escstr = ds_getstring (ds, str, len, &prefix);
+	}
 	if (escstr) {
 		bool inv = ds->show_color && !ds->show_emu_strinv;
 		ds_begin_comment (ds);
@@ -5399,7 +5411,7 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 			r_str_trim (escstr);
 		}
 	} else {
-		escstr = strdup (str); // r_str_ndup (str, len);
+		escstr = r_str_ndup (str, len);
 	}
 	return escstr;
 }
