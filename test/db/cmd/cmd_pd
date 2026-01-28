@@ -742,9 +742,9 @@ e asm.cmt.right=false
 pd 1 @ 0x004010f0
 EOF
 EXPECT=<<EOF
-            0x004010f0      68b8214000     push str.Number_of_CPU__d_n ; 0x4021b8 ; u"Number of CPU %d\n"
+            0x004010f0      68b8214000     push str.Number_of_CPU__d_n ; 0x4021b8 ; "Number of CPU %d\n"
             ; 0x4021b8
-            ; u"Number of CPU %d\n"
+            ; "Number of CPU %d\n"
             0x004010f0      68b8214000     push str.Number_of_CPU__d_n
 EOF
 RUN
@@ -760,9 +760,9 @@ e asm.cmt.right=false
 pd 1 @ 0x004010f0
 EOF
 EXPECT=<<EOF
-            0x004010f0      68b8214000     push num_cpu                ; 0x4021b8 ; u"Number of CPU %d\n"
+            0x004010f0      68b8214000     push num_cpu                ; 0x4021b8 ; "Number of CPU %d\n"
             ; 0x4021b8
-            ; u"Number of CPU %d\n"
+            ; "Number of CPU %d\n"
             0x004010f0      68b8214000     push num_cpu
 EOF
 RUN
@@ -831,18 +831,18 @@ pd 1 @ 0x14000101c
 EOF
 EXPECT=<<EOF
             0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n ; section..data
-                                                                       ; 0x140016000 ; "\tANSI\esc: \x1b[33m\r\n"
-            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; 0x140016018 ; u"\twide\esc: \x1b[0m\xa1\r\n"
-            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; u"\"wide\" in Arabic: \u0648\u0627\u0633\u0639"
+                                                                       ; 0x140016000 ; "\tANSI\\esc: \e[33m\r\n"
+            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; 0x140016018 ; "\twide\\esc: \e[0m"
+            0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic: ; 0x140016040 ; "\"wide\" in Arabic:"
             ; section..data
             ; 0x140016000
-            ; "\tANSI\esc: \x1b[33m\r\n"
+            ; "\tANSI\\esc: \e[33m\r\n"
             0x140001004      488d05f54f..   lea rax, str._tANSIesc:_e_33m_r_n
             ; 0x140016018
-            ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, str._twideesc:_e_0m
             ; 0x140016040
-            ; u"\"wide\" in Arabic: \u0648\u0627\u0633\u0639"
+            ; "\"wide\" in Arabic:"
             0x14000101c      488d051d50..   lea rax, str._wide__in_Arabic:
 EOF
 RUN
@@ -903,9 +903,9 @@ e bin.str.enc=guess
 pd 1 @ 0x00401693
 EOF
 EXPECT=<<EOF
-            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
-            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \x1b[0m\n"
-            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m \u00a2\u20ac\U00010348 \\e[0m\\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \\e[0m\\n"
+            0x00401693      mov edi, str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n ; 0x4021ff ; "utf8> \\\\u00a2\\\\u20ac\\\\U00010348 in yellow:\\e[33m \u00a2\u20ac\U00010348 \\e[0m\\n"
 EOF
 RUN
 
@@ -1014,8 +1014,8 @@ e bin.str.enc=utf32le
 pd 1 @ 0x00400463
 EOF
 EXPECT=<<EOF
-            0x00400463      mov edi, str.ABCDEF                        ; "A"
-            0x00400463      mov edi, str.ABCDEF                        ; U"ABCDEF\U0010ffff  G\U00110000  H\U7ffdfeff\n"
+            0x00400463      mov edi, str.ABCDEF                        ; "ABCDEF"
+            0x00400463      mov edi, str.ABCDEF                        ; U"\U44434241"
 EOF
 RUN
 
@@ -1042,9 +1042,9 @@ EXPECT=<<EOF
 guess
 utf8
 utf16le
-            0x004016c0      mov edi, str.__B_                          ; u"\u2520\u2542\u2500\u2500\u2542\u2528 is a fence with embedded zeros\n"
+            0x004016c0      mov edi, str.__B_                          ; u"\u2520"
 utf32le
-            0x004016ed      mov edi, str.utf32le__u00a2u20acU00010348_in_cyan:e_36m__e_0m_n ; U"utf32le> \\u00a2\\u20ac\\U00010348 in cyan:\x1b[36m \xa2\u20ac\U00010348 \x1b[0m\n"
+            0x004016ed      mov edi, str.utf32le__u00a2u20acU00010348_in_cyan:e_36m__e_0m_n ; U"\U33667475\U3e656c32\U755c5c20\U32613030\U32755c5c\U5c636130\U3030555c\U33303130\U69203834\U7963206e\U5c3a6e61\U36335b65\Ua2c2206d\Uf0ac82e2\U20888d90\U305b655c"
 
 utf32be
 utf16le
@@ -1089,14 +1089,14 @@ e asm.cmt.right=false
 pd 1 @ 0x140001010
 EOF
 EXPECT=<<EOF
-            0x140001010      488d050150..   lea rax, [0x140016018]     ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            0x140001010      488d050150..   lea rax, [0x140016018]     ; "\twide\\esc: \e[0m"
             0x140001028      488d054150..   lea rax, [0x140016070]     ; str._fFormfeed_at_start
-            ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, [0x140016018]
             ; str._fFormfeed_at_start
             0x140001028      488d054150..   lea rax, [0x140016070]
-            0x140001010      488d050150..   lea rax, [0x140016018]     ; u"\twide\esc: \x1b[0m\xa1\r\n"
-            ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            0x140001010      488d050150..   lea rax, [0x140016018]     ; "\twide\\esc: \e[0m"
+            ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, [0x140016018]
 EOF
 RUN
@@ -1113,9 +1113,9 @@ e asm.cmt.right=false
 pd 1 @ 0x140001010
 EOF
 EXPECT=<<EOF
-            0x140001010      488d050150..   lea rax, [0x140016018]     ; str._twideesc:_e_0m ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            0x140001010      488d050150..   lea rax, [0x140016018]     ; str._twideesc:_e_0m ; "\twide\\esc: \e[0m"
             ; str._twideesc:_e_0m
-            ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            ; "\twide\\esc: \e[0m"
             0x140001010      488d050150..   lea rax, [0x140016018]
 EOF
 RUN
@@ -1167,9 +1167,9 @@ e asm.cmt.off=nodup
 pd 1 @ 0x140001010
 EOF
 EXPECT=<<EOF
-            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; u"\twide\esc: \x1b[0m\xa1\r\n"
-            0x140001010      488d050150..   lea rax, [0x140016018]     ; 0x140016018 ; u"\twide\esc: \x1b[0m\xa1\r\n"
-            0x140001010      488d050150..   lea rax, [0x140016018]     ; u"\twide\esc: \x1b[0m\xa1\r\n"
+            0x140001010      488d050150..   lea rax, str._twideesc:_e_0m ; "\twide\\esc: \e[0m"
+            0x140001010      488d050150..   lea rax, [0x140016018]     ; 0x140016018 ; "\twide\\esc: \e[0m"
+            0x140001010      488d050150..   lea rax, [0x140016018]     ; "\twide\\esc: \e[0m"
 EOF
 RUN
 
@@ -1220,7 +1220,7 @@ e asm.bytes=false
 pd 1 @ 0x004004ee
 EOF
 EXPECT=<<EOF
-            0x004004ee      mov edi, str._____S                        ; 0x4005c0 ; u"\ufeff--> %S\ufeff\n"
+            0x004004ee      mov edi, str._____S                        ; 0x4005c0 ; "--> %S"
 EOF
 RUN
 
@@ -1231,7 +1231,7 @@ e asm.bytes=false
 pd 1 @ 0x004004df
 EOF
 EXPECT=<<EOF
-            0x004004df      mov qword [rbp - 8], str.Hello_World       ; 0x4005a0 ; u"\ufeffHello World\ufeff\n"
+            0x004004df      mov qword [rbp - 8], str.Hello_World       ; 0x4005a0 ; "Hello World"
 EOF
 RUN
 
@@ -1338,7 +1338,7 @@ e str.escbslash=1
 pdJ 1 @ 0x08048532
 EOF
 EXPECT=<<EOF
-[{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\n\""},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c704247986..&nbsp;&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect__n"}]
+[{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;[0x8048679:4]=0x73736150"},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;;&nbsp;\"Password&nbsp;Incorrect!\\\\n\""},{"addr":134513970,"text":"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0x08048532&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;c704247986..&nbsp;&nbsp;&nbsp;mov&nbsp;dword&nbsp;[esp],&nbsp;str.Password_Incorrect__n"}]
 EOF
 RUN
 
@@ -2071,8 +2071,8 @@ e asm.cmt.off=false
 pd 1 @ 0x004016ca
 EOF
 EXPECT=<<EOF
-            0x004016ca      mov edi, str.__B__                         ; 0x40235a ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
-            0x004016ca      mov edi, str.__B__                         ; str.fence ; u"\u2520\u2542-\u2500-\u2500\u2542\u2528 is a fence with embedded double zeros\n"
+            0x004016ca      mov edi, str.__B__                         ; 0x40235a ; u"\u2520\u2542"
+            0x004016ca      mov edi, str.__B__                         ; str.fence ; u"\u2520\u2542"
 EOF
 RUN
 
