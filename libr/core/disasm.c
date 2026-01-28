@@ -4805,25 +4805,48 @@ static char *ds_esc_str(RDisasmState *ds, const char *str, int len, const char *
 		str_len = strlen (str);
 		if ((str_len == 1 && len > 3 && str[2] && !str[3])
 		    || (str_len == 3 && len > 5 && !memcmp (str, "\xff\xfe", 2) && str[4] && !str[5])) {
+			RRune ch;
+			bool is_ascii = true;
+			const char *ptr, *end;
+			end = (const char *)r_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0", 2, 2);
+			if (!end) {
+				end = str + len - 1;
+			}
+			for (ptr = str; ptr < end; ptr += 2) {
+				if (r_utf16le_decode ((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x7f) {
+					is_ascii = false;
+					break;
+				}
+			}
 			escstr = r_str_escape_utf16le (str, len, ds->show_asciidot, esc_bslash);
-			prefix = "u";
+			if (!is_ascii) {
+				prefix = "u";
+			}
 		} else if (str_len == 1 && len > 7 && !str[2] && !str[3] && str[4] && !str[5]) {
 			RStrEnc enc = R_STRING_ENC_UTF32LE;
 			RRune ch;
+			bool is_ascii = true;
 			const char *ptr, *end;
 			end = (const char *)r_mem_mem_aligned ((ut8 *)str, len, (ut8 *)"\0\0\0\0", 4, 4);
 			if (!end) {
 				end = str + len - 1;
 			}
 			for (ptr = str; ptr < end; ptr += 4) {
-				if (r_utf32le_decode ((ut8 *)ptr, end - ptr, &ch) > 0 && ch > 0x10ffff) {
-					enc = R_STRING_ENC_LATIN1;
-					break;
+				if (r_utf32le_decode ((ut8 *)ptr, end - ptr, &ch) > 0) {
+					if (ch > 0x10ffff) {
+						enc = R_STRING_ENC_LATIN1;
+						break;
+					}
+					if (ch > 0x7f) {
+						is_ascii = false;
+					}
 				}
 			}
 			if (enc == R_STRING_ENC_UTF32LE) {
 				escstr = r_str_escape_utf32le (str, len, ds->show_asciidot, esc_bslash);
-				prefix = "U";
+				if (!is_ascii) {
+					prefix = "U";
+				}
 			} else {
 				escstr = r_str_escape_latin1 (str, ds->show_asciidot, esc_bslash, is_comment);
 			}
@@ -4867,11 +4890,15 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	}
 	const char *prefix = "";
 	char *escstr = NULL;
-	// Use Cs metadata string if available (highest priority)
-	const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
-	if (R_STR_ISNOTEMPTY (meta_str)) {
-		escstr = ds_getstring (ds, meta_str, strlen (meta_str), &prefix);
-	} else {
+	// Use Cs metadata string only when guessing encoding (highest priority)
+	if (ds->strenc == R_STRING_ENC_GUESS) {
+		const char *meta_str = r_meta_get_string (ds->core->anal, R_META_TYPE_STRING, refaddr);
+		if (R_STR_ISNOTEMPTY (meta_str)) {
+			// metadata string is already escaped, just duplicate it
+			escstr = strdup (meta_str);
+		}
+	}
+	if (!escstr) {
 		// Fall back to flag size if available
 		RFlagItem *fi = r_flag_get_at (ds->core->flags, refaddr, false);
 		if (fi && fi->size > 1 && (int)fi->size < len) {
