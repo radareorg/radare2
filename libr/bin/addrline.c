@@ -63,6 +63,70 @@ R_API const RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr) {
 	return NULL;
 }
 
+static bool addrline_file_match(const char *path, const char *file) {
+	if (R_STR_ISEMPTY (path) || R_STR_ISEMPTY (file)) {
+		return false;
+	}
+	if (!strcmp (path, file)) {
+		return true;
+	}
+	const char *pbase = r_file_basename (path);
+	const char *fbase = r_file_basename (file);
+	return (pbase && fbase && !strcmp (pbase, fbase));
+}
+
+typedef struct {
+	const char *file;
+	int line;
+	ut64 addr;
+} AddrlineFind;
+
+static bool addrline_find_sdb(void *user, const char *k, const char *v) {
+	AddrlineFind *af = (AddrlineFind *)user;
+	if (!af || af->addr != UT64_MAX || R_STR_ISEMPTY (v)) {
+		return true;
+	}
+	char *dup = strdup (v);
+	char *sep = strchr (dup, '|');
+	if (!sep) {
+		sep = strchr (dup, ':');
+	}
+	if (!sep) {
+		free (dup);
+		return true;
+	}
+	*sep++ = 0;
+	int line = atoi (sep);
+	if (line == af->line && addrline_file_match (dup, af->file)) {
+		af->addr = sdb_atoi (k);
+	}
+	free (dup);
+	return true;
+}
+
+R_API ut64 r_bin_addrline_find(RBin *bin, const char *file, int line) {
+	if (!bin || !bin->cur || R_STR_ISEMPTY (file) || line <= 0) {
+		return UT64_MAX;
+	}
+	RBinAddrLineStore *als = &bin->cur->addrline;
+	if (als->used && als->al_find) {
+		ut64 addr = als->al_find (als, file, (ut32)line);
+		if (addr != UT64_MAX) {
+			return addr;
+		}
+	}
+	if (bin->cur->sdb_addrinfo) {
+		AddrlineFind af = {
+			.file = file,
+			.line = line,
+			.addr = UT64_MAX
+		};
+		sdb_foreach (bin->cur->sdb_addrinfo, addrline_find_sdb, &af);
+		return af.addr;
+	}
+	return UT64_MAX;
+}
+
 R_API const char *r_bin_addrline_str(RBin *bin, ut32 idx) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
