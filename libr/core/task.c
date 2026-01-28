@@ -10,24 +10,44 @@ static RCore *r_core_clone_for_task(RCore *core);
 static int _task_run_threaded(RCoreTaskScheduler *scheduler, RCoreTask *task);
 static int _task_run_forked(RCoreTaskScheduler *scheduler, RCoreTask *task);
 
-#define CUSTOMCORE 0
+#define CUSTOMCORE 1
 
 static RCore *mycore_new(RCore *core) {
 #if CUSTOMCORE
+	if (!r_config_get_b (core->config, "tasks.isolate")) {
+		return core;
+	}
 	RCore *c = R_NEW (RCore);
 	memcpy (c, core, sizeof (RCore));
 	c->cons = r_cons_new ();
-	// XXX: RConsBind must disappear. its used in bin, fs and search
-	// TODO: use r_cons_clone instead
+	if (!c->cons) {
+		free (c);
+		return core;
+	}
+	if (core->blocksize > 0 && core->block) {
+		c->block = malloc (core->blocksize);
+		if (c->block) {
+			memcpy (c->block, core->block, core->blocksize);
+		}
+	} else {
+		c->block = NULL;
+	}
 	return c;
 #else
 	return core;
 #endif
 }
 
-static void mycore_free(RCore *a) {
+static void mycore_free(RCore *c, RCore *orig) {
 #if CUSTOMCORE
-	r_cons_free (a->cons);
+	if (c && c != orig) {
+		free (c->block);
+		r_cons_free (c->cons);
+		free (c);
+	}
+#else
+	(void)c;
+	(void)orig;
 #endif
 }
 
@@ -479,7 +499,7 @@ static RThreadFunctionRet task_run(RCoreTask *task) {
 	} else {
 		res_str = r_core_cmd_str (local_core, task->cmd);
 	}
-	mycore_free (local_core);
+	mycore_free (local_core, core);
 
 	free (task->res);
 	task->res = res_str;
