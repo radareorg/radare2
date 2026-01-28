@@ -242,10 +242,12 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 			mz->bytes_in_last_block;
 	}
 
-	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {
-		return false;
-	}
+		// Old DOS files e.g. QuickBasic-compiled programs will declare
+		// a bigger size than the size on disk. Trim it.
+		dos_file_size = bin->size;
+    }
+	bin->dos_file_size = dos_file_size;
 	// eprintf ("ii %d %d\n", dos_file_size , (mz->header_paragraphs << 4));
 	if (dos_file_size < (mz->header_paragraphs << 4)) {
 		bin->load_module_size = dos_file_size;
