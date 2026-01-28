@@ -87,6 +87,14 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr) {
 		R_LOG_WARN ("prevented oom");
 		return false;
 	}
+	if (toff >= sz || rooff >= sz || doff >= sz) {
+		R_LOG_ERROR ("invalid section offset");
+		return false;
+	}
+	if (toff > rooff || rooff > doff) {
+		R_LOG_ERROR ("invalid section offset order");
+		return false;
+	}
 	RBuffer *newbuf = r_buf_new_empty (total_size);
 	ut64 ba = baddr (bf);
 	ut8 *tmp = NULL;
