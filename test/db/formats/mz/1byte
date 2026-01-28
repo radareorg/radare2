@@ -10,7 +10,7 @@ EXPECT=<<EOF
 nth paddr        size vaddr       vsize perm flags type name
 ------------------------------------------------------------
 0   0x00000000  0x200 0x00000000  0x200 -r-- 0x0   ---- .mzhdr
-1   0x00000200  0x201 0x00000000  0x201 -r-- 0x0   ---- .text
+1   0x00000200  0x200 0x00000000  0x201 -r-- 0x0   ---- .text
             ;-- section..mzhdr:
             ;-- section..text:
             ;-- segment.seg_000:

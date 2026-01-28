@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2024 nodepad, pancake */
+/* radare - LGPL - Copyright 2015-2026 nodepad, pancake */
 
 #include "mz.h"
 #include <r_list.h>
@@ -24,10 +24,8 @@ RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 		return NULL;
 	}
 	RBinAddr *ep = R_NEW0 (RBinAddr);
-	if (ep) {
-		ep->vaddr = la;
-		ep->paddr = r_bin_mz_la_to_pa (bin, la);
-	}
+	ep->vaddr = la;
+	ep->paddr = r_bin_mz_la_to_pa (bin, la);
 	return ep;
 }
 
@@ -39,13 +37,11 @@ static int cmp_sections(const void *a, const void *b) {
 
 static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin, ut64 laddr) {
 	RBinSection *section = R_NEW0 (RBinSection);
-	if (section) {
-		section->vaddr = laddr;
-	}
+	section->vaddr = laddr;
 	return section;
 }
 
-RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
+RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
 	RListIter *iter;
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs;
@@ -149,7 +145,8 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin) {
 	section->name = strdup (".text");
 	section->paddr = hdroff;
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);
-	section->size = section->vsize; // TODO: enforce file size boundaries
+	section->size = section->vsize;
+	section->size = R_MIN (filesize - hdroff, section->size); // enforce file size boundaries
 	section->perm = R_PERM_R;
 	r_list_append (res, section);
 
@@ -202,11 +199,7 @@ void *r_bin_mz_free (struct r_bin_mz_obj_t *bin) {
 
 static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 	int relocations_size, dos_file_size;
-	MZ_image_dos_header *mz;
-	if (!(mz = R_NEW0 (MZ_image_dos_header))) {
-		r_sys_perror ("malloc (MZ_image_dos_header)");
-		return false;
-	}
+	MZ_image_dos_header *mz = R_NEW0 (MZ_image_dos_header);
 	bin->dos_header = mz;
 
 	ut8 raw[sizeof (*mz)];
@@ -241,10 +234,12 @@ static int r_bin_mz_init_hdr(struct r_bin_mz_obj_t *bin) {
 			mz->bytes_in_last_block;
 	}
 
-	bin->dos_file_size = dos_file_size;
 	if (dos_file_size > bin->size) {
-		return false;
+		// Old DOS files e.g. QuickBasic-compiled programs will declare
+		// a bigger size than the size on disk. Trim it.
+		dos_file_size = bin->size;
 	}
+	bin->dos_file_size = dos_file_size;
 	// eprintf ("ii %d %d\n", dos_file_size , (mz->header_paragraphs << 4));
 	if (dos_file_size < (mz->header_paragraphs << 4)) {
 		bin->load_module_size = dos_file_size;
@@ -314,9 +309,6 @@ static bool r_bin_mz_init(struct r_bin_mz_obj_t *bin) {
 
 struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
-	if (!bin) {
-		return NULL;
-	}
 	bin->file = file;
 	size_t binsz;
 	ut8 *buf = (ut8*)r_file_slurp (file, &binsz);
@@ -338,9 +330,6 @@ struct r_bin_mz_obj_t *r_bin_mz_new (const char *file) {
 
 struct r_bin_mz_obj_t *r_bin_mz_new_buf(RBuffer *buf) {
 	struct r_bin_mz_obj_t *bin = R_NEW0 (struct r_bin_mz_obj_t);
-	if (!bin) {
-		return NULL;
-	}
 	bin->b = r_buf_new_with_buf (buf);
 	if (!bin->b) {
 		return r_bin_mz_free (bin);
