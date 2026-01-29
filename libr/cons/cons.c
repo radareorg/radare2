@@ -1657,6 +1657,8 @@ R_API bool r_cons_pop(RCons *cons) {
 		memcpy (&parent->cpal, &cons->context->cpal, sizeof (parent->cpal));
 		parent->pal_dirty = true;
 	}
+	// Propagate color_mode changes from child to parent
+	parent->color_mode = cons->context->color_mode;
 	// Unref the current context we're done with
 	r_unref (cons->context);
 	cons->context = parent;

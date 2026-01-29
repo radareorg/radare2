@@ -532,9 +532,7 @@ static void recursive_help(RCore *core, int detail, const char *cmd_prefix) {
 		return;
 	}
 	R_LOG_DEBUG ("[recursive help] %s", cmd_prefix);
-// eprintf ("ejej %s\n", cmd_prefix);
 	char *s = r_core_cmd_strf (core, "%s?", cmd_prefix);
-// eprintf ("eqeq %s\n", s);
 	if (R_STR_ISEMPTY (s)) {
 		free (s);
 		return;
