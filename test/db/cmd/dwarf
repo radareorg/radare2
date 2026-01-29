@@ -480,7 +480,7 @@ EXPECT=<<EOF
             ; CALL XREF from dbg.main @ 0x10001ae8(x)
 / 64: dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
-|           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 [0m; void init(Grid * const this);
+|           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 ; void init(Grid * const this);
 |           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
 |           0x100012c4      39400000       li r10, 0
 |           ; CODE XREF from Grid::init() @ 0x100012e8(x)

@@ -907,9 +907,9 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 				ut8 b1 = ch1 | ch1 << 4;
 				r_str_bits (color0bits, &b0, 4, NULL);
 				r_str_bits (color1bits, &b1, 4, NULL);
-				r_cons_printf (cons, "%s%s%s%s" Color_RESET " ", color0, color0bits, color1, color1bits);
+				r_cons_printf (cons, "%s%s%s%s%s ", color0, color0bits, color1, color1bits, show_color? Color_RESET: "");
 			} else {
-				r_cons_printf (cons, "%s%01x%s%01x" Color_RESET, color0, ch0, color1, ch1);
+				r_cons_printf (cons, "%s%01x%s%01x%s", color0, ch0, color1, ch1, show_color? Color_RESET: "");
 			}
 			free (color0);
 			free (color1);

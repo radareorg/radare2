@@ -1157,7 +1157,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	RCore *core = ds->core;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (ds->core->rasm->config);
 	// if (ds->show_trace_color && ds->show_trace) {
-	if (ds->show_trace_color) {
+	if (ds->show_trace_color && ds->show_color) {
 		bool extraspace = true;
 		if (ds->fcn) {
 			RAnalBlock *bb = r_anal_function_bbget_in (ds->core->anal, ds->fcn, ds->at);
@@ -2557,7 +2557,7 @@ static void ds_show_comments_right(RDisasmState *ds) {
 		}
 	} else if (vartype) {
 		ds->comment = r_str_newf ("%s%s %s %s%s%s %s",
-				COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, Color_RESET,
+				COLOR_ARG (ds, color_usrcmt), ds->cmtoken, vartype, COLOR_RESET (ds),
 				COLOR (ds, color_usrcmt), ds->cmtoken, comment);
 	} else {
 		ds->comment = r_str_newf ("%s%s %s", COLOR_ARG (ds, color_usrcmt), ds->cmtoken, comment);
@@ -4290,7 +4290,6 @@ static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->asm_instr) {
 		r_cons_print (ds->core->cons, ds->opstr);
-		ds_print_color_reset (ds);
 	}
 }
 
