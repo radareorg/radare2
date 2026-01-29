@@ -696,9 +696,14 @@ static const ut8 *parse_line_header_source(RBin *bin, RBinFile *bf, const ut8 *b
 					include_dir_alloc = sdb_array_get (sdb, "includedirs", id_idx - 1, 0);
 					include_dir = include_dir_alloc;
 					if (include_dir && include_dir[0] != '/') {
-						const char *comp_dir_key = get_compilation_directory_key (bf->arena, debug_line_offset);
-						const char *k = comp_dir_key? comp_dir_key: "DW_AT_comp_dir";
-						const char *comp_dir = sdb_const_get (bf->sdb_addrinfo, k, 0);
+						// Look up comp_dir for this specific compilation unit
+						const char *comp_dir = NULL;
+						if (bf->dwarf_metadata.comp_dirs) {
+							comp_dir = ht_up_find (bf->dwarf_metadata.comp_dirs, debug_line_offset, NULL);
+						}
+						if (!comp_dir) {
+							comp_dir = bf->dwarf_metadata.comp_dir;
+						}
 						if (comp_dir) {
 							include_dir = r_str_newf ("%s/%s", comp_dir, include_dir);
 							free (include_dir_alloc);
@@ -706,11 +711,15 @@ static const ut8 *parse_line_header_source(RBin *bin, RBinFile *bf, const ut8 *b
 						}
 					}
 				} else {
-					char *comp_dir_key = get_compilation_directory_key (bf->arena, debug_line_offset);
-					if (comp_dir_key) {
-						include_dir_alloc = sdb_get (bf->sdb_addrinfo, comp_dir_key, 0);
-					} else {
-						include_dir_alloc = sdb_get (bf->sdb_addrinfo, "DW_AT_comp_dir", 0);
+					// id_idx == 0: use comp_dir directly as include_dir
+					if (bf->dwarf_metadata.comp_dirs) {
+						const char *cd = ht_up_find (bf->dwarf_metadata.comp_dirs, debug_line_offset, NULL);
+						if (cd) {
+							include_dir_alloc = strdup (cd);
+						}
+					}
+					if (!include_dir_alloc) {
+						include_dir_alloc = bf->dwarf_metadata.comp_dir? strdup (bf->dwarf_metadata.comp_dir) : NULL;
 					}
 					if (!include_dir_alloc) {
 						include_dir_alloc = strdup ("./");
@@ -1203,8 +1212,7 @@ static const ut8 *parse_line_header(RBin *bin, RBinFile *bf, const ut8 *buf, con
 }
 
 static inline void add_sdb_addrline(RBinFile *bf, ut64 addr, const char *file, ut64 line, ut64 column, int mode, PrintfCallback print) {
-	Sdb *s = bf->sdb_addrinfo;
-	if (!s || R_STR_ISEMPTY (file)) {
+	if (R_STR_ISEMPTY (file)) {
 		return;
 	}
 
@@ -1263,7 +1271,7 @@ static const ut8 *parse_ext_opcode(RBin *bin, const ut8 *obuf, size_t len, const
 	case DW_LNE_end_sequence:
 		regs->end_sequence = true;
 
-		if (binfile && binfile->sdb_addrinfo && hdr->file_names) {
+		if (binfile && hdr->file_names) {
 			int fnidx = regs->file;
 			if (fnidx >= 0 && fnidx < hdr->file_names_count) {
 				add_sdb_addrline (binfile, regs->address, hdr->file_names[fnidx].name, regs->line, regs->column, mode, print);
@@ -1556,6 +1564,10 @@ static size_t parse_opcodes(RBin *bin, const ut8 *obuf, size_t len, const RBinDw
 		bin->cb_printf ("\n"); // formatting of the output
 	}
 	return (size_t)buf? (buf - obuf): 0; // number of bytes we've moved by
+}
+
+static void free_comp_dir_entry(HtUPKv *kv) {
+	free (kv->value);
 }
 
 static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode) {
@@ -2618,7 +2630,31 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *bin, RVecDwarfAbbrevDecl 
 	if (!buf || section->size < 1 || section->size > (UT32_MAX >> 1)) {
 		return NULL;
 	}
-	RBinDwarfDebugInfo *info = parse_info_raw (bf, bf->sdb_addrinfo, da, buf, section->bytes.len);
+	// Create temporary SDB for DWARF parsing metadata (this will be migrated to dwarf_metadata)
+	Sdb *tmp_sdb = sdb_new (NULL, NULL, 0);
+	RBinDwarfDebugInfo *info = parse_info_raw (bf, tmp_sdb, da, buf, section->bytes.len);
+
+	// Migrate compilation directory information to new metadata storage
+	const char *comp_dir = sdb_const_get (tmp_sdb, "DW_AT_comp_dir", 0);
+	if (comp_dir) {
+		bf->dwarf_metadata.comp_dir = strdup (comp_dir);
+	}
+	SdbList *ls = sdb_foreach_list (tmp_sdb, true);
+	SdbListIter *iter;
+	SdbKv *kv;
+	ls_foreach (ls, iter, kv) {
+		const char *k = sdbkv_key (kv);
+		const char *v = sdbkv_value (kv);
+		if (r_str_startswith (k, "DW_AT_comp_dir") && IS_DIGIT (k[14])) {
+			if (!bf->dwarf_metadata.comp_dirs) {
+				bf->dwarf_metadata.comp_dirs = ht_up_new (NULL, free_comp_dir_entry, NULL);
+			}
+			ut64 offset = r_num_get (NULL, k + 14);
+			ht_up_insert (bf->dwarf_metadata.comp_dirs, offset, strdup (v));
+		}
+	}
+	ls_free (ls);
+	sdb_free (tmp_sdb);
 	if (!info) {
 		return NULL;
 	}

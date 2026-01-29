@@ -742,7 +742,8 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 	bf->xtr_obj = NULL;
 	bf->sdb = sdb_new0 ();
-	bf->sdb_addrinfo = sdb_new0 ();
+	bf->dwarf_metadata.comp_dir = NULL;
+	bf->dwarf_metadata.comp_dirs = NULL;
 	return bf;
 }
 
@@ -1012,8 +1013,10 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
 	// TODO: unset related sdb namespaces
-	sdb_free (bf->sdb_addrinfo);
 	sdb_free (bf->sdb);
+	// Cleanup DWARF metadata
+	R_FREE (bf->dwarf_metadata.comp_dir);
+	ht_up_free (bf->dwarf_metadata.comp_dirs);
 	r_bin_object_free (bf->bo);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
@@ -1432,7 +1435,6 @@ R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
 	// merge imports
 	// merge dbginfo
 	sdb_merge (dst->bo->kv, src->bo->kv);
-	sdb_merge (dst->sdb_addrinfo, src->sdb_addrinfo);
 	sdb_merge (dst->sdb_info, src->sdb_info);
 	dst->addrline = src->addrline;
 	memset (&src->addrline, 0, sizeof (src->addrline));

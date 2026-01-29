@@ -286,7 +286,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		if (!sdb_ns (bdb, "info", 0)) {
 			sdb_ns_set (bdb, "info", bo->kv);
 		}
-		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);
 		bo->kv = bdb;
 		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */

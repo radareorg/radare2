@@ -490,9 +490,11 @@ typedef struct r_bin_file_t {
 	RList *xtr_data;
 	Sdb *sdb;
 	Sdb *sdb_info;
-	Sdb *sdb_addrinfo; // deprecate
 	RBinAddrLineStore addrline;
-	void *addrinfo_priv; // future use to store abi-safe addrline info instead of k/v
+	struct {
+		char *comp_dir;           // Main compilation directory
+		HtUP *comp_dirs;          // Map of offset -> comp_dir for multiple CUs
+	} dwarf_metadata;
 	struct r_bin_t *rbin;
 	int string_count;
 	RBinFileOptions *options;
