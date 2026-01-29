@@ -1176,7 +1176,7 @@ R_API void r_cons_grepbuf(RCons *cons);
 R_API void r_cons_println(RCons *cons, const char* str);
 R_API void r_cons_print(RCons *cons, const char *str);
 R_API void r_cons_newline(RCons *cons);
-R_API int r_cons_write(RCons *cons, const void *str, int len);
+R_API bool r_cons_write(RCons *cons, const void *str, size_t len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);
 R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap);
 R_API int r_cons_printf(RCons *cons, const char *format, ...);
@@ -1229,7 +1229,7 @@ typedef int (*RConsGetCursor)(RCons *cons, int *rows);
 typedef bool (*RConsIsBreaked)(RCons *cons);
 typedef void (*RConsFlush)(RCons *cons);
 typedef int (*RConsPrintfCallback)(RCons *cons, const char *format, ...);
-typedef int (*RConsWriteCallback)(RCons *cons, const void *data, int len);
+typedef bool (*RConsWriteCallback)(RCons *cons, const void *data, size_t len);
 typedef void (*RConsGrepCallback)(RCons *cons, const char *grep);
 typedef struct r_cons_bind_t {
 	RConsGetSize get_size;

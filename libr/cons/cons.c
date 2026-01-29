@@ -1253,12 +1253,27 @@ R_API void r_cons_memset(RCons *cons, char ch, int len) {
 	}
 }
 
-R_API int r_cons_write(RCons *cons, const void *data, int len) {
-	R_RETURN_VAL_IF_FAIL (data && len >= 0, -1);
+#define SIXTEEN_MEGS (1024 * 1024 * 16)
+
+R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
+	R_RETURN_VAL_IF_FAIL (data && len > 0, false);
 	const char *str = data;
 	RConsContext *ctx = cons->context;
 	if (len < 1 || ctx->breaked) {
-		return 0;
+		return false;
+	}
+	if (len > SIXTEEN_MEGS) {
+		size_t left = len;
+		size_t chunk_off = 0;
+		while (left > 0) {
+			size_t chunk_left = R_MIN (SIXTEEN_MEGS, left);
+			if (!r_cons_write (cons, (const ut8*)data + chunk_off, chunk_left)) {
+				return false;
+			}
+			left -= SIXTEEN_MEGS;
+			chunk_off += SIXTEEN_MEGS;
+		}
+		return true;
 	}
 
 	if (cons->echo) {
