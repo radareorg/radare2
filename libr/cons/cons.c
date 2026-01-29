@@ -1267,7 +1267,7 @@ R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
 		size_t chunk_off = 0;
 		while (left > 0) {
 			size_t chunk_left = R_MIN (SIXTEEN_MEGS, left);
-			if (!r_cons_write (cons, data + chunk_off, chunk_left)) {
+			if (!r_cons_write (cons, (const ut8*)data + chunk_off, chunk_left)) {
 				return false;
 			}
 			left -= SIXTEEN_MEGS;
