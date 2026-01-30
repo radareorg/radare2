@@ -286,7 +286,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		if (!sdb_ns (bdb, "info", 0)) {
 			sdb_ns_set (bdb, "info", bo->kv);
 		}
-		sdb_ns_set (bdb, "addrinfo", bf->sdb_addrinfo);
 		bo->kv = bdb;
 		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
 		/* NOTE */
@@ -294,9 +293,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		 * sub-namespaces */
 		/* And if any namespace is referenced backwards it gets
 		 * double-freed */
-		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-	//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
-	//	bf->sdb_addrinfbo->refs++;
 		sdb_ns_set (root_bin_sdb, "cur", bdb); // bf->sdb);
 		r_strf_var (fdns, 32, "fd.%d", bf->fd);
 		sdb_ns_set (root_bin_sdb, fdns, bdb); // bf->sdb);

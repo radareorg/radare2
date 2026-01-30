@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2023-2024 - pancake */
+/* radare - LGPL - Copyright 2023-2026 - pancake */
 
 #include <r_core.h>
 
@@ -13,9 +13,8 @@ typedef struct treestate {
 	RList list[4];
 } TreeState;
 
-static ut64 itemcmp(const void* _a) {
-	const char* a = _a;
-	return r_str_hash64 (a);
+static ut64 itemcmp(const void* a) {
+	return r_str_hash64 ((const char *)a);
 }
 
 static RList *functions_for_file(TreeState *ts, const char *file) {
@@ -42,31 +41,13 @@ static RList *functions_for_file(TreeState *ts, const char *file) {
 
 static void tree_files(struct treestate *ts, int indent) {
 	RListIter *iter, *iter2;
-	RList *files = r_list_newf (free);
 	char *file;
 	RBinFile *bf = r_bin_cur (ts->core->bin);
 	if (!bf) {
 		R_LOG_WARN ("Unable to find current bin file");
 		return;
 	}
-	SdbList *ls = sdb_foreach_list (bf->sdb_addrinfo, false);
-	// Use the parsed information from _raw and transform it to more useful format
-	SdbListIter *sdbiter;
-	SdbKv *kv;
-	ls_foreach (ls, sdbiter, kv) {
-		const char *key = kv->base.key;
-		if (strchr (key, '/') || r_str_endswith (key, ".c")) {
-			char *s = strdup (key);
-			r_str_after (s, '|');
-			const char *lastslash = r_str_rchr (s, "/", -1);
-			if (lastslash) {
-				r_list_append (files, strdup (lastslash + 1));
-				free (s);
-			} else {
-				r_list_append (files, s);
-			}
-		}
-	}
+	RList *files = r_bin_addrline_files (ts->core->bin);
 	r_list_sort (files, (RListComparator)strcmp);
 	r_list_uniq_inplace (files, (RListComparatorItem)itemcmp);
 	RStrBuf *sb = r_strbuf_new ("");
@@ -103,52 +84,27 @@ static void tree_functions(struct treestate *ts, int indent) {
 R_API void r_print_list(RCore *core, const char *input) {
 	TreeState ts = {0};
 	ts.core = core;
-	// int level = 0;
 	char *oargstr = strdup (input);
 	char *argstr = oargstr;
-	// char *arg = r_str_after (argstr, ' ');
-	//bool dash = false;
 	while (*argstr) {
 		if (ts.layers > 3) {
 			R_LOG_ERROR ("too many layers");
 			break;
 		}
-		switch (*argstr) {
-		case '-':
-			// dash = true;
-			// ignored on purpose
+		const char a = *argstr;
+		if (a == ' ') {
 			break;
-		case ' ':
-			goto done;
-		case 'l':
+		}
+		if (a == 'l') {
 			ts.layer[ts.layers++] = (treefcn)&tree_files;
-			break;
-		case 'f':
+		} else if (a == 'f') {
 			ts.layer[ts.layers++] = (treefcn)&tree_functions;
-			break;
-		default:
-			break;
 		}
 		argstr++;
 	}
-done:
 	free (oargstr);
-	// RListIter *iter;
-	// RPrintTreeCallback ptcb;
 	treefcn ptcb = ts.layer[0];
-	// ts.layer[0](&ts, 0);
 	if (ptcb != NULL) {
 		ptcb (&ts, 0);
 	}
-#if 0
-	void *entry;
-	RList *root = NULL;
-	r_list_foreach (ts.levels, iter, ptcb) {
-		ptcb (core, indent, NULL, NULL);
-		r_list_foreach (root, iter, entry) {
-			r_cons_printf ("L0 ..\n");
-		}
-		indent ++;
-	}
-#endif
 }

@@ -719,12 +719,6 @@ static void populate_lines_from_addrline(RBin *bin, RList *lines) {
 	if (bin && bin->cur && bin->cur->addrline.used) {
 		AddrlineCbCtx ctx = { bin, lines };
 		r_bin_addrline_foreach (bin, addrline_cb, &ctx);
-	} else {
-		if (bin && bin->cur && bin->cur->sdb_addrinfo) {
-			R_LOG_INFO ("Falling back to legacy sdb_addrinfo");
-			// Legacy method - to be removed
-			sdb_foreach (bin->cur->sdb_addrinfo, NULL, NULL);
-		}
 	}
 }
 

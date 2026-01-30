@@ -80,7 +80,6 @@ EOF
 EXPECT=<<EOF
 info
 pe
-addrinfo
 vs_version_info
 pe_resource
 --
@@ -132,7 +131,6 @@ EOF
 EXPECT=<<EOF
 info
 pe
-addrinfo
 vs_version_info
 pe_resource
 --

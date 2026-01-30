@@ -546,37 +546,50 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 /// ^move into addrline.c ///
 /////////////////////////////
 
+static void addrline_item_fini(RBinAddrline *item) {
+	// RBinAddrline fields are indexes into strpool, no need to free
+}
+
+R_VEC_TYPE_WITH_FINI (RVecAddrLine, RBinAddrline, addrline_item_fini);
+
 typedef struct {
-	RList *list;
+	RVecAddrLine vec;
 	RStrpool *pool;
-	HtUP *ht;
+	HtUP *ht;  // maps addr -> index+1 in vec (0 means not found)
 } AddrLineStore;
 
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	RBinAddrline *hitem = ht_up_find (store->ht, addr, NULL);
-	if (hitem && hitem->line == line) {
-		return false;
+	bool found = false;
+	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
+	if (found && existing_idx > 0) {
+		RBinAddrline *hitem = RVecAddrLine_at (&store->vec, existing_idx - 1);
+		if (hitem && hitem->line == line) {
+			return false;
+		}
+		// Different line at same address - add to vec but keep first hash entry
+		RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
+		di->addr = addr;
+		di->line = line;
+		di->column = column;
+		di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
+		di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
+		return true;
 	}
-	RBinAddrline *di = R_NEW0 (RBinAddrline);
-	if (!di) {
-		return false;
-	}
+	size_t new_idx = RVecAddrLine_length (&store->vec);
+	RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
 	di->addr = addr;
 	di->line = line;
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_insert (store->ht, di->addr, di);
-	r_list_append (store->list, di);
+	ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
 	return true;
 }
 
 static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
-	// TODO: add storage for the compilation units here
-	// we are just storing the filename in the stringpool for `idx` purposes
 	if (file) {
 		als->used = true;
 		r_strpool_add (store->pool, file);
@@ -586,52 +599,18 @@ static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const
 
 static void al_reset(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
-	r_list_free (store->list);
-	store->list = r_list_newf (free);
+	RVecAddrLine_fini (&store->vec);
+	RVecAddrLine_init (&store->vec);
 	r_strpool_free (store->pool);
 	store->pool = r_strpool_new ();
 	ht_up_free (store->ht);
 	store->ht = ht_up_new0 ();
-#if 0
-	r_bloom_reset (store->bloomGet);
-	r_bloom_reset (store->bloomSet);
-#endif
 }
-
-#if 0
-static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
-	AddrLineStore *store = als->storage;
-	RBinAddrline *di = R_NEW0 (RBinAddrline);
-	di->addr = item->addr;
-	di->line = item->line;
-	di->column = item->colu;
-	di->file = r_strpool_get_nth (store->pool, item->file);
-	if (!di->file) {
-		di->file = "?";
-	}
-	di->path = r_strpool_get_nth (store->pool, item->path);
-	if (!di->path) {
-		di->path = "?";
-	}
-	return di;
-}
-#endif
-
-// no longer needed - RBinAddrline is now stored directly
-
-#if 0
-// Free temporary RBinAddrline created by dbgitem_from_internal (does not free strpool pointers)
-static void addrline_from_strpool_free(void *p) {
-	if (p) {
-		free (p);
-	}
-}
-#endif
 
 static RList *al_files(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	RList *files = r_list_newf (free);
-	int i = 0;
+	int i;
 	for (i = 0; true; i++) {
 		char *n = r_strpool_get_nth (store->pool, i);
 		if (!n) {
@@ -644,9 +623,8 @@ static RList *al_files(RBinAddrLineStore *als) {
 
 static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
 	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
+	R_VEC_FOREACH (&store->vec, item) {
 		if (!cb (user, item)) {
 			break;
 		}
@@ -655,19 +633,18 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 
 static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
-	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
-		if (item->addr == addr) {
-			r_list_delete (store->list, iter);
-			break;
-		}
-	}
+	ht_up_delete (store->ht, addr);
+	// Note: not removing from vec as it would be O(n) and shift pointers
 }
 
 static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-	return ht_up_find (store->ht, addr, NULL);
+	bool found = false;
+	ut64 idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
+	if (found && idx > 0) {
+		return RVecAddrLine_at (&store->vec, idx - 1);
+	}
+	return NULL;
 }
 
 static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
@@ -680,11 +657,8 @@ static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
 
 static void addrline_store_init(RBinAddrLineStore *b) {
 	AddrLineStore *als = R_NEW0 (AddrLineStore);
-	if (!als) {
-		return;
-	}
 	als->ht = ht_up_new0 ();
-	als->list = r_list_newf (free);
+	RVecAddrLine_init (&als->vec);
 	als->pool = r_strpool_new ();
 	b->storage = (void*)als;
 	b->al_add = al_add;
@@ -701,7 +675,7 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
-		r_list_free (store->list);
+		RVecAddrLine_fini (&store->vec);
 		r_strpool_free (store->pool);
 	}
 	free (als->storage);
@@ -742,7 +716,8 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	bf->xtr_data = r_list_newf ((RListFree)r_bin_xtrdata_free);
 	bf->xtr_obj = NULL;
 	bf->sdb = sdb_new0 ();
-	bf->sdb_addrinfo = sdb_new0 ();
+	bf->dwarf_metadata.comp_dir = NULL;
+	bf->dwarf_metadata.comp_dirs = NULL;
 	return bf;
 }
 
@@ -1012,8 +987,10 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
 	// TODO: unset related sdb namespaces
-	sdb_free (bf->sdb_addrinfo);
 	sdb_free (bf->sdb);
+	// Cleanup DWARF metadata
+	R_FREE (bf->dwarf_metadata.comp_dir);
+	ht_up_free (bf->dwarf_metadata.comp_dirs);
 	r_bin_object_free (bf->bo);
 	r_list_free (bf->xtr_data);
 	if (bf->id != -1) {
@@ -1432,7 +1409,6 @@ R_API void r_bin_file_merge(RBinFile *dst, RBinFile *src) {
 	// merge imports
 	// merge dbginfo
 	sdb_merge (dst->bo->kv, src->bo->kv);
-	sdb_merge (dst->sdb_addrinfo, src->sdb_addrinfo);
 	sdb_merge (dst->sdb_info, src->sdb_info);
 	dst->addrline = src->addrline;
 	memset (&src->addrline, 0, sizeof (src->addrline));
