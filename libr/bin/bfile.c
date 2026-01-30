@@ -547,10 +547,13 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 /////////////////////////////
 
 typedef struct {
-	RList *list;
 	RStrpool *pool;
 	HtUP *ht;
 } AddrLineStore;
+
+static void addrline_kv_free(HtUPKv *kv) {
+	free (kv->value);
+}
 
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
@@ -568,15 +571,12 @@ static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const ch
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_insert (store->ht, di->addr, di);
-	r_list_append (store->list, di);
+	ht_up_update (store->ht, di->addr, di);
 	return true;
 }
 
 static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
-	// TODO: add storage for the compilation units here
-	// we are just storing the filename in the stringpool for `idx` purposes
 	if (file) {
 		als->used = true;
 		r_strpool_add (store->pool, file);
@@ -586,47 +586,11 @@ static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const
 
 static void al_reset(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
-	r_list_free (store->list);
-	store->list = r_list_newf (free);
 	r_strpool_free (store->pool);
 	store->pool = r_strpool_new ();
 	ht_up_free (store->ht);
-	store->ht = ht_up_new0 ();
-#if 0
-	r_bloom_reset (store->bloomGet);
-	r_bloom_reset (store->bloomSet);
-#endif
+	store->ht = ht_up_new (NULL, addrline_kv_free, NULL);
 }
-
-#if 0
-static RBinAddrline* dbgitem_from_internal(RBinAddrLineStore *als, RBinAddrlineInternal *item) {
-	AddrLineStore *store = als->storage;
-	RBinAddrline *di = R_NEW0 (RBinAddrline);
-	di->addr = item->addr;
-	di->line = item->line;
-	di->column = item->colu;
-	di->file = r_strpool_get_nth (store->pool, item->file);
-	if (!di->file) {
-		di->file = "?";
-	}
-	di->path = r_strpool_get_nth (store->pool, item->path);
-	if (!di->path) {
-		di->path = "?";
-	}
-	return di;
-}
-#endif
-
-// no longer needed - RBinAddrline is now stored directly
-
-#if 0
-// Free temporary RBinAddrline created by dbgitem_from_internal (does not free strpool pointers)
-static void addrline_from_strpool_free(void *p) {
-	if (p) {
-		free (p);
-	}
-}
-#endif
 
 static RList *al_files(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
@@ -642,27 +606,34 @@ static RList *al_files(RBinAddrLineStore *als) {
 	return files;
 }
 
+typedef struct {
+	RBinDbgInfoCallback cb;
+	void *user;
+	bool stop;
+} ForeachCtx;
+
+static bool al_foreach_cb(void *user, const ut64 key, const void *value) {
+	ForeachCtx *ctx = user;
+	if (ctx->stop) {
+		return false;
+	}
+	const RBinAddrline *item = value;
+	if (!ctx->cb (ctx->user, item)) {
+		ctx->stop = true;
+		return false;
+	}
+	return true;
+}
+
 static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
-	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
-		if (!cb (user, item)) {
-			break;
-		}
-	}
+	ForeachCtx ctx = { .cb = cb, .user = user, .stop = false };
+	ht_up_foreach (store->ht, al_foreach_cb, &ctx);
 }
 
 static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
-	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
-		if (item->addr == addr) {
-			r_list_delete (store->list, iter);
-			break;
-		}
-	}
+	ht_up_delete (store->ht, addr);
 }
 
 static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
@@ -683,8 +654,7 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	if (!als) {
 		return;
 	}
-	als->ht = ht_up_new0 ();
-	als->list = r_list_newf (free);
+	als->ht = ht_up_new (NULL, addrline_kv_free, NULL);
 	als->pool = r_strpool_new ();
 	b->storage = (void*)als;
 	b->al_add = al_add;
@@ -701,7 +671,6 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
-		r_list_free (store->list);
 		r_strpool_free (store->pool);
 	}
 	free (als->storage);

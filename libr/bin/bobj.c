@@ -293,9 +293,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		 * sub-namespaces */
 		/* And if any namespace is referenced backwards it gets
 		 * double-freed */
-		// bf->sdb_info = sdb_ns (bf->sdb, "info", 1);
-	//	bf->sdb_addrinfo = sdb_ns (bf->sdb, "addrinfo", 1);
-	//	bf->sdb_addrinfbo->refs++;
 		sdb_ns_set (root_bin_sdb, "cur", bdb); // bf->sdb);
 		r_strf_var (fdns, 32, "fd.%d", bf->fd);
 		sdb_ns_set (root_bin_sdb, fdns, bdb); // bf->sdb);
