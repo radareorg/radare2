@@ -647,6 +647,34 @@ static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
 	return NULL;
 }
 
+static bool addrline_file_match_str(const char *path, const char *file) {
+	if (R_STR_ISEMPTY (path) || R_STR_ISEMPTY (file)) {
+		return false;
+	}
+	if (!strcmp (path, file)) {
+		return true;
+	}
+	const char *pbase = r_file_basename (path);
+	const char *fbase = r_file_basename (file);
+	return (pbase && fbase && !strcmp (pbase, fbase));
+}
+
+static ut64 al_find(RBinAddrLineStore *als, const char *file, ut32 line) {
+	AddrLineStore *store = als->storage;
+	RBinAddrline *item;
+	R_VEC_FOREACH (&store->vec, item) {
+		if (item->line != line) {
+			continue;
+		}
+		const char *path = r_strpool_get_nth (store->pool, item->path);
+		const char *fname = r_strpool_get_nth (store->pool, item->file);
+		if (addrline_file_match_str (path, file) || addrline_file_match_str (fname, file)) {
+			return item->addr;
+		}
+	}
+	return UT64_MAX;
+}
+
 static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
 	if (idx == UT32_MAX) {
 		return NULL;
@@ -664,6 +692,7 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	b->al_add = al_add;
 	b->al_add_cu = al_add_cu;
 	b->al_get = al_get;
+	b->al_find = al_find;
 	b->al_del = al_del;
 	b->al_reset = al_reset;
 	b->al_foreach = al_foreach;

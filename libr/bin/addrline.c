@@ -63,6 +63,18 @@ R_API const RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr) {
 	return NULL;
 }
 
+R_API ut64 r_bin_addrline_find(RBin *bin, const char *file, int line) {
+	R_RETURN_VAL_IF_FAIL (bin && bin->cur && !R_STR_ISEMPTY (file) && line > 0, UT64_MAX);
+	RBinAddrLineStore *als = &bin->cur->addrline;
+	if (als->used && als->al_find) {
+		ut64 addr = als->al_find (als, file, (ut32)line);
+		if (addr != UT64_MAX) {
+			return addr;
+		}
+	}
+	return UT64_MAX;
+}
+
 R_API const char *r_bin_addrline_str(RBin *bin, ut32 idx) {
 	if (bin->cur && bin->cur->addrline.used) {
 		RBinAddrLineStore *als = &bin->cur->addrline;
