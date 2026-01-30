@@ -661,9 +661,8 @@ static bool addrline_file_match_str(const char *path, const char *file) {
 
 static ut64 al_find(RBinAddrLineStore *als, const char *file, ut32 line) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
 	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
+	R_VEC_FOREACH (&store->vec, item) {
 		if (item->line != line) {
 			continue;
 		}
