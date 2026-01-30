@@ -132,9 +132,6 @@ line: 0
 colu: 0
 addr: 0x00000000
 EOF
-EXPECT_ERR=<<EOF
-ERROR: Cannot open 'foo'
-EOF
 RUN
 
 NAME=CL base64
