@@ -3734,7 +3734,9 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			}
 			break;
 		case R_META_TYPE_STRING:
-			fmi = mi;
+			if (ds->at == node->start) {
+				fmi = mi;
+			}
 			break;
 		default:
 			break;
