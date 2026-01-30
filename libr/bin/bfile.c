@@ -547,20 +547,32 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 /////////////////////////////
 
 typedef struct {
+	RList *list;
 	RStrpool *pool;
 	HtUP *ht;
 } AddrLineStore;
-
-static void addrline_kv_free(HtUPKv *kv) {
-	free (kv->value);
-}
 
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
 	RBinAddrline *hitem = ht_up_find (store->ht, addr, NULL);
-	if (hitem && hitem->line == line) {
-		return false;
+	if (hitem) {
+		// Already have an entry for this address - still add to list but don't update hash
+		if (hitem->line == line) {
+			return false;  // Exact duplicate, skip
+		}
+		// Different line at same address - add to list for iteration but keep first hash entry
+		RBinAddrline *di = R_NEW0 (RBinAddrline);
+		if (!di) {
+			return false;
+		}
+		di->addr = addr;
+		di->line = line;
+		di->column = column;
+		di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
+		di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
+		r_list_append (store->list, di);
+		return true;
 	}
 	RBinAddrline *di = R_NEW0 (RBinAddrline);
 	if (!di) {
@@ -571,7 +583,8 @@ static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const ch
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_update (store->ht, di->addr, di);
+	ht_up_insert (store->ht, di->addr, di);
+	r_list_append (store->list, di);
 	return true;
 }
 
@@ -586,10 +599,12 @@ static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const
 
 static void al_reset(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
+	r_list_free (store->list);
+	store->list = r_list_newf (free);
 	r_strpool_free (store->pool);
 	store->pool = r_strpool_new ();
 	ht_up_free (store->ht);
-	store->ht = ht_up_new (NULL, addrline_kv_free, NULL);
+	store->ht = ht_up_new0 ();
 }
 
 static RList *al_files(RBinAddrLineStore *als) {
@@ -606,34 +621,28 @@ static RList *al_files(RBinAddrLineStore *als) {
 	return files;
 }
 
-typedef struct {
-	RBinDbgInfoCallback cb;
-	void *user;
-	bool stop;
-} ForeachCtx;
-
-static bool al_foreach_cb(void *user, const ut64 key, const void *value) {
-	ForeachCtx *ctx = user;
-	if (ctx->stop) {
-		return false;
-	}
-	const RBinAddrline *item = value;
-	if (!ctx->cb (ctx->user, item)) {
-		ctx->stop = true;
-		return false;
-	}
-	return true;
-}
-
 static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user) {
 	AddrLineStore *store = als->storage;
-	ForeachCtx ctx = { .cb = cb, .user = user, .stop = false };
-	ht_up_foreach (store->ht, al_foreach_cb, &ctx);
+	RListIter *iter;
+	RBinAddrline *item;
+	r_list_foreach (store->list, iter, item) {
+		if (!cb (user, item)) {
+			break;
+		}
+	}
 }
 
 static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
 	ht_up_delete (store->ht, addr);
+	RListIter *iter;
+	RBinAddrline *item;
+	r_list_foreach (store->list, iter, item) {
+		if (item->addr == addr) {
+			r_list_delete (store->list, iter);
+			break;
+		}
+	}
 }
 
 static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
@@ -654,7 +663,8 @@ static void addrline_store_init(RBinAddrLineStore *b) {
 	if (!als) {
 		return;
 	}
-	als->ht = ht_up_new (NULL, addrline_kv_free, NULL);
+	als->ht = ht_up_new0 ();
+	als->list = r_list_newf (free);
 	als->pool = r_strpool_new ();
 	b->storage = (void*)als;
 	b->al_add = al_add;
@@ -671,6 +681,7 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
+		r_list_free (store->list);
 		r_strpool_free (store->pool);
 	}
 	free (als->storage);

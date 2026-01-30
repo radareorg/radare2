@@ -765,18 +765,6 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 
 	int i = 0;
 
-#if 0
-	printf (" const int test_addresses[] = {\n");
-	r_list_foreach (line_list, iter, row) {
-	printf ("\t0x%08x,\n", row->addr);
-		// mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
-		if (i == 23) {
-			break;
-		}
-		i++;
-	}
-	printf ("}\n");
-#endif
 	r_list_foreach (line_list, iter, row) {
 		mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
 		if (i == 23) {
@@ -1422,14 +1410,6 @@ bool test_big_endian_dwarf2(void) {
 		0x10001c48,
 	};
 
-#if 0
-	printf (" const int test_addresses[] = {\n");
-	r_list_foreach (line_list, iter, row) {
-	printf ("\t0x%08x,\n", row->addr);
-		// mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
-	}
-	printf ("}\n");
-#endif
 	int i = 0;
 	r_list_foreach (line_list, iter, row) {
 		mu_assert_eq (row->addr, test_addresses[i++], "Line number statement address doesn't match");
