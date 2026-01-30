@@ -201,7 +201,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 				free (row);
 			}
 		}
-	} else {
+	} else if (line > 0) {
 		R_LOG_ERROR ("Cannot open '%s'", al_file);
 	}
 	return true;
