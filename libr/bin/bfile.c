@@ -546,45 +546,45 @@ static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool 
 /// ^move into addrline.c ///
 /////////////////////////////
 
+static void addrline_item_fini(RBinAddrline *item) {
+	// RBinAddrline fields are indexes into strpool, no need to free
+}
+
+R_VEC_TYPE_WITH_FINI (RVecAddrLine, RBinAddrline, addrline_item_fini);
+
 typedef struct {
-	RList *list;
+	RVecAddrLine vec;
 	RStrpool *pool;
-	HtUP *ht;
+	HtUP *ht;  // maps addr -> index+1 in vec (0 means not found)
 } AddrLineStore;
 
 static bool al_add(RBinAddrLineStore *als, ut64 addr, const char *file, const char *path, ut32 line, ut32 column) {
 	AddrLineStore *store = als->storage;
 	als->used = true;
-	RBinAddrline *hitem = ht_up_find (store->ht, addr, NULL);
-	if (hitem) {
-		// Already have an entry for this address - still add to list but don't update hash
-		if (hitem->line == line) {
-			return false;  // Exact duplicate, skip
-		}
-		// Different line at same address - add to list for iteration but keep first hash entry
-		RBinAddrline *di = R_NEW0 (RBinAddrline);
-		if (!di) {
+	bool found = false;
+	ut64 existing_idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
+	if (found && existing_idx > 0) {
+		RBinAddrline *hitem = RVecAddrLine_at (&store->vec, existing_idx - 1);
+		if (hitem && hitem->line == line) {
 			return false;
 		}
+		// Different line at same address - add to vec but keep first hash entry
+		RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
 		di->addr = addr;
 		di->line = line;
 		di->column = column;
 		di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 		di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-		r_list_append (store->list, di);
 		return true;
 	}
-	RBinAddrline *di = R_NEW0 (RBinAddrline);
-	if (!di) {
-		return false;
-	}
+	size_t new_idx = RVecAddrLine_length (&store->vec);
+	RBinAddrline *di = RVecAddrLine_emplace_back (&store->vec);
 	di->addr = addr;
 	di->line = line;
 	di->column = column;
 	di->file = file ? r_strpool_add (store->pool, file) : UT32_MAX;
 	di->path = path ? r_strpool_add (store->pool, path) : UT32_MAX;
-	ht_up_insert (store->ht, di->addr, di);
-	r_list_append (store->list, di);
+	ht_up_insert (store->ht, addr, (void*)(size_t)(new_idx + 1));
 	return true;
 }
 
@@ -599,8 +599,8 @@ static bool al_add_cu(RBinAddrLineStore *als, ut64 addr, const char *file, const
 
 static void al_reset(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
-	r_list_free (store->list);
-	store->list = r_list_newf (free);
+	RVecAddrLine_fini (&store->vec);
+	RVecAddrLine_init (&store->vec);
 	r_strpool_free (store->pool);
 	store->pool = r_strpool_new ();
 	ht_up_free (store->ht);
@@ -610,7 +610,7 @@ static void al_reset(RBinAddrLineStore *als) {
 static RList *al_files(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	RList *files = r_list_newf (free);
-	int i = 0;
+	int i;
 	for (i = 0; true; i++) {
 		char *n = r_strpool_get_nth (store->pool, i);
 		if (!n) {
@@ -623,9 +623,8 @@ static RList *al_files(RBinAddrLineStore *als) {
 
 static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *user) {
 	AddrLineStore *store = als->storage;
-	RListIter *iter;
 	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
+	R_VEC_FOREACH (&store->vec, item) {
 		if (!cb (user, item)) {
 			break;
 		}
@@ -635,19 +634,17 @@ static void al_foreach(RBinAddrLineStore *als, RBinDbgInfoCallback cb, void *use
 static void al_del(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
 	ht_up_delete (store->ht, addr);
-	RListIter *iter;
-	RBinAddrline *item;
-	r_list_foreach (store->list, iter, item) {
-		if (item->addr == addr) {
-			r_list_delete (store->list, iter);
-			break;
-		}
-	}
+	// Note: not removing from vec as it would be O(n) and shift pointers
 }
 
 static const RBinAddrline *al_get(RBinAddrLineStore *als, ut64 addr) {
 	AddrLineStore *store = als->storage;
-	return ht_up_find (store->ht, addr, NULL);
+	bool found = false;
+	ut64 idx = (ut64)(size_t)ht_up_find (store->ht, addr, &found);
+	if (found && idx > 0) {
+		return RVecAddrLine_at (&store->vec, idx - 1);
+	}
+	return NULL;
 }
 
 static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
@@ -660,11 +657,8 @@ static const char *al_str(RBinAddrLineStore *als, ut32 idx) {
 
 static void addrline_store_init(RBinAddrLineStore *b) {
 	AddrLineStore *als = R_NEW0 (AddrLineStore);
-	if (!als) {
-		return;
-	}
 	als->ht = ht_up_new0 ();
-	als->list = r_list_newf (free);
+	RVecAddrLine_init (&als->vec);
 	als->pool = r_strpool_new ();
 	b->storage = (void*)als;
 	b->al_add = al_add;
@@ -681,7 +675,7 @@ static void addrline_store_fini(RBinAddrLineStore *als) {
 	AddrLineStore *store = als->storage;
 	if (store) {
 		ht_up_free (store->ht);
-		r_list_free (store->list);
+		RVecAddrLine_fini (&store->vec);
 		r_strpool_free (store->pool);
 	}
 	free (als->storage);
