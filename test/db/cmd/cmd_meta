@@ -108,26 +108,32 @@ EOF
 RUN
 
 NAME=CL FAIL if no file
-BROKEN=1
 FILE=--
 CMDS=<<EOF
 CL $$ foo
 CL.
 EOF
 EXPECT=<<EOF
-foo
+EOF
+EXPECT_ERR=<<EOF
+TODO: Support global SdbAddrinfo or dummy rbinfile to handle this case
 EOF
 RUN
 
 NAME=CL FAIL if no rbinfile
-BROKEN=1
 FILE=-
 CMDS=<<EOF
-CL $$ foo
+CL $$ foo:0
 CL.
 EOF
 EXPECT=<<EOF
-foo
+file: foo
+line: 0
+colu: 0
+addr: 0x00000000
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Cannot open 'foo'
 EOF
 RUN
 
@@ -159,9 +165,10 @@ EOF
 RUN
 
 NAME=CL add
-FILE=-
-BROKEN=1
+FILE=malloc://1024
 CMDS=<<EOF
+-a x86
+-b 32
 CL $$ foo.c:123
 e asm.lines=0
 e asm.flags=0
@@ -173,8 +180,8 @@ CL-*
 pd 1
 EOF
 EXPECT=<<EOF
-0x00000000      0000           add byte [rax], al ; foo:123
-0x00000000      0000           add byte [rax], al
+0x00000000      0000           add byte [eax], al ; foo.c:123
+0x00000000      0000           add byte [eax], al
 EOF
 RUN
 

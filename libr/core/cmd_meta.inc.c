@@ -211,7 +211,7 @@ static bool print_meta_offset(RCore *core, ut64 addr, PJ *pj) {
 static bool print_addrinfo2_json(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct *)user;
 	ut64 offset = item->addr;
-	if (!offset || offset == UT64_MAX) {
+	if (offset == UT64_MAX) {
 		return true;
 	}
 #if 0
@@ -261,7 +261,7 @@ static bool print_addrinfo2_json(void *user, const RBinAddrline *item) {
 static bool print_addrinfo2(void *user, const RBinAddrline *item) {
 	FilterStruct *fs = (FilterStruct*)user;
 	ut64 offset = item->addr;
-	if (!offset || offset == UT64_MAX) {
+	if (offset == UT64_MAX) {
 		return true;
 	}
 	if (fs->filter_offset == UT64_MAX || fs->filter_offset == offset) {
