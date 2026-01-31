@@ -1833,12 +1833,18 @@ static int handleMidFlags(RCore *core, RDisasmState *ds, bool print) {
 			} else if (r_str_startswith (finame, "hit.")) { // use search.prefix ?
 				i = 0;
 			} else if (r_str_startswith (finame, "str.")) {
-				ut64 meta_size = 0;
-				RAnalMetaItem *mi = r_meta_get_at (core->anal, ds->at, R_META_TYPE_STRING, &meta_size);
-				if (mi && meta_size > 0 && (ds->at + i) < (ds->at + meta_size)) {
-					continue;
+				ut64 flag_meta_size = 0;
+				RAnalMetaItem *flag_mi = r_meta_get_at (core->anal, ds->at + i, R_META_TYPE_STRING, &flag_meta_size);
+				if (flag_mi) {
+					ds->midflags = R_MIDFLAGS_REALIGN;
+				} else {
+					ut64 meta_size = 0;
+					RAnalMetaItem *mi = r_meta_get_at (core->anal, ds->at, R_META_TYPE_STRING, &meta_size);
+					if (mi && meta_size > 0 && (ds->at + i) < (ds->at + meta_size)) {
+						continue;
+					}
+					ds->midflags = R_MIDFLAGS_REALIGN;
 				}
-				ds->midflags = R_MIDFLAGS_REALIGN;
 			} else if (r_str_startswith (finame, "reloc.")) {
 				continue;
 			}
@@ -3778,7 +3784,18 @@ static bool ds_print_meta_infos(RDisasmState *ds, ut8* buf, int len, int idx, in
 			free (out);
 			delta = ds->at - node->start;
 			ds->oplen = mi_size - delta;
-			ds->asmop.size = (int)mi_size;
+			{
+				int k;
+				for (k = 1; k < ds->oplen; k++) {
+					ut64 next_meta_size = 0;
+					RAnalMetaItem *next_mi = r_meta_get_at (core->anal, ds->at + k, R_META_TYPE_STRING, &next_meta_size);
+					if (next_mi && next_mi != mi) {
+						ds->oplen = k;
+						break;
+					}
+				}
+			}
+			ds->asmop.size = ds->oplen;
 			//i += mi->size-1; // wtf?
 			R_FREE (ds->line);
 			R_FREE (ds->line_col);
