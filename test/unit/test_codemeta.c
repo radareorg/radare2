@@ -119,7 +119,7 @@ static RCodeMeta *get_hello_world(void) {
 }
 
 static RCodeMeta *get_all_context_annotated_code(void) {
-	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
+	const char *test_string = "\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RCodeMetaItem function_name = make_reference_annotation (1, 10, R_CODEMETA_TYPE_FUNCTION_NAME, 1234, "func-name");
 	RCodeMetaItem constant_variable = make_reference_annotation (10, 19, R_CODEMETA_TYPE_CONSTANT_VARIABLE, 12345, NULL);
