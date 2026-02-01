@@ -63,6 +63,7 @@ bool test_r_egg_save(void) {
 	close (out);
 	unlink ("./file");
 	r_egg_free (egg);
+	r_anal_free (a);
 	
 	mu_end;
 }
