@@ -403,6 +403,27 @@ R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	return out;
 }
 
+R_API ut8 *r_hex_str2bin_dup(const char *in, size_t *len) {
+	R_RETURN_VAL_IF_FAIL (in, NULL);
+	int res = 0;
+	ut8 *out = NULL;
+	size_t inlen = strlen (in);
+	if (inlen > 0) {
+		out = malloc ((inlen + 1) / 2);
+		if (out) {
+			res = r_hex_str2bin (in, out);
+			if (res < 1) {
+				res = 0;
+				R_FREE (out);
+			}
+		}
+	}
+	if (len) {
+		*len = res;
+	}
+	return out;
+}
+
 R_API int r_hex_str2bin(const char *in, ut8 *out) {
 	R_RETURN_VAL_IF_FAIL (in, 0);
 	long nibbles = 0;
