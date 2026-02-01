@@ -1898,6 +1898,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			RIODesc *desc = r_io_desc_get (core->io, fd);
 			if (desc && r_io_desc_is_dbg (desc)) {
 				R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
+				r_table_free (table);
 				return false;
 			}
 		}

@@ -440,10 +440,12 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a);
+			free (dotname);
 			return true;
 		}
 	//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
 	}
+	free (dotname);
 	return false;
 }
 

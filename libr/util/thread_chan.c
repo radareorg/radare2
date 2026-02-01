@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2022-2025 - pancake */
+/* radare - LGPL - Copyright 2022-2026 - pancake */
 
 #define R_LOG_DISABLE 1
 #include <r_util.h>
@@ -7,9 +7,6 @@
 R_API RThreadChannel *r_th_channel_new(RThreadFunction consumer, void *user) {
 	R_LOG_DEBUG ("r_th_channel_new");
 	RThreadChannel *tc = R_NEW0 (RThreadChannel);
-	if (!tc) {
-		return NULL;
-	}
 	// Initialize semaphore with 0 permits - consumers will initially block
 	// until a message is pushed to the queue
 	tc->sem = r_th_sem_new (0);
@@ -68,15 +65,13 @@ R_API RThreadChannelMessage *r_th_channel_message_new(RThreadChannel *tc, const 
 	R_LOG_DEBUG ("r_th_channel_message_new");
 	// lock struct
 	RThreadChannelMessage *cm = R_NEW0 (RThreadChannelMessage);
-	if (cm) {
-		cm->id = tc->nextid;
-		cm->msg = r_mem_dup (msg, len);
-		cm->len = len;
-		// Initialize message semaphore to 0 so readers block until posted
-		cm->sem = r_th_sem_new (0);
-		// r_th_sem_wait (cm->sem); // busy because stack is empty
-		cm->lock = r_th_lock_new (false); // locked here
-	}
+	cm->id = tc->nextid;
+	cm->msg = r_mem_dup (msg, len);
+	cm->len = len;
+	// Initialize message semaphore to 0 so readers block until posted
+	cm->sem = r_th_sem_new (0);
+	// r_th_sem_wait (cm->sem); // busy because stack is empty
+	cm->lock = r_th_lock_new (false); // locked here
 	return cm;
 }
 
@@ -92,25 +87,26 @@ R_API RThreadChannelMessage *r_th_channel_message_read(RThreadChannel *tc, RThre
 
 R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *promise) {
 	if (!promise || !promise->tc || !promise->message) {
-		R_LOG_ERROR("Invalid promise or thread channel in r_th_channel_promise_wait");
+		R_LOG_ERROR ("Invalid promise or thread channel in r_th_channel_promise_wait");
 		return NULL;
 	}
 	RThreadChannel *tc = promise->tc;
 	RThreadChannelMessage *cm = promise->message;
 	// Wait for the consumer to signal the response
-	r_th_sem_wait(cm->sem);
+	r_th_sem_wait (cm->sem);
 	// Remove the message from the responses list to avoid double-free
 	if (tc->responses) {
-		r_th_lock_enter(tc->lock);
+		r_th_lock_enter (tc->lock);
 		RListIter *iter;
 		RThreadChannelMessage *res;
-		r_list_foreach(tc->responses, iter, res) {
+		r_list_foreach (tc->responses, iter, res) {
 			if (res == cm) {
-				r_list_split_iter(tc->responses, iter);
+				r_list_split_iter (tc->responses, iter);
+				free (iter);
 				break;
 			}
 		}
-		r_th_lock_leave(tc->lock);
+		r_th_lock_leave (tc->lock);
 	}
 	return cm;
 }
@@ -118,10 +114,6 @@ R_API RThreadChannelMessage *r_th_channel_promise_wait(RThreadChannelPromise *pr
 R_API RThreadChannelPromise *r_th_channel_promise_new(RThreadChannel *tc) {
 	r_th_lock_enter (tc->lock);
 	RThreadChannelPromise *promise = R_NEW0 (RThreadChannelPromise);
-	if (!promise) {
-		r_th_lock_leave (tc->lock);
-		return NULL;
-	}
 	promise->tc = tc;
 	promise->id = tc->nextid++;
 	r_th_lock_leave (tc->lock);

@@ -196,6 +196,7 @@ typedef struct {
 
 static void r_type_test_free(TypeTest *tt) {
 	tt->name = "";
+	free (tt);
 }
 
 static TypeTest *r_type_test_new(const char *name) {

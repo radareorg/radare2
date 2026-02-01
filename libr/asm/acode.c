@@ -2,9 +2,21 @@
 
 #include <r_asm.h>
 
+static void kv_fini(HtPPKv *kv) {
+	free (kv->key);
+	free (kv->value);
+}
+
 R_API RAsmCode *r_asm_code_new(void) {
 	RAsmCode *ac = R_NEW0 (RAsmCode);
-	ac->equs = ht_pp_new0 ();
+	HtPPOptions opts = { 0 };
+	opts.cmp = (HtPPListComparator)strcmp;
+	opts.hashfn = (HtPPHashFunction)sdb_hash;
+	opts.dupkey = (HtPPDupKey)strdup;
+	opts.dupvalue = (HtPPDupValue)strdup;
+	opts.freefn = kv_fini;
+	opts.elem_size = 0;
+	ac->equs = ht_pp_new_opt (&opts);
 	ac->cfloat_profile = R_CFLOAT_PROFILE_BINARY32;
 	return ac;
 }
@@ -20,7 +32,7 @@ R_API void r_asm_code_free(RAsmCode *acode) {
 
 R_API void r_asm_code_set_equ(RAsmCode *code, const char *key, const char *value) {
 	R_RETURN_IF_FAIL (code && key && value);
-	ht_pp_insert (code->equs, key, strdup (value));
+	ht_pp_insert (code->equs, key, (void *)value);
 }
 
 typedef struct {

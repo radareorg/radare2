@@ -105,13 +105,13 @@ static RVecCodeMetaItem *get_annotations_for_hello_world(void) {
 }
 
 static RCodeMeta *get_hello_world(void) {
-	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
+	const char *test_string = "\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n";
 	RCodeMeta *code = r_codemeta_new (test_string);
 
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
 	RCodeMetaItem *annotation;
 	R_VEC_FOREACH (test_annotations, annotation) {
-		r_codemeta_add_item (code, r_codemeta_item_clone (annotation));
+		r_codemeta_add_item (code, annotation);
 	}
 
 	RVecCodeMetaItem_free (test_annotations);
@@ -119,7 +119,7 @@ static RCodeMeta *get_hello_world(void) {
 }
 
 static RCodeMeta *get_all_context_annotated_code(void) {
-	char *test_string = strdup ("\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n");
+	const char *test_string = "\nfunc-name\nconst-var\n   global-var(\"Hello, local-var\");\n    function-param\n}\n";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RCodeMetaItem function_name = make_reference_annotation (1, 10, R_CODEMETA_TYPE_FUNCTION_NAME, 1234, "func-name");
 	RCodeMetaItem constant_variable = make_reference_annotation (10, 19, R_CODEMETA_TYPE_CONSTANT_VARIABLE, 12345, NULL);
@@ -136,7 +136,7 @@ static RCodeMeta *get_all_context_annotated_code(void) {
 
 static bool test_r_codemeta_new(void) {
 	//Testing RAnnoatedCode->code
-	char *test_string = strdup ("How are you?");
+	const char *test_string = "How are you?";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	mu_assert_streq (code->code, test_string, "Code in RCodeMeta is not set as expected");
 
@@ -148,7 +148,7 @@ static bool test_r_codemeta_new(void) {
 }
 
 static bool test_r_codemeta_free(void) {
-	char *test_string = strdup ("How are you?");
+	const char *test_string = "How are you?";
 	RCodeMeta *code = r_codemeta_new (test_string);
 
 	RCodeMetaItem test_annotation1, test_annotation2;
@@ -179,7 +179,7 @@ static bool test_equal(RCodeMetaItem *first, RCodeMetaItem *second) { // First -
 }
 
 static bool test_r_codemeta_add_item(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add ();
@@ -202,7 +202,7 @@ static bool test_r_codemeta_add_item(void) {
 }
 
 static bool test_r_codemeta_at(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
@@ -232,7 +232,7 @@ static bool test_r_codemeta_at(void) {
 }
 
 static bool test_r_codemeta_in(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();

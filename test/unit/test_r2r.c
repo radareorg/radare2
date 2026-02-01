@@ -129,7 +129,7 @@ bool test_r2r_fix(void) {
 	R_VEC_FOREACH (&results, it) {
 		r2r_test_result_info_free (*it);
 	}
-	RVecR2RTestResultInfoPtr_clear (&results);
+	RVecR2RTestResultInfoPtr_fini (&results);
 
 	mu_assert_streq (content,
 		"NAME=multiline0\n"

@@ -858,6 +858,7 @@ static void r_kext_index_free(RKextIndex *index) {
 	}
 
 	index->length = 0;
+	free (index->entries);
 	R_FREE (index);
 }
 
@@ -2651,7 +2652,6 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 	if (obj->mach0) {
 		MACH0_(mach0_free) (obj->mach0);
 		obj->mach0 = NULL;
-		obj->cache_buf = NULL;
 	}
 
 	if (obj->cache_buf) {
@@ -2673,6 +2673,8 @@ static void r_kernel_cache_free(RKernelCacheObj *obj) {
 		r_rebase_info_free (obj->rebase_info);
 		obj->rebase_info = NULL;
 	}
+
+	r_list_free (obj->pending_bin_files);
 
 	R_FREE (obj);
 }

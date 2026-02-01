@@ -235,6 +235,7 @@ bool test_r_interval_tree_delete(void) {
 		RVecTestEntryPtr_push_back (&contained_entries, &ptr);
 	}
 	if (!check_invariants (tree.root)) {
+		RVecTestEntryPtr_fini (&contained_entries);
 		return false;
 	}
 
@@ -266,7 +267,7 @@ bool test_r_interval_tree_delete(void) {
 
 	mu_assert_null (tree.root, "root null after deleting all entries");
 	r_interval_tree_fini (&tree);
-	RVecTestEntryPtr_clear (&contained_entries);
+	RVecTestEntryPtr_fini (&contained_entries);
 	mu_end;
 }
 

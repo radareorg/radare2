@@ -593,6 +593,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 
 	if (!core->dbg->glibc_version_resolved && !GH (resolve_glibc_version)(core)) {
 		R_LOG_WARN("get_main_arena_offset_with_relocs: glibc_version could not be resolved");
+		free (libc_data.buf);
 		return GHT_MAX;
 	}
 	GHT next_field_offset = GHT_MAX;
@@ -609,6 +610,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 		malloc_state_size = sizeof (GH(RHeap_MallocState_212));
 	} else  {
 		R_LOG_WARN ("get_main_arena_offset_with_relocs: cannot handle glibc version %.2f", core->dbg->glibc_version_d);
+		free (libc_data.buf);
 		return GHT_MAX;
 	}
 
@@ -645,6 +647,7 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 		}
 	}
 
+	free (libc_data.buf);
 	RBinFile *libc_bf = r_bin_cur (bin);
 	r_bin_file_delete (bin, libc_bf->id);
 	r_bin_file_set_cur_binfile (bin, bf);

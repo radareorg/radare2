@@ -422,6 +422,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 
 	// kill b completely
 	r_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
+	r_anal_block_unref (b);
 
 	// invalidate ranges of a's functions
 	r_list_foreach (a->fcns, iter, fcn) {

@@ -213,7 +213,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_spaces_fini (&a->zign_spaces);
 	r_anal_pin_fini (a);
 	r_syscall_free (a->syscall);
-	r_reg_free (a->reg);
+	r_unref (a->reg);
 	r_anal_xrefs_free (a);
 	r_list_free (a->threads);
 	r_list_free (a->leaddrs);

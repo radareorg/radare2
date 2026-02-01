@@ -174,10 +174,11 @@ bool test_str2bin_alloc (void) {
 	mu_assert_eq (len, 0, "r_hex_str2bin_until_new invalid str 4");
 	mu_assert_null (buf, "r_hex_str2bin_until_new invalid str 4");
 
-	// bad bufs
-	R_ALIGNED(8) ut8 buf2[8];
-	len = r_hex_str2bin_until_new ("44", (ut8 **)&buf2);
-	mu_assert_eq (len, 1, "r_hex_str2bin_until_new accepted non-null **");
+	// test with pre-initialized pointer
+	ut8 *buf2 = NULL;
+	len = r_hex_str2bin_until_new ("44", &buf2);
+	mu_assert_eq (len, 1, "r_hex_str2bin_until_new simple 1-byte");
+	free (buf2);
 
 	// valid input
 	buf = NULL;

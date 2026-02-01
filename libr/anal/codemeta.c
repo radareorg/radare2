@@ -146,7 +146,14 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	R_RETURN_IF_FAIL (code && mi);
 	RVecCodeMetaItem_push_back (&code->annotations, mi);
-	r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
+}
+
+static void codemeta_build_tree(RCodeMeta *code) {
+	r_crbtree_clear (code->tree);
+	RCodeMetaItem *mi;
+	R_VEC_FOREACH (&code->annotations, mi) {
+		r_crbtree_insert (code->tree, mi, cmp_ins, NULL);
+	}
 }
 
 R_API RVecCodeMetaItemPtr *r_codemeta_at(RCodeMeta *code, size_t offset) {
@@ -156,6 +163,7 @@ R_API RVecCodeMetaItemPtr *r_codemeta_at(RCodeMeta *code, size_t offset) {
 
 R_API RVecCodeMetaItemPtr *r_codemeta_in(RCodeMeta *code, size_t start, size_t end) {
 	R_RETURN_VAL_IF_FAIL (code, NULL);
+	codemeta_build_tree (code);
 	RVecCodeMetaItemPtr *r = RVecCodeMetaItemPtr_new ();
 	if (!r) {
 		return NULL;

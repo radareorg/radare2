@@ -48,6 +48,7 @@ typedef struct r_num_calc_t {
 } RNumCalc;
 
 typedef struct r_num_t {
+	R_REF_TYPE;
 	ut64 (*callback)(struct r_num_t *userptr, const char *str, bool *ok);
 	const char *(*cb_from_value)(struct r_num_t *userptr, ut64 value, bool *ok);
 //	RNumCallback callback;
@@ -56,7 +57,6 @@ typedef struct r_num_t {
 	void *userptr;
 	int dbz; /// division by zero happened
 	RNumCalc nc;
-// R2_590 R_REF_TYPE
 } RNum;
 
 typedef ut64 (*RNumCallback)(struct r_num_t *self, const char *str, bool *ok);

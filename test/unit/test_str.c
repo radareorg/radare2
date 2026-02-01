@@ -187,12 +187,14 @@ bool test_r_str_split_list(void) {
 		char* hi = strdup ("");
 		RList *r = r_str_split_list (hi, "\n", 0);
 		mu_assert_eq (r_list_length (r), 1, "split empty");
+		r_list_free (r);
 		free (hi);
 	}
 	{
 		char* hi = strdup ("\n");
 		RList *r = r_str_split_list (hi, "\n", 0);
 		mu_assert_eq (r_list_length (r), 2, "split newline");
+		r_list_free (r);
 		free (hi);
 	}
 	{
@@ -200,6 +202,7 @@ bool test_r_str_split_list(void) {
 		RList *r = r_str_split_list (hi, ",", 3);
 		mu_assert_eq (r_list_length (r), 3, "split commas");
 		mu_assert_streq (r_list_get_n (r, 2), "comma,world", "split commas");
+		r_list_free (r);
 		free (hi);
 	}
 	mu_end;
@@ -693,7 +696,9 @@ bool test_r_str_ndup_zero_len (void) {
 	char str[] = "deadbeef";
 
 	mu_assert_null (R_STR_NDUP (str, 0), "uppercase yields NULL");
-	mu_assert_streq (r_str_ndup (str, 0), "", "lowercase yields empty string");
+	char *dup = r_str_ndup (str, 0);
+	mu_assert_streq (dup, "", "lowercase yields empty string");
+	free (dup);
 
 	mu_end;
 }

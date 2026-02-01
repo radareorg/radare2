@@ -11,6 +11,7 @@ static bool test_r_id_storage_toomany(void) {
 	mu_assert_true (r, "id1");
 	r = r_id_storage_add (ids, "ccc", &id2);
 	mu_assert_false (r, "id2");
+	r_id_storage_free (ids);
 	mu_end;
 }
 
@@ -20,6 +21,7 @@ static bool test_r_id_storage_wrong(void) {
 	if (ids) {
 		bool r = r_id_storage_add (ids, "aaa", &id0);
 		mu_assert_false (r, "id0");
+		r_id_storage_free (ids);
 	}
 	mu_end;
 }
