@@ -250,10 +250,7 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 							res = false;
 						}
 					} else if (ishexchar (line[2]) && ishexchar (line[3])) {
-						// - 30 (single byte in hex)
-// AITODO: use r_hex_pair2bin instead of this awful numget hack
-						char byte_str[5] = {'0', 'x', line[2], line[3], '\0'};
-						ut8 expected_byte = (ut8)r_num_get (NULL, byte_str);
+						int expected_byte = r_hex_pair2bin (line + 2);
 						if (size == 1) {
 							if (data[0] != expected_byte) {
 								R_LOG_ERROR ("original data does not match. Expected 0x%02x found 0x%02x at 0x%08"PFMT64x,
@@ -304,10 +301,7 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 						res = false;
 					}
 				} else if (ishexchar (line[2]) && ishexchar (line[3])) {
-					// + 30 (single byte in hex)
-// AITODO: use r_hex_pair2bin instead of this awful numget hack
-					char byte_str[5] = {'0', 'x', line[2], line[3], '\0'};
-					ut8 byte_value = (ut8)r_num_get (NULL, byte_str);
+					int byte_value = r_hex_pair2bin (line + 2);
 					if (size == 1) {
 						r_io_write_at (core->io, addr, &byte_value, 1);
 					} else {
