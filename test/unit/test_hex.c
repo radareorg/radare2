@@ -178,6 +178,7 @@ bool test_str2bin_alloc (void) {
 	R_ALIGNED(8) ut8 buf2[8];
 	len = r_hex_str2bin_until_new ("44", (ut8 **)&buf2);
 	mu_assert_eq (len, 1, "r_hex_str2bin_until_new accepted non-null **");
+	free (*(ut8 **)buf2);
 
 	// valid input
 	buf = NULL;

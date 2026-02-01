@@ -237,6 +237,7 @@ bool test_pdb_tpi_cpp(void) {
 					char *type;
 					type_info->get_print_type (tpi_stream, type_info, &type);
 					mu_assert_streq (type, "int32_t", "Wrong member type");
+					free (type);
 				}
 				if (i == 1) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
@@ -246,6 +247,7 @@ bool test_pdb_tpi_cpp(void) {
 					char *type;
 					type_info->get_print_type (tpi_stream, type_info, &type);
 					mu_assert_streq (type, "uint32_t", "Wrong member type");
+					free (type);
 				}
 				if (i == 17) {
 					mu_assert_eq (type_info->leaf_type, eLF_MEMBER, "Incorrect data type");
@@ -255,6 +257,7 @@ bool test_pdb_tpi_cpp(void) {
 					char *type;
 					type_info->get_print_type (tpi_stream, type_info, &type);
 					mu_assert_streq (type, "wchar_t *[24]", "Wrong method type");
+					free (type);
 				}
 				i++;
 			}

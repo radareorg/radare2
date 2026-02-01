@@ -111,7 +111,7 @@ static RCodeMeta *get_hello_world(void) {
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
 	RCodeMetaItem *annotation;
 	R_VEC_FOREACH (test_annotations, annotation) {
-		r_codemeta_add_item (code, r_codemeta_item_clone (annotation));
+		r_codemeta_add_item (code, annotation);
 	}
 
 	RVecCodeMetaItem_free (test_annotations);
