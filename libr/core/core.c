@@ -2697,6 +2697,8 @@ R_API bool r_core_init(RCore *core) {
 	core->prompt_addr = 0LL;
 	r_core_cmd_init (core);
 	core->dbg = r_debug_new (true);
+	r_unref (core->dbg->reg);
+	core->dbg->reg = r_ref (core->anal->reg);
 
 	r_io_bind (core->io, &(core->dbg->iob));
 	r_io_bind (core->io, &(core->dbg->bp->iob));
