@@ -2261,6 +2261,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 		}
 		free (mo->chained_starts);
 	}
+	sdb_free (mo->kv);
 	r_unref (mo->b);
 	free (mo);
 	return NULL;
