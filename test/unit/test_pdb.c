@@ -186,7 +186,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_eq (type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
-			RList *members = r_list_new ();
+			RList *members = NULL;
 			type_info->get_members (tpi_stream, &type->type_data, &members);
 			mu_assert_eq (members->length, 2725, "Incorrect members length");
 			RListIter *it = r_list_iterator (members);
@@ -222,7 +222,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq (name, "threadlocaleinfostruct", "Wrong name");
 			type_info->is_fwdref (tpi_stream, &type->type_data, &is_forward_ref);
 			mu_assert_eq (is_forward_ref, false, "Wrong is_fwdref");
-			RList *members = r_list_new ();
+			RList *members = NULL;
 			type_info->get_members (tpi_stream, &type->type_data, &members);
 			mu_assert_eq (members->length, 18, "Incorrect members count");
 			RListIter *it = r_list_iterator (members);
@@ -261,7 +261,6 @@ bool test_pdb_tpi_cpp(void) {
 				}
 				i++;
 			}
-			r_list_free (members);
 		}
 	};
 	pdb.finish_pdb_parse (&pdb);
@@ -421,7 +420,7 @@ bool test_pdb_tpi_rust(void) {
 		} else if (type->tpi_idx == 0x13BF) {
 			mu_assert_eq (type_info->leaf_type, eLF_FIELDLIST, "Incorrect data type");
 			// check size
-			RList *members = r_list_new ();
+			RList *members = NULL;
 			type_info->get_members (tpi_stream, &type->type_data, &members);
 			mu_assert_eq (members->length, 3, "Incorrect members length");
 			RListIter *it = r_list_iterator (members);
@@ -443,7 +442,6 @@ bool test_pdb_tpi_rust(void) {
 				}
 				i++;
 			}
-			r_list_free (members);
 		} else if (type->tpi_idx == 0x1164) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1058) {
@@ -460,7 +458,7 @@ bool test_pdb_tpi_rust(void) {
 			type_info->get_val (tpi_stream, type_info, &size);
 			mu_assert_eq (size, 24, "Wrong struct size");
 
-			RList *members = r_list_new ();
+			RList *members = NULL;
 			type_info->get_members (tpi_stream, &type->type_data, &members);
 			mu_assert_eq (members->length, 2, "Incorrect members count");
 
@@ -483,7 +481,6 @@ bool test_pdb_tpi_rust(void) {
 				}
 				i++;
 			}
-			r_list_free (members);
 		}
 	};
 	pdb.finish_pdb_parse (&pdb);
