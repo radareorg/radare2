@@ -105,7 +105,7 @@ static RVecCodeMetaItem *get_annotations_for_hello_world(void) {
 }
 
 static RCodeMeta *get_hello_world(void) {
-	char *test_string = strdup ("\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n");
+	const char *test_string = "\nvoid main(void)\n{\n    sym.imp.puts(\"Hello, World!\");\n    return;\n}\n";
 	RCodeMeta *code = r_codemeta_new (test_string);
 
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations = get_annotations_for_hello_world ();
