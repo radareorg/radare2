@@ -261,6 +261,7 @@ bool test_pdb_tpi_cpp(void) {
 				}
 				i++;
 			}
+			r_list_free (members);
 		}
 	};
 	pdb.finish_pdb_parse (&pdb);
@@ -442,6 +443,7 @@ bool test_pdb_tpi_rust(void) {
 				}
 				i++;
 			}
+			r_list_free (members);
 		} else if (type->tpi_idx == 0x1164) {
 			mu_assert_eq (type_info->leaf_type, eLF_ARGLIST, "Incorrect data type");
 		} else if (type->tpi_idx == 0x1058) {
@@ -481,6 +483,7 @@ bool test_pdb_tpi_rust(void) {
 				}
 				i++;
 			}
+			r_list_free (members);
 		}
 	};
 	pdb.finish_pdb_parse (&pdb);
