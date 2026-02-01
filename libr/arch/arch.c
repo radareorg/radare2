@@ -279,6 +279,7 @@ R_API bool r_arch_del(RArch *arch, const char *name) {
 
 R_API void r_arch_free(RArch *arch) {
 	if (arch) {
+		r_unref (arch->num);
 		free (arch->platform);
 		r_list_free (arch->plugins);
 		r_unref (arch->session);

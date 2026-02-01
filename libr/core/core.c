@@ -2674,8 +2674,8 @@ R_API bool r_core_init(RCore *core) {
 
 	r_bin_bind (core->bin, &(core->anal->binb));
 	r_bin_bind (core->bin, &(core->anal->arch->binb));
-	r_num_free (core->anal->arch->num);
-	core->anal->arch->num = core->num;
+	r_unref (core->anal->arch->num);
+	core->anal->arch->num = r_ref (core->num);
 	r_io_bind (core->io, &(core->search->iob));
 	r_io_bind (core->io, &(core->print->iob));
 	r_io_bind (core->io, &(core->anal->iob));
@@ -2813,7 +2813,7 @@ R_API void r_core_fini(RCore *c) {
 
 	r_list_free (c->gadgets);
 	r_list_free (c->undos);
-	r_num_free (c->num);
+	r_unref (c->num);
 	// TODO: sync or not? sdb_sync (c->sdb);
 	// TODO: sync all dbs?
 	// c->file = NULL;
