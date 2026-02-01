@@ -303,7 +303,8 @@ R_API bool r_core_patch_unified(RCore *core, const char *patch, int level, bool 
 				} else if (ishexchar (line[2]) && ishexchar (line[3])) {
 					int byte_value = r_hex_pair2bin (line + 2);
 					if (size == 1) {
-						r_io_write_at (core->io, addr, &byte_value, 1);
+						ut8 byte = (ut8)(byte_value & 0xff);
+						r_io_write_at (core->io, addr, &byte, 1);
 					} else {
 						R_LOG_ERROR ("Single byte format requires size 1, got %d", (int)size);
 						res = false;
