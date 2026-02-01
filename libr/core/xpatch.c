@@ -111,13 +111,12 @@ static bool ubp_parseFile(const char *line, UBP_File *uf, bool add) {
 	if (tab) {
 		size_t tab_pos = tab - line;
 		uf->file = r_str_ndup (line, tab_pos);
-		uf->tstamp = strdup (tab + 1);
+		r_str_trim (uf->file);
+		uf->tstamp = r_str_trim_dup (tab + 1);
 	} else {
-		uf->file = strdup (line);
+		uf->file = r_str_trim_dup (line);
 		uf->tstamp = NULL;
 	}
-	r_str_trim (uf->file);
-	r_str_trim (uf->tstamp);
 	return true;
 }
 
