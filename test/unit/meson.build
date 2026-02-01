@@ -66,7 +66,8 @@ if get_option('enable_tests')
     'unum',
     'util',
     'vec',
-    'crbtree'
+    'crbtree',
+    'xpatch'
   ]
 
   foreach test : tests
