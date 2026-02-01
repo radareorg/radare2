@@ -2,22 +2,13 @@
 #include <r_util.h>
 #include "minunit.h"
 
-// AITODO: use r_file_slurp and r_file_dump instead of fopen calls
-
-// Test that hexpairs format works correctly in the full xpatch flow
 static bool test_xpatch_hexpairs_format(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Should create core");
 
-	// Create test file
 	const char *test_file = "/tmp/test_xpatch_unit.bin";
-	FILE *f = fopen (test_file, "wb");
-	mu_assert_notnull (f, "Should create test file");
-
-	// Write test data: 4f f2 ba fc 30 40
 	ut8 data[] = {0x4f, 0xf2, 0xba, 0xfc, 0x30, 0x40};
-	fwrite (data, 1, sizeof (data), f);
-	fclose (f);
+	r_file_dump (test_file, data, sizeof (data), false);
 
 	// Test applying hexpairs patch (xpatch opens the file from patch header)
 	const char *patch =
@@ -46,20 +37,13 @@ static bool test_xpatch_hexpairs_format(void) {
 	return true;
 }
 
-// Test xpatch with wrong data (should fail)
 static bool test_xpatch_hexpairs_wrong_data(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Should create core");
 
-	// Create test file with wrong initial data
 	const char *test_file = "/tmp/test_xpatch_wrong.bin";
-	FILE *f = fopen (test_file, "wb");
-	mu_assert_notnull (f, "Should create test file");
-
-	// Write wrong test data (not matching the patch)
 	ut8 data[] = {0x11, 0x22, 0x33, 0x44, 0x50, 0x60};
-	fwrite (data, 1, sizeof (data), f);
-	fclose (f);
+	r_file_dump (test_file, data, sizeof (data), false);
 
 	// Test applying hexpairs patch (should fail because data doesn't match)
 	const char *patch =
@@ -78,20 +62,13 @@ static bool test_xpatch_hexpairs_wrong_data(void) {
 	return true;
 }
 
-// Test single byte hex format
 static bool test_xpatch_single_byte_format(void) {
 	RCore *core = r_core_new ();
 	mu_assert_notnull (core, "Should create core");
 
-	// Create test file
 	const char *test_file = "/tmp/test_xpatch_single.bin";
-	FILE *f = fopen (test_file, "wb");
-	mu_assert_notnull (f, "Should create test file");
-
-	// Write test data
 	ut8 data[] = {0x4f, 0xf2, 0x30, 0x40, 0x50, 0x60};
-	fwrite (data, 1, sizeof (data), f);
-	fclose (f);
+	r_file_dump (test_file, data, sizeof (data), false);
 
 	// Test applying single byte patch
 	const char *patch =
