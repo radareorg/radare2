@@ -12,6 +12,7 @@
 	do {                                                                   \
 		char *value = sdb_get (anal->sdb_types, k, NULL);                    \
 		mu_assert_nullable_streq (value, v, "Wrong key - value pair"); \
+		free (value);                                                  \
 	} while (0)
 
 // copy from cbin.c modified to get pdb back

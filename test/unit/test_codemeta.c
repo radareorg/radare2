@@ -136,7 +136,7 @@ static RCodeMeta *get_all_context_annotated_code(void) {
 
 static bool test_r_codemeta_new(void) {
 	//Testing RAnnoatedCode->code
-	char *test_string = strdup ("How are you?");
+	const char *test_string = "How are you?";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	mu_assert_streq (code->code, test_string, "Code in RCodeMeta is not set as expected");
 
@@ -148,7 +148,7 @@ static bool test_r_codemeta_new(void) {
 }
 
 static bool test_r_codemeta_free(void) {
-	char *test_string = strdup ("How are you?");
+	const char *test_string = "How are you?";
 	RCodeMeta *code = r_codemeta_new (test_string);
 
 	RCodeMetaItem test_annotation1, test_annotation2;
@@ -179,7 +179,7 @@ static bool test_equal(RCodeMetaItem *first, RCodeMetaItem *second) { // First -
 }
 
 static bool test_r_codemeta_add_item(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_code_annotation_for_add ();
@@ -202,7 +202,7 @@ static bool test_r_codemeta_add_item(void) {
 }
 
 static bool test_r_codemeta_at(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
@@ -232,7 +232,7 @@ static bool test_r_codemeta_at(void) {
 }
 
 static bool test_r_codemeta_in(void) {
-	char *test_string = strdup ("abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+	const char *test_string = "abcdefghijklmnopqrtstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 	RCodeMeta *code = r_codemeta_new (test_string);
 	RVecCodeMetaItem /*<RCodeMetaItem>*/ *test_annotations;
 	test_annotations = get_some_annotations_for_in ();
