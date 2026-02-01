@@ -26,22 +26,16 @@ static bool ishexchar(const char ch) {
 	return false;
 }
 
-static ut8 *parse_hexpairs_line(const char *line, size_t *out_len) {
-	R_RETURN_VAL_IF_FAIL (line && out_len, NULL);
-	if (line[2] != '\'') {
-		return NULL;
-	}
+static ut8 *parse_hexpairs_line(char *line, size_t *out_len) {
 	char *end_quote = strchr (line + 3, '\'');
 	if (!end_quote) {
 		return NULL;
 	}
-	char *hex_copy = r_str_ndup (line + 3, end_quote - line - 3);
-	ut8 *result = r_hex_str2bin_dup (hex_copy, out_len);
-	free (hex_copy);
-	return result;
+	*end_quote = 0;
+	return r_hex_str2bin_dup (line + 3, out_len);
 }
 
-static bool verify_hexpairs(const char *line, ut64 addr, const ut8 *data, size_t size) {
+static bool verify_hexpairs(char *line, ut64 addr, const ut8 *data, size_t size) {
 	size_t hex_len = 0;
 	ut8 *hex_bytes = parse_hexpairs_line (line, &hex_len);
 	if (!hex_bytes) {
@@ -61,7 +55,7 @@ static bool verify_hexpairs(const char *line, ut64 addr, const ut8 *data, size_t
 	return match;
 }
 
-static bool write_hexpairs(RIO *io, const char *line, ut64 addr, size_t size) {
+static bool write_hexpairs(RIO *io, char *line, ut64 addr, size_t size) {
 	size_t hex_len = 0;
 	ut8 *hex_bytes = parse_hexpairs_line (line, &hex_len);
 	if (!hex_bytes) {

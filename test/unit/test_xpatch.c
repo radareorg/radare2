@@ -2,6 +2,8 @@
 #include <r_util.h>
 #include "minunit.h"
 
+// AITODO: use r_file_slurp and r_file_dump instead of fopen calls
+
 // Test that hexpairs format works correctly in the full xpatch flow
 static bool test_xpatch_hexpairs_format(void) {
 	RCore *core = r_core_new ();
