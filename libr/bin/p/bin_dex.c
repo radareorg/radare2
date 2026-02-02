@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2025 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2011-2026 - pancake, h4ng3r */
 
 #include <r_bin.h>
 #include "../i/private.h"
@@ -1721,11 +1721,11 @@ static bool imports_vec(RBinFile *bf) {
 	if (!RVecRBinImport_empty (&dex->imports_vec)) {
 		RBinImport *imp;
 		R_VEC_FOREACH (&dex->imports_vec, imp) {
-			RBinImport *_i = RVecRBinImport_emplace_back (&bf->bo->imports_vec);
-			if (_i) {
-				*_i = *imp;
-			}
+			RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
 		}
+		// Transfer ownership: reset imports_vec without calling fini
+		free (dex->imports_vec._start);
+		RVecRBinImport_init (&dex->imports_vec);
 		return true;
 	}
 	return false;

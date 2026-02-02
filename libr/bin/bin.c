@@ -213,7 +213,7 @@ R_API void r_bin_symbol_fini(RBinSymbol *sym) {
 
 R_API void r_bin_import_fini(RBinImport *imp) {
 	if (imp) {
-		free (imp->name);
+		r_bin_name_free (imp->name);
 		free (imp->libname);
 		free (imp->classname);
 		free (imp->descriptor);
