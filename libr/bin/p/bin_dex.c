@@ -1680,29 +1680,29 @@ static bool dex_loadcode(RBinFile *bf) {
 			const char *method_name = dex_method_name (dex, i);
 			char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
-				RBinImport *imp = R_NEW0 (RBinImport);
+				RBinImport imp = {0};
 				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
-				imp->name = r_bin_name_new (s);
+				imp.name = r_bin_name_new (s);
 				free (s);
-				imp->type = "FUNC";
-				imp->bind = "NONE";
-				imp->ordinal = import_count++;
-				{ RBinImport *_i = RVecRBinImport_emplace_back (&dex->imports_vec); if (_i) *_i = *imp; }
+				imp.type = "FUNC";
+				imp.bind = "NONE";
+				imp.ordinal = import_count++;
+				RVecRBinImport_push_back (&dex->imports_vec, &imp);
 
-				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				sym->name = r_bin_name_clone (imp->name);
-				sym->is_imported = true;
-				sym->type = R_BIN_TYPE_FUNC_STR;
-				sym->bind = "NONE";
+				RBinSymbol sym = {0};
+				sym.name = r_bin_name_clone (imp.name);
+				sym.is_imported = true;
+				sym.type = R_BIN_TYPE_FUNC_STR;
+				sym.bind = "NONE";
 				//XXX so damn unsafe check buffer boundaries!!!!
 				//XXX use r_buf API!!
-				sym->paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
-				sym->vaddr = sym->paddr; //  + bf->bo->baddr;
-				sym->ordinal = sym_count++;
-				sym->lang = R_BIN_LANG_JAVA;
-				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_vec); if (_s) *_s = *sym; }
+				sym.paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
+				sym.vaddr = sym.paddr; //  + bf->bo->baddr;
+				sym.ordinal = sym_count++;
+				sym.lang = R_BIN_LANG_JAVA;
+				RVecRBinSymbol_push_back (&dex->methods_vec, &sym);
 				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
-				sdb_num_set (dex->mdb, mname, sym->paddr, 0);
+				sdb_num_set (dex->mdb, mname, sym.paddr, 0);
 			}
 			free ((void *)signature);
 			free (class_name);
