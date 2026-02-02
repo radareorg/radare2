@@ -2,6 +2,13 @@
 
 #define WEBCONFIG 1
 
+// Return values for r_core_rtr_http_run
+typedef enum {
+	HTTP_RUN_ERROR = 0,   // Error occurred, stop server
+	HTTP_RUN_SUCCESS = 1, // Clean exit, stop server
+	HTTP_RUN_RESTART = 2  // Restart the server (used for =h* command)
+} HttpRunResult;
+
 typedef struct {
 	const char *ext;
 	const char *type;
@@ -79,13 +86,15 @@ static char *cmdstr(RCore *core, const char *cmd) {
 	return out;
 }
 
-// return 1 on error WHY
-static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
+static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
+	if (!path) {
+		return HTTP_RUN_ERROR;
+	}
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = {0};
 	RSocketHTTPRequest *rs;
 	char buf[32];
-	int ret = 0;
+	HttpRunResult ret = HTTP_RUN_SUCCESS;
 	RSocket *s;
 	RSocketHTTPOptions so;
 	char *dir;
@@ -105,9 +114,6 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		if (!r_file_is_directory (homeroot)) {
 			R_LOG_ERROR ("Cannot find http.root or http.homeroot");
 		}
-	}
-	if (!path) {
-		return false;
 	}
 	char *arg = strchr (path, ' ');
 	if (arg) {
@@ -130,34 +136,22 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		port = buf;
 	}
 	s = r_socket_new (false);
-	{
-		if (R_STR_ISNOTEMPTY (host)) {
-			if (!strcmp (host, "::1")) {
-				s->local = true;
-			} else if (!strcmp (host, "localhost")) {
-				s->local = true;
-			} else if (!strcmp (host, "127.0.0.1")) {
-				s->local = true;
-			} else if (!strcmp (host, "local")) {
-				s->local = true;
-				r_config_set (core->config, "http.bind", "localhost");
-			} else if (R_STR_ISEMPTY (host) || !strcmp (host, "public")) {
-				// public
-				host = "127.0.0.1";
-				r_config_set (core->config, "http.bind", "0.0.0.0");
-				s->local = false;
-			} else {
-				s->local = true;
-			}
-		} else {
-			s->local = true;
+	s->local = true;
+	if (R_STR_ISNOTEMPTY (host)) {
+		if (!strcmp (host, "local")) {
+			r_config_set (core->config, "http.bind", "localhost");
+		} else if (R_STR_ISEMPTY (host) || !strcmp (host, "public")) {
+			// public
+			host = "127.0.0.1";
+			r_config_set (core->config, "http.bind", "0.0.0.0");
+			s->local = false;
 		}
-		memset (&so, 0, sizeof (so));
 	}
+	memset (&so, 0, sizeof (so));
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
 		R_LOG_ERROR ("Cannot listen on http.port");
-		return 1;
+		return HTTP_RUN_ERROR;
 	}
 
 	if (browse == 'H') {
@@ -172,7 +166,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		if (!httpauthfile) {
 			r_socket_free (s);
 			R_LOG_ERROR ("No user list set for HTTP Authentication");
-			return 1;
+			return HTTP_RUN_ERROR;
 		}
 		pfile = r_file_slurp (httpauthfile, NULL);
 		if (pfile) {
@@ -180,7 +174,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		} else {
 			r_socket_free (s);
 			R_LOG_ERROR ("Empty list of HTTP users");
-			return 1;
+			return HTTP_RUN_ERROR;
 		}
 		so.timeout = r_config_get_i (core->config, "http.timeout");
 		so.accept_timeout = 1;
@@ -207,7 +201,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 		r_socket_free (s);
 		r_list_free (so.authtokens);
 		free (pfile);
-		return 1;
+		return HTTP_RUN_ERROR;
 	}
 	memcpy (newblk, core->block, core->blocksize);
 
@@ -404,7 +398,7 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 					if (httpref_enabled && (!rs->referer || (refstr && !strstr (rs->referer, refstr)))) {
 						r_socket_http_response (rs, 503, "", 0, headers);
 					} else {
-						if (httpcmd && *httpcmd) {
+						if (R_STR_ISNOTEMPTY (httpcmd)) {
 							int len; // do remote http query and proxy response
 							char *res, *bar = r_str_newf ("%s/%s", httpcmd, cmd);
 							bed = r_cons_sleep_begin (core->cons);
@@ -449,13 +443,13 @@ static int r_core_rtr_http_run(RCore *core, int launch, int browse, const char *
 									r_socket_http_close (rs);
 									free (dir);
 									free (refstr);
-									ret = -2;
+									ret = HTTP_RUN_RESTART;
 									goto the_end;
 								} else if (!strcmp (cmd, "=h--")) {
 									r_socket_http_close (rs);
 									free (dir);
 									free (refstr);
-									ret = 0;
+									ret = HTTP_RUN_SUCCESS;
 									goto the_end;
 								}
 							}
@@ -620,24 +614,15 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 	if (r_config_get_b (ht->core->config, "http.sandbox")) {
 		R_LOG_WARN ("Background webserver requires http.sandbox=false to run properly");
 	}
-	int ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
+	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
 	R_FREE (ht->path);
-#if 0
-	if (ret) {
-		int p = r_config_get_i (ht->core->config, "http.port");
-		r_config_set_i (ht->core->config, "http.port",  p + 1);
-		if (p >= r_config_get_i (ht->core->config, "http.maxport")) {
-			return R_TH_STOP;
-		}
-	}
-#endif
-	return ret ? R_TH_REPEAT : R_TH_STOP;
+	return (ret == HTTP_RUN_ERROR || ret == HTTP_RUN_RESTART) ? R_TH_REPEAT : R_TH_STOP;
 }
 #endif
 
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	RCorePriv *priv = core->priv;
-	int ret;
+	HttpRunResult ret;
 	if (r_sandbox_enable (0)) {
 		R_LOG_ERROR ("sandbox: connect is not permitted");
 		return 1;
@@ -659,8 +644,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	if (launch == '&') {
 #if USE_HTTP_THREADS
 		if (priv->httpthread) {
-			eprintf ("HTTP Thread is already running\n");
-			eprintf ("This is experimental and probably buggy. Use at your own risk\n");
+			R_LOG_INFO ("The HTTP Thread is already running");
+			R_LOG_INFO ("This is experimental and probably buggy. Use at your own risk");
 			R_LOG_TODO ("Use different eval environ for scr. for the web");
 			R_LOG_TODO ("Visual mode should be enabled on local");
 		} else {
@@ -688,6 +673,6 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	}
 	do {
 		ret = r_core_rtr_http_run (core, launch, browse, path);
-	} while (ret == -2);
-	return ret;
+	} while (ret == HTTP_RUN_RESTART);
+	return (ret == HTTP_RUN_ERROR) ? 1 : 0;
 }
