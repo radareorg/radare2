@@ -1270,8 +1270,8 @@ R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
 			if (!r_cons_write (cons, (const ut8*)data + chunk_off, chunk_left)) {
 				return false;
 			}
-			left -= SIXTEEN_MEGS;
-			chunk_off += SIXTEEN_MEGS;
+			left -= chunk_left;
+			chunk_off += chunk_left;
 		}
 		return true;
 	}
