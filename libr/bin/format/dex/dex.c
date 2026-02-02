@@ -239,7 +239,10 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->cal_strings);
 	free (dex->strings);
 	free (dex->classes);
-	free (dex->methods);
+	RVecDexMethod_fini (&dex->dex_methods);
+	RVecRBinSymbol_fini (&dex->symbols_vec);
+	RVecRBinImport_fini (&dex->imports_vec);
+	RVecRBinClass_fini (&dex->classes_vec);
 	free (dex->types);
 	free (dex->fields);
 	free (dex->protos);
@@ -351,16 +354,20 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 	}
 	dexhdr->method_size = methods_size / sizeof (struct dex_method_t);
-	dex->methods = (struct dex_method_t *) calloc (methods_size + 1, sizeof (struct dex_method_t));
+	RVecDexMethod_init (&dex->dex_methods);
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
 		if (offset + 8 > dex->size) {
 			goto fail;
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
-		dex->methods[i].class_id = r_buf_read_le16 (dex->b);
-		dex->methods[i].proto_id = r_buf_read_le16 (dex->b);
-		dex->methods[i].name_id = r_buf_read_le32 (dex->b);
+		RBinDexMethod *method = RVecDexMethod_emplace_back (&dex->dex_methods);
+		if (!method) {
+			goto fail;
+		}
+		method->class_id = r_buf_read_le16 (dex->b);
+		method->proto_id = r_buf_read_le16 (dex->b);
+		method->name_id = r_buf_read_le32 (dex->b);
 	}
 
 	/* types */

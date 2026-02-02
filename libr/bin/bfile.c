@@ -1304,13 +1304,19 @@ R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin) {
 	return "other";
 }
 
-R_API void r_bin_class_free(RBinClass *k) {
+R_API void r_bin_class_fini(RBinClass *k) {
 	if (k) {
 		r_bin_name_free (k->name);
 		r_list_free (k->super);
 		free (k->visibility_str);
 		r_list_free (k->methods);
 		r_list_free (k->fields);
+	}
+}
+
+R_API void r_bin_class_free(RBinClass *k) {
+	if (k) {
+		r_bin_class_fini (k);
 		free (k);
 	}
 }

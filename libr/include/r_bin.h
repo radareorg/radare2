@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #ifndef R2_BIN_H
 #define R2_BIN_H
@@ -857,6 +857,7 @@ R_API bool r_bin_cmd(RBin *bin, const char *input);
 
 R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr);
 R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin);
+R_API void r_bin_class_fini(RBinClass *);
 R_API void r_bin_class_free(RBinClass *);
 // uhm should be tied used because we dont want bincur to change because of open
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);
