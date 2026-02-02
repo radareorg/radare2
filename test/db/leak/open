@@ -51,7 +51,6 @@ EOF
 RUN
 
 NAME=leak opening java class
-BROKEN=1
 FILE=bins/java/Hello.class
 CMDS=<<EOF
 ?e hello
@@ -62,7 +61,6 @@ EOF
 RUN
 
 NAME=leak analysis java class
-BROKEN=1
 FILE=bins/java/Hello.class
 ARGS=-AA
 CMDS=<<EOF

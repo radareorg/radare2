@@ -52,6 +52,24 @@ static inline void __bin_symbol_free(void *_sym) {
         }
 }
 
+static inline void __bin_field_free(void *_field) {
+	RBinField *field = (RBinField *)_field;
+	if (field) {
+		__bin_name_free (field->name);
+		free (field);
+	}
+}
+
+static inline void __bin_import_free(void *_imp) {
+	RBinImport *imp = (RBinImport *)_imp;
+	if (imp) {
+		__bin_name_free (imp->name);
+		free (imp->classname);
+		free (imp->descriptor);
+		free (imp);
+	}
+}
+
 // Maximum recursion depth when resolving constant pool references
 #define MAX_CPITEMS 16
 
@@ -572,7 +590,7 @@ R_API void r_bin_java_reset_bin_info(RBinJavaObj *bin) {
 	r_str_constpool_init (&bin->constpool);
 	bin->cf2.flags_str = strdup ("unknown");
 	bin->cf2.this_class_name = strdup ("unknown");
-	bin->imports_list = r_list_newf (free);
+	bin->imports_list = r_list_newf (__bin_import_free);
 	bin->methods_list = r_list_newf (r_bin_java_fmtype_free);
 	bin->fields_list = r_list_newf (r_bin_java_fmtype_free);
 	bin->attrs_list = r_list_newf (r_bin_java_attribute_free);
@@ -2611,7 +2629,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 }
 
 R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
-	RList *methods = r_list_newf (free);
+	RList *methods = r_list_newf (__bin_symbol_free);
 	RListIter *iter;
 	RBinJavaField *field;
 	r_list_foreach (bin->methods_list, iter, field) {
@@ -2639,7 +2657,7 @@ R_API RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 }
 
 R_API RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
-	RList *fields = r_list_newf (free);
+	RList *fields = r_list_newf (__bin_field_free);
 	RListIter *iter;
 	RBinJavaField *fm_type;
 	RBinField *field = NULL;
@@ -2831,7 +2849,7 @@ R_API void r_bin_java_set_imports(RBinJavaObj *bin) {
 	RListIter *iter = NULL;
 	RBinJavaCPTypeObj *obj = NULL;
 	r_list_free (bin->imports_list);
-	bin->imports_list = r_list_newf (free);
+	bin->imports_list = r_list_newf (__bin_import_free);
 	r_list_foreach (bin->cp_list, iter, obj) {
 		const char *type = NULL;
 		switch (obj->tag) {
@@ -2847,12 +2865,17 @@ R_API void r_bin_java_set_imports(RBinJavaObj *bin) {
 }
 
 R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf (__bin_import_free);
 	RBinImport *import = NULL;
 	RListIter *iter;
 	r_list_foreach (bin->imports_list, iter, import) {
 		RBinImport *n_import = R_NEW0 (RBinImport);
-		memcpy (n_import, import, sizeof (RBinImport));
+		n_import->name = __bin_name_clone (import->name);
+		n_import->classname = import->classname ? strdup (import->classname) : NULL;
+		n_import->descriptor = import->descriptor ? strdup (import->descriptor) : NULL;
+		n_import->bind = import->bind;
+		n_import->type = import->type;
+		n_import->ordinal = import->ordinal;
 		r_list_append (ret, n_import);
 	}
 	return ret;
