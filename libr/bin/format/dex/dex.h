@@ -123,6 +123,8 @@ typedef struct dex_class_t {
 	struct dex_class_data_item_t *class_data;
 }) RBinDexClass;
 
+R_VEC_TYPE_WITH_FINI (RVecRBinClass, RBinClass, r_bin_class_free);
+
 R_PACKED(
 typedef struct dex_class_data_item_t {
 	ut64 static_fields_size;
@@ -143,9 +145,9 @@ typedef struct r_bin_dex_obj_t {
 	RVecDexMethod methods_vec;
 	struct dex_class_t *classes;
 	RVecRBinSymbol methods_list;
+	RVecRBinImport imports_vec;
+	RVecRBinClass classes_vec;
 	RList *trycatch_list;
-	RList *imports_list;
-	RList *classes_list;
 	RList *lines_list;
 	ut64 code_from;
 	ut64 code_to;

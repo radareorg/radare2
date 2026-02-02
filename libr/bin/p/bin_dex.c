@@ -1369,8 +1369,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-				
-				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
+				// AITODO: this assignment looks bad, methods_list should be named methods_vec, also the assignment below is meh we can probably rewrite this in a more elegant and atopic way
+				RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list);
+				if (_s) {
+					*_s = *sym;
+				}
 				// XXX keep class method vaddr consistent with symbol
 				RBinSymbol *method = r_bin_symbol_clone (sym);
 				if (method) {
@@ -1469,7 +1472,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		goto beach;
 	}
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
-	r_list_append (dex->classes_list, cls);
+	{ RBinClass *_c = RVecRBinClass_emplace_back (&dex->classes_vec); if (_c) *_c = *cls; free (cls); }
 	if (dex->dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls_name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
@@ -1527,9 +1530,6 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 
 		RBinDexClassData *dc = R_NEW0 (RBinDexClassData);
-		if (!dc) {
-			goto beach;
-		}
 
 		bool err = false;
 		size_t skip = 0;
@@ -1600,24 +1600,10 @@ static bool dex_loadcode(RBinFile *bf) {
 	dex->version = r_bin_dex_get_version (dex);
 	dex->code_from = UT64_MAX;
 	dex->code_to = 0;
-	
-	if (false) {
-		return false;
-	}
-	dex->imports_list = r_list_newf ((RListFree)r_bin_import_free);
-	if (!dex->imports_list) {
-		
-		return false;
-	}
+	RVecRBinImport_init (&dex->imports_vec);
+	RVecRBinClass_init (&dex->classes_vec);
 	dex->lines_list = r_list_newf ((RListFree)free);
 	if (!dex->lines_list) {
-		return false;
-	}
-	dex->classes_list = r_list_newf ((RListFree)r_bin_class_free);
-	if (!dex->classes_list) {
-		
-		r_list_free (dex->lines_list);
-		r_list_free (dex->imports_list);
 		return false;
 	}
 
@@ -1704,7 +1690,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				imp->type = "FUNC";
 				imp->bind = "NONE";
 				imp->ordinal = import_count++;
-				r_list_append (dex->imports_list, imp);
+				{ RBinImport *_i = RVecRBinImport_emplace_back (&dex->imports_vec); if (_i) *_i = *imp; }
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
 				sym->name = r_bin_name_clone (imp->name);
@@ -1729,13 +1715,23 @@ static bool dex_loadcode(RBinFile *bf) {
 	return true;
 }
 
-static RList* imports(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *dex = (RBinDexObj*) bf->bo->bin_obj;
-	if (!dex->imports_list) {
+	if (RVecRBinImport_empty (&dex->imports_vec)) {
 		dex_loadcode (bf);
 	}
-	return dex->imports_list;
+	if (!RVecRBinImport_empty (&dex->imports_vec)) {
+		RBinImport *imp;
+		R_VEC_FOREACH (&dex->imports_vec, imp) {
+			RBinImport *_i = RVecRBinImport_emplace_back (&bf->bo->imports_vec);
+			if (_i) {
+				*_i = *imp;
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 static RList *trycatch(RBinFile *bf) {
@@ -1769,10 +1765,21 @@ static bool symbols_vec(RBinFile *bf) {
 static RList *classes(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	if (!bin->classes_list) {
+	if (RVecRBinClass_empty (&bin->classes_vec)) {
 		dex_loadcode (bf);
 	}
-	return bin->classes_list;
+	// Convert vec to list for backward compatibility
+	RList *ret = r_list_newf ((RListFree)r_bin_class_free);
+	if (!ret) {
+		return NULL;
+	}
+	RBinClass *cls;
+	R_VEC_FOREACH (&bin->classes_vec, cls) {
+		RBinClass *cloned = R_NEW0 (RBinClass);
+		*cloned = *cls;
+		r_list_append (ret, cloned);
+	}
+	return ret;
 }
 
 static bool already_entry(RList *entries, ut64 vaddr) {
@@ -2187,9 +2194,9 @@ RBinPlugin r_bin_plugin_dex = {
 	.classes = classes,
 	.sections = sections,
 	.symbols_vec = &symbols_vec,
+	.imports_vec = &imports_vec,
 	.baddr = baddr,
 	.trycatch = trycatch,
-	.imports = imports,
 	.strings = strings,
 	.info = &info,
 	.header = dex_header,
