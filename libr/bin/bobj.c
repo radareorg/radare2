@@ -79,7 +79,7 @@ static void object_delete_items(RBinObject *o) {
 		/* explicit deep cleanup for symbols via fini which calls r_bin_symbol_fini */
 		RVecRBinSymbol_fini (&o->symbols_vec);
 		if (o->symbols) {
-			o->symbols->free = NULL; /* shared pointers, already freed by vec fini */
+			o->symbols->free = free; /* internal data freed by vec fini, just free structs */
 		}
 	}
 	r_list_free (o->symbols);
@@ -305,9 +305,10 @@ fail:
 	if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
 		RVecRBinSymbol_fini (&bo->symbols_vec);
 		if (bo->symbols) {
-			bo->symbols->free = NULL;
+			bo->symbols->free = free;
 		}
 	}
+	r_list_free (bo->symbols);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
