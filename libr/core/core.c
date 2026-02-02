@@ -2476,6 +2476,7 @@ static void cmdusr2(int p) {
 #endif
 
 static void core_visual_init(RCoreVisual *visual) {
+	// AITODO: just memset the whole struct with zeros and set the values that are not zero to its expected value
 	visual->printidx = 0;
 	visual->textedit_mode = true;
 	visual->obs = 0;
@@ -2508,6 +2509,17 @@ static void core_visual_init(RCoreVisual *visual) {
 	visual->firstRun = true;
 	visual->fromVisual = false;
 	memset (visual->menus_Colors, 0, sizeof (visual->menus_Colors));
+
+	// Initialize visual menu state variables
+	visual->level = 0;
+	visual->delta = 0;
+	visual->option = 0;
+	visual->variable_option = 0;
+	visual->printMode = 0;
+	visual->selectPanel = false;
+	visual->coldelta = 0;
+	visual->sortMode = 0;
+	visual->cur_name = NULL;
 }
 
 R_API bool r_core_init(RCore *core) {

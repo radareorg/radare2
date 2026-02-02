@@ -262,6 +262,16 @@ typedef struct r_core_visual_t {
 	int mousemode;
 	bool graphCursor;
 	bool coming_from_vmark;
+
+	// Visual menu state variables (moved from R_TH_LOCAL globals)
+	int level;
+	st64 delta;
+	int option;
+	int variable_option;
+	bool selectPanel;
+	int coldelta;
+	int sortMode;
+	const char *cur_name;
 } RCoreVisual;
 
 typedef struct {

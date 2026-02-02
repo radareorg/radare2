@@ -14,7 +14,7 @@ typedef struct {
 	bool canRight;
 } RCoreVisualViewZigns;
 
-static R_TH_LOCAL const char *cur_name = NULL;
+// cur_name moved to RCoreVisual struct
 
 static char *print_item(void *_core, void *_item, bool selected) {
 	RSignItem *item = _item;
@@ -30,7 +30,8 @@ static char *print_item(void *_core, void *_item, bool selected) {
 		}
 	}
 	if (selected && item->name) {
-		cur_name = strdup (item->name);
+		RCore *core = _core;
+		core->visual.cur_name = strdup (item->name);
 	}
 	return r_str_newf ("%c 0x%08"PFMT64x" bytes=%d/%d %20s\n", selected?'>':' ',
 		item->addr, bytes_mask, bytes_size, item->name);
@@ -97,9 +98,9 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			}
 			break;
 		case 'd':
-			if (cur_name && *cur_name) {
-				r_sign_delete (core->anal, cur_name);
-				R_FREE (cur_name);
+			if (core->visual.cur_name && *core->visual.cur_name) {
+				r_sign_delete (core->anal, core->visual.cur_name);
+				R_FREE (core->visual.cur_name);
 			}
 			break;
 		case 'J':
@@ -153,7 +154,7 @@ R_API int r_core_visual_view_zigns(RCore *core) {
 			r_cons_any_key (core->cons, NULL);
 			break;
 		case 'q':
-			R_FREE (cur_name);
+			R_FREE (core->visual.cur_name);
 			return false;
 		case ':': // TODO: move this into a separate helper function
 			{
