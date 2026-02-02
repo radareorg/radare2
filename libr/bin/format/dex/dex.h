@@ -142,9 +142,9 @@ typedef struct r_bin_dex_obj_t {
 	struct dex_type_t *types;
 	struct dex_proto_t *protos;
 	struct dex_field_t *fields;
-	RVecDexMethod methods_vec;
+	RVecDexMethod dex_methods;
 	struct dex_class_t *classes;
-	RVecRBinSymbol methods_list;
+	RVecRBinSymbol symbols_vec;
 	RVecRBinImport imports_vec;
 	RVecRBinClass classes_vec;
 	RList *trycatch_list;

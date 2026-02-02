@@ -239,8 +239,8 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->cal_strings);
 	free (dex->strings);
 	free (dex->classes);
-	RVecDexMethod_fini (&dex->methods_vec);
-	RVecRBinSymbol_fini (&dex->methods_list);
+	RVecDexMethod_fini (&dex->dex_methods);
+	RVecRBinSymbol_fini (&dex->methods_vec);
 	RVecRBinImport_fini (&dex->imports_vec);
 	RVecRBinClass_fini (&dex->classes_vec);
 	free (dex->types);
@@ -354,14 +354,14 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 	}
 	dexhdr->method_size = methods_size / sizeof (struct dex_method_t);
-	RVecDexMethod_init (&dex->methods_vec);
+	RVecDexMethod_init (&dex->dex_methods);
 	for (i = 0; i < dexhdr->method_size; i++) {
 		ut64 offset = dexhdr->method_offset + i * sizeof (struct dex_method_t);
 		if (offset + 8 > dex->size) {
 			goto fail;
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
-		RBinDexMethod *method = RVecDexMethod_emplace_back (&dex->methods_vec);
+		RBinDexMethod *method = RVecDexMethod_emplace_back (&dex->dex_methods);
 		if (!method) {
 			goto fail;
 		}
