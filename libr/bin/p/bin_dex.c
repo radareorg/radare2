@@ -1330,7 +1330,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 		}
 		if (*flag_name) {
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			RBinSymbol symb = {0};
+			RBinSymbol *sym = &symb;
 			sym->name = r_bin_name_new (flag_name);
 			R_FREE (flag_name);
 			// is_direct is no longer used
@@ -1352,7 +1353,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			sym->ordinal = (*sym_count)++;
 			if (MC > 0) {
 				if (bufsz < MC || bufsz < MC + 16) {
-					R_FREE (sym);
+					r_bin_symbol_fini (sym);
 					R_FREE (signature);
 					continue;
 				}
@@ -1369,10 +1370,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-				RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list);
-				if (_s) {
-					*_s = *sym;
-				}
+				RVecRBinSymbol_push_back (&dex->methods_list, sym);
+				sym = RVecRBinSymbol_last (&dex->methods_list);
 				// XXX keep class method vaddr consistent with symbol
 				RBinSymbol *method = r_bin_symbol_clone (sym);
 				if (method) {
@@ -1407,7 +1406,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 #endif
 			} else {
 				sym->size = 0;
-				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
+				RVecRBinSymbol_push_back (&dex->methods_list, sym);
+				sym = RVecRBinSymbol_last (&dex->methods_list);
 				sym->lang = R_BIN_LANG_JAVA;
 				RBinSymbol *method = r_bin_symbol_clone (sym);
 				if (method) {
@@ -1749,11 +1749,11 @@ static bool symbols_vec(RBinFile *bf) {
 	if (!RVecRBinSymbol_empty (&bin->methods_list)) {
 		RBinSymbol *sym;
 		R_VEC_FOREACH (&bin->methods_list, sym) {
-			RBinSymbol *_s = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
-			if (_s) {
-				*_s = *sym;
-			}
+			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
 		}
+		// Transfer ownership: reset methods_list without calling fini
+		free (bin->methods_list._start);
+		RVecRBinSymbol_init (&bin->methods_list);
 		return true;
 	}
 	return false;
@@ -1776,6 +1776,9 @@ static RList *classes(RBinFile *bf) {
 		*cloned = *cls;
 		r_list_append (ret, cloned);
 	}
+	// Transfer ownership: reset classes_vec without calling fini
+	free (bin->classes_vec._start);
+	RVecRBinClass_init (&bin->classes_vec);
 	return ret;
 }
 
