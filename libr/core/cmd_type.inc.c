@@ -597,13 +597,12 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 			free (fmt);
 		}
 		pj_end (pj);
-		pj_end (pj);
 	}
 	pj_end (pj);
 
 	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
-	ls_free (l);
+	ls_free (all_items);
 	return 1;
 }
 
@@ -1286,6 +1285,9 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		case 0:
 			print_keys (TDB, core, stdifunion, printkey_cb, false);
+			break;
+		default:
+			r_core_return_invalid_command (core, "tu", input[1]);
 			break;
 		}
 		break;
