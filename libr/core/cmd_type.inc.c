@@ -765,121 +765,75 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 	free (res);
 }
 
-static void printFunctionType(RCore *core, const char *input) {
-	Sdb *TDB = core->anal->sdb_types;
-	PJ *pj = r_core_pj_new (core);
-	pj_o (pj);
-	r_strf_buffer (64);
-	char *res = sdb_get (TDB, r_strf ("func.%s.args", input), NULL);
-	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
-	pj_ks (pj, "name", name);
-	const char *ret_type = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
-	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	pj_k (pj, "args");
-	pj_a (pj);
-	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
-		if (!type) {
-			continue;
-		}
-		char *name = strchr (type, ',');
-		if (name) {
-			*name++ = 0;
-		}
-		pj_o (pj);
-		pj_ks (pj, "type", type);
-		if (!strcmp (type, "...")) {
-			// variadic arguments don't have names
-		} else if (name) {
-			pj_ks (pj, "name", name);
-		} else {
-			pj_ks (pj, "name", "(null)");
-		}
-		pj_end (pj);
-		free (type);
-	}
-	pj_end (pj);
-	pj_end (pj);
-	char *s = pj_drain (pj);
-	if (s) {
-		r_cons_printf (core->cons, "%s", s);
-		free (s);
-	}
-	free (res);
-}
-
 typedef struct {
 	RCore *core;
 	PJ *pj;
 } TypePrintCtx;
 
-static void printFunctionTypeJson(PJ *pj, RCore *core, const char *input) {
-	Sdb *TDB = core->anal->sdb_types;
-	pj_o (pj);
-	r_strf_buffer (64);
-	char *res = sdb_get (TDB, r_strf ("func.%s.args", input), NULL);
+static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
+	Sdb *tdb = ctx->core->anal->sdb_types;
+	PJ *pj = ctx->pj;
+	r_strf_buffer (256);
 	const char *name = r_str_trim_head_ro (input);
-	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
+	int i, args = sdb_num_get (tdb, r_strf ("func.%s.args", name), 0);
+	pj_o (pj);
 	pj_ks (pj, "name", name);
-	const char *ret_type = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
-	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	pj_k (pj, "args");
-	pj_a (pj);
+	pj_ks (pj, "ret", r_str_get_fail (sdb_const_get (tdb, r_strf ("func.%s.ret", name), 0), "void"));
+	pj_ka (pj, "args");
 	for (i = 0; i < args; i++) {
-		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
-		if (!type) {
-			continue;
+		char *type = sdb_get (tdb, r_strf ("func.%s.arg.%d", name, i), 0);
+		if (type) {
+			char *argname = strchr (type, ',');
+			if (argname) {
+				*argname++ = 0;
+			}
+			pj_o (pj);
+			pj_ks (pj, "type", type);
+			if (strcmp (type, "...")) {
+				pj_ks (pj, "name", argname? argname: "(null)");
+			}
+			pj_end (pj);
+			free (type);
 		}
-		char *argname = strchr (type, ',');
-		if (argname) {
-			*argname++ = 0;
-		}
-		pj_o (pj);
-		pj_ks (pj, "type", type);
-		if (!strcmp (type, "...")) {
-			// variadic arguments don't have names
-		} else if (argname) {
-			pj_ks (pj, "name", argname);
-		} else {
-			pj_ks (pj, "name", "(null)");
-		}
-		pj_end (pj);
-		free (type);
 	}
 	pj_end (pj);
 	pj_end (pj);
-	free (res);
+}
+
+static void printFunctionType(RCore *core, const char *input) {
+	PJ *pj = r_core_pj_new (core);
+	TypePrintCtx ctx = { .core = core, .pj = pj };
+	printFunctionTypeJson (&ctx, input);
+	char *s = pj_drain (pj);
+	if (s) {
+		r_cons_printf (core->cons, "%s", s);
+		free (s);
+	}
 }
 
 static bool printfunc_json_cb(void *user, const char *k, const char *v) {
-	TypePrintCtx *ctx = (TypePrintCtx *)user;
-	printFunctionTypeJson (ctx->pj, ctx->core, k);
+	printFunctionTypeJson ((TypePrintCtx *)user, k);
 	return true;
 }
 
 static bool stdiffunc(void *p, const char *k, const char *v) {
-	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
-	return !strncmp (v, "func", strlen ("func") + 1);
+	return !strcmp (v, "func");
 }
 
 static bool stdifunion(void *p, const char *k, const char *v) {
-	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
-	return !strncmp (v, "union", strlen ("union") + 1);
+	return !strcmp (v, "union");
 }
 
 static bool sdbdeletelink(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
-	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
-	if (!strncmp (k, "link.", strlen ("link."))) {
+	if (r_str_startswith (k, "link.")) {
 		r_type_del (core->anal->sdb_types, k);
 	}
 	return true;
 }
 
 static bool stdiflink(void *p, const char *k, const char *v) {
-	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
-	return !strncmp (k, "link.", strlen ("link."));
+	return r_str_startswith (k, "link.");
 }
 
 static bool print_link_cb(void *p, const char *k, const char *v) {
@@ -888,7 +842,6 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
-// TODO PJ void*p shouldbe a pointer to a new struct that takes the PJ instance and have also access to RCore+, etc
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	r_cons_printf (core->cons, "{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
@@ -913,7 +866,6 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
-//TODO PJ
 static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
@@ -928,7 +880,7 @@ static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 }
 
 static bool stdiftype(void *p, const char *k, const char *v) {
-	return !strncmp (v, "type", strlen ("type") + 1);
+	return !strcmp (v, "type");
 }
 
 static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
