@@ -282,6 +282,69 @@ static void cmd_tcc(RCore *core, const char *input) {
 	}
 }
 
+static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
+	const bool is_union = !strcmp (type_name, "union");
+	// Get struct members list
+	char *members_query = r_str_newf ("%s.%s", type_name, struct_name);
+	char *members = sdb_get (core->anal->sdb_types, members_query, 0);
+	free (members_query);
+	if (!members) {
+		return;
+	}
+
+	pj_k (pj, "fields");
+	pj_a (pj);
+
+	ut32 current_offset = 0;
+	int i, nargs = r_str_split (members, ',');
+	for (i = 0; i < nargs; i++) {
+		const char *member_name = r_str_word_get0 (members, i);
+		if (!member_name || R_STR_ISEMPTY (member_name)) {
+			continue;
+		}
+		char *member_query = r_str_newf ("%s.%s.%s", type_name, struct_name, member_name);
+		char *member_details = sdb_get (core->anal->sdb_types, member_query, 0);
+		free (member_query);
+		if (!member_details) {
+			continue;
+		}
+
+		int details_len = r_str_split (member_details, ',');
+		if (details_len >= 3) {
+			const char *type = r_str_word_get0 (member_details, 0);
+			const char *arr_size_str = r_str_word_get0 (member_details, 2);
+			ut32 arr_size = r_num_get (NULL, arr_size_str);
+			arr_size = arr_size ? arr_size : 1;
+			ut32 type_size;
+			if (strchr (type, '*')) {
+				type_size = core->anal->config->bits / 8;
+			} else {
+				ut64 type_bits = r_type_get_bitsize (core->anal->sdb_types, type);
+				type_size = type_bits / 8;
+				if (type_size == 0) {
+					type_size = 1;
+				}
+			}
+			ut32 size = type_size * arr_size;
+			pj_o (pj);
+			pj_ks (pj, "name", member_name);
+			pj_ks (pj, "type", type);
+			pj_ki (pj, "offset", current_offset);
+			pj_ki (pj, "size", size);
+			if (!is_union) {
+				current_offset += size;
+			}
+			if (arr_size > 1) {
+				pj_ki (pj, "array_size", arr_size);
+			}
+			pj_end (pj);
+		}
+		free (member_details);
+	}
+	pj_end (pj);
+	free (members);
+}
+
 static void showFormat(RCore *core, const char *name, int mode) {
 	const char *isenum = sdb_const_get (core->anal->sdb_types, name, 0);
 	if (isenum && !strcmp (isenum, "enum")) {
@@ -292,12 +355,15 @@ static void showFormat(RCore *core, const char *name, int mode) {
 			r_str_trim (fmt);
 			if (mode == 'j') {
 				PJ *pj = r_core_pj_new (core);
-				if (!pj) {
-					return;
-				}
 				pj_o (pj);
 				pj_ks (pj, "name", name);
 				pj_ks (pj, "format", fmt);
+
+				const char *typeinfo = sdb_const_get (core->anal->sdb_types, name, 0);
+				if (typeinfo && (!strcmp (typeinfo, "struct") || !strcmp (typeinfo, "union"))) {
+					add_type_fields_to_json (core, pj, name, typeinfo);
+				}
+
 				pj_end (pj);
 				r_cons_printf (core->cons, "%s", pj_string (pj));
 				pj_free (pj);
@@ -1325,13 +1391,15 @@ static int cmd_type(void *data, const char *input) {
 			print_struct_union_in_c_format (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case 'j': // "tsj"
-			// TODO: current output is a bit poor, will be good to improve
 			if (input[2]) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
 				r_cons_newline (core->cons);
 			} else {
 				print_struct_union_list_json (core, TDB, stdifstruct);
 			}
+			break;
+		default:
+			r_core_return_invalid_command (core, "ts", input[1]);
 			break;
 		} // end of switch (input[1])
 		break;
@@ -1488,7 +1556,7 @@ static int cmd_type(void *data, const char *input) {
 		  {
 			  const char *token = r_str_trim_head_ro (input + 1);
 			  const char *typdef = sdb_const_get (core->anal->sdb_types, token, 0);
-			  // Tresolve typedef if any
+			  // Resolve typedef if any
 			  if (typdef && !strcmp (typdef, "typedef")) {
 				  r_strf_var (a, 128, "typedef.%s", token);
 				  const char *tokendef = sdb_const_get (core->anal->sdb_types, a, 0);
