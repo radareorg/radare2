@@ -240,7 +240,7 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->strings);
 	free (dex->classes);
 	RVecDexMethod_fini (&dex->dex_methods);
-	RVecRBinSymbol_fini (&dex->methods_vec);
+	RVecRBinSymbol_fini (&dex->symbols_vec);
 	RVecRBinImport_fini (&dex->imports_vec);
 	RVecRBinClass_fini (&dex->classes_vec);
 	free (dex->types);
