@@ -768,9 +768,6 @@ static void printFunctionTypeC(RCore *core, const char *input) {
 static void printFunctionType(RCore *core, const char *input) {
 	Sdb *TDB = core->anal->sdb_types;
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return;
-	}
 	pj_o (pj);
 	r_strf_buffer (64);
 	char *res = sdb_get (TDB, r_strf ("func.%s.args", input), NULL);
@@ -812,21 +809,25 @@ static void printFunctionType(RCore *core, const char *input) {
 	free (res);
 }
 
+// AITODO: all those print funtctions must take a struct reference to pass RCore, PJ for json strings
 static bool printfunc_json_cb(void *user, const char *k, const char *v) {
 	printFunctionType ((RCore *)user, k);
 	return true;
 }
 
 static bool stdiffunc(void *p, const char *k, const char *v) {
+	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
 	return !strncmp (v, "func", strlen ("func") + 1);
 }
 
 static bool stdifunion(void *p, const char *k, const char *v) {
+	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
 	return !strncmp (v, "union", strlen ("union") + 1);
 }
 
 static bool sdbdeletelink(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
+	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
 	if (!strncmp (k, "link.", strlen ("link."))) {
 		r_type_del (core->anal->sdb_types, k);
 	}
@@ -834,6 +835,7 @@ static bool sdbdeletelink(void *p, const char *k, const char *v) {
 }
 
 static bool stdiflink(void *p, const char *k, const char *v) {
+	// WTF strncmp for this shit? isnt the same as strcmp? what about r_str_starstwith instead?
 	return !strncmp (k, "link.", strlen ("link."));
 }
 
@@ -843,7 +845,7 @@ static bool print_link_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
-//TODO PJ
+// TODO PJ void*p shouldbe a pointer to a new struct that takes the PJ instance and have also access to RCore+, etc
 static bool print_link_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	r_cons_printf (core->cons, "{\"0x%s\":\"%s\"}", k + strlen ("link."), v);
@@ -922,14 +924,17 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 }
 
 static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
-	Sdb *TDB = core->anal->sdb_types;
-	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	Sdb *tdb = core->anal->sdb_types;
+	SdbList *l = sdb_foreach_list_filter (tdb, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
 
+	PJ *pj = NULL;
 	// AITODO: use PJ
 	if (json) {
-		r_cons_print (core->cons, "{\"types\":[");
+		pj = r_core_pj_new (core);
+		pj_o (pj);
+		pj_ka (pj, "types");
 	}
 	bool first = true;
 	ls_foreach (l, it, kv) {
@@ -949,6 +954,9 @@ static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallbac
 		}
 	}
 	if (json) {
+		pj_end (pj);
+		pj_end (pj);
+		char *s = pj_drain (pj);
 		r_cons_println (core->cons, "]}\n");
 	}
 	ls_free (l);
