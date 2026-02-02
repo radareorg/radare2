@@ -282,9 +282,10 @@ static void cmd_tcc(RCore *core, const char *input) {
 	}
 }
 
-static void add_struct_fields_to_json(RCore *core, PJ *pj, const char *struct_name) {
+static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name, const char *type_name) {
+	const bool is_union = !strcmp (type_name, "union");
 	// Get struct members list
-	char *members_query = r_str_newf ("struct.%s", struct_name);
+	char *members_query = r_str_newf ("%s.%s", type_name, struct_name);
 	char *members = sdb_get (core->anal->sdb_types, members_query, 0);
 	free (members_query);
 	if (!members) {
@@ -301,7 +302,7 @@ static void add_struct_fields_to_json(RCore *core, PJ *pj, const char *struct_na
 		if (!member_name || R_STR_ISEMPTY (member_name)) {
 			continue;
 		}
-		char *member_query = r_str_newf ("struct.%s.%s", struct_name, member_name);
+		char *member_query = r_str_newf ("%s.%s.%s", type_name, struct_name, member_name);
 		char *member_details = sdb_get (core->anal->sdb_types, member_query, 0);
 		free (member_query);
 		if (!member_details) {
@@ -325,13 +326,14 @@ static void add_struct_fields_to_json(RCore *core, PJ *pj, const char *struct_na
 				}
 			}
 			ut32 size = type_size * arr_size;
-
 			pj_o (pj);
 			pj_ks (pj, "name", member_name);
 			pj_ks (pj, "type", type);
 			pj_ki (pj, "offset", current_offset);
 			pj_ki (pj, "size", size);
-			current_offset += size;
+			if (!is_union) {
+				current_offset += size;
+			}
 			if (arr_size > 1) {
 				pj_ki (pj, "array_size", arr_size);
 			}
@@ -357,10 +359,9 @@ static void showFormat(RCore *core, const char *name, int mode) {
 				pj_ks (pj, "name", name);
 				pj_ks (pj, "format", fmt);
 
-				// Add fields array if this is a struct type
 				const char *typeinfo = sdb_const_get (core->anal->sdb_types, name, 0);
-				if (typeinfo && strcmp (typeinfo, "struct") == 0) {
-					add_struct_fields_to_json (core, pj, name);
+				if (typeinfo && (!strcmp (typeinfo, "struct") || !strcmp (typeinfo, "union"))) {
+					add_type_fields_to_json (core, pj, name, typeinfo);
 				}
 
 				pj_end (pj);

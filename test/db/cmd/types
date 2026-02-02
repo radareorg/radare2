@@ -2039,7 +2039,12 @@ RUN
 
 NAME=types json fields
 FILE=bins/mach0/mac-ls
-CMDS=tsj NSString
+ARGS=-b64
+CMDS=<<EOF
+tsj NSString~{}
+-b32
+?e --
+tsj NSString~{}
 EOF
 EXPECT=<<EOF
 {
@@ -2068,6 +2073,37 @@ EXPECT=<<EOF
       "name": "len",
       "type": "int",
       "offset": 24,
+      "size": 4
+    }
+  ]
+}
+--
+{
+  "name": "NSString",
+  "format": "pxzd p0 p1 str len",
+  "fields": [
+    {
+      "name": "p0",
+      "type": "void *",
+      "offset": 0,
+      "size": 4
+    },
+    {
+      "name": "p1",
+      "type": "size_t",
+      "offset": 4,
+      "size": 8
+    },
+    {
+      "name": "str",
+      "type": "char *",
+      "offset": 12,
+      "size": 4
+    },
+    {
+      "name": "len",
+      "type": "int",
+      "offset": 16,
       "size": 4
     }
   ]
