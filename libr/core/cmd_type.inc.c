@@ -548,17 +548,14 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
-// AITODO: there should be no globals anywhere! this pointer must be passed by argument wherever is needed
-static Sdb *TDB_ = NULL; // HACK
-
 static bool stdifstruct(void *user, const char *k, const char *v) {
-	R_RETURN_VAL_IF_FAIL (TDB_, false);
+	Sdb *TDB = (Sdb *)user;
 	if (!strcmp (v, "struct") && !r_str_startswith (k, "typedef")) {
 		return true;
 	}
 	if (!strcmp (v, "typedef")) {
 		char *typedef_key = r_str_newf ("typedef.%s", k);
-		const char *type = sdb_const_get (TDB_, typedef_key, NULL);
+		const char *type = sdb_const_get (TDB, typedef_key, NULL);
 		free (typedef_key);
 		if (type && r_str_startswith (type, "struct")) {
 			return true;
@@ -924,11 +921,13 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
-static void print_keys(Sdb *TDB, RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
+static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallback printfn_cb, bool json) {
+	Sdb *TDB = core->anal->sdb_types;
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
 
+	// AITODO: use PJ
 	if (json) {
 		r_cons_print (core->cons, "{\"types\":[");
 	}
@@ -959,13 +958,13 @@ static void typesList(RCore *core, int mode) {
 	switch (mode) {
 	case 1:
 	case '*':
-		print_keys (core->anal->sdb_types, core, NULL, print_typelist_r_cb, false);
+		print_keys (core, NULL, print_typelist_r_cb, false);
 		break;
 	case 'j':
-		print_keys (core->anal->sdb_types, core, stdiftype, print_typelist_json_cb, true);
+		print_keys (core, stdiftype, print_typelist_json_cb, true);
 		break;
 	default:
-		print_keys (core->anal->sdb_types, core, stdiftype, printkey_cb, false);
+		print_keys (core, stdiftype, printkey_cb, false);
 		break;
 	}
 }
@@ -1244,7 +1243,6 @@ static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;
-	TDB_ = TDB; // HACK AITODO remove this hack
 
 	switch (input[0]) {
 	case 'n': // "tn"
@@ -1287,7 +1285,7 @@ static int cmd_type(void *data, const char *input) {
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
 		case 0:
-			print_keys (TDB, core, stdifunion, printkey_cb, false);
+			print_keys (core, stdifunion, printkey_cb, false);
 			break;
 		default:
 			r_core_return_invalid_command (core, "tu", input[1]);
@@ -1369,7 +1367,7 @@ static int cmd_type(void *data, const char *input) {
 	case 's': { // "ts"
 		switch (input[1]) {
 		case 0: // "ts"
-			print_keys (TDB, core, stdifstruct, printkey_cb, false);
+			print_keys (core, stdifstruct, printkey_cb, false);
 			break;
 		case '*': // "ts*"
 			if (input[2] == ' ') {
@@ -1556,8 +1554,10 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case '?':
-		default:
 			r_core_cmd_help (core, help_msg_te);
+			break;
+		default:
+			r_core_return_invalid_command (core, "te", *input);
 			break;
 		} // end of switch (input[1])
 		free (name);
@@ -1878,23 +1878,23 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case '*':
-			print_keys (TDB, core, stdiflink, print_link_r_cb, false);
+			print_keys (core, stdiflink, print_link_r_cb, false);
 			break;
 		case 'l':
 			switch (input[2]) {
 			case 'j':
-				print_keys (TDB, core, stdiflink, print_link_readable_json_cb, true);
+				print_keys (core, stdiflink, print_link_readable_json_cb, true);
 				break;
 			default:
-				print_keys (TDB, core, stdiflink, print_link_readable_cb, false);
+				print_keys (core, stdiflink, print_link_readable_cb, false);
 				break;
 			}
 			break;
 		case 'j':
-			print_keys (TDB, core, stdiflink, print_link_json_cb, true);
+			print_keys (core, stdiflink, print_link_json_cb, true);
 			break;
 		case '\0':
-			print_keys (TDB, core, stdiflink, print_link_cb, false);
+			print_keys (core, stdiflink, print_link_cb, false);
 			break;
 		}
 		break;
@@ -1993,7 +1993,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'f': // "tf"
 		switch (input[1]) {
 		case 0: // "tf"
-			print_keys (TDB, core, stdiffunc, printkey_cb, false);
+			print_keys (core, stdiffunc, printkey_cb, false);
 			break;
 		case 'c': // "tfc"
 			if (input[2] == ' ') {
@@ -2017,7 +2017,7 @@ static int cmd_type(void *data, const char *input) {
 				printFunctionType (core, input + 2);
 				r_cons_newline (core->cons);
 			} else {
-				print_keys (TDB, core, stdiffunc, printfunc_json_cb, true);
+				print_keys (core, stdiffunc, printfunc_json_cb, true);
 			}
 			break;
 		case ' ': {
