@@ -123,7 +123,7 @@ typedef struct dex_class_t {
 	struct dex_class_data_item_t *class_data;
 }) RBinDexClass;
 
-R_VEC_TYPE_WITH_FINI (RVecRBinClass, RBinClass, r_bin_class_free);
+R_VEC_TYPE_WITH_FINI (RVecRBinClass, RBinClass, r_bin_class_fini);
 
 R_PACKED(
 typedef struct dex_class_data_item_t {
