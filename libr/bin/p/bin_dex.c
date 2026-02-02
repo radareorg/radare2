@@ -1098,6 +1098,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 // TODO: refactor this method
 static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
+	// TODO: use RStrBuf to build the string instead of calling cb_printf all the time
 	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->bo->bin_obj;
 	bool bin_dbginfo = bf->rbin->want_dbginfo;
