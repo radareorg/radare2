@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
+/* radare - LGPL - Copyright 2009-2026 - pancake, oddcoder, Anton Kochkov, Jody Frankowski */
 
 #if R_INCLUDE_BEGIN
 
@@ -545,6 +545,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 	}
 }
 
+// AITODO: there should be no globals anywhere! this pointer must be passed by argument wherever is needed
 static Sdb *TDB_ = NULL; // HACK
 
 static bool stdifstruct(void *user, const char *k, const char *v) {
@@ -577,18 +578,28 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	SdbListIter *it;
 	SdbKv *kv;
-
-	pj_a (pj); // [
+	pj_a (pj);
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
-		if (!k || !*k) {
+		if (R_STR_ISEMPTY (k)) {
 			continue;
 		}
-		pj_o (pj); // {
-		pj_ks (pj, "type", k); // key value pair of string and string
-		pj_end (pj); // }
+		pj_o (pj);
+		pj_ks (pj, "name", k);
+		char *fmt = r_type_format (TDB, k);
+		if (fmt) {
+			r_str_trim (fmt);
+			pj_ks (pj, "format", fmt);
+			const char *typeinfo = sdb_const_get (TDB, k, 0);
+			if (typeinfo && (!strcmp (typeinfo, "struct") || !strcmp (typeinfo, "union"))) {
+				add_type_fields_to_json (core, pj, k, typeinfo);
+			}
+			free (fmt);
+		}
+		pj_end (pj);
+		pj_end (pj);
 	}
-	pj_end (pj); // ]
+	pj_end (pj);
 
 	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
@@ -1231,7 +1242,7 @@ static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;
-	TDB_ = TDB; // HACK
+	TDB_ = TDB; // HACK AITODO remove this hack
 
 	switch (input[0]) {
 	case 'n': // "tn"
@@ -1352,8 +1363,8 @@ static int cmd_type(void *data, const char *input) {
 		break;
 	case 's': { // "ts"
 		switch (input[1]) {
-		case '?': // "ts?"
-			r_core_cmd_help (core, help_msg_ts);
+		case 0: // "ts"
+			print_keys (TDB, core, stdifstruct, printkey_cb, false);
 			break;
 		case '*': // "ts*"
 			if (input[2] == ' ') {
@@ -1381,9 +1392,6 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmd_help (core, help_msg_ts);
 			}
 			break;
-		case 0:
-			print_keys (TDB, core, stdifstruct, printkey_cb, false);
-			break;
 		case 'c': // "tsc"
 			print_struct_union_in_c_format (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), true);
 			break;
@@ -1397,6 +1405,9 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				print_struct_union_list_json (core, TDB, stdifstruct);
 			}
+			break;
+		case '?': // "ts?"
+			r_core_cmd_help (core, help_msg_ts);
 			break;
 		default:
 			r_core_return_invalid_command (core, "ts", input[1]);
