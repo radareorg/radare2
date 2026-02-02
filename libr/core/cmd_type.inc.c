@@ -809,9 +809,52 @@ static void printFunctionType(RCore *core, const char *input) {
 	free (res);
 }
 
-// AITODO: all those print funtctions must take a struct reference to pass RCore, PJ for json strings
+typedef struct {
+	RCore *core;
+	PJ *pj;
+} TypePrintCtx;
+
+static void printFunctionTypeJson(PJ *pj, RCore *core, const char *input) {
+	Sdb *TDB = core->anal->sdb_types;
+	pj_o (pj);
+	r_strf_buffer (64);
+	char *res = sdb_get (TDB, r_strf ("func.%s.args", input), NULL);
+	const char *name = r_str_trim_head_ro (input);
+	int i, args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
+	pj_ks (pj, "name", name);
+	const char *ret_type = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
+	pj_k (pj, "args");
+	pj_a (pj);
+	for (i = 0; i < args; i++) {
+		char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+		if (!type) {
+			continue;
+		}
+		char *argname = strchr (type, ',');
+		if (argname) {
+			*argname++ = 0;
+		}
+		pj_o (pj);
+		pj_ks (pj, "type", type);
+		if (!strcmp (type, "...")) {
+			// variadic arguments don't have names
+		} else if (argname) {
+			pj_ks (pj, "name", argname);
+		} else {
+			pj_ks (pj, "name", "(null)");
+		}
+		pj_end (pj);
+		free (type);
+	}
+	pj_end (pj);
+	pj_end (pj);
+	free (res);
+}
+
 static bool printfunc_json_cb(void *user, const char *k, const char *v) {
-	printFunctionType ((RCore *)user, k);
+	TypePrintCtx *ctx = (TypePrintCtx *)user;
+	printFunctionTypeJson (ctx->pj, ctx->core, k);
 	return true;
 }
 
@@ -896,11 +939,12 @@ static bool print_typelist_r_cb(void *p, const char *k, const char *v) {
 
 static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 	R_RETURN_VAL_IF_FAIL (p && k, false);
-	RCore *core = (RCore *)p;
+	TypePrintCtx *ctx = (TypePrintCtx *)p;
+	RCore *core = ctx->core;
+	PJ *pj = ctx->pj;
 	if (!v) {
 		v = "";
 	}
-	PJ *pj = r_core_pj_new (core);
 	pj_o (pj);
 	Sdb *sdb = core->anal->sdb_types;
 	char *sizecmd = r_str_newf ("type.%s.size", k);
@@ -915,8 +959,6 @@ static bool print_typelist_json_cb(void *p, const char *k, const char *v) {
 		free (format_s);
 	}
 	pj_end (pj);
-	r_cons_printf (core->cons, "%s", pj_string (pj));
-	pj_free (pj);
 	free (size_s);
 	free (sizecmd);
 	free (formatcmd);
@@ -930,13 +972,13 @@ static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallbac
 	SdbKv *kv;
 
 	PJ *pj = NULL;
-	// AITODO: use PJ
+	TypePrintCtx ctx = { .core = core, .pj = NULL };
 	if (json) {
 		pj = r_core_pj_new (core);
 		pj_o (pj);
 		pj_ka (pj, "types");
+		ctx.pj = pj;
 	}
-	bool first = true;
 	ls_foreach (l, it, kv) {
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
@@ -945,19 +987,18 @@ static void print_keys(RCore *core, SdbForeachCallback filter, SdbForeachCallbac
 		}
 		if (v) {
 			if (json) {
-				if (!first) {
-					r_cons_print (core->cons, ",");
-				}
-				first = false;
+				printfn_cb (&ctx, k, v);
+			} else {
+				printfn_cb (core, k, v);
 			}
-			printfn_cb (core, k, v);
 		}
 	}
-	if (json) {
+	if (pj) {
 		pj_end (pj);
 		pj_end (pj);
 		char *s = pj_drain (pj);
-		r_cons_println (core->cons, "]}\n");
+		r_cons_println (core->cons, s);
+		free (s);
 	}
 	ls_free (l);
 }
