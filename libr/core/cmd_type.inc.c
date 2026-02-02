@@ -2,6 +2,8 @@
 
 #if R_INCLUDE_BEGIN
 
+// clang-format off
+
 static RCoreHelpMessage help_msg_t = {
 	"Usage: t", "", "Parse, manage, and print C types",
 	"t", "", "list all loaded types",
@@ -172,6 +174,8 @@ static RCoreHelpMessage help_msg_tu = {
 	NULL
 };
 
+// clang-format on
+
 static bool cc_cb(void *p, const char *k, const char *v) {
 	if (!strcmp (v, "cc")) {
 		RList *list = (RList*)p;
@@ -274,7 +278,7 @@ static void cmd_tcc(RCore *core, const char *input) {
 			const char *ccname = r_str_trim_head_ro (input + 1);
 			char *cc = r_anal_cc_get (core->anal, ccname);
 			if (cc) {
-				r_cons_printf (core->cons, "%s\n", cc);
+				r_cons_println (core->cons, cc);
 				free (cc);
 			}
 		}
@@ -308,7 +312,6 @@ static void add_type_fields_to_json(RCore *core, PJ *pj, const char *struct_name
 		if (!member_details) {
 			continue;
 		}
-
 		int details_len = r_str_split (member_details, ',');
 		if (details_len >= 3) {
 			const char *type = r_str_word_get0 (member_details, 0);
