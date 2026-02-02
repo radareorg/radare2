@@ -59,7 +59,6 @@ prefix\bin\radare2.exe
 
 Using the `r2pm` tool you can browse and install many plugins and tools that use radare2.
 
-* [esilsolve](https://github.com/radareorg/esilsolve): The symbolic execution plugin, based on esil and z3
 * [iaito](https://github.com/radareorg/iaito): The official Qt graphical interface
 * [keystone](https://github.com/radareorg/radare2-extras/tree/master/keystone) Assembler instructions using the Keystone library
 * [decai](https://github.com/radareorg/r2ai) Decompiler based on AI
@@ -74,7 +73,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2poke](https://github.com/radareorg/radare2-extras/tree/master/r2poke) Integration with GNU/Poke for extended binary parsing capabilities
 * [goresym](https://github.com/hanemile/radare2-GoReSym): Import GoReSym symbol as flags
 * [r2yara](https://github.com/radareorg/r2yara) Run Yara from r2 or use r2 primitives from Yara
-* [radius2](https://github.com/nowsecure/radius2): A fast symbolic execution engine based on boolector and esil
+* [radius2](https://github.com/radareorg/radius2): A fast symbolic execution engine based on boolector and esil
 * [r2sarif](https://github.com/radareorg/r2sarif) import/extend/export SARIF documents
 
 ## Usage
