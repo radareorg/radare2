@@ -5,6 +5,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 #include <r_bin.h>
+#include <r_vec.h>
 
 #define R_BIN_DEX_MAXSTR 256
 #define DEX_CLASS_SIZE (32)
@@ -107,6 +108,8 @@ typedef struct dex_method_t {
 	ut32 name_id;
 }) RBinDexMethod;
 
+R_VEC_TYPE (RVecDexMethod, RBinDexMethod);
+
 R_PACKED(
 typedef struct dex_class_t {
 	ut32 class_id; // index into typeids
@@ -137,9 +140,9 @@ typedef struct r_bin_dex_obj_t {
 	struct dex_type_t *types;
 	struct dex_proto_t *protos;
 	struct dex_field_t *fields;
-	struct dex_method_t *methods;
+	RVecDexMethod methods_vec;
 	struct dex_class_t *classes;
-	RList *methods_list;
+	RVecRBinSymbol methods_list;
 	RList *trycatch_list;
 	RList *imports_list;
 	RList *classes_list;

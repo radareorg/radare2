@@ -297,7 +297,11 @@ static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
-	return dex_get_proto (bin, bin->methods[method_idx].proto_id);
+	RBinDexMethod *method = RVecDexMethod_at (&bin->methods_vec, method_idx);
+	if (!method) {
+		return NULL;
+	}
+	return dex_get_proto (bin, method->proto_id);
 }
 
 static ut32 read32(RBuffer* b, ut64 addr) {
@@ -313,7 +317,6 @@ static ut16 read16(RBuffer* b, ut64 addr) {
 }
 
 static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
-	ut32 proto_id, params_off, list_size;
 	ut16 type_idx;
 	size_t i;
 
@@ -324,18 +327,22 @@ static RList *dex_method_signature2(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		goto out_error;
 	}
-	proto_id = bin->methods[method_idx].proto_id;
+	RBinDexMethod *method = RVecDexMethod_at (&bin->methods_vec, method_idx);
+	if (!method) {
+		goto out_error;
+	}
+	ut32 proto_id = method->proto_id;
 	if (proto_id >= bin->header.prototypes_size) {
 		goto out_error;
 	}
-	params_off = bin->protos[proto_id].parameters_off;
+	ut32 params_off = bin->protos[proto_id].parameters_off;
 	if (params_off  >= bin->size) {
 		goto out_error;
 	}
 	if (!params_off) {
 		return params;
 	}
-	list_size = read32 (bin->b, params_off);
+	ut32 list_size = read32 (bin->b, params_off);
 	for (i = 0; i < list_size; i++) {
 		ut64 of = params_off + 4 + (i * 2);
 		if (of >= bin->size || of < params_off) {
@@ -847,11 +854,15 @@ static const char *dex_method_name(RBinDexObj *bin, int idx) {
 	if (idx < 0 || idx >= bin->header.method_size) {
 		return NULL;
 	}
-	ut16 cid = bin->methods[idx].class_id;
+	RBinDexMethod *method = RVecDexMethod_at (&bin->methods_vec, idx);
+	if (!method) {
+		return NULL;
+	}
+	ut16 cid = method->class_id;
 	if (cid >= bin->header.strings_size) {
 		return NULL;
 	}
-	int tid = bin->methods[idx].name_id;
+	int tid = method->name_id;
 	if (tid < 0 || tid >= bin->header.strings_size) {
 		return NULL;
 	}
@@ -941,7 +952,11 @@ static char *dex_method_fullname(RBinDexObj *dex, int method_idx) {
 	if (method_idx < 0 || method_idx >= dex->header.method_size) {
 		return NULL;
 	}
-	ut16 cid = dex->methods[method_idx].class_id;
+	RBinDexMethod *method = RVecDexMethod_at (&dex->methods_vec, method_idx);
+	if (!method) {
+		return NULL;
+	}
+	ut16 cid = method->class_id;
 	if (cid >= dex->header.types_size) {
 		return NULL;
 	}
@@ -1051,11 +1066,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		const char *ftype = is_sfield ? "sfield": "ifield";
 		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
 		sym->name = r_bin_name_new (s);
-		if (is_sfield) {
-			sym->type = "STATIC";
-		} else {
-			sym->type = "FIELD";
-		}
+		sym->type = is_sfield? "STATIC": "FIELD";
 		s = r_str_replace (s, "method.", "", 0);
 		r_str_replace_char (s, ';', 0);
 		r_bin_name_filtered (sym->name, s);
@@ -1074,7 +1085,7 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					 (ut32)accessFlags, r_str_get (accessStr));
 			free (accessStr);
 		}
-		r_list_append (dex->methods_list, sym);
+		{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
 
 		RBinField *field = R_NEW0 (RBinField);
 		field->vaddr = field->paddr = sym->paddr;
@@ -1358,7 +1369,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-				r_list_append (dex->methods_list, sym);
+				
+				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
 				// XXX keep class method vaddr consistent with symbol
 				RBinSymbol *method = r_bin_symbol_clone (sym);
 				if (method) {
@@ -1393,7 +1405,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 #endif
 			} else {
 				sym->size = 0;
-				r_list_append (dex->methods_list, sym);
+				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
 				sym->lang = R_BIN_LANG_JAVA;
 				RBinSymbol *method = r_bin_symbol_clone (sym);
 				if (method) {
@@ -1582,19 +1594,19 @@ static bool dex_loadcode(RBinFile *bf) {
 	size_t methods_size = 0;
 	int sym_count = 0;
 	// doublecheck??
-	if (dex->methods_list) {
+	if (!RVecRBinSymbol_empty (&dex->methods_list)) {
 		return false;
 	}
 	dex->version = r_bin_dex_get_version (dex);
 	dex->code_from = UT64_MAX;
 	dex->code_to = 0;
-	dex->methods_list = r_list_newf ((RListFree)free);
-	if (!dex->methods_list) {
+	
+	if (false) {
 		return false;
 	}
 	dex->imports_list = r_list_newf ((RListFree)r_bin_import_free);
 	if (!dex->imports_list) {
-		r_list_free (dex->methods_list);
+		
 		return false;
 	}
 	dex->lines_list = r_list_newf ((RListFree)free);
@@ -1603,7 +1615,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	dex->classes_list = r_list_newf ((RListFree)r_bin_class_free);
 	if (!dex->classes_list) {
-		r_list_free (dex->methods_list);
+		
 		r_list_free (dex->lines_list);
 		r_list_free (dex->imports_list);
 		return false;
@@ -1643,20 +1655,24 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	if (methods) {
 		int import_count = 0;
-		int sym_count = dex->methods_list->length;
+		int sym_count = RVecRBinSymbol_length (&dex->methods_list);
 		int last = (methods_size / sizeof (int)); // sym_count
 		for (i = 0; i < last; i++) {
 			int len = 0;
 			if (methods[i]) {
 				continue;
 			}
-			if (dex->methods[i].class_id >= dex->header.types_size) {
+			RBinDexMethod *method = RVecDexMethod_at (&dex->methods_vec, i);
+			if (!method) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes (dex, dex->methods[i].class_id)) {
+			if (method->class_id >= dex->header.types_size) {
 				continue;
 			}
-			const char *className = getstr (dex, dex->types[dex->methods[i].class_id].descriptor_id);
+			if (is_class_idx_in_code_classes (dex, method->class_id)) {
+				continue;
+			}
+			const char *className = getstr (dex, dex->types[method->class_id].descriptor_id);
 			if (!className) {
 				continue;
 			}
@@ -1701,7 +1717,7 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym->vaddr = sym->paddr; //  + bf->bo->baddr;
 				sym->ordinal = sym_count++;
 				sym->lang = R_BIN_LANG_JAVA;
-				r_list_append (dex->methods_list, sym);
+				{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
 				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
 				sdb_num_set (dex->mdb, mname, sym->paddr, 0);
 			}
@@ -1731,13 +1747,23 @@ static RList *trycatch(RBinFile *bf) {
 	return bin->trycatch_list;
 }
 
-static RList *methods(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	if (!bin->methods_list) {
+	if (RVecRBinSymbol_empty (&bin->methods_list)) {
 		dex_loadcode (bf);
 	}
-	return bin->methods_list;
+	if (!RVecRBinSymbol_empty (&bin->methods_list)) {
+		RBinSymbol *sym;
+		R_VEC_FOREACH (&bin->methods_list, sym) {
+			RBinSymbol *_s = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
+			if (_s) {
+				*_s = *sym;
+			}
+		}
+		return true;
+	}
+	return false;
 }
 
 static RList *classes(RBinFile *bf) {
@@ -1761,8 +1787,6 @@ static bool already_entry(RList *entries, ut64 vaddr) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RListIter *iter;
-	RBinSymbol *m;
 	RBinAddr *ptr;
 
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
@@ -1770,12 +1794,13 @@ static RList *entries(RBinFile *bf) {
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)free);
 
-	if (!bin->methods_list) {
+	if (RVecRBinSymbol_empty (&bin->methods_list)) {
 		dex_loadcode (bf);
 	}
 
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
-	r_list_foreach (bin->methods_list, iter, m) {
+	RBinSymbol *m;
+	R_VEC_FOREACH (&bin->methods_list, m) {
 		const char *oname = r_bin_name_tostring2 (m->name, 'o');
 		if (strlen (oname) > 30 && m->bind \
 				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
@@ -1790,7 +1815,7 @@ static RList *entries(RBinFile *bf) {
 
 	// STEP 2. ".main([Ljava/lang/String;)V"
 	if (r_list_empty (ret)) {
-		r_list_foreach (bin->methods_list, iter, m) {
+		R_VEC_FOREACH (&bin->methods_list, m) {
 			const char *oname = r_bin_name_tostring2 (m->name, 'o');
 			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
@@ -1927,10 +1952,12 @@ static void fast_code_size(RBinFile *bf) {
 	ut64 ns;
 	ut64 fsym = 0LL;
 	ut64 fsymsz = 0LL;
-	RListIter *iter;
+	RBinDexObj *bin = bf->bo->bin_obj;
+	if (RVecRBinSymbol_empty (&bin->methods_list)) {
+		dex_loadcode (bf);
+	}
 	RBinSymbol *m;
-	RList *ml = methods (bf);
-	r_list_foreach (ml, iter, m) {
+	R_VEC_FOREACH (&bin->methods_list, m) {
 		if (!fsym || m->paddr < fsym) {
 			fsym = m->paddr;
 		}
@@ -1942,7 +1969,6 @@ static void fast_code_size(RBinFile *bf) {
 			fsymsz = ns;
 		}
 	}
-	struct r_bin_dex_obj_t *bin = bf->bo->bin_obj;
 	bin->code_from = fsym;
 	bin->code_to = fsymsz;
 }
@@ -2023,7 +2049,7 @@ static void dex_header(RBinFile *bf) {
 	cb_printf ("data_off            : %d (0x%06x)\n\n", hdr->data_offset, hdr->data_offset);
 
 	// TODO: print information stored in the RBIN not this ugly fix
-	dex->methods_list = NULL;
+	RVecRBinSymbol_clear (&dex->methods_list);
 	dex->dexdump = true; /// XXX convert this global into an argument or field in RBinFile or so
 	dex_loadcode (bf);
 	dex->dexdump = false;
@@ -2160,7 +2186,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.entries = entries,
 	.classes = classes,
 	.sections = sections,
-	.symbols = methods,
+	.symbols_vec = &symbols_vec,
 	.baddr = baddr,
 	.trycatch = trycatch,
 	.imports = imports,
