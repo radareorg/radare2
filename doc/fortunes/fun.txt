@@ -366,3 +366,4 @@ Six seveeen bruh
 Warming up the tubes..
 Scanning for viruses...
 No viruses detected.
+By typing 'agree' you are agreeing to the terms of the software license agreements.

@@ -2036,3 +2036,41 @@ EXPECT=<<EOF
 var size_t sz @ rbp-0x8
 EOF
 RUN
+
+NAME=types json fields
+FILE=bins/mach0/mac-ls
+CMDS=tsj NSString
+EOF
+EXPECT=<<EOF
+{
+  "name": "NSString",
+  "format": "pxzd p0 p1 str len",
+  "fields": [
+    {
+      "name": "p0",
+      "type": "void *",
+      "offset": 0,
+      "size": 8
+    },
+    {
+      "name": "p1",
+      "type": "size_t",
+      "offset": 8,
+      "size": 8
+    },
+    {
+      "name": "str",
+      "type": "char *",
+      "offset": 16,
+      "size": 8
+    },
+    {
+      "name": "len",
+      "type": "int",
+      "offset": 24,
+      "size": 4
+    }
+  ]
+}
+EOF
+RUN
