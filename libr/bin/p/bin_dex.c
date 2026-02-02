@@ -1061,20 +1061,20 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		tid = dex->types[field.type_id].descriptor_id;
 		const char *type_str = getstr (dex, tid);
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		const char *cls_name = r_bin_name_tostring (cls->name);
+		RBinSymbol sym = {0};
 		const char *ftype = is_sfield ? "sfield": "ifield";
 		char *s = r_str_newf ("%s.%s_%s:%s", cls_name, ftype, fieldName, type_str);
-		sym->name = r_bin_name_new (s);
-		sym->type = is_sfield? "STATIC": "FIELD";
+		sym.name = r_bin_name_new (s);
+		sym.type = is_sfield? "STATIC": "FIELD";
 		s = r_str_replace (s, "method.", "", 0);
 		r_str_replace_char (s, ';', 0);
-		r_bin_name_filtered (sym->name, s);
+		r_bin_name_filtered (sym.name, s);
 		free (s);
-		sym->paddr = total;
-		sym->vaddr = sym->paddr; //  + baddr;
-		sym->lang = R_BIN_LANG_JAVA;
-		sym->ordinal = (*sym_count)++;
+		sym.paddr = total;
+		sym.vaddr = sym.paddr; //  + baddr;
+		sym.lang = R_BIN_LANG_JAVA;
+		sym.ordinal = (*sym_count)++;
 
 		if (dex->dexdump) {
 			char *accessStr = createAccessFlagStr (accessFlags, kAccessForField);
@@ -1085,11 +1085,11 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					 (ut32)accessFlags, r_str_get (accessStr));
 			free (accessStr);
 		}
-		{ RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list); if (_s) *_s = *sym; }
+		RVecRBinSymbol_push_back (&dex->methods_list, &sym);
 
 		RBinField *field = R_NEW0 (RBinField);
-		field->vaddr = field->paddr = sym->paddr;
-		field->name = r_bin_name_clone (sym->name);
+		field->vaddr = field->paddr = sym.paddr;
+		field->name = r_bin_name_clone (sym.name);
 		field->attr = get_method_attr (accessFlags);
 		r_list_append (cls->fields, field);
 		lastIndex = fieldIndex;
