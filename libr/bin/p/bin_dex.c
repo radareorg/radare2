@@ -1682,12 +1682,6 @@ static bool dex_loadcode(RBinFile *bf) {
 			char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport *imp = R_NEW0 (RBinImport);
-				if (!imp) {
-					free (methods);
-					free (signature);
-					free (class_name);
-					return false;
-				}
 				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
 				imp->name = r_bin_name_new (s);
 				free (s);
@@ -1697,12 +1691,6 @@ static bool dex_loadcode(RBinFile *bf) {
 				r_list_append (dex->imports_list, imp);
 
 				RBinSymbol *sym = R_NEW0 (RBinSymbol);
-				if (!sym) {
-					free (methods);
-					free ((void *)signature);
-					free (class_name);
-					return false;
-				}
 				sym->name = r_bin_name_clone (imp->name);
 				sym->is_imported = true;
 				sym->type = R_BIN_TYPE_FUNC_STR;
@@ -1793,10 +1781,9 @@ static RList *entries(RBinFile *bf) {
 				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
 				&& !strcmp (oname + strlen (oname) - 31, ".onCreate(Landroid/os/Bundle;)V")) {
 			if (!already_entry (ret, m->paddr)) {
-				if ((ptr = R_NEW0 (RBinAddr))) {
-					ptr->paddr = ptr->vaddr = m->paddr;
-					r_list_append (ret, ptr);
-				}
+				ptr = R_NEW0 (RBinAddr);
+				ptr->paddr = ptr->vaddr = m->paddr;
+				r_list_append (ret, ptr);
 			}
 		}
 	}
@@ -1807,11 +1794,10 @@ static RList *entries(RBinFile *bf) {
 			const char *oname = r_bin_name_tostring2 (m->name, 'o');
 			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
-					if ((ptr = R_NEW0 (RBinAddr))) {
-						ptr->paddr = m->paddr;
-						ptr->vaddr = ptr->paddr;
-						r_list_append (ret, ptr);
-					}
+					ptr = R_NEW0 (RBinAddr);
+					ptr->paddr = m->paddr;
+					ptr->vaddr = ptr->paddr;
+					r_list_append (ret, ptr);
 				}
 			}
 		}
@@ -1887,18 +1873,14 @@ static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Sectio
 	R_RETURN_VAL_IF_FAIL (s.addr < UT32_MAX, NULL);
 	R_RETURN_VAL_IF_FAIL (s.size > 0 && s.size < UT32_MAX, NULL);
 	RBinSection *ptr = R_NEW0 (RBinSection);
-	if (ptr) {
-		ptr->name = strdup (name);
-		ptr->size = ptr->vsize = s.size;
-		ptr->paddr = s.addr;
-		ptr->vaddr = s.addr;
-		ptr->perm = perm;
-		ptr->add = false;
-		if (format) {
-			ptr->format = format;
-		}
-		r_list_append (ret, ptr);
-	}
+	ptr->name = strdup (name);
+	ptr->size = ptr->vsize = s.size;
+	ptr->paddr = s.addr;
+	ptr->vaddr = s.addr;
+	ptr->perm = perm;
+	ptr->add = false;
+	ptr->format = format;
+	r_list_append (ret, ptr);
 	return ptr;
 }
 

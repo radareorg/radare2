@@ -1124,7 +1124,7 @@ R_API int r_core_visual_types(RCore *core) {
 				return true;
 			}
 			menu--;
-			option = _option;
+			core->visual.option = _option;
 			if (menu == 0) {
 				// if no flagspaces, just quit
 				if (r_flag_space_is_empty (core->flags)) {
@@ -2070,7 +2070,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					r_core_seek (core, off, true);
 					addr = off;
 					forceaddr = true;
-					delta = 0;
+					core->visual.delta = 0;
 				}
 			}
 			break;
@@ -2080,7 +2080,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				const char *line = r_line_readline (core->cons);
 				if (line && *line) {
 					free (cursearch);
-					delta = 0;
+					core->visual.delta = 0;
 					addr = UT64_MAX;
 					cur = 0;
 					cursearch = strdup (line);
@@ -2138,10 +2138,10 @@ R_API int r_core_visual_view_rop(RCore *core) {
 		case 'J':
 			cur += 10;
 			forceaddr = false;
-			delta = 0;
+			core->visual.delta = 0;
 			break;
 		case 'K':
-			delta = 0;
+			core->visual.delta = 0;
 			forceaddr = false;
 			if (cur > 10) {
 				cur -= 10;
@@ -2150,16 +2150,16 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			}
 			break;
 		case '0':
-			delta = 0;
+			core->visual.delta = 0;
 			cur = 0;
 			break;
 		case 'j':
-			delta = 0;
+			core->visual.delta = 0;
 			cur++;
 			forceaddr = false;
 			break;
 		case 'k':
-			delta = 0;
+			core->visual.delta = 0;
 			forceaddr = false;
 			if (cur > 0) {
 				cur--;
@@ -2322,7 +2322,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				return true;
 			}
 			menu--;
-			option = _option;
+			core->visual.option = _option;
 			if (menu == 0) {
 				r_flag_space_set (core->flags, NULL);
 				// if no flagspaces, just quit
@@ -2419,8 +2419,8 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			}
 			r_flag_space_set (core->flags, fs);
 			menu = 1;
-			_option = option;
-			option = 0;
+			_option = core->visual.option;
+			core->visual.option = 0;
 			break;
 		case '?':
 			r_cons_clear00 (core->cons);
@@ -2810,7 +2810,7 @@ R_API void r_core_visual_config(RCore *core) {
 		case 'h':
 		case 'b': // back
 			menu = 0;
-			option = _option;
+			core->visual.option = _option;
 			break;
 		case '_':
 			r_core_visual_config_hud (core);
@@ -2821,7 +2821,7 @@ R_API void r_core_visual_config(RCore *core) {
 				return;
 			}
 			menu--;
-			option = _option;
+			core->visual.option = _option;
 			break;
 		case '$':
 			r_core_cmd0 (core, "?$");
@@ -2850,7 +2850,7 @@ R_API void r_core_visual_config(RCore *core) {
 				fs2 ? config_visual_hit (core, fs2, (ch == 'E')) : 0;
 			} else {
 				menu = 1;
-				_option = option;
+				_option = core->visual.option;
 				option = 0;
 			}
 			break;
@@ -3392,28 +3392,22 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	return addr;
 }
 
-// TODO: remove all those globals!
-static R_TH_LOCAL int level = 0;
-static R_TH_LOCAL st64 delta = 0;
-static R_TH_LOCAL int option = 0;
-static R_TH_LOCAL int variable_option = 0;
-static R_TH_LOCAL int printMode = 0;
-static R_TH_LOCAL bool selectPanel = false;
+// Visual menu state variables moved to RCoreVisual struct
 #define lastPrintMode 6
 static const char *printCmds[lastPrintMode] = {
 	"pdr", "pd $r", "afi", "pdsf", "pdc", "pdr"
 };
 
 static void r_core_visual_anal_refresh_column(RCore *core, int colpos) {
-	const ut64 addr = (level != 0 && level != 1)
-		? core->addr : var_functions_show (core, option, 0, colpos);
+	const ut64 addr = (core->visual.level != 0 && core->visual.level != 1)
+		? core->addr : var_functions_show (core, core->visual.option, 0, colpos);
 	const char *cmd;
-	if (printMode > 0 && printMode < lastPrintMode) {
-		cmd = printCmds[printMode];
+	if (core->visual.printMode > 0 && core->visual.printMode < lastPrintMode) {
+		cmd = printCmds[core->visual.printMode];
 	} else {
-		cmd = printCmds[printMode = 0];
+		cmd = printCmds[core->visual.printMode = 0];
 	}
-	char *cmdf = r_str_newf ("%s @ 0x%"PFMT64x, cmd, addr + delta);
+	char *cmdf = r_str_newf ("%s @ 0x%"PFMT64x, cmd, addr + core->visual.delta);
 	char *output = r_core_cmd_str (core, cmdf);
 	if (output) {
 		int h, w = r_cons_get_size (core->cons, &h);
@@ -3457,7 +3451,7 @@ static RCoreHelpMessage help_visual_anal_keys = {
 	NULL
 };
 
-static R_TH_LOCAL int coldelta = 0;
+// coldelta moved to RCoreVisual struct
 static ut64 r_core_visual_anal_refresh(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core, UT64_MAX);
 	RCons *cons = core->cons;
@@ -3467,7 +3461,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	int h, cols = r_cons_get_size (cons, &h);
 	addr = core->addr;
 	cols -= 50;
-	int maxcols = 60 + coldelta;
+	int maxcols = 60 + core->visual.coldelta;
 	if (cols > maxcols) {
 		cols = maxcols;
 	}
@@ -3477,7 +3471,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 	if (cols > 30) {
 		r_cons_column (core->cons, cols);
 	}
-	switch (level) {
+	switch (core->visual.level) {
 	// Show functions list help in visual mode
 	case 0:
 		buf = r_strbuf_new ("");
@@ -3487,10 +3481,10 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		r_cons_gotoxy (cons, 0, 0);
 		r_cons_print (cons, ".-- functions -------------------------------.");
 		r_cons_gotoxy (cons, 20, 0);
-		if (selectPanel) {
-			r_cons_printf (cons, "[%s]", printCmds[printMode]);
+		if (core->visual.selectPanel) {
+			r_cons_printf (cons, "[%s]", printCmds[core->visual.printMode]);
 		} else {
-			r_cons_printf (cons, " %s ", printCmds[printMode]);
+			r_cons_printf (cons, " %s ", printCmds[core->visual.printMode]);
 		}
 		if (color) {
 			r_cons_print (cons, Color_RESET);
@@ -3501,7 +3495,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		r_cons_print (cons, "| (d)efine    (v)ars    (?)help  (:)shell    |\n");
 		r_cons_print (cons, "| (s)ignature (_)hud    (q)quit  (;)comment  |\n");
 		r_cons_printf (cons, "'-------------------------------------------'");
-		addr = var_functions_show (core, option, 1, cols);
+		addr = var_functions_show (core, core->visual.option, 1, cols);
 		break;
 	case 1:
 		buf = r_strbuf_new ("");
@@ -3520,7 +3514,7 @@ static ut64 r_core_visual_anal_refresh(RCore *core) {
 		r_cons_printf (core->cons, "'-----------------------------------------'");
 		char *drained = r_strbuf_drain (buf);
 		r_cons_printf (core->cons, "%s", drained);
-		addr = var_variables_show (core, option, &variable_option, 1, cols);
+		addr = var_variables_show (core, core->visual.option, &core->visual.variable_option, 1, cols);
 		free (drained);
 		// var_index_show (core->anal, fcn, addr, option);
 		break;
@@ -3596,10 +3590,10 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 			ch = r_cons_readchar (core->cons);
 		}
 		if (ch == 4 || (int)ch == -1) {
-			if (level == 0) {
+			if (core->visual.level == 0) {
 				return;
 			}
-			level--;
+			core->visual.level--;
 			continue;
 		}
 		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
@@ -3627,7 +3621,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		case 'K': // "vbdK"
 			delta -= 10;
 			if (delta < 0) {
-				delta = 0;
+				core->visual.delta = 0;
 			}
 		case 'j': // "vbdj"
 			delta++;
@@ -3635,7 +3629,7 @@ R_API void r_core_visual_debugtraces(RCore *core, const char *input) {
 		case 'k':
 			delta--;
 			if (delta < 0) {
-				delta = 0;
+				core->visual.delta = 0;
 			}
 			break;
 		case ':': // "vbd:"
@@ -3678,8 +3672,8 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 	core->cons->event_data = core;
 	core->cons->event_resize = (RConsEvent) r_core_visual_anal_refresh_queued;
 
-	level = 0;
-	coldelta = 0;
+	core->visual.level = 0;
+	core->visual.delta = 0;
 	bool asmbytes = r_config_get_b (core->config, "asm.bytes");
 	r_config_set_b (core->config, "asm.bytes", false);
 	for (;;) {
@@ -3693,20 +3687,20 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			ch = r_cons_readchar (core->cons);
 		}
 		if (ch == 4 || ch == -1) {
-			if (level == 0) {
+			if (core->visual.level == 0) {
 				goto beach;
 			}
-			level--;
+			core->visual.level--;
 			continue;
 		}
 		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
 		switch (ch) {
 		case '[':
-			coldelta--;
+			core->visual.coldelta--;
 			// core->cons->show_vals = true;
 			break;
 		case ']':
-			coldelta++;
+			core->visual.coldelta++;
 			core->cons->show_vals = false;
 			break;
 		case ';':
@@ -3722,10 +3716,10 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_strbuf_free (rsb);
 			break;
 		case 9:
-			selectPanel = !selectPanel;
-			if (!selectPanel) {
-				delta = 0;
-				printMode = 0;
+			core->visual.selectPanel = !core->visual.selectPanel;
+			if (!core->visual.selectPanel) {
+				core->visual.delta = 0;
+				core->visual.printMode = 0;
 			}
 			break;
 		case ':':
@@ -3740,7 +3734,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_cmd0 (core, "?i highlight;e scr.highlight=`yp`");
 			break;
 		case 'a':
-			switch (level) {
+			switch (core->visual.level) {
 			case 0:
 				r_core_cmd0 (core, "af-$$;af"); // reanalize
 				break;
@@ -3770,12 +3764,12 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 					r_cons_any_key (core->cons, "No function found in the current offset");
 					break;
 				}
-				switch (level) {
+				switch (core->visual.level) {
 				case 1:
 					{
 					const char *newname = r_cons_visual_readln (core->cons, "New name: ", NULL);
 					if (*newname) {
-						variable_rename (core, addr, variable_option, newname);
+						variable_rename (core, addr, core->visual.variable_option, newname);
 					}
 					}
 					break;
@@ -3794,31 +3788,31 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			r_core_cmd0 (core, "ecn");
 			break;
 		case 't':
-			if (level == 1) {
+			if (core->visual.level == 1) {
 				const char *newtype = r_cons_visual_readln (core->cons, "New type: ", NULL);
 				if (*newtype) {
-					variable_set_type (core, addr, variable_option, newtype);
+					variable_set_type (core, addr, core->visual.variable_option, newtype);
 				}
 			}
 			break;
 		case '.':
-			delta = 0;
+			core->visual.delta = 0;
 			break;
 		case 'p':
-			printMode ++;
+			core->visual.printMode ++;
 			break;
 		case 'P':
-			if (printMode == 0) {
-				printMode = lastPrintMode;
+			if (core->visual.printMode == 0) {
+				core->visual.printMode = lastPrintMode;
 			} else {
-				printMode --;
+				core->visual.printMode --;
 			}
 			break;
 		case 'd': // "Vvd"
 			r_core_visual_define (core, "", 0);
 			break;
 		case '-': // "Vv-"
-			if (level == 0) {
+			if (core->visual.level == 0) {
 				r_core_cmdf (core, "af-0x%"PFMT64x, addr);
 			}
 			break;
@@ -3839,11 +3833,11 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case 'c':
-			level = 2;
+			core->visual.level = 2;
 			break;
 		case 'v':
-			level = 1;
-			variable_option = 0;
+			core->visual.level = 1;
+			core->visual.variable_option = 0;
 			break;
 		case '_':
 			{
@@ -3853,7 +3847,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 				RAnalFunction *fcn;
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					if (fcn->addr == core->addr) {
-						option = n;
+						core->visual.option = n;
 						break;
 					}
 					n ++;
@@ -3861,17 +3855,17 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			}
 			break;
 		case 'j':
-			if (selectPanel) {
-				printMode = 1;
-				delta += 16;
+			if (core->visual.selectPanel) {
+				core->visual.printMode = 1;
+				core->visual.delta += 16;
 			} else {
-				delta = 0;
-				if (level == 1) {
-					variable_option++;
+				core->visual.delta = 0;
+				if (core->visual.level == 1) {
+					core->visual.variable_option++;
 				} else {
-					option++;
-					if (option >= nfcns) {
-						option--;
+					core->visual.option++;
+					if (core->visual.option >= nfcns) {
+						core->visual.option--;
 					}
 				}
 			}
@@ -3879,52 +3873,51 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case '!':
 			// TODO: use aflsn/aflsb/aflss/...
 			{
-			static R_TH_LOCAL int sortMode = 0;
 			const char *sortModes[4] = { "aflsa", "aflss", "aflsb", "aflsn" };
-			r_core_cmd0 (core, sortModes[sortMode%4]);
-			sortMode++;
+			r_core_cmd0 (core, sortModes[core->visual.sortMode%4]);
+			core->visual.sortMode++;
 			}
 			break;
 		case 'k':
-			if (selectPanel) {
-				printMode = 1;
-				delta -= 16;
+			if (core->visual.selectPanel) {
+				core->visual.printMode = 1;
+				core->visual.delta -= 16;
 			} else {
-				delta = 0;
-				switch (level) {
+				core->visual.delta = 0;
+				switch (core->visual.level) {
 				case 1:
-					variable_option = (variable_option <= 0)? 0: variable_option-1;
+					core->visual.variable_option = (core->visual.variable_option <= 0)? 0: core->visual.variable_option-1;
 					break;
 				default:
-					option = (option <= 0)? 0: option-1;
+					core->visual.option = (core->visual.option <= 0)? 0: core->visual.option-1;
 					break;
 				}
 			}
 
 			break;
 		case 'J':
-			if (selectPanel) {
-				printMode = 1;
-				delta += 40;
+			if (core->visual.selectPanel) {
+				core->visual.printMode = 1;
+				core->visual.delta += 40;
 			} else {
 				int rows = 0;
 				r_cons_get_size (core->cons, &rows);
-				option += (rows - 5);
-				if (option >= nfcns) {
-					option = nfcns - 1;
+				core->visual.option += (rows - 5);
+				if (core->visual.option >= nfcns) {
+					core->visual.option = nfcns - 1;
 				}
 			}
 			break;
 		case 'K':
-			if (selectPanel) {
-				printMode = 1;
-				delta -= 40;
+			if (core->visual.selectPanel) {
+				core->visual.printMode = 1;
+				core->visual.delta -= 40;
 			} else {
 				int rows = 0;
 				r_cons_get_size (core->cons, &rows);
-				option -= (rows - 5);
-				if (option < 0) {
-					option = 0;
+				core->visual.option -= (rows - 5);
+				if (core->visual.option < 0) {
+					core->visual.option = 0;
 				}
 			}
 			break;
@@ -3937,7 +3930,7 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 			int i = 0;
 			r_list_foreach (core->anal->fcns, iter, fcn) {
 				if (core->addr == fcn->addr) {
-					option = i;
+					core->visual.option = i;
 				}
 				i++;
 			}
@@ -3950,24 +3943,24 @@ R_API void r_core_visual_anal(RCore *core, const char *input) {
 		case ' ':
 		case '\r':
 		case '\n':
-			level = 0;
+			core->visual.level = 0;
 			r_core_seek (core, addr, SEEK_SET);
 			goto beach;
 		case 'l':
-			level = 1;
-			_option = option;
+			core->visual.level = 1;
+			_option = core->visual.option;
 			break;
 		case 'h':
 		case 'b': // back
-			level = 0;
-			option = _option;
+			core->visual.level = 0;
+			core->visual.option = _option;
 			break;
 		case 'Q':
 		case 'q':
-			if (level == 0) {
+			if (core->visual.level == 0) {
 				goto beach;
 			}
-			level--;
+			core->visual.level--;
 			break;
 		}
 	}
@@ -3975,7 +3968,7 @@ beach:
 	core->cons->event_resize = NULL; // avoid running old event with new data
 	core->cons->event_data = olde_user;
 	core->cons->event_resize = olde;
-	level = 0;
+	core->visual.level = 0;
 	r_config_set_b (core->config, "asm.bytes", asmbytes);
 }
 
