@@ -520,6 +520,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't show block list if
 						just Basic Latin (0x00 - 0x7F) */
+						free (block_list);
 						break;
 					}
 					int *block_ptr = block_list;
@@ -573,7 +574,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	bool new_bf = false;
-	if (bf && strstr (bf->file, "malloc://")) {
+	if (bf && bf->file && strstr (bf->file, "malloc://")) {
 		// sync bf->buf to search string on it
 		ut8 *tmp = R_NEWS (ut8, bf->size);
 		if (!tmp) {
@@ -581,6 +582,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 		}
 		r_io_read_at (core->io, 0, tmp, bf->size);
 		r_buf_write_at (bf->buf, 0, tmp, bf->size);
+		free (tmp);
 	}
 	if (!core->io->desc) {
 		R_LOG_ERROR ("Core doesnt have any file");
@@ -601,6 +603,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 		bf->file = strdup (desc->name);
 		bf->size = r_io_desc_size (desc);
 		if (bf->size == UT64_MAX) {
+			free (bf->file);
 			free (bf);
 			return false;
 		}
