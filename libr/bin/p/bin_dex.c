@@ -1369,7 +1369,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				sym->size = insns_size * 2;
 				//}
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
-				// AITODO: this assignment looks bad, methods_list should be named methods_vec, also the assignment below is meh we can probably rewrite this in a more elegant and atopic way
 				RBinSymbol *_s = RVecRBinSymbol_emplace_back (&dex->methods_list);
 				if (_s) {
 					*_s = *sym;
@@ -1443,12 +1442,12 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	RBinDexObj *dex = bf->bo->bin_obj;
 	RBin *rbin = bf->rbin;
 	int z;
-	RBinClass *cls = R_NEW0 (RBinClass);
+	RBinClass clz = {0};
+	RBinClass *cls = &clz;
 	cls->lang = R_BIN_LANG_JAVA;
 	cls->origin = R_BIN_CLASS_ORIGIN_BIN;
 	char *cls_name = dex_class_name (dex, c);
 	if (!cls_name) {
-		free (cls);
 		goto beach;
 	}
 	r_str_replace_char (cls_name, ';', 0);
@@ -1462,17 +1461,16 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		r_list_append (cls->super, r_bin_name_new (super));
 	}
 	if (!cls->methods) {
-		free (cls);
 		goto beach;
 	}
 	cls->fields = r_list_new ();
 	if (!cls->fields) {
 		r_list_free (cls->methods);
-		free (cls);
 		goto beach;
 	}
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
-	{ RBinClass *_c = RVecRBinClass_emplace_back (&dex->classes_vec); if (_c) *_c = *cls; free (cls); }
+	RVecRBinClass_push_back (&dex->classes_vec, cls);
+	cls = RVecRBinClass_last (&dex->classes_vec);
 	if (dex->dexdump) {
 		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls_name);
 		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
@@ -1569,7 +1567,6 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 					c->source_file);
 		}
 	}
-	cls = NULL;
 beach:
 	R_FREE (cls_name);
 }
