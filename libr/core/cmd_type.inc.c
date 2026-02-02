@@ -602,7 +602,7 @@ static int print_struct_union_list_json(RCore *core, Sdb *TDB, SdbForeachCallbac
 
 	r_cons_println (core->cons, pj_string (pj));
 	pj_free (pj);
-	ls_free (all_items);
+	ls_free (l);
 	return 1;
 }
 
