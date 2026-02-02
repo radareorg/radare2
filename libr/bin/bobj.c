@@ -442,7 +442,19 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			REBASE_PADDR (bo, bo->fields, RBinField);
 		}
 	}
-	if (p->imports) {
+	if (p->imports_vec) {
+		p->imports_vec (bf);
+		// Populate imports list from vec for backward compatibility
+		if (!RVecRBinImport_empty (&bo->imports_vec)) {
+			r_list_free (bo->imports);
+			bo->imports = r_list_newf ((RListFree)r_bin_import_free);
+			RBinImport *imp;
+			R_VEC_FOREACH (&bo->imports_vec, imp) {
+				r_list_append (bo->imports, r_bin_import_clone (imp));
+			}
+		}
+		import_cache_cleanup (bo);
+	} else if (p->imports) {
 		r_list_free (bo->imports);
 		bo->imports = p->imports (bf);
 		if (bo->imports) {
