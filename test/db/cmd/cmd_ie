@@ -165,7 +165,6 @@ DEBUG: (section .got) Cd 4[56] @ 0x2fdd8
 DEBUG: RCoreCallAt(0x0002fdd8): Cd 4[56]
 DEBUG: (cannot find opening [) in (56])
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
-DEBUG: SLOW: cloning imports list into a vec
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 DEBUG: RCoreCmd: ie

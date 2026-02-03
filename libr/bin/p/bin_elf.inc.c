@@ -34,15 +34,6 @@ static char* regstate(RBinFile *bf) {
 	return NULL;
 }
 
-static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
-	if (!eo->imports_by_ord || ord >= eo->imports_by_ord_size) {
-		return;
-	}
-	r_bin_import_free (eo->imports_by_ord[ord]);
-	// Clone so this array owns a separate copy from the imports list
-	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
-}
-
 static Sdb* get_sdb(RBinFile *bf) {
 	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
 	return eo? eo->kv: NULL;
@@ -358,36 +349,16 @@ static bool symbols_vec(RBinFile *bf) {
 	RVecRBinSymbol_init (&eo->symbols_cache);
 	eo->symbols_cached = false;
 
-	// Also add imports with size as symbols (for plt entries)
-	if (!Elf_(load_imports) (eo)) {
-		return true;
-	}
-	RBinElfSymbol *symbol;
-	R_VEC_FOREACH (eo->g_imports_vec, symbol) {
-		if (!symbol->size) {
-			continue;
+	// Also add PLT entries from imports (already converted and cached)
+	RVecRBinSymbol *plt_symbols = Elf_(load_plt_symbols_vec) (eo);
+	if (plt_symbols) {
+		R_VEC_FOREACH (plt_symbols, sym) {
+			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
 		}
-		if (symbol->is_sht_null) {
-			continue;
-		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (!ptr) {
-			break;
-		}
-		ptr->is_imported = true;
-		if (ptr->paddr == 0) {
-			ptr->paddr = UT64_MAX;
-			ptr->vaddr = UT64_MAX;
-		}
-		if (ptr->vaddr == UT32_MAX) {
-			ptr->paddr = 0;
-			ptr->vaddr = 0;
-		}
-		RBinSymbol *s = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
-		if (s) {
-			memcpy (s, ptr, sizeof (RBinSymbol));
-			free (ptr);
-		}
+		// Reset the PLT cache without freeing contents (ownership transferred)
+		free (eo->plt_symbols_cache._start);
+		RVecRBinSymbol_init (&eo->plt_symbols_cache);
+		eo->plt_symbols_cached = false;
 	}
 	return true;
 }
@@ -403,9 +374,9 @@ static bool imports_vec(RBinFile *bf) {
 		return false;
 	}
 	// Transfer ownership from ELF cache to bin object
+	// Note: imports_by_ord is already populated in Elf_(load_imports_vec)
 	RBinImport *imp;
 	R_VEC_FOREACH (imports, imp) {
-		setimpord (eo, imp->ordinal, imp);
 		RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
 	}
 	// Reset the ELF cache without freeing contents (ownership transferred)
@@ -1582,13 +1553,13 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 
 static bool has_sanitizers(RBinFile *bf) {
 	ELFOBJ *eo = bf->bo->bin_obj;
-	if (!Elf_(load_imports) (eo)) {
+	RVecRBinImport *imports = Elf_(load_imports_vec) (eo);
+	if (!imports) {
 		return false;
 	}
-	const RVecRBinElfSymbol *imports = eo->g_imports_vec;
-	RBinElfSymbol *is;
-	R_VEC_FOREACH (imports, is) {
-		const char *iname = is->name;
+	RBinImport *imp;
+	R_VEC_FOREACH (imports, imp) {
+		const char *iname = r_bin_name_tostring2 (imp->name, 'o');
 		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
 			return true;
 		}

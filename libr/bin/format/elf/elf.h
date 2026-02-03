@@ -171,8 +171,10 @@ struct Elf_(obj_t) {
 	// cached converted symbols/imports for direct transfer to bin layer
 	RVecRBinSymbol symbols_cache;
 	RVecRBinImport imports_cache;
+	RVecRBinSymbol plt_symbols_cache; // PLT entries from imports with size > 0
 	bool symbols_cached;
 	bool imports_cached;
+	bool plt_symbols_cached;
 	RList *inits;
 	HtUU *rel_cache;
 	ut32 g_reloc_num;
@@ -228,6 +230,7 @@ bool Elf_(load_symbols)(ELFOBJ *eo);
 bool Elf_(load_imports)(ELFOBJ *eo);
 RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo);
 RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo);
+RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo);
 const RVecRBinElfField *Elf_(load_fields)(struct Elf_(obj_t) *bin);
 char *Elf_(get_rpath)(struct Elf_(obj_t) *bin);
 

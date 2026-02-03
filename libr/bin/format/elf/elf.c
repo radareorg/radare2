@@ -5540,9 +5540,66 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 		imp->bind = is->bind;
 		imp->type = is->type;
 		imp->ordinal = is->ordinal;
+		// Populate imports_by_ord directly instead of cloning later
+		if (eo->imports_by_ord && is->ordinal < eo->imports_by_ord_size) {
+			r_bin_import_free (eo->imports_by_ord[is->ordinal]);
+			eo->imports_by_ord[is->ordinal] = r_bin_import_clone (imp);
+		}
 	}
 	eo->imports_cached = true;
 	return &eo->imports_cache;
+}
+
+RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->plt_symbols_cached) {
+		return &eo->plt_symbols_cache;
+	}
+	if (!Elf_(load_imports) (eo)) {
+		return NULL;
+	}
+	RVecRBinSymbol_init (&eo->plt_symbols_cache);
+	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
+	// Count how many have size > 0 and !is_sht_null
+	size_t count = 0;
+	RBinElfSymbol *is;
+	R_VEC_FOREACH (elf_imports, is) {
+		if (is->size && !is->is_sht_null) {
+			count++;
+		}
+	}
+	if (count == 0) {
+		eo->plt_symbols_cached = true;
+		return &eo->plt_symbols_cache;
+	}
+	if (!RVecRBinSymbol_reserve (&eo->plt_symbols_cache, count)) {
+		return NULL;
+	}
+	R_VEC_FOREACH (elf_imports, is) {
+		if (!is->size || is->is_sht_null) {
+			continue;
+		}
+		RBinSymbol *ptr = Elf_(convert_symbol) (eo, is);
+		if (!ptr) {
+			break;
+		}
+		ptr->is_imported = true;
+		if (ptr->paddr == 0) {
+			ptr->paddr = UT64_MAX;
+			ptr->vaddr = UT64_MAX;
+		}
+		if (ptr->vaddr == UT32_MAX) {
+			ptr->paddr = 0;
+			ptr->vaddr = 0;
+		}
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&eo->plt_symbols_cache);
+		if (sym) {
+			memcpy (sym, ptr, sizeof (RBinSymbol));
+			free (ptr);
+		}
+	}
+	eo->plt_symbols_cached = true;
+	return &eo->plt_symbols_cache;
 }
 
 const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
@@ -5667,6 +5724,9 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	if (eo->imports_cached) {
 		RVecRBinImport_fini (&eo->imports_cache);
+	}
+	if (eo->plt_symbols_cached) {
+		RVecRBinSymbol_fini (&eo->plt_symbols_cache);
 	}
 	ht_uu_free (eo->rel_cache);
 	eo->rel_cache = NULL;

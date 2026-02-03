@@ -2464,8 +2464,6 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	bool lit = info? info->has_lit: false;
 	bool va = core->io->va || r_config_get_b (core->config, "cfg.debug");
 
-	RListIter *iter;
-	RBinImport *imp;
 	if (!obj) {
 		return NULL;
 	}
@@ -2473,13 +2471,17 @@ R_API RGraph *r_core_anal_importxrefs(RCore *core) {
 	if (!graph) {
 		return NULL;
 	}
-	r_list_foreach (obj->imports, iter, imp) {
-		const char *imp_name = r_bin_name_tostring (imp->name);
-		ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp_name): 0;
-		if (addr) {
-			add_single_addr_xrefs (core, addr, graph);
-		} else {
-			r_graph_add_node_info (graph, imp_name, NULL, 0);
+	RVecRBinImport *imports = r_bin_get_imports_vec (core->bin);
+	if (imports) {
+		RBinImport *imp;
+		R_VEC_FOREACH (imports, imp) {
+			const char *imp_name = r_bin_name_tostring (imp->name);
+			ut64 addr = lit ? r_core_bin_impaddr (core->bin, va, imp_name): 0;
+			if (addr) {
+				add_single_addr_xrefs (core, addr, graph);
+			} else {
+				r_graph_add_node_info (graph, imp_name, NULL, 0);
+			}
 		}
 	}
 	return graph;
