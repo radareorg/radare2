@@ -4905,24 +4905,11 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 	if (ELF_ST_BIND (sym->st_info) != STB_LOCAL) {
 		return false;
 	}
-	if (!is_shidx_valid (eo, sym->st_shndx)) {
-		return false;
-	}
-	return true;
-	// Elf_(Word) sh_name = eo->shdr[sym->st_shndx].sh_name;
-	// return eo->shstrtab && sh_name < eo->shstrtab_size;
+	return is_shidx_valid (eo, sym->st_shndx);
 }
 
-static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (eobj->symbols_by_ord && ord < eobj->symbols_by_ord_size) {
-		r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-		eobj->symbols_by_ord[ord] = ptr;
-	}
-}
-
-static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
+static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	int bin_bits = Elf_(get_bits) (eo);
-	RBinSymbol *sym = *symp;
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	int len = strlen (name);
 	if (name[0] == '$' && (len >= 2 && !name[2])) {
@@ -4961,8 +4948,8 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 	}
 }
 
-// XXX this is slow because we can directly use RBinSymbol instead of RBinElfSymbol imho
-RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
+// Fill sym with converted symbol data, returns true on success
+static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	ut64 paddr, vaddr;
 	const ut64 baddr = Elf_(get_baddr) (eo);
 	if (baddr && baddr != UT64_MAX && symbol->offset && symbol->offset != UT64_MAX) {
@@ -4976,28 +4963,21 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 	} else {
 		paddr = symbol->offset;
 		ut64 va = Elf_(p2v_new) (eo, paddr);
-		if (va != UT64_MAX) {
-			vaddr = va;
-		} else {
-			vaddr = paddr;
-		}
+		vaddr = (va != UT64_MAX) ? va : paddr;
 	}
-
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	ptr->name = r_bin_name_new (symbol->name);
-	ptr->forwarder = "NONE";
-	ptr->bind = symbol->bind;
-	ptr->type = symbol->type;
-	ptr->is_imported = symbol->is_imported;
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
+	memset (sym, 0, sizeof (RBinSymbol));
+	sym->name = r_bin_name_new (symbol->name);
+	sym->forwarder = "NONE";
+	sym->bind = symbol->bind;
+	sym->type = symbol->type;
+	sym->is_imported = symbol->is_imported;
+	sym->paddr = paddr;
+	sym->vaddr = vaddr;
+	sym->size = symbol->size;
+	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {
-		_set_arm_thumb_bits (eo, &ptr);
+		_set_arm_thumb_bits (eo, sym);
 	}
-	return ptr;
 }
 
 static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_i) {
@@ -5145,11 +5125,13 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	const int limit = eo->limit;
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
-		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol);
-		if (!isym) {
-			continue;
+		RBinSymbol *isym = R_NEW0 (RBinSymbol);
+		fill_symbol (eo, symbol, isym);
+		// Store in symbols_by_ord for relocation lookups
+		if (eo->symbols_by_ord && isym->ordinal < eo->symbols_by_ord_size) {
+			r_bin_symbol_free (eo->symbols_by_ord[isym->ordinal]);
+			eo->symbols_by_ord[isym->ordinal] = isym;
 		}
-		setsymord (eo, isym->ordinal, isym);
 		if (symbol->is_imported) {
 			if (limit > 0 && count++ > limit) {
 				R_LOG_WARN ("eo.limit reached for imports");
@@ -5484,6 +5466,98 @@ bool Elf_(load_imports)(ELFOBJ *eo) {
 	return eo->g_imports_vec != NULL;
 }
 
+RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->symbols_cached) {
+		return &eo->symbols_cache;
+	}
+	if (!Elf_(load_symbols) (eo)) {
+		return NULL;
+	}
+	RVecRBinSymbol_init (&eo->symbols_cache);
+	RVecRBinElfSymbol *elf_symbols = eo->g_symbols_vec;
+	if (!RVecRBinSymbol_reserve (&eo->symbols_cache, RVecRBinElfSymbol_length (elf_symbols))) {
+		return NULL;
+	}
+	RBinElfSymbol *symbol;
+	R_VEC_FOREACH (elf_symbols, symbol) {
+		if (symbol->is_sht_null) {
+			continue;
+		}
+		RBinSymbol sym;
+		fill_symbol (eo, symbol, &sym);
+		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
+	}
+	eo->symbols_cached = true;
+	return &eo->symbols_cache;
+}
+
+RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->imports_cached) {
+		return &eo->imports_cache;
+	}
+	if (!Elf_(load_imports) (eo)) {
+		return NULL;
+	}
+	RVecRBinImport_init (&eo->imports_cache);
+	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
+	if (!RVecRBinImport_reserve (&eo->imports_cache, RVecRBinElfSymbol_length (elf_imports))) {
+		return NULL;
+	}
+	RBinElfSymbol *is;
+	R_VEC_FOREACH (elf_imports, is) {
+		RBinImport *imp = RVecRBinImport_emplace_back (&eo->imports_cache);
+		if (!imp) {
+			break;
+		}
+		memset (imp, 0, sizeof (RBinImport));
+		imp->name = r_bin_name_new (is->name);
+		imp->bind = is->bind;
+		imp->type = is->type;
+		imp->ordinal = is->ordinal;
+		// Populate imports_by_ord directly instead of cloning later
+		if (eo->imports_by_ord && is->ordinal < eo->imports_by_ord_size) {
+			r_bin_import_free (eo->imports_by_ord[is->ordinal]);
+			eo->imports_by_ord[is->ordinal] = r_bin_import_clone (imp);
+		}
+	}
+	eo->imports_cached = true;
+	return &eo->imports_cache;
+}
+
+RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->plt_symbols_cached) {
+		return &eo->plt_symbols_cache;
+	}
+	if (!Elf_(load_imports) (eo)) {
+		return NULL;
+	}
+	RVecRBinSymbol_init (&eo->plt_symbols_cache);
+	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
+	RBinElfSymbol *is;
+	R_VEC_FOREACH (elf_imports, is) {
+		if (!is->size || is->is_sht_null) {
+			continue;
+		}
+		RBinSymbol sym;
+		fill_symbol (eo, is, &sym);
+		sym.is_imported = true;
+		if (sym.paddr == 0) {
+			sym.paddr = UT64_MAX;
+			sym.vaddr = UT64_MAX;
+		}
+		if (sym.vaddr == UT32_MAX) {
+			sym.paddr = 0;
+			sym.vaddr = 0;
+		}
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
+	}
+	eo->plt_symbols_cached = true;
+	return &eo->plt_symbols_cache;
+}
+
 const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
@@ -5526,31 +5600,11 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	r_list_free (eo->relocs_list);
 	if (eo->imports_by_ord) {
-		int i;
-		for (i = 0; i < eo->imports_by_ord_size; i++) {
-			RBinImport *imp = eo->imports_by_ord[i];
-			if (imp) {
-				r_bin_import_free (eo->imports_by_ord[i]);
-				eo->imports_by_ord[i] = NULL;
-			}
-		}
-		eo->imports_by_ord_size = 0;
-		R_FREE (eo->imports_by_ord);
-	}
-	free (eo->osabi);
-	free (eo->phdr);
-	free (eo->shdr);
-	free (eo->strtab);
-	free (eo->shstrtab);
-	free (eo->dynstr);
-	RVecElfOff_fini (&eo->dyn_info.dt_needed);
-	//free (eo->strtab_section);
-	if (eo->imports_by_ord) {
 		size_t i;
 		for (i = 0; i < eo->imports_by_ord_size; i++) {
-			free (eo->imports_by_ord[i]);
+			r_bin_import_free (eo->imports_by_ord[i]);
 		}
-		free (eo->imports_by_ord);
+		R_FREE (eo->imports_by_ord);
 	}
 	if (eo->symbols_by_ord) {
 		size_t i;
@@ -5559,28 +5613,18 @@ void Elf_(free)(ELFOBJ* eo) {
 		}
 		free (eo->symbols_by_ord);
 	}
+	free (eo->osabi);
+	free (eo->phdr);
+	free (eo->shdr);
+	free (eo->strtab);
+	free (eo->shstrtab);
+	free (eo->dynstr);
+	RVecElfOff_fini (&eo->dyn_info.dt_needed);
 	r_unref (eo->b);
 	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-	eo->phdr_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
-	eo->phdr_imports_vec = NULL;
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
-	eo->g_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
-	eo->g_imports_vec = NULL;
-#if 0
-	// R2_590
-	RVecRBinElfSymbol_free (&eo->g_symbols);
-	eo->g_symbols = NULL;
-	// eo->phdr_symbols = NULL;
-
-	if (eo->phdr_imports != eo->g_imports) {
-		RVecElfOff_free (&eo->phdr_imports);
-	}
-	eo->phdr_imports = NULL;
-	RVecElfOff_free (&eo->g_imports);
-	eo->g_imports = NULL;
-#endif
 	if (eo->sections_loaded) {
 		RVecRBinElfSection_fini (&eo->g_sections);
 	}
@@ -5601,8 +5645,16 @@ void Elf_(free)(ELFOBJ* eo) {
 	if (eo->fields_loaded) {
 		RVecRBinElfField_fini (&eo->g_fields);
 	}
+	if (eo->symbols_cached) {
+		RVecRBinSymbol_fini (&eo->symbols_cache);
+	}
+	if (eo->imports_cached) {
+		RVecRBinImport_fini (&eo->imports_cache);
+	}
+	if (eo->plt_symbols_cached) {
+		RVecRBinSymbol_fini (&eo->plt_symbols_cache);
+	}
 	ht_uu_free (eo->rel_cache);
-	eo->rel_cache = NULL;
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);

@@ -34,15 +34,6 @@ static char* regstate(RBinFile *bf) {
 	return NULL;
 }
 
-static void setimpord(ELFOBJ* eo, ut32 ord, RBinImport *ptr) {
-	if (!eo->imports_by_ord || ord >= eo->imports_by_ord_size) {
-		return;
-	}
-	r_bin_import_free (eo->imports_by_ord[ord]);
-	// Clone so this array owns a separate copy from the imports list
-	eo->imports_by_ord[ord] = r_bin_import_clone (ptr);
-}
-
 static Sdb* get_sdb(RBinFile *bf) {
 	ELFOBJ *eo = R_UNWRAP3 (bf, bo, bin_obj);
 	return eo? eo->kv: NULL;
@@ -337,109 +328,49 @@ static RList* entries(RBinFile *bf) {
 }
 
 // fill bf->bo->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
-// thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
-
-	ELFOBJ *eo = bf->bo->bin_obj;
-	// traverse symbols
-	if (!Elf_(load_symbols) (eo)) {
-		return false;
-	}
 	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
 		return true;
 	}
-	RVecRBinSymbol *list = &bf->bo->symbols_vec;
-#if 1
-	RVecRBinElfSymbol *elf_symbols = eo->g_symbols_vec;
-	RBinElfSymbol *symbol;
-	R_VEC_FOREACH (elf_symbols, symbol) {
-		if (symbol->is_sht_null) {
-			// add it to the list of symbols only if it doesn't point to SHT_NULL
-			continue;
-		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (!ptr) {
-			break;
-		}
-		RVecRBinSymbol_push_back (list, ptr);
-		// Vector copies the struct, but pointers are shallow copies
-		// Only free the wrapper, not the contents
-		ptr->name = NULL;
-		ptr->libname = NULL;
-		ptr->classname = NULL;
-		r_bin_symbol_free (ptr);
-	}
-
-	// traverse imports
-	if (!Elf_(load_imports) (eo)) {
+	ELFOBJ *eo = bf->bo->bin_obj;
+	RVecRBinSymbol *symbols = Elf_(load_symbols_vec) (eo);
+	if (!symbols) {
 		return false;
 	}
-	R_VEC_FOREACH (eo->g_imports_vec, symbol) {
-		if (!symbol->size) {
-			continue;
-		}
-		if (symbol->is_sht_null) {
-			// add it to the list of symbols only if it doesn't point to SHT_NULL
-			continue;
-		}
+	// Transfer ownership: swap vectors and reset source
+	bf->bo->symbols_vec = eo->symbols_cache;
+	RVecRBinSymbol_init (&eo->symbols_cache);
+	eo->symbols_cached = false;
 
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (!ptr) {
-			break;
+	// Also add PLT entries from imports
+	RVecRBinSymbol *plt_symbols = Elf_(load_plt_symbols_vec) (eo);
+	if (plt_symbols && !RVecRBinSymbol_empty (plt_symbols)) {
+		RBinSymbol *sym;
+		R_VEC_FOREACH (plt_symbols, sym) {
+			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
 		}
-		ptr->is_imported = true;
-		// object files have no plt section, imports are referenced by relocs not trampolines
-		if (ptr->paddr == 0) {
-			ptr->paddr = UT64_MAX;
-			ptr->vaddr = UT64_MAX;
-		}
-		// special case where there is no entry in the plt for the import
-		if (ptr->vaddr == UT32_MAX) {
-			ptr->paddr = 0;
-			ptr->vaddr = 0;
-		}
-		RVecRBinSymbol_push_back (list, ptr);
-		// Vector copies the struct, but pointers are shallow copies
-		// Only free the wrapper, not the contents
-		ptr->name = NULL;
-		ptr->libname = NULL;
-		ptr->classname = NULL;
-		r_bin_symbol_free (ptr);
+		free (eo->plt_symbols_cache._start);
+		RVecRBinSymbol_init (&eo->plt_symbols_cache);
+		eo->plt_symbols_cached = false;
 	}
 	return true;
-#endif
 }
 
-static RList* imports(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
-	if (!ret) {
-		return NULL;
+static bool imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	if (!RVecRBinImport_empty (&bf->bo->imports_vec)) {
+		return true;
 	}
-
 	ELFOBJ *eo = bf->bo->bin_obj;
-	if (!Elf_(load_imports) (eo)) {
-		r_list_free (ret);
-		return NULL;
+	if (!Elf_(load_imports_vec) (eo)) {
+		return false;
 	}
-	const RVecRBinElfSymbol *imports = eo->g_imports_vec;
-
-	RBinElfSymbol *is;
-	R_VEC_FOREACH (imports, is) {
-		RBinImport *ptr = R_NEW0 (RBinImport);
-		if (!ptr) {
-			break;
-		}
-		ptr->name = r_bin_name_new (is->name);
-		ptr->bind = is->bind;
-		ptr->type = is->type;
-		ptr->ordinal = is->ordinal;
-		setimpord (eo, ptr->ordinal, ptr);
-		r_list_append (ret, ptr);
-	}
-	return ret;
+	// Transfer ownership: swap vectors and reset source
+	bf->bo->imports_vec = eo->imports_cache;
+	RVecRBinImport_init (&eo->imports_cache);
+	eo->imports_cached = false;
+	return true;
 }
 
 static RList* libs(RBinFile *bf) {
@@ -467,85 +398,51 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	ut64 P = rel->rva; // rva has taken baddr into account
 
 	RBinReloc *r = R_NEW0 (RBinReloc);
-	r->import = NULL;
 	r->ntype = rel->type;
-	r->symbol = NULL;
-	r->is_ifunc = false;
 	r->addend = rel->addend;
+	r->vaddr = rel->rva;
+	r->paddr = rel->offset;
+	r->laddr = rel->laddr;
+
 	// Special handling for CREL relocations
 	if (rel->mode == DT_CREL) {
-		// No special handling needed for symbol lookup, it works the same way
-		// Set appropriate relocation type based on architecture
 		if (eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_AARCH64) {
 			r->type = R_BIN_RELOC_64;
 		} else if (eo->ehdr.e_machine == EM_386 || eo->ehdr.e_machine == EM_ARM) {
 			r->type = R_BIN_RELOC_32;
 		} else {
-			r->type = R_BIN_RELOC_64; // Default to 64-bit relocation type
+			r->type = R_BIN_RELOC_64;
 		}
-		r->additive = true;       // CREL relocations are typically additive
-		// Ensure valid vaddr and paddr
-		if (!r->vaddr) {
-			r->vaddr = rel->rva;
-		}
-		if (!r->paddr) {
-			r->paddr = rel->offset;
-		}
+		r->additive = true;
 	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
-			// Clone the import so relocations own their own copy
-			// This avoids UAF if imports are modified later
 			r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
 		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
 			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
 	}
-	r->vaddr = rel->rva;
-	r->paddr = rel->offset;
-	r->laddr = rel->laddr;
 
-	ut64 sym_vaddr = 0;
-	if (r->symbol) {
-		sym_vaddr = r->symbol->vaddr;
-	} else if (rel->sym) { // r->import) {
-		sym_vaddr = rel->rva;
-	}
+	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
-		// If there's a symbol, use it to determine appropriate type
 		if (r->symbol || r->import) {
-			// Make sure the relocation has a valid vaddr and paddr before returning
-			if (!r->vaddr) {
-				r->vaddr = rel->rva;
-			}
-			if (!r->paddr) {
-				r->paddr = rel->offset;
-			}
 			return r;
 		}
 		// Default CREL handling based on machine type
 		switch (eo->ehdr.e_machine) {
 		case EM_X86_64:
-			ADD(64, 0);
-			break;
-		case EM_386:
-			ADD(32, 0);
-			break;
 		case EM_AARCH64:
 			ADD(64, 0);
-			break;
+		case EM_386:
 		case EM_ARM:
 			ADD(32, 0);
-			break;
 		default:
-			// Default to 64-bit for other architectures
 			ADD(64, 0);
-			break;
 		}
 	}
 
@@ -1608,19 +1505,19 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 }
 
 static bool has_sanitizers(RBinFile *bf) {
-	bool ret = false;
-	RList* imports_list = imports (bf);
-	RListIter *iter;
-	RBinImport *import;
-	r_list_foreach (imports_list, iter, import) {
-		const char *iname = r_bin_name_tostring2 (import->name, 'o');
+	ELFOBJ *eo = bf->bo->bin_obj;
+	RVecRBinImport *imports = Elf_(load_imports_vec) (eo);
+	if (!imports) {
+		return false;
+	}
+	RBinImport *imp;
+	R_VEC_FOREACH (imports, imp) {
+		const char *iname = r_bin_name_tostring2 (imp->name, 'o');
 		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
-			ret = true;
-			break;
+			return true;
 		}
 	}
-	r_list_free (imports_list);
-	return ret;
+	return false;
 }
 
 static RBinInfo* info(RBinFile *bf) {

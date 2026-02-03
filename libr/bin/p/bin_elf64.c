@@ -142,7 +142,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.sections = &sections,
 #endif
 	.symbols_vec = symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.minstrlen = 4,
 	.info = &info,
 	.fields = &fields,
