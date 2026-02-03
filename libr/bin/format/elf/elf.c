@@ -4905,14 +4905,10 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 	if (ELF_ST_BIND (sym->st_info) != STB_LOCAL) {
 		return false;
 	}
-	if (!is_shidx_valid (eo, sym->st_shndx)) {
-		return false;
-	}
-	return true;
-	// Elf_(Word) sh_name = eo->shdr[sym->st_shndx].sh_name;
-	// return eo->shstrtab && sh_name < eo->shstrtab_size;
+	return is_shidx_valid (eo, sym->st_shndx);
 }
 
+// AITODO: is this function really needed or used anywhere else instead of from where it's called from? analyze its meaning and cases, and just inline the code and remove this function in order to reduce LOCs
 static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	if (eobj->symbols_by_ord && ord < eobj->symbols_by_ord_size) {
 		r_bin_symbol_free (eobj->symbols_by_ord[ord]);
@@ -4920,9 +4916,8 @@ static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
 	}
 }
 
-static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
+static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	int bin_bits = Elf_(get_bits) (eo);
-	RBinSymbol *sym = *symp;
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	int len = strlen (name);
 	if (name[0] == '$' && (len >= 2 && !name[2])) {
@@ -4961,8 +4956,8 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol **symp) {
 	}
 }
 
-// XXX this is slow because we can directly use RBinSymbol instead of RBinElfSymbol imho
-RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
+// Fill sym with converted symbol data, returns true on success
+static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 	ut64 paddr, vaddr;
 	const ut64 baddr = Elf_(get_baddr) (eo);
 	if (baddr && baddr != UT64_MAX && symbol->offset && symbol->offset != UT64_MAX) {
@@ -4976,28 +4971,21 @@ RBinSymbol *Elf_(convert_symbol)(ELFOBJ *eo, RBinElfSymbol *symbol) {
 	} else {
 		paddr = symbol->offset;
 		ut64 va = Elf_(p2v_new) (eo, paddr);
-		if (va != UT64_MAX) {
-			vaddr = va;
-		} else {
-			vaddr = paddr;
-		}
+		vaddr = (va != UT64_MAX) ? va : paddr;
 	}
-
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	ptr->name = r_bin_name_new (symbol->name);
-	ptr->forwarder = "NONE";
-	ptr->bind = symbol->bind;
-	ptr->type = symbol->type;
-	ptr->is_imported = symbol->is_imported;
-	ptr->paddr = paddr;
-	ptr->vaddr = vaddr;
-	ptr->size = symbol->size;
-	ptr->ordinal = symbol->ordinal;
-	// detect thumb
+	memset (sym, 0, sizeof (RBinSymbol));
+	sym->name = r_bin_name_new (symbol->name);
+	sym->forwarder = "NONE";
+	sym->bind = symbol->bind;
+	sym->type = symbol->type;
+	sym->is_imported = symbol->is_imported;
+	sym->paddr = paddr;
+	sym->vaddr = vaddr;
+	sym->size = symbol->size;
+	sym->ordinal = symbol->ordinal;
 	if (eo->ehdr.e_machine == EM_ARM) {
-		_set_arm_thumb_bits (eo, &ptr);
+		_set_arm_thumb_bits (eo, sym);
 	}
-	return ptr;
 }
 
 static RBinElfSection *getsection_byname(ELFOBJ *eo, const char *name, size_t *_i) {
@@ -5145,10 +5133,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	const int limit = eo->limit;
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
-		RBinSymbol *isym = Elf_(convert_symbol) (eo, symbol);
-		if (!isym) {
-			continue;
-		}
+		RBinSymbol *isym = R_NEW0 (RBinSymbol);
+		fill_symbol (eo, symbol, isym);
 		setsymord (eo, isym->ordinal, isym);
 		if (symbol->is_imported) {
 			if (limit > 0 && count++ > limit) {
@@ -5502,10 +5488,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		if (symbol->is_sht_null) {
 			continue;
 		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (ptr) {
-			RVecRBinSymbol_push_back (&eo->symbols_cache, ptr);
-		}
+		RBinSymbol sym;
+		fill_symbol (eo, symbol, &sym);
+		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
 	}
 	eo->symbols_cached = true;
 	return &eo->symbols_cache;
@@ -5560,20 +5545,18 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 		if (!is->size || is->is_sht_null) {
 			continue;
 		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, is);
-		if (!ptr) {
-			continue;
+		RBinSymbol sym;
+		fill_symbol (eo, is, &sym);
+		sym.is_imported = true;
+		if (sym.paddr == 0) {
+			sym.paddr = UT64_MAX;
+			sym.vaddr = UT64_MAX;
 		}
-		ptr->is_imported = true;
-		if (ptr->paddr == 0) {
-			ptr->paddr = UT64_MAX;
-			ptr->vaddr = UT64_MAX;
+		if (sym.vaddr == UT32_MAX) {
+			sym.paddr = 0;
+			sym.vaddr = 0;
 		}
-		if (ptr->vaddr == UT32_MAX) {
-			ptr->paddr = 0;
-			ptr->vaddr = 0;
-		}
-		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, ptr);
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, &sym);
 	}
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;
