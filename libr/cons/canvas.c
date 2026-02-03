@@ -451,6 +451,7 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 	}
 
 	olen = 0;
+	const bool useutf = c->flags & R_CONS_CANVAS_FLAG_UTF8;
 	for (y = 0; y < c->h; y++) {
 		if (!is_first) {
 			o[olen++] = '\n';
@@ -470,6 +471,17 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 					attr_x++;
 					x++;
 					continue;
+				}
+				if (useutf) {
+					RRune ch;
+					int ulen = r_utf8_decode ((const ut8 *)c->b[y] + x, c->blen[y] - x, &ch);
+					if (ulen > 1) {
+						memcpy (o + olen, c->b[y] + x, ulen);
+						olen += ulen;
+						attr_x += rune_display_width (ch);
+						x += ulen;
+						continue;
+					}
 				}
 				const char *rune = r_cons_get_rune ((const ut8)c->b[y][x]);
 				if (rune) {
