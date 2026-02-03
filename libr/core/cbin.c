@@ -1895,15 +1895,13 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	char *sdb_module = NULL;
 
 	R_TIME_PROFILE_BEGIN;
-	{
-		int fd = r_io_fd_get_current (core->io);
-		if (fd != -1) {
-			RIODesc *desc = r_io_desc_get (core->io, fd);
-			if (desc && r_io_desc_is_dbg (desc)) {
-				R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
-				r_table_free (table);
-				return false;
-			}
+	int fd = r_io_fd_get_current (core->io);
+	if (fd != -1) {
+		RIODesc *desc = r_io_desc_get (core->io, fd);
+		if (desc && r_io_desc_is_dbg (desc)) {
+			R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
+			r_table_free (table);
+			return false;
 		}
 	}
 
@@ -2055,7 +2053,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
 			// end reloc item
 			pj_end (pj);
-
 			free (mn);
 			free (relname);
 		} else if (IS_MODE_NORMAL (mode)) {
@@ -2063,7 +2060,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				R_LOG_DEBUG ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
 				continue;
 			}
-
 			char *name = reloc->import
 				? strdup (r_bin_name_tostring (reloc->import->name))
 				: reloc->symbol
@@ -2093,7 +2089,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			if (reloc->is_ifunc) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
-
 			char *res = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "XXsds", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), reloc->ntype, res);
@@ -2116,7 +2111,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 		}
 	}
-
 	r_table_free (table);
 	R_FREE (sdb_module);
 	sdb_free (db);
@@ -2162,10 +2156,7 @@ static bool import_cache_fill(RBinObject *obj, RVecRBinSymbol *symbols) {
 
 static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
 	RBinObject *obj = r_bin_cur_object (bin);
-	if (!obj) {
-		return NULL;
-	}
-	if (!import_cache_fill (obj, symbols)) {
+	if (!obj || !import_cache_fill (obj, symbols)) {
 		return NULL;
 	}
 	if (name) {
@@ -2178,7 +2169,7 @@ static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *na
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	ut64 addr = UT64_MAX;
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return addr;
 	}
 	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (bin);
@@ -2207,9 +2198,8 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	bool keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	RTable *table = r_core_table_new (core, "imports");
 	R_RETURN_VAL_IF_FAIL (table, false);
-	RBinImport *import;
-	RListIter *iter;
-	r_strf_buffer (64);
+	// TODO: Use the heap, symbols can be very large
+	r_strf_buffer (128);
 	bool lit = info? info->has_lit: false;
 
 	if (!info) {
