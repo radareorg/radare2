@@ -1445,6 +1445,7 @@ R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf) {
 			r_list_foreach (list, iter, import) {
 				RVecRBinImport_push_back (&bo->imports_vec, import);
 			}
+			bo->imports->free = free; // vec now owns internal strings
 		}
 		return &bo->imports_vec;
 	}

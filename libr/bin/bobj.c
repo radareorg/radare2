@@ -244,6 +244,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->plugin = plugin;
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 	RVecRBinSymbol_init (&bo->symbols_vec);
+	RVecRBinImport_init (&bo->imports_vec);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
