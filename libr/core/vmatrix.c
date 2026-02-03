@@ -296,9 +296,9 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 		}
 	} else if (!strcmp (cat, "imports")) {
 		RBinImport *imp;
-		RListIter *iter;
-		const RList *imports = r_bin_get_imports (rvm->core->bin);
-		r_list_foreach (imports, iter, imp) {
+		RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm->core->bin);
+		if (imports_vec) {
+			R_VEC_FOREACH (imports_vec, imp) {
 			if (item_count >= max_items) {
 				break;
 			}
@@ -323,6 +323,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 				col = 0;
 			}
 			item_count++;
+		}
 		}
 	} else if (!strcmp (cat, "comments")) {
 		RIntervalTreeIter it;
@@ -1012,8 +1013,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 					const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 					max_items = r_list_length (symbols);
 				} else if (!strcmp (cat, "imports")) {
-					const RList *imports = r_bin_get_imports (rvm.core->bin);
-					max_items = r_list_length (imports);
+					RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
+					max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
 				} else if (!strcmp (cat, "sections")) {
 					const RList *sections = r_bin_get_sections (rvm.core->bin);
 					max_items = r_list_length (sections);
@@ -1083,8 +1084,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
 						max_items = r_list_length (symbols);
 					} else if (!strcmp (cat, "imports")) {
-						const RList *imports = r_bin_get_imports (rvm.core->bin);
-						max_items = r_list_length (imports);
+						RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
+						max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
 					} else if (!strcmp (cat, "sections")) {
 						const RList *sections = r_bin_get_sections (rvm.core->bin);
 						max_items = r_list_length (sections);

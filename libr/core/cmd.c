@@ -5679,8 +5679,9 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	case 'i': // @@@i
 		{
 			RBinImport *imp;
-			const RList *implist = r_bin_get_imports (core->bin);
-			r_list_foreach (implist, iter, imp) {
+			RVecRBinImport *imports_vec = r_bin_get_imports_vec (core->bin);
+			if (imports_vec) {
+				R_VEC_FOREACH (imports_vec, imp) {
 				const char *name = r_bin_name_tostring (imp->name);
 				char *impflag = r_str_newf ("sym.imp.%s", name);
 				ut64 addr = r_num_math (core->num, impflag);
@@ -5689,6 +5690,7 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 				}
 				free (impflag);
 			}
+		}
 		}
 		break;
 	case 'E':

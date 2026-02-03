@@ -895,9 +895,18 @@ static ut8 *get_imports(RCore *c, int *len) {
 		return NULL;
 	}
 
-	const RList *list = r_bin_get_imports (c->bin);
+	const RList *list = NULL;
+	RVecRBinImport *imports_vec = r_bin_get_imports_vec (c->bin);
 	// XXX we probably dont want to sort an unowned list
-	r_list_sort ((RList *)list, (RListComparator)import_cmp);
+	if (imports_vec) {
+		// Convert to list for backward compatibility
+		list = r_list_newf ((RListFree)r_bin_import_free);
+		RBinImport *imp;
+		R_VEC_FOREACH (imports_vec, imp) {
+			r_list_append (list, r_bin_import_clone (imp));
+		}
+		r_list_sort (list, (RListComparator)import_cmp);
+	}
 
 	*len = 0;
 

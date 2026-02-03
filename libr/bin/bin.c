@@ -827,6 +827,12 @@ R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
 	return bf? r_bin_file_get_symbols_vec (bf): NULL;
 }
 
+R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinFile *bf = bin->cur;
+	return bf? r_bin_file_get_imports_vec (bf): NULL;
+}
+
 R_API RList *r_bin_get_mem(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
