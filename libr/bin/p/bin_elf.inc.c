@@ -328,7 +328,6 @@ static RList* entries(RBinFile *bf) {
 }
 
 // fill bf->bo->symbols_vec (RBinSymbol) with the processed contents of eo->g_symbols_vec (RBinElfSymbol)
-// thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
@@ -339,23 +338,18 @@ static bool symbols_vec(RBinFile *bf) {
 	if (!symbols) {
 		return false;
 	}
-	// Transfer ownership from ELF cache to bin object
-	RBinSymbol *sym;
-	R_VEC_FOREACH (symbols, sym) {
-		RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
-	}
-	// Reset the ELF cache without freeing contents (ownership transferred)
-	free (eo->symbols_cache._start);
+	// Transfer ownership: swap vectors and reset source
+	bf->bo->symbols_vec = eo->symbols_cache;
 	RVecRBinSymbol_init (&eo->symbols_cache);
 	eo->symbols_cached = false;
 
-	// Also add PLT entries from imports (already converted and cached)
+	// Also add PLT entries from imports
 	RVecRBinSymbol *plt_symbols = Elf_(load_plt_symbols_vec) (eo);
-	if (plt_symbols) {
+	if (plt_symbols && !RVecRBinSymbol_empty (plt_symbols)) {
+		RBinSymbol *sym;
 		R_VEC_FOREACH (plt_symbols, sym) {
 			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
 		}
-		// Reset the PLT cache without freeing contents (ownership transferred)
 		free (eo->plt_symbols_cache._start);
 		RVecRBinSymbol_init (&eo->plt_symbols_cache);
 		eo->plt_symbols_cached = false;
@@ -369,18 +363,11 @@ static bool imports_vec(RBinFile *bf) {
 		return true;
 	}
 	ELFOBJ *eo = bf->bo->bin_obj;
-	RVecRBinImport *imports = Elf_(load_imports_vec) (eo);
-	if (!imports) {
+	if (!Elf_(load_imports_vec) (eo)) {
 		return false;
 	}
-	// Transfer ownership from ELF cache to bin object
-	// Note: imports_by_ord is already populated in Elf_(load_imports_vec)
-	RBinImport *imp;
-	R_VEC_FOREACH (imports, imp) {
-		RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
-	}
-	// Reset the ELF cache without freeing contents (ownership transferred)
-	free (eo->imports_cache._start);
+	// Transfer ownership: swap vectors and reset source
+	bf->bo->imports_vec = eo->imports_cache;
 	RVecRBinImport_init (&eo->imports_cache);
 	eo->imports_cached = false;
 	return true;
@@ -411,85 +398,51 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	ut64 P = rel->rva; // rva has taken baddr into account
 
 	RBinReloc *r = R_NEW0 (RBinReloc);
-	r->import = NULL;
 	r->ntype = rel->type;
-	r->symbol = NULL;
-	r->is_ifunc = false;
 	r->addend = rel->addend;
+	r->vaddr = rel->rva;
+	r->paddr = rel->offset;
+	r->laddr = rel->laddr;
+
 	// Special handling for CREL relocations
 	if (rel->mode == DT_CREL) {
-		// No special handling needed for symbol lookup, it works the same way
-		// Set appropriate relocation type based on architecture
 		if (eo->ehdr.e_machine == EM_X86_64 || eo->ehdr.e_machine == EM_AARCH64) {
 			r->type = R_BIN_RELOC_64;
 		} else if (eo->ehdr.e_machine == EM_386 || eo->ehdr.e_machine == EM_ARM) {
 			r->type = R_BIN_RELOC_32;
 		} else {
-			r->type = R_BIN_RELOC_64; // Default to 64-bit relocation type
+			r->type = R_BIN_RELOC_64;
 		}
-		r->additive = true;       // CREL relocations are typically additive
-		// Ensure valid vaddr and paddr
-		if (!r->vaddr) {
-			r->vaddr = rel->rva;
-		}
-		if (!r->paddr) {
-			r->paddr = rel->offset;
-		}
+		r->additive = true;
 	}
 	if (rel->sym) {
 		if (rel->sym < eo->imports_by_ord_size && eo->imports_by_ord[rel->sym]) {
-			// Clone the import so relocations own their own copy
-			// This avoids UAF if imports are modified later
 			r->import = r_bin_import_clone (eo->imports_by_ord[rel->sym]);
 		} else if (rel->sym < eo->symbols_by_ord_size && eo->symbols_by_ord[rel->sym]) {
 			r->symbol = eo->symbols_by_ord[rel->sym];
 		}
 	}
-	r->vaddr = rel->rva;
-	r->paddr = rel->offset;
-	r->laddr = rel->laddr;
 
-	ut64 sym_vaddr = 0;
-	if (r->symbol) {
-		sym_vaddr = r->symbol->vaddr;
-	} else if (rel->sym) { // r->import) {
-		sym_vaddr = rel->rva;
-	}
+	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
 	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {
-		// If there's a symbol, use it to determine appropriate type
 		if (r->symbol || r->import) {
-			// Make sure the relocation has a valid vaddr and paddr before returning
-			if (!r->vaddr) {
-				r->vaddr = rel->rva;
-			}
-			if (!r->paddr) {
-				r->paddr = rel->offset;
-			}
 			return r;
 		}
 		// Default CREL handling based on machine type
 		switch (eo->ehdr.e_machine) {
 		case EM_X86_64:
-			ADD(64, 0);
-			break;
-		case EM_386:
-			ADD(32, 0);
-			break;
 		case EM_AARCH64:
 			ADD(64, 0);
-			break;
+		case EM_386:
 		case EM_ARM:
 			ADD(32, 0);
-			break;
 		default:
-			// Default to 64-bit for other architectures
 			ADD(64, 0);
-			break;
 		}
 	}
 

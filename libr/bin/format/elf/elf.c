@@ -5503,13 +5503,8 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 			continue;
 		}
 		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (!ptr) {
-			break;
-		}
-		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&eo->symbols_cache);
-		if (sym) {
-			memcpy (sym, ptr, sizeof (RBinSymbol));
-			free (ptr);
+		if (ptr) {
+			RVecRBinSymbol_push_back (&eo->symbols_cache, ptr);
 		}
 	}
 	eo->symbols_cached = true;
@@ -5560,28 +5555,14 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 	}
 	RVecRBinSymbol_init (&eo->plt_symbols_cache);
 	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
-	// Count how many have size > 0 and !is_sht_null
-	size_t count = 0;
 	RBinElfSymbol *is;
-	R_VEC_FOREACH (elf_imports, is) {
-		if (is->size && !is->is_sht_null) {
-			count++;
-		}
-	}
-	if (count == 0) {
-		eo->plt_symbols_cached = true;
-		return &eo->plt_symbols_cache;
-	}
-	if (!RVecRBinSymbol_reserve (&eo->plt_symbols_cache, count)) {
-		return NULL;
-	}
 	R_VEC_FOREACH (elf_imports, is) {
 		if (!is->size || is->is_sht_null) {
 			continue;
 		}
 		RBinSymbol *ptr = Elf_(convert_symbol) (eo, is);
 		if (!ptr) {
-			break;
+			continue;
 		}
 		ptr->is_imported = true;
 		if (ptr->paddr == 0) {
@@ -5592,11 +5573,7 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&eo->plt_symbols_cache);
-		if (sym) {
-			memcpy (sym, ptr, sizeof (RBinSymbol));
-			free (ptr);
-		}
+		RVecRBinSymbol_push_back (&eo->plt_symbols_cache, ptr);
 	}
 	eo->plt_symbols_cached = true;
 	return &eo->plt_symbols_cache;
@@ -5644,31 +5621,11 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	r_list_free (eo->relocs_list);
 	if (eo->imports_by_ord) {
-		int i;
-		for (i = 0; i < eo->imports_by_ord_size; i++) {
-			RBinImport *imp = eo->imports_by_ord[i];
-			if (imp) {
-				r_bin_import_free (eo->imports_by_ord[i]);
-				eo->imports_by_ord[i] = NULL;
-			}
-		}
-		eo->imports_by_ord_size = 0;
-		R_FREE (eo->imports_by_ord);
-	}
-	free (eo->osabi);
-	free (eo->phdr);
-	free (eo->shdr);
-	free (eo->strtab);
-	free (eo->shstrtab);
-	free (eo->dynstr);
-	RVecElfOff_fini (&eo->dyn_info.dt_needed);
-	//free (eo->strtab_section);
-	if (eo->imports_by_ord) {
 		size_t i;
 		for (i = 0; i < eo->imports_by_ord_size; i++) {
-			free (eo->imports_by_ord[i]);
+			r_bin_import_free (eo->imports_by_ord[i]);
 		}
-		free (eo->imports_by_ord);
+		R_FREE (eo->imports_by_ord);
 	}
 	if (eo->symbols_by_ord) {
 		size_t i;
@@ -5677,28 +5634,18 @@ void Elf_(free)(ELFOBJ* eo) {
 		}
 		free (eo->symbols_by_ord);
 	}
+	free (eo->osabi);
+	free (eo->phdr);
+	free (eo->shdr);
+	free (eo->strtab);
+	free (eo->shstrtab);
+	free (eo->dynstr);
+	RVecElfOff_fini (&eo->dyn_info.dt_needed);
 	r_unref (eo->b);
 	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-	eo->phdr_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
-	eo->phdr_imports_vec = NULL;
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
-	eo->g_symbols_vec = NULL;
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
-	eo->g_imports_vec = NULL;
-#if 0
-	// R2_590
-	RVecRBinElfSymbol_free (&eo->g_symbols);
-	eo->g_symbols = NULL;
-	// eo->phdr_symbols = NULL;
-
-	if (eo->phdr_imports != eo->g_imports) {
-		RVecElfOff_free (&eo->phdr_imports);
-	}
-	eo->phdr_imports = NULL;
-	RVecElfOff_free (&eo->g_imports);
-	eo->g_imports = NULL;
-#endif
 	if (eo->sections_loaded) {
 		RVecRBinElfSection_fini (&eo->g_sections);
 	}
@@ -5729,7 +5676,6 @@ void Elf_(free)(ELFOBJ* eo) {
 		RVecRBinSymbol_fini (&eo->plt_symbols_cache);
 	}
 	ht_uu_free (eo->rel_cache);
-	eo->rel_cache = NULL;
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);
