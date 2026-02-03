@@ -411,18 +411,12 @@ static bool symbols_vec(RBinFile *bf) {
 #endif
 }
 
-static RList* imports(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
-	if (!ret) {
-		return NULL;
-	}
+static bool imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 
 	ELFOBJ *eo = bf->bo->bin_obj;
 	if (!Elf_(load_imports) (eo)) {
-		r_list_free (ret);
-		return NULL;
+		return false;
 	}
 	const RVecRBinElfSymbol *imports = eo->g_imports_vec;
 
@@ -437,9 +431,9 @@ static RList* imports(RBinFile *bf) {
 		ptr->type = is->type;
 		ptr->ordinal = is->ordinal;
 		setimpord (eo, ptr->ordinal, ptr);
-		r_list_append (ret, ptr);
+		RVecRBinImport_push_back (&bf->bo->imports_vec, ptr);
 	}
-	return ret;
+	return true;
 }
 
 static RList* libs(RBinFile *bf) {
@@ -1608,19 +1602,19 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 }
 
 static bool has_sanitizers(RBinFile *bf) {
-	bool ret = false;
-	RList* imports_list = imports (bf);
-	RListIter *iter;
-	RBinImport *import;
-	r_list_foreach (imports_list, iter, import) {
-		const char *iname = r_bin_name_tostring2 (import->name, 'o');
+	ELFOBJ *eo = bf->bo->bin_obj;
+	if (!Elf_(load_imports) (eo)) {
+		return false;
+	}
+	const RVecRBinElfSymbol *imports = eo->g_imports_vec;
+	RBinElfSymbol *is;
+	R_VEC_FOREACH (imports, is) {
+		const char *iname = is->name;
 		if (*iname == '_' && (strstr (iname, "__sanitizer") || strstr (iname, "__ubsan"))) {
-			ret = true;
-			break;
+			return true;
 		}
 	}
-	r_list_free (imports_list);
-	return ret;
+	return false;
 }
 
 static RBinInfo* info(RBinFile *bf) {
