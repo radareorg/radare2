@@ -848,6 +848,20 @@ typedef char *(*RAnalTypesParser)(RAnal *a, const char *s);
 typedef char *(*RAnalTypesParserFile)(RAnal *a, const char *s, const char *dir);
 typedef char *(*RAnalTypesParserText)(RAnal *a, const char *s);
 
+// Per-function analysis callback (called after af completes)
+typedef bool (*RAnalFcnAnalyzeCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Variable recovery callback (called during afva)
+// Returns list of RAnalVarProt or NULL to use default ESIL recovery
+typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Data flow refs callback (called during aar)
+// Returns vector of RAnalRef for data flow xrefs
+typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Post-analysis callback (called at end of aaaa)
+typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
+
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
 
@@ -874,6 +888,14 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 #endif
+
+	// Per-function analysis hooks
+	RAnalFcnAnalyzeCallback analyze_fcn;      // Called after af completes
+	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
+	RAnalDataRefsCallback get_data_refs;      // Called during aar, returns refs
+
+	// Post-analysis hook (for aaaa)
+	RAnalPostAnalysisCallback post_analysis;
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1071,6 +1093,12 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
+
+// Plugin hook dispatch functions
+R_API bool r_anal_plugin_analyze_fcn(RAnal *anal, RAnalFunction *fcn);
+R_API RList *r_anal_plugin_recover_vars(RAnal *anal, RAnalFunction *fcn);
+R_API RVecAnalRef *r_anal_plugin_get_data_refs(RAnal *anal, RAnalFunction *fcn);
+R_API bool r_anal_plugin_post_analysis(RAnal *anal);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);

@@ -1940,7 +1940,12 @@ beach:
 
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
-	return fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
+	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
+	// Notify plugins that function analysis is complete
+	if (ret >= 0) {
+		r_anal_plugin_analyze_fcn (anal, fcn);
+	}
+	return ret;
 }
 
 R_API bool r_anal_check_fcn(RAnal *anal, ut8 *buf, ut16 bufsz, ut64 addr, ut64 low, ut64 high) {

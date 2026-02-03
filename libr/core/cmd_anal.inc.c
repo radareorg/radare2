@@ -14365,6 +14365,22 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
+		// Add plugin-provided data flow refs
+		{
+			RListIter *iter;
+			RAnalFunction *fcn;
+			r_list_foreach (core->anal->fcns, iter, fcn) {
+				RVecAnalRef *refs = r_anal_plugin_get_data_refs (core->anal, fcn);
+				if (refs) {
+					RAnalRef *ref;
+					R_VEC_FOREACH (refs, ref) {
+						r_anal_xrefs_set (core->anal, ref->at, ref->addr, ref->type);
+					}
+					RVecAnalRef_free (refs);
+				}
+			}
+		}
+		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
@@ -14494,6 +14510,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 				// const char *mode = core->anal->opt.slow? "slow": "fast";
 				logline (core, 98, "Autoname all functions (.afna@@c:afla)");
 				r_core_cmd0 (core, ".afna@@c:afla");
+				// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
+				logline (core, 99, "Running plugin post-analysis hooks");
+				r_anal_plugin_post_analysis (core->anal);
 			}
 		} else {
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
