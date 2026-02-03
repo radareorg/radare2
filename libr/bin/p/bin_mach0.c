@@ -260,6 +260,9 @@ static RList *relocs(RBinFile *bf) {
 	}
 	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 
+	RVecRBinImport *imports = mo->imports_loaded
+		? &mo->imports_cache
+		: &bf->bo->imports_vec;
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (relocs, it, reloc) {
@@ -273,8 +276,8 @@ static RList *relocs(RBinFile *bf) {
 		RBinImport *imp = NULL;
 		if (reloc->name[0]) {
 			imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
-		} else if (reloc->ord >= 0 && mo->imports_loaded) {
-			imp = RVecRBinImport_at (&mo->imports_cache, reloc->ord);
+		} else if (reloc->ord >= 0) {
+			imp = RVecRBinImport_at (imports, reloc->ord);
 		}
 		if (imp) {
 			ptr->import = r_bin_import_clone (imp);
