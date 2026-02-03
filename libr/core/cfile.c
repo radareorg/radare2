@@ -837,8 +837,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		r_config_set_i (r->config, "bin.at", true);
 		R_LOG_INFO ("[bin.libs] Linking imports");
 		RBinImport *imp;
-		const RList *imports = r_bin_get_imports (r->bin);
-		r_list_foreach (imports, iter, imp) {
+		RVecRBinImport *imports_vec = r_bin_get_imports_vec (r->bin);
+		if (imports_vec) {
+			R_VEC_FOREACH (imports_vec, imp) {
 			// PLT finding
 			char *flagname = r_str_newf ("sym.imp.%s", r_bin_name_tostring2 (imp->name, 'f'));
 			RFlagItem *impsym = r_flag_get (r->flags, flagname);
@@ -858,9 +859,10 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 				const ut64 b = imp_addr;
 				r_core_cmdf (r, "ax 0x%08"PFMT64x" 0x%08"PFMT64x, a, b);
 			}
+			}
 		}
-	}
-	bool is_core = false;
+		}
+		bool is_core = false;
 	if (plugin && plugin->info) {
 		RBinInfo *info = plugin->info (binfile);
 		if (info && info->type) {

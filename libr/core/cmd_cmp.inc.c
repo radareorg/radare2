@@ -890,7 +890,16 @@ static const RList *imports_of(RCore *core, int id0) {
 	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
 	RBinFile *old_bf = core->bin->cur;
 	r_bin_file_set_cur_binfile (core->bin, bf);
-	const RList *list = bf? r_bin_get_imports (core->bin): NULL;
+	RList *list = NULL;
+	RVecRBinImport *imports_vec = bf? r_bin_file_get_imports_vec (bf): NULL;
+	// Convert to list for backward compatibility
+	if (imports_vec) {
+		list = r_list_newf ((RListFree)r_bin_import_free);
+		RBinImport *imp;
+		R_VEC_FOREACH (imports_vec, imp) {
+			r_list_append (list, r_bin_import_clone (imp));
+		}
+	}
 	r_bin_file_set_cur_binfile (core->bin, old_bf);
 	return list;
 }

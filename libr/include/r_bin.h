@@ -898,6 +898,8 @@ R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
+R_API const RList *r_bin_get_imports(RBin *bin);
+R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true
 R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
@@ -931,6 +933,7 @@ R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_API RList *r_bin_file_get_symbols(RBinFile *bf);
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
+R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 //
 R_API ut64 r_bin_file_get_vaddr(RBinFile *bf, ut64 paddr, ut64 vaddr);
 // RBinFile.add

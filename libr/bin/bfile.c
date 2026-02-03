@@ -1432,6 +1432,26 @@ R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf) {
 	return NULL;
 }
 
+R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	RBinObject *bo = bf->bo;
+	if (bo) {
+		if (bo->imports && RVecRBinImport_empty (&bo->imports_vec)) {
+			R_LOG_DEBUG ("SLOW: cloning imports list into a vec"); // R2_600
+			RBinImport *import;
+			// Create a vector for those plugins not loading the rvec
+			RList *list = bo->imports;
+			RListIter *iter;
+			r_list_foreach (list, iter, import) {
+				RVecRBinImport_push_back (&bo->imports_vec, import);
+			}
+			bo->imports->free = free; // vec now owns internal strings
+		}
+		return &bo->imports_vec;
+	}
+	return NULL;
+}
+
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	if (r_bin_open (bin, file, opt)) {
 		return r_bin_cur (bin);

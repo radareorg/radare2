@@ -409,11 +409,12 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		}
 		return;
 	}
-	const RList *imports = r_bin_get_imports (core->bin);
-	RListIter *iter, *iter2;
-	RBinSymbol *imp;
+	RVecRBinImport *imports_vec = r_bin_get_imports_vec (core->bin);
+	RListIter *iter2;
+	RBinImport *imp;
 	Sdb *db = sdb_new0 ();
-	r_list_foreach (imports, iter, imp) {
+	if (imports_vec) {
+		R_VEC_FOREACH (imports_vec, imp) {
 		const char *name = r_bin_name_tostring2 (imp->name, 'o');
 		const char *un = r_bin_import_tags (core->bin, name);
 		if (!un) {
@@ -432,6 +433,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 		free (a);
 		r_list_free (keys);
 	}
+	}
 	if (mode == 'c') {
 		char *s = sdb_querys (db, NULL, 0, symname);
 		if (s) {
@@ -442,7 +444,7 @@ static void cmd_iic2(RCore *core, int mode, const char *symname) {
 	} else if (mode == 'x') {
 		char *s = sdb_querys (db, NULL, 0, symname);
 		if (s) {
-			RListIter *iter2;
+			RListIter *iter, *iter2;
 			const char *value;
 			RList *values = r_str_split_list (s, ",", 0);
 			RList *rrrr = NULL;

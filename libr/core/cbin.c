@@ -1895,15 +1895,13 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	char *sdb_module = NULL;
 
 	R_TIME_PROFILE_BEGIN;
-	{
-		int fd = r_io_fd_get_current (core->io);
-		if (fd != -1) {
-			RIODesc *desc = r_io_desc_get (core->io, fd);
-			if (desc && r_io_desc_is_dbg (desc)) {
-				R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
-				r_table_free (table);
-				return false;
-			}
+	int fd = r_io_fd_get_current (core->io);
+	if (fd != -1) {
+		RIODesc *desc = r_io_desc_get (core->io, fd);
+		if (desc && r_io_desc_is_dbg (desc)) {
+			R_LOG_DEBUG ("Ignoring reloc patching in debugger mode");
+			r_table_free (table);
+			return false;
 		}
 	}
 
@@ -2055,7 +2053,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			pj_kb (pj, "is_ifunc", reloc->is_ifunc);
 			// end reloc item
 			pj_end (pj);
-
 			free (mn);
 			free (relname);
 		} else if (IS_MODE_NORMAL (mode)) {
@@ -2063,7 +2060,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				R_LOG_DEBUG ("Cannot resolve address for %s", bin_reloc_type_name (reloc));
 				continue;
 			}
-
 			char *name = reloc->import
 				? strdup (r_bin_name_tostring (reloc->import->name))
 				: reloc->symbol
@@ -2093,7 +2089,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			if (reloc->is_ifunc) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
-
 			char *res = r_strbuf_drain (buf);
 			r_table_add_rowf (table, "XXsds", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), reloc->ntype, res);
@@ -2116,7 +2111,6 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 			}
 		}
 	}
-
 	r_table_free (table);
 	R_FREE (sdb_module);
 	sdb_free (db);
@@ -2162,10 +2156,7 @@ static bool import_cache_fill(RBinObject *obj, RVecRBinSymbol *symbols) {
 
 static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *name, ut64 addr) {
 	RBinObject *obj = r_bin_cur_object (bin);
-	if (!obj) {
-		return NULL;
-	}
-	if (!import_cache_fill (obj, symbols)) {
+	if (!obj || !import_cache_fill (obj, symbols)) {
 		return NULL;
 	}
 	if (name) {
@@ -2178,7 +2169,7 @@ static RBinSymbol *get_import(RBin *bin, RVecRBinSymbol *symbols, const char *na
 R_API ut64 r_core_bin_impaddr(RBin *bin, int va, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bin, UT64_MAX);
 	ut64 addr = UT64_MAX;
-	if (!name || !*name) {
+	if (R_STR_ISEMPTY (name)) {
 		return addr;
 	}
 	RVecRBinSymbol *symbols = r_bin_get_symbols_vec (bin);
@@ -2207,9 +2198,8 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	bool keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
 	RTable *table = r_core_table_new (core, "imports");
 	R_RETURN_VAL_IF_FAIL (table, false);
-	RBinImport *import;
-	RListIter *iter;
-	r_strf_buffer (64);
+	// TODO: Use the heap, symbols can be very large
+	r_strf_buffer (128);
 	bool lit = info? info->has_lit: false;
 
 	if (!info) {
@@ -2221,7 +2211,7 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 		return false;
 	}
 	r_bin_object_import_cache_cleanup (r_bin_cur_object (core->bin));
-	const RList *imports = r_bin_get_imports (core->bin);
+	RVecRBinImport *imports_vec = r_bin_get_imports_vec (core->bin);
 	int cdsz = info? (info->bits == 64? 8: info->bits == 32? 4
 					: info->bits == 16? 4
 							: 0)
@@ -2233,81 +2223,84 @@ static bool bin_imports(RCore *core, PJ *pj, int mode, int va, const char *name)
 	} else if (IS_MODE_NORMAL (mode)) {
 		r_table_set_columnsf (table, "nXssss", "nth", "vaddr", "bind", "type", "lib", "name");
 	}
-	r_list_foreach (imports, iter, import) {
-		const char *iname = r_bin_name_tostring (import->name);
-		if (name && strcmp (iname, name)) {
-			continue;
-		}
-		char *symname = strdup (iname);
-		char *libname = import->libname? strdup (import->libname): NULL;
-		ut64 addr = lit? r_core_bin_impaddr (core->bin, va, symname): 0;
-		if (bin_demangle) {
-			char *dname = r_bin_demangle (core->bin->cur, NULL, symname, addr, keep_lib);
-			if (dname) {
+	if (imports_vec) {
+		RBinImport *import;
+		R_VEC_FOREACH (imports_vec, import) {
+			const char *iname = r_bin_name_tostring (import->name);
+			if (name && strcmp (iname, name)) {
+				continue;
+			}
+			char *symname = strdup (iname);
+			char *libname = import->libname? strdup (import->libname): NULL;
+			ut64 addr = lit? r_core_bin_impaddr (core->bin, va, symname): 0;
+			if (bin_demangle) {
+				char *dname = r_bin_demangle (core->bin->cur, NULL, symname, addr, keep_lib);
+				if (dname) {
+					free (symname);
+					symname = r_str_newf ("sym.imp.%s", dname);
+					free (dname);
+				}
+			}
+			if (core->bin->prefix) {
+				char *prname = r_str_newf ("%s.%s", core->bin->prefix, symname);
 				free (symname);
-				symname = r_str_newf ("sym.imp.%s", dname);
-				free (dname);
+				symname = prname;
 			}
-		}
-		if (core->bin->prefix) {
-			char *prname = r_str_newf ("%s.%s", core->bin->prefix, symname);
-			free (symname);
-			symname = prname;
-		}
-		if (IS_MODE_SET (mode)) {
-			// TODO (eddyb) symbols that are imports.
-			// Add a dword/qword for PE imports
-			if (libname && strstr (libname, ".dll") && cdsz) {
-				r_meta_set (core->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
-			}
-		} else if (IS_MODE_SIMPLE (mode)) {
-			r_cons_printf (core->cons, "%s%s%s\n", r_str_get (libname), libname? " ": "", symname);
-		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_cons_println (core->cons, symname);
-		} else if (IS_MODE_JSON (mode)) {
-			pj_o (pj);
-			pj_ki (pj, "ordinal", import->ordinal);
-			if (import->bind) {
-				pj_ks (pj, "bind", import->bind);
-			}
-			if (import->type) {
-				pj_ks (pj, "type", import->type);
-			}
-			if (import->classname && import->classname[0]) {
-				pj_ks (pj, "classname", import->classname);
-				pj_ks (pj, "descriptor", import->descriptor);
-			}
-			pj_ks (pj, "name", symname);
-			if (libname) {
-				pj_ks (pj, "libname", libname);
-			}
-			if (addr && addr != UT64_MAX) {
-				pj_kn (pj, "plt", addr);
-			}
-			pj_end (pj);
-		} else if (IS_MODE_RAD (mode)) {
-			// TODO (eddyb) symbols that are imports.
-		} else {
-			const char *bind = r_str_get_fail (import->bind, "NONE");
-			const char *type = r_str_get_fail (import->type, "NONE");
-			if (import->classname && import->classname[0]) {
-				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
-					r_strf ("%s.%s", import->classname, symname));
+			if (IS_MODE_SET (mode)) {
+				// TODO (eddyb) symbols that are imports.
+				// Add a dword/qword for PE imports
+				if (libname && strstr (libname, ".dll") && cdsz) {
+					r_meta_set (core->anal, R_META_TYPE_DATA, addr, cdsz, NULL);
+				}
+			} else if (IS_MODE_SIMPLE (mode)) {
+				r_cons_printf (core->cons, "%s%s%s\n", r_str_get (libname), libname? " ": "", symname);
+			} else if (IS_MODE_SIMPLEST (mode)) {
+				r_cons_println (core->cons, symname);
+			} else if (IS_MODE_JSON (mode)) {
+				pj_o (pj);
+				pj_ki (pj, "ordinal", import->ordinal);
+				if (import->bind) {
+					pj_ks (pj, "bind", import->bind);
+				}
+				if (import->type) {
+					pj_ks (pj, "type", import->type);
+				}
+				if (import->classname && import->classname[0]) {
+					pj_ks (pj, "classname", import->classname);
+					pj_ks (pj, "descriptor", import->descriptor);
+				}
+				pj_ks (pj, "name", symname);
+				if (libname) {
+					pj_ks (pj, "libname", libname);
+				}
+				if (addr && addr != UT64_MAX) {
+					pj_kn (pj, "plt", addr);
+				}
+				pj_end (pj);
+			} else if (IS_MODE_RAD (mode)) {
+				// TODO (eddyb) symbols that are imports.
 			} else {
-				r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
-					symname);
-			}
+				const char *bind = r_str_get_fail (import->bind, "NONE");
+				const char *type = r_str_get_fail (import->type, "NONE");
+				if (import->classname && import->classname[0]) {
+					r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
+						r_strf ("%s.%s", import->classname, symname));
+				} else {
+					r_table_add_rowf (table, "nXssss", (ut64)import->ordinal, addr, bind, type, r_str_get (libname),
+						symname);
+				}
 
-			if (import->descriptor && import->descriptor[0]) {
-				// Uh?
-				r_cons_printf (core->cons, " descriptor=%s", import->descriptor);
+				if (import->descriptor && import->descriptor[0]) {
+					// Uh?
+					r_cons_printf (core->cons, " descriptor=%s", import->descriptor);
+				}
+				if (!IS_MODE_NORMAL (mode)) {
+					r_cons_newline (core->cons);
+				}
 			}
-			if (!IS_MODE_NORMAL (mode)) {
-				r_cons_newline (core->cons);
-			}
+			R_FREE (symname);
+			R_FREE (libname);
 		}
-		R_FREE (symname);
-		R_FREE (libname);
 	}
 
 	if (IS_MODE_JSON (mode)) {
