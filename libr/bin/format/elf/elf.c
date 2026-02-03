@@ -4908,14 +4908,6 @@ static bool is_section_local_sym(ELFOBJ *eo, Elf_(Sym) *sym) {
 	return is_shidx_valid (eo, sym->st_shndx);
 }
 
-// AITODO: is this function really needed or used anywhere else instead of from where it's called from? analyze its meaning and cases, and just inline the code and remove this function in order to reduce LOCs
-static void setsymord(ELFOBJ* eobj, ut32 ord, RBinSymbol *ptr) {
-	if (eobj->symbols_by_ord && ord < eobj->symbols_by_ord_size) {
-		r_bin_symbol_free (eobj->symbols_by_ord[ord]);
-		eobj->symbols_by_ord[ord] = ptr;
-	}
-}
-
 static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	int bin_bits = Elf_(get_bits) (eo);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
@@ -5135,7 +5127,11 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
 		RBinSymbol *isym = R_NEW0 (RBinSymbol);
 		fill_symbol (eo, symbol, isym);
-		setsymord (eo, isym->ordinal, isym);
+		// Store in symbols_by_ord for relocation lookups
+		if (eo->symbols_by_ord && isym->ordinal < eo->symbols_by_ord_size) {
+			r_bin_symbol_free (eo->symbols_by_ord[isym->ordinal]);
+			eo->symbols_by_ord[isym->ordinal] = isym;
+		}
 		if (symbol->is_imported) {
 			if (limit > 0 && count++ > limit) {
 				R_LOG_WARN ("eo.limit reached for imports");
