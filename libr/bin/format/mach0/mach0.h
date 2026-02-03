@@ -116,12 +116,7 @@ static inline void mach0_lib_fini (char **lib) {
 	free (*lib);
 }
 
-static inline void mach0_import_fini (RBinImport **import) {
-	r_bin_import_free (*import);
-}
-
 R_VEC_TYPE_WITH_FINI (RVecMach0Lib, char *, mach0_lib_fini);
-R_VEC_TYPE_WITH_FINI (RVecMach0Import, RBinImport *, mach0_import_fini);
 
 struct MACH0_(obj_t) {
 	struct MACH0_(mach_header) hdr;
@@ -145,8 +140,6 @@ struct MACH0_(obj_t) {
 	int nindirectsyms;
 	int maxsymlen;
 
-	RBinImport **imports_by_ord;
-	size_t imports_by_ord_size;
 	HtPP *imports_by_name;
 	struct MACH0_(opts_t) options;
 
@@ -203,7 +196,7 @@ struct MACH0_(obj_t) {
 	bool sections_loaded;
 	RVecSection sections_cache;
 	bool imports_loaded;
-	RVecMach0Import imports_cache;
+	RVecRBinImport imports_cache;
 	bool relocs_loaded;
 	RSkipList *relocs_cache;
 	RList *reloc_fixups;
@@ -279,7 +272,7 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
-const RVecMach0Import *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
+RVecRBinImport *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
 const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
 const RVecMach0Lib *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);

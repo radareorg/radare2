@@ -2223,7 +2223,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->symtab);
 	free (mo->symstr);
 	free (mo->indirectsyms);
-	free (mo->imports_by_ord);
 	if (mo->imports_by_name) {
 		mo->imports_by_name->opt.freefn = import_hash_free;
 		ht_pp_free (mo->imports_by_name);
@@ -2238,12 +2237,9 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) *mo) {
 	free (mo->signature);
 	free (mo->intrp);
 	free (mo->compiler);
-#if R2_590
-#else
 	if (mo->imports_loaded) {
-		RVecMach0Import_fini (&mo->imports_cache);
+		RVecRBinImport_fini (&mo->imports_cache);
 	}
-#endif
 	if (mo->sections_loaded) {
 		RVecSection_fini (&mo->sections_cache);
 	}
@@ -3357,12 +3353,8 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) *mo, int jota) {
 	return NULL;
 }
 
-static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
-	RBinImport *ptr = R_NEW0 (RBinImport);
-	if (R_UNLIKELY (!ptr)) {
-		return NULL;
-	}
-
+static void fill_import(RBin *rbin, const char *orig_name, RBinImport *imp) {
+	memset (imp, 0, sizeof (RBinImport));
 	char *name = (char*) orig_name;
 	const char _objc_class[] = "_OBJC_CLASS_$";
 	const char _objc_metaclass[] = "_OBJC_METACLASS_$";
@@ -3383,11 +3375,10 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name) {
 		name++;
 	}
 	char *s = r_str_ndup (name, R_BIN_MACH0_STRING_LENGTH - 1);
-	ptr->name = r_bin_name_new (s);
+	imp->name = r_bin_name_new (s);
 	free (s);
-	ptr->bind = "NONE";
-	ptr->type = r_str_constpool_get (&rbin->constpool, type);
-	return ptr;
+	imp->bind = "NONE";
+	imp->type = r_str_constpool_get (&rbin->constpool, type);
 }
 
 static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport *import) {
@@ -3405,34 +3396,36 @@ static void check_for_special_import_names(struct MACH0_(obj_t) *bin, RBinImport
 	}
 }
 
-const RVecMach0Import *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
+RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	if (bin->imports_loaded) {
 		return &bin->imports_cache;
 	}
 
 	bin->imports_loaded = true;
-	RVecMach0Import_init (&bin->imports_cache);
+	RVecRBinImport_init (&bin->imports_cache);
 
 	ut32 nundefsym = bin->dysymtab.nundefsym;
 	if (nundefsym < 1 || nundefsym > 0xfffff) {
 		return NULL;
 	}
 
-	RVecMach0Import_reserve (&bin->imports_cache, nundefsym);
+	if (!RVecRBinImport_reserve (&bin->imports_cache, nundefsym)) {
+		return NULL;
+	}
 
 	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
 	}
 
-	int i, num_imports;
+	int i;
 	const int limit = bf->rbin->options.limit;
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
 
-	for (i = num_imports = 0; i < nundefsym; i++) {
+	for (i = 0; i < nundefsym; i++) {
 		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
@@ -3449,36 +3442,15 @@ const RVecMach0Import *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *
 			continue;
 		}
 
-		RBinImport *import = import_from_name (bf->rbin, imp_name);
-		if (!import) {
+		RBinImport *imp = RVecRBinImport_emplace_back (&bin->imports_cache);
+		if (!imp) {
 			free (imp_name);
 			break;
 		}
-
-		import->ordinal = i;
-		RVecMach0Import_push_back (&bin->imports_cache, &import);
-		num_imports++;
-		check_for_special_import_names (bin, import);
+		fill_import (bf->rbin, imp_name, imp);
+		imp->ordinal = i;
+		check_for_special_import_names (bin, imp);
 		free (imp_name);
-	}
-
-	if (num_imports > 0) {
-		bin->imports_by_ord_size = num_imports;
-		bin->imports_by_ord = (RBinImport**)calloc (num_imports, sizeof (RBinImport*));
-		if (!bin->imports_by_ord) {
-			return NULL;
-		}
-
-		RBinImport **it;
-		R_VEC_FOREACH (&bin->imports_cache, it) {
-			RBinImport *import = *it;
-			if (import->ordinal < bin->imports_by_ord_size) {
-				bin->imports_by_ord[import->ordinal] = import;
-			}
-		}
-	} else {
-		bin->imports_by_ord_size = 0;
-		bin->imports_by_ord = NULL;
 	}
 
 	return &bin->imports_cache;

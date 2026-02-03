@@ -234,22 +234,21 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	return ptr;
 }
 
-static RList *imports(RBinFile *bf) {
-	RBinObject *obj = bf? bf->bo: NULL;
-	const RVecMach0Import *imports = MACH0_(load_imports) (bf, obj->bin_obj);
+static bool imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	if (!RVecRBinImport_empty (&bf->bo->imports_vec)) {
+		return true;
+	}
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RVecRBinImport *imports = MACH0_(load_imports) (bf, mo);
 	if (!imports) {
-		return NULL;
+		return false;
 	}
-
-	RList *list = r_list_newf ((RListFree) r_bin_import_free);
-	RBinImport **it;
-	R_VEC_FOREACH (imports, it) {
-		// need to clone here, in bobj.c the list free function is forced to `r_bin_import_free`
-		// otherwise, a list with no free function could be returned here..
-		RBinImport *import = r_bin_import_clone (*it);
-		r_list_append (list, import);
-	}
-	return list;
+	// Transfer ownership: swap vectors and reset source
+	bf->bo->imports_vec = mo->imports_cache;
+	RVecRBinImport_init (&mo->imports_cache);
+	mo->imports_loaded = false;
+	return true;
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -261,6 +260,9 @@ static RList *relocs(RBinFile *bf) {
 	}
 	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 
+	RVecRBinImport *imports = mo->imports_loaded
+		? &mo->imports_cache
+		: &bf->bo->imports_vec;
 	RSkipListNode *it;
 	struct reloc_t *reloc;
 	r_skiplist_foreach (relocs, it, reloc) {
@@ -274,8 +276,8 @@ static RList *relocs(RBinFile *bf) {
 		RBinImport *imp = NULL;
 		if (reloc->name[0]) {
 			imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
-		} else if (reloc->ord >= 0 && mo->imports_by_ord && reloc->ord < mo->imports_by_ord_size) {
-			imp = mo->imports_by_ord[reloc->ord];
+		} else if (reloc->ord >= 0) {
+			imp = RVecRBinImport_at (imports, reloc->ord);
 		}
 		if (imp) {
 			ptr->import = r_bin_import_clone (imp);
@@ -989,7 +991,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.signature = &entitlements,
 	.sections = &sections,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.size = &size,
 	.info = &info,
 	.header = MACH0_(mach_headerfields),
