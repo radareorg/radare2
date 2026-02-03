@@ -340,99 +340,78 @@ static RList* entries(RBinFile *bf) {
 // thats kind of dup because rbinelfsymbol shouldnt exist, rbinsymbol should be enough, rvec makes this easily typed
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
-
-	ELFOBJ *eo = bf->bo->bin_obj;
-	// traverse symbols
-	if (!Elf_(load_symbols) (eo)) {
-		return false;
-	}
 	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
 		return true;
 	}
-	RVecRBinSymbol *list = &bf->bo->symbols_vec;
-#if 1
-	RVecRBinElfSymbol *elf_symbols = eo->g_symbols_vec;
-	RBinElfSymbol *symbol;
-	R_VEC_FOREACH (elf_symbols, symbol) {
-		if (symbol->is_sht_null) {
-			// add it to the list of symbols only if it doesn't point to SHT_NULL
-			continue;
-		}
-		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
-		if (!ptr) {
-			break;
-		}
-		RVecRBinSymbol_push_back (list, ptr);
-		// Vector copies the struct, but pointers are shallow copies
-		// Only free the wrapper, not the contents
-		ptr->name = NULL;
-		ptr->libname = NULL;
-		ptr->classname = NULL;
-		r_bin_symbol_free (ptr);
-	}
-
-	// traverse imports
-	if (!Elf_(load_imports) (eo)) {
+	ELFOBJ *eo = bf->bo->bin_obj;
+	RVecRBinSymbol *symbols = Elf_(load_symbols_vec) (eo);
+	if (!symbols) {
 		return false;
 	}
+	// Transfer ownership from ELF cache to bin object
+	RBinSymbol *sym;
+	R_VEC_FOREACH (symbols, sym) {
+		RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
+	}
+	// Reset the ELF cache without freeing contents (ownership transferred)
+	free (eo->symbols_cache._start);
+	RVecRBinSymbol_init (&eo->symbols_cache);
+	eo->symbols_cached = false;
+
+	// Also add imports with size as symbols (for plt entries)
+	if (!Elf_(load_imports) (eo)) {
+		return true;
+	}
+	RBinElfSymbol *symbol;
 	R_VEC_FOREACH (eo->g_imports_vec, symbol) {
 		if (!symbol->size) {
 			continue;
 		}
 		if (symbol->is_sht_null) {
-			// add it to the list of symbols only if it doesn't point to SHT_NULL
 			continue;
 		}
-
 		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
 		if (!ptr) {
 			break;
 		}
 		ptr->is_imported = true;
-		// object files have no plt section, imports are referenced by relocs not trampolines
 		if (ptr->paddr == 0) {
 			ptr->paddr = UT64_MAX;
 			ptr->vaddr = UT64_MAX;
 		}
-		// special case where there is no entry in the plt for the import
 		if (ptr->vaddr == UT32_MAX) {
 			ptr->paddr = 0;
 			ptr->vaddr = 0;
 		}
-		RVecRBinSymbol_push_back (list, ptr);
-		// Vector copies the struct, but pointers are shallow copies
-		// Only free the wrapper, not the contents
-		ptr->name = NULL;
-		ptr->libname = NULL;
-		ptr->classname = NULL;
-		r_bin_symbol_free (ptr);
+		RBinSymbol *s = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
+		if (s) {
+			memcpy (s, ptr, sizeof (RBinSymbol));
+			free (ptr);
+		}
 	}
 	return true;
-#endif
 }
 
 static bool imports_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
-
+	if (!RVecRBinImport_empty (&bf->bo->imports_vec)) {
+		return true;
+	}
 	ELFOBJ *eo = bf->bo->bin_obj;
-	if (!Elf_(load_imports) (eo)) {
+	RVecRBinImport *imports = Elf_(load_imports_vec) (eo);
+	if (!imports) {
 		return false;
 	}
-	const RVecRBinElfSymbol *imports = eo->g_imports_vec;
-
-	RBinElfSymbol *is;
-	R_VEC_FOREACH (imports, is) {
-		RBinImport *ptr = R_NEW0 (RBinImport);
-		if (!ptr) {
-			break;
-		}
-		ptr->name = r_bin_name_new (is->name);
-		ptr->bind = is->bind;
-		ptr->type = is->type;
-		ptr->ordinal = is->ordinal;
-		setimpord (eo, ptr->ordinal, ptr);
-		RVecRBinImport_push_back (&bf->bo->imports_vec, ptr);
+	// Transfer ownership from ELF cache to bin object
+	RBinImport *imp;
+	R_VEC_FOREACH (imports, imp) {
+		setimpord (eo, imp->ordinal, imp);
+		RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
 	}
+	// Reset the ELF cache without freeing contents (ownership transferred)
+	free (eo->imports_cache._start);
+	RVecRBinImport_init (&eo->imports_cache);
+	eo->imports_cached = false;
 	return true;
 }
 

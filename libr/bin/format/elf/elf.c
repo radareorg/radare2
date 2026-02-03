@@ -5484,6 +5484,67 @@ bool Elf_(load_imports)(ELFOBJ *eo) {
 	return eo->g_imports_vec != NULL;
 }
 
+RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->symbols_cached) {
+		return &eo->symbols_cache;
+	}
+	if (!Elf_(load_symbols) (eo)) {
+		return NULL;
+	}
+	RVecRBinSymbol_init (&eo->symbols_cache);
+	RVecRBinElfSymbol *elf_symbols = eo->g_symbols_vec;
+	if (!RVecRBinSymbol_reserve (&eo->symbols_cache, RVecRBinElfSymbol_length (elf_symbols))) {
+		return NULL;
+	}
+	RBinElfSymbol *symbol;
+	R_VEC_FOREACH (elf_symbols, symbol) {
+		if (symbol->is_sht_null) {
+			continue;
+		}
+		RBinSymbol *ptr = Elf_(convert_symbol) (eo, symbol);
+		if (!ptr) {
+			break;
+		}
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&eo->symbols_cache);
+		if (sym) {
+			memcpy (sym, ptr, sizeof (RBinSymbol));
+			free (ptr);
+		}
+	}
+	eo->symbols_cached = true;
+	return &eo->symbols_cache;
+}
+
+RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, NULL);
+	if (eo->imports_cached) {
+		return &eo->imports_cache;
+	}
+	if (!Elf_(load_imports) (eo)) {
+		return NULL;
+	}
+	RVecRBinImport_init (&eo->imports_cache);
+	RVecRBinElfSymbol *elf_imports = eo->g_imports_vec;
+	if (!RVecRBinImport_reserve (&eo->imports_cache, RVecRBinElfSymbol_length (elf_imports))) {
+		return NULL;
+	}
+	RBinElfSymbol *is;
+	R_VEC_FOREACH (elf_imports, is) {
+		RBinImport *imp = RVecRBinImport_emplace_back (&eo->imports_cache);
+		if (!imp) {
+			break;
+		}
+		memset (imp, 0, sizeof (RBinImport));
+		imp->name = r_bin_name_new (is->name);
+		imp->bind = is->bind;
+		imp->type = is->type;
+		imp->ordinal = is->ordinal;
+	}
+	eo->imports_cached = true;
+	return &eo->imports_cache;
+}
+
 const RVecRBinElfField* Elf_(load_fields)(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
@@ -5600,6 +5661,12 @@ void Elf_(free)(ELFOBJ* eo) {
 	}
 	if (eo->fields_loaded) {
 		RVecRBinElfField_fini (&eo->g_fields);
+	}
+	if (eo->symbols_cached) {
+		RVecRBinSymbol_fini (&eo->symbols_cache);
+	}
+	if (eo->imports_cached) {
+		RVecRBinImport_fini (&eo->imports_cache);
 	}
 	ht_uu_free (eo->rel_cache);
 	eo->rel_cache = NULL;
