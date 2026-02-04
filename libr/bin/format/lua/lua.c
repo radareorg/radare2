@@ -93,7 +93,7 @@ static ut64 parseStringR(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut6
 	}
 	if (functionNameSize != 0) {
 		if (str_ptr) {
-			*str_ptr = r_str_ndup ((char *)(data + offset), functionNameSize - 1);
+			*str_ptr = r_str_ndup ((char *) (data + offset), functionNameSize - 1);
 		}
 		if (str_len) {
 			*str_len = functionNameSize - 1;
@@ -101,7 +101,7 @@ static ut64 parseStringR(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut6
 		if (parseStruct && parseStruct->onString) {
 			parseStruct->onString (data, offset, functionNameSize - 1, parseStruct);
 		}
-		R_LOG_DEBUG ("String %.*s", (int)(functionNameSize - 1), data + offset);
+		R_LOG_DEBUG ("String %.*s", (int) (functionNameSize - 1), data + offset);
 		offset += functionNameSize - 1;
 	}
 	return offset;
@@ -291,14 +291,15 @@ bool check_header(RBuffer *b) {
 	return r_buf_read_be32 (b) == 0x1b4c7561? true: false; // "\x1bLua"
 }
 
-#define GETVALIDSIZE(x, symname) { \
-	lh->x = r_buf_read8 (buf); \
-	if (!is_valid_num_size (lh->x)) { \
-		R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%lx", lh->x, where); \
-		goto bad_header_ret; \
-	} \
-	where = add_symbol (lh, buf, symname, where, "NUM"); \
-}
+#define GETVALIDSIZE(x, symname) \
+	{ \
+		lh->x = r_buf_read8 (buf); \
+		if (!is_valid_num_size (lh->x)) { \
+			R_LOG_WARN ("Invalid size 0x%x for " #x " at offset: 0x%lx", lh->x, where); \
+			goto bad_header_ret; \
+		} \
+		where = add_symbol (lh, buf, symname, where, "NUM"); \
+	}
 
 // this function expects buf to be pointing to correct location
 RLuaHeader *r_lua_load_header(RBuffer *buf) {
