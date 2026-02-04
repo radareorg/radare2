@@ -4228,10 +4228,11 @@ static int inbounds(RList *bbs, ut64 addr) {
 
 static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
 	if (!obb->depth && f) {
+		RAnalBlock **iter;
 		RAnalBlock *bb;
-		RListIter *iter;
 		RVecAnalBlockPtr_sort (&f->bbs, bb_cmp);
-		r_list_foreach (f->bbs, iter, bb) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			bb = *iter;
 			if (bb->depth) {
 				// dont compute twice
 				break;

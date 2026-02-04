@@ -1691,9 +1691,11 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 			}
 				r_anal_function_rebase_vars (core->anal, fcn);
 			r_anal_function_relocate (fcn, fcn->addr + diff);
+			RAnalBlock **ititit;
 			RAnalBlock *bb;
 			ut64 new_sec_addr = new_base + old_section->vaddr;
-			r_list_foreach (fcn->bbs, ititit, bb) {
+			R_VEC_FOREACH (&fcn->bbs, ititit) {
+				bb = *ititit;
 				if (bb->addr >= new_sec_addr && bb->addr <= new_sec_addr + old_section->vsize) {
 					// Todo: Find better way to check if bb was already rebased
 					continue;

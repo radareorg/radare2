@@ -14879,9 +14879,10 @@ static bool anal_fcn_data(RCore *core, const char *input) {
 			R_LOG_WARN ("Cannot allocate %d fcn_size", fcn_size);
 			return false;
 		}
+		RAnalBlock **iter;
 		RAnalBlock *b;
-		RListIter *iter;
-		r_list_foreach (fcn->bbs, iter, b) {
+		R_VEC_FOREACH (&fcn->bbs, iter) {
+			b = *iter;
 			int f = b->addr - fcn->addr;
 			int t = R_MIN (f + b->size, fcn_size);
 			if (f >= 0) {
@@ -15576,7 +15577,10 @@ static bool core_anal_abf(RCore *core, const char* input) {
 			return false;
 		}
 		r_list_foreach (bb->fcns, iter, fcn) {
-			r_list_foreach (fcn->bbs, iter2, bb2) {
+			RAnalBlock **iter2;
+			RAnalBlock *bb2;
+			R_VEC_FOREACH (&fcn->bbs, iter2) {
+				bb2 = *iter2;
 				if (bb != bb2) {
 					if (bb2->jump != UT64_MAX && bb2->jump == bb->addr) {
 						r_cons_printf (core->cons, "0x%"PFMT64x"\n", bb2->addr);

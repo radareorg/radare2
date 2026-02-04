@@ -4061,9 +4061,10 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 			if (fcn && !pj) {
 				bool label = false;
 				/* show labels, basic blocks and (conditional) branches */
+				RAnalBlock **iter;
 				RAnalBlock *bb;
-				RListIter *iter;
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					if (addr == bb->jump) {
 						if (show_offset) {
 							r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
@@ -4076,7 +4077,8 @@ static void disasm_strings(RCore *core, const char *input, RAnalFunction *fcn) {
 					r_cons_printf (core->cons, "%s0x%08" PFMT64x ":\n", use_color? Color_YELLOW: "", addr);
 				}
 				if (strstr (line, "=<")) {
-					r_list_foreach (fcn->bbs, iter, bb) {
+					R_VEC_FOREACH (&fcn->bbs, iter) {
+						bb = *iter;
 						if (addr >= bb->addr && addr < bb->addr + bb->size) {
 							const char *op;
 							if (use_color) {
@@ -5811,7 +5813,9 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 		pj_o (pj);
 		pj_ks (pj, "name", f->name);
 		pj_ka (pj, "bbs");
-		r_list_foreach (f->bbs, iter, b) {
+		RAnalBlock **iter;
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pj_o (pj);
 			pj_kn (pj, "addr", b->addr);
 			pj_ka (pj, "ops");
@@ -5845,7 +5849,8 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 		}
 		r_config_set_i (core->config, "asm.lines.jmp", 0);
-		r_list_foreach (f->bbs, iter, b) {
+		R_VEC_FOREACH (&f->bbs, iter) {
+			b = *iter;
 			pr_bb (core, f, b, emu, saved_gp, saved_arena, saved_arena_size, type_print, fromHere);
 		}
 		if (emu) {
@@ -6283,11 +6288,12 @@ static bool cmd_pi(RCore *core, const char *input, int len, int l, ut8 *block) {
 				r_config_set_b (core->config, "asm.addr", false);
 			}
 			ut64 orig = core->addr;
+			RAnalBlock **iter;
 			RAnalBlock *bb;
-			RListIter *iter;
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, orig, 0);
 			if (fcn) {
-				r_list_foreach (fcn->bbs, iter, bb) {
+				R_VEC_FOREACH (&fcn->bbs, iter) {
+					bb = *iter;
 					r_core_seek (core, orig, true);
 					r_core_disasm_pdi (core, bb->ninstr, 0, 'e');
 				}
@@ -7329,7 +7335,9 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					pj_k (pj, "ops");
 					pj_a (pj);
 					RVecAnalBlockPtr_sort (&f->bbs, bb_cmpaddr);
-					r_list_foreach (f->bbs, locs_it, b) {
+					RAnalBlock **locs_it;
+				R_VEC_FOREACH (&f->bbs, locs_it) {
+					b = *locs_it;
 						ut8 *buf = malloc (b->size);
 						if (buf) {
 							r_io_read_at (core->io, b->addr, buf, b->size);
