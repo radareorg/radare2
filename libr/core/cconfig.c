@@ -3413,6 +3413,13 @@ static bool cb_anal_jmptbl(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_jmptbl_split(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.jmptbl_split = node->i_value;
+	return true;
+}
+
 static bool cb_anal_cjmpref(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -3889,7 +3896,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
 	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 
-	SETCB ("anal.jmp.tbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");
+	SETCB ("anal.jmptbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");
+	SETCB ("anal.jmptbl.split", "false", &cb_anal_jmptbl_split, "enable splitting blocks in jump table analysis");
 
 	SETCB ("anal.jmp.cref", "false", &cb_anal_cjmpref, "create references for conditional jumps");
 	SETCB ("anal.jmp.ref", "true", &cb_anal_jmpref, "create references for unconditional jumps");

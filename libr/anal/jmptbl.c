@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2025 - nibble, alvaro, pancake, th3str4ng3r */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_anal.h>
 
@@ -72,26 +72,35 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 	const ut64 block_size = block->size;
 	(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
 	if (block->size != block_size) {
-		// block was be split during anal and does not contain the
+		// block was split during anal and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again
 		RAnalSwitchOp *sop = block->switch_op;
 		block = r_anal_get_block_at (anal, ip);
 		if (!block) {
 			block = r_anal_bb_from_offset (anal, ip);
-			if (block) {
-				if (block->addr != ip) {
-					st64 d = block->addr - ip;
-					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
-					block = NULL;
-					return;
-				}
-				R_LOG_WARN ("Inconsistent basicblock storage issue at 0x%08"PFMT64x, ip);
-			} else {
+			if (!block) {
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;
 			}
-			// analyze at given address
-			// block = r_anal_create_block(RAnal *anal, ut64 addr, ut64 size) {
+			if (block->addr != ip) {
+				if (anal->opt.jmptbl_split) {
+					// split the block so switch instruction is at the start of its block
+					RAnalBlock *newblock = r_anal_block_split (block, ip);
+					if (newblock) {
+						r_anal_block_unref (newblock);
+						block = r_anal_get_block_at (anal, ip);
+					}
+					if (!block) {
+						R_LOG_ERROR ("Failed to split block for switch at 0x%08"PFMT64x, ip);
+						return;
+					}
+				} else {
+					st64 d = block->addr - ip;
+					R_LOG_WARN ("Cannot find basic block case for jmptbl switch from 0x%08"PFMT64x" bbdelta = %d. Try -e anal.jmptbl.split=true and let us know", ip, (int)R_ABS (d));
+					block = NULL;
+					return;
+				}
+			}
 		}
 		block->switch_op = sop;
 	}
@@ -563,7 +572,7 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	}
 	// predecessor must be a conditional jump
 	if (!prev_bb || !prev_bb->jump || !prev_bb->fail) {
-		R_LOG_DEBUG ("[anal.jmp.tbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x, addr);
+		R_LOG_DEBUG ("[anal.jmptbl] Missing predecesessor cjmp bb at 0x%08"PFMT64x, addr);
 		return false;
 	}
 

@@ -404,6 +404,7 @@ typedef struct r_anal_options_t {
 	bool nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
+	bool jmptbl_split; // enable splitting blocks in jump table analysis
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
 	bool armthumb; //
