@@ -1,4 +1,4 @@
-.Dd Jul 10, 2025
+.Dd Feb 4, 2026
 .Dt RAFIND2 1
 .Sh NAME
 .Nm rafind2
@@ -18,6 +18,8 @@
 .Op Fl j
 .Op Fl L
 .Op Fl M Ar str
+.Op Fl R Ar str
+.Op Fl I
 .Op Fl r
 .Op Fl c
 .Op Fl V Ar s:num | s:num1,num2
@@ -55,6 +57,10 @@ List all IO plugins (same as r2 for now)
 Magic search, file-type carver
 .It Fl M Ar str
 Set a binary mask to be applied on keywords
+.It Fl R Ar str
+Replace each hit with the given string (prefix with h: hex, w: wide, s: string)
+.It Fl I
+Insert the replacement and resize the file (only with -R)
 .It Fl n
 Do not stop on read errors
 .It Fl r
@@ -123,6 +129,11 @@ $ rafind2 -e "password|passwd" file.txt
 Show hexdump of search results:
 .Bd -literal -offset indent
 $ rafind2 -X -s "hello" file.bin
+.Ed
+.Pp
+Replace string hits in a file:
+.Bd -literal -offset indent
+$ rafind2 -s "old" -R "new" file.bin
 .Ed
 .Sh SEE ALSO
 .Pp

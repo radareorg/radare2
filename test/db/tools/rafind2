@@ -338,3 +338,42 @@ EXPECT=<<EOF
 0x34ab
 EOF
 RUN
+
+NAME=rafind2 replace string
+FILE=--
+CMDS=<<EOF
+!cp bins/other/search.bin rafind2-repl.bin
+!rafind2 -q -s 1234 -R ABCD rafind2-repl.bin > /dev/null
+!rafind2 -q -s ABCD rafind2-repl.bin
+!rm -f rafind2-repl.bin
+EOF
+EXPECT=<<EOF
+0xfe
+EOF
+RUN
+
+NAME=rafind2 replace hex
+FILE=--
+CMDS=<<EOF
+!cp bins/other/search.bin rafind2-repl.bin
+!rafind2 -q -s 1234 -R h:41424344 rafind2-repl.bin > /dev/null
+!rafind2 -q -s ABCD rafind2-repl.bin
+!rm -f rafind2-repl.bin
+EOF
+EXPECT=<<EOF
+0xfe
+EOF
+RUN
+
+NAME=rafind2 replace insert
+FILE=--
+CMDS=<<EOF
+!cp bins/other/search.bin rafind2-repl.bin
+!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl.bin > /dev/null
+!rafind2 -q -s ABCDE rafind2-repl.bin
+!rm -f rafind2-repl.bin
+EOF
+EXPECT=<<EOF
+0xfe
+EOF
+RUN
