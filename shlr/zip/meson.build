@@ -11,7 +11,12 @@ if get_option('use_zip')
     zip_dep = otezip_proj.get_variable('otezip_dep')
     zlib_dep = declare_dependency()  # otezip has bundled zlib
   else
-    error('use_zip=true but neither use_sys_zip nor use_otezip is enabled. Please set one of them to true.')
+    # If use_zip is enabled but no specific implementation chosen,
+    # automatically use otezip as the default bundled implementation
+    message('Using otezip as default libzip implementation (with bundled zlib)')
+    otezip_proj = subproject('otezip')
+    zip_dep = otezip_proj.get_variable('otezip_dep')
+    zlib_dep = declare_dependency()  # otezip has bundled zlib
   endif
 else
   message('Zip support disabled (use_zip=false)')

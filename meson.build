@@ -413,7 +413,7 @@ else
   userconf.set('DATADIR_R2', r2_datdir_r2)
   userconf.set10('HAVE_JEMALLOC', true)
 endif
-userconf.set('WITH_STATIC_THEMES', get_option('static_themes'))
+userconf.set10('WITH_STATIC_THEMES', get_option('static_themes'))
 
 userconf.set('DATADIR', join_paths(r2_prefix, r2_datdir))
 userconf.set('WWWROOT', join_paths(r2_prefix, r2_wwwroot))
