@@ -9,6 +9,7 @@
 typedef struct {
 	RCons *cons;
 	RIO *io;
+	RList *hits;
 	bool showstr;
 	bool rad;
 	bool color;
@@ -20,6 +21,8 @@ typedef struct {
 	bool pluglist;
 	bool bigendian;
 	bool json;
+	bool insert;
+	bool replace;
 	int mode;
 	int align;
 	ut8 *buf;
@@ -27,6 +30,8 @@ typedef struct {
 	ut64 from;
 	ut64 to;
 	ut64 cur;
+	ut8 *repbuf;
+	int replen;
 	RPrint *pr;
 	RList *keywords;
 	const char *mask;
@@ -35,12 +40,19 @@ typedef struct {
 	PJ *pj;
 } RafindOptions;
 
+typedef struct {
+	ut64 addr;
+	ut32 len;
+} ReplaceHit;
+
 static void rafind_options_fini(RafindOptions *ro) {
 	if (ro) {
 		// 	r_io_free (ro->io);
 		ro->io = NULL;
 		free (ro->buf);
+		free (ro->repbuf);
 		ro->cur = 0;
+		r_list_free (ro->hits);
 		r_list_free (ro->keywords);
 		ro->keywords = NULL;
 		r_cons_free2 (ro->cons);
@@ -54,11 +66,60 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->to = UT64_MAX;
 	ro->color = true;
 	ro->keywords = r_list_newf (NULL);
+	ro->hits = r_list_newf (free);
 	ro->pj = NULL;
 	ro->cons = r_cons_new ();
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
+
+static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
+	if (!ro->replace || !ro->repbuf || ro->replen < 0) {
+		return false;
+	}
+	if (!ro->insert) {
+		if (ro->replen > match_len) {
+			R_LOG_WARN ("Replace string longer than match at 0x%08" PFMT64x, addr);
+			return false;
+		}
+		r_io_write_at (ro->io, addr, ro->repbuf, ro->replen);
+		return true;
+	}
+	ut64 size = r_io_size (ro->io);
+	ut64 tail_off = addr + match_len;
+	if (tail_off > size) {
+		return false;
+	}
+	ut64 tail_len = size - tail_off;
+	ut8 *tail = NULL;
+	if (tail_len > 0) {
+		tail = malloc (tail_len);
+		if (!tail) {
+			return false;
+		}
+		r_io_pread_at (ro->io, tail_off, tail, tail_len);
+	}
+	st64 delta = (st64)ro->replen - (st64)match_len;
+	ut64 new_size = size + delta;
+	if (delta > 0) {
+		if (!r_io_resize (ro->io, new_size)) {
+			free (tail);
+			return false;
+		}
+	}
+	r_io_write_at (ro->io, addr, ro->repbuf, ro->replen);
+	if (tail_len > 0) {
+		r_io_write_at (ro->io, addr + ro->replen, tail, tail_len);
+	}
+	if (delta < 0) {
+		if (!r_io_resize (ro->io, new_size)) {
+			free (tail);
+			return false;
+		}
+	}
+	free (tail);
+	return true;
+}
 
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RafindOptions *ro = (RafindOptions *)user;
@@ -164,11 +225,84 @@ static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	if (buf != ro->buf) {
 		free (buf);
 	}
+	if (ro->replace) {
+		if (kw->keyword_length > 0) {
+			ReplaceHit *rh = R_NEW0 (ReplaceHit);
+			rh->addr = addr;
+			rh->len = kw->keyword_length;
+			r_list_append (ro->hits, rh);
+		}
+	}
 	return 1;
 }
 
+static bool rafind_parse_replace(RafindOptions *ro, const char *arg) {
+	const char *s = arg;
+	bool hex = false;
+	bool wide = false;
+	if (r_str_startswith (s, "h:")) {
+		hex = true;
+		s += 2;
+	} else if (r_str_startswith (s, "w:")) {
+		wide = true;
+		s += 2;
+	} else if (r_str_startswith (s, "s:")) {
+		s += 2;
+	}
+	free (ro->repbuf);
+	ro->repbuf = NULL;
+	ro->replen = 0;
+	if (hex) {
+		int len = strlen (s);
+		ut8 *buf = malloc (len + 1);
+		if (!buf) {
+			return false;
+		}
+		int outlen = r_hex_str2bin (s, buf);
+		if (outlen < 1) {
+			free (buf);
+			return false;
+		}
+		ro->repbuf = buf;
+		ro->replen = outlen;
+		return true;
+	}
+	if (wide) {
+		int len = strlen (s);
+		char *str = malloc ((len + 1) * 2);
+		if (!str) {
+			return false;
+		}
+		const char *p2 = s;
+		char *p = str;
+		while (*p2) {
+			RRune ch;
+			const int num_utf8_bytes = r_utf8_decode ((const ut8 *)p2, s + len - p2, &ch);
+			if (num_utf8_bytes < 1) {
+				p[0] = *p2;
+				p[1] = 0;
+				p2++;
+				p += 2;
+				continue;
+			}
+			const int num_wide_bytes = ro->bigendian
+				? r_utf16be_encode ((ut8 *)p, ch)
+				: r_utf16le_encode ((ut8 *)p, ch);
+			R_WARN_IF_FAIL (num_wide_bytes != 0);
+			p2 += num_utf8_bytes;
+			p += num_wide_bytes;
+		}
+		ro->repbuf = (ut8 *)str;
+		ro->replen = p - str;
+		return true;
+	}
+	ro->repbuf = (ut8 *)strdup (s);
+	ro->replen = strlen (s);
+	return true;
+}
+
 static int show_help(const char *argv0, int line) {
-	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] -|file|dir ..\n", argv0);
+	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -189,7 +323,8 @@ static int show_help(const char *argv0, int line) {
 		" -M [str]   set a binary mask to be applied on keywords\n"
 		" -n         do not stop on read errors\n"
 		" -r         print using radare commands\n"
-		// " -R         replace in place every search hit with the given argument\n"
+		" -R [str]   replace each hit (prefix with h: hex, w: wide, s: string)\n"
+		" -I         allow resize while replacing (insert/resize mode)\n"
 		" -s [str]   search for a string (more than one string can be passed)\n"
 		" -S [str]   search for a wide string (more than one string can be passed).\n"
 		" -t [to]    stop search at address 'to'\n"
@@ -211,6 +346,8 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	int ret, result = 0;
 
 	ro->buf = NULL;
+	r_list_free (ro->hits);
+	ro->hits = r_list_newf (free);
 	char *efile = r_str_escape_sh (file);
 
 	if (ro->identify) {
@@ -223,7 +360,8 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 
 	RIO *io = r_io_new ();
 	ro->io = io;
-	if (!r_io_open_nomap (io, file, R_PERM_R, 0)) {
+	int perm = ro->replace ? R_PERM_RW : R_PERM_R;
+	if (!r_io_open_nomap (io, file, perm, 0)) {
 		R_LOG_ERROR ("Cannot open file '%s'", file);
 		result = 1;
 		goto err;
@@ -331,6 +469,19 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 			break;
 		}
 	}
+	if (ro->replace && ro->repbuf && ro->replen > 0 && !r_list_empty (ro->hits)) {
+		ReplaceHit *rh;
+		RListIter *it;
+		if (ro->insert) {
+			r_list_foreach_prev (ro->hits, it, rh) {
+				rafind_replace_at (ro, rh->addr, rh->len);
+			}
+		} else {
+			r_list_foreach (ro->hits, it, rh) {
+				rafind_replace_at (ro, rh->addr, rh->len);
+			}
+		}
+	}
 done:
 //	r_cons_free2 (ro);
 err:
@@ -391,7 +542,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	rafind_options_init (&ro);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:");
+	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:R:I");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -416,6 +567,17 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			break;
 		case 'r':
 			ro.rad = true;
+			break;
+		case 'R':
+			if (!rafind_parse_replace (&ro, opt.arg)) {
+				rafind_options_fini (&ro);
+				R_LOG_ERROR ("Invalid replace string");
+				return 1;
+			}
+			ro.replace = true;
+			break;
+		case 'I':
+			ro.insert = true;
 			break;
 		case 'i':
 			ro.identify = true;
@@ -592,6 +754,10 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	}
 	if (opt.ind == argc) {
 		return show_help (argv[0], 1);
+	}
+	if (ro.replace && ro.mode != R_SEARCH_KEYWORD) {
+		R_LOG_ERROR ("Replace only supported for keyword searches (-s/-S/-x/-V/-F)");
+		return 1;
 	}
 	/* Enable quiet mode if searching just a single file */
 	if (opt.ind + 1 == argc && argv[opt.ind] && argv[opt.ind][0] && !r_file_is_directory (argv[opt.ind])) {
