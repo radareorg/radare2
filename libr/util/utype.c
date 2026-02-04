@@ -421,7 +421,7 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		if (type) {
 			char var3[128] = { 0 };
 			// Handle general pointers except for char *
-			if ( (strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+			if ((strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
 				isfp = true;
 			} else if (r_str_startswith (type, "struct ")) {
 				struct_name = type + 7;
@@ -430,20 +430,34 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				tfmt = sdb_const_get (TDB, var3, NULL);
 				isStruct = true;
 			} else {
-				// special case for char[]. Use char* format type without *
-				if (!strcmp (type, "char") && elements > 0) {
-					tfmt = sdb_const_get (TDB, "type.char *", NULL);
-					if (tfmt && *tfmt == '*') {
-						tfmt++;
-					}
-				} else {
-					if (r_str_startswith (type, "enum ")) {
-						snprintf (var3, sizeof (var3), "%s", type + 5);
-						isEnum = true;
-					} else {
-						snprintf (var3, sizeof (var3), "type.%s", type);
-					}
+				// Check if the type is a struct/union without explicit prefix
+				const char *type_kind = sdb_const_get (TDB, type, NULL);
+				if (type_kind && !strcmp (type_kind, "struct")) {
+					struct_name = type;
+					snprintf (var3, sizeof (var3), "struct.%s", type);
 					tfmt = sdb_const_get (TDB, var3, NULL);
+					isStruct = true;
+				} else if (type_kind && !strcmp (type_kind, "union")) {
+					struct_name = type;
+					snprintf (var3, sizeof (var3), "union.%s", type);
+					tfmt = sdb_const_get (TDB, var3, NULL);
+					isStruct = true;
+				} else {
+					// special case for char[]. Use char* format type without *
+					if (!strcmp (type, "char") && elements > 0) {
+						tfmt = sdb_const_get (TDB, "type.char *", NULL);
+						if (tfmt && *tfmt == '*') {
+							tfmt++;
+						}
+					} else {
+						if (r_str_startswith (type, "enum ")) {
+							snprintf (var3, sizeof (var3), "%s", type + 5);
+							isEnum = true;
+						} else {
+							snprintf (var3, sizeof (var3), "type.%s", type);
+						}
+						tfmt = sdb_const_get (TDB, var3, NULL);
+					}
 				}
 			}
 			if (tfmt && !strcmp (tfmt, "func")) {
