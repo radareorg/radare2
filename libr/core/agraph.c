@@ -2291,19 +2291,19 @@ static char *get_bb_body(RCore *core, RAnalBlock *b, int opts, RAnalFunction *fc
 	return body;
 }
 
-static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
-	if (a->addr < b->addr) {
+static int bbcmp(RAnalBlock *const *a, RAnalBlock *const *b) {
+	if ((*a)->addr < (*b)->addr) {
 		return -1;
 	}
-	if (a->addr > b->addr) {
+	if ((*a)->addr > (*b)->addr) {
 		return 1;
 	}
 	return 0;
 }
 
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	RListIter *iter;
 	const bool emu = r_config_get_b (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
@@ -2320,12 +2320,13 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		R_FREE (saved_arena);
 		return;
 	}
-	if (fcn->bbs) {
-		r_list_sort (fcn->bbs, (RListComparator)bbcmp);
+	if (!RVecAnalBlockPtr_empty (&fcn->bbs)) {
+		RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
 	}
 
 	shortcuts = r_config_get_b (core->config, "graph.nodejmps");
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (bb->addr == UT64_MAX) {
 			continue;
 		}
@@ -2449,8 +2450,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (!fcn) {
 		return false;
 	}
-	RAnalBlock *bb;
-	RListIter *iter;
+	// Remove conflicting variable declarations
 	char *shortcut = NULL;
 	int shortcuts = 0;
 	int ret = false;
@@ -2465,40 +2465,46 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	}
-	r_list_sort (fcn->bbs, (RListComparator)bbcmp);
+	RVecAnalBlockPtr_sort (&fcn->bbs, bbcmp);
 	RAnalBlock *curbb = NULL;
 	if (few) {
-		r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalBlock **iter2;
+		RAnalBlock *bb2;
+		R_VEC_FOREACH (&fcn->bbs, iter2) {
+			bb2 = *iter2;
 			if (!curbb) {
-				curbb = bb;
+				curbb = bb2;
 			}
-			if (r_anal_block_contains (bb, core->addr)) {
-				curbb = bb;
+			if (r_anal_block_contains (bb2, core->addr)) {
+				curbb = bb2;
 				break;
 			}
 		}
 	}
 
 	core->keep_asmqjmps = false;
-	const bool breakable = r_list_length (fcn->bbs) > 1024;
+	const bool breakable = RVecAnalBlockPtr_length (&fcn->bbs) > 1024;
 	if (breakable) {
 		r_cons_set_raw (core->cons, false);
 		r_cons_break_push (core->cons, NULL, NULL);
 	}
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **iter2;
+	RAnalBlock *bb2;
+	R_VEC_FOREACH (&fcn->bbs, iter2) {
+		bb2 = *iter2;
 		if (breakable && r_cons_is_breaked (core->cons)) {
 			goto interrupted;
 		}
-		if (bb->addr == UT64_MAX) {
+		if (bb2->addr == UT64_MAX) {
 			continue;
 		}
-		if (few && !isbbfew (curbb, bb)) {
+		if (few && !isbbfew (curbb, bb2)) {
 			continue;
 		}
-		char *body = get_bb_body (core, bb, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
-		char *title = get_title (bb->addr);
-		char *color = (bb->color.r || bb->color.g || bb->color.b)
-			? r_cons_rgb_str (core->cons, NULL, -1, &bb->color)
+		char *body = get_bb_body (core, bb2, mode2opts (g), fcn, emu, saved_gp, saved_arena, saved_arena_size);
+		char *title = get_title (bb2->addr);
+		char *color = (bb2->color.r || bb2->color.g || bb2->color.b)
+			? r_cons_rgb_str (core->cons, NULL, -1, &bb2->color)
 			: NULL;
 
 		RANode *node = r_agraph_add_node (g, title, body, color);
@@ -2506,7 +2512,7 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		shortcuts = g->is_interactive? r_config_get_b (core->config, "graph.nodejmps"): false;
 
 		if (shortcuts) {
-			shortcut = r_core_add_asmqjmp (core, bb->addr);
+			shortcut = r_core_add_asmqjmp (core, bb2->addr);
 			if (shortcut) {
 				char *k = r_str_newf ("agraph.nodes.%s.shortcut", title);
 				sdb_set (g->db, k, shortcut, 0);
@@ -2522,23 +2528,26 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		core->keep_asmqjmps = true;
 	}
 
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->addr == UT64_MAX) {
+	RAnalBlock **iter3;
+	RAnalBlock *bb3;
+	R_VEC_FOREACH (&fcn->bbs, iter3) {
+		bb3 = *iter3;
+		if (bb3->addr == UT64_MAX) {
 			continue;
 		}
-		if (few && !isbbfew (curbb, bb)) {
+		if (few && !isbbfew (curbb, bb3)) {
 			continue;
 		}
 
-		char *title = get_title (bb->addr);
+		char *title = get_title (bb3->addr);
 		RANode *u = r_agraph_get_node (g, title);
 		free (title);
-		add_child (core, g, u, bb->jump);
-		add_child (core, g, u, bb->fail);
-		if (bb->switch_op) {
+		add_child (core, g, u, bb3->jump);
+		add_child (core, g, u, bb3->fail);
+		if (bb3->switch_op) {
 			RListIter *it;
 			RAnalCaseOp *cop;
-			r_list_foreach (bb->switch_op->cases, it, cop) {
+			r_list_foreach (bb3->switch_op->cases, it, cop) {
 				add_child (core, g, u, cop->addr);
 			}
 		}

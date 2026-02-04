@@ -4646,7 +4646,7 @@ static bool __check_func(RCore *core) {
 		r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
 		return false;
 	}
-	if (r_list_empty (fun->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fun->bbs)) {
 		r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 		return false;
 	}

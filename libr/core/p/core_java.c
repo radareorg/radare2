@@ -941,7 +941,9 @@ static bool r_cmd_java_handle_find_cp_const(RCore *core, const char *cmd) {
 	find_list->free = free;
 	// XXX - this will break once RAnal moves to sdb
 	r_list_foreach (core->anal->fcns, fn_iter, fcn) {
-		r_list_foreach (fcn->bbs, bb_iter, bb) {
+		RAnalBlock **bbit;
+		R_VEC_FOREACH (&fcn->bbs, bbit) {
+			bb = *bbit;
 			char op = bb->op_bytes[0];
 			cp_res = NULL;
 			switch (op) {

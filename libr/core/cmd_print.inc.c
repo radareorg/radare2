@@ -3208,7 +3208,7 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 			int value = 0;
 			if (fcn) {
-				value = r_list_length (fcn->bbs);
+				value = RVecAnalBlockPtr_length (&fcn->bbs);
 			}
 			return value;
 		}
@@ -4905,7 +4905,7 @@ static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize,
 			if (type == 'a') {
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
 				if (fcn) {
-					ptr[i] = r_list_length (fcn->bbs);
+					ptr[i] = RVecAnalBlockPtr_length (&fcn->bbs);
 				}
 				continue;
 			}
@@ -5084,7 +5084,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 							{
 								RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
 								if (fcn) {
-									k += r_list_length (fcn->bbs);
+									k += RVecAnalBlockPtr_length (&fcn->bbs);
 									k = R_MAX (255, k);
 								}
 							}
@@ -5794,7 +5794,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 
 	// XXX: hack must be reviewed/fixed in code analysis
 	if (!b) {
-		if (r_list_length (f->bbs) >= 1) {
+		if (RVecAnalBlockPtr_length (&f->bbs) >= 1) {
 			ut32 fcn_size = r_anal_function_realsize (f);
 			b = r_list_last (f->bbs);
 			if (b->size > fcn_size) {
@@ -5802,7 +5802,7 @@ static void func_walk_blocks(RCore *core, RAnalFunction *f, char input, char typ
 			}
 		}
 	}
-	r_list_sort (f->bbs, (RListComparator)bbcmp);
+	RVecAnalBlockPtr_sort (&f->bbs, (RListComparator)bbcmp);
 	if (input == 'j' && b) { // "pdrj"
 		pj = r_core_pj_new (core);
 		if (!pj) {
@@ -7328,7 +7328,7 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 					pj_kn (pj, "addr", f->addr);
 					pj_k (pj, "ops");
 					pj_a (pj);
-					r_list_sort (f->bbs, bb_cmpaddr);
+					RVecAnalBlockPtr_sort (&f->bbs, bb_cmpaddr);
 					r_list_foreach (f->bbs, locs_it, b) {
 						ut8 *buf = malloc (b->size);
 						if (buf) {

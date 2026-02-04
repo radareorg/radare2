@@ -2080,9 +2080,10 @@ R_API const char *colorforop(RCore *core, ut64 addr) {
 	if (!fcn) {
 		return NULL;
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		if (addr >= bb->addr && addr < (bb->addr + bb->size)) {
 			ut64 opat = r_anal_bb_opaddr_at (bb, addr);
 			RAnalOp *op = r_core_anal_op (core, opat, 0);

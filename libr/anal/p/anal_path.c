@@ -5,7 +5,6 @@
 #include <r_vec.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
-R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 typedef struct {
 	RAnal *anal;

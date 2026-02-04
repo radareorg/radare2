@@ -55,9 +55,9 @@ static bool isAnExport(RBinSymbol *s) {
 
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char* colon, bool *tmpseek);
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a;
-	const RAnalBlock *b = _b;
+static int bb_cmpaddr(RAnalBlock * const *_a, RAnalBlock * const *_b) {
+	const RAnalBlock *a = *_a;
+	const RAnalBlock *b = *_b;
 	return a->addr > b->addr ? 1 : (a->addr < b->addr ? -1 : 0);
 }
 
@@ -6053,7 +6053,7 @@ static void atat_i(RCore *core, const char *cmd) {
 	RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 	SetU *set = set_u_new ();
 	if (fcn) {
-		r_list_sort (fcn->bbs, bb_cmp);
+		RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
 		r_list_foreach (fcn->bbs, iter, bb) {
 			r_core_seek (core, bb->addr, true);
 			r_core_cmd (core, cmd, 0);
@@ -6114,7 +6114,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RAnalFunction *fcn = r_anal_get_function_at (core->anal, core->addr);
 			int bs = core->blocksize;
 			if (fcn) {
-				r_list_sort (fcn->bbs, bb_cmp);
+				RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, true);

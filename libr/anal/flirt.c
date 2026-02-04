@@ -576,9 +576,9 @@ static bool module_match_buffer(RAnal *anal, const RFlirtModule *module, ut8 *b,
 					if (fcn != next_module_function &&
 						fcn->addr >= next_module_function->addr + next_module_function_size &&
 						fcn->addr < next_module_function->addr + flirt_fcn_size) {
-						RListIter *iter_bb;
-						RAnalBlock *block;
-						r_list_foreach (fcn->bbs, iter_bb, block) {
+						RAnalBlock **it_bb;
+						R_VEC_FOREACH (&fcn->bbs, it_bb) {
+							RAnalBlock *block = *it_bb;
 							r_anal_function_add_block (next_module_function, block);
 						}
 						next_module_function->ninstr += fcn->ninstr;

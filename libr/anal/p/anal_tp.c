@@ -1103,8 +1103,8 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	r_cons_break_pop (r_cons_singleton ());
 }
 
-static int bb_cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
+static int bb_cmpaddr(RAnalBlock * const *_a, RAnalBlock * const *_b) {
+	const RAnalBlock *a = *_a, *b = *_b;
 	return a->addr > b->addr? 1: (a->addr < b->addr? -1: 0);
 }
 
@@ -1410,7 +1410,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	RVecUT64 bblist;
 	RVecUT64_init (&bblist);
 	RAnalOp *next_op = R_NEW0 (RAnalOp);
-	r_list_sort (fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
+	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmpaddr); // TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
 	int retries = 2;
 repeat:
 	if (retries < 0) {
@@ -1423,10 +1423,12 @@ repeat:
 		type_trace_rollback (&tps->tt, &tps->esil);
 	}
 	RVecUT64_clear (&bblist);
-	size_t bblist_size = r_list_length (fcn->bbs); // TODO: Use ut64
+	size_t bblist_size = RVecAnalBlockPtr_length (&fcn->bbs);
 	RVecUT64_reserve (&bblist, bblist_size);
 	// TODO: add a dependency graph out of it, maybe just saving the depth index is enough so we save and restore the state on each level
-	r_list_foreach (fcn->bbs, it, bb) {
+	RAnalBlock **bbit;
+	R_VEC_FOREACH (&fcn->bbs, bbit) {
+		RAnalBlock *bb = *bbit;
 		RVecUT64_push_back (&bblist, &bb->addr);
 	}
 	int i, j;

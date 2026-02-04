@@ -4230,7 +4230,7 @@ static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
 	if (!obb->depth && f) {
 		RAnalBlock *bb;
 		RListIter *iter;
-		r_list_sort (f->bbs, bb_cmp);
+		RVecAnalBlockPtr_sort (&f->bbs, bb_cmp);
 		r_list_foreach (f->bbs, iter, bb) {
 			if (bb->depth) {
 				// dont compute twice

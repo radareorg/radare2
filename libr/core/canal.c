@@ -76,8 +76,8 @@ static int cmpname(const void *_a, const void *_b) {
 
 static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
-	ut64 as = r_list_length (a->bbs);
-	ut64 bs = r_list_length (b->bbs);
+	ut64 as = RVecAnalBlockPtr_length (&a->bbs);
+	ut64 bs = RVecAnalBlockPtr_length (&b->bbs);
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
@@ -938,7 +938,8 @@ static void function_rename(RFlag *flags, RAnalFunction *fcn) {
 }
 
 static void autoname_imp_trampoline(RCore *core, RAnalFunction *fcn) {
-	if (r_list_length (fcn->bbs) == 1 && ((RAnalBlock *) r_list_first (fcn->bbs))->ninstr == 1) {
+	RAnalBlock **first = RVecAnalBlockPtr_at (&fcn->bbs, 0);
+	if (RVecAnalBlockPtr_length (&fcn->bbs) == 1 && first && (*first)->ninstr == 1) {
 		// TODO seems wasteful, maybe we should add a function to only retrieve the first?
 		RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 		if (refs && RVecAnalRef_length (refs) == 1) {
@@ -1702,7 +1703,7 @@ static void core_anal_color_curr_node(RCore *core, RAnalBlock *bbi) {
 
 static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int opts, PJ *pj, Sdb *DB) {
 	RAnalBlock *bbi;
-	RListIter *iter;
+	RAnalBlock **iter;
 	const bool is_keva = opts & R_CORE_ANAL_KEYVALUE;
 	const bool is_star = opts & R_CORE_ANAL_STAR;
 	const bool is_json = opts & R_CORE_ANAL_JSON;
@@ -1712,7 +1713,8 @@ static int core_anal_graph_construct_edges(RCore *core, RAnalFunction *fcn, int 
 	char *pal_fail = palColorFor (cons, "graph.false");
 	char *pal_trfa = palColorFor (cons, "graph.trufae");
 	int nodes = 0;
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bbi = *iter;
 		if (bbi->jump != UT64_MAX) {
 			nodes++;
 			if (is_keva) {
@@ -2097,7 +2099,7 @@ typedef struct {
 static int core_anal_graph_nodes(RCore *core, RAnalFunction *fcn, GraphOptions *go, PJ *pj) {
 	int nodes = 0;
 	Sdb *DB = NULL;
-	if (!fcn || !fcn->bbs) {
+	if (!fcn || RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		nodes = -1;
 		goto fin;
 	}
@@ -2799,7 +2801,7 @@ static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	r_cons_printf (core->cons, FCN_LIST_VERBOSE_ENTRY, color,
 			addrwidth, fcn->addr, fcn->is_noreturn,
 			r_anal_function_realsize (fcn),
-			r_list_length (fcn->bbs),
+			RVecAnalBlockPtr_length (&fcn->bbs),
 			r_anal_function_count_edges (fcn, &ebbs),
 			r_anal_function_complexity (fcn),
 			r_anal_function_cost (fcn),
@@ -2877,12 +2879,12 @@ static void fcn_print(RCore *core, RAnalFunction *fcn, bool quiet) {
 			RAnalBlock *firstBlock = r_list_first (fcn->bbs);
 			char *color = firstBlock? r_cons_rgb_str (core->cons, NULL, 0, &firstBlock->color): strdup ("");
 			r_cons_printf (core->cons, "%s0x%08"PFMT64x" %4d %6"PFMT64d" %s%s\n",
-					color, fcn->addr, r_list_length (fcn->bbs),
+					color, fcn->addr, RVecAnalBlockPtr_length (&fcn->bbs),
 					realsize, name, Color_RESET);
 			free (color);
 		} else {
 			r_cons_printf (core->cons, "0x%08"PFMT64x" %4d %6"PFMT64d" %s\n",
-					fcn->addr, r_list_length (fcn->bbs), realsize, name);
+					fcn->addr, RVecAnalBlockPtr_length (&fcn->bbs), realsize, name);
 		}
 		free (name);
 	}
@@ -2952,7 +2954,7 @@ static int RAnalRef_compare_by_addr(const RAnalRef *ref1, const RAnalRef *ref2) 
 }
 
 static double midbbins(RAnalFunction *fcn) {
-	if (r_list_empty (fcn->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		return 0.0;
 	}
 	int bbins = 0;
@@ -2961,7 +2963,7 @@ static double midbbins(RAnalFunction *fcn) {
 	r_list_foreach (fcn->bbs, iter, bb) {
 		bbins += bb->ninstr;
 	}
-	return ((double)bbins) / r_list_length (fcn->bbs);
+	return ((double)bbins) / RVecAnalBlockPtr_length (&fcn->bbs);
 }
 
 static int maxbbins(RAnalFunction *fcn) {
@@ -3186,7 +3188,7 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 		free (fn);
 	}
 	pj_ks (pj, "type", r_anal_functiontype_tostring (fcn->type));
-	pj_ki (pj, "nbbs", r_list_length (fcn->bbs));
+	pj_ki (pj, "nbbs", RVecAnalBlockPtr_length (&fcn->bbs));
 	pj_ki (pj, "tracecov", r_anal_function_coverage(fcn));
 	pj_kb (pj, "is-lineal", r_anal_function_islineal (fcn));
 	pj_ki (pj, "ninstrs", r_anal_function_instrcount (fcn));
@@ -3486,7 +3488,7 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?"MATCH":
 				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?"UNMATCH":"NEW");
 	}
-	r_cons_printf (cons, "\nnum-bbs: %d", r_list_length (fcn->bbs));
+	r_cons_printf (cons, "\nnum-bbs: %d", RVecAnalBlockPtr_length (&fcn->bbs));
 	r_cons_printf (cons, "\nnum-instrs: %d", r_anal_function_instrcount (fcn));
 	r_cons_printf (cons, "\nedges: %d", r_anal_function_count_edges (fcn, &ebbs));
 	r_cons_printf (cons, "\nminaddr: 0x%08" PFMT64x, r_anal_function_min_addr (fcn));
@@ -3673,7 +3675,7 @@ static int fcn_list_table(RCore *core, const char *q, int fmt) {
 	r_list_foreach (core->anal->fcns, iter, fcn) {
 		r_strf_var (fcnAddr, 32, "0x%08"PFMT64x, fcn->addr);
 		r_strf_var (fcnSize, 32, "%"PFMT64u, r_anal_function_linear_size (fcn)); // r_anal_function_size (fcn));
-		r_strf_var (nbbs, 32, "%d", r_list_length (fcn->bbs));
+		r_strf_var (nbbs, 32, "%d", RVecAnalBlockPtr_length (&fcn->bbs));
 		r_strf_var (nins, 32, "%d", r_anal_function_instrcount (fcn));
 		r_strf_var (noret, 32, "%d", fcn->is_noreturn);
 

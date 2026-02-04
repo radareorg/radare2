@@ -572,12 +572,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	// use it for indentation
 	// asm.pseudo=true
 	// asm.decode=true
-	RAnalBlock *bb = r_list_first (state.fcn->bbs);
+	RAnalBlock **first = RVecAnalBlockPtr_at (&state.fcn->bbs, 0);
+	RAnalBlock *bb = first ? *first : NULL;
 	int indent = 0;
 	int nindent = 1;
 	// XXX sorting basic blocks is nice for the reader, but introduces conceptual problems
-	// when the entrypoint is not starting at the lowest address. // r_list_sort (fcn->bbs, cmpnbbs);
-	int n_bb = r_list_length (state.fcn->bbs);
+	// when the entrypoint is not starting at the lowest address. // RVecAnalBlockPtr_sort (&fcn->bbs, cmpnbbs);
+	int n_bb = RVecAnalBlockPtr_length (&state.fcn->bbs);
 
 	if (state.pj) {
 		pj_o (state.pj);
@@ -966,18 +967,24 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 	}
-	RListIter *iter;
+	RAnalBlock **iter;
+	size_t iter_idx = 0;
+	size_t bbs_len = RVecAnalBlockPtr_length (&state.fcn->bbs);
 	bool use_html = r_config_get_b (core->config, "scr.html");
-	r_list_foreach (state.fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&state.fcn->bbs, iter) {
+		bb = *iter;
 		if (r_list_contains (visited, bb)) {
+			iter_idx++;
 			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
-		if (iter->n) {
-			RListIter *nit = (RListIter *) (iter->n);
-			RAnalBlock *nbb = (RAnalBlock *) (nit->data);
-			nextbbaddr = nbb->addr;
+		if (iter_idx + 1 < bbs_len) {
+			RAnalBlock **nit = RVecAnalBlockPtr_at (&state.fcn->bbs, iter_idx + 1);
+			if (nit) {
+				nextbbaddr = (*nit)->addr;
+			}
 		}
+		iter_idx++;
 		if (use_html) {
 			r_config_set_b (core->config, "scr.html", false);
 		}

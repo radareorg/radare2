@@ -545,9 +545,9 @@ typedef RVecAnalRef *(*CollectFn)(RefManager *rm, ut64 addr);
 static RVecAnalRef *fcn_get_all_refs(RAnalFunction *fcn, RefManager *rm, CollectFn collect_refs) {
 	RVecAnalRef *anal_refs = RVecAnalRef_new ();
 	if (R_LIKELY (anal_refs)) {
-		RListIter *iter;
-		RAnalBlock *bb;
-		r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalBlock **it;
+		R_VEC_FOREACH (&fcn->bbs, it) {
+			RAnalBlock *bb = *it;
 			// TODO : add an option to choose to iterate over bytes or ops
 #if 1
 			// iterate over instructions
@@ -646,9 +646,9 @@ static ut64 ref_manager_count_xrefs_filtered(RefManager *rm, ut64 addr, RAnalRef
 
 static ut64 fcn_count_refs(RAnalFunction *fcn, RefManager *rm, CountFn count_refs, RAnalRefType type_filter) {
 	ut64 total = 0;
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		int i;
 		for (i = 0; i < bb->ninstr; i++) {
 			ut64 addr = bb->addr + r_anal_bb_offset_inst (bb, i);
