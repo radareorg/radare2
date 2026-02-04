@@ -83,6 +83,8 @@ if [ "$USEMESON" = 1 ]; then
 	rm -rf b
 	meson b
 	ninja -C b
+	echo "[INFO] We need sudo to run the following command:"
+	echo "${SUDO} make symstall PWD='$PWD/b' BTOP='$PWD/b/binr'"
 	${SUDO} make symstall PWD="$PWD/b" BTOP="$PWD/b/binr"
 	exit $RV
 fi
@@ -222,6 +224,8 @@ else
 	${SHELL} ./sys/build.sh ${ARGS} || exit 1
 fi
 
+echo "[INFO] We need sudo to run the following command:"
+echo "${SUDO} ${MAKE} ${INSTALL_TARGET}"
 ${SUDO} ${MAKE} ${INSTALL_TARGET} || exit 1
 if [ -z "${NOSUDO}" ]; then
 	${SHELL} ./sys/ldconfig.sh
