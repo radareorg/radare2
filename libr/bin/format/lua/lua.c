@@ -276,8 +276,8 @@ static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, con
 static inline bool lua53_check_header_data(RBuffer *buf) {
 	const ut8 lua_data[] = "\x19\x93\r\n\x1a\n";
 	ut8 tmp[6];
-	r_buf_read (buf, tmp, sizeof (buf));
-	return memcmp (tmp, lua_data, size) == 0;
+	r_buf_read (buf, tmp, sizeof (tmp));
+	return memcmp (tmp, lua_data, sizeof (tmp)) == 0;
 }
 
 static inline bool is_valid_num_size(int size) {
