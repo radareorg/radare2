@@ -35,6 +35,25 @@ Str
 EOF
 RUN
 
+NAME=td union with nested struct
+FILE=malloc://32
+CMDS=<<EOF
+'td struct PadStr { char pad[6]; char str1[11]; }
+'td union Str { char str0[5]; PadStr str1; }
+w hello world sucks
+tu Str
+.tu Str
+EOF
+EXPECT=<<EOF
+pf 0[5]z? str0 (PadStr)str1
+ str0 : 0x00000000 = "hello"
+ str1 : 
+                struct<PadStr>
+       pad : 0x00000000 = "hello "
+      str1 : 0x00000006 = "world sucks"
+EOF
+RUN
+
 NAME=td anonymous struct in typedef
 FILE=--
 CMDS=<<EOF
