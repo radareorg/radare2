@@ -167,7 +167,7 @@ RUN
 NAME=x86_64 main() jmptbl in bins/elf/ls.odd
 FILE=bins/elf/ls.odd
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e anal.jmptbl=true
 s main
 aF
 afb
@@ -477,7 +477,7 @@ NAME=x86_64 main() jmptbl in bins/elf/analysis/ls-alxchk
 FILE=bins/elf/analysis/ls-alxchk
 CMDS=<<EOF
 e asm.bytes=false
-e anal.jmp.tbl=true
+e anal.jmptbl=true
 s main
 aF
 pd 3 @ 0x3ec1
@@ -3395,7 +3395,7 @@ RUN
 NAME=mac-ls switch count
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e anal.jmptbl=true
 af
 f~switch
 EOF

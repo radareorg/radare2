@@ -714,7 +714,7 @@ RUN
 NAME=mac-ls switch count3
 FILE=bins/pe/test.exe
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e anal.jmptbl=true
 s 0x402cb6
 af
 afb
@@ -964,7 +964,7 @@ RUN
 NAME=mac-ls switch count4
 FILE=bins/pe/ConsoleApplication1.exe
 CMDS=<<EOF
-e anal.jmp.tbl=true
+e anal.jmptbl=true
 s 0x401090
 af
 afb
