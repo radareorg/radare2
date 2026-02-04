@@ -8,6 +8,33 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=td union
+FILE=malloc://32
+CMDS=<<EOF
+'td union Str { char str0[5]; char str1[11]; }
+tu
+tuc Str
+tu Str
+tu
+w hello world sucks
+pf 0[5]z[11]z str0 str1
+.tu Str
+EOF
+EXPECT=<<EOF
+Str
+union Str {
+  char str0[5];
+  char str1[11];
+};
+pf 0[5]z[11]z str0 str1
+Str
+ str0 : 0x00000000 = "hello"
+ str1 : 0x00000000 = "hello world"
+ str0 : 0x00000000 = "hello"
+ str1 : 0x00000000 = "hello world"
+EOF
+RUN
+
 NAME=td anonymous struct in typedef
 FILE=--
 CMDS=<<EOF
@@ -880,7 +907,7 @@ pd 1
 EOF
 EXPECT=<<EOF
 Books
-pf [50]z[50]z[100]z title author subject
+pf 0[50]z[50]z[100]z title author subject
 var union Books @ rbp-0x70
 |           0x000006d2      488d4590       lea rax, [Books]
 EOF
@@ -1645,13 +1672,13 @@ t foo
 tu* foo
 EOF
 EXPECT=<<EOF
-pf.foo dc a b
+pf.foo 0dc a b
 'tk foo=union
 'tk union.foo=a,b
 'tk union.foo.a=int,0,0
 'tk union.foo.b=char,0,0
-pf dc a b
-pf.foo dc a b
+pf 0dc a b
+pf.foo 0dc a b
 EOF
 RUN
 

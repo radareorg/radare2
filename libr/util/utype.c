@@ -507,15 +507,31 @@ R_API char *r_type_format(Sdb *TDB, const char *t) {
 		if (fmt) {
 			return strdup (fmt);
 		}
-	} else if (!strcmp (kind, "struct") || !strcmp (kind, "union")) {
+	} else if (!strcmp (kind, "struct")) {
 		return fmt_struct_union (TDB, var, false);
+	} else if (!strcmp (kind, "union")) {
+		char *fmt = fmt_struct_union (TDB, var, false);
+		if (fmt) {
+			char *res = r_str_newf ("0%s", fmt);
+			free (fmt);
+			return res;
+		}
+		return NULL;
 	}
 	if (!strcmp (kind, "typedef")) {
 		snprintf (var2, sizeof (var2), "typedef.%s", t);
 		const char *type = sdb_const_get (TDB, var2, NULL);
-		// only supports struct atm
 		if (type && !strcmp (type, "struct")) {
 			return fmt_struct_union (TDB, var, true);
+		}
+		if (type && !strcmp (type, "union")) {
+			char *fmt = fmt_struct_union (TDB, var, true);
+			if (fmt) {
+				char *res = r_str_newf ("0%s", fmt);
+				free (fmt);
+				return res;
+			}
+			return NULL;
 		}
 	}
 	return NULL;
