@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, dennis */
+/* radare - LGPL - Copyright 2009-2026 - pancake, dennis */
 
 #include "lua.h"
 
@@ -16,10 +16,8 @@ static void lua_func_free(void *f) {
 
 static inline RLuaHeader *lua_header_new(void) {
 	RLuaHeader *lh = R_NEW0 (RLuaHeader);
-	if (lh) {
-		lh->functionList = r_list_newf ((RListFree)lua_func_free);
-		lh->symbols = r_list_newf ((RListFree)r_bin_symbol_free);
-	}
+	lh->functionList = r_list_newf ((RListFree)lua_func_free);
+	lh->symbols = r_list_newf ((RListFree)r_bin_symbol_free);
 	return lh;
 }
 
@@ -260,7 +258,7 @@ static inline double buf_parse_num(RLuaHeader *lh, RBuffer *buf) {
 static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, const char *type) {
 	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	ut64 end = r_buf_tell (buf); // end of field that was just parsed from bf
-	if (sym && end > start) {
+	if (end > start) {
 		sym->name = r_bin_name_new (name);
 		sym->vaddr = sym->paddr = start;
 		sym->size = end - start;
@@ -276,18 +274,14 @@ static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, con
 }
 
 static inline bool lua53_check_header_data(RBuffer *buf) {
-	ut8 lua_data[] = "\x19\x93\r\n\x1a\n";
-	const size_t size = R_ARRAY_SIZE (lua_data) - 1;
-	ut8 tmp[size];
-	r_buf_read (buf, tmp, size);
+	const ut8 lua_data[] = "\x19\x93\r\n\x1a\n";
+	ut8 tmp[6];
+	r_buf_read (buf, tmp, sizeof (buf));
 	return memcmp (tmp, lua_data, size) == 0;
 }
 
 static inline bool is_valid_num_size(int size) {
-	switch (size) {
-	case 2:
-	case 4:
-	case 8:
+	if (size == 2 || size == 4 || size == 8) {
 		return true;
 	}
 	return false;
@@ -401,73 +395,71 @@ ut64 lua53parseFunction(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut64
 			parseStruct->onFunction (lh, function, parseStruct);
 		}
 		return offset + function->size;
-	} else {
-		ut64 baseoffset = offset;
-
-		function = R_NEW0 (LuaFunction);
-		function->parent_func = parent_func;
-		function->offset = offset;
-		offset = parseStringR (lh, data, offset, size, &function->name_ptr, &function->name_size, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-
-		function->lineDefined = parseInt (data + offset);
-		R_LOG_DEBUG ("Line Defined: %" PFMT64x, function->lineDefined);
-		function->lastLineDefined = parseInt (data + offset + lh->intSize);
-		R_LOG_DEBUG ("Last Line Defined: %" PFMT64x, function->lastLineDefined);
-		offset += lh->intSize * 2;
-		function->numParams = data[offset + 0];
-		R_LOG_DEBUG ("Param Count: %d", function->numParams);
-		function->isVarArg = data[offset + 1];
-		R_LOG_DEBUG ("Is VarArgs: %d", function->isVarArg);
-		function->maxStackSize = data[offset + 2];
-		R_LOG_DEBUG ("Max Stack Size: %d", function->maxStackSize);
-		offset += 3;
-
-		function->code_offset = offset;
-		function->code_size = parseInt (data + offset);
-		offset = parseCode (lh, data, offset, size, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-		function->const_offset = offset;
-		function->const_size = parseInt (data + offset);
-		offset = parseConstants (lh, data, offset, size, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-		function->upvalue_offset = offset;
-		function->upvalue_size = parseInt (data + offset);
-		offset = parseUpvalues (lh, data, offset, size, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-		function->protos_offset = offset;
-		function->protos_size = parseInt (data + offset);
-		offset = parseProtos (lh, data, offset, size, function, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-		function->debug_offset = offset;
-		offset = parseDebug (lh, data, offset, size, parseStruct);
-		if (offset == 0) {
-			free (function);
-			return 0;
-		}
-
-		function->size = offset - baseoffset;
-		if (parseStruct && parseStruct->onFunction) {
-			parseStruct->onFunction (lh, function, parseStruct);
-		}
-		if (!storeLuaFunction (lh, function)) {
-			free (function);
-		}
-		return offset;
 	}
+	ut64 baseoffset = offset;
+	function = R_NEW0 (LuaFunction);
+	function->parent_func = parent_func;
+	function->offset = offset;
+	offset = parseStringR (lh, data, offset, size, &function->name_ptr, &function->name_size, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+
+	function->lineDefined = parseInt (data + offset);
+	R_LOG_DEBUG ("Line Defined: %" PFMT64x, function->lineDefined);
+	function->lastLineDefined = parseInt (data + offset + lh->intSize);
+	R_LOG_DEBUG ("Last Line Defined: %" PFMT64x, function->lastLineDefined);
+	offset += lh->intSize * 2;
+	function->numParams = data[offset + 0];
+	R_LOG_DEBUG ("Param Count: %d", function->numParams);
+	function->isVarArg = data[offset + 1];
+	R_LOG_DEBUG ("Is VarArgs: %d", function->isVarArg);
+	function->maxStackSize = data[offset + 2];
+	R_LOG_DEBUG ("Max Stack Size: %d", function->maxStackSize);
+	offset += 3;
+
+	function->code_offset = offset;
+	function->code_size = parseInt (data + offset);
+	offset = parseCode (lh, data, offset, size, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+	function->const_offset = offset;
+	function->const_size = parseInt (data + offset);
+	offset = parseConstants (lh, data, offset, size, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+	function->upvalue_offset = offset;
+	function->upvalue_size = parseInt (data + offset);
+	offset = parseUpvalues (lh, data, offset, size, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+	function->protos_offset = offset;
+	function->protos_size = parseInt (data + offset);
+	offset = parseProtos (lh, data, offset, size, function, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+	function->debug_offset = offset;
+	offset = parseDebug (lh, data, offset, size, parseStruct);
+	if (offset == 0) {
+		free (function);
+		return 0;
+	}
+
+	function->size = offset - baseoffset;
+	if (parseStruct && parseStruct->onFunction) {
+		parseStruct->onFunction (lh, function, parseStruct);
+	}
+	if (!storeLuaFunction (lh, function)) {
+		free (function);
+	}
+	return offset;
 }
