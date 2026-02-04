@@ -459,9 +459,15 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	BlockTakeoverCtx *ctx = user;
 	RAnalFunction *our_fcn = ctx->fcn;
 	RAnal *anal = our_fcn->anal;
+	bool already_owned = r_list_contains (block->fcns, our_fcn);
 	r_anal_block_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
+		if (other_fcn == our_fcn) {
+			// Skip our function - remove from list temporarily, will remain as sole owner
+			r_list_delete_data (block->fcns, our_fcn);
+			continue;
+		}
 		if (other_fcn->addr == block->addr) {
 			r_anal_block_unref (block);
 			return false;
@@ -510,7 +516,12 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	}
 	block->stackptr -= ctx->stack_diff;
 	block->parent_stackptr -= ctx->stack_diff;
-	r_anal_function_add_block (our_fcn, block);
+	if (already_owned) {
+		// Re-add our_fcn to block->fcns since we removed it in the loop
+		r_list_append (block->fcns, our_fcn);
+	} else {
+		r_anal_function_add_block (our_fcn, block);
+	}
 	// TODO: add block->ninstr from our_fcn considering delay slots
 	r_anal_block_unref (block);
 	return true;
@@ -667,19 +678,15 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 
 	RAnalBlock *existing_bb = bbget (anal, addr, anal->opt.jmpmid);
 	if (existing_bb) {
-		bool existing_in_fcn = r_list_contains (existing_bb->fcns, fcn);
 		existing_bb = r_anal_block_split (existing_bb, addr);
+		bool existing_in_fcn = existing_bb && r_list_contains (existing_bb->fcns, fcn);
 		if (!existing_in_fcn && existing_bb) {
 			if (existing_bb->addr == fcn->addr) {
 				if (anal->opt.slow) {
-					// XXX this call causes an infinite loop if not commented
 					// our function starts directly there, so we steal what is ours!
 					fcn_takeover_block_recursive (fcn, existing_bb);
 				} else {
-					r_list_delete_data (fcn->bbs, existing_bb);
-					R_LOG_INFO ("Basic block collides with function 0x%08"PFMT64x, fcn->addr);
-					// r_anal_block_unref (existing_bb);
-					// return R_ANAL_RET_END; // MUST BE NOT FOUND
+					R_LOG_DEBUG ("Basic block collides with function 0x%08"PFMT64x, fcn->addr);
 				}
 			}
 		}

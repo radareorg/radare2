@@ -269,11 +269,10 @@ R_API bool r_anal_function_rename(RAnalFunction *fcn, const char *name) {
 
 R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
-	// XXX this is slow use skiplist or vector instead
 	if (r_list_contains (bb->fcns, fcn)) {
 		return;
 	}
-	r_list_append (bb->fcns, fcn); // associate the given fcn with this bb
+	r_list_append (bb->fcns, fcn);
 	r_anal_block_ref (bb);
 	r_list_append (fcn->bbs, bb);
 
