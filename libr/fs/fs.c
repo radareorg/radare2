@@ -505,9 +505,12 @@ static void r_fs_find_off_aux(RFS *fs, const char *name, ut64 offset, RList *lis
 		} else {
 			file = r_fs_open (fs, found, false);
 			if (file) {
-				r_fs_read (fs, file, 0, file->size);
-				if (file->off == offset) {
-					r_list_append (list, found);
+				if (file->size > 0) {
+					r_fs_read (fs, file, 0, file->size);
+					if (file->off == offset) {
+						r_list_append (list, found);
+						found = NULL;
+					}
 				}
 				r_fs_close (fs, file);
 			}

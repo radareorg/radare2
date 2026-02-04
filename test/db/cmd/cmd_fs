@@ -174,7 +174,9 @@ EOF
 EXPECT=<<EOF
 d etc
 d bin
+f åeadme~1.swp
 f README.md
+f åeadme~1.swx
 EOF
 RUN
 
@@ -915,6 +917,42 @@ rm ls
 EOF
 EXPECT=<<EOF
 size     0x5
+EOF
+RUN
+
+NAME=mdx fat deleted files
+FILE=bins/fs/fat_deleted/fat_deleted.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0
+mdx /mnt~eadme.md
+EOF
+EXPECT=<<EOF
+x åeadme.md
+EOF
+RUN
+
+NAME=mi fat find filename by offset
+FILE=bins/fs/fat_deleted/fat_deleted.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0
+mi 0x29600~mnt
+EOF
+EXPECT=<<EOF
+/mnt/etc/services
+EOF
+RUN
+
+NAME=mix fat deleted filename by offset
+FILE=bins/fs/fat_deleted/fat_deleted.img
+ARGS=-n
+CMDS=<<EOF
+m /mnt fat 0
+mix 0x2ae00~mnt
+EOF
+EXPECT=<<EOF
+/mnt/åeadme.md
 EOF
 RUN
 
