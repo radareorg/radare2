@@ -6,7 +6,6 @@ fromscratch=1 # 1
 onlymakedeb=0
 static=1
 
-
 gcc -v 2> /dev/null
 if [ $? = 0 ]; then
 	export HOST_CC=gcc
@@ -26,6 +25,10 @@ if [ "${STOW}" = 1 ]; then
 PREFIX=/private/var/radare2
 else
 PREFIX=/usr
+fi
+
+if [ "${ROOTLESS}" = 1 ]; then
+	PREFIX=/var/jb/usr
 fi
 
 ROOT=dist/cydia/radare2/root

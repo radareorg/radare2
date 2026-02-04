@@ -267,7 +267,7 @@ jobs:
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Create ${{ matrix.type }} package
-      run: ./sys/ios-${{ matrix.type }}.sh
+      run: ROOTLESS=1 ./sys/ios-${{ matrix.type }}.sh
     - if: ${{ matrix.sdk }}
       name: Create iOS SDK
       run: |
