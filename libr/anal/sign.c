@@ -822,16 +822,16 @@ static RSignGraph *r_sign_fcn_graph(RAnalFunction *fcn) {
 	RSignGraph *graph = R_NEW0 (RSignGraph);
 	if (graph) {
 		graph->cc = r_anal_function_complexity (fcn),
-		graph->nbbs = r_list_length (fcn->bbs);
+		graph->nbbs = RVecAnalBlockPtr_length (&fcn->bbs);
 		graph->edges = r_anal_function_count_edges (fcn, &graph->ebbs);
 		graph->bbsum = r_anal_function_realsize (fcn);
 	}
 	return graph;
 }
 
-static int bb_sort_by_addr(const void *x, const void *y) {
-	RAnalBlock *a = (RAnalBlock *)x;
-	RAnalBlock *b = (RAnalBlock *)y;
+static int bb_sort_by_addr(RAnalBlock * const *x, RAnalBlock * const *y) {
+	RAnalBlock *a = *x;
+	RAnalBlock *b = *y;
 	if (a->addr > b->addr) {
 		return 1;
 	}
@@ -842,14 +842,15 @@ static int bb_sort_by_addr(const void *x, const void *y) {
 }
 
 static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (a && fcn && fcn->bbs && fcn->bbs->head, false);
+	R_RETURN_VAL_IF_FAIL (a && fcn && !RVecAnalBlockPtr_empty (&fcn->bbs), false);
 
 	// get size
 	RCore *core = a->coreb.core;
 	int maxsz = a->coreb.cfgGetI (core, "zign.maxsz");
-	r_list_sort (fcn->bbs, &bb_sort_by_addr);
+	RVecAnalBlockPtr_sort (&fcn->bbs, bb_sort_by_addr);
 	ut64 ea = fcn->addr;
-	RAnalBlock *bb = (RAnalBlock *)fcn->bbs->tail->data;
+	RAnalBlock **last = RVecAnalBlockPtr_last (&fcn->bbs);
+	RAnalBlock *bb = *last;
 	int size = R_MIN (bb->addr + bb->size - ea, maxsz);
 
 	// alloc space for signature
@@ -867,7 +868,7 @@ static RSignBytes *r_sign_func_empty_mask(RAnal *a, RAnalFunction *fcn) {
 }
 
 static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (a && fcn && fcn->bbs && fcn->bbs->head, false);
+	R_RETURN_VAL_IF_FAIL (a && fcn && !RVecAnalBlockPtr_empty (&fcn->bbs), false);
 	RSignBytes *sig = r_sign_func_empty_mask (a, fcn);
 	if (!sig) {
 		return NULL;
@@ -876,9 +877,9 @@ static RSignBytes *r_sign_fcn_bytes(RAnal *a, RAnalFunction *fcn) {
 	ut64 ea = fcn->addr;
 	int size = sig->size;
 	ut8 *tmpmask = NULL;
-	RAnalBlock *bb;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (bb->addr >= ea) {
 			size_t delta = bb->addr - ea;
 			size_t rsize = bb->size;
@@ -924,7 +925,7 @@ static RSignHash *r_sign_fcn_bbhash(RAnal *a, RAnalFunction *fcn) {
 static char *real_function_name(RAnal *a, RAnalFunction *fcn);
 
 static RSignItem *item_from_func(RAnal *a, RAnalFunction *fcn, const char *name) {
-	if (r_list_empty (fcn->bbs)) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		R_LOG_WARN ("Function with no basic blocks at 0x%08"PFMT64x, fcn->addr);
 		return NULL;
 	}
@@ -2108,8 +2109,8 @@ R_API const char *r_sign_type_to_name(int type) {
 	}
 }
 
-static int cmpaddr(const void *_a, const void *_b) {
-	const RAnalBlock *a = _a, *b = _b;
+static int cmpaddr(RAnalBlock * const *_a, RAnalBlock * const *_b) {
+	const RAnalBlock *a = *_a, *b = *_b;
 	return (a->addr - b->addr);
 }
 
@@ -2118,14 +2119,15 @@ static int cmpaddr(const void *_a, const void *_b) {
 #include "../muta/hash/sha2.c"
 
 R_API char *r_sign_calc_bbhash(RAnal *a, RAnalFunction *fcn) {
-	RListIter *iter = NULL;
+	RAnalBlock **it;
 	RAnalBlock *bbi = NULL;
 
 	RSha256Context ctx;
 	R_SHA2_API (r_sha256_init) (&ctx);
 
-	r_list_sort (fcn->bbs, &cmpaddr);
-	r_list_foreach (fcn->bbs, iter, bbi) {
+	RVecAnalBlockPtr_sort (&fcn->bbs, cmpaddr);
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bbi = *it;
 		ut8 *buf = malloc (bbi->size);
 		if (!buf) {
 			return NULL;

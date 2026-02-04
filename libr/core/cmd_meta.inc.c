@@ -527,9 +527,10 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 				}
 				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
 				if (fcn) {
+					RAnalBlock **iter;
 					RAnalBlock *bb;
-					RListIter *iter;
-					r_list_foreach (fcn->bbs, iter, bb) {
+					R_VEC_FOREACH (&fcn->bbs, iter) {
+						bb = *iter;
 						int i;
 						for (i = 0; i < bb->size; i++) {
 							ut64 addr = bb->addr + i;

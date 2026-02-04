@@ -4,9 +4,9 @@
 
 R_API int r_anal_function_instrcount(RAnalFunction *fcn) {
 	int amount = 0;
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		amount += bb->ninstr;
 	}
 	return amount;
@@ -16,14 +16,15 @@ R_API bool r_anal_function_islineal(RAnalFunction *fcn) {
 	if (r_anal_function_linear_size (fcn) != r_anal_function_realsize (fcn)) {
 		return false;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
+	RAnalBlock *bb = NULL;
 	ut64 at = r_anal_function_min_addr (fcn);
 	bool found;
 	ut64 end = r_anal_function_max_addr (fcn);
 	for (at = fcn->addr; at < end; at ++) {
 		found = false;
-		r_list_foreach (fcn->bbs, iter, bb) {
+		R_VEC_FOREACH (&fcn->bbs, it) {
+			bb = *it;
 			if (r_anal_block_contains (bb, at)) {
 				found = true;
 				break;

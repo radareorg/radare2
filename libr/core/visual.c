@@ -2857,7 +2857,7 @@ static void handle_space_key(RCore *core, int force) {
 		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 		if (!fun) {
 			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
-		} else if (r_list_empty (fun->bbs)) {
+		} else if (RVecAnalBlockPtr_empty (&fun->bbs)) {
 			r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
 		} else {
 			const int ocolor = r_config_get_i (core->config, "scr.color");

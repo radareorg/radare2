@@ -190,6 +190,8 @@ enum {
 
 #define RAnalBlock struct r_anal_bb_t
 
+R_VEC_TYPE (RVecAnalBlockPtr, RAnalBlock *);
+
 enum {
 	R_ANAL_DIFF_TYPE_NULL = 0,
 	R_ANAL_DIFF_TYPE_MATCH = 'm',
@@ -321,7 +323,7 @@ typedef struct r_anal_function_t {
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;
-	RList *bbs; // TODO: should be RVec
+	RVecAnalBlockPtr bbs;
 	RAnalFcnMeta meta;
 	RList *imports; // maybe bound to class?
 	struct r_anal_t *anal; // this function is associated with this instance

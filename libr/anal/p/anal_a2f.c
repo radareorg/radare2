@@ -407,7 +407,7 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 			if (vars) {
 				// handling arguments
 				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
-				if (fcn && !r_list_empty (fcn->bbs)) {
+				if (fcn && !RVecAnalBlockPtr_empty (&fcn->bbs)) {
 					coreb.cmdf (coreb.core, "afva @ 0x%"PFMT64x, addr);
 					// r_core_cmdf (core, "afva @ 0x%"PFMT64x, addr);
 				}

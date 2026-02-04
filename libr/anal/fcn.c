@@ -85,8 +85,6 @@ static bool cond_is_inverse(RAnalCondType a, RAnalCondType b) {
 
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
-	RAnalBlock *bb;
-	RListIter *iter, *iter2;
 
 	R_RETURN_VAL_IF_FAIL (fcn, false);
 
@@ -102,7 +100,9 @@ R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	}
 
 	ut64 eof = fcn->addr + newsize;
-	r_list_foreach_safe (fcn->bbs, iter, iter2, bb) {
+	size_t i;
+	for (i = RVecAnalBlockPtr_length (&fcn->bbs); i > 0; i--) {
+		RAnalBlock *bb = *RVecAnalBlockPtr_at (&fcn->bbs, i - 1);
 		if (bb->addr >= eof) {
 			r_anal_function_remove_block (fcn, bb);
 			continue;
@@ -293,10 +293,10 @@ static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBl
 		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs, UT64_MAX);
-	RListIter *iter;
-	RAnalBlock *tmp_bb;
-	r_list_foreach (fcn->bbs, iter, tmp_bb) {
+	R_RETURN_VAL_IF_FAIL (fcn, UT64_MAX);
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *tmp_bb = *it;
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			if (tmp_bb->cmpreg == cmp_reg) {
 				if (tmp_bb->cond) {
@@ -2212,10 +2212,10 @@ R_API bool r_anal_function_add_bb(RAnal *a, RAnalFunction *fcn, ut64 addr, ut64 
 }
 
 R_API int r_anal_function_loops(RAnalFunction *fcn) {
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	ut32 loops = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (bb->jump != UT64_MAX && bb->jump < bb->addr) {
 			loops ++;
 		}
@@ -2236,10 +2236,10 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 #endif
 	RAnal *anal = fcn->anal;
 	int E = 0, N = 0, P = 0;
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		N++; // nodes
 		if ((!anal || anal->verbose) && bb->jump == UT64_MAX && bb->fail != UT64_MAX) {
 			R_LOG_WARN ("invalid bb jump/fail pair at 0x%08"PFMT64x" (fcn 0x%08"PFMT64x, bb->addr, fcn->addr);
@@ -2421,10 +2421,10 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	const bool aligned = r_anal_is_aligned (anal, addr);
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (r_anal_block_contains (bb, addr)) {
 			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
 			// if (r_anal_block_op_starts_at (bb, addr)) {
@@ -2442,9 +2442,9 @@ R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64
 	if (b) {
 		return b;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (addr == bb->addr) {
 			return bb;
 		}
@@ -2454,14 +2454,14 @@ R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64
 
 // compute the cyclomatic cost
 R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	ut32 totalCycles = 0;
 	if (!fcn) {
 		return 0;
 	}
 	RAnal *anal = fcn->anal;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		RAnalOp op;
 		ut64 at, end = bb->addr + bb->size;
 		ut8 *buf = malloc (bb->size);
@@ -2488,13 +2488,13 @@ R_API ut32 r_anal_function_cost(RAnalFunction *fcn) {
 
 R_API int r_anal_function_count_edges(const RAnalFunction *fcn, int * R_NULLABLE ebbs) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	int edges = 0;
 	if (ebbs) {
 		*ebbs = 0;
 	}
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (ebbs && bb->jump == UT64_MAX && bb->fail == UT64_MAX) {
 			*ebbs = *ebbs + 1;
 		} else {
@@ -2545,7 +2545,7 @@ static bool can_affect_bp(RAnal *anal, RAnalOp* op) {
 R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
 	RAnal *anal = fcn->anal;
-	RListIter *iter;
+	RAnalBlock **iter;
 	RAnalBlock *bb;
 	char *pos;
 	// XXX omg this is one of the most awful things ive seen lately
@@ -2555,7 +2555,8 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 		snprintf (str_to_find, sizeof (str_to_find),
 			"\"type\":\"reg\",\"value\":\"%s", bpreg);
 	}
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, iter) {
+		bb = *iter;
 		RAnalOp op;
 		RAnalValue *src = NULL;
 		ut64 at, end = bb->addr + bb->size;
@@ -2642,6 +2643,10 @@ typedef struct {
 	HtUP *visited;
 } BlockRecurseCtx;
 
+static int find_bb_cmp(RAnalBlock * const *a, const void *b) {
+	return (*a == b) ? 0 : 1;
+}
+
 static bool mark_as_visited(RAnalBlock *bb, void *user) {
 	BlockRecurseCtx *ctx = user;
 	ht_up_insert (ctx->visited, bb->addr, NULL);
@@ -2652,10 +2657,11 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 	BlockRecurseCtx *ctx = user;
 	RAnal *anal = ctx->fcn->anal;
 	RAnalBlock *existing_bb = r_anal_get_block_at (anal, addr);
-	if (!existing_bb || !r_list_contains (ctx->fcn->bbs, existing_bb)) {
-		int old_len = r_list_length (ctx->fcn->bbs);
+	size_t idx = existing_bb ? RVecAnalBlockPtr_find_index (&ctx->fcn->bbs, existing_bb, find_bb_cmp) : SZT_MAX;
+	if (!existing_bb || idx == SZT_MAX) {
+		size_t old_len = RVecAnalBlockPtr_length (&ctx->fcn->bbs);
 		r_anal_function_bb (ctx->fcn->anal, ctx->fcn, addr, anal->opt.depth);
-		if (old_len != r_list_length (ctx->fcn->bbs)) {
+		if (old_len != RVecAnalBlockPtr_length (&ctx->fcn->bbs)) {
 			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
 		}
 	}
@@ -2739,7 +2745,7 @@ static void clear_bb_vars(RAnalFunction *fcn, RAnalBlock *bb, ut64 from, ut64 to
 
 static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 	// huge slowdown
-	RListIter *it, *it2, *tmp;
+	RListIter *it;
 	RAnalFunction *fcn;
 	bool old_jmpmid = anal->opt.jmpmid;
 	anal->opt.jmpmid = true;
@@ -2759,8 +2765,12 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 		BlockRecurseCtx ctx = { fcn, ht };
 		r_anal_block_recurse (bb, analize_descendents, &ctx);
 
-		// Remove non-reachable blocks
-		r_list_foreach_safe (fcn->bbs, it2, tmp, bb) {
+		// Remove non-reachable blocks - collect first, then remove
+		RVecAnalBlockPtr to_remove;
+		RVecAnalBlockPtr_init (&to_remove);
+		RAnalBlock **it2;
+		R_VEC_FOREACH (&fcn->bbs, it2) {
+			bb = *it2;
 			if (ht_up_find_kv (ht, bb->addr, NULL)) {
 				continue;
 			}
@@ -2769,11 +2779,20 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 				// Avoid removing blocks that were already not reachable
 				continue;
 			}
+			RVecAnalBlockPtr_push_back (&to_remove, &bb);
+		}
+		R_VEC_FOREACH (&to_remove, it2) {
+			bb = *it2;
 			fcn->ninstr -= bb->ninstr;
 			r_anal_function_remove_block (fcn, bb);
 		}
+		RVecAnalBlockPtr_fini (&to_remove);
 
-		RList *bbs = r_list_clone (fcn->bbs, NULL);
+		// Create temporary RList for r_anal_block_automerge
+		RList *bbs = r_list_new ();
+		R_VEC_FOREACH (&fcn->bbs, it2) {
+			r_list_append (bbs, *it2);
+		}
 		r_anal_block_automerge (bbs);
 		r_anal_function_delete_unused_vars (fcn);
 		r_list_free (bbs);
@@ -2838,18 +2857,28 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 
 R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
 	R_RETURN_IF_FAIL (fcn);
-	RListIter *it, *it2, *tmp, *tmp2;
+	RListIter *it2, *tmp2;
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
-	r_list_foreach_safe (fcn->bbs, it, tmp, bb) {
+	// Collect blocks to process first since we may modify during iteration
+	RVecAnalBlockPtr to_process;
+	RVecAnalBlockPtr_init (&to_process);
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		if (r_anal_block_was_modified (bb)) {
-			r_list_foreach_safe (bb->fcns, it2, tmp2, f) {
-				calc_reachable_and_remove_block (fcns, f, bb, reachable);
-			}
+			RVecAnalBlockPtr_push_back (&to_process, &bb);
 		}
 	}
+	R_VEC_FOREACH (&to_process, it) {
+		bb = *it;
+		r_list_foreach_safe (bb->fcns, it2, tmp2, f) {
+			calc_reachable_and_remove_block (fcns, f, bb, reachable);
+		}
+	}
+	RVecAnalBlockPtr_fini (&to_process);
 	update_analysis (fcn->anal, fcns, reachable);
 	ht_up_free (reachable);
 	r_list_free (fcns);

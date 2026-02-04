@@ -5,7 +5,6 @@
 #include <r_core.h>
 
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
-R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 typedef struct recurse_depth_first_ctx_t {
 	RAnalBlock *bb;
@@ -1046,10 +1045,10 @@ static bool automerge_get_predecessors_cb(void *user, ut64 k) {
 		return true;
 	}
 	AutomergeCtx *ctx = user;
-	const RAnalFunction *fcn = (const RAnalFunction *) (size_t)k;
-	RListIter *it;
-	RAnalBlock *block;
-	r_list_foreach (fcn->bbs, it, block) {
+	RAnalFunction *fcn = (RAnalFunction *) (size_t)k;
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *block = *it;
 		bool already_visited;
 		ht_up_find (ctx->visited_blocks, (ut64) (size_t)block, &already_visited);
 		if (already_visited) {

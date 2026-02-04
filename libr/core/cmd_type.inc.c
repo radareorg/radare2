@@ -1042,7 +1042,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		return;
 	}
 	RAnalBlock *bb;
-	RListIter *it;
+	RAnalBlock **it;
 	RAnalOp aop = {0};
 	bool ioCache = r_config_get_b (core->config, "io.cache");
 	bool stack_set = false;
@@ -1092,8 +1092,9 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	ut64 oldoff = core->addr;
 	r_cons_break_push (core->cons, NULL, NULL);
 	// TODO: The algorithm can be more accurate if blocks are followed by their jmp/fail, not just by address
-	r_list_sort (fcn->bbs, bb_cmpaddr);
-	r_list_foreach (fcn->bbs, it, bb) {
+	RVecAnalBlockPtr_sort (&fcn->bbs, bb_cmpaddr);
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		bb = *it;
 		ut64 at = bb->addr;
 		ut64 to = bb->addr + bb->size;
 		r_reg_set_value (esil->anal->reg, pc, at);

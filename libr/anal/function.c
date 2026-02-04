@@ -81,7 +81,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->addr = UT64_MAX;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
-	fcn->bbs = r_list_new ();
+	RVecAnalBlockPtr_init (&fcn->bbs);
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
@@ -102,15 +102,13 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 		return;
 	}
 
-	RAnalBlock *block;
-	RListIter *iter, *iter2;
-	r_list_foreach_safe (fcn->bbs, iter, iter2, block) {
-		r_anal_function_remove_block (fcn, block);
-		// r_list_delete_data (block->fcns, fcn);
-		// r_anal_block_unref (block);
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *block = *it;
+		r_list_delete_data (block->fcns, fcn);
+		r_anal_block_unref (block);
 	}
-	// fcn->bbs->free = r_anal_block_unref;
-	r_list_free (fcn->bbs);
+	RVecAnalBlockPtr_fini (&fcn->bbs);
 
 	RAnal *anal = fcn->anal;
 	if (ht_up_find (anal->ht_addr_fun, fcn->addr, NULL) == fcn) {
@@ -129,7 +127,6 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	ht_pp_free (fcn->label_addrs);
 
 	free (fcn->name);
-	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
 	r_list_free (fcn->imports);
@@ -274,7 +271,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 	r_list_append (bb->fcns, fcn);
 	r_anal_block_ref (bb);
-	r_list_append (fcn->bbs, bb);
+	RVecAnalBlockPtr_push_back (&fcn->bbs, &bb);
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {
@@ -290,29 +287,35 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 }
 
+static int find_bb_cmp(RAnalBlock * const *a, const void *b) {
+	return (*a == b) ? 0 : 1;
+}
+
 R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	R_RETURN_IF_FAIL (fcn && bb);
 	r_list_delete_data (bb->fcns, fcn);
 
 	if (fcn->meta._min != UT64_MAX
 		&& (fcn->meta._min == bb->addr || fcn->meta._max == bb->addr + bb->size)) {
-		// If a block is removed at the beginning or end, updating min/max is not trivial anymore, just invalidate
 		fcn->meta._min = UT64_MAX;
 	}
 
-	r_list_delete_data (fcn->bbs, bb);
+	size_t idx = RVecAnalBlockPtr_find_index (&fcn->bbs, bb, find_bb_cmp);
+	if (idx != SZT_MAX) {
+		RVecAnalBlockPtr_remove (&fcn->bbs, idx);
+	}
 	r_anal_block_unref (bb);
 }
 
 static void ensure_fcn_range(RAnalFunction *fcn) {
-	if (fcn->meta._min != UT64_MAX) { // recalculate only if invalid
+	if (fcn->meta._min != UT64_MAX) {
 		return;
 	}
 	ut64 minval = UT64_MAX;
 	ut64 maxval = UT64_MIN;
-	RAnalBlock *block;
-	RListIter *iter;
-	r_list_foreach (fcn->bbs, iter, block) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *block = *it;
 		if (block->addr < minval) {
 			minval = block->addr;
 		}
@@ -352,11 +355,10 @@ R_API ut64 r_anal_function_size_from_entry(RAnalFunction *fcn) {
 
 R_API ut64 r_anal_function_realsize(const RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, UT64_MAX);
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	ut64 sz = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		sz += bb->size;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		sz += (*it)->size;
 	}
 	return sz;
 }
@@ -383,10 +385,9 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr) {
 
 R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, false);
-	RListIter *it;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, it, bb) {
-		if (r_anal_block_was_modified (bb)) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		if (r_anal_block_was_modified (*it)) {
 			return true;
 		}
 	}
@@ -395,15 +396,14 @@ R_API bool r_anal_function_was_modified(RAnalFunction *fcn) {
 
 R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, 0);
-	int total = r_list_length (fcn->bbs);
+	int total = RVecAnalBlockPtr_length (&fcn->bbs);
 	if (total == 0) {
 		return 0;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
+	RAnalBlock **it;
 	int traced = 0;
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (bb->traced != 0) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		if ((*it)->traced != 0) {
 			traced++;
 		}
 	}
@@ -411,22 +411,23 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 }
 
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs && r_list_length (fcn->bbs), NULL);
+	R_RETURN_VAL_IF_FAIL (fcn && !RVecAnalBlockPtr_empty (&fcn->bbs), NULL);
 	HtUP *nodes = ht_up_new0 ();
 	RGraph *g = r_graph_new ();
 	if (node_ptr) {
 		*node_ptr = NULL;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
-	r_list_foreach (fcn->bbs, iter, bb) {
+	RAnalBlock **it;
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		RGraphNode *node = r_graph_add_node (g, bb);
 		if (node_ptr && !node_ptr[0] && bb->addr <= addr && addr < (bb->addr + bb->size)) {
 			*node_ptr = node;
 		}
 		ht_up_insert (nodes, bb->addr, node);
 	}
-	r_list_foreach (fcn->bbs, iter, bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		RAnalBlock *bb = *it;
 		if (bb->jump == UT64_MAX  &&
 			(!bb->switch_op || !bb->switch_op->cases || !r_list_length (bb->switch_op->cases))) {
 			continue;

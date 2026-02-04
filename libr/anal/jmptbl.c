@@ -543,10 +543,10 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnalBlock *my_bb, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
 	bool isValid = false;
 	int i;
-	RListIter *iter;
+	RAnalBlock **it;
 	RAnalBlock *tmp_bb, *prev_bb;
 	prev_bb = 0;
-	if (!fcn->bbs) {
+	if (RVecAnalBlockPtr_empty (&fcn->bbs)) {
 		return false;
 	}
 
@@ -564,7 +564,8 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	}
 
 	// search for the predecessor bb
-	r_list_foreach (fcn->bbs, iter, tmp_bb) {
+	R_VEC_FOREACH (&fcn->bbs, it) {
+		tmp_bb = *it;
 		if (tmp_bb->jump == my_bb->addr || tmp_bb->fail == my_bb->addr) {
 			prev_bb = tmp_bb;
 			break;
