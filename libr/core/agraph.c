@@ -3621,8 +3621,8 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 		}
 	}
 
-	r_cons_canvas_print_region (g->can);
 	g->can->flags = r_cons_canvas_flags (core->cons);
+	r_cons_canvas_print_region (g->can);
 
 	if (is_interactive) {
 		r_cons_newline (core->cons);

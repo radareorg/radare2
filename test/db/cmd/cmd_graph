@@ -50,6 +50,18 @@ agraph.nodes.title1.body=base64:aGVsbG8gd29ybGQ=
 EOF
 RUN
 
+NAME=utf8 base64 body
+FILE=-
+CMDS=<<EOF
+e scr.utf8=true
+agn "Phi" base64:zqY=
+agg~Φ
+EOF
+EXPECT=<<EOF
+| Φ                  |
+EOF
+RUN
+
 NAME=long base64 body
 FILE=-
 CMDS=<<EOF
