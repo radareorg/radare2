@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2025 - nibble, alvaro, pancake, th3str4ng3r */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_anal.h>
 
@@ -82,15 +82,22 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 				R_LOG_ERROR ("Major disaster at 0x%08"PFMT64x, ip);
 				return;
 			}
-			if (anal->opt.jmptbl_split && block->addr != ip) {
-				// split the block so switch instruction is at the start of its block
-				RAnalBlock *newblock = r_anal_block_split (block, ip);
-				if (newblock) {
-					r_anal_block_unref (newblock);
-					block = r_anal_get_block_at (anal, ip);
-				}
-				if (!block) {
-					R_LOG_ERROR ("Failed to split block for switch at 0x%08"PFMT64x, ip);
+			if (block->addr != ip) {
+				if (anal->opt.jmptbl_split) {
+					// split the block so switch instruction is at the start of its block
+					RAnalBlock *newblock = r_anal_block_split (block, ip);
+					if (newblock) {
+						r_anal_block_unref (newblock);
+						block = r_anal_get_block_at (anal, ip);
+					}
+					if (!block) {
+						R_LOG_ERROR ("Failed to split block for switch at 0x%08"PFMT64x, ip);
+						return;
+					}
+				} else {
+					st64 d = block->addr - ip;
+					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
+					block = NULL;
 					return;
 				}
 			}
