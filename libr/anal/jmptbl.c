@@ -96,7 +96,7 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 					}
 				} else {
 					st64 d = block->addr - ip;
-					R_LOG_WARN ("Cannot find basic block for switch case at 0x%08"PFMT64x" bbdelta = %d", ip, (int)R_ABS (d));
+					R_LOG_WARN ("Cannot find basic block case for jmptbl switch from 0x%08"PFMT64x" bbdelta = %d. Try -e anal.jmptbl.split=true and let us know", ip, (int)R_ABS (d));
 					block = NULL;
 					return;
 				}
