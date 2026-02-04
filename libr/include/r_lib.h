@@ -129,7 +129,7 @@ typedef struct r_lib_t {
 	bool ignore_abiversion;
 	bool safe_loading; /* true to enable 2-step loading process */
 	// hashtable plugname = &plugin
-	HtPP *plugins_ht;
+	HtPP *plugins_ht[R_LIB_TYPE_LAST];
 	ut32 abiversion; /* Current ABI version */
 } RLib;
 
