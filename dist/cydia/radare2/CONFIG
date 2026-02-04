@@ -1,5 +1,5 @@
 PACKAGE?=radare2
-ARCH=iphoneos-arm64e
+ARCH=iphoneos-arm64
 SECTION=Utilities
 PRIORITY=optional
 MAINTAINER=pancake <pancake@nopcode.org>

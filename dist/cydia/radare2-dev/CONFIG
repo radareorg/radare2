@@ -1,5 +1,5 @@
 PACKAGE?=radare2-dev
-ARCH=iphoneos-arm64e
+ARCH=iphoneos-arm64
 SECTION=Utilities
 DEPENDS=radare2
 PRIORITY=optional
