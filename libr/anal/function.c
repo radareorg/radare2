@@ -273,8 +273,7 @@ R_API void r_anal_function_add_block(RAnalFunction *fcn, RAnalBlock *bb) {
 		return;
 	}
 	r_list_append (bb->fcns, fcn);
-	r_anal_block_ref (bb);
-	r_list_append (fcn->bbs, bb);
+	r_list_append (fcn->bbs, r_ref (bb));
 
 	if (fcn->meta._min != UT64_MAX) {
 		if (bb->addr + bb->size > fcn->meta._max) {
@@ -301,7 +300,7 @@ R_API void r_anal_function_remove_block(RAnalFunction *fcn, RAnalBlock *bb) {
 	}
 
 	r_list_delete_data (fcn->bbs, bb);
-	r_anal_block_unref (bb);
+	r_unref (bb);
 }
 
 static void ensure_fcn_range(RAnalFunction *fcn) {

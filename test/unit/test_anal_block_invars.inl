@@ -10,8 +10,8 @@ static bool block_check_invariants(RAnal *anal) {
 		}
 		last_start = block->addr;
 
-		mu_assert ("block->ref < 1, but it is still in the tree", block->ref >= 1);
-		mu_assert ("block->ref < r_list_length (block->fcns)", block->ref >= r_list_length (block->fcns));
+		mu_assert ("block->refcount < 1, but it is still in the tree", r_ref_count (block) >= 1);
+		mu_assert ("block->refcount < r_list_length (block->fcns)", r_ref_count (block) >= r_list_length (block->fcns));
 
 		RListIter *fcniter;
 		RAnalFunction *fcn;
@@ -62,7 +62,7 @@ static bool block_check_leaks(RAnal *anal) {
 	RBIter iter;
 	RAnalBlock *block;
 	r_rbtree_foreach (anal->bb_tree, iter, block, RAnalBlock, _rb) {
-		if (block->ref != r_list_length (block->fcns))  {
+		if (r_ref_count (block) != r_list_length (block->fcns))  {
 			mu_assert ("leaked basic block", false);
 		}
 	}
