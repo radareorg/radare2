@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble */
 
 #define R_LOG_ORIGIN "core.anal"
 
@@ -6959,7 +6959,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 					}
 				}
 				if (block) {
-					r_ref (block);
+					block = r_ref (block);
 				}
 				r_list_free (blocks);
 				if (!block) {
