@@ -185,12 +185,12 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	lib->safe_loading = r_sys_getenv_asbool ("R2_SAFE_PLUGINS");
 	lib->abiversion = R2_ABIVERSION;
 	lib->handlers = r_list_newf (free);
+	lib->plugins = r_list_newf (free);
 	int i;
 	for (i = 0; i < R_LIB_TYPE_LAST; i++) {
 		lib->handlers_bytype[i] = NULL;
+		lib->plugins_ht[i] = ht_pp_new (NULL, (HtPPKvFreeFunc)free_kv, NULL);
 	}
-	lib->plugins = r_list_newf (free);
-	lib->plugins_ht = ht_pp_new (NULL, (HtPPKvFreeFunc)free_kv, NULL);
 	lib->symname = strdup (symname? symname: R_LIB_SYMNAME);
 	lib->symnamefunc = strdup (symnamefunc? symnamefunc: R_LIB_SYMFUNC);
 	return lib;
@@ -201,7 +201,10 @@ R_API void r_lib_free(RLib * R_NULLABLE lib) {
 		r_lib_close (lib, NULL);
 		r_list_free (lib->handlers);
 		r_list_free (lib->plugins);
-		ht_pp_free (lib->plugins_ht);
+		int i;
+		for (i = 0; i < R_LIB_TYPE_LAST; i++) {
+			ht_pp_free (lib->plugins_ht[i]);
+		}
 		free (lib->symname);
 		free (lib->symnamefunc);
 		free (lib);
@@ -233,12 +236,12 @@ R_API RLibHandler *r_lib_get_handler(RLib *lib, int type) {
 
 static bool delete_plugin(RLib *lib, RLibPlugin *plugin) {
 	bool found;
-	if (plugin->name == NULL) {
+	if (plugin->name == NULL || plugin->type < 0 || plugin->type >= R_LIB_TYPE_LAST) {
 		return false;
 	}
-	ht_pp_find (lib->plugins_ht, plugin->name, &found);
+	ht_pp_find (lib->plugins_ht[plugin->type], plugin->name, &found);
 	if (found) {
-		ht_pp_delete (lib->plugins_ht, plugin->name);
+		ht_pp_delete (lib->plugins_ht[plugin->type], plugin->name);
 	}
 	bool ret = false;
 	if (plugin->handler && plugin->handler->destructor) {
@@ -281,10 +284,10 @@ R_API bool r_lib_close(RLib *lib, const char *file) {
 	return false;
 }
 
-static bool already_loaded(RLib *lib, const char *name) {
-	if (name) {
+static bool already_loaded(RLib *lib, const char *name, int type) {
+	if (name && type >= 0 && type < R_LIB_TYPE_LAST) {
 		bool found;
-		RLibPlugin *p = ht_pp_find (lib->plugins_ht, name, &found);
+		RLibPlugin *p = ht_pp_find (lib->plugins_ht[type], name, &found);
 		if (found && p) {
 			R_LOG_ERROR ("Not loading library because it has already been loaded from '%s'", p->file);
 			return true;
@@ -333,7 +336,7 @@ R_API bool r_lib_open(RLib *lib, const char *file) {
 
 	// Step 3: Check plugin metadata and ABI version
 	RPluginMeta *meta = (RPluginMeta *)(stru->data);
-	if (already_loaded (lib, meta->name)) {
+	if (already_loaded (lib, meta->name, stru->type)) {
 		r_lib_dl_close (handle);
 		return false;
 	}
@@ -464,7 +467,7 @@ R_API bool r_lib_open_ptr(RLib *lib, const char *file, void *handle, RLibStruct 
 	} else {
 		r_list_append (lib->plugins, p);
 		if (p->name) {
-			ht_pp_insert (lib->plugins_ht, p->name, p);
+			ht_pp_insert (lib->plugins_ht[p->type], p->name, p);
 		}
 	}
 	return ret;
