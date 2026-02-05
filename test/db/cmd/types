@@ -2157,3 +2157,55 @@ EXPECT=<<EOF
 }
 EOF
 RUN
+
+NAME=visibility hidden metadata parsing
+FILE=--
+CMDS=<<CMDS
+to bins/other/visibility_test.h
+tk ~PadStr
+CMDS
+EXPECT=<<EXPECT
+PadStr=struct
+struct.PadStr=pad,str1
+struct.PadStr.pad=char,0,6
+struct.PadStr.pad.@.visibility=hidden
+struct.PadStr.str1=char,6,11
+EXPECT
+RUN
+
+NAME=visibility hidden pf format
+FILE=malloc://32
+CMDS=<<CMDS
+to bins/other/visibility_test.h
+ts PadStr
+CMDS
+EXPECT=<<EXPECT
+pf [6].[11]z str1
+EXPECT
+RUN
+
+NAME=visibility hidden tsc output
+FILE=--
+CMDS=<<CMDS
+to bins/other/visibility_test.h
+tsc PadStr
+CMDS
+EXPECT=<<EXPECT
+struct PadStr {
+  char pad[6]; /// @visibility(hidden)
+  char str1[11];
+};
+EXPECT
+RUN
+
+NAME=visibility hidden field display
+FILE=malloc://32
+CMDS=<<CMDS
+to bins/other/visibility_test.h
+w hello world sucks
+.ts PadStr
+CMDS
+EXPECT=<<EXPECT
+ str1 : 0x00000006 = "world sucks"
+EXPECT
+RUN
