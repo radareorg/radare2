@@ -837,23 +837,37 @@ static RList *collect_field_xrefs(RCore *core, const char *type_name, const char
 	return xrefs;
 }
 
-static void append_xrefs_to_strbuf(RStrBuf *sb, RList *xrefs) {
+static void append_xrefs_to_strbuf(RCore *core, RStrBuf *sb, RList *xrefs, bool use_color) {
 	if (!xrefs || r_list_empty (xrefs)) {
 		return;
+	}
+	const char *color_addr = "";
+	const char *color_fname = "";
+	const char *color_comment = "";
+	const char *color_read = "";
+	const char *color_write = "";
+	const char *color_reset = "";
+	if (use_color) {
+		RConsPrintablePalette *pal = &core->cons->context->pal;
+		color_addr = pal->addr ? pal->addr : Color_GREEN;
+		color_fname = pal->fname ? pal->fname : Color_RED;
+		color_comment = pal->comment ? pal->comment : Color_CYAN;
+		color_read = pal->ai_read ? pal->ai_read : Color_GREEN;
+		color_write = pal->ai_write ? pal->ai_write : Color_RED;
+		color_reset = Color_RESET;
 	}
 	RListIter *iter;
 	TypeXref *xref;
 	r_list_foreach (xrefs, iter, xref) {
-		const char *perm_str = "";
-		if ((xref->access_type & R_PERM_R) && (xref->access_type & R_PERM_W)) {
-			perm_str = "rw";
-		} else if (xref->access_type & R_PERM_R) {
-			perm_str = "r";
-		} else if (xref->access_type & R_PERM_W) {
-			perm_str = "w";
+		r_strbuf_appendf (sb, "             %s; XREF[", color_comment);
+		if (xref->access_type & R_PERM_R) {
+			r_strbuf_appendf (sb, "%sr%s", color_read, color_reset);
 		}
-		r_strbuf_appendf (sb, "             ; XREF[%s] 0x%08"PFMT64x" %s\n",
-			perm_str, xref->addr, xref->fcn_name);
+		if (xref->access_type & R_PERM_W) {
+			r_strbuf_appendf (sb, "%sw%s", color_write, color_reset);
+		}
+		r_strbuf_appendf (sb, "%s] %s0x%08"PFMT64x" %s%s%s\n",
+			color_comment, color_addr, xref->addr, color_fname, xref->fcn_name, color_reset);
 	}
 }
 
@@ -863,6 +877,19 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	bool match = false;
+	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+
+	const char *color_addr = "";
+	const char *color_type = "";
+	const char *color_name = "";
+	const char *color_reset = "";
+	if (use_color) {
+		RConsPrintablePalette *pal = &core->cons->context->pal;
+		color_addr = pal->addr ? pal->addr : Color_GREEN;
+		color_type = pal->var_type ? pal->var_type : Color_CYAN;
+		color_name = pal->var_name ? pal->var_name : Color_YELLOW;
+		color_reset = Color_RESET;
+	}
 
 	RStrBuf *sb = r_strbuf_new ("");
 
@@ -881,9 +908,9 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 			}
 		}
 		RList *type_xrefs = collect_type_xrefs (core, name);
-		append_xrefs_to_strbuf (sb, type_xrefs);
+		append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
 		r_list_free (type_xrefs);
-		r_strbuf_appendf (sb, "0x%08x %s %s {\n", 0, sdbkv_value (kv), name);
+		r_strbuf_appendf (sb, "%s0x%08x%s %s %s%s%s {\n", color_addr, 0, color_reset, sdbkv_value (kv), color_name, name, color_reset);
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		ut32 current_offset = 0;
 		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
@@ -906,15 +933,15 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 					}
 					ut32 arr_size = arrnum ? arrnum : 1;
 					ut32 size = type_size * arr_size;
-					r_strbuf_appendf (sb, "0x%08x   %s", current_offset, val);
+					r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s", color_addr, current_offset, color_reset, color_type, val, color_reset);
 					if (p && p[0] != '\0') {
-						r_strbuf_appendf (sb, "%s%s", strstr (val, " *")? "": " ", p);
+						r_strbuf_appendf (sb, "%s%s%s%s", strstr (val, " *")? "": " ", color_name, p, color_reset);
 						if (arrnum) {
 							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
 					}
 					RList *field_xrefs = collect_field_xrefs (core, name, p, current_offset);
-					append_xrefs_to_strbuf (sb, field_xrefs);
+					append_xrefs_to_strbuf (core, sb, field_xrefs, use_color);
 					r_list_free (field_xrefs);
 					r_strbuf_append (sb, ";\n");
 					if (!is_union) {
@@ -927,7 +954,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 			free (p);
 		}
 		free (var);
-		r_strbuf_appendf (sb, "0x%08x };\n", current_offset);
+		r_strbuf_appendf (sb, "%s0x%08x%s };\n", color_addr, current_offset, color_reset);
 		if (match) {
 			break;
 		}
@@ -945,6 +972,20 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list (TDB, true);
 	bool match = false;
+	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+
+	const char *color_addr = "";
+	const char *color_name = "";
+	const char *color_num = "";
+	const char *color_reset = "";
+	if (use_color) {
+		RConsPrintablePalette *pal = &core->cons->context->pal;
+		color_addr = pal->addr ? pal->addr : Color_GREEN;
+		color_name = pal->var_name ? pal->var_name : Color_YELLOW;
+		color_num = pal->num ? pal->num : Color_CYAN;
+		color_reset = Color_RESET;
+	}
+
 	RStrBuf *sb = r_strbuf_new ("");
 	ls_foreach (l, iter, kv) {
 		if (!strcmp (sdbkv_value (kv), "enum")) {
@@ -959,20 +1000,22 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 					}
 				}
 				RList *type_xrefs = collect_type_xrefs (core, name);
-				append_xrefs_to_strbuf (sb, type_xrefs);
+				append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
 				r_list_free (type_xrefs);
-				r_strbuf_appendf (sb, "0x%08x enum %s {\n", 0, name);
+				r_strbuf_appendf (sb, "%s0x%08x%s enum %s%s%s {\n", color_addr, 0, color_reset, color_name, name, color_reset);
 				RList *list = r_type_get_enum (TDB, name);
 				if (list && !r_list_empty (list)) {
 					RListIter *liter;
 					RTypeEnum *member;
 					r_list_foreach (list, liter, member) {
-						r_strbuf_appendf (sb, "0x%08x   %s = %s;\n",
-							(ut32)r_num_math (NULL, member->val), member->name, member->val);
+						r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s = %s%s%s;\n",
+							color_addr, (ut32)r_num_math (NULL, member->val), color_reset,
+							color_name, member->name, color_reset,
+							color_num, member->val, color_reset);
 					}
 				}
 				r_list_free (list);
-				r_strbuf_append (sb, "0x00000000 };\n");
+				r_strbuf_appendf (sb, "%s0x00000000%s };\n", color_addr, color_reset);
 				if (match) {
 					break;
 				}
@@ -995,6 +1038,20 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 	SdbListIter *iter;
 	SdbList *l = sdb_foreach_list_filter (TDB, stdifbasictype, true);
 	bool match = false;
+	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+
+	const char *color_addr = "";
+	const char *color_name = "";
+	const char *color_comment = "";
+	const char *color_reset = "";
+	if (use_color) {
+		RConsPrintablePalette *pal = &core->cons->context->pal;
+		color_addr = pal->addr ? pal->addr : Color_GREEN;
+		color_name = pal->var_name ? pal->var_name : Color_YELLOW;
+		color_comment = pal->comment ? pal->comment : Color_CYAN;
+		color_reset = Color_RESET;
+	}
+
 	RStrBuf *sb = r_strbuf_new ("");
 
 	ls_foreach (l, iter, kv) {
@@ -1011,10 +1068,12 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 		free (size_key);
 		ut32 size = size_str ? (ut32)(atoi (size_str) / 8) : 0;
 		RList *type_xrefs = collect_type_xrefs (core, name);
-		append_xrefs_to_strbuf (sb, type_xrefs);
+		append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
 		r_list_free (type_xrefs);
-		r_strbuf_appendf (sb, "0x%08x type %s; // size=%d\n", 0, name, size);
-		r_strbuf_appendf (sb, "0x%08x\n", size);
+		r_strbuf_appendf (sb, "%s0x%08x%s type %s%s%s; %s// size=%d%s\n",
+			color_addr, 0, color_reset, color_name, name, color_reset,
+			color_comment, size, color_reset);
+		r_strbuf_appendf (sb, "%s0x%08x%s\n", color_addr, size, color_reset);
 		if (match) {
 			break;
 		}
