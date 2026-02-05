@@ -58,23 +58,34 @@ static int __bb_addr_cmp(const void *incoming, const RBNode *in_tree, void *user
 	return 0;
 }
 
-R_API void r_anal_block_ref(RAnalBlock *bb) {
-	// XXX we have R_REF for this
-	if (bb) {
-		// 0-refd must already be freed.
-		R_RETURN_IF_FAIL (bb->ref > 0);
-		bb->ref++;
-	}
-}
-
 #define DFLT_NINSTR 3
+
+static void block_free(RAnalBlock *bb) {
+	if (!bb) {
+		return;
+	}
+	RAnal *anal = bb->anal;
+	if (anal) {
+		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
+	}
+	free (bb->esil);
+	r_anal_cond_free (bb->cond);
+	free (bb->fingerprint);
+	r_anal_diff_free (bb->diff);
+	free (bb->op_bytes);
+	r_anal_switch_op_free (bb->switch_op);
+	r_list_free (bb->fcns);
+	free (bb->op_pos);
+	free (bb->parent_reg_arena);
+	free (bb);
+}
 
 static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	RAnalBlock *block = R_NEW0 (RAnalBlock);
 	block->addr = addr;
 	block->size = size;
 	block->anal = a;
-	block->ref = 1;
+	r_ref_init (block, block_free);
 	block->jump = UT64_MAX;
 	block->fail = UT64_MAX;
 #if R2_590
@@ -93,26 +104,14 @@ static RAnalBlock *block_new(RAnal *a, ut64 addr, ut64 size) {
 	return block;
 }
 
-static void block_free(RAnalBlock *bb) {
-	if (!bb) {
-		return;
-	}
-	free (bb->esil);
-	r_anal_cond_free (bb->cond);
-	free (bb->fingerprint);
-	r_anal_diff_free (bb->diff);
-	free (bb->op_bytes);
-	r_anal_switch_op_free (bb->switch_op);
-	r_list_free (bb->fcns);
-	free (bb->op_pos);
-	free (bb->parent_reg_arena);
-	free (bb);
-}
-
 R_IPI void __block_free_rb(RBNode *node, void *user) {
 	RAnalBlock *block = unwrap (node);
-	r_anal_block_unref (block);
-	// block_free (block);
+	block->anal = NULL;
+	r_unref (block);
+}
+
+static void block_unref(RAnalBlock *block) {
+	r_unref (block);
 }
 
 R_API void r_anal_block_reset(RAnal *a) {
@@ -164,14 +163,13 @@ R_API bool r_anal_blocks_foreach_in(RAnal *anal, ut64 addr, RAnalBlockCb cb, voi
 
 static bool block_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
-	r_anal_block_ref (block);
-	r_list_push (list, block);
+	r_list_push (list, r_ref (block));
 	return true;
 }
 
 R_API RList *r_anal_get_blocks_in(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
+	RList *list = r_list_newf ((RListFree)block_unref);
 	if (list) {
 		r_anal_blocks_foreach_in (anal, addr, block_list_cb, list);
 	}
@@ -204,7 +202,7 @@ R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RA
 
 R_API RList *r_anal_get_blocks_intersect(RAnal *anal, ut64 addr, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	RList *list = r_list_newf ((RListFree)r_anal_block_unref);
+	RList *list = r_list_newf ((RListFree)block_unref);
 	if (R_LIKELY (list)) {
 		r_anal_blocks_foreach_intersect (anal, addr, size, block_list_cb, list);
 	}
@@ -233,16 +231,16 @@ R_API void r_anal_delete_block_at(RAnal *anal, ut64 addr) {
 }
 
 R_API void r_anal_delete_block(RAnalBlock *bb) {
-	r_anal_block_ref (bb);
-	while (!r_list_empty (bb->fcns)) {
+	RAnalBlock *rbb = r_ref (bb);
+	while (!r_list_empty (rbb->fcns)) {
 		RListIter *iter, *iter2;
 		RAnalFunction *fcn;
-		r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
-			r_anal_function_remove_block (fcn, bb);
+		r_list_foreach_safe (rbb->fcns, iter, iter2, fcn) {
+			r_anal_function_remove_block (fcn, rbb);
 		}
 	}
 	r_rbtree_aug_delete (&bb->anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
-	r_anal_block_unref (bb);
+	r_unref (rbb);
 }
 
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
@@ -312,8 +310,7 @@ R_API RAnalBlock *r_anal_block_split(RAnalBlock *bbi, ut64 addr) {
 	RAnal *anal = bbi->anal;
 	R_RETURN_VAL_IF_FAIL (bbi && addr >= bbi->addr && addr < bbi->addr + bbi->size && addr != UT64_MAX, 0);
 	if (addr == bbi->addr) {
-		r_anal_block_ref (bbi); // ref to be consistent with splitted return ref-count
-		return bbi;
+		return r_ref (bbi); // ref to be consistent with splitted return ref-count
 	}
 
 	if (r_anal_get_block_at (bbi->anal, addr)) {
@@ -392,7 +389,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	}
 
 	// Keep a ref to b, but remove all references of b from its functions
-	r_anal_block_ref (b);
+	b = r_ref (b);
 	while (!r_list_empty (b->fcns)) {
 		r_anal_function_remove_block (r_list_first (b->fcns), b);
 	}
@@ -422,7 +419,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 
 	// kill b completely
 	r_rbtree_aug_delete (&a->anal->bb_tree, &b->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
-	r_anal_block_unref (b);
+	r_unref (b);
 
 	// invalidate ranges of a's functions
 	r_list_foreach (a->fcns, iter, fcn) {
@@ -432,23 +429,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	return true;
 }
 
-R_API void r_anal_block_unref(RAnalBlock *bb) {
-	if (!bb) {
-		return;
-	}
-	if (bb->ref < 1) {
-		return;
-	}
-	R_RETURN_IF_FAIL (bb->ref > 0);
-	bb->ref--;
-	// R_RETURN_IF_FAIL (bb->ref >= r_list_length (bb->fcns)); // all of the block's functions must hold a reference to it
-	if (bb->ref < 1) {
-		RAnal *anal = bb->anal;
-		r_rbtree_aug_delete (&anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, __block_free_rb, NULL, __max_end);
-		block_free (bb);
-		// R_RETURN_IF_FAIL (r_list_empty (bb->fcns));
-	}
-}
+
 
 R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb cb, void *user) {
 #define CB_ADDR(addr) \
@@ -632,14 +613,13 @@ beach:
 
 static bool recurse_list_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
-	r_anal_block_ref (block);
-	r_list_push (list, block);
+	r_list_push (list, r_ref (block));
 	return true;
 }
 
 R_API RList *r_anal_block_recurse_list(RAnalBlock *block) {
 	R_RETURN_VAL_IF_FAIL (block, NULL);
-	RList *ret = r_list_newf ((RListFree)r_anal_block_unref);
+	RList *ret = r_list_newf ((RListFree)block_unref);
 	if (ret) {
 		r_anal_block_recurse (block, recurse_list_cb, ret);
 	}
@@ -806,12 +786,10 @@ done_bfs: {
 	RAnalBlock *prev = ht_up_find (ctx.visited, dstbb_addr, &found);
 	RAnalBlock *dst_block = r_anal_get_block_at (block->anal, dstbb_addr);
 	if (found && dst_block) {
-		ret = r_list_newf ((RListFree)r_anal_block_unref);
-		r_anal_block_ref (dst_block);
-		r_list_prepend (ret, dst_block);
+		ret = r_list_newf ((RListFree)block_unref);
+		r_list_prepend (ret, r_ref (dst_block));
 		while (prev) {
-			r_anal_block_ref (prev);
-			r_list_prepend (ret, prev);
+			r_list_prepend (ret, r_ref (prev));
 			prev = ht_up_find (ctx.visited, prev->addr, NULL);
 		}
 	}
@@ -886,7 +864,7 @@ typedef struct {
 
 static void noreturn_successor_free(HtUPKv *kv) {
 	NoreturnSuccessor *succ = kv->value;
-	r_anal_block_unref (succ->block);
+	r_unref (succ->block);
 	free (succ);
 }
 
@@ -896,8 +874,7 @@ static bool noreturn_successors_cb(RAnalBlock *block, void *user) {
 	}
 	HtUP *succs = user;
 	NoreturnSuccessor *succ = R_NEW0 (NoreturnSuccessor);
-	r_anal_block_ref (block);
-	succ->block = block;
+	succ->block = r_ref (block);
 	succ->reachable = false; // reset for first iteration
 	ht_up_insert (succs, block->addr, succ);
 	return true;
@@ -925,8 +902,7 @@ static bool noreturn_remove_unreachable_cb(void *user, const ut64 k, const void 
 static bool noreturn_get_blocks_cb(void *user, const ut64 k, const void *v) {
 	RList *blocks = user;
 	NoreturnSuccessor *succ = (NoreturnSuccessor *)v;
-	r_anal_block_ref (succ->block);
-	r_list_push (blocks, succ->block);
+	r_list_push (blocks, r_ref (succ->block));
 	return true;
 }
 
@@ -935,7 +911,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
 		return block;
 	}
-	r_anal_block_ref (block);
+	block = r_ref (block);
 
 	// Cache all recursive successors of block here.
 	// These are the candidates that we might have to remove from functions later.
@@ -971,7 +947,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	// Prepare to merge blocks with their predecessors if possible
 	RList merge_blocks;
 	r_list_init (&merge_blocks);
-	merge_blocks.free = (RListFree)r_anal_block_unref;
+	merge_blocks.free = (RListFree)block_unref;
 	ht_up_foreach (succs, noreturn_get_blocks_cb, &merge_blocks);
 
 	// Free/unref BEFORE doing the merge!
@@ -980,7 +956,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 
 	ut64 block_addr = block->addr; // save the addr to identify the block. the automerge might free it so we must not use the pointer!
 
-	r_anal_block_unref (block);
+	r_unref (block);
 	// Do the actual merge
 	r_anal_block_automerge (&merge_blocks);
 

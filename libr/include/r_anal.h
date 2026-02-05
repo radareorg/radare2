@@ -676,7 +676,7 @@ typedef struct r_anal_bb_t {
 	RList *fcns;
 	RAnal *anal;
 	char *esil;
-	int ref;
+	R_REF_TYPE;
 	int depth;
 #undef RAnalBlock
 } RAnalBlock;
@@ -910,8 +910,6 @@ typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
 typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
 
 // lifetime
-R_API void r_anal_block_ref(RAnalBlock *bb);
-R_API void r_anal_block_unref(RAnalBlock *bb);
 R_API void r_anal_block_reset(RAnal *a);
 
 // Create one block covering the given range.

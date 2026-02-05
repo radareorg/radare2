@@ -167,6 +167,7 @@ static RCoreHelpMessage help_msg_tu = {
 	"tu", "", "list all loaded unions",
 	"tu", " [type]", "show pf format string for given union",
 	"tu.", "[type]", "show union contents mapped in current offset (same as .tu)",
+	"tu-", "[type]", "delete union type definition",
 	"tuj", "", "list all loaded unions in json",
 	"tuj", " [type]", "show pf format string for given union in json",
 	"tu*", "", "show pf.<name> format string for all loaded unions",
@@ -1279,6 +1280,9 @@ static int cmd_type(void *data, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_tu);
 			break;
+		case '-': // "tu-"
+			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			break;
 		case '*':
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_head_ro (input + 2), 1);
@@ -1420,7 +1424,7 @@ static int cmd_type(void *data, const char *input) {
 			}
 			break;
 		case '-': // "ts-"
-			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
 			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
@@ -1474,7 +1478,7 @@ static int cmd_type(void *data, const char *input) {
 		}
 		switch (input[1]) {
 		case '-':
-			r_core_cmdf (core, "t-%s", r_str_trim_head_ro (input + 2));
+			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
 			break;
 		case 'j': // "tej"
 			if (input[2] == '\0') { // "tej"
