@@ -147,6 +147,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=rafind2 -I filter match
+FILE=-
+CMDS=!rafind2 -I "x86 elf 32" -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+0x58f
+EOF
+RUN
+
+NAME=rafind2 -I filter no match
+FILE=-
+CMDS=!rafind2 -I "arm elf" -s 250382 bins/elf/ioli/crackme0x00
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=rafind2 -m
 FILE=-
 CMDS=!!rafind2 -m bins/elf/ioli/crackme0x00
@@ -369,7 +384,7 @@ NAME=rafind2 replace insert
 FILE=--
 CMDS=<<EOF
 !cp bins/other/search.bin rafind2-repl3.bin
-!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl3.bin > /dev/null
+!rafind2 -q -s 1234 -R ABCDE -g rafind2-repl3.bin > /dev/null
 !rafind2 -q -s ABCDE rafind2-repl3.bin
 !rm -f rafind2-repl3.bin
 EOF
