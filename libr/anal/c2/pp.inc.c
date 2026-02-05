@@ -16,15 +16,8 @@ typedef struct {
 
 R_API char *pp_preprocess(PPState *st, const char *source);
 
-// Allocate a new PPState object
 R_API PPState *pp_new(void) {
 	PPState *st = R_NEW0 (PPState);
-	st->keys = NULL;
-	st->values = NULL;
-	st->count = st->cap = 0;
-	st->if_count = 0;
-	memset (st->if_skip, 0, sizeof (st->if_skip));
-	st->rec_depth = 0;
 	st->rec_limit = PP_DEFAULT_RECURSION_LIMIT;
 	return st;
 }
@@ -42,29 +35,20 @@ static void pp_clear_defines(PPState *st) {
 	st->count = st->cap = 0;
 }
 
-// Initialize or reset an existing PPState object (clears defines and conditional state)
 R_API void pp_init(PPState *st) {
-	if (!st) {
-		return;
+	if (st) {
+		pp_clear_defines (st);
+		st->if_count = 0;
+		memset (st->if_skip, 0, sizeof (st->if_skip));
+		st->rec_depth = 0;
 	}
-	pp_clear_defines (st);
-	st->if_count = 0;
-	memset (st->if_skip, 0, sizeof (st->if_skip));
-	st->rec_depth = 0;
 }
 
-// Finalize a PPState object (clears defines)
-R_API void pp_fini(PPState *st) {
-	pp_clear_defines (st);
-}
-
-// Free a PPState object and its resources
 R_API void pp_free(PPState *st) {
-	if (!st) {
-		return;
+	if (st) {
+		pp_clear_defines (st);
+		free (st);
 	}
-	pp_fini (st);
-	free (st);
 }
 
 R_API void pp_set_define(PPState *st, const char *name, const char *value) {
@@ -243,15 +227,13 @@ static void pp_handle_endif(PPState *st) {
 	}
 }
 
-static void pp_handle_warning(PPState *st, const char *q, const char *line_end) {
+static void pp_handle_message(const char *q, const char *line_end, bool is_error) {
 	char *s = parse_to_end (q, line_end);
-	R_LOG_WARN ("cpp: %s", s);
-	free (s);
-}
-
-static void pp_handle_error(PPState *st, const char *q, const char *line_end) {
-	char *s = parse_to_end (q, line_end);
-	R_LOG_ERROR ("cpp: %s", s);
+	if (is_error) {
+		R_LOG_ERROR ("cpp: %s", s);
+	} else {
+		R_LOG_WARN ("cpp: %s", s);
+	}
 	free (s);
 }
 
@@ -295,9 +277,9 @@ static bool pp_handle_directive(PPState *st, RStrBuf *out, const char *dir, cons
 	} else if (!strcmp (dir, "endif")) {
 		pp_handle_endif (st);
 	} else if (!strcmp (dir, "warning") && !skip) {
-		pp_handle_warning (st, q, line_end);
+		pp_handle_message (q, line_end, false);
 	} else if (!strcmp (dir, "error") && !skip) {
-		pp_handle_error (st, q, line_end);
+		pp_handle_message (q, line_end, true);
 		return false;
 	} else if (!strcmp (dir, "include") && !skip) {
 		char *inc = pp_handle_include (st, q, line_end);
@@ -351,9 +333,7 @@ R_API char *pp_preprocess(PPState *st, const char *source) {
 		const char *newline = memchr (p, '\n', end - p);
 		const char *line_end = newline? newline: end;
 		const char *q = line_start;
-		while (q < line_end && (*q == ' ' || *q == '\t')) {
-			q++;
-		}
+		skip_whitespace (&q, line_end);
 		bool skip = st->if_count? st->if_skip[st->if_count - 1]: false;
 		if (q < line_end && *q == '#') {
 			q++;
