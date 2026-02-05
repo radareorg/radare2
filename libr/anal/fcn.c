@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2025 - nibble, alvaro, pancake */
+/* radare - LGPL - Copyright 2010-2026 - nibble, alvaro, pancake */
 
 #define R_LOG_ORIGIN "fcn"
 
@@ -460,7 +460,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	RAnalFunction *our_fcn = ctx->fcn;
 	RAnal *anal = our_fcn->anal;
 	bool already_owned = r_list_contains (block->fcns, our_fcn);
-	r_ref (block);
+	block = r_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn == our_fcn) {
