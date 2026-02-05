@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "rafind2"
 
+#include <ctype.h>
 #include <r_main.h>
 #include <r_bin.h>
 #include <r_search.h>
@@ -10,6 +11,8 @@
 typedef struct {
 	RCons *cons;
 	RIO *io;
+	RBin *bin;
+	RIO *bin_io;
 	RList *hits;
 	bool showstr;
 	bool rad;
@@ -57,6 +60,13 @@ static void rafind_options_fini(RafindOptions *ro) {
 		r_list_free (ro->hits);
 		r_list_free (ro->keywords);
 		ro->keywords = NULL;
+		if (ro->bin) {
+			r_bin_file_delete_all (ro->bin);
+			r_bin_free (ro->bin);
+			ro->bin = NULL;
+		}
+		r_io_free (ro->bin_io);
+		ro->bin_io = NULL;
 		r_cons_free2 (ro->cons);
 	}
 }
@@ -71,6 +81,16 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->hits = r_list_newf (free);
 	ro->pj = NULL;
 	ro->cons = r_cons_new ();
+	ro->bin = r_bin_new ();
+	ro->bin_io = r_io_new ();
+	if (ro->bin && ro->bin_io) {
+		r_io_bind (ro->bin_io, &ro->bin->iob);
+	} else {
+		r_bin_free (ro->bin);
+		ro->bin = NULL;
+		r_io_free (ro->bin_io);
+		ro->bin_io = NULL;
+	}
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
@@ -122,7 +142,7 @@ static bool rafind_info_match_filter(const RBinInfo *info, const char *filter) {
 	}
 	char *p;
 	for (p = tokens; *p; p++) {
-		if (*p == ',' || *p == '\t' || *p == '\n') {
+		if (*p == ',' || isspace ((ut8)*p)) {
 			*p = ' ';
 		}
 	}
@@ -143,26 +163,22 @@ static bool rafind_match_bininfo(RafindOptions *ro, const char *file) {
 	if (!ro->idfilter) {
 		return true;
 	}
+	if (!ro->bin || !ro->bin_io) {
+		return false;
+	}
 	bool match = false;
-	RBin *bin = r_bin_new ();
-	if (!bin) {
-		return false;
-	}
-	RIO *io = r_io_new ();
-	if (!io) {
-		r_bin_free (bin);
-		return false;
-	}
-	r_io_bind (io, &bin->iob);
+	r_bin_file_delete_all (ro->bin);
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, 0);
 	opt.filename = file;
-	if (r_bin_open (bin, file, &opt)) {
-		const RBinInfo *info = r_bin_get_info (bin);
+	if (r_bin_open (ro->bin, file, &opt)) {
+		const RBinInfo *info = r_bin_get_info (ro->bin);
 		match = rafind_info_match_filter (info, ro->idfilter);
+		RBinFile *bf = r_bin_cur (ro->bin);
+		if (bf) {
+			r_bin_file_delete (ro->bin, bf->id);
+		}
 	}
-	r_bin_free (bin);
-	r_io_free (io);
 	return match;
 }
 
@@ -394,7 +410,7 @@ static bool rafind_parse_replace(RafindOptions *ro, const char *arg) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-J] -|file|dir ..\n", argv0);
+	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-g] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -407,8 +423,10 @@ static int show_help(const char *argv0, int line) {
 		" -E         perform a search using an esil expression\n"
 		" -f [from]  start searching from address 'from'\n"
 		" -F [file]  read the contents of the file and use it as keyword\n"
+		" -g         allow resize while replacing (insert/grow mode)\n"
 		" -h         show this help\n"
 		" -i         identify filetype (r2 -nqcpm file)\n"
+		" -I [str]   filter by rbin info (arch/type/bits/...) before searching\n"
 		" -j         output in JSON\n"
 		" -L         list all io plugins (same as r2 for now)\n"
 		" -m         magic search, file-type carver\n"
@@ -416,8 +434,6 @@ static int show_help(const char *argv0, int line) {
 		" -n         do not stop on read errors\n"
 		" -r         print using radare commands\n"
 		" -R [str]   replace each hit (prefix with h: hex, w: wide, s: string)\n"
-		" -I [str]   filter by rbin info (arch/type/bits/...) before searching\n"
-		" -J         allow resize while replacing (insert/resize mode)\n"
 		" -s [str]   search for a string (more than one string can be passed)\n"
 		" -S [str]   search for a wide string (more than one string can be passed).\n"
 		" -t [to]    stop search at address 'to'\n"
@@ -638,7 +654,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	rafind_options_init (&ro);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:R:I:J");
+	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:R:I:g");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -672,11 +688,11 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			}
 			ro.replace = true;
 			break;
+		case 'g':
+			ro.insert = true;
+			break;
 		case 'I':
 			ro.idfilter = opt.arg;
-			break;
-		case 'J':
-			ro.insert = true;
 			break;
 		case 'i':
 			ro.identify = true;

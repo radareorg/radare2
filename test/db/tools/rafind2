@@ -384,7 +384,7 @@ NAME=rafind2 replace insert
 FILE=--
 CMDS=<<EOF
 !cp bins/other/search.bin rafind2-repl3.bin
-!rafind2 -q -s 1234 -R ABCDE -J rafind2-repl3.bin > /dev/null
+!rafind2 -q -s 1234 -R ABCDE -g rafind2-repl3.bin > /dev/null
 !rafind2 -q -s ABCDE rafind2-repl3.bin
 !rm -f rafind2-repl3.bin
 EOF

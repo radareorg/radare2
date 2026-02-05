@@ -14,13 +14,13 @@
 .Op Fl x Ar hex
 .Op Fl E
 .Op Fl F Ar file
+.Op Fl g
 .Op Fl i
 .Op Fl I Ar str
 .Op Fl j
 .Op Fl L
 .Op Fl M Ar str
 .Op Fl R Ar str
-.Op Fl J
 .Op Fl r
 .Op Fl c
 .Op Fl V Ar s:num | s:num1,num2
@@ -46,6 +46,8 @@ Perform a search using an esil expression
 Start searching from address 'from'
 .It Fl F Ar file
 Read the contents of the file and use it as keyword
+.It Fl g
+Insert the replacement and resize the file (only with -R)
 .It Fl h
 Show help message
 .It Fl i
@@ -62,8 +64,6 @@ Magic search, file-type carver
 Set a binary mask to be applied on keywords
 .It Fl R Ar str
 Replace each hit with the given string (prefix with h: hex, w: wide, s: string)
-.It Fl J
-Insert the replacement and resize the file (only with -R)
 .It Fl n
 Do not stop on read errors
 .It Fl r
