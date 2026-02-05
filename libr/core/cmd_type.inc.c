@@ -150,6 +150,7 @@ static RCoreHelpMessage help_msg_ts = {
 	"Usage: ts[...]", " [type]", "",
 	"ts", "", "list all loaded structs",
 	"ts", " [type]", "show pf format string for given struct",
+	"tu.", "[type]", "show struct contents mapped in current offset (same as .ts)",
 	"ts-", "[type]", "delete struct type definition",
 	"tsj", "", "list all loaded structs in json",
 	"tsj", " [type]", "show pf format string for given struct in json",
@@ -165,6 +166,7 @@ static RCoreHelpMessage help_msg_tu = {
 	"Usage: tu[...]", "", "",
 	"tu", "", "list all loaded unions",
 	"tu", " [type]", "show pf format string for given union",
+	"tu.", "[type]", "show union contents mapped in current offset (same as .tu)",
 	"tu-", "[type]", "delete union type definition",
 	"tuj", "", "list all loaded unions in json",
 	"tuj", " [type]", "show pf format string for given union in json",
@@ -1294,6 +1296,12 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
+		case '.': // "tu."
+			if (input[2]) {
+				const char *typename = r_str_trim_head_ro (input + 2);
+				r_core_cmdf (core, ".tu %s", typename);
+			}
+			break;
 		case 'j': // "tuj"
 			if (input[2]) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
@@ -1407,6 +1415,12 @@ static int cmd_type(void *data, const char *input) {
 					showFormat (core, sdbkv_key (kv), 1);
 				}
 				ls_free (l);
+			}
+			break;
+		case '.': // "ts."
+			if (input[2]) {
+				const char *typename = r_str_trim_head_ro (input + 2);
+				r_core_cmdf (core, ".ts %s", typename);
 			}
 			break;
 		case '-': // "ts-"
