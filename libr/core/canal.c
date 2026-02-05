@@ -9,8 +9,6 @@
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
-
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -4058,23 +4056,11 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	return true;
 }
 
-// TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	R_RETURN_IF_FAIL (core && core->anal && fcn);
 
 	// Try plugin-based variable recovery first
-	RList *plugin_vars = r_anal_plugin_recover_vars (core->anal, fcn);
-	if (plugin_vars) {
-		// Plugin provided variables, add them to the function
-		RListIter *iter;
-		RAnalVarProt *prot;
-		r_list_foreach (plugin_vars, iter, prot) {
-			if (prot && prot->name) {
-				r_anal_function_set_var (fcn, prot->delta, prot->kind,
-					prot->type, 0, prot->isarg, prot->name);
-			}
-		}
-		r_list_free (plugin_vars);
+	if (r_anal_function_recover_vars_plugin (core->anal, fcn)) {
 		return;  // Done, skip ESIL-based recovery
 	}
 

@@ -9,7 +9,6 @@ R_LIB_VERSION (r_sign);
 #define SIGN_DIFF_MATCH_BYTES_THRESHOLD 1.0
 #define SIGN_DIFF_MATCH_GRAPH_THRESHOLD 1.0
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
 R_VEC_TYPE (RVecRSignItemPtr, RSignItem *);
 
 static inline const char *get_xrefname(RCore *core, ut64 addr) {

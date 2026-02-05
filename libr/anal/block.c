@@ -4,7 +4,6 @@
 #include <r_hash.h>
 #include <r_core.h>
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
 R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 typedef struct recurse_depth_first_ctx_t {

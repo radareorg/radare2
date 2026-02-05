@@ -715,7 +715,7 @@ typedef struct r_anal_ref_t {
 	RAnalRefType type;
 } RAnalRef;
 
-typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
@@ -1094,11 +1094,12 @@ R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 
-// Plugin hook dispatch functions
-R_API bool r_anal_plugin_analyze_fcn(RAnal *anal, RAnalFunction *fcn);
+// Plugin hook dispatch functions (call all registered anal plugins)
+R_API void r_anal_plugin_analyze_fcn(RAnal *anal, RAnalFunction *fcn);
 R_API RList *r_anal_plugin_recover_vars(RAnal *anal, RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_plugin_get_data_refs(RAnal *anal, RAnalFunction *fcn);
-R_API bool r_anal_plugin_post_analysis(RAnal *anal);
+R_API void r_anal_plugin_post_analysis(RAnal *anal);
+R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);

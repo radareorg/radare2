@@ -3,8 +3,6 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
-
 #define NPF 5
 #define PIDX (R_ABS (core->visual.printidx % NPF))
 #define KEY_ALTQ 0xc5

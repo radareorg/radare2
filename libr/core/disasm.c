@@ -5,8 +5,6 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
-
 #define HASRETRY 1
 #define HAVE_LOCALS 1
 #define DEFAULT_NARGS 4

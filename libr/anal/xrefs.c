@@ -8,8 +8,6 @@
 #include <r_vec.h>
 #include <sdb/cwisstable.h>
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
-
 // xrefs are stored as an adjacency list (in both directions),
 // as a hastable mapping at (from) to hashtables mapping addr (at) to a ref type.
 CWISS_DECLARE_FLAT_HASHMAP_DEFAULT(Edges, ut64, RAnalRefType);

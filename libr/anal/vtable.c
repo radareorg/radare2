@@ -25,8 +25,6 @@ VTABLE_READ_ADDR_FUNC (vtable_read_addr_be16, r_read_be16, 2)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_be32, r_read_be32, 4)
 VTABLE_READ_ADDR_FUNC (vtable_read_addr_be64, r_read_be64, 8)
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
-
 R_API void r_anal_vtable_info_free(RVTableInfo *vtable) {
 	if (!vtable) {
 		return;

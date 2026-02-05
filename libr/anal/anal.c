@@ -4,8 +4,6 @@
 #include <config.h>
 #include "../config.h"
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
-
 R_LIB_VERSION(r_anal);
 
 #define DEFAULT_FCNPREFIX_RADIUS 0x1000
@@ -242,73 +240,6 @@ R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	return true;
 }
 
-// Call all plugins' analyze_fcn callback for a function
-R_API bool r_anal_plugin_analyze_fcn(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
-	RListIter *iter;
-	RAnalPlugin *p;
-	r_list_foreach (anal->plugins, iter, p) {
-		if (p->analyze_fcn) {
-			p->analyze_fcn (anal, fcn);
-		}
-	}
-	return true;
-}
-
-// Try plugins for variable recovery, return first non-NULL result
-R_API RList *r_anal_plugin_recover_vars(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
-	RListIter *iter;
-	RAnalPlugin *p;
-	r_list_foreach (anal->plugins, iter, p) {
-		if (p->recover_vars) {
-			RList *vars = p->recover_vars (anal, fcn);
-			if (vars) {
-				return vars;  // First plugin wins
-			}
-		}
-	}
-	return NULL;
-}
-
-// Collect data refs from all plugins
-R_API RVecAnalRef *r_anal_plugin_get_data_refs(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
-	RVecAnalRef *all_refs = NULL;
-	RListIter *iter;
-	RAnalPlugin *p;
-	r_list_foreach (anal->plugins, iter, p) {
-		if (p->get_data_refs) {
-			RVecAnalRef *refs = p->get_data_refs (anal, fcn);
-			if (refs) {
-				if (!all_refs) {
-					all_refs = refs;
-				} else {
-					// Merge refs
-					RAnalRef *ref;
-					R_VEC_FOREACH (refs, ref) {
-						RVecAnalRef_push_back (all_refs, ref);
-					}
-					RVecAnalRef_free (refs);
-				}
-			}
-		}
-	}
-	return all_refs;
-}
-
-// Call post_analysis on all plugins (for aaaa)
-R_API bool r_anal_plugin_post_analysis(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal, false);
-	RListIter *iter;
-	RAnalPlugin *p;
-	r_list_foreach (anal->plugins, iter, p) {
-		if (p->post_analysis) {
-			p->post_analysis (anal);
-		}
-	}
-	return true;
-}
 
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
