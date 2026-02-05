@@ -226,6 +226,10 @@ static void skip_semicolons(KVCParser *kvc) {
 		if (!ch) {
 			break;
 		}
+		// Stop at newlines to allow trailing attribute parsing
+		if (ch == '\n') {
+			break;
+		}
 		if (ch != ';' && !isspace (ch)) {
 			break;
 		}
@@ -377,6 +381,20 @@ static bool parse_attributes(KVCParser *kvc) {
 	}
 	skip_until (kvc, '\n', 0);
 	return true;
+}
+
+// Parse trailing /// comments after semicolon on the same line (e.g., "char pad[6]; /// @visibility(hidden)")
+static bool parse_trailing_attributes(KVCParser *kvc) {
+	// Skip horizontal whitespace only (spaces/tabs), not newlines
+	while (kvc_peek (kvc, 0) == ' ' || kvc_peek (kvc, 0) == '\t') {
+		kvc_getch (kvc);
+	}
+	const char *begin = kvc_peekn (kvc, 3);
+	if (!begin || !r_str_startswith (begin, "///")) {
+		return false;
+	}
+	// Found a trailing /// comment, parse it
+	return parse_attributes (kvc);
 }
 
 static void apply_attributes(KVCParser *kvc, const char *type, const char *scope) {
@@ -725,6 +743,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 #if 1
 			// PANCAKE
 			kvc_getch (kvc); // Skip the semicolon
+			parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
 #else
 			// Handle trailing C-style __attribute__ before semicolon
 			skip_spaces (kvc);
@@ -951,6 +970,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			kvctoken_typename (&member_type, &member_name);
 			// PANCAKE
 			kvc_getch (kvc); // Skip the semicolon
+			parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
 			kvctoken_trim (&member_type);
 			// Handle possible array dimensions (e.g. "[10]"):
 			const char *bracket = kvctoken_find (member_name, "[");
@@ -1506,6 +1526,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		memcpy (&member_name, &member_type, sizeof (member_name));
 		kvctoken_typename (&member_type, &member_name);
 		skip_semicolons (kvc);
+		parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
 		kvctoken_trim (&member_type);
 		// Special-case function pointer fields
 		if (kvctoken_find (member_type, " (*")) {

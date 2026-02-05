@@ -641,6 +641,27 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 					char *arr = sdb_array_get (TDB, var2, 2, NULL);
 					int arrnum = arr? atoi (arr): 0;
 					free (arr);
+					// Check for metadata attributes for this field
+					RStrBuf *attrs_sb = r_strbuf_new ("");
+					SdbList *all_keys = sdb_foreach_list (TDB, true);
+					SdbListIter *attr_iter;
+					SdbKv *attr_kv;
+					char *attr_prefix = r_str_newf ("%s.@.", var2);
+					ls_foreach (all_keys, attr_iter, attr_kv) {
+						const char *attr_key = sdbkv_key (attr_kv);
+						if (r_str_startswith (attr_key, attr_prefix)) {
+							const char *attr_name = attr_key + strlen (attr_prefix);
+							const char *attr_val = sdbkv_value (attr_kv);
+							if (!strcmp (attr_val, "true")) {
+								r_strbuf_appendf (attrs_sb, " /// @%s", attr_name);
+							} else {
+								r_strbuf_appendf (attrs_sb, " /// @%s(%s)", attr_name, attr_val);
+							}
+						}
+					}
+					free (attr_prefix);
+					ls_free (all_keys);
+					char *attrs_str = r_strbuf_drain (attrs_sb);
 					if (multiline) {
 						r_strbuf_appendf (sb, "  %s", val);
 						if (p && p[0] != '\0') {
@@ -649,15 +670,16 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 								r_strbuf_appendf (sb, "[%d]", arrnum);
 							}
 						}
-						r_strbuf_append (sb, ";\n");
+						r_strbuf_appendf (sb, ";%s\n", attrs_str? attrs_str: "");
 					} else {
 						r_strbuf_appendf (sb, "%s%s %s", space, val, p);
 						if (arrnum) {
 							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
-						r_strbuf_append (sb, ";");
+						r_strbuf_appendf (sb, ";%s", attrs_str? attrs_str: "");
 						space = " ";
 					}
+					free (attrs_str);
 					free (val);
 				}
 				free (var2);

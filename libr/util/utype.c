@@ -414,7 +414,15 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		bool isStruct = false;
 		bool isEnum = false;
 		bool isfp = false;
+		bool isHidden = false;
 		snprintf (var2, sizeof (var2), "%s.%s", var, p);
+		// Check for @visibility(hidden) attribute
+		char var_visibility[256];
+		snprintf (var_visibility, sizeof (var_visibility), "%s.@.visibility", var2);
+		const char *visibility = sdb_const_get (TDB, var_visibility, NULL);
+		if (visibility && !strcmp (visibility, "hidden")) {
+			isHidden = true;
+		}
 		size_t alen = sdb_array_size (TDB, var2);
 		int elements = sdb_array_get_num (TDB, var2, alen - 1, NULL);
 		char *type = sdb_array_get (TDB, var2, 0, NULL);
@@ -464,7 +472,38 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				isfp = true;
 				// function pointer
 			}
-			if (isfp) {
+			if (isHidden) {
+				// For hidden fields, skip the bytes without displaying
+				// Use [N]. to skip N bytes (. skips 1 byte)
+				int skip_bytes = 0;
+				if (isfp) {
+					// pointer size depends on platform, assume 8 for now
+					skip_bytes = 8;
+				} else if (tfmt) {
+					// Get size from type format
+					if (!strcmp (tfmt, "d") || !strcmp (tfmt, "i") || !strcmp (tfmt, "x") || !strcmp (tfmt, "o") || !strcmp (tfmt, "f")) {
+						skip_bytes = 4;
+					} else if (!strcmp (tfmt, "q") || !strcmp (tfmt, "F") || !strcmp (tfmt, "p")) {
+						skip_bytes = 8;
+					} else if (!strcmp (tfmt, "w")) {
+						skip_bytes = 2;
+					} else if (!strcmp (tfmt, "b") || !strcmp (tfmt, "c") || !strcmp (tfmt, "C") || !strcmp (tfmt, "z")) {
+						skip_bytes = 1;
+					} else {
+						skip_bytes = 4; // default
+					}
+				} else {
+					skip_bytes = 8; // assume pointer for unknown types
+				}
+				if (elements > 0) {
+					skip_bytes *= elements;
+				}
+				// Use [N]. to skip bytes - . skips 1 byte at a time
+				if (skip_bytes > 0) {
+					r_strbuf_appendf (fmt_sb, "[%d].", skip_bytes);
+				}
+				// Don't add field name for hidden fields
+			} else if (isfp) {
 				// consider function pointer as void * for printing
 				r_strbuf_append (fmt_sb, "p");
 				r_strbuf_appendf (vars_sb, "%s ", p);
