@@ -5105,6 +5105,53 @@ static bool bin_resources(RCore *core, PJ *pj, int mode) {
 	return true;
 }
 
+static void bin_mdmp_versioninfo(RCore *core, PJ *pj, int mode) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->sdb) {
+		return;
+	}
+	const char *os_version = sdb_const_get (bf->sdb, "mdmp.os_version", 0);
+	if (!os_version) {
+		return;
+	}
+	if (IS_MODE_JSON (mode)) {
+		pj_o (pj);
+		pj_ks (pj, "os_version", os_version);
+		ut64 major = sdb_num_get (bf->sdb, "mdmp.os_major", 0);
+		ut64 minor = sdb_num_get (bf->sdb, "mdmp.os_minor", 0);
+		ut64 build = sdb_num_get (bf->sdb, "mdmp.os_build", 0);
+		ut64 revision = sdb_num_get (bf->sdb, "mdmp.os_revision", 0);
+		pj_kn (pj, "major", major);
+		pj_kn (pj, "minor", minor);
+		pj_kn (pj, "build", build);
+		if (revision > 0) {
+			pj_kn (pj, "revision", revision);
+		}
+		const char *product_type = sdb_const_get (bf->sdb, "mdmp.os_product_type", 0);
+		if (product_type) {
+			pj_ks (pj, "product_type", product_type);
+		}
+		pj_end (pj);
+	} else {
+		r_cons_printf (core->cons, "=== Windows Version Information ===\n\n");
+		r_cons_printf (core->cons, "  %s\n", os_version);
+		ut64 major = sdb_num_get (bf->sdb, "mdmp.os_major", 0);
+		ut64 minor = sdb_num_get (bf->sdb, "mdmp.os_minor", 0);
+		ut64 build = sdb_num_get (bf->sdb, "mdmp.os_build", 0);
+		ut64 revision = sdb_num_get (bf->sdb, "mdmp.os_revision", 0);
+		r_cons_printf (core->cons, "  Major: %" PFMT64u "\n", major);
+		r_cons_printf (core->cons, "  Minor: %" PFMT64u "\n", minor);
+		r_cons_printf (core->cons, "  Build: %" PFMT64u "\n", build);
+		if (revision > 0) {
+			r_cons_printf (core->cons, "  Revision: %" PFMT64u "\n", revision);
+		}
+		const char *product_type = sdb_const_get (bf->sdb, "mdmp.os_product_type", 0);
+		if (product_type) {
+			r_cons_printf (core->cons, "  Product Type: %s\n", product_type);
+		}
+	}
+}
+
 static bool bin_versioninfo(RCore *core, PJ *pj, int mode) {
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
@@ -5123,6 +5170,8 @@ static bool bin_versioninfo(RCore *core, PJ *pj, int mode) {
 		bin_elf_versioninfo (core, pj, mode);
 	} else if (r_str_startswith (rclass, "mach0")) {
 		bin_mach0_versioninfo (core); // TODO
+	} else if (!strcmp (rclass, "mdmp")) {
+		bin_mdmp_versioninfo (core, pj, mode);
 	} else {
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);

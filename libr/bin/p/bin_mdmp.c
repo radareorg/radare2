@@ -2,6 +2,7 @@
 
 #include <r_util/r_print.h>
 #include <r_bin.h>
+#include <r_endian.h>
 #include "mdmp/mdmp.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
@@ -43,17 +44,16 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 	R_RETURN_VAL_IF_FAIL (mdmp && mdmp->streams.modules, 0);
 
 	struct minidump_module *module;
-	struct minidump_string *str;
 	RListIter *it;
 	ut8 b[512];
-	char *module_name = NULL;
+	char module_name[1024];
 	ut32 revision = 0;
 	ut32 mod_major, mod_minor, mod_build;
-	int ptr_name_len;
+	ut32 str_length;
 	int t;
 
 	/* Try ntoskrnl.exe first (kernel), then ntdll.dll */
-	const char *target_modules[] = { "ntoskrnl.exe", "ntdll.dll", NULL };
+	static const char * const target_modules[] = { "ntoskrnl.exe", "ntdll.dll", NULL };
 
 	for (t = 0; target_modules[t]; t++) {
 		r_list_foreach (mdmp->streams.modules, it, module) {
@@ -63,25 +63,19 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 			if (r_buf_read_at (mdmp->b, module->module_name_rva, (ut8 *)&b, sizeof (b)) < sizeof (struct minidump_string)) {
 				continue;
 			}
-			str = (struct minidump_string *)b;
+			/* Read length field using endian-safe API */
+			str_length = r_read_le32 (b);
 			/* Validate string length (max reasonable length for a module name) */
-			if (str->length == 0 || str->length > 256) {
-				continue;
-			}
-			ptr_name_len = (str->length + 2) * 4;
-			if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
+			if (str_length == 0 || str_length > 256) {
 				continue;
 			}
 			/* Validate bounds: length is in UTF-16 characters, need to multiply by 2 for bytes */
-			if (module->module_name_rva + sizeof (struct minidump_string) + (str->length * 2) > r_buf_size (mdmp->b)) {
+			if (module->module_name_rva + sizeof (struct minidump_string) + (str_length * 2) > r_buf_size (mdmp->b)) {
 				continue;
 			}
-			module_name = calloc (1, ptr_name_len);
-			if (!module_name) {
-				continue;
-			}
-			r_str_utf16_to_utf8 ((ut8 *)module_name, str->length * 4,
-				(const ut8 *)(&str->buffer), str->length, mdmp->endian);
+			memset (module_name, 0, sizeof (module_name));
+			r_str_utf16_to_utf8 ((ut8 *)module_name, str_length * 4,
+				(const ut8 *)(b + sizeof (ut32)), str_length, mdmp->endian);
 
 			/* Extract just the filename from the full path */
 			const char *filename = strrchr (module_name, '\\');
@@ -98,8 +92,6 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 			if (!r_str_casecmp (filename, target_modules[t])) {
 				/* Validate version_info signature before extracting version */
 				if (module->version_info.dw_signature != 0xFEEF04BD) {
-					free (module_name);
-					module_name = NULL;
 					continue;
 				}
 				/* Extract version from vs_fixedfileinfo */
@@ -112,16 +104,12 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 				 * For ntoskrnl.exe (kernel-mode), require exact version match */
 				if (t == 1 && revision > 0) {
 					/* ntdll.dll found - use its revision */
-					free (module_name);
 					return revision;
 				} else if (t == 0 && mod_major == major && mod_minor == minor && mod_build == build && revision > 0) {
 					/* ntoskrnl.exe with matching version */
-					free (module_name);
 					return revision;
 				}
 			}
-			free (module_name);
-			module_name = NULL;
 		}
 	}
 
@@ -179,53 +167,39 @@ static RBinInfo *info(RBinFile *bf) {
 		ut32 minor = mdmp->streams.system_info->minor_version;
 		ut32 build = mdmp->streams.system_info->build_number;
 		ut32 revision = extract_rtm_from_modules (mdmp, major, minor, build);
+		char *version_str = NULL;
+		const char *product_type_str = "Unknown";
 
+		ret->os = strdup ("windows");
+
+		/* Store detailed version information in SDB for iV command */
 		switch (mdmp->streams.system_info->product_type) {
 		case MDMP_VER_NT_WORKSTATION:
-			if (revision > 0) {
-				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d.%d",
-					major,
-					minor,
-					build,
-					revision);
-			} else {
-				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
-					major,
-					minor,
-					build);
-			}
+			product_type_str = "Workstation";
 			break;
 		case MDMP_VER_NT_DOMAIN_CONTROLLER:
-			if (revision > 0) {
-				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d.%d",
-					major,
-					minor,
-					build,
-					revision);
-			} else {
-				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
-					major,
-					minor,
-					build);
-			}
+			product_type_str = "Server Domain Controller";
 			break;
 		case MDMP_VER_NT_SERVER:
-			if (revision > 0) {
-				ret->os = r_str_newf ("Windows NT Server %d.%d.%d.%d",
-					major,
-					minor,
-					build,
-					revision);
-			} else {
-				ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
-					major,
-					minor,
-					build);
-			}
+			product_type_str = "Server";
 			break;
-		default:
-			ret->os = strdup ("Unknown");
 		}
+		if (revision > 0) {
+			version_str = r_str_newf ("Windows NT %s %d.%d.%d.%d",
+				product_type_str, major, minor, build, revision);
+		} else {
+			version_str = r_str_newf ("Windows NT %s %d.%d.%d",
+				product_type_str, major, minor, build);
+		}
+		sdb_set (bf->sdb, "mdmp.os_version", version_str, 0);
+		sdb_num_set (bf->sdb, "mdmp.os_major", major, 0);
+		sdb_num_set (bf->sdb, "mdmp.os_minor", minor, 0);
+		sdb_num_set (bf->sdb, "mdmp.os_build", build, 0);
+		if (revision > 0) {
+			sdb_num_set (bf->sdb, "mdmp.os_revision", revision, 0);
+		}
+		sdb_set (bf->sdb, "mdmp.os_product_type", product_type_str, 0);
+		R_FREE (version_str);
 	}
 
 	return ret;
@@ -343,27 +317,27 @@ static RList *sections(RBinFile *bf) {
 
 		ptr = R_NEW0 (RBinSection);
 		if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (obj->b)) {
-			free (ptr);
+			R_FREE (ptr);
 			continue;
 		}
 		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
-		str = (struct minidump_string *)b;
-		int ptr_name_len = (str->length + 2) * 4;
+		ut32 str_length = r_read_le32 (b);
+		int ptr_name_len = (str_length + 2) * 4;
 		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
-			free (ptr);
+			R_FREE (ptr);
 			continue;
 		}
-		if (module->module_name_rva + str->length > r_buf_size (obj->b)) {
-			free (ptr);
+		if (module->module_name_rva + str_length > r_buf_size (obj->b)) {
+			R_FREE (ptr);
 			break;
 		}
 		ptr->name = calloc (1, ptr_name_len);
 		if (!ptr->name) {
-			free (ptr);
+			R_FREE (ptr);
 			continue;
 		}
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str->length * 4,
-				(const ut8 *)(&str->buffer), str->length, obj->endian);
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str_length * 4,
+				(const ut8 *)(b + sizeof (ut32)), str_length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
@@ -374,7 +348,7 @@ static RList *sections(RBinFile *bf) {
 		ptr->perm = 0;
 
 		if (!r_list_append (ret, ptr)) {
-			free (ptr);
+			R_FREE (ptr);
 			break;
 		}
 
