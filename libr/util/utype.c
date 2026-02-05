@@ -399,15 +399,39 @@ R_API int r_type_unlink(Sdb *TDB, ut64 addr) {
 	return true;
 }
 
+static int fmt_type_size(const char *tfmt, bool isfp, int elements) {
+	int size = 0;
+	if (isfp) {
+		size = 8;
+	} else if (tfmt) {
+		if (!strcmp (tfmt, "d") || !strcmp (tfmt, "i") || !strcmp (tfmt, "x") || !strcmp (tfmt, "o") || !strcmp (tfmt, "f")) {
+			size = 4;
+		} else if (!strcmp (tfmt, "q") || !strcmp (tfmt, "F") || !strcmp (tfmt, "p") || !strcmp (tfmt, "z") || !strcmp (tfmt, "*z")) {
+			size = 8;
+		} else if (!strcmp (tfmt, "w")) {
+			size = 2;
+		} else if (!strcmp (tfmt, "b") || !strcmp (tfmt, "c") || !strcmp (tfmt, "C")) {
+			size = 1;
+		} else {
+			size = 4;
+		}
+	} else {
+		size = 8;
+	}
+	if (elements > 0) {
+		size *= elements;
+	}
+	return size;
+}
+
 static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
-	// assumes var list is sorted by offset.. should do more checks here
 	char *p = NULL, var2[132];
 	size_t n;
 	char *fields = r_str_newf ("%s.fields", var);
 	char *nfields = (is_typedef) ? fields : var;
-	// TODO: Use RStrBuf for fmt and vars
 	RStrBuf *fmt_sb = r_strbuf_new ("");
 	RStrBuf *vars_sb = r_strbuf_new ("");
+	int current_offset = 0;
 	for (n = 0; (p = sdb_array_get (TDB, nfields, n, NULL)); n++) {
 		char *struct_name = NULL;
 		const char *tfmt = NULL;
@@ -416,6 +440,12 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		bool isfp = false;
 		bool isHidden = false;
 		snprintf (var2, sizeof (var2), "%s.%s", var, p);
+		int field_offset = sdb_array_get_num (TDB, var2, 1, NULL);
+		if (field_offset > current_offset) {
+			int pad = field_offset - current_offset;
+			r_strbuf_appendf (fmt_sb, "[%d].", pad);
+			current_offset = field_offset;
+		}
 		// Check for @visibility(hidden) attribute
 		char var_visibility[256];
 		snprintf (var_visibility, sizeof (var_visibility), "%s.@.visibility", var2);
@@ -498,15 +528,14 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				if (elements > 0) {
 					skip_bytes *= elements;
 				}
-				// Use [N]. to skip bytes - . skips 1 byte at a time
 				if (skip_bytes > 0) {
 					r_strbuf_appendf (fmt_sb, "[%d].", skip_bytes);
+					current_offset += skip_bytes;
 				}
-				// Don't add field name for hidden fields
 			} else if (isfp) {
-				// consider function pointer as void * for printing
 				r_strbuf_append (fmt_sb, "p");
 				r_strbuf_appendf (vars_sb, "%s ", p);
+				current_offset += fmt_type_size (NULL, true, elements);
 			} else if (tfmt) {
 				(void)r_str_replace_ch (type, ' ', '_', true);
 				if (elements > 0) {
@@ -526,11 +555,13 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					r_strbuf_append (vars_sb, p);
 					r_strbuf_append (vars_sb, " ");
 				}
+				current_offset += fmt_type_size (tfmt, false, elements);
 			} else {
 #if 1
 				R_LOG_WARN ("Cannot resolve type '%s' assuming pointer", var3);
 				r_strbuf_append (fmt_sb, "p");
 				r_strbuf_appendf (vars_sb, "%s ", p);
+				current_offset += fmt_type_size (NULL, true, elements);
 #else
 				R_LOG_ERROR ("Cannot resolve type '%s'", var3);
 #endif

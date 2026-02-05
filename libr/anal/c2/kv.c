@@ -26,6 +26,7 @@ typedef struct {
 	const char *error;
 	TypedefEntry tdefs[64];
 	size_t tdef_count;
+	int struct_pack;
 } KVCParser;
 
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
@@ -404,23 +405,34 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 }
 
 static int kvc_typesize(KVCParser *kvc, const char *name, int dimension) {
-	if (r_str_endswith (name, "8")) {
+	if (!strcmp (name, "char") || r_str_endswith (name, "8")) {
 		return 1 * dimension;
 	}
-	if (r_str_endswith (name, "16")) {
+	if (!strcmp (name, "short") || r_str_endswith (name, "16")) {
 		return 2 * dimension;
 	}
-	if (r_str_endswith (name, "64")) {
+	if (!strcmp (name, "long long") || !strcmp (name, "double") || r_str_endswith (name, "64")) {
 		return 8 * dimension;
 	}
-	if (r_str_startswith (name, "int")) {
+	if (r_str_startswith (name, "int") || !strcmp (name, "float") || !strcmp (name, "long")) {
 		return 4 * dimension;
 	}
 	if (dimension > 1) {
-		// TODO: honor type size
 		return dimension;
 	}
-	// TODO: honor alignment, packing, access types
+	return 4;
+}
+
+static int kvc_typealign(KVCParser *kvc, const char *name) {
+	if (!strcmp (name, "char") || r_str_endswith (name, "8")) {
+		return 1;
+	}
+	if (!strcmp (name, "short") || r_str_endswith (name, "16")) {
+		return 2;
+	}
+	if (!strcmp (name, "long long") || !strcmp (name, "double") || r_str_endswith (name, "64")) {
+		return 8;
+	}
 	return 4;
 }
 
@@ -1142,6 +1154,8 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	}
 	struct_name.b = kvc->s.a;
 	skip_spaces (kvc);
+	parse_c_attributes (kvc);
+	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
 		R_LOG_ERROR ("Expected { after name in struct");
@@ -1151,6 +1165,17 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	kvc_getch (kvc);
 	char *sn = kvctoken_tostring (struct_name);
 	r_strbuf_appendf (kvc->sb, "%s=%s\n", sn, type);
+	const char *pack_attr = kvc_attr (kvc, "pack");
+	const char *packed_attr = kvc_attr (kvc, "packed");
+	if (pack_attr) {
+		kvc->struct_pack = atoi (pack_attr);
+	} else if (packed_attr) {
+		kvc->struct_pack = 1;
+	} else {
+		kvc->struct_pack = 0;
+	}
+	free ((void *)pack_attr);
+	free ((void *)packed_attr);
 	apply_attributes (kvc, type, sn);
 	// Lookahead: scan struct body for direct function-pointer members so we can
 	// emit a typedef-like func handle for them (e.g. foo.fp=func)
@@ -1388,18 +1413,21 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		massage_type (&mt);
 		r_strf_var (full_scope, 512, "%s.%s", sn, mn);
 		int dimension = 1;
-		// TODO: honor packed attribute too
 		const char *align_attribute = kvc_attr (kvc, "aligned");
-		bool must_be_aligned = align_attribute != NULL;
-		if (must_be_aligned) {
-			size_t av = atoi (align_attribute);
-			if (av < 1) {
-				av = 4;
+		int av = kvc_typealign (kvc, mt);
+		if (align_attribute) {
+			int explicit_align = atoi (align_attribute);
+			if (explicit_align > 0) {
+				av = explicit_align;
 			}
-			if (off % av) {
-				const int rest = av - (off % av);
-				off += rest;
-			}
+			free ((void *)align_attribute);
+		}
+		if (kvc->struct_pack > 0 && av > kvc->struct_pack) {
+			av = kvc->struct_pack;
+		}
+		if (av > 1 && (off % av)) {
+			const int rest = av - (off % av);
+			off += rest;
 		}
 		if (md) {
 			dimension = atoi (md);

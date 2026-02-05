@@ -2209,3 +2209,110 @@ EXPECT=<<EXPECT
  str1 : 0x00000006 = "world sucks"
 EXPECT
 RUN
+
+NAME=@pack(1) attribute removes padding
+FILE=--
+CMDS=<<CMDS
+to bins/other/packed_test.h
+tk ~struct.packed
+CMDS
+EXPECT=<<EXPECT
+struct.packed=a,b,c
+struct.packed.@.pack=1
+struct.packed.a=char,0,0
+struct.packed.b=int,1,0
+struct.packed.c=char,5,0
+EXPECT
+RUN
+
+NAME=struct without pack has natural alignment
+FILE=--
+CMDS=<<CMDS
+to bins/other/packed_test.h
+tk ~struct.normal
+CMDS
+EXPECT=<<EXPECT
+struct.normal=a,b,c
+struct.normal.a=char,0,0
+struct.normal.b=int,4,0
+struct.normal.c=char,8,0
+EXPECT
+RUN
+
+NAME=packed struct pf format (no padding)
+FILE=--
+CMDS=<<CMDS
+to bins/other/packed_test.h
+ts packed
+CMDS
+EXPECT=<<EXPECT
+pf cdc a b c
+EXPECT
+RUN
+
+NAME=normal struct pf format (with padding)
+FILE=--
+CMDS=<<CMDS
+to bins/other/packed_test.h
+ts normal
+CMDS
+EXPECT=<<EXPECT
+pf c[3].dc a b c
+EXPECT
+RUN
+
+NAME=__attribute__((packed)) syntax
+FILE=--
+CMDS=<<CMDS
+'td struct foo __attribute__((packed)) { char a; int b; };
+tk ~struct.foo
+CMDS
+EXPECT=<<EXPECT
+struct.foo=a,b
+struct.foo.@.packed=true
+struct.foo.a=char,0,0
+struct.foo.b=int,1,0
+EXPECT
+RUN
+
+NAME=@aligned attribute on field
+FILE=--
+CMDS=<<CMDS
+'td struct bar { char gap; int val __attribute__((__aligned__(8))); };
+tk ~struct.bar
+CMDS
+EXPECT=<<EXPECT
+struct.bar=gap,val
+struct.bar.gap=char,0,0
+struct.bar.val=int,8,0
+struct.bar.val.@.aligned=8
+EXPECT
+RUN
+
+NAME=packed struct type print
+FILE=malloc://32
+CMDS=<<CMDS
+to bins/other/packed_test.h
+wx 4112345678ff
+tp packed
+CMDS
+EXPECT=<<EXPECT
+ a : 0x00000000 = 'A'
+ b : 0x00000001 = 0x78563412
+ c : 0x00000005 = '.'
+EXPECT
+RUN
+
+NAME=normal struct type print
+FILE=malloc://32
+CMDS=<<CMDS
+to bins/other/packed_test.h
+wx 41000000123456784200000000000000
+tp normal
+CMDS
+EXPECT=<<EXPECT
+ a : 0x00000000 = 'A'
+ b : 0x00000004 = 0x78563412
+ c : 0x00000008 = 'B'
+EXPECT
+RUN
