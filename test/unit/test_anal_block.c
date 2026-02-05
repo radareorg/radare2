@@ -6,6 +6,10 @@
 #define check_invariants block_check_invariants
 #define check_leaks block_check_leaks
 
+static void block_unref(RAnalBlock *block) {
+	r_unref (block);
+}
+
 static size_t blocks_count(RAnal *anal) {
 	size_t count = 0;
 	RBIter iter;
@@ -31,7 +35,7 @@ bool test_r_anal_block_create(void) {
 	mu_assert ("created block", block);
 	mu_assert_eq (block->addr, 0x1337, "created addr");
 	mu_assert_eq (block->size, 42, "created size");
-	mu_assert_eq (block->ref, 1, "created initial ref");
+	mu_assert_eq (r_ref_count (block), 1, "created initial ref");
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 
 	RAnalBlock *block2 = r_anal_create_block (anal, 0x133f, 100);
@@ -39,7 +43,7 @@ bool test_r_anal_block_create(void) {
 	mu_assert ("created block (overlap)", block2);
 	mu_assert_eq (block2->addr, 0x133f, "created addr");
 	mu_assert_eq (block2->size, 100, "created size");
-	mu_assert_eq (block2->ref, 1, "created initial ref");
+	mu_assert_eq (r_ref_count (block2), 1, "created initial ref");
 	mu_assert_eq (blocks_count (anal), 2, "count after create");
 
 	RAnalBlock *block3 = r_anal_create_block (anal, 0x1337, 5);
@@ -47,8 +51,8 @@ bool test_r_anal_block_create(void) {
 	mu_assert ("no double create on same start", !block3);
 	mu_assert_eq (blocks_count (anal), 2, "count after failed create");
 
-	r_anal_block_unref (block);
-	r_anal_block_unref (block2);
+	r_unref (block);
+	r_unref (block2);
 
 	assert_leaks (anal);
 	r_anal_free (anal);
@@ -87,8 +91,8 @@ bool test_r_anal_block_split(void) {
 	assert_invariants (anal);
 	mu_assert_ptreq (second, block, "nop split on first addr");
 	mu_assert_eq (blocks_count (anal), 1, "count after nop split");
-	mu_assert_eq (block->ref, 2, "ref after nop split");
-	r_anal_block_unref (block);
+	mu_assert_eq (r_ref_count (block), 2, "ref after nop split");
+	r_unref (block);
 
 	second = r_anal_block_split (block, 0x1339);
 	assert_invariants (anal);
@@ -114,8 +118,8 @@ bool test_r_anal_block_split(void) {
 	mu_assert_eq (r_anal_bb_offset_inst (second, 1), 2, "second op_pos[1]");
 	mu_assert_eq (r_anal_bb_offset_inst (second, 2), 28, "second op_pos[2]");
 
-	r_anal_block_unref (block);
-	r_anal_block_unref (second);
+	r_unref (block);
+	r_unref (second);
 
 	assert_leaks (anal);
 	r_anal_free (anal);
@@ -134,22 +138,22 @@ bool test_r_anal_block_split_in_function(void) {
 	mu_assert_eq (blocks_count (anal), 1, "count after create");
 	r_anal_function_add_block (fcn, block);
 	assert_invariants (anal);
-	mu_assert_eq (block->ref, 2, "block refs after adding to function");
+	mu_assert_eq (r_ref_count (block), 2, "block refs after adding to function");
 
 	RAnalBlock *second = r_anal_block_split (block, 0x1339);
 	assert_invariants (anal);
 	mu_assert_ptrneq (second, block, "non-nop split");
 	mu_assert_eq (blocks_count (anal), 2, "count after non-nop split");
-	mu_assert_eq (block->ref, 2, "first block refs after adding to function");
-	mu_assert_eq (second->ref, 2, "second block refs after adding to function");
+	mu_assert_eq (r_ref_count (block), 2, "first block refs after adding to function");
+	mu_assert_eq (r_ref_count (second), 2, "second block refs after adding to function");
 
 	mu_assert ("function has first block after split", r_list_contains (fcn->bbs, block));
 	mu_assert ("function has second block after split", r_list_contains (fcn->bbs, second));
 	mu_assert ("second block is in function after split", r_list_contains (block->fcns, fcn));
 	mu_assert ("second block is in function after split", r_list_contains (second->fcns, fcn));
 
-	r_anal_block_unref (block);
-	r_anal_block_unref (second);
+	r_unref (block);
+	r_unref (second);
 
 	assert_leaks (anal);
 	r_anal_free (anal);
@@ -196,7 +200,7 @@ bool test_r_anal_block_merge(void) {
 	mu_assert_eq (r_anal_bb_offset_inst (first, 5), 42+9, "offset 5 after merge");
 	mu_assert_eq (r_anal_bb_offset_inst (first, 6), 42+30, "offset 6 after merge");
 
-	r_anal_block_unref (first);
+	r_unref (first);
 	// second must be already freed by the merge!
 
 	assert_invariants (anal);
@@ -229,7 +233,7 @@ bool test_r_anal_block_merge_in_function(void) {
 	mu_assert ("function has merged block", r_list_contains (fcn->bbs, first));
 	mu_assert ("merged block is in function", r_list_contains (first->fcns, fcn));
 
-	r_anal_block_unref (first);
+	r_unref (first);
 	// second must be already freed by the merge!
 
 	assert_invariants (anal);
@@ -249,17 +253,17 @@ bool test_r_anal_block_delete(void) {
 
 	r_anal_function_add_block (fcn, block);
 	assert_invariants (anal);
-	mu_assert_eq (block->ref, 2, "refs after adding");
+	mu_assert_eq (r_ref_count (block), 2, "refs after adding");
 	mu_assert_eq (r_list_length (fcn->bbs), 1, "fcn bbs after add");
 	mu_assert_eq (r_list_length (block->fcns), 1, "bb fcns after add");
 
 	r_anal_delete_block (block);
 	assert_invariants (anal);
-	mu_assert_eq (block->ref, 1, "refs after delete");
+	mu_assert_eq (r_ref_count (block), 1, "refs after delete");
 	mu_assert_eq (r_list_length (fcn->bbs), 0, "fcn bbs after delete");
 	mu_assert_eq (r_list_length (block->fcns), 0, "bb fcns after delete");
 
-	r_anal_block_unref (block);
+	r_unref (block);
 
 	r_anal_free (anal);
 	mu_end;
@@ -296,8 +300,8 @@ bool test_r_anal_block_set_size(void) {
 	assert_invariants (anal);
 	mu_assert_eq (block->size, 80, "size after set_size");
 
-	r_anal_block_unref (block);
-	r_anal_block_unref (second);
+	r_unref (block);
+	r_unref (second);
 	assert_invariants (anal);
 
 	r_anal_free (anal);
@@ -361,8 +365,8 @@ bool test_r_anal_block_relocate(void) {
 	mu_assert_eq (block->addr, 0x10, "addr after failed relocate");
 	mu_assert_eq (block->size, 0x333, "size after failed relocate");
 
-	r_anal_block_unref (block);
-	r_anal_block_unref (second);
+	r_unref (block);
+	r_unref (second);
 	assert_invariants (anal);
 
 	r_anal_free (anal);
@@ -425,7 +429,7 @@ bool test_r_anal_block_query(void) {
 		RAnalBlock *block;
 		RListIter *it;
 		r_list_foreach (in, it, block) {
-			mu_assert_eq (block->ref, 2, "block refd in returned list");
+			mu_assert_eq (r_ref_count (block), 2, "block refd in returned list");
 		}
 
 		size_t linear_found = 0;
@@ -454,7 +458,7 @@ bool test_r_anal_block_query(void) {
 		RAnalBlock *block;
 		RListIter *it;
 		r_list_foreach (in, it, block) {
-			mu_assert_eq (block->ref, 2, "block refd in returned list");
+			mu_assert_eq (r_ref_count (block), 2, "block refd in returned list");
 		}
 
 		size_t linear_found = 0;
@@ -472,7 +476,7 @@ bool test_r_anal_block_query(void) {
 	}
 
 	for (i = 0; i < N; i++) {
-		r_anal_block_unref (blocks[i]);
+		r_unref (blocks[i]);
 	}
 
 	assert_leaks (anal);
@@ -542,7 +546,7 @@ bool test_r_anal_block_successors(void) {
 	RAnalBlock *block;
 	RListIter *it;
 	r_list_foreach (result, it, block) {
-		mu_assert_eq (block->ref, 2, "block refd in returned list");
+		mu_assert_eq (r_ref_count (block), 2, "block refd in returned list");
 	}
 
 	mu_assert_eq (r_list_length (result), 8, "recursive successors count");
@@ -559,7 +563,7 @@ bool test_r_anal_block_successors(void) {
 
 	size_t i;
 	for (i = 0; i < sizeof (blocks) / sizeof (RAnalBlock *); i++) {
-		r_anal_block_unref (blocks[i]);
+		r_unref (blocks[i]);
 	}
 
 	assert_leaks (anal);
@@ -615,7 +619,7 @@ bool test_r_anal_block_automerge(void) {
 
 		// Randomize the order in which we give the automerge the block.
 		// The outcome should always be the same but it can have some delicate implications on the algorithm inside.
-		RList *shuffled_blocks = r_list_newf ((RListFree)r_anal_block_unref);
+		RList *shuffled_blocks = r_list_newf ((RListFree)block_unref);
 		while (!r_list_empty (all_blocks)) {
 			int n = rand () % r_list_length (all_blocks);
 			r_list_push (shuffled_blocks, r_list_get_n (all_blocks, n));

@@ -7,6 +7,10 @@
 R_VEC_TYPE(RVecAnalRef, RAnalRef);
 R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
+static void block_unref(RAnalBlock *block) {
+	r_unref (block);
+}
+
 typedef struct {
 	RAnal *anal;
 	RAnalBlock *cur_parent;
@@ -126,12 +130,10 @@ done_bfs:;
 	 RAnalBlock *prev = ht_up_find (ctx.visited, dstbb, &found);
 	 RAnalBlock *dst_block = r_anal_get_block_at (anal, dstbb);
 	 if (found && dst_block) {
-		 ret = r_list_newf ((RListFree)r_anal_block_unref);
-		 r_anal_block_ref (dst_block);
-		 r_list_prepend (ret, dst_block);
+		 ret = r_list_newf ((RListFree)block_unref);
+		 r_list_prepend (ret, r_ref (dst_block));
 		 while (prev) {
-			 r_anal_block_ref (prev);
-			 r_list_prepend (ret, prev);
+			 r_list_prepend (ret, r_ref (prev));
 			 prev = ht_up_find (ctx.visited, prev->addr, NULL);
 		 }
 	 }

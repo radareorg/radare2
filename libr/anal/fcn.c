@@ -460,7 +460,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	RAnalFunction *our_fcn = ctx->fcn;
 	RAnal *anal = our_fcn->anal;
 	bool already_owned = r_list_contains (block->fcns, our_fcn);
-	r_anal_block_ref (block);
+	r_ref (block);
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn == our_fcn) {
@@ -469,7 +469,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 			continue;
 		}
 		if (other_fcn->addr == block->addr) {
-			r_anal_block_unref (block);
+			r_unref (block);
 			return false;
 		}
 		// Steal vars from this block
@@ -523,7 +523,7 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 		r_anal_function_add_block (our_fcn, block);
 	}
 	// TODO: add block->ninstr from our_fcn considering delay slots
-	r_anal_block_unref (block);
+	r_unref (block);
 	return true;
 }
 
@@ -690,8 +690,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 				}
 			}
 		}
-		// r_unref (existing_bb);
-		r_anal_block_unref (existing_bb);
+		r_unref (existing_bb);
 		if (anal->opt.recont) {
 			return R_ANAL_RET_END;
 		}
@@ -866,7 +865,7 @@ noskip:
 					// and now we hit an offset where the instructions match again.
 					// So we need to split the overwalked block.
 					RAnalBlock *split = r_anal_block_split (bbg, at);
-					r_anal_block_unref (split);
+					r_unref (split);
 				}
 				overlapped = true;
 				R_LOG_DEBUG ("Overlapped at 0x%08"PFMT64x, at);
@@ -908,7 +907,7 @@ noskip:
 						if (bb->size == 0) {
 							r_anal_function_remove_block (fcn, bb);
 						}
-						r_anal_block_unref (bb);
+						r_unref (bb);
 						bb = fcn_append_basic_block (anal, fcn, addr);
 						if (!bb) {
 							gotoBeach (R_ANAL_RET_ERROR);
@@ -1941,7 +1940,7 @@ beach:
 		r_anal_function_remove_block (fcn, bb);
 	}
 	r_anal_block_update_hash (bb);
-	r_anal_block_unref (bb);
+	r_unref (bb);
 	return ret;
 }
 

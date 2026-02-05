@@ -6959,7 +6959,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 					}
 				}
 				if (block) {
-					r_anal_block_ref (block);
+					r_ref (block);
 				}
 				r_list_free (blocks);
 				if (!block) {
@@ -6969,9 +6969,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 				if (request_fcn) {
 					// specific function requested, check if it contains the bb
 					if (!r_list_contains (block->fcns, request_fcn)) {
-						if (block) {
-							r_anal_block_unref (block);
-						}
+						r_unref (block);
 						r_list_free (block_fcns);
 						continue;
 					}
@@ -6992,9 +6990,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 					}
 				}
 
-				if (block) {
-					r_anal_block_unref (block);
-				}
+				r_unref (block);
 				r_list_free (block_fcns);
 			}
 		}

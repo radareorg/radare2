@@ -87,7 +87,7 @@ static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock 
 					// split the block so switch instruction is at the start of its block
 					RAnalBlock *newblock = r_anal_block_split (block, ip);
 					if (newblock) {
-						r_anal_block_unref (newblock);
+						r_unref (newblock);
 						block = r_anal_get_block_at (anal, ip);
 					}
 					if (!block) {
