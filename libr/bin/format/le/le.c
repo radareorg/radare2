@@ -649,6 +649,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 
 		if (header.target & F_TARGET_CHAIN) {
 			// TODO: add tests for this case
+			ut32 chain_limit = h->pagesize / sizeof (ut32);
 			ut64 source = 0;
 			ut32 fixupinfo = r_buf_read_ble32_at (bin->buf, cur_page_offset + source, h->worder);
 			ut64 base_target_address = rel->addend - (fixupinfo & 0xFFFFF);
@@ -664,7 +665,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				new->addend = base_target_address + (fixupinfo & 0xFFFFF);
 				r_list_append (l, new);
 				source = (fixupinfo >> 20) & 0xFFF;
-			} while (source != 0xFFF);
+			} while (source != 0xFFF && chain_limit-- > 0);
 		}
 
 		while (repeat) {
