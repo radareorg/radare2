@@ -10,7 +10,7 @@ static RCoreHelpMessage help_msg_t = {
 	"tj", "", "list all loaded types as json",
 	"t", " <type>", "show type in 'pf' syntax",
 	"t*", "", "list types info in r2 commands",
-	"t-", " <name>", "delete type by name",
+	"t-", " <name> [name2..]", "delete type(s) by name (supports glob with *)",
 	"t-*", "", "remove all types",
 	"tail", "([n]) [file]", "output the last n lines of a file (default n=5)",
 	"tac", " [file]", "the infamous reverse cat command",
@@ -108,7 +108,7 @@ static RCoreHelpMessage help_msg_te = {
 	"te", "", "list all loaded enums",
 	"te", " <enum>", "print all values of enum for given name",
 	"te", " <enum> <value>", "show name for given enum number",
-	"te-", "<enum>", "delete enum type definition",
+	"te-", " <enum> [name2..]", "delete enum type(s) (supports glob with *)",
 	"teb", " <enum> <name>", "show matching enum bitfield for given name",
 	"tec", "", "list all loaded enums in C output format with newlines",
 	"tec", " <name>", "list given loaded enums in C output format with newlines",
@@ -160,7 +160,7 @@ static RCoreHelpMessage help_msg_ts = {
 	"ts", "", "list all loaded structs",
 	"ts", " [type]", "show pf format string for given struct",
 	"tu.", "[type]", "show struct contents mapped in current offset (same as .ts)",
-	"ts-", "[type]", "delete struct type definition",
+	"ts-", " <type> [name2..]", "delete struct type(s) (supports glob with *)",
 	"tsj", "", "list all loaded structs in json",
 	"tsj", " [type]", "show pf format string for given struct in json",
 	"ts*", "", "show pf.<name> format string for all loaded structs",
@@ -177,7 +177,7 @@ static RCoreHelpMessage help_msg_tu = {
 	"tu", "", "list all loaded unions",
 	"tu", " [type]", "show pf format string for given union",
 	"tu.", "[type]", "show union contents mapped in current offset (same as .tu)",
-	"tu-", "[type]", "delete union type definition",
+	"tu-", " <type> [name2..]", "delete union type(s) (supports glob with *)",
 	"tuj", "", "list all loaded unions in json",
 	"tuj", " [type]", "show pf format string for given union in json",
 	"tu*", "", "show pf.<name> format string for all loaded unions",
@@ -580,6 +580,49 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 
 static bool stdifunion(void *p, const char *k, const char *v) {
 	return !strcmp (v, "union");
+}
+
+static bool stdifenum(void *p, const char *k, const char *v) {
+	return !strcmp (v, "enum");
+}
+
+static bool stdifany(void *p, const char *k, const char *v) {
+	return !strcmp (v, "struct") || !strcmp (v, "union") || !strcmp (v, "enum") || !strcmp (v, "type") || !strcmp (v, "typedef");
+}
+
+static void types_remove_glob(RCore *core, SdbForeachCallback filter, const char *arg) {
+	Sdb *TDB = core->anal->sdb_types;
+	RList *names = r_list_newf (free);
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	SdbListIter *it;
+	SdbKv *kv;
+	char *args = strdup (arg);
+	RList *patterns = r_str_split_list (args, " ", 0);
+	RListIter *pit;
+	char *pattern;
+	ls_foreach (l, it, kv) {
+		const char *name = sdbkv_key (kv);
+		r_list_foreach (patterns, pit, pattern) {
+			if (strchr (pattern, '*')) {
+				if (r_str_glob (name, pattern)) {
+					r_list_append (names, strdup (name));
+					break;
+				}
+			} else if (!strcmp (name, pattern)) {
+				r_list_append (names, strdup (name));
+				break;
+			}
+		}
+	}
+	ls_free (l);
+	r_list_free (patterns);
+	free (args);
+	char *name;
+	RListIter *iter;
+	r_list_foreach (names, iter, name) {
+		r_anal_remove_parsed_type (core->anal, name);
+	}
+	r_list_free (names);
 }
 
 /*!
@@ -1692,9 +1735,15 @@ static int cmd_type(void *data, const char *input) {
 		case '?':
 			r_core_cmd_help (core, help_msg_tu);
 			break;
-		case '-': // "tu-"
-			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
+		case '-': { // "tu-"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (strchr (arg, '*') || strchr (arg, ' ')) {
+				types_remove_glob (core, stdifunion, arg);
+			} else {
+				r_core_cmd_callf (core, "t-%s", arg);
+			}
 			break;
+		}
 		case '*':
 			if (input[2] == ' ') {
 				showFormat (core, r_str_trim_head_ro (input + 2), 1);
@@ -1838,9 +1887,15 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmdf (core, ".ts %s", typename);
 			}
 			break;
-		case '-': // "ts-"
-			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
+		case '-': { // "ts-"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (strchr (arg, '*') || strchr (arg, ' ')) {
+				types_remove_glob (core, stdifstruct, arg);
+			} else {
+				r_core_cmd_callf (core, "t-%s", arg);
+			}
 			break;
+		}
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1889,14 +1944,23 @@ static int cmd_type(void *data, const char *input) {
 		if (member_name) {
 			*member_name++ = 0;
 		}
+		if (input[1] == '-') { // "te-"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (strchr (arg, '*') || strchr (arg, ' ')) {
+				types_remove_glob (core, stdifenum, arg);
+			} else {
+				r_core_cmd_callf (core, "t-%s", arg);
+			}
+			free (name);
+			break;
+		}
 		if (R_STR_ISNOTEMPTY (name) && (r_type_kind (TDB, name) != R_TYPE_ENUM)) {
 			R_LOG_ERROR ("%s is not an enum", name);
 			free (name);
 			break;
 		}
 		switch (input[1]) {
-		case '-':
-			r_core_cmd_callf (core, "t-%s", r_str_trim_head_ro (input + 2));
+		case '-': // "te-" (handled above)
 			break;
 		case 'j': // "tej"
 			if (input[2] == '\0') { // "tej"
@@ -2463,9 +2527,13 @@ static int cmd_type(void *data, const char *input) {
 				sdb_reset (TDB);
 			}
 		} else {
-			const char *name = r_str_trim_head_ro (input + 1);
-			if (*name) {
-				r_anal_remove_parsed_type (core->anal, name);
+			const char *arg = r_str_trim_head_ro (input + 1);
+			if (*arg) {
+				if (strchr (arg, '*') || strchr (arg, ' ')) {
+					types_remove_glob (core, stdifany, arg);
+				} else {
+					r_anal_remove_parsed_type (core->anal, arg);
+				}
 			} else {
 				R_LOG_ERROR ("Invalid use of t-. See t-? for help");
 			}

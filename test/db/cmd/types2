@@ -189,3 +189,110 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ts- glob deletion
+FILE=--
+CMDS=<<EOF
+"td struct foo {int x;}"
+"td struct foo2 {int y;}"
+"td struct foobar {int z;}"
+"td struct bar {int w;}"
+ts~bar,foo
+?e ---
+ts- foo*
+ts~bar,foo
+EOF
+EXPECT=<<EOF
+bar
+foo
+foo2
+foobar
+---
+bar
+EOF
+RUN
+
+NAME=ts- multiple names deletion
+FILE=--
+CMDS=<<EOF
+"td struct foo {int x;}"
+"td struct bar {int y;}"
+"td struct baz {int z;}"
+ts~bar,baz,foo
+?e ---
+ts- foo baz
+ts~bar,baz,foo
+EOF
+EXPECT=<<EOF
+bar
+baz
+foo
+---
+bar
+EOF
+RUN
+
+NAME=te- glob deletion
+FILE=--
+CMDS=<<EOF
+"td enum myenum {A=1,B=2}"
+"td enum myenum2 {C=3,D=4}"
+"td enum other {E=5}"
+te
+?e ---
+te- myenum*
+te
+EOF
+EXPECT=<<EOF
+myenum
+myenum2
+other
+---
+other
+EOF
+RUN
+
+NAME=tu- glob deletion
+FILE=--
+CMDS=<<EOF
+"td union myunion {int i;float f;}"
+"td union myunion2 {int i;double d;}"
+"td union other {int i;char c;}"
+tu
+?e ---
+tu- myunion*
+tu
+EOF
+EXPECT=<<EOF
+myunion
+myunion2
+other
+---
+other
+EOF
+RUN
+
+NAME=t- glob deletion any type
+FILE=--
+CMDS=<<EOF
+"td struct sfoo {int x;}"
+"td struct sfoo2 {int y;}"
+"td enum efoo {A=1}"
+"td union ufoo {int i;}"
+ts~sfoo
+te~efoo
+tu~ufoo
+?e ---
+t- *foo*
+ts~sfoo
+te~efoo
+tu~ufoo
+EOF
+EXPECT=<<EOF
+sfoo
+sfoo2
+efoo
+ufoo
+---
+EOF
+RUN
+
