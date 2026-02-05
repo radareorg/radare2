@@ -2316,3 +2316,32 @@ EXPECT=<<EXPECT
  c : 0x00000008 = 'B'
 EXPECT
 RUN
+
+NAME=tso struct with offsets
+FILE=--
+CMDS=<<EOF
+'td struct foo {int a;int b;}
+tso foo
+EOF
+EXPECT=<<EOF
+0x00000000 struct foo {
+0x00000000   int a;
+0x00000004   int b;
+0x00000008 };
+EOF
+RUN
+
+NAME=tuo union with offsets
+FILE=--
+CMDS=<<EOF
+'td union bar {int a;short b;}
+tuo bar
+EOF
+EXPECT=<<EOF
+0x00000000 union bar {
+0x00000000   int a;
+0x00000000   short b;
+0x00000000 };
+EOF
+RUN
+
