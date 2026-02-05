@@ -116,6 +116,7 @@ static RCoreHelpMessage help_msg_te = {
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
 	"test", " [-x,f,d] [path]", "test if executable, file or directory exists",
+	"tev", " [name]", "view all/given enums in C format with member values",
 	NULL
 };
 
@@ -1978,6 +1979,13 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_te, "ted");
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), false);
+			}
+			break;
+		case 'v': // "tev"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "tev");
+			} else {
+				print_enum_with_offsets (core, TDB, r_str_trim_head_ro (input + 2));
 			}
 			break;
 		case ' ': // "te "
