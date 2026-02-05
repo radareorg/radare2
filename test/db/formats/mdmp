@@ -39,6 +39,18 @@ va       true
 EOF
 RUN
 
+NAME=: version info
+FILE=bins/mdmp/calc.dmp
+CMDS=iV
+EXPECT=<<EOF
+  Windows NT Workstation 6.1.7601
+  Major: 6
+  Minor: 1
+  Build: 7601
+  Product Type: Workstation
+EOF
+RUN
+
 NAME=: sections
 FILE=bins/mdmp/calc.dmp
 CMDS=iS~calc

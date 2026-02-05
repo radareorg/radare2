@@ -105,7 +105,8 @@ static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, 
 				if (t == 1 && revision > 0) {
 					/* ntdll.dll found - use its revision */
 					return revision;
-				} else if (t == 0 && mod_major == major && mod_minor == minor && mod_build == build && revision > 0) {
+				}
+				if (t == 0 && mod_major == major && mod_minor == minor && mod_build == build && revision > 0) {
 					/* ntoskrnl.exe with matching version */
 					return revision;
 				}
@@ -263,7 +264,6 @@ static RList *sections(RBinFile *bf) {
 	struct minidump_memory_descriptor *memory;
 	struct minidump_memory_descriptor64 *memory64;
 	struct minidump_module *module;
-	struct minidump_string *str;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RList *pe_secs;
