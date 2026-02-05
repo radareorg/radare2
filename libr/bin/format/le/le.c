@@ -320,7 +320,11 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 			r_list_append (l, s);
 			iter_cnt++;
 		}
-		bytes_left -= sizeof (ut16) * 2 + data_size;
+		ut64 consumed = sizeof (ut16) * 2 + data_size;
+		if (consumed > bytes_left) {
+			break;
+		}
+		bytes_left -= consumed;
 		// Get the next iter record
 		offset += data_size;
 		iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
