@@ -12,7 +12,6 @@ typedef struct {
 	RCons *cons;
 	RIO *io;
 	RBin *bin;
-	RIO *bin_io;
 	RList *hits;
 	bool showstr;
 	bool rad;
@@ -65,8 +64,6 @@ static void rafind_options_fini(RafindOptions *ro) {
 			r_bin_free (ro->bin);
 			ro->bin = NULL;
 		}
-		r_io_free (ro->bin_io);
-		ro->bin_io = NULL;
 		r_cons_free2 (ro->cons);
 	}
 }
@@ -81,19 +78,19 @@ static void rafind_options_init(RafindOptions *ro) {
 	ro->hits = r_list_newf (free);
 	ro->pj = NULL;
 	ro->cons = r_cons_new ();
-	ro->bin = r_bin_new ();
-	ro->bin_io = r_io_new ();
-	if (ro->bin && ro->bin_io) {
-		r_io_bind (ro->bin_io, &ro->bin->iob);
-	} else {
-		r_bin_free (ro->bin);
-		ro->bin = NULL;
-		r_io_free (ro->bin_io);
-		ro->bin_io = NULL;
-	}
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
+
+static RBin *rafind_bin(RafindOptions *ro) {
+	if (!ro->bin) {
+		ro->bin = r_bin_new ();
+	}
+	if (ro->bin && ro->io) {
+		r_io_bind (ro->io, &ro->bin->iob);
+	}
+	return ro->bin;
+}
 static bool rafind_info_match_token(const RBinInfo *info, const char *token) {
 	if (R_STR_ISEMPTY (token) || !info) {
 		return false;
@@ -163,20 +160,21 @@ static bool rafind_match_bininfo(RafindOptions *ro, const char *file) {
 	if (!ro->idfilter) {
 		return true;
 	}
-	if (!ro->bin || !ro->bin_io) {
+	RBin *bin = rafind_bin (ro);
+	if (!bin) {
 		return false;
 	}
 	bool match = false;
-	r_bin_file_delete_all (ro->bin);
+	r_bin_file_delete_all (bin);
 	RBinFileOptions opt;
 	r_bin_file_options_init (&opt, -1, 0, 0, 0);
 	opt.filename = file;
-	if (r_bin_open (ro->bin, file, &opt)) {
-		const RBinInfo *info = r_bin_get_info (ro->bin);
+	if (r_bin_open (bin, file, &opt)) {
+		const RBinInfo *info = r_bin_get_info (bin);
 		match = rafind_info_match_filter (info, ro->idfilter);
-		RBinFile *bf = r_bin_cur (ro->bin);
+		RBinFile *bf = r_bin_cur (bin);
 		if (bf) {
-			r_bin_file_delete (ro->bin, bf->id);
+			r_bin_file_delete (bin, bf->id);
 		}
 	}
 	return match;
@@ -457,9 +455,6 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	ro->buf = NULL;
 	r_list_free (ro->hits);
 	ro->hits = r_list_newf (free);
-	if (ro->idfilter && !rafind_match_bininfo (ro, file)) {
-		return 0;
-	}
 	char *efile = r_str_escape_sh (file);
 
 	if (ro->identify) {
@@ -476,6 +471,10 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	if (!r_io_open_nomap (io, file, perm, 0)) {
 		R_LOG_ERROR ("Cannot open file '%s'", file);
 		result = 1;
+		goto err;
+	}
+
+	if (ro->idfilter && !rafind_match_bininfo (ro, file)) {
 		goto err;
 	}
 
