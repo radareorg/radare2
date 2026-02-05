@@ -1,6 +1,6 @@
 NAME=rafind2 -s 1234 -X -b 0x100
 FILE=--
-CMDS=!rafind2 -s 1234 -X -b 0x100 bins/other/search.bin
+CMDS=!rafind2 -s 1234 -cX -b 0x100 bins/other/search.bin
 EXPECT=<<EOF
 0xfe
 [35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
@@ -355,10 +355,10 @@ RUN
 NAME=rafind2 replace hex
 FILE=--
 CMDS=<<EOF
-!cp bins/other/search.bin rafind2-repl.bin
-!rafind2 -q -s 1234 -R h:41424344 rafind2-repl.bin > /dev/null
-!rafind2 -q -s ABCD rafind2-repl.bin
-!rm -f rafind2-repl.bin
+!cp bins/other/search.bin rafind2-repl2.bin
+!rafind2 -q -s 1234 -R h:41424344 rafind2-repl2.bin > /dev/null
+!rafind2 -q -s ABCD rafind2-repl2.bin
+!rm -f rafind2-repl2.bin
 EOF
 EXPECT=<<EOF
 0xfe
@@ -368,10 +368,10 @@ RUN
 NAME=rafind2 replace insert
 FILE=--
 CMDS=<<EOF
-!cp bins/other/search.bin rafind2-repl.bin
-!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl.bin > /dev/null
-!rafind2 -q -s ABCDE rafind2-repl.bin
-!rm -f rafind2-repl.bin
+!cp bins/other/search.bin rafind2-repl3.bin
+!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl3.bin > /dev/null
+!rafind2 -q -s ABCDE rafind2-repl3.bin
+!rm -f rafind2-repl3.bin
 EOF
 EXPECT=<<EOF
 0xfe
