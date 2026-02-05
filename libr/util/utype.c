@@ -733,10 +733,16 @@ static const char *strip_common_prefixes_stdlib(const char *func_name) {
 	return func_name;
 }
 
-static const char *strip_dll_prefix(const char *func_name) {
+static const char *strip_dll_prefix(const char *func_name, bool *stripped) {
 	const char *tmp = strstr (func_name, "dll_");
 	if (tmp) {
-		return tmp + 3;
+		if (stripped) {
+			*stripped = true;
+		}
+		return tmp + 4;
+	}
+	if (stripped) {
+		*stripped = false;
 	}
 	return func_name;
 }
@@ -764,16 +770,22 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 
 	str = strip_r_prefixes (str, slen);
 	str = strip_common_prefixes_stdlib (str);
-	str = strip_dll_prefix (str);
+	bool dll_stripped = false;
+	str = strip_dll_prefix (str, &dll_stripped);
 
-	if ( (result = type_func_try_guess (TDB, str))) {
+	if ((result = type_func_try_guess (TDB, str))) {
 		return result;
 	}
 
 	char *str_copy = strdup (str);
 	clean_function_name (str_copy);
 
-	if (*str_copy == '_') {
+	// If we stripped dll_ prefix, try matching the cleaned name directly
+	if (dll_stripped) {
+		result = type_func_try_guess (TDB, str_copy);
+	}
+	if (!result && *str_copy == '_') {
+		// Also try without leading underscore
 		result = type_func_try_guess (TDB, str_copy + 1);
 	}
 

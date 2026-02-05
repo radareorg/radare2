@@ -1266,22 +1266,23 @@ RUN
 
 NAME=Type Propagation
 FILE=bins/pe/debugme.exe
-BROKEN=1
 CMDS=<<EOF
 aaaa
-pd 1 @ 0x00401792~?[n
-pd 1 @ 0x00401796~?[c
-pd 1 @ 0x0040179e~?[s
-pd 1 @ 0x004017b1~?[n
-pd 1 @ 0x004017b5~?[c
-pd 1 @ 0x004017bd~?[s
+s 0x0040151f
+a:tp
+pd 1 @ 0x00401792~?size_t n
+pd 1 @ 0x00401796~?int c
+pd 1 @ 0x0040179e~?void
+pd 1 @ 0x004017b1~?size_t n
+pd 1 @ 0x004017b5~?int c
+pd 1 @ 0x004017bd~?void
 pd 1 @ 0x0040186a~?[s2
-pd 1 @ 0x0040186e~?[s1
+pd 1 @ 0x0040186e~?s1
 pd 1 @ 0x0040152f~?[dwInitParam
 pd 1 @ 0x00401537~?[lpDialogFunc
 pd 1 @ 0x0040153f~?[hWndParent
 pd 1 @ 0x00401547~?[lpTemplateName
-pd 1 @ 0x00401554~?[hInstance
+pd 1 @ 0x00401554~?hInstance
 EOF
 EXPECT=<<EOF
 1
