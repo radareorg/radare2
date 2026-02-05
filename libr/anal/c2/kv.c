@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024-2025 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
 #include <r_util.h>
 
@@ -44,8 +44,8 @@ static char *kvctoken_tostring(KVCToken t) {
 }
 
 static bool kvctoken_equals(KVCToken a, KVCToken b) {
-	int alen = kvctoken_len (a);
-	int blen = kvctoken_len (b);
+	const int alen = kvctoken_len (a);
+	const int blen = kvctoken_len (b);
 	if (alen != blen) {
 		return false;
 	}
@@ -156,7 +156,7 @@ static inline void kvc_skipn(KVCParser *kvc, size_t amount) {
 	}
 }
 
-static const char *kvc_find_semicolon_ex(KVCParser *kvc, bool allow_parens) {
+static const char *scan_to_semicolon(KVCParser *kvc, bool allow_parens) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
 		if (c == ';') {
@@ -172,27 +172,10 @@ static const char *kvc_find_semicolon_ex(KVCParser *kvc, bool allow_parens) {
 	return NULL;
 }
 
-static const char *kvc_find_semicolon(KVCParser *kvc) {
-	return kvc_find_semicolon_ex (kvc, false);
-}
-
-static const char *kvc_find_semicolon2(KVCParser *kvc) {
-	return kvc_find_semicolon_ex (kvc, true);
-}
-
-// rename to until_but
-static bool skip_until(KVCParser *kvc, char ch, char ch2) {
+static bool skip_until(KVCParser *kvc, char ch) {
 	while (!kvctoken_eof (kvc->s)) {
 		const char c = kvc_peek (kvc, 0);
-		if (!c) {
-			break;
-		}
 		if (c == ch) {
-			// kvc_getch (kvc);
-			return true;
-		}
-		if (ch2 && c != ch2) {
-			//		kvc_getch (kvc);
 			return true;
 		}
 		kvc_getch (kvc);
@@ -228,7 +211,7 @@ static void skip_spaces(KVCParser *kvc) {
 		}
 		p = kvc_peekn (kvc, 3);
 		if (p && p[0] == '/' && p[1] == '/' && p[2] != '/') {
-			skip_until (kvc, '\n', 0);
+			skip_until (kvc, '\n');
 			again = true;
 		}
 	} while (again);
@@ -356,21 +339,19 @@ static bool parse_attributes(KVCParser *kvc) {
 			kvc->attrs.values[atidx].b = kvc->attrs.values[atidx].a + 4;
 		}
 	}
-	skip_until (kvc, '\n', 0);
+	skip_until (kvc, '\n');
 	return true;
 }
 
-// Parse trailing /// comments after semicolon on the same line (e.g., "char pad[6]; /// @visibility(hidden)")
 static bool parse_trailing_attributes(KVCParser *kvc) {
-	// Skip horizontal whitespace only (spaces/tabs), not newlines
-	while (kvc_peek (kvc, 0) == ' ' || kvc_peek (kvc, 0) == '\t') {
+	char ch;
+	while ((ch = kvc_peek (kvc, 0)) == ' ' || ch == '\t') {
 		kvc_getch (kvc);
 	}
 	const char *begin = kvc_peekn (kvc, 3);
 	if (!begin || !r_str_startswith (begin, "///")) {
 		return false;
 	}
-	// Found a trailing /// comment, parse it
 	return parse_attributes (kvc);
 }
 
@@ -666,8 +647,6 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		}
 		kvc_getch (kvc);
 		char *struct_tag = has_tag? kvctoken_tostring (tag): lookahead_alias_after_brace (kvc, "anon_struct");
-		/* Begin output for the struct definition */
-		// r_strbuf_appendf (kvc->sb, "struct.%s=struct\n", struct_tag);
 		r_strbuf_appendf (kvc->sb, "%s=struct\n", struct_tag);
 		apply_attributes (kvc, "struct", struct_tag);
 		RStrBuf *args_sb = r_strbuf_new ("");
@@ -686,7 +665,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			KVCToken member_dimm = { 0 };
 			// parse member type token up to semicolon
 			member_type.a = kvc->s.a;
-			member_type.b = kvc_find_semicolon (kvc);
+			member_type.b = scan_to_semicolon (kvc, false);
 			if (!member_type.b) {
 				kvc_error (kvc, "Missing semicolon in struct member");
 				r_strbuf_free (args_sb);
@@ -842,7 +821,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			KVCToken member_dimm = { 0 };
 			// parse member type token up to semicolon
 			member_type.a = kvc->s.a;
-			member_type.b = kvc_find_semicolon (kvc);
+			member_type.b = scan_to_semicolon (kvc, false);
 			if (!member_type.b) {
 				kvc_error (kvc, "Missing semicolon in union member");
 				r_strbuf_free (args_sb);
@@ -1055,9 +1034,9 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		typedef RETTYPE (*alias) (ARGS); */
 		KVCToken decl = { .a = start };
 		/* find semicolon for decl end */
-		const char *semicolon = kvc_find_semicolon2 (kvc);
+		const char *semicolon = scan_to_semicolon (kvc, true);
 		if (!semicolon) {
-			semicolon = kvc_find_semicolon (kvc);
+			semicolon = scan_to_semicolon (kvc, false);
 		}
 		decl.b = semicolon;
 		if (!semicolon) {
@@ -1219,13 +1198,13 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		member_type.a = kvc->s.a;
 		// Support function pointer fields: allow parentheses when scanning semicolon
 		if (kvctoken_find ((KVCToken){ member_type.a, kvc->s.b }, " (*")) {
-			member_type.b = kvc_find_semicolon2 (kvc);
+			member_type.b = scan_to_semicolon (kvc, true);
 		} else {
-			member_type.b = kvc_find_semicolon (kvc);
+			member_type.b = scan_to_semicolon (kvc, false);
 		}
 		if (!member_type.b) {
 			// attempt extended scan allowing parentheses (attributes or function pointers)
-			const char *semi2 = kvc_find_semicolon2 (kvc);
+			const char *semi2 = scan_to_semicolon (kvc, true);
 			if (!semi2) {
 				const char ch0 = kvc_peek (kvc, 0);
 				if (ch0 == '}') {
@@ -1536,11 +1515,10 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 
 static bool parse_function(KVCParser *kvc) {
 	parse_attributes (kvc);
-	// Check for 'static' keyword
 	bool is_static = false;
 	skip_spaces (kvc);
-	const char *word = kvc_peekn (kvc, 6);
-	if (word && !strncmp (word, "static", 6) && (word[6] == ' ' || word[6] == '\t' || word[6] == '\n' || word[6] == 0 || word[6] == ';')) {
+	const char *word = kvc_peekn (kvc, 7);
+	if (word && !strncmp (word, "static", 6) && (isspace (word[6]) || word[6] == 0 || word[6] == ';')) {
 		kvc_skipn (kvc, 6);
 		skip_spaces (kvc);
 		is_static = true;
@@ -1556,14 +1534,14 @@ static bool parse_function(KVCParser *kvc) {
 	}
 	fun_rtyp.b = kvc->s.a;
 	fun_name.a = fun_rtyp.a;
-	if (!skip_until (kvc, '(', 0)) {
+	if (!skip_until (kvc, '(')) {
 		kvc_error (kvc, "Cannot find ( in function definition");
 		// r_sys_breakpoint ();
 		return false;
 	}
 	fun_name.b = kvc->s.a;
 	fun_parm.a = kvc->s.a + 1;
-	if (!skip_until (kvc, ')', 0)) {
+	if (!skip_until (kvc, ')')) {
 		kvc_error (kvc, "Cannot find ) in function definition");
 		return false;
 	}
