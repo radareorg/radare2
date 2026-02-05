@@ -309,14 +309,9 @@ static const char *t2s(const char ch) {
 }
 
 static RList *cmd_mount_find_off(RCore *core, const char *cwd, ut64 off) {
-	R_RETURN_VAL_IF_FAIL (core && core->fs, NULL);
 	RList *list = NULL;
 	if (R_STR_ISEMPTY (cwd) || !strcmp (cwd, "/")) {
-		list = r_list_new ();
-		if (!list) {
-			return NULL;
-		}
-		list->free = free;
+		list = r_list_newf (free);
 		RListIter *iter;
 		RFSRoot *root;
 		r_list_foreach (core->fs->roots, iter, root) {
@@ -329,36 +324,55 @@ static RList *cmd_mount_find_off(RCore *core, const char *cwd, ut64 off) {
 				r_list_free (found);
 			}
 		}
-		if (r_list_empty (list)) {
-			r_list_free (list);
-			list = NULL;
-		}
 	} else {
 		list = r_fs_find_off (core->fs, cwd, off);
-		if (list && r_list_empty (list)) {
-			r_list_free (list);
-			list = NULL;
-		}
+	}
+	if (list && r_list_empty (list)) {
+		r_list_free (list);
+		list = NULL;
 	}
 	return list;
 }
 
-static char *cmd_mount_deleted_name(const char *name) {
-	R_RETURN_VAL_IF_FAIL (name, NULL);
-	if ((ut8)name[0] != 0xe5) {
-		return strdup (name);
-	}
-	return r_str_newf ("\\xE5%s", name + 1);
+static char *cmd_mount_escape_name(const char *name) {
+	char *escaped = r_str_escape_utf8_keep_printable (name, false, true);
+	return escaped? escaped: strdup (name);
 }
 
-static char *cmd_mount_deleted_path(const char *path) {
-	R_RETURN_VAL_IF_FAIL (path, NULL);
-	const char *base = r_file_basename (path);
-	if (!base || (ut8)base[0] != 0xe5) {
-		return strdup (path);
+static char *cmd_mount_escape_path(const char *path) {
+	char *escaped = r_str_escape_utf8_keep_printable (path, false, true);
+	return escaped? escaped: strdup (path);
+}
+
+static int cmd_mix(RCore *core, const char *input) {
+	input = (char *)r_str_trim_head_ro (input);
+	if (R_STR_ISEMPTY (input)) {
+		R_LOG_ERROR ("Usage: mix 0xOFFSET");
+		return 0;
 	}
-	int prefix_len = (int)(base - path);
-	return r_str_newf ("%.*s\\xE5%s", prefix_len, path, base + 1);
+	ut64 off = r_num_math (core->num, input);
+	const char *cwd = r_config_get (core->config, "fs.cwd");
+	if (R_STR_ISEMPTY (cwd)) {
+		cwd = "/";
+	}
+	int old_view = core->fs->view;
+	r_fs_view (core->fs, R_FS_VIEW_DELETED);
+	RList *list = cmd_mount_find_off (core, cwd, off);
+	r_fs_view (core->fs, old_view);
+	if (list) {
+		RListIter *iter;
+		char *ptr;
+		r_list_foreach (list, iter, ptr) {
+			char *epath = cmd_mount_escape_path (ptr);
+			if (epath) {
+				r_str_trim_path (epath);
+				r_cons_println (core->cons, epath);
+				free (epath);
+			}
+		}
+		r_list_free (list);
+	}
+	return 0;
 }
 
 static void cmd_mount_ls(RCore *core, const char *input) {
@@ -419,7 +433,7 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 				char *dname = NULL;
 				const char *name = file->name;
 				if (is_deleted && file->name) {
-					dname = cmd_mount_deleted_name (file->name);
+					dname = cmd_mount_escape_name (file->name);
 					if (dname) {
 						name = dname;
 					}
@@ -774,35 +788,7 @@ static int cmd_mount(void *data, const char *_input) {
 		if (input[1] == '?') { // "mi?"
 			r_core_cmd_help_match (core, help_msg_m, "mi");
 		} else if (input[1] == 'x') { // "mix"
-			input = (char *)r_str_trim_head_ro (input + 2);
-			if (R_STR_ISEMPTY (input)) {
-				R_LOG_ERROR ("Usage: mix 0xOFFSET");
-				break;
-			}
-			ut64 off = r_num_math (core->num, input);
-			const char *cwd = r_config_get (core->config, "fs.cwd");
-			if (R_STR_ISEMPTY (cwd)) {
-				cwd = "/";
-			}
-			int old_view = core->fs->view;
-			r_fs_view (core->fs, R_FS_VIEW_DELETED);
-			list = cmd_mount_find_off (core, cwd, off);
-			r_fs_view (core->fs, old_view);
-			if (list) {
-				r_list_foreach (list, iter, ptr) {
-					const char *base = r_file_basename (ptr);
-					if (!base || (ut8)base[0] != 0xe5) {
-						continue;
-					}
-					char *dpath = cmd_mount_deleted_path (ptr);
-					if (dpath) {
-						r_str_trim_path (dpath);
-						r_cons_println (core->cons, dpath);
-						free (dpath);
-					}
-				}
-				r_list_free (list);
-			}
+			cmd_mix (core, input + 2);
 		} else if (input[1] == 's') { // "mis"
 			input = (char *)r_str_trim_head_ro (input + 2);
 			file = r_fs_open (core->fs, input, false);
@@ -816,7 +802,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
-			if (r_str_isnumber (input) || r_str_startswith (input, "0x")) {
+			if (r_str_isnumber (input)) {
 				ut64 off = r_num_math (core->num, input);
 				const char *cwd = r_config_get (core->config, "fs.cwd");
 				if (R_STR_ISEMPTY (cwd)) {
