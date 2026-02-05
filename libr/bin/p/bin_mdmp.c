@@ -37,6 +37,97 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
+/* Extract RTM revision from system modules (ntoskrnl.exe or ntdll.dll).
+ * Returns revision number if found and validated, 0 otherwise. */
+static ut32 extract_rtm_from_modules(RBinMdmpObj *mdmp, ut32 major, ut32 minor, ut32 build) {
+	R_RETURN_VAL_IF_FAIL (mdmp && mdmp->streams.modules, 0);
+
+	struct minidump_module *module;
+	struct minidump_string *str;
+	RListIter *it;
+	ut8 b[512];
+	char *module_name = NULL;
+	ut32 revision = 0;
+	ut32 mod_major, mod_minor, mod_build;
+	int ptr_name_len;
+	int t;
+
+	/* Try ntoskrnl.exe first (kernel), then ntdll.dll */
+	const char *target_modules[] = { "ntoskrnl.exe", "ntdll.dll", NULL };
+
+	for (t = 0; target_modules[t]; t++) {
+		r_list_foreach (mdmp->streams.modules, it, module) {
+			if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (mdmp->b)) {
+				continue;
+			}
+			if (r_buf_read_at (mdmp->b, module->module_name_rva, (ut8 *)&b, sizeof (b)) < sizeof (struct minidump_string)) {
+				continue;
+			}
+			str = (struct minidump_string *)b;
+			/* Validate string length (max reasonable length for a module name) */
+			if (str->length == 0 || str->length > 256) {
+				continue;
+			}
+			ptr_name_len = (str->length + 2) * 4;
+			if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
+				continue;
+			}
+			/* Validate bounds: length is in UTF-16 characters, need to multiply by 2 for bytes */
+			if (module->module_name_rva + sizeof (struct minidump_string) + (str->length * 2) > r_buf_size (mdmp->b)) {
+				continue;
+			}
+			module_name = calloc (1, ptr_name_len);
+			if (!module_name) {
+				continue;
+			}
+			r_str_utf16_to_utf8 ((ut8 *)module_name, str->length * 4,
+				(const ut8 *)(&str->buffer), str->length, mdmp->endian);
+
+			/* Extract just the filename from the full path */
+			const char *filename = strrchr (module_name, '\\');
+			if (!filename) {
+				filename = strrchr (module_name, '/');
+			}
+			if (filename) {
+				filename++;
+			} else {
+				filename = module_name;
+			}
+
+			/* Case-insensitive comparison */
+			if (!r_str_casecmp (filename, target_modules[t])) {
+				/* Validate version_info signature before extracting version */
+				if (module->version_info.dw_signature != 0xFEEF04BD) {
+					free (module_name);
+					module_name = NULL;
+					continue;
+				}
+				/* Extract version from vs_fixedfileinfo */
+				mod_major = (module->version_info.dw_file_version_ms >> 16) & 0xFFFF;
+				mod_minor = module->version_info.dw_file_version_ms & 0xFFFF;
+				mod_build = (module->version_info.dw_file_version_ls >> 16) & 0xFFFF;
+				revision = module->version_info.dw_file_version_ls & 0xFFFF;
+
+				/* For ntdll.dll (user-mode dumps), use revision if valid
+				 * For ntoskrnl.exe (kernel-mode), require exact version match */
+				if (t == 1 && revision > 0) {
+					/* ntdll.dll found - use its revision */
+					free (module_name);
+					return revision;
+				} else if (t == 0 && mod_major == major && mod_minor == minor && mod_build == build && revision > 0) {
+					/* ntoskrnl.exe with matching version */
+					free (module_name);
+					return revision;
+				}
+			}
+			free (module_name);
+			module_name = NULL;
+		}
+	}
+
+	return 0;
+}
+
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	RBinMdmpObj *mdmp = bf->bo->bin_obj;
@@ -84,24 +175,53 @@ static RBinInfo *info(RBinFile *bf) {
 			break;
 		}
 
+		ut32 major = mdmp->streams.system_info->major_version;
+		ut32 minor = mdmp->streams.system_info->minor_version;
+		ut32 build = mdmp->streams.system_info->build_number;
+		ut32 revision = extract_rtm_from_modules (mdmp, major, minor, build);
+
 		switch (mdmp->streams.system_info->product_type) {
 		case MDMP_VER_NT_WORKSTATION:
-			ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
-			mdmp->streams.system_info->major_version,
-			mdmp->streams.system_info->minor_version,
-			mdmp->streams.system_info->build_number);
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d.%d",
+					major,
+					minor,
+					build,
+					revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
+					major,
+					minor,
+					build);
+			}
 			break;
 		case MDMP_VER_NT_DOMAIN_CONTROLLER:
-			ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
-			mdmp->streams.system_info->major_version,
-			mdmp->streams.system_info->minor_version,
-			mdmp->streams.system_info->build_number);
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d.%d",
+					major,
+					minor,
+					build,
+					revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
+					major,
+					minor,
+					build);
+			}
 			break;
 		case MDMP_VER_NT_SERVER:
-			ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
-			mdmp->streams.system_info->major_version,
-			mdmp->streams.system_info->minor_version,
-			mdmp->streams.system_info->build_number);
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Server %d.%d.%d.%d",
+					major,
+					minor,
+					build,
+					revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
+					major,
+					minor,
+					build);
+			}
 			break;
 		default:
 			ret->os = strdup ("Unknown");
