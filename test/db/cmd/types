@@ -2317,11 +2317,11 @@ EXPECT=<<EXPECT
 EXPECT
 RUN
 
-NAME=tso struct with offsets
+NAME=tsv struct with offsets
 FILE=--
 CMDS=<<EOF
 'td struct foo {int a;int b;}
-tso foo
+tsv foo
 EOF
 EXPECT=<<EOF
 0x00000000 struct foo {
@@ -2331,17 +2331,70 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=tuo union with offsets
+NAME=tuv union with offsets
 FILE=--
 CMDS=<<EOF
 'td union bar {int a;short b;}
-tuo bar
+tuv bar
 EOF
 EXPECT=<<EOF
 0x00000000 union bar {
 0x00000000   int a;
 0x00000000   short b;
 0x00000000 };
+EOF
+RUN
+
+NAME=tv struct view
+FILE=--
+CMDS=<<EOF
+'td struct point {int x;int y;}
+tv point
+EOF
+EXPECT=<<EOF
+0x00000000 struct point {
+0x00000000   int x;
+0x00000004   int y;
+0x00000008 };
+EOF
+RUN
+
+NAME=tv union view
+FILE=--
+CMDS=<<EOF
+'td union value {int i;float f;}
+tv value
+EOF
+EXPECT=<<EOF
+0x00000000 union value {
+0x00000000   int i;
+0x00000000   float f;
+0x00000000 };
+EOF
+RUN
+
+NAME=tv enum view
+FILE=--
+CMDS=<<EOF
+'td enum status {ok=0,err=1}
+tv status
+EOF
+EXPECT=<<EOF
+0x00000000 enum status {
+0x00000000   ok = 0x0;
+0x00000001   err = 0x1;
+0x00000000 };
+EOF
+RUN
+
+NAME=tv basic type view
+FILE=--
+CMDS=<<EOF
+tv int
+EOF
+EXPECT=<<EOF
+0x00000000 type int; // size=4
+0x00000004
 EOF
 RUN
 

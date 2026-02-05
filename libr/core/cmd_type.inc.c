@@ -26,7 +26,15 @@ static RCoreHelpMessage help_msg_t = {
 	"ts", "[?]", "print loaded struct types",
 	"tt", "[?]", "list all loaded typedefs",
 	"tu", "[?]", "print loaded union types",
+	"tv", "[?]", "view types with offsets and xrefs",
 	"tx", "[?]", "type xrefs",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_tv = {
+	"Usage: tv[...]", " [type]", "View types with offsets and xrefs",
+	"tv", "", "list all types with offsets (structs, unions, enums, types)",
+	"tv", " [type]", "show specific type with offsets and xrefs",
 	NULL
 };
 
@@ -569,6 +577,10 @@ static bool stdifstruct(void *user, const char *k, const char *v) {
 	return false;
 }
 
+static bool stdifunion(void *p, const char *k, const char *v) {
+	return !strcmp (v, "union");
+}
+
 /*!
 * \brief print the data types details in JSON format
 * \param TDB pointer to the sdb for types
@@ -705,6 +717,146 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 	ls_free (l);
 }
 
+typedef struct type_xref_t {
+	ut64 addr;
+	char *fcn_name;
+	char *field_name;
+	int access_type; // R_PERM_R, R_PERM_W, or both
+} TypeXref;
+
+static void type_xref_free(void *x) {
+	TypeXref *xref = (TypeXref *)x;
+	if (xref) {
+		free (xref->fcn_name);
+		free (xref->field_name);
+		free (xref);
+	}
+}
+
+static RList *collect_type_xrefs(RCore *core, const char *type_name) {
+	RList *xrefs = r_list_newf (type_xref_free);
+	if (!xrefs) {
+		return NULL;
+	}
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RList *vars = r_anal_var_all_list (core->anal, fcn);
+		RAnalVar *var;
+		r_list_foreach (vars, iter2, var) {
+			if (!var->type) {
+				continue;
+			}
+			char *var_type = strdup (var->type);
+			r_str_trim (var_type);
+			char *sp = strchr (var_type, ' ');
+			if (sp) {
+				*sp = 0;
+			}
+			char *base_type = var_type;
+			if (r_str_startswith (var_type, "struct ")) {
+				base_type = var_type + 7;
+			} else if (r_str_startswith (var_type, "union ")) {
+				base_type = var_type + 6;
+			}
+			bool type_match = !strcmp (base_type, type_name);
+			if (!type_match && sp) {
+				*sp = ' ';
+				type_match = !strcmp (var_type, type_name);
+			}
+			if (type_match) {
+				RAnalVarAccess *acc;
+				R_VEC_FOREACH (&var->accesses, acc) {
+					TypeXref *xref = R_NEW0 (TypeXref);
+					if (xref) {
+						xref->addr = fcn->addr + acc->offset;
+						xref->fcn_name = strdup (fcn->name);
+						xref->field_name = NULL;
+						xref->access_type = acc->type;
+						r_list_append (xrefs, xref);
+					}
+				}
+			}
+			free (var_type);
+		}
+		r_list_free (vars);
+	}
+	return xrefs;
+}
+
+static RList *collect_field_xrefs(RCore *core, const char *type_name, const char *field_name, ut32 field_offset) {
+	RList *xrefs = r_list_newf (type_xref_free);
+	if (!xrefs) {
+		return NULL;
+	}
+	RListIter *iter, *iter2;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RList *vars = r_anal_var_all_list (core->anal, fcn);
+		RAnalVar *var;
+		r_list_foreach (vars, iter2, var) {
+			if (!var->type) {
+				continue;
+			}
+			char *var_type = strdup (var->type);
+			r_str_trim (var_type);
+			char *sp = strchr (var_type, ' ');
+			if (sp) {
+				*sp = 0;
+			}
+			char *base_type = var_type;
+			if (r_str_startswith (var_type, "struct ")) {
+				base_type = var_type + 7;
+			} else if (r_str_startswith (var_type, "union ")) {
+				base_type = var_type + 6;
+			}
+			bool type_match = !strcmp (base_type, type_name);
+			if (!type_match && sp) {
+				*sp = ' ';
+				type_match = !strcmp (var_type, type_name);
+			}
+			if (type_match) {
+				RAnalVarAccess *acc;
+				R_VEC_FOREACH (&var->accesses, acc) {
+					if (acc->stackptr == (st64)field_offset) {
+						TypeXref *xref = R_NEW0 (TypeXref);
+						if (xref) {
+							xref->addr = fcn->addr + acc->offset;
+							xref->fcn_name = strdup (fcn->name);
+							xref->field_name = strdup (field_name);
+							xref->access_type = acc->type;
+							r_list_append (xrefs, xref);
+						}
+					}
+				}
+			}
+			free (var_type);
+		}
+		r_list_free (vars);
+	}
+	return xrefs;
+}
+
+static void append_xrefs_to_strbuf(RStrBuf *sb, RList *xrefs) {
+	if (!xrefs || r_list_empty (xrefs)) {
+		return;
+	}
+	RListIter *iter;
+	TypeXref *xref;
+	r_list_foreach (xrefs, iter, xref) {
+		const char *perm_str = "";
+		if ((xref->access_type & R_PERM_R) && (xref->access_type & R_PERM_W)) {
+			perm_str = "rw";
+		} else if (xref->access_type & R_PERM_R) {
+			perm_str = "r";
+		} else if (xref->access_type & R_PERM_W) {
+			perm_str = "w";
+		}
+		r_strbuf_appendf (sb, "             ; XREF[%s] 0x%08"PFMT64x" %s\n",
+			perm_str, xref->addr, xref->fcn_name);
+	}
+}
+
 static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCallback filter, const char *arg, bool is_union) {
 	char *name = NULL;
 	SdbKv *kv;
@@ -728,6 +880,9 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 				continue;
 			}
 		}
+		RList *type_xrefs = collect_type_xrefs (core, name);
+		append_xrefs_to_strbuf (sb, type_xrefs);
+		r_list_free (type_xrefs);
 		r_strbuf_appendf (sb, "0x%08x %s %s {\n", 0, sdbkv_value (kv), name);
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		ut32 current_offset = 0;
@@ -758,6 +913,9 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
 					}
+					RList *field_xrefs = collect_field_xrefs (core, name, p, current_offset);
+					append_xrefs_to_strbuf (sb, field_xrefs);
+					r_list_free (field_xrefs);
 					r_strbuf_append (sb, ";\n");
 					if (!is_union) {
 						current_offset += size;
@@ -779,6 +937,126 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 	free (s);
 	free (name);
 	ls_free (l);
+}
+
+static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list (TDB, true);
+	bool match = false;
+	RStrBuf *sb = r_strbuf_new ("");
+	ls_foreach (l, iter, kv) {
+		if (!strcmp (sdbkv_value (kv), "enum")) {
+			if (!name || strcmp (sdbkv_value (kv), name)) {
+				free (name);
+				name = strdup (sdbkv_key (kv));
+				if (name && (arg && *arg)) {
+					if (!strcmp (arg, name)) {
+						match = true;
+					} else {
+						continue;
+					}
+				}
+				RList *type_xrefs = collect_type_xrefs (core, name);
+				append_xrefs_to_strbuf (sb, type_xrefs);
+				r_list_free (type_xrefs);
+				r_strbuf_appendf (sb, "0x%08x enum %s {\n", 0, name);
+				RList *list = r_type_get_enum (TDB, name);
+				if (list && !r_list_empty (list)) {
+					RListIter *liter;
+					RTypeEnum *member;
+					r_list_foreach (list, liter, member) {
+						r_strbuf_appendf (sb, "0x%08x   %s = %s;\n",
+							(ut32)r_num_math (NULL, member->val), member->name, member->val);
+					}
+				}
+				r_list_free (list);
+				r_strbuf_append (sb, "0x00000000 };\n");
+				if (match) {
+					break;
+				}
+			}
+		}
+	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (core->cons, s);
+	free (s);
+	free (name);
+	ls_free (l);
+}
+
+static bool stdifbasictype(void *p, const char *k, const char *v) {
+	return !strcmp (v, "type");
+}
+
+static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list_filter (TDB, stdifbasictype, true);
+	bool match = false;
+	RStrBuf *sb = r_strbuf_new ("");
+
+	ls_foreach (l, iter, kv) {
+		const char *name = sdbkv_key (kv);
+		if (arg && *arg) {
+			if (!strcmp (arg, name)) {
+				match = true;
+			} else {
+				continue;
+			}
+		}
+		char *size_key = r_str_newf ("type.%s.size", name);
+		const char *size_str = sdb_const_get (TDB, size_key, NULL);
+		free (size_key);
+		ut32 size = size_str ? (ut32)(atoi (size_str) / 8) : 0;
+		RList *type_xrefs = collect_type_xrefs (core, name);
+		append_xrefs_to_strbuf (sb, type_xrefs);
+		r_list_free (type_xrefs);
+		r_strbuf_appendf (sb, "0x%08x type %s; // size=%d\n", 0, name, size);
+		r_strbuf_appendf (sb, "0x%08x\n", size);
+		if (match) {
+			break;
+		}
+	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (core->cons, s);
+	free (s);
+	ls_free (l);
+}
+
+static void print_type_view(RCore *core, const char *arg) {
+	Sdb *TDB = core->anal->sdb_types;
+	if (arg && *arg) {
+		const char *type_kind = sdb_const_get (TDB, arg, 0);
+		if (type_kind) {
+			if (!strcmp (type_kind, "struct")) {
+				print_struct_union_with_offsets (core, TDB, stdifstruct, arg, false);
+			} else if (!strcmp (type_kind, "union")) {
+				print_struct_union_with_offsets (core, TDB, stdifunion, arg, true);
+			} else if (!strcmp (type_kind, "enum")) {
+				print_enum_with_offsets (core, TDB, arg);
+			} else if (!strcmp (type_kind, "type")) {
+				print_basic_type_with_offsets (core, TDB, arg);
+			} else if (!strcmp (type_kind, "typedef")) {
+				char *typedef_key = r_str_newf ("typedef.%s", arg);
+				const char *real_type = sdb_const_get (TDB, typedef_key, NULL);
+				free (typedef_key);
+				if (real_type) {
+					print_type_view (core, real_type);
+				}
+			} else {
+				R_LOG_ERROR ("Unknown type kind: %s", type_kind);
+			}
+		} else {
+			R_LOG_ERROR ("Type not found: %s", arg);
+		}
+	} else {
+		print_struct_union_with_offsets (core, TDB, stdifstruct, NULL, false);
+		print_struct_union_with_offsets (core, TDB, stdifunion, NULL, true);
+		print_enum_with_offsets (core, TDB, NULL);
+		print_basic_type_with_offsets (core, TDB, NULL);
+	}
 }
 
 static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool multiline) {
@@ -921,10 +1199,6 @@ static bool printfunc_json_cb(void *user, const char *k, const char *v) {
 
 static bool stdiffunc(void *p, const char *k, const char *v) {
 	return !strcmp (v, "func");
-}
-
-static bool stdifunion(void *p, const char *k, const char *v) {
-	return !strcmp (v, "union");
 }
 
 static bool sdbdeletelink(void *p, const char *k, const char *v) {
@@ -1825,6 +2099,22 @@ static int cmd_type(void *data, const char *input) {
 			}
 		} else {
 			R_LOG_ERROR ("Invalid use of td. See td? for help");
+		}
+		break;
+	case 'v': // "tv"
+		switch (input[1]) {
+		case '?':
+			r_core_cmd_help (core, help_msg_tv);
+			break;
+		case ' ':
+			print_type_view (core, r_str_trim_head_ro (input + 2));
+			break;
+		case 0:
+			print_type_view (core, NULL);
+			break;
+		default:
+			r_core_return_invalid_command (core, "tv", input[1]);
+			break;
 		}
 		break;
 	case 'x': {
