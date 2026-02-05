@@ -343,6 +343,24 @@ static RList *cmd_mount_find_off(RCore *core, const char *cwd, ut64 off) {
 	return list;
 }
 
+static char *cmd_mount_deleted_name(const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	if ((ut8)name[0] != 0xe5) {
+		return strdup (name);
+	}
+	return r_str_newf ("\\xE5%s", name + 1);
+}
+
+static char *cmd_mount_deleted_path(const char *path) {
+	R_RETURN_VAL_IF_FAIL (path, NULL);
+	const char *base = r_file_basename (path);
+	if (!base || (ut8)base[0] != 0xe5) {
+		return strdup (path);
+	}
+	int prefix_len = (int)(base - path);
+	return r_str_newf ("%.*s\\xE5%s", prefix_len, path, base + 1);
+}
+
 static void cmd_mount_ls(RCore *core, const char *input) {
 	bool isJSON = *input == 'j';
 	RListIter *iter;
@@ -398,17 +416,26 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 				pj_end (pj);
 			} else {
 				char ftype = is_deleted? R_FS_FILE_TYPE_DELETED: file->type;
+				char *dname = NULL;
+				const char *name = file->name;
+				if (is_deleted && file->name) {
+					dname = cmd_mount_deleted_name (file->name);
+					if (dname) {
+						name = dname;
+					}
+				}
 				if (minus_quiet) {
 					if (ftype == 'd') {
-						r_cons_printf (core->cons, "%s/\n", file->name);
+						r_cons_printf (core->cons, "%s/\n", name);
 					} else {
-						r_cons_printf (core->cons, "%s\n", file->name);
+						r_cons_printf (core->cons, "%s\n", name);
 					}
 				} else if (minus_ele) {
-					r_cons_printf (core->cons, "%c %10d %s\n", ftype, file->size, file->name);
+					r_cons_printf (core->cons, "%c %10d %s\n", ftype, file->size, name);
 				} else {
-					r_cons_printf (core->cons, "%c %s\n", ftype, file->name);
+					r_cons_printf (core->cons, "%c %s\n", ftype, name);
 				}
+				free (dname);
 			}
 		}
 		r_list_free (list);
@@ -767,8 +794,12 @@ static int cmd_mount(void *data, const char *_input) {
 					if (!base || (ut8)base[0] != 0xe5) {
 						continue;
 					}
-					r_str_trim_path (ptr);
-					r_cons_println (core->cons, ptr);
+					char *dpath = cmd_mount_deleted_path (ptr);
+					if (dpath) {
+						r_str_trim_path (dpath);
+						r_cons_println (core->cons, dpath);
+						free (dpath);
+					}
 				}
 				r_list_free (list);
 			}
