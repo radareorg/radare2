@@ -231,16 +231,16 @@ R_API void r_anal_delete_block_at(RAnal *anal, ut64 addr) {
 }
 
 R_API void r_anal_delete_block(RAnalBlock *bb) {
-	r_ref (bb);
-	while (!r_list_empty (bb->fcns)) {
+	RAnalBlock *rbb = r_ref (bb);
+	while (!r_list_empty (rbb->fcns)) {
 		RListIter *iter, *iter2;
 		RAnalFunction *fcn;
-		r_list_foreach_safe (bb->fcns, iter, iter2, fcn) {
-			r_anal_function_remove_block (fcn, bb);
+		r_list_foreach_safe (rbb->fcns, iter, iter2, fcn) {
+			r_anal_function_remove_block (fcn, rbb);
 		}
 	}
 	r_rbtree_aug_delete (&bb->anal->bb_tree, &bb->addr, __bb_addr_cmp, NULL, NULL, NULL, __max_end);
-	r_unref (bb);
+	r_unref (rbb);
 }
 
 R_API void r_anal_block_set_size(RAnalBlock *block, ut64 size) {
@@ -389,7 +389,7 @@ R_API bool r_anal_block_merge(RAnalBlock *a, RAnalBlock *b) {
 	}
 
 	// Keep a ref to b, but remove all references of b from its functions
-	r_ref (b);
+	b = r_ref (b);
 	while (!r_list_empty (b->fcns)) {
 		r_anal_function_remove_block (r_list_first (b->fcns), b);
 	}
@@ -911,7 +911,7 @@ R_API RAnalBlock *r_anal_block_chop_noreturn(RAnalBlock *block, ut64 addr) {
 	if (!r_anal_block_contains (block, addr) || addr == block->addr) {
 		return block;
 	}
-	r_ref (block);
+	block = r_ref (block);
 
 	// Cache all recursive successors of block here.
 	// These are the candidates that we might have to remove from functions later.
