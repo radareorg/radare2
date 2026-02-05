@@ -15,11 +15,12 @@
 .Op Fl E
 .Op Fl F Ar file
 .Op Fl i
+.Op Fl I Ar str
 .Op Fl j
 .Op Fl L
 .Op Fl M Ar str
 .Op Fl R Ar str
-.Op Fl I
+.Op Fl J
 .Op Fl r
 .Op Fl c
 .Op Fl V Ar s:num | s:num1,num2
@@ -49,6 +50,8 @@ Read the contents of the file and use it as keyword
 Show help message
 .It Fl i
 Identify filetype (r2 -nqcpm file)
+.It Fl I Ar str
+Filter files by rbin info (arch/type/bits/...) before searching
 .It Fl j
 Output in JSON
 .It Fl L
@@ -59,7 +62,7 @@ Magic search, file-type carver
 Set a binary mask to be applied on keywords
 .It Fl R Ar str
 Replace each hit with the given string (prefix with h: hex, w: wide, s: string)
-.It Fl I
+.It Fl J
 Insert the replacement and resize the file (only with -R)
 .It Fl n
 Do not stop on read errors

@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "rafind2"
 
 #include <r_main.h>
+#include <r_bin.h>
 #include <r_search.h>
 #include <r_util/r_print.h>
 
@@ -37,6 +38,7 @@ typedef struct {
 	const char *mask;
 	const char *valstr;
 	const char *curfile;
+	const char *idfilter;
 	PJ *pj;
 } RafindOptions;
 
@@ -72,6 +74,97 @@ static void rafind_options_init(RafindOptions *ro) {
 }
 
 static int rafind_open(RafindOptions *ro, const char *file);
+static bool rafind_info_match_token(const RBinInfo *info, const char *token) {
+	if (R_STR_ISEMPTY (token) || !info) {
+		return false;
+	}
+	if (r_str_isnumber (token)) {
+		int bits = atoi (token);
+		return info->bits == bits;
+	}
+	if (info->arch && r_str_casestr (info->arch, token)) {
+		return true;
+	}
+	if (info->type && r_str_casestr (info->type, token)) {
+		return true;
+	}
+	if (info->bclass && r_str_casestr (info->bclass, token)) {
+		return true;
+	}
+	if (info->rclass && r_str_casestr (info->rclass, token)) {
+		return true;
+	}
+	if (info->cpu && r_str_casestr (info->cpu, token)) {
+		return true;
+	}
+	if (info->machine && r_str_casestr (info->machine, token)) {
+		return true;
+	}
+	if (info->os && r_str_casestr (info->os, token)) {
+		return true;
+	}
+	if (info->abi && r_str_casestr (info->abi, token)) {
+		return true;
+	}
+	if (info->subsystem && r_str_casestr (info->subsystem, token)) {
+		return true;
+	}
+	return false;
+}
+
+static bool rafind_info_match_filter(const RBinInfo *info, const char *filter) {
+	if (R_STR_ISEMPTY (filter)) {
+		return true;
+	}
+	char *tokens = strdup (filter);
+	if (!tokens) {
+		return false;
+	}
+	char *p;
+	for (p = tokens; *p; p++) {
+		if (*p == ',' || *p == '\t' || *p == '\n') {
+			*p = ' ';
+		}
+	}
+	int count = r_str_word_set0 (tokens);
+	int i;
+	for (i = 0; i < count; i++) {
+		const char *token = r_str_word_get0 (tokens, i);
+		if (!rafind_info_match_token (info, token)) {
+			free (tokens);
+			return false;
+		}
+	}
+	free (tokens);
+	return true;
+}
+
+static bool rafind_match_bininfo(RafindOptions *ro, const char *file) {
+	if (!ro->idfilter) {
+		return true;
+	}
+	bool match = false;
+	RBin *bin = r_bin_new ();
+	if (!bin) {
+		return false;
+	}
+	RIO *io = r_io_new ();
+	if (!io) {
+		r_bin_free (bin);
+		return false;
+	}
+	r_io_bind (io, &bin->iob);
+	RBinFileOptions opt;
+	r_bin_file_options_init (&opt, -1, 0, 0, 0);
+	opt.filename = file;
+	if (r_bin_open (bin, file, &opt)) {
+		const RBinInfo *info = r_bin_get_info (bin);
+		match = rafind_info_match_filter (info, ro->idfilter);
+	}
+	r_bin_free (bin);
+	r_io_free (io);
+	return match;
+}
 
 static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
 	if (!ro->replace || !ro->repbuf || ro->replen < 0) {
@@ -120,7 +213,6 @@ static bool rafind_replace_at(RafindOptions *ro, ut64 addr, ut32 match_len) {
 	free (tail);
 	return true;
 }
-
 static int hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	RafindOptions *ro = (RafindOptions *)user;
 	ut8 *buf = ro->buf;
@@ -302,7 +394,7 @@ static bool rafind_parse_replace(RafindOptions *ro, const char *arg) {
 }
 
 static int show_help(const char *argv0, int line) {
-	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I] -|file|dir ..\n", argv0);
+	printf ("Usage: %s [-mBXnzZhqv] [-a align] [-b sz] [-f/t from/to] [-[e|s|S] str] [-x hex] [-R str] [-I str] [-J] -|file|dir ..\n", argv0);
 	if (line) {
 		return 0;
 	}
@@ -324,7 +416,8 @@ static int show_help(const char *argv0, int line) {
 		" -n         do not stop on read errors\n"
 		" -r         print using radare commands\n"
 		" -R [str]   replace each hit (prefix with h: hex, w: wide, s: string)\n"
-		" -I         allow resize while replacing (insert/resize mode)\n"
+		" -I [str]   filter by rbin info (arch/type/bits/...) before searching\n"
+		" -J         allow resize while replacing (insert/resize mode)\n"
 		" -s [str]   search for a string (more than one string can be passed)\n"
 		" -S [str]   search for a wide string (more than one string can be passed).\n"
 		" -t [to]    stop search at address 'to'\n"
@@ -348,6 +441,9 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	ro->buf = NULL;
 	r_list_free (ro->hits);
 	ro->hits = r_list_newf (free);
+	if (ro->idfilter && !rafind_match_bininfo (ro, file)) {
+		return 0;
+	}
 	char *efile = r_str_escape_sh (file);
 
 	if (ro->identify) {
@@ -542,7 +638,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 	rafind_options_init (&ro);
 
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:R:I");
+	r_getopt_init (&opt, argc, argv, "a:ie:Eb:BcjmM:s:S:x:Xzf:F:t:E:rqnhvZLV:R:I:J");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'a':
@@ -577,6 +673,9 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			ro.replace = true;
 			break;
 		case 'I':
+			ro.idfilter = opt.arg;
+			break;
+		case 'J':
 			ro.insert = true;
 			break;
 		case 'i':
