@@ -1,13 +1,13 @@
 NAME=rafind2 -s 1234 -X -b 0x100
 FILE=--
-CMDS=!rafind2 -s 1234 -X -b 0x100 bins/other/search.bin
+CMDS=!rafind2 -s 1234 -cX -b 0x100 bins/other/search.bin
 EXPECT=<<EOF
 0xfe
-[35m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
-[0m[32m0x000000fe[0m  [35m31[0m[35m32[0m [35m33[0m[35m34[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [35m1[0m[35m2[0m[35m3[0m[35m4[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
-[32m0x0000010e[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
-[32m0x0000011e[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
-[32m0x0000012e[0m  [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m [32m00[0m[32m00[0m  [32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m[32m.[0m
+- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF
+0x000000fe  3132 3334 0000 0000 0000 0000 0000 0000  1234............
+0x0000010e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000011e  0000 0000 0000 0000 0000 0000 0000 0000  ................
+0x0000012e  0000 0000 0000 0000 0000 0000 0000 0000  ................
 EOF
 RUN
 
@@ -355,10 +355,10 @@ RUN
 NAME=rafind2 replace hex
 FILE=--
 CMDS=<<EOF
-!cp bins/other/search.bin rafind2-repl.bin
-!rafind2 -q -s 1234 -R h:41424344 rafind2-repl.bin > /dev/null
-!rafind2 -q -s ABCD rafind2-repl.bin
-!rm -f rafind2-repl.bin
+!cp bins/other/search.bin rafind2-repl2.bin
+!rafind2 -q -s 1234 -R h:41424344 rafind2-repl2.bin > /dev/null
+!rafind2 -q -s ABCD rafind2-repl2.bin
+!rm -f rafind2-repl2.bin
 EOF
 EXPECT=<<EOF
 0xfe
@@ -368,10 +368,10 @@ RUN
 NAME=rafind2 replace insert
 FILE=--
 CMDS=<<EOF
-!cp bins/other/search.bin rafind2-repl.bin
-!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl.bin > /dev/null
-!rafind2 -q -s ABCDE rafind2-repl.bin
-!rm -f rafind2-repl.bin
+!cp bins/other/search.bin rafind2-repl3.bin
+!rafind2 -q -s 1234 -R ABCDE -I rafind2-repl3.bin > /dev/null
+!rafind2 -q -s ABCDE rafind2-repl3.bin
+!rm -f rafind2-repl3.bin
 EOF
 EXPECT=<<EOF
 0xfe
