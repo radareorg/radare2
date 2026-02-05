@@ -159,6 +159,7 @@ static RCoreHelpMessage help_msg_ts = {
 	"tsc", "<name>", "list all/given loaded structs in C output format with newlines",
 	"tsd", "", "list all loaded structs in C output format without newlines",
 	"tss", " [type]", "display size of struct",
+	"tsv", " [name]", "view all/given structs in C format with field offsets",
 	NULL
 };
 
@@ -174,6 +175,7 @@ static RCoreHelpMessage help_msg_tu = {
 	"tu*", " [type]", "show pf.<name> format string for given union",
 	"tuc", "<name>", "list all/given loaded unions in C output format with newlines",
 	"tud", "", "list all loaded unions in C output format without newlines",
+	"tuv", " [name]", "view all/given unions in C format with field offsets",
 	NULL
 };
 
@@ -692,6 +694,82 @@ static void print_struct_union_in_c_format(RCore *core, Sdb *TDB, SdbForeachCall
 		free (var);
 		r_strbuf_append (sb, "};\n");
 		space = "";
+		if (match) {
+			break;
+		}
+	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (core->cons, s);
+	free (s);
+	free (name);
+	ls_free (l);
+}
+
+static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCallback filter, const char *arg, bool is_union) {
+	char *name = NULL;
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
+	bool match = false;
+
+	RStrBuf *sb = r_strbuf_new ("");
+
+	ls_foreach (l, iter, kv) {
+		if (name && !strcmp (sdbkv_value (kv), name)) {
+			continue;
+		}
+		free (name);
+		int n;
+		name = strdup (sdbkv_key (kv));
+		if (name && (arg && *arg)) {
+			if (!strcmp (arg, name)) {
+				match = true;
+			} else {
+				continue;
+			}
+		}
+		r_strbuf_appendf (sb, "0x%08x %s %s {\n", 0, sdbkv_value (kv), name);
+		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
+		ut32 current_offset = 0;
+		for (n = 0; (p = sdb_array_get (TDB, var, n, NULL)); n++) {
+			char *var2 = r_str_newf ("%s.%s", var, p);
+			if (var2) {
+				char *val = sdb_array_get (TDB, var2, 0, NULL);
+				if (val) {
+					char *arr = sdb_array_get (TDB, var2, 2, NULL);
+					int arrnum = arr? atoi (arr): 0;
+					free (arr);
+					ut32 type_size;
+					if (strchr (val, '*')) {
+						type_size = core->anal->config->bits / 8;
+					} else {
+						ut64 type_bits = r_type_get_bitsize (TDB, val);
+						type_size = type_bits / 8;
+						if (type_size == 0) {
+							type_size = 1;
+						}
+					}
+					ut32 arr_size = arrnum ? arrnum : 1;
+					ut32 size = type_size * arr_size;
+					r_strbuf_appendf (sb, "0x%08x   %s", current_offset, val);
+					if (p && p[0] != '\0') {
+						r_strbuf_appendf (sb, "%s%s", strstr (val, " *")? "": " ", p);
+						if (arrnum) {
+							r_strbuf_appendf (sb, "[%d]", arrnum);
+						}
+					}
+					r_strbuf_append (sb, ";\n");
+					if (!is_union) {
+						current_offset += size;
+					}
+					free (val);
+				}
+				free (var2);
+			}
+			free (p);
+		}
+		free (var);
+		r_strbuf_appendf (sb, "0x%08x };\n", current_offset);
 		if (match) {
 			break;
 		}
@@ -1316,6 +1394,9 @@ static int cmd_type(void *data, const char *input) {
 		case 'd':
 			print_struct_union_in_c_format (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
 			break;
+		case 'v': // "tuv"
+			print_struct_union_with_offsets (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), true);
+			break;
 		case ' ':
 			showFormat (core, r_str_trim_head_ro (input + 1), 0);
 			break;
@@ -1449,6 +1530,9 @@ static int cmd_type(void *data, const char *input) {
 			} else {
 				print_struct_union_list_json (core, TDB, stdifstruct);
 			}
+			break;
+		case 'v': // "tsv"
+			print_struct_union_with_offsets (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
 		case '?': // "ts?"
 			r_core_cmd_help (core, help_msg_ts);
