@@ -5133,7 +5133,6 @@ static void bin_mdmp_versioninfo(RCore *core, PJ *pj, int mode) {
 		}
 		pj_end (pj);
 	} else {
-		r_cons_printf (core->cons, "=== Windows Version Information ===\n\n");
 		r_cons_printf (core->cons, "  %s\n", os_version);
 		ut64 major = sdb_num_get (bf->sdb, "mdmp.os_major", 0);
 		ut64 minor = sdb_num_get (bf->sdb, "mdmp.os_minor", 0);

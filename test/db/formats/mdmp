@@ -27,7 +27,7 @@ linenum  false
 lsyms    false
 machine  AMD64
 nx       false
-os       windows
+os       Windows NT Workstation 6.1.7601.23543
 pic      false
 relocs   false
 rpath    NONE
@@ -43,8 +43,6 @@ NAME=: version info
 FILE=bins/mdmp/calc.dmp
 CMDS=iV
 EXPECT=<<EOF
-=== Windows Version Information ===
-
   Windows NT Workstation 6.1.7601.23543
   Major: 6
   Minor: 1

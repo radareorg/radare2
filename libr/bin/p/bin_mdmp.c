@@ -171,18 +171,40 @@ static RBinInfo *info(RBinFile *bf) {
 		char *version_str = NULL;
 		const char *product_type_str = "Unknown";
 
-		ret->os = strdup ("windows");
-
 		/* Store detailed version information in SDB for iV command */
 		switch (mdmp->streams.system_info->product_type) {
 		case MDMP_VER_NT_WORKSTATION:
 			product_type_str = "Workstation";
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d.%d",
+					major, minor, build, revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Workstation %d.%d.%d",
+					major, minor, build);
+			}
 			break;
 		case MDMP_VER_NT_DOMAIN_CONTROLLER:
 			product_type_str = "Server Domain Controller";
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d.%d",
+					major, minor, build, revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Server Domain Controller %d.%d.%d",
+					major, minor, build);
+			}
 			break;
 		case MDMP_VER_NT_SERVER:
 			product_type_str = "Server";
+			if (revision > 0) {
+				ret->os = r_str_newf ("Windows NT Server %d.%d.%d.%d",
+					major, minor, build, revision);
+			} else {
+				ret->os = r_str_newf ("Windows NT Server %d.%d.%d",
+					major, minor, build);
+			}
+			break;
+		default:
+			ret->os = strdup ("windows");
 			break;
 		}
 		if (revision > 0) {
