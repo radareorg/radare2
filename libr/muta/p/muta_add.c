@@ -3,23 +3,41 @@
 #include <r_lib.h>
 #include <r_muta.h>
 
-static void addsum(const ut8 *inbuf, ut8 *outbuf, int buflen) {
-	int i;
-	ut32 v = 0;
-	for (i = 0; i < buflen; i++) {
-		v += inbuf[i];
+typedef struct {
+	ut32 sum;
+} AddState;
+
+static bool add_update(RMutaSession *ms, const ut8 *buf, int len) {
+	AddState *state = ms->plugin_data;
+	if (!state) {
+		state = R_NEW0 (AddState);
+		ms->plugin_data = state;
 	}
-	r_write_le32 (outbuf, v);
+	int i;
+	for (i = 0; i < len; i++) {
+		state->sum += buf[i];
+	}
+	return true;
 }
 
-static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	ut8 *obuf = calloc (1, len);
-	if (!obuf) {
+static bool add_end(RMutaSession *ms, const ut8 *buf, int len) {
+	if (buf && len > 0) {
+		if (!add_update (ms, buf, len)) {
+			return false;
+		}
+	}
+	AddState *state = ms->plugin_data;
+	if (!state) {
 		return false;
 	}
-	addsum (buf, obuf, len);
-	r_muta_session_append (ms, obuf, len);
-	free (obuf);
+	ut8 obuf[4];
+	r_write_le32 (obuf, state->sum);
+	r_muta_session_append (ms, obuf, 4);
+	return true;
+}
+
+static bool add_fini(RMutaSession *ms) {
+	R_FREE (ms->plugin_data);
 	return true;
 }
 
@@ -37,8 +55,9 @@ RMutaPlugin r_muta_plugin_add = {
 	},
 	.implements = "add",
 	.get_key_size = get_key_size,
-	.update = update,
-	.end = update
+	.update = add_update,
+	.end = add_end,
+	.fini = add_fini
 };
 
 #ifndef R2_PLUGIN_INCORE
