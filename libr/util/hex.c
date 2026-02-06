@@ -509,38 +509,43 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 
 R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	R_RETURN_VAL_IF_FAIL (in && out && mask, -1);
-	ut8 *ptr;
-	int ilen = strlen (in) + 1;
-	memcpy (out, in, ilen);
-	for (ptr = out; *ptr; ptr++) {
-		if (*ptr == '.') {
-			*ptr = '0';
+	char *kw = strdup (in);
+	char *ms = strdup (in);
+	if (!kw || !ms) {
+		free (kw);
+		free (ms);
+		return -1;
+	}
+	char *k, *m;
+	for (k = kw, m = ms; *k; k++, m++) {
+		if (*k == '.') {
+			*k = '0';
+			*m = '0';
+		} else if (IS_HEXCHAR (*k)) {
+			*m = 'f';
 		}
 	}
-	int len = r_hex_str2bin ((char*)out, out);
-	bool has_nibble = false;
-	if (len < 0) {
-		has_nibble = true;
-		len = -(len + 1);
+	int klen = r_hex_str2bin (kw, out);
+	int mlen = r_hex_str2bin (ms, mask);
+	free (kw);
+	free (ms);
+	bool has_nibble = (klen < 0);
+	if (klen < 0) {
+		klen = -(klen + 1);
 	}
-	if (len != -1) {
-		memcpy (mask, in, ilen);
+	if (mlen < 0) {
+		mlen = -(mlen + 1);
+	}
+	if (klen > 0) {
+		if (mlen < klen) {
+			memset (mask + mlen, 0xff, klen - mlen);
+		}
 		if (has_nibble) {
-			memcpy (mask + ilen, "f0", 3);
+			return -klen;
 		}
-		for (ptr = mask; *ptr; ptr++) {
-			if (IS_HEXCHAR (*ptr)) {
-				*ptr = 'f';
-			} else if (*ptr == '.') {
-				*ptr = '0';
-			}
-		}
-		len = r_hex_str2bin ((char*)mask, mask);
-		if (len < 0) {
-			len++;
-		}
+		return klen;
 	}
-	return len;
+	return -1;
 }
 
 R_API st64 r_hex_bin_truncate(ut64 in, int n) {

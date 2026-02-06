@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "rafind2"
 
@@ -438,7 +438,7 @@ static int show_help(const char *argv0, int line) {
 		" -q         quiet: fewer output do not show headings or filenames.\n"
 		" -v         print version and exit\n"
 		" -V [s:num | s:num1,num2] search for a value or range in the specified endian (-V 4:123 or -V 4:100,200)\n"
-		" -x [hex]   search for hexpair string (909090) (can be used multiple times)\n"
+		" -x [hex]   search hexadecimal patterns. Inline nibble mask using `.` dots (94a2..34) (multiple keywords can be used)\n"
 		" -X         show hexdump of search results\n"
 		" -z         search for zero-terminated strings\n"
 		" -Z         show string found on each search hit\n");
