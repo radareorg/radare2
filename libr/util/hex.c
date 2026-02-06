@@ -42,36 +42,37 @@ R_API char *r_hex_from_py_str(char *out, const char *code) {
 	return r_hex_from_c_str (out, &code);
 }
 
+typedef const char *(*SkipCommentFunc)(const char *);
+
 static const char *skip_comment_py(const char *code) {
 	if (*code != '#') {
 		return code;
 	}
 	char *end = strchr (code, '\n');
-	if (end) {
-		code = end;
-	}
-	return code + 1;
+	return end ? end + 1 : code + 1;
 }
 
-R_API char *r_hex_from_py_array(char *out, const char *code) {
+static char *hex_from_array(char *out, const char *code, char open, char close, SkipCommentFunc skip_comment) {
 	R_RETURN_VAL_IF_FAIL (out && code, NULL);
-	if (*code != '[' || !strchr (code, ']')) {
+	if (*code != open || !strchr (code, close)) {
 		return NULL;
 	}
 	code++;
 	for (; *code; code++) {
-		char *comma = strchr (code, ',');
+		const char *comma = strchr (code, ',');
 		if (!comma) {
-			comma = strchr (code, ']');
+			comma = strchr (code, close);
 		}
 		if (!comma) {
 			break;
 		}
-		char * _word = r_str_ndup (code, comma - code);
+		char *_word = r_str_ndup (code, comma - code);
 		const char *word = _word;
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
-			word = skip_comment_py (word);
+			if (skip_comment) {
+				word = skip_comment (word);
+			}
 		}
 		if (isdigit (*word)) {
 			ut8 n = (ut8)r_num_math (NULL, word);
@@ -80,11 +81,15 @@ R_API char *r_hex_from_py_array(char *out, const char *code) {
 		}
 		free (_word);
 		code = comma;
-		if (*code == ']') {
+		if (*code == close) {
 			break;
 		}
 	}
 	return out;
+}
+
+R_API char *r_hex_from_py_array(char *out, const char *code) {
+	return hex_from_array (out, code, '[', ']', skip_comment_py);
 }
 
 R_API char* r_hex_from_py(const char *code) {
@@ -166,49 +171,20 @@ static const char *skip_comment_c(const char *code) {
 	if (r_str_startswith (code, "/*")) {
 		char *end = strstr (code, "*/");
 		if (end) {
-			code = end + 2;
-		} else {
-			R_LOG_ERROR ("Missing closing comment");
+			return end + 2;
 		}
+		R_LOG_ERROR ("Missing closing comment");
 	} else if (r_str_startswith (code, "//")) {
 		char *end = strchr (code, '\n');
 		if (end) {
-			code = end + 2;
+			return end + 1;
 		}
 	}
 	return code;
 }
 
 R_API char *r_hex_from_c_array(char *out, const char *code) {
-	R_RETURN_VAL_IF_FAIL (out && code, NULL);
-	if (*code != '{' || !strchr (code, '}')) {
-		return NULL;
-	}
-	code++;
-	for (; *code; code++) {
-		const char *comma = strchr (code, ',');
-		if (!comma) {
-			comma = strchr (code, '}');
-		}
-		char * _word = r_str_ndup (code, comma - code);
-		const char *word = _word;
-		word = skip_comment_c (word);
-		while (*word == ' ' || *word == '\t' || *word == '\n') {
-			word++;
-			word = skip_comment_c (word);
-		}
-		if (isdigit (*word)) {
-			ut8 n = (ut8)r_num_math (NULL, word);
-			*out++ = abc[(n >> 4) & 0xf];
-			*out++ = abc[n & 0xf];
-		}
-		free (_word);
-		code = comma;
-		if (*code == '}') {
-			break;
-		}
-	}
-	return out;
+	return hex_from_array (out, code, '{', '}', skip_comment_c);
 }
 
 /* convert:
