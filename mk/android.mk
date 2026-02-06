@@ -37,6 +37,7 @@ ifeq (${NDK_ARCH},aarch64)
 # aarch64
 ARCH=aarch64
 CROSS=${ARCH}-linux-android-
+LDFLAGS+=-Wl,-z,max-page-size=16384
 endif
 
 ifeq (${NDK_ARCH},)

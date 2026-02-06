@@ -21,6 +21,12 @@ else
 	git pull https://github.com/radareorg/radare2 master
 fi
 ./preconfigure
+
+if [ "$(uname -m)" = "aarch64" ]; then
+    export LDFLAGS="${LDFLAGS} -Wl,-z,max-page-size=16384"
+    echo "Enabled 16KB page alignment for aarch64 (Termux)"
+fi
+
 # ./configure-plugins
 bash ./configure --with-compiler=termux --prefix=${PREFIX} || exit 1
 make libr/include/r_version.h
