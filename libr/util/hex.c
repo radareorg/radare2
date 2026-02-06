@@ -361,21 +361,13 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
 	R_RETURN_VAL_IF_FAIL (in && len > 0, NULL);
-	int i, idx;
-
 	if ((len + 1) * 2 < len) {
 		return NULL;
 	}
 	char *out = malloc ((len + 1) * 2);
-	if (!out) {
-		return NULL;
+	if (out) {
+		r_hex_bin2str (in, len, out);
 	}
-	char tmp[5];
-	for (i = idx = 0; i < len; i++, idx += 2)  {
-		r_hex_from_byte (tmp, in[i]);
-		memcpy (out+idx, tmp, 2);
-	}
-	out[idx] = 0;
 	return out;
 }
 
