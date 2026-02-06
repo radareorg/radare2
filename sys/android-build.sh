@@ -44,6 +44,7 @@ arm64|aarch64)
 	NDK_ARCH=aarch64
 	STATIC_BUILD=0
 	STRIP=aarch64-linux-android-strip
+	export LDFLAGS="${LDFLAGS} -Wl,-z,max-page-size=16384"
 	;;
 x64|x86_64)
 	NDK_ARCH=x86_64
@@ -63,6 +64,7 @@ x64-static|static-x64)
 aarch64-static|static-aarch64|arm64-static|static-arm64)
 	NDK_ARCH=aarch64
 	STATIC_BUILD=1
+	export LDFLAGS="${LDFLAGS} -Wl,-z,max-page-size=16384"
 	;;
 arm-static|static-arm)
 	NDK_ARCH=arm
