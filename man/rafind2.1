@@ -81,7 +81,7 @@ Show version information
 .It Fl V Ar s:num | s:num1,num2
 Search for a value or range in the specified endian (-V 4:123 or -V 4:100,200)
 .It Fl x Ar hex
-Search for hexpair string (909090) (can be used multiple times)
+Search for hexpair string (909090) with optional nibble mask using dots (41.42) (can be used multiple times)
 .It Fl X
 Show hexdump of search results
 .It Fl z
@@ -102,6 +102,11 @@ $ rafind2 -s "search_string" file.txt
 Search for a hex pattern in all the files from directory:
 .Bd -literal -offset indent
 $ rafind2 -x "909090" directory_path
+.Ed
+.Pp
+Search for hex pattern with nibble mask (dot masks single nibble):
+.Bd -literal -offset indent
+$ rafind2 -x "41.42" file.bin
 .Ed
 .Pp
 Identify the file type:
