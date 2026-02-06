@@ -4,14 +4,11 @@
 #include <r_muta.h>
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	if (!ms || !ms->result || !ms->c) {
+	if (!ms || !ms->c) {
 		return false;
 	}
 	ut8 obuf[R_HASH_SIZE_SIP];
 	uint64_t h = r_hash_sip (buf, len);
-	if (ms && ms->result) {
-		ms->result->output = malloc (ms->result->output_size);
-	}
 	r_write_ble64 (obuf, h, ms->c->bigendian);
 	r_muta_session_append (ms, obuf, R_HASH_SIZE_SIP);
 	return true;
