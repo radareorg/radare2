@@ -529,6 +529,7 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	int mlen = r_hex_str2bin (ms, mask);
 	free (kw);
 	free (ms);
+	bool has_nibble = (klen < 0);
 	if (klen < 0) {
 		klen = -(klen + 1);
 	}
@@ -538,6 +539,9 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	if (klen > 0) {
 		if (mlen < klen) {
 			memset (mask + mlen, 0xff, klen - mlen);
+		}
+		if (has_nibble) {
+			return -klen;
 		}
 		return klen;
 	}
