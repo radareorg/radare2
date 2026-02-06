@@ -4184,9 +4184,58 @@ restore_conf:
 	}
 }
 
+// Compute hash incrementally in chunks for large data sizes using RMuta API
+static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr, ut64 len) {
+	if (R_STR_ISEMPTY (algo)) {
+		return NULL;
+	}
+	// Check if the algorithm is a hash type that supports incremental processing
+	if (!r_muta_algo_supports (core->muta, algo, R_MUTA_TYPE_HASH)) {
+		R_LOG_ERROR ("Unknown hash '%s', use Lh to list the hash plugins");
+		return NULL;
+	}
+	RMutaSession *ms = r_muta_use (core->muta, algo);
+	if (!ms) {
+		return NULL;
+	}
+	ut64 chunksize = core->blocksize;
+	ut8 *buf = malloc (chunksize);
+	if (!buf) {
+		r_muta_session_free (ms);
+		return NULL;
+	}
+	ut64 remaining = len;
+	ut64 off = addr;
+	r_cons_break_push (core->cons, NULL, NULL);
+	while (remaining > 0 && !r_cons_is_breaked (core->cons)) {
+		if (r_cons_is_breaked (core->cons)) {
+			R_LOG_INFO ("Interrupted");
+			r_muta_session_free (ms);
+			return NULL;
+		}
+		ut64 toread = R_MIN (remaining, chunksize);
+		r_io_read_at (core->io, off, buf, toread);
+		r_muta_session_update (ms, buf, toread);
+		remaining -= toread;
+		off += toread;
+	}
+	r_cons_break_pop (core->cons);
+	free (buf);
+	r_muta_session_end (ms, NULL, 0);
+	int outlen = 0;
+	ut8 *output = r_muta_session_get_output (ms, &outlen);
+	char *result = NULL;
+	if (output && outlen > 0) {
+		result = r_hex_bin2strdup (output, outlen);
+		free (output);
+	}
+	r_muta_session_free (ms);
+	return result;
+}
+
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char *algo = NULL;
-	ut32 len = core->blocksize;
+	ut64 len = core->blocksize;
 	int handled_cmd = false;
 
 	const char i0 = input[0];
@@ -4225,8 +4274,22 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	if (len_str) {
 		len = r_num_math (core->num, len_str);
 	}
+	// Use incremental hashing for large sizes that exceed the block size limit
+	if (len > core->blocksize_max) {
+		char *hash_result = cmd_print_hash_incremental (core, algo, core->addr, len);
+		if (hash_result) {
+			r_cons_printf (core->cons, "%s\n", hash_result);
+			free (hash_result);
+			free (cmd);
+			r_list_free (args);
+			return true;
+		}
+		// Fall through to try the muta-based approach if incremental doesn't support this algo
+	}
 	ut8 *buf = r_core_readblock (core, len);
 	if (!buf) {
+		free (cmd);
+		r_list_free (args);
 		return false;
 	}
 	char *hash_result = cmd_print_hash (core, algo, buf, len);
@@ -4235,6 +4298,8 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 		free (hash_result);
 	}
 	free (buf);
+	free (cmd);
+	r_list_free (args);
 	return handled_cmd;
 }
 
@@ -7655,10 +7720,10 @@ static int cmd_print(void *data, const char *input) {
 		}
 		if (p) {
 			l = (int)r_num_math (core->num, p + 1);
-			/* except disasm and memoryfmt (pd, pm) and overlay (po) */
+			/* except disasm and memoryfmt (pd, pm) and overlay (po) and hash (ph) */
 			if (input[0] != 'd' && input[0] != 't' && input[0] != 'D' && input[0] != 'm' &&
 				input[0] != 'a' && input[0] != 'f' && input[0] != 'i' &&
-				input[0] != 'I' && input[0] != 'o') {
+				input[0] != 'I' && input[0] != 'o' && input[0] != 'h') {
 				if (l < 0) {
 					off = core->addr + l;
 					len = l = -l;
@@ -7692,7 +7757,7 @@ static int cmd_print(void *data, const char *input) {
 		block = core->block;
 	}
 
-	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i') {
+	if (input[0] != 'd' && input[0] != 'm' && input[0] != 'a' && input[0] != 'f' && input[0] != 'i' && input[0] != 'h') {
 		n = core->blocksize_max;
 		i = (int)n;
 		if (i != n) {

@@ -63,7 +63,7 @@ R_API bool r_muta_session_set_subtype(RMutaSession *ms, const char *subtype) {
 	return true;
 }
 R_API bool r_muta_session_end(RMutaSession *ms, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (ms && buf, false);
+	R_RETURN_VAL_IF_FAIL (ms, false);
 	return (ms->h && ms->h->end)? ms->h->end (ms, buf, len): 0;
 }
 
