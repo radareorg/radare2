@@ -1640,6 +1640,17 @@ static bool cb_cmdpdc(void *user, void *data) {
 		if (r2dec) {
 			r_cons_printf (core->cons, "pdd\n");
 		}
+		/* Check for r2sleigh analysis plugin with decompiler support */
+		{
+			RListIter *it;
+			RAnalPlugin *ap;
+			r_list_foreach (core->anal->plugins, it, ap) {
+				if (!strcmp (ap->meta.name, "sla")) {
+					r_cons_println (core->cons, "a:sla.dec");
+					break;
+				}
+			}
+		}
 		return false;
 	}
 	return true;
@@ -3906,6 +3917,10 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
 	SETCB ("anal.types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");
+	SETS ("anal.plugins.fcn", "", "ordered comma-separated list of analysis plugins for analyze_fcn callbacks");
+	SETS ("anal.plugins.vars", "", "ordered comma-separated list of analysis plugins for recover_vars callbacks");
+	SETS ("anal.plugins.datarefs", "", "ordered comma-separated list of analysis plugins for get_data_refs callbacks");
+	SETS ("anal.plugins.post", "", "ordered comma-separated list of analysis plugins for post_analysis callbacks");
 
 	n = NODECB ("anal.cxxabi", "itanium", &cb_anal_cxxabi);
 	SETDESC (n, "select C++ RTTI ABI");

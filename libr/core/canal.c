@@ -4092,6 +4092,23 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	fcn->stack = saved_stack;
 }
 
+// Collect plugin-provided data refs for all functions and add them as xrefs
+R_API void r_core_anal_plugin_data_refs(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal);
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RVecAnalRef *refs = r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, fcn);
+		if (refs) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (refs, ref) {
+				r_anal_xrefs_set (core->anal, ref->at, ref->addr, ref->type);
+			}
+			RVecAnalRef_free (refs);
+		}
+	}
+}
+
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {
 	R_RETURN_VAL_IF_FAIL (bbs, false);
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, from);

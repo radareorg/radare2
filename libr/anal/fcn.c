@@ -1939,10 +1939,7 @@ beach:
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
 	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
-	// Notify plugins that function analysis is complete
-	if (ret >= 0) {
-		r_anal_plugin_analyze_fcn (anal, fcn);
-	}
+	// Plugin notification is in r_anal_fcn() to fire once per function
 	return ret;
 }
 
@@ -2084,6 +2081,10 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	int ret = r_anal_function_bb (anal, fcn, addr, anal->opt.depth);
 	if (ret < 0) {
 		R_LOG_DEBUG ("Failed to analyze basic block at 0x%"PFMT64x, addr);
+	}
+	// Notify plugins after all basic blocks are analyzed
+	if (ret >= 0 || ret == R_ANAL_RET_END) {
+		r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_ANALYZE_FCN, fcn);
 	}
 	return ret;
 }

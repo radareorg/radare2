@@ -830,7 +830,12 @@ typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data
 typedef RAnalOpFlow (*RAnalOpFlowCallback)(RAnal *a, RAnalOp *op);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
-typedef bool (*RAnalPluginEligible)(RAnal *a);
+// Plugin eligibility/priority callback. Returns a score:
+//   score > 0: eligible, higher = higher priority (run first)
+//   score == 0: eligible, default priority
+//   score < 0:  ineligible (will not run)
+// If NULL, the plugin is always eligible with default priority (0).
+typedef int (*RAnalPluginEligible)(RAnal *a);
 
 typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
@@ -1094,11 +1099,16 @@ R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 
-// Plugin hook dispatch functions (call all registered anal plugins)
-R_API void r_anal_plugin_analyze_fcn(RAnal *anal, RAnalFunction *fcn);
-R_API RList *r_anal_plugin_recover_vars(RAnal *anal, RAnalFunction *fcn);
-R_API RVecAnalRef *r_anal_plugin_get_data_refs(RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_plugin_post_analysis(RAnal *anal);
+// Plugin action enum: determines which callback to dispatch
+typedef enum {
+	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
+	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
+	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
+	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
+} RAnalPluginAction;
+
+// Unified plugin action dispatcher (replaces per-action APIs)
+R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);

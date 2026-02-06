@@ -4,9 +4,9 @@
 
 #include <r_core.h>
 
-static bool eligible(RAnal *anal) {
+static int eligible(RAnal *anal) {
 	const bool is_arm = sarch && r_str_startswith (sarch, "arm");
-	return is_arm && anal->config->bits == 64;
+	return (is_arm && anal->config->bits == 64) ? 0 : -1;
 }
 
 // PLUGIN Definition Info
