@@ -68,6 +68,9 @@ static char *hex_from_array(char *out, const char *code, char open, char close, 
 		}
 		char *_word = r_str_ndup (code, comma - code);
 		const char *word = _word;
+		if (skip_comment) {
+			word = skip_comment (word);
+		}
 		while (*word == ' ' || *word == '\t' || *word == '\n') {
 			word++;
 			if (skip_comment) {
