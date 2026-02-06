@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2011-2024 - pancake */
 
 #include <r_fs.h>
+#include <grub/fshelp.h>
 #include "grubfs.h"
 
 #if WITH_GPL
@@ -54,6 +55,7 @@ static RList *FSP(_dir)(RFSRoot *root, const char *path, int view) {
 	}
 	GrubFS *gfs = root->ptr;
 	list = r_list_new ();
+	grub_fshelp_view = view;
 	//gfs->file->device->data = &root->iob;
 	grubfs_bind_io (&root->iob, root->delta);
 	gfs->file->fs->dir (gfs->file->device, path, dirhook, 0);
