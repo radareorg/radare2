@@ -516,15 +516,14 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		if (!rel) {
 			break;
 		}
-		LE_fixup_record_header header;
-		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
-		// XXX this is endiandy unsafe
-		if (ret < (int)sizeof (header)) {
+		ut8 header_source = r_buf_read8_at (bin->buf, offset);
+		ut8 header_target = r_buf_read8_at (bin->buf, offset + 1);
+		if (offset + 2 > r_buf_size (bin->buf)) {
 			R_LOG_WARN ("oobread in LE header parsing relocs");
 			break;
 		}
-		offset += sizeof (header);
-		switch (header.source & F_SOURCE_TYPE_MASK) {
+		offset += 2;
+		switch (header_source & F_SOURCE_TYPE_MASK) {
 		case BYTEFIXUP:
 			rel->type = R_BIN_RELOC_8;
 			break;
@@ -543,7 +542,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		}
 		ut64 repeat = 0;
 		st16 source = 0;
-		if (header.source & F_SOURCE_LIST) {
+		if (header_source & F_SOURCE_LIST) {
 			repeat = r_buf_read8_at (bin->buf, offset);
 			offset += sizeof (ut8);
 		} else {
@@ -551,7 +550,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			offset += sizeof (st16);
 		}
 		ut32 ordinal;
-		if (header.target & F_TARGET_ORD16) {
+		if (header_target & F_TARGET_ORD16) {
 			ordinal = r_buf_read_ble16_at (bin->buf, offset, h->worder);
 			if (ordinal == UT16_MAX) {
 				break;
@@ -561,13 +560,13 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			ordinal = r_buf_read8_at (bin->buf, offset);
 			offset += sizeof (ut8);
 		}
-		rel->ntype = header.source & F_SOURCE_TYPE_MASK; // XXX correct?
-		switch (header.target & F_TARGET_TYPE_MASK) {
+		rel->ntype = header_source & F_SOURCE_TYPE_MASK; // XXX correct?
+		switch (header_target & F_TARGET_TYPE_MASK) {
 		case INTERNAL:
 			if ((ordinal - 1) < bin->header->objcnt) {
 				rel->addend = get_object_base (bin, ordinal - 1);
-				if ((header.source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
-					if (header.target & F_TARGET_OFF32) {
+				if ((header_source & F_SOURCE_TYPE_MASK) != SELECTOR16) {
+					if (header_target & F_TARGET_OFF32) {
 						rel->addend += r_buf_read_ble32_at (bin->buf, offset, h->worder);
 						offset += sizeof (ut32);
 					} else {
@@ -589,10 +588,10 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			}
 
-			if (header.target & F_TARGET_ORD8) {
+			if (header_target & F_TARGET_ORD8) {
 				ordinal = r_buf_read8_at (bin->buf, offset);
 				offset += sizeof (ut8);
-			} else if (header.target & F_TARGET_OFF32) {
+			} else if (header_target & F_TARGET_OFF32) {
 				ordinal = r_buf_read_ble32_at (bin->buf, offset, h->worder);
 				offset += sizeof (ut32);
 			} else {
@@ -612,7 +611,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 				break;
 			}
 			ut32 nameoff;
-			if (header.target & F_TARGET_OFF32) {
+			if (header_target & F_TARGET_OFF32) {
 				nameoff = r_buf_read_ble32_at (bin->buf, offset, h->worder);
 				offset += sizeof (ut32);
 			} else {
@@ -630,9 +629,9 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			rel->addend = (ut64)(size_t)r_list_get_n (entries, ordinal - 1);
 			break;
 		}
-		if (header.target & F_TARGET_ADDITIVE) {
+		if (header_target & F_TARGET_ADDITIVE) {
 			ut32 additive = 0;
-			if (header.target & F_TARGET_ADD32) {
+			if (header_target & F_TARGET_ADD32) {
 				additive = r_buf_read_ble32_at (bin->buf, offset, h->worder);
 				offset += sizeof (ut32);
 			} else {
@@ -651,7 +650,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			rel_appended = true;
 		}
 
-		if (header.target & F_TARGET_CHAIN) {
+		if (header_target & F_TARGET_CHAIN) {
 			// TODO: add tests for this case
 			ut32 chain_limit = h->pagesize / sizeof (ut32);
 			ut64 source = 0;
