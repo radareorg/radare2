@@ -3381,7 +3381,7 @@ R_API RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer, 
 		}
 		_attr = r_bin_java_read_next_attr_from_buffer (bin, buffer + offset, size, buf_offset + offset);
 		if (!_attr) {
-			eprintf ("[X] r_bin_java_code_attr_new: Error unable to parse remainder of classfile after Method's Code Attribute: %d.\n", k);
+			R_LOG_ERROR ("Unable to parse code attribute: %d", k);
 			break;
 		}
 		// eprintf ("Parsing @ 0x%"PFMT64x " (%s) = 0x%"PFMT64x " bytes, %p\n", _attr->file_offset, _attr->name, _attr->size, _attr);
@@ -3459,8 +3459,7 @@ R_API RBinJavaAttrInfo *r_bin_java_signature_attr_new(RBinJavaObj *bin, ut8 *buf
 	attr->info.signature_attr.signature = r_bin_java_get_utf8_from_bin_cp_list (
 		bin, attr->info.signature_attr.signature_idx);
 	if (!attr->info.signature_attr.signature) {
-		eprintf ("r_bin_java_signature_attr_new: Unable to resolve the "
-			"Signature UTF8 String Index: 0x%02x\n",
+		R_LOG_WARN ("Unable to resolve Signature UTF8 String Index: 0x%02x",
 			attr->info.signature_attr.signature_idx);
 	}
 	attr->size = offset;
@@ -3499,15 +3498,15 @@ R_API RBinJavaAttrInfo *r_bin_java_enclosing_methods_attr_new(RBinJavaObj *bin, 
 	offset += 2;
 	attr->info.enclosing_method_attr.class_name = r_bin_java_get_name_from_bin_cp_list (bin, attr->info.enclosing_method_attr.class_idx);
 	if (attr->info.enclosing_method_attr.class_name == NULL) {
-		eprintf ("Could not resolve enclosing class name for the enclosed method.\n");
+		R_LOG_WARN ("Could not resolve enclosing class name for the enclosed method");
 	}
 	attr->info.enclosing_method_attr.method_name = r_bin_java_get_name_from_bin_cp_list (bin, attr->info.enclosing_method_attr.method_idx);
 	if (attr->info.enclosing_method_attr.class_name == NULL) {
-		eprintf ("Could not resolve method descriptor for the enclosed method.\n");
+		R_LOG_WARN ("Could not resolve method descriptor for the enclosed method");
 	}
 	attr->info.enclosing_method_attr.method_descriptor = r_bin_java_get_desc_from_bin_cp_list (bin, attr->info.enclosing_method_attr.method_idx);
 	if (attr->info.enclosing_method_attr.method_name == NULL) {
-		eprintf ("Could not resolve method name for the enclosed method.\n");
+		R_LOG_WARN ("Could not resolve method name for the enclosed method");
 	}
 	attr->size = offset;
 	return attr;
@@ -3599,7 +3598,7 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8 
 	for (i = 0; i < attr->info.inner_classes_attr.number_of_classes; i++) {
 		curpos = buf_offset + offset;
 		if (offset + 8 > sz) {
-			eprintf ("Invalid amount of inner classes\n");
+			R_LOG_ERROR ("Invalid amount of inner classes");
 			break;
 		}
 		icattr = R_NEW0 (RBinJavaClassesAttribute);
@@ -3617,18 +3616,18 @@ R_API RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8 
 
 		obj = r_bin_java_get_item_from_bin_cp_list (bin, icattr->inner_name_idx);
 		if (!obj) {
-			eprintf ("BINCPLIS IS HULL %d\n", icattr->inner_name_idx);
+			R_LOG_WARN ("Unable to resolve inner class name index: %d", icattr->inner_name_idx);
 		}
 		icattr->name = r_bin_java_get_item_name_from_bin_cp_list (bin, obj);
 		if (!icattr->name) {
 			obj = r_bin_java_get_item_from_bin_cp_list (bin, icattr->inner_class_info_idx);
 			if (!obj) {
-				eprintf ("BINCPLIST IS NULL %d\n", icattr->inner_class_info_idx);
+				R_LOG_WARN ("Unable to resolve inner class info index: %d", icattr->inner_class_info_idx);
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (bin, obj);
 			if (!icattr->name) {
 				icattr->name = strdup ("NULL");
-				eprintf ("r_bin_java_inner_classes_attr: Unable to find the name for %d index.\n", icattr->inner_name_idx);
+				R_LOG_WARN ("Unable to find inner class name for index: %d", icattr->inner_name_idx);
 				free (icattr);
 				break;
 			}
@@ -3745,11 +3744,11 @@ R_API RBinJavaAttrInfo *r_bin_java_source_debug_attr_new(RBinJavaObj *bin, ut8 *
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_DEBUG_EXTENTSION_ATTR;
 	if (attr->length == 0) {
-		eprintf ("r_bin_java_source_debug_attr_new: Attempting to allocate 0 bytes for debug_extension.\n");
+		R_LOG_WARN ("Attempting to allocate 0 bytes for debug_extension");
 		attr->info.debug_extensions.debug_extension = NULL;
 		return attr;
 	} else if ((attr->length + offset) > sz) {
-		eprintf ("r_bin_java_source_debug_attr_new: Expected %d byte(s) got %" PFMT64d " bytes for debug_extension.\n", attr->length, (offset + sz));
+		R_LOG_WARN ("Expected %d byte(s) got %" PFMT64d " bytes for debug_extension", attr->length, (offset + sz));
 	}
 	attr->info.debug_extensions.debug_extension = (ut8 *)malloc (attr->length);
 	if (attr->info.debug_extensions.debug_extension && (attr->length > (sz - offset))) {
@@ -3757,7 +3756,7 @@ R_API RBinJavaAttrInfo *r_bin_java_source_debug_attr_new(RBinJavaObj *bin, ut8 *
 	} else if (attr->info.debug_extensions.debug_extension) {
 		memcpy (attr->info.debug_extensions.debug_extension, buffer + offset, attr->length);
 	} else {
-		eprintf ("r_bin_java_source_debug_attr_new: Unable to allocate the data for the debug_extension.\n");
+		R_LOG_ERROR ("Unable to allocate data for debug_extension");
 	}
 	offset += attr->length;
 	attr->size = offset;
@@ -3845,12 +3844,12 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_table_attr_new(RBinJavaObj *bi
 		lvattr->size = 10;
 		if (!lvattr->name) {
 			lvattr->name = strdup ("NULL");
-			eprintf ("r_bin_java_local_variable_table_attr_new: Unable to find the name for %d index.\n", lvattr->name_idx);
+			R_LOG_WARN ("Unable to find local variable name for index: %d", lvattr->name_idx);
 		}
 		lvattr->descriptor = r_bin_java_get_utf8_from_bin_cp_list (bin, lvattr->descriptor_idx);
 		if (!lvattr->descriptor) {
 			lvattr->descriptor = strdup ("NULL");
-			eprintf ("r_bin_java_local_variable_table_attr_new: Unable to find the descriptor for %d index.\n", lvattr->descriptor_idx);
+			R_LOG_WARN ("Unable to find local variable descriptor for index: %d", lvattr->descriptor_idx);
 		}
 		r_list_append (attr->info.local_variable_table_attr.local_variable_table, lvattr);
 	}
@@ -3929,12 +3928,12 @@ R_API RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(RBinJavaOb
 		lvattr->size = 10;
 		if (!lvattr->name) {
 			lvattr->name = strdup ("NULL");
-			eprintf ("r_bin_java_local_variable_type_table_attr_new: Unable to find the name for %d index.\n", lvattr->name_idx);
+			R_LOG_WARN ("Unable to find local variable type name for index: %d", lvattr->name_idx);
 		}
 		lvattr->signature = r_bin_java_get_utf8_from_bin_cp_list (bin, lvattr->signature_idx);
 		if (!lvattr->signature) {
 			lvattr->signature = strdup ("NULL");
-			eprintf ("r_bin_java_local_variable_type_table_attr_new: Unable to find the descriptor for %d index.\n", lvattr->signature_idx);
+			R_LOG_WARN ("Unable to find local variable type signature for index: %d", lvattr->signature_idx);
 		}
 		r_list_append (attr->info.local_variable_type_table_attr.local_variable_table, lvattr);
 	}
