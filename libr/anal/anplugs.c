@@ -250,15 +250,11 @@ static RList *plugin_order_list(RAnal *anal, RAnalPluginAction action) {
 	if (R_STR_ISEMPTY (cfg)) {
 		return NULL;
 	}
-	RList *plugins = r_list_newf (NULL);
-	if (!plugins) {
-		return NULL;
-	}
 	RList *names = r_str_split_duplist (cfg, ",", true);
 	if (!names) {
-		r_list_free (plugins);
 		return NULL;
 	}
+	RList *plugins = r_list_new ();
 	RListIter *iter;
 	char *name;
 	r_list_foreach (names, iter, name) {
