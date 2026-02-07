@@ -9,8 +9,6 @@
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 
-R_VEC_TYPE (RVecAnalRef, RAnalRef);
-
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -4060,9 +4058,15 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	return true;
 }
 
-// TODO: move this logic into the main anal loop
 R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	R_RETURN_IF_FAIL (core && core->anal && fcn);
+
+	// Try plugin-based variable recovery first
+	if (r_anal_function_recover_vars_plugin (core->anal, fcn)) {
+		return;  // Done, skip ESIL-based recovery
+	}
+
+	// Fall back to existing ESIL-based recovery
 	if (core->anal->opt.bb_max_size < 1) {
 		return;
 	}
@@ -4088,6 +4092,23 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 	reg_set_clear (&ctx.reg_set);
 	RVecIntPtr_fini (&ctx.reg_set);
 	fcn->stack = saved_stack;
+}
+
+// Collect plugin-provided data refs for all functions and add them as xrefs
+R_API void r_core_anal_plugin_data_refs(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->anal);
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		RVecAnalRef *refs = r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, fcn);
+		if (refs) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (refs, ref) {
+				r_anal_xrefs_set (core->anal, ref->at, ref->addr, ref->type);
+			}
+			RVecAnalRef_free (refs);
+		}
+	}
 }
 
 static bool anal_path_exists(RCore *core, ut64 from, ut64 to, RList *bbs, int depth, HtUP *state, HtUP *avoid) {

@@ -11,10 +11,11 @@ static RCoreHelpMessage help_msg_La = {
 };
 
 static RCoreHelpMessage help_msg_LA = {
-	"Usage:", "LA[qj]", " # analysis plugin list",
+	"Usage:", "LA[qjf]", " # analysis plugin list",
 	"LA",  "", "List analysis plugins (See rasm2 -L)",
 	"LAq",  "", "Only list the plugin name",
 	"LAj",  "", "Full list, but in JSON format",
+	"LAf",  "", "Only list plugins exposing analyze_fcn callback",
 	NULL
 };
 
@@ -25,7 +26,7 @@ static RCoreHelpMessage help_msg_L = {
 	"L", " blah."R_LIB_EXT, "load plugin file",
 	"L-", "duk", "unload core plugin by name or file name",
 	"La", "[qj]", "list arch plugins",
-	"LA", "[qj]", "list analysis plugins",
+	"LA", "[qjf]", "list analysis plugins",
 	"Lb", "[qj]", "list bin plugins",
 	"Lc", "[j]", "list core plugins",
 	"Ld", "[j]", "list debug plugins (dL)",
@@ -471,12 +472,26 @@ static int cmd_plugins(void *data, const char *input) {
 			r_list_foreach (core->anal->plugins, iter, item) {
 				switch (mode) {
 				case 'j':
-					pj_o (pj);
-					r_lib_meta_pj (pj, &item->meta);
-					pj_end (pj);
+				pj_o (pj);
+				r_lib_meta_pj (pj, &item->meta);
+				{
+					int sc = item->eligible ? item->eligible (core->anal) : 0;
+					pj_ki (pj, "score", sc);
+					pj_kb (pj, "eligible", sc >= 0);
+				}
+				pj_kb (pj, "analyze_fcn", item->analyze_fcn != NULL);
+				pj_kb (pj, "recover_vars", item->recover_vars != NULL);
+				pj_kb (pj, "get_data_refs", item->get_data_refs != NULL);
+				pj_kb (pj, "post_analysis", item->post_analysis != NULL);
+				pj_end (pj);
 					break;
 				case 'q':
 					r_cons_printf (core->cons, "%s\n", item->meta.name);
+					break;
+				case 'f':
+					if (item->analyze_fcn) {
+						r_cons_printf (core->cons, "%s\n", item->meta.name);
+					}
 					break;
 				default:
 					r_cons_printf (core->cons, "%-12s %5s %s\n",

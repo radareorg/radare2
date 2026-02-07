@@ -1,0 +1,94 @@
+NAME=LAq lists tp analysis plugin
+FILE=-
+CMDS=<<EOF
+LAq~tp
+EOF
+EXPECT=<<EOF
+tp
+EOF
+RUN
+
+NAME=LA shows tp analysis plugin table
+FILE=-
+CMDS=<<EOF
+LA~tp
+EOF
+EXPECT=<<EOF
+tp           LGPL3 Type propagation analysis
+EOF
+RUN
+
+NAME=LAj first plugin has score and eligible fields
+FILE=-
+CMDS=<<EOF
+LAj~{0}
+EOF
+EXPECT=<<EOF
+{"name":"a2f","desc":"The reworked analysis from scratch thing","license":"MIT","score":0,"eligible":true,"analyze_fcn":false,"recover_vars":false,"get_data_refs":false,"post_analysis":false}
+EOF
+RUN
+
+NAME=LAf does not crash
+FILE=-
+CMDS=<<EOF
+LAf
+?e ok
+EOF
+EXPECT=<<EOF
+ok
+EOF
+RUN
+
+NAME=anal.plugins.fcn wildcard does not crash
+FILE=bins/elf/analysis/ls-linux64
+CMDS=<<EOF
+e anal.plugins.fcn=*
+af
+afl~entry0[0]
+EOF
+EXPECT=<<EOF
+0x00005c20
+EOF
+RUN
+
+NAME=anal.plugins.fcn with explicit plugin ordering
+FILE=bins/elf/analysis/ls-linux64
+CMDS=<<EOF
+e anal.plugins.fcn=tp,*
+af
+afl~entry0[0]
+EOF
+EXPECT=<<EOF
+0x00005c20
+EOF
+RUN
+
+NAME=anal.plugins.vars config exists
+FILE=-
+CMDS=<<EOF
+e anal.plugins.vars
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=anal.plugins.datarefs config exists
+FILE=-
+CMDS=<<EOF
+e anal.plugins.datarefs
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN
+
+NAME=anal.plugins.post config exists
+FILE=-
+CMDS=<<EOF
+e anal.plugins.post
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN

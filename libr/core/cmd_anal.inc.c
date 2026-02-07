@@ -44,7 +44,7 @@ static RCoreHelpMessage help_msg_a = {
 	"ah", "[?]", "analysis hints (force opcode size, ...)",
 	"ai", " [addr]", "address information (show perms, stack, heap, ...)",
 	"aj", "", "same as a* but in json (aflj)",
-	"aL", "[jq]", "list all asm/anal plugins (See `e asm.arch=?` and `La[jq]`)",
+	"aL", "[jqf]", "list all asm/anal plugins (See `e asm.arch=?` and `La[jqf]`)",
 	"an", "[?] [name]", "show/rename/create whatever var/flag/function used in current instruction",
 	"ao", "[?] [len]", "analyze Opcodes (or emulate it)",
 	"aO", "[?] [len]", "analyze N instructions in M bytes",
@@ -14365,6 +14365,9 @@ static void cmd_aaa(RCore *core, const char *input) {
 		logline (core, 40, "Analyze len bytes of instructions for references (aar)");
 		(void)r_core_anal_refs (core, ""); // "aar"
 		r_core_task_yield (&core->tasks);
+		// Add plugin-provided data flow refs
+		r_core_anal_plugin_data_refs (core);
+		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;
 		}
@@ -14488,7 +14491,10 @@ static void cmd_aaa(RCore *core, const char *input) {
 			}
 			logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
 			r_config_set_b (core->config, "anal.types.constraint", true);
-			if (input[2] == 'a') { // "aaaa"
+			// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
+			logline (core, 97, "Running plugin post-analysis hooks");
+			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
+			if (input[2] == 'a') { // "aaaaa"
 				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
 				r_core_cmd_call (core, "aarr");
 				// const char *mode = core->anal->opt.slow? "slow": "fast";
@@ -16122,6 +16128,7 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'L':
 		switch (input[1]) {
+		case 'f':
 		case 'j':
 		case 'q':
 		case 0:

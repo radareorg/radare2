@@ -63,8 +63,6 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void cmd_debug_reg(RCore *core, const char *str);
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
-
 R_API ut8 *r_core_readblock(RCore *core, ut64 size) {
 	if (size == 0) {
 		size = core->blocksize;

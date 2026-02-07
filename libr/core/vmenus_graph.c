@@ -3,8 +3,6 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
-
 #define SORT_ADDRESS 0
 #define SORT_NAME 1
 

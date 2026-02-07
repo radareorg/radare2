@@ -716,7 +716,7 @@ typedef struct r_anal_ref_t {
 	RAnalRefType type;
 } RAnalRef;
 
-typedef struct r_vec_RVecAnalRef_t RVecAnalRef;
+R_VEC_TYPE (RVecAnalRef, RAnalRef);
 
 /* represents a reference line from one address (from) to another (to) */
 typedef struct r_anal_refline_t {
@@ -831,7 +831,12 @@ typedef int (*RAnalOpCallback)(RAnal *a, RAnalOp *op, ut64 addr, const ut8 *data
 typedef RAnalOpFlow (*RAnalOpFlowCallback)(RAnal *a, RAnalOp *op);
 typedef int (*RAnalOpAsmCallback)(RAnal *a, ut64 addr, const char *str, ut8 *outbuf, int outlen);
 
-typedef bool (*RAnalPluginEligible)(RAnal *a);
+// Plugin eligibility/priority callback. Returns a score:
+//   score > 0: eligible, higher = higher priority (run first)
+//   score == 0: eligible, default priority
+//   score < 0:  ineligible (will not run)
+// If NULL, the plugin is always eligible with default priority (0).
+typedef int (*RAnalPluginEligible)(RAnal *a);
 
 typedef bool (*RAnalRegProfCallback)(RAnal *a);
 typedef char*(*RAnalRegProfGetCallback)(RAnal *a);
@@ -848,6 +853,20 @@ typedef int (*REsilTrapCB)(REsil *esil, int trap_type, int trap_code);
 typedef char *(*RAnalTypesParser)(RAnal *a, const char *s);
 typedef char *(*RAnalTypesParserFile)(RAnal *a, const char *s, const char *dir);
 typedef char *(*RAnalTypesParserText)(RAnal *a, const char *s);
+
+// Per-function analysis callback (called after af completes)
+typedef bool (*RAnalFcnAnalyzeCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Variable recovery callback (called during afva)
+// Returns list of RAnalVarProt or NULL to use default ESIL recovery
+typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Data flow refs callback (called during aar)
+// Returns vector of RAnalRef for data flow xrefs
+typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
+
+// Post-analysis callback (called at end of aaaa)
+typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
 
 typedef struct r_anal_plugin_t {
 	RPluginMeta meta;
@@ -875,6 +894,14 @@ typedef struct r_anal_plugin_t {
 	RAnalDiffFcnCallback diff_fcn;
 	RAnalDiffEvalCallback diff_eval;
 #endif
+
+	// Per-function analysis hooks
+	RAnalFcnAnalyzeCallback analyze_fcn;      // Called after af completes
+	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
+	RAnalDataRefsCallback get_data_refs;      // Called during aar, returns refs
+
+	// Post-analysis hook (for aaaa)
+	RAnalPostAnalysisCallback post_analysis;
 } RAnalPlugin;
 
 /*----------------------------------------------------------------------------------------------*/
@@ -1070,6 +1097,18 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
 R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
+
+// Plugin action enum: determines which callback to dispatch
+typedef enum {
+	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
+	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
+	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins
+	R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, // aaaa hook: call post_analysis on all eligible plugins
+} RAnalPluginAction;
+
+// Unified plugin action dispatcher (replaces per-action APIs)
+R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
+R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
 R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);

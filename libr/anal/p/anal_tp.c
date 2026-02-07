@@ -1911,8 +1911,8 @@ static char *tp_cmd(RAnal *anal, const char *input) {
 	return strdup ("");
 }
 
-static bool tp_plugin_eligible(RAnal *anal) {
-	return tp_requirements_met (anal, false);
+static int tp_plugin_eligible(RAnal *anal) {
+	return tp_requirements_met (anal, false) ? 0 : -1;
 }
 
 RAnalPlugin r_anal_plugin_tp = {

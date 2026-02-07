@@ -240,6 +240,7 @@ R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	return true;
 }
 
+
 R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RArchSession *session = R_UNWRAP3 (anal, arch, session);

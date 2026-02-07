@@ -4,7 +4,6 @@
 #include <r_core.h>
 #include <r_vec.h>
 
-R_VEC_TYPE(RVecAnalRef, RAnalRef);
 R_VEC_TYPE(RVecAnalBlockPtr, RAnalBlock *);
 
 static void block_unref(RAnalBlock *block) {
