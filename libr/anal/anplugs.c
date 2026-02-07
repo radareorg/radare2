@@ -119,7 +119,6 @@ R_API SdbGperf *r_anal_get_gperf_types(const char * R_NULLABLE k) {
 
 // Returns plugin priority score: >0 = eligible (higher first), 0 = eligible default, <0 = ineligible
 static int plugin_score(RAnal *anal, RAnalPlugin *p) {
-	R_RETURN_VAL_IF_FAIL (anal && p, -1);
 	if (p->eligible) {
 		return p->eligible (anal);
 	}
@@ -131,7 +130,6 @@ static bool plugin_is_eligible(RAnal *anal, RAnalPlugin *p) {
 }
 
 static bool plugin_has_callback(RAnalPlugin *p, RAnalPluginAction action) {
-	R_RETURN_VAL_IF_FAIL (p, false);
 	switch (action) {
 	case R_ANAL_PLUGIN_ACTION_ANALYZE_FCN:
 		return p->analyze_fcn != NULL;
@@ -168,7 +166,6 @@ static RAnalPlugin *plugin_find_by_name(RAnal *anal, const char *name) {
 }
 
 static void plugin_append_if_valid(RList *list, RAnal *anal, RAnalPlugin *p, RAnalPluginAction action) {
-	R_RETURN_IF_FAIL (list && anal && p);
 	if (!plugin_has_callback (p, action)) {
 		return;
 	}
