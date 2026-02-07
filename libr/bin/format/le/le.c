@@ -518,7 +518,6 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		}
 		LE_fixup_record_header header;
 		int ret = r_buf_read_at (bin->buf, offset, (ut8 *)&header, sizeof (header));
-		// XXX this is endiandy unsafe
 		if (ret < (int)sizeof (header)) {
 			R_LOG_WARN ("oobread in LE header parsing relocs");
 			break;
