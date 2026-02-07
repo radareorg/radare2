@@ -3,8 +3,6 @@
 #include <r_util.h>
 
 #include "mdmp.h"
-// XXX: this is a random number, no idea how long it should be.
-#define COMMENTS_SIZE 32
 
 static ut32 safe_loop_count(ut64 offset, ut32 count, size_t item_size, ut64 obj_size, const char *item_name) {
 	if (offset + (ut64)count * item_size > obj_size) {
@@ -646,12 +644,12 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_A:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_a = R_NEWS (ut8, COMMENTS_SIZE);
+		obj->streams.comments_a = R_NEWS (ut8, entry->location.data_size);
 		if (!obj->streams.comments_a) {
 			break;
 		}
-		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_a, COMMENTS_SIZE);
-		if (r != COMMENTS_SIZE) {
+		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_a, entry->location.data_size);
+		if (r != entry->location.data_size) {
 			break;
 		}
 
@@ -663,12 +661,12 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_W:
 		/* TODO: Not yet fully parsed or utilised */
-		obj->streams.comments_w = R_NEWS (ut8, COMMENTS_SIZE);
+		obj->streams.comments_w = R_NEWS (ut8, entry->location.data_size);
 		if (!obj->streams.comments_w) {
 			break;
 		}
-		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_w, COMMENTS_SIZE);
-		if (r != COMMENTS_SIZE) {
+		r = r_buf_read_at (obj->b, entry->location.rva, obj->streams.comments_w, entry->location.data_size);
+		if (r != entry->location.data_size) {
 			break;
 		}
 
