@@ -644,6 +644,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_A:
 		/* TODO: Not yet fully parsed or utilised */
+		if (entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
+			break;
+		}
 		obj->streams.comments_a = R_NEWS (ut8, entry->location.data_size);
 		if (!obj->streams.comments_a) {
 			break;
@@ -661,6 +664,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case COMMENT_STREAM_W:
 		/* TODO: Not yet fully parsed or utilised */
+		if (entry->location.data_size < 1 || entry->location.data_size > r_buf_size (obj->b)) {
+			break;
+		}
 		obj->streams.comments_w = R_NEWS (ut8, entry->location.data_size);
 		if (!obj->streams.comments_w) {
 			break;
