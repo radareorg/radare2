@@ -3329,12 +3329,14 @@ R_API RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer, 
 	offset += attr->is_attr_in_old_format? 1: 2;
 	attr->info.code_attr.code_length = attr->is_attr_in_old_format? R_BIN_JAVA_USHORT (buffer, offset): R_BIN_JAVA_UINT (buffer, offset);
 	offset += attr->is_attr_in_old_format? 2: 4;
-	// BUG: possible unsigned integer overflow here
 	attr->info.code_attr.code_offset = buf_offset + offset;
+	if (offset >= sz || attr->info.code_attr.code_length > sz - offset) {
+		attr->info.code_attr.code_length = (offset < sz) ? sz - offset : 0;
+	}
 	attr->info.code_attr.code = (ut8 *)malloc (attr->info.code_attr.code_length);
 	if (!attr->info.code_attr.code) {
-		eprintf ("Handling Code Attributes: Unable to allocate memory "
-			"(%u bytes) for a code.\n",
+		R_LOG_ERROR ("Handling Code Attributes: Unable to allocate memory "
+			"(%u bytes) for a code",
 			attr->info.code_attr.code_length);
 		return attr;
 	}
