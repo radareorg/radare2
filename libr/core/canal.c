@@ -3398,11 +3398,14 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	if (fcn->bits != 0) {
 		r_cons_printf (cons, "'@0x%08"PFMT64x"'afB %d\n", fcn->addr, fcn->bits);
 	}
-	// FIXME command injection vuln here
 	if (fcn->callconv || defaultCC) {
-		r_cons_printf (cons, "s 0x%"PFMT64x"\n", fcn->addr);
-		r_cons_printf (cons, "'afc %s\n", fcn->callconv? fcn->callconv: defaultCC);
-		r_cons_println (cons, "s-");
+		char *cc = r_str_sanitize_r2 (fcn->callconv? fcn->callconv: defaultCC);
+		if (cc) {
+			r_cons_printf (cons, "s 0x%"PFMT64x"\n", fcn->addr);
+			r_cons_printf (cons, "'afc %s\n", cc);
+			r_cons_println (cons, "s-");
+			free (cc);
+		}
 	}
 	if (fcn->folded) {
 		r_cons_printf (cons, "afF @ 0x%08"PFMT64x"\n", fcn->addr);
