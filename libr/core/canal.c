@@ -3386,13 +3386,17 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	char *fname = r_name_filter_dup (name);
 	r_cons_printf (cons, "'f %s %"PFMT64u" 0x%08"PFMT64x"\n", fname, r_anal_function_linear_size (fcn), fcn->addr);
 	free (fname);
-	r_cons_printf (cons, "'af+ 0x%08"PFMT64x" %s %c %c\n",
-			fcn->addr, name, //r_anal_function_size (fcn), name,
-			fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
-			fcn->type == R_ANAL_FCN_TYPE_SYM?'s':
-			fcn->type == R_ANAL_FCN_TYPE_IMP?'i':'f',
-			fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
-			fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+	char *sanitized_name = r_str_sanitize_r2 (name);
+	if (sanitized_name) {
+		r_cons_printf (cons, "'af+ 0x%08"PFMT64x" %s %c %c\n",
+				fcn->addr, sanitized_name, //r_anal_function_size (fcn), name,
+				fcn->type == R_ANAL_FCN_TYPE_LOC?'l':
+				fcn->type == R_ANAL_FCN_TYPE_SYM?'s':
+				fcn->type == R_ANAL_FCN_TYPE_IMP?'i':'f',
+				fcn->diff->type == R_ANAL_DIFF_TYPE_MATCH?'m':
+				fcn->diff->type == R_ANAL_DIFF_TYPE_UNMATCH?'u':'n');
+		free (sanitized_name);
+	}
 	// FIXME: this command prints something annoying. Does it have important side-effects?
 	fcn_list_bbs (core, fcn);
 	if (fcn->bits != 0) {
@@ -3628,7 +3632,11 @@ static int fcn_list_names(RCore *core, RList *fcns) {
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (fcns, iter, fcn) {
-		r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, fcn->name);
+		char *sname = r_str_sanitize_r2 (fcn->name);
+		if (sname) {
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'afn %s\n", fcn->addr, sname);
+			free (sname);
+		}
 	}
 	r_cons_newline (core->cons);
 	return 0;
