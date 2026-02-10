@@ -4816,33 +4816,11 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	return ret;
 }
 
-static RVecRBinElfSymbol *Elf_(load_phdr_symbols)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
-	if (!eo->phdr_symbols_vec) {
-		eo->phdr_symbols_vec = load_symbols_from_phdr (eo, R_BIN_ELF_ALL_SYMBOLS);
-	}
-	return eo->phdr_symbols_vec;
-}
-
-static RVecRBinElfSymbol *Elf_(load_phdr_imports)(ELFOBJ *eo) {
-	R_RETURN_VAL_IF_FAIL (eo, NULL);
-	if (!eo->phdr_imports_vec) {
-		eo->phdr_imports_vec = load_symbols_from_phdr (eo, R_BIN_ELF_IMPORT_SYMBOLS);
-	}
-	return eo->phdr_imports_vec;
-}
-
-static RVecRBinElfSymbol *Elf_(load_symbols_type)(ELFOBJ *eo, int type) {
-	return (type == R_BIN_ELF_IMPORT_SYMBOLS)
-		? Elf_(load_phdr_imports) (eo)
-		: Elf_(load_phdr_symbols) (eo);
-}
-
 static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *symbols) {
 	int result = -1;
 	HtUP *phd_offset_map = ht_up_new0 ();
 	HtUP *phd_ordinal_map = ht_up_new0 ();
-	RVecRBinElfSymbol *uhsymbols = Elf_(load_symbols_type) (eo, type);
+	RVecRBinElfSymbol *uhsymbols = load_symbols_from_phdr (eo, type);
 	if (uhsymbols) {
 		RBinElfSymbol *symbol;
 		R_VEC_FOREACH (symbols, symbol) {
@@ -4892,6 +4870,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *
 	result = nsym;
 	ht_up_free (phd_offset_map);
 	ht_up_free (phd_ordinal_map);
+	RVecRBinElfSymbol_free (uhsymbols);
 	return result;
 }
 
@@ -5379,7 +5358,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 
 	if (!eo->shdr || !eo->ehdr.e_shnum || eo->ehdr.e_shnum == 0xffff) {
 		R_LOG_DEBUG ("invalid section header value");
-		return Elf_(load_symbols_type) (eo, type);
+		return load_symbols_from_phdr (eo, type);
 	}
 
 	ut32 shdr_size = 0;
@@ -5424,7 +5403,7 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	}
 
 	if (!ret) {
-		return Elf_(load_symbols_type) (eo, type);
+		return load_symbols_from_phdr (eo, type);
 	}
 
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
@@ -5621,8 +5600,6 @@ void Elf_(free)(ELFOBJ* eo) {
 	free (eo->dynstr);
 	RVecElfOff_fini (&eo->dyn_info.dt_needed);
 	r_unref (eo->b);
-	RVecRBinElfSymbol_free (eo->phdr_symbols_vec);
-	RVecRBinElfSymbol_free (eo->phdr_imports_vec);
 	RVecRBinElfSymbol_free (eo->g_symbols_vec);
 	RVecRBinElfSymbol_free (eo->g_imports_vec);
 	if (eo->sections_loaded) {
