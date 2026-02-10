@@ -1713,6 +1713,8 @@ static ut64 get_import_addr_arm64(ELFOBJ *eo, RBinElfReloc *rel) {
 		return plt_addr + pos * 16 + 32;
 	case R_AARCH64_JUMP_SLOT:
 		return plt_addr + pos * 16 + 32;
+	case R_AARCH64_GLOB_DAT:
+		return rel->rva;
 	default:
 		R_LOG_WARN ("Unsupported relocation type for imports %d", rel->type);
 		return UT64_MAX;
