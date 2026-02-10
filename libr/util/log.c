@@ -69,9 +69,6 @@ R_API const char *r_log_level_tocolor(int level) {
 R_API bool r_log_init(void) {
 	if (!rlog) {
 		rlog = R_NEW0 (RLog);
-		if (!rlog) {
-			return false;
-		}
 		rlog->level = R_LOG_LEVEL_DEFAULT;
 	}
 	return true;
@@ -227,7 +224,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	char *s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
-		eprintf ("%s", s);
+		fprintf (stderr, "%s", s);
 	}
 	if (rlog->cb_printf) {
 		rlog->cb_printf ("%s", s);

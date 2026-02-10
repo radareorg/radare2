@@ -134,7 +134,7 @@ R_API void r_str_reverse(char *str) {
 }
 
 // TODO: do not use toupper.. must support modes to also append lowercase chars like in r1
-// 580 : this function doesnt specify the size of strout, so it can overflow by accident
+// TODO: this function doesnt specify the size of strout, so it can overflow by accident
 R_API int r_str_bits(char *strout, const ut8 *buf, int len, const char *bitz) {
 	int i, j, idx;
 	if (bitz) {
@@ -211,13 +211,12 @@ R_API ut64 r_str_bits_from_string(const char *buf, const char *bitz) {
 		char *ch = strchr (bitz, toupper ((int) (ut8)*buf));
 		if (!ch) {
 			ch = strchr (bitz, tolower ((int) (ut8)*buf));
+			if (!ch) {
+				return UT64_MAX;
+			}
 		}
-		if (ch) {
-			int bit = (int) (size_t) (ch - bitz);
-			out |= (ut64) (1LL << bit);
-		} else {
-			return UT64_MAX;
-		}
+		const int bit = (int) (size_t) (ch - bitz);
+		out |= (ut64) (1LL << bit);
 	}
 	return out;
 }

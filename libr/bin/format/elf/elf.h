@@ -166,8 +166,6 @@ struct Elf_(obj_t) {
 	/*cache purpose*/
 	RVecRBinElfSymbol *g_symbols_vec;
 	RVecRBinElfSymbol *g_imports_vec;
-	RVecRBinElfSymbol *phdr_symbols_vec;
-	RVecRBinElfSymbol *phdr_imports_vec;
 	// cached converted symbols/imports for direct transfer to bin layer
 	RVecRBinSymbol symbols_cache;
 	RVecRBinImport imports_cache;
