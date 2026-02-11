@@ -10,13 +10,13 @@ static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx);
 static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size);
 
 static bool check(RBinFile *bf, RBuffer *buf) {
-	ut8 b[4] = {0};
+	ut8 b[4] = { 0 };
 	r_buf_read_at (buf, 0, b, sizeof (b));
-	return !memcmp (buf, "dyld", 4);
+	return !memcmp (b, "dyld", 4);
 }
 
 static void free_xtr(void *xtr_obj) {
-	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t*)xtr_obj);
+	r_bin_dyldcache_free ((struct r_bin_dyldcache_obj_t *)xtr_obj);
 }
 
 static void destroy(RBin *bin) {
@@ -25,15 +25,15 @@ static void destroy(RBin *bin) {
 
 static bool load(RBin *bin) {
 	if (!bin || !bin->cur) {
-	    return false;
+		return false;
 	}
 	if (!bin->cur->xtr_obj) {
 		bin->cur->xtr_obj = r_bin_dyldcache_new (bin->cur->file);
 	}
 	if (!bin->file) {
-	   	bin->file = bin->cur->file;
+		bin->file = bin->cur->file;
 	}
-	return bin->cur->xtr_obj? true : false;
+	return bin->cur->xtr_obj != NULL;
 }
 
 static RList *extractall(RBin *bin) {
@@ -41,8 +41,11 @@ static RList *extractall(RBin *bin) {
 	if (!data) {
 		return NULL;
 	}
-	// XXX - how do we validate a valid nlib?
 	int nlib = data->file_count;
+	if (nlib < 1) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	RList *result = r_list_newf (r_bin_xtrdata_free);
 	if (!result) {
 		r_bin_xtrdata_free (data);
@@ -57,7 +60,7 @@ static RList *extractall(RBin *bin) {
 	return result;
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
@@ -66,40 +69,32 @@ static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MAC
 
 static RBinXtrData *extract(RBin *bin, int idx) {
 	int nlib = 0;
-	RBinXtrData *res = NULL;
-	char *libname;
-	struct MACH0_(mach_header) *hdr;
 	struct r_bin_dyldcache_lib_t *lib = r_bin_dyldcache_extract (
-		(struct r_bin_dyldcache_obj_t*)bin->cur->xtr_obj, idx, &nlib);
+		(struct r_bin_dyldcache_obj_t *)bin->cur->xtr_obj, idx, &nlib);
 
-	if (lib) {
-		RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-		if (!metadata) {
-			free (lib);
-			return NULL;
-		}
-		hdr = MACH0_(get_hdr) (lib->b);
-		if (!hdr) {
-			free (lib);
-			R_FREE (metadata);
-			free (hdr);
-			return NULL;
-		}
-		fill_metadata_info_from_hdr (metadata, hdr);
-		r_bin_dydlcache_get_libname (lib, &libname);
-		metadata->libname = strdup (libname);
-
-		res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata);
-		r_unref (lib->b);
-		free (lib);
-		free (hdr);
+	if (!lib) {
+		return NULL;
 	}
+
+	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
+	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (lib->b);
+	if (!hdr) {
+		free (lib);
+		free (metadata);
+		return NULL;
+	}
+	fill_metadata_info_from_hdr (metadata, hdr);
+	metadata->libname = strdup (r_file_basename (lib->path));
+
+	RBinXtrData *res = r_bin_xtrdata_new (lib->b, lib->offset, lib->size, nlib, metadata);
+	r_unref (lib->b);
+	free (lib);
+	free (hdr);
 	return res;
 }
 
-static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
+static RBinXtrData *oneshot(RBin *bin, const ut8 *buf, ut64 size, int idx) {
 	int nlib = 0;
-	char *libname;
 
 	if (!load (bin)) {
 		return NULL;
@@ -113,10 +108,6 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		return NULL;
 	}
 	RBinXtrMetadata *metadata = R_NEW0 (RBinXtrMetadata);
-	if (!metadata) {
-		free (lib);
-		return NULL;
-	}
 	struct MACH0_(mach_header) *hdr = MACH0_(get_hdr) (lib->b);
 	if (!hdr) {
 		free (lib);
@@ -124,8 +115,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 		return NULL;
 	}
 	fill_metadata_info_from_hdr (metadata, hdr);
-	r_bin_dydlcache_get_libname (lib, &libname);
-	metadata->libname = strdup (libname);
+	metadata->libname = strdup (r_file_basename (lib->path));
 
 	RBinXtrData *res = r_bin_xtrdata_new (lib->b, lib->offset, r_buf_size (lib->b), nlib, metadata);
 	r_unref (lib->b);
@@ -134,7 +124,7 @@ static RBinXtrData *oneshot(RBin *bin, const ut8* buf, ut64 size, int idx) {
 	return res;
 }
 
-static RList *oneshotall(RBin *bin, const ut8* buf, ut64 size) {
+static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size) {
 	RBinXtrData *data = NULL;
 	RList *res = NULL;
 	int nlib, i = 0;
@@ -147,8 +137,11 @@ static RList *oneshotall(RBin *bin, const ut8* buf, ut64 size) {
 	if (!data) {
 		return res;
 	}
-	// XXX - how do we validate a valid nlib?
 	nlib = data->file_count;
+	if (nlib < 1) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
 	res = r_list_newf (r_bin_xtrdata_free);
 	if (!res) {
 		r_bin_xtrdata_free (data);
