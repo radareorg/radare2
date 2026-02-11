@@ -802,7 +802,7 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
-			if (r_str_isnumber (input)) {
+			if (r_str_isnumber (input) || r_str_startswith (input, "0x")) {
 				ut64 off = r_num_math (core->num, input);
 				const char *cwd = r_config_get (core->config, "fs.cwd");
 				if (R_STR_ISEMPTY (cwd)) {

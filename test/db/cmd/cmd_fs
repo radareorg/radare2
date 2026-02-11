@@ -928,7 +928,7 @@ m /mnt fat 0
 mdx /mnt~eadme.md
 EOF
 EXPECT=<<EOF
-x \xE5eadme.md
+x \xe5eadme.md
 EOF
 RUN
 
@@ -952,7 +952,7 @@ m /mnt fat 0
 mix 0x2ae00~mnt
 EOF
 EXPECT=<<EOF
-/mnt/\xE5eadme.md
+/mnt/\xe5eadme.md
 EOF
 RUN
 

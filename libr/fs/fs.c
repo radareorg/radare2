@@ -506,7 +506,8 @@ static void r_fs_find_off_aux(RFS *fs, const char *name, ut64 offset, RList *lis
 			file = r_fs_open (fs, found, false);
 			if (file) {
 				if (file->size > 0) {
-					r_fs_read (fs, file, 0, file->size);
+					int rlen = file->size > ST32_MAX ? ST32_MAX : (int)file->size;
+					r_fs_read (fs, file, 0, rlen);
 				}
 				if (file->off == offset) {
 					r_list_append (list, found);
