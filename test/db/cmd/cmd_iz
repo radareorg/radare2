@@ -474,6 +474,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iz+
+FILE=bins/elf/analysis/hello-utf-16
+CMDS=<<EOF
+iz+
+iz~Hello
+iz+ 0x00400800
+iz~Hello
+iz+ 0x00400800 20 a
+iz~Hello
+EOF
+EXPECT=<<EOF
+0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
+0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
+0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
+0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
+EOF
+RUN
+
 NAME=regression for #9370
 FILE=bins/elf/analysis/hello-arm32
 ARGS=-m 0x10000
