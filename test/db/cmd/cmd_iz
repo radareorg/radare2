@@ -664,9 +664,13 @@ RUN
 
 NAME=izc string count
 FILE=bins/elf/ls-toybox
-CMDS=izc
+CMDS=<<EOF
+izq~?
+izc
+EOF
 EXPECT=<<EOF
-3345
+3343
+3343
 EOF
 RUN
 
