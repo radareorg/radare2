@@ -371,7 +371,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
-		if (!r_bin_string_filter (bin, string->string, vaddr, string->length, string->type)) {
+		if (!r_bin_string_filter (bin, string->string, vaddr)) {
 			continue;
 		}
 		if (string->length < minstr) {

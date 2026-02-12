@@ -4895,7 +4895,7 @@ static void ds_print_str(RDisasmState *ds, const char *str, int len, ut64 refadd
 	if (!ds->show_cmt_strings) {
 		return;
 	}
-	if (ds->core->flags->realnames || !r_bin_string_filter (ds->core->bin, str, refaddr, (ut32)len, 0)) {
+	if (ds->core->flags->realnames || !r_bin_string_filter (ds->core->bin, str, refaddr)) {
 		return;
 	}
 	// do not resolve strings on arm64 pointed with ADRP
@@ -5520,7 +5520,7 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 			}
 		}
 
-		if (*str && !r_bin_strpurge (ds->core->bin, str, *val, (ut32)strlen (str), 0) && r_str_is_printable_incl_newlines (str)
+		if (*str && !r_bin_strpurge (ds->core->bin, str, *val) && r_str_is_printable_incl_newlines (str)
 		    && (ds->printed_str_addr == UT64_MAX || *val != ds->printed_str_addr)) {
 			bool jump_op = false;
 			bool ignored = false;

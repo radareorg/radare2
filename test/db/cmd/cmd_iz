@@ -458,19 +458,58 @@ EOF
 RUN
 
 NAME=iz-
-FILE=-
+FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
-iz- @ 0x412420
-e bin.str.purge
-iz- @ 0x4028a0
-e bin.str.purge
-iz- 0x414fbf
-e bin.str.purge
+iz~Hello
+iz- @ 0x080484b0
+iz~Hello
 EOF
 EXPECT=<<EOF
-0x412420
-0x412420,0x4028a0
-0x412420,0x4028a0,0x414fbf
+0   0x000004b0 0x080484b0 12  13   .rodata ascii Hello world!
+EOF
+RUN
+
+NAME=iz-plus-minus-cycle
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.bits=64
+e bin.str.raw=1
+w teststring @ 0x100
+echo ---initial---
+iz~teststring
+echo ---after-add---
+iz+ 0x100 10 a
+iz~teststring
+echo ---after-delete---
+iz- 0x100
+iz~teststring
+echo ---after-readd---
+iz+ 0x100 10 a
+iz~teststring
+echo ---wrong-len---
+iz- 0x100 99
+iz~teststring
+echo ---wrong-type---
+iz- 0x100 10 w
+iz~teststring
+echo ---correct-criteria---
+iz- 0x100 10 a
+iz~teststring
+echo ---end---
+EOF
+EXPECT=<<EOF
+---initial---
+---after-add---
+0   0x00000100 0x00000100 10  11           ascii teststring
+---after-delete---
+---after-readd---
+0   0x00000100 0x00000100 10  11           ascii teststring
+---wrong-len---
+0   0x00000100 0x00000100 10  11           ascii teststring
+---wrong-type---
+0   0x00000100 0x00000100 10  11           ascii teststring
+---correct-criteria---
+---end---
 EOF
 RUN
 
@@ -479,16 +518,15 @@ FILE=bins/elf/analysis/hello-utf-16
 CMDS=<<EOF
 iz+
 iz~Hello
-iz+ 0x00400800
+iz+ 0x004005e8
 iz~Hello
-iz+ 0x00400800 20 a
+iz+ 0x004005e8 20 a
 iz~Hello
 EOF
 EXPECT=<<EOF
-0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
-0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
-0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
-0   0x00000800 0x00400800 11  22   .rodata utf16le Hello World
+0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
+0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
+0   0x000005e8 0x004005e8 11  24   .rodata utf16le Hello World
 EOF
 RUN
 
