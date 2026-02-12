@@ -2645,11 +2645,6 @@ err_args:
 /* In this function, most of the buffers have 4 times
  * the required length. This is because we supports colours,
  * that are 4 chars long. */
-#define append(x, y) \
-	if (x && y) { \
-		strcat (x, y); \
-		x += strlen (y); \
-	}
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	R_RETURN_IF_FAIL (core);
 	if (!str || len < 1) {
@@ -2664,8 +2659,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const ut8 *buf = core->block;
 	ut64 addr = core->addr;
 	int color_idx = 0;
-	char *bytes, *chars;
-	char *ebytes, *echars; // They'll walk over the vars above
+	RStrBuf *sbytes = r_strbuf_new ("");
+	RStrBuf *schars = r_strbuf_new ("");
 	ut64 fend = UT64_MAX;
 	int i, j, low, max, here, rows;
 	bool marks = false, setcolor = true, hascolor = false;
@@ -2693,87 +2688,72 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	}
 	nb_cols -= (nb_cols % 2); // nb_cols should be even
 	if (nb_cols < 1) {
-		return;
+		goto cleanup;
 	}
 
 	nb_cons_cols = 12 + nb_cols * 2 + (nb_cols / 2);
 	nb_cons_cols += 17;
 	rows = len / nb_cols;
 
-	chars = calloc (nb_cols * 40, sizeof (char));
-	if (!chars) {
-		goto err_chars;
-	}
 	note = calloc (nb_cols, sizeof (char *));
 	if (!note) {
-		goto err_note;
+		goto cleanup;
 	}
-	size_t bytes_size = (64 + nb_cons_cols * 40);
-	bytes = calloc (bytes_size, 1);
-	if (!bytes) {
-		goto err_bytes;
-	}
-#if 1
+
 	char addrpad[32];
 	int addrpadlen = snprintf (addrpad, 0, "%08" PFMT64x, addr) - 8;
 	if (addrpadlen > 0) {
 		memset (addrpad, ' ', addrpadlen);
 		addrpad[addrpadlen] = 0;
-		r_str_ncpy (bytes, addrpad, bytes_size);
+		r_strbuf_append (sbytes, addrpad);
 	} else {
 		*addrpad = 0;
 		addrpadlen = 0;
 	}
 	if (show_offset) {
-		r_str_ncpy (bytes + addrpadlen, "- offset -  ", bytes_size - addrpadlen);
+		r_strbuf_append (sbytes, "- offset -  ");
 	}
-#endif
-	j = strlen (bytes);
 	for (i = 0; i < nb_cols; i += 2) {
-		snprintf (bytes + j, bytes_size - j, format, (i & 0xf), (i + 1) & 0xf);
-		j += step;
+		r_strbuf_appendf (sbytes, format, (i & 0xf), (i + 1) & 0xf);
 	}
 	if (!compact) {
-		j--;
+		// trim last space
+		int slen = r_strbuf_length (sbytes);
+		if (slen > 0) {
+			r_strbuf_slice (sbytes, 0, slen - 1);
+		}
 	}
-	r_str_ncpy (bytes + j, "     ", bytes_size - j);
-	j += 2;
+	r_strbuf_append (sbytes, "     ");
 	for (i = 0; i < nb_cols; i++) {
-		snprintf (bytes + j + i, bytes_size - j - i, "%0X", i % 17);
+		r_strbuf_appendf (sbytes, "%0X", i % 17);
 	}
 	if (usecolor) {
-		r_cons_print (core->cons, Color_GREEN);
-		r_cons_print (core->cons, bytes);
-		r_cons_print (core->cons, Color_RESET);
+		r_cons_printf (core->cons, "%s%s%s", Color_GREEN, r_strbuf_get (sbytes), Color_RESET);
 	} else {
-		r_cons_print (core->cons, bytes);
+		r_cons_print (core->cons, r_strbuf_get (sbytes));
 	}
 	r_cons_newline (core->cons);
 
 	// hexdump
 	for (i = 0; i < rows; i++) {
-		bytes[0] = '\0';
-		chars[0] = '\0';
-		ebytes = bytes;
-		echars = chars;
+		r_strbuf_set (sbytes, "");
+		r_strbuf_set (schars, "");
 		ut64 ea = addr;
 		if (core->print->pava) {
 			r_io_p2v (core->io, addr, &ea);
 		}
 		if (usecolor) {
-			append (ebytes, core->cons->context->pal.addr);
+			r_strbuf_append (sbytes, core->cons->context->pal.addr);
 		}
 		if (show_section) {
 			const char *name = r_core_get_section_name (core, ea);
-			char *s = r_str_newf ("%20s ", name);
-			append (ebytes, s);
-			free (s);
+			r_strbuf_appendf (sbytes, "%20s ", name);
 		}
-		ebytes += snprintf (ebytes, 20, "0x%08" PFMT64x, ea);
+		r_strbuf_appendf (sbytes, "0x%08" PFMT64x, ea);
 		if (usecolor) {
-			append (ebytes, Color_RESET);
+			r_strbuf_append (sbytes, Color_RESET);
 		}
-		append (ebytes, (col == 1)? " |": "  ");
+		r_strbuf_append (sbytes, (col == 1)? " |": "  ");
 		bool hadflag = false;
 		for (j = 0; j < nb_cols; j++) {
 			setcolor = true;
@@ -2787,8 +2767,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				r_core_cmd_callf (core, "pfs %s", meta->str);
 				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, meta->str, meta_node->start);
 				if (usecolor) {
-					append (ebytes, Color_INVERT);
-					append (echars, Color_INVERT);
+					r_strbuf_append (sbytes, Color_INVERT);
+					r_strbuf_append (schars, Color_INVERT);
 				}
 				hadflag = true;
 			}
@@ -2897,8 +2877,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 				if (flagaddr == addr + j) {
 					if (usecolor) {
-						append (ebytes, Color_INVERT);
-						append (echars, Color_INVERT);
+						r_strbuf_append (sbytes, Color_INVERT);
+						r_strbuf_append (schars, Color_INVERT);
 					}
 					hadflag = true;
 				}
@@ -2919,8 +2899,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				if (!setcolor) {
 					const char *bytecolor = r_print_byte_color (core->print, addr + j, ch);
 					if (bytecolor) {
-						append (ebytes, bytecolor);
-						append (echars, bytecolor);
+						r_strbuf_append (sbytes, bytecolor);
+						r_strbuf_append (schars, bytecolor);
 						hascolor = true;
 					}
 				} else if (!hascolor) {
@@ -2935,13 +2915,13 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					if (curcolor) {
 						char *ansicolor = r_cons_pal_parse (core->cons, curcolor, NULL);
 						if (ansicolor) {
-							append (ebytes, ansicolor);
-							append (echars, ansicolor);
+							r_strbuf_append (sbytes, ansicolor);
+							r_strbuf_append (schars, ansicolor);
 							free (ansicolor);
 						}
 					} else { // Use "random" colours
-						append (ebytes, colors[color_idx]);
-						append (echars, colors[color_idx]);
+						r_strbuf_append (sbytes, colors[color_idx]);
+						r_strbuf_append (schars, colors[color_idx]);
 					}
 				}
 			}
@@ -2957,68 +2937,64 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				if (low == max) {
 					if (low == here) {
 						if (html || !usecolor) {
-							append (ebytes, "[");
-							append (echars, "[");
+							r_strbuf_append (sbytes, "[");
+							r_strbuf_append (schars, "[");
 						} else {
-							append (echars, Color_INVERT);
-							append (ebytes, Color_INVERT);
+							r_strbuf_append (schars, Color_INVERT);
+							r_strbuf_append (sbytes, Color_INVERT);
 						}
 					}
 				} else {
 					if (here >= low && here < max) {
 						if (html || !usecolor) {
-							append (ebytes, "[");
-							append (echars, "[");
+							r_strbuf_append (sbytes, "[");
+							r_strbuf_append (schars, "[");
 						} else {
 							if (usecolor) {
-								append (ebytes, Color_INVERT);
-								append (echars, Color_INVERT);
+								r_strbuf_append (sbytes, Color_INVERT);
+								r_strbuf_append (schars, Color_INVERT);
 							}
 						}
 					}
 				}
 			}
-			r_hex_from_byte (ebytes, ch & 0xff);
-			ebytes[2] = 0;
-			ebytes += strlen (ebytes);
+			r_strbuf_appendf (sbytes, "%02x", ch & 0xff);
 			if (hadflag) {
 				if (usecolor) {
-					append (ebytes, Color_INVERT_RESET);
-					append (echars, Color_INVERT_RESET);
+					r_strbuf_append (sbytes, Color_INVERT_RESET);
+					r_strbuf_append (schars, Color_INVERT_RESET);
 				}
 				hadflag = false;
 			}
-			*echars++ = IS_PRINTABLE (ch)? ch: '.';
-			*echars = 0;
+			r_strbuf_appendf (schars, "%c", IS_PRINTABLE (ch)? ch: '.');
 			if (core->print->cur_enabled && max == here) {
 				if (!html && usecolor) {
-					append (ebytes, Color_RESET);
-					append (echars, Color_RESET);
+					r_strbuf_append (sbytes, Color_RESET);
+					r_strbuf_append (schars, Color_RESET);
 				}
 				hascolor = false;
 			}
 
 			if (j < (nb_cols - 1) && (j % 2) && !compact) {
-				append (ebytes, " ");
+				r_strbuf_append (sbytes, " ");
 			}
 
 			if (fend != UT64_MAX && fend == addr + j + 1) {
 				if (!html && usecolor) {
-					append (ebytes, Color_RESET);
-					append (echars, Color_RESET);
+					r_strbuf_append (sbytes, Color_RESET);
+					r_strbuf_append (schars, Color_RESET);
 				}
 				fend = UT64_MAX;
 				hascolor = false;
 			}
 		}
 		if (!html && usecolor) {
-			append (ebytes, Color_RESET);
-			append (echars, Color_RESET);
+			r_strbuf_append (sbytes, Color_RESET);
+			r_strbuf_append (schars, Color_RESET);
 		}
-		append (ebytes, (col == 1)? "| ": (col == 2)? " |"
-							: "  ");
+		r_strbuf_append (sbytes, (col == 1)? "| ": (col == 2)? " |": "  ");
 		if (col == 2) {
-			append (echars, "|");
+			r_strbuf_append (schars, "|");
 		}
 
 		if (marks) { // show comments and flags
@@ -3056,8 +3032,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			marks = false;
 			free (out);
 		}
-		r_cons_print (core->cons, bytes);
-		r_cons_print (core->cons, chars);
+		r_cons_print (core->cons, r_strbuf_get (sbytes));
+		r_cons_print (core->cons, r_strbuf_get (schars));
 
 		if (core->print->use_comments) {
 			for (j = 0; j < nb_cols; j++) {
@@ -3073,12 +3049,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		addr += nb_cols;
 	}
 
-	free (bytes);
-err_bytes:
 	free (note);
-err_note:
-	free (chars);
-err_chars:
+cleanup:
+	r_strbuf_free (sbytes);
+	r_strbuf_free (schars);
 	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {
 		R_FREE (colors[i]);
 	}

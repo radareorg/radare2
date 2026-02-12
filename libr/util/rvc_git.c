@@ -101,6 +101,7 @@ static bool commit_git(Rvc *vc, const char *_message, const char *author, const 
 		escauth = r_str_escape (author);
 	}
 	if (!escauth) {
+		free (message);
 		return false;
 	}
 	if (R_STR_ISEMPTY (message)) {
