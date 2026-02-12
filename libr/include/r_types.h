@@ -750,7 +750,7 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 }
 
 #ifndef container_of
-#define container_of(ptr, type, member) (ptr? ((type *)((char *)(ptr) - r_offsetof(type, member))): NULL)
+#define container_of(ptr, type, member) ((ptr)? ((type *)(void *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
 
 #endif // R2_TYPES_H
