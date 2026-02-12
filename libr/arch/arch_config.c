@@ -64,6 +64,7 @@ R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax) {
 	case R_ARCH_SYNTAX_MASM:
 	case R_ARCH_SYNTAX_ATT:
 	case R_ARCH_SYNTAX_JZ:
+	case R_ARCH_SYNTAX_CAMEL:
 		config->syntax = syntax;
 		return true;
 	default:

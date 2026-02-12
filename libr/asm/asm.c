@@ -1355,6 +1355,9 @@ R_API int r_asm_syntax_from_string(const char *name) {
 	if (!strcmp (name, "att")) {
 		return R_ARCH_SYNTAX_ATT;
 	}
+	if (!strcmp (name, "camel")) {
+		return R_ARCH_SYNTAX_CAMEL;
+	}
 	return -1;
 }
 
