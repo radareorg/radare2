@@ -67,6 +67,7 @@ enum {
 	R_ARCH_SYNTAX_MASM,
 	R_ARCH_SYNTAX_REGNUM, // alias for capstone's NOREGNAME
 	R_ARCH_SYNTAX_JZ, // hack to use jz instead of je on x86
+	R_ARCH_SYNTAX_CAMEL, // CamelCase mnemonics (e.g. hermes bytecode)
 };
 
 typedef struct r_arch_config_t {
