@@ -1571,12 +1571,9 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 }
 
 static bool inrange(RBinSection *sec, RBinSymbol *sym) {
-	if (sym->vaddr >= sec->vaddr) {
-		if (sym->vaddr < sec->vaddr + sec->vsize) {
-			return true;
-		}
-	}
-	return false;
+	const ut64 symva = sym->vaddr;
+	const ut64 secva = sec->vaddr;
+	return (symva >= secva && symva < secva + sec->vsize);
 }
 
 static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {
