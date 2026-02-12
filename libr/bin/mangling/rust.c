@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2023 - pancake */
+/* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_bin.h>
 
@@ -52,13 +52,12 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 				|| RS ("$u7e$", '~')))) {
 			if (*in == '.') {
 				if (len > 1 && in[1] == '.') {
+					*out++ = ':';
+					*out++ = ':';
 					in += 2;
-					*out++ = ':';
-					*out++ = ':';
 					len -= 2;
 				} else {
-					in += 1;
-					*out++ = '-';
+					in++;
 					len--;
 				}
 			} else {

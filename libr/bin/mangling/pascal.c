@@ -1,10 +1,10 @@
-// ported to radare2 by pancake 2022
+// ported to radare2 by pancake 2022-2026
 // SPDX-FileCopyrightText: 2021 deroad <wargio@libero.it>
 // SPDX-License-Identifier: LGPL-3.0-only
 
 #include <r_util.h>
 
-#define IS_NAME(x) (islower(x) || isdigit(x) || (x) == '_')
+#define IS_NAME(x) (islower (x) || isdigit (x) || (x) == '_')
 
 static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t mangled_len) {
 	char *next = mangled;
@@ -17,7 +17,7 @@ static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t man
 	next = tmp + strlen ("$");
 	size_t n_arg = 0;
 
-	while (next < end && *next != '$' && (tmp = strchr(next, '$')) && tmp > next && tmp > mangled && IS_NAME(tmp[-1])) {
+	while (next < end && *next != '$' && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && IS_NAME (tmp[-1])) {
 		// <type0$type1>$$<ret_type>
 		if (n_arg > 0) {
 			r_strbuf_append (ds, ",");
@@ -106,12 +106,12 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 		mangled[i] = tolower (mangled[i]);
 	}
 
-	if (next < end && (tmp = strstr (next, "$_$")) && tmp > next && IS_NAME(tmp[-1])) {
+	if (next < end && (tmp = strstr (next, "$_$")) && tmp > next && IS_NAME (tmp[-1])) {
 		// <unit>$_$<object>_$_<unit1>_$$_<func_name>$<type0$type1>$$<ret_type>
 		demangle_freepascal_unit (ds, next, tmp - next);
 		unit = true;
 		next = tmp + strlen ("$_$");
-		while ((tmp = strstr (next, "_$_")) && tmp > next && IS_NAME(tmp[-1])) {
+		while ((tmp = strstr (next, "_$_")) && tmp > next && IS_NAME (tmp[-1])) {
 			r_strbuf_append_n (ds, next, tmp - next);
 			r_strbuf_append (ds, ".");
 			next = tmp + strlen ("_$_");
@@ -122,7 +122,7 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 		}
 	}
 
-	if (next < end && (tmp = strstr (next, "_$$_")) && tmp > next && IS_NAME(tmp[-1])) {
+	if (next < end && (tmp = strstr (next, "_$$_")) && tmp > next && IS_NAME (tmp[-1])) {
 		// <unit1>_$$_<func_name>$<type0$type1>$$<ret_type>
 		if (!unit) {
 			demangle_freepascal_unit (ds, next, tmp - next);
@@ -133,8 +133,8 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 		next = tmp + strlen ("_$$_");
 	}
 
-	if (next < end && (tmp = strchr(next, '$')) && tmp > next && IS_NAME(tmp[-1])) {
-		next = demangle_freepascal_function (ds, next, end - next);
+	if (next < end && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && IS_NAME (tmp[-1])) {
+		(void)demangle_freepascal_function (ds, next, end - next);
 	} else {
 		// <func_name>
 		r_strbuf_append (ds, next);
