@@ -1584,61 +1584,65 @@ static void cmd_izplus(RCore *core, const char *input) {
 		vaddr, paddr, bs->size, bs->length, type);
 }
 
+static void cmd_izminus(RCore *core, const char *input) {
+	char *strpurge = core->bin->strpurge;
+	ut64 addr = core->addr;
+	ut64 len = 0;
+	char type = 0;
+	bool old_tmpseek = core->tmpseek;
+	input++;
+	if (input[1] == ' ') {
+		char *args = strdup (r_str_trim_head_ro (input + 2));
+		const char *arg_addr = r_str_word_get0 (args, 0);
+		const char *arg_len = r_str_word_get0 (args, 1);
+		const char *arg_type = r_str_word_get0 (args, 2);
+		ut64 arg = r_num_get (NULL, arg_addr);
+		if (arg != 0 || R_STR_ISNOTEMPTY (arg_addr)) {
+			addr = arg;
+		}
+		if (R_STR_ISNOTEMPTY (arg_len)) {
+			len = r_num_get (NULL, arg_len);
+		}
+		if (R_STR_ISNOTEMPTY (arg_type)) {
+			type = *arg_type;
+		}
+		free (args);
+	}
+	core->tmpseek = false;
+	if (len > 0 && type) {
+		// addr, len and type - format: addr-len:type (len is string length for matching)
+		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x ":%c",
+				r_str_get (strpurge),
+				R_STR_ISNOTEMPTY (strpurge)? ",": "",
+				addr, len, type);
+	} else if (len > 0) {
+		// addr and len only - format: addr-len (len is string length for matching)
+		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x,
+				r_str_get (strpurge),
+				R_STR_ISNOTEMPTY (strpurge)? ",": "",
+				addr, len);
+	} else if (type) {
+		// addr and type only
+		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x ":%c",
+				r_str_get (strpurge),
+				R_STR_ISNOTEMPTY (strpurge)? ",": "",
+				addr, type);
+	} else {
+		// addr only
+		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
+				r_str_get (strpurge),
+				R_STR_ISNOTEMPTY (strpurge)? ",": "",
+				addr);
+	}
+	core->tmpseek = old_tmpseek;
+}
+
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	bool rdump = false;
 	if (input[1] == '+') { // "iz+"
 		cmd_izplus (core, input);
 	} else if (input[1] == '-') { // "iz-"
-		char *strpurge = core->bin->strpurge;
-		ut64 addr = core->addr;
-		ut64 len = 0;
-		char type = 0;
-		bool old_tmpseek = core->tmpseek;
-		input++;
-		if (input[1] == ' ') {
-			char *args = strdup (r_str_trim_head_ro (input + 2));
-			const char *arg_addr = r_str_word_get0 (args, 0);
-			const char *arg_len = r_str_word_get0 (args, 1);
-			const char *arg_type = r_str_word_get0 (args, 2);
-			ut64 arg = r_num_get (NULL, arg_addr);
-			if (arg != 0 || R_STR_ISNOTEMPTY (arg_addr)) {
-				addr = arg;
-			}
-			if (R_STR_ISNOTEMPTY (arg_len)) {
-				len = r_num_get (NULL, arg_len);
-			}
-			if (R_STR_ISNOTEMPTY (arg_type)) {
-				type = *arg_type;
-			}
-			free (args);
-		}
-		core->tmpseek = false;
-		if (len > 0 && type) {
-			// addr, len and type - format: addr-len:type (len is string length for matching)
-			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x ":%c",
-					r_str_get (strpurge),
-					R_STR_ISNOTEMPTY (strpurge)? ",": "",
-					addr, len, type);
-		} else if (len > 0) {
-			// addr and len only - format: addr-len (len is string length for matching)
-			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x,
-					r_str_get (strpurge),
-					R_STR_ISNOTEMPTY (strpurge)? ",": "",
-					addr, len);
-		} else if (type) {
-			// addr and type only
-			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x ":%c",
-					r_str_get (strpurge),
-					R_STR_ISNOTEMPTY (strpurge)? ",": "",
-					addr, type);
-		} else {
-			// addr only
-			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
-					r_str_get (strpurge),
-					R_STR_ISNOTEMPTY (strpurge)? ",": "",
-					addr);
-		}
-		core->tmpseek = old_tmpseek;
+		cmd_izminus (core, input);
 	} else if (input[1] == 'z') { // "izz"
 		switch (input[2]) {
 		case 'z':// "izzz"
