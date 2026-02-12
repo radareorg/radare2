@@ -7,6 +7,9 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
+R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
+R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
+
 static RCoreHelpMessage help_msg_ih = {
 	"Usage: ih", "[*jq]", "Display header information",
 	"ih", "", "normal output to display binary headers",
@@ -1465,25 +1468,6 @@ static void cmd_izminus(RCore *core, const char *input) {
 	r_bin_file_string_delete (bf, args.addr, args.len, args.type);
 }
 
-static void cmd_iz_output(RCore *core, PJ *pj, int mode, bool va, bool raw) {
-	if (raw) {
-		RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
-	} else {
-		RList *bfiles = r_core_bin_files (core);
-		RListIter *iter;
-		RBinFile *bf;
-		RBinFile *cur = core->bin->cur;
-		r_list_foreach (bfiles, iter, bf) {
-			core->bin->cur = bf;
-			RBinObject *bo = r_bin_cur_object (core->bin);
-			RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-				(bo && bo->strings)? r_list_length (bo->strings): 0);
-		}
-		core->bin->cur = cur;
-		r_list_free (bfiles);
-	}
-}
-
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	if (input[1] == '+') { // "iz+"
 		cmd_izplus (core, input);
@@ -1512,6 +1496,8 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	const char *p = input + 1;
 	bool raw = false;  // izz = raw strings from whole binary
 	bool rdump = false; // izzz = dump mode
+	ut64 skip = 0;
+	ut64 count = 0;
 	// Count 'z' characters
 	while (*p == 'z') {
 		if (!raw) {
@@ -1543,14 +1529,13 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	}
 	// Parse optional pagination arguments: "skip count" or just "count"
 	if (*p == ' ') {
-		R_FREE (core->table_query);
 		char *args = strdup (r_str_trim_head_ro (p + 1));
 		int nwords = r_str_word_set0 (args);
 		if (nwords == 1) {
-			core->table_query = r_str_newf ("/head/%s", args);
+			count = r_num_get (NULL, args);
 		} else if (nwords >= 2) {
-			core->table_query = r_str_newf ("/skip/%s,/head/%s",
-				r_str_word_get0 (args, 0), r_str_word_get0 (args, 1));
+			skip = r_num_get (NULL, r_str_word_get0 (args, 0));
+			count = r_num_get (NULL, r_str_word_get0 (args, 1));
 		}
 		free (args);
 	}
@@ -1563,8 +1548,19 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			RList *res = r_bin_dump_strings (bf, min, 2);
 			r_list_free (res);
 		}
+	} else if (raw) {
+		bin_raw_strings (core, pj, mode, va, skip, count);
 	} else {
-		cmd_iz_output (core, pj, mode, va, raw);
+		RList *bfiles = r_core_bin_files (core);
+		RListIter *iter;
+		RBinFile *bf;
+		RBinFile *cur = core->bin->cur;
+		r_list_foreach (bfiles, iter, bf) {
+			core->bin->cur = bf;
+			bin_strings (core, pj, mode, va, skip, count);
+		}
+		core->bin->cur = cur;
+		r_list_free (bfiles);
 	}
 }
 
