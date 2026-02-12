@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2023 nibble, pancake */
+/* radare - LGPL - Copyright 2009-2026 nibble, pancake */
 
 #include <r_bin.h>
 #include "mach0/dyldcache.h"
@@ -12,7 +12,10 @@ static RList *oneshotall(RBin *bin, const ut8 *buf, ut64 size);
 static bool check(RBinFile *bf, RBuffer *buf) {
 	ut8 b[4] = { 0 };
 	r_buf_read_at (buf, 0, b, sizeof (b));
-	return !memcmp (b, "dyld", 4);
+	if (!memcmp (b, "dyld", 4)) {
+		R_LOG_INFO ("EXPERIMENTAL: Force with `-F xtr.dyldcache` to extract the inner libs");
+	}
+	return false;
 }
 
 static void free_xtr(void *xtr_obj) {
