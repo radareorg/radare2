@@ -502,10 +502,10 @@ R_API int r_hex_str2binmask(const char *in, ut8 *out, ut8 *mask) {
 	free (ms);
 	bool has_nibble = (klen < 0);
 	if (klen < 0) {
-		klen = -(klen + 1);
+		klen = -klen;
 	}
 	if (mlen < 0) {
-		mlen = -(mlen + 1);
+		mlen = -mlen;
 	}
 	if (klen > 0) {
 		if (mlen < klen) {
