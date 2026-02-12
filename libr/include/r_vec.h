@@ -149,6 +149,25 @@ extern "C" {
 #define R_MAYBE_UNUSED __attribute__((unused))
 #endif
 
+// Overflow-safe realloc wrapper (like reallocarray)
+static inline void *r_realloc_array(void *ptr, size_t nmemb, size_t size) {
+	if (SZT_MUL_OVFCHK (nmemb, size)) {
+		return NULL;
+	}
+	return realloc (ptr, nmemb * size);
+}
+
+// Overflow-safe capacity growth (returns 0 on overflow)
+static inline size_t r_vec_grow_capacity(size_t capacity) {
+	if (capacity == 0) {
+		return 8;
+	}
+	if (SZT_MUL_OVFCHK (capacity, 2)) {
+		return 0;
+	}
+	return capacity * 2;
+}
+
 // Hack / Helper macro for conditional code generation.
 #define R_MAYBE_GENERATE(condition, code) R_MAYBE_GENERATE##condition(code)
 #define R_MAYBE_GENERATE1(code) code
@@ -278,7 +297,7 @@ extern "C" {
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
-		type *buf = (type *)malloc (capacity * sizeof (type)); \
+		type *buf = (type *)calloc (capacity, sizeof (type)); \
 		if (R_LIKELY (buf)) { \
 			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \
@@ -297,7 +316,7 @@ extern "C" {
 		R_RETURN_VAL_IF_FAIL (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
 			const size_t num_elems = R_VEC_FUNC (vec_type, length) (vec); \
-			type *buf = (type *)realloc (vec->_start, new_capacity * sizeof (type)); \
+			type *buf = (type *)r_realloc_array (vec->_start, new_capacity, sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
 				vec->_start = buf; \
@@ -317,7 +336,7 @@ extern "C" {
 				free (vec->_start); \
 				memset (vec, 0, sizeof (vec_type)); \
 			} else { \
-				type *buf = (type *)realloc (vec->_start, num_elems * sizeof (type)); \
+				type *buf = (type *)r_realloc_array (vec->_start, num_elems, sizeof (type)); \
 				if (R_LIKELY (buf)) { \
 					vec->_start = buf; \
 					vec->_end = buf + num_elems; \
@@ -331,8 +350,8 @@ extern "C" {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
 		} \
@@ -344,8 +363,8 @@ extern "C" {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
 		} \
@@ -359,8 +378,8 @@ extern "C" {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
 		} \
@@ -373,8 +392,8 @@ extern "C" {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = capacity == 0 ? 8 : capacity * 2; \
-			if (!R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
+			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
 		} \
