@@ -124,7 +124,10 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		if (r != sizeof (lc)) {
 			goto dbuf_err;
 		}
-		r_buf_append_bytes (dbuf, (ut8 *)&lc, lc.cmdsize);
+		if (lc.cmdsize < sizeof (lc) || cmdptr + lc.cmdsize > bin->size) {
+			goto dbuf_err;
+		}
+		r_buf_append_buf_slice (dbuf, bin->b, cmdptr, lc.cmdsize);
 		cmdptr += lc.cmdsize;
 	}
 	cmdptr = liboff + addend;
