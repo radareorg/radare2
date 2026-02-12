@@ -19,6 +19,7 @@
 
 #include <r_fs.h>
 #include <grub/fs.h>
+#include <grubfs.h>
 #include <grub/fshelp.h>
 #include <grub/disk.h>
 #include <grub/file.h>
@@ -429,6 +430,7 @@ grub_fat_read_data(grub_disk_t disk, struct grub_fat_data *data, void(*read_hook
 
 		disk->read_hook = read_hook;
 		disk->closure = closure;
+		grub_hack_lastoff = ((unsigned long long)sector) << GRUB_DISK_SECTOR_BITS;
 		grub_disk_read_ex (disk, sector, offset, size, buf, flags);
 		disk->read_hook = 0;
 		if (grub_errno) {

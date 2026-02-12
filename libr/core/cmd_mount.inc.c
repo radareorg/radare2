@@ -15,10 +15,13 @@ static RCoreHelpMessage help_msg_m = {
 	"mc", " [file]", "cat: Show the contents of the given file",
 	"md", " /", "list files and directory on the virtual r2's fs",
 	"mdd", " /", "show file size like `ls -l` in ms",
+	"mdx", " /", "list deleted files (FAT)",
 	"mdq", " /", "show just the file name (quiet)",
 	"mf", "[?] [o|n]", "search files for given filename or for offset",
 	"mg", " /foo [offset size]", "get fs file/dir and dump to disk (support base64:)",
 	"mi", " /foo/bar", "get offset and size of given file",
+	"mi", " 0x1234", "find filename by offset in current fs",
+	"mix", " 0x1234", "find deleted filename by offset (FAT)",
 	"mis", " /foo/bar", "get offset and size of given file and seek to it",
 	"mj", "", "list mounted filesystems in JSON",
 	"mmc", "[left_path] [right_path]", "Mountpoint Miknight Commander (dual-panel file manager)",
@@ -305,6 +308,73 @@ static const char *t2s(const char ch) {
 	return "unknown";
 }
 
+static RList *cmd_mount_find_off(RCore *core, const char *cwd, ut64 off) {
+	RList *list = NULL;
+	if (R_STR_ISEMPTY (cwd) || !strcmp (cwd, "/")) {
+		list = r_list_newf (free);
+		RListIter *iter;
+		RFSRoot *root;
+		r_list_foreach (core->fs->roots, iter, root) {
+			if (!root || !root->path) {
+				continue;
+			}
+			RList *found = r_fs_find_off (core->fs, root->path, off);
+			if (found) {
+				r_list_join (list, found);
+				r_list_free (found);
+			}
+		}
+	} else {
+		list = r_fs_find_off (core->fs, cwd, off);
+	}
+	if (list && r_list_empty (list)) {
+		r_list_free (list);
+		list = NULL;
+	}
+	return list;
+}
+
+static char *cmd_mount_escape_name(const char *name) {
+	char *escaped = r_str_escape_utf8_keep_printable (name, false, true);
+	return escaped? escaped: strdup (name);
+}
+
+static char *cmd_mount_escape_path(const char *path) {
+	char *escaped = r_str_escape_utf8_keep_printable (path, false, true);
+	return escaped? escaped: strdup (path);
+}
+
+static int cmd_mix(RCore *core, const char *input) {
+	input = (char *)r_str_trim_head_ro (input);
+	if (R_STR_ISEMPTY (input)) {
+		R_LOG_ERROR ("Usage: mix 0xOFFSET");
+		return 0;
+	}
+	ut64 off = r_num_math (core->num, input);
+	const char *cwd = r_config_get (core->config, "fs.cwd");
+	if (R_STR_ISEMPTY (cwd)) {
+		cwd = "/";
+	}
+	int old_view = core->fs->view;
+	r_fs_view (core->fs, R_FS_VIEW_DELETED);
+	RList *list = cmd_mount_find_off (core, cwd, off);
+	r_fs_view (core->fs, old_view);
+	if (list) {
+		RListIter *iter;
+		char *ptr;
+		r_list_foreach (list, iter, ptr) {
+			char *epath = cmd_mount_escape_path (ptr);
+			if (epath) {
+				r_str_trim_path (epath);
+				r_cons_println (core->cons, epath);
+				free (epath);
+			}
+		}
+		r_list_free (list);
+	}
+	return 0;
+}
+
 static void cmd_mount_ls(RCore *core, const char *input) {
 	bool isJSON = *input == 'j';
 	RListIter *iter;
@@ -312,6 +382,10 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	RFSRoot *root;
 	bool minus_ele = *input == 'd'; // "mdd"
 	if (minus_ele) {
+		input++;
+	}
+	bool deleted_only = *input == 'x'; // "mdx"
+	if (deleted_only) {
 		input++;
 	}
 	bool minus_quiet = *input == 'q'; // "mdq"
@@ -326,7 +400,14 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 			input = decoded;
 		}
 	}
+	int old_view = core->fs->view;
+	if (deleted_only) {
+		r_fs_view (core->fs, R_FS_VIEW_DELETED);
+	}
 	RList *list = r_fs_dir (core->fs, input);
+	if (deleted_only) {
+		r_fs_view (core->fs, old_view);
+	}
 	PJ *pj = NULL;
 	if (isJSON) {
 		pj = r_core_pj_new (core);
@@ -334,24 +415,41 @@ static void cmd_mount_ls(RCore *core, const char *input) {
 	}
 	if (list) {
 		r_list_foreach (list, iter, file) {
+			bool is_deleted = false;
+			if (deleted_only) {
+				is_deleted = file->name && (ut8)file->name[0] == 0xe5;
+				if (!is_deleted) {
+					continue;
+				}
+			}
 			if (isJSON) {
 				pj_o (pj);
-				pj_ks (pj, "type", t2s (file->type));
+				pj_ks (pj, "type", is_deleted? "deleted": t2s (file->type));
 				pj_kn (pj, "size", file->size);
 				pj_ks (pj, "name", file->name);
 				pj_end (pj);
 			} else {
+				char ftype = is_deleted? R_FS_FILE_TYPE_DELETED: file->type;
+				char *dname = NULL;
+				const char *name = file->name;
+				if (is_deleted && file->name) {
+					dname = cmd_mount_escape_name (file->name);
+					if (dname) {
+						name = dname;
+					}
+				}
 				if (minus_quiet) {
-					if (file->type == 'd') {
-						r_cons_printf (core->cons, "%s/\n", file->name);
+					if (ftype == 'd') {
+						r_cons_printf (core->cons, "%s/\n", name);
 					} else {
-						r_cons_printf (core->cons, "%s\n", file->name);
+						r_cons_printf (core->cons, "%s\n", name);
 					}
 				} else if (minus_ele) {
-					r_cons_printf (core->cons, "%c %10d %s\n", file->type, file->size, file->name);
+					r_cons_printf (core->cons, "%c %10d %s\n", ftype, file->size, name);
 				} else {
-					r_cons_printf (core->cons, "%c %s\n", file->type, file->name);
+					r_cons_printf (core->cons, "%c %s\n", ftype, name);
 				}
+				free (dname);
 			}
 		}
 		r_list_free (list);
@@ -689,6 +787,8 @@ static int cmd_mount(void *data, const char *_input) {
 	case 'i':
 		if (input[1] == '?') { // "mi?"
 			r_core_cmd_help_match (core, help_msg_m, "mi");
+		} else if (input[1] == 'x') { // "mix"
+			cmd_mix (core, input + 2);
 		} else if (input[1] == 's') { // "mis"
 			input = (char *)r_str_trim_head_ro (input + 2);
 			file = r_fs_open (core->fs, input, false);
@@ -702,14 +802,30 @@ static int cmd_mount(void *data, const char *_input) {
 			}
 		} else {
 			input = (char *)r_str_trim_head_ro (input + 1);
-			file = r_fs_open (core->fs, input, false);
-			if (file) {
-				// XXX: dump to file or just pipe?
-				r_fs_read (core->fs, file, 0, file->size);
-				r_cons_printf (core->cons, "'f file %d 0x%08" PFMT64x "\n", file->size, file->off);
-				r_fs_close (core->fs, file);
+			if (r_str_isnumber (input) || r_str_startswith (input, "0x")) {
+				ut64 off = r_num_math (core->num, input);
+				const char *cwd = r_config_get (core->config, "fs.cwd");
+				if (R_STR_ISEMPTY (cwd)) {
+					cwd = "/";
+				}
+				list = cmd_mount_find_off (core, cwd, off);
+				if (list) {
+					r_list_foreach (list, iter, ptr) {
+						r_str_trim_path (ptr);
+						r_cons_println (core->cons, ptr);
+					}
+					r_list_free (list);
+				}
 			} else {
-				R_LOG_ERROR ("Cannot open file");
+				file = r_fs_open (core->fs, input, false);
+				if (file) {
+					// XXX: dump to file or just pipe?
+					r_fs_read (core->fs, file, 0, file->size);
+					r_cons_printf (core->cons, "'f file %d 0x%08" PFMT64x "\n", file->size, file->off);
+					r_fs_close (core->fs, file);
+				} else {
+					R_LOG_ERROR ("Cannot open file");
+				}
 			}
 		}
 		break;
