@@ -173,16 +173,20 @@ R_API bool r_log_match(int level, const char *origin) {
 }
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
-	char out[512];
+	char *out;
 	if (!r_log_init ()) {
 		return;
 	}
-	vsnprintf (out, sizeof (out), fmt, ap);
+	out = r_str_newvf (fmt, ap);
+	if (!out) {
+		return;
+	}
 	if (rlog->cbs) {
 		RListIter *iter;
 		RLogCallbackUser *cbu;
 		r_list_foreach (rlog->cbs, iter, cbu) {
 			if (cbu->cb (cbu->user, level, origin, out)) {
+				free (out);
 				return;
 			}
 		}
@@ -221,6 +225,7 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		}
 	}
 	r_strbuf_appendf (sb, "%s %s\n", ts, out);
+	free (out);
 	char *s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
