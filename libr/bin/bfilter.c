@@ -204,7 +204,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
+R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr, ut32 len, char type) {
 	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	bool purge = false;
 	if (bin->strpurge) {
@@ -213,9 +213,11 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 			int splits = r_str_split (addrs, ',');
 			int i;
 			char *ptr;
-			char *range_sep;
-			ut64 addr, from, to;
+			char *len_sep;
+			char *type_sep;
+			ut64 addr, match_len;
 			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
+				char match_type = 0;
 				if (!strcmp (ptr, "true") && false_positive (str)) {
 					purge = true;
 					continue;
@@ -229,22 +231,34 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 					purge = !bang;
 					continue;
 				}
-				range_sep = strchr (ptr, '-');
-				if (range_sep) {
-					*range_sep = 0;
-					from = r_num_get (NULL, ptr);
-					ptr = range_sep + 1;
-					to = r_num_get (NULL, ptr);
-					if (refaddr >= from && refaddr <= to) {
-						purge = !bang;
+				// Check for type separator (e.g., 0x100:a or 0x100-10:a for ascii)
+				type_sep = strchr (ptr, ':');
+				if (type_sep) {
+					*type_sep = 0;
+					match_type = type_sep[1];
+				}
+				// Check for length separator (e.g., 0x100-10 means addr 0x100 with len 10)
+				len_sep = strchr (ptr, '-');
+				if (len_sep) {
+					*len_sep = 0;
+					addr = r_num_get (NULL, ptr);
+					ptr = len_sep + 1;
+					match_len = r_num_get (NULL, ptr);
+					if (refaddr == addr && len == match_len) {
+						if (!match_type || type == match_type) {
+							purge = !bang;
+						}
 						continue;
 					}
-				}
-				addr = r_num_get (NULL, ptr);
-				if (addr != 0 || *ptr == '0') {
-					if (refaddr == addr) {
-						purge = !bang;
-						continue;
+				} else {
+					addr = r_num_get (NULL, ptr);
+					if (addr != 0 || *ptr == '0') {
+						if (refaddr == addr) {
+							if (!match_type || type == match_type) {
+								purge = !bang;
+							}
+							continue;
+						}
 					}
 				}
 			}
@@ -376,9 +390,9 @@ loop_end:
 	return true;
 }
 
-R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
+R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr, ut32 len, char type) {
 	R_RETURN_VAL_IF_FAIL (bin && str, false);
-	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
+	if (r_bin_strpurge (bin, str, addr, len, type) || !bin_strfilter (bin, str)) {
 		return false;
 	}
 	return true;
