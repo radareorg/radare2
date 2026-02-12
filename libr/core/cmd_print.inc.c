@@ -2645,6 +2645,10 @@ err_args:
 /* In this function, most of the buffers have 4 times
  * the required length. This is because we supports colours,
  * that are 4 chars long. */
+#define append_both(x) do { \
+		r_strbuf_append (sbytes, (x)); \
+		r_strbuf_append (schars, (x)); \
+	} while (0)
 static void annotated_hexdump(RCore *core, const char *str, int len) {
 	R_RETURN_IF_FAIL (core);
 	if (!str || len < 1) {
@@ -2680,7 +2684,6 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		compact = core->print->flags & R_PRINT_FLAGS_COMPACT;
 	}
 	char *format = compact? " %X %X": " %X %X ";
-	int step = compact? 4: 5;
 
 	// Adjust the number of columns
 	if (nb_cols < 1) {
@@ -2723,7 +2726,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			r_strbuf_slice (sbytes, 0, slen - 1);
 		}
 	}
-	r_strbuf_append (sbytes, "     ");
+	r_strbuf_append (sbytes, "  ");
 	for (i = 0; i < nb_cols; i++) {
 		r_strbuf_appendf (sbytes, "%0X", i % 17);
 	}
@@ -2767,13 +2770,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				r_core_cmd_callf (core, "pfs %s", meta->str);
 				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, meta->str, meta_node->start);
 				if (usecolor) {
-					r_strbuf_append (sbytes, Color_INVERT);
-					r_strbuf_append (schars, Color_INVERT);
+					append_both (Color_INVERT);
 				}
 				hadflag = true;
-			}
-			if (meta) {
-				meta = NULL;
 			}
 			// collect comments
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
@@ -2877,8 +2876,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				}
 				if (flagaddr == addr + j) {
 					if (usecolor) {
-						r_strbuf_append (sbytes, Color_INVERT);
-						r_strbuf_append (schars, Color_INVERT);
+						append_both (Color_INVERT);
 					}
 					hadflag = true;
 				}
@@ -2899,29 +2897,22 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				if (!setcolor) {
 					const char *bytecolor = r_print_byte_color (core->print, addr + j, ch);
 					if (bytecolor) {
-						r_strbuf_append (sbytes, bytecolor);
-						r_strbuf_append (schars, bytecolor);
+						append_both (bytecolor);
 						hascolor = true;
 					}
 				} else if (!hascolor) {
 					hascolor = true;
-					const char *curcolor = NULL;
-					if (curflag) {
-						const char *fimcolor = r_flag_item_set_color (core->flags, curflag, NULL);
-						if (fimcolor) {
-							curcolor = fimcolor;
-						}
-					}
+					const char *curcolor = curflag
+						? r_flag_item_set_color (core->flags, curflag, NULL)
+						: NULL;
 					if (curcolor) {
 						char *ansicolor = r_cons_pal_parse (core->cons, curcolor, NULL);
 						if (ansicolor) {
-							r_strbuf_append (sbytes, ansicolor);
-							r_strbuf_append (schars, ansicolor);
+							append_both (ansicolor);
 							free (ansicolor);
 						}
-					} else { // Use "random" colours
-						r_strbuf_append (sbytes, colors[color_idx]);
-						r_strbuf_append (schars, colors[color_idx]);
+					} else {
+						append_both (colors[color_idx]);
 					}
 				}
 			}
@@ -2934,63 +2925,41 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				low = max = core->print->cur;
 			}
 			if (core->print->cur_enabled) {
-				if (low == max) {
-					if (low == here) {
-						if (html || !usecolor) {
-							r_strbuf_append (sbytes, "[");
-							r_strbuf_append (schars, "[");
-						} else {
-							r_strbuf_append (schars, Color_INVERT);
-							r_strbuf_append (sbytes, Color_INVERT);
-						}
-					}
-				} else {
-					if (here >= low && here < max) {
-						if (html || !usecolor) {
-							r_strbuf_append (sbytes, "[");
-							r_strbuf_append (schars, "[");
-						} else {
-							if (usecolor) {
-								r_strbuf_append (sbytes, Color_INVERT);
-								r_strbuf_append (schars, Color_INVERT);
-							}
-						}
+				bool incur = (low == max)? (low == here): (here >= low && here < max);
+				if (incur) {
+					if (html || !usecolor) {
+						append_both ("[");
+					} else {
+						append_both (Color_INVERT);
 					}
 				}
 			}
 			r_strbuf_appendf (sbytes, "%02x", ch & 0xff);
-			if (hadflag) {
-				if (usecolor) {
-					r_strbuf_append (sbytes, Color_INVERT_RESET);
-					r_strbuf_append (schars, Color_INVERT_RESET);
-				}
+			if (hadflag && usecolor) {
+				append_both (Color_INVERT_RESET);
 				hadflag = false;
 			}
-			r_strbuf_appendf (schars, "%c", IS_PRINTABLE (ch)? ch: '.');
+			const char pch = IS_PRINTABLE (ch)? ch: '.';
+			r_strbuf_append_n (schars, &pch, 1);
 			if (core->print->cur_enabled && max == here) {
 				if (!html && usecolor) {
-					r_strbuf_append (sbytes, Color_RESET);
-					r_strbuf_append (schars, Color_RESET);
+					append_both (Color_RESET);
 				}
 				hascolor = false;
 			}
-
 			if (j < (nb_cols - 1) && (j % 2) && !compact) {
-				r_strbuf_append (sbytes, " ");
+				r_strbuf_append_n (sbytes, " ", 1);
 			}
-
 			if (fend != UT64_MAX && fend == addr + j + 1) {
 				if (!html && usecolor) {
-					r_strbuf_append (sbytes, Color_RESET);
-					r_strbuf_append (schars, Color_RESET);
+					append_both (Color_RESET);
 				}
 				fend = UT64_MAX;
 				hascolor = false;
 			}
 		}
 		if (!html && usecolor) {
-			r_strbuf_append (sbytes, Color_RESET);
-			r_strbuf_append (schars, Color_RESET);
+			append_both (Color_RESET);
 		}
 		r_strbuf_append (sbytes, (col == 1)? "| ": (col == 2)? " |": "  ");
 		if (col == 2) {
@@ -3057,6 +3026,7 @@ cleanup:
 		R_FREE (colors[i]);
 	}
 }
+#undef append_both
 
 R_API void r_core_print_examine(RCore *core, const char *str) {
 	char cmd[128], *p;
