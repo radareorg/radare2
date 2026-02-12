@@ -150,7 +150,7 @@ extern "C" {
 #endif
 
 // Overflow-safe realloc wrapper (like reallocarray)
-static inline void *r_realloc_array(void *ptr, size_t nmemb, size_t size) {
+static inline void *r_vec_realloc(void *ptr, size_t nmemb, size_t size) {
 	if (SZT_MUL_OVFCHK (nmemb, size)) {
 		return NULL;
 	}
@@ -158,7 +158,7 @@ static inline void *r_realloc_array(void *ptr, size_t nmemb, size_t size) {
 }
 
 // Overflow-safe capacity growth (returns 0 on overflow)
-static inline size_t r_vec_grow_capacity(size_t capacity) {
+static inline size_t r_vec_grow(size_t capacity) {
 	if (capacity == 0) {
 		return 8;
 	}
@@ -297,7 +297,10 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
-		type *buf = (type *)calloc (capacity, sizeof (type)); \
+		if (SZT_MUL_OVFCHK (capacity, sizeof (type))) { \
+			return NULL; \
+		} \
+		type *buf = (type *)malloc (capacity * sizeof (type)); \
 		if (R_LIKELY (buf)) { \
 			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \
@@ -316,7 +319,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 		R_RETURN_VAL_IF_FAIL (vec, false); \
 		if (new_capacity > R_VEC_CAPACITY (vec)) { \
 			const size_t num_elems = R_VEC_FUNC (vec_type, length) (vec); \
-			type *buf = (type *)r_realloc_array (vec->_start, new_capacity, sizeof (type)); \
+			type *buf = (type *)r_vec_realloc (vec->_start, new_capacity, sizeof (type)); \
 			const bool is_success = buf != NULL; \
 			if (R_LIKELY (is_success)) { \
 				vec->_start = buf; \
@@ -336,7 +339,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 				free (vec->_start); \
 				memset (vec, 0, sizeof (vec_type)); \
 			} else { \
-				type *buf = (type *)r_realloc_array (vec->_start, num_elems, sizeof (type)); \
+				type *buf = (type *)r_vec_realloc (vec->_start, num_elems, sizeof (type)); \
 				if (R_LIKELY (buf)) { \
 					vec->_start = buf; \
 					vec->_end = buf + num_elems; \
@@ -350,7 +353,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			const size_t new_capacity = r_vec_grow (capacity); \
 			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
@@ -363,7 +366,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			const size_t new_capacity = r_vec_grow (capacity); \
 			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
@@ -378,7 +381,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			const size_t new_capacity = r_vec_grow (capacity); \
 			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return; \
 			} \
@@ -392,7 +395,7 @@ static inline size_t r_vec_grow_capacity(size_t capacity) {
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
 		if (R_UNLIKELY (num_elems == capacity)) { \
-			const size_t new_capacity = r_vec_grow_capacity (capacity); \
+			const size_t new_capacity = r_vec_grow (capacity); \
 			if (!new_capacity || !R_VEC_FUNC(vec_type, reserve) (vec, new_capacity)) { \
 				return NULL; \
 			} \
