@@ -1465,37 +1465,6 @@ static void cmd_izminus(RCore *core, const char *input) {
 	r_bin_file_string_delete (bf, args.addr, args.len, args.type);
 }
 
-static void set_table_query_pagination(RCore *core, const char *args) {
-	ut64 skip = 0;
-	ut64 count = 0;
-	char *s = strdup (r_str_trim_head_ro (args));
-	int nwords = r_str_word_set0 (s);
-	if (nwords == 1) {
-		const char *a0 = r_str_word_get0 (s, 0);
-		if (R_STR_ISNOTEMPTY (a0)) {
-			count = r_num_get (NULL, a0);
-		}
-	} else if (nwords >= 2) {
-		const char *a0 = r_str_word_get0 (s, 0);
-		const char *a1 = r_str_word_get0 (s, 1);
-		if (R_STR_ISNOTEMPTY (a0)) {
-			skip = r_num_get (NULL, a0);
-		}
-		if (R_STR_ISNOTEMPTY (a1)) {
-			count = r_num_get (NULL, a1);
-		}
-	}
-	free (s);
-	if (count > 0) {
-		R_FREE (core->table_query);
-		if (skip > 0) {
-			core->table_query = r_str_newf ("/skip/%"PFMT64u",/head/%"PFMT64u, skip, count);
-		} else {
-			core->table_query = r_str_newf ("/head/%"PFMT64u, count);
-		}
-	}
-}
-
 static void cmd_iz_output(RCore *core, PJ *pj, int mode, bool va, bool raw) {
 	if (raw) {
 		RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
@@ -1572,9 +1541,18 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		core->table_query = strdup (p + 1);
 		p = ""; // consume rest
 	}
-	// Parse optional pagination arguments
+	// Parse optional pagination arguments: "skip count" or just "count"
 	if (*p == ' ') {
-		set_table_query_pagination (core, p + 1);
+		R_FREE (core->table_query);
+		char *args = strdup (r_str_trim_head_ro (p + 1));
+		int nwords = r_str_word_set0 (args);
+		if (nwords == 1) {
+			core->table_query = r_str_newf ("/head/%s", args);
+		} else if (nwords >= 2) {
+			core->table_query = r_str_newf ("/skip/%s,/head/%s",
+				r_str_word_get0 (args, 0), r_str_word_get0 (args, 1));
+		}
+		free (args);
 	}
 	// Execute command
 	if (rdump) {

@@ -426,6 +426,17 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 				string = &b64;
 			}
 		}
+		// Apply pagination for non-table output modes
+		if (!IS_MODE_SET (mode) && !IS_MODE_NORMAL (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
+		}
 		if (IS_MODE_SET (mode)) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
@@ -450,35 +461,11 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
-			if (skip > 0) {
-				skip--;
-				continue;
-			}
-			if (count > 0 && printed >= count) {
-				break;
-			}
-			printed++;
 			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			if (skip > 0) {
-				skip--;
-				continue;
-			}
-			if (count > 0 && printed >= count) {
-				break;
-			}
-			printed++;
 			r_cons_println (core->cons, string->string);
 		} else if (IS_MODE_JSON (mode)) {
-			if (skip > 0) {
-				skip--;
-				continue;
-			}
-			if (count > 0 && printed >= count) {
-				break;
-			}
-			printed++;
 			int *block_list;
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
@@ -516,14 +503,6 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
-			if (skip > 0) {
-				skip--;
-				continue;
-			}
-			if (count > 0 && printed >= count) {
-				break;
-			}
-			printed++;
 			char *str = (core->bin->prefix)
 				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);
