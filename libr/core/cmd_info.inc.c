@@ -814,6 +814,12 @@ static RList *r_core_bin_files(RCore *core) {
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf && bf->bo) {
 			r_list_append (list, bf);
+		} else {
+			// no bin selected via `ob`, fall back to all bins
+			RListIter *iter;
+			r_list_foreach (core->bin->binfiles, iter, bf) {
+				r_list_append (list, bf);
+			}
 		}
 	}
 	return list;
