@@ -678,6 +678,10 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			ret (1);
 		}
 	}
+	if (rad == 3 && !ro->incremental) {
+		R_LOG_ERROR ("Option -R incompatible with -B (per-block hashing)");
+		ret (1);
+	}
 	ro->mode = rad;
 	if ((st64)ro->from >= 0 && (st64)ro->to < 0) {
 		ro->to = 0; // end of file

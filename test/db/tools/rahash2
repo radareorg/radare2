@@ -84,6 +84,15 @@ bins/elf/analysis/hello-linux-x86_64: k file.sha256=7bdbf25324af1946ec0b16dbf928
 EOF
 RUN
 
+NAME=rahash2 -R -B rejected
+FILE=-
+CMDS=!rahash2 -a md5 -R -B bins/elf/analysis/hello-linux-x86_64
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option -R incompatible with -B (per-block hashing)
+EOF
+RUN
+
 NAME=rahash2 -h
 FILE=-
 CMDS=!rahash2~Usage

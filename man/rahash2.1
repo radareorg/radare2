@@ -70,6 +70,12 @@ $ rahash2 -a sha1 -r file | r2 -qni file
 .Bd -literal -offset indent
 $ rahash2 -a sha1 -R file | r2 -qni file
 .Ed
+.Pp
+.Nm
+.Fl R
+is incompatible with
+.Fl B
+(per-block hashing).
 .It Fl s Ar string
 Hash this string instead of files
 .It Fl t Ar to
