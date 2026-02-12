@@ -3045,13 +3045,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, true);
 			r_cons_flush (core->cons);
 			r_cons_set_raw (core->cons, false);
-			strcpy (buf, "\"wa ");
+
+			strcpy (buf, "'wa ");
 			r_line_set_prompt (core->cons->line, "> ");
 			r_cons_enable_mouse (core->cons, false);
-			if (r_cons_fgets (core->cons, buf + 4, sizeof (buf) - 4, 0, NULL) < 0) {
-				buf[0] = '\0';
+			if (r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 6, 0, NULL) < 1) {
+				*buf = 0;
 			}
-			strcat (buf, "\"");
 			int wheel = r_config_get_i (core->config, "scr.wheel");
 			if (wheel) {
 				r_cons_enable_mouse (core->cons, true);
@@ -3343,12 +3343,11 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				break;
 			}
 			if (core->print->col == 2) {
-				strcpy (buf, "\"w ");
+				strcpy (buf, "'w ");
 				r_line_set_prompt (core->cons->line, "insert string: ");
-				if (r_cons_fgets (core->cons, buf + 3, sizeof (buf) - 3, 0, NULL) < 0) {
-					buf[0] = '\0';
+				if (r_cons_fgets (core->cons, buf + 2, sizeof (buf) - 5, 0, NULL) < 1) {
+					buf[0] = 0;
 				}
-				strcat (buf, "\"");
 			} else if (PIDX != 4) {
 				r_line_set_prompt (core->cons->line, "insert hex: ");
 				if (core->print->ocur != -1) {
