@@ -4,19 +4,20 @@
 
 // R2R db/formats/mangling/rust
 
-#define RS(from, to) (replace_seq ((const char **)&in, &out, (const char *)(from), to))
+#define RS(from, to) (replace_seq ((const char **)&in, &out, &len, (const char *)(from), to))
 
-static bool replace_seq(const char **in, char **out, const char *seq, char value) {
-	size_t len = strlen (seq);
+static bool replace_seq(const char **in, char **out, size_t *remaining, const char *seq, char value) {
+	size_t slen = strlen (seq);
 
-	if (strncmp (*in, seq, len)) {
+	if (strncmp (*in, seq, slen)) {
 		return false;
 	}
 
 	**out = value;
 
-	*in += len;
+	*in += slen;
 	*out += 1;
+	*remaining -= slen;
 
 	return true;
 }
@@ -31,13 +32,7 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 	char *in = str;
 	char *out = str;
 	size_t len = strlen (str);
-#if 0
-	if (*in == '_' && in[1] != '_') {
-		in++;
-		len--;
-	}
-#endif
-	while ((len = strlen (in)) > 0) {
+	while (len > 0) {
 		if (!(*in == '$' && (RS ("$SP$", '@')
 				|| RS ("$BP$", '*')
 				|| RS ("$RF$", '&')
@@ -56,17 +51,19 @@ R_API char *r_bin_demangle_rust(RBinFile *binfile, const char *sym, ut64 vaddr) 
 				|| RS ("$u5d$", ']')
 				|| RS ("$u7e$", '~')))) {
 			if (*in == '.') {
-				if (len > 0 && in[1] == '.') {
+				if (len > 1 && in[1] == '.') {
 					in += 2;
 					*out++ = ':';
 					*out++ = ':';
-					len--;
+					len -= 2;
 				} else {
 					in += 1;
-					*out = '-';
+					*out++ = '-';
+					len--;
 				}
 			} else {
 				*out++ = *in++;
+				len--;
 			}
 		}
 	}

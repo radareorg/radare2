@@ -1640,9 +1640,8 @@ static void get_modifier_print_type(STpiStream *ss, void *type, char **name) {
 		SLF_SIMPLE_TYPE *base_type = stype->type_data.type_info;
 		tmp_name = strdup (base_type->type);
 		free_simple_type (stype);
-	} else {
-		STypeInfo *refered_type_info = NULL;
-		refered_type_info = &stype->type_data;
+	} else if (stype) {
+		STypeInfo *refered_type_info = &stype->type_data;
 		refered_type_info->get_print_type (ss, refered_type_info, &tmp_name);
 	}
 	SLF_MODIFIER *modifier = stype_info->type_info;

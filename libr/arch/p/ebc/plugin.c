@@ -50,10 +50,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	ebc_command_t cmd;
 	ut8 opcode = buf[0] & EBC_OPCODE_MASK;
-	if (!op) {
-		return false;
-	}
-
 	op->addr = addr;
 
 	int ret = op->size = ebc_decode_command (buf, &cmd);
@@ -155,10 +151,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
-	if (q == R_ARCH_INFO_MAXOP_SIZE) {
-		return 18;
-	}
-	return 1;
+	return (q == R_ARCH_INFO_MAXOP_SIZE)? 18: 1;
 }
 
 const RArchPlugin r_arch_plugin_ebc = {

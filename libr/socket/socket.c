@@ -410,7 +410,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 				FD_ZERO (&wfds);
 				FD_SET (s->fd, &wfds);
 
-				if ((ret = select (s->fd + 1, NULL, &wfds, NULL, &tv)) != -1) {
+				if (select (s->fd + 1, NULL, &wfds, NULL, &tv) != -1) {
 					if (r_socket_is_connected (s)) {
 						freeaddrinfo (res);
 						goto success;
@@ -542,8 +542,9 @@ R_API bool r_socket_listen(RSocket *s, const char *port, const char *certfile) {
 	if (s->proto == R_SOCKET_PROTO_UNIX) {
 #if R2__UNIX__
 		return __listen_unix (s, port);
-#endif
+#else
 		return false;
+#endif
 	}
 	if (!r_sandbox_check (R_SANDBOX_GRAIN_SOCKET)) {
 		return false;

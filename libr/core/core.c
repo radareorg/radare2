@@ -2880,9 +2880,10 @@ static int prompt_flag(RCore *core, char *s, size_t maxlen) {
 	} else {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
 	}
-	if (strlen (s) > maxlen - sizeof (DOTS)) {
-		s[maxlen - sizeof (DOTS) - 1] = '\0';
-		strcat (s, DOTS);
+	size_t slen = strlen (s);
+	if (slen > maxlen - sizeof (DOTS)) {
+		size_t pos = maxlen - sizeof (DOTS) - 1;
+		memcpy (s + pos, DOTS, sizeof (DOTS));
 	}
 	return true;
 }
@@ -2893,8 +2894,9 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 	if (bo) {
 		const RBinSection *sec = r_bin_get_section_at (bo, core->addr, true);
 		if (sec) {
-			r_str_ncpy (s, sec->name, maxlen - 2);
-			strcat (s, ":");
+			size_t len = r_str_ncpy (s, sec->name, maxlen - 2);
+			s[len] = ':';
+			s[len + 1] = '\0';
 		}
 	}
 }
@@ -3280,7 +3282,6 @@ reaccept:
 						}
 						R_LOG_INFO ("(flags: %d) len: %d filename: '%s'", flg, cmd, ptr);
 					} else {
-						pipefd = -1;
 						R_LOG_ERROR ("Cannot open file (%s)", ptr);
 						r_socket_close (c);
 						if (r_config_get_i (core->config, "rap.loop")) {

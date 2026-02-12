@@ -208,7 +208,7 @@ static R2Pipe *r2p_open_pipes(R2Pipe *r2p) {
 }
 #endif
 
-static R2Pipe *r2pipe_new(void) {
+static R2Pipe * R_NONNULL r2pipe_new(void) {
 	R2Pipe *r2pipe = R_NEW0 (R2Pipe);
 #if HAVE_R2PIPE && R2__UNIX__
 	r2pipe->input[0] = r2pipe->input[1] = -1;
@@ -237,11 +237,8 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 
 	if (rnew && rcmd) {
 		R2Pipe *r2pipe = r2pipe_new ();
-		if (r2pipe) {
-			r2pipe->coreb.core = rnew ();
-			r2pipe->coreb.cmdStr = rcmd;
-			// r2pipe->coreb.free = rfre;
-		}
+		r2pipe->coreb.core = rnew ();
+		r2pipe->coreb.cmdStr = rcmd;
 		return r2pipe;
 	}
 #endif
@@ -252,9 +249,6 @@ R_API R2Pipe *r2pipe_open_dl(const char *libr_path) {
 R_API R2Pipe *r2pipe_open(const char *R_NULLABLE cmd) {
 #if HAVE_R2PIPE
 	R2Pipe *r2p = r2pipe_new ();
-	if (!r2p) {
-		return NULL;
-	}
 	/* HTTP/r2web mode: if the command is a http (s):// or r2web:// URL,
 	 * store it in the r2pipe and use HTTP POST for commands. */
 	if (cmd && (r_str_startswith (cmd, "http://") || r_str_startswith (cmd, "https://") || r_str_startswith (cmd, "r2web://"))) {

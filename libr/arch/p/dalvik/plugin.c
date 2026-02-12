@@ -767,10 +767,6 @@ static int dalvik_disassemble(RArchSession *as, RAnalOp *op, ut64 addr, const ut
 		size = len;
 	}
 
-	if (len > 0 && payload > len) {
-		payload = len;
-	}
-
 	if (size + payload < 0) {
 		op->size = 0;
 	} else if (size + payload >= len) {

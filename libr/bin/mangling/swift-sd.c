@@ -683,7 +683,7 @@ moreitems:
 							r_strbuf_append (out, ".");
 							strbuf_append_n (out, Q, n);
 						} else {
-							if (*q) {
+							if (q < q_end && *q) {
 								r_strbuf_appendf (out, "...%s", q);
 								q += strlen (q);
 							}
