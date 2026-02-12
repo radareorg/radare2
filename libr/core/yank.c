@@ -65,7 +65,8 @@ static bool perform_mapped_file_yank(RCore *core, ut64 offset, ut64 len, const c
 		if (actual_len > 0 && nres == addr) {
 			buf = malloc (actual_len);
 			if (!r_io_read_at (core->io, addr, buf, actual_len)) {
-				actual_len = 0;
+				free (buf);
+				buf = NULL;
 			}
 			r_core_yank_set (core, R_CORE_FOREIGN_ADDR, buf, len);
 			res = true;

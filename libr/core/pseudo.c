@@ -773,7 +773,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			R_LOG_DEBUG ("// 0x%08" PFMT64x " already analyzed", bb->addr);
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 			if (addr == UT64_MAX) {
-				nindent = 1;
 #if 0
 				int i;
 				for (i = indent; i != nindent && i > 0; i--) {
@@ -1132,7 +1131,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_list_free (visited);
 	indent = 0;
 	NEWLINE (addr, indent);
-	if (state.show_asm) {
+	if (state.show_asm && bb) {
 		PRINTF ("\n 0x%08" PFMT64x " | ", bb->addr);
 		if (state.pj) {
 			r_strbuf_pad (state.codestr, ' ', 30);

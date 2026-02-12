@@ -57,8 +57,9 @@ static ut32 core_esil_reg_size (void *core, const char *name) {
 	if (!ri) {
 		return 0;
 	}
+	int size = ri->size;
 	r_unref (ri);
-	return ri->size;
+	return size;
 }
 
 static REsilRegInterface core_esil_reg_if = {

@@ -96,12 +96,14 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 				free (kv);
 			} else if (r_str_startswith (s, "--gotokey:")) {
 				char *kv = strdup (s + strlen ("--gotokey:"));
-				if (kv[0] && kv[1]) {
+				if (kv && kv[0] && kv[1]) {
 					kv[1] = 0;
 					int k = kv[0];
-					R_FREE (state->keys[k]);
+					free (state->keys[k]);
 					if (kv[2]) {
 						state->keys[k] = strdup (kv + 2);
+					} else {
+						state->keys[k] = NULL;
 					}
 				}
 				free (kv);
