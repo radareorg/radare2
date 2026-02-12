@@ -7,6 +7,9 @@
 
 #include "../bin/format/pdb/pdb_downloader.h"
 
+R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
+R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count);
+
 static RCoreHelpMessage help_msg_ih = {
 	"Usage: ih", "[*jq]", "Display header information",
 	"ih", "", "normal output to display binary headers",
@@ -56,15 +59,17 @@ static RCoreHelpMessage help_msg_iy = {
 };
 
 static RCoreHelpMessage help_msg_iz = {
-	"Usage: iz", "[][jq*]", "List strings",
-	"iz", "", "strings in data sections (in JSON/Base64)",
+	"Usage: iz", "[?jq*] ([skip] [count])", "List strings",
+	"iz", " ([skip]) ([count])", "strings in data sections (skip N strings, show count)",
 	"iz,", "[:help]", "perform a table query on strings listing",
-	"iz-", " [addr] [len] [type]", "delete string at address (uses current seek if addr not specified, len/type for matching)",
-	"iz+", " [addr] [len] [type]", "add string manually (addr=current seek if not specified, len=auto, type=auto-detect)",
+	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (uses current seek if addr not specified, len/type for matching)",
+	"iz+", " ([addr]) ([len]) ([type])", "add string manually (addr=current seek if not specified, len=auto, type=auto-detect)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
-	"izz", "", "search for Strings in the whole binary",
-	"izz*", "", "same as iz* but exposing the strings of the whole binary",
-	"izzz", "", "dump Strings from whole binary to r2 shell (for huge files)",
+	"izc", "", "count the strings in data sections",
+	"izj", "", "strings in data sections in JSON format",
+	"izq", "[q]", "strings in data sections in quiet (and quieter) mode",
+	"izz", "[jq*] ([skip]) ([count])", "search for strings in the whole binary",
+	"izzz", "[jq]", "dump strings from whole binary to r2 shell (for huge files)",
 	NULL
 };
 
@@ -809,6 +814,12 @@ static RList *r_core_bin_files(RCore *core) {
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf && bf->bo) {
 			r_list_append (list, bf);
+		} else {
+			// no bin selected via `ob`, fall back to all bins
+			RListIter *iter;
+			r_list_foreach (core->bin->binfiles, iter, bf) {
+				r_list_append (list, bf);
+			}
 		}
 	}
 	return list;
@@ -1464,99 +1475,105 @@ static void cmd_izminus(RCore *core, const char *input) {
 }
 
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
-	bool rdump = false;
 	if (input[1] == '+') { // "iz+"
 		cmd_izplus (core, input);
-	} else if (input[1] == '-') { // "iz-"
+		return;
+	}
+	if (input[1] == '-') { // "iz-"
 		cmd_izminus (core, input);
-	} else if (input[1] == 'z') { // "izz"
-		switch (input[2]) {
-		case 'z':// "izzz"
+		return;
+	}
+	if (input[1] == 'c') { // "izc"
+		RList *bfiles = r_core_bin_files (core);
+		RListIter *iter;
+		RBinFile *bf;
+		ut64 total = 0;
+		r_list_foreach (bfiles, iter, bf) {
+			RBinObject *bo = bf->bo;
+			if (bo && bo->strings) {
+				total += r_list_length (bo->strings);
+			}
+		}
+		r_list_free (bfiles);
+		r_cons_printf (core->cons, "%"PFMT64u"\n", total);
+		return;
+	}
+	// Parse command: iz[z][z][jq*] [skip] [count]
+	const char *p = input + 1;
+	bool raw = false;  // izz = raw strings from whole binary
+	bool rdump = false; // izzz = dump mode
+	ut64 skip = 0;
+	ut64 count = 0;
+	// Count 'z' characters
+	while (*p == 'z') {
+		if (!raw) {
+			raw = true;
+		} else {
 			rdump = true;
-			break;
-		case '*': // "izz*"
-			mode = R_MODE_RADARE;
-			break;
-		case 'j': // "izzj"
-			mode = R_MODE_JSON;
-			break;
-		case 'q': // "izzq"
-			if (input[3] == 'q') { // "izzqq"
-				mode = R_MODE_SIMPLEST;
-				input++;
-			} else {
-				mode = R_MODE_SIMPLE;
-			}
-			break;
-		default:
-			mode = R_MODE_PRINT;
-			break;
 		}
-		input++;
-		if (rdump) {
-			RBinFile *bf = r_bin_cur (core->bin);
-			int min = r_config_get_i (core->config, "bin.str.min");
-			if (bf) {
-				bf->strmode = mode;
-				RList *res = r_bin_dump_strings (bf, min, 2);
-				r_list_free (res);
-			}
+		p++;
+	}
+	// Parse suffix (j, q, qq, *, ,)
+	if (*p == 'j') {
+		mode = R_MODE_JSON;
+		p++;
+	} else if (*p == 'q') {
+		p++;
+		if (*p == 'q') {
+			mode = R_MODE_SIMPLEST;
+			p++;
 		} else {
-			RBININFO ("strings", R_CORE_BIN_ACC_RAW_STRINGS, NULL, 0);
+			mode = R_MODE_SIMPLE;
 		}
+	} else if (*p == '*') {
+		mode = R_MODE_RADARE;
+		p++;
+	} else if (*p == ',') {
+		R_FREE (core->table_query);
+		core->table_query = strdup (p + 1);
+		p = ""; // consume rest
+	}
+	// Parse optional pagination arguments: "skip count" or just "count"
+	if (*p == ' ') {
+		char *args = strdup (r_str_trim_head_ro (p + 1));
+		int nwords = r_str_word_set0 (args);
+		if (nwords == 1) {
+			count = r_num_get (NULL, args);
+		} else if (nwords >= 2) {
+			skip = r_num_get (NULL, r_str_word_get0 (args, 0));
+			count = r_num_get (NULL, r_str_word_get0 (args, 1));
+		}
+		free (args);
+	}
+	// Execute command
+	if (rdump) {
+		RBinFile *bf = r_bin_cur (core->bin);
+		int min = r_config_get_i (core->config, "bin.str.min");
+		if (bf) {
+			bf->strmode = mode;
+			RList *res = r_bin_dump_strings (bf, min, 2);
+			r_list_free (res);
+		}
+	} else if (raw) {
+		bin_raw_strings (core, pj, mode, va, skip, count);
 	} else {
-		// "iz"
-		bool validcmd = true;
-		switch (input[1]) {
-		case ',': // "iz,"
-			R_FREE (core->table_query);
-			core->table_query = strdup (input + 2);
-			break;
-		case 'J': // "izJ"
-			validcmd = false;
-			break;
-		case '*': // "iz*"
-		case 'j': // "izj"
-		case 0: // "iz"
-			validcmd = true;
-			break;
-		case 'q':
-			// "izq"
-			mode = (input[2] == 'q')
-				? R_MODE_SIMPLEST
-				: R_MODE_SIMPLE;
-			input++;
-			break;
-		default:
-			// invalid subcommand handler?
-			break;
+		RList *bfiles = r_core_bin_files (core);
+		RListIter *iter;
+		RBinFile *bf;
+		RBinFile *cur = core->bin->cur;
+		r_list_foreach (bfiles, iter, bf) {
+			core->bin->cur = bf;
+			bin_strings (core, pj, mode, va, skip, count);
 		}
-		if (validcmd) {
-			RList *bfiles = r_core_bin_files (core);
-			RListIter *iter;
-			RBinFile *bf;
-			RBinFile *cur = core->bin->cur;
-			r_list_foreach (bfiles, iter, bf) {
-				core->bin->cur = bf;
-				RBinObject *bo = r_bin_cur_object (core->bin);
-				RBININFO ("strings", R_CORE_BIN_ACC_STRINGS, NULL,
-						(bo && bo->strings)? r_list_length (bo->strings): 0);
-			}
-			core->bin->cur = cur;
-			r_list_free (bfiles);
-		} else {
-			//
-		}
+		core->bin->cur = cur;
+		r_list_free (bfiles);
 	}
 }
 
 static bool inrange(RBinSection *sec, RBinSymbol *sym) {
-	if (sym->vaddr >= sec->vaddr) {
-		if (sym->vaddr < sec->vaddr + sec->vsize) {
-			return true;
-		}
-	}
-	return false;
+	const ut64 symva = sym->vaddr;
+	const ut64 secva = sec->vaddr;
+	return (symva >= secva && symva < secva + sec->vsize);
 }
 
 static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bool va, const bool is_array) {

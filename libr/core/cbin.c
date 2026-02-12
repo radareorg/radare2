@@ -339,7 +339,7 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
+static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
 		return;
@@ -356,6 +356,8 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 
 	bin->options.minstrlen = minstr;
 	bin->options.maxstrlen = maxstr;
+	ut64 printed = 0;
+
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
@@ -407,6 +409,17 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 				b64.size = strlen (b64.string);
 				string = &b64;
 			}
+		}
+		// Apply pagination for non-table output modes
+		if (!IS_MODE_SET (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
 		}
 		if (IS_MODE_SET (mode)) {
 			if (r_cons_is_breaked (core->cons)) {
@@ -571,7 +584,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 	R_CRITICAL_LEAVE (core);
 }
 
-static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
+R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	bool new_bf = false;
 	if (bf && bf->file && strstr (bf->file, "malloc://")) {
@@ -614,7 +627,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 		va = false;
 	}
 	RList *l = r_bin_raw_strings (bf, 0);
-	_print_strings (core, l, pj, mode, va);
+	_print_strings (core, l, pj, mode, va, skip, count);
 	r_list_free (l);
 	if (new_bf) {
 		r_unref (bf->buf);
@@ -625,7 +638,7 @@ static bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va) {
 	return true;
 }
 
-static bool bin_strings(RCore *core, PJ *pj, int mode, int va) {
+R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RBinFile *binfile = r_bin_cur (core->bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
 	int rawstr = r_config_get_i (core->config, "bin.str.raw");
@@ -647,7 +660,7 @@ static bool bin_strings(RCore *core, PJ *pj, int mode, int va) {
 	}
 	RList *list = r_bin_get_strings (core->bin);
 	if (list) {
-		_print_strings (core, list, pj, mode, va);
+		_print_strings (core, list, pj, mode, va, skip, count);
 		return true;
 	}
 	return false;
@@ -5235,9 +5248,9 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 	// use our internal values for va
 	va = va? VA_TRUE: VA_FALSE;
 	if ((action & R_CORE_BIN_ACC_RAW_STRINGS)) {
-		ret &= bin_raw_strings (core, pj, mode, va);
+		ret &= bin_raw_strings (core, pj, mode, va, 0, 0);
 	} else if ((action & R_CORE_BIN_ACC_STRINGS)) {
-		ret &= bin_strings (core, pj, mode, va);
+		ret &= bin_strings (core, pj, mode, va, 0, 0);
 	}
 	if ((action & R_CORE_BIN_ACC_INFO)) {
 		ret &= bin_info (core, pj, mode, loadaddr);
