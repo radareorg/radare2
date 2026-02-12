@@ -356,6 +356,24 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 
 	bin->options.minstrlen = minstr;
 	bin->options.maxstrlen = maxstr;
+
+	// Parse pagination from table_query (e.g., "/skip/10,/head/5")
+	ut64 skip = 0;
+	ut64 count = 0;
+	if (core->table_query) {
+		char *s = strdup (core->table_query);
+		char *head = strstr (s, "/head/");
+		char *skip_str = strstr (s, "/skip/");
+		if (head) {
+			count = r_num_get (NULL, head + 6);
+		}
+		if (skip_str) {
+			skip = r_num_get (NULL, skip_str + 6);
+		}
+		free (s);
+	}
+	ut64 printed = 0;
+
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_RAD (mode)) {
@@ -432,11 +450,35 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
 			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
 			r_cons_println (core->cons, string->string);
 		} else if (IS_MODE_JSON (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
 			int *block_list;
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
@@ -474,6 +516,14 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va) {
 			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
+			if (skip > 0) {
+				skip--;
+				continue;
+			}
+			if (count > 0 && printed >= count) {
+				break;
+			}
+			printed++;
 			char *str = (core->bin->prefix)
 				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);
