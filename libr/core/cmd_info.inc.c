@@ -60,6 +60,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"iz", "", "strings in data sections (in JSON/Base64)",
 	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " [addr] [len] [type]", "purge string via bin.str.purge (addr, optional length, type:a/u/w/W/b)",
+	"iz+", " [addr] [len] [type]", "add string manually (addr=current seek if not specified, len=auto, type=auto-detect)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izz", "", "search for Strings in the whole binary",
 	"izz*", "", "same as iz* but exposing the strings of the whole binary",
@@ -1398,9 +1399,196 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 	}
 }
 
+static void cmd_izplus(RCore *core, const char *input) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->bo) {
+		R_LOG_ERROR ("No file selected or no bin object available");
+		return;
+	}
+	RBinObject *bo = bf->bo;
+	if (!bo->strings) {
+		bo->strings = r_list_newf ((RListFree)r_bin_string_free);
+	}
+	if (!bo->strings_db) {
+		bo->strings_db = ht_up_new0 ();
+	}
+
+	// Parse arguments: iz+ [addr] [len] [type]
+	ut64 addr = core->addr;  // Can be vaddr or paddr depending on io.va
+	ut64 len = 0;  // 0 = auto (null-terminated or max_scan)
+	char type = 0; // 0 = auto-detect
+
+	if (input[2] == ' ') {
+		char *args = strdup (r_str_trim_head_ro (input + 3));
+		const char *arg_addr = r_str_word_get0 (args, 0);
+		const char *arg_len = r_str_word_get0 (args, 1);
+		const char *arg_type = r_str_word_get0 (args, 2);
+		if (R_STR_ISNOTEMPTY (arg_addr)) {
+			addr = r_num_get (NULL, arg_addr);
+		}
+		if (R_STR_ISNOTEMPTY (arg_len)) {
+			len = r_num_get (NULL, arg_len);
+		}
+		if (R_STR_ISNOTEMPTY (arg_type)) {
+			type = *arg_type;
+		}
+		free (args);
+	}
+
+	// Determine paddr and vaddr based on io.va setting
+	bool io_va = r_config_get_b (core->config, "io.va");
+	ut64 paddr, vaddr;
+	if (io_va) {
+		vaddr = addr;
+		paddr = r_io_v2p (core->io, addr);
+		if (paddr == UT64_MAX) {
+			paddr = addr; // fallback
+		}
+	} else {
+		paddr = addr;
+		vaddr = addr; // io.pava doesn't matter here, use same
+	}
+
+	// Default length for auto-detection
+	ut64 max_scan = 512;
+	if (len == 0) {
+		len = max_scan;
+	}
+	if (len < 1) {
+		R_LOG_ERROR ("Invalid string length");
+		return;
+	}
+
+	// Read string data from buffer
+	ut8 *buf = malloc (len);
+	if (!buf) {
+		return;
+	}
+
+	st64 read = r_buf_read_at (bf->buf, paddr, buf, len);
+	if (read < 1) {
+		R_LOG_ERROR ("Cannot read at 0x%" PFMT64x, paddr);
+		free (buf);
+		return;
+	}
+
+	// Auto-detect type if not specified
+	if (type == 0) {
+		// Simple heuristics: check for wide chars
+		if (read >= 4 && buf[1] == 0 && buf[3] == 0) {
+			type = R_STRING_TYPE_WIDE32;
+		} else if (read >= 2 && buf[1] == 0) {
+			type = R_STRING_TYPE_WIDE;
+		} else {
+			type = R_STRING_TYPE_ASCII;
+		}
+	}
+
+	// Create string based on type
+	RBinString *bs = R_NEW0 (RBinString);
+	if (!bs) {
+		free (buf);
+		return;
+	}
+
+	ut32 actual_len = 0;
+	ut32 actual_size = 0;
+
+	switch (type) {
+	case R_STRING_TYPE_WIDE:
+		// UTF-16: find length (stop at null or non-printable)
+		for (int i = 0; i < read - 1; i += 2) {
+			if (buf[i] == 0 && buf[i+1] == 0) {
+				actual_size = i + 2;
+				break;
+			}
+			if (!IS_PRINTABLE (buf[i])) {
+				actual_size = i;
+				break;
+			}
+			actual_len++;
+		}
+		if (actual_size == 0) {
+			actual_size = (read % 2 == 0) ? read : read - 1;
+			actual_len = actual_size / 2;
+		}
+		bs->string = malloc (actual_len + 1);
+		if (bs->string) {
+			for (ut32 i = 0; i < actual_len; i++) {
+				bs->string[i] = buf[i * 2];
+			}
+			bs->string[actual_len] = 0;
+		}
+		break;
+	case R_STRING_TYPE_WIDE32:
+		// UTF-32: find length
+		for (int i = 0; i < read - 3; i += 4) {
+			if (buf[i] == 0 && buf[i+1] == 0 && buf[i+2] == 0 && buf[i+3] == 0) {
+				actual_size = i + 4;
+				break;
+			}
+			if (!IS_PRINTABLE (buf[i])) {
+				actual_size = i;
+				break;
+			}
+			actual_len++;
+		}
+		if (actual_size == 0) {
+			actual_size = (read % 4 == 0) ? read : read - (read % 4);
+			actual_len = actual_size / 4;
+		}
+		bs->string = malloc (actual_len + 1);
+		if (bs->string) {
+			for (ut32 i = 0; i < actual_len; i++) {
+				bs->string[i] = buf[i * 4];
+			}
+			bs->string[actual_len] = 0;
+		}
+		break;
+	case R_STRING_TYPE_ASCII:
+	case R_STRING_TYPE_UTF8:
+	default:
+		// ASCII/UTF-8: find null terminator or stop at non-printable
+		for (int i = 0; i < read; i++) {
+			if (buf[i] == 0 || !IS_PRINTABLE (buf[i])) {
+				actual_size = i;
+				break;
+			}
+			actual_len++;
+		}
+		if (actual_size == 0) {
+			actual_size = read;
+			actual_len = read;
+		}
+		bs->string = r_str_ndup ((char *)buf, actual_len);
+		break;
+	}
+
+	free (buf);
+
+	if (!bs->string) {
+		bs->string = strdup ("");
+	}
+
+	bs->paddr = paddr;
+	bs->vaddr = vaddr;
+	bs->size = actual_size;
+	bs->length = actual_len;
+	bs->type = type;
+	bs->ordinal = bo->strings->length;
+
+	r_list_append (bo->strings, bs);
+	ht_up_insert (bo->strings_db, bs->vaddr, bs);
+
+	R_LOG_INFO ("Added string at 0x%08" PFMT64x " (paddr: 0x%08" PFMT64x ", size: %u, length: %u, type: %c)",
+		vaddr, paddr, bs->size, bs->length, type);
+}
+
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
 	bool rdump = false;
-	if (input[1] == '-') { // "iz-"
+	if (input[1] == '+') { // "iz+"
+		cmd_izplus (core, input);
+	} else if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
 		ut64 addr = core->addr;
 		ut64 len = 0;
