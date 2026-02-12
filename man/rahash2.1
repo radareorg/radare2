@@ -5,7 +5,7 @@
 .Nd Block-Based Hashing, Encoding, and Encryption Utility
 .Sh SYNOPSIS
 .Nm rahash2
-.Op Fl BehjkLqrvX
+.Op Fl BehjkLqRrvX
 .Op Fl b Ar S
 .Op Fl a Ar A
 .Op Fl c Ar H
@@ -60,7 +60,22 @@ Run in quiet mode (-qq to show only the hash)
 .It Fl L
 List muta plugins (combines with -q, used by -a, -E and -D)
 .It Fl r
-Output radare commands
+.No Output radare commands (comments), for example:
+.Bd -literal -offset indent
+$ rahash2 -a sha1 -r file | r2 -qni file
+.Ed
+.It Fl R
+.No Output radare2 sdb commands to store hashes under
+.No file.<algo> keys (works with any algorithm name), for example:
+.Bd -literal -offset indent
+$ rahash2 -a sha1 -R file | r2 -qni file
+.Ed
+.Pp
+.Nm
+.Fl R
+is incompatible with
+.Fl B
+(per-block hashing).
 .It Fl s Ar string
 Hash this string instead of files
 .It Fl t Ar to
