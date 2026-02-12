@@ -173,20 +173,32 @@ R_API bool r_log_match(int level, const char *origin) {
 }
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
-	char *out;
+	char out[512];
+	char *msg = out;
+	va_list ap2;
 	if (!r_log_init ()) {
 		return;
 	}
-	out = r_str_newvf (fmt, ap);
-	if (!out) {
+	va_copy (ap2, ap);
+	int msglen = vsnprintf (out, sizeof (out), fmt, ap2);
+	va_end (ap2);
+	if (msglen < 0) {
 		return;
+	}
+	if (msglen >= sizeof (out)) {
+		msg = r_str_newvf (fmt, ap);
+		if (!msg) {
+			return;
+		}
 	}
 	if (rlog->cbs) {
 		RListIter *iter;
 		RLogCallbackUser *cbu;
 		r_list_foreach (rlog->cbs, iter, cbu) {
-			if (cbu->cb (cbu->user, level, origin, out)) {
-				free (out);
+			if (cbu->cb (cbu->user, level, origin, msg)) {
+				if (msg != out) {
+					free (msg);
+				}
 				return;
 			}
 		}
@@ -224,8 +236,10 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 			r_strbuf_appendf (sb, ts, sizeof (ts), "[ts:%" PFMT64u "]", now);
 		}
 	}
-	r_strbuf_appendf (sb, "%s %s\n", ts, out);
-	free (out);
+	r_strbuf_appendf (sb, "%s %s\n", ts, msg);
+	if (msg != out) {
+		free (msg);
+	}
 	char *s = r_strbuf_drain (sb);
 	sb = NULL;
 	if (!rlog->quiet) {
