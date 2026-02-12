@@ -3261,15 +3261,17 @@ static bool is_debug_build(RBinFile *bf, struct MACH0_(obj_t) *mo) {
 		return false;
 	}
 
+	bool res = false;
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
 		if (strstr (section->name, ".__debug_line")) {
-			return true;
+			res = true;
+			break;
 		}
 	}
 	r_list_free (sections);
-	return false;
+	return res;
 }
 #endif
 

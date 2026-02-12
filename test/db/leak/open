@@ -70,3 +70,13 @@ EXPECT=<<EOF
 hello
 EOF
 RUN
+
+NAME=macho zip
+FILE=zip0://bins/mach0/io.zip
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
