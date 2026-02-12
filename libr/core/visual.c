@@ -1002,12 +1002,8 @@ static void findPair(RCore *core) {
 
 	p = (const ut8 *) strchr (keys, ch);
 	if (p) {
-		char p_1 = 0;
-		if ((const char *) p > keys) {
-			p_1 = p[-1];
-		}
 		delta = (size_t) (p - (const ut8 *) keys);
-		ch = (delta % 2 && p != (const ut8 *) keys)? p_1: p[1];
+		ch = (delta % 2 && delta > 0)? p[-1]: p[1];
 	}
 	len = 1;
 	buf[0] = ch;
@@ -2905,8 +2901,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		}
 		r_core_cmdf (core, "wx %02x @ 0x%08"PFMT64x" + %d", ch, core->addr, core->print->cur);
 		core->print->cur ++;
-		och = 0;
-		ch = 0;
 		return 1;
 	}
 	RCoreVisual *v = &core->visual;

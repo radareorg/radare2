@@ -310,11 +310,6 @@ R_API void *r_arena_push(RArena *arena, const void *mem, size_t n) {
 // Copy arbitrary memory into arena and free it
 R_API void *r_arena_move(RArena *arena, void *mem, size_t n) {
 	R_RETURN_VAL_IF_FAIL (arena && mem && n > 0, NULL);
-	// if we are asked to move 0 bytes - return NULL, but free mem
-	if (!n) {
-		r_free (mem);
-		return NULL;
-	}
 	void *copy = r_arena_alloc (arena, n);
 	memcpy (copy, mem, n);
 	r_free (mem);

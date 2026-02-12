@@ -180,9 +180,7 @@ TODO:
 
 // XXX: this needs to be moved to use the standard shell like in !=! and support visual+panels
 static void __rtr_shell(RCore *core, int nth) {
-	char *host = "";
-	char *port= "";
-	char *file= "";
+	char *file = "";
 	char prompt[64], prompt2[64], *str, *ptr;
 	int len;
 	const char* res;
@@ -200,8 +198,8 @@ static void __rtr_shell(RCore *core, int nth) {
 		R_LOG_ERROR ("Unknown protocol");
 		return;
 	}
-	host = strdup (rtr_host[nth].host);
-	port = r_str_newf ("%d", rtr_host[nth].port);
+	char *host = strdup (rtr_host[nth].host);
+	char *port = r_str_newf ("%d", rtr_host[nth].port);
 
 	if (!r_config_get_b (core->config, "scr.interactive")) {
 		eprintf ("Set scr.interfactive to use the remote r2 shell.\n");
