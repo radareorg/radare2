@@ -983,6 +983,7 @@ R_API RIODesc *r_core_file_open_many(RCore *r, const char *file, int perm, ut64 
 			r_esil_setup (r->anal->esil, r->anal, 0, 0, false);
 		}
 	}
+	r_list_free (list_fds);
 	return first;
 }
 

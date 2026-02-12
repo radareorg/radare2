@@ -221,6 +221,7 @@ static void r_io_zip_free_zipfileobj(RIOZipFileObj *zfo) {
 	if (zfo->modified) {
 		r_io_zip_flush_file (zfo);
 	}
+	free (zfo->archivename);
 	free (zfo->name);
 	free (zfo->password);
 	r_unref (zfo->b);
