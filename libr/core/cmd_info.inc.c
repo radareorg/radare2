@@ -59,7 +59,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"Usage: iz", "[][jq*]", "List strings",
 	"iz", "", "strings in data sections (in JSON/Base64)",
 	"iz,", "[:help]", "perform a table query on strings listing",
-	"iz-", " [addr]", "purge string via bin.str.purge",
+	"iz-", " [addr] [len] [type]", "purge string via bin.str.purge (addr, optional length, type:a/u/w/W/b)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izz", "", "search for Strings in the whole binary",
 	"izz*", "", "same as iz* but exposing the strings of the whole binary",
@@ -1403,21 +1403,53 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	if (input[1] == '-') { // "iz-"
 		char *strpurge = core->bin->strpurge;
 		ut64 addr = core->addr;
+		ut64 len = 0;
+		char type = 0;
 		bool old_tmpseek = core->tmpseek;
 		input++;
 		if (input[1] == ' ') {
-			const char *argstr = r_str_trim_head_ro (input + 2);
-			ut64 arg = r_num_get (NULL, argstr);
-			input++;
-			if (arg != 0 || *argstr == '0') {
+			char *args = strdup (r_str_trim_head_ro (input + 2));
+			const char *arg_addr = r_str_word_get0 (args, 0);
+			const char *arg_len = r_str_word_get0 (args, 1);
+			const char *arg_type = r_str_word_get0 (args, 2);
+			ut64 arg = r_num_get (NULL, arg_addr);
+			if (arg != 0 || R_STR_ISNOTEMPTY (arg_addr)) {
 				addr = arg;
 			}
+			if (R_STR_ISNOTEMPTY (arg_len)) {
+				len = r_num_get (NULL, arg_len);
+			}
+			if (R_STR_ISNOTEMPTY (arg_type)) {
+				type = *arg_type;
+			}
+			free (args);
 		}
 		core->tmpseek = false;
-		r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
-				r_str_get (strpurge),
-				(strpurge && *strpurge)? ",": "",
-				addr);
+		if (len > 0 && type) {
+			// addr, len and type - format: addr-len:type (len is string length for matching)
+			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x ":%c",
+					r_str_get (strpurge),
+					R_STR_ISNOTEMPTY (strpurge)? ",": "",
+					addr, len, type);
+		} else if (len > 0) {
+			// addr and len only - format: addr-len (len is string length for matching)
+			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x "-%" PFMT64x,
+					r_str_get (strpurge),
+					R_STR_ISNOTEMPTY (strpurge)? ",": "",
+					addr, len);
+		} else if (type) {
+			// addr and type only
+			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x ":%c",
+					r_str_get (strpurge),
+					R_STR_ISNOTEMPTY (strpurge)? ",": "",
+					addr, type);
+		} else {
+			// addr only
+			r_core_cmdf (core, "e bin.str.purge=%s%s0x%" PFMT64x,
+					r_str_get (strpurge),
+					R_STR_ISNOTEMPTY (strpurge)? ",": "",
+					addr);
+		}
 		core->tmpseek = old_tmpseek;
 	} else if (input[1] == 'z') { // "izz"
 		switch (input[2]) {
