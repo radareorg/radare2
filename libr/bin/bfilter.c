@@ -204,7 +204,7 @@ static bool false_positive(const char *str) {
 	return false;
 }
 
-R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr, ut32 len, char type) {
+R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr) {
 	R_RETURN_VAL_IF_FAIL (bin && str, false);
 	bool purge = false;
 	if (bin->strpurge) {
@@ -213,11 +213,9 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr, ut32 len, ch
 			int splits = r_str_split (addrs, ',');
 			int i;
 			char *ptr;
-			char *len_sep;
-			char *type_sep;
-			ut64 addr, match_len;
+			char *range_sep;
+			ut64 addr, from, to;
 			for (i = 0, ptr = addrs; i < splits; i++, ptr += strlen (ptr) + 1) {
-				char match_type = 0;
 				if (!strcmp (ptr, "true") && false_positive (str)) {
 					purge = true;
 					continue;
@@ -231,34 +229,22 @@ R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr, ut32 len, ch
 					purge = !bang;
 					continue;
 				}
-				// Check for type separator (e.g., 0x100:a or 0x100-10:a for ascii)
-				type_sep = strchr (ptr, ':');
-				if (type_sep) {
-					*type_sep = 0;
-					match_type = type_sep[1];
-				}
-				// Check for length separator (e.g., 0x100-10 means addr 0x100 with len 10)
-				len_sep = strchr (ptr, '-');
-				if (len_sep) {
-					*len_sep = 0;
-					addr = r_num_get (NULL, ptr);
-					ptr = len_sep + 1;
-					match_len = r_num_get (NULL, ptr);
-					if (refaddr == addr && len == match_len) {
-						if (!match_type || type == match_type) {
-							purge = !bang;
-						}
+				range_sep = strchr (ptr, '-');
+				if (range_sep) {
+					*range_sep = 0;
+					from = r_num_get (NULL, ptr);
+					ptr = range_sep + 1;
+					to = r_num_get (NULL, ptr);
+					if (refaddr >= from && refaddr <= to) {
+						purge = !bang;
 						continue;
 					}
-				} else {
-					addr = r_num_get (NULL, ptr);
-					if (addr != 0 || *ptr == '0') {
-						if (refaddr == addr) {
-							if (!match_type || type == match_type) {
-								purge = !bang;
-							}
-							continue;
-						}
+				}
+				addr = r_num_get (NULL, ptr);
+				if (addr != 0 || *ptr == '0') {
+					if (refaddr == addr) {
+						purge = !bang;
+						continue;
 					}
 				}
 			}
@@ -390,10 +376,116 @@ loop_end:
 	return true;
 }
 
-R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr, ut32 len, char type) {
+R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bin && str, false);
-	if (r_bin_strpurge (bin, str, addr, len, type) || !bin_strfilter (bin, str)) {
+	if (r_bin_strpurge (bin, str, addr) || !bin_strfilter (bin, str)) {
 		return false;
 	}
 	return true;
+}
+
+R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char type) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && vaddr != UT64_MAX, false);
+	RBinObject *bo = bf->bo;
+	RBinString *bs = ht_up_find (bo->strings_db, vaddr, NULL);
+	if (!bs) {
+		return false;
+	}
+	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
+		return false;
+	}
+	ht_up_delete (bo->strings_db, vaddr);
+	r_list_delete_data (bo->strings, bs);
+	return true;
+}
+
+static int detect_string_type(const ut8 *buf, st64 len) {
+	if (len >= 4 && buf[1] == 0 && buf[3] == 0) {
+		return R_STRING_TYPE_WIDE32;
+	}
+	if (len >= 2 && buf[1] == 0) {
+		return R_STRING_TYPE_WIDE;
+	}
+	return R_STRING_TYPE_ASCII;
+}
+
+static char *extract_wide_string(const ut8 *buf, st64 len, int charsize, ut32 *out_len, ut32 *out_size) {
+	ut32 actual_len = 0;
+	int i;
+	for (i = 0; i < len - (charsize - 1); i += charsize) {
+		bool is_null = (charsize == 2) ? (buf[i] == 0 && buf[i+1] == 0)
+			: (buf[i] == 0 && buf[i+1] == 0 && buf[i+2] == 0 && buf[i+3] == 0);
+		if (is_null || !IS_PRINTABLE (buf[i])) {
+			break;
+		}
+		actual_len++;
+	}
+	*out_size = (actual_len > 0) ? (actual_len * charsize + charsize) : 0;
+	*out_len = actual_len;
+	char *str = malloc (actual_len + 1);
+	if (str) {
+		ut32 j;
+		for (j = 0; j < actual_len; j++) {
+			str[j] = buf[j * charsize];
+		}
+		str[actual_len] = 0;
+	}
+	return str;
+}
+
+R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut64 max_len, int type) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	RBinObject *bo = bf->bo;
+	if (!bo->strings) {
+		bo->strings = r_list_newf ((RListFree)r_bin_string_free);
+	}
+	if (!bo->strings_db) {
+		bo->strings_db = ht_up_new0 ();
+	}
+	if (max_len < 1) {
+		max_len = 512;
+	}
+	ut8 *buf = malloc (max_len);
+	if (!buf) {
+		return NULL;
+	}
+	st64 len = r_buf_read_at (bf->buf, paddr, buf, max_len);
+	if (len < 1) {
+		free (buf);
+		return NULL;
+	}
+	if (type == 0) {
+		type = detect_string_type (buf, len);
+	}
+	RBinString *bs = R_NEW0 (RBinString);
+	ut32 actual_len = 0, actual_size = 0;
+	int i;
+	switch (type) {
+	case R_STRING_TYPE_WIDE:
+		bs->string = extract_wide_string (buf, len, 2, &actual_len, &actual_size);
+		break;
+	case R_STRING_TYPE_WIDE32:
+		bs->string = extract_wide_string (buf, len, 4, &actual_len, &actual_size);
+		break;
+	default:
+		for (i = 0; i < len && buf[i] && IS_PRINTABLE (buf[i]); i++) {
+			actual_len++;
+		}
+		actual_size = actual_len + 1;
+		bs->string = r_str_ndup ((char *)buf, actual_len);
+		break;
+	}
+	free (buf);
+	if (!bs->string) {
+		bs->string = strdup ("");
+	}
+	bs->paddr = paddr;
+	bs->vaddr = vaddr;
+	bs->size = actual_size;
+	bs->length = actual_len;
+	bs->type = type;
+	bs->ordinal = r_list_length (bo->strings);
+	r_list_append (bo->strings, bs);
+	ht_up_insert (bo->strings_db, bs->vaddr, bs);
+	return bs;
 }
