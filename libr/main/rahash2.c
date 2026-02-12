@@ -118,7 +118,9 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 0:
 		if (!ro->quiet) {
 			printf ("0x%08" PFMT64x "-0x%08" PFMT64x " %s: ",
-				ro->from, ro->to > 0? ro->to - 1: 0, hname);
+				ro->from,
+				ro->to > 0? ro->to - 1: 0,
+				hname);
 		}
 		if (hash & R_HASH_SSDEEP) {
 			printf ("%s\n", ctx->digest);
@@ -131,6 +133,16 @@ static void do_hash_print(RHash *ctx, RahashOptions *ro, ut64 hash, int dlen, PJ
 	case 1:
 		printf ("CC file %s:", hname);
 		do_hash_hexprint (c, dlen, ule, pj, rad);
+		break;
+	case 3:
+		printf ("k file.%s=", hname);
+		if (hash & R_HASH_SSDEEP) {
+			printf ("%s\n", ctx->digest);
+		} else if (dlen == R_HASH_SIZE_ENTROPY) {
+			printf ("%.8f\n", ctx->entropy);
+		} else {
+			do_hash_hexprint (c, dlen, ule, pj, 0);
+		}
 		break;
 	case 'n':
 		if (ro->quiet > 2) {
@@ -318,7 +330,7 @@ static int do_hash(RahashOptions *ro, const char *file, const char *algo, RIO *i
 }
 
 static int do_help(int line) {
-	printf ("Usage: rahash2 [-BehjkLqrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
+	printf ("Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...\n");
 	if (line) {
 		return 0;
 	}
@@ -341,6 +353,7 @@ static int do_help(int line) {
 		" -q          run in quiet mode (-qq to show only the hash)\n"
 		" -L          list muta plugins (combines with -q, used by -a, -E and -D)\n"
 		" -r          output radare commands\n"
+		" -R          output radare2 sdb commands (k file.<algo>=...)\n"
 		" -s string   hash this string instead of files\n"
 		" -t to       stop hashing at given address\n"
 		" -x hexstr   hash this hexpair string instead of files\n"
@@ -562,7 +575,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		goto beach; \
 	}
 	RGetopt opt;
-	r_getopt_init (&opt, argc, argv, "p:jJD:rveE:a:i:I:S:s:x:b:nBhf:t:kLqc:X");
+	r_getopt_init (&opt, argc, argv, "p:jJD:RrveE:a:i:I:S:s:x:b:nBhf:t:kLqc:X");
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
 		case 'q':
@@ -603,6 +616,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 			ro->endian = !ro->endian;
 			break;
 		case 'r': rad = 1; break;
+		case 'R': rad = 3; break;
 		case 'k': rad = 2; break;
 		case 'p': ptype = opt.arg; break;
 		case 'a': add_algo (algos, opt.arg); break;

@@ -74,11 +74,21 @@ bins/elf/analysis/hello-linux-x86_64: CC file sha256:7bdbf25324af1946ec0b16dbf92
 EOF
 RUN
 
+NAME=rahash2 -a md5,sha1,sha256 -R
+FILE=-
+CMDS=!rahash2 -a md5,sha1,sha256 -R bins/elf/analysis/hello-linux-x86_64
+EXPECT=<<EOF
+bins/elf/analysis/hello-linux-x86_64: k file.md5=c957bd5bd6204470256bc15248ccafd4
+bins/elf/analysis/hello-linux-x86_64: k file.sha1=687c82d13cb27f0600d8e57edc784282c1732f56
+bins/elf/analysis/hello-linux-x86_64: k file.sha256=7bdbf25324af1946ec0b16dbf928875a588a786f7c279cd115729c5a3a297a55
+EOF
+RUN
+
 NAME=rahash2 -h
 FILE=-
 CMDS=!rahash2~Usage
 EXPECT=<<EOF
-Usage: rahash2 [-BehjkLqrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
+Usage: rahash2 [-BehjkLqRrvX] [-b S] [-a A] [-c H] [-E A] [-s S] [-f O] [-t O] [file] ...
 EOF
 RUN
 
