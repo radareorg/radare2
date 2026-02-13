@@ -4396,10 +4396,10 @@ static struct r_bin_pe_section_t *PE_(r_bin_pe_get_sections)(RBinPEObj *pe) {
 			ut64 sym_tbl_off = pe->nt_headers->file_header.PointerToSymbolTable;
 			const int num_symbols = pe->nt_headers->file_header.NumberOfSymbols;
 
-			if (ST32_MUL_OVFCHK (num_symbols, COFF_SYMBOL_SIZE)) {
+			st64 off;
+			if (r_mul_overflow ((st64)num_symbols, (st64)COFF_SYMBOL_SIZE, &off)) {
 				continue;
 			}
-			st64 off = num_symbols * COFF_SYMBOL_SIZE;
 			if (off > 0 && sym_tbl_off &&
 				sym_tbl_off + off + idx < pe->size &&
 				sym_tbl_off + off + idx > off) {

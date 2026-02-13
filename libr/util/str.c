@@ -1740,10 +1740,10 @@ R_API char *r_str_encoded_json(const char *buf, int buf_size, int encoding) {
 		size_t i = 0;
 		size_t increment = encoding == PJ_ENCODING_STR_ARRAY? 4: 2;
 
-		if (!SZT_MUL_OVFCHK (((buf_sz * increment) + 1), SZT_MAX)) {
+		size_t new_sz;
+		if (r_mul_overflow (buf_sz, increment, &new_sz) || r_add_overflow (new_sz, (size_t)1, &new_sz)) {
 			return NULL;
 		}
-		size_t new_sz = (buf_sz * increment) + 1;
 
 		encoded_str = malloc (new_sz);
 		if (!encoded_str) {

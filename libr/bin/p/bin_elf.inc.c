@@ -426,7 +426,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 	ut64 sym_vaddr = r->symbol ? r->symbol->vaddr : (rel->sym ? rel->rva : 0);
 
 	#define SET(T) r->type = R_BIN_RELOC_ ## T; r->additive = 0; return r
-	#define ADD(T, A) r->type = R_BIN_RELOC_ ## T; if (!ST32_ADD_OVFCHK (r->addend, A)) { r->addend += A; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r
+	#define ADD(T, A) do { r->type = R_BIN_RELOC_ ## T; st32 _tmp; if (!r_add_overflow_st32 (r->addend, A, &_tmp)) { r->addend = _tmp; } r->additive = rel->mode == DT_RELA || rel->mode == DT_CREL; return r; } while (0)
 
 	// Early return if it's a CREL relocation - it was already set up in the initialization above
 	if (rel->mode == DT_CREL) {

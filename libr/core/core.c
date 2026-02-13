@@ -3256,10 +3256,11 @@ reaccept:
 				r_socket_read_block (c, &flg, 1); // flags
 				R_LOG_DEBUG ("open (%d)", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
-				if (UT8_ADD_OVFCHK (cmd, 1)) {
+				ut8 alloc_size;
+				if (r_add_overflow (cmd, (ut8)1, &alloc_size)) {
 					goto out_of_function;
 				}
-				ptr = malloc ((size_t)cmd + 1);
+				ptr = malloc ((size_t)alloc_size);
 				pipefd = -1;
 				if (!ptr) {
 					R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);
@@ -3317,12 +3318,13 @@ reaccept:
 					}
 					r_core_block_read (core);
 					/* Prevent size overflow on allocation */
-					if (SZT_ADD_OVFCHK ((size_t)i, 5)) {
+					size_t alloc_size;
+					if (r_add_overflow ((size_t)i, (size_t)5, &alloc_size)) {
 						R_LOG_ERROR ("rap: size overflow for read length %d", i);
 						r_socket_close (c);
 						goto out_of_function;
 					}
-					ptr = malloc ((size_t)i + 5);
+					ptr = malloc (alloc_size);
 					if (!ptr) {
 						R_LOG_ERROR ("rap: cannot allocate %zu bytes for read", (size_t)i + 5);
 						r_socket_close (c);

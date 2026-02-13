@@ -157,7 +157,8 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) 
 		return -1;
 	}
 
-	if (SZT_MUL_OVFCHK (module_count, sizeof (DrcovModule))) {
+	size_t alloc_size;
+	if (r_mul_overflow_size_t (module_count, sizeof (DrcovModule), &alloc_size)) {
 		R_LOG_ERROR ("Module table too large in '%s'", path);
 		free (buf);
 		return -1;
@@ -229,17 +230,18 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) 
 			continue;
 		}
 		DrcovModule *mod = &modules[mod_id];
-		if (UT64_ADD_OVFCHK (mod->base, start)) {
+		ut64 addr;
+		if (r_add_overflow (mod->base, (ut64)start, &addr)) {
 			continue;
 		}
-		ut64 addr = mod->base + start;
-		if (size && UT64_ADD_OVFCHK (addr, size)) {
+		ut64 addr_end;
+		if (size && r_add_overflow (addr, (ut64)size, &addr_end)) {
 			continue;
 		}
 		if (mod->end && mod->end != UT64_MAX && addr > mod->end) {
 			continue;
 		}
-		if (size && mod->end && mod->end != UT64_MAX && addr + size > mod->end) {
+		if (size && mod->end && mod->end != UT64_MAX && addr_end > mod->end) {
 			continue;
 		}
 		if (cb && cb (user, addr, size)) {

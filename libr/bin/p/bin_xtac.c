@@ -41,18 +41,17 @@ static bool validate_header(RBinXtacObj *bin) {
 		hdr->size_of_nt_pname > 0xfff * sizeof (ut16)) {
 		return false;
 	}
-	if (UT64_ADD_OVFCHK (hdr->ptr_to_addr_pairs, (ut64)hdr->num_of_addr_pairs * sizeof (X86ArmAddrPair))) {
+	ut64 addr_pairs_end, mod_name_end, nt_pname_end;
+	if (r_add_overflow ((ut64)hdr->ptr_to_addr_pairs, (ut64)hdr->num_of_addr_pairs * sizeof (X86ArmAddrPair), &addr_pairs_end)) {
 		return false;
 	}
-	if (UT64_ADD_OVFCHK (hdr->ptr_to_mod_name, hdr->size_of_mod_name)) {
+	if (r_add_overflow ((ut64)hdr->ptr_to_mod_name, (ut64)hdr->size_of_mod_name, &mod_name_end)) {
 		return false;
 	}
-	if (UT64_ADD_OVFCHK (hdr->ptr_to_nt_pname, hdr->size_of_nt_pname)) {
+	if (r_add_overflow ((ut64)hdr->ptr_to_nt_pname, (ut64)hdr->size_of_nt_pname, &nt_pname_end)) {
 		return false;
 	}
-	if ((ut64)hdr->ptr_to_addr_pairs + (ut64)hdr->num_of_addr_pairs * sizeof (X86ArmAddrPair) > buf_size ||
-		(ut64)hdr->ptr_to_mod_name + hdr->size_of_mod_name > buf_size ||
-		(ut64)hdr->ptr_to_nt_pname + hdr->size_of_nt_pname > buf_size) {
+	if (addr_pairs_end > buf_size || mod_name_end > buf_size || nt_pname_end > buf_size) {
 		return false;
 	}
 	if (hdr->ptr_to_head_blck_stub > buf_size ||
@@ -96,12 +95,11 @@ static RList *sections(RBinFile *bf) {
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (UT32_ADD_OVFCHK (ptr_addr, blck_stub_code_size)) {
+		if (r_add_overflow (ptr_addr, blck_stub_code_size, &ptr_addr)) {
 			free (s->name);
 			free (s);
 			continue;
 		}
-		ptr_addr += blck_stub_code_size;
 		r_list_append (ret, s);
 
 		if (blck_stub_header->offset_to_next_entry < blck_stub_code_size) {
@@ -115,18 +113,16 @@ static RList *sections(RBinFile *bf) {
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (UT32_ADD_OVFCHK (ptr_addr, size_of_trans_code)) {
+		if (r_add_overflow (ptr_addr, size_of_trans_code, &ptr_addr)) {
 			free (s->name);
 			free (s);
 			continue;
 		}
-		ptr_addr += size_of_trans_code;
 		r_list_append (ret, s);
 
-		if (UT32_ADD_OVFCHK (ptr_addr, sizeof (RBinBlckStubHeader) - 4)) {
-			break; // Overflow detected, stop processing
+		if (r_add_overflow (ptr_addr, (ut32)(sizeof (RBinBlckStubHeader) - 4), &ptr_addr)) {
+			break;
 		}
-		ptr_addr += sizeof (RBinBlckStubHeader) - 4;
 	}
 
 	return ret;

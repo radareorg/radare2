@@ -802,9 +802,10 @@ R_API void r_table_filter(RTable *t, int nth, int op, const char *un) {
 			if (page < 1) {
 				page = 1;
 			}
-			if (!ST32_MUL_OVFCHK (page, page_items)) {
-				lrow = page_items * (page - 1);
-				uv = ((ut64)page_items) * page;
+			st32 page_offset;
+			if (!r_mul_overflow (page_items, page - 1, &page_offset)) {
+				lrow = page_offset;
+				uv = (ut64)page_offset + (ut64)page_items;
 			} else {
 				uv = 0;
 			}

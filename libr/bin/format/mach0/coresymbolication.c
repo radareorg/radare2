@@ -193,15 +193,16 @@ RCoreSymCacheElement *r_coresym_cache_element_new(RBinFile *bf, RBuffer *buf, ut
 
 	ut64 page_zero_size = 0;
 	size_t page_zero_idx = 0;
-	if (UT32_MUL_OVFCHK (hdr->n_segments, sizeof (RCoreSymCacheElementSegment))) {
+	ut32 tmp;
+	if (r_mul_overflow_ut32 (hdr->n_segments, sizeof (RCoreSymCacheElementSegment), &tmp)) {
 		goto beach;
-	} else if (UT32_MUL_OVFCHK (hdr->n_sections, sizeof (RCoreSymCacheElementSection))) {
+	} else if (r_mul_overflow_ut32 (hdr->n_sections, sizeof (RCoreSymCacheElementSection), &tmp)) {
 		goto beach;
-	} else if (UT32_MUL_OVFCHK (hdr->n_symbols, sizeof (RCoreSymCacheElementSymbol))) {
+	} else if (r_mul_overflow_ut32 (hdr->n_symbols, sizeof (RCoreSymCacheElementSymbol), &tmp)) {
 		goto beach;
-	} else if (UT32_MUL_OVFCHK (hdr->n_lined_symbols, sizeof (RCoreSymCacheElementLinedSymbol))) {
+	} else if (r_mul_overflow_ut32 (hdr->n_lined_symbols, sizeof (RCoreSymCacheElementLinedSymbol), &tmp)) {
 		goto beach;
-	} else if (UT32_MUL_OVFCHK (hdr->n_line_info, sizeof (RCoreSymCacheElementLineInfo))) {
+	} else if (r_mul_overflow_ut32 (hdr->n_line_info, sizeof (RCoreSymCacheElementLineInfo), &tmp)) {
 		goto beach;
 	}
 	if (hdr->n_segments > 0) {

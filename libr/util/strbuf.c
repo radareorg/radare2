@@ -261,11 +261,10 @@ R_API bool r_strbuf_append_n(RStrBuf *sb, const char *s, size_t l) {
 		return false;
 	}
 
-	if (SZT_ADD_OVFCHK (sb->len, l + 1)) {
+	size_t required;
+	if (r_add_overflow (sb->len, l + 1, &required)) {
 		return false;
 	}
-
-	size_t required = sb->len + l + 1;
 	if (sb->weakref || l == 0) {
 		return !sb->weakref;
 	}

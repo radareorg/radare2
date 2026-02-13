@@ -4,7 +4,8 @@
 #include <r_util/r_print.h>
 
 R_API RConsPixel *r_cons_pixel_new(int w, int h) {
-	if (UT32_MUL_OVFCHK (w, h)) {
+	size_t buf_size;
+	if (r_mul_overflow ((size_t)w, (size_t)h, &buf_size)) {
 		return NULL;
 	}
 	RConsPixel *p = R_NEW (RConsPixel);
@@ -13,7 +14,7 @@ R_API RConsPixel *r_cons_pixel_new(int w, int h) {
 	}
 	p->w = w;
 	p->h = h;
-	p->buf_size = ((size_t)w) * h;
+	p->buf_size = buf_size;
 	p->buf = calloc (w, h);
 	if (!p->buf) {
 		free (p);

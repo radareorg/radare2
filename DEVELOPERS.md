@@ -487,12 +487,12 @@ and then check for null.
 For example:
 
 ```c
-if (ST32_ADD_OVFCHK (sizeof (Object), counter)) {
-	void *amount = calloc (sizeof (Object), counter);
-	if (!amount) {
-		R_LOG_DEBUG ("Cannot allocate %d objects", counter);
-		return;
-	}
+st32 alloc_size;
+if (r_mul_overflow_st32 (sizeof (Object), counter, &alloc_size)) {
+	R_LOG_DEBUG ("Overflow when computing allocation size");
+	return;
+}
+void *amount = calloc (sizeof (Object), counter);
 ```
 
 ### Stack allocations
