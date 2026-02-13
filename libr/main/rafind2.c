@@ -742,6 +742,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 				char *data = r_file_slurp (opt.arg, &data_size);
 				if (!data) {
 					R_LOG_ERROR ("Cannot slurp '%s'", opt.arg);
+					rafind_options_fini (&ro);
 					return 1;
 				}
 				char *hexdata = r_hex_bin2strdup ((ut8 *)data, data_size);
@@ -844,6 +845,7 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 			ro.showstr = true;
 			break;
 		default:
+			rafind_options_fini (&ro);
 			return show_help (argv[0], 1);
 		}
 	}
@@ -864,13 +866,16 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		}
 #endif
 		r_cons_flush (ro.cons);
+		rafind_options_fini (&ro);
 		return 0;
 	}
 	if (opt.ind == argc) {
+		rafind_options_fini (&ro);
 		return show_help (argv[0], 1);
 	}
 	if (ro.replace && ro.mode != R_SEARCH_KEYWORD) {
 		R_LOG_ERROR ("Replace only supported for keyword searches (-s/-S/-x/-V/-F)");
+		rafind_options_fini (&ro);
 		return 1;
 	}
 	/* Enable quiet mode if searching just a single file */
@@ -887,16 +892,18 @@ R_API int r_main_rafind2(int argc, const char **argv) {
 		if (file) {
 			if (!*file) {
 				R_LOG_ERROR ("Cannot open empty path");
+				rafind_options_fini (&ro);
 				return 1;
 			}
 			rafind_open (&ro, file);
 		}
 	}
-	r_list_free (ro.keywords);
 	if (ro.pj) {
 		pj_end (ro.pj);
 		printf ("%s\n", pj_string (ro.pj));
 		pj_free (ro.pj);
+		ro.pj = NULL;
 	}
+	rafind_options_fini (&ro);
 	return 0;
 }
