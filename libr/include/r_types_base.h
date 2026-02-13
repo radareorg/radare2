@@ -168,6 +168,7 @@ typedef struct _utX {
 #endif
 #define R_ABS(x) (((x)<0)?-(x):(x))
 #define R_BTW(x,y,z) (((x)>=(y))&&((y)<=(z)))?y:x
+#define R_CLAMP(v,min,max) ((v)<(min)?(min):((v)>(max)?(max):(v)))
 
 #include "r_types_overflow.h"
 
