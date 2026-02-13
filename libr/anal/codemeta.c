@@ -3,24 +3,27 @@
 #include <r_core.h>
 #include <r_codemeta.h>
 
-R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *code) {
-	R_RETURN_VAL_IF_FAIL (code, NULL);
-	RCodeMetaItem *mi = r_mem_dup (code, sizeof (RCodeMetaItem));
-	switch (mi->type) {
+R_API void r_codemeta_item_copy(RCodeMetaItem *dst, RCodeMetaItem *src) {
+	R_RETURN_IF_FAIL (dst && src);
+	*dst = *src;
+	switch (dst->type) {
 	case R_CODEMETA_TYPE_FUNCTION_NAME:
-		mi->reference.name = strdup (mi->reference.name);
+		dst->reference.name = strdup (dst->reference.name);
 		break;
 	case R_CODEMETA_TYPE_LOCAL_VARIABLE:
 	case R_CODEMETA_TYPE_FUNCTION_PARAMETER:
-		mi->variable.name = strdup (mi->variable.name);
+		dst->variable.name = strdup (dst->variable.name);
 		break;
-	case R_CODEMETA_TYPE_CONSTANT_VARIABLE:
-	case R_CODEMETA_TYPE_OFFSET:
-	case R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT:
-	case R_CODEMETA_TYPE_GLOBAL_VARIABLE:
+	default:
 		break;
 	}
-	return mi;
+}
+
+R_API RCodeMetaItem *r_codemeta_item_clone(RCodeMetaItem *mi) {
+	R_RETURN_VAL_IF_FAIL (mi, NULL);
+	RCodeMetaItem *dst = R_NEW (RCodeMetaItem);
+	r_codemeta_item_copy (dst, mi);
+	return dst;
 }
 
 R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
@@ -28,7 +31,7 @@ R_API RCodeMeta *r_codemeta_clone(RCodeMeta *code) {
 	RCodeMeta *r = r_codemeta_new (code->code);
 	RCodeMetaItem *mi;
 	R_VEC_FOREACH (&code->annotations, mi) {
-		r_codemeta_add_item (r, r_codemeta_item_clone (mi));
+		r_codemeta_add_item (r, mi);
 	}
 	return r;
 }
@@ -145,7 +148,9 @@ static int cmp_find_min_mid(void *incoming, void *in, void *user) {
 
 R_API void r_codemeta_add_item(RCodeMeta *code, RCodeMetaItem *mi) {
 	R_RETURN_IF_FAIL (code && mi);
-	RVecCodeMetaItem_push_back (&code->annotations, mi);
+	RCodeMetaItem item;
+	r_codemeta_item_copy (&item, mi);
+	RVecCodeMetaItem_push_back (&code->annotations, &item);
 }
 
 static void codemeta_build_tree(RCodeMeta *code) {
