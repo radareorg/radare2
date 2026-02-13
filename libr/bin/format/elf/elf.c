@@ -4858,6 +4858,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *
 				result = -1;
 				ht_up_free (phd_offset_map);
 				ht_up_free (phd_ordinal_map);
+				RVecRBinElfSymbol_free (uhsymbols);
 				return result;
 			}
 			R_VEC_FOREACH (uhsymbols, symbol) {
