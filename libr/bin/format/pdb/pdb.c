@@ -183,13 +183,13 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 			R_FREE (sizes);
 			return 0;
 		}
-		if (SZT_MUL_OVFCHK (num_pages, 4)) {
+		ut32 size;
+		if (r_mul_overflow (num_pages, (ut32)4, &size)) {
 			R_LOG_WARN ("num_pages overflow");
 			R_FREE (data);
 			R_FREE (sizes);
 			return 0;
 		}
-		ut32 size = num_pages * 4;
 		if (size > UT16_MAX) {
 			R_LOG_WARN ("too many pages");
 			R_FREE (data);
@@ -480,10 +480,11 @@ static bool pdb7_parse(RBinPdb *pdb) {
 	}
 	p_tmp = root_page_data;
 	for (i = 0; i < num_root_index_pages; i++) {
-		if (UT64_MUL_OVFCHK (root_index_pages[i], page_size)) {
+		ut64 seek_pos;
+		if (r_mul_overflow ((ut64)root_index_pages[i], (ut64)page_size, &seek_pos)) {
 			break;
 		}
-		r_buf_seek (pdb->buf, root_index_pages[i] * page_size, R_BUF_SET);
+		r_buf_seek (pdb->buf, seek_pos, R_BUF_SET);
 		r_buf_read (pdb->buf, p_tmp, page_size);
 		p_tmp = (char *)p_tmp + page_size;
 	}

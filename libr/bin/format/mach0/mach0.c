@@ -3002,13 +3002,10 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 		return;
 	}
 
-	if (SZT_MUL_OVFCHK (symbols_count, 2 * sizeof (RBinSymbol))) {
-		// overflow may happen here
+	if (r_mul_overflow (symbols_count, 2 * sizeof (RBinSymbol), &symbols_size)) {
 		ht_pp_free (hash);
 		return;
 	}
-
-	symbols_size = symbols_count * 2 * sizeof (RBinSymbol);
 	j = 0; // symbol_idx
 	mo->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);

@@ -3317,12 +3317,13 @@ reaccept:
 					}
 					r_core_block_read (core);
 					/* Prevent size overflow on allocation */
-					if (SZT_ADD_OVFCHK ((size_t)i, 5)) {
+					size_t alloc_size;
+					if (r_add_overflow ((size_t)i, (size_t)5, &alloc_size)) {
 						R_LOG_ERROR ("rap: size overflow for read length %d", i);
 						r_socket_close (c);
 						goto out_of_function;
 					}
-					ptr = malloc ((size_t)i + 5);
+					ptr = malloc (alloc_size);
 					if (!ptr) {
 						R_LOG_ERROR ("rap: cannot allocate %zu bytes for read", (size_t)i + 5);
 						r_socket_close (c);

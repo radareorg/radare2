@@ -96,12 +96,11 @@ static RList *sections(RBinFile *bf) {
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (UT32_ADD_OVFCHK (ptr_addr, blck_stub_code_size)) {
+		if (r_add_overflow (ptr_addr, blck_stub_code_size, &ptr_addr)) {
 			free (s->name);
 			free (s);
 			continue;
 		}
-		ptr_addr += blck_stub_code_size;
 		r_list_append (ret, s);
 
 		if (blck_stub_header->offset_to_next_entry < blck_stub_code_size) {
@@ -115,18 +114,16 @@ static RList *sections(RBinFile *bf) {
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (UT32_ADD_OVFCHK (ptr_addr, size_of_trans_code)) {
+		if (r_add_overflow (ptr_addr, size_of_trans_code, &ptr_addr)) {
 			free (s->name);
 			free (s);
 			continue;
 		}
-		ptr_addr += size_of_trans_code;
 		r_list_append (ret, s);
 
-		if (UT32_ADD_OVFCHK (ptr_addr, sizeof (RBinBlckStubHeader) - 4)) {
-			break; // Overflow detected, stop processing
+		if (r_add_overflow (ptr_addr, (ut32)(sizeof (RBinBlckStubHeader) - 4), &ptr_addr)) {
+			break;
 		}
-		ptr_addr += sizeof (RBinBlckStubHeader) - 4;
 	}
 
 	return ret;

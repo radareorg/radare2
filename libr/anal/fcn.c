@@ -57,8 +57,13 @@ static int read_ahead(ReadAhead *ra, RAnal *anal, ut64 addr, ut8 *buf, int len) 
 	bool is_cached = false;
 #if READ_AHEAD
 	if (ra->cache_addr != UT64_MAX && addr >= ra->cache_addr && addr < ra->cache_addr + sizeof (ra->cache)) {
-		ut64 addr_end = UT64_ADD_OVFCHK (addr, len)? UT64_MAX: addr + len;
-		ut64 cache_addr_end = UT64_ADD_OVFCHK (ra->cache_addr, cache_len)? UT64_MAX: ra->cache_addr + cache_len;
+		ut64 addr_end, cache_addr_end;
+		if (r_add_overflow (addr, (ut64)len, &addr_end)) {
+			addr_end = UT64_MAX;
+		}
+		if (r_add_overflow (ra->cache_addr, (ut64)cache_len, &cache_addr_end)) {
+			cache_addr_end = UT64_MAX;
+		}
 		is_cached = ((addr != UT64_MAX) && (addr >= ra->cache_addr) && (addr_end < cache_addr_end));
 	}
 #endif

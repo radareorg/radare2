@@ -4,12 +4,12 @@
 #include <r_util.h>
 
 static ut8 *r_rap_packet(ut8 type, ut32 len) {
-	/* Prevent size overflow in allocation */
-	if (SZT_ADD_OVFCHK ((size_t)len, 5)) {
+	size_t alloc_size;
+	if (r_add_overflow ((size_t)len, (size_t)5, &alloc_size)) {
 		R_LOG_ERROR ("rap: packet length overflow %u", len);
 		return NULL;
 	}
-	ut8 *buf = malloc (len + 5);
+	ut8 *buf = malloc (alloc_size);
 	if (buf) {
 		buf[0] = type;
 		r_write_be32 (buf + 1, len);

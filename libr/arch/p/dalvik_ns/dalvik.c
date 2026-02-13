@@ -153,10 +153,10 @@ static bool dalvik_read_payload(RBuffer *buf, const struct dalvik_instr *instr, 
 		}
 		st32 first_key = r_read_le32 (&v[2]);
 
-		if (SZT_MUL_OVFCHK (len, sizeof (st32))) {
+		size_t targets_size;
+		if (r_mul_overflow ((size_t)len, sizeof (st32), &targets_size)) {
 			return false;
 		}
-		size_t targets_size = (size_t)len * sizeof (st32);
 		st32 *targets = malloc (targets_size);
 		if (targets == NULL) {
 			return false;
@@ -185,10 +185,10 @@ static bool dalvik_read_payload(RBuffer *buf, const struct dalvik_instr *instr, 
 			return false;
 		}
 
-		if (SZT_MUL_OVFCHK (len, sizeof (st32))) {
+		size_t size;
+		if (r_mul_overflow ((size_t)len, sizeof (st32), &size)) {
 			return false;
 		}
-		size_t size = (size_t)len * sizeof (st32);
 		st32 *keys = malloc (size);
 		st32 *targets = malloc (size);
 		if (keys == NULL || targets == NULL) {
@@ -229,10 +229,10 @@ static bool dalvik_read_payload(RBuffer *buf, const struct dalvik_instr *instr, 
 			return false;
 		}
 
-		if (SZT_MUL_OVFCHK (len, element_width)) {
+		size_t size;
+		if (r_mul_overflow ((size_t)len, (size_t)element_width, &size)) {
 			return false;
 		}
-		size_t size = (size_t)len * (size_t)element_width;
 		R_RETURN_VAL_IF_FAIL (size < 0x10000000, false);
 		ut8 *data = malloc (size);
 		if (data == NULL) {

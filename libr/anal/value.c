@@ -17,18 +17,20 @@ R_API ut64 r_anal_value_to_ut64(RAnal *anal, RAnalValue *val) {
 	ut64 num = val->base + (val->delta * (val->mul ? val->mul : 1));
 	if (val->reg) {
 		st64 n = (st64)r_reg_getv (anal->reg, val->reg);
-		if (ST64_ADD_OVFCHK (num, n)) {
+		st64 result;
+		if (r_add_overflow ((st64)num, n, &result)) {
 			num = UT64_MAX;
 		} else {
-			num += n;
+			num = result;
 		}
 	}
 	if (val->regdelta) {
 		st64 n = (st64)r_reg_getv (anal->reg, val->regdelta);
-		if (ST64_ADD_OVFCHK (num, n)) {
+		st64 result;
+		if (r_add_overflow ((st64)num, n, &result)) {
 			num = UT64_MAX;
 		} else {
-			num += n;
+			num = result;
 		}
 	}
 	switch (val->memref) {

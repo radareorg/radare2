@@ -487,11 +487,11 @@ R_API bool r_bplist_parse(PJ *pj, const ut8 *data, size_t data_len) {
 		R_LOG_ERROR ("offset table offset points outside of valid range");
 		return false;
 	}
-	if (UT64_MUL_OVFCHK (num_objects, offset_size)) {
+	ut64 offset_table_size;
+	if (r_mul_overflow (num_objects, offset_size, &offset_table_size)) {
 		R_LOG_ERROR ("integer overflow when calculating offset table size");
 		return false;
 	}
-	ut64 offset_table_size = num_objects * offset_size;
 	if (offset_table_size > (ut64)(end_data - offset_table)) {
 		R_LOG_ERROR ("offset table points outside of valid range");
 		return false;
