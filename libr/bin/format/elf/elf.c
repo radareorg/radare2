@@ -4858,6 +4858,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *
 				result = -1;
 				ht_up_free (phd_offset_map);
 				ht_up_free (phd_ordinal_map);
+				RVecRBinElfSymbol_free (uhsymbols);
 				return result;
 			}
 			R_VEC_FOREACH (uhsymbols, symbol) {
@@ -5120,6 +5121,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 				break;
 			}
 			RVecRBinElfSymbol_push_back (imports, symbol);
+		} else if (!eo->symbols_by_ord || isym->ordinal >= eo->symbols_by_ord_size) {
+			free (isym);
 		}
 	}
 
