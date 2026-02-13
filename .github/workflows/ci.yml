@@ -107,8 +107,8 @@ jobs:
         name: r2r.json
         path: /tmp/r2r.json
   # TODO: Add job to build with capstone-next, for now v5 is stable
-  build-syscapstone:
-    name: linux-sys-capstone
+  build-syscapstone-resymlink:
+    name: linux-sys-capstone-resymlink
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout
@@ -117,19 +117,7 @@ jobs:
       run: |
         git clone --branch v5 --single-branch --depth=1 https://github.com/capstone-engine/capstone
         cd capstone && ( git log | head ) && sh make.sh && sudo make install
-    - name: Installing r2 with sys-capstone
-      run: |
-        export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
-        sys/install.sh
-    - name: Checking if capstone was cloned
-      run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
-  build-resymlink:
-    name: linux-acr-resymlink
-    runs-on: ubuntu-22.04
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v6
-    - name: Installing with symlinks
+    - name: Installing r2 with symlinks (sys-capstone)
       run: |
         export CFLAGS="-O0 -Werror -Wno-unused-result -Wno-stringop-truncation"
         sys/install.sh
@@ -137,6 +125,8 @@ jobs:
       run: sudo make uninstall
     - name: Reinstalling without symlinks
       run: sudo make install
+    - name: Checking if capstone was cloned
+      run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
   linux-test:
     runs-on: ubuntu-22.04
 #    if: contains(github.ref, 'ci-')
