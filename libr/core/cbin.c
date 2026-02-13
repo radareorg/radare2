@@ -3200,8 +3200,9 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 		return;
 	}
 
-	if (!r_io_desc_get (core->io, fd) || UT64_ADD_OVFCHK (sec->size, sec->paddr) ||
-		UT64_ADD_OVFCHK (sec->size, addr) || !sec->vsize) {
+	ut64 tmp;
+	if (!r_io_desc_get (core->io, fd) || r_add_overflow_ut64 (sec->size, sec->paddr, &tmp) ||
+		r_add_overflow_ut64 (sec->size, addr, &tmp) || !sec->vsize) {
 		return;
 	}
 

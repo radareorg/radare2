@@ -1122,7 +1122,7 @@ static bool esil_signed_mod(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (ST64_DIV_OVFCHK (d, s)) {
+			if (r_div_overflow_st64 (d, s)) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
@@ -1199,7 +1199,7 @@ static bool esil_signed_div(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src && r_esil_get_parm (esil, src, (ut64 *)&s)) {
 		if (dst && r_esil_get_parm (esil, dst, (ut64 *)&d)) {
-			if (ST64_DIV_OVFCHK (d, s)) {
+			if (r_div_overflow_st64 (d, s)) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;

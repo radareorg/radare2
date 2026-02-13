@@ -169,46 +169,6 @@ static inline bool r_div_overflow_ut16(ut16 a, ut16 b) { (void)(a); return !b; }
 static inline bool r_div_overflow_ut32(ut32 a, ut32 b) { (void)(a); return !b; }
 static inline bool r_div_overflow_ut64(ut64 a, ut64 b) { (void)(a); return !b; }
 
-// OVFCHK macros: return true if overflow would occur
-static inline bool SZT_ADD_OVFCHK(size_t a, size_t b) { size_t r; return r_add_overflow_size_t (a, b, &r); }
-static inline bool UT64_ADD_OVFCHK(ut64 a, ut64 b) { ut64 r; return r_add_overflow_ut64 (a, b, &r); }
-static inline bool ST64_ADD_OVFCHK(st64 a, st64 b) { st64 r; return r_add_overflow_st64 (a, b, &r); }
-static inline bool UT32_ADD_OVFCHK(ut32 a, ut32 b) { ut32 r; return r_add_overflow_ut32 (a, b, &r); }
-static inline bool ST32_ADD_OVFCHK(st32 a, st32 b) { st32 r; return r_add_overflow_st32 (a, b, &r); }
-static inline bool UT16_ADD_OVFCHK(ut16 a, ut16 b) { ut16 r; return r_add_overflow_ut16 (a, b, &r); }
-static inline bool ST16_ADD_OVFCHK(st16 a, st16 b) { st16 r; return r_add_overflow_st16 (a, b, &r); }
-static inline bool UT8_ADD_OVFCHK(ut8 a, ut8 b) { ut8 r; return r_add_overflow_ut8 (a, b, &r); }
-static inline bool ST8_ADD_OVFCHK(st8 a, st8 b) { st8 r; return r_add_overflow_st8 (a, b, &r); }
-
-static inline bool SZT_SUB_OVFCHK(size_t a, size_t b) { size_t r; return r_sub_overflow_size_t (a, b, &r); }
-static inline bool UT64_SUB_OVFCHK(ut64 a, ut64 b) { ut64 r; return r_sub_overflow_ut64 (a, b, &r); }
-static inline bool ST64_SUB_OVFCHK(st64 a, st64 b) { st64 r; return r_sub_overflow_st64 (a, b, &r); }
-static inline bool UT32_SUB_OVFCHK(ut32 a, ut32 b) { ut32 r; return r_sub_overflow_ut32 (a, b, &r); }
-static inline bool ST32_SUB_OVFCHK(st32 a, st32 b) { st32 r; return r_sub_overflow_st32 (a, b, &r); }
-static inline bool UT16_SUB_OVFCHK(ut16 a, ut16 b) { ut16 r; return r_sub_overflow_ut16 (a, b, &r); }
-static inline bool ST16_SUB_OVFCHK(st16 a, st16 b) { st16 r; return r_sub_overflow_st16 (a, b, &r); }
-static inline bool UT8_SUB_OVFCHK(ut8 a, ut8 b) { ut8 r; return r_sub_overflow_ut8 (a, b, &r); }
-static inline bool ST8_SUB_OVFCHK(st8 a, st8 b) { st8 r; return r_sub_overflow_st8 (a, b, &r); }
-
-static inline bool SZT_MUL_OVFCHK(size_t a, size_t b) { size_t r; return r_mul_overflow_size_t (a, b, &r); }
-static inline bool UT64_MUL_OVFCHK(ut64 a, ut64 b) { ut64 r; return r_mul_overflow_ut64 (a, b, &r); }
-static inline bool ST64_MUL_OVFCHK(st64 a, st64 b) { st64 r; return r_mul_overflow_st64 (a, b, &r); }
-static inline bool UT32_MUL_OVFCHK(ut32 a, ut32 b) { ut32 r; return r_mul_overflow_ut32 (a, b, &r); }
-static inline bool ST32_MUL_OVFCHK(st32 a, st32 b) { st32 r; return r_mul_overflow_st32 (a, b, &r); }
-static inline bool UT16_MUL_OVFCHK(ut16 a, ut16 b) { ut16 r; return r_mul_overflow_ut16 (a, b, &r); }
-static inline bool ST16_MUL_OVFCHK(st16 a, st16 b) { st16 r; return r_mul_overflow_st16 (a, b, &r); }
-static inline bool UT8_MUL_OVFCHK(ut8 a, ut8 b) { ut8 r; return r_mul_overflow_ut8 (a, b, &r); }
-static inline bool ST8_MUL_OVFCHK(st8 a, st8 b) { st8 r; return r_mul_overflow_st8 (a, b, &r); }
-
-#define ST64_DIV_OVFCHK(a,b) r_div_overflow_st64 ((a), (b))
-#define ST32_DIV_OVFCHK(a,b) r_div_overflow_st32 ((a), (b))
-#define ST16_DIV_OVFCHK(a,b) r_div_overflow_st16 ((a), (b))
-#define ST8_DIV_OVFCHK(a,b) r_div_overflow_st8 ((a), (b))
-#define UT64_DIV_OVFCHK(a,b) r_div_overflow_ut64 ((a), (b))
-#define UT32_DIV_OVFCHK(a,b) r_div_overflow_ut32 ((a), (b))
-#define UT16_DIV_OVFCHK(a,b) r_div_overflow_ut16 ((a), (b))
-#define UT8_DIV_OVFCHK(a,b) r_div_overflow_ut8 ((a), (b))
-
 #ifdef __cplusplus
 }
 #endif

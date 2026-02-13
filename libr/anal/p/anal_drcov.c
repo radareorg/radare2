@@ -157,7 +157,8 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) 
 		return -1;
 	}
 
-	if (SZT_MUL_OVFCHK (module_count, sizeof (DrcovModule))) {
+	size_t alloc_size;
+	if (r_mul_overflow_size_t (module_count, sizeof (DrcovModule), &alloc_size)) {
 		R_LOG_ERROR ("Module table too large in '%s'", path);
 		free (buf);
 		return -1;

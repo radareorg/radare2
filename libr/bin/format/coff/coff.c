@@ -561,7 +561,8 @@ static bool r_bin_coff_init_scn_va(RBinCoffObj *obj) {
 		R_LOG_WARN ("Invalid amount of f_nscns %d", f_nscns);
 		return true;
 	}
-	if (ST32_MUL_OVFCHK (sizeof (struct coff_scn_hdr), f_nscns)) {
+	st32 alloc_size;
+	if (r_mul_overflow_st32 (sizeof (struct coff_scn_hdr), f_nscns, &alloc_size)) {
 		R_LOG_WARN ("Dimming f_nscns count because is poluted or too large");
 		f_nscns &= 0xff;
 		return false;
