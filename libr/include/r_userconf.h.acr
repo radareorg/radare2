@@ -97,9 +97,9 @@ extern "C" {
 #define R2_INCDIR "@INCLUDEDIR@/libr"
 #define R2_DATDIR "@DATADIR@"
 #define R2_WWWROOT R2_DATDIR "/radare2/" R2_VERSION "/www"
-#define R2_PLUGINS "lib/radare2/" R2_VERSION
-#define R2_EXTRAS "lib/radare2-extras/" R2_VERSION
-#define R2_BINDINGS "lib/radare2-bindings/" R2_VERSION
+#define R2_PLUGINS "lib/radare2/" R2_VERSION_ABI
+#define R2_EXTRAS "lib/radare2-extras/" R2_VERSION_ABI
+#define R2_BINDINGS "lib/radare2-bindings/" R2_VERSION_ABI
 #endif
 #endif
 
