@@ -1,4 +1,4 @@
-/* radare - LGPLv3- Copyright 2017-2025 - xarkes */
+/* radare - LGPLv3- Copyright 2017-2026 - xarkes */
 
 #include <r_io.h>
 #include "ar/ar.h"
@@ -40,6 +40,7 @@ static RIODesc *r_io_ar_open(RIO *io, const char *file, int rw, int mode) {
 		arname += 3;
 		char *filename = strstr (arname, "//");
 		if (!filename) {
+			free (uri);
 			return NULL;
 		}
 		*filename = 0;
@@ -86,8 +87,10 @@ static int __io_ar_list(RArFp *arf, void *user) {
 
 static RList *r_io_ar_open_many(RIO *io, const char *file, int rw, int mode) {
 	R_RETURN_VAL_IF_FAIL (io && file, NULL);
-	ar_many_data data;
-	if ((data.schema = r_io_get_individual_schema (file)) == NULL) {
+	ar_many_data data = {
+		.schema = r_io_get_individual_schema (file)
+	};
+	if (!data.schema) {
 		R_WARN_IF_REACHED ();
 		return NULL;
 	}

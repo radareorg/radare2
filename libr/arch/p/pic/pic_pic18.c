@@ -118,9 +118,8 @@ char *pic_pic18_disassemble(const ut8 *b, int blen, int *opsz) {
 	*opsz = 2;
 	ut16 instr = r_read_le16 (b); // instruction
 	r_strf_buffer (64);
-	// if still redundan code is reported think of this of instr=0x2
-	const char *buf_asm = "invalid";
 
+	const char *buf_asm;
 	for (i = 0; ops[i].opmin != (ops[i].opmin & instr) || ops[i].opmax != (ops[i].opmax | instr); i++) {
 		;
 	}

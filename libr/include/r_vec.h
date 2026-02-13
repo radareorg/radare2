@@ -300,7 +300,8 @@ static inline size_t r_vec_grow(size_t capacity) {
 		if (SZT_MUL_OVFCHK (capacity, sizeof (type))) { \
 			return NULL; \
 		} \
-		type *buf = (type *)malloc (capacity * sizeof (type)); \
+		size_t new_capacity = capacity * sizeof (type); \
+		type *buf = (type *)malloc (new_capacity); \
 		if (R_LIKELY (buf)) { \
 			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \

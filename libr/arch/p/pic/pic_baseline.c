@@ -204,17 +204,17 @@ char *pic_baseline_disassemble(const ut8 *b, int l, int *opsz) {
 		EMIT_INVALID
 	}
 
-	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info(opcode);
-	if (!op_info) {
-		EMIT_INVALID
-	}
-
 #undef EMIT_INVALID
 
 	*opsz = 2;
 
-	const char *buf_asm = "invalid";
+	const PicBaselineOpInfo *op_info = pic_baseline_get_op_info(opcode);
+	if (!op_info) {
+		return NULL;
+	}
+
 	r_strf_buffer (64);
+	const char *buf_asm;
 	switch (op_info->args) {
 	case PIC_BASELINE_OP_ARGS_NONE:
 		buf_asm = op_info->mnemonic;
