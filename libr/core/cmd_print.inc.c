@@ -4154,7 +4154,9 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 	while (remaining > 0 && !r_cons_is_breaked (core->cons)) {
 		if (r_cons_is_breaked (core->cons)) {
 			R_LOG_INFO ("Interrupted");
+			free (buf);
 			r_muta_session_free (ms);
+			r_cons_break_pop (core->cons);
 			return NULL;
 		}
 		ut64 toread = R_MIN (remaining, chunksize);
@@ -4168,11 +4170,8 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 	r_muta_session_end (ms, NULL, 0);
 	int outlen = 0;
 	ut8 *output = r_muta_session_get_output (ms, &outlen);
-	char *result = NULL;
-	if (output && outlen > 0) {
-		result = r_hex_bin2strdup (output, outlen);
-		free (output);
-	}
+	char *result = (output && outlen > 0)? r_hex_bin2strdup (output, outlen): NULL;
+	free (output);
 	r_muta_session_free (ms);
 	return result;
 }
