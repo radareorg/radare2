@@ -1869,8 +1869,9 @@ R_API int r_print_format_sizeof(RPrint *p, const char *f, int mode, int n) {
 					ret = 0;
 					goto cleanup_struct;
 				}
-				if (!ST32_MUL_OVFCHK (tabsize, newsize)) {
-					size = size + (tabsize * newsize);
+				st32 mul_result;
+				if (!r_mul_overflow (tabsize, newsize, &mul_result)) {
+					size = size + mul_result;
 				} else {
 					R_LOG_ERROR ("Prevented multiply integer overflow in format2.c");
 					ret = 0;

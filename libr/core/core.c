@@ -3256,10 +3256,11 @@ reaccept:
 				r_socket_read_block (c, &flg, 1); // flags
 				R_LOG_DEBUG ("open (%d)", cmd);
 				r_socket_read_block (c, &cmd, 1); // len
-				if (UT8_ADD_OVFCHK (cmd, 1)) {
+				ut8 alloc_size;
+				if (r_add_overflow (cmd, (ut8)1, &alloc_size)) {
 					goto out_of_function;
 				}
-				ptr = malloc ((size_t)cmd + 1);
+				ptr = malloc ((size_t)alloc_size);
 				pipefd = -1;
 				if (!ptr) {
 					R_LOG_ERROR ("Cannot malloc in rmt-open len = %d", cmd);

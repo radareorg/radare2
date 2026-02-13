@@ -2686,10 +2686,10 @@ static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 t
 	int opsz;
 	from = align ? from - (from % align) : from;
 	to = align ? R_ROUND (to, align) : to;
-	if (UT64_SUB_OVFCHK (to, from)) {
+	ut64 len;
+	if (r_sub_overflow (to, from, &len)) {
 		return;
 	}
-	ut64 len = to - from;
 	ut8 *buf = malloc (len);
 	if (!buf) {
 		return;

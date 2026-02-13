@@ -155,11 +155,12 @@ static char *decode_buffer(PJ *pj, const ut8* start, const ut8* end, int padcnt,
 					R_LOG_ERROR ("Invalid delta in var64");
 					goto leave;
 				}
-				if (UT64_ADD_OVFCHK ((size_t)ps, var64)) {
+				size_t pe_addr;
+				if (r_add_overflow ((size_t)ps, (size_t)var64, &pe_addr)) {
 					R_LOG_ERROR ("Invalid overflow in var64");
 					goto leave;
 				}
-				const ut8* pe = (const ut8*)ps + var64;
+				const ut8* pe = (const ut8*)pe_addr;
 				if (ps > buffer && pe <= end) {
 					if (is_string (ps, pe)) {
 						if (mode == 'J') {

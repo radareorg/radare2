@@ -71,13 +71,17 @@ static ut64 base36_decode(const char *str) {
 		}
 		v -= 91;
 		// Check for overflow
-		if (i == 12) {
-			if (v > 3 || UT64_ADD_OVFCHK (ret, v * pow36[i])) {
-				printf ("Error: base36_decode supports up to 64-bit values only\n");
-				return 0;
-			}
+		ut64 term = v * pow36[i];
+		ut64 new_ret;
+		if (i == 12 && (v > 3 || r_add_overflow (ret, term, &new_ret))) {
+			printf ("Error: base36_decode supports up to 64-bit values only\n");
+			return 0;
 		}
-		ret += v * pow36[i];
+		if (r_add_overflow (ret, term, &new_ret)) {
+			printf ("Error: base36_decode overflow\n");
+			return 0;
+		}
+		ret = new_ret;
 	}
 	return ret;
 }

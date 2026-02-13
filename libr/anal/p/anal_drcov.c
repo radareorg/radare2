@@ -229,17 +229,18 @@ static int drcov_parse(RAnal *anal, const char *path, DrcovBbCb cb, void *user) 
 			continue;
 		}
 		DrcovModule *mod = &modules[mod_id];
-		if (UT64_ADD_OVFCHK (mod->base, start)) {
+		ut64 addr;
+		if (r_add_overflow (mod->base, (ut64)start, &addr)) {
 			continue;
 		}
-		ut64 addr = mod->base + start;
-		if (size && UT64_ADD_OVFCHK (addr, size)) {
+		ut64 addr_end;
+		if (size && r_add_overflow (addr, (ut64)size, &addr_end)) {
 			continue;
 		}
 		if (mod->end && mod->end != UT64_MAX && addr > mod->end) {
 			continue;
 		}
-		if (size && mod->end && mod->end != UT64_MAX && addr + size > mod->end) {
+		if (size && mod->end && mod->end != UT64_MAX && addr_end > mod->end) {
 			continue;
 		}
 		if (cb && cb (user, addr, size)) {
