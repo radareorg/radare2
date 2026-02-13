@@ -886,24 +886,6 @@ static const RList *symbols_of(RCore *core, int id0) {
 	return list;
 }
 
-static const RList *imports_of(RCore *core, int id0) {
-	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
-	RBinFile *old_bf = core->bin->cur;
-	r_bin_file_set_cur_binfile (core->bin, bf);
-	RList *list = NULL;
-	RVecRBinImport *imports_vec = bf? r_bin_file_get_imports_vec (bf): NULL;
-	// Convert to list for backward compatibility
-	if (imports_vec) {
-		list = r_list_newf ((RListFree)r_bin_import_free);
-		RBinImport *imp;
-		R_VEC_FOREACH (imports_vec, imp) {
-			r_list_append (list, r_bin_import_clone (imp));
-		}
-	}
-	r_bin_file_set_cur_binfile (core->bin, old_bf);
-	return list;
-}
-
 static bool its_an_export(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
@@ -974,40 +956,41 @@ static void _core_cmp_info_libs(RCore *core, int id0, int id1) {
 }
 
 static void _core_cmp_info_imports(RCore *core, int id0, int id1) {
-	const RList *s0 = imports_of (core, id0);
-	const RList *s1 = imports_of (core, id1);
-	if (!s0 || !s1) {
+	RBinFile *bf0 = r_bin_file_find_by_id (core->bin, id0);
+	RBinFile *bf1 = r_bin_file_find_by_id (core->bin, id1);
+	RVecRBinImport *v0 = bf0? r_bin_file_get_imports_vec (bf0): NULL;
+	RVecRBinImport *v1 = bf1? r_bin_file_get_imports_vec (bf1): NULL;
+	if (!v0 || !v1) {
 		R_LOG_ERROR ("Missing bin object");
 		return;
 	}
-	RListIter *iter, *iter2;
-	RBinImport *s, *s2;
 	if (id0 == id1) {
-		eprintf ("%d == %d\n", id0, id1);
+		// eprintf ("%d == %d\n", id0, id1);
 		return;
 	}
-	r_list_foreach (s0, iter, s) {
-		const char *s_name = r_bin_name_tostring (s->name);
+	RBinImport *imp, *imp2;
+	R_VEC_FOREACH (v0, imp) {
+		const char *name = r_bin_name_tostring (imp->name);
 		bool found = false;
-		r_list_foreach (s1, iter2, s2) {
-			const char *s2_name = r_bin_name_tostring (s2->name);
-			if (!strcmp (s_name, s2_name)) {
+		R_VEC_FOREACH (v1, imp2) {
+			if (!strcmp (name, r_bin_name_tostring (imp2->name))) {
 				found = true;
+				break;
 			}
 		}
-		r_cons_printf (core->cons, "%s%s\n", found? " ": "-", s_name);
+		r_cons_printf (core->cons, "%s%s\n", found? " ": "-", name);
 	}
-	r_list_foreach (s1, iter, s) {
-		const char *s_name = r_bin_name_tostring (s->name);
+	R_VEC_FOREACH (v1, imp) {
+		const char *name = r_bin_name_tostring (imp->name);
 		bool found = false;
-		r_list_foreach (s0, iter2, s2) {
-			const char *s2_name = r_bin_name_tostring (s2->name);
-			if (!strcmp (s_name, s2_name)) {
+		R_VEC_FOREACH (v0, imp2) {
+			if (!strcmp (name, r_bin_name_tostring (imp2->name))) {
 				found = true;
+				break;
 			}
 		}
 		if (!found) {
-			r_cons_printf (core->cons, "+%s\n", s_name);
+			r_cons_printf (core->cons, "+%s\n", name);
 		}
 	}
 }
