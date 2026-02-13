@@ -89,7 +89,7 @@ R_DEFINE_SIGNED_OVERFLOW(st8,  ST8_MAX,  ST8_MIN)
 R_DEFINE_SIGNED_OVERFLOW(st16, ST16_MAX, ST16_MIN)
 R_DEFINE_SIGNED_OVERFLOW(st32, ST32_MAX, ST32_MIN)
 R_DEFINE_SIGNED_OVERFLOW(st64, ST64_MAX, ST64_MIN)
-R_DEFINE_SIGNED_OVERFLOW(ssize_t, SSZT_MAX, SSZT_MIN)
+// ssize_t overflow not supported: use st32/st64 instead (MSVC lacks ssize_t)
 
 #if R_HAVE_BUILTIN_OVERFLOW
 
@@ -131,8 +131,7 @@ R_DEFINE_SIGNED_OVERFLOW(ssize_t, SSZT_MAX, SSZT_MIN)
 	st8:    r_add_overflow_st8,  \
 	st16:   r_add_overflow_st16, \
 	st32:   r_add_overflow_st32, \
-	st64:   r_add_overflow_st64, \
-	ssize_t: r_add_overflow_ssize_t \
+	st64:   r_add_overflow_st64 \
 )(a,b,res)
 
 #define r_sub_overflow(a,b,res) _Generic(*(res), \
@@ -144,8 +143,7 @@ R_DEFINE_SIGNED_OVERFLOW(ssize_t, SSZT_MAX, SSZT_MIN)
 	st8:    r_sub_overflow_st8,  \
 	st16:   r_sub_overflow_st16, \
 	st32:   r_sub_overflow_st32, \
-	st64:   r_sub_overflow_st64, \
-	ssize_t: r_sub_overflow_ssize_t \
+	st64:   r_sub_overflow_st64 \
 )(a,b,res)
 
 #define r_mul_overflow(a,b,res) _Generic(*(res), \
@@ -157,8 +155,7 @@ R_DEFINE_SIGNED_OVERFLOW(ssize_t, SSZT_MAX, SSZT_MIN)
 	st8:    r_mul_overflow_st8,  \
 	st16:   r_mul_overflow_st16, \
 	st32:   r_mul_overflow_st32, \
-	st64:   r_mul_overflow_st64, \
-	ssize_t: r_mul_overflow_ssize_t \
+	st64:   r_mul_overflow_st64 \
 )(a,b,res)
 
 #endif
@@ -173,7 +170,6 @@ static inline bool r_div_overflow_ut32(ut32 a, ut32 b) { (void)(a); return !b; }
 static inline bool r_div_overflow_ut64(ut64 a, ut64 b) { (void)(a); return !b; }
 
 #define SZT_ADD_OVFCHK(a,b) ({ size_t _r; r_add_overflow ((a), (b), &_r); })
-#define SSZT_ADD_OVFCHK(a,b) ({ ssize_t _r; r_add_overflow ((a), (b), &_r); })
 #define UT64_ADD_OVFCHK(a,b) ({ ut64 _r; r_add_overflow ((a), (b), &_r); })
 #define ST64_ADD_OVFCHK(a,b) ({ st64 _r; r_add_overflow ((a), (b), &_r); })
 #define UT32_ADD_OVFCHK(a,b) ({ ut32 _r; r_add_overflow ((a), (b), &_r); })
@@ -184,7 +180,6 @@ static inline bool r_div_overflow_ut64(ut64 a, ut64 b) { (void)(a); return !b; }
 #define ST8_ADD_OVFCHK(a,b) ({ st8 _r; r_add_overflow ((a), (b), &_r); })
 
 #define SZT_SUB_OVFCHK(a,b) ({ size_t _r; r_sub_overflow ((a), (b), &_r); })
-#define SSZT_SUB_OVFCHK(a,b) ({ ssize_t _r; r_sub_overflow ((a), (b), &_r); })
 #define UT64_SUB_OVFCHK(a,b) ({ ut64 _r; r_sub_overflow ((a), (b), &_r); })
 #define ST64_SUB_OVFCHK(a,b) ({ st64 _r; r_sub_overflow ((a), (b), &_r); })
 #define UT32_SUB_OVFCHK(a,b) ({ ut32 _r; r_sub_overflow ((a), (b), &_r); })
