@@ -243,13 +243,19 @@ R_API RVecCodeMetaOffset *r_codemeta_line_offsets(RCodeMeta *code) {
 	return r;
 }
 
-#define PAL(x, def) ((pal && pal->x) ? pal->x : def)
-#define PCOL(x) do { if (pal) { r_strbuf_append (sb, (x)); } } while (0)
+typedef struct {
+	RStrBuf *sb;
+	RConsPrintablePalette *pal;
+	RCore *core;
+	size_t width;
+} CodeMetaPrintContext;
 
-/**
- * @param width maximum nibbles per address
- */
-static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RConsPrintablePalette *pal) {
+#define PAL(x, def) ((ctx->pal && ctx->pal->x) ? ctx->pal->x : def)
+#define PCOL(x) do { if (ctx->pal) { r_strbuf_append (ctx->sb, (x)); } } while (0)
+
+// print address offset in the left margin bar
+static void print_offset_in_binary_line_bar(CodeMetaPrintContext *ctx, ut64 offset) {
+	size_t width = ctx->width;
 	if (width < 8) {
 		width = 8;
 	}
@@ -258,29 +264,29 @@ static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 	}
 	width -= 8;
 
-	r_strbuf_append (sb, "    ");
+	r_strbuf_append (ctx->sb, "    ");
 	if (offset == UT64_MAX) {
-		r_strbuf_append (sb, "          ");
+		r_strbuf_append (ctx->sb, "          ");
 		while (width > 0) {
-			r_strbuf_append (sb, " ");
+			r_strbuf_append (ctx->sb, " ");
 			width--;
 		}
 	} else {
 		PCOL (PAL (addr, Color_GREEN));
-		r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
+		r_strbuf_appendf (ctx->sb, "0x%08" PFMT64x, offset);
 		PCOL (Color_RESET);
 	}
-	r_strbuf_append (sb, "    |");
+	r_strbuf_append (ctx->sb, "    |");
 }
 
-static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RAnal *anal, RConsPrintablePalette *pal) {
-	width = 40;
-	RCore *core = (anal && anal->coreb.core) ? anal->coreb.core : NULL;
-	r_strbuf_append (sb, "    ");
+// print disassembly instruction in the left margin bar
+static void print_disasm_in_binary_line_bar(CodeMetaPrintContext *ctx, ut64 offset) {
+	const int width = 40;
+	r_strbuf_append (ctx->sb, "    ");
 	if (offset == UT64_MAX) {
-		r_strbuf_pad (sb, ' ', width);
-	} else if (core) {
-		char *res = anal->coreb.cmdStrF (core, "pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
+		r_strbuf_pad (ctx->sb, ' ', width);
+	} else if (ctx->core) {
+		char *res = ctx->core->anal->coreb.cmdStrF (ctx->core, "pid 1 @ 0x%" PFMT64x " @e:asm.flags=0@e:asm.lines=0@e:asm.bytes=0", offset);
 		r_str_trim (res);
 		int w = r_str_ansi_len (res);
 		if (w >= width) {
@@ -288,19 +294,19 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 			if (p) {
 				*p = 0;
 			}
-			r_strbuf_append (sb, res);
+			r_strbuf_append (ctx->sb, res);
 		} else {
-			r_strbuf_append (sb, res);
-			r_strbuf_pad (sb, ' ', width - w);
+			r_strbuf_append (ctx->sb, res);
+			r_strbuf_pad (ctx->sb, ' ', width - w);
 		}
 		free (res);
 	} else {
 		PCOL (PAL (addr, Color_GREEN));
-		r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
+		r_strbuf_appendf (ctx->sb, "0x%08" PFMT64x, offset);
 		PCOL (Color_RESET);
-		r_strbuf_pad (sb, ' ', width - 11);
+		r_strbuf_pad (ctx->sb, ' ', width - 11);
 	}
-	r_strbuf_append (sb, "    |");
+	r_strbuf_append (ctx->sb, "    |");
 }
 
 static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, RAnal *anal, bool doprint) {
@@ -308,13 +314,11 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 		return r_str_newf ("%s\n", code->code);
 	}
 
-	RStrBuf *sb = r_strbuf_new ("");
+	CodeMetaPrintContext context = {0};
+	CodeMetaPrintContext *ctx = &context;
+	ctx->sb = r_strbuf_new ("");
 
-	size_t cur = 0;
-	size_t line_idx = 0;
-	size_t len = strlen (code->code);
-
-	size_t offset_width = 0;
+	// compute offset_width based on max address
 	if (line_offsets) {
 		ut64 *offset;
 		ut64 offset_max = 0;
@@ -324,33 +328,38 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 			}
 		}
 		while (offset_max) {
-			offset_width += 1;
+			ctx->width++;
 			offset_max >>= 4;
 		}
-		if (offset_width < 4) {
-			offset_width = 4;
+		if (ctx->width < 4) {
+			ctx->width = 4;
 		}
 	}
 
-	RCore *core = NULL;
-	RConsPrintablePalette *pal = NULL;
+	// setup core and palette (pal is NULL if colors disabled)
 	if (anal && anal->coreb.core) {
-		core = anal->coreb.core;
-		RCons *cons = core->cons;
+		ctx->core = anal->coreb.core;
+		RCons *cons = ctx->core->cons;
 		if (cons && cons->context && cons->context->color_mode) {
-			pal = &cons->context->pal;
+			ctx->pal = &cons->context->pal;
 		}
 	} else {
 		R_LOG_WARN ("No core for codemeta");
 	}
+
+	size_t cur = 0;
+	size_t line_idx = 0;
+	size_t len = strlen (code->code);
 	const ut64 *offsets = line_offsets ? RVecCodeMetaOffset_at (line_offsets, 0) : NULL;
 	const size_t offsets_len = line_offsets ? RVecCodeMetaOffset_length (line_offsets) : 0;
+
 	RCodeMetaItem *annotation;
 	R_VEC_FOREACH (&code->annotations, annotation) {
 		if (annotation->type != R_CODEMETA_TYPE_SYNTAX_HIGHLIGHT) {
 			continue;
 		}
 
+		// pick a suitable color for the syntax highlight type
 		const char *color = Color_RESET;
 		switch (annotation->syntax_highlight.type) {
 		case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
@@ -372,49 +381,53 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 			break;
 		}
 
+		// print uncolored chunk before this annotation
 		for (; cur < annotation->start && cur < len; cur++) {
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
 				if (doprint) {
-					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
+					print_disasm_in_binary_line_bar (ctx, offset);
 				} else {
-					print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
+					print_offset_in_binary_line_bar (ctx, offset);
 				}
 				line_idx++;
 			}
-			r_strbuf_append_n (sb, code->code + cur, 1);
+			r_strbuf_append_n (ctx->sb, code->code + cur, 1);
 		}
 
+		// print highlighted chunk between start and end
 		PCOL (color);
 		for (; cur < annotation->end && cur < len; cur++) {
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
 				PCOL (Color_RESET);
 				if (doprint) {
-					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
+					print_disasm_in_binary_line_bar (ctx, offset);
 				} else {
-					print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
+					print_offset_in_binary_line_bar (ctx, offset);
 				}
 				PCOL (color);
 				line_idx++;
 			}
-			r_strbuf_append_n (sb, code->code + cur, 1);
+			r_strbuf_append_n (ctx->sb, code->code + cur, 1);
 		}
 		PCOL (Color_RESET);
 	}
+
+	// print remaining code without highlighting
 	for (; cur < len; cur++) {
 		if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 			ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
 			if (doprint) {
-				print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
+				print_disasm_in_binary_line_bar (ctx, offset);
 			} else {
-				print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
+				print_offset_in_binary_line_bar (ctx, offset);
 			}
 			line_idx++;
 		}
-		r_strbuf_append_n (sb, code->code + cur, 1);
+		r_strbuf_append_n (ctx->sb, code->code + cur, 1);
 	}
-	return r_strbuf_drain (sb);
+	return r_strbuf_drain (ctx->sb);
 }
 
 R_API char *r_codemeta_print_disasm(RCodeMeta *code, RVecCodeMetaOffset *line_offsets, void *anal) {
