@@ -220,7 +220,6 @@ RUN
 
 NAME=ps and psz on ascii
 FILE=-
-NEWABI=1
 CMDS=<<EOF
 e cfg.charset=ascii
 wx 41424301

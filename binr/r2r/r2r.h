@@ -84,7 +84,6 @@ typedef struct r2r_cmd_test_t {
 	macro_str ("ENV", env) \
 	macro_bool ("BROKEN", broken) \
 	macro_bool ("OLDABI", oldabi) \
-	macro_bool ("NEWABI", newabi) \
 	macro_bool ("SKIPONASAN", skiponasan) \
 
 typedef enum r2r_asm_test_mode_t {
