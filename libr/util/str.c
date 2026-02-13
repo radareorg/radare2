@@ -4438,48 +4438,40 @@ R_API char *r_str_md2txt(const char *page, bool usecolor) {
 	return r_strbuf_drain (sb);
 }
 
-R_API void r_str_camel_to_snake(const char *camel, char *snake, size_t snake_size) {
-	if (!camel || !snake || snake_size == 0) {
-		return;
-	}
-	size_t j = 0;
-	for (size_t i = 0; camel[i] && j < snake_size - 1; i++) {
+R_API char *r_str_camel_to_snake(const char *camel) {
+	R_RETURN_VAL_IF_FAIL (camel, NULL);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	size_t i;
+	r_strbuf_appendf (sb, "%c", tolower ((unsigned char)camel[0]));
+	for (i = 1; camel[i]; i++) {
 		char c = camel[i];
-		if (i > 0 && c >= 'A' && c <= 'Z') {
-			if (!(camel[i - 1] >= 'A' && camel[i - 1] <= 'Z'
-				&& camel[i + 1] >= 'a' && camel[i + 1] <= 'z')) {
-				if (j < snake_size - 1) {
-					snake[j++] = '_';
-				}
+		if (isupper ((unsigned char)c)) {
+			if (!isupper ((unsigned char)camel[i - 1])
+				|| (camel[i + 1] && islower ((unsigned char)camel[i + 1]))) {
+				r_strbuf_append (sb, "_");
 			}
 		}
-		if (j < snake_size - 1) {
-			snake[j++] = (c >= 'A' && c <= 'Z')? (c + 32): c;
-		}
+		r_strbuf_appendf (sb, "%c", tolower ((unsigned char)c));
 	}
-	snake[j] = '\0';
+	return r_strbuf_drain (sb);
 }
 
-R_API void r_str_snake_to_camel(const char *snake, char *camel, size_t camel_size) {
-	if (!snake || !camel || camel_size < 2) {
-		if (camel && camel_size > 0) {
-			camel[0] = '\0';
-		}
-		return;
-	}
-	size_t j = 0;
+R_API char *r_str_snake_to_camel(const char *snake) {
+	R_RETURN_VAL_IF_FAIL (snake, NULL);
+	RStrBuf *sb = r_strbuf_new (NULL);
+	size_t i;
 	bool cap_next = true;
-	for (size_t i = 0; snake[i] && j + 1 < camel_size; i++) {
+	for (i = 0; snake[i]; i++) {
 		if (snake[i] == '_') {
 			cap_next = true;
 		} else {
 			char c = snake[i];
-			if (cap_next && c >= 'a' && c <= 'z') {
-				c = c - 32;
+			if (cap_next && islower ((unsigned char)c)) {
+				c = toupper ((unsigned char)c);
 			}
-			camel[j++] = c;
+			r_strbuf_appendf (sb, "%c", c);
 			cap_next = false;
 		}
 	}
-	camel[j] = '\0';
+	return r_strbuf_drain (sb);
 }
