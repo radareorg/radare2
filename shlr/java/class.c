@@ -3330,8 +3330,8 @@ R_API RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer, 
 	attr->info.code_attr.code_length = attr->is_attr_in_old_format? R_BIN_JAVA_USHORT (buffer, offset): R_BIN_JAVA_UINT (buffer, offset);
 	offset += attr->is_attr_in_old_format? 2: 4;
 	attr->info.code_attr.code_offset = buf_offset + offset;
-	if (offset >= sz || attr->info.code_attr.code_length > sz - offset) {
-		attr->info.code_attr.code_length = (offset < sz) ? sz - offset : 0;
+	if (attr->info.code_attr.code_length > sz - offset) {
+		attr->info.code_attr.code_length = sz - offset;
 	}
 	attr->info.code_attr.code = (ut8 *)malloc (attr->info.code_attr.code_length);
 	if (!attr->info.code_attr.code) {

@@ -5117,7 +5117,7 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 		if (symbol->is_imported) {
 			if (limit > 0 && count++ > limit) {
 				R_LOG_WARN ("eo.limit reached for imports");
-				free (isym);
+				r_bin_symbol_free (isym);
 				break;
 			}
 			RVecRBinElfSymbol_push_back (imports, symbol);
