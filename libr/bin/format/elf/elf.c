@@ -5121,6 +5121,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 				break;
 			}
 			RVecRBinElfSymbol_push_back (imports, symbol);
+		} else if (!eo->symbols_by_ord || isym->ordinal >= eo->symbols_by_ord_size) {
+			free (isym);
 		}
 	}
 
