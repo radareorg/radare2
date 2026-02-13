@@ -919,6 +919,7 @@ static ut8 *get_imports(RCore *c, int *len) {
 	}
 
 	*len = r_strbuf_length (sb);
+	r_list_free (list);
 	return (ut8 *)r_strbuf_drain (sb);
 }
 
