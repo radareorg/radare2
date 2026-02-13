@@ -151,10 +151,11 @@ extern "C" {
 
 // Overflow-safe realloc wrapper (like reallocarray)
 static inline void *r_vec_realloc(void *ptr, size_t nmemb, size_t size) {
-	if (SZT_MUL_OVFCHK (nmemb, size)) {
+	size_t total;
+	if (r_mul_overflow (nmemb, size, &total)) {
 		return NULL;
 	}
-	return realloc (ptr, nmemb * size);
+	return realloc (ptr, total);
 }
 
 // Overflow-safe capacity growth (returns 0 on overflow)
@@ -162,10 +163,11 @@ static inline size_t r_vec_grow(size_t capacity) {
 	if (capacity == 0) {
 		return 8;
 	}
-	if (SZT_MUL_OVFCHK (capacity, 2)) {
+	size_t new_capacity;
+	if (r_mul_overflow (capacity, (size_t)2, &new_capacity)) {
 		return 0;
 	}
-	return capacity * 2;
+	return new_capacity;
 }
 
 // Hack / Helper macro for conditional code generation.
@@ -297,11 +299,11 @@ static inline size_t r_vec_grow(size_t capacity) {
 	static inline R_MAYBE_UNUSED R_MUSTUSE vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
-		if (SZT_MUL_OVFCHK (capacity, sizeof (type))) { \
+		size_t alloc_size; \
+		if (r_mul_overflow (capacity, sizeof (type), &alloc_size)) { \
 			return NULL; \
 		} \
-		size_t new_capacity = capacity * sizeof (type); \
-		type *buf = (type *)malloc (new_capacity); \
+		type *buf = (type *)malloc (alloc_size); \
 		if (R_LIKELY (buf)) { \
 			vec_type *cloned_vec = (vec_type *)malloc (sizeof (vec_type)); \
 			if (R_LIKELY (cloned_vec)) { \
