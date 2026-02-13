@@ -243,19 +243,13 @@ R_API RVecCodeMetaOffset *r_codemeta_line_offsets(RCodeMeta *code) {
 	return r;
 }
 
-// AITODO: find an efficient way to delete those two macros and all the unnecessary dereferences beause we can just hold a reference to pal which can be null if color is not enabled instead of having to dereference cons->context->pal every time. do the same for PRINT_COLOR.
-#define PALETTE(x) (cons && cons->context->pal.x) ? cons->context->pal.x
-#define PRINT_COLOR(x) \
-	do { \
-		if (cons && cons->context && cons->context->color_mode) { \
-			r_strbuf_appendf (sb, "%s", (x)); \
-		} \
-	} while (0)
+#define PAL(x, def) ((pal && pal->x) ? pal->x : def)
+#define PCOL(x) do { if (pal) { r_strbuf_append (sb, (x)); } } while (0)
 
 /**
  * @param width maximum nibbles per address
  */
-static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RCons *cons) {
+static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RConsPrintablePalette *pal) {
 	if (width < 8) {
 		width = 8;
 	}
@@ -272,17 +266,16 @@ static void print_offset_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 			width--;
 		}
 	} else {
-		PRINT_COLOR (PALETTE (addr) : Color_GREEN);
+		PCOL (PAL (addr, Color_GREEN));
 		r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
-		PRINT_COLOR (Color_RESET);
+		PCOL (Color_RESET);
 	}
 	r_strbuf_append (sb, "    |");
 }
 
-static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RAnal *anal) {
+static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 offset, size_t width, RAnal *anal, RConsPrintablePalette *pal) {
 	width = 40;
 	RCore *core = (anal && anal->coreb.core) ? anal->coreb.core : NULL;
-	RCons *cons = core ? core->cons : NULL;
 	r_strbuf_append (sb, "    ");
 	if (offset == UT64_MAX) {
 		r_strbuf_pad (sb, ' ', width);
@@ -302,9 +295,9 @@ static void print_disasm_in_binary_line_bar(RStrBuf *sb, RCodeMeta *code, ut64 o
 		}
 		free (res);
 	} else {
-		PRINT_COLOR (PALETTE (addr) : Color_GREEN);
+		PCOL (PAL (addr, Color_GREEN));
 		r_strbuf_appendf (sb, "0x%08" PFMT64x, offset);
-		PRINT_COLOR (Color_RESET);
+		PCOL (Color_RESET);
 		r_strbuf_pad (sb, ' ', width - 11);
 	}
 	r_strbuf_append (sb, "    |");
@@ -340,10 +333,13 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 	}
 
 	RCore *core = NULL;
-	RCons *cons = NULL;
+	RConsPrintablePalette *pal = NULL;
 	if (anal && anal->coreb.core) {
 		core = anal->coreb.core;
-		cons = core->cons;
+		RCons *cons = core->cons;
+		if (cons && cons->context && cons->context->color_mode) {
+			pal = &cons->context->pal;
+		}
 	} else {
 		R_LOG_WARN ("No core for codemeta");
 	}
@@ -355,84 +351,64 @@ static char *r_codemeta_print_internal(RCodeMeta *code, RVecCodeMetaOffset *line
 			continue;
 		}
 
-		// (1/3)
-		// now we have a syntax highlighting annotation.
-		// pick a suitable color for it.
 		const char *color = Color_RESET;
 		switch (annotation->syntax_highlight.type) {
 		case R_SYNTAX_HIGHLIGHT_TYPE_COMMENT:
-			color = PALETTE (comment)
-			    : Color_WHITE;
+			color = PAL (comment, Color_WHITE);
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_KEYWORD:
-			color = PALETTE (pop)
-			    : Color_MAGENTA;
+			color = PAL (pop, Color_MAGENTA);
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_DATATYPE:
-			color = PALETTE (var_type)
-			    : Color_BLUE;
+			color = PAL (var_type, Color_BLUE);
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_FUNCTION_NAME:
-			color = PALETTE (fname)
-			    : Color_RED;
+			color = PAL (fname, Color_RED);
 			break;
 		case R_SYNTAX_HIGHLIGHT_TYPE_CONSTANT_VARIABLE:
-			color = PALETTE (num)
-			    : Color_YELLOW;
+			color = PAL (num, Color_YELLOW);
 			break;
 		default:
 			break;
 		}
 
-		// (2/3)
-		// the chunk before the syntax highlighting annotation should not be colored
 		for (; cur < annotation->start && cur < len; cur++) {
-			// if we are starting a new line and we are printing with offsets
-			// we need to prepare the bar with offsets on the left handside before that
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
 				if (doprint) {
-					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
+					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
 				} else {
-					print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
+					print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
 				}
 				line_idx++;
 			}
 			r_strbuf_append_n (sb, code->code + cur, 1);
 		}
 
-		// (3/3)
-		// everything in between the "start" and the "end" inclusive should be highlighted
-		PRINT_COLOR (color);
+		PCOL (color);
 		for (; cur < annotation->end && cur < len; cur++) {
-			// if we are starting a new line and we are printing with offsets
-			// we need to prepare the bar with offsets on the left handside before that
 			if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 				ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
-				PRINT_COLOR (Color_RESET);
+				PCOL (Color_RESET);
 				if (doprint) {
-					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
+					print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
 				} else {
-					print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
+					print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
 				}
-				PRINT_COLOR (color);
+				PCOL (color);
 				line_idx++;
 			}
 			r_strbuf_append_n (sb, code->code + cur, 1);
 		}
-		PRINT_COLOR (Color_RESET);
+		PCOL (Color_RESET);
 	}
-	// the rest of the decompiled code should be printed
-	// without any highlighting since we don't have any annotations left
 	for (; cur < len; cur++) {
-		// if we are starting a new line and we are printing with offsets
-		// we need to prepare the bar with offsets on the left handside before that
 		if (line_offsets && (cur == 0 || code->code[cur - 1] == '\n')) {
 			ut64 offset = (line_idx < offsets_len) ? offsets[line_idx] : 0;
 			if (doprint) {
-				print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal);
+				print_disasm_in_binary_line_bar (sb, code, offset, offset_width, anal, pal);
 			} else {
-				print_offset_in_binary_line_bar (sb, code, offset, offset_width, cons);
+				print_offset_in_binary_line_bar (sb, code, offset, offset_width, pal);
 			}
 			line_idx++;
 		}
