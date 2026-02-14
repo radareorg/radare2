@@ -70,7 +70,9 @@ static RCoreHelpMessage help_msg_iz = {
 	"izjq", "", "strings in data sections in quiet JSON (just vaddr and string)",
 	"izq", "[q]", "strings in data sections in quiet (and quieter) mode",
 	"izz", "[jq*] ([skip]) ([count])", "search for strings in the whole binary",
+	"izzc", "", "count the strings in the whole binary",
 	"izzz", "[jq]", "dump strings from whole binary to r2 shell (for huge files)",
+	"izzzc", "", "count the strings dumped from the whole binary",
 	NULL
 };
 
@@ -1513,6 +1515,16 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			rdump = true;
 		}
 		p++;
+	}
+	// Handle count mode for izz and izzz: "izzc" and "izzzc"
+	if (*p == 'c') {
+		RBinFile *bf = r_bin_cur (core->bin);
+		if (bf) {
+			RList *l = r_bin_raw_strings (bf, 0);
+			r_cons_printf (core->cons, "%d\n", r_list_length (l));
+			r_list_free (l);
+		}
+		return;
 	}
 	// Parse suffix (j, jq, qj, q, qq, *, ,)
 	bool local_pj = false;

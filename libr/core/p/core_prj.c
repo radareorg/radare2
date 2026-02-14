@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2024-2025 - pancake */
+/* radare - MIT - Copyright 2024-2026 - pancake */
 
 #define R_LOG_ORIGIN "prj"
 
@@ -13,6 +13,7 @@ enum {
 	RPRJ_BLOB,
 	RPRJ_MODS,
 	RPRJ_STRS,
+	RPRJ_THEM,
 	RPRJ_HINTS,
 	RPRJ_MAGIC = 0x4a525052,
 };
@@ -93,6 +94,7 @@ static const char *entry_type_tostring(int a) {
 	case RPRJ_MODS: return "Mods";
 	case RPRJ_BLOB: return "Blob";
 	case RPRJ_STRS: return "Strings";
+	case RPRJ_THEM: return "Theme";
 	case RPRJ_HINTS: return "Hints";
 	}
 	return "UNKNOWN";
