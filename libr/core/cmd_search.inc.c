@@ -1035,8 +1035,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 						append_bound (list, core->io, search_itv, from, size, rwx);
 					}
 				}
+			} else if (from < to) {
+				append_bound (list, core->io, search_itv, from, to - from, 1);
 			}
-			append_bound (list, core->io, search_itv, from, to - from, 1);
 		}
 	} else if (r_str_startswith (mode, "bin.ormaps")) {
 		// int mask = (mode[len - 1] == '.')? r_str_rwx (mode + len): 0;
@@ -1237,7 +1238,9 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 					}
 				}
 			}
-			append_bound (list, core->io, search_itv, from, to - from, 5);
+			if (from < to) {
+				append_bound (list, core->io, search_itv, from, to - from, 5);
+			}
 		}
 	}
 	return list;
