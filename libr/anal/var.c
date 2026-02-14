@@ -574,14 +574,26 @@ R_API RAnalVar *r_anal_function_get_var(RAnalFunction *fcn, char kind, int delta
 R_API ut64 r_anal_var_addr(RAnalVar *var) {
 	R_RETURN_VAL_IF_FAIL (var, UT64_MAX);
 	RAnal *anal = var->fcn->anal;
-	const char *regname = NULL;
-	if (var->kind == R_ANAL_VAR_KIND_BPV) {
-		regname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-		return r_reg_getv (anal->reg, regname) + var->delta + var->fcn->bp_off;
+	int alias = -1;
+	switch (var->kind) {
+	case R_ANAL_VAR_KIND_BPV:
+		alias = R_REG_ALIAS_BP;
+		break;
+	case R_ANAL_VAR_KIND_SPV:
+		alias = R_REG_ALIAS_SP;
+		break;
 	}
-	if (var->kind == R_ANAL_VAR_KIND_SPV) {
-		regname = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-		return r_reg_getv (anal->reg, regname) + var->delta;
+	if (alias != -1) {
+		const char *regname = r_reg_alias_getname (anal->reg, alias);
+		ut64 regval = r_reg_getv (anal->reg, regname);
+		if (regval != UT64_MAX) {
+			st64 delta = var->delta;
+			if (var->kind == R_ANAL_VAR_KIND_BPV) {
+				delta += var->fcn->bp_off;
+			}
+			return regval + delta;
+		}
+		return UT64_MAX;
 	}
 	return 0;
 }
