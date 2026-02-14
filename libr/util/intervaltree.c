@@ -79,8 +79,10 @@ static int cmp_exact_node(const void *incoming, const RBNode *in_tree, void *use
 				}
 			} else {
 				// if there is no right branch, go up
-				while (path_cache->len && path_cache->path[path_cache->len - 1]->child[1] == rbnode) {
-					rbnode = path_cache->path[--path_cache->len];
+				if (path_cache->len > 0) {
+					do {
+						rbnode = path_cache->path[--path_cache->len];
+					} while (path_cache->len && path_cache->path[path_cache->len - 1]->child[1] == rbnode);
 				}
 			}
 		}

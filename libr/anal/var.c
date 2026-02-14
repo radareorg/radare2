@@ -582,6 +582,8 @@ R_API ut64 r_anal_var_addr(RAnalVar *var) {
 	case R_ANAL_VAR_KIND_SPV:
 		alias = R_REG_ALIAS_SP;
 		break;
+	default: // R_ANAL_VAR_KIND_REG
+		break;
 	}
 	if (alias != -1) {
 		const char *regname = r_reg_alias_getname (anal->reg, alias);
