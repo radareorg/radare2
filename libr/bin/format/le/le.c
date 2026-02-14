@@ -214,12 +214,13 @@ R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
 		if (!imp) {
 			break;
 		}
-		const char *name = __read_nonnull_str_at (bin->buf, &offset);
+		char *name = __read_nonnull_str_at (bin->buf, &offset);
 		if (!name) {
 			r_bin_import_free (imp);
 			break;
 		}
 		imp->name = r_bin_name_new (name);
+		free (name);
 		if (!imp->name) {
 			r_bin_import_free (imp);
 			break;
@@ -623,11 +624,17 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			char *mod_name = __get_modname_by_ord (bin, ordinal);
 			imp->name = r_bin_name_new_from (r_str_newf ("%s.%s", r_str_get (mod_name), r_str_get (proc_name)));
 			rel->import = imp;
+			free (mod_name);
+			free (proc_name);
 			break;
 		}
-		case INTERNALENTRY:
-			rel->addend = (ut64)(size_t)r_list_get_n (entries, ordinal - 1);
-			break;
+			case INTERNALENTRY: {
+				const char *n = r_list_get_n (entries, ordinal - 1);
+				if (n) {
+					rel->addend = r_num_get (NULL, n);
+				}
+				break;
+			}
 		}
 		if (header_target & F_TARGET_ADDITIVE) {
 			ut32 additive = 0;
@@ -775,12 +782,14 @@ static void parse_obj_bases_from_env(RBinLEObj *bin) {
 	bin->obj_bases = bases;
 	bin->n_bases = n_bases;
 beach:
-	free (bases_str);
+	r_list_free (bases_str);
+	free (bases_raw);
 }
 
 R_IPI RBinLEObj *r_bin_le_new_buf(RBuffer *buf) {
 	RBinLEObj *bin = R_NEW0 (RBinLEObj);
 	if (!__init_header (bin, buf)) {
+		r_bin_le_free (bin);
 		return NULL;
 	}
 	LE_image_header *h = bin->header;
