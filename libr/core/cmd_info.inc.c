@@ -1597,12 +1597,18 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 					} else if (mode & R_MODE_SIMPLE) {
 						r_cons_printf (core->cons, "0x%"PFMT64x" %d %d %s\n",
 							vaddr, string->size, string->length, string->string);
-					} else {
-						r_cons_println (core->cons, string->string);
-					}
-					return;
+				} else {
+					r_cons_println (core->cons, string->string);
+				}
+				if (local_pj) {
+					pj_free (pj);
+				}
+				return;
 				}
 			}
+		}
+		if (local_pj) {
+			pj_free (pj);
 		}
 		return;
 	}
