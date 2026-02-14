@@ -944,7 +944,7 @@ static int r_io_internal_read(RIODscObject * dsc, ut64 off_global, ut8 *buf, int
 
 	RListIter * iter;
 	RIODscTrimmedSlice * trimmed;
-	int total = 0;
+	ut64 total = 0;
 	int failures = 0;
 	int index = 0;
 	int n_slices = r_list_length (slices);
@@ -956,7 +956,7 @@ static int r_io_internal_read(RIODscObject * dsc, ut64 off_global, ut8 *buf, int
 			if (index < n_slices - 1) {
 				total += trimmed->count;
 			}
-		} else {
+		} else if (one_result > 0) {
 			total += one_result;
 		}
 		index++;
@@ -968,7 +968,7 @@ static int r_io_internal_read(RIODscObject * dsc, ut64 off_global, ut8 *buf, int
 		return -1;
 	}
 
-	return total;
+	return (total > INT_MAX) ? INT_MAX : (int)total;
 }
 
 static ut64 dsc_object_seek(RIO *io, RIODscObject *dsc, ut64 offset, int whence) {
