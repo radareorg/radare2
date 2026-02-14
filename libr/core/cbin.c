@@ -444,11 +444,16 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 				}
 			}
 			free (str);
-		} else if (IS_MODE_SIMPLE (mode)) {
+		} else if (IS_MODE_SIMPLE (mode) && !IS_MODE_JSON (mode)) {
 			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr,
 				string->size, string->length, string->string);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_println (core->cons, string->string);
+		} else if (IS_MODE_JSON (mode) && IS_MODE_SIMPLE (mode)) {
+			pj_o (pj);
+			pj_kn (pj, "vaddr", vaddr);
+			pj_ks (pj, "string", string->string);
+			pj_end (pj);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
 			pj_o (pj);
@@ -459,7 +464,6 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			// data itself may be encoded so use pj_ks
 			pj_ks (pj, "string", string->string);
 
 			switch (string->type) {
