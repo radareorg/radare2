@@ -2482,13 +2482,22 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 
 static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
 	const ut8 OxFF = core->io->Oxff;
+	const size_t limit = R_MIN (buf_size, 32);
+	size_t count_00 = 0;
+	size_t count_ff = 0;
+	size_t count_oxff = 0;
 	size_t i;
-	for (i = 0; i < buf_size; i++) {
-		if (buf[i] != OxFF) {
-			return false;
+	for (i = 0; i < limit; i++) {
+		const ut8 ch = buf[i];
+		if (ch == 0x00) {
+			count_00++;
+		} else if (ch == 0xff) {
+			count_ff++;
+		} else if (ch == OxFF) {
+			count_oxff++;
 		}
 	}
-	return true;
+	return (count_00 == limit || count_ff == limit || count_oxff == limit);
 }
 
 static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
