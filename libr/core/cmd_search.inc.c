@@ -442,26 +442,42 @@ static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
 	return 1;
 }
 
-R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
-	ut64 at;
-	ut8 *b = (ut8 *) malloc (core->blocksize);
-	if (!b) {
-		return 0;
+static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
+	const ut8 OxFF = core->io->Oxff;
+	const size_t limit = R_MIN (buf_size, 32);
+	size_t count_00 = 0;
+	size_t count_ff = 0;
+	size_t count_oxff = 0;
+	size_t i;
+	for (i = 0; i < limit; i++) {
+		const ut8 ch = buf[i];
+		if (ch == 0x00) {
+			count_00++;
+		} else if (ch == 0xff) {
+			count_ff++;
+		} else if (ch == OxFF) {
+			count_oxff++;
+		}
 	}
-	char *zeropage = calloc (core->blocksize, 1);
-	if (!zeropage) {
-		free (b);
+	return (count_00 == limit || count_ff == limit || count_oxff == limit);
+}
+
+R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf, int blen, const ut8 *mask, int mlen) {
+	size_t bs = core->blocksize;
+	ut64 at;
+	ut8 *b = (ut8 *) malloc (bs);
+	if (!b) {
 		return 0;
 	}
 	// TODO: handle sections ?
 	if (from >= to) {
 		R_LOG_ERROR ("aap: Invalid search range 0x%08"PFMT64x " - 0x%08"PFMT64x, from, to);
 		free (b);
-		free (zeropage);
 		return 0;
 	}
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
+	const bool badpages = r_config_get_b (core->config, "search.badpages");
 	const int afuncali = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
 	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
 	if (ufuncali > 1) {
@@ -473,25 +489,25 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	r_search_begin (core->search);
 	UserPrelude up = {core, false, 0};
 	r_search_set_callback (core->search, &__prelude_cb_hit, &up);
-	for (at = from; at < to; at += core->blocksize) {
+	for (at = from; at < to; at += bs) {
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
 		if (!r_io_is_valid_offset (core->io, at, 0)) {
 			break;
 		}
-		(void)r_io_read_at (core->io, at, b, core->blocksize);
-		// if the whole block is 00 skip, if its all ff da same
-		// aap takes 14s instead of 1s to scan a 800MB page
-		if (!memcmp (b, zeropage, core->blocksize)) {
-			continue;
+		if (!r_io_read_at (core->io, at, b, bs)) {
+			break;
+		}
+		if (badpages && invalid_page (core, b, bs)) {
+			R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+			break;
 		}
 		if (r_search_update (core->search, at, b, core->blocksize) == -1) {
 			R_LOG_ERROR ("update read error at 0x%08"PFMT64x, at);
 			break;
 		}
 	}
-	free (zeropage);
 	// r_search_reset might also benifet from having an if (s->data) R_FREE(s->data),
 	// but im not sure. Add a commit that puts it in there to this PR if it wouldn't
 	// break anything. (don't have to worry about this happening again, since all
@@ -589,14 +605,14 @@ R_API int r_core_search_preludes(RCore *core, bool log) {
 	}
 
 	// 256MB scan region limit
-// #define RANGE_LIMIT 0xfffffff
+	// #define RANGE_LIMIT 0xfffffff
 	// 4GB scan region limit
 #define RANGE_LIMIT 0xffffffff
 	size_t fc0 = r_list_length (core->anal->fcns);
 	r_list_foreach (list, iter, p) {
 		if ((r_itv_end (p->itv) - p->itv.addr) >= RANGE_LIMIT) {
 			// skip searching in large regions
-			R_LOG_ERROR ("aap: skipping large range, please check 'anal.in' variable");
+			R_LOG_WARN ("aap: skipping large range, please check 'anal.in' variable");
 			continue;
 		}
 		if (log) {
@@ -2478,26 +2494,6 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 			}
 		}
 	}
-}
-
-static bool invalid_page(RCore *core, const ut8 *buf, size_t buf_size) {
-	const ut8 OxFF = core->io->Oxff;
-	const size_t limit = R_MIN (buf_size, 32);
-	size_t count_00 = 0;
-	size_t count_ff = 0;
-	size_t count_oxff = 0;
-	size_t i;
-	for (i = 0; i < limit; i++) {
-		const ut8 ch = buf[i];
-		if (ch == 0x00) {
-			count_00++;
-		} else if (ch == 0xff) {
-			count_ff++;
-		} else if (ch == OxFF) {
-			count_oxff++;
-		}
-	}
-	return (count_00 == limit || count_ff == limit || count_oxff == limit);
 }
 
 static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool quiet, const char *input) {
