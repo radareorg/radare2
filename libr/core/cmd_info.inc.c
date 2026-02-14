@@ -67,6 +67,7 @@ static RCoreHelpMessage help_msg_iz = {
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izc", "", "count the strings in data sections",
 	"izj", "", "strings in data sections in JSON format",
+	"izjq", "", "strings in data sections in quiet JSON (just vaddr and string)",
 	"izq", "[q]", "strings in data sections in quiet (and quieter) mode",
 	"izz", "[jq*] ([skip]) ([count])", "search for strings in the whole binary",
 	"izzz", "[jq]", "dump strings from whole binary to r2 shell (for huge files)",
@@ -1513,15 +1514,31 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		}
 		p++;
 	}
-	// Parse suffix (j, q, qq, *, ,)
+	// Parse suffix (j, jq, qj, q, qq, *, ,)
+	bool local_pj = false;
 	if (*p == 'j') {
 		mode = R_MODE_JSON;
 		p++;
+		if (*p == 'q') {
+			mode |= R_MODE_SIMPLE;
+			p++;
+		}
+		if (!pj) {
+			pj = r_core_pj_new (core);
+			local_pj = true;
+		}
 	} else if (*p == 'q') {
 		p++;
 		if (*p == 'q') {
 			mode = R_MODE_SIMPLEST;
 			p++;
+		} else if (*p == 'j') {
+			mode = R_MODE_JSON | R_MODE_SIMPLE;
+			p++;
+			if (!pj) {
+				pj = r_core_pj_new (core);
+				local_pj = true;
+			}
 		} else {
 			mode = R_MODE_SIMPLE;
 		}
@@ -1567,6 +1584,10 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		}
 		core->bin->cur = cur;
 		r_list_free (bfiles);
+	}
+	if (local_pj) {
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 	}
 }
 
@@ -2634,7 +2655,6 @@ static int cmd_info(void *data, const char *input) {
 		{
 			char *ptr = strchr (input, ' ');
 			int json = input[1] == 'j'? 'j': 0;
-
 			if (ptr && ptr[0] && ptr[1]) {
 				const char *plugin_name = ptr + 1;
 				if (is_array) {
@@ -2823,11 +2843,6 @@ static int cmd_info(void *data, const char *input) {
 	}
 	R_FREE (core->table_query);
 	if (pj || mode & R_MODE_JSON) {
-#if 0
-		if (is_array && !is_izzzj && !is_idpij) {
-			pj_end (pj);
-		}
-#endif
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
 	}
