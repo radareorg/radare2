@@ -410,6 +410,9 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		return false;
 	}
 	ut16 nsec = r_buf_read_be16_at (bf->buf, 32);
+	if (nsec > 1024) {
+		return false;
+	}
 	RBinPEFObj *pef = bf->bo->bin_obj = calloc (1, sizeof (RBinPEFObj) + sizeof (PEFSection) * nsec);
 	if (!pef) {
 		return false;
@@ -430,7 +433,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		r_buf_read_at (buf, offset + 26, &sec->align, 1);
 
 		if (sec->kind <= 3 || sec->kind == 6) { // exists in memory
-			ut64 alignmask = (1 << sec->align) - 1;
+			ut64 alignmask = (1ULL << sec->align) - 1;
 			sec->addr = climb = (climb + alignmask) & ~alignmask;
 			climb += sec->lenTotal;
 		}
@@ -441,10 +444,16 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 		if (sec->kind == 2) { // pidata, extract now
 			size_t fsize = r_buf_size (buf);
-			size_t paclen = R_MIN (sec->lenDisk, fsize);
+			if (fsize == UT64_MAX || sec->lenDisk == UT32_MAX || sec->lenUnpack == UT32_MAX) {
+				return false;
+			}
+			if (sec->lenDisk > fsize || sec->lenUnpack > 0x10000000) {
+				return false;
+			}
+			size_t paclen = sec->lenDisk;
 			void *pac = malloc (paclen);
 			sec->unpack = sec->lenUnpack > 0 ? malloc (sec->lenUnpack) : NULL;
-			if (!pac || !sec->unpack) {
+			if (!pac || (sec->lenUnpack > 0 && !sec->unpack)) {
 				free (pac);
 				free (sec->unpack);
 				return false;
