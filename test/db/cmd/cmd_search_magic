@@ -1,5 +1,6 @@
 NAME=search magic Flash
 FILE=bins/swf/CurveBall.swf  
+ARGS=-e search.align=8
 CMDS=<<EOF
 /m
 /m
