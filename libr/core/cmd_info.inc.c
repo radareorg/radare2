@@ -61,14 +61,17 @@ static RCoreHelpMessage help_msg_iy = {
 static RCoreHelpMessage help_msg_iz = {
 	"Usage: iz", "[?jq*] ([skip] [count])", "List strings",
 	"iz", " ([skip]) ([count])", "strings in data sections (skip N strings, show count)",
+	"iz.", "", "show string at current address",
 	"iz,", "[:help]", "perform a table query on strings listing",
 	"iz-", " ([addr]) ([len]) ([type])", "delete string at address (uses current seek if addr not specified, len/type for matching)",
 	"iz+", " ([addr]) ([len]) ([type])", "add string manually (addr=current seek if not specified, len=auto, type=auto-detect)",
 	"iz*", "", "print flags and comments r2 commands for all the strings",
 	"izc", "", "count the strings in data sections",
 	"izj", "", "strings in data sections in JSON format",
+	"izj.", "", "show string at current address in JSON",
 	"izjq", "", "strings in data sections in quiet JSON (just vaddr and string)",
 	"izq", "[q]", "strings in data sections in quiet (and quieter) mode",
+	"izq.", "", "show string at current address (quiet)",
 	"izz", "[jq*] ([skip]) ([count])", "search for strings in the whole binary",
 	"izzc", "", "count the strings in the whole binary",
 	"izzz", "[jq]", "dump strings from whole binary to r2 shell (for huge files)",
@@ -1528,6 +1531,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	}
 	// Parse suffix (j, jq, qj, q, qq, *, ,)
 	bool local_pj = false;
+	bool dotmode = false;
 	if (*p == 'j') {
 		mode = R_MODE_JSON;
 		p++;
@@ -1561,6 +1565,46 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		R_FREE (core->table_query);
 		core->table_query = strdup (p + 1);
 		p = ""; // consume rest
+	}
+	// Check for '.' suffix after mode specifier
+	if (*p == '.') {
+		dotmode = true;
+		p++;
+	}
+	// Handle "iz.", "izj.", "izq." - show string at current address
+	if (dotmode) {
+		RList *list = r_bin_get_strings (core->bin);
+		if (list) {
+			ut64 addr = core->addr;
+			RListIter *iter;
+			RBinString *string;
+			r_list_foreach (list, iter, string) {
+				ut64 vaddr = va ? string->vaddr : string->paddr;
+				if (vaddr == addr || string->paddr == addr) {
+					if (mode & R_MODE_JSON) {
+						PJ *lpj = r_core_pj_new (core);
+						pj_o (lpj);
+						pj_kn (lpj, "vaddr", string->vaddr);
+						pj_kn (lpj, "paddr", string->paddr);
+						pj_ki (lpj, "ordinal", string->ordinal);
+						pj_ki (lpj, "size", string->size);
+						pj_ki (lpj, "length", string->length);
+						pj_ks (lpj, "type", r_bin_string_type (string->type));
+						pj_ks (lpj, "string", string->string);
+						pj_end (lpj);
+						r_cons_println (core->cons, pj_string (lpj));
+						pj_free (lpj);
+					} else if (mode & R_MODE_SIMPLE) {
+						r_cons_printf (core->cons, "0x%"PFMT64x" %d %d %s\n",
+							vaddr, string->size, string->length, string->string);
+					} else {
+						r_cons_println (core->cons, string->string);
+					}
+					return;
+				}
+			}
+		}
+		return;
 	}
 	// Parse optional pagination arguments: "skip count" or just "count"
 	if (*p == ' ') {
