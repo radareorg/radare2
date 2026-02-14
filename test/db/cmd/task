@@ -54,13 +54,16 @@ CMDS=<<EOF
 &=2
 EOF
 EXPECT=<<EOF
-  0          running  -- MAIN TASK --
-  1     before start  ?e hello
-  2     before start  ?e world
+[1] ?e hello
+[2] ?e world
+id mode   fg state        transient cmd
+---------------------------------------
+0  coop   *  running      false     -- MAIN TASK --
+1  thread    running      false     ?e hello
+2  thread    before start false     ?e world
+
+total running: 1
 --
-total running: 0
---
-world
 
 EOF
 RUN

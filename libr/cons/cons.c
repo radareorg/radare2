@@ -243,7 +243,7 @@ R_API RCons *r_cons_new2(void) {
 	init_cons_context (cons, NULL);
 	// eprintf ("CTX %p %p\n", cons, cons->context);
 	init_cons_input (&cons->input_state);
-	cons->lock = r_th_lock_new (false);
+	cons->lock = r_th_lock_new (true);
 	cons->use_utf8 = r_cons_is_utf8 ();
 	cons->rgbstr = r_cons_rgb_str_off; // XXX maybe we can kill that
 	cons->enable_highlight = true;
@@ -1425,6 +1425,7 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 		va_end (ap3);
 		return;
 	}
+	r_th_lock_enter (cons->lock);
 	if (strchr (format, '%')) {
 		if (cons_palloc (cons, MOAR + strlen (format) * 20)) {
 			bool need_retry = true;
@@ -1453,6 +1454,7 @@ R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap) {
 	} else {
 		r_cons_print (cons, format);
 	}
+	r_th_lock_leave (cons->lock);
 	va_end (ap2);
 	va_end (ap3);
 }
@@ -1579,16 +1581,20 @@ R_API void r_cons_break_end(RCons *cons) {
 }
 
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
+	r_th_lock_enter (cons->lock);
 	RConsContext *ctx = cons->context;
 	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
 		r_cons_break_timeout (cons, cons->otimeout);
 	}
 	r_cons_context_break_push (cons, ctx, cb, user, true);
+	r_th_lock_leave (cons->lock);
 }
 
 R_API void r_cons_break_pop(RCons *cons) {
+	r_th_lock_enter (cons->lock);
 	cons->timeout = 0;
 	r_cons_context_break_pop (cons, cons->context, true);
+	r_th_lock_leave (cons->lock);
 }
 
 R_API void *r_cons_sleep_begin(RCons *cons) {
@@ -1628,6 +1634,7 @@ R_API bool r_cons_drop(RCons *cons, int n) {
 }
 
 R_API void r_cons_push(RCons *cons) {
+	r_th_lock_enter (cons->lock);
 	// Push the current context to the stack.
 	// The stack's free function will handle the refcount.
 	r_list_push (cons->ctx_stack, cons->context);
@@ -1644,10 +1651,13 @@ R_API void r_cons_push(RCons *cons) {
 		Gcons->context = nc;
 	}
 	r_cons_reset (cons);
+	r_th_lock_leave (cons->lock);
 }
 
 R_API bool r_cons_pop(RCons *cons) {
+	r_th_lock_enter (cons->lock);
 	if (r_list_empty (cons->ctx_stack)) {
+		r_th_lock_leave (cons->lock);
 		R_LOG_INFO ("Nothing to pop");
 		return false;
 	}
@@ -1669,6 +1679,7 @@ R_API bool r_cons_pop(RCons *cons) {
 	if (cons == Gcons) {
 		Gcons->context = parent;
 	}
+	r_th_lock_leave (cons->lock);
 	return true;
 }
 
