@@ -10154,7 +10154,12 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 			bufi = 0;
 		}
 		if (!bufi) {
-			(void)r_io_read_at (core->io, addr, buf, bsz);
+			if (!r_io_read_at (core->io, addr, buf, bsz)) {
+				break;
+			}
+			if (!r_io_is_valid_offset (core->io, addr, R_PERM_X | R_PERM_R)) {
+				break;
+			}
 		}
 		if (!memcmp (buf, block0, bsz) || !memcmp (buf, block1, bsz)) {
 			addr += bsz;
@@ -10191,7 +10196,9 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 				}
 				if (isValidCall) {
 					ut8 zbuf[4] = {0};
-					r_io_read_at (core->io, op.jump, zbuf, 4);
+					if (!r_io_read_at (core->io, op.jump, zbuf, 4)) {
+						break;
+					}
 					isValidCall = memcmp (zbuf, "\x00\x00\x00\x00", 4);
 				}
 				if (isValidCall) {
@@ -10240,6 +10247,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		bufi += addrbytes * op.size;
 		r_anal_op_fini (&op);
 	}
+	r_anal_op_fini (&op);
 	r_cons_break_pop (core->cons);
 	free (buf);
 	free (block0);
