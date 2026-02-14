@@ -540,6 +540,7 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
+	const int old_h = c->h;
 	int *newblen = realloc (c->blen, sizeof (int) * h);
 	if (!newblen) {
 		r_cons_canvas_free (c);
@@ -551,13 +552,13 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 		r_cons_canvas_free (c);
 		return false;
 	}
+	c->bsize = newbsize;
 
 	// Don't lose the end of the array if size is being reduced
-	for (i = h; i < c->h; i++) {
+	for (i = h; i < old_h; i++) {
 		free (c->b[i]);
 	}
 
-	c->bsize = newbsize;
 	char **newb = realloc (c->b, sizeof (*c->b) * h);
 	if (!newb) {
 		r_cons_canvas_free (c);
@@ -566,8 +567,8 @@ R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
 	c->b = newb;
 	char *newline = NULL;
 	for (i = 0; i < h; i++) {
-		if (i < c->h) {
-			newline = realloc (c->b[i], sizeof (*c->b[i]) *(w + 1));
+		if (i < old_h) {
+			newline = realloc (c->b[i], sizeof (*c->b[i]) * (w + 1));
 			if (newline) {
 				c->b[i] = newline;
 			}
