@@ -399,6 +399,7 @@ static int main_print_var(const char *var_name) {
 	free (libdir);
 	free (bindir);
 	free (mandir);
+	free (docdir);
 	free (confighome);
 	free (historyhome);
 	free (datahome);
