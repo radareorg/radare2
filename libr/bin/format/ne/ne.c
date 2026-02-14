@@ -295,7 +295,7 @@ RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
 		off++;
 		char *name = malloc ((ut64)sz + 1);
 		if (!name) {
-			break;
+			r_bin_import_free (imp); break;
 		}
 		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
@@ -437,11 +437,11 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 			// && off + sizeof (NE_image_reloc_item) < buf_size)
 			NE_image_reloc_item rel = {0};
 			if (r_buf_fread_at (bin->buf, off, (ut8 *)&rel, "2c3s", 1) < 1) {
-				return NULL;
+				free (modref); return NULL;
 			}
 			RBinReloc *reloc = R_NEW0 (RBinReloc);
 			if (!reloc) {
-				return NULL;
+				free (modref); return NULL;
 			}
 			reloc->paddr = seg->paddr + rel.offset;
 			reloc->ntype = rel.type;
