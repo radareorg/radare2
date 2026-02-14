@@ -735,7 +735,11 @@ static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf) {
 
 		ut64 vaddr = r_buf_read_le64_at (cache_buf, cursor + 8);
 		ut64 paddr = r_buf_read_le64_at (cache_buf, cursor + 16);
-		st32 padded_name_length = (st32)cmdsize - 32;
+		if (cmdsize < 33 || cmdsize > 0x1000 + 32) {
+			cursor = cmd_end;
+			continue;
+		}
+		st32 padded_name_length = (st32)(cmdsize - 32);
 		if (padded_name_length <= 0 || padded_name_length > 0x1000) {
 			cursor = cmd_end;
 			continue;
