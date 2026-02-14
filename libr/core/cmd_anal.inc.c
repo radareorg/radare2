@@ -1276,42 +1276,6 @@ static bool listOpDescriptions(void *_core, const char *k, const char *v) {
 	return true;
 }
 
-/* better aac for windows-x86-32 */
-#define JAYRO_03 0
-
-#if JAYRO_03
-
-static bool anal_is_bad_call(RCore *core, ut64 from, ut64 to, ut64 addr, ut8 *buf, int bufi) {
-	ut64 align = R_ABS (addr % PE_ALIGN);
-	ut32 call_bytes;
-
-	// XXX this is x86 specific
-	if (align == 0) {
-		call_bytes = (ut32)((ut8*)buf)[bufi + 3] << 24;
-		call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 16;
-		call_bytes |= (ut32)((ut8*)buf)[bufi + 1] << 8;
-		call_bytes |= (ut32)((ut8*)buf)[bufi];
-	} else {
-		call_bytes = (ut32)((ut8*)buf)[bufi - align + 3] << 24;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 2] << 16;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align + 1] << 8;
-		call_bytes |= (ut32)((ut8*)buf)[bufi - align];
-	}
-	if (call_bytes >= from && call_bytes <= to) {
-		return true;
-	}
-	call_bytes = (ut32)((ut8*)buf)[bufi + 4] << 24;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 3] << 16;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 2] << 8;
-	call_bytes |= (ut32)((ut8*)buf)[bufi + 1];
-	call_bytes += addr + 5;
-	if (call_bytes >= from && call_bytes <= to) {
-		return false;
-	}
-	return false;
-}
-#endif
-
 static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 	RList *fcns = r_anal_get_functions_in (core->anal, addr);
 	if (fcns && r_list_length (fcns) > 0) {
@@ -1340,17 +1304,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RList *all_vars = cache.rvars;
 	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
-#if 0
-	r_list_foreach (all_vars, iter, var) {
-		if (var->isarg) {
-			arg_count++;
-		}
-	}
-	int old_arg_count = r_num_get (NULL, args);
-	if (old_arg_count >= arg_count) {
-		return;
-	}
-#endif
 	r_list_foreach (all_vars, iter, var) {
 		if (var->isarg) {
 			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
@@ -1375,13 +1328,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				if (var->name && !strstr (var->name, "arg_")) {
 					o = NULL;
 				}
-#if 0
-				if (name != var->name) {
-					o = NULL;
-				} else {
-					type = strdup (var->type);
-				}
-#endif
 				char *v = comma? strdup (o): r_str_newf ("%s,%s", type, name);
 				/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
 				char *s = strdup (name);
@@ -1447,8 +1393,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	// Iterating Reverse so that we get function in top-bottom call order
 	r_list_foreach_prev (core->anal->fcns, it, fcn) {
-		int ret = r_core_seek (core, fcn->addr, true);
-		if (!ret) {
+		if (!r_core_seek (core, fcn->addr, true)) {
 			continue;
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
@@ -10202,14 +10147,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 					isValidCall = memcmp (zbuf, "\x00\x00\x00\x00", 4);
 				}
 				if (isValidCall) {
-#if JAYRO_03
-					if (!anal_is_bad_call (core, from, to, addr, buf, bufi)) {
-						fcn = r_anal_get_fcn_in (core->anal, op.jump, R_ANAL_FCN_TYPE_ROOT);
-						if (!fcn) {
-							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
-						}
-					}
-#else
 					if (printCommands) {
 						r_cons_printf (core->cons, "ax 0x%08" PFMT64x " 0x%08" PFMT64x "\n", op.jump, addr);
 						r_cons_printf (core->cons, "af @ 0x%08" PFMT64x"\n", op.jump);
@@ -10220,7 +10157,6 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
 					}
-#endif
 				}
 			}
 			switch (op.type) {
