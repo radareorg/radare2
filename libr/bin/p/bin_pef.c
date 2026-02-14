@@ -774,6 +774,9 @@ static RList *libs(RBinFile *bf) {
 	RList *ret = r_list_newf ((RListFree)free);
 	ut32 importedLibraryCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 24);
 	ut32 loaderStringsOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 40);
+	if (importedLibraryCount > (UT32_MAX / 24)) {
+		return ret;
+	}
 	int i;
 
 	for (i = 0; i < importedLibraryCount; i++) {
