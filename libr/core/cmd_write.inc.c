@@ -833,7 +833,7 @@ static bool cmd_wfs(RCore *core, const char *input) {
 		free (buf);
 		return false;
 	}
-	int done = 0;
+	ut64 done = 0;
 	RSocket *c = r_socket_accept (s);
 	if (c) {
 		R_LOG_INFO ("Receiving data from client");
