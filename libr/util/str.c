@@ -4437,3 +4437,51 @@ R_API char *r_str_md2txt(const char *page, bool usecolor) {
 	}
 	return r_strbuf_drain (sb);
 }
+
+R_API char *r_str_camel_to_snake(const char *camel) {
+	R_RETURN_VAL_IF_FAIL (camel, NULL);
+	size_t len = strlen (camel);
+	char *snake = malloc (len * 2 + 1);
+	if (!snake) {
+		return NULL;
+	}
+	size_t i, j = 0;
+	snake[j++] = tolower ((int)camel[0] & 0xff);
+	for (i = 1; camel[i]; i++) {
+		char c = camel[i];
+		if (isupper ((int)c & 0xff)) {
+			if (!isupper ((int)camel[i - 1] & 0xff)
+				|| (camel[i + 1] && islower ((int)camel[i + 1] & 0xff))) {
+				snake[j++] = '_';
+			}
+		}
+		snake[j++] = tolower ((int)c & 0xff);
+	}
+	snake[j] = '\0';
+	return snake;
+}
+
+R_API char *r_str_snake_to_camel(const char *snake) {
+	R_RETURN_VAL_IF_FAIL (snake, NULL);
+	size_t len = strlen (snake);
+	char *camel = malloc (len + 1);
+	if (!camel) {
+		return NULL;
+	}
+	size_t i, j = 0;
+	bool cap_next = true;
+	for (i = 0; snake[i]; i++) {
+		if (snake[i] == '_') {
+			cap_next = true;
+		} else {
+			char c = snake[i];
+			if (cap_next && islower ((int)c & 0xff)) {
+				c = toupper ((int)c & 0xff);
+			}
+			camel[j++] = c;
+			cap_next = false;
+		}
+	}
+	camel[j] = '\0';
+	return camel;
+}

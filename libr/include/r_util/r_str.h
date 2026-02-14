@@ -271,6 +271,8 @@ R_API char *r_str_append_owned(char *ptr, char *string);
 R_API char *r_str_appendf(char *ptr, const char *fmt, ...) R_PRINTF_CHECK(2, 3);
 R_API char *r_str_appendch(char *x, char y);
 R_API void r_str_case(char *str, bool up);
+R_API char *r_str_camel_to_snake(const char *camel);
+R_API char *r_str_snake_to_camel(const char *snake);
 R_API void r_str_trim_path(char *s);
 R_API ut8 r_str_contains_macro(const char *input_value);
 R_API void r_str_truncate_cmd(char *string);
