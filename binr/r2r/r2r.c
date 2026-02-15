@@ -105,7 +105,8 @@ static void helpvars(int workers_count) {
 		"R2R_OFFLINE=0       # same as passing -u\n"
 		"R2R_SHALLOW=0       # skip 0-100%% random tests\n"
 		"R2R_RADARE2=radare2 # path to radare2 for the cmd tests\n",
-		workers_count, TIMEOUT_DEFAULT);
+		workers_count,
+		TIMEOUT_DEFAULT);
 }
 
 static int help(bool verbose, int workers_count) {
@@ -141,35 +142,55 @@ static void path_left_free_kv(HtPPKv *kv) {
 	free (kv->value);
 }
 
+static inline bool is_dbpath(const char *arg) {
+	return *arg == '@' || r_str_startswith (arg, "db/") || !strcmp (arg, "db");
+}
+
+static char *r2r_test_directory(const char *argv0) {
+#if R2__UNIX__
+	char src_path[PATH_MAX];
+	char *r2r_path = (*argv0 == '/')
+		? strdup (argv0)
+		: r_file_path (argv0);
+	if (r2r_path) {
+		char *check_path = r2r_path;
+		if (readlink (r2r_path, src_path, PATH_MAX) != -1) {
+			src_path[PATH_MAX - 1] = 0;
+			check_path = src_path;
+		}
+		char *p = strstr (check_path, "/binr/r2r/r2r");
+		if (p) {
+			*p = 0;
+			char *test_path = r_file_new (check_path, "test", NULL);
+			free (r2r_path);
+			if (r_file_is_directory (test_path)) {
+				return test_path;
+			}
+			free (test_path);
+			return NULL;
+		}
+		free (r2r_path);
+	}
+#endif
+	return NULL;
+}
+
 static bool r2r_chdir(const char *argv0) {
 	bool found = false;
 #if R2__UNIX__
 	if (r_file_is_directory ("db")) {
 		return true;
 	}
-	char src_path[PATH_MAX];
-	char *r2r_path = r_file_path (argv0);
-	if (!r2r_path) {
-		return false;
-	}
-	if (readlink (r2r_path, src_path, PATH_MAX) != -1) {
-		src_path[PATH_MAX - 1] = 0;
-		char *p = strstr (src_path, "/binr/r2r/r2r");
-		if (p) {
-			*p = 0;
-			char *test_path = r_file_new (src_path, "test", NULL);
-			if (r_file_is_directory (test_path)) {
-				if (chdir (test_path) != -1) {
-					R_LOG_INFO ("Running from %s", test_path);
-					found = true;
-				} else {
-					R_LOG_ERROR ("Cannot find '%s' directory", test_path);
-				}
-			}
-			free (test_path);
+	char *test_path = r2r_test_directory (argv0);
+	if (test_path) {
+		if (chdir (test_path) != -1) {
+			R_LOG_INFO ("Running from %s", test_path);
+			found = true;
+		} else {
+			R_LOG_ERROR ("Cannot find '%s' directory", test_path);
 		}
+		free (test_path);
 	}
-	free (r2r_path);
 #endif
 	return found;
 }
@@ -448,9 +469,13 @@ static bool r2r_setup_directory(R2ROptions *opt, int arg_ind, int argc, char **a
 			avi = cwd;
 			argv[arg_ind] = cwd;
 		}
-		dir_found = (avi[0] != '.' || (*avi && !avi[1]))
-			? r2r_chdir_fromtest (avi)
-			: r2r_chdir (argv[0]);
+		if (is_dbpath (avi)) {
+			dir_found = r2r_chdir (argv[0]);
+		} else if (avi[0] != '.' || (*avi && !avi[1])) {
+			dir_found = r2r_chdir_fromtest (avi);
+		} else {
+			dir_found = r2r_chdir (argv[0]);
+		}
 	} else {
 		dir_found = r2r_chdir (argv[0]);
 	}
@@ -649,7 +674,9 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 			free (arg_str);
 			return grc? grc: 1; // Signal special exit
 		}
-		char *tf = r_file_abspath_rel (cwd, arg);
+		char *tf = is_dbpath (arg)
+			? r_file_abspath (arg)
+			: r_file_abspath_rel (cwd, arg);
 		if (!tf || !r2r_test_database_load (state->db, tf, skip_json_tests, skip_leak_tests)) {
 			R_LOG_ERROR ("Failed to load tests from \"%s\"", tf);
 			free (tf);
@@ -681,8 +708,10 @@ static void r2r_setup_log_mode(R2RState *state) {
 
 static void print_state_counts(R2RState *state) {
 	printf ("%8" PFMT64u " OK  %8" PFMT64u " BR %8" PFMT64u " XX %8" PFMT64u " SK %8" PFMT64u " FX",
-		state->counters[R2R_TEST_RESULT_OK], state->counters[R2R_TEST_RESULT_BROKEN],
-		state->counters[R2R_TEST_RESULT_FAILED], state->sk_count,
+		state->counters[R2R_TEST_RESULT_OK],
+		state->counters[R2R_TEST_RESULT_BROKEN],
+		state->counters[R2R_TEST_RESULT_FAILED],
+		state->sk_count,
 		state->counters[R2R_TEST_RESULT_FIXED]);
 }
 
@@ -773,8 +802,7 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 		}
 		d->diff_cmd = "git diff --no-index --word-diff=porcelain --word-diff-regex=.";
 	}
-	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected),
-		(const ut8 *)output, (int)strlen (output));
+	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
@@ -853,8 +881,7 @@ static void print_cmd_test_diff(R2RTestResultInfo *result) {
 	}
 }
 
-static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size,
-	const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
+static R2RProcessOutput *print_runner(const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size, ut64 timeout_ms, void *user) {
 	size_t i;
 	for (i = 0; i < env_size; i++) {
 		printf ("%s=%s ", envvars[i], envvals[i]);
@@ -960,7 +987,6 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 		free (name);
 	}
 }
-
 
 static void print_state(R2RState *state, ut64 prev_completed) {
 #if R2__WINDOWS__
@@ -1148,7 +1174,7 @@ int main(int argc, char **argv) {
 	}
 #endif
 	R2ROptions opt = r2r_options_init ();
-	R2RState state = {0};
+	R2RState state = { 0 };
 
 	int arg_ind = r2r_parse_args (&opt, argc, argv);
 	if (arg_ind < 0) {

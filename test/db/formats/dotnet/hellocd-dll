@@ -19,7 +19,7 @@ format   pe
 iorw     false
 block    0x100
 type     EXEC (Executable file)
-arch     x86
+arch     cil
 baddr    0x400000
 binsz    4608
 bintype  pe
@@ -51,7 +51,7 @@ signed   false
 sanitize false
 static   false
 stripped false
-subsys   Windows CUI
+subsys   dotnet
 va       true
 versions
 === VS_VERSIONINFO ===
