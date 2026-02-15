@@ -14417,8 +14417,14 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_anal_propagate_noreturn (core, UT64_MAX);
 		r_core_task_yield (&core->tasks);
 
-		// apply dwarf function information
+		// Ensure DWARF metadata is loaded before integration.
 		Sdb *dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+		if (!dwarf_sdb || sdb_isempty (dwarf_sdb)) {
+			int io_va = r_config_get_b (core->config, "io.va");
+			(void)r_core_bin_info (core, R_CORE_BIN_ACC_ADDRLINE, NULL, R_MODE_SET, io_va, NULL, NULL);
+			dwarf_sdb = sdb_ns (core->anal->sdb, "dwarf", 0);
+		}
+		// apply dwarf function information
 		if (dwarf_sdb) {
 			logline (core, 95, "Integrate dwarf function information");
 			r_anal_dwarf_integrate_functions (core->anal, core->flags, dwarf_sdb);

@@ -374,6 +374,11 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = fun_name->b;
 	kvctoken_trim (fun_rtyp);
 	kvctoken_trim (fun_name);
+	if (fun_rtyp->a >= fun_rtyp->b) {
+		// empty token after trimming, nothing to split
+		fun_name->a = fun_rtyp->a;
+		return;
+	}
 	const bool accept_dots_in_function_names = true;
 	const char *p = fun_rtyp->b - 1;
 	while (p >= fun_rtyp->a) {
