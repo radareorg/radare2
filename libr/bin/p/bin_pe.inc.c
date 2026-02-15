@@ -95,6 +95,45 @@ static RList* entries(RBinFile *bf) {
 		return NULL;
 	}
 	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe) {
+		return ret;
+	}
+	// For .NET assemblies, find entry point from CLR EntryPointToken
+	if (pe->clr_hdr && pe->clr_hdr->EntryPointToken) {
+		ut32 token = pe->clr_hdr->EntryPointToken;
+		ut32 table = (token >> 24) & 0xFF;
+		// Table 0x06 is MethodDef - the main entry point for .NET
+		if (table == 0x06) {
+			RBuffer *buf = bf->buf;
+			const ut8 *data = r_buf_data (buf, NULL);
+			size_t size = r_buf_size (buf);
+			if (data && size > 0 && size <= INT_MAX) {
+				ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
+				RList *dotnet_symbols = dotnet_parse (data, (int)size, image_base);
+				if (dotnet_symbols) {
+					RListIter *iter;
+					DotNetSymbol *dsym;
+					r_list_foreach (dotnet_symbols, iter, dsym) {
+						if (dsym->token == token && dsym->vaddr > 0) {
+							ptr = R_NEW0 (RBinAddr);
+							if (ptr) {
+								ptr->vaddr = dsym->vaddr + image_base;
+								ptr->paddr = dsym->vaddr;
+								ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
+								r_list_append (ret, ptr);
+							}
+							break;
+						}
+					}
+					r_list_free (dotnet_symbols);
+				}
+			}
+		}
+		if (!r_list_empty (ret)) {
+			return ret;
+		}
+	}
+	// Fall back to native PE entry point
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (pe))) {
 		return ret;
 	}
@@ -847,10 +886,16 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->bclass = PE_(r_bin_pe_get_class) (pe);
 	ret->rclass = strdup ("pe");
 	ret->os = PE_(r_bin_pe_get_os) (pe);
-	ret->arch = strdup (PE_(r_bin_pe_get_arch) (pe));
 	ret->machine = PE_(r_bin_pe_get_machine) (pe);
-	ret->subsystem = PE_(r_bin_pe_get_subsystem) (pe);
 	ret->default_cc = PE_(r_bin_pe_get_cc) (pe);
+	if (pe->clr_hdr) {
+		ret->arch = strdup ("cil");
+		ret->subsystem = strdup ("dotnet");
+		ret->lang = "cil";
+	} else {
+		ret->arch = strdup (PE_(r_bin_pe_get_arch) (pe));
+		ret->subsystem = PE_(r_bin_pe_get_subsystem) (pe);
+	}
 	if (is_dot_net (bf)) {
 		ret->lang = "cil";
 	}

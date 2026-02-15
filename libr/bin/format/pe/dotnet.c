@@ -1203,61 +1203,30 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 	STREAMS headers;
 	ut16 num_streams;
 	RList *symbols = NULL;
-	st64 offset = -1;
-	int i, j, metadata_offset = -1;
+	int i;
+	st64 metadata_offset = -1;
 
 	symbols = r_list_newf ((RListFree)free);
 	if (!symbols) {
 		return NULL;
 	}
 
-	// Try to find the CLI header by looking for the magic number
-	// The NET_METADATA_MAGIC (0x424a5342) appears right after the CLI header structure
-	// The CLI header structure is: Size (4) + MajorVersion (2) + MinorVersion (2) +
-	// MetaDataDir (8) + ... so metadata usually starts 8-20 bytes after cli header start
+	// Find the .NET metadata by searching for the magic number (BSJB = 0x424a5342)
+	// The metadata can be anywhere in the file, so scan the entire file
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
 			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
 			if (test_metadata->Magic == NET_METADATA_MAGIC) {
-				metadata_offset = i; // Save the metadata offset
-				// Found metadata magic at offset i
-				// The metadata in .NET files is typically preceded by the CLI header
-				// The CLI header can be quite far before the metadata (hundreds of bytes)
-				// Search back to find the CLI header with a wider range
-				// Search range: go back up to 0x400 bytes or to start of file
-				int search_start = (i > 0x400)? (i - 0x400): 0;
-				for (j = i - 1; j >= search_start; j--) {
-#if 0
-					if (j < 0) {
-						continue;
-					}
-#endif
-					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
-					if (cli->Size == 0x48 || cli->Size == 0x44) {
-						// Verify the version looks reasonable
-						if (cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5) {
-							offset = j;
-							break;
-						}
-					}
-				}
-				if (offset >= 0) {
-					break;
-				}
+				metadata_offset = i;
+				break;
 			}
 		}
 	}
 
-	if (offset < 0) {
+	if (metadata_offset < 0) {
 		return symbols;
 	}
 
-	if (!struct_fits_in_pe (pe, pe->data + offset, CLI_HEADER)) {
-		return symbols;
-	}
-
-	// The CLI header contains an RVA to the metadata, not a direct offset
-	// Use the offset where we found the metadata magic
 	metadata_root = metadata_offset;
 
 	if (!struct_fits_in_pe (pe, pe->data + metadata_root, NET_METADATA)) {
@@ -1279,28 +1248,21 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 	}
 
 	// The metadata structure has some variable length records after the version.
-	offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
+	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
 
 	// 2 bytes for Streams.
-	if (!fits_in_pe (pe, pe->data + offset, 2)) {
+	if (!fits_in_pe (pe, pe->data + stream_offset, 2)) {
 		return symbols;
 	}
 
-	num_streams = (ut16) *(pe->data + offset);
-	offset += 2;
+	num_streams = (ut16) *(pe->data + stream_offset);
+	stream_offset += 2;
 
-	headers = dotnet_parse_stream_headers (pe, offset, metadata_root, num_streams);
+	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
 
 	// Parse the #~ stream which contains the metadata tables
 	if (headers.tilde && headers.string && headers.blob) {
-		eprintf ("[dotnet] Parsing tilde stream\n");
 		dotnet_parse_tilde (pe, metadata_root, &headers, symbols);
-		eprintf ("[dotnet] After parse_tilde: %d symbols\n", r_list_length (symbols));
-	} else {
-		eprintf ("[dotnet] Missing required streams: tilde=%p, string=%p, blob=%p\n",
-			headers.tilde,
-			headers.string,
-			headers.blob);
 	}
 
 	return symbols;
@@ -1318,8 +1280,8 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 	STREAMS headers;
 	ut16 num_streams;
 	RList *libraries = NULL;
-	st64 offset = -1;
-	int i, j, metadata_offset = -1;
+	int i;
+	st64 metadata_offset = -1;
 	PE pe_struct = { buf, (ut32)size, NULL };
 	PE *pe = &pe_struct;
 
@@ -1328,39 +1290,18 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		return NULL;
 	}
 
-	// Try to find the CLI header by looking for the magic number
+	// Find the .NET metadata by searching for the magic number
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
 			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
 			if (test_metadata->Magic == NET_METADATA_MAGIC) {
 				metadata_offset = i;
-				int search_start = (i > 0x400)? (i - 0x400): 0;
-				for (j = i - 1; j >= search_start; j--) {
-#if 0
-					if (j < 0) {
-						continue;
-					}
-#endif
-					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
-					if (cli->Size == 0x48 || cli->Size == 0x44) {
-						if (cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5) {
-							offset = j;
-							break;
-						}
-					}
-				}
-				if (offset >= 0) {
-					break;
-				}
+				break;
 			}
 		}
 	}
 
-	if (offset < 0) {
-		return libraries;
-	}
-
-	if (! (fits_in_pe (pe, pe->data + offset, sizeof (CLI_HEADER)))) {
+	if (metadata_offset < 0) {
 		return libraries;
 	}
 
@@ -1383,16 +1324,16 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		return libraries;
 	}
 
-	offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
+	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
 
-	if (! (fits_in_pe (pe, pe->data + offset, 2))) {
+	if (! (fits_in_pe (pe, pe->data + stream_offset, 2))) {
 		return libraries;
 	}
 
-	num_streams = (ut16) *(pe->data + offset);
-	offset += 2;
+	num_streams = (ut16) *(pe->data + stream_offset);
+	stream_offset += 2;
 
-	headers = dotnet_parse_stream_headers (pe, offset, metadata_root, num_streams);
+	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
 
 	// Parse the #~ stream which contains the metadata tables for libraries
 	if (headers.tilde && headers.string) {
@@ -1451,55 +1392,54 @@ RList *dotnet_parse_imports(const ut8 *buf, int size) {
 
 // Extract .NET runtime version and assembly version from MSIL headers
 DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
-	st64 offset = -1;
-	int i, j, metadata_offset = -1;
+	st64 cli_offset = -1;
+	int i;
+	st64 metadata_offset = -1;
 	PE pe_struct = { buf, (ut32)size, NULL };
 	PE *pe = &pe_struct;
 
-	// Try to find the CLI header by looking for the metadata magic number
+	// First, find the CLI header by scanning for its signature near the start of the file
+	// CLI headers are typically within the first 0x1000 bytes of the .text section
+	if (pe->data_size > 0x100) {
+		int search_limit = (pe->data_size > 0x2000) ? 0x2000 : (int)pe->data_size;
+		for (i = 0x100; i < search_limit - (int)sizeof (CLI_HEADER); i++) {
+			PCLI_HEADER cli = (PCLI_HEADER) (pe->data + i);
+			if ((cli->Size == 0x48 || cli->Size == 0x44) &&
+			    cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5 &&
+			    cli->MinorRuntimeVersion <= 10) {
+				cli_offset = i;
+				break;
+			}
+		}
+	}
+
+	// Find the metadata magic
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
 			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
 			if (test_metadata->Magic == NET_METADATA_MAGIC) {
 				metadata_offset = i;
-				// Search backwards for CLI header
-				int search_start = (i > 0x400)? (i - 0x400): 0;
-				for (j = i - 1; j >= search_start; j--) {
-#if 0
-					if (j < 0) {
-						continue;
-					}
-#endif
-					PCLI_HEADER cli = (PCLI_HEADER) (pe->data + j);
-					if (cli->Size == 0x48 || cli->Size == 0x44) {
-						if (cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5) {
-							offset = j;
-							break;
-						}
-					}
-				}
-				if (offset >= 0) {
-					break;
-				}
+				break;
 			}
 		}
 	}
 
-	if (offset < 0) {
+	if (cli_offset < 0 && metadata_offset < 0) {
 		return NULL;
 	}
 
 	// Allocate version info structure
 	DotNetVersionInfo *version_info = R_NEW0 (DotNetVersionInfo);
-	// Get CLI header version
-	if (!struct_fits_in_pe (pe, pe->data + offset, CLI_HEADER)) {
-		free (version_info);
-		return NULL;
+	// Get CLI header version if we found it
+	if (cli_offset >= 0 && struct_fits_in_pe (pe, pe->data + cli_offset, CLI_HEADER)) {
+		PCLI_HEADER cli = (PCLI_HEADER) (pe->data + cli_offset);
+		version_info->cli_major = cli->MajorRuntimeVersion;
+		version_info->cli_minor = cli->MinorRuntimeVersion;
 	}
 
-	PCLI_HEADER cli = (PCLI_HEADER) (pe->data + offset);
-	version_info->cli_major = cli->MajorRuntimeVersion;
-	version_info->cli_minor = cli->MinorRuntimeVersion;
+	if (metadata_offset < 0) {
+		return version_info;
+	}
 
 	// Try to parse Assembly table, but don't fail if we can't
 	// The CLR version alone is valuable
