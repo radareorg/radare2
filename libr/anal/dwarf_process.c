@@ -1689,6 +1689,10 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
 	char *real_name = strdup (dwarf_fcn->name);
 	r_str_ansi_strip (real_name);
 	char *sname = r_str_sanitize_sdb_key (real_name);
+	if (!sname) {
+		free (real_name);
+		return;
+	}
 	sdb_set (sdb, sname, "fcn", 0);
 
 	char *addr_key = r_str_newf ("fcn.%s.addr", sname);
