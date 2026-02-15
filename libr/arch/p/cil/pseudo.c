@@ -220,7 +220,7 @@ static const char *pseudo_rules[] = {
 	"stobj/1/*($1*)pop() = pop()",
 	"cpobj/1/*($1*)pop() = *($1*)pop()",
 	"initobj/1/*($1*)pop() = default($1)",
-	"sizeof/1/push(sizeof($1))",
+	"sizeof/1/push(size_of($1))",
 
 	/* Function pointer operations */
 	"ldftn/1/push(&$1)",
