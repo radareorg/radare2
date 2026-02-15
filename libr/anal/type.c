@@ -90,13 +90,8 @@ R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) 
 	if (errmsg) {
 		*errmsg = NULL;
 	}
-	/* Suppress parser warnings during programmatic import (e.g. DWARF Rust/Go
-	   types that are not valid C).  The error is returned via errmsg. */
-	RLogLevel prev = r_log_get_level ();
-	r_log_set_level (R_LOG_LEVEL_ERROR);
 	char *error_msg = NULL;
 	const char *out = r_anal_cparse (anal, decls, &error_msg);
-	r_log_set_level (prev);
 	if (out) {
 		r_anal_save_parsed_type (anal, out);
 	}

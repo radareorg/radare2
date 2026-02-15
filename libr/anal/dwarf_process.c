@@ -1584,6 +1584,12 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	sdb_set (types, ret_key, ret_type, 0);
 	free (ret_key);
 
+	char *cc_key = r_str_newf ("func.%s.cc", typed_name);
+	sdb_set (types, cc_key, "cdecl", 0);
+	free (cc_key);
+
+	RStrBuf argnames;
+	r_strbuf_init (&argnames);
 	int arg_index = 0;
 	RListIter *iter;
 	Variable *var;
@@ -1595,6 +1601,7 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 		char *arg_key = r_str_newf ("func.%s.arg.%d", typed_name, arg_index);
 		char *arg_val = r_str_newf ("%s,%s", var->type, arg_name);
 		sdb_set (types, arg_key, arg_val, 0);
+		r_strbuf_appendf (&argnames, "%s%s", arg_index? ",": "", arg_name);
 		free (arg_name);
 		free (arg_key);
 		free (arg_val);
@@ -1611,6 +1618,11 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	sdb_set (types, argc_key, argc_val, 0);
 	free (argc_key);
 	free (argc_val);
+
+	char *func_key = r_str_newf ("func.%s", typed_name);
+	sdb_set (types, func_key, r_strbuf_get (&argnames), 0);
+	free (func_key);
+	r_strbuf_fini (&argnames);
 	return true;
 }
 
@@ -1649,14 +1661,24 @@ static void import_dwarf_function_type(Context *ctx, const char *sname, Function
 	r_strbuf_fini (&args_buf);
 
 	if (!r_type_func_exist (anal->sdb_types, typed_name)) {
-		char *errmsg = NULL;
-		if (!r_anal_import_c_decls (anal, csig, &errmsg)) {
-			(void)import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
-			if (errmsg) {
+		/* Only attempt C parsing for C-like languages.  Non-C languages
+		   (Rust, Go, D, etc.) produce type names that are not valid C and
+		   would choke the parser.  Use the fallback which writes the same
+		   sdb entries directly. */
+		const char *lang = ctx->lang;
+		bool is_c_like = !lang || !strcmp (lang, "cxx") || !strcmp (lang, "objc");
+		bool imported = false;
+		if (is_c_like) {
+			char *errmsg = NULL;
+			imported = r_anal_import_c_decls (anal, csig, &errmsg);
+			if (!imported && errmsg) {
 				R_LOG_DEBUG ("DWARF type import fallback for %s: %s", typed_name, errmsg);
 			}
+			free (errmsg);
 		}
-		free (errmsg);
+		if (!imported) {
+			(void)import_dwarf_function_fallback (anal, typed_name, ret_type, variables, has_unspecified_parameters);
+		}
 	}
 	free (typed_name);
 	free (csig);

@@ -90,7 +90,7 @@ static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
 }
 
 static void kvc_error(KVCParser *kvc, const char *msg) {
-	R_LOG_WARN ("Parsing problem at line %d: %s", kvc->line, msg);
+	R_LOG_ERROR ("Parsing problem at line %d: %s", kvc->line, msg);
 	kvc->error = msg;
 	kvc->s.a = kvc->s.b;
 }
@@ -374,6 +374,11 @@ static void kvctoken_typename(KVCToken *fun_rtyp, KVCToken *fun_name) {
 	fun_rtyp->b = fun_name->b;
 	kvctoken_trim (fun_rtyp);
 	kvctoken_trim (fun_name);
+	if (fun_rtyp->a >= fun_rtyp->b) {
+		// empty token after trimming, nothing to split
+		fun_name->a = fun_rtyp->a;
+		return;
+	}
 	const bool accept_dots_in_function_names = true;
 	const char *p = fun_rtyp->b - 1;
 	while (p >= fun_rtyp->a) {
