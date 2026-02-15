@@ -19,7 +19,7 @@ format   pe
 iorw     false
 block    0x100
 type     DLL (Dynamic Link Library)
-arch     x86
+arch     cil
 baddr    0x10000000
 binsz    6144
 bintype  pe
@@ -51,7 +51,7 @@ signed   false
 sanitize false
 static   false
 stripped false
-subsys   Windows CUI
+subsys   dotnet
 va       true
 versions
 === VS_VERSIONINFO ===

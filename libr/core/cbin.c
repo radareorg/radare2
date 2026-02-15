@@ -2682,9 +2682,14 @@ static void select_flag_space(RCore *core, RBinSymbol *symbol) {
 
 static void set_symbol_arch(RCore *core, RBinInfo *info, RBinSymbol *symbol) {
 	ut64 addr = symbol->vaddr;
-	// Only set hints for mapped addresses
-	// if (r_io_map_get_at (core->io, addr)) {
-	const char *arch = (symbol->lang == R_BIN_LANG_CIL)? "cil": info->arch;
+	const char *arch = NULL;
+	if (symbol->lang == R_BIN_LANG_CIL) {
+		arch = "cil";
+	} else if (symbol->is_imported && info->machine) {
+		if (strstr (info->machine, "386") || strstr (info->machine, "AMD64")) {
+			arch = "x86";
+		}
+	}
 	if (arch) {
 		r_anal_hint_set_arch (core->anal, addr, arch);
 	}
@@ -3038,9 +3043,25 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				handle_arm_entry (core, entry, info, va);
 			}
 		}
-	} else if (is_dotnet) {
-		r_list_foreach (entries, iter, entry) {
-			r_anal_hint_set_arch (core->anal, entry->vaddr, info->arch);
+	} else if (is_dotnet && info->machine) {
+		const char *native_arch = NULL;
+		if (strstr (info->machine, "386") || strstr (info->machine, "AMD64")) {
+			native_arch = "x86";
+		}
+		if (native_arch) {
+			r_list_foreach (entries, iter, entry) {
+				bool is_cil_entry = false;
+				RBinSymbol *sym;
+				R_VEC_FOREACH (symbols, sym) {
+					if (sym->vaddr == entry->vaddr && sym->lang == R_BIN_LANG_CIL) {
+						is_cil_entry = true;
+						break;
+					}
+				}
+				if (!is_cil_entry) {
+					r_anal_hint_set_arch (core->anal, entry->vaddr, native_arch);
+				}
+			}
 		}
 	}
 	if (IS_MODE_JSON (mode)) {
