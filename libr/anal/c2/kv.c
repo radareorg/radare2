@@ -90,7 +90,7 @@ static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
 }
 
 static void kvc_error(KVCParser *kvc, const char *msg) {
-	R_LOG_ERROR ("Parsing problem at line %d: %s", kvc->line, msg);
+	R_LOG_WARN ("Parsing problem at line %d: %s", kvc->line, msg);
 	kvc->error = msg;
 	kvc->s.a = kvc->s.b;
 }

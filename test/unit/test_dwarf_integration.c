@@ -141,14 +141,37 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	check_kv ("fcn.Dog::walk__.addr", "0x401380");
 	check_kv ("fcn.Dog::walk__.sig", "int Dog::walk()(Dog * this);");
 	check_kv ("fcn.Dog::walk__.name", "Dog::walk()");
-	check_kv ("fcn.Mammal::walk__.vars", "this");
-	check_kv ("fcn.Mammal::walk__.var.this", "b,-8,Mammal *");
+	check_kv ("fcn.Mammal::walk__.args", "this");
+	check_kv ("fcn.Mammal::walk__.arg.0", "this,b,-8,Mammal *");
+	check_kv ("fcn.Mammal::walk__.vars", NULL);
 
 	check_kv ("main", "fcn");
 	check_kv ("fcn.main.addr", "0x401160");
 	check_kv ("fcn.main.sig", "int main();");
 	check_kv ("fcn.main.vars", "b,m,output");
 	check_kv ("fcn.main.var.output", "b,-40,int");
+	const char *typed_main = sdb_const_get (sdb, "fcn.main.typed_name", NULL);
+	mu_assert_notnull ("Missing typed name for main", typed_main);
+	sdb = anal->sdb_types;
+	char *typed_main_kind = strdup (typed_main);
+	check_kv (typed_main_kind, "func");
+	free (typed_main_kind);
+	char *typed_main_ret = r_str_newf ("func.%s.ret", typed_main);
+	check_kv (typed_main_ret, "int");
+	free (typed_main_ret);
+
+	Sdb *dwarf_sdb2 = sdb_ns (anal->sdb, "dwarf", 0);
+	const char *typed_walk = sdb_const_get (dwarf_sdb2, "fcn.Dog::walk__.typed_name", NULL);
+	mu_assert_notnull ("Missing typed name for Dog::walk()", typed_walk);
+	char *typed_walk_kind = strdup (typed_walk);
+	check_kv (typed_walk_kind, "func");
+	free (typed_walk_kind);
+	char *typed_walk_ret = r_str_newf ("func.%s.ret", typed_walk);
+	check_kv (typed_walk_ret, "int");
+	free (typed_walk_ret);
+	char *typed_walk_args = r_str_newf ("func.%s.args", typed_walk);
+	check_kv (typed_walk_args, "1");
+	free (typed_walk_args);
 
 	r_bin_dwarf_free_debug_info (info);
 	RVecDwarfAbbrevDecl_free (abbrevs);
@@ -254,11 +277,24 @@ static bool test_dwarf_function_parsing_rust(void) {
 
 	check_kv ("bubble_sort__str_", "fcn");
 	check_kv ("bubble_sort_i32_", "fcn");
-	check_kv ("fcn.bubble_sort_i32_.vars", "values,n,swapped,iter,__next,val,i");
+	check_kv ("fcn.bubble_sort_i32_.args", "values");
+	check_kv ("fcn.bubble_sort_i32_.vars", "n,swapped,iter,__next,val,i");
 	check_kv ("fcn.bubble_sort_i32_.var.iter", "s,112,Range<usize>");
 	check_kv ("fcn.bubble_sort_i32_.var.i", "s,176,usize");
 	check_kv ("fcn.bubble_sort_i32_.name", "bubble_sort<i32>");
 	check_kv ("fcn.bubble_sort_i32_.addr", "0x5270");
+	const char *typed_bubble = sdb_const_get (sdb, "fcn.bubble_sort_i32_.typed_name", NULL);
+	mu_assert_notnull ("Missing typed name for bubble_sort_i32_", typed_bubble);
+	sdb = anal->sdb_types;
+	char *typed_bubble_kind = strdup (typed_bubble);
+	check_kv (typed_bubble_kind, "func");
+	free (typed_bubble_kind);
+	char *typed_bubble_ret = r_str_newf ("func.%s.ret", typed_bubble);
+	check_kv (typed_bubble_ret, "void");
+	free (typed_bubble_ret);
+	char *typed_bubble_args = r_str_newf ("func.%s.args", typed_bubble);
+	check_kv (typed_bubble_args, "1");
+	free (typed_bubble_args);
 
 	r_bin_dwarf_free_debug_info (info);
 	RVecDwarfAbbrevDecl_free (abbrevs);

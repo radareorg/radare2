@@ -1243,6 +1243,7 @@ R_API RList *r_anal_get_fcns(RAnal *anal);
 /* type.c */
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name);
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed);
+R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg);
 
 /* var.c */
 R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, const char *pfx, int ptr);

@@ -1370,6 +1370,15 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	pdb.print_gvars (&pdb, baddr, pj, fmt_mode);
 	// Save compound types into SDB
 	r_parse_pdb_types (core->anal, &pdb);
+	char *decls = r_bin_get_types (core->bin);
+	if (decls) {
+		char *errmsg = NULL;
+		if (!r_anal_import_c_decls (core->anal, decls, &errmsg) && errmsg) {
+			R_LOG_DEBUG ("PDB decl import failed: %s", errmsg);
+		}
+		free (errmsg);
+		free (decls);
+	}
 	pdb.finish_pdb_parse (&pdb);
 	if (jsonmode) {
 		pj_end (pj);

@@ -234,6 +234,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME="function info import c++ typed signature"
+FILE=bins/elf/dwarf3_many_comp_units.elf
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+k anal/dwarf/*~fcn.Dog::Dog__.name
+k anal/dwarf/*~fcn.Dog::Dog__.typed_name
+k anal/dwarf/*~fcn.Dog::Dog__.csig
+tfc Dog_Dog_
+EOF
+EXPECT=<<EOF
+fcn.Dog::Dog__.name=Dog::Dog()
+fcn.Dog::Dog__.typed_name=Dog_Dog_
+fcn.Dog::Dog__.csig=void Dog_Dog_(Dog * const this);
+void Dog_Dog_ (Dog * const this);
+EOF
+RUN
+
 
 NAME="function info integration 1 rust"
 FILE=bins/elf/dwarf_rust_bubble 
@@ -336,7 +354,7 @@ EXPECT=<<EOF
 |           0x00005844      4c89c2         mov rdx, r8                 ; int64_t arg3
 |           0x00005847      488b4c2460     mov rcx, qword [var_60h]    ; int64_t arg4
 |           0x0000584c      41b801000000   mov r8d, 1                  ; int64_t arg5
-|           0x00005852      e8591b0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288
+|           0x00005852      e8591b0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; Arguments new_v1(&[&str] pieces, &[core::fmt::ArgumentV1] args)
 |           0x00005857      488dbc24a8..   lea rdi, [var_a8h]
 |           0x0000585f      ff15b3430300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
 |           0x00005865      488d842480..   lea rax, [numbers]
@@ -366,7 +384,7 @@ EXPECT=<<EOF
 |           0x000058f9      4c89c2         mov rdx, r8                 ; int64_t arg3
 |           0x000058fc      488b4c2440     mov rcx, qword [var_40h]    ; int64_t arg4
 |           0x00005901      41b801000000   mov r8d, 1                  ; int64_t arg5
-|           0x00005907      e8a41a0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288
+|           0x00005907      e8a41a0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; Arguments new_v1(&[&str] pieces, &[core::fmt::ArgumentV1] args)
 |           0x0000590c      488dbc24f0..   lea rdi, [var_f0h]
 |           0x00005914      ff15fe420300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
 |           0x0000591a      488d052b47..   lea rax, [0x0002a04c]       ; "dealempty/usr/src/rustc-1.43.0/src/libcore/slice/mod.rscalled `Option::unwrap()` on a `None` valuesrc/libstd/env.rsfailed to ge"
@@ -393,9 +411,10 @@ EXPECT=<<EOF
             ;-- rust::bubble_sort::h0777bc845caabc60:
             ;-- dbg.bubble_sort_i32_:
             ; CALL XREF from rust::main::h523dcf5432fcfd88 @ 0x5875(x) ; dbg.main
-/ 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2);
+/ 614: dbg.bubble_sort<i32> (int64_t arg1, int64_t arg2, &mut [i32] values);
 |           ; arg int64_t arg1 @ rdi
 |           ; arg int64_t arg2 @ rsi
+|           ; arg &mut [i32] values @ rsp+0x90
 |           ; var int64_t var_fh @ rsp+0xf
 |           ; var int64_t var_10h @ rsp+0x10
 |           ; var int64_t var_18h @ rsp+0x18
@@ -413,7 +432,6 @@ EXPECT=<<EOF
 |           ; var int64_t var_78h @ rsp+0x78
 |           ; var int64_t var_80h @ rsp+0x80
 |           ; var int64_t var_88h @ rsp+0x88
-|           ; var &mut [i32] values @ rsp+0x90
 |           ; var int64_t var_98h @ rsp+0x98
 |           ; var usize val @ rsp+0xa0
 |           ; var usize __next @ rsp+0xa8
@@ -478,7 +496,7 @@ EXPECT=<<EOF
             ;-- method.Grid.init__:
             ;-- Grid::init():
             ; CALL XREF from dbg.main @ 0x10001ae8(x)
-/ 64: dbg.init (Grid * const this);
+/ 64: void dbg.init (Grid * const this);
 |           ; arg Grid * const this @ r3
 |           0x100012bc      39030144       addi r8, r3, 0x144          ; arg1 ; void init(Grid * const this);
 |           0x100012c0      38e30168       addi r7, r3, 0x168          ; arg1
@@ -540,9 +558,9 @@ EXPECT=<<EOF
 |           0x0000277f      488d45f8       lea rax, [seh.F]
 |           0x00002783      4889c7         mov rdi, rax
 |           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
-|           0x0000278b      e8e8fcffff     call dbg.adainit
-|           0x00002790      e847000000     call dbg._ada_ada_test
-|           0x00002795      e8b6fcffff     call dbg.adafinal
+|           0x0000278b      e8e8fcffff     call dbg.adainit            ; void adainit(void)
+|           0x00002790      e847000000     call dbg._ada_ada_test      ; void _ada_ada_test(void)
+|           0x00002795      e8b6fcffff     call dbg.adafinal           ; void adafinal(void)
 |           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
 |           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
 |           0x000027a5      c9             leave
@@ -588,9 +606,9 @@ EXPECT=<<EOF
 |           0x0000277f      488d45f8       lea rax, [seh.F]
 |           0x00002783      4889c7         mov rdi, rax
 |           0x00002786      e875f9ffff     call sym.imp.__gnat_initialize
-|           0x0000278b      e8e8fcffff     call dbg.adainit
-|           0x00002790      e847000000     call dbg._ada_ada_test
-|           0x00002795      e8b6fcffff     call dbg.adafinal
+|           0x0000278b      e8e8fcffff     call dbg.adainit            ; void adainit(void)
+|           0x00002790      e847000000     call dbg._ada_ada_test      ; void _ada_ada_test(void)
+|           0x00002795      e8b6fcffff     call dbg.adafinal           ; void adafinal(void)
 |           0x0000279a      e8d1f8ffff     call sym.imp.__gnat_finalize
 |           0x0000279f      8b054b290000   mov eax, dword [obj.gnat_exit_status] ; [0x50f0:4]=0
 |           0x000027a5      c9             leave
@@ -609,9 +627,9 @@ EOF
 EXPECT=<<EOF
             ;-- unit p(mozgkigyo palya(smallint,smallint)):
             ; CALL XREFS from dbg.$main @ 0x405237(x), 0x40542d(x), 0x405ba3(x), 0x406e29(x)
-/ 439: dbg.palya() ();
-|           ; var SmallInt mag @ rbp-0x8
-|           ; var SmallInt szel @ rbp-0x10
+/ 439: dbg.palya() (SmallInt szel, SmallInt mag);
+|           ; arg SmallInt szel @ rbp+0x10
+|           ; arg SmallInt mag @ rbp+0x8
 |           ; var SmallInt i @ rbp-0x14
 |           ; var int64_t var_20h @ rbp-0x20
 |           ; var int64_t var_28h @ rbp-0x28
