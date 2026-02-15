@@ -392,16 +392,18 @@ static void destroy(RBinFile *bf) {
 	r_coresym_cache_element_free (bf->bo->bin_obj);
 }
 
-static void header(RBinFile *bf) {
-	R_RETURN_IF_FAIL (bf && bf->bo);
+static char *header(RBinFile *bf, int mode) {
+	if (!bf || !bf->bo) {
+		return NULL;
+	}
 
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	if (!element) {
-		return;
+		return NULL;
 	}
 
-	RBin *bin = bf->rbin;
-	PrintfCallback p = bin->cb_printf;
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	PJ *pj = pj_new ();
 	pj_o (pj);
 	pj_kn (pj, "cs_version", element->hdr->version);
@@ -424,6 +426,8 @@ static void header(RBinFile *bf) {
 
 	p ("%s\n", pj_string (pj));
 	pj_free (pj);
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 RBinPlugin r_bin_plugin_symbols = {

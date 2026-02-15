@@ -2,8 +2,9 @@
 
 #include "bin_elf.inc.c"
 
-static void headers32(RBinFile *bf) {
-#define p bf->rbin->cb_printf
+static char *headers32(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	p ("0x00000000  ELF MAGIC   0x%08x\n", r_buf_read_le32_at (bf->buf, 0));
 	p ("0x00000010  Type        0x%04x\n", r_buf_read_le16_at (bf->buf, 0x10));
 	p ("0x00000012  Machine     0x%04x\n", r_buf_read_le16_at (bf->buf, 0x12));
@@ -18,6 +19,8 @@ static void headers32(RBinFile *bf) {
 	p ("0x0000002e  ShentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x2e));
 	p ("0x00000030  ShNum       %d\n", r_buf_read_le16_at (bf->buf, 0x30));
 	p ("0x00000032  ShrStrndx   %d\n", r_buf_read_le16_at (bf->buf, 0x32));
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static bool check(RBinFile *bf, RBuffer *buf) {

@@ -1799,14 +1799,24 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 	}
 }
 
-static bool bin_header(RCore *r, int mode) {
+static bool bin_header(RCore *r, int mode, PJ *pj) {
 	R_RETURN_VAL_IF_FAIL (r, false);
 	RBinFile *cur = r_bin_cur (r->bin);
 	if (cur) {
 		RBinPlugin *plg = r_bin_file_cur_plugin (cur);
 		if (plg && plg->header) {
-			plg->header (cur);
-			return true;
+			char *s = plg->header (cur, mode);
+			if (s) {
+				if (pj && s[0] != '{') {
+					pj_o (pj);
+					pj_ks (pj, "header", s);
+					pj_end (pj);
+				} else {
+					r_cons_print (r->cons, s);
+				}
+				free (s);
+				return true;
+			}
 		}
 	}
 	return false;
@@ -2703,7 +2713,7 @@ static int cmd_info(void *data, const char *input) {
 	case 'H': // "iH"
 		if (question) {
 			r_core_cmd_help (core, help_msg_iH);
-		} else if (!bin_header (core, mode)) {
+		} else if (!bin_header (core, mode, pj)) {
 			/// XXX header vs fields wtf
 			if (!r_core_bin_info (core, R_CORE_BIN_ACC_HEADER, pj, mode, va, NULL, NULL)) {
 				if (!pj) {

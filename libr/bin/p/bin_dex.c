@@ -2027,40 +2027,41 @@ static RList *sections(RBinFile *bf) {
 }
 
 // iH
-static void dex_header(RBinFile *bf) {
+static char *dex_header(RBinFile *bf, int mode) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	DexHeader *hdr = &dex->header;
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
-
-	cb_printf ("DEX file header:\n");
-	cb_printf ("magic               : 'dex\\n035\\0'\n");
-	cb_printf ("checksum            : %x\n", hdr->checksum);
-	cb_printf ("signature           : %02x%02x...%02x%02x\n",
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	p ("DEX file header:\n");
+	p ("magic               : 'dex\\n035\\0'\n");
+	p ("checksum            : %x\n", hdr->checksum);
+	p ("signature           : %02x%02x...%02x%02x\n",
 		hdr->signature[0], hdr->signature[1], hdr->signature[18], hdr->signature[19]);
-	cb_printf ("file_size           : %d\n", hdr->size);
-	cb_printf ("header_size         : %d\n", hdr->header_size);
-	cb_printf ("link_size           : %d\n", hdr->linksection_size);
-	cb_printf ("link_off            : %d (0x%06x)\n", hdr->linksection_offset, hdr->linksection_offset);
-	cb_printf ("string_ids_size     : %d\n", hdr->strings_size);
-	cb_printf ("string_ids_off      : %d (0x%06x)\n", hdr->strings_offset, hdr->strings_offset);
-	cb_printf ("type_ids_size       : %d\n", hdr->types_size);
-	cb_printf ("type_ids_off        : %d (0x%06x)\n", hdr->types_offset, hdr->types_offset);
-	cb_printf ("proto_ids_size      : %d\n", hdr->prototypes_size);
-	cb_printf ("proto_ids_off       : %d (0x%06x)\n", hdr->prototypes_offset, hdr->prototypes_offset);
-	cb_printf ("field_ids_size      : %d\n", hdr->fields_size);
-	cb_printf ("field_ids_off       : %d (0x%06x)\n", hdr->fields_offset, hdr->fields_offset);
-	cb_printf ("method_ids_size     : %d\n", hdr->method_size);
-	cb_printf ("method_ids_off      : %d (0x%06x)\n", hdr->method_offset, hdr->method_offset);
-	cb_printf ("class_defs_size     : %d\n", hdr->class_size);
-	cb_printf ("class_defs_off      : %d (0x%06x)\n", hdr->class_offset, hdr->class_offset);
-	cb_printf ("data_size           : %d\n", hdr->data_size);
-	cb_printf ("data_off            : %d (0x%06x)\n\n", hdr->data_offset, hdr->data_offset);
-
+	p ("file_size           : %d\n", hdr->size);
+	p ("header_size         : %d\n", hdr->header_size);
+	p ("link_size           : %d\n", hdr->linksection_size);
+	p ("link_off            : %d (0x%06x)\n", hdr->linksection_offset, hdr->linksection_offset);
+	p ("string_ids_size     : %d\n", hdr->strings_size);
+	p ("string_ids_off      : %d (0x%06x)\n", hdr->strings_offset, hdr->strings_offset);
+	p ("type_ids_size       : %d\n", hdr->types_size);
+	p ("type_ids_off        : %d (0x%06x)\n", hdr->types_offset, hdr->types_offset);
+	p ("proto_ids_size      : %d\n", hdr->prototypes_size);
+	p ("proto_ids_off       : %d (0x%06x)\n", hdr->prototypes_offset, hdr->prototypes_offset);
+	p ("field_ids_size      : %d\n", hdr->fields_size);
+	p ("field_ids_off       : %d (0x%06x)\n", hdr->fields_offset, hdr->fields_offset);
+	p ("method_ids_size     : %d\n", hdr->method_size);
+	p ("method_ids_off      : %d (0x%06x)\n", hdr->method_offset, hdr->method_offset);
+	p ("class_defs_size     : %d\n", hdr->class_size);
+	p ("class_defs_off      : %d (0x%06x)\n", hdr->class_offset, hdr->class_offset);
+	p ("data_size           : %d\n", hdr->data_size);
+	p ("data_off            : %d (0x%06x)\n\n", hdr->data_offset, hdr->data_offset);
+#undef p
 	// TODO: print information stored in the RBIN not this ugly fix
 	RVecRBinSymbol_clear (&dex->symbols_vec);
 	dex->dexdump = true; /// XXX convert this global into an argument or field in RBinFile or so
 	dex_loadcode (bf);
 	dex->dexdump = false;
+	return r_strbuf_drain (sb);
 }
 
 static ut64 size(RBinFile *bf) {

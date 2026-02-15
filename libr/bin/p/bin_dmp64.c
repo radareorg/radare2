@@ -13,34 +13,36 @@ static void destroy(RBinFile *bf) {
 	r_bin_dmp64_free ((struct r_bin_dmp64_obj_t*)bf->bo->bin_obj);
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
-	struct r_bin_t *rbin = bf->rbin;
-	rbin->cb_printf ("DUMP_HEADER64:\n");
-	rbin->cb_printf ("  MajorVersion : 0x%08"PFMT32x"\n", obj->header->MajorVersion);
-	rbin->cb_printf ("  MinorVersion : 0x%08"PFMT32x"\n", obj->header->MinorVersion);
-	rbin->cb_printf ("  DirectoryTableBase : 0x%016"PFMT64x"\n", obj->header->DirectoryTableBase);
-	rbin->cb_printf ("  PfnDataBase : 0x%016"PFMT64x"\n", obj->header->PfnDataBase);
-	rbin->cb_printf ("  PsLoadedModuleList : 0x%016"PFMT64x"\n", obj->header->PsLoadedModuleList);
-	rbin->cb_printf ("  PsActiveProcessHead : 0x%016"PFMT64x"\n", obj->header->PsActiveProcessHead);
-	rbin->cb_printf ("  MachineImageType : 0x%08"PFMT32x"\n", obj->header->MachineImageType);
-	rbin->cb_printf ("  NumberProcessors : 0x%08"PFMT32x"\n", obj->header->NumberProcessors);
-	rbin->cb_printf ("  BugCheckCode : 0x%08"PFMT32x"\n", obj->header->BugCheckCode);
-	rbin->cb_printf ("  BugCheckParameter1 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[0]);
-	rbin->cb_printf ("  BugCheckParameter2 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[1]);
-	rbin->cb_printf ("  BugCheckParameter3 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[2]);
-	rbin->cb_printf ("  BugCheckParameter4 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[3]);
-	rbin->cb_printf ("  KdDebuggerDataBlock : 0x%016"PFMT64x"\n", obj->header->KdDebuggerDataBlock);
-	rbin->cb_printf ("  SecondaryDataState : 0x%08"PFMT32x"\n", obj->header->SecondaryDataState);
-	rbin->cb_printf ("  ProductType : 0x%08"PFMT32x"\n", obj->header->ProductType);
-	rbin->cb_printf ("  SuiteMask : 0x%08"PFMT32x"\n", obj->header->SuiteMask);
-
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	p ("DUMP_HEADER64:\n");
+	p ("  MajorVersion : 0x%08"PFMT32x"\n", obj->header->MajorVersion);
+	p ("  MinorVersion : 0x%08"PFMT32x"\n", obj->header->MinorVersion);
+	p ("  DirectoryTableBase : 0x%016"PFMT64x"\n", obj->header->DirectoryTableBase);
+	p ("  PfnDataBase : 0x%016"PFMT64x"\n", obj->header->PfnDataBase);
+	p ("  PsLoadedModuleList : 0x%016"PFMT64x"\n", obj->header->PsLoadedModuleList);
+	p ("  PsActiveProcessHead : 0x%016"PFMT64x"\n", obj->header->PsActiveProcessHead);
+	p ("  MachineImageType : 0x%08"PFMT32x"\n", obj->header->MachineImageType);
+	p ("  NumberProcessors : 0x%08"PFMT32x"\n", obj->header->NumberProcessors);
+	p ("  BugCheckCode : 0x%08"PFMT32x"\n", obj->header->BugCheckCode);
+	p ("  BugCheckParameter1 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[0]);
+	p ("  BugCheckParameter2 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[1]);
+	p ("  BugCheckParameter3 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[2]);
+	p ("  BugCheckParameter4 : 0x%016"PFMT64x"\n", obj->header->BugCheckCodeParameter[3]);
+	p ("  KdDebuggerDataBlock : 0x%016"PFMT64x"\n", obj->header->KdDebuggerDataBlock);
+	p ("  SecondaryDataState : 0x%08"PFMT32x"\n", obj->header->SecondaryDataState);
+	p ("  ProductType : 0x%08"PFMT32x"\n", obj->header->ProductType);
+	p ("  SuiteMask : 0x%08"PFMT32x"\n", obj->header->SuiteMask);
 	if (obj->bmp_header) {
-		rbin->cb_printf ("\nBITMAP_DUMP:\n");
-		rbin->cb_printf ("  HeaderSize : 0x%08"PFMT64x"\n", obj->bmp_header->FirstPage);
-		rbin->cb_printf ("  BitmapSize : 0x%08"PFMT64x"\n", obj->bmp_header->Pages);
-		rbin->cb_printf ("  Pages : 0x%08"PFMT64x"\n", obj->bmp_header->TotalPresentPages);
+		p ("\nBITMAP_DUMP:\n");
+		p ("  HeaderSize : 0x%08"PFMT64x"\n", obj->bmp_header->FirstPage);
+		p ("  BitmapSize : 0x%08"PFMT64x"\n", obj->bmp_header->Pages);
+		p ("  Pages : 0x%08"PFMT64x"\n", obj->bmp_header->TotalPresentPages);
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RBinInfo *info(RBinFile *bf) {

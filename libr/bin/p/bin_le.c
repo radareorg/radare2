@@ -39,15 +39,15 @@ static void destroy(RBinFile *bf) {
 	r_bin_le_free (bf->bo->bin_obj);
 }
 
-static void header(RBinFile *bf) {
-	R_RETURN_IF_FAIL (bf && bf->rbin && bf->bo && bf->bo->bin_obj);
-	RBin *rbin = bf->rbin;
+static char *header(RBinFile *bf, int mode) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->bo && bf->bo->bin_obj, NULL);
 	RBinLEObj *bin = bf->bo->bin_obj;
 	LE_image_header *h = bin->header;
-	PrintfCallback p = rbin->cb_printf;
-	if (!h || !p) {
-		return;
+	if (!h) {
+		return NULL;
 	}
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	p ("Signature: %2s\n", h->magic);
 	p ("Byte Order: %s\n", h->border ? "Big" : "Little");
 	p ("Word Order: %s\n", h->worder ? "Big" : "Little");
@@ -99,6 +99,8 @@ static void header(RBinFile *bf) {
 	p ("Demand pages: %u\n", h->instdemand);
 	p ("Heap Size: 0x%04x\n", h->heapsize);
 	p ("Stack Size: 0x%04x\n", h->stacksize);
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RList *sections(RBinFile *bf) {

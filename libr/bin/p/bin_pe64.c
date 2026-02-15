@@ -202,111 +202,114 @@ static RList *fields(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
 	struct PE_(r_bin_pe_obj_t) * bin = bf->bo->bin_obj;
-	struct r_bin_t *rbin = bf->rbin;
-	rbin->cb_printf ("PE file header:\n");
-	rbin->cb_printf ("IMAGE_NT_HEADERS\n");
-	rbin->cb_printf ("  Signature : 0x%x\n", bin->nt_headers->Signature);
-	rbin->cb_printf ("IMAGE_FILE_HEADERS\n");
-	rbin->cb_printf ("  Machine : 0x%x\n", bin->nt_headers->file_header.Machine);
-	rbin->cb_printf ("  NumberOfSections : 0x%x\n", bin->nt_headers->file_header.NumberOfSections);
-	rbin->cb_printf ("  TimeDateStamp : 0x%x\n", bin->nt_headers->file_header.TimeDateStamp);
-	rbin->cb_printf ("  PointerToSymbolTable : 0x%x\n", bin->nt_headers->file_header.PointerToSymbolTable);
-	rbin->cb_printf ("  NumberOfSymbols : 0x%x\n", bin->nt_headers->file_header.NumberOfSymbols);
-	rbin->cb_printf ("  SizeOfOptionalHeader : 0x%x\n", bin->nt_headers->file_header.SizeOfOptionalHeader);
-	rbin->cb_printf ("  Characteristics : 0x%x\n", bin->nt_headers->file_header.Characteristics);
-	rbin->cb_printf ("IMAGE_OPTIONAL_HEADERS\n");
-	rbin->cb_printf ("  Magic : 0x%x\n", bin->nt_headers->optional_header.Magic);
-	rbin->cb_printf ("  MajorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MajorLinkerVersion);
-	rbin->cb_printf ("  MinorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MinorLinkerVersion);
-	rbin->cb_printf ("  SizeOfCode : 0x%x\n", bin->nt_headers->optional_header.SizeOfCode);
-	rbin->cb_printf ("  SizeOfInitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfInitializedData);
-	rbin->cb_printf ("  SizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
-	rbin->cb_printf ("  AddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
-	rbin->cb_printf ("  BaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
-	rbin->cb_printf ("  ImageBase : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.ImageBase);
-	rbin->cb_printf ("  SectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
-	rbin->cb_printf ("  FileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
-	rbin->cb_printf ("  MajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
-	rbin->cb_printf ("  MinorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorOperatingSystemVersion);
-	rbin->cb_printf ("  MajorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MajorImageVersion);
-	rbin->cb_printf ("  MinorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MinorImageVersion);
-	rbin->cb_printf ("  MajorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorSubsystemVersion);
-	rbin->cb_printf ("  MinorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorSubsystemVersion);
-	rbin->cb_printf ("  Win32VersionValue : 0x%x\n", bin->nt_headers->optional_header.Win32VersionValue);
-	rbin->cb_printf ("  SizeOfImage : 0x%x\n", bin->nt_headers->optional_header.SizeOfImage);
-	rbin->cb_printf ("  SizeOfHeaders : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeaders);
-	rbin->cb_printf ("  CheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
-	rbin->cb_printf ("  Subsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
-	rbin->cb_printf ("  DllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
-	rbin->cb_printf ("  SizeOfStackReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackReserve);
-	rbin->cb_printf ("  SizeOfStackCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackCommit);
-	rbin->cb_printf ("  SizeOfHeapReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
-	rbin->cb_printf ("  SizeOfHeapCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
-	rbin->cb_printf ("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
-	rbin->cb_printf ("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	p ("PE file header:\n");
+	p ("IMAGE_NT_HEADERS\n");
+	p ("  Signature : 0x%x\n", bin->nt_headers->Signature);
+	p ("IMAGE_FILE_HEADERS\n");
+	p ("  Machine : 0x%x\n", bin->nt_headers->file_header.Machine);
+	p ("  NumberOfSections : 0x%x\n", bin->nt_headers->file_header.NumberOfSections);
+	p ("  TimeDateStamp : 0x%x\n", bin->nt_headers->file_header.TimeDateStamp);
+	p ("  PointerToSymbolTable : 0x%x\n", bin->nt_headers->file_header.PointerToSymbolTable);
+	p ("  NumberOfSymbols : 0x%x\n", bin->nt_headers->file_header.NumberOfSymbols);
+	p ("  SizeOfOptionalHeader : 0x%x\n", bin->nt_headers->file_header.SizeOfOptionalHeader);
+	p ("  Characteristics : 0x%x\n", bin->nt_headers->file_header.Characteristics);
+	p ("IMAGE_OPTIONAL_HEADERS\n");
+	p ("  Magic : 0x%x\n", bin->nt_headers->optional_header.Magic);
+	p ("  MajorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MajorLinkerVersion);
+	p ("  MinorLinkerVersion : 0x%x\n", bin->nt_headers->optional_header.MinorLinkerVersion);
+	p ("  SizeOfCode : 0x%x\n", bin->nt_headers->optional_header.SizeOfCode);
+	p ("  SizeOfInitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfInitializedData);
+	p ("  SizeOfUninitializedData : 0x%x\n", bin->nt_headers->optional_header.SizeOfUninitializedData);
+	p ("  AddressOfEntryPoint : 0x%x\n", bin->nt_headers->optional_header.AddressOfEntryPoint);
+	p ("  BaseOfCode : 0x%x\n", bin->nt_headers->optional_header.BaseOfCode);
+	p ("  ImageBase : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.ImageBase);
+	p ("  SectionAlignment : 0x%x\n", bin->nt_headers->optional_header.SectionAlignment);
+	p ("  FileAlignment : 0x%x\n", bin->nt_headers->optional_header.FileAlignment);
+	p ("  MajorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorOperatingSystemVersion);
+	p ("  MinorOperatingSystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorOperatingSystemVersion);
+	p ("  MajorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MajorImageVersion);
+	p ("  MinorImageVersion : 0x%x\n", bin->nt_headers->optional_header.MinorImageVersion);
+	p ("  MajorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MajorSubsystemVersion);
+	p ("  MinorSubsystemVersion : 0x%x\n", bin->nt_headers->optional_header.MinorSubsystemVersion);
+	p ("  Win32VersionValue : 0x%x\n", bin->nt_headers->optional_header.Win32VersionValue);
+	p ("  SizeOfImage : 0x%x\n", bin->nt_headers->optional_header.SizeOfImage);
+	p ("  SizeOfHeaders : 0x%x\n", bin->nt_headers->optional_header.SizeOfHeaders);
+	p ("  CheckSum : 0x%x\n", bin->nt_headers->optional_header.CheckSum);
+	p ("  Subsystem : 0x%x\n", bin->nt_headers->optional_header.Subsystem);
+	p ("  DllCharacteristics : 0x%x\n", bin->nt_headers->optional_header.DllCharacteristics);
+	p ("  SizeOfStackReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackReserve);
+	p ("  SizeOfStackCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfStackCommit);
+	p ("  SizeOfHeapReserve : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapReserve);
+	p ("  SizeOfHeapCommit : 0x%"PFMT64x"\n", bin->nt_headers->optional_header.SizeOfHeapCommit);
+	p ("  LoaderFlags : 0x%x\n", bin->nt_headers->optional_header.LoaderFlags);
+	p ("  NumberOfRvaAndSizes : 0x%x\n", bin->nt_headers->optional_header.NumberOfRvaAndSizes);
 	RListIter *it;
 	Pe_image_rich_entry *entry;
-	rbin->cb_printf ("RICH_FIELDS\n");
+	p ("RICH_FIELDS\n");
 	r_list_foreach (bin->rich_entries, it, entry) {
-		rbin->cb_printf ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+		p ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (bin->nt_headers->optional_header.DataDirectory[i].Size > 0) {
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IMPORT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_RESOURCE:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_RESOURCE\n");
+				p ("IMAGE_DIRECTORY_ENTRY_RESOURCE\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_EXCEPTION\n");
+				p ("IMAGE_DIRECTORY_ENTRY_EXCEPTION\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_SECURITY:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_SECURITY\n");
+				p ("IMAGE_DIRECTORY_ENTRY_SECURITY\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BASERELOC:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_BASERELOC\n");
+				p ("IMAGE_DIRECTORY_ENTRY_BASERELOC\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DEBUG:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_DEBUG\n");
+				p ("IMAGE_DIRECTORY_ENTRY_DEBUG\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT\n");
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_ARCHITECTURE\n");
+				p ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_ARCHITECTURE\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR\n");
+				p ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_TLS:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_TLS\n");
+				p ("IMAGE_DIRECTORY_ENTRY_TLS\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG\n");
+				p ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IAT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_IAT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_IAT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:
-				rbin->cb_printf ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
+				p ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
 				break;
 			}
-			rbin->cb_printf ("  VirtualAddress : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
-			rbin->cb_printf ("  Size : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].Size);
+			p ("  VirtualAddress : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
+			p ("  Size : 0x%x\n", bin->nt_headers->optional_header.DataDirectory[i].Size);
 		}
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 extern struct r_bin_write_t r_bin_write_pe64;

@@ -23,8 +23,9 @@ static ut64 get_elf_vaddr64(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return obj->baddr - obj->boffset + vaddr;
 }
 
-static void headers64(RBinFile *bf) {
-#define p bf->rbin->cb_printf
+static char *headers64(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	p ("0x00000000  ELF64       0x%08x\n", r_buf_read_le32_at (bf->buf, 0));
 	p ("0x00000010  Type        0x%04x\n", r_buf_read_le16_at (bf->buf, 0x10));
 	p ("0x00000012  Machine     0x%04x\n", r_buf_read_le16_at (bf->buf, 0x12));
@@ -39,6 +40,8 @@ static void headers64(RBinFile *bf) {
 	p ("0x0000003a  ShentSize   %d\n", r_buf_read_le16_at (bf->buf, 0x3a));
 	p ("0x0000003c  ShNum       %d\n", r_buf_read_le16_at (bf->buf, 0x3c));
 	p ("0x0000003e  ShrStrndx   %d\n", r_buf_read_le16_at (bf->buf, 0x3e));
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RBuffer* create(RBin* bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {

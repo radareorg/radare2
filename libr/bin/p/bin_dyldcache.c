@@ -1571,23 +1571,21 @@ beach:
 	return NULL;
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
 	if (!bf || !bf->bo) {
-		return;
+		return NULL;
 	}
 
 	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
-		return;
+		return NULL;
 	}
 
-	RBin *bin = bf->rbin;
 	ut64 slide = rebase_infos_get_slide (cache);
-	PrintfCallback p = bin->cb_printf;
 
 	PJ *pj = pj_new ();
 	if (!pj) {
-		return;
+		return NULL;
 	}
 
 	pj_o (pj);
@@ -1678,10 +1676,13 @@ static void header(RBinFile *bf) {
 	}
 
 	pj_end (pj);
-	p ("%s", pj_string (pj));
+	char *res = strdup (pj_string (pj));
+	pj_free (pj);
+	return res;
 
 beach:
 	pj_free (pj);
+	return NULL;
 }
 
 RBinPlugin r_bin_plugin_dyldcache = {

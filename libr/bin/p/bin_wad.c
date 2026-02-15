@@ -105,13 +105,15 @@ static RList *symbols(RBinFile *bf) {
 	return ret;
 }
 
-// Prints header info using iH
-static void wad_header_fields(RBinFile *bf) {
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	cb_printf ("pf.wad_header @ 0x%08"PFMT64x"\n", (ut64)0);
-	cb_printf ("0x00000000  Magic           0x%x\n", r_buf_read_le32_at (bf->buf, 0));
-	cb_printf ("0x00000004  Numlumps        %d\n", r_buf_read_le32_at (bf->buf, 0x04));
-	cb_printf ("0x00000008  TableOffset     0x%x\n", r_buf_read_le32_at (bf->buf, 0x08));
+static char *wad_header_fields(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	p ("pf.wad_header @ 0x%08"PFMT64x"\n", (ut64)0);
+	p ("0x00000000  Magic           0x%x\n", r_buf_read_le32_at (bf->buf, 0));
+	p ("0x00000004  Numlumps        %d\n", r_buf_read_le32_at (bf->buf, 0x04));
+	p ("0x00000008  TableOffset     0x%x\n", r_buf_read_le32_at (bf->buf, 0x08));
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RList *wad_fields(RBinFile *bf) {

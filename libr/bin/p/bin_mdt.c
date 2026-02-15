@@ -20,8 +20,12 @@ typedef struct {
 	ut32 cert_sz;
 } SblHeader;
 
-static void headers(RBinFile *bf) {
-	r_return_if_fail (bf && bf->bo && bf->bo->bin_obj && bf->rbin && bf->rbin->cb_printf);
+static char *headers(RBinFile *bf, int mode) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->rbin) {
+		return NULL;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
 	char bits[65] = { 0 };
 	size_t i;
@@ -31,71 +35,72 @@ static void headers(RBinFile *bf) {
 	i = 0;
 	r_list_foreach (mdt->parts, iter, part) {
 		r_str_bits64 (bits, qcom_p_flags (part->pflags));
-		bf->rbin->cb_printf ("==== MDT Segment %"PFMT64u" ====\n", (ut64)i);
-		bf->rbin->cb_printf ("     priv_p_flags: 0b%s:", bits);
+		p ("==== MDT Segment %"PFMT64u" ====\n", (ut64)i);
+		p ("     priv_p_flags: 0b%s:", bits);
 		if (part->is_layout) {
-			bf->rbin->cb_printf (" layout");
+			p (" layout");
 		}
 		if (part->relocatable) {
-			bf->rbin->cb_printf (" reloc");
+			p (" reloc");
 		}
 		switch (part->format) {
 		default:
 		case R_BIN_MDT_PART_UNIDENTIFIED:
-			bf->rbin->cb_printf (" | Unidentified\n");
+			p (" | Unidentified\n");
 			break;
 		case R_BIN_MDT_PART_ELF:
-			bf->rbin->cb_printf (" | ELF\n");
+			p (" | ELF\n");
 			if (part->obj.elf) {
-				bf->rbin->cb_printf (" -- ELF HEADER BEGIN -- \n");
-				// Print ELF header info - simplified
+				p (" -- ELF HEADER BEGIN -- \n");
 				ELFOBJ *eo = part->obj.elf;
-				bf->rbin->cb_printf ("0x00000000  MAGIC       %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
+				p ("0x00000000  MAGIC       %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x %02x\n",
 					eo->ehdr.e_ident[0], eo->ehdr.e_ident[1], eo->ehdr.e_ident[2], eo->ehdr.e_ident[3],
 					eo->ehdr.e_ident[4], eo->ehdr.e_ident[5], eo->ehdr.e_ident[6], eo->ehdr.e_ident[7],
 					eo->ehdr.e_ident[8], eo->ehdr.e_ident[9], eo->ehdr.e_ident[10], eo->ehdr.e_ident[11],
 					eo->ehdr.e_ident[12], eo->ehdr.e_ident[13], eo->ehdr.e_ident[14], eo->ehdr.e_ident[15]);
-				bf->rbin->cb_printf ("0x00000010  Type        0x%04x\n", eo->ehdr.e_type);
-				bf->rbin->cb_printf ("0x00000012  Machine     0x%04x\n", eo->ehdr.e_machine);
-				bf->rbin->cb_printf ("0x00000014  Version     0x%08x\n", eo->ehdr.e_version);
-				bf->rbin->cb_printf ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_entry);
-				bf->rbin->cb_printf ("0x0000001c  PhOff       0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_phoff);
-				bf->rbin->cb_printf ("0x00000020  ShOff       0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_shoff);
-				bf->rbin->cb_printf ("0x00000024  Flags       0x%04x\n", eo->ehdr.e_flags);
-				bf->rbin->cb_printf ("0x00000028  EhSize      %d\n", eo->ehdr.e_ehsize);
-				bf->rbin->cb_printf ("0x0000002a  PhentSize   %d\n", eo->ehdr.e_phentsize);
-				bf->rbin->cb_printf ("0x0000002c  PhNum       %d\n", eo->ehdr.e_phnum);
-				bf->rbin->cb_printf ("0x0000002e  ShentSize   %d\n", eo->ehdr.e_shentsize);
-				bf->rbin->cb_printf ("0x00000030  ShNum       %d\n", eo->ehdr.e_shnum);
-				bf->rbin->cb_printf ("0x00000032  ShStrndx    %d\n", eo->ehdr.e_shstrndx);
-				bf->rbin->cb_printf (" --- ELF HEADER END --- \n\n");
+				p ("0x00000010  Type        0x%04x\n", eo->ehdr.e_type);
+				p ("0x00000012  Machine     0x%04x\n", eo->ehdr.e_machine);
+				p ("0x00000014  Version     0x%08x\n", eo->ehdr.e_version);
+				p ("0x00000018  Entrypoint  0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_entry);
+				p ("0x0000001c  PhOff       0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_phoff);
+				p ("0x00000020  ShOff       0x%08"PFMT64x"\n", (ut64)eo->ehdr.e_shoff);
+				p ("0x00000024  Flags       0x%04x\n", eo->ehdr.e_flags);
+				p ("0x00000028  EhSize      %d\n", eo->ehdr.e_ehsize);
+				p ("0x0000002a  PhentSize   %d\n", eo->ehdr.e_phentsize);
+				p ("0x0000002c  PhNum       %d\n", eo->ehdr.e_phnum);
+				p ("0x0000002e  ShentSize   %d\n", eo->ehdr.e_shentsize);
+				p ("0x00000030  ShNum       %d\n", eo->ehdr.e_shnum);
+				p ("0x00000032  ShStrndx    %d\n", eo->ehdr.e_shstrndx);
+				p (" --- ELF HEADER END --- \n\n");
 			} else {
-				bf->rbin->cb_printf (" ------- FAILED ------- \n");
+				p (" ------- FAILED ------- \n");
 			}
 			break;
 		case R_BIN_MDT_PART_MBN:
-			bf->rbin->cb_printf (" | MBN signature segment\n");
+			p (" | MBN signature segment\n");
 			if (part->obj.mbn) {
 				SblHeader *mbn = (SblHeader *)part->obj.mbn;
-				bf->rbin->cb_printf (" -- MBN AUTH HEADER BEGIN -- \n");
-				bf->rbin->cb_printf ("0x00 image_id:   kMbnImageNone (0x%x)\n", 0);
-				bf->rbin->cb_printf ("0x04 version:    0x%x\n", mbn->version);
-				bf->rbin->cb_printf ("0x08 paddr:      0x%x\n", mbn->paddr);
-				bf->rbin->cb_printf ("0x0c vaddr:      0x%x\n", mbn->vaddr);
-				bf->rbin->cb_printf ("0x10 psize:      0x%x\n", mbn->psize);
-				bf->rbin->cb_printf ("0x14 code_pa:    0x%x\n", mbn->code_pa);
-				bf->rbin->cb_printf ("0x18 sign_va:    0x%x\n", mbn->sign_va);
-				bf->rbin->cb_printf ("0x1c sign_sz:    0x%x\n", mbn->sign_sz);
-				bf->rbin->cb_printf ("0x20 cert_va:    0x%x\n", mbn->cert_va);
-				bf->rbin->cb_printf ("0x24 cert_sz:    0x%x\n", mbn->cert_sz);
-				bf->rbin->cb_printf (" --- MBN AUTH HEADER END --- \n\n");
+				p (" -- MBN AUTH HEADER BEGIN -- \n");
+				p ("0x00 image_id:   kMbnImageNone (0x%x)\n", 0);
+				p ("0x04 version:    0x%x\n", mbn->version);
+				p ("0x08 paddr:      0x%x\n", mbn->paddr);
+				p ("0x0c vaddr:      0x%x\n", mbn->vaddr);
+				p ("0x10 psize:      0x%x\n", mbn->psize);
+				p ("0x14 code_pa:    0x%x\n", mbn->code_pa);
+				p ("0x18 sign_va:    0x%x\n", mbn->sign_va);
+				p ("0x1c sign_sz:    0x%x\n", mbn->sign_sz);
+				p ("0x20 cert_va:    0x%x\n", mbn->cert_va);
+				p ("0x24 cert_sz:    0x%x\n", mbn->cert_sz);
+				p (" --- MBN AUTH HEADER END --- \n\n");
 			} else {
-				bf->rbin->cb_printf (" ------- FAILED ------- \n");
+				p (" ------- FAILED ------- \n");
 			}
 			break;
 		}
 		i++;
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static void mdt_map_free(void *ptr) {

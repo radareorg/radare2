@@ -86,16 +86,20 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	ut8 buf[64];
 	if (r_buf_read_at (bf->buf, 0, buf, sizeof (buf)) == sizeof (buf)) {
-		eprintf ("0x00000000  SOM MAGIC   0x%04x\n", r_read_be16 (buf + 2));
-		eprintf ("0x00000002  Version     0x%08x\n", r_read_be32 (buf + 4));
-		eprintf ("0x00000010  Entry Space 0x%08x\n", r_read_be32 (buf + 16));
-		eprintf ("0x00000014  Entry Subsp 0x%08x\n", r_read_be32 (buf + 20));
-		eprintf ("0x00000018  Entry Offs  0x%08x\n", r_read_be32 (buf + 24));
-		eprintf ("0x00000024  SOM Length  0x%08x\n", r_read_be32 (buf + 36));
+		p ("0x00000000  SOM MAGIC   0x%04x\n", r_read_be16 (buf + 2));
+		p ("0x00000002  Version     0x%08x\n", r_read_be32 (buf + 4));
+		p ("0x00000010  Entry Space 0x%08x\n", r_read_be32 (buf + 16));
+		p ("0x00000014  Entry Subsp 0x%08x\n", r_read_be32 (buf + 20));
+		p ("0x00000018  Entry Offs  0x%08x\n", r_read_be32 (buf + 24));
+		p ("0x00000024  SOM Length  0x%08x\n", r_read_be32 (buf + 36));
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RList *fields(RBinFile *bf) {
