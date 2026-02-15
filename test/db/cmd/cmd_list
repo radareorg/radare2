@@ -12,6 +12,7 @@ att2intel
 avr
 bpf
 chip8
+cil
 cosmac
 dalvik
 evm

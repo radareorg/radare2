@@ -173,6 +173,7 @@ extern RAsmPlugin r_asm_plugin_att2intel;
 extern RAsmPlugin r_asm_plugin_avr;
 extern RAsmPlugin r_asm_plugin_bpf;
 extern RAsmPlugin r_asm_plugin_chip8;
+extern RAsmPlugin r_asm_plugin_cil;
 extern RAsmPlugin r_asm_plugin_cosmac;
 extern RAsmPlugin r_asm_plugin_dalvik;
 extern RAsmPlugin r_asm_plugin_dummy;
