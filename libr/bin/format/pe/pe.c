@@ -3344,6 +3344,9 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 	PE_(image_data_directory) *data_dir_security = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_SECURITY];
 	PE_DWord paddr = data_dir_security->VirtualAddress;
 	ut32 size = data_dir_security->Size;
+	if (size == 0) {
+		return true;
+	}
 	if (size < 8 || paddr > pe->size || paddr + size > pe->size) {
 		R_LOG_WARN ("Invalid certificate table");
 		return false;
