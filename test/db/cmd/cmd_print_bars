@@ -1,0 +1,251 @@
+NAME=p== output lines
+FILE=-
+CMDS=<<EOF
+wx 00112233445566778899aabbccddeeff
+p== 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p==b output lines
+FILE=-
+CMDS=<<EOF
+wx 00112233445566778899aabbccddeeff
+p==b 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p==e output lines
+FILE=-
+CMDS=<<EOF
+wx 00000000111111112222222233333333
+p==e 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p==p output lines
+FILE=-
+CMDS=<<EOF
+w helloworld12345
+p==p 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p==0 output lines
+FILE=-
+CMDS=<<EOF
+wx 00000000112233440000000055667788
+p==0 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p==f output lines
+FILE=-
+CMDS=<<EOF
+wx ffffffff00000000ffffffff00000000
+p==f 16~?
+EOF
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p== not crash with empty
+FILE=-
+CMDS=p==~?
+EXPECT=<<EOF
+14
+EOF
+RUN
+
+NAME=p= 0xff 0x00
+FILE=-
+BROKEN=1
+CMDS=<<EOF
+b 2
+wx 0xff
+p= 2@0
+EOF
+EXPECT=<<EOF
+         ___________________________________________________
+00 00ff | __________________________________________________|
+01 0000 ||
+EOF
+RUN
+
+NAME=p=b 0xff 0x00
+FILE=-
+CMDS=<<EOF
+b 2
+wx 0xff
+e zoom.in=range
+p=b 2 2@0
+EOF
+EXPECT=<<EOF
+0x00000000 000 00ff |###################################################
+0x00000001 001 0000 |
+EOF
+RUN
+
+NAME=p= - crash
+FILE=-
+CMDS=<<EOF
+e zoom.in = block
+p=p" 1 " 1 EN
+EOF
+EXPECT=<<EOF
+0x00000000 000 0000 |
+EOF
+RUN
+
+NAME=p=d
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=p=d 10 @ 0
+EXPECT=<<EOF
+min:              0  0x0
+max:              127  0x7f
+unique (count):   6  0x6
+range (max-min):  127  0x7f
+size (of block):  10  0xa
+EOF
+RUN
+
+NAME=p=e 5
+FILE=bins/elf/arm1.bin
+CMDS=p=e 5@0
+EXPECT=<<EOF
+0x00000000 000 009f |###############################
+0x0001bec1 001 00c3 |#######################################
+0x00037d82 002 00c3 |#######################################
+0x00053c43 003 00c3 |#######################################
+0x0006fb04 004 0051 |################
+EOF
+RUN
+
+NAME=p=e 5 0x100
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+e zoom.in = block
+p=e 5 0x100
+EOF
+EXPECT=<<EOF
+0x00000000 000 007f |#########################
+0x00000033 001 006b |#####################
+0x00000066 002 007a |########################
+0x00000099 003 006a |#####################
+0x000000cc 004 005f |###################
+EOF
+RUN
+
+NAME=p=e 5 0x100 1
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+e zoom.in = block
+p=e 5 0x100 1
+EOF
+EXPECT=<<EOF
+0x00000000 000 006b |#####################
+0x00000033 001 007a |########################
+0x00000066 002 006a |#####################
+0x00000099 003 005f |###################
+0x000000cc 004 0059 |#################
+EOF
+RUN
+
+NAME=p=p 5
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=p=p 5@0
+EXPECT=<<EOF
+0x00000000 000 0032 |##########
+0x0001bec1 001 0031 |#########
+0x00037d82 002 0035 |##########
+0x00053c43 003 0040 |############
+0x0006fb04 004 0076 |#######################
+EOF
+RUN
+
+NAME=p=p 5 0x100
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+e zoom.in = block
+p=p 5 0x100
+EOF
+EXPECT=<<EOF
+0x00000000 000 0032 |##########
+0x00000033 001 0019 |#####
+0x00000066 002 001e |######
+0x00000099 003 001e |######
+0x000000cc 004 0028 |########
+EOF
+RUN
+
+NAME=p=p 5 0x100 1
+FILE=bins/elf/arm1.bin
+ARGS=-n
+CMDS=<<EOF
+e zoom.in = block
+p=p 5 0x100 1
+EOF
+EXPECT=<<EOF
+0x00000000 000 0019 |#####
+0x00000033 001 001e |######
+0x00000066 002 001e |######
+0x00000099 003 0028 |########
+0x000000cc 004 001e |######
+EOF
+RUN
+
+NAME=p=e hex.addr=0
+FILE=-
+CMDS=<<EOF
+e hex.addr=0
+e scr.color=0
+woe 0 0xff 1
+p=e 10
+EOF
+EXPECT=<<EOF
+000 00ff |###################################################
+001 00ff |###################################################
+002 00ff |###################################################
+003 00ff |###################################################
+004 00ff |###################################################
+005 0006 |#
+006 0000 |
+007 0000 |
+008 0000 |
+009 0000 |
+EOF
+RUN
+
+NAME=p=F hello-linux-x86_64
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=p=F
+EXPECT=<<EOF
+0x00400000 000 0000 |
+0x00400100 001 0000 |
+0x00400200 002 0000 |
+0x00400300 003 000a |##
+0x00400400 004 0013 |###
+0x00400500 005 0014 |####
+EOF
+RUN
+
