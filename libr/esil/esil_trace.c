@@ -7,7 +7,9 @@
 #define CMP_REG_CHANGE(x, y) ((x) - ((REsilRegChange *)y)->idx)
 #define CMP_MEM_CHANGE(x, y) ((x) - ((REsilMemChange *)y)->idx)
 
-#define D if(false)
+// clang-format: off
+#define D if (false)
+// clang-format: on
 
 R_VEC_TYPE(RVecEsilRegChange, REsilRegChange);
 R_VEC_TYPE(RVecEsilMemChange, REsilMemChange);
