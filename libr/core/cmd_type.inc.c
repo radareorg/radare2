@@ -16,6 +16,7 @@ static RCoreHelpMessage help_msg_t = {
 	"tac", " [file]", "the infamous reverse cat command",
 	"tc", "[?] [type.name]", "list all/given types in C output format",
 	"td", " <string>", "load types from string (quote the whole command: \"td ...\")",
+	"tde", "", "open cfg.editor to define new types",
 	"te", "[?]", "list all loaded enums",
 	"tf", "[?]", "list all loaded functions signatures",
 	"tk", " <sdb-query>", "perform sdb query",
@@ -2272,7 +2273,33 @@ static int cmd_type(void *data, const char *input) {
 	case 'd': // "td"
 		if (input[1] == '?') {
 			// TODO #7967 help refactor: move to detail
-			r_core_cmd_help_match (core, help_msg_t, "td");
+			r_core_cmd_help_contains (core, help_msg_t, "td");
+		} else if (input[1] == 'e') { // "tde"
+			for (;;) {
+				char *tmp = r_core_editor (core, "*.h", "");
+				if (!tmp) {
+					break;
+				}
+				r_str_trim (tmp);
+				if (R_STR_ISEMPTY (tmp)) {
+					free (tmp);
+					break;
+				}
+				char *errmsg = NULL;
+				char *out = r_anal_cparse (core->anal, tmp, &errmsg);
+				free (tmp);
+				if (out) {
+					r_anal_save_parsed_type (core->anal, out);
+					free (out);
+					free (errmsg);
+					break;
+				}
+				if (errmsg) {
+					R_LOG_ERROR ("%s", errmsg);
+					free (errmsg);
+				}
+				r_cons_any_key (core->cons, NULL);
+			}
 		} else if (input[1] == ' ') {
 			char *tmp = r_str_newf ("%s;", input + 2);
 			if (!tmp) {
