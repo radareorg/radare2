@@ -1534,7 +1534,9 @@ static char *sanitize_c_identifier(const char *name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
 	const size_t len = strlen (name);
 	char *out = malloc (len + 2);
-	R_RETURN_VAL_IF_FAIL (out, NULL);
+	if (!out) {
+		return NULL;
+	}
 	size_t j = 0;
 	size_t i;
 	for (i = 0; i < len; i++) {
