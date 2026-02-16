@@ -496,9 +496,14 @@ dotherax:
 		return true;
 	} else if (flags->timestamp) { // -t
 		RList *split = r_str_split_list (str, "GMT", 0);
+		size_t ll = r_list_length (split);
+		if (ll < 1) {
+			R_LOG_ERROR ("Timestamp string is not containing GMT");
+			return false;
+		}
 		char *ts = r_list_head (split)->data;
 		const char *gmt = NULL;
-		if (r_list_length (split) >= 2 && strlen (r_list_head (split)->n->data) > 2) {
+		if (ll >= 2 && strlen (r_list_head (split)->n->data) > 2) {
 			gmt = (const char *)r_list_head (split)->n->data + 2;
 		}
 		ut32 n = r_num_math_err (num, ts, &errstr);

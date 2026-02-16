@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include "r_userconf.h"
 #ifndef R2_DOCDIR
@@ -1716,7 +1716,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 			}
 		}
 		r_core_cmd0 (r, "=!"); // initalize io subsystem
-		mr.iod = r->io? r_io_desc_get (r->io, mr.fh->fd): NULL;
+		mr.iod = r_io_desc_get (r->io, mr.fh->fd);
 		if (mr.mapaddr) {
 			r_core_seek (r, mr.mapaddr, true);
 		}

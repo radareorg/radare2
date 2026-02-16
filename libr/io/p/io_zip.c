@@ -448,7 +448,7 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 	}
 
 	if (!zip_filename) {
-		R_LOG_INFO ("Use: zip:///path/to/archive//filepath or zip:///path/to/archive::[number]\n");
+		R_LOG_INFO ("Use: zip:///path/to/archive//filepath or zip:///path/to/archive::[number]");
 	}
 
 	if (!filename_in_zipfile) {
