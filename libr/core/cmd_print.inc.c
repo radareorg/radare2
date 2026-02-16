@@ -7721,6 +7721,9 @@ static int cmd_print(void *data, const char *input) {
 				R_LOG_ERROR ("This block size is too big. Did you mean 'p%c @ %s' instead?", *input, input + 2);
 				goto beach;
 			}
+			if (!myblock) {
+				block = core->block;
+			}
 		}
 	}
 
