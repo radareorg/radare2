@@ -37,41 +37,44 @@ static void destroy(RBinFile *bf) {
 	r_bin_ne_free (bf->bo->bin_obj);
 }
 
-static void header(RBinFile *bf) {
-	struct r_bin_t *rbin = bf->rbin;
+static char *header(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	r_bin_ne_obj_t *ne = bf->bo->bin_obj;
-	rbin->cb_printf ("Signature: NE\n");
-	rbin->cb_printf ("MajLinkerVersion: %d\n", ne->ne_header->MajLinkerVersion);
-	rbin->cb_printf ("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
-	rbin->cb_printf ("EntryTableOffset: 0x%04x\n", ne->ne_header->EntryTableOffset);
-	rbin->cb_printf ("EntryTableLength: %d\n", ne->ne_header->EntryTableLength);
-	rbin->cb_printf ("FileLoadCRC: %08x\n", ne->ne_header->FileLoadCRC);
-	rbin->cb_printf ("ProgFlags: %d\n", ne->ne_header->ProgFlags);
-	rbin->cb_printf ("ApplFlags: %d\n", ne->ne_header->ApplFlags);
-	rbin->cb_printf ("AutoDataSegIndex: %d\n", ne->ne_header->AutoDataSegIndex);
-	rbin->cb_printf ("InitHeapSize: %d\n", ne->ne_header->InitHeapSize);
-	rbin->cb_printf ("InitStackSize: %d\n", ne->ne_header->InitStackSize);
-	rbin->cb_printf ("EntryPointCSIndex: %d\n", ne->ne_header->csEntryPoint);
-	rbin->cb_printf ("EntryPointIPOff: 0x%04x\n", ne->ne_header->ipEntryPoint);
-	rbin->cb_printf ("InitStack: %d\n", ne->ne_header->InitStack);
-	rbin->cb_printf ("SegCount: %d\n", ne->ne_header->SegCount);
-	rbin->cb_printf ("ModuleRefsCount: %d\n", ne->ne_header->ModRefs);
-	rbin->cb_printf ("NonResNamesTblSiz: 0x%x\n", ne->ne_header->NoResNamesTabSiz);
-	rbin->cb_printf ("SegTableOffset: 0x%x\n", ne->ne_header->SegTableOffset);
-	rbin->cb_printf ("ResourceTblOff: 0x%x\n", ne->ne_header->ResTableOffset);
-	rbin->cb_printf ("ResidentNameTblOff: 0x%x\n", ne->ne_header->ResidNamTable);
-	rbin->cb_printf ("ModuleRefTblOff: 0x%x\n", ne->ne_header->ModRefTable);
-	rbin->cb_printf ("ImportNameTblOff: 0x%x\n", ne->ne_header->ImportNameTable);
-	rbin->cb_printf ("OffStartNonResTab: %d\n", ne->ne_header->OffStartNonResTab);
-	rbin->cb_printf ("MovEntryCount: %d\n", ne->ne_header->MovEntryCount);
-	rbin->cb_printf ("FileAlnSzShftCnt: %d\n", ne->ne_header->FileAlnSzShftCnt);
-	rbin->cb_printf ("nResTabEntries: %d\n", ne->ne_header->nResTabEntries);
-	rbin->cb_printf ("OS: %s\n", ne->os);
-	rbin->cb_printf ("OS2EXEFlags: %x\n", ne->ne_header->OS2EXEFlags);
-	rbin->cb_printf ("retThunkOffset: %d\n", ne->ne_header->retThunkOffset);
-	rbin->cb_printf ("segRefThunksOff: %d\n", ne->ne_header->segrefthunksoff);
-	rbin->cb_printf ("mincodeswap: %d\n", ne->ne_header->mincodeswap);
-	rbin->cb_printf ("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
+	p ("Signature: NE\n");
+	p ("MajLinkerVersion: %d\n", ne->ne_header->MajLinkerVersion);
+	p ("MinLinkerVersion: %d\n", ne->ne_header->MinLinkerVersion);
+	p ("EntryTableOffset: 0x%04x\n", ne->ne_header->EntryTableOffset);
+	p ("EntryTableLength: %d\n", ne->ne_header->EntryTableLength);
+	p ("FileLoadCRC: %08x\n", ne->ne_header->FileLoadCRC);
+	p ("ProgFlags: %d\n", ne->ne_header->ProgFlags);
+	p ("ApplFlags: %d\n", ne->ne_header->ApplFlags);
+	p ("AutoDataSegIndex: %d\n", ne->ne_header->AutoDataSegIndex);
+	p ("InitHeapSize: %d\n", ne->ne_header->InitHeapSize);
+	p ("InitStackSize: %d\n", ne->ne_header->InitStackSize);
+	p ("EntryPointCSIndex: %d\n", ne->ne_header->csEntryPoint);
+	p ("EntryPointIPOff: 0x%04x\n", ne->ne_header->ipEntryPoint);
+	p ("InitStack: %d\n", ne->ne_header->InitStack);
+	p ("SegCount: %d\n", ne->ne_header->SegCount);
+	p ("ModuleRefsCount: %d\n", ne->ne_header->ModRefs);
+	p ("NonResNamesTblSiz: 0x%x\n", ne->ne_header->NoResNamesTabSiz);
+	p ("SegTableOffset: 0x%x\n", ne->ne_header->SegTableOffset);
+	p ("ResourceTblOff: 0x%x\n", ne->ne_header->ResTableOffset);
+	p ("ResidentNameTblOff: 0x%x\n", ne->ne_header->ResidNamTable);
+	p ("ModuleRefTblOff: 0x%x\n", ne->ne_header->ModRefTable);
+	p ("ImportNameTblOff: 0x%x\n", ne->ne_header->ImportNameTable);
+	p ("OffStartNonResTab: %d\n", ne->ne_header->OffStartNonResTab);
+	p ("MovEntryCount: %d\n", ne->ne_header->MovEntryCount);
+	p ("FileAlnSzShftCnt: %d\n", ne->ne_header->FileAlnSzShftCnt);
+	p ("nResTabEntries: %d\n", ne->ne_header->nResTabEntries);
+	p ("OS: %s\n", ne->os);
+	p ("OS2EXEFlags: %x\n", ne->ne_header->OS2EXEFlags);
+	p ("retThunkOffset: %d\n", ne->ne_header->retThunkOffset);
+	p ("segRefThunksOff: %d\n", ne->ne_header->segrefthunksoff);
+	p ("mincodeswap: %d\n", ne->ne_header->mincodeswap);
+	p ("winver: %d.%d\n", ne->ne_header->expctwinver[1], ne->ne_header->expctwinver[0]);
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RBinInfo *info(RBinFile *bf) {

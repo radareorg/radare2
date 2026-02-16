@@ -345,10 +345,10 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static void headers(RBinFile *bf) {
+static char *headers(RBinFile *bf, int mode) {
 	s390user *su = bf->bo->bin_obj;
 	char *s = r_strbuf_get (su->sb);
-	bf->rbin->cb_printf ("%s\n", s);
+	return r_str_newf ("%s\n", s);
 }
 
 static void destroy(RBinFile *bf) {

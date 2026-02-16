@@ -293,7 +293,7 @@ ut64 MACH0_(get_main)(struct MACH0_(obj_t) *mo);
 const char *MACH0_(get_cputype_from_hdr)(struct MACH0_(mach_header) *hdr);
 int MACH0_(get_bits_from_hdr)(struct MACH0_(mach_header) *hdr);
 struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf);
-void MACH0_(mach_headerfields)(RBinFile *bf);
+char *MACH0_(mach_headerfields)(RBinFile *bf, int mode);
 RList *MACH0_(mach_fields)(RBinFile *bf);
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *obj, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void *context);
 #endif

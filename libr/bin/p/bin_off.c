@@ -48,11 +48,13 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-// Prints header info using iH
-static void off_header_fields(RBinFile *bf) {
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
-	cb_printf ("pf.off_header @ 0x%08"PFMT64x"\n", (ut64)0);
-	cb_printf ("0x00000000  Magic           0x%x\n", r_buf_read_le32_at (bf->buf, 0));
+static char *off_header_fields(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	p ("pf.off_header @ 0x%08"PFMT64x"\n", (ut64)0);
+	p ("0x00000000  Magic           0x%x\n", r_buf_read_le32_at (bf->buf, 0));
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RList *off_fields(RBinFile *bf) {

@@ -294,144 +294,147 @@ static RList *fields(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
 	RBinPEObj *pe = PE_(get)(bf);
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 
-	cb_printf ("PE file header:\n");
-	cb_printf ("IMAGE_NT_HEADERS\n");
-	cb_printf ("  Signature : 0x%x\n", pe->nt_headers->Signature);
-	cb_printf ("IMAGE_FILE_HEADERS\n");
-	cb_printf ("  Machine : 0x%x\n", pe->nt_headers->file_header.Machine);
-	cb_printf ("  NumberOfSections : 0x%x\n", pe->nt_headers->file_header.NumberOfSections);
-	cb_printf ("  TimeDateStamp : 0x%x\n", pe->nt_headers->file_header.TimeDateStamp);
-	cb_printf ("  PointerToSymbolTable : 0x%x\n", pe->nt_headers->file_header.PointerToSymbolTable);
-	cb_printf ("  NumberOfSymbols : 0x%x\n", pe->nt_headers->file_header.NumberOfSymbols);
-	cb_printf ("  SizeOfOptionalHeader : 0x%x\n", pe->nt_headers->file_header.SizeOfOptionalHeader);
-	cb_printf ("  Characteristics : 0x%x\n", pe->nt_headers->file_header.Characteristics);
-	cb_printf ("IMAGE_OPTIONAL_HEADERS\n");
-	cb_printf ("  Magic : 0x%x\n", pe->nt_headers->optional_header.Magic);
-	cb_printf ("  MajorLinkerVersion : 0x%x\n", pe->nt_headers->optional_header.MajorLinkerVersion);
-	cb_printf ("  MinorLinkerVersion : 0x%x\n", pe->nt_headers->optional_header.MinorLinkerVersion);
-	cb_printf ("  SizeOfCode : 0x%x\n", pe->nt_headers->optional_header.SizeOfCode);
-	cb_printf ("  SizeOfInitializedData : 0x%x\n", pe->nt_headers->optional_header.SizeOfInitializedData);
-	cb_printf ("  SizeOfUninitializedData : 0x%x\n", pe->nt_headers->optional_header.SizeOfUninitializedData);
-	cb_printf ("  AddressOfEntryPoint : 0x%x\n", pe->nt_headers->optional_header.AddressOfEntryPoint);
-	cb_printf ("  BaseOfCode : 0x%x\n", pe->nt_headers->optional_header.BaseOfCode);
-	cb_printf ("  BaseOfData : 0x%x\n", pe->nt_headers->optional_header.BaseOfData);
-	cb_printf ("  ImageBase : 0x%x\n", pe->nt_headers->optional_header.ImageBase);
-	cb_printf ("  SectionAlignment : 0x%x\n", pe->nt_headers->optional_header.SectionAlignment);
-	cb_printf ("  FileAlignment : 0x%x\n", pe->nt_headers->optional_header.FileAlignment);
-	cb_printf ("  MajorOperatingSystemVersion : 0x%x\n", pe->nt_headers->optional_header.MajorOperatingSystemVersion);
-	cb_printf ("  MinorOperatingSystemVersion : 0x%x\n", pe->nt_headers->optional_header.MinorOperatingSystemVersion);
-	cb_printf ("  MajorImageVersion : 0x%x\n", pe->nt_headers->optional_header.MajorImageVersion);
-	cb_printf ("  MinorImageVersion : 0x%x\n", pe->nt_headers->optional_header.MinorImageVersion);
-	cb_printf ("  MajorSubsystemVersion : 0x%x\n", pe->nt_headers->optional_header.MajorSubsystemVersion);
-	cb_printf ("  MinorSubsystemVersion : 0x%x\n", pe->nt_headers->optional_header.MinorSubsystemVersion);
-	cb_printf ("  Win32VersionValue : 0x%x\n", pe->nt_headers->optional_header.Win32VersionValue);
-	cb_printf ("  SizeOfImage : 0x%x\n", pe->nt_headers->optional_header.SizeOfImage);
-	cb_printf ("  SizeOfHeaders : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeaders);
-	cb_printf ("  CheckSum : 0x%x\n", pe->nt_headers->optional_header.CheckSum);
-	cb_printf ("  Subsystem : 0x%x\n", pe->nt_headers->optional_header.Subsystem);
-	cb_printf ("  DllCharacteristics : 0x%x\n", pe->nt_headers->optional_header.DllCharacteristics);
-	cb_printf ("  SizeOfStackReserve : 0x%x\n", pe->nt_headers->optional_header.SizeOfStackReserve);
-	cb_printf ("  SizeOfStackCommit : 0x%x\n", pe->nt_headers->optional_header.SizeOfStackCommit);
-	cb_printf ("  SizeOfHeapReserve : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeapReserve);
-	cb_printf ("  SizeOfHeapCommit : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeapCommit);
-	cb_printf ("  LoaderFlags : 0x%x\n", pe->nt_headers->optional_header.LoaderFlags);
-	cb_printf ("  NumberOfRvaAndSizes : 0x%x\n", pe->nt_headers->optional_header.NumberOfRvaAndSizes);
+	p ("PE file header:\n");
+	p ("IMAGE_NT_HEADERS\n");
+	p ("  Signature : 0x%x\n", pe->nt_headers->Signature);
+	p ("IMAGE_FILE_HEADERS\n");
+	p ("  Machine : 0x%x\n", pe->nt_headers->file_header.Machine);
+	p ("  NumberOfSections : 0x%x\n", pe->nt_headers->file_header.NumberOfSections);
+	p ("  TimeDateStamp : 0x%x\n", pe->nt_headers->file_header.TimeDateStamp);
+	p ("  PointerToSymbolTable : 0x%x\n", pe->nt_headers->file_header.PointerToSymbolTable);
+	p ("  NumberOfSymbols : 0x%x\n", pe->nt_headers->file_header.NumberOfSymbols);
+	p ("  SizeOfOptionalHeader : 0x%x\n", pe->nt_headers->file_header.SizeOfOptionalHeader);
+	p ("  Characteristics : 0x%x\n", pe->nt_headers->file_header.Characteristics);
+	p ("IMAGE_OPTIONAL_HEADERS\n");
+	p ("  Magic : 0x%x\n", pe->nt_headers->optional_header.Magic);
+	p ("  MajorLinkerVersion : 0x%x\n", pe->nt_headers->optional_header.MajorLinkerVersion);
+	p ("  MinorLinkerVersion : 0x%x\n", pe->nt_headers->optional_header.MinorLinkerVersion);
+	p ("  SizeOfCode : 0x%x\n", pe->nt_headers->optional_header.SizeOfCode);
+	p ("  SizeOfInitializedData : 0x%x\n", pe->nt_headers->optional_header.SizeOfInitializedData);
+	p ("  SizeOfUninitializedData : 0x%x\n", pe->nt_headers->optional_header.SizeOfUninitializedData);
+	p ("  AddressOfEntryPoint : 0x%x\n", pe->nt_headers->optional_header.AddressOfEntryPoint);
+	p ("  BaseOfCode : 0x%x\n", pe->nt_headers->optional_header.BaseOfCode);
+	p ("  BaseOfData : 0x%x\n", pe->nt_headers->optional_header.BaseOfData);
+	p ("  ImageBase : 0x%x\n", pe->nt_headers->optional_header.ImageBase);
+	p ("  SectionAlignment : 0x%x\n", pe->nt_headers->optional_header.SectionAlignment);
+	p ("  FileAlignment : 0x%x\n", pe->nt_headers->optional_header.FileAlignment);
+	p ("  MajorOperatingSystemVersion : 0x%x\n", pe->nt_headers->optional_header.MajorOperatingSystemVersion);
+	p ("  MinorOperatingSystemVersion : 0x%x\n", pe->nt_headers->optional_header.MinorOperatingSystemVersion);
+	p ("  MajorImageVersion : 0x%x\n", pe->nt_headers->optional_header.MajorImageVersion);
+	p ("  MinorImageVersion : 0x%x\n", pe->nt_headers->optional_header.MinorImageVersion);
+	p ("  MajorSubsystemVersion : 0x%x\n", pe->nt_headers->optional_header.MajorSubsystemVersion);
+	p ("  MinorSubsystemVersion : 0x%x\n", pe->nt_headers->optional_header.MinorSubsystemVersion);
+	p ("  Win32VersionValue : 0x%x\n", pe->nt_headers->optional_header.Win32VersionValue);
+	p ("  SizeOfImage : 0x%x\n", pe->nt_headers->optional_header.SizeOfImage);
+	p ("  SizeOfHeaders : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeaders);
+	p ("  CheckSum : 0x%x\n", pe->nt_headers->optional_header.CheckSum);
+	p ("  Subsystem : 0x%x\n", pe->nt_headers->optional_header.Subsystem);
+	p ("  DllCharacteristics : 0x%x\n", pe->nt_headers->optional_header.DllCharacteristics);
+	p ("  SizeOfStackReserve : 0x%x\n", pe->nt_headers->optional_header.SizeOfStackReserve);
+	p ("  SizeOfStackCommit : 0x%x\n", pe->nt_headers->optional_header.SizeOfStackCommit);
+	p ("  SizeOfHeapReserve : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeapReserve);
+	p ("  SizeOfHeapCommit : 0x%x\n", pe->nt_headers->optional_header.SizeOfHeapCommit);
+	p ("  LoaderFlags : 0x%x\n", pe->nt_headers->optional_header.LoaderFlags);
+	p ("  NumberOfRvaAndSizes : 0x%x\n", pe->nt_headers->optional_header.NumberOfRvaAndSizes);
 	RListIter *it;
 	Pe_image_rich_entry *entry;
-	cb_printf ("RICH_FIELDS\n");
+	p ("RICH_FIELDS\n");
 	r_list_foreach (pe->rich_entries, it, entry) {
-		cb_printf ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
+		p ("  Product: %d Name: %s Version: %d Times: %d\n", entry->productId, entry->productName, entry->minVersion, entry->timesUsed);
 	}
 	int i;
 	for (i = 0; i < PE_IMAGE_DIRECTORY_ENTRIES - 1; i++) {
 		if (pe->nt_headers->optional_header.DataDirectory[i].Size > 0) {
 			switch (i) {
 			case PE_IMAGE_DIRECTORY_ENTRY_EXPORT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_EXPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IMPORT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_RESOURCE:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_RESOURCE\n");
+				p ("IMAGE_DIRECTORY_ENTRY_RESOURCE\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_EXCEPTION:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_EXCEPTION\n");
+				p ("IMAGE_DIRECTORY_ENTRY_EXCEPTION\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_SECURITY:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_SECURITY\n");
+				p ("IMAGE_DIRECTORY_ENTRY_SECURITY\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BASERELOC:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_BASERELOC\n");
+				p ("IMAGE_DIRECTORY_ENTRY_BASERELOC\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DEBUG:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_DEBUG\n");
+				p ("IMAGE_DIRECTORY_ENTRY_DEBUG\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COPYRIGHT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT\n");
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_ARCHITECTURE\n");
+				p ("IMAGE_DIRECTORY_ENTRY_COPYRIGHT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_ARCHITECTURE\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_GLOBALPTR:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR\n");
+				p ("IMAGE_DIRECTORY_ENTRY_GLOBALPTR\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_TLS:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_TLS\n");
+				p ("IMAGE_DIRECTORY_ENTRY_TLS\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG\n");
+				p ("IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_IAT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_IAT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_IAT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT\n");
+				p ("IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT\n");
 				break;
 			case PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR:
-				cb_printf ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
+				p ("IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR\n");
 				break;
 			}
-			cb_printf ("  VirtualAddress : 0x%x\n", pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
-			cb_printf ("  Size : 0x%x\n", pe->nt_headers->optional_header.DataDirectory[i].Size);
+			p ("  VirtualAddress : 0x%x\n", pe->nt_headers->optional_header.DataDirectory[i].VirtualAddress);
+			p ("  Size : 0x%x\n", pe->nt_headers->optional_header.DataDirectory[i].Size);
 		}
 	}
 	if (pe->metadata_header) {
 		PE_(image_metadata_header) *mh = pe->metadata_header;
-		cb_printf ("Metadata Header:\n");
-		cb_printf ("  Signature: 0x%08"PFMT64x"\n", mh->Signature);
-		cb_printf ("  Version: %d.%d\n", mh->MajorVersion, mh->MinorVersion);
-		cb_printf ("  VersionString: %s\n", mh->VersionString);
-		cb_printf ("  Flags: 0x%x\n", mh->Flags);
-		cb_printf ("  Streams: %d\n", mh->NumberOfStreams);
+		p ("Metadata Header:\n");
+		p ("  Signature: 0x%08"PFMT64x"\n", mh->Signature);
+		p ("  Version: %d.%d\n", mh->MajorVersion, mh->MinorVersion);
+		p ("  VersionString: %s\n", mh->VersionString);
+		p ("  Flags: 0x%x\n", mh->Flags);
+		p ("  Streams: %d\n", mh->NumberOfStreams);
 		if (pe->streams) {
 			for (i = 0; i < mh->NumberOfStreams; i++) {
 				PE_(image_metadata_stream) * stream = pe->streams[i];
-				cb_printf ("  Stream %d: %s\n", i, stream->Name);
-				cb_printf ("    offset: 0x%08"PFMT64x" size: 0x%x\n", (ut64)stream->Offset, stream->Size);
+				p ("  Stream %d: %s\n", i, stream->Name);
+				p ("    offset: 0x%08"PFMT64x" size: 0x%x\n", (ut64)stream->Offset, stream->Size);
 			}
 		}
 	}
 	if (pe->clr_hdr) {
 		PE_(image_clr_header) *clr = pe->clr_hdr;
-		cb_printf ("Common Language Runtime Header (CLR):\n");
-		cb_printf ("  Header Size: %d\n", clr->HeaderSize);
-		cb_printf ("  CLR RuntimeVersion: %d.%d\n", clr->MajorRuntimeVersion, clr->MinorRuntimeVersion);
-		cb_printf ("  MetadataDirectory: 0x%08"PFMT64x" (%d)\n", (ut64) clr->MetaDataDirectoryAddress, clr->MetaDataDirectorySize);
-		cb_printf ("  Flags: 0x%x\n", clr->Flags);
-		cb_printf ("  EntryPointToken: 0x%x\n", clr->EntryPointToken);
-		cb_printf ("  ResourceDirectory: 0x%"PFMT64x" (%d)\n", (ut64)clr->ResourcesDirectoryAddress, clr->ResourcesDirectorySize);
-		cb_printf ("  StrongNameSignature: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
-		cb_printf ("  CodeManagerTable: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
-		cb_printf ("  VTableFixups: 0x%"PFMT64x" (%d)\n", (ut64)clr->VTableFixupsAddress, clr->VTableFixupsSize);
-		cb_printf ("  ExportAddressTableJumps: 0x%"PFMT64x" (%d)\n", (ut64)clr->ExportAddressTableJumpsAddress, clr->ExportAddressTableJumpsSize);
-		cb_printf ("  ManagedNativeHeader: 0x%"PFMT64x" (%d)\n", (ut64)clr->ManagedNativeHeaderAddress, clr->ManagedNativeHeaderSize);
+		p ("Common Language Runtime Header (CLR):\n");
+		p ("  Header Size: %d\n", clr->HeaderSize);
+		p ("  CLR RuntimeVersion: %d.%d\n", clr->MajorRuntimeVersion, clr->MinorRuntimeVersion);
+		p ("  MetadataDirectory: 0x%08"PFMT64x" (%d)\n", (ut64) clr->MetaDataDirectoryAddress, clr->MetaDataDirectorySize);
+		p ("  Flags: 0x%x\n", clr->Flags);
+		p ("  EntryPointToken: 0x%x\n", clr->EntryPointToken);
+		p ("  ResourceDirectory: 0x%"PFMT64x" (%d)\n", (ut64)clr->ResourcesDirectoryAddress, clr->ResourcesDirectorySize);
+		p ("  StrongNameSignature: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
+		p ("  CodeManagerTable: 0x%"PFMT64x" (%d)\n", (ut64)clr->StrongNameSignatureAddress, clr->StrongNameSignatureSize);
+		p ("  VTableFixups: 0x%"PFMT64x" (%d)\n", (ut64)clr->VTableFixupsAddress, clr->VTableFixupsSize);
+		p ("  ExportAddressTableJumps: 0x%"PFMT64x" (%d)\n", (ut64)clr->ExportAddressTableJumpsAddress, clr->ExportAddressTableJumpsSize);
+		p ("  ManagedNativeHeader: 0x%"PFMT64x" (%d)\n", (ut64)clr->ManagedNativeHeaderAddress, clr->ManagedNativeHeaderSize);
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 RBinPlugin r_bin_plugin_pe = {

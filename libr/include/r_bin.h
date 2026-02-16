@@ -665,7 +665,7 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinReloc>*/* (*patch_relocs)(RBinFile *bf);
 	RList/*<RBinMap>*/* (*maps)(RBinFile *bf); // this should be segments!
 	RList/*<RBinFileHash>*/* (*hashes)(RBinFile *bf);
-	void (*header)(RBinFile *bf);
+	char* (*header)(RBinFile *bf, int mode);
 	char* (*signature)(RBinFile *bf, bool json);
 	int (*demangle_type)(const char *str);
 	struct r_bin_write_t *write;

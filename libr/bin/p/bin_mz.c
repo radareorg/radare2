@@ -170,8 +170,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void header(RBinFile *bf) {
-#define p bf->rbin->cb_printf
+static char *header(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	const struct r_bin_mz_obj_t *mz = (struct r_bin_mz_obj_t *)bf->bo->bin_obj;
 	const MZ_image_dos_header *dh = mz->dos_header;
 	p ("[0000:0000]  Signature           %c%c\n",
@@ -190,6 +191,8 @@ static void header(RBinFile *bf) {
 	p ("[0000:0016]  InitialCs           0x%04x\n", dh->cs);
 	p ("[0000:0018]  RelocTableOffset    0x%04x\n", dh->reloc_table_offset);
 	p ("[0000:001a]  OverlayNumber       0x%04x\n", dh->overlay_number);
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static RList *relocs(RBinFile *bf) {

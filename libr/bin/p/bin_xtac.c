@@ -241,60 +241,63 @@ static RList *fields(RBinFile *bf) {
 #undef ROWL
 }
 
-static void header(RBinFile *bf) {
+static char *header(RBinFile *bf, int mode) {
+	RStrBuf *sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
 	RBinXtacObj *bin = bf->bo->bin_obj;
 	RBinXtacHeader *hdr = bin->header;
-	struct r_bin_t *rbin = bf->rbin;
-	rbin->cb_printf ("XTAC file header:\n");
-	rbin->cb_printf ("  magic : 0x%x\n", hdr->magic);
-	rbin->cb_printf ("  version : 0x%x\n", hdr->version);
-	rbin->cb_printf ("  is_updated : 0x%x\n", hdr->is_updated);
-	rbin->cb_printf ("  ptr_to_addr_pairs : 0x%x\n", hdr->ptr_to_addr_pairs);
-	rbin->cb_printf ("  num_of_addr_pairs : 0x%x\n", hdr->num_of_addr_pairs);
+	p ("XTAC file header:\n");
+	p ("  magic : 0x%x\n", hdr->magic);
+	p ("  version : 0x%x\n", hdr->version);
+	p ("  is_updated : 0x%x\n", hdr->is_updated);
+	p ("  ptr_to_addr_pairs : 0x%x\n", hdr->ptr_to_addr_pairs);
+	p ("  num_of_addr_pairs : 0x%x\n", hdr->num_of_addr_pairs);
 
-	rbin->cb_printf ("  ptr_to_mod_name : 0x%x\n", hdr->ptr_to_mod_name);
-	rbin->cb_printf ("  size_of_mod_name : 0x%x\n", hdr->size_of_mod_name);
-	rbin->cb_printf ("  module name : %s\n", bin->mod_name_u8);
+	p ("  ptr_to_mod_name : 0x%x\n", hdr->ptr_to_mod_name);
+	p ("  size_of_mod_name : 0x%x\n", hdr->size_of_mod_name);
+	p ("  module name : %s\n", bin->mod_name_u8);
 
-	rbin->cb_printf ("  ptr_to_nt_pname : 0x%x\n", hdr->ptr_to_nt_pname);
-	rbin->cb_printf ("  size_of_nt_pname : 0x%x\n", hdr->size_of_nt_pname);
-	rbin->cb_printf ("  module name : %s\n", bin->nt_path_name_u8);
+	p ("  ptr_to_nt_pname : 0x%x\n", hdr->ptr_to_nt_pname);
+	p ("  size_of_nt_pname : 0x%x\n", hdr->size_of_nt_pname);
+	p ("  module name : %s\n", bin->nt_path_name_u8);
 
-	rbin->cb_printf ("  ptr_to_head_blck_stub : 0x%x\n", hdr->ptr_to_head_blck_stub);
-	rbin->cb_printf ("  ptr_to_tail_blck_stub : 0x%x\n", hdr->ptr_to_tail_blck_stub);
-	rbin->cb_printf ("  size_of_blck_stub_code : 0x%x\n", hdr->size_of_blck_stub_code);
-	rbin->cb_printf ("  ptr_to_xtac_linked_list_head : 0x%x\n", hdr->ptr_to_xtac_linked_list_head);
-	rbin->cb_printf ("  ptr_to_xtac_linked_list_tail : 0x%x\n", hdr->ptr_to_xtac_linked_list_tail);
+	p ("  ptr_to_head_blck_stub : 0x%x\n", hdr->ptr_to_head_blck_stub);
+	p ("  ptr_to_tail_blck_stub : 0x%x\n", hdr->ptr_to_tail_blck_stub);
+	p ("  size_of_blck_stub_code : 0x%x\n", hdr->size_of_blck_stub_code);
+	p ("  ptr_to_xtac_linked_list_head : 0x%x\n", hdr->ptr_to_xtac_linked_list_head);
+	p ("  ptr_to_xtac_linked_list_tail : 0x%x\n", hdr->ptr_to_xtac_linked_list_tail);
 
-	rbin->cb_printf ("address pairs (x86, arm64):\n");
+	p ("address pairs (x86, arm64):\n");
 	const ut32 n_addr_pairs = hdr->num_of_addr_pairs;
 	ut32 i;
 	for (i = 0; i < n_addr_pairs; i++) {
-		rbin->cb_printf ("  0x%x, 0x%x\n", bin->address_pairs[i].x86_rva, bin->address_pairs[i].arm64_rva);
+		p ("  0x%x, 0x%x\n", bin->address_pairs[i].x86_rva, bin->address_pairs[i].arm64_rva);
 	}
 
-	rbin->cb_printf ("blck stubs:\n");
+	p ("blck stubs:\n");
 	RBinBlckStubHeader *blck_stub = NULL;
 	RListIter *iter = NULL;
 	r_list_foreach (bin->blck_stubs, iter, blck_stub) {
-		rbin->cb_printf ("  blck stub entry\n");
-		rbin->cb_printf ("    ptr_to_entry : 0x%x\n", blck_stub->ptr_to_entry);
-		rbin->cb_printf ("    magic : 0x%x\n", blck_stub->magic);
-		rbin->cb_printf ("    offset_to_next_entry : 0x%x\n", blck_stub->offset_to_next_entry);
-		rbin->cb_printf ("    ptr_to_next_entry : 0x%x\n", blck_stub->ptr_to_next_entry);
-		rbin->cb_printf ("    padding : 0x%x\n", blck_stub->padding);
+		p ("  blck stub entry\n");
+		p ("    ptr_to_entry : 0x%x\n", blck_stub->ptr_to_entry);
+		p ("    magic : 0x%x\n", blck_stub->magic);
+		p ("    offset_to_next_entry : 0x%x\n", blck_stub->offset_to_next_entry);
+		p ("    ptr_to_next_entry : 0x%x\n", blck_stub->ptr_to_next_entry);
+		p ("    padding : 0x%x\n", blck_stub->padding);
 	}
 
-	rbin->cb_printf ("xtac linked list:\n");
+	p ("xtac linked list:\n");
 	RBinXtacLinkedListEntry *entry = NULL;
 	r_list_foreach (bin->xtac_linked_list, iter, entry) {
-		rbin->cb_printf ("  xtac linked list entry\n");
-		rbin->cb_printf ("    ptr_to_entry : 0x%x\n", entry->ptr_to_entry);
-		rbin->cb_printf ("    meta_data : 0x%x\n", GET_META_DATA (entry->meta_and_offset));
-		rbin->cb_printf ("    offset_to_next_entry : 0x%x\n", GET_OFFSET (entry->meta_and_offset) * 4);
-		rbin->cb_printf ("    forward_edge_addr : 0x%x\n", entry->forward_edge_addr);
-		rbin->cb_printf ("    backward_edge_addr : 0x%x\n", entry->backward_edge_addr);
+		p ("  xtac linked list entry\n");
+		p ("    ptr_to_entry : 0x%x\n", entry->ptr_to_entry);
+		p ("    meta_data : 0x%x\n", GET_META_DATA (entry->meta_and_offset));
+		p ("    offset_to_next_entry : 0x%x\n", GET_OFFSET (entry->meta_and_offset) * 4);
+		p ("    forward_edge_addr : 0x%x\n", entry->forward_edge_addr);
+		p ("    backward_edge_addr : 0x%x\n", entry->backward_edge_addr);
 	}
+#undef p
+	return r_strbuf_drain (sb);
 }
 
 static bool r_bin_xtac_read_header(RBinXtacObj *bin) {
