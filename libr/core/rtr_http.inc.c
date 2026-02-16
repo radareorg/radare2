@@ -482,6 +482,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 					if (*index == '/') {
 						path = strdup (index);
 					} else {
+						path = r_file_root (root, rs->path);
 					}
 				}
 				// FD IS OK HERE
