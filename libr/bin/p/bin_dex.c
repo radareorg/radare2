@@ -23,6 +23,9 @@
 #define DBG_LINE_BASE             -4
 #define DBG_LINE_RANGE            15
 
+#define pf(f, ...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+#define ps(s) r_strbuf_append (sb, s)
+
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
 static ut64 get_method_attr(ut64 MA) {
@@ -369,9 +372,8 @@ out_error:
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
 // https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
 static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off) {
-	RBin *rbin = bf->rbin;
-	RBinDexObj *dex = bf->bo->bin_obj; //  bin .. unnecessary arg
-	// runtime error: pointer index expression with base 0x000000004402 overflowed to 0xffffffffff0043fc
+	RBinDexObj *dex = bf->bo->bin_obj;
+	RStrBuf *sb = dex->sb;
 	if (debug_info_off >= r_buf_size (bf->buf)) {
 		return;
 	}
@@ -613,7 +615,7 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 				int line_delta = DBG_LINE_BASE + (adjusted_opcode % DBG_LINE_RANGE);
 				address += addr_delta;
 				line += line_delta;
-				if (dex->dexdump) {
+				if (sb) {
 					struct dex_debug_position_t *position =
 						R_NEW0 (struct dex_debug_position_t);
 					position->source_file_idx = source_file_idx;
@@ -632,33 +634,30 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		}
 	}
 
-	if (!dex->dexdump) {
+	if (!sb) {
 		goto beach;
 	}
 
 	RListIter *iter2;
 	struct dex_debug_position_t *position;
 
-	rbin->cb_printf ("      positions     :\n");
+	ps ("      positions     :\n");
 	r_list_foreach (debug_positions, iter2, position) {
-		rbin->cb_printf ("        0x%04"PFMT64x" line=%"PFMT64u"\n",
-				 position->address, position->line);
+		pf ("        0x%04"PFMT64x" line=%"PFMT64u"\n", position->address, position->line);
 	}
 
-	rbin->cb_printf ("      locals        :\n");
+	ps ("      locals        :\n");
 
 	RListIter *iter3;
 	struct dex_debug_local_t *local;
 	r_list_foreach (emitted_debug_locals, iter3, local) {
 		if (local->signature) {
-			rbin->cb_printf (
-				"        0x%04x - 0x%04x reg=%d %s %s %s\n",
+			pf ("        0x%04x - 0x%04x reg=%d %s %s %s\n",
 				local->startAddress, local->endAddress,
 				local->reg, local->name, local->descriptor,
 				local->signature);
 		} else {
-			rbin->cb_printf (
-				"        0x%04x - 0x%04x reg=%d %s %s\n",
+			pf ("        0x%04x - 0x%04x reg=%d %s %s\n",
 				local->startAddress, local->endAddress,
 				local->reg, local->name, local->descriptor);
 		}
@@ -670,15 +669,13 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 		}
 		if (debug_locals[reg].live) {
 			if (debug_locals[reg].signature) {
-				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s %s\n",
+				pf ("        0x%04x - 0x%04x reg=%d %s %s %s\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
 					debug_locals[reg].descriptor,
 					debug_locals[reg].signature);
 			} else {
-				rbin->cb_printf (
-					"        0x%04x - 0x%04x reg=%d %s %s\n",
+				pf ("        0x%04x - 0x%04x reg=%d %s %s\n",
 					debug_locals[reg].startAddress,
 					insns_size, reg, debug_locals[reg].name,
 					debug_locals[reg].descriptor);
@@ -1030,7 +1027,7 @@ static ut64 peek_uleb(RBuffer *b, bool *err, size_t *nn) {
 
 static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 fields_count, bool is_sfield) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBin *bin = bf->rbin;
+	RStrBuf *sb = dex->sb;
 	ut64 lastIndex = 0;
 	ut8 ff[sizeof (DexField)] = {0};
 	int total, tid;
@@ -1076,12 +1073,12 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		sym.lang = R_BIN_LANG_JAVA;
 		sym.ordinal = (*sym_count)++;
 
-		if (dex->dexdump) {
+		if (sb) {
 			char *accessStr = createAccessFlagStr (accessFlags, kAccessForField);
-			bin->cb_printf ("    #%u              : (in %s;)\n", (unsigned int)i, cls_name);
-			bin->cb_printf ("      name          : '%s'\n", fieldName);
-			bin->cb_printf ("      type          : '%s'\n", type_str);
-			bin->cb_printf ("      access        : 0x%04x (%s)\n",
+			pf ("    #%u              : (in %s;)\n", (unsigned int)i, cls_name);
+			pf ("      name          : '%s'\n", fieldName);
+			pf ("      type          : '%s'\n", type_str);
+			pf ("      access        : 0x%04x (%s)\n",
 					 (ut32)accessFlags, r_str_get (accessStr));
 			free (accessStr);
 		}
@@ -1098,10 +1095,9 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 // TODO: refactor this method
 static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls, int *sym_count, ut64 DM, int *methods, bool is_direct) {
-	// TODO: use RStrBuf to build the string instead of calling cb_printf all the time
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	RBinDexObj *dex = bf->bo->bin_obj;
-	bool bin_dbginfo = bf->rbin->want_dbginfo;
+	RStrBuf *sb = dex->sb;
+	const bool bin_dbginfo = bf->rbin->want_dbginfo;
 	ut64 omi = 0;
 	bool catchAll;
 	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
@@ -1202,32 +1198,30 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 			t = 16 + 2 * insns_size + padd;
 		}
-		if (dex->dexdump) {
+		if (sb) {
 			char* accessStr = createAccessFlagStr (MA, kAccessForMethod);
-			cb_printf ("    #%" PFMT64d "              : (in %s;)\n", i, cls_name);
-			cb_printf ("      name          : '%s'\n", method_name);
-			cb_printf ("      type          : '%s'\n", signature);
-			cb_printf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
+			pf ("    #%" PFMT64d "              : (in %s;)\n", i, cls_name);
+			pf ("      name          : '%s'\n", method_name);
+			pf ("      type          : '%s'\n", signature);
+			pf ("      access        : 0x%04x (%s)\n", (ut32)MA, accessStr);
 			free (accessStr);
 		}
 
 		if (MC > 0) {
-			if (dex->dexdump) {
-				cb_printf ("      code          -\n");
-				cb_printf ("      registers     : %d\n", regsz);
-				cb_printf ("      ins           : %d\n", ins_size);
-				cb_printf ("      outs          : %d\n", outs_size);
-				cb_printf (
-					"      insns size    : %d 16-bit code "
-					"units\n",
-					insns_size);
+			if (sb) {
+				ps ("      code          -\n");
+				pf ("      registers     : %d\n", regsz);
+				pf ("      ins           : %d\n", ins_size);
+				pf ("      outs          : %d\n", outs_size);
+				pf ("      insns size    : %d 16-bit code units\n", insns_size);
+				if (tries_size > 0) {
+					pf ("      catches       : %d\n", tries_size);
+				} else {
+					ps ("      catches       : (none)\n");
+				}
 			}
 			if (tries_size > 0) {
-				if (dex->dexdump) {
-					cb_printf ("      catches       : %d\n", tries_size);
-				}
 				int j, m = 0;
-				//XXX bucle controlled by tainted variable it could produces huge loop
 				ut64 offorig = r_buf_tell (bf->buf);
 				for (j = 0; j < tries_size; j++) {
 					ut64 offset = MC + t + j * 8;
@@ -1239,34 +1233,24 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						R_FREE (signature);
 						break;
 					}
-					// start address of the block of code covered by this entry.
-					// The address is a count of 16-bit code units to the start of the first covered instruction.
 					start_addr = r_buf_read_le32_at (bf->buf, offset);
-					// number of 16-bit code units covered by this entry.
-					// The last code unit covered (inclusive) is start_addr + insn_count - 1.
 					insn_count = r_buf_read_le16_at (bf->buf, offset + 4);
-					// offset in bytes from the start of the associated encoded_catch_hander_list
-					// to the encoded_catch_handler for this entry.
-					// This must be an offset to the start of an encoded_catch_handler.
 					ut64 handler_off = r_buf_read_le16_at (bf->buf, offset + 6);
-
 					ut64 method_offset = MC + 16;
 					ut64 try_from = (start_addr * 2) + method_offset;
 					ut64 try_to = (start_addr * 2) + (insn_count * 2) + method_offset + 2;
 					ut64 try_catch = try_to + handler_off - 1;
-					if (dex->dexdump) {
-						cb_printf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
+					if (sb) {
+						pf ("        0x%04x - 0x%04x\n", start_addr, (start_addr + insn_count));
 					}
 					RBinTrycatch *tc = r_bin_trycatch_new (method_offset, try_from, try_to, try_catch, 0);
 					r_list_append (dex->trycatch_list, tc);
 
-					//XXX tries_size is tainted and oob here
 					int off = MC + t + tries_size * 8 + handler_off;
 					if (off >= dex->size || off < tries_size) {
 						R_FREE (signature);
 						break;
 					}
-					// TODO: catch left instead of null
 					st64 size;
 					if (r_buf_seek (bf->buf, off, R_BUF_SET) == -1) {
 						break;
@@ -1278,7 +1262,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 					if (size <= 0) {
 						catchAll = true;
 						size = -size;
-						// XXX this is probably wrong
 					} else {
 						catchAll = false;
 					}
@@ -1292,18 +1275,12 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						if (r <= 0) {
 							break;
 						}
-						if (handler_type > 0 && handler_type < dex->header.types_size) {
-							const char *s = getstr (dex, dex->types[handler_type].descriptor_id);
-							if (dex->dexdump) {
-								cb_printf (
-									"          %s "
-									"-> 0x%04"PFMT64x"\n",
-									s,
-									handler_addr);
-							}
-						} else {
-							if (dex->dexdump) {
-								cb_printf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);
+						if (sb) {
+							if (handler_type > 0 && handler_type < dex->header.types_size) {
+								const char *s = getstr (dex, dex->types[handler_type].descriptor_id);
+								pf ("          %s -> 0x%04"PFMT64x"\n", s, handler_addr);
+							} else {
+								pf ("          (error) -> 0x%04"PFMT64x"\n", handler_addr);
 							}
 						}
 					}
@@ -1312,23 +1289,15 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 						if (r <= 0) {
 							break;
 						}
-						if (dex->dexdump) {
-							cb_printf ("          <any> -> 0x%04"PFMT64x"\n", v2);
+						if (sb) {
+							pf ("          <any> -> 0x%04"PFMT64x"\n", v2);
 						}
 					}
 				}
 				r_buf_seek (bf->buf, offorig, R_BUF_SET);
-			} else {
-				if (dex->dexdump) {
-					cb_printf (
-						"      catches       : "
-						"(none)\n");
-				}
 			}
-		} else {
-			if (dex->dexdump) {
-				cb_printf ("      code          : (none)\n");
-			}
+		} else if (sb) {
+			ps ("      code          : (none)\n");
 		}
 		if (*flag_name) {
 			RBinSymbol symb = {0};
@@ -1424,11 +1393,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 							insns_size, cls_name, regsz, debug_info_off);
 					r_buf_seek (bf->buf, addr, R_BUF_SET);
 				}
-			} else if (MC > 0) {
-				if (dex->dexdump) {
-					cb_printf ("      positions     :\n");
-					cb_printf ("      locals        :\n");
-				}
+			} else if (MC > 0 && sb) {
+				ps ("      positions     :\n");
+				ps ("      locals        :\n");
 			}
 		} else {
 			R_FREE (flag_name);
@@ -1441,7 +1408,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	R_RETURN_IF_FAIL (bf && bf->bo && c);
 
 	RBinDexObj *dex = bf->bo->bin_obj;
-	RBin *rbin = bf->rbin;
+	RStrBuf *sb = dex->sb;
 	int z;
 	RBinClass clz = {0};
 	RBinClass *cls = &clz;
@@ -1472,20 +1439,19 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
 	RVecRBinClass_push_back (&dex->classes_vec, cls);
 	cls = RVecRBinClass_last (&dex->classes_vec);
-	if (dex->dexdump) {
-		rbin->cb_printf ("  Class descriptor  : '%s;'\n", cls_name);
-		rbin->cb_printf ("  Access flags      : 0x%04x (%s)\n", c->access_flags,
-				r_str_get (cls->visibility_str));
+	if (sb) {
+		pf ("  Class descriptor  : '%s;'\n", cls_name);
+		pf ("  Access flags      : 0x%04x (%s)\n", c->access_flags, r_str_get (cls->visibility_str));
 		if (cls->super) {
 			RBinName *bn;
 			RListIter *iter;
-			rbin->cb_printf ("  Superclass        : '");
+			ps ("  Superclass        : '");
 			r_list_foreach (cls->super, iter, bn) {
-				rbin->cb_printf ("%s%s", iter->n? ",": "", r_bin_name_tostring (bn));
+				pf ("%s%s", iter->n? ",": "", r_bin_name_tostring (bn));
 			}
-			rbin->cb_printf ("'\n");
+			ps ("'\n");
 		}
-		rbin->cb_printf ("  Interfaces        -\n");
+		ps ("  Interfaces        -\n");
 	}
 
 	if (c->interfaces_offset > 0 &&
@@ -1495,31 +1461,29 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		if (types_list_size < 0 || types_list_size >= dex->header.types_size ) {
 			goto beach;
 		}
-		for (z = 0; z < types_list_size; z++) {
-			ut16 le16;
-			ut32 off = c->interfaces_offset + 4 + (z * 2);
-			r_buf_read_at (bf->buf, off, (ut8*)&le16, sizeof (le16));
-			int t = r_read_le16 (&le16);
-			if (t > 0 && t < dex->header.types_size ) {
-				int tid = dex->types[t].descriptor_id;
-				if (dex->dexdump) {
+		if (sb) {
+			for (z = 0; z < types_list_size; z++) {
+				ut16 le16;
+				ut32 off = c->interfaces_offset + 4 + (z * 2);
+				r_buf_read_at (bf->buf, off, (ut8*)&le16, sizeof (le16));
+				int t = r_read_le16 (&le16);
+				if (t > 0 && t < dex->header.types_size) {
+					int tid = dex->types[t].descriptor_id;
 					const char *cn = getstr (dex, tid);
-					rbin->cb_printf ("    #%d              : '%s'\n", z, cn);
+					pf ("    #%d              : '%s'\n", z, cn);
 				}
 			}
 		}
 	}
 	// TODO: this is quite ugly
 	if (!c || !c->class_data_offset) {
-		if (dex->dexdump) {
-			rbin->cb_printf (
-				"  Static fields     -\n"
+		if (sb) {
+			ps ("  Static fields     -\n"
 				"  Instance fields   -\n"
 				"  Direct methods    -\n"
 				"  Virtual methods   -\n");
 		}
 	} else {
-		// TODO: move to func, def or inline
 		// class_data_offset => [class_offset, class_defs_off+class_defs_size*32]
 		if (dex->header.class_offset > c->class_data_offset ||
 		    c->class_data_offset <
@@ -1543,29 +1507,35 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 		}
 		c->class_data = dc;
 
-		if (dex->dexdump) { rbin->cb_printf ("  Static fields     -\n"); }
+		if (sb) {
+			ps ("  Static fields     -\n");
+		}
 		parse_dex_class_fields (bf, c, cls, sym_count, dc->static_fields_size, true);
 
-		if (dex->dexdump) { rbin->cb_printf ("  Instance fields   -\n"); }
+		if (sb) {
+			ps ("  Instance fields   -\n");
+		}
 		parse_dex_class_fields (bf, c, cls, sym_count, dc->instance_fields_size, false);
 
-		if (dex->dexdump) { rbin->cb_printf ("  Direct methods    -\n"); }
+		if (sb) {
+			ps ("  Direct methods    -\n");
+		}
 		parse_dex_class_method (bf, c, cls, sym_count,
 			c->class_data->direct_methods_size, methods, true);
 
-		if (dex->dexdump) { rbin->cb_printf ("  Virtual methods   -\n"); }
+		if (sb) {
+			ps ("  Virtual methods   -\n");
+		}
 		parse_dex_class_method (bf, c, cls, sym_count,
 			c->class_data->virtual_methods_size, methods, false);
 	}
 
-	if (dex->dexdump) {
+	if (sb) {
 		const char *source_file = getstr (dex, c->source_file);
 		if (source_file) {
-			rbin->cb_printf ("  source_file_idx   : %d (%s)\n\n",
-					c->source_file, source_file);
+			pf ("  source_file_idx   : %d (%s)\n\n", c->source_file, source_file);
 		} else {
-			rbin->cb_printf ("  source_file_idx   : %d (unknown)\n\n",
-					c->source_file);
+			pf ("  source_file_idx   : %d (unknown)\n\n", c->source_file);
 		}
 	}
 beach:
@@ -1585,8 +1555,8 @@ static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
 static bool dex_loadcode(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *dex = bf->bo->bin_obj;
+	RStrBuf *sb = dex->sb;
 	dex->verbose = true;
-	PrintfCallback cb_printf = bf->rbin->cb_printf;
 	size_t i;
 	int *methods = NULL;
 	size_t methods_size = 0;
@@ -1631,8 +1601,8 @@ static bool dex_loadcode(RBinFile *bf) {
 		methods = calloc (1, methods_size);
 		for (i = 0; i < dex->header.class_size; i++) {
 			struct dex_class_t *c = &dex->classes[i];
-			if (dex->dexdump) {
-				cb_printf ("Class #%u            -\n", (unsigned int)i);
+			if (sb) {
+				pf ("Class #%u            -\n", (unsigned int)i);
 			}
 			parse_class (bf, c, i, methods, &sym_count);
 		}
@@ -2030,8 +2000,8 @@ static RList *sections(RBinFile *bf) {
 static char *dex_header(RBinFile *bf, int mode) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	DexHeader *hdr = &dex->header;
-	RStrBuf *sb = r_strbuf_new ("");
-#define p(f,...) r_strbuf_appendf (sb, f, ##__VA_ARGS__)
+	dex->sb = r_strbuf_new ("");
+#define p(f,...) r_strbuf_appendf (dex->sb, f, ##__VA_ARGS__)
 	p ("DEX file header:\n");
 	p ("magic               : 'dex\\n035\\0'\n");
 	p ("checksum            : %x\n", hdr->checksum);
@@ -2058,10 +2028,10 @@ static char *dex_header(RBinFile *bf, int mode) {
 #undef p
 	// TODO: print information stored in the RBIN not this ugly fix
 	RVecRBinSymbol_clear (&dex->symbols_vec);
-	dex->dexdump = true; /// XXX convert this global into an argument or field in RBinFile or so
 	dex_loadcode (bf);
-	dex->dexdump = false;
-	return r_strbuf_drain (sb);
+	char *ret = r_strbuf_drain (dex->sb);
+	dex->sb = NULL;
+	return ret;
 }
 
 static ut64 size(RBinFile *bf) {
