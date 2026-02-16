@@ -5011,7 +5011,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			}
 		}
 	}
-	blocksize = (blocksize > 0)? (totalsize / blocksize): (core->blocksize);
+	blocksize = (blocksize > 0)? (totalsize / blocksize): core->blocksize;
 	if (blocksize < 1) {
 		R_LOG_ERROR ("Invalid block size: %d", (int)blocksize);
 		goto beach;
@@ -5135,49 +5135,57 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 		case 'e': // "p=e"
-		{
-			ut8 *p;
-			int i = 0;
+			{
+				ut8 *p;
+				int i = 0;
+				ptr = calloc (1, nblocks);
+				if (!ptr) {
+					goto beach;
+				}
+				p = malloc (blocksize);
+				if (!p) {
+					R_FREE (ptr);
+					goto beach;
+				}
+				for (i = 0; i < nblocks; i++) {
+					ut64 off = from + (blocksize *(i + skipblocks));
+					r_io_read_at (core->io, off, p, blocksize);
+					ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
+				}
+				free (p);
+				r_print_columns (core->print, ptr, nblocks, 14);
+			}
+			break;
+		case ' ':
+		case 0:
 			ptr = calloc (1, nblocks);
-			if (!ptr) {
-				goto beach;
+			if (ptr) {
+				r_io_read_at (core->io, from, ptr, nblocks);
+				r_print_columns (core->print, ptr, nblocks, 14);
 			}
-			p = malloc (blocksize);
-			if (!p) {
-				R_FREE (ptr);
-				goto beach;
-			}
-			for (i = 0; i < nblocks; i++) {
-				ut64 off = from + (blocksize *(i + skipblocks));
-				r_io_read_at (core->io, off, p, blocksize);
-				ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
-			}
-			free (p);
-			r_print_columns (core->print, ptr, nblocks, 14);
-		}
-		break;
+			break;
 		default:
-			r_print_columns (core->print, ptr, nblocks, 14);
+			r_core_return_invalid_command (core, "p==", submode);
 			break;
 		}
 		break;
 	case '2': // "p=2"
-	{
-		short *word = (short *)core->block;
-		int i, words = core->blocksize / 2;
-		int step = r_num_math (core->num, input + 2);
-		ut64 oldword = 0;
-		for (i = 0; i < words; i++) {
-			ut64 word64 = word[i] + ST16_MAX;
-			r_cons_printf (core->cons, "0x%08" PFMT64x " %8d  ", core->addr + (i * 2), word[i]);
-			r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
-			r_cons_printf (core->cons, " %" PFMT64d, word64 - oldword);
-			oldword = word64;
-			r_cons_newline (core->cons);
-			i += step;
+		{
+			short *word = (short *)core->block;
+			int i, words = core->blocksize / 2;
+			int step = r_num_math (core->num, input + 2);
+			ut64 oldword = 0;
+			for (i = 0; i < words; i++) {
+				ut64 word64 = word[i] + ST16_MAX;
+				r_cons_printf (core->cons, "0x%08" PFMT64x " %8d  ", core->addr + (i * 2), word[i]);
+				r_print_progressbar (core->print, word64 * 100 / UT16_MAX, 60, NULL);
+				r_cons_printf (core->cons, " %" PFMT64d, word64 - oldword);
+				oldword = word64;
+				r_cons_newline (core->cons);
+				i += step;
+			}
 		}
-	}
-	break;
+		break;
 	case 'd': // "p=d"
 		ptr = NULL;
 		if (input[2]) {
@@ -5236,27 +5244,26 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case 'e': // "p=e" entropy
-	{
-		ut8 *p;
-		int i = 0;
-		ptr = calloc (1, nblocks);
-		if (!ptr) {
-			goto beach;
+		{
+			int i = 0;
+			ptr = calloc (1, nblocks);
+			if (!ptr) {
+				goto beach;
+			}
+			ut8 *p = malloc (blocksize);
+			if (!p) {
+				R_FREE (ptr);
+				goto beach;
+			}
+			for (i = 0; i < nblocks; i++) {
+				ut64 off = from + (blocksize *(i + skipblocks));
+				r_io_read_at (core->io, off, p, blocksize);
+				ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
+			}
+			free (p);
+			print_bars = true;
 		}
-		p = malloc (blocksize);
-		if (!p) {
-			R_FREE (ptr);
-			goto beach;
-		}
-		for (i = 0; i < nblocks; i++) {
-			ut64 off = from + (blocksize *(i + skipblocks));
-			r_io_read_at (core->io, off, p, blocksize);
-			ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
-		}
-		free (p);
-		print_bars = true;
-	}
-	break;
+		break;
 	case '0': // 0x00 bytes
 	case 'F': // 0xff bytes
 	case 'p': // printable chars
@@ -5275,7 +5282,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		int len = 0;
 		for (i = 0; i < nblocks; i++) {
-			ut64 off = from + blocksize *(i + skipblocks);
+			ut64 off = from + blocksize * (i + skipblocks);
 			r_io_read_at (core->io, off, p, blocksize);
 			for (j = k = 0; j < blocksize; j++) {
 				switch (mode) {
@@ -5346,7 +5353,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				pj_kn (pj, "size", totalsize);
 				pj_k (pj, "entropy");
 				pj_a (pj);
-
 				for (i = 0; i < nblocks; i++) {
 					ut8 ep = ptr[i];
 					ut64 off = blocksize * i;
