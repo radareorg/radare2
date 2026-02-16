@@ -203,7 +203,11 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 		for (i = 0; i < 64; i++) {
 			ut64 bits = ((ut64)1) << i;
 			const char *name = r_hash_name (bits);
-			if R_STR_ISEMPTY (name) {
+			if (R_STR_ISEMPTY (name)) {
+				continue;
+			}
+			// skip if already implemented by a muta plugin
+			if (r_muta_find (cry, name)) {
 				continue;
 			}
 			switch (mode) {

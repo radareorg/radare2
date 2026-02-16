@@ -39,6 +39,7 @@ include charset_katakana.mk
 include charset_macintosh.mk
 include charset_pokemon.mk
 include charset_pokered.mk
+include charset_seven.mk
 include cps2.mk
 include crc.mk
 include des.mk
@@ -56,6 +57,9 @@ include sip.mk
 include sm4.mk
 include ssdeep.mk
 include strhash.mk
+include simplehash.mk
+include xxhash.mk
+include md4.mk
 include xor.mk
 
 clean:
