@@ -1055,7 +1055,7 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 			tmp_val_replaced = r_str_replace_icase (tmp_val, key, str_case, 0, 0);
 			free (str_case);
 			if (!tmp_val_replaced) {
-				free (tmp_val);
+				// tmp_val is already freed by r_str_replace_icase on failure
 				return NULL;
 			}
 			tmp_val = tmp_val_replaced;
