@@ -70,6 +70,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"tf", " <name>", "show function signature",
 	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
+	"tfe", " <name>", "edit function signature with cfg.editor",
 	"tfj", "", "list all function definitions in JSON",
 	"tfj", " <name>", "show function signature in JSON",
 	NULL
@@ -113,6 +114,7 @@ static RCoreHelpMessage help_msg_te = {
 	"tec", "", "list all loaded enums in C output format with newlines",
 	"tec", " <name>", "list given loaded enums in C output format with newlines",
 	"ted", "", "list all loaded enums in C output format without newlines",
+	"tee", " <name>", "edit enum with cfg.editor",
 	"tej", "", "list all loaded enums in json",
 	"tej", " <enum>", "show enum in json",
 	"test", " [-x,f,d] [path]", "test if executable, file or directory exists",
@@ -124,6 +126,7 @@ static RCoreHelpMessage help_msg_tt = {
 	"Usage: tt[...]", "", "Type typedef commands",
 	"tt", "", "list all loaded typedefs",
 	"tt", " <typename>", "show name for given type alias",
+	"tte", " <name>", "edit typedef with cfg.editor",
 	"ttj", "", "show typename and type alias in json",
 	"ttc", "<name>", "show typename and type alias in C output format",
 	NULL
@@ -161,6 +164,7 @@ static RCoreHelpMessage help_msg_ts = {
 	"ts", " [type]", "show pf format string for given struct",
 	"tu.", "[type]", "show struct contents mapped in current offset (same as .ts)",
 	"ts-", " <type> [name2..]", "delete struct type(s) (supports glob with *)",
+	"tse", " <name>", "edit struct with cfg.editor",
 	"tsj", "", "list all loaded structs in json",
 	"tsj", " [type]", "show pf format string for given struct in json",
 	"ts*", "", "show pf.<name> format string for all loaded structs",
@@ -178,6 +182,7 @@ static RCoreHelpMessage help_msg_tu = {
 	"tu", " [type]", "show pf format string for given union",
 	"tu.", "[type]", "show union contents mapped in current offset (same as .tu)",
 	"tu-", " <type> [name2..]", "delete union type(s) (supports glob with *)",
+	"tue", " <name>", "edit union with cfg.editor",
 	"tuj", "", "list all loaded unions in json",
 	"tuj", " [type]", "show pf format string for given union in json",
 	"tu*", "", "show pf.<name> format string for all loaded unions",
@@ -560,6 +565,41 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_tn);
 		break;
 	}
+}
+
+static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) {
+	if (R_STR_ISEMPTY (typename)) {
+		R_LOG_ERROR ("Type name required");
+		return;
+	}
+	char *str = r_core_cmd_strf (core, "%s %s", c_cmd, typename);
+	if (R_STR_ISEMPTY (str)) {
+		R_LOG_ERROR ("Type '%s' not found", typename);
+		free (str);
+		return;
+	}
+	char *tmp = r_core_editor (core, "*.h", str);
+	if (tmp) {
+		r_str_trim (tmp);
+		char *str_trimmed = strdup (str);
+		r_str_trim (str_trimmed);
+		if (strcmp (tmp, str_trimmed)) {
+			r_core_cmdf (core, "t- %s", typename);
+			char *errmsg = NULL;
+			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
+			if (out) {
+				r_anal_save_parsed_type (core->anal, out);
+				free (out);
+			}
+			if (errmsg) {
+				R_LOG_ERROR ("%s", errmsg);
+				free (errmsg);
+			}
+		}
+		free (str_trimmed);
+		free (tmp);
+	}
+	free (str);
 }
 
 static bool stdifstruct(void *user, const char *k, const char *v) {
@@ -1777,6 +1817,13 @@ static int cmd_type(void *data, const char *input) {
 		case 'd':
 			print_struct_union_in_c_format (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), false);
 			break;
+		case 'e': // "tue"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tu, "tue");
+			} else {
+				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tuc");
+			}
+			break;
 		case 'v': // "tuv"
 			print_struct_union_with_offsets (core, TDB, stdifunion, r_str_trim_head_ro (input + 2), true);
 			break;
@@ -1912,6 +1959,13 @@ static int cmd_type(void *data, const char *input) {
 		case 'd': // "tsd"
 			print_struct_union_in_c_format (core, TDB, stdifstruct, r_str_trim_head_ro (input + 2), false);
 			break;
+		case 'e': // "tse"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ts, "tse");
+			} else {
+				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tsc");
+			}
+			break;
 		case 'j': // "tsj"
 			if (input[2]) {
 				showFormat (core, r_str_trim_head_ro (input + 2), 'j');
@@ -2043,6 +2097,13 @@ static int cmd_type(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_te, "ted");
 			} else {
 				print_enum_in_c_format (core, TDB, r_str_trim_head_ro (input + 2), false);
+			}
+			break;
+		case 'e': // "tee"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_te, "tee");
+			} else {
+				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tec");
 			}
 			break;
 		case 'v': // "tev"
@@ -2562,6 +2623,13 @@ static int cmd_type(void *data, const char *input) {
 				ls_free (l);
 			}
 			break;
+		case 'e': // "tfe"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tf, "tfe");
+			} else {
+				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "tfc");
+			}
+			break;
 		case 'j': // "tfj"
 			if (input[2] == ' ') {
 				printFunctionType (core, input + 2);
@@ -2659,6 +2727,14 @@ static int cmd_type(void *data, const char *input) {
 			}
 			free (name);
 			ls_free (l);
+			break;
+		}
+		if (input[1] == 'e') { // "tte"
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tt, "tte");
+			} else {
+				cmd_type_edit (core, r_str_trim_head_ro (input + 2), "ttc");
+			}
 			break;
 		}
 		if (input[1] == '?') {
