@@ -3,9 +3,8 @@
 #include <r_bin.h>
 #include "../i/private.h"
 #include "dex/dex.h"
-// XXX use rhash/crytpo/trans api instead
+// TODO: use rhash/crypto/trans api instead
 #define r_hash_adler32 __adler32
-// TODO rename muta/hash to muta/p/algo
 #include "../../muta/hash/adler32.c"
 
 #define DBG_END_SEQUENCE          0x00
@@ -367,10 +366,7 @@ out_error:
 	return NULL;
 }
 
-// TODO: fix this, now has more registers that it should
-// XXX. this is using binfile->buf directly :(
-// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L312
-// https://github.com/android/platform_dalvik/blob/0641c2b4836fae3ee8daf6c0af45c316c84d5aeb/libdex/DexDebugInfo.cpp#L141
+// https://github.com/pxb1988/dex2jar/blob/2.x/dex-reader/src/main/java/com/googlecode/d2j/reader/DexFileReader.java#L1023
 static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	RStrBuf *sb = dex->sb;
@@ -1159,8 +1155,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		ut64 v2, handler_type, handler_addr;
 		int t = 0;
 		if (MC > 0) {
-			// TODO: parse debug info
-			// XXX why bf->buf->base???
 			if (MC + 16 >= dex->size || MC + 16 < MC) {
 				R_FREE (flag_name);
 				R_FREE (signature);
@@ -1610,29 +1604,24 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (methods) {
 		int import_count = 0;
 		int sym_count = RVecRBinSymbol_length (&dex->symbols_vec);
-		int last = (methods_size / sizeof (int)); // sym_count
-		for (i = 0; i < last; i++) {
-			int len = 0;
+		const ut32 method_size = dex->header.method_size;
+		for (i = 0; i < method_size; i++) {
 			if (methods[i]) {
 				continue;
 			}
 			RBinDexMethod *method = RVecDexMethod_at (&dex->dex_methods, i);
-			if (!method) {
-				continue;
-			}
-			if (method->class_id >= dex->header.types_size) {
+			if (!method || method->class_id >= dex->header.types_size) {
 				continue;
 			}
 			if (is_class_idx_in_code_classes (dex, method->class_id)) {
 				continue;
 			}
 			const char *className = getstr (dex, dex->types[method->class_id].descriptor_id);
-			if (!className) {
+			if (R_STR_ISEMPTY (className)) {
 				continue;
 			}
 			char *class_name = strdup (className);
 			if (!class_name) {
-				free (class_name);
 				continue;
 			}
 			if (!dex->dexSubsystem) {
@@ -1642,8 +1631,7 @@ static bool dex_loadcode(RBinFile *bf) {
 					dex->dexSubsystem = "android";
 				}
 			}
-			len = strlen (class_name);
-			if (len < 1) {
+			if (class_name[0] == '\0') {
 				free (class_name);
 				continue;
 			}
@@ -1665,10 +1653,8 @@ static bool dex_loadcode(RBinFile *bf) {
 				sym.is_imported = true;
 				sym.type = R_BIN_TYPE_FUNC_STR;
 				sym.bind = "NONE";
-				//XXX so damn unsafe check buffer boundaries!!!!
-				//XXX use r_buf API!!
 				sym.paddr = dex->header.method_offset + (sizeof (struct dex_method_t) * i);
-				sym.vaddr = sym.paddr; //  + bf->bo->baddr;
+				sym.vaddr = sym.paddr;
 				sym.ordinal = sym_count++;
 				sym.lang = R_BIN_LANG_JAVA;
 				RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
@@ -1852,7 +1838,7 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinDexObj *dex = bf->bo->bin_obj;
-	dex->simplifiedDemangling = sd; // XXX kill globals
+	dex->simplifiedDemangling = sd;
 	switch (type) {
 	case 'm': // methods
 		return dex_method_fullname (dex, idx);
