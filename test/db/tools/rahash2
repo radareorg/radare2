@@ -217,6 +217,7 @@ cryp      des-ecb  DES with with Electronic Code Book mode
 sign      ed25519  Elliptic curve pubkey cryptographic algorithm used for signing and verification
 hash      entropy  Shannon entropy
 hash     fletcher  Fletcher hash algorithms (implements: fletcher8,fletcher16,fletcher32,fletcher64)
+hash          md4  MD4 hash
 hash          md5  MD5 hash
 hash         null  mutate nothing
 char     punycode  Unicoded represented in plain ascii
@@ -224,55 +225,13 @@ cryp           rc  Rivest Cipher (implements: rc2,rc4,rc6)
 cryp          rot  Rotate algorithms (rot13, rol, ror) (implements: rot,rol,ror)
 cryp  serpent-ecb  Serpent block cipher with Electronic Code Book mode
 hash          sha  Secure Hash Algorithm (SHA) (implements: sha1,sha256,sha384,sha512)
+hash   simplehash  Simple hash algorithms (xorpair, parity, hamdist, pcprint, mod255, adler32, luhn, elf) (implements: xorpair,parity,hamdist,pcprint,mod255,adler32,luhn,elf)
 hash          sip  SipHash-2-4
 cryp      sm4-ecb  ShāngMì4 block cipher with Electronic Code Book mode
 hash       ssdeep  ssdeep fuzzy hash
 hash      strhash  String hash using a modified DJB2 xor
 cryp          xor  Byte level Exclusive Or
-hash          md5
-hash         sha1
-hash       sha256
-hash       sha384
-hash       sha512
-hash          md4
-hash          xor
-hash      xorpair
-hash       parity
-hash      entropy
-hash      hamdist
-hash      pcprint
-hash       mod255
-hash       xxhash
-hash      adler32
-hash         luhn
-hash       ssdeep
-hash    crc8smbus
-hash     crc15can
-hash        crc16
-hash    crc16hdlc
-hash     crc16usb
-hash    crc16citt
-hash        crc24
-hash        crc32
-hash       crc32c
-hash crc32ecma267
-hash   crc32bzip2
-hash       crc32d
-hash   crc32mpeg2
-hash   crc32posix
-hash       crc32q
-hash  crc32jamcrc
-hash    crc32xfer
-hash        crc64
-hash    crc64ecma
-hash      crc64we
-hash      crc64xz
-hash     crc64iso
-hash    fletcher8
-hash   fletcher16
-hash   fletcher32
-hash   fletcher64
-hash          elf
+hash       xxhash  xxHash fast hash algorithm
 EOF
 RUN
 
