@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - nibble, pancake */
+/* radare - LGPL - Copyright 2009-2026 - nibble, pancake */
 
 #define INTERACTIVE_MAX_REP 1024
 
@@ -45,7 +45,7 @@ static const char help_message[] = \
 "* f~...   - search for strings or hexadecimal patterns\n" \
 "* q       - quit (alias for ^D or exit)\n";
 
-static bool isAnExport(RBinSymbol *s) {
+static inline bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
 	if (s->is_imported) {
 		return false;
@@ -5036,19 +5036,17 @@ repeat_arroba:
 			case 'f': // "@f:" // slurp file in block
 				f = r_file_slurp (ptr + 2, &sz);
 				if (f) {
-					{
-						RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
-						RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
-						if (d) {
-							if (tmpdesc) {
-								r_io_desc_close (tmpdesc);
-							}
-							tmpdesc = d;
-							if (pamode) {
-								r_config_set_b (core->config, "io.va", true);
-							}
-							r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
+					RBuffer *b = r_buf_new_with_bytes ((const ut8*)f, (ut64)sz);
+					RIODesc *d = r_io_open_buffer (core->io, b, R_PERM_RWX, 0);
+					if (d) {
+						if (tmpdesc) {
+							r_io_desc_close (tmpdesc);
 						}
+						tmpdesc = d;
+						if (pamode) {
+							r_config_set_b (core->config, "io.va", true);
+						}
+						r_io_map_add (core->io, d->fd, d->perm, 0, core->addr, r_buf_size (b));
 					}
 				} else {
 					R_LOG_ERROR ("Cannot open at-f '%s'", ptr + 3);
