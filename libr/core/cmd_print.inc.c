@@ -5130,7 +5130,9 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					ptr[i] = 256 * k / blocksize;
 				}
 			}
-			r_print_columns (core->print, ptr, nblocks, 14);
+			char *s = r_print_columns (core->print, ptr, nblocks, 14);
+			r_cons_print (core->cons, s);
+			free (s);
 			free (p);
 		}
 		break;
@@ -5153,7 +5155,9 @@ static void cmd_print_bars(RCore *core, const char *input) {
 					ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
 				}
 				free (p);
-				r_print_columns (core->print, ptr, nblocks, 14);
+				char *s = r_print_columns (core->print, ptr, nblocks, 14);
+				r_cons_print (core->cons, s);
+				free (s);
 			}
 			break;
 		case ' ':
@@ -5161,7 +5165,9 @@ static void cmd_print_bars(RCore *core, const char *input) {
 			ptr = calloc (1, nblocks);
 			if (ptr) {
 				r_io_read_at (core->io, from, ptr, nblocks);
-				r_print_columns (core->print, ptr, nblocks, 14);
+				char *s = r_print_columns (core->print, ptr, nblocks, 14);
+				r_cons_print (core->cons, s);
+				free (s);
 			}
 			break;
 		default:

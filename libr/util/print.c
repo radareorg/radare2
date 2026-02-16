@@ -51,7 +51,6 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	size_t i, j;
 	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
 	int rows = height > 0 ? height : 10;
-	// int realrows = rows * 2;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
 	const char *vline = p->consb.cons->use_utf8 ? RUNE_LINE_VERT : "|";
@@ -68,7 +67,7 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 			size_t koli = i * 5 / rows;
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
-	 			if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
+				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
 					if (p->histblock) {
 						r_strbuf_appendf (sb, "%s%s%s", kol[koli], block, Color_RESET);
 					} else {
