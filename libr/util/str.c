@@ -1548,7 +1548,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		if (show_asciidot && !IS_PRINTABLE (ch)) {
 			*q++ = '.';
 		} else if (ch_bytes > 1) {
-			if (keep_printable) {
+			if (keep_printable && r_isprint (ch)) {
 				q += r_utf8_encode ((ut8 *)q, ch);
 			} else {
 				*q++ = '\\';
