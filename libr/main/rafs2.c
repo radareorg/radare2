@@ -8,8 +8,6 @@
 #include <r_cons.h>
 
 typedef struct {
-	RFS *fs;
-	RIO *io;
 	const char *fstype;
 	const char *file;
 	const char *mountpoint;
@@ -18,10 +16,43 @@ typedef struct {
 	bool json;
 } Rafs2Options;
 
-static void rafs2_options_fini(Rafs2Options *opt) {
-	if (opt) {
-		r_fs_free (opt->fs);
-		r_io_free (opt->io);
+typedef struct {
+	RLib *l;
+	RFS *fs;
+	RIO *io;
+	Rafs2Options opt;
+} Rafs2State;
+
+static bool __lib_fs_cb(RLibPlugin *pl, void *user, void *data) {
+	RFSPlugin *hand = (RFSPlugin *)data;
+	Rafs2State *s = (Rafs2State *)user;
+	r_fs_plugin_add (s->fs, hand);
+	return true;
+}
+
+static void rafs2_load_plugins(Rafs2State *s) {
+	r_lib_add_handler (s->l, R_LIB_TYPE_FS, "filesystem plugins", &__lib_fs_cb, NULL, s);
+	r_lib_load_default_paths (s->l, R_LIB_LOAD_DEFAULT);
+}
+
+static Rafs2State *rafs2_new(void) {
+	Rafs2State *s = R_NEW0 (Rafs2State);
+	s->l = r_lib_new (NULL, NULL);
+	s->io = r_io_new ();
+	s->fs = r_fs_new ();
+
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		rafs2_load_plugins (s);
+	}
+	return s;
+}
+static void rafs2_free(Rafs2State *s) {
+	if (s) {
+		r_fs_free (s->fs);
+		r_io_free (s->io);
+		r_lib_free (s->l);
+		free (s);
 	}
 }
 
@@ -50,23 +81,21 @@ static void show_usage(void) {
 	"  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
 }
 
-static int rafs2_list_plugins(Rafs2Options *opt) {
-	RFS *fs = r_fs_new ();
-	if (!fs) {
+static int rafs2_list_plugins(Rafs2State *s) {
+	if (!s->fs) {
 		R_LOG_ERROR ("Cannot create FS instance");
 		return 1;
 	}
 
-	if (opt->json) {
+	if (s->opt.json) {
 		PJ *pj = pj_new ();
 		if (!pj) {
-			r_fs_free (fs);
 			return 1;
 		}
 		pj_a (pj);
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (fs->plugins, iter, plugin) {
+		r_list_foreach (s->fs->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				pj_o (pj);
 				pj_ks (pj, "name", plugin->meta.name);
@@ -83,7 +112,7 @@ static int rafs2_list_plugins(Rafs2Options *opt) {
 		printf ("Available filesystem types:\n");
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (fs->plugins, iter, plugin) {
+		r_list_foreach (s->fs->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
 				printf ("  %-12s %s\n", plugin->meta.name, desc);
@@ -91,18 +120,17 @@ static int rafs2_list_plugins(Rafs2Options *opt) {
 		}
 	}
 
-	r_fs_free (fs);
 	return 0;
 }
 
-static int rafs2_list(Rafs2Options *opt, const char *path) {
-	RList *list = r_fs_dir (opt->fs, path);
+static int rafs2_list(Rafs2State *s, const char *path) {
+	RList *list = r_fs_dir (s->fs, path);
 	if (!list) {
 		R_LOG_ERROR ("Cannot list directory: %s", path);
 		return 1;
 	}
 
-	if (opt->json) {
+	if (s->opt.json) {
 		PJ *pj = pj_new ();
 		if (!pj) {
 			r_list_free (list);
@@ -134,28 +162,28 @@ static int rafs2_list(Rafs2Options *opt, const char *path) {
 	return 0;
 }
 
-static int rafs2_cat(Rafs2Options *opt, const char *path) {
-	RFSFile *file = r_fs_open (opt->fs, path, false);
+static int rafs2_cat(Rafs2State *s, const char *path) {
+	RFSFile *file = r_fs_open (s->fs, path, false);
 	if (!file) {
 		R_LOG_ERROR ("Cannot open file: %s", path);
 		return 1;
 	}
 
 	if (file->size > 0) {
-		int len = r_fs_read (opt->fs, file, 0, file->size);
+		int len = r_fs_read (s->fs, file, 0, file->size);
 		if (len > 0 && file->data) {
 			fwrite (file->data, 1, len, stdout);
 		}
 	}
 
-	r_fs_close (opt->fs, file);
+	r_fs_close (s->fs, file);
 	return 0;
 }
 
-static int rafs2_details(Rafs2Options *opt) {
-	RList *roots = r_fs_root (opt->fs, opt->mountpoint);
+static int rafs2_details(Rafs2State *s) {
+	RList *roots = r_fs_root (s->fs, s->opt.mountpoint);
 	if (!roots || r_list_empty (roots)) {
-		R_LOG_ERROR ("No mounted filesystem found at %s", opt->mountpoint);
+		R_LOG_ERROR ("No mounted filesystem found at %s", s->opt.mountpoint);
 		r_list_free (roots);
 		return 1;
 	}
@@ -167,7 +195,7 @@ static int rafs2_details(Rafs2Options *opt) {
 		return 1;
 	}
 
-	if (opt->json) {
+	if (s->opt.json) {
 		PJ *pj = pj_new ();
 		if (!pj) {
 			r_list_free (roots);
@@ -176,7 +204,7 @@ static int rafs2_details(Rafs2Options *opt) {
 		pj_o (pj);
 		pj_ks (pj, "fstype", root->p->meta.name);
 		pj_kn (pj, "offset", root->delta);
-		pj_ks (pj, "mountpoint", opt->mountpoint);
+		pj_ks (pj, "mountpoint", s->opt.mountpoint);
 		RStrBuf *sb = r_strbuf_new ("");
 		root->p->details (root, sb);
 		pj_ks (pj, "details", r_strbuf_get (sb));
@@ -194,7 +222,7 @@ static int rafs2_details(Rafs2Options *opt) {
 	return 0;
 }
 
-static int rafs2_extract(Rafs2Options *opt, const char *paths) {
+static int rafs2_extract(Rafs2State *s, const char *paths) {
 	char *colon = strchr (paths, ':');
 	if (!colon) {
 		R_LOG_ERROR ("Invalid extract syntax. Use: -x <src:dst>");
@@ -210,7 +238,7 @@ static int rafs2_extract(Rafs2Options *opt, const char *paths) {
 		return 1;
 	}
 
-	RFSFile *file = r_fs_open (opt->fs, src, false);
+	RFSFile *file = r_fs_open (s->fs, src, false);
 	if (!file) {
 		R_LOG_ERROR ("Cannot open file in image: %s", src);
 		free (src);
@@ -218,12 +246,12 @@ static int rafs2_extract(Rafs2Options *opt, const char *paths) {
 	}
 
 	if (file->size > 0) {
-		int len = r_fs_read (opt->fs, file, 0, file->size);
+		int len = r_fs_read (s->fs, file, 0, file->size);
 		if (len > 0 && file->data) {
 			FILE *fp = fopen (dst, "wb");
 			if (!fp) {
 				R_LOG_ERROR ("Cannot create output file: %s", dst);
-				r_fs_close (opt->fs, file);
+				r_fs_close (s->fs, file);
 				free (src);
 				return 1;
 			}
@@ -232,7 +260,7 @@ static int rafs2_extract(Rafs2Options *opt, const char *paths) {
 			printf ("Extracted %s -> %s (%d bytes)\n", src, dst, len);
 		} else {
 			R_LOG_ERROR ("Failed to read file: %s", src);
-			r_fs_close (opt->fs, file);
+			r_fs_close (s->fs, file);
 			free (src);
 			return 1;
 		}
@@ -244,51 +272,52 @@ static int rafs2_extract(Rafs2Options *opt, const char *paths) {
 		}
 	}
 
-	r_fs_close (opt->fs, file);
+	r_fs_close (s->fs, file);
 	free (src);
 	return 0;
 }
 
-static int rafs2_shell(Rafs2Options *opt) {
+static int rafs2_shell(Rafs2State *s) {
 	RFSShell *shell = r_fs_shell_new ();
 	if (!shell) {
 		R_LOG_ERROR ("Cannot create filesystem shell");
 		return 1;
 	}
 
-	shell->cwd = strdup (opt->mountpoint);
+	shell->cwd = strdup (s->opt.mountpoint);
 	shell->cons = r_cons_singleton ();
 
-	bool ret = r_fs_shell (shell, opt->fs, opt->mountpoint);
+	bool ret = r_fs_shell (shell, s->fs, s->opt.mountpoint);
 	r_fs_shell_free (shell);
 
 	return ret? 0: 1;
 }
 
 R_API int r_main_rafs2(int argc, const char **argv) {
-	Rafs2Options opt = {.mountpoint = "/"};
-	int c;
+	int c, ret = 0;
 	const char *list_path = NULL;
 	const char *cat_path = NULL;
 	const char *extract_path = NULL;
 	bool show_details = false;
 
+	Rafs2State *s = rafs2_new();
+	s->opt.mountpoint = "/";
 
 	RGetopt go;
 	r_getopt_init (&go, argc, argv, "t:o:m:il:c:x:nLhjv");
 	while ((c = r_getopt_next (&go)) != -1) {
 		switch (c) {
 		case 't':
-			opt.fstype = go.arg;
+			s->opt.fstype = go.arg;
 			break;
 		case 'o':
-			opt.offset = r_num_math (NULL, go.arg);
+			s->opt.offset = r_num_math (NULL, go.arg);
 			break;
 		case 'm':
-			opt.mountpoint = go.arg;
+			s->opt.mountpoint = go.arg;
 			break;
 		case 'i':
-			opt.interactive = true;
+			s->opt.interactive = true;
 			break;
 		case 'l':
 			list_path = go.arg;
@@ -303,15 +332,20 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 			show_details = true;
 			break;
 		case 'j':
-			opt.json = true;
+			s->opt.json = true;
 			break;
 		case 'L':
-			return rafs2_list_plugins (&opt);
+			ret = rafs2_list_plugins (s); // TODO leak
+			rafs2_free (s);
+			return ret;
 		case 'v':
-			return r_main_version_print ("rafs2", 0);
+			ret = r_main_version_print ("rafs2", 0);
+			rafs2_free (s);
+			return ret;
 		case 'h':
 		default:
 			show_usage ();
+			rafs2_free (s);
 			return c == 'h'? 0: 1;
 		}
 	}
@@ -319,67 +353,68 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 	if (go.ind >= argc) {
 		R_LOG_ERROR ("No file specified");
 		show_usage ();
+		rafs2_free (s);
 		return 1;
 	}
 
-	if (!opt.fstype) {
+	if (!s->opt.fstype) {
 		R_LOG_ERROR ("Filesystem type not specified (use -t)");
 		show_usage ();
+		rafs2_free (s);
 		return 1;
 	}
 
-	opt.file = argv[go.ind];
+	s->opt.file = argv[go.ind];
 
-	opt.io = r_io_new ();
-	if (!opt.io) {
+	// s->io = r_io_new ();
+	if (!s->io) {
 		R_LOG_ERROR ("Cannot create IO instance");
+		rafs2_free (s);
 		return 1;
 	}
 
-	RIODesc *desc = r_io_open (opt.io, opt.file, R_PERM_R, 0);
+	RIODesc *desc = r_io_open (s->io, s->opt.file, R_PERM_R, 0);
 	if (!desc) {
-		R_LOG_ERROR ("Cannot open file: %s", opt.file);
-		rafs2_options_fini (&opt);
+		R_LOG_ERROR ("Cannot open file: %s", s->opt.file);
+		rafs2_free (s);
 		return 1;
 	}
 
-	opt.fs = r_fs_new ();
-	if (!opt.fs) {
+	// s->fs = r_fs_new ();
+	if (!s->fs) {
 		R_LOG_ERROR ("Cannot create FS instance");
-		rafs2_options_fini (&opt);
+		rafs2_free (s);
 		return 1;
 	}
 
-	r_fs_view (opt.fs, R_FS_VIEW_NORMAL);
-	opt.fs->iob.io = opt.io;
-	opt.fs->iob.read_at = (void *)r_io_read_at;
-	opt.fs->iob.write_at = (void *)r_io_write_at;
+	r_fs_view (s->fs, R_FS_VIEW_NORMAL);
+	s->fs->iob.io = s->io;
+	s->fs->iob.read_at = (void *)r_io_read_at;
+	s->fs->iob.write_at = (void *)r_io_write_at;
 
-	RFSRoot *root = r_fs_mount (opt.fs, opt.fstype, opt.mountpoint, opt.offset);
+	RFSRoot *root = r_fs_mount (s->fs, s->opt.fstype, s->opt.mountpoint, s->opt.offset);
 	if (!root) {
-		R_LOG_ERROR ("Cannot mount %s filesystem at offset 0x%" PFMT64x, opt.fstype, opt.offset);
-		rafs2_options_fini (&opt);
+		R_LOG_ERROR ("Cannot mount %s filesystem at offset 0x%" PFMT64x, s->opt.fstype, s->opt.offset);
+		rafs2_free (s);
 		return 1;
 	}
-
-	int ret = 0;
 
 	if (show_details) {
-		ret = rafs2_details (&opt);
+		ret = rafs2_details (s);
 	} else if (list_path) {
-		ret = rafs2_list (&opt, list_path);
+		ret = rafs2_list (s, list_path);
 	} else if (cat_path) {
-		ret = rafs2_cat (&opt, cat_path);
+		ret = rafs2_cat (s, cat_path);
 	} else if (extract_path) {
-		ret = rafs2_extract (&opt, extract_path);
-	} else if (opt.interactive) {
-		ret = rafs2_shell (&opt);
+		ret = rafs2_extract (s, extract_path);
+	} else if (s->opt.interactive) {
+		ret = rafs2_shell (s);
 	} else {
 		R_LOG_ERROR ("No action specified (use -l, -c, -x, -n, or -i)");
 		show_usage ();
 		ret = 1;
 	}
 
-	rafs2_options_fini (&opt);
+	rafs2_free (s);
 	return ret;
 }
