@@ -208,6 +208,16 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 	return ret;
 }
 
+static bool trace_reg_write(REsil *esil, const char *name, ut64 val) {
+	// ignore
+	return true;
+}
+
+static bool trace_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	// ignore
+	return true;
+}
+
 static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	bool ret = false;
 	// eprintf ("[ESIL] REG WRITE %s 0x%08"PFMT64x"\n", name, *val);
@@ -357,6 +367,8 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	esil->cb.hook_reg_write = trace_hook_reg_write;
 	esil->cb.hook_mem_read = trace_hook_mem_read;
 	esil->cb.hook_mem_write = trace_hook_mem_write;
+	esil->cb.reg_write = trace_reg_write;
+	esil->cb.mem_write = trace_mem_write;
 	/* evaluate esil expression */
 	const int esil_verbose = esil->verbose;
 	esil->verbose = 0; // disable verbose logs when tracing
