@@ -735,28 +735,7 @@ static void rasm_load_plugins(RAsmState *as) {
 	// r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ARCH, "architecture plugins", &__lib_arch_cb, NULL, as);
-
-	char *path = r_sys_getenv (R_LIB_ENV);
-	if (R_STR_ISNOTEMPTY (path)) {
-		r_lib_opendir (as->l, path);
-	}
-
-	// load plugins from the home directory
-	char *homeplugindir = r_xdg_datadir ("plugins");
-	r_lib_opendir (as->l, homeplugindir);
-	free (homeplugindir);
-
-	// load plugins from the system directory
-	char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-	char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-	char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-	r_lib_opendir (as->l, plugindir);
-	r_lib_opendir (as->l, extrasdir);
-	r_lib_opendir (as->l, bindingsdir);
-	free (plugindir);
-	free (extrasdir);
-	free (bindingsdir);
-	free (path);
+	r_lib_load_default_paths (as->l, R_LIB_LOAD_DEFAULT);
 }
 
 static char *io_slurp(const char *file, size_t *len) {
