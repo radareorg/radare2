@@ -39,37 +39,17 @@ static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 
 static void __load_plugins(REggState *es) {
 	r_lib_add_handler (es->l, R_LIB_TYPE_EGG, "egg plugins", &__lib_egg_cb, NULL, es);
-
-	char *path = r_sys_getenv (R_LIB_ENV);
-	if (!R_STR_ISEMPTY (path)) {
-		r_lib_opendir (es->l, path);
-	}
-
-	// load plugins from the home directory
-	char *homeplugindir = r_xdg_datadir ("plugins");
-	r_lib_opendir (es->l, homeplugindir);
-	free (homeplugindir);
-
-	// load plugins from the system directory
-	char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-	char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-	char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-	r_lib_opendir (es->l, plugindir);
-	r_lib_opendir (es->l, extrasdir);
-	r_lib_opendir (es->l, bindingsdir);
-	free (plugindir);
-	free (extrasdir);
-	free (bindingsdir);
-
-	free (path);
+	r_lib_load_default_paths (es->l, R_LIB_LOAD_DEFAULT);
 }
 
-static REggState *__es_new(bool load_plugins) {
+static REggState *__es_new(void) {
 	REggState *es = R_NEW0 (REggState);
 	es->l = r_lib_new (NULL, NULL);
 	es->e = r_egg_new ();
 	es->a = r_anal_new ();
 	r_anal_bind (es->a, &es->e->rasm->analb);
+
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
 		__load_plugins (es);
 	}
@@ -245,9 +225,8 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	if (argc < 2) {
 		return usage (1);
 	}
-	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 
-	REggState *es = __es_new (load_plugins);
+	REggState *es = __es_new ();
 
 	RGetopt opt;
 	r_getopt_init (&opt, argc, argv, "a:b:B:c:C:d:D:e:E:f:FhH:i:I:k:Ln:N:o:Op:P:q:rsS:vw:xX:z");

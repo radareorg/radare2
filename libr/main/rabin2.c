@@ -628,11 +628,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set_i (core.config, "scr.color", (int)color_val);
 	}
 
-	if (! (tmp = r_sys_getenv ("R2_NOPLUGINS"))) {
-		char *homeplugindir = r_xdg_datadir ("plugins");
-		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
 		RLib *l = r_lib_new (NULL, NULL);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
@@ -640,23 +637,9 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
 			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
-		/* load plugins everywhere */
-		char *path = r_sys_getenv (R_LIB_ENV);
-		if (R_STR_ISNOTEMPTY (path)) {
-			r_lib_opendir (l, path);
-		}
-		r_lib_opendir (l, homeplugindir);
-		r_lib_opendir (l, plugindir);
-		r_lib_opendir (l, extrasdir);
-		r_lib_opendir (l, bindingsdir);
-		free (homeplugindir);
-		free (plugindir);
-		free (extrasdir);
-		free (bindingsdir);
-		free (path);
+		r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
 		r_lib_free (l);
 	}
-	free (tmp);
 #if 0
 	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
 		Sdb *config_sdb = sdb_new (NULL, tmp, 0);
