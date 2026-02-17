@@ -58,6 +58,7 @@ static REggState *__es_new(void) {
 
 static void __es_free(REggState *es) {
 	if (es) {
+		r_anal_free (es->a);
 		r_egg_free (es->e);
 		r_lib_free (es->l);
 		free (es);
