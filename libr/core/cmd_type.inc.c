@@ -1188,15 +1188,20 @@ static RList *collect_func_xrefs(RCore *core, const char *func_name) {
 	if (!xrefs) {
 		return NULL;
 	}
+	Sdb *TDB = core->anal->sdb_types;
 	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		if (!strcmp (fcn->name, func_name)) {
+		char *guessed = r_type_func_guess (TDB, fcn->name);
+		bool match = guessed && !strcmp (guessed, func_name);
+		free (guessed);
+		if (match) {
 			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, fcn->addr);
 			if (refs) {
 				RAnalRef *ref;
 				R_VEC_FOREACH (refs, ref) {
-					if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
+					RAnalRefType rt = ref->type & R_ANAL_REF_TYPE_MASK;
+					if (rt == R_ANAL_REF_TYPE_CALL || rt == R_ANAL_REF_TYPE_CODE) {
 						RAnalFunction *caller = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 						TypeXref *xref = R_NEW0 (TypeXref);
 						if (xref) {
@@ -1204,13 +1209,12 @@ static RList *collect_func_xrefs(RCore *core, const char *func_name) {
 							xref->fcn_name = strdup (caller ? caller->name : "unknown");
 							xref->field_name = NULL;
 							xref->access_type = R_PERM_X;
+							r_list_append (xrefs, xref);
 						}
-						r_list_append (xrefs, xref);
 					}
 				}
 				RVecAnalRef_free (refs);
 			}
-			break;
 		}
 	}
 	return xrefs;
