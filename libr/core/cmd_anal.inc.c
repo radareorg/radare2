@@ -14439,8 +14439,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 				(void)r_core_search_preludes (core, false); // "aap"
 				r_core_task_yield (&core->tasks);
 			}
-			logline (core, 96, "Enable anal.types.constraint for experimental type propagation");
-			r_config_set_b (core->config, "anal.types.constraint", true);
+			logline (core, 96, "Enable types.constraint for experimental type propagation");
+			r_config_set_b (core->config, "types.constraint", true);
 			// Plugin post-analysis hooks (for advanced analysis like taint, symbolic)
 			logline (core, 97, "Running plugin post-analysis hooks");
 			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);

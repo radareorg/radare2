@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
 #include <r_types_base.h>
@@ -3876,11 +3876,11 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.nonull", 0, &cb_anal_nonull, "do not analyze regions of N null bytes");
 	SETB ("anal.esil", "false", "use the new ESIL code analysis");
 	SETB ("anal.strings", "false", "flag strings when performing analysis (see af,aar, e bin.strings)");
-	SETS ("anal.types.spec", "gcc", "set profile for specifying format chars used in type analysis");
-	SETB ("anal.types.verbose", "false", "verbose output from type analysis");
-	SETB ("anal.types.constraint", "false", "enable constraint types analysis for variables");
-	SETB ("anal.types.rollback", "false", "enable state rollback for type propagation recovery");
-	SETB ("anal.types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
+	SETS ("types.spec", "gcc", "set profile for specifying format chars used in type analysis");
+	SETB ("types.verbose", "false", "verbose output from type analysis");
+	SETB ("types.constraint", "false", "enable constraint types analysis for variables");
+	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
+	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
 	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");
@@ -3925,7 +3925,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
 	SETCB ("anal.bb.maxsize", "512K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
-	SETCB ("anal.types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");
+	SETCB ("types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");
 	SETS ("anal.plugins.fcn", "", "ordered comma-separated list of analysis plugins for analyze_fcn callbacks");
 	SETS ("anal.plugins.vars", "", "ordered comma-separated list of analysis plugins for recover_vars callbacks");
 	SETS ("anal.plugins.datarefs", "", "ordered comma-separated list of analysis plugins for get_data_refs callbacks");

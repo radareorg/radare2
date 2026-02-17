@@ -189,7 +189,7 @@ e io.cache=false
 e io.cache.read=false
 wc-*
 aa
--e anal.types.plugin=tcc
+-e types.plugin=tcc
 s sym.Java_com_app_ndh_NDHActivity_print
 to bins/headers/jni.h
 td struct NULL { }
@@ -1496,7 +1496,7 @@ RUN
 NAME=constrained type
 FILE=bins/elf/constr_type
 CMDS=<<EOF
-e anal.types.constraint = true
+e types.constraint = true
 e asm.var.summary=0
 aaa
 s sym.single_cond
@@ -1973,7 +1973,7 @@ NAME=a:tp with rollback enabled
 FILE=bins/elf/double_ptr
 CMDS=<<EOF
 aa
-e anal.types.rollback=true
+e types.rollback=true
 s main
 a:tp
 afv~ptr
@@ -1986,7 +1986,7 @@ RUN
 NAME=a:tp config rollback default off
 FILE=bins/elf/double_ptr
 CMDS=<<EOF
-e anal.types.rollback
+e types.rollback
 EOF
 EXPECT=<<EOF
 false
@@ -1996,8 +1996,8 @@ RUN
 NAME=a:tp config rollback can be enabled
 FILE=bins/elf/double_ptr
 CMDS=<<EOF
-e anal.types.rollback=true
-e anal.types.rollback
+e types.rollback=true
+e types.rollback
 EOF
 EXPECT=<<EOF
 true
@@ -2008,7 +2008,7 @@ NAME=a:tp preserves variable after rollback
 FILE=bins/elf/double_ptr
 CMDS=<<EOF
 aa
-e anal.types.rollback=true
+e types.rollback=true
 s main
 a:tp
 afv~ptr

@@ -880,7 +880,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	TypeTrace *tt = &tps->tt;
 	Sdb *TDB = anal->sdb_types;
 	const int idx = etrace_index (tt) - 1;
-	const bool verbose = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "anal.types.verbose"): false;
+	const bool verbose = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "types.verbose"): false;
 	bool stack_rev = false, in_stack = false, format = false;
 	R_LOG_DEBUG ("type_match %s %" PFMT64x " %" PFMT64x " %s %d", fcn_name, addr, baddr, cc, prev_idx);
 
@@ -1340,11 +1340,11 @@ static TPState *tps_init(RAnal *anal) {
 	// Config hold requires RConfig which we get through coreb.core
 	void *core = anal->coreb.core;
 	if (core && anal->coreb.cfgGet && anal->coreb.cfgGetB) {
-		const char *spec = anal->coreb.cfgGet (core, "anal.types.spec");
+		const char *spec = anal->coreb.cfgGet (core, "types.spec");
 		tps->cfg_spec = strdup (spec? spec: "gcc");
 		tps->cfg_breakoninvalid = anal->coreb.cfgGetB (core, "esil.breakoninvalid");
-		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "anal.types.constraint");
-		tps->cfg_rollback = anal->coreb.cfgGetB (core, "anal.types.rollback");
+		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "types.constraint");
+		tps->cfg_rollback = anal->coreb.cfgGetB (core, "types.rollback");
 		if (anal->coreb.cfgGetI && anal->coreb.cmd) {
 			tps->old_follow = anal->coreb.cfgGetI (core, "dbg.follow");
 			anal->coreb.cmd (core, "e dbg.follow=0");
