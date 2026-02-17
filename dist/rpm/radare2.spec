@@ -4,7 +4,7 @@
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        6.0.8
+Version:        6.1.0
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
@@ -12,10 +12,9 @@ License:        LGPLv3
 URL:            https://www.radare.org/
 Source0:        https://github.com/%{gituser}/%{gitname}/archive/refs/tags/%{version}.tar.gz
 
-
 # BuildRequires:  file-devel
 # BuildRequires:  libzip-devel
-#BuildRequires:  capstone-devel >= 3.0.4
+# BuildRequires:  capstone-devel >= 3.0.4
 
 #Assume more versions installed in paraller side-by-side
 %{!?_pkgdocdir: %global _pkgdocdir %{_docdir}/%{name}-%{version}}
