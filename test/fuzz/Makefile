@@ -87,6 +87,7 @@ build-custom:
 			$(BUILD_DIR)/libr/util/libr_util.a \
 			$(BUILD_DIR)/libr/cons/libr_cons.a \
 			$(BUILD_DIR)/libr/socket/libr_socket.a \
+			$(BUILD_DIR)/libr/mutal/libr_muta.a \
 			$(BUILD_DIR)/libr/config/libr_config.a \
 			$(BUILD_DIR)/libr/egg/libr_egg.a \
 			$(BUILD_DIR)/libr/esil/libr_esil.a \
@@ -100,8 +101,6 @@ build-custom:
 			$(BUILD_DIR)/libr/search/libr_search.a \
 			$(BUILD_DIR)/libr/syscall/libr_syscall.a \
 			$(BUILD_DIR)/libr/db/libr_db.a \
-			$(BUILD_DIR)/libr/hash/libr_hash.a \
-			$(BUILD_DIR)/libr/crypto/libr_crypto.a \
 			$(BUILD_DIR)/libr/arch/libr_arch.a \
 			$(BUILD_DIR)/subprojects/sdb/liblibsdb_static.a \
 			$(BUILD_DIR)/shlr/zip/libr2zip.a \
