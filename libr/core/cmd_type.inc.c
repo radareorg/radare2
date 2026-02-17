@@ -964,7 +964,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_type = "";
@@ -1064,7 +1064,7 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbList *l = sdb_foreach_list (TDB, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1133,7 +1133,7 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 	SdbList *l = sdb_foreach_list_filter (TDB, stdifbasictype, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1226,7 +1226,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbList *l = sdb_foreach_list_filter (TDB, stdiffunc, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_type = "";
@@ -1280,12 +1280,11 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			r_list_free (func_xrefs);
 		}
 
-		r_strbuf_appendf (sb, "%s0x%08x%s %s%s%s %s%s%s (", color_addr, 0, color_reset,
-			color_type, ret, color_reset, color_name, name, color_reset);
-
 		const char *ret_reg = r_anal_cc_ret (core->anal, cc);
-		r_strbuf_appendf (sb, ") %s// cc:%s ret:%s%s\n", color_comment, cc ? cc : "default",
-			ret_reg ? ret_reg : "?", color_reset);
+		r_strbuf_appendf (sb, "%s0x%08x%s %s%s%s %s%s%s ( %s// cc:%s ret:%s%s\n",
+			color_addr, 0, color_reset,
+			color_type, ret, color_reset, color_name, name, color_reset,
+			color_comment, cc ? cc : "default", ret_reg ? ret_reg : "?", color_reset);
 
 		int i;
 		int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
@@ -1310,7 +1309,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 
 			ut32 type_size;
 			if (!strcmp (type, "...")) {
-				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s// %s%s\n",
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
 					color_type, type, color_reset,
 					color_comment, "varargs", color_reset);
@@ -1325,7 +1324,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 						type_size = core->anal->config->bits / 8;
 					}
 				}
-				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s%s%s %s// %s%s\n",
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s%s%s%s // %s%s\n",
 					color_addr, current_offset, color_reset,
 					color_type, type, color_reset,
 					color_name, argname ? argname : "", color_reset,
@@ -1341,7 +1340,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 				color_addr, current_offset, color_reset, color_comment, err_reg, color_reset);
 		}
 
-		r_strbuf_appendf (sb, "%s0x%08x%s };\n", color_addr, current_offset, color_reset);
+		r_strbuf_appendf (sb, "%s0x%08x%s );\n", color_addr, current_offset, color_reset);
 
 		if (match) {
 			break;
