@@ -34,7 +34,7 @@ static RCoreHelpMessage help_msg_t = {
 
 static RCoreHelpMessage help_msg_tv = {
 	"Usage: tv[...]", " [type]", "View types with offsets and xrefs",
-	"tv", "", "list all types with offsets (structs, unions, enums, types)",
+	"tv", "", "list all types with offsets (structs, unions, enums, functions)",
 	"tv", " [type]", "show specific type with offsets and xrefs",
 	NULL
 };
@@ -74,6 +74,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"tfe", " <name>", "edit function signature with cfg.editor",
 	"tfj", "", "list all function definitions in JSON",
 	"tfj", " <name>", "show function signature in JSON",
+	"tfv", " [name]", "show function type with calling convention and argument offsets",
 	NULL
 };
 
@@ -963,6 +964,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
 
 	const char *color_addr = "";
 	const char *color_type = "";
@@ -992,9 +994,11 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 				continue;
 			}
 		}
-		RList *type_xrefs = collect_type_xrefs (core, name);
-		append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
-		r_list_free (type_xrefs);
+		if (show_xrefs) {
+			RList *type_xrefs = collect_type_xrefs (core, name);
+			append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
+			r_list_free (type_xrefs);
+		}
 		r_strbuf_appendf (sb, "%s0x%08x%s %s %s%s%s {\n", color_addr, 0, color_reset, sdbkv_value (kv), color_name, name, color_reset);
 		char *p, *var = r_str_newf ("%s.%s", sdbkv_value (kv), name);
 		ut32 current_offset = 0;
@@ -1025,9 +1029,11 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 							r_strbuf_appendf (sb, "[%d]", arrnum);
 						}
 					}
-					RList *field_xrefs = collect_field_xrefs (core, name, p, current_offset);
-					append_xrefs_to_strbuf (core, sb, field_xrefs, use_color);
-					r_list_free (field_xrefs);
+					if (show_xrefs) {
+						RList *field_xrefs = collect_field_xrefs (core, name, p, current_offset);
+						append_xrefs_to_strbuf (core, sb, field_xrefs, use_color);
+						r_list_free (field_xrefs);
+					}
 					r_strbuf_append (sb, ";\n");
 					if (!is_union) {
 						current_offset += size;
@@ -1058,6 +1064,7 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbList *l = sdb_foreach_list (TDB, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1084,9 +1091,11 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 						continue;
 					}
 				}
-				RList *type_xrefs = collect_type_xrefs (core, name);
-				append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
-				r_list_free (type_xrefs);
+				if (show_xrefs) {
+					RList *type_xrefs = collect_type_xrefs (core, name);
+					append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
+					r_list_free (type_xrefs);
+				}
 				r_strbuf_appendf (sb, "%s0x%08x%s enum %s%s%s {\n", color_addr, 0, color_reset, color_name, name, color_reset);
 				RList *list = r_type_get_enum (TDB, name);
 				if (list && !r_list_empty (list)) {
@@ -1124,6 +1133,7 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 	SdbList *l = sdb_foreach_list_filter (TDB, stdifbasictype, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1152,9 +1162,11 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 		const char *size_str = sdb_const_get (TDB, size_key, NULL);
 		free (size_key);
 		ut32 size = size_str ? (ut32)(atoi (size_str) / 8) : 0;
-		RList *type_xrefs = collect_type_xrefs (core, name);
-		append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
-		r_list_free (type_xrefs);
+		if (show_xrefs) {
+			RList *type_xrefs = collect_type_xrefs (core, name);
+			append_xrefs_to_strbuf (core, sb, type_xrefs, use_color);
+			r_list_free (type_xrefs);
+		}
 		r_strbuf_appendf (sb, "%s0x%08x%s type %s%s%s; %s// size=%d%s\n",
 			color_addr, 0, color_reset, color_name, name, color_reset,
 			color_comment, size, color_reset);
@@ -1163,6 +1175,175 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 			break;
 		}
 	}
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (core->cons, s);
+	free (s);
+	ls_free (l);
+}
+
+static bool stdiffunc(void *p, const char *k, const char *v);
+
+static RList *collect_func_xrefs(RCore *core, const char *func_name) {
+	RList *xrefs = r_list_newf (type_xref_free);
+	if (!xrefs) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (core->anal->fcns, iter, fcn) {
+		if (!strcmp (fcn->name, func_name)) {
+			RVecAnalRef *refs = r_anal_xrefs_get (core->anal, fcn->addr);
+			if (refs) {
+				RAnalRef *ref;
+				R_VEC_FOREACH (refs, ref) {
+					if (ref->type == R_ANAL_REF_TYPE_CALL || ref->type == R_ANAL_REF_TYPE_CODE) {
+						RAnalFunction *caller = r_anal_get_fcn_in (core->anal, ref->addr, 0);
+						TypeXref *xref = R_NEW0 (TypeXref);
+						if (xref) {
+							xref->addr = ref->addr;
+							xref->fcn_name = strdup (caller ? caller->name : "unknown");
+							xref->field_name = NULL;
+							xref->access_type = R_PERM_X;
+						}
+						r_list_append (xrefs, xref);
+					}
+				}
+				RVecAnalRef_free (refs);
+			}
+			break;
+		}
+	}
+	return xrefs;
+}
+
+static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
+	SdbKv *kv;
+	SdbListIter *iter;
+	SdbList *l = sdb_foreach_list_filter (TDB, stdiffunc, true);
+	bool match = false;
+	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+	bool show_xrefs = r_config_get_b (core->config, "asm.xrefs");
+
+	const char *color_addr = "";
+	const char *color_type = "";
+	const char *color_name = "";
+	const char *color_comment = "";
+	const char *color_reset = "";
+	if (use_color) {
+		RConsPrintablePalette *pal = &core->cons->context->pal;
+		color_addr = pal->addr ? pal->addr : Color_GREEN;
+		color_type = pal->var_type ? pal->var_type : Color_CYAN;
+		color_name = pal->var_name ? pal->var_name : Color_YELLOW;
+		color_comment = pal->comment ? pal->comment : Color_CYAN;
+		color_reset = Color_RESET;
+	}
+
+	RStrBuf *sb = r_strbuf_new ("");
+	r_strf_buffer (256);
+
+	ls_foreach (l, iter, kv) {
+		const char *name = sdbkv_key (kv);
+		if (arg && *arg) {
+			if (!strcmp (arg, name)) {
+				match = true;
+			} else {
+				continue;
+			}
+		}
+
+		int args = sdb_num_get (TDB, r_strf ("func.%s.args", name), 0);
+		const char *ret = sdb_const_get (TDB, r_strf ("func.%s.ret", name), 0);
+		const char *cc = sdb_const_get (TDB, r_strf ("func.%s.cc", name), 0);
+		if (!ret) {
+			ret = "void";
+		}
+		if (!cc) {
+			cc = r_anal_cc_default (core->anal);
+		}
+
+		if (show_xrefs) {
+			RList *func_xrefs = collect_func_xrefs (core, name);
+			if (func_xrefs && !r_list_empty (func_xrefs)) {
+				RListIter *xiter;
+				TypeXref *xref;
+				r_list_foreach (func_xrefs, xiter, xref) {
+					r_strbuf_appendf (sb, "             %s; XREF[x] %s0x%08"PFMT64x" %s%s%s\n",
+						color_comment, color_addr, xref->addr,
+						use_color ? (core->cons->context->pal.fname ? core->cons->context->pal.fname : Color_RED) : "",
+						xref->fcn_name, color_reset);
+				}
+			}
+			r_list_free (func_xrefs);
+		}
+
+		r_strbuf_appendf (sb, "%s0x%08x%s %s%s%s %s%s%s (", color_addr, 0, color_reset,
+			color_type, ret, color_reset, color_name, name, color_reset);
+
+		const char *ret_reg = r_anal_cc_ret (core->anal, cc);
+		r_strbuf_appendf (sb, ") %s// cc:%s ret:%s%s\n", color_comment, cc ? cc : "default",
+			ret_reg ? ret_reg : "?", color_reset);
+
+		int i;
+		int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
+		ut32 current_offset = 0;
+		for (i = 0; i < args; i++) {
+			char *type = sdb_get (TDB, r_strf ("func.%s.arg.%d", name, i), 0);
+			if (!type) {
+				continue;
+			}
+			char *argname = strchr (type, ',');
+			if (argname) {
+				*argname++ = 0;
+			}
+
+			const char *arg_loc = NULL;
+			if (cc && i < max_cc_args) {
+				arg_loc = r_anal_cc_arg (core->anal, cc, i, args);
+			}
+			if (!arg_loc) {
+				arg_loc = "stack";
+			}
+
+			ut32 type_size;
+			if (!strcmp (type, "...")) {
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s// %s%s\n",
+					color_addr, current_offset, color_reset,
+					color_type, type, color_reset,
+					color_comment, "varargs", color_reset);
+				type_size = 0;
+			} else {
+				if (strchr (type, '*')) {
+					type_size = core->anal->config->bits / 8;
+				} else {
+					ut64 type_bits = r_type_get_bitsize (TDB, type);
+					type_size = type_bits / 8;
+					if (type_size == 0) {
+						type_size = core->anal->config->bits / 8;
+					}
+				}
+				r_strbuf_appendf (sb, "%s0x%08x%s   %s%s%s %s%s%s %s// %s%s\n",
+					color_addr, current_offset, color_reset,
+					color_type, type, color_reset,
+					color_name, argname ? argname : "", color_reset,
+					color_comment, arg_loc, color_reset);
+			}
+			current_offset += type_size;
+			free (type);
+		}
+
+		const char *err_reg = cc ? r_anal_cc_error (core->anal, cc) : NULL;
+		if (err_reg) {
+			r_strbuf_appendf (sb, "%s0x%08x%s   %s// error: %s%s\n",
+				color_addr, current_offset, color_reset, color_comment, err_reg, color_reset);
+		}
+
+		r_strbuf_appendf (sb, "%s0x%08x%s };\n", color_addr, current_offset, color_reset);
+
+		if (match) {
+			break;
+		}
+	}
+
 	char *s = r_strbuf_drain (sb);
 	r_cons_print (core->cons, s);
 	free (s);
@@ -1182,6 +1363,8 @@ static void print_type_view(RCore *core, const char *arg) {
 				print_enum_with_offsets (core, TDB, arg);
 			} else if (!strcmp (type_kind, "type")) {
 				print_basic_type_with_offsets (core, TDB, arg);
+			} else if (!strcmp (type_kind, "func")) {
+				print_func_with_offsets (core, TDB, arg);
 			} else if (!strcmp (type_kind, "typedef")) {
 				char *typedef_key = r_str_newf ("typedef.%s", arg);
 				const char *real_type = sdb_const_get (TDB, typedef_key, NULL);
@@ -1200,6 +1383,7 @@ static void print_type_view(RCore *core, const char *arg) {
 		print_struct_union_with_offsets (core, TDB, stdifunion, NULL, true);
 		print_enum_with_offsets (core, TDB, NULL);
 		print_basic_type_with_offsets (core, TDB, NULL);
+		print_func_with_offsets (core, TDB, NULL);
 	}
 }
 
@@ -1296,15 +1480,38 @@ typedef struct {
 } TypePrintCtx;
 
 static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
-	Sdb *tdb = ctx->core->anal->sdb_types;
+	RCore *core = ctx->core;
+	Sdb *tdb = core->anal->sdb_types;
 	PJ *pj = ctx->pj;
 	r_strf_buffer (256);
 	const char *name = r_str_trim_head_ro (input);
 	int i, args = sdb_num_get (tdb, r_strf ("func.%s.args", name), 0);
+	const char *ret = sdb_const_get (tdb, r_strf ("func.%s.ret", name), 0);
+	const char *cc = sdb_const_get (tdb, r_strf ("func.%s.cc", name), 0);
+	if (!ret) {
+		ret = "void";
+	}
+	if (!cc) {
+		cc = r_anal_cc_default (core->anal);
+	}
+	int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
+	const char *ret_reg = r_anal_cc_ret (core->anal, cc);
+	const char *err_reg = cc ? r_anal_cc_error (core->anal, cc) : NULL;
+
 	pj_o (pj);
 	pj_ks (pj, "name", name);
-	pj_ks (pj, "ret", r_str_get_fail (sdb_const_get (tdb, r_strf ("func.%s.ret", name), 0), "void"));
+	pj_ks (pj, "ret", ret);
+	if (cc) {
+		pj_ks (pj, "cc", cc);
+	}
+	if (ret_reg) {
+		pj_ks (pj, "ret_reg", ret_reg);
+	}
+	if (err_reg) {
+		pj_ks (pj, "err_reg", err_reg);
+	}
 	pj_ka (pj, "args");
+	ut32 current_offset = 0;
 	for (i = 0; i < args; i++) {
 		char *type = sdb_get (tdb, r_strf ("func.%s.arg.%d", name, i), 0);
 		if (type) {
@@ -1312,16 +1519,40 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 			if (argname) {
 				*argname++ = 0;
 			}
+			const char *arg_loc = NULL;
+			if (cc && i < max_cc_args) {
+				arg_loc = r_anal_cc_arg (core->anal, cc, i, args);
+			}
+			if (!arg_loc) {
+				arg_loc = "stack";
+			}
+			ut32 type_size = 0;
+			if (strcmp (type, "...")) {
+				if (strchr (type, '*')) {
+					type_size = core->anal->config->bits / 8;
+				} else {
+					ut64 type_bits = r_type_get_bitsize (tdb, type);
+					type_size = type_bits / 8;
+					if (type_size == 0) {
+						type_size = core->anal->config->bits / 8;
+					}
+				}
+			}
 			pj_o (pj);
 			pj_ks (pj, "type", type);
 			if (strcmp (type, "...")) {
-				pj_ks (pj, "name", argname? argname: "(null)");
+				pj_ks (pj, "name", argname ? argname : "(null)");
+				pj_kn (pj, "size", type_size);
 			}
+			pj_kn (pj, "offset", current_offset);
+			pj_ks (pj, "loc", arg_loc);
 			pj_end (pj);
+			current_offset += type_size;
 			free (type);
 		}
 	}
 	pj_end (pj);
+	pj_kn (pj, "size", current_offset);
 	pj_end (pj);
 }
 
@@ -2663,6 +2894,15 @@ static int cmd_type(void *data, const char *input) {
 				r_cons_newline (core->cons);
 			} else {
 				print_keys (core, stdiffunc, printfunc_json_cb, true);
+			}
+			break;
+		case 'v': // "tfv"
+			if (input[2] == ' ') {
+				print_func_with_offsets (core, TDB, r_str_trim_head_ro (input + 3));
+			} else if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_tf, "tfv");
+			} else {
+				print_func_with_offsets (core, TDB, NULL);
 			}
 			break;
 		case ' ': {
