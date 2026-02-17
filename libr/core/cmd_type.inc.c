@@ -965,7 +965,7 @@ static void print_struct_union_with_offsets(RCore *core, Sdb *TDB, SdbForeachCal
 	SdbList *l = sdb_foreach_list_filter (TDB, filter, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_type = "";
@@ -1065,7 +1065,7 @@ static void print_enum_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbList *l = sdb_foreach_list (TDB, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1134,7 +1134,7 @@ static void print_basic_type_with_offsets(RCore *core, Sdb *TDB, const char *arg
 	SdbList *l = sdb_foreach_list_filter (TDB, stdifbasictype, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_name = "";
@@ -1227,7 +1227,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 	SdbList *l = sdb_foreach_list_filter (TDB, stdiffunc, true);
 	bool match = false;
 	bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	bool show_xrefs = r_config_get_b (core->config, "anal.types.xrefs");
+	bool show_xrefs = r_config_get_b (core->config, "types.xrefs");
 
 	const char *color_addr = "";
 	const char *color_type = "";
