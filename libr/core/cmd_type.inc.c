@@ -69,6 +69,7 @@ static RCoreHelpMessage help_msg_tf = {
 	"Usage: tf[...]", "", "",
 	"tf", "", "list all function definitions loaded",
 	"tf", " <name>", "show function signature",
+	"tf-", "<name>", "delete function type (supports glob with *)",
 	"tfc", " [name]", "list all/given function signatures in C output format with newlines",
 	"tfcj", " <name>", "same as above but in JSON",
 	"tfe", " <name>", "edit function signature with cfg.editor",
@@ -2867,6 +2868,17 @@ static int cmd_type(void *data, const char *input) {
 		case 0: // "tf"
 			print_keys (core, stdiffunc, printkey_cb, false);
 			break;
+		case '-': { // "tf-"
+			const char *arg = r_str_trim_head_ro (input + 2);
+			if (R_STR_ISEMPTY (arg)) {
+				r_core_cmd_help_match (core, help_msg_tf, "tf-");
+			} else if (strchr (arg, '*') || strchr (arg, ' ')) {
+				types_remove_glob (core, stdiffunc, arg);
+			} else {
+				r_anal_remove_parsed_type (core->anal, arg);
+			}
+			break;
+		}
 		case 'c': // "tfc"
 			if (input[2] == ' ') {
 				printFunctionTypeC (core, input + 3);
