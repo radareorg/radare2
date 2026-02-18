@@ -1,4 +1,4 @@
-project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.63', version : '6.1.0')
+project('radare2', 'c', license : 'LGPL3', meson_version : '>=0.63', version : '6.1.1')
 
 # Global Arguments First
 
