@@ -435,7 +435,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		} else if ((sep = strstr (zip_filename, "::")) && sep[2]) {
 			*sep++ = 0;
 			*sep++ = 0;
-			filename_in_zipfile = r_io_zip_get_by_file_idx (zip_filename, sep, ZIP_CREATE, mode, rw);
+			ut32 idx_perm = (rw & R_PERM_W)? ZIP_CREATE: ZIP_RDONLY;
+			filename_in_zipfile = r_io_zip_get_by_file_idx (zip_filename, sep, idx_perm, mode, rw);
 		} else {
 			filename_in_zipfile = strdup (zip_filename);
 			free (zip_filename_alloc);
@@ -464,7 +465,8 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 			r_list_free (files);
 		}
 	} else {
-		RIOZipFileObj *zfo = alloc_zipfileobj (zip_filename, filename_in_zipfile, ZIP_CREATE, mode, rw);
+		ut32 perm = (rw & R_PERM_W)? ZIP_CREATE: ZIP_RDONLY;
+		RIOZipFileObj *zfo = alloc_zipfileobj (zip_filename, filename_in_zipfile, perm, mode, rw);
 		if (zfo) {
 			if (zfo->entry == -1) {
 				R_LOG_WARN ("File did not exist, creating a new one");
