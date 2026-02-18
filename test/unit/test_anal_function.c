@@ -1,5 +1,6 @@
 #include <r_anal.h>
 #include "minunit.h"
+#include <string.h>
 
 #include "test_anal_block_invars.inl"
 
@@ -124,9 +125,49 @@ bool test_r_anal_function_labels(void) {
 	mu_end;
 }
 
+bool test_r_anal_str_to_fcn_returns_status(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *f = r_anal_create_function (anal, "sigtest", 0x1000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for signature test");
+
+	bool ok = r_anal_str_to_fcn (anal, f, "int sigtest (int arg0);");
+	mu_assert_true (ok, "valid signature must return success");
+
+	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
+	mu_assert_notnull (typed_name, "valid signature must create a type entry");
+
+	const char *ret = r_type_func_ret (anal->sdb_types, typed_name);
+	int argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	char *arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
+	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
+		"valid signature should set integer return type");
+	mu_assert_eq (argc, 1, "valid signature should set one argument");
+	mu_assert_true (arg0 && (!strcmp (arg0, "int") || !strcmp (arg0, "int32_t")),
+		"valid signature should keep first argument type");
+	free (arg0);
+
+	ok = r_anal_str_to_fcn (anal, f, "int sigtest (");
+	mu_assert_false (ok, "invalid signature must return failure");
+
+	ret = r_type_func_ret (anal->sdb_types, typed_name);
+	argc = r_type_func_args_count (anal->sdb_types, typed_name);
+	arg0 = r_type_func_args_type (anal->sdb_types, typed_name, 0);
+	mu_assert_true (ret && (!strcmp (ret, "int") || !strcmp (ret, "int32_t")),
+		"invalid signature must not clobber existing return type");
+	mu_assert_eq (argc, 1, "invalid signature must not clobber existing argc");
+	mu_assert_true (arg0 && (!strcmp (arg0, "int") || !strcmp (arg0, "int32_t")),
+		"invalid signature must not clobber existing argument type");
+	free (arg0);
+	free (typed_name);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
+	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	return tests_passed != tests_run;
 }
 

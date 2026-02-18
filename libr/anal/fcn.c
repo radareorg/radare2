@@ -2383,18 +2383,21 @@ R_API char *r_anal_function_get_signature(RAnalFunction *function) {
 
 /* set function signature from string */
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
-	R_RETURN_VAL_IF_FAIL (a || f || sig, false);
+	R_RETURN_VAL_IF_FAIL (a && f && sig, false);
+	int ret = false;
 	char *error_msg = NULL;
-	const char *out = r_anal_cparse (a, sig, &error_msg);
+	char *out = r_anal_cparse (a, sig, &error_msg);
 	if (out) {
 		r_anal_save_parsed_type (a, out);
+		free (out);
+		ret = true;
 	}
 	if (error_msg) {
 		R_LOG_ERROR ("%s", error_msg);
 		free (error_msg);
 	}
 
-	return true;
+	return ret;
 }
 
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr) {
