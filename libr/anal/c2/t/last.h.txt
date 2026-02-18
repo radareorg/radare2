@@ -1,0 +1,17 @@
+function=func
+func.function.arg.0=int,a
+func.function.arg.1=int,b
+func.function.arg.2=int,c
+func.function.cc=cdecl
+func.function=a,b,c
+func.function.ret=int
+func.function.args=3
+fptr=func
+func.fptr.arg.0=int,a
+func.fptr.arg.1=void *,b
+func.fptr.arg.2=...,varg
+func.fptr.cc=cdecl
+func.fptr=a,b,varg
+func.fptr.ret=int
+func.fptr.args=3
+

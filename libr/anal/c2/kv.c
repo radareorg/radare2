@@ -1580,6 +1580,76 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	return true;
 }
 
+static int emit_func_signature(KVCParser *kvc, const char *fn, KVCToken fun_parm, bool is_static) {
+	RStrBuf *func_args_sb = r_strbuf_new ("");
+	int arg_idx = 0;
+	if (fun_parm.a < fun_parm.b) {
+		const char *pa = fun_parm.a;
+		const char *pb = fun_parm.b;
+		const char *argp = pa;
+		const char *comma = NULL;
+		do {
+			while (pa < pb && isspace ((unsigned char)*pa)) {
+				pa++;
+			}
+			comma = r_str_nchr (pa, ',', pb - pa);
+			pa = comma? comma: pb;
+			KVCToken arg_type = { argp, pa };
+			KVCToken arg_name = { argp, pa };
+			kvctoken_typename (&arg_type, &arg_name);
+			char *an = kvctoken_tostring (arg_name);
+			char *at = kvctoken_tostring (arg_type);
+			char *full = kvctoken_tostring ((KVCToken){ argp, pa });
+			r_str_trim (full);
+			if (!strcmp (full, "...")) {
+				free (at);
+				at = full;
+				free (an);
+				an = strdup ("varg");
+			} else if (!kvctoken_len (arg_type)) {
+				free (at);
+				at = full;
+				free (an);
+				an = r_str_newf ("arg%d", arg_idx);
+			} else {
+				free (full);
+			}
+			massage_type (&at);
+			if ((!an || !*an) && strcmp (at, "...") != 0) {
+				free (an);
+				an = r_str_newf ("arg%d", arg_idx);
+			}
+			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
+				arg_idx--;
+			} else {
+				r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
+				r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
+			}
+			free (an);
+			free (at);
+			arg_idx++;
+			pa++;
+			argp = pa;
+		} while (comma);
+	}
+	char *func_args = r_strbuf_drain (func_args_sb);
+	r_strbuf_appendf (kvc->sb, "func.%s.cc=cdecl\n", fn);
+	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
+	if (is_static) {
+		r_strbuf_appendf (kvc->sb, "func.%s.@.static=true\n", fn);
+	}
+	free (func_args);
+	return arg_idx;
+}
+
+static void emit_func_decl(KVCParser *kvc, const char *fn, const char *fr, KVCToken fun_parm, bool is_static) {
+	r_strbuf_appendf (kvc->sb, "%s=func\n", fn);
+	apply_attributes (kvc, "func", fn);
+	int arg_idx = emit_func_signature (kvc, fn, fun_parm, is_static);
+	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", fn, fr);
+	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
+}
+
 static bool parse_function(KVCParser *kvc) {
 	parse_attributes (kvc);
 	bool is_static = false;
@@ -1593,17 +1663,52 @@ static bool parse_function(KVCParser *kvc) {
 	KVCToken fun_name = { 0 };
 	KVCToken fun_rtyp = { 0 };
 	KVCToken fun_parm = { 0 };
+	const char *saved_pos = kvc->s.a;
 	fun_rtyp.a = consume_word (kvc);
 	if (!fun_rtyp.a) {
-		// no need to error here, there's nothing to parse
-		// kvc_error (kvc, "Cannot consume word for function");
 		return false;
 	}
 	fun_rtyp.b = kvc->s.a;
 	fun_name.a = fun_rtyp.a;
+	skip_spaces (kvc);
+	if (kvc_peek (kvc, 0) == '(' && kvc_peek (kvc, 1) == '*') {
+		kvc_skipn (kvc, 2);
+		skip_spaces (kvc);
+		KVCToken fp_name = { .a = consume_word (kvc) };
+		if (!fp_name.a) {
+			kvc->s.a = saved_pos;
+			return false;
+		}
+		fp_name.b = kvc->s.a;
+		skip_spaces (kvc);
+		if (kvc_peek (kvc, 0) != ')') {
+			kvc->s.a = saved_pos;
+			return false;
+		}
+		kvc_getch (kvc);
+		skip_spaces (kvc);
+		if (kvc_peek (kvc, 0) != '(') {
+			kvc->s.a = saved_pos;
+			return false;
+		}
+		kvc_getch (kvc);
+		fun_parm.a = kvc->s.a;
+		if (!skip_until (kvc, ')')) {
+			kvc->s.a = saved_pos;
+			return false;
+		}
+		fun_parm.b = kvc->s.a;
+		kvc_getch (kvc);
+		skip_ws (kvc);
+		char *fn = kvctoken_tostring (fp_name);
+		char *fr = kvctoken_tostring (fun_rtyp);
+		emit_func_decl (kvc, fn, fr, fun_parm, is_static);
+		free (fn);
+		free (fr);
+		return true;
+	}
 	if (!skip_until (kvc, '(')) {
 		kvc_error (kvc, "Cannot find ( in function definition");
-		// r_sys_breakpoint ();
 		return false;
 	}
 	fun_name.b = kvc->s.a;
@@ -1618,76 +1723,7 @@ static bool parse_function(KVCParser *kvc) {
 	skip_ws (kvc);
 	char *fn = kvctoken_tostring (fun_name);
 	char *fr = kvctoken_tostring (fun_rtyp);
-	r_strbuf_appendf (kvc->sb, "%s=func\n", fn);
-	apply_attributes (kvc, "func", fn);
-	RStrBuf *func_args_sb = r_strbuf_new ("");
-	int arg_idx = 0;
-	if (fun_parm.a < fun_parm.b) {
-		const char *pa = fun_parm.a;
-		const char *pb = fun_parm.b;
-		const char *argp = pa;
-		const char *comma = NULL;
-		do {
-			while (pa < pb && isspace ((unsigned char)*pa)) {
-				pa++;
-			}
-			comma = r_str_nchr (pa, ',', pb - pa);
-			pa = comma? comma: pb;
-			if (pa == pb) {
-				// break;
-			}
-			KVCToken arg_type = { argp, pa };
-			KVCToken arg_name = { argp, pa };
-			kvctoken_typename (&arg_type, &arg_name);
-			char *an = kvctoken_tostring (arg_name);
-			char *at = kvctoken_tostring (arg_type);
-			{
-				char *full = kvctoken_tostring ((KVCToken){ argp, pa });
-				r_str_trim (full);
-				if (!strcmp (full, "...")) {
-					// vararg, set name to varg
-					free (at);
-					at = full;
-					free (an);
-					an = strdup ("varg");
-				} else if (!kvctoken_len (arg_type)) {
-					// unnamed type
-					free (at);
-					at = full;
-					free (an);
-					an = r_str_newf ("arg%d", arg_idx);
-				} else {
-					free (full);
-				}
-			}
-			massage_type (&at);
-			if ((!an || !*an) && strcmp (at, "...") != 0) {
-				free (an);
-				an = r_str_newf ("arg%d", arg_idx);
-			}
-			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
-				// TODO: check if its the only arg
-				arg_idx--;
-			} else {
-				r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
-				r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
-			}
-			free (an);
-			free (at);
-			arg_idx++;
-			pa++;
-			argp = pa;
-		} while (comma);
-	}
-	char *func_args = r_strbuf_drain (func_args_sb);
-	r_strbuf_appendf (kvc->sb, "func.%s.cc=%s\n", fn, "cdecl");
-	r_strbuf_appendf (kvc->sb, "func.%s=%s\n", fn, func_args);
-	if (is_static) {
-		r_strbuf_appendf (kvc->sb, "func.%s.@.static=true\n", fn);
-	}
-	r_strbuf_appendf (kvc->sb, "func.%s.ret=%s\n", fn, fr);
-	r_strbuf_appendf (kvc->sb, "func.%s.args=%d\n", fn, arg_idx);
-	free (func_args);
+	emit_func_decl (kvc, fn, fr, fun_parm, is_static);
 	free (fn);
 	free (fr);
 	return true;
@@ -1794,7 +1830,12 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 
-	char *result = kvc_parse ((const char *)content, NULL);
+	char *errmsg = NULL;
+	char *result = kvc_parse ((const char *)content, &errmsg);
+	if (errmsg) {
+		R_LOG_ERROR ("Parsing problem %s", errmsg);
+		free (errmsg);
+	}
 	if (result) {
 		printf ("%s\n", result);
 		free (result);
