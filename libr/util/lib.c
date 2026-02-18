@@ -653,7 +653,7 @@ R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta) {
 }
 
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
-	if (r_sys_getenv ("R2_NOPLUGINS")) {
+	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
 		return;
 	}
 
