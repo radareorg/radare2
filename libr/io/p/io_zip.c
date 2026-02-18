@@ -122,10 +122,13 @@ static struct zip *r_io_zip_open_archive(const char *archivename, ut32 perm, int
 }
 
 static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
-	R_RETURN_VAL_IF_FAIL (zfo, -1);
+	R_RETURN_VAL_IF_FAIL (zfo, false);
 	bool res = false;
 	struct zip *za = r_io_zip_open_archive (zfo->archivename, zfo->perm, zfo->mode, zfo->rw);
-	if (za && zfo && zfo->entry != -1) {
+	if (!za) {
+		return false;
+	}
+	if (zfo->entry != -1) {
 		struct zip_file *zFile = zip_fopen_index (za, zfo->entry, 0);
 		if (!zFile) {
 			zip_close (za);
@@ -137,13 +140,18 @@ static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 		struct zip_stat sb;
 		zip_stat_init (&sb);
 		if (zfo->b && !zip_stat_index (za, zfo->entry, 0, &sb)) {
-			ut8 *buf = calloc (1, sb.size);
-			if (buf) {
-				zip_fread (zFile, buf, sb.size);
-				r_buf_set_bytes (zfo->b, buf, sb.size);
+			if (sb.size > 0) {
+				ut8 *buf = calloc (1, sb.size);
+				if (buf) {
+					zip_fread (zFile, buf, sb.size);
+					r_buf_set_bytes (zfo->b, buf, sb.size);
+					res = true;
+					zfo->opened = true;
+					free (buf);
+				}
+			} else {
 				res = true;
 				zfo->opened = true;
-				free (buf);
 			}
 		}
 		zip_fclose (zFile);
@@ -154,16 +162,16 @@ static bool r_io_zip_slurp_file(RIOZipFileObj *zfo) {
 
 static RList *r_io_zip_get_files(char *archivename, ut32 perm, int mode, int rw) {
 	struct zip *za = r_io_zip_open_archive (archivename, perm, mode, rw);
-	RList *files = NULL;
-	if (za) {
-		files = r_list_newf (free);
-		ut64 i, num_entries = zip_get_num_files (za);
-		for (i = 0; i < num_entries; i++) {
-			struct zip_stat sb;
-			zip_stat_init (&sb);
-			zip_stat_index (za, i, 0, &sb);
-			r_list_append (files, strdup (sb.name));
-		}
+	if (!za) {
+		return NULL;
+	}
+	RList *files = r_list_newf (free);
+	ut64 i, num_entries = zip_get_num_files (za);
+	for (i = 0; i < num_entries; i++) {
+		struct zip_stat sb;
+		zip_stat_init (&sb);
+		zip_stat_index (za, i, 0, &sb);
+		r_list_append (files, strdup (sb.name));
 	}
 	zip_close (za);
 	return files;
@@ -299,6 +307,7 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 	}
 	RList *list_fds = r_list_new ();
 	if (!list_fds) {
+		zip_close (za);
 		free (zip_uri);
 		return NULL;
 	}
@@ -336,9 +345,11 @@ static RList *r_io_zip_open_many(RIO *io, const char *file, int rw, int mode) {
 }
 
 static char *r_io_zip_get_by_file_idx(const char *archivename, const char *idx, ut32 perm, int mode, int rw) {
+	if (!idx) {
+		return NULL;
+	}
 	struct zip *za = r_io_zip_open_archive (archivename, perm, mode, rw);
-	if (!idx || !za) {
-		zip_close (za);
+	if (!za) {
 		return NULL;
 	}
 	ut64 i, num_entries = zip_get_num_files (za);
@@ -469,15 +480,21 @@ static RIODesc *r_io_zip_open(RIO *io, const char *file, int rw, int mode) {
 		RIOZipFileObj *zfo = alloc_zipfileobj (zip_filename, filename_in_zipfile, perm, mode, rw);
 		if (zfo) {
 			if (zfo->entry == -1) {
-				R_LOG_WARN ("File did not exist, creating a new one");
+				if (rw & R_PERM_W) {
+					R_LOG_WARN ("File did not exist, creating a new one");
+				} else {
+					R_LOG_ERROR ("File '%s' not found in archive", filename_in_zipfile);
+					r_io_zip_free_zipfileobj (zfo);
+					zfo = NULL;
+				}
 			}
-			zfo->io_backref = io;
-			res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);
+			if (zfo) {
+				zfo->io_backref = io;
+				res = r_io_desc_new (io, &r_io_plugin_zip, zfo->name, rw, mode, zfo);
+			}
 		}
 		if (!res) {
 			R_LOG_ERROR ("Failed to open the archive %s and file %s", zip_filename, filename_in_zipfile);
-			r_io_desc_free (res);
-			res = NULL;
 		}
 	}
 	free (filename_in_zipfile);
@@ -556,7 +573,7 @@ static int r_io_zip_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 		return -1;
 	}
 	RIOZipFileObj *zfo = fd->data;
-	if (! (zfo->perm & R_PERM_W)) {
+	if (!(zfo->rw & R_PERM_W)) {
 		return -1;
 	}
 	if (r_buf_tell (zfo->b) + count >= r_buf_size (zfo->b)) {
