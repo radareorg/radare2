@@ -801,6 +801,9 @@ static int cmd_cp(void *data, const char *input) {
 		}
 
 		ret = r_file_copy (file, newfile);
+		if (!ret) {
+			R_LOG_ERROR ("Cannot copy '%s' to '%s'", file, newfile);
+		}
 		free (file);
 		free (newfile);
 		return ret;
@@ -810,7 +813,26 @@ static int cmd_cp(void *data, const char *input) {
 	if (files) {
 		bool ret = false;
 		if (files[0] && files[1]) {
-			ret = r_file_copy (files[0], files[1]);
+			if (!r_file_exists (files[0])) {
+				R_LOG_ERROR ("Cannot open '%s'", files[0]);
+			} else {
+				char *dst = NULL;
+				if (r_file_is_directory (files[1])) {
+					const char *basename = r_file_basename (files[0]);
+					dst = r_str_newf ("%s%s%s", files[1],
+						R_STR_ISEMPTY (files[1]) || files[1][strlen (files[1]) - 1] == R_SYS_DIR[0] ? "" : R_SYS_DIR,
+						basename);
+				} else {
+					dst = strdup (files[1]);
+				}
+				if (dst) {
+					ret = r_file_copy (files[0], dst);
+					if (!ret) {
+						R_LOG_ERROR ("Cannot copy '%s' to '%s'", files[0], dst);
+					}
+					free (dst);
+				}
+			}
 		} else {
 			r_core_cmd_help (core, help_msg_cp);
 		}
