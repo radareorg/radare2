@@ -24,6 +24,7 @@ typedef struct {
 	AttrList attrs;
 	KVCToken s;
 	const char *error;
+	char *error_msg;
 	TypedefEntry tdefs[64];
 	size_t tdef_count;
 	int struct_pack;
@@ -90,7 +91,8 @@ static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
 }
 
 static void kvc_error(KVCParser *kvc, const char *msg) {
-	R_LOG_ERROR ("Parsing problem at line %d: %s", kvc->line, msg);
+	free (kvc->error_msg);
+	kvc->error_msg = r_str_newf ("at line %d: %s", kvc->line, msg);
 	kvc->error = msg;
 	kvc->s.a = kvc->s.b;
 }
@@ -150,6 +152,12 @@ static const char *kvc_find(KVCParser *kvc, const char *needle) {
 
 static inline void kvc_skipn(KVCParser *kvc, size_t amount) {
 	if (amount <= kvctoken_len (kvc->s)) {
+		size_t i;
+		for (i = 0; i < amount; i++) {
+			if (kvc->s.a[i] == '\n') {
+				kvc->line++;
+			}
+		}
 		kvc->s.a += amount;
 	} else {
 		// should not reach this, implies a bug somewhere else
@@ -1474,7 +1482,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
 	if (p0 != '{') {
-		R_LOG_ERROR ("Expected { after name in enum");
+		R_LOG_ERROR ("Expected { after '%s' at line %d in enum", en, kvc->line);
 		free (en);
 		return false;
 	}
@@ -1674,6 +1682,7 @@ static void kvcparser_fini(KVCParser *kvc) {
 	}
 	kvc->tdef_count = 0;
 	r_strbuf_free (kvc->sb);
+	free (kvc->error_msg);
 }
 
 static bool tryparse(KVCParser *kvc, const char *word, const char *type, KVCParserCallback cb) {
@@ -1735,8 +1744,9 @@ R_IPI char *kvc_parse(const char *header_content, char **errmsg) {
 	}
 	char *res = NULL;
 	if (kvc->error && errmsg) {
-		*errmsg = strdup (kvc->error);
-	} else {
+		*errmsg = kvc->error_msg? strdup (kvc->error_msg): strdup (kvc->error);
+	}
+	if (!kvc->error) {
 		res = r_strbuf_drain (kvc->sb);
 		kvc->sb = NULL;
 	}
