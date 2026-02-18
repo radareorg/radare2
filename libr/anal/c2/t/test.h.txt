@@ -3,6 +3,6 @@ struct.Foo.a=int,0,0
 struct.Foo.a.@.pack=1
 struct.Foo.a.@.brow=123
 struct.Foo.b=char,4,0
-struct.Foo.c=ut8,8,32
+struct.Foo.c=ut8,5,32
 struct.Foo=a,b,c
 
