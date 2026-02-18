@@ -1170,8 +1170,15 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 	parse_c_attributes (kvc);
 	skip_spaces (kvc);
 	const char p0 = kvc_peek (kvc, 0);
+	if (p0 == ';') {
+		// forward declaration: struct Foo;
+		kvc_getch (kvc);
+		return true;
+	}
 	if (p0 != '{') {
-		R_LOG_ERROR ("Expected { after name in struct");
+		char *sn = kvctoken_tostring (struct_name);
+		R_LOG_ERROR ("Expected { after '%s' at line %d in struct", sn, kvc->line);
+		free (sn);
 		return false;
 	}
 	RStrBuf *args_sb = r_strbuf_new ("");
