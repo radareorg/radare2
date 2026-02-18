@@ -172,7 +172,7 @@ static const char *scan_to_semicolon(KVCParser *kvc, bool allow_parens) {
 			return kvc->s.a;
 		}
 		if (!isalnum (c) && !isspace (c) && c != '_' && c != '[' && c != ']' && c != '*') {
-			if (!allow_parens || (c != ',' && c != '(' && c != ')')) {
+			if (!allow_parens || (c != ',' && c != '(' && c != ')' && c != '.')) {
 				return NULL;
 			}
 		}
