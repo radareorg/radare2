@@ -83,7 +83,6 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 
 	// Now add the type to sdb.
 	sdb_query_lines (anal->sdb_types, parsed);
-	eprintf ("%s\n", parsed);
 }
 
 R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) {
