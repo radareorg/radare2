@@ -20,6 +20,7 @@ typedef struct {
 	RLib *l;
 	RFS *fs;
 	RIO *io;
+	RCons *cons;
 	Rafs2Options opt;
 } Rafs2State;
 
@@ -40,6 +41,7 @@ static Rafs2State *rafs2_new(void) {
 	s->l = r_lib_new (NULL, NULL);
 	s->io = r_io_new ();
 	s->fs = r_fs_new ();
+	s->cons = r_cons_new();
 
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
@@ -47,13 +49,16 @@ static Rafs2State *rafs2_new(void) {
 	}
 	return s;
 }
+
 static void rafs2_free(Rafs2State *s) {
 	if (s) {
+		r_cons_free (s->cons);
 		r_fs_free (s->fs);
 		r_io_free (s->io);
 		r_lib_free (s->l);
 		free (s);
 	}
+	// r_log_fini ();
 }
 
 static void show_usage(void) {
@@ -335,7 +340,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 			s->opt.json = true;
 			break;
 		case 'L':
-			ret = rafs2_list_plugins (s); // TODO leak
+			ret = rafs2_list_plugins (s);
 			rafs2_free (s);
 			return ret;
 		case 'v':
@@ -388,9 +393,8 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 	}
 
 	r_fs_view (s->fs, R_FS_VIEW_NORMAL);
-	s->fs->iob.io = s->io;
-	s->fs->iob.read_at = (void *)r_io_read_at;
-	s->fs->iob.write_at = (void *)r_io_write_at;
+	r_io_bind (s->io, &(s->fs->iob));
+	r_cons_bind (s->cons, &(s->fs->csb));
 
 	RFSRoot *root = r_fs_mount (s->fs, s->opt.fstype, s->opt.mountpoint, s->opt.offset);
 	if (!root) {
