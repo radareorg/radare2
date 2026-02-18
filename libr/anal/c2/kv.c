@@ -37,6 +37,25 @@ static size_t kvctoken_len(KVCToken t) {
 	return t.b - t.a;
 }
 
+static void collapse_whitespace(char *s) {
+	r_str_trim (s);
+	char *d = s;
+	bool in_space = false;
+	while (*s) {
+		if (isspace ((unsigned char)*s)) {
+			if (!in_space) {
+				*d++ = ' ';
+				in_space = true;
+			}
+		} else {
+			*d++ = *s;
+			in_space = false;
+		}
+		s++;
+	}
+	*d = 0;
+}
+
 static char *kvctoken_tostring(KVCToken t) {
 	if (t.a && t.b) {
 		size_t len = kvctoken_len (t);
@@ -1097,7 +1116,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 					if (args_end > args_open) {
 						KVCToken args_tok = { .a = args_open + 1, .b = args_end };
 						args_str = kvctoken_tostring (args_tok);
-						r_str_trim (args_str);
+						collapse_whitespace (args_str);
 					}
 				}
 				char *fulltype = r_str_newf ("%s * (%s)", rtype, args_str? args_str: "");
@@ -1318,7 +1337,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						args_end--;
 					}
 					args = r_str_ndup (args_start + 1, args_end - args_start - 1);
-					r_str_trim (args);
+					collapse_whitespace (args);
 				}
 				// build full type string
 				char *fulltype = r_str_newf ("%s * (%s)", rtype, args? args: "");
@@ -1378,7 +1397,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 							const char *args_close = strrchr (tdef, ')');
 							if (args_close && args_close > args_open) {
 								args_str = r_str_ndup (args_open + 1, args_close - args_open - 1);
-								r_str_trim (args_str);
+								collapse_whitespace (args_str);
 							}
 						}
 						// For typedef function-pointer types, reference the typedef alias as the field's type
