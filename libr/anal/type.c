@@ -82,23 +82,8 @@ R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	}
 
 	// Now add the type to sdb.
-	char *line = strdup (parsed);
-	if (line) {
-		char *p = line;
-		while (p && *p) {
-			char *nl = strchr (p, '\n');
-			if (nl) {
-				*nl = 0;
-			}
-			char *eq = strchr (p, '=');
-			if (eq) {
-				*eq = 0;
-				sdb_set (anal->sdb_types, p, eq + 1, 0);
-			}
-			p = nl? nl + 1: NULL;
-		}
-		free (line);
-	}
+	sdb_query_lines (anal->sdb_types, parsed);
+	eprintf ("%s\n", parsed);
 }
 
 R_API bool r_anal_import_c_decls(RAnal *anal, const char *decls, char **errmsg) {
