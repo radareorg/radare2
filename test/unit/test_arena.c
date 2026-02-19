@@ -283,7 +283,7 @@ static bool test_r_arena_push_str(void) {
 	const char *test_str = "Hello, Arena!";
 	char *copy = r_arena_push_str (arena, test_str);
 	mu_assert_notnull (copy, "string should be copied");
-	mu_assert_streq (copy, test_str, "copied string should match original");
+	mu_assert_nullable_streq (copy, test_str, "copied string should match original");
 	mu_assert ("strings should be at different addresses", copy != test_str);
 
 	// Verify null terminator
