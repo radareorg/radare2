@@ -1423,7 +1423,7 @@ R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	/* Get filename or project name for context */
 	const char *filename = "";
 	if (core->io && core->io->desc && core->io->desc->uri) {
-		filename = strdup (core->io->desc->uri);
+		filename = core->io->desc->uri;
 	} else if (core->io && core->io->desc && core->io->desc->name) {
 		filename = r_file_basename (core->io->desc->name);
 	} else if (core->prj && core->prj->name) {

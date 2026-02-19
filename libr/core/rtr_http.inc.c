@@ -651,8 +651,7 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			R_LOG_TODO ("Visual mode should be enabled on local");
 		} else {
 			const char *tpath = r_str_trim_head_ro (path + 1);
-			//HttpThread ht = { core, launch, strdup (tpath) };
-			HttpThread *ht = calloc (sizeof (HttpThread), 1);
+			HttpThread *ht = R_NEW0 (HttpThread);
 			ht->core = core;
 			ht->launch = launch;
 			ht->browse = browse;
@@ -661,8 +660,8 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 			if (priv->httpthread) {
 				r_th_setname (priv->httpthread, "httpthread");
 			}
-			r_th_start (priv->httpthread);
-			R_LOG_INFO ("Background http server started");
+			bool res = r_th_start (priv->httpthread);
+			R_LOG_INFO ("Background http server started (success=%s)", r_str_bool (res));
 		}
 		return 0;
 #else
