@@ -559,11 +559,12 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 		if (p0 == 0xf4 && p1 > 0x8f) {
 			return 0;
 		}
+		RRune r = (p0 & 7) << 18 | (p1 & 0x3f) << 12 | (p2 & 0x3f) << 6 | (p3 & 0x3f);
+		if (r > 0x10ffff) {
+			return 0;
+		}
 		if (ch) {
-			*ch = (p0 & 7) << 18 | (p1 & 0x3f) << 12 | (p2 & 0x3f) << 6 | (p3 & 0x3f);
-			if (*ch > 0x10ffff) {
-				return 0;
-			}
+			*ch = r;
 		}
 		return 4;
 	}
