@@ -2782,7 +2782,6 @@ R_API void r_core_fini(RCore *c) {
 	r_table_free (c->table);
 	R_FREE (c->cmdlog);
 	free (c->lastsearch);
-	free (c->sessionfile);
 	r_list_free (c->cmdqueue);
 	free (c->lastcmd);
 	free (c->stkcmd);
@@ -2801,6 +2800,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->watchers);
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
+	free (c->sessionfile);
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
 	if (c->anal->esil) {
