@@ -1413,9 +1413,7 @@ R_API bool r_core_rtr_cmds(RCore *core, const char * R_NULLABLE port) {
 
 /* Session registration API - used to track HTTP sessions for r2agent -L */
 R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
-	if (!core || !uri) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (core && uri, false);
 	char *tmpdir = r_file_tmpdir ();
 	char *tmpdir_r2 = r_str_newf ("%s/r2", tmpdir);
 	r_sys_mkdir (tmpdir_r2);
@@ -1424,7 +1422,9 @@ R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 
 	/* Get filename or project name for context */
 	const char *filename = "";
-	if (core->io && core->io->desc && core->io->desc->name) {
+	if (core->io && core->io->desc && core->io->desc->uri) {
+		filename = strdup (core->io->desc->uri);
+	} else if (core->io && core->io->desc && core->io->desc->name) {
 		filename = r_file_basename (core->io->desc->name);
 	} else if (core->prj && core->prj->name) {
 		filename = core->prj->name;
