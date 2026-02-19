@@ -419,7 +419,7 @@ e bin.str.purge=all,!0x413220-0x413235
 EOF
 EXPECT=<<EOF
 --1--
-1055 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
+1049 0x00012420 0x00412420 5   6    .text              ascii   AWAVA
 --2--
 --3--
 0   0x000131d8 0x004131d8 11  12   .rodata ascii dev_ino_pop
@@ -589,10 +589,10 @@ NAME=ascii substring detection (#14499)
 FILE=bins/pe/Reborn_Stub-strings.exe
 CMDS=izz~pomf
 EXPECT=<<EOF
-7130 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
-7135 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
-7298 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
-7299 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
+7076 0x00087f8a 0x00489d8a 26  53   .text   utf16le http://pomf.cat/upload.php
+7081 0x000880dd 0x00489edd 19  39   .text   utf16le https://a.pomf.cat/
+7244 0x00089bed 0x0048b9ed 26  53   .text   utf16le http://pomf.cat/upload.php
+7245 0x00089c22 0x0048ba22 19  40   .text   utf16le https://a.pomf.cat/
 EOF
 RUN
 
