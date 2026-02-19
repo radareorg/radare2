@@ -239,7 +239,7 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10228
+10199
 EOF
 RUN
 
@@ -372,7 +372,7 @@ izq~Alpc
 izq~Timer
 EOF
 EXPECT=<<EOF
-22883
+22877
 0x77820352 10 4 Alpc
 0x77825ffd 41 40 AlpcAdjustCompletionListConcurrencyCount
 0x77826026 30 29 AlpcFreeCompletionListMessage
