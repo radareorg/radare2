@@ -5,7 +5,7 @@
 #define FILTER_DWORD 0
 
 #define isx86separator(x) ( \
-	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || (x) == ' ' || \
+	(x) == ' ' || (x) == '\t' || (x) == '\n' || (x) == '\r' || \
 	(x) == ',' || (x) == ';' || (x) == '[' || (x) == ']' || \
 	(x) == '(' || (x) == ')' || (x) == '{' || (x) == '}' || (x) == '\x1b')
 
@@ -211,7 +211,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 		}
 		char *colon = strstr (ptr, ":");
 		bool size_suffix = false;
-		if (colon && !(x86 && bits == 16)) {
+		if (colon && ! (x86 && bits == 16)) {
 			char *s = colon + 1;
 			if (s && isdigit ((ut8)*s)) {
 				char *e = s;
@@ -411,7 +411,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 								}
 								memmove (ptr_left, ptr_esc, copied_len);
 								char *dptr_left = strcpy (ptr_left + copied_len,
-										(ansi_found && ptr_right - ptr_end + 1 >= 4) ? Color_RESET : "");
+									(ansi_found && ptr_right - ptr_end + 1 >= 4)? Color_RESET: "");
 								int dlen = strlen (dptr_left);
 								dptr_left += dlen;
 								char *dptr_end = ptr_right + 1;
@@ -436,7 +436,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 							ut64 tail = r_num_tail_base (NULL, addr, off);
 							if (tail != UT64_MAX) {
 								char str[128];
-								snprintf (str, sizeof (str), "..%"PFMT64x, tail);
+								snprintf (str, sizeof (str), "..%" PFMT64x, tail);
 								insert (ptr, str);
 							}
 						}
@@ -639,11 +639,41 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 	return NULL;
 }
 
+static char *apply_camel_syntax(const char *str) {
+	const char *p = r_str_trim_head_ro (str);
+	const char *mnem_start = p;
+	// find first non-space.. maybe just strchr can be enough
+	while (*p && *p != ' ' && *p != '\t' && *p != '\x1b') {
+		p++;
+	}
+	size_t mnem_len = p - mnem_start;
+	if (mnem_len == 0) {
+		return NULL;
+	}
+	char *mnem = r_str_ndup (mnem_start, mnem_len);
+	char *camel_mnem = r_str_snake_to_camel (mnem);
+	free (mnem);
+	if (!camel_mnem) {
+		return NULL;
+	}
+	size_t prefix_len = mnem_start - str;
+	char *result = r_str_newf ("%.*s%s%s", (int)prefix_len, str, camel_mnem, p);
+	free (camel_mnem);
+	return result;
+}
+
 R_API char *r_asm_parse_filter(RAsm *a, ut64 addr, RFlag *f, RAnalHint *hint, const char *data) {
 	RAsmPluginSession *aps = a->cur;
 	char *str = filter (aps, addr, f, hint, data);
 	if (!str) {
 		str = strdup (data);
+	}
+	if (a->config && a->config->syntax == R_ARCH_SYNTAX_CAMEL) {
+		char *camel = apply_camel_syntax (str);
+		if (camel) {
+			free (str);
+			str = camel;
+		}
 	}
 	// Handle immediate base conversion
 	if (hint && hint->immbase && a->config) {

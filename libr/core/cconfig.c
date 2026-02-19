@@ -4105,7 +4105,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.trace.color", "true", "indent disassembly with trace.count information");
 	SETB ("asm.trace.space", "false", "indent disassembly with trace.count information");
 	SETB ("asm.ucase", "false", "use uppercase syntax at disassembly");
-	SETB ("asm.capitalize", "false", "use camelcase at disassembly");
+	SETB ("asm.capitalize", "false", "use capitalied instructions in the disassembly"); // maybe this should be asm.syntax=capital
 	SETB ("asm.var", "true", "show local function variables in disassembly");
 	SETB ("asm.var.access", "false", "show accesses of local variables");
 	SETB ("asm.sub.var", "true", "substitute variables in disassembly");
