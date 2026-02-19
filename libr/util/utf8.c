@@ -505,6 +505,15 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 		}
 		return 1;
 	}
+	/*
+	 * Reject invalid UTF-8 sequences (overlong, surrogates, out-of-range).
+	 * This is important for JSON output: emitting a lone surrogate as "\\uD800"
+	 * is not valid JSON and will make parsers (e.g. jq) fail.
+	 */
+	if (p0 < 0xc2) {
+		/* 0x80..0xBF are continuation bytes; 0xC0..0xC1 are overlong starts */
+		return 0;
+	}
 	if (ptrlen < 2) {
 		return 0;
 	}
@@ -520,6 +529,14 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	}
 	const ut8 p2 = ptr[2];
 	if ((p0 & 0xf0) == 0xe0 && (p1 & 0xc0) == 0x80 && (p2 & 0xc0) == 0x80) {
+		/* overlong encoding (U+0000..U+07FF must use 1-2 bytes) */
+		if (p0 == 0xe0 && p1 < 0xa0) {
+			return 0;
+		}
+		/* UTF-16 surrogate halves (U+D800..U+DFFF) are invalid code points */
+		if (p0 == 0xed && p1 >= 0xa0) {
+			return 0;
+		}
 		if (ch) {
 			*ch = (p0 & 0xf) << 12 | (p1 & 0x3f) << 6 | (p2 & 0x3f);
 		}
@@ -530,8 +547,24 @@ R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	}
 	const ut8 p3 = ptr[3];
 	if ((p0 & 0xf8) == 0xf0 && (p1 & 0xc0) == 0x80 && (p2 & 0xc0) == 0x80 && (p3 & 0xc0) == 0x80) {
+		/* reject sequences outside Unicode scalar range */
+		if (p0 > 0xf4) {
+			return 0;
+		}
+		/* overlong encoding (U+0000..U+FFFF must use 1-3 bytes) */
+		if (p0 == 0xf0 && p1 < 0x90) {
+			return 0;
+		}
+		/* code points > U+10FFFF */
+		if (p0 == 0xf4 && p1 > 0x8f) {
+			return 0;
+		}
+		RRune r = (p0 & 7) << 18 | (p1 & 0x3f) << 12 | (p2 & 0x3f) << 6 | (p3 & 0x3f);
+		if (r > 0x10ffff) {
+			return 0;
+		}
 		if (ch) {
-			*ch = (p0 & 7) << 18 | (p1 & 0x3f) << 12 | (p2 & 0x3f) << 6 | (p3 & 0x3f);
+			*ch = r;
 		}
 		return 4;
 	}
