@@ -41,7 +41,7 @@ static Rafs2State *rafs2_new(void) {
 	s->l = r_lib_new (NULL, NULL);
 	s->io = r_io_new ();
 	s->fs = r_fs_new ();
-	s->cons = r_cons_new();
+	s->cons = r_cons_new ();
 
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
@@ -290,7 +290,7 @@ static int rafs2_shell(Rafs2State *s) {
 	}
 
 	shell->cwd = strdup (s->opt.mountpoint);
-	shell->cons = r_cons_singleton ();
+	shell->cons = s->cons;
 
 	bool ret = r_fs_shell (shell, s->fs, s->opt.mountpoint);
 	r_fs_shell_free (shell);
