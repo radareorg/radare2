@@ -574,12 +574,7 @@ static R2RTestFrom test_type_for_path(const char *path) {
 	}
 	res.archos = false;
 	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) {
-		// AITODO: this check sounds very overengineered! keep it simple!
-		size_t path_len = strlen (path);
-		size_t archos_len = strlen (R_SYS_ARCHOSBITS);
-		if (path_len >= archos_len && strcmp (path + path_len - archos_len, R_SYS_ARCHOSBITS)) {
-			res.archos = true;
-		}
+		res.archos = !r_str_endswith (path, R_SYS_ARCHOSBITS);
 	}
 	return res;
 }
