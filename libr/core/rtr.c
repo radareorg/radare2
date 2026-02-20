@@ -1,4 +1,4 @@
-/* radare - Copyright 2009-2025 - pancake, nibble */
+/* radare - Copyright 2009-2026 - pancake, nibble */
 
 #include "r_core.h"
 #include "r_socket.h"
@@ -1421,13 +1421,16 @@ R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	char *fn = r_str_newf ("%s/%d.pid", tmpdir_r2, pid);
 
 	/* Get filename or project name for context */
-	const char *filename = "";
+	char *filename = NULL;
 	if (core->io && core->io->desc && core->io->desc->uri) {
-		filename = core->io->desc->uri;
+		filename = strdup (core->io->desc->uri);
 	} else if (core->io && core->io->desc && core->io->desc->name) {
-		filename = r_file_basename (core->io->desc->name);
+		filename = strdup (r_file_basename (core->io->desc->name));
 	} else if (core->prj && core->prj->name) {
-		filename = core->prj->name;
+		filename = strdup (core->prj->name);
+	} else {
+		R_LOG_WARN ("Session without a file name");
+		filename = strdup ("");
 	}
 
 	/* Store URI and filename separated by # for parsing */
@@ -1446,6 +1449,7 @@ R_API bool r_core_session_register(RCore *core, const char *uri, int port) {
 	free (suri);
 	free (tmpdir_r2);
 	free (tmpdir);
+	free (filename);
 	return res;
 }
 
