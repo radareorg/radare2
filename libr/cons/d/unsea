@@ -1,0 +1,67 @@
+ecd
+ec comment rgb:cff
+ec usrcmt rgb:cff
+ec fname rgb:aaa
+ec fline rgb:aaa
+ec flag rgb:3af
+ec label rgb:3af
+ec floc white
+# help messages
+ec help rgb:3cf
+ec args rgb:09f
+ec flow white
+ec flow2 rgb:6af
+ec prompt rgb:09f
+ec addr rgb:666
+ec input rgb:cff
+ec invalid blue
+ec other rgb:09f
+ec b0x00 rgb:99a
+ec b0x7f rgb:09f
+ec b0xff rgb:555
+ec btext rgb:3cf
+ec math rgb:09f
+ec bin rgb:99a
+ec push rgb:999
+ec pop rgb:09f
+ec crypto rgb:fff
+ec jmp white
+ec ujmp white
+ec cjmp white
+ec call rgb:6af
+ec ucall rgb:6af
+ec nop rgb:33a
+ec ret white
+ec trap blue
+ec swi rgb:e34
+ec cmp rgb:aaa
+ec reg rgb:3cf
+ec creg rgb:09f
+ec num white
+ec mov rgb:99a
+ec ai.read rgb:e33
+ec ai.write rgb:33e
+ec ai.exec rgb:3cf
+ec ai.seq rgb:09f
+ec ai.ascii rgb:fff
+ec gui.cflow rgb:09f
+ec gui.dataoffset rgb:99a
+ec gui.background rgb:7c5
+ec gui.background2 rgb:e34
+ec gui.border rgb:23f
+
+ec graph.current rgb:aaf
+ec graph.false white
+ec graph.true rgb:9ff
+ec graph.trufae rgb:4aa
+ec graph.box white
+ec graph.box2 rgb:07f
+
+ec var rgb:555
+ec var.name rgb:09f
+ec var.type rgb:99a
+ec var.addr rgb:666
+
+# ec graph.box4=white
+# ""e graph.gv.node=fillcolor="#303030" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname="Courier Bold" fontsize=14 shape=box
+# e graph.gv.graph=bgcolor=black

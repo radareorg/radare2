@@ -1615,17 +1615,19 @@ static int emit_func_signature(KVCParser *kvc, const char *fn, KVCToken fun_parm
 				free (full);
 			}
 			massage_type (&at);
-			if ((!an || !*an) && strcmp (at, "...") != 0) {
+			if (R_STR_ISEMPTY (an) && strcmp (at, "...") != 0) {
 				free (an);
 				an = r_str_newf ("arg%d", arg_idx);
 			}
-			if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
-				arg_idx--;
-			} else {
-				r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
-				r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
+			if (an) {
+				if (R_STR_ISEMPTY (at) && !strcmp (an, "void") && arg_idx == 0) {
+					arg_idx--;
+				} else {
+					r_strbuf_appendf (kvc->sb, "func.%s.arg.%d=%s,%s\n", fn, arg_idx, at, an);
+					r_strbuf_appendf (func_args_sb, "%s%s", arg_idx? ",": "", an);
+				}
+				free (an);
 			}
-			free (an);
 			free (at);
 			arg_idx++;
 			pa++;
