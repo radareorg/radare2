@@ -695,6 +695,12 @@ typedef enum {
 #define R_SYS_OS "unknown"
 #endif
 
+#if ((R_SYS_BITS & 64) || (R_SYS_BITS & (64 << R_SYS_BITS_SIZE)))
+#define R_SYS_ARCHOSBITS R_SYS_OS "-" R_SYS_ARCH "_64"
+#else
+#define R_SYS_ARCHOSBITS R_SYS_OS "-" R_SYS_ARCH "_32"
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -52,17 +52,6 @@ typedef struct r2r_options_t {
 	const char *r2r_dir;
 } R2ROptions;
 
-// TODO: move this to util/sys.c
-R_IPI const char *getarchos(void) {
-	if (R_SYS_BITS_CHECK (R_SYS_BITS, 64)) {
-		return R_SYS_OS "-" R_SYS_ARCH "_64";
-	}
-	if (R_SYS_BITS_CHECK (R_SYS_BITS, 32)) {
-		return R_SYS_OS "-" R_SYS_ARCH "_32";
-	}
-	return R_SYS_OS "-" R_SYS_ARCH;
-}
-
 static void results_clear(RVecR2RTestResultInfoPtr *vec) {
 	R2RTestResultInfo **it;
 	R_VEC_FOREACH (vec, it) {
@@ -133,7 +122,7 @@ static int help(bool verbose, int workers_count) {
 			" -v           show version\n"
 			"\n");
 		helpvars (workers_count);
-		printf ("\nSupported test types: @arch @asm @cmd @fuzz @json @leak @unit\nOS/Arch for archos tests: %s\n", getarchos ());
+		printf ("\nSupported test types: @arch @asm @cmd @fuzz @json @leak @unit\nOS/Arch for archos tests: %s\n", R_SYS_ARCHOSBITS);
 	}
 	return 1;
 }

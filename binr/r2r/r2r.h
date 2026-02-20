@@ -262,6 +262,5 @@ R_API char *r2r_test_name(R2RTest *test);
 R_API bool r2r_test_broken(R2RTest *test);
 R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test);
 R_API void r2r_test_result_info_free(R2RTestResultInfo *result);
-R_IPI const char *getarchos(void);
 
 #endif //RADARE2_R2R_H
