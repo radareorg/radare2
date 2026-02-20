@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2026 - pancake, thestr4ng3r */
 
 #undef R_LOG_ORIGIN
 #define R_LOG_ORIGIN "r2r.load"
@@ -557,8 +557,6 @@ R_API void r2r_test_database_free(R2RTestDatabase *db) {
 	free (db);
 }
 
-R_IPI const char *getarchos(void);
-
 static R2RTestFrom test_type_for_path(const char *path) {
 	R2RTestFrom res = { 0 };
 	res.load_plugins = false;
@@ -575,9 +573,13 @@ static R2RTestFrom test_type_for_path(const char *path) {
 		res.type = R2R_TEST_TYPE_CMD;
 	}
 	res.archos = false;
-	if ((strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) &&
-	    strcmp (path + strlen (path) - strlen (getarchos ()), getarchos ())) {
-		res.archos = true;
+	if (strstr (path, R_SYS_DIR "archos" R_SYS_DIR) || !strcmp (path, "archos")) {
+		// AITODO: this check sounds very overengineered! keep it simple!
+		size_t path_len = strlen (path);
+		size_t archos_len = strlen (R_SYS_ARCHOSBITS);
+		if (path_len >= archos_len && strcmp (path + path_len - archos_len, R_SYS_ARCHOSBITS)) {
+			res.archos = true;
+		}
 	}
 	return res;
 }
@@ -596,7 +598,6 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 	}
 	R2RTestFrom test_from = test_type_for_path (path);
 	if (r_file_is_directory (path)) {
-		const char *archos = getarchos ();
 		RList *dir = r_sys_dir (path);
 		if (!dir) {
 			return false;
@@ -639,8 +640,8 @@ static bool database_load(R2RTestDatabase *db, const char *path, int depth, bool
 				R_LOG_INFO ("R2R_SKIP_ASM: Skipping %s", shortpath (path));
 				continue;
 			}
-			if (test_from.archos && (skip_archos || strcmp (subname, archos))) {
-				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", shortpath (path), subname, archos);
+			if (test_from.archos && (skip_archos || strcmp (subname, R_SYS_ARCHOSBITS))) {
+				R_LOG_INFO ("Skipping %s" R_SYS_DIR "%s because it does not match the current platform \"%s\"", shortpath (path), subname, R_SYS_ARCHOSBITS);
 				continue;
 			}
 			char *subpath = r_file_new (path, subname, NULL);
