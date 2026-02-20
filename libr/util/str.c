@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <limits.h>
 #include <r_bin.h>
@@ -4150,9 +4150,8 @@ R_API char *r_str_version(const char *program) {
 #if WITH_GPL
 	gplstr = " gpl";
 #endif
-	char *s = r_str_newf ("%s " R2_VERSION " +%d abi:%d @ " R_SYS_OS "-" R_SYS_ARCH "-%d\n",
-		program, R2_VERSION_COMMIT, R2_ABIVERSION,
-		(R_SYS_BITS_CHECK (R_SYS_BITS, 64))? 64: 32);
+	char *s = r_str_newf ("%s " R2_VERSION " +%d abi:%d @ " R_SYS_ARCHOSBITS "\n",
+		program, R2_VERSION_COMMIT, R2_ABIVERSION);
 	int csv = R2_CSVERSION;
 	s = r_str_appendf (s, "birth: git.%s " R2_BIRTH "\n",
 		*R2_GITTAP? R2_GITTAP: "");
