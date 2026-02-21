@@ -1,4 +1,4 @@
-/* pancake // nopcode.org 2010-2011 -- arm emiter */
+/* pancake // nopcode.org 2010-2026 -- arm emiter */
 
 #include <r_egg.h>
 #define attsyntax 0
@@ -293,6 +293,13 @@ static const char *emit_regs(REgg *egg, int idx) {
 	return regs[idx % R_NGP];
 }
 
+static void emit_get_ar(REgg *egg, char *out, int idx) {
+	const char *regs[] = {"r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7"};
+	if (idx >= 0 && idx < 8) {
+		strcpy (out, regs[idx]);
+	}
+}
+
 REggEmit EMIT_NAME = {
 	.retvar = "r0",
 	.arch = R_ARCH,
@@ -312,6 +319,7 @@ REggEmit EMIT_NAME = {
 	.get_result = emit_get_result,
 	.syscall_args = emit_syscall_args,
 	.set_string = emit_set_string,
+	.get_ar = emit_get_ar,
 	.get_var = emit_get_var,
 	.while_end = emit_while_end,
 	.get_while_end = emit_get_while_end,

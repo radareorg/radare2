@@ -129,7 +129,8 @@ R_API void r_egg_free(REgg *egg) {
 
 R_API void r_egg_reset(REgg *egg) {
 	R_RETURN_IF_FAIL (egg);
-	r_egg_lang_include_init (egg);
+	r_egg_lang_free (egg);
+	r_egg_lang_init (egg);
 	// TODO: use r_list_purge instead of free/new here
 	r_unref (egg->src);
 	r_unref (egg->buf);

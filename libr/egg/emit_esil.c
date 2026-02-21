@@ -261,6 +261,10 @@ static const char *emit_regs(REgg *egg, int idx) {
 	return regs[idx % R_NGP];
 }
 
+static void emit_get_ar(REgg *egg, char *out, int idx) {
+	snprintf (out, 32, "r%d", idx);
+}
+
 REggEmit EMIT_NAME = {
 	.retvar = "r0",
 	.arch = R_ARCH,
@@ -280,6 +284,7 @@ REggEmit EMIT_NAME = {
 	.get_result = emit_get_result,
 	.syscall_args = emit_syscall_args,
 	.set_string = emit_set_string,
+	.get_ar = emit_get_ar,
 	.get_var = emit_get_var,
 	.while_end = emit_while_end,
 	.get_while_end = emit_get_while_end,

@@ -120,10 +120,47 @@ R_API void r_egg_lang_free(REgg *egg) {
 		R_FREE (egg->lang.syscalls[i].name);
 		R_FREE (egg->lang.syscalls[i].arg);
 	}
+	for (i = 0; i < egg->lang.nalias; i++) {
+		R_FREE (egg->lang.aliases[i].name);
+		R_FREE (egg->lang.aliases[i].content);
+	}
+	for (i = 0; i < egg->lang.ninlines; i++) {
+		R_FREE (egg->lang.inlines[i].name);
+		R_FREE (egg->lang.inlines[i].body);
+	}
 	len = sizeof (egg->lang.ctxpush) / sizeof (char *);
 	for (i = 0; i < len; i++) {
 		R_FREE (egg->lang.ctxpush[i]);
 	}
+	len = sizeof (egg->lang.inlines) / sizeof (egg->lang.inlines[0]);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.inlines[i].name);
+		R_FREE (egg->lang.inlines[i].body);
+	}
+	len = sizeof (egg->lang.aliases) / sizeof (egg->lang.aliases[0]);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.aliases[i].name);
+		R_FREE (egg->lang.aliases[i].content);
+	}
+	len = sizeof (egg->lang.nested) / sizeof (char *);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.nested[i]);
+	}
+	len = sizeof (egg->lang.nested_callname) / sizeof (char *);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.nested_callname[i]);
+	}
+	R_FREE (egg->lang.conditionstr);
+	R_FREE (egg->lang.syscallbody);
+	R_FREE (egg->lang.includefile);
+	R_FREE (egg->lang.setenviron);
+	R_FREE (egg->lang.mathline);
+	R_FREE (egg->lang.callname);
+	R_FREE (egg->lang.endframe);
+	R_FREE (egg->lang.file);
+	R_FREE (egg->lang.dstvar);
+	R_FREE (egg->lang.dstval);
+	R_FREE (egg->lang.includedir);
 }
 
 R_API void r_egg_lang_include_path(REgg *egg, const char *path) {
@@ -489,7 +526,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	if (!_str) {
 		return NULL; /* fix segfault, but not badparsing */
 	}
-	/* XXX memory leak */
 	ret = str = oldstr = r_str_trim_dup (_str);
 	// if (num || str[0] == '0') {snprintf (out, 32, "$%d", num); ret = out; }
 	if ((q = strchr (str, ':'))) {
