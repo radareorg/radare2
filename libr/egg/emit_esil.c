@@ -262,6 +262,7 @@ static const char *emit_regs(REgg *egg, int idx) {
 }
 
 REggEmit EMIT_NAME = {
+	.retvar = "r0",
 	.arch = R_ARCH,
 	.size = R_SZ,
 	.jmp = emit_jmp,
