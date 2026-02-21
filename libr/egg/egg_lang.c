@@ -113,7 +113,7 @@ R_API void r_egg_lang_init(REgg *egg) {
 	egg->lang.mode = LANG_MODE_NORMAL;
 }
 
-R_API void r_egg_lang_free(REgg *egg) {
+R_API void r_egg_lang_fini(REgg *egg) {
 	int i, len;
 
 	for (i = 0; i < egg->lang.nsyscalls; i++) {
@@ -554,9 +554,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 			e->get_var (egg, 0, out, idx);
 			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ));
 		} else if (!strncmp (str + 1, "rarg", 4)) {
-			if (e->get_ar) {
+			if (e->get_arg) {
 				int idx = (int)r_num_math (NULL, str + 5);
-				e->get_ar (egg, out, idx);
+				e->get_arg (egg, out, idx);
 			}
 		} else if (!strncmp (str + 1, "arg", 3)) {
 			if (str[4]) {
