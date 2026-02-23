@@ -206,15 +206,16 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	RListIter *iter, *iter2;
 	r_list_foreach (bo->classes, iter, k) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
-		const ut64 addr = iova? f->vaddr: f->paddr;
 		r_list_foreach (k->fields, iter2, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			const char *fname = r_bin_name_tostring2 (f->name, 'f');
+			const ut64 addr = iova? f->vaddr: f->paddr;
 			r_cons_printf (core->cons, "klass.%s.field.%s.%s=0x%" PFMT64x "\n", kname, kind, fname, addr);
 		}
 		r_list_foreach (k->methods, iter2, m) {
 			char *attr = r_bin_attr_tostring (m->attr, true);
 			const char *mname = r_bin_name_tostring2 (m->name, 'f');
+			const ut64 addr = iova? m->vaddr: m->paddr;
 			r_cons_printf (core->cons, "klass.%s.method.%s.%s=0x%" PFMT64x "\n", kname, r_str_get (attr), mname, addr);
 			free (attr);
 		}
@@ -1473,7 +1474,6 @@ static void cmd_izminus(RCore *core, const char *input) {
 }
 
 static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const char *input) {
-	const char ch1 = input[1];
 	switch (input[1]) {
 	case '+': // "iz+"
 		cmd_izplus (core, input);
@@ -1481,7 +1481,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	case '-': // "iz-"
 		cmd_izminus (core, input);
 		return;
-	case 'c': // "izc"
+	case 'c': ; // "izc"
 		RList *bfiles = r_core_bin_files (core);
 		RListIter *iter;
 		RBinFile *bf;
