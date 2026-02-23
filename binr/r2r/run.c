@@ -564,6 +564,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			r_th_lock_leave (subprocs_mutex);
 		}
 	}
+	r_log_fini ();
 	return R_TH_STOP;
 }
 

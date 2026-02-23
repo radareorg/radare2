@@ -1095,6 +1095,7 @@ static RThreadFunctionRet worker_th(RThread *th) {
 		r_th_cond_signal (state->cond);
 	}
 	r_th_lock_leave (state->lock);
+	r_log_fini ();
 	return R_TH_STOP;
 }
 

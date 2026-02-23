@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_egg.h>
 
@@ -220,7 +220,8 @@ static const char *find_alias(REgg *egg, const char *str) {
 	}
 	*p = '\x00';
 	for (i = 0; i < egg->lang.nalias; i++) {
-		if (!strcmp (str, egg->lang.aliases[i].name)) {
+		const char *name = egg->lang.aliases[i].name;
+		if (name && !strcmp (str, name)) {
 			return strdup (egg->lang.aliases[i].content);
 		}
 	}
@@ -377,7 +378,8 @@ static void rcc_element(REgg *egg, char *str) {
 				break;
 			}
 			for (i = 0; i < egg->lang.nalias; i++) {
-				if (!strcmp (egg->lang.dstvar, egg->lang.aliases[i].name)) {
+				const char *name = egg->lang.aliases[i].name;
+				if (name && !strcmp (egg->lang.dstvar, name)) {
 					R_FREE (egg->lang.aliases[i].name);
 					R_FREE (egg->lang.aliases[i].content);
 					break;
@@ -403,7 +405,7 @@ static void rcc_element(REgg *egg, char *str) {
 				bool found = false;
 				int idx = egg->lang.nsyscalls;
 				for (i = 0; i < egg->lang.nsyscalls; i++) {
-					if (!strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
+				if (egg->lang.syscalls[i].name && !strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
 						idx = i;
 						found = true;
 						break;
@@ -543,22 +545,22 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
-		if (!strncmp (str + 1, "ret", 3)) {
+		if (r_str_startswith (str + 1, "ret")) {
 			strcpy (out, e->retvar);
-		} else if (!strncmp (str + 1, "fix", 3)) {
+		} else if (r_str_startswith (str + 1, "fix")) {
 			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - egg->lang.stackfixed);
 			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ-egg->lang.stackfixed));
-		} else if (!strncmp (str + 1, "var", 3)) {
+		} else if (r_str_startswith (str + 1, "var")) {
 			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
 			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ));
-		} else if (!strncmp (str + 1, "rarg", 4)) {
+		} else if (r_str_startswith (str + 1, "rarg")) {
 			if (e->get_arg) {
 				int idx = (int)r_num_math (NULL, str + 5);
 				e->get_arg (egg, out, idx);
 			}
-		} else if (!strncmp (str + 1, "arg", 3)) {
+		} else if (r_str_startswith (str + 1, "arg")) {
 			if (str[4]) {
 				if (egg->lang.stackframe == 0) {
 					e->get_var (egg, 1, out, 4); // idx-4);
@@ -570,7 +572,8 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				/* TODO: return size of syscall */
 				if (egg->lang.callname) {
 					for (i = 0; i < egg->lang.nsyscalls; i++) {
-						if (!strcmp (egg->lang.syscalls[i].name, egg->lang.callname)) {
+						const char *name = egg->lang.syscalls[i].name;
+						if (name && !strcmp (name, egg->lang.callname)) {
 							free (oldstr);
 							return strdup (r_str_get (egg->lang.syscalls[i].arg));
 						}
@@ -580,7 +583,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					R_LOG_WARN ("No CallName '%s'", r_str_get (egg->lang.callname));
 				}
 			}
-		} else if (!strncmp (str + 1, "reg", 3)) {
+		} else if (r_str_startswith (str + 1, "reg")) {
 			// XXX: can overflow if out is small
 			if (egg->lang.attsyntax) {
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str + 4)));
@@ -1064,7 +1067,8 @@ static void rcc_next(REgg *egg) {
 			egg->lang.nargs = 0;
 		} else {
 			for (i = 0; i < egg->lang.nsyscalls; i++) {
-				if (!strcmp (str, egg->lang.syscalls[i].name)) {
+				const char *name = egg->lang.syscalls[i].name;
+				if (name && !strcmp (str, name)) {
 					p = egg->lang.syscallbody;
 					e->comment (egg, "set syscall args");
 					e->syscall_args (egg, egg->lang.nargs);
