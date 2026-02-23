@@ -2227,37 +2227,37 @@ static bool is_entrypoint_symbol(const char *name) {
 	const char *words[] = {
 		// clang-format off
 		"main", "_start", "_main", "Main", "WinMain", "wmain", "DllMain", "wWinMain",
-		"loadView"
-		"viewDidLoad"
+		"loadView",
+		"viewDidLoad",
 		"UIApplicationMain",
-		"applicationDidFinishLaunching"
-		"application:didFinishLaunchingWithOptions"
-		"applicationWillResignActive"
-		"applicationDidEnterBackground"
-		"applicationWillEnterForeground"
-		"applicationDidBecomeActive"
-		"applicationWillTerminate"
-		"application:configurationForConnectingSceneSession:options"
-		"application:didDiscardSceneSessions"
-		"application:openURL:options"
-		"application:performFetchWithCompletionHandler"
-		"application:didReceiveRemoteNotification:fetchCompletionHandler"
-		"application:handleEventsForBackgroundURLSession:completionHandler"
-		"application:shouldSaveSecureApplicationState"
-		"application:shouldRestoreSecureApplicationState"
-		"application:didRegisterForRemoteNotificationsWithDeviceToken"
-		"application:didFailToRegisterForRemoteNotificationsWithError"
-		"application:didReceiveRemoteNotification"
-		"application:handleOpenURL"
-		"application:continueUserActivity:restorationHandler"
-		"application:didUpdateUserActivity"
-		"scene:willConnectToSession:options"
-		"sceneDidDisconnect"
-		"sceneDidBecomeActive"
-		"sceneWillResignActive"
-		"sceneWillEnterForeground"
-		"sceneDidEnterBackground"
-		"application:handleWatchKitExtensionRequest:reply"
+		"applicationDidFinishLaunching",
+		"application:didFinishLaunchingWithOptions",
+		"applicationWillResignActive",
+		"applicationDidEnterBackground",
+		"applicationWillEnterForeground",
+		"applicationDidBecomeActive",
+		"applicationWillTerminate",
+		"application:configurationForConnectingSceneSession:options",
+		"application:didDiscardSceneSessions",
+		"application:openURL:options",
+		"application:performFetchWithCompletionHandler",
+		"application:didReceiveRemoteNotification:fetchCompletionHandler",
+		"application:handleEventsForBackgroundURLSession:completionHandler",
+		"application:shouldSaveSecureApplicationState",
+		"application:shouldRestoreSecureApplicationState",
+		"application:didRegisterForRemoteNotificationsWithDeviceToken",
+		"application:didFailToRegisterForRemoteNotificationsWithError",
+		"application:didReceiveRemoteNotification",
+		"application:handleOpenURL",
+		"application:continueUserActivity:restorationHandler",
+		"application:didUpdateUserActivity",
+		"scene:willConnectToSession:options",
+		"sceneDidDisconnect",
+		"sceneDidBecomeActive",
+		"sceneWillResignActive",
+		"sceneWillEnterForeground",
+		"sceneDidEnterBackground",
+		"application:handleWatchKitExtensionRequest:reply",
 		// clang-format on
 	};
 	size_t i, size = sizeof (words) / sizeof (words[0]);
