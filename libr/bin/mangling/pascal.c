@@ -4,20 +4,21 @@
 
 #include <r_util.h>
 
-#define IS_NAME(x) (islower (x) || isdigit (x) || (x) == '_')
+static inline bool isname(char ch) {
+	return islower (ch) || isdigit (ch) || (ch) == '_';
+}
 
 static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t mangled_len) {
-	char *next = mangled;
 	char *end = mangled + mangled_len;
-	char *tmp = strchr (next, '$');
+	char *tmp = strchr (mangled, '$');
 
 	// <func_name>$<type0$type1>$$<ret_type>
-	r_strbuf_append_n (ds, next, tmp - next);
+	r_strbuf_append_n (ds, mangled, tmp - mangled);
 	r_strbuf_append (ds, "(");
-	next = tmp + strlen ("$");
+	char *next = tmp + strlen ("$");
 	size_t n_arg = 0;
 
-	while (next < end && *next != '$' && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && IS_NAME (tmp[-1])) {
+	while (next < end && *next != '$' && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && isname (tmp[-1])) {
 		// <type0$type1>$$<ret_type>
 		if (n_arg > 0) {
 			r_strbuf_append (ds, ",");
@@ -46,7 +47,6 @@ static char *demangle_freepascal_function(RStrBuf *ds, char *mangled, size_t man
 		r_strbuf_append (ds, ")");
 		next = end;
 	}
-
 	return next;
 }
 
@@ -77,8 +77,6 @@ static void demangle_freepascal_unit(RStrBuf *ds, char *mangled, size_t mangled_
 		} else {
 			if (end > mangled) {
 				r_strbuf_append_n (ds, mangled, end - mangled);
-			} else {
-				// should never happen
 			}
 		}
 	} else {
@@ -90,6 +88,7 @@ static void demangle_freepascal_unit(RStrBuf *ds, char *mangled, size_t mangled_
 
 // Demangles freepascal 2.6.x to 3.2.x symbols
 R_API char *r_bin_demangle_freepascal(const char *_mangled) {
+	R_RETURN_VAL_IF_FAIL (_mangled, NULL);
 	char *tmp = NULL;
 	bool unit = false;
 	char *mangled = strdup (_mangled);
@@ -97,21 +96,14 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 	char *next = mangled;
 	char *end = mangled + mangled_len;
 	RStrBuf *ds = r_strbuf_new ("");
-	if (!ds) {
-		goto demangle_fail;
-	}
+	r_str_case (mangled, false);
 
-	size_t i;
-	for (i = 0; i < mangled_len; i++) {
-		mangled[i] = tolower (mangled[i]);
-	}
-
-	if (next < end && (tmp = strstr (next, "$_$")) && tmp > next && IS_NAME (tmp[-1])) {
+	if (next < end && (tmp = strstr (next, "$_$")) && tmp > next && isname (tmp[-1])) {
 		// <unit>$_$<object>_$_<unit1>_$$_<func_name>$<type0$type1>$$<ret_type>
 		demangle_freepascal_unit (ds, next, tmp - next);
 		unit = true;
 		next = tmp + strlen ("$_$");
-		while ((tmp = strstr (next, "_$_")) && tmp > next && IS_NAME (tmp[-1])) {
+		while ((tmp = strstr (next, "_$_")) && tmp > next && isname (tmp[-1])) {
 			r_strbuf_append_n (ds, next, tmp - next);
 			r_strbuf_append (ds, ".");
 			next = tmp + strlen ("_$_");
@@ -121,8 +113,7 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 			next += strlen ("_$$_");
 		}
 	}
-
-	if (next < end && (tmp = strstr (next, "_$$_")) && tmp > next && IS_NAME (tmp[-1])) {
+	if (next < end && (tmp = strstr (next, "_$$_")) && tmp > next && isname (tmp[-1])) {
 		// <unit1>_$$_<func_name>$<type0$type1>$$<ret_type>
 		if (!unit) {
 			demangle_freepascal_unit (ds, next, tmp - next);
@@ -132,24 +123,17 @@ R_API char *r_bin_demangle_freepascal(const char *_mangled) {
 		}
 		next = tmp + strlen ("_$$_");
 	}
-
-	if (next < end && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && IS_NAME (tmp[-1])) {
+	if (next < end && (tmp = strchr (next, '$')) && tmp > next && tmp > mangled && isname (tmp[-1])) {
 		(void)demangle_freepascal_function (ds, next, end - next);
 	} else {
 		// <func_name>
 		r_strbuf_append (ds, next);
 		r_strbuf_append (ds, "()");
 	}
-
-	if (ds->len < 1) {
-		goto demangle_fail;
+	free (mangled);
+	if (ds->len > 0) {
+		return r_strbuf_drain (ds);
 	}
-
-	free (mangled);
-	return r_strbuf_drain (ds);
-
-demangle_fail:
 	r_strbuf_free (ds);
-	free (mangled);
 	return NULL;
 }
