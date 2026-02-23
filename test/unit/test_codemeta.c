@@ -127,10 +127,15 @@ static RCodeMeta *get_all_context_annotated_code(void) {
 	RCodeMetaItem local_variable = make_variable_annotation (42, 51, R_CODEMETA_TYPE_LOCAL_VARIABLE, "local-var");
 	RCodeMetaItem function_parameter = make_variable_annotation (59, 73, R_CODEMETA_TYPE_FUNCTION_PARAMETER, "function-param");
 	r_codemeta_add_item (code, &function_name);
+	r_codemeta_item_fini (&function_name);
 	r_codemeta_add_item (code, &constant_variable);
+	r_codemeta_item_fini (&constant_variable);
 	r_codemeta_add_item (code, &global_variable);
+	r_codemeta_item_fini (&global_variable);
 	r_codemeta_add_item (code, &local_variable);
+	r_codemeta_item_fini (&local_variable);
 	r_codemeta_add_item (code, &function_parameter);
+	r_codemeta_item_fini (&function_parameter);
 	return code;
 }
 

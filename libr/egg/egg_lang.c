@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2022 - pancake */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_egg.h>
 
@@ -108,22 +108,59 @@ R_API void r_egg_lang_init(REgg *egg) {
 	/* do call or inline it? */ // BOOL
 	egg->lang.docall = 1;
 	egg->lang.line = 1;
-	egg->lang.file = "stdin";
+	egg->lang.file = strdup ("stdin");
 	egg->lang.oc = '\n';
 	egg->lang.mode = LANG_MODE_NORMAL;
 }
 
-R_API void r_egg_lang_free(REgg *egg) {
+R_API void r_egg_lang_fini(REgg *egg) {
 	int i, len;
 
 	for (i = 0; i < egg->lang.nsyscalls; i++) {
 		R_FREE (egg->lang.syscalls[i].name);
 		R_FREE (egg->lang.syscalls[i].arg);
 	}
+	for (i = 0; i < egg->lang.nalias; i++) {
+		R_FREE (egg->lang.aliases[i].name);
+		R_FREE (egg->lang.aliases[i].content);
+	}
+	for (i = 0; i < egg->lang.ninlines; i++) {
+		R_FREE (egg->lang.inlines[i].name);
+		R_FREE (egg->lang.inlines[i].body);
+	}
 	len = sizeof (egg->lang.ctxpush) / sizeof (char *);
 	for (i = 0; i < len; i++) {
 		R_FREE (egg->lang.ctxpush[i]);
 	}
+	len = sizeof (egg->lang.inlines) / sizeof (egg->lang.inlines[0]);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.inlines[i].name);
+		R_FREE (egg->lang.inlines[i].body);
+	}
+	len = sizeof (egg->lang.aliases) / sizeof (egg->lang.aliases[0]);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.aliases[i].name);
+		R_FREE (egg->lang.aliases[i].content);
+	}
+	len = sizeof (egg->lang.nested) / sizeof (char *);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.nested[i]);
+	}
+	len = sizeof (egg->lang.nested_callname) / sizeof (char *);
+	for (i = 0; i < len; i++) {
+		R_FREE (egg->lang.nested_callname[i]);
+	}
+	R_FREE (egg->lang.conditionstr);
+	R_FREE (egg->lang.syscallbody);
+	R_FREE (egg->lang.includefile);
+	R_FREE (egg->lang.setenviron);
+	R_FREE (egg->lang.mathline);
+	R_FREE (egg->lang.callname);
+	R_FREE (egg->lang.endframe);
+	R_FREE (egg->lang.file);
+	R_FREE (egg->lang.dstvar);
+	R_FREE (egg->lang.dstval);
+	R_FREE (egg->lang.includedir);
 }
 
 R_API void r_egg_lang_include_path(REgg *egg, const char *path) {
@@ -183,7 +220,8 @@ static const char *find_alias(REgg *egg, const char *str) {
 	}
 	*p = '\x00';
 	for (i = 0; i < egg->lang.nalias; i++) {
-		if (!strcmp (str, egg->lang.aliases[i].name)) {
+		const char *name = egg->lang.aliases[i].name;
+		if (name && !strcmp (str, name)) {
 			return strdup (egg->lang.aliases[i].content);
 		}
 	}
@@ -340,7 +378,8 @@ static void rcc_element(REgg *egg, char *str) {
 				break;
 			}
 			for (i = 0; i < egg->lang.nalias; i++) {
-				if (!strcmp (egg->lang.dstvar, egg->lang.aliases[i].name)) {
+				const char *name = egg->lang.aliases[i].name;
+				if (name && !strcmp (egg->lang.dstvar, name)) {
 					R_FREE (egg->lang.aliases[i].name);
 					R_FREE (egg->lang.aliases[i].content);
 					break;
@@ -366,7 +405,7 @@ static void rcc_element(REgg *egg, char *str) {
 				bool found = false;
 				int idx = egg->lang.nsyscalls;
 				for (i = 0; i < egg->lang.nsyscalls; i++) {
-					if (!strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
+				if (egg->lang.syscalls[i].name && !strcmp (egg->lang.dstvar, egg->lang.syscalls[i].name)) {
 						idx = i;
 						found = true;
 						break;
@@ -489,7 +528,6 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	if (!_str) {
 		return NULL; /* fix segfault, but not badparsing */
 	}
-	/* XXX memory leak */
 	ret = str = oldstr = r_str_trim_dup (_str);
 	// if (num || str[0] == '0') {snprintf (out, 32, "$%d", num); ret = out; }
 	if ((q = strchr (str, ':'))) {
@@ -507,22 +545,22 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
-		if (!strncmp (str + 1, "ret", 3)) {
+		if (r_str_startswith (str + 1, "ret")) {
 			strcpy (out, e->retvar);
-		} else if (!strncmp (str + 1, "fix", 3)) {
+		} else if (r_str_startswith (str + 1, "fix")) {
 			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - egg->lang.stackfixed);
 			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ-egg->lang.stackfixed));
-		} else if (!strncmp (str + 1, "var", 3)) {
+		} else if (r_str_startswith (str + 1, "var")) {
 			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
 			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ));
-		} else if (!strncmp (str + 1, "rarg", 4)) {
-			if (e->get_ar) {
+		} else if (r_str_startswith (str + 1, "rarg")) {
+			if (e->get_arg) {
 				int idx = (int)r_num_math (NULL, str + 5);
-				e->get_ar (egg, out, idx);
+				e->get_arg (egg, out, idx);
 			}
-		} else if (!strncmp (str + 1, "arg", 3)) {
+		} else if (r_str_startswith (str + 1, "arg")) {
 			if (str[4]) {
 				if (egg->lang.stackframe == 0) {
 					e->get_var (egg, 1, out, 4); // idx-4);
@@ -534,7 +572,8 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				/* TODO: return size of syscall */
 				if (egg->lang.callname) {
 					for (i = 0; i < egg->lang.nsyscalls; i++) {
-						if (!strcmp (egg->lang.syscalls[i].name, egg->lang.callname)) {
+						const char *name = egg->lang.syscalls[i].name;
+						if (name && !strcmp (name, egg->lang.callname)) {
 							free (oldstr);
 							return strdup (r_str_get (egg->lang.syscalls[i].arg));
 						}
@@ -544,7 +583,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 					R_LOG_WARN ("No CallName '%s'", r_str_get (egg->lang.callname));
 				}
 			}
-		} else if (!strncmp (str + 1, "reg", 3)) {
+		} else if (r_str_startswith (str + 1, "reg")) {
 			// XXX: can overflow if out is small
 			if (egg->lang.attsyntax) {
 				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str + 4)));
@@ -1028,7 +1067,8 @@ static void rcc_next(REgg *egg) {
 			egg->lang.nargs = 0;
 		} else {
 			for (i = 0; i < egg->lang.nsyscalls; i++) {
-				if (!strcmp (str, egg->lang.syscalls[i].name)) {
+				const char *name = egg->lang.syscalls[i].name;
+				if (name && !strcmp (str, name)) {
 					p = egg->lang.syscallbody;
 					e->comment (egg, "set syscall args");
 					e->syscall_args (egg, egg->lang.nargs);

@@ -174,7 +174,7 @@ typedef struct r_egg_emit_t {
 	void (*restore_stack)(REgg *egg, int size);
 	void (*syscall_args)(REgg *egg, int nargs);
 	void (*get_var)(REgg *egg, int type, char *out, int idx);
-	void (*get_ar)(REgg *egg, char *out, int idx);
+	void (*get_arg)(REgg *egg, char *out, int idx);
 	void (*while_end)(REgg *egg, const char *label);
 	void (*load)(REgg *egg, const char *str, int sz);
 	void (*load_ptr)(REgg *egg, const char *str);
@@ -186,7 +186,7 @@ typedef struct r_egg_emit_t {
 #ifdef R_API
 R_API REgg *r_egg_new(void);
 R_API void r_egg_lang_init(REgg *egg);
-R_API void r_egg_lang_free(REgg *egg);
+R_API void r_egg_lang_fini(REgg *egg);
 R_API char *r_egg_tostring(REgg *egg);
 R_API void r_egg_free(REgg *egg);
 R_API bool r_egg_plugin_add(REgg *a, REggPlugin *plugin);
