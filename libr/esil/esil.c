@@ -2,10 +2,117 @@
 
 #define R_LOG_ORIGIN "esil"
 
+#include <stddef.h>
 #include <r_anal.h>
 #include <r_io.h>
 #include <r_reg.h>
 
+#define ESIL_STR_MAGIC 0x4553494c
+
+typedef struct r_esil_string_hdr_t {
+	struct r_esil_string_hdr_t *next;
+	size_t capacity;
+	size_t len;
+	ut32 magic;
+	ut8 bucket;
+} REsilStringChunk;
+
+static const size_t esil_str_bin_sizes[R_ESIL_STR_CACHE_BINS] = {16, 32, 64, 96, 160, 256, 512, 1024};
+
+static inline size_t esil_str_bucket_for_len(size_t len) {
+	size_t need = len + 1;
+	size_t i;
+	for (i = 0; i < R_ESIL_STR_CACHE_BINS; i++) {
+		if (esil_str_bin_sizes[i] >= need) {
+			return i;
+		}
+	}
+	return R_ESIL_STR_CACHE_BINS;
+}
+
+static inline REsilStringChunk *esil_str_chunk_from_data(char *s) {
+	if (!s) {
+		return NULL;
+	}
+	size_t len = strlen (s);
+	return (REsilStringChunk *)(s + len + 1);
+}
+
+static char *esil_str_alloc(REsil *esil, const char *src, size_t len) {
+	size_t bucket = esil_str_bucket_for_len (len);
+	size_t payload = (bucket < R_ESIL_STR_CACHE_BINS)? esil_str_bin_sizes[bucket]: (len + 1);
+	size_t total = payload + sizeof (REsilStringChunk);
+	REsilStringChunk *tail = NULL;
+	char *base = NULL;
+	if (bucket < R_ESIL_STR_CACHE_BINS) {
+		tail = esil->str_cache[bucket];
+		if (tail) {
+			esil->str_cache[bucket] = tail->next;
+			esil->str_cache_bytes -= tail->capacity;
+			payload = tail->capacity - sizeof (REsilStringChunk);
+			base = (char *)tail - payload;
+		}
+	}
+	if (!tail) {
+		total = payload + sizeof (REsilStringChunk);
+		base = malloc (total);
+		if (!base) {
+			return NULL;
+		}
+		tail = (REsilStringChunk *)(base + payload);
+		tail->capacity = total;
+	}
+	tail->len = len;
+	tail->bucket = (bucket < R_ESIL_STR_CACHE_BINS)? bucket: 0xff;
+	tail->magic = ESIL_STR_MAGIC;
+	tail->next = NULL;
+	memcpy (base, src, len);
+	base[len] = 0;
+	return base;
+}
+
+static void esil_str_release(REsil *esil, char *str) {
+	if (!str) {
+		return;
+	}
+	REsilStringChunk *tail = esil_str_chunk_from_data (str);
+	if (!tail || tail->magic != ESIL_STR_MAGIC) {
+		free (str);
+		return;
+	}
+	const size_t bucket = tail->bucket;
+	if (bucket < R_ESIL_STR_CACHE_BINS) {
+		const size_t cap = tail->capacity;
+		if (esil->str_cache_bytes + cap <= esil->str_cache_limit) {
+			tail->next = esil->str_cache[bucket];
+			esil->str_cache[bucket] = tail;
+			esil->str_cache_bytes += cap;
+			return;
+		}
+	}
+	const size_t payload = tail->capacity - sizeof (REsilStringChunk);
+	char *base = (char *)tail - payload;
+	free (base);
+}
+
+static void esil_str_cache_clear(REsil *esil) {
+	if (!esil) {
+		return;
+	}
+	size_t i;
+	for (i = 0; i < R_ESIL_STR_CACHE_BINS; i++) {
+		REsilStringChunk *hdr = esil->str_cache[i];
+		while (hdr) {
+			REsilStringChunk *next = hdr->next;
+			const size_t payload = hdr->capacity - sizeof (REsilStringChunk);
+			char *base = (char *)hdr - payload;
+			free (base);
+			hdr = next;
+		}
+		esil->str_cache[i] = NULL;
+	}
+	esil->str_cache_bytes = 0;
+}
 R_IPI bool isregornum(REsil *esil, const char *str, ut64 *num);
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr) {
@@ -33,6 +140,7 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 		free (esil);
 		return NULL;
 	}
+	esil->str_cache_limit = 128 * 1024;
 	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
@@ -58,6 +166,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 	if (R_UNLIKELY (!esil->stack)) {
 		return false;
 	}
+	esil->str_cache_limit = 128 * 1024;
 	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
 	if (R_UNLIKELY (!esil->ops)) {
 		goto ops_fail;
@@ -256,6 +365,7 @@ R_API void r_esil_fini(REsil *esil) {
 	ht_pp_free (esil->ops);
 	r_esil_stack_free (esil);
 	free (esil->stack);
+	esil_str_cache_clear (esil);
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -285,6 +395,7 @@ R_API void r_esil_free(REsil *esil) {
 	sdb_free (esil->stats);
 	r_esil_stack_free (esil);
 	free (esil->stack);
+	esil_str_cache_clear (esil);
 
 	r_esil_trace_free (esil->trace);
 	free (esil->cmd_intr);
@@ -525,7 +636,12 @@ R_API bool r_esil_push(REsil *esil, const char *str) {
 	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	esil->stack[esil->stackptr++] = strdup (str);
+	size_t len = strlen (str);
+	char *dup = esil_str_alloc (esil, str, len);
+	if (!dup) {
+		return false;
+	}
+	esil->stack[esil->stackptr++] = dup;
 	return true;
 }
 
@@ -535,6 +651,17 @@ R_API char *r_esil_pop(REsil *esil) {
 		return NULL;
 	}
 	return esil->stack[--esil->stackptr];
+}
+
+R_API void r_esil_str_free(REsil *esil, char *str) {
+	if (!str) {
+		return;
+	}
+	if (esil) {
+		esil_str_release (esil, str);
+		return;
+	}
+	free (str);
 }
 
 static int not_a_number(REsil *esil, const char *str) {
@@ -979,6 +1106,7 @@ R_API void r_esil_stack_free(REsil *esil) {
 	int i;
 	for (i = 0; i < esil->stackptr; i++) {
 		R_TAG_FREE (esil->stack[i]);
+		r_esil_str_free (esil, esil->stack[i]);
 		esil->stack[i] = NULL;
 	}
 	esil->stackptr = 0;
@@ -997,7 +1125,7 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 		} else {
 			ret = 0;
 		}
-		free (popped);
+		r_esil_str_free (esil, popped);
 	} else {
 		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;

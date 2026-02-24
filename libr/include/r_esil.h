@@ -43,6 +43,9 @@ enum {
 };
 
 typedef struct r_esil_t ESIL;
+typedef struct r_esil_string_hdr_t REsilStringChunk;
+
+#define R_ESIL_STR_CACHE_BINS 8
 
 typedef bool (*REsilHandlerCB)(ESIL *esil, ut32 h, void *user);
 
@@ -210,6 +213,9 @@ typedef struct r_esil_options_t {
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
 	char **stack;
+	REsilStringChunk *str_cache[R_ESIL_STR_CACHE_BINS];
+	size_t str_cache_bytes;
+	size_t str_cache_limit;
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
@@ -333,6 +339,7 @@ R_API const char *r_esil_pop(REsil *esil);
 #else
 R_API char *r_esil_pop(REsil *esil);
 #endif
+R_API void r_esil_str_free(REsil *esil, char *str);
 typedef bool (*REsilOpCb)(REsil *esil);
 
 typedef struct r_esil_operation_t {
