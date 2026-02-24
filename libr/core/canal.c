@@ -4,18 +4,11 @@
 
 #include <r_core.h>
 #include <r_vec.h>
-#include <sdb/ht_uu.h>
 
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 
-typedef struct {
-	ut64 from;
-	ut64 to;
-	bool set_xref;
-} StringRef;
-
-R_VEC_TYPE(RVecStringRef, StringRef);
+R_VEC_TYPE(RVecU64, ut64);
 
 // used to speedup strcmp with rconfig.get in loops
 enum {
@@ -5398,7 +5391,7 @@ typedef struct {
 	RAnalFunction *fcn;
 	char *spname;
 	ut64 initial_sp;
-	RVecStringRef pending_string_refs;
+	RVecU64 pending_string_refs;
 	bool batch_strings;
 } EsilBreakCtx;
 
@@ -5469,32 +5462,36 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len)
 
 static void esilbreak_batch_init(EsilBreakCtx *ctx) {
 	R_RETURN_IF_FAIL (ctx);
-	RVecStringRef_init (&ctx->pending_string_refs);
+	RVecU64_init (&ctx->pending_string_refs);
 	ctx->batch_strings = true;
 }
 
 static void esilbreak_batch_fini(EsilBreakCtx *ctx) {
 	R_RETURN_IF_FAIL (ctx);
-	RVecStringRef_fini (&ctx->pending_string_refs);
+	RVecU64_fini (&ctx->pending_string_refs);
 	ctx->batch_strings = false;
 }
 
-static void esilbreak_collect_string_ref(REsil *esil, ut64 from, ut64 to, bool set_xref) {
+static void esilbreak_collect_string_ref(REsil *esil, ut64 to) {
 	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	RCore *core = esil->anal->coreb.core;
 	if (!ctx->batch_strings) {
-		add_string_ref (core, from, to);
+		add_string_ref (core, esil->addr, to);
 		return;
 	}
 	if (to == UT64_MAX || !to) {
 		return;
 	}
-	if (!from || from == UT64_MAX) {
-		from = esil->addr;
+	size_t i;
+	const size_t count = RVecU64_length (&ctx->pending_string_refs);
+	for (i = 0; i < count; i++) {
+		ut64 *existing = RVecU64_at (&ctx->pending_string_refs, i);
+		if (*existing == to) {
+			return;
+		}
 	}
-	StringRef ref = { from, to, set_xref };
-	RVecStringRef_push_back (&ctx->pending_string_refs, &ref);
+	RVecU64_push_back (&ctx->pending_string_refs, &to);
 }
 
 static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
@@ -5502,47 +5499,18 @@ static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
 	if (!ctx->batch_strings) {
 		return;
 	}
-	const size_t count = RVecStringRef_length (&ctx->pending_string_refs);
+	const size_t count = RVecU64_length (&ctx->pending_string_refs);
 	if (!count) {
 		return;
 	}
-	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
-	HtUU *seen = ht_uu_new0 ();
-	if (!seen) {
-		size_t i;
-		for (i = 0; i < count; i++) {
-			StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
-			add_string_ref (core, ref->from, ref->to);
-		}
-		goto beach;
-	}
 	size_t i;
 	for (i = 0; i < count; i++) {
-		StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
-		bool found = false;
-		ht_uu_find (seen, ref->to, &found);
-		if (found) {
-			continue;
-		}
+		ut64 *ref = RVecU64_at (&ctx->pending_string_refs, i);
 		char str[STRSZ] = {0};
 		int len = 0;
-		ut64 state = add_string_ref_meta (core, ref->to, str, &len)? 1: 2;
-		ht_uu_insert (seen, ref->to, state);
+		add_string_ref_meta (core, *ref, str, &len);
 	}
-	for (i = 0; i < count; i++) {
-		StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
-		if (!ref->set_xref) {
-			continue;
-		}
-		bool found = false;
-		ut64 state = ht_uu_find (seen, ref->to, &found);
-		if (found && state == 1) {
-			r_anal_xrefs_set (core->anal, ref->from, ref->to, reftype);
-		}
-	}
-	ht_uu_free (seen);
-beach:
-	RVecStringRef_clear (&ctx->pending_string_refs);
+	RVecU64_clear (&ctx->pending_string_refs);
 }
 
 static bool is_stack(RIO *io, ut64 addr) {
@@ -5615,7 +5583,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 				} else {
 				r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 				str[sizeof (str) - 1] = 0;
-				esilbreak_collect_string_ref (esil, esil->addr, refptr, false);
+				esilbreak_collect_string_ref (esil, refptr);
 				esilbreak_last_data = UT64_MAX;
 			}
 		}
@@ -5665,18 +5633,21 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		}
 		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				esilbreak_collect_string_ref (esil, esil->addr, at, true);
+				r_anal_xrefs_set (anal, esil->addr, at, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				esilbreak_collect_string_ref (esil, at);
 			}
 		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				esilbreak_collect_string_ref (esil, esil->addr, at, true);
+				r_anal_xrefs_set (anal, esil->addr, at, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				esilbreak_collect_string_ref (esil, at);
 			}
 		}
 	} else {
 		// intel, sparc and others
 		if (op->type != R_ANAL_OP_TYPE_RMOV) {
 			if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
-				esilbreak_collect_string_ref (esil, esil->addr, at, true);
+				r_anal_xrefs_set (anal, esil->addr, at, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				esilbreak_collect_string_ref (esil, at);
 			}
 		}
 	}
