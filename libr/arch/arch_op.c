@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake, nibble, condret */
+/* radare - LGPL - Copyright 2010-2026 - pancake, nibble, condret */
 
 #include <r_arch.h>
 
@@ -16,6 +16,7 @@ R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
 }
 
 R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
+	R_RETURN_VAL_IF_FAIL (op && data && size > 0, false);
 	if (op) {
 		// TODO: use maxopsz from archbits
 		op->addr = addr;

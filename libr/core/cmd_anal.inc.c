@@ -9739,9 +9739,48 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 	}
 }
 
+static void cmd_aoc(RCore *core, const char *input) {
+	RListIter *iter;
+	RAnalCycleHook *hook;
+	char ch = input[1];
+	if (ch== '?') {
+		r_core_cmd_help_contains (core, help_msg_ao, "aoc");
+		return;
+	}
+	if (ch && ch != ' ') {
+		r_core_return_invalid_command (core, "aoc", ch);
+		return;
+	}
+	const int ccl = input[1]? r_num_math (core->num, input + 2): 0;
+	if (ccl < 0) {
+		R_LOG_ERROR ("aoc expects a positive number");
+		return;
+	}
+	RConfigHold *hc = r_config_hold_new (core->config);
+	r_config_hold (hc, "asm.cmt.right", "asm.functions", "asm.lines", "asm.xrefs", NULL);
+	r_config_set_b (core->config, "asm.cmt.right", true);
+	r_config_set_b (core->config, "asm.functions", false);
+	r_config_set_b (core->config, "asm.lines", false);
+	r_config_set_b (core->config, "asm.xrefs", false);
+
+	RList *hooks = r_core_anal_cycles (core, ccl);
+	r_list_foreach (hooks, iter, hook) {
+		char *ins = r_core_disassemble_instr (core, hook->addr, 1);
+		if (ins) {
+			size_t count = ccl - hook->cycles;
+			r_cons_printf (core->cons, "after %i cycles: %s\n", count, ins);
+			free (ins);
+		}
+	}
+	r_list_free (hooks);
+
+	r_config_hold_restore (hc);
+	r_config_hold_free (hc);
+}
+
 static void cmd_anal_opcode(RCore *core, const char *input) {
-	int l, len = core->blocksize;
 	ut32 tbs = core->blocksize;
+	int l, len = tbs;
 	r_core_block_read (core);
 	switch (input[0]) {
 	case 's': // "aos"
@@ -9857,39 +9896,8 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		}
 		break;
 	case 'c': // "aoc"
-	{
-		RList *hooks;
-		RListIter *iter;
-		RAnalCycleHook *hook;
-		char *instr_tmp = NULL;
-		int ccl = input[1]? r_num_math (core->num, &input[2]): 0; //get cycles to look for
-		bool cr = r_config_get_b (core->config, "asm.cmt.right");
-		bool fu = r_config_get_b (core->config, "asm.functions");
-		bool li = r_config_get_b (core->config, "asm.lines");
-		bool xr = r_config_get_b (core->config, "asm.xrefs");
-
-		r_config_set_b (core->config, "asm.cmt.right", true);
-		r_config_set_b (core->config, "asm.functions", false);
-		r_config_set_b (core->config, "asm.lines", false);
-		r_config_set_b (core->config, "asm.xrefs", false);
-
-		hooks = r_core_anal_cycles (core, ccl); // analyse
-		r_list_foreach (hooks, iter, hook) {
-			instr_tmp = r_core_disassemble_instr (core, hook->addr, 1);
-			if (instr_tmp) {
-				r_cons_printf (core->cons, "After %4i cycles:\t%s", (ccl - hook->cycles), instr_tmp);
-				r_cons_flush (core->cons);
-				free (instr_tmp);
-			}
-		}
-		r_list_free (hooks);
-
-		r_config_set_b (core->config, "asm.cmt.right", cr); //reset settings
-		r_config_set_b (core->config, "asm.functions", fu);
-		r_config_set_b (core->config, "asm.lines", li);
-		r_config_set_b (core->config, "asm.xrefs", xr);
-	}
-	break;
+		cmd_aoc (core, input);
+		break;
 	case 'd': // "aod"
 		if (input[1] == 'a') { // "aoda"
 			// list sdb database
