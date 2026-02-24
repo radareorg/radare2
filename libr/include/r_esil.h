@@ -44,6 +44,8 @@ enum {
 
 typedef struct r_esil_t ESIL;
 
+#define R_ESIL_TOKEN_SIZE 32
+
 typedef bool (*REsilHandlerCB)(ESIL *esil, ut32 h, void *user);
 
 typedef struct r_esil_handler_t {
@@ -209,7 +211,7 @@ typedef struct r_esil_options_t {
 
 typedef struct r_esil_t {
 	struct r_anal_t *anal; // required for io, reg, and call esil_init/fini of the selected arch plugin
-	char **stack;
+	char (*stack)[R_ESIL_TOKEN_SIZE];
 	ut64 addrmask;
 	int stacksize;
 	int stackptr;
@@ -328,11 +330,7 @@ R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);
-#if R2_590
 R_API const char *r_esil_pop(REsil *esil);
-#else
-R_API char *r_esil_pop(REsil *esil);
-#endif
 typedef bool (*REsilOpCb)(REsil *esil);
 
 typedef struct r_esil_operation_t {
