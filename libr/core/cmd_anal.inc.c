@@ -2503,9 +2503,9 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 		addr = core->addr + idx;
 		r_asm_set_pc (core->rasm, addr);
 		hint = r_anal_hint_get (core->anal, addr);
-			ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
-				R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT
-				| R_ARCH_OP_MASK_DISASM | R_ARCH_OP_MASK_VAL);
+		ret = r_anal_op (core->anal, &op, addr, buf + idx, len - idx,
+			R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_OPEX | R_ARCH_OP_MASK_HINT
+			| R_ARCH_OP_MASK_DISASM | R_ARCH_OP_MASK_VAL);
 		(void)r_asm_disassemble (core->rasm, &asmop, buf + idx, len - idx);
 		esilstr = R_STRBUF_SAFEGET (&op.esil);
 		opexstr = R_STRBUF_SAFEGET (&op.opex);
