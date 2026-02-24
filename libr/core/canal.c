@@ -4,7 +4,6 @@
 
 #include <r_core.h>
 #include <r_vec.h>
-#include <sdb/ht_uu.h>
 
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
@@ -5584,19 +5583,26 @@ static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
 	}
 	RStringSectionRange *ranges = NULL;
 	size_t ranges_count = build_string_section_ranges (core, &ranges);
+#if 0
+	if (count > 1) {
+		RVecU64_sort (&ctx->pending_string_refs, esilbreak_u64_find_cmp);
+	}
+#endif
+		RVecU64_uniq (&ctx->pending_string_refs, esilbreak_u64_find_cmp);
 	size_t i;
-	for (i = 0; i < count; i++) {
-		ut64 *ref = RVecU64_at (&ctx->pending_string_refs, i);
+	for (i = 0; i < RVecU64_length (&ctx->pending_string_refs); i++) {
+		ut64 ref = *RVecU64_at (&ctx->pending_string_refs, i);
 		char str[STRSZ] = {0};
 		int len = 0;
-		const RStringSectionRange *range = ranges_count? string_section_range_find (ranges, ranges_count, *ref): NULL;
-		add_string_ref_meta_cached (core, *ref, str, sizeof (str), &len, range);
+		const RStringSectionRange *range = ranges_count? string_section_range_find (ranges, ranges_count, ref): NULL;
+		add_string_ref_meta_cached (core, ref, str, sizeof (str), &len, range);
 	}
 	free (ranges);
 	RVecU64_clear (&ctx->pending_string_refs);
 }
 
 static void esilbreak_collect_string_ref(REsil *esil, ut64 to) {
+return;
 	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
 	EsilBreakCtx *ctx = esil->user;
 	RCore *core = esil->anal->coreb.core;
@@ -5614,7 +5620,7 @@ static void esilbreak_collect_string_ref(REsil *esil, ut64 to) {
 		RVecU64_push_back (&ctx->pending_string_refs, &to);
 	}
 	ctx->last_string_ref = to;
-	if (RVecU64_length (&ctx->pending_string_refs) > 0x10000) {
+	if (RVecU64_length (&ctx->pending_string_refs) > 0x1000) {
 		// process batch
 		esilbreak_flush_string_refs (ctx, core);
 	}
