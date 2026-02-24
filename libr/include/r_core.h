@@ -66,12 +66,12 @@ R_LIB_VERSION_HEADER(r_core);
 #define R_FLAGS_FS_SYMBOLS_SECTIONS "symbols.sections"
 #define R_FLAGS_FS_SYSCALLS "syscalls"
 
-#define R_GRAPH_FORMAT_NO           0
-#define R_GRAPH_FORMAT_GMLFCN       1
-#define R_GRAPH_FORMAT_JSON         2
-#define R_GRAPH_FORMAT_GML          3
-#define R_GRAPH_FORMAT_DOT          4
-#define R_GRAPH_FORMAT_CMD          5
+#define R_GRAPH_FORMAT_NO 0
+#define R_GRAPH_FORMAT_GMLFCN 1
+#define R_GRAPH_FORMAT_JSON 2
+#define R_GRAPH_FORMAT_GML 3
+#define R_GRAPH_FORMAT_DOT 4
+#define R_GRAPH_FORMAT_CMD 5
 
 ///
 #define R_CONS_COLOR_DEF(x, def) ((core->cons && core->cons->context->pal.x)? core->cons->context->pal.x: def)
@@ -318,14 +318,14 @@ typedef struct r_core_esil_t {
 	ut32 tr_reg;
 	ut32 tr_mem;
 	RReg *reg;
-	char *cmd_step;		// command to run before a step is performed
-	char *cmd_step_out;	// command to run after a step is performed
-	char *cmd_intr;		// command to run when an interrupt occurs
-	char *cmd_trap;		// command to run when a trap occurs
-	char *cmd_mdev;		// command to run when an memory mapped device address is used
-	char *cmd_todo;		// command to run when esil expr contains TODO
-	char *cmd_ioer;		// command to run when esil fails to IO
-	char *mdev_range;	// string containing the r_str_range to match for read/write accesses
+	char *cmd_step;	// command to run before a step is performed
+	char *cmd_step_out; // command to run after a step is performed
+	char *cmd_intr; // command to run when an interrupt occurs
+	char *cmd_trap; // command to run when a trap occurs
+	char *cmd_mdev; // command to run when an memory mapped device address is used
+	char *cmd_todo; // command to run when esil expr contains TODO
+	char *cmd_ioer; // command to run when esil fails to IO
+	char *mdev_range; // string containing the r_str_range to match for read/write accesses
 	ut8 cfg;
 } RCoreEsil;
 

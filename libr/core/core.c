@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "core"
 
 #include "../include/r_core.h"
+#include "../include/r_core_priv.h"
 #include <r_vec.h>
 
 R_LIB_VERSION(r_core);
@@ -2762,6 +2763,8 @@ R_API void r_core_bind_cons(RCore *core) {
 
 R_API void r_core_fini(RCore *c) {
 	R_RETURN_IF_FAIL (c);
+	// Free cached section ranges in priv
+	r_core_sec_ranges_invalidate (c);
 	if (c->chan) {
 		r_th_channel_free (c->chan);
 	}

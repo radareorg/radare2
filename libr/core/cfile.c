@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "cfile"
 
 #include <r_core.h>
+#include <r_core_priv.h>
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
@@ -153,6 +154,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		bool had_rbin_info = false;
 
 		if (odesc && bf) {
+			r_core_sec_ranges_invalidate (core);
 			if (r_bin_file_delete (core->bin, bf->id)) {
 				had_rbin_info = true;
 			}
@@ -694,6 +696,8 @@ static bool mustreopen(RCore *core, RIODesc *desc, const char *fn) {
 
 R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	R_RETURN_VAL_IF_FAIL (r && r->io, false);
+	// Invalidate section ranges cache when loading new binary
+	r_core_sec_ranges_invalidate (r);
 	R_CRITICAL_ENTER (r);
 	ut64 laddr = r_config_get_i (r->config, "bin.laddr");
 	RIODesc *desc = r->io->desc;

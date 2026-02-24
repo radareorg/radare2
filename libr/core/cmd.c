@@ -3,6 +3,7 @@
 #define INTERACTIVE_MAX_REP 1024
 
 #include <r_core.h>
+#include <r_core_priv.h>
 #include <r_vec.h>
 #include <r_util/r_json.h>
 #if R2__UNIX__
