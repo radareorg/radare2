@@ -1484,7 +1484,6 @@ static bool esil_poke_n(REsil *esil, int bits) {
 		return false;
 	}
 	bool ret = false;
-	//eprintf ("GONA POKE %d src:%s dst:%s\n", bits, src, dst);
 	char *src2 = NULL;
 	if (src && r_esil_get_parm (esil, src, &num)) {
 		if (dst && r_esil_get_parm (esil, dst, &addr)) {
@@ -1499,37 +1498,23 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				ut64 high = r_reg_getv (esil->anal->reg, reg);
 				ret = r_esil_mem_write (esil, addr, (const ut8*)&loow, 8);
 				ret = r_esil_mem_write (esil, addr + 8, (const ut8*)&high, 8);
-#if 0
-				src2 = r_esil_pop (esil);
-				if (src2 && r_esil_get_parm (esil, src2, &num2)) {
-					r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
-					ret = r_esil_mem_write (esil, addr, b, bytes);
-					if (ret == 0) {
-						r_write_ble (b, num2, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), 64);
-						ret = r_esil_mem_write (esil, addr + 8, b, bytes);
-					}
-					goto out;
-				}
-				ret = false;
-#endif
-				goto out;
+			} else {
+				// this is a internal peek performed before a poke
+				// we disable hooks to avoid run hooks on internal peeks
+				void * oldhook = (void*)esil->cb.hook_mem_read;
+				esil->cb.hook_mem_read = NULL;
+				r_esil_mem_read (esil, addr, b, bytes);
+				esil->cb.hook_mem_read = oldhook;
+				n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
+				esil->old = n;
+				esil->cur = num;
+				esil->lastsz = bits;
+				num = num & bitmask;
+				r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
+				ret = r_esil_mem_write (esil, addr, b, bytes);
 			}
-			// this is a internal peek performed before a poke
-			// we disable hooks to avoid run hooks on internal peeks
-			void * oldhook = (void*)esil->cb.hook_mem_read;
-			esil->cb.hook_mem_read = NULL;
-			r_esil_mem_read (esil, addr, b, bytes);
-			esil->cb.hook_mem_read = oldhook;
-			n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
-			esil->old = n;
-			esil->cur = num;
-			esil->lastsz = bits;
-			num = num & bitmask;
-			r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
-			ret = r_esil_mem_write (esil, addr, b, bytes);
 		}
 	}
-out:
 	free (src2);
 	free (src);
 	free (dst);

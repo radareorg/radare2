@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
 #include <r_esil.h>
 #include <r_anal.h>
