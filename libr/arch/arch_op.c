@@ -15,36 +15,28 @@ R_API bool r_anal_op_set_mnemonic(RAnalOp *op, ut64 addr, const char *s) {
 	return false;
 }
 
-R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8* data, int size) {
+R_API bool r_anal_op_set_bytes(RAnalOp *op, ut64 addr, const ut8 *data, int size) {
 	R_RETURN_VAL_IF_FAIL (op && data && size > 0, false);
-	if (op) {
-		// TODO: use maxopsz from archbits
-		op->addr = addr;
-		if (op->weakbytes) {
-			op->weakbytes = false;
-		} else {
-			if (op->bytes != op->bytes_buf) {
-				free (op->bytes);
-			}
+	op->addr = addr;
+	if (op->weakbytes) {
+		op->weakbytes = false;
+	} else {
+		if (op->bytes != op->bytes_buf) {
+			free (op->bytes);
 		}
-#if 0
-		if (size > 512) {
-			R_LOG_DEBUG ("large opsetbytes of %d. check backtrace to fix", size);
-		}
-#endif
-		size = R_MIN (size, 64); // sizeof (op->bytes_buf));
-		if (size <= sizeof (op->bytes_buf)) {
-			op->weakbytes = true;
-			op->bytes = op->bytes_buf;
-			memcpy (op->bytes_buf, data, size);
-		} else {
-			op->bytes = r_mem_dup (data, size);
-			op->weakbytes = false;
-		}
-		op->size = size;
-		return true;
 	}
-	return false;
+	// TODO: int maxopsz = r_arch_info (arch, R_ARCH_INFO_MAXOP_SIZE);
+	size = R_MIN (size, 64); // 32?
+	if (size <= sizeof (op->bytes_buf)) {
+		op->weakbytes = true;
+		op->bytes = op->bytes_buf;
+		memcpy (op->bytes_buf, data, size);
+	} else {
+		op->bytes = r_mem_dup (data, size);
+		op->weakbytes = false;
+	}
+	op->size = size;
+	return true;
 }
 
 R_API RAnalOp *r_anal_op_new(void) {
@@ -77,7 +69,7 @@ R_API RAnalOp *r_anal_op_clone(RAnalOp *op) {
 		RArchValue *val;
 		RList *naccess = r_list_newf ((RListFree)r_anal_value_free);
 		r_list_foreach (op->access, it, val) {
-			r_list_append (naccess, r_anal_value_clone(val));
+			r_list_append (naccess, r_anal_value_clone (val));
 		}
 		nop->access = naccess;
 	}
@@ -207,12 +199,12 @@ static const struct {
 	{ R_ANAL_OP_TYPE_CASE, "case" },
 	{ R_ANAL_OP_TYPE_CPL, "cpl" },
 	{ R_ANAL_OP_TYPE_CRYPTO, "crypto" },
-	{0,NULL}
+	{ 0, NULL }
 };
 
 R_API int r_arch_optype_from_string(const char *type) {
 	int i;
-	for  (i = 0; optypes[i].name;i++) {
+	for (i = 0; optypes[i].name; i++) {
 		if (!strcmp (optypes[i].name, type)) {
 			return optypes[i].type;
 		}
@@ -225,71 +217,71 @@ R_API const char *r_arch_optype_tostring(int t) {
 repeat:
 	// TODO: delete
 	switch (t) {
-	case R_ANAL_OP_TYPE_IO    : return "io";
-	case R_ANAL_OP_TYPE_ACMP  : return "acmp";
-	case R_ANAL_OP_TYPE_ADD   : return "add";
-	case R_ANAL_OP_TYPE_SYNC  : return "sync";
-	case R_ANAL_OP_TYPE_AND   : return "and";
-	case R_ANAL_OP_TYPE_CALL  : return "call";
-	case R_ANAL_OP_TYPE_CCALL : return "ccall";
-	case R_ANAL_OP_TYPE_CJMP  : return "cjmp";
-	case R_ANAL_OP_TYPE_MJMP  : return "mjmp";
-	case R_ANAL_OP_TYPE_CMP   : return "cmp";
-	case R_ANAL_OP_TYPE_CRET  : return "cret";
-	case R_ANAL_OP_TYPE_DIV   : return "div";
-	case R_ANAL_OP_TYPE_ILL   : return "ill";
-	case R_ANAL_OP_TYPE_JMP   : return "jmp";
-	case R_ANAL_OP_TYPE_LEA   : return "lea";
-	case R_ANAL_OP_TYPE_LEAVE : return "leave";
-	case R_ANAL_OP_TYPE_LOAD  : return "load";
-	case R_ANAL_OP_TYPE_NEW   : return "new";
-	case R_ANAL_OP_TYPE_MOD   : return "mod";
-	case R_ANAL_OP_TYPE_CMOV  : return "cmov";
-	case R_ANAL_OP_TYPE_MOV   : return "mov";
-	case R_ANAL_OP_TYPE_CAST  : return "cast";
-	case R_ANAL_OP_TYPE_MUL   : return "mul";
-	case R_ANAL_OP_TYPE_NOP   : return "nop";
-	case R_ANAL_OP_TYPE_NOT   : return "not";
-	case R_ANAL_OP_TYPE_NULL  : return "null";
-	case R_ANAL_OP_TYPE_OR    : return "or";
-	case R_ANAL_OP_TYPE_POP   : return "pop";
-	case R_ANAL_OP_TYPE_PUSH  : return "push";
-	case R_ANAL_OP_TYPE_RPUSH : return "rpush";
-	case R_ANAL_OP_TYPE_REP   : return "rep";
-	case R_ANAL_OP_TYPE_RET   : return "ret";
-	case R_ANAL_OP_TYPE_ROL   : return "rol";
-	case R_ANAL_OP_TYPE_ROR   : return "ror";
-	case R_ANAL_OP_TYPE_SAL   : return "sal";
-	case R_ANAL_OP_TYPE_SAR   : return "sar";
-	case R_ANAL_OP_TYPE_SHL   : return "shl";
-	case R_ANAL_OP_TYPE_SHR   : return "shr";
-	case R_ANAL_OP_TYPE_STORE : return "store";
-	case R_ANAL_OP_TYPE_SUB   : return "sub";
-	case R_ANAL_OP_TYPE_SWI   : return "swi";
-	case R_ANAL_OP_TYPE_CSWI  : return "cswi";
+	case R_ANAL_OP_TYPE_IO: return "io";
+	case R_ANAL_OP_TYPE_ACMP: return "acmp";
+	case R_ANAL_OP_TYPE_ADD: return "add";
+	case R_ANAL_OP_TYPE_SYNC: return "sync";
+	case R_ANAL_OP_TYPE_AND: return "and";
+	case R_ANAL_OP_TYPE_CALL: return "call";
+	case R_ANAL_OP_TYPE_CCALL: return "ccall";
+	case R_ANAL_OP_TYPE_CJMP: return "cjmp";
+	case R_ANAL_OP_TYPE_MJMP: return "mjmp";
+	case R_ANAL_OP_TYPE_CMP: return "cmp";
+	case R_ANAL_OP_TYPE_CRET: return "cret";
+	case R_ANAL_OP_TYPE_DIV: return "div";
+	case R_ANAL_OP_TYPE_ILL: return "ill";
+	case R_ANAL_OP_TYPE_JMP: return "jmp";
+	case R_ANAL_OP_TYPE_LEA: return "lea";
+	case R_ANAL_OP_TYPE_LEAVE: return "leave";
+	case R_ANAL_OP_TYPE_LOAD: return "load";
+	case R_ANAL_OP_TYPE_NEW: return "new";
+	case R_ANAL_OP_TYPE_MOD: return "mod";
+	case R_ANAL_OP_TYPE_CMOV: return "cmov";
+	case R_ANAL_OP_TYPE_MOV: return "mov";
+	case R_ANAL_OP_TYPE_CAST: return "cast";
+	case R_ANAL_OP_TYPE_MUL: return "mul";
+	case R_ANAL_OP_TYPE_NOP: return "nop";
+	case R_ANAL_OP_TYPE_NOT: return "not";
+	case R_ANAL_OP_TYPE_NULL: return "null";
+	case R_ANAL_OP_TYPE_OR: return "or";
+	case R_ANAL_OP_TYPE_POP: return "pop";
+	case R_ANAL_OP_TYPE_PUSH: return "push";
+	case R_ANAL_OP_TYPE_RPUSH: return "rpush";
+	case R_ANAL_OP_TYPE_REP: return "rep";
+	case R_ANAL_OP_TYPE_RET: return "ret";
+	case R_ANAL_OP_TYPE_ROL: return "rol";
+	case R_ANAL_OP_TYPE_ROR: return "ror";
+	case R_ANAL_OP_TYPE_SAL: return "sal";
+	case R_ANAL_OP_TYPE_SAR: return "sar";
+	case R_ANAL_OP_TYPE_SHL: return "shl";
+	case R_ANAL_OP_TYPE_SHR: return "shr";
+	case R_ANAL_OP_TYPE_STORE: return "store";
+	case R_ANAL_OP_TYPE_SUB: return "sub";
+	case R_ANAL_OP_TYPE_SWI: return "swi";
+	case R_ANAL_OP_TYPE_CSWI: return "cswi";
 	case R_ANAL_OP_TYPE_SWITCH: return "switch";
-	case R_ANAL_OP_TYPE_TRAP  : return "trap";
-	case R_ANAL_OP_TYPE_UCALL : return "ucall";
-	case R_ANAL_OP_TYPE_RCALL : return "rcall";
-	case R_ANAL_OP_TYPE_ICALL : return "icall";
+	case R_ANAL_OP_TYPE_TRAP: return "trap";
+	case R_ANAL_OP_TYPE_UCALL: return "ucall";
+	case R_ANAL_OP_TYPE_RCALL: return "rcall";
+	case R_ANAL_OP_TYPE_ICALL: return "icall";
 	case R_ANAL_OP_TYPE_IRCALL: return "ircall";
 	case R_ANAL_OP_TYPE_UCCALL: return "uccall";
-	case R_ANAL_OP_TYPE_UCJMP : return "ucjmp";
-	case R_ANAL_OP_TYPE_MCJMP : return "mcjmp";
-	case R_ANAL_OP_TYPE_RCJMP : return "rcjmp";
-	case R_ANAL_OP_TYPE_UJMP  : return "ujmp";
-	case R_ANAL_OP_TYPE_RJMP  : return "rjmp";
-	case R_ANAL_OP_TYPE_IJMP  : return "ijmp";
-	case R_ANAL_OP_TYPE_IRJMP : return "irjmp";
-	case R_ANAL_OP_TYPE_UNK   : return "unk";
-	case R_ANAL_OP_TYPE_UPUSH : return "upush";
-	case R_ANAL_OP_TYPE_XCHG  : return "xchg";
-	case R_ANAL_OP_TYPE_XOR   : return "xor";
-	case R_ANAL_OP_TYPE_CASE  : return "case";
-	case R_ANAL_OP_TYPE_CPL   : return "cpl";
+	case R_ANAL_OP_TYPE_UCJMP: return "ucjmp";
+	case R_ANAL_OP_TYPE_MCJMP: return "mcjmp";
+	case R_ANAL_OP_TYPE_RCJMP: return "rcjmp";
+	case R_ANAL_OP_TYPE_UJMP: return "ujmp";
+	case R_ANAL_OP_TYPE_RJMP: return "rjmp";
+	case R_ANAL_OP_TYPE_IJMP: return "ijmp";
+	case R_ANAL_OP_TYPE_IRJMP: return "irjmp";
+	case R_ANAL_OP_TYPE_UNK: return "unk";
+	case R_ANAL_OP_TYPE_UPUSH: return "upush";
+	case R_ANAL_OP_TYPE_XCHG: return "xchg";
+	case R_ANAL_OP_TYPE_XOR: return "xor";
+	case R_ANAL_OP_TYPE_CASE: return "case";
+	case R_ANAL_OP_TYPE_CPL: return "cpl";
 	case R_ANAL_OP_TYPE_CRYPTO: return "crypto";
 	case R_ANAL_OP_TYPE_LENGTH: return "lenght";
-	case R_ANAL_OP_TYPE_ABS   : return "abs";
+	case R_ANAL_OP_TYPE_ABS: return "abs";
 	}
 	if (once) {
 		once = false;
@@ -339,23 +331,23 @@ struct op_family {
 	int id;
 };
 static const struct op_family of[] = {
-	{ "cpu", R_ANAL_OP_FAMILY_CPU},
-	{ "fpu", R_ANAL_OP_FAMILY_FPU},
-	{ "mmx", R_ANAL_OP_FAMILY_SIMD},
-	{ "sse", R_ANAL_OP_FAMILY_SIMD},
-	{ "priv", R_ANAL_OP_FAMILY_PRIV},
-	{ "virt", R_ANAL_OP_FAMILY_VIRT},
-	{ "crpt", R_ANAL_OP_FAMILY_CRYPTO},
-	{ "io", R_ANAL_OP_FAMILY_IO},
-	{ "sec", R_ANAL_OP_FAMILY_SECURITY},
-	{ "thread", R_ANAL_OP_FAMILY_THREAD},
-	{ "simd", R_ANAL_OP_FAMILY_SIMD},
-	{ "vec", R_ANAL_OP_FAMILY_VEC},
+	{ "cpu", R_ANAL_OP_FAMILY_CPU },
+	{ "fpu", R_ANAL_OP_FAMILY_FPU },
+	{ "mmx", R_ANAL_OP_FAMILY_SIMD },
+	{ "sse", R_ANAL_OP_FAMILY_SIMD },
+	{ "priv", R_ANAL_OP_FAMILY_PRIV },
+	{ "virt", R_ANAL_OP_FAMILY_VIRT },
+	{ "crpt", R_ANAL_OP_FAMILY_CRYPTO },
+	{ "io", R_ANAL_OP_FAMILY_IO },
+	{ "sec", R_ANAL_OP_FAMILY_SECURITY },
+	{ "thread", R_ANAL_OP_FAMILY_THREAD },
+	{ "simd", R_ANAL_OP_FAMILY_SIMD },
+	{ "vec", R_ANAL_OP_FAMILY_VEC },
 };
 
 R_API int r_arch_op_family_from_string(const char *f) {
 	int i;
-	for (i = 0; i < sizeof (of) / sizeof (of[0]); i ++) {
+	for (i = 0; i < sizeof (of) / sizeof (of[0]); i++) {
 		if (!strcmp (f, of[i].name)) {
 			return of[i].id;
 		}
@@ -368,8 +360,9 @@ R_API const char *r_arch_op_direction_tostring(RAnalOp *op) {
 		return "none";
 	}
 	int d = op->direction;
-	return d == 1 ? "read"
-		: d == 2 ? "write"
-		: d == 4 ? "exec"
-		: d == 8 ? "ref": "none";
+	return d == 1? "read"
+		: d == 2? "write"
+		: d == 4? "exec"
+		: d == 8? "ref"
+			: "none";
 }
