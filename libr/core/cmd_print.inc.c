@@ -1176,7 +1176,6 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	RVecRIORegion *regions = NULL;
 	RIORegion *region = NULL;
 	size_t region_idx = 0;
-	ut8 *block = core->block;
 	int len = core->blocksize;
 	if (show_unalloc && core->io->va) {
 		RInterval itv = { core->addr, (ut64)len };
@@ -1200,7 +1199,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		}
 	} else {
 		from = core->addr;
-		to = from + core->blocksize;
+		to = from + len;
 	}
 	if (list) {
 		r_list_free (list);
@@ -1209,7 +1208,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 
 	core->print->zoom->mode = (input && *input)? input[1]: 'e';
 	r_print_zoom_buf (core->print, printzoomcallback, core, from, to, len, len);
-	block = core->print->zoom->buf;
+	ut8 *block = core->print->zoom->buf;
 
 	for (i = 0; i < len; i += cols) {
 		ut64 ea = core->addr + i;
