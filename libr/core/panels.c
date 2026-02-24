@@ -2738,7 +2738,7 @@ static void __set_refresh_by_type(RCore *core, const char *cmd, bool clearCache)
 }
 
 static char *filter_arg(char *a) {
-	r_name_filter_print (a);
+	r_str_filter (a, -1);
 	char *r = r_str_escape (a);
 	free (a);
 	return r;

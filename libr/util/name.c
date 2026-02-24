@@ -32,19 +32,6 @@ static const bool shell_skip_char[256] = {
 	['\n'] = true, ['\r'] = true, [' '] = true, ['"'] = true, ['='] = true, ['\\'] = true,
 };
 
-/* Validate if char is printable , why not use ISPRINTABLE() ?? */
-R_API bool r_name_validate_print(const char ch) {
-	// TODO: support utf8
-	if (isalpha (ch & 0xff) || isdigit (ch & 0xff)) {
-		return true;
-	}
-	const char chars[] = "()[]<>+-$%@ .,:_";
-	if (strchr (chars, ch)) {
-		return true;
-	}
-	return false;
-}
-
 // used to determine if we want to replace those chars with '_' in r_name_filter()
 R_API bool r_name_validate_dash(const char ch) {
 	return dash_char[(ut8)ch];
@@ -88,26 +75,6 @@ R_API const char *r_name_filter_ro(const char *a) {
 	R_RETURN_VAL_IF_FAIL (a, NULL);
 	while (*a++ == '_');
 	return a - 1;
-}
-
-// filter string for printing purposes
-R_API bool r_name_filter_print(char *s) {
-	R_RETURN_VAL_IF_FAIL (s, false);
-	char *es = s + strlen (s);
-	bool valid = true;
-	while (*s && s < es) {
-		int us = r_utf8_size ((const ut8*)s);
-		if (us > 1) {
-			s += us;
-			continue;
-		}
-		if (!r_name_validate_print (*s)) {
-			r_str_cpy (s, s + 1);
-			valid = false;
-		}
-		s++;
-	}
-	return valid;
 }
 
 R_API bool r_name_filter(char *s, int maxlen) {
