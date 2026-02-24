@@ -156,77 +156,96 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static char *is_string_at(RCore *core, ut64 addr, int *olen) {
-	ut8 rstr[128] = {0};
-	int ret = 0, len = 0;
-	ut8 *str = calloc (256, 1);
-	if (!str) {
-		if (olen) {
-			*olen = 0;
-		}
-		return NULL;
+static inline bool is_likely_string(const ut8 *buf, int size) {
+	int min_len = 3;
+	if (size < min_len) {
+		return false;
 	}
-	r_io_read_at (core->io, addr, str, 255);
+	if (buf[0] < 0x20 || buf[0] > 0x7E) {
+		return false;
+	}
+	for (int i = 1; i < R_MIN(min_len, size); i++) {
+		ut8 c = buf[i];
+		if (c < 0x20 && c != '\t' && c != '\n' && c != '\r') {
+			return false;
+		}
+		if (c > 0x7E) {
+			return false;
+		}
+	}
+	return true;
+}
 
-	str[255] = 0;
-	if (is_string (str, 256, &len)) {
+static bool is_string_at(RCore *core, ut64 addr, char *str, int strsz, int *olen) {
+	if (olen) {
+		*olen = 0;
+	}
+	if (!str || strsz < 2 || !r_io_is_valid_offset (core->io, addr, 0)) {
+		return false;
+	}
+
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	RBinSection *section = obj? r_bin_get_section_at (obj, addr, core->io->va): NULL;
+	if (section) {
+		if (section->perm & R_PERM_X) {
+			return false;
+		}
+		if (addr + 4 > section->vaddr + section->vsize) {
+			return false;
+		}
+	}
+
+	ut8 rstr[64] = {0};
+	int len = 0;
+	const int size = R_MIN (strsz - 1, 64);
+
+	r_io_read_at (core->io, addr, (ut8*)str, size);
+	str[size] = 0;
+	if (!is_likely_string ((ut8*)str, size)) {
+		return false;
+	}
+	if (is_string ((ut8*)str, size, &len)) {
 		if (olen) {
 			*olen = len;
 		}
-		return (char*) str;
+		return true;
 	}
 
 	ut64 *cstr = (ut64*)str;
 	ut64 lowptr = cstr[0];
-	if (lowptr >> 32) { // must be pa mode only
+	if (lowptr >> 32) {
 		lowptr &= UT32_MAX;
 	}
-	// cstring
+
 	if (cstr[0] == 0 && cstr[1] < 0x1000) {
 		ut64 ptr = cstr[2];
-		if (ptr >> 32) { // must be pa mode only
+		if (ptr >> 32) {
 			ptr &= UT32_MAX;
 		}
 		if (ptr) {
-			r_io_read_at (core->io, ptr, rstr, sizeof (rstr));
-			rstr[127] = 0;
-			ret = is_string (rstr, 128, &len);
-			if (ret) {
-				strcpy ((char*) str, (char*) rstr);
+			r_io_read_at (core->io, ptr, rstr, sizeof (rstr) - 1);
+			rstr[sizeof (rstr) - 1] = 0;
+			if (is_string (rstr, sizeof (rstr), &len)) {
+				r_str_ncpy (str, (char*)rstr, strsz);
 				if (olen) {
 					*olen = len;
 				}
-				return (char*) str;
+				return true;
 			}
 		}
 	} else {
-		// pstring
-		r_io_read_at (core->io, lowptr, rstr, sizeof (rstr));
-		rstr[127] = 0;
-		ret = is_string (rstr, sizeof (rstr), &len);
-		if (ret) {
-			strcpy ((char*) str, (char*) rstr);
+		r_io_read_at (core->io, lowptr, rstr, sizeof (rstr) - 1);
+		rstr[sizeof (rstr) - 1] = 0;
+		if (is_string (rstr, sizeof (rstr), &len)) {
+			r_str_ncpy (str, (char*)rstr, strsz);
 			if (olen) {
 				*olen = len;
 			}
-			return (char*) str;
+			return true;
 		}
 	}
-	// check if current section have no exec bit
-	if (len < 1) {
-		ret = 0;
-		free (str);
-		return NULL;
-	}
-	if (olen) {
-		*olen = len;
-	}
-	// NOTE: coverity says that ret is always 0 here, so str is dead code
-	if (ret && len > 0) {
-		return (char *)str;
-	}
-	free (str);
-	return NULL;
+
+	return false;
 }
 
 /* returns the R_ANAL_ADDR_TYPE_* of the address 'addr' */
@@ -4560,14 +4579,14 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
+	char str[64] = {0};
 	if (xref_to == UT64_MAX || !xref_to) {
 		return;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
 	}
-	char *str = is_string_at (core, xref_to, &len);
-	if (R_STR_ISNOTEMPTY (str) && len > 0) {
+	if (is_string_at (core, xref_to, str, sizeof (str), &len) && str[0] && len > 0) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
@@ -4585,7 +4604,6 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 			r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
 		}
 	}
-	free (str);
 }
 
 // R2R db/anal/mach0
@@ -4634,13 +4652,12 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 		}
 		r_cons_printf (core->cons, "%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 		if (cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
-			char *str_flagname = is_string_at (core, xref_to, &len);
-			if (str_flagname) {
+			char str_flagname[64] = {0};
+			if (is_string_at (core, xref_to, str_flagname, sizeof (str_flagname), &len)) {
 				ut64 str_addr = xref_to;
 				r_name_filter (str_flagname, -1);
 				r_cons_printf (core->cons, "'f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
 				r_cons_printf (core->cons, "Cs %d @ 0x%"PFMT64x"\n", len, str_addr);
-				free (str_flagname);
 			}
 		}
 	}
@@ -6292,7 +6309,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if ((target && dst == ntarget) || !target) {
 					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core, dst)) {
 						RFlagItem *f;
-						char *str;
+						char str[64] = {0};
 						if (CHECKREF (dst) || CHECKREF (cur)) {
 							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
@@ -6300,7 +6317,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-							} else if ((str = is_string_at (core, dst, NULL))) {
+							} else if (is_string_at (core, dst, str, sizeof (str), NULL)) {
 								char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
@@ -6308,7 +6325,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 								r_str_replace_char (str2, '%', '&');
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, str2);
 								free (str2);
-								free (str);
 							}
 						}
 					}
