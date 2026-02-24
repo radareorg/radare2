@@ -1,19 +1,19 @@
-/* radare - LGPL - Copyright 2021-2024 - pancake */
+/* radare - LGPL - Copyright 2021-2026 - pancake */
 
 #include <r_esil.h>
+#include <r_anal.h>
 
 static bool esil2c_eq(REsil *esil) {
 	REsilC *user = esil->user;
 	char *dst = r_esil_pop (esil);
 	char *src = r_esil_pop (esil);
-
 	if (!src || !dst) {
 		free (dst);
 		free (src);
 		return false;
 	}
-	const char *pcreg = "rip";
-	if (!strcmp (dst, pcreg)) {
+	const char *pc = r_reg_alias_getname (esil->anal->reg, R_REG_ALIAS_PC);
+	if (pc && !strcmp (dst, pc)) {
 		r_strbuf_appendf (user->sb, "  goto addr_0x%08"PFMT64x"_0;\n", r_num_get (NULL, src));
 	} else {
 		r_strbuf_appendf (user->sb, "  %s = %s;\n", dst, src);
@@ -26,7 +26,6 @@ static bool esil2c_eq(REsil *esil) {
 static bool esil2c_peek8(REsil *esil) {
 	REsilC *user = esil->user;
 	char *src = r_esil_pop (esil);
-
 	if (!src) {
 		return false;
 	}
@@ -219,18 +218,17 @@ static void esil2c_setup(REsil *esil) {
 	// r_esil_set_op (esil, "+=", esil2c_set, 0, 2, R_ESIL_OP_TYPE_REG_WRITE);
 }
 
-R_API REsilC *r_esil_toc_new(struct r_anal_t *anal, const int bits) {
+R_API REsilC *r_esil_toc_new(RAnal *anal, const int bits) {
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	REsilC *ec = R_NEW0 (REsilC);
-	if (ec) {
-		int ss = 16 * 1024;
-		REsil *esil = r_esil_new (ss, 0, bits);
-		if (esil) {
-			esil2c_setup (esil);
-			ec->anal = anal;
-			ec->esil = esil;
-		} else {
-			R_FREE (ec);
-		}
+	int ss = 16 * 1024;
+	REsil *esil = r_esil_new (ss, 0, bits);
+	if (esil) {
+		esil2c_setup (esil);
+		ec->anal = anal;
+		ec->esil = esil;
+	} else {
+		R_FREE (ec);
 	}
 	return ec;
 }
@@ -247,6 +245,7 @@ R_API void r_esil_toc_free(REsilC *ec) {
 }
 
 R_API char *r_esil_toc(REsilC *ec, const char *expr) {
+	R_RETURN_VAL_IF_FAIL (ec && expr, NULL);
 	REsil *esil = ec->esil;
 	RStrBuf *sb = r_strbuf_new ("");
 	ec->sb = sb;

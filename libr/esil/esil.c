@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2024 - pancake, condret */
+/* radare - LGPL - Copyright 2014-2026 - pancake, condret */
 
 #define R_LOG_ORIGIN "esil"
 
@@ -6,8 +6,6 @@
 #include <r_io.h>
 #include <r_reg.h>
 
-// TODO: replace esil->verbose with R_LOG_DEBUG
-#define IFDBG if (esil->verbose > 1)
 R_IPI bool isregornum(REsil *esil, const char *str, ut64 *num);
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr) {
@@ -120,12 +118,6 @@ static bool default_is_reg(void *reg, const char *name) {
 	r_unref (ri);
 	return true;
 }
-
-#if 0
-static bool default_reg_alias(void *reg, int kind, const char *name) {
-	return r_reg_set_alias ((RReg *)reg, kind, name);
-}
-#endif
 
 static bool default_reg_read(void *reg, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
@@ -430,14 +422,14 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && buf, false);
 	addr &= esil->addrmask;
 	bool ret = false;
-	IFDBG {
-		eprintf ("0x%08" PFMT64x " <W ", addr);
-		int i;
-		for (i = 0; i < len; i++) {
-			eprintf ("%02x", buf[i]);
-		}
-		eprintf ("\n");
+#if DEBUG
+	eprintf ("0x%08" PFMT64x " <W ", addr);
+	int i;
+	for (i = 0; i < len; i++) {
+		eprintf ("%02x", buf[i]);
 	}
+	eprintf ("\n");
+#endif
 	if (esil->cb.hook_mem_write) {
 		ret = esil->cb.hook_mem_write (esil, addr, buf, len);
 	}
@@ -479,20 +471,10 @@ static bool internal_esil_reg_read(REsil *esil, const char *regname, ut64 *num, 
 
 static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal, false);
-#if 1
 	if (r_reg_setv (esil->anal->reg, regname, num)) {
 		return true;
 	}
 	R_LOG_DEBUG ("Register %s does not exist", regname);
-#else
-	RRegItem *ri = r_reg_get (esil->anal->reg, regname, -1);
-	if (ri) {
-		r_reg_set_value (esil->anal->reg, ri, num);
-		R_LOG_DEBUG ("%s = %x", regname, (int)num);
-		r_unref (ri);
-		return true;
-	}
-#endif
 	return false;
 }
 
@@ -759,7 +741,7 @@ static bool runword(REsil *esil, const char *word) {
 		return false;
 	}
 
-	//eprintf ("WORD (%d) (%s)\n", esil->skip, word);
+	// eprintf ("WORD (%d) (%s)\n", esil->skip, word);
 	if (!strcmp (word, "}{")) {
 		if (esil->skip == 1) {
 			esil->skip = 0;
@@ -887,12 +869,6 @@ static bool step_out(REsil *esil, const char *cmd) {
 
 R_API bool r_esil_parse(REsil *esil, const char *str) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-#if 0
-	if (strstr (str, "(null)")) {
-		R_LOG_WARN ("-> 0x%"PFMT64x" %s", esil->address, str);
-		r_sys_breakpoint ();
-	}
-#endif
 	int rc = 0;
 	bool in_delay = esil->delay > 0;
 	int wordi = 0;
@@ -1093,7 +1069,6 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	}
 	return len;
 }
-
 
 /* register callbacks using this anal module. */
 R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool nonull) {
