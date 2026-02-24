@@ -179,15 +179,45 @@ static inline bool is_likely_string(const ut8 *buf, int size) {
 
 #define STRSZ 64
 static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
+	static RBinObject *section_cache_obj = NULL;
+	static RBinSection *section_cache = NULL;
+	static ut64 section_cache_from = UT64_MAX;
+	static ut64 section_cache_to = UT64_MAX;
+	ut64 section_from = 0;
+	ut64 section_to = 0;
+	RBinSection *section = NULL;
 	if (olen) {
 		*olen = 0;
 	}
 	if (!str || !r_io_is_valid_offset (core->io, addr, 0)) {
 		return false;
 	}
-	RIORegion region;
-	if (r_io_get_region_at (core->io, &region, addr) && (region.perm & R_PERM_X)) {
-		return false;
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	if (obj && section_cache_obj == obj && addr >= section_cache_from && addr < section_cache_to) {
+		section = section_cache;
+		section_from = section_cache_from;
+		section_to = section_cache_to;
+	} else if (obj) {
+		section = r_bin_get_section_at (obj, addr, core->io->va);
+		section_cache_obj = obj;
+		section_cache = section;
+		if (section) {
+			section_from = core->io->va? obj->baddr_shift + section->vaddr: section->paddr;
+			section_to = section_from + (core->io->va? section->vsize: section->size);
+			section_cache_from = section_from;
+			section_cache_to = section_to;
+		} else {
+			section_cache_from = UT64_MAX;
+			section_cache_to = UT64_MAX;
+		}
+	}
+	if (section) {
+		if (section->perm & R_PERM_X) {
+			return false;
+		}
+		if (addr + 4 > section_to) {
+			return false;
+		}
 	}
 
 	int len = 0;
