@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2025 - pancake, Roc Valles, condret, killabyte */
+/* radare - LGPL - Copyright 2011-2026 - pancake, Roc Valles, condret, killabyte */
 
 #if 0
 http://www.atmel.com/images/atmel-0856-avr-instruction-set-manual.pdf
@@ -237,12 +237,10 @@ static CPU_CONST *const_by_name(CPU_MODEL *cpu, int type, char *c) {
 }
 
 static int __esil_pop_argument(REsil *esil, ut64 *v) {
-	char *t = r_esil_pop (esil);
+	const char *t = r_esil_pop (esil);
 	if (!t || !r_esil_get_parm (esil, t, v)) {
-		free (t);
 		return false;
 	}
-	free (t);
 	return true;
 }
 

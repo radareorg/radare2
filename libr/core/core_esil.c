@@ -15,13 +15,11 @@ static bool core_esil_op_todo(REsil *esil) {
 }
 
 static bool core_esil_op_interrupt(REsil *esil) {
-	char *str = r_esil_pop (esil);
+	const char *str = r_esil_pop (esil);
 	ut64 interrupt;
 	if (!r_esil_get_parm (esil, str, &interrupt)) {
-		free (str);
 		return false;
 	}
-	free (str);
 	RCore *core = esil->user;
 	if (core->esil.cmd_intr) {
 		r_core_cmd0 (core, core->esil.cmd_intr);

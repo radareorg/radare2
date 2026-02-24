@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "esil"
 
+#include <stddef.h>
 #include <r_anal.h>
 #include <r_io.h>
 #include <r_reg.h>
@@ -14,11 +15,67 @@ R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 	return !(da > 0 && addr % da);
 }
 
-static void esil_ops_free(HtPPKv *kv) {
+/* ---- Ops hashtable: HtPP keyed by RStrs slices -------------------------
+ * Keys are `RStrs *` pointing into `REsilOp.name`, which holds the caller's
+ * NUL-terminated `const char *` verbatim. No key duplication, no byte copy:
+ * registered names must outlive the REsil instance (all in-tree callers
+ * register string literals, satisfying this trivially). */
+
+static ut32 esil_ops_hash(const void *k) {
+	const RStrs *s = k;
+	ut32 h = CDB_HASHSTART;
+	const char *p;
+	for (p = s->a; p < s->b; p++) {
+		h = (h + (h << 5)) ^ (ut8)*p;
+	}
+	return h;
+}
+
+static ut32 esil_ops_keysize(const void *k) {
+	return (ut32)r_strs_len (*(const RStrs *)k);
+}
+
+static int esil_ops_cmp(const void *a, const void *b) {
+	// HT checks key_len equality before calling cmp — plain memcmp suffices
+	const RStrs *sa = a;
+	return memcmp (sa->a, ((const RStrs *)b)->a, r_strs_len (*sa));
+}
+
+// key is embedded in value (REsilOp.name); freeing value reclaims both
+static void esil_ops_kv_free(HtPPKv *kv) {
 	if (R_LIKELY (kv)) {
-		free (kv->key);
 		free (kv->value);
 	}
+}
+
+static HtPP *esil_ops_new(void) {
+	HtPPOptions opt = {
+		.hashfn = esil_ops_hash,
+		.cmp = esil_ops_cmp,
+		.calcsizeK = esil_ops_keysize,
+		.freefn = esil_ops_kv_free,
+		.elem_size = sizeof (HtPPKv),
+	};
+	return ht_pp_new_opt (&opt);
+}
+
+/* Average token width used to size the shared arena (stacksize * 32 bytes).
+ * Individual tokens may be any length as long as they fit in the arena. */
+#define R_ESIL_STACK_ARENA_WIDTH 32
+
+static bool esil_stack_alloc(REsil *esil, int stacksize) {
+	esil->stack = calloc (stacksize, sizeof (RStrs));
+	if (!esil->stack) {
+		return false;
+	}
+	esil->stack_buf_cap = (ut32)stacksize * R_ESIL_STACK_ARENA_WIDTH;
+	esil->stack_buf = malloc (esil->stack_buf_cap);
+	if (!esil->stack_buf) {
+		R_FREE (esil->stack);
+		return false;
+	}
+	esil->stack_buf_len = 0;
+	return true;
 }
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
@@ -28,15 +85,14 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 		free (esil);
 		return NULL;
 	}
-	esil->stack = calloc (sizeof (char *), stacksize);
-	if (!esil->stack) {
+	if (!esil_stack_alloc (esil, stacksize)) {
 		free (esil);
 		return NULL;
 	}
 	esil->verbose = false;
 	esil->stacksize = stacksize;
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
-	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
+	esil->ops = esil_ops_new ();
 	esil->iotrap = iotrap;
 	r_esil_handlers_init (esil);
 	r_esil_plugins_init (esil);
@@ -54,14 +110,10 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
 		mem_if->mem_write && (stacksize > 2), false);
 	//do not check for mem_switch, as that is optional
-	esil->stack = calloc (sizeof (char *), stacksize);
-	if (R_UNLIKELY (!esil->stack)) {
+	if (R_UNLIKELY (!esil_stack_alloc (esil, stacksize))) {
 		return false;
 	}
-	esil->ops = ht_pp_new (NULL, esil_ops_free, NULL);
-	if (R_UNLIKELY (!esil->ops)) {
-		goto ops_fail;
-	}
+	esil->ops = esil_ops_new ();
 	if (R_UNLIKELY (!r_esil_setup_ops (esil) || !r_esil_handlers_init (esil))) {
 		goto ops_setup_fail;
 	}
@@ -94,8 +146,9 @@ plugins_fail:
 	r_esil_handlers_fini (esil);
 ops_setup_fail:
 	ht_pp_free (esil->ops);
-ops_fail:
+	esil->ops = NULL;
 	free (esil->stack);
+	free (esil->stack_buf);
 	return false;
 }
 
@@ -203,34 +256,46 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 
 R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push, ut32 pop, ut32 type, const char *info) {
 	R_RETURN_VAL_IF_FAIL (code && R_STR_ISNOTEMPTY (op) && esil && esil->ops, false);
-	REsilOp *eop = ht_pp_find (esil->ops, op, NULL);
+	const RStrs k = r_strs_from (op);
+	REsilOp *eop = ht_pp_find (esil->ops, &k, NULL);
 	if (!eop) {
-		eop = R_NEW (REsilOp);
+		eop = R_NEW0 (REsilOp);
 		if (!eop) {
 			return false;
 		}
-		if (!ht_pp_insert (esil->ops, op, eop)) {
+		eop->name = k; // points at caller's const char* — must outlive esil
+		if (!ht_pp_insert (esil->ops, &eop->name, eop)) {
 			R_LOG_ERROR ("Cannot set esil-operation %s", op);
 			free (eop);
 			return false;
 		}
 	}
+	eop->code = code;
 	eop->push = push;
 	eop->pop = pop;
 	eop->type = type;
-	eop->code = code;
 	eop->info = info;
 	return true;
 }
 
+R_API REsilOp *r_esil_get_op_strs(REsil *esil, RStrs w) {
+	R_RETURN_VAL_IF_FAIL (esil, NULL);
+	if (r_strs_empty (w) || !esil->ops) {
+		return NULL;
+	}
+	return ht_pp_find (esil->ops, &w, NULL);
+}
+
 R_API REsilOp *r_esil_get_op(REsil *esil, const char *op) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->ops && R_STR_ISNOTEMPTY (op), NULL);
-	return (REsilOp *) ht_pp_find (esil->ops, op, NULL);
+	R_RETURN_VAL_IF_FAIL (esil && R_STR_ISNOTEMPTY (op), NULL);
+	const RStrs w = r_strs_from (op);
+	return ht_pp_find (esil->ops, &w, NULL);
 }
 
 R_API void r_esil_del_op(REsil *esil, const char *op) {
 	R_RETURN_IF_FAIL (esil && esil->ops && R_STR_ISNOTEMPTY (op));
-	ht_pp_delete (esil->ops, op);
+	const RStrs k = r_strs_from (op);
+	ht_pp_delete (esil->ops, &k);
 }
 
 R_API void r_esil_set_pc(REsil *esil, ut64 addr) {
@@ -254,8 +319,10 @@ R_API void r_esil_fini(REsil *esil) {
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
+	esil->ops = NULL;
 	r_esil_stack_free (esil);
 	free (esil->stack);
+	free (esil->stack_buf);
 }
 
 R_API void r_esil_free(REsil *esil) {
@@ -282,9 +349,11 @@ R_API void r_esil_free(REsil *esil) {
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
+	esil->ops = NULL;
 	sdb_free (esil->stats);
 	r_esil_stack_free (esil);
 	free (esil->stack);
+	free (esil->stack_buf);
 
 	r_esil_trace_free (esil->trace);
 	free (esil->cmd_intr);
@@ -514,27 +583,77 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	return false;
 }
 
-R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
-	char str[SDB_NUM_BUFSZ] = {0};
-	sdb_itoa (num, 16, str, sizeof (str));
-	return r_esil_push (esil, str);
+/* Internal: reserve `need` bytes (including trailing NUL) at the arena tip.
+ * Returns the writable buffer, or NULL on overflow. */
+static char *stack_arena_reserve(REsil *esil, size_t need) {
+	if (esil->stack_buf_len + need > esil->stack_buf_cap) {
+		return NULL;
+	}
+	return esil->stack_buf + esil->stack_buf_len;
+}
+
+R_API bool r_esil_push_strs(REsil *esil, RStrs s) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	const size_t n = r_strs_len (s);
+	if (n == 0 || esil->stackptr > esil->stacksize - 1) {
+		return false;
+	}
+	// Re-push of an already-in-arena slice (e.g. mem_*eq_n re-pushing a
+	// popped dst): just record the slot, no memcpy and no arena growth.
+	// The arena is append-only within a parse so the slot stays valid.
+	if (s.a >= esil->stack_buf && s.b <= esil->stack_buf + esil->stack_buf_len) {
+		esil->stack[esil->stackptr++] = s;
+		return true;
+	}
+	char *dst = stack_arena_reserve (esil, n + 1);
+	if (!dst) {
+		R_LOG_DEBUG ("esil stack arena exhausted");
+		return false;
+	}
+	memcpy (dst, s.a, n);
+	dst[n] = 0; // keep NUL-terminated for const char * API compat
+	esil->stack[esil->stackptr++] = r_strs_from_len (dst, n);
+	esil->stack_buf_len += n + 1;
+	return true;
 }
 
 R_API bool r_esil_push(REsil *esil, const char *str) {
 	R_RETURN_VAL_IF_FAIL (esil && R_STR_ISNOTEMPTY (str), false);
-	if (esil->stackptr > (esil->stacksize - 1)) {
+	return r_esil_push_strs (esil, r_strs_from (str));
+}
+
+R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	if (esil->stackptr > esil->stacksize - 1) {
 		return false;
 	}
-	esil->stack[esil->stackptr++] = strdup (str);
+	char *dst = stack_arena_reserve (esil, SDB_NUM_BUFSZ);
+	if (!dst) {
+		R_LOG_DEBUG ("esil stack arena exhausted");
+		return false;
+	}
+	sdb_itoa (num, 16, dst, SDB_NUM_BUFSZ);
+	const size_t n = strlen (dst);
+	esil->stack[esil->stackptr++] = r_strs_from_len (dst, n);
+	esil->stack_buf_len += n + 1;
 	return true;
 }
 
-R_API char *r_esil_pop(REsil *esil) {
+R_API RStrs r_esil_pop_strs(REsil *esil) {
+	RStrs empty = { NULL, NULL };
+	R_RETURN_VAL_IF_FAIL (esil, empty);
+	if (esil->stackptr < 1) {
+		return empty;
+	}
+	return esil->stack[--esil->stackptr];
+}
+
+R_API const char *r_esil_pop(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	if (esil->stackptr < 1) {
 		return NULL;
 	}
-	return esil->stack[--esil->stackptr];
+	return esil->stack[--esil->stackptr].a;
 }
 
 static int not_a_number(REsil *esil, const char *str) {
@@ -721,18 +840,17 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 	}
 	bool ret = false;
 	for (i = 0; i < esil->stackptr; i++) {
-		const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
-		esil->anal->cb_printf ("%s%s", esil->stack[i], comma);
-		ret = true;
+		RStrs s = esil->stack[i];
+		if (!r_strs_empty (s)) {
+			const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
+			esil->anal->cb_printf ("%s%s", s.a, comma);
+			ret = true;
+		}
 	}
 	return ret;
 }
 
-static bool runword(REsil *esil, const char *word) {
-	REsilOp *op = NULL;
-	if (!word) {
-		return false;
-	}
+static bool runword_strs(REsil *esil, RStrs w) {
 	esil->parse_goto_count--;
 	if (esil->parse_goto_count < 1) {
 		R_LOG_DEBUG ("ESIL infinite loop detected");
@@ -740,66 +858,62 @@ static bool runword(REsil *esil, const char *word) {
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return false;
 	}
-
-	// eprintf ("WORD (%d) (%s)\n", esil->skip, word);
-	if (!strcmp (word, "}{")) {
+	// control-flow braces — checked on slices, no copy
+	if (r_strs_equals_str (w, "}{")) {
 		if (esil->skip == 1) {
 			esil->skip = 0;
-		} else if (esil->skip == 0) {	//this isn't perfect, but should work for valid esil
+		} else if (esil->skip == 0) {
 			esil->skip = 1;
 		}
 		return true;
 	}
-	if (!strcmp (word, "}")) {
+	if (r_strs_equals_str (w, "}")) {
 		if (esil->skip) {
 			esil->skip--;
 		}
 		return true;
 	}
-	if (esil->skip && strcmp (word, "?{")) {
+	if (esil->skip && !r_strs_equals_str (w, "?{")) {
 		return true;
 	}
-
-	op = r_esil_get_op (esil, word);
+	if (r_strs_empty (w)) {
+		return true;
+	}
+	// RStrs-native op lookup — slice-vs-slice compare via custom HT hash/cmp
+	REsilOp *op = r_esil_get_op_strs (esil, w);
 	if (op) {
-		// run action
+		// stored name is the caller's const char* — already NUL-terminated,
+		// no copy needed for callbacks that take `const char *`.
+		const char *name = op->name.a;
 #if USE_NEW_ESIL
 		ut32 i;
 		if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_OP], &i)) {
 			do {
 				REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_OP], i);
-				voy->op (voy->user, word);
+				voy->op (voy->user, name);
 			} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_OP], &i));
 		}
 #else
-		if (esil->cb.hook_command) {
-			if (esil->cb.hook_command (esil, word)) {
-				return 1; // XXX cannot return != 1
-			}
+		if (esil->cb.hook_command && esil->cb.hook_command (esil, name)) {
+			return true;
 		}
 #endif
-		esil->current_opstr = strdup (word);
-		// so this is basically just sharing what's the
-		// operation with the operation useful for wrappers
+		esil->current_opstr = (char *)name;
 		const bool ret = op->code (esil);
-		R_FREE (esil->current_opstr);
+		esil->current_opstr = NULL;
 		if (!ret) {
-			R_LOG_DEBUG ("%s returned 0", word);
+			R_LOG_DEBUG ("%s returned 0", name);
 		}
 		return ret;
 	}
-	if (!*word || *word == ',') {
-		// skip empty words
-		return true;
-	}
-
-	// push value
-	if (!r_esil_push (esil, word)) {
+	// not an op — push the slice into the stack arena
+	if (esil->stackptr > esil->stacksize - 1) {
 		R_LOG_DEBUG ("ESIL stack is full");
 		esil->trap = 1;
 		esil->trap_code = 1;
+		return true;
 	}
-	return true;
+	return r_esil_push_strs (esil, w);
 }
 
 static const char *goto_word(const char *str, int n) {
@@ -869,85 +983,56 @@ static bool step_out(REsil *esil, const char *cmd) {
 
 R_API bool r_esil_parse(REsil *esil, const char *str) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	int rc = 0;
-	bool in_delay = esil->delay > 0;
-	int wordi = 0;
-	int dorunword;
-	char word[64];
-	const char *ostr = str;
 	if (R_STR_ISEMPTY (str)) {
 		return false;
 	}
-
 	if (step_out (esil, esil->cmd_step)) {
 		(void)step_out (esil, esil->cmd_step_out);
 		return true;
 	}
 	esil->trap = 0;
-	if (esil->cmd && esil->cmd_todo) {
-		if (r_str_startswith (str, "TODO")) {
-			esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
-		}
+	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
+		esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
 	}
+	// Each parse starts with a clean operand stack and arena. Within a
+	// single parse the arena is append-only so popped slices stay valid
+	// across subsequent pushes (handlers like esil_mem_addeq_n re-push
+	// dst without a scratch buffer; re-push is recognized in
+	// r_esil_push_strs as in-arena and consumes no extra space).
+	esil->stackptr = 0;
+	esil->stack_buf_len = 0;
+	const bool in_delay = esil->delay > 0;
+	const char *ostr = str;
+	int rc = 0;
 loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
-// memleak or failing aetr test. wat du
-//	r_esil_stack_free (esil);
 	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ESIL_GOTO_LIMIT;
 	str = ostr;
-repeat:
-	wordi = 0;
 	while (*str) {
-		if (R_UNLIKELY (wordi > 62)) {
-			R_LOG_DEBUG ("Invalid esil string");
-			step_out (esil, esil->cmd_step_out);
-			return false;
+		// slice the next token directly off the input — no intermediate buffer
+		const char *start = str;
+		while (*str && *str != ',' && *str != ';') {
+			str++;
 		}
-		dorunword = 0;
-		if (*str == ';') {
-			word[wordi] = 0;
-			dorunword = 1;
-		} else if (*str == ',') {
-			word[wordi] = 0;
-			dorunword = 2;
-		}
-		if (dorunword) {
-			if (*word) {
-				if (!runword (esil, word)) {
-					goto step_out;
-				}
-				word[wordi] = ',';
-				wordi = 0;
-				switch (eval_word (esil, ostr, &str)) {
-				case 0: goto loop;
-				case 1: goto step_out;
-				case 2: continue;
-				}
-				if (dorunword == 1) {
-					goto step_out;
-				}
+		const char sep = *str;
+		const RStrs tok = { start, str };
+		if (!r_strs_empty (tok)) {
+			if (!runword_strs (esil, tok)) {
+				goto step_out;
 			}
+			switch (eval_word (esil, ostr, &str)) {
+			case 0: goto loop;
+			case 1: goto step_out;
+			case 2: continue; // goto_word updated str, skip increment
+			}
+			if (sep == ';') {
+				goto step_out;
+			}
+		}
+		if (sep) {
 			str++;
-		}
-		const char str0 = *str;
-		word[wordi++] = str0;
-		// is *str is '\0' in the next iteration the condition will be true
-		// reading beyond the boundaries
-		if (str0) {
-			str++;
-		}
-	}
-	word[wordi] = 0;
-	if (*word) {
-		if (!runword (esil, word)) {
-			goto step_out;
-		}
-		switch (eval_word (esil, ostr, &str)) {
-		case 0: goto loop;
-		case 1: goto step_out;
-		case 2: goto repeat;
 		}
 	}
 	rc = 1;
@@ -965,23 +1050,15 @@ step_out:
 }
 
 R_API bool r_esil_runword(REsil *esil, const char *word) {
-	const char *str = NULL;
-	if (runword (esil, word)) {
-		(void)eval_word (esil, word, &str);
-		return true;
-	}
-	return false;
+	R_RETURN_VAL_IF_FAIL (esil && word, false);
+	return runword_strs (esil, r_strs_from (word));
 }
 
 // TODO rename to clearstack() or reset_stack()
 R_API void r_esil_stack_free(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
-	int i;
-	for (i = 0; i < esil->stackptr; i++) {
-		R_TAG_FREE (esil->stack[i]);
-		esil->stack[i] = NULL;
-	}
 	esil->stackptr = 0;
+	esil->stack_buf_len = 0;
 }
 
 R_API int r_esil_condition(REsil *esil, const char *str) {
@@ -989,7 +1066,7 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 	int ret = -1;
 	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
-	char *popped = r_esil_pop (esil);
+	const char *popped = r_esil_pop (esil);
 	if (popped) {
 		ut64 num;
 		if (isregornum (esil, popped, &num)) {
@@ -997,7 +1074,6 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 		} else {
 			ret = 0;
 		}
-		free (popped);
 	} else {
 		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;
