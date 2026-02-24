@@ -67,7 +67,6 @@ R_API int r_core_seek_base(RCore *core, const char *hex) {
 
 R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int append) {
 	ut64 i;
-	ut8 *buf;
 	int bs = core->blocksize;
 	FILE *fd;
 	if (append) {
@@ -84,7 +83,7 @@ R_API bool r_core_dump(RCore *core, const char *file, ut64 addr, ut64 size, int 
 	if (bs > 4096) {
 		bs = 4096;
 	}
-	buf = malloc (bs);
+	ut8 *buf = malloc (bs);
 	if (!buf) {
 		R_LOG_ERROR ("Cannot alloc %d byte(s)", bs);
 		fclose (fd);

@@ -1225,26 +1225,28 @@ static char *get_title(ut64 addr) {
 	return r_str_newf ("0x%"PFMT64x, addr);
 }
 
-/* decode and return the RAnalOp at the address addr */
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
-	int len;
-	ut8 buf[32];
-	ut8 *ptr;
-
 	R_RETURN_VAL_IF_FAIL (core, NULL);
+	ut8 buf[32];
+
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-	if (sizeof (buf) < maxopsz) {
+	if (maxopsz > sizeof (buf)) {
 		maxopsz = sizeof (buf);
 	}
-	int delta = (addr - core->addr);
-	int minopsz = 8;
-	if (delta > 0 && delta + minopsz < core->blocksize && addr >= core->addr && addr + 16 < core->addr + core->blocksize) {
+#if 0
+	int len;
+	ut8 *ptr;
+	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const ut64 blk_addr = core->addr;
+	const int blk_size = core->blocksize;
+	int delta = addr - blk_addr;
+	if (delta > 0 && delta + minopsz < blk_size && addr >= blk_addr && addr + maxopsz < core->addr + blk_size) {
 		ptr = core->block + delta;
-		len = core->blocksize - delta;
+		len = blk_size - delta;
 		if (len < 1) {
 			goto err_op;
 		}
@@ -1255,19 +1257,17 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 		ptr = buf;
 		len = maxopsz;
 	}
-	if (r_anal_op (core->anal, op, addr, ptr, len, mask) < 1) {
-		goto err_op;
+	if (r_anal_op (core->anal, op, addr, ptr, len, mask) > 0) {
+		return op;
 	}
-	// TODO This code block must be deleted when all the anal plugs support disasm
-	if (!op->mnemonic && mask & R_ARCH_OP_MASK_DISASM) {
-		r_asm_set_pc (core->rasm, addr);
-		if (r_asm_disassemble (core->rasm, op, ptr, len) < 1) {
-			free (op->mnemonic);
-			op->mnemonic = strdup ("invalid");
+err_op:
+#else
+	if (r_io_read_at (core->io, addr, buf, maxopsz)) {
+		if (r_anal_op (core->anal, op, addr, buf, maxopsz, mask) > 0) {
+			return op;
 		}
 	}
-	return op;
-err_op:
+#endif
 	r_anal_op_free (op);
 	return NULL;
 }
@@ -5088,23 +5088,21 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 R_API void r_core_anal_stats_free(RCoreAnalStats *s) {
 	if (s) {
 		free (s->block);
+		free (s);
 	}
-	free (s);
 }
 
 R_API RList* r_core_anal_cycles(RCore *core, int ccl) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
 	RCons *cons = core->cons;
 	const bool verbose = r_config_get_b (core->config, "scr.interactive") && r_config_get_b (core->config, "scr.prompt");
 	ut64 addr = core->addr;
 	int depth = 0;
 	RAnalOp *op = NULL;
-	RAnalCycleFrame *prev = NULL, *cf = NULL;
+	RAnalCycleFrame *prev = NULL;
 	RAnalCycleHook *ch;
 	RList *hooks = r_list_new ();
-	if (!hooks) {
-		return NULL;
-	}
-	cf = r_anal_cycle_frame_new ();
+	RAnalCycleFrame *cf = r_anal_cycle_frame_new ();
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (cf && !r_cons_is_breaked (cons)) {
 		if ((op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC)) && (op->cycles) && (ccl > 0)) {
@@ -5305,9 +5303,9 @@ struct r_merge_ctx_t {
 /* Tests if functions are touching */
 bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
 	RAnalBlock *bb = r_anal_get_block_at(ctx->anal, addr);
-
-	if (!bb)
+	if (!bb) {
 		return true;
+	}
 
 	RListIter *iter;
 	RAnalFunction *fcn;
@@ -5326,9 +5324,8 @@ bool fcn_merge_touch_cb(ut64 addr, struct r_merge_ctx_t *ctx) {
 
 	// Add it to the touch list
 	if (found) {
-		r_list_append(&ctx->touch, bb);
+		r_list_append (&ctx->touch, bb);
 	}
-
 	return true;
 }
 
