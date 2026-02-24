@@ -165,7 +165,7 @@ static inline bool is_likely_string(const ut8 *buf, int size) {
 		return false;
 	}
 	size_t i;
-	for (i = 1; i < R_MIN(min_len, size); i++) {
+	for (i = 1; i < R_MIN (min_len, size); i++) {
 		ut8 c = buf[i];
 		if (c < 0x20 && c != '\t' && c != '\n' && c != '\r') {
 			return false;
