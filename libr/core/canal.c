@@ -184,19 +184,11 @@ static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
 	if (!str || !r_io_is_valid_offset (core->io, addr, 0)) {
 		return false;
 	}
-
-	RBinObject *obj = r_bin_cur_object (core->bin);
-	RBinSection *section = obj? r_bin_get_section_at (obj, addr, core->io->va): NULL;
-	if (section) {
-		if (section->perm & R_PERM_X) {
-			return false;
-		}
-		if (addr + 4 > section->vaddr + section->vsize) {
-			return false;
-		}
+	RIORegion region;
+	if (r_io_get_region_at (core->io, &region, addr) && (region.perm & R_PERM_X)) {
+		return false;
 	}
 
-	ut8 rstr[STRSZ] = {0};
 	int len = 0;
 	const int size = STRSZ - 1;
 
@@ -205,48 +197,13 @@ static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
 	if (!is_likely_string ((ut8*)str, size)) {
 		return false;
 	}
-	if (is_string ((ut8*)str, size, &len)) {
-		if (olen) {
-			*olen = len;
-		}
-		return true;
+	if (!is_string ((ut8*)str, size, &len)) {
+		return false;
 	}
-
-	ut64 *cstr = (ut64*)str;
-	ut64 lowptr = cstr[0];
-	if (lowptr >> 32) {
-		lowptr &= UT32_MAX;
+	if (olen) {
+		*olen = len;
 	}
-
-	if (cstr[0] == 0 && cstr[1] < 0x1000) {
-		ut64 ptr = cstr[2];
-		if (ptr >> 32) {
-			ptr &= UT32_MAX;
-		}
-		if (ptr) {
-			r_io_read_at (core->io, ptr, rstr, sizeof (rstr) - 1);
-			rstr[sizeof (rstr) - 1] = 0;
-			if (is_string (rstr, sizeof (rstr), &len)) {
-				r_str_ncpy (str, (char*)rstr, STRSZ);
-				if (olen) {
-					*olen = len;
-				}
-				return true;
-			}
-		}
-	} else {
-		r_io_read_at (core->io, lowptr, rstr, sizeof (rstr) - 1);
-		rstr[sizeof (rstr) - 1] = 0;
-		if (is_string (rstr, sizeof (rstr), &len)) {
-			r_str_ncpy (str, (char*)rstr, STRSZ);
-			if (olen) {
-				*olen = len;
-			}
-			return true;
-		}
-	}
-
-	return false;
+	return true;
 }
 
 /* returns the R_ANAL_ADDR_TYPE_* of the address 'addr' */
