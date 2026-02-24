@@ -973,13 +973,6 @@ static bool set_fcn_name_from_flag(RCore *core, RAnalFunction *fcn, RFlagItem *f
 			nameChanged = true;
 		}
 	}
-#if 0
-	if (!nameChanged) {
-		char *nn = r_str_newf ("%s.%08" PFMT64x, fcnpfx, fcn->addr);
-		r_anal_function_rename (fcn, nn);
-		free (nn);
-	}
-#endif
 	return nameChanged;
 }
 
@@ -1227,47 +1220,20 @@ static char *get_title(ut64 addr) {
 
 R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	R_RETURN_VAL_IF_FAIL (core, NULL);
-	ut8 buf[32];
-
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
+	ut8 buf[32];
 	RAnalOp *op = R_NEW0 (RAnalOp);
 	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
 	if (maxopsz > sizeof (buf)) {
 		maxopsz = sizeof (buf);
 	}
-#if 0
-	int len;
-	ut8 *ptr;
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	const ut64 blk_addr = core->addr;
-	const int blk_size = core->blocksize;
-	int delta = addr - blk_addr;
-	if (delta > 0 && delta + minopsz < blk_size && addr >= blk_addr && addr + maxopsz < core->addr + blk_size) {
-		ptr = core->block + delta;
-		len = blk_size - delta;
-		if (len < 1) {
-			goto err_op;
-		}
-	} else {
-		if (!r_io_read_at (core->io, addr, buf, maxopsz)) {
-			goto err_op;
-		}
-		ptr = buf;
-		len = maxopsz;
-	}
-	if (r_anal_op (core->anal, op, addr, ptr, len, mask) > 0) {
-		return op;
-	}
-err_op:
-#else
 	if (r_io_read_at (core->io, addr, buf, maxopsz)) {
 		if (r_anal_op (core->anal, op, addr, buf, maxopsz, mask) > 0) {
 			return op;
 		}
 	}
-#endif
 	r_anal_op_free (op);
 	return NULL;
 }

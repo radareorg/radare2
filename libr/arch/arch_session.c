@@ -16,6 +16,7 @@ static void _arch_session_free(RArchSession *s) {
 }
 
 R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *ap) {
+	R_RETURN_VAL_IF_FAIL (arch && cfg && ap, false);
 	RArchSession *ai = R_NEW0 (RArchSession);
 	r_ref_init (ai, _arch_session_free);
 	ai->arch = arch;
@@ -35,6 +36,7 @@ R_API RArchSession *r_arch_session(RArch *arch, RArchConfig *cfg, RArchPlugin *a
 }
 
 R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask mask) {
+	R_RETURN_VAL_IF_FAIL (ai && op, false);
 	RArchPluginDecodeCallback decode = R_UNWRAP3 (ai, plugin, decode);
 	if (decode != NULL) {
 		return decode (ai, op, mask);
@@ -43,6 +45,7 @@ R_API bool r_arch_session_decode(RArchSession *ai, RAnalOp *op, RArchDecodeMask 
 }
 
 R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
+	R_RETURN_VAL_IF_FAIL (ai && op, false);
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
 	if (encode != NULL) {
 		return encode (ai, op, mask);
@@ -51,6 +54,7 @@ R_API bool r_arch_session_patch(RArchSession *ai, RAnalOp *op, RArchEncodeMask m
 }
 
 R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask mask) {
+	R_RETURN_VAL_IF_FAIL (ai && op, false);
 	// TODO R2_590 use the encoder if found in the current session ai->encoder->..
 	RArchPluginEncodeCallback encode = R_UNWRAP3 (ai, plugin, encode);
 	if (encode != NULL) {
@@ -60,23 +64,19 @@ R_API bool r_arch_session_encode(RArchSession *ai, RAnalOp *op, RArchEncodeMask 
 }
 
 R_API RList *r_arch_session_preludes(RArchSession *s) {
-	if (s) {
-		RArchPluginPreludesCallback preludes = R_UNWRAP3 (s, plugin, preludes);
-		if (preludes != NULL) {
-			return preludes (s);
-		}
+	R_RETURN_VAL_IF_FAIL (s, false);
+	RArchPluginPreludesCallback preludes = R_UNWRAP3 (s, plugin, preludes);
+	if (preludes != NULL) {
+		return preludes (s);
 	}
 	return NULL;
 }
 
 R_API int r_arch_session_info(RArchSession *s, int query) {
-	if (!s) {
-		return -1;
-	}
+	R_RETURN_VAL_IF_FAIL (s, -1);
 	RArchPluginInfoCallback info = R_UNWRAP3 (s, plugin, info);
 	if (info != NULL) {
 		return info (s, query);
 	}
 	return -1;
 }
-
