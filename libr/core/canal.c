@@ -176,11 +176,12 @@ static inline bool is_likely_string(const ut8 *buf, int size) {
 	return true;
 }
 
-static bool is_string_at(RCore *core, ut64 addr, char *str, int strsz, int *olen) {
+#define STRSZ 64
+static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
 	if (olen) {
 		*olen = 0;
 	}
-	if (!str || strsz < 2 || !r_io_is_valid_offset (core->io, addr, 0)) {
+	if (!str || !r_io_is_valid_offset (core->io, addr, 0)) {
 		return false;
 	}
 
@@ -195,9 +196,9 @@ static bool is_string_at(RCore *core, ut64 addr, char *str, int strsz, int *olen
 		}
 	}
 
-	ut8 rstr[64] = {0};
+	ut8 rstr[STRSZ] = {0};
 	int len = 0;
-	const int size = R_MIN (strsz - 1, 64);
+	const int size = STRSZ - 1;
 
 	r_io_read_at (core->io, addr, (ut8*)str, size);
 	str[size] = 0;
@@ -226,7 +227,7 @@ static bool is_string_at(RCore *core, ut64 addr, char *str, int strsz, int *olen
 			r_io_read_at (core->io, ptr, rstr, sizeof (rstr) - 1);
 			rstr[sizeof (rstr) - 1] = 0;
 			if (is_string (rstr, sizeof (rstr), &len)) {
-				r_str_ncpy (str, (char*)rstr, strsz);
+				r_str_ncpy (str, (char*)rstr, STRSZ);
 				if (olen) {
 					*olen = len;
 				}
@@ -237,7 +238,7 @@ static bool is_string_at(RCore *core, ut64 addr, char *str, int strsz, int *olen
 		r_io_read_at (core->io, lowptr, rstr, sizeof (rstr) - 1);
 		rstr[sizeof (rstr) - 1] = 0;
 		if (is_string (rstr, sizeof (rstr), &len)) {
-			r_str_ncpy (str, (char*)rstr, strsz);
+			r_str_ncpy (str, (char*)rstr, STRSZ);
 			if (olen) {
 				*olen = len;
 			}
@@ -4579,14 +4580,14 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
-	char str[64] = {0};
+	char str[STRSZ] = {0};
 	if (xref_to == UT64_MAX || !xref_to) {
 		return;
 	}
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
 	}
-	if (is_string_at (core, xref_to, str, sizeof (str), &len) && str[0] && len > 0) {
+	if (is_string_at (core, xref_to, str, &len) && str[0] && len > 0) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
@@ -4652,8 +4653,8 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 		}
 		r_cons_printf (core->cons, "%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 		if (cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
-			char str_flagname[64] = {0};
-			if (is_string_at (core, xref_to, str_flagname, sizeof (str_flagname), &len)) {
+			char str_flagname[STRSZ] = {0};
+			if (is_string_at (core, xref_to, str_flagname, &len)) {
 				ut64 str_addr = xref_to;
 				r_name_filter (str_flagname, -1);
 				r_cons_printf (core->cons, "'f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
@@ -6309,7 +6310,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				if ((target && dst == ntarget) || !target) {
 					if (dst > 0xffff && opsrc1 && (dst & 0xffff) == (opsrc1->imm & 0xffff) && myvalid (core, dst)) {
 						RFlagItem *f;
-						char str[64] = {0};
+						char str[STRSZ] = {0};
 						if (CHECKREF (dst) || CHECKREF (cur)) {
 							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
@@ -6317,8 +6318,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-							} else if (is_string_at (core, dst, str, sizeof (str), NULL)) {
-								char *str2 = r_str_newf ("esilref: '%s'", str);
+						} else if (is_string_at (core, dst, str, NULL)) {
+							char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
 								// https://github.com/radareorg/radare2/issues/6937
