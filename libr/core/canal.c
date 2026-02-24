@@ -5401,14 +5401,16 @@ typedef struct {
 typedef int RPerm;
 
 static const char *reg_name_for_access(RAnalOp* op, RPerm type) {
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	if (type == R_PERM_W) {
+		RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 		if (dst) {
 			return dst->reg;
 		}
-	} else if (src) {
-		return src->reg;
+	} else {
+		RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+		if (src) {
+			return src->reg;
+		}
 	}
 	return NULL;
 }
