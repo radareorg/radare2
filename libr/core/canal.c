@@ -9,6 +9,14 @@
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
 
+typedef struct {
+	ut64 from;
+	ut64 to;
+	bool set_xref;
+} StringRef;
+
+R_VEC_TYPE(RVecStringRef, StringRef);
+
 // used to speedup strcmp with rconfig.get in loops
 enum {
 	R2_ARCH_THUMB,
@@ -178,63 +186,42 @@ static inline bool is_likely_string(const ut8 *buf, int size) {
 }
 
 #define STRSZ 64
-static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
-	static RBinObject *section_cache_obj = NULL;
-	static RBinSection *section_cache = NULL;
-	static ut64 section_cache_from = UT64_MAX;
-	static ut64 section_cache_to = UT64_MAX;
+static int is_string_at(RCore *core, ut64 addr, char *str, int strsz) {
 	ut64 section_from = 0;
 	ut64 section_to = 0;
 	RBinSection *section = NULL;
-	if (olen) {
-		*olen = 0;
-	}
-	if (!str || !r_io_is_valid_offset (core->io, addr, 0)) {
-		return false;
+	if (!str || strsz < 2 || !r_io_is_valid_offset (core->io, addr, 0)) {
+		return 0;
 	}
 	RBinObject *obj = r_bin_cur_object (core->bin);
-	if (obj && section_cache_obj == obj && addr >= section_cache_from && addr < section_cache_to) {
-		section = section_cache;
-		section_from = section_cache_from;
-		section_to = section_cache_to;
-	} else if (obj) {
+	if (obj) {
 		section = r_bin_get_section_at (obj, addr, core->io->va);
-		section_cache_obj = obj;
-		section_cache = section;
 		if (section) {
 			section_from = core->io->va? obj->baddr_shift + section->vaddr: section->paddr;
 			section_to = section_from + (core->io->va? section->vsize: section->size);
-			section_cache_from = section_from;
-			section_cache_to = section_to;
-		} else {
-			section_cache_from = UT64_MAX;
-			section_cache_to = UT64_MAX;
 		}
 	}
 	if (section) {
 		if (section->perm & R_PERM_X) {
-			return false;
+			return 0;
 		}
 		if (addr + 4 > section_to) {
-			return false;
+			return 0;
 		}
 	}
 
 	int len = 0;
-	const int size = STRSZ - 1;
+	const int size = strsz - 1;
 
 	r_io_read_at (core->io, addr, (ut8*)str, size);
 	str[size] = 0;
 	if (!is_likely_string ((ut8*)str, size)) {
-		return false;
+		return 0;
 	}
 	if (!is_string ((ut8*)str, size, &len)) {
-		return false;
+		return 0;
 	}
-	if (olen) {
-		*olen = len;
-	}
-	return true;
+	return len;
 }
 
 /* returns the R_ANAL_ADDR_TYPE_* of the address 'addr' */
@@ -4565,33 +4552,41 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
+static bool add_string_ref_meta(RCore *core, ut64 xref_to, char *str, int *len) {
+	if (xref_to == UT64_MAX || !xref_to) {
+		return false;
+	}
+	*len = is_string_at (core, xref_to, str, sizeof (str));
+	if (!str[0] || *len <= 0) {
+		return false;
+	}
+	r_name_filter (str, -1);
+	if (*str) {
+		RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, false, xref_to);
+		if (!flag || !r_str_startswith (flag->name, "str.")) {
+			r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
+			char *strf = r_str_newf ("str.%s", str);
+			r_flag_set (core->flags, strf, xref_to, *len);
+			free (strf);
+			r_flag_space_pop (core->flags);
+		}
+	}
+	RAnalMetaItem *mi = r_meta_get_at (core->anal, xref_to, R_META_TYPE_ANY, NULL);
+	if (!mi || mi->type != R_META_TYPE_STRING) {
+		r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, *len, str);
+	}
+	return true;
+}
+
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
 	char str[STRSZ] = {0};
-	if (xref_to == UT64_MAX || !xref_to) {
-		return;
-	}
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
 	}
-	if (is_string_at (core, xref_to, str, &len) && str[0] && len > 0) {
+	if (add_string_ref_meta (core, xref_to, str, &len)) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
-		r_name_filter (str, -1);
-		if (*str) {
-			RFlagItem *flag = r_core_flag_get_by_spaces (core->flags, false, xref_to);
-			if (!flag || !r_str_startswith (flag->name, "str.")) {
-				r_flag_space_push (core->flags, R_FLAGS_FS_STRINGS);
-				char *strf = r_str_newf ("str.%s", str);
-				r_flag_set (core->flags, strf, xref_to, len);
-				free (strf);
-				r_flag_space_pop (core->flags);
-			}
-		}
-		RAnalMetaItem *mi = r_meta_get_at (core->anal, xref_to, R_META_TYPE_ANY, NULL);
-		if (!mi || mi->type != R_META_TYPE_STRING) {
-			r_meta_set (core->anal, R_META_TYPE_STRING, xref_to, len, str);
-		}
 	}
 }
 
@@ -4642,7 +4637,8 @@ static bool found_xref(RCore *core, ut64 at, ut64 xref_to, RAnalRefType type, PJ
 		r_cons_printf (core->cons, "%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 		if (cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
 			char str_flagname[STRSZ] = {0};
-			if (is_string_at (core, xref_to, str_flagname, &len)) {
+			len = is_string_at (core, xref_to, str_flagname, sizeof (str_flagname));
+			if (len > 0) {
 				ut64 str_addr = xref_to;
 				r_name_filter (str_flagname, -1);
 				r_cons_printf (core->cons, "'f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
@@ -5402,6 +5398,8 @@ typedef struct {
 	RAnalFunction *fcn;
 	char *spname;
 	ut64 initial_sp;
+	RVecStringRef pending_string_refs;
+	bool batch_strings;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5467,6 +5465,84 @@ static void handle_var_stack_access(REsil *esil, ut64 addr, RPerm type, int len)
 			}
 		}
 	}
+}
+
+static void esilbreak_batch_init(EsilBreakCtx *ctx) {
+	R_RETURN_IF_FAIL (ctx);
+	RVecStringRef_init (&ctx->pending_string_refs);
+	ctx->batch_strings = true;
+}
+
+static void esilbreak_batch_fini(EsilBreakCtx *ctx) {
+	R_RETURN_IF_FAIL (ctx);
+	RVecStringRef_fini (&ctx->pending_string_refs);
+	ctx->batch_strings = false;
+}
+
+static void esilbreak_collect_string_ref(REsil *esil, ut64 from, ut64 to, bool set_xref) {
+	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
+	EsilBreakCtx *ctx = esil->user;
+	RCore *core = esil->anal->coreb.core;
+	if (!ctx->batch_strings) {
+		add_string_ref (core, from, to);
+		return;
+	}
+	if (to == UT64_MAX || !to) {
+		return;
+	}
+	if (!from || from == UT64_MAX) {
+		from = esil->addr;
+	}
+	StringRef ref = { from, to, set_xref };
+	RVecStringRef_push_back (&ctx->pending_string_refs, &ref);
+}
+
+static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
+	R_RETURN_IF_FAIL (ctx && core);
+	if (!ctx->batch_strings) {
+		return;
+	}
+	const size_t count = RVecStringRef_length (&ctx->pending_string_refs);
+	if (!count) {
+		return;
+	}
+	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
+	HtUU *seen = ht_uu_new0 ();
+	if (!seen) {
+		size_t i;
+		for (i = 0; i < count; i++) {
+			StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
+			add_string_ref (core, ref->from, ref->to);
+		}
+		goto beach;
+	}
+	size_t i;
+	for (i = 0; i < count; i++) {
+		StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
+		bool found = false;
+		ht_uu_find (seen, ref->to, &found);
+		if (found) {
+			continue;
+		}
+		char str[STRSZ] = {0};
+		int len = 0;
+		ut64 state = add_string_ref_meta (core, ref->to, str, &len)? 1: 2;
+		ht_uu_insert (seen, ref->to, state);
+	}
+	for (i = 0; i < count; i++) {
+		StringRef *ref = RVecStringRef_at (&ctx->pending_string_refs, i);
+		if (!ref->set_xref) {
+			continue;
+		}
+		bool found = false;
+		ut64 state = ht_uu_find (seen, ref->to, &found);
+		if (found && state == 1) {
+			r_anal_xrefs_set (core->anal, ref->from, ref->to, reftype);
+		}
+	}
+	ht_uu_free (seen);
+beach:
+	RVecStringRef_clear (&ctx->pending_string_refs);
 }
 
 static bool is_stack(RIO *io, ut64 addr) {
@@ -5537,12 +5613,12 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 					//eprintf ("Invalid read\n");
 					str[0] = 0;
 				} else {
-					r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-					str[sizeof (str) - 1] = 0;
-					add_string_ref (core, esil->addr, refptr);
-					esilbreak_last_data = UT64_MAX;
-				}
+				r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+				str[sizeof (str) - 1] = 0;
+				esilbreak_collect_string_ref (esil, esil->addr, refptr, false);
+				esilbreak_last_data = UT64_MAX;
 			}
+		}
 		}
 		if (myvalid (core, addr) && r_io_read_at (core->io, addr, (ut8*)buf, len)) {
 			if (!is_stack (core->io, addr)) {
@@ -5589,18 +5665,18 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		}
 		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at);
+				esilbreak_collect_string_ref (esil, esil->addr, at, true);
 			}
 		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at);
+				esilbreak_collect_string_ref (esil, esil->addr, at, true);
 			}
 		}
 	} else {
 		// intel, sparc and others
 		if (op->type != R_ANAL_OP_TYPE_RMOV) {
 			if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
-				add_string_ref (anal->coreb.core, esil->addr, at);
+				esilbreak_collect_string_ref (esil, esil->addr, at, true);
 			}
 		}
 	}
@@ -5951,8 +6027,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		&op,
 		fcn,
 		spname,
-		r_reg_getv (core->anal->reg, spname) // initial_sp
+		r_reg_getv (core->anal->reg, spname), // initial_sp
 	};
+	esilbreak_batch_init (&ctx);
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
 	ESIL->user = &ctx;
@@ -6306,7 +6383,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-						} else if (is_string_at (core, dst, str, NULL)) {
+						} else if (is_string_at (core, dst, str, sizeof (str)) > 0) {
 							char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
@@ -6421,6 +6498,8 @@ repeat:
 			break;
 		}
 	} while (get_next_i (&ictx, &i));
+	esilbreak_flush_string_refs (&ctx, core);
+	esilbreak_batch_fini (&ctx);
 	free (sn);
 	free (spname);
 	r_list_free (ictx.bbl);
