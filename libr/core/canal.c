@@ -4,6 +4,7 @@
 
 #include <r_core.h>
 #include <r_vec.h>
+#include <sdb/ht_uu.h>
 
 HEAPTYPE (ut64);
 R_VEC_TYPE(RVecIntPtr, int *);
@@ -123,7 +124,6 @@ static char *get_function_name(RCore *core, const char *fcnpfx, ut64 addr) {
 }
 
 // XXX: copypaste from anal/data.c
-#define MINLEN 1
 static int is_string(const ut8 *buf, int size, int *len) {
 	int i, fakeLen = 0;
 	if (size < 1) {
@@ -137,7 +137,7 @@ static int is_string(const ut8 *buf, int size, int *len) {
 		return 2; // is wide
 	}
 	for (i = 0; i < size; i++) {
-		if (!buf[i] && i > MINLEN) {
+		if (!buf[i] && i > 1) {
 			*len = i;
 			return 1;
 		}
@@ -179,6 +179,96 @@ static inline bool is_likely_string(const ut8 *buf, int size) {
 }
 
 #define STRSZ 64
+typedef struct {
+	ut64 from;
+	ut64 to;
+	int perm;
+} RStringSectionRange;
+
+static int string_section_range_cmp(const void *a, const void *b) {
+	const RStringSectionRange *ra = a;
+	const RStringSectionRange *rb = b;
+	return (ra->from > rb->from)? 1: (ra->from < rb->from)? -1: 0;
+}
+
+static size_t build_string_section_ranges(RCore *core, RStringSectionRange **ranges_out) {
+	R_RETURN_VAL_IF_FAIL (core && ranges_out, 0);
+	*ranges_out = NULL;
+	RBinObject *obj = r_bin_cur_object (core->bin);
+	if (!obj) {
+		return 0;
+	}
+	RList *sections = r_bin_get_sections (core->bin);
+	const size_t count = r_list_length (sections);
+	if (!count) {
+		return 0;
+	}
+	RStringSectionRange *ranges = calloc (sizeof (RStringSectionRange), count);
+	RListIter *iter;
+	RBinSection *section;
+	size_t idx = 0;
+	r_list_foreach (sections, iter, section) {
+		ut64 from = core->io->va? obj->baddr_shift + section->vaddr: section->paddr;
+		ut64 size = core->io->va? section->vsize: section->size;
+		ranges[idx].from = from;
+		ranges[idx].to = from + size;
+		ranges[idx].perm = section->perm;
+		idx++;
+	}
+	if (idx > 1) {
+		qsort (ranges, idx, sizeof (*ranges), string_section_range_cmp);
+	}
+	*ranges_out = ranges;
+	return idx;
+}
+
+static const RStringSectionRange *string_section_range_find(const RStringSectionRange *ranges, size_t count, ut64 addr) {
+	size_t left = 0;
+	size_t right = count;
+	while (left < right) {
+		size_t mid = (left + right) / 2;
+		const RStringSectionRange *range = &ranges[mid];
+		if (addr < range->from) {
+			right = mid;
+		} else if (addr >= range->to) {
+			left = mid + 1;
+		} else {
+			return range;
+		}
+	}
+	return NULL;
+}
+
+static int is_string_at_cached(RCore *core, ut64 addr, char *str, int strsz, const RStringSectionRange *range) {
+	if (!str || strsz < 2 || !r_io_is_valid_offset (core->io, addr, 0)) {
+		return 0;
+	}
+	if (range) {
+		if (addr < range->from || addr >= range->to) {
+			return 0;
+		}
+		if (range->perm & R_PERM_X) {
+			return 0;
+		}
+		if (addr + 4 > range->to) {
+			return 0;
+		}
+	}
+
+	int len = 0;
+	const int size = strsz - 1;
+
+	r_io_read_at (core->io, addr, (ut8*)str, size);
+	str[size] = 0;
+	if (!is_likely_string ((ut8*)str, size)) {
+		return 0;
+	}
+	if (!is_string ((ut8*)str, size, &len)) {
+		return 0;
+	}
+	return len;
+}
+
 static int is_string_at(RCore *core, ut64 addr, char *str, int strsz) {
 	ut64 section_from = 0;
 	ut64 section_to = 0;
@@ -4545,11 +4635,11 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static bool add_string_ref_meta(RCore *core, ut64 xref_to, char *str, int *len) {
+static bool add_string_ref_meta_cached(RCore *core, ut64 xref_to, char *str, int strsz, int *len, const RStringSectionRange *range) {
 	if (xref_to == UT64_MAX || !xref_to) {
 		return false;
 	}
-	*len = is_string_at (core, xref_to, str, sizeof (str));
+	*len = is_string_at_cached (core, xref_to, str, strsz, range);
 	if (!str[0] || *len <= 0) {
 		return false;
 	}
@@ -4571,6 +4661,10 @@ static bool add_string_ref_meta(RCore *core, ut64 xref_to, char *str, int *len) 
 	return true;
 }
 
+static bool add_string_ref_meta(RCore *core, ut64 xref_to, char *str, int strsz, int *len) {
+	return add_string_ref_meta_cached (core, xref_to, str, strsz, len, NULL);
+}
+
 static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
@@ -4578,7 +4672,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
 	}
-	if (add_string_ref_meta (core, xref_to, str, &len)) {
+	if (add_string_ref_meta (core, xref_to, str, sizeof (str), &len)) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 	}
 }
@@ -5393,6 +5487,7 @@ typedef struct {
 	ut64 initial_sp;
 	RVecU64 pending_string_refs;
 	bool batch_strings;
+	ut64 last_string_ref;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5464,6 +5559,7 @@ static void esilbreak_batch_init(EsilBreakCtx *ctx) {
 	R_RETURN_IF_FAIL (ctx);
 	RVecU64_init (&ctx->pending_string_refs);
 	ctx->batch_strings = true;
+	ctx->last_string_ref = UT64_MAX;
 }
 
 static void esilbreak_batch_fini(EsilBreakCtx *ctx) {
@@ -5472,26 +5568,9 @@ static void esilbreak_batch_fini(EsilBreakCtx *ctx) {
 	ctx->batch_strings = false;
 }
 
-static void esilbreak_collect_string_ref(REsil *esil, ut64 to) {
-	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
-	EsilBreakCtx *ctx = esil->user;
-	RCore *core = esil->anal->coreb.core;
-	if (!ctx->batch_strings) {
-		add_string_ref (core, esil->addr, to);
-		return;
-	}
-	if (to == UT64_MAX || !to) {
-		return;
-	}
-	size_t i;
-	const size_t count = RVecU64_length (&ctx->pending_string_refs);
-	for (i = 0; i < count; i++) {
-		ut64 *existing = RVecU64_at (&ctx->pending_string_refs, i);
-		if (*existing == to) {
-			return;
-		}
-	}
-	RVecU64_push_back (&ctx->pending_string_refs, &to);
+static inline int esilbreak_u64_find_cmp(const ut64 *a, const void *b) {
+	const ut64 *value = b;
+	return (*a == *value)? 0: 1;
 }
 
 static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
@@ -5503,14 +5582,42 @@ static void esilbreak_flush_string_refs(EsilBreakCtx *ctx, RCore *core) {
 	if (!count) {
 		return;
 	}
+	RStringSectionRange *ranges = NULL;
+	size_t ranges_count = build_string_section_ranges (core, &ranges);
 	size_t i;
 	for (i = 0; i < count; i++) {
 		ut64 *ref = RVecU64_at (&ctx->pending_string_refs, i);
 		char str[STRSZ] = {0};
 		int len = 0;
-		add_string_ref_meta (core, *ref, str, &len);
+		const RStringSectionRange *range = ranges_count? string_section_range_find (ranges, ranges_count, *ref): NULL;
+		add_string_ref_meta_cached (core, *ref, str, sizeof (str), &len, range);
 	}
+	free (ranges);
 	RVecU64_clear (&ctx->pending_string_refs);
+}
+
+static void esilbreak_collect_string_ref(REsil *esil, ut64 to) {
+	R_RETURN_IF_FAIL (esil && esil->anal && esil->user);
+	EsilBreakCtx *ctx = esil->user;
+	RCore *core = esil->anal->coreb.core;
+	if (!ctx->batch_strings) {
+		add_string_ref (core, esil->addr, to);
+		return;
+	}
+	if (to == UT64_MAX || to < 32) {
+		return;
+	}
+	if (to == ctx->last_string_ref) {
+		return;
+	}
+	if (!RVecU64_find (&ctx->pending_string_refs, &to, esilbreak_u64_find_cmp)) {
+		RVecU64_push_back (&ctx->pending_string_refs, &to);
+	}
+	ctx->last_string_ref = to;
+	if (RVecU64_length (&ctx->pending_string_refs) > 0x10000) {
+		// process batch
+		esilbreak_flush_string_refs (ctx, core);
+	}
 }
 
 static bool is_stack(RIO *io, ut64 addr) {
