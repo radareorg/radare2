@@ -433,6 +433,7 @@ io_plugins += [
   asm_plugins += [
     '6502',
     '8051',
+    'bf',
     'bpf',
     'cosmac',
     'evm',
