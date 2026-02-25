@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2024 - pancake */
+/* radare2 - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_arch.h>
 
@@ -309,7 +309,7 @@ static int archinfo(RArchSession *as, ut32 q) {
 	case R_ARCH_INFO_ISVM:
 		return R_ARCH_INFO_ISVM;
 	case R_ARCH_INFO_MAXOP_SIZE:
-		return 0xff;
+		return 32;
 		// return 32;
 	}
 	return 1;
