@@ -48,7 +48,7 @@ The `sys/lint.sh` script enforces additional style rules including:
 - Use `R_RETURN_*` macros in public `R_API` functions for programming error checks
 - Use standard `if` statements for runtime error checks (e.g., malloc failures)
 - Never use `<assert.h>`; use `"r_util/r_assert.h"`
-- Prefer `!strcmp()` over `strcmp() == 0`
+- Prefer `!strcmp ()` over `strcmp () == 0`
 - Use string and memory parsing functions from `libr/util` before libc if possible:
   - Use `r_str_newf` instead of manual malloc + snprintf
   - Use `r_strbuf_*` for string concatenation in loops; avoid `r_str_append`
