@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2007-2025 - pancake */
+/* radare2 - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_util/r_print.h>
 #include <r_util/r_str.h>
@@ -383,84 +383,71 @@ R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	}
 }
 
-R_API void r_print_addr(RPrint *p, ut64 addr) {
-	char space[32] = {
-		0
-	};
-	char padstr[32];
-	const char *white = "";
-#define PREOFF(x) (p && p->consb.cons && p->consb.cons->context && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
-	bool use_segoff = p? (p->flags & R_PRINT_FLAGS_SEGOFF): false;
-	bool use_color = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
-	bool dec = p? (p->flags & R_PRINT_FLAGS_ADDRDEC): false;
-	bool mod = p? (p->flags & R_PRINT_FLAGS_ADDRMOD): false;
-	char ch = p? ((p->addrmod && mod)? ((addr % p->addrmod)? ' ': ','): ' '): ' ';
-	if (p && p->flags & R_PRINT_FLAGS_COMPACT && p->col == 1) {
+R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size) {
+	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, 0);
+	bool use_segoff = p ? (p->flags & R_PRINT_FLAGS_SEGOFF) : false;
+	bool use_color = p ? (p->flags & R_PRINT_FLAGS_COLOR) : false;
+	bool dec = p ? (p->flags & R_PRINT_FLAGS_ADDRDEC) : false;
+	bool mod = p ? (p->flags & R_PRINT_FLAGS_ADDRMOD) : false;
+	char ch = p ? ((p->addrmod && mod) ? ((addr % p->addrmod) ? ' ' : ',') : ' ') : ' ';
+	if (p && (p->flags & R_PRINT_FLAGS_COMPACT) && p->col == 1) {
 		ch = '|';
 	}
 	if (p && p->pava) {
 		p->iob.p2v (p->iob.io, addr, &addr);
 	}
-	if (use_segoff) {
-		ut32 a = addr & 0xffff;
-		ut32 s = (addr - a) >> ((p && p->config)? p->config->seggrn: 4);
-		if (dec) {
-			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-			white = r_str_pad (padstr, sizeof (padstr), ' ', 9 - strlen (space));
-		}
-		if (use_color) {
-			const char *pre = PREOFF (addr): Color_GREEN;
-			const char *fin = Color_RESET;
-			if (dec) {
-				r_print_printf (p, "%s%s%s%s%c", pre, white, space, fin, ch);
-			} else {
-				r_print_printf (p, "%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
-			}
-		} else {
-			if (dec) {
-				r_print_printf (p, "%s%s%c", white, space, ch);
-			} else {
-				r_print_printf (p, "%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
-			}
-		}
-	} else {
-		if (dec) {
-			snprintf (space, sizeof (space), "%" PFMT64d, addr);
-			int w = R_MAX (10 - strlen (space), 0);
-			white = r_str_pad (padstr, sizeof (padstr), ' ', w);
-		}
-		if (use_color) {
-			const char *pre = PREOFF (addr): Color_GREEN;
-			const char *fin = Color_RESET;
-			if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
-				if (p->consb.cons && p->consb.cons->rgbstr) {
+	const char *pre = Color_GREEN;
+	const char *fin = Color_RESET; // AITODO: confirm this is used only in `use_color` code paths, because maybe we can just inline the value or simplify this code a little bit more
+	if (use_color && p) {
+		RCons *cons = p->consb.cons;
+		if (cons) {
+			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
+				if (cons->rgbstr) {
 					static R_TH_LOCAL char rgbstr[32];
-					pre = p->consb.cons->rgbstr (p->consb.cons, rgbstr, sizeof (rgbstr), addr);
+					pre = cons->rgbstr (cons, rgbstr, sizeof (rgbstr), addr);
 				}
-			}
-			if (dec) {
-				r_print_printf (p, "%s%s%" PFMT64d "%s%c", pre, white, addr, fin, ch);
-			} else {
-				if (p && p->wide_offsets) {
-					// TODO: make %016 depend on asm.bits
-					r_print_printf (p, "%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
-				} else {
-					r_print_printf (p, "%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
-				}
-			}
-		} else {
-			if (dec) {
-				r_print_printf (p, "%s%" PFMT64d "%c", white, addr, ch);
-			} else {
-				if (p && p->wide_offsets) {
-					// TODO: make %016 depend on asm.bits
-					r_print_printf (p, "0x%016" PFMT64x "%c", addr, ch);
-				} else {
-					r_print_printf (p, "0x%08" PFMT64x "%c", addr, ch);
-				}
+			} else if (cons->context && cons->context->pal.addr) {
+				pre = cons->context->pal.addr;
 			}
 		}
 	}
+	if (use_segoff) {
+		const ut32 a = addr & 0xffff;
+		const ut32 s = (addr - a) >> ((p && p->config) ? p->config->seggrn : 4);
+		if (dec) {
+			if (use_color) {
+				return snprintf (buf, buf_size, "%s%9d:%-5d%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+			}
+			return snprintf (buf, buf_size, "%9d:%-5d%c", s & 0xffff, a & 0xffff, ch);
+		}
+		if (use_color) {
+			return snprintf (buf, buf_size, "%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+		}
+		return snprintf (buf, buf_size, "%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
+	}
+	if (dec) {
+		if (use_color) {
+			return snprintf (buf, buf_size, "%s%10" PFMT64d "%s%c", pre, addr, fin, ch);
+		}
+		return snprintf (buf, buf_size, "%10" PFMT64d "%c", addr, ch);
+	}
+	if (use_color) {
+		if (p && p->wide_offsets) {
+			return snprintf (buf, buf_size, "%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+		}
+		return snprintf (buf, buf_size, "%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+	}
+	if (p && p->wide_offsets) {
+		return snprintf (buf, buf_size, "0x%016" PFMT64x "%c", addr, ch);
+	}
+	return snprintf (buf, buf_size, "0x%08" PFMT64x "%c", addr, ch);
+}
+
+// TODO: deprecate this function. r_print functions must not use RCons! just work with strbuf
+R_API void r_print_addr(RPrint *p, ut64 addr) {
+	char buf[64];
+	r_print_addr_tostring (p, addr, buf, sizeof (buf));
+	r_print_printf (p, "%s", buf);
 }
 
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
