@@ -9625,7 +9625,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				const char *color;
 				int idx;
 			} AobRow;
-			AobRow row[16] = {0};
+			AobRow row[16] = {{0}};
 			int rows = 0;
 			char *p;
 			char *s = r_strbuf_drain (sb);

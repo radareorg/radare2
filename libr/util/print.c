@@ -397,7 +397,6 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 		p->iob.p2v (p->iob.io, addr, &addr);
 	}
 	const char *pre = Color_GREEN;
-	const char *fin = Color_RESET; // AITODO: confirm this is used only in `use_color` code paths, because maybe we can just inline the value or simplify this code a little bit more
 	if (use_color && p) {
 		RCons *cons = p->consb.cons;
 		if (cons) {
@@ -411,31 +410,32 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 			}
 		}
 	}
+	// Note: Color_RESET is only needed in use_color paths, so it's inlined directly in those format strings
 	if (use_segoff) {
 		const ut32 a = addr & 0xffff;
 		const ut32 s = (addr - a) >> ((p && p->config) ? p->config->seggrn : 4);
 		if (dec) {
 			if (use_color) {
-				return snprintf (buf, buf_size, "%s%9d:%-5d%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+				return snprintf (buf, buf_size, "%s%9d:%-5d" Color_RESET "%c", pre, s & 0xffff, a & 0xffff, ch);
 			}
 			return snprintf (buf, buf_size, "%9d:%-5d%c", s & 0xffff, a & 0xffff, ch);
 		}
 		if (use_color) {
-			return snprintf (buf, buf_size, "%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+			return snprintf (buf, buf_size, "%s%04x:%04x" Color_RESET "%c", pre, s & 0xffff, a & 0xffff, ch);
 		}
 		return snprintf (buf, buf_size, "%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
 	}
 	if (dec) {
 		if (use_color) {
-			return snprintf (buf, buf_size, "%s%10" PFMT64d "%s%c", pre, addr, fin, ch);
+			return snprintf (buf, buf_size, "%s%10" PFMT64d Color_RESET "%c", pre, addr, ch);
 		}
 		return snprintf (buf, buf_size, "%10" PFMT64d "%c", addr, ch);
 	}
 	if (use_color) {
 		if (p && p->wide_offsets) {
-			return snprintf (buf, buf_size, "%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+			return snprintf (buf, buf_size, "%s0x%016" PFMT64x Color_RESET "%c", pre, addr, ch);
 		}
-		return snprintf (buf, buf_size, "%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+		return snprintf (buf, buf_size, "%s0x%08" PFMT64x Color_RESET "%c", pre, addr, ch);
 	}
 	if (p && p->wide_offsets) {
 		return snprintf (buf, buf_size, "0x%016" PFMT64x "%c", addr, ch);

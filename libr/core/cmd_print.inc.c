@@ -953,16 +953,19 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 		RInterval itv = { core->addr, (ut64)len };
 		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char *name = r_core_get_section_name (core, core->addr + i);
-			r_cons_printf (core->cons, "%20s ", r_str_get (name));
+			r_strbuf_appendf (sb, "%20s ", r_str_get (name));
 		}
 		if (show_offset) {
-			r_print_addr (core->print, core->addr + i);
+			char addrbuf[64];
+			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
+			r_strbuf_append (sb, addrbuf);
 		}
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
@@ -976,7 +979,7 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 					color_val);
 				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
-				ch = (show_cursor && core->print->cur == j)?: '_': ' ';
+				ch = (show_cursor && core->print->cur == j)? '_': ' ';
 			} else {
 				color = strdup ("");
 				if (show_cursor && core->print->cur == j) {
@@ -1001,17 +1004,19 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 				} else {
 					ch2 = ch;
 				}
-				r_cons_printf (core->cons, "%s%c%c", color, ch, ch2);
+				r_strbuf_appendf (sb, "%s%c%c", color, ch, ch2);
 			} else {
-				r_cons_printf (core->cons, "%s%c", color, ch);
+				r_strbuf_appendf (sb, "%s%c", color, ch);
 			}
 			free (color);
 		}
 		if (show_color) {
-			r_cons_printf (core->cons, Color_RESET);
+			r_strbuf_append (sb, Color_RESET);
 		}
-		r_cons_newline (core->cons);
+		r_strbuf_append (sb, "\n");
 	}
+	r_cons_print (core->cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 	RVecRIORegion_free (regions);
 }
 
