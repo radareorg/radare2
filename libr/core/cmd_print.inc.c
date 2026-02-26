@@ -976,7 +976,7 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 					color_val);
 				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
-				ch = (show_cursor && core->print->cur == j)?: '_': ' ';
+				ch = (show_cursor && core->print->cur == j)? '_': ' ';
 			} else {
 				color = strdup ("");
 				if (show_cursor && core->print->cur == j) {
