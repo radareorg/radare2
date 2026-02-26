@@ -875,13 +875,16 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 		RInterval itv = { core->addr, (ut64)len };
 		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char *name = r_core_get_section_name (core, core->addr + i);
-			r_cons_printf (cons, "%20s ", r_str_get (name));
+			r_strbuf_appendf (sb, "%20s ", r_str_get (name));
 		}
 		if (show_offset) {
-			r_print_addr (core->print, core->addr + i);
+			char addrbuf[64];
+			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
+			r_strbuf_append (sb, addrbuf);
 		}
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
@@ -903,28 +906,30 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 			if (bitsmode) {
 				char color0bits[8] = { 0 };
 				char color1bits[8] = { 0 };
-				ut8 b0 = ch0 | ch0 << 4;
-				ut8 b1 = ch1 | ch1 << 4;
+				const ut8 b0 = ch0 | ch0 << 4;
+				const ut8 b1 = ch1 | ch1 << 4;
 				r_str_bits (color0bits, &b0, 4, NULL);
 				r_str_bits (color1bits, &b1, 4, NULL);
-				r_cons_printf (cons, "%s%s%s%s%s ", color0, color0bits, color1, color1bits, show_color? Color_RESET: "");
+				r_strbuf_appendf (sb, "%s%s%s%s%s ", color0, color0bits, color1, color1bits, show_color ? Color_RESET : "");
 			} else {
-				r_cons_printf (cons, "%s%01x%s%01x%s", color0, ch0, color1, ch1, show_color? Color_RESET: "");
+				r_strbuf_appendf (sb, "%s%01x%s%01x%s", color0, ch0, color1, ch1, show_color ? Color_RESET : "");
 			}
 			free (color0);
 			free (color1);
 		}
 		if (show_color) {
-			r_cons_printf (cons, Color_RESET);
+			r_strbuf_append (sb, Color_RESET);
 		}
 		if (show_flags) {
 			RFlagItem *fi = r_flag_get_in (core->flags, core->addr + j);
 			if (fi) {
-				r_cons_printf (cons, " ; %s", fi->name);
+				r_strbuf_appendf (sb, " ; %s", fi->name);
 			}
 		}
-		r_cons_newline (cons);
+		r_strbuf_append (sb, "\n");
 	}
+	r_cons_print (cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 	RVecRIORegion_free (regions);
 }
 
@@ -971,11 +976,7 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 					color_val);
 				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					ch = ' ';
-				}
+				ch = (show_cursor && core->print->cur == j)?: '_': ' ';
 			} else {
 				color = strdup ("");
 				if (show_cursor && core->print->cur == j) {

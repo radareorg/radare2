@@ -184,6 +184,7 @@ R_API void r_print_free(RPrint * R_NULLABLE p);
 R_API bool r_print_fini(RPrint * R_NONNULL p);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
+R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size);
 R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API void r_print_section(RPrint *p, ut64 at);
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height);
