@@ -397,7 +397,6 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 		p->iob.p2v (p->iob.io, addr, &addr);
 	}
 	const char *pre = Color_GREEN;
-	const char *fin = Color_RESET; // AITODO: confirm this is used only in `use_color` code paths, because maybe we can just inline the value or simplify this code a little bit more
 	if (use_color && p) {
 		RCons *cons = p->consb.cons;
 		if (cons) {
@@ -411,31 +410,32 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 			}
 		}
 	}
+	// Note: Color_RESET is only needed in use_color paths, so it's inlined directly in those format strings
 	if (use_segoff) {
 		const ut32 a = addr & 0xffff;
 		const ut32 s = (addr - a) >> ((p && p->config) ? p->config->seggrn : 4);
 		if (dec) {
 			if (use_color) {
-				return snprintf (buf, buf_size, "%s%9d:%-5d%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+				return snprintf (buf, buf_size, "%s%9d:%-5d" Color_RESET "%c", pre, s & 0xffff, a & 0xffff, ch);
 			}
 			return snprintf (buf, buf_size, "%9d:%-5d%c", s & 0xffff, a & 0xffff, ch);
 		}
 		if (use_color) {
-			return snprintf (buf, buf_size, "%s%04x:%04x%s%c", pre, s & 0xffff, a & 0xffff, fin, ch);
+			return snprintf (buf, buf_size, "%s%04x:%04x" Color_RESET "%c", pre, s & 0xffff, a & 0xffff, ch);
 		}
 		return snprintf (buf, buf_size, "%04x:%04x%c", s & 0xffff, a & 0xffff, ch);
 	}
 	if (dec) {
 		if (use_color) {
-			return snprintf (buf, buf_size, "%s%10" PFMT64d "%s%c", pre, addr, fin, ch);
+			return snprintf (buf, buf_size, "%s%10" PFMT64d Color_RESET "%c", pre, addr, ch);
 		}
 		return snprintf (buf, buf_size, "%10" PFMT64d "%c", addr, ch);
 	}
 	if (use_color) {
 		if (p && p->wide_offsets) {
-			return snprintf (buf, buf_size, "%s0x%016" PFMT64x "%s%c", pre, addr, fin, ch);
+			return snprintf (buf, buf_size, "%s0x%016" PFMT64x Color_RESET "%c", pre, addr, ch);
 		}
-		return snprintf (buf, buf_size, "%s0x%08" PFMT64x "%s%c", pre, addr, fin, ch);
+		return snprintf (buf, buf_size, "%s0x%08" PFMT64x Color_RESET "%c", pre, addr, ch);
 	}
 	if (p && p->wide_offsets) {
 		return snprintf (buf, buf_size, "0x%016" PFMT64x "%c", addr, ch);
@@ -570,27 +570,41 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	return NULL;
 }
 
-R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
+
+R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch, char *buf, size_t buf_size) {
+	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, 0);
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
 	}
-	r_print_cursor (p, idx, 1, 1);
+	int len = 0;
+	bool have_cursor = p && r_print_have_cursor (p, idx, 1);
+	if (have_cursor) {
+		len += snprintf (buf + len, buf_size - len, "%s", R_CONS_INVERT (1, 1));
+	}
 	if (p && p->flags & R_PRINT_FLAGS_COLOR) {
 		const char *bytecolor = r_print_byte_color (p, addr, ch);
 		if (bytecolor) {
-			r_print_printf (p, "%s", bytecolor);
+			len += snprintf (buf + len, buf_size - len, "%s", bytecolor);
 		}
-		r_print_printf (p, fmt, rch);
+		len += snprintf (buf + len, buf_size - len, fmt, rch);
 		if (bytecolor) {
-			r_print_printf (p, "%s", Color_RESET);
+			len += snprintf (buf + len, buf_size - len, "%s", Color_RESET);
 		}
 	} else {
-		r_print_printf (p, fmt, rch);
+		len += snprintf (buf + len, buf_size - len, fmt, rch);
 	}
-	r_print_cursor (p, idx, 1, 0);
+	if (have_cursor) {
+		len += snprintf (buf + len, buf_size - len, "%s", R_CONS_INVERT (0, 1));
+	}
+	return len;
 }
 
+R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
+	char buf[64];
+	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
+	r_print_printf (p, "%s", buf);
+}
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
 	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
 	int i;
@@ -1647,6 +1661,7 @@ R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, co
 		}
 		printf ("\n");
 	}
+
 }
 
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlines) {

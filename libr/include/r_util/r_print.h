@@ -197,6 +197,7 @@ R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt, co
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch);
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch);
+R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch, char *buf, size_t buf_size);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
 R_API bool r_print_have_cursor(RPrint *p, int cur, int len);

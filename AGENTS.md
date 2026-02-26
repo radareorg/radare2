@@ -13,6 +13,7 @@ radare2 is a modular reverse engineering framework.
 ## Formatting
 
 Run `clang-format-radare2` on modified files before submitting.
+Run `sys/lint.sh` script to enforce some extra rules.
 
 - Indent code with **tabs**, spaces for comments and no trailing spaces
 - Space before opening parenthesis: `if (a)`, `foo ()`, `sizeof (int)`
@@ -24,14 +25,6 @@ Run `clang-format-radare2` on modified files before submitting.
 - Use `R_PACKED()` macro for packed structures for portability
 - Use types from `<r_types.h>` (`ut8`, `ut16`, `ut32`, `ut64`) instead of `<stdint.h>`
 - Use `PFMT64` macros instead of `%lld` for portable formatting
-
-The `sys/lint.sh` script enforces additional style rules including:
-- No `for (int ...)` declarations
-- No trailing whitespace or tabs
-- Proper spacing around keywords and parentheses
-- No `eprintf` with "Error:" prefix (use `R_LOG_ERROR` instead)
-- Strings passed to `R_LOG_` can't have newlines
-- No direct `free()` calls on expressions (assign to variable first)
 
 ## Coding Rules
 

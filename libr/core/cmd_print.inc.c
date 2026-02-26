@@ -953,16 +953,19 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 		RInterval itv = { core->addr, (ut64)len };
 		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
 	}
+	RStrBuf *sb = r_strbuf_new ("");
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char *name = r_core_get_section_name (core, core->addr + i);
-			r_cons_printf (core->cons, "%20s ", r_str_get (name));
+			r_strbuf_appendf (sb, "%20s ", r_str_get (name));
 		}
 		if (show_offset) {
-			r_print_addr (core->print, core->addr + i);
+			char addrbuf[64];
+			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
+			r_strbuf_append (sb, addrbuf);
 		}
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
@@ -1001,17 +1004,19 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 				} else {
 					ch2 = ch;
 				}
-				r_cons_printf (core->cons, "%s%c%c", color, ch, ch2);
+				r_strbuf_appendf (sb, "%s%c%c", color, ch, ch2);
 			} else {
-				r_cons_printf (core->cons, "%s%c", color, ch);
+				r_strbuf_appendf (sb, "%s%c", color, ch);
 			}
 			free (color);
 		}
 		if (show_color) {
-			r_cons_printf (core->cons, Color_RESET);
+			r_strbuf_append (sb, Color_RESET);
 		}
-		r_cons_newline (core->cons);
+		r_strbuf_append (sb, "\n");
 	}
+	r_cons_print (core->cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 	RVecRIORegion_free (regions);
 }
 
@@ -6933,6 +6938,93 @@ repeat:;
 	r_core_seek (core, initial_addr, true);
 }
 
+static void cmd_pxe(RCore *core, const char *input, int len) {
+	if (input[1] == '?') {
+		r_core_cmd_help_contains (core, help_msg_px, "pxe");
+		return;
+	}
+	if (len < 1) {
+		return;
+	}
+	// Emoji lookup table: each entry is a 2-byte suffix for UTF-8 emoji (0xF0 0x9F + suffix)
+	// Maps byte value 0x00-0xFF to emoji characters in the range U+1F300-U+1F585
+	// Each emoji at index i is stored at positions i*2 and i*2+1
+	static const ut8 emoji[512] = {
+		0x8c,0x80, 0x8c,0x82, 0x8c,0x85, 0x8c,0x88, 0x8c,0x99, 0x8c,0x9e, 0x8c,0x9f, 0x8c,0xa0,
+		0x8c,0xb0, 0x8c,0xb1, 0x8c,0xb2, 0x8c,0xb3, 0x8c,0xb4, 0x8c,0xb5, 0x8c,0xb7, 0x8c,0xb8,
+		0x8c,0xb9, 0x8c,0xba, 0x8c,0xbb, 0x8c,0xbc, 0x8c,0xbd, 0x8c,0xbe, 0x8c,0xbf, 0x8d,0x80,
+		0x8d,0x81, 0x8d,0x82, 0x8d,0x83, 0x8d,0x84, 0x8d,0x85, 0x8d,0x86, 0x8d,0x87, 0x8d,0x88,
+		0x8d,0x89, 0x8d,0x8a, 0x8d,0x8b, 0x8d,0x8c, 0x8d,0x8d, 0x8d,0x8e, 0x8d,0x8f, 0x8d,0x90,
+		0x8d,0x91, 0x8d,0x92, 0x8d,0x93, 0x8d,0x94, 0x8d,0x95, 0x8d,0x96, 0x8d,0x97, 0x8d,0x98,
+		0x8d,0x9c, 0x8d,0x9d, 0x8d,0x9e, 0x8d,0x9f, 0x8d,0xa0, 0x8d,0xa1, 0x8d,0xa2, 0x8d,0xa3,
+		0x8d,0xa4, 0x8d,0xa5, 0x8d,0xa6, 0x8d,0xa7, 0x8d,0xa8, 0x8d,0xa9, 0x8d,0xaa, 0x8d,0xab,
+		0x8d,0xac, 0x8d,0xad, 0x8d,0xae, 0x8d,0xaf, 0x8d,0xb0, 0x8d,0xb1, 0x8d,0xb2, 0x8d,0xb3,
+		0x8d,0xb4, 0x8d,0xb5, 0x8d,0xb6, 0x8d,0xb7, 0x8d,0xb8, 0x8d,0xb9, 0x8d,0xba, 0x8d,0xbb,
+		0x8d,0xbc, 0x8e,0x80, 0x8e,0x81, 0x8e,0x82, 0x8e,0x83, 0x8e,0x84, 0x8e,0x85, 0x8e,0x88,
+		0x8e,0x89, 0x8e,0x8a, 0x8e,0x8b, 0x8e,0x8c, 0x8e,0x8d, 0x8e,0x8e, 0x8e,0x8f, 0x8e,0x92,
+		0x8e,0x93, 0x8e,0xa0, 0x8e,0xa1, 0x8e,0xa2, 0x8e,0xa3, 0x8e,0xa4, 0x8e,0xa5, 0x8e,0xa6,
+		0x8e,0xa7, 0x8e,0xa8, 0x8e,0xa9, 0x8e,0xaa, 0x8e,0xab, 0x8e,0xac, 0x8e,0xad, 0x8e,0xae,
+		0x8e,0xaf, 0x8e,0xb0, 0x8e,0xb1, 0x8e,0xb2, 0x8e,0xb3, 0x8e,0xb4, 0x8e,0xb5, 0x8e,0xb7,
+		0x8e,0xb8, 0x8e,0xb9, 0x8e,0xba, 0x8e,0xbb, 0x8e,0xbd, 0x8e,0xbe, 0x8e,0xbf, 0x8f,0x80,
+		0x8f,0x81, 0x8f,0x82, 0x8f,0x83, 0x8f,0x84, 0x8f,0x86, 0x8f,0x87, 0x8f,0x88, 0x8f,0x89,
+		0x8f,0x8a, 0x90,0x80, 0x90,0x81, 0x90,0x82, 0x90,0x83, 0x90,0x84, 0x90,0x85, 0x90,0x86,
+		0x90,0x87, 0x90,0x88, 0x90,0x89, 0x90,0x8a, 0x90,0x8b, 0x90,0x8c, 0x90,0x8d, 0x90,0x8e,
+		0x90,0x8f, 0x90,0x90, 0x90,0x91, 0x90,0x92, 0x90,0x93, 0x90,0x94, 0x90,0x95, 0x90,0x96,
+		0x90,0x97, 0x90,0x98, 0x90,0x99, 0x90,0x9a, 0x90,0x9b, 0x90,0x9c, 0x90,0x9d, 0x90,0x9e,
+		0x90,0x9f, 0x90,0xa0, 0x90,0xa1, 0x90,0xa2, 0x90,0xa3, 0x90,0xa4, 0x90,0xa5, 0x90,0xa6,
+		0x90,0xa7, 0x90,0xa8, 0x90,0xa9, 0x90,0xaa, 0x90,0xab, 0x90,0xac, 0x90,0xad, 0x90,0xae,
+		0x90,0xaf, 0x90,0xb0, 0x90,0xb1, 0x90,0xb2, 0x90,0xb3, 0x90,0xb4, 0x90,0xb5, 0x90,0xb6,
+		0x90,0xb7, 0x90,0xb8, 0x90,0xb9, 0x90,0xba, 0x90,0xbb, 0x90,0xbc, 0x90,0xbd, 0x90,0xbe,
+		0x91,0x80, 0x91,0x82, 0x91,0x83, 0x91,0x84, 0x91,0x85, 0x91,0x86, 0x91,0x87, 0x91,0x88,
+		0x91,0x89, 0x91,0x8a, 0x91,0x8b, 0x91,0x8c, 0x91,0x8d, 0x91,0x8e, 0x91,0x8f, 0x91,0x90,
+		0x91,0x91, 0x91,0x92, 0x91,0x93, 0x91,0x94, 0x91,0x95, 0x91,0x96, 0x91,0x97, 0x91,0x98,
+		0x91,0x99, 0x91,0x9a, 0x91,0x9b, 0x91,0x9c, 0x91,0x9d, 0x91,0x9e, 0x91,0x9f, 0x91,0xa0,
+		0x91,0xa1, 0x91,0xa2, 0x91,0xa3, 0x91,0xa4, 0x91,0xa5, 0x91,0xa6, 0x91,0xa7, 0x91,0xa8,
+		0x91,0xa9, 0x91,0xaa, 0x91,0xae, 0x91,0xaf, 0x91,0xba, 0x91,0xbb, 0x91,0xbc, 0x91,0xbd,
+		0x91,0xbe, 0x91,0xbf, 0x92,0x80, 0x92,0x81, 0x92,0x82, 0x92,0x83, 0x92,0x84, 0x92,0x85
+	};
+	int cols = core->print->cols;
+	if (cols < 1) {
+		cols = 1;
+	}
+	ut8 *block = malloc (len);
+	if (!block) {
+		return;
+	}
+	ut64 at = core->addr;
+	if (!r_io_read_at (core->io, at, block, len)) {
+		R_LOG_ERROR ("Unable to read at 0x%08"PFMT64x, at);
+		free (block);
+		return;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	char addrbuf[128];
+	char bytebuf[64];
+	int i, j;
+	for (i = 0; i < len; i += cols) {
+		r_print_addr_tostring (core->print, at + i, addrbuf, sizeof (addrbuf));
+		r_strbuf_append (sb, addrbuf);
+		for (j = i; j < i + cols; j++) {
+			if (j < len) {
+				const ut8 bj = block[j];
+				r_strbuf_appendf (sb, "\xf0\x9f%c%c ", emoji[bj * 2], emoji[bj * 2 + 1]);
+			} else {
+				r_strbuf_append (sb, "  ");
+			}
+		}
+		r_strbuf_append (sb, " ");
+		for (j = i; j < len && j < i + cols; j++) {
+			r_print_byte_tostring (core->print, at + j, "%c", j, block[j], bytebuf, sizeof (bytebuf));
+			r_strbuf_append (sb, bytebuf);
+		}
+		r_strbuf_append (sb, "\n");
+	}
+	free (block);
+	char *s = r_strbuf_drain (sb);
+	r_cons_print (core->cons, s);
+	free (s);
+}
+
 static void p8fm(RCore *core, ut64 addr, int mode) {
 	if (mode == '?') {
 		r_core_cmd_help_contains (core, help_msg_p8, "p8fm");
@@ -9113,33 +9205,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case 'e': // "pxe" // emoji dump
-			if (l != 0) {
-				int j;
-				char emoji[] = {
-					'\x8c', '\x80', '\x8c', '\x82', '\x8c', '\x85', '\x8c', '\x88', '\x8c', '\x99', '\x8c', '\x9e', '\x8c', '\x9f', '\x8c', '\xa0', '\x8c', '\xb0', '\x8c', '\xb1', '\x8c', '\xb2', '\x8c', '\xb3', '\x8c', '\xb4', '\x8c', '\xb5', '\x8c', '\xb7', '\x8c', '\xb8', '\x8c', '\xb9', '\x8c', '\xba', '\x8c', '\xbb', '\x8c', '\xbc', '\x8c', '\xbd', '\x8c', '\xbe', '\x8c', '\xbf', '\x8d', '\x80', '\x8d', '\x81', '\x8d', '\x82', '\x8d', '\x83', '\x8d', '\x84', '\x8d', '\x85', '\x8d', '\x86', '\x8d', '\x87', '\x8d', '\x88', '\x8d', '\x89', '\x8d', '\x8a', '\x8d', '\x8b', '\x8d', '\x8c', '\x8d', '\x8d', '\x8d', '\x8e', '\x8d', '\x8f', '\x8d', '\x90', '\x8d', '\x91', '\x8d', '\x92', '\x8d', '\x93', '\x8d', '\x94', '\x8d', '\x95', '\x8d', '\x96', '\x8d', '\x97', '\x8d', '\x98', '\x8d', '\x9c', '\x8d', '\x9d', '\x8d', '\x9e', '\x8d', '\x9f', '\x8d', '\xa0', '\x8d', '\xa1', '\x8d', '\xa2', '\x8d', '\xa3', '\x8d', '\xa4', '\x8d', '\xa5', '\x8d', '\xa6', '\x8d', '\xa7', '\x8d', '\xa8', '\x8d', '\xa9', '\x8d', '\xaa', '\x8d', '\xab', '\x8d', '\xac', '\x8d', '\xad', '\x8d', '\xae', '\x8d', '\xaf', '\x8d', '\xb0', '\x8d', '\xb1', '\x8d', '\xb2', '\x8d', '\xb3', '\x8d', '\xb4', '\x8d', '\xb5', '\x8d', '\xb6', '\x8d', '\xb7', '\x8d', '\xb8', '\x8d', '\xb9', '\x8d', '\xba', '\x8d', '\xbb', '\x8d', '\xbc', '\x8e', '\x80', '\x8e', '\x81', '\x8e', '\x82', '\x8e', '\x83', '\x8e', '\x84', '\x8e', '\x85', '\x8e', '\x88', '\x8e', '\x89', '\x8e', '\x8a', '\x8e', '\x8b', '\x8e', '\x8c', '\x8e', '\x8d', '\x8e', '\x8e', '\x8e', '\x8f', '\x8e', '\x92', '\x8e', '\x93', '\x8e', '\xa0', '\x8e', '\xa1', '\x8e', '\xa2', '\x8e', '\xa3', '\x8e', '\xa4', '\x8e', '\xa5', '\x8e', '\xa6', '\x8e', '\xa7', '\x8e', '\xa8', '\x8e', '\xa9', '\x8e', '\xaa', '\x8e', '\xab', '\x8e', '\xac', '\x8e', '\xad', '\x8e', '\xae', '\x8e', '\xaf', '\x8e', '\xb0', '\x8e', '\xb1', '\x8e', '\xb2', '\x8e', '\xb3', '\x8e', '\xb4', '\x8e', '\xb5', '\x8e', '\xb7', '\x8e', '\xb8', '\x8e', '\xb9', '\x8e', '\xba', '\x8e', '\xbb', '\x8e', '\xbd', '\x8e', '\xbe', '\x8e', '\xbf', '\x8f', '\x80', '\x8f', '\x81', '\x8f', '\x82', '\x8f', '\x83', '\x8f', '\x84', '\x8f', '\x86', '\x8f', '\x87', '\x8f', '\x88', '\x8f', '\x89', '\x8f', '\x8a', '\x90', '\x80', '\x90', '\x81', '\x90', '\x82', '\x90', '\x83', '\x90', '\x84', '\x90', '\x85', '\x90', '\x86', '\x90', '\x87', '\x90', '\x88', '\x90', '\x89', '\x90', '\x8a', '\x90', '\x8b', '\x90', '\x8c', '\x90', '\x8d', '\x90', '\x8e', '\x90', '\x8f', '\x90', '\x90', '\x90', '\x91', '\x90', '\x92', '\x90', '\x93', '\x90', '\x94', '\x90', '\x95', '\x90', '\x96', '\x90', '\x97', '\x90', '\x98', '\x90', '\x99', '\x90', '\x9a', '\x90', '\x9b', '\x90', '\x9c', '\x90', '\x9d', '\x90', '\x9e', '\x90', '\x9f', '\x90', '\xa0', '\x90', '\xa1', '\x90', '\xa2', '\x90', '\xa3', '\x90', '\xa4', '\x90', '\xa5', '\x90', '\xa6', '\x90', '\xa7', '\x90', '\xa8', '\x90', '\xa9', '\x90', '\xaa', '\x90', '\xab', '\x90', '\xac', '\x90', '\xad', '\x90', '\xae', '\x90', '\xaf', '\x90', '\xb0', '\x90', '\xb1', '\x90', '\xb2', '\x90', '\xb3', '\x90', '\xb4', '\x90', '\xb5', '\x90', '\xb6', '\x90', '\xb7', '\x90', '\xb8', '\x90', '\xb9', '\x90', '\xba', '\x90', '\xbb', '\x90', '\xbc', '\x90', '\xbd', '\x90', '\xbe', '\x91', '\x80', '\x91', '\x82', '\x91', '\x83', '\x91', '\x84', '\x91', '\x85', '\x91', '\x86', '\x91', '\x87', '\x91', '\x88', '\x91', '\x89', '\x91', '\x8a', '\x91', '\x8b', '\x91', '\x8c', '\x91', '\x8d', '\x91', '\x8e', '\x91', '\x8f', '\x91', '\x90', '\x91', '\x91', '\x91', '\x92', '\x91', '\x93', '\x91', '\x94', '\x91', '\x95', '\x91', '\x96', '\x91', '\x97', '\x91', '\x98', '\x91', '\x99', '\x91', '\x9a', '\x91', '\x9b', '\x91', '\x9c', '\x91', '\x9d', '\x91', '\x9e', '\x91', '\x9f', '\x91', '\xa0', '\x91', '\xa1', '\x91', '\xa2', '\x91', '\xa3', '\x91', '\xa4', '\x91', '\xa5', '\x91', '\xa6', '\x91', '\xa7', '\x91', '\xa8', '\x91', '\xa9', '\x91', '\xaa', '\x91', '\xae', '\x91', '\xaf', '\x91', '\xba', '\x91', '\xbb', '\x91', '\xbc', '\x91', '\xbd', '\x91', '\xbe', '\x91', '\xbf', '\x92', '\x80', '\x92', '\x81', '\x92', '\x82', '\x92', '\x83', '\x92', '\x84', '\x92', '\x85'
-				};
-				int cols = core->print->cols;
-				if (cols < 1) {
-					cols = 1;
-				}
-				for (i = 0; i < len; i += cols) {
-					r_print_addr (core->print, core->addr + i);
-					for (j = i; j < i + cols; j += 1) {
-						ut8 *p = (ut8 *)core->block + j;
-						if (j < len) {
-							r_cons_printf (core->cons, "\xf0\x9f%c%c ", emoji[*p * 2], emoji[*p * 2 + 1]);
-						} else {
-							r_cons_print (core->cons, "  ");
-						}
-					}
-					r_cons_print (core->cons, " ");
-					for (j = i; j < len && j < i + cols; j += 1) {
-						ut8 *p = (ut8 *)core->block + j;
-						r_print_byte (core->print, core->addr + j, "%c", j, *p);
-					}
-					r_cons_newline (core->cons);
-				}
-			}
+			cmd_pxe (core, input, l);
 			break;
 		case 'l': // "pxl"
 			len = core->print->cols * len;
