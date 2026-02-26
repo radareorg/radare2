@@ -876,13 +876,13 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	char addrbuf[64];
 	for (i = 0; i < len; i += cols) {
 		if (show_section) {
 			const char *name = r_core_get_section_name (core, core->addr + i);
 			r_strbuf_appendf (sb, "%20s ", r_str_get (name));
 		}
 		if (show_offset) {
+			char addrbuf[64];
 			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
 			r_strbuf_append (sb, addrbuf);
 		}
@@ -906,8 +906,8 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 			if (bitsmode) {
 				char color0bits[8] = { 0 };
 				char color1bits[8] = { 0 };
-				ut8 b0 = ch0 | ch0 << 4;
-				ut8 b1 = ch1 | ch1 << 4;
+				const ut8 b0 = ch0 | ch0 << 4;
+				const ut8 b1 = ch1 | ch1 << 4;
 				r_str_bits (color0bits, &b0, 4, NULL);
 				r_str_bits (color1bits, &b1, 4, NULL);
 				r_strbuf_appendf (sb, "%s%s%s%s%s ", color0, color0bits, color1, color1bits, show_color ? Color_RESET : "");
@@ -976,11 +976,7 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 					color_val);
 				color = r_cons_pal_parse (core->cons, str, NULL);
 				free (str);
-				if (show_cursor && core->print->cur == j) {
-					ch = '_';
-				} else {
-					ch = ' ';
-				}
+				ch = (show_cursor && core->print->cur == j)?: '_': ' ';
 			} else {
 				color = strdup ("");
 				if (show_cursor && core->print->cur == j) {
