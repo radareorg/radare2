@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "core.anal"
 
 #include <r_core.h>
-#include <r_core_priv.h>
 #include <r_vec.h>
 #include <sdb/ht_uu.h>
 
