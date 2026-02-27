@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "cfile"
 
 #include <r_core.h>
-#include <r_core_priv.h>
 
 static bool close_but_cb(void *user, void *data, ut32 id) {
 	RCore *core = (RCore *)user;
