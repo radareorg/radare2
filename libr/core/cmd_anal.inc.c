@@ -7065,6 +7065,23 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
+static bool is_steporeable(int type) {
+	switch (type) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_CRET:
+	case R_ANAL_OP_TYPE_UJMP:
+		return true;
+	}
+	return false;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define SET_PC_BOTH(core, val) do { \
 	r_reg_setv ((core)->anal->reg, "PC", (val)); \
@@ -7186,14 +7203,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
-#if 1
-			if (core->dbg->anal->esil->trace) {
-			//	ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			//	ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
-			//	RAnalOp *op = r_core_anal_op (core, pc, mask);
-				r_esil_trace_op (core->dbg->anal->esil, &op);
-			}
-#endif
+		eprintf ("OP %d %s // %s\n", op.size, op.mnemonic, R_STRBUF_SAFEGET (&op.esil));
+		if (core->dbg->anal->esil->trace) {
+			r_esil_trace_op (core->dbg->anal->esil, &op);
+		}
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
@@ -7211,24 +7224,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		naddr = addr + op.size;
-		if (stepOver) {
-			switch (op.type) {
-			case R_ANAL_OP_TYPE_SWI:
-			case R_ANAL_OP_TYPE_UCALL:
-			case R_ANAL_OP_TYPE_CALL:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_RCALL:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_RET:
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_UJMP:
-				if (addr == until_addr) {
-					return_tail (0);
-				}
-				SET_PC_BOTH (core, op.addr + op.size);
-				ret = 0;
+		if (stepOver && is_steporeable (op.type)) {
+			if (addr == until_addr) {
+				return_tail (0);
 			}
+			SET_PC_BOTH (core, op.addr + op.size);
+			ret = 0;
 		}
 		if (r2wars) {
 			// this is x86 and r2wars specific, shouldnt hurt outside x86
@@ -11310,7 +11311,7 @@ static void cmd_aheq(RCore *core, const char *input) {
 	}
 	ut64 at = core->addr;
 	ut64 addr = r_num_math (core->num, input + 1);
-	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_DISASM);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ALL);
 	if (op) {
 		RAnal *a = core->anal;
 		r_anal_hint_set_type (a, at, op->type);
