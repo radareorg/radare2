@@ -9,15 +9,6 @@
 extern "C" {
 #endif
 
-typedef struct r_core_sec_range_t {
-	ut64 from;
-	ut64 to;
-} RCoreSecRange;
-
-R_VEC_TYPE (RVecRCoreSecRange, RCoreSecRange);
-
-R_IPI void r_core_sec_ranges_invalidate(RCore *core);
-
 typedef struct r_core_priv_t {
 	// arch cache
 	int old_bits;
@@ -33,8 +24,6 @@ typedef struct r_core_priv_t {
 	// disasm cache
 	ut64 goaddr;
 	char *section;
-	// analysis cache
-	RVecRCoreSecRange *sec_ranges;
 } RCorePriv;
 
 #ifdef __cplusplus

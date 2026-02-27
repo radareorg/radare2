@@ -415,7 +415,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 						}
 						r_core_cmd_callf (core, "op %d", dst->fd);
 						r_bin_file_set_cur_binfile (core->bin, dst);
-						r_core_sec_ranges_invalidate (core);
 						r_bin_file_delete (core->bin, current);
 						if (curfd >= 0) {
 							r_io_fd_close (core->io, curfd);
@@ -443,7 +442,6 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case '-': // "ob-"
 		if (input[2] == '*') {
-			r_core_sec_ranges_invalidate (core);
 			r_bin_file_delete_all (core->bin);
 		} else if (input[2] == '-') {
 			RBinFile *bf = r_bin_cur (core->bin);
@@ -2602,7 +2600,6 @@ static int cmd_open(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_o_dash, "o-*");
 			} else {
 				r_io_close_all (core->io);
-				r_core_sec_ranges_invalidate (core);
 				r_bin_file_delete_all (core->bin);
 			}
 			break;
@@ -2611,7 +2608,6 @@ static int cmd_open(void *data, const char *input) {
 				r_core_cmd_help_match (core, help_msg_o_dash, "o--");
 			} else {
 				r_io_close_all (core->io);
-				r_core_sec_ranges_invalidate (core);
 				r_bin_file_delete_all (core->bin);
 				r_core_cmd0 (core, "o-*;om-*");
 				r_anal_purge (core->anal);

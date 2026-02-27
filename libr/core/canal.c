@@ -29,69 +29,6 @@ static int cmpsize(const void *a, const void *b) {
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
-static int cmp_sec_range(const RCoreSecRange *a, const RCoreSecRange *b) {
-	ut64 fa = a->from;
-	ut64 fb = b->from;
-	return (fa > fb)? 1: (fa < fb)? -1: 0;
-}
-
-static RVecRCoreSecRange *r_core_get_sec_ranges(RCore *core) {
-	RCorePriv *priv = core->priv;
-	// Check if we have a cached result
-	if (priv->sec_ranges) {
-		return priv->sec_ranges;
-	}
-	RVecRCoreSecRange *sr = RVecRCoreSecRange_new ();
-	RBin *bin = core->bin;
-	int va = core->io->va;
-	RListIter *iter;
-	RBinFile *bf;
-	r_list_foreach (bin->binfiles, iter, bf) {
-		RBinObject *obj = bf->bo;
-		if (!obj) {
-			continue;
-		}
-		RBinSection *section;
-		RListIter *sit;
-		r_list_foreach (obj->sections, sit, section) {
-			if (section->is_segment) {
-				continue;
-			}
-			ut64 from = va? obj->baddr_shift + section->vaddr: section->paddr;
-			ut64 to = from + (va? section->vsize: section->size);
-			if (to <= from) {
-				continue;
-			}
-#if 0
-			// Skip writable sections unless they contain strings
-			if ((section->perm & R_PERM_W) && !section->has_strings) {
-				continue;
-			}
-#endif
-			RCoreSecRange r = {
-				.from = from,
-				.to = to,
-			};
-			RVecRCoreSecRange_push_back (sr, &r);
-		}
-	}
-	if (!RVecRCoreSecRange_empty (sr) && RVecRCoreSecRange_length (sr) > 1) {
-		RVecRCoreSecRange_sort (sr, cmp_sec_range);
-	}
-	// Cache the result
-	priv->sec_ranges = sr;
-	return sr;
-}
-
-R_IPI void r_core_sec_ranges_invalidate(RCore *core) {
-	R_RETURN_IF_FAIL (core);
-	RCorePriv *priv = core->priv;
-	if (priv && priv->sec_ranges) {
-		RVecRCoreSecRange_free (priv->sec_ranges);
-		priv->sec_ranges = NULL;
-	}
-}
-
 static int cmpfcncc(const void *_a, const void *_b) {
 	RAnalFunction *a = (RAnalFunction *)_a;
 	RAnalFunction *b = (RAnalFunction *)_b;
@@ -227,30 +164,6 @@ static int is_string(const ut8 *buf, int size, int *len) {
 	return 1;
 }
 
-static inline int find_sec_range_idx(const RVecRCoreSecRange *sr, ut64 addr) {
-	if (!sr || RVecRCoreSecRange_empty (sr)) {
-		return -1;
-	}
-	size_t count = RVecRCoreSecRange_length (sr);
-	const RCoreSecRange *last = RVecRCoreSecRange_at (sr, count - 1);
-	if (addr >= last->to) {
-		return -1;
-	}
-	int lo = 0, hi = (int)count - 1;
-	while (lo <= hi) {
-		const int mid = lo + (hi - lo) / 2;
-		const RCoreSecRange *r = RVecRCoreSecRange_at (sr, mid);
-		if (addr >= r->to) {
-			lo = mid + 1;
-		} else if (addr < r->from) {
-			hi = mid - 1;
-		} else {
-			return mid;
-		}
-	}
-	return -1;
-}
-
 #define STRSZ 128
 static bool is_cfstring_or_pstring(RCore *core, char *str, int size, int *len) {
 	ut64 v0 = r_read_at_le64 (str, 0);
@@ -269,22 +182,13 @@ static bool is_cfstring_or_pstring(RCore *core, char *str, int size, int *len) {
 	return false;
 }
 
-static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen, const RVecRCoreSecRange *sr) {
+static bool is_string_at(RCore *core, ut64 addr, char *str, int *olen) {
 	if (olen) {
 		*olen = 0;
 	}
 	if (!r_io_is_valid_offset (core->io, addr, 0)) {
 		return false;
 	}
-	int idx = find_sec_range_idx (sr, addr);
-	if (idx < 0) {
-		return false;
-	}
-	const RCoreSecRange *r = RVecRCoreSecRange_at (sr, idx);
-	if (addr + 4 > r->to) {
-		return false;
-	}
-
 	int len = 0;
 	const int size = STRSZ - 1;
 
@@ -4602,7 +4506,7 @@ R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode
 	return count;
 }
 
-static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to, const RVecRCoreSecRange *sr) {
+static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to) {
 	const int reftype = R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ;
 	int len = 0;
 	char str[STRSZ] = {0};
@@ -4612,7 +4516,7 @@ static void add_string_ref(RCore *core, ut64 xref_from, ut64 xref_to, const RVec
 	if (!xref_from || xref_from == UT64_MAX) {
 		xref_from = core->anal->esil->addr;
 	}
-	if (is_string_at (core, xref_to, str, &len, sr) && str[0] && len > 0) {
+	if (is_string_at (core, xref_to, str, &len) && str[0] && len > 0) {
 		r_anal_xrefs_set (core->anal, xref_from, xref_to, reftype);
 		r_name_filter (str, -1);
 		if (*str) {
@@ -4638,7 +4542,6 @@ typedef struct {
 	int rad;
 	bool cfg_debug;
 	bool cfg_anal_strings;
-	const RVecRCoreSecRange *sr;
 } XrefSearchCtx;
 
 // R2R db/anal/mach0
@@ -4663,11 +4566,11 @@ static bool found_xref(const XrefSearchCtx *ctx, ut64 at, ut64 xref_to, RAnalRef
 	}
 	if (!ctx->rad) {
 		if (ctx->cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
-			add_string_ref (core, at, xref_to, ctx->sr);
+			add_string_ref (core, at, xref_to);
 		} else if (ctx->cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_ICOD) {
-			add_string_ref (core, at, xref_to, ctx->sr);
+			add_string_ref (core, at, xref_to);
 		} else if (ctx->cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_STRN) {
-			add_string_ref (core, at, xref_to, ctx->sr);
+			add_string_ref (core, at, xref_to);
 		} else if (xref_to) {
 			r_anal_xrefs_set (core->anal, at, xref_to, type);
 		}
@@ -4689,7 +4592,7 @@ static bool found_xref(const XrefSearchCtx *ctx, ut64 at, ut64 xref_to, RAnalRef
 		r_cons_printf (core->cons, "%s 0x%08"PFMT64x" 0x%08"PFMT64x"\n", cmd, xref_to, at);
 		if (ctx->cfg_anal_strings && R_ANAL_REF_TYPE_MASK (type) == R_ANAL_REF_TYPE_DATA) {
 			char str_flagname[STRSZ] = {0};
-			if (is_string_at (core, xref_to, str_flagname, &len, ctx->sr)) {
+			if (is_string_at (core, xref_to, str_flagname, &len)) {
 				ut64 str_addr = xref_to;
 				r_name_filter (str_flagname, -1);
 				r_cons_printf (core->cons, "'f str.%s=0x%"PFMT64x"\n", str_flagname, str_addr);
@@ -4726,8 +4629,7 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	}
 
 	const bool search_badpages = r_config_get_b (core->config, "search.badpages");
-	RVecRCoreSecRange *sr = r_core_get_sec_ranges (core);
-	XrefSearchCtx ctx = { core, pj, rad, r_config_get_b (core->config, "cfg.debug"), cfg_anal_strings, sr };
+	XrefSearchCtx ctx = { core, pj, rad, r_config_get_b (core->config, "cfg.debug"), cfg_anal_strings };
 	if (core->blocksize <= OPSZ) {
 		R_LOG_ERROR ("block size too small");
 		return -1;
@@ -5449,7 +5351,6 @@ typedef struct {
 	RAnalFunction *fcn;
 	char *spname;
 	ut64 initial_sp;
-	RVecRCoreSecRange *sr;
 } EsilBreakCtx;
 
 typedef int RPerm;
@@ -5589,7 +5490,7 @@ static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 				} else {
 					r_anal_xrefs_set (core->anal, esil->addr, refptr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 					str[sizeof (str) - 1] = 0;
-					add_string_ref (core, esil->addr, refptr, ctx->sr);
+					add_string_ref (core, esil->addr, refptr);
 					esilbreak_last_data = UT64_MAX;
 				}
 			}
@@ -5639,18 +5540,18 @@ static bool esilbreak_reg_write(REsil *esil, const char *name, ut64 *val) {
 		}
 		if (core->rasm && core->rasm->config && core->rasm->config->bits == 32 && strstr (core->rasm->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at, ctx->sr);
+				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
 		} else if (core->anal && core->anal->config && core->anal->config->bits == 32 && strstr (core->anal->config->arch, "arm")) {
 			if ((!(at & 1)) && r_io_is_valid_offset (anal->iob.io, at, 0)) { //  !core->anal->opt.noncode)) {
-				add_string_ref (anal->coreb.core, esil->addr, at, ctx->sr);
+				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
 		}
 	} else {
 		// intel, sparc and others
 		if (op->type != R_ANAL_OP_TYPE_RMOV) {
 			if (r_io_is_valid_offset (anal->iob.io, at, 0)) {
-				add_string_ref (anal->coreb.core, esil->addr, at, ctx->sr);
+				add_string_ref (anal->coreb.core, esil->addr, at);
 			}
 		}
 	}
@@ -5883,7 +5784,6 @@ static ut64 pulldata(RCore *core, ut8 *buf, size_t buf_size, ut64 start, ut64 en
 
 R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *target /* addr */) {
 	bool cfg_anal_strings = r_config_get_b (core->config, "anal.strings");
-	RVecRCoreSecRange *sr = r_core_get_sec_ranges (core);
 	bool emu_lazy = r_config_get_b (core->config, "emu.lazy");
 	const bool gp_fixed = r_config_get_b (core->config, "anal.fixed.gp");
 	bool newstack = r_config_get_b (core->config, "anal.var.newstack");
@@ -6002,8 +5902,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		&op,
 		fcn,
 		spname,
-		r_reg_getv (core->anal->reg, spname), // initial_sp
-		sr
+		r_reg_getv (core->anal->reg, spname) // initial_sp
 	};
 	ESIL->cb.hook_reg_write = &esilbreak_reg_write;
 	//this is necessary for the hook to read the id of analop
@@ -6258,7 +6157,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst, sr);
+							add_string_ref (core, op.addr, dst);
 						}
 					}
 				}
@@ -6268,7 +6167,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst, sr);
+							add_string_ref (core, op.addr, dst);
 						}
 					}
 				}
@@ -6278,7 +6177,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst, sr);
+							add_string_ref (core, op.addr, dst);
 						}
 					}
 				}
@@ -6304,7 +6203,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				}
 			}
 			if (cfg_anal_strings) {
-				add_string_ref (core, op.addr, op.ptr, sr);
+				add_string_ref (core, op.addr, op.ptr);
 			}
 			break;
 		case R_ANAL_OP_TYPE_SUB:
@@ -6328,7 +6227,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					}
 				}
 				if (cfg_anal_strings) {
-					add_string_ref (core, op.addr, dst, sr);
+					add_string_ref (core, op.addr, dst);
 				}
 			} else if (archIsMips32) {
 				if (!needOpVals) {
@@ -6354,11 +6253,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						if (CHECKREF (dst) || CHECKREF (cur)) {
 							r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA);
 							if (cfg_anal_strings) {
-								add_string_ref (core, op.addr, dst, sr);
+								add_string_ref (core, op.addr, dst);
 							}
 							if ((f = r_core_flag_get_by_spaces (core->flags, false, dst))) {
 								r_meta_set_string (core->anal, R_META_TYPE_COMMENT, cur, f->name);
-						} else if (is_string_at (core, dst, str, NULL, sr)) {
+						} else if (is_string_at (core, dst, str, NULL)) {
 							char *str2 = r_str_newf ("esilref: '%s'", str);
 								// HACK avoid format string inside string used later as format
 								// string crashes disasm inside agf under some conditions.
@@ -6374,7 +6273,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			} else {
 				R_LOG_DEBUG ("add aae string refs for this arch here");
 				if (cfg_anal_strings) {
-					add_string_ref (core, op.addr, dst, sr);
+					add_string_ref (core, op.addr, dst);
 				}
 #endif
 			}
@@ -6386,7 +6285,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst, sr);
+							add_string_ref (core, op.addr, dst);
 						}
 					}
 				}
@@ -6395,7 +6294,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					if (myvalid (core, dst)) {
 						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst, sr);
+							add_string_ref (core, op.addr, dst);
 						}
 					}
 				}
@@ -6528,7 +6427,6 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
 	bool vinfunr = r_config_get_b (core->config, "anal.vinfunrange");
 	bool analStrings = r_config_get_b (core->config, "anal.strings");
-	RVecRCoreSecRange *sr = r_core_get_sec_ranges (core);
 	// bool be = r_config_get_b (core->config, "cfg.bigendian");
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->anal->config);
 	if (relative) {
@@ -6647,7 +6545,7 @@ R_IPI int r_core_search_value_in_range(RCore *core, bool relative, RInterval sea
 				if (isValidMatch) {
 					cb (core, addr, value, vsize, cb_user);
 					if (analStrings && stringAt (core, addr)) {
-						add_string_ref (core, addr, value, sr);
+						add_string_ref (core, addr, value);
 					}
 					hitctr++;
 				}

@@ -269,7 +269,6 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (bf) {
 		r_core_bin_export_info (core, R_MODE_SET);
-		r_core_sec_ranges_invalidate (core);
 		r_bin_file_delete (core->bin, bf->id);
 		return true;
 	}
@@ -5474,7 +5473,6 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 	if (bf_id == UT32_MAX) {
 		return false;
 	}
-	r_core_sec_ranges_invalidate (core);
 	r_bin_file_delete (core->bin, bf_id);
 	RBinFile *bf = r_bin_file_at (core->bin, core->addr);
 	if (bf) {
