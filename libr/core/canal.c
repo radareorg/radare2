@@ -5452,7 +5452,6 @@ static R_TH_LOCAL ut64 ntarget = UT64_MAX;
 // TODO differentiate endian-aware mem_read with other reads; move ntarget handling to another function
 static bool esilbreak_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->user, false);
-	EsilBreakCtx *ctx = esil->user;
 	RCore *core = esil->anal->coreb.core;
 	ut8 str[128];
 	if (addr != UT64_MAX) {
