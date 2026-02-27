@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024-2025 - pancake */
+/* radare - LGPL - Copyright 2024-2026 - pancake */
 
 #include "r_core.h"
 
@@ -8,6 +8,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 typedef struct r_core_priv_t {
 	// arch cache
 	int old_bits;
