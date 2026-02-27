@@ -167,14 +167,15 @@ static int is_string(const ut8 *buf, int size, int *len) {
 static bool is_cfstring_or_pstring(RCore *core, char *str, int size, int *len) {
 	ut64 v0 = r_read_at_le64 (str, 0);
 	ut64 v1 = r_read_at_le64 (str, 8);
-	ut64 v2 = r_read_at_le64 (str, 16);
+	const ut64 v2 = r_read_at_le64 (str, 16);
 	if (!v0) {
 		v0 = v2;
 		v1 = 0;
 	}
 	if (v1 < 0x1000 && v2) {
-		ut64 ptr = v2;
-		r_io_read_at (core->io, ptr, (ut8*)str, size);
+		if (r_io_read_at (core->io, v2, (ut8*)str, size) < 1) {
+			return false;
+		}
 		str[size] = 0;
 		return is_string ((ut8*)str, size, len);
 	}
