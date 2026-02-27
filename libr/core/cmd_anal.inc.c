@@ -928,12 +928,13 @@ static RCoreHelpMessage help_msg_agn = {
 static RCoreHelpMessage help_msg_ah = {
 	"Usage:", "ah[lba-]", "analysis Hints",
 	"ah?", "", "show this help",
-	"ah?", " offset", "show hint of given offset",
+	"ah?", " addr", "show hint of given address",
 	"ah", "", "list hints in human-readable format",
 	"ah.", "", "list hints in human-readable format from current offset",
 	"ah-", "", "remove all hints",
-	"ah-", " offset [size]", "remove hints at given offset",
-	"ah*", " offset", "list hints in radare commands format",
+	"ah-", " addr [size]", "remove hints at given offset (ah-$$ for current instruction)",
+	"ah*", " addr", "list hints in radare commands format",
+	"ah=", " addr", "copy the instruction details from given address to the current one",
 	"aha", " ppc @ 0x42", "force arch ppc for all addrs >= 0x42 or until the next hint",
 	"aha", " 0 @ 0x84", "disable the effect of arch hints for all addrs >= 0x84 or until the next hint",
 	"ahb", "[-*] [8,16,32,64] @ addr", "get/set asm.bits for 'addr' and beyond",
@@ -7064,6 +7065,23 @@ void cmd_anal_reg(RCore *core, const char *str) {
 	}
 }
 
+static bool is_steporeable(int type) {
+	switch (type) {
+	case R_ANAL_OP_TYPE_SWI:
+	case R_ANAL_OP_TYPE_UCALL:
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_JMP:
+	case R_ANAL_OP_TYPE_RCALL:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_CJMP:
+	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_CRET:
+	case R_ANAL_OP_TYPE_UJMP:
+		return true;
+	}
+	return false;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define SET_PC_BOTH(core, val) do { \
 	r_reg_setv ((core)->anal->reg, "PC", (val)); \
@@ -7185,14 +7203,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
-#if 1
-			if (core->dbg->anal->esil->trace) {
-			//	ut64 pc = r_debug_reg_get (core->dbg, "PC");
-			//	ut64 mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL;
-			//	RAnalOp *op = r_core_anal_op (core, pc, mask);
-				r_esil_trace_op (core->dbg->anal->esil, &op);
-			}
-#endif
+		if (core->dbg->anal->esil->trace) {
+			r_esil_trace_op (core->dbg->anal->esil, &op);
+		}
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
@@ -7210,24 +7223,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		naddr = addr + op.size;
-		if (stepOver) {
-			switch (op.type) {
-			case R_ANAL_OP_TYPE_SWI:
-			case R_ANAL_OP_TYPE_UCALL:
-			case R_ANAL_OP_TYPE_CALL:
-			case R_ANAL_OP_TYPE_JMP:
-			case R_ANAL_OP_TYPE_RCALL:
-			case R_ANAL_OP_TYPE_RJMP:
-			case R_ANAL_OP_TYPE_CJMP:
-			case R_ANAL_OP_TYPE_RET:
-			case R_ANAL_OP_TYPE_CRET:
-			case R_ANAL_OP_TYPE_UJMP:
-				if (addr == until_addr) {
-					return_tail (0);
-				}
-				SET_PC_BOTH (core, op.addr + op.size);
-				ret = 0;
+		if (stepOver && is_steporeable (op.type)) {
+			if (addr == until_addr) {
+				return_tail (0);
 			}
+			SET_PC_BOTH (core, op.addr + op.size);
+			ret = 0;
 		}
 		if (r2wars) {
 			// this is x86 and r2wars specific, shouldnt hurt outside x86
@@ -11297,7 +11298,38 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 
 	return true;
 }
+
+static void cmd_aheq(RCore *core, const char *input) {
+	const char ch0 = input[1];
+	if (ch0 == '?') {
+		r_core_cmd_help_match (core, help_msg_ah, "ah=");
+		return;
+	} else if (!ch0) {
+		R_LOG_ERROR ("This command requires an address as argument");
+		return;
+	}
+	ut64 at = core->addr;
+	ut64 addr = r_num_math (core->num, input + 1);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_ALL);
+	if (op) {
+		RAnal *a = core->anal;
+		r_anal_hint_set_type (a, at, op->type);
+		r_anal_hint_set_opcode (a, at, op->mnemonic);
+		r_anal_hint_set_esil (a, at, R_STRBUF_SAFEGET (&op->esil));
+		if (op->jump && op->jump != UT64_MAX) {
+			r_anal_hint_set_jump (a, at, op->jump);
+			if (op->fail && op->fail != UT64_MAX) {
+				r_anal_hint_set_fail (a, at, op->fail);
+			}
+		}
+		r_anal_op_free (op);
+	} else {
+		R_LOG_ERROR ("Cannot decode instruction at 0x%08"PFMT64x, addr);
+	}
+}
+
 static void cmd_anal_hint(RCore *core, const char *input) {
+	RAnal *a = core->anal;
 	switch (input[0]) {
 	case '?':
 		if (input[1]) {
@@ -11310,15 +11342,18 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case '.': // "ah."
 		r_core_anal_hint_print (core, core->addr, 0);
 		break;
+	case '=': // "ah=" [addr]
+		cmd_aheq (core, input);
+		break;
 	case 'a': // "aha" set arch
 		if (input[1] == ' ') {
 			char *ptr = strdup (input + 2);
 			r_str_word_set0 (ptr);
 			const char *arch = r_str_word_get0 (ptr, 0);
-			r_anal_hint_set_arch (core->anal, core->addr, !arch || strcmp (arch, "0") == 0 ? NULL : arch);
+			r_anal_hint_set_arch (a, core->addr, !arch || strcmp (arch, "0") == 0 ? NULL : arch);
 			free (ptr);
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_arch (core->anal, core->addr);
+			r_anal_hint_unset_arch (a, core->addr);
 		} else {
 			R_LOG_ERROR ("Missing argument");
 		}
@@ -11326,26 +11361,26 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'o': // "aho"
 		if (input[1] == '*') {
 			// show in r2
-			RAnalHint *hint = r_anal_hint_get (core->anal, core->addr);
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
 			if (hint && hint->opcode) {
 				r_cons_printf (core->cons, "aho %s @ 0x%08"PFMT64x"\n", hint->opcode, hint->addr);
 			}
 			r_anal_hint_free (hint);
 		} else if (input[1] == 0) {
 			// show if any
-			RAnalHint *hint = r_anal_hint_get (core->anal, core->addr);
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
 			if (hint && hint->type > 0) {
 				r_cons_printf (core->cons, "%s\n", r_anal_optype_tostring (hint->type));
 			}
 			r_anal_hint_free (hint);
 		}  else if (input[1] == '-') {
 			ut64 off = input[2]? r_num_math (core->num, input + 2): core->addr;
-			r_anal_hint_unset_bits (core->anal, off);
+			r_anal_hint_unset_bits (a, off);
 		} else if (input[1] == ' ') {
 			const char *arg = r_str_trim_head_ro (input + 1);
 			const int type = r_anal_optype_from_string (arg);
 			if (type != -1) {
-				r_anal_hint_set_type (core->anal, core->addr, type);
+				r_anal_hint_set_type (a, core->addr, type);
 			} else {
 				R_LOG_ERROR ("Unknown opcode type. Try: io, acmp, add, sync, call, cjmp, cmp, nop,,,");
 			}
@@ -11368,17 +11403,17 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				r_num_math (core->num, r_str_word_get0 (ptr, 1));
 			}
 			bits = r_num_math (core->num, r_str_word_get0 (ptr, 0));
-			r_anal_hint_set_bits (core->anal, core->addr, bits);
+			r_anal_hint_set_bits (a, core->addr, bits);
 			free (ptr);
 		} else if (input[1] == '-') { // "ahb-"
 			if (!strcmp (input + 2, "*")) {
-				r_anal_hint_unset_bits (core->anal, UT64_MAX);
+				r_anal_hint_unset_bits (a, UT64_MAX);
 			} else {
 				const ut64 off = input[2]? r_num_math (core->num, input + 2): core->addr;
-				r_anal_hint_unset_bits (core->anal, off);
+				r_anal_hint_unset_bits (a, off);
 			}
 		} else {
-			RAnalHint *hint = r_anal_hint_get (core->anal, core->addr);
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
 			if (hint && hint->bits) {
 				r_cons_printf (core->cons, "%d\n", hint->bits);
 			}
@@ -11393,11 +11428,11 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		if (input[1] == '-') { // "ahi-"
 			ut64 addr = r_num_get (core->num, input + 2);
 			// add ahi-*
-			r_anal_hint_set_immbase (core->anal, addr? addr: core->addr, 0);
+			r_anal_hint_set_immbase (a, addr? addr: core->addr, 0);
 			break;
 		}
 		if (isdigit (input[1] & 0xff)) {
-			r_anal_hint_set_nword (core->anal, core->addr, input[1] - '0');
+			r_anal_hint_set_nword (a, core->addr, input[1] - '0');
 			input++;
 		}
 		if (input[1] == ' ') {
@@ -11418,9 +11453,9 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				       (input[2] == 'S') ? 80 : // syscall
 				       (int) r_num_math (core->num, input + 1);
 			}
-			r_anal_hint_set_immbase (core->anal, core->addr, base);
+			r_anal_hint_set_immbase (a, core->addr, base);
 		} else if (!input[1]) {
-			RAnalHint *hint = r_anal_hint_get (core->anal, core->addr);
+			RAnalHint *hint = r_anal_hint_get (a, core->addr);
 			if (hint && hint->immbase) {
 				r_cons_printf (core->cons, "%d\n", hint->immbase);
 			}
@@ -11431,56 +11466,56 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'h': // "ahh"
 		if (input[1] == '-') {
-			r_anal_hint_unset_high (core->anal, core->addr);
+			r_anal_hint_unset_high (a, core->addr);
 		} else if (input[1] == ' ') {
-			r_anal_hint_set_high (core->anal, r_num_math (core->num, input + 1));
+			r_anal_hint_set_high (a, r_num_math (core->num, input + 1));
 		} else {
-			r_anal_hint_set_high (core->anal, core->addr);
+			r_anal_hint_set_high (a, core->addr);
 		}
 		break;
 	case 'c': // "ahc"
 		if (input[1] == ' ') {
 			r_anal_hint_set_jump (
-				core->anal, core->addr,
+				a, core->addr,
 				r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_jump (core->anal, core->addr);
+			r_anal_hint_unset_jump (a, core->addr);
 		}
 		break;
-	case 'f': // "ahf"
+	case 'f': // "ahf" // TODO: merge with 'ahc' just take 2 arguments, theres no sense to have fail branch if there's no true one
 		if (input[1] == ' ') {
 			r_anal_hint_set_fail (
-				core->anal, core->addr,
+				a, core->addr,
 				r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_fail (core->anal, core->addr);
+			r_anal_hint_unset_fail (a, core->addr);
 		}
 		break;
 	case 'F': // "ahF" set stackframe size
 		if (input[1] == ' ') {
 			r_anal_hint_set_stackframe (
-				core->anal, core->addr,
+				a, core->addr,
 				r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_stackframe (core->anal, core->addr);
+			r_anal_hint_unset_stackframe (a, core->addr);
 		}
 		break;
 	case 's': // "ahs" set size (opcode length)
 		if (input[1] == ' ') {
-			r_anal_hint_set_size (core->anal, core->addr, atoi (input + 1));
+			r_anal_hint_set_size (a, core->addr, atoi (input + 1));
 		} else if (input[1] == '-') {
 			if (input[2] == '*') {
 				R_LOG_INFO ("Not implemented");
-				// R2_600 - take arg to specify type of hint to remove .. r_anal_hint_clear (core->anal, );
-				// r_anal_hint_unset_size (core->anal, UT64_MAX);
-				// r_anal_hint_clear (core->anal);
+				// R2_600 - take arg to specify type of hint to remove .. r_anal_hint_clear (a, );
+				// r_anal_hint_unset_size (a, UT64_MAX);
+				// r_anal_hint_clear (a);
 			} else if (input[2]) {
 				ut64 at = r_num_math (core->num, input + 2);
 				if (at != UT64_MAX) {
-					r_anal_hint_unset_size (core->anal, at);
+					r_anal_hint_unset_size (a, at);
 				}
 			} else {
-				r_anal_hint_unset_size (core->anal, core->addr);
+				r_anal_hint_unset_size (a, core->addr);
 			}
 		} else if (input[1] == 0) {
 			char *s = r_core_cmd_str (core, "ah~size=");
@@ -11492,27 +11527,27 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		break;
 	case 'S': // "ahS" set asm.syntax
 		if (input[1] == ' ') {
-			r_anal_hint_set_syntax (core->anal, core->addr, input + 2);
+			r_anal_hint_set_syntax (a, core->addr, input + 2);
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_syntax (core->anal, core->addr);
+			r_anal_hint_unset_syntax (a, core->addr);
 		} else {
 			r_core_cmd_help_match (core, help_msg_ah, "ahS");
 		}
 		break;
 	case 'd': // "ahd" set opcode string
 		if (input[1] == ' ') {
-			r_anal_hint_set_opcode (core->anal, core->addr, input + 2);
+			r_anal_hint_set_opcode (a, core->addr, input + 2);
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_opcode (core->anal, core->addr);
+			r_anal_hint_unset_opcode (a, core->addr);
 		} else {
 			r_core_cmd_help_match (core, help_msg_ah, "ahd");
 		}
 		break;
 	case 'e': // "ahe" set ESIL string
 		if (input[1] == ' ') {
-			r_anal_hint_set_esil (core->anal, core->addr, input + 2);
+			r_anal_hint_set_esil (a, core->addr, input + 2);
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_esil (core->anal, core->addr);
+			r_anal_hint_unset_esil (a, core->addr);
 		} else {
 			r_core_cmd_help_match (core, help_msg_ah, "ahe");
 		}
@@ -11520,25 +11555,25 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 #if 0
 	case 'e': // set endian
 		if (input[1] == ' ') {
-			r_anal_hint_set_opcode (core->anal, core->addr, atoi (input + 1));
+			r_anal_hint_set_opcode (a, core->addr, atoi (input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_opcode (core->anal, core->addr);
+			r_anal_hint_unset_opcode (a, core->addr);
 		}
 		break;
 #endif
 	case 'p': // "ahp"
 		if (input[1] == ' ') {
-			r_anal_hint_set_pointer (core->anal, core->addr, r_num_math (core->num, input + 1));
+			r_anal_hint_set_pointer (a, core->addr, r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') { // "ahp-"
-			r_anal_hint_unset_pointer (core->anal, core->addr);
+			r_anal_hint_unset_pointer (a, core->addr);
 		}
 		break;
 	case 'r': // "ahr"
 		// XXX isnt this the same as 'aho ret' ?
 		if (input[1] == ' ') {
-			r_anal_hint_set_ret (core->anal, core->addr, r_num_math (core->num, input + 1));
+			r_anal_hint_set_ret (a, core->addr, r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') { // "ahr-"
-			r_anal_hint_unset_ret (core->anal, core->addr);
+			r_anal_hint_unset_ret (a, core->addr);
 		} else {
 			r_core_cmd_help (core, help_msg_ahr);
 		}
@@ -11559,16 +11594,16 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 	case 'v': // "ahv"
 		if (input[1] == ' ') {
 			r_anal_hint_set_val (
-				core->anal, core->addr,
+				a, core->addr,
 				r_num_math (core->num, input + 1));
 		} else if (input[1] == '-') {
-			r_anal_hint_unset_val (core->anal, core->addr);
+			r_anal_hint_unset_val (a, core->addr);
 		}
 		break;
 	case '-': // "ah-"
 		if (input[1]) {
 			if (input[1] == '*') {
-				r_anal_hint_clear (core->anal);
+				r_anal_hint_clear (a);
 			} else {
 				char *ptr = strdup (r_str_trim_head_ro (input + 1));
 				ut64 addr;
@@ -11583,11 +11618,11 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				} else {
 					addr = core->addr;
 				}
-				r_anal_hint_del (core->anal, addr, size);
+				r_anal_hint_del (a, addr, size);
 				free (ptr);
 			}
 		} else {
-			r_anal_hint_clear (core->anal);
+			r_anal_hint_clear (a);
 		} break;
 	case 't': // "aht"
 		switch (input[1]) {
@@ -11596,7 +11631,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			r_str_trim (off);
 			int toff = r_num_math (NULL, off);
 			if (toff) {
-				RList *typeoffs = r_type_get_by_offset (core->anal->sdb_types, toff);
+				RList *typeoffs = r_type_get_by_offset (a->sdb_types, toff);
 				RListIter *iter;
 				char *ty;
 				r_list_foreach (typeoffs, iter, ty) {
@@ -11608,7 +11643,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			break;
 		}
 		case ' ': {
-			// r_anal_hint_set_opcode (core->anal, core->addr, input + 2);
+			// r_anal_hint_set_opcode (a, core->addr, input + 2);
 			const char *off = NULL;
 			char *type = strdup (r_str_trim_head_ro (input + 2));
 			char *idx = strchr (type, ' ');
@@ -11640,7 +11675,7 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			(void)r_io_read_at (core->io, core->addr, code, sizeof (code));
 			r_asm_set_pc (core->rasm, addr);
 			(void)r_asm_disassemble (core->rasm, &asmop, code, sizeof (code));
-			int ret = r_anal_op (core->anal, &op, core->addr, code, sizeof (code), R_ARCH_OP_MASK_VAL);
+			int ret = r_anal_op (a, &op, core->addr, code, sizeof (code), R_ARCH_OP_MASK_VAL);
 			if (ret >= 0) {
 				// HACK: Just convert only the first imm seen
 				RAnalValue *src;
@@ -11668,15 +11703,15 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 						offimm += r_num_math (NULL, off);
 					}
 					// TODO: Allow to select from multiple choices
-					RList *otypes = r_type_get_by_offset (core->anal->sdb_types, offimm);
+					RList *otypes = r_type_get_by_offset (a->sdb_types, offimm);
 					RListIter *iter;
 					char *otype = NULL;
 					r_list_foreach (otypes, iter, otype) {
 						// TODO: I don't think we should silently error, it is confusing
 						if (!strcmp (type, otype)) {
 							//eprintf ("Adding type offset %s\n", type);
-							r_type_link_offset (core->anal->sdb_types, type, addr);
-							r_anal_hint_set_offset (core->anal, addr, otype);
+							r_type_link_offset (a->sdb_types, type, addr);
+							r_anal_hint_set_offset (a, addr, otype);
 							break;
 						}
 					}

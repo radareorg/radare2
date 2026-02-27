@@ -18,6 +18,29 @@ after:
 EOF
 RUN
 
+NAME=ah=$$+4
+FILE=malloc://32
+ARGS=-a arm -b64
+CMDS=<<EOF
+wx 9f2403d5 1d0080d2
+pd 2
+?e ==
+ah=$$+4
+pd 2
+dr x29=3
+aes
+dr?x29
+EOF
+EXPECT=<<EOF
+            0x00000000      9f2403d5       bti j
+            0x00000004      1d0080d2       mov x29, 0
+==
+            0x00000000      9f2403d5       mov x29, 0
+            0x00000004      1d0080d2       mov x29, 0
+0x00000000
+EOF
+RUN
+
 NAME=ah-offset
 FILE=-
 CMDS=<<EOF
