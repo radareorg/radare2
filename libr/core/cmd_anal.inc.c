@@ -7203,7 +7203,6 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
-		eprintf ("OP %d %s // %s\n", op.size, op.mnemonic, R_STRBUF_SAFEGET (&op.esil));
 		if (core->dbg->anal->esil->trace) {
 			r_esil_trace_op (core->dbg->anal->esil, &op);
 		}
