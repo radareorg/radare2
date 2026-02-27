@@ -3,7 +3,6 @@
 #define R_LOG_ORIGIN "core"
 
 #include "../include/r_core.h"
-#include "../include/r_core_priv.h"
 #include <r_vec.h>
 
 R_LIB_VERSION(r_core);
