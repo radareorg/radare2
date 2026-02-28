@@ -6,6 +6,7 @@
 #include <stdarg.h>
 
 static R_TH_LOCAL RLog *rlog = NULL;
+static R_TH_LOCAL REvent *rlogev = NULL;
 typedef struct r_log_cbuser_t {
 	void *user;
 	RLogCallback cb;
@@ -78,11 +79,23 @@ R_API void r_log_fini(void) {
 	if (rlog) {
 		RLog *log = rlog;
 		rlog = NULL;
+		r_event_free (rlogev);
+		rlogev = NULL;
 		r_list_free (log->cbs);
 		free (log->file);
 		free (log->filter);
 		free (log);
 	}
+}
+
+R_API REvent *r_log_event(void) {
+	if (!r_log_init ()) {
+		return NULL;
+	}
+	if (!rlogev) {
+		rlogev = r_event_new (NULL);
+	}
+	return rlogev;
 }
 
 R_API void r_log_show_ts(bool ts) {
@@ -178,6 +191,16 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 		return;
 	}
 	vsnprintf (out, sizeof (out), fmt, ap);
+	if (rlogev) {
+		REventLog logev = {
+			.level = level,
+			.origin = origin,
+			.func = func,
+			.line = line,
+			.msg = out,
+		};
+		r_event_send (rlogev, R_EVENT_LOG, &logev);
+	}
 	if (rlog->cbs) {
 		RListIter *iter;
 		RLogCallbackUser *cbu;
