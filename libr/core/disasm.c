@@ -7568,6 +7568,30 @@ R_API int r_core_print_disasm_instructions(RCore *core, int nb_bytes, int nb_opc
 	return ret;
 }
 
+static void anal_value_to_json(PJ *pj, RAnalValue *val) {
+	char *s = r_anal_value_tostring (val);
+	pj_o (pj);
+	pj_ks (pj, "name", s);
+	free (s);
+	pj_ks (pj, "type", r_anal_value_type_tostring (val));
+	if (val->access) {
+		pj_ks (pj, "access", (val->access & R_PERM_W)? "rw": "ro");
+	}
+	if (val->absolute) {
+		pj_kn (pj, "absolute", val->absolute);
+	}
+	if (val->imm) {
+		pj_kn (pj, "imm", val->imm);
+	}
+	if (val->delta) {
+		pj_kn (pj, "delta", val->delta);
+	}
+	if (val->mul) {
+		pj_kn (pj, "mul", val->mul);
+	}
+	pj_end (pj);
+}
+
 
 /* Disassemble `nb_opcodes` instructions, or bytes if `nb_bytes` is enabled (as JSON) */
 R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_bytes, int nb_opcodes, PJ *pj, const void *pdu_condition) {
@@ -7790,6 +7814,22 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 		// wanted the numerical values of the type information
 		pj_kn (pj, "type_num", (ut64)(ds->analop.type & UT64_MAX));
 		pj_kn (pj, "type2_num", (ut64)(ds->analop.type2 & UT64_MAX));
+		if (RVecRArchValue_length (&ds->analop.srcs) > 0) {
+			pj_ka (pj, "srcs");
+			RAnalValue *val;
+			R_VEC_FOREACH (&ds->analop.srcs, val) {
+				anal_value_to_json (pj, val);
+			}
+			pj_end (pj);
+		}
+		if (RVecRArchValue_length (&ds->analop.dsts) > 0) {
+			pj_ka (pj, "dsts");
+			RAnalValue *val;
+			R_VEC_FOREACH (&ds->analop.dsts, val) {
+				anal_value_to_json (pj, val);
+			}
+			pj_end (pj);
+		}
 		// addr addrline info here
 		{
 			const RBinAddrline *al = r_bin_addrline_get (core->bin, at);
