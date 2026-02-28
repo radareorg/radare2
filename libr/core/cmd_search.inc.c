@@ -1869,7 +1869,7 @@ bad:
 static bool esil_addrinfo(REsil *esil) {
 	RCore *core = (RCore *) esil->cb.user;
 	ut64 num = 0;
-	char *src = r_esil_pop (esil);
+	const char *src = r_esil_pop (esil);
 	if (src && *src && r_esil_get_parm (esil, src, &num)) {
 		num = r_core_anal_address (core, num);
 		r_esil_pushnum (esil, num);
@@ -1877,7 +1877,6 @@ static bool esil_addrinfo(REsil *esil) {
 		// error. empty stack?
 		return false;
 	}
-	free (src);
 	return true;
 }
 
@@ -1925,7 +1924,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_list_foreach (param->boundaries, iter, map) {
 		bool hit_happens = false;
 		size_t hit_combo = 0;
-		char *res;
 		ut64 nres, addr;
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
@@ -1965,7 +1963,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				break;
 			}
 			hit_happens = false;
-			res = r_esil_pop (esil);
+			const char *res = r_esil_pop (esil);
 			if (r_esil_get_parm (esil, res, &nres)) {
 				R_LOG_DEBUG ("RES 0x%08"PFMT64x" %"PFMT64d, addr, nres);
 				if (nres) {
@@ -1973,7 +1971,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 					hit_happens = true;
 					if (param->outmode != R_MODE_JSON) {
 						if (!_cb_hit (&kw, param, addr)) {
-							free (res);
 							break;
 						}
 						// eprintf (" HIT AT 0x%"PFMT64x"\n", addr);
@@ -1986,11 +1983,9 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 			} else {
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				r_esil_stack_free (esil);
-				free (res);
 				break;
 			}
 			r_esil_stack_free (esil);
-			free (res);
 
 			if (hit_happens) {
 				if (param->outmode == R_MODE_JSON) {

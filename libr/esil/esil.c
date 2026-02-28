@@ -2,6 +2,7 @@
 
 #define R_LOG_ORIGIN "esil"
 
+#include <stddef.h>
 #include <r_anal.h>
 #include <r_io.h>
 #include <r_reg.h>
@@ -28,7 +29,7 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 		free (esil);
 		return NULL;
 	}
-	esil->stack = calloc (sizeof (char *), stacksize);
+	esil->stack = calloc (stacksize, R_ESIL_TOKEN_SIZE);
 	if (!esil->stack) {
 		free (esil);
 		return NULL;
@@ -54,7 +55,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
 		mem_if->mem_write && (stacksize > 2), false);
 	//do not check for mem_switch, as that is optional
-	esil->stack = calloc (sizeof (char *), stacksize);
+	esil->stack = calloc (stacksize, R_ESIL_TOKEN_SIZE);
 	if (R_UNLIKELY (!esil->stack)) {
 		return false;
 	}
@@ -525,11 +526,17 @@ R_API bool r_esil_push(REsil *esil, const char *str) {
 	if (esil->stackptr > (esil->stacksize - 1)) {
 		return false;
 	}
-	esil->stack[esil->stackptr++] = strdup (str);
+	size_t len = strlen (str);
+	if (len >= R_ESIL_TOKEN_SIZE) {
+		R_LOG_DEBUG ("esil token too long: %s", str);
+		return false;
+	}
+	memcpy (esil->stack[esil->stackptr], str, len + 1);
+	esil->stackptr++;
 	return true;
 }
 
-R_API char *r_esil_pop(REsil *esil) {
+R_API const char *r_esil_pop(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, NULL);
 	if (esil->stackptr < 1) {
 		return NULL;
@@ -722,8 +729,10 @@ R_API bool r_esil_dumpstack(REsil *esil) {
 	bool ret = false;
 	for (i = 0; i < esil->stackptr; i++) {
 		const char *comma = (i + 1 < esil->stackptr)? ",": "\n";
-		esil->anal->cb_printf ("%s%s", esil->stack[i], comma);
-		ret = true;
+		if (esil->stack[i][0]) {
+			esil->anal->cb_printf ("%s%s", esil->stack[i], comma);
+			ret = true;
+		}
 	}
 	return ret;
 }
@@ -976,11 +985,6 @@ R_API bool r_esil_runword(REsil *esil, const char *word) {
 // TODO rename to clearstack() or reset_stack()
 R_API void r_esil_stack_free(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
-	int i;
-	for (i = 0; i < esil->stackptr; i++) {
-		R_TAG_FREE (esil->stack[i]);
-		esil->stack[i] = NULL;
-	}
 	esil->stackptr = 0;
 }
 
@@ -989,7 +993,7 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 	int ret = -1;
 	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
-	char *popped = r_esil_pop (esil);
+	const char *popped = r_esil_pop (esil);
 	if (popped) {
 		ut64 num;
 		if (isregornum (esil, popped, &num)) {
@@ -997,7 +1001,6 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 		} else {
 			ret = 0;
 		}
-		free (popped);
 	} else {
 		R_LOG_WARN ("Cannot pop because The ESIL stack is empty");
 		return -1;
