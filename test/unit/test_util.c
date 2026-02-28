@@ -229,13 +229,55 @@ bool test_references(void) {
 	mu_end;
 }
 
+typedef struct {
+	const char *expected;
+	size_t expected_len;
+	size_t got_len;
+	bool got_msg;
+	bool match;
+} LogTestCtx;
+
+static bool cb_log_test(void *user, int type, const char *origin, const char *msg) {
+	(void)type;
+	(void)origin;
+	LogTestCtx *ctx = (LogTestCtx *)user;
+	if (!msg) {
+		return true;
+	}
+	ctx->got_len = strlen (msg);
+	ctx->got_msg = true;
+	ctx->match = !strcmp (msg, ctx->expected);
+	return ctx->match;
+}
+
 bool test_log(void) {
 	// Stand up a semi-realistic log environment with an RCore
 	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "r_core_new should not return NULL");
 	r_log_set_quiet (true);
 
 	// https://github.com/radareorg/radare2/issues/22468
 	R_LOG_INFO ("%s", "");
+
+	const size_t slen = 600;
+	char *s = malloc (slen + 1);
+	mu_assert_notnull (s, "malloc should not return NULL");
+	memset (s, 'A', slen);
+	s[slen] = 0;
+	LogTestCtx ctx = {
+		.expected = s,
+		.expected_len = slen,
+		.got_len = 0,
+		.got_msg = false,
+		.match = false,
+	};
+	r_log_add_callback (cb_log_test, &ctx);
+	R_LOG_INFO ("%s", s);
+	r_log_del_callback (cb_log_test);
+	free (s);
+	mu_assert_true (ctx.got_msg, "log callback should receive message");
+	mu_assert_true (ctx.match, "log callback message should match expected string");
+	mu_assert_eq ((int)ctx.got_len, (int)ctx.expected_len, "log message should not be truncated");
 
 	r_core_free (core);
 	mu_end;

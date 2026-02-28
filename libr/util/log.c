@@ -173,7 +173,7 @@ R_API bool r_log_match(int level, const char *origin) {
 }
 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap) {
-	char out[512];
+	char out[2048];
 	if (!r_log_init ()) {
 		return;
 	}
