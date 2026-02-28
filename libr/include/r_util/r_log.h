@@ -2,7 +2,10 @@
 #define R_LOG_H
 
 #include <r_userconf.h>
-#include <r_list.h>
+#include <r_types.h>
+#include <stdarg.h>
+// NOTE: avoid including <r_vec.h> here because it includes r_assert.h, which
+// includes this header, causing a circular dependency.
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,6 +42,8 @@ typedef enum r_log_level {
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
 
+typedef struct r_vec_RVecRLogCallbackUser_t RVecRLogCallbackUser;
+
 typedef struct r_log_t {
 	int level; // skip messages lower than this level
 	int traplevel; // skip messages lower than this level
@@ -50,7 +55,7 @@ typedef struct r_log_t {
 	bool show_origin;
 	bool show_source;
 	bool show_ts;
-	RList *cbs;
+	RVecRLogCallbackUser *cbs;
 	PrintfCallback cb_printf;
 } RLog;
 

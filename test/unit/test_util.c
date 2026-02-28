@@ -14,6 +14,20 @@ static Sdb *setup_sdb(void) {
 	return res;
 }
 
+typedef struct {
+	int calls;
+} LogCbCtx;
+
+static bool log_cb_counter(void *user, int type, const char *origin, const char *msg) {
+	(void)type;
+	(void)origin;
+	if (msg) {
+		LogCbCtx *ctx = (LogCbCtx *)user;
+		ctx->calls++;
+	}
+	return false;
+}
+
 bool test_dll_names(void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
@@ -236,6 +250,13 @@ bool test_log(void) {
 
 	// https://github.com/radareorg/radare2/issues/22468
 	R_LOG_INFO ("%s", "");
+
+	LogCbCtx ctx = { 0 };
+	r_log_add_callback (log_cb_counter, &ctx);
+	R_LOG_INFO ("hi");
+	r_log_del_callback (log_cb_counter);
+	R_LOG_INFO ("bye");
+	mu_assert_eq (ctx.calls, 1, "r_log_del_callback should unregister callback");
 
 	r_core_free (core);
 	mu_end;
