@@ -228,7 +228,7 @@ static bool or1k_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 
 	/* read instruction and basic opcode value */
-	ut32 insn = (be? r_read_be32: r_read_le32) (data);
+	ut32 insn = r_read_ble32 (data, be);
 	op->size = 4;
 	ut32 opcode = (insn & INSN_OPCODE_MASK);
 	ut8 opcode_idx = (opcode >> INSN_OPCODE_SHIFT) & 0xff;
