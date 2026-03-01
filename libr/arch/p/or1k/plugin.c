@@ -33,7 +33,7 @@ static bool or1k_fini(RArchSession *s) {
 }
 
 static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {0};
+	struct operands o = { 0 };
 	insn_type_t type = type_of_opcode (descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
@@ -62,7 +62,7 @@ static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 ins
 	case INSN_X:
 		return r_str_newf (type_descr->format, name);
 	case INSN_N:
-		return r_str_newf (type_descr->format, name, (sign_extend(o.n, get_operand_mask (type_descr, INSN_OPER_N)) << 2) + addr);
+		return r_str_newf (type_descr->format, name, (sign_extend (o.n, get_operand_mask (type_descr, INSN_OPER_N)) << 2) + addr);
 	case INSN_K:
 		return r_str_newf (type_descr->format, name, o.k);
 	case INSN_DK:
@@ -98,7 +98,6 @@ static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 ins
 	return strdup ("invalid");
 }
 
-
 /**
  * \brief Convert raw N operand to complete address
  *
@@ -111,11 +110,11 @@ static char *insn_to_str(ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 ins
 static ut64 n_oper_to_addr(ut32 n, ut32 mask, ut64 addr) {
 	/* sign extension returns 32b unsigned N, then it is multiplied by 4, made
 	 * signed to support negative offsets, added to address and made unsigned again */
-	return (ut64) ((st64) ((st32) (sign_extend(n, mask) << 2)) + addr);
+	return (ut64) ((st64) ((st32) (sign_extend (n, mask) << 2)) + addr);
 }
 
 static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *descr, insn_extra_t *extra, ut32 insn) {
-	struct operands o = {0};
+	struct operands o = { 0 };
 	insn_type_t type = type_of_opcode (descr, extra);
 	insn_type_descr_t *type_descr = &types[INSN_X];
 
@@ -129,47 +128,47 @@ static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *de
 	case 0x00: /* l.j */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr (o.n, get_operand_mask (type_descr, INSN_OPER_N), addr);
 		op->delay = 1;
 		break;
 	case 0x01: /* l.jal */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
 		op->eob = true;
-		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr (o.n, get_operand_mask (type_descr, INSN_OPER_N), addr);
 		op->delay = 1;
 		break;
 	case 0x03: /* l.bnf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_CONDTYPE_NE;
-		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr (o.n, get_operand_mask (type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x04: /* l.bf */
 		o.n = get_operand_value (insn, type_descr, INSN_OPER_N);
 		op->cond = R_ANAL_CONDTYPE_EQ;
-		op->jump = n_oper_to_addr (o.n, get_operand_mask(type_descr, INSN_OPER_N), addr);
+		op->jump = n_oper_to_addr (o.n, get_operand_mask (type_descr, INSN_OPER_N), addr);
 		op->fail = addr + 8;
 		op->delay = 1;
 		break;
 	case 0x11: /* l.jr */
 		o.rb = get_operand_value (insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (regs->cpu_enable & (1 << o.rb)) {
+		if (regs->cpu_enable &(1 << o.rb)) {
 			op->jump = regs->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
 	case 0x12: /* l.jalr */
-		o.rb = get_operand_value(insn, type_descr, INSN_OPER_B);
+		o.rb = get_operand_value (insn, type_descr, INSN_OPER_B);
 		op->eob = true;
-		if (regs->cpu_enable & (1 << o.rb)) {
+		if (regs->cpu_enable &(1 << o.rb)) {
 			op->jump = regs->cpu[o.rb];
 		}
 		op->delay = 1;
 		break;
 	case 0x06: /* extended */
-		switch (insn & (1 << 16)) {
+		switch (insn &(1 << 16)) {
 		case 0: /* l.movhi */
 			o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 			o.k = get_operand_value (insn, type_descr, INSN_OPER_K);
@@ -184,7 +183,7 @@ static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *de
 		o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
-		if (regs->cpu_enable & (1 << o.ra) && regs->cpu_enable & (1 << o.rd)) {
+		if (regs->cpu_enable &(1 << o.ra) && regs->cpu_enable &(1 << o.rd)) {
 			regs->cpu[o.rd] = regs->cpu[o.ra] | o.i;
 			regs->cpu_enable |= (1 << o.rd);
 			op->ptr = regs->cpu[o.rd];
@@ -195,7 +194,7 @@ static int insn_to_op(struct or1k_regs *regs, RAnalOp *op, ut64 addr, insn_t *de
 		o.rd = get_operand_value (insn, type_descr, INSN_OPER_D);
 		o.ra = get_operand_value (insn, type_descr, INSN_OPER_A);
 		o.i = get_operand_value (insn, type_descr, INSN_OPER_I);
-		if (regs->cpu_enable & (1 << o.ra)) {
+		if (regs->cpu_enable &(1 << o.ra)) {
 			regs->cpu[o.rd] = regs->cpu[o.ra] | o.i;
 			regs->cpu_enable |= (1 << o.rd);
 			op->ptr = regs->cpu[o.rd];
@@ -229,7 +228,7 @@ static bool or1k_op(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config);
 
 	/* read instruction and basic opcode value */
-	ut32 insn = (be ? r_read_be32 : r_read_le32) (data);
+	ut32 insn = (be? r_read_be32: r_read_le32) (data);
 	op->size = 4;
 	ut32 opcode = (insn & INSN_OPCODE_MASK);
 	ut8 opcode_idx = (opcode >> INSN_OPCODE_SHIFT) & 0xff;
