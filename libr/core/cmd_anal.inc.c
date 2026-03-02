@@ -14828,6 +14828,11 @@ static int cmd_anal_all(RCore *core, const char *input) {
 		switch (input[1]) {
 		case 0:
 		case ' ':
+			(void)r_core_anal_refs (core, input + 1);
+			// Keep aar behavior consistent with aa* pipelines by inserting
+			// plugin-provided data-flow refs after reference analysis.
+			r_core_anal_plugin_data_refs (core);
+			break;
 		case '*':
 		case 'j':
 			(void)r_core_anal_refs (core, input + 1);
