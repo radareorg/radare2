@@ -782,9 +782,11 @@ static ut64 numvar_dollar(RCore *core, const char *str, bool *ok) {
 			return core->addr;
 		}
 	}
+#if 0
 	if (ok) {
 		*ok = false;
 	}
+#endif
 	return invalid_numvar (core, str);
 }
 
