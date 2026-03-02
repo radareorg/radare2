@@ -755,24 +755,38 @@ static ut64 numvar_flag(RCore *core, const char *str, bool *ok) {
 }
 
 static ut64 numvar_dollar(RCore *core, const char *str, bool *ok) {
-	if (!strcmp (str, "$$")) {
-		return core->addr;
-	}
-	if (!strcmp (str, "$$c")) {
-		if (core->print->cur_enabled) {
-			return core->addr + core->print->cur;
+	if (r_str_startswith (str, "$$")) {
+		switch (str[2]) {
+		case 0: // "$$"
+			return core->addr;
+		case '.': // assume partial relative addressing "$$..3f3"
+			return r_num_tail (core->num, core->addr, str + 2);
+		case '$': // "$$$" -- prompt address vs cursor
+			if (!strcmp (str, "$$.")) {
+				return r_num_tail (core->num, core->prompt_addr, str + 3);
+			}
+			if (!strcmp (str, "$$$")) {
+				return core->prompt_addr;
+			}
+			if (!strcmp (str, "$$$c")) {
+				if (core->print->cur_enabled) {
+					return core->prompt_addr + core->print->cur;
+				}
+				return core->prompt_addr;
+			}
+			break;
+		case 'c': // "$$c" -- cursor address
+			if (core->print->cur_enabled) {
+				return core->addr + core->print->cur;
+			}
+			return core->addr;
 		}
-		return core->addr;
 	}
-	if (!strcmp (str, "$$$")) {
-		return core->prompt_addr;
+#if 0
+	if (ok) {
+		*ok = false;
 	}
-	if (!strcmp (str, "$$$c")) {
-		if (core->print->cur_enabled) {
-			return core->prompt_addr + core->print->cur;
-		}
-		return core->prompt_addr;
-	}
+#endif
 	return invalid_numvar (core, str);
 }
 
@@ -1002,15 +1016,6 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				}
 				return fcn->addr;
 			}
-#if 0
-			ut64 addr = r_anal_function_label_get (core->anal, core->addr, str);
-			if (addr != 0) {
-				ret = addr;
-			} else {
-				...
-			}
-#endif
-
 			if (((RCorePriv*)core->priv)->regnums) {
 				// check for reg alias
 				RRegItem *r = r_reg_get (core->dbg->reg, str, -1);
@@ -1036,8 +1041,7 @@ static ut64 num_callback(RNum *userptr, const char *str, bool *ok) {
 				if (ok) {
 					*ok = true;
 				}
-				ret = r_reg_get_value (core->dbg->reg, r);
-				return ret;
+				return r_reg_get_value (core->dbg->reg, r);
 			}
 		}
 		}
