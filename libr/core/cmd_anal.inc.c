@@ -11178,8 +11178,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 					R_VEC_FOREACH (list, ref) {
 						// TODO: Use r_core_anal_op(DISASM) instead of all those 4 lines
 						ut8 buf[16];
-						r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
-						r_asm_set_pc (core->rasm, ref->addr);
+						/* axfj lists refs FROM current address, so opcode should
+							* be rendered at the source instruction (ref->at). */
+						r_io_read_at (core->io, ref->at, buf, sizeof (buf));
+						r_asm_set_pc (core->rasm, ref->at);
 						r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 						pj_o (pj);
 						pj_kn (pj, "from", ref->at);
