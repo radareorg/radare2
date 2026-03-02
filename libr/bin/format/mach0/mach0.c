@@ -86,6 +86,14 @@ static ut64 read_uleb128(ut8 **p, ut8 *end) {
 	return v;
 }
 
+static bool fits_in(ut64 file_size, ut64 offset, ut64 size) {
+	ut64 end;
+	if (!UT64_ADD (&end, offset, size)) {
+		return false;
+	}
+	return offset <= file_size && end <= file_size;
+}
+
 static ut64 entry_to_vaddr(struct MACH0_(obj_t) *bin) {
 	switch (bin->main_cmd.cmd) {
 	case LC_MAIN:
@@ -1635,10 +1643,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 	if (!bind_size || bind_size < 1) {
 		return false;
 	}
-	if (mo->dyld_info->bind_off > mo->size) {
-		return false;
-	}
-	if (mo->dyld_info->bind_off + bind_size > mo->size) {
+	if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_size)) {
 		return false;
 	}
 	ut8 *opcodes = calloc (1, bind_size + 1);
@@ -2282,19 +2287,11 @@ struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(
 	// mo->nofuncstarts = options->nofuncstarts;
 	// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 	ut64 sz = r_buf_size (buf);
-	{
-#if 0
-		if (options->bf->loadaddr == UT64_MAX - sz) {
-			// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
-			// sz = 4 * 1024 * 1024;
-		}
-#endif
-		mo->verbose = options->verbose;
-		mo->header_at = options->header_at;
-		mo->maxsymlen = options->maxsymlen;
-		mo->symbols_off = options->symbols_off;
-		mo->parse_start_symbols = options->parse_start_symbols;
-	}
+	mo->verbose = options->verbose;
+	mo->header_at = options->header_at;
+	mo->maxsymlen = options->maxsymlen;
+	mo->symbols_off = options->symbols_off;
+	mo->parse_start_symbols = options->parse_start_symbols;
 	mo->size = sz;
 	if (!init (mo)) {
 		return MACH0_(mach0_free)(mo);
@@ -2957,11 +2954,6 @@ static void _fill_exports(struct MACH0_(obj_t) *mo, const char *name, ut64 flags
 }
 
 static bool apple_symbol(const char *sym_name) {
-#if 0
-	if (r_str_startswith (sym_name, "__")) {
-		return true;
-	}
-#endif
 	if (r_str_startswith (sym_name, "radr://")) {
 		return true;
 	}
@@ -2971,10 +2963,62 @@ static bool apple_symbol(const char *sym_name) {
 	return false;
 }
 
+#define WALK_THE_UNDEFINED 0
+static bool dysym_bounds(struct MACH0_(obj_t) *mo, size_t s, ut64 *f, ut64 *t) {
+	ut32 from = 0;
+	ut32 to = 0;
+	switch (s) {
+	case 0:
+		from = mo->dysymtab.iextdefsym;
+		to = from + mo->dysymtab.nextdefsym;
+		break;
+	case 1:
+		from = mo->dysymtab.ilocalsym;
+		to = from + mo->dysymtab.nlocalsym;
+		break;
+#if WALK_THE_UNDEFINED
+	case 2:
+		from = mo->dysymtab.iundefsym;
+		to = from + mo->dysymtab.nundefsym;
+		break;
+#endif
+	default:
+		return false;
+	}
+	if (from >= to) {
+		return false;
+	}
+	*f = R_MIN (from, (ut64)mo->nsymtab);
+	*t = R_MIN (to, (ut64)mo->nsymtab);
+	return *f < *t;
+}
+
+static inline bool exceeds_bin_limit(int limit, ut64 value) {
+	return limit > 0 && value > (ut64)limit;
+}
+
+static int bounded_count_for_int_loop(ut64 count, int limit) {
+	if (count > ST32_MAX) {
+		return 0;
+	}
+	if (exceeds_bin_limit (limit, count)) {
+		return limit;
+	}
+	return (int)count;
+}
+
+static bool count_fits_stride_in_range(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
+	if (!stride) {
+		return count == 0;
+	}
+	ut64 remaining = (addr < segment_end_addr) ? segment_end_addr - addr : 0;
+	return count <= (remaining / stride);
+}
+
 static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache) {
 	size_t i, j, s, symbols_size, symbols_count;
-	ut32 to = UT32_MAX;
-	ut32 from = UT32_MAX;
+	ut64 to = UT64_MAX;
+	ut64 from = UT64_MAX;
 	ut32 ordinal = 0;
 
 	RBinObject *obj = bf? bf->bo: NULL;
@@ -2983,9 +3027,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 	}
 
 	HtPP *hash = ht_pp_new0 ();
-	if (!hash) {
-		return;
-	}
 
 	FillCtx fill_context = { .bf = bf, .symcache = symcache, .hash = hash, .boffset = obj->boffset, .ordinal = &ordinal };
 	walk_exports (mo, _fill_exports, &fill_context);
@@ -3013,28 +3054,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 	bool is_stripped = true;
 	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
-		switch (s) {
-		case 0:
-			from = mo->dysymtab.iextdefsym;
-			to = from + mo->dysymtab.nextdefsym;
-			break;
-		case 1:
-			from = mo->dysymtab.ilocalsym;
-			to = from + mo->dysymtab.nlocalsym;
-			break;
-#if NOT_USED
-		case 2:
-			from = mo->dysymtab.iundefsym;
-			to = from + mo->dysymtab.nundefsym;
-			break;
-#endif
-		}
-		if (from == to) {
+		if (!dysym_bounds (mo, s, &from, &to)) {
 			continue;
 		}
-
-		from = R_MIN (from, symbols_size / sizeof (RBinSymbol));
-		to = R_MIN (R_MIN (to, mo->nsymtab), symbols_size / sizeof (RBinSymbol));
 		ut32 maxsymbols = symbols_size / sizeof (RBinSymbol);
 		if (symbols_count >= maxsymbols) {
 			symbols_count = maxsymbols - 1;
@@ -3047,7 +3069,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				j--;
 				continue;
 			}
-
 			int stridx = mo->symtab[i].n_strx;
 			char *sym_name = get_name (mo, stridx, false);
 			if (!sym_name) {
@@ -3075,7 +3096,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym);
-				if (limit > 0 && ordinal > limit) {
+				if (exceeds_bin_limit (limit, ordinal)) {
 					R_LOG_WARN ("symbols mo.limit reached");
 					break;
 				}
@@ -3148,7 +3169,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo, HtPP *symcache
 				free (sym_name);
 				continue;
 			}
-			if (limit > 0 && ordinal > limit) {
+			if (exceeds_bin_limit (limit, ordinal)) {
 				R_LOG_WARN ("funcstart count reached bin.limit");
 				free (sym_name);
 				break;
@@ -3229,7 +3250,7 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) *mo,
 				is_stripped = true;
 			}
 		}
-		if (limit > 0 && sym->ordinal > limit) {
+		if (exceeds_bin_limit (limit, sym->ordinal)) {
 			R_LOG_WARN ("funcstart mo.limit reached");
 			break;
 		}
@@ -3431,7 +3452,7 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
 			return NULL;
 		}
-		if (limit > 0 && i > limit) {
+		if (exceeds_bin_limit (limit, i)) {
 			R_LOG_WARN ("imports mo.limit reached");
 			break;
 		}
@@ -3454,16 +3475,6 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 	}
 
 	return &bin->imports_cache;
-}
-
-static bool check_bind_count(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 skip, ut64 wordsize) {
-	ut64 increment = skip + wordsize;
-	if (!increment) {
-		return count == 0;
-	}
-	ut64 remaining = (addr < segment_end_addr) ? segment_end_addr - addr : 0;
-	ut64 max_count = remaining / increment;
-	return count <= max_count;
 }
 
 static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
@@ -3507,7 +3518,7 @@ static void parse_relocation_info(struct MACH0_(obj_t) *mo, RSkipList *relocs, u
 		if (sym_num >= mo->nsymtab) {
 			continue;
 		}
-		if (limit > 0 && i > limit) {
+		if (exceeds_bin_limit (limit, i)) {
 			R_LOG_WARN ("relocs mo.limit reached");
 			break;
 		}
@@ -3519,7 +3530,6 @@ static void parse_relocation_info(struct MACH0_(obj_t) *mo, RSkipList *relocs, u
 		}
 
 		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-
 		reloc->addr = offset_to_vaddr (mo, a_info.r_address);
 		reloc->offset = a_info.r_address;
 		reloc->ord = sym_num;
@@ -3549,7 +3559,7 @@ static bool walk_bind_chains_callback(void * context, RFixupEventDetails * event
 		addend = ((RFixupBindEventDetails *) event_details)->addend;
 	}
 	const int limit = mo->limit;
-	if (limit > 0 && import_index > limit) {
+	if (exceeds_bin_limit (limit, import_index)) {
 		return false;
 	}
 	if (import_index < imports_count) {
@@ -3701,49 +3711,332 @@ static RVecRelocRef *reloc_ref_vec_new_with_len (ut64 length) {
 	return vec;
 }
 
+typedef struct {
+	ut8 type;
+	int lib_ord;
+	int seg_idx;
+	int sym_ord;
+	char *sym_name;
+	st64 addend;
+	ut64 addr;
+	ut64 segment_end_addr;
+	bool done;
+	bool stop;
+} RBindOpState;
+
+static HtPP *build_symbol_ordinal_cache(struct MACH0_(obj_t) *mo) {
+	HtPP *cache = ht_pp_new0 ();
+	if (!mo->symtab || mo->dysymtab.nundefsym >= UT16_MAX) {
+		return cache;
+	}
+	int iundefsym = mo->dysymtab.iundefsym;
+	if (iundefsym < 0 || iundefsym >= mo->nsymtab) {
+		return cache;
+	}
+	int j;
+	for (j = 0; j < mo->dysymtab.nundefsym; j++) {
+		int sidx = iundefsym + j;
+		if (sidx < 0 || sidx >= mo->nsymtab) {
+			continue;
+		}
+		size_t stridx = mo->symtab[sidx].n_strx;
+		if (stridx >= mo->symstrlen) {
+			continue;
+		}
+		const char *name = (const char *)mo->symstr + stridx;
+		if (!ht_pp_find (cache, name, NULL)) {
+			ht_pp_insert (cache, name, (void *)(size_t)(j + 1));
+		}
+	}
+	return cache;
+}
+
+static bool stop_bind_parsing(RBindOpState *state) {
+	state->done = true;
+	state->stop = true;
+	return true;
+}
+
+static void insert_bind_reloc(struct MACH0_(obj_t) *mo, RVecRelocRef *threaded_binds, RBindOpState *state, ut8 op, ut8 rel_type) {
+	if (state->sym_ord < 0 && !state->sym_name) {
+		return;
+	}
+	if (!threaded_binds) {
+		if (state->seg_idx < 0) {
+			return;
+		}
+		if (!state->addr) {
+			return;
+		}
+	}
+	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+	reloc->addr = state->addr;
+	if (state->seg_idx >= 0) {
+		reloc->offset = state->addr - mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].fileoff;
+		reloc->addend = state->addend;
+		if (state->type == BIND_TYPE_TEXT_PCREL32) {
+			reloc->addend -= (mo->baddr + state->addr);
+		}
+	} else {
+		reloc->addend = state->addend;
+	}
+	/* library ordinal ??? */
+	reloc->ntype = op;
+	reloc->ord = state->lib_ord;
+	reloc->ord = state->sym_ord;
+	reloc->type = rel_type;
+	if (state->sym_name) {
+		r_str_ncpy (reloc->name, state->sym_name, sizeof (reloc->name));
+	}
+	if (threaded_binds) {
+		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, state->sym_ord);
+		if (slot) {
+			*slot = reloc;
+		} else {
+			free (reloc);
+		}
+	} else {
+		r_skiplist_insert (mo->relocs_cache, reloc);
+	}
+}
+
+static void apply_threaded_bind(struct MACH0_(obj_t) *mo, RVecRelocRef *threaded_binds, RBindOpState *state, ut8 op, size_t wordsize) {
+	if (!threaded_binds) {
+		return;
+	}
+	int cur_seg_idx = (state->seg_idx != -1)? state->seg_idx: 0;
+	ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
+	while (state->addr < state->segment_end_addr) {
+		ut8 tmp[8];
+		ut64 paddr = state->addr - mo->segs[cur_seg_idx].vmaddr + mo->segs[cur_seg_idx].fileoff;
+		mo->rebasing_buffer = true;
+		if (r_buf_read_at (mo->b, paddr, tmp, 8) != 8) {
+			break;
+		}
+		mo->rebasing_buffer = false;
+		ut64 raw_ptr = r_read_le64 (tmp);
+		bool is_auth = (raw_ptr & (1ULL << 63)) != 0;
+		bool is_bind = (raw_ptr & (1ULL << 62)) != 0;
+		int ordinal = -1;
+		int ptr_addend = -1;
+		ut64 delta = 0;
+		if (is_auth && is_bind) {
+			struct dyld_chained_ptr_arm64e_auth_bind *p =
+					(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+			delta = p->next;
+			ordinal = p->ordinal;
+		} else if (!is_auth && is_bind) {
+			struct dyld_chained_ptr_arm64e_bind *p =
+					(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+			delta = p->next;
+			ordinal = p->ordinal;
+			ptr_addend = p->addend;
+		} else if (is_auth && !is_bind) {
+			struct dyld_chained_ptr_arm64e_auth_rebase *p =
+					(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+			delta = p->next;
+		} else {
+			struct dyld_chained_ptr_arm64e_rebase *p =
+					(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+			delta = p->next;
+		}
+		if (ordinal != -1) {
+			if (ordinal >= n_threaded_binds) {
+				R_LOG_DEBUG ("Malformed bind chain");
+				break;
+			}
+			struct reloc_t **ref_slot = RVecRelocRef_at (threaded_binds, ordinal);
+			struct reloc_t *ref = ref_slot ? *ref_slot : NULL;
+			if (!ref) {
+				R_LOG_DEBUG ("Inconsistent bind opcodes");
+				break;
+			}
+			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
+			*reloc = *ref;
+			reloc->addr = state->addr;
+			reloc->ntype = op;
+			reloc->offset = paddr;
+			if (ptr_addend != -1) {
+				reloc->addend = ptr_addend;
+			}
+			r_skiplist_insert (mo->relocs_cache, reloc);
+		}
+		state->addr += delta * wordsize;
+		if (!delta) {
+			break;
+		}
+	}
+}
+
+static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_binds, HtPP *ord_cache, RBindOpState *state, ut8 rel_type, size_t wordsize, bool in_lazy_binds, ut8 **p, ut8 *end) {
+	ut8 op = **p & BIND_OPCODE_MASK;
+	ut8 imm = **p & BIND_IMMEDIATE_MASK;
+	(*p)++;
+	int j;
+	switch (op) {
+	case BIND_OPCODE_DONE:
+		if (!in_lazy_binds) {
+			state->done = true;
+		}
+		return true;
+	case BIND_OPCODE_THREADED:
+		switch (imm) {
+		case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+			ut64 table_size = read_uleb128 (p, end);
+			if (!is_valid_ordinal_table_size (table_size)) {
+				R_LOG_DEBUG ("BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong");
+			} else {
+				if (*threaded_binds) {
+					RVecRelocRef_free (*threaded_binds);
+				}
+				*threaded_binds = reloc_ref_vec_new_with_len (table_size);
+				if (*threaded_binds) {
+					state->sym_ord = 0;
+				}
+			}
+			return true;
+		}
+		case BIND_SUBOPCODE_THREADED_APPLY:
+			apply_threaded_bind (mo, *threaded_binds, state, op, wordsize);
+			return true;
+		default:
+			R_LOG_DEBUG ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
+			return true;
+		}
+	case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+		state->lib_ord = imm;
+		return true;
+	case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+		state->lib_ord = read_uleb128 (p, end);
+		return true;
+	case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+		state->lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
+		return true;
+	case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+		state->sym_name = (char *)*p;
+		while (*p < end && **p) {
+			(*p)++;
+		}
+		if (*p < end) {
+			(*p)++;
+		}
+		if (!*threaded_binds) {
+			void *ord = ord_cache? ht_pp_find (ord_cache, state->sym_name, NULL): NULL;
+			state->sym_ord = ord? (int)((size_t)ord - 1): -1;
+		}
+		return true;
+	case BIND_OPCODE_SET_TYPE_IMM:
+		state->type = imm;
+		return true;
+	case BIND_OPCODE_SET_ADDEND_SLEB:
+		state->addend = r_sleb128 ((const ut8 **)p, end);
+		return true;
+	case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+		state->seg_idx = imm;
+		if (state->seg_idx >= mo->nsegs) {
+			R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
+			return false;
+		}
+		state->addr = mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
+		state->segment_end_addr = mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].vmsize;
+		return true;
+	case BIND_OPCODE_ADD_ADDR_ULEB:
+		state->addr += read_uleb128 (p, end);
+		return true;
+	case BIND_OPCODE_DO_BIND:
+		if (!*threaded_binds && state->addr >= state->segment_end_addr) {
+			R_LOG_DEBUG ("Malformed DO bind opcode 0x%"PFMT64x, state->addr);
+			return stop_bind_parsing (state);
+		}
+		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+		if (!*threaded_binds) {
+			state->addr += wordsize;
+		} else {
+			state->sym_ord++;
+		}
+		return true;
+	case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+		if (state->addr >= state->segment_end_addr) {
+			R_LOG_DEBUG ("Malformed ADDR ULEB bind opcode");
+			return stop_bind_parsing (state);
+		}
+		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+		state->addr += read_uleb128 (p, end) + wordsize;
+		return true;
+	case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+		if (state->addr >= state->segment_end_addr) {
+			R_LOG_DEBUG ("Malformed IMM SCALED bind opcode");
+			return stop_bind_parsing (state);
+		}
+		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+		state->addr += (ut64)imm * (ut64)wordsize + wordsize;
+		return true;
+	case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB: {
+		ut64 count = read_uleb128 (p, end);
+		ut64 skip = read_uleb128 (p, end);
+		ut64 increment;
+		if (!UT64_ADD (&increment, skip, wordsize) || !count_fits_stride_in_range (count, state->addr, state->segment_end_addr, increment)) {
+			R_LOG_DEBUG ("Count exceeds segment bounds");
+			return stop_bind_parsing (state);
+		}
+		for (j = 0; j < count; j++) {
+			if (state->addr >= state->segment_end_addr) {
+				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
+				return stop_bind_parsing (state);
+			}
+			insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+			state->addr += skip + wordsize;
+		}
+		return true;
+	}
+	default:
+		R_LOG_DEBUG ("unknown bind opcode 0x%02x in dyld_info", op);
+		return false;
+	}
+}
+
+// i think we need this helper function in other places..
+static inline ut8 relfrom_wordsize(size_t ws) {
+	if (ws == 1 || ws == 2 || ws == 4 || ws == 8) {
+		return ws * 8;
+	}
+	return 0;
+}
+
 static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 	RVecRelocRef *threaded_binds = NULL;
 	ut8 *opcodes = NULL;
 	size_t wordsize = get_word_size (mo);
 	if (mo->dyld_info) {
-		ut8 rel_type = 0;
-		size_t bind_size, lazy_size, weak_size;
-
-#define CASE(T) case ((T) / 8): rel_type = R_BIN_RELOC_ ## T; break
-		switch (wordsize) {
-		CASE(8);
-		CASE(16);
-		CASE(32);
-		CASE(64);
-		default: return false;
+		ut8 rel_type = relfrom_wordsize (wordsize);
+		if (!rel_type) {
+			return false;
 		}
-#undef CASE
-		bind_size = mo->dyld_info->bind_size;
-		lazy_size = mo->dyld_info->lazy_bind_size;
-		weak_size = mo->dyld_info->weak_bind_size;
+		size_t bind_size = mo->dyld_info->bind_size;
+		size_t lazy_size = mo->dyld_info->lazy_bind_size;
+		size_t weak_size = mo->dyld_info->weak_bind_size;
+		ut64 bind_lazy_size = 0;
 
 		if (!bind_size && !lazy_size) {
 			return false;
 		}
-
-		if ((bind_size + lazy_size) < 1) {
+		if (!UT64_ADD (&bind_lazy_size, bind_size, lazy_size)) {
 			return false;
 		}
-		if (mo->dyld_info->bind_off > mo->size || mo->dyld_info->bind_off + bind_size > mo->size) {
+		if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_size)) {
 			return false;
 		}
-		if (mo->dyld_info->lazy_bind_off > mo->size || \
-			mo->dyld_info->lazy_bind_off + lazy_size > mo->size) {
+		if (!fits_in (mo->size, mo->dyld_info->lazy_bind_off, lazy_size)) {
 			return false;
 		}
-		if (mo->dyld_info->bind_off + bind_size + lazy_size > mo->size) {
+		if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_lazy_size)) {
 			return false;
 		}
-		if (mo->dyld_info->weak_bind_off + weak_size > mo->size) {
+		if (!fits_in (mo->size, mo->dyld_info->weak_bind_off, weak_size)) {
 			return false;
 		}
-		ut64 amount = bind_size + lazy_size + weak_size;
-		if (amount == 0 || amount > UT32_MAX) {
+		ut64 amount = 0;
+		if (!UT64_ADD (&amount, bind_lazy_size, weak_size) || amount == 0 || amount > UT32_MAX) {
 			return false;
 		}
 		if (!mo->segs) {
@@ -3754,27 +4047,29 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 			return false;
 		}
 
-		int len = r_buf_read_at (mo->b, mo->dyld_info->bind_off, opcodes, bind_size);
+		st64 len = r_buf_read_at (mo->b, mo->dyld_info->bind_off, opcodes, bind_size);
 		len += r_buf_read_at (mo->b, mo->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
 		len += r_buf_read_at (mo->b, mo->dyld_info->weak_bind_off, opcodes + bind_size + lazy_size, weak_size);
-		if (len < amount) {
+		if (len < 0 || (ut64)len < amount) {
 			R_LOG_ERROR ("read (dyld_info bind) at 0x%08"PFMT64x, (ut64)(size_t)mo->dyld_info->bind_off);
 			R_FREE (opcodes);
 			return false;
 		}
+		HtPP *ord_cache = build_symbol_ordinal_cache (mo);
 
 		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
 		size_t pidx;
-		int opcodes_offset = 0;
+		size_t opcodes_offset = 0;
 		for (pidx = 0; pidx < R_ARRAY_SIZE (partition_sizes); pidx++) {
 			size_t partition_size = partition_sizes[pidx];
+			if (partition_size > amount - opcodes_offset) {
+				break;
+			}
 
-			ut8 type = 0;
-			int lib_ord = 0, seg_idx = -1, sym_ord = -1;
-			char *sym_name = NULL;
-			size_t j, count, skip;
-			st64 addend = 0;
-			ut64 addr = mo->segs[0].vmaddr;
+			RBindOpState state = {0};
+			state.seg_idx = -1;
+			state.sym_ord = -1;
+			state.addr = mo->segs[0].vmaddr;
 			ut64 segment_size = mo->segs[0].filesize;
 			if (mo->segs[0].filesize != mo->segs[0].vmsize) {
 				// is probably invalid and we should warn the user
@@ -3783,279 +4078,32 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 				// is probably invalid and we should warn the user
 				segment_size = mo->size;
 			}
-			ut64 segment_end_addr = addr + segment_size;
+			state.segment_end_addr = state.addr + segment_size;
 
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
-			bool done = false;
-			while (!done && p < end) {
-				ut8 imm = *p & BIND_IMMEDIATE_MASK;
-				ut8 op = *p & BIND_OPCODE_MASK;
-				p++;
-				switch (op) {
-				case BIND_OPCODE_DONE: {
-					bool in_lazy_binds = pidx == 1;
-					if (!in_lazy_binds) {
-						done = true;
-					}
-					break;
-				}
-				case BIND_OPCODE_THREADED: {
-					switch (imm) {
-					case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-						ut64 table_size = read_uleb128 (&p, end);
-						if (!is_valid_ordinal_table_size (table_size)) {
-							R_LOG_DEBUG ("BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong");
-							break;
-						}
-						if (threaded_binds) {
-							RVecRelocRef_free (threaded_binds);
-						}
-						threaded_binds = reloc_ref_vec_new_with_len (table_size);
-						if (threaded_binds) {
-							sym_ord = 0;
-						}
-						break;
-					}
-					case BIND_SUBOPCODE_THREADED_APPLY:
-						if (threaded_binds) {
-							int cur_seg_idx = (seg_idx != -1)? seg_idx: 0;
-							ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
-							while (addr < segment_end_addr) {
-								ut8 tmp[8];
-								ut64 paddr = addr - mo->segs[cur_seg_idx].vmaddr + mo->segs[cur_seg_idx].fileoff;
-								mo->rebasing_buffer = true;
-								if (r_buf_read_at (mo->b, paddr, tmp, 8) != 8) {
-									break;
-								}
-								mo->rebasing_buffer = false;
-								ut64 raw_ptr = r_read_le64 (tmp);
-								bool is_auth = (raw_ptr & (1ULL << 63)) != 0;
-								bool is_bind = (raw_ptr & (1ULL << 62)) != 0;
-								int ordinal = -1;
-								int addend = -1;
-								ut64 delta;
-								if (is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_bind *p =
-											(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
-								} else if (!is_auth && is_bind) {
-									struct dyld_chained_ptr_arm64e_bind *p =
-											(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
-									delta = p->next;
-									ordinal = p->ordinal;
-									addend = p->addend;
-								} else if (is_auth && !is_bind) {
-									struct dyld_chained_ptr_arm64e_auth_rebase *p =
-											(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-									delta = p->next;
-								} else {
-									struct dyld_chained_ptr_arm64e_rebase *p =
-											(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-									delta = p->next;
-								}
-								if (ordinal != -1) {
-									if (ordinal >= n_threaded_binds) {
-										R_LOG_DEBUG ("Malformed bind chain");
-										break;
-									}
-									struct reloc_t **ref_slot = RVecRelocRef_at (threaded_binds, ordinal);
-									struct reloc_t *ref = ref_slot ? *ref_slot : NULL;
-									if (!ref) {
-										R_LOG_DEBUG ("Inconsistent bind opcodes");
-										break;
-									}
-									struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-									*reloc = *ref;
-									reloc->addr = addr;
-									reloc->ntype = op;
-									reloc->offset = paddr;
-									if (addend != -1) {
-										reloc->addend = addend;
-									}
-									r_skiplist_insert (mo->relocs_cache, reloc);
-								}
-								addr += delta * wordsize;
-								if (!delta) {
-									break;
-								}
-							}
-						}
-						break;
-					default:
-						R_LOG_DEBUG ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
-					}
-					break;
-				}
-				case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
-					lib_ord = imm;
-					break;
-				case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
-					lib_ord = read_uleb128 (&p, end);
-					break;
-				case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
-					lib_ord = imm? (st8)(BIND_OPCODE_MASK | imm) : 0;
-					break;
-				case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM: {
-					sym_name = (char*)p;
-					while (*p++ && p < end) {
-						/* empty loop */
-					}
-					if (threaded_binds) {
-						break;
-					}
-					sym_ord = -1;
-					if (mo->symtab && mo->dysymtab.nundefsym < UT16_MAX) {
-						for (j = 0; j < mo->dysymtab.nundefsym; j++) {
-							size_t stridx = 0;
-							bool found = false;
-							int iundefsym = mo->dysymtab.iundefsym;
-							if (iundefsym >= 0 && iundefsym < mo->nsymtab) {
-								int sidx = iundefsym + j;
-								if (sidx < 0 || sidx >= mo->nsymtab) {
-									continue;
-								}
-								stridx = mo->symtab[sidx].n_strx;
-								if (stridx >= mo->symstrlen) {
-									continue;
-								}
-								found = true;
-							}
-							if (found && !strcmp ((const char *)mo->symstr + stridx, sym_name)) {
-								sym_ord = j;
-								break;
-							}
-						}
-					}
-					break;
-				}
-				case BIND_OPCODE_SET_TYPE_IMM:
-					type = imm;
-					break;
-				case BIND_OPCODE_SET_ADDEND_SLEB:
-					addend = r_sleb128 ((const ut8 **)&p, end);
-					break;
-				case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-					seg_idx = imm;
-					if (seg_idx >= mo->nsegs) {
-						R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", seg_idx);
-						free (opcodes);
-						RVecRelocRef_free (threaded_binds);
-						return false; // early exit to avoid future mayhem
-					}
-					addr = mo->segs[seg_idx].vmaddr + read_uleb128 (&p, end);
-					segment_end_addr = mo->segs[seg_idx].vmaddr \
-							+ mo->segs[seg_idx].vmsize;
-					break;
-				case BIND_OPCODE_ADD_ADDR_ULEB:
-					addr += read_uleb128 (&p, end);
-					break;
-#define DO_BIND() do {\
-	if (sym_ord < 0 && !sym_name) break;\
-	if (!threaded_binds) {\
-		if (seg_idx < 0 ) break;\
-		if (!addr) break;\
-	}\
-	struct reloc_t *reloc = R_NEW0 (struct reloc_t);\
-	reloc->addr = addr;\
-	if (seg_idx >= 0) {\
-		reloc->offset = addr - mo->segs[seg_idx].vmaddr + mo->segs[seg_idx].fileoff;\
-		reloc->addend = addend;\
-		if (type == BIND_TYPE_TEXT_PCREL32) {\
-			reloc->addend -= (mo->baddr + addr);\
-		}\
-	} else {\
-		reloc->addend = addend;\
-	}\
-	/* library ordinal ??? */ \
-	reloc->ntype = op; \
-	reloc->ord = lib_ord;\
-	reloc->ord = sym_ord;\
-	reloc->type = rel_type;\
-	if (sym_name) {\
-		r_str_ncpy (reloc->name, sym_name, 256);\
-	}\
-	if (threaded_binds) {\
-		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, sym_ord);\
-		if (slot) {\
-			*slot = reloc;\
-		} else {\
-			free (reloc);\
-		}\
-	} else {\
-		r_skiplist_insert (mo->relocs_cache, reloc);\
-	}\
-} while (0)
-				case BIND_OPCODE_DO_BIND:
-					if (!threaded_binds && addr >= segment_end_addr) {
-						R_LOG_DEBUG ("Malformed DO bind opcode 0x%"PFMT64x, addr);
-						goto beach;
-					}
-					DO_BIND ();
-					if (!threaded_binds) {
-						addr += wordsize;
-					} else {
-						sym_ord++;
-					}
-					break;
-				case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-					if (addr >= segment_end_addr) {
-						R_LOG_DEBUG ("Malformed ADDR ULEB bind opcode");
-						goto beach;
-					}
-					DO_BIND ();
-					addr += read_uleb128 (&p, end) + wordsize;
-					break;
-				case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-					if (addr >= segment_end_addr) {
-						R_LOG_DEBUG ("Malformed IMM SCALED bind opcode");
-						goto beach;
-					}
-					DO_BIND ();
-					addr += (ut64)imm * (ut64)wordsize + wordsize;
-					break;
-				case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
-					count = read_uleb128 (&p, end);
-					skip = read_uleb128 (&p, end);
-					if (!check_bind_count (count, addr, segment_end_addr, skip, wordsize)) {
-						R_LOG_DEBUG ("Count exceeds segment bounds");
-						goto beach;
-					}
-					for (j = 0; j < count; j++) {
-						if (addr >= segment_end_addr) {
-							R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
-							goto beach;
-						}
-						DO_BIND ();
-						addr += skip + wordsize;
-					}
-					break;
-#undef DO_BIND
-				default:
-					R_LOG_DEBUG ("unknown bind opcode 0x%02x in dyld_info", *p);
+			while (!state.done && p < end) {
+				if (!parse_bind_op (mo, &threaded_binds, ord_cache, &state, rel_type, wordsize, pidx == 1, &p, end)) {
 					R_FREE (opcodes);
 					RVecRelocRef_free (threaded_binds);
+					ht_pp_free (ord_cache);
 					return false;
 				}
+			}
+			if (state.stop) {
+				break;
 			}
 			opcodes_offset += partition_size;
 		}
 		R_FREE (opcodes);
 		RVecRelocRef_free (threaded_binds);
+		ht_pp_free (ord_cache);
 		threaded_binds = NULL;
 	}
 
 	if (mo->symtab && mo->symstr && mo->sects && mo->indirectsyms) {
 		int j;
-		int amount = mo->dysymtab.nundefsym;
-		if (amount < 0) {
-			amount = 0;
-		}
-		const int bin_limit = mo->limit;
-		if (bin_limit > 0 && amount > bin_limit) {
-			amount = bin_limit;
-		}
+		int amount = bounded_count_for_int_loop (mo->dysymtab.nundefsym, mo->limit);
 		for (j = 0; j < amount; j++) {
 			struct reloc_t *reloc = parse_import_ptr (mo, j);
 			if (!reloc) {
@@ -4073,7 +4121,6 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 	if (!mo->dyld_info && mo->chained_starts && mo->nsegs && mo->fixups_offset) {
 		walk_bind_chains (mo, mo->relocs_cache);
 	}
-beach:
 	R_FREE (opcodes);
 	RVecRelocRef_free (threaded_binds);
 	return true;
@@ -4458,18 +4505,18 @@ bool MACH0_(has_nx)(struct MACH0_(obj_t) *mo) {
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) *hdr) {
 	const char *mhtype = "Unknown";
 	switch (hdr->filetype) {
-	case MH_OBJECT:     mhtype = "Relocatable object"; break;
-	case MH_EXECUTE:    mhtype = "Executable file"; break;
-	case MH_FVMLIB:     mhtype = "Fixed VM shared library"; break;
-	case MH_CORE:       mhtype = "Core file"; break;
-	case MH_PRELOAD:    mhtype = "Preloaded executable file"; break;
-	case MH_DYLIB:      mhtype = "Dynamically bound shared library"; break;
-	case MH_DYLINKER:   mhtype = "Dynamic link editor"; break;
-	case MH_BUNDLE:     mhtype = "Dynamically bound bundle file"; break;
+	case MH_OBJECT: mhtype = "Relocatable object"; break;
+	case MH_EXECUTE: mhtype = "Executable file"; break;
+	case MH_FVMLIB: mhtype = "Fixed VM shared library"; break;
+	case MH_CORE: mhtype = "Core file"; break;
+	case MH_PRELOAD: mhtype = "Preloaded executable file"; break;
+	case MH_DYLIB: mhtype = "Dynamically bound shared library"; break;
+	case MH_DYLINKER: mhtype = "Dynamic link editor"; break;
+	case MH_BUNDLE: mhtype = "Dynamically bound bundle file"; break;
 	case MH_DYLIB_STUB: mhtype = "Shared library stub for static linking (no sections)"; break;
-	case MH_DSYM:       mhtype = "Companion file with only debug sections"; break;
+	case MH_DSYM: mhtype = "Companion file with only debug sections"; break;
 	case MH_KEXT_BUNDLE: mhtype = "Kernel extension bundle file"; break;
-	case MH_FILESET:    mhtype = "Kernel cache file"; break;
+	case MH_FILESET: mhtype = "Kernel cache file"; break;
 	}
 	return strdup (mhtype);
 }
