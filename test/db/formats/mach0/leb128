@@ -15,3 +15,15 @@ ERROR: malformed uleb128
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
 EOF
 RUN
+
+NAME=macho trie malformed uleb128
+FILE=bins/mach0/macho-trie-bad-export-size
+CMDS=<<EOF
+iR
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+WARN: dyld export trie is out of bounds
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+EOF
+RUN
