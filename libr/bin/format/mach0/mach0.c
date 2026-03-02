@@ -1593,9 +1593,6 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *mo, ut32 offset, ut32 siz
 			break;
 		}
 		struct r_dyld_chained_starts_in_segment *cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
-		if (!cur_seg) {
-			return false;
-		}
 		mo->chained_starts[i] = cur_seg;
 		if (r_buf_fread_at (mo->b, starts_at + seg_off, (ut8 *)cur_seg, "isslis", 1) != 22) {
 			return false;
@@ -1677,9 +1674,6 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) *mo) {
 					cur_seg = mo->chained_starts[seg_idx];
 					if (!cur_seg) {
 						cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
-						if (!cur_seg) {
-							break;
-						}
 						mo->chained_starts[seg_idx] = cur_seg;
 						cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
 						cur_seg->page_size = ps;
@@ -2276,36 +2270,34 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) *options, RBinFile *bf) {
 struct MACH0_(obj_t) *MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *options) {
 	R_RETURN_VAL_IF_FAIL (buf && options->bf->bo, NULL);
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
-	if (mo) {
-		mo->b = r_ref (buf);
-		mo->main_addr = UT64_MAX;
-		mo->kv = sdb_new (NULL, "bin.mach0", 0);
-		mo->imports_by_name = ht_pp_new0 ();
-		// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
-		// RVecRBinSymbol_init (&options->bf->bo->symbols_vec);
-		mo->symbols_vec = &(options->bf->bo->symbols_vec);
-		mo->options = *options;
-		mo->limit = options->bf->rbin->options.limit;
-		// mo->nofuncstarts = options->nofuncstarts;
-		// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
-		ut64 sz = r_buf_size (buf);
-		{
+	mo->b = r_ref (buf);
+	mo->main_addr = UT64_MAX;
+	mo->kv = sdb_new (NULL, "bin.mach0", 0);
+	mo->imports_by_name = ht_pp_new0 ();
+	// probably unnecessary indirection if we pass bf or bo to the apis instead of mo
+	// RVecRBinSymbol_init (&options->bf->bo->symbols_vec);
+	mo->symbols_vec = &(options->bf->bo->symbols_vec);
+	mo->options = *options;
+	mo->limit = options->bf->rbin->options.limit;
+	// mo->nofuncstarts = options->nofuncstarts;
+	// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
+	ut64 sz = r_buf_size (buf);
+	{
 #if 0
-			if (options->bf->loadaddr == UT64_MAX - sz) {
-				// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
-				// sz = 4 * 1024 * 1024;
-			}
+		if (options->bf->loadaddr == UT64_MAX - sz) {
+			// handle the negative binsize problem when source io returns -1 as size. assume its 2MB
+			// sz = 4 * 1024 * 1024;
+		}
 #endif
-			mo->verbose = options->verbose;
-			mo->header_at = options->header_at;
-			mo->maxsymlen = options->maxsymlen;
-			mo->symbols_off = options->symbols_off;
-			mo->parse_start_symbols = options->parse_start_symbols;
-		}
-		mo->size = sz;
-		if (!init (mo)) {
-			return MACH0_(mach0_free)(mo);
-		}
+		mo->verbose = options->verbose;
+		mo->header_at = options->header_at;
+		mo->maxsymlen = options->maxsymlen;
+		mo->symbols_off = options->symbols_off;
+		mo->parse_start_symbols = options->parse_start_symbols;
+	}
+	mo->size = sz;
+	if (!init (mo)) {
+		return MACH0_(mach0_free)(mo);
 	}
 	return mo;
 }
@@ -2711,11 +2703,26 @@ static int walk_exports_trie(struct MACH0_(obj_t) *bin, ut64 trie_off, ut64 size
 	if (!size || size >= SIZE_MAX) {
 		return 0;
 	}
-	ut8 *trie = calloc (size + 1, 1);
+	if (trie_off == UT64_MAX) {
+		R_LOG_WARN ("dyld export trie is out of bounds");
+		return 0;
+	}
+	if (bin->size != UT64_MAX) {
+		if (trie_off >= bin->size) {
+			R_LOG_WARN ("dyld export trie is out of bounds");
+			return 0;
+		}
+		ut64 trie_left = bin->size - trie_off;
+		if (size > trie_left) {
+			R_LOG_WARN ("dyld export trie is out of bounds");
+			size = trie_left;
+		}
+	}
+	ut8 *trie = calloc ((size_t)size + 1, 1);
 	if (!trie) {
 		return 0;
 	}
-	ut8 *end = trie + size;
+	ut8 *end = trie + (size_t)size;
 	if (r_buf_read_at (bin->b, trie_off, trie, size) != size) {
 		return 0;
 	}
@@ -2726,9 +2733,6 @@ static int walk_exports_trie(struct MACH0_(obj_t) *bin, ut64 trie_off, ut64 size
 	}
 
 	RTrieState *root = R_NEW0 (RTrieState);
-	if (!root) {
-		goto beach;
-	}
 	root->node = trie;
 	root->i = 0;
 	root->label = NULL;
@@ -2805,15 +2809,12 @@ static int walk_exports_trie(struct MACH0_(obj_t) *bin, ut64 trie_off, ut64 size
 			free (r_list_pop (states));
 			continue;
 		}
-		if (!state->next_child) {
-			state->next_child = p;
-		} else {
+		if (state->next_child) {
 			p = state->next_child;
+		} else {
+			state->next_child = p;
 		}
 		RTrieState * next = R_NEW0 (RTrieState);
-		if (!next) {
-			goto beach;
-		}
 		next->label = (char *) p;
 		p += strlen (next->label) + 1;
 		if (p >= end) {
@@ -3518,11 +3519,6 @@ static void parse_relocation_info(struct MACH0_(obj_t) *mo, RSkipList *relocs, u
 		}
 
 		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-		if (!reloc) {
-			free (info);
-			free (sym_name);
-			return;
-		}
 
 		reloc->addr = offset_to_vaddr (mo, a_info.r_address);
 		reloc->offset = a_info.r_address;
@@ -3587,10 +3583,6 @@ static bool walk_bind_chains_callback(void * context, RFixupEventDetails * event
 			char *name = r_buf_get_string (mo->b, symbols_offset + name_offset);
 			if (name) {
 				struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-				if (!reloc) {
-					free (name);
-					return false;
-				}
 				reloc->addr = offset_to_vaddr (mo, event_details->offset);
 				reloc->offset = event_details->offset;
 				reloc->ord = import_index;
@@ -3875,9 +3867,6 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 										break;
 									}
 									struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-									if (!reloc) {
-										break;
-									}
 									*reloc = *ref;
 									reloc->addr = addr;
 									reloc->ntype = op;
@@ -4115,9 +4104,6 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *mo) {
 		return NULL;
 	}
 	struct addr_t *entry = R_NEW0 (struct addr_t);
-	if (!entry) {
-		return NULL;
-	}
 	entry->addr = ea;
 	entry->offset = addr_to_offset (mo, entry->addr);
 	entry->haddr = sdb_num_get (mo->kv, "mach0.entry.offset", 0);
