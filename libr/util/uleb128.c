@@ -1,18 +1,15 @@
-/* radare - LGPL - Copyright 2014-2023 - pancake */
+/* radare - LGPL - Copyright 2014-2026 - pancake */
 
-#include "r_util/r_str.h"
-#include <r_util.h>
+#include "../include/r_util/r_str.h"
+#include "../include/r_util.h"
 
 /* dex/dwarf uleb128 implementation */
 
 R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **error) {
+	R_RETURN_VAL_IF_FAIL (data, NULL);
 	ut8 c;
 	ut64 s, sum = 0;
-	const ut8 *data_end;
 	bool malformed_uleb = true;
-	if (!data) {
-		return NULL;
-	}
 	if (v) {
 		*v = 0LL;
 	}
@@ -23,14 +20,14 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **e
 	if (datalen < 0) {
 		return NULL;
 	}
-	data_end = data + datalen;
+	const ut8 *data_end = data + datalen;
 	if (data && datalen > 0) {
 		if (*data) {
 			for (s = 0; data < data_end; s += 7) {
 				c = *(data++) & 0xff;
 				if (s > 63) {
 					if (error) {
-						*error = r_str_newf ("r_uleb128: undefined behaviour in %d shift on ut32", (int)s);
+						*error = "undefined uleb128 behaviour in signed ut32 shift";
 					}
 					break;
 				} else {
@@ -41,10 +38,8 @@ R_API const ut8 *r_uleb128(const ut8 *data, int datalen, ut64 *v, const char **e
 					break;
 				}
 			}
-			if (malformed_uleb) {
-				if (error) {
-					*error = r_str_newf ("malformed uleb128");
-				}
+			if (malformed_uleb && error) {
+				*error = "malformed uleb128";
 			}
 		} else {
 			data++;
