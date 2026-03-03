@@ -3726,6 +3726,12 @@ typedef struct {
 	bool stop;
 } RBindOpState;
 
+typedef struct {
+	struct MACH0_(obj_t) *mo;
+	RVecRelocRef **threaded_binds;
+	HtPP *ord_cache;
+} RBindOpRefs;
+
 static HtPP *build_symbol_ordinal_cache(struct MACH0_(obj_t) *mo) {
 	HtPP *cache = ht_pp_new0 ();
 	if (!mo->symtab || mo->dysymtab.nundefsym >= UT16_MAX) {
@@ -3870,40 +3876,34 @@ static void apply_threaded_bind(struct MACH0_(obj_t) *mo, RVecRelocRef *threaded
 	}
 }
 
-static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_binds, HtPP *ord_cache, RBindOpState *state, ut8 rel_type, size_t wordsize, bool in_lazy_binds, ut8 **p, ut8 *end) {
-	ut8 op = **p & BIND_OPCODE_MASK;
-	ut8 imm = **p & BIND_IMMEDIATE_MASK;
-	(*p)++;
-	switch (op) {
-	case BIND_OPCODE_DONE:
-		if (!in_lazy_binds) {
-			state->done = true;
+static bool parse_bind_op_threaded(RBindOpRefs *refs, RBindOpState *state, ut8 op, ut8 imm, size_t wordsize, ut8 **p, ut8 *end) {
+	switch (imm) {
+	case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
+		ut64 table_size = read_uleb128 (p, end);
+		if (!is_valid_ordinal_table_size (table_size)) {
+			R_LOG_DEBUG ("BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong");
+		} else {
+			if (*refs->threaded_binds) {
+				RVecRelocRef_free (*refs->threaded_binds);
+			}
+			*refs->threaded_binds = reloc_ref_vec_new_with_len (table_size);
+			if (*refs->threaded_binds) {
+				state->sym_ord = 0;
+			}
 		}
 		return true;
-	case BIND_OPCODE_THREADED:
-		switch (imm) {
-		case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB: {
-			ut64 table_size = read_uleb128 (p, end);
-			if (!is_valid_ordinal_table_size (table_size)) {
-				R_LOG_DEBUG ("BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB size is wrong");
-			} else {
-				if (*threaded_binds) {
-					RVecRelocRef_free (*threaded_binds);
-				}
-				*threaded_binds = reloc_ref_vec_new_with_len (table_size);
-				if (*threaded_binds) {
-					state->sym_ord = 0;
-				}
-			}
-			return true;
-		}
-		case BIND_SUBOPCODE_THREADED_APPLY:
-			apply_threaded_bind (mo, *threaded_binds, state, op, wordsize);
-			return true;
-		default:
-			R_LOG_DEBUG ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
-			return true;
-		}
+	}
+	case BIND_SUBOPCODE_THREADED_APPLY:
+		apply_threaded_bind (refs->mo, *refs->threaded_binds, state, op, wordsize);
+		return true;
+	default:
+		R_LOG_DEBUG ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
+		return true;
+	}
+}
+
+static bool parse_bind_op_setters(RBindOpRefs *refs, RBindOpState *state, ut8 op, ut8 imm, ut8 **p, ut8 *end) {
+	switch (op) {
 	case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 		state->lib_ord = imm;
 		return true;
@@ -3921,8 +3921,8 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 		if (*p < end) {
 			(*p)++;
 		}
-		if (!*threaded_binds) {
-			void *ord = ord_cache? ht_pp_find (ord_cache, state->sym_name, NULL): NULL;
+		if (!*refs->threaded_binds) {
+			void *ord = refs->ord_cache? ht_pp_find (refs->ord_cache, state->sym_name, NULL): NULL;
 			state->sym_ord = ord? (int)((size_t)ord - 1): -1;
 		}
 		return true;
@@ -3934,23 +3934,30 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 		return true;
 	case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
 		state->seg_idx = imm;
-		if (state->seg_idx >= mo->nsegs) {
+		if (state->seg_idx >= refs->mo->nsegs) {
 			R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
 			return false;
 		}
-		state->addr = mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
-		state->segment_end_addr = mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].vmsize;
+		state->addr = refs->mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
+		state->segment_end_addr = refs->mo->segs[state->seg_idx].vmaddr + refs->mo->segs[state->seg_idx].vmsize;
 		return true;
 	case BIND_OPCODE_ADD_ADDR_ULEB:
 		state->addr += read_uleb128 (p, end);
 		return true;
+	default:
+		return false;
+	}
+}
+
+static bool parse_bind_op_do_bind(RBindOpRefs *refs, RBindOpState *state, ut8 op, ut8 imm, ut8 rel_type, size_t wordsize, ut8 **p, ut8 *end) {
+	switch (op) {
 	case BIND_OPCODE_DO_BIND:
-		if (!*threaded_binds && state->addr >= state->segment_end_addr) {
+		if (!*refs->threaded_binds && state->addr >= state->segment_end_addr) {
 			R_LOG_DEBUG ("Malformed DO bind opcode 0x%"PFMT64x, state->addr);
 			return stop_bind_parsing (state);
 		}
-		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
-		if (!*threaded_binds) {
+		insert_bind_reloc (refs->mo, *refs->threaded_binds, state, op, rel_type);
+		if (!*refs->threaded_binds) {
 			state->addr += wordsize;
 		} else {
 			state->sym_ord++;
@@ -3961,7 +3968,7 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 			R_LOG_DEBUG ("Malformed ADDR ULEB bind opcode");
 			return stop_bind_parsing (state);
 		}
-		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+		insert_bind_reloc (refs->mo, *refs->threaded_binds, state, op, rel_type);
 		state->addr += read_uleb128 (p, end) + wordsize;
 		return true;
 	case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
@@ -3969,7 +3976,7 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 			R_LOG_DEBUG ("Malformed IMM SCALED bind opcode");
 			return stop_bind_parsing (state);
 		}
-		insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+		insert_bind_reloc (refs->mo, *refs->threaded_binds, state, op, rel_type);
 		state->addr += (ut64)imm * (ut64)wordsize + wordsize;
 		return true;
 	case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB: {
@@ -3985,11 +3992,42 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
 				return stop_bind_parsing (state);
 			}
-			insert_bind_reloc (mo, *threaded_binds, state, op, rel_type);
+			insert_bind_reloc (refs->mo, *refs->threaded_binds, state, op, rel_type);
 			state->addr += skip + wordsize;
 		}
 		return true;
 	}
+	default:
+		return false;
+	}
+}
+
+static bool parse_bind_op(RBindOpRefs *refs, RBindOpState *state, ut8 rel_type, size_t wordsize, bool in_lazy_binds, ut8 **p, ut8 *end) {
+	ut8 op = **p & BIND_OPCODE_MASK;
+	ut8 imm = **p & BIND_IMMEDIATE_MASK;
+	(*p)++;
+	switch (op) {
+	case BIND_OPCODE_DONE:
+		if (!in_lazy_binds) {
+			state->done = true;
+		}
+		return true;
+	case BIND_OPCODE_THREADED:
+		return parse_bind_op_threaded (refs, state, op, imm, wordsize, p, end);
+	case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
+	case BIND_OPCODE_SET_DYLIB_ORDINAL_ULEB:
+	case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
+	case BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM:
+	case BIND_OPCODE_SET_TYPE_IMM:
+	case BIND_OPCODE_SET_ADDEND_SLEB:
+	case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
+	case BIND_OPCODE_ADD_ADDR_ULEB:
+		return parse_bind_op_setters (refs, state, op, imm, p, end);
+	case BIND_OPCODE_DO_BIND:
+	case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
+	case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
+	case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
+		return parse_bind_op_do_bind (refs, state, op, imm, rel_type, wordsize, p, end);
 	default:
 		R_LOG_DEBUG ("unknown bind opcode 0x%02x in dyld_info", op);
 		return false;
@@ -4057,6 +4095,10 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 			return false;
 		}
 		HtPP *ord_cache = build_symbol_ordinal_cache (mo);
+		RBindOpRefs refs = {0};
+		refs.mo = mo;
+		refs.threaded_binds = &threaded_binds;
+		refs.ord_cache = ord_cache;
 
 		size_t partition_sizes[] = {bind_size, lazy_size, weak_size};
 		size_t pidx;
@@ -4084,7 +4126,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
 			while (!state.done && p < end) {
-				if (!parse_bind_op (mo, &threaded_binds, ord_cache, &state, rel_type, wordsize, pidx == 1, &p, end)) {
+				if (!parse_bind_op (&refs, &state, rel_type, wordsize, pidx == 1, &p, end)) {
 					R_FREE (opcodes);
 					RVecRelocRef_free (threaded_binds);
 					ht_pp_free (ord_cache);
