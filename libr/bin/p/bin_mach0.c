@@ -639,7 +639,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 	case R_FIXUP_EVENT_REBASE_AUTH:
 		{
 			ut8 data[8] = {0};
-			ut64 v = ((RFixupRebaseEventDetails *) event_details)->ptr_value;
+			ut64 v = event_details->ptr_value;
 			add_fixup (rflist, in_buf, v);
 			memcpy (&data, &v, event_details->ptr_size);
 			r_buf_write_at (ctx->obj->b, in_buf, data, event_details->ptr_size);
