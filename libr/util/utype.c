@@ -458,43 +458,103 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 		char *type = sdb_array_get (TDB, var2, 0, NULL);
 		if (type) {
 			char var3[128] = { 0 };
+			char type_name[256] = { 0 };
+			const char *enum_name = NULL;
+			r_str_trim (type);
+			const char *type_view = type;
+			while (r_str_startswith (type_view, "const ")
+				|| r_str_startswith (type_view, "volatile ")
+				|| r_str_startswith (type_view, "restrict ")) {
+				const char *sp = strchr (type_view, ' ');
+				if (!sp || !sp[1]) {
+					break;
+				}
+				type_view = sp + 1;
+			}
+			r_str_ncpy (type_name, type_view, sizeof (type_name));
+			r_str_trim (type_name);
+			char *arr = strchr (type_name, '[');
+			if (arr) {
+				char *arr_end = strchr (arr + 1, ']');
+				if (arr_end) {
+					*arr_end = 0;
+					if (elements <= 0) {
+						int parsed_elems = atoi (arr + 1);
+						if (parsed_elems > 0) {
+							elements = parsed_elems;
+						}
+					}
+					*arr = 0;
+					r_str_trim (type_name);
+				}
+			}
+			const char *base_type = type_name;
+			if (r_str_startswith (base_type, "type.")) {
+				base_type += 5;
+			}
 			// Handle general pointers except for char *
-			if ((strstr (type, "*(") || strstr (type, " *")) && !r_str_startswith (type, "char *")) {
+			if ((strstr (base_type, "*(") || strstr (base_type, " *")) && !r_str_startswith (base_type, "char *")) {
 				isfp = true;
-			} else if (r_str_startswith (type, "struct ")) {
-				struct_name = type + 7;
+			} else if (r_str_startswith (base_type, "struct ")) {
+				struct_name = (char *)base_type + 7;
 				// TODO: iterate over all the struct fields, and format the format and vars
 				snprintf (var3, sizeof (var3), "struct.%s", struct_name);
 				tfmt = sdb_const_get (TDB, var3, NULL);
 				isStruct = true;
 			} else {
 				// Check if the type is a struct/union without explicit prefix
-				const char *type_kind = sdb_const_get (TDB, type, NULL);
+				const char *type_kind = sdb_const_get (TDB, base_type, NULL);
 				if (type_kind && !strcmp (type_kind, "struct")) {
-					struct_name = type;
-					snprintf (var3, sizeof (var3), "struct.%s", type);
+					struct_name = (char *)base_type;
+					snprintf (var3, sizeof (var3), "struct.%s", base_type);
 					tfmt = sdb_const_get (TDB, var3, NULL);
 					isStruct = true;
 				} else if (type_kind && !strcmp (type_kind, "union")) {
-					struct_name = type;
-					snprintf (var3, sizeof (var3), "union.%s", type);
+					struct_name = (char *)base_type;
+					snprintf (var3, sizeof (var3), "union.%s", base_type);
 					tfmt = sdb_const_get (TDB, var3, NULL);
 					isStruct = true;
 				} else {
 					// special case for char[]. Use char* format type without *
-					if (!strcmp (type, "char") && elements > 0) {
+					if (!strcmp (base_type, "char") && elements > 0) {
 						tfmt = sdb_const_get (TDB, "type.char *", NULL);
 						if (tfmt && *tfmt == '*') {
 							tfmt++;
 						}
 					} else {
-						if (r_str_startswith (type, "enum ")) {
-							snprintf (var3, sizeof (var3), "%s", type + 5);
+						if (r_str_startswith (base_type, "enum ")) {
+							enum_name = base_type + 5;
+							snprintf (var3, sizeof (var3), "%s", enum_name);
 							isEnum = true;
 						} else {
-							snprintf (var3, sizeof (var3), "type.%s", type);
+							snprintf (var3, sizeof (var3), "type.%s", base_type);
 						}
 						tfmt = sdb_const_get (TDB, var3, NULL);
+						if (!tfmt) {
+							if (!strcmp (base_type, "int")) {
+								tfmt = sdb_const_get (TDB, "type.int32_t", NULL);
+								if (!tfmt) {
+									tfmt = "d";
+								}
+							} else if (!strcmp (base_type, "short") || !strcmp (base_type, "short int")) {
+								tfmt = sdb_const_get (TDB, "type.int16_t", NULL);
+								if (!tfmt) {
+									tfmt = "w";
+								}
+							} else if (!strcmp (base_type, "char")) {
+								tfmt = sdb_const_get (TDB, "type.int8_t", NULL);
+								if (!tfmt) {
+									tfmt = "c";
+								}
+							} else if (!strcmp (base_type, "long long")
+								|| !strcmp (base_type, "long long int")
+								|| !strcmp (base_type, "int64_t")) {
+								tfmt = sdb_const_get (TDB, "type.int64_t", NULL);
+								if (!tfmt) {
+									tfmt = "q";
+								}
+							}
+						}
 					}
 				}
 			}
@@ -541,18 +601,18 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				if (elements > 0) {
 					r_strbuf_appendf (fmt_sb, "[%d]", elements);
 				}
-				if (isStruct) {
-					r_strbuf_append (fmt_sb, "?");
-					if (struct_name) {
-						r_strbuf_appendf (vars_sb, "(%s)%s", struct_name, p);
-					}
-					r_strbuf_append (vars_sb, " ");
-				} else if (isEnum) {
-					r_strbuf_append (fmt_sb, "E");
-					r_strbuf_appendf (vars_sb, "(%s)%s ", type + 5, p);
-				} else {
-					r_strbuf_append (fmt_sb, tfmt);
-					r_strbuf_append (vars_sb, p);
+					if (isStruct) {
+						r_strbuf_append (fmt_sb, "?");
+						if (struct_name) {
+							r_strbuf_appendf (vars_sb, "(%s)%s", struct_name, p);
+						}
+						r_strbuf_append (vars_sb, " ");
+					} else if (isEnum) {
+						r_strbuf_append (fmt_sb, "E");
+						r_strbuf_appendf (vars_sb, "(%s)%s ", enum_name ? enum_name : base_type, p);
+					} else {
+						r_strbuf_append (fmt_sb, tfmt);
+						r_strbuf_append (vars_sb, p);
 					r_strbuf_append (vars_sb, " ");
 				}
 				current_offset += fmt_type_size (tfmt, false, elements);

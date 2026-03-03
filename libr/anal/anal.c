@@ -322,17 +322,34 @@ R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	R_RETURN_VAL_IF_FAIL (anal && os, false);
 	Sdb *types = anal->sdb_types;
 	char *dir_prefix = r_sys_prefix (NULL);
+	SdbGperf *base_gp = r_anal_get_gperf_types ("types");
 	SdbGperf *gp = r_anal_get_gperf_types (os);
 	if (gp) {
-		Sdb *gd = sdb_new0 ();
-		sdb_open_gperf (gd, gp);
 		sdb_reset (anal->sdb_types);
-		sdb_merge (anal->sdb_types, gd);
-		sdb_close (gd);
-		sdb_free (gd);
+		if (base_gp) {
+			Sdb *base_db = sdb_new0 ();
+			sdb_open_gperf (base_db, base_gp);
+			sdb_merge (anal->sdb_types, base_db);
+			sdb_close (base_db);
+			sdb_free (base_db);
+		}
+		if (gp != base_gp) {
+			Sdb *os_db = sdb_new0 ();
+			sdb_open_gperf (os_db, gp);
+			sdb_merge (anal->sdb_types, os_db);
+			sdb_close (os_db);
+			sdb_free (os_db);
+		}
 		free (dir_prefix);
 		return r_anal_set_triplet (anal, os, NULL, -1);
 	}
+	sdb_reset (types);
+	char *basepath = r_str_newf ("%s%s%s%stypes.sdb",
+		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR);
+	if (r_file_exists (basepath)) {
+		sdb_concat_by_path (types, basepath);
+	}
+	free (basepath);
 	// char *ff = r_str_newf ("types-%s.sdb", os);
 	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff, NULL);
 	char *dbpath = r_str_newf ("%s%s%s%stypes-%s.sdb",
