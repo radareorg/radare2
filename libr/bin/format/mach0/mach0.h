@@ -45,6 +45,31 @@
 #define CSSLOT_TICKETSLOT 0x10002
 #define CSSLOT_CMS_SIGNATURE CSSLOT_SIGNATURESLOT
 
+typedef struct {
+	ut32 magic; /* magic number (CSMAGIC_CODEDIRECTORY) */
+	ut32 length; /* total length of CodeDirectory blob */
+	ut32 version; /* compatibility version */
+	ut32 flags; /* setup and mode flags */
+	ut32 hashOffset; /* offset of hash slot element at index zero */
+	ut32 identOffset; /* offset of identifier string */
+	ut32 nSpecialSlots; /* number of special hash slots */
+	ut32 nCodeSlots; /* number of ordinary (code) hash slots */
+	ut32 codeLimit; /* limit to main image signature range */
+	ut8 hashSize; /* size of each hash in bytes */
+	ut8 hashType; /* type of hash (cdHashType* constants) */
+	ut8 platform; /* unused (must be zero) */
+	ut8 pageSize; /* log2 (page size in bytes); 0 => infinite */
+	ut32 spare2; /* unused (must be zero) */
+	/* followed by dynamic content as located by offset fields above */
+	ut32 scatterOffset;
+	ut32 teamIDOffset;
+	ut32 spare3;
+	ut64 codeLimit64;
+	ut64 execSegBase;
+	ut64 execSegLimit;
+	ut64 execSegFlags;
+} CS_CodeDirectory;
+
 typedef enum {
 	R_FIXUP_EVENT_NONE = 0,
 	R_FIXUP_EVENT_REBASE = 1,
