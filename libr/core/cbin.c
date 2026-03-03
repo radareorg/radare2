@@ -4109,13 +4109,17 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	r_list_foreach (c->methods, iter3, sym) {
 		const char *sname = r_bin_name_tostring2 (sym->name, pref);
 		char *rp = NULL;
+		bool is_class_method = (sym->attr & R_BIN_ATTR_CLASS) != 0;
 		if (sym->rtype && sym->rtype[0] != '@') {
 			rp = get_rp (sym->rtype);
 		} else if (sym->type) {
 			rp = strdup ("id");
 		}
 		if (rp) {
-			const char *sign = r_str_startswith (sym->type, R_BIN_TYPE_METH_STR)? "+": "-";
+			if (!is_class_method && sym->type) {
+				is_class_method = !r_str_startswith (sym->type, R_BIN_TYPE_METH_STR);
+			}
+			const char *sign = is_class_method? "+": "-";
 			r_cons_printf (core->cons, "%s (%s) %s\n", sign, rp, sname);
 			free (rp);
 		}
