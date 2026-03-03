@@ -890,9 +890,14 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasi
 	free (p);
 }
 
+static void set_malformed_entitlement(struct MACH0_(obj_t) *mo) {
+	free (mo->signature);
+	mo->signature = (ut8 *)strdup ("Malformed entitlement");
+}
+
 // parse the Load Command
 static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
-	int i,len;
+	int i, len;
 	ut32 data;
 	mo->signature = NULL;
 	struct linkedit_data_command link = {0};
@@ -900,9 +905,6 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 	struct blob_index_t idx = {0};
 	struct super_blob_t super = {{0}};
 
-	if (off > mo->size || off + sizeof (struct linkedit_data_command) > mo->size) {
-		return false;
-	}
 	len = r_buf_read_at (mo->b, off, lit, sizeof (struct linkedit_data_command));
 	if (len != sizeof (struct linkedit_data_command)) {
 		R_LOG_ERROR ("Failed to get data while parsing LC_CODE_SIGNATURE command");
@@ -914,13 +916,19 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 	link.datasize = r_read_ble32 (&lit[12], mo->big_endian);
 
 	data = link.dataoff;
-	if (data > mo->size || data + sizeof (struct super_blob_t) > mo->size) {
-		mo->signature = (ut8 *)strdup ("Malformed entitlement");
+	if (link.datasize < sizeof (struct super_blob_t)) {
+		set_malformed_entitlement (mo);
 		return true;
 	}
 	super.blob.magic = r_buf_read_ble32_at (mo->b, data, mach0_endian);
 	super.blob.length = r_buf_read_ble32_at (mo->b, data + 4, mach0_endian);
 	super.count = r_buf_read_ble32_at (mo->b, data + 8, mach0_endian);
+	if (super.blob.length < sizeof (struct super_blob_t) || super.blob.length > link.datasize) {
+		set_malformed_entitlement (mo);
+		return true;
+	}
+	ut64 max_slots = (super.blob.length - sizeof (struct super_blob_t)) / sizeof (struct blob_index_t);
+	ut32 slots = (ut32)R_MIN ((ut64)super.count, max_slots);
 	// XXX deprecate
 	bool isVerbose = r_sys_getenv_asbool ("RABIN2_CODESIGN_VERBOSE");
 	// to dump all certificates
@@ -929,72 +937,94 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 	// $ openssl asn1parse -inform der -in a|less
 	// $ openssl pkcs7 -inform DER -print_certs -text -in a
 	// uhm we have pFa to parse der/asn1 we can do it inline
-	for (i = 0; i < super.count; i++) {
-		if (data + i > mo->size) {
-			mo->signature = (ut8 *)strdup ("Malformed entitlement");
-			break;
-		}
-		struct blob_index_t bi = { 0 };
-		if (r_buf_read_at (mo->b, data + 12 + (i * sizeof (struct blob_index_t)),
-			(ut8*)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
-			break;
-		}
-		if (i > 32 && idx.type == 0 && idx.offset == 0) {
+	ut64 index_off = data + sizeof (struct super_blob_t);
+	for (i = 0; i < slots; i++, index_off += sizeof (struct blob_index_t)) {
+		struct blob_index_t bi = {0};
+		if (r_buf_read_at (mo->b, index_off, (ut8*)&bi, sizeof (struct blob_index_t)) < sizeof (struct blob_index_t)) {
+			set_malformed_entitlement (mo);
 			break;
 		}
 		idx.type = r_read_ble32 (&bi.type, mach0_endian);
 		idx.offset = r_read_ble32 (&bi.offset, mach0_endian);
-		switch (idx.type) {
-		case CSSLOT_ENTITLEMENTS:
-			if (true || isVerbose) {
-				ut64 off = data + idx.offset;
-				if (off > mo->size || off + sizeof (struct blob_t) > mo->size) {
-					mo->signature = (ut8 *)strdup ("Malformed entitlement");
-					break;
-				}
-				struct blob_t entitlements = {0};
-				entitlements.magic = r_buf_read_ble32_at (mo->b, off, mach0_endian);
-				entitlements.length = r_buf_read_ble32_at (mo->b, off + 4, mach0_endian);
-				len = entitlements.length - sizeof (struct blob_t);
-				if (len <= mo->size && len > 1) {
-					mo->signature = calloc (1, len + 1);
-					if (!mo->signature) {
-						break;
-					}
-					if (off + sizeof (struct blob_t) + len < r_buf_size (mo->b)) {
-						r_buf_read_at (mo->b, off + sizeof (struct blob_t), (ut8 *)mo->signature, len);
-						if (len >= 0) {
-							mo->signature[len] = '\0';
-						}
-					} else {
-						mo->signature = (ut8 *)strdup ("Malformed entitlement");
-					}
-				} else {
-					mo->signature = (ut8 *)strdup ("Malformed entitlement");
-				}
+
+		if (idx.offset > super.blob.length - sizeof (struct blob_t)) {
+			if (mo->verbose) {
+				R_LOG_DEBUG ("Invalid code signature slot offset %u", idx.offset);
 			}
-			break;
-		case CSSLOT_CODEDIRECTORY:
+			continue;
+		}
+		ut64 slot_off = (ut64)data + idx.offset;
+
+		if (idx.type == CSSLOT_CODEDIRECTORY
+			|| (idx.type >= CSSLOT_ALTERNATE_CODEDIRECTORIES
+			&& idx.type < CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT)) {
 			if (isVerbose) {
 				RBinFile *bf = mo->options.bf;
-				if (bf && bf->rbin && bf->rbin->mb.hash) {
-					parseCodeDirectory (&bf->rbin->mb, mo->b, data + idx.offset, link.datasize);
+				ut32 slot_size = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
+				if (slot_size >= sizeof (struct blob_t)
+					&& slot_size <= super.blob.length
+					&& idx.offset <= super.blob.length - slot_size) {
+					if (bf && bf->rbin && bf->rbin->mb.hash) {
+						parseCodeDirectory (&bf->rbin->mb, mo->b, slot_off, slot_size);
+					}
+				} else if (mo->verbose) {
+					R_LOG_DEBUG ("Invalid CodeDirectory slot size");
 				}
 			}
+			continue;
+		}
+
+		switch (idx.type) {
+		case CSSLOT_ENTITLEMENTS:
+			{
+				struct blob_t entitlements = {0};
+				entitlements.magic = r_buf_read_ble32_at (mo->b, slot_off, mach0_endian);
+				entitlements.length = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
+				if (entitlements.length <= sizeof (struct blob_t)
+					|| entitlements.length > super.blob.length
+					|| idx.offset > super.blob.length - entitlements.length) {
+					set_malformed_entitlement (mo);
+					break;
+				}
+				ut32 ent_size = entitlements.length - sizeof (struct blob_t);
+				if (ent_size <= 1) {
+					set_malformed_entitlement (mo);
+					break;
+				}
+				free (mo->signature);
+				mo->signature = calloc (1, ent_size + 1);
+				if (!mo->signature) {
+					break;
+				}
+				st64 got = r_buf_read_at (mo->b, slot_off + sizeof (struct blob_t),
+					(ut8 *)mo->signature, ent_size);
+				if (got < 0 || (ut64)got < ent_size) {
+					set_malformed_entitlement (mo);
+					break;
+				}
+				mo->signature[ent_size] = '\0';
+			}
 			break;
-		case 0x1000: // AITODO: whats this CSSLOT name?
-			// unknown
-			break;
-		case CSSLOT_CMS_SIGNATURE: // ASN1/DER certificate
+		case CSSLOT_SIGNATURESLOT: // ASN1/DER certificate
 			if (isVerbose) {
 				ut8 header[8] = {0};
-				r_buf_read_at (mo->b, data + idx.offset, header, sizeof (header));
+				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) < sizeof (header)) {
+					break;
+				}
 				ut32 length = R_MIN (UT16_MAX, r_read_ble32 (header + 4, 1));
+				if (!length || length > super.blob.length || idx.offset > super.blob.length - length) {
+					break;
+				}
 				ut8 *p = calloc (length, 1);
 				if (p) {
-					r_buf_read_at (mo->b, data + idx.offset + 0, p, length);
-					ut32 *words = (ut32*)p;
-					eprintf ("Magic: %x\n", words[0]);
+					if (r_buf_read_at (mo->b, slot_off, p, length) < (int)length) {
+						free (p);
+						break;
+					}
+					if (length >= sizeof (ut32)) {
+						ut32 *words = (ut32*)p;
+						eprintf ("Magic: %x\n", words[0]);
+					}
 					eprintf ("wtf DUMP @%d!%d\n",
 						(int)data + idx.offset + 8, (int)length);
 					eprintf ("openssl pkcs7 -print_certs -text -inform der -in DUMP\n");
@@ -1009,27 +1039,37 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 		case CSSLOT_REQUIREMENTS: // 2
 			{
 				ut8 p[256];
-				r_buf_read_at (mo->b, data + idx.offset + 16, p, sizeof (p));
+				const ut32 req_size = 16 + sizeof (p);
+				if (req_size > super.blob.length || idx.offset > super.blob.length - req_size) {
+					break;
+				}
+				ut64 req_off = slot_off + 16;
+				if (r_buf_read_at (mo->b, req_off, p, sizeof (p)) < sizeof (p)) {
+					break;
+				}
 				p[sizeof (p) - 1] = 0;
-				ut32 slot_size = r_read_ble32 (p + 8, 1);
-				if (slot_size < sizeof (p)) {
-					ut32 ident_size = r_read_ble32 (p + 8, 1);
-					if (!ident_size || ident_size > sizeof (p) - 28) {
-						break;
-					}
-					char *ident = r_str_ndup ((const char *)p + 28, ident_size);
-					if (ident) {
-						sdb_set (mo->kv, "mach0.ident", ident, 0);
-						free (ident);
-					}
-				} else {
+				ut32 ident_size = r_read_ble32 (p + 8, 1);
+				if (!ident_size || ident_size > sizeof (p) - 28) {
 					R_LOG_DEBUG ("Invalid code slot size");
+					break;
+				}
+				char *ident = r_str_ndup ((const char *)p + 28, ident_size);
+				if (ident) {
+					sdb_set (mo->kv, "mach0.ident", ident, 0);
+					free (ident);
 				}
 			}
 			break;
-		case CSSLOT_INFOSLOT: // 1;
-		case CSSLOT_RESOURCEDIR: // 3;
-		case CSSLOT_APPLICATION: // 4;
+		case CSSLOT_INFOSLOT: // 1
+		case CSSLOT_RESOURCEDIR: // 3
+		case CSSLOT_APPLICATION: // 4
+		case CSSLOT_DER_ENTITLEMENTS:
+		case CSSLOT_LAUNCH_CONSTRAINT_SELF:
+		case CSSLOT_LAUNCH_CONSTRAINT_PARENT:
+		case CSSLOT_LAUNCH_CONSTRAINT_RESPONSIBLE:
+		case CSSLOT_LIBRARY_CONSTRAINT:
+		case CSSLOT_IDENTIFICATIONSLOT:
+		case CSSLOT_TICKETSLOT:
 			// TODO: parse those codesign slots
 			if (mo->verbose) {
 				R_LOG_TODO ("Some codesign slots are not yet supported");
@@ -1037,7 +1077,7 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 			break;
 		default:
 			if (mo->verbose) {
-				R_LOG_WARN ("Unknown Code signature slot %d", idx.type);
+				R_LOG_WARN ("Unknown Code signature slot %u", idx.type);
 			}
 			break;
 		}
