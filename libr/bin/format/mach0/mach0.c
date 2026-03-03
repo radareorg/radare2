@@ -468,11 +468,13 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	return true;
 }
 
-static void reset_symtab(struct MACH0_(obj_t) * mo) {
+// AITODO: this function is used too many times.. and maybe we can just use a tail-call/defer-style helper function that we can use to return directly from it, if we pass the variable that need to be freed before leaving, but still it is a bad sign that the function below have so many return statements, so we may want to improve code quality and reduce checks or group them
+static bool reset_symtab(struct MACH0_(obj_t) * mo) {
 	R_FREE (mo->symtab);
 	R_FREE (mo->symstr);
 	mo->nsymtab = 0;
 	mo->symstrlen = 0;
+	return false;
 }
 
 static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
@@ -488,10 +490,10 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		R_LOG_ERROR ("read (symtab)");
 		return false;
 	}
-	ut64 symoff = r_read_ble32 (symt + 8, be);
-	ut64 nsyms = r_read_ble32 (symt + 12, be);
-	ut64 stroff = r_read_ble32 (symt + 16, be);
-	ut64 strsize = r_read_ble32 (symt + 20, be);
+	const ut64 symoff = r_read_ble32 (symt + 8, be);
+	const ut64 nsyms = r_read_ble32 (symt + 12, be);
+	const ut64 stroff = r_read_ble32 (symt + 16, be);
+	const ut64 strsize = r_read_ble32 (symt + 20, be);
 	if (!UT64_ADD (&symoff, symoff, mo->symbols_off)) {
 		return false;
 	}
@@ -555,7 +557,7 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		return false;
 	}
 	const size_t nlist_size = sizeof (struct MACH0_(nlist));
-	size_t count = mo->nsymtab;
+	const size_t count = mo->nsymtab;
 	if (be) {
 		for (i = 0; i < count; i++) {
 			const ut8 *nlst_ptr = symdata + (i * nlist_size);
