@@ -477,8 +477,22 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			if (arr) {
 				char *arr_end = strchr (arr + 1, ']');
 				if (arr_end) {
+					bool pointee_array = false;
+					char *close_paren = arr;
+					while (close_paren > type_name && (close_paren[-1] == ' ' || close_paren[-1] == '\t')) {
+						close_paren--;
+					}
+					if (close_paren > type_name && close_paren[-1] == ')') {
+						char *open_paren = close_paren - 1;
+						while (open_paren >= type_name && *open_paren != '(') {
+							open_paren--;
+						}
+						if (open_paren >= type_name && memchr (open_paren, '*', (size_t)(close_paren - open_paren))) {
+							pointee_array = true;
+						}
+					}
 					*arr_end = 0;
-					if (elements <= 0) {
+					if (!pointee_array && elements <= 0) {
 						int parsed_elems = atoi (arr + 1);
 						if (parsed_elems > 0) {
 							elements = parsed_elems;
@@ -498,7 +512,8 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 			} else if (r_str_startswith (base_type, "struct ")) {
 				struct_name = (char *)base_type + 7;
 				// TODO: iterate over all the struct fields, and format the format and vars
-				snprintf (var3, sizeof (var3), "struct.%s", struct_name);
+				snprintf (var3, sizeof (var3), "struct.%.*s",
+						(int)(sizeof (var3) - sizeof ("struct.")), struct_name);
 				tfmt = sdb_const_get (TDB, var3, NULL);
 				isStruct = true;
 			} else {
@@ -506,12 +521,14 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 				const char *type_kind = sdb_const_get (TDB, base_type, NULL);
 				if (type_kind && !strcmp (type_kind, "struct")) {
 					struct_name = (char *)base_type;
-					snprintf (var3, sizeof (var3), "struct.%s", base_type);
+					snprintf (var3, sizeof (var3), "struct.%.*s",
+							(int)(sizeof (var3) - sizeof ("struct.")), base_type);
 					tfmt = sdb_const_get (TDB, var3, NULL);
 					isStruct = true;
 				} else if (type_kind && !strcmp (type_kind, "union")) {
 					struct_name = (char *)base_type;
-					snprintf (var3, sizeof (var3), "union.%s", base_type);
+					snprintf (var3, sizeof (var3), "union.%.*s",
+							(int)(sizeof (var3) - sizeof ("union.")), base_type);
 					tfmt = sdb_const_get (TDB, var3, NULL);
 					isStruct = true;
 				} else {
@@ -524,10 +541,12 @@ static char *fmt_struct_union(Sdb *TDB, char *var, bool is_typedef) {
 					} else {
 						if (r_str_startswith (base_type, "enum ")) {
 							enum_name = base_type + 5;
-							snprintf (var3, sizeof (var3), "%s", enum_name);
+							snprintf (var3, sizeof (var3), "%.*s",
+									(int)(sizeof (var3) - 1), enum_name);
 							isEnum = true;
 						} else {
-							snprintf (var3, sizeof (var3), "type.%s", base_type);
+							snprintf (var3, sizeof (var3), "type.%.*s",
+									(int)(sizeof (var3) - sizeof ("type.")), base_type);
 						}
 						tfmt = sdb_const_get (TDB, var3, NULL);
 						if (!tfmt) {
