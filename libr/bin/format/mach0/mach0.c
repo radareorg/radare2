@@ -75,14 +75,14 @@ static void import_hash_free(HtPPKv *kv) {
 }
 
 static ut64 read_uleb128(ut8 **p, ut8 *end) {
-	const char *error = NULL;
 	ut64 v;
-	*p = (ut8 *)r_uleb128 (*p, end - *p, &v, &error);
+	const char *error = NULL;
+	const ut8 *next = r_uleb128 (*p, end - *p, &v, &error);
 	if (error) {
 		R_LOG_ERROR ("%s", error);
-		R_FREE (error);
 		return UT64_MAX;
 	}
+	*p = (ut8 *)next;
 	return v;
 }
 
@@ -982,7 +982,7 @@ static bool parse_signature(struct MACH0_(obj_t) *mo, ut64 off) {
 				}
 			}
 			break;
-		case 0x1000:
+		case 0x1000: // AITODO: whats this CSSLOT name?
 			// unknown
 			break;
 		case CSSLOT_CMS_SIGNATURE: // ASN1/DER certificate
