@@ -264,6 +264,7 @@ static bool init_hdr(struct MACH0_(obj_t) * mo) {
 	if (r_buf_read_at (mo->b, 0 + mo->header_at, magicbytes, 4) < 1) {
 		return false;
 	}
+	// TODO move this stuff into a separfate function, avoid duplicated reads, ddont mix le and be numbers, call the function and check if it return false and then fail, and otherwises just pass mo->big_endian as reference
 	if (r_read_le32 (magicbytes) == 0xfeedface) {
 		mo->big_endian = false;
 	} else if (r_read_be32 (magicbytes) == 0xfeedface) {
@@ -468,17 +469,22 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	return true;
 }
 
-// AITODO: this function is used too many times.. and maybe we can just use a tail-call/defer-style helper function that we can use to return directly from it, if we pass the variable that need to be freed before leaving, but still it is a bad sign that the function below have so many return statements, so we may want to improve code quality and reduce checks or group them
-static bool reset_symtab(struct MACH0_(obj_t) * mo) {
+static void reset_symtab(struct MACH0_(obj_t) * mo) {
 	R_FREE (mo->symtab);
 	R_FREE (mo->symstr);
 	mo->nsymtab = 0;
 	mo->symstrlen = 0;
+}
+
+static bool defer_fail(struct MACH0_(obj_t) * mo, ut8 *symdata) {
+	free (symdata);
+	reset_symtab (mo);
 	return false;
 }
 
 static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	size_t i;
+	ut8 *symdata = NULL;
 	ut8 symt[sizeof (struct symtab_command)] = { 0 };
 	const bool be = mo->big_endian;
 
@@ -487,12 +493,11 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	}
 	int len = r_buf_read_at (mo->b, off, symt, sizeof (struct symtab_command));
 	if (len != sizeof (struct symtab_command)) {
-		R_LOG_ERROR ("read (symtab)");
 		return false;
 	}
-	const ut64 symoff = r_read_ble32 (symt + 8, be);
+	ut64 symoff = r_read_ble32 (symt + 8, be);
 	const ut64 nsyms = r_read_ble32 (symt + 12, be);
-	const ut64 stroff = r_read_ble32 (symt + 16, be);
+	ut64 stroff = r_read_ble32 (symt + 16, be);
 	const ut64 strsize = r_read_ble32 (symt + 20, be);
 	if (!UT64_ADD (&symoff, symoff, mo->symbols_off)) {
 		return false;
@@ -506,55 +511,46 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		return true;
 	}
 	if (strsize > ST32_MAX || !fits_in (mo->size, stroff, strsize)) {
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	ut32 size_sym;
 	if (!UT32_MUL (&size_sym, nsyms, sizeof (struct MACH0_(nlist))) || !size_sym || size_sym > ST32_MAX) {
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	if (!fits_in (mo->size, symoff, size_sym)) {
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	mo->symstr = calloc (1, strsize + 2);
 	if (!mo->symstr) {
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	mo->symstrlen = strsize;
 	len = r_buf_read_at (mo->b, stroff, (ut8 *)mo->symstr, strsize);
 	if (len != strsize) {
-		reset_symtab (mo);
-		R_LOG_ERROR ("read (symstr)");
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	const ut64 bsz = r_buf_size (mo->b);
 	if (symoff > bsz) {
-		reset_symtab (mo);
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	ut64 max_nsymtab = (bsz - symoff) / sizeof (struct MACH0_(nlist));
 	if (nsyms > max_nsymtab) {
-		reset_symtab (mo);
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	mo->symtab = calloc (nsyms, sizeof (struct MACH0_(nlist)));
 	if (!mo->symtab) {
-		reset_symtab (mo);
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	mo->nsymtab = nsyms;
 
 	// Bulk read all symbol data at once instead of one-by-one
-	ut8 *symdata = malloc (size_sym);
+	symdata = malloc (size_sym);
 	if (!symdata) {
-		reset_symtab (mo);
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	len = r_buf_read_at (mo->b, symoff, symdata, size_sym);
 	if (len != size_sym) {
-		free (symdata);
-		reset_symtab (mo);
-		R_LOG_ERROR ("read (symdata bulk)");
-		return false;
+		return defer_fail (mo, symdata);
 	}
 	const size_t nlist_size = sizeof (struct MACH0_(nlist));
 	const size_t count = mo->nsymtab;
