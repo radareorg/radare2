@@ -23,20 +23,20 @@ EXPECT=<<EOF
   isa Employee::(property)shortWord
   isa Employee::(property)wideWord
 }
-+ (void) helloWorld
-+ (id) sayHello
-+ (unknown) p0
-+ (unknown) p1
-+ (unknown) p2
-+ (unknown) p3
-+ (unknown) base
-+ (id) username
-+ (void) setUsername:
-+ (id) firstName
-+ (void) setFirstName:
-+ (short) shortWord
-+ (unsigned long long) wideWord
+- (void) helloWorld
 - (id) sayHello
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
++ (id) sayHello
 @end
 EOF
 RUN
@@ -293,21 +293,21 @@ EXPECT=<<EOF
   isa Employee::(property)shortWord
   isa Employee::(property)wideWord
 }
-+ (void) sayHello
-+ (void) helloWorld
-+ (unknown) p0
-+ (unknown) p1
-+ (unknown) p2
-+ (unknown) p3
-+ (unknown) base
-+ (id) username
-+ (void) setUsername:
-+ (id) firstName
-+ (void) setFirstName:
-+ (short) shortWord
-+ (unsigned long long) wideWord
-+ (void) .cxx_destruct
 - (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
 @end
 EOF
 RUN
@@ -566,21 +566,21 @@ EXPECT=<<EOF
   isa Employee::(property)shortWord
   isa Employee::(property)wideWord
 }
-+ (void) sayHello
-+ (void) helloWorld
-+ (unknown) p0
-+ (unknown) p1
-+ (unknown) p2
-+ (unknown) p3
-+ (unknown) base
-+ (id) username
-+ (void) setUsername:
-+ (id) firstName
-+ (void) setFirstName:
-+ (short) shortWord
-+ (unsigned long long) wideWord
-+ (void) .cxx_destruct
 - (void) sayHello
+- (void) helloWorld
+- (unknown) p0
+- (unknown) p1
+- (unknown) p2
+- (unknown) p3
+- (unknown) base
+- (id) username
+- (void) setUsername:
+- (id) firstName
+- (void) setFirstName:
+- (short) shortWord
+- (unsigned long long) wideWord
+- (void) .cxx_destruct
++ (void) sayHello
 @end
 EOF
 RUN

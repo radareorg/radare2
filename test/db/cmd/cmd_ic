@@ -1088,3 +1088,163 @@ CMDS=iqcq
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=InsecurePasswordStore
+FILE=bins/mach0/InsecurePasswordStore
+CMDS=icc objc
+EXPECT=<<EOF
+@interface Utils : NSObject
+{
+}
++ (void) updateConfigKey:WithValue:
++ (id) getConfigKey:
++ (bool) isJailbroken
++ (id) AES128EncryptedData:WithKey:
++ (id) AES128DecryptedData:WithKey:
++ (id) AES128EncryptedData:WithKey:iv:
++ (id) AES128DecryptedData:WithKey:iv:
++ (id) AES128Operation:WithData:key:iv:
+@end
+@interface Credential : NSManagedObject
+{
+  isa Credential::(property)identifier
+  isa Credential::(property)username
+  isa Credential::(property)password
+  isa Credential::(property)website
+  isa Credential::(property)notes
+}
+@end
+@interface AdminViewController : UIViewController
+{
+  struct objc_class * AdminViewController::(var)isa
+  @"NSManagedObjectContext" AdminViewController::(var)_managedObjectContext
+  @"NSPersistentStoreCoordinator" AdminViewController::(var)_persistentStoreCoordinator
+  isa AdminViewController::(property)managedObjectContext
+  isa AdminViewController::(property)persistentStoreCoordinator
+}
+- (void) viewDidLoad
+- (void) deleteAllCredsBtnTap:
+- (id) managedObjectContext
+- (void) setManagedObjectContext:
+- (id) persistentStoreCoordinator
+- (void) setPersistentStoreCoordinator:
+- (void) .cxx_destruct
+@end
+@interface MainViewController : UIViewController
+{
+  struct objc_class * MainViewController::(var)isa
+  @"NSManagedObjectContext" MainViewController::(var)_managedObjectContext
+  isa MainViewController::(property)managedObjectContext
+}
+- (void) createCredentials
+- (void) createPIN
+- (void) viewDidLoad
+- (void) didReceiveMemoryWarning
+- (void) viewCredentialsTap:
+- (void) AdminBtnTapped:
+- (void) checkDeviceSecurityTap:
+- (bool) isUserAdmin
+- (void) showAlertWithTitle:message:
+- (id) managedObjectContext
+- (void) setManagedObjectContext:
+- (void) .cxx_destruct
+@end
+@interface AppDelegate : UIResponder
+{
+  struct objc_class * AppDelegate::(var)isa
+  @"NSManagedObjectContext" AppDelegate::(var)_managedObjectContext
+  @"NSManagedObjectModel" AppDelegate::(var)_managedObjectModel
+  @"NSPersistentStoreCoordinator" AppDelegate::(var)_persistentStoreCoordinator
+  @"UIWindow" AppDelegate::(var)_window
+  isa AppDelegate::(property)window
+  isa AppDelegate::(property)managedObjectModel
+  isa AppDelegate::(property)managedObjectContext
+  isa AppDelegate::(property)persistentStoreCoordinator
+  isa AppDelegate::(property)hash
+  isa AppDelegate::(property)superclass
+  isa AppDelegate::(property)description
+  isa AppDelegate::(property)debugDescription
+}
+- (bool) application:didFinishLaunchingWithOptions:
+- (id) application:configurationForConnectingSceneSession:options:
+- (void) application:didDiscardSceneSessions:
+- (id) managedObjectContext
+- (id) managedObjectModel
+- (id) persistentStoreCoordinator
+- (id) applicationDocumentsDirectory
+- (id) window
+- (void) setWindow:
+- (void) .cxx_destruct
+@end
+@interface PasswordViewController : UIViewController
+{
+  struct objc_class * PasswordViewController::(var)isa
+  @"UITableView" PasswordViewController::(var)_myTableView
+  @"NSMutableArray" PasswordViewController::(var)_credentials
+  isa PasswordViewController::(property)myTableView
+  isa PasswordViewController::(property)credentials
+  isa PasswordViewController::(property)hash
+  isa PasswordViewController::(property)superclass
+  isa PasswordViewController::(property)description
+  isa PasswordViewController::(property)debugDescription
+}
+- (void) viewDidLoad
+- (long long) numberOfSectionsInTableView:
+- (long long) tableView:numberOfRowsInSection:
+- (id) tableView:cellForRowAtIndexPath:
+- (id) myTableView
+- (void) setMyTableView:
+- (id) credentials
+- (void) setCredentials:
+- (void) .cxx_destruct
+@end
+@interface SceneDelegate : UIResponder
+{
+  struct objc_class * SceneDelegate::(var)isa
+  @"UIWindow" SceneDelegate::(var)_window
+  isa SceneDelegate::(property)window
+  isa SceneDelegate::(property)hash
+  isa SceneDelegate::(property)superclass
+  isa SceneDelegate::(property)description
+  isa SceneDelegate::(property)debugDescription
+}
+- (void) scene:willConnectToSession:options:
+- (void) sceneDidDisconnect:
+- (void) sceneDidBecomeActive:
+- (void) sceneWillResignActive:
+- (void) sceneWillEnterForeground:
+- (void) sceneDidEnterBackground:
+- (id) window
+- (void) setWindow:
+- (void) .cxx_destruct
+@end
+@interface LoginViewController : UIViewController
+{
+  struct objc_class * LoginViewController::(var)isa
+  @"UITextField" LoginViewController::(var)usernameField
+  @"UITextField" LoginViewController::(var)passwordField
+  isa LoginViewController::(property)usernameField
+  isa LoginViewController::(property)passwordField
+}
+- (id) deviceName
+- (id) deviceUUID
+- (void) sendUserInfo:withDeviceName:DeviceId:
+- (id) getPathForFilename:
+- (void) storeCredentialsForUsername:withPassword:isAdmin:
+- (void) storeEncryptedCredentialsForUsername:withPassword:
+- (bool) isUserValidForUsername:withPassword:
+- (bool) isValidAdminForUsername:
+- (void) doLogin
+- (void) viewDidLoad
+- (void) submit:
+- (void) getHint:
+- (void) changeBgWithColor:
+- (void) showAlert:
+- (id) usernameField
+- (void) setUsernameField:
+- (id) passwordField
+- (void) setPasswordField:
+- (void) .cxx_destruct
+@end
+EOF
+RUN
