@@ -13,30 +13,29 @@ CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
 {
-  struct objc_class * Employee::(var)isa
-  s Employee::(var)_shortWord
-  @"NSString" Employee::(var)_username
-  @"NSString" Employee::(var)_firstName
-  Q Employee::(var)_wideWord
-  isa Employee::(property)username
-  isa Employee::(property)firstName
-  isa Employee::(property)shortWord
-  isa Employee::(property)wideWord
+	short _shortWord;
+	NSString * _username;
+	NSString * _firstName;
+	uint64_t _wideWord;
 }
-- (void) helloWorld
-- (id) sayHello
-- (unknown) p0
-- (unknown) p1
-- (unknown) p2
-- (unknown) p3
-- (unknown) base
-- (id) username
-- (void) setUsername:
-- (id) firstName
-- (void) setFirstName:
-- (short) shortWord
-- (unsigned long long) wideWord
-+ (id) sayHello
+@property (nonatomic, strong) NSString * username;
+@property (nonatomic, strong) NSString * firstName;
+@property (nonatomic, assign) short shortWord;
+@property (nonatomic, assign) uint64_t wideWord;
+- (void)helloWorld;
+- (id)sayHello;
+- (id)p0;
+- (id)p1;
+- (id)p2;
+- (id)p3;
+- (id)base;
+- (NSString *)username;
+- (void)setUsername:(NSString *)arg0;
+- (NSString *)firstName;
+- (void)setFirstName:(NSString *)arg0;
+- (short)shortWord;
+- (unsigned long long)wideWord;
++ (id)sayHello;
 @end
 EOF
 RUN
@@ -283,31 +282,30 @@ CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
 {
-  struct objc_class * Employee::(var)isa
-  s Employee::(var)_shortWord
-  @"NSString" Employee::(var)_username
-  @"NSString" Employee::(var)_firstName
-  Q Employee::(var)_wideWord
-  isa Employee::(property)username
-  isa Employee::(property)firstName
-  isa Employee::(property)shortWord
-  isa Employee::(property)wideWord
+	short _shortWord;
+	NSString * _username;
+	NSString * _firstName;
+	uint64_t _wideWord;
 }
-- (void) sayHello
-- (void) helloWorld
-- (unknown) p0
-- (unknown) p1
-- (unknown) p2
-- (unknown) p3
-- (unknown) base
-- (id) username
-- (void) setUsername:
-- (id) firstName
-- (void) setFirstName:
-- (short) shortWord
-- (unsigned long long) wideWord
-- (void) .cxx_destruct
-+ (void) sayHello
+@property (nonatomic, strong) NSString * username;
+@property (nonatomic, strong) NSString * firstName;
+@property (nonatomic, assign) short shortWord;
+@property (nonatomic, assign) uint64_t wideWord;
+- (void)sayHello;
+- (void)helloWorld;
+- (id)p0;
+- (id)p1;
+- (id)p2;
+- (id)p3;
+- (id)base;
+- (NSString *)username;
+- (void)setUsername:(NSString *)arg0;
+- (NSString *)firstName;
+- (void)setFirstName:(NSString *)arg0;
+- (short)shortWord;
+- (unsigned long long)wideWord;
+// - (void).cxx_destruct;
++ (void)sayHello;
 @end
 EOF
 RUN
@@ -556,31 +554,30 @@ CMDS=icc*
 EXPECT=<<EOF
 @interface Employee : NSObject
 {
-  struct objc_class * Employee::(var)isa
-  s Employee::(var)_shortWord
-  @"NSString" Employee::(var)_username
-  @"NSString" Employee::(var)_firstName
-  Q Employee::(var)_wideWord
-  isa Employee::(property)username
-  isa Employee::(property)firstName
-  isa Employee::(property)shortWord
-  isa Employee::(property)wideWord
+	short _shortWord;
+	NSString * _username;
+	NSString * _firstName;
+	uint64_t _wideWord;
 }
-- (void) sayHello
-- (void) helloWorld
-- (unknown) p0
-- (unknown) p1
-- (unknown) p2
-- (unknown) p3
-- (unknown) base
-- (id) username
-- (void) setUsername:
-- (id) firstName
-- (void) setFirstName:
-- (short) shortWord
-- (unsigned long long) wideWord
-- (void) .cxx_destruct
-+ (void) sayHello
+@property (nonatomic, strong) NSString * username;
+@property (nonatomic, strong) NSString * firstName;
+@property (nonatomic, assign) short shortWord;
+@property (nonatomic, assign) uint64_t wideWord;
+- (void)sayHello;
+- (void)helloWorld;
+- (id)p0;
+- (id)p1;
+- (id)p2;
+- (id)p3;
+- (id)base;
+- (NSString *)username;
+- (void)setUsername:(NSString *)arg0;
+- (NSString *)firstName;
+- (void)setFirstName:(NSString *)arg0;
+- (short)shortWord;
+- (unsigned long long)wideWord;
+// - (void).cxx_destruct;
++ (void)sayHello;
 @end
 EOF
 RUN
