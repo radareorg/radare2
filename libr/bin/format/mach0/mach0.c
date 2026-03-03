@@ -94,6 +94,23 @@ static bool fits_in(ut64 file_size, ut64 offset, ut64 size) {
 	return offset <= file_size && end <= file_size;
 }
 
+static bool mach0_set_endian_from_magic(ut32 magic, R_OUT bool *big_endian) {
+	switch (magic) {
+	case MH_MAGIC:
+	case MH_MAGIC_64:
+	case FAT_MAGIC:
+		*big_endian = true;
+		return true;
+	case MH_CIGAM:
+	case MH_CIGAM_64:
+	case FAT_CIGAM:
+		*big_endian = false;
+		return true;
+	default:
+		return false;
+	}
+}
+
 static ut64 entry_to_vaddr(struct MACH0_(obj_t) * bin) {
 	switch (bin->main_cmd.cmd) {
 	case LC_MAIN:
@@ -258,32 +275,14 @@ static void init_sdb_formats(struct MACH0_(obj_t) * mo) {
 }
 
 static bool init_hdr(struct MACH0_(obj_t) * mo) {
-	ut8 magicbytes[4] = { 0 };
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = { 0 };
-
-	if (r_buf_read_at (mo->b, 0 + mo->header_at, magicbytes, 4) < 1) {
-		return false;
-	}
-	// TODO move this stuff into a separfate function, avoid duplicated reads, ddont mix le and be numbers, call the function and check if it return false and then fail, and otherwises just pass mo->big_endian as reference
-	if (r_read_le32 (magicbytes) == 0xfeedface) {
-		mo->big_endian = false;
-	} else if (r_read_be32 (magicbytes) == 0xfeedface) {
-		mo->big_endian = true;
-	} else if (r_read_le32 (magicbytes) == FAT_MAGIC) {
-		mo->big_endian = false;
-	} else if (r_read_be32 (magicbytes) == FAT_MAGIC) {
-		mo->big_endian = true;
-	} else if (r_read_le32 (magicbytes) == 0xfeedfacf) {
-		mo->big_endian = false;
-	} else if (r_read_be32 (magicbytes) == 0xfeedfacf) {
-		mo->big_endian = true;
-	} else {
-		return false; // object files are magic == 0, but body is different :?
-	}
 	int len = r_buf_read_at (mo->b, mo->header_at, machohdrbytes, sizeof (machohdrbytes));
 	if (len != sizeof (machohdrbytes)) {
 		R_LOG_WARN ("cannot read magic header");
 		return false;
+	}
+	if (!mach0_set_endian_from_magic (r_read_be32 (machohdrbytes), &mo->big_endian)) {
+		return false; // object files are magic == 0, but body is different :?
 	}
 	mo->hdr.magic = r_read_ble (&machohdrbytes[0], mo->big_endian, 32);
 	mo->hdr.cputype = r_read_ble (&machohdrbytes[4], mo->big_endian, 32);
@@ -5051,7 +5050,6 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 }
 
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
-	ut8 magicbytes[sizeof (ut32)] = { 0 };
 	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = { 0 };
 	int len;
 	struct MACH0_(mach_header) *macho_hdr = R_NEW0 (struct MACH0_(mach_header));
@@ -5059,36 +5057,17 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
 	if (!macho_hdr) {
 		return NULL;
 	}
-	if (r_buf_read_at (buf, 0, magicbytes, 4) < 1) {
+	len = r_buf_read_at (buf, 0, machohdrbytes, sizeof (machohdrbytes));
+	if (len != sizeof (struct MACH0_(mach_header))) {
 		free (macho_hdr);
-		return false;
+		return NULL;
 	}
-	const ut32 lemagic = r_read_le32 (magicbytes);
-	const ut32 bemagic = r_read_be32 (magicbytes);
-	// TODO: simplify this
-	if (lemagic == 0xfeedface) {
-		big_endian = false;
-	} else if (bemagic == 0xfeedface) {
-		big_endian = true;
-	} else if (lemagic == FAT_MAGIC) {
-		big_endian = false;
-	} else if (bemagic == FAT_MAGIC) {
-		big_endian = true;
-	} else if (lemagic == 0xfeedfacf) {
-		big_endian = false;
-	} else if (bemagic == 0xfeedfacf) {
-		big_endian = true;
-	} else {
+	if (!mach0_set_endian_from_magic (r_read_be32 (machohdrbytes), &big_endian)) {
 		/* also extract non-mach0s */
 #if 0
 		free (macho_hdr);
 		return NULL;
 #endif
-	}
-	len = r_buf_read_at (buf, 0, machohdrbytes, sizeof (machohdrbytes));
-	if (len != sizeof (struct MACH0_(mach_header))) {
-		free (macho_hdr);
-		return NULL;
 	}
 	macho_hdr->magic = r_read_ble (&machohdrbytes[0], big_endian, 32);
 	macho_hdr->cputype = r_read_ble (&machohdrbytes[4], big_endian, 32);
