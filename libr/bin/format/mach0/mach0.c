@@ -2997,7 +2997,8 @@ static inline bool exceeds_bin_limit(int limit, ut64 value) {
 	return limit > 0 && value > (ut64)limit;
 }
 
-static int bounded_count_for_int_loop(ut64 count, int limit) {
+// AITODO: this function is used ONCE. scan the code to find other possible uses for this helper in order to reduce LOCs. also consider the case of not clamping from ut64->int, because maybe this way we can ensure better type safety and more generic uses in other places in this file
+static int clamp_count(ut64 count, int limit) {
 	if (count > ST32_MAX) {
 		return 0;
 	}
@@ -3007,11 +3008,12 @@ static int bounded_count_for_int_loop(ut64 count, int limit) {
 	return (int)count;
 }
 
-static bool count_fits_stride_in_range(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
+// AITODO: this function is used ONCE. scan the code to find other possible uses for this helper in order to reduce LOCs. also consider the case of not clamping from ut64->int, because maybe this way we can ensure better type safety and more generic uses in other places in this file
+static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
 	if (!stride) {
 		return count == 0;
 	}
-	ut64 remaining = (addr < segment_end_addr) ? segment_end_addr - addr : 0;
+	const ut64 remaining = (addr < segment_end_addr) ? segment_end_addr - addr : 0;
 	return count <= (remaining / stride);
 }
 
@@ -3872,7 +3874,6 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 	ut8 op = **p & BIND_OPCODE_MASK;
 	ut8 imm = **p & BIND_IMMEDIATE_MASK;
 	(*p)++;
-	int j;
 	switch (op) {
 	case BIND_OPCODE_DONE:
 		if (!in_lazy_binds) {
@@ -3975,11 +3976,11 @@ static bool parse_bind_op(struct MACH0_(obj_t) *mo, RVecRelocRef **threaded_bind
 		ut64 count = read_uleb128 (p, end);
 		ut64 skip = read_uleb128 (p, end);
 		ut64 increment;
-		if (!UT64_ADD (&increment, skip, wordsize) || !count_fits_stride_in_range (count, state->addr, state->segment_end_addr, increment)) {
+		if (!UT64_ADD (&increment, skip, wordsize) || !bind_fits (count, state->addr, state->segment_end_addr, increment)) {
 			R_LOG_DEBUG ("Count exceeds segment bounds");
 			return stop_bind_parsing (state);
 		}
-		for (j = 0; j < count; j++) {
+		while (count--) {
 			if (state->addr >= state->segment_end_addr) {
 				R_LOG_DEBUG ("Malformed ULEB TIMES bind opcode");
 				return stop_bind_parsing (state);
@@ -4102,8 +4103,7 @@ static bool _load_relocations(struct MACH0_(obj_t) *mo) {
 	}
 
 	if (mo->symtab && mo->symstr && mo->sects && mo->indirectsyms) {
-		int j;
-		int amount = bounded_count_for_int_loop (mo->dysymtab.nundefsym, mo->limit);
+		int j, amount = clamp_count (mo->dysymtab.nundefsym, mo->limit);
 		for (j = 0; j < amount; j++) {
 			struct reloc_t *reloc = parse_import_ptr (mo, j);
 			if (!reloc) {
