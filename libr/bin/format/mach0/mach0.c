@@ -2997,7 +2997,6 @@ static inline bool exceeds_bin_limit(int limit, ut64 value) {
 	return limit > 0 && value > (ut64)limit;
 }
 
-// AITODO: this function is used ONCE. scan the code to find other possible uses for this helper in order to reduce LOCs. also consider the case of not clamping from ut64->int, because maybe this way we can ensure better type safety and more generic uses in other places in this file
 static int clamp_count(ut64 count, int limit) {
 	if (count > ST32_MAX) {
 		return 0;
@@ -3008,7 +3007,6 @@ static int clamp_count(ut64 count, int limit) {
 	return (int)count;
 }
 
-// AITODO: this function is used ONCE. scan the code to find other possible uses for this helper in order to reduce LOCs. also consider the case of not clamping from ut64->int, because maybe this way we can ensure better type safety and more generic uses in other places in this file
 static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
 	if (!stride) {
 		return count == 0;
@@ -3441,22 +3439,19 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) *bin) {
 		return NULL;
 	}
 
-	int i;
 	const int limit = bf->rbin->options.limit;
+	const int amount = clamp_count (nundefsym, limit);
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
 	bin->has_blocks_ext = false;
 
-	for (i = 0; i < nundefsym; i++) {
+	int i;
+	for (i = 0; i < amount; i++) {
 		int idx = bin->dysymtab.iundefsym + i;
 		if (idx < 0 || idx >= bin->nsymtab) {
 			R_LOG_WARN ("Imports index out of bounds. Ignoring relocs");
 			return NULL;
-		}
-		if (exceeds_bin_limit (limit, i)) {
-			R_LOG_WARN ("imports mo.limit reached");
-			break;
 		}
 
 		int stridx = bin->symtab[idx].n_strx;
@@ -3512,17 +3507,13 @@ static void parse_relocation_info(struct MACH0_(obj_t) *mo, RSkipList *relocs, u
 		return;
 	}
 
-	const int limit = mo->limit;
+	const int amount = clamp_count (num, mo->limit);
 	size_t i;
-	for (i = 0; i < num; i++) {
+	for (i = 0; i < amount; i++) {
 		struct relocation_info a_info = info[i];
 		ut32 sym_num = a_info.r_symbolnum;
 		if (sym_num >= mo->nsymtab) {
 			continue;
-		}
-		if (exceeds_bin_limit (limit, i)) {
-			R_LOG_WARN ("relocs mo.limit reached");
-			break;
 		}
 
 		ut32 stridx = mo->symtab[sym_num].n_strx;
