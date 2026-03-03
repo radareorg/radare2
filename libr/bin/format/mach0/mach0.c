@@ -5059,12 +5059,8 @@ struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
 		return NULL;
 	}
 	if (!magic_endian (r_read_be32 (hdr), &be)) {
-		// AITODO: evaluate the need for this early return here.. maybe it must remove the if0 block.. or maybe we can just uncomment it? take a decision and make it happen
-		/* also extract non-mach0s */
-#if 0
-		free (mh);
-		return NULL;
-#endif
+		/* Keep parsing to support metadata extraction from non-mach0 slices. */
+		be = false;
 	}
 	mh->magic = r_read_ble (&hdr[0], be, 32);
 	mh->cputype = r_read_ble (&hdr[4], be, 32);
