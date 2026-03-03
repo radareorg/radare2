@@ -186,14 +186,13 @@ def convert_leading_spaces(line):
 	return tabs + line[len(ws):]
 
 
-def fix_paren_spacing(line):
-	line_starts_alnum = bool(line and re.match(r"[A-Za-z0-9]", line))
+def rewrite_outside_literals(line, handler):
 	in_single = False
 	in_double = False
 	escape = False
 	result = []
-	length = len(line)
 	i = 0
+	length = len(line)
 	while i < length:
 		ch = line[i]
 		if escape:
@@ -216,18 +215,43 @@ def fix_paren_spacing(line):
 			result.append(ch)
 			i += 1
 			continue
-		if not in_single and not in_double and ch == "(":
-			while result and result[-1] == " ":
-				result.pop()
-			prev = result[-1] if result else ""
-			if not line_starts_alnum and prev not in ("", "(", "\t", "\n") and prev != "*" and prev != "_" and prev != "&" and prev != "[" and not line.startswith("#"):
-				result.append(" ")
-			result.append("(")
-			i += 1
-			continue
+		if not in_single and not in_double:
+			next_i = handler(line, result, i)
+			if next_i is not None:
+				i = next_i
+				continue
 		result.append(ch)
 		i += 1
 	return "".join(result)
+
+
+LEADING_WS_RE = re.compile(r"^(\s*)")
+
+
+def leading_ws(line):
+	match = LEADING_WS_RE.match(line)
+	return match.group(1) if match else ""
+
+
+def fix_paren_spacing(line):
+	line_starts_alnum = bool(line and re.match(r"[A-Za-z0-9]", line))
+
+	def handle_paren(line, result, i):
+		if line[i] != "(":
+			return None
+		while result and result[-1] == " ":
+			result.pop()
+		prev = result[-1] if result else ""
+		if (
+			not line_starts_alnum
+			and prev not in ("", "(", "\t", "\n", "*", "_", "&", "[")
+			and not line.startswith("#")
+		):
+			result.append(" ")
+		result.append("(")
+		return i + 1
+
+	return rewrite_outside_literals(line, handle_paren)
 
 
 def split_line_ending(line):
@@ -256,20 +280,19 @@ def fix_case_blocks(lines):
 			comment = match_open.group(2)
 			if comment:
 				case_line = f"{case_line} {comment.strip()}"
-			indent_match = re.match(r"^(\s*)", content)
-			indent = indent_match.group(1) if indent_match else ""
+			indent = leading_ws(content)
 			fixed.append(case_line + line_sep)
 			fixed.append(indent + "\t{" + line_sep)
-			case_indent_stack.append((indent, indent + "\t", indent + "\t\t"))
+			case_indent_stack.append(indent)
 			continue
 		match_close = CASE_CLOSE_BREAK_RE.match(content)
 		if match_close:
-			indent = match_close.group(1)
 			comment = match_close.group(2).strip()
 			if case_indent_stack:
-				_, inner_indent, body_indent = case_indent_stack.pop()
+				case_indent = case_indent_stack.pop()
+				inner_indent = case_indent + "\t"
 			else:
-				inner_indent = indent
+				inner_indent = match_close.group(1)
 			fixed.append(inner_indent + "}" + line_sep)
 			if comment:
 				fixed.append(inner_indent + "break; " + comment + line_sep)
@@ -279,7 +302,8 @@ def fix_case_blocks(lines):
 		match_close_only = CASE_CLOSE_ONLY_RE.match(content)
 		if match_close_only and case_indent_stack:
 			indent = match_close_only.group(1)
-			case_indent, inner_indent, body_indent = case_indent_stack[-1]
+			case_indent = case_indent_stack[-1]
+			inner_indent = case_indent + "\t"
 			if indent == case_indent:
 				case_indent_stack.pop()
 				remainder = match_close_only.group(2).strip()
@@ -289,8 +313,11 @@ def fix_case_blocks(lines):
 					fixed.append(inner_indent + "}" + line_sep)
 				continue
 		if case_indent_stack:
-			_, inner_indent, body_indent = case_indent_stack[-1]
-			if content and not content.lstrip().startswith("{") and not ("||" in content or "&&" in content) and not content.lstrip().startswith("?") and not content.lstrip().startswith(":"):
+			case_indent = case_indent_stack[-1]
+			inner_indent = case_indent + "\t"
+			body_indent = inner_indent + "\t"
+			stripped = content.lstrip()
+			if content and not stripped.startswith(("{", "||", "&&", "?", ":")):
 				if content.startswith(inner_indent):
 					adjusted = body_indent + content[len(inner_indent):]
 					fixed.append(adjusted + line_sep)
@@ -319,161 +346,98 @@ def fix_labels(lines):
 
 
 def fix_ternary_spacing(line):
-	in_single = False
-	in_double = False
-	escape = False
 	question_depth = 0
-	result = []
-	length = len(line)
-	i = 0
-	while i < length:
+
+	def handle_ternary(line, result, i):
+		nonlocal question_depth
 		ch = line[i]
-		if escape:
-			result.append(ch)
-			escape = False
-			i += 1
-			continue
-		if ch == "\\" and (in_single or in_double):
-			result.append(ch)
-			escape = True
-			i += 1
-			continue
-		if ch == "'" and not in_double:
-			in_single = not in_single
-			result.append(ch)
-			i += 1
-			continue
-		if ch == '"' and not in_single:
-			in_double = not in_double
-			result.append(ch)
-			i += 1
-			continue
-		if not in_single and not in_double:
-			if ch == "?":
-				question_depth += 1
-				while result and result[-1] == " ":
-					result.pop()
-				result.append("?")
-				i += 1
-				while i < length and line[i] in " \t":
-					i += 1
-				if i < length and line[i] not in (" ", "\t", "\n", ")", ",", ";", ":"):
-					result.append(" ")
-				continue
-			if ch == ":" and question_depth > 0:
-				question_depth -= 1
-				while result and result[-1] == " ":
-					result.pop()
-				result.append(":")
-				i += 1
-				while i < length and line[i] in " \t":
-					i += 1
-				if i < length and line[i] not in (" ", "\t", "\n", ")", ",", ";"):
-					result.append(" ")
-				continue
+		if ch == "?":
+			question_depth += 1
+		elif ch == ":" and question_depth > 0:
+			question_depth -= 1
+		else:
+			return None
+		while result and result[-1] == " ":
+			result.pop()
 		result.append(ch)
 		i += 1
-	return "".join(result)
+		while i < len(line) and line[i] in " \t":
+			i += 1
+		forbidden = (" ", "\t", "\n", ")", ",", ";") + ((":",) if ch == "?" else ())
+		if i < len(line) and line[i] not in forbidden:
+			result.append(" ")
+		return i
+
+	return rewrite_outside_literals(line, handle_ternary)
 
 
 def fix_hash_spacing(line):
-	in_single = False
-	in_double = False
-	escape = False
-	result = []
-	length = len(line)
-	i = 0
-	while i < length:
-		ch = line[i]
-		if escape:
-			result.append(ch)
-			escape = False
+
+	def handle_hash(line, result, i):
+		if i + 1 >= len(line) or line[i] != "#" or line[i + 1] != "#":
+			return None
+		while result and result[-1] == " ":
+			result.pop()
+		result.append(" ")
+		result.append("##")
+		result.append(" ")
+		i += 2
+		while i < len(line) and line[i] == " ":
 			i += 1
-			continue
-		if ch == "\\" and (in_single or in_double):
-			result.append(ch)
-			escape = True
-			i += 1
-			continue
-		if ch == "'" and not in_double:
-			in_single = not in_single
-			result.append(ch)
-			i += 1
-			continue
-		if ch == '"' and not in_single:
-			in_double = not in_double
-			result.append(ch)
-			i += 1
-			continue
-		if not in_single and not in_double and ch == '#' and i + 1 < length and line[i+1] == '#':
-			# Found ##, replace surrounding spaces
-			# Remove trailing spaces before ##
-			while result and result[-1] == ' ':
-				result.pop()
-			result.append(' ')
-			result.append('##')
-			result.append(' ')
-			i += 2
-			# Skip leading spaces after ##
-			while i < length and line[i] == ' ':
-				i += 1
-			continue
-		result.append(ch)
-		i += 1
-	return "".join(result)
+		return i
+
+	return rewrite_outside_literals(line, handle_hash)
 
 
 def fix_logical_spacing(line):
-	in_single = False
-	in_double = False
-	escape = False
-	result = []
-	length = len(line)
-	i = 0
-	while i < length:
-		ch = line[i]
-		if escape:
-			result.append(ch)
-			escape = False
-			i += 1
-			continue
-		if ch == "\\" and (in_single or in_double):
-			result.append(ch)
-			escape = True
-			i += 1
-			continue
-		if ch == "'" and not in_double:
-			in_single = not in_single
-			result.append(ch)
-			i += 1
-			continue
-		if ch == '"' and not in_single:
-			in_double = not in_double
-			result.append(ch)
-			i += 1
-			continue
-		if not in_single and not in_double:
-			if ch == '&' and i + 1 < length and line[i+1] == '&':
-				result.append("&&")
-				i += 2
-				if i < length and line[i] not in (' ', '\t', '\n'):
-					result.append(" ")
-				continue
-			elif ch == '|' and i + 1 < length and line[i+1] == '|':
-				result.append("||")
-				i += 2
-				if i < length and line[i] not in (' ', '\t', '\n'):
-					result.append(" ")
-				continue
-		result.append(ch)
-		i += 1
-	return "".join(result)
+
+	def handle_logical(line, result, i):
+		pair = line[i:i + 2]
+		if pair not in ("&&", "||"):
+			return None
+		result.append(pair)
+		i += 2
+		if i < len(line) and line[i] not in (" ", "\t", "\n"):
+			result.append(" ")
+		return i
+
+	return rewrite_outside_literals(line, handle_logical)
+
+
+def fix_ampersand_paren_spacing(line):
+
+	def handle_ampersand(line, result, i):
+		if line[i] != "&":
+			return None
+		if i + 1 < len(line) and line[i + 1] in ("&", "="):
+			return None
+		j = i + 1
+		while j < len(line) and line[j] in (" ", "\t"):
+			j += 1
+		if j >= len(line) or line[j] != "(":
+			return None
+		k = len(result) - 1
+		while k >= 0 and result[k] in (" ", "\t"):
+			k -= 1
+		prev = result[k] if k >= 0 else ""
+		if not prev or not (prev.isalnum() or prev in ("_", ")", "]", '"', "'")):
+			return None
+		while result and result[-1] == " ":
+			result.pop()
+		if result and result[-1] not in (" ", "\t", "\n"):
+			result.append(" ")
+		result.append("&")
+		result.append(" ")
+		return j
+
+	return rewrite_outside_literals(line, handle_ampersand)
 
 
 def format_macro_body(body):
 	if not body:
 		return body
 	formatted = fix_paren_spacing(body)
+	formatted = fix_ampersand_paren_spacing(formatted)
 	formatted = fix_ternary_spacing(formatted)
 	formatted = fix_hash_spacing(formatted)
 	formatted = fix_logical_spacing(formatted)
@@ -533,8 +497,6 @@ def fix_preprocessor_line(line):
 	adjusted = stripped.replace('\t', ' ')
 	if adjusted.startswith('#define'):
 		adjusted = normalize_define_line(adjusted)
-	else:
-		adjusted = fix_hash_spacing(adjusted)
 	adjusted = fix_hash_spacing(adjusted)
 	return adjusted + ending
 
@@ -562,6 +524,42 @@ def fix_multiline_comments(lines):
 			in_comment = False
 		result.append(content + ending)
 	return result
+
+
+def is_string_literal_line(content):
+	stripped = content.lstrip()
+	if not stripped:
+		return False
+	return stripped.startswith(('"', "u8\"", "u\"", "U\"", "L\""))
+
+
+def fix_string_continuation_indent(lines):
+	fixed = []
+	run_base_indent = None
+	prev_nonempty = ""
+	prev_nonempty_is_string = False
+	for line in lines:
+		content, ending = split_line_ending(line)
+		line_sep = ending or "\n"
+		stripped = content.lstrip()
+		is_string = is_string_literal_line(content)
+		if is_string and prev_nonempty and not prev_nonempty.lstrip().startswith('#'):
+			if prev_nonempty_is_string and run_base_indent is not None:
+				base_indent = run_base_indent
+			else:
+				base_indent = leading_ws(prev_nonempty)
+				run_base_indent = base_indent
+			content = base_indent + "\t" + stripped
+			line = content + line_sep
+		else:
+			line = content + line_sep
+			if stripped and not is_string:
+				run_base_indent = None
+		fixed.append(line)
+		if stripped:
+			prev_nonempty = content
+			prev_nonempty_is_string = is_string
+	return fixed
 
 
 def fix_ternary_lines(lines):
@@ -608,6 +606,7 @@ def apply_indent_rules(text):
 			continue
 		line = convert_leading_spaces(line)
 		line = fix_paren_spacing(line)
+		line = fix_ampersand_paren_spacing(line)
 		line = fix_ternary_spacing(line)
 		line = fix_hash_spacing(line)
 		line = fix_logical_spacing(line)
@@ -615,6 +614,7 @@ def apply_indent_rules(text):
 	lines = fix_case_blocks(lines)
 	lines = fix_labels(lines)
 	lines = fix_ternary_lines(lines)
+	lines = fix_string_continuation_indent(lines)
 	lines = fix_multiline_comments(lines)
 	return "".join(lines)
 
