@@ -3565,10 +3565,10 @@ static bool walk_bind_chains_callback(void *context, RFixupEventDetails *ed) {
 	ut32 fixups_offset = mo->fixups_offset;
 	ut32 fixups_size = mo->fixups_size;
 	ut32 imports_format = mo->fixups_header.imports_format;
-	ut32 import_index = ((RFixupBindEventDetails *)ed)->ordinal;
+	ut32 import_index = ed->ordinal;
 	ut64 addend = 0;
 	if (ed->type != R_FIXUP_EVENT_BIND_AUTH) {
-		addend = ((RFixupBindEventDetails *)ed)->addend;
+		addend = ed->addend;
 	}
 	const int limit = mo->limit;
 	if (exceeds_bin_limit (limit, import_index)) {
@@ -5144,7 +5144,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 					ut16 pointer_format = starts->pointer_format;
 					ut64 raw_ptr = IS_FMT_32BIT (pointer_format)? r_read_le32 (tmp): r_read_le64 (tmp);
 					ut64 ptr_value = raw_ptr;
-					ut64 delta, stride, addend;
+					ut64 delta = 0, stride = 0, addend = 0;
 					RFixupEvent event = R_FIXUP_EVENT_NONE;
 					ut8 key = 0, addr_div = 0;
 					ut16 diversity = 0;
@@ -5300,51 +5300,20 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 						return;
 					}
 					if (cursor >= limit_start && cursor <= limit_end - 8 && (event & event_mask) != 0) {
-						bool carry_on;
-						union {
-							RFixupEventDetails event;
-							RFixupBindEventDetails bind;
-							RFixupBindAuthEventDetails bind_auth;
-							RFixupRebaseEventDetails rebase;
-							RFixupRebaseAuthEventDetails rebase_auth;
-						} ed = {
-							.event = {
-								.type = event,
-								.bin = mo,
-								.offset = cursor,
-								.raw_ptr = raw_ptr,
-								.ptr_size = ptr_size,
-							}
+						RFixupEventDetails ed = {
+							.type = event,
+							.bin = mo,
+							.offset = cursor,
+							.raw_ptr = raw_ptr,
+							.ptr_size = ptr_size,
+							.ordinal = ordinal,
+							.addend = addend,
+							.ptr_value = ptr_value,
+							.key = key,
+							.addr_div = addr_div,
+							.diversity = diversity,
 						};
-						switch (event) {
-						case R_FIXUP_EVENT_BIND:
-							ed.bind.ordinal = ordinal;
-							ed.bind.addend = addend;
-							carry_on = callback (context, (RFixupEventDetails *)&ed.bind);
-							break;
-						case R_FIXUP_EVENT_BIND_AUTH:
-							ed.bind_auth.ordinal = ordinal;
-							ed.bind_auth.key = key;
-							ed.bind_auth.addr_div = addr_div;
-							ed.bind_auth.diversity = diversity;
-							carry_on = callback (context, (RFixupEventDetails *)&ed.bind_auth);
-							break;
-						case R_FIXUP_EVENT_REBASE:
-							ed.rebase.ptr_value = ptr_value;
-							carry_on = callback (context, (RFixupEventDetails *)&ed.rebase);
-							break;
-						case R_FIXUP_EVENT_REBASE_AUTH:
-							ed.rebase_auth.ptr_value = ptr_value;
-							ed.rebase_auth.key = key;
-							ed.rebase_auth.addr_div = addr_div;
-							ed.rebase_auth.diversity = diversity;
-							carry_on = callback (context, (RFixupEventDetails *)&ed.rebase_auth);
-							break;
-						default:
-							R_LOG_WARN ("Unexpected event while iterating chained fixups");
-							carry_on = false;
-							break;
-						}
+						bool carry_on = callback (context, &ed);
 						if (!carry_on) {
 							return;
 						}
