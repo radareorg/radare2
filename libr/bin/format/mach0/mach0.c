@@ -1628,17 +1628,21 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) *mo, ut32 offset, ut32 siz
 	mo->fixups_header = header;
 	mo->fixups_offset = offset;
 	mo->fixups_size = size;
+	ut32 segs_to_parse = segs_count;
+	if (mo->nsegs < 1) {
+		return true;
+	}
+	if ((ut32)mo->nsegs < segs_to_parse) {
+		segs_to_parse = (ut32)mo->nsegs;
+	}
 	size_t i;
 	ut64 cursor = starts_at + sizeof (ut32);
 	ut64 bsize = r_buf_size (mo->b);
-	for (i = 0; i < segs_count && cursor + 4 < bsize; i++) {
+	for (i = 0; i < segs_to_parse && cursor + 4 < bsize; i++) {
 		ut32 seg_off;
 		if ((seg_off = r_buf_read_le32_at (mo->b, cursor)) == UT32_MAX || !seg_off) {
 			cursor += sizeof (ut32);
 			continue;
-		}
-		if (i >= mo->nsegs) {
-			break;
 		}
 		struct r_dyld_chained_starts_in_segment *cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
 		mo->chained_starts[i] = cur_seg;
@@ -3853,25 +3857,29 @@ static void apply_threaded_bind(struct MACH0_(obj_t) *mo, RVecRelocRef *threaded
 		int ordinal = -1;
 		int ptr_addend = -1;
 		ut64 delta = 0;
-		if (is_auth && is_bind) {
-			struct dyld_chained_ptr_arm64e_auth_bind *p =
-					(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
-			delta = p->next;
-			ordinal = p->ordinal;
-		} else if (!is_auth && is_bind) {
-			struct dyld_chained_ptr_arm64e_bind *p =
-					(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
-			delta = p->next;
-			ordinal = p->ordinal;
-			ptr_addend = p->addend;
-		} else if (is_auth && !is_bind) {
-			struct dyld_chained_ptr_arm64e_auth_rebase *p =
-					(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
-			delta = p->next;
+		if (is_auth) {
+			if (is_bind) {
+				struct dyld_chained_ptr_arm64e_auth_bind *p =
+						(struct dyld_chained_ptr_arm64e_auth_bind *) &raw_ptr;
+				delta = p->next;
+				ordinal = p->ordinal;
+			} else {
+				struct dyld_chained_ptr_arm64e_auth_rebase *p =
+						(struct dyld_chained_ptr_arm64e_auth_rebase *) &raw_ptr;
+				delta = p->next;
+			}
 		} else {
-			struct dyld_chained_ptr_arm64e_rebase *p =
-					(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
-			delta = p->next;
+			if (is_bind) {
+				struct dyld_chained_ptr_arm64e_bind *p =
+						(struct dyld_chained_ptr_arm64e_bind *) &raw_ptr;
+				delta = p->next;
+				ordinal = p->ordinal;
+				ptr_addend = p->addend;
+			} else {
+				struct dyld_chained_ptr_arm64e_rebase *p =
+						(struct dyld_chained_ptr_arm64e_rebase *) &raw_ptr;
+				delta = p->next;
+			}
 		}
 		if (ordinal != -1) {
 			if (ordinal >= n_threaded_binds) {
@@ -5102,10 +5110,11 @@ struct MACH0_(mach_header) *MACH0_(get_hdr)(RBuffer *buf) {
 void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, ut64 limit_end, ut32 event_mask, RFixupCallback callback, void * context) {
 	int i;
 	for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
-		if (!mo->chained_starts[i]) {
+		struct r_dyld_chained_starts_in_segment *starts = mo->chained_starts[i];
+		if (!starts || !starts->page_start || !starts->page_count) {
 			continue;
 		}
-		int page_size = mo->chained_starts[i]->page_size;
+		int page_size = starts->page_size;
 		if (page_size < 1) {
 			page_size = 4096;
 		}
@@ -5114,14 +5123,13 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 		if (end >= limit_start && start <= limit_end) {
 			ut64 page_idx = (R_MAX (start, limit_start) - start) / page_size;
 			ut64 page_end_idx = (R_MIN (limit_end, end) - start) / page_size;
+			ut64 max_page_idx = starts->page_count - 1;
+			page_end_idx = R_MIN (page_end_idx, max_page_idx);
+			if (page_idx > page_end_idx) {
+				continue;
+			}
 			for (; page_idx <= page_end_idx; page_idx++) {
-				if (page_idx >= mo->chained_starts[i]->page_count) {
-					break;
-				}
-				if (!mo->chained_starts[i]->page_start) {
-					break;
-				}
-				ut16 page_start = mo->chained_starts[i]->page_start[page_idx];
+				ut16 page_start = starts->page_start[page_idx];
 				if (page_start == DYLD_CHAINED_PTR_START_NONE) {
 					continue;
 				}
@@ -5135,7 +5143,7 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) *mo, ut64 limit_start, 
 						break;
 					}
 					mo->rebasing_buffer = previous_rebasing;
-					ut16 pointer_format = mo->chained_starts[i]->pointer_format;
+					ut16 pointer_format = starts->pointer_format;
 					ut64 raw_ptr = IS_FMT_32BIT (pointer_format)? r_read_le32 (tmp) : r_read_le64 (tmp);
 					ut64 ptr_value = raw_ptr;
 					ut64 delta, stride, addend;
