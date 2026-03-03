@@ -468,18 +468,19 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 	return true;
 }
 
-#define Error(x) \
-	error_message = x; \
-	goto error;
+static void reset_symtab(struct MACH0_(obj_t) * mo) {
+	R_FREE (mo->symtab);
+	R_FREE (mo->symstr);
+	mo->nsymtab = 0;
+	mo->symstrlen = 0;
+}
+
 static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
-	struct symtab_command st;
-	ut32 size_sym;
 	size_t i;
-	const char *error_message = "";
 	ut8 symt[sizeof (struct symtab_command)] = { 0 };
 	const bool be = mo->big_endian;
 
-	if (off > (ut64)mo->size || off + sizeof (struct symtab_command) > (ut64)mo->size) {
+	if (!fits_in (mo->size, off, sizeof (struct symtab_command))) {
 		return false;
 	}
 	int len = r_buf_read_at (mo->b, off, symt, sizeof (struct symtab_command));
@@ -487,73 +488,105 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		R_LOG_ERROR ("read (symtab)");
 		return false;
 	}
-	st.cmd = r_read_ble32 (symt, be);
-	st.cmdsize = r_read_ble32 (symt + 4, be);
-	st.symoff = r_read_ble32 (symt + 8, be) + mo->symbols_off;
-	st.nsyms = r_read_ble32 (symt + 12, be);
-	st.stroff = r_read_ble32 (symt + 16, be) + mo->symbols_off;
-	st.strsize = r_read_ble32 (symt + 20, be);
+	ut64 symoff = r_read_ble32 (symt + 8, be);
+	ut64 nsyms = r_read_ble32 (symt + 12, be);
+	ut64 stroff = r_read_ble32 (symt + 16, be);
+	ut64 strsize = r_read_ble32 (symt + 20, be);
+	if (!UT64_ADD (&symoff, symoff, mo->symbols_off)) {
+		return false;
+	}
+	if (!UT64_ADD (&stroff, stroff, mo->symbols_off)) {
+		return false;
+	}
 
-	mo->symtab = NULL;
-	mo->nsymtab = 0;
-	if (st.strsize > 0 && st.strsize < mo->size && st.nsyms > 0) {
-		mo->nsymtab = st.nsyms;
-		if (st.stroff > mo->size || st.stroff + st.strsize > mo->size) {
-			Error ("fail");
-		}
-		if (!UT32_MUL (&size_sym, mo->nsymtab, sizeof (struct MACH0_(nlist)))) {
-			Error ("fail2");
-		}
-		if (!size_sym) {
-			Error ("symbol size is zero");
-		}
-		if (st.symoff > mo->size || st.symoff + size_sym > mo->size) {
-			Error ("symoff is out of bounds");
-		}
-		if (! (mo->symstr = calloc (1, st.strsize + 2))) {
-			Error ("symoff is out of bounds");
-		}
-		mo->symstrlen = st.strsize;
-		len = r_buf_read_at (mo->b, st.stroff, (ut8 *)mo->symstr, st.strsize);
-		if (len != st.strsize) {
-			Error ("Error: read (symstr)");
-		}
-		ut64 max_nsymtab = (r_buf_size (mo->b) - st.symoff) / sizeof (struct MACH0_(nlist));
-		if (mo->nsymtab > max_nsymtab || ! (mo->symtab = calloc (mo->nsymtab, sizeof (struct MACH0_(nlist))))) {
-			goto error;
-		}
-		// Bulk read all symbol data at once instead of one-by-one
-		ut8 *symdata = malloc (size_sym);
-		if (!symdata) {
-			Error ("malloc (symdata)");
-		}
-		len = r_buf_read_at (mo->b, st.symoff, symdata, size_sym);
-		if (len != size_sym) {
-			free (symdata);
-			Error ("read (symdata bulk)");
-		}
-		const size_t nlist_size = sizeof (struct MACH0_(nlist));
-		for (i = 0; i < mo->nsymtab; i++) {
+	reset_symtab (mo);
+	if (strsize == 0 || strsize >= mo->size || nsyms == 0) {
+		return true;
+	}
+	if (strsize > ST32_MAX || !fits_in (mo->size, stroff, strsize)) {
+		return false;
+	}
+	ut32 size_sym;
+	if (!UT32_MUL (&size_sym, nsyms, sizeof (struct MACH0_(nlist))) || !size_sym || size_sym > ST32_MAX) {
+		return false;
+	}
+	if (!fits_in (mo->size, symoff, size_sym)) {
+		return false;
+	}
+	mo->symstr = calloc (1, strsize + 2);
+	if (!mo->symstr) {
+		return false;
+	}
+	mo->symstrlen = strsize;
+	len = r_buf_read_at (mo->b, stroff, (ut8 *)mo->symstr, strsize);
+	if (len != strsize) {
+		reset_symtab (mo);
+		R_LOG_ERROR ("read (symstr)");
+		return false;
+	}
+	const ut64 bsz = r_buf_size (mo->b);
+	if (symoff > bsz) {
+		reset_symtab (mo);
+		return false;
+	}
+	ut64 max_nsymtab = (bsz - symoff) / sizeof (struct MACH0_(nlist));
+	if (nsyms > max_nsymtab) {
+		reset_symtab (mo);
+		return false;
+	}
+	mo->symtab = calloc (nsyms, sizeof (struct MACH0_(nlist)));
+	if (!mo->symtab) {
+		reset_symtab (mo);
+		return false;
+	}
+	mo->nsymtab = nsyms;
+
+	// Bulk read all symbol data at once instead of one-by-one
+	ut8 *symdata = malloc (size_sym);
+	if (!symdata) {
+		reset_symtab (mo);
+		return false;
+	}
+	len = r_buf_read_at (mo->b, symoff, symdata, size_sym);
+	if (len != size_sym) {
+		free (symdata);
+		reset_symtab (mo);
+		R_LOG_ERROR ("read (symdata bulk)");
+		return false;
+	}
+	const size_t nlist_size = sizeof (struct MACH0_(nlist));
+	size_t count = mo->nsymtab;
+	if (be) {
+		for (i = 0; i < count; i++) {
 			const ut8 *nlst_ptr = symdata + (i * nlist_size);
 			struct MACH0_(nlist) *sti = &mo->symtab[i];
-			sti->n_strx = r_read_ble32 (nlst_ptr, be);
-			sti->n_type = r_read_ble8 (nlst_ptr + 4);
-			sti->n_sect = r_read_ble8 (nlst_ptr + 5);
-			sti->n_desc = r_read_ble16 (nlst_ptr + 6, be);
+			sti->n_strx = r_read_be32 (nlst_ptr);
+			sti->n_type = r_read_be8 (nlst_ptr + 4);
+			sti->n_sect = r_read_be8 (nlst_ptr + 5);
+			sti->n_desc = r_read_be16 (nlst_ptr + 6);
 #if R_BIN_MACH064
-			sti->n_value = r_read_ble64 (nlst_ptr + 8, be);
+			sti->n_value = r_read_be64 (nlst_ptr + 8);
 #else
-			sti->n_value = r_read_ble32 (nlst_ptr + 8, be);
+			sti->n_value = r_read_be32 (nlst_ptr + 8);
 #endif
 		}
-		free (symdata);
+	} else {
+		for (i = 0; i < count; i++) {
+			const ut8 *nlst_ptr = symdata + (i * nlist_size);
+			struct MACH0_(nlist) *sti = &mo->symtab[i];
+			sti->n_strx = r_read_le32 (nlst_ptr);
+			sti->n_type = r_read_le8 (nlst_ptr + 4);
+			sti->n_sect = r_read_le8 (nlst_ptr + 5);
+			sti->n_desc = r_read_le16 (nlst_ptr + 6);
+#if R_BIN_MACH064
+			sti->n_value = r_read_le64 (nlst_ptr + 8);
+#else
+			sti->n_value = r_read_le32 (nlst_ptr + 8);
+#endif
+		}
 	}
+	free (symdata);
 	return true;
-error:
-	R_FREE (mo->symstr);
-	R_FREE (mo->symtab);
-	R_LOG_ERROR ("parse.symtab: %s", error_message);
-	return false;
 }
 
 static bool parse_aot_metadata(struct MACH0_(obj_t) * mo, ut64 off) {
@@ -3314,6 +3347,13 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 	return !RVecRBinSymbol_empty (mo->symbols_vec);
 }
 
+static inline ut8 relfrom_wordsize(size_t ws) {
+	if (ws == 1 || ws == 2 || ws == 4 || ws == 8) {
+		return ws * 8;
+	}
+	return 0;
+}
+
 static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 	int idx = mo->dysymtab.iundefsym + jota;
 	int i, j, sym;
@@ -3988,14 +4028,6 @@ static bool parse_bind_op(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_bin
 		R_LOG_DEBUG ("unknown bind opcode 0x%02x in dyld_info", op);
 		return false;
 	}
-}
-
-// i think we need this helper function in other places..
-static inline ut8 relfrom_wordsize(size_t ws) {
-	if (ws == 1 || ws == 2 || ws == 4 || ws == 8) {
-		return ws * 8;
-	}
-	return 0;
 }
 
 static bool _load_relocations(struct MACH0_(obj_t) * mo) {
