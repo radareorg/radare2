@@ -94,7 +94,7 @@ static bool fits_in(ut64 file_size, ut64 offset, ut64 size) {
 	return offset <= file_size && end <= file_size;
 }
 
-static bool mach0_set_endian_from_magic(ut32 magic, R_OUT bool *big_endian) {
+static bool magic_endian(ut32 magic, R_OUT bool *big_endian) {
 	switch (magic) {
 	case MH_MAGIC:
 	case MH_MAGIC_64:
@@ -281,7 +281,7 @@ static bool init_hdr(struct MACH0_(obj_t) * mo) {
 		R_LOG_WARN ("cannot read magic header");
 		return false;
 	}
-	if (!mach0_set_endian_from_magic (r_read_be32 (machohdrbytes), &mo->big_endian)) {
+	if (!magic_endian (r_read_be32 (machohdrbytes), &mo->big_endian)) {
 		return false; // object files are magic == 0, but body is different :?
 	}
 	mo->hdr.magic = r_read_ble (&machohdrbytes[0], mo->big_endian, 32);
@@ -5050,36 +5050,33 @@ RList *MACH0_(mach_fields)(RBinFile *bf) {
 }
 
 struct MACH0_(mach_header) * MACH0_(get_hdr)(RBuffer *buf) {
-	ut8 machohdrbytes[sizeof (struct MACH0_(mach_header))] = { 0 };
-	int len;
-	struct MACH0_(mach_header) *macho_hdr = R_NEW0 (struct MACH0_(mach_header));
-	bool big_endian = false;
-	if (!macho_hdr) {
-		return NULL;
-	}
-	len = r_buf_read_at (buf, 0, machohdrbytes, sizeof (machohdrbytes));
+	ut8 hdr[sizeof (struct MACH0_(mach_header))] = { 0 };
+	struct MACH0_(mach_header) *mh = R_NEW0 (struct MACH0_(mach_header));
+	bool be = false;
+	int len = r_buf_read_at (buf, 0, hdr, sizeof (hdr));
 	if (len != sizeof (struct MACH0_(mach_header))) {
-		free (macho_hdr);
+		free (mh);
 		return NULL;
 	}
-	if (!mach0_set_endian_from_magic (r_read_be32 (machohdrbytes), &big_endian)) {
+	if (!magic_endian (r_read_be32 (hdr), &be)) {
+		// AITODO: evaluate the need for this early return here.. maybe it must remove the if0 block.. or maybe we can just uncomment it? take a decision and make it happen
 		/* also extract non-mach0s */
 #if 0
-		free (macho_hdr);
+		free (mh);
 		return NULL;
 #endif
 	}
-	macho_hdr->magic = r_read_ble (&machohdrbytes[0], big_endian, 32);
-	macho_hdr->cputype = r_read_ble (&machohdrbytes[4], big_endian, 32);
-	macho_hdr->cpusubtype = r_read_ble (&machohdrbytes[8], big_endian, 32);
-	macho_hdr->filetype = r_read_ble (&machohdrbytes[12], big_endian, 32);
-	macho_hdr->ncmds = r_read_ble (&machohdrbytes[16], big_endian, 32);
-	macho_hdr->sizeofcmds = r_read_ble (&machohdrbytes[20], big_endian, 32);
-	macho_hdr->flags = r_read_ble (&machohdrbytes[24], big_endian, 32);
+	mh->magic = r_read_ble (&hdr[0], be, 32);
+	mh->cputype = r_read_ble (&hdr[4], be, 32);
+	mh->cpusubtype = r_read_ble (&hdr[8], be, 32);
+	mh->filetype = r_read_ble (&hdr[12], be, 32);
+	mh->ncmds = r_read_ble (&hdr[16], be, 32);
+	mh->sizeofcmds = r_read_ble (&hdr[20], be, 32);
+	mh->flags = r_read_ble (&hdr[24], be, 32);
 #if R_BIN_MACH064
-	macho_hdr->reserved = r_read_ble (&machohdrbytes[28], big_endian, 32);
+	mh->reserved = r_read_ble (&hdr[28], be, 32);
 #endif
-	return macho_hdr;
+	return mh;
 }
 
 #define IS_FMT_32BIT(x) (x == DYLD_CHAINED_PTR_32 || x == DYLD_CHAINED_PTR_32_CACHE || x == DYLD_CHAINED_PTR_32_FIRMWARE)
@@ -5292,15 +5289,14 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 							.addr_div = addr_div,
 							.diversity = diversity,
 						};
-						bool carry_on = callback (context, &ed);
-						if (!carry_on) {
+						if (!callback (context, &ed)) {
 							return;
 						}
 					}
-					cursor += delta * stride;
 					if (!delta) {
 						break;
 					}
+					cursor += delta * stride;
 				}
 			}
 		}
