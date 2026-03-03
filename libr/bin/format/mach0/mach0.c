@@ -3557,19 +3557,18 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 	free (info);
 }
 
-static bool walk_bind_chains_callback(void *context, RFixupEventDetails *event_details) {
-	R_RETURN_VAL_IF_FAIL (event_details->type == R_FIXUP_EVENT_BIND || event_details->type == R_FIXUP_EVENT_BIND_AUTH, false);
+static bool walk_bind_chains_callback(void *context, RFixupEventDetails *ed) {
 	RWalkBindChainsContext *ctx = context;
 	ut8 *imports = ctx->imports;
-	struct MACH0_(obj_t) *mo = event_details->bin;
+	struct MACH0_(obj_t) *mo = ed->bin;
 	ut32 imports_count = mo->fixups_header.imports_count;
 	ut32 fixups_offset = mo->fixups_offset;
 	ut32 fixups_size = mo->fixups_size;
 	ut32 imports_format = mo->fixups_header.imports_format;
-	ut32 import_index = ((RFixupBindEventDetails *)event_details)->ordinal;
+	ut32 import_index = ((RFixupBindEventDetails *)ed)->ordinal;
 	ut64 addend = 0;
-	if (event_details->type != R_FIXUP_EVENT_BIND_AUTH) {
-		addend = ((RFixupBindEventDetails *)event_details)->addend;
+	if (ed->type != R_FIXUP_EVENT_BIND_AUTH) {
+		addend = ((RFixupBindEventDetails *)ed)->addend;
 	}
 	const int limit = mo->limit;
 	if (exceeds_bin_limit (limit, import_index)) {
@@ -3609,8 +3608,8 @@ static bool walk_bind_chains_callback(void *context, RFixupEventDetails *event_d
 			char *name = r_buf_get_string (mo->b, symbols_offset + name_offset);
 			if (name) {
 				struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-				reloc->addr = offset_to_vaddr (mo, event_details->offset);
-				reloc->offset = event_details->offset;
+				reloc->addr = offset_to_vaddr (mo, ed->offset);
+				reloc->offset = ed->offset;
 				reloc->ord = import_index;
 				reloc->type = R_BIN_RELOC_64;
 				reloc->size = 8;
@@ -5302,66 +5301,45 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 					}
 					if (cursor >= limit_start && cursor <= limit_end - 8 && (event & event_mask) != 0) {
 						bool carry_on;
+						union {
+							RFixupEventDetails event;
+							RFixupBindEventDetails bind;
+							RFixupBindAuthEventDetails bind_auth;
+							RFixupRebaseEventDetails rebase;
+							RFixupRebaseAuthEventDetails rebase_auth;
+						} ed = {
+							.event = {
+								.type = event,
+								.bin = mo,
+								.offset = cursor,
+								.raw_ptr = raw_ptr,
+								.ptr_size = ptr_size,
+							}
+						};
 						switch (event) {
 						case R_FIXUP_EVENT_BIND:
-							{
-								RFixupBindEventDetails event_details = {
-									.type = event,
-									.bin = mo,
-									.offset = cursor,
-									.raw_ptr = raw_ptr,
-									.ptr_size = ptr_size,
-									.ordinal = ordinal,
-									.addend = addend,
-								};
-								carry_on = callback (context, (RFixupEventDetails *)&event_details);
-								break;
-							}
+							ed.bind.ordinal = ordinal;
+							ed.bind.addend = addend;
+							carry_on = callback (context, (RFixupEventDetails *)&ed.bind);
+							break;
 						case R_FIXUP_EVENT_BIND_AUTH:
-							{
-								RFixupBindAuthEventDetails event_details = {
-									.type = event,
-									.bin = mo,
-									.offset = cursor,
-									.raw_ptr = raw_ptr,
-									.ptr_size = ptr_size,
-									.ordinal = ordinal,
-									.key = key,
-									.addr_div = addr_div,
-									.diversity = diversity,
-								};
-								carry_on = callback (context, (RFixupEventDetails *)&event_details);
-								break;
-							}
+							ed.bind_auth.ordinal = ordinal;
+							ed.bind_auth.key = key;
+							ed.bind_auth.addr_div = addr_div;
+							ed.bind_auth.diversity = diversity;
+							carry_on = callback (context, (RFixupEventDetails *)&ed.bind_auth);
+							break;
 						case R_FIXUP_EVENT_REBASE:
-							{
-								RFixupRebaseEventDetails event_details = {
-									.type = event,
-									.bin = mo,
-									.offset = cursor,
-									.raw_ptr = raw_ptr,
-									.ptr_size = ptr_size,
-									.ptr_value = ptr_value,
-								};
-								carry_on = callback (context, (RFixupEventDetails *)&event_details);
-								break;
-							}
+							ed.rebase.ptr_value = ptr_value;
+							carry_on = callback (context, (RFixupEventDetails *)&ed.rebase);
+							break;
 						case R_FIXUP_EVENT_REBASE_AUTH:
-							{
-								RFixupRebaseAuthEventDetails event_details = {
-									.type = event,
-									.bin = mo,
-									.offset = cursor,
-									.raw_ptr = raw_ptr,
-									.ptr_size = ptr_size,
-									.ptr_value = ptr_value,
-									.key = key,
-									.addr_div = addr_div,
-									.diversity = diversity,
-								};
-								carry_on = callback (context, (RFixupEventDetails *)&event_details);
-								break;
-							}
+							ed.rebase_auth.ptr_value = ptr_value;
+							ed.rebase_auth.key = key;
+							ed.rebase_auth.addr_div = addr_div;
+							ed.rebase_auth.diversity = diversity;
+							carry_on = callback (context, (RFixupEventDetails *)&ed.rebase_auth);
+							break;
 						default:
 							R_LOG_WARN ("Unexpected event while iterating chained fixups");
 							carry_on = false;
