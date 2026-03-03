@@ -5850,7 +5850,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			ut64 ls = r_anal_function_linear_size (fcn);
 			ut64 fs = r_anal_function_realsize (fcn);
 			if (ls > fs + 4096) {
-				R_LOG_INFO ("Function is too sparse, must be analyzed with recursive");
+				R_LOG_INFO ("Function 0x%08"PFMT64x" (%s) is too sparse, analyzing recursively",
+					fcn->addr, fcn->name? fcn->name: "?");
 				// `aaef` (analysis) must not modify the opened file even in `-w` mode.
 				// Route ESIL writes to the IO overlay temporarily for this recursive pass.
 				bool (*old_write_at)(RIO *io, ut64 addr, const ut8 *buf, int len) = core->anal->iob.write_at;
