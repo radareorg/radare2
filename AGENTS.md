@@ -12,8 +12,9 @@ radare2 is a modular reverse engineering framework.
 
 ## Formatting
 
-Run `clang-format-radare2` on modified files before submitting.
-Run `sys/lint.sh` script to enforce some extra rules.
+Do not run `clang-format-radare2` unless clearly specified by the user.
+Follow the already existing and defined coding style.
+Optionally run `sys/lint.sh` script if you are unsure about the linter.
 
 - Indent code with **tabs**, spaces for comments and no trailing spaces
 - Space before opening parenthesis: `if (a)`, `foo ()`, `sizeof (int)`
