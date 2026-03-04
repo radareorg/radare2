@@ -94,6 +94,39 @@ static bool fits_in(ut64 file_size, ut64 offset, ut64 size) {
 	return offset <= file_size && end <= file_size;
 }
 
+static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *size) {
+	R_RETURN_VAL_IF_FAIL (mo && size, false);
+	if (seg_idx < 0 || seg_idx >= mo->nsegs) {
+		return false;
+	}
+	ut64 fileoff = mo->segs[seg_idx].fileoff;
+	ut64 filesize = mo->segs[seg_idx].filesize;
+	if (fileoff > mo->size) {
+		return false;
+	}
+	ut64 max_filesize = mo->size - fileoff;
+	ut64 filebacked_size = R_MIN (filesize, max_filesize);
+	filebacked_size = R_MIN (filebacked_size, mo->segs[seg_idx].vmsize);
+	*size = filebacked_size;
+	return true;
+}
+
+static bool segment_bind_bounds(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *start, R_OUT ut64 *end) {
+	R_RETURN_VAL_IF_FAIL (mo && start && end, false);
+	ut64 seg_size = 0;
+	if (!segment_filebacked_size (mo, seg_idx, &seg_size)) {
+		return false;
+	}
+	ut64 seg_start = mo->segs[seg_idx].vmaddr;
+	if (!UT64_ADD (end, seg_start, seg_size)) {
+		return false;
+	}
+	*start = seg_start;
+	return true;
+}
+
+static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride);
+
 static bool magic_endian(ut32 magic, R_OUT bool *big_endian) {
 	switch (magic) {
 	case MH_MAGIC:
@@ -1654,9 +1687,10 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	}
 	size_t wordsize = get_word_size (mo);
 	ut8 *p = NULL;
-	size_t j, count, skip;
+	ut64 count, skip;
 	int seg_idx = 0;
 	ut64 seg_off = 0;
+	ut64 segment_size = 0;
 	size_t bind_size = mo->dyld_info->bind_size;
 	if (!bind_size || bind_size < 1) {
 		return false;
@@ -1677,6 +1711,10 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	size_t cur_seg_idx = 0;
 	ut8 *end;
 	bool done = false;
+	if (!segment_filebacked_size (mo, seg_idx, &segment_size)) {
+		R_FREE (opcodes);
+		return false;
+	}
 	for (p = opcodes, end = opcodes + bind_size; !done && p < end;) {
 		ut8 imm = *p & BIND_IMMEDIATE_MASK, op = *p & BIND_OPCODE_MASK;
 		p++;
@@ -1687,48 +1725,47 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 		case BIND_OPCODE_THREADED:
 			{
 				switch (imm) {
-			case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB:
-				{
+				case BIND_SUBOPCODE_THREADED_SET_BIND_ORDINAL_TABLE_SIZE_ULEB:
 					read_uleb128 (&p, end);
 					break;
-				}
-			case BIND_SUBOPCODE_THREADED_APPLY:
-				{
-					const size_t ps = 0x1000;
-					if (!cur_seg || cur_seg_idx != seg_idx) {
-						cur_seg_idx = seg_idx;
-						cur_seg = mo->chained_starts[seg_idx];
-						if (!cur_seg) {
-							cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+				case BIND_SUBOPCODE_THREADED_APPLY:
+					{
+						const size_t ps = 0x1000;
+						if (!cur_seg || cur_seg_idx != seg_idx) {
+							cur_seg_idx = seg_idx;
+							cur_seg = mo->chained_starts[seg_idx];
 							if (!cur_seg) {
-								break;
-							}
-							mo->chained_starts[seg_idx] = cur_seg;
-							cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
-							cur_seg->page_size = ps;
-							cur_seg->page_count = ((mo->segs[seg_idx].vmsize + (ps - 1)) & ~ (ps - 1)) / ps;
-							if (cur_seg->page_count > 0) {
-								cur_seg->page_start = R_NEWS0 (ut16, cur_seg->page_count);
-								if (!cur_seg->page_start) {
+								cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+								if (!cur_seg) {
 									break;
 								}
-								memset (cur_seg->page_start, 0xff, sizeof (ut16) * cur_seg->page_count);
+								mo->chained_starts[seg_idx] = cur_seg;
+								cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
+								cur_seg->page_size = ps;
+								cur_seg->page_count = ((segment_size + (ps - 1)) & ~ (ps - 1)) / ps;
+								if (cur_seg->page_count > 0) {
+									cur_seg->page_start = R_NEWS0 (ut16, cur_seg->page_count);
+									if (!cur_seg->page_start) {
+										break;
+									}
+									memset (cur_seg->page_start, 0xff, sizeof (ut16) * cur_seg->page_count);
+								}
 							}
 						}
-					}
-					{
-						ut32 page_index = (ut32) (seg_off / ps);
-						if (page_index < cur_seg->page_count && cur_seg->page_start) {
-							cur_seg->page_start[page_index] = seg_off & 0xfff;
+						{
+							ut32 page_index = (ut32) (seg_off / ps);
+							if (page_index < cur_seg->page_count && cur_seg->page_start) {
+								cur_seg->page_start[page_index] = seg_off & 0xfff;
+							}
 						}
+						break;
 					}
-					break;
-				}
 				default:
 					R_LOG_ERROR ("Unexpected BIND_OPCODE_THREADED sub-opcode: 0x%x", imm);
+					break;
 				}
-				break;
 			}
+			break;
 		case BIND_OPCODE_SET_DYLIB_ORDINAL_IMM:
 		case BIND_OPCODE_SET_DYLIB_SPECIAL_IMM:
 		case BIND_OPCODE_SET_TYPE_IMM:
@@ -1750,26 +1787,60 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 				R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has unexistent segment %d", seg_idx);
 				R_FREE (opcodes);
 				return false;
-			} else {
-				seg_off = read_uleb128 (&p, end);
+			}
+			seg_off = read_uleb128 (&p, end);
+			if (!segment_filebacked_size (mo, seg_idx, &segment_size) || seg_off > segment_size) {
+				R_LOG_ERROR ("Malformed bind opcode stream");
+				R_FREE (opcodes);
+				return false;
 			}
 			break;
 		case BIND_OPCODE_ADD_ADDR_ULEB:
-			seg_off += read_uleb128 (&p, end);
+			{
+				ut64 add = read_uleb128 (&p, end);
+				if (!UT64_ADD (&seg_off, seg_off, add)) {
+					R_FREE (opcodes);
+					return false;
+				}
+			}
 			break;
 		case BIND_OPCODE_DO_BIND:
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-			seg_off += read_uleb128 (&p, end) + wordsize;
+			{
+				ut64 add = read_uleb128 (&p, end);
+				ut64 inc = 0;
+				if (!UT64_ADD (&inc, add, wordsize) || !UT64_ADD (&seg_off, seg_off, inc)) {
+					R_FREE (opcodes);
+					return false;
+				}
+			}
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
-			seg_off += (ut64)imm *(ut64)wordsize + wordsize;
+			{
+				ut64 scaled = 0;
+				ut64 inc = 0;
+				if (!UT64_MUL (&scaled, (ut64)imm, (ut64)wordsize) || !UT64_ADD (&inc, scaled, wordsize) || !UT64_ADD (&seg_off, seg_off, inc)) {
+					R_FREE (opcodes);
+					return false;
+				}
+			}
 			break;
 		case BIND_OPCODE_DO_BIND_ULEB_TIMES_SKIPPING_ULEB:
 			count = read_uleb128 (&p, end);
 			skip = read_uleb128 (&p, end);
-			for (j = 0; j < count; j++) {
-				seg_off += skip + wordsize;
+			{
+				ut64 stride = 0;
+				ut64 span = 0;
+				if (!UT64_ADD (&stride, skip, wordsize) || !bind_fits (count, seg_off, segment_size, stride)) {
+					R_LOG_ERROR ("Malformed bind opcode stream");
+					R_FREE (opcodes);
+					return false;
+				}
+				if (!UT64_MUL (&span, count, stride) || !UT64_ADD (&seg_off, seg_off, span)) {
+					R_FREE (opcodes);
+					return false;
+				}
 			}
 			break;
 		default:
@@ -1789,6 +1860,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	struct load_command lc = { 0, 0 };
 	ut8 loadc[sizeof (struct load_command)] = { 0 };
 	bool is_first_thread = true;
+	ut64 cmds_begin = sizeof (struct MACH0_(mach_header)) + mo->header_at;
+	ut64 cmds_end = 0;
 	ut64 off = 0LL;
 	int i, len;
 	char cmd_flagname[128];
@@ -1799,19 +1872,19 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	mo->segments_vec = NULL;
 	RVecMach0Lib_init (&mo->libs_cache);
 
-	if (mo->hdr.sizeofcmds > mo->size) {
+	if (!UT64_ADD (&cmds_end, cmds_begin, mo->hdr.sizeofcmds) || cmds_end > mo->size) {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
-		mo->hdr.sizeofcmds = mo->size - 128;
-		// return false;
+		cmds_end = mo->size;
 	}
 	bool noFuncStarts = mo->nofuncstarts;
 	// bprintf ("Commands: %d\n", mo->hdr.ncmds);
-	for (i = 0, off = sizeof (struct MACH0_(mach_header)) + mo->header_at;
+	for (i = 0, off = cmds_begin;
 		i < mo->hdr.ncmds;
 		i++, off += lc.cmdsize) {
-		if (off > mo->size || off + sizeof (struct load_command) > mo->size) {
+		ut64 cmd_end = 0;
+		if (!UT64_ADD (&cmd_end, off, sizeof (struct load_command)) || cmd_end > cmds_end) {
 			R_LOG_WARN ("out of bounds macho command");
-			return false;
+			break;
 		}
 		len = r_buf_read_at (mo->b, off, loadc, sizeof (struct load_command));
 		if (len < 1) {
@@ -1821,8 +1894,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		lc.cmd = r_read_ble32 (&loadc[0], mo->big_endian);
 		lc.cmdsize = r_read_ble32 (&loadc[4], mo->big_endian);
 
-		if (lc.cmdsize < 1 || off + lc.cmdsize > mo->size) {
-			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, (ut64) (off + lc.cmdsize), (ut64) (mo->size));
+		if (!UT64_ADD (&cmd_end, off, lc.cmdsize) || lc.cmdsize < 1 || cmd_end > cmds_end) {
+			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, (ut64) cmd_end, cmds_end);
 			break;
 		}
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
@@ -3805,12 +3878,13 @@ static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_
 	if (threaded_binds) {
 		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, state->sym_ord);
 		if (slot) {
+			free (*slot);
 			*slot = reloc;
 		} else {
 			free (reloc);
 		}
 	} else {
-		r_skiplist_insert (mo->relocs_cache, reloc);
+		r_skiplist_insert_autofree (mo->relocs_cache, reloc);
 	}
 }
 
@@ -3877,7 +3951,7 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 			if (ptr_addend != -1) {
 				reloc->addend = ptr_addend;
 			}
-			r_skiplist_insert (mo->relocs_cache, reloc);
+			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
 		}
 		state->addr += delta * wordsize;
 		if (!delta) {
@@ -4008,17 +4082,32 @@ static bool parse_bind_op(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_bin
 		state->addend = r_sleb128 ((const ut8 **)p, end);
 		return true;
 	case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-		state->seg_idx = imm;
-		if (state->seg_idx >= mo->nsegs) {
-			R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
-			return false;
+		{
+			ut64 seg_start = 0;
+			ut64 seg_end = 0;
+			ut64 seg_off;
+			state->seg_idx = imm;
+			if (state->seg_idx >= mo->nsegs) {
+				R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
+				return false;
+			}
+			seg_off = read_uleb128 (p, end);
+			if (!segment_bind_bounds (mo, state->seg_idx, &seg_start, &seg_end) || !UT64_ADD (&state->addr, seg_start, seg_off) || state->addr > seg_end) {
+				R_LOG_DEBUG ("Malformed segment bind range");
+				return stop_bind_parsing (state);
+			}
+			state->segment_end_addr = seg_end;
+			return true;
 		}
-		state->addr = mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
-		state->segment_end_addr = mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].vmsize;
-		return true;
 	case BIND_OPCODE_ADD_ADDR_ULEB:
-		state->addr += read_uleb128 (p, end);
-		return true;
+		{
+			ut64 add = read_uleb128 (p, end);
+			if (!UT64_ADD (&state->addr, state->addr, add)) {
+				R_LOG_DEBUG ("Malformed ADD_ADDR bind opcode");
+				return stop_bind_parsing (state);
+			}
+			return true;
+		}
 	case BIND_OPCODE_DO_BIND:
 	case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
 	case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
@@ -4096,16 +4185,18 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 			RBindOpState state = { 0 };
 			state.seg_idx = -1;
 			state.sym_ord = -1;
-			state.addr = mo->segs[0].vmaddr;
-			ut64 segment_size = mo->segs[0].filesize;
-			if (mo->segs[0].filesize != mo->segs[0].vmsize) {
-				// is probably invalid and we should warn the user
+			{
+				ut64 seg_start = 0;
+				ut64 seg_end = 0;
+				if (!segment_bind_bounds (mo, 0, &seg_start, &seg_end)) {
+					R_FREE (opcodes);
+					RVecRelocRef_free (threaded_binds);
+					ht_pp_free (ord_cache);
+					return false;
+				}
+				state.addr = seg_start;
+				state.segment_end_addr = seg_end;
 			}
-			if (segment_size > mo->size) {
-				// is probably invalid and we should warn the user
-				segment_size = mo->size;
-			}
-			state.segment_end_addr = state.addr + segment_size;
 
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
