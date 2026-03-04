@@ -25,6 +25,8 @@
 
 // Max NOP count to stop analysis
 #define MAX_NOP_PREFIX_CNT 1024
+// Keep recursion bounded across all builds to avoid stack exhaustion.
+#define R_ANAL_FCN_RECURSE_STACK_LIMIT 192
 
 #define DB a->sdb_fcns
 #define EXISTS(x, ...) snprintf (key, sizeof (key) - 1, x, ## __VA_ARGS__), sdb_exists (DB, key)
@@ -605,8 +607,7 @@ static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
 
 static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int depth) {
 	const char *variadic_reg = NULL;
-	ReadAhead ra = {0};
-	ra.cache_addr = UT64_MAX; // invalidate the cache
+	ReadAhead *ra = NULL;
 	char *bp_reg = NULL;
 	char *sp_reg = NULL;
 	char *op_dst = NULL;
@@ -772,6 +773,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 			nopskip = false;
 		}
 	}
+	ra = R_NEW0 (ReadAhead);
+	ra->cache_addr = UT64_MAX; // invalidate the cache
 
 	op = r_anal_op_new ();
 	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
@@ -790,7 +793,7 @@ repeat:
 		ut32 at_delta = addrbytes * idx;
 		ut64 at = addr + at_delta;
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
-		ret = read_ahead (&ra, anal, at, buf, bytes_read);
+		ret = read_ahead (ra, anal, at, buf, bytes_read);
 		if (ret < 0) {
 			R_LOG_ERROR ("Failed to read");
 			break;
@@ -1128,7 +1131,7 @@ noskip:
 				RAnalOp jmp_aop = {0};
 				ut64 jmptbl_addr = op->ptr;
 				ut64 casetbl_addr = op->ptr;
-				if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+				if (is_delta_pointer_table (ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 					ut64 table_size, default_case = 0;
 					st64 case_shift = 0;
 					// we require both checks here since try_get_jmptbl_info uses
@@ -1236,7 +1239,7 @@ noskip:
 					RAnalOp jmp_aop ;
 					if (jmptbl_addr != UT64_MAX) {
 						eprintf ("CHKLS PTR TABLE AT %llx\n", jmptbl_addr);
-						if (is_delta_pointer_table (&ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
+						if (is_delta_pointer_table (ra, anal, fcn, op->addr, op->ptr, &jmptbl_addr, &casetbl_addr, &jmp_aop)) {
 							eprintf("ISDELTA\n");
 						}
 					}
@@ -1374,7 +1377,7 @@ noskip:
 		case R_ANAL_OP_TYPE_UCJMP:
 			if (anal->opt.jmppair && is_x86 && op->jump != UT64_MAX && op->fail == op->addr + op->size) {
 				ut8 next_buf[32];
-				int next_read = read_ahead (&ra, anal, op->fail, next_buf, sizeof (next_buf));
+				int next_read = read_ahead (ra, anal, op->fail, next_buf, sizeof (next_buf));
 				if (next_read > 0) {
 					RAnalOp next = {0};
 					int next_len = r_anal_op (anal, &next, op->fail, next_buf, next_read, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
@@ -1928,6 +1931,7 @@ beach:
 	free (op_dst);
 	free (bp_reg);
 	free (sp_reg);
+	free (ra);
 	while (lea_cnt > 0) {
 		leaddr_pair *lea = r_list_pop (anal->leaddrs);
 		if (!lea) {
@@ -1949,6 +1953,9 @@ beach:
 
 R_API int r_anal_function_bb(RAnal *anal, RAnalFunction *fcn, ut64 addr, int depth) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, -1);
+	if (depth > R_ANAL_FCN_RECURSE_STACK_LIMIT) {
+		depth = R_ANAL_FCN_RECURSE_STACK_LIMIT;
+	}
 	int ret = fcn_recurse (anal, fcn, addr, anal->opt.bb_max_size, depth - 1);
 	// Plugin notification is in r_anal_fcn() to fire once per function
 	return ret;

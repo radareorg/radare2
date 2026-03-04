@@ -131,28 +131,38 @@ R_API RAnalBlock *r_anal_get_block_at(RAnal *anal, ut64 addr) {
 
 // This is a special case of what r_interval_node_all_in () does
 static bool all_in(RAnalBlock *node, ut64 addr, RAnalBlockCb cb, void *user) {
-	while (node && addr < node->addr) {
-		// less than the current node, but might still be contained further down
-		node = unwrap (node->_rb.child[0]);
+	RVecAnalBlockPtr stack;
+	RVecAnalBlockPtr_init (&stack);
+	if (node) {
+		RVecAnalBlockPtr_push_back (&stack, &node);
 	}
-	if (!node) {
-		return true;
-	}
-	if (addr >= node->_max_end) {
-		return true;
-	}
-	if (addr < node->addr + node->size) {
-		if (!cb (node, user)) {
-			return false;
+	while (!RVecAnalBlockPtr_empty (&stack)) {
+		RAnalBlock **node_slot = RVecAnalBlockPtr_last (&stack);
+		RAnalBlock *cur = node_slot? *node_slot: NULL;
+		RVecAnalBlockPtr_pop_back (&stack);
+		while (cur && addr < cur->addr) {
+			// less than the current node, but might still be contained further down
+			cur = unwrap (cur->_rb.child[0]);
+		}
+		if (!cur || addr >= cur->_max_end) {
+			continue;
+		}
+		if (addr < cur->addr + cur->size) {
+			if (!cb (cur, user)) {
+				RVecAnalBlockPtr_fini (&stack);
+				return false;
+			}
+		}
+		RAnalBlock *right = unwrap (cur->_rb.child[1]);
+		RAnalBlock *left = unwrap (cur->_rb.child[0]);
+		if (right) {
+			RVecAnalBlockPtr_push_back (&stack, &right);
+		}
+		if (left) {
+			RVecAnalBlockPtr_push_back (&stack, &left);
 		}
 	}
-	// This can be done more efficiently by building the stack manually
-	if (!all_in (unwrap (node->_rb.child[0]), addr, cb, user)) {
-		return false;
-	}
-	if (!all_in (unwrap (node->_rb.child[1]), addr, cb, user)) {
-		return false;
-	}
+	RVecAnalBlockPtr_fini (&stack);
 	return true;
 }
 
@@ -177,22 +187,35 @@ R_API RList *r_anal_get_blocks_in(RAnal *anal, ut64 addr) {
 
 static void all_intersect(RAnalBlock *node, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
 	ut64 end = addr + size;
-	while (node && end <= node->addr) {
-		// less than the current node, but might still be contained further down
-		node = unwrap (node->_rb.child[0]);
+	RVecAnalBlockPtr stack;
+	RVecAnalBlockPtr_init (&stack);
+	if (node) {
+		RVecAnalBlockPtr_push_back (&stack, &node);
 	}
-	if (!node) {
-		return;
+	while (!RVecAnalBlockPtr_empty (&stack)) {
+		RAnalBlock **node_slot = RVecAnalBlockPtr_last (&stack);
+		RAnalBlock *cur = node_slot? *node_slot: NULL;
+		RVecAnalBlockPtr_pop_back (&stack);
+		while (cur && end <= cur->addr) {
+			// less than the current node, but might still be contained further down
+			cur = unwrap (cur->_rb.child[0]);
+		}
+		if (!cur || addr >= cur->_max_end) {
+			continue;
+		}
+		if (addr < cur->addr + cur->size) {
+			cb (cur, user);
+		}
+		RAnalBlock *right = unwrap (cur->_rb.child[1]);
+		RAnalBlock *left = unwrap (cur->_rb.child[0]);
+		if (right) {
+			RVecAnalBlockPtr_push_back (&stack, &right);
+		}
+		if (left) {
+			RVecAnalBlockPtr_push_back (&stack, &left);
+		}
 	}
-	if (addr >= node->_max_end) {
-		return;
-	}
-	if (addr < node->addr + node->size) {
-		cb (node, user);
-	}
-	// This can be done more efficiently by building the stack manually
-	all_intersect (unwrap (node->_rb.child[0]), addr, size, cb, user);
-	all_intersect (unwrap (node->_rb.child[1]), addr, size, cb, user);
+	RVecAnalBlockPtr_fini (&stack);
 }
 
 R_API void r_anal_blocks_foreach_intersect(RAnal *anal, ut64 addr, ut64 size, RAnalBlockCb cb, void *user) {
