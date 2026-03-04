@@ -46,20 +46,8 @@ R_API void r_core_task_scheduler_init(RCoreTaskScheduler *tasks, RCore *core) {
 }
 
 R_API void r_core_task_scheduler_fini(RCoreTaskScheduler *tasks) {
-	// Join all task threads before freeing lists to avoid races
-	RListIter *iter;
-	RCoreTask *t;
-	r_th_lock_enter (tasks->lock);
-	RList *snapshot = r_list_clone (tasks->tasks, NULL);
-	r_th_lock_leave (tasks->lock);
-	if (snapshot) {
-		r_list_foreach (snapshot, iter, t) {
-			if (t && t->thread) {
-				r_th_wait (t->thread);
-			}
-		}
-		r_list_free (snapshot);
-	}
+	// r_core_task_free() (tasks list free callback) performs the thread join.
+	// Avoid joining here to prevent double-join on the same pthread.
 	r_list_free (tasks->tasks);
 	r_list_free (tasks->tasks_queue);
 	r_th_lock_free (tasks->lock);
@@ -346,7 +334,11 @@ R_API RCoreTask *r_core_task_new(RCore *core, RCoreTaskMode mode, bool create_co
 	}
 
 	if (create_cons) {
-		task->cons_context = r_cons_context_clone (core->cons->context);
+		RConsContext *ctx = (core->cons)? core->cons->context: NULL;
+		if (!ctx) {
+			goto hell;
+		}
+		task->cons_context = r_cons_context_clone (ctx);
 		if (!task->cons_context) {
 			goto hell;
 		}

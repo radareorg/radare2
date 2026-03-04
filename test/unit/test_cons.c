@@ -162,9 +162,16 @@ bool test_cons_to_html(void) {
 	mu_end;
 }
 
+bool test_cons_context_clone_null(void) {
+	RConsContext *ctx = r_cons_context_clone (NULL);
+	mu_assert_null (ctx, "r_cons_context_clone(NULL) must return NULL");
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
+	mu_run_test (test_cons_context_clone_null);
 	return tests_passed != tests_run;
 }
 
