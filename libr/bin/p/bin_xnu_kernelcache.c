@@ -23,6 +23,7 @@ typedef struct _RKernelCacheObj {
 	bool rebase_info_populated;
 	bool rebasing_buffer;
 	bool kexts_initialized;
+	bool fileset_style; // kexts use absolute file offsets
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	ut64 kernel_base;
@@ -221,6 +222,7 @@ static bool try_parse_mov_reg_reg(ut32 insn, int *dst_reg, int *src_reg);
 static void r_kext_free(RKext *kext);
 static void r_kext_fill_text_range(RKext *kext);
 static int kexts_sort_vaddr_func(const void *a, const void *b);
+static struct MACH0_(obj_t) *create_kext_mach0_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *opts);
 static struct MACH0_(obj_t) * create_kext_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
 static struct MACH0_(obj_t) * create_kext_shared_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf);
 
@@ -275,6 +277,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	}
 
 	obj->pending_bin_files = r_list_new (); // R_NEW0 cannot return NULL, so this cannot fail
+	obj->fileset_style = is_modern;
 
 	obj->mach0 = main_mach0;
 	obj->rebase_info = rebase_info;
@@ -882,14 +885,26 @@ static RKext *r_kext_index_vget(RKextIndex *index, ut64 vaddr) {
 	return NULL;
 }
 
+static struct MACH0_(obj_t) *create_kext_mach0_raw(RKernelCacheObj *obj, RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) *opts) {
+	bool rebasing_buffer = obj->rebasing_buffer;
+	obj->rebasing_buffer = true;
+	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, opts);
+	obj->rebasing_buffer = rebasing_buffer;
+	return mach0;
+}
+
 static struct MACH0_(obj_t) * create_kext_mach0(RKernelCacheObj *obj, RKext *kext, RBinFile *bf) {
-	RBuffer *buf = r_buf_new_slice (obj->cache_buf, kext->range.offset, r_buf_size (obj->cache_buf) - kext->range.offset);
 	struct MACH0_(opts_t) opts;
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.verbose = true;
+	if (obj->fileset_style) {
+		/* Fileset entries store file offsets in the outer cache address space. */
+		opts.header_at = kext->range.offset;
+		return create_kext_mach0_raw (obj, bf, obj->cache_buf, &opts);
+	}
+	RBuffer *buf = r_buf_new_slice (obj->cache_buf, kext->range.offset, r_buf_size (obj->cache_buf) - kext->range.offset);
 	opts.header_at = 0;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, buf, &opts);
-	// MACH0_(new_buf) takes a ref, so free our local ref
+	struct MACH0_(obj_t) *mach0 = create_kext_mach0_raw (obj, bf, buf, &opts);
 	r_unref (buf);
 	return mach0;
 }
@@ -900,7 +915,7 @@ static struct MACH0_(obj_t) * create_kext_shared_mach0(RKernelCacheObj *obj, RKe
 	MACH0_(opts_set_default) (&opts, bf);
 	opts.verbose = false;
 	opts.header_at = kext->range.offset;
-	struct MACH0_(obj_t) *mach0 = MACH0_(new_buf) (bf, obj->cache_buf, &opts);
+	struct MACH0_(obj_t) *mach0 = create_kext_mach0_raw (obj, bf, obj->cache_buf, &opts);
 	return mach0;
 }
 
