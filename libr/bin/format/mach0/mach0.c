@@ -94,6 +94,14 @@ static bool fits_in(ut64 file_size, ut64 offset, ut64 size) {
 	return offset <= file_size && end <= file_size;
 }
 
+static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
+	if (!stride) {
+		return count == 0;
+	}
+	const ut64 remaining = (addr < segment_end_addr)? segment_end_addr - addr: 0;
+	return count <= (remaining / stride);
+}
+
 static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *size) {
 	R_RETURN_VAL_IF_FAIL (mo && size, false);
 	if (seg_idx < 0 || seg_idx >= mo->nsegs) {
@@ -111,12 +119,12 @@ static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OU
 	return true;
 }
 
-static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride);
-
+// AITODO: this is just one fucking line. does it really matter? cant we just use athe UT64_ADD itself?
 static inline bool safe_advance(ut64 *off, ut64 delta) {
 	return UT64_ADD (off, *off, delta);
 }
 
+// AITODO: kind of the same here, this advance and advance2 shit seems very hacky imho. also we have the fits_in macro that does something similar
 static inline bool safe_advance2(ut64 *off, ut64 a, ut64 b) {
 	ut64 sum = 0;
 	return UT64_ADD (&sum, a, b) && safe_advance (off, sum);
@@ -3093,14 +3101,6 @@ static int clamp_count(ut64 count, int limit) {
 		return limit;
 	}
 	return (int)count;
-}
-
-static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride) {
-	if (!stride) {
-		return count == 0;
-	}
-	const ut64 remaining = (addr < segment_end_addr)? segment_end_addr - addr: 0;
-	return count <= (remaining / stride);
 }
 
 static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcache) {
