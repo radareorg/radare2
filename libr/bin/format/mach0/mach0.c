@@ -1696,6 +1696,9 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 						cur_seg = mo->chained_starts[seg_idx];
 						if (!cur_seg) {
 							cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
+							if (!cur_seg) {
+								break;
+							}
 							mo->chained_starts[seg_idx] = cur_seg;
 							cur_seg->pointer_format = DYLD_CHAINED_PTR_ARM64E;
 							cur_seg->page_size = ps;
@@ -1709,7 +1712,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 							}
 						}
 					}
-					if (cur_seg) {
+					{
 						ut32 page_index = (ut32) (seg_off / ps);
 						if (page_index < cur_seg->page_count && cur_seg->page_start) {
 							cur_seg->page_start[page_index] = seg_off & 0xfff;
@@ -3076,27 +3079,24 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			continue;
 		}
 		ut32 maxsymbols = symbols_size / sizeof (RBinSymbol);
-		if (symbols_count >= maxsymbols) {
-			symbols_count = maxsymbols - 1;
+		if (maxsymbols == 0 || symbols_count >= maxsymbols) {
+			symbols_count = maxsymbols == 0 ? 0 : maxsymbols - 1;
 			R_LOG_WARN ("Truncated symbol table");
 		}
 
-		for (i = from; i < to && j < symbols_count; i++, j++) {
+		for (i = from; i < to && j < symbols_count; i++) {
 			ut64 vaddr = mo->symtab[i].n_value;
 			if (vaddr < 100) {
-				j--;
 				continue;
 			}
 			int stridx = mo->symtab[i].n_strx;
 			char *sym_name = get_name (mo, stridx, false);
 			if (!sym_name) {
-				j--;
 				continue;
 			}
 
 			if ((has_redacted && strstr (sym_name, "<redacted>")) || hash_find_or_insert (hash, sym_name, vaddr)) {
 				free (sym_name);
-				j--;
 			} else {
 				RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 				memset (sym, 0, sizeof (RBinSymbol));
@@ -3114,6 +3114,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				sym->ordinal = ordinal++;
 				_update_main_addr_if_needed (mo, sym);
 				_enrich_symbol (bf, mo, symcache, sym);
+				j++;
 				if (exceeds_bin_limit (limit, ordinal)) {
 					R_LOG_WARN ("symbols mo.limit reached");
 					break;
@@ -3792,7 +3793,6 @@ static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_
 	}
 	/* library ordinal??? */
 	reloc->ntype = op;
-	reloc->ord = state->lib_ord;
 	reloc->ord = state->sym_ord;
 	reloc->type = rel_type;
 	if (state->sym_name) {
