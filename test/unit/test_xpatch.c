@@ -34,7 +34,7 @@ static bool test_xpatch_hexpairs_format(void) {
 	r_core_free (core);
 	unlink (test_file);
 
-	return true;
+	mu_end;
 }
 
 static bool test_xpatch_hexpairs_wrong_data(void) {
@@ -59,7 +59,7 @@ static bool test_xpatch_hexpairs_wrong_data(void) {
 	r_core_free (core);
 	unlink (test_file);
 
-	return true;
+	mu_end;
 }
 
 static bool test_xpatch_single_byte_format(void) {
@@ -94,7 +94,7 @@ static bool test_xpatch_single_byte_format(void) {
 	r_core_free (core);
 	unlink (test_file);
 
-	return true;
+	mu_end;
 }
 
 static int test_all(void) {
