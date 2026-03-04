@@ -642,7 +642,7 @@ def format_file(path, clang_format, style_file, check_only=False):
 	if check_only:
 		show_diff(path, original, indented)
 		return True
-	with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False) as tmp:
+	with tempfile.NamedTemporaryFile("w", encoding="utf-8", delete=False, dir=os.path.dirname(path)) as tmp:
 		tmp.write(indented)
 		temp_name = tmp.name
 	os.replace(temp_name, path)
