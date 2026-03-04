@@ -1197,7 +1197,7 @@ R_API void r_cons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);
 R_API const char *r_cons_get_buffer(RCons *cons, size_t *buffer_len);
 R_API void r_cons_push(RCons *cons);
-R_API RConsContext *r_cons_context_clone(RConsContext *ctx);
+R_API RConsContext *r_cons_context_clone(RConsContext * R_NULLABLE ctx);
 R_API void r_cons_echo(RCons *cons, const char *msg);
 R_API char *r_cons_drain(RCons *cons);
 R_API int r_cons_get_column(RCons *cons);
