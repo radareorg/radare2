@@ -1859,10 +1859,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	mo->segments_vec = NULL;
 	RVecMach0Lib_init (&mo->libs_cache);
 
-	if (fits_in (mo->size, cmds_begin, mo->hdr.sizeofcmds)) {
+	if (mo->hdr.sizeofcmds > 0 && fits_in (mo->size, cmds_begin, mo->hdr.sizeofcmds)) {
 		cmds_end = cmds_begin + mo->hdr.sizeofcmds;
 	} else {
-		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
+		if (mo->hdr.ncmds > 0) {
+			R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
+		}
 		cmds_end = mo->size;
 	}
 	bool noFuncStarts = mo->nofuncstarts;
@@ -1882,8 +1884,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		lc.cmd = r_read_ble32 (&loadc[0], mo->big_endian);
 		lc.cmdsize = r_read_ble32 (&loadc[4], mo->big_endian);
 
-		if (lc.cmdsize < 1 || !fits_in (cmds_end, off, lc.cmdsize)) {
-			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, off + lc.cmdsize, cmds_end);
+		if (lc.cmdsize < 1 || !fits_in (mo->size, off, lc.cmdsize)) {
+			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, off + lc.cmdsize, mo->size);
 			break;
 		}
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);

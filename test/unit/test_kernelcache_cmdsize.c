@@ -91,7 +91,7 @@ bool test_kernelcache_cmdsize(void) {
 
 	r_buf_resize (buf, big_size);
 
-	write_mach0_header (buf, 0, MH_FILESET, 5, 0xffffffffU);
+	write_mach0_header (buf, 0, MH_FILESET, 5, 0);
 	write_le32 (buf, cmd1_off + offsetof (struct load_command, cmd), LC_SEGMENT_64);
 	write_le32 (buf, cmd1_off + offsetof (struct load_command, cmdsize), cmd1_size);
 
