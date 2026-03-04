@@ -760,14 +760,15 @@ static bool lastMatters(RConsContext *C) {
 }
 
 R_API void r_cons_flush(RCons *cons) {
+	r_th_lock_enter (cons->lock);
 	RConsContext *ctx = cons->context;
 	const char *tee = cons->teefile;
 	if (ctx->noflush) {
-		return;
+		goto beach;
 	}
 	if (cons->null) {
 		r_cons_reset (cons);
-		return;
+		goto beach;
 	}
 	if (lastMatters (ctx)) {
 		// snapshot of the output
@@ -783,7 +784,7 @@ R_API void r_cons_flush(RCons *cons) {
 	r_cons_filter (cons);
 	if (!ctx->buffer || ctx->buffer_len < 1) {
 		r_cons_reset (cons);
-		return;
+		goto beach;
 	}
 	if (r_cons_is_interactive (cons) && cons->fdout == 1) {
 		/* Use a pager if the output doesn't fit on the terminal window. */
@@ -795,7 +796,7 @@ R_API void r_cons_flush(RCons *cons) {
 				r_cons_less_str (cons, str, NULL);
 				r_cons_reset (cons);
 				free (str);
-				return;
+				goto beach;
 			}
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
 			r_cons_reset (cons);
@@ -803,7 +804,7 @@ R_API void r_cons_flush(RCons *cons) {
 			unsigned int lines = count_display_lines (cons, ctx->buffer, ctx->buffer_len);
 			if (lines > 0 && !r_cons_yesno (cons, 'n', "Do you want to print %u lines? (y/N)", lines)) {
 				r_cons_reset (cons);
-				return;
+				goto beach;
 			}
 			// fix | more | less problem
 			r_cons_set_raw (cons, true);
@@ -829,7 +830,7 @@ R_API void r_cons_flush(RCons *cons) {
 		}
 		R_FREE (cons->wasm_redirect_file);
 		r_cons_reset (cons);
-		return;
+		goto beach;
 	}
 #endif
 	r_cons_highlight (cons, cons->highlight);
@@ -867,6 +868,8 @@ R_API void r_cons_flush(RCons *cons) {
 		ctx->tmp_html = false;
 		ctx->was_html = false;
 	}
+beach:
+	r_th_lock_leave (cons->lock);
 }
 
 R_API bool r_cons_is_windows(void) {
@@ -1521,8 +1524,14 @@ R_API void r_cons_context_free(RConsContext *R_NULLABLE ctx) {
 	}
 }
 
-R_API RConsContext *r_cons_context_clone(RConsContext *ctx) {
+R_API RConsContext *r_cons_context_clone(RConsContext *R_NULLABLE ctx) {
+	if (!ctx) {
+		return NULL;
+	}
 	RConsContext *c = r_mem_dup (ctx, sizeof (RConsContext));
+	if (!c) {
+		return NULL;
+	}
 	// Initialize independent refcount for the cloned context
 	r_ref_init (c, r_cons_context_free_internal);
 	if (ctx->buffer) {
