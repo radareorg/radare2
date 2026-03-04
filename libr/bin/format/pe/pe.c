@@ -1324,8 +1324,24 @@ static int bin_pe_read_metadata_string(char *to, RBuffer *frombuf, int fromoff) 
 	return covered;
 }
 
+static void bin_pe_free_metadata_streams(PE_(image_metadata_stream) **streams, int n_streams) {
+	int i;
+	if (streams) {
+		for (i = 0; i < n_streams; i++) {
+			PE_(image_metadata_stream) *stream = streams[i];
+			if (stream) {
+				free (stream->Name);
+			}
+			free (stream);
+		}
+	}
+	free (streams);
+}
+
 static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 	PE_(image_metadata_header) *metadata = R_NEW0 (PE_(image_metadata_header));
+	PE_(image_metadata_stream) **streams = NULL;
+	int parsed_streams = 0;
 	if (!metadata) {
 		return false;
 	}
@@ -1380,31 +1396,27 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 		goto fail;
 	}
 	R_LOG_DEBUG ("Number of Metadata Streams: %d", metadata->NumberOfStreams);
-	pe->metadata_header = metadata;
 
 	// read metadata streams
 	int stream_addr = metadata_directory + 20 + metadata->VersionStringLength;
 	PE_(image_metadata_stream) * stream;
-	PE_(image_metadata_stream) **streams = calloc (sizeof (PE_(image_metadata_stream) *), metadata->NumberOfStreams);
-	if (!streams) {
+	streams = calloc (sizeof (PE_(image_metadata_stream) *), metadata->NumberOfStreams);
+	if (!streams && metadata->NumberOfStreams > 0) {
 		goto fail;
 	}
 	int count;
 	for (count = 0; count < metadata->NumberOfStreams; count++) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
 		if (!stream) {
-			free (streams);
 			goto fail;
 		}
 		if (r_buf_size (pe->b) < (stream_addr + 8 + MAX_METADATA_STRING_LENGTH)) {
 			R_LOG_DEBUG ("metadata strnig truncated");
 			free (stream);
-			free (streams);
 			goto fail;
 		}
 		if (r_buf_fread_at (pe->b, stream_addr, (ut8 *)stream, pe->big_endian? "2I": "2i", 1) < 1) {
 			free (stream);
-			free (streams);
 			goto fail;
 		}
 		R_LOG_DEBUG ("DirectoryAddress: %x Size: %x", stream->Offset, stream->Size);
@@ -1412,7 +1424,6 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 
 		if (!stream_name) {
 			free (stream);
-			free (streams);
 			goto fail;
 		}
 
@@ -1420,18 +1431,20 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 		if (c == 0) {
 			free (stream_name);
 			free (stream);
-			free (streams);
 			goto fail;
 		}
 		R_LOG_DEBUG ("Stream name: %s %d", stream_name, c);
 		stream->Name = stream_name;
 		streams[count] = stream;
+		parsed_streams++;
 		stream_addr += 8 + c;
 	}
+	pe->metadata_header = metadata;
 	pe->streams = streams;
 	return true;
 fail:
 	R_LOG_DEBUG ("read (metadata header)");
+	bin_pe_free_metadata_streams (streams, parsed_streams);
 	if (metadata) {
 		free (metadata->VersionString);
 		free (metadata);
@@ -4565,6 +4578,7 @@ int PE_(r_bin_pe_is_stripped_debug)(RBinPEObj *pe) {
 }
 
 void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
+	int n_streams = 0;
 	if (!pe) {
 		return NULL;
 	}
@@ -4577,6 +4591,13 @@ void *PE_(r_bin_pe_free)(RBinPEObj *pe) {
 	free_security_directory (pe->security_directory);
 	free (pe->delay_import_directory);
 	free (pe->tls_directory);
+	free (pe->clr_hdr);
+	if (pe->metadata_header) {
+		n_streams = pe->metadata_header->NumberOfStreams;
+		free (pe->metadata_header->VersionString);
+	}
+	bin_pe_free_metadata_streams (pe->streams, n_streams);
+	free (pe->metadata_header);
 	free (pe->sections);
 	free (pe->authentihash);
 	r_list_free (pe->rich_entries);
