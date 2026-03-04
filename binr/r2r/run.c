@@ -1416,7 +1416,7 @@ R_API void r2r_asm_test_output_free(R2RAsmTestOutput *out) {
 }
 
 R_API R2RProcessOutput *r2r_run_fuzz_test(R2RRunConfig *config, const char *file, R2RCmdRunner runner, void *user) {
-	const char *cmd = "aaa";
+	const char *cmd = "iH;aaa";
 	RList *files = r_list_new ();
 	r_list_push (files, (void *)file);
 	R2RProcessOutput *ret = run_r2_test (config, config->timeout_ms, 1, cmd, files, NULL, NULL, false, runner, user);
