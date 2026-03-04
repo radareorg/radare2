@@ -4085,29 +4085,21 @@ static bool parse_bind_op(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_bin
 		{
 			ut64 seg_start = 0;
 			ut64 seg_end = 0;
-			ut64 seg_off;
 			state->seg_idx = imm;
 			if (state->seg_idx >= mo->nsegs) {
 				R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
 				return false;
 			}
-			seg_off = read_uleb128 (p, end);
-			if (!segment_bind_bounds (mo, state->seg_idx, &seg_start, &seg_end) || !UT64_ADD (&state->addr, seg_start, seg_off) || state->addr > seg_end) {
-				R_LOG_DEBUG ("Malformed segment bind range");
-				return stop_bind_parsing (state);
+			if (!segment_bind_bounds (mo, state->seg_idx, &seg_start, &seg_end)) {
+				return false;
 			}
+			state->addr = seg_start + read_uleb128 (p, end);
 			state->segment_end_addr = seg_end;
 			return true;
 		}
 	case BIND_OPCODE_ADD_ADDR_ULEB:
-		{
-			ut64 add = read_uleb128 (p, end);
-			if (!UT64_ADD (&state->addr, state->addr, add)) {
-				R_LOG_DEBUG ("Malformed ADD_ADDR bind opcode");
-				return stop_bind_parsing (state);
-			}
-			return true;
-		}
+		state->addr += read_uleb128 (p, end);
+		return true;
 	case BIND_OPCODE_DO_BIND:
 	case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
 	case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
