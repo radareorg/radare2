@@ -2975,6 +2975,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 	}
 	kobj->rebasing_buffer = true;
 	struct MACH0_(obj_t) *obj = kobj->mach0;
+	const ut64 count64 = count > 0 ? (ut64)count : 0;
 	ut64 eob = off + count;
 	size_t i = 0;
 	for (; i < obj->segs_count; i++) {
@@ -3003,11 +3004,18 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 				}
 				ut64 cursor = start + page_idx * page_size + page_start;
 				while (cursor < eob && cursor < end) {
-					ut8 tmp[8];
-					if (r_buf_read_at (obj->b, cursor, tmp, 8) != 8) {
-						break;
+					ut64 raw_ptr = 0;
+					ut64 in_buf = 0;
+					const bool is_in_buf = cursor >= off && (in_buf = cursor - off) + 8 <= count64;
+					if (is_in_buf) {
+						raw_ptr = r_read_le64 (&buf[in_buf]);
+					} else {
+						ut8 tmp[8];
+						if (r_buf_read_at (obj->b, cursor, tmp, 8) != 8) {
+							break;
+						}
+						raw_ptr = r_read_le64 (tmp);
 					}
-					ut64 raw_ptr = r_read_le64 (tmp);
 					ut64 ptr_value = raw_ptr;
 					ut64 delta = 0;
 					ut64 stride = 8;
@@ -3053,8 +3061,7 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 					} else {
 						R_LOG_ERROR ("Unsupported pointer format: %u", obj->chained_starts[i]->pointer_format);
 					}
-					ut64 in_buf = cursor - off;
-					if (cursor >= off && cursor <= eob - 8) {
+					if (is_in_buf) {
 						r_write_le64 (&buf[in_buf], ptr_value);
 					}
 					cursor += delta * stride;
