@@ -1859,7 +1859,9 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	mo->segments_vec = NULL;
 	RVecMach0Lib_init (&mo->libs_cache);
 
-	if (!UT64_ADD (&cmds_end, cmds_begin, mo->hdr.sizeofcmds) || cmds_end > mo->size) {
+	if (fits_in (mo->size, cmds_begin, mo->hdr.sizeofcmds)) {
+		cmds_end = cmds_begin + mo->hdr.sizeofcmds;
+	} else {
 		R_LOG_WARN ("chopping hdr.sizeofcmds because it's larger than the file size");
 		cmds_end = mo->size;
 	}
@@ -1868,8 +1870,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	for (i = 0, off = cmds_begin;
 		i < mo->hdr.ncmds;
 		i++, off += lc.cmdsize) {
-		ut64 cmd_end = 0;
-		if (!UT64_ADD (&cmd_end, off, sizeof (struct load_command)) || cmd_end > cmds_end) {
+		if (!fits_in (cmds_end, off, sizeof (struct load_command))) {
 			R_LOG_WARN ("out of bounds macho command");
 			break;
 		}
@@ -1881,8 +1882,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 		lc.cmd = r_read_ble32 (&loadc[0], mo->big_endian);
 		lc.cmdsize = r_read_ble32 (&loadc[4], mo->big_endian);
 
-		if (!UT64_ADD (&cmd_end, off, lc.cmdsize) || lc.cmdsize < 1 || cmd_end > cmds_end) {
-			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, (ut64) cmd_end, cmds_end);
+		if (lc.cmdsize < 1 || !fits_in (cmds_end, off, lc.cmdsize)) {
+			R_LOG_WARN ("mach0_header %d = cmdsize<1. (0x%" PFMT64x " vs 0x%" PFMT64x ")", i, off + lc.cmdsize, cmds_end);
 			break;
 		}
 		snprintf (cmd_flagname, sizeof (cmd_flagname), "mach0_cmd_%d.offset", i);
