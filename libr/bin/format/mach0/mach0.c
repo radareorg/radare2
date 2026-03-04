@@ -111,21 +111,16 @@ static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OU
 	return true;
 }
 
-static bool segment_bind_bounds(struct MACH0_(obj_t) * mo, int seg_idx, R_OUT ut64 *start, R_OUT ut64 *end) {
-	R_RETURN_VAL_IF_FAIL (mo && start && end, false);
-	ut64 seg_size = 0;
-	if (!segment_filebacked_size (mo, seg_idx, &seg_size)) {
-		return false;
-	}
-	ut64 seg_start = mo->segs[seg_idx].vmaddr;
-	if (!UT64_ADD (end, seg_start, seg_size)) {
-		return false;
-	}
-	*start = seg_start;
-	return true;
+static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride);
+
+static inline bool safe_advance(ut64 *off, ut64 delta) {
+	return UT64_ADD (off, *off, delta);
 }
 
-static bool bind_fits(ut64 count, ut64 addr, ut64 segment_end_addr, ut64 stride);
+static inline bool safe_advance2(ut64 *off, ut64 a, ut64 b) {
+	ut64 sum = 0;
+	return UT64_ADD (&sum, a, b) && safe_advance (off, sum);
+}
 
 static bool magic_endian(ut32 magic, R_OUT bool *big_endian) {
 	switch (magic) {
@@ -1796,31 +1791,23 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 			}
 			break;
 		case BIND_OPCODE_ADD_ADDR_ULEB:
-			{
-				ut64 add = read_uleb128 (&p, end);
-				if (!UT64_ADD (&seg_off, seg_off, add)) {
-					R_FREE (opcodes);
-					return false;
-				}
+			if (!safe_advance (&seg_off, read_uleb128 (&p, end))) {
+				R_FREE (opcodes);
+				return false;
 			}
 			break;
 		case BIND_OPCODE_DO_BIND:
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_ULEB:
-			{
-				ut64 add = read_uleb128 (&p, end);
-				ut64 inc = 0;
-				if (!UT64_ADD (&inc, add, wordsize) || !UT64_ADD (&seg_off, seg_off, inc)) {
-					R_FREE (opcodes);
-					return false;
-				}
+			if (!safe_advance2 (&seg_off, read_uleb128 (&p, end), wordsize)) {
+				R_FREE (opcodes);
+				return false;
 			}
 			break;
 		case BIND_OPCODE_DO_BIND_ADD_ADDR_IMM_SCALED:
 			{
 				ut64 scaled = 0;
-				ut64 inc = 0;
-				if (!UT64_MUL (&scaled, (ut64)imm, (ut64)wordsize) || !UT64_ADD (&inc, scaled, wordsize) || !UT64_ADD (&seg_off, seg_off, inc)) {
+				if (!UT64_MUL (&scaled, (ut64)imm, (ut64)wordsize) || !safe_advance2 (&seg_off, scaled, wordsize)) {
 					R_FREE (opcodes);
 					return false;
 				}
@@ -1837,7 +1824,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 					R_FREE (opcodes);
 					return false;
 				}
-				if (!UT64_MUL (&span, count, stride) || !UT64_ADD (&seg_off, seg_off, span)) {
+				if (!UT64_MUL (&span, count, stride) || !safe_advance (&seg_off, span)) {
 					R_FREE (opcodes);
 					return false;
 				}
@@ -4082,21 +4069,14 @@ static bool parse_bind_op(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_bin
 		state->addend = r_sleb128 ((const ut8 **)p, end);
 		return true;
 	case BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB:
-		{
-			ut64 seg_start = 0;
-			ut64 seg_end = 0;
-			state->seg_idx = imm;
-			if (state->seg_idx >= mo->nsegs) {
-				R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
-				return false;
-			}
-			if (!segment_bind_bounds (mo, state->seg_idx, &seg_start, &seg_end)) {
-				return false;
-			}
-			state->addr = seg_start + read_uleb128 (p, end);
-			state->segment_end_addr = seg_end;
-			return true;
+		state->seg_idx = imm;
+		if (state->seg_idx >= mo->nsegs) {
+			R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
+			return false;
 		}
+		state->addr = mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
+		state->segment_end_addr = mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].vmsize;
+		return true;
 	case BIND_OPCODE_ADD_ADDR_ULEB:
 		state->addr += read_uleb128 (p, end);
 		return true;
@@ -4177,18 +4157,8 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 			RBindOpState state = { 0 };
 			state.seg_idx = -1;
 			state.sym_ord = -1;
-			{
-				ut64 seg_start = 0;
-				ut64 seg_end = 0;
-				if (!segment_bind_bounds (mo, 0, &seg_start, &seg_end)) {
-					R_FREE (opcodes);
-					RVecRelocRef_free (threaded_binds);
-					ht_pp_free (ord_cache);
-					return false;
-				}
-				state.addr = seg_start;
-				state.segment_end_addr = seg_end;
-			}
+			state.addr = mo->segs[0].vmaddr;
+			state.segment_end_addr = mo->segs[0].vmaddr + mo->segs[0].vmsize;
 
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
