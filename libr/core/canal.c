@@ -5850,12 +5850,20 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			ut64 ls = r_anal_function_linear_size (fcn);
 			ut64 fs = r_anal_function_realsize (fcn);
 			if (ls > fs + 4096) {
-				R_LOG_INFO ("Function is too sparse, must be analyzed with recursive");
-				// `aaef` (analysis) must not modify the opened file even in `-w` mode.
-				// Route ESIL writes to the IO overlay temporarily for this recursive pass.
+				R_LOG_DEBUG ("Function 0x%08"PFMT64x" (%s) is sparse, analyzing each basic block",
+					fcn->addr, fcn->name? fcn->name: "?");
+				// Sparse function: analyze each basic block separately using full ESIL analysis
+				// (not r_core_anal_esil_function which uses simpler hooks and misses some xrefs)
 				bool (*old_write_at)(RIO *io, ut64 addr, const ut8 *buf, int len) = core->anal->iob.write_at;
 				core->anal->iob.write_at = r_io_vwrite_to_overlay_at;
-				r_core_anal_esil_function (core, core->addr);
+				RListIter *iter;
+				RAnalBlock *bb;
+				r_list_foreach (fcn->bbs, iter, bb) {
+					char szbuf[32];
+					snprintf (szbuf, sizeof (szbuf), "%"PFMT64u, (ut64)bb->size);
+					r_core_seek (core, bb->addr, true);
+					r_core_anal_esil (core, szbuf, NULL);
+				}
 				core->anal->iob.write_at = old_write_at;
 				return;
 			}
@@ -5954,7 +5962,8 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	} else {
 		R_LOG_WARN ("No SN reg alias for '%s'", r_config_get (core->config, "asm.arch"));
 	}
-	IterCtx ictx = { start, end, fcn, NULL };
+	// Use linear iteration (NULL fcn) instead of graph traversal to ensure all instructions are analyzed
+	IterCtx ictx = { start, end, NULL, NULL };
 	size_t i = 0; // addr - start;
 	size_t i_old = 0;
 	size_t buf_size = 128 * 1024; // 512KB

@@ -14525,6 +14525,35 @@ jacuzzi:
 	R_FREE (dh_orig);
 }
 
+static void cmd_aaef(RCore *core) {
+	r_core_cmd0 (core, "aeim");
+	RListIter *iter;
+	ut64 cur_seek = core->addr;
+	// Capture function addresses in dependency order BEFORE analysis
+	// (core->anal->fcns can change during emulation, and afla provides proper order for type propagation)
+	char *offsets = r_core_cmd_str (core, "afla");
+	RList *list = r_str_split_list (offsets, "\n", 0);
+	char *addr_str;
+	r_list_foreach (list, iter, addr_str) {
+		if (r_cons_is_breaked (core->cons)) {
+			break;
+		}
+		ut64 addr = r_num_get (NULL, addr_str);
+		if (addr && addr != UT64_MAX) {
+			r_core_seek (core, addr, true);
+			r_core_anal_esil (core, "f", NULL);
+		}
+	}
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, cur_seek);
+	if (fcn) {
+		r_core_seek (core, fcn->addr, true);
+		r_core_anal_esil (core, "f", NULL);
+	}
+	r_core_seek (core, cur_seek, true);
+	r_list_free (list);
+	free (offsets);
+}
+
 static int cmd_anal_all(RCore *core, const char *input) {
 	switch (*input) {
 	case '?':
@@ -14737,30 +14766,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_aae, "aaef");
 			} else {
-				r_core_cmd0 (core, "aeim");
-				RListIter *it;
-				ut64 cur_seek = core->addr;
-				char *offsets = r_core_cmd_str (core, "afla");
-				RList *list = r_str_split_list (offsets, "\n", 0);
-
-				char *of;
-				r_list_foreach (list, it, of) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
-					ut64 addr = r_num_get (NULL, of);
-					r_core_seek (core, addr, true);
-					r_core_anal_esil (core, "f", NULL);
-					// __anal_esil_function (core, fcn->addr);
-				}
-				RAnalFunction *fcn = r_anal_get_function_at (core->anal, cur_seek);
-				if (fcn) {
-					r_core_seek (core, fcn->addr, true);
-					r_core_anal_esil (core, "f", NULL);
-				}
-				r_core_seek (core, cur_seek, true);
-				r_list_free (list);
-				free (offsets);
+				cmd_aaef (core);
 			}
 		} else if (input[1] == '?') { // "aae?"
 			r_core_cmd_help (core, help_msg_aae);
