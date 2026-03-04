@@ -338,6 +338,18 @@ bool test_r_str_len_utf8_ansi(void) {
 	mu_end;
 }
 
+bool test_r_str_len_utf8_ansi_truncated_utf8_tail(void) {
+	char s1[] = { 'a', 'b', 'c', (char)0xe2, 0 };
+	char s2[] = { (char)0xf0, (char)0x9f, (char)0x92, 0 };
+	int len = r_str_len_utf8_ansi (s1);
+	mu_assert_eq (len, 4, "len(ascii + truncated utf8 tail)");
+	len = r_str_len_utf8_ansi (s2);
+	mu_assert_eq (len, 1, "len(truncated 4-byte utf8 tail)");
+	mu_assert_eq (r_utf8_decode ((const ut8 *)s1 + 3, -1, NULL), 0, "decode rejects truncated utf8 tail");
+	mu_assert_eq (r_utf8_decode ((const ut8 *)s2, -1, NULL), 0, "decode rejects truncated 4-byte utf8 tail");
+	mu_end;
+}
+
 bool test_r_str_utf8_charsize(void) {
 	char s[16] = "\x61\xc3\xa1\xe6\x97\xa5\xf0\x9f\x91\x8c\xf0\x9f\x91\x8c\x8c"; // aá日👌
 	int sz;
@@ -741,6 +753,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_str_rchr);
 	mu_run_test (test_r_str_ansi_len);
 	mu_run_test (test_r_str_len_utf8_ansi);
+	mu_run_test (test_r_str_len_utf8_ansi_truncated_utf8_tail);
 	mu_run_test (test_r_str_utf8_charsize);
 	mu_run_test (test_r_str_utf8_charsize_prev);
 	mu_run_test (test_r_str_sanitize_sdb_key);
