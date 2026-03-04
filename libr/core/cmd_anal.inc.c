@@ -14526,6 +14526,7 @@ jacuzzi:
 }
 
 static void cmd_aaef(RCore *core) {
+	r_core_cmd0 (core, "aeim");
 	RListIter *iter;
 	ut64 cur_seek = core->addr;
 	// Capture function addresses in dependency order BEFORE analysis
@@ -14542,6 +14543,11 @@ static void cmd_aaef(RCore *core) {
 			r_core_seek (core, addr, true);
 			r_core_anal_esil (core, "f", NULL);
 		}
+	}
+	RAnalFunction *fcn = r_anal_get_function_at (core->anal, cur_seek);
+	if (fcn) {
+		r_core_seek (core, fcn->addr, true);
+		r_core_anal_esil (core, "f", NULL);
 	}
 	r_core_seek (core, cur_seek, true);
 	r_list_free (list);
