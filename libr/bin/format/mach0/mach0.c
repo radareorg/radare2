@@ -568,6 +568,7 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 #endif
 		}
 	} else {
+#if R_SYS_ENDIAN
 		for (i = 0; i < count; i++) {
 			const ut8 *nlst_ptr = symdata + (i * nlist_size);
 			struct MACH0_(nlist) *sti = &mo->symtab[i];
@@ -581,6 +582,9 @@ static bool parse_symtab(struct MACH0_(obj_t) * mo, ut64 off) {
 			sti->n_value = r_read_le32 (nlst_ptr + 8);
 #endif
 		}
+#else
+		memcpy (mo->symtab, symdata, size_sym);
+#endif
 	}
 	free (symdata);
 	return true;
