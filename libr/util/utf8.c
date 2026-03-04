@@ -490,10 +490,9 @@ R_API const char *r_utf_block_name(int idx) {
 /* Convert an UTF-8 buf into a unicode RRune */
 R_API int r_utf8_decode(const ut8 *ptr, int ptrlen, RRune *ch) {
 	if (ptrlen < 0) {
-		ptrlen = r_utf8_size (ptr);
-		if (ptrlen < 1) {
-			ptrlen = 1;
-		}
+		/* Clamp to available bytes for NUL-terminated strings. */
+		const int expected = r_utf8_size (ptr);
+		ptrlen = R_MAX (1, r_str_nlen ((const char *)ptr, expected));
 	}
 	if (ptrlen < 1) {
 		return 0;
