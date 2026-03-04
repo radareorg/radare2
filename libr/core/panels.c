@@ -6637,7 +6637,7 @@ R_API void r_core_panels_save(RCore *core, const char *oname) {
 	if (!core->panels) {
 		return;
 	}
-	const char *name = oname;
+	const char *name = r_str_trim_head_ro (oname); // leading whitespace skipped
 	if (R_STR_ISEMPTY (name)) {
 		name = __show_status_input (core, "Name for the layout: ");
 		if (R_STR_ISEMPTY (name)) {
