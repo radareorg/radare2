@@ -21,9 +21,10 @@ R2PM_PLUGINS ?=
 KEEP_R2_SOURCE ?= 0
 KEEP_R2PM_CACHE ?= 0
 ROOTFS_DIR ?= rootfs
+BOOT_BRANDING_DIR ?= assets/boot
 ISO_MOTD ?= Welcome to r2iso
 # ROOT_PASSWORD_MODE: empty | password | locked
-ROOT_PASSWORD_MODE ?= empty
+ROOT_PASSWORD_MODE ?= password
 ROOT_PASSWORD ?= radare2
 
 HOST_BUILD_PACKAGES ?= ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso
