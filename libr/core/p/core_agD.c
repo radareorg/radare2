@@ -10,7 +10,19 @@ static char *_get_title(void *data, void *user) {
 static char *_get_body(void *data, void *user) {
 	RAnalBlock *bb = (RAnalBlock *)((RGraphNode *)data)->data;
 	RCore *core = (RCore *)user;
-	return r_core_cmd_strf (core, "pD 0x%"PFMT64x" @ 0x%"PFMT64x, bb->size, bb->addr);
+	ut64 bbsize = bb->size;
+	const int graph_bb_maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
+	const bool truncated = graph_bb_maxsize > 0 && bbsize > (ut64)graph_bb_maxsize;
+	if (truncated) {
+		bbsize = graph_bb_maxsize;
+	}
+	char *body = r_core_cmd_strf (core, "pD 0x%"PFMT64x" @ 0x%"PFMT64x, bbsize, bb->addr);
+	if (truncated && body) {
+		char *tmp = r_str_newf ("%s\n...", body);
+		free (body);
+		body = tmp;
+	}
+	return body;
 }
 
 static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {

@@ -4630,6 +4630,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("graph.addr", "false", "show addresses in graphs");
 	SETB ("graph.bytes", "false", "show opcode bytes in graphs");
 	SETI ("graph.bb.maxwidth", 0, "maximum width for the basic blocks in the graph");
+	SETI ("graph.bb.maxsize", 1024, "maximum bytes disassembled per basic block in graph views (0 to disable)");
 	SETI ("graph.from", UT64_MAX, "lower bound address when drawing global graphs");
 	SETI ("graph.to", UT64_MAX, "upper bound address when drawing global graphs");
 	SETI ("graph.scroll", 5, "scroll speed in ascii-art graph");
