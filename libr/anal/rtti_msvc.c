@@ -1040,10 +1040,10 @@ R_API void r_anal_rtti_msvc_recover_all(RVTableContext *vt_context, RList *vtabl
 		recovery_apply_complete_object_locator (&context, col);
 	}
 #endif
-	RVecVTableInfo_clear (&context.vtables);
-	RVecRecoveryCompleteObjectLocator_clear (&context.complete_object_locators);
+	RVecVTableInfo_fini (&context.vtables);
+	RVecRecoveryCompleteObjectLocator_fini (&context.complete_object_locators);
 	ht_up_free (context.addr_col);
-	RVecRecoveryTypeDescriptor_clear (&context.type_descriptors);
+	RVecRecoveryTypeDescriptor_fini (&context.type_descriptors);
 	ht_up_free (context.addr_td);
 	ht_up_free (context.col_td_classes);
 }
