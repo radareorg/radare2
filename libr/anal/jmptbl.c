@@ -5,8 +5,6 @@
 #include <r_vec.h>
 
 #define JMPTBL_MAXSZ 512
-#define JMPTBL_FILL_PREFIX_MIN 8
-#define JMPTBL_FILL_PROBE_SIZE 32
 
 R_VEC_TYPE (RVecUT64, ut64);
 
@@ -27,19 +25,6 @@ static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
 		return ip & 0xfffff;
 	}
 	return gp;
-}
-
-static bool has_byte_prefix(const ut8 *buf, int len, ut8 byte, int count) {
-	if (!buf || len < count || count < 1) {
-		return false;
-	}
-	int i;
-	for (i = 0; i < count; i++) {
-		if (buf[i] != byte) {
-			return false;
-		}
-	}
-	return true;
 }
 
 static void jmptbl_target_ctx_init(JmptblTargetCtx *ctx, RAnal *anal, ut64 switch_addr) {
@@ -86,17 +71,11 @@ static bool is_valid_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 
 			goto beach;
 		}
 	}
-	int prefix_count = anal->opt.nonull > 0? anal->opt.nonull: JMPTBL_FILL_PREFIX_MIN;
-	prefix_count = R_MAX (prefix_count, JMPTBL_FILL_PREFIX_MIN);
-	prefix_count = R_MIN (prefix_count, JMPTBL_FILL_PROBE_SIZE);
-	ut8 probe[JMPTBL_FILL_PROBE_SIZE];
-	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, prefix_count)) {
+	ut8 probe[32];
+	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, sizeof (probe))) {
 		goto beach;
 	}
-	if (has_byte_prefix (probe, prefix_count, 0x00, prefix_count)) {
-		goto beach;
-	}
-	if (has_byte_prefix (probe, prefix_count, 0xff, prefix_count)) {
+	if (r_anal_is_invalid_code (anal, probe, sizeof (probe), true)) {
 		goto beach;
 	}
 	valid = true;

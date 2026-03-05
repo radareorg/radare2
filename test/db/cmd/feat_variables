@@ -36,7 +36,7 @@ s $FB
 s
 EOF
 EXPECT=<<EOF
-0x2a
+0x2c
 EOF
 RUN
 
