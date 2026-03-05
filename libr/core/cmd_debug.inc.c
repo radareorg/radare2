@@ -6205,12 +6205,20 @@ static int cmd_debug(void *data, const char *input) {
 		case 'e': // "doe"
 			switch (input[2]) {
 			case '\0': // "doe"
+				if (!core->io->envprofile) {
+					char **env = r_sys_get_environ ();
+					core->io->envprofile = r_run_get_environ_profile (env);
+				}
 				if (core->io->envprofile) {
 					r_cons_println (core->cons, core->io->envprofile);
 				}
 				break;
 			case '!': // "doe!"
 			{
+				if (!core->io->envprofile) {
+					char **env = r_sys_get_environ ();
+					core->io->envprofile = r_run_get_environ_profile (env);
+				}
 				char *out = r_core_editor (core, NULL, core->io->envprofile);
 				if (out) {
 					free (core->io->envprofile);
