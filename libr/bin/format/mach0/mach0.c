@@ -4663,6 +4663,7 @@ typedef struct {
 static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 	ut32 magic;
 	ut32 i;
+	ut32 base_addr = addr;
 	ut64 addr_end = addr + size;
 	RStrBuf *sb = r_strbuf_new ("");
 	struct MACH0_(obj_t) *bo = bf->bo->bin_obj;
@@ -4672,6 +4673,10 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.length = 0x%08x\n", (ut64)addr + 4, sblob.length);
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.count = 0x%08x\n", (ut64)addr + 8, sblob.count);
 	}
+	ut32 *blob_offsets = R_NEWS0 (ut32, sblob.count);
+	if (!blob_offsets) {
+		return r_strbuf_drain (sb);
+	}
 	addr += (3 * 4); // skip superblob
 	for (i = 0; i < sblob.count; i++) {
 		// type : offset
@@ -4680,9 +4685,11 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 			break;
 		}
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " type 0x%08x off %d\n", (ut64)addr, to[0], to[1]);
+		blob_offsets[i] = to[1];
 		addr += 8;
 	}
 	for (i = 0; i < sblob.count; i++) {
+		addr = base_addr + blob_offsets[i];
 		if (addr >= addr_end) {
 			break;
 		}
@@ -4713,7 +4720,6 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 				r_strbuf_appendf (sb, "0x%08" PFMT64x " code.dir.hashtype   0x%02x\n", (ut64)addr + 40, cdbuf.hashType);
 				r_strbuf_appendf (sb, "0x%08" PFMT64x " code.dir.pagesize   0x%02x\n", (ut64)addr + 40, cdbuf.pageSize); // log2 () or 0
 			}
-			addr += sizeof (CodeDirectory) - 4;
 		}
 		break;
 		case 0xfade0cc0: // embedded signature
@@ -4738,6 +4744,7 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 			break;
 		}
 	}
+	free (blob_offsets);
 	return r_strbuf_drain (sb);
 }
 
