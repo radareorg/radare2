@@ -3300,6 +3300,9 @@ static void cmd_autocomplete_help(RCore *core) {
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
+	if (!core->autocomplete) {
+		r_core_autocomplete_reload (core);
+	}
 	RCoreAutocomplete* b = core->autocomplete;
 	input = r_str_trim_head_ro (input);
 	char arg[256];

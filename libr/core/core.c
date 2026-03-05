@@ -738,13 +738,19 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 	return ret;
 }
 
+static void ensure_autocomplete(RCore *core);
+
 #define ADDARG(x) \
 	if (!strncmp (buf->data + chr, x, strlen (buf->data + chr))) { \
 		r_line_completion_push (completion, x); \
 	}
 
 static void autocomplete_default(RCore *R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf) {
-	RCoreAutocomplete *a = core? core->autocomplete: NULL;
+	RCoreAutocomplete *a = NULL;
+	if (core) {
+		ensure_autocomplete (core);
+		a = core->autocomplete;
+	}
 	int i;
 	if (a) {
 		for (i = 0; i < a->n_subcmds; i++) {
@@ -754,7 +760,7 @@ static void autocomplete_default(RCore *R_NULLABLE core, RLineCompletion *comple
 		}
 	} else {
 		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
-			int length = strlen (radare_argv[i]);
+			const size_t length = strlen (radare_argv[i]);
 			if (!strncmp (radare_argv[i], buf->data, length)) {
 				r_line_completion_push (completion, radare_argv[i]);
 			}
@@ -2286,6 +2292,13 @@ static void __init_autocomplete(RCore *core) {
 	}
 }
 
+static void ensure_autocomplete(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	if (!core->autocomplete) {
+		__init_autocomplete (core);
+	}
+}
+
 static const char *colorfor_cb(void *user, ut64 addr, ut8 ch, bool verbose) {
 	return r_core_anal_optype_colorfor ((RCore *)user, addr, ch, verbose);
 }
@@ -2378,7 +2391,8 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 R_API void r_core_autocomplete_reload(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	r_core_autocomplete_free (core->autocomplete);
-	__init_autocomplete (core);
+	core->autocomplete = NULL;
+	ensure_autocomplete (core);
 }
 
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off) {
@@ -2731,7 +2745,6 @@ R_API bool r_core_init(RCore *core) {
 		}
 	}
 	r_core_anal_type_init (core);
-	__init_autocomplete (core);
 	r_anal_bind (core->anal, &(core->rasm->analb));
 	return 0;
 }

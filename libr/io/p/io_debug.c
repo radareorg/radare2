@@ -260,8 +260,12 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		if (strstr (io->runprofile, R_SYS_DIR ".rarun2.")) {
 			(void)r_file_rm (io->runprofile);
 		}
-	} else if (io->envprofile) {
-		if (!r_run_parse (rp, io->envprofile)) {
+	} else {
+		if (!io->envprofile) {
+			char **env = r_sys_get_environ ();
+			io->envprofile = r_run_get_environ_profile (env);
+		}
+		if (io->envprofile && !r_run_parse (rp, io->envprofile)) {
 			R_LOG_ERROR ("Can't parse default rarun2 profile");
 			r_run_free (rp);
 			return NULL;
