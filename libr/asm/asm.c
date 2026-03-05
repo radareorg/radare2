@@ -428,6 +428,8 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		// that shouldnt be permitted imho, keep for backward compat
 		return false;
 	}
+	char old_arch[sizeof (a->config->arch)] = {0};
+	r_str_ncpy (old_arch, a->config->arch, sizeof (old_arch));
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
 	char *dotname = strdup (name);
@@ -445,6 +447,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		}
 	//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
 	}
+	r_arch_config_use (a->config, old_arch);
 	free (dotname);
 	return false;
 }

@@ -1372,6 +1372,7 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 
 static bool cmd_anal_aaft(RCore *core) {
 	RListIter *it;
+	r_core_anal_type_init (core);
 	RAnalFunction *fcn;
 	ut64 seek;
 	const char *io_cache_key = "io.pcache.write";
@@ -1414,6 +1415,9 @@ static bool cmd_anal_aaft(RCore *core) {
 }
 
 static void cmd_aft(RCore *core, const char *input) {
+	if (*input != '?') {
+		r_core_anal_type_init (core);
+	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 	if (!fcn && *input != '?') {
 		R_LOG_WARN ("cant find function here");

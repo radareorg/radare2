@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2025 - pancake, nibble */
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
 #include <config.h>
 #include "../config.h"
 
@@ -137,6 +138,8 @@ R_API RAnal *r_anal_new(void) {
 	}
 	anal->cmpval = UT64_MAX;
 	anal->lea_jmptbl_ip = UT64_MAX;
+	anal->priv = R_NEW0 (RAnalPriv);
+	R_ANAL_PRIV (anal)->types_dirty = true;
 	anal->bb_tree = NULL;
 	anal->ht_addr_fun = ht_up_new0 ();
 	anal->ht_name_fun = ht_pp_new0 ();
@@ -212,6 +215,10 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 
 void __block_free_rb(RBNode *node, void *user);
 
+static void anal_priv_free(RAnal * R_NONNULL a) {
+	free (a->priv);
+}
+
 R_API void r_anal_free(RAnal *a) {
 	if (!a) {
 		return;
@@ -248,6 +255,7 @@ R_API void r_anal_free(RAnal *a) {
 	r_list_free (a->imports);
 	r_str_constpool_fini (&a->constpool);
 	r_anal_backtrace_fini (a);
+	anal_priv_free (a);
 	free (a);
 }
 
@@ -274,14 +282,23 @@ R_API char *r_anal_mnemonics(RAnal *anal, int id, bool json) {
 
 R_API bool r_anal_use(RAnal *anal, const char *name) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
+	char *old_arch = anal->config && *anal->config->arch? strdup (anal->config->arch): NULL;
 	if (anal->arch) {
 		bool res = r_arch_use (anal->arch, anal->config, name);
 		if (res) {
+			RArchSession *session = anal->arch->session;
+			const char *new_arch = session && session->plugin? session->plugin->arch: name;
+			r_arch_config_use (anal->config, new_arch);
 	//		anal->cur = NULL;
 			r_anal_set_reg_profile (anal, NULL);
+			if (!old_arch || !new_arch || strcmp (old_arch, new_arch)) {
+				R_ANAL_PRIV (anal)->types_dirty = true;
+			}
+			free (old_arch);
 			return true;
 		}
 	}
+	free (old_arch);
 	// R_LOG_DEBUG ("no plugin found");
 	return false;
 }
@@ -321,7 +338,7 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char * R_NULLABLE os, const cha
 	if (bits < 1) {
 		bits = anal->config->bits;
 	}
-	if (anal->config && anal->config->os && !strcmp (anal->config->os, os)) {
+	if (anal->config && (!anal->config->os || strcmp (anal->config->os, os))) {
 		free (anal->config->os);
 		anal->config->os = strdup (os);
 	}
@@ -331,58 +348,12 @@ R_API bool r_anal_set_triplet(RAnal *anal, const char * R_NULLABLE os, const cha
 	return true;
 }
 
-// copypasta from core/cbin.c
-static void sdb_concat_by_path(Sdb *s, const char *path) {
-	R_RETURN_IF_FAIL (s && path);
-	Sdb *db = sdb_new (0, path, 0);
-	if (db) {
-		sdb_merge (s, db);
-		sdb_close (db);
-		sdb_free (db);
-	}
-}
-
 R_API bool r_anal_set_os(RAnal *anal, const char *os) {
 	R_RETURN_VAL_IF_FAIL (anal && os, false);
-	Sdb *types = anal->sdb_types;
-	char *dir_prefix = r_sys_prefix (NULL);
-	SdbGperf *base_gp = r_anal_get_gperf_types ("types");
-	SdbGperf *gp = r_anal_get_gperf_types (os);
-	if (gp) {
-		sdb_reset (anal->sdb_types);
-		if (base_gp) {
-			Sdb *base_db = sdb_new0 ();
-			sdb_open_gperf (base_db, base_gp);
-			sdb_merge (anal->sdb_types, base_db);
-			sdb_close (base_db);
-			sdb_free (base_db);
-		}
-		if (gp != base_gp) {
-			Sdb *os_db = sdb_new0 ();
-			sdb_open_gperf (os_db, gp);
-			sdb_merge (anal->sdb_types, os_db);
-			sdb_close (os_db);
-			sdb_free (os_db);
-		}
-		free (dir_prefix);
-		return r_anal_set_triplet (anal, os, NULL, -1);
+	const char *old_os = anal->config? anal->config->os: NULL;
+	if (!old_os || strcmp (old_os, os)) {
+		R_ANAL_PRIV (anal)->types_dirty = true;
 	}
-	sdb_reset (types);
-	char *basepath = r_str_newf ("%s%s%s%stypes.sdb",
-		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR);
-	if (r_file_exists (basepath)) {
-		sdb_concat_by_path (types, basepath);
-	}
-	free (basepath);
-	// char *ff = r_str_newf ("types-%s.sdb", os);
-	// char *dbpath = r_file_new (dir_prefix, r2_sdb_fcnsign, ff, NULL);
-	char *dbpath = r_str_newf ("%s%s%s%stypes-%s.sdb",
-		dir_prefix, R_SYS_DIR, R2_SDB_FCNSIGN, R_SYS_DIR, os);
-	free (dir_prefix);
-	if (r_file_exists (dbpath)) {
-		sdb_concat_by_path (types, dbpath);
-	}
-	free (dbpath);
 	return r_anal_set_triplet (anal, os, NULL, -1);
 }
 
@@ -392,6 +363,7 @@ R_API bool r_anal_set_bits(RAnal *anal, int bits) {
 	r_arch_config_set_bits (anal->config, bits);
 	r_arch_set_bits (anal->arch, bits);
 	if (bits != obits) {
+		R_ANAL_PRIV (anal)->types_dirty = true;
 		r_anal_set_reg_profile (anal, NULL);
 	}
 	return true;

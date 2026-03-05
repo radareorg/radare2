@@ -1067,8 +1067,11 @@ static bool cb_asmos(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	int asmbits = r_config_get_i (core->config, "asm.bits");
 	RConfigNode *node = (RConfigNode *)data;
+	const char *os = R_UNWRAP3 (core, anal->config, os);
+	char *old_os = os? strdup (os): NULL;
 
 	if (*node->value == '?') {
+		free (old_os);
 		print_node_options (user, node);
 		return 0;
 	}
@@ -1084,6 +1087,7 @@ static bool cb_asmos(void *user, void *data) {
 	}
 	r_anal_set_os (core->anal, node->value);
 	r_core_anal_cc_init (core);
+	free (old_os);
 	return true;
 }
 
