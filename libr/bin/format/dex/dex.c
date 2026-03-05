@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, h4ng3r */
+/* radare - LGPL - Copyright 2009-2026 - pancake, h4ng3r */
 
 #define R_LOG_ORIGIN "dex"
 
@@ -229,7 +229,6 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	if (!dex) {
 		return;
 	}
-	struct dex_header_t *dexhdr = &dex->header;
 	if (dex->cal_strings) {
 		const ut32 cal_strings_size = dex->cal_strings_size;
 		ut32 i;

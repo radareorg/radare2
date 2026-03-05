@@ -188,6 +188,7 @@ extern RAsmPlugin r_asm_plugin_msp430;
 extern RAsmPlugin r_asm_plugin_nds32;
 extern RAsmPlugin r_asm_plugin_null;
 extern RAsmPlugin r_asm_plugin_pickle;
+extern RAsmPlugin r_asm_plugin_pyc;
 extern RAsmPlugin r_asm_plugin_ppc;
 extern RAsmPlugin r_asm_plugin_riscv;
 extern RAsmPlugin r_asm_plugin_sbpf;

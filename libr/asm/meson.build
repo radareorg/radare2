@@ -37,6 +37,7 @@ r_asm_sources = [
   '../arch/p/avr/pseudo.c',
   '../arch/p/msp430/pseudo.c',
   '../arch/p/pickle/pseudo.c',
+  '../arch/p/pyc/pseudo.c',
   '../arch/p/stm8/pseudo.c',
   '../arch/p/vax/pseudo.c',
   '../arch/p/bf/pseudo.c',
