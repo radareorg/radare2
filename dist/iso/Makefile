@@ -21,6 +21,7 @@ iso:
 		-e KEEP_R2_SOURCE="$(KEEP_R2_SOURCE)" \
 		-e KEEP_R2PM_CACHE="$(KEEP_R2PM_CACHE)" \
 		-e ROOTFS_DIR="$(ROOTFS_DIR)" \
+		-e BOOT_BRANDING_DIR="$(BOOT_BRANDING_DIR)" \
 		-e ISO_MOTD="$(ISO_MOTD)" \
 		-e ROOT_PASSWORD_MODE="$(ROOT_PASSWORD_MODE)" \
 		-e ROOT_PASSWORD="$(ROOT_PASSWORD)" \
@@ -34,7 +35,7 @@ iso:
 		"$(DOCKER_IMAGE)" \
 		/bin/bash "./$(BUILD_SCRIPT)"
 
-run: iso
+run:
 	@if [ "$(ARCH)" = "amd64" ]; then \
 		qemu-system-x86_64 -m "$(QEMU_MEMORY)" -boot d -cdrom "$(ISO_PATH)"; \
 	elif [ "$(ARCH)" = "arm64" ] || [ "$(ARCH)" = "aarch64" ]; then \
@@ -81,6 +82,7 @@ help:
 		'  KEEP_R2_SOURCE   Keep /usr/src/radare2 in final ISO (0|1, default: 0)' \
 		'  KEEP_R2PM_CACHE  Keep r2pm cache in final ISO (0|1, default: 0)' \
 		'  ROOTFS_DIR       Overlay dir copied into final ISO rootfs (default: rootfs)' \
+		'  BOOT_BRANDING_DIR Bootloader branding assets dir (default: assets/boot)' \
 		'  ISO_MOTD         /etc/motd text written into final ISO rootfs' \
 		'  ROOT_PASSWORD_MODE Root password policy: empty|password|locked' \
 		'  ROOT_PASSWORD    Used when ROOT_PASSWORD_MODE=password' \

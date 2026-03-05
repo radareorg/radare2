@@ -43,6 +43,7 @@ make R2_GIT_REF=master R2PM_PLUGINS="r2ghidra r2frida"
 - `KEEP_R2_SOURCE`: keep `/usr/src/radare2` in final ISO (`0`/`1`)
 - `KEEP_R2PM_CACHE`: keep r2pm cache in final ISO (`0`/`1`)
 - `ROOTFS_DIR`: overlay directory copied into the final rootfs (`rootfs`)
+- `BOOT_BRANDING_DIR`: bootloader branding assets directory (`assets/boot`)
 - `ISO_MOTD`: text written to `/etc/motd`
 - `ROOT_PASSWORD_MODE`: root password policy (`empty`, `password`, or `locked`)
 - `ROOT_PASSWORD`: root password when `ROOT_PASSWORD_MODE=password`
@@ -55,6 +56,8 @@ Default `ISO_CHROOT_PACKAGES` includes the tools needed by `r2pm` plugin builds:
 
 Default overlay includes `rootfs/etc/r2ascii.txt` and `rootfs/etc/profile.d/r2ascii.sh`
 to display the ASCII banner from `doc/r2ascii.txt` before the shell prompt.
+
+Default login is `root` / `radare2` (`ROOT_PASSWORD_MODE=password`).
 
 ## QEMU Testing
 

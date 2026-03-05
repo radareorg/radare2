@@ -15,8 +15,9 @@ KEEP_R2_SOURCE="${KEEP_R2_SOURCE:-0}"
 KEEP_R2PM_CACHE="${KEEP_R2PM_CACHE:-0}"
 BOOTLOADERS="${BOOTLOADERS:-}"
 ROOTFS_DIR="${ROOTFS_DIR:-rootfs}"
+BOOT_BRANDING_DIR="${BOOT_BRANDING_DIR:-assets/boot}"
 ISO_MOTD="${ISO_MOTD:-Welcome to r2iso}"
-ROOT_PASSWORD_MODE="${ROOT_PASSWORD_MODE:-empty}"
+ROOT_PASSWORD_MODE="${ROOT_PASSWORD_MODE:-password}"
 ROOT_PASSWORD="${ROOT_PASSWORD:-radare2}"
 HOST_BUILD_PACKAGES="${HOST_BUILD_PACKAGES:-ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso}"
 ISO_CHROOT_PACKAGES="${ISO_CHROOT_PACKAGES:-ca-certificates curl file git gcc meson ninja-build vim libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev make pkg-config python3 wget zlib1g-dev build-essential}"
@@ -103,6 +104,18 @@ if [ -n "${ISO_MOTD}" ]; then
 	mkdir -p config/includes.chroot/etc
 	printf '%s\n' "${ISO_MOTD}" > config/includes.chroot/etc/motd
 fi
+if [ -n "${BOOT_BRANDING_DIR}" ]; then
+	if [ ! -d "${SOURCE_DIR}/${BOOT_BRANDING_DIR}" ]; then
+		echo "BOOT_BRANDING_DIR does not exist: ${BOOT_BRANDING_DIR}" >&2
+		exit 1
+	fi
+	echo "[*] Copying boot branding from ${BOOT_BRANDING_DIR}"
+	mkdir -p config/includes.binary/boot/grub/live-theme config/includes.binary/boot/grub config/includes.binary/isolinux
+	install -m 0644 "${SOURCE_DIR}/${BOOT_BRANDING_DIR}/grub-theme.txt" config/includes.binary/boot/grub/live-theme/theme.txt
+	install -m 0644 "${SOURCE_DIR}/${BOOT_BRANDING_DIR}/splash800x600.png" config/includes.binary/boot/grub/splash.png
+	install -m 0644 "${SOURCE_DIR}/${BOOT_BRANDING_DIR}/splash800x600.png" config/includes.binary/isolinux/splash800x600.png
+	install -m 0644 "${SOURCE_DIR}/${BOOT_BRANDING_DIR}/splash.png" config/includes.binary/isolinux/splash.png
+fi
 
 cat > config/hooks/live/010-build-radare2.chroot <<EOF
 #!/usr/bin/env bash
@@ -138,7 +151,7 @@ make install
 case "\${ROOT_PASSWORD_MODE}" in
 empty)
 	passwd -d root || true
-	passwd -u root || true
+	usermod -p '' root || true
 	;;
 password)
 	echo "root:\${ROOT_PASSWORD}" | chpasswd

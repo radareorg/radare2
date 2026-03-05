@@ -3902,7 +3902,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
-	SETCB ("anal.vars.maxbbsize", "16K", &cb_analvars_maxbbsize, "maximum basic block size for variable analysis (0 = unlimited)");
+	SETCB ("anal.vars.maxbbsize", "64K", &cb_analvars_maxbbsize, "maximum basic block size for variable analysis (0 = unlimited)");
 	SETCB ("anal.vars.maxframe", "8K", &cb_analvars_maxframe, "maximum stack-frame delta in bytes for variable takeover (0 = unlimited)");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
 	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");
@@ -3945,7 +3945,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	SETCB ("anal.refstr", "false", &cb_anal_searchstringrefs, "search string references in data references");
 	SETCB ("anal.trycatch", "false", &cb_anal_trycatch, "honor try.X.Y.{from,to,catch} flags");
-	SETCB ("anal.bb.maxsize", "8K", &cb_anal_bb_max_size, "maximum basic block size");
+	SETCB ("anal.bb.maxsize", "64K", &cb_anal_bb_max_size, "maximum basic block size");
 	SETCB ("anal.pushret", "false", &cb_anal_pushret, "analyze push+ret as jmp");
 	SETCB ("types.plugin", "", &cb_anal_types_parser, "use the new c parser instead of tcc");
 	SETS ("anal.plugins.fcn", "", "ordered comma-separated list of analysis plugins for analyze_fcn callbacks");
