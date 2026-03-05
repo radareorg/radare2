@@ -1582,11 +1582,22 @@ static char *core_anal_graph_label(RCore *core, RAnalBlock *bb, int opts) {
 	} else if (opts & R_CORE_ANAL_STAR) {
 		str = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pdb %"PFMT64u, bb->addr, bb->size);
 	} else if (opts & R_CORE_ANAL_GRAPHBODY) {
+		const int graph_bb_maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
+		ut64 bbsize = bb->size;
+		const bool truncated = graph_bb_maxsize > 0 && bbsize > (ut64)graph_bb_maxsize;
+		if (truncated) {
+			bbsize = graph_bb_maxsize;
+		}
 		const bool scrColor = r_config_get (core->config, "scr.color");
 		const bool scrUtf8 = r_config_get_b (core->config, "scr.utf8");
 		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
 		r_config_set_b (core->config, "scr.utf8", false);
-		cmdstr = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pD %"PFMT64u, bb->addr, bb->size);
+		cmdstr = r_core_cmd_strf (core, "'@0x%08"PFMT64x"'pD %"PFMT64u, bb->addr, bbsize);
+		if (truncated && cmdstr) {
+			char *tmp = r_str_newf ("%s\n...", cmdstr);
+			free (cmdstr);
+			cmdstr = tmp;
+		}
 		r_config_set_i (core->config, "scr.color", scrColor);
 		r_config_set_b (core->config, "scr.utf8", scrUtf8);
 	}

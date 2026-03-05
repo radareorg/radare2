@@ -2162,6 +2162,7 @@ static void set_layout(RAGraph *g) {
 
 static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	char *body;
+	int disas_size = size;
 	RConfigHold *hc = r_config_hold_new (core->config);
 	if (!hc) {
 		return NULL;
@@ -2174,16 +2175,26 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	const bool o_bytes = r_config_get_b (core->config, "graph.bytes");
 	bool o_flags_in_bytes = r_config_get_b (core->config, "asm.flags.inbytes");
 	const bool o_graph_addr = r_config_get_b (core->config, "graph.addr");
+	const int graph_bb_maxsize = r_config_get_i (core->config, "graph.bb.maxsize");
+	const bool truncated = graph_bb_maxsize > 0 && disas_size > graph_bb_maxsize;
+	if (truncated) {
+		disas_size = graph_bb_maxsize;
+	}
 	int o_cursor = core->print->cur_enabled;
 	r_config_set_b (core->config, "asm.dwarf.file", false);
 	int mw = r_config_get_i (core->config, "graph.bb.maxwidth");
 	if (opts & BODY_COMMENTS) {
 		r_core_visual_toggle_decompiler_disasm (core, true, false);
-		char *res = r_core_cmd_strf (core, "pD %d @ 0x%08" PFMT64x, size, addr);
+		char *res = r_core_cmd_strf (core, "pD %d @ 0x%08" PFMT64x, disas_size, addr);
 		res = r_str_replace (res, "; ", "", true);
 		// res = r_str_replace (res, "\n", "(\n)", true);
 		r_str_trim (res);
 		res = r_str_trim_lines (res);
+		if (truncated && res) {
+			char *trunc_res = r_str_newf ("%s\n...", res);
+			free (res);
+			res = trunc_res;
+		}
 		if (mw > 0) {
 			res = r_str_ansi_crop (res, 0, 0, mw, -1);
 		}
@@ -2223,7 +2234,12 @@ static char *get_body(RCore *core, ut64 addr, int size, int opts) {
 	if (r_config_get_b (core->config, "graph.aeab")) {
 		body = r_core_cmd_strf (core, "%s 0x%08" PFMT64x, "aeab", addr);
 	} else {
-		body = r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, size, addr);
+		body = r_core_cmd_strf (core, "%s %d @ 0x%08" PFMT64x, cmd, disas_size, addr);
+		if (truncated && body) {
+			char *trunc_body = r_str_newf ("%s\n...", body);
+			free (body);
+			body = trunc_body;
+		}
 	}
 	if (mw > 0) {
 		body = r_str_ansi_crop (body, 0, 0, mw, -1);
