@@ -1,10 +1,9 @@
-/* radare - LGPL - Copyright 2015-2025 - pancake */
+/* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
 #include <sdb/ht_uu.h>
 
-static char *hashify(const char *s, ut64 vaddr);
 #include "i/private.h"
 
 typedef struct {
@@ -14,21 +13,56 @@ typedef struct {
 } RBinSectionNameState;
 
 static void section_name_state_free(HtPPKv *kv) {
-	RBinSectionNameState *state = kv? kv->value: NULL;
-	if (state) {
-		ht_uu_free (state->seen_vaddrs);
-		free (state);
+	if (kv) {
+		RBinSectionNameState *state = kv->value;
+		free (kv->key);
+		if (state) {
+			ht_uu_free (state->seen_vaddrs);
+			free (state);
+		}
 	}
 }
 
-static bool has_only_printable_chars(const char *s) {
-	R_RETURN_VAL_IF_FAIL (s, false);
-	for (; *s; s++) {
-		if (!IS_PRINTABLE (*s)) {
-			return false;
+static bool section_name_exists(RBinSectionNameState *state, ut64 vaddr) {
+	if (!state->seen_vaddrs) {
+		if (state->first_vaddr == vaddr) {
+			return true;
 		}
+		state->seen_vaddrs = ht_uu_new0 ();
+		if (state->seen_vaddrs) {
+			ht_uu_insert (state->seen_vaddrs, state->first_vaddr, 1);
+			ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+		}
+		return false;
 	}
-	return true;
+	bool found = false;
+	(void)ht_uu_find (state->seen_vaddrs, vaddr, &found);
+	if (!found) {
+		ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+	}
+	return found;
+}
+
+static char *hashify(const char *s, ut64 vaddr, ut64 suffix, bool keep_printable) {
+	R_RETURN_VAL_IF_FAIL (s, NULL);
+	const char *os = s;
+	while (*s) {
+		if (!IS_PRINTABLE (*s)) {
+			char *res = NULL;
+			if (vaddr && vaddr != UT64_MAX) {
+				res = r_str_newf ("_%" PFMT64d, vaddr);
+			} else {
+				const ut32 hash = sdb_hash (s);
+				res = r_str_newf ("%x", hash);
+			}
+			return suffix? r_str_appendf (res, "_%" PFMT64u, suffix): res;
+		}
+		s++;
+	}
+	if (!suffix && !keep_printable) {
+		return NULL;
+	}
+	return suffix? r_str_newf ("%s_%" PFMT64u, os, suffix): strdup (os);
 }
 
 static char *filter_section_name(HtPP *db, ut64 vaddr, const char *name) {
@@ -38,51 +72,17 @@ static char *filter_section_name(HtPP *db, ut64 vaddr, const char *name) {
 		state = R_NEW0 (RBinSectionNameState);
 		state->count = 1;
 		state->first_vaddr = vaddr;
-		ht_pp_insert (db, name, state);
-		if (!vaddr || has_only_printable_chars (name)) {
+		if (!ht_pp_insert (db, name, state)) {
+			free (state);
 			return NULL;
 		}
-		return hashify (name, vaddr);
+		return hashify (name, vaddr, 0, false);
 	}
 	state->count++;
-	if (!state->seen_vaddrs) {
-		if (state->first_vaddr == vaddr) {
-			return NULL;
-		}
-		state->seen_vaddrs = ht_uu_new0 ();
-		if (state->seen_vaddrs) {
-			ht_uu_insert (state->seen_vaddrs, state->first_vaddr, 1);
-			ht_uu_insert (state->seen_vaddrs, vaddr, 1);
-		}
-	} else {
-		bool found = false;
-		(void)ht_uu_find (state->seen_vaddrs, vaddr, &found);
-		if (found) {
-			return NULL;
-		}
-		ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+	if (section_name_exists (state, vaddr)) {
+		return NULL;
 	}
-	char *resname = vaddr? hashify (name, vaddr): NULL;
-	if (!resname) {
-		resname = strdup (name);
-	}
-	return r_str_appendf (resname, "_%" PFMT64u, state->count - 1);
-}
-
-static char *hashify(const char *s, ut64 vaddr) {
-	R_RETURN_VAL_IF_FAIL (s, NULL);
-	const char *os = s;
-	while (*s) {
-		if (!IS_PRINTABLE (*s)) {
-			if (vaddr && vaddr != UT64_MAX) {
-				return r_str_newf ("_%" PFMT64d, vaddr);
-			}
-			const ut32 hash = sdb_hash (s);
-			return r_str_newf ("%x", hash);
-		}
-		s++;
-	}
-	return strdup (os);
+	return hashify (name, vaddr, state->count - 1, true);
 }
 
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *name) {
@@ -114,9 +114,12 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 	char *resname = NULL;
 	if (vaddr) {
-		resname = hashify (name, vaddr);
+		resname = hashify (name, vaddr, 0, true);
 	}
 	if (count > 1) {
+		if (!resname) {
+			resname = strdup (name);
+		}
 		resname = r_str_appendf (resname, "_%d", count - 1);
 		// two symbols at different addresses and same name wtf
 		R_LOG_DEBUG ("Found duplicated symbol '%s'", resname);
