@@ -79,7 +79,8 @@ typedef struct {
 	RList *interned_table; // shared interned strings table
 } PycUnmarshalCtx;
 
-bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *objs);
+bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *objs, pyc_object **out_pobj);
 ut64 get_code_object_addr(RBuffer *buffer, ut32 magic);
+void pyc_object_free(pyc_object *obj);
 
 #endif

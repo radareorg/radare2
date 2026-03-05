@@ -17,10 +17,11 @@ typedef struct {
 	struct pyc_version version;
 	RList *sections_cache;     // RList<RBinSection*>
 	RList *interned_table;     // RList<char*>
-	RList *cobjs;              // RList<pyc_code_object*>
+	RList *cobjs;              // RList<pyc_code_object*> (borrowed ptrs)
+	pyc_object *pobj;          // root object tree (owns cobjs data)
 } RBinPycObj;
 
-bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table);
+bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj);
 bool pyc_is_code(ut8 b, ut32 magic);
 
 #endif
