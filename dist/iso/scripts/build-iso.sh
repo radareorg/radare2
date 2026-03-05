@@ -10,10 +10,13 @@ DEBIAN_RELEASE="${DEBIAN_RELEASE:-bookworm}"
 ARCH="${ARCH:-amd64}"
 R2_GIT_URL="${R2_GIT_URL:-https://github.com/radareorg/radare2.git}"
 R2_GIT_REF="${R2_GIT_REF:-master}"
-R2PM_PLUGINS="${R2PM_PLUGINS:-r2ghidra r2frida}"
+R2PM_PLUGINS="${R2PM_PLUGINS:-r2dec}"
 KEEP_R2_SOURCE="${KEEP_R2_SOURCE:-0}"
 KEEP_R2PM_CACHE="${KEEP_R2PM_CACHE:-0}"
 BOOTLOADERS="${BOOTLOADERS:-}"
+HOST_BUILD_PACKAGES="${HOST_BUILD_PACKAGES:-ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso}"
+ISO_CHROOT_PACKAGES="${ISO_CHROOT_PACKAGES:-ca-certificates curl file git gcc meson ninja-build vim libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev make pkg-config python3 wget zlib1g-dev build-essential}"
+ISO_CHROOT_PURGE_PACKAGES="${ISO_CHROOT_PURGE_PACKAGES:-build-essential libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev zlib1g-dev}"
 
 if [ "${KEEP_R2_SOURCE}" != "0" ] && [ "${KEEP_R2_SOURCE}" != "1" ]; then
 	echo "KEEP_R2_SOURCE must be 0 or 1" >&2
@@ -30,6 +33,14 @@ if [ -z "${BOOTLOADERS}" ]; then
 	*) BOOTLOADERS="grub-efi" ;;
 	esac
 fi
+if [ -z "${HOST_BUILD_PACKAGES}" ]; then
+	echo "HOST_BUILD_PACKAGES cannot be empty" >&2
+	exit 1
+fi
+if [ -z "${ISO_CHROOT_PACKAGES}" ]; then
+	echo "ISO_CHROOT_PACKAGES cannot be empty" >&2
+	exit 1
+fi
 
 case "${WORK_DIR}" in
 /*) WORK_ABS="${WORK_DIR}" ;;
@@ -39,16 +50,7 @@ esac
 echo "[*] Installing build dependencies in container"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends \
-	ca-certificates \
-	curl \
-	debootstrap \
-	git \
-	live-build \
-	mtools \
-	squashfs-tools \
-	syslinux-common \
-	xorriso
+apt-get install -y --no-install-recommends ${HOST_BUILD_PACKAGES}
 
 echo "[*] Preparing live-build workspace at ${WORK_DIR}"
 rm -rf "${WORK_ABS}"
@@ -67,26 +69,10 @@ lb config \
 
 mkdir -p config/package-lists config/hooks/live config/includes.chroot/usr/local/sbin
 
-cat > config/package-lists/r2iso.list.chroot <<'EOF'
-ca-certificates
-curl
-file
-git
-libcapstone-dev
-liblz4-dev
-libmagic-dev
-libssl-dev
-libuv1-dev
-libxxhash-dev
-libzstd-dev
-libzip-dev
-make
-pkg-config
-python3
-wget
-zlib1g-dev
-build-essential
-EOF
+: > config/package-lists/r2iso.list.chroot
+for pkg in ${ISO_CHROOT_PACKAGES}; do
+	echo "${pkg}" >> config/package-lists/r2iso.list.chroot
+done
 
 install -m 0755 "${SOURCE_DIR}/scripts/install-r2pm-plugins.sh" \
 	"config/includes.chroot/usr/local/sbin/install-r2pm-plugins.sh"
@@ -100,6 +86,8 @@ R2_GIT_REF='${R2_GIT_REF}'
 R2PM_PLUGINS='${R2PM_PLUGINS}'
 KEEP_R2_SOURCE='${KEEP_R2_SOURCE}'
 KEEP_R2PM_CACHE='${KEEP_R2PM_CACHE}'
+ISO_CHROOT_PACKAGES='${ISO_CHROOT_PACKAGES}'
+ISO_CHROOT_PURGE_PACKAGES='${ISO_CHROOT_PURGE_PACKAGES}'
 
 export DEBIAN_FRONTEND=noninteractive
 mkdir -p /usr/src
@@ -118,20 +106,10 @@ make install
 
 /usr/local/sbin/install-r2pm-plugins.sh "\${R2PM_PLUGINS}"
 
-apt-get purge -y \
-	build-essential \
-	git \
-	libcapstone-dev \
-	liblz4-dev \
-	libmagic-dev \
-	libssl-dev \
-	libuv1-dev \
-	libxxhash-dev \
-	libzstd-dev \
-	libzip-dev \
-	make \
-	pkg-config \
-	zlib1g-dev || true
+apt-mark manual \${ISO_CHROOT_PACKAGES} >/dev/null 2>&1 || true
+if [ -n "\${ISO_CHROOT_PURGE_PACKAGES}" ]; then
+	apt-get purge -y \${ISO_CHROOT_PURGE_PACKAGES} || true
+fi
 apt-get autoremove -y
 apt-get clean
 rm -rf /var/lib/apt/lists/*

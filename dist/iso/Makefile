@@ -1,26 +1,6 @@
 SHELL := /bin/sh
 
-DOCKER_IMAGE := debian:bookworm
-CONTAINER_WORKDIR := /work
-CONTAINER_BUILD_ROOT := /tmp/r2iso-build
-BUILD_SCRIPT := scripts/build-iso.sh
-
-ISO_NAME := r2iso
-OUTPUT_DIR := output
-WORK_DIR := build/live-build
-DEBIAN_RELEASE := bookworm
-ARCH ?= amd64
-DOCKER_PLATFORM := $(if $(filter amd64,$(ARCH)),linux/amd64,$(if $(filter arm64 aarch64,$(ARCH)),linux/arm64,linux/amd64))
-ISO_PATH := $(OUTPUT_DIR)/$(ISO_NAME)-$(DEBIAN_RELEASE)-$(ARCH).iso
-QEMU_MEMORY ?= 4096
-QEMU_AARCH64_EFI ?=
-BOOTLOADERS ?=
-R2_GIT_URL := https://github.com/radareorg/radare2.git
-R2_GIT_REF := master
-R2PM_PLUGINS := r2dec
-# R2PM_PLUGINS := r2ghidra r2frida
-KEEP_R2_SOURCE := 0
-KEEP_R2PM_CACHE := 0
+include config.mk
 
 .PHONY: all iso run run-usb clean help
 
@@ -40,6 +20,9 @@ iso:
 		-e R2PM_PLUGINS="$(R2PM_PLUGINS)" \
 		-e KEEP_R2_SOURCE="$(KEEP_R2_SOURCE)" \
 		-e KEEP_R2PM_CACHE="$(KEEP_R2PM_CACHE)" \
+		-e HOST_BUILD_PACKAGES="$(HOST_BUILD_PACKAGES)" \
+		-e ISO_CHROOT_PACKAGES="$(ISO_CHROOT_PACKAGES)" \
+		-e ISO_CHROOT_PURGE_PACKAGES="$(ISO_CHROOT_PURGE_PACKAGES)" \
 		-e SOURCE_DIR="$(CONTAINER_WORKDIR)" \
 		-e BUILD_ROOT="$(CONTAINER_BUILD_ROOT)" \
 		-v "$(CURDIR):$(CONTAINER_WORKDIR)" \
@@ -81,14 +64,18 @@ help:
 		'  make clean      Remove build artifacts and generated ISOs' \
 		'' \
 		'Variables (override with make VAR=value):' \
+		'  Defaults are set in dist/iso/config.mk' \
 		'  ISO_NAME         Output ISO basename (default: r2iso)' \
 		'  DEBIAN_RELEASE   Debian suite (default: bookworm)' \
 		'  ARCH             Debian architecture (default: amd64)' \
 		'  DOCKER_PLATFORM  Container architecture (auto from ARCH)' \
 		'  BOOTLOADERS      live-build bootloaders (auto by ARCH if empty)' \
 		'  R2_GIT_REF       radare2 git ref (default: master)' \
-		'  R2PM_PLUGINS     Space-separated plugins (default: r2ghidra r2frida)' \
+		'  R2PM_PLUGINS     Space-separated plugins (default: r2dec)' \
 		'  QEMU_MEMORY      RAM for make run targets in MB (default: 4096)' \
 		'  QEMU_AARCH64_EFI Required only for make run ARCH=arm64' \
 		'  KEEP_R2_SOURCE   Keep /usr/src/radare2 in final ISO (0|1, default: 0)' \
-		'  KEEP_R2PM_CACHE  Keep r2pm cache in final ISO (0|1, default: 0)'
+		'  KEEP_R2PM_CACHE  Keep r2pm cache in final ISO (0|1, default: 0)' \
+		'  HOST_BUILD_PACKAGES      Packages installed in builder container' \
+		'  ISO_CHROOT_PACKAGES      Packages installed in final ISO rootfs' \
+		'  ISO_CHROOT_PURGE_PACKAGES Packages purged after radare2 install'

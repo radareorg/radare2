@@ -8,6 +8,8 @@ Build a small Debian live ISO with the latest `radare2` from git and optional `r
 make
 ```
 
+All defaults are centralized in `dist/iso/config.mk`.
+
 Default build architecture is `amd64` (x86_64).
 
 To build ARM64 explicitly:
@@ -39,6 +41,12 @@ make R2_GIT_REF=master R2PM_PLUGINS="r2ghidra r2frida"
 - `R2PM_PLUGINS`: space-separated plugin list
 - `KEEP_R2_SOURCE`: keep `/usr/src/radare2` in final ISO (`0`/`1`)
 - `KEEP_R2PM_CACHE`: keep r2pm cache in final ISO (`0`/`1`)
+- `HOST_BUILD_PACKAGES`: packages installed in the builder container
+- `ISO_CHROOT_PACKAGES`: packages installed in final ISO rootfs
+- `ISO_CHROOT_PURGE_PACKAGES`: packages purged after building radare2
+
+Default `ISO_CHROOT_PACKAGES` includes the tools needed by `r2pm` plugin builds:
+`gcc`, `meson`, `ninja` (`ninja-build` package), `git`, and `vim`.
 
 ## QEMU Testing
 
