@@ -2319,6 +2319,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 			}
 		}
 	}
+	r_list_free (bfiles);
 	RFlagItem *fi = r_flag_get (core->flags, "main");
 	if (fi) {
 		if (pj) {
