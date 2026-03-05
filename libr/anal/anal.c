@@ -46,6 +46,28 @@ static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	return *suffix? suffix: defpfx;
 }
 
+static bool has_byte_prefix(const ut8 *buf, int len, ut8 byte, int count) {
+	if (!buf || len < count || count < 1) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < count; i++) {
+		if (buf[i] != byte) {
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API bool r_anal_is_invalid_code(RAnal *anal, const ut8 *buf, int len, bool check_zeros) {
+	R_RETURN_VAL_IF_FAIL (buf && len > 0, false);
+	int prefix_count = anal && anal->opt.nonull > 0 ? anal->opt.nonull : 32;
+	prefix_count = R_MAX (prefix_count, 1);
+	prefix_count = R_MIN (prefix_count, 32);
+	return (check_zeros && has_byte_prefix (buf, len, 0x00, prefix_count))
+		|| has_byte_prefix (buf, len, 0xff, prefix_count);
+}
+
 R_API void r_anal_set_limits(RAnal *anal, ut64 from, ut64 to) {
 	free (anal->limit);
 	anal->limit = R_NEW0 (RAnalRange);

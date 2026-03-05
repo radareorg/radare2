@@ -14114,6 +14114,8 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	const bool anal_vars = r_config_get_b (core->config, "anal.vars");
 	const bool anal_calls = r_config_get_b (core->config, "anal.calls");
 	const int anal_symsort = r_config_get_i (core->config, "anal.symsort");
+	r_cons_break_push (core->cons, NULL, NULL);
+	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 
 	// required for noreturn
 	if (r_config_get_b (core->config, "anal.imports")) {
@@ -14137,9 +14139,6 @@ static bool cmd_aa(RCore *core, bool aaa) {
 	}
 #endif
 	r_core_task_yield (&core->tasks);
-
-	r_cons_break_push (core->cons, NULL, NULL);
-	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 
 	logline (core, 18, "Analyze symbols (af@@@s)");
 	RVecRBinSymbol *v = r_bin_get_symbols_vec (core->bin);

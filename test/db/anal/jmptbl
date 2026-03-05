@@ -335,7 +335,6 @@ EXPECT=<<EOF
 0x00407c48    1      6 fcn.00407c48
 0x0040c42c    2     24 fcn.0040c42c
 0x0040c4cc    1     21 fcn.0040c4cc
-0x0040cc58   10   1141 loc.0040cc58
 0x00407c78    1      6 fcn.00407c78
 0x00407d0c    3     73 fcn.00407d0c
 0x00407c38    1      6 fcn.00407c38
@@ -344,7 +343,6 @@ EXPECT=<<EOF
 0x0040bf3c    1      6 fcn.0040bf3c
 0x0040bf44    1      6 fcn.0040bf44
 0x0040c878    3     59 fcn.0040c878
-0x0040cb90    1    200 fcn.0040cb90
 EOF
 RUN
 

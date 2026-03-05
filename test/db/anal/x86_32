@@ -3189,7 +3189,7 @@ aa > /dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-┌ (fcn) fcn.00000000 1645
+┌ (fcn) fcn.00000000 297
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 │           ; arg int32_t arg_4h @ esp+0x50
 │           ; arg int32_t arg_1ch @ esp+0x68
@@ -3254,7 +3254,7 @@ aa >/dev/null
 pd 38
 EOF
 EXPECT=<<EOF
-/ (fcn) fcn.00000000 1645
+/ (fcn) fcn.00000000 297
 // void fcn.00000000 (int32_t arg_4h, int32_t arg_1ch, int32_t arg_2ch);
 |           ; arg int32_t arg_4h @ esp+0x50
 |           ; arg int32_t arg_1ch @ esp+0x68

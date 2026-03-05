@@ -19,7 +19,7 @@ BOOT_BRANDING_DIR="${BOOT_BRANDING_DIR:-assets/boot}"
 ISO_MOTD="${ISO_MOTD:-Welcome to r2iso}"
 ROOT_PASSWORD_MODE="${ROOT_PASSWORD_MODE:-password}"
 ROOT_PASSWORD="${ROOT_PASSWORD:-radare2}"
-HOST_BUILD_PACKAGES="${HOST_BUILD_PACKAGES:-ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso}"
+HOST_BUILD_PACKAGES="${HOST_BUILD_PACKAGES:-ca-certificates cpio curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso}"
 ISO_CHROOT_PACKAGES="${ISO_CHROOT_PACKAGES:-ca-certificates curl file git gcc meson ninja-build vim libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev make pkg-config python3 wget zlib1g-dev build-essential}"
 ISO_CHROOT_PURGE_PACKAGES="${ISO_CHROOT_PURGE_PACKAGES:-build-essential libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev zlib1g-dev}"
 

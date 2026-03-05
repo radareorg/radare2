@@ -139,35 +139,6 @@ static RAnalBlock *fcn_append_basic_block(RAnal *anal, RAnalFunction *fcn, ut64 
 
 #define gotoBeach(x) ret = x; goto beach;
 
-static bool is_invalid_memory(RAnal *anal, const ut8 *buf, int len) {
-	if (len > 8) {
-		if (!memcmp (buf, "\x00\x00\x00\x00\x00\x00\x00\x00", 8)) {
-			const char *arch = R_UNWRAP3 (anal, config, arch);
-			if (arch) {
-				if (anal->config->bits == 16 && r_str_startswith (arch, "x86")) {
-					return true;
-				}
-				if (!strcmp (arch, "java") || r_str_startswith (arch, "riscv")) {
-					return true;
-				}
-			}
-		}
-	}
-	if (anal->opt.nonull > 0) {
-		int i;
-		const int count = R_MIN (len, anal->opt.nonull);
-		for (i = 0; i < count; i++) {
-			if (buf[i]) {
-				break;
-			}
-		}
-		if (i == count) {
-			return true;
-		}
-	}
-	return !memcmp (buf, "\xff\xff\xff\xff", R_MIN (len, 4));
-}
-
 static bool is_symbol_flag(const char *name) {
 	return strstr (name, "imp.")
 		|| strstr (name, "dbg.")
@@ -579,6 +550,9 @@ static const char *retpoline_reg(RAnal *anal, ut64 addr) {
 
 static void analyze_retpoline(RAnal *anal, RAnalOp *op) {
 	if (anal->opt.retpoline) {
+		if (op->jump == UT64_MAX) {
+			return;
+		}
 		const char *rr = retpoline_reg (anal, op->jump);
 		if (rr) {
 			op->type = R_ANAL_OP_TYPE_RJMP;
@@ -644,6 +618,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	int ret = R_ANAL_RET_END;
 	bool overlapped = false;
 	bool skip_fail = false;
+	bool is_import_stub = false;
 	int oplen, idx = 0;
 	int lea_cnt = 0;
 	size_t nop_prefix_cnt = 0;
@@ -719,6 +694,10 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 		// we checked before whether there is a bb at addr, so the create should have succeeded
 		R_LOG_DEBUG ("Missing basic block assertion failed");
 		return R_ANAL_RET_ERROR;
+	}
+	if (anal->flb.get_at) {
+		RFlagItem *fi = anal->flb.get_at (anal->flb.f, addr, false);
+		is_import_stub = fi && fi->name && strstr (fi->name, "imp.");
 	}
 
 	if (!anal->leaddrs) {
@@ -804,6 +783,9 @@ repeat:
 		ut8 buf[32]; // 32 bytes is enough to hold any instruction.
 		ut32 at_delta = addrbytes * idx;
 		ut64 at = addr + at_delta;
+		if (!anal->iob.is_valid_offset (anal->iob.io, at, 0)) {
+			gotoBeach (R_ANAL_RET_END);
+		}
 		ut64 bytes_read = R_MIN (len - at_delta, sizeof (buf));
 		ret = read_ahead (ra, anal, at, buf, bytes_read);
 		if (ret < 0) {
@@ -812,8 +794,10 @@ repeat:
 		}
 		// ret is the max length of bytes available
 		// eprintf("%02x %02x\n", buf[0], buf[1]);
-		if (is_invalid_memory (anal, buf, bytes_read)) {
-			R_LOG_DEBUG ("FFFF opcode at 0x%08"PFMT64x, at);
+		const bool check_invalid_fill = bb->size < sizeof (buf) || anal->opt.nonull > 0;
+		const bool check_zeros = anal->opt.nonull > 0 || is_x86;
+		if (!is_import_stub && check_invalid_fill && r_anal_is_invalid_code (anal, buf, bytes_read, check_zeros)) {
+			R_LOG_DEBUG ("Invalid code prefix at 0x%08"PFMT64x, at);
 			gotoBeach (R_ANAL_RET_ERROR)
 		}
 		r_anal_op_fini (op);

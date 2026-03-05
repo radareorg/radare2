@@ -29,6 +29,7 @@ e asm.bits=64
 e asm.var.summary=0
 
 s 0x10
+wox 0xc0 # thats an 'inc', 000s is not valid code nops wont work with nopskip.. inc works fine
 af
 
 afvb 8 arg_8h int
