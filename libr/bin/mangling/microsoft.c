@@ -522,6 +522,10 @@ static size_t get_operator_code(SDemangler *sd, const char *buf, RList *names_l,
 				char *c = get_num (&state);
 				char *d = get_num (&state);
 				if (!a || !b || !c || !d) {
+					free (a);
+					free (b);
+					free (c);
+					free (d);
 					r_list_free (names_l);
 					return 0;
 				}
@@ -577,11 +581,13 @@ static size_t get_template(SDemangler *sd, const char *buf, SStrInfo *str_info, 
 		RList *names_l = r_list_newf ((RListFree)sstrinfo_free);
 		if (!names_l) {
 			free_type_code_str_struct (&type_code_str);
+			r_list_free (new_abbr_names);
 			return 0;
 		}
 		size_t i = get_operator_code (sd, buf, names_l, memorize);
 		if (!i) {
 			free_type_code_str_struct (&type_code_str);
+			r_list_free (new_abbr_names);
 			return 0;
 		}
 		buf = str_skip_report (buf, &len, i);
@@ -643,7 +649,9 @@ get_template_err:
 		char *s = strdup (type_code_str.type_str);
 		r_list_append (sd->abbr_names, s);
 	}
-	// XXX LEAK OR DOUBLE FREE free_type_code_str_struct (&type_code_str);
+	if (!len) {
+		free_type_code_str_struct (&type_code_str);
+	}
 	return len;
 }
 
@@ -720,10 +728,13 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		if ((*tmp == '?') && (*(tmp + 1) == 'Q')) {
 			STypeCodeStr str;
 			if (!init_type_code_str_struct (&str)) {
+				R_FREE (str_info);
 				break;
 			}
 			size_t i = get_namespace_and_name (sd, tmp + 2, &str, NULL, true);
 			if (!i) {
+				free_type_code_str_struct (&str);
+				R_FREE (str_info);
 				break;
 			}
 			prev_pos = str_skip_report (tmp, &read_len, i + 3);
@@ -749,6 +760,8 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 			}
 			char *demangled = NULL;
 			if (parse_microsoft_mangled_name (sd, str_skip_n (tmp, 2), &demangled, &len) != eDemanglerErrOK) {
+				free (num);
+				R_FREE (str_info);
 				break;
 			}
 			read_len += len + 1;
@@ -769,6 +782,7 @@ static size_t get_namespace_and_name(SDemangler *sd, const char *buf, STypeCodeS
 		if (isdigit ((ut8)*tmp)) {
 			tmp = r_list_get_n (sd->abbr_names, *tmp - '0');
 			if (!tmp) {
+				R_FREE (str_info);
 				break;
 			}
 			len = 1;
