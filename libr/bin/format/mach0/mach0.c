@@ -680,20 +680,17 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 
 	mo->ntoc = mo->dysymtab.ntoc;
 	if (mo->ntoc > 0) {
-		if (! (mo->toc = calloc (mo->ntoc, sizeof (struct dylib_table_of_contents)))) {
-			r_sys_perror ("calloc (toc)");
-			return false;
-		}
 		if (!UT32_MUL (&size_tab, mo->ntoc, sizeof (struct dylib_table_of_contents))) {
-			R_FREE (mo->toc);
 			return false;
 		}
 		if (!size_tab) {
-			R_FREE (mo->toc);
 			return false;
 		}
 		if (mo->dysymtab.tocoff > mo->size || mo->dysymtab.tocoff + size_tab > mo->size) {
-			R_FREE (mo->toc);
+			return false;
+		}
+		if (! (mo->toc = calloc (mo->ntoc, sizeof (struct dylib_table_of_contents)))) {
+			r_sys_perror ("calloc (toc)");
 			return false;
 		}
 		for (i = 0; i < mo->ntoc; i++) {
@@ -710,21 +707,18 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	mo->nmodtab = mo->dysymtab.nmodtab;
 	ut64 max_nmodtab = (mo->size - mo->dysymtab.modtaboff) / sizeof (struct MACH0_(dylib_module));
 	if (mo->nmodtab > 0 && mo->nmodtab <= max_nmodtab) {
-		if (! (mo->modtab = calloc (mo->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
-			r_sys_perror ("calloc (modtab)");
-			return false;
-		}
 		if (!UT32_MUL (&size_tab, mo->nmodtab, sizeof (struct MACH0_(dylib_module)))) {
-			R_FREE (mo->modtab);
 			return false;
 		}
 		if (!size_tab) {
-			R_FREE (mo->modtab);
 			return false;
 		}
 		if (mo->dysymtab.modtaboff > mo->size ||
 			mo->dysymtab.modtaboff + size_tab > mo->size) {
-			R_FREE (mo->modtab);
+			return false;
+		}
+		if (! (mo->modtab = calloc (mo->nmodtab, sizeof (struct MACH0_(dylib_module))))) {
+			r_sys_perror ("calloc (modtab)");
 			return false;
 		}
 		for (i = 0; i < mo->nmodtab; i++) {
@@ -757,21 +751,18 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	}
 	mo->nindirectsyms = mo->dysymtab.nindirectsyms;
 	if (mo->nindirectsyms > 0) {
-		if (! (mo->indirectsyms = calloc (mo->nindirectsyms, sizeof (ut32)))) {
-			r_sys_perror ("calloc (indirectsyms)");
-			return false;
-		}
 		if (!UT32_MUL (&size_tab, mo->nindirectsyms, sizeof (ut32))) {
-			R_FREE (mo->indirectsyms);
 			return false;
 		}
 		if (!size_tab) {
-			R_FREE (mo->indirectsyms);
 			return false;
 		}
 		if (mo->dysymtab.indirectsymoff > mo->size ||
 			mo->dysymtab.indirectsymoff + size_tab > mo->size) {
-			R_FREE (mo->indirectsyms);
+			return false;
+		}
+		if (! (mo->indirectsyms = calloc (mo->nindirectsyms, sizeof (ut32)))) {
+			r_sys_perror ("calloc (indirectsyms)");
 			return false;
 		}
 		for (i = 0; i < mo->nindirectsyms; i++) {
