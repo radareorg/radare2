@@ -231,8 +231,9 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	}
 	struct dex_header_t *dexhdr = &dex->header;
 	if (dex->cal_strings) {
-		size_t i;
-		for (i = 0; i < dexhdr->strings_size; i++) {
+		const ut32 cal_strings_size = dex->cal_strings_size;
+		ut32 i;
+		for (i = 0; i < cal_strings_size; i++) {
 			free (dex->cal_strings[i]);
 		}
 	}
@@ -246,6 +247,8 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->types);
 	free (dex->fields);
 	free (dex->protos);
+	free (dex->version);
+	r_list_free (dex->lines_list);
 	r_unref (dex->b);
 	free (dex);
 }

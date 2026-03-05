@@ -77,6 +77,7 @@ ae 0,3,/
 ae*
 EOF
 EXPECT=<<EOF
+0
 trap: 3
 trap-code: 0
 EOF

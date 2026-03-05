@@ -100,6 +100,7 @@ static const char *getstr(RBinDexObj *dex, int idx) {
 		}
 	} else {
 		dex->cal_strings = R_NEWS0 (char *, dex->header.strings_size);
+		dex->cal_strings_size = dex->header.strings_size;
 	}
 	const ut32 string_index = dex->strings[idx];
 	if (string_index >= dex->size) {
@@ -264,9 +265,8 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	size_t typeidx_bufsize = (list_size * sizeof (ut16));
 	if (params_off + typeidx_bufsize > bin->size) {
-		R_LOG_WARN ("truncated typeidx buffer from %d to %d",
+		R_LOG_DEBUG ("truncated typeidx buffer from %d to %d",
 			(int)(params_off + typeidx_bufsize), (int)(bin->size - params_off));
-		typeidx_bufsize = bin->size - params_off;
 		// early return as this may result on so many trashy symbols that take too much time to load
 		// this is only happening when there's a corrupted dex.
 		return NULL;
@@ -1559,14 +1559,18 @@ static bool dex_loadcode(RBinFile *bf) {
 	if (!RVecRBinSymbol_empty (&dex->symbols_vec)) {
 		return false;
 	}
-	dex->version = r_bin_dex_get_version (dex);
+	if (!dex->version) {
+		dex->version = r_bin_dex_get_version (dex);
+	}
 	dex->code_from = UT64_MAX;
 	dex->code_to = 0;
 	RVecRBinImport_init (&dex->imports_vec);
 	RVecRBinClass_init (&dex->classes_vec);
-	dex->lines_list = r_list_newf ((RListFree)free);
 	if (!dex->lines_list) {
-		return false;
+		dex->lines_list = r_list_newf ((RListFree)free);
+		if (!dex->lines_list) {
+			return false;
+		}
 	}
 
 	if (dex->header.method_size > dex->size) {
@@ -2013,7 +2017,14 @@ static char *dex_header(RBinFile *bf, int mode) {
 	p ("data_off            : %d (0x%06x)\n\n", hdr->data_offset, hdr->data_offset);
 #undef p
 	// TODO: print information stored in the RBIN not this ugly fix
+	// Free previously allocated resources before reloading
 	RVecRBinSymbol_clear (&dex->symbols_vec);
+	RVecRBinImport_fini (&dex->imports_vec);
+	RVecRBinClass_fini (&dex->classes_vec);
+	r_list_free (dex->lines_list);
+	dex->lines_list = NULL;
+	free (dex->version);
+	dex->version = NULL;
 	dex_loadcode (bf);
 	char *ret = r_strbuf_drain (dex->sb);
 	dex->sb = NULL;
