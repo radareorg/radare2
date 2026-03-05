@@ -2,7 +2,72 @@
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
+#include <sdb/ht_uu.h>
+
+static char *hashify(const char *s, ut64 vaddr);
 #include "i/private.h"
+
+typedef struct {
+	ut64 count;
+	ut64 first_vaddr;
+	HtUU *seen_vaddrs;
+} RBinSectionNameState;
+
+static void section_name_state_free(HtPPKv *kv) {
+	RBinSectionNameState *state = kv? kv->value: NULL;
+	if (state) {
+		ht_uu_free (state->seen_vaddrs);
+		free (state);
+	}
+}
+
+static bool has_only_printable_chars(const char *s) {
+	R_RETURN_VAL_IF_FAIL (s, false);
+	for (; *s; s++) {
+		if (!IS_PRINTABLE (*s)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static char *filter_section_name(HtPP *db, ut64 vaddr, const char *name) {
+	R_RETURN_VAL_IF_FAIL (db && name, NULL);
+	RBinSectionNameState *state = ht_pp_find (db, name, NULL);
+	if (!state) {
+		state = R_NEW0 (RBinSectionNameState);
+		state->count = 1;
+		state->first_vaddr = vaddr;
+		ht_pp_insert (db, name, state);
+		if (!vaddr || has_only_printable_chars (name)) {
+			return NULL;
+		}
+		return hashify (name, vaddr);
+	}
+	state->count++;
+	if (!state->seen_vaddrs) {
+		if (state->first_vaddr == vaddr) {
+			return NULL;
+		}
+		state->seen_vaddrs = ht_uu_new0 ();
+		if (state->seen_vaddrs) {
+			ht_uu_insert (state->seen_vaddrs, state->first_vaddr, 1);
+			ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+		}
+	} else {
+		bool found = false;
+		(void)ht_uu_find (state->seen_vaddrs, vaddr, &found);
+		if (found) {
+			return NULL;
+		}
+		ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+	}
+	char *resname = vaddr? hashify (name, vaddr): NULL;
+	if (!resname) {
+		resname = strdup (name);
+	}
+	return r_str_appendf (resname, "_%" PFMT64u, state->count - 1);
+}
 
 static char *hashify(const char *s, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
@@ -132,19 +197,22 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
-	HtSU *db = ht_su_new0 ();
+	HtPP *db = ht_pp_new (NULL, section_name_state_free, NULL);
 	RListIter *iter;
+	if (!db) {
+		return;
+	}
 	r_list_foreach (list, iter, sec) {
 		if (!sec->name) {
 			continue;
 		}
-		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
+		char *p = filter_section_name (db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);
 			sec->name = p;
 		}
 	}
-	ht_su_free (db);
+	ht_pp_free (db);
 }
 
 static bool false_positive(const char *str) {
