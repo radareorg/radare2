@@ -16,8 +16,8 @@ BOOTLOADERS ?=
 
 R2_GIT_URL ?= https://github.com/radareorg/radare2.git
 R2_GIT_REF ?= master
-R2PM_PLUGINS ?= r2dec
-# R2PM_PLUGINS ?= r2ghidra r2frida
+R2PM_PLUGINS ?=
+# R2PM_PLUGINS ?= r2dec r2ghidra r2frida
 KEEP_R2_SOURCE ?= 0
 KEEP_R2PM_CACHE ?= 0
 ROOTFS_DIR ?= rootfs

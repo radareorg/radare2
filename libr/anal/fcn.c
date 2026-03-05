@@ -464,8 +464,15 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 	BlockTakeoverCtx *ctx = user;
 	RAnalFunction *our_fcn = ctx->fcn;
 	RAnal *anal = our_fcn->anal;
+	const int maxbbsize = anal->opt.vars_maxbbsize;
+	const int maxframe = anal->opt.vars_maxframe;
 	bool already_owned = r_list_contains (block->fcns, our_fcn);
 	block = r_ref (block);
+	if (maxbbsize > 0 && block->size > (ut64)maxbbsize) {
+		R_LOG_DEBUG ("Skipping variable takeover on oversized block at 0x%08"PFMT64x" (%"PFMT64u" bytes)", block->addr, block->size);
+		r_unref (block);
+		return false;
+	}
 	while (!r_list_empty (block->fcns)) {
 		RAnalFunction *other_fcn = r_list_first (block->fcns);
 		if (other_fcn == our_fcn) {
@@ -500,13 +507,18 @@ static bool fcn_takeover_block_recursive_followthrough_cb(RAnalBlock *block, voi
 				const int actual_delta = other_var->kind == R_ANAL_VAR_KIND_SPV
 					? other_var->delta + ctx->stack_diff
 					: other_var->delta + (other_fcn->bp_off - our_fcn->bp_off);
-				RAnalVar *our_var = r_anal_function_get_var (our_fcn, other_var->kind, actual_delta);
-				if (!our_var) {
-					our_var = r_anal_function_set_var (our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
-				}
-				if (our_var) {
-					RAnalVarAccess *acc = r_anal_var_get_access_at (other_var, addr);
-					r_anal_var_set_access (anal, our_var, acc->reg, addr, acc->type, acc->stackptr);
+				const bool stack_var = other_var->kind == R_ANAL_VAR_KIND_SPV || other_var->kind == R_ANAL_VAR_KIND_BPV;
+				if (!stack_var || maxframe < 1 || (actual_delta <= maxframe && actual_delta >= -maxframe)) {
+					RAnalVar *our_var = r_anal_function_get_var (our_fcn, other_var->kind, actual_delta);
+					if (!our_var) {
+						our_var = r_anal_function_set_var (our_fcn, actual_delta, other_var->kind, other_var->type, 0, other_var->isarg, other_var->name);
+					}
+					if (our_var) {
+						RAnalVarAccess *acc = r_anal_var_get_access_at (other_var, addr);
+						if (acc) {
+							r_anal_var_set_access (anal, our_var, acc->reg, addr, acc->type, acc->stackptr);
+						}
+					}
 				}
 				r_anal_var_remove_access_at (other_var, addr);
 				if (RVecAnalVarAccess_empty (&other_var->accesses)) {
@@ -895,6 +907,10 @@ noskip:
 				gotoBeach (R_ANAL_RET_ERROR);
 			}
 			fcn->ninstr++;
+			if (anal->opt.vars && anal->opt.vars_maxbbsize > 0 && bb->size > (ut64)anal->opt.vars_maxbbsize) {
+				R_LOG_DEBUG ("Stopping analysis on oversized block at 0x%08"PFMT64x" for variable analysis (%"PFMT64u" bytes)", bb->addr, bb->size);
+				gotoBeach (R_ANAL_RET_END);
+			}
 		}
 		if (anal->opt.trycatch) {
 			const char *name = anal->coreb.getName (anal->coreb.core, at);
