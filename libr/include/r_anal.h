@@ -383,6 +383,8 @@ typedef struct r_anal_options_t {
 	int depth;
 	int graph_depth;
 	bool vars; //analyze local var and arguments
+	int vars_maxbbsize; // skip variable analysis on blocks larger than this size (0 = unlimited)
+	int vars_maxframe; // maximum stack-frame delta for variable takeover in bytes (0 = unlimited)
 	bool varname_stack; // name vars based on their offset in the stack
 	bool var_newstack; // new sp-relative variable analysis
 	int cjmpref;

@@ -123,6 +123,8 @@ R_API RAnal *r_anal_new(void) {
 	anal->esil_goto_limit = R_ESIL_GOTO_LIMIT;
 	anal->opt.nopskip = true; // skip nops in code analysis
 	anal->opt.hpskip = false; // skip `mov reg,reg` and `lea reg,[reg]`
+	anal->opt.vars_maxbbsize = 16 * 1024;
+	anal->opt.vars_maxframe = 8 * 1024;
 	anal->gp = 0LL;
 	anal->sdb = sdb_new0 ();
 	anal->cxxabi = R_ANAL_CPP_ABI_ITANIUM;

@@ -303,6 +303,26 @@ static bool cb_analvars(void *user, void *data) {
 	return true;
 }
 
+static bool cb_analvars_maxbbsize(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->i_value < 0) {
+		node->i_value = 0;
+	}
+	core->anal->opt.vars_maxbbsize = node->i_value;
+	return true;
+}
+
+static bool cb_analvars_maxframe(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->i_value < 0) {
+		node->i_value = 0;
+	}
+	core->anal->opt.vars_maxframe = node->i_value;
+	return true;
+}
+
 static bool cb_analvars_stackname(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -3882,6 +3902,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("types.rollback", "false", "enable state rollback for type propagation recovery");
 	SETB ("types.xrefs", "true", "show xrefs in type view commands (tv, tfv, tsv, ...)");
 	SETCB ("anal.vars", "true", &cb_analvars, "analyze local variables and arguments");
+	SETCB ("anal.vars.maxbbsize", "16K", &cb_analvars_maxbbsize, "maximum basic block size for variable analysis (0 = unlimited)");
+	SETCB ("anal.vars.maxframe", "8K", &cb_analvars_maxframe, "maximum stack-frame delta in bytes for variable takeover (0 = unlimited)");
 	SETCB ("anal.vars.stackname", "false", &cb_analvars_stackname, "name variables based on their offset on the stack");
 	SETCB ("anal.vars.newstack", "false", &cb_analvars_newstack, "use new sp-relative variable analysis (EXPERIMENTAL)");
 	SETB ("anal.vinfun", "false", "search values in functions (aav) (false by default to only find on non-code)");
