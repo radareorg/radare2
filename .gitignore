@@ -6,6 +6,8 @@ clang-log/
 *._d
 *._o
 *.[ado]
+!dist/iso/rootfs/etc/profile.d/
+!dist/iso/rootfs/etc/profile.d/r2ascii.sh
 *.so
 *.pc
 *.sdb

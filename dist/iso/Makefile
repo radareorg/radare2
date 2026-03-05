@@ -20,6 +20,10 @@ iso:
 		-e R2PM_PLUGINS="$(R2PM_PLUGINS)" \
 		-e KEEP_R2_SOURCE="$(KEEP_R2_SOURCE)" \
 		-e KEEP_R2PM_CACHE="$(KEEP_R2PM_CACHE)" \
+		-e ROOTFS_DIR="$(ROOTFS_DIR)" \
+		-e ISO_MOTD="$(ISO_MOTD)" \
+		-e ROOT_PASSWORD_MODE="$(ROOT_PASSWORD_MODE)" \
+		-e ROOT_PASSWORD="$(ROOT_PASSWORD)" \
 		-e HOST_BUILD_PACKAGES="$(HOST_BUILD_PACKAGES)" \
 		-e ISO_CHROOT_PACKAGES="$(ISO_CHROOT_PACKAGES)" \
 		-e ISO_CHROOT_PURGE_PACKAGES="$(ISO_CHROOT_PURGE_PACKAGES)" \
@@ -76,6 +80,10 @@ help:
 		'  QEMU_AARCH64_EFI Required only for make run ARCH=arm64' \
 		'  KEEP_R2_SOURCE   Keep /usr/src/radare2 in final ISO (0|1, default: 0)' \
 		'  KEEP_R2PM_CACHE  Keep r2pm cache in final ISO (0|1, default: 0)' \
+		'  ROOTFS_DIR       Overlay dir copied into final ISO rootfs (default: rootfs)' \
+		'  ISO_MOTD         /etc/motd text written into final ISO rootfs' \
+		'  ROOT_PASSWORD_MODE Root password policy: empty|password|locked' \
+		'  ROOT_PASSWORD    Used when ROOT_PASSWORD_MODE=password' \
 		'  HOST_BUILD_PACKAGES      Packages installed in builder container' \
 		'  ISO_CHROOT_PACKAGES      Packages installed in final ISO rootfs' \
 		'  ISO_CHROOT_PURGE_PACKAGES Packages purged after radare2 install'

@@ -14,6 +14,10 @@ R2PM_PLUGINS="${R2PM_PLUGINS:-r2dec}"
 KEEP_R2_SOURCE="${KEEP_R2_SOURCE:-0}"
 KEEP_R2PM_CACHE="${KEEP_R2PM_CACHE:-0}"
 BOOTLOADERS="${BOOTLOADERS:-}"
+ROOTFS_DIR="${ROOTFS_DIR:-rootfs}"
+ISO_MOTD="${ISO_MOTD:-Welcome to r2iso}"
+ROOT_PASSWORD_MODE="${ROOT_PASSWORD_MODE:-empty}"
+ROOT_PASSWORD="${ROOT_PASSWORD:-radare2}"
 HOST_BUILD_PACKAGES="${HOST_BUILD_PACKAGES:-ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso}"
 ISO_CHROOT_PACKAGES="${ISO_CHROOT_PACKAGES:-ca-certificates curl file git gcc meson ninja-build vim libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev make pkg-config python3 wget zlib1g-dev build-essential}"
 ISO_CHROOT_PURGE_PACKAGES="${ISO_CHROOT_PURGE_PACKAGES:-build-essential libcapstone-dev liblz4-dev libmagic-dev libssl-dev libuv1-dev libxxhash-dev libzstd-dev libzip-dev zlib1g-dev}"
@@ -39,6 +43,17 @@ if [ -z "${HOST_BUILD_PACKAGES}" ]; then
 fi
 if [ -z "${ISO_CHROOT_PACKAGES}" ]; then
 	echo "ISO_CHROOT_PACKAGES cannot be empty" >&2
+	exit 1
+fi
+case "${ROOT_PASSWORD_MODE}" in
+empty|password|locked) ;;
+*)
+	echo "ROOT_PASSWORD_MODE must be empty, password or locked" >&2
+	exit 1
+	;;
+esac
+if [ "${ROOT_PASSWORD_MODE}" = "password" ] && [ -z "${ROOT_PASSWORD}" ]; then
+	echo "ROOT_PASSWORD cannot be empty when ROOT_PASSWORD_MODE=password" >&2
 	exit 1
 fi
 
@@ -76,6 +91,18 @@ done
 
 install -m 0755 "${SOURCE_DIR}/scripts/install-r2pm-plugins.sh" \
 	"config/includes.chroot/usr/local/sbin/install-r2pm-plugins.sh"
+if [ -n "${ROOTFS_DIR}" ]; then
+	if [ ! -d "${SOURCE_DIR}/${ROOTFS_DIR}" ]; then
+		echo "ROOTFS_DIR does not exist: ${ROOTFS_DIR}" >&2
+		exit 1
+	fi
+	echo "[*] Copying rootfs overlay from ${ROOTFS_DIR}"
+	cp -a "${SOURCE_DIR}/${ROOTFS_DIR}/." config/includes.chroot/
+fi
+if [ -n "${ISO_MOTD}" ]; then
+	mkdir -p config/includes.chroot/etc
+	printf '%s\n' "${ISO_MOTD}" > config/includes.chroot/etc/motd
+fi
 
 cat > config/hooks/live/010-build-radare2.chroot <<EOF
 #!/usr/bin/env bash
@@ -86,6 +113,8 @@ R2_GIT_REF='${R2_GIT_REF}'
 R2PM_PLUGINS='${R2PM_PLUGINS}'
 KEEP_R2_SOURCE='${KEEP_R2_SOURCE}'
 KEEP_R2PM_CACHE='${KEEP_R2PM_CACHE}'
+ROOT_PASSWORD_MODE='${ROOT_PASSWORD_MODE}'
+ROOT_PASSWORD='${ROOT_PASSWORD}'
 ISO_CHROOT_PACKAGES='${ISO_CHROOT_PACKAGES}'
 ISO_CHROOT_PURGE_PACKAGES='${ISO_CHROOT_PURGE_PACKAGES}'
 
@@ -105,6 +134,19 @@ make -j"\$(nproc)"
 make install
 
 /usr/local/sbin/install-r2pm-plugins.sh "\${R2PM_PLUGINS}"
+
+case "\${ROOT_PASSWORD_MODE}" in
+empty)
+	passwd -d root || true
+	passwd -u root || true
+	;;
+password)
+	echo "root:\${ROOT_PASSWORD}" | chpasswd
+	;;
+locked)
+	passwd -l root || true
+	;;
+esac
 
 apt-mark manual \${ISO_CHROOT_PACKAGES} >/dev/null 2>&1 || true
 if [ -n "\${ISO_CHROOT_PURGE_PACKAGES}" ]; then

@@ -20,6 +20,11 @@ R2PM_PLUGINS ?= r2dec
 # R2PM_PLUGINS ?= r2ghidra r2frida
 KEEP_R2_SOURCE ?= 0
 KEEP_R2PM_CACHE ?= 0
+ROOTFS_DIR ?= rootfs
+ISO_MOTD ?= Welcome to r2iso
+# ROOT_PASSWORD_MODE: empty | password | locked
+ROOT_PASSWORD_MODE ?= empty
+ROOT_PASSWORD ?= radare2
 
 HOST_BUILD_PACKAGES ?= ca-certificates curl debootstrap git live-build mtools squashfs-tools syslinux-common xorriso
 
