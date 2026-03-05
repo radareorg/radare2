@@ -5,8 +5,6 @@
 	let pava = r2.cmd("iE,name/eq/radare_plugin,1/head/1,:noheader,paddr/cols/vaddr").trim();
 	if (pava) {
 		const [pa, va] = pava.split(/ /);
-		console.log(va);
-		console.log(pa);
 		const abi = r2.cmdj("-Vj").abiversion;
 		const v = +r2.callAt("pv4d", va + "+0x28");
 		if (v < 1 || v > 256) {
@@ -14,8 +12,7 @@
 		} else if (v == abi) {
 			console.log("Abiversion seems correct. Nothing to do here");
 		} else {
-			console.log("expected abi:", abi);
-			console.log("found abi:", v);
+			console.log("expected abi:", abi, "vs", v);
 			const filename = r2.cmd("o.").trim();
 			if (filename && yesno (`Fix abiversion for ${filename}?`)) {
 				r2.cmd2(`!!r2 -nwc 'wv4 ${abi} @ ${pa}+0x28' ${filename}`);
