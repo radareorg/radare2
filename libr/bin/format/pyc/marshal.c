@@ -681,6 +681,10 @@ static void free_object(pyc_object *object) {
 	switch (object->type) {
 	case TYPE_SMALL_TUPLE:
 	case TYPE_TUPLE:
+	case TYPE_LIST:
+	case TYPE_SET:
+	case TYPE_FROZENSET:
+	case TYPE_DICT:
 		r_list_free (object->data);
 		break;
 	case TYPE_STRING:
@@ -693,7 +697,18 @@ static void free_object(pyc_object *object) {
 	case TYPE_SHORT_ASCII:
 	case TYPE_ASCII:
 	case TYPE_SHORT_ASCII_INTERNED:
+	case TYPE_UNICODE:
+	case TYPE_FLOAT:
+	case TYPE_BINARY_FLOAT:
+	case TYPE_INT64:
 		free (object->data);
+		break;
+	case TYPE_INTERNED:
+		// data is borrowed from interned_table, don't free
+		break;
+	case TYPE_LONG:
+		// data points inside allocated buffer, can't free directly
+		// TODO: store original pointer for proper freeing
 		break;
 	case TYPE_CODE_v0:
 	case TYPE_CODE_v1: {
@@ -713,21 +728,13 @@ static void free_object(pyc_object *object) {
 	case TYPE_REF:
 		free_object (object->data);
 		break;
-	case TYPE_SET:
-	case TYPE_FROZENSET:
 	case TYPE_ELLIPSIS:
 	case TYPE_STOPITER:
+		// no data to free
+		break;
 	case TYPE_BINARY_COMPLEX:
-	case TYPE_BINARY_FLOAT:
 	case TYPE_COMPLEX:
 	case TYPE_STRINGREF:
-	case TYPE_DICT:
-	case TYPE_FLOAT:
-	case TYPE_INT64:
-	case TYPE_INTERNED:
-	case TYPE_LIST:
-	case TYPE_LONG:
-	case TYPE_UNICODE:
 	case TYPE_UNKNOWN:
 		R_LOG_DEBUG ("Free not implemented for type %x", object->type);
 		break;
@@ -765,7 +772,24 @@ static pyc_object *copy_object(pyc_object *object) {
 		case TYPE_SHORT_ASCII:
 		case TYPE_ASCII_INTERNED:
 		case TYPE_SHORT_ASCII_INTERNED:
+		case TYPE_UNICODE:
+		case TYPE_FLOAT:
+		case TYPE_BINARY_FLOAT:
 			copy->data = strdup (object->data);
+			break;
+		case TYPE_INTERNED:
+			// borrowed pointer from interned_table, just copy the pointer
+			copy->data = object->data;
+			break;
+		case TYPE_LONG:
+			// TODO: handle properly - for now just copy the pointer
+			copy->data = object->data;
+			break;
+		case TYPE_LIST:
+		case TYPE_SET:
+		case TYPE_FROZENSET:
+		case TYPE_DICT:
+			copy->data = r_list_clone (object->data, NULL);
 			break;
 		case TYPE_CODE_v0:
 		case TYPE_CODE_v1: {
@@ -792,18 +816,12 @@ static pyc_object *copy_object(pyc_object *object) {
 			break;
 		case TYPE_ELLIPSIS:
 		case TYPE_STOPITER:
+			// no data to copy
+			copy->data = NULL;
+			break;
 		case TYPE_BINARY_COMPLEX:
-		case TYPE_BINARY_FLOAT:
 		case TYPE_COMPLEX:
 		case TYPE_STRINGREF:
-		case TYPE_DICT:
-		case TYPE_FLOAT:
-		case TYPE_FROZENSET:
-		case TYPE_INTERNED:
-		case TYPE_LIST:
-		case TYPE_LONG:
-		case TYPE_SET:
-		case TYPE_UNICODE:
 		case TYPE_UNKNOWN:
 			R_LOG_DEBUG ("Copy not implemented for type %x", object->type);
 			break;
@@ -812,7 +830,8 @@ static pyc_object *copy_object(pyc_object *object) {
 			break;
 		}
 	}
-	if (!copy->data) {
+	// only free copy if data is NULL AND type requires data
+	if (!copy->data && copy->type != TYPE_NULL && copy->type != TYPE_ELLIPSIS && copy->type != TYPE_STOPITER) {
 		R_FREE (copy);
 	}
 	return copy;
@@ -895,6 +914,7 @@ static pyc_object *get_code_object(PycUnmarshalCtx *ctx, RBuffer *buffer) {
 	// 1 from get_object() and 4 from get_string_object()
 	cobj->start_offset = r_buf_tell (buffer) + 5;
 	if (!ctx->refs) {
+		ret->type = TYPE_CODE_v1;
 		return ret; //return for entried part to get the root object of this file
 	}
 	cobj->code = get_object (ctx, buffer, 0);
@@ -1106,7 +1126,7 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 	if (!ret) {
 		ret = get_none_object ();
 		if (ret) {
-			r_list_append (ctx->refs, ret);
+			r_list_append (ctx->refs, copy_object (ret));
 		}
 	}
 	return ret;
@@ -1179,17 +1199,29 @@ fail2:
 	return false;
 }
 
-bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs) {
+void pyc_object_free(pyc_object *obj) {
+	free_object (obj);
+}
+
+bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, pyc_object **out_pobj) {
 	if (!ctx) {
 		return false;
 	}
-	ctx->refs = r_list_newf (NULL); // (RListFree)free_object);
+	if (out_pobj) {
+		*out_pobj = NULL;
+	}
+	ctx->refs = r_list_newf ((RListFree)free_object);
 	bool ret = false;
 	if (ctx->refs) {
 		pyc_object *pobj = get_object (ctx, buffer, 0);
 		ret = extract_sections_symbols (ctx, pobj, sections, symbols, cobjs, NULL);
 		r_list_free (ctx->refs);
 		ctx->refs = NULL;
+		if (out_pobj) {
+			*out_pobj = pobj;
+		} else {
+			free_object (pobj);
+		}
 	}
 	return ret;
 }

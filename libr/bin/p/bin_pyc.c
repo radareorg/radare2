@@ -88,7 +88,7 @@ static RList *symbols(RBinFile *bf) {
 		return NULL;
 	}
 	if (!obj->cobjs) {
-		obj->cobjs = r_list_newf ((RListFree)free);
+		obj->cobjs = r_list_newf (NULL); // borrowed pointers into pobj
 	}
 	if (!obj->interned_table) {
 		obj->interned_table = r_list_newf ((RListFree)free);
@@ -101,7 +101,7 @@ static RList *symbols(RBinFile *bf) {
 		(void) get_entrypoint (buffer, obj->version.magic, &obj->code_start_offset);
 	}
 	r_buf_seek (buffer, obj->code_start_offset, R_BUF_SET);
-	pyc_get_sections_symbols (sections, symbols, obj->cobjs, buffer, obj->version.magic, obj->interned_table);
+	pyc_get_sections_symbols (sections, symbols, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
 	obj->sections_cache = sections;
 	return symbols;
 }
@@ -115,6 +115,7 @@ static void destroy(RBinFile *bf) {
 		bf->bo->bin_obj = NULL;
 		r_list_free (obj->interned_table);
 		r_list_free (obj->cobjs);
+		pyc_object_free (obj->pobj);
 		// sections_cache is handled by RBin core
 		free (obj);
 	}
