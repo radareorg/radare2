@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - pancake, condret */
+/* radare - LGPL - Copyright 2024-2026 - pancake, condret */
 
 #include <r_esil.h>
 #include <r_anal.h>
@@ -1102,6 +1102,7 @@ static bool esil_mod(REsil *esil) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d % s);
 			}
@@ -1126,6 +1127,7 @@ static bool esil_signed_mod(REsil *esil) {
 				R_LOG_DEBUG ("0x%08"PFMT64x" esil_mod: Division by zero!", esil->addr);
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d % s);
 			}
@@ -1155,6 +1157,7 @@ static bool esil_modeq(REsil *esil) {
 				R_LOG_DEBUG ("esil_modeq: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
 			}
 			ret = true;
 		} else {
@@ -1179,6 +1182,7 @@ static bool esil_div(REsil *esil) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d / s);
 			}
@@ -1203,6 +1207,7 @@ static bool esil_signed_div(REsil *esil) {
 				R_LOG_DEBUG ("esil_div: Division by zero!");
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
 			} else {
 				r_esil_pushnum (esil, d / s);
 			}
@@ -2275,7 +2280,7 @@ static bool esil_dup(REsil *esil) {
 		return false;
 	}
 	const char *ss = esil->stack[stackptr - 1];
-	if (ss && *ss) {
+	if (R_STR_ISNOTEMPTY (ss)) {
 		return r_esil_push (esil, ss);
 	}
 	R_LOG_WARN ("Nothing to dup");
