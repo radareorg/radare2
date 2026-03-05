@@ -1,23 +1,88 @@
-/* radare - LGPL - Copyright 2015-2025 - pancake */
+/* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
+#include <sdb/ht_uu.h>
+
 #include "i/private.h"
 
-static char *hashify(const char *s, ut64 vaddr) {
+typedef struct {
+	ut64 count;
+	ut64 first_vaddr;
+	HtUU *seen_vaddrs;
+} RBinSectionNameState;
+
+static void section_name_state_free(HtPPKv *kv) {
+	if (kv) {
+		RBinSectionNameState *state = kv->value;
+		free (kv->key);
+		if (state) {
+			ht_uu_free (state->seen_vaddrs);
+			free (state);
+		}
+	}
+}
+
+static bool section_name_exists(RBinSectionNameState *state, ut64 vaddr) {
+	if (!state->seen_vaddrs) {
+		if (state->first_vaddr == vaddr) {
+			return true;
+		}
+		state->seen_vaddrs = ht_uu_new0 ();
+		if (state->seen_vaddrs) {
+			ht_uu_insert (state->seen_vaddrs, state->first_vaddr, 1);
+			ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+		}
+		return false;
+	}
+	bool found = false;
+	(void)ht_uu_find (state->seen_vaddrs, vaddr, &found);
+	if (!found) {
+		ht_uu_insert (state->seen_vaddrs, vaddr, 1);
+	}
+	return found;
+}
+
+static char *hashify(const char *s, ut64 vaddr, ut64 suffix, bool keep_printable) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	const char *os = s;
 	while (*s) {
 		if (!IS_PRINTABLE (*s)) {
+			char *res = NULL;
 			if (vaddr && vaddr != UT64_MAX) {
-				return r_str_newf ("_%" PFMT64d, vaddr);
+				res = r_str_newf ("_%" PFMT64d, vaddr);
+			} else {
+				const ut32 hash = sdb_hash (s);
+				res = r_str_newf ("%x", hash);
 			}
-			const ut32 hash = sdb_hash (s);
-			return r_str_newf ("%x", hash);
+			return suffix? r_str_appendf (res, "_%" PFMT64u, suffix): res;
 		}
 		s++;
 	}
-	return strdup (os);
+	if (!suffix && !keep_printable) {
+		return NULL;
+	}
+	return suffix? r_str_newf ("%s_%" PFMT64u, os, suffix): strdup (os);
+}
+
+static char *filter_section_name(HtPP *db, ut64 vaddr, const char *name) {
+	R_RETURN_VAL_IF_FAIL (db && name, NULL);
+	RBinSectionNameState *state = ht_pp_find (db, name, NULL);
+	if (!state) {
+		state = R_NEW0 (RBinSectionNameState);
+		state->count = 1;
+		state->first_vaddr = vaddr;
+		if (!ht_pp_insert (db, name, state)) {
+			free (state);
+			return NULL;
+		}
+		return hashify (name, vaddr, 0, false);
+	}
+	state->count++;
+	if (section_name_exists (state, vaddr)) {
+		return NULL;
+	}
+	return hashify (name, vaddr, state->count - 1, true);
 }
 
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *name) {
@@ -49,9 +114,12 @@ R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 vaddr, const char *na
 
 	char *resname = NULL;
 	if (vaddr) {
-		resname = hashify (name, vaddr);
+		resname = hashify (name, vaddr, 0, true);
 	}
 	if (count > 1) {
+		if (!resname) {
+			resname = strdup (name);
+		}
 		resname = r_str_appendf (resname, "_%d", count - 1);
 		// two symbols at different addresses and same name wtf
 		R_LOG_DEBUG ("Found duplicated symbol '%s'", resname);
@@ -132,19 +200,22 @@ R_API void r_bin_filter_symbols(RBinFile *bf, RList *list) {
 
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list) {
 	RBinSection *sec;
-	HtSU *db = ht_su_new0 ();
+	HtPP *db = ht_pp_new (NULL, section_name_state_free, NULL);
 	RListIter *iter;
+	if (!db) {
+		return;
+	}
 	r_list_foreach (list, iter, sec) {
 		if (!sec->name) {
 			continue;
 		}
-		char *p = r_bin_filter_name (bf, db, sec->vaddr, sec->name);
+		char *p = filter_section_name (db, sec->vaddr, sec->name);
 		if (p) {
 			free (sec->name);
 			sec->name = p;
 		}
 	}
-	ht_su_free (db);
+	ht_pp_free (db);
 }
 
 static bool false_positive(const char *str) {
