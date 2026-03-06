@@ -2155,7 +2155,34 @@ R_API bool r_core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int dep
 	if (r_cons_is_breaked (core->cons)) {
 		return false;
 	}
-	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+	RAnalFunction *fcn = NULL;
+	{
+		RList *fcns = r_anal_get_functions_in (core->anal, at);
+		if (fcns) {
+			const int rt = R_ANAL_REF_TYPE_MASK (reftype);
+			RAnalFunction *first = NULL;
+			RAnalFunction *containing_from = NULL;
+			RAnalFunction *iter_fcn;
+			RListIter *iter;
+			r_list_foreach (fcns, iter, iter_fcn) {
+				if (!first) {
+					first = iter_fcn;
+				}
+				if (iter_fcn->addr == at) {
+					fcn = iter_fcn;
+					break;
+				}
+				if (rt == R_ANAL_REF_TYPE_CALL && from != UT64_MAX
+					&& r_anal_function_contains (iter_fcn, from) && !containing_from) {
+					containing_from = iter_fcn;
+				}
+			}
+			if (!fcn) {
+				fcn = containing_from ? containing_from : first;
+			}
+			r_list_free (fcns);
+		}
+	}
 	if (fcn) {
 		if (fcn->addr == at) {
 			// if the function was already analyzed as a "loc.",

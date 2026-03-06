@@ -747,8 +747,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
 			}
 		}
-		bool closed = false;
-		ut64 gotoaddr = UT64_MAX;
+			bool closed = false;
+			bool resume_from_indent = false;
+			ut64 gotoaddr = UT64_MAX;
 		if (bb->fail == UT64_MAX) {
 			if (bb->jump != UT64_MAX) {
 #if 1
@@ -884,22 +885,34 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				// TODO: determine which branch take first
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
-				// if its from another function chop it!
-				RAnalFunction *curfcn = r_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL);
-				if (curfcn != state.fcn) {
-					// chop that branch
+				// If a conditional branch leaves the current function, do not
+				// descend into the foreign CFG. Prefer the in-function branch.
+				RAnalFunction *jumpfcn = jump != UT64_MAX
+					? r_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL)
+					: NULL;
+				if (jumpfcn && jumpfcn != state.fcn) {
 					NEWLINE (jump, indent);
 					PRINTF ("// chop");
-					// break;
-				}
-				if (sdb_get (state.db, K_INDENT (jump), 0)) {
-					// already tracekd
-					if (!sdb_get (state.db, K_INDENT (fail), 0)) {
-						bb = r_anal_bb_from_offset (core->anal, fail);
+					RAnalFunction *failfcn = fail != UT64_MAX
+						? r_anal_get_fcn_in (core->anal, fail, R_ANAL_FCN_TYPE_NULL)
+						: NULL;
+					if (fail != UT64_MAX && (!failfcn || failfcn == state.fcn)) {
+						jump = fail;
+						fail = UT64_MAX;
 					} else {
-						R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
+						break;
 					}
-				} else {
+				}
+					if (sdb_get (state.db, K_INDENT (jump), 0)) {
+						// already tracekd
+						if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
+							bb = r_anal_bb_from_offset (core->anal, fail);
+						} else if (fail == UT64_MAX) {
+							resume_from_indent = true;
+						} else {
+							R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
+						}
+					} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
 						R_LOG_ERROR ("Failed to retrieve block at 0x%" PFMT64x, jump);
@@ -933,10 +946,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 					}
 				}
-			} else if (!closed) {
-				ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
-				if (addr == UT64_MAX) {
-					NEWLINE (bb->addr, indent);
+				}
+				if ((bb->jump == UT64_MAX && !closed) || resume_from_indent) {
+					ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
+					if (addr == UT64_MAX) {
+						NEWLINE (bb->addr, indent);
 					PRINTF ("break;");
 					break;
 				}

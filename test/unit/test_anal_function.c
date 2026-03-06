@@ -1,4 +1,5 @@
 #include <r_anal.h>
+#include <r_core.h>
 #include "minunit.h"
 #include <string.h>
 
@@ -164,10 +165,39 @@ bool test_r_anal_str_to_fcn_returns_status(void) {
 	mu_end;
 }
 
+bool test_r_core_anal_fcn_prefers_exact_start_match(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+	RAnal *anal = core->anal;
+	r_config_set_b (core->config, "anal.esil", false);
+
+	RAnalFunction *outer = r_anal_create_function (anal, "outer", 0x100, R_ANAL_FCN_TYPE_FCN, NULL);
+	RAnalFunction *target = r_anal_create_function (anal, "target", 0x120, R_ANAL_FCN_TYPE_LOC, NULL);
+	mu_assert_notnull (outer, "Couldn't create outer function");
+	mu_assert_notnull (target, "Couldn't create target function");
+
+	RAnalBlock *outer_bb = r_anal_create_block (anal, 0x100, 0x30);
+	RAnalBlock *target_bb = r_anal_create_block (anal, 0x120, 0x10);
+	mu_assert_notnull (outer_bb, "Couldn't create outer block");
+	mu_assert_notnull (target_bb, "Couldn't create target block");
+	r_anal_function_add_block (outer, outer_bb);
+	r_anal_function_add_block (target, target_bb);
+	r_unref (outer_bb);
+	r_unref (target_bb);
+
+	bool ret = r_core_anal_fcn (core, 0x120, 0x104, R_ANAL_REF_TYPE_CALL, 1);
+	mu_assert_false (ret, "Exact-start function should short-circuit analysis");
+	mu_assert_eq (r_anal_xrefs_count (anal), 0, "Exact-start match should not synthesize a new xref");
+
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
+	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
 	return tests_passed != tests_run;
 }
 
