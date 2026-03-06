@@ -694,61 +694,23 @@ static bool is_executable(RBinObject *bo) {
 
 static void sdb_concat_by_path(Sdb *s, const char *path) {
 	Sdb *db = sdb_new (0, path, 0);
-	sdb_merge (s, db);
-	sdb_close (db);
-	sdb_free (db);
-}
-
-static void load_types_from(RCore *core, const char *fmt, ...) {
-	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
-	va_list ap;
-	va_start (ap, fmt);
-	char *s = r_str_newvf (fmt, ap);
-	SdbGperf *gp = r_anal_get_gperf_types (s);
-	if (gp) {
-#if HAVE_GPERF
-		Sdb *gd = sdb_new0 ();
-		sdb_open_gperf (gd, gp);
-		sdb_reset (core->anal->sdb_types);
-		sdb_merge (core->anal->sdb_types, gd);
-		sdb_close (gd);
-		sdb_free (gd);
-#endif
-	} else {
-		char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
-		if (r_file_exists (dbpath)) {
-			sdb_concat_by_path (core->anal->sdb_types, dbpath);
-		}
-		free (dbpath);
+	if (db) {
+		sdb_merge (s, db);
+		sdb_close (db);
+		sdb_free (db);
 	}
-	free (s);
-	va_end (ap);
 }
 
 R_API void r_core_anal_type_init(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal);
-	int bits = core->rasm->config->bits;
-	Sdb *types = core->anal->sdb_types;
-	// make sure they are empty this is initializing
-	sdb_reset (types);
-	const char *anal_arch = r_config_get (core->config, "anal.arch");
+	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	const char *os = r_config_get (core->config, "asm.os");
-
-	load_types_from (core, "types");
-	load_types_from (core, "types-%s", anal_arch);
-	load_types_from (core, "types-%s", os);
-	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
-		load_types_from (core, "types-darwin");
+	RBinInfo *info;
+	if (!os) {
+		os = "";
 	}
-	RBinInfo *info = r_bin_get_info (core->bin);
-	if (info && info->subsystem && !strcmp (info->subsystem, "xnu")) {
-		load_types_from (core, "types-iokit");
-	}
-	load_types_from (core, "types-%d", bits);
-	load_types_from (core, "types-%s-%d", os, bits);
-	load_types_from (core, "types-%s-%d", anal_arch, bits);
-	load_types_from (core, "types-%s-%s", anal_arch, os);
-	load_types_from (core, "types-%s-%s-%d", anal_arch, os, bits);
+	info = r_bin_get_info (core->bin);
+	r_anal_types_reload (core->anal, dir_prefix, os, info? info->subsystem: NULL);
 }
 
 R_API void r_core_anal_cc_init(RCore *core) {

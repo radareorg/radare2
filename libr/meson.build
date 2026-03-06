@@ -468,6 +468,7 @@ include_files = [
   'include/rvc.h',
   'include/r_agraph.h',
   'include/r_anal.h',
+  'include/r_anal_priv.h',
   'include/r_arch.h',
   'include/r_esil.h',
   'include/r_asm.h',

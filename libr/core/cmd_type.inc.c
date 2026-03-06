@@ -1998,6 +1998,9 @@ static int cmd_test(RCore *core, const char *input) {
 
 static int cmd_type(void *data, const char *input) {
 	RCore *core = (RCore *)data;
+	if (*input != '?') {
+		r_core_anal_type_init (core);
+	}
 	Sdb *TDB = core->anal->sdb_types;
 	char *res;
 

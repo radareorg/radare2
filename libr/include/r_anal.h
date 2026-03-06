@@ -523,6 +523,7 @@ typedef struct r_anal_t {
 	char *pincmd;
 	RMutaBind mb;
 	RAnalBacktraces btstore;
+	void *priv; // Its RAnalPriv but only used internally to not break abi
 	/* private */
 	RThreadLock *lock;
 	RList *eligible;
@@ -1680,6 +1681,7 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg);
 R_API void r_anal_esil_cfg_free(RAnalEsilCFG *cfg);
 R_API SdbGperf *r_anal_get_gperf_cc(const char *k);
 R_API SdbGperf *r_anal_get_gperf_types(const char *k);
+R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem);
 
 R_API RAnalEsilDFGNode *r_anal_esil_dfg_node_new(RAnalEsilDFG *edf, const char *c);
 R_API RAnalEsilDFG *r_anal_esil_dfg_new(RAnal *anal, bool use_map_info, bool use_maps);

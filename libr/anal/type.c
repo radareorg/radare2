@@ -1,6 +1,8 @@
 /* radare - LGPL - Copyright 2019-2023 - pancake, oddcoder, Anton Kochkov */
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
+#include <stdarg.h>
 #include <string.h>
 #include <sdb/sdb.h>
 #include "base_types.h"
@@ -29,6 +31,83 @@ static char *get_type_data(Sdb *sdb_types, const char *type, const char *sname) 
 	char *members = sdb_get (sdb_types, key, NULL);
 	free (key);
 	return members;
+}
+
+static void sdb_concat_by_path(Sdb *s, const char *path) {
+	R_RETURN_IF_FAIL (s && path);
+	Sdb *db = sdb_new (0, path, 0);
+	if (db) {
+		sdb_merge (s, db);
+		sdb_close (db);
+		sdb_free (db);
+	}
+}
+
+static void load_types_from(RAnal *anal, const char *dir_prefix, const char *fmt, ...) {
+	R_RETURN_IF_FAIL (anal && fmt);
+	va_list ap;
+	va_start (ap, fmt);
+	char *s = r_str_newvf (fmt, ap);
+	va_end (ap);
+	if (!s) {
+		return;
+	}
+	SdbGperf *gp = r_anal_get_gperf_types (s);
+	if (gp) {
+#if HAVE_GPERF
+		Sdb *gd = sdb_new0 ();
+		if (gd) {
+			sdb_open_gperf (gd, gp);
+			sdb_merge (anal->sdb_types, gd);
+			sdb_close (gd);
+			sdb_free (gd);
+		}
+#endif
+	} else if (R_STR_ISNOTEMPTY (dir_prefix)) {
+		char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
+		if (dbpath && r_file_exists (dbpath)) {
+			sdb_concat_by_path (anal->sdb_types, dbpath);
+		}
+		free (dbpath);
+	}
+	free (s);
+}
+
+R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem) {
+	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	const char *arch = anal->config->arch;
+	const int bits = anal->config->bits;
+	// Check if types need to be reloaded due to bits change
+	if (!priv->types_dirty && priv->types_loaded_bits == bits) {
+		return;
+	}
+	if (!arch) {
+		arch = "";
+	}
+	if (!os) {
+		os = anal->config->os;
+	}
+	if (!os) {
+		os = "";
+	}
+	sdb_reset (anal->sdb_types);
+	load_types_from (anal, dir_prefix, "types");
+	load_types_from (anal, dir_prefix, "types-%s", arch);
+	load_types_from (anal, dir_prefix, "types-%s", os);
+	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
+		load_types_from (anal, dir_prefix, "types-darwin");
+	}
+	if (subsystem && !strcmp (subsystem, "xnu")) {
+		load_types_from (anal, dir_prefix, "types-iokit");
+	}
+	load_types_from (anal, dir_prefix, "types-%d", bits);
+	load_types_from (anal, dir_prefix, "types-%s-%d", os, bits);
+	load_types_from (anal, dir_prefix, "types-%s-%d", arch, bits);
+	load_types_from (anal, dir_prefix, "types-%s-%s", arch, os);
+	load_types_from (anal, dir_prefix, "types-%s-%s-%d", arch, os, bits);
+	priv->types_dirty = false;
+	priv->types_loaded_bits = bits;
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
