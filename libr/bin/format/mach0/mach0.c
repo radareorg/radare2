@@ -4663,6 +4663,7 @@ typedef struct {
 static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 	ut32 magic;
 	ut32 i;
+	ut32 maxcount;
 	ut32 base_addr = addr;
 	ut64 addr_end = addr + size;
 	RStrBuf *sb = r_strbuf_new ("");
@@ -4672,6 +4673,11 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.magic = 0x%08x\n", (ut64)addr, sblob.magic);
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.length = 0x%08x\n", (ut64)addr + 4, sblob.length);
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.count = 0x%08x\n", (ut64)addr + 8, sblob.count);
+	}
+	maxcount = size > 12 ? ((size - 12) / 8) : 0;
+	if (sblob.count > maxcount) {
+		R_LOG_DEBUG ("invalid superblob count (%u > %u)", sblob.count, maxcount);
+		sblob.count = maxcount;
 	}
 	ut32 *blob_offsets = R_NEWS0 (ut32, sblob.count);
 	if (!blob_offsets) {
