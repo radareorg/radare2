@@ -4672,6 +4672,11 @@ static char *walk_codesig(RBinFile *bf, ut32 addr, ut32 size) {
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.length = 0x%08x\n", (ut64)addr + 4, sblob.length);
 		r_strbuf_appendf (sb, "0x%08" PFMT64x " superblob.count = 0x%08x\n", (ut64)addr + 8, sblob.count);
 	}
+	const ut32 maxcount = size > 12 ? ((size - 12) / 8) : 0;
+	if (sblob.count > maxcount) {
+		R_LOG_DEBUG ("invalid superblob count (%u > %u)", sblob.count, maxcount);
+		sblob.count = maxcount;
+	}
 	ut32 *blob_offsets = R_NEWS0 (ut32, sblob.count);
 	if (!blob_offsets) {
 		return r_strbuf_drain (sb);
