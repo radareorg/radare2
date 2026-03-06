@@ -526,6 +526,56 @@ def fix_multiline_comments(lines):
 	return result
 
 
+def fix_brace_newlines(text):
+	# Split "enum/struct/union Name { content" into separate lines
+	def split_open_brace(m):
+		indent = m.group(1)
+		keyword = m.group(2)
+		name = m.group(3) or ''
+		rest = m.group(4).strip()
+		result = f"{indent}{keyword}{name} {{\n"
+		if rest:
+			# Check if rest contains closing brace
+			trail = re.match(r'^(.+?)\s*(\}\s*\w*\s*;?)$', rest)
+			if trail:
+				elem = trail.group(1).strip()
+				brace = trail.group(2).strip()
+				if elem:
+					result += f"{indent}\t{elem}\n"
+				result += brace
+			else:
+				result += f"{indent}\t{rest}"
+		return result
+	text = re.sub(
+		r'^(\s*)((?:typedef\s+)?(?:enum|struct|union))(\s+\w+)?\s*\{\s*(.+)$',
+		split_open_brace, text, flags=re.MULTILINE
+	)
+	# Split "content } Name;" or "content };" putting brace on new line
+	def split_close_brace(m):
+		indent = m.group(1)
+		before = m.group(2).strip()
+		brace = m.group(3).strip()
+		if before.startswith('}'):
+			return m.group(0)  # Keep "} Name;" as-is
+		return f"{indent}{before}\n{brace}"
+	text = re.sub(
+		r'^(\s*)([^{}\n]+?)\s*(\}\s*\w*\s*;)$',
+		split_close_brace, text, flags=re.MULTILINE
+	)
+	# Move standalone }; to column 0 (only after enum/struct, detected by preceding line pattern)
+	lines = text.split('\n')
+	result = []
+	for i, line in enumerate(lines):
+		stripped = line.strip()
+		if stripped == '};' and i > 0:
+			prev = result[-1].strip() if result else ''
+			if prev.endswith(',') or prev.endswith('{'):
+				result.append('};')
+				continue
+		result.append(line)
+	return '\n'.join(result)
+
+
 def is_string_literal_line(content):
 	stripped = content.lstrip()
 	if not stripped:
@@ -616,7 +666,9 @@ def apply_indent_rules(text):
 	lines = fix_ternary_lines(lines)
 	lines = fix_string_continuation_indent(lines)
 	lines = fix_multiline_comments(lines)
-	return "".join(lines)
+	text = "".join(lines)
+	text = fix_brace_newlines(text)
+	return text
 
 
 def format_file(path, clang_format, style_file, check_only=False):
