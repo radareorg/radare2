@@ -376,6 +376,14 @@ R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
 	return false;
 }
 
+R_API bool r_print_cursor_strbuf(RPrint *p, int cur, int len, int set, RStrBuf *sb) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	if (!p || !r_print_have_cursor (p, cur, len)) {
+		return true;
+	}
+	return r_strbuf_append (sb, R_CONS_INVERT (set, 1));
+}
+
 R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	R_RETURN_IF_FAIL (p);
 	if (r_print_have_cursor (p, cur, len)) {
@@ -768,17 +776,23 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-R_API void r_print_section(RPrint *p, ut64 at) {
-	bool use_section = p && p->flags & R_PRINT_FLAGS_SECTION;
-	if (use_section) {
-		const char *s = p->get_section_name (p->user, at);
-		if (!s) {
-			s = "";
-		}
-		char *tail = r_str_ndup (s, 19);
-		r_print_printf (p, "%20s ", tail);
-		free (tail);
+R_API bool r_print_section_strbuf(RPrint *p, ut64 at, RStrBuf *sb) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	if (!p || !(p->flags & R_PRINT_FLAGS_SECTION)) {
+		return true;
 	}
+	const char *s = p->get_section_name? p->get_section_name (p->user, at): "";
+	return r_strbuf_appendf (sb, "%20.19s ", s? s: "");
+}
+
+R_API void r_print_section(RPrint *p, ut64 at) {
+	R_RETURN_IF_FAIL (p);
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	if (r_print_section_strbuf (p, at, &sb) && !r_strbuf_is_empty (&sb)) {
+		r_print_printf (p, "%s", r_strbuf_get (&sb));
+	}
+	r_strbuf_fini (&sb);
 }
 
 static bool invalidchar(char ch) {
