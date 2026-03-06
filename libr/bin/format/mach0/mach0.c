@@ -931,7 +931,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	link.datasize = r_read_ble32 (&lit[12], mo->big_endian);
 
 	data = link.dataoff;
-	if (link.datasize < sizeof (struct super_blob_t)) {
+	if (link.datasize < sizeof (struct super_blob_t) || !fits_in (mo->size, data, link.datasize)) {
 		set_malformed_entitlement (mo);
 		return true;
 	}
@@ -989,6 +989,10 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 		case CSSLOT_ENTITLEMENTS:
 			{
 				struct blob_t entitlements = { 0 };
+				if (!fits_in (mo->size, slot_off, sizeof (struct blob_t))) {
+					set_malformed_entitlement (mo);
+					break;
+				}
 				entitlements.magic = r_buf_read_ble32_at (mo->b, slot_off, mach0_endian);
 				entitlements.length = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
 				if (entitlements.length <= sizeof (struct blob_t) || entitlements.length > super.blob.length || idx.offset > super.blob.length - entitlements.length) {
@@ -997,6 +1001,10 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 				}
 				ut32 ent_size = entitlements.length - sizeof (struct blob_t);
 				if (ent_size <= 1) {
+					set_malformed_entitlement (mo);
+					break;
+				}
+				if (!fits_in (mo->size, slot_off + sizeof (struct blob_t), ent_size)) {
 					set_malformed_entitlement (mo);
 					break;
 				}
