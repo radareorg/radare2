@@ -750,8 +750,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			bool closed = false;
 			bool resume_from_indent = false;
 			ut64 gotoaddr = UT64_MAX;
+		const bool has_jump = bb->jump != UT64_MAX;
 		if (bb->fail == UT64_MAX) {
-			if (bb->jump != UT64_MAX) {
+			if (has_jump) {
 #if 1
 				gotoaddr = bb->jump;
 				// PRINTGOTO (UT64_MAX, bb->jump);
@@ -880,23 +881,21 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			indent = nindent - 1;
 		} else {
 			sdb_set (state.db, K_INDENT (bb->addr), "passed", 0);
-			if (bb->jump != UT64_MAX) {
+			if (has_jump) {
 				int swap = 1;
 				// TODO: determine which branch take first
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
 				// If a conditional branch leaves the current function, do not
 				// descend into the foreign CFG. Prefer the in-function branch.
-				RAnalFunction *jumpfcn = jump != UT64_MAX
-					? r_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL)
-					: NULL;
-				if (jumpfcn && jumpfcn != state.fcn) {
+				const bool jump_in_fcn = jump != UT64_MAX
+					&& r_anal_function_contains (state.fcn, jump);
+				if (!jump_in_fcn) {
 					NEWLINE (jump, indent);
 					PRINTF ("// chop");
-					RAnalFunction *failfcn = fail != UT64_MAX
-						? r_anal_get_fcn_in (core->anal, fail, R_ANAL_FCN_TYPE_NULL)
-						: NULL;
-					if (fail != UT64_MAX && (!failfcn || failfcn == state.fcn)) {
+					const bool fail_in_fcn = fail != UT64_MAX
+						&& r_anal_function_contains (state.fcn, fail);
+					if (fail_in_fcn) {
 						jump = fail;
 						fail = UT64_MAX;
 					} else {
@@ -947,7 +946,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 				}
 				}
-				if ((bb->jump == UT64_MAX && !closed) || resume_from_indent) {
+				if ((!has_jump && !closed) || resume_from_indent) {
 					ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 					if (addr == UT64_MAX) {
 						NEWLINE (bb->addr, indent);
@@ -963,7 +962,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						PRINTF ("}");
 					}
 				}
-				PRINTF ("goto loc_0x%08" PFMT64x ";", bb->fail);
+				PRINTF ("goto loc_0x%08" PFMT64x ";", addr);
 #if 0
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);
