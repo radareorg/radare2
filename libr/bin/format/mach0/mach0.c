@@ -119,12 +119,10 @@ static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OU
 	return true;
 }
 
-// AITODO: this is just one fucking line. does it really matter? cant we just use athe UT64_ADD itself?
 static inline bool safe_advance(ut64 *off, ut64 delta) {
 	return UT64_ADD (off, *off, delta);
 }
 
-// AITODO: kind of the same here, this advance and advance2 shit seems very hacky imho. also we have the fits_in macro that does something similar
 static inline bool safe_advance2(ut64 *off, ut64 a, ut64 b) {
 	ut64 sum = 0;
 	return UT64_ADD (&sum, a, b) && safe_advance (off, sum);
