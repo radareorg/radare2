@@ -8,31 +8,6 @@
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static int cmd_print(void *data, const char *input);
 
-// Helper to get entropy value via RMuta
-static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
-	RMutaResult res = r_muta_process_simple (core->muta, "entropy", data, len);
-	double entropy = res.entropy;
-	r_muta_result_free (&res);
-	// Normalize entropy from 0-8 to 0-1
-	return len? entropy / log2 ((double)R_MIN (len, 256)): 0;
-}
-
-static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
-	RMutaResult res = r_muta_process_simple (core->muta, algo, data, len);
-	char *result = NULL;
-	if (res.success && res.output) {
-		if (res.text_output) {
-			// Output is already text (e.g., entropy), copy as-is
-			result = r_str_ndup ((const char *)res.output, res.output_len);
-		} else {
-			// Output is binary, convert to hex
-			result = r_hex_bin2strdup (res.output, res.output_len);
-		}
-	}
-	r_muta_result_free (&res);
-	return result? result: r_hash_tostring (NULL, algo, data, len);
-}
-
 // clang-format off
 static RCoreHelpMessage help_msg_pa = {
 	"Usage: pa[edD]", "[asm|hex]", "Print (dis)assembly",
@@ -782,6 +757,31 @@ static const ut32 colormap[256] = {
 };
 
 // clang-format on
+
+// Helper to get entropy value via RMuta
+static double cmd_print_entropy(RCore *core, const ut8 *data, ut64 len) {
+	RMutaResult res = r_muta_process_simple (core->muta, "entropy", data, len);
+	double entropy = res.entropy;
+	r_muta_result_free (&res);
+	// Normalize entropy from 0-8 to 0-1
+	return len? entropy / log2 ((double)R_MIN (len, 256)): 0;
+}
+
+static char *cmd_print_hash(RCore *core, const char *algo, const ut8 *data, int len) {
+	RMutaResult res = r_muta_process_simple (core->muta, algo, data, len);
+	char *result = NULL;
+	if (res.success && res.output) {
+		if (res.text_output) {
+			// Output is already text (e.g., entropy), copy as-is
+			result = r_str_ndup ((const char *)res.output, res.output_len);
+		} else {
+			// Output is binary, convert to hex
+			result = r_hex_bin2strdup (res.output, res.output_len);
+		}
+	}
+	r_muta_result_free (&res);
+	return result? result: r_hash_tostring (NULL, algo, data, len);
+}
 
 static void __cmd_pad(RCore *core, const char *arg) {
 	if (*arg == '?') {
@@ -1668,14 +1668,13 @@ static void cmd_pDj(RCore *core, const char *arg) {
 static void cmd_pdj(RCore *core, const char *arg, ut8 *block) {
 	int nblines = r_num_math (core->num, arg);
 	PJ *pj = r_core_pj_new (core);
-	if (!pj) {
-		return;
+	if (pj) {
+		pj_a (pj);
+		r_core_print_disasm_json_ipi (core, core->addr, block, core->blocksize, nblines, pj, NULL);
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
 	}
-	pj_a (pj);
-	r_core_print_disasm_json_ipi (core, core->addr, block, core->blocksize, nblines, pj, NULL);
-	pj_end (pj);
-	r_cons_println (core->cons, pj_string (pj));
-	pj_free (pj);
 }
 
 static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
