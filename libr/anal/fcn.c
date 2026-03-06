@@ -795,7 +795,8 @@ repeat:
 		// ret is the max length of bytes available
 		// eprintf("%02x %02x\n", buf[0], buf[1]);
 		const bool check_invalid_fill = bb->size < sizeof (buf) || anal->opt.nonull > 0;
-		const bool check_zeros = anal->opt.nonull > 0 || is_x86;
+		const bool bits_unknown = !anal->config->bits || anal->config->bits > 64 || !fcn->bits || fcn->bits > 64;
+		const bool check_zeros = anal->opt.nonull > 0 || is_x86 || bits_unknown;
 		if (!is_import_stub && check_invalid_fill && r_anal_is_invalid_code (anal, buf, bytes_read, check_zeros)) {
 			R_LOG_DEBUG ("Invalid code prefix at 0x%08"PFMT64x, at);
 			gotoBeach (R_ANAL_RET_ERROR)

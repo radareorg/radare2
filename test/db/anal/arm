@@ -1262,3 +1262,19 @@ EOF
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=arm invalid bits stop zero-fill analysis
+FILE=malloc://0x10000
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=65535
+af @ 0
+aflc
+EOF
+EXPECT=<<EOF
+0
+EOF
+EXPECT_ERR=<<EOF
+WARN: select the calling convention with `e anal.cc=?`
+EOF
+RUN
