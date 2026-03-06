@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2026 - pancake */
 
 #include "r2r.h"
 #if ALLINC
@@ -102,24 +102,25 @@ static int help(bool verbose, int workers_count) {
 	printf ("Usage: r2r [-qvVnLi] [-C dir] [-F dir] [-f file] [-o file] [-s test] [-t seconds] [-j threads] [test file/dir | @test-type]\n");
 	if (verbose) {
 		printf (
+			" -1           same as -j1\n"
 			" -C [dir]     chdir before running r2r (default follows executable symlink + test/new\n"
 			" -F [dir]     run fuzz tests (open and default analysis) on all files in the given dir\n"
-			" -L           log mode (better printing for CI, logfiles, etc.)\n"
-			" -V           verbose\n"
 			" -f [file]    file to use for json tests (default is " JSON_TEST_FILE_DEFAULT ")\n"
 			" -g           run the tests specified via '// R2R' comments in modified source files\n"
-			" -h           print this help\n"
 			" -H           display environment variables\n"
+			" -h           print this help\n"
 			" -i           interactive mode\n"
 			" -j [threads] how many threads to use for running tests concurrently (default is " WORKERS_DEFAULT_STR ")\n"
+			" -L           log mode (better printing for CI, logfiles, etc.)\n"
 			" -n           do nothing (don't run any test, just load/parse them)\n"
 			" -o [file]    output test run information in JSON format to file\n"
 			" -q           quiet\n"
-			" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
 			" -S [0-100]   set R2R_SHALLOW=N to skip a random percentage of tests\n"
+			" -s [test]    set R2R_SKIP_(TEST)=1 to skip running that test type\n"
 			" -t [seconds] timeout per test (default is " TIMEOUT_DEFAULT_STR ")\n"
 			" -u           do not git pull/clone test/bins (See R2R_OFFLINE)\n"
 			" -v           show version\n"
+			" -V           verbose\n"
 			"\n");
 		helpvars (workers_count);
 		printf ("\nSupported test types: @arch @asm @cmd @fuzz @json @leak @unit\nOS/Arch for archos tests: %s\n", R_SYS_ARCHOSBITS);
@@ -351,11 +352,14 @@ static void r2r_git(void) {
 // Returns: >= 0 = arg index to continue from, -1 = exit with success, -2 = exit with error
 static int r2r_parse_args(R2ROptions *opt, int argc, char **argv) {
 	RGetopt go;
-	r_getopt_init (&go, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ugHS:");
+	r_getopt_init (&go, argc, (const char **)argv, "hqvj:r:m:f:C:LnVt:F:io:s:ugHS:1");
 
 	int c;
 	while ((c = r_getopt_next (&go)) != -1) {
 		switch (c) {
+		case '1':
+			opt->workers_count = 1;
+			break;
 		case 'g':
 			r2r_git ();
 			return -1;

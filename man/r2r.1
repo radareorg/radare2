@@ -5,7 +5,7 @@
 .Nd radare2 regression testsuite
 .Sh SYNOPSIS
 .Nm r2r
-.Op Fl qvVnLiHh
+.Op Fl 1qvVnLiHh
 .Op Fl C Ar dir
 .Op Fl F Ar dir
 .Op Fl f Ar file
@@ -25,6 +25,8 @@ It automates the discovery and execution of diverse test suites—including unit
 r2r supports parallel test execution, interactive failure handling, custom timeouts, and filtering of tests by type or name. It integrates seamlessly into continuous integration workflows or can be used locally, and requires only that Radare2 be installed and available in the system PATH.
 .Sh OPTIONS
 .Bl -tag -width Fl
+.It Fl 1
+Run tests in a single thread (same as -j 1)
 .It Fl C Ar dir
 Chdir before running r2r (default follows executable symlink + test/new)
 .It Fl F Ar dir
