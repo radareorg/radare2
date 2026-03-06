@@ -77,7 +77,9 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
 	RAnalPriv *priv = R_ANAL_PRIV (anal);
 	const char *arch = anal->config->arch;
-	if (!priv->types_dirty) {
+	const int bits = anal->config->bits;
+	// Check if types need to be reloaded due to bits change
+	if (!priv->types_dirty && priv->types_loaded_bits == bits) {
 		return;
 	}
 	if (!arch) {
@@ -99,12 +101,13 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	if (subsystem && !strcmp (subsystem, "xnu")) {
 		load_types_from (anal, dir_prefix, "types-iokit");
 	}
-	load_types_from (anal, dir_prefix, "types-%d", anal->config->bits);
-	load_types_from (anal, dir_prefix, "types-%s-%d", os, anal->config->bits);
-	load_types_from (anal, dir_prefix, "types-%s-%d", arch, anal->config->bits);
+	load_types_from (anal, dir_prefix, "types-%d", bits);
+	load_types_from (anal, dir_prefix, "types-%s-%d", os, bits);
+	load_types_from (anal, dir_prefix, "types-%s-%d", arch, bits);
 	load_types_from (anal, dir_prefix, "types-%s-%s", arch, os);
-	load_types_from (anal, dir_prefix, "types-%s-%s-%d", arch, os, anal->config->bits);
+	load_types_from (anal, dir_prefix, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
+	priv->types_loaded_bits = bits;
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {

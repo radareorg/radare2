@@ -11,6 +11,7 @@ extern "C" {
 
 typedef struct r_anal_priv_t {
 	bool types_dirty;
+	int types_loaded_bits;
 } RAnalPriv;
 
 #define R_ANAL_PRIV(x) ((RAnalPriv*)(x)->priv)

@@ -884,7 +884,7 @@ static bool cb_asmbits(void *user, void *data) {
 	if (!bits) {
 		return false;
 	}
-	if (bits == core->rasm->config->bits && bits == core->dbg->bits) {
+	if (bits == core->rasm->config->bits && bits == core->dbg->bits && bits == core->anal->config->bits) {
 		if (core->print) {
 			core->print->reg = core->anal->reg;
 			core->print->get_register = r_reg_get;
