@@ -52,6 +52,10 @@ vc4: bins
 clean:
 	$(MAKE) -C unit clean
 	rm -rf tmp
+	$(MAKE) -C indent clean
+
+indent-check:
+	$(MAKE) -C indent check-indent
 
 rc:
 	echo q | r2 -c '?V' -
@@ -77,4 +81,4 @@ unit unit-tests: bins
 	PATH="$(BINDIR):$(PATH)" \
 		$(MAKE) -C unit run
 
-.PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara unit-tests
+.PHONY: all clean unit install uninstall r2r-tests fuzz-tests keystone swf dwarf yara unit-tests indent-check

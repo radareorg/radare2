@@ -547,19 +547,25 @@ def fix_brace_newlines(text):
 				result += f"{indent}\t{rest}"
 		return result
 	text = re.sub(
-		r'^(\s*)((?:typedef\s+)?(?:enum|struct|union))(\s+\w+)?\s*\{\s*(.+)$',
+		r'^(\s*)((?:typedef\s+)?(?:enum|struct|union))(\s+\w+)?[ \t]*\{[ \t]*(.+)$',
 		split_open_brace, text, flags=re.MULTILINE
 	)
 	# Split "content } Name;" or "content };" putting brace on new line
+	# Only matches lines with actual content (non-whitespace) before the closing brace
 	def split_close_brace(m):
-		indent = m.group(1)
-		before = m.group(2).strip()
-		brace = m.group(3).strip()
-		if before.startswith('}'):
-			return m.group(0)  # Keep "} Name;" as-is
-		return f"{indent}{before}\n{brace}"
+		content_indent = m.group(1)
+		before = m.group(2)
+		brace_line = m.group(3) + m.group(4)
+		before_stripped = before.strip()
+		# Check if 'before' contains actual content (not just whitespace)
+		if not before_stripped:
+			return m.group(0)  # Just whitespace before }, keep as-is
+		if before_stripped.startswith('}'):
+			return m.group(0)  # Already starts with }, keep as-is
+		# brace_line contains the whitespace (including newline) + closing brace
+		return f"{content_indent}{before_stripped}{brace_line}"
 	text = re.sub(
-		r'^(\s*)([^{}\n]+?)\s*(\}\s*\w*\s*;)$',
+		r'^(\s*)([^{}\n]+?)(\s*)(\}\s*\w*\s*;)$',
 		split_close_brace, text, flags=re.MULTILINE
 	)
 	# Move standalone }; to column 0 (only after enum/struct, detected by preceding line pattern)
