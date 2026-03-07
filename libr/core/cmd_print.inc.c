@@ -853,6 +853,15 @@ static char *get_color(RCons *cons, ut8 ch) {
 	return res;
 }
 
+static void append_section_addr_prefix(RCore *core, ut64 at, bool show_section, bool show_offset, RStrBuf *sb) {
+	if (show_section) {
+		r_print_section_strbuf (core->print, sb, at);
+	}
+	if (show_offset) {
+		r_print_addr_strbuf (core->print, sb, at);
+	}
+}
+
 static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 	int i, j;
 	char *color0;
@@ -877,14 +886,7 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < len; i += cols) {
-		if (show_section) {
-			r_print_section_strbuf (core->print, core->addr + i, sb);
-		}
-		if (show_offset) {
-			char addrbuf[64];
-			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
-			r_strbuf_append (sb, addrbuf);
-		}
+		append_section_addr_prefix (core, core->addr + i, show_section, show_offset, sb);
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
 				break;
@@ -957,14 +959,7 @@ static void cmd_prc(RCore *core, const ut8 *block, int len) {
 		cols = 32;
 	}
 	for (i = 0; i < len; i += cols) {
-		if (show_section) {
-			r_print_section_strbuf (core->print, core->addr + i, sb);
-		}
-		if (show_offset) {
-			char addrbuf[64];
-			r_print_addr_tostring (core->print, core->addr + i, addrbuf, sizeof (addrbuf));
-			r_strbuf_append (sb, addrbuf);
-		}
+		append_section_addr_prefix (core, core->addr + i, show_section, show_offset, sb);
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
 				break;
@@ -1218,14 +1213,9 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		RVecRIORegion_free (regions);
 		return;
 	}
-	char addrbuf[64];
 
 	for (i = 0; i < len; i += cols) {
-		ut64 ea = core->addr + i;
-		if (show_offset) {
-			r_print_addr_tostring (core->print, ea, addrbuf, sizeof (addrbuf));
-			r_strbuf_append (sb, addrbuf);
-		}
+		append_section_addr_prefix (core, core->addr + i, false, show_offset, sb);
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
 				break;
@@ -6561,21 +6551,21 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 			if (core->print->pava) {
 				r_io_p2v (core->io, ea, &ea);
 			}
-			r_print_section_strbuf (core->print, ea, sb);
-			r_print_offset_strbuf (core->print, ea, 0, 0, NULL, sb);
+			r_print_section_strbuf (core->print, sb, ea);
+			r_print_offset_strbuf (core->print, sb, ea, 0, 0, NULL);
 		}
 		r_str_bits (buf, data + i, 8, NULL);
 
 		// split bits
 		memmove (buf + 5, buf + 4, 5);
 		buf[4] = 0;
-		r_print_cursor_strbuf (core->print, i, 1, 1, sb);
+		r_print_cursor_strbuf (core->print, sb, i, 1, 1);
 		if (input[1] == 'B') {
 			r_str_replace_ch (buf, '0', '.', true);
 			r_str_replace_ch (buf + 5, '0', '.', true);
 		}
 		r_strbuf_appendf (sb, "%s_%s  ", buf, buf + 5);
-		r_print_cursor_strbuf (core->print, i, 1, 0, sb);
+		r_print_cursor_strbuf (core->print, sb, i, 1, 0);
 		if (c == lastc) {
 			const ut8 *b = data + i - 3;
 			ut64 (*k) (const ut8 *, int) = cmd_pxb_k;
@@ -6746,10 +6736,18 @@ static void cmd_psa(RCore *core, const char *_) {
 	r_core_return_value (core, rc);
 }
 
+static void core_print_string_or_json(RCore *core, const ut8 *data, int len, const char *type, int options, bool json) {
+	if (json) {
+		print_json_string (core, (const char *)data, len, type);
+	} else {
+		r_print_string (core->print, core->addr, data, len, options);
+	}
+}
+
 static bool append_cursor_char(RPrint *p, int idx, char ch, RStrBuf *sb) {
-	return r_print_cursor_strbuf (p, idx, 1, 1, sb)
+	return r_print_cursor_strbuf (p, sb, idx, 1, 1)
 		&& r_strbuf_appendf (sb, "%c", ch)
-		&& r_print_cursor_strbuf (p, idx, 1, 0, sb);
+		&& r_print_cursor_strbuf (p, sb, idx, 1, 0);
 }
 
 static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
@@ -6758,7 +6756,7 @@ static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
 		return;
 	}
 	if (!quiet) {
-		r_print_offset_strbuf (core->print, core->addr, 0, 0, NULL, sb);
+		r_print_offset_strbuf (core->print, sb, core->addr, 0, 0, NULL);
 	}
 	bool hasnl = false;
 	int i;
@@ -6767,7 +6765,7 @@ static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
 		if (ch == '\n') {
 			r_strbuf_append (sb, "\n");
 			if (!quiet) {
-				r_print_offset_strbuf (core->print, core->addr + i, 0, 0, NULL, sb);
+				r_print_offset_strbuf (core->print, sb, core->addr + i, 0, 0, NULL);
 			}
 			hasnl = true;
 			continue;
@@ -6779,7 +6777,7 @@ static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
 			if (!hasnl) {
 				r_strbuf_append (sb, "\n");
 				if (!quiet) {
-					r_print_offset_strbuf (core->print, core->addr + i, 0, 0, NULL, sb);
+					r_print_offset_strbuf (core->print, sb, core->addr + i, 0, 0, NULL);
 				}
 			}
 			hasnl = true;
@@ -6862,12 +6860,8 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 		break;
 	}
 	if (slen + disp < data_len) {
-		if (dojson) {
-			const char *arg = ((options & R_PRINT_STRING_WIDE) == R_PRINT_STRING_WIDE)? "wide": ((options & R_PRINT_STRING_WIDE32) == R_PRINT_STRING_WIDE32)? "wide32" : NULL;
-			print_json_string (core, (const char *)data + disp, slen, arg);
-		} else {
-			r_print_string (core->print, core->addr, data + disp, slen, options);
-		}
+		const char *arg = ((options & R_PRINT_STRING_WIDE) == R_PRINT_STRING_WIDE)? "wide": ((options & R_PRINT_STRING_WIDE32) == R_PRINT_STRING_WIDE32)? "wide32" : NULL;
+		core_print_string_or_json (core, data + disp, slen, arg, options, dojson);
 		core->num->value = slen;
 	} else {
 		R_LOG_WARN ("String longer than current block");
@@ -7064,12 +7058,9 @@ static void cmd_pxe(RCore *core, const char *input, int len) {
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	char addrbuf[128];
-	char bytebuf[64];
 	int i, j;
 	for (i = 0; i < len; i += cols) {
-		r_print_addr_tostring (core->print, at + i, addrbuf, sizeof (addrbuf));
-		r_strbuf_append (sb, addrbuf);
+		r_print_addr_strbuf (core->print, sb, at + i);
 		for (j = i; j < i + cols; j++) {
 			if (j < len) {
 				const ut8 bj = block[j];
@@ -7080,8 +7071,7 @@ static void cmd_pxe(RCore *core, const char *input, int len) {
 		}
 		r_strbuf_append (sb, " ");
 		for (j = i; j < len && j < i + cols; j++) {
-			r_print_byte_tostring (core->print, at + j, "%c", j, block[j], bytebuf, sizeof (bytebuf));
-			r_strbuf_append (sb, bytebuf);
+			r_print_byte_strbuf (core->print, sb, at + j, "%c", j, block[j]);
 		}
 		r_strbuf_append (sb, "\n");
 	}
@@ -8374,7 +8364,7 @@ static int cmd_print(void *data, const char *input) {
 				} else if (input[2] == 'c' || input[2] == 'l') {
 					r_cons_printf (core->cons, "%d\n", (int)r_str_nlen ((const char *)s, l));
 				} else {
-					int slen = (int)r_str_nlen ((const char *)s, l);
+					const int slen = (int)r_str_nlen ((const char *)s, l);
 					r_print_string (core->print, core->addr, s, slen, R_PRINT_STRING_ZEROEND);
 				}
 				free (s);
@@ -8391,22 +8381,14 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_ps, "psw");
 			} else if (l > 0) {
-				if (input[2] == 'j') { // pswj
-					print_json_string (core, (const char *)core->block, len, "wide");
-				} else {
-					r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_WIDE | R_PRINT_STRING_ZEROEND);
-				}
+				core_print_string_or_json (core, block, len, "wide", R_PRINT_STRING_WIDE | R_PRINT_STRING_ZEROEND, input[2] == 'j');
 			}
 			break;
 		case 'W': // "psW"
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_ps, "psW");
 			} else if (l > 0) {
-				if (input[2] == 'j') { // psWj
-					print_json_string (core, (const char *)core->block, len, "wide32");
-				} else {
-					r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_WIDE32 | R_PRINT_STRING_ZEROEND);
-				}
+				core_print_string_or_json (core, block, len, "wide32", R_PRINT_STRING_WIDE32 | R_PRINT_STRING_ZEROEND, input[2] == 'j');
 			}
 			break;
 		case 'j': // "psj"
@@ -8415,7 +8397,7 @@ static int cmd_print(void *data, const char *input) {
 			} else {
 				ut8 *s = decode_text (core, core->addr, l, false);
 				if (s) {
-					print_json_string (core, (const char *)s, l, NULL);
+					core_print_string_or_json (core, s, l, NULL, 0, true);
 					free (s);
 				}
 			}
@@ -8498,10 +8480,8 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						r_core_cmdf (core, "ps%c @ 0x%" PFMT32x, json? 'j': ' ', *((ut32 *)block + 2));
 					}
-				} else if (json) {
-					print_json_string (core, (const char *)block + 1, len, NULL);
 				} else {
-					r_print_string (core->print, core->addr, block + 1, len, R_PRINT_STRING_ZEROEND);
+					core_print_string_or_json (core, block + 1, len, NULL, R_PRINT_STRING_ZEROEND, json);
 				}
 			}
 			break;
@@ -8515,8 +8495,8 @@ static int cmd_print(void *data, const char *input) {
 						r_io_read_at (core->io, core->addr, data, len);
 						char *out = (char *)r_muta_session_decode_string (core->charset_session, data, len, core->print->charset_decode, core->print->charset_ctx);
 						if (out) {
-							int outlen = (int)strlen (out) + 1;
-							int plen = R_MIN (len, outlen);
+							const int outlen = (int)strlen (out) + 1;
+							const int plen = R_MIN (len, outlen);
 							r_print_string (core->print, core->addr, (const ut8 *)out, plen, R_PRINT_STRING_ZEROEND);
 							free (out);
 						}
@@ -8550,7 +8530,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_p, "pu");
 		} else {
 			if (l > 0) {
-				r_print_string (core->print, core->addr, core->block, len, R_PRINT_STRING_URLENCODE | ((input[1] == 'w')? R_PRINT_STRING_WIDE: 0));
+				r_print_string (core->print, core->addr, block, len, R_PRINT_STRING_URLENCODE | ((input[1] == 'w')? R_PRINT_STRING_WIDE: 0));
 			}
 		}
 		break;

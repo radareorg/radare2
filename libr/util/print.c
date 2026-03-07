@@ -377,7 +377,7 @@ R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
 	return false;
 }
 
-R_API bool r_print_cursor_strbuf(RPrint *p, int cur, int len, int set, RStrBuf *sb) {
+R_API bool r_print_cursor_strbuf(RPrint *p, RStrBuf *sb, int cur, int len, int set) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (!p || !r_print_have_cursor (p, cur, len)) {
 		return true;
@@ -452,6 +452,13 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 	return snprintf (buf, buf_size, "0x%08" PFMT64x "%c", addr, ch);
 }
 
+R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	char buf[64];
+	r_print_addr_tostring (p, addr, buf, sizeof (buf));
+	return r_strbuf_append (sb, buf);
+}
+
 // TODO: deprecate this function. r_print functions must not use RCons! just work with strbuf
 R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char buf[64];
@@ -470,7 +477,7 @@ static int print_offset_len(ut64 off, bool with_delta) {
 	return strlen (buf);
 }
 
-R_API bool r_print_offset_strbuf(RPrint *p, ut64 off, int invert, int delta, const char *label, RStrBuf *sb) {
+R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, int delta, const char *label) {
 	R_RETURN_VAL_IF_FAIL (p && p->config && sb, false);
 	const int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
 	const int segbas = p->config->segbas;
@@ -574,7 +581,7 @@ R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char
 	R_RETURN_IF_FAIL (p);
 	RStrBuf sb;
 	r_strbuf_init (&sb);
-	if (r_print_offset_strbuf (p, off, invert, delta, label, &sb) && !r_strbuf_is_empty (&sb)) {
+	if (r_print_offset_strbuf (p, &sb, off, invert, delta, label) && !r_strbuf_is_empty (&sb)) {
 		r_print_printf (p, "%s", r_strbuf_get (&sb));
 	}
 	r_strbuf_fini (&sb);
@@ -730,13 +737,20 @@ R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, 
 	return len;
 }
 
+R_API bool r_print_byte_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const char *fmt, int idx, ut8 ch) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	char buf[64];
+	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
+	return r_strbuf_append (sb, buf);
+}
+
 R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
 	char buf[64];
 	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
 	r_print_printf (p, "%s", buf);
 }
 
-R_API int r_print_string_strbuf(RPrint *p, ut64 seek, const ut8 *buf, int len, int options, RStrBuf *sb) {
+R_API int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *buf, int len, int options) {
 	R_RETURN_VAL_IF_FAIL (buf && sb, 0);
 	(void)seek;
 	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
@@ -768,7 +782,7 @@ R_API int r_print_string_strbuf(RPrint *p, ut64 seek, const ut8 *buf, int len, i
 		if (zeroend && buf[i] == '\0') {
 			break;
 		}
-		r_print_cursor_strbuf (p, i, 1, 1, sb);
+		r_print_cursor_strbuf (p, sb, i, 1, 1);
 		const ut8 b = buf[i];
 		if (b == '\n') {
 			col = 0;
@@ -791,7 +805,7 @@ R_API int r_print_string_strbuf(RPrint *p, ut64 seek, const ut8 *buf, int len, i
 		} else {
 			r_strbuf_appendf (sb, "\\x%02x", b);
 		}
-		r_print_cursor_strbuf (p, i, 1, 0, sb);
+		r_print_cursor_strbuf (p, sb, i, 1, 0);
 		if (wrap && col + 1 >= p->width) {
 			r_strbuf_append (sb, "\n");
 			col = 0;
@@ -807,7 +821,7 @@ R_API int r_print_string_strbuf(RPrint *p, ut64 seek, const ut8 *buf, int len, i
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
 	RStrBuf sb;
 	r_strbuf_init (&sb);
-	const int ret = r_print_string_strbuf (p, seek, buf, len, options, &sb);
+	const int ret = r_print_string_strbuf (p, &sb, seek, buf, len, options);
 	if (!r_strbuf_is_empty (&sb)) {
 		r_print_printf (p, "%s", r_strbuf_get (&sb));
 	}
@@ -908,7 +922,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-R_API bool r_print_section_strbuf(RPrint *p, ut64 at, RStrBuf *sb) {
+R_API bool r_print_section_strbuf(RPrint *p, RStrBuf *sb, ut64 at) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (!p || !(p->flags & R_PRINT_FLAGS_SECTION)) {
 		return true;
@@ -921,7 +935,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	R_RETURN_IF_FAIL (p);
 	RStrBuf sb;
 	r_strbuf_init (&sb);
-	if (r_print_section_strbuf (p, at, &sb) && !r_strbuf_is_empty (&sb)) {
+	if (r_print_section_strbuf (p, &sb, at) && !r_strbuf_is_empty (&sb)) {
 		r_print_printf (p, "%s", r_strbuf_get (&sb));
 	}
 	r_strbuf_fini (&sb);
