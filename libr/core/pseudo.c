@@ -19,14 +19,12 @@ typedef struct {
 } PDCState;
 
 typedef enum {
-
 	TYPE_NONE = 0,
 	TYPE_STR = 1,
 	TYPE_SYM = 2
 } RFindType;
 
 typedef struct _find_ctx {
-
 	char *comment;
 	char *left;
 	char *right;
