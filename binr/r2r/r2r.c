@@ -1196,6 +1196,19 @@ int main(int argc, char **argv) {
 		r_sys_cmd (cmd);
 	}
 
+	r2r_setup_environment ();
+
+	// state_init runs validate_suite() which calls r_sys_cmdf()
+	// (libc system()). This must happen BEFORE subprocess_init()
+	// installs the SIGCHLD handler, otherwise the sigchld reaper
+	// thread races with system()'s internal waitpid() and can
+	// steal the child exit status, making "r2 -v" appear to fail.
+	if (!r2r_state_init (&state, &opt)) {
+		free (cwd);
+		ret = -1;
+		goto cleanup;
+	}
+
 	if (!r2r_subprocess_init ()) {
 		R_LOG_ERROR ("Subprocess init failed");
 		free (cwd);
@@ -1203,14 +1216,6 @@ int main(int argc, char **argv) {
 		goto cleanup;
 	}
 	atexit (r2r_subprocess_fini);
-
-	r2r_setup_environment ();
-
-	if (!r2r_state_init (&state, &opt)) {
-		free (cwd);
-		ret = -1;
-		goto cleanup;
-	}
 
 	int load_result = r2r_load_tests (&state, &opt, arg_ind, argc, argv, cwd);
 	free (cwd);

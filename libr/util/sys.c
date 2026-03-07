@@ -854,20 +854,27 @@ R_API int r_sys_cmd_str_full(const char *cmd, const char *input, int ilen, char 
 		for (;;) {
 			fd_set rfds, wfds;
 			int nfd;
+			int maxfd = sh_err[0];
 			FD_ZERO (&rfds);
 			FD_ZERO (&wfds);
 			if (output) {
 				FD_SET (sh_out[0], &rfds);
+				if (sh_out[0] > maxfd) {
+					maxfd = sh_out[0];
+				}
 			}
 			if (sterr) {
 				FD_SET (sh_err[0], &rfds);
 			}
 			if (inputptr && *inputptr) {
 				FD_SET (sh_in[1], &wfds);
+				if (sh_in[1] > maxfd) {
+					maxfd = sh_in[1];
+				}
 			}
 			memset (buffer, 0, sizeof (buffer));
 
-			nfd = select (sh_err[0] + 1, &rfds, &wfds, NULL, NULL);
+			nfd = select (maxfd + 1, &rfds, &wfds, NULL, NULL);
 			if (nfd < 0 && errno == EINTR) {
 				continue;
 			}
