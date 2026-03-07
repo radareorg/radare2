@@ -204,6 +204,9 @@ typedef enum {
 	R_EVENT_CORE_TASK_FINISHED,
 	R_EVENT_CORE_TASK_INTERRUPTED,
 
+	// util
+	R_EVENT_LOG,
+
 	R_EVENT_LAST,
 } REventType;
 
@@ -270,6 +273,14 @@ typedef struct r_event_msg_t {
 	void *data;
 	size_t data_len;
 } REventMessage;
+
+typedef struct r_event_log_t {
+	int level;
+	const char *origin;
+	const char *func;
+	int line;
+	const char *msg;
+} REventLog;
 
 typedef struct r_event_t REvent;
 typedef void (*REventCallback)(REvent *ev, int type, void *user, void *data);
