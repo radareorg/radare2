@@ -6342,42 +6342,6 @@ static char *_find_next_number(char *op) {
 	return NULL;
 }
 
-#if 0
-static bool set_jump_realname(RDisasmState *ds, ut64 addr, const char **kw, const char **name) {
-return true;
-	RFlag *f = ds->core->flags;
-	if (!f) {
-		return false;
-	}
-	if (!ds->asm_demangle && !f->realnames) {
-		// nothing to do, neither demangled nor regular realnames should be shown
-		return false;
-	}
-	RFlagItem *flag_sym = r_flag_get_by_spaces (f, true, addr, R_FLAGS_FS_SYMBOLS, NULL);
-	if (!flag_sym || !flag_sym->realname) {
-		// nothing to replace
-		return false;
-	}
-	if (!flag_sym->demangled && !f->realnames) {
-		// realname is not demangled and we don't want to show non-demangled realnames
-		return false;
-	}
-	*name = flag_sym->realname;
-	RFlagItem *flag_mthd = r_flag_get_by_spaces (f, false, addr, R_FLAGS_FS_CLASSES, NULL);
-	if (!f->realnames) {
-#if 1
-		// for asm.flags.real, we don't want these prefixes
-		if (flag_mthd && flag_mthd->name && r_str_startswith (flag_mthd->name, "method.")) {
-			*kw = "method,";
-		} else {
-			*kw = "sym,";
-		}
-#endif
-	}
-	return true;
-}
-#endif
-
 // R2_600 - TODO: this should be moved into r_parse
 static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	RAnal *anal = ds->core->anal;
@@ -6390,7 +6354,6 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 		return NULL;
 	}
 	ut64 addr = ds->analop.jump;
-#if 1
 	int optype = ds->analop.type & R_ANAL_OP_TYPE_MASK;
 	switch (optype) {
 	case R_ANAL_OP_TYPE_LEA:
@@ -6416,11 +6379,9 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	case R_ANAL_OP_TYPE_UJMP:
 	case R_ANAL_OP_TYPE_UCALL:
 		break;
-	//	return NULL;
 	default:
 		return NULL;
 	}
-#endif
 	RBinReloc *rel = NULL;
 	RBinObject *bo = r_bin_cur_object (ds->core->bin);
 	if (bo && !bo->is_reloc_patched) {
@@ -6447,9 +6408,7 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 	}
 	RAnalFunction *fcn = r_anal_get_function_at (anal, addr);
 	if (fcn) {
-	//	if (!set_jump_realname (ds, addr, &kw, &name)) {
-			name = fcn->name;
-	//	}
+		name = fcn->name;
 	} else {
 		if (rel) {
 			if (rel->import && rel->import->name) {
