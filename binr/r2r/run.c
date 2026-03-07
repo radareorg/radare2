@@ -526,10 +526,12 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 		}
 		while (true) {
 			int wstat;
-			// pid_t pid = wait (&wstat);
-			pid_t pid = waitpid (-1, &wstat, 0);
+			// Use WNOHANG to avoid blocking: reap all
+			// currently-dead children without stalling the
+			// sigchld thread (which would starve killpipe
+			// notifications for other subprocesses).
+			pid_t pid = waitpid (-1, &wstat, WNOHANG);
 			if (pid <= 0) {
-				// 	r_sys_perror ("waitpid failed");
 				break;
 			}
 			r_th_lock_enter (subprocs_mutex);
@@ -823,7 +825,6 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stdout_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 1");
-				child_dead = true;
 				stdout_eof = true;
 			} else if (sz == 0) {
 				stdout_eof = true;
@@ -837,10 +838,8 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ssize_t sz = read (proc->stderr_fd, buf, sizeof (buf));
 			if (sz < 0) {
 				r_sys_perror ("sp-wait read 2");
-				child_dead = true;
-				break;
-			}
-			if (sz == 0) {
+				stderr_eof = true;
+			} else if (sz == 0) {
 				stderr_eof = true;
 			} else {
 				r_strbuf_append_n (&proc->err, buf, (int)sz);
