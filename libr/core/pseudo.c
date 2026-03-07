@@ -19,12 +19,14 @@ typedef struct {
 } PDCState;
 
 typedef enum {
+
 	TYPE_NONE = 0,
 	TYPE_STR = 1,
 	TYPE_SYM = 2
 } RFindType;
 
 typedef struct _find_ctx {
+
 	char *comment;
 	char *left;
 	char *right;
@@ -600,7 +602,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		PRINTF ("unsigned char *byte = &stack;\n");
 		PRINTF ("int %s, %s;\n", a0, a1);
 		PRINTF ("// This function contains %d basic blocks and its %d long.",
-			n_bb, (int)r_anal_function_realsize (state.fcn));
+			n_bb,
+			(int)r_anal_function_realsize (state.fcn));
 		NEWLINE (state.fcn->addr, indent);
 		const char *S0 = "esp";
 		PRINTF ("static inline void push(int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
@@ -747,9 +750,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
 			}
 		}
-			bool closed = false;
-			bool resume_from_indent = false;
-			ut64 gotoaddr = UT64_MAX;
+		bool closed = false;
+		bool resume_from_indent = false;
+		ut64 gotoaddr = UT64_MAX;
 		const bool has_jump = bb->jump != UT64_MAX;
 		if (bb->fail == UT64_MAX) {
 			if (has_jump) {
@@ -888,13 +891,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				ut64 fail = swap? bb->fail: bb->jump;
 				// If a conditional branch leaves the current function, do not
 				// descend into the foreign CFG. Prefer the in-function branch.
-				const bool jump_in_fcn = jump != UT64_MAX
-					&& r_anal_function_contains (state.fcn, jump);
+				const bool jump_in_fcn = jump != UT64_MAX && r_anal_function_contains (state.fcn, jump);
 				if (!jump_in_fcn) {
 					NEWLINE (jump, indent);
 					PRINTF ("// chop");
-					const bool fail_in_fcn = fail != UT64_MAX
-						&& r_anal_function_contains (state.fcn, fail);
+					const bool fail_in_fcn = fail != UT64_MAX && r_anal_function_contains (state.fcn, fail);
 					if (fail_in_fcn) {
 						jump = fail;
 						fail = UT64_MAX;
@@ -902,16 +903,16 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						break;
 					}
 				}
-					if (sdb_get (state.db, K_INDENT (jump), 0)) {
-						// already tracekd
-						if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
-							bb = r_anal_bb_from_offset (core->anal, fail);
-						} else if (fail == UT64_MAX) {
-							resume_from_indent = true;
-						} else {
-							R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
-						}
+				if (sdb_get (state.db, K_INDENT (jump), 0)) {
+					// already tracekd
+					if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
+						bb = r_anal_bb_from_offset (core->anal, fail);
+					} else if (fail == UT64_MAX) {
+						resume_from_indent = true;
 					} else {
+						R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
+					}
+				} else {
 					bb = r_anal_bb_from_offset (core->anal, jump);
 					if (!bb) {
 						R_LOG_ERROR ("Failed to retrieve block at 0x%" PFMT64x, jump);
@@ -945,11 +946,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 					}
 				}
-				}
-				if ((!has_jump && !closed) || resume_from_indent) {
-					ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
-					if (addr == UT64_MAX) {
-						NEWLINE (bb->addr, indent);
+			}
+			if ((!has_jump && !closed) || resume_from_indent) {
+				ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
+				if (addr == UT64_MAX) {
+					NEWLINE (bb->addr, indent);
 					PRINTF ("break;");
 					break;
 				}
