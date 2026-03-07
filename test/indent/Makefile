@@ -1,18 +1,14 @@
 .PHONY: all clean check-indent format
+FMT=../../sys/clang-format-radare2
 
 all: check-indent
 
 check-indent: header.h source.c
-	@echo "Checking indentation of header.h and source.c..."
-	@if python3 ../../sys/clang-format-radare2 --no-update header.h source.c; then \
-		echo "Indentation check passed!"; \
-	else \
-		echo "Indentation check failed!"; \
-		exit 1; \
-	fi
+	$(FMT) --no-update header.h source.c
 
 format: header.h source.c
-	@echo "Formatting header.h and source.c..."
-	python3 ../../sys/clang-format-radare2 -i header.h source.c
+	$(FMT) header.h source.c
 
 clean:
+	rm -f header.h source.c
+	git checkout header.h source.c

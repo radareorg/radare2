@@ -108,70 +108,78 @@ case 1:
 		process (local);
 		break;
 	}
+case 2:
+	process (3);
+	break;
 default:
 	break;
 }
 
-// If statements with braces
-if(condition) {
-	do_thing ();
+void function() {
+	// If statements with braces
+	if (condition) {
+		do_thing ();
+	}
+
+	if (a && b) {
+		do_thing ();
+	}
+
+	if (a || b) {
+		do_thing ();
+	}
+
+	// For loops
+	for (i = 0; i < count; i++) {
+		process (i);
+	}
+
+	// While loops
+	while (condition) {
+		do_thing ();
+	}
+
+	// Do-while
+	do {
+		iteration++;
+	} while (iteration < max);
+
+	// Goto labels
+	goto cleanup;
+
+cleanup:
+	free (ptr);
+	return result;
 }
 
-if(a && b) {
-	do_thing ();
+void another_function() {
+	// Struct member access
+	ptr->member = value;
+	struct_var.member = value;
+	array[i].field = value;
+
+	// Complex expressions
+	result = (a + b) *(c - d) / e;
+	result = func (a, b, c) + func2 (d, e);
+	result = !cond? x: y;
+	result = (ptr != NULL)? ptr->value: 0;
+
+	// String concatenation
+	const char *str =
+		"This is a very long string"
+		" that continues on the next line"
+		" with proper indentation.";
+
+	// Multi-dimensional array access
+	matrix[i][j] = value;
+	data[row * cols + col] = value;
+
+	// Bitwise operations
+	flags |= FLAG_A;
+	flags &= ~FLAG_B;
+	flags ^= FLAG_C;
+	mask = (1 << n) - 1;
 }
-
-if(a || b) {
-	do_thing ();
-}
-
-// For loops
-for(i = 0; i < count; i++) {
-	process (i);
-}
-
-// While loops
-while(condition) {
-	do_thing ();
-}
-
-// Do-while
-do {
-	iteration++;
-} while (iteration < max);
-
-// Goto labels
-goto cleanup;
-
-cleanup : free(ptr);
-return result;
-
-// Struct member access
-ptr->member = value;
-struct_var.member = value;
-array[i].field = value;
-
-// Complex expressions
-result =(a + b) *(c - d) / e;
-result = func(a, b, c) + func2(d, e);
-result = !cond? x: y;
-result =(ptr != NULL)? ptr->value: 0;
-
-// String concatenation
-const char *str =
-	"This is a very long string"
-	" that continues on the next line"
-	" with proper indentation.";
-
-// Multi-dimensional array access
-matrix[i][j] = value;
-data[row * cols + col] = value;
-
-// Bitwise operations
-flags |= FLAG_A;
-flags &= ~FLAG_B;
-flags ^= FLAG_C;
-mask =(1 << n) - 1;
 
 // Comments
 // Single line comment
