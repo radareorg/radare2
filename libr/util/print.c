@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_util/r_print.h>
+#include <r_util/r_base36.h>
 #include <r_util/r_str.h>
 #include <r_anal.h>
 
@@ -376,7 +377,7 @@ R_API bool r_print_cursor_pointer(RPrint *p, int cur, int len) {
 	return false;
 }
 
-R_API bool r_print_cursor_strbuf(RPrint *p, int cur, int len, int set, RStrBuf *sb) {
+R_API bool r_print_cursor_strbuf(RPrint *p, RStrBuf *sb, int cur, int len, int set) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (!p || !r_print_have_cursor (p, cur, len)) {
 		return true;
@@ -451,11 +452,139 @@ R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size
 	return snprintf (buf, buf_size, "0x%08" PFMT64x "%c", addr, ch);
 }
 
+R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	char buf[64];
+	r_print_addr_tostring (p, addr, buf, sizeof (buf));
+	return r_strbuf_append (sb, buf);
+}
+
 // TODO: deprecate this function. r_print functions must not use RCons! just work with strbuf
 R_API void r_print_addr(RPrint *p, ut64 addr) {
 	char buf[64];
 	r_print_addr_tostring (p, addr, buf, sizeof (buf));
 	r_print_printf (p, "%s", buf);
+}
+
+static int print_offset_len(ut64 off, bool with_delta) {
+	char buf[64];
+	buf[0] = 0;
+	if (with_delta) {
+		snprintf (buf, sizeof (buf), "+0x%" PFMT64x, off);
+	} else {
+		snprintf (buf, sizeof (buf), "0x%08" PFMT64x, off);
+	}
+	return strlen (buf);
+}
+
+R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, int delta, const char *label) {
+	R_RETURN_VAL_IF_FAIL (p && p->config && sb, false);
+	const int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
+	const int segbas = p->config->segbas;
+	const int seggrn = p->config->seggrn;
+	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
+	const bool base36 = p->coreb.cfgGetB? p->coreb.cfgGetB (p->coreb.core, "asm.addr.base36"): p->base36;
+	char space[32] = { 0 };
+	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
+	const bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
+	bool ok = true;
+
+	if (show_color) {
+		char rgbstr[32];
+		RCons *cons = p->consb.cons;
+		const char *k = (cons && cons->context)? cons->context->pal.addr: "";
+		const char *inv = invert? R_CONS_INVERT (true, true): "";
+		if ((p->flags & R_PRINT_FLAGS_RAINBOW) && cons && cons->rgbstr) {
+			k = cons->rgbstr (cons, rgbstr, sizeof (rgbstr), off);
+		}
+		if (!k) {
+			k = "";
+		}
+		if (base36) {
+			char b36str[16];
+			b36_fromnum (b36str, off);
+			ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, b36str, reset);
+		} else if (offseg) {
+			ut32 s, a;
+			r_num_segaddr (off, segbas, seggrn, &s, &a);
+			if (offdec) {
+				snprintf (space, sizeof (space), "%d:%d", s, a);
+				ok &= r_strbuf_appendf (sb, "%s%s%9s%s", k, inv, space, reset);
+			} else {
+				ok &= r_strbuf_appendf (sb, "%s%s%04x:%04x%s", k, inv, s, a, reset);
+			}
+		} else {
+			const int sz = print_offset_len (off, false);
+			const int sz2 = print_offset_len (delta, true);
+			if (delta > 0 || label) {
+				if (label) {
+					const int label_padding = 10;
+					ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, label, reset);
+					if (delta > 0) {
+						ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
+						ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
+					} else {
+						ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
+					}
+				} else {
+					ok &= r_strbuf_pad (sb, ' ', sz - sz2);
+					ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
+					ok &= r_strbuf_append (sb, reset);
+				}
+			} else if (offdec) {
+				snprintf (space, sizeof (space), "%" PFMT64u, off);
+				ok &= r_strbuf_appendf (sb, "%s%s%10s%s", k, inv, space, reset);
+			} else if (p->wide_offsets) {
+				ok &= r_strbuf_appendf (sb, "%s%s0x%016" PFMT64x "%s", k, inv, off, reset);
+			} else {
+				ok &= r_strbuf_appendf (sb, "%s%s0x%08" PFMT64x "%s", k, inv, off, reset);
+			}
+		}
+		return ok && r_strbuf_append (sb, " ");
+	}
+	if (offseg) {
+		ut32 s, a;
+		r_num_segaddr (off, segbas, seggrn, &s, &a);
+		if (offdec) {
+			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
+			return r_strbuf_appendf (sb, "%9s%s", space, reset);
+		}
+		return r_strbuf_appendf (sb, "%04x:%04x", s & 0xffff, a & 0xffff);
+	}
+	const int sz = print_offset_len (off, false);
+	const int sz2 = print_offset_len (delta, true);
+	if (delta > 0 || label) {
+		if (label) {
+			const int label_padding = 10;
+			ok &= r_strbuf_append (sb, label);
+			if (delta > 0) {
+				ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
+				ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
+			} else {
+				ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
+			}
+		} else {
+			ok &= r_strbuf_pad (sb, ' ', sz - 5 - sz2 - 3);
+			ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
+			ok &= r_strbuf_append (sb, reset);
+		}
+		return ok;
+	}
+	if (offdec) {
+		snprintf (space, sizeof (space), "%" PFMT64u, off);
+		return r_strbuf_appendf (sb, "%10s", space);
+	}
+	return r_strbuf_appendf (sb, "0x%08" PFMT64x " ", off);
+}
+
+R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label) {
+	R_RETURN_IF_FAIL (p);
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	if (r_print_offset_strbuf (p, &sb, off, invert, delta, label) && !r_strbuf_is_empty (&sb)) {
+		r_print_printf (p, "%s", r_strbuf_get (&sb));
+	}
+	r_strbuf_fini (&sb);
 }
 
 R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
@@ -608,12 +737,22 @@ R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, 
 	return len;
 }
 
+R_API bool r_print_byte_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const char *fmt, int idx, ut8 ch) {
+	R_RETURN_VAL_IF_FAIL (sb, false);
+	char buf[64];
+	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
+	return r_strbuf_append (sb, buf);
+}
+
 R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
 	char buf[64];
 	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
 	r_print_printf (p, "%s", buf);
 }
-R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
+
+R_API int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *buf, int len, int options) {
+	R_RETURN_VAL_IF_FAIL (buf && sb, 0);
+	(void)seek;
 	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
 	int i;
 	bool wide = (options & R_PRINT_STRING_WIDE);
@@ -643,44 +782,51 @@ R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int opti
 		if (zeroend && buf[i] == '\0') {
 			break;
 		}
-		r_print_cursor (p, i, 1, 1);
-		ut8 b = buf[i];
+		r_print_cursor_strbuf (p, sb, i, 1, 1);
+		const ut8 b = buf[i];
 		if (b == '\n') {
 			col = 0;
 		}
 		col++;
 		if (urlencode) {
 			// TODO: some ascii can be bypassed here
-			r_print_printf (p, "%%%02x", b);
-		} else {
-			if (b == '\\') {
-				r_print_printf (p, "\\\\");
-			} else if ((b == '\n' && !esc_nl)) {
-				r_print_printf (p, "\n");
-				if (use_color && is_interactive) {
-					r_print_printf (p, R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
-				}
-			} else if (IS_PRINTABLE (b)) {
-				r_print_printf (p, "%c", b);
-			} else {
-				if (only_printable) {
-					break;
-				} else {
-					r_print_printf (p, "\\x%02x", b);
-				}
+			r_strbuf_appendf (sb, "%%%02x", b);
+		} else if (b == '\\') {
+			r_strbuf_append (sb, "\\\\");
+		} else if (b == '\n' && !esc_nl) {
+			r_strbuf_append (sb, "\n");
+			if (use_color && is_interactive) {
+				r_strbuf_append (sb, R_CONS_CLEAR_FROM_CURSOR_TO_EOL);
 			}
+		} else if (IS_PRINTABLE (b)) {
+			r_strbuf_appendf (sb, "%c", b);
+		} else if (only_printable) {
+			break;
+		} else {
+			r_strbuf_appendf (sb, "\\x%02x", b);
 		}
-		r_print_cursor (p, i, 1, 0);
+		r_print_cursor_strbuf (p, sb, i, 1, 0);
 		if (wrap && col + 1 >= p->width) {
-			r_print_printf (p, "\n");
+			r_strbuf_append (sb, "\n");
 			col = 0;
 		}
 		if (wide) {
 			i++;
 		}
 	}
-	r_print_printf (p, "\n");
+	r_strbuf_append (sb, "\n");
 	return i;
+}
+
+R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *buf, int len, int options) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	const int ret = r_print_string_strbuf (p, &sb, seek, buf, len, options);
+	if (!r_strbuf_is_empty (&sb)) {
+		r_print_printf (p, "%s", r_strbuf_get (&sb));
+	}
+	r_strbuf_fini (&sb);
+	return ret;
 }
 
 static bool checkSparse(const ut8 *p, int len, int ch) {
@@ -776,7 +922,7 @@ R_API void r_print_set_screenbounds(RPrint *p, ut64 addr) {
 	}
 }
 
-R_API bool r_print_section_strbuf(RPrint *p, ut64 at, RStrBuf *sb) {
+R_API bool r_print_section_strbuf(RPrint *p, RStrBuf *sb, ut64 at) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 	if (!p || !(p->flags & R_PRINT_FLAGS_SECTION)) {
 		return true;
@@ -789,7 +935,7 @@ R_API void r_print_section(RPrint *p, ut64 at) {
 	R_RETURN_IF_FAIL (p);
 	RStrBuf sb;
 	r_strbuf_init (&sb);
-	if (r_print_section_strbuf (p, at, &sb) && !r_strbuf_is_empty (&sb)) {
+	if (r_print_section_strbuf (p, &sb, at) && !r_strbuf_is_empty (&sb)) {
 		r_print_printf (p, "%s", r_strbuf_get (&sb));
 	}
 	r_strbuf_fini (&sb);
