@@ -44,6 +44,7 @@ ec graph.box rgb:f00
 ec graph.box2 rgb:f00
 ec graph.box3 rgb:000
 ec graph.box4 rgb:000
+ec diff.match rgb:000
 ec gui.cflow rgb:f00
 ec gui.dataoffset rgb:f00
 ec crypto rgb:f00

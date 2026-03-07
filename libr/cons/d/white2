@@ -2,6 +2,7 @@ ecd
 ec ai.exec rgb:6d6
 ec ai.read rgb:66d
 ec ai.write rgb:d66
+ec ai.ascii rgb:305F65 0 italic
 ec args rgb:2bc
 ec b0x00 rgb:878585             # 00 bytes
 ec b0x7f rgb:fff
@@ -22,6 +23,7 @@ ec graph.box rgb:007D96         # unselected boxes in visual graph mode
 ec graph.box2 rgb:D100A7        # currently selected box in visual graph mode
 ec graph.box3 rgb:66d9ef
 ec graph.box4 rgb:66d9ef
+ec diff.match rgb:66d9ef
 ec graph.current rgb:fff
 ec graph.false rgb:990000       # false line on visual graph mode
 ec graph.true rgb:376B4C        # true line on visual graph mode

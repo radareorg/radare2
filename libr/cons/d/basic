@@ -44,11 +44,17 @@ ec graph.box gray
 ec graph.box2 blue
 ec graph.box3 gray
 ec graph.box4 gray
+ec diff.match gray
 
 ec var white
 ec var.type blue
 ec var.addr cyan
 ec var.name white
+
+ec ai.read cyan
+ec ai.write cyan
+ec ai.exec green
+ec ai.ascii blue
 
 ec widget.bg white gray
 ec widget.sel black cyan

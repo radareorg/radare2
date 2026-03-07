@@ -42,6 +42,7 @@ ec graph.box blue
 ec graph.box2 yellow
 ec graph.box3 blue
 ec graph.box4 blue
+ec diff.match blue
 ec graph.true green
 ec graph.false red
 ec graph.trufae blue

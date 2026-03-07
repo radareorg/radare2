@@ -63,6 +63,7 @@ ec graph.box rgb:950
 ec graph.box2 rgb:7d1
 ec graph.box3 rgb:950
 ec graph.box4 rgb:950
+ec diff.match rgb:950
 
 ec var rgb:370
 ec var.type rgb:a41

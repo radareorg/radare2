@@ -66,6 +66,7 @@ ec graph.box rgb:0000ff
 ec graph.box2 rgb:00ff00
 ec graph.box3 rgb:ff00ff
 ec graph.box4 rgb:808080
+ec diff.match rgb:808080
 ec graph.true rgb:00ff00
 ec graph.false rgb:ff0000
 ec graph.trufae rgb:0000ff    # single jump

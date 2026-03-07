@@ -56,11 +56,15 @@ ec graph.true rgb:9ff
 ec graph.trufae rgb:4aa
 ec graph.box white
 ec graph.box2 rgb:07f
+ec graph.box4 white
+ec diff.match white
 
 ec var rgb:555
 ec var.name rgb:09f
 ec var.type rgb:99a
 ec var.addr rgb:666
+
+ec widget.bg white rgb:07f
 
 # ec graph.box4=white
 # ""e graph.gv.node=fillcolor="#303030" color=lightgray bgcolor=red fontcolor=white penwidth=2 style=filled fontname="Courier Bold" fontsize=14 shape=box

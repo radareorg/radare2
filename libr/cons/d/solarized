@@ -41,6 +41,7 @@ ec graph.box rgb:033
 ec graph.box2 rgb:de8
 ec graph.box3 rgb:033
 ec graph.box4 rgb:033
+ec diff.match rgb:033
 ec graph.true rgb:890
 ec graph.false rgb:c41
 ec graph.trufae rgb:899

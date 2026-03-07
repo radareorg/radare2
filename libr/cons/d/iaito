@@ -53,6 +53,7 @@ ec graph.box rgb:005f87
 ec graph.box2 rgb:5f8700
 ec graph.box3 rgb:e03030
 ec graph.box4 rgb:005f87
+ec diff.match rgb:005f87
 ec graph.true rgb:5f8700
 ec graph.false rgb:e03030
 ec graph.trufae rgb:005f87

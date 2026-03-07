@@ -4,6 +4,7 @@ ecd
 ec ai.exec rgb:689d6a
 ec ai.read rgb:458588
 ec ai.write rgb:cc241d
+ec ai.ascii rgb:fabd2f
 ec args rgb:b8bb26
 ec b0x00 rgb:665c54
 ec b0x7f rgb:504945
@@ -21,6 +22,7 @@ ec graph.box rgb:3c3836
 ec graph.box2 rgb:fe8019
 ec graph.box3 rgb:83a598
 ec graph.box4 rgb:83a598
+ec diff.match rgb:83a598
 ec graph.current rgb:ebdbb2
 ec graph.false rgb:fb4934
 ec graph.true rgb:b8bb26

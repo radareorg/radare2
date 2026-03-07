@@ -35,6 +35,7 @@ ec graph.box white
 ec graph.box2 green
 ec graph.box3 rgb:000
 ec graph.box4 rgb:000
+ec diff.match rgb:000
 ec graph.true green . bold
 ec graph.false red
 ec push white
