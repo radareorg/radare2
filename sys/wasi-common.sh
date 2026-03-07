@@ -1,50 +1,62 @@
 #!/bin/sh
 # Common functions for WASI build scripts
 
+wasi_refresh_paths() {
+	if [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${WASI_ARCH}-${WASI_OS}" ]; then
+		export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${WASI_ARCH}-${WASI_OS}"
+	elif [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}" ]; then
+		export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}"
+	fi
+	export WASI_SYSROOT="${WASI_SYSROOT:-${WASI_ROOT}/wasi-sysroot-${WASI_VERSION}}"
+}
+
+wasi_download() {
+	URL="$1"
+	OUTPUT="$2"
+
+	if [ -s "$OUTPUT" ]; then
+		echo "Using cached `basename "$OUTPUT"`"
+		return 0
+	fi
+	mkdir -p "`dirname "$OUTPUT"`"
+	echo "Downloading `basename "$OUTPUT"`..."
+	if command -v curl >/dev/null 2>&1; then
+		curl -fsSL --retry 3 --retry-delay 2 -o "$OUTPUT" "$URL" || return 1
+	elif command -v wget >/dev/null 2>&1; then
+		wget -nv -O "$OUTPUT" "$URL" || return 1
+	else
+		echo "ERROR: neither curl nor wget is available"
+		return 1
+	fi
+	return 0
+}
+
 # Setup WASI SDK by downloading if necessary
 wasi_setup_sdk() {
-	ARCH=`uname -m`
+	wasi_refresh_paths
+
+	if [ -d "$WASI_SDK" ] && [ -d "$WASI_SYSROOT" ]; then
+		echo "Using WASI_SDK=$WASI_SDK"
+		echo "Using WASI_SYSROOT=$WASI_SYSROOT"
+		return 0
+	fi
+
+	echo "Preparing WASI SDK under $WASI_ROOT"
+	mkdir -p "$WASI_ROOT" "$WASI_DOWNLOAD_DIR"
 
 	if [ ! -d "$WASI_SDK" ]; then
-		echo "WASI SDK not found at $WASI_SDK, downloading..."
+		wasi_download "$WASI_SDK_URL" "$WASI_SDK_ARCHIVE" || exit 1
+		echo "Extracting `basename "$WASI_SDK_ARCHIVE"`..."
+		tar xzf "$WASI_SDK_ARCHIVE" -C "$WASI_ROOT" || exit 1
+		wasi_refresh_paths
+	fi
 
-		# Determine OS for download URL
-		OS=`uname`
-		case "$OS" in
-		linux|Linux) OS=linux ;;
-		darwin|Darwin) OS=macos ;;
-		windows|Windows) OS=mingw ;;
-		esac
-		OS="$ARCH-$OS"
-
-		mkdir -p ~/Downloads/wasi
-		rm -f ~/Downloads/wasi/wasi-sdk.tar.gz
-		echo "Downloading wasi-sdk-${WASI_VERSION}-$OS.tar.gz..."
-		wget -c -O ~/Downloads/wasi/wasi-sdk.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sdk-${WASI_VERSION}-$OS.tar.gz || exit 1
-
-		rm -f ~/Downloads/wasi/wasi-sysroot.tar.gz
-		echo "Downloading wasi-sysroot-${WASI_VERSION}.tar.gz..."
-		wget -c -O ~/Downloads/wasi/wasi-sysroot.tar.gz https://github.com/WebAssembly/wasi-sdk/releases/download/wasi-sdk-${WASI_MAJOR}/wasi-sysroot-${WASI_VERSION}.tar.gz || exit 1
-
-		echo "Extracting WASI SDK..."
-		(
-			cd ~/Downloads/wasi
-			tar xzvf wasi-sdk.tar.gz
-			tar xzvf wasi-sysroot.tar.gz
-			# Version 29+ already extracts with the versioned directory name
-		if [ -d wasi-sysroot ] && [ ! -d wasi-sysroot-${WASI_VERSION} ]; then
-			mv wasi-sysroot wasi-sysroot-${WASI_VERSION}
-		fi
-		)
-
-		echo "WASI SDK installed successfully"
-
-		# Re-evaluate WASI_SDK path after extraction
-		# OS variable already contains "${ARCH}-${OS_NAME}" at this point
-		if [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}" ]; then
-			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}-${OS}"
-		elif [ -d "${WASI_ROOT}/wasi-sdk-${WASI_VERSION}" ]; then
-			export WASI_SDK="${WASI_ROOT}/wasi-sdk-${WASI_VERSION}"
+	if [ ! -d "$WASI_SYSROOT" ]; then
+		wasi_download "$WASI_SYSROOT_URL" "$WASI_SYSROOT_ARCHIVE" || exit 1
+		echo "Extracting `basename "$WASI_SYSROOT_ARCHIVE"`..."
+		tar xzf "$WASI_SYSROOT_ARCHIVE" -C "$WASI_ROOT" || exit 1
+		if [ -d "${WASI_ROOT}/wasi-sysroot" ] && [ ! -d "$WASI_SYSROOT" ]; then
+			mv "${WASI_ROOT}/wasi-sysroot" "$WASI_SYSROOT" || exit 1
 		fi
 	fi
 
@@ -55,6 +67,7 @@ wasi_setup_sdk() {
 	fi
 
 	echo "Using WASI_SDK=$WASI_SDK"
+	echo "Using WASI_SYSROOT=$WASI_SYSROOT"
 }
 
 # Setup plugins configuration
@@ -71,8 +84,10 @@ wasi_build_tools() {
 	mkdir -p "$OUTPUT_DIR"
 
 	for a in ${TOOLS} ; do
-		echo "Building $a..."
-		make -C binr/$a || ERR=1
+		if [ ! -f "binr/$a/$a.wasm" ]; then
+			echo "Building $a..."
+			make -C "binr/$a" -s || ERR=1
+		fi
 		cp -f binr/$a/$a.wasm "$OUTPUT_DIR" || ERR=1
 	done
 

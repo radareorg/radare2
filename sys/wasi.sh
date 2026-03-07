@@ -1,5 +1,7 @@
 #!/bin/sh
 
+OSNAME=`uname`
+. `dirname $0`/make-jobs.inc.sh
 . `dirname $0`/wasi-env.sh
 . `dirname $0`/wasi-common.sh
 
@@ -16,7 +18,7 @@ wasi_setup_plugins
 # ./configure --with-static-themes --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl
 ./configure --with-static-themes --without-gperf --with-compiler=wasi --disable-debugger --without-fork --with-ostype=wasi --with-checks-level=0 --disable-threads --without-dylink --with-libr --without-gpl --without-zip || exit 1
 
-make -j || exit 1
+make -s -j${MAKE_JOBS} || exit 1
 
 # Build tools and package
 R2V=`./configure -qV`
@@ -31,5 +33,5 @@ ERR=$?
 # 	wasm-opt -o $a.o3.wasm -O3 $a
 # done
 
-zip -r "$D".zip $D
+zip -qr "$D".zip "$D"
 exit $ERR

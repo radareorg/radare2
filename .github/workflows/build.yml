@@ -14,9 +14,17 @@ jobs:
   # WASI
   linux-wasi:
     runs-on: ubuntu-22.04
+    env:
+      WASI_ROOT: ${{ github.workspace }}/.wasi-cache
+      WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Restore WASI SDK cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.WASI_ROOT }}
+        key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi.sh
     - uses: actions/upload-artifact@v7
@@ -27,10 +35,21 @@ jobs:
   # WASI API
   linux-wasi-api:
     if: github.ref == 'refs/heads/master'
+    # Serialize behind linux-wasi so the first master run after a cache-key
+    # change can reuse the freshly saved WASI SDK cache in this workflow.
+    needs: linux-wasi
     runs-on: ubuntu-22.04
+    env:
+      WASI_ROOT: ${{ github.workspace }}/.wasi-cache
+      WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Restore WASI SDK cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.WASI_ROOT }}
+        key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi-api.sh
     - uses: actions/upload-artifact@v7
@@ -42,10 +61,21 @@ jobs:
   # WASI Browser
   linux-wasi-browser:
     if: github.ref == 'refs/heads/master'
+    # Serialize behind linux-wasi so the first master run after a cache-key
+    # change can reuse the freshly saved WASI SDK cache in this workflow.
+    needs: linux-wasi
     runs-on: ubuntu-22.04
+    env:
+      WASI_ROOT: ${{ github.workspace }}/.wasi-cache
+      WASI_DOWNLOAD_DIR: ${{ github.workspace }}/.wasi-cache/distfiles
     steps:
     - name: Checkout
       uses: actions/checkout@v6
+    - name: Restore WASI SDK cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.WASI_ROOT }}
+        key: ${{ runner.os }}-${{ runner.arch }}-wasi-sdk-${{ hashFiles('sys/wasi-env.sh') }}
     - name: Installing with symlinks
       run: sys/wasi-browser.sh
     - uses: actions/upload-artifact@v7
