@@ -1213,11 +1213,18 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 	core->print->zoom->mode = (input && *input)? input[1]: 'e';
 	r_print_zoom_buf (core->print, printzoomcallback, core, from, to, len, len);
 	ut8 *block = core->print->zoom->buf;
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		RVecRIORegion_free (regions);
+		return;
+	}
+	char addrbuf[64];
 
 	for (i = 0; i < len; i += cols) {
 		ut64 ea = core->addr + i;
 		if (show_offset) {
-			r_print_addr (core->print, ea);
+			r_print_addr_tostring (core->print, ea, addrbuf, sizeof (addrbuf));
+			r_strbuf_append (sb, addrbuf);
 		}
 		for (j = i; j < i + cols; j++) {
 			if (j >= len) {
@@ -1262,17 +1269,19 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 				} else {
 					ch2 = ch;
 				}
-				r_cons_printf (core->cons, "%s%c%c", color, ch, ch2);
+				r_strbuf_appendf (sb, "%s%c%c", color, ch, ch2);
 			} else {
-				r_cons_printf (core->cons, "%s%c", color, ch);
+				r_strbuf_appendf (sb, "%s%c", color, ch);
 			}
 			free (color);
 		}
 		if (show_color) {
-			r_cons_printf (core->cons, Color_RESET);
+			r_strbuf_append (sb, Color_RESET);
 		}
-		r_cons_newline (core->cons);
+		r_strbuf_append (sb, "\n");
 	}
+	r_cons_print (core->cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 	RVecRIORegion_free (regions);
 }
 
@@ -6536,8 +6545,6 @@ static void cmd_print_pcA(RCore *core, ut64 addr, const ut8 *data, int len) {
 	}
 }
 
-static bool print_offset_strbuf(RPrint *p, ut64 off, int invert, int delta, const char *label, RStrBuf *sb);
-
 static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *input) {
 	const int cols = r_config_get_i (core->config, "hex.cols");
 	ut32 n;
@@ -6555,7 +6562,7 @@ static void cmd_print_pxb(RCore *core, const ut8 *data, int len, const char *inp
 				r_io_p2v (core->io, ea, &ea);
 			}
 			r_print_section_strbuf (core->print, ea, sb);
-			print_offset_strbuf (core->print, ea, 0, 0, NULL, sb);
+			r_print_offset_strbuf (core->print, ea, 0, 0, NULL, sb);
 		}
 		r_str_bits (buf, data + i, 8, NULL);
 
@@ -6737,6 +6744,60 @@ static void cmd_psa(RCore *core, const char *_) {
 	}
 	RCmdReturnCode rc = found? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
 	r_core_return_value (core, rc);
+}
+
+static bool append_cursor_char(RPrint *p, int idx, char ch, RStrBuf *sb) {
+	return r_print_cursor_strbuf (p, idx, 1, 1, sb)
+		&& r_strbuf_appendf (sb, "%c", ch)
+		&& r_print_cursor_strbuf (p, idx, 1, 0, sb);
+}
+
+static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return;
+	}
+	if (!quiet) {
+		r_print_offset_strbuf (core->print, core->addr, 0, 0, NULL, sb);
+	}
+	bool hasnl = false;
+	int i;
+	for (i = 0; i < len; i++) {
+		const char ch = (char)block[i];
+		if (ch == '\n') {
+			r_strbuf_append (sb, "\n");
+			if (!quiet) {
+				r_print_offset_strbuf (core->print, core->addr + i, 0, 0, NULL, sb);
+			}
+			hasnl = true;
+			continue;
+		}
+		if (!ch) {
+			if (core->print->cur_enabled && core->print->cur == i) {
+				append_cursor_char (core->print, i, '.', sb);
+			}
+			if (!hasnl) {
+				r_strbuf_append (sb, "\n");
+				if (!quiet) {
+					r_print_offset_strbuf (core->print, core->addr + i, 0, 0, NULL, sb);
+				}
+			}
+			hasnl = true;
+			continue;
+		}
+		hasnl = false;
+		if (IS_PRINTABLE (ch)) {
+			if (core->print->cur_enabled && core->print->cur == i) {
+				append_cursor_char (core->print, i, ch, sb);
+			} else {
+				r_strbuf_appendf (sb, "%c", ch);
+			}
+		} else if (core->print->cur_enabled && core->print->cur == i) {
+			append_cursor_char (core->print, i, '.', sb);
+		}
+	}
+	r_cons_print (core->cons, r_strbuf_get (sb));
+	r_strbuf_free (sb);
 }
 
 static void print_pascal_string(RCore *core, const ut8 *data, const int data_len, const char *input, int len) {
@@ -8285,61 +8346,7 @@ static int cmd_print(void *data, const char *input) {
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_ps, "psb");
 			} else if (l > 0) {
-				int quiet = input[2] == 'q'; // "psbq"
-				RStrBuf *sb = r_strbuf_new ("");
-				int i, hasnl = 0;
-				if (sb) {
-					if (!quiet) {
-						r_print_offset (core->print, core->addr, 0, 0, NULL);
-					}
-					// TODO: filter more chars?
-					for (i = 0; i < core->blocksize; i++) {
-						char ch = (char)block[i];
-						if (ch == 0xa) {
-							char *s = r_strbuf_drain (sb);
-							r_cons_print (core->cons, s); // TODO: missing newline?
-							free (s);
-							sb = r_strbuf_new ("");
-							r_cons_newline (core->cons);
-							if (!quiet) {
-								r_print_offset (core->print, core->addr + i, 0, 0, NULL);
-							}
-							hasnl = 1;
-							continue;
-						}
-						if (!ch) {
-							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_append (sb, Color_INVERT "." Color_RESET);
-							}
-							if (!hasnl) {
-								char *s = r_strbuf_drain (sb);
-								r_cons_println (core->cons, s); // TODO: missing newline?
-								free (s);
-								sb = r_strbuf_new ("");
-								if (!quiet) {
-									r_print_offset (core->print, core->addr + i, 0, 0, NULL);
-								}
-							}
-							hasnl = true;
-							continue;
-						}
-						hasnl = 0;
-						if (IS_PRINTABLE (ch)) {
-							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_appendf (sb, Color_INVERT "%c" Color_RESET, ch);
-							} else {
-								r_strbuf_appendf (sb, "%c", ch);
-							}
-						} else {
-							if (core->print->cur_enabled && core->print->cur == i) {
-								r_strbuf_append (sb, Color_INVERT "." Color_RESET);
-							}
-						}
-					}
-					char *s = r_strbuf_drain (sb);
-					r_cons_print (core->cons, s); // TODO: missing newline?
-					free (s);
-				}
+				cmd_print_psb (core, block, core->blocksize, input[2] == 'q');
 			}
 			break;
 		case 'z': // "psz"
@@ -9682,136 +9689,6 @@ static int cmd_hexdump(void *data, const char *input) {
 	int rc = cmd_print (data, pcmd);
 	free (pcmd);
 	return rc;
-}
-
-static int lenof(ut64 off, int two) {
-	char buf[64];
-	buf[0] = 0;
-	if (two) {
-		snprintf (buf, sizeof (buf), "+0x%" PFMT64x, off);
-	} else {
-		snprintf (buf, sizeof (buf), "0x%08" PFMT64x, off);
-	}
-	return strlen (buf);
-}
-
-static bool print_offset_strbuf(RPrint *p, ut64 off, int invert, int delta, const char *label, RStrBuf *sb) {
-	R_RETURN_VAL_IF_FAIL (p && p->config && sb, false);
-	const int offdec = (p->flags & R_PRINT_FLAGS_ADDRDEC) != 0;
-	const int segbas = p->config->segbas;
-	const int seggrn = p->config->seggrn;
-	const int offseg = (p->flags & R_PRINT_FLAGS_SEGOFF) != 0;
-#if R2_590
-	const bool base36 = p->config->base36;
-#else
-	RCore *core = p->user;
-	const bool base36 = r_config_get_b (core->config, "asm.addr.base36");
-#endif
-	char space[32] = { 0 };
-	const char *reset = p->resetbg? Color_RESET: Color_RESET_NOBG;
-	const bool show_color = p->flags & R_PRINT_FLAGS_COLOR;
-	bool ok = true;
-
-	if (show_color) {
-		char rgbstr[32];
-		RCons *cons = p->consb.cons;
-		const char *k = (cons && cons->context)? cons->context->pal.addr: "";
-		const char *inv = invert? R_CONS_INVERT (true, true): "";
-		if ((p->flags & R_PRINT_FLAGS_RAINBOW) && cons) {
-			k = r_cons_rgb_str_off (cons, rgbstr, sizeof (rgbstr), off);
-		}
-		if (!k) {
-			k = "";
-		}
-		if (base36) {
-			char b36str[16];
-			b36_fromnum (b36str, off);
-			ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, b36str, reset);
-		} else if (offseg) {
-			ut32 s, a;
-			r_num_segaddr (off, segbas, seggrn, &s, &a);
-			if (offdec) {
-				snprintf (space, sizeof (space), "%d:%d", s, a);
-				ok &= r_strbuf_appendf (sb, "%s%s%9s%s", k, inv, space, reset);
-			} else {
-				ok &= r_strbuf_appendf (sb, "%s%s%04x:%04x%s", k, inv, s, a, reset);
-			}
-		} else {
-			const int sz = lenof (off, 0);
-			const int sz2 = lenof (delta, 1);
-			if (delta > 0 || label) {
-				if (label) {
-					const int label_padding = 10;
-					ok &= r_strbuf_appendf (sb, "%s%s%s%s", k, inv, label, reset);
-					if (delta > 0) {
-						ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-						ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
-					} else {
-						ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
-					}
-				} else {
-					ok &= r_strbuf_pad (sb, ' ', sz - sz2);
-					ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-					ok &= r_strbuf_append (sb, reset);
-				}
-			} else {
-				if (offdec) {
-					snprintf (space, sizeof (space), "%" PFMT64u, off);
-					ok &= r_strbuf_appendf (sb, "%s%s%10s%s", k, inv, space, reset);
-				} else if (p->wide_offsets) {
-					ok &= r_strbuf_appendf (sb, "%s%s0x%016" PFMT64x "%s", k, inv, off, reset);
-				} else {
-					ok &= r_strbuf_appendf (sb, "%s%s0x%08" PFMT64x "%s", k, inv, off, reset);
-				}
-			}
-		}
-		return ok && r_strbuf_append (sb, " ");
-	}
-	if (offseg) {
-		ut32 s, a;
-		r_num_segaddr (off, segbas, seggrn, &s, &a);
-		if (offdec) {
-			snprintf (space, sizeof (space), "%d:%d", s & 0xffff, a & 0xffff);
-			return r_strbuf_appendf (sb, "%9s%s", space, reset);
-		}
-		return r_strbuf_appendf (sb, "%04x:%04x", s & 0xffff, a & 0xffff);
-	}
-	const int sz = lenof (off, 0);
-	const int sz2 = lenof (delta, 1);
-	if (delta > 0 || label) {
-		if (label) {
-			const int label_padding = 10;
-			ok &= r_strbuf_append (sb, label);
-			if (delta > 0) {
-				ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-				ok &= r_strbuf_pad (sb, ' ', sz - sz2 + label_padding);
-			} else {
-				ok &= r_strbuf_pad (sb, ' ', sz + label_padding);
-			}
-		} else {
-			ok &= r_strbuf_pad (sb, ' ', sz - 5 - sz2 - 3);
-			ok &= r_strbuf_appendf (sb, offdec? "+%d": "+0x%x", delta);
-			ok &= r_strbuf_append (sb, reset);
-		}
-		return ok;
-	}
-	if (offdec) {
-		snprintf (space, sizeof (space), "%" PFMT64u, off);
-		return r_strbuf_appendf (sb, "%10s", space);
-	}
-	return r_strbuf_appendf (sb, "0x%08" PFMT64x " ", off);
-}
-
-// R2_600 - TODO: move into util/print.c
-R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label) {
-	R_RETURN_IF_FAIL (p);
-	RCore *core = p->user;
-	RStrBuf sb;
-	r_strbuf_init (&sb);
-	if (print_offset_strbuf (p, off, invert, delta, label, &sb)) {
-		r_cons_print (core->cons, r_strbuf_get (&sb));
-	}
-	r_strbuf_fini (&sb);
 }
 
 #endif

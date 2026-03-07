@@ -186,6 +186,7 @@ R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
 R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size);
 R_API void r_print_addr(RPrint *p, ut64 addr);
+R_API bool r_print_offset_strbuf(RPrint *p, ut64 off, int invert, int delta, const char *label, RStrBuf *sb);
 R_API bool r_print_section_strbuf(RPrint *p, ut64 at, RStrBuf *sb);
 R_API void r_print_section(RPrint *p, ut64 at);
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height);
@@ -251,6 +252,7 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 #define R_PRINT_STRING_WIDE32 16
 #define R_PRINT_STRING_ESC_NL 32
 #define R_PRINT_STRING_ONLY_PRINTABLE 64
+R_API int r_print_string_strbuf(RPrint *p, ut64 seek, const ut8 *str, int len, int options, RStrBuf *sb);
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 
 // time
