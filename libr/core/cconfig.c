@@ -306,9 +306,6 @@ static bool cb_analvars(void *user, void *data) {
 static bool cb_analvars_maxbbsize(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->i_value < 0) {
-		node->i_value = 0;
-	}
 	core->anal->opt.vars_maxbbsize = node->i_value;
 	return true;
 }
@@ -316,9 +313,6 @@ static bool cb_analvars_maxbbsize(void *user, void *data) {
 static bool cb_analvars_maxframe(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->i_value < 0) {
-		node->i_value = 0;
-	}
 	core->anal->opt.vars_maxframe = node->i_value;
 	return true;
 }
