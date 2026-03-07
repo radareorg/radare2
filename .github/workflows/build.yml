@@ -35,6 +35,9 @@ jobs:
   # WASI API
   linux-wasi-api:
     if: github.ref == 'refs/heads/master'
+    # Serialize behind linux-wasi so the first master run after a cache-key
+    # change can reuse the freshly saved WASI SDK cache in this workflow.
+    needs: linux-wasi
     runs-on: ubuntu-22.04
     env:
       WASI_ROOT: ${{ github.workspace }}/.wasi-cache
@@ -58,6 +61,9 @@ jobs:
   # WASI Browser
   linux-wasi-browser:
     if: github.ref == 'refs/heads/master'
+    # Serialize behind linux-wasi so the first master run after a cache-key
+    # change can reuse the freshly saved WASI SDK cache in this workflow.
+    needs: linux-wasi
     runs-on: ubuntu-22.04
     env:
       WASI_ROOT: ${{ github.workspace }}/.wasi-cache
