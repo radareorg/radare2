@@ -107,6 +107,149 @@ Run specific test types using @ notation:
   $ r2r @fuzz      # Run fuzz tests
   $ r2r @arch      # Run architecture-specific tests
   $ r2r @cmd       # Run command tests
+.Sh CREATING TESTS
+.Pp
+r2r loads tests from files under
+.Pa test/db
+and infers the test type from the path:
+.Bl -tag -width "test/db/asm/"
+.It Pa test/db/asm/*
+Parsed as ASM tests.
+.It Pa test/db/json/*
+Parsed as JSON tests.
+.It Pa test/db/leak/*
+Parsed as leak tests (command syntax, executed with Valgrind checks).
+.It Other files
+Parsed as command tests.
+.El
+.Pp
+Command-style test files are
+.Dq KEY=VALUE
+records are terminated by
+.Dq RUN
+Every record is validated at load time.
+.Pp
+.Bd -literal
+NAME=example
+FILE=bins/elf/crackme
+ARGS=-a x86 -b 64
+CMDS=<<EOF
+pd 1
+EOF
+EXPECT=<<EOF
+...output...
+EOF
+RUN
+.Ed
+.Pp
+.Dq NORUN
+marks a pending record as incomplete, so it is ignored by the parser. Records are loaded only when terminated by
+.Dq RUN
+and otherwise treated as disabled.
+.Sh TEST RULES
+.Pp
+Accepted command/leak test keys are handled by
+.Li R2R_CMD_TEST_FOREACH_RECORD
+in
+.Pa binr/r2r/r2r.h
+with the following accepted keys:
+.Bl -tag -width "REGEXP_ERR"
+.It Cm NAME
+Optional identifier used for reporting.
+.It Cm FILE
+Optional file input for the r2 command. You can list multiple files on separate lines.
+If omitted, stdin
+.Dq -
+is used.
+.It Cm ARGS
+Extra arguments passed directly to r2 before
+.Dq -Qc
+and the command block.
+.It Cm REQUIRE
+Skip condition string. Supported tokens are
+.Dq gas , unix , windows , linux , arm , x86 .
+Known host tokens are checked at run time; if unsupported, the test is skipped.
+.It Cm REPEAT
+Numeric repeat count.
+The test command is executed that many times; only the last output is checked.
+.It Cm TIMEOUT
+Numeric timeout override for this test in seconds.
+.It Cm SOURCE
+Parsed and accepted for compatibility; no additional runtime behavior is wired in.
+.It Cm CMDS
+Required command block, passed as
+.Dq -Qc <CMDS>
+Multiline command blocks must use
+.Dq <<EOF
+with the closing token at the beginning of the line.
+Single-line quoted values are not accepted.
+.It Cm EXPECT
+Exact expected stdout match.
+.It Cm EXPECT_ERR
+Exact expected stderr match.
+.It Cm REGEXP_OUT
+Extended-regex match against stdout.
+.It Cm REGEXP_ERR
+Extended-regex match against stderr.
+.It Cm ENV
+Semicolon-separated
+.Dq KEY=VALUE
+environment overrides.
+Tokens missing
+.Dq =
+are ignored.
+.It Cm BROKEN
+Boolean (`0`/`1`) marking the test as expected-failing.
+Failed broken tests are counted as broken instead of failed.
+.It Cm SKIPONASAN
+Boolean (`0`/`1`) to skip this test when built with ASAN.
+.El
+Boolean fields accept only
+.Dq 1
+or
+.Dq 0
+as values.
+.Pp
+A command/leak test is only accepted when:
+.Bl -enum
+.It
+.Cm CMDS
+is present.
+.It
+Either exact-output or regex-output assertions are present:
+.Cm EXPECT
+or
+.Cm EXPECT_ERR
+or
+.Cm REGEXP_OUT
+or
+.Cm REGEXP_ERR
+.El
+Unknown keys cause parser failure.
+.Pp
+JSON tests load one command per non-empty, non-comment line from files under
+.Pa test/db/json/* .
+Empty lines and
+.Dq #
+lines are ignored.
+If a line contains the word
+.Dq BROKEN,
+the test is marked broken.
+.Pp
+ASM tests are parsed line-by-line as
+.Bd -literal
+<modes> "<disassembly text>" <hexbytes>[ <offset>]
+.Ed
+.Dq a
+enables assemble mode,
+.Dq d
+disassemble mode,
+.Dq E
+enables big-endian and
+.Dq B
+marks the case broken.
+The filename selects architecture and optional CPU/bits via
+.Dq arch[_cpu]_bits .
 .Sh SEE ALSO
 .Pp
 .Xr radare2(1)
