@@ -600,7 +600,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		PRINTF ("unsigned char *byte = &stack;\n");
 		PRINTF ("int %s, %s;\n", a0, a1);
 		PRINTF ("// This function contains %d basic blocks and its %d long.",
-			n_bb, (int)r_anal_function_realsize (state.fcn));
+			n_bb,
+			(int)r_anal_function_realsize (state.fcn));
 		NEWLINE (state.fcn->addr, indent);
 		const char *S0 = "esp";
 		PRINTF ("static inline void push(int reg) {%s -= %d; stack[%s] = reg; }\n", S0, (int)sizeof (int), S0);
@@ -748,9 +749,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		bool closed = false;
+		bool resume_from_indent = false;
 		ut64 gotoaddr = UT64_MAX;
+		const bool has_jump = bb->jump != UT64_MAX;
 		if (bb->fail == UT64_MAX) {
-			if (bb->jump != UT64_MAX) {
+			if (has_jump) {
 #if 1
 				gotoaddr = bb->jump;
 				// PRINTGOTO (UT64_MAX, bb->jump);
@@ -879,23 +882,31 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			indent = nindent - 1;
 		} else {
 			sdb_set (state.db, K_INDENT (bb->addr), "passed", 0);
-			if (bb->jump != UT64_MAX) {
+			if (has_jump) {
 				int swap = 1;
 				// TODO: determine which branch take first
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
-				// if its from another function chop it!
-				RAnalFunction *curfcn = r_anal_get_fcn_in (core->anal, jump, R_ANAL_FCN_TYPE_NULL);
-				if (curfcn != state.fcn) {
-					// chop that branch
+				// If a conditional branch leaves the current function, do not
+				// descend into the foreign CFG. Prefer the in-function branch.
+				const bool jump_in_fcn = jump != UT64_MAX && r_anal_function_contains (state.fcn, jump);
+				if (!jump_in_fcn) {
 					NEWLINE (jump, indent);
 					PRINTF ("// chop");
-					// break;
+					const bool fail_in_fcn = fail != UT64_MAX && r_anal_function_contains (state.fcn, fail);
+					if (fail_in_fcn) {
+						jump = fail;
+						fail = UT64_MAX;
+					} else {
+						break;
+					}
 				}
 				if (sdb_get (state.db, K_INDENT (jump), 0)) {
 					// already tracekd
-					if (!sdb_get (state.db, K_INDENT (fail), 0)) {
+					if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
+					} else if (fail == UT64_MAX) {
+						resume_from_indent = true;
 					} else {
 						R_LOG_ERROR ("pdc: unknown branch from 0x%08" PFMT64x, jump);
 					}
@@ -933,7 +944,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						indent++;
 					}
 				}
-			} else if (!closed) {
+			}
+			if ((!has_jump && !closed) || resume_from_indent) {
 				ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 				if (addr == UT64_MAX) {
 					NEWLINE (bb->addr, indent);
@@ -949,7 +961,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						PRINTF ("}");
 					}
 				}
-				PRINTF ("goto loc_0x%08" PFMT64x ";", bb->fail);
+				PRINTF ("goto loc_0x%08" PFMT64x ";", addr);
 #if 0
 				if (nindent != indent) {
 					NEWLINE (bb->addr, indent);

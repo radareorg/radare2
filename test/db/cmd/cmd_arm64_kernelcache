@@ -1,0 +1,53 @@
+NAME=arm64 pdc stays inside current function after chop
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wa cbz x0, 0x20
+wa mov x0, 1 @ 4
+wa ret @ 8
+wa mov x0, 2 @ 0x20
+wa ret @ 0x24
+af+ 0 wrapper
+afb+ 0 0 4 0x20 0x4
+afb+ 0 0x4 8
+af+ 0x20 helper
+afb+ 0x20 0x20 8
+pdc~?chop
+pdc~?x0 = 1
+pdc~?x0 = 2
+pdc~?loc_0x00000020
+EOF
+EXPECT=<<EOF
+1
+1
+0
+0
+EOF
+RUN
+
+NAME=arm64 aac keeps wrapper stable with exact target function
+FILE=malloc://128
+CMDS=<<EOF
+e asm.arch=arm
+e asm.bits=64
+wa bl 0x24
+wa ret @ 4
+wa ret @ 0x24
+af+ 0 wrapper
+afb+ 0 0 0x30
+af+ 0x24 helper loc
+afb+ 0x24 0x24 4
+aac
+afij @ 0~?\"name\":\"wrapper\"
+afij @ 0~?\"size\":48
+afij @ 0x24~?\"name\":\"helper\"
+afij @ 0x24~?\"indegree\":1
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+EOF
+RUN
