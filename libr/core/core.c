@@ -1228,6 +1228,7 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 
 static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
 	RCoreAutocomplete *child = NULL;
+	ensure_autocomplete (core);
 	RCoreAutocomplete *parent = core->autocomplete;
 	const char *p = buf->data;
 	if (!*p) {
