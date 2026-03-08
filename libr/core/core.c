@@ -1227,9 +1227,14 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 }
 
 static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
+	R_RETURN_VAL_IF_FAIL (core && completion && buf && buf->data, false);
+	ensure_autocomplete (core);
 	RCoreAutocomplete *child = NULL;
 	ensure_autocomplete (core);
 	RCoreAutocomplete *parent = core->autocomplete;
+	if (!parent) {
+		return false;
+	}
 	const char *p = buf->data;
 	if (!*p) {
 		return false;
@@ -1627,11 +1632,8 @@ R_API void r_core_autocomplete(RCore *R_NULLABLE core, RLineCompletion *completi
 }
 
 static int autocomplete(RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type, void *user) {
-	RCore *core = (RCore *)user;
-	if (core == NULL) {
-		R_LOG_WARN ("core->cons->line->user is nul, but should be equals to core");
-	}
-	r_core_autocomplete (core, completion, buf, prompt_type);
+	R_RETURN_VAL_IF_FAIL (completion && buf && user, 0);
+	r_core_autocomplete ((RCore*)user, completion, buf, prompt_type);
 	return true;
 }
 

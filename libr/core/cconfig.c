@@ -4227,6 +4227,7 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* prj */
 	SETCB ("prj.name", "", &cb_prjname, "name of current project");
+	SETB ("prj.new", "false", "also save a binary project file in the project directory");
 	SETB ("prj.files", "false", "save the target binary inside the project directory");
 	SETB ("prj.vc", "true", "use your version control system of choice (rvc, git) to manage projects");
 	SETB ("prj.zip", "false", "use ZIP format for project files");

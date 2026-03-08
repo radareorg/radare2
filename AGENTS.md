@@ -21,7 +21,7 @@ Optionally run `sys/lint.sh` script if you are unsure about the linter.
 - Function signatures do not require a space before `(` and must fit in one line
 - Always use braces `{}` for conditionals, even single statements
 - Switch `case` labels column-aligned with the `switch` keyword
-- Declare and assign variables in the same line if possible (No K&R style)
+- Declare and assign variables in the same line if possible (No K&R style); they do not need to be grouped at the beginning of the block
 - No C99 `for (int i = ...)` declarations; declare variables before the loop
 - Use `R_PACKED()` macro for packed structures for portability
 - Use types from `<r_types.h>` (`ut8`, `ut16`, `ut32`, `ut64`) instead of `<stdint.h>`

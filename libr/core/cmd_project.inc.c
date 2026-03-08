@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -115,6 +115,141 @@ static void cmd_Pz(RCore *core, const char *cmd) {
 	default:
 		r_core_cmd_help (core, help_msg_Pz);
 		break;
+	}
+}
+
+static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
+	if (input[1] == '?') {
+		r_core_cmd_help (core, help_msg_Pn);
+		return;
+	}
+	if (R_STR_ISEMPTY (fileproject)) {
+		R_LOG_ERROR ("No project");
+		return;
+	}
+	switch (input[1]) {
+	case '-': // "Pn-"
+		/* remove lines containing specific words */
+	{
+		char *notes_file = r_core_project_notes_file (core, fileproject);
+		if (!notes_file) {
+			break;
+		}
+		FILE *fd = r_sandbox_fopen (notes_file, "w");
+		if (!fd) {
+			R_LOG_ERROR ("Cannot open %s", notes_file);
+		} else {
+			char *data = r_file_slurp (notes_file, NULL);
+			int count = 0;
+			if (data) {
+				char *ptr, *nl;
+				for (ptr = data; ptr; ptr = nl) {
+					nl = strchr (ptr, '\n');
+					if (nl) {
+						*nl++ = 0;
+						if (strstr (ptr, input + 2)) {
+							count++;
+						} else {
+							fprintf (fd, "%s\n", ptr);
+						}
+					}
+				}
+				free (data);
+			}
+			if (count > 0) {
+				R_LOG_ERROR ("Deleted %d lines", count);
+			}
+			fclose (fd);
+		}
+		free (notes_file);
+	}
+	break;
+	case ' ': // "Pn "
+	{
+		char *notes_file = r_core_project_notes_file (core, fileproject);
+		if (!notes_file) {
+			break;
+		}
+		if (input[2] == '-') {
+			// edit with cfg.editor
+			const char *editor = r_config_get (core->config, "cfg.editor");
+			if (*notes_file && editor && *editor) {
+				r_sys_cmdf ("%s %s", editor, notes_file);
+			} else {
+				R_LOG_ERROR ("No cfg.editor configured");
+			}
+		} else {
+			FILE *fd = r_sandbox_fopen (notes_file, "a");
+			if (fd) {
+				fprintf (fd, "%s\n", input + 2);
+				fclose (fd);
+			}
+		}
+		free (notes_file);
+	}
+	break;
+	case '+': // "Pn+"
+	{
+		char *notes_file = r_core_project_notes_file (core, fileproject);
+		if (!notes_file) {
+			break;
+		}
+		char *data = r_file_slurp (notes_file, NULL);
+		data = r_str_append (data, input + 2);
+		data = r_str_append (data, "\n");
+		if (data) {
+			r_file_dump (notes_file, (const ut8*)data, strlen (data), false);
+			free (data);
+		}
+		free (notes_file);
+	}
+	break;
+	case 'j': // "Pnj"
+		if (!input[2]) {
+			size_t len = 0;
+			/* get base64 string */
+			char *notes_file = r_core_project_notes_file (core, fileproject);
+			if (notes_file) {
+				char *data = r_file_slurp (notes_file, &len);
+				char *res = r_base64_encode_dyn ((const ut8*)data, (int)len);
+				if (res) {
+					r_cons_println (core->cons, res);
+					free (res);
+				}
+				free (data);
+				free (notes_file);
+			}
+		} else if (input[2] == ' ') {
+			/* set base64 string */
+			ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL);
+			if (data) {
+				char *notes_file = r_core_project_notes_file (core, fileproject);
+				if (notes_file) {
+					r_file_dump (notes_file, data, strlen ((const char *) data), 0);
+					free (notes_file);
+				}
+				free (data);
+			}
+		} else {
+			r_core_cmd_help_contains (core, help_msg_P, "Pn");
+		}
+		break;
+	case 'x': // "Pnx"
+		r_core_project_execute_cmds (core, fileproject);
+		break;
+	case 0: // "Pn"
+	{
+		char *notes_file = r_core_project_notes_file (core, fileproject);
+		if (notes_file) {
+			char *data = r_file_slurp (notes_file, NULL);
+			if (data) {
+				r_cons_println (core->cons, data);
+				free (data);
+			}
+			free (notes_file);
+		}
+	}
+	break;
 	}
 }
 
@@ -270,127 +405,7 @@ static int cmd_project(void *data, const char *input) {
 		}
 		break;
 	case 'n': // "Pn"
-		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_Pn);
-		} else if (R_STR_ISEMPTY (fileproject)) {
-			R_LOG_ERROR ("No project");
-		} else {
-			switch (input[1]) {
-			case '-': // "Pn-"
-				/* remove lines containing specific words */
-			{
-				FILE *fd = r_sandbox_fopen (str, "w");
-				if (!fd) {
-					R_LOG_ERROR ("Cannot open %s", str);
-				} else {
-					char *str = r_core_project_notes_file (core, fileproject);
-					char *data = r_file_slurp (str, NULL);
-					int count = 0;
-					if (data) {
-						char *ptr, *nl;
-						for (ptr = data; ptr; ptr = nl) {
-							nl = strchr (ptr, '\n');
-							if (nl) {
-								*nl++ = 0;
-								if (strstr (ptr, input + 2)) {
-									count++;
-								} else {
-									fprintf (fd, "%s\n", ptr);
-								}
-							}
-						}
-						free (data);
-					}
-					if (count > 0) {
-						R_LOG_ERROR ("Deleted %d lines", count);
-					}
-					free (str);
-					fclose (fd);
-				}
-			}
-			break;
-			case ' ': // "Pn "
-				if (input[2] == '-') {
-					char *str = r_core_project_notes_file (core, fileproject);
-					// edit with cfg.editor
-					const char *editor = r_config_get (core->config, "cfg.editor");
-					if (str && *str && editor && *editor) {
-						r_sys_cmdf ("%s %s", editor, str);
-					} else {
-						R_LOG_ERROR ("No cfg.editor configured");
-					}
-					free (str);
-				} else {
-					// char *str = r_core_project_notes_file (core, fileproject);
-					// append line to project notes
-					char *str = r_core_project_notes_file (core, fileproject);
-					char *data = r_file_slurp (str, NULL);
-					FILE *fd = r_sandbox_fopen (str, "a");
-					if (fd) {
-						fprintf (fd, "%s\n", input + 2);
-						fclose (fd);
-					}
-					free (str);
-					free (data);
-				}
-				break;
-			case '+': // "Pn+"
-				{
-					char *str = r_core_project_notes_file (core, fileproject);
-					char *data = r_file_slurp (str, NULL);
-					data = r_str_append (data, input + 2);
-					data = r_str_append (data, "\n");
-					r_file_dump (str, (const ut8*)data, strlen (data), false);
-					free (data);
-					free (str);
-				}
-				break;
-			case 'j': // "Pnj"
-				if (!input[2]) {
-					size_t len = 0;
-					/* get base64 string */
-					char *str = r_core_project_notes_file (core, fileproject);
-					if (str) {
-						char *data = r_file_slurp (str, &len);
-						char *res = r_base64_encode_dyn ((const ut8*)data, (int)len);
-						if (res) {
-							r_cons_println (core->cons, res);
-							free (res);
-						}
-						free (data);
-						free (str);
-					}
-				} else if (input[2] == ' ') {
-					/* set base64 string */
-					ut8 *data = r_base64_decode_dyn (input + 3, -1, NULL);
-					if (data) {
-						char *str = r_core_project_notes_file (core, fileproject);
-						if (str) {
-							r_file_dump (str, data, strlen ((const char *) data), 0);
-							free (str);
-						}
-						free (data);
-					}
-				} else {
-					r_core_cmd_help_contains (core, help_msg_P, "Pn");
-				}
-				break;
-			case 'x': // "Pnx"
-				r_core_project_execute_cmds (core, fileproject);
-				break;
-			case 0: // "Pn"
-			{
-				char *str = r_core_project_notes_file (core, fileproject);
-				char *data = r_file_slurp (str, NULL);
-				if (data) {
-					r_cons_println (core->cons, data);
-					free (data);
-				}
-				free (str);
-			}
-			break;
-			}
-		}
+		cmd_Pn (core, input, fileproject);
 		break;
 	case 'i': // "Pi" DEPRECATE
 		if (R_STR_ISNOTEMPTY (file)) {
