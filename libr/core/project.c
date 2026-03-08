@@ -686,7 +686,7 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		R_LOG_ERROR ("Cannot open '%s' project name", prj_name);
 		ret = false;
 		r_config_set (core->config, "prj.name", "");
-	} else (r_config_get_b (core->config, "prj.new")) {
+	} else if (r_config_get_b (core->config, "prj.new")) {
 		char *prj_file = r_file_new (prj_dir, "prj.bin", NULL);
 		r_file_rm (prj_file);
 		r_core_cmdf (core, "prj save %s", prj_file);
