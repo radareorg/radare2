@@ -758,7 +758,7 @@ R_API int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *bu
 	bool wide = (options & R_PRINT_STRING_WIDE);
 	bool wide32 = (options & R_PRINT_STRING_WIDE32);
 	bool zeroend = (options & R_PRINT_STRING_ZEROEND);
-	bool wrap = (options & R_PRINT_STRING_WRAP);
+	bool wrap = p && (options & R_PRINT_STRING_WRAP);
 	bool urlencode = (options & R_PRINT_STRING_URLENCODE);
 	bool only_printable = (options & R_PRINT_STRING_ONLY_PRINTABLE);
 	bool is_interactive = cons ? cons->context->is_interactive: false;

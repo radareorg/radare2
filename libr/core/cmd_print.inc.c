@@ -6800,8 +6800,9 @@ static void cmd_print_psb(RCore *core, const ut8 *block, int len, bool quiet) {
 
 static void print_pascal_string(RCore *core, const ut8 *data, const int data_len, const char *input, int len) {
 	int disp = 1;
-	int slen = -1;
+	int slen = 0;
 	int options = R_PRINT_STRING_ZEROEND;
+	ut32 rawlen = 0;
 	bool dojson = false;
 	switch (input[0]) {
 	case 'w': // pspw
@@ -6841,25 +6842,24 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 	if (input[0] && input[1] != ' ' && input[3] == 'j') {
 		dojson = true;
 	}
-	ut8 buf[4];
-	if (!data || data_len < sizeof (buf)) {
+	if (!data || data_len < disp) {
 		return;
 	}
-	memcpy (buf, data, 4);
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
-	slen = data[0];
 	switch (disp) {
 	case 2:
-		slen = r_read_ble16 (buf, be);
+		rawlen = r_read_ble16 (data, be);
 		break;
 	case 4:
-		slen = r_read_ble32 (buf, be);
+		rawlen = r_read_ble32 (data, be);
 		break;
 	default:
-		slen = buf[0];
+		rawlen = data[0];
 		break;
 	}
-	if (slen + disp < data_len) {
+	const ut32 maxlen = (ut32)(data_len - disp);
+	if (rawlen <= maxlen && rawlen <= INT_MAX) {
+		slen = (int)rawlen;
 		const char *arg = ((options & R_PRINT_STRING_WIDE) == R_PRINT_STRING_WIDE)? "wide": ((options & R_PRINT_STRING_WIDE32) == R_PRINT_STRING_WIDE32)? "wide32" : NULL;
 		core_print_string_or_json (core, data + disp, slen, arg, options, dojson);
 		core->num->value = slen;

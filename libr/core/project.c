@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2025 - pancake, rhl */
+/* radare - LGPL - Copyright 2010-2026 - pancake, rhl */
 
 // R2R db/cmd/projects
 
@@ -686,6 +686,15 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 		R_LOG_ERROR ("Cannot open '%s' project name", prj_name);
 		ret = false;
 		r_config_set (core->config, "prj.name", "");
+	} else if (r_config_get_b (core->config, "prj.new")) {
+		char *prj_file = r_file_new (prj_dir, "prj.bin", NULL);
+		r_file_rm (prj_file);
+		r_core_cmdf (core, "prj save %s", prj_file);
+		if (!r_file_exists (prj_file)) {
+			R_LOG_ERROR ("Cannot create binary project '%s'", prj_file);
+			ret = false;
+		}
+		free (prj_file);
 	}
 
 	if (r_config_get_b (core->config, "prj.files")) {
