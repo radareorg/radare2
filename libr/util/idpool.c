@@ -107,6 +107,7 @@ static bool oid_storage_preallocate(ROIDStorage *st, ut32 size) {
 	if (!size) {
 		R_FREE (st->permutation);
 		st->psize = 0;
+		return false;
 	}
 	ut32 *permutation = realloc (st->permutation, size * sizeof (ut32));
 	if (!permutation) {
@@ -468,12 +469,11 @@ R_API void *r_oids_first(ROIDStorage *storage) {
 }
 
 R_API bool r_oids_foreach(ROIDStorage *storage, RIDStorageForeachCb cb, void *user) {
-	ut32 i;
-	ut32 id;
 	if (!cb || !storage || !storage->data || !storage->data->data
 		|| !storage->permutation) {
 		return false;
 	}
+	ut32 i, id;
 	for (i = storage->ptop - 1; i != 0; i--) {
 		id = storage->permutation[i];
 		if (!cb (user, storage->data->data[id], id)) {
@@ -485,14 +485,13 @@ R_API bool r_oids_foreach(ROIDStorage *storage, RIDStorageForeachCb cb, void *us
 }
 
 R_API bool r_oids_foreach_prev(ROIDStorage* storage, RIDStorageForeachCb cb, void* user) {
-	ut32 i;
-	ut32 id;
 	if (!cb || !storage || !storage->data || !storage->data->data
 		|| !storage->permutation) {
 		return false;
 	}
+	ut32 i;
 	for (i = 0; i < storage->ptop; i++) {
-		id = storage->permutation[i];
+		ut32 id = storage->permutation[i];
 		if (!cb (user, storage->data->data[id], id)) {
 			return false;
 		}
