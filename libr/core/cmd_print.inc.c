@@ -9000,6 +9000,8 @@ static int cmd_print(void *data, const char *input) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.addr"));
 				bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->print->config);
 				len = len - (len % 4);
+				RStrBuf sb;
+				r_strbuf_init (&sb);
 				for (i = 0; i < len; i += 4) {
 					const char *a, *b;
 					char *fn;
@@ -9031,13 +9033,15 @@ static int cmd_print(void *data, const char *input) {
 						}
 					}
 					if (printOffset) {
-						r_print_section (core->print, core->addr + i);
-						r_cons_printf (core->cons, "0x%08" PFMT64x " %s0x%08" PFMT64x "%s%s%s\n", (ut64)core->addr + i, a, (ut64)v, b, fn? " ": "", r_str_get (fn));
+						r_print_section_strbuf (core->print, &sb, core->addr + i);
+						r_strbuf_appendf (&sb, "0x%08" PFMT64x " %s0x%08" PFMT64x "%s%s%s\n", (ut64)core->addr + i, a, (ut64)v, b, fn? " ": "", r_str_get (fn));
 					} else {
-						r_cons_printf (core->cons, "%s0x%08" PFMT64x "%s\n", a, (ut64)v, b);
+						r_strbuf_appendf (&sb, "%s0x%08" PFMT64x "%s\n", a, (ut64)v, b);
 					}
 					free (fn);
 				}
+				r_cons_print (core->cons, r_strbuf_get (&sb));
+				r_strbuf_fini (&sb);
 			}
 			break;
 		case 'r': // "pxr"
@@ -9134,6 +9138,8 @@ static int cmd_print(void *data, const char *input) {
 				bool printOffset = (input[2] != 'q' && r_config_get_i (core->config, "hex.addr"));
 				const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 				len = len - (len % 8);
+				RStrBuf sb;
+				r_strbuf_init (&sb);
 				for (i = 0; i < len; i += 8) {
 					const char *a, *b;
 					char *fn;
@@ -9163,13 +9169,15 @@ static int cmd_print(void *data, const char *input) {
 						}
 					}
 					if (printOffset) {
-						r_print_section (core->print, core->addr + i);
-						r_cons_printf (core->cons, "0x%08" PFMT64x " %s0x%016" PFMT64x "%s %s\n", (ut64)core->addr + i, a, v, b, r_str_get (fn));
+						r_print_section_strbuf (core->print, &sb, core->addr + i);
+						r_strbuf_appendf (&sb, "0x%08" PFMT64x " %s0x%016" PFMT64x "%s %s\n", (ut64)core->addr + i, a, v, b, r_str_get (fn));
 					} else {
-						r_cons_printf (core->cons, "%s0x%016" PFMT64x "%s\n", a, v, b);
+						r_strbuf_appendf (&sb, "%s0x%016" PFMT64x "%s\n", a, v, b);
 					}
 					free (fn);
 				}
+				r_cons_print (core->cons, r_strbuf_get (&sb));
+				r_strbuf_fini (&sb);
 			}
 			break;
 		case 's': // "pxs"

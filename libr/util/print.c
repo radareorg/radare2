@@ -392,8 +392,7 @@ R_API void r_print_cursor(RPrint *p, int cur, int len, int set) {
 	}
 }
 
-R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size) {
-	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, 0);
+static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size) {
 	bool use_segoff = p ? (p->flags & R_PRINT_FLAGS_SEGOFF) : false;
 	bool use_color = p ? (p->flags & R_PRINT_FLAGS_COLOR) : false;
 	bool dec = p ? (p->flags & R_PRINT_FLAGS_ADDRDEC) : false;
@@ -459,8 +458,7 @@ R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
 	return r_strbuf_append (sb, buf);
 }
 
-// TODO: deprecate this function. r_print functions must not use RCons! just work with strbuf
-R_API void r_print_addr(RPrint *p, ut64 addr) {
+static void r_print_addr(RPrint *p, ut64 addr) {
 	char buf[64];
 	r_print_addr_tostring (p, addr, buf, sizeof (buf));
 	r_print_printf (p, "%s", buf);
@@ -678,7 +676,8 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	return dst;
 }
 
-static char colorbuffer[64];
+// THREAD-SAFETY: must be TH_LOCAL, shared across r_print_byte_color calls
+static R_TH_LOCAL char colorbuffer[64];
 #define P(x) (p->consb.cons && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
@@ -708,8 +707,7 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 }
 
 
-R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch, char *buf, size_t buf_size) {
-	R_RETURN_VAL_IF_FAIL (buf && buf_size > 0, 0);
+static int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch, char *buf, size_t buf_size) {
 	ut8 rch = ch;
 	if (!IS_PRINTABLE (ch) && fmt[0] == '%' && fmt[1] == 'c') {
 		rch = '.';
@@ -744,14 +742,13 @@ R_API bool r_print_byte_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const char *fm
 	return r_strbuf_append (sb, buf);
 }
 
-R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
+static void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch) {
 	char buf[64];
 	r_print_byte_tostring (p, addr, fmt, idx, ch, buf, sizeof (buf));
 	r_print_printf (p, "%s", buf);
 }
 
-R_API int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *buf, int len, int options) {
-	R_RETURN_VAL_IF_FAIL (buf && sb, 0);
+static int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *buf, int len, int options) {
 	(void)seek;
 	RCons *cons = (p && p->consb.cons)? p->consb.cons: NULL;
 	int i;
@@ -853,6 +850,7 @@ static bool isAllZeros(const ut8 *buf, int len) {
 	return true;
 }
 
+// THREAD-SAFETY: Pal reads cons->context->pal without locking; safe only if palette is not mutated concurrently
 #define Pal(x,y) (x->consb.cons && x->consb.cons->context->pal.y)? x->consb.cons->context->pal.y
 R_API void r_print_hexii(RPrint *rp, ut64 addr, const ut8 *buf, int len, int step) {
 	bool c = rp->flags & R_PRINT_FLAGS_COLOR;
@@ -931,8 +929,7 @@ R_API bool r_print_section_strbuf(RPrint *p, RStrBuf *sb, ut64 at) {
 	return r_strbuf_appendf (sb, "%20.19s ", s? s: "");
 }
 
-R_API void r_print_section(RPrint *p, ut64 at) {
-	R_RETURN_IF_FAIL (p);
+static void r_print_section(RPrint *p, ut64 at) {
 	RStrBuf sb;
 	r_strbuf_init (&sb);
 	if (r_print_section_strbuf (p, &sb, at) && !r_strbuf_is_empty (&sb)) {
@@ -990,6 +987,9 @@ R_API void r_print_printf(const RPrint *p, const char *fmt, ...) {
 	va_end (ap);
 }
 
+// THREAD-SAFETY: r_print_hexdump reads p->flags, p->consb.cons->context->pal,
+// and various callbacks (colorfor, offname, offsize, iob) without locking.
+// Concurrent mutation of RPrint or its callbacks during hexdump is unsafe.
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz) {
 	R_RETURN_IF_FAIL (buf && len > 0);
 	bool c = p? (p->flags & R_PRINT_FLAGS_COLOR): false;
@@ -1804,6 +1804,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 	free (b);
 }
 
+// TODO: replace direct cb_printf calls with r_print_printf or RStrBuf to reduce RCons coupling
 R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, const char sep) {
 	int i;
 	RCons *cons = p->consb.cons;
@@ -1821,7 +1822,6 @@ R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, co
 		}
 		printf ("\n");
 	}
-
 }
 
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlines) {
@@ -2079,6 +2079,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 			r_strbuf_append (sb, block);
 		} else {
 			if (!isFirst) {
+				// TODO: bug? this cb_printf leaks output outside the strbuf being accumulated
 				p->consb.cb_printf (p->consb.cons, Color_RESET);
 			}
 			r_strbuf_append (sb, h_line);
