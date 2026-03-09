@@ -1804,24 +1804,18 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 	free (b);
 }
 
-// TODO: replace direct cb_printf calls with r_print_printf or RStrBuf to reduce RCons coupling
-R_API void r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, const char sep) {
-	int i;
-	RCons *cons = p->consb.cons;
-	if (cons) {
-		for (i = 0; i < len; i++) {
-			p->consb.cb_printf (cons, fmt, buf[i]);
-			if (sep && i + 1 < len) {
-				p->consb.cb_printf (cons, "%c", sep);
-			}
+// TODO: add RPrint as first argument, so we can use colors and other settings
+R_API R_OWNED char *r_print_bytes(const ut8 *buf, int len, const char *fmt, const char sep) {
+	R_RETURN_VAL_IF_FAIL (fmt && buf && len > 0, NULL);
+	size_t i;
+	RStrBuf *sb = r_strbuf_new ("");
+	for (i = 0; i < len; i++) {
+		r_strbuf_appendf (sb, fmt, buf[i]);
+		if (sep && i + 1 < len) {
+			r_strbuf_appendf (sb, "%c", sep);
 		}
-		p->consb.cb_printf (cons, "\n");
-	} else {
-		for (i = 0; i < len; i++) {
-			printf (fmt, buf[i]);
-		}
-		printf ("\n");
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8 *buf, int len, int offlines) {

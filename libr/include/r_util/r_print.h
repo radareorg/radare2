@@ -193,7 +193,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
-R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt, const char sep);
+R_API R_OWNED char *r_print_bytes(const ut8 *buf, int len, const char *fmt, const char sep);
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch);
 R_API bool r_print_byte_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const char *fmt, int idx, ut8 ch);
@@ -241,7 +241,6 @@ R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* buf, const int len, c
 R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield);
 R_API const char *r_print_format_byname(RPrint *p, const char *name);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label);
-// r_print_offset_sg removed: dead declaration, was never implemented
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
 #define R_PRINT_STRING_URLENCODE 4

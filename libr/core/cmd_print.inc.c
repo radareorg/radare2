@@ -8,6 +8,14 @@
 static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 size);
 static int cmd_print(void *data, const char *input);
 
+static void print_bytes(RCore *core, const ut8 *buf, int len, const char *fmt, const char sep) {
+	char *s = r_print_bytes (buf, len, fmt, sep);
+	if (s) {
+		r_print_printf (core->print, "%s\n", s);
+		free (s);
+	}
+}
+
 // clang-format off
 static RCoreHelpMessage help_msg_pa = {
 	"Usage: pa[edD]", "[asm|hex]", "Print (dis)assembly",
@@ -3550,7 +3558,7 @@ static void print_encrypted_block(RCore *core, const char *algo, const char *key
 		int result_size = 0;
 		ut8 *result = r_muta_session_get_output (cj, &result_size);
 		if (result) {
-			r_print_bytes (core->print, result, result_size, "%02x", 0);
+			print_bytes (core, result, result_size, "%02x", 0);
 			free (result);
 		}
 	}
@@ -3629,7 +3637,7 @@ static void cmd_print_op(RCore *core, const char *input) {
 			int result_size = 0;
 			ut8 *result = r_muta_session_get_output (cj, &result_size);
 			if (result) {
-				r_print_bytes (core->print, result, result_size, "%02x", 0);
+				print_bytes (core, result, result_size, "%02x", 0);
 				free (result);
 			}
 			r_muta_session_free (cj);
@@ -8653,7 +8661,7 @@ static int cmd_print(void *data, const char *input) {
 						for (i = 0; i < olen; i += 32) {
 							int left = R_MIN (olen - i, 32);
 							r_cons_printf (core->cons, "wx+");
-							r_print_bytes (core->print, obuf + i, left, "%02x", 0);
+							print_bytes (core, obuf + i, left, "%02x", 0);
 						}
 					} else {
 						R_LOG_ERROR ("Invalid input size %d", olen);
@@ -8832,7 +8840,7 @@ static int cmd_print(void *data, const char *input) {
 		case '0': // "px0"
 			if (l) {
 				int len = r_str_nlen ((const char *)core->block, core->blocksize);
-				r_print_bytes (core->print, core->block, len, "%02x", 0);
+				print_bytes (core, core->block, len, "%02x", 0);
 			}
 			break;
 		case 'a': // "pxa"
@@ -9332,11 +9340,11 @@ static int cmd_print(void *data, const char *input) {
 			} else if (input[1] == 's') { // "p8s"
 				r_core_block_read (core);
 				block = core->block;
-				r_print_bytes (core->print, block, l, "%02x", ' ');
+				print_bytes (core, block, l, "%02x", ' ');
 			} else if (input[1] == ',') { // "p8,"
 				r_core_block_read (core);
 				block = core->block;
-				r_print_bytes (core->print, block, l, "0x%02x", ',');
+				print_bytes (core, block, l, "0x%02x", ',');
 			} else if (input[1] == 'x') { // "p8x"
 				r_core_block_read (core);
 				block = core->block;
@@ -9349,7 +9357,7 @@ static int cmd_print(void *data, const char *input) {
 					if (rad) {
 						r_cons_printf (core->cons, "wx+ ");
 					}
-					r_print_bytes (core->print, block + i, R_MIN (cols, len - cols), "%02x", 0);
+					print_bytes (core, block + i, R_MIN (cols, len - cols), "%02x", 0);
 				}
 			} else if (input[1] == 'd') { // "p8d"
 				int i;
@@ -9390,7 +9398,7 @@ static int cmd_print(void *data, const char *input) {
 				if (rad) {
 					r_cons_printf (core->cons, "wx+ ");
 				}
-				r_print_bytes (core->print, block, len, "%02x", 0);
+				print_bytes (core, block, len, "%02x", 0);
 			}
 		}
 		break;
