@@ -86,6 +86,14 @@ typedef struct r_print_zoom_t {
 	int mode;
 } RPrintZoom;
 
+#define COLORIZE_BUFSIZE 1024
+
+typedef struct r_print_priv_t {
+	char rgbstr[32];
+	int zoom_mode;
+	char colorize_buf[COLORIZE_BUFSIZE];
+} RPrintPriv;
+
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
@@ -168,6 +176,7 @@ typedef struct r_print_t {
 	int spinpos;
 	char *spinmsg;
 	char colorbuffer[64];
+	RPrintPriv *priv;
 } RPrint;
 
 #ifdef R_API

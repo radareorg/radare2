@@ -288,6 +288,12 @@ R_API void r_print_init(RPrint *p) {
 	p->io_unalloc_ch = '.';
 	p->enable_progressbar = true;
 	// Charset callbacks are set by RCore; nothing to do here
+	if (!p->priv) {
+		p->priv = R_NEW0 (RPrintPriv);
+	}
+	if (p->priv) {
+		p->priv->zoom_mode = -1;
+	}
 }
 
 R_API RPrint* r_print_new(void) {
@@ -310,6 +316,7 @@ R_API bool r_print_fini(RPrint * R_NONNULL p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
+	R_FREE (p->priv);
 	// Charset callbacks/context are owned by RCore; do not free here
 	r_unref (p->config);
 	return true;
@@ -409,9 +416,8 @@ static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_siz
 		RCons *cons = p->consb.cons;
 		if (cons) {
 			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
-				if (cons->rgbstr) {
-					static R_TH_LOCAL char rgbstr[32];
-					pre = cons->rgbstr (cons, rgbstr, sizeof (rgbstr), addr);
+				if (cons->rgbstr && p->priv) {
+					pre = cons->rgbstr (cons, p->priv->rgbstr, sizeof (p->priv->rgbstr), addr);
 				}
 			} else if (cons->context && cons->context->pal.addr) {
 				pre = cons->context->pal.addr;
@@ -2080,7 +2086,6 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 }
 
 R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from, ut64 to, int len, int maxlen) {
-	static R_TH_LOCAL int mode = -1;
 	ut8 *bufz = NULL, *bufz2 = NULL;
 	int i, j = 0;
 	ut64 size = (to - from);
@@ -2099,12 +2104,14 @@ R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 f
 		len = 1;
 	}
 
-	if (mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
+	if (p->priv && p->priv->zoom_mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
 		// get from cache
 		bufz = p->zoom->buf;
 		size = p->zoom->size;
 	} else {
-		mode = p->zoom->mode;
+		if (p->priv) {
+			p->priv->zoom_mode = p->zoom->mode;
+		}
 		bufz = (ut8 *) calloc (1, len);
 		if (!bufz) {
 			return;
@@ -2397,9 +2404,7 @@ R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	}
 }
 
-// XXX Global buffer to speed up colorizing performance
-#define COLORIZE_BUFSIZE 1024
-static R_TH_LOCAL char o[COLORIZE_BUFSIZE];
+// colorize_buf is now in RPrintPriv for thread safety
 
 static bool issymbol(char c) {
 	switch (c) {
@@ -2490,9 +2495,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	char previous = '\0';
 	const char *color_flag = print->consb.cons->context->pal.flag;
 
-	if (R_STR_ISEMPTY (p)) {
+	if (R_STR_ISEMPTY (p) || !print->priv) {
 		return NULL;
 	}
+	char *o = print->priv->colorize_buf;
 #if 0
 	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	// uncomment to ignore color of call/jmp arguments and inherit the op one
