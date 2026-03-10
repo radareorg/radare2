@@ -747,7 +747,6 @@ static void parse_atomic_type(Context *ctx, ut64 idx) {
 	R_VEC_FOREACH(die->attr_values, value) {
 		switch (value->attr_name) {
 		case DW_AT_name:
-			R_FREE (name);
 			if (value->kind == DW_AT_KIND_STRING) {
 				if (!value->string.content) {
 					name = create_type_name_from_offset (ctx->arena, die->offset);
