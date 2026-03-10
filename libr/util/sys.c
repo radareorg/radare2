@@ -195,7 +195,6 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 }
 #elif HAVE_SIGACTION
 R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
-#if WANT_DEBUGSTUFF
 	struct sigaction sigact = { };
 	int ret, i;
 	if (Gunsignable) {
@@ -216,11 +215,12 @@ R_API int r_sys_sigaction(int *sig, void(*handler)(int)) {
 	for (i = 0; sig[i] != 0; i++) {
 		ret = sigaction (sig[i], &sigact, NULL);
 		if (ret) {
+#if WANT_DEBUGSTUFF
 			R_LOG_ERROR ("Failed to set signal handler for signal '%d': %s", sig[i], strerror(errno));
+#endif
 			return ret;
 		}
 	}
-#endif
 	return 0;
 }
 #else
