@@ -508,6 +508,41 @@ static void subprocs_remove(R2RSubprocess *proc) {
 	}
 }
 
+static void subprocess_set_status(R2RSubprocess *proc, int wstat) {
+	int exit_status = -1;
+#if !__wasi__
+	if (WIFSIGNALED (wstat)) {
+		const int signal_number = WTERMSIG (wstat);
+		R_LOG_ERROR ("Child signal %d", signal_number);
+	} else if (WIFEXITED (wstat)) {
+		exit_status = WEXITSTATUS (wstat);
+	}
+#endif
+	r_th_lock_enter (proc->lock);
+	proc->ret = exit_status;
+	r_th_lock_leave (proc->lock);
+}
+
+static bool subprocess_try_wait(R2RSubprocess *proc) {
+	int wstat;
+	pid_t pid = waitpid (proc->pid, &wstat, WNOHANG);
+	if (pid == 0) {
+		return false;
+	}
+	if (pid < 0) {
+		if (errno == EINTR) {
+			return false;
+		}
+		if (errno == ECHILD) {
+			return true;
+		}
+		r_sys_perror ("sp-wait waitpid");
+		return false;
+	}
+	subprocess_set_status (proc, wstat);
+	return true;
+}
+
 static RThreadFunctionRet sigchld_th(RThread *th) {
 	while (true) {
 		ut8 b;
@@ -540,22 +575,7 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 				r_th_lock_leave (subprocs_mutex);
 				continue;
 			}
-			// Capture exit status while holding only one lock
-			int exit_status = -1;
-#if !__wasi__
-			if (WIFSIGNALED (wstat)) {
-				const int signal_number = WTERMSIG (wstat);
-				R_LOG_ERROR ("Child signal %d", signal_number);
-				exit_status = -1;
-			} else if (WIFEXITED (wstat)) {
-				exit_status = WEXITSTATUS (wstat);
-			}
-#endif
-
-			// Update process status before signaling
-			r_th_lock_enter (proc->lock);
-			proc->ret = exit_status;
-			r_th_lock_leave (proc->lock);
+			subprocess_set_status (proc, wstat);
 			// Signal process completion through killpipe
 			int ret = write (proc->killpipe[1], "", 1);
 			if (ret != 1) {
@@ -778,6 +798,7 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 		fd_set rfds;
 		FD_ZERO (&rfds);
 		int nfds = 0;
+		bool poll_child = !child_dead && stdout_eof && stderr_eof;
 		if (!stdout_eof) {
 			FD_SET (proc->stdout_fd, &rfds);
 			if (proc->stdout_fd > nfds) {
@@ -808,6 +829,10 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			ut64 usec_diff = timeout_abs - r_time_now_mono ();
 			timeout_s.tv_sec = usec_diff / R_USEC_PER_SEC;
 			timeout_s.tv_usec = usec_diff % R_USEC_PER_SEC;
+			timeout = &timeout_s;
+		} else if (poll_child) {
+			timeout_s.tv_sec = 0;
+			timeout_s.tv_usec = 100000;
 			timeout = &timeout_s;
 		}
 		r = select (nfds, &rfds, NULL, NULL, timeout);
@@ -849,8 +874,17 @@ R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
 			timedout = false;
 			child_dead = true;
 		}
+		if (!child_dead && (poll_child || r == 0)) {
+			child_dead = subprocess_try_wait (proc);
+			if (child_dead) {
+				timedout = false;
+			}
+		}
 		if (timedout) {
-			break;
+			if (timeout_ms != UT64_MAX) {
+				break;
+			}
+			continue;
 		}
 	}
 	if (r < 0) {
