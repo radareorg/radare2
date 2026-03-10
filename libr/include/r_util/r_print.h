@@ -92,6 +92,7 @@ typedef struct r_print_priv_t {
 	char rgbstr[32];
 	int zoom_mode;
 	char colorize_buf[COLORIZE_BUFSIZE];
+	char colorbuffer[64];
 } RPrintPriv;
 
 typedef struct r_print_t {
@@ -175,7 +176,6 @@ typedef struct r_print_t {
 	int nbcolor;
 	int spinpos;
 	char *spinmsg;
-	char colorbuffer[64];
 	RPrintPriv *priv;
 } RPrint;
 

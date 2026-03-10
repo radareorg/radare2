@@ -687,8 +687,8 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
 		int bg = (p->flags & R_PRINT_FLAGS_NONHEX)? 48: 38;
-		snprintf (p->colorbuffer, sizeof (p->colorbuffer), "\033[%d;5;%dm", bg, ch);
-		return p->colorbuffer;
+		snprintf (p->priv->colorbuffer, sizeof (p->priv->colorbuffer), "\033[%d;5;%dm", bg, ch);
+		return p->priv->colorbuffer;
 	}
 	// check for flag colors
 	if (p && p->colorfor) {
