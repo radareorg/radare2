@@ -566,9 +566,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v6
-    - uses: actions/setup-python@v6
-      with:
-        python-version: '3.11'
     - name: Preparing MSVC for ARM64
       uses: ilammy/msvc-dev-cmd@v1
       with:
