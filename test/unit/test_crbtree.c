@@ -41,7 +41,7 @@ static bool test_r_crbtree_in_ascending_order_iteration2(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	RRBNode *node = r_crbtree_find_node (tree, &s, cmp_cb, NULL);
-	mu_assert_neq (node, NULL, "Finding node failed");
+	mu_assert_notnull (node, "Finding node failed");
 	int *data = node->data;
 	node = r_rbnode_next (node);
 	bool t = true;
@@ -80,7 +80,7 @@ static bool test_r_crbtree_in_descending_order_iteration2(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	RRBNode *node = r_crbtree_find_node (tree, &s, cmp_cb, NULL);
-	mu_assert_neq (node, NULL, "Finding node failed");
+	mu_assert_notnull (node, "Finding node failed");
 	int *data = node->data;
 	node = r_rbnode_prev (node);
 	bool t = true;
@@ -99,7 +99,7 @@ static bool test_r_crbtree_delete(void) {
 	RRBTree *tree = create_test_tree ();
 	int s = 17;
 	r_crbtree_delete (tree, &s, cmp_cb, NULL);
-	mu_assert_eq (r_crbtree_find (tree, &s, cmp_cb, NULL), NULL, "deletion failed");
+	mu_assert_null (r_crbtree_find (tree, &s, cmp_cb, NULL), "deletion failed");
 	r_crbtree_free (tree);
 	mu_end;
 }

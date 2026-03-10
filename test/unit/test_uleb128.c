@@ -82,7 +82,7 @@ bool test_leb128_correctness(void) {
 	const ut8 *data = (ut8 *)"\xc5\x00";
 	const ut8 *buf = r_leb128 (data, 2, &val);
 	mu_assert_eq (val, 69, "leb128 decoded");
-	mu_assert_eq (buf, data + 2, "leb128 decoded");
+	mu_assert_ptreq (buf, data + 2, "leb128 decoded");
 	mu_end;
 }
 

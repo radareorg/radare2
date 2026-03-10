@@ -33,9 +33,9 @@ R_VEC_TYPE_WITH_FINI (RVecS, S, fini_S);
 static bool test_vec_init(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "init start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "init end");
-	mu_assert_eq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "init start == end");
+	mu_assert_null (R_VEC_START_ITER (&v), "init start");
+	mu_assert_null (R_VEC_END_ITER (&v), "init end");
+	mu_assert_ptreq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "init start == end");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "init capacity");
 	RVecUT32_fini (&v);
 	mu_end;
@@ -51,8 +51,8 @@ static bool test_vec_fini(void) {
 	}
 
 	RVecUT32_fini (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "fini start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "fini end");
+	mu_assert_null (R_VEC_START_ITER (&v), "fini start");
+	mu_assert_null (R_VEC_END_ITER (&v), "fini end");
 
 	RVecS vS;
 	RVecS_init (&vS);
@@ -66,16 +66,16 @@ static bool test_vec_fini(void) {
 
 	RVecS_fini (&vS);
 
-	mu_assert_eq (R_VEC_START_ITER (&vS), NULL, "fini start2");
-	mu_assert_eq (R_VEC_END_ITER (&vS), NULL, "fini end2");
+	mu_assert_null (R_VEC_START_ITER (&vS), "fini start2");
+	mu_assert_null (R_VEC_END_ITER (&vS), "fini end2");
 	mu_end;
 }
 
 static bool test_vec_new(void) {
 	RVecUT32 *v = RVecUT32_new ();
-	mu_assert_eq (R_VEC_START_ITER (v), NULL, "new start");
-	mu_assert_eq (R_VEC_END_ITER (v), NULL, "new end");
-	mu_assert_eq (R_VEC_START_ITER (v), R_VEC_END_ITER (v), "new start == end");
+	mu_assert_null (R_VEC_START_ITER (v), "new start");
+	mu_assert_null (R_VEC_END_ITER (v), "new end");
+	mu_assert_ptreq (R_VEC_START_ITER (v), R_VEC_END_ITER (v), "new start == end");
 	mu_assert_eq (R_VEC_CAPACITY (v), 0, "new capacity");
 	RVecUT32_free (v);
 	mu_end;
@@ -154,9 +154,9 @@ static bool test_vec_clone(void) {
 static bool test_vec_push_back(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "push_back start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "push_back end");
-	mu_assert_eq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "push_back start == end");
+	mu_assert_null (R_VEC_START_ITER (&v), "push_back start");
+	mu_assert_null (R_VEC_END_ITER (&v), "push_back end");
+	mu_assert_ptreq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "push_back start == end");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "push_back capacity");
 
 	ut32 x;
@@ -164,8 +164,8 @@ static bool test_vec_push_back(void) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "push_back start2");
-	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "push_back end2");
+	mu_assert_notnull (R_VEC_START_ITER (&v), "push_back start2");
+	mu_assert_notnull (R_VEC_END_ITER (&v), "push_back end2");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "push_back capacity2");
 	mu_assert_eq (RVecUT32_length (&v), 8, "push_back length2");
 
@@ -180,9 +180,9 @@ static bool test_vec_push_back(void) {
 static bool test_vec_emplace_back(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "emplace_back start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "emplace_back end");
-	mu_assert_eq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "emplace_back start == end");
+	mu_assert_null (R_VEC_START_ITER (&v), "emplace_back start");
+	mu_assert_null (R_VEC_END_ITER (&v), "emplace_back end");
+	mu_assert_ptreq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "emplace_back start == end");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "emplace_back capacity");
 
 	ut32 x;
@@ -191,8 +191,8 @@ static bool test_vec_emplace_back(void) {
 		*ptr = x;
 	}
 
-	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "emplace_back start2");
-	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "emplace_back end2");
+	mu_assert_notnull (R_VEC_START_ITER (&v), "emplace_back start2");
+	mu_assert_notnull (R_VEC_END_ITER (&v), "emplace_back end2");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "emplace_back capacity2");
 	mu_assert_eq (RVecUT32_length (&v), 8, "emplace_back length2");
 
@@ -208,9 +208,9 @@ static bool test_vec_emplace_back(void) {
 static bool test_vec_push_front(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "push_front start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "push_front end");
-	mu_assert_eq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "push_front start == end");
+	mu_assert_null (R_VEC_START_ITER (&v), "push_front start");
+	mu_assert_null (R_VEC_END_ITER (&v), "push_front end");
+	mu_assert_ptreq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "push_front start == end");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "push_front capacity");
 
 	ut32 x;
@@ -236,9 +236,9 @@ static bool test_vec_push_front(void) {
 static bool test_vec_emplace_front(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "emplace_front start");
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "emplace_front end");
-	mu_assert_eq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "emplace_front start == end");
+	mu_assert_null (R_VEC_START_ITER (&v), "emplace_front start");
+	mu_assert_null (R_VEC_END_ITER (&v), "emplace_front end");
+	mu_assert_ptreq (R_VEC_START_ITER (&v), R_VEC_END_ITER (&v), "emplace_front start == end");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 0, "emplace_front capacity");
 
 	ut32 x;
@@ -313,8 +313,8 @@ static bool test_vec_append(void) {
 	}
 
 	RVecS_append (&v3, &v4, copy_S);
-	mu_assert_neq (RVecS_at (&v3, 2)->y, RVecS_at (&v4, 0)->y, "append copy1");
-	mu_assert_neq (RVecS_at (&v3, 3)->y, RVecS_at (&v4, 1)->y, "append copy1");
+	mu_assert_ptrneq (RVecS_at (&v3, 2)->y, RVecS_at (&v4, 0)->y, "append copy1");
+	mu_assert_ptrneq (RVecS_at (&v3, 3)->y, RVecS_at (&v4, 1)->y, "append copy1");
 
 	RVecS_fini (&v3);
 	RVecS_fini (&v4);
@@ -423,7 +423,7 @@ static bool test_vec_erase_back(void) {
 	RVecS_erase_back (&v, RVecS_at (&v, 4));
 	mu_assert_eq (R_VEC_CAPACITY (&v), 8, "erase_back capacity3");
 	mu_assert_eq (RVecS_length (&v), 4, "erase_back length3");
-	mu_assert_eq (RVecS_at (&v, 4), NULL, "erase_back at3");
+	mu_assert_null (RVecS_at (&v, 4), "erase_back at3");
 	mu_assert_eq (RVecS_at (&v, 3)->x, 3, "erase_back at4");
 	mu_assert_eq (count_S, 4, "erase count");
 
@@ -593,20 +593,20 @@ static bool test_vec_start_iter(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (R_VEC_START_ITER (&v), NULL, "start iter1");
+	mu_assert_null (R_VEC_START_ITER (&v), "start iter1");
 
 	ut32 x = 100;
 	RVecUT32_push_back (&v, &x);
-	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter2");
+	mu_assert_notnull (R_VEC_START_ITER (&v), "start iter2");
 
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter3");
+	mu_assert_notnull (R_VEC_START_ITER (&v), "start iter3");
 
 	RVecUT32_clear (&v);
-	mu_assert_neq (R_VEC_START_ITER (&v), NULL, "start iter4");
+	mu_assert_notnull (R_VEC_START_ITER (&v), "start iter4");
 
 	RVecUT32_fini (&v);
 	mu_end;
@@ -616,20 +616,20 @@ static bool test_vec_end_iter(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (R_VEC_END_ITER (&v), NULL, "end iter1");
+	mu_assert_null (R_VEC_END_ITER (&v), "end iter1");
 
 	ut32 x = 100;
 	RVecUT32_push_back (&v, &x);
-	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter2");
+	mu_assert_notnull (R_VEC_END_ITER (&v), "end iter2");
 
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter3");
+	mu_assert_notnull (R_VEC_END_ITER (&v), "end iter3");
 
 	RVecUT32_clear (&v);
-	mu_assert_neq (R_VEC_END_ITER (&v), NULL, "end iter4");
+	mu_assert_notnull (R_VEC_END_ITER (&v), "end iter4");
 
 	RVecUT32_fini (&v);
 	mu_end;
@@ -639,22 +639,22 @@ static bool test_vec_at(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (RVecUT32_at (&v, 0), NULL, "at1");
+	mu_assert_null (RVecUT32_at (&v, 0), "at1");
 
 	ut32 x;
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (RVecUT32_at (&v, 0), NULL, "at2");
-	mu_assert_eq (RVecUT32_at (&v, 0), R_VEC_START_ITER (&v), "at3");
+	mu_assert_notnull (RVecUT32_at (&v, 0), "at2");
+	mu_assert_ptreq (RVecUT32_at (&v, 0), R_VEC_START_ITER (&v), "at3");
 	mu_assert_eq (*RVecUT32_at (&v, 0), 0, "at4");
 
 	*RVecUT32_at (&v, 0) = 10;
 	mu_assert_eq (*RVecUT32_at (&v, 0), 10, "at5");
 
 	RVecUT32_clear (&v);
-	mu_assert_eq (RVecUT32_at (&v, 0), NULL, "at6");
+	mu_assert_null (RVecUT32_at (&v, 0), "at6");
 
 	RVecUT32_fini (&v);
 	mu_end;
@@ -664,21 +664,21 @@ static bool test_vec_last(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
 
-	mu_assert_eq (RVecUT32_last (&v), NULL, "last1");
+	mu_assert_null (RVecUT32_last (&v), "last1");
 
 	ut32 x;
 	for (x = 0; x < 3; x++) {
 		RVecUT32_push_back (&v, &x);
 	}
 
-	mu_assert_neq (RVecUT32_last (&v), NULL, "last2");
+	mu_assert_notnull (RVecUT32_last (&v), "last2");
 	mu_assert_eq (*RVecUT32_last (&v), 2, "last4");
 
 	*RVecUT32_last (&v) = 10;
 	mu_assert_eq (*RVecUT32_last (&v), 10, "last5");
 
 	RVecUT32_clear (&v);
-	mu_assert_eq (RVecUT32_last (&v), NULL, "last6");
+	mu_assert_null (RVecUT32_last (&v), "last6");
 
 	RVecUT32_fini (&v);
 	mu_end;
@@ -689,7 +689,7 @@ static bool test_vec_find(void) {
 	RVecST32_init (&v);
 
 	st32 x = 0;
-	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find1");
+	mu_assert_null (RVecST32_find (&v, &x, find_compare_st32), "find1");
 
 	for (x = 0; x < 3; x++) {
 		RVecST32_push_back (&v, &x);
@@ -702,11 +702,11 @@ static bool test_vec_find(void) {
 	x = 2;
 	mu_assert_eq (*RVecST32_find (&v, &x, find_compare_st32), 2, "find4");
 	x = 3;
-	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find5");
+	mu_assert_null (RVecST32_find (&v, &x, find_compare_st32), "find5");
 
 	RVecST32_clear (&v);
 	x = 0;
-	mu_assert_eq (RVecST32_find (&v, &x, find_compare_st32), NULL, "find6");
+	mu_assert_null (RVecST32_find (&v, &x, find_compare_st32), "find6");
 
 	RVecST32_fini (&v);
 	mu_end;
@@ -722,7 +722,7 @@ static bool test_vec_find_if_not(void) {
 	RVecST32_init (&v);
 
 	st32 x = 0;
-	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not1");
+	mu_assert_null (RVecST32_find_if_not (&v, &x, greater_than_ut32), "find_if_not1");
 
 	for (x = 0; x < 3; x++) {
 		RVecST32_push_back (&v, &x);
@@ -733,11 +733,11 @@ static bool test_vec_find_if_not(void) {
 	x = 1;
 	mu_assert_eq (*RVecST32_find_if_not (&v, &x, greater_than_ut32), 2, "find_if_not3");
 	x = 2;
-	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not4");
+	mu_assert_null (RVecST32_find_if_not (&v, &x, greater_than_ut32), "find_if_not4");
 
 	RVecST32_clear (&v);
 	x = 0;
-	mu_assert_eq (RVecST32_find_if_not (&v, &x, greater_than_ut32), NULL, "find_if_not6");
+	mu_assert_null (RVecST32_find_if_not (&v, &x, greater_than_ut32), "find_if_not6");
 
 	RVecST32_fini (&v);
 	mu_end;
@@ -792,7 +792,7 @@ static bool test_vec_reserve(void) {
 
 	mu_assert_eq (RVecUT32_length (&v), 9, "reserve length3");
 	mu_assert_eq (R_VEC_CAPACITY (&v), 12, "reserve capacity3");
-	mu_assert_eq (start_iter, R_VEC_START_ITER (&v), "reserve start iter3");
+	mu_assert_ptreq (start_iter, R_VEC_START_ITER (&v), "reserve start iter3");
 
 	RVecUT32_fini (&v);
 	mu_end;
@@ -1173,7 +1173,7 @@ static bool test_vec_with_pointers(void) {
 	RVecBuf_init (&buf);
 
 	char *ptr = NULL;
-	mu_assert_eq (RVecBuf_find (&buf, &ptr, find_compare_buf), NULL, "pointer find1");
+	mu_assert_null (RVecBuf_find (&buf, &ptr, find_compare_buf), "pointer find1");
 
 	ut32 x = 0;
 	for (x = 0; x < 3; x++) {
@@ -1185,7 +1185,7 @@ static bool test_vec_with_pointers(void) {
 	RVecBuf_push_back (&buf, &ptr);
 
 	char **ptr2 = RVecBuf_at (&buf, 3);
-	mu_assert_eq (RVecBuf_find (&buf, &ptr, find_compare_buf), ptr2, "pointer find2");
+	mu_assert_ptreq (RVecBuf_find (&buf, &ptr, find_compare_buf), ptr2, "pointer find2");
 
 	RVecBuf_fini (&buf);
 	mu_end;

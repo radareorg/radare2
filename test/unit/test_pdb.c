@@ -148,7 +148,7 @@ bool test_pdb_tpi_cpp(void) {
 			mu_assert_streq (name, "TEST_CLASS", "wrong class name");
 			RList *members = NULL;
 			type_info->get_members (tpi_stream, type_info, &members);
-			mu_assert_eq (!members, NULL, "no members");
+			mu_assert_notnull (members, "no members");
 			mu_assert_eq (members->length, 2, "wrong class member count");
 			SType *stype = NULL;
 			int result = type_info->get_vshape (tpi_stream, type_info, (void **)&stype);
@@ -181,7 +181,7 @@ bool test_pdb_tpi_cpp(void) {
 			type_info->get_class_type (tpi_stream, type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x1079, "incorrect mfunction class type");
 			type_info->get_this_type (tpi_stream, type_info, (void **)&type);
-			mu_assert_eq (type, 0, "incorrect mfunction this type");
+			mu_assert_null (type, "incorrect mfunction this type");
 			type_info->get_arglist (tpi_stream, type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x1027, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x113F) {
@@ -414,7 +414,7 @@ bool test_pdb_tpi_rust(void) {
 			type_info->get_class_type (tpi_stream, type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x107F, "incorrect mfunction class type");
 			type_info->get_this_type (tpi_stream, type_info, (void **)&type);
-			mu_assert_eq (type, 0, "incorrect mfunction this type");
+			mu_assert_null (type, "incorrect mfunction this type");
 			type_info->get_arglist (tpi_stream, type_info, (void **)&type);
 			mu_assert_eq (type->tpi_idx, 0x1000, "incorrect mfunction arglist");
 		} else if (type->tpi_idx == 0x13BF) {
