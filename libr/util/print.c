@@ -676,15 +676,13 @@ R_API char* r_print_hexpair(RPrint *p, const char *str, int n) {
 	return dst;
 }
 
-// THREAD-SAFETY: must be TH_LOCAL, shared across r_print_byte_color calls
-static R_TH_LOCAL char colorbuffer[64];
 #define P(x) (p->consb.cons && p->consb.cons->context->pal.x)? p->consb.cons->context->pal.x
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
 		int bg = (p->flags & R_PRINT_FLAGS_NONHEX)? 48: 38;
-		snprintf (colorbuffer, sizeof (colorbuffer), "\033[%d;5;%dm", bg, ch);
-		return colorbuffer;
+		snprintf (p->colorbuffer, sizeof (p->colorbuffer), "\033[%d;5;%dm", bg, ch);
+		return p->colorbuffer;
 	}
 	// check for flag colors
 	if (p && p->colorfor) {

@@ -167,6 +167,7 @@ typedef struct r_print_t {
 	int nbcolor;
 	int spinpos;
 	char *spinmsg;
+	char colorbuffer[64];
 } RPrint;
 
 #ifdef R_API
