@@ -2403,7 +2403,15 @@ R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	}
 }
 
-// colorize_buf is now in RPrintPriv for thread safety
+static bool colorize_append(RStrBuf *sb, const char *src, char ch) {
+	if (src && !r_strbuf_append (sb, src)) {
+		return false;
+	}
+	if (ch) {
+		return r_strbuf_append_n (sb, &ch, 1);
+	}
+	return true;
+}
 
 static bool issymbol(char c) {
 	switch (c) {
@@ -2484,21 +2492,24 @@ R_IPI bool r_print_reg_rainbow_enabled (RPrint *print);
 R_IPI char *r_print_reg_rainbow_color (RPrint *print, const char *p);
 
 R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, const char *num, bool partial_reset, ut64 func_addr) {
+	R_RETURN_VAL_IF_FAIL (print && reg && num, NULL);
 	bool expect_reg = true;
-	int i, j, k, is_mod, is_float = 0, is_arg = 0;
+	int i, k, is_mod, is_float = 0, is_arg = 0;
 	bool was_ansi = false;
 	bool was_ansi_reset = false;
-	char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
-	ut32 c_reset = strlen (reset);
-	ut32 opcode_sz = p && *p? strlen (p) * 10 + 1: 0;
+	const char *reset = partial_reset ? Color_RESET_NOBG : Color_RESET;
+	const size_t reset_len = strlen (reset);
+	const size_t ansi_reset_len = strlen (Color_RESET);
+	const size_t ansi_reset_nb_len = strlen (Color_RESET_NOBG);
 	char previous = '\0';
-	const char *color_flag = print->consb.cons->context->pal.flag;
+	RCons *cons = print->consb.cons;
+	const char *color_flag = cons? cons->context->pal.flag: NULL;
+	const char *var_type = cons? cons->context->pal.var_type: NULL;
+	RStrBuf sb;
 
-	if (R_STR_ISEMPTY (p) || !print->priv) {
+	if (R_STR_ISEMPTY (p)) {
 		return NULL;
 	}
-	char *o = print->priv->colorize_buf;
-	const size_t colorize_bufsz = sizeof (print->priv->colorize_buf);
 #if 0
 	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	// uncomment to ignore color of call/jmp arguments and inherit the op one
@@ -2507,26 +2518,24 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	}
 #endif
 	r_str_trim (p);
-	if (opcode_sz > colorize_bufsz) {
-		/* return same string in case of error */
-		return strdup (p);
-	}
-
-	memset (o, 0, colorize_bufsz);
-	for (i = j = 0; p[i]; i++, j++) {
+	r_strbuf_init (&sb);
+	r_strbuf_reserve (&sb, strlen (p) * 2);
+	for (i = 0; p[i]; i++) {
 		const bool prev_was_ansi = was_ansi;
 		const bool prev_was_ansi_reset = was_ansi_reset;
 		was_ansi = false;
 		was_ansi_reset = false;
 		if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
-			snprintf (o + j, colorize_bufsz - j, "%s0", num);
-			j += strlen (o + j);
+			if (!colorize_append (&sb, num, '0')) {
+				goto oom;
+			}
 			i++;
 			break;
 		}
 		if (p[i] == '-' && isdigit (p[i + 1])) {
-			snprintf (o + j, colorize_bufsz - j, "%s-", num);
-			j += strlen (o + j);
+			if (!colorize_append (&sb, num, '-')) {
+				goto oom;
+			}
 			i++;
 		}
 		/* colorize numbers */
@@ -2535,68 +2544,49 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		if (!prev_was_ansi && is_number) {
 			const char *num2 = num;
 			ut64 n = r_num_get (NULL, p + i);
-			const char *name = print->offname (print->user, n)? color_flag: NULL;
+			const char *name = (print->offname && color_flag && print->offname (print->user, n))? color_flag: NULL;
 			if (name) {
 				num2 = name;
 			}
-			const size_t nlen = strlen (num2);
-			if (nlen + j >= colorize_bufsz) {
-				R_LOG_WARN ("Colorize buffer is too small");
-				break;
+			if (!r_strbuf_append (&sb, num2)) {
+				goto oom;
 			}
-			memcpy (o + j, num2, nlen + 1);
-			j += nlen;
 		}
 		previous = p[i];
-		if (j + 100 >= colorize_bufsz) {
-			R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow"); // XXX dont warn about overflows just fix
-			return strdup (p);
-		}
 		if (is_arg && r_print_reg_rainbow_enabled (print) && (i < 1 || issymbol (p[i - 1]))
 			&& (isalpha (p[i] & 0xff) || p[i] == '_')) {
 			char *color = r_print_reg_rainbow_color (print, p + i);
 			if (color) {
-				const ut32 color_len = strlen (color);
-				if (color_len + j + 10 >= colorize_bufsz) {
-					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
+				if (!r_strbuf_append (&sb, color)) {
 					free (color);
-					return strdup (p);
+					goto oom;
 				}
-				strcpy (o + j, color);
-				j += color_len;
 				free (color);
 			}
 		}
 		switch (p[i]) {
 		case 0x1b: {
-			/* copy ansi sequence verbatim */
-			const int ansi_j = j;
+			const char *ansi = p + i;
 			while (p[i] && p[i] != 'm') {
-				o[j++] = p[i++];
-				if (j + 10 >= colorize_bufsz) {
-					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
-					return strdup (p);
-				}
+				i++;
 			}
 			if (p[i] == 'm') {
-				o[j++] = p[i];
+				i++;
 			}
-			const int ansi_len = j - ansi_j;
-			if (ansi_len > 0) {
-				const int reset_len = strlen (Color_RESET);
-				const int resetnb_len = strlen (Color_RESET_NOBG);
-				if ((ansi_len == reset_len && !memcmp (o + ansi_j, Color_RESET, reset_len))
-					|| (ansi_len == resetnb_len && !memcmp (o + ansi_j, Color_RESET_NOBG, resetnb_len))) {
-					was_ansi_reset = true;
-				}
+			const size_t ansi_len = p + i - ansi;
+			if (!r_strbuf_append_n (&sb, ansi, ansi_len)) {
+				goto oom;
 			}
-			j--;
+			was_ansi_reset = (ansi_len == ansi_reset_len && !memcmp (ansi, Color_RESET, ansi_reset_len))
+				|| (ansi_len == ansi_reset_nb_len && !memcmp (ansi, Color_RESET_NOBG, ansi_reset_nb_len));
 			was_ansi = true;
+			i--;
 			continue;
 		}
 		case '$':
-			snprintf (o + j, colorize_bufsz - j, "%s$", num);
-			j += strlen (o + j);
+			if (!colorize_append (&sb, num, '$')) {
+				goto oom;
+			}
 			i++;
 			break;
 		case '+':
@@ -2619,15 +2609,10 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if (prev_was_ansi && prev_was_ansi_reset) {
 					break;
 				}
-				if (c_reset + j + 10 >= colorize_bufsz) {
-					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
-					return strdup (p);
-				}
-
 				bool found_var = check_arg_name (print, p + i + 1, func_addr);
-				strcpy (o + j, reset);
-				j += strlen (reset);
-				o[j] = p[i];
+				if (!colorize_append (&sb, reset, p[i])) {
+					goto oom;
+				}
 				const char *np = p + i + 1;
 				while (*np && isspace (*np & 0xff)) {
 					np++;
@@ -2636,21 +2621,16 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				const bool immediate_space = isspace (p[i + 1] & 0xff);
 				if (!(next_is_num && (p[i] == '[' || !immediate_space))) {
 					const char *color = reg;
-					if (found_var) {
-						color = print->consb.cons->context->pal.var_type;
+					if (found_var && var_type) {
+						color = var_type;
 					}
 					expect_reg = false;
-					if (is_flag (p + i)) {
+					if (is_flag (p + i) && color_flag) {
 						color = color_flag;
-						expect_reg = false;
 					}
-					ut32 color_len = strlen (color);
-					if (color_len + j + 10 >= colorize_bufsz) {
-						R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
-						return strdup (p);
+					if (!r_strbuf_append (&sb, color)) {
+						goto oom;
 					}
-					strcpy (o + j + 1, color);
-					j += strlen (color);
 				}
 				continue;
 			}
@@ -2677,59 +2657,58 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				}
 			}
 			if (is_float) {
-				strcpy (o + j, num);
-				j += strlen (num);
+				if (!r_strbuf_append (&sb, num)) {
+					goto oom;
+				}
 			}
 			if (!p[k]) {
 				is_mod = 1;
 			}
 			if (is_mod) {
 				// COLOR FOR REGISTER
-				/* if (reg_len+j+10 >= opcode_sz) o = realloc_color_buffer (o, &opcode_sz, reg_len+100); */
 				if (is_flag (p + i)) {
 					if (color_flag) {
-						strcpy (o + j, color_flag);
-						j += strlen (o + j);
+						if (!r_strbuf_append (&sb, color_flag)) {
+							goto oom;
+						}
 					}
 				} else {
 					if (expect_reg) {
-						strcpy (o + j, reg);
-						j += strlen (o + j);
+						if (!r_strbuf_append (&sb, reg)) {
+							goto oom;
+						}
 					}
 				}
 			}
 			break;
 		case '0': /* address */
 			if (p[i + 1] == 'x') {
-				if (print->flags & R_PRINT_FLAGS_SECSUB) {
+				if ((print->flags & R_PRINT_FLAGS_SECSUB) && print->iob.map_get_at) {
 					RIOMap *map = print->iob.map_get_at (print->iob.io, r_num_get (NULL, p + i));
 					if (map && map->name) {
-						if (strlen (map->name) + j + 1 >= colorize_bufsz) {
-							R_LOG_WARN ("prevent overflow");
-							break;
+						if (!colorize_append (&sb, map->name, '.')) {
+							goto oom;
 						}
-						strcpy (o + j, map->name);
-						j += strlen (o + j);
-						strcpy (o + j, ".");
-						j++;
 					}
 				}
 			}
 			break;
 		}
-		o[j] = p[i];
+		if (!colorize_append (&sb, NULL, p[i])) {
+			goto oom;
+		}
 	}
-	// decolorize at the end
-	if (j + 20 >= opcode_sz) {
-		char *t_o = o;
-		/* o = malloc (opcode_sz+21); */
-		memmove (o, t_o, opcode_sz);
-		/* free (t_o); */
+	const char *out = r_strbuf_get (&sb);
+	size_t len = r_strbuf_length (&sb);
+	if (len < reset_len || memcmp (out + len - reset_len, reset, reset_len)) {
+		if (!r_strbuf_append (&sb, reset)) {
+			goto oom;
+		}
 	}
-	if (j < c_reset || memcmp (o + j - c_reset, reset, c_reset)) {
-		strcpy (o + j, reset);
-	}
-	return strdup (o);
+	return r_strbuf_drain_nofree (&sb);
+oom:
+	r_strbuf_fini (&sb);
+	return strdup (p);
 }
 
 // reset the status of row_offsets
