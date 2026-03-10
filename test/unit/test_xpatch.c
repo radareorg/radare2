@@ -53,7 +53,9 @@ static bool test_xpatch_hexpairs_wrong_data(void) {
 		"- '4f f2 ba fc'\n"  // This doesn't match the actual data
 		"+ 'ff fe fd fc'\n";
 
+	r_log_set_quiet (true);
 	bool result = r_core_patch_unified (core, patch, 0, false);
+	r_log_set_quiet (false);
 	mu_assert_false (result, "Should fail to apply patch with wrong data");
 
 	r_core_free (core);

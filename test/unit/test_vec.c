@@ -748,7 +748,7 @@ static bool test_vec_find_index(void) {
 	RVecST32_init (&v);
 
 	st32 x = 0;
-	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index1");
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), SZT_MAX, "find_index1");
 
 	for (x = 0; x < 3; x++) {
 		RVecST32_push_back (&v, &x);
@@ -761,11 +761,11 @@ static bool test_vec_find_index(void) {
 	x = 2;
 	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), 2, "find_index4");
 	x = 3;
-	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index5");
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), SZT_MAX, "find_index5");
 
 	RVecST32_clear (&v);
 	x = 0;
-	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), UT64_MAX, "find_index6");
+	mu_assert_eq (RVecST32_find_index (&v, &x, find_compare_st32), SZT_MAX, "find_index6");
 
 	RVecST32_fini (&v);
 	mu_end;
@@ -1029,7 +1029,7 @@ static bool test_vec_partition(void) {
 	mu_assert_eq (*RVecST32_at (&v, 2), 59, "partition15");
 	mu_assert_eq (*RVecST32_at (&v, 3), 38, "partition16");
 	mu_assert_eq (*RVecST32_at (&v, 4), 47, "partition17");
-	mu_assert_eq (pivot, v._start, "partition18");
+	mu_assert_ptreq (pivot, v._start, "partition18");
 
 	RVecST32_fini (&v);
 	mu_end;
