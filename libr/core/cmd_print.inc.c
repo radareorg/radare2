@@ -11,7 +11,7 @@ static int cmd_print(void *data, const char *input);
 static void print_bytes(RCore *core, const ut8 *buf, int len, const char *fmt, const char sep) {
 	char *s = r_print_bytes (buf, len, fmt, sep);
 	if (s) {
-		r_print_printf (core->print, "%s\n", s);
+		r_cons_println (core->cons, s);
 		free (s);
 	}
 }
@@ -7912,6 +7912,26 @@ static void cmd_pb(RCore *core, const char *input, const ut8 *block, int l, int 
 	}
 }
 
+static void cmd_pxc(RCore *core, const char *input, int l, int len) {
+	if (input[2] == '?') {
+		r_core_cmd_help_match (core, help_msg_px, "pxc");
+		return;
+	}
+	int ocomments = core->print->use_comments;
+	core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
+	ut64 from = r_config_get_i (core->config, "diff.from");
+	ut64 to = r_config_get_i (core->config, "diff.to");
+	if (from == to && !from) {
+		r_core_block_size (core, len);
+		len = core->blocksize;
+		r_print_hexdump (core->print, core->addr, core->block, core->blocksize, 16, 1, 1);
+	} else {
+		r_core_print_cmp (core, from, to);
+	}
+	core->num->value = len;
+	core->print->use_comments = ocomments;
+}
+
 static int cmd_print(void *data, const char *input) {
 	RCore *core = (RCore *)data;
 	st64 l;
@@ -8838,7 +8858,7 @@ static int cmd_print(void *data, const char *input) {
 			r_core_cmd_help (core, help_msg_px);
 			break;
 		case '0': // "px0"
-			if (l) {
+			if (l != 0) {
 				int len = r_str_nlen ((const char *)core->block, core->blocksize);
 				print_bytes (core, core->block, len, "%02x", 0);
 			}
@@ -8879,29 +8899,15 @@ static int cmd_print(void *data, const char *input) {
 			break;
 		case 'b': // "pxb"
 		case 'B': // "pxB"
-			if (l) {
+			if (l != 0) {
 				cmd_print_pxb (core, block, len, input);
 			}
 			break;
 		case 'c': // "pxc"
-		{
-			int ocomments = core->print->use_comments;
-			core->print->use_comments = core->print->flags & R_PRINT_FLAGS_COMMENT;
-			if (l) {
-				ut64 from = r_config_get_i (core->config, "diff.from");
-				ut64 to = r_config_get_i (core->config, "diff.to");
-				if (from == to && !from) {
-					r_core_block_size (core, len);
-					len = core->blocksize;
-					r_print_hexdump (core->print, core->addr, core->block, core->blocksize, 16, 1, 1);
-				} else {
-					r_core_print_cmp (core, from, to);
-				}
-				core->num->value = len;
+			if (l != 0) {
+				cmd_pxc (core, input, l, len);
 			}
-			core->print->use_comments = ocomments;
-		}
-		break;
+			break;
 		case 'i': // "pxi"
 			if (l != 0) {
 				core->print->show_offset = r_config_get_i (core->config, "hex.addr");

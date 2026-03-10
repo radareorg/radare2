@@ -942,11 +942,7 @@ static bool invalidchar(char ch) {
 	return !ch || !IS_PRINTABLE (ch) || isspace (ch & 0xff);
 }
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
+// TODO: this function shouldnt exist at all, we should use r_strbuf and the callers must use r_cons apis instead
 R_API void r_print_printf(const RPrint *p, const char *fmt, ...) {
 	va_list ap;
 	va_start(ap, fmt);
