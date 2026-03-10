@@ -598,6 +598,7 @@ RUN
 
 NAME=izzz*
 FILE=bins/mach0/fatmach0-3true
+ARGS=-b64 -a x86
 CMDS=izzz*~appleca
 EXPECT=<<EOF
 '0x00002562'f str._http:__www.apple.com_appleca_root.crl0_r 41
