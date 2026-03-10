@@ -2403,14 +2403,13 @@ R_API const char* r_print_color_op_type(RPrint *p, ut32 anal_type) {
 	}
 }
 
-static bool colorize_append(RStrBuf *sb, const char *src, char ch) {
-	if (src && !r_strbuf_append (sb, src)) {
-		return false;
+static void colorize_append(RStrBuf *sb, const char *src, char ch) {
+	if (src) {
+		r_strbuf_append (sb, src);
 	}
 	if (ch) {
-		return r_strbuf_append_n (sb, &ch, 1);
+		r_strbuf_append_n (sb, &ch, 1);
 	}
-	return true;
 }
 
 static bool issymbol(char c) {
@@ -2526,16 +2525,12 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		was_ansi = false;
 		was_ansi_reset = false;
 		if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
-			if (!colorize_append (&sb, num, '0')) {
-				goto oom;
-			}
+			colorize_append (&sb, num, '0');
 			i++;
 			break;
 		}
 		if (p[i] == '-' && isdigit (p[i + 1])) {
-			if (!colorize_append (&sb, num, '-')) {
-				goto oom;
-			}
+			colorize_append (&sb, num, '-');
 			i++;
 		}
 		/* colorize numbers */
@@ -2548,19 +2543,14 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			if (name) {
 				num2 = name;
 			}
-			if (!r_strbuf_append (&sb, num2)) {
-				goto oom;
-			}
+			r_strbuf_append (&sb, num2);
 		}
 		previous = p[i];
 		if (is_arg && r_print_reg_rainbow_enabled (print) && (i < 1 || issymbol (p[i - 1]))
 			&& (isalpha (p[i] & 0xff) || p[i] == '_')) {
 			char *color = r_print_reg_rainbow_color (print, p + i);
 			if (color) {
-				if (!r_strbuf_append (&sb, color)) {
-					free (color);
-					goto oom;
-				}
+				r_strbuf_append (&sb, color);
 				free (color);
 			}
 		}
@@ -2574,9 +2564,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				i++;
 			}
 			const size_t ansi_len = p + i - ansi;
-			if (!r_strbuf_append_n (&sb, ansi, ansi_len)) {
-				goto oom;
-			}
+			r_strbuf_append_n (&sb, ansi, ansi_len);
 			was_ansi_reset = (ansi_len == ansi_reset_len && !memcmp (ansi, Color_RESET, ansi_reset_len))
 				|| (ansi_len == ansi_reset_nb_len && !memcmp (ansi, Color_RESET_NOBG, ansi_reset_nb_len));
 			was_ansi = true;
@@ -2584,9 +2572,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			continue;
 		}
 		case '$':
-			if (!colorize_append (&sb, num, '$')) {
-				goto oom;
-			}
+			colorize_append (&sb, num, '$');
 			i++;
 			break;
 		case '+':
@@ -2610,9 +2596,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					break;
 				}
 				bool found_var = check_arg_name (print, p + i + 1, func_addr);
-				if (!colorize_append (&sb, reset, p[i])) {
-					goto oom;
-				}
+				colorize_append (&sb, reset, p[i]);
 				const char *np = p + i + 1;
 				while (*np && isspace (*np & 0xff)) {
 					np++;
@@ -2628,9 +2612,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 					if (is_flag (p + i) && color_flag) {
 						color = color_flag;
 					}
-					if (!r_strbuf_append (&sb, color)) {
-						goto oom;
-					}
+					r_strbuf_append (&sb, color);
 				}
 				continue;
 			}
@@ -2657,9 +2639,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				}
 			}
 			if (is_float) {
-				if (!r_strbuf_append (&sb, num)) {
-					goto oom;
-				}
+				r_strbuf_append (&sb, num);
 			}
 			if (!p[k]) {
 				is_mod = 1;
@@ -2668,15 +2648,11 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				// COLOR FOR REGISTER
 				if (is_flag (p + i)) {
 					if (color_flag) {
-						if (!r_strbuf_append (&sb, color_flag)) {
-							goto oom;
-						}
+						r_strbuf_append (&sb, color_flag);
 					}
 				} else {
 					if (expect_reg) {
-						if (!r_strbuf_append (&sb, reg)) {
-							goto oom;
-						}
+						r_strbuf_append (&sb, reg);
 					}
 				}
 			}
@@ -2686,29 +2662,20 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if ((print->flags & R_PRINT_FLAGS_SECSUB) && print->iob.map_get_at) {
 					RIOMap *map = print->iob.map_get_at (print->iob.io, r_num_get (NULL, p + i));
 					if (map && map->name) {
-						if (!colorize_append (&sb, map->name, '.')) {
-							goto oom;
-						}
+						colorize_append (&sb, map->name, '.');
 					}
 				}
 			}
 			break;
 		}
-		if (!colorize_append (&sb, NULL, p[i])) {
-			goto oom;
-		}
+		colorize_append (&sb, NULL, p[i]);
 	}
 	const char *out = r_strbuf_get (&sb);
 	size_t len = r_strbuf_length (&sb);
 	if (len < reset_len || memcmp (out + len - reset_len, reset, reset_len)) {
-		if (!r_strbuf_append (&sb, reset)) {
-			goto oom;
-		}
+		r_strbuf_append (&sb, reset);
 	}
 	return r_strbuf_drain_nofree (&sb);
-oom:
-	r_strbuf_fini (&sb);
-	return strdup (p);
 }
 
 // reset the status of row_offsets
