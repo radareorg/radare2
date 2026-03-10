@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -594,6 +594,52 @@ static void cmd_drn(RCore *core, const char *str) {
 		}
 	}
 	free (foo);
+}
+
+static void cmd_drb(RCore *core, const char *str) {
+	char *arg = strchr (str, ' ');
+	int len, type = R_REG_TYPE_GPR;
+	if (arg) {
+		char *string = r_str_trim_dup (arg + 1);
+		if (string) {
+			type = r_reg_type_by_name (string);
+			if (type == -1 && string[0] != 'a') {
+				type = R_REG_TYPE_GPR;
+			}
+			free (string);
+		}
+	}
+	ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
+	if (str[0] == '8') {
+		char *bytes = r_print_bytes (core->print, buf, len, "%02x", 0);
+		if (bytes) {
+			r_cons_println (core->cons, bytes);
+			free (bytes);
+		}
+	} else {
+		switch (str[1]) {
+		case '1':
+			r_print_hexdump (core->print, 0, buf, len, 8, 1, 1);
+			break;
+		case '2':
+			r_print_hexdump (core->print, 0, buf, len, 16, 2, 1);
+			break;
+		case '4':
+			r_print_hexdump (core->print, 0, buf, len, 32, 4, 1);
+			break;
+		case '8':
+			r_print_hexdump (core->print, 0, buf, len, 64, 8, 1);
+			break;
+		default:
+			if (core->rasm->config->bits == 64) {
+				r_print_hexdump (core->print, 0, buf, len, 64, 8, 1);
+			} else {
+				r_print_hexdump (core->print, 0, buf, len, 32, 4, 1);
+			}
+			break;
+		}
+	}
+	free (buf);
 }
 
 static void setRarunProfileString(RCore *core, const char *str) {
@@ -2717,47 +2763,7 @@ static void cmd_debug_reg(RCore *core, const char *str) {
 		break;
 	case '8': // "dr8"
 	case 'b': // "drb"
-		{
-			int len, type = R_REG_TYPE_GPR;
-			arg = strchr (str, ' ');
-			if (arg) {
-				char *string = r_str_trim_dup (arg + 1);
-				if (string) {
-					type = r_reg_type_by_name (string);
-					if (type == -1 && string[0] != 'a') {
-						type = R_REG_TYPE_GPR;
-					}
-					free (string);
-				}
-			}
-			ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
-			if (str[0] == '8') {
-				r_print_bytes (core->print, buf, len, "%02x", 0);
-			} else {
-				switch (str[1]) {
-				case '1':
-					r_print_hexdump (core->print, 0ll, buf, len, 8, 1, 1);
-					break;
-				case '2':
-					r_print_hexdump (core->print, 0ll, buf, len, 16, 2, 1);
-					break;
-				case '4':
-					r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
-					break;
-				case '8':
-					r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
-					break;
-				default:
-					if (core->rasm->config->bits == 64) {
-						r_print_hexdump (core->print, 0ll, buf, len, 64, 8, 1);
-					} else {
-						r_print_hexdump (core->print, 0ll, buf, len, 32, 4, 1);
-					}
-					break;
-				}
-			}
-			free (buf);
-		}
+		cmd_drb (core, str);
 		break;
 	case 'e': // "dre"
 		r_debug_reg_list (core->dbg, R_REG_TYPE_GPR, 64, NULL, 'e', NULL);

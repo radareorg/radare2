@@ -86,6 +86,12 @@ typedef struct r_print_zoom_t {
 	int mode;
 } RPrintZoom;
 
+typedef struct r_print_priv_t {
+	char rgbstr[32];
+	int zoom_mode;
+	char colorbuffer[64];
+} RPrintPriv;
+
 typedef struct r_print_t {
 	void *user;
 	RIOBind iob;
@@ -167,6 +173,7 @@ typedef struct r_print_t {
 	int nbcolor;
 	int spinpos;
 	char *spinmsg;
+	RPrintPriv *priv;
 } RPrint;
 
 #ifdef R_API
@@ -184,23 +191,18 @@ R_API void r_print_free(RPrint * R_NULLABLE p);
 R_API bool r_print_fini(RPrint * R_NONNULL p);
 R_API void r_print_set_flags(RPrint *p, int _flags);
 R_API void r_print_unset_flags(RPrint *p, int flags);
-R_API int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_size);
 R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr);
-R_API void r_print_addr(RPrint *p, ut64 addr);
 R_API bool r_print_offset_strbuf(RPrint *p, RStrBuf *sb, ut64 off, int invert, int delta, const char *label);
 R_API bool r_print_section_strbuf(RPrint *p, RStrBuf *sb, ut64 at);
-R_API void r_print_section(RPrint *p, ut64 at);
 R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height);
 R_API void r_print_hexii(RPrint *p, ut64 addr, const ut8 *buf, int len, int step);
 R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int base, int step, size_t zoomsz);
 R_API void r_print_hexdump_simple(const ut8 *buf, int len);
 R_API int r_print_jsondump(RPrint *p, const ut8 *buf, int len, int wordsize);
 R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8* a, ut64 ba, const ut8 *b, int len, int scndcol);
-R_API void r_print_bytes(RPrint *p, const ut8* buf, int len, const char *fmt, const char sep);
+R_API R_OWNED char *r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, const char sep);
 R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step);
-R_API void r_print_byte(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch);
 R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch);
-R_API int r_print_byte_tostring(RPrint *p, ut64 addr, const char *fmt, int idx, ut8 ch, char *buf, size_t buf_size);
 R_API bool r_print_byte_strbuf(RPrint *p, RStrBuf *sb, ut64 addr, const char *fmt, int idx, ut8 ch);
 R_API void r_print_c(RPrint *p, const ut8 *str, int len);
 R_API void r_print_raw(RPrint *p, ut64 addr, const ut8* buf, int len, int offlines);
@@ -246,7 +248,6 @@ R_API int r_print_format2(RPrint *p, ut64 seek, const ut8* buf, const int len, c
 R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const ut8* b, const int len, const char *formatname, int mode, const char *setval, const char *ofield);
 R_API const char *r_print_format_byname(RPrint *p, const char *name);
 R_API void r_print_offset(RPrint *p, ut64 off, int invert, int delta, const char *label);
-R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int seggrn, int offdec, int delta, const char *label);
 #define R_PRINT_STRING_WIDE 1
 #define R_PRINT_STRING_ZEROEND 2
 #define R_PRINT_STRING_URLENCODE 4
@@ -254,7 +255,6 @@ R_API void r_print_offset_sg(RPrint *p, ut64 off, int invert, int offseg, int se
 #define R_PRINT_STRING_WIDE32 16
 #define R_PRINT_STRING_ESC_NL 32
 #define R_PRINT_STRING_ONLY_PRINTABLE 64
-R_API int r_print_string_strbuf(RPrint *p, RStrBuf *sb, ut64 seek, const ut8 *str, int len, int options);
 R_API int r_print_string(RPrint *p, ut64 seek, const ut8 *str, int len, int options);
 
 // time

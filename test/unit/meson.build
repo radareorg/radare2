@@ -45,6 +45,7 @@ if get_option('enable_tests')
     'ovf',
     'pdb',
     'pj',
+    'print',
     'queue',
     'r2pipe',
     'r2r',

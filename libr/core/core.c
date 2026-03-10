@@ -1227,7 +1227,7 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 }
 
 static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
-	R_RETURN_VAL_IF_FAIL (core && completion && buf && buf->data, false);
+	R_RETURN_VAL_IF_FAIL (core && completion && buf, false);
 	ensure_autocomplete (core);
 	RCoreAutocomplete *child = NULL;
 	ensure_autocomplete (core);
