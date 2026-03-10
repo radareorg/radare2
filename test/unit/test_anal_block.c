@@ -484,9 +484,22 @@ bool test_r_anal_block_query(void) {
 	mu_end;
 }
 
-bool addr_list_cb(ut64 addr, void *user) {
+static bool addr_list_contains(RList *list, ut64 addr) {
+	RListIter *it;
+	ut64 *item;
+	r_list_foreach (list, it, item) {
+		if (*item == addr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool addr_list_cb(ut64 addr, void *user) {
 	RList *list = user;
-	r_list_push (list, (void *)addr);
+	ut64 *item = R_NEW (ut64);
+	*item = addr;
+	r_list_push (list, item);
 	return true;
 }
 
@@ -525,21 +538,21 @@ bool test_r_anal_block_successors(void) {
 	r_anal_switch_op_add_case (sop, 0x55, 5, 0x140);
 	blocks[2]->switch_op = sop;
 
-	RList *result = r_list_new ();
+	RList *result = r_list_newf (free);
 	r_anal_block_successor_addrs_foreach (blocks[0], addr_list_cb, result);
 	mu_assert_eq (r_list_length (result), 2, "jump/fail successors count");
-	mu_assert ("jmp successor", r_list_contains (result, (void *)0x30));
-	mu_assert ("fail successor", r_list_contains (result, (void *)0x50));
+	mu_assert ("jmp successor", addr_list_contains (result, 0x30));
+	mu_assert ("fail successor", addr_list_contains (result, 0x50));
 	r_list_purge (result);
 
 	r_anal_block_successor_addrs_foreach (blocks[2], addr_list_cb, result);
 	mu_assert_eq (r_list_length (result), 6, "switch successors count");
-	mu_assert ("jmp successor", r_list_contains (result, (void *)0x10));
-	mu_assert ("case successor", r_list_contains (result, (void *)0x100));
-	mu_assert ("case successor", r_list_contains (result, (void *)0x110));
-	mu_assert ("case successor", r_list_contains (result, (void *)0x120));
-	mu_assert ("case successor", r_list_contains (result, (void *)0x130));
-	mu_assert ("case successor", r_list_contains (result, (void *)0x140));
+	mu_assert ("jmp successor", addr_list_contains (result, 0x10));
+	mu_assert ("case successor", addr_list_contains (result, 0x100));
+	mu_assert ("case successor", addr_list_contains (result, 0x110));
+	mu_assert ("case successor", addr_list_contains (result, 0x120));
+	mu_assert ("case successor", addr_list_contains (result, 0x130));
+	mu_assert ("case successor", addr_list_contains (result, 0x140));
 	r_list_free (result);
 
 	result = r_anal_block_recurse_list (blocks[0]);

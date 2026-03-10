@@ -2,12 +2,12 @@ UNITS_BINDIR := bin
 BINS=$(patsubst %.c,$(UNITS_BINDIR)/%,$(wildcard *.c))
 # LDFLAGS+=$(shell pkg-config --libs r_core)
 -include ../../config-user.mk
-LDFLAGS+=-L$(LIBDIR)
-LDFLAGS+=-lr_core -lr_main -lm -lr_config -lr_debug -lr_bin -lr_lang -lr_anal -lr_bp -lr_egg -lr_asm -lr_flag -lr_search -lr_syscall -lr_fs -lr_io -lr_socket -lr_cons -lr_magic -lr_muta -lr_arch -lr_esil -lr_reg -lr_util -ldl
-CFLAGS+=-I$(INCLUDEDIR)
-CFLAGS+=-I../../libr/include
-CFLAGS+=-I../../subprojects/sdb/include
+CPPFLAGS+=-I$(INCLUDEDIR)
+CPPFLAGS+=-I../../libr/include
+CPPFLAGS+=-I../../subprojects/sdb/include
 CFLAGS+=-g
+LDLIBS+=-L$(LIBDIR)
+LDLIBS+=-lr_core -lr_main -lm -lr_config -lr_debug -lr_bin -lr_lang -lr_anal -lr_bp -lr_egg -lr_asm -lr_flag -lr_search -lr_syscall -lr_fs -lr_io -lr_socket -lr_cons -lr_magic -lr_muta -lr_arch -lr_esil -lr_reg -lr_util -ldl
 ifeq ($(ASAN),1)
 	ASAN_LD_PRELOAD=LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.5
 else
@@ -21,7 +21,7 @@ asan:
 
 $(UNITS_BINDIR)/%: %.c
 	mkdir -p "$(UNITS_BINDIR)"
-	$(CC) $< -o $@ $(CFLAGS) $(LDFLAGS)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< -o $@ $(LDFLAGS) $(LDLIBS)
 
 test_debug: $(UNITS_BINDIR)/test_debug
 	@:

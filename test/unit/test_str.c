@@ -569,7 +569,7 @@ bool test_r_str_tok_r (void) {
 		char *token = NULL;
 
 		token = r_str_tok_r(str, ",", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 
 	{
@@ -590,7 +590,7 @@ bool test_r_str_tok_r (void) {
 		mu_assert_streq(token, "world", "obtained incorrect token");
 
 		token = r_str_tok_r(NULL, " ", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 	
 	{
@@ -608,7 +608,7 @@ bool test_r_str_tok_r (void) {
 		mu_assert_streq(token, "333", "obtained incorrect token");
 
 		token = r_str_tok_r(NULL, ",", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 
 	{
@@ -626,7 +626,7 @@ bool test_r_str_tok_r (void) {
 		mu_assert_streq(token, "333", "obtained incorrect token");
 
 		token = r_str_tok_r(NULL, ", ", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 
 	{
@@ -638,7 +638,7 @@ bool test_r_str_tok_r (void) {
 		mu_assert_streq(token, "This is hello world", "obtained incorrect token");
 
 		token = r_str_tok_r(NULL, ";", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 
 	{
@@ -659,7 +659,7 @@ bool test_r_str_tok_r (void) {
 		mu_assert_streq(token, "world", "obtained incorrect token");
 
 		token = r_str_tok_r(NULL, ";", &rest);
-		mu_assert_eq(token, NULL, "token unexpectedly is not NULL");
+		mu_assert_null (token, "token unexpectedly is not NULL");
 	}
 
 	mu_end;

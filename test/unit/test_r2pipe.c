@@ -16,7 +16,7 @@ static bool test_r2pipe(void) {
 
 static bool test_r2pipe_404(void) {
 	R2Pipe *r = r2pipe_open ("rodoro2 -N -q0 -");
-	mu_assert_eq (r, NULL, "r2pipe can spawn");
+	mu_assert_null (r, "r2pipe should not spawn");
 	// mu_assert ("r2pipe can spawn", !r);
 	mu_end;
 }
