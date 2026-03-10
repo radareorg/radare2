@@ -309,15 +309,15 @@ static int assemble_moveq(char tokens[][256], int num_tokens, ut8 *buf, int size
 
 static int assemble_move(char tokens[][256], int num_tokens, ut8 *buf, int size, int size_code) {
 	// Handle special tokenization when first operand contains a comma inside parentheses
-	char op1[128] = {0};
-	char op2[128] = {0};
+	char combined[256];
+	const char *op1, *op2;
 	if (num_tokens == 3) {
-		strncpy (op1, tokens[1], sizeof (op1) - 1);
-		strncpy (op2, tokens[2], sizeof (op2) - 1);
+		op1 = tokens[1];
+		op2 = tokens[2];
 	} else if (num_tokens == 4 && strchr (tokens[1], '(') && tokens[2][strlen (tokens[2]) - 1] == ')') {
-		// Reconstruct operand1 as tokens[1] "," tokens[2]
-		snprintf (op1, sizeof (op1), "%s,%s", tokens[1], tokens[2]);
-		strncpy (op2, tokens[3], sizeof (op2) - 1);
+		snprintf (combined, sizeof (combined), "%s,%s", tokens[1], tokens[2]);
+		op1 = combined;
+		op2 = tokens[3];
 	} else {
 		return 0;
 	}
