@@ -1804,8 +1804,7 @@ R_API void r_print_hexdiff(RPrint *p, ut64 aa, const ut8 *_a, ut64 ba, const ut8
 	free (b);
 }
 
-// TODO: add RPrint as first argument, so we can use colors and other settings
-R_API R_OWNED char *r_print_bytes(const ut8 *buf, int len, const char *fmt, const char sep) {
+R_API R_OWNED char *r_print_bytes(RPrint *p, const ut8 *buf, int len, const char *fmt, const char sep) {
 	R_RETURN_VAL_IF_FAIL (fmt && buf && len > 0, NULL);
 	size_t i;
 	RStrBuf *sb = r_strbuf_new ("");

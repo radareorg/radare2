@@ -9,7 +9,7 @@ static int printzoomcallback(void *user, int mode, ut64 addr, ut8 *bufz, ut64 si
 static int cmd_print(void *data, const char *input);
 
 static void print_bytes(RCore *core, const ut8 *buf, int len, const char *fmt, const char sep) {
-	char *s = r_print_bytes (buf, len, fmt, sep);
+	char *s = r_print_bytes (core->print, buf, len, fmt, sep);
 	if (s) {
 		r_cons_println (core->cons, s);
 		free (s);

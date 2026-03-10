@@ -611,7 +611,7 @@ static void cmd_drb(RCore *core, const char *str) {
 	}
 	ut8 *buf = r_reg_get_bytes (core->dbg->reg, type, &len);
 	if (str[0] == '8') {
-		char *bytes = r_print_bytes (buf, len, "%02x", 0);
+		char *bytes = r_print_bytes (core->print, buf, len, "%02x", 0);
 		if (bytes) {
 			r_cons_println (core->cons, bytes);
 			free (bytes);
