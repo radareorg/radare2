@@ -2498,6 +2498,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 		return NULL;
 	}
 	char *o = print->priv->colorize_buf;
+	const size_t colorize_bufsz = sizeof (print->priv->colorize_buf);
 #if 0
 	// bool is_jmp = p && (*p == 'j' || ((*p == 'c') && (p[1] == 'a')))? 1: 0;
 	// uncomment to ignore color of call/jmp arguments and inherit the op one
@@ -2506,25 +2507,25 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 	}
 #endif
 	r_str_trim (p);
-	if (opcode_sz > COLORIZE_BUFSIZE) {
+	if (opcode_sz > colorize_bufsz) {
 		/* return same string in case of error */
 		return strdup (p);
 	}
 
-	memset (o, 0, COLORIZE_BUFSIZE);
+	memset (o, 0, colorize_bufsz);
 	for (i = j = 0; p[i]; i++, j++) {
 		const bool prev_was_ansi = was_ansi;
 		const bool prev_was_ansi_reset = was_ansi_reset;
 		was_ansi = false;
 		was_ansi_reset = false;
 		if (i > 0 && p[i - 1] == ' ' && (p[i] == '0' && p[i + 1] == 0)) {
-			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s0", num);
+			snprintf (o + j, colorize_bufsz - j, "%s0", num);
 			j += strlen (o + j);
 			i++;
 			break;
 		}
 		if (p[i] == '-' && isdigit (p[i + 1])) {
-			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s-", num);
+			snprintf (o + j, colorize_bufsz - j, "%s-", num);
 			j += strlen (o + j);
 			i++;
 		}
@@ -2539,7 +2540,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				num2 = name;
 			}
 			const size_t nlen = strlen (num2);
-			if (nlen + j >= sizeof (o)) {
+			if (nlen + j >= colorize_bufsz) {
 				R_LOG_WARN ("Colorize buffer is too small");
 				break;
 			}
@@ -2547,7 +2548,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			j += nlen;
 		}
 		previous = p[i];
-		if (j + 100 >= COLORIZE_BUFSIZE) {
+		if (j + 100 >= colorize_bufsz) {
 			R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow"); // XXX dont warn about overflows just fix
 			return strdup (p);
 		}
@@ -2556,7 +2557,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			char *color = r_print_reg_rainbow_color (print, p + i);
 			if (color) {
 				const ut32 color_len = strlen (color);
-				if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
+				if (color_len + j + 10 >= colorize_bufsz) {
 					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
 					free (color);
 					return strdup (p);
@@ -2572,7 +2573,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			const int ansi_j = j;
 			while (p[i] && p[i] != 'm') {
 				o[j++] = p[i++];
-				if (j + 10 >= COLORIZE_BUFSIZE) {
+				if (j + 10 >= colorize_bufsz) {
 					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
 					return strdup (p);
 				}
@@ -2594,7 +2595,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 			continue;
 		}
 		case '$':
-			snprintf (o + j, COLORIZE_BUFSIZE - j, "%s$", num);
+			snprintf (o + j, colorize_bufsz - j, "%s$", num);
 			j += strlen (o + j);
 			i++;
 			break;
@@ -2618,7 +2619,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if (prev_was_ansi && prev_was_ansi_reset) {
 					break;
 				}
-				if (c_reset + j + 10 >= COLORIZE_BUFSIZE) {
+				if (c_reset + j + 10 >= colorize_bufsz) {
 					R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow");
 					return strdup (p);
 				}
@@ -2644,7 +2645,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 						expect_reg = false;
 					}
 					ut32 color_len = strlen (color);
-					if (color_len + j + 10 >= COLORIZE_BUFSIZE) {
+					if (color_len + j + 10 >= colorize_bufsz) {
 						R_LOG_WARN ("r_print_colorize_opcode(): buffer overflow!");
 						return strdup (p);
 					}
@@ -2703,7 +2704,7 @@ R_API char* r_print_colorize_opcode(RPrint *print, char *p, const char *reg, con
 				if (print->flags & R_PRINT_FLAGS_SECSUB) {
 					RIOMap *map = print->iob.map_get_at (print->iob.io, r_num_get (NULL, p + i));
 					if (map && map->name) {
-						if (strlen (map->name) + j + 1 >= COLORIZE_BUFSIZE) {
+						if (strlen (map->name) + j + 1 >= colorize_bufsz) {
 							R_LOG_WARN ("prevent overflow");
 							break;
 						}
