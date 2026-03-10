@@ -211,7 +211,7 @@ typedef struct r_disasm_state_t {
 	int ocols;
 	int lcols;
 	int nb, nbytes;
-	int show_utf8;
+	bool show_utf8;
 	int lines;
 	int oplen;
 	int vliw_count;
@@ -2762,7 +2762,11 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			if (printPre) {
 				ds_pre_xrefs (ds, no_fcn_lines);
 			}
-			r_cons_print (cons, "...");
+			if (ds->show_utf8) {
+				r_cons_print (cons, "…");
+			} else {
+				r_cons_print (cons, "...");
+			}
 			break;
 		}
 		count++;
