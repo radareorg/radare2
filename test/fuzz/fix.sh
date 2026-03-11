@@ -22,13 +22,14 @@ while : ; do
 	if [ -z "${F}" ]; then
 		echo "No pending crash to fix in the inbox.."
 		pkill 'fuzz_*'
-		sleep 10
+		sleep 30
 		continue
 	fi
 	FF="${WRKDIR}/inbox/${F}"
 	cat "$FF" | grep DEADLYSIG
 	if [ $? != 0 ]; then
 		mv "${FF}" "${WRKDIR}/trash"
+		continue
 	fi
 	echo "${PROMPT}" > ${WRKDIR}/prompt.txt
 	tail -n 60 "${WRKDIR}/inbox/${F}" >> ${WRKDIR}/prompt.txt
