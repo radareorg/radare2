@@ -16,38 +16,26 @@ FUZZ_TARGETS = fuzz_anal fuzz_bin fuzz_bin2 fuzz_fs fuzz_dwarf fuzz_bin_demangle
                fuzz_ia fuzz_cmd fuzz_pdb_parse fuzz_pkcs7_parse fuzz_protobuf_decode \
                fuzz_punycode_decode fuzz_run_parseline fuzz_types_parser fuzz_x509_parse
 
-
 all: usage
 
 do: setup build
 
 setup:
 	$(MAKE) config
-	@echo "Checking compiler availability..."
-	@eval $$($(MAKE) -s env) ; which $(CC) || (echo "Error: $(CC) not found in PATH" && exit 1)
-	@eval $$($(MAKE) -s env) ; which $(CXX) || (echo "Error: $(CXX) not found in PATH" && exit 1)
-	@echo ""
-	@echo "Testing compiler version..."
-	@eval $$($(MAKE) -s env) ; $(CC) --version | head -1
-	@echo ""
-	@echo "Testing fuzzer support..."
-	@eval $$($(MAKE) -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
-	@echo ""
-	@echo "Testing coverage support..."
-	@eval $$($(MAKE) -s env) ; echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
-	@echo ""
-	@echo "All checks passed!"
+	which $(CC) || (echo "Error: $(CC) not found in PATH. Run 'eval \`make -s env\`'" && exit 1)
+	$(CC) --version | head -1
+	echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
+	echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
 
-b build:
-	@echo "Building radare2 using meson with libFuzzer support..."
-	$(MAKE) env
+b build: env setup
 	@echo "Checking compiler availability..."
-	@eval $$($(MAKE) -s env) ; which $(CC) > /dev/null || (echo "Error: $(CC) not found. Please install clang-18 or set CC variable." && exit 1)
-	cd $(R2_ROOT) && eval $$($(MAKE) -s -C test/fuzz env) && unset CFLAGS CXXFLAGS LDFLAGS && if [ -d "$(BUILD_NAME)/meson-info" ]; then \
+	cd $(R2_ROOT) && unset CFLAGS CXXFLAGS LDFLAGS && \
+	if [ -d "$(BUILD_NAME)/meson-info" ]; then \
 		meson setup --wipe $(BUILD_NAME) -Denable_libfuzzer=true; \
 	else \
 		meson setup $(BUILD_NAME) -Denable_libfuzzer=true; \
 	fi
+	rm -f ../../libr/include/r_userconf.h
 	ninja -C $(BUILD_DIR)
 	ls $(FUZZ_DIR)
 	@echo
@@ -62,7 +50,8 @@ r run-fuzzer run:
 	fi
 	@echo "Running $(T)..."
 	@mkdir -p $(CORPUS_DIR)/$(T)
-	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 R2_DEBUG_FUZZ=1 $(FUZZ_DIR)/$(T) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
+	@ASAN_OPTIONS=detect_leaks=0 R2_DEBUG_ASSERT=1 R2_DEBUG_FUZZ=1 \
+		$(FUZZ_DIR)/$(T) $(FUZZER_OPTS) $(EXTRA_FUZZER_OPTS) $(CORPUS_DIR)/$(T)
 
 # Build custom mutator version
 build-custom:
@@ -247,16 +236,15 @@ replay:
 	@echo "Replaying crashes for $(T)..."
 	@$(FUZZ_DIR)/$(T) $(CRASH_FILES)
 
-list:
+l ls list:
 	@cd $(FUZZ_DIR) && ls fuzz_* | grep fuzz | grep -v '\.' 2>/dev/null
 
 clean:
-	cd $(R2_ROOT) && rm -rf $(BUILD_NAME)
-	rm -rf $(CORPUS_DIR)_*
-	rm -rf $(CORPUS_DIR)
+	cd "$(R2_ROOT)" && rm -rf $(BUILD_NAME)
+	rm -rf "$(CORPUS_DIR)" $(CORPUS_DIR)_*
 
 mrproper distclean: clean
-	cd $(R2_ROOT) && rm -rf shlr/capstone
+	cd "$(R2_ROOT)" && rm -rf shlr/capstone
 
 test:
 	@echo "Running quick test with fuzz_anal..."
@@ -291,6 +279,7 @@ fuzz-continuous:
 	done
 
 env config:
+	@which "${CC}" > /dev/null || (echo 'export PATH="/opt/homebrew/opt/llvm@22/bin:$$''PATH"' && true)
 	@echo "export CC='$(CC)'"
 	@echo "export CXX='$(CXX)'"
 	@echo "export CFLAGS='$(CFLAGS)'"
