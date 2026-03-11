@@ -9,18 +9,34 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	return 0;
 }
 
-R_API RX509Certificate *wtf_r_x509_parse_certificate2(const ut8 *buffer, ut32 length) {
-	if (!buffer || !length) {
-		return NULL;
-	}
+static void fuzz_x509_certificate(const ut8 *buffer, ut32 length) {
 	RASN1Object *object = r_asn1_object_parse (buffer, buffer, length, 0);
+	if (!object) {
+		return;
+	}
 	RX509Certificate *certificate = r_x509_certificate_parse (object);
-	// object freed by r_x509_parse_certificate
-	return certificate;
+	if (!certificate) {
+		return;
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	char *text = NULL;
+	if (sb) {
+		r_x509_certificate_dump (certificate, "", sb);
+		text = r_strbuf_drain (sb);
+	}
+	PJ *pj = pj_new ();
+	if (pj) {
+		r_x509_certificate_json (pj, certificate);
+		free (pj_drain (pj));
+	}
+	free (text);
+	r_x509_certificate_free (certificate);
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	RX509Certificate *out = wtf_r_x509_parse_certificate2 (data, len);
-	free (out);
+	if (!len) {
+		return 0;
+	}
+	fuzz_x509_certificate (data, (ut32)len);
 	return 0;
 }

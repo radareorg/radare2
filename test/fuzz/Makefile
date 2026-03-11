@@ -12,9 +12,11 @@ FUZZER_OPTS=-detect_leaks=0
 FUZZER_OPTS+=-timeout=10
 FUZZER_OPTS+=-mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
 
-FUZZ_TARGETS = fuzz_anal fuzz_bin fuzz_bin2 fuzz_fs fuzz_dwarf fuzz_bin_demangle \
-               fuzz_ia fuzz_cmd fuzz_pdb_parse fuzz_pkcs7_parse fuzz_protobuf_decode \
-               fuzz_punycode_decode fuzz_run_parseline fuzz_types_parser fuzz_x509_parse
+FUZZ_TARGETS = fuzz_anal fuzz_asn1_parse fuzz_axml_decode fuzz_bin fuzz_bin2 \
+               fuzz_bin_demangle fuzz_bplist_parse fuzz_cmd fuzz_dwarf fuzz_fs \
+               fuzz_ia fuzz_json_parse fuzz_pdb_parse fuzz_pkcs7_parse \
+               fuzz_protobuf_decode fuzz_punycode_decode fuzz_run_parseline \
+               fuzz_types_parser fuzz_x509_parse
 
 all: usage
 

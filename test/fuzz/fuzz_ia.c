@@ -1,23 +1,36 @@
-#include <stdio.h>
 #include <r_core.h>
 
 int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
+	r_sys_clearenv ();
+	r_sandbox_enable (true);
+	r_sandbox_grain (R_SANDBOX_GRAIN_NONE);
 	r_log_set_quiet (true);
 	return 0;
 }
 
-int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
-	RCore *r = r_core_new ();
-	if (Size == 0) {
+int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
+	if (!len) {
 		return 0;
 	}
-	r_core_cmdf (r, "o malloc://%zu", Size);
-	r_io_write_at (r->io, 0, Data, Size);
-
-	r_core_cmd0 (r, "oba 0");
-	r_core_cmd0 (r, "ia");
-	r_core_cmd0 (r, "ii;is;il");
-
-	r_core_free (r);
+	RCore *core = r_core_new ();
+	if (!core) {
+		return 0;
+	}
+	r_core_cmd0 (core, "e cfg.sandbox=true");
+	r_core_cmd0 (core, "e scr.interactive=false");
+	r_core_cmd0 (core, "e scr.color=0");
+	r_core_cmdf (core, "o malloc://%" PFMT64d, (ut64)len);
+	r_io_write_at (core->io, 0, data, len);
+	r_core_cmd0 (core, "oob");
+	r_core_cmd0 (core, "oba 0");
+	r_core_cmd0 (core, "ia");
+	r_core_cmd0 (core, "iaj");
+	r_core_cmd0 (core, "iA");
+	r_core_cmd0 (core, "iAj");
+	r_core_cmd0 (core, "ii");
+	r_core_cmd0 (core, "is");
+	r_core_cmd0 (core, "il");
+	r_core_cmd0 (core, "ie");
+	r_core_free (core);
 	return 0;
 }

@@ -22,9 +22,10 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	r_log_set_quiet (true);
 
 	int argc = *lf_argc;
-	const char **argv = (const char **) (*lf_argv);
+	const char **argv = (const char **)(*lf_argv);
 	bool has_args = false;
-	int i, c;
+	int i;
+	int c;
 	for (i = 1; i < argc; i++) {
 		argv++;
 		if (!strcmp ((*lf_argv)[i], "--")) {
@@ -32,7 +33,6 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 			break;
 		}
 	}
-
 	if (has_args) {
 		*lf_argc = i;
 		argc -= i;
@@ -46,12 +46,10 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 				break;
 			}
 		}
-
 		if (opt.ind < argc) {
 			usage ();
 		}
 	}
-
 	return 0;
 }
 
@@ -59,51 +57,40 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	RBuffer *buf = r_buf_new_with_bytes (data, len);
 	RBin *bin = r_bin_new ();
 	RIO *io = r_io_new ();
+	int mode;
+	int addr_size;
+	if (!buf || !bin || !io) {
+		r_bin_free (bin);
+		r_io_free (io);
+		r_unref (buf);
+		return 0;
+	}
 	r_io_bind (io, &bin->iob);
 
 	RBinFileOptions bo;
-	r_bin_file_options_init (&bo, /*fd*/ -1, /*baseaddr*/ 0x10000000, /*loadaddr*/ 0, /*rawstr*/ 0);
-	bo.filename = strdup ("test");
+	r_bin_file_options_init (&bo, -1, 0x10000000, 0, 0);
+	bo.filename = "fuzz-dwarf";
 	r_bin_open_buf (bin, buf, &bo);
 
-	int mode = 0;
-	{
-		RBinFile *bf = r_bin_cur (bin);
-		if (!bf) {
-			exit (1);
-			return false;
-		}
-		// TODO: complete and speed-up support for dwarf
-		void *da = r_bin_dwarf_parse_abbrev (bf, mode);
-		if (!da) {
-			exit (1);
-			return false;
-		}
-		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 8);
-		// I suppose there is no reason the parse it for a printing purposes
-#if 0
-		if (info && mode != R_MODE_PRINT) {
-			/* Should we do this by default? */
-			RAnalDwarfContext ctx = {
-				.info = info,
-				.loc = loc_table
-			};
-			r_anal_dwarf_process_info (core->anal, &ctx);
-		}
-#endif
+	mode = (len && (data[0] & 1))? R_MODE_JSON: R_MODE_PRINT;
+	addr_size = (len && (data[0] & 2))? 8: 4;
+	RBinFile *bf = r_bin_cur (bin);
+	if (bf) {
+		RVecDwarfAbbrevDecl *abbrev = r_bin_dwarf_parse_abbrev (bf, mode);
+		RBinDwarfDebugInfo *info = abbrev? r_bin_dwarf_parse_info (bf, abbrev, mode): NULL;
+		HtUP /*<offset, RBinDwarfLocList*>*/ *loc_table = r_bin_dwarf_parse_loc (bf, addr_size);
+		RList *lines = r_bin_dwarf_parse_line (bf, mode);
+		r_bin_dwarf_parse_aranges (bf, mode);
 		if (loc_table) {
-			r_bin_dwarf_print_loc (loc_table, 8);
+			char *text = r_bin_dwarf_print_loc (loc_table, addr_size);
+			free (text);
 			r_bin_dwarf_free_loc (loc_table);
 		}
+		r_list_free (lines);
 		r_bin_dwarf_free_debug_info (info);
-		r_bin_dwarf_parse_aranges (bf, mode);
-		r_list_free (r_bin_dwarf_parse_line (bf, mode));
-		r_bin_dwarf_free_debug_abbrev (da);
+		r_bin_dwarf_free_debug_abbrev (abbrev);
 	}
-
 	r_bin_free (bin);
-	R_FREE (bo.filename);
 	r_io_free (io);
 	r_unref (buf);
 	return 0;
