@@ -35,6 +35,7 @@ extern "C" {
 #define R_PRINT_FLAGS_SECTION  0x00200000
 #define R_PRINT_FLAGS_COLOROP  0x00400000
 #define R_PRINT_FLAGS_TRIMLAST 0x00800000
+#define R_PRINT_FLAGS_USEUTF8  0x01000000
 
 /*
 
@@ -132,7 +133,6 @@ typedef struct r_print_t {
 	Sdb *formats;
 	Sdb *sdb_types;
 	RConsBind consb;
-	bool use_utf8;
 	RNum *num;
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);

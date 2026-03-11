@@ -2591,6 +2591,9 @@ R_API bool r_core_init(RCore *core) {
 	core->cons = r_cons_new ();
 	core->cons->line->user = core;
 	r_cons_bind (core->cons, &core->print->consb);
+	if (core->cons->use_utf8) {
+		core->print->flags |= R_PRINT_FLAGS_USEUTF8;
+	}
 	core->cmdlog = NULL;
 	// XXX causes uaf
 	r_log_add_callback (cbcore, core);

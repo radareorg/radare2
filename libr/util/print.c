@@ -10,7 +10,7 @@
 static const char hex[16] = "0123456789ABCDEF";
 
 R_API const char *r_print_ellipsis(RPrint *p, int *size) {
-	const bool use_utf8 = p ? p->use_utf8 : false;
+	const bool use_utf8 = p ? (p->flags & R_PRINT_FLAGS_USEUTF8) : false;
 	if (size) {
 		*size = use_utf8 ? 1 : 3;
 	}
@@ -62,8 +62,8 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	int rows = height > 0 ? height : 10;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
-	const char *vline = p->consb.cons->use_utf8 ? RUNE_LINE_VERT : "|";
-	const char *block = p->consb.cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	const char *vline = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LINE_VERT : "|";
+	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
@@ -265,7 +265,6 @@ R_API void r_print_init(RPrint *p) {
 	//p->cb_printf = libc_printf;
 	// p->oprintf = nullprinter;
 	p->stride = 0;
-	p->use_utf8 = false;
 	p->bytespace = 0;
 	p->datezone = 0;
 	p->col = 0;
@@ -1963,7 +1962,7 @@ R_API void r_print_spinbar(RPrint *p, const char *msg) {
 /* TODO: handle screen width */
 R_API void r_print_progressbar(RPrint *p, int pc, int _cols, const char *title) {
 	R_RETURN_IF_FAIL (p);
-	const bool utf8 = p->consb.cons->use_utf8;
+	const bool utf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
 	// TODO: add support for colors
 	int i, cols = (_cols == -1)? 78: _cols;
 	const char *h_line = utf8 ? RUNE_LONG_LINE_HORIZ : "-";
@@ -2019,8 +2018,8 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 	R_RETURN_IF_FAIL (p);
 	int i, cols = (_cols == -1)? 78: _cols;
 	const bool enable_colors = p && (p->flags & R_PRINT_FLAGS_COLOR);
-	const char *h_line = p->consb.cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->consb.cons->use_utf8? R_UTF8_BLOCK: "#";
+	const char *h_line = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
 
 	total = R_MAX (1, total);
 	pc = R_MAX (0, R_MIN (total, pc));
@@ -2060,8 +2059,8 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 }
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
-	const char *h_line = p->consb.cons->use_utf8? RUNE_LONG_LINE_HORIZ: "-";
-	const char *block = p->consb.cons->use_utf8? R_UTF8_BLOCK: "#";
+	const char *h_line = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	RStrBuf *sb = r_strbuf_new ("|");
@@ -2160,8 +2159,8 @@ R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from,
 
 static inline void printHistBlock(RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
-	const char *h_line = p->consb.cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = p->consb.cons->use_utf8 ? R_UTF8_BLOCK : "#";
+	const char *h_line = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
@@ -2193,7 +2192,7 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	R_RETURN_IF_FAIL (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
-	bool useUtf8 = p->consb.cons->use_utf8;
+	bool useUtf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
 	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
 
@@ -2863,7 +2862,7 @@ R_API RBraile r_print_braile(int u) {
 }
 
 R_API void r_print_graphline(RPrint *p, const ut8 *buf, size_t len) {
-	const bool utf8 = p->consb.cons->use_utf8;
+	const bool utf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
 	if (utf8) {
 		size_t i;
 		for (i = 0; i < len; i++) {
