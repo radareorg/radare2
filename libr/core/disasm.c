@@ -2744,7 +2744,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	RAnalFunction *f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = custom_sorted_flags (flaglist);
-	const char *ellipsis = r_print_ellipsis (core->print, NULL);
+	const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
@@ -2985,7 +2985,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	RCons *cons = core->cons;
 	int ellipsis_width, ret;
-	const char *ellipsis = r_print_ellipsis (core->print, &ellipsis_width);
+	const char *ellipsis = r_print_ellipsis (core->print, &ellipsis_width, NULL);
 
 	// find the meta item at this offset if any
 	RVecIntervalNodePtr *metas = r_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range

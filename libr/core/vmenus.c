@@ -2649,7 +2649,7 @@ R_API void r_core_visual_config(RCore *core) {
 	RListIter *iter;
 	RConfigNode *bt;
 	RCons *cons = core->cons;
-	const char *ellipsis = r_print_ellipsis (core->print, NULL);
+	const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 	char old[1024] = {0};
 	int delta = 9;
 	int menu = 0;

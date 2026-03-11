@@ -291,7 +291,7 @@ R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 R_API void r_print_pie(RPrint *p, int nvalues, int *values, const char **text, int size);
 R_API char *r_print_treemap(int n, int *values, const char **labels, int width, int height);
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
-R_API const char *r_print_ellipsis(RPrint *p, int *size);
+R_API const char *r_print_ellipsis(RPrint *p, int *width, int *bytes);
 
 // WIP
 R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);

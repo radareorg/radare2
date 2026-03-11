@@ -2889,8 +2889,9 @@ R_API bool r_core_prompt_loop(RCore *r) {
 }
 
 static int prompt_flag(RCore *core, char *s, size_t maxlen) {
-	const char *dots = r_print_ellipsis (core->print, NULL);
-	const size_t dots_size = strlen (dots) + 1;
+	int dots_bytes = 0;
+	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
+	const size_t dots_size = (size_t)dots_bytes + 1;
 	const RFlagItem *f = r_flag_get_at (core->flags, core->addr, true);
 	if (!f) {
 		return false;
@@ -2923,8 +2924,9 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 
 static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max_tmp_size) {
 	unsigned int OTHRSCH = 3;
-	const char *dots = r_print_ellipsis (core->print, NULL);
-	const size_t dots_size = strlen (dots) + 1;
+	int dots_bytes = 0;
+	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
+	const size_t dots_size = (size_t)dots_bytes + 1;
 
 	int w = r_cons_get_size (core->cons, NULL);
 	size_t file_len = r_str_display_width (filename);

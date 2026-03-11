@@ -77,7 +77,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	case 'z' : // Null terminated string
 		r_cons_print (core->cons, color ?Color_RESET Color_BWHITE:"");
 		r_cons_print (core->cons, "\"");
-		const char *ellipsis = r_print_ellipsis (core->print, NULL);
+		const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
 				break;
