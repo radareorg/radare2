@@ -132,6 +132,7 @@ typedef struct r_print_t {
 	Sdb *formats;
 	Sdb *sdb_types;
 	RConsBind consb;
+	bool use_utf8;
 	RNum *num;
 	RReg *reg;
 	RRegItem* (*get_register)(RReg *reg, const char *name, int type);

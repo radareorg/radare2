@@ -10,12 +10,15 @@
 static const char hex[16] = "0123456789ABCDEF";
 
 R_API const char *r_print_ellipsis(RPrint *p, int *size) {
-	RCons *cons = p? p->consb.cons: r_cons_singleton ();
-	const bool use_utf8 = cons? cons->use_utf8: false;
-	if (size) {
-		*size = use_utf8? 1: 3;
+	bool use_utf8 = p ? p->use_utf8 : false;
+	if (p && p->consb.cons) {
+		use_utf8 = p->consb.cons->use_utf8;
+		p->use_utf8 = use_utf8;
 	}
-	return use_utf8? "…": "...";
+	if (size) {
+		*size = use_utf8 ? 1 : 3;
+	}
+	return use_utf8 ? "…" : "...";
 }
 
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
@@ -266,6 +269,7 @@ R_API void r_print_init(RPrint *p) {
 	//p->cb_printf = libc_printf;
 	// p->oprintf = nullprinter;
 	p->stride = 0;
+	p->use_utf8 = false;
 	p->bytespace = 0;
 	p->datezone = 0;
 	p->col = 0;
