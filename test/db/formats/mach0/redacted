@@ -1,0 +1,18 @@
+NAME=mach0 redacted symbols are ignored
+FILE=bins/mach0/mach0-redacted-syms
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+is~redacted~?
+f~redacted~?
+is~_main~?
+f~sym._main~?
+f~sym.func.100000f40~?
+EOF
+EXPECT=<<EOF
+0
+0
+1
+1
+1
+EOF
+RUN
