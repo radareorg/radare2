@@ -74,7 +74,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			return false;
 		}
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bf, mode);
+		void *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (!da) {
 			exit (1);
 			return false;

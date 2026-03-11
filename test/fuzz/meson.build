@@ -24,6 +24,8 @@ if get_option('enable_libfuzzer')
       dependencies: [
         r_bin_dep,
         r_core_dep,
+        r_anal_dep,
+        r_muta_dep,
         r_util_dep,
         r_socket_dep,
         r_io_dep,

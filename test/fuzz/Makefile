@@ -1,7 +1,8 @@
 include config.mk
 
 R2_ROOT = ../..
-BUILD_DIR = $(R2_ROOT)/build
+BUILD_NAME ?= build-fuzz
+BUILD_DIR = $(R2_ROOT)/$(BUILD_NAME)
 FUZZ_DIR = $(BUILD_DIR)/test/fuzz
 CORPUS_DIR = corpus
 
@@ -9,7 +10,7 @@ FUZZER_OPTS=-detect_leaks=0
 # Useful for scripts or types parser
 # FUZZER_OPTS+=-only_ascii=1
 FUZZER_OPTS+=-timeout=10
- FUZZER_OPTS+=--mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
+FUZZER_OPTS+=--mutate_depth=1 -len_control=50 -reduce_inputs=0 -keep_seed=1 -prefer_small=0
 
 FUZZ_TARGETS = fuzz_anal fuzz_bin fuzz_bin2 fuzz_fs fuzz_dwarf fuzz_bin_demangle \
                fuzz_ia fuzz_cmd fuzz_pdb_parse fuzz_pkcs7_parse fuzz_protobuf_decode \
@@ -23,33 +24,36 @@ do: setup build
 setup:
 	$(MAKE) config
 	@echo "Checking compiler availability..."
-	@eval $$(make -s env) ; which $(CC) || (echo "Error: $(CC) not found in PATH" && exit 1)
-	@eval $$(make -s env) ; which $(CXX) || (echo "Error: $(CXX) not found in PATH" && exit 1)
+	@eval $$($(MAKE) -s env) ; which $(CC) || (echo "Error: $(CC) not found in PATH" && exit 1)
+	@eval $$($(MAKE) -s env) ; which $(CXX) || (echo "Error: $(CXX) not found in PATH" && exit 1)
 	@echo ""
 	@echo "Testing compiler version..."
-	@eval $$(make -s env) ; $(CC) --version | head -1
+	@eval $$($(MAKE) -s env) ; $(CC) --version | head -1
 	@echo ""
 	@echo "Testing fuzzer support..."
-	@eval $$(make -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
+	@eval $$($(MAKE) -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /tmp/test_fuzzer && echo "✓ Fuzzer support detected" && rm -f /tmp/test_fuzzer || (echo "✗ No fuzzer support" && exit 1)
 	@echo ""
 	@echo "Testing coverage support..."
-	@eval $$(make -s env) ; echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
+	@eval $$($(MAKE) -s env) ; echo 'int main(){return 0;}' | $(CC) -fsanitize-coverage=trace-pc -c -x c - -o /tmp/test_cov.o && echo "✓ Coverage support detected" && rm -f /tmp/test_cov.o || (echo "✗ No coverage support" && exit 1)
 	@echo ""
 	@echo "All checks passed!"
 
 b build:
 	@echo "Building radare2 using meson with libFuzzer support..."
 	$(MAKE) env
-	#
 	@echo "Checking compiler availability..."
-	@eval $$(make -s env) ; which $(CC) > /dev/null || (echo "Error: $(CC) not found. Please install clang-18 or set CC variable." && exit 1)
-	#
-	@echo "Testing compiler supports fuzzer..."
-	@eval $$(make -s env) ; echo '#include <stddef.h>\nint LLVMFuzzerTestOneInput(const unsigned char *Data, size_t Size){return 0;}' | $(CC) -fsanitize=fuzzer -x c - -o /dev/null || (echo "Error: $(CC) doesn't support fuzzer. Please install clang-18 or newer." && exit 1)
-	cd $(R2_ROOT) && eval $$(make -s env) && python3 ./sys/meson.py --fuzz
-	@echo "Build completed. Fuzzing binaries are in $(FUZZ_DIR)/"
+	@eval $$($(MAKE) -s env) ; which $(CC) > /dev/null || (echo "Error: $(CC) not found. Please install clang-18 or set CC variable." && exit 1)
+	cd $(R2_ROOT) && eval $$($(MAKE) -s -C test/fuzz env) && unset CFLAGS CXXFLAGS LDFLAGS && if [ -d "$(BUILD_NAME)/meson-info" ]; then \
+		meson setup --wipe $(BUILD_NAME) -Denable_libfuzzer=true; \
+	else \
+		meson setup $(BUILD_NAME) -Denable_libfuzzer=true; \
+	fi
+	ninja -C $(BUILD_DIR)
+	ls $(FUZZ_DIR)
+	@echo
+	@echo "Run 'make r T=bin'"
 
-run-fuzzer run:
+r run-fuzzer run:
 	@if [ -z "$(T)" ]; then \
 		echo "Usage: make run-fuzzer T=<fuzzer_name>"; \
 		echo "Available targets:"; \
@@ -247,7 +251,7 @@ list:
 	@cd $(FUZZ_DIR) && ls fuzz_* | grep fuzz | grep -v '\.' 2>/dev/null
 
 clean:
-	cd $(R2_ROOT) && rm -rf build
+	cd $(R2_ROOT) && rm -rf $(BUILD_NAME)
 	rm -rf $(CORPUS_DIR)_*
 	rm -rf $(CORPUS_DIR)
 
