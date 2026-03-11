@@ -2591,6 +2591,9 @@ R_API bool r_core_init(RCore *core) {
 	core->cons = r_cons_new ();
 	core->cons->line->user = core;
 	r_cons_bind (core->cons, &core->print->consb);
+	if (core->cons->use_utf8) {
+		core->print->flags |= R_PRINT_FLAGS_USEUTF8;
+	}
 	core->cmdlog = NULL;
 	// XXX causes uaf
 	r_log_add_callback (cbcore, core);
@@ -2885,21 +2888,18 @@ R_API bool r_core_prompt_loop(RCore *r) {
 	return true;
 }
 
-static int prompt_flag(RCore *core, char *s, size_t maxlen) {
-	const char DOTS[] = "...";
+static bool prompt_flag(RCore *core, char *s, size_t maxlen) {
 	const RFlagItem *f = r_flag_get_at (core->flags, core->addr, true);
 	if (!f) {
 		return false;
 	}
-	if (core->addr > f->addr) {
-		snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x, core->addr, f->name, core->addr - f->addr);
-	} else {
-		snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
-	}
-	size_t slen = strlen (s);
-	if (slen > maxlen - sizeof (DOTS)) {
-		size_t pos = maxlen - sizeof (DOTS) - 1;
-		memcpy (s + pos, DOTS, sizeof (DOTS));
+	int db, slen = (core->addr > f->addr)
+		? snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x, core->addr, f->name, core->addr - f->addr)
+		: snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
+	const char *dots = r_print_ellipsis (core->print, NULL, &db);
+	if ((size_t)db < maxlen && slen > maxlen - ((size_t)db + 1)) {
+		size_t pos = maxlen - ((size_t)db + 1);
+		memcpy (s + pos, dots, db + 1);
 	}
 	return true;
 }
@@ -2918,18 +2918,18 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 }
 
 static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max_tmp_size) {
-	unsigned int OTHRSCH = 3;
-	const char DOTS[] = "...";
+	int dw = 0;
+	int db = 0;
+	const char *dots = r_print_ellipsis (core->print, &dw, &db);
 
-	int w = r_cons_get_size (core->cons, NULL);
-	size_t file_len = r_str_display_width (filename);
-	size_t tmp_len = r_str_display_width (tmp);
-	int p_len = R_MAX (0, w - 6);
-	if (file_len + tmp_len + OTHRSCH >= p_len) {
-		size_t dots_size = sizeof (DOTS);
-		size_t chop_point = (size_t) (p_len - OTHRSCH - file_len - dots_size);
-		if (chop_point < max_tmp_size - dots_size) {
-			snprintf (tmp + chop_point, dots_size, "%s", DOTS);
+	const int w = r_cons_get_size (core->cons, NULL);
+	const size_t file_len = r_str_display_width (filename);
+	const size_t tmp_len = r_str_display_width (tmp);
+	const int p_len = R_MAX (0, w - 6);
+	if (file_len + tmp_len + 3 >= p_len) {
+		size_t chop_point = (size_t) (p_len - 3 - file_len - dw);
+		if (chop_point < max_tmp_size && (size_t)db < max_tmp_size - chop_point) {
+			memcpy (tmp + chop_point, dots, db + 1);
 		}
 	}
 }

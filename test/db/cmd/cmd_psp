@@ -1,0 +1,22 @@
+NAME=psp exact fit
+FILE=malloc://4
+CMDS=<<EOF
+wx 03616263
+psp
+EOF
+EXPECT=<<EOF
+abc
+EOF
+RUN
+
+NAME=psp4 exact fit
+FILE=malloc://7
+CMDS=<<EOF
+e cfg.bigendian=false
+wx 03000000616263
+psp4
+EOF
+EXPECT=<<EOF
+abc
+EOF
+RUN
