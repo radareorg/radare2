@@ -11,7 +11,19 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	RCMS *out = r_pkcs7_cms_parse (data, len);
-	free (out);
+	RCMS *cms = r_pkcs7_cms_parse (data, len);
+	if (!cms) {
+		return 0;
+	}
+	char *text = r_pkcs7_cms_tostring (cms);
+	PJ *pj = r_pkcs7_cms_json (cms);
+	SpcIndirectDataContent *spcinfo = r_pkcs7_spcinfo_parse (cms);
+
+	free (text);
+	if (pj) {
+		free (pj_drain (pj));
+	}
+	r_pkcs7_spcinfo_free (spcinfo);
+	r_pkcs7_cms_free (cms);
 	return 0;
 }

@@ -1,6 +1,7 @@
 #include <r_types.h>
+#include <r_util/bplist.h>
+#include <r_util/pj.h>
 #include <r_util/r_log.h>
-#include <r_util/r_protobuf.h>
 
 int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 	r_log_set_quiet (true);
@@ -8,11 +9,11 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
-	char *pb = r_protobuf_decode (data, len, 0);
-	free (pb);
-	pb = r_protobuf_decode (data, len, 'j');
-	free (pb);
-	pb = r_protobuf_decode (data, len, 'J');
-	free (pb);
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return 0;
+	}
+	r_bplist_parse (pj, data, len);
+	free (pj_drain (pj));
 	return 0;
 }
