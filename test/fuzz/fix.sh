@@ -32,8 +32,10 @@ while : ; do
 	fi
 	echo "${PROMPT}" > ${WRKDIR}/prompt.txt
 	tail -n 60 "${WRKDIR}/inbox/${F}" >> ${WRKDIR}/prompt.txt
-
-	(cd ../.. && ${AGENT} exec "`cat ${WRKDIR}/prompt.txt`") >> ${WRKDIR}/outbox/${F}.log
+	(
+		cd ../..
+		${AGENT} exec "`cat ${WRKDIR}/prompt.txt`" 2>&1
+	) | tee ${WRKDIR}/outbox/${F}.log
 	if [ $? = 0 ]; then
 		mv "${WRKDIR}/inbox/${F}" "${WRKDIR}/outbox/${F}.crash"
 		git diff > "${WRKDIR}/outbox/${F}.patch"

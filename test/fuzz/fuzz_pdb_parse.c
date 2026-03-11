@@ -14,8 +14,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	if (r_bin_pdb_parser_with_buf (&pdb, buf)) {
 		pdb.pdb_parse (&pdb);
 		pdb.finish_pdb_parse (&pdb);
-	} else {
-		free (buf);
 	}
 
 	return 0;
