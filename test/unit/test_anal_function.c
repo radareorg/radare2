@@ -193,90 +193,103 @@ bool test_r_core_anal_fcn_prefers_exact_start_match(void) {
 	mu_end;
 }
 
-bool test_r_anal_function_readback_collect(void) {
+bool test_r_anal_function_context_collect(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
 	RAnalFunction *f = r_anal_create_function (anal, "sigread", 0x2000, 0, NULL);
-	mu_assert_notnull (f, "Couldn't create function for readback test");
+	mu_assert_notnull (f, "Couldn't create function for context test");
 	bool ok = r_anal_str_to_fcn (anal, f, "int sigread (int arg0, char *arg1);");
-	mu_assert_true (ok, "valid signature must apply before readback");
-	f->callconv = strdup ("amd64");
-
-	RAnalFunctionReadback *readback = r_anal_function_readback_collect (anal, f);
-	mu_assert_notnull (readback, "readback must be collected");
-	mu_assert_streq (readback->ret_type, "int", "readback return type");
-	mu_assert_streq (readback->callconv, "amd64", "readback callconv");
-	mu_assert_false (readback->has_opaque_type_markers, "typed signature must not be opaque");
-	mu_assert_eq ((int)r_list_length (readback->params), 2, "readback param count");
-	RAnalFunctionReadbackParam *arg0 = r_list_get_n (readback->params, 0);
-	RAnalFunctionReadbackParam *arg1 = r_list_get_n (readback->params, 1);
-	mu_assert_notnull (arg0, "first readback param");
-	mu_assert_notnull (arg1, "second readback param");
-	mu_assert_streq (arg0->type, "int", "first readback param type");
-	mu_assert_streq (arg1->type, "char *", "second readback param type");
-	mu_assert_notnull (readback->signature, "readback signature string");
+	mu_assert_true (ok, "valid signature must apply before context collection");
 
 	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
-	mu_assert_notnull (typed_name, "typed function name for opaque test");
+	mu_assert_notnull (typed_name, "typed function name");
+	char *sdb_cc = r_str_newf ("func.%s.cc", typed_name);
+	mu_assert_notnull (sdb_cc, "persisted callconv key");
 	char *sdb_ret = r_str_newf ("func.%s.ret", typed_name);
 	mu_assert_notnull (sdb_ret, "opaque ret key");
-	sdb_set (anal->sdb_types, sdb_ret, "type_0x4010", 0);
-	r_anal_function_readback_free (readback);
-	readback = r_anal_function_readback_collect (anal, f);
-	mu_assert_notnull (readback, "opaque readback must be collected");
-	mu_assert_true (readback->has_opaque_type_markers, "opaque placeholder must be detected");
+	sdb_set (anal->sdb_types, sdb_cc, "amd64", 0);
 
+	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, f);
+	mu_assert_notnull (ctx, "context must be collected");
+	mu_assert_streq (ctx->function->name, "sigread", "context function name");
+	mu_assert_streq (ctx->ret_type, "int", "context return type");
+	mu_assert_streq (ctx->callconv, "amd64", "context callconv");
+	mu_assert_false (ctx->has_opaque_type_markers, "typed signature must not be opaque");
+	mu_assert_eq ((int)r_list_length (ctx->params), 2, "context param count");
+	RAnalFunctionContextParam *arg0 = r_list_get_n (ctx->params, 0);
+	RAnalFunctionContextParam *arg1 = r_list_get_n (ctx->params, 1);
+	mu_assert_notnull (arg0, "first context param");
+	mu_assert_notnull (arg1, "second context param");
+	mu_assert_streq (arg0->type, "int", "first context param type");
+	mu_assert_streq (arg1->type, "char *", "second context param type");
+	mu_assert_notnull (ctx->signature, "context signature string");
+
+	sdb_set (anal->sdb_types, sdb_ret, "type_0x4010", 0);
+	r_anal_function_context_free (ctx);
+	ctx = r_anal_function_context_collect (anal, f);
+	mu_assert_notnull (ctx, "opaque context must be collected");
+	mu_assert_true (ctx->has_opaque_type_markers, "opaque placeholder must be detected");
+
+	free (sdb_cc);
 	free (sdb_ret);
 	free (typed_name);
-	r_anal_function_readback_free (readback);
+	r_anal_function_context_free (ctx);
 	r_anal_free (anal);
 	mu_end;
 }
 
-bool test_r_anal_function_apply_signature_overwrites_typed_entries(void) {
+bool test_r_anal_function_apply_signature_uses_canonical_type_name(void) {
 	RAnal *anal = r_anal_new ();
 	mu_assert_notnull (anal, "Couldn't create new RAnal");
-	RAnalFunction *f = r_anal_create_function (anal, "sigapply", 0x3000, 0, NULL);
+	bool ok = r_anal_import_c_decls (anal, "int scanf (const char *fmt);", NULL);
+	mu_assert_true (ok, "seed canonical scanf signature");
+
+	RAnalFunction *f = r_anal_create_function (anal, "sym.imp.__isoc99_scanf", 0x3000, 0, NULL);
 	mu_assert_notnull (f, "Couldn't create function for typed apply test");
 
 	RAnalFunctionSignatureParam params[] = {
-		{ .name = "argc", .type = "int32_t" },
-		{ .name = "argv", .type = "char **" },
+		{ .name = "format", .type = "const char *" },
+		{ .name = "value", .type = "int *" },
 	};
 
-	bool ok = r_anal_function_apply_signature (anal, f, "int32_t", params, 2, "amd64", false);
+	ok = r_anal_function_apply_signature (anal, f, "int", params, 2, "amd64", false);
 	mu_assert_true (ok, "typed signature apply must succeed");
 
-	RAnalFunctionReadback *readback = r_anal_function_readback_collect (anal, f);
-	mu_assert_notnull (readback, "typed signature readback");
-	mu_assert_streq (readback->ret_type, "int32_t", "typed apply return type");
-	mu_assert_streq (readback->callconv, "amd64", "typed apply callconv");
-	mu_assert_eq ((int)r_list_length (readback->params), 2, "typed apply param count");
-	RAnalFunctionReadbackParam *arg0 = r_list_get_n (readback->params, 0);
-	RAnalFunctionReadbackParam *arg1 = r_list_get_n (readback->params, 1);
+	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
+	mu_assert_notnull (typed_name, "canonical typed name");
+	mu_assert_streq (typed_name, "scanf", "apply must reuse canonical type name");
+	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 2, "typed apply param count");
+	mu_assert_null (sdb_const_get (anal->sdb_types, f->name, 0), "apply must not create duplicate import-scoped signature");
+
+	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, f);
+	mu_assert_notnull (ctx, "typed signature context");
+	mu_assert_streq (ctx->ret_type, "int", "typed apply return type");
+	mu_assert_streq (ctx->callconv, "amd64", "typed apply callconv");
+	mu_assert_eq ((int)r_list_length (ctx->params), 2, "typed apply context param count");
+	RAnalFunctionContextParam *arg0 = r_list_get_n (ctx->params, 0);
+	RAnalFunctionContextParam *arg1 = r_list_get_n (ctx->params, 1);
 	mu_assert_notnull (arg0, "first typed param");
 	mu_assert_notnull (arg1, "second typed param");
-	mu_assert_streq (arg0->name, "argc", "first typed param name");
-	mu_assert_streq (arg0->type, "int32_t", "first typed param type");
-	mu_assert_streq (arg1->name, "argv", "second typed param name");
-	mu_assert_streq (arg1->type, "char **", "second typed param type");
-	r_anal_function_readback_free (readback);
+	mu_assert_streq (arg0->name, "format", "first typed param name");
+	mu_assert_streq (arg0->type, "const char *", "first typed param type");
+	mu_assert_streq (arg1->name, "value", "second typed param name");
+	mu_assert_streq (arg1->type, "int *", "second typed param type");
+	mu_assert_streq (ctx->signature, "int scanf (const char *format, int *value);", "canonical signature string");
+	r_anal_function_context_free (ctx);
 
 	ok = r_anal_function_apply_signature (anal, f, "void", NULL, 0, "cdecl", true);
 	mu_assert_true (ok, "typed signature overwrite must succeed");
-	readback = r_anal_function_readback_collect (anal, f);
-	mu_assert_notnull (readback, "typed overwrite readback");
-	mu_assert_streq (readback->ret_type, "void", "typed overwrite return type");
-	mu_assert_streq (readback->callconv, "cdecl", "typed overwrite callconv");
-	mu_assert_true (readback->noreturn, "typed overwrite noreturn");
-	mu_assert_eq ((int)r_list_length (readback->params), 0, "typed overwrite clears params");
+	ctx = r_anal_function_context_collect (anal, f);
+	mu_assert_notnull (ctx, "typed overwrite context");
+	mu_assert_streq (ctx->ret_type, "void", "typed overwrite return type");
+	mu_assert_streq (ctx->callconv, "cdecl", "typed overwrite callconv");
+	mu_assert_true (ctx->noreturn, "typed overwrite noreturn");
+	mu_assert_eq ((int)r_list_length (ctx->params), 0, "typed overwrite clears params");
 
-	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
-	mu_assert_notnull (typed_name, "typed name must exist after overwrite");
 	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 0, "typed overwrite argc");
 	free (typed_name);
 
-	r_anal_function_readback_free (readback);
+	r_anal_function_context_free (ctx);
 	r_anal_free (anal);
 	mu_end;
 }
@@ -286,8 +299,8 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_labels);
 	mu_run_test (test_r_anal_str_to_fcn_returns_status);
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
-	mu_run_test (test_r_anal_function_readback_collect);
-	mu_run_test (test_r_anal_function_apply_signature_overwrites_typed_entries);
+	mu_run_test (test_r_anal_function_context_collect);
+	mu_run_test (test_r_anal_function_apply_signature_uses_canonical_type_name);
 	return tests_passed != tests_run;
 }
 

@@ -270,51 +270,22 @@ typedef struct r_anal_function_context_param_t {
 	char *type;
 } RAnalFunctionContextParam;
 
-typedef enum r_anal_function_context_var_kind_t {
-	R_ANAL_FUNCTION_CONTEXT_VAR_KIND_REGISTER,
-	R_ANAL_FUNCTION_CONTEXT_VAR_KIND_STACK_BP,
-	R_ANAL_FUNCTION_CONTEXT_VAR_KIND_STACK_SP,
-} RAnalFunctionContextVarKind;
-
-typedef struct r_anal_function_context_var_t {
-	char *name;
-	char *type;
-	char *reg;
-	char *base;
-	bool is_arg;
-	st64 offset;
-	RAnalFunctionContextVarKind kind;
-} RAnalFunctionContextVar;
-
 typedef struct r_anal_function_context_t {
-	char *name;
-	char *ret_type;
-	char *callconv;
-	bool noreturn;
-	RList *params; // RList<RAnalFunctionContextParam *>
-	RList *vars; // RList<RAnalFunctionContextVar *>
-	RList *base_types; // RList<RAnalBaseType *>
-} RAnalFunctionContext;
-
-typedef struct r_anal_function_readback_param_t {
-	char *name;
-	char *type;
-} RAnalFunctionReadbackParam;
-
-typedef struct r_anal_function_signature_param_t {
-	const char *name;
-	const char *type;
-} RAnalFunctionSignatureParam;
-
-typedef struct r_anal_function_readback_t {
-	char *name;
+	struct r_anal_function_t *function; // borrowed
 	char *signature;
 	char *ret_type;
 	char *callconv;
 	bool noreturn;
 	bool has_opaque_type_markers;
-	RList *params; // RList<RAnalFunctionReadbackParam *>
-} RAnalFunctionReadback;
+	RList *params; // RList<RAnalFunctionContextParam *>
+	RList *vars; // RList<RAnalVar *>
+	RList *base_types; // RList<RAnalBaseType *>
+} RAnalFunctionContext;
+
+typedef struct r_anal_function_signature_param_t {
+	const char *name;
+	const char *type;
+} RAnalFunctionSignatureParam;
 
 typedef struct r_anal_diff_t {
 	int type;
@@ -1250,8 +1221,6 @@ R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
 R_API char *r_anal_function_get_signature(RAnalFunction *function);
 R_API RAnalFunctionContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_function_context_free(RAnalFunctionContext *ctx);
-R_API RAnalFunctionReadback *r_anal_function_readback_collect(RAnal *anal, RAnalFunction *fcn);
-R_API void r_anal_function_readback_free(RAnalFunctionReadback *readback);
 R_API bool r_anal_function_apply_signature(
 	RAnal *anal,
 	RAnalFunction *fcn,
