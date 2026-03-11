@@ -428,11 +428,6 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
 	RCons *cons = g->can->cons;
-	RPrint p = {0};
-	if (cons->use_utf8) {
-		p.flags |= R_PRINT_FLAGS_USEUTF8;
-	}
-	const char *dots = r_print_ellipsis (&p, NULL);
 	if (n->color) {
 		// r_cons_canvas_bgfill (g->can, n->x-1, n->y-1, n->w+2, n->h+2, n->color);
 		r_cons_canvas_box (g->can, n->x - 1, n->y, n->w + 2, n->h, n->color);
@@ -510,6 +505,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 			/* print some dots when the body is cropped because of zoom */
 			if (n->body && *n->body) {
 				if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
+					const char *dots = cons->use_utf8 ? "…" : "...";
 					if (delta_x < strlen (dots)) {
 						dots += delta_x;
 						W (dots);
