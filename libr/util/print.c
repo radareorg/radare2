@@ -10,11 +10,7 @@
 static const char hex[16] = "0123456789ABCDEF";
 
 R_API const char *r_print_ellipsis(RPrint *p, int *size) {
-	bool use_utf8 = p ? p->use_utf8 : false;
-	if (p && p->consb.cons) {
-		use_utf8 = p->consb.cons->use_utf8;
-		p->use_utf8 = use_utf8;
-	}
+	const bool use_utf8 = p ? p->use_utf8 : false;
 	if (size) {
 		*size = use_utf8 ? 1 : 3;
 	}
