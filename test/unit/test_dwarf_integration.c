@@ -49,19 +49,21 @@ static bool test_parse_dwarf_types(void) {
 	anal->config->bits = 32;
 	mu_assert ("pe/vista-glass.exe binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
 		return MU_ERR;
 	}
 
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 4);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 4);
 	RAnalDwarfContext ctx = {
 		.info = info,
 		.loc = loc_table
@@ -113,18 +115,20 @@ static bool test_dwarf_function_parsing_cpp(void) {
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("elf/dwarf4_many_comp_units.elf binary could not be opened", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
 		return MU_ERR;
 	}
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 8);
 
 	RAnalDwarfContext ctx = {
 		.info = info,
@@ -188,18 +192,20 @@ static bool test_dwarf_function_parsing_go(void) {
 	bool res = r_bin_open (bin, "bins/elf/dwarf_go_tree", &opt);
 	mu_assert ("bins/elf/dwarf_go_tree", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
 		return MU_ERR;
 	}
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 8);
 
 	RAnalDwarfContext ctx = {
 		.info = info,
@@ -245,18 +251,20 @@ static bool test_dwarf_function_parsing_rust(void) {
 	free (anal->config->cpu);
 	mu_assert ("bins/elf/dwarf_rust_bubble", res);
 	mu_assert_notnull (anal->sdb_types, "Couldn't create new RAnal.sdb_types");
-	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Couldn't get current bin file");
+	RVecDwarfAbbrevDecl *abbrevs = r_bin_dwarf_parse_abbrev (bf, MODE);
 	if (!abbrevs) {
 		mu_assert ("Couldn't parse Abbreviations", false);
 		return MU_ERR;
 	}
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, abbrevs, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, abbrevs, MODE);
 	if (!info) {
 		RVecDwarfAbbrevDecl_free (abbrevs);
 		mu_assert ("Couldn't parse debug_info section", false);
 		return MU_ERR;
 	}
-	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
+	HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 8);
 
 	RAnalDwarfContext ctx = {
 		.info = info,

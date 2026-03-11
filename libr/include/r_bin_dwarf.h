@@ -5,6 +5,7 @@
 #include <r_util.h>
 
 typedef struct r_bin_t RBin;
+typedef struct r_bin_file_t RBinFile;
 
 #ifdef __cplusplus
 extern "C" {
@@ -887,11 +888,11 @@ typedef struct r_bin_dwarf_loc_list_t {
 
 #define r_bin_dwarf_line_new(o,a,f,l) o->address=a, o->file = strdup (r_str_get (f)), o->line = l, o->column =0,o
 
-R_API void r_bin_dwarf_parse_aranges(RBin *a, int mode);
-R_API RList *r_bin_dwarf_parse_line(RBin *a, int mode);
-R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBin *a, int mode);
-R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBin *a, RVecDwarfAbbrevDecl *da, int mode);
-R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBin *bin, int addr_size);
+R_API void r_bin_dwarf_parse_aranges(RBinFile *bf, int mode);
+R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode);
+R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBinFile *bf, int mode);
+R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDecl *da, int mode);
+R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size);
 R_API char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
 R_API void r_bin_dwarf_free_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table);
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf);
