@@ -788,8 +788,12 @@ static RList *libs(RBinFile *bf) {
 	return ret;
 }
 
-void **flatlist(RList *list) {
-	void **flat = R_NEWS (void *, r_list_length (list));
+static void **flatlist(RList *list) {
+	size_t len = r_list_length (list);
+	if (len == 0) {
+		return NULL;
+	}
+	void **flat = R_NEWS (void *, len);
 	RListIter *iter;
 	void *ptr;
 	size_t i = 0;
@@ -807,6 +811,9 @@ static RList *relocs(RBinFile *bf) {
 	PEFReloc *r;
 	RListIter *iter;
 	int i;
+	if (!importArray) {
+		return NULL;
+	}
 
 	for (i = 0; i < pef->nsec; i++) {
 		r_list_foreach (pef->sec[i].relocs, iter, r) {
