@@ -9,6 +9,14 @@
 
 static const char hex[16] = "0123456789ABCDEF";
 
+R_API const char *r_print_ellipsis(RCons *cons, int *size) {
+	const bool use_utf8 = cons? cons->use_utf8: false;
+	if (size) {
+		*size = use_utf8? 1: 3;
+	}
+	return use_utf8? "…": "...";
+}
+
 R_API void r_print_portionbar(RPrint *p, const ut64 *portions, int n_portions) {
 	R_RETURN_IF_FAIL (p);
 	const int use_color = p->flags & R_PRINT_FLAGS_COLOR;

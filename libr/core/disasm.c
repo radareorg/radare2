@@ -2744,6 +2744,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 	RAnalFunction *f = r_anal_get_function_at (ds->core->anal, ds->at);
 	const RList *flaglist = r_flag_get_list (core->flags, ds->at);
 	RList *uniqlist = custom_sorted_flags (flaglist);
+	const char *ellipsis = r_print_ellipsis (cons, NULL);
 	int count = 0;
 	bool outline = !ds->flags_inline;
 	const char *comma = "";
@@ -2762,7 +2763,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 			if (printPre) {
 				ds_pre_xrefs (ds, no_fcn_lines);
 			}
-			r_cons_print (cons, r_cons_ellipsis (cons, NULL));
+			r_cons_print (cons, ellipsis);
 			break;
 		}
 		count++;
@@ -2984,6 +2985,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	RCore *core = ds->core;
 	RCons *cons = core->cons;
 	int ellipsis_width, ret;
+	const char *ellipsis = r_print_ellipsis (cons, &ellipsis_width);
 
 	// find the meta item at this offset if any
 	RVecIntervalNodePtr *metas = r_meta_get_all_at (ds->core->anal, ds->at); // TODO: do in range
@@ -3070,7 +3072,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 			default:
 				break;
 			}
-			const char *ellipsis = r_cons_ellipsis (cons, &ellipsis_width);
 			const int max_meta = 16 + ((3 - ellipsis_width) / 2);
 			int sz = R_MIN (max_meta, meta_size);
 			ds->asmop.size = sz;
@@ -3132,7 +3133,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		if (ds->prev_ins && !strcmp (ds->prev_ins, opname)) {
 			if (!ds->prev_ins_eq) {
 				ds->prev_ins_eq = true;
-				r_cons_print (cons, r_cons_ellipsis (cons, NULL));
+				r_cons_print (cons, ellipsis);
 			}
 			ds->prev_ins_count++;
 			return -31337;

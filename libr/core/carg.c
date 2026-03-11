@@ -77,6 +77,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 	case 'z' : // Null terminated string
 		r_cons_print (core->cons, color ?Color_RESET Color_BWHITE:"");
 		r_cons_print (core->cons, "\"");
+		const char *ellipsis = r_print_ellipsis (core->cons, NULL);
 		for (i = 0; i < MAXSTRLEN; i++) {
 			if (buf[i] == '\0') {
 				break;
@@ -88,7 +89,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 				r_cons_printf (core->cons, "\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-					r_cons_print (core->cons, r_cons_ellipsis (core->cons, NULL)); // To show string is truncated
+				r_cons_print (core->cons, ellipsis); // To show string is truncated
 			}
 		}
 		r_cons_print (core->cons, "\"");
