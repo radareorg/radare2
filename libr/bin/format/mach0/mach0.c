@@ -3120,8 +3120,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		ht_pp_free (hash);
 		return;
 	}
-	// Check once if <redacted> exists anywhere in string table
-	const bool has_redacted = strstr ((const char *)mo->symstr, "<redacted>") != NULL;
+	// Mach-O string tables are NUL-separated blobs, not a single C string.
+	const bool has_redacted = mo->symstrlen > 0
+		&& r_mem_mem (mo->symstr, mo->symstrlen, (const ut8 *)"<redacted>", sizeof ("<redacted>") - 1) != NULL;
 	/* parse dynamic symbol table */
 	symbols_count = mo->dysymtab.nextdefsym + mo->dysymtab.nlocalsym + mo->dysymtab.nundefsym + mo->nsymtab;
 	if (symbols_count == 0) {
