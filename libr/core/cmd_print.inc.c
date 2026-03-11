@@ -6812,6 +6812,9 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 	int options = R_PRINT_STRING_ZEROEND;
 	ut32 rawlen = 0;
 	bool dojson = false;
+	if (input[0] == 'p') {
+		input++;
+	}
 	switch (input[0]) {
 	case 'w': // pspw
 		options |= R_PRINT_STRING_WIDE;
@@ -6823,9 +6826,6 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 		break;
 	}
 	switch (input[0]) {
-	case 'j': // "pspj"
-		dojson = true;
-		break;
 	case '?': // "psp?"
 		r_core_cmd_help (core, help_msg_psp);
 		return;
@@ -6833,12 +6833,15 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 		return;
 	case '1': // "psp1"
 		disp = 1;
+		input++;
 		break;
 	case '2': // "psp2"
 		disp = 2;
+		input++;
 		break;
 	case '4': // "psp4"
 		disp = 4;
+		input++;
 		break;
 	case ' ':
 		input++;
@@ -6847,7 +6850,7 @@ static void print_pascal_string(RCore *core, const ut8 *data, const int data_len
 	if (len < 1) {
 		return;
 	}
-	if (input[0] && input[1] != ' ' && input[3] == 'j') {
+	if (input[0] == 'j') {
 		dojson = true;
 	}
 	if (!data || data_len < disp) {
