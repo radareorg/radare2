@@ -1204,6 +1204,7 @@ R_API int r_cons_get_column(RCons *cons);
 R_API int r_cons_get_cursor(RCons *cons, int *rows);
 R_API void r_cons_show_cursor(RCons *cons, int cursor);
 R_API void r_cons_set_utf8(RCons *cons, bool b);
+
 R_API void r_cons_column(RCons *cons, int c);
 R_API void r_cons_set_title(RCons *cons, const char *str);
 R_API void r_cons_zero(RCons *cons);

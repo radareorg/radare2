@@ -1499,6 +1499,7 @@ repeat:
 		r_core_cmd_call (core, "fd");
 
 		int secondColumn = (w > 120)? 80: 0;
+		const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 		int maxcount = 9;
 		int rows = h; // XXX dupe
 		count = 0;
@@ -1509,7 +1510,7 @@ repeat:
 		const ut64 num_xrefs = RVecAnalRef_length (xrefs);
 		R_VEC_FOREACH (xrefs, refi) {
 			if (idx - skip > maxcount) {
-				r_cons_printf (cons, "...");
+				r_cons_print (cons, ellipsis);
 				break;
 			}
 
@@ -1598,7 +1599,7 @@ repeat:
 					dis = res;
 				}
 				if (++count >= rows) {
-					r_cons_printf (cons, "...");
+					r_cons_print (cons, ellipsis);
 					break;
 				}
 			}

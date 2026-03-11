@@ -2649,6 +2649,7 @@ R_API void r_core_visual_config(RCore *core) {
 	RListIter *iter;
 	RConfigNode *bt;
 	RCons *cons = core->cons;
+	const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
 	char old[1024] = {0};
 	int delta = 9;
 	int menu = 0;
@@ -2786,7 +2787,7 @@ R_API void r_core_visual_config(RCore *core) {
 				}
 			}
 			r_cons_gotoxy (core->cons, 21, y);
-			r_cons_printf (core->cons, "...");
+			r_cons_print (core->cons, ellipsis);
 			r_cons_gotoxy (core->cons, 0, 0);
 			r_cons_flush (core->cons);
 		}

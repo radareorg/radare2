@@ -35,6 +35,7 @@ extern "C" {
 #define R_PRINT_FLAGS_SECTION  0x00200000
 #define R_PRINT_FLAGS_COLOROP  0x00400000
 #define R_PRINT_FLAGS_TRIMLAST 0x00800000
+#define R_PRINT_FLAGS_USEUTF8  0x01000000
 
 /*
 
@@ -75,7 +76,6 @@ typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RPrintColorForByte)(void *user, ut64 addr, ut8 ch, bool verbose);
-// typedef const char *(*RPrintColorForCode)(void *user, const char *type);
 typedef char *(*RPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct r_print_zoom_t {
@@ -163,17 +163,17 @@ typedef struct r_print_t {
 	ut64 screen_bounds;
 	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
 	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
-    bool enable_progressbar;
-     // Charset transform callbacks provided by RCore to avoid r_util->r_muta dep
-     void *charset_ctx;
-     int (*charset_decode)(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed);
-     int (*charset_encode)(void *ctx, const ut8 *in, int len, ut8 **out);
+	bool enable_progressbar;
+	// Charset transform callbacks provided by RCore to avoid r_util->r_muta dep
+	void *charset_ctx;
+	int (*charset_decode)(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed);
+	int (*charset_encode)(void *ctx, const ut8 *in, int len, ut8 **out);
 
 	// segmented memory addressing
 	int nbcolor;
 	int spinpos;
 	char *spinmsg;
-	RPrintPriv *priv;
+	RPrintPriv priv;
 } RPrint;
 
 #ifdef R_API
@@ -290,6 +290,7 @@ R_API int r_print_row_at_off(RPrint *p, ut32 offset);
 R_API void r_print_pie(RPrint *p, int nvalues, int *values, const char **text, int size);
 R_API char *r_print_treemap(int n, int *values, const char **labels, int width, int height);
 R_API void r_print_graphline(RPrint *print, const ut8 *buf, size_t len);
+R_API const char *r_print_ellipsis(RPrint *p, int *width, int *bytes);
 
 // WIP
 R_API char *r_print_stereogram_bytes(const ut8 *buf, int len);

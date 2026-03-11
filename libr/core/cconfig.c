@@ -3035,6 +3035,11 @@ static bool cb_utf8(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	r_cons_set_utf8 (core->cons, (bool)node->i_value);
+	if (node->i_value) {
+		core->print->flags |= R_PRINT_FLAGS_USEUTF8;
+	} else {
+		core->print->flags &= ~R_PRINT_FLAGS_USEUTF8;
+	}
 	return true;
 }
 
