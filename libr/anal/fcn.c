@@ -2393,7 +2393,9 @@ static void function_context_collect_signature(RAnalFunctionContext *ctx, RAnal 
 		ctx->ret_type = strdup (ret_type);
 	}
 	int argc = sdb_num_get (anal->sdb_types, sdb_args, 0);
-	for (int i = 0; i < argc; i++) {
+	int i = 0;
+	for (; i < argc; i++)
+	{
 		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
 		char *arg_i = sdb_arg_i? sdb_get (anal->sdb_types, sdb_arg_i, 0): NULL;
 		if (!arg_i) {
@@ -2421,7 +2423,9 @@ static void function_context_collect_vars(RAnalFunctionContext *ctx, RAnal *anal
 		R_ANAL_VAR_KIND_BPV,
 		R_ANAL_VAR_KIND_SPV,
 	};
-	for (size_t i = 0; i < R_ARRAY_SIZE (kinds); i++) {
+	size_t i = 0;
+	for (; i < R_ARRAY_SIZE(kinds); i++)
+	{
 		RList *vars = r_anal_var_list (anal, fcn, kinds[i]);
 		if (!vars) {
 			continue;
