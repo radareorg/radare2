@@ -2888,22 +2888,18 @@ R_API bool r_core_prompt_loop(RCore *r) {
 	return true;
 }
 
-static int prompt_flag(RCore *core, char *s, size_t maxlen) {
+static bool prompt_flag(RCore *core, char *s, size_t maxlen) {
 	const RFlagItem *f = r_flag_get_at (core->flags, core->addr, true);
 	if (!f) {
 		return false;
 	}
-	if (core->addr > f->addr) {
-		snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x, core->addr, f->name, core->addr - f->addr);
-	} else {
-		snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
-	}
-	int dots_bytes = 0;
-	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
-	size_t slen = strlen (s);
-	if ((size_t)dots_bytes < maxlen && slen > maxlen - ((size_t)dots_bytes + 1)) {
-		size_t pos = maxlen - ((size_t)dots_bytes + 1);
-		memcpy (s + pos, dots, dots_bytes + 1);
+	int db, slen = (core->addr > f->addr)
+		? snprintf (s, maxlen, "0x%08" PFMT64x " | %s+0x%" PFMT64x, core->addr, f->name, core->addr - f->addr)
+		: snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
+	const char *dots = r_print_ellipsis (core->print, NULL, &db);
+	if ((size_t)db < maxlen && slen > maxlen - ((size_t)db + 1)) {
+		size_t pos = maxlen - ((size_t)db + 1);
+		memcpy (s + pos, dots, db + 1);
 	}
 	return true;
 }
