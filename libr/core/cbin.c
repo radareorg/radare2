@@ -1124,9 +1124,9 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		}
 		return false;
 	}
-	RBinFile *binfile = r_bin_cur (core->bin);
-	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
-	if (!binfile) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	if (!bf) {
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
 		}
@@ -1136,18 +1136,18 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 	RList *ownlist = NULL;
 	if (plugin && plugin->lines) {
 		// list is not cloned to improve speed. avoid use after free
-		list = plugin->lines (binfile);
+		list = plugin->lines (bf);
 	} else if (core->bin) {
 		// TODO: complete and speed-up support for dwarf
-		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (core->bin, mode);
+		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (!da) {
 			if (IS_MODE_JSON (mode)) {
 				pj_end (pj);
 			}
 			return false;
 		}
-		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (core->bin, da, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (core->bin, core->anal->config->bits / 8);
+		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
 		// I suppose there is no reason the parse it for a printing purposes
 		if (info && mode != R_MODE_PRINT) {
 			/* Should we do this by default? */
@@ -1166,8 +1166,8 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 			r_bin_dwarf_free_loc (loc_table);
 		}
 		r_bin_dwarf_free_debug_info (info);
-		r_bin_dwarf_parse_aranges (core->bin, mode);
-		list = ownlist = r_bin_dwarf_parse_line (core->bin, mode);
+		r_bin_dwarf_parse_aranges (bf, mode);
+		list = ownlist = r_bin_dwarf_parse_line (bf, mode);
 		r_bin_dwarf_free_debug_abbrev (da);
 	}
 	if (!list) {

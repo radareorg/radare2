@@ -68,14 +68,19 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 
 	int mode = 0;
 	{
+		RBinFile *bf = r_bin_cur (bin);
+		if (!bf) {
+			exit (1);
+			return false;
+		}
 		// TODO: complete and speed-up support for dwarf
-		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bin, mode);
+		RBinDwarfDebugAbbrev *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (!da) {
 			exit (1);
 			return false;
 		}
-		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bin, 8);
+		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
+		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, 8);
 		// I suppose there is no reason the parse it for a printing purposes
 #if 0
 		if (info && mode != R_MODE_PRINT) {
@@ -92,8 +97,8 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			r_bin_dwarf_free_loc (loc_table);
 		}
 		r_bin_dwarf_free_debug_info (info);
-		r_bin_dwarf_parse_aranges (bin, mode);
-		r_list_free (r_bin_dwarf_parse_line (bin, mode));
+		r_bin_dwarf_parse_aranges (bf, mode);
+		r_list_free (r_bin_dwarf_parse_line (bf, mode));
 		r_bin_dwarf_free_debug_abbrev (da);
 	}
 

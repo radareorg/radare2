@@ -116,11 +116,13 @@ bool test_dwarf3_c(void) {
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("dwarf3_c.elf binary could not be opened", res);
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 7, "Incorrect number of abbreviations");
 
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
 	mu_assert_notnull (info, "Failed to parse debug info");
 	mu_assert_notnull (info->comp_units, "Compilation units vector is NULL");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 1, "Incorrect number of info compilation units");
@@ -171,11 +173,13 @@ bool test_dwarf4_cpp_multiple_modules(void) {
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 37, "Incorrect number of abbreviations");
 
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_notnull (info->comp_units, "Compilation units vector is NULL");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 2, "Incorrect number of info compilation units");
@@ -338,9 +342,11 @@ bool test_dwarf2_big_endian(void) {
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert ("dwarf4_many_comp_units.elf binary could not be opened", res);
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 108, "Incorrect number of abbreviation");
-	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bin, da, MODE);
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, MODE);
 	mu_assert_notnull (info, "Failed parsing of debug_info");
 	mu_assert_eq (RVecDwarfCompUnit_length(info->comp_units), 1, "Incorrect number of info compilation units");
 

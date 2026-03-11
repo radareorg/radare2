@@ -67,6 +67,18 @@ addr: 0x0000119a
 EOF
 RUN
 
+NAME="dwarf5 fuzzed missing string section"
+FILE=bins/fuzzed/dwarf5-double_DW_AT_name_attr
+ARGS=-e log.level=0
+CMDS=<<EOF
+e scr.null=true
+iH
+aaa
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME="ansi injection via dwarf"
 FILE=bins/elf/dwarf_test_func_patched
 ARGS=-AA

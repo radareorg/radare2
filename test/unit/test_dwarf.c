@@ -102,8 +102,10 @@ static bool test_dwarf3_c_basic(void) { // this should work for dwarf2 as well
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_c.elf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 7, "Incorrect number of abbreviations");
 
@@ -176,7 +178,7 @@ static bool test_dwarf3_c_basic(void) { // this should work for dwarf2 as well
 	}
 	i++;
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 8, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -214,8 +216,10 @@ static bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_cpp.elf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 32, "Incorrect number of abbreviations");
 
@@ -512,7 +516,7 @@ static bool test_dwarf3_cpp_basic(void) { // this should work for dwarf2 as well
 		check_abbrev_count (8);
 	}
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 60, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -601,8 +605,10 @@ static bool test_dwarf3_cpp_many_comp_units(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf3_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 58, "Incorrect number of abbreviations");
 	int i = 18;
@@ -617,7 +623,7 @@ static bool test_dwarf3_cpp_many_comp_units(void) {
 	check_abbrev_children (false);
 	check_abbrev_code (18);
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 67, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -721,13 +727,15 @@ static bool test_dwarf_cpp_empty_line_info(void) { // this should work for dwarf
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/pe/hello_world_not_stripped.exe", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	// not ignoring null entries -> 755 abbrevs
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 731, "Incorrect number of abbreviations");
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 1159, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -782,8 +790,10 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf2_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bin, MODE);
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, MODE);
 	mu_assert_notnull (da, "Failed to parse abbreviations");
 	mu_assert_eq (RVecDwarfAbbrevDecl_length(da), 58, "Incorrect number of abbreviations");
 
@@ -799,7 +809,7 @@ bool test_dwarf2_cpp_many_comp_units(void) {
 	check_abbrev_children (false);
 	check_abbrev_code (18);
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 67, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -902,8 +912,10 @@ bool test_dwarf4_cpp_many_comp_units(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/dwarf4_many_comp_units.elf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 75, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
@@ -1003,8 +1015,10 @@ bool test_big_endian_dwarf2(void) {
 	RBinFileOptions opt = {0};
 	bool res = r_bin_open (bin, "bins/elf/ppc64_sudoku_dwarf", &opt);
 	mu_assert ("couldn't open file", res);
+	RBinFile *bf = r_bin_cur (bin);
+	mu_assert_notnull (bf, "Failed to get current bin file");
 
-	RList *line_list = r_bin_dwarf_parse_line (bin, MODE);
+	RList *line_list = r_bin_dwarf_parse_line (bf, MODE);
 	mu_assert_eq (r_list_length (line_list), 395, "Amount of line information parse doesn't match");
 
 	RBinAddrline *row;
