@@ -8,6 +8,7 @@ EOF
 
 mkdir -p "${WRKDIR}/inbox"
 mkdir -p "${WRKDIR}/outbox"
+mkdir -p "${WRKDIR}/trash"
 
 popcrash() {
 	(
@@ -19,11 +20,24 @@ popcrash() {
 while : ; do
 	F=`popcrash`
 	if [ -z "${F}" ]; then
-		echo "No pending crash to process.. waiting for "
+		echo "No pending crash to fix in the inbox.."
+		pkill 'fuzz_*'
+		sleep 10
 		continue
+	fi
+	FF="${WRKDIR}/inbox/${F}"
+	cat "$FF" | grep DEADLYSIG
+	if [ $? != 0 ]; then
+		mv "${FF}" "${WRKDIR}/trash"
 	fi
 	echo "${PROMPT}" > ${WRKDIR}/prompt.txt
 	tail -n 60 "${WRKDIR}/inbox/${F}" >> ${WRKDIR}/prompt.txt
-	mv "${WRKDIR}/inbox/${F}" "${WRKDIR}/outbox/${F}.crash"
-	${AGENT} exec "$(c)" >> ${WRKDIR}/outbox/${F}.log
+
+	(cd ../.. && ${AGENT} exec "`cat ${WRKDIR}/prompt.txt`") >> ${WRKDIR}/outbox/${F}.log
+	if [ $? = 0 ]; then
+		mv "${WRKDIR}/inbox/${F}" "${WRKDIR}/outbox/${F}.crash"
+		git diff > "${WRKDIR}/outbox/${F}.patch"
+		git reset --hard
+		make b
+	fi
 done
