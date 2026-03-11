@@ -364,7 +364,8 @@ static bool read_module_name(RBinXtacObj *bin) {
 	const ut32 len_of_mod_name = hdr->size_of_mod_name / sizeof (ut16) + 1;
 
 	if (hdr->size_of_mod_name == 0) {
-		return true;
+		bin->mod_name_u8 = strdup ("");
+		return bin->mod_name_u8 != NULL;
 	}
 	if (! (bin->mod_name_u16 = R_NEWS0 (ut16, len_of_mod_name))) {
 		return false;
@@ -386,7 +387,8 @@ static bool read_nt_native_pathname(RBinXtacObj *bin) {
 	const ut32 len_of_nt_pname = (hdr->size_of_nt_pname / sizeof (ut16)) + 1;
 
 	if (hdr->size_of_nt_pname == 0) {
-		return true;
+		bin->nt_path_name_u8 = strdup ("");
+		return bin->nt_path_name_u8 != NULL;
 	}
 	if (! (bin->nt_path_name_u16 = R_NEWS0 (ut16, len_of_nt_pname))) {
 		return false;
