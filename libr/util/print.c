@@ -65,8 +65,9 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	int rows = height > 0 ? height : 10;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
-	const char *vline = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LINE_VERT : "|";
-	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
+	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
+	const char *vline = useutf8 ? RUNE_LINE_VERT : "|";
+	const char *block = useutf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->call;
 	kol[1] = pal->jmp;
@@ -80,11 +81,8 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 			for (j = 0; j < cols; j++) {
 				int realJ = j * len / cols;
 				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					if (p->histblock) {
-						r_strbuf_appendf (sb, "%s%s%s", kol[koli], block, Color_RESET);
-					} else {
-						r_strbuf_appendf (sb, "%s%s%s", kol[koli], vline, Color_RESET);
-					}
+					const char *line = p->histblock? block: vline;
+					r_strbuf_appendf (sb, "%s%s%s", kol[koli], line, Color_RESET);
 				} else {
 					r_strbuf_append (sb, " ");
 				}

@@ -76,7 +76,6 @@ typedef int (*RPrintSizeCallback)(void *user, ut64 addr);
 typedef char *(*RPrintCommentCallback)(void *user, ut64 addr);
 typedef const char *(*RPrintSectionGet)(void *user, ut64 addr);
 typedef const char *(*RPrintColorForByte)(void *user, ut64 addr, ut8 ch, bool verbose);
-// typedef const char *(*RPrintColorForCode)(void *user, const char *type);
 typedef char *(*RPrintHasRefs)(void *user, ut64 addr, int mode);
 
 typedef struct r_print_zoom_t {
@@ -164,17 +163,17 @@ typedef struct r_print_t {
 	ut64 screen_bounds;
 	// HACK: Used to temporarily disable the progress bar when it doesn't make sense to have it,
 	// eg. when setting the default flag tags on startup. Does not override scr.progressbar.
-    bool enable_progressbar;
-     // Charset transform callbacks provided by RCore to avoid r_util->r_muta dep
-     void *charset_ctx;
-     int (*charset_decode)(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed);
-     int (*charset_encode)(void *ctx, const ut8 *in, int len, ut8 **out);
+	bool enable_progressbar;
+	// Charset transform callbacks provided by RCore to avoid r_util->r_muta dep
+	void *charset_ctx;
+	int (*charset_decode)(void *ctx, const ut8 *in, int len, ut8 **out, int *consumed);
+	int (*charset_encode)(void *ctx, const ut8 *in, int len, ut8 **out);
 
 	// segmented memory addressing
 	int nbcolor;
 	int spinpos;
 	char *spinmsg;
-	RPrintPriv *priv;
+	RPrintPriv priv;
 } RPrint;
 
 #ifdef R_API
