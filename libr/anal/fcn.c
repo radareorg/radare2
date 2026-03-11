@@ -2303,26 +2303,426 @@ R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 	return true;
 }
 
-// MOVE To function.c
-R_API char *r_anal_function_get_signature(RAnalFunction *function) {
-	RAnal *a = function->anal;
-	const char *realname = NULL, *import_substring = NULL;
-
-	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
-	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
+static const char *anal_function_signature_realname(RAnal *anal, RAnalFunction *fcn) {
+	const char *realname = NULL;
+	const char *import_substring = NULL;
+	RFlagItem *flag = NULL;
+	if (anal && anal->flag_get && anal->flb.f) {
+		flag = anal->flag_get (anal->flb.f, false, fcn->addr);
+	}
 	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
-		// Get substring after last dot
-		import_substring = r_str_rchr (function->name, NULL, '.');
+		import_substring = r_str_rchr (fcn->name, NULL, '.');
 		if (import_substring) {
 			realname = import_substring + 1;
 		}
 	} else {
-		realname = function->name;
+		realname = fcn->name;
 	}
-	// strip leading __ prefix (e.g. __strcpy_chk -> strcpy_chk)
 	if (realname && r_str_startswith (realname, "__")) {
 		realname += 2;
 	}
+	return realname;
+}
+
+static void function_context_param_free(RAnalFunctionContextParam *param) {
+	if (!param) {
+		return;
+	}
+	free (param->name);
+	free (param->type);
+	free (param);
+}
+
+static void function_context_var_free(RAnalFunctionContextVar *var) {
+	if (!var) {
+		return;
+	}
+	free (var->name);
+	free (var->type);
+	free (var->reg);
+	free (var->base);
+	free (var);
+}
+
+static void function_readback_param_free(RAnalFunctionReadbackParam *param) {
+	if (!param) {
+		return;
+	}
+	free (param->name);
+	free (param->type);
+	free (param);
+}
+
+static bool string_has_opaque_type_marker(const char *type) {
+	return type && strstr (type, "type_0x");
+}
+
+static void function_context_parse_arg(const char *arg_desc, char **type_out, char **name_out) {
+	*type_out = NULL;
+	*name_out = NULL;
+	if (R_STR_ISEMPTY (arg_desc)) {
+		return;
+	}
+	char *copy = strdup (arg_desc);
+	if (!copy) {
+		return;
+	}
+	char *comma = strchr (copy, ',');
+	if (comma) {
+		*comma++ = 0;
+		*name_out = r_str_trim_dup (comma);
+	}
+	*type_out = r_str_trim_dup (copy);
+	free (copy);
+}
+
+static void function_context_collect_signature(RAnalFunctionContext *ctx, RAnal *anal, RAnalFunction *fcn) {
+	const char *realname = anal_function_signature_realname (anal, fcn);
+	if (R_STR_ISEMPTY (realname)) {
+		return;
+	}
+	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
+	char *sdb_args = r_str_newf ("func.%s.args", realname);
+	if (!sdb_ret || !sdb_args) {
+		free (sdb_ret);
+		free (sdb_args);
+		return;
+	}
+	const char *ret_type = sdb_const_get (anal->sdb_types, sdb_ret, 0);
+	if (ret_type) {
+		ctx->ret_type = strdup (ret_type);
+	}
+	int argc = sdb_num_get (anal->sdb_types, sdb_args, 0);
+	for (int i = 0; i < argc; i++) {
+		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
+		char *arg_i = sdb_arg_i? sdb_get (anal->sdb_types, sdb_arg_i, 0): NULL;
+		if (!arg_i) {
+			free (sdb_arg_i);
+			continue;
+		}
+		RAnalFunctionContextParam *param = R_NEW0 (RAnalFunctionContextParam);
+		if (!param) {
+			free (arg_i);
+			free (sdb_arg_i);
+			break;
+		}
+		function_context_parse_arg (arg_i, &param->type, &param->name);
+		r_list_append (ctx->params, param);
+		free (arg_i);
+		free (sdb_arg_i);
+	}
+	free (sdb_ret);
+	free (sdb_args);
+}
+
+static void function_context_collect_vars(RAnalFunctionContext *ctx, RAnal *anal, RAnalFunction *fcn) {
+	const int kinds[] = {
+		R_ANAL_VAR_KIND_REG,
+		R_ANAL_VAR_KIND_BPV,
+		R_ANAL_VAR_KIND_SPV,
+	};
+	for (size_t i = 0; i < R_ARRAY_SIZE (kinds); i++) {
+		RList *vars = r_anal_var_list (anal, fcn, kinds[i]);
+		if (!vars) {
+			continue;
+		}
+		RListIter *iter;
+		RAnalVar *var;
+		r_list_foreach (vars, iter, var) {
+			if (!var) {
+				continue;
+			}
+			RAnalFunctionContextVar *item = R_NEW0 (RAnalFunctionContextVar);
+			if (!item) {
+				break;
+			}
+			item->name = var->name? strdup (var->name): NULL;
+			item->type = var->type? strdup (var->type): NULL;
+			item->reg = var->regname? strdup (var->regname): NULL;
+			item->is_arg = var->isarg;
+			item->offset = var->delta;
+			switch (var->kind) {
+			case R_ANAL_VAR_KIND_REG:
+				item->kind = R_ANAL_FUNCTION_CONTEXT_VAR_KIND_REGISTER;
+				break;
+			case R_ANAL_VAR_KIND_BPV:
+				item->kind = R_ANAL_FUNCTION_CONTEXT_VAR_KIND_STACK_BP;
+				item->base = strdup ("bp");
+				break;
+			case R_ANAL_VAR_KIND_SPV:
+				item->kind = R_ANAL_FUNCTION_CONTEXT_VAR_KIND_STACK_SP;
+				item->base = strdup ("sp");
+				break;
+			default:
+				function_context_var_free (item);
+				continue;
+			}
+			r_list_append (ctx->vars, item);
+		}
+		r_list_free (vars);
+	}
+}
+
+R_API RAnalFunctionContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	RAnalFunctionContext *ctx = R_NEW0 (RAnalFunctionContext);
+	if (!ctx) {
+		return NULL;
+	}
+	ctx->name = fcn->name? strdup (fcn->name): NULL;
+	ctx->callconv = fcn->callconv? strdup (fcn->callconv): NULL;
+	ctx->noreturn = fcn->is_noreturn;
+	ctx->params = r_list_newf ((RListFree)function_context_param_free);
+	ctx->vars = r_list_newf ((RListFree)function_context_var_free);
+	ctx->base_types = r_anal_collect_base_types (anal);
+	if (!ctx->params || !ctx->vars || !ctx->base_types) {
+		r_anal_function_context_free (ctx);
+		return NULL;
+	}
+	function_context_collect_signature (ctx, anal, fcn);
+	function_context_collect_vars (ctx, anal, fcn);
+	return ctx;
+}
+
+R_API void r_anal_function_context_free(RAnalFunctionContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+	free (ctx->name);
+	free (ctx->ret_type);
+	free (ctx->callconv);
+	r_list_free (ctx->params);
+	r_list_free (ctx->vars);
+	r_anal_base_type_list_free (ctx->base_types);
+	free (ctx);
+}
+
+R_API RAnalFunctionReadback *r_anal_function_readback_collect(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	RAnalFunctionReadback *readback = R_NEW0 (RAnalFunctionReadback);
+	RAnalFunctionContext sigctx = {0};
+	if (!readback) {
+		return NULL;
+	}
+	sigctx.params = r_list_newf ((RListFree)function_context_param_free);
+	if (!sigctx.params) {
+		r_anal_function_readback_free (readback);
+		return NULL;
+	}
+	function_context_collect_signature (&sigctx, anal, fcn);
+	readback->name = fcn->name? strdup (fcn->name): NULL;
+	readback->ret_type = sigctx.ret_type? strdup (sigctx.ret_type): NULL;
+	readback->callconv = fcn->callconv? strdup (fcn->callconv): NULL;
+	readback->noreturn = fcn->is_noreturn;
+	readback->signature = r_anal_function_get_signature (fcn);
+	readback->has_opaque_type_markers = string_has_opaque_type_marker (readback->ret_type);
+	readback->params = r_list_newf ((RListFree)function_readback_param_free);
+	if (!readback->params) {
+		r_anal_function_readback_free (readback);
+		free (sigctx.ret_type);
+		r_list_free (sigctx.params);
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalFunctionContextParam *param;
+	r_list_foreach (sigctx.params, iter, param) {
+		RAnalFunctionReadbackParam *item = R_NEW0 (RAnalFunctionReadbackParam);
+		if (!item) {
+			r_anal_function_readback_free (readback);
+			free (sigctx.ret_type);
+			r_list_free (sigctx.params);
+			return NULL;
+		}
+		item->name = param && param->name? strdup (param->name): NULL;
+		item->type = param && param->type? strdup (param->type): NULL;
+		readback->has_opaque_type_markers |= string_has_opaque_type_marker (item->type);
+		r_list_append (readback->params, item);
+	}
+	free (sigctx.ret_type);
+	r_list_free (sigctx.params);
+	return readback;
+}
+
+R_API void r_anal_function_readback_free(RAnalFunctionReadback *readback) {
+	if (!readback) {
+		return;
+	}
+	free (readback->name);
+	free (readback->signature);
+	free (readback->ret_type);
+	free (readback->callconv);
+	r_list_free (readback->params);
+	free (readback);
+}
+
+static void function_signature_clear_entries(Sdb *types, const char *realname) {
+	int i;
+	int argc;
+	char *argc_key;
+
+	R_RETURN_IF_FAIL (types && realname);
+	argc_key = r_str_newf ("func.%s.args", realname);
+	if (!argc_key) {
+		return;
+	}
+	argc = sdb_num_get (types, argc_key, 0);
+	free (argc_key);
+	for (i = 0; i < argc; i++) {
+		char *arg_key = r_str_newf ("func.%s.arg.%d", realname, i);
+		if (!arg_key) {
+			continue;
+		}
+		sdb_unset (types, arg_key, 0);
+		free (arg_key);
+	}
+	char *ret_key = r_str_newf ("func.%s.ret", realname);
+	char *cc_key = r_str_newf ("func.%s.cc", realname);
+	char *noreturn_key = r_str_newf ("func.%s.noreturn", realname);
+	char *args_key = r_str_newf ("func.%s.args", realname);
+	char *func_key = r_str_newf ("func.%s", realname);
+	if (ret_key) {
+		sdb_unset (types, ret_key, 0);
+		free (ret_key);
+	}
+	if (cc_key) {
+		sdb_unset (types, cc_key, 0);
+		free (cc_key);
+	}
+	if (noreturn_key) {
+		sdb_unset (types, noreturn_key, 0);
+		free (noreturn_key);
+	}
+	if (args_key) {
+		sdb_unset (types, args_key, 0);
+		free (args_key);
+	}
+	if (func_key) {
+		sdb_unset (types, func_key, 0);
+		free (func_key);
+	}
+}
+
+R_API bool r_anal_function_apply_signature(
+	RAnal *anal,
+	RAnalFunction *fcn,
+	const char *ret_type,
+	const RAnalFunctionSignatureParam *params,
+	size_t param_count,
+	const char *callconv,
+	bool noreturn
+) {
+	Sdb *types;
+	const char *realname;
+	const char *resolved_ret_type;
+	const char *resolved_callconv;
+	RStrBuf argnames;
+	char *ret_key = NULL;
+	char *cc_key = NULL;
+	char *argc_key = NULL;
+	char *func_key = NULL;
+	char *argc_value = NULL;
+	size_t i;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, false);
+	types = anal->sdb_types;
+	realname = anal_function_signature_realname (anal, fcn);
+	if (R_STR_ISEMPTY (realname)) {
+		return false;
+	}
+
+	resolved_ret_type = R_STR_ISNOTEMPTY (ret_type)? ret_type: "void";
+	resolved_callconv = R_STR_ISNOTEMPTY (callconv)
+		? callconv
+		: (R_STR_ISNOTEMPTY (fcn->callconv)? fcn->callconv: r_anal_cc_default (anal));
+
+	sdb_set (types, realname, "func", 0);
+	function_signature_clear_entries (types, realname);
+
+	r_strbuf_init (&argnames);
+	for (i = 0; i < param_count; i++) {
+		const RAnalFunctionSignatureParam *param = &params[i];
+		char *default_param_name = NULL;
+		const char *param_name = NULL;
+		const char *param_type = (param && R_STR_ISNOTEMPTY (param->type))
+			? param->type
+			: "void";
+		if (param && R_STR_ISNOTEMPTY (param->name)) {
+			param_name = param->name;
+		} else {
+			default_param_name = r_str_newf ("arg%zu", i);
+			if (!default_param_name) {
+				r_strbuf_fini (&argnames);
+				return false;
+			}
+			param_name = default_param_name;
+		}
+		char *arg_key = r_str_newf ("func.%s.arg.%zu", realname, i);
+		char *arg_val = r_str_newf ("%s,%s", param_type, param_name);
+		if (!arg_key || !arg_val) {
+			free (arg_key);
+			free (arg_val);
+			free (default_param_name);
+			r_strbuf_fini (&argnames);
+			return false;
+		}
+		sdb_set (types, arg_key, arg_val, 0);
+		r_strbuf_appendf (&argnames, "%s%s", i? ",": "", param_name);
+		free (arg_key);
+		free (arg_val);
+		free (default_param_name);
+	}
+
+	ret_key = r_str_newf ("func.%s.ret", realname);
+	cc_key = r_str_newf ("func.%s.cc", realname);
+	argc_key = r_str_newf ("func.%s.args", realname);
+	func_key = r_str_newf ("func.%s", realname);
+	argc_value = r_str_newf ("%zu", param_count);
+	if (!ret_key || !cc_key || !argc_key || !func_key || !argc_value) {
+		free (ret_key);
+		free (cc_key);
+		free (argc_key);
+		free (func_key);
+		free (argc_value);
+		r_strbuf_fini (&argnames);
+		return false;
+	}
+	sdb_set (types, ret_key, resolved_ret_type, 0);
+	sdb_set (types, cc_key, resolved_callconv, 0);
+	sdb_set (types, argc_key, argc_value, 0);
+	sdb_set (types, func_key, r_strbuf_get (&argnames), 0);
+	free (ret_key);
+	free (cc_key);
+	free (argc_key);
+	free (func_key);
+	free (argc_value);
+	if (noreturn) {
+		char *noreturn_key = r_str_newf ("func.%s.noreturn", realname);
+		if (!noreturn_key) {
+			r_strbuf_fini (&argnames);
+			return false;
+		}
+		sdb_set (types, noreturn_key, "true", 0);
+		free (noreturn_key);
+	} else {
+		char *noreturn_key = r_str_newf ("func.%s.noreturn", realname);
+		if (noreturn_key) {
+			sdb_unset (types, noreturn_key, 0);
+			free (noreturn_key);
+		}
+	}
+	r_strbuf_fini (&argnames);
+
+	if (R_STR_ISNOTEMPTY (resolved_callconv)) {
+		fcn->callconv = r_str_constpool_get (&anal->constpool, resolved_callconv);
+	}
+	fcn->is_noreturn = noreturn;
+	return true;
+}
+
+// MOVE To function.c
+R_API char *r_anal_function_get_signature(RAnalFunction *function) {
+	RAnal *a = function->anal;
+	const char *realname = anal_function_signature_realname (a, function);
 	char *ret = NULL, *args = strdup ("");
 	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
 	char *sdb_args = r_str_newf ("func.%s.args", realname);
