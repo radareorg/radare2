@@ -1,4 +1,4 @@
-/* Copyright radare2 - 2014-2025 - pancake, ret2libc */
+/* Copyright radare2 - 2014-2026 - pancake, ret2libc */
 
 #include <r_core.h>
 
@@ -423,15 +423,11 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 	ut32 delta_y = 0, delta_txt_y = 0;
 	char title[TITLE_LEN];
 	char *body;
-	int x, y;
 	int color = n->difftype;
 	const bool showTitle = g->show_node_titles;
 	const bool showBody = g->show_node_body;
 	RCons *cons = g->can->cons;
-	RPrint p = {0};
-	if (cons->use_utf8) {
-		p.flags |= R_PRINT_FLAGS_USEUTF8;
-	}
+	RPrint p = { .flags = R_PRINT_FLAGS_USEUTF8 };
 	int dots_width = 0, dots_bytes = 0;
 	const char *dots = r_print_ellipsis (&p, &dots_width, &dots_bytes);
 	if (n->color) {
@@ -439,8 +435,8 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		r_cons_canvas_box (g->can, n->x - 1, n->y, n->w + 2, n->h, n->color);
 	}
 
-	x = n->x + g->can->sx;
-	y = n->y + g->can->sy;
+	int x = n->x + g->can->sx;
+	int y = n->y + g->can->sy;
 	if (x + MARGIN_TEXT_X < 0) {
 		delta_x = - (x + MARGIN_TEXT_X);
 	}
@@ -509,7 +505,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 				}
 			}
 			/* print some dots when the body is cropped because of zoom */
-			if (n->body && *n->body) {
+			if (R_STR_ISNOTEMPTY (n->body)) {
 				if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
 					if (delta_x < dots_width) {
 						if (dots_width == dots_bytes) {

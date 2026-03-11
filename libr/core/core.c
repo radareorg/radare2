@@ -2889,9 +2889,6 @@ R_API bool r_core_prompt_loop(RCore *r) {
 }
 
 static int prompt_flag(RCore *core, char *s, size_t maxlen) {
-	int dots_bytes = 0;
-	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
-	const size_t dots_size = (size_t)dots_bytes + 1;
 	const RFlagItem *f = r_flag_get_at (core->flags, core->addr, true);
 	if (!f) {
 		return false;
@@ -2901,10 +2898,12 @@ static int prompt_flag(RCore *core, char *s, size_t maxlen) {
 	} else {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
 	}
+	int dots_bytes = 0;
+	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
 	size_t slen = strlen (s);
-	if (slen > maxlen - dots_size) {
-		size_t pos = maxlen - dots_size - 1;
-		memcpy (s + pos, dots, dots_size);
+	if ((size_t)dots_bytes < maxlen && slen > maxlen - ((size_t)dots_bytes + 1)) {
+		size_t pos = maxlen - ((size_t)dots_bytes + 1);
+		memcpy (s + pos, dots, dots_bytes + 1);
 	}
 	return true;
 }
@@ -2923,19 +2922,18 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 }
 
 static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max_tmp_size) {
-	unsigned int OTHRSCH = 3;
-	int dots_bytes = 0;
-	const char *dots = r_print_ellipsis (core->print, NULL, &dots_bytes);
-	const size_t dots_size = (size_t)dots_bytes + 1;
+	int dw = 0;
+	int db = 0;
+	const char *dots = r_print_ellipsis (core->print, &dw, &db);
 
-	int w = r_cons_get_size (core->cons, NULL);
-	size_t file_len = r_str_display_width (filename);
-	size_t tmp_len = r_str_display_width (tmp);
-	int p_len = R_MAX (0, w - 6);
-	if (file_len + tmp_len + OTHRSCH >= p_len) {
-		size_t chop_point = (size_t) (p_len - OTHRSCH - file_len - dots_size);
-		if (chop_point < max_tmp_size - dots_size) {
-			snprintf (tmp + chop_point, dots_size, "%s", dots);
+	const int w = r_cons_get_size (core->cons, NULL);
+	const size_t file_len = r_str_display_width (filename);
+	const size_t tmp_len = r_str_display_width (tmp);
+	const int p_len = R_MAX (0, w - 6);
+	if (file_len + tmp_len + 3 >= p_len) {
+		size_t chop_point = (size_t) (p_len - 3 - file_len - dw);
+		if (chop_point < max_tmp_size && (size_t)db < max_tmp_size - chop_point) {
+			memcpy (tmp + chop_point, dots, db + 1);
 		}
 	}
 }
