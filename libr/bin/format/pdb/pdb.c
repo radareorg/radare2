@@ -522,25 +522,30 @@ error:
 }
 
 static void finish_pdb_parse(RBinPdb *pdb) {
-	R_PDB7_ROOT_STREAM *p = pdb->root_stream;
+	R_PDB7_ROOT_STREAM *p;
 	RListIter *it;
 	SPage *page = 0;
 
-	if (!p) {
+	if (!pdb) {
 		return;
 	}
-	it = r_list_iterator (p->streams_list);
-	while (r_list_iter_next (it)) {
-		page = (SPage *)r_list_iter_get (it);
-		free (page->stream_pages);
-		page->stream_pages = 0;
-		free (page);
-		page = 0;
+	p = pdb->root_stream;
+	if (p && p->streams_list) {
+		it = r_list_iterator (p->streams_list);
+		while (r_list_iter_next (it)) {
+			page = (SPage *)r_list_iter_get (it);
+			free (page->stream_pages);
+			page->stream_pages = 0;
+			free (page);
+			page = 0;
+		}
+		r_list_free (p->streams_list);
+		p->streams_list = 0;
 	}
-	r_list_free (p->streams_list);
-	p->streams_list = 0;
-	free (p);
-	p = 0;
+	if (p) {
+		free (p);
+		pdb->root_stream = NULL;
+	}
 	// end of free of R_PDB7_ROOT_STREAM
 
 	// TODO: maybe create some kind of destructor?
@@ -558,55 +563,64 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 	 * element in a list is of a specific type and just store this info in the type struct or so.
 	 */
 	// XXX: this loop is fucked up. i prefer to leak than crash
-	it = r_list_iterator (pdb->pdb_streams);
-	while (r_list_iter_next (it)) {
-		switch (i) {
-		case 1:
-			pdb_info_stream = (SPDBInfoStream *)r_list_iter_get (it);
-			if (pdb_info_stream->free_) {
-				pdb_info_stream->free_(NULL, pdb_info_stream);
-			}
-			free (pdb_info_stream);
-			break;
-		case 2:
-			ss = (STpiStream *)r_list_iter_get (it);
-			break;
-		case 3:
-			dbi_stream = (SDbiStream *)r_list_iter_get (it);
-			if (dbi_stream->free_) {
-				dbi_stream->free_(ss, dbi_stream);
-			}
-			free (dbi_stream);
-			break;
-		default:
-			find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
-			if (stream_parse_func) {
+	if (pdb->pdb_streams) {
+		it = r_list_iterator (pdb->pdb_streams);
+		while (r_list_iter_next (it)) {
+			switch (i) {
+			case 1:
+				pdb_info_stream = (SPDBInfoStream *)r_list_iter_get (it);
+				if (pdb_info_stream->free_) {
+					pdb_info_stream->free_(NULL, pdb_info_stream);
+				}
+				free (pdb_info_stream);
+				break;
+			case 2:
+				ss = (STpiStream *)r_list_iter_get (it);
+				break;
+			case 3:
+				dbi_stream = (SDbiStream *)r_list_iter_get (it);
+				if (dbi_stream->free_) {
+					dbi_stream->free_(ss, dbi_stream);
+				}
+				free (dbi_stream);
+				break;
+			default:
+				stream_parse_func = NULL;
+				if (pdb->pdb_streams2) {
+					find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
+				}
+				if (stream_parse_func) {
+					break;
+				}
+				pdb_stream = (R_PDB_STREAM *)r_list_iter_get (it);
+				free_pdb_stream (ss, pdb_stream);
+				free (pdb_stream);
 				break;
 			}
-			pdb_stream = (R_PDB_STREAM *)r_list_iter_get (it);
-			free_pdb_stream (ss, pdb_stream);
-			free (pdb_stream);
-			break;
+			i++;
 		}
-		i++;
 	}
 #endif
 	r_list_free (pdb->pdb_streams);
+	pdb->pdb_streams = NULL;
 	// enf of free of pdb->pdb_streams
 
 #if 1
 	// start of free pdb->pdb_streams2
-	it = r_list_iterator (pdb->pdb_streams2);
-	while (r_list_iter_next (it)) {
-		stream_parse_func = (SStreamParseFunc *)r_list_iter_get (it);
-		if (stream_parse_func->free) {
-			stream_parse_func->free (ss, stream_parse_func->stream);
-			free (stream_parse_func->stream);
+	if (pdb->pdb_streams2) {
+		it = r_list_iterator (pdb->pdb_streams2);
+		while (r_list_iter_next (it)) {
+			stream_parse_func = (SStreamParseFunc *)r_list_iter_get (it);
+			if (stream_parse_func->free) {
+				stream_parse_func->free (ss, stream_parse_func->stream);
+				free (stream_parse_func->stream);
+			}
+			free (stream_parse_func);
 		}
-		free (stream_parse_func);
 	}
 #endif
 	r_list_free (pdb->pdb_streams2);
+	pdb->pdb_streams2 = NULL;
 	// end of free pdb->streams2
 
 	if (ss) {
@@ -617,6 +631,7 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 	}
 
 	free (pdb->stream_map);
+	pdb->stream_map = NULL;
 	r_unref (pdb->buf);
 
 	// fclose (pdb->fp);
@@ -1507,6 +1522,10 @@ R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, RBuffer *buf) {
 
 error:
 	R_FREE (signature);
+	if (pdb && pdb->buf) {
+		r_unref (pdb->buf);
+		pdb->buf = NULL;
+	}
 	return false;
 }
 
