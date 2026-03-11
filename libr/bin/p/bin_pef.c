@@ -789,6 +789,9 @@ static RList *libs(RBinFile *bf) {
 }
 
 static void **flatlist(RList *list) {
+	if (!list) {
+		return NULL;
+	}
 	size_t len = r_list_length (list);
 	if (len == 0) {
 		return NULL;
@@ -808,12 +811,10 @@ static RList *relocs(RBinFile *bf) {
 	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
 	RList *importList = imports (bf); // Import linked-list
 	void **importArray = flatlist (importList); // Indexable import list
+	size_t importCount = importList ? (size_t)r_list_length (importList) : 0;
 	PEFReloc *r;
 	RListIter *iter;
 	int i;
-	if (!importArray) {
-		return NULL;
-	}
 
 	for (i = 0; i < pef->nsec; i++) {
 		r_list_foreach (pef->sec[i].relocs, iter, r) {
@@ -822,7 +823,7 @@ static RList *relocs(RBinFile *bf) {
 			ptr->additive = 1;
 			ptr->vaddr = pef->sec[i].addr + r->offset;
 			if (r->isimport) {
-				if (r->target >= r_list_length (importList)) {
+				if (!importArray || r->target >= importCount) {
 					free (ptr);
 					continue;
 				}
