@@ -1499,7 +1499,7 @@ repeat:
 		r_core_cmd_call (core, "fd");
 
 		int secondColumn = (w > 120)? 80: 0;
-		const char *ellipsis = r_print_ellipsis (cons, NULL);
+		const char *ellipsis = r_print_ellipsis (core->print, NULL);
 		int maxcount = 9;
 		int rows = h; // XXX dupe
 		count = 0;
