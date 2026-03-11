@@ -1509,7 +1509,7 @@ repeat:
 		const ut64 num_xrefs = RVecAnalRef_length (xrefs);
 		R_VEC_FOREACH (xrefs, refi) {
 			if (idx - skip > maxcount) {
-				r_cons_printf (cons, "...");
+				r_cons_print (cons, r_cons_ellipsis (cons, NULL));
 				break;
 			}
 
@@ -1598,7 +1598,7 @@ repeat:
 					dis = res;
 				}
 				if (++count >= rows) {
-					r_cons_printf (cons, "...");
+					r_cons_print (cons, r_cons_ellipsis (cons, NULL));
 					break;
 				}
 			}

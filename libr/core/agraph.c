@@ -505,7 +505,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 			/* print some dots when the body is cropped because of zoom */
 			if (n->body && *n->body) {
 				if (body_y <= body_h && g->zoom < ZOOM_DEFAULT) {
-					char *dots = "...";
+					const char *dots = r_cons_ellipsis (cons, NULL);
 					if (delta_x < strlen (dots)) {
 						dots += delta_x;
 						W (dots);

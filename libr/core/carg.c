@@ -88,7 +88,7 @@ static void print_format_values(RCore *core, const char *fmt, bool onstack, ut64
 				r_cons_printf (core->cons, "\\x%02x", b);
 			}
 			if (i == MAXSTRLEN - 1) {
-				 r_cons_print (core->cons, "..."); // To show string is truncated
+					r_cons_print (core->cons, r_cons_ellipsis (core->cons, NULL)); // To show string is truncated
 			}
 		}
 		r_cons_print (core->cons, "\"");

@@ -2886,7 +2886,8 @@ R_API bool r_core_prompt_loop(RCore *r) {
 }
 
 static int prompt_flag(RCore *core, char *s, size_t maxlen) {
-	const char DOTS[] = "...";
+	const char *dots = r_cons_ellipsis (core->cons, NULL);
+	const size_t dots_size = strlen (dots) + 1;
 	const RFlagItem *f = r_flag_get_at (core->flags, core->addr, true);
 	if (!f) {
 		return false;
@@ -2897,9 +2898,9 @@ static int prompt_flag(RCore *core, char *s, size_t maxlen) {
 		snprintf (s, maxlen, "0x%08" PFMT64x " | %s", core->addr, f->name);
 	}
 	size_t slen = strlen (s);
-	if (slen > maxlen - sizeof (DOTS)) {
-		size_t pos = maxlen - sizeof (DOTS) - 1;
-		memcpy (s + pos, DOTS, sizeof (DOTS));
+	if (slen > maxlen - dots_size) {
+		size_t pos = maxlen - dots_size - 1;
+		memcpy (s + pos, dots, dots_size);
 	}
 	return true;
 }
@@ -2919,17 +2920,17 @@ static void prompt_sec(RCore *core, char *s, size_t maxlen) {
 
 static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max_tmp_size) {
 	unsigned int OTHRSCH = 3;
-	const char DOTS[] = "...";
+	const char *dots = r_cons_ellipsis (core->cons, NULL);
+	const size_t dots_size = strlen (dots) + 1;
 
 	int w = r_cons_get_size (core->cons, NULL);
 	size_t file_len = r_str_display_width (filename);
 	size_t tmp_len = r_str_display_width (tmp);
 	int p_len = R_MAX (0, w - 6);
 	if (file_len + tmp_len + OTHRSCH >= p_len) {
-		size_t dots_size = sizeof (DOTS);
 		size_t chop_point = (size_t) (p_len - OTHRSCH - file_len - dots_size);
 		if (chop_point < max_tmp_size - dots_size) {
-			snprintf (tmp + chop_point, dots_size, "%s", DOTS);
+			snprintf (tmp + chop_point, dots_size, "%s", dots);
 		}
 	}
 }

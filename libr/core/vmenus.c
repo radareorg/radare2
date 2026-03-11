@@ -2786,7 +2786,7 @@ R_API void r_core_visual_config(RCore *core) {
 				}
 			}
 			r_cons_gotoxy (core->cons, 21, y);
-			r_cons_printf (core->cons, "...");
+			r_cons_print (core->cons, r_cons_ellipsis (core->cons, NULL));
 			r_cons_gotoxy (core->cons, 0, 0);
 			r_cons_flush (core->cons);
 		}
