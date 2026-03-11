@@ -297,12 +297,8 @@ R_API void r_print_init(RPrint *p) {
 	p->io_unalloc_ch = '.';
 	p->enable_progressbar = true;
 	// Charset callbacks are set by RCore; nothing to do here
-	if (!p->priv) {
-		p->priv = R_NEW0 (RPrintPriv);
-	}
-	if (p->priv) {
-		p->priv->zoom_mode = -1;
-	}
+	memset (&p->priv, 0, sizeof (p->priv));
+	p->priv.zoom_mode = -1;
 }
 
 R_API RPrint* r_print_new(void) {
@@ -325,7 +321,6 @@ R_API bool r_print_fini(RPrint * R_NONNULL p) {
 	}
 	R_FREE (p->lines_cache);
 	R_FREE (p->row_offsets);
-	R_FREE (p->priv);
 	// Charset callbacks/context are owned by RCore; do not free here
 	r_unref (p->config);
 	return true;
@@ -425,8 +420,8 @@ static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_siz
 		RCons *cons = p->consb.cons;
 		if (cons) {
 			if (p->flags & R_PRINT_FLAGS_RAINBOW) {
-				if (cons->rgbstr && p->priv) {
-					pre = cons->rgbstr (cons, p->priv->rgbstr, sizeof (p->priv->rgbstr), addr);
+				if (cons->rgbstr) {
+					pre = cons->rgbstr (cons, p->priv.rgbstr, sizeof (p->priv.rgbstr), addr);
 				}
 			} else if (cons->context && cons->context->pal.addr) {
 				pre = cons->context->pal.addr;
@@ -696,8 +691,8 @@ R_API const char *r_print_byte_color(RPrint *p, ut64 addr, int ch) {
 	if (p && p->flags & R_PRINT_FLAGS_RAINBOW) {
 		// EXPERIMENTAL
 		int bg = (p->flags & R_PRINT_FLAGS_NONHEX)? 48: 38;
-		snprintf (p->priv->colorbuffer, sizeof (p->priv->colorbuffer), "\033[%d;5;%dm", bg, ch);
-		return p->priv->colorbuffer;
+		snprintf (p->priv.colorbuffer, sizeof (p->priv.colorbuffer), "\033[%d;5;%dm", bg, ch);
+		return p->priv.colorbuffer;
 	}
 	// check for flag colors
 	if (p && p->colorfor) {
@@ -2060,8 +2055,9 @@ R_API void r_print_progressbar_with_count(RPrint *p, unsigned int pc, unsigned i
 }
 
 R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 max, int cols) {
-	const char *h_line = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
+	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
+	const char *h_line = useutf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = useutf8 ? R_UTF8_BLOCK : "#";
 	const bool show_colors = p->flags & R_PRINT_FLAGS_COLOR;
 	int j = 0;
 	RStrBuf *sb = r_strbuf_new ("|");
@@ -2112,14 +2108,12 @@ R_API void r_print_zoom_buf(RPrint *p, RPrintZoomCallback cb, void *user, ut64 f
 		len = 1;
 	}
 
-	if (p->priv && p->priv->zoom_mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
+	if (p->priv.zoom_mode == p->zoom->mode && from == p->zoom->from && to == p->zoom->to && size == p->zoom->size) {
 		// get from cache
 		bufz = p->zoom->buf;
 		size = p->zoom->size;
 	} else {
-		if (p->priv) {
-			p->priv->zoom_mode = p->zoom->mode;
-		}
+		p->priv.zoom_mode = p->zoom->mode;
 		bufz = (ut8 *) calloc (1, len);
 		if (!bufz) {
 			return;
@@ -2160,8 +2154,9 @@ R_API void r_print_zoom(RPrint *p, RPrintZoomCallback cb, void *user, ut64 from,
 
 static inline void printHistBlock(RPrint *p, int k, int cols) {
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
-	const char *h_line = (p->flags & R_PRINT_FLAGS_USEUTF8) ? RUNE_LONG_LINE_HORIZ : "-";
-	const char *block = (p->flags & R_PRINT_FLAGS_USEUTF8) ? R_UTF8_BLOCK : "#";
+	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
+	const char *h_line = useutf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = useutf8 ? R_UTF8_BLOCK : "#";
 	const char *kol[5];
 	kol[0] = pal->nop;
 	kol[1] = pal->mov;
@@ -2193,8 +2188,8 @@ R_API void r_print_fill(RPrint *p, const ut8 *arr, int size, ut64 addr, int step
 	R_RETURN_IF_FAIL (p && arr);
 	const bool show_colors = (p && (p->flags & R_PRINT_FLAGS_COLOR));
 	const bool show_offset = (p && (p->flags & R_PRINT_FLAGS_OFFSET));
-	bool useUtf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
-	const char *v_line = useUtf8 ? RUNE_LINE_VERT : "|";
+	bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
+	const char *v_line = useutf8 ? RUNE_LINE_VERT : "|";
 	int i = 0, j;
 
 #define INC 5
@@ -2863,12 +2858,12 @@ R_API RBraile r_print_braile(int u) {
 }
 
 R_API void r_print_graphline(RPrint *p, const ut8 *buf, size_t len) {
-	const bool utf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
-	if (utf8) {
+	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
+	if (useutf8) {
 		size_t i;
 		for (i = 0; i < len; i++) {
 			int brailechar = 0;
-			ut8 ch = buf[i];
+			const ut8 ch = buf[i];
 			switch (0|(ch / 64)) {
 			case 0:
 				brailechar = _BR30 + _BR31;
@@ -2890,7 +2885,6 @@ R_API void r_print_graphline(RPrint *p, const ut8 *buf, size_t len) {
 		}
 	} else {
 		const char *chars = "_.-'\"`";
-		// const char *chars = "_.,-^'";
 		size_t i;
 		for (i = 0; i < len; i++) {
 			r_print_printf (p, "%c", chars[buf[i] / 50]);
