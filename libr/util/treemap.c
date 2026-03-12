@@ -28,7 +28,7 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 					ch = '|';
 				}
 			}
-			(*buffer)[gy * (width + 1) + gx] = ch;
+			(*buffer)[gy *(width + 1) + gx] = ch;
 		}
 	}
 	if (text && w >= MIN_BOX_WIDTH && h >= MIN_BOX_HEIGHT) {
@@ -43,12 +43,30 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	}
 }
 
-static inline int dodiv(float adjusted, float sum_adjusted, int d) {
-	if (sum_adjusted < 1) {
+static inline ut32 isqrt32(ut32 n) {
+	ut32 res = 0;
+	ut32 bit = 1U << 30;
+	while (bit > n) {
+		bit >>= 2;
+	}
+	while (bit) {
+		if (n >= res + bit) {
+			n -= res + bit;
+			res = (res >> 1) + bit;
+		} else {
+			res >>= 1;
+		}
+		bit >>= 2;
+	}
+	return res;
+}
+
+static inline int dodiv(ut32 adjusted, ut64 sum_adjusted, int d) {
+	if (sum_adjusted < 1 || d < 1) {
 		return 0;
 	}
-	float base = sum_adjusted * d;
-	int boxw = (int)(adjusted / base);
+	ut64 scaled = (ut64)adjusted * (ut64)d;
+	int boxw = (int)(scaled / sum_adjusted);
 	return R_MAX (boxw, 1);
 }
 
@@ -72,10 +90,11 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 	for (i = 0; i < n; i++) {
 		int val = values[start + i];
 		// soften extremes by taking square root
-		float adjusted = sqrtf ((float)val);
-		float sum_adjusted = 0;
+		ut32 adjusted = isqrt32 (val > 0 ? (ut32)val : 0);
+		ut64 sum_adjusted = 0;
 		for (j = 0; j < n - i; j++) {
-			sum_adjusted += sqrtf ((float)values[start + i + j]);
+			int current = values[start + i + j];
+			sum_adjusted += isqrt32 (current > 0 ? (ut32)current : 0);
 		}
 		int boxw = w, boxh = h;
 		if (horizontal) {
@@ -118,8 +137,8 @@ static char *drawTreemapAscii(int *values, const char **labels, int n, int width
 	}
 	int i;
 	for (i = 0; i < height; i++) {
-		memset(buf + i * (width + 1), ' ', width);
-		buf[i * (width + 1) + width] = '\n';
+		memset (buf + i *(width + 1), ' ', width);
+		buf[i *(width + 1) + width] = '\n';
 	}
 	int total = 0;
 	for (i = 0; i < n; i++) {
@@ -130,5 +149,5 @@ static char *drawTreemapAscii(int *values, const char **labels, int n, int width
 }
 
 R_API char *r_print_treemap(int n, int *values, const char **labels, int width, int height) {
-	return drawTreemapAscii(values, labels, n, width, height);
+	return drawTreemapAscii (values, labels, n, width, height);
 }
