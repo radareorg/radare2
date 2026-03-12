@@ -71,7 +71,11 @@ arm64-darwin|aarch64-darwin|arm64-macos|aarch64-macos)
 wasm32|wasm|wasm32-wasi|wasi)
 	TARGET="wasm32-wasi-musl"
 	;;
-arm-linux|arm32-linux)
+	# These names are already valid zig targets.
+arm-linux|mips-linux|mipsel-linux|mips64-linux|mips64el-linux|loongarch64-linux|riscv64-linux|s390x-linux)
+	:
+	;;
+arm32-linux)
 	TARGET="arm-linux"
 	;;
 i386-linux|x86-linux|x86-linux-gnu)
@@ -95,36 +99,17 @@ amd64-linux|x86_64-linux|x64-linux)
 riscv32-linux)
 	TARGET="riscv32-linux-musl"
 	;;
-riscv-linux|riscv64-linux)
+riscv-linux)
 	TARGET="riscv64-linux"
 	;;
 amd64-freebsd|x86_64-freebsd|x64-freebsd)
 	TARGET="x86_64-freebsd"
-	;;
-mips-linux)
-	TARGET="mips-linux"
-	;;
-	# LOL There are a lot of TARGET=$TARGET please get rid of all those duplicates you can just enumerate them and do not overwrite the variable with the same value but just put a comment that these are valid, keep the script shorter and simpler
-mipsel-linux)
-	TARGET="mipsel-linux"
-	;;
-mips64-linux)
-	TARGET="mips64-linux"
-	;;
-mips64el-linux)
-	TARGET="mips64el-linux"
-	;;
-loongarch64-linux)
-	TARGET="loongarch64-linux"
 	;;
 sparc-linux)
 	TARGET="sparc-linux-gnu"
 	;;
 sparcv9-linux|sparc64-linux)
 	TARGET="sparc64-linux-gnu"
-	;;
-s390x-linux)
-	TARGET="s390x-linux"
 	;;
 ios)
 	TARGET="aarch64-ios-none" #aarch64-linux-android"
