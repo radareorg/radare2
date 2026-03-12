@@ -24,6 +24,9 @@ all:
 	# docker buildx build --platform=linux/arm64 . -t radare/radare2
 	docker run $(DOCKER_PLATFORM) -v $(shell pwd)/../..:/r -v /tmp:/tmp $(DOCKERFLAGS) -i -t ${DOCKER_IMAGE}
 
+i386-r2r:
+	./test-i386-r2r.sh
+
 install:
 	${INSTALL_SCRIPT} r2-docker.sh "${DESTDIR}${BINDIR}/r2-docker"
 
