@@ -265,20 +265,15 @@ typedef struct r_anal_base_type_t {
 	};
 } RAnalBaseType;
 
-typedef struct r_anal_function_context_param_t {
+typedef struct r_anal_function_param_t {
 	char *name;
 	char *type;
-} RAnalFunctionContextParam;
+} RAnalFunctionParam;
+
+typedef RAnalFunctionParam RAnalFunctionContextParam;
 
 typedef struct r_anal_function_context_t {
 	struct r_anal_function_t *function; // borrowed
-	char *signature;
-	char *ret_type;
-	char *callconv;
-	bool noreturn;
-	bool has_opaque_type_markers;
-	RList *params; // RList<RAnalFunctionContextParam *>
-	RList *vars; // RList<RAnalVar *>
 	RList *base_types; // RList<RAnalBaseType *>
 } RAnalFunctionContext;
 
@@ -324,6 +319,9 @@ typedef struct r_anal_function_t {
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
 	const char *callconv; // calling convention, should come from RAnal.constpool
+	char *signature; // cached from sdb_types
+	char *ret_type; // cached from sdb_types
+	RList *params; // RList<RAnalFunctionParam *> cached from sdb_types
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
@@ -340,6 +338,7 @@ typedef struct r_anal_function_t {
 	bool has_changed; // true if function may have changed since last anaysis TODO: set this attribute where necessary
 	bool bp_frame;
 	bool is_noreturn; // true if function does not return
+	bool has_opaque_type_markers; // cached from sdb_types
 	ut8 *fingerprint; // TODO: make is fuzzy and smarter
 	size_t fingerprint_size;
 	RAnalDiff *diff;

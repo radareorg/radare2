@@ -2279,6 +2279,11 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	return result;
 }
 
+static char *function_signature_type_name(Sdb *types, RAnalFunction *fcn);
+static void function_signature_cache_fini(RAnalFunction *fcn);
+static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn);
+static void function_signature_cache_invalidate(RAnal *anal, const char *name, const char *type_name);
+
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 	Sdb *db;
 	char *type_name;
@@ -2305,6 +2310,7 @@ R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
 		free (type_name);
 		return false;
 	}
+	function_signature_cache_invalidate (a, name, type_name);
 	sdb_ret = r_str_newf ("func.%s.ret", type_name);
 	sdb_cc = r_str_newf ("func.%s.cc", type_name);
 	sdb_noreturn = r_str_newf ("func.%s.noreturn", type_name);
@@ -2393,7 +2399,7 @@ static bool function_signature_is_noreturn(Sdb *types, const char *type_name, bo
 	return value? r_str_is_true (value): fallback;
 }
 
-static void function_context_param_free(RAnalFunctionContextParam *param) {
+static void function_param_free(RAnalFunctionParam *param) {
 	if (!param) {
 		return;
 	}
@@ -2402,56 +2408,128 @@ static void function_context_param_free(RAnalFunctionContextParam *param) {
 	free (param);
 }
 
-static bool string_has_opaque_type_marker(const char *type) {
+static inline bool string_has_opaque_type_marker(const char *type) {
 	return type && strstr (type, "type_0x");
 }
 
-static void function_context_collect_signature(RAnalFunctionContext *ctx, RAnal *anal, const char *type_name) {
+static void function_signature_cache_fini(RAnalFunction *fcn) {
+	free (fcn->signature);
+	free (fcn->ret_type);
+	r_list_free (fcn->params);
+	fcn->signature = NULL;
+	fcn->ret_type = NULL;
+	fcn->params = NULL;
+	fcn->has_opaque_type_markers = false;
+}
+
+static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
+	char *type_name;
 	const char *ret_type;
+	const char *callconv;
+	bool noreturn;
+	bool has_opaque_type_markers = false;
+	RList *params;
+	RStrBuf args;
+	char *ret_type_copy = NULL;
+	char *signature = NULL;
+	char *sane = NULL;
 	int argc;
 	int i;
 
-	R_RETURN_IF_FAIL (ctx && anal && anal->sdb_types);
-	if (R_STR_ISEMPTY (type_name)) {
-		return;
+	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, false);
+	type_name = function_signature_type_name (anal->sdb_types, fcn);
+	if (!type_name) {
+		return false;
 	}
+	params = r_list_newf ((RListFree)function_param_free);
+	r_strbuf_init (&args);
 	ret_type = r_type_func_ret (anal->sdb_types, type_name);
 	if (ret_type) {
-		ctx->ret_type = strdup (ret_type);
-		ctx->has_opaque_type_markers = string_has_opaque_type_marker (ret_type);
+		ret_type_copy = strdup (ret_type);
+		if (!ret_type_copy) {
+			goto beach;
+		}
+		has_opaque_type_markers = string_has_opaque_type_marker (ret_type);
 	}
 	argc = r_type_func_args_count (anal->sdb_types, type_name);
 	for (i = 0; i < argc; i++) {
 		const char *param_name = r_type_func_args_name (anal->sdb_types, type_name, i);
-		RAnalFunctionContextParam *param = R_NEW0 (RAnalFunctionContextParam);
+		RAnalFunctionParam *param = R_NEW0 (RAnalFunctionParam);
+		char *arg = NULL;
 		param->name = param_name? strdup (param_name): NULL;
 		param->type = r_type_func_args_type (anal->sdb_types, type_name, i);
-		ctx->has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
-		r_list_append (ctx->params, param);
+		has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
+		r_list_append (params, param);
+		if (!param->type) {
+			break;
+		}
+		if (R_STR_ISEMPTY (param->name)) {
+			arg = strdup (param->type);
+		} else if (r_str_endswith (param->type, "*")) {
+			arg = r_str_newf ("%s%s", param->type, param->name);
+		} else {
+			arg = r_str_newf ("%s %s", param->type, param->name);
+		}
+		if (!arg || !r_strbuf_appendf (&args, "%s%s", i? ", ": "", arg)) {
+			free (arg);
+			goto beach;
+		}
+		free (arg);
+	}
+	sane = r_name_filter_dup (type_name);
+	if (sane) {
+		r_str_replace_ch (sane, ':', '_', true);
+	}
+	signature = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type_copy, "void"), r_str_get_fail (sane, type_name), r_strbuf_get (&args));
+	if (!signature) {
+		goto beach;
+	}
+	callconv = function_signature_callconv (anal, fcn, type_name);
+	noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, fcn->is_noreturn);
+	function_signature_cache_fini (fcn);
+	fcn->signature = signature;
+	fcn->ret_type = ret_type_copy;
+	fcn->params = params;
+	fcn->callconv = r_str_constpool_get (&anal->constpool, r_str_get_fail (callconv, r_anal_cc_default (anal)));
+	fcn->is_noreturn = noreturn;
+	fcn->has_opaque_type_markers = has_opaque_type_markers;
+	free (sane);
+	free (type_name);
+	r_strbuf_fini (&args);
+	return true;
+
+beach:
+	free (signature);
+	free (ret_type_copy);
+	free (sane);
+	free (type_name);
+	r_list_free (params);
+	r_strbuf_fini (&args);
+	return false;
+}
+
+static void function_signature_cache_invalidate(RAnal *anal, const char *name, const char *type_name) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+
+	R_RETURN_IF_FAIL (anal && name && type_name);
+	r_list_foreach (anal->fcns, iter, fcn) {
+		char *fcn_type_name = function_signature_type_name (anal->sdb_types, fcn);
+		const bool matches = !strcmp (fcn->name, name)
+			|| (fcn_type_name && !strcmp (fcn_type_name, type_name));
+		free (fcn_type_name);
+		if (matches) {
+			function_signature_cache_fini (fcn);
+		}
 	}
 }
 
 R_API RAnalFunctionContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
-	char *type_name;
-	const char *callconv;
-
 	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, NULL);
+	(void)function_signature_cache_update (anal, fcn);
 	RAnalFunctionContext *ctx = R_NEW0 (RAnalFunctionContext);
 	ctx->function = fcn;
-	ctx->params = r_list_newf ((RListFree)function_context_param_free);
-	ctx->vars = r_anal_var_all_list (anal, fcn);
 	ctx->base_types = r_anal_collect_base_types (anal);
-	if (!ctx->params || !ctx->vars || !ctx->base_types) {
-		r_anal_function_context_free (ctx);
-		return NULL;
-	}
-	type_name = function_signature_type_name (anal->sdb_types, fcn);
-	ctx->signature = r_anal_function_get_signature (fcn);
-	callconv = function_signature_callconv (anal, fcn, type_name);
-	ctx->callconv = callconv? strdup (callconv): NULL;
-	ctx->noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, fcn->is_noreturn);
-	function_context_collect_signature (ctx, anal, type_name);
-	free (type_name);
 	return ctx;
 }
 
@@ -2459,11 +2537,6 @@ R_API void r_anal_function_context_free(RAnalFunctionContext *ctx) {
 	if (!ctx) {
 		return;
 	}
-	free (ctx->signature);
-	free (ctx->ret_type);
-	free (ctx->callconv);
-	r_list_free (ctx->params);
-	r_list_free (ctx->vars);
 	r_anal_base_type_list_free (ctx->base_types);
 	free (ctx);
 }
@@ -2546,93 +2619,17 @@ beach:
 	free (type_name);
 	r_strbuf_fini (&query);
 	r_strbuf_fini (&argnames);
-	if (!ok) {
-		return false;
+	if (ok) {
+		(void)function_signature_cache_update (anal, fcn);
 	}
-	if (R_STR_ISNOTEMPTY (resolved_callconv)) {
-		fcn->callconv = r_str_constpool_get (&anal->constpool, resolved_callconv);
-	}
-	fcn->is_noreturn = noreturn;
-	return true;
-}
-
-static char *function_signature_arg_string(Sdb *types, const char *type_name, int index) {
-	char *type;
-	char *arg;
-	const char *name;
-	size_t type_len;
-
-	R_RETURN_VAL_IF_FAIL (types && type_name && index >= 0, NULL);
-	type = r_type_func_args_type (types, type_name, index);
-	if (!type) {
-		return NULL;
-	}
-	if (r_str_startswith (type, "...")) {
-		return type;
-	}
-	name = r_type_func_args_name (types, type_name, index);
-	if (R_STR_ISEMPTY (name)) {
-		return type;
-	}
-	type_len = strlen (type);
-	arg = (type_len > 0 && type[type_len - 1] == '*')
-		? r_str_newf ("%s%s", type, name)
-		: r_str_newf ("%s %s", type, name);
-	free (type);
-	return arg;
+	return ok;
 }
 
 // MOVE To function.c
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
-	RAnal *a;
-	char *type_name;
-	char *ret;
-	char *args;
-	char *sane;
-	const char *ret_type;
-	int argc;
-	int i;
-
 	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
-	a = function->anal;
-	type_name = function_signature_type_name (a->sdb_types, function);
-	if (!type_name) {
-		return NULL;
-	}
-	args = strdup ("");
-	if (!args) {
-		free (type_name);
-		return NULL;
-	}
-	ret_type = r_type_func_ret (a->sdb_types, type_name);
-	argc = r_type_func_args_count (a->sdb_types, type_name);
-	for (i = 0; i < argc; i++) {
-		char *arg = function_signature_arg_string (a->sdb_types, type_name, i);
-		char *new_args;
-		if (!arg) {
-			break;
-		}
-		new_args = (i + 1 == argc)
-			? r_str_newf ("%s%s", args, arg)
-			: r_str_newf ("%s%s, ", args, arg);
-		if (!new_args) {
-			free (arg);
-			break;
-		}
-		free (args);
-		args = new_args;
-		free (arg);
-	}
-
-	sane = r_name_filter_dup (type_name);
-	if (sane) {
-		r_str_replace_ch (sane, ':', '_', true);
-	}
-	ret = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), r_str_get_fail (sane, type_name), args);
-	free (sane);
-	free (args);
-	free (type_name);
-	return ret;
+	(void)function_signature_cache_update (function->anal, function);
+	return function->signature? strdup (function->signature): NULL;
 }
 
 /* set function signature from string */
@@ -2643,6 +2640,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	char *out = r_anal_cparse (a, sig, &error_msg);
 	if (out) {
 		r_anal_save_parsed_type (a, out);
+		(void)function_signature_cache_update (a, f);
 		free (out);
 		ret = true;
 	}
