@@ -202,8 +202,8 @@ static QjsIoPlugin *plugin_manager_find_io_plugin(const QjsPluginManager *pm, co
 static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecAsmPlugin_find_index (&pm->asm_plugins, (void *)name, compare_parse_plugin_name);
-	if (index != UT64_MAX) {
+	size_t index = RVecAsmPlugin_find_index (&pm->asm_plugins, (void *)name, compare_parse_plugin_name);
+	if (index != SZT_MAX) {
 		pm->core->lang->cmdf (pm->core, "Lp-%s", name);
 		RVecAsmPlugin_remove (&pm->asm_plugins, index);
 		return true;
@@ -215,8 +215,8 @@ static bool plugin_manager_remove_parse_plugin(QjsPluginManager *pm, const char 
 static bool plugin_manager_remove_core_plugin(QjsPluginManager *pm, const char *name) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecCorePlugin_find_index (&pm->core_plugins, (void *)name, compare_core_plugin_name);
-	if (index != UT64_MAX) {
+	size_t index = RVecCorePlugin_find_index (&pm->core_plugins, (void *)name, compare_core_plugin_name);
+	if (index != SZT_MAX) {
 		pm->core->lang->cmdf (pm->core, "L-%s", name);
 		// JS_FreeValue (pm->default_ctx.ctx, pm->default_ctx.call_func);
 		RVecCorePlugin_remove (&pm->core_plugins, index);
@@ -253,8 +253,8 @@ static QjsArchPlugin *plugin_manager_find_arch_plugin(const QjsPluginManager *pm
 static bool plugin_manager_remove_arch_plugin(QjsPluginManager *pm, const char *arch) {
 	R_RETURN_VAL_IF_FAIL (pm, false);
 
-	ut64 index = RVecArchPlugin_find_index (&pm->arch_plugins, (void *)arch, compare_arch_plugin_arch);
-	if (index != UT64_MAX) {
+	size_t index = RVecArchPlugin_find_index (&pm->arch_plugins, (void *)arch, compare_arch_plugin_arch);
+	if (index != SZT_MAX) {
 		QjsArchPlugin *ap = RVecArchPlugin_at (&pm->arch_plugins, index);
 		pm->core->lang->cmdf (pm->core, "L-%s", ap->name);
 		RVecArchPlugin_remove (&pm->arch_plugins, index);

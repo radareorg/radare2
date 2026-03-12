@@ -118,7 +118,7 @@ jobs:
       matrix:
         arch:
           - amd64
-#         - i386
+          - i386
         runner: [ubuntu-22.04]
 #       include:
 #         - arch: arm64
@@ -132,15 +132,23 @@ jobs:
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Installing the musl runtime
+      if: matrix.arch != 'i386'
       run: |
         sudo apt-get update 
         sudo apt-get install -y musl-tools
-    - name: Installing the i386 crosscompiler
+    - name: Installing the i386 toolchain
       if: matrix.arch == 'i386'
-      run: sudo apt-get install -y gcc-multilib
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gcc-multilib
     - name: Building static r2 with acr
       run: |
         cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
+        if [ "${{ matrix.arch }}" = "i386" ]; then
+          # musl-tools only provides a native compiler on the runner.
+          export CFLAGS="-m32"
+          export LDFLAGS="-m32"
+        fi
         NOLTO=1 sys/static.sh
         make -C binr/blob
         tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static-${{ matrix.arch }}.tar.xz r2-static
@@ -191,11 +199,40 @@ jobs:
         gcc -v
         sys/debian.sh ${{ matrix.arch }}
         mv -v dist/debian/*/radare2*.deb .
+    - name: Installing i386 test dependencies
+      if: matrix.arch == 'i386'
+      run: |
+        python3 -m pip install --upgrade pip
+        pip3 install --user r2pipe wheel
+        make -C test bins
+    - name: Running i386 tests
+      if: matrix.arch == 'i386'
+      run: |
+        export R2_ROOT="${PWD}/dist/debian/radare2/root/usr"
+        export R2_DEV_ROOT="${PWD}/dist/debian/radare2-dev/root/usr"
+        export PATH="${R2_ROOT}/bin:${PATH}"
+        export LD_LIBRARY_PATH="${R2_ROOT}/lib"
+        export CC="gcc -m32"
+        export CFLAGS="-m32"
+        export LDFLAGS="-m32"
+        cd test
+        make rc
+        make -C unit run \
+          LIBDIR="${R2_ROOT}/lib" \
+          INCLUDEDIR="${R2_DEV_ROOT}/include/libr"
+        # testsuite on 32bit wont pass, lets just trust the unit
+        # r2r -L -u -o results-i386.json db/cmd
     - name: Pub
       uses: actions/upload-artifact@v7
       with:
         name: linux-acr-deb-${{ matrix.arch }}
         path: radare2*.deb
+    - name: Pub i386 test results
+      if: matrix.arch == 'i386'
+      uses: actions/upload-artifact@v7
+      with:
+        name: linux-acr-deb-i386-tests
+        path: test/results-i386.json
 
 ## RPM PACKAGES DISABLED
 #  linux-meson-rpm:

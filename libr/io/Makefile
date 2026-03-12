@@ -31,4 +31,3 @@ include ../socket/deps.mk
 include $(SHLR)/zip/deps.mk
 include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk
-

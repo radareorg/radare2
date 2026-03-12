@@ -77,6 +77,8 @@ Use these macros to document function parameters:
 - Do not build `.o` files separately
 - `sudo make symstall` creates symlinked system-wide installation
 - Symlinks ensure working directory builds work as system installations
+- The `./configure` script is generated with `acr` from the configure.acr
+  - Never modify the `configure` script directly. always autogenerate it
 - For new library dependencies, update both `Makefile` and `meson.build`
 - For new plugins, register in:
   - `dist/plugins-cfg/plugins.def.cfg`

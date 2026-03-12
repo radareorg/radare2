@@ -6,6 +6,8 @@ _INCLUDE_MK_GCC_=
 include ../mk/${COMPILER}.mk
 include ../mk/darwin.mk
 
+.DEFAULT_GOAL := all
+
 
 CAPSTONE_CFLAGS=
 # CAPSTONE_MAKEFLAGS?=CAPSTONE_ARCHS="arm aarch64"
@@ -38,6 +40,7 @@ endif
 SHLR?=$(shell pwd)
 AR?=ar
 RANLIB?=ranlib
+include zip/deps.mk
 MODS=zip java
 MODS+=gdb qnx
 # lz4
@@ -148,17 +151,23 @@ ifeq ($(WITH_LIBR),1)
 install: libr_shlr.${EXT_AR}
 	mkdir -p ${DESTDIR}/${LIBDIR}
 	cp -f libr_shlr.${EXT_AR} ${DESTDIR}/${LIBDIR}
+	@if [ -f ../subprojects/otezip/libotezip.${EXT_AR} ]; then \
+		cp -f ../subprojects/otezip/libotezip.${EXT_AR} ${DESTDIR}/${LIBDIR}; \
+	fi
 else
 install:
 endif
 
 install-symlink symstall:
 	mkdir -p "${DESTDIR}${LIBDIR}"
-	#cd tcc ; for FILE in libr_tcc* ; do \
-	#	ln -fs `pwd`/$$FILE ${DESTDIR}${LIBDIR}/$$FILE ; done
+	ln -fs "$(PWD)/libr_shlr.${EXT_AR}" "${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}"
+	@if [ -f ../subprojects/otezip/libotezip.${EXT_AR} ]; then \
+		ln -fs "$(PWD)/../subprojects/otezip/libotezip.${EXT_AR}" "${DESTDIR}${LIBDIR}/libotezip.${EXT_AR}"; \
+	fi
 
 uninstall deinstall:
 	rm -f ${DESTDIR}${LIBDIR}/libr_shlr.${EXT_AR}
+	rm -f ${DESTDIR}${LIBDIR}/libotezip.${EXT_AR}
 
 .PHONY: capstone capstone-sync capstone-build
 
@@ -257,11 +266,14 @@ SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=java/libr_java.a
 SHLRS+=qnx/lib/libqnxr.a
 SHLRS+=winkd/libr_winkd.a
+SHLRS+=$(OTEZIP_LIBA)
 # librz.a removed from SHLRS - it's now conditionally built only when USE_LIB_ZIP=0
 # When USE_LIB_ZIP=1, system libzip is used instead
 # See shlr/zip/Makefile for build rules
 
-libr_shlr.${EXT_AR}: preall
+all: libr_shlr.${EXT_AR}
+
+libr_shlr.${EXT_AR}: preall $(OTEZIP_LIBA)
 ifeq ($(OSTYPE),darwin)
 	@LIBS=""; \
 	for LIB in $(SHLRS); do \
@@ -271,14 +283,17 @@ ifeq ($(OSTYPE),darwin)
 	done; \
 	xcrun libtool -static -o $@ $${LIBS}
 else
-	rm -rf .libr
-	mkdir .libr
+	rm -f $@ .libr.mri
+	echo "create $@" > .libr.mri
 	for LIB in ${SHLRS} ; do \
 		if [ -f "$${LIB}" ]; then \
-			( cd .libr && ${AR} x "../$${LIB}" ); \
+			echo "addlib $${LIB}" >> .libr.mri; \
 		fi ; \
 	done
-	${AR} rs $@ .libr/*.o
+	echo "save" >> .libr.mri
+	echo "end" >> .libr.mri
+	${AR} -M < .libr.mri
+	rm -f .libr.mri
 	$(RANLIB) $@
 endif
 

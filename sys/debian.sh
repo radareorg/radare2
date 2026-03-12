@@ -87,8 +87,13 @@ $FAKEROOT ${MAKE} install DESTDIR="${PWD}/${PKGDIR}"
 mkdir -p "${DEVDIR}/usr/include"
 mv "${PKGDIR}/usr/include/"* "${DEVDIR}/usr/include"
 mkdir -p "${DEVDIR}/usr/lib"
-mv "${PKGDIR}/usr/lib/"lib*a "${DEVDIR}/usr/lib"
-mv "${PKGDIR}/usr/lib/pkgconfig" "${DEVDIR}/usr/lib"
+set -- "${PKGDIR}/usr/lib"/lib*a
+if [ -e "$1" ]; then
+	mv "$@" "${DEVDIR}/usr/lib"
+fi
+if [ -d "${PKGDIR}/usr/lib/pkgconfig" ]; then
+	mv "${PKGDIR}/usr/lib/pkgconfig" "${DEVDIR}/usr/lib"
+fi
 
 # strip
 for a in ${PKGDIR}/usr/bin/* ; do
