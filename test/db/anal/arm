@@ -678,6 +678,7 @@ EOF
 EXPECT=<<EOF
             ; CALL XREF from main @ 0x10468(x)
 / (fcn) sym.call 44
+// void sym.call (int32_t arg1);
 |           ; arg int32_t arg1 @ r0
 |           ; var int32_t var_8h @ fp-0x8
 |           0x00010420      00482de9       push {fp, lr}
@@ -693,6 +694,7 @@ EXPECT=<<EOF
 \           0x00010448      0088bde8       pop {fp, pc}
             ; CALL XREF from main @ 0x10468(x)
 / (fcn) sym.call 44
+// void sym.call (int32_t arg1);
 | `- args(r0) vars(1:sp[0xc..0xc])
 |           0x00010420      00482de9       push {fp, lr}
 |           0x00010424      04b08de2       add fp, sp, 4
