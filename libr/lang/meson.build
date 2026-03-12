@@ -7,6 +7,10 @@ spp_inc = [platform_inc, include_directories('../../shlr/spp')]
 qjs = subproject('qjs')
 qjs_inc = qjs.get_variable('incs')
 qjs_static = qjs.get_variable('qjs_static')
+r_lang_pkgcfg_private_libs = []
+if mth.found()
+  r_lang_pkgcfg_private_libs += ['-lm']
+endif
 
 
 r_lang = library('r_lang', r_lang_sources,
@@ -58,6 +62,7 @@ pkgconfig_mod.generate(r_lang,
   name: 'r_lang',
   filebase: 'r_lang',
   libraries: pkgcfg_sanitize_libs,
+  libraries_private: r_lang_pkgcfg_private_libs,
   requires: [
     'r_util',
     'r_asm',

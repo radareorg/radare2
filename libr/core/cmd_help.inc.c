@@ -481,6 +481,7 @@ static void cmd_help_em(RCore *core, const char *input) {
 	char *word, *str = strdup (r_str_trim_head_ro (input + 2));
 	char *legend = strchr (str, ',');
 	RList *llist = NULL;
+	RListIter *iter;
 	if (legend) {
 		*legend = 0;
 		r_str_trim (legend + 1);
@@ -497,7 +498,7 @@ static void cmd_help_em(RCore *core, const char *input) {
 		free (text);
 		r_list_free (list);
 		r_list_free (llist);
-		break;
+		return;
 	}
 	int i = 0;
 	r_list_foreach (list, iter, word) {

@@ -5,7 +5,7 @@
 #define MIN_BOX_WIDTH 6
 #define MIN_BOX_HEIGHT 3
 
-static char charfor(int i, int j, int w, int h) {
+static char charat(int i, int j, int w, int h) {
 	const bool horizontal_border = i == 0 || i == h - 1;
 	const bool vertical_border = j == 0 || j == w - 1;
 	if (horizontal_border && vertical_border) {
@@ -27,7 +27,7 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	int i, j;
 	for (i = 0; i < h; i++) {
 		for (j = 0; j < w; j++) {
-			char ch = charfor (i, j, w, h);
+			char ch = charat (i, j, w, h);
 			int gx = x + j;
 			int gy = y + i;
 			(*buffer)[gy *(width + 1) + gx] = ch;

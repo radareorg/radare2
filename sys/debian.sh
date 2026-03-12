@@ -9,8 +9,7 @@ CFGOSTYPE=
 use_zig_target() {
 	ZIG_TARGET="$1"
 	type zig > /dev/null 2>&1 || {
-		echo "ERROR: zig is required for ${ARCH} builds in sys/debian.sh" >&2
-		exit 1
+		return 1
 	}
 	export CC="zig cc -target ${ZIG_TARGET}"
 	export LD="zig cc -target ${ZIG_TARGET}"
@@ -18,6 +17,12 @@ use_zig_target() {
 	export RANLIB="zig ranlib"
 	[ -z "${PKGCONFIG}" ] && export PKGCONFIG=/usr/bin/false
 	CFGOSTYPE="--with-ostype=gnulinux"
+	return 0
+}
+
+use_i386_toolchain() {
+	export CFLAGS="-m32 ${CFLAGS}"
+	export LDFLAGS="-m32 ${LDFLAGS}"
 }
 
 case "$ARG" in
@@ -31,7 +36,7 @@ amd64)
 i386)
 	ARCH=i386
 	export CFLAGS="-Werror"
-	use_zig_target x86-linux-gnu
+	use_zig_target x86-linux-gnu || use_i386_toolchain
 	;;
 *)
 	CFGARGS=$*
@@ -87,8 +92,13 @@ $FAKEROOT ${MAKE} install DESTDIR="${PWD}/${PKGDIR}"
 mkdir -p "${DEVDIR}/usr/include"
 mv "${PKGDIR}/usr/include/"* "${DEVDIR}/usr/include"
 mkdir -p "${DEVDIR}/usr/lib"
-mv "${PKGDIR}/usr/lib/"lib*a "${DEVDIR}/usr/lib"
-mv "${PKGDIR}/usr/lib/pkgconfig" "${DEVDIR}/usr/lib"
+set -- "${PKGDIR}/usr/lib"/lib*a
+if [ -e "$1" ]; then
+	mv "$@" "${DEVDIR}/usr/lib"
+fi
+if [ -d "${PKGDIR}/usr/lib/pkgconfig" ]; then
+	mv "${PKGDIR}/usr/lib/pkgconfig" "${DEVDIR}/usr/lib"
+fi
 
 # strip
 for a in ${PKGDIR}/usr/bin/* ; do

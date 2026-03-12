@@ -101,6 +101,8 @@ IFAND WITH_SYSLZ4 HAVE_PKGCFG_LIBLZ4 {
 	USE_SYSLZ4 = 1 ;
 }{
 	USE_SYSLZ4 = 0 ;
+	LZ4_CFLAGS = '' ;
+	LZ4_LDFLAGS = '' ;
 
 }
 
@@ -111,18 +113,57 @@ CHKLIB zip
 ARG_WITH USE_ZIP syszip force to use system's libzip and zlib ;
 IFNOT WANT_ZIP {
 	USE_ZIP = 0 ;
-}
-IFAND HAVE_LIB_Z USE_ZIP {
-	IF HAVE_LIB_ZIP {
-		USE_LIB_ZIP = 1 ;
-		LIBZIP = -lz -lzip ;
+	USE_LIB_ZIP = 0 ;
+	LIBZIP = '' ;
+	PKGCFG_ZLIBS = '' ;
+	PKGCFG_LIBZIPLIBS = '' ;
+}{
+	IF HAVE_LIB_Z {
+		PKGCFG_ZLIBS = -lz ;
+	}{
+		PKGCFG_ZLIBS = -lr_shlr ;
+	}
+	IFAND HAVE_LIB_Z USE_ZIP {
+		IF HAVE_LIB_ZIP {
+			USE_LIB_ZIP = 1 ;
+			LIBZIP = -lz -lzip ;
+			PKGCFG_LIBZIPLIBS = -lz -lzip ;
+		}{
+			USE_LIB_ZIP = 0 ;
+			LIBZIP = '' ; (( static linking to shlr/zip ))
+			PKGCFG_LIBZIPLIBS = '' ;
+		}
 	}{
 		USE_LIB_ZIP = 0 ;
 		LIBZIP = '' ; (( static linking to shlr/zip ))
+		PKGCFG_LIBZIPLIBS = '' ;
 	}
+}
+
+PKGCFG_R_ARCH_LIBS_PRIVATE = -lr_shlr ;
+PKGCFG_R_ASM_LIBS_PRIVATE = -lr_shlr ;
+PKGCFG_R_BIN_LIBS_PRIVATE = -lr_shlr ;
+PKGCFG_R_DEBUG_LIBS_PRIVATE = -lr_shlr ;
+PKGCFG_R_FS_LIBS_PRIVATE = '' ;
+PKGCFG_R_IO_LIBS_PRIVATE = -lr_shlr ;
+PKGCFG_R_LANG_LIBS_PRIVATE = -lm ;
+PKGCFG_R_UTIL_LIBS_PRIVATE = '' ;
+
+IFNOT WANT_ZIP {
+	PKGCFG_R_UTIL_LIBS_PRIVATE = '' ;
 }{
-	USE_LIB_ZIP = 0 ;
-	LIBZIP = '' ; (( static linking to shlr/zip ))
+	IF HAVE_LIB_Z {
+		PKGCFG_R_UTIL_LIBS_PRIVATE = -lz ;
+	}{
+		PKGCFG_R_UTIL_LIBS_PRIVATE = -lr_shlr ;
+	}
+}
+
+IFAND HAVE_LIB_Z USE_ZIP {
+	IF HAVE_LIB_ZIP {
+		PKGCFG_R_FS_LIBS_PRIVATE += -lz -lzip ;
+		PKGCFG_R_IO_LIBS_PRIVATE += -lz -lzip ;
+	}
 }
 
 CHKLIB xxhash

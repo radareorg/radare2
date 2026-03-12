@@ -72,34 +72,42 @@ if [ 1 = "${DOCFG}" ]; then
 	fi
 	export CFLAGS="${CFLAGS} -fPIC"
 	export CFGARGS="$CFGARGS --with-static-themes"
-	strip -s binr/blob/r2blob
+	if [ -f binr/blob/r2blob ]; then
+		strip -s binr/blob/r2blob
+	fi
 	cp -f dist/plugins-cfg/plugins.static.nogpl.cfg plugins.cfg
 	./configure-plugins || exit 1
 	./configure --prefix="$PREFIX" --without-gpl --with-libr $CFGARGS || exit 1
 fi
 ${MAKE} -j 8 || exit 1
 BINS="rarun2 r2pm rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
-# shellcheck disable=SC2086
-export CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a subprojects/capstone-v5/libcapstone.a"
-for a in ${BINS} ; do
-(
-	cd binr/$a
-	${MAKE} clean
-	if [ "`uname`" = Darwin ]; then
-		${MAKE} -j4 || exit 1
-	else
-		if [ "${STATIC_BINS}" = 1 ]; then
-			CFLAGS=${CFLAGS_STATIC} LDFLAGS=${CFLAGS_STATIC}" ${STATIC_LIBS}" ${MAKE} -j4 || exit 1
-		else
-			${MAKE} -j4 || exit 1
-		fi
-	fi
-)
-done
+STATIC_TEST_CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 
-${MAKE} -C binr/blob/r2blob
-strip -s binr/blob/r2blob/*
+show_link_errors() {
+	if [ -s "$1" ]; then
+		grep -Ev "warning: Using '.*' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking" "$1" || true
+	fi
+}
+
+if [ "${STATIC_BINS}" = 1 ]; then
+	for a in ${BINS} ; do
+	(
+		cd binr/$a
+		${MAKE} clean
+		if [ "`uname`" = Darwin ]; then
+			${MAKE} -j4 || exit 1
+		else
+			CFLAGS="${STATIC_TEST_CFLAGS}" LDFLAGS="${CFLAGS_STATIC} ${STATIC_LIBS}" ${MAKE} -j4 || exit 1
+		fi
+	) || exit 1
+	done
+fi
+
+${MAKE} -C binr/blob || exit 1
+if [ -f binr/blob/r2blob ]; then
+	strip -s binr/blob/r2blob
+fi
 
 rm -rf r2-static
 mkdir r2-static || exit 1
@@ -131,9 +139,11 @@ pkg-config \
 `
 
 set -x
-${CC} .test.c ${PKG_CONFIG_FLAGS} -o r2-pkgcfg-static
+${CC} .test.c ${STATIC_TEST_CFLAGS} ${PKG_CONFIG_FLAGS} ${LDFLAGS} -o r2-pkgcfg-static 2>.static-pkgcfg.err
 res=$?
 set +x
+show_link_errors .static-pkgcfg.err
+rm -f .static-pkgcfg.err
 if [ $res = 0 ]; then
 	echo SUCCESS
 	rm -f a.out
@@ -143,14 +153,16 @@ fi
 
 echo "[*] Static building with libr.a..."
 ${CC} .test.c \
-	${CFLAGS} \
+	${STATIC_TEST_CFLAGS} \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
-	r2-static/usr/lib/libr.a ${LDFLAGS} ${STATIC_LIBS}
+	r2-static/usr/lib/libr.a ${LDFLAGS} ${STATIC_LIBS} 2>.static-libr.err
 res2=$?
 du -hs r2-static/usr/bin/radare2
 du -hs a.out
 set +x
+show_link_errors .static-libr.err
+rm -f .static-libr.err
 if [ $res2 = 0 ]; then
 	echo SUCCESS2
 	rm -f a.out
@@ -159,4 +171,7 @@ else
 fi
 
 rm -f .test.c
-exit $res
+if [ $res = 0 -a $res2 = 0 ]; then
+	exit 0
+fi
+exit 1

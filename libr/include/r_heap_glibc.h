@@ -228,7 +228,7 @@ typedef struct r_malloc_state_227_32 {
 	int mutex;                              /* serialized access */
 	int flags;                              /* flags */
 	int have_fast_chunks;                   /* have fast chunks */
-	ut32 fastbinsY[NFASTBINS + 1];          /* array of fastchunks */
+	ut32 fastbinsY[NFASTBINS];              /* array of fastchunks */
 	ut32 top;                               /* top chunk's base addr */
 	ut32 last_remainder;                    /* remainder top chunk's addr */
 	ut32 bins[NBINS * 2 - 2];               /* array of remainder free chunks */

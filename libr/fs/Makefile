@@ -1,4 +1,5 @@
 NAME=r_fs
+PCLIBS_PRIVATE=@PKGCFG_LIBZIPLIBS@
 R2DEPS=r_util r_io r_socket r_cons r_muta
 CFLAGS:=-DR2_PLUGIN_INCORE -Iarch/include -Iarch $(CFLAGS)
 

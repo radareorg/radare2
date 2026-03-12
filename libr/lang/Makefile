@@ -1,6 +1,7 @@
 include ../config.mk
 
 NAME=r_lang
+PCLIBS_PRIVATE=-lm
 OBJS=lang.o
 R2DEPS+=r_util
 R2DEPS+=r_io

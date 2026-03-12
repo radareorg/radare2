@@ -1,6 +1,7 @@
 include ../config.mk
 
 NAME=r_io
+PCLIBS_PRIVATE=-lr_shlr @PKGCFG_LIBZIPLIBS@
 R2DEPS+=r_util r_socket r_muta r_cons
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
@@ -31,4 +32,3 @@ include ../socket/deps.mk
 include $(SHLR)/zip/deps.mk
 include $(SHLR)/gdb/deps.mk
 include $(SHLR)/qnx/deps.mk
-
