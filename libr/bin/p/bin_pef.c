@@ -443,7 +443,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		}
 
 		if (sec->kind == 2) { // pidata, extract now
-			size_t fsize = r_buf_size (buf);
+			ut64 fsize = r_buf_size (buf);
 			if (fsize == UT64_MAX || sec->lenDisk == UT32_MAX || sec->lenUnpack == UT32_MAX) {
 				return false;
 			}
