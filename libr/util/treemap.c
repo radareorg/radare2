@@ -1,13 +1,25 @@
-/* radare - LGPL - Copyright 2025 - pancake */
+/* radare - LGPL - Copyright 2025-2026 - pancake */
 
-#include <r_util.h>
-#include <r_util/r_print.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include "../include/r_util.h"
 
 #define MIN_BOX_WIDTH 6
 #define MIN_BOX_HEIGHT 3
+
+static char charfor(int i, int j, int w, int h) {
+	// TODO: these nested conditionals look really confusing and complex, make it simple
+	if ((i == 0 || i == h - 1) || (j == 0 || j == w - 1)) {
+		if ((i == 0 || i == h - 1) && (j == 0 || j == w - 1)) {
+			return '+';
+		}
+		if (i == 0 || i == h - 1) {
+			return '-';
+		}
+		if (j == 0 || j == w - 1) {
+			return '|';
+		}
+	}
+	return ' ';
+}
 
 static void drawBox(char **buffer, int width, int height, int x, int y, int w, int h, const char *text) {
 	if (x < 0 || y < 0 || x + w > width || y + h > height) {
@@ -16,18 +28,9 @@ static void drawBox(char **buffer, int width, int height, int x, int y, int w, i
 	int i, j;
 	for (i = 0; i < h; i++) {
 		for (j = 0; j < w; j++) {
+			char ch = charfor (i, j, w, h);
 			int gx = x + j;
 			int gy = y + i;
-			char ch = ' ';
-			if ((i == 0 || i == h - 1) || (j == 0 || j == w - 1)) {
-				if ((i == 0 || i == h - 1) && (j == 0 || j == w - 1)) {
-					ch = '+';
-				} else if (i == 0 || i == h - 1) {
-					ch = '-';
-				} else if (j == 0 || j == w - 1) {
-					ch = '|';
-				}
-			}
 			(*buffer)[gy *(width + 1) + gx] = ch;
 		}
 	}
@@ -70,6 +73,7 @@ static inline int dodiv(ut32 adjusted, ut64 sum_adjusted, int d) {
 	return R_MAX (boxw, 1);
 }
 
+// AITODO: i think values must be ut32 instead of int, removing the sign here will remove some unnecessary casts and clean the code a little bit
 static void treemapRecurse(char **buffer, int width, int height, int x, int y, int w, int h, int *values, const char **labels, int start, int n, int total, bool horizontal) {
 	if (n <= 0 || w <= 0 || h <= 0 || total <= 0) {
 		return;
