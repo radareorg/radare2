@@ -266,7 +266,7 @@ typedef struct r_malloc_state {
 	unsigned int attached_threads;          /* threads attached */
 
 	/*32 bits members*/
-	ut32 fastbinsY_32[NFASTBINS + 1];       /* array of fastchunks */
+	ut32 fastbinsY_32[NFASTBINS];           /* array of fastchunks */
 	ut32 top_32;                            /* top chunk's base addr */
 	ut32 last_remainder_32;                 /* remainder top chunk's addr */
 	ut32 bins_32[NBINS * 2 - 2];            /* array of remainder free chunks */
