@@ -294,6 +294,27 @@ bool test_r_anal_function_apply_signature_uses_canonical_type_name(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_get_signature_falls_back_to_vars(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *f = r_anal_create_function (anal, "foo", 0x4000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for var fallback test");
+	mu_assert_notnull (
+		r_anal_function_set_var (f, 8, R_ANAL_VAR_KIND_BPV, "int32_t", 4, true, "arg_ch"),
+		"Couldn't add second arg var");
+	mu_assert_notnull (
+		r_anal_function_set_var (f, 4, R_ANAL_VAR_KIND_BPV, "int32_t", 4, true, "arg_8h"),
+		"Couldn't add first arg var");
+
+	char *sig = r_anal_function_get_signature (f);
+	mu_assert_notnull (sig, "var fallback signature");
+	mu_assert_streq (sig, "void foo (int32_t arg_8h, int32_t arg_ch);", "signature must fall back to sorted arg vars");
+	mu_assert_eq ((int)r_list_length (f->params), 2, "var fallback param count");
+	free (sig);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
@@ -301,6 +322,7 @@ int all_tests(void) {
 	mu_run_test (test_r_core_anal_fcn_prefers_exact_start_match);
 	mu_run_test (test_r_anal_function_context_collect);
 	mu_run_test (test_r_anal_function_apply_signature_uses_canonical_type_name);
+	mu_run_test (test_r_anal_function_get_signature_falls_back_to_vars);
 	return tests_passed != tests_run;
 }
 

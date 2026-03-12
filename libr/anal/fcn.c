@@ -2412,6 +2412,90 @@ static inline bool string_has_opaque_type_marker(const char *type) {
 	return type && strstr (type, "type_0x");
 }
 
+static char *function_param_string(const RAnalFunctionParam *param) {
+	R_RETURN_VAL_IF_FAIL (param && param->type, NULL);
+	if (R_STR_ISEMPTY (param->name)) {
+		return strdup (param->type);
+	}
+	if (r_str_endswith (param->type, "*")) {
+		return r_str_newf ("%s%s", param->type, param->name);
+	}
+	return r_str_newf ("%s %s", param->type, param->name);
+}
+
+static int function_arg_var_cmp(const RAnalVar *a, const RAnalVar *b) {
+	if (a && b) {
+		if (a->isarg && !b->isarg) {
+			return -1;
+		}
+		if (!a->isarg && b->isarg) {
+			return 1;
+		}
+		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
+			if (a->argnum > b->argnum) {
+				return 1;
+			}
+			if (a->argnum < b->argnum) {
+				return -1;
+			}
+			return 0;
+		}
+		if (a->kind == b->kind && a->kind == R_ANAL_VAR_KIND_BPV && a->isarg && b->isarg) {
+			if (a->delta > b->delta) {
+				return 1;
+			}
+			if (a->delta < b->delta) {
+				return -1;
+			}
+			return 0;
+		}
+		if (a->delta > b->delta) {
+			return 1;
+		}
+		if (a->delta < b->delta) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static bool function_signature_cache_fallback_to_vars(RAnal *anal, RAnalFunction *fcn, RList *params, RStrBuf *args, bool *has_opaque_type_markers) {
+	RListIter *iter;
+	RAnalVar *var;
+	RList *vars;
+	bool ok = true;
+	bool first = true;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn && params && args && has_opaque_type_markers, false);
+	vars = r_anal_var_all_list (anal, fcn);
+	if (!vars) {
+		return false;
+	}
+	r_list_sort (vars, (RListComparator)function_arg_var_cmp);
+	r_list_foreach (vars, iter, var) {
+		RAnalFunctionParam *param;
+		char *arg;
+		if (!var->isarg || R_STR_ISEMPTY (var->type)) {
+			continue;
+		}
+		param = R_NEW0 (RAnalFunctionParam);
+		param->name = var->name? strdup (var->name): NULL;
+		param->type = strdup (var->type);
+		*has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
+		r_list_append (params, param);
+		arg = function_param_string (param);
+		if (!arg || !r_strbuf_appendf (args, "%s%s", first? "": ", ", arg)) {
+			free (arg);
+			ok = false;
+			break;
+		}
+		free (arg);
+		first = false;
+	}
+	r_list_free (vars);
+	return ok;
+}
+
 static void function_signature_cache_fini(RAnalFunction *fcn) {
 	free (fcn->signature);
 	free (fcn->ret_type);
@@ -2430,6 +2514,7 @@ static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
 	bool has_opaque_type_markers = false;
 	RList *params;
 	RStrBuf args;
+	const char *type_kind;
 	char *ret_type_copy = NULL;
 	char *signature = NULL;
 	char *sane = NULL;
@@ -2443,6 +2528,7 @@ static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
 	}
 	params = r_list_newf ((RListFree)function_param_free);
 	r_strbuf_init (&args);
+	type_kind = sdb_const_get (anal->sdb_types, type_name, 0);
 	ret_type = r_type_func_ret (anal->sdb_types, type_name);
 	if (ret_type) {
 		ret_type_copy = strdup (ret_type);
@@ -2455,7 +2541,7 @@ static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
 	for (i = 0; i < argc; i++) {
 		const char *param_name = r_type_func_args_name (anal->sdb_types, type_name, i);
 		RAnalFunctionParam *param = R_NEW0 (RAnalFunctionParam);
-		char *arg = NULL;
+		char *arg;
 		param->name = param_name? strdup (param_name): NULL;
 		param->type = r_type_func_args_type (anal->sdb_types, type_name, i);
 		has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
@@ -2463,18 +2549,16 @@ static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
 		if (!param->type) {
 			break;
 		}
-		if (R_STR_ISEMPTY (param->name)) {
-			arg = strdup (param->type);
-		} else if (r_str_endswith (param->type, "*")) {
-			arg = r_str_newf ("%s%s", param->type, param->name);
-		} else {
-			arg = r_str_newf ("%s %s", param->type, param->name);
-		}
+		arg = function_param_string (param);
 		if (!arg || !r_strbuf_appendf (&args, "%s%s", i? ", ": "", arg)) {
 			free (arg);
 			goto beach;
 		}
 		free (arg);
+	}
+	if ((!type_kind || strcmp (type_kind, "func")) && r_list_empty (params)
+		&& !function_signature_cache_fallback_to_vars (anal, fcn, params, &args, &has_opaque_type_markers)) {
+		goto beach;
 	}
 	sane = r_name_filter_dup (type_name);
 	if (sane) {
