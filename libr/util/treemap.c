@@ -6,17 +6,16 @@
 #define MIN_BOX_HEIGHT 3
 
 static char charfor(int i, int j, int w, int h) {
-	// AITODO: these nested conditionals look really confusing and complex, make it simple
-	if ((i == 0 || i == h - 1) || (j == 0 || j == w - 1)) {
-		if ((i == 0 || i == h - 1) && (j == 0 || j == w - 1)) {
-			return '+';
-		}
-		if (i == 0 || i == h - 1) {
-			return '-';
-		}
-		if (j == 0 || j == w - 1) {
-			return '|';
-		}
+	const bool horizontal_border = i == 0 || i == h - 1;
+	const bool vertical_border = j == 0 || j == w - 1;
+	if (horizontal_border && vertical_border) {
+		return '+';
+	}
+	if (horizontal_border) {
+		return '-';
+	}
+	if (vertical_border) {
+		return '|';
 	}
 	return ' ';
 }
@@ -73,7 +72,7 @@ static inline int dodiv(ut32 adjusted, ut64 sum_adjusted, int d) {
 	return R_MAX (boxw, 1);
 }
 
-static char *formatLabel(char *label, size_t label_size, const char *text, ut32 value) {
+static char *formatLabel(const char *text, ut32 value) {
 	if (text) {
 		return r_str_newf ("%s (%" PFMT32u ")", text, value);
 	}
