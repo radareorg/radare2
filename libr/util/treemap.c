@@ -6,7 +6,7 @@
 #define MIN_BOX_HEIGHT 3
 
 static char charfor(int i, int j, int w, int h) {
-	// TODO: these nested conditionals look really confusing and complex, make it simple
+	// AITODO: these nested conditionals look really confusing and complex, make it simple
 	if ((i == 0 || i == h - 1) || (j == 0 || j == w - 1)) {
 		if ((i == 0 || i == h - 1) && (j == 0 || j == w - 1)) {
 			return '+';
@@ -75,10 +75,9 @@ static inline int dodiv(ut32 adjusted, ut64 sum_adjusted, int d) {
 
 static void formatLabel(char *label, size_t label_size, const char *text, ut32 value) {
 	if (text) {
-		snprintf (label, label_size, "%s (%" PFMT32u ")", text, value);
-	} else {
-		snprintf (label, label_size, "%" PFMT32u, value);
+		return r_str_newf ("%s (%" PFMT32u ")", text, value);
 	}
+	return r_str_newf ("%" PFMT32u, value);
 }
 
 static void treemapRecurse(char **buffer, int width, int height, int x, int y, int w, int h, const ut32 *values, const char **labels, int start, int n, ut64 total, bool horizontal) {
@@ -115,22 +114,23 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 			}
 		}
 
-		char label[128];
-		formatLabel (label, sizeof (label), labels ? labels[start + i] : NULL, val);
+		char *label = formatLabel (labels ? labels[start + i] : NULL, val);
 		drawBox (buffer, width, height, x, y, boxw, boxh, label);
+		free (label);
 
-		int newx = horizontal ? x + boxw - 1 : x;
-		int newy = horizontal ? y : y + boxh - 1;
-		int neww = horizontal ? w - boxw + 1 : w;
-		int newh = horizontal ? h : h - boxh + 1;
+		const int newx = horizontal ? x + boxw - 1 : x;
+		const int newy = horizontal ? y : y + boxh - 1;
+		const int neww = horizontal ? w - boxw + 1 : w;
+		const int newh = horizontal ? h : h - boxh + 1;
 
 		treemapRecurse (buffer, width, height, newx, newy, neww, newh, values, labels, start + i + 1, n - i - 1, total - val, !horizontal);
 		break;
 	}
 }
 
-static char *drawTreemapAscii(const ut32 *values, const char **labels, int n, int width, int height) {
-	if (n <= 0 || width < 1 || height < 1) {
+R_API char *r_print_treemap(int n, const ut32 *values, const char **labels, int width, int height) {
+	R_RETURN_VAL_IF_FAIL (n > 0 && values, NULL);
+	if (n < 1 || width < 1 || height < 1) {
 		return NULL;
 	}
 	char *buf = calloc (1, (width + 1) * height + 1);
@@ -139,8 +139,9 @@ static char *drawTreemapAscii(const ut32 *values, const char **labels, int n, in
 	}
 	int i;
 	for (i = 0; i < height; i++) {
-		memset (buf + i *(width + 1), ' ', width);
-		buf[i *(width + 1) + width] = '\n';
+		const int w1 = width + 1;
+		memset (buf + (i * w1), ' ', width);
+		buf[(i * w1) + width] = '\n';
 	}
 	ut64 total = 0;
 	for (i = 0; i < n; i++) {
@@ -148,10 +149,4 @@ static char *drawTreemapAscii(const ut32 *values, const char **labels, int n, in
 	}
 	treemapRecurse (&buf, width, height, 0, 0, width, height, values, labels, 0, n, total, true);
 	return buf;
-}
-
-R_API char *r_print_treemap(int n, const ut32 *values, const char **labels, int width, int height) {
-	R_RETURN_VAL_IF_FAIL (n >= 0, NULL);
-	R_RETURN_VAL_IF_FAIL (values || !n, NULL);
-	return drawTreemapAscii (values, labels, n, width, height);
 }
