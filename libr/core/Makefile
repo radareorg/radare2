@@ -1,6 +1,7 @@
 include ../config.mk
 
 NAME=r_core
+PCLIBS_PRIVATE=-lr_shlr
 
 R2DEPS=r_config r_cons r_io r_util r_flag r_asm r_arch r_esil
 R2DEPS+=r_debug r_bin r_lang r_io r_anal r_bp r_egg

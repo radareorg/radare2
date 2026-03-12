@@ -1,6 +1,7 @@
 include ../../global.mk
 
 NAME=r_asm
+PCLIBS_PRIVATE=-lr_shlr
 R2DEPS=r_syscall r_util r_esil r_muta
 R2DEPS+=r_flag r_cons r_reg r_arch
 CFLAGS+=-DR2_PLUGIN_INCORE -Iarch/include -Iarch

@@ -128,6 +128,9 @@ pkgcfg:
 	@echo 'Requires: $(filter r_%,${R2DEPS})' >> ../../pkgcfg/${NAME}.pc.acr
 	@if [ "${NAME}" = "libr" ]; then NAME=''; else NAME=${NAME}; fi ;\
 	echo 'Libs: -L$${libdir} -l${NAME} $(filter-out r_%,${R2DEPS}) ${PCLIBS}' >> ../../pkgcfg/${NAME}.pc.acr
+	@if [ -n "${PCLIBS_PRIVATE}" ]; then \
+		echo 'Libs.private: ${PCLIBS_PRIVATE}' >> ../../pkgcfg/${NAME}.pc.acr ; \
+	fi
 	@echo 'Cflags: -I$${includedir}/libr ${PCCFLAGS}' >> ../../pkgcfg/${NAME}.pc.acr
 
 clean:: ${EXTRA_CLEAN}

@@ -2,6 +2,7 @@ include ../config.mk
 include p/capstone.mk
 
 NAME=r_arch
+PCLIBS_PRIVATE=-lr_shlr
 R2DEPS+=r_util r_reg r_esil r_muta
 
 CFLAGS+=-DR2_PLUGIN_INCORE
