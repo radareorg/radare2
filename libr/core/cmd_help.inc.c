@@ -1,7 +1,8 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
+// clang-format off
 static RCoreHelpMessage help_msg_question_t = {
 	"Usage: ?t[0,1] [cmd]", "", "",
 	"?t", " pd 32", "show time needed to run 'pd 32'",
@@ -128,21 +129,6 @@ static RCoreHelpMessage help_msg_at_at_at = {
 	// TODO: Add @@k sdb-query-expression-here
 	NULL
 };
-
-static ut32 vernum(const char *s) {
-	// XXX this is known to be buggy, only works for strings like "x.x.x"
-	// XXX anything like "x.xx.x" will break the parsing
-	// XXX -git is ignored, maybe we should shift for it
-	char *a = strdup (s);
-	a = r_str_replace (a, ".", "0", 1);
-	char *dash = strchr (a, '-');
-	if (dash) {
-		*dash = 0;
-	}
-	ut32 res = atoi (a);
-	free (a);
-	return res;
-}
 
 static RCoreHelpMessage help_msg_percent = {
 	"Usage:", "%[name[=value]]", "Set each NAME to VALUE in the environment",
@@ -454,6 +440,23 @@ static RCoreHelpMessage help_msg_intro = {
 	NULL
 };
 
+// clang-format on
+
+static ut32 vernum(const char *s) {
+	// XXX this is known to be buggy, only works for strings like "x.x.x"
+	// XXX anything like "x.xx.x" will break the parsing
+	// XXX -git is ignored, maybe we should shift for it
+	char *a = strdup (s);
+	a = r_str_replace (a, ".", "0", 1);
+	char *dash = strchr (a, '-');
+	if (dash) {
+		*dash = 0;
+	}
+	ut32 res = atoi (a);
+	free (a);
+	return res;
+}
+
 static void cmd_help_exclamation(RCore *core) {
 	r_core_cmd_help (core, help_msg_exclamation);
 	r_core_cmd_help (core, help_msg_env);
@@ -472,6 +475,60 @@ static const char* findBreakChar(const char *s) {
 		s++;
 	}
 	return s;
+}
+
+static void cmd_help_em(RCore *core, const char *input) {
+	char *word, *str = strdup (r_str_trim_head_ro (input + 2));
+	char *legend = strchr (str, ',');
+	RList *llist = NULL;
+	if (legend) {
+		*legend = 0;
+		r_str_trim (legend + 1);
+		llist = r_str_split_list (strdup (legend + 1), " ", 0);
+	}
+	r_str_trim (str);
+	RList *list = r_str_split_list (str, " ", 0);
+	const int count = r_list_length (list);
+	ut32 *nums = R_NEWS0 (ut32, count);
+	char **text = R_NEWS0 (char *, count);
+	if (count > 0 && (!nums || !text)) {
+		R_LOG_ERROR ("Cannot allocate treemap data");
+		free (nums);
+		free (text);
+		r_list_free (list);
+		r_list_free (llist);
+		break;
+	}
+	int i = 0;
+	r_list_foreach (list, iter, word) {
+		st64 n = r_num_math (core->num, word);
+		if (n > UT32_MAX || n < 0) {
+			R_LOG_WARN ("Number out of range");
+		} else {
+			nums[i] = (ut32)n;
+		}
+		i++;
+	}
+	int j = 0;
+	r_list_foreach (llist, iter, word) {
+		if (j >= i) {
+			break;
+		}
+		text[j] = word;
+		j++;
+	}
+	// const int size = r_config_get_i (core->config, "hex.cols");
+	int h, w = r_cons_get_size (core->cons, &h);
+	h /= 2;
+	char *res = r_print_treemap (count, nums, (const char**)text, w, h);
+	if (res) {
+		r_cons_println (core->cons, res);
+		free (res);
+	}
+	free (nums);
+	free (text);
+	r_list_free (list);
+	r_list_free (llist);
 }
 
 // XXX This is an experimental test and must be implemented in RCons directly
@@ -1364,46 +1421,7 @@ static int cmd_help(void *data, const char *input) {
 			}
 			break;
 		case 'm': // "?em"
-			  {
-				  char *word, *str = strdup (r_str_trim_head_ro (input + 2));
-				  char *legend = strchr (str, ',');
-				  RList *llist = NULL;
-				  if (legend) {
-					  *legend = 0;
-					  r_str_trim (legend + 1);
-					  llist = r_str_split_list (strdup (legend + 1), " ", 0);
-				  }
-				  r_str_trim (str);
-				  RList *list = r_str_split_list (str, " ", 0);
-				  int *nums = calloc (sizeof (int), r_list_length (list));
-				  char **text = calloc (sizeof (char *), r_list_length (list));
-				  int i = 0;
-				  r_list_foreach (list, iter, word) {
-					st64 n = r_num_math (core->num, word);
-					if (n >= ST32_MAX || n < 0) {
-						R_LOG_WARN ("Number out of range");
-					}
-					nums[i] = n;
-					i++;
-				  }
-				  int j = 0;
-				  r_list_foreach (llist, iter, word) {
-					  if (j >= i) {
-						  break;
-					  }
-					  text[j] = word;
-					  j++;
-				  }
-				  // const int size = r_config_get_i (core->config, "hex.cols");
-				  int h, w = r_cons_get_size (core->cons, &h);
-				  h /= 2;
-				  char *res = r_print_treemap (r_list_length (list), nums, (const char**)text, w, h);
-				  r_cons_println (core->cons, res);
-				  free (res);
-				  free (text);
-				  r_list_free (list);
-				  r_list_free (llist);
-			  }
+			cmd_help_em (core, input);
 			break;
 		case 'p': // "?ep"
 			  {
