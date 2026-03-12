@@ -2373,7 +2373,10 @@ static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, 
 			free (key);
 		}
 	}
-	if (!callconv && R_STR_ISNOTEMPTY (fcn->callconv)) {
+	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
+		return callconv;
+	}
+	if (R_STR_ISNOTEMPTY (fcn->callconv) && r_anal_cc_exist (anal, fcn->callconv)) {
 		callconv = fcn->callconv;
 	}
 	if (!callconv) {
@@ -2414,6 +2417,9 @@ static inline bool string_has_opaque_type_marker(const char *type) {
 
 static char *function_param_string(const RAnalFunctionParam *param) {
 	R_RETURN_VAL_IF_FAIL (param && param->type, NULL);
+	if (!strcmp (param->type, "...")) {
+		return strdup ("...");
+	}
 	if (R_STR_ISEMPTY (param->name)) {
 		return strdup (param->type);
 	}
