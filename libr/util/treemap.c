@@ -73,7 +73,7 @@ static inline int dodiv(ut32 adjusted, ut64 sum_adjusted, int d) {
 	return R_MAX (boxw, 1);
 }
 
-static void formatLabel(char *label, size_t label_size, const char *text, ut32 value) {
+static char *formatLabel(char *label, size_t label_size, const char *text, ut32 value) {
 	if (text) {
 		return r_str_newf ("%s (%" PFMT32u ")", text, value);
 	}
@@ -85,14 +85,13 @@ static void treemapRecurse(char **buffer, int width, int height, int x, int y, i
 		return;
 	}
 	if (n == 1) {
-		char label[128];
-		formatLabel (label, sizeof (label), labels ? labels[start] : NULL, values[start]);
+		char *label = formatLabel (labels ? labels[start] : NULL, values[start]);
 		drawBox (buffer, width, height, x, y, w, h, label);
+		free (label);
 		return;
 	}
 
-	int used = 0;
-	int i, j;
+	int i, j, used = 0;
 	for (i = 0; i < n; i++) {
 		ut32 val = values[start + i];
 		// soften extremes by taking square root
