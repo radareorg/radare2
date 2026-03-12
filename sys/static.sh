@@ -1,9 +1,12 @@
 #!/bin/sh
 
 [ -z "${STATIC_BINS}" ] && STATIC_BINS=0
+[ -z "${USE_LTO}" ] && USE_LTO=0
+[ "${NOLTO}" = 1 ] && USE_LTO=0
 
 if [ "$1" = "--help" ]; then
-	echo "Usage: sys/static.sh [--help,--meson]"
+	echo "Usage: sys/static.sh [--help,--meson] [prefix]"
+	echo "Set USE_LTO=1 to enable LTO builds"
 	exit 0
 fi
 
@@ -17,7 +20,7 @@ fi
 case "$(uname)" in
 Linux)
 	LDFLAGS="${LDFLAGS} -lpthread -ldl -lutil -lm"
-	if [ "$NOLTO" != 1 ]; then
+	if [ "${USE_LTO}" = 1 ]; then
 		CFLAGS="${CFLAGS} -flto"
 		LDFLAGS="${LDFLAGS} -flto"
 	fi
@@ -27,8 +30,10 @@ Linux)
 	CFLAGS_STATIC=-static
 	;;
 Darwin)
-	CFLAGS="${CFLAGS} -flto"
-	LDFLAGS="${LDFLAGS} -flto"
+	if [ "${USE_LTO}" = 1 ]; then
+		CFLAGS="${CFLAGS} -flto"
+		LDFLAGS="${LDFLAGS} -flto"
+	fi
 	CFLAGS_STATIC=""
 	;;
 DragonFly|OpenBSD)
