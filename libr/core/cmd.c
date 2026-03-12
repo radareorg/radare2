@@ -20,6 +20,7 @@
 
 #define SPECIAL_CHARS "@;~$#|`\"'()<>"
 
+// clang-format off
 static const char help_message[] = \
 "\nWelcome to radare2!\n" \
 "\n" \
@@ -44,6 +45,7 @@ static const char help_message[] = \
 "* /, /x   - search for strings or hexadecimal patterns\n" \
 "* f~...   - search for strings or hexadecimal patterns\n" \
 "* q       - quit (alias for ^D or exit)\n";
+// clang-format on
 
 static inline bool isAnExport(RBinSymbol *s) {
 	/* workaround for some bin plugs */
@@ -2334,35 +2336,9 @@ static int cmd_interpret(void *data, const char *input) {
 	case '\0': // "."
 		lastcmd_repeat (core, 0);
 		break;
-#if 0
-	case ':': // ".:"
-		if ((ptr = strchr (input + 1, ' '))) {
-			/* .:port cmd */
-			/* .:host:port cmd */
-			cmd = ptr + 1;
-			*ptr = 0;
-			eol = strchr (input + 1, ':');
-			if (eol) {
-				*eol = 0;
-				host = input + 1;
-				port = eol + 1;
-			} else {
-				host = "localhost";
-				port = input + ((input[1] == ':')? 2: 1);
-			}
-			rbuf = r_core_rtr_cmds_query (core, host, port, cmd);
-			if (rbuf) {
-				r_cons_print (core->cons, rbuf);
-				free (rbuf);
-			}
-		} else {
-			r_core_rtr_cmds (core, input + 1);
-		}
-		break;
-#endif
 	case '.': // ".." same as \n
 		if (input[1] == '.') { // "..." run the last command repeated
-			// same as \n with e cmd.repeat=true
+				       // same as \n with e cmd.repeat=true
 			lastcmd_repeat (core, 1);
 		} else if (input[1] == ' ') {
 			char *str = r_core_cmd_str_pipe (core, r_str_trim_head_ro (input));
@@ -4261,6 +4237,29 @@ static char *getarg(char *ptr) {
 	return NULL;
 }
 
+static bool cmd_subst_parse_dot_grep(const char *cmd) {
+	R_RETURN_VAL_IF_FAIL (cmd, false);
+	if (*cmd != '.') {
+		return false;
+	}
+	switch (cmd[1]) {
+	case '\0':
+	case ' ':
+	case '!':
+	case '*':
+	case '-':
+		return true;
+	case '.':
+		return true;
+	case '?':
+		return !cmd[2];
+	case '(':
+		return cmd[2] != '*';
+	default:
+		return false;
+	}
+}
+
 static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek) {
 	R_CRITICAL_ENTER (core);
 	RList *tmpenvs = r_list_newf (tmpenvs_free);
@@ -4423,6 +4422,12 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 			if (p && *p == '|') {
 				str = (char *)r_str_trim_head_ro (p + 1);
 				r_core_cmd_pipe (core, cmd, str);
+			} else if (quoted_grep) {
+				char *out = r_core_cmd_str (core, line);
+				if (out) {
+					r_cons_print (core->cons, out);
+					free (out);
+				}
 			} else {
 				r_cmd_call (core->rcmd, line);
 			}
@@ -4901,7 +4906,7 @@ escape_backtick:
 			}
 		}
 	}
-	if (*cmd != '.') {
+	if (*cmd != '.' || cmd_subst_parse_dot_grep (cmd)) {
 		grep = r_cons_grep_strip (cmd, quotestr);
 	}
 

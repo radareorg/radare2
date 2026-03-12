@@ -1,5 +1,20 @@
+NAME=grep
+FILE=malloc://32
+ARGS=-a arm -b64
+CMDS=<<EOF
+(t; ?e a)
+.(t)~z
+?e done
+.(t)~a
+EOF
+EXPECT=<<EOF
+done
+a
+EOF
+RUN
+
 NAME=optype
-FILE=-
+FILE=malloc://32
 ARGS=-a arm -b64
 CMDS=<<EOF
 '(optype;ao~type)
@@ -14,7 +29,7 @@ EOF
 RUN
 
 NAME=escaping colons
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg;?e hello;?e world)"
 (msg2\;?e hello\;?e world)
@@ -30,7 +45,7 @@ EOF
 RUN
 
 NAME=escaping echoes
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?e "hello\@world\|pipe"
 ?e one\ntwo
@@ -43,7 +58,7 @@ EOF
 RUN
 
 NAME=(msg x;?e $0)
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -55,7 +70,7 @@ RUN
 
 NAME=(msg x;?e $0)
 
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -67,7 +82,7 @@ RUN
 
 NAME=(msg x;?e $0)
 
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg HelloWorld)
@@ -80,7 +95,7 @@ EOF
 RUN
 
 NAME=.(msg x y;?e $0 $1)
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x y;?e $0 $1)"
 .(msg Hello World)
@@ -91,7 +106,7 @@ EOF
 RUN
 
 NAME=.(msg "foo bar")
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg "Hello World")
@@ -102,7 +117,7 @@ EOF
 RUN
 
 NAME=.(msg foo\ bar)
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 "(msg x;?e $0)"
 .(msg Hello\ World)
@@ -113,7 +128,7 @@ EOF
 RUN
 
 NAME=(*~?
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 (foo;bar)
 (bar;cow)
@@ -125,7 +140,7 @@ EOF
 RUN
 
 NAME=3(foo;p8 4;s+$0)(1)
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 wx 010203040506070809
 3(foo;p8 4;s+$0)(1)
@@ -138,7 +153,7 @@ EOF
 RUN
 
 NAME=3(foo;?e a;?e b)()
-FILE=-
+FILE=malloc://32
 CMDS=2(foo;?e a;?e b)()
 EXPECT=<<EOF
 a
@@ -149,7 +164,7 @@ EOF
 RUN
 
 NAME=?v $$ @@ foo*
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
@@ -164,7 +179,7 @@ EOF
 RUN
 
 NAME=?v
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 f foo.one = 1
 f foo.bar = 2
@@ -179,7 +194,7 @@ EOF
 RUN
 
 NAME=multiple commands
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 (foo x y; p8 $0 @ $1; ?e Hello $0)(2 0)
 (bar x y; p8 $0 @ $1; ?e Hello $0; ?e World $1)(1 0)
@@ -197,7 +212,7 @@ EOF
 RUN
 
 NAME=json
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 (foo;bar;cow)
 (bar;cow;foo)

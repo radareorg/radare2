@@ -42,6 +42,27 @@ Eron
 EOF
 RUN
 
+NAME=interpret dollar file with grep
+FILE=-
+CMDS=<<EOF
+?e ?e hello > $cmd
+. $cmd~ll
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=.spp with grep
+FILE=-
+CMDS=<<EOF
+. bins/src/r2test.spp~world
+EOF
+EXPECT=<<EOF
+hello world
+EOF
+RUN
+
 NAME=$foo=#!pipe
 FILE=-
 CMDS=<<EOF
