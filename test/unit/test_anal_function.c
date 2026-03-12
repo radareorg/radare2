@@ -315,6 +315,44 @@ bool test_r_anal_function_get_signature_falls_back_to_vars(void) {
 	mu_end;
 }
 
+bool test_r_anal_function_get_signature_hides_variadic_placeholder(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *f = r_anal_create_function (anal, "foo.bar", 0x5000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for variadic signature test");
+
+	bool ok = r_anal_str_to_fcn (anal, f, "char foo.bar (int a, ...);");
+	mu_assert_true (ok, "variadic signature must parse");
+
+	char *sig = r_anal_function_get_signature (f);
+	mu_assert_notnull (sig, "variadic signature string");
+	mu_assert_streq (sig, "char foo.bar (int a, ...);", "variadic placeholder name must stay hidden");
+	free (sig);
+	r_anal_free (anal);
+	mu_end;
+}
+
+bool test_r_anal_function_context_collect_falls_back_to_valid_callconv(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	r_anal_cc_reset (anal);
+	mu_assert_true (r_anal_cc_set (anal, "void amd64 (rdi, rsi, rdx, rcx, r8, r9, stack)"),
+		"must seed amd64 calling convention");
+	r_anal_set_cc_default (anal, "amd64");
+
+	RAnalFunction *f = r_anal_create_function (anal, "sigcc", 0x6000, 0, NULL);
+	mu_assert_notnull (f, "Couldn't create function for callconv fallback test");
+	bool ok = r_anal_str_to_fcn (anal, f, "void sigcc (size_t sz);");
+	mu_assert_true (ok, "signature must parse");
+
+	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, f);
+	mu_assert_notnull (ctx, "context must be collected");
+	mu_assert_streq (ctx->function->callconv, "amd64", "invalid persisted cc must fall back to a valid live cc");
+	r_anal_function_context_free (ctx);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
@@ -323,6 +361,8 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_context_collect);
 	mu_run_test (test_r_anal_function_apply_signature_uses_canonical_type_name);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_vars);
+	mu_run_test (test_r_anal_function_get_signature_hides_variadic_placeholder);
+	mu_run_test (test_r_anal_function_context_collect_falls_back_to_valid_callconv);
 	return tests_passed != tests_run;
 }
 
