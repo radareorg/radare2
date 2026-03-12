@@ -149,7 +149,7 @@ jobs:
           export CFLAGS="-m32"
           export LDFLAGS="-m32"
         fi
-        NOLTO=1 sys/static.sh
+        sys/static.sh
         make -C binr/blob
         tar cJvf radare2-${{ steps.r2v.outputs.branch }}-static-${{ matrix.arch }}.tar.xz r2-static
     - name: Pub

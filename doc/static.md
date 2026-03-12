@@ -14,6 +14,11 @@ or just run
 
 	sys/static.sh
 
+LTO is disabled by default in `sys/static.sh` because it can make static
+builds significantly slower. If you want to enable it, run:
+
+	USE_LTO=1 sys/static.sh
+
 Android
 -------
 
