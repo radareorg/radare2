@@ -1,7 +1,7 @@
 #!/bin/sh
 
 WRKDIR=$PWD/tmp
-TYPES="fuzz_bin fuzz_bin2 fuzz_cmd fuzz_dwarf fuzz_fs fuzz_ia fuzz_pdb_parse fuzz_x509_parse"
+TYPES="`make ls`"
 
 mkdir -p "${WRKDIR}/inbox"
 mkdir -p "${WRKDIR}/outbox"
