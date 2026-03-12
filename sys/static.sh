@@ -83,6 +83,13 @@ ${MAKE} -j 8 || exit 1
 BINS="rarun2 r2pm rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
 STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a subprojects/capstone-v5/libcapstone.a"
 STATIC_TEST_CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
+
+show_link_errors() {
+	if [ -s "$1" ]; then
+		grep -Ev "warning: Using '.*' in statically linked applications requires at runtime the shared libraries from the glibc version used for linking" "$1" || true
+	fi
+}
+
 if [ "${STATIC_BINS}" = 1 ]; then
 	for a in ${BINS} ; do
 	(
@@ -132,9 +139,11 @@ pkg-config \
 `
 
 set -x
-${CC} .test.c ${STATIC_TEST_CFLAGS} ${PKG_CONFIG_FLAGS} ${LDFLAGS} -o r2-pkgcfg-static
+${CC} .test.c ${STATIC_TEST_CFLAGS} ${PKG_CONFIG_FLAGS} ${LDFLAGS} -o r2-pkgcfg-static 2>.static-pkgcfg.err
 res=$?
 set +x
+show_link_errors .static-pkgcfg.err
+rm -f .static-pkgcfg.err
 if [ $res = 0 ]; then
 	echo SUCCESS
 	rm -f a.out
@@ -147,11 +156,13 @@ ${CC} .test.c \
 	${STATIC_TEST_CFLAGS} \
 	-I ${PWD}/r2-static/usr/include/libr \
 	-I ${PWD}/r2-static/usr/include/libr/sdb \
-	r2-static/usr/lib/libr.a ${LDFLAGS} ${STATIC_LIBS}
+	r2-static/usr/lib/libr.a ${LDFLAGS} ${STATIC_LIBS} 2>.static-libr.err
 res2=$?
 du -hs r2-static/usr/bin/radare2
 du -hs a.out
 set +x
+show_link_errors .static-libr.err
+rm -f .static-libr.err
 if [ $res2 = 0 ]; then
 	echo SUCCESS2
 	rm -f a.out
