@@ -61,3 +61,31 @@ make -C dist/docker R2PM=radius2
 ```
 
 Also, you can select the architecture (amd64 / arm64) to compile the image by using the `ARCH` make variable.
+
+## i386 test runner
+
+There is also a dedicated native `linux/386` docker runner to build radare2 and run tests from the current worktree.
+It is useful for debugging 32-bit regressions and running the `r2r` cmd tests on an i386 userspace.
+
+Run it with:
+
+```sh
+make -C dist/docker i386-r2r
+```
+
+This target builds `dist/docker/i386-r2r.Dockerfile`, clones the current repository inside the container, applies the local git diff, builds and installs radare2 as 32-bit, runs `test rc`, the unit tests and then `r2r`.
+The full `r2r` JSON report is copied to `dist/docker/out/i386-r2r/results-i386.json`.
+
+Some useful variables:
+
+```sh
+R2_MAKE_JOBS=8 R2R_JOBS=8 make -C dist/docker i386-r2r
+OUT_DIR=/tmp/r2-i386 make -C dist/docker i386-r2r
+R2_CONFIGURE_FLAGS='--without-qjs' make -C dist/docker i386-r2r
+```
+
+For sanitizer builds you can pass compiler flags through the environment:
+
+```sh
+CFLAGS='-fsanitize=address' LDFLAGS='-fsanitize=address' make -C dist/docker i386-r2r
+```
