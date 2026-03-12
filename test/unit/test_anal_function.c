@@ -212,23 +212,23 @@ bool test_r_anal_function_context_collect(void) {
 	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, f);
 	mu_assert_notnull (ctx, "context must be collected");
 	mu_assert_streq (ctx->function->name, "sigread", "context function name");
-	mu_assert_streq (ctx->ret_type, "int", "context return type");
-	mu_assert_streq (ctx->callconv, "amd64", "context callconv");
-	mu_assert_false (ctx->has_opaque_type_markers, "typed signature must not be opaque");
-	mu_assert_eq ((int)r_list_length (ctx->params), 2, "context param count");
-	RAnalFunctionContextParam *arg0 = r_list_get_n (ctx->params, 0);
-	RAnalFunctionContextParam *arg1 = r_list_get_n (ctx->params, 1);
+	mu_assert_streq (ctx->function->ret_type, "int", "context return type");
+	mu_assert_streq (ctx->function->callconv, "amd64", "context callconv");
+	mu_assert_false (ctx->function->has_opaque_type_markers, "typed signature must not be opaque");
+	mu_assert_eq ((int)r_list_length (ctx->function->params), 2, "context param count");
+	RAnalFunctionParam *arg0 = r_list_get_n (ctx->function->params, 0);
+	RAnalFunctionParam *arg1 = r_list_get_n (ctx->function->params, 1);
 	mu_assert_notnull (arg0, "first context param");
 	mu_assert_notnull (arg1, "second context param");
 	mu_assert_streq (arg0->type, "int", "first context param type");
 	mu_assert_streq (arg1->type, "char *", "second context param type");
-	mu_assert_notnull (ctx->signature, "context signature string");
+	mu_assert_notnull (ctx->function->signature, "context signature string");
 
 	sdb_set (anal->sdb_types, sdb_ret, "type_0x4010", 0);
 	r_anal_function_context_free (ctx);
 	ctx = r_anal_function_context_collect (anal, f);
 	mu_assert_notnull (ctx, "opaque context must be collected");
-	mu_assert_true (ctx->has_opaque_type_markers, "opaque placeholder must be detected");
+	mu_assert_true (ctx->function->has_opaque_type_markers, "opaque placeholder must be detected");
 
 	free (sdb_cc);
 	free (sdb_ret);
@@ -263,28 +263,28 @@ bool test_r_anal_function_apply_signature_uses_canonical_type_name(void) {
 
 	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, f);
 	mu_assert_notnull (ctx, "typed signature context");
-	mu_assert_streq (ctx->ret_type, "int", "typed apply return type");
-	mu_assert_streq (ctx->callconv, "amd64", "typed apply callconv");
-	mu_assert_eq ((int)r_list_length (ctx->params), 2, "typed apply context param count");
-	RAnalFunctionContextParam *arg0 = r_list_get_n (ctx->params, 0);
-	RAnalFunctionContextParam *arg1 = r_list_get_n (ctx->params, 1);
+	mu_assert_streq (ctx->function->ret_type, "int", "typed apply return type");
+	mu_assert_streq (ctx->function->callconv, "amd64", "typed apply callconv");
+	mu_assert_eq ((int)r_list_length (ctx->function->params), 2, "typed apply context param count");
+	RAnalFunctionParam *arg0 = r_list_get_n (ctx->function->params, 0);
+	RAnalFunctionParam *arg1 = r_list_get_n (ctx->function->params, 1);
 	mu_assert_notnull (arg0, "first typed param");
 	mu_assert_notnull (arg1, "second typed param");
 	mu_assert_streq (arg0->name, "format", "first typed param name");
 	mu_assert_streq (arg0->type, "const char *", "first typed param type");
 	mu_assert_streq (arg1->name, "value", "second typed param name");
 	mu_assert_streq (arg1->type, "int *", "second typed param type");
-	mu_assert_streq (ctx->signature, "int scanf (const char *format, int *value);", "canonical signature string");
+	mu_assert_streq (ctx->function->signature, "int scanf (const char *format, int *value);", "canonical signature string");
 	r_anal_function_context_free (ctx);
 
 	ok = r_anal_function_apply_signature (anal, f, "void", NULL, 0, "cdecl", true);
 	mu_assert_true (ok, "typed signature overwrite must succeed");
 	ctx = r_anal_function_context_collect (anal, f);
 	mu_assert_notnull (ctx, "typed overwrite context");
-	mu_assert_streq (ctx->ret_type, "void", "typed overwrite return type");
-	mu_assert_streq (ctx->callconv, "cdecl", "typed overwrite callconv");
-	mu_assert_true (ctx->noreturn, "typed overwrite noreturn");
-	mu_assert_eq ((int)r_list_length (ctx->params), 0, "typed overwrite clears params");
+	mu_assert_streq (ctx->function->ret_type, "void", "typed overwrite return type");
+	mu_assert_streq (ctx->function->callconv, "cdecl", "typed overwrite callconv");
+	mu_assert_true (ctx->function->is_noreturn, "typed overwrite noreturn");
+	mu_assert_eq ((int)r_list_length (ctx->function->params), 0, "typed overwrite clears params");
 
 	mu_assert_eq (r_type_func_args_count (anal->sdb_types, typed_name), 0, "typed overwrite argc");
 	free (typed_name);
