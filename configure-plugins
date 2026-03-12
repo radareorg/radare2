@@ -8,12 +8,36 @@
 LANG=C
 LC_ALL=C
 LOADLIBS=1
-if [ -z "$EXT_SO" ]; then
+TARGET_OSTYPE="${USEROSTYPE}"
+
+ostype_ext() {
+	case "$1" in
+	windows|mingw32)
+		echo dll
+		;;
+	darwin)
+		echo dylib
+		;;
+	*)
+		echo so
+		;;
+	esac
+}
+
+update_ext() {
+	if [ -n "$EXT_SO" ]; then
+		EXT="${EXT_SO}"
+		return
+	fi
+	if [ -n "$TARGET_OSTYPE" ]; then
+		EXT=$(ostype_ext "$TARGET_OSTYPE")
+		return
+	fi
 	EXT=so
 	[ "`uname`" = Darwin ] && EXT=dylib
-else
-	EXT="${EXT_SO}"
-fi
+}
+
+update_ext
 
 export LANG
 export LC_ALL
@@ -253,12 +277,21 @@ RMSTATIC=-
 
 while : ; do
   [ -z "$1" ] && break
-  case "$1" in
-  "--static") MODE=static ; ;;
-  "--shared") MODE=shared ; ;;
-  "--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
-  "--disable-loadlibs") LOADLIBS=0 ;;
-  "--rm-static") RMSTATIC="$2" ; ;;
+	case "$1" in
+	"--static") MODE=static ; ;;
+	"--shared") MODE=shared ; ;;
+	"--with-ostype")
+		shift
+		TARGET_OSTYPE="$1"
+		update_ext
+		;;
+	"--with-ostype="*)
+		TARGET_OSTYPE="${1#*=}"
+		update_ext
+		;;
+	"--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
+	"--disable-loadlibs") LOADLIBS=0 ;;
+	"--rm-static") RMSTATIC="$2" ; ;;
   "--list") sort_vars ; list ; ;;
   "-n") DONOTHING=1 ; ;;
   "-h"|"--help") help ; ;;

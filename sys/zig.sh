@@ -7,6 +7,7 @@ TARGETS="
 	clean
 
 	arm-linux
+	i386-linux
 	arm64-linux
 	amd64-linux
 	riscv64-linux
@@ -61,12 +62,15 @@ arm64-darwin|aarch64-darwin|arm64-macos|aarch64-macos)
 wasm32|wasm|wasm32-wasi|wasi)
 	TARGET="wasm32-wasi-musl"
 	;;
-arm-linux|arm32-linux)
-	TARGET="arm-linux"
-	;;
-arm64-linux|aarch64-linux)
-	TARGET="aarch64-linux-musl"
-	;;
+	arm-linux|arm32-linux)
+		TARGET="arm-linux"
+		;;
+	i386-linux|x86-linux|x86-linux-gnu)
+		TARGET="x86-linux-gnu"
+		;;
+	arm64-linux|aarch64-linux)
+		TARGET="aarch64-linux-musl"
+		;;
 ppc-linux|powerpc-linux)
 	TARGET="powerpc-linux"
 	;;
@@ -112,10 +116,10 @@ wip)
 native)
 	TARGET=""
 	;;
-*)
-	echo "Unknown target $TARGET"
-	;;
-esac
+	*)
+		echo "Unknown target $TARGET"
+		;;
+	esac
 
 # seems to be problematic, better leave cflags to the user
 #export CFLAGS="-Oz"
@@ -127,6 +131,8 @@ if [ -z "${TARGET}" ]; then
 else
 	export CC="zig cc -target ${TARGET}"
 	export LD="zig cc -target ${TARGET}"
+	# Avoid leaking host pkg-config results into cross builds.
+	[ -z "${PKGCONFIG}" ] && export PKGCONFIG=/usr/bin/false
 fi
 # nollvm doesnt work with all targets
 #export CC="$CC -fstage1 -fno-LLVM"
@@ -152,6 +158,10 @@ fi
 
 RUN_CONFIGURE=1
 if [ "$RUN_CONFIGURE" = 1 ]; then
+	if [ -n "${TARGET}" ]; then
+		make clean > /dev/null 2>&1 || true
+		ulimit -n 1024 > /dev/null 2>&1 || true
+	fi
 	rm -f libr/include/r_version.h
 	# ./configure --host=aarch64-gnu-linux --with-ostype=linux
 	./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1

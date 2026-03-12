@@ -5,6 +5,12 @@ uname -a
 
 ARG=$1
 
+if [ "$ARG" = "i386" ] && [ "`uname`" = "Darwin" ] && [ "`uname -m`" = "arm64" ]; then
+	echo "ERROR: sys/debian.sh i386 is not supported on macOS/arm64 hosts." >&2
+	echo "Use 'sys/zig.sh i386-linux' for a cross-build or 'make -C dist/docker i386-r2r' for the Debian/docker path." >&2
+	exit 1
+fi
+
 if [ "$ARG" = "arm64" ]; then
   ARCH=arm64
 elif [ "$ARG" = "amd64" ]; then
