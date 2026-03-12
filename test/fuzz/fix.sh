@@ -1,7 +1,8 @@
 #!/bin/sh
 
 WRKDIR=$PWD/tmp
-AGENT=codex-rs
+#AGENT="codex -a never"
+AGENT="codex"
 PROMPT=<<EOF
 Fix this bug, do not add unit tests, reason hard and find the root cause of the problem do not fix the consequence, do surgical patch but if needed refactor what's required to avoid adding unnecessary conditionals all around the code.
 EOF
@@ -32,7 +33,9 @@ while : ; do
 		continue
 	fi
 	echo "${PROMPT}" > ${WRKDIR}/prompt.txt
-	tail -n 60 "${WRKDIR}/inbox/${F}" >> ${WRKDIR}/prompt.txt
+	echo "<CRASHLOG>" >> ${WRKDIR}/prompt.txt
+	awk '/DEADSIGNAL/{f=1} f' file < "${WRKDIR}/inbox/${F}" >> ${WRKDIR}/prompt.txt
+	echo "</CRASHLOG>" >> ${WRKDIR}/prompt.txt
 	(
 		cd ../..
 		${AGENT} exec "`cat ${WRKDIR}/prompt.txt`" 2>&1

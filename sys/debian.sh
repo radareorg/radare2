@@ -4,30 +4,52 @@
 uname -a
 
 ARG=$1
+CFGOSTYPE=
 
-if [ "$ARG" = "arm64" ]; then
-  ARCH=arm64
-elif [ "$ARG" = "amd64" ]; then
-  ARCH=amd64
-  export CFLAGS="-Werror"
-elif [ "$ARG" = "i386" ]; then
-  ARCH=i386
-  export CFLAGS="-m32 -Werror"
-  export LDFLAGS=-m32
-else
-  CFGARGS=$*
-fi
+use_zig_target() {
+	ZIG_TARGET="$1"
+	type zig > /dev/null 2>&1 || {
+		echo "ERROR: zig is required for ${ARCH} builds in sys/debian.sh" >&2
+		exit 1
+	}
+	export CC="zig cc -target ${ZIG_TARGET}"
+	export LD="zig cc -target ${ZIG_TARGET}"
+	export AR="zig ar"
+	export RANLIB="zig ranlib"
+	[ -z "${PKGCONFIG}" ] && export PKGCONFIG=/usr/bin/false
+	CFGOSTYPE="--with-ostype=gnulinux"
+}
+
+case "$ARG" in
+arm64)
+	ARCH=arm64
+	;;
+amd64)
+	ARCH=amd64
+	export CFLAGS="-Werror"
+	;;
+i386)
+	ARCH=i386
+	export CFLAGS="-Werror"
+	use_zig_target x86-linux-gnu
+	;;
+*)
+	CFGARGS=$*
+	;;
+esac
 
 if [ -z "${ARCH}" ]; then
-  ARCH=`uname -m`
+	ARCH=`uname -m`
 fi
 
-if [ "${ARCH}" = "x86_64" ]; then
-  ARCH=amd64
-fi
-if [ "${ARCH}" = "aarch64" ]; then
-  ARCH=arm64
-fi
+case "${ARCH}" in
+x86_64)
+	ARCH=amd64
+	;;
+aarch64)
+	ARCH=arm64
+	;;
+esac
 export ARCH
 
 echo "[debian] preparing radare2 package..."
@@ -39,6 +61,12 @@ rm -rf "${PKGDIR}" "${DEVDIR}"
 
 . `dirname $0`/make-jobs.inc.sh
 
+if [ -z "${MAKE}" ]; then
+	MAKE=make
+	gmake --help > /dev/null 2>&1
+	[ $? = 0 ] && MAKE=gmake
+fi
+
 type fakeroot > /dev/null 2>&1
 if [ $? = 0 ]; then
 FAKEROOT=fakeroot
@@ -48,11 +76,11 @@ fi
 
 export CFLAGS="-Wno-cpp -Wno-unused-result ${CFLAGS} -O2"
 # build
-./configure --prefix=/usr --with-checks-level=0 ${CFGARGS}
+./configure --prefix=/usr --with-checks-level=0 ${CFGOSTYPE} ${CFGARGS}
 [ $? != 0 ] && exit 1
-make -j4
+${MAKE} -j${MAKE_JOBS}
 [ $? != 0 ] && exit 1
-$FAKEROOT make install DESTDIR="${PWD}/${PKGDIR}"
+$FAKEROOT ${MAKE} install DESTDIR="${PWD}/${PKGDIR}"
 [ $? != 0 ] && exit 1
 
 # dev-split
@@ -83,9 +111,9 @@ wget -P "${PKGDIR}/usr/share/info/" \
 
 # packages
 echo "[debian] building radare2 package..."
-$FAKEROOT make -C dist/debian/radare2 ARCH=${ARCH}
+$FAKEROOT ${MAKE} -C dist/debian/radare2 ARCH=${ARCH}
 cp -f dist/debian/radare2/*.deb .
 
 echo "[debian] building radare2-dev package..."
-$FAKEROOT make -C dist/debian/radare2-dev ARCH=${ARCH}
+$FAKEROOT ${MAKE} -C dist/debian/radare2-dev ARCH=${ARCH}
 cp -f dist/debian/radare2-dev/*.deb .

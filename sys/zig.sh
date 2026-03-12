@@ -7,13 +7,23 @@ TARGETS="
 	clean
 
 	arm-linux
+	i386-linux
 	arm64-linux
 	amd64-linux
+	riscv32-linux
 	riscv64-linux
 	mips-linux
+	mipsel-linux
+	mips64-linux
+	mips64el-linux
 	sparcv9-linux
+	sparc-linux
+	sparc64-linux
 	ppc-linux
 	ppc64-linux
+	ppc64le-linux
+	loongarch64-linux
+	s390x-linux
 	wasm32-wasi
 
 Experimental:
@@ -61,8 +71,15 @@ arm64-darwin|aarch64-darwin|arm64-macos|aarch64-macos)
 wasm32|wasm|wasm32-wasi|wasi)
 	TARGET="wasm32-wasi-musl"
 	;;
-arm-linux|arm32-linux)
+	# These names are already valid zig targets.
+arm-linux|mips-linux|mipsel-linux|mips64-linux|mips64el-linux|loongarch64-linux|riscv64-linux|s390x-linux)
+	:
+	;;
+arm32-linux)
 	TARGET="arm-linux"
+	;;
+i386-linux|x86-linux|x86-linux-gnu)
+	TARGET="x86-linux-gnu"
 	;;
 arm64-linux|aarch64-linux)
 	TARGET="aarch64-linux-musl"
@@ -73,17 +90,26 @@ ppc-linux|powerpc-linux)
 ppc64-linux|powerpc64-linux)
 	TARGET="powerpc64-linux"
 	;;
+ppc64le-linux|powerpc64le-linux)
+	TARGET="powerpc64le-linux"
+	;;
 amd64-linux|x86_64-linux|x64-linux)
 	TARGET="x86_64-linux"
 	;;
-riscv-linux|riscv64-linux)
+riscv32-linux)
+	TARGET="riscv32-linux-musl"
+	;;
+riscv-linux)
 	TARGET="riscv64-linux"
 	;;
 amd64-freebsd|x86_64-freebsd|x64-freebsd)
 	TARGET="x86_64-freebsd"
 	;;
-mips-linux|mips64-linux)
-	TARGET="mips-linux"
+sparc-linux)
+	TARGET="sparc-linux-gnu"
+	;;
+sparcv9-linux|sparc64-linux)
+	TARGET="sparc64-linux-gnu"
 	;;
 ios)
 	TARGET="aarch64-ios-none" #aarch64-linux-android"
@@ -112,10 +138,10 @@ wip)
 native)
 	TARGET=""
 	;;
-*)
-	echo "Unknown target $TARGET"
-	;;
-esac
+	*)
+		echo "Unknown target $TARGET"
+		;;
+	esac
 
 # seems to be problematic, better leave cflags to the user
 #export CFLAGS="-Oz"
@@ -127,6 +153,8 @@ if [ -z "${TARGET}" ]; then
 else
 	export CC="zig cc -target ${TARGET}"
 	export LD="zig cc -target ${TARGET}"
+	# Avoid leaking host pkg-config results into cross builds.
+	[ -z "${PKGCONFIG}" ] && export PKGCONFIG=/usr/bin/false
 fi
 # nollvm doesnt work with all targets
 #export CC="$CC -fstage1 -fno-LLVM"
@@ -152,6 +180,10 @@ fi
 
 RUN_CONFIGURE=1
 if [ "$RUN_CONFIGURE" = 1 ]; then
+	if [ -n "${TARGET}" ]; then
+		make clean > /dev/null 2>&1 || true
+		ulimit -n 1024 > /dev/null 2>&1 || true
+	fi
 	rm -f libr/include/r_version.h
 	# ./configure --host=aarch64-gnu-linux --with-ostype=linux
 	./configure --with-ostype=$OSTYPE ${CFGFLAGS} || exit 1
