@@ -1375,15 +1375,25 @@ static int cmd_help(void *data, const char *input) {
 				  }
 				  r_str_trim (str);
 				  RList *list = r_str_split_list (str, " ", 0);
-				  int *nums = calloc (sizeof (int), r_list_length (list));
-				  char **text = calloc (sizeof (char *), r_list_length (list));
+				  const int count = r_list_length (list);
+				  ut32 *nums = R_NEWS0 (ut32, count);
+				  char **text = R_NEWS0 (char *, count);
+				  if (count > 0 && (!nums || !text)) {
+					  R_LOG_ERROR ("Cannot allocate treemap data");
+					  free (nums);
+					  free (text);
+					  r_list_free (list);
+					  r_list_free (llist);
+					  break;
+				  }
 				  int i = 0;
 				  r_list_foreach (list, iter, word) {
 					st64 n = r_num_math (core->num, word);
-					if (n >= ST32_MAX || n < 0) {
+					if (n > UT32_MAX || n < 0) {
 						R_LOG_WARN ("Number out of range");
+					} else {
+						nums[i] = (ut32)n;
 					}
-					nums[i] = n;
 					i++;
 				  }
 				  int j = 0;
@@ -1397,9 +1407,12 @@ static int cmd_help(void *data, const char *input) {
 				  // const int size = r_config_get_i (core->config, "hex.cols");
 				  int h, w = r_cons_get_size (core->cons, &h);
 				  h /= 2;
-				  char *res = r_print_treemap (r_list_length (list), nums, (const char**)text, w, h);
-				  r_cons_println (core->cons, res);
+				  char *res = r_print_treemap (count, nums, (const char**)text, w, h);
+				  if (res) {
+					  r_cons_println (core->cons, res);
+				  }
 				  free (res);
+				  free (nums);
 				  free (text);
 				  r_list_free (list);
 				  r_list_free (llist);
