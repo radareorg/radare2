@@ -233,9 +233,6 @@ EXPECT=<<EOF
 +__ctype_tolower_loc
 +__ctype_b_loc
 +__sprintf_chk
-+M_deregisterTMCloneTable
-+GLIBC_2.17
-+GLIBC_2.3
 --
 -printf
  __gmon_start__
@@ -352,9 +349,6 @@ EXPECT=<<EOF
 +__ctype_tolower_loc
 +__ctype_b_loc
 +__sprintf_chk
-+M_deregisterTMCloneTable
-+GLIBC_2.17
-+GLIBC_2.3
 --
 EOF
 RUN
