@@ -25,6 +25,9 @@ typedef struct {
 	PEFSection sec[];
 } RBinPEFObj;
 
+#define PEF_MAX_RELOC_INSTRUCTIONS 0x100000
+#define PEF_MAX_RELOCATIONS 0x100000
+
 static const char *class2string(ut8 class) {
 	switch (class & 0xf) {
 	case 0: return R_BIN_TYPE_FUNC_STR; // code
@@ -179,7 +182,33 @@ static int reloc_comparator(const PEFReloc *a, const PEFReloc *b) {
 	return (a->offset > b->offset) - (a->offset < b->offset);
 }
 
+static bool push_reloc(RList *ret, size_t *reloc_count, ut32 offset, ut32 target, bool isimport) {
+	if (*reloc_count >= PEF_MAX_RELOCATIONS) {
+		return false;
+	}
+	PEFReloc *r = R_NEW0 (PEFReloc);
+	r->offset = offset;
+	r->target = (ut16)target;
+	r->isimport = isimport;
+	r_list_append (ret, r);
+	(*reloc_count)++;
+	return true;
+}
+
 static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
+	ut64 bsz = r_buf_size (b);
+	ut64 reloc_bytes = 0;
+	ut64 reloc_end = 0;
+	size_t reloc_count = 0;
+	if (!b || instCount == 0 || instCount > PEF_MAX_RELOC_INSTRUCTIONS || at >= bsz) {
+		return NULL;
+	}
+	if (r_mul_overflow ((ut64)instCount, (ut64)2, &reloc_bytes)) {
+		return NULL;
+	}
+	if (r_add_overflow ((ut64)at, reloc_bytes, &reloc_end) || reloc_end > bsz) {
+		return NULL;
+	}
 	RList *ret = r_list_newf ((RListFree)free);
 	ut32 codeA = 0, dataA = 1, rSymI = 0, rAddr = 0;
 	ut32 loopInstruct = UT32_MAX;
@@ -190,17 +219,8 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 	if (0) { \
 		char buf[50]; \
 		snprintf (buf, sizeof (buf), format, __VA_ARGS__); \
-		printf ("%05X [% 2d] %04X      %-5s %-19s %d %5d %5d   %08X\n", \
-			at + 2 * printpc, printpc, r_buf_read_be16_at (b, at + 2 * printpc), name, buf, codeA, dataA, rSymI, rAddr); \
-	}
-
-#define PUSH_RELOC(ofs, targ, imp) \
-	{ \
-		PEFReloc *r = R_NEW0 (PEFReloc); \
-		r->offset = ofs; \
-		r->target = targ; \
-		r->isimport = imp; \
-		r_list_append (ret, r); \
+			printf ("%05X [% 2d] %04X      %-5s %-19s %d %5d %5d   %08X\n", \
+				at + 2 * printpc, printpc, r_buf_read_be16_at (b, at + 2 * printpc), name, buf, codeA, dataA, rSymI, rAddr); \
 	}
 
 	ut32 pc = 0;
@@ -212,8 +232,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 		ut32 longop = 0;
 		if (op >= 0xa000) {
 			if (pc >= instCount) {
-				r_list_free (ret);
-				return NULL;
+				goto fail;
 			}
 			longop = ((ut32)op << 16) | r_buf_read_be16_at (b, at + 2 * pc++);
 		}
@@ -226,7 +245,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 
 			rAddr += 4 * skipCount;
 			for (i = 0; i < relocCount; i++) {
-				PUSH_RELOC (rAddr, dataA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, dataA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
 			}
 		} else if (op >= 0x4000 && op <= 0x41ff) {
@@ -235,7 +256,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("CODE", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, codeA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, codeA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
 			}
 		} else if (op >= 0x4200 && op <= 0x43ff) {
@@ -243,7 +266,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("DATA", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, dataA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, dataA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
 			}
 		} else if (op >= 0x4400 && op <= 0x45ff) {
@@ -251,9 +276,13 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("DESC", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, codeA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, codeA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
-				PUSH_RELOC (rAddr, dataA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, dataA, false)) {
+					goto fail;
+				}
 				rAddr += 8;
 			}
 		} else if (op >= 0x4600 && op <= 0x47ff) {
@@ -261,9 +290,13 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("DSC2", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, codeA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, codeA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
-				PUSH_RELOC (rAddr, dataA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, dataA, false)) {
+					goto fail;
+				}
 				rAddr += 4;
 			}
 		} else if (op >= 0x4800 && op <= 0x49ff) {
@@ -271,7 +304,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("VTBL", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, dataA, false);
+				if (!push_reloc (ret, &reloc_count, rAddr, dataA, false)) {
+					goto fail;
+				}
 				rAddr += 8;
 			}
 		} else if (op >= 0x4a00 && op <= 0x4bff) {
@@ -279,7 +314,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 runLength = (op & 0x1ff) + 1;
 			dbg ("SYMR", "cnt=%d", runLength);
 			for (i = 0; i < runLength; i++) {
-				PUSH_RELOC (rAddr, rSymI, true);
+				if (!push_reloc (ret, &reloc_count, rAddr, rSymI, true)) {
+					goto fail;
+				}
 				rAddr += 4;
 				rSymI += 1;
 			}
@@ -288,7 +325,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			ut16 index = op & 0x1ff;
 			;
 			dbg ("SYMB", "idx=%d", index);
-			PUSH_RELOC (rAddr, index, true);
+			if (!push_reloc (ret, &reloc_count, rAddr, index, true)) {
+				goto fail;
+			}
 			rAddr += 4;
 			rSymI = index + 1;
 		} else if (op >= 0x6200 && op <= 0x63ff) {
@@ -305,7 +344,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocSmBySection (SECN)
 			ut16 index = op & 0x1ff;
 			dbg ("SECN", "sct=%d", index);
-			PUSH_RELOC (rAddr, index, false);
+			if (!push_reloc (ret, &reloc_count, rAddr, index, false)) {
+				goto fail;
+			}
 			rAddr += 4;
 		} else if (op >> 12 == 0b1000) {
 			// RelocIncrPosition (DELT)
@@ -319,8 +360,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("RPT", "i=%d,rpt=%d", blockCount, repeatCount);
 
 			if (loopInstruct != UT32_MAX && loopInstruct != pc) {
-				r_list_free (ret);
-				return NULL; // nested loop
+				goto fail; // nested loop
 			}
 			loopInstruct = pc;
 
@@ -330,8 +370,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 				loopDone++;
 				pc--; // rewind over "op"
 				if (blockCount > pc) {
-					r_list_free (ret);
-					return NULL; // can't go back this far
+					goto fail; // can't go back this far
 				}
 				pc -= blockCount;
 			}
@@ -344,7 +383,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// RelocLgByImport (LSYM)
 			ut32 index = longop & 0x3ffffff;
 			dbg ("LSYM", "idx=%d", index);
-			PUSH_RELOC (rAddr, index, true);
+			if (!push_reloc (ret, &reloc_count, rAddr, index, true)) {
+				goto fail;
+			}
 			rAddr += 4;
 			rSymI = index + 1;
 		} else if (op >= 0xb000 && op <= 0xb3ff) {
@@ -354,8 +395,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("LRPT", "i=%d,rpt=%d", blockCount, repeatCount);
 
 			if (loopInstruct != UT32_MAX && loopInstruct != pc) {
-				r_list_free (ret);
-				return NULL; // nested loop
+				goto fail; // nested loop
 			}
 			loopInstruct = pc;
 
@@ -365,8 +405,7 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 				loopDone++;
 				pc -= 2; // rewind over "longop"
 				if (blockCount > pc) {
-					r_list_free (ret);
-					return NULL; // can't go back this far
+					goto fail; // can't go back this far
 				}
 				pc -= blockCount;
 			}
@@ -374,7 +413,9 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			// Same as RelocSmBySection (LSEC LSECN)
 			ut32 index = longop & 0x3fffff;
 			dbg ("LSEC", "LSECN,sct=%d", index);
-			PUSH_RELOC (rAddr, index, false);
+			if (!push_reloc (ret, &reloc_count, rAddr, index, false)) {
+				goto fail;
+			}
 			rAddr += 4;
 		} else if (op >= 0xb440 && op <= 0xb47f) {
 			// Same as RelocSmSetSectC (LSEC LDIS)
@@ -387,16 +428,18 @@ static RList *do_reloc_bytecode(RBuffer *b, ut32 at, ut32 instCount) {
 			dbg ("LSEC", "LDTIS,sct=%d", index);
 			dataA = index;
 		} else {
-			r_list_free (ret);
-			return NULL;
+			goto fail;
 		}
 	}
 	if (r_list_length (ret) == 0) {
-		r_list_free (ret);
-		return NULL;
+		goto fail;
 	}
 	r_list_sort (ret, (RListComparator)reloc_comparator);
 	return ret;
+
+fail:
+	r_list_free (ret);
+	return NULL;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -501,7 +544,13 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 		ut32 firstInst = r_buf_read_be32_at (bf->buf, at + 8);
 
 		if (sec < pef->nsec) {
-			pef->sec[sec].relocs = do_reloc_bytecode (bf->buf, pef->ldrsec + relocInstrOffset + firstInst, instCount);
+			ut64 reloc_at = 0;
+			if (r_add_overflow ((ut64)pef->ldrsec, (ut64)relocInstrOffset, &reloc_at) ||
+				r_add_overflow (reloc_at, (ut64)firstInst, &reloc_at) ||
+				reloc_at > UT32_MAX) {
+				continue;
+			}
+			pef->sec[sec].relocs = do_reloc_bytecode (bf->buf, (ut32)reloc_at, instCount);
 		}
 	}
 

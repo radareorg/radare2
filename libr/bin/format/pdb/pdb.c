@@ -21,12 +21,15 @@
 typedef void(*parse_stream_)(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file);
 
 typedef struct {
+	RBinPdb *pdb;
 	int indx;
 	parse_stream_ parse_stream;
 	void *stream;
 	EStream type;
 	free_func free;
 } SStreamParseFunc;
+
+static void free_info_stream(STpiStream *ss, void *stream);
 
 ///////////////////////////////////////////////////////////////////////////////
 static void free_pdb_stream(STpiStream *ss, void *stream) {
@@ -35,6 +38,107 @@ static void free_pdb_stream(STpiStream *ss, void *stream) {
 		// R_FREE (pdb_stream->pages);
 		pdb_stream->pages = NULL;
 	}
+}
+
+static void free_stream_page(void *ptr) {
+	if (!ptr) {
+		return;
+	}
+	SPage *page = (SPage *)ptr;
+	free (page->stream_pages);
+	page->stream_pages = NULL;
+	free (page);
+}
+
+static STpiStream *get_tpi_stream(RBinPdb *pdb) {
+	if (!pdb || !pdb->pdb_streams) {
+		return NULL;
+	}
+	return r_list_get_n (pdb->pdb_streams, ePDB_STREAM_TPI);
+}
+
+static void free_stream_parse_func(SStreamParseFunc *stream_parse_func) {
+	if (!stream_parse_func) {
+		return;
+	}
+	if (stream_parse_func->free) {
+		stream_parse_func->free (get_tpi_stream (stream_parse_func->pdb), stream_parse_func->stream);
+		free (stream_parse_func->stream);
+		stream_parse_func->stream = NULL;
+	}
+	free (stream_parse_func);
+}
+
+static void free_stream_parse_func_cb(void *ptr) {
+	free_stream_parse_func ((SStreamParseFunc *)ptr);
+}
+
+static void free_root_stream(RBinPdb *pdb) {
+	if (!pdb) {
+		return;
+	}
+	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
+	if (!root_stream) {
+		return;
+	}
+	r_list_free (root_stream->streams_list);
+	root_stream->streams_list = NULL;
+	free (root_stream);
+	pdb->root_stream = NULL;
+}
+
+static void free_pdb_streams2(RBinPdb *pdb) {
+	if (!pdb || !pdb->pdb_streams2) {
+		return;
+	}
+	r_list_free (pdb->pdb_streams2);
+	pdb->pdb_streams2 = NULL;
+}
+
+static void free_pdb_stream_entry(int index, void *entry) {
+	STpiStream *stpi = (STpiStream *)entry;
+	SDbiStream *sdbi = (SDbiStream *)entry;
+	switch (index) {
+	case ePDB_STREAM_PDB:
+		free_info_stream (NULL, entry);
+		free (entry);
+		break;
+	case ePDB_STREAM_TPI:
+		if (stpi->free_) {
+			stpi->free_ (stpi, stpi);
+		}
+		free (stpi);
+		break;
+	case ePDB_STREAM_DBI:
+		if (sdbi->free_) {
+			sdbi->free_ (NULL, sdbi);
+		}
+		free (sdbi);
+		break;
+	default:
+		free_pdb_stream (NULL, entry);
+		free (entry);
+		break;
+	}
+}
+
+static void free_pdb_streams(RBinPdb *pdb) {
+	void *entry;
+	RListIter *it = NULL;
+	int i = 0;
+	if (!pdb || !pdb->pdb_streams) {
+		return;
+	}
+	r_list_foreach (pdb->pdb_streams, it, entry) {
+		if (!entry) {
+			i++;
+			continue;
+		}
+		free_pdb_stream_entry (i, entry);
+		i++;
+	}
+	r_list_free (pdb->pdb_streams);
+	pdb->pdb_streams = NULL;
 }
 
 /**
@@ -171,40 +275,39 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	// short ii;
 	// FILE *tmp_file;
 	tmp_data = ((char *)data + num_streams * 4 + 4);
-	root_stream7->streams_list = r_list_new ();
+	root_stream7->streams_list = r_list_newf ((RListFree)free_stream_page);
 	RList *pList = root_stream7->streams_list;
-	SPage *page = 0;
 	for (i = 0; i < num_streams; i++) {
 		num_pages = count_pages (sizes[i], page_size);
 
 		if ((pos + num_pages) > tmp_data_max_size) {
 			R_LOG_WARN ("looks like there is no correct values of stream size in PDB file");
-			R_FREE (data);
-			R_FREE (sizes);
+			free (data);
+			free (sizes);
 			return 0;
 		}
 		ut32 size;
 		if (r_mul_overflow (num_pages, (ut32)4, &size)) {
 			R_LOG_WARN ("num_pages overflow");
-			R_FREE (data);
-			R_FREE (sizes);
+			free (data);
+			free (sizes);
 			return 0;
 		}
 		if (size > UT16_MAX) {
 			R_LOG_WARN ("too many pages");
-			R_FREE (data);
-			R_FREE (sizes);
+			free (data);
+			free (sizes);
 			return 0;
 		}
 		ut8 *tmp = (ut8 *)calloc (num_pages, 4);
-		page = R_NEW0 (SPage);
+		SPage *page = R_NEW0 (SPage);
 		if (num_pages != 0) {
 			if ((pos + size) > tmp_data_max_size) {
 				R_LOG_ERROR ("Data overrun by num_pages");
-				R_FREE (data);
-				R_FREE (sizes);
-				R_FREE (tmp);
-				R_FREE (page);
+				free (data);
+				free (sizes);
+				free (tmp);
+				free (page);
 				return 0;
 			}
 			memcpy (tmp, tmp_data + pos, num_pages * 4);
@@ -275,11 +378,12 @@ static void free_info_stream(STpiStream *ss, void *stream) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void add_index(RList *list, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
+static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
 	if (index == -1) {
 		return;
 	}
 	SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc);
+	stream_parse_func->pdb = pdb;
 	stream_parse_func->indx = (index);
 	stream_parse_func->type = (stream_type);
 	stream_parse_func->parse_stream = (parse_func);
@@ -293,32 +397,31 @@ static void add_index(RList *list, int index, int stream_size, EStream stream_ty
 	} else {
 		stream_parse_func->stream = 0;
 	}
-	r_list_append ((list), stream_parse_func);
+	r_list_append (list, stream_parse_func);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
-	add_index (l, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream), ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
-	add_index (l, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream), ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
+static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbis) {
+	add_index (l, pdb, dbis->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_section_hdr_orig, sizeof (SPEStream), ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_omap_to_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_omap_from_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_fpo, sizeof (SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
+	add_index (l, pdb, dbis->dbg_header.sn_new_fpo, sizeof (SFPONewStream), ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
 
 	// unparsed, but know their names
-	add_index (l, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
-	add_index (l, dbi_stream->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
-	add_index (l, dbi_stream->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
+	add_index (l, pdb, dbis->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
+	add_index (l, pdb, dbis->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
+	add_index (l, pdb, dbis->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
-	SStreamParseFunc *stream_parse_func = 0;
+	SStreamParseFunc *stream_parse_func;
+	RListIter *it;
 	*res = 0;
-	RListIter *it = r_list_iterator (l);
-	while (r_list_iter_next (it)) {
-		stream_parse_func = (SStreamParseFunc *)r_list_iter_get (it);
+	r_list_foreach (l, it, stream_parse_func) {
 		if (index == stream_parse_func->indx) {
 			*res = stream_parse_func;
 			return;
@@ -339,9 +442,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 	SPage *page = 0;
 	SStreamParseFunc *stream_parse_func = 0;
 
-	it = r_list_iterator (root_stream->streams_list);
-	while (r_list_iter_next (it)) {
-		page = (SPage *)r_list_iter_get (it);
+	r_list_foreach (root_stream->streams_list, it, page) {
 		if (page->stream_pages == 0) {
 			R_LOG_DEBUG ("no stream pages. Skipping");
 			r_list_append (pList, NULL);
@@ -351,7 +452,6 @@ static int pdb_read_root(RBinPdb *pdb) {
 		init_r_stream_file (&stream_file, pdb->buf, (int *)page->stream_pages, page->num_pages /*root_stream->pdb_stream.pages_amount*/, page->stream_size, root_stream->pdb_stream.page_size);
 		switch (i) {
 		// TODO: rewrite for style like for streams from dbg stream
-		// look default
 		case ePDB_STREAM_PDB:
 			pdb_info_stream = R_NEW0 (SPDBInfoStream);
 			pdb_info_stream->free_ = free_info_stream;
@@ -373,14 +473,18 @@ static int pdb_read_root(RBinPdb *pdb) {
 				init_dbi_stream (dbi_stream);
 				parse_dbi_stream (dbi_stream, &stream_file);
 				r_list_append (pList, dbi_stream);
-				pdb->pdb_streams2 = r_list_new ();
-				fill_list_for_stream_parsing (pdb->pdb_streams2, dbi_stream);
+				pdb->pdb_streams2 = r_list_newf (free_stream_parse_func_cb);
+				if (!pdb->pdb_streams2) {
+					return 0;
+				}
+				fill_list_for_stream_parsing (pdb->pdb_streams2, pdb, dbi_stream);
 				break;
 			}
 		default:
 			find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
 			if (stream_parse_func && stream_parse_func->parse_stream) {
 				stream_parse_func->parse_stream (ss, stream_parse_func->stream, &stream_file);
+				r_list_append (pList, NULL);
 				break;
 			}
 
@@ -522,117 +626,18 @@ error:
 }
 
 static void finish_pdb_parse(RBinPdb *pdb) {
-	R_PDB7_ROOT_STREAM *p;
-	RListIter *it;
-	SPage *page = 0;
-
 	if (!pdb) {
 		return;
 	}
-	p = pdb->root_stream;
-	if (p && p->streams_list) {
-		it = r_list_iterator (p->streams_list);
-		while (r_list_iter_next (it)) {
-			page = (SPage *)r_list_iter_get (it);
-			free (page->stream_pages);
-			page->stream_pages = 0;
-			free (page);
-			page = 0;
-		}
-		r_list_free (p->streams_list);
-		p->streams_list = 0;
-	}
-	if (p) {
-		free (p);
-		pdb->root_stream = NULL;
-	}
-	// end of free of R_PDB7_ROOT_STREAM
-
-	// TODO: maybe create some kind of destructor?
-	// free of pdb->pdb_streams
-	// SParsedPDBStream *parsed_pdb_stream = 0;
-	SPDBInfoStream *pdb_info_stream = 0;
-	STpiStream *ss = 0;
-	SDbiStream *dbi_stream = 0;
-	SStreamParseFunc *stream_parse_func;
-	R_PDB_STREAM *pdb_stream = 0;
-	int i = 0;
-#if 1
-	/* r_list_free should be enough, all the items in a list should be freeable using a generic destructor
-	 * hacking up things like that may only produce problems. so it is better to not assume that a specific
-	 * element in a list is of a specific type and just store this info in the type struct or so.
-	 */
-	// XXX: this loop is fucked up. i prefer to leak than crash
-	if (pdb->pdb_streams) {
-		it = r_list_iterator (pdb->pdb_streams);
-		while (r_list_iter_next (it)) {
-			switch (i) {
-			case 1:
-				pdb_info_stream = (SPDBInfoStream *)r_list_iter_get (it);
-				if (pdb_info_stream->free_) {
-					pdb_info_stream->free_(NULL, pdb_info_stream);
-				}
-				free (pdb_info_stream);
-				break;
-			case 2:
-				ss = (STpiStream *)r_list_iter_get (it);
-				break;
-			case 3:
-				dbi_stream = (SDbiStream *)r_list_iter_get (it);
-				if (dbi_stream->free_) {
-					dbi_stream->free_(ss, dbi_stream);
-				}
-				free (dbi_stream);
-				break;
-			default:
-				stream_parse_func = NULL;
-				if (pdb->pdb_streams2) {
-					find_indx_in_list (pdb->pdb_streams2, i, &stream_parse_func);
-				}
-				if (stream_parse_func) {
-					break;
-				}
-				pdb_stream = (R_PDB_STREAM *)r_list_iter_get (it);
-				free_pdb_stream (ss, pdb_stream);
-				free (pdb_stream);
-				break;
-			}
-			i++;
-		}
-	}
-#endif
-	r_list_free (pdb->pdb_streams);
-	pdb->pdb_streams = NULL;
-	// enf of free of pdb->pdb_streams
-
-#if 1
-	// start of free pdb->pdb_streams2
-	if (pdb->pdb_streams2) {
-		it = r_list_iterator (pdb->pdb_streams2);
-		while (r_list_iter_next (it)) {
-			stream_parse_func = (SStreamParseFunc *)r_list_iter_get (it);
-			if (stream_parse_func->free) {
-				stream_parse_func->free (ss, stream_parse_func->stream);
-				free (stream_parse_func->stream);
-			}
-			free (stream_parse_func);
-		}
-	}
-#endif
-	r_list_free (pdb->pdb_streams2);
-	pdb->pdb_streams2 = NULL;
-	// end of free pdb->streams2
-
-	if (ss) {
-		if (ss->free_) {
-			ss->free_(ss, ss);
-		}
-		free (ss);
-	}
-
+	free_root_stream (pdb);
+	free_pdb_streams2 (pdb);
+	free_pdb_streams (pdb);
 	free (pdb->stream_map);
 	pdb->stream_map = NULL;
-	r_unref (pdb->buf);
+	if (pdb->buf) {
+		r_unref (pdb->buf);
+		pdb->buf = NULL;
+	}
 
 	// fclose (pdb->fp);
 	// printf ("finish_pdb_parse()\n");
@@ -668,121 +673,122 @@ static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
  * @param member_format pointer to assert member format to
  * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
  */
+static int direct_type_to_format(ut32 simple_type, char **member_format) {
+	SimpleTypeKind kind = get_simple_type_kind (simple_type);
+	switch (kind) {
+	case PDB_NONE:
+	case PDB_VOID:
+	case PDB_NOT_TRANSLATED:
+	case PDB_HRESULT:
+		return -1;
+	case PDB_SIGNED_CHAR:
+	case PDB_NARROW_CHAR:
+		*member_format = "c";
+		break;
+	case PDB_UNSIGNED_CHAR:
+		*member_format = "b";
+		break;
+	case PDB_SBYTE:
+		*member_format = "n1";
+		break;
+	case PDB_BOOL8:
+	case PDB_BYTE:
+		*member_format = "N1";
+		break;
+	case PDB_INT16_SHORT:
+	case PDB_INT16:
+		*member_format = "n2";
+		break;
+	case PDB_UINT16_SHORT:
+	case PDB_UINT16:
+	case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
+	case PDB_CHAR16:
+	case PDB_BOOL16:
+		*member_format = "N2";
+		break;
+	case PDB_INT32_LONG:
+	case PDB_INT32:
+		*member_format = "n4";
+		break;
+	case PDB_UINT32_LONG:
+	case PDB_UINT32:
+	case PDB_CHAR32:
+	case PDB_BOOL32:
+		*member_format = "N4";
+		break;
+	case PDB_INT64_QUAD:
+	case PDB_INT64:
+		*member_format = "n8";
+		break;
+	case PDB_UINT64_QUAD:
+	case PDB_UINT64:
+	case PDB_BOOL64:
+		*member_format = "N8";
+		break;
+		// TODO these when formatting for them will exist
+	case PDB_INT128_OCT:
+	case PDB_UINT128_OCT:
+	case PDB_INT128:
+	case PDB_UINT128:
+	case PDB_BOOL128:
+		*member_format = "::::";
+		return -2;
+		////////////////////////////////////
+		// TODO these when formatting for them will exist
+		// I assume complex are made up by 2 floats
+	case PDB_COMPLEX16:
+		*member_format = "..";
+		return -2;
+	case PDB_COMPLEX32:
+	case PDB_COMPLEX32_PP:
+		*member_format = ":";
+		return -2;
+	case PDB_COMPLEX48:
+		*member_format = ":.";
+		return -2;
+	case PDB_COMPLEX64:
+		*member_format = "::";
+		return -2;
+	case PDB_COMPLEX80:
+		*member_format = "::..";
+		return -2;
+	case PDB_COMPLEX128:
+		*member_format = "::::";
+		return -2;
+
+	case PDB_FLOAT32:
+	case PDB_FLOAT32_PP:
+		*member_format = "f";
+		break;
+	case PDB_FLOAT64:
+		*member_format = "F";
+		break;
+		////////////////////////////////////
+		// TODO these when formatting for them will exist
+	case PDB_FLOAT16:
+		*member_format = "..";
+		return -2;
+	case PDB_FLOAT48:
+		*member_format = ":.";
+		return -2;
+	case PDB_FLOAT80:
+		*member_format = "::..";
+		return -2;
+	case PDB_FLOAT128:
+		*member_format = "::::";
+		return -2;
+	default:
+		R_WARN_IF_REACHED ();
+		break;
+	}
+	return 0;
+}
+
 static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **member_format) {
 	SimpleTypeMode mode = get_simple_type_mode (simple_type->simple_type);
 	switch (mode) {
 	case DIRECT:
-		{
-			SimpleTypeKind kind = get_simple_type_kind (simple_type->simple_type);
-			switch (kind) {
-			case PDB_NONE:
-			case PDB_VOID:
-			case PDB_NOT_TRANSLATED:
-			case PDB_HRESULT:
-				return -1;
-				break;
-			case PDB_SIGNED_CHAR:
-			case PDB_NARROW_CHAR:
-				*member_format = "c";
-				break;
-			case PDB_UNSIGNED_CHAR:
-				*member_format = "b";
-				break;
-			case PDB_SBYTE:
-				*member_format = "n1";
-				break;
-			case PDB_BOOL8:
-			case PDB_BYTE:
-				*member_format = "N1";
-				break;
-			case PDB_INT16_SHORT:
-			case PDB_INT16:
-				*member_format = "n2";
-				break;
-			case PDB_UINT16_SHORT:
-			case PDB_UINT16:
-			case PDB_WIDE_CHAR: // TODO what ideal format for wchar?
-			case PDB_CHAR16:
-			case PDB_BOOL16:
-				*member_format = "N2";
-				break;
-			case PDB_INT32_LONG:
-			case PDB_INT32:
-				*member_format = "n4";
-				break;
-			case PDB_UINT32_LONG:
-			case PDB_UINT32:
-			case PDB_CHAR32:
-			case PDB_BOOL32:
-				*member_format = "N4";
-				break;
-			case PDB_INT64_QUAD:
-			case PDB_INT64:
-				*member_format = "n8";
-				break;
-			case PDB_UINT64_QUAD:
-			case PDB_UINT64:
-			case PDB_BOOL64:
-				*member_format = "N8";
-				break;
-				// TODO these when formatting for them will exist
-			case PDB_INT128_OCT:
-			case PDB_UINT128_OCT:
-			case PDB_INT128:
-			case PDB_UINT128:
-			case PDB_BOOL128:
-				*member_format = "::::";
-				return -2;
-				////////////////////////////////////
-				// TODO these when formatting for them will exist
-				// I assume complex are made up by 2 floats
-			case PDB_COMPLEX16:
-				*member_format = "..";
-				return -2;
-			case PDB_COMPLEX32:
-			case PDB_COMPLEX32_PP:
-				*member_format = ":";
-				return -2;
-			case PDB_COMPLEX48:
-				*member_format = ":.";
-				return -2;
-			case PDB_COMPLEX64:
-				*member_format = "::";
-				return -2;
-			case PDB_COMPLEX80:
-				*member_format = "::..";
-				return -2;
-			case PDB_COMPLEX128:
-				*member_format = "::::";
-				return -2;
-
-			case PDB_FLOAT32:
-			case PDB_FLOAT32_PP:
-				*member_format = "f";
-				break;
-			case PDB_FLOAT64:
-				*member_format = "F";
-				break;
-				////////////////////////////////////
-				// TODO these when formatting for them will exist
-			case PDB_FLOAT16:
-				*member_format = "..";
-				return -2;
-			case PDB_FLOAT48:
-				*member_format = ":.";
-				return -2;
-			case PDB_FLOAT80:
-				*member_format = "::..";
-				return -2;
-			case PDB_FLOAT128:
-				*member_format = "::::";
-				return -2;
-			default:
-				R_WARN_IF_REACHED ();
-				break;
-			}
-			break;
-		}
+		return direct_type_to_format (simple_type->simple_type, member_format);
 	case NEAR_POINTER:
 		*member_format = "p2";
 		break;
@@ -997,9 +1003,9 @@ static void print_struct(STpiStream *ss, const char *name, const int size, const
 	R_RETURN_IF_FAIL (name && printf);
 	printf ("struct %s { // size 0x%x\n", name, size);
 
-	RListIter *member_iter = r_list_iterator (members);
-	while (r_list_iter_next (member_iter)) {
-		STypeInfo *type_info = r_list_iter_get (member_iter);
+	STypeInfo *type_info;
+	RListIter *member_iter;
+	r_list_foreach (members, member_iter, type_info) {
 		char *member_name = NULL;
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &member_name);
@@ -1032,9 +1038,9 @@ static void print_union(STpiStream *ss, const char *name, const int size, const 
 	const char *n = R_STR_ISEMPTY (name)? "<unnamed>": name;
 	printf ("union %s { // size 0x%x\n", n, size);
 
-	RListIter *member_iter = r_list_iterator (members);
-	while (r_list_iter_next (member_iter)) {
-		STypeInfo *type_info = r_list_iter_get (member_iter);
+	STypeInfo *type_info;
+	RListIter *member_iter;
+	r_list_foreach (members, member_iter, type_info) {
 		char *member_name = NULL;
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &member_name);
@@ -1066,9 +1072,9 @@ static void print_enum(STpiStream *ss, const char *name, const char *type, const
 	R_RETURN_IF_FAIL (name && printf);
 	printf ("enum %s { // type: %s\n", name, type);
 
-	RListIter *member_iter = r_list_iterator (members);
-	while (r_list_iter_next (member_iter)) {
-		STypeInfo *type_info = r_list_iter_get (member_iter);
+	STypeInfo *type_info;
+	RListIter *member_iter;
+	r_list_foreach (members, member_iter, type_info) {
 		char *member_name = NULL;
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &member_name);
@@ -1091,10 +1097,9 @@ static void print_enum(STpiStream *ss, const char *name, const char *type, const
  */
 static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types);
-	RListIter *it = r_list_iterator (types);
-
-	while (r_list_iter_next (it)) {
-		SType *type = r_list_iter_get (it);
+	SType *type;
+	RListIter *it;
+	r_list_foreach (types, it, type) {
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
 		if (!type || !is_printable_type (type_info->leaf_type)) {
@@ -1150,12 +1155,12 @@ static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList 
 static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types && pj);
 
-	RListIter *it = r_list_iterator (types);
+	SType *type;
+	RListIter *it;
 
 	pj_ka (pj, "types");
 
-	while (r_list_iter_next (it)) {
-		SType *type = r_list_iter_get (it);
+	r_list_foreach (types, it, type) {
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types
 		if (!type || !is_printable_type (type_info->leaf_type)) {
@@ -1201,21 +1206,21 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 				pj_ka (pj, "members");
 
 				if (members) {
-					RListIter *member_iter = r_list_iterator (members);
-					while (r_list_iter_next (member_iter)) {
+					STypeInfo *minfo;
+					RListIter *member_iter;
+					r_list_foreach (members, member_iter, minfo) {
 						pj_o (pj);
-						STypeInfo *type_info = r_list_iter_get (member_iter);
 						char *member_name = NULL;
-						if (type_info->get_name) {
-							type_info->get_name (ss, type_info, &member_name);
+						if (minfo->get_name) {
+							minfo->get_name (ss, minfo, &member_name);
 						}
 						int offset = 0;
-						if (type_info->get_val) {
-							type_info->get_val (ss, type_info, &offset);
+						if (minfo->get_val) {
+							minfo->get_val (ss, minfo, &offset);
 						}
 						char *type_name = NULL;
-						if (type_info->get_print_type) {
-							type_info->get_print_type (ss, type_info, &type_name);
+						if (minfo->get_print_type) {
+							minfo->get_print_type (ss, minfo, &type_name);
 						}
 						pj_ks (pj, "member_type", type_name);
 						pj_ks (pj, "member_name", member_name);
@@ -1237,17 +1242,17 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 				pj_ka (pj, "cases");
 
 				if (members) {
-					RListIter *member_iter = r_list_iterator (members);
-					while (r_list_iter_next (member_iter)) {
+					STypeInfo *minfo;
+					RListIter *member_iter;
+					r_list_foreach (members, member_iter, minfo) {
 						pj_o (pj);
-						STypeInfo *type_info = r_list_iter_get (member_iter);
 						char *member_name = NULL;
-						if (type_info->get_name) {
-							type_info->get_name (ss, type_info, &member_name);
+						if (minfo->get_name) {
+							minfo->get_name (ss, minfo, &member_name);
 						}
 						int value = 0;
-						if (type_info->get_val) {
-							type_info->get_val (ss, type_info, &value);
+						if (minfo->get_val) {
+							minfo->get_val (ss, minfo, &value);
 						}
 						pj_ks (pj, "enum_name", member_name);
 						pj_kn (pj, "enum_val", value);
@@ -1276,10 +1281,10 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
  */
 static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
 	R_RETURN_IF_FAIL (pdb && types);
-	RListIter *it = r_list_iterator (types);
+	SType *type;
+	RListIter *it;
 	bool to_free_name = false;
-	while (r_list_iter_next (it)) {
-		SType *type = r_list_iter_get (it);
+	r_list_foreach (types, it, type) {
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
 		if (!type || !is_printable_type (type_info->leaf_type) || type_info->leaf_type == eLF_ENUM) {
@@ -1319,9 +1324,9 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 			r_strbuf_append (&format, "0"); // every type start from the offset 0
 		}
 
-		RListIter *member_iter = r_list_iterator (members);
-		while (r_list_iter_next (member_iter)) {
-			STypeInfo *member_info = r_list_iter_get (member_iter);
+		STypeInfo *member_info;
+		RListIter *member_iter;
+		r_list_foreach (members, member_iter, member_info) {
 			switch (type_info->leaf_type) {
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
@@ -1379,19 +1384,15 @@ static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
-	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp = 0;
+	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp;
 	SIMAGE_SECTION_HEADER *sctn_header = 0;
 	SGDATAStream *gsym_data_stream = 0;
 	SPEStream *pe_stream = 0;
-	SGlobal *gdata = 0;
-	RListIter *it = 0;
-	RList *l = 0;
+	SGlobal *gdata;
+	RListIter *it;
 	char *name;
 
-	l = pdb->pdb_streams2;
-	it = r_list_iterator (l);
-	while (r_list_iter_next (it)) {
-		tmp = (SStreamParseFunc *)r_list_iter_get (it);
+	r_list_foreach (pdb->pdb_streams2, it, tmp) {
 		switch (tmp->type) {
 		case ePDB_STREAM_SECT__HDR_ORIG:
 			sctns_orig = tmp;
@@ -1428,9 +1429,7 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	if (!pe_stream) {
 		return;
 	}
-	it = r_list_iterator (gsym_data_stream->globals_list);
-	while (r_list_iter_next (it)) {
-		gdata = (SGlobal *)r_list_iter_get (it);
+	r_list_foreach (gsym_data_stream->globals_list, it, gdata) {
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			char *filtered_name;
