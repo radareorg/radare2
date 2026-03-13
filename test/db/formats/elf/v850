@@ -51,6 +51,7 @@ rpath    NONE
 sanitize false
 static   true
 stripped false
+uncaps   false
 subsys   linux
 va       true
             0x00100004      3506ffff0000   mov 0xffff, r21

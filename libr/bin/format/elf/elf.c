@@ -2399,6 +2399,9 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 }
 
 static bool has_interp_program_header(ELFOBJ *eo) {
+	if (!eo || !eo->phdr) {
+		return false;
+	}
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_phnum; i++) {
 		if (eo->phdr[i].p_type == PT_INTERP) {
@@ -2415,9 +2418,25 @@ static bool is_known_runtime_export(const char *name) {
 		!strcmp (name, "__do_global_dtors_aux") || !strcmp (name, "frame_dummy");
 }
 
-static bool has_public_executable_dynsym(ELFOBJ *eo) {
+static const char *normalized_visibility_name(const char *name) {
+	while (name && *name == '_') {
+		name++;
+	}
+	return name;
+}
+
+static bool is_suspicious_library_export(const char *name) {
+	name = normalized_visibility_name (name);
+	return R_STR_ISNOTEMPTY (name) && (!strcmp (name, "main") ||
+		r_str_casestr (name, "hidden") || r_str_casestr (name, "helper"));
+}
+
+static bool has_public_visibility_leaks(ELFOBJ *eo) {
 	R_RETURN_VAL_IF_FAIL (eo, false);
-	if (eo->ehdr.e_type != ET_DYN || Elf_(is_static) (eo) || !has_interp_program_header (eo)) {
+	const bool executable_like = eo->ehdr.e_type == ET_EXEC ||
+		(eo->ehdr.e_type == ET_DYN && !Elf_(is_static) (eo) && has_interp_program_header (eo));
+	const bool library_like = eo->ehdr.e_type == ET_DYN && !has_interp_program_header (eo);
+	if (!executable_like && !library_like) {
 		return false;
 	}
 	if (!Elf_(load_symbols) (eo)) {
@@ -2435,17 +2454,22 @@ static bool has_public_executable_dynsym(ELFOBJ *eo) {
 		if (strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
 			continue;
 		}
-		if (!is_known_runtime_export (name)) {
+		if (executable_like && !is_known_runtime_export (name)) {
+			return true;
+		}
+		if (library_like && is_suspicious_library_export (name)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
+bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms, bool *have_uncaps) {
 	*have_lines = false;
 	*have_syms = false;
+	*have_uncaps = false;
 	if (!eo->shdr) {
+		*have_uncaps = has_public_visibility_leaks (eo);
 		return true;
 	}
 	RBinElfSection *sec = get_section_by_name (eo, ".gnu_debugdata");
@@ -2461,12 +2485,10 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
 	}
 	// TODO: check for named relocs and return R_BIN_DBG_RELOCS
 	if (*have_lines || *have_syms) {
+		*have_uncaps = has_public_visibility_leaks (eo);
 		return false;
 	}
-	if (has_public_executable_dynsym (eo)) {
-		*have_syms = true;
-		return false;
-	}
+	*have_uncaps = has_public_visibility_leaks (eo);
 	return true;
 }
 

@@ -607,6 +607,7 @@ json.bin.rpath = "NONE";
 json.bin.sanitize = false;
 json.bin.static = false;
 json.bin.stripped = false;
+json.bin.uncaps = true;
 json.bin.subsys = "linux";
 json.bin.va = true;
 json.bin.checksums = {};

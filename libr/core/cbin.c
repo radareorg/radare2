@@ -1026,6 +1026,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				}
 			}
 			pair_bool (core, pj, "stripped", R_BIN_DBG_STRIPPED & info->dbg_info);
+			pair_bool (core, pj, "uncaps", R_BIN_DBG_UNCAPS & info->dbg_info);
 			pair_str (core, pj, "subsys", info->subsystem);
 			pair_bool (core, pj, "va", info->has_va);
 		}

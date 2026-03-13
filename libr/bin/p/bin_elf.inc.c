@@ -1601,7 +1601,8 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->dbg_info = 0;
 	bool have_lines = false;
 	bool have_syms = false;
-	if (Elf_(get_stripped) (obj, &have_lines, &have_syms)) {
+	bool have_uncaps = false;
+	if (Elf_(get_stripped) (obj, &have_lines, &have_syms, &have_uncaps)) {
 		ret->dbg_info |= R_BIN_DBG_STRIPPED;
 	} else {
 		if (have_lines) {
@@ -1611,6 +1612,9 @@ static RBinInfo* info(RBinFile *bf) {
 			ret->dbg_info |= R_BIN_DBG_SYMS;
 			ret->dbg_info |= R_BIN_DBG_RELOCS; // maybe not
 		}
+	}
+	if (have_uncaps) {
+		ret->dbg_info |= R_BIN_DBG_UNCAPS;
 	}
 	if (Elf_(is_static) (obj)) {
 		ret->dbg_info |= R_BIN_DBG_STATIC;

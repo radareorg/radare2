@@ -3026,26 +3026,29 @@ typedef struct fill_context_t {
 	HtPP *hash;
 	ut64 boffset;
 	ut32 *ordinal;
-	bool strip_sensitive_exports;
-	bool has_nonruntime_export;
 } FillCtx;
 
 static bool apple_symbol(const char *sym_name);
 
-static bool export_affects_strip_state(struct MACH0_(obj_t) *mo) {
-	switch (mo->hdr.filetype) {
-	case MH_EXECUTE:
-	case MH_BUNDLE:
-	case MH_KEXT_BUNDLE:
-		return true;
-	default:
-		return false;
+static const char *normalized_visibility_name(const char *name) {
+	while (name && *name == '_') {
+		name++;
 	}
+	return name;
+}
+
+static bool is_suspicious_library_export(const char *name) {
+	name = normalized_visibility_name (name);
+	return R_STR_ISNOTEMPTY (name) && (!strcmp (name, "main") ||
+		r_str_casestr (name, "hidden") || r_str_casestr (name, "helper"));
 }
 
 static bool has_nonruntime_public_symbols(struct MACH0_(obj_t) *mo) {
 	R_RETURN_VAL_IF_FAIL (mo, false);
-	if (!export_affects_strip_state (mo)) {
+	const bool executable_like = mo->hdr.filetype == MH_EXECUTE ||
+		mo->hdr.filetype == MH_BUNDLE || mo->hdr.filetype == MH_KEXT_BUNDLE;
+	const bool dylib_like = mo->hdr.filetype == MH_DYLIB;
+	if (!executable_like && !dylib_like) {
 		return false;
 	}
 	RBinSymbol *sym;
@@ -3057,7 +3060,10 @@ static bool has_nonruntime_public_symbols(struct MACH0_(obj_t) *mo) {
 		if (strcmp (sym->bind, R_BIN_BIND_GLOBAL_STR)) {
 			continue;
 		}
-		if (!apple_symbol (name)) {
+		if (executable_like && !apple_symbol (name)) {
+			return true;
+		}
+		if (dylib_like && is_suspicious_library_export (name)) {
 			return true;
 		}
 	}
@@ -3080,9 +3086,6 @@ static void _fill_exports(struct MACH0_(obj_t) * mo, const char *name, ut64 flag
 	sym->bind = R_BIN_BIND_GLOBAL_STR;
 	sym->ordinal = (*context->ordinal)++;
 	_enrich_symbol (context->bf, mo, context->symcache, sym);
-	if (context->strip_sensitive_exports && !apple_symbol (name)) {
-		context->has_nonruntime_export = true;
-	}
 }
 
 static bool apple_symbol(const char *sym_name) {
@@ -3163,7 +3166,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		.hash = hash,
 		.boffset = obj->boffset,
 		.ordinal = &ordinal,
-		.strip_sensitive_exports = export_affects_strip_state (mo),
 	};
 	walk_exports (mo, _fill_exports, &fill_context);
 
@@ -3188,7 +3190,7 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 	j = 0; // symbol_idx
 	mo->main_addr = UT64_MAX;
 	int bits = MACH0_(get_bits_from_hdr) (&mo->hdr);
-	bool is_stripped = !fill_context.has_nonruntime_export;
+	bool is_stripped = true;
 	const int limit = bf->rbin->options.limit;
 	for (s = 0; s < 2; s++) {
 		if (!dysym_bounds (mo, s, &from, &to)) {
@@ -3326,9 +3328,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 			j++;
 		}
 	}
-	if (has_nonruntime_public_symbols (mo)) {
-		is_stripped = false;
-	}
 	if (is_stripped) {
 		mo->dbg_info |= R_BIN_DBG_STRIPPED;
 	}
@@ -3457,7 +3456,9 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 		ht_pp_free (symcache);
 	}
 	if (has_nonruntime_public_symbols (mo)) {
-		mo->dbg_info &= ~R_BIN_DBG_STRIPPED;
+		mo->dbg_info |= R_BIN_DBG_UNCAPS;
+	} else {
+		mo->dbg_info &= ~R_BIN_DBG_UNCAPS;
 	}
 
 	if (is_debug_build (mo->options.bf, mo)) {

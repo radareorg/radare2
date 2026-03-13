@@ -247,6 +247,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 subsys   baseband
 va       true
 nth paddr       size vaddr       vsize perm flags type name

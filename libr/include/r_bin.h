@@ -27,6 +27,7 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_DBG_LINENUMS 0x04
 #define R_BIN_DBG_SYMS     0x08
 #define R_BIN_DBG_RELOCS   0x10
+#define R_BIN_DBG_UNCAPS   0x20
 
 #define R_BIN_ENTRY_TYPE_PROGRAM 0
 #define R_BIN_ENTRY_TYPE_MAIN    1

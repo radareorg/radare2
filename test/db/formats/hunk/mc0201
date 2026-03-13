@@ -35,6 +35,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 va       true
  .------------------------------.
  |  0x24                        |
