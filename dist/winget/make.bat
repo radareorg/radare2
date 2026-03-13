@@ -11,10 +11,16 @@ call ninja.exe --version > NUL 2> NUL && (
   if EXIST b (
     call ninja.exe -C b -j 2 && (
       echo Installing r2 in %CD%\prefix
-      set DESTDIR=%CD%\prefix
+      set "DESTDIR=%CD%\prefix"
       rmdir /q /s prefix 2> NUL
-      call ninja -C b install > NUL
-      copy /y C:\WINDOWS\System32\vcruntime140.dll %DESTDIR%\bin\vcruntime140.dll
+      call ninja.exe -C b install > NUL || (
+        echo Ninja install has failed
+        exit /b 1
+      )
+      copy /y C:\WINDOWS\System32\vcruntime140.dll "%CD%\prefix\bin\vcruntime140.dll" || (
+        echo Copying vcruntime140.dll has failed
+        exit /b 1
+      )
       REM Create zip package
       if EXIST radare2-6.0.7-w64.zip del radare2-6.0.7-w64.zip
       powershell "Compress-Archive -Path prefix\* -DestinationPath radare2-6.0.7-w64.zip"

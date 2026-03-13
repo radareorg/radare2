@@ -11,11 +11,17 @@ call ninja.exe --version > NUL 2> NUL && (
     REM meson compile -C b
     call ninja.exe -C b -j 2 && (
       echo Installing r2 in %CD%\prefix
-      set DESTDIR=%CD%\prefix
+      set "DESTDIR=%CD%\prefix"
       rmdir /q /s prefix 2> NUL
       REM meson install -C b
-      call ninja -C b install > NUL
-      copy /y C:\WINDOWS\System32\vcruntime140.dll %DESTDIR%\bin\vcruntime140.dll
+      call ninja.exe -C b install > NUL || (
+        echo Ninja install has failed
+        exit /b 1
+      )
+      copy /y C:\WINDOWS\System32\vcruntime140.dll "%CD%\prefix\bin\vcruntime140.dll" || (
+        echo Copying vcruntime140.dll has failed
+        exit /b 1
+      )
       exit /b 0
     ) || (
       echo Ninja compilation has failed
