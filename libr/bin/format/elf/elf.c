@@ -4821,6 +4821,26 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 	return true;
 }
 
+static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
+	ut64 bound = eo->size;
+	if (eo->dyn_info.dt_strtab != R_BIN_ELF_ADDR_MAX) {
+		ut64 strtab_addr = Elf_(v2p_new) (eo, eo->dyn_info.dt_strtab);
+		if (strtab_addr != UT64_MAX && strtab_addr > addr_sym_table) {
+			bound = R_MIN (bound, strtab_addr);
+		}
+	}
+	if (eo->shdr && eo->ehdr.e_shnum && eo->ehdr.e_shnum != 0xffff) {
+		int i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			ut64 sh_offset = eo->shdr[i].sh_offset;
+			if (sh_offset > addr_sym_table) {
+				bound = R_MIN (bound, sh_offset);
+			}
+		}
+	}
+	return bound;
+}
+
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	R_RETURN_VAL_IF_FAIL (eo, NULL);
 
@@ -4837,8 +4857,14 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		return NULL;
 	}
 
-	// since ELF doesn't specify the symbol table size we may read until the end of the buffer
-	int nsym = (eo->size - addr_sym_table) / sym_size;
+	ut64 symtab_end = get_phdr_symtab_upper_bound (eo, addr_sym_table);
+	if (symtab_end <= addr_sym_table) {
+		return NULL;
+	}
+
+	// Stop at the next table boundary so the phdr fallback does not decode
+	// adjacent dynamic metadata as synthetic dynsym entries.
+	int nsym = (symtab_end - addr_sym_table) / sym_size;
 	if (nsym < 1) {
 		return NULL;
 	}

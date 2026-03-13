@@ -465,7 +465,7 @@ rpath    NONE
 sanitize false
 static   true
 stripped false
-uncaps   false
+uncaps   true
 subsys   linux
 va       true
 EOF
