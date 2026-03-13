@@ -61,3 +61,23 @@ EXPECT=<<EOF
 stripped true
 EOF
 RUN
+
+NAME=stripped check 6
+FILE=bins/mach0/hello-osx-x86_64
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped false
+EOF
+RUN
+
+NAME=stripped check 7
+FILE=bins/mach0/Alamofire-stripped
+CMDS=<<EOF
+i~^stripp
+EOF
+EXPECT=<<EOF
+stripped true
+EOF
+RUN
