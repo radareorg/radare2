@@ -5723,7 +5723,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 
 					  case 0xC: /* 8-bit negative immediate offset.  */
-						  offset = -i8;
+						  offset = -(int)i8;
 						  break;
 
 					  case 0xF: /* 8-bit + preindex with wb.  */
@@ -5732,7 +5732,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 
 					  case 0xD: /* 8-bit - preindex with wb.  */
-						  offset = -i8;
+						  offset = -(int)i8;
 						  writeback = TRUE;
 						  break;
 
@@ -5742,7 +5742,7 @@ print_insn_thumb32 (bfd_vma pc, struct disassemble_info *info, long given)
 						  break;
 
 					  case 0x9: /* 8-bit - postindex.  */
-						  offset = -i8;
+						  offset = -(int)i8;
 						  postind = TRUE;
 						  break;
 
