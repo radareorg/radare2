@@ -2,9 +2,11 @@ NAME=stripped check 0
 FILE=bins/mach0/aout-notstripped
 CMDS=<<EOF
 i~^stripp
+i~^uncaps
 EOF
 EXPECT=<<EOF
 stripped false
+uncaps   true
 EOF
 RUN
 
@@ -12,9 +14,11 @@ NAME=stripped check 1
 FILE=bins/mach0/aout-stripped
 CMDS=<<EOF
 i~^stripp
+i~^uncaps
 EOF
 EXPECT=<<EOF
 stripped true
+uncaps   false
 EOF
 RUN
 
@@ -23,9 +27,11 @@ FILE=bins/mach0/aout-notstripped
 CMDS=<<EOF
 %RABIN2_MACHO_NOFUNCSTARTS=0
 !!rabin2 -I bins/mach0/aout-notstripped~^strip
+!!rabin2 -I bins/mach0/aout-notstripped~^uncaps
 EOF
 EXPECT=<<EOF
 stripped false
+uncaps   true
 EOF
 RUN
 
@@ -34,9 +40,11 @@ FILE=bins/mach0/aout-stripped
 CMDS=<<EOF
 %RABIN2_MACHO_NOFUNCSTARTS=0
 !!rabin2 -I bins/mach0/aout-stripped~^strip
+!!rabin2 -I bins/mach0/aout-stripped~^uncaps
 EOF
 EXPECT=<<EOF
 stripped true
+uncaps   false
 EOF
 RUN
 
@@ -45,9 +53,11 @@ FILE=bins/mach0/aout-notstripped
 CMDS=<<EOF
 %RABIN2_MACHO_NOFUNCSTARTS=1
 !!rabin2 -I bins/mach0/aout-notstripped~^strip
+!!rabin2 -I bins/mach0/aout-notstripped~^uncaps
 EOF
 EXPECT=<<EOF
 stripped false
+uncaps   true
 EOF
 RUN
 
@@ -56,9 +66,11 @@ FILE=bins/mach0/aout-stripped
 CMDS=<<EOF
 %RABIN2_MACHO_NOFUNCSTARTS=1
 !!rabin2 -I bins/mach0/aout-stripped~^strip
+!!rabin2 -I bins/mach0/aout-stripped~^uncaps
 EOF
 EXPECT=<<EOF
 stripped true
+uncaps   false
 EOF
 RUN
 
@@ -66,9 +78,11 @@ NAME=stripped check 6
 FILE=bins/mach0/hello-osx-x86_64
 CMDS=<<EOF
 i~^stripp
+i~^uncaps
 EOF
 EXPECT=<<EOF
-stripped false
+stripped true
+uncaps   true
 EOF
 RUN
 
@@ -76,8 +90,10 @@ NAME=stripped check 7
 FILE=bins/mach0/Alamofire-stripped
 CMDS=<<EOF
 i~^stripp
+i~^uncaps
 EOF
 EXPECT=<<EOF
 stripped true
+uncaps   false
 EOF
 RUN

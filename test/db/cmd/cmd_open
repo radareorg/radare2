@@ -565,6 +565,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped true
+uncaps   false
 subsys   linux
 va       true
 --
@@ -614,12 +615,12 @@ ob 1
 is~?
 EOF
 EXPECT=<<EOF
-132
+135
 138
 --
-270
+273
 --
-132
+135
 138
 EOF
 RUN
@@ -669,6 +670,7 @@ relocs   true
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   darwin
 va       true
 -- o

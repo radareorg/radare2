@@ -47,6 +47,7 @@ relocs   false
 sanitize false
 static   false
 stripped false
+uncaps   false
 subsys   any
 va       false
   ;-- entry1:

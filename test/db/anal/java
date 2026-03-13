@@ -241,6 +241,7 @@ pic      false
 relocs   false
 static   false
 stripped false
+uncaps   false
 subsys   any
 va       false
   ;-- entry0:

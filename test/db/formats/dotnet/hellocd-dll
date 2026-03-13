@@ -51,6 +51,7 @@ signed   false
 sanitize false
 static   false
 stripped false
+uncaps   false
 subsys   dotnet
 va       true
 versions

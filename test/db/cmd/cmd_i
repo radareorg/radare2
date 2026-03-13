@@ -204,6 +204,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -1260,6 +1261,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -1301,6 +1303,7 @@ EXPECT=<<EOF
   "sanitize": false,
   "static": false,
   "stripped": false,
+  "uncaps": true,
   "subsys": "linux",
   "va": true,
   "checksums": {
@@ -2715,6 +2718,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -2802,6 +2806,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -3565,10 +3570,11 @@ NAME=ii dupped imports
 FILE=bins/elf/varsub
 CMDS=ii
 EXPECT=<<EOF
-nth vaddr      bind   type   lib name
--------------------------------------
-1   ---------- GLOBAL FUNC       __libc_start_main
-2   ---------- WEAK   NOTYPE     __gmon_start__
+nth vaddr           bind   type   lib name
+------------------------------------------
+1   ----------      GLOBAL FUNC       __libc_start_main
+2   ----------      WEAK   NOTYPE     __gmon_start__
+6   0x2000009691a75 LOCAL  NOTYPE     c_start_main
 EOF
 RUN
 
