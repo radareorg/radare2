@@ -21,6 +21,7 @@
 typedef void(*parse_stream_)(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file);
 
 typedef struct {
+	RBinPdb *pdb;
 	int indx;
 	parse_stream_ parse_stream;
 	void *stream;
@@ -49,16 +50,27 @@ static void free_stream_page(void *ptr) {
 	free (page);
 }
 
-static void free_stream_parse_func(STpiStream *ss, SStreamParseFunc *stream_parse_func) {
+static STpiStream *get_tpi_stream(RBinPdb *pdb) {
+	if (!pdb || !pdb->pdb_streams) {
+		return NULL;
+	}
+	return r_list_get_n (pdb->pdb_streams, ePDB_STREAM_TPI);
+}
+
+static void free_stream_parse_func(SStreamParseFunc *stream_parse_func) {
 	if (!stream_parse_func) {
 		return;
 	}
 	if (stream_parse_func->free) {
-		stream_parse_func->free (ss, stream_parse_func->stream);
+		stream_parse_func->free (get_tpi_stream (stream_parse_func->pdb), stream_parse_func->stream);
 		free (stream_parse_func->stream);
 		stream_parse_func->stream = NULL;
 	}
 	free (stream_parse_func);
+}
+
+static void free_stream_parse_func_cb(void *ptr) {
+	free_stream_parse_func ((SStreamParseFunc *)ptr);
 }
 
 static void free_root_stream(RBinPdb *pdb) {
@@ -75,18 +87,9 @@ static void free_root_stream(RBinPdb *pdb) {
 	pdb->root_stream = NULL;
 }
 
-static void free_pdb_streams2(RBinPdb *pdb, STpiStream *ss) {
-	RListIter *it;
-	SStreamParseFunc *stream_parse_func;
+static void free_pdb_streams2(RBinPdb *pdb) {
 	if (!pdb || !pdb->pdb_streams2) {
 		return;
-	}
-// TODO why not use r_list_foreach or r_list_foreach_safe here? keep it simple
-// AITODO: investigate why we cant just use the rlist->free callback instead of iterating and freeing here and keep it simple!
-	it = r_list_iterator (pdb->pdb_streams2);
-	while (r_list_iter_next (it)) {
-		stream_parse_func = (SStreamParseFunc *)r_list_iter_get (it);
-		free_stream_parse_func (ss, stream_parse_func);
 	}
 	r_list_free (pdb->pdb_streams2);
 	pdb->pdb_streams2 = NULL;
@@ -98,7 +101,7 @@ static void free_pdb_streams(RBinPdb *pdb) {
 	if (!pdb || !pdb->pdb_streams) {
 		return;
 	}
-// XXX why not use r_list_foreach or r_list_foreach_safe here? keep it simple
+// AITODO why not use r_list_foreach or r_list_foreach_safe here? keep it simple 
 	RListIter *it = r_list_iterator (pdb->pdb_streams);
 	while (r_list_iter_next (it)) {
 		entry = r_list_iter_get (it);
@@ -378,11 +381,12 @@ static void free_info_stream(STpiStream *ss, void *stream) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void add_index(RList *list, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
+static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
 	if (index == -1) {
 		return;
 	}
 	SStreamParseFunc *stream_parse_func = R_NEW0 (SStreamParseFunc);
+	stream_parse_func->pdb = pdb;
 	stream_parse_func->indx = (index);
 	stream_parse_func->type = (stream_type);
 	stream_parse_func->parse_stream = (parse_func);
@@ -400,19 +404,19 @@ static void add_index(RList *list, int index, int stream_size, EStream stream_ty
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static void fill_list_for_stream_parsing(RList *l, SDbiStream *dbi_stream) {
-	add_index (l, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream), ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
-	add_index (l, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
-	add_index (l, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream), ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
+static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbi_stream) {
+	add_index (l, pdb, dbi_stream->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_section_hdr_orig, sizeof (SPEStream), ePDB_STREAM_SECT__HDR_ORIG, free_pe_stream, parse_pe_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_omap_to_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_TO_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_omap_from_src, sizeof (SOmapStream), ePDB_STREAM_OMAP_FROM_SRC, free_omap_stream, parse_omap_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_fpo, sizeof (SFPOStream), ePDB_STREAM_FPO, free_fpo_stream, parse_fpo_stream);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_new_fpo, sizeof (SFPONewStream), ePDB_STREAM_FPO_NEW, free_fpo_stream, parse_fpo_new_stream);
 
 	// unparsed, but know their names
-	add_index (l, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
-	add_index (l, dbi_stream->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
-	add_index (l, dbi_stream->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_xdata, 0, ePDB_STREAM_XDATA, 0, 0);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_pdata, 0, ePDB_STREAM_PDATA, 0, 0);
+	add_index (l, pdb, dbi_stream->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -476,11 +480,11 @@ static int pdb_read_root(RBinPdb *pdb) {
 				init_dbi_stream (dbi_stream);
 				parse_dbi_stream (dbi_stream, &stream_file);
 				r_list_append (pList, dbi_stream);
-				pdb->pdb_streams2 = r_list_new ();
+				pdb->pdb_streams2 = r_list_newf (free_stream_parse_func_cb);
 				if (!pdb->pdb_streams2) {
 					return 0;
 				}
-				fill_list_for_stream_parsing (pdb->pdb_streams2, dbi_stream);
+				fill_list_for_stream_parsing (pdb->pdb_streams2, pdb, dbi_stream);
 				break;
 			}
 		default:
@@ -629,13 +633,11 @@ error:
 }
 
 static void finish_pdb_parse(RBinPdb *pdb) {
-	STpiStream *ss;
 	if (!pdb) {
 		return;
 	}
-	ss = pdb->pdb_streams? r_list_get_n (pdb->pdb_streams, ePDB_STREAM_TPI): NULL;
 	free_root_stream (pdb);
-	free_pdb_streams2 (pdb, ss);
+	free_pdb_streams2 (pdb);
 	free_pdb_streams (pdb);
 	free (pdb->stream_map);
 	pdb->stream_map = NULL;
