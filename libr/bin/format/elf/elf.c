@@ -2398,6 +2398,50 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 	return lookup_main_symbol_offset (eo);
 }
 
+static bool has_interp_program_header(ELFOBJ *eo) {
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		if (eo->phdr[i].p_type == PT_INTERP) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool is_known_runtime_export(const char *name) {
+	return !strcmp (name, "_init") || !strcmp (name, "_fini") || !strcmp (name, "_start") ||
+		!strcmp (name, "__libc_csu_init") || !strcmp (name, "__libc_csu_fini") ||
+		!strcmp (name, "deregister_tm_clones") || !strcmp (name, "register_tm_clones") ||
+		!strcmp (name, "__do_global_dtors_aux") || !strcmp (name, "frame_dummy");
+}
+
+static bool has_public_executable_dynsym(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, false);
+	if (eo->ehdr.e_type != ET_DYN || Elf_(is_static) (eo) || !has_interp_program_header (eo)) {
+		return false;
+	}
+	if (!Elf_(load_symbols) (eo)) {
+		return false;
+	}
+	RBinElfSymbol *symbol;
+	R_VEC_FOREACH (eo->g_symbols_vec, symbol) {
+		const char *name = symbol->name;
+		if (!name || !*name || symbol->is_imported || symbol->is_sht_null) {
+			continue;
+		}
+		if (strcmp (symbol->bind, R_BIN_BIND_GLOBAL_STR) && strcmp (symbol->bind, R_BIN_BIND_WEAK_STR)) {
+			continue;
+		}
+		if (strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
+		if (!is_known_runtime_export (name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
 	*have_lines = false;
 	*have_syms = false;
@@ -2417,6 +2461,10 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
 	}
 	// TODO: check for named relocs and return R_BIN_DBG_RELOCS
 	if (*have_lines || *have_syms) {
+		return false;
+	}
+	if (has_public_executable_dynsym (eo)) {
+		*have_syms = true;
 		return false;
 	}
 	return true;
@@ -4666,6 +4714,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 #endif
 		bool is_sht_null = false;
 		bool is_vaddr = false;
+		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
 		int tsize;
 		ut64 toffset = 0;
 		// Zero symbol is always empty
@@ -4745,6 +4794,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
 		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
+		psym->is_imported = is_imported;
 	}
 	return true;
 }
@@ -5283,7 +5333,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		memset (es, 0, sizeof (RBinElfSymbol));
 		bool is_sht_null = false;
 		bool is_vaddr = false;
-		bool is_imported = false;
+		bool is_imported = memory->sym[k].st_shndx == STN_UNDEF;
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			if (memory->sym[k].st_value) {
@@ -5292,7 +5342,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				// toffset = 0;
 			}
 			tsize = 16;
-			is_imported = memory->sym[k].st_shndx == STN_UNDEF;
 		} else {
 			tsize = memory->sym[k].st_size;
 			toffset = (ut64)memory->sym[k].st_value;
