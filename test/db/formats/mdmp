@@ -35,6 +35,7 @@ sanitize false
 static   true
 streams  13
 stripped false
+uncaps   false
 va       true
 EOF
 RUN

@@ -876,6 +876,46 @@ static bool haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
 }
 
+static const char *normalized_visibility_name(const char *name) {
+	while (name && *name == '_') {
+		name++;
+	}
+	return name;
+}
+
+static bool is_suspicious_library_export(const char *name) {
+	name = normalized_visibility_name (name);
+	return R_STR_ISNOTEMPTY (name) && (!strcmp (name, "main") ||
+		r_str_casestr (name, "hidden") || r_str_casestr (name, "helper"));
+}
+
+static bool has_uncaps_exports(RBinPEObj *pe) {
+	R_RETURN_VAL_IF_FAIL (pe, false);
+	struct r_bin_pe_export_t *exports = PE_(r_bin_pe_get_exports) (pe);
+	if (!exports) {
+		return false;
+	}
+	const bool is_dll = PE_(r_bin_pe_is_dll) (pe);
+	bool uncaps = false;
+	struct r_bin_pe_export_t *exp;
+	for (exp = exports; !exp->last; exp++) {
+		const char *name = (const char *)exp->name;
+		if (!R_STR_ISNOTEMPTY (name)) {
+			continue;
+		}
+		if (!is_dll) {
+			uncaps = true;
+			break;
+		}
+		if (is_suspicious_library_export (name)) {
+			uncaps = true;
+			break;
+		}
+	}
+	free (exports);
+	return uncaps;
+}
+
 static RBinInfo* info(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe) {
@@ -956,6 +996,9 @@ static RBinInfo* info(RBinFile *bf) {
 	}
 	if (PE_(r_bin_pe_is_stripped_relocs) (pe)) {
 		ret->dbg_info |= R_BIN_DBG_RELOCS;
+	}
+	if (has_uncaps_exports (pe)) {
+		ret->dbg_info |= R_BIN_DBG_UNCAPS;
 	}
 
 	SDebugInfo di = {{0}};

@@ -29,6 +29,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 subsys   darwin
 va       true
             0x00000458      ff430191       add sp, sp, 0x50
