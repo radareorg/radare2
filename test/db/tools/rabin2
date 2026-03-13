@@ -638,7 +638,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
-uncaps   false
+uncaps   true
 subsys   linux
 va       true
 0x00000000 0x00000000 0x464c457f ELF
@@ -736,7 +736,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
-uncaps   false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -773,7 +773,7 @@ rpath    NONE
 sanitize true
 static   false
 stripped false
-uncaps   false
+uncaps   true
 subsys   linux
 va       true
 EOF
