@@ -1,5 +1,5 @@
 NAME=stdin eof
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 
 EOF
@@ -8,7 +8,7 @@ EOF
 RUN
 
 NAME=touch
-FILE=--
+FILE=malloc://32-
 CMDS=<<EOF
 rm .foo.touch
 ls .foo.touch
@@ -22,7 +22,7 @@ EOF
 RUN
 
 NAME=quote + quoteseek
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 woe 1
 ""p8 8
@@ -35,7 +35,7 @@ EOF
 RUN
 
 NAME=single quote
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 woe 1
 'p8 8
@@ -48,7 +48,7 @@ EOF
 RUN
 
 NAME=escaped or
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?v 1 \| 2
 EOF
@@ -58,7 +58,7 @@ EOF
 RUN
 
 NAME=nested escaped or
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| `?v 1 \| 2`
 EOF
@@ -68,7 +68,7 @@ EOF
 RUN
 
 NAME=nested escaped or with dolarpar
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| $(?v 1 \| 2)
 EOF
@@ -78,7 +78,7 @@ EOF
 RUN
 
 NAME=nested escaped or with double quote
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| `""?v 1 | 2`
 EOF
@@ -89,7 +89,7 @@ RUN
 
 NAME=nested escaped or with single quote
 BROKEN=1
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?v 4 \| `'?v 1 | 2`
 EOF
@@ -99,11 +99,34 @@ EOF
 RUN
 
 NAME=nested dolarpar
-FILE=-
+FILE=malloc://32
 CMDS=<<EOF
 ?e $(?v 4 \| $(?v 1 \| 2))
 EOF
 EXPECT=<<EOF
 0x7
+EOF
+RUN
+
+NAME=pipe system
+FILE=malloc://32
+CMDS=<<EOF
+?e hello|cat
+?e ---
+?e hello|!cat
+?e ===
+?e hello|!grep morn
+_
+?e hello|!grep hell
+_
+EOF
+EXPECT=<<EOF
+hello
+---
+hello
+===
+===
+hello
+hello
 EOF
 RUN
