@@ -3729,35 +3729,36 @@ err_r_w32_cmd_pipe:
 #undef __CLOSE_DUPPED_PIPES
 #endif
 
-R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+static int cmdpipe_internal(RCore *core, char *radare_cmd, char *shell_cmd) {
 #if R2__UNIX__ && !__wasi__ && HAVE_FORK
 	int stdout_fd, fds[2];
 	int child;
 #endif
-	int olen, ret = -1, pipecolor = -1;
+	int olen, ret = -1;
 	char *str, *out = NULL;
 
-	if (r_sandbox_enable (0)) {
-		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
-		return -1;
-	}
-	bool si = r_cons_is_interactive (core->cons);
-	r_config_set_b (core->config, "scr.interactive", false);
-	if (!r_config_get_b (core->config, "scr.color.pipe")) {
-		pipecolor = r_config_get_i (core->config, "scr.color");
-		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
-	}
 	if (*shell_cmd == '!') {
+		shell_cmd++;
+		char *err = NULL;
+
 		r_cons_grep_parsecmd (core->cons, shell_cmd, "\"");
 		olen = 0;
 		out = NULL;
-		// TODO: implement foo
 		str = r_core_cmd_str (core, radare_cmd);
-		r_sys_cmd_str_full (shell_cmd + 1, str, -1, &out, &olen, NULL);
-		free (str);
-		r_cons_write (core->cons, out, olen);
+		if (str) {
+			ret = r_sys_cmd_str_full (shell_cmd, str, -1, &out, &olen, &err)? 0: -1;
+			free (str);
+			if (olen > 0) {
+				r_cons_write (core->cons, out, olen);
+			}
+			if (ret < 0 && R_STR_ISNOTEMPTY (err)) {
+				r_str_trim_tail (err);
+				R_LOG_ERROR ("%s", err);
+			}
+		}
 		free (out);
-		ret = 0;
+		free (err);
+		return 0;
 	}
 #if !HAVE_FORK
 	// nothing
@@ -3802,6 +3803,22 @@ R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
 #endif
 	R_LOG_ERROR ("unimplemented for this platform");
 #endif
+	return ret;
+}
+
+R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
+	if (r_sandbox_enable (0)) {
+		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
+		return -1;
+	}
+	const bool si = r_cons_is_interactive (core->cons);
+	r_config_set_b (core->config, "scr.interactive", false);
+	int pipecolor = -1;
+	if (!r_config_get_b (core->config, "scr.color.pipe")) {
+		pipecolor = r_config_get_i (core->config, "scr.color");
+		r_config_set_i (core->config, "scr.color", COLOR_MODE_DISABLED);
+	}
+	const int ret = cmdpipe_internal (core, radare_cmd, shell_cmd);
 	if (pipecolor != -1) {
 		r_config_set_i (core->config, "scr.color", pipecolor);
 	}
