@@ -2279,112 +2279,447 @@ R_API int r_anal_function_complexity(RAnalFunction *fcn) {
 	return result;
 }
 
+static char *function_signature_type_name(Sdb *types, RAnalFunction *fcn);
+static void function_signature_cache_fini(RAnalFunction *fcn);
+static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn);
+static void function_signature_cache_invalidate(RAnal *anal, const char *name, const char *type_name);
+
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name) {
-	Sdb *db = a->sdb_types;
-	const char *s = sdb_const_get (db, name, 0);
-	if (!s || strcmp (s, "func")) {
+	Sdb *db;
+	char *type_name;
+	char *sdb_ret;
+	char *sdb_cc;
+	char *sdb_noreturn;
+	char *sdb_args;
+	char *sdb_func;
+	int argc;
+	int i;
+	const char *s;
+
+	R_RETURN_VAL_IF_FAIL (a && a->sdb_types && name, false);
+	db = a->sdb_types;
+	type_name = r_type_func_name (db, name);
+	if (!type_name) {
+		type_name = strdup (name);
+	}
+	if (!type_name) {
 		return false;
 	}
-	char *sdb_ret = r_str_newf ("func.%s.ret", name);
-	char *sdb_args = r_str_newf ("func.%s.args", name);
-	int argc = sdb_num_get (db, sdb_args, 0);
-
-	sdb_unset (db, sdb_ret, 0);
-	sdb_unset (db, sdb_args, 0);
-	int i;
-	for (i = 0; i < argc; i++) {
-		char *s = r_str_newf ("func.%s.arg.%d", name, i);
-		sdb_unset (db, s, 0);
-		free (s);
+	s = sdb_const_get (db, type_name, 0);
+	if (!s || strcmp (s, "func")) {
+		free (type_name);
+		return false;
 	}
-	sdb_unset (db, name, 0);
+	function_signature_cache_invalidate (a, name, type_name);
+	sdb_ret = r_str_newf ("func.%s.ret", type_name);
+	sdb_cc = r_str_newf ("func.%s.cc", type_name);
+	sdb_noreturn = r_str_newf ("func.%s.noreturn", type_name);
+	sdb_args = r_str_newf ("func.%s.args", type_name);
+	sdb_func = r_str_newf ("func.%s", type_name);
+	argc = sdb_args? sdb_num_get (db, sdb_args, 0): 0;
+
+	if (sdb_ret) {
+		sdb_unset (db, sdb_ret, 0);
+	}
+	if (sdb_cc) {
+		sdb_unset (db, sdb_cc, 0);
+	}
+	if (sdb_noreturn) {
+		sdb_unset (db, sdb_noreturn, 0);
+	}
+	if (sdb_args) {
+		sdb_unset (db, sdb_args, 0);
+	}
+	if (sdb_func) {
+		sdb_unset (db, sdb_func, 0);
+	}
+	for (i = 0; i < argc; i++) {
+		char *sdb_arg = r_str_newf ("func.%s.arg.%d", type_name, i);
+		if (sdb_arg) {
+			sdb_unset (db, sdb_arg, 0);
+			free (sdb_arg);
+		}
+	}
+	sdb_unset (db, type_name, 0);
+	free (type_name);
 	free (sdb_ret);
+	free (sdb_cc);
+	free (sdb_noreturn);
 	free (sdb_args);
+	free (sdb_func);
 	return true;
+}
+
+static char *function_signature_type_name(Sdb *types, RAnalFunction *fcn) {
+	char *name;
+
+	R_RETURN_VAL_IF_FAIL (types && fcn && fcn->name, NULL);
+	name = r_type_func_name (types, fcn->name);
+	if (name) {
+		return name;
+	}
+	return strdup (fcn->name);
+}
+
+static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, const char *type_name) {
+	const char *callconv = NULL;
+	char *key;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	if (R_STR_ISNOTEMPTY (type_name)) {
+		key = r_str_newf ("func.%s.cc", type_name);
+		if (key) {
+			callconv = sdb_const_get (anal->sdb_types, key, 0);
+			free (key);
+		}
+	}
+	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
+		return callconv;
+	}
+	if (R_STR_ISNOTEMPTY (fcn->callconv) && r_anal_cc_exist (anal, fcn->callconv)) {
+		callconv = fcn->callconv;
+	}
+	if (!callconv) {
+		callconv = r_anal_cc_default (anal);
+	}
+	return callconv;
+}
+
+static bool function_signature_is_noreturn(Sdb *types, const char *type_name, bool fallback) {
+	const char *value;
+	char *key;
+
+	R_RETURN_VAL_IF_FAIL (types, fallback);
+	if (R_STR_ISEMPTY (type_name)) {
+		return fallback;
+	}
+	key = r_str_newf ("func.%s.noreturn", type_name);
+	if (!key) {
+		return fallback;
+	}
+	value = sdb_const_get (types, key, 0);
+	free (key);
+	return value? r_str_is_true (value): fallback;
+}
+
+static void function_param_free(RAnalFunctionParam *param) {
+	if (!param) {
+		return;
+	}
+	free (param->name);
+	free (param->type);
+	free (param);
+}
+
+static inline bool string_has_opaque_type_marker(const char *type) {
+	return type && strstr (type, "type_0x");
+}
+
+static char *function_param_string(const RAnalFunctionParam *param) {
+	R_RETURN_VAL_IF_FAIL (param && param->type, NULL);
+	if (!strcmp (param->type, "...")) {
+		return strdup ("...");
+	}
+	if (R_STR_ISEMPTY (param->name)) {
+		return strdup (param->type);
+	}
+	if (r_str_endswith (param->type, "*")) {
+		return r_str_newf ("%s%s", param->type, param->name);
+	}
+	return r_str_newf ("%s %s", param->type, param->name);
+}
+
+static int function_arg_var_cmp(const RAnalVar *a, const RAnalVar *b) {
+	if (a && b) {
+		if (a->isarg && !b->isarg) {
+			return -1;
+		}
+		if (!a->isarg && b->isarg) {
+			return 1;
+		}
+		if (a->kind == R_ANAL_VAR_KIND_REG && a->kind == b->kind) {
+			if (a->argnum > b->argnum) {
+				return 1;
+			}
+			if (a->argnum < b->argnum) {
+				return -1;
+			}
+			return 0;
+		}
+		if (a->kind == b->kind && a->kind == R_ANAL_VAR_KIND_BPV && a->isarg && b->isarg) {
+			if (a->delta > b->delta) {
+				return 1;
+			}
+			if (a->delta < b->delta) {
+				return -1;
+			}
+			return 0;
+		}
+		if (a->delta > b->delta) {
+			return 1;
+		}
+		if (a->delta < b->delta) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static bool function_signature_cache_fallback_to_vars(RAnal *anal, RAnalFunction *fcn, RList *params, RStrBuf *args, bool *has_opaque_type_markers) {
+	RListIter *iter;
+	RAnalVar *var;
+	RList *vars;
+	bool ok = true;
+	bool first = true;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn && params && args && has_opaque_type_markers, false);
+	vars = r_anal_var_all_list (anal, fcn);
+	if (!vars) {
+		return false;
+	}
+	r_list_sort (vars, (RListComparator)function_arg_var_cmp);
+	r_list_foreach (vars, iter, var) {
+		RAnalFunctionParam *param;
+		char *arg;
+		if (!var->isarg || R_STR_ISEMPTY (var->type)) {
+			continue;
+		}
+		param = R_NEW0 (RAnalFunctionParam);
+		param->name = var->name? strdup (var->name): NULL;
+		param->type = strdup (var->type);
+		*has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
+		r_list_append (params, param);
+		arg = function_param_string (param);
+		if (!arg || !r_strbuf_appendf (args, "%s%s", first? "": ", ", arg)) {
+			free (arg);
+			ok = false;
+			break;
+		}
+		free (arg);
+		first = false;
+	}
+	r_list_free (vars);
+	return ok;
+}
+
+static void function_signature_cache_fini(RAnalFunction *fcn) {
+	free (fcn->signature);
+	free (fcn->ret_type);
+	r_list_free (fcn->params);
+	fcn->signature = NULL;
+	fcn->ret_type = NULL;
+	fcn->params = NULL;
+	fcn->has_opaque_type_markers = false;
+}
+
+static bool function_signature_cache_update(RAnal *anal, RAnalFunction *fcn) {
+	char *type_name;
+	const char *ret_type;
+	const char *callconv;
+	bool noreturn;
+	bool has_opaque_type_markers = false;
+	RList *params;
+	RStrBuf args;
+	const char *type_kind;
+	char *ret_type_copy = NULL;
+	char *signature = NULL;
+	char *sane = NULL;
+	int argc;
+	int i;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, false);
+	type_name = function_signature_type_name (anal->sdb_types, fcn);
+	if (!type_name) {
+		return false;
+	}
+	params = r_list_newf ((RListFree)function_param_free);
+	r_strbuf_init (&args);
+	type_kind = sdb_const_get (anal->sdb_types, type_name, 0);
+	ret_type = r_type_func_ret (anal->sdb_types, type_name);
+	if (ret_type) {
+		ret_type_copy = strdup (ret_type);
+		if (!ret_type_copy) {
+			goto beach;
+		}
+		has_opaque_type_markers = string_has_opaque_type_marker (ret_type);
+	}
+	argc = r_type_func_args_count (anal->sdb_types, type_name);
+	for (i = 0; i < argc; i++) {
+		const char *param_name = r_type_func_args_name (anal->sdb_types, type_name, i);
+		RAnalFunctionParam *param = R_NEW0 (RAnalFunctionParam);
+		char *arg;
+		param->name = param_name? strdup (param_name): NULL;
+		param->type = r_type_func_args_type (anal->sdb_types, type_name, i);
+		has_opaque_type_markers |= string_has_opaque_type_marker (param->type);
+		r_list_append (params, param);
+		if (!param->type) {
+			break;
+		}
+		arg = function_param_string (param);
+		if (!arg || !r_strbuf_appendf (&args, "%s%s", i? ", ": "", arg)) {
+			free (arg);
+			goto beach;
+		}
+		free (arg);
+	}
+	if ((!type_kind || strcmp (type_kind, "func")) && r_list_empty (params)
+		&& !function_signature_cache_fallback_to_vars (anal, fcn, params, &args, &has_opaque_type_markers)) {
+		goto beach;
+	}
+	sane = r_name_filter_dup (type_name);
+	if (sane) {
+		r_str_replace_ch (sane, ':', '_', true);
+	}
+	signature = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type_copy, "void"), r_str_get_fail (sane, type_name), r_strbuf_get (&args));
+	if (!signature) {
+		goto beach;
+	}
+	callconv = function_signature_callconv (anal, fcn, type_name);
+	noreturn = function_signature_is_noreturn (anal->sdb_types, type_name, fcn->is_noreturn);
+	function_signature_cache_fini (fcn);
+	fcn->signature = signature;
+	fcn->ret_type = ret_type_copy;
+	fcn->params = params;
+	fcn->callconv = r_str_constpool_get (&anal->constpool, r_str_get_fail (callconv, r_anal_cc_default (anal)));
+	fcn->is_noreturn = noreturn;
+	fcn->has_opaque_type_markers = has_opaque_type_markers;
+	free (sane);
+	free (type_name);
+	r_strbuf_fini (&args);
+	return true;
+
+beach:
+	free (signature);
+	free (ret_type_copy);
+	free (sane);
+	free (type_name);
+	r_list_free (params);
+	r_strbuf_fini (&args);
+	return false;
+}
+
+static void function_signature_cache_invalidate(RAnal *anal, const char *name, const char *type_name) {
+	RListIter *iter;
+	RAnalFunction *fcn;
+
+	R_RETURN_IF_FAIL (anal && name && type_name);
+	r_list_foreach (anal->fcns, iter, fcn) {
+		char *fcn_type_name = function_signature_type_name (anal->sdb_types, fcn);
+		const bool matches = !strcmp (fcn->name, name)
+			|| (fcn_type_name && !strcmp (fcn_type_name, type_name));
+		free (fcn_type_name);
+		if (matches) {
+			function_signature_cache_fini (fcn);
+		}
+	}
+}
+
+R_API RAnalFunctionContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, NULL);
+	(void)function_signature_cache_update (anal, fcn);
+	RAnalFunctionContext *ctx = R_NEW0 (RAnalFunctionContext);
+	ctx->function = fcn;
+	ctx->base_types = r_anal_collect_base_types (anal);
+	return ctx;
+}
+
+R_API void r_anal_function_context_free(RAnalFunctionContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+	r_anal_base_type_list_free (ctx->base_types);
+	free (ctx);
+}
+
+R_API bool r_anal_function_apply_signature(
+	RAnal *anal,
+	RAnalFunction *fcn,
+	const char *ret_type,
+	const RAnalFunctionSignatureParam *params,
+	size_t param_count,
+	const char *callconv,
+	bool noreturn
+) {
+	Sdb *types;
+	char *type_name;
+	const char *resolved_ret_type;
+	const char *resolved_callconv;
+	RStrBuf query;
+	RStrBuf argnames;
+	size_t i;
+	bool ok = false;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn && anal->sdb_types, false);
+	types = anal->sdb_types;
+	type_name = function_signature_type_name (types, fcn);
+	if (R_STR_ISEMPTY (type_name)) {
+		free (type_name);
+		return false;
+	}
+	resolved_ret_type = R_STR_ISNOTEMPTY (ret_type)? ret_type: "void";
+	resolved_callconv = R_STR_ISNOTEMPTY (callconv)
+		? callconv
+		: function_signature_callconv (anal, fcn, type_name);
+
+	r_strbuf_init (&query);
+	r_strbuf_init (&argnames);
+	if (!r_strbuf_appendf (&query, "%s=func\n", type_name)) {
+		goto beach;
+	}
+	for (i = 0; i < param_count; i++) {
+		const RAnalFunctionSignatureParam *param = params? &params[i]: NULL;
+		char *default_param_name = NULL;
+		const char *param_name = NULL;
+		const char *param_type = (param && R_STR_ISNOTEMPTY (param->type))
+			? param->type
+			: "void";
+		if (param && R_STR_ISNOTEMPTY (param->name)) {
+			param_name = param->name;
+		} else {
+			default_param_name = r_str_newf ("arg%zu", i);
+			if (!default_param_name) {
+				goto beach;
+			}
+			param_name = default_param_name;
+		}
+		if (!r_strbuf_appendf (&query, "func.%s.arg.%zu=%s,%s\n", type_name, i, param_type, param_name)
+			|| !r_strbuf_appendf (&argnames, "%s%s", i? ",": "", param_name)) {
+			free (default_param_name);
+			goto beach;
+		}
+		free (default_param_name);
+	}
+	if (!r_strbuf_appendf (&query, "func.%s.ret=%s\n", type_name, resolved_ret_type)
+		|| !r_strbuf_appendf (&query, "func.%s.args=%zu\n", type_name, param_count)
+		|| !r_strbuf_appendf (&query, "func.%s=%s\n", type_name, r_strbuf_get (&argnames))) {
+		goto beach;
+	}
+	if (R_STR_ISNOTEMPTY (resolved_callconv)
+		&& !r_strbuf_appendf (&query, "func.%s.cc=%s\n", type_name, resolved_callconv)) {
+		goto beach;
+	}
+	if (noreturn && !r_strbuf_appendf (&query, "func.%s.noreturn=true\n", type_name)) {
+		goto beach;
+	}
+	r_anal_function_del_signature (anal, type_name);
+	sdb_query_lines (types, r_strbuf_get (&query));
+	ok = true;
+
+beach:
+	free (type_name);
+	r_strbuf_fini (&query);
+	r_strbuf_fini (&argnames);
+	if (ok) {
+		(void)function_signature_cache_update (anal, fcn);
+	}
+	return ok;
 }
 
 // MOVE To function.c
 R_API char *r_anal_function_get_signature(RAnalFunction *function) {
-	RAnal *a = function->anal;
-	const char *realname = NULL, *import_substring = NULL;
-
-	RFlagItem *flag = a->flag_get (a->flb.f, false, function->addr);
-	// Can't access R_FLAGS_FS_IMPORTS, since it is defined in r_core.h
-	if (flag && flag->space && !strcmp (flag->space->name, "imports")) {
-		// Get substring after last dot
-		import_substring = r_str_rchr (function->name, NULL, '.');
-		if (import_substring) {
-			realname = import_substring + 1;
-		}
-	} else {
-		realname = function->name;
-	}
-	// strip leading __ prefix (e.g. __strcpy_chk -> strcpy_chk)
-	if (realname && r_str_startswith (realname, "__")) {
-		realname += 2;
-	}
-	char *ret = NULL, *args = strdup ("");
-	char *sdb_ret = r_str_newf ("func.%s.ret", realname);
-	char *sdb_args = r_str_newf ("func.%s.args", realname);
-	const char *argc_str = sdb_const_get (a->sdb_types, sdb_args, 0);
-	// RList *args_list = r_list_newf ((RListFree) free);
-	unsigned int i, j;
-	const char *ret_type = sdb_const_get (a->sdb_types, sdb_ret, 0);
-
-	int argc = argc_str? atoi (argc_str): 0;
-
-	for (i = 0; i < argc; i++) {
-		char *sdb_arg_i = r_str_newf ("func.%s.arg.%d", realname, i);
-		char *arg_i = sdb_get (a->sdb_types, sdb_arg_i, 0);
-		if (!arg_i) {
-			free (sdb_arg_i);
-			break;
-		}
-		// parse commas
-		int arg_i_len = strlen (arg_i);
-		for (j = 0; j < arg_i_len; j++) {
-			if (arg_i[j] == ',') {
-				if (j> 0) {
-					if (arg_i[j - 1] == '*') {
-						// remove whitespace
-						memmove (arg_i + j, arg_i + j + 1, strlen (arg_i) - j);
-					} else {
-						arg_i[j] = ' ';
-					}
-				} else {
-					// untyped arg. fex: `printf(...)`
-					memmove (arg_i, arg_i + 1, strlen (arg_i));
-				}
-			}
-		}
-		// for variadic arguments, don't include the name
-		if (r_str_startswith (arg_i, "...")) {
-			char *comma = strchr (arg_i, ' ');
-			if (comma) {
-				*comma = 0;
-			}
-		}
-		char *new_args = (i + 1 == argc)
-			? r_str_newf ("%s%s", args, arg_i)
-			: r_str_newf ("%s%s, ", args, arg_i);
-		free (args);
-		args = new_args;
-		free (arg_i);
-		free (sdb_arg_i);
-	}
-
-	char *sane = r_name_filter_dup (realname);
-	if (sane) {
-		r_str_replace_ch (sane, ':', '_', true);
-		realname = sane;
-	}
-	ret = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), realname, args);
-	free (sane);
-
-	free (sdb_args);
-	free (sdb_ret);
-	free (args);
-	return ret;
+	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
+	(void)function_signature_cache_update (function->anal, function);
+	return function->signature? strdup (function->signature): NULL;
 }
 
 /* set function signature from string */
@@ -2395,6 +2730,7 @@ R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *sig) {
 	char *out = r_anal_cparse (a, sig, &error_msg);
 	if (out) {
 		r_anal_save_parsed_type (a, out);
+		(void)function_signature_cache_update (a, f);
 		free (out);
 		ret = true;
 	}
