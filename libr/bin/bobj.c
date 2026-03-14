@@ -275,15 +275,9 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 		}
 		bo->kv = bdb;
 		sdb_set (bf->sdb, "archs", "0:0:x86:32", 0); // x86??
-		/* NOTE */
-		/* Those refs++ are necessary because sdb_ns() doesnt rerefs all
-		 * sub-namespaces */
-		/* And if any namespace is referenced backwards it gets
-		 * double-freed */
 		sdb_ns_set (root_bin_sdb, "cur", bdb); // bf->sdb);
 		r_strf_var (fdns, 32, "fd.%d", bf->fd);
 		sdb_ns_set (root_bin_sdb, fdns, bdb); // bf->sdb);
-		bf->sdb->refs++;
 	}
 	return bo;
 
