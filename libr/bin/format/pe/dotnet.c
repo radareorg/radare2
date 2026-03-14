@@ -1401,12 +1401,12 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	// First, find the CLI header by scanning for its signature near the start of the file
 	// CLI headers are typically within the first 0x1000 bytes of the .text section
 	if (pe->data_size > 0x100) {
-		int search_limit = (pe->data_size > 0x2000) ? 0x2000 : (int)pe->data_size;
+		int search_limit = (pe->data_size > 0x2000)? 0x2000: (int)pe->data_size;
 		for (i = 0x100; i < search_limit - (int)sizeof (CLI_HEADER); i++) {
 			PCLI_HEADER cli = (PCLI_HEADER) (pe->data + i);
 			if ((cli->Size == 0x48 || cli->Size == 0x44) &&
-			    cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5 &&
-			    cli->MinorRuntimeVersion <= 10) {
+				cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5 &&
+				cli->MinorRuntimeVersion <= 10) {
 				cli_offset = i;
 				break;
 			}
@@ -1534,7 +1534,7 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 								}
 
 								// Now read Assembly table first row
-								if (table_offset >= pe->data && (size_t) (pe->data + pe->data_size - table_offset) >= (4 + 2 + 2 + 2 + 2)) {
+								if (fits_in_pe (pe, table_offset, 4 + 2 + 2 + 2 + 2)) {
 									version_info->asm_major = r_read_le16 (table_offset + 4);
 									version_info->asm_minor = r_read_le16 (table_offset + 6);
 									version_info->asm_build = r_read_le16 (table_offset + 8);
