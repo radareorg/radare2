@@ -78,6 +78,9 @@ static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_ro
 	STREAMS headers = { 0 };
 	unsigned int i;
 
+	if (offset >= pe->data_size) {
+		return headers;
+	}
 	PSTREAM_HEADER stream_header = (PSTREAM_HEADER) (pe->data + offset);
 
 	for (i = 0; i < num_streams; i++) {
@@ -152,6 +155,9 @@ static void dotnet_parse_tilde_assemblyref(
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
+	if (metadata_root + streams->string->Offset >= pe->data_size) {
+		return;
+	}
 	const uint8_t *string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
@@ -166,6 +172,9 @@ static void dotnet_parse_tilde_assemblyref(
 			return;
 		}
 
+		if (!fits_in_pe (pe, (uint8_t *)row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
+			return;
+		}
 		num_rows = *(row_offset + matched_bits);
 
 		if (bit_check == BIT_ASSEMBLYREF) {
@@ -217,10 +226,12 @@ static void dotnet_parse_tilde_assemblyref(
 			}
 			return;
 		} else {
-			if (bit_check) {
+			switch (bit_check) {
+			case BIT_MODULE:
 				table_offset += (2 + index_sizes.string + (index_sizes.guid * 3)) * num_rows;
-			} else {
-				// Skip other tables
+				break;
+			default:
+				// Cannot compute table size for unknown table, bail out
 				return;
 			}
 		}
@@ -297,6 +308,9 @@ static void dotnet_parse_tilde_field(
 
 	matched_bits = 0;
 
+	if (metadata_root + streams->string->Offset >= pe->data_size) {
+		return;
+	}
 	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	// Iterate through tables, looking for Field
@@ -447,6 +461,9 @@ static void dotnet_parse_tilde_typedef(
 	table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
+	if (metadata_root + streams->string->Offset >= pe->data_size) {
+		return;
+	}
 	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
@@ -569,6 +586,9 @@ static void dotnet_parse_tilde_methoddef(
 	table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
+	if (metadata_root + streams->string->Offset >= pe->data_size) {
+		return;
+	}
 	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
@@ -908,8 +928,17 @@ static void dotnet_typedef_free(void *p) {
 }
 
 static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS streams, ROWS rows, INDEX_SIZES index_sizes) {
+	if (metadata_root + streams->tilde->Offset >= pe->data_size) {
+		return r_list_newf ((RListFree)dotnet_typedef_free);
+	}
 	PTILDE_HEADER tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + streams->tilde->Offset);
+	if (!struct_fits_in_pe (pe, tilde_header, TILDE_HEADER)) {
+		return r_list_newf ((RListFree)dotnet_typedef_free);
+	}
 	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
+	if (metadata_root + streams->string->Offset >= pe->data_size) {
+		return r_list_newf ((RListFree)dotnet_typedef_free);
+	}
 	const uint8_t *string_offset = pe->data + metadata_root + streams->string->Offset;
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	int j, bit_check, matched_bits = 0;
@@ -1075,6 +1104,9 @@ static void dotnet_parse_tilde(PE *pe, ut64 metadata_root, PSTREAMS streams, RLi
 	// Default index sizes are 2. Will be bumped to 4 if necessary.
 	memset (&index_sizes, 2, sizeof (index_sizes));
 
+	if (metadata_root + streams->tilde->Offset >= pe->data_size) {
+		return;
+	}
 	tilde_header = (PTILDE_HEADER) (pe->data +
 		metadata_root +
 		streams->tilde->Offset);
@@ -1255,7 +1287,7 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 		return symbols;
 	}
 
-	num_streams = (ut16) *(pe->data + stream_offset);
+	num_streams = r_read_le16 (pe->data + stream_offset);
 	stream_offset += 2;
 
 	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
@@ -1270,6 +1302,9 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 
 // entrypoint - returns a list of DotNetSymbol pointers
 RList *dotnet_parse(const ut8 *buf, int size, ut64 baddr) {
+	if (!buf || size < 1) {
+		return NULL;
+	}
 	PE pe = { buf, (ut32)size, NULL };
 	return dotnet_parse_com (&pe, baddr);
 }
@@ -1282,6 +1317,9 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 	RList *libraries = NULL;
 	int i;
 	st64 metadata_offset = -1;
+	if (!buf || size < 1) {
+		return NULL;
+	}
 	PE pe_struct = { buf, (ut32)size, NULL };
 	PE *pe = &pe_struct;
 
@@ -1330,7 +1368,7 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		return libraries;
 	}
 
-	num_streams = (ut16) *(pe->data + stream_offset);
+	num_streams = r_read_le16 (pe->data + stream_offset);
 	stream_offset += 2;
 
 	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
@@ -1347,6 +1385,9 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		memset (&rows, '\0', sizeof (ROWS));
 		memset (&index_sizes, 2, sizeof (index_sizes));
 
+		if (metadata_root + headers.tilde->Offset >= pe->data_size) {
+			return libraries;
+		}
 		tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + headers.tilde->Offset);
 
 		if (fits_in_pe (pe, (uint8_t *)tilde_header, sizeof (TILDE_HEADER))) {
@@ -1384,6 +1425,9 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 }
 
 RList *dotnet_parse_imports(const ut8 *buf, int size) {
+	if (!buf || size < 1) {
+		return NULL;
+	}
 	// TODO: Parse ImplMap table for P/Invoke declarations
 	// This would extract native library imports from .NET assemblies
 	RList *imports = r_list_newf ((RListFree)free);
@@ -1395,6 +1439,9 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	st64 cli_offset = -1;
 	int i;
 	st64 metadata_offset = -1;
+	if (!buf || size < 1) {
+		return NULL;
+	}
 	PE pe_struct = { buf, (ut32)size, NULL };
 	PE *pe = &pe_struct;
 
@@ -1457,7 +1504,7 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 
 			st64 offset_2 = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
 			if (fits_in_pe (pe, pe->data + offset_2, 2)) {
-				ut16 num_streams = (ut16) *(pe->data + offset_2);
+				ut16 num_streams = r_read_le16 (pe->data + offset_2);
 				offset_2 += 2;
 				STREAMS headers = dotnet_parse_stream_headers (pe, offset_2, metadata_root, num_streams);
 
@@ -1468,6 +1515,9 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 					INDEX_SIZES index_sizes;
 					memset (&index_sizes, 2, sizeof (index_sizes));
 
+					if (metadata_root + headers.tilde->Offset >= pe->data_size) {
+						return version_info;
+					}
 					tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + headers.tilde->Offset);
 
 					if (fits_in_pe (pe, (uint8_t *)tilde_header, sizeof (TILDE_HEADER))) {
