@@ -1559,6 +1559,9 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 								}
 								table_offset = (uint8_t *)row_offset;
 								table_offset += sizeof (uint32_t) * matched_bits;
+								if (!fits_in_pe (pe, table_offset, 12)) {
+									return version_info;
+								}
 
 								matched_bits = 0;
 								int bit_check;

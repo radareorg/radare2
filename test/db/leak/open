@@ -71,6 +71,48 @@ hello
 EOF
 RUN
 
+NAME=leak opening pe
+FILE=bins/pe/a.exe
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak analysis pe
+FILE=bins/pe/a.exe
+ARGS=-AA
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak opening dotnet
+FILE=bins/dotnet/HelloWorld.exe
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=leak analysis dotnet
+FILE=bins/dotnet/HelloWorld.exe
+ARGS=-AA
+CMDS=<<EOF
+?e hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
 NAME=macho zip
 FILE=zip0://bins/mach0/io.zip
 CMDS=<<EOF

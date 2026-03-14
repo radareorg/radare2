@@ -1064,7 +1064,11 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				RAnalRefType ref_type = reftype == UT64_MAX ? R_ANAL_REF_TYPE_CODE : reftype;
 				r_anal_xrefs_set (core->anal, from, fcn->addr, ref_type | R_ANAL_REF_TYPE_EXEC);
 			}
-			r_anal_add_function (core->anal, fcn);
+			if (!r_anal_add_function (core->anal, fcn)) {
+				r_anal_function_free (fcn);
+				fcn = NULL;
+				break;
+			}
 			if (has_next) {
 				ut64 addr = r_anal_function_max_addr (fcn);
 				RIOMap *map = r_io_map_get_at (core->io, addr);
@@ -1104,9 +1108,9 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 			r_core_anal_fcn (core, *iter, from, 0, depth - 1);
 		}
 	}
-	if (is_x86) {
+	if (fcn && is_x86) {
 		r_anal_function_check_bp_use (fcn);
-		if (fcn && !fcn->bp_frame) {
+		if (!fcn->bp_frame) {
 			r_anal_function_delete_vars_by_kind (fcn, R_ANAL_VAR_KIND_BPV);
 		}
 	}
@@ -1135,7 +1139,10 @@ error:
 				r_flag_set (core->flags, fcn->name, at, r_anal_function_linear_size (fcn));
 				r_flag_space_pop (core->flags);
 			}
-			r_anal_add_function (core->anal, fcn);
+			if (!r_anal_add_function (core->anal, fcn)) {
+				r_anal_function_free (fcn);
+				fcn = NULL;
+			}
 		}
 		if (fcn && has_next) {
 			ut64 newaddr = r_anal_function_max_addr (fcn);
