@@ -565,6 +565,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped true
+uncaps   false
 subsys   linux
 va       true
 --
@@ -669,6 +670,7 @@ relocs   true
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   darwin
 va       true
 -- o

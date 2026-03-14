@@ -2398,10 +2398,78 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 	return lookup_main_symbol_offset (eo);
 }
 
-bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
+static bool has_interp_program_header(ELFOBJ *eo) {
+	if (!eo || !eo->phdr) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		if (eo->phdr[i].p_type == PT_INTERP) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool is_known_runtime_export(const char *name) {
+	return !strcmp (name, "_init") || !strcmp (name, "_fini") || !strcmp (name, "_start") ||
+		!strcmp (name, "__libc_csu_init") || !strcmp (name, "__libc_csu_fini") ||
+		!strcmp (name, "deregister_tm_clones") || !strcmp (name, "register_tm_clones") ||
+		!strcmp (name, "__do_global_dtors_aux") || !strcmp (name, "frame_dummy");
+}
+
+static const char *normalized_visibility_name(const char *name) {
+	while (name && *name == '_') {
+		name++;
+	}
+	return name;
+}
+
+static bool is_suspicious_library_export(const char *name) {
+	name = normalized_visibility_name (name);
+	return R_STR_ISNOTEMPTY (name) && (!strcmp (name, "main") ||
+		r_str_casestr (name, "hidden") || r_str_casestr (name, "helper"));
+}
+
+static bool has_public_visibility_leaks(ELFOBJ *eo) {
+	R_RETURN_VAL_IF_FAIL (eo, false);
+	const bool executable_like = eo->ehdr.e_type == ET_EXEC ||
+		(eo->ehdr.e_type == ET_DYN && !Elf_(is_static) (eo) && has_interp_program_header (eo));
+	const bool library_like = eo->ehdr.e_type == ET_DYN && !has_interp_program_header (eo);
+	if (!executable_like && !library_like) {
+		return false;
+	}
+	if (!Elf_(load_symbols) (eo)) {
+		return false;
+	}
+	RBinElfSymbol *symbol;
+	R_VEC_FOREACH (eo->g_symbols_vec, symbol) {
+		const char *name = symbol->name;
+		if (!name || !*name || symbol->is_imported || symbol->is_sht_null) {
+			continue;
+		}
+		if (strcmp (symbol->bind, R_BIN_BIND_GLOBAL_STR) && strcmp (symbol->bind, R_BIN_BIND_WEAK_STR)) {
+			continue;
+		}
+		if (strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
+		if (executable_like && !is_known_runtime_export (name)) {
+			return true;
+		}
+		if (library_like && is_suspicious_library_export (name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms, bool *have_uncaps) {
 	*have_lines = false;
 	*have_syms = false;
+	*have_uncaps = false;
 	if (!eo->shdr) {
+		*have_uncaps = has_public_visibility_leaks (eo);
 		return true;
 	}
 	RBinElfSection *sec = get_section_by_name (eo, ".gnu_debugdata");
@@ -2417,8 +2485,10 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms) {
 	}
 	// TODO: check for named relocs and return R_BIN_DBG_RELOCS
 	if (*have_lines || *have_syms) {
+		*have_uncaps = has_public_visibility_leaks (eo);
 		return false;
 	}
+	*have_uncaps = has_public_visibility_leaks (eo);
 	return true;
 }
 
@@ -4666,6 +4736,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 #endif
 		bool is_sht_null = false;
 		bool is_vaddr = false;
+		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
 		int tsize;
 		ut64 toffset = 0;
 		// Zero symbol is always empty
@@ -4745,8 +4816,29 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		fill_symbol_bind_and_type (eo, psym, &new_symbol);
 		psym->is_sht_null = is_sht_null;
 		psym->is_vaddr = is_vaddr;
+		psym->is_imported = is_imported;
 	}
 	return true;
+}
+
+static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
+	ut64 bound = eo->size;
+	if (eo->dyn_info.dt_strtab != R_BIN_ELF_ADDR_MAX) {
+		ut64 strtab_addr = Elf_(v2p_new) (eo, eo->dyn_info.dt_strtab);
+		if (strtab_addr != UT64_MAX && strtab_addr > addr_sym_table) {
+			bound = R_MIN (bound, strtab_addr);
+		}
+	}
+	if (eo->shdr && eo->ehdr.e_shnum && eo->ehdr.e_shnum != 0xffff) {
+		int i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			ut64 sh_offset = eo->shdr[i].sh_offset;
+			if (sh_offset > addr_sym_table) {
+				bound = R_MIN (bound, sh_offset);
+			}
+		}
+	}
+	return bound;
 }
 
 static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
@@ -4765,8 +4857,14 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 		return NULL;
 	}
 
-	// since ELF doesn't specify the symbol table size we may read until the end of the buffer
-	int nsym = (eo->size - addr_sym_table) / sym_size;
+	ut64 symtab_end = get_phdr_symtab_upper_bound (eo, addr_sym_table);
+	if (symtab_end <= addr_sym_table) {
+		return NULL;
+	}
+
+	// Stop at the next table boundary so the phdr fallback does not decode
+	// adjacent dynamic metadata as synthetic dynsym entries.
+	int nsym = (symtab_end - addr_sym_table) / sym_size;
 	if (nsym < 1) {
 		return NULL;
 	}
@@ -5283,7 +5381,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		memset (es, 0, sizeof (RBinElfSymbol));
 		bool is_sht_null = false;
 		bool is_vaddr = false;
-		bool is_imported = false;
+		bool is_imported = memory->sym[k].st_shndx == STN_UNDEF;
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			if (memory->sym[k].st_value) {
@@ -5292,7 +5390,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				// toffset = 0;
 			}
 			tsize = 16;
-			is_imported = memory->sym[k].st_shndx == STN_UNDEF;
 		} else {
 			tsize = memory->sym[k].st_size;
 			toffset = (ut64)memory->sym[k].st_value;

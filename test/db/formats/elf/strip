@@ -1,0 +1,35 @@
+NAME=ELF: stripped pie imports only
+FILE=bins/elf/analysis/zigs_stripped
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN
+
+NAME=ELF: stripped pie with exported main
+FILE=bins/elf/analysis/hello-linux-i386-pie
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   true
+EOF
+RUN
+
+NAME=ELF: stripped pie with linker exports only
+FILE=bins/elf/analysis/candypop
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped true
+uncaps   false
+EOF
+RUN

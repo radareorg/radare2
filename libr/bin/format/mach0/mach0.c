@@ -3028,6 +3028,48 @@ typedef struct fill_context_t {
 	ut32 *ordinal;
 } FillCtx;
 
+static bool apple_symbol(const char *sym_name);
+
+static const char *normalized_visibility_name(const char *name) {
+	while (name && *name == '_') {
+		name++;
+	}
+	return name;
+}
+
+static bool is_suspicious_library_export(const char *name) {
+	name = normalized_visibility_name (name);
+	return R_STR_ISNOTEMPTY (name) && (!strcmp (name, "main") ||
+		r_str_casestr (name, "hidden") || r_str_casestr (name, "helper"));
+}
+
+static bool has_nonruntime_public_symbols(struct MACH0_(obj_t) *mo) {
+	R_RETURN_VAL_IF_FAIL (mo, false);
+	const bool executable_like = mo->hdr.filetype == MH_EXECUTE ||
+		mo->hdr.filetype == MH_BUNDLE || mo->hdr.filetype == MH_KEXT_BUNDLE;
+	const bool dylib_like = mo->hdr.filetype == MH_DYLIB;
+	if (!executable_like && !dylib_like) {
+		return false;
+	}
+	RBinSymbol *sym;
+	R_VEC_FOREACH (mo->symbols_vec, sym) {
+		const char *name = r_bin_name_tostring2 (sym->name, 'o');
+		if (!name || !*name || sym->is_imported) {
+			continue;
+		}
+		if (strcmp (sym->bind, R_BIN_BIND_GLOBAL_STR)) {
+			continue;
+		}
+		if (executable_like && !apple_symbol (name)) {
+			return true;
+		}
+		if (dylib_like && is_suspicious_library_export (name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static void _fill_exports(struct MACH0_(obj_t) * mo, const char *name, ut64 flags, ut64 offset, void *ctx) {
 	FillCtx *context = ctx;
 	ut64 vaddr = offset_to_vaddr (mo, offset);
@@ -3051,6 +3093,11 @@ static bool apple_symbol(const char *sym_name) {
 		return true;
 	}
 	if (!strcmp (sym_name, "__mh_execute_header")) {
+		return true;
+	}
+	if (!strcmp (sym_name, "start") || !strcmp (sym_name, "_NXArgc") ||
+		!strcmp (sym_name, "_NXArgv") || !strcmp (sym_name, "___progname") ||
+		!strcmp (sym_name, "_environ")) {
 		return true;
 	}
 	return false;
@@ -3113,7 +3160,13 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 
 	HtPP *hash = ht_pp_new0 ();
 
-	FillCtx fill_context = { .bf = bf, .symcache = symcache, .hash = hash, .boffset = obj->boffset, .ordinal = &ordinal };
+	FillCtx fill_context = {
+		.bf = bf,
+		.symcache = symcache,
+		.hash = hash,
+		.boffset = obj->boffset,
+		.ordinal = &ordinal,
+	};
 	walk_exports (mo, _fill_exports, &fill_context);
 
 	if (!mo->symtab || !mo->symstr) {
@@ -3401,6 +3454,11 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 			}
 		}
 		ht_pp_free (symcache);
+	}
+	if (has_nonruntime_public_symbols (mo)) {
+		mo->dbg_info |= R_BIN_DBG_UNCAPS;
+	} else {
+		mo->dbg_info &= ~R_BIN_DBG_UNCAPS;
 	}
 
 	if (is_debug_build (mo->options.bf, mo)) {

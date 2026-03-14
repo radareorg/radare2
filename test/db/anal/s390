@@ -45,6 +45,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 va       false
 EOF
 RUN

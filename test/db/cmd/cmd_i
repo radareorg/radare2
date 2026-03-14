@@ -204,6 +204,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -1260,6 +1261,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -1301,6 +1303,7 @@ EXPECT=<<EOF
   "sanitize": false,
   "static": false,
   "stripped": false,
+  "uncaps": true,
   "subsys": "linux",
   "va": true,
   "checksums": {
@@ -2715,6 +2718,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF
@@ -2802,6 +2806,7 @@ rpath    NONE
 sanitize false
 static   false
 stripped false
+uncaps   true
 subsys   linux
 va       true
 EOF

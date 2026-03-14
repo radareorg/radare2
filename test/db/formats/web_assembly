@@ -43,6 +43,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 subsys   wasm
 va       false
 EOF

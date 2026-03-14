@@ -36,6 +36,7 @@ relocs   false
 sanitize false
 static   true
 stripped false
+uncaps   false
 va       true
             ;-- entry0:
             ;-- InitAddress:

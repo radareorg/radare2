@@ -32,6 +32,7 @@ relocs   false
 sanitize false
 static   false
 stripped false
+uncaps   false
 va       true
 /usr/lib/libc.2
 EOF
@@ -106,6 +107,7 @@ relocs   false
 sanitize false
 static   false
 stripped false
+uncaps   false
 va       true
 0x00000002 0x00000002 0x00000108 SOM MAGIC; Magic number
 0x00000004 0x00000004 0x05124000 Version ID; Version identifier
