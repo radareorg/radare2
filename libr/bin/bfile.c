@@ -737,7 +737,6 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	bf->rawstr = opt->rawstr;
 	bf->fd = opt->fd;
 	bf->curxtr = opt->pluginname? r_bin_get_xtrplugin_by_name (bin, opt->pluginname) : NULL;
-	bf->sdb = sdb;
 	if ((st64)file_sz < 0) {
 		file_sz = 1024 * 64;
 	}
@@ -1015,7 +1014,10 @@ R_API void r_bin_file_free(void /*RBinFile*/ *_bf) {
 	if (bf->curxtr && bf->curxtr->destroy && bf->xtr_obj) {
 		bf->curxtr->free_xtr ((void *)(bf->xtr_obj));
 	}
-	// TODO: unset related sdb namespaces
+	// Avoid double-free: r_bin_object_new aliases bo->kv to bf->sdb
+	if (bf->bo && bf->bo->kv == bf->sdb) {
+		bf->bo->kv = NULL;
+	}
 	sdb_free (bf->sdb);
 	// Cleanup DWARF metadata
 	R_FREE (bf->dwarf_metadata.comp_dir);
