@@ -195,11 +195,20 @@ static ut32 anal_esil_reg_size (void *user, const char *name) {
 	return size;
 }
 
+static bool anal_esil_reg_alias (void *user, const char *name, const char *alias) {
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (((RAnal *)user)->reg, alias_type, name);
+}
+
 static REsilRegInterface anal_esil_reg_if = {
 	.is_reg = anal_esil_is_reg,
 	.reg_read = anal_esil_reg_read,
 	.reg_write = anal_esil_reg_write,
-	.reg_size = anal_esil_reg_size
+	.reg_size = anal_esil_reg_size,
+	.reg_alias = anal_esil_reg_alias
 };
 
 static bool anal_esil_set_bits (void *user, int bits) {
