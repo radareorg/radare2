@@ -2782,7 +2782,6 @@ R_API void r_core_fini(RCore *c) {
 	free (c->sessionfile);
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
-	r_list_free (c->cmd_descriptors);
 	/*
 	r_unref (c->anal->config);
 	*/
