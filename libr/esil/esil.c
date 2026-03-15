@@ -50,8 +50,8 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	return esil;
 }
 
-R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
-	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if) {
+R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap, ut32 addrsize,
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if) {
 	R_RETURN_VAL_IF_FAIL (esil && reg_if && reg_if->is_reg && reg_if->reg_read &&
 		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
 		mem_if->mem_write && (stacksize > 2), false);
@@ -90,6 +90,9 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
 	esil->addrmask = r_num_genmask (addrsize - 1);
 	esil->reg_if = *reg_if;
 	esil->mem_if = *mem_if;
+	if (util_if) {
+		esil->util_if = *util_if;
+	}
 	return true;
 voyeur_fail:
 	r_esil_plugins_fini (esil);
@@ -103,10 +106,10 @@ ops_fail:
 }
 
 R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if) {
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if) {
 	REsil *esil = R_NEW0 (REsil);
 	if (R_UNLIKELY (!r_esil_init (esil, stacksize, iotrap,
-		addrsize, reg_if, mem_if))) {
+		addrsize, reg_if, mem_if, util_if))) {
 		free (esil);
 		return NULL;
 	}
@@ -156,7 +159,7 @@ R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
 	simple_reg_if.reg = reg;
 	REsilMemInterface simple_mem_if = {{bnd->io}, (REsilMemSwitch)bnd->bank_use,
 		(REsilMemRead)bnd->read_at, (REsilMemWrite)bnd->write_at};
-	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if);
+	return r_esil_new_ex (4096, false, addrsize, &simple_reg_if, &simple_mem_if, NULL);
 }
 
 R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType vt) {
@@ -166,6 +169,7 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 	case R_ESIL_VOYEUR_REG_WRITE:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
+	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
@@ -194,6 +198,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	case R_ESIL_VOYEUR_REG_WRITE:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
+	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
 		break;
 	default:
@@ -697,6 +702,22 @@ R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32
 		*size = esil->reg_if.reg_size (esil->reg_if.reg, name);
 	}
 	return true;
+}
+
+R_API bool r_esil_set_bits(REsil *esil, int bits) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	if (!esil->util_if.set_bits) {
+		R_LOG_WARN ("Cannot set bits; REsilUtilInterface was not setup for this Esil");
+		return false;
+	}
+	ut32 i;
+	if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_SET_BITS], &i)) {
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_SET_BITS], i);
+			voy->set_bits (voy->user, bits);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_SET_BITS], &i));
+	}
+	return esil->util_if.set_bits (esil->util_if.user, bits);
 }
 
 R_API const char *r_esil_trapstr(int type) {

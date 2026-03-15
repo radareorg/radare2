@@ -1313,7 +1313,7 @@ static TPState *tps_init(RAnal *anal) {
 	// todo: this probably needs some boundary checks
 	r_reg_setv (reg, "SP", sp);
 	r_reg_setv (reg, "BP", sp);
-	if (!r_esil_init (&tps->esil, 4096, false, anal->config->bits, &tps->reg_if, &tps->mem_if)) {
+	if (!r_esil_init (&tps->esil, 4096, false, anal->config->bits, &tps->reg_if, &tps->mem_if, NULL)) {
 		r_reg_free (reg);
 		if (anal->iob.fd_close) {
 			anal->iob.fd_close (io, tps->stack_fd);

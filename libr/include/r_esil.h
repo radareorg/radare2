@@ -167,10 +167,18 @@ typedef struct r_esil_register_interface_t {
 	// REsilRegAlias reg_alias;
 } REsilRegInterface;
 
+typedef bool (*REsilSetBits)(void *user, int bits);
+
+typedef struct r_esil_util_interface_t {
+	void *user;
+	REsilSetBits set_bits;
+} REsilUtilInterface;
+
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
 typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
+typedef	void (*REsilVoyeurSetBits)(void *user, int bits);
 typedef void (*REsilVoyeurOp)(void *user, const char *op);
 
 typedef struct r_esil_voyeur_t {
@@ -180,6 +188,7 @@ typedef struct r_esil_voyeur_t {
 		REsilVoyeurRegWrite reg_write;
 		REsilVoyeurMemRead mem_read;
 		REsilVoyeurMemWrite mem_write;
+		REsilVoyeurSetBits set_bits;
 		REsilVoyeurOp op;
 		void *vfn;
 	};
@@ -190,6 +199,7 @@ typedef enum {
 	R_ESIL_VOYEUR_REG_WRITE,
 	R_ESIL_VOYEUR_MEM_READ,
 	R_ESIL_VOYEUR_MEM_WRITE,
+	R_ESIL_VOYEUR_SET_BITS,
 	R_ESIL_VOYEUR_OP,
 	R_ESIL_VOYEUR_LAST,
 	R_ESIL_VOYEUR_HIGH_MASK = 0x7,
@@ -251,6 +261,7 @@ typedef struct r_esil_t {
 	REsilTrace *trace;
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
+	REsilUtilInterface util_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
 	REsilCallbacks cb;
 	REsilCallbacks ocb;
@@ -300,9 +311,9 @@ typedef struct r_esil_active_plugin_t {
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
 R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
-	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if);
+	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *util_if);
 R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if);
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if);
 //this should replace existing r_esil_new
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
 //R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
@@ -326,6 +337,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
+R_API bool r_esil_set_bits(REsil *esil, int bits);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);
 #if R2_590

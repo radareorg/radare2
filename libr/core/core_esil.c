@@ -133,6 +133,15 @@ static REsilMemInterface core_esil_mem_if = {
 	.mem_write = core_esil_mem_write
 };
 
+static bool core_esil_set_bits(void *core, int bits) {
+	r_config_set_i (((RCore *)core)->config, "asm.bits", bits);
+	return true;
+}
+
+static REsilUtilInterface core_esil_util_if = {
+	.set_bits = core_esil_set_bits
+};
+
 static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
 	ut64 old, ut64 val) {
 	RCoreEsil *cesil = user;
@@ -159,6 +168,16 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	}
 }
 
+static void core_esil_voyeur_trap_revert_set_bits (void *user, int bits) {
+	RCore *core = user;
+	RCoreEsil *cesil = &core->esil;
+	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
+		return;
+	}
+	ut32 old_bits = r_config_get_i (core->config, "asm.bits");
+	r_strbuf_prependf (&cesil->trap_revert, "%d,BITS,", old_bits);
+}
+
 static void core_esil_stepback_free (void *data) {
 	if (data) {
 		RCoreEsilStepBack *cesb = data;
@@ -176,8 +195,9 @@ R_API bool r_core_esil_init(RCore *core) {
 	}
 	core_esil_reg_if.reg = core;
 	core_esil_mem_if.mem = core;
+	core_esil_util_if.user = core;
 	if (!r_esil_init (&core->esil.esil, 4096, false, 64,
-		&core_esil_reg_if, &core_esil_mem_if)) {
+		&core_esil_reg_if, &core_esil_mem_if, &core_esil_util_if)) {
 		goto init_fail;
 	}
 	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0,
@@ -191,6 +211,8 @@ R_API bool r_core_esil_init(RCore *core) {
 		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
 	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
 		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	core->esil.tr_bits = r_esil_add_voyeur (&core->esil.esil, core,
+		core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
 	core->esil.stepback.free = core_esil_stepback_free;
 	return true;
 op_fail:
@@ -516,6 +538,7 @@ R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_mem);
+	r_esil_del_voyeur (&cesil->esil, cesil->tr_bits);
 	r_esil_fini (&cesil->esil);
 	r_strbuf_fini (&cesil->trap_revert);
 	if (cesil->reg) {

@@ -201,6 +201,14 @@ static REsilRegInterface anal_esil_reg_if = {
 	.reg_write = anal_esil_reg_write,
 	.reg_size = anal_esil_reg_size
 };
+
+static bool anal_esil_set_bits (void *user, int bits) {
+	return r_anal_set_triplet ((RAnal *)user, NULL, NULL, bits);
+}
+
+static REsilUtilInterface anal_esil_util_if = {
+	.set_bits = anal_esil_set_bits
+};
 #endif
 
 // Take nullable RArchConfig as argument?
@@ -252,9 +260,10 @@ R_API RAnal *r_anal_new(void) {
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
 #if USE_NEW_ESIL
-	anal_esil_reg_if.user = anal;
-	anal_esil_mem_if.user = anal;
-	anal->esil = r_esil_new_ex (4096, 0, 1, &anal_esil_reg_if, &anal_esil_mem_if);
+	anal_esil_reg_if.reg = anal;
+	anal_esil_mem_if.mem = anal;
+	anal_esil_util_if.user = anal;
+	anal->esil = r_esil_new_ex (4096, 0, 1, &anal_esil_reg_if, &anal_esil_mem_if, &anal_esil_util_if);
 #else
 	anal->esil = r_esil_new (4096, 0, 1);
 #endif

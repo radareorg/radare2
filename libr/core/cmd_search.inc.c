@@ -1983,7 +1983,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	search_esil_mem_if.user = core;
 	REsil stack_located_esil = {0};
 	if (!r_esil_init (&stack_located_esil, stacksize, iotrap, addrsize,
-		&search_esil_reg_if, &search_esil_mem_if)) {
+		&search_esil_reg_if, &search_esil_mem_if, NULL)) {
 		R_LOG_ERROR ("Cannot initialize search esil instance");
 		return;
 	}

@@ -25,7 +25,6 @@
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr);
 
-/// XXX R2_600 - must be internal imho
 R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 #if USE_NEW_ESIL
 	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
@@ -597,10 +596,7 @@ static bool esil_trap(REsil *esil) {
 static bool esil_bits(REsil *esil) {
 	ut64 s;
 	if (popRN (esil, &s)) {
-		if (esil->anal && esil->anal->coreb.setArchBits) {
-			esil->anal->coreb.setArchBits (esil->anal->coreb.core, NULL, s);
-		}
-		return true;
+		return r_esil_set_bits (esil, (int)s);
 	}
 	R_LOG_DEBUG ("esil_bits: missing parameters in stack");
 	return false;
