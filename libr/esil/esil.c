@@ -145,12 +145,20 @@ static ut32 default_reg_size(void *reg, const char *name) {
 	return rsize;
 }
 
+static bool default_reg_alias(void *reg, const char *name, const char *alias) {
+	const int kind = r_reg_alias_fromstring (alias);
+	if (kind < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (reg, kind, name);
+}
+
 static REsilRegInterface simple_reg_if = {
 	.is_reg = default_is_reg,
 	.reg_read = default_reg_read,
 	.reg_write = (REsilRegWrite)r_reg_setv,
 	.reg_size = default_reg_size,
-	// .reg_alias = default_reg_alias
+	.reg_alias = default_reg_alias,
 };
 
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob) {
@@ -167,6 +175,7 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_REG_ALIAS:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
@@ -196,6 +205,7 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_REG_ALIAS:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
@@ -702,6 +712,22 @@ R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32
 		*size = esil->reg_if.reg_size (esil->reg_if.reg, name);
 	}
 	return true;
+}
+
+R_API bool r_esil_reg_alias(REsil *esil, const char *name, const char *alias) {
+	R_RETURN_VAL_IF_FAIL (esil && name && alias, false);
+	if (!esil->reg_if.reg_alias) {
+		R_LOG_WARN ("Cannot set reg alias; .reg_alias was not setup for this Esil");
+		return false;
+	}
+	ut32 i;
+	if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i)) {
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], i);
+			voy->reg_alias (voy->user, name, alias);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i));
+	}
+	return esil->reg_if.reg_alias (esil->reg_if.reg, name, alias);
 }
 
 R_API bool r_esil_set_bits(REsil *esil, int bits) {

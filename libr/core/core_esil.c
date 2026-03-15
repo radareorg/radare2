@@ -62,11 +62,20 @@ static ut32 core_esil_reg_size (void *core, const char *name) {
 	return size;
 }
 
+static bool core_esil_reg_alias (void *core, const char *name, const char *alias) {
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (((RCore *)core)->esil.reg, alias_type, name);
+}
+
 static REsilRegInterface core_esil_reg_if = {
 	.is_reg = core_esil_is_reg,
 	.reg_read = core_esil_reg_read,
 	.reg_write = core_esil_reg_write,
-	.reg_size = core_esil_reg_size
+	.reg_size = core_esil_reg_size,
+	.reg_alias = core_esil_reg_alias
 };
 
 static bool core_esil_mem_switch (void *core, ut32 idx) {
@@ -178,6 +187,22 @@ static void core_esil_voyeur_trap_revert_set_bits (void *user, int bits) {
 	r_strbuf_prependf (&cesil->trap_revert, "%d,BITS,", old_bits);
 }
 
+static void core_esil_voyeur_trap_revert_reg_alias (void *user, const char *name, const char *alias) {
+	RCoreEsil *cesil = user;
+	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
+		return;
+	}
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return;
+	}
+	const char *old_name = r_reg_alias_getname (cesil->reg, alias_type);
+	if (!old_name) {
+		return;
+	}
+	r_strbuf_prependf (&cesil->trap_revert, "%s,%s,r=,", old_name, alias);
+}
+
 static void core_esil_stepback_free (void *data) {
 	if (data) {
 		RCoreEsilStepBack *cesb = data;
@@ -213,6 +238,8 @@ R_API bool r_core_esil_init(RCore *core) {
 		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
 	core->esil.tr_bits = r_esil_add_voyeur (&core->esil.esil, core,
 		core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
+	core->esil.tr_reg_alias = r_esil_add_voyeur (&core->esil.esil, core,
+		core_esil_voyeur_trap_revert_reg_alias, R_ESIL_VOYEUR_REG_ALIAS);
 	core->esil.stepback.free = core_esil_stepback_free;
 	return true;
 op_fail:
@@ -539,6 +566,7 @@ R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_mem);
 	r_esil_del_voyeur (&cesil->esil, cesil->tr_bits);
+	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg_alias);
 	r_esil_fini (&cesil->esil);
 	r_strbuf_fini (&cesil->trap_revert);
 	if (cesil->reg) {

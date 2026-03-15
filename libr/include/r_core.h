@@ -322,6 +322,7 @@ typedef struct r_core_esil_t {
 	ut32 tr_reg;
 	ut32 tr_mem;
 	ut32 tr_bits;
+	ut32 tr_reg_alias;
 	RReg *reg;
 	char *cmd_step;		// command to run before a step is performed
 	char *cmd_step_out;	// command to run after a step is performed

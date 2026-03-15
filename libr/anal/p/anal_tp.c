@@ -1159,6 +1159,14 @@ static ut32 tt_reg_size(void *reg, const char *name) {
 	return size;
 }
 
+static bool tt_reg_alias(void *reg, const char *name, const char *alias) {
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (reg, alias_type, name);
+}
+
 static bool tt_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
 	if (tps->anal->iob.read_at) {
@@ -1306,6 +1314,7 @@ static TPState *tps_init(RAnal *anal) {
 	tps->reg_if.reg_read = tt_reg_read;
 	tps->reg_if.reg_write = (REsilRegWrite)r_reg_setv;
 	tps->reg_if.reg_size = tt_reg_size;
+	tps->reg_if.reg_alias = tt_reg_alias;
 	tps->mem_if.mem = tps;
 	tps->mem_if.mem_read = tt_mem_read;
 	tps->mem_if.mem_write = tt_mem_write;

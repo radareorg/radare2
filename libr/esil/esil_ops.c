@@ -693,6 +693,20 @@ static bool esil_cmp(REsil *esil) {
 
 #if 1
 // needed for COSMAC
+#if USE_NEW_ESIL
+static bool esil_regalias(REsil *esil) {
+	R_RETURN_VAL_IF_FAIL (esil, false);
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	bool ret = false;
+	if (src && dst) {
+		ret = r_esil_reg_alias (esil, src, dst);
+	}
+	free (dst);
+	free (src);
+	return ret;
+}
+#else
 static bool esil_regalias(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	ut64 num;
@@ -710,6 +724,7 @@ static bool esil_regalias(REsil *esil) {
 	free (src);
 	return ret;
 }
+#endif
 #endif
 
 #if 0

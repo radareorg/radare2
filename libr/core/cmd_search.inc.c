@@ -1931,11 +1931,20 @@ static ut32 search_esil_reg_size (void *reg, const char *name) {
 	return size;
 }
 
+static bool search_esil_reg_alias (void *reg, const char *name, const char *alias) {
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (reg, alias_type, name);
+}
+
 REsilRegInterface search_esil_reg_if = {
 	.is_reg = search_esil_is_reg,
 	.reg_read = search_esil_reg_read,
 	.reg_write = (REsilRegWrite)r_reg_setv,
 	.reg_size = search_esil_reg_size,
+	.reg_alias = search_esil_reg_alias,
 };
 #endif
 
