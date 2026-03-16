@@ -74,24 +74,20 @@ static uint32_t max_rows(int count, ...) {
 }
 
 static ut64 dotnet_max_stream_headers(PE *pe, ut64 offset) {
-	ut64 remaining_size;
-
 	if (offset >= pe->data_size) {
 		return 0;
 	}
-	remaining_size = pe->data_size - offset;
+	ut64 remaining_size = pe->data_size - offset;
 	return remaining_size / (sizeof (STREAM_HEADER) + 4);
 }
 
 static ut32 dotnet_max_rows_at(PE *pe, const ut8 *row_ptr, ut32 row_size) {
 	const ut8 *data = (const ut8 *)pe->data;
 	const ut8 *end = data + pe->data_size;
-	ut64 remaining_size;
-
 	if (!row_size || row_ptr < data || row_ptr > end) {
 		return 0;
 	}
-	remaining_size = end - row_ptr;
+	ut64 remaining_size = end - row_ptr;
 	return (ut32)(remaining_size / row_size);
 }
 
@@ -118,12 +114,12 @@ static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_ro
 
 		char *eos = (char *)r_mem_mem ((void *)start, DOTNET_STREAM_NAME_SIZE, (void *)"\0", 1);
 
-		if (eos == NULL) {
+		if (!eos) {
 			break;
 		}
 
-		strncpy (stream_name, stream_header->Name, DOTNET_STREAM_NAME_SIZE);
-		stream_name[DOTNET_STREAM_NAME_SIZE] = '\0';
+		size_t name_len = eos - start;
+		r_str_ncpy (stream_name, start, R_MIN (name_len + 1, DOTNET_STREAM_NAME_SIZE + 1));
 
 		// Store necessary bits to parse these later
 		if (r_str_startswith (stream_name, "#GUID")) {
@@ -237,7 +233,7 @@ static void dotnet_parse_tilde_assemblyref(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *)name_ptr);
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetLibrary *lib = R_NEW0 (DotNetLibrary);
 					lib->name = strdup (name);
 					lib->major_version = major;
@@ -369,7 +365,7 @@ static void dotnet_parse_tilde_field(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 2));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					// Find which typedef this field belongs to
 					RListIter *iter;
 					DotNetTypeDefInfo *td;
@@ -377,7 +373,7 @@ static void dotnet_parse_tilde_field(
 						if (field_idx >= td->field_list_start && field_idx < td->field_list_end) {
 							// Find the corresponding DotNetSymbol
 							char *full_name;
-							if (td->namespace && td->namespace[0] != '\0') {
+							if (R_STR_ISNOTEMPTY (td->namespace)) {
 								full_name = r_str_newf ("%s.%s", td->namespace, td->class_name);
 							} else {
 								full_name = strdup (td->class_name);
@@ -532,10 +528,10 @@ static void dotnet_parse_tilde_typedef(
 					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (name);
-					sym->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+					sym->namespace = strdup (r_str_get (namespace));
 					sym->type = strdup ("typedef");
 					sym->flags = flags;
 					sym->vaddr = 0; // TypeDefs don't have direct RVAs
@@ -706,7 +702,7 @@ static void dotnet_parse_tilde_methoddef(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + class_index_size));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (name);
 					sym->vaddr = 0; // MemberRef don't have RVA
@@ -750,10 +746,10 @@ static void dotnet_parse_tilde_methoddef(
 					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
 				}
 
-				if (type_name && type_name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (type_name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (type_name);
-					sym->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+					sym->namespace = strdup (r_str_get (namespace));
 					sym->vaddr = 0; // TypeDefs don't have direct RVAs
 					sym->type = strdup ("typedef");
 					sym->flags = flags;
@@ -1054,8 +1050,8 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 				}
 
 				DotNetTypeDefInfo *td = R_NEW0 (DotNetTypeDefInfo);
-				td->class_name = (type_name && type_name[0] != '\0')? strdup (type_name): strdup ("<unnamed>");
-				td->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+				td->class_name = strdup (r_str_get_fail (type_name, "<unnamed>"));
+				td->namespace = strdup (r_str_get (namespace));
 				td->field_list_start = field_list_idx;
 				td->field_list_end = next_field_list_idx;
 				td->method_list_start = method_list_idx;
