@@ -7,7 +7,6 @@ ifeq ($(LINK_QJS_ARCHIVE),1)
 QJSFILES=$(QJS_NAME)/libquickjs.a
 else
 QJSFILES+=quickjs.c
-QJSFILES+=cutils.c
 QJSFILES+=libregexp.c
 QJSFILES+=libunicode.c
 # https://github.com/quickjs-ng/quickjs/issues/17
