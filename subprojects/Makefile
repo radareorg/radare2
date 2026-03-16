@@ -35,4 +35,4 @@ all: $(ALL)
 clean:
 	rm -rf $(ALL)
 
-include *.mk
+include $(addsuffix .mk,$(DEPS))
