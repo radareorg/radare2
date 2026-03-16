@@ -73,12 +73,30 @@ static uint32_t max_rows(int count, ...) {
 	return biggest;
 }
 
+static ut64 dotnet_max_stream_headers(PE *pe, ut64 offset) {
+	if (offset >= pe->data_size) {
+		return 0;
+	}
+	ut64 remaining_size = pe->data_size - offset;
+	return remaining_size / (sizeof (STREAM_HEADER) + 4);
+}
+
+static ut32 dotnet_max_rows_at(PE *pe, const ut8 *row_ptr, ut32 row_size) {
+	const ut8 *data = (const ut8 *)pe->data;
+	const ut8 *end = data + pe->data_size;
+	if (!row_size || row_ptr < data || row_ptr > end) {
+		return 0;
+	}
+	ut64 remaining_size = end - row_ptr;
+	return (ut32)(remaining_size / row_size);
+}
+
 static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_root, ut32 num_streams) {
 	char stream_name[DOTNET_STREAM_NAME_SIZE + 1];
 	STREAMS headers = { 0 };
 	unsigned int i;
 
-	if (offset >= pe->data_size) {
+	if (offset >= pe->data_size || num_streams > dotnet_max_stream_headers (pe, offset)) {
 		return headers;
 	}
 	PSTREAM_HEADER stream_header = (PSTREAM_HEADER) (pe->data + offset);
@@ -96,12 +114,12 @@ static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_ro
 
 		char *eos = (char *)r_mem_mem ((void *)start, DOTNET_STREAM_NAME_SIZE, (void *)"\0", 1);
 
-		if (eos == NULL) {
+		if (!eos) {
 			break;
 		}
 
-		strncpy (stream_name, stream_header->Name, DOTNET_STREAM_NAME_SIZE);
-		stream_name[DOTNET_STREAM_NAME_SIZE] = '\0';
+		size_t name_len = eos - start;
+		r_str_ncpy (stream_name, start, R_MIN (name_len + 1, DOTNET_STREAM_NAME_SIZE + 1));
 
 		// Store necessary bits to parse these later
 		if (r_str_startswith (stream_name, "#GUID")) {
@@ -181,8 +199,12 @@ static void dotnet_parse_tilde_assemblyref(
 			// AssemblyRef structure: MajorVersion (2) MinorVersion (2) BuildNumber (2) RevisionNumber (2)
 			// Flags (4) PublicKeyOrToken (blob) Name (string) Culture (string)
 			row_ptr = table_offset;
+			ut32 row_size = 2 + 2 + 2 + 2 + 4 + (index_sizes.blob * 2) + (index_sizes.string * 2);
+			ut32 max_rows = dotnet_max_rows_at (pe, row_ptr, row_size);
+			if (num_rows > max_rows) {
+				return;
+			}
 			for (i = 0; i < num_rows; i++) {
-				uint32_t row_size = 2 + 2 + 2 + 2 + 4 + (index_sizes.blob * 2) + (index_sizes.string * 2);
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
@@ -211,7 +233,7 @@ static void dotnet_parse_tilde_assemblyref(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *)name_ptr);
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetLibrary *lib = R_NEW0 (DotNetLibrary);
 					lib->name = strdup (name);
 					lib->major_version = major;
@@ -343,7 +365,7 @@ static void dotnet_parse_tilde_field(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 2));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					// Find which typedef this field belongs to
 					RListIter *iter;
 					DotNetTypeDefInfo *td;
@@ -351,7 +373,7 @@ static void dotnet_parse_tilde_field(
 						if (field_idx >= td->field_list_start && field_idx < td->field_list_end) {
 							// Find the corresponding DotNetSymbol
 							char *full_name;
-							if (td->namespace && td->namespace[0] != '\0') {
+							if (R_STR_ISNOTEMPTY (td->namespace)) {
 								full_name = r_str_newf ("%s.%s", td->namespace, td->class_name);
 							} else {
 								full_name = strdup (td->class_name);
@@ -506,10 +528,10 @@ static void dotnet_parse_tilde_typedef(
 					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (name);
-					sym->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+					sym->namespace = strdup (r_str_get (namespace));
 					sym->type = strdup ("typedef");
 					sym->flags = flags;
 					sym->vaddr = 0; // TypeDefs don't have direct RVAs
@@ -680,7 +702,7 @@ static void dotnet_parse_tilde_methoddef(
 					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + class_index_size));
 				}
 
-				if (name && name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (name);
 					sym->vaddr = 0; // MemberRef don't have RVA
@@ -724,10 +746,10 @@ static void dotnet_parse_tilde_methoddef(
 					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
 				}
 
-				if (type_name && type_name[0] != '\0') {
+				if (R_STR_ISNOTEMPTY (type_name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					sym->name = strdup (type_name);
-					sym->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+					sym->namespace = strdup (r_str_get (namespace));
 					sym->vaddr = 0; // TypeDefs don't have direct RVAs
 					sym->type = strdup ("typedef");
 					sym->flags = flags;
@@ -1028,8 +1050,8 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 				}
 
 				DotNetTypeDefInfo *td = R_NEW0 (DotNetTypeDefInfo);
-				td->class_name = (type_name && type_name[0] != '\0')? strdup (type_name): strdup ("<unnamed>");
-				td->namespace = (namespace && namespace[0] != '\0')? strdup (namespace): strdup ("");
+				td->class_name = strdup (r_str_get_fail (type_name, "<unnamed>"));
+				td->namespace = strdup (r_str_get (namespace));
 				td->field_list_start = field_list_idx;
 				td->field_list_end = next_field_list_idx;
 				td->method_list_start = method_list_idx;
@@ -1289,6 +1311,9 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 
 	num_streams = r_read_le16 (pe->data + stream_offset);
 	stream_offset += 2;
+	if (num_streams > dotnet_max_stream_headers (pe, stream_offset)) {
+		return symbols;
+	}
 
 	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
 
@@ -1370,6 +1395,9 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 
 	num_streams = r_read_le16 (pe->data + stream_offset);
 	stream_offset += 2;
+	if (num_streams > dotnet_max_stream_headers (pe, stream_offset)) {
+		return libraries;
+	}
 
 	headers = dotnet_parse_stream_headers (pe, stream_offset, metadata_root, num_streams);
 
@@ -1506,6 +1534,9 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 			if (fits_in_pe (pe, pe->data + offset_2, 2)) {
 				ut16 num_streams = r_read_le16 (pe->data + offset_2);
 				offset_2 += 2;
+				if (num_streams > dotnet_max_stream_headers (pe, offset_2)) {
+					return version_info;
+				}
 				STREAMS headers = dotnet_parse_stream_headers (pe, offset_2, metadata_root, num_streams);
 
 				// Try to parse Assembly table
