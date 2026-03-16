@@ -2467,9 +2467,8 @@ static bool has_public_visibility_leaks(ELFOBJ *eo) {
 bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms, bool *have_uncaps) {
 	*have_lines = false;
 	*have_syms = false;
-	*have_uncaps = false;
+	*have_uncaps = has_public_visibility_leaks (eo);
 	if (!eo->shdr) {
-		*have_uncaps = has_public_visibility_leaks (eo);
 		return true;
 	}
 	RBinElfSection *sec = get_section_by_name (eo, ".gnu_debugdata");
@@ -2484,12 +2483,7 @@ bool Elf_(get_stripped)(ELFOBJ *eo, bool *have_lines, bool *have_syms, bool *hav
 		}
 	}
 	// TODO: check for named relocs and return R_BIN_DBG_RELOCS
-	if (*have_lines || *have_syms) {
-		*have_uncaps = has_public_visibility_leaks (eo);
-		return false;
-	}
-	*have_uncaps = has_public_visibility_leaks (eo);
-	return true;
+	return !(*have_lines || *have_syms);
 }
 
 char *Elf_(intrp)(ELFOBJ *eo) {
