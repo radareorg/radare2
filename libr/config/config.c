@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2006-2025 - pancake */
+/* radare - LGPL - Copyright 2006-2026 - pancake */
 
 #define R_LOG_ORIGIN "config"
 
@@ -561,17 +561,16 @@ R_API RConfigNode* r_config_set_b(RConfig *cfg, const char *name, bool b) {
 		}
 		R_LOG_WARN ("This node is not boolean");
 		R_RETURN_VAL_IF_FAIL (false, NULL);
-		// return NULL;
-	}
-	node = r_config_node_new (name, r_str_bool (b));
-	if (!node) {
-		return NULL;
-	}
-	node->flags = CN_RW | CN_BOOL;
-	node->i_value = b;
-	ht_pp_insert (cfg->ht, node->name, node);
-	if (cfg->nodes) {
-		r_list_append (cfg->nodes, node);
+	} else if (!cfg->lock) {
+		node = r_config_node_new (name, r_str_bool (b));
+		if (node) {
+			node->flags = CN_RW | CN_BOOL;
+			node->i_value = b;
+			ht_pp_insert (cfg->ht, node->name, node);
+			if (cfg->nodes) {
+				r_list_append (cfg->nodes, node);
+			}
+		}
 	}
 	return node;
 }
