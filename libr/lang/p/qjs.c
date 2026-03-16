@@ -816,12 +816,22 @@ static void register_helpers(JSContext *ctx) {
 		"{console.log ((typeof x==='string')?x:JSON.stringify (x, null, 2));}"
 		"}");
 	eval (ctx, "var console = { log:print, error:print, debug:print };");
-	eval (ctx, "r2.cmd2 = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\"}`));");
-	eval (ctx, "r2.cmd2j = (x) => JSON.parse (r2.cmd (`'{\"cmd\":\"${x}\",\"json\":true}`));");
+	eval (ctx, "r2._cmd2 = (x, a, j) => {"
+		"const cmd = (a === undefined || a === null)? x: x + ' @ ' + a;"
+		"const req = { cmd: cmd };"
+		"if (j) { req.json = true; }"
+		"return JSON.parse (r2.cmd (\"'\" + JSON.stringify (req)));"
+		"};");
+	eval (ctx, "r2.cmd2 = (x) => r2._cmd2 (x);");
+	eval (ctx, "r2.cmd2j = (x) => r2._cmd2 (x, null, true);");
 	eval (ctx, "r2.cmdj = (x) => JSON.parse (r2.cmd (x));");
 	eval (ctx, "r2.cmdAt = (x, a) => r2.cmd (x + ' @ ' + a);");
+	eval (ctx, "r2.cmd2At = (x, a) => r2._cmd2 (x, a);");
 	eval (ctx, "r2.call = (x) => r2.cmd ('\"\"' + x);");
 	eval (ctx, "r2.callj = (x) => JSON.parse (r2.call (x));");
+	eval (ctx, "r2.call2 = (x) => r2._cmd2 ('\"\"' + x);");
+	eval (ctx, "r2.call2At = (x, a) => r2._cmd2 ('\"\"' + x, a);");
+	eval (ctx, "r2.call2j = (x) => r2._cmd2 ('\"\"' + x, null, true);");
 	eval (ctx, "var global = globalThis; var G = globalThis;");
 	eval (ctx, js_require_qjs);
 	eval (ctx, "require = function (x) { if (x == 'r2papi') { return new R2Papi (r2); } ; return requirejs (x); }");

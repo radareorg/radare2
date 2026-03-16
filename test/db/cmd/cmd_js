@@ -163,3 +163,15 @@ ec ucall rgb:13a10e
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=qjs r2pipe2 helpers
+FILE=-
+CMDS=<<EOF
+s 0x10
+'js const ok = r2.cmd2At("?v $$", 0x33).value === 0x33 && Number(r2.callAt("?v $$", 0x44).trim()) === 0x44 && r2.call2("?v $$").value === 0x10 && r2.call2At("?v $$", 0x55).value === 0x55 && !r2.call2j("?Vj").error && typeof r2.call2j("?Vj").res === "object"; console.log(ok ? "ok" : "no");
+EOF
+EXPECT=<<EOF
+ok
+EOF
+EXPECT_ERR=
+RUN
