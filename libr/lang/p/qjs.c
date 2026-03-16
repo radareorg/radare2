@@ -881,7 +881,7 @@ static bool eval(JSContext *ctx, const char *code) {
 	// Set interrupt handler for JS runtime
 	JS_SetInterruptHandler (rt, qjs_interrupt_handler, cons);
 
-	bool wantRaw = strstr (code, "termInit (");
+	const bool wantRaw = strstr (code, "termInit(");
 	if (wantRaw) {
 		r_cons_set_raw (cons, true);
 	}
