@@ -76,7 +76,6 @@ libr/include/r_version.h
 libr/include/r_version.h.tmp
 libr/arch/p/arm/v35/arch-arm64
 libr/arch/p/arm/v35/arch-armv7
-shlr/capstone/
 shlr/java/out
 shlr/java/out.exe
 shlr/spp/config.h

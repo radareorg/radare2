@@ -1,10 +1,19 @@
 include config.mk
+-include ../../config-user.mk
 
 R2_ROOT = ../..
 BUILD_NAME ?= build-fuzz
 BUILD_DIR = $(R2_ROOT)/$(BUILD_NAME)
 FUZZ_DIR = $(BUILD_DIR)/test/fuzz
 CORPUS_DIR = corpus
+
+ifeq ($(USE_CSNEXT),1)
+CAPSTONE_DIR = capstone-next
+else ifeq ($(USE_CS4),1)
+CAPSTONE_DIR = capstone-v4
+else
+CAPSTONE_DIR = capstone-v5
+endif
 
 FUZZER_OPTS=-detect_leaks=0
 # Useful for scripts or types parser
@@ -66,11 +75,11 @@ build-custom:
 	@fuzz_name=$$(echo "$(T)" | sed 's/^fuzz_//'); \
 	if [ -f "fuzz_$${fuzz_name}_custom.c" ]; then \
 		echo "Building custom mutator for $$fuzz_name..."; \
-		$(CC) $(CFLAGS) \
+			$(CC) $(CFLAGS) \
 			-I$(BUILD_DIR) \
 			-I$(R2_ROOT)/libr/include \
 			-I$(R2_ROOT)/shlr \
-			-I$(R2_ROOT)/shlr/capstone/include \
+			-I$(R2_ROOT)/subprojects/$(CAPSTONE_DIR)/include \
 			-I$(R2_ROOT)/subprojects/sdb/src \
 			-I$(R2_ROOT)/subprojects/sdb/include \
 			-D__LIBR_CORE__ -D__LIBR_BIN__ -D__LIBR_IO__ -D__LIBR_ANAL__ -D__LIBR_UTIL__ -D__LIBR_CONS__ -D__LIBR_SOCKET__ \
@@ -100,7 +109,7 @@ build-custom:
 			$(BUILD_DIR)/subprojects/sdb/liblibsdb_static.a \
 			$(BUILD_DIR)/shlr/zip/libr2zip.a \
 			$(BUILD_DIR)/shlr/zip/libr2zlib.a \
-			$(BUILD_DIR)/shlr/capstone/libcapstone-static.a \
+			$(BUILD_DIR)/subprojects/$(CAPSTONE_DIR)/libcapstone.a \
 			$(BUILD_DIR)/subprojects/qjs/libquickjs.a \
 			-lm -lpthread -ldl \
 			$(LDFLAGS) -o $(FUZZ_DIR)/$(T)_custom || echo "Failed to build $(T)_custom"; \
@@ -246,7 +255,6 @@ clean:
 	rm -rf "$(CORPUS_DIR)" $(CORPUS_DIR)_*
 
 mrproper distclean: clean
-	cd "$(R2_ROOT)" && rm -rf shlr/capstone
 
 test:
 	@echo "Running quick test with fuzz_anal..."

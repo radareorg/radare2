@@ -70,7 +70,7 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y libmagic-dev
-        git clean -xdf ; rm -rf shlr/capstone
+        git clean -xdf
         cp -f dist/plugins-cfg/plugins.nocs.cfg plugins.cfg
         ./configure --with-sysmagic --without-capstone --with-rpath && make -j
         sudo make install
@@ -126,7 +126,7 @@ jobs:
     - name: Reinstalling without symlinks
       run: sudo make install
     - name: Checking if capstone was cloned
-      run: if [ -d shlr/capstone ]; then echo "Capstone wasnt supposed to be cloned"; return 1; fi
+      run: if find subprojects -maxdepth 1 -type d \( -name 'capstone-v4' -o -name 'capstone-v5' -o -name 'capstone-next' \) | grep -q .; then echo "Capstone wasnt supposed to be cloned"; exit 1; fi
   linux-test:
     runs-on: ubuntu-22.04
 #    if: contains(github.ref, 'ci-')

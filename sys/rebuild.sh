@@ -63,11 +63,19 @@ RebuildJava() {
 	Rebuild libr/core
 }
 
-RebuildCapstone() {
-	if [ ! -d shlr/capstone ]; then
-		make -C shlr capstone
+CapstoneSubproject() {
+	if grep -q '^USE_CSNEXT=1' config-user.mk 2> /dev/null; then
+		echo capstone-next
+	elif grep -q '^USE_CS4=1' config-user.mk 2> /dev/null; then
+		echo capstone-v4
+	else
+		echo capstone-v5
 	fi
-	Rebuild shlr/capstone
+}
+
+RebuildCapstone() {
+	make -C subprojects "$(CapstoneSubproject)" || exit 1
+	make -C shlr capstone-build || exit 1
 	Rebuild libr/asm
 	Rebuild libr/anal
 }

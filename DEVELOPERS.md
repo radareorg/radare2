@@ -734,7 +734,6 @@ discard your current work, use the following commands:
 ```sh
 git clean -xdf
 git reset --hard
-rm -rf shlr/capstone
 ```
 
 ## Regression testing

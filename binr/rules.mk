@@ -36,7 +36,7 @@ else
 LINK+=$(SHLR)/../subprojects/otezip/libotezip.a
 endif
 LINK+=$(SHLR)/gdb/lib/libgdbr.a
-LINK+=$(CS_ROOT)/libcapstone.a
+LINK+=$(CS_LDFLAGS)
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
 
 # instead of libr.a
@@ -64,12 +64,12 @@ LINK+=$(LIBR)/main/libr_main.a
 else ifeq (${COMPILER},wasm)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
-include $(SHLR)/capstone.mk
+LINK+=$(CS_LDFLAGS)
 EXT_EXE=.wasm
 else ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
-include $(SHLR)/capstone.mk
+LINK+=$(CS_LDFLAGS)
 CFLAGS+= -s SIDE_MODULE=1
 #CFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
 #EXT_EXE=.js

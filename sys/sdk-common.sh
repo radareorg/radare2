@@ -14,9 +14,8 @@ sdkClean() {
 	make clean || true
 	rm -rf libr/.libr libr/.libr2 libr/libr.a libr/libr.dylib shlr/libr_shlr.a
 	rm -rf shlr/.libr/
-	rm -rf shlr/capstone
 	rm -rf subprojects/sdb/src/libsdb.a
-	rm -rf subprojects/capstone-v5/libcapstone.a
+	rm -rf subprojects/capstone-*/libcapstone.a
 }
 
 sdkBuild() {

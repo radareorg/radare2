@@ -50,7 +50,7 @@ include ../../shlr/java/deps.mk
 include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/sdb.mk
-include ../../shlr/capstone.mk
+LINK+=$(CS_LDFLAGS)
 
 .PHONY: all symlinks build install blobclean
 all:: symlinks
@@ -79,4 +79,3 @@ blobinstall:
 		rm -f "${DESTDIR}${BINDIR}/$$FILE" ; \
 		cp -PRpf "$$FILE" "${DESTDIR}${BINDIR}/$$FILE" ; \
 	done
-
