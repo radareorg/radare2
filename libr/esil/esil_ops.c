@@ -25,55 +25,6 @@
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr);
 
-R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-#if USE_NEW_ESIL
-	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
-	addr &= esil->addrmask;
-#else
-	R_RETURN_VAL_IF_FAIL (buf && esil, false);
-	addr &= esil->addrmask;
-	bool ret = false;
-	if (esil->cb.hook_mem_read) {
-		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
-	}
-#endif
-	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
-#if USE_NEW_ESIL
-	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
-		return false;
-	}
-	ut32 i;
-	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i)) {
-		return true;
-	}
-	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], i);
-		voy->mem_read (voy->user, addr, buf, len);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i));
-	return true;
-#else
-	if (!ret && esil->cb.mem_read) {
-		if (ret = esil->cb.mem_read (esil, addr, buf, len), (!ret && esil->iotrap)) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
-		}
-	}
-	IFDBG {
-		size_t i;
-		eprintf ("0x%08" PFMT64x " R> ", addr);
-		for (i = 0; i < len; i++) {
-			eprintf ("%02x", buf[i]);
-		}
-		eprintf ("\n");
-	}
-	return ret;
-#endif
-}
-
 static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
