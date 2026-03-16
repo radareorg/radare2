@@ -22,6 +22,11 @@ else
 CS_ROOT:=$(LIBR)/../subprojects/capstone-v5
 endif
 
+SHLR:=$(LIBR)/../shlr
+
+include $(LIBR)/../global.mk
+include $(LIBR)/../mk/${COMPILER}.mk
+
 ifeq ($(WANT_CAPSTONE),1)
 ifeq ($(USE_CAPSTONE),1)
 CS_CFLAGS=${CAPSTONE_CFLAGS}
@@ -34,11 +39,6 @@ else
 CS_CFLAGS=
 CS_LDFLAGS=
 endif
-
-SHLR:=$(LIBR)/../shlr
-
-include $(LIBR)/../global.mk
-include $(LIBR)/../mk/${COMPILER}.mk
 
 CFLAGS+=${CPPFLAGS}
 CFLAGS+=-I../xps
