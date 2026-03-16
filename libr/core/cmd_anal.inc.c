@@ -8565,6 +8565,16 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	return type;
 }
 
+#if USE_NEW_ESIL
+static void regwrite_voy(void *user, const char *name, ut64 val) {
+	RCore *core = user;
+	const int type = core_type_by_addr (core, val);
+	if (type == -1) {
+		return;
+	}
+	r_anal_xrefs_set (core->anal, core->anal->esil->addr, val, type);
+}
+#else
 static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	RCore *core = esil->user;
 	int type = core_type_by_addr (core, *val);
@@ -8573,6 +8583,7 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	}
 	return false;
 }
+#endif
 
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	RListIter *iter;
@@ -8585,10 +8596,14 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	if (!sdb_const_get (core->sdb, "aeim.fd", 0)) {
 		r_core_cmd_call (core, "aeim"); // should be set by default imho
 	}
+#if USE_NEW_ESIL
+	const ut32 vid = r_esil_add_voyeur (core->anal->esil, core, regwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
+#else
 	void *u = core->anal->esil->user;
 	core->anal->esil->user = core;
 	void *p = core->anal->esil->cb.hook_reg_write;
 	core->anal->esil->cb.hook_reg_write = regwrite_hook;
+#endif
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 	const ut64 old_pc = r_reg_getv (core->anal->reg, "PC");
@@ -8653,8 +8668,12 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	} else {
 		R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, addr);
 	}
+#if USE_NEW_ESIL
+	r_esil_del_voyeur (core->anal->esil, vid);
+#else
 	core->anal->esil->cb.hook_reg_write = p;
 	core->anal->esil->user = u;
+#endif
 	r_reg_setv (core->anal->reg, "PC", old_pc);
 }
 
