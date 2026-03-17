@@ -184,11 +184,6 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 		return 1;
 	}
 
-#if 0
-	/* try compression stuff */
-	if ((ms->flags & R_MAGIC_NO_CHECK_COMPRESS) != 0 ||
-	    (m = __magic_file_zmagic(ms, fd, inname, buf, nb)) == 0) {
-#endif
 	    /* Check if we have a tar file */
 	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
 		(m = __magic_file_is_tar(ms, buf, nb)) == 0) {
@@ -196,8 +191,8 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
 		    (m = __magic_file_softmagic(ms, buf, nb, BINTEST)) == 0) {
 		    /* try known keywords, check whether it is ASCII */
-		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0 ||
-			(m = __magic_file_ascmagic(ms, buf, nb)) == 0) {
+		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0) {
+			m = 0; // __magic_file_ascmagic(ms, buf, nb))
 			/* abandon hope, all ye who remain here */
 			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
 		//		if (mime)
@@ -208,9 +203,6 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 		    }
 		}
 	    }
-#if 0
-	}
-#endif
 	return m;
 }
 
