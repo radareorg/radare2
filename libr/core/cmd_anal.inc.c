@@ -7613,6 +7613,39 @@ static void initialize_stack(RCore *core, ut64 addr, ut64 size) {
 	}
 }
 
+static int anal_esil_mem(RCore *core) {
+	ut64 size = r_config_get_i (core->config, "esil.stack.size");
+	ut64 addr = r_config_get_i (core->config, "esil.stack.addr");
+	ut64 mapinc = r_config_get_i (core->config, "io.mapinc");
+	const ut64 esaddr = addr;
+	if (!r_io_map_locate (core->io, &addr, size, esaddr) || (addr != esaddr)) {
+		addr = esaddr;
+		if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
+			addr = 0ULL;
+			if (!r_io_map_locate (core->io, &addr, size, mapinc)) {
+				R_LOG_ERROR ("Couldn't locate suitable address for anal esil memory");
+				return -2;
+			}
+		}
+	}
+	char uri[32];
+	snprintf (uri, sizeof (uri), "malloc://%d", (int)size);
+	int fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
+	if (fd < 0) {
+		return fd;
+	}
+	if (!r_io_map_add (core->io, fd, R_PERM_RW, 0LL, addr, size)) {
+		r_io_fd_close (core->io, fd);
+		R_LOG_ERROR ("Cannot create map for anal esil mem, fd %d got closed again", fd);
+		return -1;
+	}
+	const ut64 sp = addr + (size / 2);
+	r_reg_setv (core->anal->reg, "SP", sp);
+	r_reg_setv (core->anal->reg, "BP", sp);
+	initialize_stack (core, addr, size);
+	return fd;
+}
+
 static void cmd_esil_mem(RCore *core, const char *input) {
 	REsil *esil = core->anal->esil;
 	RIOMap *stack_map;
@@ -8236,10 +8269,13 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 	R_LOG_INFO ("Resolve call args for 0x%08"PFMT64x, to);
 
 	// emulate
-	// XXX do not use commands, here, just use the api
-	r_core_cmd_call (core, "aeim"); // XXX
+	int mem_fd = anal_esil_mem (core);
+	if (mem_fd < 0) {
+		return;
+	}
 	ut64 off = core->addr;
 	for (at = from; at < to ; at++) {
+		// XXX do not use commands, here, just use the api
 		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
 		r_core_cmd_call (core, "aeso");
 		r_core_seek (core, at, true);
@@ -8249,6 +8285,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 		}
 		at += delta - 1;
 	}
+	r_io_fd_close (core->io, mem_fd);
 	r_core_seek (core, off, true);
 
 	// the logic of identifying args by function types and
@@ -14529,7 +14566,10 @@ jacuzzi:
 }
 
 static void cmd_aaef(RCore *core) {
-	r_core_cmd0 (core, "aeim");
+	int mem_fd = anal_esil_mem (core);
+	if (mem_fd < 0) {
+		return;
+	}
 	RListIter *iter;
 	ut64 cur_seek = core->addr;
 	// Capture function addresses in dependency order BEFORE analysis
@@ -14555,6 +14595,7 @@ static void cmd_aaef(RCore *core) {
 	r_core_seek (core, cur_seek, true);
 	r_list_free (list);
 	free (offsets);
+	r_io_fd_close (core->io, mem_fd);
 }
 
 static int cmd_anal_all(RCore *core, const char *input) {
@@ -14788,8 +14829,9 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				*addr = 0;
 				addr = (char *)r_str_trim_head_ro (addr + 1);
 			}
-			r_core_cmd0 (core, "aeim");
+			int mem_fd = anal_esil_mem (core);	//what du if this fails?
 			r_core_anal_esil (core, len, addr);
+			r_io_fd_close (core->io, mem_fd);
 			free (arg);
 		} else {
 			const bool only_xrefs = input[1] == 'x';

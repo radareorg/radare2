@@ -3522,10 +3522,8 @@ e asm.comments=false
 aF
 aaef  # TODO Fix if aae here
 pdf
-# TODO eip flag?
 EOF
 EXPECT=<<EOF
-            ;-- eip:
 / 7: entry0 ();
 |           0x08048054      mov bl, 0x2a
 |           0x08048056      xor eax, eax
