@@ -518,38 +518,45 @@ static bool r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8 *b
 }
 
 static bool r_cmd_java_get_cp_bytes_and_write(RCore *core, RBinJavaObj *obj, ut16 idx, ut64 addr, const ut8 *buf, const ut64 len) {
-	int res = false;
+	bool res = false;
 	RBinJavaCPTypeObj *cp_obj = r_bin_java_get_item_from_bin_cp_list (obj, idx);
 	ut64 c_file_sz = r_io_size (core->io);
-	ut32 n_sz = 0, c_sz = obj? r_bin_java_cp_get_size (obj, idx): (ut32)-1;
+	ut32 n_sz = 0, c_sz = obj? r_bin_java_cp_get_size (obj, idx): UT32_MAX;
 	ut8 *bytes = NULL;
 
-	if (c_sz == (ut32)-1) {
+	if (c_sz == UT32_MAX || c_sz > ST32_MAX) {
 		return res;
 	}
 
 	bytes = r_bin_java_cp_get_bytes (cp_obj->tag, &n_sz, buf, len);
+	if (!bytes || !n_sz || n_sz > ST32_MAX) {
+		R_FREE (bytes);
+		return false;
+	}
+	int c_sz_i = (int)c_sz;
+	int n_sz_i = (int)n_sz;
+	int delta = n_sz_i - c_sz_i;
 
-	if (n_sz < c_sz) {
-		res = r_core_shift_block (core, addr + c_sz, 0, (int)n_sz - (int)c_sz) &&
-			r_io_resize (core->io, c_file_sz + (int)n_sz - (int)c_sz);
-	} else if (n_sz > c_sz) {
-		res = r_core_extend_at (core, addr, (int)n_sz - (int)c_sz);
+	if (delta < 0) {
+		ut64 n_file_sz = 0;
+		res = !r_sub_overflow (c_file_sz, (ut64)(-delta), &n_file_sz) &&
+			r_core_shift_block (core, addr + c_sz, 0, delta) &&
+			r_io_resize (core->io, n_file_sz);
+	} else if (delta > 0) {
+		res = r_core_extend_at (core, addr, delta);
 	} else {
-		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to resize the file correctly aborting.\n");
-		return res;
+		res = true;
 	}
 
-	if (n_sz > 0 && bytes) {
-		res = r_core_write_at (core, addr, (const ut8 *)bytes, n_sz) && r_core_seek (core, addr, true);
+	if (res) {
+		res = r_core_write_at (core, addr, (const ut8 *)bytes, n_sz_i) && r_core_seek (core, addr, true);
 	}
+	R_FREE (bytes);
 
 	if (res == false) {
 		eprintf ("[X] r_cmd_java_get_cp_bytes_and_write: Failed to write the bytes to the file correctly aborting.\n");
 		return res;
 	}
-
-	R_FREE (bytes);
 
 	if (res == true) {
 		ut64 n_file_sz = 0;
