@@ -32,7 +32,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)cclass.h	8.3 (Berkeley) 3/20/94
+ *	@ (#)cclass.h	8.3 (Berkeley) 3/20/94
  */
 
 /* character-class table */
@@ -43,7 +43,7 @@ static struct cclass {
 } cclasses[] = {
 	{ "alnum", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", "" },
 	{ "alpha", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", "" },
-	{ "blank", " \t",  "" },
+	{ "blank", " \t", "" },
 	{ "cntrl", "\007\b\t\n\v\f\r\1\2\3\4\5\6\16\17\20\21\22\23\24\25\26\27\30\31\32\33\34\35\36\37\177", "" },
 	{ "digit", "0123456789", "" },
 	{ "graph", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 0123456789!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~", "" },
@@ -53,5 +53,5 @@ static struct cclass {
 	{ "space", "\t\n\v\f\r ", "" },
 	{ "upper", "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "" },
 	{ "xdigit", "0123456789ABCDEFabcdef", "" },
-	{ NULL,  NULL,  "" }
+	{ NULL, NULL, "" }
 };

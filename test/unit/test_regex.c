@@ -395,7 +395,9 @@ static int test_match_list(void) {
 
 	RList *matches = r_regex_match_list (rx, "hello world");
 	mu_assert_notnull (matches, "match_list returns list");
-	mu_assert ("match_list has results", r_list_length (matches) > 0);
+	mu_assert_eq (r_list_length (matches), 2, "match_list length");
+	mu_assert_streq (r_list_get_n (matches, 0), "hello", "match_list first");
+	mu_assert_streq (r_list_get_n (matches, 1), "world", "match_list second");
 
 	r_list_free (matches);
 	r_regex_free (rx);

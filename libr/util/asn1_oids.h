@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 const struct r_oid_list_t {
-	const char* const oid;
-	const char* const name;
+	const char *const oid;
+	const char *const name;
 } X509OIDList[] = {
 	{ "0.2.262.1.10", "Telesec" },
 	{ "0.2.262.1.10.0", "extension" },
@@ -2371,4 +2371,3 @@ const struct r_oid_list_t {
 #endif
 
 #endif /* OIDS_H */
-
