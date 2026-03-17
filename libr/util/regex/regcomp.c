@@ -1374,7 +1374,7 @@ static void mcadd( struct parse *p, cset *cs, const char *cp) {
 	}
 	cs->multis = np;
 
-	r_str_ncpy (cs->multis + oldend - 1, cp, cs->smultis - oldend + 1);
+	r_str_ncpy (cs->multis + oldend, cp, cs->smultis - oldend);
 }
 
 /*

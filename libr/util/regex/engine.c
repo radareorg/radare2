@@ -155,7 +155,7 @@ static int matcher(struct re_guts *g, char *string, size_t nmatch, RRegexMatch p
 	m->beginp = start;
 	m->endp = stop;
 
-	if (m->g->nstates * 4 < m->g->nstates) {
+	if (m->g->nstates > LONG_MAX / 4) {
 		return R_REGEX_NOMATCH;
 	}
 	STATESETUP (m, 4);
@@ -574,10 +574,11 @@ static char *backref(struct match *m, char *start, char *stop, sopno startst, so
 	switch (OP (s)) {
 	case OBACK_:		/* the vilest depths */
 		i = OPND (s);
-		if (i > 0 && i <= m->g->nsub) {
-			if (m->pmatch[i].rm_eo == -1) {
-				return NULL;
-			}
+		if (i <= 0 || i > m->g->nsub) {
+			return NULL;
+		}
+		if (m->pmatch[i].rm_eo == -1) {
+			return NULL;
 		}
 		if (m->pmatch[i].rm_so != -1) {
 			len = m->pmatch[i].rm_eo - m->pmatch[i].rm_so;
