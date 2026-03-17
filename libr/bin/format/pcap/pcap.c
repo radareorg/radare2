@@ -6,7 +6,7 @@ void pcap_obj_free(pcap_obj_t *obj) {
 	if (obj) {
 		free (obj->header);
 		r_list_free (obj->recs);
-		r_buf_fini (obj->b);
+		r_unref (obj->b);
 		free (obj);
 	}
 }
