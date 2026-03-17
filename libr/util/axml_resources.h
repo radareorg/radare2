@@ -7,22 +7,22 @@
 
 // A list of all public resources from frameworks/base/core/res/res/values/public.xml:
 //
-// const data = JSON.parse(require('xml2json').toJson(require('fs').readFileSync('public.xml').toString()))
-// const resources = data.resources.public.filter(e => e.type === 'attr')
+// const data = JSON.parse (require ('xml2json').toJson (require ('fs').readFileSync ('public.xml').toString ()))
+// const resources = data.resources.public.filter (e => e.type === 'attr')
 //
 // const resourceMap = {}
 // for (const resource of resources) {
-// 	resourceMap[parseInt(resource.id, 16)] = resource.name
+// 	resourceMap[parseInt (resource.id, 16)] = resource.name
 // }
 //
-// const base = parseInt(resources[0].id, 16)
-// const last = parseInt(resources[resources.length - 1].id, 16)
+// const base = parseInt (resources[0].id, 16)
+// const last = parseInt (resources[resources.length - 1].id, 16)
 //
 // for (let i = base; i <= last; i++) {
 // 	if (resourceMap[i]) {
-// 		console.log(`\t"${resourceMap[i]}",`)
+// 		console.log (`\t"${resourceMap[i]}",`)
 // 	} else {
-// 		console.log('\t"null",')
+// 		console.log ('\t"null",')
 // 	}
 // }
 const char *ANDROID_ATTRIBUTE_NAMES[] = {
@@ -1587,6 +1587,6 @@ const char *ANDROID_ATTRIBUTE_NAMES[] = {
 	"gwpAsanMode",
 };
 
-size_t ANDROID_ATTRIBUTE_NAMES_SIZE = R_ARRAY_SIZE (ANDROID_ATTRIBUTE_NAMES);
+size_t ANDROID_ATTRIBUTE_NAMES_SIZE = R_ARRAY_SIZE(ANDROID_ATTRIBUTE_NAMES);
 
 #endif // R2_AXML_RESOURCES_H

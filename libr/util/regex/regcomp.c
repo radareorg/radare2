@@ -80,6 +80,7 @@ static void bothcases(struct parse *, int);
 static void ordinary(struct parse *, int);
 static void special(struct parse *, int);
 static void nonnewline(struct parse *);
+static void p_fakebracket(struct parse *, char *, size_t);
 static void repeat(struct parse *, sopno, int, int);
 static int seterr(struct parse *, int);
 static cset *allocset(struct parse *);
@@ -147,17 +148,18 @@ R_API bool r_regex_match(const char *pattern, const char *flags, const char *tex
 R_API RList *r_regex_match_list(RRegex *rx, const char *text) {
 	RList *list = r_list_newf (free);
 	RRegexMatch match;
+	size_t text_len = strlen (text);
 
 	/* Initialize the boundaries for R_REGEX_STARTEND */
 	match.rm_so = 0;
-	match.rm_eo = strlen (text);
+	match.rm_eo = text_len;
 	while (!r_regex_exec (rx, text, 1, &match, rx->re_flags | R_REGEX_STARTEND)) {
-		size_t entry_len = match.rm_eo - match.rm_so + 1;
+		size_t entry_len = match.rm_eo - match.rm_so;
 		char *entry = r_str_ndup (text + match.rm_so, entry_len);
 		r_list_append (list, entry);
 		/* Update the boundaries for R_REGEX_STARTEND */
 		match.rm_so = match.rm_eo;
-		match.rm_eo = strlen (text);
+		match.rm_eo = text_len;
 	}
 	return list;
 }
@@ -172,7 +174,7 @@ R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
 	if (!r) {
 		return NULL;
 	}
-	memcpy (r, &rx, sizeof (RRegex));
+	*r = rx;
 	return r;
 }
 
@@ -1002,24 +1004,28 @@ static char othercase(int ch) {
  *
  * Boy, is this implementation ever a kludge...
  */
-static void bothcases(struct parse *p, int ch) {
+static void p_fakebracket(struct parse *p, char *bracket, size_t len) {
 	char *oldnext = p->next;
 	char *oldend = p->end;
-	char bracket[3];
+
+	p->next = bracket;
+	p->end = bracket + len;
+	p_bracket (p);
+	if (p->next == bracket + len) {
+		p->next = oldnext;
+		p->end = oldend;
+	}
+}
+
+static void bothcases(struct parse *p, int ch) {
+	char bracket[] = { 0, ']', 0 };
 
 	ch = (ut8)ch;
-	if (othercase (ch) != ch) { /* p_bracket () would recurse */
-		p->next = bracket;
-		p->end = bracket + 2;
-		bracket[0] = ch;
-		bracket[1] = ']';
-		bracket[2] = '\0';
-		p_bracket (p);
-		if (p->next == bracket + 2) {
-			p->next = oldnext;
-			p->end = oldend;
-		}
+	if (othercase (ch) == ch) {
+		return;
 	}
+	bracket[0] = ch;
+	p_fakebracket (p, bracket, 2);
 }
 
 /*
@@ -1041,12 +1047,8 @@ ordinary(struct parse *p, int ch) {
 
 static void
 special(struct parse *p, int ch) {
-	char *oldnext = p->next;
-	char *oldend = p->end;
-	char bracket[16] = { 0 };
 	char digits[3] = { 0 };
 	char c;
-	int num = 0;
 	switch (ch) {
 	case 'x':
 		digits[0] = GETNEXT ();
@@ -1063,31 +1065,24 @@ special(struct parse *p, int ch) {
 	case 'r':
 		ordinary (p, '\r');
 		return;
-	case 's':
-		num = 5;
-		memcpy (bracket, "\t\r\n ]", num);
-		break;
-	case 'd':
-		num = 4;
-		memcpy (bracket, "0-9]", num);
-		break;
-	case 'w':
-		num = 4;
-		memcpy (bracket, "a-z]", num);
-		break;
+	case 's': {
+		char bracket[] = "\t\r\n ]";
+		p_fakebracket (p, bracket, sizeof (bracket) - 1);
+		return;
+	}
+	case 'd': {
+		char bracket[] = "0-9]";
+		p_fakebracket (p, bracket, sizeof (bracket) - 1);
+		return;
+	}
+	case 'w': {
+		char bracket[] = "a-z]";
+		p_fakebracket (p, bracket, sizeof (bracket) - 1);
+		return;
+	}
 	default:
 		SETERROR (R_REGEX_INVARG);
 		return;
-	}
-
-	p->next = bracket;
-	p->end = bracket + num;
-
-	p_bracket (p);
-
-	if (p->next == bracket + num) {
-		p->next = oldnext;
-		p->end = oldend;
 	}
 }
 
@@ -1098,22 +1093,9 @@ special(struct parse *p, int ch) {
  */
 static void
 nonnewline(struct parse *p) {
-	char *oldnext = p->next;
-	char *oldend = p->end;
-	char bracket[5];
+	char bracket[] = { '^', '\n', ']', 0 };
 
-	bracket[0] = '^';
-	bracket[1] = '\n';
-	bracket[2] = ']';
-	bracket[3] = '\0';
-	bracket[4] = '\0';
-	p->next = bracket;
-	p->end = bracket + 3;
-	p_bracket (p);
-	if (p->next == bracket + 3) {
-		p->next = oldnext;
-		p->end = oldend;
-	}
+	p_fakebracket (p, bracket, 3);
 }
 
 /*
@@ -1361,9 +1343,7 @@ static void mcadd(struct parse *p, cset *cs, const char *cp) {
 	cs->smultis += strlen (cp) + 1;
 	np = realloc (cs->multis, cs->smultis);
 	if (!np) {
-		if (cs->multis) {
-			free (cs->multis);
-		}
+		free (cs->multis);
 		cs->multis = NULL;
 		SETERROR (R_REGEX_ESPACE);
 		return;
@@ -1469,6 +1449,7 @@ dupl(struct parse *p,
 {
 	sopno ret = HERE ();
 	sopno len = finish - start;
+	sopno i;
 
 	if (finish >= start) {
 		if (len == 0) {
@@ -1476,9 +1457,9 @@ dupl(struct parse *p,
 		}
 		enlarge (p, p->ssize + len); /* this many unexpected additions */
 		if (p->ssize >= p->slen + len) {
-			(void)memcpy ((char *) (p->strip + p->slen),
-				(char *) (p->strip + start),
-				(size_t)len * sizeof (sop));
+			for (i = 0; i < len; i++) {
+				p->strip[p->slen + i] = p->strip[start + i];
+			}
 			p->slen += len;
 			return ret;
 		}
@@ -1518,8 +1499,8 @@ static void doemit(struct parse *p, sop op, size_t opnd) {
  */
 static void doinsert(struct parse *p, sop op, size_t opnd, sopno pos) {
 	sopno sn;
+	sopno i;
 	sop s;
-	int i;
 
 	/* avoid making error situations worse */
 	if (p->error != 0) {
@@ -1535,16 +1516,19 @@ static void doinsert(struct parse *p, sop op, size_t opnd, sopno pos) {
 
 	/* adjust paren pointers */
 	if (pos > 0) {
-		for (i = 1; i < NPAREN; i++) {
-			if (p->pbegin[i] >= pos) {
-				p->pbegin[i]++;
+		int j;
+		for (j = 1; j < NPAREN; j++) {
+			if (p->pbegin[j] >= pos) {
+				p->pbegin[j]++;
 			}
-			if (p->pend[i] >= pos) {
-				p->pend[i]++;
+			if (p->pend[j] >= pos) {
+				p->pend[j]++;
 			}
 		}
 	}
-	memmove ((char *)&p->strip[pos + 1], (char *)&p->strip[pos], (HERE () - pos - 1) * sizeof (sop));
+	for (i = sn; i > pos; i--) {
+		p->strip[i] = p->strip[i - 1];
+	}
 	p->strip[pos] = s;
 }
 

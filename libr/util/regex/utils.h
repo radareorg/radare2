@@ -32,18 +32,11 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- *	@(#)utils.h	8.3 (Berkeley) 3/20/94
+ *	@ (#)utils.h	8.3 (Berkeley) 3/20/94
  */
 
 /* utility definitions */
-#define	DUPMAX		255
+#define DUPMAX 255
 //_POSIX2_RE_DUP_MAX	/* xxx is this right? */
-#define	INTFINITY	(DUPMAX + 1)
-#define	NC		(CHAR_MAX - CHAR_MIN + 1)
-
-#define STRLCPY(x,y,z) { strncpy ((x),(y),(z)); (x)[(z)? (z) - 1: 0] = 0; }
-
-/* for old systems with bcopy() but no memmove() */
-#ifdef USEBCOPY
-#define	memmove(d, s, c)	bcopy(s, d, c)
-#endif
+#define INTFINITY (DUPMAX + 1)
+#define NC (CHAR_MAX - CHAR_MIN + 1)
