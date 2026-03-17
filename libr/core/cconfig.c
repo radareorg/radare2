@@ -506,10 +506,32 @@ static bool cb_archendian(void *user, void *data) {
 	R_RETURN_VAL_IF_FAIL (node && core && core->anal && core->anal->arch, false);
 	if (!strcmp (node->value, "big") || !strcmp (node->value, "bigswap")) {
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_BIG);
+		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
+		if (be) {
+			free (be->value);
+			be->value = strdup ("true");
+			be->i_value = 1;
+		}
 		return true;
 	}
 	if (!strcmp (node->value, "little") || !strcmp (node->value, "littleswap")) {
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_LITTLE);
+		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
+		if (be) {
+			free (be->value);
+			be->value = strdup ("false");
+			be->i_value = 0;
+		}
+		return true;
+	}
+	if (!strcmp (node->value, "middle")) {
+		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_MIDDLE);
+		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
+		if (be) {
+			free (be->value);
+			be->value = strdup ("false");
+			be->i_value = 0;
+		}
 		return true;
 	}
 	return false;
@@ -1348,6 +1370,11 @@ static bool cb_bigendian(void *user, void *data) {
 	}
 	core->rasm->config->endian = endianType;
 	r_arch_set_endian (core->anal->arch, endianType);
+	RConfigNode *ae = r_config_node_get (core->config, "arch.endian");
+	if (ae) {
+		free (ae->value);
+		ae->value = strdup (node->i_value? "big": "little");
+	}
 	return true;
 }
 
@@ -3936,7 +3963,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("arch.platform", "", &cb_arch_platform, "define arch platform to use");
 	n = NODECB ("arch.endian", R_SYS_ENDIAN? "big": "little", &cb_archendian);
 	SETDESC (n, "set arch endianness");
-	SETOPTIONS (n, "big", "little", "bigswap", "littleswap", NULL);
+	SETOPTIONS (n, "big", "little", "middle", "bigswap", "littleswap", NULL);
 	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 
 	SETCB ("anal.jmptbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");
