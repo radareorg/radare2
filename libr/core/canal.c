@@ -5022,7 +5022,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 	}
 	// iter all symbols
 	RVecRBinSymbol *syms = r_bin_get_symbols_vec (core->bin);
-	R_VEC_FOREACH (syms, S) {
+	if (syms) R_VEC_FOREACH (syms, S) {
 		if (S->vaddr < from || S->vaddr > to) {
 			continue;
 		}

@@ -3061,18 +3061,24 @@ static bool cb_zoombyte(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	switch (*node->value) {
-	case 'p':
-	case 'f':
-	case 's':
 	case '0':
-	case 'F':
+	case 'a':
+	case 'A':
+	case 'c':
+	case 'd':
 	case 'e':
+	case 'f':
+	case 'F':
 	case 'h':
+	case 'i':
+	case 'm':
+	case 'p':
+	case 's':
+	case 'z':
 		core->print->zoom->mode = *node->value;
 		break;
 	default:
 		R_LOG_ERROR ("Invalid zoom.byte value. See pz? for help");
-		r_cons_printf (core->cons, "pzp\npzf\npzs\npz0\npzF\npze\npzh\n");
 		return false;
 	}
 	return true;

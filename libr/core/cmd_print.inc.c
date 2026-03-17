@@ -661,18 +661,25 @@ static RCoreHelpMessage help_msg_px = {
 };
 
 static RCoreHelpMessage help_msg_pz = {
-	"Usage: pz [len]", "", "print zoomed blocks (filesize/N)",
+	"Usage: pz[mode][j] [len]", "", "print zoomed blocks (filesize/N)",
 	"e ", "zoom.maxsz", "max size of block",
 	"e ", "zoom.from", "start address",
 	"e ", "zoom.to", "end address",
 	"e ", "zoom.byte", "specify how to calculate each byte",
-	"pz0", "", "number of bytes with value '0'",
-	"pzF", "", "number of bytes with value 0xFF",
-	"pze", "", "calculate entropy and expand to 0-255 range",
-	"pzf", "", "count of flags in block",
-	"pzh", "", "head (first byte value); This is the default mode",
-	"pzp", "", "number of printable chars",
-	"pzs", "", "strings in range",
+	"pz0", "[j]", "number of bytes with value '0'",
+	"pza", "[j]", "analysis bbs maps",
+	"pzA", "[j]", "analysis stats maps",
+	"pzc", "[j]", "number of calls per block",
+	"pzd", "[j]", "number of unique bytes in block",
+	"pze", "[j]", "calculate entropy and expand to 0-255 range",
+	"pzf", "[j]", "count of flags in block (same as pzm)",
+	"pzF", "[j]", "number of bytes with value 0xFF",
+	"pzh", "[j]", "head (first byte value); This is the default mode",
+	"pzi", "[j]", "number of invalid instructions per block",
+	"pzm", "[j]", "number of flags and marks in block (same as pzf)",
+	"pzp", "[j]", "number of printable chars",
+	"pzs", "[j]", "strings in range (same as pzz)",
+	"pzz", "[j]", "number of chars in strings in block (same as pzs)",
 	// "WARNING: On big files, use 'zoom.byte=h' or restrict ranges\n");
 	NULL
 };
@@ -3171,19 +3178,21 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 	case 'A':
 		{
 			RCoreAnalStats *as = r_core_anal_get_stats (core, addr, addr + size * 2, size);
-			int i;
 			int value = 0;
-			for (i = 0; i < 1; i++) {
-				value += as->block[i].functions;
-				value += as->block[i].in_functions;
-				value += as->block[i].comments;
-				value += as->block[i].symbols;
-				value += as->block[i].flags;
-				value += as->block[i].strings;
-				value += as->block[i].blocks;
-				value *= 20;
+			if (as) {
+				int i;
+				for (i = 0; i < 1; i++) {
+					value += as->block[i].functions;
+					value += as->block[i].in_functions;
+					value += as->block[i].comments;
+					value += as->block[i].symbols;
+					value += as->block[i].flags;
+					value += as->block[i].strings;
+					value += as->block[i].blocks;
+					value *= 20;
+				}
+				r_core_anal_stats_free (as);
 			}
-			r_core_anal_stats_free (as);
 			return value;
 		}
 		break;
@@ -3216,12 +3225,64 @@ static int printzoomcallback(void *cbarg, int mode, ut64 addr, ut8 *bufz, ut64 s
 			}
 		}
 		break;
+	case 'z': // "pzz" strings (alias for 's', for p= compatibility)
 	case 's': // "pzs"
 		u.flagspace = r_flag_space_get (core->flags, R_FLAGS_FS_STRINGS);
 		u.addr = addr;
 		u.size = size;
 		u.ret = &ret;
 		r_flag_foreach (core->flags, count_pzs, &u);
+		break;
+	case 'c': // "pzc" calls
+	case 'i': // "pzi" invalid instructions
+		{
+			ut64 off;
+			for (off = 0; off < size; ) {
+				RAnalOp *op = r_core_anal_op (core, addr + off, R_ARCH_OP_MASK_BASIC);
+				if (op) {
+					if (mode == 'c') {
+						switch (op->type) {
+						case R_ANAL_OP_TYPE_RCALL:
+						case R_ANAL_OP_TYPE_UCALL:
+						case R_ANAL_OP_TYPE_CALL:
+							ret++;
+							break;
+						}
+					} else if (mode == 'i') {
+						if (op->size < 1 || op->type == R_ANAL_OP_TYPE_ILL || op->type == R_ANAL_OP_TYPE_TRAP) {
+							ret++;
+						}
+					}
+					off += (op->size > 0) ? op->size : 1;
+					r_anal_op_free (op);
+				} else {
+					if (mode == 'i') {
+						ret++;
+					}
+					off++;
+				}
+			}
+		}
+		break;
+	case 'd': // "pzd" unique bytes
+		{
+			bool seen[256] = { 0 };
+			for (j = 0; j < size; j++) {
+				seen[bufz[j]] = true;
+			}
+			for (j = 0; j < 256; j++) {
+				if (seen[j]) {
+					ret++;
+				}
+			}
+		}
+		break;
+	case 'm': // "pzm" marks/flags (same as 'f', for p= compatibility)
+		for (j = 0; j < size; j++) {
+			if (r_flag_get_at (core->flags, addr + j, false)) {
+				ret++;
+			}
+		}
 		break;
 	case 'h': // "pzh" head
 	default:
@@ -4883,75 +4944,141 @@ static inline void matchBar(ut8 *ptr, int i) {
 	}
 }
 
-static ut8 *analBars(RCore *core, size_t type, size_t nblocks, size_t blocksize, size_t skipblocks, ut64 from) {
-	size_t j, i = 0;
+// Compute bar/zoom values for an array of blocks. Shared by p= and p== commands.
+static ut8 *compute_bar_blocks(RCore *core, int mode, ut64 from, int nblocks, ut64 blocksize, int skipblocks) {
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
-		R_LOG_ERROR ("failed to malloc memory");
 		return NULL;
 	}
-	// XXX: unused memblock
-	ut8 *p = malloc (blocksize);
-	if (!p) {
-		R_FREE (ptr);
-		R_LOG_ERROR ("failed to malloc");
-		return NULL;
-	}
-	if (type == 'A') {
+	// Batch analysis stats mode
+	if (mode == 'A') {
 		ut64 to = from + (blocksize * nblocks);
 		RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, blocksize);
-		for (i = 0; i < nblocks; i++) {
-			int value = 0;
-			value += as->block[i].functions;
-			value += as->block[i].in_functions;
-			value += as->block[i].comments;
-			value += as->block[i].symbols;
-			value += as->block[i].flags;
-			value += as->block[i].strings;
-			value += as->block[i].blocks;
-			ptr[i] = R_MIN (255, value);
+		if (as) {
+			int i;
+			for (i = 0; i < nblocks; i++) {
+				int value = 0;
+				value += as->block[i].functions;
+				value += as->block[i].in_functions;
+				value += as->block[i].comments;
+				value += as->block[i].symbols;
+				value += as->block[i].flags;
+				value += as->block[i].strings;
+				value += as->block[i].blocks;
+				ptr[i] = R_MIN (255, value);
+			}
+			r_core_anal_stats_free (as);
 		}
-		r_core_anal_stats_free (as);
-		free (p);
 		return ptr;
 	}
-	for (i = 0; i < nblocks; i++) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
-		ut64 off = from + (i + skipblocks) * blocksize;
-		for (j = 0; j < blocksize; j++) {
-			if (type == 'a') {
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
-				if (fcn) {
-					ptr[i] = r_list_length (fcn->bbs);
-				}
-				continue;
+	// Instruction analysis modes
+	if (mode == 'a' || mode == 'c' || mode == 'i' || mode == 'j' || mode == 's') {
+		int i;
+		ut64 j;
+		for (i = 0; i < nblocks; i++) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
 			}
-			RAnalOp *op = r_core_anal_op (core, off + j, R_ARCH_OP_MASK_BASIC);
-			if (op) {
-				if (op->size < 1) {
-					// do nothing
-					if (type == 'i') {
+			ut64 off = from + (i + skipblocks) * blocksize;
+			for (j = 0; j < blocksize; j++) {
+				if (mode == 'a') {
+					RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
+					if (fcn) {
+						ptr[i] = r_list_length (fcn->bbs);
+					}
+					continue;
+				}
+				RAnalOp *op = r_core_anal_op (core, off + j, R_ARCH_OP_MASK_BASIC);
+				if (op) {
+					if (op->size < 1) {
+						if (mode == 'i') {
+							matchBar (ptr, i);
+						}
+					} else if (checkAnalType (op, mode)) {
 						matchBar (ptr, i);
 					}
-				} else {
-					if (checkAnalType (op, type)) {
-						matchBar (ptr, i);
+					if (op->size > 0) {
+						j += op->size - 1;
 					}
-				}
-				if (op->size > 0) {
-					j += op->size - 1;
-				}
-				r_anal_op_free (op);
-			} else {
-				if (type == 'i') {
+					r_anal_op_free (op);
+				} else if (mode == 'i') {
 					matchBar (ptr, i);
 				}
 			}
 		}
+		return ptr;
 	}
-	free (p);
+	// Byte-based modes: read each block and compute
+	ut8 *buf = calloc (1, blocksize);
+	if (!buf) {
+		free (ptr);
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < nblocks; i++) {
+		ut64 off = from + blocksize * (i + skipblocks);
+		r_io_read_at (core->io, off, buf, blocksize);
+		ut64 j;
+		int k = 0;
+		int slen = 0;
+		switch (mode) {
+		case '0':
+			for (j = 0; j < blocksize; j++) {
+				if (!buf[j]) {
+					k++;
+				}
+			}
+			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			break;
+		case 'f':
+		case 'F':
+			for (j = 0; j < blocksize; j++) {
+				if (buf[j] == 0xff) {
+					k++;
+				}
+			}
+			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			break;
+		case 'p':
+			for (j = 0; j < blocksize; j++) {
+				if (IS_PRINTABLE (buf[j])) {
+					k++;
+				}
+			}
+			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			break;
+		case 'z':
+			for (j = 0; j < blocksize; j++) {
+				if (IS_PRINTABLE (buf[j])) {
+					if (j + 1 < blocksize && buf[j + 1] == 0) {
+						k++;
+						j++;
+					}
+					if (slen++ > 8) {
+						k++;
+					}
+				} else {
+					slen = 0;
+				}
+			}
+			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
+			break;
+		case 'e':
+			ptr[i] = (ut8) (255 * cmd_print_entropy (core, buf, blocksize));
+			break;
+		case 'm':
+			for (j = 0; j < blocksize; j++) {
+				if (r_flag_get_at (core->flags, off + j, false)) {
+					matchBar (ptr, i);
+				}
+			}
+			break;
+		default:
+			ptr[i] = buf[0];
+			break;
+		}
+	}
+	free (buf);
 	return ptr;
 }
 
@@ -5053,126 +5180,16 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_p_equal);
 		break;
 	case '=': // "p=="
-		switch (submode) {
-		case '?':
+		if (submode == '?') {
 			r_core_cmd_help (core, help_msg_p_equal);
-			break;
-		case '0': // 0x00 bytes
-		case 'f': // 0xff bytes
-		case 'F': // 0xff bytes
-		case 'A': // anal stats
-		case 'a': // anal bb
-		case 'p': // printable chars
-		case 'z': // zero terminated strings
-		case 'b': // zero terminated strings
-		{
-			ut64 i, j, k;
-			ptr = calloc (1, nblocks);
-			if (!ptr) {
-				goto beach;
-			}
-			ut8 *p = calloc (1, blocksize);
-			if (!p) {
-				R_FREE (ptr);
-				goto beach;
-			}
-			int len = 0;
-			if (submode == 'A') {
-				ut64 to = from + totalsize; // (blocksize * nblocks);
-				RCoreAnalStats *as = r_core_anal_get_stats (core, from, to, blocksize);
-				for (i = 0; i < nblocks; i++) {
-					int value = 0;
-					value += as->block[i].functions;
-					value += as->block[i].in_functions;
-					value += as->block[i].comments;
-					value += as->block[i].symbols;
-					value += as->block[i].flags;
-					value += as->block[i].strings;
-					value += as->block[i].blocks;
-					ptr[i] = 256 * value / blocksize;
-					ptr[i] *= 3;
-				}
-				r_core_anal_stats_free (as);
-			} else {
-				for (i = 0; i < nblocks; i++) {
-					ut64 off = from + blocksize *(i + skipblocks);
-					r_io_read_at (core->io, off, p, blocksize);
-					for (j = k = 0; j < blocksize; j++) {
-						switch (submode) {
-						case 'a':
-							{
-								RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, off + j, 0);
-								if (fcn) {
-									k += r_list_length (fcn->bbs);
-									k = R_MAX (255, k);
-								}
-							}
-							break;
-						case '0':
-							if (!p[j]) {
-								k++;
-							}
-							break;
-						case 'f':
-							if (p[j] == 0xff) {
-								k++;
-							}
-							break;
-						case 'z':
-							if ((IS_PRINTABLE (p[j]))) {
-								if ((j + 1) < blocksize && p[j + 1] == 0) {
-									k++;
-									j++;
-								}
-								if (len++ > 8) {
-									k++;
-								}
-							} else {
-								len = 0;
-							}
-							break;
-						case 'p':
-							if ((IS_PRINTABLE (p[j]))) {
-								k++;
-							}
-							break;
-						}
-					}
-					ptr[i] = 256 * k / blocksize;
-				}
-			}
-			char *s = r_print_columns (core->print, ptr, nblocks, 14);
-			r_cons_print (core->cons, s);
-			free (s);
-			free (p);
-		}
-		break;
-		case 'e': // "p=e"
-			{
-				ut8 *p;
-				int i = 0;
-				ptr = calloc (1, nblocks);
-				if (!ptr) {
-					goto beach;
-				}
-				p = malloc (blocksize);
-				if (!p) {
-					R_FREE (ptr);
-					goto beach;
-				}
-				for (i = 0; i < nblocks; i++) {
-					ut64 off = from + (blocksize *(i + skipblocks));
-					r_io_read_at (core->io, off, p, blocksize);
-					ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
-				}
-				free (p);
+		} else if (submode && submode != ' ') {
+			ptr = compute_bar_blocks (core, submode, from, nblocks, blocksize, skipblocks);
+			if (ptr) {
 				char *s = r_print_columns (core->print, ptr, nblocks, 14);
 				r_cons_print (core->cons, s);
 				free (s);
 			}
-			break;
-		case ' ':
-		case 0:
+		} else {
 			ptr = calloc (1, nblocks);
 			if (ptr) {
 				r_io_read_at (core->io, from, ptr, nblocks);
@@ -5180,10 +5197,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				r_cons_print (core->cons, s);
 				free (s);
 			}
-			break;
-		default:
-			r_core_return_invalid_command (core, "p==", submode);
-			break;
 		}
 		break;
 	case '2': // "p=2"
@@ -5205,147 +5218,48 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case 'd': // "p=d"
 		ptr = NULL;
-		if (input[2]) {
-			ut64 bufsz = r_num_math (core->num, input + 3);
+		{
+			ut64 bufsz = (input[2])
+				? r_num_math (core->num, input + 3)
+				: 0;
 			if (bufsz < 1) {
 				bufsz = core->blocksize;
 			}
 			ut8 *buf = r_core_readblock (core, bufsz);
-			if (!buf) {
-				break;
+			if (buf) {
+				cmd_print_eq_dict (core, buf, bufsz);
+				free (buf);
 			}
-			cmd_print_eq_dict (core, buf, bufsz);
-			free (buf);
-		} else {
-			ut8 *buf = r_core_readblock (core, 0);
-			if (!buf) {
-				break;
-			}
-			cmd_print_eq_dict (core, buf, core->blocksize);
-			free (buf);
 		}
 		break;
+	case '0': // "p=0" 0x00 bytes
+	case 'e': // "p=e" entropy
+	case 'F': // "p=F" 0xff bytes
+	case 'p': // "p=p" printable chars
+	case 'z': // "p=z" zero terminated strings
+	case 'm': // "p=m" marks/flags
 	case 'j': // "p=j" cjmp and jmp
 	case 'A': // "p=A" anal info
 	case 'a': // "p=a" bb info
 	case 'c': // "p=c" calls
 	case 'i': // "p=i" invalid
 	case 's': // "p=s" syscalls
-		if ((ptr = analBars (core, mode, nblocks, blocksize, skipblocks, from))) {
+		ptr = compute_bar_blocks (core, mode, from, nblocks, blocksize, skipblocks);
+		if (ptr) {
 			print_bars = true;
 		}
 		break;
-	case 'm':
-		{
-			ut8 *p;
-			int j, i = 0;
-			ptr = calloc (1, nblocks);
-			if (!ptr) {
-				goto beach;
-			}
-			p = malloc (blocksize);
-			if (!p) {
-				R_FREE (ptr);
-				goto beach;
-			}
-			for (i = 0; i < nblocks; i++) {
-				ut64 off = from + (blocksize *(i + skipblocks));
-				for (j = 0; j < blocksize; j++) {
-					if (r_flag_get_at (core->flags, off + j, false)) {
-						matchBar (ptr, i);
-					}
-				}
-			}
-			free (p);
-			print_bars = true;
-		}
-		break;
-	case 'e': // "p=e" entropy
-		{
-			int i = 0;
-			ptr = calloc (1, nblocks);
-			if (!ptr) {
-				goto beach;
-			}
-			ut8 *p = malloc (blocksize);
-			if (!p) {
-				R_FREE (ptr);
-				goto beach;
-			}
-			for (i = 0; i < nblocks; i++) {
-				ut64 off = from + (blocksize *(i + skipblocks));
-				r_io_read_at (core->io, off, p, blocksize);
-				ptr[i] = (ut8) (255 * cmd_print_entropy (core, p, blocksize));
-			}
-			free (p);
-			print_bars = true;
-		}
-		break;
-	case '0': // 0x00 bytes
-	case 'F': // 0xff bytes
-	case 'p': // printable chars
-	case 'z': // zero terminated strings
-	{
-		ut8 *p;
-		ut64 i, j, k;
-		ptr = calloc (1, nblocks);
-		if (!ptr) {
-			goto beach;
-		}
-		p = calloc (1, blocksize);
-		if (!p) {
-			R_FREE (ptr);
-			goto beach;
-		}
-		int len = 0;
-		for (i = 0; i < nblocks; i++) {
-			ut64 off = from + blocksize * (i + skipblocks);
-			r_io_read_at (core->io, off, p, blocksize);
-			for (j = k = 0; j < blocksize; j++) {
-				switch (mode) {
-				case '0':
-					if (!p[j]) {
-						k++;
-					}
-					break;
-				case 'F':
-					if (p[j] == 0xff) {
-						k++;
-					}
-					break;
-				case 'z':
-					if ((IS_PRINTABLE (p[j]))) {
-						if ((j + 1) < blocksize && p[j + 1] == 0) {
-							k++;
-							j++;
-						}
-						if (len++ > 8) {
-							k++;
-						}
-					} else {
-						len = 0;
-					}
-					break;
-				case 'p':
-					if ((IS_PRINTABLE (p[j]))) {
-						k++;
-					}
-					break;
-				}
-			}
-			ptr[i] = 256 * k / blocksize;
-		}
-		free (p);
-		print_bars = true;
-	}
-	break;
 	case 'b': // bytes
 	case '\0':
 		ptr = calloc (1, nblocks);
-		r_io_read_at (core->io, from, ptr, nblocks);
-		// TODO: support print_bars
-		r_print_fill (core->print, ptr, nblocks, from, blocksize);
+		if (ptr) {
+			r_io_read_at (core->io, from, ptr, nblocks);
+			r_print_fill (core->print, ptr, nblocks, from, blocksize);
+		}
 		R_FREE (ptr);
+		break;
+	default:
+		r_core_return_invalid_command (core, "p=", mode);
 		break;
 	}
 	if (print_bars) {
@@ -9645,16 +9559,38 @@ static int cmd_print(void *data, const char *input) {
 			int oldva = core->io->va;
 			char *oldmode = NULL;
 			bool do_zoom = true;
+			bool json = false;
+			char mode_ch = input[1];
+
+			if (mode_ch == 'j') {
+				// "pzj" = default mode + JSON
+				json = true;
+				mode_ch = 0;
+			} else if (mode_ch && mode_ch != ' ' && input[2] == 'j') {
+				// "pzej" = entropy + JSON
+				json = true;
+			}
 
 			core->io->va = 0;
-			if (input[1] && input[1] != ' ') {
-				oldmode = strdup (r_config_get (core->config, "zoom.byte"));
-				if (!r_config_set (core->config, "zoom.byte", input + 1)) {
+			if (mode_ch && mode_ch != ' ') {
+				if (strchr ("0aAcdefFhimpszm", mode_ch)) {
+					char mode_str[2] = { mode_ch, 0 };
+					oldmode = strdup (r_config_get (core->config, "zoom.byte"));
+					r_config_set (core->config, "zoom.byte", mode_str);
+				} else {
 					do_zoom = false;
+					r_core_return_invalid_command (core, "pz", mode_ch);
 				}
 			}
 			if (do_zoom && l > 0) {
-				r_print_zoom (core->print, printzoomcallback, core, from, to, l, (int)maxsize);
+				if (json) {
+					ut64 zsize = (to - from);
+					zsize = l? zsize / l: 0;
+					r_print_zoom_buf (core->print, printzoomcallback, core, from, to, l, (int)maxsize);
+					r_print_jsondump (core->print, core->print->zoom->buf, core->print->zoom->size, 8);
+				} else {
+					r_print_zoom (core->print, printzoomcallback, core, from, to, l, (int)maxsize);
+				}
 			}
 			if (oldmode) {
 				r_config_set (core->config, "zoom.byte", oldmode);
