@@ -195,6 +195,7 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 	int n;
 	unichar c;
 	int gotone = 0, ctrl = 0;
+	bool done = false;
 
 	if (ubuf) {
 		*ulen = 0;
@@ -241,7 +242,8 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 			for (n = 0; n < following; n++) {
 				i++;
 				if (i >= nbytes) {
-					goto done;
+					done = true;
+					break;
 				}
 
 				if ((buf[i] & 0x80) == 0 || (buf[i] & 0x40)) {
@@ -256,8 +258,10 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 			}
 			gotone = 1;
 		}
+		if (done) {
+			break;
+		}
 	}
-done:
 	return ctrl? 0: (gotone? 2: 1);
 }
 

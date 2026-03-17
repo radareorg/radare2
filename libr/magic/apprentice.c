@@ -474,24 +474,11 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
 	}
 }
 
-static bool has_desc_text_word(const char *desc) {
-#define SYMLEN 4
-	char *p = strstr (desc, "text");
-	return p && (p == desc || isspace ((ut8)p[-1])) &&
-		(p + SYMLEN - desc == MAXstring ||
-		(p[SYMLEN] == '\0' || isspace ((ut8)p[SYMLEN])));
-}
-
 static void debug_test_type(RMagic *ms, struct r_magic *m) {
 	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
 		return;
 	}
-	const char *sep = R_STR_ISNOTEMPTY (m->mimetype)? "; ": "";
-	const char *desc = R_STR_ISNOTEMPTY (m->desc)? m->desc: "(no description)";
-	R_LOG_DEBUG ("%s%s%s: %s", m->mimetype, sep, desc, m->flag & BINTEST? "binary": "text");
-	if ((m->flag & BINTEST) && has_desc_text_word (m->desc)) {
-		R_LOG_DEBUG ("Possible binary test for text type");
-	}
+	(void)m;
 }
 
 /*
@@ -1902,44 +1889,54 @@ static const ut32 ar[] = {
 	MAGICNO, VERSIONNO
 };
 
+static void apprentice_log_error(RMagic *ms, int error, const char *fmt, const char *dbname) {
+	if (!ms || ms->haderr) {
+		return;
+	}
+	r_strbuf_setf (&ms->o.sb, fmt, dbname);
+	if (error > 0) {
+		r_strbuf_appendf (&ms->o.sb, " (%s)", strerror (error));
+	}
+	ms->haderr++;
+	ms->error = error;
+	R_LOG_ERROR ("%s", r_strbuf_get (&ms->o.sb));
+}
+
 /*
  * handle an mmaped file.
  */
 static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn) {
-	int fd;
-	char *dbname;
+	int fd = -1;
 	int rv = -1;
-
-	dbname = mkdbname (fn, 1);
-
+	char *dbname = mkdbname (fn, 1);
 	if (!dbname) {
-		goto out;
+		return -1;
 	}
 
-	if ((fd = r_sandbox_open (dbname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644)) == -1) {
-		__magic_file_error (ms, errno, "cannot open `%s'", dbname);
-		goto out;
-	}
+	do {
+		fd = r_sandbox_open (dbname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
+		if (fd == -1) {
+			apprentice_log_error (ms, errno, "cannot open `%s'", dbname);
+			break;
+		}
+		if (write (fd, ar, sizeof (ar)) != (int)sizeof (ar)) {
+			apprentice_log_error (ms, errno, "error writing `%s'", dbname);
+			break;
+		}
+		if (lseek (fd, (off_t)sizeof (struct r_magic), SEEK_SET) != sizeof (struct r_magic)) {
+			apprentice_log_error (ms, errno, "error seeking `%s'", dbname);
+			break;
+		}
+		if (write (fd, *magicp, (sizeof (struct r_magic) * *nmagicp)) != (int) (sizeof (struct r_magic) * *nmagicp)) {
+			apprentice_log_error (ms, errno, "error writing `%s'", dbname);
+			break;
+		}
+		rv = 0;
+	} while (0);
 
-	if (write (fd, ar, sizeof (ar)) != (int)sizeof (ar)) {
-		__magic_file_error (ms, errno, "error writing `%s'", dbname);
-		goto beach;
+	if (fd != -1) {
+		(void)close (fd);
 	}
-
-	if (lseek (fd, (off_t)sizeof (struct r_magic), SEEK_SET) != sizeof (struct r_magic)) {
-		__magic_file_error (ms, errno, "error seeking `%s'", dbname);
-		goto beach;
-	}
-
-	if (write (fd, *magicp, (sizeof (struct r_magic) * *nmagicp)) != (int) (sizeof (struct r_magic) * *nmagicp)) {
-		__magic_file_error (ms, errno, "error writing `%s'", dbname);
-		goto beach;
-	}
-
-	rv = 0;
-beach:
-	(void)close (fd);
-out:
 	free (dbname);
 	return rv;
 }
