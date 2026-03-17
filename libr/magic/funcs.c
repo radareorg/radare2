@@ -190,12 +190,9 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
 		    (m = __magic_file_softmagic(ms, buf, nb, BINTEST)) == 0) {
-		    /* try known keywords, check whether it is ASCII */
-		    if ((ms->flags & R_MAGIC_NO_CHECK_ASCII) != 0) {
-			m = 0; // __magic_file_ascmagic(ms, buf, nb))
-			/* abandon hope, all ye who remain here */
+		    /* abandon hope, all ye who remain here */
+		    {
 			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
-		//		if (mime)
 					__magic_file_printf (ms, "application/octet-stream");
 				return -1;
 			}
