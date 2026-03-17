@@ -259,7 +259,11 @@ static void set_opdir(RAnalOp *op) {
 }
 
 #define CSINC RISCV
+#if CS_NEXT_VERSION >= 6
+#define CSINC_MODE (CS_MODE_RISCV_C | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
+#else
 #define CSINC_MODE (CS_MODE_RISCVC | ((as->config->bits == 64)? CS_MODE_RISCV64: CS_MODE_RISCV32))
+#endif
 #include "../capstone.inc.c"
 
 static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
@@ -305,7 +309,9 @@ static bool riscv_decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			case RISCV_INS_MRET:
 			case RISCV_INS_SRET:
+#if CS_NEXT_VERSION < 6
 			case RISCV_INS_URET:
+#endif
 				op->type = R_ANAL_OP_TYPE_RET;
 				break;
 			}
@@ -390,7 +396,9 @@ static bool old_riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask)
 		break;
 	case RISCV_INS_MRET:
 	case RISCV_INS_SRET:
+#if CS_NEXT_VERSION < 6
 	case RISCV_INS_URET:
+#endif
 		op->type = R_ANAL_OP_TYPE_RET;
 		break;
 	}
