@@ -82,13 +82,7 @@ macos-sign-libs:
 
 ifeq ($(OSTYPE),android)
 LDFLAGS+=${DL_LIBS} -lm
-ifeq ($(USE_CSNEXT),1)
-LDFLAGS+=../../subprojects/capstone-next/libcapstone.a
-else ifeq ($(USE_CS4),1)
-LDFLAGS+=../../subprojects/capstone-v4/libcapstone.a
-else
-LDFLAGS+=../../subprojects/capstone-v5/libcapstone.a
-endif
+LDFLAGS+=$(CS_LDFLAGS)
 endif
 
 include ../shlr.mk

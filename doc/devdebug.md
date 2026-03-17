@@ -62,7 +62,6 @@ want to have a clean build dir. To do this, reset your git state into a clean st
 ```
 $ make mrproper
 $ git clean -xdf
-$ rm -rf shlr/capstone
 ```
 
 Works like valgrind, but faster. Use `sys/sanitize.sh` to get that build ready to use.

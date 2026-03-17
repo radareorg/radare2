@@ -19,7 +19,7 @@ Note that capstone6 is still under development (not yet released at the moment o
 
 ## Using System Capstone
 
-You can link capstone dynamically (by using --with-syscapstone), this will skip all the download and build steps of capstone inside `shlr/capstone`.and just link against the version of capstone found in the system. That's what distros usually want.
+You can link capstone dynamically (by using --with-syscapstone), this will skip all the download and build steps of the bundled capstone inside `subprojects/capstone-*` and just link against the version of capstone found in the system. That's what distros usually want.
 
 **NOTE**: that building against capstone-master is cursedd, because cs-master reports v5, but code is from v4, so it fails to compile because of missing enums and archs.
 

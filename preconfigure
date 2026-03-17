@@ -17,10 +17,7 @@ if [ -d "$HOME/.local/share/radare2/prefix/include/capstone" ]; then
 	echo "[*] Using capstone from r2pm"
 	export PKG_CONFIG_PATH
 else
-	printf "[*] Checking out capstone... "
-	rm -rf shlr/capstone
-	${MAKE} -C shlr capstone > /dev/null 2>&1 || exit 1
-	echo OK
+	echo "[*] Using bundled capstone from subprojects"
 fi
 
 echo "[*] Checking subprojects... "

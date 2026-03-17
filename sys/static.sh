@@ -86,7 +86,13 @@ if [ 1 = "${DOCFG}" ]; then
 fi
 ${MAKE} -j 8 || exit 1
 BINS="rarun2 r2pm rasm2 radare2 ragg2 rabin2 rax2 rahash2 rafind2 r2agent radiff2 r2r"
-STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a subprojects/capstone-v5/libcapstone.a"
+CAPSTONE_LIB=subprojects/capstone-v5/libcapstone.a
+if grep -q '^USE_CSNEXT=1' config-user.mk 2> /dev/null; then
+	CAPSTONE_LIB=subprojects/capstone-next/libcapstone.a
+elif grep -q '^USE_CS4=1' config-user.mk 2> /dev/null; then
+	CAPSTONE_LIB=subprojects/capstone-v4/libcapstone.a
+fi
+STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a ${CAPSTONE_LIB}"
 STATIC_TEST_CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 
 show_link_errors() {
