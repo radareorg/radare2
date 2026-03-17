@@ -30,7 +30,7 @@ ALL=$(basename $(wildcard *.mk))
 
 default: $(DEPS)
 
-all: $(ALL)
+all: $(DEPS)
 
 clean:
 	rm -rf $(ALL)
