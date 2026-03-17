@@ -215,7 +215,8 @@ R_API RMagic* r_magic_new(int flags) {
 	}
 	init_file_tables (ms);
 	r_magic_setflags (ms, flags);
-	ms->o.buf = ms->o.pbuf = NULL;
+	r_strbuf_init (&ms->o.sb);
+	ms->o.pbuf = NULL;
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
 	if (!ms->c.li) {
 		free (ms);
@@ -232,7 +233,7 @@ R_API void r_magic_free(RMagic *ms) {
 	if (ms) {
 		free_mlist (ms->mlist);
 		free (ms->o.pbuf);
-		free (ms->o.buf);
+		r_strbuf_fini (&ms->o.sb);
 		free (ms->c.li);
 		free (ms);
 	}
@@ -294,7 +295,7 @@ R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
 
 R_API const char *r_magic_error(RMagic *ms) {
 	if (ms && ms->haderr) {
-		return ms->o.buf;
+		return r_strbuf_get (&ms->o.sb);
 	}
 	return NULL;
 }

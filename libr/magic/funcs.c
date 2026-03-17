@@ -40,60 +40,12 @@
 #include <wchar.h>
 #endif
 
-// copypasta to fix an OPENBSDBUG
 static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
-	va_list ap2;
-	char cbuf[4096];
-	char *buf, *newstr;
-
-	va_copy (ap2, ap);
-	int len = vsnprintf (cbuf, sizeof (cbuf), fmt, ap2);
-	va_end (ap2);
-	if (len < 0) {
-		goto out;
-	}
-	if (len > sizeof (cbuf)) {
-		buf = malloc (len + 1);
-		va_copy (ap2, ap);
-		(void)vsnprintf (buf, len + 1, fmt, ap2);
-		va_end (ap2);
-	} else {
-		int nullbyte = len;
-		if (nullbyte > 0 && nullbyte == sizeof (cbuf)) {
-			nullbyte--;
-		}
-		cbuf[nullbyte] = 0;
-		buf = strdup (cbuf);
-	}
-	if (!buf) {
+	if (!r_strbuf_vappendf (&ms->o.sb, fmt, ap)) {
+		__magic_file_error (ms, errno, "vasprintf failed");
 		return -1;
 	}
-
-	int buflen = len;
-	if (ms->o.buf) {
-		int obuflen = strlen (ms->o.buf);
-		len = obuflen + buflen + 1;
-		newstr = malloc (len);
-		if (!newstr) {
-			free (buf);
-			return -1;
-		}
-		memcpy (newstr, ms->o.buf, obuflen);
-		memcpy (newstr + obuflen, buf, buflen);
-		newstr[len - 1] = 0;
-		free (buf);
-		free (ms->o.buf);
-		if (len < 0) {
-			free (newstr);
-			goto out;
-		}
-		buf = newstr;
-	}
-	ms->o.buf = buf;
 	return 0;
-out:
-	__magic_file_error (ms, errno, "vasprintf failed");
-	return -1;
 }
 
 /*
@@ -119,8 +71,8 @@ static void __magic_file_error_core(RMagic *ms, int error, const char *f, va_lis
 		return;
 	}
 	if (lineno != 0) {
-		free (ms->o.buf);
-		ms->o.buf = NULL;
+		r_strbuf_fini (&ms->o.sb);
+		r_strbuf_init (&ms->o.sb);
 		(void)__magic_file_printf (ms, "line %u: ", lineno);
 	}
 	// OPENBSDBUG
@@ -208,8 +160,8 @@ int __magic_file_reset(RMagic *ms) {
 		return 0;
 	}
 	ms->last_cont_level = 0;
-	free (ms->o.buf);
-	ms->o.buf = NULL;
+	r_strbuf_fini (&ms->o.sb);
+	r_strbuf_init (&ms->o.sb);
 	ms->haderr = 0;
 	ms->error = -1;
 	if (!ms->mlist) {
@@ -235,17 +187,18 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 		return NULL;
 	}
 
+	char *obuf = r_strbuf_get (&ms->o.sb);
 	if (ms->flags & R_MAGIC_RAW) {
-		return ms->o.buf;
+		return obuf;
 	}
 
-	if (!ms->o.buf) {
-		eprintf ("ms->o.buf = NULL\n");
+	if (r_strbuf_is_empty (&ms->o.sb)) {
+		eprintf ("ms->o.sb is empty\n");
 		return NULL;
 	}
 
 	/* * 4 is for octal representation, + 1 is for NUL */
-	len = strlen (ms->o.buf);
+	len = strlen (obuf);
 	if (len > (SIZE_MAX - 1) / 4) {
 		__magic_file_oomem (ms, len);
 		return NULL;
@@ -268,7 +221,7 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 		(void)memset(&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
-		op = ms->o.buf;
+		op = obuf;
 		eop = op + len;
 
 		while (op < eop) {
@@ -298,7 +251,7 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 		}
 	}
 #endif
-	for (np = ms->o.pbuf, op = ms->o.buf; *op; op++) {
+	for (np = ms->o.pbuf, op = obuf; *op; op++) {
 		if (isprint ((ut8)*op)) {
 			*np++ = *op;
 		} else {

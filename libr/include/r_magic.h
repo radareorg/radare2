@@ -4,6 +4,7 @@
 #define R2_MAGIC_H
 
 #include <r_types.h>
+#include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -237,7 +238,7 @@ struct r_magic_set {
 		} *li;
 	} c;
 	struct out {
-		char *buf;		/* Accumulation buffer */
+		RStrBuf sb;		/* Accumulation buffer */
 		char *pbuf;		/* Printable buffer */
 	} o;
 	ut32 offset;
