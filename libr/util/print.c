@@ -1554,7 +1554,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							ut8 c0 = out[0];
 							ut8 c1 = (olen > 1)? out[1]: 0;
 							if (invalidchar (c0) && invalidchar (c1)) {
-								r_print_printf (p, ".");
+								r_print_printf (p, "%c", c0? '.': '?');
 							} else {
 								r_print_printf (p, "%s", out);
 							}

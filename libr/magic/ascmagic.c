@@ -61,6 +61,7 @@
  * between old-style and internationalized examples of text.
  */
 
+// clang-format off
 static ut8 ebcdic_to_ascii[] = {
   0,   1,   2,   3, 156,   9, 134, 127, 151, 141, 142,  11,  12,  13,  14,  15,
  16,  17,  18,  19, 157, 133,   8, 135,  24,  25, 146, 143,  28,  29,  30,  31,
@@ -80,6 +81,7 @@ static ut8 ebcdic_to_ascii[] = {
 '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 250, 251, 252, 253, 254, 255
 };
 
+// clang-format off
 /*
  * Copy buf[0 ... nbytes-1] into out[], translating EBCDIC to ASCII.
  */

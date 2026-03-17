@@ -24,31 +24,7 @@ static const RMutaCharsetMap cp1253_table[] = {
 // clang-format on
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	int olen = 0;
-	ut8 *obuf = NULL;
-	if (!ms || !buf || len < 0) {
-		return false;
-	}
-	switch (ms->dir) {
-	case R_MUTA_OP_DECRYPT:
-		obuf = r_muta_charset_decode (buf, len, &olen, cp1253_table, ".");
-		break;
-	case R_MUTA_OP_ENCRYPT:
-		obuf = r_muta_charset_encode (buf, len, &olen, cp1253_table, r_muta_charset_parse_default);
-		break;
-	}
-	if (!obuf) {
-		return false;
-	}
-	if (olen > 0) {
-		r_muta_session_append (ms, obuf, olen);
-	}
-	free (obuf);
-	return true;
-}
-
-static bool end(RMutaSession *ms, const ut8 *b, int l) {
-	return update (ms, b, l);
+	return r_muta_charset_table_update (ms, buf, len, cp1253_table, ".", r_muta_charset_parse_default, '?');
 }
 
 RMutaPlugin r_muta_plugin_charset_greek_windows = {
@@ -56,7 +32,7 @@ RMutaPlugin r_muta_plugin_charset_greek_windows = {
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "greek.win",
 	.update = update,
-	.end = end
+	.end = update
 };
 #ifndef R2_PLUGIN_INCORE
 RLibStruct radare_plugin = { .type = R_LIB_TYPE_MUTA, .data = &r_muta_plugin_charset_greek_windows };
