@@ -247,13 +247,18 @@ bool test_r_anal_function_apply_signature_uses_canonical_type_name(void) {
 	RAnalFunction *f = r_anal_create_function (anal, "sym.imp.__isoc99_scanf", 0x3000, 0, NULL);
 	mu_assert_notnull (f, "Couldn't create function for typed apply test");
 
-	RAnalFunctionSignatureParam params[] = {
+	RAnalFunctionParam params_data[] = {
 		{ .name = "format", .type = "const char *" },
 		{ .name = "value", .type = "int *" },
 	};
+	RList *params = r_list_new ();
+	mu_assert_notnull (params, "Couldn't create typed apply param list");
+	r_list_append (params, &params_data[0]);
+	r_list_append (params, &params_data[1]);
 
-	ok = r_anal_function_apply_signature (anal, f, "int", params, 2, "amd64", false);
+	ok = r_anal_function_apply_signature (anal, f, "int", params, "amd64", false);
 	mu_assert_true (ok, "typed signature apply must succeed");
+	r_list_free (params);
 
 	char *typed_name = r_type_func_name (anal->sdb_types, f->name);
 	mu_assert_notnull (typed_name, "canonical typed name");
@@ -277,7 +282,7 @@ bool test_r_anal_function_apply_signature_uses_canonical_type_name(void) {
 	mu_assert_streq (ctx->function->signature, "int scanf (const char *format, int *value);", "canonical signature string");
 	r_anal_function_context_free (ctx);
 
-	ok = r_anal_function_apply_signature (anal, f, "void", NULL, 0, "cdecl", true);
+	ok = r_anal_function_apply_signature (anal, f, "void", NULL, "cdecl", true);
 	mu_assert_true (ok, "typed signature overwrite must succeed");
 	ctx = r_anal_function_context_collect (anal, f);
 	mu_assert_notnull (ctx, "typed overwrite context");

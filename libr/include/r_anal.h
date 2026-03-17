@@ -277,10 +277,7 @@ typedef struct r_anal_function_context_t {
 	RList *base_types; // RList<RAnalBaseType *>
 } RAnalFunctionContext;
 
-typedef struct r_anal_function_signature_param_t {
-	const char *name;
-	const char *type;
-} RAnalFunctionSignatureParam;
+typedef RAnalFunctionParam RAnalFunctionSignatureParam;
 
 typedef struct r_anal_diff_t {
 	int type;
@@ -1224,8 +1221,7 @@ R_API bool r_anal_function_apply_signature(
 	RAnal *anal,
 	RAnalFunction *fcn,
 	const char *ret_type,
-	const RAnalFunctionSignatureParam *params,
-	size_t param_count,
+	RList *params,
 	const char *callconv,
 	bool noreturn
 );
