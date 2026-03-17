@@ -274,8 +274,6 @@ typedef struct r_magic_set RMagic;
 R_API RMagic* r_magic_new(int flags);
 R_API void r_magic_free(RMagic*);
 
-R_API const char *r_magic_file(RMagic*, const char *);
-R_API const char *r_magic_descriptor(RMagic*, int);
 R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
 
 R_API const char *r_magic_error(RMagic*);
