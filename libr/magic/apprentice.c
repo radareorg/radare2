@@ -110,7 +110,7 @@ static const struct type_tbl_s {
 	const int type;
 	const int format;
 } type_tbl[] = {
-#define XX(s) s,(sizeof(s) - 1)
+#define XX(s) s,(sizeof (s) - 1)
 #define XX_NULL "", 0
 	{ XX ("byte"), FILE_BYTE, FILE_FMT_NUM },
 	{ XX ("short"), FILE_SHORT, FILE_FMT_NUM },
