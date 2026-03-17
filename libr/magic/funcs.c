@@ -124,34 +124,34 @@ R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void
 	mime = ms->flags & R_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-			__magic_file_printf (ms, mime ? "application/x-empty" : "empty") == -1) {
+			__magic_file_printf (ms, mime? "application/x-empty": "empty") == -1) {
 			return -1;
 		}
 		return 1;
 	} else if (nb == 1) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
-			__magic_file_printf (ms, mime ? "application/octet-stream" : "very short file (no magic)") == -1) {
+			__magic_file_printf (ms, mime? "application/octet-stream": "very short file (no magic)") == -1) {
 			return -1;
 		}
 		return 1;
 	}
 
-	    /* Check if we have a tar file */
-	    if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
-		(m = __magic_file_is_tar(ms, buf, nb)) == 0) {
+	/* Check if we have a tar file */
+	if ((ms->flags & R_MAGIC_NO_CHECK_TAR) != 0 ||
+		(m = __magic_file_is_tar (ms, buf, nb)) == 0) {
 		/* try tests in /etc/magic (or surrogate magic file) */
 		if ((ms->flags & R_MAGIC_NO_CHECK_SOFT) != 0 ||
-		    (m = __magic_file_softmagic(ms, buf, nb, BINTEST)) == 0) {
-		    /* abandon hope, all ye who remain here */
-		    {
-			if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
+			(m = __magic_file_softmagic (ms, buf, nb, BINTEST)) == 0) {
+			/* abandon hope, all ye who remain here */
+			{
+				if ((!mime || (mime & R_MAGIC_MIME_TYPE))) {
 					__magic_file_printf (ms, "application/octet-stream");
-				return -1;
+					return -1;
+				}
+				m = 1;
 			}
-			m = 1;
-		    }
 		}
-	    }
+	}
 	return m;
 }
 
@@ -171,13 +171,13 @@ int __magic_file_reset(RMagic *ms) {
 	return 0;
 }
 
-#define OCTALIFY(n, o)	\
+#define OCTALIFY(n, o) \
 	/*LINTED*/ \
-	(void)(*(n)++ = '\\', \
-	*(n)++ = (((ut32)*(o) >> 6) & 3) + '0', \
-	*(n)++ = (((ut32)*(o) >> 3) & 7) + '0', \
-	*(n)++ = (((ut32)*(o) >> 0) & 7) + '0', \
-	(o)++)
+	(void) (*(n)++ = '\\', \
+		*(n)++ = (((ut32) *(o) >> 6) & 3) + '0', \
+		*(n)++ = (((ut32) *(o) >> 3) & 7) + '0', \
+		*(n)++ = (((ut32) *(o) >> 0) & 7) + '0', \
+		(o)++)
 
 const char *__magic_file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
@@ -204,37 +204,36 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 		return NULL;
 	}
 	psize = len * 4 + 1;
-	if (!(pbuf = realloc (ms->o.pbuf, psize))) {
+	if (! (pbuf = realloc (ms->o.pbuf, psize))) {
 		__magic_file_oomem (ms, psize);
 		return NULL;
 	}
 	ms->o.pbuf = pbuf;
 
 #if !defined(__serenity__)
-//defined(HAVE_WCHAR_H) && defined(HAVE_MBRTOWC) && defined(HAVE_WCWIDTH)
+	// defined (HAVE_WCHAR_H) && defined (HAVE_MBRTOWC) && defined (HAVE_WCWIDTH)
 	{
 		mbstate_t state;
 		wchar_t nextchar;
 		int mb_conv = 1;
 		size_t bytesconsumed;
 		char *eop;
-		(void)memset(&state, 0, sizeof (mbstate_t));
+		(void)memset (&state, 0, sizeof (mbstate_t));
 
 		np = ms->o.pbuf;
 		op = obuf;
 		eop = op + len;
 
 		while (op < eop) {
-			bytesconsumed = mbrtowc(&nextchar, op,
-			    (size_t)(eop - op), &state);
-			if (bytesconsumed == (size_t)(-1) ||
-			    bytesconsumed == (size_t)(-2)) {
+			bytesconsumed = mbrtowc (&nextchar, op, (size_t) (eop - op), &state);
+			if (bytesconsumed == (size_t) (-1) ||
+				bytesconsumed == (size_t) (-2)) {
 				mb_conv = 0;
 				break;
 			}
 
-			if (iswprint(nextchar)) {
-				(void)memcpy(np, op, bytesconsumed);
+			if (iswprint (nextchar)) {
+				(void)memcpy (np, op, bytesconsumed);
 				op += bytesconsumed;
 				np += bytesconsumed;
 			} else {
@@ -266,8 +265,7 @@ int __magic_file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
 		ms->c.len = level + 20;
 		size_t len = ms->c.len * sizeof (*ms->c.li);
-		ms->c.li = (!ms->c.li) ? malloc (len) :
-		    realloc (ms->c.li, len);
+		ms->c.li = (!ms->c.li)? malloc (len): realloc (ms->c.li, len);
 		if (!ms->c.li) {
 			__magic_file_oomem (ms, len);
 			return -1;

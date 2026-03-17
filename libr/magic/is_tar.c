@@ -27,12 +27,12 @@
  * SUCH DAMAGE.
  */
 /*
- * is_tar() -- figure out whether file is a tar archive.
+ * is_tar () -- figure out whether file is a tar archive.
  *
  * Stolen (by the author!) from the public domain tar program:
  * Public Domain version written 26 Aug 1985 John Gilmore (ihnp4!hoptoad!gnu).
  *
- * @(#)list.c 1.18 9/23/86 Public Domain - gnu
+ * @ (#)list.c 1.18 9/23/86 Public Domain - gnu
  *
  * Comments changed and some code/comments reformatted
  * for file command by Ian Darwin.
@@ -58,16 +58,16 @@ static const char tartype[][32] = {
  *
  * Result is -1 if the field is invalid (all blank, or nonoctal).
  */
-#define	isodigit(c)	( ((c) >= '0') && ((c) <= '7') )
+#define isodigit(c) (((c) >= '0') && ((c) <= '7'))
 static int from_oct(int digs, const char *where) {
 	int value = 0;
-	while (isspace ((ut8)*where)) {	/* Skip spaces */
+	while (isspace ((ut8)*where)) { /* Skip spaces */
 		where++;
 		if (--digs <= 0) {
 			return -1; /* All blank field */
 		}
 	}
-	while (digs > 0 && isodigit(*where)) {	/* Scan til nonoctal */
+	while (digs > 0 && isodigit (*where)) { /* Scan til nonoctal */
 		value = (value << 3) | (*where++ - '0');
 		--digs;
 	}
@@ -85,7 +85,7 @@ static int from_oct(int digs, const char *where) {
  *	3 for GNU tar file.
  */
 static int is_tar(const ut8 *buf, size_t nbytes) {
-	const union record *header = (const union record *)(const void *)buf;
+	const union record *header = (const union record *) (const void *)buf;
 	int i, sum, recsum;
 	const char *p;
 
@@ -119,7 +119,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 	if (strcmp (header->header.magic, TMAGIC) == 0) {
 		return 2; /* Unix Standard tar archive */
 	}
-	return 1;			/* Old fashioned tar archive */
+	return 1; /* Old fashioned tar archive */
 }
 
 int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
@@ -127,7 +127,7 @@ int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	 * Do the tar test first, because if the first file in the tar
 	 * archive starts with a dot, we can confuse it with an nroff file.
 	 */
-	int tar = is_tar(buf, nbytes);
+	int tar = is_tar (buf, nbytes);
 	int mime = ms->flags & R_MAGIC_MIME;
 
 	if (tar < 1 || tar > 3) {
@@ -136,7 +136,7 @@ int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	if (mime == R_MAGIC_MIME_ENCODING) {
 		return 0;
 	}
-	if (__magic_file_printf (ms, mime ? "application/x-tar" : tartype[tar - 1]) == -1) {
+	if (__magic_file_printf (ms, mime? "application/x-tar": tartype[tar - 1]) == -1) {
 		return -1;
 	}
 	return 1;

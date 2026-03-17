@@ -41,7 +41,7 @@
 
 /*
  * This table maps each EBCDIC character to an (8-bit extended) ASCII
- * character, as specified in the rationale for the dd(1) command in
+ * character, as specified in the rationale for the dd (1) command in
  * draft 11.2 (September, 1991) of the POSIX P1003.2 standard.
  *
  * Unfortunately it does not seem to correspond exactly to any of the
@@ -63,8 +63,8 @@
 
 // clang-format off
 static ut8 ebcdic_to_ascii[] = {
-  0,   1,   2,   3, 156,   9, 134, 127, 151, 141, 142,  11,  12,  13,  14,  15,
- 16,  17,  18,  19, 157, 133,   8, 135,  24,  25, 146, 143,  28,  29,  30,  31,
+0,   1,   2,   3, 156,   9, 134, 127, 151, 141, 142,  11,  12,  13,  14,  15,
+16,  17,  18,  19, 157, 133,   8, 135,  24,  25, 146, 143,  28,  29,  30,  31,
 128, 129, 130, 131, 132,  10,  23,  27, 136, 137, 138, 139, 140,   5,   6,   7,
 144, 145,  22, 147, 148, 149, 150,   4, 152, 153, 154, 155,  20,  21, 158,  26,
 ' ', 160, 161, 162, 163, 164, 165, 166, 167, 168, 213, '.', '<', '(', '+', '|',
@@ -110,8 +110,8 @@ R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
  * "text," and there is room for disagreement about it.
  *
  * Version 3.31 of the file command considered a file to be ASCII if
- * each of its characters was approved by either the isascii() or
- * isalpha() function.  On most systems, this would mean that any
+ * each of its characters was approved by either the isascii () or
+ * isalpha () function.  On most systems, this would mean that any
  * file consisting only of characters in the range 0x00 ... 0x7F
  * would be called ASCII text, but many systems might reasonably
  * consider some characters outside this range to be alphabetic,
@@ -130,7 +130,7 @@ R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
  *
  * The table below considers a file to be ASCII if all of its characters
  * are either ASCII printing characters (again, according to the X3.4
- * standard, not isascii()) or any of the following controls: bell,
+ * standard, not isascii ()) or any of the following controls: bell,
  * backspace, tab, line feed, form feed, carriage return, esc, nextline.
  *
  * I include bell because some programs (particularly shell scripts)
@@ -160,7 +160,7 @@ R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
 #define F 0   /* character never appears in text */
 #define T 1   /* character appears in plain ASCII text */
 #define I 2   /* character appears in ISO-8859 text */
-#define X 3   /* character appears in non-ISO extended ASCII (Mac, IBM PC) */
+#define X 3   /* character appears in non-ISO extended ASCII(Mac, IBM PC) */
 
 static char text_chars[256] = {
 	/*                  BEL BS HT LF    FF CR    */
@@ -263,7 +263,7 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 		}
 	}
 done:
-	return ctrl ? 0 : (gotone ? 2 : 1);
+	return ctrl? 0: (gotone? 2: 1);
 }
 
 #undef F
