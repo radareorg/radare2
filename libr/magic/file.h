@@ -60,7 +60,6 @@ R_IPI int __magic_file_fsmagic(RMagic *, const char *, struct stat *);
 R_IPI int __magic_file_printf(RMagic *, const char *, ...);
 R_IPI int __magic_file_reset(RMagic *);
 R_IPI int __magic_file_zmagic(RMagic *, int, const char *, const ut8*, size_t);
-R_IPI int __magic_file_ascmagic(RMagic *, const unsigned char *, size_t);
 R_IPI int __magic_file_is_tar(RMagic *, const unsigned char *, size_t);
 R_IPI int __magic_file_softmagic(RMagic *, const unsigned char *, size_t, int);
 R_IPI struct mlist *__magic_file_apprentice(RMagic *, const char *, size_t, int);
