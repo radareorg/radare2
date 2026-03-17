@@ -6071,7 +6071,7 @@ static int cmd_af(RCore *core, const char *input) {
 			if (input[2] == 'Q' && f->addr == addr) {
 				break;
 			}
-			char *str = r_anal_function_get_signature (f);
+			char *str = r_anal_function_get_signature_string (f);
 			if (str) {
 				r_cons_println (core->cons, str);
 				free (str);

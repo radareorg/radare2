@@ -16,6 +16,8 @@ typedef struct r_anal_priv_t {
 
 #define R_ANAL_PRIV(x) ((RAnalPriv*)(x)->priv)
 
+R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
+
 #ifdef __cplusplus
 }
 #endif

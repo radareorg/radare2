@@ -73,6 +73,41 @@ static void load_types_from(RAnal *anal, const char *dir_prefix, const char *fmt
 	free (s);
 }
 
+R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
+	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
+	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	const char *arch = anal->config->arch;
+	const int bits = anal->config->bits;
+	const char *os = anal->config->os;
+	const bool merge = !priv->types_loaded_bits && !sdb_isempty (anal->sdb_types);
+
+	if (!priv->types_dirty && priv->types_loaded_bits == bits) {
+		return;
+	}
+	if (!arch) {
+		arch = "";
+	}
+	if (!os) {
+		os = "";
+	}
+	if (!merge) {
+		sdb_reset (anal->sdb_types);
+	}
+	load_types_from (anal, NULL, "types");
+	load_types_from (anal, NULL, "types-%s", arch);
+	load_types_from (anal, NULL, "types-%s", os);
+	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
+		load_types_from (anal, NULL, "types-darwin");
+	}
+	load_types_from (anal, NULL, "types-%d", bits);
+	load_types_from (anal, NULL, "types-%s-%d", os, bits);
+	load_types_from (anal, NULL, "types-%s-%d", arch, bits);
+	load_types_from (anal, NULL, "types-%s-%s", arch, os);
+	load_types_from (anal, NULL, "types-%s-%s-%d", arch, os, bits);
+	priv->types_dirty = false;
+	priv->types_loaded_bits = bits;
+}
+
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem) {
 	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
 	RAnalPriv *priv = R_ANAL_PRIV (anal);
@@ -140,6 +175,7 @@ R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
 // RENAME TO r_anal_types_save(); // parses the string and imports the types
 R_API void r_anal_save_parsed_type(RAnal *anal, const char *parsed) {
 	R_RETURN_IF_FAIL (anal && parsed);
+	r_anal_types_ensure_loaded (anal);
 
 	// First, if any parsed types exist, let's remove them.
 	char *type = strdup (parsed);
@@ -453,7 +489,7 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	return base_type;
 }
 
-R_API RList *r_anal_collect_base_types(RAnal *anal) {
+R_API RList *r_anal_types_baselist(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *types = r_list_newf ((RListFree)r_anal_base_type_free);
 	if (!types) {
@@ -488,10 +524,6 @@ R_API RList *r_anal_collect_base_types(RAnal *anal) {
 	}
 	ls_free (keys);
 	return types;
-}
-
-R_API void r_anal_base_type_list_free(RList *types) {
-	r_list_free (types);
 }
 
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {

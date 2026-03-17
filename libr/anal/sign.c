@@ -1098,7 +1098,7 @@ R_API bool r_sign_addto_item(RAnal *a, RSignItem *it, RAnalFunction *fcn, RSignT
 		return !it->vars && (it->vars = sign_vars (fcn));
 	case R_SIGN_TYPES:
 		if (!it->types) {
-			it->types = r_anal_function_get_signature (fcn);
+			it->types = r_anal_function_get_signature_string (fcn);
 			if (it->types) {
 				size_t l = strlen (it->types) - 1;
 				if (l > 0 && it->types[l] == ';') {
