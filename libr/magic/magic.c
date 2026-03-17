@@ -7,16 +7,6 @@
 
 R_LIB_VERSION (r_magic);
 
-#ifdef _MSC_VER
-# include <io.h>
-# include <sys\stat.h>
-# define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-# define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-# define S_IFIFO (-1)
-# define S_ISFIFO(m) (((m) & S_IFIFO) == S_IFIFO)
-# define MAXPATHLEN 255
-#endif
-
 #if USE_LIB_MAGIC
 
 // we keep this code just to make debian happy, but we should use
@@ -33,8 +23,6 @@ R_API void r_magic_free(RMagic* m) {
 		magic_close (m);
 	}
 }
-R_API const char *r_magic_file(RMagic* m, const char *f) { return magic_file(m, f); }
-R_API const char *r_magic_descriptor(RMagic* m, int fd) { return magic_descriptor(m, fd); }
 R_API const char *r_magic_buffer(RMagic* m, const void *b, size_t s) { return magic_buffer(m, b, s); }
 R_API const char *r_magic_error(RMagic* m) { return magic_error(m); }
 R_API void r_magic_setflags(RMagic* m, int f) { magic_setflags(m, f); }
@@ -49,15 +37,6 @@ R_API int r_magic_errno(RMagic* m) { return magic_errno(m); }
 
 #include "file.h"
 
-#ifndef PIPE_BUF
-/* Get the PIPE_BUF from pathconf */
-#ifdef _PC_PIPE_BUF
-#define PIPE_BUF pathconf(".", _PC_PIPE_BUF)
-#else
-#define PIPE_BUF 512
-#endif
-#endif
-
 static void free_mlist(struct mlist *mlist) {
 	struct mlist *ml;
 	if (!mlist) {
@@ -71,136 +50,6 @@ static void free_mlist(struct mlist *mlist) {
 		ml = next;
 	}
 	free (ml);
-}
-
-static int info_from_stat(RMagic *ms, unsigned short md) {
-	/* We cannot open it, but we were able to stat it. */
-	if (md & 0222) {
-		if (__magic_file_printf (ms, "writable, ") == -1) {
-			return -1;
-		}
-	}
-	if (md & 0111) {
-		if (__magic_file_printf (ms, "executable, ") == -1) {
-			return -1;
-		}
-	}
-	if (S_ISREG (md)) {
-		if (__magic_file_printf (ms, "regular file, ") == -1) {
-			return -1;
-		}
-	}
-	if (__magic_file_printf (ms, "no read permission") == -1) {
-		return -1;
-	}
-	return 0;
-}
-
-static void close_and_restore(const RMagic *ms, const char *name, int fd, const struct stat *sb) {
-	if (fd >= 0) {
-		close (fd);
-	}
-}
-
-static const char *file_or_fd(RMagic *ms, const char *inname, int fd) {
-	bool ispipe = false;
-	int rv = -1;
-	unsigned char *buf;
-	struct stat sb;
-	int nbytes = 0;	/* number of bytes read from a datafile */
-
-	/*
-	 * one extra for terminating '\0', and
-	 * some overlapping space for matches near EOF
-	 */
-#define SLOP (1 + sizeof (union VALUETYPE))
-	if (!(buf = malloc (HOWMANY + SLOP))) {
-		return NULL;
-	}
-
-	if (__magic_file_reset (ms) == -1) {
-		goto done;
-	}
-
-	switch (__magic_file_fsmagic (ms, inname, &sb)) {
-	case -1: goto done;		/* error */
-	case 0:	break;			/* nothing found */
-	default: rv = 0; goto done;	/* matched it and printed type */
-	}
-
-	if (!inname) {
-		if (fstat (fd, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
-			ispipe = true;
-		}
-	} else {
-		int flags = O_RDONLY | O_BINARY;
-
-		if (stat (inname, &sb) == 0 && S_ISFIFO (sb.st_mode)) {
-#ifdef O_NONBLOCK
-			flags |= O_NONBLOCK;
-#endif
-			ispipe = true;
-		}
-		errno = 0;
-		if ((fd = open (inname, flags)) < 0) {
-			eprintf ("couldn't open file\n");
-			if (info_from_stat (ms, sb.st_mode) == -1) {
-				goto done;
-			}
-			rv = 0;
-			goto done;
-		}
-#ifdef O_NONBLOCK
-		if ((flags = fcntl (fd, F_GETFL)) != -1) {
-			flags &= ~O_NONBLOCK;
-			(void)fcntl (fd, F_SETFL, flags);
-		}
-#endif
-	}
-
-	/*
-	 * try looking at the first HOWMANY bytes
-	 */
-#ifdef O_NONBLOCK
-	if (ispipe) {
-		ssize_t r = 0;
-
-		//while ((r = sread(fd, (void *)&buf[nbytes],
-		while ((r = read(fd, (void *)&buf[nbytes],
-		    (size_t)(HOWMANY - nbytes))) > 0) {
-			nbytes += r;
-			if (r < PIPE_BUF) {
-				break;
-			}
-		}
-
-		if (nbytes == 0) {
-			/* We can not read it, but we were able to stat it. */
-			if (info_from_stat (ms, sb.st_mode) == -1) {
-				goto done;
-			}
-			rv = 0;
-			goto done;
-		}
-	} else {
-#endif
-		if ((nbytes = read(fd, (char *)buf, HOWMANY)) == -1) {
-			__magic_file_error(ms, errno, "cannot read `%s'", inname);
-			goto done;
-		}
-#ifdef O_NONBLOCK
-	}
-#endif
-
-	(void)memset (buf + nbytes, 0, SLOP); /* NUL terminate */
-	if (__magic_file_buffer (ms, fd, inname, buf, (size_t)nbytes) == -1) {
-		goto done;
-	}
-	rv = 0;
-done:
-	free (buf);
-	close_and_restore (ms, inname, fd, &sb);
-	return rv == 0 ? __magic_file_getbuffer(ms) : NULL;
 }
 
 /* API */
@@ -273,14 +122,6 @@ R_API bool r_magic_check(RMagic *ms, const char *magicfile) {
 	struct mlist *ml = __magic_file_apprentice (ms, magicfile, strlen (magicfile), FILE_CHECK);
 	free_mlist (ml);
 	return ml;
-}
-
-R_API const char* r_magic_descriptor(RMagic *ms, int fd) {
-	return file_or_fd (ms, NULL, fd);
-}
-
-R_API const char *r_magic_file(RMagic *ms, const char *inname) {
-	return file_or_fd (ms, inname, 0); // 0 = stdin
 }
 
 R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {

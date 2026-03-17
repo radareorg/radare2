@@ -5,7 +5,7 @@ BIN=file${EXT_EXE}
 NAME=r_magic
 R2DEPS=r_util
 CFLAGS+=-I.
-OBJS=apprentice.o ascmagic.o fsmagic.o funcs.o is_tar.o magic.o softmagic.o mdump.o
+OBJS=apprentice.o ascmagic.o funcs.o is_tar.o magic.o softmagic.o mdump.o
 PCLIBS=@LIBMAGIC@
 
 alle: all

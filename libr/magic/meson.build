@@ -1,7 +1,6 @@
 r_magic_sources = [
   'apprentice.c',
   'ascmagic.c',
-  'fsmagic.c',
   'funcs.c',
   'mdump.c',
   'is_tar.c',

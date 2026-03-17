@@ -53,10 +53,8 @@ typedef unsigned int ssize_t;
 /* Type for Unicode characters */
 typedef unsigned long unichar;
 
-struct stat;
 R_IPI const char *__magic_file_fmttime(unsigned int, int, char *);
 R_IPI int __magic_file_buffer(RMagic *, int, const char *, const void *, size_t);
-R_IPI int __magic_file_fsmagic(RMagic *, const char *, struct stat *);
 R_IPI int __magic_file_printf(RMagic *, const char *, ...);
 R_IPI int __magic_file_reset(RMagic *);
 R_IPI int __magic_file_zmagic(RMagic *, int, const char *, const ut8*, size_t);
