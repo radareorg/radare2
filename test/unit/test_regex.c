@@ -94,9 +94,8 @@ static int test_literal_match(void) {
 }
 
 static int test_empty_string(void) {
-	// empty pattern matches everything
-	mu_assert_true (r_regex_match ("", "e", "anything"), "empty pattern matches");
-	mu_assert_true (r_regex_match ("", "e", ""), "empty pattern matches empty");
+	// empty pattern fails to compile in this engine (R_REGEX_EMPTY)
+	mu_assert_false (r_regex_match ("", "e", "anything"), "empty pattern fails to compile");
 	// non-empty pattern vs empty string
 	mu_assert_false (r_regex_match ("hello", "e", ""), "non-empty pattern vs empty string");
 	mu_end;
@@ -442,8 +441,11 @@ static int test_escaping(void) {
 	mu_assert_true (r_regex_match ("a\\.b", "e", "a.b"), "escaped dot matches dot");
 	mu_assert_false (r_regex_match ("a\\.b", "e", "axb"), "escaped dot no wildcard");
 
-	// literal parens via backslash in basic mode
-	mu_assert_true (r_regex_match ("a\\(b\\)", "", "a(b)"), "escaped parens basic");
+	// in basic mode \ ( \) are group delimiters, not literal parens
+	// so \ (b\) captures "b", and "ab" matches
+	mu_assert_true (r_regex_match ("a\\(b\\)", "", "ab"), "basic group parens");
+	// literal parens in extended mode
+	mu_assert_true (r_regex_match ("a\\(b\\)", "e", "a(b)"), "escaped parens extended");
 
 	// literal star
 	mu_assert_true (r_regex_match ("a\\*b", "e", "a*b"), "escaped star");
@@ -461,12 +463,12 @@ static int test_escaping(void) {
 // === Basic vs Extended syntax ===
 
 static int test_basic_vs_extended(void) {
-	// In basic mode, ( ) are literal, \( \) are grouping
+	// In basic mode, ( ) are literal, \ ( \) are grouping
 	mu_assert_true (r_regex_match ("(abc)", "", "(abc)"), "basic parens literal");
 	// In extended mode, ( ) are grouping
 	mu_assert_true (r_regex_match ("(abc)", "e", "abc"), "extended parens group");
 
-	// In basic mode, + and ? are literal
+	// In basic mode, + and? are literal
 	mu_assert_true (r_regex_match ("a+", "", "a+"), "basic plus literal");
 	// In extended mode, + is quantifier
 	mu_assert_true (r_regex_match ("a+", "e", "aaa"), "extended plus quantifier");
@@ -494,7 +496,7 @@ static int test_newline(void) {
 // === Backreferences ===
 
 static int test_backrefs(void) {
-	// basic mode: \( \) for groups, \1 for backreference
+	// basic mode: \ ( \) for groups, \1 for backreference
 	mu_assert_true (r_regex_match ("\\(a\\)\\1", "", "aa"), "backref basic aa");
 	mu_assert_false (r_regex_match ("\\(a\\)\\1", "", "ab"), "backref basic ab");
 
