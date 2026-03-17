@@ -60,6 +60,7 @@ static RCoreHelpMessage help_msg_T = {
 	"TT", "", "enter into the text log chat console",
 	"T=", "[.]", "pull logs from remote r2 instance specified by http.sync",
 	"T=&", "", "start background thread syncing with the remote server",
+	"TV", "", "alias for VT (visual textlogs)",
 	NULL
 };
 
@@ -324,6 +325,9 @@ static int cmd_log(void *data, const char *input) {
 	case '?': // "T?"
 		r_core_cmd_help (core, help_msg_T);
 		break;
+	case 'V': // "TV"
+		r_core_cmd0 (core, "VT");
+		break;
 	case 'T': // "TT" Ts ? as ms?
 		if (r_cons_is_interactive (core->cons)) {
 			textlog_chat (core);
@@ -397,6 +401,9 @@ static int cmd_log(void *data, const char *input) {
 	case '*':
 	case '\0':
 		r_core_log_list (core, n, n2, *input);
+		break;
+	default:
+		r_core_return_invalid_command (core, "V", *input);
 		break;
 	}
 	return 0;
