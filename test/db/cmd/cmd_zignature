@@ -53,7 +53,7 @@ EXPECT=<<EOF
     "realname": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
     "rawname": "__ZSt3minImERKT_S2_S2_",
     "demangled": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
-    "types": "void method.unsigned_long_const_std.min_unsigned_long__unsigned_long_const__unsigned_long_const_ (int32_t arg_8h, int32_t arg_ch)",
+    "types": "void sym.unsigned_long_const_std__min_unsigned_long__unsigned_long_const__unsigned_long_const_ (int32_t arg_8h, int32_t arg_ch)",
     "refs": [
       
     ],
@@ -1271,7 +1271,7 @@ za sym.memset b 200c014e0400028b5f8001f1c80300545f4000f102020054013c084ea2001836
 za sym.memset g cc=28 nbbs=35 edges=47 ebbs=8 bbsum=460
 za sym.memset o 0x00012180
 za sym.memset R bWVtc2V0
-za sym.memset t void sym.memset (void *s, int c, size_t n)
+za sym.memset t void * memset (void *s, int c, size_t n)
 za sym.memset v tr10:c:int, tr6:s:void *, tr14:n:size_t
 za sym.memset h 82e8b18bbf263f9ed0e31d6b68099efe6eb8805a429444f8aa119af00c47369c
 EOF
@@ -1957,4 +1957,3 @@ Usage: zf[dlsz] filename   # Manage FLIRT signatures
 | zfz filename             open FLIRT file and get sig commands (zfz flirt_file > zignatures.sig)
 EOF
 RUN
-

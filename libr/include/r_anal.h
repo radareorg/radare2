@@ -265,6 +265,21 @@ typedef struct r_anal_base_type_t {
 	};
 } RAnalBaseType;
 
+typedef struct r_anal_function_param_t {
+	char *name;
+	char *type;
+} RAnalFunctionParam;
+
+typedef RAnalFunctionParam RAnalFunctionSignatureParam;
+
+typedef struct r_anal_function_signature_t {
+	char *signature;
+	char *ret_type;
+	char *callconv;
+	RList *params; // RList<RAnalFunctionParam *>
+	bool noreturn;
+} RAnalFunctionSignature;
+
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
@@ -1196,7 +1211,10 @@ R_API int r_anal_function_loops(RAnalFunction *fcn);
 R_API void r_anal_trim_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API void r_anal_del_jmprefs(RAnal *anal, RAnalFunction *fcn);
 R_API RAnalFunction *r_anal_function_next(RAnal *anal, ut64 addr);
-R_API char *r_anal_function_get_signature(RAnalFunction *function);
+R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *function);
+R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
+R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
+R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
@@ -1694,6 +1712,7 @@ R_API bool r_anal_esil_dfg_reg_is_const(RAnalEsilDFG *dfg, const char *reg);
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
+R_API RList *r_anal_types_baselist(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_base_type_free(RAnalBaseType *type);

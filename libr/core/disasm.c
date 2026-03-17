@@ -2214,7 +2214,7 @@ static void ds_show_functions(RDisasmState *ds) {
 	}
 	RCons *cons = ds->core->cons;
 	ds_begin_line (ds);
-	char *sign = r_anal_function_get_signature (f);
+	char *sign = r_anal_function_get_signature_string (f);
 	if (empty_signature (sign)) {
 		R_FREE (sign);
 	}
