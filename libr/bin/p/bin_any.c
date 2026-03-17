@@ -6,8 +6,13 @@
 static char *get_filetype(RBuffer *b) {
 	RMagic *ck = r_magic_new (0);
 	if (ck) {
-		// TODO: use dir.magic here
-		r_magic_load (ck, R2_SDB_MAGIC);
+		char *magicpath = r_str_r2_prefix (R2_SDB_MAGIC);
+		if (!magicpath) {
+			r_magic_free (ck);
+			return NULL;
+		}
+		r_magic_load (ck, magicpath);
+		free (magicpath);
 		ut8 buf[256] = {0};
 		if (r_buf_read_at (b, 0, buf, sizeof (buf)) < 1) {
 			r_magic_free (ck);
