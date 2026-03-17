@@ -41,10 +41,8 @@
 
 #if !USE_LIB_MAGIC
 
+#include <r_util.h>
 #include "file.h"
-#include <string.h>
-#include <ctype.h>
-#include <sys/types.h>
 #include "tar.h"
 
 static const char tartype[][32] = {

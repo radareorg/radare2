@@ -31,10 +31,7 @@
 #if !USE_LIB_MAGIC
 
 #include "file.h"
-#include <stdarg.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <r_util.h>
 #include <wctype.h>
 #if defined(HAVE_WCHAR_H)
 #include <wchar.h>
@@ -82,10 +79,10 @@ static void __magic_file_error_core(RMagic *ms, int error, const char *f, va_lis
 	}
 	ms->haderr++;
 	ms->error = error;
+	R_LOG_ERROR ("%s", r_strbuf_get (&ms->o.sb));
 }
 
 /*VARARGS*/
-// XXX deprecate and just use R_LOG
 void __magic_file_error(RMagic *ms, int error, const char *f, ...) {
 	va_list va;
 	va_start (va, f);

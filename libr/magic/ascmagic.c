@@ -37,7 +37,7 @@
  * international characters, now subsumed into this file.
  */
 #include <r_userconf.h>
-#include <r_types.h>
+#include <r_util.h>
 
 /*
  * This table maps each EBCDIC character to an (8-bit extended) ASCII
@@ -95,11 +95,6 @@ R_API void r_magic_from_ebcdic(const ut8 *buf, size_t nbytes, ut8 *out) {
 #if !USE_LIB_MAGIC
 
 #include "file.h"
-#include <stdio.h>
-#include <string.h>
-#include <memory.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "names.h"
 
 R_IPI int __magic_file_looks_utf8(const ut8 *, size_t, unichar *, size_t *);

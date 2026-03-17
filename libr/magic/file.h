@@ -40,7 +40,7 @@
 #include <stdio.h>	/* Include that here, to make sure __P gets defined */
 #include <errno.h>
 #include <fcntl.h>	/* For open and flags */
-#include <inttypes.h> // TODO: use utX
+#include <r_types.h>
 #include <r_regex.h>
 #include <sys/types.h>
 /* Do this here and now, because struct stat gets re-defined on solaris */

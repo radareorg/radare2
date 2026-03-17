@@ -36,16 +36,13 @@
 #include <r_util.h>
 #include "file.h"
 #include "r_regex.h"
-#include <string.h>
-#include <ctype.h>
-#include <stdlib.h>
 #include "r_util/r_time.h"
 
 static int match(RMagic *, struct r_magic *, ut32, const ut8 *, size_t, int);
 static int mget(RMagic *, const ut8 *, struct r_magic *, size_t, unsigned int);
 static int magiccheck(RMagic *, struct r_magic *);
 static st32 mprint(RMagic *, struct r_magic *);
-static void mdebug(ut32, const char *, size_t);
+static void mdebug(RMagic *, ut32, const char *, size_t);
 static int mcopy(RMagic *, union VALUETYPE *, int, int, const ut8 *, ut32, size_t, size_t);
 static int mconvert(RMagic *, struct r_magic *);
 static int print_sep(RMagic *, int);
@@ -53,6 +50,28 @@ static void cvt_8(union VALUETYPE *, const struct r_magic *);
 static void cvt_16(union VALUETYPE *, const struct r_magic *);
 static void cvt_32(union VALUETYPE *, const struct r_magic *);
 static void cvt_64(union VALUETYPE *, const struct r_magic *);
+
+static void magic_debug(RMagic *ms, const char *fmt, ...) {
+	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
+		return;
+	}
+	va_list ap;
+	va_start (ap, fmt);
+	char *msg = r_str_newvf (fmt, ap);
+	va_end (ap);
+	if (msg) {
+		R_LOG_DEBUG ("%s", msg);
+		free (msg);
+	}
+}
+
+static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const union VALUETYPE *p) {
+	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
+		return;
+	}
+	mdebug (ms, offset, (const char *)p, sizeof (*p));
+	__magic_file_mdump (ms, m);
+}
 
 /*
  * Macro to give description string according to whether we want plain
@@ -767,11 +786,14 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	}
 }
 
-static void mdebug(ut32 offset, const char *str, size_t len) {
-	eprintf ("mget @%d: ", offset);
-	__magic_file_showstr (stderr, str, len);
-	(void)fputc ('\n', stderr);
-	(void)fputc ('\n', stderr);
+static void mdebug(RMagic *ms, ut32 offset, const char *str, size_t len) {
+	char *escaped = r_str_escape_raw ((const ut8 *)str, (int)len);
+	if (escaped) {
+		magic_debug (ms, "mget @%u: %s", offset, escaped);
+		free (escaped);
+		return;
+	}
+	magic_debug (ms, "mget @%u", offset);
 }
 
 static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 *s, ut32 offset, size_t nbytes, size_t linecnt) {
@@ -886,10 +908,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		return -1;
 	}
 
-	if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-		mdebug (offset, (char *) (void *)p, sizeof (union VALUETYPE));
-		__magic_file_mdump (ms, m);
-	}
+	magic_debug_dump (ms, m, offset, p);
 
 	if (m->flag & INDIR) {
 		int off = m->in_offset;
@@ -1159,10 +1178,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		}
 		ms->offset = offset;
 
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			mdebug (offset, (char *) (void *)p, sizeof (union VALUETYPE));
-			__magic_file_mdump (ms, m);
-		}
+		magic_debug_dump (ms, m, offset, p);
 	}
 
 	/* Verify we have enough data to match magic type */
@@ -1470,60 +1486,42 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	v = __magic_file_signextend (ms, m, v);
 	switch (m->reln) {
 	case 'x':
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			(void)fprintf (stderr, "%" PFMT64u " == *any* = 1\n", (ut64)v);
-		}
+		magic_debug (ms, "%" PFMT64u " == *any* = 1", (ut64)v);
 		matched = 1;
 		break;
 	case '!':
 		matched = v != l;
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			fprintf (stderr, "%" PFMT64u " != %" PFMT64u " = %d\n", (ut64)v, (ut64)l, matched);
-		}
+		magic_debug (ms, "%" PFMT64u " != %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '=':
 		matched = v == l;
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			eprintf ("%" PFMT64u " == %" PFMT64u " = %d\n", (ut64)v, (ut64)l, matched);
-		}
+		magic_debug (ms, "%" PFMT64u " == %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		break;
 	case '>':
 		if (m->flag & UNSIGNED) {
 			matched = v > l;
-			if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-				eprintf ("%" PFMT64u " > %" PFMT64u " = %d\n", (ut64)v, (ut64)l, matched);
-			}
+			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		} else {
 			matched = (ut64)v > (ut64)l;
-			if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-				eprintf ("%" PFMT64u " > %" PFMT64u " = %d\n", (st64)v, (st64)l, matched);
-			}
+			magic_debug (ms, "%" PFMT64u " > %" PFMT64u " = %d", (st64)v, (st64)l, matched);
 		}
 		break;
 	case '<':
 		if (m->flag & UNSIGNED) {
 			matched = v < l;
-			if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-				eprintf ("%" PFMT64u " < %" PFMT64u " = %d\n", (ut64)v, (ut64)l, matched);
-			}
+			magic_debug (ms, "%" PFMT64u " < %" PFMT64u " = %d", (ut64)v, (ut64)l, matched);
 		} else {
 			matched = (ut64)v < (ut64)l;
-			if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-				eprintf ("%" PFMT64d " < %" PFMT64d " = %d\n", (st64)v, (st64)l, matched);
-			}
+			magic_debug (ms, "%" PFMT64d " < %" PFMT64d " = %d", (st64)v, (st64)l, matched);
 		}
 		break;
 	case '&':
 		matched = (v & l) == l;
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			eprintf ("((%" PFMT64x " & %" PFMT64x ") == %" PFMT64x ") = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
-		}
+		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") == %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	case '^':
 		matched = (v & l) != l;
-		if ((ms->flags & R_MAGIC_DEBUG) != 0) {
-			eprintf ("((%" PFMT64x " & %" PFMT64x ") != %" PFMT64x ") = %d\n", (ut64)v, (ut64)l, (ut64)l, matched);
-		}
+		magic_debug (ms, "((%" PFMT64x " & %" PFMT64x ") != %" PFMT64x ") = %d", (ut64)v, (ut64)l, (ut64)l, matched);
 		break;
 	default:
 		__magic_file_magerror (ms, "cannot happen: invalid relation `%c'", m->reln);

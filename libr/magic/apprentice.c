@@ -34,7 +34,6 @@
 #if !USE_LIB_MAGIC
 
 #include <r_util.h>
-#include <ctype.h>
 #include "file.h"
 #include "patchlevel.h"
 
@@ -475,51 +474,63 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
 	}
 }
 
+static bool has_desc_text_word(const char *desc) {
+#define SYMLEN 4
+	char *p = strstr (desc, "text");
+	return p && (p == desc || isspace ((ut8)p[-1])) &&
+		(p + SYMLEN - desc == MAXstring ||
+		(p[SYMLEN] == '\0' || isspace ((ut8)p[SYMLEN])));
+}
+
+static void debug_test_type(RMagic *ms, struct r_magic *m) {
+	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
+		return;
+	}
+	const char *sep = R_STR_ISNOTEMPTY (m->mimetype)? "; ": "";
+	const char *desc = R_STR_ISNOTEMPTY (m->desc)? m->desc: "(no description)";
+	R_LOG_DEBUG ("%s%s%s: %s", m->mimetype, sep, desc, m->flag & BINTEST? "binary": "text");
+	if ((m->flag & BINTEST) && has_desc_text_word (m->desc)) {
+		R_LOG_DEBUG ("Possible binary test for text type");
+	}
+}
+
 /*
  * Load and parse from buffer.
  */
-static const char *bgets(char *line, size_t line_sz, const char *data) {
-	if (!*data) {
-		return NULL;
+static bool bgets(char *line, size_t line_sz, const char **data) {
+	const char *p = *data;
+	if (R_STR_ISEMPTY (p)) {
+		return false;
 	}
-	const char *nl = strchr (data, '\n');
-	const int nlsz = nl
-		? nl - data + 1
-		: R_MIN (line_sz, strlen (data));
-	r_str_ncpy (line, data, nlsz);
-	if (!data[nlsz]) {
-		return NULL;
+	const char *nl = strchr (p, '\n');
+	size_t adv = nl? (size_t)(nl - p) + 1: strlen (p);
+	size_t len = R_MIN (adv, line_sz - 1);
+	r_str_ncpy (line, p, len + 1);
+	*data = p + adv;
+	return true;
+}
+
+static bool parse_line(RMagic *ms, int action, struct r_magic_entry **marray, ut32 *marraycount, char *line, size_t lineno) {
+	size_t len = strlen (line);
+	if (len == 0) {
+		return true;
 	}
-	return data + nlsz;
+	if (line[len - 1] == '\n') {
+		line[len - 1] = '\0';
+	}
+	if (R_STR_ISEMPTY (line) || *line == '#') {
+		return true;
+	}
+	if (r_str_startswith (line, mime_marker)) {
+		return parse_mime (ms, marray, marraycount, line + mime_marker_len) == 0;
+	}
+	return parse (ms, marray, marraycount, line, lineno, action) == 0;
 }
 
 static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
 	char line[BUFSIZ];
-	size_t lineno = 0;
-	/* read and parse this file */
-	for (ms->line = 1; (data = bgets (line, sizeof (line), data)); ms->line++) {
-		size_t len = strlen (line);
-		if (len == 0) { /* null line, garbage, etc */
-			continue;
-		}
-		if (line[len - 1] == '\n') {
-			lineno++;
-			line[len - 1] = '\0'; /* delete newline */
-		}
-		if (line[0] == '\0') { /* empty, do not parse */
-			continue;
-		}
-		if (line[0] == '#') { /* comment, do not parse */
-			continue;
-		}
-		if (len > mime_marker_len && !memcmp (line, mime_marker, mime_marker_len)) {
-			/* MIME type */
-			if (parse_mime (ms, marray, marraycount, line + mime_marker_len) != 0) {
-				(*errs)++;
-			}
-			continue;
-		}
-		if (parse (ms, marray, marraycount, line, lineno, action) != 0) {
+	for (ms->line = 1; bgets (line, sizeof (line), &data); ms->line++) {
+		if (!parse_line (ms, action, marray, marraycount, line, ms->line)) {
 			(*errs)++;
 		}
 	}
@@ -534,7 +545,6 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 		return;
 	}
 	char line[BUFSIZ];
-	size_t lineno = 0;
 	FILE *f = r_sandbox_fopen (ms->file = file, "r");
 	if (!f) {
 		if (errno != ENOENT) {
@@ -545,29 +555,7 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 	}
 	/* read and parse this file */
 	for (ms->line = 1; fgets (line, sizeof (line), f); ms->line++) {
-		size_t len = strlen (line);
-		if (len == 0) { /* null line, garbage, etc */
-			continue;
-		}
-		if (line[len - 1] == '\n') {
-			lineno++;
-			line[len - 1] = '\0'; /* delete newline */
-		}
-		if (line[0] == '\0') { /* empty, do not parse */
-			continue;
-		}
-		if (line[0] == '#') { /* comment, do not parse */
-			continue;
-		}
-		if (len > mime_marker_len &&
-			memcmp (line, mime_marker, mime_marker_len) == 0) {
-			/* MIME type */
-			if (parse_mime (ms, marray, marraycount, line + mime_marker_len) != 0) {
-				(*errs)++;
-			}
-			continue;
-		}
-		if (parse (ms, marray, marraycount, line, lineno, action) != 0) {
+		if (!parse_line (ms, action, marray, marraycount, line, ms->line)) {
 			(*errs)++;
 		}
 	}
@@ -674,19 +662,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 		starttest = i;
 		do {
 			set_test_type (marray[starttest].mp, marray[i].mp);
-			if (ms->flags & R_MAGIC_DEBUG) {
-				(void)fprintf (stderr, "%s%s%s: %s\n", marray[i].mp->mimetype, marray[i].mp->mimetype[0] == '\0'? "": "; ", marray[i].mp->desc[0]? marray[i].mp->desc: "(no description)", marray[i].mp->flag & BINTEST? "binary": "text");
-				if (marray[i].mp->flag & BINTEST) {
-#define SYMLEN 4 /* strlen("text") */
-					char *p = strstr (marray[i].mp->desc, "text");
-					if (p && (p == marray[i].mp->desc || isspace ((ut8)p[-1])) &&
-						(p + SYMLEN - marray[i].mp->desc == MAXstring ||
-							(p[SYMLEN] == '\0' || isspace ((ut8)p[SYMLEN])))) {
-						(void)fprintf (stderr,
-							"*** Possible binary test for text type\n");
-					}
-				}
-			}
+			debug_test_type (ms, marray[i].mp);
 		} while (++i < marraycount && marray[i].mp->cont_level != 0);
 	}
 
