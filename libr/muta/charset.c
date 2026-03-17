@@ -224,6 +224,48 @@ R_API ut8 *r_muta_charset_encode(const ut8 *in, int in_len, int *out_len, const 
 	return r_muta_charset_encode_ex (in, in_len, out_len, table, parser, '?');
 }
 
+R_API int r_muta_charset_tr_decode(const ut8 *in, int len, ut8 **out, int *consumed, const ut8 tr[256]) {
+	R_RETURN_VAL_IF_FAIL (out && consumed, 0);
+	*out = NULL;
+	*consumed = 0;
+	R_RETURN_VAL_IF_FAIL (in && len > 0 && tr, 0);
+
+	ut8 *obuf = malloc (2);
+	if (!obuf) {
+		return 0;
+	}
+	obuf[0] = tr[in[0]];
+	obuf[1] = 0;
+	*out = obuf;
+	*consumed = 1;
+	return 1;
+}
+
+R_API bool r_muta_charset_table_update(RMutaSession *ms, const ut8 *buf, int len, const RMutaCharsetMap *table, const char *unknown_fmt, RMutaCharsetParserFn parser, ut8 unknown_byte) {
+	R_RETURN_VAL_IF_FAIL (ms && buf && len >= 0 && table && parser, false);
+
+	int olen = 0;
+	ut8 *obuf = NULL;
+	switch (ms->dir) {
+	case R_MUTA_OP_DECRYPT:
+		obuf = r_muta_charset_decode (buf, len, &olen, table, unknown_fmt);
+		break;
+	case R_MUTA_OP_ENCRYPT:
+		obuf = r_muta_charset_encode_ex (buf, len, &olen, table, parser, unknown_byte);
+		break;
+	default:
+		return false;
+	}
+	if (!obuf) {
+		return false;
+	}
+	if (olen > 0) {
+		r_muta_session_append (ms, obuf, olen);
+	}
+	free (obuf);
+	return true;
+}
+
 R_API bool r_muta_charset_stub_update(RMutaSession *cj, const ut8 *b, int l) {
 	R_RETURN_VAL_IF_FAIL (cj && b && l >= 0, false);
 	r_muta_session_append (cj, b, l);

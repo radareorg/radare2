@@ -78,31 +78,7 @@ static const RMutaCharsetMap pokemon_table[] = {
 };
 
 static bool update(RMutaSession *ms, const ut8 *buf, int len) {
-	int olen = 0;
-	ut8 *obuf = NULL;
-	if (!ms || !buf || len < 0) {
-		return false;
-	}
-	switch (ms->dir) {
-	case R_MUTA_OP_ENCRYPT:
-		obuf = r_muta_charset_encode (buf, len, &olen, pokemon_table, r_muta_charset_parse_default);
-		break;
-	case R_MUTA_OP_DECRYPT:
-		obuf = r_muta_charset_decode (buf, len, &olen, pokemon_table, "\\x%02x");
-		break;
-	}
-	if (!obuf) {
-		return false;
-	}
-	if (olen > 0) {
-		r_muta_session_append (ms, obuf, olen);
-	}
-	free (obuf);
-	return true;
-}
-
-static bool end(RMutaSession *ms, const ut8 *buf, int len) {
-	return update (ms, buf, len);
+	return r_muta_charset_table_update (ms, buf, len, pokemon_table, "\\x%02x", r_muta_charset_parse_default, '?');
 }
 
 RMutaPlugin r_muta_plugin_charset_pokemon = {
@@ -114,7 +90,7 @@ RMutaPlugin r_muta_plugin_charset_pokemon = {
 	.type = R_MUTA_TYPE_CHARSET,
 	.implements = "pokemon",
 	.update = update,
-	.end = end
+	.end = update
 };
 
 #ifndef R2_PLUGIN_INCORE
