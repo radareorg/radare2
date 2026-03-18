@@ -1444,6 +1444,8 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 		bool has_linkage_name = false;
 		int argNumber = 1;
 		const char *name = NULL;
+		// cache frame_base once instead of looking it up per-variable
+		const RBinDwarfAttrValue *frame_base = find_attr (die, DW_AT_frame_base);
 		size_t j;
 		for (j = idx; child_depth > 0 && j < ctx->count; j++) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
@@ -1475,7 +1477,7 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 						parse_abstract_origin (ctx, val->reference, &type, &name);
 						break;
 					case DW_AT_location:
-						var->location = parse_dwarf_location (ctx, val, find_attr (die, DW_AT_frame_base));
+						var->location = parse_dwarf_location (ctx, val, frame_base);
 						break;
 					default:
 						break;
