@@ -82,7 +82,12 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 	R_RETURN_VAL_IF_FAIL (f, false);
 	RListIter *iter;
 	RFlagZoneItem *zi;
-	*prev = *next = NULL;
+	if (prev) {
+		*prev = NULL;
+	}
+	if (next) {
+		*next = NULL;
+	}
 	ut64 h = UT64_MAX, l = 0LL;
 	RList *db = f->zones;
 
@@ -91,12 +96,16 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 		if (zi->from > addr) {
 			if (h == UT64_MAX) {
 				h = zi->from;
-				*next = zi->name;
+				if (next) {
+					*next = zi->name;
+				}
 				res = true;
 			} else {
 				if (zi->from < h) {
 					h = zi->from;
-					*next = zi->name;
+					if (next) {
+						*next = zi->name;
+					}
 					res = true;
 				}
 			}
@@ -104,12 +113,16 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 		if (zi->from < addr) {
 			if (l == UT64_MAX) {
 				l = zi->from;
-				*prev = zi->name;
+				if (prev) {
+					*prev = zi->name;
+				}
 				res = true;
 			} else {
 				if (zi->from >= l) {
 					l = zi->from;
-					*prev = zi->name;
+					if (prev) {
+						*prev = zi->name;
+					}
 					res = true;
 				}
 			}
@@ -117,13 +130,17 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 		if (zi->to <= addr) {
 			if (l == UT64_MAX) {
 				l = zi->to;
-				*prev = zi->name;
+				if (prev) {
+					*prev = zi->name;
+				}
 				res = true;
 			} else {
 				if (zi->to >= l) {
 					l = zi->to;
 					res = true;
-					*prev = zi->name;
+					if (prev) {
+						*prev = zi->name;
+					}
 				}
 			}
 		}
@@ -131,12 +148,16 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 			if (h == UT64_MAX) {
 				h = zi->to;
 				res = true;
-				*next = zi->name;
+				if (next) {
+					*next = zi->name;
+				}
 			} else {
 				if (zi->to < h) {
 					h = zi->to;
 					res = true;
-					*next = zi->name;
+					if (next) {
+						*next = zi->name;
+					}
 				}
 			}
 		}

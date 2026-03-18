@@ -46,3 +46,22 @@ EXPECT=<<EOF
     1 . symbols
 EOF
 RUN
+
+NAME=fzn and fzp with nullable outputs
+FILE=malloc://64
+CMDS=<<EOF
+fz+ first
+s 0x10
+fz+ second
+s 1
+fzn
+?v $$
+s 0xf
+fzp
+?v $$
+EOF
+EXPECT=<<EOF
+0x10
+0x0
+EOF
+RUN
