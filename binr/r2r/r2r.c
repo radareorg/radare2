@@ -797,8 +797,17 @@ static void print_diff(const char *actual, const char *expected, bool diffchar, 
 	}
 	char *uni = r_diff_buffers_tostring (d, (const ut8 *)expected, (int)strlen (expected), (const ut8 *)output, (int)strlen (output));
 	r_diff_free (d);
+	if (!uni) {
+		R_LOG_ERROR ("Failed to generate unified diff");
+		goto cleanup;
+	}
 
 	RList *lines = r_str_split_duplist (uni, "\n", false);
+	if (!lines) {
+		free (uni);
+		R_LOG_ERROR ("Failed to split unified diff output");
+		goto cleanup;
+	}
 	RListIter *it;
 	char *line;
 	bool header_found = false;

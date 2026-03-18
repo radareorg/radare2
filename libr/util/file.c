@@ -1011,22 +1011,41 @@ R_API char *r_file_temp_ex(const char * R_NULLABLE prefix, const char * R_NULLAB
 }
 
 #if !__wasi__ && !R2__WINDOWS__
-static inline char *file_fmt_split(const char *fmt) {
-	if (R_STR_ISEMPTY (fmt)) {
-		return r_file_temp_ex (NULL, NULL);
-	}
+static inline char *file_fmt_template(const char *fmt) {
+	const char *pref = "r2";
+	const char *ex = "";
+	char *dup = NULL;
+	char *path = r_file_tmpdir ();
 	char *name = NULL;
-	char *dup = strdup (fmt);
-	if (dup) {
+	if (!path) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (fmt)) {
+		dup = strdup (fmt);
+		if (!dup) {
+			free (path);
+			return NULL;
+		}
 		RList *splt = r_str_split_list (dup, "*", 2);
 		if (splt && r_list_length (splt)) {
-			char *pref = r_list_pop_head (splt);
-			char *ex = r_list_pop_head (splt);
-			name = r_file_temp_ex (pref, ex);
+			char *fmt_pref = r_list_pop_head (splt);
+			char *fmt_ex = r_list_pop_head (splt);
+			if (R_STR_ISNOTEMPTY (fmt_pref)) {
+				pref = fmt_pref;
+			}
+			if (R_STR_ISNOTEMPTY (fmt_ex)) {
+				ex = fmt_ex;
+			}
 		}
 		r_list_free (splt);
-		free (dup);
 	}
+	if (R_STR_ISNOTEMPTY (ex)) {
+		name = r_str_newf ("%s/%s%s.XXXXXX", path, pref, ex);
+	} else {
+		name = r_str_newf ("%s/%s.XXXXXX", path, pref);
+	}
+	free (dup);
+	free (path);
 	return name;
 }
 #endif
@@ -1070,16 +1089,19 @@ err_r_file_mkstemp:
 #elif __wasi__
 	// nothing to do for wasm, drops to return -1
 #else
-	char *name = file_fmt_split (prefix);
-	if (name) {
-		int perm = RDWR_FLAGS | O_CREAT | O_EXCL | O_BINARY;
-		h = r_sandbox_open (name, perm, 0644);
-		if (h != -1) {
-			*oname = name;
-		} else {
-			free (name);
+		char *name = file_fmt_template (prefix);
+		if (name) {
+			h = mkstemp (name);
+			if (h != -1) {
+				if (oname) {
+					*oname = name;
+				} else {
+					free (name);
+				}
+			} else {
+				free (name);
+			}
 		}
-	}
 #endif
 	return h;
 }
