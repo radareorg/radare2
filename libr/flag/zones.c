@@ -3,6 +3,7 @@
 #include <r_flag.h>
 
 R_API RFlagZoneItem *r_flag_zone_get(RFlag *f, const char *name) {
+	R_RETURN_VAL_IF_FAIL (f && name, NULL);
 	RListIter *iter;
 	RFlagZoneItem *zi;
 	RList *db = f->zones;
