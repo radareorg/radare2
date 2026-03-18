@@ -291,7 +291,7 @@ grub_hfsplus_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 
 	while (1) {
 		struct grub_hfsplus_extkey *key;
-		struct grub_hfsplus_extkey_internal extoverflow;
+		struct grub_hfsplus_key_internal extoverflow;
 		int blk, ptr = 0;
 
 		/* Try to find this block in the current set of extents.  */
@@ -316,11 +316,12 @@ grub_hfsplus_read_block(grub_fshelp_node_t node, grub_disk_addr_t fileblock) {
 		}
 
 		/* Set up the key to look for in the extent overflow file.  */
-		extoverflow.fileid = node->fileid;
-		extoverflow.start = fileblock - blksleft;
+		grub_memset (&extoverflow, 0, sizeof (extoverflow));
+		extoverflow.extkey.fileid = node->fileid;
+		extoverflow.extkey.start = fileblock - blksleft;
 
 		if (grub_hfsplus_btree_search (&node->data->extoverflow_tree,
-			(struct grub_hfsplus_key_internal *)&extoverflow,
+			&extoverflow,
 			grub_hfsplus_cmp_extkey,
 			&nnode,
 			&ptr)) {
