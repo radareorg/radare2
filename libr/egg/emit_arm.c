@@ -46,8 +46,8 @@ static void emit_frame(REgg *egg, int sz) {
 	if (sz > 0) {
 		r_egg_printf (egg,
 			// "  mov "R_BP", "R_SP"\n"
-			"  add fp, sp, $4\n" // size of arguments
-			"  sub sp, %d\n",
+			"  add fp, sp, 4\n" // size of arguments
+			"  sub sp, sp, %d\n",
 			sz); // size of stackframe 8, 16, ..
 	}
 }
@@ -84,30 +84,33 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	int rest, off = 0;
-	off = strlen (str) + 1;
-	rest = (off % 4);
+	int slen = strlen (str) + 1;
+	int rest = (slen % 4);
 	if (rest) {
 		rest = 4 - rest;
 	}
-	off += rest - 4;
-	r_egg_printf (egg, "  add pc, %d\n", (off));
-	// XXX: does not handle \n and so on.. must use r_util
-	// use r_str_escape to handle \n
-	// do not forget mem leak
-	char *s = strdup (str);
-	char *escaped = r_str_escape (s);
-	free (s);
-	s = escaped;
+	int total_data = slen + rest;
+	char *s = r_str_escape (str);
+	if (egg->bits == 16) {
+		// Thumb: use adr to get string address, then branch over data
+		r_egg_printf (egg, "  adr r0, 4\n");
+		r_egg_printf (egg, "  b %d\n", 4 + total_data); // skip over data
+	} else {
+		// ARM32: add pc skips over inline data (pc reads as +8)
+		int off = total_data - 4;
+		r_egg_printf (egg, "  add pc, %d\n", off);
+	}
 	r_egg_printf (egg, ".string \"%s\"\n", s);
 	free (s);
 	if (rest) {
-		r_egg_printf (egg, ".fill %d, 1, 0\n", (rest));
+		r_egg_printf (egg, ".fill %d, 1, 0\n", rest);
 	}
-	r_egg_printf (egg, "  sub r0, pc, %d\n", off + 12);
+	if (egg->bits != 16) {
+		// ARM32: calculate string address relative to pc
+		r_egg_printf (egg, "  sub r0, pc, %d\n", total_data + 4);
+	}
 	{
 		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
-		// r_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
 		r_egg_printf (egg, "  str r0, [%s]\n", p);
 		free (p);
 	}
@@ -165,7 +168,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 		if (d) {
 			r_egg_printf (egg, "  add " R_BP ", %d\n", d);
 		}
-		r_egg_printf (egg, "  push { " R_BP " }\n");
+		r_egg_printf (egg, "  push {" R_BP "}\n");
 		if (d) {
 			r_egg_printf (egg, "  sub " R_BP ", %d\n", d);
 		}
@@ -188,7 +191,7 @@ static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const 
 
 static void emit_while_end(REgg *egg, const char *labelback) {
 	r_egg_printf (egg,
-		"  pop " R_AX "\n"
+		"  pop {" R_AX "}\n"
 		"  cmp " R_AX ", " R_AX "\n" // XXX MUST SUPPORT != 0 COMPARE HERE
 		"  beq %s\n",
 		labelback);
@@ -196,7 +199,7 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 
 static void emit_get_var(REgg *egg, int type, char *out, int idx) {
 	switch (type) {
-	case 0: snprintf (out, 32, "sp, %d", idx - 1); break; /* variable */
+	case 0: snprintf (out, 32, "sp, %d", (idx - 1) & ~3); break; /* variable, 4-byte aligned */
 	case 1:
 		snprintf (out, 32, "r%d", idx);
 		break; /* registers */
@@ -240,7 +243,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		arg++; /* for <=, >=, ... */
 	}
 	p = r_egg_mkvar (egg, str, arg, 0);
-	r_egg_printf (egg, "  pop " R_AX "\n"); /* TODO: add support for more than one arg get arg0 */
+	r_egg_printf (egg, "  pop {" R_AX "}\n"); /* TODO: add support for more than one arg get arg0 */
 	r_egg_printf (egg, "  cmp %s, " R_AX "\n", p);
 	// if (context>0)
 	r_egg_printf (egg, "  %s %s\n", op, dst);
@@ -251,16 +254,15 @@ static void emit_load(REgg *egg, const char *dst, int sz) {
 	switch (sz) {
 	case 'l':
 		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
+		r_egg_printf (egg, "  ldr " R_AX ", [" R_AX "]\n");
 		break;
 	case 'b':
 		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  movz " R_AX ", [" R_AX "]\n");
+		r_egg_printf (egg, "  ldrb " R_AX ", [" R_AX "]\n");
 		break;
 	default:
-		// TODO: unhandled? !?
 		r_egg_printf (egg, "  mov " R_AX ", %s\n", dst);
-		r_egg_printf (egg, "  mov " R_AX ", [" R_AX "]\n");
+		r_egg_printf (egg, "  ldr " R_AX ", [" R_AX "]\n");
 	}
 }
 
