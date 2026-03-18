@@ -11,7 +11,6 @@
 typedef struct {
 	RLib *l;
 	REgg *e;
-	RAnal *a;
 	// TODO flags
 	// bool oneliner;
 	// bool coutput;
@@ -46,8 +45,6 @@ static REggState *__es_new(void) {
 	REggState *es = R_NEW0 (REggState);
 	es->l = r_lib_new (NULL, NULL);
 	es->e = r_egg_new ();
-	es->a = r_anal_new ();
-	r_anal_bind (es->a, &es->e->rasm->analb);
 
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
@@ -58,7 +55,6 @@ static REggState *__es_new(void) {
 
 static void __es_free(REggState *es) {
 	if (es) {
-		r_anal_free (es->a);
 		r_egg_free (es->e);
 		r_lib_free (es->l);
 		free (es);
