@@ -118,25 +118,23 @@ IFNOT WANT_ZIP {
 	PKGCFG_ZLIBS = '' ;
 	PKGCFG_LIBZIPLIBS = '' ;
 }{
-	IF HAVE_LIB_Z {
-		PKGCFG_ZLIBS = -lz ;
-	}{
-		PKGCFG_ZLIBS = -lr_shlr ;
-	}
 	IFAND HAVE_LIB_Z USE_ZIP {
 		IF HAVE_LIB_ZIP {
 			USE_LIB_ZIP = 1 ;
 			LIBZIP = -lz -lzip ;
+			PKGCFG_ZLIBS = -lz ;
 			PKGCFG_LIBZIPLIBS = -lz -lzip ;
 		}{
 			USE_LIB_ZIP = 0 ;
-			LIBZIP = '' ; (( static linking to shlr/zip ))
-			PKGCFG_LIBZIPLIBS = '' ;
+			LIBZIP = '' ; (( static linking to subprojects/otezip ))
+			PKGCFG_ZLIBS = -lotezip ;
+			PKGCFG_LIBZIPLIBS = -lotezip ;
 		}
 	}{
 		USE_LIB_ZIP = 0 ;
-		LIBZIP = '' ; (( static linking to shlr/zip ))
-		PKGCFG_LIBZIPLIBS = '' ;
+		LIBZIP = '' ; (( static linking to subprojects/otezip ))
+		PKGCFG_ZLIBS = -lotezip ;
+		PKGCFG_LIBZIPLIBS = -lotezip ;
 	}
 }
 
@@ -152,18 +150,9 @@ PKGCFG_R_UTIL_LIBS_PRIVATE = '' ;
 IFNOT WANT_ZIP {
 	PKGCFG_R_UTIL_LIBS_PRIVATE = '' ;
 }{
-	IF HAVE_LIB_Z {
-		PKGCFG_R_UTIL_LIBS_PRIVATE = -lz ;
-	}{
-		PKGCFG_R_UTIL_LIBS_PRIVATE = -lr_shlr ;
-	}
-}
-
-IFAND HAVE_LIB_Z USE_ZIP {
-	IF HAVE_LIB_ZIP {
-		PKGCFG_R_FS_LIBS_PRIVATE += -lz -lzip ;
-		PKGCFG_R_IO_LIBS_PRIVATE += -lz -lzip ;
-	}
+	PKGCFG_R_UTIL_LIBS_PRIVATE = ${PKGCFG_ZLIBS} ;
+	PKGCFG_R_FS_LIBS_PRIVATE = ${PKGCFG_LIBZIPLIBS} ;
+	PKGCFG_R_IO_LIBS_PRIVATE += ${PKGCFG_LIBZIPLIBS} ;
 }
 
 CHKLIB xxhash

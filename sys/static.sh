@@ -92,7 +92,11 @@ if grep -q '^USE_CSNEXT=1' config-user.mk 2> /dev/null; then
 elif grep -q '^USE_CS4=1' config-user.mk 2> /dev/null; then
 	CAPSTONE_LIB=subprojects/capstone-v4/libcapstone.a
 fi
-STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a ${CAPSTONE_LIB}"
+ZIP_STATIC_LIBS=subprojects/otezip/libotezip.a
+if grep -q '^USE_LIB_ZIP=1' config-user.mk 2> /dev/null; then
+	ZIP_STATIC_LIBS=`sed -n 's/^LIBZIP=//p' config-user.mk`
+fi
+STATIC_LIBS="shlr/gdb/lib/libgdbr.a ${ZIP_STATIC_LIBS} ${CAPSTONE_LIB}"
 STATIC_TEST_CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 
 show_link_errors() {
