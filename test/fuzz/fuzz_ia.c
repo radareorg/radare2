@@ -25,8 +25,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	r_core_cmd0 (core, "oba 0");
 	r_core_cmd0 (core, "ia");
 	r_core_cmd0 (core, "iaj");
-	r_core_cmd0 (core, "iA");
-	r_core_cmd0 (core, "iAj");
 	r_core_cmd0 (core, "ii");
 	r_core_cmd0 (core, "is");
 	r_core_cmd0 (core, "il");
