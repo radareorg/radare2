@@ -279,7 +279,15 @@ jobs:
         export JOBS=4         # Limit to -j4
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
-        r2r -t 3600 test/db/cmd
+        status=0
+        r2r -t 3600 -L -o r2r-tinyasan.json test/db/cmd || status=$?
+        exit $status
+    - name: Upload r2r tinyasan report
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: r2r-tinyasan.json
+        path: r2r-tinyasan.json
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
@@ -310,7 +318,18 @@ jobs:
         export JOBS=4         # Limit to -j4
         export LD_LIBRARY_PATH=/usr/local/lib
         export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libasan.so.8
-        make tests
+        status=0
+        make -C test unit-tests || status=$?
+        cd test
+        r2r -L -o ../r2r-asan.json || status=$?
+        cd ..
+        exit $status
+    - name: Upload r2r asan report
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: r2r-asan.json
+        path: r2r-asan.json
     - name: Run fuzz tests
       run: |
         export ASAN_OPTIONS="detect_leaks=0 detect_stack_use_after_return=1"
