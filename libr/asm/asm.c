@@ -284,6 +284,7 @@ R_API void r_asm_free(RAsm *a) {
 	}
 	r_list_free (a->sessions);
 	r_parse_free (a->parse);
+	r_arch_free (a->arch);
 	free (a);
 }
 
@@ -456,6 +457,13 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			return true;
 		}
 	//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
+	} else if (a->arch) {
+		// use RArch directly without RAnal bridge
+		if (r_arch_use (a->arch, a->config, name)) {
+			load_asm_descriptions (a);
+			free (dotname);
+			return true;
+		}
 	}
 	r_arch_config_use (a->config, old_arch);
 	free (dotname);
@@ -652,20 +660,30 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	r_str_case (b, false); // to-lower
 	if (a->analb.anal) {
 		ut8 buf[256] = { 0 };
-		a->analb.anal->arch->cfg->endian = a->config->endian;
-		// XXX we should use just RArch and ecur/dcur
+		// sync asm config into the anal/arch session for encoding
+		RAnal *anal = a->analb.anal;
+		anal->config->bits = a->config->bits;
+		anal->arch->cfg->endian = a->config->endian;
+		if (anal->arch->session) {
+			anal->arch->session->config->bits = a->config->bits;
+		}
 		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
 		if (ret > 0) {
 			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
 		}
+	} else if (a->arch && a->arch->session) {
+		// use RArch directly without RAnal bridge
+		a->arch->cfg->endian = a->config->endian;
+		r_anal_op_set_mnemonic (op, a->pc, b);
+		if (r_arch_encode (a->arch, op, 0)) {
+			ret = op->size;
+		} else {
+			R_LOG_DEBUG ("r_arch_encode failed for '%s' (bits=%d)", b, a->config->bits);
+			ret = -1;
+		}
 	} else {
-		R_LOG_ERROR ("Cannot assemble because there are no anal binds into the asm instance %p", a);
+		R_LOG_ERROR ("Cannot assemble: no arch encoder available");
 		ret = -1;
-#if 0
-	} else if (ase) {
-		/* find callback if no assembler support in current plugin */
-		ret = ase (a, op, b);
-#endif
 	}
 	free (b);
 	return ret;
