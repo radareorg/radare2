@@ -1592,17 +1592,19 @@ R_API void r_cons_break_end(RCons *cons) {
 R_API void r_cons_break_push(RCons *cons, RConsBreak cb, void *user) {
 	r_th_lock_enter (cons->lock);
 	RConsContext *ctx = cons->context;
-	if (ctx->break_stack && r_stack_size (ctx->break_stack) > 0) {
-		r_cons_break_timeout (cons, cons->otimeout);
-	}
 	r_cons_context_break_push (cons, ctx, cb, user, true);
 	r_th_lock_leave (cons->lock);
 }
 
 R_API void r_cons_break_pop(RCons *cons) {
 	r_th_lock_enter (cons->lock);
-	cons->timeout = 0;
-	r_cons_context_break_pop (cons, cons->context, true);
+	RConsContext *ctx = cons->context;
+	// Preserve the active deadline while unwinding nested break scopes.
+	const bool has_outer_break = ctx->break_stack && r_stack_size (ctx->break_stack) > 1;
+	if (!has_outer_break) {
+		cons->timeout = 0;
+	}
+	r_cons_context_break_pop (cons, ctx, true);
 	r_th_lock_leave (cons->lock);
 }
 
