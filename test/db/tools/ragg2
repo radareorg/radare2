@@ -112,6 +112,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=ragg2 fastcall declarations do not emit x86 asm garbage
+FILE=-
+CMDS=<<EOF
+'!ragg2 -a x86 -b 32 -s -e 'foo@fastcall();bar@fastcall(4);main@global(0,0){}'
+EOF
+EXPECT=<<EOF
+
+.global main
+main:
+  ret
+
+
+EOF
+RUN
+
 #CLANG=e900000000488d3524000000bf01000000b80400000248c7c2070000000f05b80100000248c7c7000000000f0531c0c348656c6c6f210a00
 NAME=ragg2c bins/other/ragg2/hi.c
 BROKEN=1

@@ -46,6 +46,7 @@ enum {
 	LANG_MODE_DATA,
 	LANG_MODE_INLINE,
 	LANG_MODE_NAKED,
+	LANG_MODE_FASTCALL,
 	LANG_MODE_SYSCALL,
 	LANG_MODE_SYSCALLBODY,
 	LANG_MODE_GOTO,
@@ -648,7 +649,9 @@ static void rcc_fun(REgg *egg, const char *str) {
 				egg->lang.setenviron = r_str_trim_dup (str);
 				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "fastcall")) {
-				/* TODO : not yet implemented */
+				free (egg->lang.dstvar);
+				egg->lang.dstvar = r_str_trim_dup (str);
+				egg->lang.mode = LANG_MODE_FASTCALL;
 				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
@@ -1247,6 +1250,27 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	}
 	if (egg->lang.mode == LANG_MODE_INLINE) {
 		return parseinlinechar (egg, c);
+	}
+	if (egg->lang.mode == LANG_MODE_FASTCALL && CTX == 0) {
+		switch (c) {
+		case ';':
+			R_FREE (egg->lang.dstvar);
+			egg->lang.mode = LANG_MODE_NORMAL;
+			egg->lang.elem_n = 0;
+			break;
+		case '{':
+			if (egg->lang.dstvar) {
+				r_egg_printf (egg, "%s:\n", egg->lang.dstvar);
+				R_FREE (egg->lang.dstvar);
+			}
+			egg->lang.elem_n = 0;
+			rcc_context (egg, 1);
+			break;
+		}
+		if (c != '\t' && c != ' ') {
+			egg->lang.oc = c;
+		}
+		return 0;
 	}
 	/* quotes */
 	if (egg->lang.quoteline) {
