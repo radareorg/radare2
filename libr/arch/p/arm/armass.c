@@ -1710,6 +1710,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else if (( m = opmask (ao->op, "b", 0) )) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
+		case THUMB_OTHER:
+			// unresolved label, emit placeholder for label resolution stages
 		case THUMB_CONST: {
 			st32 offset = thumb_getoffset (ao->a[0], off);
 			if (offset % 2 != 0) {
@@ -1761,6 +1763,8 @@ static int thumb_assemble(ArmOpcode *ao, ut64 off, const char *str) {
 	} else if ((m = opmask (ao->op, "bl", 0))) {
 		ut64 argt = thumb_selector (ao);
 		switch (argt) {
+		case THUMB_OTHER:
+			// unresolved label, emit placeholder for label resolution stages
 		case THUMB_CONST: {
 			st32 offset = thumb_getoffset (ao->a[0], off);
 			ao->o = 0x00f000d0;
