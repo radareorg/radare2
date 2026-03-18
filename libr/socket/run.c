@@ -1045,13 +1045,14 @@ R_API bool r_run_config_env(RRunProfile *p) {
 			R_LOG_ERROR ("Cannot chdir to chroot in %s", p->_chroot);
 			return false;
 		}
-		if (chroot (".") == -1) {
+		if (chroot (".") != -1) {
+			// Silencing pedantic meson flags...
+			if (chdir ("/") == -1) {
+				R_LOG_ERROR ("Cannot chdir to /");
+				return false;
+			}
+		} else {
 			R_LOG_ERROR ("Cannot chroot to %s", p->_chroot);
-			return false;
-		}
-		// Silenting pedantic meson flags...
-		if (chdir ("/") == -1) {
-			R_LOG_ERROR ("Cannot chdir to /");
 			return false;
 		}
 		if (p->_chgdir && chdir (p->_chgdir) == -1) {
