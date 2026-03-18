@@ -857,6 +857,30 @@ f0debc9a78563412
 EOF
 RUN
 
+NAME=rasm2 .fill directive
+FILE=-
+CMDS=!rasm2 ".fill 5"
+EXPECT=<<EOF
+0000000000
+EOF
+RUN
+
+NAME=rasm2 .fill repeat,size,value directive
+FILE=-
+CMDS=!rasm2 ".fill 2, 2, 0x1122"
+EXPECT=<<EOF
+22112211
+EOF
+RUN
+
+NAME=rasm2 .fill size over 4 bytes
+FILE=-
+CMDS=!rasm2 ".fill 2,8,0x1122334455667788"
+EXPECT=<<EOF
+88776655000000008877665500000000
+EOF
+RUN
+
 NAME=rasm2 .db out of range
 FILE=-
 CMDS=!rasm2 ".db 256"
