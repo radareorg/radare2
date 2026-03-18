@@ -2742,21 +2742,32 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			continue;
 		}
 		bool inmov = false;
+		const size_t blksz = 0x1000;
+		ut8 *blk = malloc (blksz + 32);
+		if (!blk) {
+			break;
+		}
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			at = from + i;
-			ut8 bufop[32] = {0};
-			if (!r_io_read_at (core->io, at, bufop, sizeof (bufop))) {
-				break;
+			// read in blocks to avoid per-byte r_io_read_at overhead
+			const size_t blk_off = (at - from) % blksz;
+			if (blk_off == 0 || i == 0) {
+				size_t rsz = R_MIN (blksz + 32, to - at);
+				if (!r_io_read_at (core->io, at, blk, rsz)) {
+					break;
+				}
+				if (badpages && invalid_page (core, blk, R_MIN (32, rsz))) {
+					R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
+					break;
+				}
 			}
-			if (badpages && invalid_page (core, bufop, sizeof (bufop))) {
-				R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
-				break;
-			}
+			ut8 *bufop = blk + blk_off;
+			size_t bufop_len = R_MIN (32, (blksz + 32) - blk_off);
 
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, bufop_len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				if (hasch > 0) {
 					hasch--;
@@ -2859,6 +2870,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			}
 			r_anal_op_fini (&aop);
 		}
+		free (blk);
 	}
 	r_list_free (words);
 	free (word);
