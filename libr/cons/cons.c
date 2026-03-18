@@ -530,7 +530,9 @@ R_API bool r_cons_is_breaked(RCons *cons) {
 	if (R_UNLIKELY (cons->timeout)) {
 		const ut64 now = r_time_now_mono ();
 		if (now > cons->timeout) {
-			R_LOG_INFO ("Timeout interruption after %ds", (now - cons->timeout) / 1000);
+			if (!cons->timeout_break) {
+				R_LOG_INFO ("Timeout interruption after %"PFMT64u"s", (now - cons->timeout) / R_USEC_PER_SEC);
+			}
 			C->breaked = true;
 			C->was_breaked = true;
 			cons->timeout_break = true;
@@ -610,7 +612,17 @@ R_API int r_cons_get_cur_line(void) {
 
 R_API void r_cons_break_timeout(RCons *cons, int timeout) {
 	if (timeout > 0) {
-		cons->timeout = r_time_now_mono () + (timeout * 1000000LL);
+		const ut64 now = r_time_now_mono ();
+		const ut64 new_deadline = now + ((ut64)timeout * R_USEC_PER_SEC);
+		if (cons->timeout) {
+			if (cons->timeout_break || cons->timeout <= now) {
+				return;
+			}
+			if (cons->timeout < new_deadline) {
+				return;
+			}
+		}
+		cons->timeout = new_deadline;
 		cons->otimeout = timeout;
 		cons->timeout_break = false;
 		cons->timeout_warned = false;

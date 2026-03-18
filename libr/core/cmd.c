@@ -6029,6 +6029,9 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 		}
 		// space separated numbers
 		while (R_STR_ISNOTEMPTY (each)) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
 			// find spaces
 			while (*each == ' ') {
 				each++;
@@ -6359,9 +6362,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			// XXX what's this 999 ?
 			i = 0;
 			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				r_cmd_macro_call (&core->rcmd->macro, each + 2);
 				if (!core->rcmd->macro.brk_value) {
 					break;
@@ -6599,6 +6599,8 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		free (core->lastcmd);
 		core->lastcmd = strdup (cstr);
 	}
+	const ut64 timeout = core->cons->timeout;
+	const int otimeout = core->cons->otimeout;
 
 	char *cmd = malloc (strlen (cstr) + 4096);
 	if (!cmd) {
@@ -6609,6 +6611,10 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		r_line_hist_add (core->cons->line, cstr);
 	}
 	ret = run_cmd_depth (core, cmd);
+	if (timeout && !core->cons->timeout_break && (!core->cons->timeout || core->cons->timeout > timeout)) {
+		core->cons->timeout = timeout;
+		core->cons->otimeout = otimeout;
+	}
 	free (cmd);
 beach:
 	return ret;
