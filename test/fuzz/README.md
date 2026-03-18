@@ -5,8 +5,8 @@
 Get libFuzzer-capable clang
 
 ```shell
-make setup
 eval $(make env)
+make setup
 ```
 
 Running with the provided Makefile

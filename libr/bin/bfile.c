@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake, nibble, dso */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake, nibble, dso */
 
 #include <r_bin.h>
 #include <r_muta.h>
@@ -1188,6 +1188,9 @@ R_API bool r_bin_file_close(RBin *bin, int bd) {
 }
 
 static RBinFileHash *compute_hash(RMutaBind *mb, const char *algo, const ut8 *buf, int len) {
+	if (!mb || !mb->hash) {
+		return NULL;
+	}
 	int outlen = 0;
 	ut8 *digest = mb->hash (mb, algo, buf, len, &outlen);
 	if (!digest || outlen < 1) {
