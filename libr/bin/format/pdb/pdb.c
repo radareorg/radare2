@@ -1479,7 +1479,7 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, RBuffer *buf) {
+R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, R_OWNED RBuffer *buf) {
 	char *signature = NULL;
 
 	if (!pdb) {
