@@ -1,4 +1,5 @@
 #include <r_cons.h>
+#include <r_util/r_time.h>
 #include "minunit.h"
 
 bool test_r_cons(void) {
@@ -168,10 +169,43 @@ bool test_cons_context_clone_null(void) {
 	mu_end;
 }
 
+bool test_cons_timeout_keeps_earliest_deadline(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	r_cons_break_timeout (cons, 10);
+	const ut64 first_deadline = cons->timeout;
+	mu_assert ("first timeout set", first_deadline > 0);
+
+	r_cons_break_timeout (cons, 100);
+	mu_assert_eq (cons->timeout, first_deadline, "longer nested timeout must not extend deadline");
+
+	r_cons_break_timeout (cons, 1);
+	mu_assert ("shorter nested timeout must tighten deadline", cons->timeout < first_deadline);
+
+	r_cons_free (cons);
+	mu_end;
+}
+
+bool test_cons_timeout_does_not_restart_expired_deadline(void) {
+	RCons *cons = r_cons_new2 ();
+	mu_assert_notnull (cons, "r_cons_new2()");
+
+	cons->timeout = r_time_now_mono () - 1;
+	cons->otimeout = 1;
+	r_cons_break_timeout (cons, 100);
+	mu_assert ("expired timeout must stay expired", cons->timeout < r_time_now_mono ());
+
+	r_cons_free (cons);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_cons);
 	mu_run_test (test_cons_to_html);
 	mu_run_test (test_cons_context_clone_null);
+	mu_run_test (test_cons_timeout_keeps_earliest_deadline);
+	mu_run_test (test_cons_timeout_does_not_restart_expired_deadline);
 	return tests_passed != tests_run;
 }
 
