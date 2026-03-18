@@ -446,17 +446,9 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	r_str_ncpy (old_arch, a->config->arch, sizeof (old_arch));
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
-	char *dotname = strdup (name);
-	char *vv = strchr (dotname, '.');
-	if (vv) {
-		*vv = 0;
-	} else {
-		R_FREE (dotname);
-	}
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
 			load_asm_descriptions (a);
-			free (dotname);
 			return true;
 		}
 	//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
@@ -464,12 +456,10 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		// use RArch directly without RAnal bridge
 		if (r_arch_use (a->arch, a->config, name)) {
 			load_asm_descriptions (a);
-			free (dotname);
 			return true;
 		}
 	}
 	r_arch_config_use (a->config, old_arch);
-	free (dotname);
 	return false;
 }
 
@@ -676,7 +666,6 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 		}
 	} else if (a->arch && a->arch->session) {
 		// use RArch directly without RAnal bridge
-		a->arch->cfg->endian = a->config->endian;
 		r_anal_op_set_mnemonic (op, a->pc, b);
 		if (r_arch_encode (a->arch, op, 0)) {
 			ret = op->size;
