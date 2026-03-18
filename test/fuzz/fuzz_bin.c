@@ -97,7 +97,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			(void)r_bin_get_sections (bin);
 			(void)r_bin_get_classes (bin);
 			(void)r_bin_get_strings (bin);
-			(void)r_bin_get_symbols (bin);
 			(void)r_bin_get_symbols_vec (bin);
 			if (pj) {
 				r_bin_list (bin, pj, R_MODE_JSON);
