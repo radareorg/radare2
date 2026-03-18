@@ -177,44 +177,47 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	return len;
 }
 
-static int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
-	int repeat = 0, size = 0, value = 0;
+static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
+	int repeat = 1, size = 0;
+	ut32 value = 0;
+	size_t total = 0;
 	if (strchr (input, ',')) {
 		char *p = strdup (input);
 		if (!p) {
 			return -1;
 		}
-		r_str_replace_char (p, ',', ' ');
-		r_str_word_set0 (p);
-		const char *w0 = r_str_word_get0 (p, 0);
-		const char *w1 = r_str_word_get0 (p, 1);
-		const char *w2 = r_str_word_get0 (p, 2);
-		if (R_STR_ISEMPTY (w0) || R_STR_ISEMPTY (w1) || R_STR_ISEMPTY (w2)) {
+		if (r_str_split (p, ',') != 3) {
 			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
 			free (p);
 			return -1;
 		}
-		repeat = (int)r_num_math (NULL, w0);
-		size = (int)r_num_math (NULL, w1);
-		value = (int)r_num_math (NULL, w2);
+		char *q = p + strlen (p) + 1;
+		char *r = q + strlen (q) + 1;
+		repeat = (int)r_num_math (NULL, r_str_trim_head_ro (p));
+		size = (int)r_num_math (NULL, r_str_trim_head_ro (q));
+		value = (ut32)r_num_math (NULL, r_str_trim_head_ro (r));
 		free (p);
 	} else {
-		ut64 v = r_num_math (NULL, input);
-		size = (int)v;
-		repeat = 1;
+		size = (int)r_num_math (NULL, input);
 	}
-	size *= repeat;
-	if (size > 0) {
-		ut8 *buf = malloc (size);
-		if (buf) {
-			memset (buf, value & 0xff, size);
-			r_anal_op_set_bytes (op, 0, buf, size);
-			free (buf);
-		}
+	if (repeat < 1 || size < 1 || r_mul_overflow ((size_t)repeat, (size_t)size, &total) || total > INT_MAX) {
+		return 0;
+	}
+	ut8 *buf = calloc (1, total);
+	if (!buf) {
+		return 0;
+	}
+	ut8 pattern[sizeof (value)] = {0};
+	r_write_ble32 (pattern, value, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
+	if (size > sizeof (pattern)) {
+		memcpy (buf, pattern, sizeof (pattern));
+		r_mem_copyloop (buf, buf, (int)total, size);
 	} else {
-		size = 0;
+		r_mem_copyloop (buf, pattern, (int)total, size);
 	}
-	return size;
+	r_anal_op_set_bytes (op, 0, buf, (int)total);
+	free (buf);
+	return (int)total;
 }
 
 static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
@@ -838,7 +841,7 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			ret = 0;
 		}
 	} else if (r_str_startswith (ptr, ".fill ")) {
-		ret = r_asm_pseudo_fill (op, ptr + 6);
+		ret = r_asm_pseudo_fill (a, op, ptr + 6);
 		if (ret < 0) {
 			return ret;
 		}
