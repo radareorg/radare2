@@ -178,26 +178,36 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 }
 
 static int r_asm_pseudo_fill(RAnalOp *op, const char *input) {
-	int i, repeat = 0, size = 0, value = 0;
+	int repeat = 0, size = 0, value = 0;
 	if (strchr (input, ',')) {
-		int res = sscanf (input, "%d,%d,%d", &repeat, &size, &value); // use r_num?
-		if (res != 3) {
-			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
-			R_LOG_ERROR ("for example: .fill 1,0x100,0");
+		char *p = strdup (input);
+		if (!p) {
 			return -1;
 		}
+		r_str_replace_char (p, ',', ' ');
+		r_str_word_set0 (p);
+		const char *w0 = r_str_word_get0 (p, 0);
+		const char *w1 = r_str_word_get0 (p, 1);
+		const char *w2 = r_str_word_get0 (p, 2);
+		if (R_STR_ISEMPTY (w0) || R_STR_ISEMPTY (w1) || R_STR_ISEMPTY (w2)) {
+			R_LOG_ERROR ("Invalid usage of .fill repeat,size,value");
+			free (p);
+			return -1;
+		}
+		repeat = (int)r_num_math (NULL, w0);
+		size = (int)r_num_math (NULL, w1);
+		value = (int)r_num_math (NULL, w2);
+		free (p);
 	} else {
 		ut64 v = r_num_math (NULL, input);
 		size = (int)v;
 		repeat = 1;
 	}
-	size *= (sizeof (value) * repeat);
+	size *= repeat;
 	if (size > 0) {
 		ut8 *buf = malloc (size);
 		if (buf) {
-			for (i = 0; i < size; i += sizeof (value)) {
-				memcpy (&buf[i], &value, sizeof (value));
-			}
+			memset (buf, value & 0xff, size);
 			r_anal_op_set_bytes (op, 0, buf, size);
 			free (buf);
 		}
