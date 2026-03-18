@@ -649,6 +649,7 @@ static void rcc_fun(REgg *egg, const char *str) {
 				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "fastcall")) {
 				/* TODO : not yet implemented */
+				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
 					egg->lang.mode = LANG_MODE_SYSCALL;
