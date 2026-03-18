@@ -193,7 +193,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 			} else if (mode == 'e') {
 				RAnalOp analop = {0};
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ARCH_OP_MASK_ESIL) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx += minopsz;
 					continue;
 				}
 				// opsz = analop.size;
