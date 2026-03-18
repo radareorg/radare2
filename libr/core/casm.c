@@ -151,44 +151,44 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				ut64 len = R_MIN (15, bs - idx);
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len,
 						R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx += minopsz;
 					continue;
 				}
-				ut64 val = analop.val; // maybe chk for ptr or others?
+				const int opsz = R_MAX (minopsz, analop.size);
+				ut64 val = analop.val;
 				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				if (!match) {
-					ut64 val = analop.disp;
+					val = analop.disp;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (!match) {
-					ut64 val = analop.ptr;
+					val = analop.ptr;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
-					RAnalOp op;
 					RCoreAsmHit *hit = r_core_asm_hit_new ();
 					if (!hit) {
+						r_anal_op_fini (&analop);
 						r_list_purge (hits);
 						R_FREE (hits);
 						goto beach;
 					}
 					hit->addr = addr;
-					hit->len = analop.size;  //  idx + len - tidx;
+					hit->len = analop.size;
 					if (hit->len == -1) {
+						r_anal_op_fini (&analop);
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
-					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
-					      bs - addrbytes * idx);
-					hit->code = strdup (op.mnemonic);
-					r_anal_op_fini (&op);
-					idx = (matchcount)? tidx + 1: idx + 1;
+					hit->code = strdup (analop.mnemonic);
+					r_anal_op_fini (&analop);
+					idx += opsz;
 					matchcount = 0;
 					r_list_append (hits, hit);
 					continue;
 				}
 				r_anal_op_fini (&analop);
-				idx ++; // TODO: honor mininstrsz
+				idx += opsz;
 				continue;
 			} else if (mode == 'e') {
 				RAnalOp analop = {0};
