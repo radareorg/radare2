@@ -5845,8 +5845,6 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 	return list;
 }
 
-static void foreach_maybe_set_anal_timeout(RCore *core, const char *cmd);
-
 R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@@"
 	ForeachListItem *item;
 	RListIter *iter;
@@ -5897,7 +5895,6 @@ R_API int r_core_cmd_foreach3(RCore *core, const char *cmd, char *each) { // "@@
 			ut64 offorig = core->addr;
 			ut64 bszorig = core->blocksize;
 			r_cons_break_push (core->cons, NULL, NULL);
-			foreach_maybe_set_anal_timeout (core, cmd);
 			r_list_foreach (list, iter, item) {
 				if (r_cons_is_breaked (core->cons)) {
 					break;
@@ -6104,16 +6101,6 @@ static void atat_i(RCore *core, const char *cmd) {
 	set_u_free (set);
 }
 
-static void foreach_maybe_set_anal_timeout(RCore *core, const char *cmd) {
-	const char *p = r_str_trim_head_ro (cmd);
-	while (*p == '.') {
-		p++;
-	}
-	if (*p == 'a') {
-		r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
-	}
-}
-
 R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	int i, j;
 	char ch;
@@ -6127,7 +6114,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 	oseek = core->addr;
 	ostr = str = strdup (each);
 	r_cons_break_push (core->cons, NULL, NULL); //pop on return
-	foreach_maybe_set_anal_timeout (core, cmd);
 	switch (each[0]) {
 	case '/': // "@@/"
 		{
