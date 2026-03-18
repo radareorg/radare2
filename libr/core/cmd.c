@@ -5958,9 +5958,6 @@ static void cmd_foreach_word(RCore *core, const char *_cmd, const char *each) {
 	char *nextLine = NULL;
 	/* foreach list of items */
 	while (each) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 		// skip spaces
 		each = r_str_trim_head_ro (each);
 		// stahp on empty string
@@ -5982,9 +5979,6 @@ static void cmd_foreach_word(RCore *core, const char *_cmd, const char *each) {
 		}
 		// space separated numbers
 		while (R_STR_ISNOTEMPTY (each)) {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
 			each = r_str_trim_head_ro (each);
 			char *curword = NULL;
 			char *str = strchr (each, ' ');
@@ -6018,9 +6012,6 @@ static void cmd_foreach_offset(RCore *core, const char *_cmd, const char *each) 
 	ut64 addr;
 	/* foreach list of items */
 	while (R_STR_ISNOTEMPTY (each)) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
-		}
 		each = r_str_trim_head_ro (each);
 		// stahp if empty string
 		if (!*each) {
@@ -6091,15 +6082,9 @@ static void atat_i(RCore *core, const char *cmd) {
 	if (fcn) {
 		r_list_sort (fcn->bbs, bb_cmp);
 		r_list_foreach (fcn->bbs, iter, bb) {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
 			r_core_seek (core, bb->addr, true);
 			r_core_cmd (core, cmd, 0);
 			for (i = 0; i < bb->op_pos_size; i++) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				if (!bb->op_pos[i]) {
 					break;
 				}
@@ -6169,9 +6154,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (fcn) {
 				r_list_sort (fcn->bbs, bb_cmp);
 				r_list_foreach (fcn->bbs, iter, bb) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
 					r_core_block_size (core, bb->size);
 					r_core_seek (core, bb->addr, true);
 					r_core_cmd (core, cmd, 0);
@@ -6237,9 +6219,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			RListIter *iter;
 			if (core->anal) {
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
 					if (each[2] && strstr (fcn->name, each + 2)) {
 						r_core_seek (core, fcn->addr, true);
 						r_core_cmd (core, cmd, 0);
@@ -6257,9 +6236,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				RConsGrep grep = core->cons->context->grep;
 				RStrBuf *sb = r_strbuf_new ("");
 				r_list_foreach (core->anal->fcns, iter, fcn) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
 					r_core_seek (core, fcn->addr, true);
 #if 0
 					r_cons_push ();
@@ -6299,9 +6275,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			if (plugin && plugin->pids) {
 				RList *list = plugin->pids (core->dbg, R_MAX (0, pid));
 				r_list_foreach (list, iter, p) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
 					r_cons_printf (core->cons, "# PID %d\n", p->pid);
 					r_debug_select (core->dbg, p->pid, p->pid);
 					r_core_cmd (core, cmd, 0);
@@ -6340,9 +6313,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			list = r_debug_frames (core->dbg, UT64_MAX);
 			i = 0;
 			r_list_foreach (list, iter, frame) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				switch (each[3]) {
 				case 'b':
 					r_core_seek (core, frame->bp, true);
@@ -6374,9 +6344,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 		if (out) {
 			each = out;
 			do {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				while (*each == ' ') {
 					each++;
 				}
@@ -6409,9 +6376,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 			// XXX what's this 999 ?
 			i = 0;
 			for (core->rcmd->macro.counter = 0; i < 999; core->rcmd->macro.counter++) {
-				if (r_cons_is_breaked (core->cons)) {
-					break;
-				}
 				r_cmd_macro_call (&core->rcmd->macro, each + 2);
 				if (!core->rcmd->macro.brk_value) {
 					break;
@@ -6432,9 +6396,6 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				char *row;
 				RListIter *iter;
 				r_list_foreach (rows, iter, row) {
-					if (r_cons_is_breaked (core->cons)) {
-						break;
-					}
 					ut64 addr = r_num_math (core->num, row);
 					if (core->num->nc.errors == 0) {
 						r_core_cmd_call_at (core, addr, cmd);
