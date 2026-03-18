@@ -9,6 +9,9 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
+	if (!len) {
+		return 0;
+	}
 	PJ *pj = pj_new ();
 	if (!pj) {
 		return 0;

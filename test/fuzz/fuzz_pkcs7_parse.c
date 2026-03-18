@@ -11,6 +11,9 @@ int LLVMFuzzerInitialize(int *lf_argc, char ***lf_argv) {
 }
 
 int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
+	if (!len) {
+		return 0;
+	}
 	RCMS *cms = r_pkcs7_cms_parse (data, len);
 	if (!cms) {
 		return 0;

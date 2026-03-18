@@ -1,5 +1,5 @@
 include config.mk
--include ../../config-user.mk
+# -include ../../config-user.mk
 
 R2_ROOT = ../..
 BUILD_NAME ?= build-fuzz

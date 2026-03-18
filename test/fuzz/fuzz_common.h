@@ -61,7 +61,10 @@ static inline const ut8 *rfuzz_consume_tail(RFuzzInput *input, size_t *out_len) 
 }
 
 static inline char *rfuzz_strndup(const ut8 *data, size_t len) {
-	return r_str_ndup ((const char *)data, len);
+	if (len > ST32_MAX) {
+		return NULL;
+	}
+	return r_str_newlen ((const char *)data, (int)len);
 }
 
 static inline char *rfuzz_consume_string(RFuzzInput *input, size_t max_len, size_t *out_len) {

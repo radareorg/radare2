@@ -173,7 +173,7 @@ typedef struct r_pdb_t {
 
 // TODO: use better api names
 R_API bool r_bin_pdb_parser(RBinPdb *pdb, const char *filename);
-R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, RBuffer *buf);
+R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, R_OWNED RBuffer *buf);
 // PDB END
 
 // used for symbols, classes, methods... generic for elf, dex, pe, swift, ...

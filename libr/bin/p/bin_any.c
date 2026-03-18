@@ -2,6 +2,7 @@
 
 #include <r_bin.h>
 #include <r_magic.h>
+#include <r_util/r_file.h>
 
 static char *get_filetype(RBuffer *b) {
 	RMagic *ck = r_magic_new (0);
@@ -11,7 +12,16 @@ static char *get_filetype(RBuffer *b) {
 			r_magic_free (ck);
 			return NULL;
 		}
-		r_magic_load (ck, magicpath);
+		if (!r_file_is_directory (magicpath) && !r_file_exists (magicpath)) {
+			free (magicpath);
+			r_magic_free (ck);
+			return NULL;
+		}
+		if (!r_magic_load (ck, magicpath)) {
+			free (magicpath);
+			r_magic_free (ck);
+			return NULL;
+		}
 		free (magicpath);
 		ut8 buf[256] = {0};
 		if (r_buf_read_at (b, 0, buf, sizeof (buf)) < 1) {

@@ -307,7 +307,10 @@ static void r_pkcs7_signeddata_fini(RPKCS7SignedData *sd) {
 }
 
 R_API RCMS *r_pkcs7_cms_parse(const ut8 *buffer, ut32 length) {
-	R_RETURN_VAL_IF_FAIL (buffer && length, NULL);
+	R_RETURN_VAL_IF_FAIL (buffer, NULL);
+	if (!length) {
+		return NULL;
+	}
 	RCMS *container = R_NEW0 (RCMS);
 	if (!container) {
 		return NULL;
