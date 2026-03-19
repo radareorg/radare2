@@ -68,6 +68,7 @@ if get_option('enable_tests')
     'util',
     'vec',
     'crbtree',
+    'visual_hints',
     'xpatch'
   ]
 
