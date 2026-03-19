@@ -118,12 +118,34 @@ CMDS=<<EOF
 '!ragg2 -a x86 -b 32 -s -e 'foo@fastcall();bar@fastcall(4);main@global(0,0){}'
 EOF
 EXPECT=<<EOF
+.equ bar,4
+
 
 .global main
 main:
   ret
 
 
+EOF
+RUN
+
+NAME=ragg2 issue25590 basic arm fastcall sample assembles in 16 32 and 64 bits
+FILE=-
+CMDS=<<EOF
+'!printf 'printf@fastcall(0x1fa0b4)\n\nmain@global(0,16) {\n  printf("fnord\\n");\n}\n' > /tmp/ragg2-25590-basic.r && for b in 16 32 64; do ragg2 -a arm -b $b /tmp/ragg2-25590-basic.r >/dev/null || exit 1; done && echo OK'
+EOF
+EXPECT=<<EOF
+OK
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm dereference sample avoids invalid stack slot syntax
+FILE=-
+CMDS=<<EOF
+'!printf 'printf@fastcall(0x1fa0b4)\n\nmain@global(64,64) {\n\t.var0 = 0xb0000000;\n\tprintf("idreg=%%x\\n", *.var0);\n}\n' > /tmp/ragg2-25590-deref.r && ragg2 -s -a arm -b 16 /tmp/ragg2-25590-deref.r | grep -qE 'mov sp,|push \\{sp,|ldr r1, \\[\\]' && echo BAD || echo OK'
+EOF
+EXPECT=<<EOF
+OK
 EOF
 RUN
 

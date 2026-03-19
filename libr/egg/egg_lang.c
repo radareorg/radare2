@@ -199,6 +199,26 @@ static void rcc_reset_callname(REgg *egg) {
 	egg->lang.nargs = 0;
 }
 
+static void rcc_fastcall(REgg *egg, bool with_body) {
+	REggEmit *e = egg->remit;
+	char *value = egg->lang.dstval? r_str_trim_dup (egg->lang.dstval): NULL;
+	if (!with_body && egg->lang.dstvar && R_STR_ISNOTEMPTY (value)) {
+		e->equ (egg, egg->lang.dstvar, value);
+	}
+	if (with_body && egg->lang.dstvar) {
+		r_egg_printf (egg, "%s:\n", egg->lang.dstvar);
+		rcc_context (egg, 1);
+	}
+	R_FREE (value);
+	R_FREE (egg->lang.dstvar);
+	R_FREE (egg->lang.dstval);
+	egg->lang.mode = LANG_MODE_NORMAL;
+	egg->lang.elem[0] = '\0';
+	egg->lang.elem_n = 0;
+	egg->lang.ndstval = 0;
+	egg->lang.slurp = 0;
+}
+
 #define SYNTAX_ATT 0
 #if SYNTAX_ATT
 #define FRAME_FMT ".LC%d_%d_frame%d"
@@ -448,6 +468,10 @@ static void rcc_element(REgg *egg, char *str) {
 			}
 			R_FREE (str);
 			break;
+		case LANG_MODE_FASTCALL:
+			R_FREE (egg->lang.dstval);
+			egg->lang.dstval = r_str_trim_dup (str);
+			break;
 		default:
 			p = strchr (str, ',');
 			if (p) {
@@ -651,8 +675,8 @@ static void rcc_fun(REgg *egg, const char *str) {
 			} else if (strstr (ptr, "fastcall")) {
 				free (egg->lang.dstvar);
 				egg->lang.dstvar = r_str_trim_dup (str);
+				R_FREE (egg->lang.dstval);
 				egg->lang.mode = LANG_MODE_FASTCALL;
-				egg->lang.slurp = 0;
 			} else if (strstr (ptr, "syscall")) {
 				if (*str) {
 					egg->lang.mode = LANG_MODE_SYSCALL;
@@ -1254,23 +1278,19 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 	if (egg->lang.mode == LANG_MODE_FASTCALL && CTX == 0) {
 		switch (c) {
 		case ';':
-			R_FREE (egg->lang.dstvar);
-			egg->lang.mode = LANG_MODE_NORMAL;
-			egg->lang.elem_n = 0;
-			break;
-		case '{':
-			if (egg->lang.dstvar) {
-				r_egg_printf (egg, "%s:\n", egg->lang.dstvar);
-				R_FREE (egg->lang.dstvar);
+		case '\n':
+			rcc_fastcall (egg, false);
+			if (c != '\t' && c != ' ') {
+				egg->lang.oc = c;
 			}
-			egg->lang.elem_n = 0;
-			rcc_context (egg, 1);
-			break;
+			return 0;
+		case '{':
+			rcc_fastcall (egg, true);
+			if (c != '\t' && c != ' ') {
+				egg->lang.oc = c;
+			}
+			return 0;
 		}
-		if (c != '\t' && c != ' ') {
-			egg->lang.oc = c;
-		}
-		return 0;
 	}
 	/* quotes */
 	if (egg->lang.quoteline) {
@@ -1321,7 +1341,7 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 			egg->lang.elem[egg->lang.elem_n] = '\0';
 			if (egg->lang.elem_n > 0) {
 				rcc_element (egg, egg->lang.elem);
-			} else {
+			} else if (!(egg->lang.mode == LANG_MODE_FASTCALL && CTX == 0)) {
 				e->frame (egg, 0);
 			}
 			egg->lang.elem_n = 0;
