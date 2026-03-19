@@ -4551,6 +4551,12 @@ static ut64 get_ptr_ble(RDisasmState *ds, ut64 addr) {
 	return n64_32;
 }
 
+static bool meta_is_data_like(const RAnalMetaItem *mi) {
+	return mi && (mi->type == R_META_TYPE_DATA
+		|| mi->type == R_META_TYPE_STRING
+		|| mi->type == R_META_TYPE_FORMAT);
+}
+
 static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	RCore *core = ds->core;
 	RCons *cons = core->cons;
@@ -4575,7 +4581,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	if (ds->asm_hint_lea) {
 		ut64 size;
 		RAnalMetaItem *mi = r_meta_get_at (ds->core->anal, ds->at, R_META_TYPE_ANY, &size);
-		if (mi) {
+		if (meta_is_data_like (mi)) {
 			int obits = ds->core->rasm->config->bits;
 			r_arch_config_set_bits (ds->core->rasm->config, size * 8);
 			slen = ds_print_shortcut (ds, get_ptr (ds, ds->at), pos);
@@ -4598,6 +4604,7 @@ static bool ds_print_core_vmode(RDisasmState *ds, int pos) {
 	case R_ANAL_OP_TYPE_MOV:
 	case R_ANAL_OP_TYPE_LEA:
 	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_PUSH:
 		if (ds->asm_hint_imm) {
 			if (ds->analop.val != UT64_MAX && ds->analop.val != UT32_MAX && ds->analop.val > 256) {
 				slen = ds_print_shortcut (ds, ds->analop.val, pos);
