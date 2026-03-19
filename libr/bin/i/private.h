@@ -19,6 +19,9 @@ R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name);
 R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name);
 
 R_IPI void r_bin_section_free(RBinSection *bs);
+static inline bool limit_reached(const RList *list, int limit) {
+	return limit > 0 && r_list_length (list) >= limit;
+}
 
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);

@@ -11,12 +11,20 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
-static int bin_limit(RBinFile *bf) {
-	return bf && bf->rbin? bf->rbin->options.limit: 0;
-}
-
-static bool limit_reached(RList *list, int limit) {
-	return limit > 0 && r_list_length (list) >= limit;
+static RList *get_dotnet_symbols(RBinFile *bf) {
+	RBinPEObj *pe = PE_(get) (bf);
+	if (!pe || !pe->clr_hdr) {
+		return NULL;
+	}
+	if (!pe->dotnet_symbols) {
+		const ut8 *data = r_buf_data (bf->buf, NULL);
+		st64 size = r_buf_size (bf->buf);
+		if (data && size > 0 && size <= INT_MAX) {
+			ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+			pe->dotnet_symbols = dotnet_parse (data, (int)size, image_base);
+		}
+	}
+	return pe->dotnet_symbols;
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
@@ -51,7 +59,8 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 			break;
 		}
 	}
-	if (peaddr && (ret = R_NEW0 (RBinAddr))) {
+	if (peaddr) {
+		ret = R_NEW0 (RBinAddr);
 		ret->paddr = peaddr->paddr;
 		ret->vaddr = peaddr->vaddr;
 	}
@@ -63,7 +72,6 @@ static void add_tls_callbacks(RBinFile *bf, RList* list, int limit) {
 	r_strf_buffer (64);
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
-	RBinAddr *ptr = NULL;
 	RBinPEObj *pe = PE_(get) (bf);
 	const char *key;
 
@@ -86,22 +94,20 @@ static void add_tls_callbacks(RBinFile *bf, RList* list, int limit) {
 		if (limit_reached (list, limit)) {
 			break;
 		}
-		if ((ptr = R_NEW0 (RBinAddr))) {
-			ptr->paddr = paddr;
-			ptr->vaddr = vaddr;
-			ptr->hpaddr = haddr;
-			ptr->type = R_BIN_ENTRY_TYPE_TLS;
-			r_list_append (list, ptr);
-		}
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		ptr->paddr = paddr;
+		ptr->vaddr = vaddr;
+		ptr->hpaddr = haddr;
+		ptr->type = R_BIN_ENTRY_TYPE_TLS;
+		r_list_append (list, ptr);
 		count++;
 	} while (vaddr);
 }
 
 static RList* entries(RBinFile *bf) {
 	struct r_bin_pe_addr_t *entry = NULL;
-	RBinAddr *ptr = NULL;
 	RList* ret;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -116,28 +122,20 @@ static RList* entries(RBinFile *bf) {
 		ut32 table = (token >> 24) & 0xFF;
 		// Table 0x06 is MethodDef - the main entry point for .NET
 		if (table == 0x06) {
-			RBuffer *buf = bf->buf;
-			const ut8 *data = r_buf_data (buf, NULL);
-			size_t size = r_buf_size (buf);
-			if (data && size > 0 && size <= INT_MAX) {
-				ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-				RList *dotnet_symbols = dotnet_parse (data, (int)size, image_base);
-				if (dotnet_symbols) {
-					RListIter *iter;
-					DotNetSymbol *dsym;
-					r_list_foreach (dotnet_symbols, iter, dsym) {
-						if (dsym->token == token && dsym->vaddr > 0) {
-							ptr = R_NEW0 (RBinAddr);
-							if (ptr) {
-								ptr->vaddr = dsym->vaddr + image_base;
-								ptr->paddr = dsym->vaddr;
-								ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
-								r_list_append (ret, ptr);
-							}
-							break;
-						}
+			ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+			RList *dotnet_symbols = get_dotnet_symbols (bf);
+			if (dotnet_symbols) {
+				RListIter *iter;
+				DotNetSymbol *dsym;
+				r_list_foreach (dotnet_symbols, iter, dsym) {
+					if (dsym->token == token && dsym->vaddr > 0) {
+						RBinAddr *ptr = R_NEW0 (RBinAddr);
+						ptr->vaddr = dsym->vaddr + image_base;
+						ptr->paddr = dsym->vaddr;
+						ptr->type = R_BIN_ENTRY_TYPE_PROGRAM;
+						r_list_append (ret, ptr);
+						break;
 					}
-					r_list_free (dotnet_symbols);
 				}
 			}
 		}
@@ -149,13 +147,12 @@ static RList* entries(RBinFile *bf) {
 	if (!(entry = PE_(r_bin_pe_get_entrypoint) (pe))) {
 		return ret;
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr  = entry->paddr;
-		ptr->vaddr  = entry->vaddr;
-		ptr->hpaddr = entry->haddr;
-		ptr->type   = R_BIN_ENTRY_TYPE_PROGRAM;
-		r_list_append (ret, ptr);
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr  = entry->paddr;
+	ptr->vaddr  = entry->vaddr;
+	ptr->hpaddr = entry->haddr;
+	ptr->type   = R_BIN_ENTRY_TYPE_PROGRAM;
+	r_list_append (ret, ptr);
 	free (entry);
 	if (limit_reached (ret, limit)) {
 		return ret;
@@ -169,7 +166,7 @@ static RList* entries(RBinFile *bf) {
 static RList* sections(RBinFile *bf) {
 	ut64 ba = baddr (bf);
 	int i;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (!ret) {
@@ -189,9 +186,6 @@ static RList* sections(RBinFile *bf) {
 			break;
 		}
 		RBinSection *sec = R_NEW0 (RBinSection);
-		if (!sec) {
-			break;
-		}
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
 			sec->name = strdup ((const char*)sections[i].name);
 		} else {
@@ -253,27 +247,19 @@ static void find_pe_overlay(RBinFile *bf) {
 
 static RList* classes(RBinFile *bf) {
 	RList *ret = NULL;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
 		return NULL;
 	}
 
-	RBuffer *buf = bf->buf;
-	const ut8 *data = r_buf_data (buf, NULL);
-	st64 size = r_buf_size (buf);
-	if (!data || size <= 0 || size > INT_MAX) {
-		return NULL;
-	}
-	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-	RList *dotnet_symbols = dotnet_parse (data, (int)size, image_base);
-	if (r_list_empty (dotnet_symbols)) {
-		r_list_free (dotnet_symbols);
+	ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+	RList *dotnet_symbols = get_dotnet_symbols (bf);
+	if (!dotnet_symbols || r_list_empty (dotnet_symbols)) {
 		return NULL;
 	}
 	ret = r_list_newf ((RListFree)r_bin_class_free);
 	if (!ret) {
-		r_list_free (dotnet_symbols);
 		return NULL;
 	}
 
@@ -309,7 +295,7 @@ static RList* classes(RBinFile *bf) {
 		if (!existing) {
 			if (limit_reached (ret, limit)) {
 				free (class_name_full);
-				continue;
+				break;
 			}
 			cls = r_bin_class_new (class_name_full, NULL, 0);
 			cls->lang = R_BIN_LANG_MSVC;
@@ -408,20 +394,17 @@ static RList* classes(RBinFile *bf) {
 		if (cls && method_name && *method_name) {
 			// Add this method to the class
 			RBinSymbol *method_sym = R_NEW0 (RBinSymbol);
-			if (method_sym) {
-				method_sym->name = r_bin_name_new (method_name);
-				method_sym->vaddr = dsym->vaddr + image_base;
-				method_sym->paddr = dsym->vaddr;
-				method_sym->bind = R_BIN_BIND_GLOBAL_STR;
-				method_sym->type = R_BIN_TYPE_FUNC_STR;
-				method_sym->size = dsym->size;
-				r_list_append (cls->methods, method_sym);
-			}
+			method_sym->name = r_bin_name_new (method_name);
+			method_sym->vaddr = dsym->vaddr + image_base;
+			method_sym->paddr = dsym->vaddr;
+			method_sym->bind = R_BIN_BIND_GLOBAL_STR;
+			method_sym->type = R_BIN_TYPE_FUNC_STR;
+			method_sym->size = dsym->size;
+			r_list_append (cls->methods, method_sym);
 		}
 		free (tmp);
 	}
 
-	r_list_free (dotnet_symbols);
 	return ret;
 }
 
@@ -432,23 +415,13 @@ static char* types(RBinFile *bf) {
 		return NULL;
 	}
 
-	RBuffer *buf = bf->buf;
-	const ut8 *data = r_buf_data (buf, NULL);
-	size_t size = r_buf_size (buf);
-	// Check for integer overflow: dotnet_parse expects int, not size_t
-	if (size > INT_MAX) {
-		return NULL;
-	}
-	ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-	RList *dotnet_symbols = dotnet_parse (data, size, image_base);
-	if (r_list_empty (dotnet_symbols)) {
-		r_list_free (dotnet_symbols);
+	RList *dotnet_symbols = get_dotnet_symbols (bf);
+	if (!dotnet_symbols || r_list_empty (dotnet_symbols)) {
 		return NULL;
 	}
 
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
-		r_list_free (dotnet_symbols);
 		return NULL;
 	}
 
@@ -478,7 +451,6 @@ static char* types(RBinFile *bf) {
 		}
 	}
 
-	r_list_free (dotnet_symbols);
 	return r_strbuf_drain (sb);
 }
 #endif
@@ -489,7 +461,7 @@ static RList* symbols(RBinFile *bf) {
 	struct r_bin_pe_export_t *symbols = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	if (!(ret = r_list_newf (r_bin_symbol_free))) {
 		return NULL;
@@ -500,9 +472,7 @@ static RList* symbols(RBinFile *bf) {
 			if (limit_reached (ret, limit)) {
 				break;
 			}
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
+			ptr = R_NEW0 (RBinSymbol);
 			ptr->name = r_bin_name_new ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
@@ -523,9 +493,7 @@ static RList* symbols(RBinFile *bf) {
 			if (limit_reached (ret, limit)) {
 				break;
 			}
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
+			ptr = R_NEW0 (RBinSymbol);
 			ptr->name = r_bin_name_new ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
@@ -540,14 +508,15 @@ static RList* symbols(RBinFile *bf) {
 		}
 		free (imports);
 	}
+	if (limit_reached (ret, limit)) {
+		find_pe_overlay (bf);
+		return ret;
+	}
 
 	// Add .NET symbols if this is a .NET assembly
 	if (pe && pe->dos_header && pe->nt_headers) {
-		RBuffer *buf = bf->buf;
-		const ut8 *data = r_buf_data (buf, NULL);
-		size_t size = r_buf_size (buf);
-		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-		RList *dotnet_symbols = dotnet_parse (data, size, image_base);
+		ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+		RList *dotnet_symbols = get_dotnet_symbols (bf);
 		if (dotnet_symbols) {
 			if (r_list_length (dotnet_symbols) > 0) {
 				RListIter *iter;
@@ -601,7 +570,6 @@ static RList* symbols(RBinFile *bf) {
 #endif
 				}
 			}
-			r_list_free (dotnet_symbols);
 		}
 	}
 
@@ -624,7 +592,7 @@ static RList* imports(RBinFile *bf) {
 	RBinImport *ptr = NULL;
 	RBinReloc *rel = NULL;
 	int i;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe) {
@@ -650,9 +618,7 @@ static RList* imports(RBinFile *bf) {
 			break;
 		}
 		struct r_bin_pe_import_t *imp = &imports[i];
-		if (!(ptr = R_NEW0 (RBinImport))) {
-			break;
-		}
+		ptr = R_NEW0 (RBinImport);
 		filter_import (imp->name);
 		ptr->name = r_bin_name_new ((char*)imp->name);
 		ptr->libname = strdup ((char*)imp->libname);
@@ -664,9 +630,7 @@ static RList* imports(RBinFile *bf) {
 		//ptr->hint = imp->hint;
 		r_list_append (ret, ptr);
 
-		if (!(rel = R_NEW0 (RBinReloc))) {
-			break;
-		}
+		rel = R_NEW0 (RBinReloc);
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else
@@ -705,7 +669,7 @@ static RList* libs(RBinFile *bf) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	int i;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -1072,11 +1036,9 @@ static RList *compute_hashes(RBinFile *bf) {
 		const char *authentihash = PE_(bin_pe_compute_authentihash) (pe);
 		if (authentihash) {
 			RBinFileHash *authhash = R_NEW0 (RBinFileHash);
-			if (authhash) {
-				authhash->type = strdup ("authentihash");
-				authhash->hex = authentihash;
-				r_list_push (file_hashes, authhash);
-			}
+			authhash->type = strdup ("authentihash");
+			authhash->hex = authentihash;
+			r_list_push (file_hashes, authhash);
 		}
 	}
 	return file_hashes;
@@ -1088,16 +1050,8 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	if (!pe || !pe->clr_hdr) {
 		return NULL;
 	}
-	if (!pe->dotnet_symbols) {
-		RBuffer *buf = bf->buf;
-		const ut8 *data = r_buf_data (buf, NULL);
-		size_t size = r_buf_size (buf);
-		ut64 image_base = PE_(r_bin_pe_get_image_base)(pe);
-		if (size > 0 && size <= INT_MAX) {
-			pe->dotnet_symbols = dotnet_parse (data, (int)size, image_base);
-		}
-	}
-	if (!pe->dotnet_symbols) {
+	RList *dotnet_symbols = get_dotnet_symbols (bf);
+	if (!dotnet_symbols) {
 		return NULL;
 	}
 	RListIter *iter;
@@ -1106,13 +1060,13 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	switch (type) {
 	case 'm': // methoddef or memberref
 		token = (0x06 << 24) | idx; // try methoddef first
-		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+		r_list_foreach (dotnet_symbols, iter, dsym) {
 			if (dsym->token == token) {
 				return dsym->name;
 			}
 		}
 		token = (0x0A << 24) | idx; // try memberref
-		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+		r_list_foreach (dotnet_symbols, iter, dsym) {
 			if (dsym->token == token) {
 				return dsym->name;
 			}
@@ -1120,7 +1074,7 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 		break;
 	case 't': // typedef
 		token = (0x02 << 24) | idx;
-		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+		r_list_foreach (dotnet_symbols, iter, dsym) {
 			if (dsym->token == token) {
 				return dsym->name;
 			}
@@ -1128,7 +1082,7 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 		break;
 	case 'r': // typeref
 		token = (0x01 << 24) | idx;
-		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+		r_list_foreach (dotnet_symbols, iter, dsym) {
 			if (dsym->token == token) {
 				return dsym->name;
 			}
@@ -1136,7 +1090,7 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 		break;
 	case 'f': // field
 		token = (0x04 << 24) | idx;
-		r_list_foreach (pe->dotnet_symbols, iter, dsym) {
+		r_list_foreach (dotnet_symbols, iter, dsym) {
 			if (dsym->token == token) {
 				return dsym->name;
 			}

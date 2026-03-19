@@ -2596,14 +2596,22 @@ RList *MACH0_(get_segments)(RBinFile *bf, struct MACH0_(obj_t) * macho) {
 
 	// R2_590 slow, should return vec directly
 	RVecSegment *segments = MACH0_(get_segments_vec) (bf, macho);
+	const int limit = macho->limit;
+	int count = 0;
 	RBinSection *s;
 	R_VEC_FOREACH (segments, s) {
+		if (limit > 0 && !s->is_segment && count >= limit) {
+			break;
+		}
 		RBinSection *s_copy = r_bin_section_clone (s);
 		if (!s_copy) {
 			r_list_free (list);
 			return NULL;
 		}
 		r_list_append (list, s_copy);
+		if (!s->is_segment) {
+			count++;
+		}
 	}
 
 	return list;

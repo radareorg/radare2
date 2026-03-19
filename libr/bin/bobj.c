@@ -45,10 +45,6 @@ static void import_cache_cleanup(RBinObject *o) {
 	r_bin_object_import_cache_cleanup (o);
 }
 
-static int bin_limit(RBin *bin) {
-	return bin? bin->options.limit: 0;
-}
-
 static void clamp_list(RList *list, int limit) {
 	RListIter *it, *tmp;
 	void *item = NULL;
@@ -66,7 +62,7 @@ static void clamp_list(RList *list, int limit) {
 }
 
 static void clamp_symbols_vec(RVecRBinSymbol *symbols, int limit) {
-	if (!symbols || limit < 1) {
+	if (limit < 1) {
 		return;
 	}
 	while (RVecRBinSymbol_length (symbols) > limit) {
@@ -75,7 +71,7 @@ static void clamp_symbols_vec(RVecRBinSymbol *symbols, int limit) {
 }
 
 static void clamp_imports_vec(RVecRBinImport *imports, int limit) {
-	if (!imports || limit < 1) {
+	if (limit < 1) {
 		return;
 	}
 	while (RVecRBinImport_length (imports) > limit) {
@@ -263,9 +259,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	R_RETURN_VAL_IF_FAIL (bf && plugin, NULL);
 	ut64 bytes_sz = r_buf_size (bf->buf);
 	RBinObject *bo = R_NEW0 (RBinObject);
-	if (!bo) {
-		return NULL;
-	}
 	bo->obj_size = (bytes_sz >= sz + offset)? sz: 0;
 	bo->boffset = offset;
 	bo->strings_db = ht_up_new0 ();
@@ -416,6 +409,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	bool isSwift = false;
 	RBin *bin = bf->rbin;
 	RBinPlugin *p = bo->plugin;
+	const int limit = bin->options.limit;
 	int minlen = (bf->rbin->options.minstrlen > 0) ? bf->rbin->options.minstrlen : p->minstrlen;
 	bf->bo = bo;
 
@@ -452,7 +446,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->entries) {
 		bo->entries = p->entries (bf);
-		clamp_list (bo->entries, bin_limit (bin));
+		clamp_list (bo->entries, limit);
 		REBASE_PADDR (bo, bo->entries, RBinAddr);
 	}
 	if (p->fields) {
@@ -464,7 +458,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->imports_vec) {
 		p->imports_vec (bf);
-		clamp_imports_vec (&bo->imports_vec, bin_limit (bin));
+		clamp_imports_vec (&bo->imports_vec, limit);
 		import_cache_cleanup (bo);
 	} else if (p->imports) {
 		r_list_free (bo->imports);
@@ -472,7 +466,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->imports) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
-		clamp_list (bo->imports, bin_limit (bin));
+		clamp_list (bo->imports, limit);
 		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {
@@ -488,7 +482,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				ht_pp_free (ht);
 			}
 		}
-		clamp_symbols_vec (&bo->symbols_vec, bin_limit (bin));
+		clamp_symbols_vec (&bo->symbols_vec, limit);
 	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s
 		if (bo->symbols) {
@@ -498,7 +492,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			if (bin->filter) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}
-			clamp_list (bo->symbols, bin_limit (bin));
+			clamp_list (bo->symbols, limit);
 		}
 	}
 	if (p->info) {
@@ -509,7 +503,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->libs) {
 		bo->libs = p->libs (bf);
-		clamp_list (bo->libs, bin_limit (bin));
+		clamp_list (bo->libs, limit);
 	}
 	if (p->sections) {
 		// XXX sections are populated by call to size
@@ -528,7 +522,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (p->relocs) {
 			RList *l = (RList *)p->relocs (bf);
 			if (l) {
-				clamp_list (l, bin_limit (bin));
+				clamp_list (l, limit);
 				REBASE_PADDR (bo, l, RBinReloc);
 				bo->relocs = list2rbtree ((RList*)l);
 				l->free = NULL; // owned by tree now, via clone with proper cleanup
@@ -543,7 +537,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
-		clamp_list (bo->strings, bin_limit (bin));
+		clamp_list (bo->strings, limit);
 		REBASE_PADDR (bo, bo->strings, RBinString);
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
@@ -630,8 +624,9 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 	if (!bo->is_reloc_patched && bo->plugin && bo->plugin->patch_relocs) {
 		RList *tmp = bo->plugin->patch_relocs (bf);
 		if (R_LIKELY (tmp)) {
+			const int limit = bf->rbin->options.limit;
 			r_crbtree_free (bo->relocs);
-			clamp_list (tmp, bin_limit (bf->rbin));
+			clamp_list (tmp, limit);
 			REBASE_PADDR (bo, tmp, RBinReloc);
 			bo->relocs = list2rbtree (tmp);
 			bo->is_reloc_patched = true;
