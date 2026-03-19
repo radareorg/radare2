@@ -4448,14 +4448,13 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	ut16 mach = eo->ehdr.e_machine;
 
 	ut64 num = Elf_(get_phnum) (eo);
-	if (!RVecRBinSection_reserve (&eo->cached_sections, RVecRBinSection_length (&eo->cached_sections) + num)) {
-		return false;
-	}
-
 	const int limit = bf->rbin->options.limit;
 	if (limit > 0 && num > limit) {
 		R_LOG_WARN ("eo.limit reached for sections");
 		num = limit;
+	}
+	if (!RVecRBinSection_reserve (&eo->cached_sections, RVecRBinSection_length (&eo->cached_sections) + num)) {
+		return false;
 	}
 
 	int i = 0, n = 0;
