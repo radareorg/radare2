@@ -25,6 +25,7 @@ R_API void r_bp_restore_one(RBreakpoint *bp, RBreakpointItem *b, bool set) {
  * reflect all r_bp stuff in the process using dbg->bp_write or ->breakpoint
  */
 R_API int r_bp_restore(RBreakpoint *bp, bool set) {
+	R_RETURN_VAL_IF_FAIL (bp, false);
 	return r_bp_restore_except (bp, set, UT64_MAX);
 }
 
@@ -34,6 +35,7 @@ R_API int r_bp_restore(RBreakpoint *bp, bool set) {
  * except the specified breakpoint...
  */
 R_API bool r_bp_restore_except(RBreakpoint *bp, bool set, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bp, false);
 	bool rc = true;
 	RListIter *iter;
 	RBreakpointItem *b;
