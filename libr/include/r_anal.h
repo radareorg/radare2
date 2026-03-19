@@ -280,6 +280,57 @@ typedef struct r_anal_function_signature_t {
 	bool noreturn;
 } RAnalFunctionSignature;
 
+typedef RAnalFunctionParam RAnalFunctionContextParam;
+
+typedef enum {
+	R_ANAL_FUNCTION_CONTEXT_STACK_BASE_FRAME_POINTER = 0,
+	R_ANAL_FUNCTION_CONTEXT_STACK_BASE_STACK_POINTER,
+	R_ANAL_FUNCTION_CONTEXT_STACK_BASE_NAMED
+} RAnalFunctionContextStackBaseKind;
+
+typedef struct r_anal_function_context_stack_base_t {
+	RAnalFunctionContextStackBaseKind kind;
+	char *name;
+} RAnalFunctionContextStackBase;
+
+typedef enum {
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_LOCAL = 0,
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_STACK_ARG,
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_PARAM_HOME,
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_SAVED_REG,
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_SAVED_FP,
+	R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_UNKNOWN
+} RAnalFunctionContextStackSlotRole;
+
+typedef struct r_anal_function_context_register_param_t {
+	char *name;
+	char *type;
+	char *reg;
+	int param_index;
+} RAnalFunctionContextRegisterParam;
+
+typedef struct r_anal_function_context_stack_slot_t {
+	char *name;
+	char *type;
+	RAnalFunctionContextStackBase base;
+	st64 offset;
+	RAnalFunctionContextStackSlotRole role;
+	int param_index;
+	char *param_name;
+	char *source_reg;
+} RAnalFunctionContextStackSlot;
+
+typedef struct r_anal_function_context_t {
+	char *signature;
+	char *ret_type;
+	char *callconv;
+	bool noreturn;
+	RList *params; // RList<RAnalFunctionContextParam *>
+	RList *register_params; // RList<RAnalFunctionContextRegisterParam *>
+	RList *stack_slots; // RList<RAnalFunctionContextStackSlot *>
+	RList *base_types; // RList<RAnalBaseType *>
+} RAnalFunctionContext;
+
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
@@ -1216,6 +1267,8 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
+R_API RAnalFunctionContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
+R_API void r_anal_function_context_free(RAnalFunctionContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
