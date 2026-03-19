@@ -11,6 +11,14 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
+static int bin_limit(RBinFile *bf) {
+	return bf && bf->rbin? bf->rbin->options.limit: 0;
+}
+
+static bool limit_reached(RList *list, int limit) {
+	return limit > 0 && r_list_length (list) >= limit;
+}
+
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	R_RETURN_VAL_IF_FAIL (bf && buf, false);
 	RBinPEObj *res = PE_(r_bin_pe_new_buf) (buf, bf->rbin->options.verbose);
@@ -51,7 +59,7 @@ static RBinAddr* binsym(RBinFile *bf, int type) {
 	return ret;
 }
 
-static void add_tls_callbacks(RBinFile *bf, RList* list) {
+static void add_tls_callbacks(RBinFile *bf, RList* list, int limit) {
 	r_strf_buffer (64);
 	PE_DWord paddr, vaddr, haddr;
 	int count = 0;
@@ -75,6 +83,9 @@ static void add_tls_callbacks(RBinFile *bf, RList* list) {
 		if (!haddr) {
 			break;
 		}
+		if (limit_reached (list, limit)) {
+			break;
+		}
 		if ((ptr = R_NEW0 (RBinAddr))) {
 			ptr->paddr = paddr;
 			ptr->vaddr = vaddr;
@@ -90,6 +101,7 @@ static RList* entries(RBinFile *bf) {
 	struct r_bin_pe_addr_t *entry = NULL;
 	RBinAddr *ptr = NULL;
 	RList* ret;
+	int limit = bin_limit (bf);
 
 	if (!(ret = r_list_newf (free))) {
 		return NULL;
@@ -145,8 +157,11 @@ static RList* entries(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	free (entry);
+	if (limit_reached (ret, limit)) {
+		return ret;
+	}
 	// get TLS callback addresses
-	add_tls_callbacks (bf, ret);
+	add_tls_callbacks (bf, ret, limit);
 
 	return ret;
 }
@@ -154,6 +169,7 @@ static RList* entries(RBinFile *bf) {
 static RList* sections(RBinFile *bf) {
 	ut64 ba = baddr (bf);
 	int i;
+	int limit = bin_limit (bf);
 
 	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	if (!ret) {
@@ -169,6 +185,9 @@ static RList* sections(RBinFile *bf) {
 
 	PE_(r_bin_pe_check_sections) (pe, &sections);
 	for (i = 0; !sections[i].last; i++) {
+		if (limit_reached (ret, limit)) {
+			break;
+		}
 		RBinSection *sec = R_NEW0 (RBinSection);
 		if (!sec) {
 			break;
@@ -234,6 +253,7 @@ static void find_pe_overlay(RBinFile *bf) {
 
 static RList* classes(RBinFile *bf) {
 	RList *ret = NULL;
+	int limit = bin_limit (bf);
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
 		return NULL;
@@ -287,6 +307,10 @@ static RList* classes(RBinFile *bf) {
 		// Create new class if it doesn't exist
 		RBinClass *cls = NULL;
 		if (!existing) {
+			if (limit_reached (ret, limit)) {
+				free (class_name_full);
+				continue;
+			}
 			cls = r_bin_class_new (class_name_full, NULL, 0);
 			cls->lang = R_BIN_LANG_MSVC;
 			cls->origin = R_BIN_CLASS_ORIGIN_BIN;
@@ -370,6 +394,10 @@ static RList* classes(RBinFile *bf) {
 		}
 		if (!cls) {
 			// Create new class if it doesn't exist
+			if (limit_reached (ret, limit)) {
+				free (tmp);
+				continue;
+			}
 			cls = r_bin_class_new (class_name_full, NULL, 0);
 			if (cls) {
 				cls->lang = R_BIN_LANG_MSVC;
@@ -461,6 +489,7 @@ static RList* symbols(RBinFile *bf) {
 	struct r_bin_pe_export_t *symbols = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
+	int limit = bin_limit (bf);
 
 	if (!(ret = r_list_newf (r_bin_symbol_free))) {
 		return NULL;
@@ -468,6 +497,9 @@ static RList* symbols(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if ((symbols = PE_(r_bin_pe_get_exports)(pe))) {
 		for (i = 0; !symbols[i].last; i++) {
+			if (limit_reached (ret, limit)) {
+				break;
+			}
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
@@ -488,6 +520,9 @@ static RList* symbols(RBinFile *bf) {
 
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
 		for (i = 0; !imports[i].last; i++) {
+			if (limit_reached (ret, limit)) {
+				break;
+			}
 			if (!(ptr = R_NEW0 (RBinSymbol))) {
 				break;
 			}
@@ -518,6 +553,9 @@ static RList* symbols(RBinFile *bf) {
 				RListIter *iter;
 				DotNetSymbol *dsym;
 				r_list_foreach (dotnet_symbols, iter, dsym) {
+					if (limit_reached (ret, limit)) {
+						break;
+					}
 					if (!strcmp (dsym->type, "methoddef")) {
 						// Add methoddef at its RVA
 						ptr = R_NEW0 (RBinSymbol);
@@ -586,6 +624,7 @@ static RList* imports(RBinFile *bf) {
 	RBinImport *ptr = NULL;
 	RBinReloc *rel = NULL;
 	int i;
+	int limit = bin_limit (bf);
 
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe) {
@@ -607,6 +646,9 @@ static RList* imports(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !imports[i].last; i++) {
+		if (limit_reached (ret, limit)) {
+			break;
+		}
 		struct r_bin_pe_import_t *imp = &imports[i];
 		if (!(ptr = R_NEW0 (RBinImport))) {
 			break;
@@ -663,6 +705,7 @@ static RList* libs(RBinFile *bf) {
 	RList *ret = NULL;
 	char *ptr = NULL;
 	int i;
+	int limit = bin_limit (bf);
 
 	if (!(ret = r_list_new ())) {
 		return NULL;
@@ -673,6 +716,9 @@ static RList* libs(RBinFile *bf) {
 		return ret;
 	}
 	for (i = 0; !libs[i].last; i++) {
+		if (limit_reached (ret, limit)) {
+			break;
+		}
 		ptr = strdup (libs[i].name);
 		r_list_append (ret, ptr);
 	}
