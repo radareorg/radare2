@@ -139,6 +139,7 @@ if user_plugins.contains('arm') or no_user_plugins
   cs_c_args += [
     '-DCAPSTONE_HAS_ARM',
     '-DCAPSTONE_HAS_ARM64',
+    '-DCAPSTONE_HAS_AARCH64',
   ]
 endif
 if user_plugins.contains('sparc') or no_user_plugins
