@@ -385,12 +385,14 @@ static RCoreHelpMessage help_msg_ph = {
 };
 
 static RCoreHelpMessage help_msg_pdu = {
-	"Usage:", "pdu[acios][j]", "Disassemble instructions until condition",
+	"Usage:", "pdu[abciors][j]", "Disassemble instructions until condition",
 	"pdua", "[j] [addr]", "disassemble until address",
+	"pdub", "[j]", "disassemble until end of basic block",
 	"pduc", "[j]", "disassemble until call",
 	//"pdue", "[j] [expr]", "disassemble until esil expression",
 	"pdui", "[j] [inst]", "disassemble until instruction (e.g.: add esp, 0x20)",
 	"pduo", "[j] [opcode]", "disassemble until opcode (e.g.: mul)",
+	"pdur", "[j]", "disassemble until ret",
 	"pdus", "[j]", "disassemble until syscall",
 	NULL
 };
@@ -1542,6 +1544,48 @@ R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff
 	r_config_set_i (core->config, "asm.addr.segment", segoff);
 }
 
+static bool pdu_has_help(const char *input) {
+	return input[1] == '?' || (input[1] && input[2] == '?');
+}
+
+static bool pdu_has_json(const char *input) {
+	return input[1] == 'j';
+}
+
+static int pdu_print_until_opcode_json(RCore *core, ut64 addr, ut8 *buf, int len, const char *opcode) {
+	int ret;
+	PJ *pj = r_core_pj_new (core);
+	if (!pj) {
+		return 1;
+	}
+	pj_a (pj);
+	ret = r_core_print_disasm_json_ipi (core, addr, buf, len, 0, pj, opcode);
+	pj_end (pj);
+	r_cons_println (core->cons, pj_string (pj));
+	pj_free (pj);
+	return ret;
+}
+
+static int pdu_print_until(RCore *core, ut64 addr, ut8 *buf, int len, enum r_pdu_condition_t type, const char *condition, bool json) {
+	if (json && type == pdu_opcode) {
+		return pdu_print_until_opcode_json (core, addr, buf, len, condition);
+	}
+	return r_core_print_disasm (core, addr, buf, len, 0, type, condition, false, json, NULL, NULL);
+}
+
+static int pdu_print_until_addr(RCore *core, ut64 to, bool json) {
+	const ut64 addr = core->addr;
+	if (to < addr) {
+		R_LOG_ERROR ("Can't print until an earlier address");
+		return 2;
+	}
+	if (to == addr) {
+		R_LOG_ERROR ("Can't print until the start address");
+		return 2;
+	}
+	return r_core_cmdf (core, "%s %" PFMT64u, json? "pdJ": "pD", to - addr);
+}
+
 static int cmd_pdu(RCore *core, const char *input) {
 	int ret = 0;
 	const char *sep = strchr (input, ' ');
@@ -1563,7 +1607,7 @@ static int cmd_pdu(RCore *core, const char *input) {
 	switch (*input) {
 	case 'a': // "pdua"
 	{
-		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
+		if (pdu_has_help (input) || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdua");
 			break;
 		}
@@ -1578,27 +1622,31 @@ static int cmd_pdu(RCore *core, const char *input) {
 			R_LOG_ERROR ("Couldn't parse address \"%s\"", arg);
 			ret = 1;
 			break;
-		} else if (to < addr) {
-			R_LOG_ERROR ("Can't print until an earlier address");
-			ret = 2;
-			break;
-		} else if (to == addr) {
-			R_LOG_ERROR ("Can't print until the start address");
-			ret = 2;
-			break;
 		}
-
-		// pD <count>
-		ut64 count = to - core->addr;
-		ret = r_core_cmdf (core, "%s %" PFMT64u, (input[1] == 'j')? "pDJ": "pD", count);
+		ret = pdu_print_until_addr (core, to, pdu_has_json (input));
 	}
 	break;
+	case 'b': // "pdub"
+		if (pdu_has_help (input)) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdub");
+			break;
+		}
+		{
+			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr);
+			if (!bb) {
+				R_LOG_ERROR ("Cannot find basic block at 0x%08" PFMT64x, addr);
+				ret = 1;
+				break;
+			}
+			ret = pdu_print_until_addr (core, bb->addr + bb->size, pdu_has_json (input));
+		}
+		break;
 	case 'c': // "pduc"
-		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+		if (pdu_has_help (input)) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduc");
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, "call", false, input[1] == 'j', NULL, NULL);
+		ret = pdu_print_until (core, addr, buf, len, pdu_opcode, "call", pdu_has_json (input));
 		break;
 #if 0
 	case 'e': // "pdue"
@@ -1611,38 +1659,32 @@ static int cmd_pdu(RCore *core, const char *input) {
 		break;
 #endif
 	case 'i': // "pdui"
-		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
+		if (pdu_has_help (input) || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdui");
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, arg, false, input[1] == 'j', NULL, NULL);
+		ret = pdu_print_until (core, addr, buf, len, pdu_instruction, arg, pdu_has_json (input));
 		break;
 	case 'o': // "pduo"
-		if (input[1] == '?' || (input[1] && input[2] == '?') || !arg) {
+		if (pdu_has_help (input) || !arg) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pduo");
 			break;
 		}
-
-		if (input[1] != 'j') { // "pduo"
-			ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_opcode, arg, false, false, NULL, NULL);
-		} else { // "pduoj"
-			PJ *pj = r_core_pj_new (core);
-			if (!pj) {
-				return 1;
-			}
-			pj_a (pj);
-			ret = r_core_print_disasm_json_ipi (core, addr, buf, len, 0, pj, arg);
-			pj_end (pj);
-			r_cons_println (core->cons, pj_string (pj));
-			pj_free (pj);
+		ret = pdu_print_until (core, addr, buf, len, pdu_opcode, arg, pdu_has_json (input));
+		break;
+	case 'r': // "pdur"
+		if (pdu_has_help (input)) {
+			r_core_cmd_help_match (core, help_msg_pdu, "pdur");
+			break;
 		}
+		ret = pdu_print_until (core, addr, buf, len, pdu_opcode, "ret", pdu_has_json (input));
 		break;
 	case 's': // "pdus"
-		if (input[1] == '?' || (input[1] && input[2] == '?')) {
+		if (pdu_has_help (input)) {
 			r_core_cmd_help_match (core, help_msg_pdu, "pdus");
 			break;
 		}
-		ret = r_core_print_disasm (core, addr, buf, len, 0, pdu_instruction, "syscall", false, input[1] == 'j', NULL, NULL);
+		ret = pdu_print_until (core, addr, buf, len, pdu_opcode, "syscall", pdu_has_json (input));
 		break;
 	case '?': // "pdu?"
 	default:
