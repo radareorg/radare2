@@ -3920,11 +3920,6 @@ o bins/elf/analysis/x86-helloworld-gcc
 ii
 EOF
 EXPECT=<<EOF
-WARN: eo.limit reached for imports
-WARN: eo.limit for symbols
-WARN: eo.limit for symbols
-WARN: eo.limit reached for phdr symbols
-WARN: eo.limit reached for sections
 nth vaddr      bind   type   lib name
 -------------------------------------
 1   0x080482d0 GLOBAL FUNC       puts
@@ -3944,7 +3939,6 @@ ie
 il
 EOF
 EXPECT=<<EOF
-WARN: symbols mo.limit reached
 nth paddr      vaddr       bind   type size lib name                demangled
 -----------------------------------------------------------------------------
 0   0x00000000 0x100000000 GLOBAL FUNC 0        __mh_execute_header
@@ -3974,7 +3968,6 @@ ie
 il
 EOF
 EXPECT=<<EOF
-WARN: el.limit for strings
 nth paddr      vaddr      bind   type size lib name                      demangled
 ----------------------------------------------------------------------------------
 0   0x00000400 0x00401000 GLOBAL FUNC 0        __gnu_exception_handler@4

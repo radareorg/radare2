@@ -35,38 +35,6 @@ static bool limit_reached(RList *list, int limit) {
 	return limit > 0 && r_list_length (list) >= limit;
 }
 
-static void free_import_tail(RVecRBinImport *imports, int kept) {
-	size_t i, len;
-	RBinImport *imp;
-
-	if (!imports) {
-		return;
-	}
-	len = RVecRBinImport_length (imports);
-	for (i = kept; i < len; i++) {
-		imp = RVecRBinImport_at (imports, i);
-		r_bin_import_fini (imp);
-	}
-	free (imports->_start);
-	RVecRBinImport_init (imports);
-}
-
-static void free_symbol_tail(RVecRBinSymbol *symbols, int kept) {
-	size_t i, len;
-	RBinSymbol *sym;
-
-	if (!symbols) {
-		return;
-	}
-	len = RVecRBinSymbol_length (symbols);
-	for (i = kept; i < len; i++) {
-		sym = RVecRBinSymbol_at (symbols, i);
-		r_bin_symbol_fini (sym);
-	}
-	free (symbols->_start);
-	RVecRBinSymbol_init (symbols);
-}
-
 static void free_class_tail(RVecRBinClass *classes, int kept) {
 	size_t i, len;
 	RBinClass *cls;
@@ -81,6 +49,17 @@ static void free_class_tail(RVecRBinClass *classes, int kept) {
 	}
 	free (classes->_start);
 	RVecRBinClass_init (classes);
+}
+
+static void detect_dex_subsystem(RBinDexObj *dex, const char *class_name) {
+	if (dex->dexSubsystem || R_STR_ISEMPTY (class_name)) {
+		return;
+	}
+	if (strstr (class_name, "wearable/view")) {
+		dex->dexSubsystem = "android-wear";
+	} else if (strstr (class_name, "android/view/View")) {
+		dex->dexSubsystem = "android";
+	}
 }
 
 static ut64 get_method_attr(ut64 MA) {
@@ -1468,6 +1447,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	if (!cls_name) {
 		goto beach;
 	}
+	detect_dex_subsystem (dex, cls_name);
 	r_str_replace_char (cls_name, ';', 0);
 	cls->name = r_bin_name_new (cls_name);
 	cls->index = class_index;
@@ -1611,6 +1591,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	int *methods = NULL;
 	size_t methods_size = 0;
 	int sym_count = 0;
+	const int limit = bin_limit (bf);
 	// doublecheck??
 	if (!RVecRBinSymbol_empty (&dex->symbols_vec)) {
 		return false;
@@ -1666,6 +1647,9 @@ static bool dex_loadcode(RBinFile *bf) {
 		int sym_count = RVecRBinSymbol_length (&dex->symbols_vec);
 		const ut32 method_size = dex->header.method_size;
 		for (i = 0; i < method_size; i++) {
+			if (limit > 0 && import_count >= limit && sym_count >= limit) {
+				break;
+			}
 			if (methods[i]) {
 				continue;
 			}
@@ -1684,13 +1668,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			if (!class_name) {
 				continue;
 			}
-			if (!dex->dexSubsystem) {
-				if (strstr (class_name, "wearable/view")) {
-					dex->dexSubsystem = "android-wear";
-				} else if (strstr (class_name, "android/view/View")) {
-					dex->dexSubsystem = "android";
-				}
-			}
+			detect_dex_subsystem (dex, class_name);
 			if (class_name[0] == '\0') {
 				free (class_name);
 				continue;
@@ -1732,21 +1710,15 @@ static bool dex_loadcode(RBinFile *bf) {
 static bool imports_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *dex = (RBinDexObj*) bf->bo->bin_obj;
-	int limit = bin_limit (bf);
-	int count = 0;
+	if (!RVecRBinImport_empty (&bf->bo->imports_vec)) {
+		return true;
+	}
 	if (RVecRBinImport_empty (&dex->imports_vec)) {
 		dex_loadcode (bf);
 	}
 	if (!RVecRBinImport_empty (&dex->imports_vec)) {
-		RBinImport *imp;
-		R_VEC_FOREACH (&dex->imports_vec, imp) {
-			if (limit > 0 && count >= limit) {
-				break;
-			}
-			RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
-			count++;
-		}
-		free_import_tail (&dex->imports_vec, count);
+		bf->bo->imports_vec = dex->imports_vec;
+		RVecRBinImport_init (&dex->imports_vec);
 		return true;
 	}
 	return false;
@@ -1764,21 +1736,15 @@ static RList *trycatch(RBinFile *bf) {
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	int limit = bin_limit (bf);
-	int count = 0;
+	if (!RVecRBinSymbol_empty (&bf->bo->symbols_vec)) {
+		return true;
+	}
 	if (RVecRBinSymbol_empty (&bin->symbols_vec)) {
 		dex_loadcode (bf);
 	}
 	if (!RVecRBinSymbol_empty (&bin->symbols_vec)) {
-		RBinSymbol *sym;
-		R_VEC_FOREACH (&bin->symbols_vec, sym) {
-			if (limit > 0 && count >= limit) {
-				break;
-			}
-			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
-			count++;
-		}
-		free_symbol_tail (&bin->symbols_vec, count);
+		bf->bo->symbols_vec = bin->symbols_vec;
+		RVecRBinSymbol_init (&bin->symbols_vec);
 		return true;
 	}
 	return false;
