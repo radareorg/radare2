@@ -86,6 +86,13 @@ static char *cmdstr(RCore *core, const char *cmd) {
 	return out;
 }
 
+static void rtr_http_request_free(RSocketHTTPRequest *rs) {
+	if (rs) {
+		r_socket_http_close (rs);
+		r_socket_http_free (rs);
+	}
+}
+
 static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, const char *path) {
 	if (!path) {
 		return HTTP_RUN_ERROR;
@@ -246,10 +253,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		if (r_config_get_b (core->config, "http.channel")) {
 			// start a new thread with
 			// char *res = r_core_cmd_str_r (core, cmd);
-			if (rs) {
-				r_socket_http_response (rs, 200, "TODO", 0, headers);
-				r_socket_http_close (rs);
-			}
+			r_socket_http_response (rs, 200, "TODO", 0, headers);
+			rtr_http_request_free (rs);
 			continue;
 		}
 
@@ -257,7 +262,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			if (R_STR_ISEMPTY (rs->path) || !strcmp (rs->path, "/")) {
 				char *res = r_str_newf ("Location: %s/\n%s", basepath, headers);
 				r_socket_http_response (rs, 302, NULL, 0, res);
-				r_socket_http_close (rs);
+				rtr_http_request_free (rs);
+				free (res);
 				continue;
 			}
 			if (r_str_startswith (rs->path, basepath)) {
@@ -304,13 +310,13 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			free (peer);
 			free (allows);
 			if (!accepted) {
-				r_socket_http_close (rs);
+				rtr_http_request_free (rs);
 				continue;
 			}
 		}
 		if (!rs->method || !rs->path) {
 			http_logf (core, "Invalid http headers received from client\n");
-			r_socket_http_close (rs);
+			rtr_http_request_free (rs);
 			continue;
 		}
 		dir = NULL;
@@ -440,13 +446,13 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 							if (!r_sandbox_enable (0)) {
 								if (!strcmp (cmd, "=h*")) {
 									/* do stuff */
-									r_socket_http_close (rs);
+									rtr_http_request_free (rs);
 									free (dir);
 									free (refstr);
 									ret = HTTP_RUN_RESTART;
 									goto the_end;
 								} else if (!strcmp (cmd, "=h--")) {
-									r_socket_http_close (rs);
+									rtr_http_request_free (rs);
 									free (dir);
 									free (refstr);
 									ret = HTTP_RUN_SUCCESS;
@@ -493,7 +499,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 					if (r_file_is_directory (path)) {
 						char *res = r_str_newf ("Location: %s/\n%s", rs->path, headers);
 						r_socket_http_response (rs, 302, NULL, 0, res);
-						r_socket_http_close (rs);
+						rtr_http_request_free (rs);
 						free (path);
 						free (res);
 						R_FREE (dir);
@@ -572,7 +578,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		} else {
 			r_socket_http_response (rs, 404, "Invalid protocol", 0, headers);
 		}
-		r_socket_http_close (rs);
+		rtr_http_request_free (rs);
 		free (dir);
 	}
 the_end:
@@ -593,6 +599,7 @@ the_end:
 	}
 	r_cons_break_pop (core->cons);
 	core->http_up = false;
+	r_list_free (so.authtokens);
 	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
@@ -616,7 +623,10 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 		R_LOG_WARN ("Background webserver requires http.sandbox=false to run properly");
 	}
 	HttpRunResult ret = r_core_rtr_http_run (ht->core, ht->launch, ht->browse, ht->path);
-	R_FREE (ht->path);
+	if (ret == HTTP_RUN_SUCCESS) {
+		R_FREE (ht->path);
+		free (ht);
+	}
 	return (ret == HTTP_RUN_ERROR || ret == HTTP_RUN_RESTART) ? R_TH_REPEAT : R_TH_STOP;
 }
 #endif

@@ -43,6 +43,13 @@ typedef struct {
 	char* input;
 } RapThread;
 
+static void thread_kill_free(RThread **th) {
+	if (th && *th) {
+		r_th_kill_free (*th);
+		*th = NULL;
+	}
+}
+
 R_API void r_core_wait(RCore *core) {
 	// we need a global console break
 	// r_cons_context_break (core->cons->context);
@@ -53,10 +60,8 @@ R_API void r_core_wait(RCore *core) {
 	}
 #endif
 	RCorePriv *priv = core->priv;
-	r_th_kill (priv->httpthread, true);
-	r_th_kill (priv->rapthread, true);
-	r_th_wait (priv->httpthread);
-	r_th_wait (priv->rapthread);
+	thread_kill_free (&priv->httpthread);
+	thread_kill_free (&priv->rapthread);
 }
 
 static void http_logf(RCore *core, const char *fmt, ...) {

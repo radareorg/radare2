@@ -252,6 +252,7 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 		free (rs->host);
 		free (rs->agent);
 		free (rs->method);
+		free (rs->referer);
 		free (rs->data);
 		free (rs);
 	}

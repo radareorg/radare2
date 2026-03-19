@@ -3115,21 +3115,22 @@ R_API int r_core_prompt_exec(RCore *r) {
 	return ret;
 }
 
-R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
+R_API int r_core_block_size(RCore *core, int bsize) {
+	const ut64 addr = core->addr;
 	ut8 *bump;
 	int ret = false;
+	if (r_sandbox_enable (0)) {
+		// TODO : restrict to filesize?
+		if (bsize > 1024 * 1024 * 32) {
+			R_LOG_ERROR ("Sandbox mode restricts blocksize bigger than 32MB");
+			return false;
+		}
+	}
 	if (bsize < 0) {
 		return false;
 	}
 	if (bsize == core->blocksize) {
 		return true;
-	}
-	if (r_sandbox_enable (0)) {
-		// TODO : restrict to filesize?
-		if (bsize > 1024 * 32) {
-			R_LOG_ERROR ("Sandbox mode restricts blocksize bigger than 32k");
-			return false;
-		}
 	}
 	if (bsize > core->blocksize_max) {
 		R_LOG_ERROR ("Block size %d is too big", bsize);
@@ -3159,10 +3160,6 @@ R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize) {
 	}
 	R_CRITICAL_LEAVE (core);
 	return ret;
-}
-
-R_API int r_core_block_size(RCore *core, int bsize) {
-	return r_core_seek_size (core, core->addr, bsize);
 }
 
 R_API int r_core_seek_align(RCore *core, ut64 align, int times) {
