@@ -4,7 +4,7 @@
 %global         shortcommit     %(c=%{commit}; echo ${c:0:7})
 
 Name:           radare2
-Version:        6.1.2
+Version:        6.1.0
 Release:        1%{?dist}
 Summary:        The %{name} reverse engineering framework
 Group:          Applications/Engineering
