@@ -113,13 +113,10 @@ EOF
 RUN
 
 NAME=ragg2 fastcall declarations do not emit x86 asm garbage
-FILE=-
-CMDS=<<EOF
-'!ragg2 -a x86 -b 32 -s -e 'foo@fastcall();bar@fastcall(4);main@global(0,0){}'
-EOF
+FILE=unit/legacy_unit/ragg2/fastcall-decls.r
+CMDS=!ragg2 -a x86 -b 32 -s unit/legacy_unit/ragg2/fastcall-decls.r
 EXPECT=<<EOF
 .equ bar,4
-
 
 .global main
 main:
@@ -129,23 +126,174 @@ main:
 EOF
 RUN
 
-NAME=ragg2 issue25590 basic arm fastcall sample assembles in 16 32 and 64 bits
-FILE=-
-CMDS=<<EOF
-'!printf 'printf@fastcall(0x1fa0b4)\n\nmain@global(0,16) {\n  printf("fnord\\n");\n}\n' > /tmp/ragg2-25590-basic.r && for b in 16 32 64; do ragg2 -a arm -b $b /tmp/ragg2-25590-basic.r >/dev/null || exit 1; done && echo OK'
-EOF
+NAME=ragg2 fastcall declarations emit x64 aliases without garbage
+FILE=unit/legacy_unit/ragg2/fastcall-decls.r
+CMDS=!ragg2 -a x86 -b 64 -s unit/legacy_unit/ragg2/fastcall-decls.r
 EXPECT=<<EOF
-OK
+.equ bar,4
+
+.global main
+main:
+  ret
+
+
 EOF
 RUN
 
-NAME=ragg2 issue25590 arm dereference sample avoids invalid stack slot syntax
-FILE=-
-CMDS=<<EOF
-'!printf 'printf@fastcall(0x1fa0b4)\n\nmain@global(64,64) {\n\t.var0 = 0xb0000000;\n\tprintf("idreg=%%x\\n", *.var0);\n}\n' > /tmp/ragg2-25590-deref.r && ragg2 -s -a arm -b 16 /tmp/ragg2-25590-deref.r | grep -qE 'mov sp,|push \\{sp,|ldr r1, \\[\\]' && echo BAD || echo OK'
-EOF
+NAME=ragg2 issue25590 basic arm fastcall sample emits valid thumb asm
+FILE=unit/legacy_unit/ragg2/fastcall-basic.r
+CMDS=!ragg2 -s -a arm -b 16 unit/legacy_unit/ragg2/fastcall-basic.r
 EXPECT=<<EOF
-OK
+.equ printf, 0x1fa0b4
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 32
+# rcc_fun 1 (printf)
+# encode filtered string (fnord\n) (printf)
+  adr r0, 4
+  b 12
+.string "fnord\n"
+.fill 1, 1, 0
+  str r0, [sp, 4]
+# call in egg->lang.mode 0
+  ldr r0, [sp, 4]
+  bl printf
+  add sp, fp, 32
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 basic arm fastcall sample emits valid arm32 asm
+FILE=unit/legacy_unit/ragg2/fastcall-basic.r
+CMDS=!ragg2 -s -a arm -b 32 unit/legacy_unit/ragg2/fastcall-basic.r
+EXPECT=<<EOF
+.equ printf, 0x1fa0b4
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 32
+# rcc_fun 1 (printf)
+# encode filtered string (fnord\n) (printf)
+  add pc, 4
+.string "fnord\n"
+.fill 1, 1, 0
+  sub r0, pc, 12
+  str r0, [sp, 4]
+# call in egg->lang.mode 0
+  ldr r0, [sp, 4]
+  bl printf
+  add sp, fp, 32
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 basic arm fastcall sample emits valid arm64 asm
+FILE=unit/legacy_unit/ragg2/fastcall-basic.r
+CMDS=!ragg2 -s -a arm -b 64 unit/legacy_unit/ragg2/fastcall-basic.r
+EXPECT=<<EOF
+.equ printf, 0x1fa0b4
+
+.global main
+main:
+  stp x29, x30, [sp, -16]!
+  mov x29, sp
+  sub sp, sp, 32
+# rcc_fun 1 (printf)
+# encode filtered string (fnord\n) (printf)
+  adr x0, 8
+  b 12
+.string "fnord\n"
+.fill 1, 1, 0
+  str x0, [sp, 8]
+# call in egg->lang.mode 0
+  ldr x0, [sp, 8]
+  bl printf
+  mov sp, x29
+  ldp x29, x30, [sp], 16
+  ret
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm thumb dereference sample emits valid stack syntax
+FILE=unit/legacy_unit/ragg2/fastcall-deref.r
+CMDS=!ragg2 -s -a arm -b 16 unit/legacy_unit/ragg2/fastcall-deref.r
+EXPECT=<<EOF
+.equ printf, 0x1fa0b4
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r1, 0xb0000000
+  mov r9, r1
+  str r9, [sp, 68]
+# rcc_fun 1 (printf)
+  ldr r0, [sp, 68]
+  ldr r0, [r0]
+  str r0, [sp, 12]
+# encode filtered string (idreg=%x\n) (printf)
+  adr r0, 4
+  b 16
+.string "idreg=%x\n"
+.fill 2, 1, 0
+  str r0, [sp, 20]
+# call in egg->lang.mode 0
+  ldr r1, [sp, 12]
+  ldr r0, [sp, 20]
+  bl printf
+  add sp, fp, 192
+  pop {fp,pc}
+
+
+EOF
+RUN
+
+NAME=ragg2 issue25590 arm32 dereference sample emits valid stack syntax
+FILE=unit/legacy_unit/ragg2/fastcall-deref.r
+CMDS=!ragg2 -s -a arm -b 32 unit/legacy_unit/ragg2/fastcall-deref.r
+EXPECT=<<EOF
+.equ printf, 0x1fa0b4
+
+.global main
+main:
+  push {fp,lr}
+  add fp, sp, 4
+  sub sp, sp, 192
+  mov r1, 0
+  mov r1, 0xb0000000
+  mov r9, r1
+  str r9, [sp, 68]
+# rcc_fun 1 (printf)
+  ldr r0, [sp, 68]
+  ldr r0, [r0]
+  str r0, [sp, 12]
+# encode filtered string (idreg=%x\n) (printf)
+  add pc, 8
+.string "idreg=%x\n"
+.fill 2, 1, 0
+  sub r0, pc, 16
+  str r0, [sp, 20]
+# call in egg->lang.mode 0
+  ldr r1, [sp, 12]
+  ldr r0, [sp, 20]
+  bl printf
+  add sp, fp, 192
+  pop {fp,pc}
+
+
 EOF
 RUN
 
