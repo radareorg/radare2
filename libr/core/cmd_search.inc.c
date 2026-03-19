@@ -3017,14 +3017,24 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 	r_list_foreach (param->boundaries, iter, map) {
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
+		const size_t blksz = 0x1000;
+		ut8 *blk = malloc (blksz + 32);
+		if (!blk) {
+			break;
+		}
 		for (i = 0, at = from; at < to; i++, at++) {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
 			at = from + i;
-			ut8 bufop[32];
-			r_io_read_at (core->io, at, bufop, sizeof (bufop));
-			ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+			const size_t blk_off = (at - from) % blksz;
+			if (blk_off == 0 || i == 0) {
+				size_t rsz = R_MIN (blksz + 32, to - at);
+				r_io_read_at (core->io, at, blk, rsz);
+			}
+			ut8 *bufop = blk + blk_off;
+			size_t bufop_len = R_MIN (32, (blksz + 32) - blk_off);
+			ret = r_anal_op (core->anal, &aop, at, bufop, bufop_len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 			if (ret) {
 				bool match = false;
 				if (type == 'm') { // "/atm"
@@ -3119,6 +3129,7 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 			}
 			r_anal_op_fini (&aop);
 		}
+		free (blk);
 	}
 done:
 	r_list_free (words);
