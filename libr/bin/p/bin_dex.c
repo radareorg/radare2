@@ -35,6 +35,54 @@ static bool limit_reached(RList *list, int limit) {
 	return limit > 0 && r_list_length (list) >= limit;
 }
 
+static void free_import_tail(RVecRBinImport *imports, int kept) {
+	size_t i, len;
+	RBinImport *imp;
+
+	if (!imports) {
+		return;
+	}
+	len = RVecRBinImport_length (imports);
+	for (i = kept; i < len; i++) {
+		imp = RVecRBinImport_at (imports, i);
+		r_bin_import_fini (imp);
+	}
+	free (imports->_start);
+	RVecRBinImport_init (imports);
+}
+
+static void free_symbol_tail(RVecRBinSymbol *symbols, int kept) {
+	size_t i, len;
+	RBinSymbol *sym;
+
+	if (!symbols) {
+		return;
+	}
+	len = RVecRBinSymbol_length (symbols);
+	for (i = kept; i < len; i++) {
+		sym = RVecRBinSymbol_at (symbols, i);
+		r_bin_symbol_fini (sym);
+	}
+	free (symbols->_start);
+	RVecRBinSymbol_init (symbols);
+}
+
+static void free_class_tail(RVecRBinClass *classes, int kept) {
+	size_t i, len;
+	RBinClass *cls;
+
+	if (!classes) {
+		return;
+	}
+	len = RVecRBinClass_length (classes);
+	for (i = kept; i < len; i++) {
+		cls = RVecRBinClass_at (classes, i);
+		r_bin_class_fini (cls);
+	}
+	free (classes->_start);
+	RVecRBinClass_init (classes);
+}
+
 static ut64 get_method_attr(ut64 MA) {
 	ut64 flags = 0;
 	if (MA & R_DEX_METH_PUBLIC) {
@@ -1698,9 +1746,7 @@ static bool imports_vec(RBinFile *bf) {
 			RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
 			count++;
 		}
-		// Transfer ownership: reset imports_vec without calling fini
-		free (dex->imports_vec._start);
-		RVecRBinImport_init (&dex->imports_vec);
+		free_import_tail (&dex->imports_vec, count);
 		return true;
 	}
 	return false;
@@ -1732,9 +1778,7 @@ static bool symbols_vec(RBinFile *bf) {
 			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
 			count++;
 		}
-		// Transfer ownership: reset symbols_vec without calling fini
-		free (bin->symbols_vec._start);
-		RVecRBinSymbol_init (&bin->symbols_vec);
+		free_symbol_tail (&bin->symbols_vec, count);
 		return true;
 	}
 	return false;
@@ -1763,9 +1807,7 @@ static RList *classes(RBinFile *bf) {
 		r_list_append (ret, cloned);
 		count++;
 	}
-	// Transfer ownership: reset classes_vec without calling fini
-	free (bin->classes_vec._start);
-	RVecRBinClass_init (&bin->classes_vec);
+	free_class_tail (&bin->classes_vec, count);
 	return ret;
 }
 
