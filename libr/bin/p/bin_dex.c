@@ -27,24 +27,10 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
-static int bin_limit(RBinFile *bf) {
-	return bf && bf->rbin? bf->rbin->options.limit: 0;
-}
-
-static bool limit_reached(RList *list, int limit) {
-	return limit > 0 && r_list_length (list) >= limit;
-}
-
 static void free_class_tail(RVecRBinClass *classes, int kept) {
-	size_t i, len;
-	RBinClass *cls;
-
-	if (!classes) {
-		return;
-	}
-	len = RVecRBinClass_length (classes);
+	size_t i, len = RVecRBinClass_length (classes);
 	for (i = kept; i < len; i++) {
-		cls = RVecRBinClass_at (classes, i);
+		RBinClass *cls = RVecRBinClass_at (classes, i);
 		r_bin_class_fini (cls);
 	}
 	free (classes->_start);
@@ -1591,7 +1577,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	int *methods = NULL;
 	size_t methods_size = 0;
 	int sym_count = 0;
-	const int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 	// doublecheck??
 	if (!RVecRBinSymbol_empty (&dex->symbols_vec)) {
 		return false;
@@ -1753,7 +1739,7 @@ static bool symbols_vec(RBinFile *bf) {
 static RList *classes(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 	int count = 0;
 	if (RVecRBinClass_empty (&bin->classes_vec)) {
 		dex_loadcode (bf);
@@ -1790,7 +1776,7 @@ static bool already_entry(RList *entries, ut64 vaddr) {
 
 static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -1999,7 +1985,7 @@ static void fast_code_size(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	struct r_bin_dex_obj_t *bin = bf->bo->bin_obj;
 	RList *ret = NULL;
-	int limit = bin_limit (bf);
+	const int limit = bf->rbin->options.limit;
 
 	/* find the last method */
 	const size_t bs = r_buf_size (bf->buf);

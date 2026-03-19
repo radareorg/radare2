@@ -208,10 +208,10 @@ static void dotnet_parse_tilde_assemblyref(
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
-				ut16 major = *(ut16 *)row_ptr;
-				ut16 minor = *(ut16 *) (row_ptr + 2);
-				ut16 build = *(ut16 *) (row_ptr + 4);
-				ut16 revision = *(ut16 *) (row_ptr + 6);
+				ut16 major = r_read_le16 (row_ptr);
+				ut16 minor = r_read_le16 (row_ptr + 2);
+				ut16 build = r_read_le16 (row_ptr + 4);
+				ut16 revision = r_read_le16 (row_ptr + 6);
 
 				// Get assembly name from string stream
 				// Skip flags (4) and PublicKeyOrToken (blob) to get to Name
@@ -228,9 +228,9 @@ static void dotnet_parse_tilde_assemblyref(
 				}
 
 				if (index_sizes.string == 4) {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *)name_ptr);
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (name_ptr));
 				} else {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *)name_ptr);
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (name_ptr));
 				}
 
 				if (R_STR_ISNOTEMPTY (name)) {
@@ -277,6 +277,18 @@ static void dotnet_field_free(void *f) {
 		DotNetField *field = f;
 		free (field->name);
 		free (field);
+	}
+}
+
+static void dotnet_symbol_free(void *s) {
+	if (s) {
+		DotNetSymbol *sym = s;
+		free (sym->name);
+		free (sym->namespace);
+		free (sym->type);
+		r_list_free (sym->methods);
+		r_list_free (sym->fields);
+		free (sym);
 	}
 }
 
@@ -357,12 +369,12 @@ static void dotnet_parse_tilde_field(
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
-				ut16 flags = *(ut16 *)row_ptr;
+				ut16 flags = r_read_le16 (row_ptr);
 				// Get field name from string stream
 				if (index_sizes.string == 4) {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 2));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 2));
 				} else {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 2));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 2));
 				}
 
 				if (R_STR_ISNOTEMPTY (name)) {
@@ -517,15 +529,15 @@ static void dotnet_parse_tilde_typedef(
 					break;
 				}
 
-				uint32_t flags = *(ut32 *)row_ptr;
+				uint32_t flags = r_read_le32 (row_ptr);
 
 				// Get type name from string stream
 				if (index_sizes.string == 4) {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 4));
-					namespace = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 8));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 4));
+					namespace = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 8));
 				} else {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 4));
-					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 4));
+					namespace = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 6));
 				}
 
 				if (R_STR_ISNOTEMPTY (name)) {
@@ -638,15 +650,15 @@ static void dotnet_parse_tilde_methoddef(
 				if (!fits_in_pe (pe, row_ptr, row_size)) {
 					break;
 				}
-				rva = *(ut32 *)row_ptr;
-				ut16 impl_flags = *(ut16 *) (row_ptr + 4);
+				rva = r_read_le32 (row_ptr);
+				ut16 impl_flags = r_read_le16 (row_ptr + 4);
 
 				// Get method name from string stream
 				// Offset: RVA (4) + ImplFlags (2) + Flags (2) = 8
 				if (index_sizes.string == 4) {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 8));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 8));
 				} else {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 8));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 8));
 				}
 				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
@@ -697,9 +709,9 @@ static void dotnet_parse_tilde_methoddef(
 
 				// Name
 				if (index_sizes.string == 4) {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + class_index_size));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + class_index_size));
 				} else {
-					name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + class_index_size));
+					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + class_index_size));
 				}
 
 				if (R_STR_ISNOTEMPTY (name)) {
@@ -733,17 +745,17 @@ static void dotnet_parse_tilde_methoddef(
 					break;
 				}
 
-				uint32_t flags = *(ut32 *)row_ptr;
+				uint32_t flags = r_read_le32 (row_ptr);
 
 				// Get type name from string stream
 				// Offset: Flags (4)
 				char *type_name, *namespace;
 				if (index_sizes.string == 4) {
-					type_name = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 4));
-					namespace = pe_get_dotnet_string (pe, string_offset, *(ut32 *) (row_ptr + 8));
+					type_name = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 4));
+					namespace = pe_get_dotnet_string (pe, string_offset, r_read_le32 (row_ptr + 8));
 				} else {
-					type_name = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 4));
-					namespace = pe_get_dotnet_string (pe, string_offset, *(ut16 *) (row_ptr + 6));
+					type_name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 4));
+					namespace = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 6));
 				}
 
 				if (R_STR_ISNOTEMPTY (type_name)) {
@@ -758,9 +770,9 @@ static void dotnet_parse_tilde_methoddef(
 					// MethodList is at offset: Flags (4) + Name (string) + Namespace (string) + Extends (coded_idx) + FieldList (field)
 					uint8_t *method_list_ptr = row_ptr + 4 + (index_sizes.string * 2) + extends_index_size + index_sizes.field;
 					if (index_sizes.methoddef == 4) {
-						sym->size = *(ut32 *)method_list_ptr;
+						sym->size = r_read_le32 (method_list_ptr);
 					} else {
-						sym->size = *(ut16 *)method_list_ptr;
+						sym->size = r_read_le16 (method_list_ptr);
 					}
 					r_list_append (symbols, sym);
 				}
@@ -1004,11 +1016,11 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 				uint32_t name_idx = 0, ns_idx = 0;
 				char *type_name, *namespace;
 				if (index_sizes.string == 4) {
-					name_idx = *(ut32 *) (row_ptr + 4);
-					ns_idx = *(ut32 *) (row_ptr + 8);
+					name_idx = r_read_le32 (row_ptr + 4);
+					ns_idx = r_read_le32 (row_ptr + 8);
 				} else {
-					name_idx = *(ut16 *) (row_ptr + 4);
-					ns_idx = *(ut16 *) (row_ptr + 6);
+					name_idx = r_read_le16 (row_ptr + 4);
+					ns_idx = r_read_le16 (row_ptr + 6);
 				}
 				type_name = pe_get_dotnet_string (pe, string_offset, name_idx);
 				namespace = pe_get_dotnet_string (pe, string_offset, ns_idx);
@@ -1020,14 +1032,14 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 
 				uint32_t field_list_idx, method_list_idx;
 				if (index_sizes.field == 4) {
-					field_list_idx = *(ut32 *)field_list_ptr;
+					field_list_idx = r_read_le32 (field_list_ptr);
 				} else {
-					field_list_idx = *(ut16 *)field_list_ptr;
+					field_list_idx = r_read_le16 (field_list_ptr);
 				}
 				if (index_sizes.methoddef == 4) {
-					method_list_idx = *(ut32 *)method_list_ptr;
+					method_list_idx = r_read_le32 (method_list_ptr);
 				} else {
-					method_list_idx = *(ut16 *)method_list_ptr;
+					method_list_idx = r_read_le16 (method_list_ptr);
 				}
 
 				// Find next typedef's lists to know the range for this class
@@ -1038,14 +1050,14 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 					uint8_t *next_field_list_ptr = next_row_ptr + 4 + (index_sizes.string * 2) + extends_index_size;
 					uint8_t *next_method_list_ptr = next_field_list_ptr + index_sizes.field;
 					if (index_sizes.field == 4) {
-						next_field_list_idx = *(ut32 *)next_field_list_ptr;
+						next_field_list_idx = r_read_le32 (next_field_list_ptr);
 					} else {
-						next_field_list_idx = *(ut16 *)next_field_list_ptr;
+						next_field_list_idx = r_read_le16 (next_field_list_ptr);
 					}
 					if (index_sizes.methoddef == 4) {
-						next_method_list_idx = *(ut32 *)next_method_list_ptr;
+						next_method_list_idx = r_read_le32 (next_method_list_ptr);
 					} else {
-						next_method_list_idx = *(ut16 *)next_method_list_ptr;
+						next_method_list_idx = r_read_le16 (next_method_list_ptr);
 					}
 				}
 
@@ -1260,7 +1272,7 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 	int i;
 	st64 metadata_offset = -1;
 
-	symbols = r_list_newf ((RListFree)free);
+	symbols = r_list_newf ((RListFree)dotnet_symbol_free);
 	if (!symbols) {
 		return NULL;
 	}

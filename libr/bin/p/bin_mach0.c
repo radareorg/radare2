@@ -102,12 +102,18 @@ static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
 	return ptr;
 }
 
-static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-	RList *secs = sections (bf);
-	RListIter *iter;
+static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) {
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RVecSegment *secs = MACH0_(get_segments_vec) (bf, mo);
 	RBinSection *sec;
 	int i, type;
-	r_list_foreach (secs, iter, sec) {
+	R_VEC_FOREACH (secs, sec) {
+		if (sec->is_segment) {
+			continue;
+		}
+		if (limit_reached (ret, limit)) {
+			break;
+		}
 		type = -1;
 		if (strstr (sec->name, "_mod_fini_func")) {
 			type  = R_BIN_ENTRY_TYPE_FINI;
@@ -122,36 +128,38 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 			int read = r_buf_read_at (bf->buf, sec->paddr, buf, sec->size);
 			if (read < sec->size) {
 				R_LOG_ERROR ("process_constructors: cannot process section %s", sec->name);
+				free (buf);
 				continue;
 			}
 			if (bits == 32) {
 				for (i = 0; i + 3 < sec->size; i += 4) {
+					if (limit_reached (ret, limit)) {
+						break;
+					}
 					ut32 addr32 = r_read_le32 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, (ut64)addr32, type, bits);
-					if (ba) {
-						r_list_append (ret, ba);
-					}
+					r_list_append (ret, ba);
 				}
 			} else {
 				for (i = 0; i + 7 < sec->size; i += 8) {
+					if (limit_reached (ret, limit)) {
+						break;
+					}
 					ut64 addr64 = r_read_le64 (buf + i);
 					RBinAddr *ba = newEntry (sec->paddr + i, addr64, type, bits);
-					if (ba) {
-						r_list_append (ret, ba);
-					}
+					r_list_append (ret, ba);
 				}
 			}
 			free (buf);
 		}
 	}
-	r_list_free (secs);
 }
 
 static RList *entries(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 
-	RBinAddr *ptr = NULL;
 	struct addr_t *entry = NULL;
+	int limit = bf->rbin->options.limit;
 
 	RList *ret = r_list_newf (free);
 	if (!ret) {
@@ -162,22 +170,23 @@ static RList *entries(RBinFile *bf) {
 	if (!(entry = MACH0_(get_entrypoint) (bf->bo->bin_obj))) {
 		return ret;
 	}
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = entry->offset + bf->bo->boffset;
-		ptr->vaddr = entry->addr;
-		ptr->hpaddr = entry->haddr;
-		ptr->bits = bits;
-		//realign due to thumb
-		if (bits == 16) {
-			if (ptr->vaddr & 1) {
-				ptr->paddr--;
-				ptr->vaddr--;
-			}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = entry->offset + bf->bo->boffset;
+	ptr->vaddr = entry->addr;
+	ptr->hpaddr = entry->haddr;
+	ptr->bits = bits;
+	//realign due to thumb
+	if (bits == 16) {
+		if (ptr->vaddr & 1) {
+			ptr->paddr--;
+			ptr->vaddr--;
 		}
-		r_list_append (ret, ptr);
 	}
+	r_list_append (ret, ptr);
 
-	process_constructors (bf, ret, bits);
+	if (!limit_reached (ret, limit)) {
+		process_constructors (bf, ret, bits, limit);
+	}
 	// constructors
 	free (entry);
 	return ret;
@@ -204,9 +213,6 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	}
 
 	ptr = R_NEW0 (RBinImport);
-	if (!ptr) {
-		return NULL;
-	}
 
 	char *name = (char*) orig_name;
 	const char *const _objc_class = "_OBJC_CLASS_$";
@@ -311,26 +317,29 @@ static RList *libs(RBinFile *bf) {
 	if (!obj) {
 		return NULL;
 	}
+	const int limit = bf->rbin->options.limit;
+	const RVecMach0Lib *libs = MACH0_(load_libs) (obj->bin_obj);
+	if (!libs) {
+		return NULL;
+	}
 
-const RVecMach0Lib *libs = MACH0_(load_libs) (obj->bin_obj);
-if (!libs) {
-	return NULL;
-}
-
-RList *result = r_list_new ();
-char **it;
-R_VEC_FOREACH (libs, it) {
-	r_list_append (result, *it);
-}
-return result;
+	RList *result = r_list_new ();
+	if (!result) {
+		return NULL;
+	}
+	char **it;
+	R_VEC_FOREACH (libs, it) {
+		if (limit_reached (result, limit)) {
+			break;
+		}
+		r_list_append (result, *it);
+	}
+	return result;
 }
 
 static RBinInfo *info(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	if (bf->file) {
 		ret->file = strdup (bf->file);

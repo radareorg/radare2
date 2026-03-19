@@ -1755,6 +1755,10 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			goto get_classes_error;
 		}
 	}
+	if (limit > 0 && r_list_length (ret) >= limit) {
+		metadata_sections_fini (&ms);
+		return ret;
+	}
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
 	// 2s / 16s
@@ -1772,9 +1776,10 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			int aligned_types_count = atsize / 4;
 			st32 *types = read_section (bf, &ms.types, &atsize);
 			if (types) {
-				if (limit > 0 && aligned_types_count > limit) {
+				int remaining = limit > 0? limit - r_list_length (ret): 0;
+				if (limit > 0 && aligned_types_count > remaining) {
 					R_LOG_WARN ("swift class limit reached");
-					aligned_types_count = limit;
+					aligned_types_count = remaining;
 				}
 				HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
 				ut32 i;
@@ -1806,10 +1811,9 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	// end of seaching of section with name __objc_classlist
 	// start of getting information about each class in file
 	ut32 i;
-	ut32 ordinal = 0;
 	for (i = 0; i < ms.clslist.size; i += sizeof (mach0_ut)) {
 		left = ms.clslist.size - i;
-		if (limit > 0 && ordinal++ > limit) {
+		if (limit > 0 && r_list_length (ret) >= limit) {
 			R_LOG_WARN ("classes mo.limit reached");
 			break;
 		}
@@ -1864,6 +1868,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
 	R_LOG_DEBUG ("parse objc categories");
 	const size_t ptr_size = sizeof (mach0_ut);
+	const int limit = bf->rbin->options.limit;
 	if (!ms->catlist.have) {
 		return NULL;
 	}
@@ -1875,6 +1880,9 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 
 	ut32 i;
 	for (i = 0; i < ms->catlist.size; i += ptr_size) {
+		if (limit > 0 && r_list_length (ret) >= limit) {
+			break;
+		}
 		mach0_ut p;
 
 		if ((ms->catlist.size - i) < ptr_size) {
