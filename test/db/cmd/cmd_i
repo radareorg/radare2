@@ -3961,3 +3961,67 @@ paddr      vaddr       phaddr     vhaddr     type
 /usr/lib/libSystem.B.dylib
 EOF
 RUN
+
+NAME=pe listings respect bin.limit after open
+FILE=-
+CMDS=<<EOF
+e bin.relocs=false
+e bin.limit=3
+o bins/pe/base.exe
+is
+ii
+ie
+il
+EOF
+EXPECT=<<EOF
+WARN: el.limit for strings
+nth paddr      vaddr      bind   type size lib name                      demangled
+----------------------------------------------------------------------------------
+0   0x00000400 0x00401000 GLOBAL FUNC 0        __gnu_exception_handler@4
+1   0x00000550 0x00401150 GLOBAL FUNC 0        ___mingw_CRTStartup
+2   0x00000680 0x00401280 GLOBAL FUNC 0        _mainCRTStartup
+nth vaddr      bind type lib          name
+------------------------------------------
+1   ---------- NONE FUNC KERNEL32.dll AddAtomA
+2   ---------- NONE FUNC KERNEL32.dll ExitProcess
+3   ---------- NONE FUNC KERNEL32.dll FindAtomA
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000680 0x00401280 0x000000a8 ---------- program
+kernel32.dll
+msvcrt.dll
+EOF
+RUN
+
+NAME=dex listings respect bin.limit after open
+FILE=-
+CMDS=<<EOF
+e bin.relocs=false
+e bin.limit=3
+o bins/dex/HelloWorld.dex
+is
+ii
+ie
+iS
+EOF
+EXPECT=<<EOF
+nth paddr      vaddr      bind   type   size lib name                      demangled
+------------------------------------------------------------------------------------
+0   0x00000168 0x00000168 NONE   STATIC 0        LHello.sfield_localVar2:I
+1   0x00000160 0x00000160 NONE   FIELD  0        LHello.ifield_localVar:I
+2   0x00000238 0x00000238 GLOBAL FUNC   20       LHello.method.<init>()V
+nth vaddr      bind type lib name
+---------------------------------
+0   ---------- NONE FUNC     Ljava/io/PrintStream.method.println(Ljava/lang/String;)V
+1   ---------- NONE FUNC     Ljava/lang/Integer.method.<init>(I)V
+2   ---------- NONE FUNC     Ljava/lang/Integer.method.toString()Ljava/lang/String;
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x0000025c 0x0000025c ---------- ---------- program
+nth paddr        size vaddr       vsize perm flags type name
+------------------------------------------------------------
+0   0x00000000   0x70 0x00000000   0x70 -r-- 0x0   ---- header
+1   0x00000070  0x1b8 0x00000070  0x1b8 -r-- 0x0   ---- constpool
+2   0x00000228  0x134 0x00000228  0x134 -r-x 0x0   ---- code
+EOF
+RUN
