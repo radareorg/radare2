@@ -3574,16 +3574,15 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) * bin) {
 		return NULL;
 	}
 
-	if (!RVecRBinImport_reserve (&bin->imports_cache, nundefsym)) {
-		return NULL;
-	}
-
 	if (!bin->sects || !bin->symtab || !bin->symstr || !bin->indirectsyms) {
 		return NULL;
 	}
 
 	const int limit = bf->rbin->options.limit;
 	const int amount = clamp_count (nundefsym, limit);
+	if (!RVecRBinImport_reserve (&bin->imports_cache, amount)) {
+		return NULL;
+	}
 	bin->has_canary = false;
 	bin->has_retguard = -1;
 	bin->has_sanitizers = false;
@@ -3640,7 +3639,12 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 		total_size = mo->size - offset;
 		num = total_size /= sizeof (struct relocation_info);
 	}
-	struct relocation_info *info = calloc (num, sizeof (struct relocation_info));
+	const int amount = clamp_count (num, mo->limit);
+	if (amount < 1) {
+		return;
+	}
+	total_size = (ut64)amount * sizeof (struct relocation_info);
+	struct relocation_info *info = calloc (amount, sizeof (struct relocation_info));
 	if (!info) {
 		return;
 	}
@@ -3650,7 +3654,6 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 		return;
 	}
 
-	const int amount = clamp_count (num, mo->limit);
 	size_t i;
 	for (i = 0; i < amount; i++) {
 		struct relocation_info a_info = info[i];
