@@ -88,6 +88,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 	}
 
 	const int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const bool bytewise = everyByte || mode == 'i' || mode == 'e';
 	size_t bs = core->blocksize;
 	if (bs < minopsz) {
 		R_LOG_ERROR ("block size too small");
@@ -151,49 +152,49 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				ut64 len = R_MIN (15, bs - idx);
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len,
 						R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx += bytewise? 1: minopsz;
 					continue;
 				}
-				ut64 val = analop.val; // maybe chk for ptr or others?
+				const int opsz = R_MAX (minopsz, analop.size);
+				ut64 val = analop.val;
 				bool match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				if (!match) {
-					ut64 val = analop.disp;
+					val = analop.disp;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (!match) {
-					ut64 val = analop.ptr;
+					val = analop.ptr;
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
-					RAnalOp op;
 					RCoreAsmHit *hit = r_core_asm_hit_new ();
 					if (!hit) {
+						r_anal_op_fini (&analop);
 						r_list_purge (hits);
 						R_FREE (hits);
 						goto beach;
 					}
 					hit->addr = addr;
-					hit->len = analop.size;  //  idx + len - tidx;
+					hit->len = analop.size;
 					if (hit->len == -1) {
+						r_anal_op_fini (&analop);
 						r_core_asm_hit_free (hit);
 						goto beach;
 					}
-					r_asm_disassemble (core->rasm, &op, buf + addrbytes * idx,
-					      bs - addrbytes * idx);
-					hit->code = strdup (op.mnemonic);
-					r_anal_op_fini (&op);
-					idx = (matchcount)? tidx + 1: idx + 1;
+					hit->code = strdup (analop.mnemonic);
+					r_anal_op_fini (&analop);
+					idx += bytewise? 1: opsz;
 					matchcount = 0;
 					r_list_append (hits, hit);
 					continue;
 				}
 				r_anal_op_fini (&analop);
-				idx ++; // TODO: honor mininstrsz
+				idx += bytewise? 1: opsz;
 				continue;
 			} else if (mode == 'e') {
 				RAnalOp analop = {0};
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, 15, R_ARCH_OP_MASK_ESIL) < 1) {
-					idx ++; // TODO: honor mininstrsz
+					idx += bytewise? 1: minopsz;
 					continue;
 				}
 				// opsz = analop.size;
@@ -289,7 +290,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					idx += len;
 				}
 			} else {
-				if (everyByte) {
+				if (bytewise) {
 					idx = matchcount? tidx + 1: idx + 1;
 				} else {
 					idx += R_MAX (1, len);
