@@ -27,6 +27,14 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
+static int bin_limit(RBinFile *bf) {
+	return bf && bf->rbin? bf->rbin->options.limit: 0;
+}
+
+static bool limit_reached(RList *list, int limit) {
+	return limit > 0 && r_list_length (list) >= limit;
+}
+
 static ut64 get_method_attr(ut64 MA) {
 	ut64 flags = 0;
 	if (MA & R_DEX_METH_PUBLIC) {
@@ -1676,13 +1684,19 @@ static bool dex_loadcode(RBinFile *bf) {
 static bool imports_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *dex = (RBinDexObj*) bf->bo->bin_obj;
+	int limit = bin_limit (bf);
+	int count = 0;
 	if (RVecRBinImport_empty (&dex->imports_vec)) {
 		dex_loadcode (bf);
 	}
 	if (!RVecRBinImport_empty (&dex->imports_vec)) {
 		RBinImport *imp;
 		R_VEC_FOREACH (&dex->imports_vec, imp) {
+			if (limit > 0 && count >= limit) {
+				break;
+			}
 			RVecRBinImport_push_back (&bf->bo->imports_vec, imp);
+			count++;
 		}
 		// Transfer ownership: reset imports_vec without calling fini
 		free (dex->imports_vec._start);
@@ -1704,13 +1718,19 @@ static RList *trycatch(RBinFile *bf) {
 static bool symbols_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
+	int limit = bin_limit (bf);
+	int count = 0;
 	if (RVecRBinSymbol_empty (&bin->symbols_vec)) {
 		dex_loadcode (bf);
 	}
 	if (!RVecRBinSymbol_empty (&bin->symbols_vec)) {
 		RBinSymbol *sym;
 		R_VEC_FOREACH (&bin->symbols_vec, sym) {
+			if (limit > 0 && count >= limit) {
+				break;
+			}
 			RVecRBinSymbol_push_back (&bf->bo->symbols_vec, sym);
+			count++;
 		}
 		// Transfer ownership: reset symbols_vec without calling fini
 		free (bin->symbols_vec._start);
@@ -1723,6 +1743,8 @@ static bool symbols_vec(RBinFile *bf) {
 static RList *classes(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinDexObj *bin = (RBinDexObj*) bf->bo->bin_obj;
+	int limit = bin_limit (bf);
+	int count = 0;
 	if (RVecRBinClass_empty (&bin->classes_vec)) {
 		dex_loadcode (bf);
 	}
@@ -1733,9 +1755,13 @@ static RList *classes(RBinFile *bf) {
 	}
 	RBinClass *cls;
 	R_VEC_FOREACH (&bin->classes_vec, cls) {
+		if (limit > 0 && count >= limit) {
+			break;
+		}
 		RBinClass *cloned = R_NEW0 (RBinClass);
 		*cloned = *cls;
 		r_list_append (ret, cloned);
+		count++;
 	}
 	// Transfer ownership: reset classes_vec without calling fini
 	free (bin->classes_vec._start);
@@ -1756,6 +1782,7 @@ static bool already_entry(RList *entries, ut64 vaddr) {
 
 static RList *entries(RBinFile *bf) {
 	RBinAddr *ptr;
+	int limit = bin_limit (bf);
 
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -1769,6 +1796,9 @@ static RList *entries(RBinFile *bf) {
 	// STEP 1. ".onCreate(Landroid/os/Bundle;)V"
 	RBinSymbol *m;
 	R_VEC_FOREACH (&bin->symbols_vec, m) {
+		if (limit_reached (ret, limit)) {
+			break;
+		}
 		const char *oname = r_bin_name_tostring2 (m->name, 'o');
 		if (strlen (oname) > 30 && m->bind \
 				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
@@ -1784,6 +1814,9 @@ static RList *entries(RBinFile *bf) {
 	// STEP 2. ".main([Ljava/lang/String;)V"
 	if (r_list_empty (ret)) {
 		R_VEC_FOREACH (&bin->symbols_vec, m) {
+			if (limit_reached (ret, limit)) {
+				break;
+			}
 			const char *oname = r_bin_name_tostring2 (m->name, 'o');
 			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
 				if (!already_entry (ret, m->paddr)) {
@@ -1877,11 +1910,25 @@ static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Sectio
 	return ptr;
 }
 
+static RBinSection *add_limited_section(RList *ret, int limit, ut64 baddr, const char *name, Section s, int perm, char *format) {
+	if (limit_reached (ret, limit)) {
+		free (format);
+		return NULL;
+	}
+	return add_section (ret, baddr, name, s, perm, format);
+}
+
 static void add_segment(RList *ret, ut64 baddr, const char *name, Section s, int perm) {
 	RBinSection *bs = add_section (ret, baddr, name, s, perm, NULL);
 	if (bs) {
 		bs->is_segment = true;
 		bs->add = true;
+	}
+}
+
+static void add_limited_segment(RList *ret, int limit, ut64 baddr, const char *name, Section s, int perm) {
+	if (!limit_reached (ret, limit)) {
+		add_segment (ret, baddr, name, s, perm);
 	}
 }
 
@@ -1944,6 +1991,7 @@ static void fast_code_size(RBinFile *bf) {
 static RList *sections(RBinFile *bf) {
 	struct r_bin_dex_obj_t *bin = bf->bo->bin_obj;
 	RList *ret = NULL;
+	int limit = bin_limit (bf);
 
 	/* find the last method */
 	const size_t bs = r_buf_size (bf->buf);
@@ -1964,25 +2012,25 @@ static RList *sections(RBinFile *bf) {
 	const ut64 baddr = bf->bo->baddr;
 	/* sanity bound checks and section registrations */
 	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
-		add_section (ret, baddr, "header", s_head, R_PERM_R, NULL);
+		add_limited_section (ret, limit, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
-		add_section (ret, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
+		add_limited_section (ret, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
-		add_section (ret, baddr, "code", s_code, R_PERM_RX, NULL);
+		add_limited_section (ret, limit, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
 	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
-		add_section (ret, baddr, "data", s_data, R_PERM_RX, NULL);
+		add_limited_section (ret, limit, baddr, "data", s_data, R_PERM_RX, NULL);
 	}
-	add_section (ret, baddr, "file", s_file, R_PERM_R, NULL);
+	add_limited_section (ret, limit, baddr, "file", s_file, R_PERM_R, NULL);
 
 	/* add segments */
 	if (s_code.size > 0) {
-		add_segment (ret, baddr, "code", s_code, R_PERM_RX);
+		add_limited_segment (ret, limit, baddr, "code", s_code, R_PERM_RX);
 	}
-	add_segment (ret, baddr, "file", s_file, R_PERM_R);
+	add_limited_segment (ret, limit, baddr, "file", s_file, R_PERM_R);
 	return ret;
 }
 
