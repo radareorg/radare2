@@ -4878,7 +4878,7 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	}
 
 	const int limit = eo->limit;
-	if (limit > 0 && nsym > limit) {
+	if (type != R_BIN_ELF_IMPORT_SYMBOLS && limit > 0 && nsym > limit) {
 		R_LOG_WARN ("eo.limit reached for phdr symbols");
 		nsym = limit;
 	}
@@ -5199,21 +5199,26 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
 		RBinSymbol *isym = R_NEW0 (RBinSymbol);
+		bool keep_symbol = true;
 		fill_symbol (eo, symbol, isym);
-		// Store in symbols_by_ord for relocation lookups
-		if (eo->symbols_by_ord && isym->ordinal < eo->symbols_by_ord_size) {
+		const bool can_store = eo->symbols_by_ord && isym->ordinal < eo->symbols_by_ord_size;
+		if (symbol->is_imported) {
+			if (limit > 0 && count >= limit) {
+				R_LOG_WARN ("eo.limit reached for imports");
+				keep_symbol = false;
+			} else {
+				RVecRBinElfSymbol_push_back (imports, symbol);
+				count++;
+			}
+		}
+		if (can_store && keep_symbol) {
 			r_bin_symbol_free (eo->symbols_by_ord[isym->ordinal]);
 			eo->symbols_by_ord[isym->ordinal] = isym;
+		} else if (isym) {
+			r_bin_symbol_free (isym);
 		}
-		if (symbol->is_imported) {
-			if (limit > 0 && count++ > limit) {
-				R_LOG_WARN ("eo.limit reached for imports");
-				r_bin_symbol_free (isym);
-				break;
-			}
-			RVecRBinElfSymbol_push_back (imports, symbol);
-		} else if (!eo->symbols_by_ord || isym->ordinal >= eo->symbols_by_ord_size) {
-			free (isym);
+		if (!keep_symbol) {
+			break;
 		}
 	}
 
@@ -5290,7 +5295,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 	}
 	const int limit = eo->limit;
-	if (limit > 0 && nsym > limit) {
+	if (type != R_BIN_ELF_IMPORT_SYMBOLS && limit > 0 && nsym > limit) {
 		R_LOG_WARN ("eo.limit for symbols");
 		nsym = limit;
 	}

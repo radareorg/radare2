@@ -45,6 +45,44 @@ static void import_cache_cleanup(RBinObject *o) {
 	r_bin_object_import_cache_cleanup (o);
 }
 
+static int bin_limit(RBin *bin) {
+	return bin? bin->options.limit: 0;
+}
+
+static void clamp_list(RList *list, int limit) {
+	RListIter *it, *tmp;
+	void *item = NULL;
+	int idx = 0;
+
+	if (!list || limit < 1 || r_list_length (list) <= limit) {
+		return;
+	}
+	r_list_foreach_safe (list, it, tmp, item) {
+		if (idx++ >= limit) {
+			r_list_delete (list, it);
+		}
+	}
+	(void)item;
+}
+
+static void clamp_symbols_vec(RVecRBinSymbol *symbols, int limit) {
+	if (!symbols || limit < 1) {
+		return;
+	}
+	while (RVecRBinSymbol_length (symbols) > limit) {
+		RVecRBinSymbol_pop_back (symbols);
+	}
+}
+
+static void clamp_imports_vec(RVecRBinImport *imports, int limit) {
+	if (!imports || limit < 1) {
+		return;
+	}
+	while (RVecRBinImport_length (imports) > limit) {
+		RVecRBinImport_pop_back (imports);
+	}
+}
+
 static void object_delete_items(RBinObject *o) {
 	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
@@ -414,6 +452,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->entries) {
 		bo->entries = p->entries (bf);
+		clamp_list (bo->entries, bin_limit (bin));
 		REBASE_PADDR (bo, bo->entries, RBinAddr);
 	}
 	if (p->fields) {
@@ -425,6 +464,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->imports_vec) {
 		p->imports_vec (bf);
+		clamp_imports_vec (&bo->imports_vec, bin_limit (bin));
 		import_cache_cleanup (bo);
 	} else if (p->imports) {
 		r_list_free (bo->imports);
@@ -432,6 +472,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->imports) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
+		clamp_list (bo->imports, bin_limit (bin));
 		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {
@@ -447,6 +488,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				ht_pp_free (ht);
 			}
 		}
+		clamp_symbols_vec (&bo->symbols_vec, bin_limit (bin));
 	} else if (p->symbols) {
 		bo->symbols = p->symbols (bf); // 5s
 		if (bo->symbols) {
@@ -456,6 +498,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			if (bin->filter) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}
+			clamp_list (bo->symbols, bin_limit (bin));
 		}
 	}
 	if (p->info) {
@@ -466,6 +509,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->libs) {
 		bo->libs = p->libs (bf);
+		clamp_list (bo->libs, bin_limit (bin));
 	}
 	if (p->sections) {
 		// XXX sections are populated by call to size
@@ -484,6 +528,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (p->relocs) {
 			RList *l = (RList *)p->relocs (bf);
 			if (l) {
+				clamp_list (l, bin_limit (bin));
 				REBASE_PADDR (bo, l, RBinReloc);
 				bo->relocs = list2rbtree ((RList*)l);
 				l->free = NULL; // owned by tree now, via clone with proper cleanup
@@ -498,6 +543,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
+		clamp_list (bo->strings, bin_limit (bin));
 		REBASE_PADDR (bo, bo->strings, RBinString);
 	}
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
@@ -585,6 +631,7 @@ R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *bf, RBinObject *bo) {
 		RList *tmp = bo->plugin->patch_relocs (bf);
 		if (R_LIKELY (tmp)) {
 			r_crbtree_free (bo->relocs);
+			clamp_list (tmp, bin_limit (bf->rbin));
 			REBASE_PADDR (bo, tmp, RBinReloc);
 			bo->relocs = list2rbtree (tmp);
 			bo->is_reloc_patched = true;

@@ -1245,6 +1245,13 @@ static bool cb_binlimit(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	core->bin->options.limit = node->i_value;
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf && bf->bo) {
+		const ut64 baseaddr = bf->bo->baddr;
+		if (r_bin_reload (core->bin, bf->id, baseaddr)) {
+			r_core_bin_set_env (core, r_bin_cur (core->bin));
+		}
+	}
 	return true;
 }
 
@@ -4226,7 +4233,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.usextr", "true", &cb_usextr, "use extract plugins when loading files");
 	SETCB ("bin.useldr", "true", &cb_useldr, "use loader plugins when loading files");
 	SETS ("bin.types", "true", "parse and load filetype and language file header structs");
-	SETICB ("bin.limit", 0, &cb_binlimit, "stop parsing after finding N symbols/relocs/strings");
+	SETICB ("bin.limit", 0, &cb_binlimit, "stop parsing/listing after finding N entries/imports/symbols/libs/relocs/strings");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETS ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");

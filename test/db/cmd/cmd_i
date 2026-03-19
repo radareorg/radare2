@@ -3910,3 +3910,54 @@ nth paddr         size vaddr         vsize perm flags sha1, crc32               
 3   0x00028000  0x8000 0x100010000  0x8000 -r-- 0x0                                                     MAP  __LINKEDIT
 EOF
 RUN
+
+NAME=ii respects bin.limit after open (elf)
+FILE=-
+CMDS=<<EOF
+e bin.relocs=false
+e bin.limit=2
+o bins/elf/analysis/x86-helloworld-gcc
+ii
+EOF
+EXPECT=<<EOF
+WARN: eo.limit reached for imports
+WARN: eo.limit for symbols
+WARN: eo.limit for symbols
+WARN: eo.limit reached for phdr symbols
+WARN: eo.limit reached for sections
+nth vaddr      bind   type   lib name
+-------------------------------------
+1   0x080482d0 GLOBAL FUNC       puts
+2   ---------- WEAK   NOTYPE     __gmon_start__
+EOF
+RUN
+
+NAME=mach0 listings respect bin.limit after open
+FILE=-
+CMDS=<<EOF
+e bin.relocs=false
+e bin.limit=3
+o bins/mach0/hello-osx-x86_64
+is
+ii
+ie
+il
+EOF
+EXPECT=<<EOF
+WARN: symbols mo.limit reached
+nth paddr      vaddr       bind   type size lib name                demangled
+-----------------------------------------------------------------------------
+0   0x00000000 0x100000000 GLOBAL FUNC 0        __mh_execute_header
+1   0x00001060 0x100001060 GLOBAL FUNC 0        ___progname
+2   0x00000f0c 0x100000f0c GLOBAL FUNC 0        _main
+nth vaddr      bind type lib name
+---------------------------------
+0   ---------- NONE FUNC     exit
+1   ---------- NONE FUNC     puts
+2   ---------- NONE FUNC     dyld_stub_binder
+paddr      vaddr       phaddr     vhaddr     type
+-------------------------------------------------
+0x00000ed0 0x100000ed0 0x000005c0 ---------- program
+/usr/lib/libSystem.B.dylib
+EOF
+RUN
