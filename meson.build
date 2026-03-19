@@ -431,8 +431,11 @@ userconf.set('BINDINGS', r2_bindings)
 userconf.set('R2_BUILDSYSTEM', 'meson')
 userconf.set10('USE_SQSH', use_libsqsh)
 capstone_version = get_option('use_capstone_version')
+if capstone_version == 'v6'
+  capstone_version = 'next'
+endif
 userconf.set10('USE_CS4', capstone_version == 'v4')
-userconf.set10('USE_CSNEXT', capstone_version == 'v6')
+userconf.set10('USE_CSNEXT', capstone_version == 'next')
 userconf.set10('HAVE_OPENSSL', use_sys_openssl)
 userconf.set10('WANT_SSL_CRYPTO', use_ssl_crypto)
 userconf.set10('HAVE_LIBUV', use_libuv)

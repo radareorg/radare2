@@ -3,6 +3,10 @@ capstone_dep = dependency('capstone', version: '>=4.0.0', required: false)
 if capstone_dep.found() and get_option('use_sys_capstone')
   message('Use system-provided capstone library')
 else
+  capstone_version = get_option('use_capstone_version')
+  if capstone_version == 'v6'
+    capstone_version = 'next'
+  endif
   if get_option('capstone_in_builddir')
     capstone_path = join_paths(meson.current_build_dir(), 'capstone')
   else
@@ -10,7 +14,6 @@ else
   endif
 
   message('capstone path:' + capstone_path)
-  capstone_version = get_option('use_capstone_version')
   message('Use bundled capstone: ' + capstone_version)
 
   fs = import('fs')
@@ -165,4 +168,3 @@ else
 winkd_dep = declare_dependency()
 winkd_static_dep = declare_dependency()
 endif
-
