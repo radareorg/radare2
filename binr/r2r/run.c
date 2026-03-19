@@ -37,7 +37,7 @@ static int kill(int a, int b) {
 static int execvp(const char *a, char **b) {
 	return -1;
 }
-static int setpgid(int, int) {
+static int setpgid(int pid, int pgid) {
 	return -1;
 }
 #define WNOHANG 0

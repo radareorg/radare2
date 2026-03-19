@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2025 - pancake */
+/* radare - LGPL - Copyright 2014-2026 - pancake */
 
 /* this helper api is here because it depends on r_util and r_socket */
 /* we should find a better place for it. r_io? */
