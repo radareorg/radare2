@@ -2376,14 +2376,16 @@ static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets
 	RListIter *iter;
 	char *word;
 	r_list_foreach (words, iter, word) {
-		ut64 addr = r_num_math (core->num, word);
-		if (!addr || addr == UT64_MAX || core->num->nc.errors) {
-			R_LOG_ERROR ("Invalid address (%s)", word);
-			RVecSearchAddr_fini (targets);
-			ok = false;
-			break;
+		if (*word) {
+			ut64 addr = r_num_math (core->num, word);
+			if (!addr || addr == UT64_MAX || core->num->nc.errors) {
+				R_LOG_ERROR ("Invalid address (%s)", word);
+				RVecSearchAddr_fini (targets);
+				ok = false;
+				break;
+			}
+			RVecSearchAddr_push_back (targets, &addr);
 		}
-		RVecSearchAddr_push_back (targets, &addr);
 	}
 	r_list_free (words);
 	free (str);
