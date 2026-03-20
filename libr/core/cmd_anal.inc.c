@@ -8279,7 +8279,13 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 	for (at = from; at < to ; at++) {
 		r_reg_setv (core->anal->reg, pc, at);
 		// XXX do not use commands, here, just use the api
-		r_core_cmd_call (core, "aeso");
+		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
+		ut64 until_addr = UT64_MAX;
+		if (op && op->type == R_ANAL_OP_TYPE_CALL) {
+			until_addr = op->addr + op->size;
+		}
+		r_core_esil_step (core, until_addr, NULL, NULL, false);
+		r_core_cmd_call (core, "arA");
 		r_core_seek (core, at, true);
 		int delta = r_num_get (core->num, "$is");
 		if (delta < 1) {
