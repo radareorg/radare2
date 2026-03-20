@@ -530,6 +530,18 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=iz+ rejects oversized length
+FILE=malloc://1024
+CMDS=<<EOF
+w teststring @ 0x100
+iz+ 0x100 0x100000000 a
+izc
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
 NAME=regression for #9370
 FILE=bins/elf/analysis/hello-arm32
 ARGS=-m 0x10000

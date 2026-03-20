@@ -516,6 +516,10 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	if (max_len < 1) {
 		max_len = 512;
 	}
+	if (max_len > ST32_MAX) {
+		R_LOG_ERROR ("String is too large");
+		return NULL;
+	}
 	ut8 *buf = malloc (max_len);
 	if (!buf) {
 		return NULL;
