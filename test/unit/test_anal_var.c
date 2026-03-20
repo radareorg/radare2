@@ -21,27 +21,27 @@ static bool vec_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
 	return false;
 }
 
-static RAnalFunctionContextRegisterParam *find_register_param(RAnalFunctionContext *ctx, const char *reg) {
+static RAnalFcnRegArg *find_register_param(RAnalFcnContext *ctx, const char *reg) {
 	RListIter *iter;
-	RAnalFunctionContextRegisterParam *param;
-	if (!ctx || !ctx->register_params || !reg) {
+	RAnalFcnRegArg *arg;
+	if (!ctx || !ctx->reg_args || !reg) {
 		return NULL;
 	}
-	r_list_foreach (ctx->register_params, iter, param) {
-		if (param && param->reg && !strcmp (param->reg, reg)) {
-			return param;
+	r_list_foreach (ctx->reg_args, iter, arg) {
+		if (arg && arg->reg && !strcmp (arg->reg, reg)) {
+			return arg;
 		}
 	}
 	return NULL;
 }
 
-static RAnalFunctionContextStackSlot *find_stack_slot(RAnalFunctionContext *ctx, const char *name) {
+static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
 	RListIter *iter;
-	RAnalFunctionContextStackSlot *slot;
-	if (!ctx || !ctx->stack_slots || !name) {
+	RAnalFcnSlot *slot;
+	if (!ctx || !ctx->slots || !name) {
 		return NULL;
 	}
-	r_list_foreach (ctx->stack_slots, iter, slot) {
+	r_list_foreach (ctx->slots, iter, slot) {
 		if (slot && slot->name && !strcmp (slot->name, name)) {
 			return slot;
 		}
@@ -372,32 +372,32 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 	r_anal_var_set_access (anal, home_source, "rdi", 0x1010, R_PERM_R, 0);
 	r_anal_var_set_access (anal, home_slot, "rbp", 0x1010, R_PERM_W, -8);
 
-	RAnalFunctionContext *ctx = r_anal_function_context_collect (anal, fcn);
+	RAnalFcnContext *ctx = r_anal_function_context_collect (anal, fcn);
 	mu_assert_notnull (ctx, "collect typed function context");
 
-	RAnalFunctionContextRegisterParam *rdx_param = find_register_param (ctx, "rdx");
+	RAnalFcnRegArg *rdx_param = find_register_param (ctx, "rdx");
 	mu_assert_notnull (rdx_param, "sparse register arg must be collected");
 
-	RAnalFunctionContextStackSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
-	RAnalFunctionContextStackSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
-	RAnalFunctionContextStackSlot *saved_ctx = find_stack_slot (ctx, "saved_rbx");
-	RAnalFunctionContextStackSlot *arg_named_local_ctx = find_stack_slot (ctx, "arg2");
+	RAnalFcnSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
+	RAnalFcnSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
+	RAnalFcnSlot *saved_ctx = find_stack_slot (ctx, "saved_rbx");
+	RAnalFcnSlot *arg_named_local_ctx = find_stack_slot (ctx, "arg2");
 	mu_assert_notnull (home_ctx, "home slot must be present in function context");
 	mu_assert_notnull (stack_arg_ctx, "stack arg slot must be present in function context");
 	mu_assert_notnull (saved_ctx, "saved-named slot must be present in function context");
 	mu_assert_notnull (arg_named_local_ctx, "arg-named local slot must be present in function context");
 
-	mu_assert_eq (home_ctx->role, R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_PARAM_HOME, "register-home stack slot must stay param-home");
-	mu_assert_eq (home_ctx->param_index, 0, "param-home slot must use source register param index");
-	mu_assert_streq (home_ctx->param_name, "first", "param-home slot must inherit canonical signature name");
-	mu_assert_streq (home_ctx->source_reg, "rdi", "param-home slot must keep source register");
+	mu_assert_eq (home_ctx->role, R_ANAL_FCN_SLOT_HOME, "register-home stack slot must stay param-home");
+	mu_assert_eq (home_ctx->arg_index, 0, "param-home slot must use source register param index");
+	mu_assert_streq (home_ctx->arg_name, "first", "param-home slot must inherit canonical signature name");
+	mu_assert_streq (home_ctx->home_reg, "rdi", "param-home slot must keep source register");
 
-	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_STACK_ARG, "stack arg slot must stay stack-arg");
-	mu_assert_eq (stack_arg_ctx->param_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
-	mu_assert_null (stack_arg_ctx->param_name, "stack arg slot must not synthesize a signature param name without a canonical index");
+	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FCN_SLOT_ARG, "stack arg slot must stay stack-arg");
+	mu_assert_eq (stack_arg_ctx->arg_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
+	mu_assert_null (stack_arg_ctx->arg_name, "stack arg slot must not synthesize a signature param name without a canonical index");
 
-	mu_assert_eq (saved_ctx->role, R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_LOCAL, "saved-named local must not be reclassified from its spelling");
-	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FUNCTION_CONTEXT_STACK_SLOT_ROLE_LOCAL, "arg-named local must not become a param-home without a proven register home");
+	mu_assert_eq (saved_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "saved-named local must not be reclassified from its spelling");
+	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "arg-named local must not become a param-home without a proven register home");
 
 	r_anal_function_context_free (ctx);
 	r_anal_free (anal);
