@@ -564,7 +564,7 @@ R_API int r_core_block_read(RCore *core);
 R_API int r_core_block_size(RCore *core, int bsize);
 R_API int r_core_seek_size(RCore *core, ut64 addr, int bsize);
 R_API bool r_core_shift_block(RCore *core, ut64 addr, ut64 b_size, st64 dist);
-R_API void r_core_autocomplete(RCore * R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
+R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type);
 R_API void r_core_print_scrollbar(RCore *core);
 R_API void r_core_print_scrollbar_bottom(RCore *core);
 R_API void r_core_visual_prompt_input(RCore *core);

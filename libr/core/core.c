@@ -569,17 +569,10 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 	char *lpath = NULL, *dirname = NULL, *basename = NULL;
 	char *home = NULL, *filename = NULL, *p = NULL;
 	int n = 0;
-	bool is_pipe = false; // currently unused, might help complete without space after '>'
 
 	if (!path) {
 		goto out;
 	}
-#if 0
-	if (path[0] == '>') {
-		is_pipe = true;
-		path++;
-	}
-#endif
 	lpath = strdup (path);
 #if R2__WINDOWS__
 	r_str_replace_ch (lpath, '/', '\\', true);
@@ -632,7 +625,7 @@ static void autocomplete_process_path(RLineCompletion *completion, const char *s
 				continue;
 			}
 			if (!basename[0] || !strncmp (filename, basename, n)) {
-				char *tmpstring = r_str_newf ("%s%s%s", is_pipe? ">": "", dirname, filename);
+				char *tmpstring = r_str_newf ("%s%s", dirname, filename);
 
 				if (r_file_is_directory (tmpstring)) {
 					char *s = r_str_newf ("%s%s", tmpstring, R_SYS_DIR);
@@ -659,12 +652,6 @@ static void autocomplete_filename(RLineCompletion *completion, RLineBuffer *buf,
 
 	if (pipe) {
 		args = strdup (pipe);
-#if 0
-		if (pipe[1] == ' ') {
-			// currently unreachable
-			narg++;
-		}
-#endif
 	} else {
 		args = strdup (buf->data);
 	}
@@ -738,32 +725,17 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 	return ret;
 }
 
-static void ensure_autocomplete(RCore *core);
-
 #define ADDARG(x) \
 	if (!strncmp (buf->data + chr, x, strlen (buf->data + chr))) { \
 		r_line_completion_push (completion, x); \
 	}
 
-static void autocomplete_default(RCore *R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf) {
-	RCoreAutocomplete *a = NULL;
-	if (core) {
-		ensure_autocomplete (core);
-		a = core->autocomplete;
-	}
+static void autocomplete_default(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
 	int i;
-	if (a) {
-		for (i = 0; i < a->n_subcmds; i++) {
-			if (buf->data[0] == 0 || !strncmp (a->subcmds[i]->cmd, buf->data, a->subcmds[i]->length)) {
-				r_line_completion_push (completion, a->subcmds[i]->cmd);
-			}
-		}
-	} else {
-		for (i = 0; i < radare_argc && radare_argv[i]; i++) {
-			const size_t length = strlen (radare_argv[i]);
-			if (!strncmp (radare_argv[i], buf->data, length)) {
-				r_line_completion_push (completion, radare_argv[i]);
-			}
+	RCoreAutocomplete *a = core->autocomplete;
+	for (i = 0; i < a->n_subcmds; i++) {
+		if (buf->data[0] == 0 || !strncmp (a->subcmds[i]->cmd, buf->data, a->subcmds[i]->length)) {
+			r_line_completion_push (completion, a->subcmds[i]->cmd);
 		}
 	}
 }
@@ -1228,13 +1200,8 @@ static bool find_e_opts(RCore *core, RLineCompletion *completion, RLineBuffer *b
 
 static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (core && completion && buf, false);
-	ensure_autocomplete (core);
 	RCoreAutocomplete *child = NULL;
-	ensure_autocomplete (core);
 	RCoreAutocomplete *parent = core->autocomplete;
-	if (!parent) {
-		return false;
-	}
 	const char *p = buf->data;
 	if (!*p) {
 		return false;
@@ -1345,14 +1312,11 @@ static bool check_tabhelp_exceptions(const char *s) {
 	return false;
 }
 
-R_API void r_core_autocomplete(RCore *R_NULLABLE core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
+	R_RETURN_IF_FAIL (core);
 	R_RETURN_IF_FAIL (completion);
 	R_RETURN_IF_FAIL (buf);
 	R_RETURN_IF_FAIL (buf->data);
-	if (!core) {
-		autocomplete_default (core, completion, buf);
-		return;
-	}
 	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
 	if (!tabhelp_exception && r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
@@ -2295,13 +2259,6 @@ static void __init_autocomplete(RCore *core) {
 	}
 }
 
-static void ensure_autocomplete(RCore *core) {
-	R_RETURN_IF_FAIL (core);
-	if (!core->autocomplete) {
-		__init_autocomplete (core);
-	}
-}
-
 static const char *colorfor_cb(void *user, ut64 addr, ut8 ch, bool verbose) {
 	return r_core_anal_optype_colorfor ((RCore *)user, addr, ch, verbose);
 }
@@ -2394,8 +2351,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 R_API void r_core_autocomplete_reload(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	r_core_autocomplete_free (core->autocomplete);
-	core->autocomplete = NULL;
-	ensure_autocomplete (core);
+	__init_autocomplete (core);
 }
 
 R_API RFlagItem *r_core_flag_get_by_spaces(RFlag *f, bool prionospace, ut64 off) {
@@ -2720,6 +2676,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
+	__init_autocomplete (core);
 	r_core_plugin_init (core->rcmd);
 	r_core_loadlibs_init (core);
 	// r_core_loadlibs (core);
