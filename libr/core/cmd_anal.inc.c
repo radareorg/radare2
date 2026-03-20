@@ -8254,6 +8254,8 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 }
 
 static void r_anal_aefa(RCore *core, const char *arg) {
+	const char *pc = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
+	R_RETURN_IF_FAIL (pc);
 	ut64 to = r_num_math (core->num, arg);
 	ut64 at, from = core->addr;
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, to, -1);
@@ -8275,8 +8277,8 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 	}
 	ut64 off = core->addr;
 	for (at = from; at < to ; at++) {
+		r_reg_setv (core->anal->reg, pc, at);
 		// XXX do not use commands, here, just use the api
-		r_core_cmdf (core, "aepc 0x%08"PFMT64x, at);
 		r_core_cmd_call (core, "aeso");
 		r_core_seek (core, at, true);
 		int delta = r_num_get (core->num, "$is");
