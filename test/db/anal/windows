@@ -1,0 +1,31 @@
+NAME=winargs
+FILE=bins/pe/dhcpssvc.dll
+CMDS=<<EOF
+0x7ff5d498170
+af
+pdf
+EOF
+EXPECT=<<EOF
+/ 407: entry0 (int64_t arg1, int64_t arg2, int64_t arg3);
+| `- args(rcx, rdx, r8) vars(4:sp[0x10..0x160])
+|       :   0x7ff5d498170      48895c2408     mov qword [var_8h], rbx
+|       :   0x7ff5d498175      4889742410     mov qword [var_10h], rsi
+|       :   0x7ff5d49817a      57             push rdi
+|       :   0x7ff5d49817b      4883ec20       sub rsp, 0x20
+|       :   0x7ff5d49817f      498bf8         mov rdi, r8              ; arg3
+|       :   0x7ff5d498182      8bda           mov ebx, edx             ; arg2
+|       :   0x7ff5d498184      488bf1         mov rsi, rcx             ; arg1
+|       :   0x7ff5d498187      83fa01         cmp edx, 1               ; 1 ; arg2
+|      ,==< 0x7ff5d49818a      7505           jne 0x7ff5d498191
+|      |:   0x7ff5d49818c      e877020000     call 0x7ff5d498408
+|      `--> 0x7ff5d498191      4c8bc7         mov r8, rdi
+|       :   0x7ff5d498194      8bd3           mov edx, ebx
+|       :   0x7ff5d498196      488bce         mov rcx, rsi
+|       :   0x7ff5d498199      488b5c2430     mov rbx, qword [var_8h]
+|       :   0x7ff5d49819e      488b742438     mov rsi, qword [var_10h]
+|       :   0x7ff5d4981a3      4883c420       add rsp, 0x20
+|       :   0x7ff5d4981a7      5f             pop rdi
+|       `=< 0x7ff5d4981a8      e9cffdffff     jmp 0x7ff5d497f7c
+..
+EOF
+RUN
