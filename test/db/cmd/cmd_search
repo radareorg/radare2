@@ -30,6 +30,21 @@ hit0_0
 EOF
 RUN
 
+NAME=/ra any refs
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d3d69000000 @ 0x10
+aa
+/ra
+axtq @ 0x80
+EOF
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
 NAME=search esil json
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF

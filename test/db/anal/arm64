@@ -236,6 +236,93 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=siguzas arm64 multi /r
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e search.in=io.map
+s $S
+b $SS
+a:six
+/r    sym.imp.objc_autoreleasePoolPush  sym.imp.objc_autoreleasePoolPop
+EOF
+EXPECT=<<EOF
+(nofunc) 0x100010f94 [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x1000a03f8 [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x1000addc4 [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x1000adfa8 [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x1000ae128 [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x1000c699c [CALL] bl sym.imp.objc_autoreleasePoolPush
+(nofunc) 0x100010fe4 [CALL] bl sym.imp.objc_autoreleasePoolPop
+(nofunc) 0x1000a04a8 [CALL] b sym.imp.objc_autoreleasePoolPop
+(nofunc) 0x1000adec8 [CALL] b sym.imp.objc_autoreleasePoolPop
+(nofunc) 0x1000ae0f8 [CALL] bl sym.imp.objc_autoreleasePoolPop
+(nofunc) 0x1000ae1ec [CALL] b sym.imp.objc_autoreleasePoolPop
+(nofunc) 0x1000c6a40 [CALL] bl sym.imp.objc_autoreleasePoolPop
+EOF
+RUN
+
+NAME=siguzas arm64 multi /rc
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e search.in=io.map
+s $S
+b $SS
+a:six
+/rc sym.imp.objc_autoreleasePoolPush sym.imp.objc_autoreleasePoolPop
+axtq sym.imp.objc_autoreleasePoolPush
+?e ---
+axtq sym.imp.objc_autoreleasePoolPop
+EOF
+EXPECT=<<EOF
+0x100010f94
+0x1000a03f8
+0x1000addc4
+0x1000adfa8
+0x1000ae128
+0x1000c699c
+---
+0x100010fe4
+0x1000a04a8
+0x1000adec8
+0x1000ae0f8
+0x1000ae1ec
+0x1000c6a40
+EOF
+RUN
+
+NAME=siguzas arm64 multi /re
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e search.in=io.map
+s $S
+b $SS
+a:six
+ax-*
+/re    sym.imp.objc_autoreleasePoolPush  sym.imp.objc_autoreleasePoolPop
+axtq sym.imp.objc_autoreleasePoolPush
+?e ---
+axtq sym.imp.objc_autoreleasePoolPop
+?e ===
+axtq sym.imp.SCNetworkReachabilityGetFlags
+EOF
+EXPECT=<<EOF
+0x100010f94
+0x1000a03f8
+0x1000addc4
+0x1000adfa8
+0x1000ae128
+0x1000c699c
+---
+0x100010fe4
+0x1000a04a8
+0x1000adec8
+0x1000ae0f8
+0x1000ae1ec
+0x1000c6a40
+===
+EOF
+RUN
+
 NAME=siguzas arm64 all xrefs
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
@@ -56115,4 +56202,3 @@ EXPECT=<<EOF
 0x1000060e0
 EOF
 RUN
-
