@@ -30,6 +30,21 @@ hit0_0
 EOF
 RUN
 
+NAME=/ra any refs
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 488d3d69000000 @ 0x10
+aa
+/ra
+axtq @ 0x80
+EOF
+EXPECT=<<EOF
+0x10
+EOF
+RUN
+
 NAME=search esil json
 FILE=bins/elf/ioli/crackme0x00
 CMDS=<<EOF
@@ -1928,10 +1943,10 @@ CMDS=<<EOF
 /s*
 EOF
 EXPECT=<<EOF
-f entropy_section_0 0x00000100 0x08049f0c
-f entropy_section_1 0x00000100 0x0804a00c
-f entropy_section_2 0x00000100 0x08048000
-f entropy_section_3 0x00000200 0x08048100
+'f entropy_section_0 0x00000100 0x08049f0c
+'f entropy_section_1 0x00000100 0x0804a00c
+'f entropy_section_2 0x00000100 0x08048000
+'f entropy_section_3 0x00000200 0x08048100
 EOF
 RUN
 
