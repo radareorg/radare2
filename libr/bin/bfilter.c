@@ -513,7 +513,7 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	if (!bo->strings_db) {
 		bo->strings_db = ht_up_new0 ();
 	}
-	if (max_len < 1) {
+	if (max_len < 1 || max_len > 512) {
 		max_len = 512;
 	}
 	ut8 *buf = malloc (max_len);
