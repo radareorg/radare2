@@ -1593,6 +1593,21 @@ static bool is_null_delay_import_directory(const PE_(image_delay_import_director
 		!dir->TimeStamp;
 }
 
+static ut64 get_delay_import_directory_last(RBinPEObj *pe) {
+	ut64 off = pe->delay_import_directory_offset;
+	ut64 size = pe->delay_import_directory_size;
+	if (!off || off >= pe->size || size < sizeof (PE_(image_delay_import_directory))) {
+		return 0;
+	}
+	ut64 maxsize = pe->size - off;
+	if (size > maxsize) {
+		R_LOG_WARN ("read (delay import directory too big)");
+		size = maxsize;
+		pe->delay_import_directory_size = size;
+	}
+	return off + size;
+}
+
 static int bin_pe_init_imports(RBinPEObj *pe) {
 	PE_(image_data_directory) *data_dir_import = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	PE_(image_data_directory) *data_dir_delay_import = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
@@ -1630,11 +1645,6 @@ static int bin_pe_init_imports(RBinPEObj *pe) {
 	maxidsz -= import_dir_offset;
 	if (maxidsz < 0) {
 		maxidsz = 0;
-	}
-	int maxdidsz = R_MIN ((PE_DWord)pe->size, delay_import_dir_offset + delay_import_dir_size);
-	maxdidsz -= delay_import_dir_offset;
-	if (maxdidsz < 0) {
-		maxdidsz = 0;
 	}
 	// int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
@@ -1676,45 +1686,42 @@ static int bin_pe_init_imports(RBinPEObj *pe) {
 	}
 
 	indx = 0;
-	if (r_buf_size (pe->b) > 0) {
-		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32)r_buf_size (pe->b))) {
-			if (delay_import_dir_size < 1 || delay_import_dir_size > maxdidsz) {
-				R_LOG_WARN ("Invalid delay import directory size: 0x%x is now 0x%x", delay_import_dir_size, maxdidsz);
-				delay_import_dir_size = maxdidsz;
-			}
-			pe->delay_import_directory_offset = delay_import_dir_offset;
-			pe->delay_import_directory_size = delay_import_dir_size;
-			do {
-				new_delay_import_dir = (PE_(image_delay_import_directory) *)realloc (
-					delay_import_dir, (indx + 1) * delay_import_size);
-				if (!new_delay_import_dir) {
-					R_LOG_ERROR ("malloc (delay import directory)");
-					free (delay_import_dir);
-					return false;
-				}
-				delay_import_dir = new_delay_import_dir;
-				curr_delay_import_dir = delay_import_dir + indx;
-				rr = read_image_delay_import_directory (pe->b, delay_import_dir_offset + indx * delay_import_size,
-					curr_delay_import_dir);
-				if (rr != delay_import_size) {
-					R_LOG_WARN ("read (delay import directory)");
-					goto fail;
-				}
-				if (((2 + indx) * delay_import_size) > delay_import_dir_size) {
-					break;
-				}
-				indx++;
-			} while (!is_null_delay_import_directory (curr_delay_import_dir));
-			pe->delay_import_directory = delay_import_dir;
+	if (delay_import_dir_offset && delay_import_dir_offset < pe->size) {
+		int maxdidsz = pe->size - delay_import_dir_offset;
+		if (delay_import_dir_size < 1 || delay_import_dir_size > maxdidsz) {
+			R_LOG_WARN ("Invalid delay import directory size: 0x%x is now 0x%x", delay_import_dir_size, maxdidsz);
+			delay_import_dir_size = maxdidsz;
 		}
+		pe->delay_import_directory_offset = delay_import_dir_offset;
+		pe->delay_import_directory_size = delay_import_dir_size;
+		do {
+			new_delay_import_dir = (PE_(image_delay_import_directory) *)realloc (
+				delay_import_dir, (indx + 1) * delay_import_size);
+			if (!new_delay_import_dir) {
+				R_LOG_ERROR ("malloc (delay import directory)");
+				free (delay_import_dir);
+				return false;
+			}
+			delay_import_dir = new_delay_import_dir;
+			curr_delay_import_dir = delay_import_dir + indx;
+			rr = read_image_delay_import_directory (pe->b, delay_import_dir_offset + indx * delay_import_size,
+				curr_delay_import_dir);
+			if (rr != delay_import_size) {
+				R_LOG_WARN ("read (delay import directory)");
+				R_FREE (import_dir);
+				pe->import_directory = import_dir;
+				free (delay_import_dir);
+				return false;
+			}
+			if (((2 + indx) * delay_import_size) > delay_import_dir_size) {
+				break;
+			}
+			indx++;
+		} while (!is_null_delay_import_directory (curr_delay_import_dir));
+		pe->delay_import_directory = delay_import_dir;
 	}
 
 	return true;
-fail:
-	R_FREE (import_dir);
-	pe->import_directory = import_dir;
-	free (delay_import_dir);
-	return false;
 }
 
 static int read_image_export_directory(RBuffer *b, ut64 addr, PE_(image_export_directory) * export_dir) {
@@ -3987,16 +3994,8 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 	}
 	off = pe->delay_import_directory_offset;
 	if (off < pe->size && off > 0) {
-		ut64 last;
 		int didi = 0;
-		if (pe->delay_import_directory_size < 1) {
-			goto beach;
-		}
-		if (off + pe->delay_import_directory_size > pe->size) {
-			R_LOG_WARN ("read (delay import directory too big)");
-			pe->delay_import_directory_size = pe->size - pe->delay_import_directory_offset;
-		}
-		last = off + pe->delay_import_directory_size;
+		ut64 last = get_delay_import_directory_last (pe);
 		if (off + sizeof (PE_(image_delay_import_directory)) > last) {
 			goto beach;
 		}
@@ -4121,15 +4120,7 @@ struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 	off = pe->delay_import_directory_offset;
 	if (off < pe->size && off > 0) {
 		ut64 did = 0;
-		ut64 last;
-		if (pe->delay_import_directory_size < 1) {
-			goto out_error;
-		}
-		if (off + pe->delay_import_directory_size > pe->size) {
-			R_LOG_WARN ("read (delay import directory too big)");
-			pe->delay_import_directory_size = pe->size - pe->delay_import_directory_offset;
-		}
-		last = off + pe->delay_import_directory_size;
+		ut64 last = get_delay_import_directory_last (pe);
 		if (off + sizeof (PE_(image_delay_import_directory)) > last) {
 			goto out_error;
 		}
