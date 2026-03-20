@@ -2312,7 +2312,7 @@ beach:
 	r_reg_arena_pop (core->anal->reg);
 }
 
-static void print_ref_search_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
+static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
 	ut8 buf[32];
 	if (from > ref->addr || to < ref->addr) {
 		return;
@@ -2353,13 +2353,13 @@ static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, struct 
 	if (xrefs) {
 		RAnalRef *ref;
 		R_VEC_FOREACH (xrefs, ref) {
-			print_ref_search_hit (core, ref, from, to, param);
+			cb_ref_hit (core, ref, from, to, param);
 		}
 		RVecAnalRef_free (xrefs);
 	}
 }
 
-static bool ref_search_targets_new(RCore *core, const char *args, RVecSearchAddr *targets) {
+static bool parse_targets(RCore *core, const char *args, RVecSearchAddr *targets) {
 	R_RETURN_VAL_IF_FAIL (core && targets, false);
 	RVecSearchAddr_init (targets);
 	char *str = r_str_trim_dup (args);
@@ -2390,7 +2390,7 @@ static bool ref_search_targets_new(RCore *core, const char *args, RVecSearchAddr
 	return ok;
 }
 
-static void do_ref_search_targets(RCore *core, int mode, bool print_hits, struct search_parameters *param, const RVecSearchAddr *targets) {
+static void refsearch_targets(RCore *core, int mode, bool print_hits, struct search_parameters *param, const RVecSearchAddr *targets) {
 	const size_t target_count = RVecSearchAddr_length (targets);
 	ut64 scan_addr = UT64_MAX;
 	if (target_count == 1) {
@@ -2421,8 +2421,8 @@ static void do_ref_search_targets(RCore *core, int mode, bool print_hits, struct
 	}
 }
 
-static void do_ref_search_esil_targets(RCore *core, struct search_parameters *param, const RVecSearchAddr *targets) {
-	ut64 curseek = core->addr;
+static void esilsearch_targets(RCore *core, struct search_parameters *param, const RVecSearchAddr *targets) {
+	const ut64 curseek = core->addr;
 	RListIter *iter;
 	RIOMap *map;
 	const size_t target_count = RVecSearchAddr_length (targets);
@@ -4658,8 +4658,8 @@ reread:
 		switch (input[1]) {
 		case 'a': // "/ra"
 		case 'c': // "/rc"
-			if (ref_search_targets_new (core, args, &targets)) {
-				do_ref_search_targets (core, input[1], false, &param, &targets);
+			if (parse_targets (core, args, &targets)) {
+				refsearch_targets (core, input[1], false, &param, &targets);
 				RVecSearchAddr_fini (&targets);
 			}
 			break;
@@ -4671,15 +4671,15 @@ reread:
 				}
 				break;
 			}
-			if (ref_search_targets_new (core, args, &targets)) {
-				do_ref_search_esil_targets (core, &param, &targets);
+			if (parse_targets (core, args, &targets)) {
+				esilsearch_targets (core, &param, &targets);
 				RVecSearchAddr_fini (&targets);
 			}
 			break;
 		case ' ': // "/r $$"
 		case 0: // "/r"
-			if (ref_search_targets_new (core, args, &targets)) {
-				do_ref_search_targets (core, 0, true, &param, &targets);
+			if (parse_targets (core, args, &targets)) {
+				refsearch_targets (core, 0, true, &param, &targets);
 				RVecSearchAddr_fini (&targets);
 			}
 			break;
