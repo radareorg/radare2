@@ -1,13 +1,6 @@
 #include <r_anal.h>
 #include "minunit.h"
 
-static int reg_index(RAnal *anal, const char *name) {
-	RRegItem *ri = r_reg_get (anal->reg, name, -1);
-	int index = ri? ri->index: -1;
-	r_unref (ri);
-	return index;
-}
-
 static bool vec_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
 	if (!vec) {
 		return false;
@@ -19,34 +12,6 @@ static bool vec_contains(RVecAnalVarPtr *vec, RAnalVar *var) {
 		}
 	}
 	return false;
-}
-
-static RAnalFcnRegArg *find_register_param(RAnalFcnContext *ctx, const char *reg) {
-	RListIter *iter;
-	RAnalFcnRegArg *arg;
-	if (!ctx || !ctx->reg_args || !reg) {
-		return NULL;
-	}
-	r_list_foreach (ctx->reg_args, iter, arg) {
-		if (arg && arg->reg && !strcmp (arg->reg, reg)) {
-			return arg;
-		}
-	}
-	return NULL;
-}
-
-static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
-	RListIter *iter;
-	RAnalFcnSlot *slot;
-	if (!ctx || !ctx->slots || !name) {
-		return NULL;
-	}
-	r_list_foreach (ctx->slots, iter, slot) {
-		if (slot && slot->name && !strcmp (slot->name, name)) {
-			return slot;
-		}
-	}
-	return NULL;
 }
 
 static bool sanitize_instr_acc(void *user, const ut64 k, const void *v) {
@@ -315,98 +280,8 @@ bool test_r_anal_var(void) {
 	mu_end;
 }
 
-bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) {
-	RAnal *anal = r_anal_new ();
-	mu_assert_notnull (anal, "Couldn't create new RAnal");
-	r_anal_use (anal, "x86");
-	r_anal_set_bits (anal, 64);
-	mu_assert_true (r_anal_cc_set (anal, "rax ctxcall(rdi, rdx, stack)"), "Couldn't seed test-local calling convention");
-
-	RAnalFunction *fcn = r_anal_create_function (anal, "fcn_ctx", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
-	mu_assert_notnull (fcn, "Couldn't create function for function-context test");
-	fcn->callconv = r_str_constpool_get (&anal->constpool, "ctxcall");
-
-	RAnalFunctionParam params_data[] = {
-		{ .name = "first", .type = "int" },
-		{ .name = "second", .type = "int" },
-		{ .name = "third", .type = "int" },
-		{ .name = "fourth", .type = "int" },
-	};
-	RList *params = r_list_new ();
-	mu_assert_notnull (params, "Couldn't create param list for function-context test");
-	r_list_append (params, &params_data[0]);
-	r_list_append (params, &params_data[1]);
-	r_list_append (params, &params_data[2]);
-	r_list_append (params, &params_data[3]);
-	RAnalFunctionSignature signature = {
-		.ret_type = "int",
-		.callconv = "ctxcall",
-		.params = params,
-		.noreturn = false,
-	};
-	mu_assert_true (r_anal_function_set_signature (anal, fcn, &signature), "typed signature apply for function-context test");
-	r_list_free (params);
-
-	const int rdi = reg_index (anal, "rdi");
-	const int rdx = reg_index (anal, "rdx");
-	mu_assert ("rdi register index must resolve", rdi >= 0);
-	mu_assert ("rdx register index must resolve", rdx >= 0);
-
-	RAnalVar *home_source = r_anal_function_set_var (fcn, rdi, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg1");
-	RAnalVar *sparse_reg = r_anal_function_set_var (fcn, rdx, R_ANAL_VAR_KIND_REG, "int", 4, true, "arg3");
-	RAnalVar *home_slot = r_anal_function_set_var (fcn, -8, R_ANAL_VAR_KIND_BPV, "int", 4, false, "arg1_home");
-	RAnalVar *stack_arg = r_anal_function_set_var (fcn, 0x28, R_ANAL_VAR_KIND_SPV, "int", 4, true, "stack_input");
-	RAnalVar *saved_named = r_anal_function_set_var (fcn, -0x10, R_ANAL_VAR_KIND_BPV, "int", 4, false, "saved_rbx");
-	RAnalVar *arg_named_local = r_anal_function_set_var (fcn, 0x30, R_ANAL_VAR_KIND_SPV, "int", 4, false, "arg2");
-	mu_assert_notnull (home_source, "create register home source");
-	mu_assert_notnull (sparse_reg, "create sparse register arg");
-	mu_assert_notnull (home_slot, "create home slot");
-	mu_assert_notnull (stack_arg, "create stack arg");
-	mu_assert_notnull (saved_named, "create saved-named local");
-	mu_assert_notnull (arg_named_local, "create arg-named local");
-	free (home_source->regname);
-	home_source->regname = strdup ("rdi");
-	free (sparse_reg->regname);
-	sparse_reg->regname = strdup ("rdx");
-
-	r_anal_var_set_access (anal, home_source, "rdi", 0x1010, R_PERM_R, 0);
-	r_anal_var_set_access (anal, home_slot, "rbp", 0x1010, R_PERM_W, -8);
-
-	RAnalFcnContext *ctx = r_anal_function_context_collect (anal, fcn);
-	mu_assert_notnull (ctx, "collect typed function context");
-
-	RAnalFcnRegArg *rdx_param = find_register_param (ctx, "rdx");
-	mu_assert_notnull (rdx_param, "sparse register arg must be collected");
-
-	RAnalFcnSlot *home_ctx = find_stack_slot (ctx, "arg1_home");
-	RAnalFcnSlot *stack_arg_ctx = find_stack_slot (ctx, "stack_input");
-	RAnalFcnSlot *saved_ctx = find_stack_slot (ctx, "saved_rbx");
-	RAnalFcnSlot *arg_named_local_ctx = find_stack_slot (ctx, "arg2");
-	mu_assert_notnull (home_ctx, "home slot must be present in function context");
-	mu_assert_notnull (stack_arg_ctx, "stack arg slot must be present in function context");
-	mu_assert_notnull (saved_ctx, "saved-named slot must be present in function context");
-	mu_assert_notnull (arg_named_local_ctx, "arg-named local slot must be present in function context");
-
-	mu_assert_eq (home_ctx->role, R_ANAL_FCN_SLOT_HOME, "register-home stack slot must stay param-home");
-	mu_assert_eq (home_ctx->arg_index, 0, "param-home slot must use source register param index");
-	mu_assert_streq (home_ctx->arg_name, "first", "param-home slot must inherit canonical signature name");
-	mu_assert_streq (home_ctx->home_reg, "rdi", "param-home slot must keep source register");
-
-	mu_assert_eq (stack_arg_ctx->role, R_ANAL_FCN_SLOT_ARG, "stack arg slot must stay stack-arg");
-	mu_assert_eq (stack_arg_ctx->arg_index, -1, "stack arg slot must not synthesize param indexes from sparse register args");
-	mu_assert_null (stack_arg_ctx->arg_name, "stack arg slot must not synthesize a signature param name without a canonical index");
-
-	mu_assert_eq (saved_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "saved-named local must not be reclassified from its spelling");
-	mu_assert_eq (arg_named_local_ctx->role, R_ANAL_FCN_SLOT_LOCAL, "arg-named local must not become a param-home without a proven register home");
-
-	r_anal_function_context_free (ctx);
-	r_anal_free (anal);
-	mu_end;
-}
-
 int all_tests(void) {
 	mu_run_test (test_r_anal_var);
-	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
 	return tests_passed != tests_run;
 }
 

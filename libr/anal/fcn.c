@@ -2338,23 +2338,53 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 	return name;
 }
 
+static char *function_signature_try_type_name(Sdb *types, const char *candidate) {
+	char *name = NULL;
+
+	R_RETURN_VAL_IF_FAIL (types && candidate && *candidate, NULL);
+	name = r_type_func_name (types, candidate);
+	if (name && !strcmp (r_str_get_fail (sdb_const_get (types, name, 0), ""), "func")) {
+		return name;
+	}
+	free (name);
+	if (!strcmp (r_str_get_fail (sdb_const_get (types, candidate, 0), ""), "func")) {
+		return strdup (candidate);
+	}
+	return NULL;
+}
+
 static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 	char *name;
+	const char *basename;
 	const char *lookup_name;
 
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
 	lookup_name = function_signature_lookup_name (anal, fcn);
-	name = r_type_func_name (anal->sdb_types, lookup_name);
-	if (name && !strcmp (r_str_get_fail (sdb_const_get (anal->sdb_types, name, 0), ""), "func")) {
+	name = function_signature_try_type_name (anal->sdb_types, lookup_name);
+	if (name) {
 		return name;
 	}
-	free (name);
 	if (lookup_name != fcn->name) {
-		name = r_type_func_name (anal->sdb_types, fcn->name);
-		if (name && !strcmp (r_str_get_fail (sdb_const_get (anal->sdb_types, name, 0), ""), "func")) {
+		name = function_signature_try_type_name (anal->sdb_types, fcn->name);
+		if (name) {
 			return name;
 		}
-		free (name);
+	}
+	basename = r_str_rchr (lookup_name, NULL, '.');
+	if (basename && basename[1]) {
+		name = function_signature_try_type_name (anal->sdb_types, basename + 1);
+		if (name) {
+			return name;
+		}
+	}
+	if (lookup_name != fcn->name) {
+		basename = r_str_rchr (fcn->name, NULL, '.');
+		if (basename && basename[1]) {
+			name = function_signature_try_type_name (anal->sdb_types, basename + 1);
+			if (name) {
+				return name;
+			}
+		}
 	}
 	return strdup (lookup_name);
 }
@@ -2655,6 +2685,24 @@ beach:
 	free (type_name);
 	r_anal_function_signature_free (signature);
 	return NULL;
+}
+
+R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
+	char *res = NULL;
+	char *type_name;
+
+	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->sdb_types, NULL);
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
+	if (!signature) {
+		return NULL;
+	}
+	type_name = function_signature_type_name (fcn->anal, fcn);
+	if (type_name) {
+		res = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+		free (type_name);
+	}
+	r_anal_function_signature_free (signature);
+	return res;
 }
 
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature) {

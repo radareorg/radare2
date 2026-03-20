@@ -411,21 +411,6 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 	return (traced * 100) / total;
 }
 
-R_API char *r_anal_function_get_signature_string(RAnalFunction *function) {
-	RAnalFunctionSignature *signature;
-	char *res = NULL;
-
-	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
-	signature = r_anal_function_get_signature (function);
-	if (!signature) {
-		return NULL;
-	}
-	res = signature->signature;
-	signature->signature = NULL;
-	r_anal_function_signature_free (signature);
-	return res;
-}
-
 static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
 	if (!arg) {
 		return;
@@ -448,24 +433,7 @@ static void fcn_context_slot_free(RAnalFcnSlot *slot) {
 	free (slot);
 }
 
-static const RAnalFunctionParam *fcn_context_param_at(const RAnalFunctionSignature *signature, int index) {
-	RListIter *iter;
-	RAnalFunctionParam *param;
-	int i = 0;
-
-	if (!signature || !signature->params || index < 0) {
-		return NULL;
-	}
-	r_list_foreach (signature->params, iter, param) {
-		if (i == index) {
-			return param;
-		}
-		i++;
-	}
-	return NULL;
-}
-
-static bool fcn_context_is_default_arg_name(const char *name) {
+static bool is_default_arg_name(const char *name) {
 	if (!name || !r_str_startswith (name, "arg") || !name[3]) {
 		return false;
 	}
@@ -479,9 +447,6 @@ static bool fcn_context_is_default_arg_name(const char *name) {
 }
 
 static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
-	if (!anal || !var) {
-		return NULL;
-	}
 	if (R_STR_ISNOTEMPTY (var->regname)) {
 		return strdup (var->regname);
 	}
@@ -512,16 +477,15 @@ static RAnalVar *fcn_context_find_register_home_source(RList *rvars, RAnalVar *s
 	RListIter *iter;
 	RAnalVar *var;
 
-	if (!rvars || !slot) {
+	if (!rvars) {
 		return NULL;
 	}
 	r_list_foreach (rvars, iter, var) {
-		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
-			continue;
-		}
-		RAnalVar *dst = r_anal_var_get_dst_var (var);
-		if (dst == slot) {
-			return var;
+		if (var && var->isarg && var->kind == R_ANAL_VAR_KIND_REG) {
+			RAnalVar *dst = r_anal_var_get_dst_var (var);
+			if (dst == slot) {
+				return var;
+			}
 		}
 	}
 	return NULL;
@@ -542,18 +506,15 @@ static RAnalFcnSlotRole fcn_context_classify_slot(const RAnalVar *var, RAnalVar 
 }
 
 static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnContext *ctx, RAnalVar *var) {
-	const RAnalFunctionParam *signature_param = NULL;
-	RAnalFcnRegArg *arg = NULL;
+	RAnalFcnRegArg *arg = R_NEW0 (RAnalFcnRegArg);
 	const int arg_index = r_anal_var_get_argnum (var);
+	const RAnalFunctionParam *signature_param = (ctx->signature && arg_index >= 0)
+		? r_list_get_n (ctx->signature->params, arg_index)
+		: NULL;
 
 	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
-	arg = R_NEW0 (RAnalFcnRegArg);
-	if (!arg) {
-		return NULL;
-	}
 	arg->arg_index = arg_index;
-	signature_param = fcn_context_param_at (ctx->signature, arg_index);
-	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && fcn_context_is_default_arg_name (var->name)) {
+	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && is_default_arg_name (var->name)) {
 		arg->name = strdup (signature_param->name);
 	} else if (R_STR_ISNOTEMPTY (var->name)) {
 		arg->name = strdup (var->name);
@@ -575,14 +536,10 @@ static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnCo
 
 static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext *ctx, RAnalFunction *fcn, RAnalVar *var, RAnalVar *home_source) {
 	const RAnalFunctionParam *signature_param = NULL;
-	RAnalFcnSlot *slot = NULL;
+	RAnalFcnSlot *slot = R_NEW0 (RAnalFcnSlot);
 	int arg_index = -1;
 
 	R_RETURN_VAL_IF_FAIL (anal && ctx && fcn && var, NULL);
-	slot = R_NEW0 (RAnalFcnSlot);
-	if (!slot) {
-		return NULL;
-	}
 	if (R_STR_ISNOTEMPTY (var->name)) {
 		slot->name = strdup (var->name);
 	}
@@ -595,7 +552,7 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 
 	if (home_source) {
 		arg_index = r_anal_var_get_argnum (home_source);
-		signature_param = fcn_context_param_at (ctx->signature, arg_index);
+		signature_param = (ctx->signature && arg_index >= 0)? r_list_get_n (ctx->signature->params, arg_index): NULL;
 		slot->arg_index = arg_index;
 		slot->home_reg = fcn_context_dup_var_regname (anal, home_source);
 		if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
@@ -610,7 +567,7 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 		arg_index = r_anal_var_get_argnum (var);
 		slot->arg_index = arg_index;
 		if (arg_index >= 0) {
-			signature_param = fcn_context_param_at (ctx->signature, arg_index);
+			signature_param = ctx->signature? r_list_get_n (ctx->signature->params, arg_index): NULL;
 			if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
 				slot->arg_name = strdup (signature_param->name);
 			} else if (R_STR_ISNOTEMPTY (var->name)) {
@@ -635,17 +592,12 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 }
 
 static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn) {
-	RAnalFunctionSignature *signature;
-
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
-	signature = r_anal_function_get_signature (fcn);
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
 	if (signature || (!R_STR_ISNOTEMPTY (fcn->callconv) && !fcn->is_noreturn)) {
 		return signature;
 	}
 	signature = R_NEW0 (RAnalFunctionSignature);
-	if (!signature) {
-		return NULL;
-	}
 	signature->params = r_list_new ();
 	if (!signature->params) {
 		r_anal_function_signature_free (signature);
@@ -674,7 +626,7 @@ R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 }
 
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
-	RAnalFcnContext *ctx = NULL;
+	RAnalFcnContext *ctx;
 	RAnalFcnVarsCache cache = {0};
 	RListIter *iter;
 	RAnalVar *var;
@@ -683,9 +635,6 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	r_anal_types_ensure_loaded (anal);
 
 	ctx = R_NEW0 (RAnalFcnContext);
-	if (!ctx) {
-		return NULL;
-	}
 	ctx->signature = fcn_context_collect_signature (fcn);
 	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
 	ctx->slots = r_list_newf ((RListFree)fcn_context_slot_free);
