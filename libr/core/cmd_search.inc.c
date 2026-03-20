@@ -2415,10 +2415,9 @@ static void refsearch_targets(RCore *core, int mode, bool print_hits, struct sea
 			} else {
 				print_ref_search (core, UT64_MAX, from, to, param);
 			}
-		} else {
-			if (r_cons_is_breaked (core->cons)) {
-				break;
-			}
+		}
+		if (r_cons_is_breaked (core->cons)) {
+			break;
 		}
 	}
 }
@@ -2471,7 +2470,6 @@ static void cmd_search_aF(RCore *core, const char *input) {
 				break;
 			}
 			r_io_read_at (core->io, bb->addr, bbdata, bb->size);
-			// eprintf ("0x08%"PFMT64x"%c", bb->addr, 10);
 			int i;
 			for (i = 0; i < bb->ninstr; i++) {
 				if (i >= bb->op_pos_size) {
@@ -2488,12 +2486,9 @@ static void cmd_search_aF(RCore *core, const char *input) {
 					r_anal_op_fini (&asmop);
 					break;
 				}
-				char *s = NULL;
-				if (quiet) {
-					s = strdup (asmop.mnemonic);
-				} else {
-					s = r_core_cmd_strf (core, "pi 1 @ 0x%"PFMT64x, addr);
-				}
+				char *s = quiet
+					? strdup (asmop.mnemonic)
+					: r_core_cmd_strf (core, "pi 1 @ 0x%"PFMT64x, addr);
 				r_str_trim (s);
 				if (strstr (s, input)) {
 					r_cons_printf (core->cons, "0x%08"PFMT64x" %s: %s\n", addr, fcn->name, s);
@@ -2683,8 +2678,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 	ut8 buf[128];
 	ut64 at;
 	RAnalOp aop;
-	int hasch = 0;
-	int i, ret;
+	int i, hasch = 0;
 	r_cons_break_push (core->cons, NULL, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	ut64 lastch = UT64_MAX;
@@ -2714,8 +2708,7 @@ static char *print_analstr(RCore *core, ut64 addr, int maxlen) {
 			R_LOG_DEBUG ("Invalid read at 0x%08"PFMT64x, at);
 			break;
 		}
-
-		ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+		int ret = r_anal_op (core->anal, &aop, at, bufop, sizeof (bufop), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 		if (ret) {
 			if (hasch > 0) {
 				hasch--;
@@ -2977,13 +2970,6 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	if (json) {
 		r_strbuf_free (rb);
 		pj_end (pj);
-#if 0
-		char *res = pj_drain (pj);
-		if (R_STR_ISNOTEMPTY (res)) {
-			r_cons_println (core->cons, res);
-		}
-		free (res);
-#endif
 	} else if (silent) {
 		r_strbuf_free (rb);
 	} else {
@@ -3290,7 +3276,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 			end = at + buf_size;
 			if (diff > threshold) {
 				if (r2mode) {
-					r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+					r_cons_printf (core->cons, "'f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
 				} else if (pj) {
 					pj_o (pj);
 					pj_kn (pj, "start", begin);
@@ -3312,7 +3298,7 @@ static void do_section_search(RCore *core, struct search_parameters *param, cons
 	}
 	if (begin != UT64_MAX && lastBlock) {
 		if (r2mode) {
-			r_cons_printf (core->cons, "f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
+			r_cons_printf (core->cons, "'f entropy_section_%d 0x%08"PFMT64x" 0x%08"PFMT64x"\n", index, end - begin, begin);
 		} else {
 			r_cons_printf (core->cons, "0x%08"PFMT64x" - 0x%08"PFMT64x" ~ %d .. last\n", begin, end, 0);
 		}
@@ -3411,7 +3397,7 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	RListIter *iter;
 	RIOMap *map;
 	if (!param->searchflags && param->outmode != R_MODE_JSON) {
-		r_cons_printf (core->cons, "fs hits\n");
+		r_cons_printf (core->cons, "'fs hits\n");
 	}
 	core->search->inverse = param->inverse;
 	// TODO Bad but is to be compatible with the legacy behavior
@@ -3639,46 +3625,38 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 	if (bsz < 1 || from >= to) {
 		return;
 	}
-	ut8 *block = calloc (bsz, 1);
+	ut8 *block = calloc (bsz, 2);
 	if (!block) {
 		return;
 	}
-	ut8 *curblock = malloc (bsz);
-	if (!curblock) {
-		free (block);
-		return;
-	}
-	if (!r_io_read_at (core->io, core->addr, curblock, bsz)) {
-		goto beach;
-	}
-	while (addr < to) {
-		if (r_cons_is_breaked (core->cons)) {
-			break;
+	ut8 *curblock = block + bsz;
+	if (r_io_read_at (core->io, core->addr, curblock, bsz)) {
+		while (addr < to) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			if (!r_io_read_at (core->io, addr, block, bsz)) {
+				break;
+			}
+			int diff = memcmpdiff (curblock, block, bsz);
+			int equal = core->blocksize - diff;
+			if (equal >= count) {
+				int pc = (equal * 100) / core->blocksize;
+				r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, bsz, pc);
+				ut8 ptr[2] = {
+					(ut8)(pc * 2.5), 0
+				};
+				r_print_fill (core->print, ptr, 1, UT64_MAX, bsz);
+			}
+			addr += bsz;
 		}
-		if (!r_io_read_at (core->io, addr, block, bsz)) {
-			break;
-		}
-		int diff = memcmpdiff (curblock, block, bsz);
-		int equal = core->blocksize - diff;
-		if (equal >= count) {
-			int pc = (equal * 100) / core->blocksize;
-			r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, bsz, pc);
-			ut8 ptr[2] = {
-				(ut8)(pc * 2.5), 0
-			};
-			r_print_fill (core->print, ptr, 1, UT64_MAX, bsz);
-		}
-		addr += bsz;
 	}
-beach:
-	free (curblock);
 	free (block);
 }
 
 static void search_similar_pattern(RCore *core, int count, struct search_parameters *param) {
 	RIOMap *p;
 	RListIter *iter;
-
 	r_cons_break_push (core->cons, NULL, NULL);
 	r_list_foreach (param->boundaries, iter, p) {
 		search_similar_pattern_in (core, count, p->itv.addr, r_itv_end (p->itv));
@@ -3687,12 +3665,10 @@ static void search_similar_pattern(RCore *core, int count, struct search_paramet
 }
 
 static bool isArm(RCore *core) {
-	RAsm *as = core ? core->rasm : NULL;
-	if (as && as->config) {
-		if (r_str_startswith (as->config->arch, "arm")) {
-			if (as->config->bits < 64) {
-				return true;
-			}
+	RAsm *as = core->rasm;
+	if (as->config && r_str_startswith (as->config->arch, "arm")) {
+		if (as->config->bits < 64) {
+			return true;
 		}
 	}
 	return false;
@@ -3700,7 +3676,7 @@ static bool isArm(RCore *core) {
 
 void _CbInRangeSearchV(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	struct search_parameters *param = user;
-	bool isarm = isArm (core);
+	const bool isarm = isArm (core);
 	// this is expensive operation that could be cached but is a callback
 	// and for not messing adding a new param
 	const char *prefix = r_config_get (core->config, "search.prefix");
