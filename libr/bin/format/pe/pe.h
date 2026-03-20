@@ -131,6 +131,7 @@ struct PE_(r_bin_pe_obj_t) {
 	ut64 delay_import_directory_offset;
 
 	int import_directory_size;
+	int delay_import_directory_size;
 	int size;
 	int num_sections;
 	int endian;
