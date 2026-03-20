@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2011-2025 - pancake */
+/* radare - LGPL - Copyright 2011-2026 - pancake */
 
 #include <r_socket.h>
 #include <r_util.h>
@@ -14,6 +14,18 @@ extern char* r2_js_http_post(const char *url, const char *headers_str, const cha
 
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
+
+static bool socket_http_requires_curl(const char *url) {
+#if !HAVE_LIB_SSL && !R2__WINDOWS__
+	return r_str_startswith (url, "https://");
+#else
+	return false;
+#endif
+}
+
+static bool socket_http_use_curl(const char *url) {
+	return r_sys_getenv_asbool ("R2_CURL") || socket_http_requires_curl (url);
+}
 
 static size_t socket_slurp(RSocket *s, RBuffer *buf) {
 	size_t i;
@@ -220,7 +232,17 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		return res;
 	}
 #endif
-	if (r_sys_getenv_asbool ("R2_CURL")) {
+	const bool use_curl = socket_http_use_curl (url);
+	const bool requires_curl = socket_http_requires_curl (url);
+	if (use_curl) {
+		if (requires_curl) {
+			char *curl_path = r_file_path ("curl");
+			if (!curl_path) {
+				R_LOG_ERROR ("Tried to get '%s', but SSL support is disabled and curl was not found", url);
+				return NULL;
+			}
+			free (curl_path);
+		}
 		char *header_file = r_file_temp ("r2_http_hdr");
 		char *body_file = r_file_temp ("r2_http_body");
 		if (!header_file || !body_file) {
@@ -275,6 +297,9 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 		free (command);
 
 		if (cmd_result != 0) {
+			if (requires_curl) {
+				R_LOG_ERROR ("curl failed to fetch '%s'", url);
+			}
 			r_file_rm (header_file);
 			r_file_rm (body_file);
 			free (header_file);
@@ -327,12 +352,6 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 #else
 	RSocket *s;
 	bool ssl = r_str_startswith (url, "https://");
-#if !HAVE_LIB_SSL
-	if (ssl) {
-		R_LOG_ERROR ("Tried to get '%s', but SSL support is disabled, set R2_CURL=1 to use curl", url);
-		return NULL;
-	}
-#endif
 	char *response, *host, *path, *port = "80";
 	char *uri = strdup (url);
 	if (!uri) {
@@ -426,7 +445,17 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		return res;
 	}
 #endif
-	if (r_sys_getenv_asbool ("R2_CURL")) {
+	const bool use_curl = socket_http_use_curl (url);
+	const bool requires_curl = socket_http_requires_curl (url);
+	if (use_curl) {
+		if (requires_curl) {
+			char *curl_path = r_file_path ("curl");
+			if (!curl_path) {
+				R_LOG_ERROR ("Tried to post '%s', but SSL support is disabled and curl was not found", url);
+				return NULL;
+			}
+			free (curl_path);
+		}
 		int len;
 		char *escaped_url = r_str_escape_sh (url);
 		if (!escaped_url) {
@@ -513,10 +542,6 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	}
 	bool ssl = r_str_startswith (url, "https://");
 	char *uri = strdup (url);
-	if (!uri) {
-		return NULL;
-	}
-
 	char *host = strstr (uri, "://");
 	if (!host) {
 		free (uri);
@@ -549,8 +574,6 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 		return NULL;
 	}
 	/* Send */
-	// RStrBuf *sb = r_strbuf_new ("POST /%s HTTP/1.0\r\n");
-	// char *data = r_strbuf_drain (sb);
 	r_socket_printf (s,
 		"POST /%s HTTP/1.0\r\n"
 		"User-Agent: radare2 " R2_VERSION "\r\n"
@@ -564,11 +587,3 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 	r_socket_write (s, (void *)data, strlen (data));
 	return socket_http_answer (s, NULL, code, rlen, 0);
 }
-
-#if TEST
-void main() {
-	int ret;
-	char *p = r_socket_http_post ("https://www.radare.org/y/index.php", "a=b", &ret);
-	printf ("%s\n", p);
-}
-#endif

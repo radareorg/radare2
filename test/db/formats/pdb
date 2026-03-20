@@ -1,7 +1,6 @@
 NAME=PDB downloader check
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
-%R2_CURL=1
 !!rabin2 -PP ${R2_FILE} ~PDB
 EOF
 EXPECT=<<EOF
@@ -12,7 +11,6 @@ RUN
 NAME=PDB downloader json
 FILE=-
 CMDS=<<EOF
-%R2_CURL=1
 !!rabin2 -PPj bins/pdb/user32.dll
 EOF
 EXPECT=<<EOF
@@ -23,7 +21,6 @@ RUN
 NAME=idpdj
 FILE=bins/pdb/user32.dll
 CMDS=<<EOF
-%R2_CURL=1
 idpdj
 EOF
 EXPECT=<<EOF
