@@ -1586,6 +1586,13 @@ static int read_image_delay_import_directory(RBuffer *b, ut64 addr, PE_(image_de
 	return sizeof (PE_(image_delay_import_directory));
 }
 
+static bool is_null_delay_import_directory(const PE_(image_delay_import_directory) *dir) {
+	return !dir->Attributes && !dir->Name && !dir->ModulePlugin &&
+		!dir->DelayImportAddressTable && !dir->DelayImportNameTable &&
+		!dir->BoundDelayImportTable && !dir->UnloadDelayImportTable &&
+		!dir->TimeStamp;
+}
+
 static int bin_pe_init_imports(RBinPEObj *pe) {
 	PE_(image_data_directory) *data_dir_import = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_IMPORT];
 	PE_(image_data_directory) *data_dir_delay_import = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT];
@@ -1624,9 +1631,17 @@ static int bin_pe_init_imports(RBinPEObj *pe) {
 	if (maxidsz < 0) {
 		maxidsz = 0;
 	}
+	int maxdidsz = R_MIN ((PE_DWord)pe->size, delay_import_dir_offset + delay_import_dir_size);
+	maxdidsz -= delay_import_dir_offset;
+	if (maxdidsz < 0) {
+		maxdidsz = 0;
+	}
 	// int maxcount = maxidsz/ sizeof (struct r_bin_pe_import_t);
 
 	R_FREE (pe->import_directory);
+	R_FREE (pe->delay_import_directory);
+	pe->delay_import_directory_offset = 0;
+	pe->delay_import_directory_size = 0;
 	if (import_dir_paddr != 0) {
 		if (import_dir_size < 1 || import_dir_size > maxidsz) {
 			R_LOG_WARN ("Invalid import directory size: 0x%x is now 0x%x", import_dir_size, maxidsz);
@@ -1663,31 +1678,33 @@ static int bin_pe_init_imports(RBinPEObj *pe) {
 	indx = 0;
 	if (r_buf_size (pe->b) > 0) {
 		if ((delay_import_dir_offset != 0) && (delay_import_dir_offset < (ut32)r_buf_size (pe->b))) {
-			ut64 off;
+			if (delay_import_dir_size < 1 || delay_import_dir_size > maxdidsz) {
+				R_LOG_WARN ("Invalid delay import directory size: 0x%x is now 0x%x", delay_import_dir_size, maxdidsz);
+				delay_import_dir_size = maxdidsz;
+			}
 			pe->delay_import_directory_offset = delay_import_dir_offset;
+			pe->delay_import_directory_size = delay_import_dir_size;
 			do {
-				indx++;
-				off = indx * delay_import_size;
-				if (off >= r_buf_size (pe->b)) {
-					R_LOG_WARN ("Cannot find end of import symbols");
-					break;
-				}
 				new_delay_import_dir = (PE_(image_delay_import_directory) *)realloc (
-					delay_import_dir, (indx * delay_import_size) + 1);
+					delay_import_dir, (indx + 1) * delay_import_size);
 				if (!new_delay_import_dir) {
 					R_LOG_ERROR ("malloc (delay import directory)");
 					free (delay_import_dir);
 					return false;
 				}
 				delay_import_dir = new_delay_import_dir;
-				curr_delay_import_dir = delay_import_dir + (indx - 1);
-				rr = read_image_delay_import_directory (pe->b, delay_import_dir_offset + (indx - 1) * delay_import_size,
+				curr_delay_import_dir = delay_import_dir + indx;
+				rr = read_image_delay_import_directory (pe->b, delay_import_dir_offset + indx * delay_import_size,
 					curr_delay_import_dir);
-				if (rr != dir_size) {
-					R_LOG_WARN ("Warning: read (delay import directory)");
+				if (rr != delay_import_size) {
+					R_LOG_WARN ("read (delay import directory)");
 					goto fail;
 				}
-			} while (curr_delay_import_dir->Name != 0);
+				if (((2 + indx) * delay_import_size) > delay_import_dir_size) {
+					break;
+				}
+				indx++;
+			} while (!is_null_delay_import_directory (curr_delay_import_dir));
 			pe->delay_import_directory = delay_import_dir;
 		}
 	}
@@ -3455,6 +3472,7 @@ static int bin_pe_init(RBinPEObj *pe) {
 	pe->delay_import_directory = NULL;
 	pe->optional_header = NULL;
 	pe->data_directory = NULL;
+	pe->delay_import_directory_size = 0;
 	pe->big_endian = 0;
 	pe->cms = NULL;
 	pe->spcinfo = NULL;
@@ -3969,17 +3987,30 @@ struct r_bin_pe_import_t *PE_(r_bin_pe_get_imports)(RBinPEObj *pe) {
 	}
 	off = pe->delay_import_directory_offset;
 	if (off < pe->size && off > 0) {
-		if (off + sizeof (PE_(image_delay_import_directory)) > pe->size) {
+		ut64 last;
+		int didi = 0;
+		if (pe->delay_import_directory_size < 1) {
 			goto beach;
 		}
-		int didi;
-		for (didi = 0;; didi++) {
+		if (off + pe->delay_import_directory_size > pe->size) {
+			R_LOG_WARN ("read (delay import directory too big)");
+			pe->delay_import_directory_size = pe->size - pe->delay_import_directory_offset;
+		}
+		last = off + pe->delay_import_directory_size;
+		if (off + sizeof (PE_(image_delay_import_directory)) > last) {
+			goto beach;
+		}
+		for (didi = 0; off + (didi + 1) * sizeof (curr_delay_import_dir) <= last; didi++) {
 			int r = read_image_delay_import_directory (pe->b, off + didi * sizeof (curr_delay_import_dir),
 				&curr_delay_import_dir);
 			if (r != sizeof (curr_delay_import_dir)) {
 				goto beach;
 			}
-			if ((curr_delay_import_dir.Name == 0) || (curr_delay_import_dir.DelayImportAddressTable == 0)) {
+			if (is_null_delay_import_directory (&curr_delay_import_dir)) {
+				break;
+			}
+			if (!curr_delay_import_dir.Name || !curr_delay_import_dir.DelayImportAddressTable ||
+				!curr_delay_import_dir.DelayImportNameTable) {
 				break;
 			}
 			if (!curr_delay_import_dir.Attributes) {
@@ -4090,7 +4121,16 @@ struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 	off = pe->delay_import_directory_offset;
 	if (off < pe->size && off > 0) {
 		ut64 did = 0;
-		if (off + sizeof (PE_(image_delay_import_directory)) > pe->size) {
+		ut64 last;
+		if (pe->delay_import_directory_size < 1) {
+			goto out_error;
+		}
+		if (off + pe->delay_import_directory_size > pe->size) {
+			R_LOG_WARN ("read (delay import directory too big)");
+			pe->delay_import_directory_size = pe->size - pe->delay_import_directory_offset;
+		}
+		last = off + pe->delay_import_directory_size;
+		if (off + sizeof (PE_(image_delay_import_directory)) > last) {
 			goto out_error;
 		}
 		int r = read_image_delay_import_directory (pe->b, off, &curr_delay_import_dir);
@@ -4098,7 +4138,11 @@ struct r_bin_pe_lib_t *PE_(r_bin_pe_get_libs)(RBinPEObj *pe) {
 			goto out_error;
 		}
 		while (r == sizeof (curr_delay_import_dir) &&
-			curr_delay_import_dir.Name != 0 && curr_delay_import_dir.DelayImportNameTable != 0) {
+			off + (did + 1) * sizeof (curr_delay_import_dir) <= last &&
+			!is_null_delay_import_directory (&curr_delay_import_dir)) {
+			if (!curr_delay_import_dir.Name || !curr_delay_import_dir.DelayImportNameTable) {
+				break;
+			}
 			name_off = PE_(va2pa) (pe, curr_delay_import_dir.Name);
 			if (name_off > pe->size || name_off + PE_STRING_LENGTH > pe->size) {
 				goto out_error;
