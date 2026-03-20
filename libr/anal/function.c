@@ -2,6 +2,8 @@
 
 #include <r_anal.h>
 
+R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
+
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
 	RListIter *iter;
@@ -407,6 +409,335 @@ R_API int r_anal_function_coverage(RAnalFunction *fcn) {
 		}
 	}
 	return (traced * 100) / total;
+}
+
+R_API char *r_anal_function_get_signature_string(RAnalFunction *function) {
+	RAnalFunctionSignature *signature;
+	char *res = NULL;
+
+	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
+	signature = r_anal_function_get_signature (function);
+	if (!signature) {
+		return NULL;
+	}
+	res = signature->signature;
+	signature->signature = NULL;
+	r_anal_function_signature_free (signature);
+	return res;
+}
+
+static void fcn_context_reg_arg_free(RAnalFcnRegArg *arg) {
+	if (!arg) {
+		return;
+	}
+	free (arg->name);
+	free (arg->type);
+	free (arg->reg);
+	free (arg);
+}
+
+static void fcn_context_slot_free(RAnalFcnSlot *slot) {
+	if (!slot) {
+		return;
+	}
+	free (slot->name);
+	free (slot->type);
+	free (slot->base_name);
+	free (slot->arg_name);
+	free (slot->home_reg);
+	free (slot);
+}
+
+static const RAnalFunctionParam *fcn_context_param_at(const RAnalFunctionSignature *signature, int index) {
+	RListIter *iter;
+	RAnalFunctionParam *param;
+	int i = 0;
+
+	if (!signature || !signature->params || index < 0) {
+		return NULL;
+	}
+	r_list_foreach (signature->params, iter, param) {
+		if (i == index) {
+			return param;
+		}
+		i++;
+	}
+	return NULL;
+}
+
+static bool fcn_context_is_default_arg_name(const char *name) {
+	if (!name || !r_str_startswith (name, "arg") || !name[3]) {
+		return false;
+	}
+	const char *ptr = name + 3;
+	for (; *ptr; ptr++) {
+		if (!IS_DIGIT (*ptr)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
+	if (!anal || !var) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (var->regname)) {
+		return strdup (var->regname);
+	}
+	if (var->kind == R_ANAL_VAR_KIND_REG) {
+		RRegItem *ri = r_reg_index_get (anal->reg, R_ABS (var->delta));
+		if (ri) {
+			char *name = strdup (ri->name);
+			r_unref (ri);
+			return name;
+		}
+	}
+	return NULL;
+}
+
+static st64 fcn_context_stack_offset(const RAnalFunction *fcn, const RAnalVar *var) {
+	R_RETURN_VAL_IF_FAIL (fcn && var, 0);
+	switch (var->kind) {
+	case R_ANAL_VAR_KIND_BPV:
+		return (st64)var->delta + fcn->bp_off;
+	case R_ANAL_VAR_KIND_SPV:
+		return (st64)var->delta + fcn->maxstack;
+	default:
+		return var->delta;
+	}
+}
+
+static RAnalVar *fcn_context_find_register_home_source(RList *rvars, RAnalVar *slot) {
+	RListIter *iter;
+	RAnalVar *var;
+
+	if (!rvars || !slot) {
+		return NULL;
+	}
+	r_list_foreach (rvars, iter, var) {
+		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
+			continue;
+		}
+		RAnalVar *dst = r_anal_var_get_dst_var (var);
+		if (dst == slot) {
+			return var;
+		}
+	}
+	return NULL;
+}
+
+static RAnalFcnSlotRole fcn_context_classify_slot(const RAnalVar *var, RAnalVar *home_source) {
+	R_RETURN_VAL_IF_FAIL (var, R_ANAL_FCN_SLOT_UNKNOWN);
+	if (home_source) {
+		return R_ANAL_FCN_SLOT_HOME;
+	}
+	if (var->isarg) {
+		return R_ANAL_FCN_SLOT_ARG;
+	}
+	if (var->kind == R_ANAL_VAR_KIND_BPV || var->kind == R_ANAL_VAR_KIND_SPV) {
+		return R_ANAL_FCN_SLOT_LOCAL;
+	}
+	return R_ANAL_FCN_SLOT_UNKNOWN;
+}
+
+static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnContext *ctx, RAnalVar *var) {
+	const RAnalFunctionParam *signature_param = NULL;
+	RAnalFcnRegArg *arg = NULL;
+	const int arg_index = r_anal_var_get_argnum (var);
+
+	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
+	arg = R_NEW0 (RAnalFcnRegArg);
+	if (!arg) {
+		return NULL;
+	}
+	arg->arg_index = arg_index;
+	signature_param = fcn_context_param_at (ctx->signature, arg_index);
+	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && fcn_context_is_default_arg_name (var->name)) {
+		arg->name = strdup (signature_param->name);
+	} else if (R_STR_ISNOTEMPTY (var->name)) {
+		arg->name = strdup (var->name);
+	}
+	if (R_STR_ISNOTEMPTY (var->type)) {
+		arg->type = strdup (var->type);
+	} else if (signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
+		arg->type = strdup (signature_param->type);
+	}
+	arg->reg = fcn_context_dup_var_regname (anal, var);
+	if ((R_STR_ISNOTEMPTY (var->name) && !arg->name)
+		|| (R_STR_ISNOTEMPTY (var->type) && !arg->type)
+		|| !arg->reg) {
+		fcn_context_reg_arg_free (arg);
+		return NULL;
+	}
+	return arg;
+}
+
+static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext *ctx, RAnalFunction *fcn, RAnalVar *var, RAnalVar *home_source) {
+	const RAnalFunctionParam *signature_param = NULL;
+	RAnalFcnSlot *slot = NULL;
+	int arg_index = -1;
+
+	R_RETURN_VAL_IF_FAIL (anal && ctx && fcn && var, NULL);
+	slot = R_NEW0 (RAnalFcnSlot);
+	if (!slot) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (var->name)) {
+		slot->name = strdup (var->name);
+	}
+	if (R_STR_ISNOTEMPTY (var->type)) {
+		slot->type = strdup (var->type);
+	}
+	slot->base = (var->kind == R_ANAL_VAR_KIND_BPV)? R_ANAL_FCN_BASE_BP: R_ANAL_FCN_BASE_SP;
+	slot->offset = fcn_context_stack_offset (fcn, var);
+	slot->role = fcn_context_classify_slot (var, home_source);
+
+	if (home_source) {
+		arg_index = r_anal_var_get_argnum (home_source);
+		signature_param = fcn_context_param_at (ctx->signature, arg_index);
+		slot->arg_index = arg_index;
+		slot->home_reg = fcn_context_dup_var_regname (anal, home_source);
+		if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
+			slot->arg_name = strdup (signature_param->name);
+		} else if (R_STR_ISNOTEMPTY (home_source->name)) {
+			slot->arg_name = strdup (home_source->name);
+		}
+		if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
+			slot->type = strdup (signature_param->type);
+		}
+	} else if (var->isarg) {
+		arg_index = r_anal_var_get_argnum (var);
+		slot->arg_index = arg_index;
+		if (arg_index >= 0) {
+			signature_param = fcn_context_param_at (ctx->signature, arg_index);
+			if (signature_param && R_STR_ISNOTEMPTY (signature_param->name)) {
+				slot->arg_name = strdup (signature_param->name);
+			} else if (R_STR_ISNOTEMPTY (var->name)) {
+				slot->arg_name = strdup (var->name);
+			}
+			if (!slot->type && signature_param && R_STR_ISNOTEMPTY (signature_param->type)) {
+				slot->type = strdup (signature_param->type);
+			}
+		}
+	} else {
+		slot->arg_index = -1;
+	}
+
+	if ((R_STR_ISNOTEMPTY (var->name) && !slot->name)
+		|| (R_STR_ISNOTEMPTY (var->type) && !slot->type)
+		|| (slot->arg_index >= 0 && R_STR_ISNOTEMPTY (slot->arg_name) && !slot->arg_name)
+		|| (home_source && !slot->home_reg)) {
+		fcn_context_slot_free (slot);
+		return NULL;
+	}
+	return slot;
+}
+
+static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn) {
+	RAnalFunctionSignature *signature;
+
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	signature = r_anal_function_get_signature (fcn);
+	if (signature || (!R_STR_ISNOTEMPTY (fcn->callconv) && !fcn->is_noreturn)) {
+		return signature;
+	}
+	signature = R_NEW0 (RAnalFunctionSignature);
+	if (!signature) {
+		return NULL;
+	}
+	signature->params = r_list_new ();
+	if (!signature->params) {
+		r_anal_function_signature_free (signature);
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (fcn->callconv)) {
+		signature->callconv = strdup (fcn->callconv);
+		if (!signature->callconv) {
+			r_anal_function_signature_free (signature);
+			return NULL;
+		}
+	}
+	signature->noreturn = fcn->is_noreturn;
+	return signature;
+}
+
+R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
+	if (!ctx) {
+		return;
+	}
+	r_anal_function_signature_free (ctx->signature);
+	r_list_free (ctx->reg_args);
+	r_list_free (ctx->slots);
+	r_list_free (ctx->base_types);
+	free (ctx);
+}
+
+R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
+	RAnalFcnContext *ctx = NULL;
+	RAnalFcnVarsCache cache = {0};
+	RListIter *iter;
+	RAnalVar *var;
+
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	r_anal_types_ensure_loaded (anal);
+
+	ctx = R_NEW0 (RAnalFcnContext);
+	if (!ctx) {
+		return NULL;
+	}
+	ctx->signature = fcn_context_collect_signature (fcn);
+	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
+	ctx->slots = r_list_newf ((RListFree)fcn_context_slot_free);
+	if (!ctx->reg_args || !ctx->slots) {
+		r_anal_function_context_free (ctx);
+		return NULL;
+	}
+
+	r_anal_function_vars_cache_init (anal, &cache, fcn);
+	r_list_foreach (cache.rvars, iter, var) {
+		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
+			continue;
+		}
+		RAnalFcnRegArg *arg = fcn_context_collect_reg_arg (anal, ctx, var);
+		if (!arg) {
+			r_anal_function_vars_cache_fini (&cache);
+			r_anal_function_context_free (ctx);
+			return NULL;
+		}
+		r_list_append (ctx->reg_args, arg);
+	}
+
+	r_list_foreach (cache.bvars, iter, var) {
+		if (!var) {
+			continue;
+		}
+		RAnalVar *home_source = fcn_context_find_register_home_source (cache.rvars, var);
+		RAnalFcnSlot *slot = fcn_context_collect_slot (anal, ctx, fcn, var, home_source);
+		if (!slot) {
+			r_anal_function_vars_cache_fini (&cache);
+			r_anal_function_context_free (ctx);
+			return NULL;
+		}
+		r_list_append (ctx->slots, slot);
+	}
+	r_list_foreach (cache.svars, iter, var) {
+		if (!var) {
+			continue;
+		}
+		RAnalVar *home_source = fcn_context_find_register_home_source (cache.rvars, var);
+		RAnalFcnSlot *slot = fcn_context_collect_slot (anal, ctx, fcn, var, home_source);
+		if (!slot) {
+			r_anal_function_vars_cache_fini (&cache);
+			r_anal_function_context_free (ctx);
+			return NULL;
+		}
+		r_list_append (ctx->slots, slot);
+	}
+	r_anal_function_vars_cache_fini (&cache);
+
+	ctx->base_types = r_anal_types_baselist (anal);
+	return ctx;
 }
 
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr) {
