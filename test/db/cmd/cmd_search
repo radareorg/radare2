@@ -1943,10 +1943,10 @@ CMDS=<<EOF
 /s*
 EOF
 EXPECT=<<EOF
-f entropy_section_0 0x00000100 0x08049f0c
-f entropy_section_1 0x00000100 0x0804a00c
-f entropy_section_2 0x00000100 0x08048000
-f entropy_section_3 0x00000200 0x08048100
+'f entropy_section_0 0x00000100 0x08049f0c
+'f entropy_section_1 0x00000100 0x0804a00c
+'f entropy_section_2 0x00000100 0x08048000
+'f entropy_section_3 0x00000200 0x08048100
 EOF
 RUN
 
