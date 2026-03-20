@@ -2313,15 +2313,14 @@ beach:
 }
 
 static void print_ref_search_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
-	const int size = 12;
-	ut8 buf[12];
+	ut8 buf[32];
 	if (from > ref->addr || to < ref->addr) {
 		return;
 	}
 	RAnalOp asmop;
-	r_io_read_at (core->io, ref->addr, buf, size);
+	r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 	r_asm_set_pc (core->rasm, ref->addr);
-	r_asm_disassemble (core->rasm, &asmop, buf, size);
+	r_asm_disassemble (core->rasm, &asmop, buf, sizeof (buf));
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, 0);
 	RAnalHint *hint = r_anal_hint_get (core->anal, ref->addr);
 	char *disasm = r_asm_parse_filter (core->rasm, ref->addr, core->flags, hint, asmop.mnemonic);
@@ -2349,29 +2348,22 @@ static void print_ref_search_hit(RCore *core, const RAnalRef *ref, ut64 from, ut
 	r_anal_op_fini (&asmop);
 }
 
-static void do_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
+static void print_ref_search(RCore *core, ut64 addr, ut64 from, ut64 to, struct search_parameters *param) {
 	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, addr);
-	if (!xrefs) {
-		return;
+	if (xrefs) {
+		RAnalRef *ref;
+		R_VEC_FOREACH (xrefs, ref) {
+			print_ref_search_hit (core, ref, from, to, param);
+		}
+		RVecAnalRef_free (xrefs);
 	}
-	RAnalRef *ref;
-	R_VEC_FOREACH (xrefs, ref) {
-		print_ref_search_hit (core, ref, from, to, param);
-	}
-	RVecAnalRef_free (xrefs);
 }
 
 static bool ref_search_targets_new(RCore *core, const char *args, RVecSearchAddr *targets) {
 	R_RETURN_VAL_IF_FAIL (core && targets, false);
 	RVecSearchAddr_init (targets);
-	if (R_STR_ISEMPTY (args)) {
-		return true;
-	}
 	char *str = r_str_trim_dup (args);
-	if (!str) {
-		return false;
-	}
-	if (!*str) {
+	if (R_STR_ISEMPTY (str)) {
 		free (str);
 		return true;
 	}
@@ -2384,39 +2376,18 @@ static bool ref_search_targets_new(RCore *core, const char *args, RVecSearchAddr
 	RListIter *iter;
 	char *word;
 	r_list_foreach (words, iter, word) {
-		if (R_STR_ISEMPTY (word)) {
-			continue;
-		}
 		ut64 addr = r_num_math (core->num, word);
-		if (!addr) {
-			R_LOG_ERROR ("Cannot find null references");
+		if (!addr || addr == UT64_MAX || core->num->nc.errors) {
+			R_LOG_ERROR ("Invalid address (%s)", word);
 			RVecSearchAddr_fini (targets);
 			ok = false;
 			break;
 		}
-		ut64 *dst = RVecSearchAddr_emplace_back (targets);
-		if (!dst) {
-			RVecSearchAddr_fini (targets);
-			ok = false;
-			break;
-		}
-		*dst = addr;
+		RVecSearchAddr_push_back (targets, &addr);
 	}
 	r_list_free (words);
 	free (str);
 	return ok;
-}
-
-static void do_ref_search_all(RCore *core, ut64 from, ut64 to, struct search_parameters *param) {
-	RVecAnalRef *xrefs = r_anal_xrefs_get (core->anal, UT64_MAX);
-	if (!xrefs) {
-		return;
-	}
-	RAnalRef *ref;
-	R_VEC_FOREACH (xrefs, ref) {
-		print_ref_search_hit (core, ref, from, to, param);
-	}
-	RVecAnalRef_free (xrefs);
 }
 
 static void do_ref_search_targets(RCore *core, int mode, bool print_hits, struct search_parameters *param, const RVecSearchAddr *targets) {
@@ -2429,26 +2400,23 @@ static void do_ref_search_targets(RCore *core, int mode, bool print_hits, struct
 	RListIter *iter;
 	RIOMap *map;
 	r_list_foreach (param->boundaries, iter, map) {
-		ut64 from = r_io_map_begin (map);
-		ut64 to = r_io_map_end (map);
+		const ut64 from = r_io_map_begin (map);
+		const ut64 to = r_io_map_end (map);
 		R_LOG_DEBUG ("-- 0x%"PFMT64x" 0x%"PFMT64x, from, to);
 		r_core_anal_search (core, from, to, scan_addr, mode);
-		if (!print_hits) {
+		if (print_hits) {
+			if (target_count > 0) {
+				ut64 *addr;
+				R_VEC_FOREACH (targets, addr) {
+					print_ref_search (core, *addr, from, to, param);
+				}
+			} else {
+				print_ref_search (core, UT64_MAX, from, to, param);
+			}
+		} else {
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
-			continue;
-		}
-		if (target_count > 0) {
-			ut64 *addr;
-			R_VEC_FOREACH (targets, addr) {
-				do_ref_search (core, *addr, from, to, param);
-			}
-		} else {
-			do_ref_search_all (core, from, to, param);
-		}
-		if (r_cons_is_breaked (core->cons)) {
-			break;
 		}
 	}
 }
@@ -4266,7 +4234,7 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 	r_list_free (boundaries);
 }
 
-static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
+static void cmd_search_a1(RCore *core, int nth) {
 	ut8 buf[32];
 	int i;
 	r_io_read_at (core->io, 0, buf, sizeof (buf));
@@ -4287,7 +4255,7 @@ static void __core_cmd_search_asm_byteswap(RCore *core, int nth) {
 	}
 }
 
-static int chatoi(const char *arg) {
+static inline int chatoi(const char *arg) {
 	if (isdigit (*arg)) {
 		return *arg - '0';
 	}
@@ -4483,10 +4451,6 @@ static int cmd_search(void *data, const char *input) {
 	RSearch *search = core->search;
 	int ignorecase = false;
 	char *inp;
-	if (!core || !core->io) {
-		R_LOG_ERROR ("Can't search if we don't have an open file");
-		return false;
-	}
 	if (core->in_search) {
 		R_LOG_ERROR ("Can't search from within a search");
 		return R_CMD_RC_SUCCESS;
@@ -4594,7 +4558,6 @@ reread:
 	case 'B': // "/B" base address search
 		cmd_search_baddr (core, input);
 		goto beach;
-		break;
 	case 'o': { // "/o" print the offset of the Previous opcode
 			  if (input[1] == '?') {
 				  r_core_cmd_help_match (core, help_msg_slash, "/o");
@@ -4690,26 +4653,13 @@ reread:
 		goto beach;
 	case 'r': // "/r" and "/re"
 		{
+		RVecSearchAddr targets;
+		const char *args = r_str_trim_head_ro (input + 2);
 		switch (input[1]) {
 		case 'a': // "/ra"
-			{
-				const char *args = r_str_trim_head_ro (input + 2);
-				RVecSearchAddr targets;
-				if (!ref_search_targets_new (core, args, &targets)) {
-					break;
-				}
-				do_ref_search_targets (core, 0, false, &param, &targets);
-				RVecSearchAddr_fini (&targets);
-			}
-			break;
 		case 'c': // "/rc"
-			{
-				const char *args = r_str_trim_head_ro (input + 2);
-				RVecSearchAddr targets;
-				if (!ref_search_targets_new (core, args, &targets)) {
-					break;
-				}
-				do_ref_search_targets (core, 'c', false, &param, &targets);
+			if (ref_search_targets_new (core, args, &targets)) {
+				do_ref_search_targets (core, input[1], false, &param, &targets);
 				RVecSearchAddr_fini (&targets);
 			}
 			break;
@@ -4721,13 +4671,15 @@ reread:
 				}
 				break;
 			}
-			{
-				const char *args = r_str_trim_head_ro (input + 2);
-				RVecSearchAddr targets;
-				if (!ref_search_targets_new (core, args, &targets)) {
-					break;
-				}
+			if (ref_search_targets_new (core, args, &targets)) {
 				do_ref_search_esil_targets (core, &param, &targets);
+				RVecSearchAddr_fini (&targets);
+			}
+			break;
+		case ' ': // "/r $$"
+		case 0: // "/r"
+			if (ref_search_targets_new (core, args, &targets)) {
+				do_ref_search_targets (core, 0, true, &param, &targets);
 				RVecSearchAddr_fini (&targets);
 			}
 			break;
@@ -4755,21 +4707,12 @@ reread:
 				}
 			}
 			break;
-		case ' ': // "/r $$"
-		case 0: // "/r"
-			{
-				const char *args = r_str_trim_head_ro (input + 1);
-				RVecSearchAddr targets;
-				if (!ref_search_targets_new (core, args, &targets)) {
-					break;
-				}
-				do_ref_search_targets (core, 0, true, &param, &targets);
-				RVecSearchAddr_fini (&targets);
-			}
-			break;
 		case '?':
-		default:
 			r_core_cmd_help (core, help_msg_slash_r);
+			dosearch = false;
+			break;
+		default:
+			r_core_return_invalid_command (core, "/ab", input[2]);
 			dosearch = false;
 			break;
 		}
@@ -4828,7 +4771,7 @@ reread:
 				do_asm_search (core, &param, input + 2, 'i', search_itv);
 			}
 			break;
-		case 'b': // "ab"
+		case 'b': // "/ab"
 			if (input[2] == 'f') {
 				cmd_slash_ab (core, (int)r_num_math (core->num, input + 2), true);
 			} else if (input[2] == '?') {
@@ -4839,11 +4782,11 @@ reread:
 				r_core_return_invalid_command (core, "/ab", input[2]);
 			}
 			break;
-		case '1': // "a1"
+		case '1': // "/a1"
 			if (input[2] == '?') {
 				r_core_cmd_help_match (core, help_msg_slash_a, "/a1");
 			} else {
-				__core_cmd_search_asm_byteswap (core, (int)r_num_math (core->num, input + 2));
+				cmd_search_a1 (core, (int)r_num_math (core->num, input + 2));
 			}
 			break;
 		case 'I': //  "/aI" - infinite
