@@ -36,7 +36,7 @@ fi
 FILC_BIN=$(dirname "$(command -v filcc || echo "$FILC_ROOT/build/bin/filcc")")
 export PATH="$FILC_BIN:$PATH" CC=filcc USERCC=filcc HOST_CC=${HOST_CC:-cc}
 
-[ -z "${MAKE}" ] && MAKE=make
+[ -z "${MAKE:-}" ] && MAKE=make
 cd "$ROOT"
 . ./sys/make-jobs.inc.sh
 ${MAKE} mrproper || true
