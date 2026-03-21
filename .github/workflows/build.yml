@@ -121,11 +121,11 @@ jobs:
       run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
       id: r2v
     - name: Install dependencies
-      run: apt-get update && apt-get install -y curl git gperf patchelf xz-utils
+      run: sudo apt-get update && sudo apt-get install -y curl git gperf patchelf xz-utils
     - name: Build with filc
       run: ./sys/filc.sh --prefix=/opt/r2filc
     - name: Install filc build
-      run: make install
+      run: sudo make install
     - name: Create filc tarball
       run: tar -cJvf radare2-${{ steps.r2v.outputs.branch }}-filc.tar.xz /opt/r2filc
     - uses: actions/upload-artifact@v7
