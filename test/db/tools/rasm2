@@ -907,6 +907,15 @@ c3f5c840
 EOF
 RUN
 
+NAME=rasm2 .cfloat rejects negative sizes
+FILE=-
+CMDS=!rasm2 -a x86 -b 64 ".cfloat -1 8 23 127 0 0;.float 3.14"
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble '.cfloat -1 8 23 127 0 0' at line 1
+EOF
+RUN
+
 NAME=rasm2 #25036 (reject invalid x86-64 register r1)
 FILE=-
 CMDS=!rasm2 -a x86 -b 64 "add rax, r1"
