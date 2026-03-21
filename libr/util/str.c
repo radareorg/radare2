@@ -3341,7 +3341,11 @@ R_API char *r_str_wrap(const char *str, int w) {
 	if (w < 1 || !str) {
 		return strdup ("");
 	}
-	size_t r_size = 8 * r_utf8_strlen ((const ut8 *)str);
+	size_t r_size = 0;
+	size_t str_len = strlen (str);
+	if (r_mul_overflow (str_len, (size_t)8, &r_size) || r_add_overflow (r_size, (size_t)1, &r_size)) {
+		return NULL;
+	}
 	char *r = malloc (r_size);
 	if (!r) {
 		return NULL;
