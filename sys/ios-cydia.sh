@@ -100,10 +100,10 @@ else
 		cp -f dist/plugins-cfg/plugins.ios.cfg plugins.cfg
 		if [ "$static" = 1 ]; then
 			./configure --prefix="${PREFIX}" --with-ostype=darwin \
-			--with-compiler=ios-sdk-clang --target=arm-unknown-darwin --with-libr --without-zip
+			--with-compiler=ios-sdk-clang --target=arm-unknown-darwin --with-libr
 		else
 			./configure --prefix="${PREFIX}" --with-ostype=darwin \
-			--with-compiler=ios-sdk-clang --target=arm-unknown-darwin --without-zip
+			--with-compiler=ios-sdk-clang --target=arm-unknown-darwin
 		fi
 		RV=$?
 	fi
