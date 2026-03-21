@@ -141,6 +141,10 @@ static int r_asm_pseudo_float(RAsm *a, RAnalOp *op, char *input, const RCFloatPr
 	double value = strtod (r_str_trim_head_ro (input), NULL);
 	const int total_bits = profile->sign_bits + profile->exp_bits + profile->mant_bits;
 	const int byte_size = (total_bits + 7) / 8;
+	if (total_bits <= 0 || byte_size <= 0) {
+		R_LOG_ERROR ("Invalid .cfloat format size");
+		return -1;
+	}
 	if (byte_size > sizeof (buf)) {
 		R_LOG_ERROR ("Too many bits");
 		return -1;
@@ -1003,7 +1007,12 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 				.big_endian = atoi (r_str_word_get0 (args, 4)),
 				.explicit_leading_bit = atoi (r_str_word_get0 (args, 5))
 			};
-			acode->cfloat_profile = fp;
+			if (fp.sign_bits < 0 || fp.exp_bits < 0 || fp.mant_bits < 0) {
+				R_LOG_ERROR ("Invalid .cfloat field sizes");
+				ret = -1;
+			} else {
+				acode->cfloat_profile = fp;
+			}
 		}
 		free (args);
 	} else if (r_str_startswith (ptr, ".float ")) {
