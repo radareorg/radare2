@@ -17,6 +17,7 @@
 #include <kernel/scheduler.h>
 #endif
 
+#if HAVE_PTHREAD || R2__WINDOWS__
 #if R2__WINDOWS__
 static DWORD WINAPI _r_th_launcher(void *_th) {
 #else
@@ -93,6 +94,7 @@ static void *_r_th_launcher(void *_th) {
 #endif
 	return 0;
 }
+#endif
 
 R_API bool r_th_is_running(RThread *th) {
 	r_th_lock_enter (th->lock);
@@ -124,8 +126,7 @@ R_API R_TH_TID r_th_self(void) {
 #elif R2__WINDOWS__
 	return GetCurrentThread ();
 #else
-#pragma message("Not implemented on this platform")
-	return (R_TH_TID)-1;
+	return (R_TH_TID)0;
 #endif
 }
 
@@ -209,7 +210,7 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 #elif R2__WINDOWS__
 	th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
-	th->running = true;
+	th->running = !!th->tid;
 	return th;
 }
 

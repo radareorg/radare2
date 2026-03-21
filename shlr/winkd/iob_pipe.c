@@ -60,10 +60,10 @@ static int iob_pipe_write(void *p, const uint8_t *buf, const uint64_t count, con
 #include <sys/un.h>
 
 static void *iob_pipe_open(const char *path) {
+#ifndef __wasi__
 	int sock;
 	struct sockaddr_un sa;
 
-#ifndef __wasi__
 	sock = socket (AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1) {
 		perror ("socket");

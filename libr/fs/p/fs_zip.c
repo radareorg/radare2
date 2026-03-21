@@ -1,9 +1,11 @@
-/* radare - LGPL - Copyright 2022-2025 - pancake */
+/* radare - LGPL - Copyright 2022-2026 - pancake */
 
 #include <r_fs.h>
 #include <r_lib.h>
-#include <zip.h>
 #include <sys/stat.h>
+#include <r_userconf.h>
+#if WANT_ZIP
+#include <zip.h>
 
 static RFSFile *fs_zip_open(RFSRoot *root, const char *path, bool create) {
 	R_LOG_INFO ("zip.open (%s)", path);
@@ -94,13 +96,12 @@ static void fs_zip_close(RFSFile *file) {
 
 static void append_file(RList *list, const char *name, int type, int time, ut64 size) {
 	RFSFile *fsf = r_fs_file_new (NULL, name);
-	if (!fsf) {
-		return;
+	if (fsf) {
+		fsf->type = type;
+		fsf->time = time;
+		fsf->size = size;
+		r_list_append (list, fsf);
 	}
-	fsf->type = type;
-	fsf->time = time;
-	fsf->size = size;
-	r_list_append (list, fsf);
 }
 
 static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
@@ -208,6 +209,16 @@ RFSPlugin r_fs_plugin_zip = {
 	.close = fs_zip_close,
 	.dir = &fs_zip_dir,
 };
+#else
+RFSPlugin r_fs_plugin_zip = {
+	.meta = {
+		.name = "zip",
+		.author = "pancake",
+		.desc = "access compressed zip contents (not available)",
+		.license = "MIT",
+	},
+};
+#endif
 
 #ifndef R2_PLUGIN_INCORE
 R_API RLibStruct radare_plugin = {
