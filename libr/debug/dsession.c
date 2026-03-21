@@ -74,7 +74,7 @@ R_API bool r_debug_add_checkpoint(RDebug *dbg) {
 	}
 
 	// Save current memory maps
-	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	checkpoint.snaps = r_list_new ();
 	if (!checkpoint.snaps) {
 		return false;
 	}
