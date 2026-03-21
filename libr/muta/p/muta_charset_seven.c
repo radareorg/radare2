@@ -30,18 +30,17 @@ static int decode(RMutaSession *ms, const ut8 *in, int len, ut8 **out, int *cons
 		ch1 = strtol (buf, NULL, 16);
 		int j = out_len;
 		dest[j++] = ((ch1 &(0x7F >> shift)) << shift) | ch2;
-		dest[j++] = '\0';
 		ch2 = ch1 >> (7 - shift);
 		shift++;
 		if (shift == 7) {
 			dest[j++] = ch2;
-			dest[j++] = '\0';
 			ch2 = 0;
 			shift = 0;
 		}
 		out_len = j;
 		processed += 2;
 	}
+	dest[out_len] = '\0';
 
 	*out = (ut8 *)dest;
 	*consumed = processed;
