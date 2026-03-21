@@ -839,14 +839,13 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 	} else if (r_str_startswith (ptr, ".os ")) {
 		r_syscall_setup (a->syscall, a->config->arch, a->config->bits, asmcpu, ptr + 4);
 	} else if (r_str_startswith (ptr, ".hex ")) {
-		int size = r_hex_str2bin (ptr + 5, NULL);
-		if (size > 0) {
-			ut8 *bytes = malloc (size);
-			if (bytes) {
-				size = r_hex_str2bin (ptr + 5, bytes);
+		ut8 *bytes = malloc ((1 + strlen (ptr + 5)) / 2);
+		if (bytes) {
+			int size = r_hex_str2bin (ptr + 5, bytes);
+			if (size > 0) {
 				ret = r_anal_op_set_bytes (op, 0, bytes, size)? size: 0;
-				free (bytes);
 			}
+			free (bytes);
 		}
 	} else if (r_str_startswith (ptr, ".byte ") || r_str_startswith (ptr, ".int8 ")) {
 		ret = r_asm_pseudo_byte (op, ptr + 6);
