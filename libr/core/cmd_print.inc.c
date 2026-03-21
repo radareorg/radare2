@@ -7124,19 +7124,22 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 			if (offs) {
 				ut64 sz = r_num_math (core->num, offs);
 				char *fmt;
+				char *next;
 				if (((st64)sz * -1) > core->addr) {
 					// the offset is smaller than the negative value
 					// so only print -offset
 					fmt = r_str_newf ("d %" PFMT64d, -1 * core->addr);
+					next = r_str_newf ("d %s", input + 3);
 				} else {
 					fmt = r_str_newf ("d %s", input + 2);
+					next = r_str_newf ("d %s", input + 3);
 				}
-				if (fmt) {
+				if (fmt && next) {
 					cmd_print (core, fmt);
-					strcpy (fmt + 2, input + 3);
-					cmd_print (core, fmt);
-					free (fmt);
+					cmd_print (core, next);
 				}
+				free (fmt);
+				free (next);
 				free (offs);
 			}
 			ret = 0;
