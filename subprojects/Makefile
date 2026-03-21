@@ -2,7 +2,17 @@
 
 -include ../config-user.mk
 
-DEPS=sdb qjs otezip
+DEPS=sdb
+
+ifeq ($(WANT_QJS),1)
+  DEPS += qjs
+endif
+
+ifeq ($(WANT_ZIP),1)
+  ifeq ($(USE_LIB_ZIP),0)
+    DEPS += otezip
+  endif
+endif
 
 ifeq ($(WANT_V35),1)
   DEPS += binaryninja

@@ -111,6 +111,33 @@ jobs:
         name: tarball
         path: radare2-?.?.?.*
 
+  filc:
+    runs-on: ubuntu-24.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Extract r2 version
+      shell: bash
+      run: echo "branch=`./configure -qV`" >> $GITHUB_OUTPUT
+      id: r2v
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl git gperf patchelf xz-utils
+        sudo rm -rf /opt/r2filc
+        sudo mkdir -p /opt/r2filc
+        sudo chown "$(id -u):$(id -g)" /opt/r2filc
+    - name: Build with filc
+      run: ./sys/filc.sh --prefix=/opt/r2filc
+    - name: Install filc build
+      run: make install
+    - name: Create filc tarball
+      run: tar -C /opt -cJvf radare2-${{ steps.r2v.outputs.branch }}-filc.tar.xz r2filc
+    - uses: actions/upload-artifact@v7
+      with:
+        name: filc
+        path: radare2-*-filc.tar.xz
+
   # Linux
   linux-static:
     strategy:
@@ -788,6 +815,7 @@ jobs:
       - linux-wasi-api
       - linux-wasi-browser
       - tarball
+      - filc
 #      - linux-static
 #      - linux-acr-rpm-64
       - linux-acr-deb
@@ -827,6 +855,7 @@ jobs:
     env:
       ASSET_FILES: |
         dist/artifacts/tarball/*.tar.xz
+        dist/artifacts/filc/*.tar.xz
         dist/artifacts/linux-acr-deb-*/radare2_*.deb
         dist/artifacts/w64-meson/*.zip
         dist/artifacts/w32-meson/*.zip
