@@ -656,32 +656,43 @@ R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
 	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
 		return;
 	}
-
-	if (mask & R_LIB_LOAD_ENV) {
-		char *path = r_sys_getenv (R_LIB_ENV);
-		if (R_STR_ISNOTEMPTY (path)) {
-			r_lib_opendir (lib, path);
+	char *order_env = r_sys_getenv ("R2_PLUGINS_ORDER");
+	const char *order = R_STR_ISNOTEMPTY (order_env) ? order_env : "ehs";
+	int i;
+	for (i = 0; order[i]; i++) {
+		switch (order[i]) {
+		case 'e':
+			if (mask & R_LIB_LOAD_ENV) {
+				char *path = r_sys_getenv (R_LIB_ENV);
+				if (R_STR_ISNOTEMPTY (path)) {
+					r_lib_opendir (lib, path);
+				}
+				free (path);
+			}
+			break;
+		case 'h':
+			if (mask & R_LIB_LOAD_HOME) {
+				char *hpd = r_xdg_datadir ("plugins");
+				if (hpd) {
+					r_lib_opendir (lib, hpd);
+					free (hpd);
+				}
+			}
+			break;
+		case 's':
+			if (mask & R_LIB_LOAD_SYSTEM) {
+				char *plugindir = r_str_r2_prefix (R2_PLUGINS);
+				char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
+				char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
+				r_lib_opendir (lib, plugindir);
+				r_lib_opendir (lib, extrasdir);
+				r_lib_opendir (lib, bindingsdir);
+				free (plugindir);
+				free (extrasdir);
+				free (bindingsdir);
+			}
+			break;
 		}
-		free (path);
 	}
-
-	if (mask & R_LIB_LOAD_HOME) {
-		char *hpd = r_xdg_datadir ("plugins");
-		if (hpd) {
-			r_lib_opendir (lib, hpd);
-			free (hpd);
-		}
-	}
-
-	if (mask & R_LIB_LOAD_SYSTEM) {
-		char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-		char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-		char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-		r_lib_opendir (lib, plugindir);
-		r_lib_opendir (lib, extrasdir);
-		r_lib_opendir (lib, bindingsdir);
-		free (plugindir);
-		free (extrasdir);
-		free (bindingsdir);
-	}
+	free (order_env);
 }
