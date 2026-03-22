@@ -14,6 +14,18 @@ static Sdb *setup_sdb(void) {
 	return res;
 }
 
+typedef struct {
+	int count;
+} LogEventAcc;
+
+static void log_event_cb(REvent *ev, int type, void *user, void *data) {
+	(void)ev;
+	(void)type;
+	(void)data;
+	LogEventAcc *acc = (LogEventAcc *)user;
+	acc->count++;
+}
+
 bool test_dll_names(void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
@@ -236,6 +248,15 @@ bool test_log(void) {
 
 	// https://github.com/radareorg/radare2/issues/22468
 	R_LOG_INFO ("%s", "");
+
+	REvent *ev = r_log_event ();
+	mu_assert_notnull (ev, "r_log_event ()");
+	LogEventAcc acc = { 0 };
+	r_event_hook (ev, R_EVENT_LOG, log_event_cb, &acc);
+	R_LOG_INFO ("log-event-test");
+	r_event_unhook (ev, R_EVENT_LOG, log_event_cb);
+	R_LOG_INFO ("log-event-test-2");
+	mu_assert_eq (acc.count, 1, "R_EVENT_LOG should be sent once");
 
 	r_core_free (core);
 	mu_end;

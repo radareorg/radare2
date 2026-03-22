@@ -60,6 +60,8 @@ typedef struct r_log_source_t {
 	const char *source;
 } RLogSource;
 
+typedef struct r_event_t REvent;
+
 R_API bool r_log_init(void);
 R_API void r_log_fini(void);
 R_API bool r_log_match(int level, const char *origin);
@@ -67,6 +69,7 @@ R_API void r_log_message(RLogLevel level, const char *origin, const char *func, 
 R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func, int line, const char *fmt, va_list ap);
 R_API void r_log_add_callback(RLogCallback cb, void *user);
 R_API void r_log_del_callback(RLogCallback cb);
+R_API REvent *r_log_event(void);
 
 #if R_LOG_DISABLE
 #define R_LOG(f,...) do {} while(0)
