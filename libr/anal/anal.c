@@ -128,6 +128,98 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
+#if USE_NEW_ESIL
+static bool anal_esil_mem_switch (void *mem, ut32 idx) {
+	RAnal *anal = mem;
+	if (!anal || !anal->iob.init) {
+		R_LOG_WARN ("anal->iob is not setup");
+		return false;
+	}
+	return anal->iob.bank_use (anal->iob.io, idx);
+}
+
+static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
+	RAnal *anal = mem;
+	if (!anal || !anal->iob.init) {
+		R_LOG_WARN ("anal->iob is not setup");
+		return false;
+	}
+	return anal->iob.read_at (anal->iob.io, addr, buf, len);
+}
+
+static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
+	RAnal *anal = mem;
+	if (!anal || !anal->iob.init) {
+		R_LOG_WARN ("anal->iob is not setup");
+		return false;
+	}
+	return anal->iob.write_at (anal->iob.io, addr, buf, len);
+}
+
+REsilMemInterface anal_esil_mem_if = {
+	.mem_switch = anal_esil_mem_switch,
+	.mem_read = anal_esil_mem_read,
+	.mem_write = anal_esil_mem_write
+};
+
+static bool anal_esil_is_reg (void *user, const char *name) {
+	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	r_unref (ri);
+	return true;
+}
+
+static bool anal_esil_reg_read (void *user, const char *name, ut64 *val) {
+	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
+	if (!ri) {
+		return false;
+	}
+	*val = r_reg_get_value (((RAnal *)user)->reg, ri);
+	r_unref (ri);
+	return true;
+}
+
+static bool anal_esil_reg_write (void *user, const char *name, ut64 val) {
+	return r_reg_setv (((RAnal *)user)->reg, name, val);
+}
+
+static ut32 anal_esil_reg_size (void *user, const char *name) {
+	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	const ut32 size = ri->size;
+	r_unref (ri);
+	return size;
+}
+
+static bool anal_esil_reg_alias (void *user, const char *name, const char *alias) {
+	int alias_type = r_reg_alias_fromstring (alias);
+	if (alias_type < 0) {
+		return false;
+	}
+	return r_reg_alias_setname (((RAnal *)user)->reg, alias_type, name);
+}
+
+static REsilRegInterface anal_esil_reg_if = {
+	.is_reg = anal_esil_is_reg,
+	.reg_read = anal_esil_reg_read,
+	.reg_write = anal_esil_reg_write,
+	.reg_size = anal_esil_reg_size,
+	.reg_alias = anal_esil_reg_alias
+};
+
+static bool anal_esil_set_bits (void *user, int bits) {
+	return r_anal_set_triplet ((RAnal *)user, NULL, NULL, bits);
+}
+
+static REsilUtilInterface anal_esil_util_if = {
+	.set_bits = anal_esil_set_bits
+};
+#endif
+
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	int i;
@@ -176,7 +268,14 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
+#if USE_NEW_ESIL
+	anal_esil_reg_if.reg = anal;
+	anal_esil_mem_if.mem = anal;
+	anal_esil_util_if.user = anal;
+	anal->esil = r_esil_new_ex (4096, 0, 1, &anal_esil_reg_if, &anal_esil_mem_if, &anal_esil_util_if);
+#else
 	anal->esil = r_esil_new (4096, 0, 1);
+#endif
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
