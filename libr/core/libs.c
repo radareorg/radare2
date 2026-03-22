@@ -33,19 +33,6 @@ CB(fs, fs)
 CB(arch, anal->arch);
 
 #if R2_LOADLIBS
-static void open_plugins_at(RCore *core, const char *arg, const char *user_path) {
-	if (R_STR_ISNOTEMPTY (arg)) {
-		if (user_path && r_str_endswith (user_path, arg)) {
-			return;
-		}
-		char *pdir = r_str_r2_prefix (arg);
-		if (pdir) {
-			r_lib_opendir (core->lib, pdir);
-			free (pdir);
-		}
-	}
-}
-
 static void load_plugins(RCore *core, int where, const char *path) {
 	if (!where) {
 		where = -1;
@@ -54,44 +41,7 @@ static void load_plugins(RCore *core, int where, const char *path) {
 		r_lib_opendir (core->lib, path);
 	}
 	const char *dir_plugins = r_config_get (core->config, "dir.plugins");
-	char *order_env = r_sys_getenv ("R2_PLUGINS_ORDER");
-	const char *order = R_STR_ISNOTEMPTY (order_env) ? order_env : "cehs";
-	int i;
-	for (i = 0; order[i]; i++) {
-		switch (order[i]) {
-		case 'c':
-			if (where & R_CORE_LOADLIBS_CONFIG) {
-				r_lib_opendir (core->lib, dir_plugins);
-			}
-			break;
-		case 'e':
-			if (where & R_CORE_LOADLIBS_ENV) {
-				char *p = r_sys_getenv (R_LIB_ENV);
-				if (R_STR_ISNOTEMPTY (p)) {
-					r_lib_opendir (core->lib, p);
-				}
-				free (p);
-			}
-			break;
-		case 'h':
-			if (where & R_CORE_LOADLIBS_HOME) {
-				char *hpd = r_xdg_datadir ("plugins");
-				if (hpd) {
-					r_lib_opendir (core->lib, hpd);
-					free (hpd);
-				}
-			}
-			break;
-		case 's':
-			if (where & R_CORE_LOADLIBS_SYSTEM) {
-				open_plugins_at (core, R2_PLUGINS, dir_plugins);
-				open_plugins_at (core, R2_EXTRAS, dir_plugins);
-				open_plugins_at (core, R2_BINDINGS, dir_plugins);
-			}
-			break;
-		}
-	}
-	free (order_env);
+	r_lib_load_paths (core->lib, (RLibLoadMask)where, dir_plugins);
 }
 #else
 static void load_plugins(RCore *core, int where, const char *path){
