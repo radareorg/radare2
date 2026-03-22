@@ -522,17 +522,11 @@ static void r2pm_setenv(R2Pm *r2pm) {
 #else
 	const char *ldpathvar = "LD_LIBRARY_PATH";
 #endif
-	// For Termux, prioritize system libraries over Termux libraries to avoid conflicts
-#if defined(__ANDROID__)
-	// Add system library paths first to prevent Termux library conflicts
-#if defined(__LP64__)
-	r_sys_setenv_sep (ldpathvar, "/system/lib64", true);
-#else
-	r_sys_setenv_sep (ldpathvar, "/system/lib", true);
-#endif
-#endif
+// Termux natively manages its library resolution, overriding LD_LIBRARY_PATH breaks child processes.
+#if !defined(__ANDROID__)
 	r_sys_setenv_sep (ldpathvar, r2pm_libdir, false);
 	r_sys_setenv_sep (ldpathvar, R2_LIBDIR, false);
+#endif
 	{
 		char *r2_cflags = NULL;
 		char *r2_ldflags = NULL;
