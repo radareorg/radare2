@@ -52,6 +52,40 @@ static void print_node_options(void *user, RConfigNode *node) {
 	}
 }
 
+static const char *find_node_option(RConfigNode *node, const char *value) {
+	RListIter *iter;
+	char *option;
+	if (!node || R_STR_ISEMPTY (value) || r_list_empty (node->options)) {
+		return NULL;
+	}
+	r_list_foreach (node->options, iter, option) {
+		if (!strcmp (option, value) || !r_str_casecmp (option, value)) {
+			return option;
+		}
+	}
+	return NULL;
+}
+
+static bool canonicalize_node_option(RConfigNode *node) {
+	const char *option = find_node_option (node, node? node->value: NULL);
+	if (!option) {
+		return false;
+	}
+	if (strcmp (option, node->value)) {
+		free (node->value);
+		node->value = strdup (option);
+		if (!node->value) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool is_valid_asmcpu(RConfigNode *node) {
+	return !node || R_STR_ISEMPTY (node->value) || r_list_empty (node->options)
+		|| canonicalize_node_option (node);
+}
+
 static int compareName(const RAnalFunction *a, const RAnalFunction *b) {
 	return (a && b && a->name && b->name? strcmp (a->name, b->name): 0);
 }
@@ -692,7 +726,8 @@ static void update_cmdpdc_options(RCore *core, RConfigNode *node) {
 static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	R_RETURN_IF_FAIL (core && core->rasm);
-	const char *arch = r_config_get (core->config, "asm.arch");
+	RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
+	const char *arch = asmarch? asmarch->value: NULL;
 	if (!arch || !*arch) {
 		return;
 	}
@@ -733,7 +768,18 @@ static bool cb_asmcpu(void *user, void *data) {
 #if 0
 		update_asmcpu_options (core, node);
 #endif
-		return 0;
+		return false;
+	}
+	update_asmcpu_options (core, node);
+	if (!is_valid_asmcpu (node)) {
+		RConfigNode *asmarch = r_config_node_get (core->config, "asm.arch");
+		const char *arch = asmarch? asmarch->value: NULL;
+		if (R_STR_ISNOTEMPTY (arch)) {
+			R_LOG_WARN ("asm.cpu: invalid value '%s' for '%s'. See 'e asm.cpu=?'", node->value, arch);
+		} else {
+			R_LOG_WARN ("asm.cpu: invalid value '%s'. See 'e asm.cpu=?'", node->value);
+		}
+		return false;
 	}
 	r_arch_config_set_cpu (core->rasm->config, node->value);
 	const int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
@@ -846,8 +892,16 @@ static bool cb_asmarch(void *user, void *data) {
 
 	RConfigNode *asmcpu = r_config_node_get (core->config, "asm.cpu");
 	if (asmcpu) {
-		r_arch_config_set_cpu (core->rasm->config, asmcpu->value);
 		update_asmcpu_options (core, asmcpu);
+		if (!is_valid_asmcpu (asmcpu)) {
+			(void)r_config_set (core->config, "asm.cpu", "");
+		} else {
+			r_arch_config_set_cpu (core->rasm->config, asmcpu->value);
+		}
+		const char *asmcpu_value = r_config_get (core->config, "asm.cpu");
+		const char *asmos = r_config_get (core->config, "asm.os");
+		int archbits = (core->anal->config)? core->anal->config->bits: r_config_get_i (core->config, "asm.bits");
+		(void)r_syscall_setup (core->anal->syscall, node->value, archbits, asmcpu_value, asmos);
 	}
 	{
 		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
