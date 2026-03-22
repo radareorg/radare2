@@ -138,6 +138,7 @@ typedef enum {
 	R_LIB_LOAD_ENV = 1 << 0,
 	R_LIB_LOAD_HOME = 1 << 1,
 	R_LIB_LOAD_SYSTEM = 1 << 2,
+	R_LIB_LOAD_CONFIG = 1 << 3,
 	R_LIB_LOAD_DEFAULT = R_LIB_LOAD_ENV | R_LIB_LOAD_HOME | R_LIB_LOAD_SYSTEM,
 } RLibLoadMask;
 
@@ -164,6 +165,7 @@ R_API const char *r_lib_type_tostring(int idx);
 R_API bool r_lib_add_handler(RLib *lib, int type, const char *desc, RLibCallback ct, RLibCallback dt, void *user);
 R_API bool r_lib_del_handler(RLib *lib, int type, RLibCallback constructor, RLibCallback destructor, void *user);
 R_API bool r_lib_close(RLib *lib, const char *file);
+R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path);
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask);
 
 #include <r_util/pj.h>

@@ -652,15 +652,34 @@ R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta) {
 	}
 }
 
-R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
-	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
+static void open_plugins_at(RLib *lib, const char *arg, const char *config_path) {
+	if (R_STR_ISEMPTY (arg)) {
 		return;
 	}
+	if (config_path && r_str_endswith (config_path, arg)) {
+		return;
+	}
+	char *pdir = r_str_r2_prefix (arg);
+	if (pdir) {
+		r_lib_opendir (lib, pdir);
+		free (pdir);
+	}
+}
+
+R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path) {
+	R_RETURN_IF_FAIL (lib);
 	char *order_env = r_sys_getenv ("R2_PLUGINS_ORDER");
-	const char *order = R_STR_ISNOTEMPTY (order_env) ? order_env : "ehs";
+	const char *order = R_STR_ISNOTEMPTY (order_env)
+		? order_env
+		: ((mask & R_LIB_LOAD_CONFIG) ? "cehs" : "ehs");
 	int i;
 	for (i = 0; order[i]; i++) {
 		switch (order[i]) {
+		case 'c':
+			if ((mask & R_LIB_LOAD_CONFIG) && R_STR_ISNOTEMPTY (config_path)) {
+				r_lib_opendir (lib, config_path);
+			}
+			break;
 		case 'e':
 			if (mask & R_LIB_LOAD_ENV) {
 				char *path = r_sys_getenv (R_LIB_ENV);
@@ -681,18 +700,19 @@ R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
 			break;
 		case 's':
 			if (mask & R_LIB_LOAD_SYSTEM) {
-				char *plugindir = r_str_r2_prefix (R2_PLUGINS);
-				char *extrasdir = r_str_r2_prefix (R2_EXTRAS);
-				char *bindingsdir = r_str_r2_prefix (R2_BINDINGS);
-				r_lib_opendir (lib, plugindir);
-				r_lib_opendir (lib, extrasdir);
-				r_lib_opendir (lib, bindingsdir);
-				free (plugindir);
-				free (extrasdir);
-				free (bindingsdir);
+				open_plugins_at (lib, R2_PLUGINS, config_path);
+				open_plugins_at (lib, R2_EXTRAS, config_path);
+				open_plugins_at (lib, R2_BINDINGS, config_path);
 			}
 			break;
 		}
 	}
 	free (order_env);
+}
+
+R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
+	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
+		return;
+	}
+	r_lib_load_paths (lib, mask, NULL);
 }
