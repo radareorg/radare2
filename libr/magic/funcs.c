@@ -50,10 +50,9 @@ static int file_vprintf(RMagic *ms, const char *fmt, va_list ap) {
  */
 int __magic_file_printf(RMagic *ms, const char *fmt, ...) {
 	va_list ap;
-	int ret;
 
 	va_start (ap, fmt);
-	ret = file_vprintf (ms, fmt, ap);
+	int ret = file_vprintf (ms, fmt, ap);
 	va_end (ap);
 	return ret;
 }
@@ -206,47 +205,6 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 		return NULL;
 	}
 	ms->o.pbuf = pbuf;
-
-#if !defined(__serenity__)
-	// defined (HAVE_WCHAR_H) && defined (HAVE_MBRTOWC) && defined (HAVE_WCWIDTH)
-	{
-		mbstate_t state;
-		wchar_t nextchar;
-		int mb_conv = 1;
-		size_t bytesconsumed;
-		char *eop;
-		(void)memset (&state, 0, sizeof (mbstate_t));
-
-		np = ms->o.pbuf;
-		op = obuf;
-		eop = op + len;
-
-		while (op < eop) {
-			bytesconsumed = mbrtowc (&nextchar, op, (size_t) (eop - op), &state);
-			if (bytesconsumed == (size_t) (-1) ||
-				bytesconsumed == (size_t) (-2)) {
-				mb_conv = 0;
-				break;
-			}
-
-			if (iswprint (nextchar)) {
-				(void)memcpy (np, op, bytesconsumed);
-				op += bytesconsumed;
-				np += bytesconsumed;
-			} else {
-				while (bytesconsumed-- > 0) {
-					OCTALIFY (np, op);
-				}
-			}
-		}
-		*np = '\0';
-
-		/* Parsing succeeded as a multi-byte sequence */
-		if (mb_conv != 0) {
-			return ms->o.pbuf;
-		}
-	}
-#endif
 	for (np = ms->o.pbuf, op = obuf; *op; op++) {
 		if (isprint ((ut8)*op)) {
 			*np++ = *op;

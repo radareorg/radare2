@@ -2,6 +2,9 @@ UNITS_BINDIR := bin
 BINS=$(patsubst %.c,$(UNITS_BINDIR)/%,$(wildcard *.c))
 # LDFLAGS+=$(shell pkg-config --libs r_core)
 -include ../../config-user.mk
+ifeq ($(USE_LIB_MAGIC),1)
+	BINS:=$(filter-out $(UNITS_BINDIR)/test_magic,$(BINS))
+endif
 CPPFLAGS+=-I$(INCLUDEDIR)
 CPPFLAGS+=-I../../libr/include
 CPPFLAGS+=-I../../subprojects/sdb/include

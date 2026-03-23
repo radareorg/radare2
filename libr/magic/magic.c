@@ -103,15 +103,15 @@ R_API void r_magic_free(RMagic *ms) {
 }
 
 R_API bool r_magic_load_buffer(RMagic *ms, const ut8 *magicdata, size_t magicdata_size) {
-	if (magicdata_size > 0 && *magicdata == '#') {
-		struct mlist *ml = __magic_file_apprentice (ms, (const char *)magicdata, magicdata_size, FILE_LOAD);
+	if (magicdata && magicdata_size > 0) {
+		struct mlist *ml = __magic_file_apprentice_buffer (ms, magicdata, magicdata_size, FILE_LOAD);
 		if (ml) {
 			free_mlist (ms->mlist);
 			ms->mlist = ml;
 			return true;
 		}
-	} else {
-		eprintf ("Magic buffers should start with #\n");
+	} else if (ms) {
+		__magic_file_error (ms, 0, "magic buffer is empty");
 	}
 	return false;
 }

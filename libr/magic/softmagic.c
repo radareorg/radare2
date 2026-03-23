@@ -38,19 +38,6 @@
 #include "r_regex.h"
 #include "r_util/r_time.h"
 
-static int match(RMagic *, struct r_magic *, ut32, const ut8 *, size_t, int);
-static int mget(RMagic *, const ut8 *, struct r_magic *, size_t, unsigned int);
-static int magiccheck(RMagic *, struct r_magic *);
-static st32 mprint(RMagic *, struct r_magic *);
-static void mdebug(RMagic *, ut32, const char *, size_t);
-static int mcopy(RMagic *, union VALUETYPE *, int, int, const ut8 *, ut32, size_t, size_t);
-static int mconvert(RMagic *, struct r_magic *);
-static int print_sep(RMagic *, int);
-static void cvt_8(union VALUETYPE *, const struct r_magic *);
-static void cvt_16(union VALUETYPE *, const struct r_magic *);
-static void cvt_32(union VALUETYPE *, const struct r_magic *);
-static void cvt_64(union VALUETYPE *, const struct r_magic *);
-
 static void magic_debug(RMagic *ms, const char *fmt, ...) {
 	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
 		return;
@@ -65,230 +52,11 @@ static void magic_debug(RMagic *ms, const char *fmt, ...) {
 	}
 }
 
-static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const union VALUETYPE *p) {
-	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
-		return;
-	}
-	mdebug (ms, offset, (const char *)p, sizeof (*p));
-	__magic_file_mdump (ms, m);
-}
-
 /*
  * Macro to give description string according to whether we want plain
  * text or MIME type
  */
 #define R_MAGIC_DESC ((ms->flags & R_MAGIC_MIME)? m->mimetype: m->desc)
-
-/*
- * softmagic - lookup one file in parsed, in-memory copy of database
- * Passed the name and FILE * of one file to be typed.
- */
-/*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
-int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
-	struct mlist *ml;
-	int rv;
-	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
-		if ((rv = match (ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0) {
-			return rv;
-		}
-	}
-	return 0;
-}
-
-/*
- * Go through the whole list, stopping if you find a match.  Process all
- * the continuations of that match before returning.
- *
- * We support multi-level continuations:
- *
- *	At any time when processing a successful top-level match, there is a
- *	current continuation level; it represents the level of the last
- *	successfully matched continuation.
- *
- *	Continuations above that level are skipped as, if we see one, it
- *	means that the continuation that controls them - i.e, the
- *	lower-level continuation preceding them - failed to match.
- *
- *	Continuations below that level are processed as, if we see one,
- *	it means we've finished processing or skipping higher-level
- *	continuations under the control of a successful or unsuccessful
- *	lower-level continuation, and are now seeing the next lower-level
- *	continuation and should process it.  The current continuation
- *	level reverts to the level of the one we're seeing.
- *
- *	Continuations at the current level are processed as, if we see
- *	one, there's no lower-level continuation that may have failed.
- *
- *	If a continuation matches, we bump the current continuation level
- *	so that higher-level continuations are processed.
- */
-static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, size_t nbytes, int mode) {
-	ut32 magindex = 0;
-	unsigned int cont_level = 0;
-	int need_separator = 0;
-	int returnval = 0; /* if a match is found it is set to 1*/
-	int firstline = 1; /* a flag to print X\n  X\n- X */
-	int printed_something = 0;
-
-	if (__magic_file_check_mem (ms, cont_level) == -1) {
-		return -1;
-	}
-	for (magindex = 0; magindex < nmagic; magindex++) {
-		int flush;
-		struct r_magic *m = &magic[magindex];
-
-		if ((m->flag & BINTEST) != mode) {
-			/* Skip sub-tests */
-			while (magic[magindex + 1].cont_level != 0 && ++magindex < nmagic - 1) {
-				continue;
-			}
-			continue; /* Skip to next top-level test*/
-		}
-
-		ms->offset = m->offset;
-		ms->line = m->lineno;
-
-		/* if main entry matches, print it... */
-		flush = !mget (ms, s, m, nbytes, cont_level);
-		if (flush) {
-			if (m->reln == '!') {
-				flush = 0;
-			}
-		} else {
-			int ret = magiccheck (ms, m);
-			if (ret == -1) {
-				return -1;
-			}
-			if (!ret) {
-				flush++;
-			}
-		}
-		if (flush) {
-			/*
-			 * main entry didn't match,
-			 * flush its continuations
-			 */
-			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
-				magindex++;
-			}
-			continue;
-		}
-
-		/*
-		 * If we are going to print something, we'll need to print
-		 * a blank before we print something else.
-		 */
-		if (*R_MAGIC_DESC) {
-			need_separator = 1;
-			printed_something = 1;
-			if (print_sep (ms, firstline) == -1) {
-				return -1;
-			}
-		}
-
-		if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
-			return -1;
-		}
-
-		/* and any continuations that match */
-		if (__magic_file_check_mem (ms, ++cont_level) == -1) {
-			return -1;
-		}
-
-		while (++magindex < nmagic - 1 && magic[magindex].cont_level != 0) {
-			m = &magic[magindex];
-			ms->line = m->lineno; /* for messages */
-
-			if (cont_level < m->cont_level) {
-				continue;
-			}
-			if (cont_level > m->cont_level) {
-				/*
-				 * We're at the end of the level
-				 * "cont_level" continuations.
-				 */
-				cont_level = m->cont_level;
-			}
-			ms->offset = m->offset;
-			if (m->flag & OFFADD) {
-				ms->offset += ms->c.li[cont_level - 1].off;
-			}
-
-			if (m->cond == COND_ELSE || m->cond == COND_ELIF) {
-				if (ms->c.li[cont_level].last_match == 1) {
-					continue;
-				}
-			}
-			flush = !mget (ms, s, m, nbytes, cont_level);
-			if (flush && m->reln != '!') {
-				continue;
-			}
-
-			switch (flush? 1: magiccheck (ms, m)) {
-			case -1:
-				return -1;
-			case 0:
-				ms->c.li[cont_level].last_match = 0;
-				break;
-			default:
-				ms->c.li[cont_level].last_match = 1;
-				if (m->type != FILE_DEFAULT) {
-					ms->c.li[cont_level].got_match = 1;
-				} else if (ms->c.li[cont_level].got_match) {
-					ms->c.li[cont_level].got_match = 0;
-					break;
-				}
-				/*
-				 * If we are going to print something,
-				 * make sure that we have a separator first.
-				 */
-				if (*R_MAGIC_DESC) {
-					printed_something = 1;
-					if (print_sep (ms, firstline) == -1) {
-						return -1;
-					}
-				}
-				/*
-				 * This continuation matched.  Print
-				 * its message, with a blank before it
-				 * if the previous item printed and
-				 * this item isn't empty.
-				 */
-				/* space if previous printed */
-				if (need_separator && ((m->flag & NOSPACE) == 0) && *R_MAGIC_DESC) {
-					if (__magic_file_printf (ms, " ") == -1) {
-						return -1;
-					}
-					need_separator = 0;
-				}
-				if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
-					return -1;
-				}
-				if (*R_MAGIC_DESC) {
-					need_separator = 1;
-				}
-
-				/*
-				 * If we see any continuations
-				 * at a higher level,
-				 * process them.
-				 */
-				if (__magic_file_check_mem (ms, ++cont_level) == -1) {
-					return -1;
-				}
-				break;
-			}
-		}
-		if (printed_something) {
-			firstline = 0;
-			returnval = 1;
-		}
-		if ((ms->flags & R_MAGIC_CONTINUE) == 0 && printed_something) {
-			return 1; /* don't keep searching */
-		}
-	}
-	return returnval; /* This is hit if -k is set or there is no match */
-}
 
 static int check_fmt(RMagic *ms, struct r_magic *m) {
 	RRegex rx;
@@ -646,6 +414,22 @@ static void cvt_double(union VALUETYPE *p, const struct r_magic *m) {
 	DO_CVT2 (d, (double));
 }
 
+static st32 apply_indir_op(st32 value, st32 off, int op) {
+	if (off) {
+		switch (op & FILE_OPS_MASK) {
+		case FILE_OPAND: value &= off; break;
+		case FILE_OPOR: value |= off; break;
+		case FILE_OPXOR: value ^= off; break;
+		case FILE_OPADD: value += off; break;
+		case FILE_OPMINUS: value -= off; break;
+		case FILE_OPMULTIPLY: value *= off; break;
+		case FILE_OPDIVIDE: value /= off; break;
+		case FILE_OPMODULO: value %= off; break;
+		}
+	}
+	return (op & FILE_OPINVERSE)? ~value: value;
+}
+
 /*
  * Convert the byte order of the data we are looking at
  * While we're here, let's apply the mask operation
@@ -703,7 +487,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 			return 1;
 		}
 	case FILE_BESHORT:
-		p->h = (short) ((p->hs[0] << 8) | (p->hs[1]));
+		p->h = (short)r_read_be16 (p->hs);
 		cvt_16 (p, m);
 		return 1;
 	case FILE_BELONG:
@@ -715,14 +499,11 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_BEQUAD:
 	case FILE_BEQDATE:
 	case FILE_BEQLDATE:
-		p->q = (ut64) (((ut64)p->hq[0] << 56) | ((ut64)p->hq[1] << 48) |
-			((ut64)p->hq[2] << 40) | ((ut64)p->hq[3] << 32) |
-			((ut64)p->hq[4] << 24) | ((ut64)p->hq[5] << 16) |
-			((ut64)p->hq[6] << 8) | ((ut64)p->hq[7]));
+		p->q = r_read_be64 (p->hq);
 		cvt_64 (p, m);
 		return 1;
 	case FILE_LESHORT:
-		p->h = (short) ((p->hs[1] << 8) | (p->hs[0]));
+		p->h = (short)r_read_le16 (p->hs);
 		cvt_16 (p, m);
 		return 1;
 	case FILE_LELONG:
@@ -734,10 +515,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_LEQUAD:
 	case FILE_LEQDATE:
 	case FILE_LEQLDATE:
-		p->q = (ut64) (((ut64)p->hq[7] << 56) | ((ut64)p->hq[6] << 48) |
-			((ut64)p->hq[5] << 40) | ((ut64)p->hq[4] << 32) |
-			((ut64)p->hq[3] << 24) | ((ut64)p->hq[2] << 16) |
-			((ut64)p->hq[1] << 8) | ((ut64)p->hq[0]));
+		p->q = r_read_le64 (p->hq);
 		cvt_64 (p, m);
 		return 1;
 	case FILE_MELONG:
@@ -750,30 +528,22 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 		cvt_float (p, m);
 		return 1;
 	case FILE_BEFLOAT:
-		p->l = ((ut32)p->hl[0] << 24) | ((ut32)p->hl[1] << 16) |
-			((ut32)p->hl[2] << 8) | ((ut32)p->hl[3]);
+		p->l = r_read_be32 (p->hl);
 		cvt_float (p, m);
 		return 1;
 	case FILE_LEFLOAT:
-		p->l = ((ut32)p->hl[3] << 24) | ((ut32)p->hl[2] << 16) |
-			((ut32)p->hl[1] << 8) | ((ut32)p->hl[0]);
+		p->l = r_read_le32 (p->hl);
 		cvt_float (p, m);
 		return 1;
 	case FILE_DOUBLE:
 		cvt_double (p, m);
 		return 1;
 	case FILE_BEDOUBLE:
-		p->q = ((ut64)p->hq[0] << 56) | ((ut64)p->hq[1] << 48) |
-			((ut64)p->hq[2] << 40) | ((ut64)p->hq[3] << 32) |
-			((ut64)p->hq[4] << 24) | ((ut64)p->hq[5] << 16) |
-			((ut64)p->hq[6] << 8) | ((ut64)p->hq[7]);
+		p->q = r_read_be64 (p->hq);
 		cvt_double (p, m);
 		return 1;
 	case FILE_LEDOUBLE:
-		p->q = ((ut64)p->hq[7] << 56) | ((ut64)p->hq[6] << 48) |
-			((ut64)p->hq[5] << 40) | ((ut64)p->hq[4] << 32) |
-			((ut64)p->hq[3] << 24) | ((ut64)p->hq[2] << 16) |
-			((ut64)p->hq[1] << 8) | ((ut64)p->hq[0]);
+		p->q = r_read_le64 (p->hq);
 		cvt_double (p, m);
 		return 1;
 	case FILE_REGEX:
@@ -796,11 +566,16 @@ static void mdebug(RMagic *ms, ut32 offset, const char *str, size_t len) {
 	magic_debug (ms, "mget @%u", offset);
 }
 
+static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const union VALUETYPE *p) {
+	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
+		return;
+	}
+	mdebug (ms, offset, (const char *)p, sizeof (*p));
+	__magic_file_mdump (ms, m);
+}
+
 static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 *s, ut32 offset, size_t nbytes, size_t linecnt) {
-	/*
-	 * Note: FILE_SEARCH and FILE_REGEX do not actually copy
-	 * anything, but setup pointers into the source
-	 */
+	// Search and regex types just point into the source buffer.
 	if (indir == 0) {
 		switch (type) {
 		case FILE_SEARCH:
@@ -889,10 +664,6 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 
 	(void)memcpy (p, s + offset, nbytes);
 
-	/*
-	 * the usefulness of padding with zeroes eludes me, it
-	 * might even cause problems
-	 */
 	if (nbytes < sizeof (*p)) {
 		(void)memset (((char *) (void *)p) + nbytes, '\0', sizeof (*p) - nbytes);
 	}
@@ -923,19 +694,19 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 				off = q->h;
 				break;
 			case FILE_BESHORT:
-				off = (short) ((q->hs[0] << 8) | (q->hs[1]));
+				off = (st16)r_read_be16 (q->hs);
 				break;
 			case FILE_LESHORT:
-				off = (short) ((q->hs[1] << 8) | (q->hs[0]));
+				off = (st16)r_read_le16 (q->hs);
 				break;
 			case FILE_LONG:
 				off = q->l;
 				break;
 			case FILE_BELONG:
-				off = (st32) ((q->hl[0] << 24) | (q->hl[1] << 16) | (q->hl[2] << 8) | (q->hl[3]));
+				off = (st32)r_read_be32 (q->hl);
 				break;
 			case FILE_LELONG:
-				off = (st32) ((q->hl[3] << 24) | (q->hl[2] << 16) | (q->hl[1] << 8) | (q->hl[0]));
+				off = (st32)r_read_le32 (q->hl);
 				break;
 			case FILE_MELONG:
 				off = (st32) ((q->hl[1] << 24) | (q->hl[0] << 16) | (q->hl[3] << 8) | (q->hl[2]));
@@ -947,226 +718,51 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 			if (nbytes < (offset + 1)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->b & off; break;
-				case FILE_OPOR: offset = p->b | off; break;
-				case FILE_OPXOR: offset = p->b ^ off; break;
-				case FILE_OPADD: offset = p->b + off; break;
-				case FILE_OPMINUS: offset = p->b - off; break;
-				case FILE_OPMULTIPLY: offset = p->b * off; break;
-				case FILE_OPDIVIDE: offset = p->b / off; break;
-				case FILE_OPMODULO: offset = p->b % off; break;
-				}
-			} else {
-				offset = p->b;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->b, off, m->in_op);
 			break;
 		case FILE_BESHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) & off; break;
-				case FILE_OPOR: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) | off; break;
-				case FILE_OPXOR: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) ^ off; break;
-				case FILE_OPADD: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) + off; break;
-				case FILE_OPMINUS: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) - off; break;
-				case FILE_OPMULTIPLY: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) * off; break;
-				case FILE_OPDIVIDE: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) / off; break;
-				case FILE_OPMODULO: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) % off; break;
-				}
-			} else {
-				offset = (short) ((p->hs[0] << 8) |
-					(p->hs[1]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
 			break;
 		case FILE_LESHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) & off; break;
-				case FILE_OPOR: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) | off; break;
-				case FILE_OPXOR: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) ^ off; break;
-				case FILE_OPADD: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) + off; break;
-				case FILE_OPMINUS: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) - off; break;
-				case FILE_OPMULTIPLY: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) * off; break;
-				case FILE_OPDIVIDE: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) / off; break;
-				case FILE_OPMODULO: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) % off; break;
-				}
-			} else {
-				offset = (short) ((p->hs[1] << 8) | (p->hs[0]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
 			break;
 		case FILE_SHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->h & off; break;
-				case FILE_OPOR: offset = p->h | off; break;
-				case FILE_OPXOR: offset = p->h ^ off; break;
-				case FILE_OPADD: offset = p->h + off; break;
-				case FILE_OPMINUS: offset = p->h - off; break;
-				case FILE_OPMULTIPLY: offset = p->h * off; break;
-				case FILE_OPDIVIDE: offset = p->h / off; break;
-				case FILE_OPMODULO: offset = p->h % off; break;
-				}
-			} else {
-				offset = p->h;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->h, off, m->in_op);
 			break;
 		case FILE_BELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
 			break;
 		case FILE_LELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) (((ut32)p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
 			break;
 		case FILE_MELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(
+				(p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | p->hl[2]
+			), off, m->in_op);
 			break;
 		case FILE_LONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->l & off; break;
-				case FILE_OPOR: offset = p->l | off; break;
-				case FILE_OPXOR: offset = p->l ^ off; break;
-				case FILE_OPADD: offset = p->l + off; break;
-				case FILE_OPMINUS: offset = p->l - off; break;
-				case FILE_OPMULTIPLY: offset = p->l * off; break;
-				case FILE_OPDIVIDE: offset = p->l / off; break;
-				case FILE_OPMODULO: offset = p->l % off; break;
-				}
-			} else {
-				offset = p->l;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->l, off, m->in_op);
 			break;
 		}
 
@@ -1241,20 +837,12 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 }
 
 static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags) {
-	/*
-	 * Convert the source args to unsigned here so that (1) the
-	 * compare will be unsigned as it is in strncmp and (2) so
-	 * the ctype functions will work correctly without extra
-	 * casting.
-	 */
+	// Compare unsigned bytes so ctype calls stay valid.
 	const ut8 *a = (const ut8 *)s1;
 	const ut8 *b = (const ut8 *)s2;
 	ut64 v;
 
-	/*
-	 * What we want here is v = strncmp (s1, s2, len),
-	 * but ignoring any nulls.
-	 */
+	// Match strncmp semantics, but ignore embedded NULs.
 	v = 0;
 	if (0L == flags) { /* normal string: do it fast */
 		while (len-- > 0) {
@@ -1299,11 +887,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 }
 
 static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags) {
-	/*
-	 * XXX - The 16-bit string compare probably needs to be done
-	 * differently, especially if the flags are to be supported.
-	 * At the moment, I am unsure.
-	 */
+	// 16-bit strings currently use the plain byte comparison path.
 	flags = 0;
 	return file_strncmp (a, b, len, flags);
 }
@@ -1532,5 +1116,194 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 
 static int print_sep(RMagic *ms, int firstline) {
 	return firstline? 0: __magic_file_printf (ms, "\n- ");
+}
+
+/*
+ * Go through the whole list, stopping if you find a match.  Process all
+ * the continuations of that match before returning.
+ *
+ * We support multi-level continuations:
+ *
+ *	At any time when processing a successful top-level match, there is a
+ *	current continuation level; it represents the level of the last
+ *	successfully matched continuation.
+ *
+ *	Continuations above that level are skipped as, if we see one, it
+ *	means that the continuation that controls them - i.e, the
+ *	lower-level continuation preceding them - failed to match.
+ *
+ *	Continuations below that level are processed as, if we see one,
+ *	it means we've finished processing or skipping higher-level
+ *	continuations under the control of a successful or unsuccessful
+ *	lower-level continuation, and are now seeing the next lower-level
+ *	continuation and should process it.  The current continuation
+ *	level reverts to the level of the one we're seeing.
+ *
+ *	Continuations at the current level are processed as, if we see
+ *	one, there's no lower-level continuation that may have failed.
+ *
+ *	If a continuation matches, we bump the current continuation level
+ *	so that higher-level continuations are processed.
+ */
+static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, size_t nbytes, int mode) {
+	ut32 magindex = 0;
+	unsigned int cont_level = 0;
+	int need_separator = 0;
+	int returnval = 0; /* if a match is found it is set to 1*/
+	int firstline = 1; /* a flag to print X\n  X\n- X */
+	int printed_something = 0;
+
+	if (__magic_file_check_mem (ms, cont_level) == -1) {
+		return -1;
+	}
+	for (magindex = 0; magindex < nmagic; magindex++) {
+		int flush;
+		struct r_magic *m = &magic[magindex];
+
+		if ((m->flag & BINTEST) != mode) {
+			/* Skip sub-tests */
+			while (magic[magindex + 1].cont_level != 0 && ++magindex < nmagic - 1) {
+				continue;
+			}
+			continue; /* Skip to next top-level test*/
+		}
+
+		ms->offset = m->offset;
+		ms->line = m->lineno;
+
+		/* if main entry matches, print it... */
+		flush = !mget (ms, s, m, nbytes, cont_level);
+		if (flush) {
+			if (m->reln == '!') {
+				flush = 0;
+			}
+		} else {
+			int ret = magiccheck (ms, m);
+			if (ret == -1) {
+				return -1;
+			}
+			if (!ret) {
+				flush++;
+			}
+		}
+		if (flush) {
+			// Main test failed, so skip its continuations.
+			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
+				magindex++;
+			}
+			continue;
+		}
+
+		// Track whether later output needs a separator.
+		if (*R_MAGIC_DESC) {
+			need_separator = 1;
+			printed_something = 1;
+			if (print_sep (ms, firstline) == -1) {
+				return -1;
+			}
+		}
+
+		if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+			return -1;
+		}
+
+		/* and any continuations that match */
+		if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+			return -1;
+		}
+
+		while (++magindex < nmagic - 1 && magic[magindex].cont_level != 0) {
+			m = &magic[magindex];
+			ms->line = m->lineno; /* for messages */
+
+			if (cont_level < m->cont_level) {
+				continue;
+			}
+			if (cont_level > m->cont_level) {
+				// Drop back to the current continuation level.
+				cont_level = m->cont_level;
+			}
+			ms->offset = m->offset;
+			if (m->flag & OFFADD) {
+				ms->offset += ms->c.li[cont_level - 1].off;
+			}
+
+			if (m->cond == COND_ELSE || m->cond == COND_ELIF) {
+				if (ms->c.li[cont_level].last_match == 1) {
+					continue;
+				}
+			}
+			flush = !mget (ms, s, m, nbytes, cont_level);
+			if (flush && m->reln != '!') {
+				continue;
+			}
+
+			switch (flush? 1: magiccheck (ms, m)) {
+			case -1:
+				return -1;
+			case 0:
+				ms->c.li[cont_level].last_match = 0;
+				break;
+			default:
+				ms->c.li[cont_level].last_match = 1;
+				if (m->type != FILE_DEFAULT) {
+					ms->c.li[cont_level].got_match = 1;
+				} else if (ms->c.li[cont_level].got_match) {
+					ms->c.li[cont_level].got_match = 0;
+					break;
+				}
+				// Print any required separator before this message.
+				if (*R_MAGIC_DESC) {
+					printed_something = 1;
+					if (print_sep (ms, firstline) == -1) {
+						return -1;
+					}
+				}
+				/* space if previous printed */
+				if (need_separator && ((m->flag & NOSPACE) == 0) && *R_MAGIC_DESC) {
+					if (__magic_file_printf (ms, " ") == -1) {
+						return -1;
+					}
+					need_separator = 0;
+				}
+				if ((ms->c.li[cont_level].off = mprint (ms, m)) == -1) {
+					return -1;
+				}
+				if (*R_MAGIC_DESC) {
+					need_separator = 1;
+				}
+
+				// Process any deeper continuations.
+				if (__magic_file_check_mem (ms, ++cont_level) == -1) {
+					return -1;
+				}
+				break;
+			}
+		}
+		if (printed_something) {
+			firstline = 0;
+			returnval = 1;
+		}
+		if ((ms->flags & R_MAGIC_CONTINUE) == 0 && printed_something) {
+			return 1; /* don't keep searching */
+		}
+	}
+	return returnval; /* This is hit if -k is set or there is no match */
+}
+
+/*
+ * softmagic - lookup one file in parsed, in-memory copy of database
+ * Passed the name and FILE * of one file to be typed.
+ */
+/*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
+int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
+	struct mlist *ml;
+	int rv;
+	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
+		if ((rv = match (ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0) {
+			return rv;
+		}
+	}
+	return 0;
 }
 #endif

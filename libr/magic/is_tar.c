@@ -84,22 +84,17 @@ static int from_oct(int digs, const char *where) {
  */
 static int is_tar(const ut8 *buf, size_t nbytes) {
 	const union record *header = (const union record *) (const void *)buf;
-	int i, sum, recsum;
-	const char *p;
 
 	if (nbytes < sizeof (union record)) {
 		return 0;
 	}
 
-	recsum = from_oct (8, header->header.chksum);
+	int recsum = from_oct (8, header->header.chksum);
 
-	sum = 0;
-	p = header->charptr;
+	int i, sum = 0;
+	const char *p = header->charptr;
 	for (i = sizeof (union record); --i >= 0;) {
-		/*
-		 * We cannot use ut8 here because of old compilers,
-		 * e.g. V7.
-		 */
+		// Keep this int-compatible for old compilers.
 		sum += 0xFF & *p++;
 	}
 
@@ -121,10 +116,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 }
 
 int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
-	/*
-	 * Do the tar test first, because if the first file in the tar
-	 * archive starts with a dot, we can confuse it with an nroff file.
-	 */
+	// Check tar first so dotfiles are not mistaken for nroff.
 	int tar = is_tar (buf, nbytes);
 	int mime = ms->flags & R_MAGIC_MIME;
 

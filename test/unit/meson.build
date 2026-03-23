@@ -72,6 +72,10 @@ if get_option('enable_tests')
     'xpatch'
   ]
 
+  if not use_syslib_magic
+    tests += ['magic']
+  endif
+
   foreach test : tests
     exe = executable('test_@0@'.format(test), 'test_@0@.c'.format(test),
       include_directories: [platform_inc],

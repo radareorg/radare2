@@ -38,65 +38,100 @@
 
 #define SZOF(a) (sizeof (a) / sizeof (a[0]))
 
+static void append_showstr(RStrBuf *sb, const char *s, size_t len) {
+	for (;;) {
+		char c = *s++;
+		if (len == ~0U) {
+			if (c == '\0') {
+				break;
+			}
+		} else {
+			if (len-- == 0) {
+				break;
+			}
+		}
+		if (c >= 040 && c <= 0176) {
+			r_strbuf_append_n (sb, &c, 1);
+		} else {
+			r_strbuf_append (sb, "\\");
+			switch (c) {
+			case '\a': r_strbuf_append (sb, "a"); break;
+			case '\b': r_strbuf_append (sb, "b"); break;
+			case '\f': r_strbuf_append (sb, "f"); break;
+			case '\n': r_strbuf_append (sb, "n"); break;
+			case '\r': r_strbuf_append (sb, "r"); break;
+			case '\t': r_strbuf_append (sb, "t"); break;
+			case '\v': r_strbuf_append (sb, "v"); break;
+			default:
+				r_strbuf_appendf (sb, "%.3o", c & 0377);
+				break;
+			}
+		}
+	}
+}
+
 #ifndef COMPILE_ONLY
 void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 	char pp[ASCTIME_BUF_MAXLEN];
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return;
+	}
 
-	(void)eprintf ("[%u", m->lineno);
-	(void)eprintf ("%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
+	r_strbuf_appendf (sb, "[%u", m->lineno);
+	r_strbuf_appendf (sb, "%.*s %u", m->cont_level & 7, ">>>>>>>>", m->offset);
 
 	if (m->flag & INDIR) {
-		(void)eprintf ("(%s,",
+		r_strbuf_appendf (sb, "(%s,",
 			/* Note: type is unsigned */
 			(m->in_type < FILE_NAMES_SIZE)? ms->magic_file_names[m->in_type]: "*bad*");
 		if (m->in_op & FILE_OPINVERSE) {
-			(void)fputc ('~', stderr);
+			r_strbuf_append (sb, "~");
 		}
-		(void)eprintf ("%c%u),",
+		r_strbuf_appendf (sb, "%c%u),",
 			((m->in_op & FILE_OPS_MASK) < SZOF (FILE_OPS))? FILE_OPS[m->in_op & FILE_OPS_MASK]: '?',
 			m->in_offset);
 	}
-	(void)eprintf (" %s%s", (m->flag & UNSIGNED)? "u": "",
+	r_strbuf_appendf (sb, " %s%s", (m->flag & UNSIGNED)? "u": "",
 		/* Note: type is unsigned */
 		(m->type < FILE_NAMES_SIZE)? ms->magic_file_names[m->type]: "*bad*");
 	if (m->mask_op & FILE_OPINVERSE) {
-		(void)fputc ('~', stderr);
+		r_strbuf_append (sb, "~");
 	}
 
 	if (MAGIC_IS_STRING (m->type)) {
 		if (m->str_flags) {
-			(void)fputc ('/', stderr);
+			r_strbuf_append (sb, "/");
 			if (m->str_flags & STRING_COMPACT_BLANK) {
-				(void)fputc (CHAR_COMPACT_BLANK, stderr);
+				r_strbuf_appendf (sb, "%c", CHAR_COMPACT_BLANK);
 			}
 			if (m->str_flags & STRING_COMPACT_OPTIONAL_BLANK) {
-				(void)fputc (CHAR_COMPACT_OPTIONAL_BLANK,
-					stderr);
+				r_strbuf_appendf (sb, "%c", CHAR_COMPACT_OPTIONAL_BLANK);
 			}
 			if (m->str_flags & STRING_IGNORE_LOWERCASE) {
-				(void)fputc (CHAR_IGNORE_LOWERCASE, stderr);
+				r_strbuf_appendf (sb, "%c", CHAR_IGNORE_LOWERCASE);
 			}
 			if (m->str_flags & STRING_IGNORE_UPPERCASE) {
-				(void)fputc (CHAR_IGNORE_UPPERCASE, stderr);
+				r_strbuf_appendf (sb, "%c", CHAR_IGNORE_UPPERCASE);
 			}
 			if (m->str_flags & REGEX_OFFSET_START) {
-				(void)fputc (CHAR_REGEX_OFFSET_START, stderr);
+				r_strbuf_appendf (sb, "%c", CHAR_REGEX_OFFSET_START);
 			}
 		}
 		if (m->str_range) {
-			(void)eprintf ("/%u", m->str_range);
+			r_strbuf_appendf (sb, "/%u", m->str_range);
 		}
 	} else {
 		if ((m->mask_op & FILE_OPS_MASK) < SZOF (FILE_OPS)) {
-			(void)fputc (FILE_OPS[m->mask_op & FILE_OPS_MASK], stderr);
+			r_strbuf_appendf (sb, "%c", FILE_OPS[m->mask_op & FILE_OPS_MASK]);
 		} else {
-			(void)fputc ('?', stderr);
+			r_strbuf_append (sb, "?");
 		}
 		if (m->num_mask) {
-			(void)eprintf ("%08" PFMT64x, (ut64)m->num_mask);
+			r_strbuf_appendf (sb, "%08" PFMT64x, (ut64)m->num_mask);
 		}
 	}
-	(void)eprintf (",%c", m->reln);
+	r_strbuf_appendf (sb, ",%c", m->reln);
 
 	if (m->reln != 'x') {
 		switch (m->type) {
@@ -108,12 +143,12 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		case FILE_MELONG:
 		case FILE_BESHORT:
 		case FILE_BELONG:
-			(void)eprintf ("%d", m->value.l);
+			r_strbuf_appendf (sb, "%d", m->value.l);
 			break;
 		case FILE_BEQUAD:
 		case FILE_LEQUAD:
 		case FILE_QUAD:
-			(void)eprintf ("%" PFMT64d, (ut64)m->value.q);
+			r_strbuf_appendf (sb, "%" PFMT64d, (ut64)m->value.q);
 			break;
 		case FILE_PSTRING:
 		case FILE_STRING:
@@ -121,53 +156,56 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		case FILE_BESTRING16:
 		case FILE_LESTRING16:
 		case FILE_SEARCH:
-			__magic_file_showstr (stderr, m->value.s, (size_t)m->vallen);
+			append_showstr (sb, m->value.s, (size_t)m->vallen);
 			break;
 		case FILE_DATE:
 		case FILE_LEDATE:
 		case FILE_BEDATE:
 		case FILE_MEDATE:
-			(void)eprintf ("%s,",
+			r_strbuf_appendf (sb, "%s,",
 				__magic_file_fmttime (m->value.l, 1, pp));
 			break;
 		case FILE_LDATE:
 		case FILE_LELDATE:
 		case FILE_BELDATE:
 		case FILE_MELDATE:
-			(void)eprintf ("%s,",
+			r_strbuf_appendf (sb, "%s,",
 				__magic_file_fmttime (m->value.l, 0, pp));
 			break;
 		case FILE_QDATE:
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
-			(void)eprintf ("%s,",
+			r_strbuf_appendf (sb, "%s,",
 				__magic_file_fmttime ((ut32)m->value.q, 1, pp));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
-			(void)eprintf ("%s,",
+			r_strbuf_appendf (sb, "%s,",
 				__magic_file_fmttime ((ut32)m->value.q, 0, pp));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
 		case FILE_LEFLOAT:
-			(void)eprintf ("%G", m->value.f);
+			r_strbuf_appendf (sb, "%G", m->value.f);
 			break;
 		case FILE_DOUBLE:
 		case FILE_BEDOUBLE:
 		case FILE_LEDOUBLE:
-			(void)eprintf ("%G", m->value.d);
+			r_strbuf_appendf (sb, "%G", m->value.d);
 			break;
 		case FILE_DEFAULT:
 			/* XXX - do anything here? */
 			break;
 		default:
-			(void)fputs ("*bad*", stderr);
+			r_strbuf_append (sb, "*bad*");
 			break;
 		}
 	}
-	(void)eprintf (",\"%s\"]\n", m->desc);
+	r_strbuf_appendf (sb, ",\"%s\"]", m->desc);
+	char *msg = r_strbuf_drain (sb);
+	R_LOG_DEBUG ("%s", msg);
+	free (msg);
 }
 #endif
 
