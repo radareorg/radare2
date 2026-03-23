@@ -131,7 +131,7 @@ DEBUG: RCoreCallAt(0x000000b4): Cd 4[244]
 DEBUG: (cannot find opening [) in (244])
 DEBUG: (section .dynstr) Css 674 @ 0x484
 DEBUG: RCoreCallAt(0x00000484): Css 674
-DEBUG: RCoreCmd: Cz@0x00000484
+DEBUG: RCoreCmd: Cs@0x00000484
 DEBUG: RCoreCmd: o;om
 DEBUG: (section .hash) Cd 4[100] @ 0x728
 DEBUG: RCoreCallAt(0x00000728): Cd 4[100]
@@ -150,7 +150,7 @@ DEBUG: RCoreCallAt(0x000000b4): Cd 4[244]
 DEBUG: (cannot find opening [) in (244])
 DEBUG: (section .dynstr) Css 674 @ 0x484
 DEBUG: RCoreCallAt(0x00000484): Css 674
-DEBUG: RCoreCmd: Cz@0x00000484
+DEBUG: RCoreCmd: Cs@0x00000484
 DEBUG: RCoreCmd: o;om
 DEBUG: (section .hash) Cd 4[100] @ 0x728
 DEBUG: RCoreCallAt(0x00000728): Cd 4[100]
