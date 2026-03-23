@@ -42,7 +42,6 @@ if get_option('enable_tests')
     'json',
     'kernelcache_cmdsize',
     'list',
-    'magic',
     'ovf',
     'pdb',
     'pj',
@@ -73,8 +72,8 @@ if get_option('enable_tests')
     'xpatch'
   ]
 
-  if use_syslib_magic
-    tests -= ['magic']
+  if not use_syslib_magic
+    tests += ['magic']
   endif
 
   foreach test : tests
