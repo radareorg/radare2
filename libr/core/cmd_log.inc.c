@@ -411,7 +411,6 @@ static int cmd_log(void *data, const char *input) {
 
 static int cmd_plugins(void *data, const char *input) {
 	RCore *core = (RCore *) data;
-	r_core_loadlibs_init (core);
 	switch (input[0]) {
 	case 0:
 		r_core_cmd_help (core, help_msg_L);

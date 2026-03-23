@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -2543,7 +2543,6 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == ' ') {
-			r_core_loadlibs_init (core);
 			if (!r_lib_open (core->lib, input + 2)) {
 				R_LOG_ERROR ("Oops. Cannot open library");
 			}
