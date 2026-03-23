@@ -508,6 +508,16 @@ static void subprocs_remove(R2RSubprocess *proc) {
 	}
 }
 
+static void subprocs_free_all(void) {
+	RVecR2RSubprocessPtr pending = {0};
+	RVecR2RSubprocessPtr_swap (&pending, &subprocs);
+	R2RSubprocess **it;
+	R_VEC_FOREACH (&pending, it) {
+		r2r_subprocess_free (*it);
+	}
+	RVecR2RSubprocessPtr_fini (&pending);
+}
+
 static void subprocess_set_status(R2RSubprocess *proc, int wstat) {
 	int exit_status = -1;
 #if !__wasi__
@@ -635,11 +645,7 @@ R_API void r2r_subprocess_fini(void) {
 	r_th_wait (sigchld_thread);
 	close (sigchld_pipe[0]);
 	r_th_free (sigchld_thread);
-	R2RSubprocess **it;
-	R_VEC_FOREACH (&subprocs, it) {
-		r2r_subprocess_free (*it);
-	}
-	RVecR2RSubprocessPtr_clear (&subprocs);
+	subprocs_free_all ();
 	r_th_lock_free (subprocs_mutex);
 }
 
