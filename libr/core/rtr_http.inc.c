@@ -203,19 +203,20 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	int newblksz, origblksz = core->blocksize;
 	ut8 *newblk, *origblk = core->block;
 
-	newblk = malloc (core->blocksize);
+	newblk = malloc (core->blocksize + 1);
 	if (!newblk) {
 		r_socket_free (s);
 		r_list_free (so.authtokens);
 		free (pfile);
 		return HTTP_RUN_ERROR;
 	}
-	memcpy (newblk, core->block, core->blocksize);
+	memcpy (newblk, core->block, core->blocksize + 1);
 
 	core->block = newblk;
 // TODO: handle mutex lock/unlock here
 	r_cons_break_push (core->cons, (RConsBreak)r_core_rtr_http_stop, core);
 	while (!r_cons_is_breaked (core->cons) && core->http_up) {
+		const bool in_http_context = core->config == newcfg;
 		/* restore environment */
 		core->config = origcfg;
 #if WEBCONFIG
@@ -224,9 +225,14 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
 #endif
 
-		newoff = core->addr;
-		newblk = core->block;
-		newblksz = core->blocksize;
+		// Preserve the HTTP session state only while we are still executing in
+		// that context. Early continues after accept() leave the core in the
+		// original context, and copying that state here would alias origblk.
+		if (in_http_context) {
+			newoff = core->addr;
+			newblk = core->block;
+			newblksz = core->blocksize;
+		}
 
 		core->addr = origoff;
 		core->block = origblk;
@@ -243,6 +249,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 			break;
 		}
 		r_cons_sleep_end (core->cons, bed);
+
 		if (!rs) {
 			bed = r_cons_sleep_begin (core->cons);
 			r_sys_usleep (100);
@@ -583,6 +590,13 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	}
 the_end:
 	{
+		if (core->config == newcfg) {
+			newoff = core->addr;
+			newblk = core->block;
+		}
+		core->addr = origoff;
+		core->block = origblk;
+		core->blocksize = origblksz;
 		int timeout = r_config_get_i (core->config, "http.timeout");
 		const char *host = r_config_get (core->config, "http.bind");
 		const char *port = r_config_get (core->config, "http.port");
@@ -603,6 +617,9 @@ the_end:
 	free (pfile);
 	r_socket_free (s);
 	r_config_free (newcfg);
+	if (newblk != origblk) {
+		free (newblk);
+	}
 	/* Unregister this HTTP session */
 	r_core_session_unregister (core);
 	return ret;
