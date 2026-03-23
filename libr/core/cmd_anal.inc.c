@@ -10639,6 +10639,7 @@ static char *get_buf_asm(RCore *core, ut64 from, ut64 addr, RAnalFunction *fcn, 
 	}
 	r_io_read_at (core->io, addr, buf, size);
 	r_asm_set_pc (core->rasm, addr);
+	r_core_seek_arch_bits (core, addr);
 	r_asm_disassemble (core->rasm, &asmop, buf, size);
 	char *ba = strdup (asmop.mnemonic);
 	if (asm_subvar) {

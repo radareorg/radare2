@@ -440,6 +440,17 @@ static void load_asm_descriptions(RAsm *a) {
 	free (r2prefix);
 }
 
+static void r_asm_update_session(RAsm *a) {
+	if (a->analb.anal && a->analb.anal->arch) {
+		a->dcur = a->analb.anal->arch->session;
+	} else if (a->arch && a->arch->session) {
+		a->dcur = a->arch->session;
+	} else {
+		a->dcur = NULL;
+	}
+	a->ecur = a->dcur? (a->dcur->encoder? a->dcur->encoder: a->dcur): NULL;
+}
+
 R_API bool r_asm_use(RAsm *a, const char *name) {
 	R_RETURN_VAL_IF_FAIL (a, false);
 	if (R_STR_ISEMPTY (name)) {
@@ -452,6 +463,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	r_asm_use_assembler (a, name);
 	if (a->analb.anal) {
 		if (a->analb.use (a->analb.anal, name)) {
+			r_asm_update_session (a);
 			load_asm_descriptions (a);
 			return true;
 		}
@@ -459,10 +471,13 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 	} else if (a->arch) {
 		// use RArch directly without RAnal bridge
 		if (r_arch_use (a->arch, a->config, name)) {
+			r_asm_update_session (a);
 			load_asm_descriptions (a);
 			return true;
 		}
 	}
+	a->dcur = NULL;
+	a->ecur = NULL;
 	r_arch_config_use (a->config, old_arch);
 	return false;
 }
@@ -525,16 +540,15 @@ static bool is_invalid(RAnalOp *op) {
 	return (text && !strcmp (text, "invalid"));
 }
 
-R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
+static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	r_anal_op_init (op);
-	if (len < 1) {
+	if (len < 1 || !a->dcur) {
 		return 0;
 	}
-
 	int ret = 0;
 	op->size = 4;
-	// r_anal_op_set_mnemonic (op, op->addr, "");
+	op->addr = a->pc;
+	r_anal_op_set_bytes (op, op->addr, buf, len);
 	if (a->config->codealign) {
 		const int mod = a->pc % a->config->codealign;
 		if (mod) {
@@ -543,9 +557,10 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			return -1;
 		}
 	}
-	if (a->analb.anal) {
-		ret = a->analb.decode (a->analb.anal, op, a->pc, buf, len,
-			R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM);
+	if (r_arch_session_decode (a->dcur, op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM)) {
+		ret = op->size;
+	} else {
+		op->size = 1;
 	}
 	if (ret < 0) {
 		ret = 0;
@@ -561,7 +576,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 #endif
-	if (op->size < 1 || is_invalid (op)) {
+	if (op->size < 1 || !op->mnemonic || is_invalid (op)) {
 		if (a->config->invhex) {
 			r_strf_buffer (32);
 			if (a->config->bits == 16) {
@@ -586,6 +601,12 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
 	r_anal_op_set_bytes (op, op->addr, buf, opsz);
 	return ret;
+}
+
+R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
+	r_asm_update_session (a);
+	return r_asm_disassemble_do (a, op, buf, len);
 }
 
 typedef int(*Ase)(RAsm *a, RAnalOp *op, const char *buf);
@@ -646,54 +667,35 @@ R_API void r_asm_list_directives(void) {
 	}
 }
 
-// returns instruction size.. but we have the size in analop and should return bool because thats just a wrapper around analb.encode
 static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
-	int ret = 0;
+	r_asm_update_session (a);
+	if (!a->ecur) {
+		return 0;
+	}
 	char *b = strdup (buf);
 	if (!b) {
 		return 0;
 	}
-	r_str_case (b, false); // to-lower
-	if (a->analb.anal) {
-		ut8 buf[256] = { 0 };
-		// sync asm config into the anal/arch session for encoding
-		RAnal *anal = a->analb.anal;
-		anal->config->bits = a->config->bits;
-		anal->arch->cfg->endian = a->config->endian;
-		if (anal->arch->session) {
-			anal->arch->session->config->bits = a->config->bits;
-		}
-		ret = a->analb.encode (a->analb.anal, a->pc, b, buf, sizeof (buf));
-		if (ret > 0) {
-			r_anal_op_set_bytes (op, a->pc, buf, R_MIN (ret, sizeof (buf)));
-		}
-	} else if (a->arch && a->arch->session) {
-		// use RArch directly without RAnal bridge
-		r_anal_op_set_mnemonic (op, a->pc, b);
-		if (r_arch_encode (a->arch, op, 0)) {
-			ret = op->size;
-		} else {
-			R_LOG_DEBUG ("r_arch_encode failed for '%s' (bits=%d)", b, a->config->bits);
-			ret = -1;
-		}
-	} else {
-		R_LOG_ERROR ("Cannot assemble: no arch encoder available");
-		ret = -1;
-	}
+	r_str_case (b, false);
+	op->addr = a->pc;
+	r_anal_op_set_mnemonic (op, op->addr, b);
+	int ret = r_arch_session_encode (a->ecur, op, 0) ? op->size : 0;
 	free (b);
 	return ret;
 }
 
 R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
-
+	r_asm_update_session (a);
 	ut64 pc = a->pc;
 	ut64 idx;
 	int ret;
-	// XXX move from io to archconfig!! and remove the dependency on core!
-	const size_t addrbytes = a->user? ((RCore *)a->user)->io->addrbytes: 1;
-	int mininstrsize = 1; // TODO: use r_arch_info ();
+	const size_t addrbytes = a->config->addrbytes > 0 ? a->config->addrbytes : 1;
+	int mininstrsize = 1;
+	if (a->arch) {
+		mininstrsize = R_MAX (1, r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE));
+	}
 
 	RAsmCode *acode = r_asm_code_new ();
 	if (!acode) {
@@ -707,11 +709,8 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_anal_op_init (&op);
 		r_asm_set_pc (a, pc + idx);
 		// we can change this to return RAnalOp* instead of passing it as arg here
-		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
-		if (ret < 1) {
-			ret = mininstrsize;
-		}
-		ret = op.size;
+		ret = r_asm_disassemble_do (a, &op, buf + idx, len - idx);
+		ret = (op.size > 0) ? op.size : mininstrsize;
 		if (a->pseudo) {
 			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
 			if (newtext) {
