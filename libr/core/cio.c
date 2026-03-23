@@ -390,6 +390,7 @@ R_API void r_core_arch_bits_at(RCore *core, ut64 addr, R_OUT int * R_NULLABLE bi
 }
 
 R_API void r_core_seek_arch_bits(RCore *core, ut64 addr) {
+	R_RETURN_IF_FAIL (core);
 	if (core->fixedarch && core->fixedbits) {
 		return;
 	}
