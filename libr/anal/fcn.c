@@ -1046,7 +1046,7 @@ noskip:
 			// skip mov reg, reg
 			if (anal->opt.jmptbl && op->scale && op->ireg) {
 				movdisp = op->disp;
-				movscale = op->scale;
+				movscale = op->refptr? op->refptr: op->ptrsize? op->ptrsize: op->scale;
 				movbasereg = src0? src0->reg: NULL;
 			}
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {

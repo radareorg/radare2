@@ -88,6 +88,58 @@ beach:
 
 // R2R db/anal/x86_64 db/anal/x86_32
 
+static inline bool block_belongs_to_function(const RAnalBlock *block, const RAnalFunction *fcn) {
+	if (!block || !fcn) {
+		return false;
+	}
+	return r_list_contains ((RList *)block->fcns, (void *)fcn);
+}
+
+static void materialize_case_target(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth) {
+	RAnalBlock *block;
+	if (!anal || !fcn || case_addr == UT64_MAX || !case_addr) {
+		return;
+	}
+	block = r_anal_get_block_at (anal, case_addr);
+	if (block) {
+		if (!block_belongs_to_function (block, fcn)) {
+			r_anal_function_add_block (fcn, block);
+		}
+		return;
+	}
+	block = r_anal_bb_from_offset (anal, case_addr);
+	if (block && block->addr != case_addr) {
+		RAnalBlock *split = r_anal_block_split (block, case_addr);
+		if (split) {
+			if (!block_belongs_to_function (split, fcn)) {
+				r_anal_function_add_block (fcn, split);
+			}
+			r_unref (split);
+			return;
+		}
+	}
+	(void)r_anal_function_bb (anal, fcn, case_addr, depth > 0? depth - 1: depth);
+	block = r_anal_get_block_at (anal, case_addr);
+	if (block) {
+		if (!block_belongs_to_function (block, fcn)) {
+			r_anal_function_add_block (fcn, block);
+		}
+		return;
+	}
+	block = r_anal_bb_from_offset (anal, case_addr);
+	if (block && block->addr != case_addr) {
+		RAnalBlock *split = r_anal_block_split (block, case_addr);
+		if (split) {
+			if (!block_belongs_to_function (split, fcn)) {
+				r_anal_function_add_block (fcn, split);
+			}
+			r_unref (split);
+		}
+	} else if (block && !block_belongs_to_function (block, fcn)) {
+		r_anal_function_add_block (fcn, block);
+	}
+}
+
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
@@ -133,9 +185,9 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 }
 
 static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
-	const ut64 block_size = block->size;
-	(void)r_anal_function_bb (anal, fcn, jmpptr, depth - 1);
-	if (block->size != block_size) {
+	const ut64 block_size = block? block->size: 0;
+	materialize_case_target (anal, fcn, jmpptr, depth);
+	if (block && block->size != block_size) {
 		// block was split during anal and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again
 		RAnalSwitchOp *sop = block->switch_op;
@@ -772,7 +824,6 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
 	RAnalCaseOp *kase;
 	RListIter *iter;
-	apply_switch (anal, saddr, jaddr, r_list_length (cases), -1);
 	SetU *s = set_u_new ();
 	r_list_foreach (cases, iter, kase) {
 		if (set_u_contains (s, kase->jump)) {
@@ -785,5 +836,6 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
 		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 	}
+	apply_switch (anal, saddr, jaddr, r_list_length (cases), UT64_MAX);
 	set_u_free (s);
 }
