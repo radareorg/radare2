@@ -3227,21 +3227,23 @@ static inline void print_dict(RCoreAutocomplete* a, int sub) {
 	if (!a) {
 		return;
 	}
-	int i, j;
+	int j;
 	const char* name = "unknown";
-	for (i = 0; i < a->n_subcmds; i++) {
-		RCoreAutocomplete* b = a->subcmds[i];
-		if (b->locked) {
-			continue;
-		}
-		for (j = 0; j < R_CORE_AUTOCMPLT_END; j++) {
-			if (b->type == autocomplete_flags[j].type) {
-				name = autocomplete_flags[j].name;
-				break;
+	if (R_VEC_START_ITER (&a->subcmds) != R_VEC_END_ITER (&a->subcmds)) {
+		RCoreAutocomplete *b;
+		R_VEC_FOREACH (&a->subcmds, b) {
+			if (b->locked) {
+				continue;
 			}
+			for (j = 0; j < R_CORE_AUTOCMPLT_END; j++) {
+				if (b->type == autocomplete_flags[j].type) {
+					name = autocomplete_flags[j].name;
+					break;
+				}
+			}
+			eprintf ("[%3d] %s: '%s'\n", sub, name, b->cmd);
+			print_dict (b, sub + 1);
 		}
-		eprintf ("[%3d] %s: '%s'\n", sub, name, b->cmd);
-		print_dict (a->subcmds[i], sub + 1);
 	}
 }
 
@@ -3276,6 +3278,9 @@ static void cmd_autocomplete_help(RCore *core) {
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
+	if (!core->autocomplete || R_VEC_START_ITER (&core->autocomplete->subcmds) == R_VEC_END_ITER (&core->autocomplete->subcmds)) {
+		r_core_autocomplete_reload (core);
+	}
 	RCoreAutocomplete* b = core->autocomplete;
 	input = r_str_trim_head_ro (input);
 	char arg[256];
@@ -3324,9 +3329,9 @@ static void cmd_autocomplete(RCore *core, const char *input) {
 		} else if (R_STR_ISEMPTY (input) && !a) {
 			if (arg[0] == '$') {
 				int type = autocomplete_type (arg);
-				if (type != R_CORE_AUTOCMPLT_END && !b->locked && !b->n_subcmds) {
+				if (type != R_CORE_AUTOCMPLT_END && !b->locked && R_VEC_START_ITER (&b->subcmds) == R_VEC_END_ITER (&b->subcmds)) {
 					b->type = type;
-				} else if (b->locked || b->n_subcmds) {
+				} else if (b->locked || R_VEC_START_ITER (&b->subcmds) != R_VEC_END_ITER (&b->subcmds)) {
 					if (!b->cmd) {
 						return;
 					}

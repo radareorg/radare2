@@ -721,8 +721,5 @@ R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_pat
 }
 
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask) {
-	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
-		return;
-	}
 	r_lib_load_paths (lib, mask, NULL);
 }

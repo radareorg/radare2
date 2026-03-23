@@ -93,6 +93,9 @@ static bool is_script(const char *name) {
 }
 
 static void load_scripts_at(RCore *core, const char *plugindir) {
+	if (R_STR_ISEMPTY (plugindir) || !r_file_is_directory (plugindir)) {
+		return;
+	}
 	RList *files = r_sys_dir (plugindir);
 	RListIter *iter;
 	char *file;

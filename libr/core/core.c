@@ -725,17 +725,81 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 	return ret;
 }
 
+static void autocomplete_elem_fini(RCoreAutocomplete *obj);
+
+static inline bool autocomplete_vec_empty(const RVecCoreAutocomplete *vec) {
+	return !vec || R_VEC_START_ITER (vec) == R_VEC_END_ITER (vec);
+}
+
+static inline size_t autocomplete_vec_length(const RVecCoreAutocomplete *vec) {
+	return autocomplete_vec_empty (vec)? 0: (size_t)(R_VEC_END_ITER (vec) - R_VEC_START_ITER (vec));
+}
+
+static RCoreAutocomplete *autocomplete_vec_at(RVecCoreAutocomplete *vec, size_t index) {
+	if (!vec || index >= autocomplete_vec_length (vec)) {
+		return NULL;
+	}
+	return R_VEC_START_ITER (vec) + index;
+}
+
+static RCoreAutocomplete *autocomplete_vec_emplace_back(RVecCoreAutocomplete *vec) {
+	R_RETURN_VAL_IF_FAIL (vec, NULL);
+	const size_t len = autocomplete_vec_length (vec);
+	if (len == R_VEC_CAPACITY (vec)) {
+		const size_t new_capacity = r_vec_grow (R_VEC_CAPACITY (vec));
+		RCoreAutocomplete *buf;
+		if (!new_capacity) {
+			return NULL;
+		}
+		buf = r_vec_realloc (R_VEC_START_ITER (vec), new_capacity, sizeof (RCoreAutocomplete));
+		if (!buf) {
+			return NULL;
+		}
+		R_VEC_START_ITER (vec) = buf;
+		R_VEC_END_ITER (vec) = buf + len;
+		R_VEC_CAPACITY (vec) = new_capacity;
+	}
+	RCoreAutocomplete *ptr = R_VEC_END_ITER (vec);
+	memset (ptr, 0, sizeof (RCoreAutocomplete));
+	R_VEC_END_ITER (vec)++;
+	return ptr;
+}
+
+static void autocomplete_vec_fini(RVecCoreAutocomplete *vec) {
+	R_RETURN_IF_FAIL (vec);
+	RCoreAutocomplete *iter;
+	R_VEC_FOREACH (vec, iter) {
+		autocomplete_elem_fini (iter);
+	}
+	R_FREE (R_VEC_START_ITER (vec));
+	R_VEC_END_ITER (vec) = NULL;
+	R_VEC_CAPACITY (vec) = 0;
+}
+
+static void autocomplete_vec_remove(RVecCoreAutocomplete *vec, size_t index) {
+	RCoreAutocomplete *ptr = autocomplete_vec_at (vec, index);
+	if (!ptr) {
+		return;
+	}
+	autocomplete_elem_fini (ptr);
+	memmove (ptr, ptr + 1, (size_t)(R_VEC_END_ITER (vec) - ptr - 1) * sizeof (RCoreAutocomplete));
+	R_VEC_END_ITER (vec)--;
+	memset (R_VEC_END_ITER (vec), 0, sizeof (RCoreAutocomplete));
+}
+
 #define ADDARG(x) \
 	if (!strncmp (buf->data + chr, x, strlen (buf->data + chr))) { \
 		r_line_completion_push (completion, x); \
 	}
 
 static void autocomplete_default(RCore *core, RLineCompletion *completion, RLineBuffer *buf) {
-	int i;
 	RCoreAutocomplete *a = core->autocomplete;
-	for (i = 0; i < a->n_subcmds; i++) {
-		if (buf->data[0] == 0 || !strncmp (a->subcmds[i]->cmd, buf->data, a->subcmds[i]->length)) {
-			r_line_completion_push (completion, a->subcmds[i]->cmd);
+	if (!autocomplete_vec_empty (&a->subcmds)) {
+		RCoreAutocomplete *iter;
+		R_VEC_FOREACH (&a->subcmds, iter) {
+			if (buf->data[0] == 0 || !strncmp (iter->cmd, buf->data, iter->length)) {
+				r_line_completion_push (completion, iter->cmd);
+			}
 		}
 	}
 }
@@ -1228,7 +1292,6 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 			break;
 		}
 	}
-	int i;
 	/* if something went wrong this will prevent bad behavior */
 	r_line_completion_clear (completion);
 	switch (parent->type) {
@@ -1285,9 +1348,12 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 	default:
 		{
 			size_t length = strlen (arg);
-			for (i = 0; i < parent->n_subcmds; i++) {
-				if (!strncmp (arg, parent->subcmds[i]->cmd, length)) {
-					r_line_completion_push (completion, parent->subcmds[i]->cmd);
+			if (!autocomplete_vec_empty (&parent->subcmds)) {
+				RCoreAutocomplete *iter;
+				R_VEC_FOREACH (&parent->subcmds, iter) {
+					if (!strncmp (arg, iter->cmd, length)) {
+						r_line_completion_push (completion, iter->cmd);
+					}
 				}
 			}
 		}
@@ -1312,11 +1378,16 @@ static bool check_tabhelp_exceptions(const char *s) {
 	return false;
 }
 
+static void __init_autocomplete(RCore *core);
+
 R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBuffer *buf, RLinePromptType prompt_type) {
 	R_RETURN_IF_FAIL (core);
 	R_RETURN_IF_FAIL (completion);
 	R_RETURN_IF_FAIL (buf);
 	R_RETURN_IF_FAIL (buf->data);
+	if (!core->autocomplete || autocomplete_vec_empty (&core->autocomplete->subcmds)) {
+		__init_autocomplete (core);
+	}
 	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
 	if (!tabhelp_exception && r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
@@ -2242,7 +2313,13 @@ static void __init_autocomplete_default(RCore *core) {
 
 static void __init_autocomplete(RCore *core) {
 	int i;
-	core->autocomplete = R_NEW0 (RCoreAutocomplete);
+	R_RETURN_IF_FAIL (core);
+	if (!core->autocomplete) {
+		core->autocomplete = R_NEW0 (RCoreAutocomplete);
+	}
+	if (!autocomplete_vec_empty (&core->autocomplete->subcmds)) {
+		return;
+	}
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
 		__init_autocomplete_default (core);
 	} else if (core->autocomplete_type == AUTOCOMPLETE_MS) {
@@ -2257,6 +2334,12 @@ static void __init_autocomplete(RCore *core) {
 			}
 		}
 	}
+}
+
+static void autocomplete_elem_fini(RCoreAutocomplete *obj) {
+	R_RETURN_IF_FAIL (obj);
+	autocomplete_vec_fini (&obj->subcmds);
+	free (obj->cmd);
 }
 
 static const char *colorfor_cb(void *user, ut64 addr, ut8 ch, bool verbose) {
@@ -2351,6 +2434,7 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 R_API void r_core_autocomplete_reload(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	r_core_autocomplete_free (core->autocomplete);
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	__init_autocomplete (core);
 }
 
@@ -2676,7 +2760,7 @@ R_API bool r_core_init(RCore *core) {
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
-	__init_autocomplete (core);
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugin_init (core->rcmd);
 	r_core_loadlibs_init (core);
 	// r_core_loadlibs (core);
@@ -2695,18 +2779,6 @@ R_API bool r_core_init(RCore *core) {
 	r_bp_use (core->dbg->bp, R_SYS_ARCH, core->anal->config->bits);
 	update_sdb (core);
 	init_cmd_suggestions (core);
-	{
-		char *a = r_str_r2_prefix (R2_FLAGS);
-		if (a) {
-			char *file = r_str_newf ("%s/tags.r2", a);
-			bool p = core->print->enable_progressbar;
-			core->print->enable_progressbar = false;
-			(void)r_core_run_script (core, file);
-			core->print->enable_progressbar = p;
-			free (file);
-			free (a);
-		}
-	}
 	r_core_anal_type_init (core);
 	r_anal_bind (core->anal, &(core->rasm->analb));
 	return 0;
@@ -3689,16 +3761,10 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
-	RCoreAutocomplete *autocmpl = R_NEW0 (RCoreAutocomplete);
-	// TODO: use rlist or so
-	RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds + 1) * sizeof (RCoreAutocomplete *));
-	if (!updated) {
-		free (autocmpl);
+	RCoreAutocomplete *autocmpl = autocomplete_vec_emplace_back (&parent->subcmds);
+	if (!autocmpl) {
 		return NULL;
 	}
-	parent->subcmds = updated;
-	parent->subcmds[parent->n_subcmds] = autocmpl;
-	parent->n_subcmds++;
 	autocmpl->cmd = strdup (cmd);
 	autocmpl->locked = lock;
 	autocmpl->type = type;
@@ -3708,12 +3774,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 	if (obj) {
-		int i;
-		for (i = 0; i < obj->n_subcmds; i++) {
-			r_core_autocomplete_free (obj->subcmds[i]);
-			obj->subcmds[i] = NULL;
-		}
-		free (obj->subcmds);
+		autocomplete_vec_fini (&obj->subcmds);
 		free (obj->cmd);
 		free (obj);
 	}
@@ -3722,13 +3783,15 @@ R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, const char *cmd, bool exact) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, NULL);
 	size_t len = strlen (cmd);
-	int i;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		if (exact && len != parent->subcmds[i]->length) {
-			continue;
-		}
-		if (!strncmp (cmd, parent->subcmds[i]->cmd, len)) {
-			return parent->subcmds[i];
+	if (!autocomplete_vec_empty (&parent->subcmds)) {
+		RCoreAutocomplete *iter;
+		R_VEC_FOREACH (&parent->subcmds, iter) {
+			if (exact && len != iter->length) {
+				continue;
+			}
+			if (!strncmp (cmd, iter->cmd, len)) {
+				return iter;
+			}
 		}
 	}
 	return NULL;
@@ -3736,28 +3799,21 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, false);
-	int i, j;
-	for (i = 0; i < parent->n_subcmds; i++) {
-		RCoreAutocomplete *ac = parent->subcmds[i];
+	if (autocomplete_vec_empty (&parent->subcmds)) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < autocomplete_vec_length (&parent->subcmds); ) {
+		RCoreAutocomplete *ac = autocomplete_vec_at (&parent->subcmds, i);
 		if (ac->locked) {
+			i++;
 			continue;
 		}
-		// if (!strncmp (parent->subcmds[i]->cmd, cmd, parent->subcmds[i]->length)) {
 		if (r_str_glob (ac->cmd, cmd)) {
-			for (j = i + 1; j < parent->n_subcmds; j++) {
-				parent->subcmds[j - 1] = parent->subcmds[j];
-				parent->subcmds[j] = NULL;
-			}
-			r_core_autocomplete_free (ac);
-			RCoreAutocomplete **updated = realloc (parent->subcmds, (parent->n_subcmds - 1) * sizeof (RCoreAutocomplete *));
-			if (!updated && (parent->n_subcmds - 1) > 0) {
-				R_LOG_INFO ("Something really bad has happen.. this should never ever happen");
-				return false;
-			}
-			parent->subcmds = updated;
-			parent->n_subcmds--;
-			i--;
+			autocomplete_vec_remove (&parent->subcmds, i);
+			continue;
 		}
+		i++;
 	}
 	return false;
 }

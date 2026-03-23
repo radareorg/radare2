@@ -43,10 +43,7 @@ static Rafs2State *rafs2_new(void) {
 	s->fs = r_fs_new ();
 	s->cons = r_cons_new ();
 
-	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
-	if (load_plugins) {
-		rafs2_load_plugins (s);
-	}
+	rafs2_load_plugins (s);
 	return s;
 }
 

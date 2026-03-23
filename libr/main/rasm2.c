@@ -63,10 +63,7 @@ static RAsmState *rasm_new(void) {
 	as->a->num = r_num_new (NULL, NULL, NULL);
 	as->anal->config = r_ref_ptr (as->a->config);
 	r_anal_bind (as->anal, &as->a->analb);
-	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
-	if (load_plugins) {
-		rasm_load_plugins (as);
-	}
+	rasm_load_plugins (as);
 	rasm_set_archbits (as);
 	return as;
 }

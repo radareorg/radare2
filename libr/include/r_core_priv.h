@@ -21,6 +21,7 @@ typedef struct r_core_priv_t {
 	char *errmsg_tmpfile;
 	int errmsg_fd; // -1
 	bool regnums;
+	bool tags_loaded;
 	// disasm cache
 	ut64 goaddr;
 	char *section;
