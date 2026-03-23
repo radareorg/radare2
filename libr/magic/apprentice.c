@@ -84,6 +84,7 @@ static int apprentice_1(RMagic *, const char *, int, struct mlist *);
 static size_t apprentice_r_magic_strength(const struct r_magic *);
 static int apprentice_sort(const void *, const void *);
 static int apprentice_load(RMagic *, struct r_magic **, ut32 *, const char *, int);
+static int apprentice_load_buffer(RMagic *, struct r_magic **, ut32 *, const ut8 *, size_t, int);
 static void byteswap(struct r_magic *, ut32);
 static void bs1(struct r_magic *);
 static ut16 swap2(ut16);
@@ -91,6 +92,7 @@ static ut32 swap4(ut32);
 static ut64 swap8(ut64);
 static char *mkdbname(const char *, int);
 static int apprentice_map(RMagic *, struct r_magic **, ut32 *, const char *);
+static int apprentice_map_buffer(RMagic *, struct r_magic **, ut32 *, const ut8 *, size_t);
 static int apprentice_compile(RMagic *, struct r_magic **, ut32 *, const char *);
 static int check_format_type(const char *, int);
 static int check_format(RMagic *, struct r_magic *);
@@ -305,6 +307,68 @@ struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size
 		return NULL;
 	}
 	free (mfn);
+	return mlist;
+}
+
+static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
+	ut32 hdr[2];
+
+	if (!buf || buf_size < sizeof (hdr)) {
+		return false;
+	}
+	memcpy (hdr, buf, sizeof (hdr));
+	if (hdr[0] == MAGICNO && hdr[1] == VERSIONNO) {
+		return true;
+	}
+	return swap4 (hdr[0]) == MAGICNO && swap4 (hdr[1]) == VERSIONNO;
+}
+
+struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
+	struct r_magic *magic = NULL;
+	struct mlist *ml;
+	struct mlist *mlist;
+	ut32 nmagic = 0;
+	int mapped;
+
+	if (!buf) {
+		return NULL;
+	}
+	if (action == FILE_COMPILE) {
+		__magic_file_error (ms, 0, "magic buffer compilation is not supported");
+		return NULL;
+	}
+	if (is_compiled_magic_buffer (buf, buf_size)) {
+		mapped = apprentice_map_buffer (ms, &magic, &nmagic, buf, buf_size);
+		if (mapped < 0) {
+			return NULL;
+		}
+	} else {
+		mapped = 0;
+		if (apprentice_load_buffer (ms, &magic, &nmagic, buf, buf_size, action) != 0) {
+			return NULL;
+		}
+	}
+	mlist = malloc (sizeof (*mlist));
+	if (!mlist) {
+		__magic_file_delmagic (magic, mapped, nmagic);
+		__magic_file_oomem (ms, sizeof (*mlist));
+		return NULL;
+	}
+	mlist->next = mlist->prev = mlist;
+	ml = malloc (sizeof (*ml));
+	if (!ml) {
+		__magic_file_delmagic (magic, mapped, nmagic);
+		free (mlist);
+		__magic_file_oomem (ms, sizeof (*ml));
+		return NULL;
+	}
+	ml->magic = magic;
+	ml->nmagic = nmagic;
+	ml->mapped = mapped;
+	mlist->prev->next = ml;
+	ml->prev = mlist->prev;
+	ml->next = mlist;
+	mlist->prev = ml;
 	return mlist;
 }
 
@@ -549,12 +613,77 @@ static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r
 	fclose (f);
 }
 
+static int apprentice_finish(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, struct r_magic_entry *marray, ut32 marraycount, int errs) {
+	ut32 i;
+	ut32 mentrycount = 0;
+	ut32 starttest;
+
+	if (!errs) {
+		for (i = 0; i < marraycount;) {
+			if (marray[i].mp->cont_level != 0) {
+				i++;
+				continue;
+			}
+
+			starttest = i;
+			do {
+				set_test_type (marray[starttest].mp, marray[i].mp);
+				debug_test_type (ms, marray[i].mp);
+			} while (++i < marraycount && marray[i].mp->cont_level != 0);
+		}
+
+		qsort (marray, marraycount, sizeof (*marray), apprentice_sort);
+
+		for (i = 0; i < marraycount; i++) {
+			if (marray[i].mp->cont_level == 0 &&
+				marray[i].mp->type == FILE_DEFAULT) {
+				while (++i < marraycount) {
+					if (marray[i].mp->cont_level == 0) {
+						break;
+					}
+				}
+				if (i != marraycount) {
+					ms->line = marray[i].mp->lineno;
+					__magic_file_magwarn (ms, "level 0 \"default\" did not sort last");
+				}
+				break;
+			}
+		}
+
+		for (i = 0; i < marraycount; i++) {
+			mentrycount += marray[i].cont_count;
+		}
+
+		if (!(*magicp = malloc (1 + (sizeof (**magicp) * mentrycount)))) {
+			__magic_file_oomem (ms, sizeof (**magicp) * mentrycount);
+			errs++;
+		} else {
+			mentrycount = 0;
+			for (i = 0; i < marraycount; i++) {
+				(void)memcpy (*magicp + mentrycount, marray[i].mp, marray[i].cont_count * sizeof (**magicp));
+				mentrycount += marray[i].cont_count;
+			}
+		}
+	}
+	for (i = 0; i < marraycount; i++) {
+		free (marray[i].mp);
+	}
+	free (marray);
+	if (errs) {
+		*magicp = NULL;
+		*nmagicp = 0;
+		return errs;
+	}
+	*nmagicp = mentrycount;
+	return 0;
+}
+
 /*
  * parse a file or directory of files
  * const char *fn: name of magic file or directory
  */
 static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn, int action) {
-	ut32 marraycount, i, mentrycount = 0, starttest;
+	ut32 marraycount;
 	struct r_magic_entry *marray;
 	struct stat st;
 	int errs = 0;
@@ -635,72 +764,34 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	} else {
 		load_1 (ms, action, fn, &errs, &marray, &marraycount);
 	}
-	if (errs) {
-		goto out;
-	}
+	return apprentice_finish (ms, magicp, nmagicp, marray, marraycount, errs);
+}
 
-	/* Set types of tests */
-	for (i = 0; i < marraycount;) {
-		if (marray[i].mp->cont_level != 0) {
-			i++;
-			continue;
-		}
+static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size, int action) {
+	struct r_magic_entry *marray;
+	ut32 marraycount = 0;
+	char *data;
+	int errs = 0;
 
-		starttest = i;
-		do {
-			set_test_type (marray[starttest].mp, marray[i].mp);
-			debug_test_type (ms, marray[i].mp);
-		} while (++i < marraycount && marray[i].mp->cont_level != 0);
+	ms->flags |= R_MAGIC_CHECK;
+	ms->file = "(buffer)";
+	maxmagic = MAXMAGIS;
+	if (!(marray = calloc (maxmagic, sizeof (*marray)))) {
+		__magic_file_oomem (ms, maxmagic * sizeof (*marray));
+		return -1;
 	}
-
-	qsort (marray, marraycount, sizeof (*marray), apprentice_sort);
-
-	/*
-	 * Make sure that any level 0 "default" line is last (if one exists).
-	 */
-	for (i = 0; i < marraycount; i++) {
-		if (marray[i].mp->cont_level == 0 &&
-			marray[i].mp->type == FILE_DEFAULT) {
-			while (++i < marraycount) {
-				if (marray[i].mp->cont_level == 0) {
-					break;
-				}
-			}
-			if (i != marraycount) {
-				ms->line = marray[i].mp->lineno; /* XXX - Ugh! */
-				__magic_file_magwarn (ms, "level 0 \"default\" did not sort last");
-			}
-			break;
-		}
+	if (action == FILE_CHECK) {
+		eprintf ("%s\n", usg_hdr);
 	}
-
-	for (i = 0; i < marraycount; i++) {
-		mentrycount += marray[i].cont_count;
+	data = r_str_ndup ((const char *)buf, buf_size);
+	if (!data) {
+		free (marray);
+		__magic_file_oomem (ms, buf_size);
+		return -1;
 	}
-
-	if (! (*magicp = malloc (1 + (sizeof (**magicp) * mentrycount)))) {
-		__magic_file_oomem (ms, sizeof (**magicp) * mentrycount);
-		errs++;
-		goto out;
-	}
-
-	mentrycount = 0;
-	for (i = 0; i < marraycount; i++) {
-		(void)memcpy (*magicp + mentrycount, marray[i].mp, marray[i].cont_count * sizeof (**magicp));
-		mentrycount += marray[i].cont_count;
-	}
-out:
-	for (i = 0; i < marraycount; i++) {
-		free (marray[i].mp);
-	}
-	free (marray);
-	if (errs) {
-		*magicp = NULL;
-		*nmagicp = 0;
-		return errs;
-	}
-	*nmagicp = mentrycount;
-	return 0;
+	load_b (ms, action, data, &errs, &marray, &marraycount);
+	free (data);
+	return apprentice_finish (ms, magicp, nmagicp, marray, marraycount, errs);
 }
 
 /*
@@ -1883,6 +1974,57 @@ error1:
 error2:
 	free (dbname);
 	return -1;
+}
+
+static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size) {
+	ut32 *ptr;
+	ut32 version;
+	int needsbyteswap;
+	void *mm;
+
+	if (!buf || buf_size < sizeof (struct r_magic)) {
+		__magic_file_error (ms, 0, "magic buffer is too small");
+		return -1;
+	}
+	mm = malloc (buf_size);
+	if (!mm) {
+		__magic_file_oomem (ms, buf_size);
+		return -1;
+	}
+	memcpy (mm, buf, buf_size);
+	*magicp = mm;
+	ptr = (ut32 *)mm;
+
+	if (*ptr != MAGICNO) {
+		if (swap4 (*ptr) != MAGICNO) {
+			__magic_file_error (ms, 0, "bad magic in buffer");
+			free (mm);
+			*magicp = NULL;
+			*nmagicp = 0;
+			return -1;
+		}
+		needsbyteswap = 1;
+	} else {
+		needsbyteswap = 0;
+	}
+
+	version = needsbyteswap? swap4 (ptr[1]): ptr[1];
+	if (version != VERSIONNO) {
+		__magic_file_error (ms, 0, "magic buffer version %d != %d", version, VERSIONNO);
+		free (mm);
+		*magicp = NULL;
+		*nmagicp = 0;
+		return -1;
+	}
+	*nmagicp = (ut32)(buf_size / sizeof (struct r_magic));
+	if (*nmagicp > 0) {
+		(*nmagicp)--;
+	}
+	(*magicp)++;
+	if (needsbyteswap) {
+		byteswap (*magicp, *nmagicp);
+	}
+	return 1;
 }
 
 static const ut32 ar[] = {

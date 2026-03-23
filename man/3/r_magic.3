@@ -35,21 +35,18 @@ if (!magic) { /* handle allocation error */ }
 After creating the instance you must load a magic database (or a buffer
 containing a magic database) before asking it to identify content.
 .Bd -literal -offset indent
-/* load default database */
+/* load a database from a path or from memory */
 bool r_magic_load(RMagic *ms, const char *magicfile);
 bool r_magic_load_buffer(RMagic *ms, const ut8 *buf, size_t len);
 .Ed
 .Sh FILE TYPE DETECTION
-Once a magic instance is loaded it can inspect files, file descriptors or
-in-memory buffers. The functions return a pointer to an internal, NUL-terminated
-string describing the matching type (do not free it). If no match is found
-they return NULL and you may call
+Once a magic instance is loaded it can inspect in-memory buffers. The function
+returns a pointer to an internal, NUL-terminated string describing the matching
+type (do not free it). If no match is found it returns NULL and you may call
 .Fn r_magic_error
 to obtain diagnostics.
 .Bd -literal -offset indent
 /* signatures */
-const char *r_magic_file(RMagic *ms, const char *path);
-const char *r_magic_descriptor(RMagic *ms, int fd);
 const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb);
 .Ed
 .Pp
@@ -108,8 +105,9 @@ the magic instance around and reload only when the database changes (this is
 the pattern used in `libr/core`).
 .Sh DATABASE MANAGEMENT
 The magic database can be loaded from the system default path, from a
-specific file, or from a buffer in memory. Helper functions also allow
-compiling and syntax-checking magic files.
+specific file, or from a buffer in memory. `r_magic_load_buffer` accepts either
+text magic source or compiled `.mgc` bytes already resident in memory.
+Helper functions also allow compiling and syntax-checking magic files.
 .Bd -literal -offset indent
 /* signatures */
 bool r_magic_load(RMagic *ms, const char *magicfile);
@@ -121,10 +119,10 @@ bool r_magic_check(RMagic *ms, const char *magicfile);
 In practice `libr/core` will call `r_magic_load` once (using the `dir.magic`
 configuration key) and reuse the returned context for multiple buffer probes.
 If you wish to supply a custom database at runtime use
-`r_magic_load_buffer` or `r_magic_compile` to validate a file first.
+`r_magic_load_buffer` and keep the database itself out of the filesystem path.
 .Bd -literal -offset indent
 /* example: load custom magic then probe a buffer */
-if (!r_magic_load(magic, "/usr/share/magic/magic.mgc")) {
+if (!r_magic_load_buffer(magic, magic_db, magic_db_len)) {
     fprintf(stderr, "failed to load magic: %s\n", r_magic_error(magic));
 }
 const char *t = r_magic_buffer(magic, data, data_len);
@@ -149,23 +147,33 @@ And many others
 .El
 The following examples demonstrate common, practical usages of the API.
 .Pp
-1) Simple command-line file probe — same pattern used by `rabin2` and the
-   `cmd.magic` implementation in `libr/core`.
+1) Simple command-line file probe using an application-managed file read and
+   `r_magic_buffer`.
 .Bd -literal -offset indent
 #include <r_magic.h>
+#include <r_util/r_file.h>
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+    size_t len = 0;
+    char *data;
     if (argc < 2) { return 1; }
     RMagic *m = r_magic_new(R_MAGIC_NONE);
     if (!m) { perror("r_magic_new"); return 1; }
-    if (!r_magic_load(m, NULL)) {
+    if (!r_magic_load(m, "/usr/share/radare2/magic.mgc")) {
         fprintf(stderr, "load failed: %s\n", r_magic_error(m));
         r_magic_free(m);
         return 1;
     }
-    const char *t = r_magic_file(m, argv[1]);
+    data = r_file_slurp(argv[1], &len);
+    if (!data) {
+        perror(argv[1]);
+        r_magic_free(m);
+        return 1;
+    }
+    const char *t = r_magic_buffer(m, data, len);
     if (t) printf("%s: %s\n", argv[1], t);
+    free(data);
     r_magic_free(m);
     return 0;
 }
@@ -177,7 +185,7 @@ int main(int argc, char **argv) {
    alignment or attempt more specific heuristics.
 .Bd -literal -offset indent
 RMagic *m = r_magic_new(0);
-r_magic_load(m, NULL);
+r_magic_load(m, "/usr/share/radare2/magic.mgc");
 const char *info = r_magic_buffer(m, block, block_len);
 if (info) {
     if (!strcmp(info, "data")) {

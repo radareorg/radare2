@@ -42,6 +42,7 @@ if get_option('enable_tests')
     'json',
     'kernelcache_cmdsize',
     'list',
+    'magic',
     'ovf',
     'pdb',
     'pj',
