@@ -224,9 +224,16 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		r_config_set_b (origcfg, "scr.interactive", r_config_get_b (origcfg, "scr.interactive"));
 #endif
 
-		newoff = core->addr;
-		newblk = core->block;
-		newblksz = core->blocksize;
+		// only update the HTTP state if commands actually changed it.
+		// after a 'continue' (e.g. NULL accept), core->block is still
+		// origblk and saving it into newblk would alias both pointers.
+		// a later r_core_block_size() realloc would then free origblk
+		// through newblk, leaving origblk as a dangling pointer (UAF).
+		if (core->block != origblk) {
+			newoff = core->addr;
+			newblk = core->block;
+			newblksz = core->blocksize;
+		}
 
 		core->addr = origoff;
 		core->block = origblk;
