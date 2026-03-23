@@ -441,7 +441,7 @@ static void load_asm_descriptions(RAsm *a) {
 }
 
 static void r_asm_update_session(RAsm *a) {
-	if (a->arch) {
+	if (a->arch && a->arch->session) {
 		a->dcur = a->arch->session;
 	} else if (a->analb.anal && a->analb.anal->arch) {
 		a->dcur = a->analb.anal->arch->session;
