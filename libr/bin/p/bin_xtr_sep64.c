@@ -1,4 +1,4 @@
-/* radare - LGPLv3 - Copyright 2009-2024 - pancake */
+/* radare - LGPLv3 - Copyright 2009-2026 - pancake */
 
 #include <r_bin.h>
 
@@ -61,28 +61,30 @@ typedef struct _RSepMachoInfo {
 } RSepMachoInfo;
 
 typedef struct _RSepSlice64 {
-	RBuffer * buf;
-	RBinXtrMetadata * meta;
+	RBuffer *buf;
+	RBinXtrMetadata *meta;
 	ut64 nominal_offset;
 	ut64 total_size;
 } RSepSlice64;
 
 typedef struct _RSepXtr64Ctx {
-	RSepHdr64 * hdr;
-	RSepApp64 * apps;
+	RSepHdr64 *hdr;
+	RSepApp64 *apps;
 } RSepXtr64Ctx;
 
-static RSepXtr64Ctx * sep64_xtr_ctx_new(RBuffer *buf);
+static RSepXtr64Ctx *sep64_xtr_ctx_new(RBuffer *buf);
 static void sep64_xtr_ctx_free(void *p);
-static RSepSlice64 * sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer *whole, int idx);
+static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx *ctx, RBuffer *whole, int idx);
+static ut64 sep64_slice_paddr(const RSepHdr64 *hdr, const RSepApp64 *app, int idx);
+static char *sep64_slice_name(const RSepHdr64 *hdr, const RSepApp64 *app, int idx);
 
-static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size);
-static RBinXtrMetadata * metadata_new(char *name, RSepMachoInfo *info);
+static RSepMachoInfo *mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size);
+static RBinXtrMetadata *metadata_new(char *name, RSepMachoInfo *info);
 
 static ut32 read_arm64_ins(RBuffer *b, int idx);
-static char * get_proper_name(const char *app_name);
-static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo *info);
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr);
+static char *get_proper_name(const char *app_name);
+static RBuffer *extract_slice(RBuffer *whole, RSepMachoInfo *info);
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr);
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	R_RETURN_VAL_IF_FAIL (b, false);
@@ -110,7 +112,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	}
 
 	/* legion2 */
-	if (read_arm64_ins (b, 1028) !=  0x326e6f69) {
+	if (read_arm64_ins (b, 1028) != 0x326e6f69) {
 		return false;
 	}
 
@@ -153,12 +155,11 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 	}
 	RSepSlice64 *slice = sep64_xtr_ctx_get_slice (ctx, b, idx);
 	if (!slice) {
-		R_LOG_DEBUG ("Cannot get slice %d, binary reports %"PFMT64u" entries", idx, ctx->hdr->n_apps);
+		R_LOG_DEBUG ("Cannot get slice %d, binary reports %" PFMT64u " entries", idx, ctx->hdr->n_apps);
 		ctx->hdr->n_apps = idx > 0? idx - 1: 0;
 		return NULL;
 	}
-	RBinXtrData * res = r_bin_xtrdata_new (slice->buf, slice->nominal_offset,
-			slice->total_size, 3 + ctx->hdr->n_apps, slice->meta);
+	RBinXtrData *res = r_bin_xtrdata_new (slice->buf, slice->nominal_offset, slice->total_size, 3 + ctx->hdr->n_apps, slice->meta);
 
 	r_unref (slice->buf);
 	free (slice);
@@ -167,24 +168,24 @@ static RBinXtrData *oneshot_buffer(RBin *bin, RBuffer *b, int idx) {
 
 static RList *oneshotall_buffer(RBin *bin, RBuffer *b) {
 	RBinXtrData *data = oneshot_buffer (bin, b, 0);
-	if (data) {
-		int narch = data->file_count;
-		RList *res = r_list_newf (r_bin_xtrdata_free);
-		if (!res) {
-			r_bin_xtrdata_free (data);
-			return NULL;
-		}
-		r_list_append (res, data);
-		int i;
-		for (i = 1; data && i < narch; i++) {
-			data = oneshot_buffer (bin, b, i);
-			if (data) {
-				r_list_append (res, data);
-			}
-		}
-		return res;
+	if (!data) {
+		return NULL;
 	}
-	return NULL;
+	int narch = data->file_count;
+	RList *res = r_list_newf (r_bin_xtrdata_free);
+	if (!res) {
+		r_bin_xtrdata_free (data);
+		return NULL;
+	}
+	r_list_append (res, data);
+	int i;
+	for (i = 1; data && i < narch; i++) {
+		data = oneshot_buffer (bin, b, i);
+		if (data) {
+			r_list_append (res, data);
+		}
+	}
+	return res;
 }
 
 static RSepXtr64Ctx *sep64_xtr_ctx_new(RBuffer *buf) {
@@ -197,7 +198,7 @@ static RSepXtr64Ctx *sep64_xtr_ctx_new(RBuffer *buf) {
 	}
 
 	RSepHdr64 *hdr = R_NEW0 (RSepHdr64);
-	if (r_buf_fread_at (buf, hdr_offset, (ut8 *) hdr, "16c16l16c16c3l", 1) != sizeof (RSepHdr64)) {
+	if (r_buf_fread_at (buf, hdr_offset, (ut8 *)hdr, "16c16l16c16c3l", 1) != sizeof (RSepHdr64)) {
 		free (hdr);
 		return NULL;
 	}
@@ -212,7 +213,7 @@ static RSepXtr64Ctx *sep64_xtr_ctx_new(RBuffer *buf) {
 		free (hdr);
 		return NULL;
 	}
-	if (r_buf_fread_at (buf, apps_at, (ut8*) apps, "9l2i16c16cl", hdr->n_apps) != (sizeof (RSepApp64) * hdr->n_apps)) {
+	if (r_buf_fread_at (buf, apps_at, (ut8 *)apps, "9l2i16c16cl", hdr->n_apps) != (sizeof (RSepApp64) * hdr->n_apps)) {
 		free (apps);
 		free (hdr);
 		return NULL;
@@ -225,56 +226,72 @@ static RSepXtr64Ctx *sep64_xtr_ctx_new(RBuffer *buf) {
 }
 
 static void sep64_xtr_ctx_free(void *p) {
-	if (p) {
-		RSepXtr64Ctx *ctx = p;
-		R_FREE (ctx->hdr);
-		R_FREE (ctx->apps);
-		free (ctx);
+	if (!p) {
+		return;
+	}
+	RSepXtr64Ctx *ctx = p;
+	R_FREE (ctx->hdr);
+	R_FREE (ctx->apps);
+	free (ctx);
+}
+
+static ut64 sep64_slice_paddr(const RSepHdr64 *hdr, const RSepApp64 *app, int idx) {
+	switch (idx) {
+	case 0:
+		return 0;
+	case 1:
+		return hdr->kernel_base_paddr;
+	case 2:
+		return hdr->init_base_paddr;
+	default:
+		return app? app->phys_text: 0;
 	}
 }
 
-static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer *whole, int idx) {
+static char *sep64_slice_name(const RSepHdr64 *hdr, const RSepApp64 *app, int idx) {
+	switch (idx) {
+	case 0:
+		return strdup ("boot");
+	case 1:
+		return strdup ("kernel");
+	default:
+		return get_proper_name (app? app->app_name: hdr->init_name);
+	}
+}
+
+static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx *ctx, RBuffer *whole, int idx) {
 	R_RETURN_VAL_IF_FAIL (ctx && ctx->hdr && whole, NULL);
 
 	if (idx < 0 || idx >= ctx->hdr->n_apps + 3) {
 		return NULL;
 	}
 
+	const RSepHdr64 *hdr = ctx->hdr;
 	ut64 whole_size = r_buf_size (whole);
-	RBuffer * slice_buf = NULL;
-	RSepMachoInfo * info = NULL;
+	RBuffer *slice_buf = NULL;
+	RSepMachoInfo *info = NULL;
 	ut64 nominal_offset = 0;
 	ut64 total_size = 0;
-	ut64 at = 0;
-	ut64 data_offset_in_whole = 0;
-	bool extract = false;
-	char *name = NULL;
+	const RSepApp64 *app = idx > 2? &ctx->apps[idx - 3]: NULL;
+	const ut64 at = sep64_slice_paddr (hdr, app, idx);
+	const ut64 data_offset_in_whole = app? app->phys_data: 0;
+	const bool extract = idx > 1;
+	char *name = sep64_slice_name (hdr, app, idx);
+	if (!name) {
+		return NULL;
+	}
 
 	if (idx == 0) {
-		name = strdup ("boot");
-		total_size = ctx->hdr->kernel_base_paddr;
-		if (!name || total_size > whole_size) {
+		total_size = hdr->kernel_base_paddr;
+		if (total_size > whole_size) {
 			free (name);
 			return NULL;
 		}
 		slice_buf = r_buf_new_slice (whole, 0, total_size);
 	} else {
-		nominal_offset = idx == 1? ctx->hdr->kernel_base_paddr: idx == 2? ctx->hdr->init_base_paddr: ctx->apps[idx - 3].phys_text;
-		at = nominal_offset;
+		nominal_offset = at;
 		if (at >= whole_size) {
-			return NULL;
-		}
-		if (idx == 1) {
-			name = strdup ("kernel");
-		} else if (idx == 2) {
-			name = get_proper_name (ctx->hdr->init_name);
-			extract = true;
-		} else {
-			name = get_proper_name (ctx->apps[idx - 3].app_name);
-			data_offset_in_whole = ctx->apps[idx - 3].phys_data;
-			extract = true;
-		}
-		if (!name) {
+			free (name);
 			return NULL;
 		}
 		info = mach0_info_new (whole, at, whole_size - at);
@@ -307,14 +324,14 @@ static RSepSlice64 *sep64_xtr_ctx_get_slice(RSepXtr64Ctx * ctx, RBuffer *whole, 
 	return slice;
 }
 
-static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
+static RSepMachoInfo *mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
 	R_RETURN_VAL_IF_FAIL (buf && max_size >= sizeof (struct MACH0_(mach_header)), NULL);
 
 	struct MACH0_(mach_header) hdr;
 	ut64 total_size = 0, text_size = 0, data_offset = 0, data_size = 0;
 	bool has_text = false, has_data = false;
 	ut32 hdr_size = sizeof (hdr);
-	if (r_buf_read_at (buf, at, (ut8 *) &hdr, hdr_size) != hdr_size) {
+	if (r_buf_read_at (buf, at, (ut8 *)&hdr, hdr_size) != hdr_size) {
 		return NULL;
 	}
 	if (hdr.magic != MH_MAGIC_64 || !hdr.ncmds || hdr.sizeofcmds < sizeof (struct load_command) || hdr.sizeofcmds > max_size - hdr_size) {
@@ -331,27 +348,33 @@ static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
 	}
 
 	ut32 i;
-	ut8 * cursor = commands;
-	ut8 * commands_end = commands + hdr.sizeofcmds;
+	ut8 *cursor = commands;
+	ut8 *commands_end = commands + hdr.sizeofcmds;
+	bool valid = true;
 	for (i = 0; i < hdr.ncmds; i++) {
-		if (cursor > commands_end || sizeof (struct load_command) > (size_t)(commands_end - cursor)) {
-			free (commands);
-			return NULL;
+		if (cursor > commands_end) {
+			valid = false;
+			break;
 		}
-		const struct load_command * cmd = (struct load_command *) cursor;
-		if (cmd->cmdsize < sizeof (struct load_command) || cmd->cmdsize > (ut32)(commands_end - cursor)) {
-			free (commands);
-			return NULL;
+		size_t left = commands_end - cursor;
+		if (left < sizeof (struct load_command)) {
+			valid = false;
+			break;
+		}
+		const struct load_command *cmd = (struct load_command *)cursor;
+		if (cmd->cmdsize < sizeof (struct load_command) || cmd->cmdsize > left) {
+			valid = false;
+			break;
 		}
 		if (cmd->cmd == LC_SEGMENT_64) {
 			if (cmd->cmdsize < sizeof (struct MACH0_(segment_command))) {
-				free (commands);
-				return NULL;
+				valid = false;
+				break;
 			}
-			const struct MACH0_(segment_command) * seg = (struct MACH0_(segment_command) *) cursor;
+			const struct MACH0_(segment_command) *seg = (struct MACH0_(segment_command) *)cursor;
 			if (seg->fileoff > max_size || seg->filesize > max_size - seg->fileoff) {
-				free (commands);
-				return NULL;
+				valid = false;
+				break;
 			}
 			ut64 seg_end = seg->fileoff + seg->filesize;
 			if (total_size < seg_end) {
@@ -370,7 +393,7 @@ static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
 	}
 	free (commands);
 
-	if (total_size == 0 || !text_size || !data_size || !has_text || !has_data || text_size > total_size || data_offset > total_size || data_size > total_size - data_offset) {
+	if (!valid || total_size == 0 || !text_size || !data_size || !has_text || !has_data || text_size > total_size || data_offset > total_size || data_size > total_size - data_offset) {
 		return NULL;
 	}
 
@@ -384,7 +407,7 @@ static RSepMachoInfo * mach0_info_new(RBuffer *buf, ut64 at, ut64 max_size) {
 	return result;
 }
 
-static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo *info) {
+static RBuffer *extract_slice(RBuffer *whole, RSepMachoInfo *info) {
 	R_RETURN_VAL_IF_FAIL (whole && info, NULL);
 
 	ut64 whole_size = r_buf_size (whole);
@@ -392,13 +415,7 @@ static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo *info) {
 		return NULL;
 	}
 	ut64 data_offset = info->data_offset_in_whole? info->data_offset_in_whole: info->text_offset_in_whole + info->data_offset;
-	if (info->text_size > info->total_size
-		|| info->data_offset > info->total_size
-		|| info->data_size > info->total_size - info->data_offset
-		|| info->text_offset_in_whole > whole_size
-		|| info->text_size > whole_size - info->text_offset_in_whole
-		|| data_offset > whole_size
-		|| info->data_size > whole_size - data_offset) {
+	if (info->text_size > info->total_size || info->data_offset > info->total_size || info->data_size > info->total_size - info->data_offset || info->text_offset_in_whole > whole_size || info->text_size > whole_size - info->text_offset_in_whole || data_offset > whole_size || info->data_size > whole_size - data_offset) {
 		return NULL;
 	}
 
@@ -406,8 +423,7 @@ static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo *info) {
 	if (!content) {
 		return NULL;
 	}
-	if (r_buf_read_at (whole, info->text_offset_in_whole, content, info->text_size) != info->text_size
-		|| r_buf_read_at (whole, data_offset, content + info->data_offset, info->data_size) != info->data_size) {
+	if (r_buf_read_at (whole, info->text_offset_in_whole, content, info->text_size) != info->text_size || r_buf_read_at (whole, data_offset, content + info->data_offset, info->data_size) != info->data_size) {
 		free (content);
 		return NULL;
 	}
@@ -415,14 +431,14 @@ static RBuffer * extract_slice(RBuffer * whole, RSepMachoInfo *info) {
 	return r_buf_new_with_pointers (content, info->total_size, true);
 }
 
-static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) *hdr) {
+static inline void fill_metadata_info_from_hdr(RBinXtrMetadata *meta, struct MACH0_(mach_header) * hdr) {
 	meta->arch = strdup (MACH0_(get_cputype_from_hdr) (hdr));
 	meta->bits = MACH0_(get_bits_from_hdr) (hdr);
 	meta->machine = MACH0_(get_cpusubtype_from_hdr) (hdr);
 	meta->type = MACH0_(get_filetype_from_hdr) (hdr);
 }
 
-static RBinXtrMetadata * metadata_new(char *name, RSepMachoInfo *info) {
+static RBinXtrMetadata *metadata_new(char *name, RSepMachoInfo *info) {
 	if (!name) {
 		return NULL;
 	}
@@ -440,22 +456,13 @@ static RBinXtrMetadata * metadata_new(char *name, RSepMachoInfo *info) {
 	return meta;
 }
 
-static char * get_proper_name(const char *app_name) {
-	char * proper_name = calloc (17, 1);
+static char *get_proper_name(const char *app_name) {
+	char *proper_name = calloc (17, 1);
 	if (!proper_name) {
 		return NULL;
 	}
 	memcpy (proper_name, app_name, 16);
-	int i;
-
-	for (i = 15; i >= 0; i--) {
-		if (!proper_name[i] || proper_name[i] == ' ') {
-			proper_name[i] = 0;
-		} else {
-			break;
-		}
-	}
-
+	r_str_trim_tail (proper_name);
 	return proper_name;
 }
 
