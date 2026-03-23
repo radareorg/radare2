@@ -188,9 +188,7 @@ void init_file_tables(RMagic *m) {
 static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *mlist) {
 	struct r_magic *magic = NULL;
 	ut32 nmagic = 0;
-	struct mlist *ml;
 	int rv = -1;
-	int mapped;
 
 	if (!ms) {
 		return -1;
@@ -221,22 +219,21 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		}
 	}
 
-	mapped = rv;
-
 	if (!magic) {
-		__magic_file_delmagic (magic, mapped, nmagic);
+		__magic_file_delmagic (magic, rv, nmagic);
 		return -1;
 	}
 
-	if (! (ml = malloc (sizeof (*ml)))) {
-		__magic_file_delmagic (magic, mapped, nmagic);
+	struct mlist *ml = malloc (sizeof (*ml));
+	if (!ml) {
+		__magic_file_delmagic (magic, rv, nmagic);
 		__magic_file_oomem (ms, sizeof (*ml));
 		return -1;
 	}
 
 	ml->magic = magic;
 	ml->nmagic = nmagic;
-	ml->mapped = mapped;
+	ml->mapped = rv;
 
 	mlist->prev->next = ml;
 	ml->prev = mlist->prev;
@@ -268,21 +265,22 @@ void __magic_file_delmagic(struct r_magic *p, int type, size_t entries) {
 
 /* const char *fn: list of magic files and directories */
 struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
-	char *p, *mfn;
+	char *p;
 	int file_err, errs = -1;
-	struct mlist *mlist;
+	char *mfn = r_str_ndup (fn, fn_size);
 
 	if (!fn) {
 		return NULL;
 	}
 
-	if (! (mfn = r_str_ndup (fn, fn_size))) {
+	if (!mfn) {
 		__magic_file_oomem (ms, fn_size);
 		return NULL;
 	}
 	fn = mfn;
 
-	if (! (mlist = malloc (sizeof (*mlist)))) {
+	struct mlist *mlist = malloc (sizeof (*mlist));
+	if (!mlist) {
 		free (mfn);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
@@ -320,13 +318,10 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 		&& version == VERSIONNO;
 }
 
-// AITODO: define and assign variables in the very same line if possible
 struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
 	struct r_magic *magic = NULL;
-	struct mlist *ml;
-	struct mlist *mlist;
 	ut32 nmagic = 0;
-	int mapped;
+	int mapped = 0;
 
 	if (!buf) {
 		return NULL;
@@ -341,19 +336,18 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 			return NULL;
 		}
 	} else {
-		mapped = 0;
 		if (apprentice_load_buffer (ms, &magic, &nmagic, buf, buf_size, action) != 0) {
 			return NULL;
 		}
 	}
-	mlist = malloc (sizeof (*mlist));
+	struct mlist *mlist = malloc (sizeof (*mlist));
 	if (!mlist) {
 		__magic_file_delmagic (magic, mapped, nmagic);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
 	mlist->next = mlist->prev = mlist;
-	ml = malloc (sizeof (*ml));
+	struct mlist *ml = malloc (sizeof (*ml));
 	if (!ml) {
 		__magic_file_delmagic (magic, mapped, nmagic);
 		free (mlist);
@@ -670,19 +664,18 @@ static int apprentice_finish(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp,
  * const char *fn: name of magic file or directory
  */
 static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn, int action) {
-	ut32 marraycount;
-	struct r_magic_entry *marray;
+	ut32 marraycount = 0;
 	RList *files;
 	RListIter *iter;
 	char *name;
 	int errs = 0;
 	ms->flags |= R_MAGIC_CHECK; /* Enable checks for parsed files */
 	maxmagic = MAXMAGIS;
-	if (! (marray = calloc (maxmagic, sizeof (*marray)))) {
+	struct r_magic_entry *marray = calloc (maxmagic, sizeof (*marray));
+	if (!marray) {
 		__magic_file_oomem (ms, maxmagic * sizeof (*marray));
 		return -1;
 	}
-	marraycount = 0;
 
 	/* print silly verbose header for USG compat. */
 	if (action == FILE_CHECK) {
@@ -717,10 +710,8 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	return apprentice_finish (ms, magicp, nmagicp, marray, marraycount, errs);
 }
 
-// AITODO: define and assign variable values in the same line if possible to avoid double initializations and unnecessary LOCs. apply this rule to the rest of the file
 static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size, int action) {
 	ut32 marraycount = 0;
-	char *data;
 	int errs = 0;
 
 	ms->flags |= R_MAGIC_CHECK;
@@ -734,7 +725,7 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 	if (action == FILE_CHECK) {
 		R_LOG_INFO ("%s", usg_hdr);
 	}
-	data = r_str_ndup ((const char *)buf, buf_size);
+	char *data = r_str_ndup ((const char *)buf, buf_size);
 	if (!data) {
 		free (marray);
 		__magic_file_oomem (ms, buf_size);
