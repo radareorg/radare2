@@ -189,14 +189,29 @@ typedef enum r_core_autocomplete_types_t {
 	R_CORE_AUTOCMPLT_END,
 } RCoreAutocompleteType;
 
-typedef struct r_core_autocomplete_t {
+typedef struct r_core_autocomplete_t RCoreAutocomplete;
+typedef struct R_ALIGNED(16) r_core_autocomplete_vec_t {
+	RCoreAutocomplete *_start;
+	RCoreAutocomplete *_end;
+	size_t _capacity;
+} RVecCoreAutocomplete;
+
+struct r_core_autocomplete_t {
 	char *cmd;
-	int length;
-	int n_subcmds;
+	ut8 length;
+	ut8 type;
 	bool locked;
-	int type;
-	struct r_core_autocomplete_t** subcmds;
-} RCoreAutocomplete;
+	RVecCoreAutocomplete subcmds;
+};
+
+static inline void r_core_autocomplete_elem_fini(RCoreAutocomplete *obj);
+R_VEC_DEFINE_IMPL_WITH_FINI (RVecCoreAutocomplete, RCoreAutocomplete, r_core_autocomplete_elem_fini);
+static inline void r_core_autocomplete_elem_fini(RCoreAutocomplete *obj) {
+	if (obj) {
+		RVecCoreAutocomplete_fini (&obj->subcmds);
+		free (obj->cmd);
+	}
+}
 
 typedef struct r_core_visual_tab_t {
 	int printidx;
@@ -674,7 +689,7 @@ R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir);
 R_API bool r_core_yank_file_ex(RCore *core, const char *input);
 R_API bool r_core_yank_file_all(RCore *core, const char *input);
 
-#define R_LIB_LOAD_ALL UT32_MAX
+#define R_CORE_LOADLIBS_ALL R_LIB_LOAD_ALL
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API bool r_core_loadlibs(RCore *core, int where, const char *path);

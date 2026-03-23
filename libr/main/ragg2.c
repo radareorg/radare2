@@ -46,10 +46,7 @@ static REggState *__es_new(void) {
 	es->l = r_lib_new (NULL, NULL);
 	es->e = r_egg_new ();
 
-	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
-	if (load_plugins) {
-		__load_plugins (es);
-	}
+	__load_plugins (es);
 	return es;
 }
 

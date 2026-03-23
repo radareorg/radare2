@@ -199,8 +199,8 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	/* Register this HTTP session so r2agent -L can discover it */
 	r_core_session_register (core, "r2web", atoi (port));
 
-	ut64 newoff, origoff = core->addr;
-	int newblksz, origblksz = core->blocksize;
+	ut64 newoff = core->addr, origoff = core->addr;
+	int newblksz = core->blocksize, origblksz = core->blocksize;
 	ut8 *newblk, *origblk = core->block;
 
 	newblk = malloc (core->blocksize + 1);

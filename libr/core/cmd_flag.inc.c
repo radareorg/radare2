@@ -737,7 +737,27 @@ static void cmd_flag_table(RCore *core, const char *input) {
 	r_table_free (t);
 }
 
+static void load_default_flag_tags(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	RCorePriv *priv = core->priv;
+	if (priv->tags_loaded) {
+		return;
+	}
+	priv->tags_loaded = true;
+	char *a = r_str_r2_prefix (R2_FLAGS);
+	if (a) {
+		char *file = r_str_newf ("%s/tags.r2", a);
+		bool p = core->print->enable_progressbar;
+		core->print->enable_progressbar = false;
+		(void)r_core_run_script (core, file);
+		core->print->enable_progressbar = p;
+		free (file);
+		free (a);
+	}
+}
+
 static void cmd_flag_tags(RCore *core, const char *input) {
+	load_default_flag_tags (core);
 	char mode = input[1];
 	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);

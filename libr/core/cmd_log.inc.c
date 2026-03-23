@@ -674,7 +674,7 @@ static int cmd_plugins(void *data, const char *input) {
 			r_list_foreach (core->rcmd->plist, iter, cp) {
 				pj_o (pj);
 				r_lib_meta_pj (pj, &cp->meta);
-				if (cp->meta.name) {
+				if (core->lib && cp->meta.name) {
 					bool found;
 					RLibPlugin *plugin = ht_pp_find (core->lib->plugins_ht[R_LIB_TYPE_CORE], cp->meta.name, &found);
 					if (found && plugin) {
