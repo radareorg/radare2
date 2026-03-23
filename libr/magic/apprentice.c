@@ -77,7 +77,7 @@ struct r_magic_entry {
 static int getvalue(RMagic *ms, struct r_magic *, const char **, int);
 static int hextoint(int);
 static const char *getstr(RMagic *, const char *, char *, int, int *, int);
-static int parse(RMagic *, struct r_magic_entry **, ut32 *, const char *, size_t, int);
+static bool parse(RMagic *, struct r_magic_entry **, ut32 *, const char *, size_t, int);
 static int parse_mime(RMagic *, struct r_magic_entry **, ut32 *, const char *);
 static void eatsize(const char **);
 static int apprentice_1(RMagic *, const char *, int, struct mlist *);
@@ -572,7 +572,7 @@ static bool parse_line(RMagic *ms, int action, struct r_magic_entry **marray, ut
 	if (r_str_startswith (line, mime_marker)) {
 		return parse_mime (ms, marray, marraycount, line + mime_marker_len) == 0;
 	}
-	return parse (ms, marray, marraycount, line, lineno, action) == 0;
+	return parse (ms, marray, marraycount, line, lineno, action);
 }
 
 static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
@@ -943,7 +943,7 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
 /*
  * parse one line from magic file, put into magic[index++] if valid
  */
-static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
+static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, const char *line, size_t lineno, int action) {
 	size_t i;
 	struct r_magic_entry *me;
 	struct r_magic *m;
@@ -957,7 +957,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	}
 	if (cont_level == 0 || cont_level > ms->last_cont_level) {
 		if (__magic_file_check_mem (ms, cont_level) == -1) {
-			return -1;
+			return false;
 		}
 	}
 	ms->last_cont_level = cont_level;
@@ -966,7 +966,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	if (cont_level != 0) {
 		if (*nmentryp == 0) {
 			__magic_file_error (ms, 0, "No current entry for continuation");
-			return -1;
+			return false;
 		}
 		me = &(*mentryp)[*nmentryp - 1];
 		if (me->cont_count == me->max_count) {
@@ -974,7 +974,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			size_t cnt = me->max_count + ALLOC_CHUNK;
 			if (! (nm = realloc (me->mp, sizeof (*nm) * cnt))) {
 				__magic_file_oomem (ms, sizeof (*nm) * cnt);
-				return -1;
+				return false;
 			}
 			me->mp = nm;
 			me->max_count = cnt;
@@ -989,7 +989,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 			maxmagic += ALLOC_INCR;
 			if (! (mp = realloc (*mentryp, sizeof (*mp) * maxmagic))) {
 				__magic_file_oomem (ms, sizeof (*mp) * maxmagic);
-				return -1;
+				return false;
 			}
 			(void)memset (&mp[*nmentryp], 0, sizeof (*mp) * ALLOC_INCR);
 			*mentryp = mp;
@@ -998,7 +998,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		if (!me->mp) {
 			if (! (m = malloc (sizeof (*m) * ALLOC_CHUNK))) {
 				__magic_file_oomem (ms, sizeof (*m) * ALLOC_CHUNK);
-				return -1;
+				return false;
 			}
 			me->mp = m;
 			me->max_count = ALLOC_CHUNK;
@@ -1130,7 +1130,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 
 	m->cond = get_cond (l, &l);
 	if (check_cond (ms, m->cond, cont_level) == -1) {
-		return -1;
+		return false;
 	}
 	EATAB;
 
@@ -1144,7 +1144,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 		if (ms->flags & R_MAGIC_CHECK) {
 			__magic_file_magwarn (ms, "type `%s' invalid", l);
 		}
-		return -1;
+		return false;
 	}
 
 	/* New-style anding: "0 byte&0x80 =0x80 dynamically linked" */
@@ -1220,7 +1220,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 							"string extension `%c' invalid",
 							*l);
 					}
-					return -1;
+					return false;
 				}
 				/* allow multiple '/' for readability */
 				if (l[1] == '/' && !isspace ((ut8)l[2])) {
@@ -1228,13 +1228,13 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 				}
 			}
 			if (string_modifier_check (ms, m) == -1) {
-				return -1;
+				return false;
 			}
 		} else {
 			if (ms->flags & R_MAGIC_CHECK) {
 				__magic_file_magwarn (ms, "invalid string op: %c", *t);
 			}
-			return -1;
+			return false;
 		}
 	}
 	/*
@@ -1273,7 +1273,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	 * Grab the value part, except for an 'x' reln.
 	 */
 	if (m->reln != 'x' && getvalue (ms, m, &l, action)) {
-		return -1;
+		return false;
 	}
 
 	/*
@@ -1309,7 +1309,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	 */
 	if (ms->flags & R_MAGIC_CHECK) {
 		if (check_format (ms, m) == -1) {
-			return -1;
+			return false;
 		}
 	}
 	if (action == FILE_CHECK) {
@@ -1319,7 +1319,7 @@ static int parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, con
 	if (m->cont_level == 0) {
 		++ (*nmentryp); /* make room for next */
 	}
-	return 0;
+	return true;
 }
 
 /*
