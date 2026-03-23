@@ -561,6 +561,8 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	}
 	if (r_arch_session_decode (a->dcur, op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM)) {
 		ret = op->size;
+	} else {
+		op->size = 1;
 	}
 	if (ret < 0) {
 		ret = 0;
@@ -576,7 +578,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 		}
 	}
 #endif
-	if (op->size < 1 || is_invalid (op)) {
+	if (op->size < 1 || !op->mnemonic || is_invalid (op)) {
 		if (a->config->invhex) {
 			r_strf_buffer (32);
 			if (a->config->bits == 16) {
