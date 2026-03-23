@@ -724,7 +724,7 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 idx;
 	int ret;
 	const size_t addrbytes = a->config->addrbytes > 0 ? a->config->addrbytes : 1;
-	int mininstrsize = r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE);
+	int mininstrsize = R_MAX (1, r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE));
 
 	RAsmCode *acode = r_asm_code_new ();
 	if (!acode) {
@@ -739,10 +739,7 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_asm_set_pc (a, pc + idx);
 		// we can change this to return RAnalOp* instead of passing it as arg here
 		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
-		if (ret < 1) {
-			ret = mininstrsize;
-		}
-		ret = op.size;
+		ret = (op.size > 0) ? op.size : mininstrsize;
 		if (a->pseudo) {
 			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
 			if (newtext) {
