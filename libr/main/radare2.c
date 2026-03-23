@@ -162,7 +162,7 @@ static int r_main_version_verify(RCore *core, bool show, bool json) {
 		}
 		pj_ko (pj, "plugins");
 		{
-			r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+			r_core_loadlibs (core, R_LIB_LOAD_ALL, NULL);
 			json_plugins (core, pj, "core", "Lcj");
 			json_plugins (core, pj, "bin", "Lbj");
 			json_plugins (core, pj, "arch", "Laj");
@@ -1182,7 +1182,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (mr.do_list_io_plugins) { // "-L"
 		if (r_config_get_b (r->config, "cfg.plugins")) {
-			r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
+			r_core_loadlibs (r, R_LIB_LOAD_ALL, NULL);
 		}
 		run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 		run_commands (r, mr.cmds, mr.files, mr.quiet, mr.do_analysis);
@@ -1252,7 +1252,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 		r_config_set_b (r->config, "cfg.plugins", false);
 	}
 	if (r_config_get_b (r->config, "cfg.plugins")) {
-		r_core_loadlibs (r, R_CORE_LOADLIBS_ALL, NULL);
+		r_core_loadlibs (r, R_LIB_LOAD_ALL, NULL);
 	}
 	ret = run_commands (r, NULL, mr.prefiles, false, mr.do_analysis);
 	r_list_free (mr.prefiles);
