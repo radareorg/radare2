@@ -727,16 +727,7 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 
 static void autocomplete_elem_fini(RCoreAutocomplete *obj);
 
-static void autocomplete_vec_fini(RVecCoreAutocomplete *vec) {
-	R_RETURN_IF_FAIL (vec);
-	RCoreAutocomplete *iter;
-	R_VEC_FOREACH (vec, iter) {
-		autocomplete_elem_fini (iter);
-	}
-	R_FREE (R_VEC_START_ITER (vec));
-	R_VEC_END_ITER (vec) = NULL;
-	R_VEC_CAPACITY (vec) = 0;
-}
+R_VEC_TYPE_WITH_FINI (RVecCoreAutocompleteImpl, RCoreAutocomplete, autocomplete_elem_fini);
 
 #define ADDARG(x) \
 	if (!strncmp (buf->data + chr, x, strlen (buf->data + chr))) { \
@@ -1310,19 +1301,10 @@ static bool find_autocomplete(RCore *core, RLineCompletion *completion, RLineBuf
 }
 
 static bool check_tabhelp_exceptions(const char *s) {
-	if (r_str_startswith (s, "pf.")) {
-		return true;
-	}
-	if (r_str_startswith (s, "pf*")) {
-		return true;
-	}
-	if (r_str_startswith (s, "pfc.")) {
-		return true;
-	}
-	if (r_str_startswith (s, "pfj.")) {
-		return true;
-	}
-	return false;
+	return r_str_startswith (s, "pf.")
+		|| r_str_startswith (s, "pf*")
+		|| r_str_startswith (s, "pfc.")
+		|| r_str_startswith (s, "pfj.");
 }
 
 static void __init_autocomplete(RCore *core);
@@ -1332,7 +1314,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 	R_RETURN_IF_FAIL (completion);
 	R_RETURN_IF_FAIL (buf);
 	R_RETURN_IF_FAIL (buf->data);
-	if (!core->autocomplete || RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
+	if (!core->autocomplete || RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&core->autocomplete->subcmds)) {
 		__init_autocomplete (core);
 	}
 	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
@@ -2264,7 +2246,7 @@ static void __init_autocomplete(RCore *core) {
 	if (!core->autocomplete) {
 		core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	}
-	if (!RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
+	if (!RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&core->autocomplete->subcmds)) {
 		return;
 	}
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
@@ -2285,7 +2267,7 @@ static void __init_autocomplete(RCore *core) {
 
 static void autocomplete_elem_fini(RCoreAutocomplete *obj) {
 	R_RETURN_IF_FAIL (obj);
-	autocomplete_vec_fini (&obj->subcmds);
+	RVecCoreAutocompleteImpl_fini ((RVecCoreAutocompleteImpl *)&obj->subcmds);
 	free (obj->cmd);
 }
 
@@ -3708,7 +3690,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
-	RCoreAutocomplete *autocmpl = RVecCoreAutocomplete_emplace_back (&parent->subcmds);
+	RCoreAutocomplete *autocmpl = RVecCoreAutocompleteImpl_emplace_back ((RVecCoreAutocompleteImpl *)&parent->subcmds);
 	if (!autocmpl) {
 		return NULL;
 	}
@@ -3721,7 +3703,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 	if (obj) {
-		autocomplete_vec_fini (&obj->subcmds);
+		RVecCoreAutocompleteImpl_fini ((RVecCoreAutocompleteImpl *)&obj->subcmds);
 		free (obj->cmd);
 		free (obj);
 	}
@@ -3744,21 +3726,18 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, false);
-	if (RVecCoreAutocomplete_empty (&parent->subcmds)) {
+	if (RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&parent->subcmds)) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < RVecCoreAutocomplete_length (&parent->subcmds); ) {
-		RCoreAutocomplete *ac = RVecCoreAutocomplete_at (&parent->subcmds, i);
+	for (i = 0; i < RVecCoreAutocompleteImpl_length ((const RVecCoreAutocompleteImpl *)&parent->subcmds); ) {
+		RCoreAutocomplete *ac = RVecCoreAutocompleteImpl_at ((const RVecCoreAutocompleteImpl *)&parent->subcmds, i);
 		if (ac->locked) {
 			i++;
 			continue;
 		}
 		if (r_str_glob (ac->cmd, cmd)) {
-			autocomplete_elem_fini (ac);
-			memmove (ac, ac + 1, (size_t)(R_VEC_END_ITER (&parent->subcmds) - ac - 1) * sizeof (RCoreAutocomplete));
-			R_VEC_END_ITER (&parent->subcmds)--;
-			memset (R_VEC_END_ITER (&parent->subcmds), 0, sizeof (RCoreAutocomplete));
+			RVecCoreAutocompleteImpl_remove ((RVecCoreAutocompleteImpl *)&parent->subcmds, i);
 			continue;
 		}
 		i++;
