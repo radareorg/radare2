@@ -12,14 +12,20 @@ The package manager for Radare2, allowing installation, update, uninstallation, 
 .Bl -tag -width Fl
 .It Fl a Ar repository
 Add or delete external repository. Using '-a repository' adds a repository, and '-a -repository' deletes it. Use with no arguments to list all registered repos.
-.It Fl c Op git/dir
-Clear source cache for specified git directory or all if not provided
+.It Fl c Ar pkgname
+Clear cached sources for the given package. Use
+.Fl cp
+to clean the user plugin directory
 .It Fl d, Cm doc Ar pkgname
 Show documentation and source for given package script
 .It Fl e Ar pkgname
 Edit using $EDITOR the given package script
 .It Fl f
-Force operation (Use in combination of -U, -i, -u, ..)
+Force operation. Requires
+.Fl U ,
+.Fl i
+or
+.Fl u
 .It Fl gi Ar pkg
 Global install (system-wide)
 .It Fl h
@@ -31,11 +37,15 @@ Install/update package and its dependencies
 .It Fl I
 Information about the repository and installed packages
 .It Fl j
-JSON output
+JSON output. Requires
+.Fl l ,
+.Fl s
+or
+.Fl v
 .It Fl l
 List installed packages
 .It Fl q
-Be quiet
+Be quiet. Requires an action
 .It Fl r Ar cmd ...args
 Run shell command with R2PM_BINDIR in PATH
 .It Fl R Ar pkgname
@@ -43,7 +53,7 @@ Reload plugin (See R2PM_RELOAD code block package)
 .It Fl s Op keyword
 Search available packages in database matching a string. Return error code if no package was found
 .It Fl t Ar YYYY-MM-DD
-Set a moment in time to pull the code from the git packages
+Set the package checkout date. Requires an action
 .It Fl u Ar pkgname
 Uninstall package (see -f to force uninstall)
 .It Fl uci Ar pkgname

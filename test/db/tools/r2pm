@@ -33,3 +33,138 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=r2pm -e requires package
+FILE=-
+CMDS=!r2pm -e
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-e' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm -r requires command
+FILE=-
+CMDS=!r2pm -r
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-r' requires a command to run
+EOF
+RUN
+
+NAME=r2pm -j requires action
+FILE=-
+CMDS=!r2pm -j
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-j' requires an action
+EOF
+RUN
+
+NAME=r2pm -i requires package
+FILE=-
+CMDS=!r2pm -i
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-i' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm -u requires package
+FILE=-
+CMDS=!r2pm -u
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-u' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm -d requires package
+FILE=-
+CMDS=!r2pm -d
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-d' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm -R requires package
+FILE=-
+CMDS=!r2pm -R
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-R' requires one or more packages
+EOF
+RUN
+
+NAME=r2pm -c requires package or -cp
+FILE=-
+CMDS=!r2pm -c
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-c' requires one or more packages or -cp
+EOF
+RUN
+
+NAME=r2pm -f requires action
+FILE=-
+CMDS=!r2pm -f
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-f' requires an action
+EOF
+RUN
+
+NAME=r2pm -g requires action
+FILE=-
+CMDS=!r2pm -g
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-g' requires an action
+EOF
+RUN
+
+NAME=r2pm -q requires action
+FILE=-
+CMDS=!r2pm -q
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-q' requires an action
+EOF
+RUN
+
+NAME=r2pm -t requires action
+FILE=-
+CMDS=!r2pm -t 2024-01-01
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Option '-t' requires an action
+EOF
+RUN
+
+NAME=r2pm -e missing package status code
+FILE=-
+CMDS='!!r2pm -e >/dev/null 2>/dev/null; echo $?
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -r missing command status code
+FILE=-
+CMDS='!!r2pm -r >/dev/null 2>/dev/null; echo $?
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=r2pm -j missing action status code
+FILE=-
+CMDS='!!r2pm -j >/dev/null 2>/dev/null; echo $?
+EXPECT=<<EOF
+1
+EOF
+EXPECT_ERR=
+RUN
