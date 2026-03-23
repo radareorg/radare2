@@ -674,7 +674,7 @@ R_API bool r_core_yank_hud_path(RCore *core, const char *input, int dir);
 R_API bool r_core_yank_file_ex(RCore *core, const char *input);
 R_API bool r_core_yank_file_all(RCore *core, const char *input);
 
-#define R_CORE_LOADLIBS_ALL UT32_MAX
+#define R_LIB_LOAD_ALL UT32_MAX
 
 R_API void r_core_loadlibs_init(RCore *core);
 R_API bool r_core_loadlibs(RCore *core, int where, const char *path);

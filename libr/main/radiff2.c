@@ -84,7 +84,7 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 	if (!c) {
 		return NULL;
 	}
-	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	r_core_loadlibs (c, R_LIB_LOAD_ALL, NULL);
 	r_config_set_b (c->config, "io.va", ro->useva);
 	r_config_set_b (c->config, "scr.interactive", false);
 	r_list_foreach (ro->evals, iter, e) {

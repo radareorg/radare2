@@ -45,7 +45,7 @@ static void _libwrap_init(void) {
 	fflush (stdout);
 	web = r_sys_getenv ("RARUN2_WEB");
 	core = r_core_new ();
-	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+	r_core_loadlibs (core, R_LIB_LOAD_ALL, NULL);
 	if (web) {
 		r_core_cmd0 (core, "=H&");
 		r_sys_setenv ("RARUN2_WEB", NULL);
@@ -74,7 +74,7 @@ void alloc_console(void) {
 
 static void start_r2(void) {
 	core = r_core_new ();
-	r_core_loadlibs (core, R_CORE_LOADLIBS_ALL, NULL);
+	r_core_loadlibs (core, R_LIB_LOAD_ALL, NULL);
 	RCoreFile *fd = r_core_file_open (core, "self://", R_PERM_RW, 0);
 	r_core_prompt_loop (core);
 	r_core_file_close (core, fd);

@@ -40,7 +40,7 @@ static RCore *opencore(const char *fname) {
 		R_LOG_ERROR ("Count not get core");
 		return NULL;
 	}
-	r_core_loadlibs (c, R_CORE_LOADLIBS_ALL, NULL);
+	r_core_loadlibs (c, R_LIB_LOAD_ALL, NULL);
 	r_config_set_b (c->config, "scr.interactive", false);
 	if (fname) {
 #if R2__WINDOWS__

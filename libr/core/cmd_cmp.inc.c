@@ -1245,7 +1245,7 @@ static void core_cmd_cg(RCore *core, const char *input) {
 		R_LOG_ERROR ("Cannot init diff core");
 		return;
 	}
-	r_core_loadlibs (core2, R_CORE_LOADLIBS_ALL, NULL);
+	r_core_loadlibs (core2, R_LIB_LOAD_ALL, NULL);
 	core2->io->va = core->io->va;
 	if (!r_core_file_open (core2, file2, 0, 0LL)) {
 		R_LOG_ERROR ("Cannot open diff file '%s'", file2);
