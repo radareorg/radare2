@@ -725,10 +725,6 @@ static int autocomplete_pfele(RCore *core, RLineCompletion *completion, char *ke
 	return ret;
 }
 
-static void autocomplete_elem_fini(RCoreAutocomplete *obj);
-
-R_VEC_TYPE_WITH_FINI (RVecCoreAutocompleteImpl, RCoreAutocomplete, autocomplete_elem_fini);
-
 #define ADDARG(x) \
 	if (!strncmp (buf->data + chr, x, strlen (buf->data + chr))) { \
 		r_line_completion_push (completion, x); \
@@ -1314,7 +1310,7 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 	R_RETURN_IF_FAIL (completion);
 	R_RETURN_IF_FAIL (buf);
 	R_RETURN_IF_FAIL (buf->data);
-	if (!core->autocomplete || RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&core->autocomplete->subcmds)) {
+	if (!core->autocomplete || RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
 		__init_autocomplete (core);
 	}
 	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
@@ -2246,7 +2242,7 @@ static void __init_autocomplete(RCore *core) {
 	if (!core->autocomplete) {
 		core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	}
-	if (!RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&core->autocomplete->subcmds)) {
+	if (!RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
 		return;
 	}
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
@@ -2263,12 +2259,6 @@ static void __init_autocomplete(RCore *core) {
 			}
 		}
 	}
-}
-
-static void autocomplete_elem_fini(RCoreAutocomplete *obj) {
-	R_RETURN_IF_FAIL (obj);
-	RVecCoreAutocompleteImpl_fini ((RVecCoreAutocompleteImpl *)&obj->subcmds);
-	free (obj->cmd);
 }
 
 static const char *colorfor_cb(void *user, ut64 addr, ut8 ch, bool verbose) {
@@ -3690,7 +3680,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
-	RCoreAutocomplete *autocmpl = RVecCoreAutocompleteImpl_emplace_back ((RVecCoreAutocompleteImpl *)&parent->subcmds);
+	RCoreAutocomplete *autocmpl = RVecCoreAutocomplete_emplace_back (&parent->subcmds);
 	if (!autocmpl) {
 		return NULL;
 	}
@@ -3703,7 +3693,7 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 
 R_API void r_core_autocomplete_free(RCoreAutocomplete *obj) {
 	if (obj) {
-		RVecCoreAutocompleteImpl_fini ((RVecCoreAutocompleteImpl *)&obj->subcmds);
+		RVecCoreAutocomplete_fini (&obj->subcmds);
 		free (obj->cmd);
 		free (obj);
 	}
@@ -3726,18 +3716,18 @@ R_API RCoreAutocomplete *r_core_autocomplete_find(RCoreAutocomplete *parent, con
 
 R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (parent && cmd, false);
-	if (RVecCoreAutocompleteImpl_empty ((const RVecCoreAutocompleteImpl *)&parent->subcmds)) {
+	if (RVecCoreAutocomplete_empty (&parent->subcmds)) {
 		return false;
 	}
 	size_t i;
-	for (i = 0; i < RVecCoreAutocompleteImpl_length ((const RVecCoreAutocompleteImpl *)&parent->subcmds); ) {
-		RCoreAutocomplete *ac = RVecCoreAutocompleteImpl_at ((const RVecCoreAutocompleteImpl *)&parent->subcmds, i);
+	for (i = 0; i < RVecCoreAutocomplete_length (&parent->subcmds); ) {
+		RCoreAutocomplete *ac = RVecCoreAutocomplete_at (&parent->subcmds, i);
 		if (ac->locked) {
 			i++;
 			continue;
 		}
 		if (r_str_glob (ac->cmd, cmd)) {
-			RVecCoreAutocompleteImpl_remove ((RVecCoreAutocompleteImpl *)&parent->subcmds, i);
+			RVecCoreAutocomplete_remove (&parent->subcmds, i);
 			continue;
 		}
 		i++;

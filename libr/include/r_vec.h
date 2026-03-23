@@ -185,6 +185,8 @@ static inline size_t r_vec_grow(size_t capacity) {
 // you can forward declare a vector type (at the cost of a pointer-indirection).
 #define R_VEC_TYPE(vec_type, type) R_VEC_TYPE_INNER(vec_type, type, _, 0)
 #define R_VEC_TYPE_WITH_FINI(vec_type, type, fini_fn) R_VEC_TYPE_INNER(vec_type, type, fini_fn, 1)
+#define R_VEC_DEFINE_IMPL(vec_type, type) R_VEC_IMPL_INNER(vec_type, type, _, 0)
+#define R_VEC_DEFINE_IMPL_WITH_FINI(vec_type, type, fini_fn) R_VEC_IMPL_INNER(vec_type, type, fini_fn, 1)
 
 #define R_VEC_TYPE_INNER(vec_type, type, fini_fn, has_fini) \
 	typedef struct R_ALIGNED(16) r_vec_ ## vec_type ## _t { \
@@ -192,6 +194,9 @@ static inline size_t r_vec_grow(size_t capacity) {
 		type *_end; \
 		size_t _capacity; \
 	} vec_type; \
+	R_VEC_IMPL_INNER(vec_type, type, fini_fn, has_fini)
+
+#define R_VEC_IMPL_INNER(vec_type, type, fini_fn, has_fini) \
 	typedef void (*R_VEC_COPY(vec_type))(type *dst, type const *src); \
 	typedef int (*R_VEC_CMP(vec_type))(type const *a, type const *b); \
 	typedef int (*R_VEC_FIND_CMP(vec_type))(type const *a, const void *b); \

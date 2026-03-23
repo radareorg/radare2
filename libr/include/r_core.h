@@ -190,7 +190,7 @@ typedef enum r_core_autocomplete_types_t {
 } RCoreAutocompleteType;
 
 typedef struct r_core_autocomplete_t RCoreAutocomplete;
-typedef struct r_core_autocomplete_vec_t {
+typedef struct R_ALIGNED(16) r_core_autocomplete_vec_t {
 	RCoreAutocomplete *_start;
 	RCoreAutocomplete *_end;
 	size_t _capacity;
@@ -203,6 +203,15 @@ struct r_core_autocomplete_t {
 	int type;
 	RVecCoreAutocomplete subcmds;
 };
+
+static inline void r_core_autocomplete_elem_fini(RCoreAutocomplete *obj);
+R_VEC_DEFINE_IMPL_WITH_FINI (RVecCoreAutocomplete, RCoreAutocomplete, r_core_autocomplete_elem_fini);
+static inline void r_core_autocomplete_elem_fini(RCoreAutocomplete *obj) {
+	if (obj) {
+		RVecCoreAutocomplete_fini (&obj->subcmds);
+		free (obj->cmd);
+	}
+}
 
 typedef struct r_core_visual_tab_t {
 	int printidx;
