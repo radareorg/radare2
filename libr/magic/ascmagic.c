@@ -201,13 +201,12 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 		*ulen = 0;
 	}
 
-	for (i = 0; i < nbytes; i++) {
+	for (i = 0; i < nbytes && !done; i++) {
 		if ((buf[i] & 0x80) == 0) {	   /* 0xxxxxxx is plain ASCII */
 			// Reject valid UTF-8 that still uses control characters.
 			if (text_chars[buf[i]] != T) {
 				ctrl = 1;
 			}
-
 			if (ubuf) {
 				ubuf[(*ulen)++] = buf[i];
 			}
@@ -234,7 +233,6 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 			} else {
 				return -1;
 			}
-
 			for (n = 0; n < following; n++) {
 				i++;
 				if (i >= nbytes) {
@@ -248,14 +246,10 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 
 				c = (c << 6) + (buf[i] & 0x3f);
 			}
-
 			if (ubuf) {
 				ubuf[(*ulen)++] = c;
 			}
 			gotone = 1;
-		}
-		if (done) {
-			break;
 		}
 	}
 	return ctrl? 0: (gotone? 2: 1);
