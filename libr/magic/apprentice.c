@@ -334,8 +334,7 @@ static void set_test_type(struct r_magic *mstart, struct r_magic *m) {
 		}
 		break;
 	case FILE_DEFAULT:
-		/* can't deduce anything; we shouldn't see this at the
-		top level anyway */
+		// Nothing to infer here at top level.
 		break;
 	case FILE_INVALID:
 	default:
@@ -373,11 +372,7 @@ static bool bgets(char *line, size_t line_sz, const char **data) {
 ut64 __magic_file_signextend(RMagic *ms, struct r_magic *m, ut64 v) {
 	if (! (m->flag & UNSIGNED)) {
 		switch (m->type) {
-		/*
-		 * Do not remove the casts below.  They are
-		 * vital.  When later compared with the data,
-		 * the sign extension must have happened.
-		 */
+		// Keep these casts so values are sign-extended before comparison.
 		case FILE_BYTE:
 			v = (char)v;
 			break;
@@ -685,10 +680,6 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 
 	ptr++;
 	if (ptr && check_format_type (ptr, ms->magic_file_formats[m->type]) == -1) {
-		/*
-		 * TODO: this error message is unhelpful if the format
-		 * string is not one character long
-		 */
 		__magic_file_magwarn (ms, "Printf format `%c' is not valid for type "
 			"`%s' in description `%s'",
 			ptr && *ptr? *ptr: '?',
@@ -777,10 +768,7 @@ static const char *getstr(RMagic *ms, const char *s, char *p, int plen, int *sle
 			/* space, perhaps force people to use \040? */
 			case ' ':
 #if 0
-			/*
-			 * Other things people escape, but shouldn't need to,
-			 * so we disallow them
-			 */
+			// Reject escapes that should stay literal.
 			case '\'':
 			case '"':
 			case '?':
@@ -1045,9 +1033,7 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 	if (m->flag & INDIR) {
 		m->in_type = FILE_LONG;
 		m->in_offset = 0;
-		/*
-		 * read [.lbs][+-]nnnnn)
-		 */
+		// Parse the indirect offset suffix.
 		if (*l == '.') {
 			l++;
 			switch (*l) {
@@ -1238,10 +1224,6 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 			return false;
 		}
 	}
-	/*
-	 * We used to set mask to all 1's here, instead let's just not do
-	 * anything if mask = 0 (unless you have a better idea)
-	 */
 	EATAB;
 
 	switch (*l) {
@@ -1270,22 +1252,12 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 		}
 		break;
 	}
-	/*
-	 * Grab the value part, except for an 'x' reln.
-	 */
+	// Parse the value unless the relation is 'x'.
 	if (m->reln != 'x' && getvalue (ms, m, &l, action)) {
 		return false;
 	}
 
-	/*
-	 * TODO finish this macro and start using it!
-	 * #define offsetcheck {if (offset > HOWMANY-1)
-	 *	magwarn ("offset too big"); }
-	 */
-
-	/*
-	 * Now get last part - the description
-	 */
+	// Parse the description.
 	EATAB;
 	if (l[0] == '\b') {
 		l++;
@@ -1304,10 +1276,7 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 		}
 	}
 
-	/*
-	 * We only do this check while compiling, or if any of the magic
-	 * files were not compiled.
-	 */
+	// Only validate formats in check mode.
 	if (ms->flags & R_MAGIC_CHECK) {
 		if (check_format (ms, m) == -1) {
 			return false;
@@ -1614,6 +1583,7 @@ static char *mkdbname(const char *fn, int strip) {
 	return buf;
 }
 
+// AITODO. all those swap functions are just r_read_* functions, remove the unnecessary rwappers and make the code portable without depending on R_SYS_ENDIAN (apply this rule to all the files in this directory
 /*
  * swap a short
  */
@@ -1699,10 +1669,9 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	struct stat st;
 	ut32 version = 0;
 	bool needsbyteswap = false;
-	char *dbname = NULL;
 	void *mm = NULL;
 
-	dbname = mkdbname (fn, 0);
+	char *dbname = mkdbname (fn, 0);
 	if (!dbname) {
 		goto error2;
 	}

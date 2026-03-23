@@ -575,10 +575,7 @@ static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const u
 }
 
 static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 *s, ut32 offset, size_t nbytes, size_t linecnt) {
-	/*
-	 * Note: FILE_SEARCH and FILE_REGEX do not actually copy
-	 * anything, but setup pointers into the source
-	 */
+	// Search and regex types just point into the source buffer.
 	if (indir == 0) {
 		switch (type) {
 		case FILE_SEARCH:
@@ -667,10 +664,6 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 
 	(void)memcpy (p, s + offset, nbytes);
 
-	/*
-	 * the usefulness of padding with zeroes eludes me, it
-	 * might even cause problems
-	 */
 	if (nbytes < sizeof (*p)) {
 		(void)memset (((char *) (void *)p) + nbytes, '\0', sizeof (*p) - nbytes);
 	}
@@ -844,20 +837,12 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 }
 
 static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags) {
-	/*
-	 * Convert the source args to unsigned here so that (1) the
-	 * compare will be unsigned as it is in strncmp and (2) so
-	 * the ctype functions will work correctly without extra
-	 * casting.
-	 */
+	// Compare unsigned bytes so ctype calls stay valid.
 	const ut8 *a = (const ut8 *)s1;
 	const ut8 *b = (const ut8 *)s2;
 	ut64 v;
 
-	/*
-	 * What we want here is v = strncmp (s1, s2, len),
-	 * but ignoring any nulls.
-	 */
+	// Match strncmp semantics, but ignore embedded NULs.
 	v = 0;
 	if (0L == flags) { /* normal string: do it fast */
 		while (len-- > 0) {
@@ -902,11 +887,7 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 }
 
 static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags) {
-	/*
-	 * XXX - The 16-bit string compare probably needs to be done
-	 * differently, especially if the flags are to be supported.
-	 * At the moment, I am unsure.
-	 */
+	// 16-bit strings currently use the plain byte comparison path.
 	flags = 0;
 	return file_strncmp (a, b, len, flags);
 }
@@ -1206,20 +1187,14 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 			}
 		}
 		if (flush) {
-			/*
-			 * main entry didn't match,
-			 * flush its continuations
-			 */
+			// Main test failed, so skip its continuations.
 			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
 				magindex++;
 			}
 			continue;
 		}
 
-		/*
-		 * If we are going to print something, we'll need to print
-		 * a blank before we print something else.
-		 */
+		// Track whether later output needs a separator.
 		if (*R_MAGIC_DESC) {
 			need_separator = 1;
 			printed_something = 1;
@@ -1245,10 +1220,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				continue;
 			}
 			if (cont_level > m->cont_level) {
-				/*
-				 * We're at the end of the level
-				 * "cont_level" continuations.
-				 */
+				// Drop back to the current continuation level.
 				cont_level = m->cont_level;
 			}
 			ms->offset = m->offset;
@@ -1280,22 +1252,13 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 					ms->c.li[cont_level].got_match = 0;
 					break;
 				}
-				/*
-				 * If we are going to print something,
-				 * make sure that we have a separator first.
-				 */
+				// Print any required separator before this message.
 				if (*R_MAGIC_DESC) {
 					printed_something = 1;
 					if (print_sep (ms, firstline) == -1) {
 						return -1;
 					}
 				}
-				/*
-				 * This continuation matched.  Print
-				 * its message, with a blank before it
-				 * if the previous item printed and
-				 * this item isn't empty.
-				 */
 				/* space if previous printed */
 				if (need_separator && ((m->flag & NOSPACE) == 0) && *R_MAGIC_DESC) {
 					if (__magic_file_printf (ms, " ") == -1) {
@@ -1310,11 +1273,7 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 					need_separator = 1;
 				}
 
-				/*
-				 * If we see any continuations
-				 * at a higher level,
-				 * process them.
-				 */
+				// Process any deeper continuations.
 				if (__magic_file_check_mem (ms, ++cont_level) == -1) {
 					return -1;
 				}

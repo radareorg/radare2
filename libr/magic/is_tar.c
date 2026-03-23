@@ -96,10 +96,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 	sum = 0;
 	p = header->charptr;
 	for (i = sizeof (union record); --i >= 0;) {
-		/*
-		 * We cannot use ut8 here because of old compilers,
-		 * e.g. V7.
-		 */
+		// Keep this int-compatible for old compilers.
 		sum += 0xFF & *p++;
 	}
 
@@ -121,10 +118,7 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 }
 
 int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
-	/*
-	 * Do the tar test first, because if the first file in the tar
-	 * archive starts with a dot, we can confuse it with an nroff file.
-	 */
+	// Check tar first so dotfiles are not mistaken for nroff.
 	int tar = is_tar (buf, nbytes);
 	int mime = ms->flags & R_MAGIC_MIME;
 

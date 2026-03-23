@@ -203,11 +203,7 @@ R_IPI int __magic_file_looks_utf8(const ut8 *buf, size_t nbytes, unichar *ubuf, 
 
 	for (i = 0; i < nbytes; i++) {
 		if ((buf[i] & 0x80) == 0) {	   /* 0xxxxxxx is plain ASCII */
-			/*
-			 * Even if the whole file is valid UTF-8 sequences,
-			 * still reject it if it uses weird control characters.
-			 */
-
+			// Reject valid UTF-8 that still uses control characters.
 			if (text_chars[buf[i]] != T) {
 				ctrl = 1;
 			}
