@@ -72,6 +72,30 @@ s110
 EOF
 RUN
 
+NAME=e asm.bytes
+FILE=-
+CMDS=<<EOF
+e asm.bytes=?
+e asm.bytes
+EOF
+EXPECT=<<EOF
+display the bytes of each instruction
+true
+EOF
+RUN
+
+NAME=e hex.cols
+FILE=-
+CMDS=<<EOF
+e hex.cols=?
+e hex.cols
+EOF
+EXPECT=<<EOF
+number of columns in hexdump
+16
+EOF
+RUN
+
 NAME=e asm.cpu
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=<<EOF

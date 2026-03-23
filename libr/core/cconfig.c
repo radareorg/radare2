@@ -4175,6 +4175,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("asm.var.access", "false", "show accesses of local variables");
 	SETB ("asm.sub.var", "true", "substitute variables in disassembly");
 	SETICB ("asm.var.summary", 4, &cb_asm_var_summary, "show variables summary instead of full list in disasm (0, 1, 2, 3, 4)");
+	n = r_config_node_get (cfg, "asm.var.summary");
+	SETOPTIONS (n, "0", "1", "2", "3", "4", NULL);
 	SETB ("asm.sub.varonly", "true", "substitute the entire variable expression with the local variable name (e.g. [local10h] instead of [ebp+local10h])");
 	SETB ("asm.sub.reg", "false", "substitute register names with their associated role name (drp~=)");
 	SETB ("asm.sub.rel", "true", "substitute pc relative expressions in disasm");
@@ -4324,6 +4326,8 @@ R_API int r_core_config_init(RCore *core) {
 
 	/* log */
 	SETICB ("log.level", R_LOG_LEVEL_DEFAULT, cb_config_log_level, "Target log level/severity (0:FATAL 1:ERROR 2:INFO 3:WARN 4:TODO 5:DEBUG)");
+	n = r_config_node_get (cfg, "log.level");
+	SETOPTIONS (n, "0", "1", "2", "3", "4", "5", NULL);
 	SETCB ("log.ts", "false", cb_config_log_ts, "Show timestamp in log messages");
 
 	SETICB ("log.traplevel", 0, cb_config_log_traplevel, "Log level for trapping R2 when hit");
@@ -4807,6 +4811,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("scr.limit", 0, &cb_scr_limit, "stop printing after N bytes");
 	const int default_color = (core->print->flags & R_PRINT_FLAGS_COLOR)? core->cons->context->color_limit: COLOR_MODE_DISABLED;
 	SETICB ("scr.color", default_color, &cb_color, "enable colors (0: none, 1: ansi, 2: 256 colors, 3: truecolor)");
+	n = r_config_node_get (cfg, "scr.color");
+	SETOPTIONS (n, "0", "1", "2", "3", NULL);
 	r_config_set_getter (cfg, "scr.color", (RConfigCallback)cb_color_getter);
 	SETCB ("scr.color.grep", "false", &cb_scr_color_grep, "enable colors when using ~grep");
 	SETB ("scr.color.pipe", "false", "enable colors when using pipes");
