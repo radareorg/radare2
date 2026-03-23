@@ -3027,7 +3027,6 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 		}
 	}
 	r_anal_op_fini (&ds->asmop);
-	r_core_seek_arch_bits (core, ds->at);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
 	if (len > ds->asmop.size) {
 		len = ds->asmop.size;

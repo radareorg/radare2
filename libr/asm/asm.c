@@ -540,9 +540,7 @@ static bool is_invalid(RAnalOp *op) {
 	return (text && !strcmp (text, "invalid"));
 }
 
-R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
-	r_asm_update_session (a);
+static int r_asm_disassemble_do(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	r_anal_op_init (op);
 	if (len < 1 || !a->dcur) {
 		return 0;
@@ -603,6 +601,12 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	int opsz = (op->size > 0)? R_MAX (0, R_MIN (len, op->size)): 1;
 	r_anal_op_set_bytes (op, op->addr, buf, opsz);
 	return ret;
+}
+
+R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
+	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
+	r_asm_update_session (a);
+	return r_asm_disassemble_do (a, op, buf, len);
 }
 
 typedef int(*Ase)(RAsm *a, RAnalOp *op, const char *buf);
@@ -688,7 +692,10 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 idx;
 	int ret;
 	const size_t addrbytes = a->config->addrbytes > 0 ? a->config->addrbytes : 1;
-	int mininstrsize = R_MAX (1, r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE));
+	int mininstrsize = 1;
+	if (a->arch) {
+		mininstrsize = R_MAX (1, r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE));
+	}
 
 	RAsmCode *acode = r_asm_code_new ();
 	if (!acode) {
@@ -702,7 +709,7 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_anal_op_init (&op);
 		r_asm_set_pc (a, pc + idx);
 		// we can change this to return RAnalOp* instead of passing it as arg here
-		ret = r_asm_disassemble (a, &op, buf + idx, len - idx);
+		ret = r_asm_disassemble_do (a, &op, buf + idx, len - idx);
 		ret = (op.size > 0) ? op.size : mininstrsize;
 		if (a->pseudo) {
 			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
