@@ -588,26 +588,15 @@ static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r
  * Load and parse one file.
  */
 static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
-	if (*file == '#') {
-		load_b (ms, action, file, errs, marray, marraycount);
-		return;
-	}
-	char line[BUFSIZ];
-	FILE *f = r_sandbox_fopen (ms->file = file, "r");
-	if (!f) {
-		if (errno != ENOENT) {
-			__magic_file_error (ms, errno, "cannot read magic file `%s'", file);
-		}
+	ms->file = file;
+	char *data = r_file_slurp (file, NULL);
+	if (!data) {
+		__magic_file_error (ms, errno, "cannot read magic file `%s'", file);
 		(*errs)++;
 		return;
 	}
-	/* read and parse this file */
-	for (ms->line = 1; fgets (line, sizeof (line), f); ms->line++) {
-		if (!parse_line (ms, action, marray, marraycount, line, ms->line)) {
-			(*errs)++;
-		}
-	}
-	fclose (f);
+	load_b (ms, action, data, errs, marray, marraycount);
+	free (data);
 }
 
 static int apprentice_finish(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, struct r_magic_entry *marray, ut32 marraycount, int errs) {
@@ -682,20 +671,10 @@ static int apprentice_finish(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp,
 static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn, int action) {
 	ut32 marraycount;
 	struct r_magic_entry *marray;
-	struct stat st;
+	RList *files;
+	RListIter *iter;
+	char *name;
 	int errs = 0;
-#if R2__WINDOWS__
-	HANDLE hdir;
-	WIN32_FIND_DATAW entry;
-	wchar_t dir[MAX_PATH];
-	wchar_t *wcpath;
-	char *cfname;
-	char subfn[1024];
-#else
-	DIR *dir;
-	struct dirent *d;
-	char subfn[MAXPATHLEN];
-#endif
 	ms->flags |= R_MAGIC_CHECK; /* Enable checks for parsed files */
 	maxmagic = MAXMAGIS;
 	if (! (marray = calloc (maxmagic, sizeof (*marray)))) {
@@ -710,54 +689,27 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	}
 
 	/* load directory or file */
-	if (stat (fn, &st) == 0 && S_ISDIR (st.st_mode)) {
+	if (r_file_is_directory (fn)) {
 		if (r_sandbox_enable (0) && !r_sandbox_check_path (fn)) {
 			free (marray);
 			return -1;
 		}
-#if R2__WINDOWS__ && !defined(__CYGWIN__)
-		if ((wcpath = r_utf8_to_utf16 (fn))) {
-			swprintf (dir, _countof (dir), L"%ls\\*.*", wcpath);
-			hdir = FindFirstFileW (dir, &entry);
-			if (! (hdir == INVALID_HANDLE_VALUE)) {
-				do {
-					if (wcsncmp (entry.cFileName, L".", 1) == 0) {
-						continue;
-					}
-					if ((cfname = r_utf16_to_utf8 (entry.cFileName))) {
-						snprintf (subfn, sizeof (subfn), "%s/%s", fn, cfname);
-						if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
-							load_1 (ms, action, subfn, &errs, &marray, &marraycount);
-						}
-						free (cfname);
-					}
-				} while (FindNextFileW (hdir, &entry));
-				FindClose (hdir);
-			}
-			free (wcpath);
-		} else {
-			errs++;
-		}
-#else
-		dir = opendir (fn);
-		if (dir) {
-			while ((d = readdir (dir))) {
-				if (*d->d_name == '.') {
+		files = r_sys_dir (fn);
+		if (files) {
+			r_list_foreach (files, iter, name) {
+				if (*name == '.') {
 					continue;
 				}
-				if (snprintf (subfn, sizeof (subfn), "%s/%s", fn, d->d_name) < 0) {
-					continue;
-				}
-				if (stat (subfn, &st) == 0 && S_ISREG (st.st_mode)) {
+				char *subfn = r_file_new (fn, name, NULL);
+				if (subfn && r_file_is_regular (subfn)) {
 					load_1 (ms, action, subfn, &errs, &marray, &marraycount);
 				}
-				// else r_sys_perror (subfn);
+				free (subfn);
 			}
-			closedir (dir);
+			r_list_free (files);
 		} else {
 			errs++;
 		}
-#endif
 	} else {
 		load_1 (ms, action, fn, &errs, &marray, &marraycount);
 	}
