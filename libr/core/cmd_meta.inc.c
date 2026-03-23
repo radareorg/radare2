@@ -1107,8 +1107,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							R_LOG_ERROR ("Invalid pascal string value length (%d)", name_len);
 							return false;
 						}
-					} else if (input[1] == 'a' || input[1] == '8') {
-						// "Cs8" "Csa" // utf8 and ascii strings handling
+					} else if (input[1] == 'a' || input[1] == '8' || input[1] == 'z') {
+						// "Cs8" "Csa" "Csz" // utf8, ascii and zero-terminated strings handling
 						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
 						name[sizeof (name) - 1] = '\0';
 						name_len = strlen (name);
@@ -1158,6 +1158,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				switch (input[1]) {
 				case 'a':
 				case '8':
+				case 'z':
 				case 'w':
 					subtype = input[1];
 					break;
