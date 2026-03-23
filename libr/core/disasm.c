@@ -8193,6 +8193,7 @@ toro:
 			}
 		}
 		r_asm_set_pc (core->rasm, addr + i);
+		r_core_seek_arch_bits (core, addr + i);
 		ret = r_asm_disassemble (core->rasm, &asmop, buf + addrbytes * i, nb_bytes - addrbytes * i);
 		ret = asmop.size;
 		if (midflags || midbb) {
