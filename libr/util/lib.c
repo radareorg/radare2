@@ -675,6 +675,9 @@ R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_pat
 	int i;
 	for (i = 0; order[i]; i++) {
 		switch (order[i]) {
+		case '?':
+			R_LOG_INFO ("R2_PLUGINS_ORDER: e=env(%s), h=home, s=system, c=config; default=cehs", R_LIB_ENV);
+			break;
 		case 'c':
 			if ((mask & R_LIB_LOAD_CONFIG) && R_STR_ISNOTEMPTY (config_path)) {
 				r_lib_opendir (lib, config_path);
