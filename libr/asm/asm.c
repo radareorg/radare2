@@ -550,7 +550,6 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	int ret = 0;
 	op->size = 4;
 	op->addr = a->pc;
-	r_anal_op_set_mnemonic (op, op->addr, "");
 	r_anal_op_set_bytes (op, op->addr, buf, len);
 	if (a->config->codealign) {
 		const int mod = a->pc % a->config->codealign;
