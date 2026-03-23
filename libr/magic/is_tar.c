@@ -84,7 +84,6 @@ static int from_oct(int digs, const char *where) {
  */
 static int is_tar(const ut8 *buf, size_t nbytes) {
 	const union record *header = (const union record *) (const void *)buf;
-	const char *p;
 
 	if (nbytes < sizeof (union record)) {
 		return 0;
