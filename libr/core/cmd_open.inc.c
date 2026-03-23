@@ -2543,6 +2543,7 @@ static int cmd_open(void *data, const char *input) {
 			return 0;
 		}
 		if (input[1] == ' ') {
+			r_core_loadlibs_init (core);
 			if (!r_lib_open (core->lib, input + 2)) {
 				R_LOG_ERROR ("Oops. Cannot open library");
 			}

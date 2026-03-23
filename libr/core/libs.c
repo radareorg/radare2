@@ -51,6 +51,10 @@ static void load_plugins(RCore *core, int where, const char *path){
 #endif
 
 R_API void r_core_loadlibs_init(RCore *core) {
+	R_RETURN_IF_FAIL (core);
+	if (core->lib) {
+		return;
+	}
 	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
@@ -118,6 +122,7 @@ R_API bool r_core_loadlibs(RCore *core, int where, const char *path) {
 		core->times->loadlibs_time = 0;
 		return false;
 	}
+	r_core_loadlibs_init (core);
 	const ut64 prev = r_time_now_mono ();
 	load_plugins (core, where, path);
 	load_scripts (core);
