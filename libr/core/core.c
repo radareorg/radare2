@@ -3680,14 +3680,18 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 	if (type < 0 || type >= R_CORE_AUTOCMPLT_END) {
 		return NULL;
 	}
+	size_t len = strlen (cmd);
+	if (len > UT8_MAX) {
+		return NULL;
+	}
 	RCoreAutocomplete *autocmpl = RVecCoreAutocomplete_emplace_back (&parent->subcmds);
 	if (!autocmpl) {
 		return NULL;
 	}
 	autocmpl->cmd = strdup (cmd);
 	autocmpl->locked = lock;
-	autocmpl->type = type;
-	autocmpl->length = strlen (cmd);
+	autocmpl->type = (ut8)type;
+	autocmpl->length = (ut8)len;
 	return autocmpl;
 }
 

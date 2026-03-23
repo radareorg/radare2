@@ -198,9 +198,9 @@ typedef struct R_ALIGNED(16) r_core_autocomplete_vec_t {
 
 struct r_core_autocomplete_t {
 	char *cmd;
-	size_t length;
+	ut8 length;
+	ut8 type;
 	bool locked;
-	int type;
 	RVecCoreAutocomplete subcmds;
 };
 
