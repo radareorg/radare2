@@ -542,6 +542,7 @@ static bool is_invalid(RAnalOp *op) {
 
 R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
+	r_asm_update_session (a);
 	r_anal_op_init (op);
 	if (len < 1) {
 		return 0;
