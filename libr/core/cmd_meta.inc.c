@@ -744,7 +744,7 @@ typedef struct {
 static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
 	if (where - sso->addr >= sso->bufsz) {
-		r_core_cmd_call_at (sso->core, where, "Cs");
+		r_core_cmd_call_at (sso->core, where, "Csz");
 	} else {
 		const char *name = (const char *)(sso->buf + (where - sso->addr));
 		const size_t maxlen = sso->bufsz - (where - sso->addr);
@@ -912,7 +912,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					const ut64 addr = core->addr;
 					const int minstr = r_config_get_i (core->config, "bin.str.min");
 					const int maxstr = r_config_get_i (core->config, "bin.str.max");
-					r_core_cmdf (core, "Cs@0x%08"PFMT64x, addr);
+					r_core_cmdf (core, "Csz@0x%08"PFMT64x, addr);
 					// maps are not yet set
 					free (r_core_cmd_str (core, "o;om")); // wtf?
 					if (!r_io_read_at (core->io, addr, buf, range)) {

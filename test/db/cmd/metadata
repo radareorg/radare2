@@ -98,7 +98,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cs
+NAME=Cs @ $$
 FILE=malloc://1024
 CMDS=<<EOF
 w hello world
@@ -122,7 +122,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Cs @ $$
+NAME=Csz
 FILE=malloc://1024
 CMDS=<<EOF
 w hello world
@@ -134,7 +134,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=Csz
+NAME=Csz info
 FILE=malloc://1024
 CMDS=<<EOF
 w hello world

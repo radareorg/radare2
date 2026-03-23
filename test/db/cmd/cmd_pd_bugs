@@ -3,7 +3,7 @@ FILE=bins/mach0/mac-ls4
 ARGS=-a arm -b64
 CMDS=<<EOF
 s 0x100003ac0
-Cs @ $$
+Csz
 e asm.describe=1
 pd 2
 EOF
