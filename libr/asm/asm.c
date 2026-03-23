@@ -544,7 +544,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (a && buf && op, -1);
 	r_asm_update_session (a);
 	r_anal_op_init (op);
-	if (len < 1) {
+	if (len < 1 || !a->dcur) {
 		return 0;
 	}
 	int ret = 0;
@@ -560,7 +560,7 @@ R_API int r_asm_disassemble(RAsm *a, RAnalOp *op, const ut8 *buf, int len) {
 			return -1;
 		}
 	}
-	if (a->dcur && r_arch_session_decode (a->dcur, op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM)) {
+	if (r_arch_session_decode (a->dcur, op, R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_DISASM)) {
 		ret = op->size;
 	}
 	if (ret < 0) {
@@ -664,26 +664,24 @@ R_API void r_asm_list_directives(void) {
 
 static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	R_RETURN_VAL_IF_FAIL (a && op && buf, 0);
+	r_asm_update_session (a);
+	if (!a->ecur) {
+		return 0;
+	}
 	char *b = strdup (buf);
 	if (!b) {
 		return 0;
 	}
-	int ret = 0;
-	r_str_case (b, false);
-	if (a->ecur) {
-		op->addr = a->pc;
-		r_anal_op_set_mnemonic (op, op->addr, b);
-		if (r_arch_session_encode (a->ecur, op, 0)) {
-			ret = op->size;
-		}
-	}
+	op->addr = a->pc;
+	r_anal_op_set_mnemonic (op, op->addr, b);
+	int ret = r_arch_session_encode (a->ecur, op, 0) ? op->size : 0;
 	free (b);
 	return ret;
 }
 
 R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (a && buf && len >= 0, NULL);
-
+	r_asm_update_session (a);
 	ut64 pc = a->pc;
 	ut64 idx;
 	int ret;
