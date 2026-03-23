@@ -3278,7 +3278,7 @@ static void cmd_autocomplete_help(RCore *core) {
 }
 
 static void cmd_autocomplete(RCore *core, const char *input) {
-	if (!core->autocomplete || R_VEC_START_ITER (&core->autocomplete->subcmds) == R_VEC_END_ITER (&core->autocomplete->subcmds)) {
+	if (!core->autocomplete) {
 		r_core_autocomplete_reload (core);
 	}
 	RCoreAutocomplete* b = core->autocomplete;

@@ -22,6 +22,7 @@ typedef struct r_core_priv_t {
 	int errmsg_fd; // -1
 	bool regnums;
 	bool tags_loaded;
+	bool autocomplete_loaded;
 	// disasm cache
 	ut64 goaddr;
 	char *section;

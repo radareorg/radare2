@@ -1310,9 +1310,10 @@ R_API void r_core_autocomplete(RCore *core, RLineCompletion *completion, RLineBu
 	R_RETURN_IF_FAIL (completion);
 	R_RETURN_IF_FAIL (buf);
 	R_RETURN_IF_FAIL (buf->data);
-	if (!core->autocomplete || RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
-		__init_autocomplete (core);
+	if (!core->autocomplete) {
+		core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	}
+	__init_autocomplete (core);
 	const bool tabhelp_exception = check_tabhelp_exceptions (buf->data);
 	if (!tabhelp_exception && r_config_get_b (core->config, "scr.prompt.tabhelp")) {
 		if (buf->data[0] != '$' // handle aliases below
@@ -2242,9 +2243,11 @@ static void __init_autocomplete(RCore *core) {
 	if (!core->autocomplete) {
 		core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	}
-	if (!RVecCoreAutocomplete_empty (&core->autocomplete->subcmds)) {
+	RCorePriv *priv = core->priv;
+	if (priv->autocomplete_loaded) {
 		return;
 	}
+	priv->autocomplete_loaded = true;
 	if (core->autocomplete_type == AUTOCOMPLETE_DEFAULT) {
 		__init_autocomplete_default (core);
 	} else if (core->autocomplete_type == AUTOCOMPLETE_MS) {
@@ -2352,6 +2355,8 @@ static RFlagItem *core_flg_fcn_set(RFlag *f, const char *name, ut64 addr, ut32 s
 
 R_API void r_core_autocomplete_reload(RCore *core) {
 	R_RETURN_IF_FAIL (core);
+	RCorePriv *priv = core->priv;
+	priv->autocomplete_loaded = false;
 	r_core_autocomplete_free (core->autocomplete);
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	__init_autocomplete (core);
