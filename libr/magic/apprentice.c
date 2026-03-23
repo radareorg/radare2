@@ -320,6 +320,7 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 		&& version == VERSIONNO;
 }
 
+// AITODO: define and assign variables in the very same line if possible
 struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
 	struct r_magic *magic = NULL;
 	struct mlist *ml;
@@ -433,7 +434,7 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 		val += 8 * MULT;
 		break;
 	default:
-		eprintf ("Bad type %d\n", m->type);
+		R_LOG_ERROR ("Bad type %d", m->type);
 		abort ();
 	}
 
@@ -454,7 +455,7 @@ static size_t apprentice_r_magic_strength(const struct r_magic *m) {
 		val -= MULT;
 		break;
 	default:
-		eprintf ("Bad relation %c\n", m->reln);
+		R_LOG_ERROR ("Bad relation %c", m->reln);
 		abort ();
 	}
 	return val? val: 1; /* ensure we only return 0 for FILE_DEFAULT */
@@ -685,7 +686,7 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 
 	/* print silly verbose header for USG compat. */
 	if (action == FILE_CHECK) {
-		eprintf ("%s\n", usg_hdr);
+		R_LOG_INFO ("%s", usg_hdr);
 	}
 
 	/* load directory or file */
@@ -716,8 +717,8 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	return apprentice_finish (ms, magicp, nmagicp, marray, marraycount, errs);
 }
 
+// AITODO: define and assign variable values in the same line if possible to avoid double initializations and unnecessary LOCs. apply this rule to the rest of the file
 static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size, int action) {
-	struct r_magic_entry *marray;
 	ut32 marraycount = 0;
 	char *data;
 	int errs = 0;
@@ -725,12 +726,13 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 	ms->flags |= R_MAGIC_CHECK;
 	ms->file = "(buffer)";
 	maxmagic = MAXMAGIS;
-	if (!(marray = calloc (maxmagic, sizeof (*marray)))) {
+	struct r_magic_entry *marray = calloc (maxmagic, sizeof (*marray));
+	if (!marray) {
 		__magic_file_oomem (ms, maxmagic * sizeof (*marray));
 		return -1;
 	}
 	if (action == FILE_CHECK) {
-		eprintf ("%s\n", usg_hdr);
+		R_LOG_INFO ("%s", usg_hdr);
 	}
 	data = r_str_ndup ((const char *)buf, buf_size);
 	if (!data) {
