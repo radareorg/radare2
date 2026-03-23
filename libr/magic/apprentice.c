@@ -1583,51 +1583,63 @@ static char *mkdbname(const char *fn, int strip) {
 	return buf;
 }
 
-static bool host_is_little_endian(void) {
-	const ut16 value = 1;
-	return ((const ut8 *)&value)[0] == 1;
-}
-
-/*
- * byteswap a single magic entry
- */
-static void bs1(struct r_magic *m) {
-	m->cont_level = r_swap_ut16 (m->cont_level);
-	m->offset = r_swap_ut32 (m->offset);
-	m->in_offset = r_swap_ut32 (m->in_offset);
-	m->lineno = r_swap_ut32 (m->lineno);
+static void decode_compiled_magic_entry(struct r_magic *m, bool be) {
+	m->cont_level = r_read_ble16 (&m->cont_level, be);
+	m->offset = r_read_ble32 (&m->offset, be);
+	m->in_offset = r_read_ble32 (&m->in_offset, be);
+	m->lineno = r_read_ble32 (&m->lineno, be);
 	if (MAGIC_IS_STRING (m->type)) {
-		m->str_range = r_swap_ut32 (m->str_range);
-		m->str_flags = r_swap_ut32 (m->str_flags);
+		m->str_range = r_read_ble32 (&m->str_range, be);
+		m->str_flags = r_read_ble32 (&m->str_flags, be);
 	} else {
-		m->value.q = r_swap_ut64 (m->value.q);
-		m->num_mask = r_swap_ut64 (m->num_mask);
+		m->value.q = r_read_ble64 (&m->value.q, be);
+		m->num_mask = r_read_ble64 (&m->num_mask, be);
 	}
 }
 
-/*
- * Byteswap an mmap'ed file if needed
- */
-static void byteswap(struct r_magic *magic, ut32 nmagic) {
+static void decode_compiled_magic(struct r_magic *magic, ut32 nmagic, bool be) {
 	ut32 i;
 	for (i = 0; i < nmagic; i++) {
-		bs1 (&magic[i]);
+		decode_compiled_magic_entry (&magic[i], be);
 	}
 }
 
-static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *needsbyteswap) {
-	bool little_endian = true;
+static void encode_compiled_magic_entry(struct r_magic *dst, const struct r_magic *src) {
+	memcpy (dst, src, sizeof (*dst));
+	r_write_le16 (&dst->cont_level, src->cont_level);
+	r_write_le32 (&dst->offset, src->offset);
+	r_write_le32 (&dst->in_offset, src->in_offset);
+	r_write_le32 (&dst->lineno, src->lineno);
+	if (MAGIC_IS_STRING (src->type)) {
+		r_write_le32 (&dst->str_range, src->str_range);
+		r_write_le32 (&dst->str_flags, src->str_flags);
+	} else {
+		r_write_le64 (&dst->value.q, src->value.q);
+		r_write_le64 (&dst->num_mask, src->num_mask);
+	}
+}
+
+static void encode_compiled_magic(struct r_magic *dst, const struct r_magic *src, ut32 nmagic) {
+	ut32 i;
+	for (i = 0; i < nmagic; i++) {
+		encode_compiled_magic_entry (&dst[i], &src[i]);
+	}
+}
+
+static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *be) {
 	ut32 magic = r_read_le32 (buf);
 
-	if (magic != MAGICNO) {
-		magic = r_read_be32 (buf);
-		if (magic != MAGICNO) {
-			return false;
-		}
-		little_endian = false;
+	if (magic == MAGICNO) {
+		*version = r_read_at_le32 (buf, sizeof (ut32));
+		*be = false;
+		return true;
 	}
-	*version = r_read_at_ble32 (buf, sizeof (ut32), !little_endian);
-	*needsbyteswap = little_endian != host_is_little_endian ();
+	magic = r_read_be32 (buf);
+	if (magic != MAGICNO) {
+		return false;
+	}
+	*version = r_read_at_be32 (buf, sizeof (ut32));
+	*be = true;
 	return true;
 }
 
@@ -1638,7 +1650,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	int fd;
 	struct stat st;
 	ut32 version = 0;
-	bool needsbyteswap = false;
+	bool be = false;
 	void *mm = NULL;
 
 	char *dbname = mkdbname (fn, 0);
@@ -1660,7 +1672,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	}
 
 #if QUICK
-	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ, // OPENBSDBUG  |PROT_WRITE,
+	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ | PROT_WRITE,
 		MAP_PRIVATE | MAP_FILE,
 		fd,
 		(off_t)0)) == MAP_FAILED) {
@@ -1682,7 +1694,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	*magicp = mm;
 	(void)close (fd);
 	fd = -1;
-	if (!read_compiled_magic_header ((const ut8 *)*magicp, &version, &needsbyteswap)) {
+	if (!read_compiled_magic_header ((const ut8 *)*magicp, &version, &be)) {
 		// OPENBSDBUG __magic_file_error (ms, 0, "bad magic in `%s'");
 		__magic_file_error (ms, 0, "bad magic in `%s'", dbname);
 		goto error1;
@@ -1702,9 +1714,7 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 		(*nmagicp)--;
 	}
 	(*magicp)++;
-	if (needsbyteswap) {
-		byteswap (*magicp, *nmagicp);
-	}
+	decode_compiled_magic (*magicp, *nmagicp, be);
 	free (dbname);
 	return RET;
 
@@ -1729,7 +1739,7 @@ error2:
 
 static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size) {
 	ut32 version = 0;
-	bool needsbyteswap = false;
+	bool be = false;
 	void *mm;
 
 	if (!buf || buf_size < sizeof (struct r_magic)) {
@@ -1743,7 +1753,7 @@ static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmag
 	}
 	memcpy (mm, buf, buf_size);
 	*magicp = mm;
-	if (!read_compiled_magic_header ((const ut8 *)mm, &version, &needsbyteswap)) {
+	if (!read_compiled_magic_header ((const ut8 *)mm, &version, &be)) {
 		__magic_file_error (ms, 0, "bad magic in buffer");
 		free (mm);
 		*magicp = NULL;
@@ -1762,15 +1772,9 @@ static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmag
 		(*nmagicp)--;
 	}
 	(*magicp)++;
-	if (needsbyteswap) {
-		byteswap (*magicp, *nmagicp);
-	}
+	decode_compiled_magic (*magicp, *nmagicp, be);
 	return 1;
 }
-
-static const ut32 ar[] = {
-	MAGICNO, VERSIONNO
-};
 
 static void apprentice_log_error(RMagic *ms, int error, const char *fmt, const char *dbname) {
 	if (!ms || ms->haderr) {
@@ -1791,10 +1795,29 @@ static void apprentice_log_error(RMagic *ms, int error, const char *fmt, const c
 static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn) {
 	int fd = -1;
 	int rv = -1;
+	size_t buf_size = 0;
+	struct r_magic hdr = {0};
+	struct r_magic *encoded = NULL;
 	char *dbname = mkdbname (fn, 1);
 	if (!dbname) {
 		return -1;
 	}
+	if (r_mul_overflow ((size_t)*nmagicp, sizeof (struct r_magic), &buf_size)) {
+		__magic_file_oomem (ms, SIZE_MAX);
+		free (dbname);
+		return -1;
+	}
+	if (buf_size > 0) {
+		encoded = malloc (buf_size);
+		if (!encoded) {
+			__magic_file_oomem (ms, buf_size);
+			free (dbname);
+			return -1;
+		}
+		encode_compiled_magic (encoded, *magicp, *nmagicp);
+	}
+	r_write_le32 (&hdr, MAGICNO);
+	r_write_at_le32 (&hdr, VERSIONNO, sizeof (ut32));
 
 	do {
 		fd = r_sandbox_open (dbname, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY, 0644);
@@ -1802,15 +1825,11 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 			apprentice_log_error (ms, errno, "cannot open `%s'", dbname);
 			break;
 		}
-		if (write (fd, ar, sizeof (ar)) != (int)sizeof (ar)) {
+		if (write (fd, &hdr, sizeof (hdr)) != (int)sizeof (hdr)) {
 			apprentice_log_error (ms, errno, "error writing `%s'", dbname);
 			break;
 		}
-		if (lseek (fd, (off_t)sizeof (struct r_magic), SEEK_SET) != sizeof (struct r_magic)) {
-			apprentice_log_error (ms, errno, "error seeking `%s'", dbname);
-			break;
-		}
-		if (write (fd, *magicp, (sizeof (struct r_magic) * *nmagicp)) != (int) (sizeof (struct r_magic) * *nmagicp)) {
+		if (buf_size > 0 && write (fd, encoded, buf_size) != (int)buf_size) {
 			apprentice_log_error (ms, errno, "error writing `%s'", dbname);
 			break;
 		}
@@ -1820,6 +1839,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 	if (fd != -1) {
 		(void)close (fd);
 	}
+	free (encoded);
 	free (dbname);
 	return rv;
 }
