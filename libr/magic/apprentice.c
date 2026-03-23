@@ -1583,54 +1583,25 @@ static char *mkdbname(const char *fn, int strip) {
 	return buf;
 }
 
-// AITODO. all those swap functions are just r_read_* functions, remove the unnecessary rwappers and make the code portable without depending on R_SYS_ENDIAN (apply this rule to all the files in this directory
-/*
- * swap a short
- */
-static ut16 swap2(ut16 sv) {
-#if R_SYS_ENDIAN
-	return r_read_le16 (&sv);
-#else
-	return r_read_be16 (&sv);
-#endif
-}
-
-/*
- * swap an int
- */
-static ut32 swap4(ut32 sv) {
-#if R_SYS_ENDIAN
-	return r_read_le32 (&sv);
-#else
-	return r_read_be32 (&sv);
-#endif
-}
-
-/*
- * swap a quad
- */
-static ut64 swap8(ut64 sv) {
-#if R_SYS_ENDIAN
-	return r_read_le64 (&sv);
-#else
-	return r_read_be64 (&sv);
-#endif
+static bool host_is_little_endian(void) {
+	const ut16 value = 1;
+	return ((const ut8 *)&value)[0] == 1;
 }
 
 /*
  * byteswap a single magic entry
  */
 static void bs1(struct r_magic *m) {
-	m->cont_level = swap2 (m->cont_level);
-	m->offset = swap4 ((ut32)m->offset);
-	m->in_offset = swap4 ((ut32)m->in_offset);
-	m->lineno = swap4 ((ut32)m->lineno);
+	m->cont_level = r_swap_ut16 (m->cont_level);
+	m->offset = r_swap_ut32 (m->offset);
+	m->in_offset = r_swap_ut32 (m->in_offset);
+	m->lineno = r_swap_ut32 (m->lineno);
 	if (MAGIC_IS_STRING (m->type)) {
-		m->str_range = swap4 (m->str_range);
-		m->str_flags = swap4 (m->str_flags);
+		m->str_range = r_swap_ut32 (m->str_range);
+		m->str_flags = r_swap_ut32 (m->str_flags);
 	} else {
-		m->value.q = swap8 (m->value.q);
-		m->num_mask = swap8 (m->num_mask);
+		m->value.q = r_swap_ut64 (m->value.q);
+		m->num_mask = r_swap_ut64 (m->num_mask);
 	}
 }
 
@@ -1645,19 +1616,18 @@ static void byteswap(struct r_magic *magic, ut32 nmagic) {
 }
 
 static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *needsbyteswap) {
+	bool little_endian = true;
 	ut32 magic = r_read_le32 (buf);
 
-	if (magic == MAGICNO) {
-		*version = r_read_at_le32 (buf, sizeof (ut32));
-		*needsbyteswap = R_SYS_ENDIAN;
-		return true;
-	}
-	magic = r_read_be32 (buf);
 	if (magic != MAGICNO) {
-		return false;
+		magic = r_read_be32 (buf);
+		if (magic != MAGICNO) {
+			return false;
+		}
+		little_endian = false;
 	}
-	*version = r_read_at_be32 (buf, sizeof (ut32));
-	*needsbyteswap = !R_SYS_ENDIAN;
+	*version = r_read_at_ble32 (buf, sizeof (ut32), !little_endian);
+	*needsbyteswap = little_endian != host_is_little_endian ();
 	return true;
 }
 

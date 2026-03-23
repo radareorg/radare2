@@ -84,17 +84,16 @@ static int from_oct(int digs, const char *where) {
  */
 static int is_tar(const ut8 *buf, size_t nbytes) {
 	const union record *header = (const union record *) (const void *)buf;
-	int i, sum, recsum;
 	const char *p;
 
 	if (nbytes < sizeof (union record)) {
 		return 0;
 	}
 
-	recsum = from_oct (8, header->header.chksum);
+	int recsum = from_oct (8, header->header.chksum);
 
-	sum = 0;
-	p = header->charptr;
+	int i, sum = 0;
+	const char *p = header->charptr;
 	for (i = sizeof (union record); --i >= 0;) {
 		// Keep this int-compatible for old compilers.
 		sum += 0xFF & *p++;
