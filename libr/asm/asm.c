@@ -672,6 +672,7 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	if (!b) {
 		return 0;
 	}
+	r_str_case (b, false);
 	op->addr = a->pc;
 	r_anal_op_set_mnemonic (op, op->addr, b);
 	int ret = r_arch_session_encode (a->ecur, op, 0) ? op->size : 0;
