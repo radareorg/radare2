@@ -87,6 +87,7 @@ static int apprentice_load(RMagic *, struct r_magic **, ut32 *, const char *, in
 static int apprentice_load_buffer(RMagic *, struct r_magic **, ut32 *, const ut8 *, size_t, int);
 static void byteswap(struct r_magic *, ut32);
 static void bs1(struct r_magic *);
+static bool read_compiled_magic_header(const ut8 *, ut32 *, bool *);
 static ut16 swap2(ut16);
 static ut32 swap4(ut32);
 static ut64 swap8(ut64);
@@ -311,16 +312,12 @@ struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size
 }
 
 static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
-	ut32 hdr[2];
+	ut32 version = 0;
+	bool needsbyteswap = false;
 
-	if (!buf || buf_size < sizeof (hdr)) {
-		return false;
-	}
-	memcpy (hdr, buf, sizeof (hdr));
-	if (hdr[0] == MAGICNO && hdr[1] == VERSIONNO) {
-		return true;
-	}
-	return swap4 (hdr[0]) == MAGICNO && swap4 (hdr[1]) == VERSIONNO;
+	return buf && buf_size >= sizeof (ut32) * 2
+		&& read_compiled_magic_header (buf, &version, &needsbyteswap)
+		&& version == VERSIONNO;
 }
 
 struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
@@ -1875,9 +1872,8 @@ static void eatsize(const char **p) {
 static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn) {
 	int fd;
 	struct stat st;
-	ut32 *ptr;
-	ut32 version;
-	int needsbyteswap;
+	ut32 version = 0;
+	bool needsbyteswap = false;
 	char *dbname = NULL;
 	void *mm = NULL;
 
@@ -1922,20 +1918,11 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	*magicp = mm;
 	(void)close (fd);
 	fd = -1;
-	ptr = (ut32 *) (void *)*magicp;
-
-	if (*ptr != MAGICNO) {
-		if (swap4 (*ptr) != MAGICNO) {
-			// OPENBSDBUG __magic_file_error (ms, 0, "bad magic in `%s'");
-			__magic_file_error (ms, 0, "bad magic in `%s'", dbname);
-			goto error1;
-		}
-		needsbyteswap = 1;
-	} else {
-		needsbyteswap = 0;
+	if (!read_compiled_magic_header ((const ut8 *)*magicp, &version, &needsbyteswap)) {
+		// OPENBSDBUG __magic_file_error (ms, 0, "bad magic in `%s'");
+		__magic_file_error (ms, 0, "bad magic in `%s'", dbname);
+		goto error1;
 	}
-
-	version = needsbyteswap? swap4 (ptr[1]): ptr[1];
 	if (version != VERSIONNO) {
 		__magic_file_error (ms, 0, "File %d.%d supports only %d version magic "
 			"files. `%s' is version %d",
@@ -1977,9 +1964,8 @@ error2:
 }
 
 static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size) {
-	ut32 *ptr;
-	ut32 version;
-	int needsbyteswap;
+	ut32 version = 0;
+	bool needsbyteswap = false;
 	void *mm;
 
 	if (!buf || buf_size < sizeof (struct r_magic)) {
@@ -1993,22 +1979,13 @@ static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmag
 	}
 	memcpy (mm, buf, buf_size);
 	*magicp = mm;
-	ptr = (ut32 *)mm;
-
-	if (*ptr != MAGICNO) {
-		if (swap4 (*ptr) != MAGICNO) {
-			__magic_file_error (ms, 0, "bad magic in buffer");
-			free (mm);
-			*magicp = NULL;
-			*nmagicp = 0;
-			return -1;
-		}
-		needsbyteswap = 1;
-	} else {
-		needsbyteswap = 0;
+	if (!read_compiled_magic_header ((const ut8 *)mm, &version, &needsbyteswap)) {
+		__magic_file_error (ms, 0, "bad magic in buffer");
+		free (mm);
+		*magicp = NULL;
+		*nmagicp = 0;
+		return -1;
 	}
-
-	version = needsbyteswap? swap4 (ptr[1]): ptr[1];
 	if (version != VERSIONNO) {
 		__magic_file_error (ms, 0, "magic buffer version %d != %d", version, VERSIONNO);
 		free (mm);
@@ -2124,60 +2101,54 @@ static void byteswap(struct r_magic *magic, ut32 nmagic) {
 	}
 }
 
+static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *needsbyteswap) {
+	ut32 magic = r_read_le32 (buf);
+
+	if (magic == MAGICNO) {
+		*version = r_read_at_le32 (buf, sizeof (ut32));
+		*needsbyteswap = R_SYS_ENDIAN;
+		return true;
+	}
+	magic = r_read_be32 (buf);
+	if (magic != MAGICNO) {
+		return false;
+	}
+	*version = r_read_at_be32 (buf, sizeof (ut32));
+	*needsbyteswap = !R_SYS_ENDIAN;
+	return true;
+}
+
 /*
  * swap a short
  */
 static ut16 swap2(ut16 sv) {
-	ut16 rv;
-	ut8 *s = (ut8 *) (void *)&sv;
-	ut8 *d = (ut8 *) (void *)&rv;
-	d[0] = s[1];
-	d[1] = s[0];
-	return rv;
+#if R_SYS_ENDIAN
+	return r_read_le16 (&sv);
+#else
+	return r_read_be16 (&sv);
+#endif
 }
 
 /*
  * swap an int
  */
 static ut32 swap4(ut32 sv) {
-	ut32 rv;
-	ut8 *s = (ut8 *) (void *)&sv;
-	ut8 *d = (ut8 *) (void *)&rv;
-	d[0] = s[3];
-	d[1] = s[2];
-	d[2] = s[1];
-	d[3] = s[0];
-	return rv;
+#if R_SYS_ENDIAN
+	return r_read_le32 (&sv);
+#else
+	return r_read_be32 (&sv);
+#endif
 }
 
 /*
  * swap a quad
  */
 static ut64 swap8(ut64 sv) {
-	// we have r_read apis for that, dont dupe!
-	ut64 rv;
-	ut8 *s = (ut8 *) (void *)&sv;
-	ut8 *d = (ut8 *) (void *)&rv;
-#if 0
-	d[0] = s[3];
-	d[1] = s[2];
-	d[2] = s[1];
-	d[3] = s[0];
-	d[4] = s[7];
-	d[5] = s[6];
-	d[6] = s[5];
-	d[7] = s[4];
+#if R_SYS_ENDIAN
+	return r_read_le64 (&sv);
 #else
-	d[0] = s[7];
-	d[1] = s[6];
-	d[2] = s[5];
-	d[3] = s[4];
-	d[4] = s[3];
-	d[5] = s[2];
-	d[6] = s[1];
-	d[7] = s[0];
+	return r_read_be64 (&sv);
 #endif
-	return rv;
 }
 
 /*

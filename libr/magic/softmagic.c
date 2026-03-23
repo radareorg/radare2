@@ -50,6 +50,7 @@ static void cvt_8(union VALUETYPE *, const struct r_magic *);
 static void cvt_16(union VALUETYPE *, const struct r_magic *);
 static void cvt_32(union VALUETYPE *, const struct r_magic *);
 static void cvt_64(union VALUETYPE *, const struct r_magic *);
+static st32 apply_indir_op(st32, st32, int);
 
 static void magic_debug(RMagic *ms, const char *fmt, ...) {
 	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
@@ -646,6 +647,22 @@ static void cvt_double(union VALUETYPE *p, const struct r_magic *m) {
 	DO_CVT2 (d, (double));
 }
 
+static st32 apply_indir_op(st32 value, st32 off, int op) {
+	if (off) {
+		switch (op & FILE_OPS_MASK) {
+		case FILE_OPAND: value &= off; break;
+		case FILE_OPOR: value |= off; break;
+		case FILE_OPXOR: value ^= off; break;
+		case FILE_OPADD: value += off; break;
+		case FILE_OPMINUS: value -= off; break;
+		case FILE_OPMULTIPLY: value *= off; break;
+		case FILE_OPDIVIDE: value /= off; break;
+		case FILE_OPMODULO: value %= off; break;
+		}
+	}
+	return (op & FILE_OPINVERSE)? ~value: value;
+}
+
 /*
  * Convert the byte order of the data we are looking at
  * While we're here, let's apply the mask operation
@@ -703,7 +720,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 			return 1;
 		}
 	case FILE_BESHORT:
-		p->h = (short) ((p->hs[0] << 8) | (p->hs[1]));
+		p->h = (short)r_read_be16 (p->hs);
 		cvt_16 (p, m);
 		return 1;
 	case FILE_BELONG:
@@ -715,14 +732,11 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_BEQUAD:
 	case FILE_BEQDATE:
 	case FILE_BEQLDATE:
-		p->q = (ut64) (((ut64)p->hq[0] << 56) | ((ut64)p->hq[1] << 48) |
-			((ut64)p->hq[2] << 40) | ((ut64)p->hq[3] << 32) |
-			((ut64)p->hq[4] << 24) | ((ut64)p->hq[5] << 16) |
-			((ut64)p->hq[6] << 8) | ((ut64)p->hq[7]));
+		p->q = r_read_be64 (p->hq);
 		cvt_64 (p, m);
 		return 1;
 	case FILE_LESHORT:
-		p->h = (short) ((p->hs[1] << 8) | (p->hs[0]));
+		p->h = (short)r_read_le16 (p->hs);
 		cvt_16 (p, m);
 		return 1;
 	case FILE_LELONG:
@@ -734,10 +748,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_LEQUAD:
 	case FILE_LEQDATE:
 	case FILE_LEQLDATE:
-		p->q = (ut64) (((ut64)p->hq[7] << 56) | ((ut64)p->hq[6] << 48) |
-			((ut64)p->hq[5] << 40) | ((ut64)p->hq[4] << 32) |
-			((ut64)p->hq[3] << 24) | ((ut64)p->hq[2] << 16) |
-			((ut64)p->hq[1] << 8) | ((ut64)p->hq[0]));
+		p->q = r_read_le64 (p->hq);
 		cvt_64 (p, m);
 		return 1;
 	case FILE_MELONG:
@@ -750,30 +761,22 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 		cvt_float (p, m);
 		return 1;
 	case FILE_BEFLOAT:
-		p->l = ((ut32)p->hl[0] << 24) | ((ut32)p->hl[1] << 16) |
-			((ut32)p->hl[2] << 8) | ((ut32)p->hl[3]);
+		p->l = r_read_be32 (p->hl);
 		cvt_float (p, m);
 		return 1;
 	case FILE_LEFLOAT:
-		p->l = ((ut32)p->hl[3] << 24) | ((ut32)p->hl[2] << 16) |
-			((ut32)p->hl[1] << 8) | ((ut32)p->hl[0]);
+		p->l = r_read_le32 (p->hl);
 		cvt_float (p, m);
 		return 1;
 	case FILE_DOUBLE:
 		cvt_double (p, m);
 		return 1;
 	case FILE_BEDOUBLE:
-		p->q = ((ut64)p->hq[0] << 56) | ((ut64)p->hq[1] << 48) |
-			((ut64)p->hq[2] << 40) | ((ut64)p->hq[3] << 32) |
-			((ut64)p->hq[4] << 24) | ((ut64)p->hq[5] << 16) |
-			((ut64)p->hq[6] << 8) | ((ut64)p->hq[7]);
+		p->q = r_read_be64 (p->hq);
 		cvt_double (p, m);
 		return 1;
 	case FILE_LEDOUBLE:
-		p->q = ((ut64)p->hq[7] << 56) | ((ut64)p->hq[6] << 48) |
-			((ut64)p->hq[5] << 40) | ((ut64)p->hq[4] << 32) |
-			((ut64)p->hq[3] << 24) | ((ut64)p->hq[2] << 16) |
-			((ut64)p->hq[1] << 8) | ((ut64)p->hq[0]);
+		p->q = r_read_le64 (p->hq);
 		cvt_double (p, m);
 		return 1;
 	case FILE_REGEX:
@@ -923,19 +926,19 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 				off = q->h;
 				break;
 			case FILE_BESHORT:
-				off = (short) ((q->hs[0] << 8) | (q->hs[1]));
+				off = (st16)r_read_be16 (q->hs);
 				break;
 			case FILE_LESHORT:
-				off = (short) ((q->hs[1] << 8) | (q->hs[0]));
+				off = (st16)r_read_le16 (q->hs);
 				break;
 			case FILE_LONG:
 				off = q->l;
 				break;
 			case FILE_BELONG:
-				off = (st32) ((q->hl[0] << 24) | (q->hl[1] << 16) | (q->hl[2] << 8) | (q->hl[3]));
+				off = (st32)r_read_be32 (q->hl);
 				break;
 			case FILE_LELONG:
-				off = (st32) ((q->hl[3] << 24) | (q->hl[2] << 16) | (q->hl[1] << 8) | (q->hl[0]));
+				off = (st32)r_read_le32 (q->hl);
 				break;
 			case FILE_MELONG:
 				off = (st32) ((q->hl[1] << 24) | (q->hl[0] << 16) | (q->hl[3] << 8) | (q->hl[2]));
@@ -947,226 +950,51 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 			if (nbytes < (offset + 1)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->b & off; break;
-				case FILE_OPOR: offset = p->b | off; break;
-				case FILE_OPXOR: offset = p->b ^ off; break;
-				case FILE_OPADD: offset = p->b + off; break;
-				case FILE_OPMINUS: offset = p->b - off; break;
-				case FILE_OPMULTIPLY: offset = p->b * off; break;
-				case FILE_OPDIVIDE: offset = p->b / off; break;
-				case FILE_OPMODULO: offset = p->b % off; break;
-				}
-			} else {
-				offset = p->b;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->b, off, m->in_op);
 			break;
 		case FILE_BESHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) & off; break;
-				case FILE_OPOR: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) | off; break;
-				case FILE_OPXOR: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) ^ off; break;
-				case FILE_OPADD: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) + off; break;
-				case FILE_OPMINUS: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) - off; break;
-				case FILE_OPMULTIPLY: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) * off; break;
-				case FILE_OPDIVIDE: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) / off; break;
-				case FILE_OPMODULO: offset = (short) ((p->hs[0] << 8) | (p->hs[1])) % off; break;
-				}
-			} else {
-				offset = (short) ((p->hs[0] << 8) |
-					(p->hs[1]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
 			break;
 		case FILE_LESHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) & off; break;
-				case FILE_OPOR: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) | off; break;
-				case FILE_OPXOR: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) ^ off; break;
-				case FILE_OPADD: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) + off; break;
-				case FILE_OPMINUS: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) - off; break;
-				case FILE_OPMULTIPLY: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) * off; break;
-				case FILE_OPDIVIDE: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) / off; break;
-				case FILE_OPMODULO: offset = (short) ((p->hs[1] << 8) | (p->hs[0])) % off; break;
-				}
-			} else {
-				offset = (short) ((p->hs[1] << 8) | (p->hs[0]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
 			break;
 		case FILE_SHORT:
 			if (nbytes < (offset + 2)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->h & off; break;
-				case FILE_OPOR: offset = p->h | off; break;
-				case FILE_OPXOR: offset = p->h ^ off; break;
-				case FILE_OPADD: offset = p->h + off; break;
-				case FILE_OPMINUS: offset = p->h - off; break;
-				case FILE_OPMULTIPLY: offset = p->h * off; break;
-				case FILE_OPDIVIDE: offset = p->h / off; break;
-				case FILE_OPMODULO: offset = p->h % off; break;
-				}
-			} else {
-				offset = p->h;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->h, off, m->in_op);
 			break;
 		case FILE_BELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) ((p->hl[0] << 24) | (p->hl[1] << 16) | (p->hl[2] << 8) | (p->hl[3]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
 			break;
 		case FILE_LELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) (((ut32)p->hl[3] << 24) | (p->hl[2] << 16) | (p->hl[1] << 8) | (p->hl[0]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
 			break;
 		case FILE_MELONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) & off;
-					break;
-				case FILE_OPOR:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) | off;
-					break;
-				case FILE_OPXOR:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) ^ off;
-					break;
-				case FILE_OPADD:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) + off;
-					break;
-				case FILE_OPMINUS:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) - off;
-					break;
-				case FILE_OPMULTIPLY:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) * off;
-					break;
-				case FILE_OPDIVIDE:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) / off;
-					break;
-				case FILE_OPMODULO:
-					offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2])) % off;
-					break;
-				}
-			} else {
-				offset = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2]));
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op ((st32)(
+				(p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | p->hl[2]
+			), off, m->in_op);
 			break;
 		case FILE_LONG:
 			if (nbytes < (offset + 4)) {
 				return 0;
 			}
-			if (off) {
-				switch (m->in_op & FILE_OPS_MASK) {
-				case FILE_OPAND: offset = p->l & off; break;
-				case FILE_OPOR: offset = p->l | off; break;
-				case FILE_OPXOR: offset = p->l ^ off; break;
-				case FILE_OPADD: offset = p->l + off; break;
-				case FILE_OPMINUS: offset = p->l - off; break;
-				case FILE_OPMULTIPLY: offset = p->l * off; break;
-				case FILE_OPDIVIDE: offset = p->l / off; break;
-				case FILE_OPMODULO: offset = p->l % off; break;
-				}
-			} else {
-				offset = p->l;
-			}
-			if (m->in_op & FILE_OPINVERSE) {
-				offset = ~offset;
-			}
+			offset = apply_indir_op (p->l, off, m->in_op);
 			break;
 		}
 
