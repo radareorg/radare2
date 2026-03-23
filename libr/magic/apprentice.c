@@ -561,9 +561,29 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
 
 static int check_format_type(const char *ptr, int type) {
 	int quad = 0;
+	const char *start = ptr;
 	if (*ptr == '\0') {
 		/* Missing format string; bad */
 		return -1;
+	}
+
+	while (strchr ("#0- +", *ptr)) {
+		ptr++;
+	}
+	if (*ptr == '*') {
+		return -1;
+	}
+	while (isdigit ((ut8)*ptr)) {
+		ptr++;
+	}
+	if (*ptr == '.') {
+		ptr++;
+		if (*ptr == '*') {
+			return -1;
+		}
+		while (isdigit ((ut8)*ptr)) {
+			ptr++;
+		}
 	}
 
 	switch (type) {
@@ -571,21 +591,6 @@ static int check_format_type(const char *ptr, int type) {
 		quad = 1;
 		/*FALLTHROUGH*/
 	case FILE_FMT_NUM:
-		if (*ptr == '-') {
-			ptr++;
-		}
-		if (*ptr == '.') {
-			ptr++;
-		}
-		while (isdigit ((ut8)*ptr)) {
-			ptr++;
-		}
-		if (*ptr == '.') {
-			ptr++;
-		}
-		while (isdigit ((ut8)*ptr)) {
-			ptr++;
-		}
 		if (quad) {
 			if (*ptr++ != 'l') {
 				return -1;
@@ -595,6 +600,7 @@ static int check_format_type(const char *ptr, int type) {
 			}
 		}
 		switch (*ptr++) {
+		case 'c':
 		case 'd':
 		case 'i':
 		case 'o':
@@ -607,21 +613,6 @@ static int check_format_type(const char *ptr, int type) {
 		}
 		break;
 	case FILE_FMT_FLOAT:
-		if (*ptr == '-') {
-			ptr++;
-		}
-		if (*ptr == '.') {
-			ptr++;
-		}
-		while (isdigit ((ut8)*ptr)) {
-			ptr++;
-		}
-		if (*ptr == '.') {
-			ptr++;
-		}
-		while (isdigit ((ut8)*ptr)) {
-			ptr++;
-		}
 		switch (*ptr++) {
 		case 'e':
 		case 'E':
@@ -642,10 +633,7 @@ static int check_format_type(const char *ptr, int type) {
 	default:
 		return -1;
 	}
-	if (*ptr != '\0') {
-		return -1;
-	}
-	return 0;
+	return (int)(ptr - start);
 }
 
 /*
@@ -654,42 +642,31 @@ static int check_format_type(const char *ptr, int type) {
  */
 static int check_format(RMagic *ms, struct r_magic *m) {
 	char *ptr;
+	int seen = 0;
 
 	for (ptr = m->desc; *ptr; ptr++) {
-		if (*ptr == '%') {
-			break;
+		int fmtlen;
+
+		if (*ptr != '%') {
+			continue;
 		}
-	}
-	if (*ptr == '\0') {
-		/* No format string; ok */
-		return 1;
-	}
-
-	if (m->type >= FILE_NAMES_SIZE) {
-		__magic_file_magwarn (ms, "Internal error inconsistency between "
-			"m->type and format strings");
-		return -1;
-	}
-	if (ms->magic_file_formats[m->type] == FILE_FMT_NONE) {
-		__magic_file_magwarn (ms, "No format string for `%s' with description "
-			"`%s'",
-			m->desc,
-			ms->magic_file_names[m->type]);
-		return -1;
-	}
-
-	ptr++;
-	if (ptr && check_format_type (ptr, ms->magic_file_formats[m->type]) == -1) {
-		__magic_file_magwarn (ms, "Printf format `%c' is not valid for type "
-			"`%s' in description `%s'",
-			ptr && *ptr? *ptr: '?',
-			ms->magic_file_names[m->type],
-			m->desc);
-		return -1;
-	}
-
-	for (; *ptr; ptr++) {
-		if (*ptr == '%') {
+		if (ptr[1] == '%') {
+			ptr++;
+			continue;
+		}
+		if (m->type >= FILE_NAMES_SIZE) {
+			__magic_file_magwarn (ms, "Internal error inconsistency between "
+				"m->type and format strings");
+			return -1;
+		}
+		if (ms->magic_file_formats[m->type] == FILE_FMT_NONE) {
+			__magic_file_magwarn (ms, "No format string for `%s' with description "
+				"`%s'",
+				m->desc,
+				ms->magic_file_names[m->type]);
+			return -1;
+		}
+		if (seen++) {
 			__magic_file_magwarn (ms,
 				"Too many format strings (should have at most one) "
 				"for `%s' with description `%s'",
@@ -697,6 +674,20 @@ static int check_format(RMagic *ms, struct r_magic *m) {
 				m->desc);
 			return -1;
 		}
+		fmtlen = check_format_type (ptr + 1, ms->magic_file_formats[m->type]);
+		if (fmtlen == -1) {
+			__magic_file_magwarn (ms, "Printf format `%c' is not valid for type "
+				"`%s' in description `%s'",
+				ptr[1]? ptr[1]: '?',
+				ms->magic_file_names[m->type],
+				m->desc);
+			return -1;
+		}
+		ptr += fmtlen;
+	}
+	if (!seen) {
+		/* No format string; ok */
+		return 1;
 	}
 	return 0;
 }
