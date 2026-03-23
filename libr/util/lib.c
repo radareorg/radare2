@@ -668,6 +668,10 @@ static void open_plugins_at(RLib *lib, const char *arg, const char *config_path)
 
 R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path) {
 	R_RETURN_IF_FAIL (lib);
+	mask &= R_LIB_LOAD_ENV | R_LIB_LOAD_HOME | R_LIB_LOAD_SYSTEM | R_LIB_LOAD_CONFIG;
+	if (!mask) {
+		return;
+	}
 	char *order_env = r_sys_getenv ("R2_PLUGINS_ORDER");
 	const char *order = R_STR_ISNOTEMPTY (order_env)
 		? order_env
