@@ -43,7 +43,6 @@ static RCoreHelpMessage help_msg_C = {
 	"Ct", "[?] [-] [comment-text] [@addr]", "add/remove type analysis comment",
 	"Ct.", "[@addr]", "show comment at current or specified address",
 	"Cv", "[?][bsr]", "add comments to args",
-	"Cz", "[@addr]", "add string (see Cs?)",
 	NULL
 };
 
@@ -120,7 +119,6 @@ static RCoreHelpMessage help_msg_Cs = {
 	"Csw", " [size] ([@addr])", "add wide string (utf16)",
 	"Csz", " [size] ([@addr])", "define zero terminated strings (with size as maxlen)",
 	"Css", " ([range]) ([@addr])", "define all strings found in given range or section",
-	"Cz", " [size] [@addr]", "Alias for Csz",
 	NULL
 };
 
@@ -746,7 +744,7 @@ typedef struct {
 static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
 	if (where - sso->addr >= sso->bufsz) {
-		r_core_cmd_call_at (sso->core, where, "Cz");
+		r_core_cmd_call_at (sso->core, where, "Csz");
 	} else {
 		const char *name = (const char *)(sso->buf + (where - sso->addr));
 		const size_t maxlen = sso->bufsz - (where - sso->addr);
@@ -914,7 +912,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					const ut64 addr = core->addr;
 					const int minstr = r_config_get_i (core->config, "bin.str.min");
 					const int maxstr = r_config_get_i (core->config, "bin.str.max");
-					r_core_cmdf (core, "Cz@0x%08"PFMT64x, addr);
+					r_core_cmdf (core, "Csz@0x%08"PFMT64x, addr);
 					// maps are not yet set
 					free (r_core_cmd_str (core, "o;om")); // wtf?
 					if (!r_io_read_at (core->io, addr, buf, range)) {
@@ -968,13 +966,9 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				break;
 			}
 		}
-		if (type == 'z') {
-			type = 's';
-		} else {
-			if (!input[1] && !core->tmpseek) {
-				r_meta_print_list_all (core->anal, type, 0, NULL, NULL);
-				break;
-			}
+		if (!input[1] && !core->tmpseek) {
+			r_meta_print_list_all (core->anal, type, 0, NULL, NULL);
+			break;
 		}
 		int len = (!input[1] || input[1] == ' ') ? 2 : 3;
 		if (strlen (input) > len) {
@@ -1113,8 +1107,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 							R_LOG_ERROR ("Invalid pascal string value length (%d)", name_len);
 							return false;
 						}
-					} else if (input[1] == 'a' || input[1] == '8') {
-						// "Cs8" "Csa" // utf8 and ascii strings handling
+					} else if (input[1] == 'a' || input[1] == '8' || input[1] == 'z') {
+						// "Cs8" "Csa" "Csz" // utf8, ascii and zero-terminated strings handling
 						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
 						name[sizeof (name) - 1] = '\0';
 						name_len = strlen (name);
@@ -1164,6 +1158,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 				switch (input[1]) {
 				case 'a':
 				case '8':
+				case 'z':
 				case 'w':
 					subtype = input[1];
 					break;
@@ -1356,7 +1351,6 @@ static int cmd_meta(void *data, const char *input) {
 	case 'r': // "Cr" run command
 	case 'h': // "Ch" comment
 	case 's': // "Cs" string
-	case 'z': // "Cz" zero-terminated string
 	case 'd': // "Cd" data
 	case 'm': // "Cm" magic
 	case 'f': // "Cf" formatted
