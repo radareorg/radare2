@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -756,6 +756,111 @@ static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	return true;
 }
 
+static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT int *n, R_OUT char *name, size_t name_size) {
+	int name_len = 0;
+
+	if (!name_size) {
+		return false;
+	}
+	// TODO 256 is the limit. and that shouldnt be a hard limit
+	if (input[1] == 'w' || input[1] == 'g') { // "Csw" "Csg"
+		int i, j;
+		char tmp[256] = {0};
+		(void)r_io_read_at (core->io, *addr, (ut8*)tmp, sizeof (tmp) - 3);
+		name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
+		// handle wide strings
+		for (i = 0, j = 0; i + 1 < name_size; i++, j++) {
+			name[i] = tmp[j];
+			if (!tmp[j]) {
+				break;
+			}
+			if (!tmp[j + 1]) {
+				if (j + 3 < sizeof (tmp) && tmp[j + 3]) {
+					break;
+				}
+				j++;
+			}
+		}
+		name[name_size - 1] = '\0';
+	} else if (input[1] == 'p') { // "Csp" // pascal string
+		// TODO: add support for wide pascal strings
+		ut8 fourbuf[4];
+		(void)r_io_read_at (core->io, *addr, (ut8*)fourbuf, sizeof (fourbuf));
+		if (*n == 0 || *n > 4) {
+			// autoguess
+			if (!fourbuf[0] && !fourbuf[1]) {
+				*n = 4;
+			} else if (!fourbuf[1]) {
+				*n = 2;
+			} else {
+				*n = 1;
+			}
+		}
+		switch (*n) {
+		case 4:
+			name_len = r_read_le32 (fourbuf);
+			break;
+		case 2:
+			name_len = r_read_le16 (fourbuf);
+			break;
+		case 1:
+			name_len = fourbuf[0];
+			break;
+		case -4:
+			name_len = r_read_be32 (fourbuf);
+			break;
+		case -2:
+			name_len = r_read_be16 (fourbuf);
+			break;
+		case -1:
+			name_len = fourbuf[0];
+			break;
+		default:
+			R_LOG_ERROR ("Invalid pascal length field size. Must be -4, -2, -1, 1, 2, 4");
+			return false;
+		}
+		if (name_len >= 0 && (size_t)name_len < name_size) {
+			char tmp[256] = {0};
+			const size_t delta = R_ABS (*n);
+			(void)r_io_read_at (core->io, *addr + delta, (ut8*)tmp, sizeof (tmp) - 3);
+			r_str_ncpy (name, tmp, name_len + 1);
+			// TODO: use api instead: r_meta_set (core->anal, 'd', *addr, delta, name);
+			r_core_cmdf (core, "Cd%d@0x%08"PFMT64x, (int)delta, *addr);
+			{
+				char *tmp_name = r_name_filter_dup (name);
+				r_core_cmdf (core, "f str.pascal.%s@0x%08"PFMT64x, tmp_name, *addr);
+				free (tmp_name);
+			}
+			*addr += delta;
+			*n = name_len;
+		} else {
+			R_LOG_ERROR ("Invalid pascal string value length (%d)", name_len);
+			return false;
+		}
+	} else if (input[1] == 'a' || input[1] == '8' || input[1] == 'z') {
+		// "Cs8" "Csa" "Csz" // utf8, ascii and zero-terminated strings handling
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
+		name[name_size - 1] = '\0';
+		name_len = strlen (name);
+	} else if (input[1] == 0 || input[1] == ' ') {
+		// same as Cs8 or Csa
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
+		name[name_size - 1] = '\0';
+		name_len = strlen (name);
+	} else {
+		R_LOG_WARN ("Unknown Cs subcommand %c", input[1]);
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
+		name[name_size - 1] = '\0';
+		name_len = strlen (name);
+	}
+	if (*n == 0) {
+		*n = name_len + 1;
+	} else if (*n > 0 && *n < name_len) {
+		name[*n] = 0;
+	}
+	return true;
+}
+
 static int cmd_meta_others(RCore *core, const char *input) {
 	char *t = 0, *p, *p2, name[256] = {0};
 	int n, repeat = 1;
@@ -1028,107 +1133,8 @@ static int cmd_meta_others(RCore *core, const char *input) {
 						break;
 					}
 				} else if (type == 's') { // "Cs"
-					int name_len = 0;
-					// TODO 256 is the limit. and that shouldnt be a hard limit
-					if (input[1] == 'w' || input[1] == 'g') { // "Csw" "Csg"
-						int i, j;
-						char tmp[256] = {0};
-						(void)r_io_read_at (core->io, addr, (ut8*)tmp, sizeof (tmp) - 3);
-						name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
-						// handle wide strings
-						for (i = 0, j = 0; i < sizeof (name); i++, j++) {
-							name[i] = tmp[j];
-							if (!tmp[j]) {
-								break;
-							}
-							if (!tmp[j + 1]) {
-								if (j + 3 < sizeof (tmp)) {
-									if (tmp[j + 3]) {
-										break;
-									}
-								}
-								j++;
-							}
-						}
-						name[sizeof (name) - 1] = '\0';
-					} else if (input[1] == 'p') { // "Csp" // pascal string
-						// TODO: add support for wide pascal strings
-						ut8 fourbuf[4];
-						(void)r_io_read_at (core->io, addr, (ut8*)fourbuf, sizeof (fourbuf));
-						name_len = 0;
-						if (n == 0 || n > 4) {
-							// autoguess
-							if (!fourbuf[0] && !fourbuf[1]) {
-								n = 4;
-							} else if (!fourbuf[1]) {
-								n = 2;
-							} else {
-								n = 1;
-							}
-						}
-						switch (n) {
-						case 4:
-							name_len = r_read_le32 (fourbuf);
-							break;
-						case 2:
-							name_len = r_read_le16 (fourbuf);
-							break;
-						case 1:
-							name_len = fourbuf[0];
-							break;
-						case -4:
-							name_len = r_read_be32 (fourbuf);
-							break;
-						case -2:
-							name_len = r_read_be16 (fourbuf);
-							break;
-						case -1:
-							name_len = fourbuf[0];
-							break;
-						default:
-							R_LOG_ERROR ("Invalid pascal length field size. Must be -4, -2, -1, 1, 2, 4");
-							return false;
-						}
-						if (name_len >= 0 && name_len < 256) {
-							char tmp[256] = {0};
-							const size_t delta = R_ABS (n);
-							(void)r_io_read_at (core->io, addr + delta, (ut8*)tmp, sizeof (tmp) - 3);
-							r_str_ncpy (name, tmp, name_len);
-							// TODO: use api instead: r_meta_set (core->anal, 'd', addr, delta, name);
-							r_core_cmdf (core, "Cd%d@0x%08"PFMT64x, (int)delta, addr);
-							{
-								char *tmp = r_name_filter_dup (name);
-								r_core_cmdf (core, "f str.pascal.%s@0x%08"PFMT64x, tmp, addr);
-								free (tmp);
-							}
-							addr += delta;
-							n = name_len;
-						} else {
-							R_LOG_ERROR ("Invalid pascal string value length (%d)", name_len);
-							return false;
-						}
-					} else if (input[1] == 'a' || input[1] == '8' || input[1] == 'z') {
-						// "Cs8" "Csa" "Csz" // utf8, ascii and zero-terminated strings handling
-						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
-						name[sizeof (name) - 1] = '\0';
-						name_len = strlen (name);
-					} else if (input[1] == 0 || input[1] == ' ') {
-						// same as Cs8 or Csa
-						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
-						name[sizeof (name) - 1] = '\0';
-						name_len = strlen (name);
-					} else {
-						R_LOG_WARN ("Unknown Cs subcommand %c", input[1]);
-						(void)r_io_read_at (core->io, addr, (ut8*)name, sizeof (name) - 1);
-						name[sizeof (name) - 1] = '\0';
-						name_len = strlen (name);
-					}
-					if (n == 0) {
-						n = name_len + 1;
-					} else {
-						if (n > 0 && n < name_len) {
-							name[n] = 0;
-						}
+					if (!cmd_Cs (core, input, &addr, &n, name, sizeof (name))) {
+						return false;
 					}
 				}
 				if (n < 1) {
