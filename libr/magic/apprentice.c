@@ -1425,7 +1425,7 @@ static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r
  */
 static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
 	ms->file = file;
-	char *const data = r_file_slurp (file, NULL);
+	char *data = r_file_slurp (file, NULL);
 	if (!data) {
 		__magic_file_error (ms, errno, "cannot read magic file `%s'", file);
 		(*errs)++;
@@ -1566,7 +1566,7 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 	if (action == FILE_CHECK) {
 		R_LOG_INFO ("%s", usg_hdr);
 	}
-	char *const data = r_str_ndup ((const char *)buf, buf_size);
+	char *data = r_str_ndup ((const char *)buf, buf_size);
 	if (!data) {
 		free (marray);
 		__magic_file_oomem (ms, buf_size);
@@ -1940,7 +1940,7 @@ RList *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	RList *const mlist = r_list_newf (mlist_free);
 	if (!mlist) {
 		free (mfn);
-		__magic_file_oomem (ms, sizeof (*mlist));
+		__magic_file_oomem (ms, sizeof (RList));
 		return NULL;
 	}
 
@@ -2005,7 +2005,7 @@ RList *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_siz
 	if (!mlist) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
-		__magic_file_oomem (ms, sizeof (*mlist));
+		__magic_file_oomem (ms, sizeof (RList));
 		return NULL;
 	}
 	struct mlist *const ml = malloc (sizeof (*ml));

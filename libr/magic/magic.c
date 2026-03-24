@@ -107,9 +107,9 @@ static size_t mlist_bytes_max(const RList *mlist) {
 }
 
 static char *magic_default_path(int action) {
-	char *const prefix = r_sys_prefix (NULL);
-	char *const system_magic = prefix? r_file_new (prefix, R2_SDB_MAGIC, NULL): NULL;
-	char *const user_magic = action == FILE_LOAD? r_xdg_datadir ("magic"): NULL;
+	char *prefix = r_sys_prefix (NULL);
+	char *system_magic = prefix? r_file_new (prefix, R2_SDB_MAGIC, NULL): NULL;
+	char *user_magic = action == FILE_LOAD? r_xdg_datadir ("magic"): NULL;
 	char *path = NULL;
 
 	free (prefix);
@@ -126,7 +126,7 @@ static char *magic_default_path(int action) {
 }
 
 static RList *magic_load_path(RMagic *ms, const char *magicfile, int action) {
-	char *const path = r_magic_getpath (magicfile, action);
+	char *path = r_magic_getpath (magicfile, action);
 	RList *ml = NULL;
 	if (R_STR_ISNOTEMPTY (path)) {
 		ml = __magic_file_apprentice (ms, path, strlen (path), action);
@@ -230,7 +230,7 @@ R_API const char *r_magic_file(RMagic *ms, const char *filename) {
 	R_RETURN_VAL_IF_FAIL (ms && filename, NULL);
 	const size_t limit = ms->bytes_max? ms->bytes_max: HOWMANY;
 	int osz = 0;
-	char *const buf = r_file_slurp_range (filename, 0, (int)R_MIN (limit, (size_t)INT_MAX), &osz);
+	char *buf = r_file_slurp_range (filename, 0, (int)R_MIN (limit, (size_t)INT_MAX), &osz);
 	if (!buf) {
 		__magic_file_error (ms, errno, "cannot read `%s'", filename);
 		return NULL;
@@ -276,7 +276,7 @@ R_API char *r_magic_getpath(const char *magicfile, int action) {
 	if (magicfile) {
 		return strdup (magicfile);
 	}
-	char *const env = r_sys_getenv ("MAGIC");
+	char *env = r_sys_getenv ("MAGIC");
 	if (R_STR_ISNOTEMPTY (env)) {
 		return env;
 	}
