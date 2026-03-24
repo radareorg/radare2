@@ -33,14 +33,6 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 			return res;
 		}
 	} else {
-		/* connect and slurp the end point - check if localhost */
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-			if (!r_sandbox_check_localhost (pathname)) {
-				R_LOG_ERROR ("sandbox: network access denied for '%s'", pathname);
-				*code = 403;
-				return NULL;
-			}
-		}
 		char *host = strdup (pathname);
 		if (!host) {
 			return NULL;

@@ -9,11 +9,6 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
-		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
-			if (!r_sandbox_check_localhost (pathname)) {
-				return NULL;
-			}
-		}
 		int rlen, code;
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		mal->offset = 0;
