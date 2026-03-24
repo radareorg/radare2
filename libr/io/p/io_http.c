@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2024 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_io.h>
 #include "../io_memory.h"
@@ -9,7 +9,6 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
-		/* Check sandbox network permission */
 		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
 			if (!r_sandbox_check_localhost (pathname)) {
 				return NULL;
@@ -17,9 +16,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		}
 		int rlen, code;
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
-		if (!mal) {
-			return NULL;
-		}
 		mal->offset = 0;
 		mal->buf = (ut8*)r_socket_http_get (pathname, NULL, &code, &rlen);
 		if (mal->buf && rlen > 0) {

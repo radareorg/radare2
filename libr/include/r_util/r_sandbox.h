@@ -49,7 +49,7 @@ R_API int r_sandbox_kill(int pid, int sig);
 #define R_SANDBOX_GRAIN_EXEC (8)
 #define R_SANDBOX_GRAIN_ENVIRON (16)
 #define R_SANDBOX_GRAIN_NETWORK (32)
-#define R_SANDBOX_GRAIN_ALL (32|16|8|4|2|1)
+#define R_SANDBOX_GRAIN_ALL UT32_MAX
 
 R_API bool r_sandbox_enable(bool e);
 R_API bool r_sandbox_disable(bool e);

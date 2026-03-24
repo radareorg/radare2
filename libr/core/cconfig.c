@@ -1600,12 +1600,23 @@ static bool cb_dirsrc_base(void *user, void *data) {
 	return true;
 }
 
+// clang-format off
+static RCoreHelpMessage help_msg_grain = {
+	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
+	"Grain types:", "", "", "",
+	"all", "", "",
+	"none", "", "",
+	"disk", "", "",
+	"files", "", "",
+	"exec", "", "",
+	"socket", "", "",
+	"network", "", NULL
+};
+// clang-format on
+
 static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (strstr (node->value, "?")) {
-		static RCoreHelpMessage help_msg_grain = {
-			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out", "Grain types:", "", "", "", "all", "", "", "none", "", "", "disk", "", "", "files", "", "", "exec", "", "", "socket", "", "", "network", "", NULL
-		};
 		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
 	}
