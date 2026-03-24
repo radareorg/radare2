@@ -95,65 +95,12 @@ static size_t magic_cap_sum(size_t base, size_t extra) {
 	return magic_cap_bytes (base + extra);
 }
 
-static size_t magic_type_bytes(const struct r_magic *m, int type) {
-	switch (type) {
-	case FILE_BYTE:
-		return 1;
-	case FILE_SHORT:
-	case FILE_BESHORT:
-	case FILE_LESHORT:
-		return 2;
-	case FILE_LONG:
-	case FILE_BELONG:
-	case FILE_LELONG:
-	case FILE_MELONG:
-	case FILE_DATE:
-	case FILE_BEDATE:
-	case FILE_LEDATE:
-	case FILE_MEDATE:
-	case FILE_LDATE:
-	case FILE_BELDATE:
-	case FILE_LELDATE:
-	case FILE_MELDATE:
-	case FILE_FLOAT:
-	case FILE_BEFLOAT:
-	case FILE_LEFLOAT:
-		return 4;
-	case FILE_QUAD:
-	case FILE_LEQUAD:
-	case FILE_BEQUAD:
-	case FILE_QDATE:
-	case FILE_LEQDATE:
-	case FILE_BEQDATE:
-	case FILE_QLDATE:
-	case FILE_LEQLDATE:
-	case FILE_BEQLDATE:
-	case FILE_DOUBLE:
-	case FILE_BEDOUBLE:
-	case FILE_LEDOUBLE:
-		return 8;
-	case FILE_STRING:
-		return m->vallen;
-	case FILE_PSTRING:
-		return (size_t)m->vallen + 1;
-	case FILE_BESTRING16:
-	case FILE_LESTRING16:
-		return (size_t)m->vallen * 2;
-	case FILE_SEARCH:
-		return m->vallen;
-	case FILE_REGEX:
-	case FILE_DEFAULT:
-	default:
-		return 0;
-	}
-}
-
 static size_t magic_min_bytes(const struct r_magic *m) {
-	size_t need = magic_type_bytes (m, m->type);
+	size_t need = file_magic_type_bytes (m, m->type);
 	size_t offset = m->offset;
 
 	if (m->flag & INDIR) {
-		size_t indir_need = magic_type_bytes (m, m->in_type);
+		size_t indir_need = file_magic_type_bytes (m, m->in_type);
 		need = R_MAX (need, indir_need);
 		if ((m->in_op & FILE_OPINDIRECT) && m->in_offset > 0) {
 			need = R_MAX (need, (size_t)m->in_offset + indir_need);
@@ -181,7 +128,7 @@ static size_t magic_max_bytes(const struct r_magic *m) {
 	case FILE_REGEX:
 		return HOWMANY;
 	default:
-		need = magic_type_bytes (m, m->type);
+		need = file_magic_type_bytes (m, m->type);
 		break;
 	}
 	return magic_cap_sum (m->offset, need);
@@ -1000,13 +947,7 @@ static void eatsize(const char **p) {
 static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
 	int slen;
 
-	switch (m->type) {
-	case FILE_BESTRING16:
-	case FILE_LESTRING16:
-	case FILE_STRING:
-	case FILE_PSTRING:
-	case FILE_REGEX:
-	case FILE_SEARCH:
+	if (file_magic_type_has_string_value (m->type)) {
 		*p = getstr (ms, *p, m->value.s, sizeof (m->value.s), &slen, action);
 		if (!*p) {
 			if (ms->flags & R_MAGIC_CHECK) {
@@ -1019,6 +960,8 @@ static int getvalue(RMagic *ms, struct r_magic *m, const char **p, int action) {
 			m->vallen++;
 		}
 		return 0;
+	}
+	switch (m->type) {
 	case FILE_FLOAT:
 	case FILE_BEFLOAT:
 	case FILE_LEFLOAT:

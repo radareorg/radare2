@@ -88,4 +88,64 @@ int asprintf(char **ptr, const char *format_string, ...);
 #define O_BINARY 0
 #endif
 
+static inline bool file_magic_type_is_string16(ut8 type) {
+	return type == FILE_BESTRING16 || type == FILE_LESTRING16;
+}
+
+static inline bool file_magic_type_has_string_value(ut8 type) {
+	return MAGIC_IS_STRING (type) && type != FILE_DEFAULT;
+}
+
+static inline size_t file_magic_type_bytes(const struct r_magic *m, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		return 1;
+	case FILE_SHORT:
+	case FILE_BESHORT:
+	case FILE_LESHORT:
+		return 2;
+	case FILE_LONG:
+	case FILE_BELONG:
+	case FILE_LELONG:
+	case FILE_MELONG:
+	case FILE_DATE:
+	case FILE_BEDATE:
+	case FILE_LEDATE:
+	case FILE_MEDATE:
+	case FILE_LDATE:
+	case FILE_BELDATE:
+	case FILE_LELDATE:
+	case FILE_MELDATE:
+	case FILE_FLOAT:
+	case FILE_BEFLOAT:
+	case FILE_LEFLOAT:
+		return 4;
+	case FILE_QUAD:
+	case FILE_LEQUAD:
+	case FILE_BEQUAD:
+	case FILE_QDATE:
+	case FILE_LEQDATE:
+	case FILE_BEQDATE:
+	case FILE_QLDATE:
+	case FILE_LEQLDATE:
+	case FILE_BEQLDATE:
+	case FILE_DOUBLE:
+	case FILE_BEDOUBLE:
+	case FILE_LEDOUBLE:
+		return 8;
+	case FILE_STRING:
+	case FILE_SEARCH:
+		return m->vallen;
+	case FILE_PSTRING:
+		return (size_t)m->vallen + 1;
+	case FILE_BESTRING16:
+	case FILE_LESTRING16:
+		return (size_t)m->vallen * 2;
+	case FILE_REGEX:
+	case FILE_DEFAULT:
+	default:
+		return 0;
+	}
+}
+
 #endif /* __file_h__ */
