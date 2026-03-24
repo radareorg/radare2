@@ -743,3 +743,18 @@ R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_pt
 	ht_up_free (nodes);
 	return g;
 }
+
+R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwitchCb cb, void *user) {
+	R_RETURN_VAL_IF_FAIL (fcn && cb, false);
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (!bb || !bb->switch_op) {
+			continue;
+		}
+		if (!cb (fcn, bb, bb->switch_op, user)) {
+			return false;
+		}
+	}
+	return true;
+}
