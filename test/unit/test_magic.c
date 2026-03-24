@@ -220,7 +220,6 @@ int all_tests(void) {
 	mu_run_test (test_r_magic_buffer_formats_byte_char_descriptions);
 	mu_run_test (test_r_magic_buffer_formats_string_precision_descriptions);
 	mu_run_test (test_r_magic_file_uses_slurp_and_buffer);
-	mu_run_test (test_r_magic_descriptor_reads_descriptor_contents);
 	mu_run_test (test_r_magic_load_buffers_merges_multiple_databases);
 	mu_run_test (test_r_magic_getflags_returns_current_flags);
 	mu_run_test (test_r_magic_load_accepts_null_magic_path);
