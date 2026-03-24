@@ -476,7 +476,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_a (pj);
 			}
-			r_list_foreach (core->anal->plugins, iter, item) {
+			r_list_foreach (core->anal->libstore->plugins, iter, item) {
 				switch (mode) {
 				case 'j':
 				pj_o (pj);
@@ -528,7 +528,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_a (pj);
 			}
-			r_list_foreach (core->anal->arch->plugins, iter, item) {
+			r_list_foreach (core->anal->arch->libstore->plugins, iter, item) {
 				char *cpu;
 				RListIter *iter2;
 				switch (mode) {
@@ -664,6 +664,7 @@ static int cmd_plugins(void *data, const char *input) {
 	case 'c': { // "Lc"
 		RListIter *iter;
 		RCorePlugin *cp;
+		RCorePluginSession *cps;
 		switch (input[1]) {
 		case 'j': { // "Lcj"
 			PJ *pj = r_core_pj_new (core);
@@ -671,7 +672,8 @@ static int cmd_plugins(void *data, const char *input) {
 				return 1;
 			}
 			pj_a (pj);
-			r_list_foreach (core->rcmd->plist, iter, cp) {
+			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
+				cp = cps->plugin;
 				pj_o (pj);
 				r_lib_meta_pj (pj, &cp->meta);
 				if (core->lib && cp->meta.name) {
@@ -718,12 +720,14 @@ static int cmd_plugins(void *data, const char *input) {
 			r_lib_list (core->lib);
 			break;
 		case 'q':
-			r_list_foreach (core->rcmd->plist, iter, cp) {
+			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
+				cp = cps->plugin;
 				r_cons_printf (core->cons, "%s\n", cp->meta.name);
 			}
 			break;
 		case 0:
-			r_list_foreach (core->rcmd->plist, iter, cp) {
+			r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
+				cp = cps->plugin;
 				r_cons_printf (core->cons, "%-10s %s\n", cp->meta.name, cp->meta.desc);
 			}
 			break;

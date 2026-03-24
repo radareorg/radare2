@@ -1122,7 +1122,7 @@ R_API bool r_esil_use(REsil *esil, const char *name) {
 	if (esil->curplug && !strcmp (name, esil->curplug->meta.name)) {
 		return true;
 	}
-	r_list_foreach (esil->plugins, it, h) {
+	r_list_foreach (esil->libstore->plugins, it, h) {
 		if (!h->meta.name || strcmp (h->meta.name, name)) {
 			continue;
 		}

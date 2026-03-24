@@ -195,7 +195,7 @@ static int cmd_egg(void *data, const char *input) {
 			pj_a (pj);
 			RListIter *iter;
 			REggPlugin *p;
-			r_list_foreach (egg->plugins, iter, p) {
+			r_list_foreach (egg->libstore->plugins, iter, p) {
 				pj_o (pj);
 				pj_ks (pj, "name", p->meta.name);
 				pj_ks (pj, "type", (p->type == R_EGG_PLUGIN_SHELLCODE)?  "shc": "enc");
@@ -211,7 +211,7 @@ static int cmd_egg(void *data, const char *input) {
 		} else {
 			RListIter *iter;
 			REggPlugin *p;
-			r_list_foreach (egg->plugins, iter, p) {
+			r_list_foreach (egg->libstore->plugins, iter, p) {
 				r_cons_printf (core->cons, "%s  %6s : %s\n",
 					(p->type == R_EGG_PLUGIN_SHELLCODE)?
 					"shc": "enc", p->meta.name, p->meta.desc);

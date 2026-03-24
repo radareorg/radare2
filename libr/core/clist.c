@@ -21,7 +21,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 		r_table_add_column (table, typeString, "license", 0);
 		r_table_add_column (table, typeString, "desc", 0);
 	}
-	r_list_foreach (lang->langs, iter, h) {
+	r_list_foreach (lang->libstore->plugins, iter, h) {
 		const char *license = h->meta.license
 			? h->meta.license : "???";
 		if (mode == 'j') {
@@ -56,7 +56,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 	RCons *cons = core->cons;
 	RIOPlugin *plugin;
-	SdbListIter *iter;
+	RListIter *iter;
 	char str[4];
 	int n = 0;
 	PJ *pj = NULL;
@@ -65,7 +65,7 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 		pj_a (pj);
 	}
 
-	ls_foreach (core->io->plugins, iter, plugin) {
+	r_list_foreach (core->io->libstore->plugins, iter, plugin) {
 		const char *plugin_name = r_str_get (plugin->meta.name);
 		if (name && strcmp (plugin_name, name)) {
 			continue;

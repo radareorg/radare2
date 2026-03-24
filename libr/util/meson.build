@@ -32,6 +32,7 @@ r_util_sources = [
   'json_indent.c',
   'json_parser.c',
   'lib.c',
+  'libstore.c',
   'list.c',
   'log.c',
   'math.c',

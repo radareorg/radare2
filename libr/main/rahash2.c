@@ -860,6 +860,7 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 	}
 
 	io = r_io_new ();
+	r_libstore_load (io->libstore);
 	for (_ret = 0, i = opt.ind; i < argc; i++) {
 		file = argv[i];
 		if (file && !*file) {

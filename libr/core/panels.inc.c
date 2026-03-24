@@ -4065,7 +4065,7 @@ static void init_menu_anal_plugins(void *_core, const char *parent) {
 	}
 	RListIter *iter;
 	RAnalPlugin *ap;
-	r_list_foreach (core->anal->plugins, iter, ap) {
+	r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 		if (!ap->cmd) {
 			continue;
 		}

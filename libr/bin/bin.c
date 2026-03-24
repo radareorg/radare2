@@ -26,6 +26,25 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
+static void bin_plugin_fini(void *user, void *plugin) {
+	RBinPlugin *plug = plugin;
+	if (plug && plug->fini) {
+		plug->fini (user);
+	}
+}
+
+static bool bin_load_plugins(RLibStore *store) {
+	RBin *bin = store->user;
+	store->fini = bin_plugin_fini;
+	store->xtrs = r_list_newf ((RListFree)free);
+	store->ldrs = r_list_newf ((RListFree)free);
+	r_lib_add_static (bin, bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
+	r_lib_add_static (bin, bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
+	r_lib_add_static (bin, bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
+	return true;
+}
+
+
 static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -275,6 +294,7 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && opt, false);
 
+	RList *xtrs = bin->libstore->xtrs;
 	RListIter *it;
 	RBinXtrPlugin *xtr;
 
@@ -289,7 +309,7 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 		// XXX - for the time being this is fine, but we may want to
 		// change the name to something like
 		// <xtr_name>:<bin_type_name>
-		r_list_foreach (bin->binxtrs, it, xtr) {
+		r_list_foreach (xtrs, it, xtr) {
 			if (!xtr->check) {
 				R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
 				continue;
@@ -375,26 +395,13 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	return res;
 }
 
-R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
-
-	RBinPlugin *plugin;
-	RListIter *it;
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->meta.name, name)) {
-			return plugin;
-		}
-	}
-	return NULL;
-}
-
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
+	R_RETURN_VAL_IF_FAIL (bin && buf, NULL);
+	RList *plugins = bin->libstore->plugins;
 	RBinPlugin *plugin;
 	RListIter *it;
 
-	R_RETURN_VAL_IF_FAIL (bin && buf, NULL);
-
-	r_list_foreach (bin->plugins, it, plugin) {
+	r_list_foreach (plugins, it, plugin) {
 		if (plugin->check) {
 			if (plugin->check (bf, buf)) {
 				return plugin;
@@ -404,48 +411,30 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer
 	return NULL;
 }
 
-R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
-	RBinXtrPlugin *xtr;
-	RListIter *it;
-
-	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
-
-	// TODO: use a hashtable here
-	r_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp (xtr->meta.name, name)) {
-			return xtr;
-		}
-	}
-	return NULL;
-}
-
 R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
-	RListIter *it;
-	RBinPlugin *plugin;
-
 	R_RETURN_VAL_IF_FAIL (bin && foo, false);
+	RList *plugins = bin->libstore->plugins;
 	if (foo->init) {
 		foo->init (bin);
 	}
 
-	r_list_foreach (bin->plugins, it, plugin) {
-		if (!strcmp (plugin->meta.name, foo->meta.name)) {
-			return false;
-		}
+	if (r_libstore_find_name (bin->libstore, foo->meta.name)) {
+		return false;
 	}
-	plugin = R_NEW0 (RBinPlugin);
+	RBinPlugin *plugin = R_NEW0 (RBinPlugin);
 	memcpy (plugin, foo, sizeof (RBinPlugin));
-	r_list_prepend (bin->plugins, plugin);
+	r_list_prepend (plugins, plugin);
 	return true;
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (bin && bin->plugins && plugin, false);
+	R_RETURN_VAL_IF_FAIL (bin && plugin, false);
+	RList *plugins = bin->libstore->plugins;
 	RListIter *iter;
 	RBinPlugin *plug;
 	// this loop is necessary because r_bin_plugin_add dups the passed RBinPlugin
 	// comparing pointers does not work here : ((
-	r_list_foreach (bin->plugins, iter, plug) {
+	r_list_foreach (plugins, iter, plug) {
 		if (!memcmp (plugin, plug, sizeof (RBinPlugin))) {
 			if (plug->fini) {
 				plug->fini (bin);
@@ -459,7 +448,7 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 					bf->bo->plugin = NULL;
 				}
 			}
-			r_list_delete (bin->plugins, iter);
+			r_list_delete (plugins, iter);
 			return true;
 		}
 	}
@@ -468,35 +457,31 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 }
 
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
-	RListIter *it;
-	RBinLdrPlugin *ldr;
-
 	R_RETURN_VAL_IF_FAIL (bin && foo, false);
-
-	// avoid duplicates
-	r_list_foreach (bin->binldrs, it, ldr) {
-		if (!strcmp (ldr->meta.name, foo->meta.name)) {
-			return false;
-		}
+	RList *ldrs = bin->libstore->ldrs;
+	if (r_libstore_find_name_in (bin->libstore, ldrs, foo->meta.name)) {
+		return false;
 	}
-	r_list_append (bin->binldrs, foo);
-	return true;
+	RBinLdrPlugin *p = R_NEW0 (RBinLdrPlugin);
+	if (p) {
+		*p = *foo;
+		r_list_append (ldrs, p);
+	}
+	return p != NULL;
 }
 
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
-	RListIter *it;
-	RBinXtrPlugin *xtr;
-
 	R_RETURN_VAL_IF_FAIL (bin && foo, false);
-
-	// avoid duplicates
-	r_list_foreach (bin->binxtrs, it, xtr) {
-		if (!strcmp (xtr->meta.name, foo->meta.name)) {
-			return false;
-		}
+	RList *xtrs = bin->libstore->xtrs;
+	if (r_libstore_find_name_in (bin->libstore, xtrs, foo->meta.name)) {
+		return false;
 	}
-	r_list_append (bin->binxtrs, foo);
-	return true;
+	RBinXtrPlugin *p = R_NEW0 (RBinXtrPlugin);
+	if (p) {
+		*p = *foo;
+		r_list_append (xtrs, p);
+	}
+	return p != NULL;
 }
 
 R_API void r_bin_free(RBin *bin) {
@@ -507,16 +492,7 @@ R_API void r_bin_free(RBin *bin) {
 		free (bin->strenc);
 		// r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
-		r_list_free (bin->binxtrs);
-		RListIter *iter;
-		RBinPlugin *plug;
-		r_list_foreach (bin->plugins, iter, plug) {
-			if (plug->fini) {
-				plug->fini (bin);
-			}
-		}
-		r_list_free (bin->plugins);
-		r_list_free (bin->binldrs);
+		r_libstore_free (bin->libstore);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
 		r_str_constpool_fini (&bin->constpool);
@@ -577,23 +553,38 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 
 // TODO: move to libr/core/clist
 R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
-	RListIter *it;
-	RBinPlugin *bp;
-	RBinXtrPlugin *bx;
-
 	R_RETURN_VAL_IF_FAIL (bin && name, false);
+	RList *plugins = bin->libstore->plugins;
+	RList *xtrs = bin->libstore->xtrs;
+	RListIter *it;
+	RBinXtrPlugin *bx;
+	RBinPlugin *prefix_bp = NULL;
+	RBinXtrPlugin *prefix_bx = NULL;
 
-	r_list_foreach (bin->plugins, it, bp) {
-		if (!r_str_startswith (bp->meta.name, name)) {
-			continue;
-		}
+	RBinPlugin *bp = r_libstore_find_name (bin->libstore, name);
+	if (bp) {
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
-	r_list_foreach (bin->binxtrs, it, bx) {
-		if (!r_str_startswith (bx->meta.name, name)) {
-			continue;
+	r_list_foreach (plugins, it, bp) {
+		if (!prefix_bp && r_str_startswith (bp->meta.name, name)) {
+			prefix_bp = bp;
 		}
+	}
+	if (prefix_bp) {
+		return r_bin_print_plugin_details (bin, prefix_bp, pj, json);
+	}
+	bx = r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
+	if (bx) {
 		__printXtrPluginDetails (bin, bx, json);
+		return true;
+	}
+	r_list_foreach (xtrs, it, bx) {
+		if (!prefix_bx && r_str_startswith (bx->meta.name, name)) {
+			prefix_bx = bx;
+		}
+	}
+	if (prefix_bx) {
+		__printXtrPluginDetails (bin, prefix_bx, json);
 		return true;
 	}
 
@@ -603,6 +594,10 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 
 // TODO: this is now a generic function that can reuse RPluginMeta
 R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
+	R_RETURN_IF_FAIL (bin);
+	RList *plugins = bin->libstore->plugins;
+	RList *xtrs = bin->libstore->xtrs;
+	RList *ldrs = bin->libstore->ldrs;
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
@@ -613,16 +608,16 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 	}
 
 	if (format == 'q') {
-		r_list_foreach (bin->plugins, it, bp) {
+		r_list_foreach (plugins, it, bp) {
 			bin->cb_printf ("%s\n", bp->meta.name);
 		}
-		r_list_foreach (bin->binxtrs, it, bx) {
+		r_list_foreach (xtrs, it, bx) {
 			bin->cb_printf ("%s\n", bx->meta.name);
 		}
 	} else if (pj) {
 		pj_o (pj);
 		pj_ka (pj, "bin");
-		r_list_foreach (bin->plugins, it, bp) {
+		r_list_foreach (plugins, it, bp) {
 			pj_o (pj);
 			pj_ks (pj, "name", bp->meta.name);
 			pj_ks (pj, "description", bp->meta.desc);
@@ -631,7 +626,7 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		}
 		pj_end (pj);
 		pj_ka (pj, "xtr");
-		r_list_foreach (bin->binxtrs, it, bx) {
+		r_list_foreach (xtrs, it, bx) {
 			pj_o (pj);
 			pj_ks (pj, "name", bx->meta.name);
 			pj_ks (pj, "description", bx->meta.desc);
@@ -640,7 +635,7 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		}
 		pj_end (pj);
 		pj_ka (pj, "ldr");
-		r_list_foreach (bin->binxtrs, it, ld) {
+		r_list_foreach (ldrs, it, ld) {
 			pj_o (pj);
 			pj_ks (pj, "name", ld->meta.name);
 			pj_ks (pj, "description", ld->meta.desc);
@@ -650,15 +645,15 @@ R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
 		pj_end (pj);
 		pj_end (pj);
 	} else {
-		r_list_foreach (bin->plugins, it, bp) {
+		r_list_foreach (plugins, it, bp) {
 			bin->cb_printf ("bin  %-11s %s\n", bp->meta.name, bp->meta.desc);
 			// bin->cb_printf ("bin  %-11s %s %s %s\n", bp->meta.name, bp->meta.desc, r_str_get (bp->meta.version), r_str_get (bp->meta.author));
 		}
-		r_list_foreach (bin->binxtrs, it, bx) {
+		r_list_foreach (xtrs, it, bx) {
 			const char *name = strncmp (bx->meta.name, "xtr.", 4)? bx->meta.name: bx->meta.name + 3;
 			bin->cb_printf ("xtr  %-11s %s\n", name, bx->meta.desc);
 		}
-		r_list_foreach (bin->binldrs, it, ld) {
+		r_list_foreach (ldrs, it, ld) {
 			const char *name = strncmp (ld->meta.name, "ldr.", 4)? ld->meta.name: ld->meta.name + 3;
 			bin->cb_printf ("ldr  %-11s %s\n", name, ld->meta.desc);
 		}
@@ -856,12 +851,10 @@ R_API bool r_bin_is_static(RBin *bin) {
 }
 
 R_API RBin *r_bin_new(void) {
-	int i;
-	RBinXtrPlugin *static_xtr_plugin;
-	RBinLdrPlugin *static_ldr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!r_str_constpool_init (&bin->constpool)) {
-		goto trashbin;
+		free (bin);
+		return NULL;
 	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
@@ -881,7 +874,6 @@ R_API RBin *r_bin_new(void) {
 		}
 	}
 	bin->cb_printf = (PrintfCallback)printf;
-	bin->plugins = r_list_newf ((RListFree)free);
 	bin->options.minstrlen = 0;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
@@ -889,41 +881,9 @@ R_API RBin *r_bin_new(void) {
 	bin->cur = NULL;
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
-	/* bin parsers */
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
-	for (i = (sizeof (bin_static_plugins) / sizeof (RBinPlugin *)) - 1; i;) {
-		if (bin_static_plugins[--i]) {
-			r_bin_plugin_add (bin, bin_static_plugins[i]);
-		}
-	}
-	/* extractors */
-	bin->binxtrs = r_list_new ();
-	if (bin->binxtrs) {
-		bin->binxtrs->free = free;
-		for (i = 0; bin_xtr_static_plugins[i]; i++) {
-			static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
-			*static_xtr_plugin = *bin_xtr_static_plugins[i];
-			if (r_bin_xtr_add (bin, static_xtr_plugin) == false) {
-				free (static_xtr_plugin);
-			}
-		}
-	}
-	/* loaders */
-	bin->binldrs = r_list_new ();
-	if (bin->binldrs) {
-		bin->binldrs->free = free;
-		for (i = 0; bin_ldr_static_plugins[i]; i++) {
-			static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
-			*static_ldr_plugin = *bin_ldr_static_plugins[i];
-			if (r_bin_ldr_add (bin, static_ldr_plugin) == false) {
-				free (static_ldr_plugin);
-			}
-		}
-	}
+	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, (RLibPluginAddCb)r_bin_plugin_add, (RLibPluginAddCb)r_bin_plugin_remove);
 	return bin;
-trashbin:
-	free (bin);
-	return NULL;
 }
 
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
@@ -1217,7 +1177,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 R_API RBuffer *r_bin_create(RBin *bin, const char *p, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && p && opt, NULL);
 
-	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
+	RBinPlugin *plugin = r_libstore_find_name (bin->libstore, p);
 	if (!plugin) {
 		R_LOG_WARN ("Cannot find RBin plugin named '%s'", p);
 		return NULL;

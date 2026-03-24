@@ -29,7 +29,6 @@ void egg_patch_free(void *p) {
 }
 
 R_API REgg *r_egg_new(void) {
-	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
 		return NULL;
@@ -69,10 +68,7 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = r_list_new ();
-	for (i = 0; egg_static_plugins[i]; i++) {
-		r_egg_plugin_add (egg, egg_static_plugins[i]);
-	}
+	r_libstore_new (&egg->libstore, egg, egg_static_plugins, NULL, NULL, NULL, NULL);
 	return egg;
 
 beach:
@@ -80,27 +76,20 @@ beach:
 	return NULL;
 }
 
-R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (a && foo, false);
-	RListIter *iter;
-	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->meta.name) {
-		return false;
+typedef struct {
+	int type;
+	const char *name;
+} REggPluginQuery;
+
+static int egg_plugin_cmp_query(const void *a, const void *b) {
+	const REggPlugin *p = a;
+	const REggPluginQuery *q = b;
+	if (!p || !q || p->type != q->type) {
+		return 1;
 	}
-	REggPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
-		if (!strcmp (h->meta.name, foo->meta.name)) {
-			return false;
-		}
-	}
-	r_list_append (a->plugins, foo);
-	return true;
+	return (p->meta.name && q->name)? strcmp (p->meta.name, q->name): 1;
 }
 
-R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
-	// XXX TODO
-	return true;
-}
 
 R_API char *r_egg_tostring(REgg *egg) {
 	R_RETURN_VAL_IF_FAIL (egg, NULL);
@@ -116,7 +105,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_asm_free (egg->rasm);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
-		r_list_free (egg->plugins);
+		r_libstore_free (egg->libstore);
 		r_list_free (egg->patches);
 		r_egg_lang_fini (egg);
 		free (egg);
@@ -528,39 +517,36 @@ R_API char *r_egg_option_get(REgg *egg, const char *key) {
 
 R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 	R_RETURN_VAL_IF_FAIL (egg && name, false);
-	REggPlugin *p;
-	RListIter *iter;
 	RBuffer *b;
-	r_list_foreach (egg->plugins, iter, p) {
+	REggPluginQuery q = { R_EGG_PLUGIN_SHELLCODE, name };
+	REggPlugin *p = r_libstore_find (egg->libstore, &q, egg_plugin_cmp_query);
+	if (p) {
 		const char *p_name = p->meta.name;
-		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
-			b = p->build (egg);
-			if (!b) {
-				R_LOG_ERROR ("%s Shellcode has failed", p_name);
-				return false;
-			}
-			ut64 tmpsz;
-			const ut8 *tmp = r_buf_data (b, &tmpsz);
-			r_egg_raw (egg, tmp, tmpsz);
-			return true;
+		b = p->build (egg);
+		if (!b) {
+			R_LOG_ERROR ("%s Shellcode has failed", p_name);
+			return false;
 		}
+		ut64 tmpsz;
+		const ut8 *tmp = r_buf_data (b, &tmpsz);
+		r_egg_raw (egg, tmp, tmpsz);
+		return true;
 	}
 	return false;
 }
 
 R_API bool r_egg_encode(REgg *egg, const char *name) {
-	REggPlugin *p;
-	RListIter *iter;
-	r_list_foreach (egg->plugins, iter, p) {
-		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
-			RBuffer *b = p->build (egg);
-			if (b) {
-				r_unref (egg->bin);
-				egg->bin = b;
-				return true;
-			}
-			return false;
+	R_RETURN_VAL_IF_FAIL (egg && name, false);
+	REggPluginQuery q = { R_EGG_PLUGIN_ENCODER, name };
+	REggPlugin *p = r_libstore_find (egg->libstore, &q, egg_plugin_cmp_query);
+	if (p) {
+		RBuffer *b = p->build (egg);
+		if (b) {
+			r_unref (egg->bin);
+			egg->bin = b;
+			return true;
 		}
+		return false;
 	}
 	return false;
 }

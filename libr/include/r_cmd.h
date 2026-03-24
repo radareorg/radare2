@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef struct r_core_t RCore;
+typedef struct r_libstore_t RLibStore;
 
 #define MACRO_LIMIT 1024
 #define MACRO_LABELS 20
@@ -66,8 +67,7 @@ typedef struct r_cmd_t {
 	RCmdNullCb nullcallback;
 	RCmdItem *cmds[UT8_MAX];
 	RCmdMacro macro;
-	RList *lcmds; // list of loaded pluginstates
-	RList *plist; // list of plugins
+	RLibStore *libstore;
 	RCmdAlias aliases;
 	void *language; // used to store TSLanguage *
 	HtUP *ts_symbols_ht;

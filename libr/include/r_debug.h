@@ -372,8 +372,6 @@ typedef struct r_debug_plugin_session_t {
 	void *plugin_data;
 } RDebugPluginSession;
 
-R_VEC_FORWARD_DECLARE (RVecDebugPluginSession);
-
 typedef struct r_debug_t {
 	// R2_600 use RArchConfig instead?
 	char *arch;
@@ -432,7 +430,6 @@ typedef struct r_debug_t {
 	RIOBind iob;
 
 	R_UNOWNED RDebugPluginSession *current;
-	RVecDebugPluginSession *plugins;
 	// R2_590 only used by windbg, set from an io plugin??
 	// possible solution: io plugin should start windbg debug plugin and set/update plugin_data?
 	void *user;
@@ -465,6 +462,7 @@ typedef struct r_debug_t {
 	bool glibc_version_resolved; /* is the libc version resolved already? */
 	int glibc_version;
 	double glibc_version_d; // TODO: move over to this only
+	RLibStore *libstore;
 } RDebug;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
@@ -552,8 +550,8 @@ R_API RList *r_debug_kill_list(RDebug *dbg);
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 
 /* handle.c */
-R_API void r_debug_init_plugins(RDebug *dbg);
-R_API void r_debug_fini_plugins(RDebug *dbg);
+R_IPI void r_debug_plugins_init(RDebug *dbg);
+R_IPI void r_debug_plugins_fini(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin);

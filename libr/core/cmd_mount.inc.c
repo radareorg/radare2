@@ -592,7 +592,7 @@ static int cmd_mount(void *data, const char *_input) {
 			pj_end (pj);
 			pj_k (pj, "plugins");
 			pj_a (pj);
-			r_list_foreach (core->fs->plugins, iter, plug) {
+			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				pj_o (pj);
 				pj_ks (pj, "name", plug->meta.name);
 				pj_ks (pj, "description", plug->meta.desc);
@@ -662,13 +662,13 @@ static int cmd_mount(void *data, const char *_input) {
 		if (input[1] == '?') { // "mL?"
 			r_core_cmd_help_match (core, help_msg_m, "mL");
 		} else if (input[1] == 'L') {
-			r_list_foreach (core->fs->plugins, iter, plug) {
+			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				r_cons_printf (core->cons, "%s\n", plug->meta.name);
 			}
 		} else if (input[1] == 'j') { // "mLj"
 			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
-			r_list_foreach (core->fs->plugins, iter, plug) {
+			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				pj_o (pj);
 				r_lib_meta_pj (pj, &plug->meta);
 				pj_end (pj);
@@ -678,7 +678,7 @@ static int cmd_mount(void *data, const char *_input) {
 			r_cons_println (core->cons, s);
 			free (s);
 		} else {
-			r_list_foreach (core->fs->plugins, iter, plug) {
+			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				r_cons_printf (core->cons, "%10s  %s\n", plug->meta.name, plug->meta.desc);
 			}
 		}
@@ -1067,7 +1067,7 @@ static int cmd_mount(void *data, const char *_input) {
 		} else if (input[1] == 'l' || !input[1]) {
 			RListIter *iter;
 			RFSPlugin *plug;
-			r_list_foreach (core->fs->plugins, iter, plug) {
+			r_list_foreach (core->fs->libstore->plugins, iter, plug) {
 				r_cons_println (core->cons, plug->meta.name);
 			}
 		} else {

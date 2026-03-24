@@ -256,6 +256,11 @@ R_API RLibStruct radare_plugin = {
 
 #else
 RFSPlugin r_fs_plugin_squashfs = {
-	.meta = {0}, 0
+	.meta = {
+		.name = "squashfs",
+		.desc = "squashfs filesystem (not available)",
+		.license = "MIT",
+		.author = "Enno Boland",
+	},
 };
 #endif

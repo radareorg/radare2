@@ -135,7 +135,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 		pj_o (pj);
 	}
 	if (R_STR_ISNOTEMPTY (arch)) {
-		r_list_foreach (a->plugins, iter, h) {
+		r_list_foreach (a->libstore->plugins, iter, h) {
 			if (h->cpus && !strcmp (arch, h->name)) {
 				char *c = strdup (h->cpus);
 				int n = r_str_split (c, ',');
@@ -150,7 +150,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 		if (!any) {
 			RArch *ai = core->anal->arch;
 			RArchPlugin *arp;
-			r_list_foreach (ai->plugins, iter, arp) {
+			r_list_foreach (ai->libstore->plugins, iter, arp) {
 				if (arp->cpus && !strcmp (arch, arp->meta.name)) {
 					char *c = strdup (arp->cpus);
 					int n = r_str_split (c, ',');
@@ -164,7 +164,7 @@ bool ranal2_list(RCore *core, const char *arch, int fmt) {
 			}
 		}
 	} else {
-		r_list_foreach (a->plugins, iter, h) {
+		r_list_foreach (a->libstore->plugins, iter, h) {
 			RStrBuf *sb = r_strbuf_new ("");
 			if (h->bits & 8) {
 				r_strbuf_append (sb, "8");
@@ -425,7 +425,7 @@ static void update_archdecoder_options(RCore *core, RConfigNode *node) {
 	r_config_node_purge_options (node);
 	RListIter *it;
 	RArchPlugin *ap;
-	r_list_foreach (core->anal->arch->plugins, it, ap) {
+	r_list_foreach (core->anal->arch->libstore->plugins, it, ap) {
 		if (ap->meta.name) {
 			SETOPTIONS (node, ap->meta.name, NULL);
 		}
@@ -698,7 +698,7 @@ static void update_asmcpu_options(RCore *core, RConfigNode *node) {
 	}
 	r_config_node_purge_options (node);
 	RArchPlugin *h;
-	r_list_foreach (core->anal->arch->plugins, iter, h) {
+	r_list_foreach (core->anal->arch->libstore->plugins, iter, h) {
 		if (h->cpus && !strcmp (arch, h->meta.name)) {
 			char *c = strdup (h->cpus);
 			int i, n = r_str_split (c, ',');
@@ -749,7 +749,7 @@ static void update_asmarch_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
 	if (core && node && core->rasm) {
 		r_config_node_purge_options (node);
-		r_list_foreach (core->anal->arch->plugins, iter, h) {
+		r_list_foreach (core->anal->arch->libstore->plugins, iter, h) {
 			if (h->meta.name) {
 				SETOPTIONS (node, h->meta.name, NULL);
 			}
@@ -1125,7 +1125,7 @@ static void update_cfgcharsets_options(RCore *core, RConfigNode *node) {
 
 static void update_asmparser_options(RCore *core, RConfigNode *node) {
 	RListIter *iter;
-	RList *plugins = R_UNWRAP3 (core, rasm, sessions);
+	RList *plugins = core && core->rasm? core->rasm->libstore->plugins: NULL;
 	if (core && node && plugins) {
 		RAsmPluginSession *aps;
 		r_config_node_purge_options (node);
@@ -1696,8 +1696,9 @@ static bool cb_cmdpdc(void *user, void *data) {
 	if (*node->value == '?') {
 		r_cons_printf (core->cons, "pdc\n");
 		RListIter *iter;
-		RCorePlugin *cp;
-		r_list_foreach (core->rcmd->plist, iter, cp) {
+		RCorePluginSession *cps;
+		r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
+			RCorePlugin *cp = cps->plugin;
 			if (!strcmp (cp->meta.name, "r2retdec")) {
 				r_cons_println (core->cons, "pdz");
 			} else if (!strcmp (cp->meta.name, "decai")) {
@@ -1716,7 +1717,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 		{
 			RListIter *it;
 			RAnalPlugin *ap;
-			r_list_foreach (core->anal->plugins, it, ap) {
+			r_list_foreach (core->anal->libstore->plugins, it, ap) {
 				if (!strcmp (ap->meta.name, "sla")) {
 					r_cons_println (core->cons, "a:sla.dec");
 					break;
@@ -3593,7 +3594,7 @@ static bool cb_anal_types_parser(void *user, void *data) {
 	if (!strcmp (node->value, "?")) {
 		RAnalPlugin *p;
 		RListIter *iter;
-		r_list_foreach (core->anal->plugins, iter, p) {
+		r_list_foreach (core->anal->libstore->plugins, iter, p) {
 			if (p->tparse_text || p->tparse_file) {
 				r_cons_println (core->cons, p->meta.name);
 			}

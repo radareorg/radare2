@@ -537,7 +537,6 @@ typedef struct r_anal_t {
 	struct r_anal_plugin_t *cur;
 	RArch *arch;
 	RAnalRange *limit; // anal.from, anal.to
-	RList *plugins; // anal plugins
 	Sdb *sdb_types;
 	Sdb *sdb_fmts;
 	Sdb *sdb_zigns;
@@ -590,6 +589,7 @@ typedef struct r_anal_t {
 	RColor tracetagcolors[64]; // each trace color for each bit
 	/* end private */
 	R_DIRTY_VAR;
+	RLibStore *libstore;
 } RAnal;
 
 typedef const char *(*RAnalLabelAt) (RAnalFunction *fcn, ut64);
@@ -1158,7 +1158,7 @@ R_API void r_anal_purge(RAnal *anal);
 R_API void r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
-R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
+R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 
 // Plugin action enum: determines which callback to dispatch

@@ -1,33 +1,21 @@
-/* radare - LGPL - Copyright 2013-2025 - pancake */
+/* radare - LGPL - Copyright 2013-2026 - pancake */
 
 #include <r_anal.h>
 
 R_IPI char* kvc_parse(const char* header_content, char **errmsg);
 
 static RAnalPlugin *resolve_plugin (RAnal *anal, int type) {
-	RAnalPlugin *p;
-	RListIter *iter;
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	const char *tpp = anal->opt.tparser;
-	r_list_foreach (anal->plugins, iter, p) {
-		if (!strcmp (tpp, p->meta.name)) {
-			switch (type) {
-			case 0:
-				if (p->tparse_text) {
-					return p;
-				}
-				break;
-			case 1:
-				if (p->tparse_file) {
-					return p;
-				}
-				break;
-			}
-		}
+	RAnalPlugin *p = r_libstore_find_name (anal->libstore, tpp);
+	if (p && ((type && p->tparse_file) || p->tparse_text)) {
+		return p;
 	}
 	return NULL;
 }
 
 R_API char *r_anal_cparse2(RAnal *anal, const char *code, char **error_msg) {
+	// TODO: this is a thin 1 line wrapper function that can be inlined
 	return kvc_parse (code, error_msg);
 }
 
@@ -36,14 +24,13 @@ R_API char *r_anal_cparse_file(RAnal *anal, const char *path, const char *dir, c
 		RAnalPlugin *p = resolve_plugin (anal, 1);
 		if (p) {
 			return p->tparse_file (anal, path, dir);
-		} else {
-			RAnalPlugin *p = resolve_plugin (anal, 0);
-			if (p) {
-				char *text = r_file_slurp (path, NULL);
-				char *res = p->tparse_text (anal, text);
-				free (text);
-				return res;
-			}
+		}
+		p = resolve_plugin (anal, 0);
+		if (p) {
+			char *text = r_file_slurp (path, NULL);
+			char *res = p->tparse_text (anal, text);
+			free (text);
+			return res;
 		}
 	}
 	char *code = r_file_slurp (path, NULL);

@@ -1011,6 +1011,17 @@ Author: nibble
 EOF
 RUN
 
+NAME=rabin2 -L elf64
+FILE=-
+CMDS=!rabin2 -L elf64
+EXPECT=<<EOF
+Name: elf64
+Description: Executable Link Format for 64bit
+License: LGPL-3.0-only
+Author: nibble
+EOF
+RUN
+
 NAME=rabin2 -U
 FILE=bins/pe/resource.exe
 CMDS=!rabin2 -U ${R2_FILE} | grep -c Resource

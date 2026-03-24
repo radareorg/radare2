@@ -464,6 +464,7 @@ struct r_core_t {
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop; // sounds like must be deprecated
+	RLibStore *libstore;
 };
 
 // maybe move into RAnal
@@ -1061,11 +1062,11 @@ extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
 
-R_API bool r_core_plugin_init(RCmd *cmd);
+R_IPI void r_core_plugins_init(RCmd *cmd);
+R_IPI void r_core_plugins_fini(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API void r_core_plugin_fini(RCmd *cmd);
 
 #endif
 

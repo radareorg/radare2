@@ -5,18 +5,16 @@
 
 #define CB(x, y) \
 	static bool __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
+		RPluginMeta *meta = (RPluginMeta *)data; \
 		pl->free = NULL; \
-		pl->name = strdup (hand->meta.name); \
-		r_ ## x ## _plugin_add (core->y, hand); \
-		return true; \
+		pl->name = strdup (meta->name); \
+		return r_libstore_add (core->y->libstore, data); \
 	} \
 	static bool __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
 		free (pl->name); \
-		return r_ ## x ## _plugin_remove (core->y, hand); \
+		return r_libstore_remove (core->y->libstore, data); \
 	}
 
 CB(io, io)
@@ -31,6 +29,29 @@ CB(bin, bin)
 CB(egg, egg)
 CB(fs, fs)
 CB(arch, anal->arch);
+
+static void core_load_internal_plugins(void *user) {
+	RCore *core = (RCore *)user;
+	r_libstore_load (core->libstore);
+}
+
+static bool core_plugins_load(RLibStore *store) {
+	RCore *core = store->user;
+	r_libstore_load (core->io->libstore);
+	r_libstore_load (core->bin->libstore);
+	r_libstore_load (core->anal->libstore);
+	r_libstore_load (core->rasm->libstore);
+	r_libstore_load (core->anal->arch->libstore);
+	r_libstore_load (core->dbg->libstore);
+	r_libstore_load (core->dbg->bp->libstore);
+	r_libstore_load (core->anal->esil->libstore);
+	r_libstore_load (core->egg->libstore);
+	r_libstore_load (core->fs->libstore);
+	r_libstore_load (core->lang->libstore);
+	r_libstore_load (core->rcmd->libstore);
+	r_libstore_load (core->muta->libstore);
+	return true;
+}
 
 #if R2_LOADLIBS
 static void load_plugins(RCore *core, int where, const char *path) {
@@ -58,6 +79,9 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
+	r_libstore_new (&core->libstore, core, NULL, NULL, core_plugins_load, NULL, NULL);
+	core->lib->cb_internal = core_load_internal_plugins;
+	core->lib->cb_internal_user = core;
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
 	DF (DBG, "debugger plugins", debug);

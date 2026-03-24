@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_lib.h>
 #include <r_util/r_table.h>
 
 #ifdef __cplusplus
@@ -19,12 +20,12 @@ typedef struct r_lang_t {
 	void *user;
 	RCons *cons; // TODO: maybe just have RCore
 	RList *defs;
-	RList *langs;
 	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
 	RCoreCallAtCallback call_at;
 	RList *sessions;
 	struct r_lang_session_t *session;
+	RLibStore *libstore;
 } RLang;
 
 typedef struct r_lang_session_t _RLangSession;

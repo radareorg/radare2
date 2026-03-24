@@ -545,9 +545,6 @@ struct r_bin_t {
 	Sdb *sdb;
 	RIDStorage *ids;
 	RMutaBind mb;
-	RList/*<RBinPlugin>*/ *plugins;
-	RList/*<RBinXtrPlugin>*/ *binxtrs;
-	RList/*<RBinLdrPlugin>*/ *binldrs;
 	RList/*<RBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -565,6 +562,7 @@ struct r_bin_t {
 	ut64 filter_rules;
 	RStrConstPool constpool;
 	RBinOptions options;
+	RLibStore *libstore;
 };
 
 typedef struct r_bin_xtr_metadata_t {

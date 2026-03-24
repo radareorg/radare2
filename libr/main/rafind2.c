@@ -85,6 +85,7 @@ static int rafind_open(RafindOptions *ro, const char *file);
 static RBin *rafind_bin(RafindOptions *ro) {
 	if (!ro->bin) {
 		ro->bin = r_bin_new ();
+		r_libstore_load (ro->bin->libstore);
 	}
 	if (ro->bin && ro->io) {
 		r_io_bind (ro->io, &ro->bin->iob);
@@ -466,6 +467,7 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	}
 
 	RIO *io = r_io_new ();
+	r_libstore_load (io->libstore);
 	ro->io = io;
 	int perm = ro->replace ? R_PERM_RW : R_PERM_R;
 	if (!r_io_open_nomap (io, file, perm, 0)) {

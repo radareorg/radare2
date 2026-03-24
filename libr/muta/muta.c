@@ -11,30 +11,23 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-static void r_muta_init(RMuta *muta) {
-	R_RETURN_IF_FAIL (muta);
+static bool muta_load_plugins(RLibStore *store) {
 	int i;
-	muta->user = NULL;
-	muta->plugins = r_list_newf (free);
 	for (i = 0; muta_static_plugins[i]; i++) {
 		RMutaPlugin *p = r_mem_dup (muta_static_plugins[i], sizeof (RMutaPlugin));
 		if (p) {
-			r_muta_add (muta, p);
+			r_libstore_add (store, p);
 		}
 	}
-}
-
-R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h) {
-	R_RETURN_VAL_IF_FAIL (muta && muta->plugins && h, false);
-	r_list_append (muta->plugins, h);
 	return true;
 }
 
-R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h) {
-	R_RETURN_VAL_IF_FAIL (muta && h, false);
-	r_list_delete_data (muta->plugins, h);
-	return true;
+static void r_muta_init(RMuta *muta) {
+	R_RETURN_IF_FAIL (muta);
+	muta->user = NULL;
+	r_libstore_new (&muta->libstore, muta, NULL, (RListFree)free, muta_load_plugins, NULL, NULL);
 }
+
 
 R_API RMuta *r_muta_new(void) {
 	RMuta *muta = R_NEW0 (RMuta);
@@ -44,16 +37,16 @@ R_API RMuta *r_muta_new(void) {
 
 R_API void r_muta_free(RMuta *muta) {
 	if (muta) {
-		r_list_free (muta->plugins);
+		r_libstore_free (muta->libstore);
 		free (muta);
 	}
 }
 
 R_API RMutaPlugin *r_muta_find(RMuta *muta, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (muta && muta->plugins && algo, NULL);
+	R_RETURN_VAL_IF_FAIL (muta && muta->libstore->plugins && algo, NULL);
 	RListIter *iter;
 	RMutaPlugin *h;
-	r_list_foreach (muta->plugins, iter, h) {
+	r_list_foreach (muta->libstore->plugins, iter, h) {
 		if (!h) {
 			continue;
 		}
@@ -159,7 +152,7 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 	}
 	RListIter *iter;
 	RMutaPlugin *cp;
-	r_list_foreach (cry->plugins, iter, cp) {
+	r_list_foreach (cry->libstore->plugins, iter, cp) {
 		if (cp->type != type && type != R_MUTA_TYPE_ALL) {
 			continue;
 		}

@@ -70,7 +70,6 @@ typedef struct r_asm_t {
 	RArchSession *ecur; // encode current
 	RArchSession *dcur; // decode current
 	struct r_asm_plugin_session_t *cur;
-	RList *sessions; // NOTE: one session per plugin! both lists must have the same length
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
 	Sdb *pair;
 	RSyscall *syscall;
@@ -81,6 +80,7 @@ typedef struct r_asm_t {
 	bool pseudo; // should be implicit by RParse
 	bool use_spp;
 	RParse *parse;
+	RLibStore *libstore;
 } RAsm;
 
 typedef struct r_asm_plugin_session_t {

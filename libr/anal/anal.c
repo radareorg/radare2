@@ -130,7 +130,6 @@ static void r_meta_item_free(void *_item) {
 
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
-	int i;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!r_str_constpool_init (&anal->constpool)) {
 		free (anal);
@@ -191,12 +190,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
-	if (anal->plugins) {
-		for (i = 0; anal_static_plugins[i]; i++) {
-			r_anal_plugin_add (anal, anal_static_plugins[i]);
-		}
-	}
+	r_libstore_new (&anal->libstore, anal, anal_static_plugins, (RListFree)r_anal_plugin_free, NULL, (RLibPluginAddCb)r_anal_plugin_add, NULL);
 	R_DIRTY_SET (anal);
 	return anal;
 }
@@ -239,7 +233,7 @@ R_API void r_anal_free(RAnal *a) {
 	a->arch = NULL;
 	free (a->zign_path);
 	free (a->opt.tparser);
-	r_list_free (a->plugins);
+	r_libstore_free (a->libstore);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
@@ -264,12 +258,12 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (anal && foo, -1);
+R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
+	R_RETURN_VAL_IF_FAIL (anal && foo, false);
 	if (foo->init) {
 		foo->init (anal->user);
 	}
-	r_list_append (anal->plugins, foo);
+	r_list_append (anal->libstore->plugins, foo);
 	return true;
 }
 
@@ -819,7 +813,7 @@ R_API char *r_anal_cmd(RAnal *anal, const char *cmd) {
 	RListIter *iter;
 	RAnalPlugin *ap;
 	char *res = NULL;
-	r_list_foreach (anal->plugins, iter, ap) {
+	r_list_foreach (anal->libstore->plugins, iter, ap) {
 		if (ap->cmd) {
 			res = ap->cmd (anal, cmd);
 			if (res) {
