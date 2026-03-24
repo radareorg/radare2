@@ -71,11 +71,11 @@ static void append_showstr(RStrBuf *sb, const char *s, size_t len) {
 }
 
 #ifndef COMPILE_ONLY
-void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
+char *__magic_file_mrender(RMagic *ms, struct r_magic *m) {
 	char pp[ASCTIME_BUF_MAXLEN];
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
-		return;
+		return NULL;
 	}
 
 	r_strbuf_appendf (sb, "[%u", m->lineno);
@@ -203,7 +203,14 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		}
 	}
 	r_strbuf_appendf (sb, ",\"%s\"]", m->desc);
-	char *msg = r_strbuf_drain (sb);
+	return r_strbuf_drain (sb);
+}
+
+void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
+	char *msg = __magic_file_mrender (ms, m);
+	if (!msg) {
+		return;
+	}
 	R_LOG_DEBUG ("%s", msg);
 	free (msg);
 }

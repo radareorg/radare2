@@ -39,6 +39,7 @@ union VALUETYPE {
 /* constants */
 #define MAGICNO         0xF11E041C
 #define VERSIONNO       5
+#define R_MAGIC_VERSION VERSIONNO
 #define FILE_MAGICSIZE  (32 * 6)
 
 #define	FILE_LOAD       0
@@ -275,16 +276,23 @@ R_API RMagic* r_magic_new(int flags);
 R_API void r_magic_free(RMagic*);
 
 R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
+R_API const char *r_magic_file(RMagic*, const char *);
+R_API const char *r_magic_descriptor(RMagic*, int);
 
 R_API const char *r_magic_error(RMagic*);
+R_API int r_magic_getflags(RMagic*);
 R_API void r_magic_setflags(RMagic*, int);
 R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
+R_API char *r_magic_getpath(const char *magicfile, int action);
 
 R_API bool r_magic_load(RMagic*, const char *);
 R_API bool r_magic_load_buffer(RMagic*, const ut8 *, size_t);
+R_API bool r_magic_load_buffers(RMagic*, const void *const *, const size_t *, size_t);
 R_API bool r_magic_compile(RMagic*, const char *);
 R_API bool r_magic_check(RMagic*, const char *);
+R_API bool r_magic_list(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
+R_API int r_magic_api_version(void);
 #endif
 
 
