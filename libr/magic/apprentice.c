@@ -224,7 +224,7 @@ void init_file_tables(RMagic *m) {
 	}
 }
 
-void __magic_file_delmagic(struct r_magic *p, int type, size_t entries) {
+void __magic_file_delmagic(struct r_magic *p, int type) {
 	if (p) {
 		switch (type) {
 		case 1:
@@ -1738,7 +1738,7 @@ error2:
 static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const ut8 *buf, size_t buf_size) {
 	ut32 version = 0;
 	bool be = false;
-	void *mm;
+	void *mm = NULL;
 
 	if (!buf || buf_size < sizeof (struct r_magic)) {
 		__magic_file_error (ms, 0, "magic buffer is too small");
@@ -1788,7 +1788,7 @@ static void apprentice_log_error(RMagic *ms, int error, const char *fmt, const c
 }
 
 /*
- * handle an mmaped file.
+ * handle a compiled file.
  */
 static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn) {
 	int fd = -1;
@@ -1882,18 +1882,18 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	}
 
 	if (!magic) {
-		__magic_file_delmagic (magic, rv, nmagic);
+		__magic_file_delmagic (magic, rv);
 		return -1;
 	}
 	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
-		__magic_file_delmagic (magic, rv, nmagic);
+		__magic_file_delmagic (magic, rv);
 		return -1;
 	}
 
 	struct mlist *ml = malloc (sizeof (*ml));
 	if (!ml) {
 		free (min_bytes);
-		__magic_file_delmagic (magic, rv, nmagic);
+		__magic_file_delmagic (magic, rv);
 		__magic_file_oomem (ms, sizeof (*ml));
 		return -1;
 	}
@@ -1991,13 +1991,13 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 		}
 	}
 	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
-		__magic_file_delmagic (magic, mapped, nmagic);
+		__magic_file_delmagic (magic, mapped);
 		return NULL;
 	}
 	struct mlist *mlist = malloc (sizeof (*mlist));
 	if (!mlist) {
 		free (min_bytes);
-		__magic_file_delmagic (magic, mapped, nmagic);
+		__magic_file_delmagic (magic, mapped);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
@@ -2007,7 +2007,7 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 	struct mlist *ml = malloc (sizeof (*ml));
 	if (!ml) {
 		free (min_bytes);
-		__magic_file_delmagic (magic, mapped, nmagic);
+		__magic_file_delmagic (magic, mapped);
 		free (mlist);
 		__magic_file_oomem (ms, sizeof (*ml));
 		return NULL;

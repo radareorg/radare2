@@ -101,7 +101,7 @@ static void free_mlist(struct mlist *mlist) {
 		struct mlist *next = ml->next;
 		struct r_magic *mg = ml->magic;
 		free (ml->min_bytes);
-		__magic_file_delmagic (mg, ml->mapped, ml->nmagic);
+		__magic_file_delmagic (mg, ml->mapped);
 		free (ml);
 		ml = next;
 	}

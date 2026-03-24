@@ -63,7 +63,7 @@ R_IPI int __magic_file_softmagic(RMagic *, const unsigned char *, size_t, int);
 R_IPI struct mlist *__magic_file_apprentice(RMagic *, const char *, size_t, int);
 R_IPI struct mlist *__magic_file_apprentice_buffer(RMagic *, const ut8 *, size_t, int);
 R_IPI ut64 __magic_file_signextend(RMagic *, struct r_magic *, ut64);
-R_IPI void __magic_file_delmagic(struct r_magic *, int type, size_t entries);
+R_IPI void __magic_file_delmagic(struct r_magic *, int type);
 R_IPI void __magic_file_badread(RMagic *);
 R_IPI void __magic_file_badseek(RMagic *);
 R_IPI void __magic_file_oomem(RMagic *, size_t);
