@@ -1,8 +1,6 @@
 /* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
-#include <r_anal.h>
-
-R_IPI void r_anal_types_ensure_loaded(RAnal *anal);
+#include <r_anal_priv.h>
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
@@ -433,19 +431,6 @@ static void fcn_context_slot_free(RAnalFcnSlot *slot) {
 	free (slot);
 }
 
-static bool is_default_arg_name(const char *name) {
-	if (!name || !r_str_startswith (name, "arg") || !name[3]) {
-		return false;
-	}
-	const char *ptr = name + 3;
-	for (; *ptr; ptr++) {
-		if (!IS_DIGIT (*ptr)) {
-			return false;
-		}
-	}
-	return true;
-}
-
 static char *fcn_context_dup_var_regname(RAnal *anal, const RAnalVar *var) {
 	if (R_STR_ISNOTEMPTY (var->regname)) {
 		return strdup (var->regname);
@@ -467,7 +452,7 @@ static st64 fcn_context_stack_offset(const RAnalFunction *fcn, const RAnalVar *v
 	case R_ANAL_VAR_KIND_BPV:
 		return (st64)var->delta + fcn->bp_off;
 	case R_ANAL_VAR_KIND_SPV:
-		return (st64)var->delta + fcn->maxstack;
+		return var->delta;
 	default:
 		return var->delta;
 	}
@@ -514,7 +499,7 @@ static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnCo
 
 	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
 	arg->arg_index = arg_index;
-	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && is_default_arg_name (var->name)) {
+	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && r_anal_var_is_default_argname (var->name)) {
 		arg->name = strdup (signature_param->name);
 	} else if (R_STR_ISNOTEMPTY (var->name)) {
 		arg->name = strdup (var->name);
@@ -621,7 +606,6 @@ R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 	r_anal_function_signature_free (ctx->signature);
 	r_list_free (ctx->reg_args);
 	r_list_free (ctx->slots);
-	r_list_free (ctx->base_types);
 	free (ctx);
 }
 
@@ -684,8 +668,6 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 		r_list_append (ctx->slots, slot);
 	}
 	r_anal_function_vars_cache_fini (&cache);
-
-	ctx->base_types = r_anal_types_baselist (anal);
 	return ctx;
 }
 

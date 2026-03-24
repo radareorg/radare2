@@ -2339,28 +2339,28 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 }
 
 static char *function_signature_try_type_name(Sdb *types, const char *candidate) {
-	char *name = NULL;
-
 	R_RETURN_VAL_IF_FAIL (types && candidate && *candidate, NULL);
-	name = r_type_func_name (types, candidate);
-	if (name && !strcmp (r_str_get_fail (sdb_const_get (types, name, 0), ""), "func")) {
-		return name;
+	char *name = r_type_func_name (types, candidate);
+	if (name) {
+		const char *kind = sdb_const_get (types, name, 0);
+		if (kind && !strcmp (kind, "func")) {
+			return name;
+		}
+		free (name);
 	}
-	free (name);
-	if (!strcmp (r_str_get_fail (sdb_const_get (types, candidate, 0), ""), "func")) {
+	const char *kind = sdb_const_get (types, candidate, 0);
+	if (kind && !strcmp (kind, "func")) {
 		return strdup (candidate);
 	}
 	return NULL;
 }
 
 static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
-	char *name;
 	const char *basename;
-	const char *lookup_name;
 
 	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
-	lookup_name = function_signature_lookup_name (anal, fcn);
-	name = function_signature_try_type_name (anal->sdb_types, lookup_name);
+	const char *lookup_name = function_signature_lookup_name (anal, fcn);
+	char *name = function_signature_try_type_name (anal->sdb_types, lookup_name);
 	if (name) {
 		return name;
 	}

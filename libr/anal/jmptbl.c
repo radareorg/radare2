@@ -95,49 +95,46 @@ static inline bool block_belongs_to_function(const RAnalBlock *block, const RAna
 	return r_list_contains ((RList *)block->fcns, (void *)fcn);
 }
 
-static void materialize_case_target(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth) {
+static bool add_case_target_block(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
 	RAnalBlock *block;
+	R_RETURN_VAL_IF_FAIL (anal && fcn && case_addr != UT64_MAX && case_addr, false);
+	block = r_anal_get_block_at (anal, case_addr);
+	if (block) {
+		if (!block_belongs_to_function (block, fcn)) {
+			r_anal_function_add_block (fcn, block);
+		}
+		return true;
+	}
+	block = r_anal_bb_from_offset (anal, case_addr);
+	if (!block) {
+		return false;
+	}
+	if (block->addr != case_addr) {
+		RAnalBlock *split = r_anal_block_split (block, case_addr);
+		if (!split) {
+			return false;
+		}
+		if (!block_belongs_to_function (split, fcn)) {
+			r_anal_function_add_block (fcn, split);
+		}
+		r_unref (split);
+		return true;
+	}
+	if (!block_belongs_to_function (block, fcn)) {
+		r_anal_function_add_block (fcn, block);
+	}
+	return true;
+}
+
+static void materialize_case_target(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth) {
 	if (!anal || !fcn || case_addr == UT64_MAX || !case_addr) {
 		return;
 	}
-	block = r_anal_get_block_at (anal, case_addr);
-	if (block) {
-		if (!block_belongs_to_function (block, fcn)) {
-			r_anal_function_add_block (fcn, block);
-		}
+	if (add_case_target_block (anal, fcn, case_addr)) {
 		return;
-	}
-	block = r_anal_bb_from_offset (anal, case_addr);
-	if (block && block->addr != case_addr) {
-		RAnalBlock *split = r_anal_block_split (block, case_addr);
-		if (split) {
-			if (!block_belongs_to_function (split, fcn)) {
-				r_anal_function_add_block (fcn, split);
-			}
-			r_unref (split);
-			return;
-		}
 	}
 	(void)r_anal_function_bb (anal, fcn, case_addr, depth > 0? depth - 1: depth);
-	block = r_anal_get_block_at (anal, case_addr);
-	if (block) {
-		if (!block_belongs_to_function (block, fcn)) {
-			r_anal_function_add_block (fcn, block);
-		}
-		return;
-	}
-	block = r_anal_bb_from_offset (anal, case_addr);
-	if (block && block->addr != case_addr) {
-		RAnalBlock *split = r_anal_block_split (block, case_addr);
-		if (split) {
-			if (!block_belongs_to_function (split, fcn)) {
-				r_anal_function_add_block (fcn, split);
-			}
-			r_unref (split);
-		}
-	} else if (block && !block_belongs_to_function (block, fcn)) {
-		r_anal_function_add_block (fcn, block);
-	}
+	(void)add_case_target_block (anal, fcn, case_addr);
 }
 
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
