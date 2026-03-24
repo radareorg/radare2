@@ -157,6 +157,7 @@ R_API RMagic *r_magic_new(int flags) {
 	ms->file = "unknown";
 	ms->line = 0;
 	ms->bytes_max = 0;
+	ms->maxmagic = 0;
 	__magic_file_reset (ms);
 	return ms;
 }

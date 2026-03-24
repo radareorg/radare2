@@ -35,33 +35,11 @@
 #include "file.h"
 #include "patchlevel.h"
 
-#ifdef __wasi__
-#define MAXPATHLEN 255
-#endif
-
-#ifdef _MSC_VER
-#include <sys\stat.h>
-#define S_ISREG(m) (((m) & S_IFMT) == S_IFREG)
-#define S_ISDIR(m) (((m) & S_IFMT) == S_IFDIR)
-#define MAXPATHLEN 255
-#endif
-
-#define EATAB \
-	{ \
-		while (isascii ((ut8) * l) && isspace ((ut8) * l)) { \
-			l++; \
-		} \
-	}
-#define LOWCASE(l) (isupper ((ut8) (l))? tolower ((ut8) (l)): (l))
-
 struct r_magic_entry {
 	struct r_magic *mp;
 	ut32 cont_count;
 	ut32 max_count;
 };
-
-// AITODO: do not use global variables!
-static size_t maxmagic = 0;
 
 static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
@@ -69,6 +47,13 @@ static const size_t mime_marker_len = sizeof(mime_marker) - 1;
 
 static size_t magic_cap_bytes(size_t bytes) {
 	return R_MIN (bytes, (size_t)HOWMANY);
+}
+
+static inline const char *eatab(const char *l) {
+	while (isascii ((ut8)*l) && isspace ((ut8)*l)) {
+		l++;
+	}
+	return l;
 }
 
 static size_t magic_cap_sum(size_t base, size_t extra) {
@@ -152,8 +137,8 @@ static const struct type_tbl_s {
 	const int type;
 	const int format;
 } type_tbl[] = {
+	// AITODO: improve the current XX macro to directly replace the whole line, so we dont have to put the FILE_ and FILE_FMT_ prefixes in the other fields, making the array below more readable liket his: `{ XX ("byte", BYTE, NUM) },`
 #define XX(s) s,(sizeof(s) - 1)
-#define XX_NULL "", 0
 	{ XX ("byte"), FILE_BYTE, FILE_FMT_NUM },
 	{ XX ("short"), FILE_SHORT, FILE_FMT_NUM },
 	{ XX ("default"), FILE_DEFAULT, FILE_FMT_STR },
@@ -192,9 +177,8 @@ static const struct type_tbl_s {
 	{ XX ("double"), FILE_DOUBLE, FILE_FMT_DOUBLE },
 	{ XX ("bedouble"), FILE_BEDOUBLE, FILE_FMT_DOUBLE },
 	{ XX ("ledouble"), FILE_LEDOUBLE, FILE_FMT_DOUBLE },
-	{ XX_NULL, FILE_INVALID, FILE_FMT_NONE },
+	{ 0 },
 #undef XX
-#undef XX_NULL
 };
 
 static int get_type(const char *l, const char **t) {
@@ -900,11 +884,11 @@ out:
 static void eatsize(const char **p) {
 	const char *l = *p;
 
-	if (LOWCASE (*l) == 'u') {
+	if (tolower (*l) == 'u') {
 		l++;
 	}
 
-	switch (LOWCASE (*l)) {
+	switch (tolower (*l)) {
 	case 'l': /* long */
 	case 's': /* short */
 	case 'h': /* short */
@@ -1018,12 +1002,12 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 		(void)memset (m, 0, sizeof (*m));
 		m->cont_level = cont_level;
 	} else {
-		if (*nmentryp == maxmagic) {
+		if (*nmentryp == ms->maxmagic) {
 			struct r_magic_entry *mp;
 
-			maxmagic += ALLOC_INCR;
-			if (! (mp = realloc (*mentryp, sizeof (*mp) * maxmagic))) {
-				__magic_file_oomem (ms, sizeof (*mp) * maxmagic);
+			ms->maxmagic += ALLOC_INCR;
+			if (! (mp = realloc (*mentryp, sizeof (*mp) * ms->maxmagic))) {
+				__magic_file_oomem (ms, sizeof (*mp) * ms->maxmagic);
 				return false;
 			}
 			(void)memset (&mp[*nmentryp], 0, sizeof (*mp) * ALLOC_INCR);
@@ -1159,13 +1143,13 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 			}
 		}
 	}
-	EATAB;
+	l = eatab (l);
 
 	m->cond = get_cond (l, &l);
 	if (check_cond (ms, m->cond, cont_level) == -1) {
 		return false;
 	}
-	EATAB;
+	l = eatab (l);
 
 	if (*l == 'u') {
 		l++;
@@ -1270,7 +1254,7 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 			return false;
 		}
 	}
-	EATAB;
+	l = eatab (l);
 
 	switch (*l) {
 	case '>':
@@ -1304,7 +1288,7 @@ static bool parse(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp, co
 	}
 
 	// Parse the description.
-	EATAB;
+	l = eatab (l);
 	if (l[0] == '\b') {
 		l++;
 		m->flag |= NOSPACE;
@@ -1365,7 +1349,7 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 		return -1;
 	}
 
-	EATAB;
+	l = eatab (l);
 	for (i = 0;
 		*l && ((isascii ((ut8)*l) && isalnum ((ut8)*l)) || strchr ("-+/.", *l)) && i < sizeof (m->mimetype);
 		m->mimetype[i++] = *l++) {
@@ -1499,10 +1483,10 @@ static int apprentice_load(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, c
 	char *name;
 	int errs = 0;
 	ms->flags |= R_MAGIC_CHECK; /* Enable checks for parsed files */
-	maxmagic = MAXMAGIS;
-	struct r_magic_entry *marray = calloc (maxmagic, sizeof (*marray));
+	ms->maxmagic = MAXMAGIS;
+	struct r_magic_entry *marray = calloc (ms->maxmagic, sizeof (*marray));
 	if (!marray) {
-		__magic_file_oomem (ms, maxmagic * sizeof (*marray));
+		__magic_file_oomem (ms, ms->maxmagic * sizeof (*marray));
 		return -1;
 	}
 
@@ -1545,10 +1529,10 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 
 	ms->flags |= R_MAGIC_CHECK;
 	ms->file = "(buffer)";
-	maxmagic = MAXMAGIS;
-	struct r_magic_entry *marray = calloc (maxmagic, sizeof (*marray));
+	ms->maxmagic = MAXMAGIS;
+	struct r_magic_entry *marray = calloc (ms->maxmagic, sizeof (*marray));
 	if (!marray) {
-		__magic_file_oomem (ms, maxmagic * sizeof (*marray));
+		__magic_file_oomem (ms, ms->maxmagic * sizeof (*marray));
 		return -1;
 	}
 	if (action == FILE_CHECK) {
@@ -1570,30 +1554,13 @@ static const char ext[] = ".mgc";
  * make a dbname
  */
 static char *mkdbname(const char *fn, int strip) {
-	char *buf = NULL;
-	int fnlen, extlen;
 	if (strip) {
 		const char *p;
 		if ((p = strrchr (fn, '/'))) {
-			p++;
-			fn = p;
+			fn = p + 1;
 		}
 	}
-	fnlen = strlen (fn);
-	extlen = strlen (ext);
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 256
-#endif
-	if (fnlen + extlen + 1 > MAXPATHLEN) {
-		return NULL;
-	}
-	buf = malloc (fnlen + extlen + 1);
-	if (buf) {
-		memcpy (buf, fn, fnlen);
-		memcpy (buf + fnlen, ext, extlen);
-		buf[fnlen + extlen] = 0;
-	}
-	return buf;
+	return r_str_newf ("%s%s", fn, ext);
 }
 
 static void decode_compiled_magic_entry(struct r_magic *m, bool be) {
@@ -1641,7 +1608,6 @@ static void encode_compiled_magic(struct r_magic *dst, const struct r_magic *src
 
 static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *be) {
 	ut32 magic = r_read_le32 (buf);
-
 	if (magic == MAGICNO) {
 		*version = r_read_at_le32 (buf, sizeof (ut32));
 		*be = false;

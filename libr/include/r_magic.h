@@ -266,6 +266,7 @@ struct r_magic_set {
 	const char *magic_file_names[FILE_NAMES_SIZE];
 	ut32 last_cont_level;
 	ut32 bytes_max;
+	size_t maxmagic;
 };
 
 #if USE_LIB_MAGIC
