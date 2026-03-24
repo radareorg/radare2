@@ -98,7 +98,7 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 	double vd;
 	ut64 t = 0;
 	char *buf = NULL;
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	switch (m->type) {
@@ -299,12 +299,12 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		break;
 	case FILE_REGEX:
 		{
-			char *cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
+			char *const cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
 			if (!cp) {
 				__magic_file_oomem (ms, ms->search.rm_len);
 				return -1;
 			}
-			int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
+			const int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
 			free (cp);
 			if (rval == -1) {
 				return -1;
@@ -477,7 +477,7 @@ static void magic_rstrip_newline(char *s) {
  *(unless you have a better idea)
  */
 static int mconvert(RMagic *ms, struct r_magic *m) {
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	switch (m->type) {
 	case FILE_BYTE:
@@ -586,21 +586,17 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	}
 }
 
-static void mdebug(RMagic *ms, ut32 offset, const char *str, size_t len) {
-	char *escaped = r_str_escape_raw ((const ut8 *)str, (int)len);
-	if (escaped) {
-		magic_debug (ms, "mget @%u: %s", offset, escaped);
-		free (escaped);
-		return;
-	}
-	magic_debug (ms, "mget @%u", offset);
-}
-
 static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const union VALUETYPE *p) {
 	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
 		return;
 	}
-	mdebug (ms, offset, (const char *)p, sizeof (*p));
+	char *const escaped = r_str_escape_raw ((const ut8 *)p, (int)sizeof (*p));
+	if (escaped) {
+		magic_debug (ms, "mget @%u: %s", offset, escaped);
+		free (escaped);
+	} else {
+		magic_debug (ms, "mget @%u", offset);
+	}
 	__magic_file_mdump (ms, m);
 }
 
@@ -702,8 +698,8 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 
 static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsigned int cont_level) {
 	ut32 offset = ms->offset;
-	ut32 count = m->str_range;
-	union VALUETYPE *p = &ms->ms_value;
+	const ut32 count = m->str_range;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	if (mcopy (ms, p, m->type, m->flag & INDIR, s, offset, nbytes, count) == -1) {
 		return -1;
@@ -718,7 +714,7 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 			if (!magic_hasbytes (nbytes, qoff, file_magic_type_bytes (m, m->in_type))) {
 				return 0;
 			}
-			const union VALUETYPE *q =
+			const union VALUETYPE *const q =
 				((const void *) (s + (size_t)qoff));
 			st32 qvalue;
 			if (magic_get_indir_value (&qvalue, q, m->in_type)) {
@@ -809,19 +805,13 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	return v;
 }
 
-static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags) {
-	// 16-bit strings currently use the plain byte comparison path.
-	flags = 0;
-	return file_strncmp (a, b, len, flags);
-}
-
 static int magiccheck(RMagic *ms, struct r_magic *m) {
 	ut64 l = m->value.q;
 	ut64 v;
 	float fl, fv;
 	double dl, dv;
 	int matched;
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	switch (m->type) {
 	case FILE_BYTE:
@@ -898,26 +888,22 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
 		l = 0;
-		v = file_magic_type_is_string16 (m->type)
-			? file_strncmp16 (m->value.s, p->s, (size_t)m->vallen, m->str_flags)
-			: file_strncmp (m->value.s, p->s, (size_t)m->vallen, m->str_flags);
+		v = file_strncmp (m->value.s, p->s, (size_t)m->vallen,
+			file_magic_type_is_string16 (m->type)? 0: m->str_flags);
 		break;
 	case FILE_SEARCH: { /* search ms->search.s for the string m->value.s */
-		size_t slen, idx;
+		size_t idx;
 
 		if (!ms->search.s) {
 			return 0;
 		}
 
-		slen = R_MIN (m->vallen, sizeof (m->value.s));
+		const size_t slen = R_MIN (m->vallen, sizeof (m->value.s));
 		l = 0;
 		v = 0;
 
 		for (idx = 0; m->str_range == 0 || idx < m->str_range; idx++) {
-			if ((int)ms->search.offset < 0) {
-				break;
-			}
-			if (slen + idx > ms->search.s_len) {
+			if (slen > ms->search.s_len || idx > ms->search.s_len - slen) {
 				break;
 			}
 			v = file_strncmp (m->value.s, ms->search.s + idx, slen, m->str_flags);
@@ -1228,9 +1214,10 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min
  */
 /*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
 int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
+	RListIter *iter;
 	struct mlist *ml;
 	int rv;
-	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
+	r_list_foreach (ms->mlist, iter, ml) {
 		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
 			return rv;
 		}

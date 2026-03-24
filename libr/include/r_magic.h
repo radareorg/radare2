@@ -4,6 +4,7 @@
 #define R2_MAGIC_H
 
 #include <r_types.h>
+#include <r_list.h>
 #include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
@@ -200,7 +201,6 @@ struct mlist {
 		      *                  1 => apprentice_map + malloc */
 	size_t bytes_max;		/* conservative max bytes needed */
 	ut32 *min_bytes;		/* min bytes needed per magic entry */
-	struct mlist *next, *prev;
 };
 
 #define R_MAGIC_NONE                0x000000 /* No flags */
@@ -229,7 +229,7 @@ struct mlist {
 #define MAGIC_NO_CHECK_TROFF        0x000000 /* Don't check ascii/troff */
 
 struct r_magic_set {
-	struct mlist *mlist;
+	RList *mlist;
 	struct cont {
 		size_t len;
 		struct level_info {

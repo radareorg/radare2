@@ -52,7 +52,7 @@ int __magic_file_printf(RMagic *ms, const char *fmt, ...) {
 	va_list ap;
 
 	va_start (ap, fmt);
-	int ret = file_vprintf (ms, fmt, ap);
+	const int ret = file_vprintf (ms, fmt, ap);
 	va_end (ap);
 	return ret;
 }
@@ -113,11 +113,11 @@ void __magic_file_badread(RMagic *ms) {
 }
 
 R_IPI int __magic_file_buffer(RMagic *ms, int fd, const char *inname, const void *buf, size_t nb) {
-	int mime, m = 0;
+	int m = 0;
 	if (!ms) {
 		return -1;
 	}
-	mime = ms->flags & R_MAGIC_MIME;
+	const int mime = ms->flags & R_MAGIC_MIME;
 	if (nb == 0) {
 		if ((!mime || (mime & R_MAGIC_MIME_TYPE)) &&
 			__magic_file_printf (ms, mime? "application/x-empty": "empty") == -1) {
@@ -177,13 +177,12 @@ int __magic_file_reset(RMagic *ms) {
 
 const char *__magic_file_getbuffer(RMagic *ms) {
 	char *pbuf, *op, *np;
-	size_t psize, len;
 
 	if (ms->haderr) {
 		return NULL;
 	}
 
-	char *obuf = r_strbuf_get (&ms->o.sb);
+	char *const obuf = r_strbuf_get (&ms->o.sb);
 	if (ms->flags & R_MAGIC_RAW) {
 		return obuf;
 	}
@@ -194,12 +193,12 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 	}
 
 	/* * 4 is for octal representation, + 1 is for NUL */
-	len = strlen (obuf);
+	const size_t len = strlen (obuf);
 	if (len > (SIZE_MAX - 1) / 4) {
 		__magic_file_oomem (ms, len);
 		return NULL;
 	}
-	psize = len * 4 + 1;
+	const size_t psize = len * 4 + 1;
 	if (! (pbuf = realloc (ms->o.pbuf, psize))) {
 		__magic_file_oomem (ms, psize);
 		return NULL;
@@ -219,7 +218,7 @@ const char *__magic_file_getbuffer(RMagic *ms) {
 int __magic_file_check_mem(RMagic *ms, unsigned int level) {
 	if (level >= ms->c.len) {
 		ms->c.len = level + 20;
-		size_t len = ms->c.len * sizeof (*ms->c.li);
+		const size_t len = ms->c.len * sizeof (*ms->c.li);
 		ms->c.li = (!ms->c.li)? malloc (len): realloc (ms->c.li, len);
 		if (!ms->c.li) {
 			__magic_file_oomem (ms, len);

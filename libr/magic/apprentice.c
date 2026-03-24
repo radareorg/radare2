@@ -69,6 +69,16 @@ static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
 static const size_t mime_marker_len = sizeof(mime_marker) - 1;
 
+static void mlist_free(void *p) {
+	struct mlist *const ml = p;
+	if (!ml) {
+		return;
+	}
+	free (ml->min_bytes);
+	__magic_file_delmagic (ml->magic, ml->mapped);
+	free (ml);
+}
+
 static size_t magic_cap_bytes(size_t bytes) {
 	return R_MIN (bytes, (size_t)HOWMANY);
 }
@@ -138,8 +148,8 @@ static bool magic_prepare_requirements(RMagic *ms, struct r_magic *magic, ut32 n
 		return false;
 	}
 	for (i = 0; i < nmagic; i++) {
-		size_t min_need = magic_min_bytes (&magic[i]);
-		size_t max_need = magic_max_bytes (&magic[i]);
+		const size_t min_need = magic_min_bytes (&magic[i]);
+		const size_t max_need = magic_max_bytes (&magic[i]);
 		req[i] = (ut32)magic_cap_bytes (min_need);
 		max_bytes = R_MAX (max_bytes, max_need);
 	}
@@ -622,7 +632,7 @@ static int check_cond(RMagic *ms, int cond, ut32 cont_level) {
 
 static int check_format_type(const char *ptr, int type) {
 	int quad = 0;
-	const char *start = ptr;
+	const char *const start = ptr;
 	if (*ptr == '\0') {
 		/* Missing format string; bad */
 		return -1;
@@ -1385,7 +1395,7 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 }
 
 static bool parse_line(RMagic *ms, int action, struct r_magic_entry **marray, ut32 *marraycount, char *line, size_t lineno) {
-	size_t len = strlen (line);
+	const size_t len = strlen (line);
 	if (len == 0) {
 		return true;
 	}
@@ -1415,7 +1425,7 @@ static void load_b(RMagic *ms, int action, const char *data, int *errs, struct r
  */
 static void load_1(RMagic *ms, int action, const char *file, int *errs, struct r_magic_entry **marray, ut32 *marraycount) {
 	ms->file = file;
-	char *data = r_file_slurp (file, NULL);
+	char *const data = r_file_slurp (file, NULL);
 	if (!data) {
 		__magic_file_error (ms, errno, "cannot read magic file `%s'", file);
 		(*errs)++;
@@ -1556,7 +1566,7 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 	if (action == FILE_CHECK) {
 		R_LOG_INFO ("%s", usg_hdr);
 	}
-	char *data = r_str_ndup ((const char *)buf, buf_size);
+	char *const data = r_str_ndup ((const char *)buf, buf_size);
 	if (!data) {
 		free (marray);
 		__magic_file_oomem (ms, buf_size);
@@ -1845,7 +1855,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 /*
  * Handle one file or directory.
  */
-static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *mlist) {
+static int apprentice_1(RMagic *ms, const char *fn, int action, RList *mlist) {
 	struct r_magic *magic = NULL;
 	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
@@ -1903,16 +1913,16 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	ml->mapped = rv;
 	ml->bytes_max = bytes_max;
 	ml->min_bytes = min_bytes;
-
-	mlist->prev->next = ml;
-	ml->prev = mlist->prev;
-	ml->next = mlist;
-	mlist->prev = ml;
+	if (!r_list_append (mlist, ml)) {
+		mlist_free (ml);
+		__magic_file_oomem (ms, sizeof (*ml));
+		return -1;
+	}
 	return 0;
 }
 
 /* const char *fn: list of magic files and directories */
-struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
+RList *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
 	char *p;
 	int file_err, errs = -1;
 	char *mfn = r_str_ndup (fn, fn_size);
@@ -1927,15 +1937,12 @@ struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size
 	}
 	fn = mfn;
 
-	struct mlist *mlist = malloc (sizeof (*mlist));
+	RList *const mlist = r_list_newf (mlist_free);
 	if (!mlist) {
 		free (mfn);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
-	mlist->next = mlist->prev = mlist;
-	mlist->bytes_max = 0;
-	mlist->min_bytes = NULL;
 
 	while (fn) {
 		p = strstr (fn, R_SYS_ENVSEP);
@@ -1951,7 +1958,7 @@ struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size
 	}
 	if (errs == -1) {
 		free (mfn);
-		R_FREE (mlist);
+		r_list_free (mlist);
 		__magic_file_error (ms, 0, "could not find any magic files!");
 		return NULL;
 	}
@@ -1966,7 +1973,7 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 	return buf && buf_size >= sizeof (ut32) * 2 && read_compiled_magic_header (buf, &version, &needsbyteswap) && version == VERSIONNO;
 }
 
-struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
+RList *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
 	struct r_magic *magic = NULL;
 	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
@@ -1994,21 +2001,18 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 		__magic_file_delmagic (magic, mapped);
 		return NULL;
 	}
-	struct mlist *mlist = malloc (sizeof (*mlist));
+	RList *const mlist = r_list_newf (mlist_free);
 	if (!mlist) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
-	mlist->next = mlist->prev = mlist;
-	mlist->bytes_max = 0;
-	mlist->min_bytes = NULL;
-	struct mlist *ml = malloc (sizeof (*ml));
+	struct mlist *const ml = malloc (sizeof (*ml));
 	if (!ml) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
-		free (mlist);
+		r_list_free (mlist);
 		__magic_file_oomem (ms, sizeof (*ml));
 		return NULL;
 	}
@@ -2017,10 +2021,12 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 	ml->mapped = mapped;
 	ml->bytes_max = bytes_max;
 	ml->min_bytes = min_bytes;
-	mlist->prev->next = ml;
-	ml->prev = mlist->prev;
-	ml->next = mlist;
-	mlist->prev = ml;
+	if (!r_list_append (mlist, ml)) {
+		mlist_free (ml);
+		r_list_free (mlist);
+		__magic_file_oomem (ms, sizeof (*ml));
+		return NULL;
+	}
 	return mlist;
 }
 #endif
