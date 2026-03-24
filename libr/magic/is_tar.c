@@ -83,13 +83,13 @@ static int from_oct(int digs, const char *where) {
  *	3 for GNU tar file.
  */
 static int is_tar(const ut8 *buf, size_t nbytes) {
-	const union record *header = (const union record *) (const void *)buf;
+	const union record *const header = (const union record *) (const void *)buf;
 
 	if (nbytes < sizeof (union record)) {
 		return 0;
 	}
 
-	int recsum = from_oct (8, header->header.chksum);
+	const int recsum = from_oct (8, header->header.chksum);
 
 	int i, sum = 0;
 	const char *p = header->charptr;
@@ -117,8 +117,8 @@ static int is_tar(const ut8 *buf, size_t nbytes) {
 
 int __magic_file_is_tar(RMagic *ms, const ut8 *buf, size_t nbytes) {
 	// Check tar first so dotfiles are not mistaken for nroff.
-	int tar = is_tar (buf, nbytes);
-	int mime = ms->flags & R_MAGIC_MIME;
+	const int tar = is_tar (buf, nbytes);
+	const int mime = ms->flags & R_MAGIC_MIME;
 
 	if (tar < 1 || tar > 3) {
 		return 0;

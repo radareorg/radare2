@@ -52,6 +52,19 @@ static void magic_debug(RMagic *ms, const char *fmt, ...) {
 	}
 }
 
+static bool magic_hasbytes(size_t nbytes, st64 offset, size_t need) {
+	size_t uoffset;
+
+	if (offset < 0) {
+		return false;
+	}
+	uoffset = (size_t)offset;
+	if (uoffset > nbytes) {
+		return false;
+	}
+	return need <= nbytes - uoffset;
+}
+
 /*
  * Macro to give description string according to whether we want plain
  * text or MIME type
@@ -79,27 +92,13 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 	}
 }
 
-char *strdupn(const char *str, size_t n) {
-	size_t len;
-	char *copy;
-
-	for (len = 0; len < n && str[len]; len++) {
-	}
-	if (! (copy = malloc (len + 1))) {
-		return NULL;
-	}
-	(void)memcpy (copy, str, len);
-	copy[len] = '\0';
-	return copy;
-}
-
 static st32 mprint(RMagic *ms, struct r_magic *m) {
 	ut64 v;
 	float vf;
 	double vd;
 	ut64 t = 0;
 	char *buf = NULL;
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 	char pp[ASCTIME_BUF_MAXLEN];
 
 	switch (m->type) {
@@ -300,12 +299,12 @@ static st32 mprint(RMagic *ms, struct r_magic *m) {
 		break;
 	case FILE_REGEX:
 		{
-			char *cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
+			char *const cp = r_str_ndup ((const char *)ms->search.s, ms->search.rm_len);
 			if (!cp) {
 				__magic_file_oomem (ms, ms->search.rm_len);
 				return -1;
 			}
-			int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
+			const int rval = __magic_file_printf (ms, R_MAGIC_DESC, cp);
 			free (cp);
 			if (rval == -1) {
 				return -1;
@@ -430,13 +429,55 @@ static st32 apply_indir_op(st32 value, st32 off, int op) {
 	return (op & FILE_OPINVERSE)? ~value: value;
 }
 
+static st32 magic_melong(const ut8 *hl) {
+	return (st32) ((hl[1] << 24) | (hl[0] << 16) | (hl[3] << 8) | hl[2]);
+}
+
+static bool magic_get_indir_value(st32 *out, const union VALUETYPE *p, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		*out = p->b;
+		return true;
+	case FILE_SHORT:
+		*out = p->h;
+		return true;
+	case FILE_BESHORT:
+		*out = (st16)r_read_be16 (p->hs);
+		return true;
+	case FILE_LESHORT:
+		*out = (st16)r_read_le16 (p->hs);
+		return true;
+	case FILE_LONG:
+		*out = p->l;
+		return true;
+	case FILE_BELONG:
+		*out = (st32)r_read_be32 (p->hl);
+		return true;
+	case FILE_LELONG:
+		*out = (st32)r_read_le32 (p->hl);
+		return true;
+	case FILE_MELONG:
+		*out = magic_melong (p->hl);
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void magic_rstrip_newline(char *s) {
+	size_t len = strlen (s);
+	if (len > 0 && s[len - 1] == '\n') {
+		s[len - 1] = '\0';
+	}
+}
+
 /*
  * Convert the byte order of the data we are looking at
  * While we're here, let's apply the mask operation
  *(unless you have a better idea)
  */
 static int mconvert(RMagic *ms, struct r_magic *m) {
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	switch (m->type) {
 	case FILE_BYTE:
@@ -458,17 +499,9 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_STRING:
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
-		{
-			size_t len;
-
-			/* Null terminate and eat *trailing* return */
-			p->s[sizeof (p->s) - 1] = '\0';
-			len = strlen (p->s);
-			if (len-- && p->s[len] == '\n') {
-				p->s[len] = '\0';
-			}
-			return 1;
-		}
+		p->s[sizeof (p->s) - 1] = '\0';
+		magic_rstrip_newline (p->s);
+		return 1;
 	case FILE_PSTRING:
 		{
 			char *ptr1 = p->s, *ptr2 = ptr1 + 1;
@@ -480,10 +513,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 				*ptr1++ = *ptr2++;
 			}
 			*ptr1 = '\0';
-			len = strlen (p->s);
-			if (len-- && p->s[len] == '\n') {
-				p->s[len] = '\0';
-			}
+			magic_rstrip_newline (p->s);
 			return 1;
 		}
 	case FILE_BESHORT:
@@ -521,7 +551,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_MELONG:
 	case FILE_MEDATE:
 	case FILE_MELDATE:
-		p->l = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2]));
+		p->l = magic_melong (p->hl);
 		cvt_32 (p, m);
 		return 1;
 	case FILE_FLOAT:
@@ -556,21 +586,17 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	}
 }
 
-static void mdebug(RMagic *ms, ut32 offset, const char *str, size_t len) {
-	char *escaped = r_str_escape_raw ((const ut8 *)str, (int)len);
-	if (escaped) {
-		magic_debug (ms, "mget @%u: %s", offset, escaped);
-		free (escaped);
-		return;
-	}
-	magic_debug (ms, "mget @%u", offset);
-}
-
 static void magic_debug_dump(RMagic *ms, struct r_magic *m, ut32 offset, const union VALUETYPE *p) {
 	if ((ms->flags & R_MAGIC_DEBUG) == 0) {
 		return;
 	}
-	mdebug (ms, offset, (const char *)p, sizeof (*p));
+	char *const escaped = r_str_escape_raw ((const ut8 *)p, (int)sizeof (*p));
+	if (escaped) {
+		magic_debug (ms, "mget @%u: %s", offset, escaped);
+		free (escaped);
+	} else {
+		magic_debug (ms, "mget @%u", offset);
+	}
 	__magic_file_mdump (ms, m);
 }
 
@@ -672,8 +698,8 @@ static int mcopy(RMagic *ms, union VALUETYPE *p, int type, int indir, const ut8 
 
 static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsigned int cont_level) {
 	ut32 offset = ms->offset;
-	ut32 count = m->str_range;
-	union VALUETYPE *p = &ms->ms_value;
+	const ut32 count = m->str_range;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	if (mcopy (ms, p, m->type, m->flag & INDIR, s, offset, nbytes, count) == -1) {
 		return -1;
@@ -684,90 +710,35 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	if (m->flag & INDIR) {
 		int off = m->in_offset;
 		if (m->in_op & FILE_OPINDIRECT) {
-			const union VALUETYPE *q =
-				((const void *) (s + offset + off));
-			switch (m->in_type) {
-			case FILE_BYTE:
-				off = q->b;
-				break;
-			case FILE_SHORT:
-				off = q->h;
-				break;
-			case FILE_BESHORT:
-				off = (st16)r_read_be16 (q->hs);
-				break;
-			case FILE_LESHORT:
-				off = (st16)r_read_le16 (q->hs);
-				break;
-			case FILE_LONG:
-				off = q->l;
-				break;
-			case FILE_BELONG:
-				off = (st32)r_read_be32 (q->hl);
-				break;
-			case FILE_LELONG:
-				off = (st32)r_read_le32 (q->hl);
-				break;
-			case FILE_MELONG:
-				off = (st32) ((q->hl[1] << 24) | (q->hl[0] << 16) | (q->hl[3] << 8) | (q->hl[2]));
-				break;
+			st64 qoff = (st64)offset + off;
+			if (!magic_hasbytes (nbytes, qoff, file_magic_type_bytes (m, m->in_type))) {
+				return 0;
+			}
+			const union VALUETYPE *const q =
+				((const void *) (s + (size_t)qoff));
+			st32 qvalue;
+			if (magic_get_indir_value (&qvalue, q, m->in_type)) {
+				off = qvalue;
 			}
 		}
-		switch (m->in_type) {
-		case FILE_BYTE:
-			if (nbytes < (offset + 1)) {
-				return 0;
-			}
-			offset = apply_indir_op (p->b, off, m->in_op);
-			break;
-		case FILE_BESHORT:
-			if (nbytes < (offset + 2)) {
-				return 0;
-			}
-			offset = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
-			break;
-		case FILE_LESHORT:
-			if (nbytes < (offset + 2)) {
-				return 0;
-			}
-			offset = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
-			break;
-		case FILE_SHORT:
-			if (nbytes < (offset + 2)) {
-				return 0;
-			}
-			offset = apply_indir_op (p->h, off, m->in_op);
-			break;
-		case FILE_BELONG:
-			if (nbytes < (offset + 4)) {
-				return 0;
-			}
-			offset = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
-			break;
-		case FILE_LELONG:
-			if (nbytes < (offset + 4)) {
-				return 0;
-			}
-			offset = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
-			break;
-		case FILE_MELONG:
-			if (nbytes < (offset + 4)) {
-				return 0;
-			}
-			offset = apply_indir_op ((st32)(
-				(p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | p->hl[2]
-			), off, m->in_op);
-			break;
-		case FILE_LONG:
-			if (nbytes < (offset + 4)) {
-				return 0;
-			}
-			offset = apply_indir_op (p->l, off, m->in_op);
-			break;
+		if (!magic_hasbytes (nbytes, offset, file_magic_type_bytes (m, m->in_type))) {
+			return 0;
 		}
+		st32 pvalue;
+		if (magic_get_indir_value (&pvalue, p, m->in_type)) {
+			off = apply_indir_op (pvalue, off, m->in_op);
+		}
+		if (off < 0) {
+			return 0;
+		}
+		offset = (ut32)off;
 
 		if (m->flag & INDIROFFADD) {
-			offset += ms->c.li[cont_level - 1].off;
+			st64 noff = (st64)offset + ms->c.li[cont_level - 1].off;
+			if (noff < 0) {
+				return 0;
+			}
+			offset = (ut32)noff;
 		}
 		if (mcopy (ms, p, m->type, 0, s, offset, nbytes, count) == -1) {
 			return -1;
@@ -778,60 +749,8 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	}
 
 	/* Verify we have enough data to match magic type */
-	switch (m->type) {
-	case FILE_BYTE:
-		if (nbytes < (offset + 1)) { /* should alway be true */
-			return 0;
-		}
-		break;
-	case FILE_SHORT:
-	case FILE_BESHORT:
-	case FILE_LESHORT:
-		if (nbytes < (offset + 2)) {
-			return 0;
-		}
-		break;
-	case FILE_LONG:
-	case FILE_BELONG:
-	case FILE_LELONG:
-	case FILE_MELONG:
-	case FILE_DATE:
-	case FILE_BEDATE:
-	case FILE_LEDATE:
-	case FILE_MEDATE:
-	case FILE_LDATE:
-	case FILE_BELDATE:
-	case FILE_LELDATE:
-	case FILE_MELDATE:
-	case FILE_FLOAT:
-	case FILE_BEFLOAT:
-	case FILE_LEFLOAT:
-		if (nbytes < (offset + 4)) {
-			return 0;
-		}
-		break;
-	case FILE_DOUBLE:
-	case FILE_BEDOUBLE:
-	case FILE_LEDOUBLE:
-		if (nbytes < (offset + 8)) {
-			return 0;
-		}
-		break;
-	case FILE_STRING:
-	case FILE_PSTRING:
-	case FILE_SEARCH:
-		if (nbytes < (offset + m->vallen)) {
-			return 0;
-		}
-		break;
-	case FILE_REGEX:
-		if (nbytes < offset) {
-			return 0;
-		}
-		break;
-	case FILE_DEFAULT: /* nothing to check */
-	default:
-		break;
+	if (m->type != FILE_DEFAULT && !magic_hasbytes (nbytes, offset, file_magic_type_bytes (m, m->type))) {
+		return 0;
 	}
 	return mconvert (ms, m);
 }
@@ -886,19 +805,13 @@ static ut64 file_strncmp(const char *s1, const char *s2, size_t len, ut32 flags)
 	return v;
 }
 
-static ut64 file_strncmp16(const char *a, const char *b, size_t len, ut32 flags) {
-	// 16-bit strings currently use the plain byte comparison path.
-	flags = 0;
-	return file_strncmp (a, b, len, flags);
-}
-
 static int magiccheck(RMagic *ms, struct r_magic *m) {
 	ut64 l = m->value.q;
 	ut64 v;
 	float fl, fv;
 	double dl, dv;
 	int matched;
-	union VALUETYPE *p = &ms->ms_value;
+	union VALUETYPE *const p = &ms->ms_value;
 
 	switch (m->type) {
 	case FILE_BYTE:
@@ -972,30 +885,24 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 		break;
 	case FILE_STRING:
 	case FILE_PSTRING:
-		l = 0;
-		v = file_strncmp (m->value.s, p->s, (size_t)m->vallen, m->str_flags);
-		break;
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
 		l = 0;
-		v = file_strncmp16 (m->value.s, p->s, (size_t)m->vallen, m->str_flags);
+		v = file_strncmp (m->value.s, p->s, (size_t)m->vallen, file_magic_type_is_string16 (m->type)? 0: m->str_flags);
 		break;
 	case FILE_SEARCH: { /* search ms->search.s for the string m->value.s */
-		size_t slen, idx;
+		size_t idx;
 
 		if (!ms->search.s) {
 			return 0;
 		}
 
-		slen = R_MIN (m->vallen, sizeof (m->value.s));
+		const size_t slen = R_MIN (m->vallen, sizeof (m->value.s));
 		l = 0;
 		v = 0;
 
 		for (idx = 0; m->str_range == 0 || idx < m->str_range; idx++) {
-			if ((int)ms->search.offset < 0) {
-				break;
-			}
-			if (slen + idx > ms->search.s_len) {
+			if (slen > ms->search.s_len || idx > ms->search.s_len - slen) {
 				break;
 			}
 			v = file_strncmp (m->value.s, ms->search.s + idx, slen, m->str_flags);
@@ -1145,7 +1052,7 @@ static int print_sep(RMagic *ms, int firstline) {
  *	If a continuation matches, we bump the current continuation level
  *	so that higher-level continuations are processed.
  */
-static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, size_t nbytes, int mode) {
+static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min_bytes, const ut8 *s, size_t nbytes, int mode) {
 	ut32 magindex = 0;
 	unsigned int cont_level = 0;
 	int need_separator = 0;
@@ -1166,6 +1073,12 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				continue;
 			}
 			continue; /* Skip to next top-level test*/
+		}
+		if (min_bytes && min_bytes[magindex] > nbytes) {
+			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
+				magindex++;
+			}
+			continue;
 		}
 
 		ms->offset = m->offset;
@@ -1233,6 +1146,9 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 					continue;
 				}
 			}
+			if (min_bytes && min_bytes[magindex] > nbytes) {
+				continue;
+			}
 			flush = !mget (ms, s, m, nbytes, cont_level);
 			if (flush && m->reln != '!') {
 				continue;
@@ -1299,8 +1215,8 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
 	struct mlist *ml;
 	int rv;
-	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
-		if ((rv = match (ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0) {
+	R_VEC_FOREACH (&ms->mlist, ml) {
+		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
 			return rv;
 		}
 	}

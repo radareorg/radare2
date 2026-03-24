@@ -4,6 +4,7 @@
 #define R2_MAGIC_H
 
 #include <r_types.h>
+#include <r_vec.h>
 #include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
@@ -39,6 +40,7 @@ union VALUETYPE {
 /* constants */
 #define MAGICNO         0xF11E041C
 #define VERSIONNO       5
+#define R_MAGIC_VERSION VERSIONNO
 #define FILE_MAGICSIZE  (32 * 6)
 
 #define	FILE_LOAD       0
@@ -194,12 +196,13 @@ struct r_magic {
 /* list of magic entries */
 struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
+	ut32 *min_bytes;		/* min bytes needed per magic entry */
 	ut32 nmagic;			/* number of entries in array */
-	int mapped;  /* allocation type: 0 => apprentice_file
-		      *                  1 => apprentice_map + malloc
-		      *                  2 => apprentice_map + mmap */
-	struct mlist *next, *prev;
+	ut32 bytes_max;		/* conservative max bytes needed */
+	ut8 mapped;  /* allocation type: 0 => apprentice_file
+		      *                  1 => apprentice_map + malloc */
 };
+R_VEC_TYPE (RVecMagicMList, struct mlist);
 
 #define R_MAGIC_NONE                0x000000 /* No flags */
 #define R_MAGIC_DEBUG               0x000001 /* Turn on debugging */
@@ -227,7 +230,7 @@ struct mlist {
 #define MAGIC_NO_CHECK_TROFF        0x000000 /* Don't check ascii/troff */
 
 struct r_magic_set {
-	struct mlist *mlist;
+	RVecMagicMList mlist;
 	struct cont {
 		size_t len;
 		struct level_info {
@@ -262,6 +265,8 @@ struct r_magic_set {
 	int magic_file_formats[FILE_NAMES_SIZE];
 	const char *magic_file_names[FILE_NAMES_SIZE];
 	ut32 last_cont_level;
+	ut32 bytes_max;
+	size_t maxmagic;
 };
 
 #if USE_LIB_MAGIC
@@ -275,16 +280,23 @@ R_API RMagic* r_magic_new(int flags);
 R_API void r_magic_free(RMagic*);
 
 R_API const char *r_magic_buffer(RMagic*, const void *, size_t);
+R_API const char *r_magic_file(RMagic*, const char *);
+R_API const char *r_magic_descriptor(RMagic*, int);
 
 R_API const char *r_magic_error(RMagic*);
+R_API int r_magic_getflags(RMagic*);
 R_API void r_magic_setflags(RMagic*, int);
 R_API void r_magic_from_ebcdic(const ut8 *, size_t, ut8 *);
+R_API char *r_magic_getpath(const char *magicfile, int action);
 
 R_API bool r_magic_load(RMagic*, const char *);
 R_API bool r_magic_load_buffer(RMagic*, const ut8 *, size_t);
+R_API bool r_magic_load_buffers(RMagic*, const void *const *, const size_t *, size_t);
 R_API bool r_magic_compile(RMagic*, const char *);
 R_API bool r_magic_check(RMagic*, const char *);
+R_API bool r_magic_list(RMagic*, const char *);
 R_API int r_magic_errno(RMagic*);
+R_API int r_magic_api_version(void);
 #endif
 
 

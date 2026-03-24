@@ -71,11 +71,11 @@ static void append_showstr(RStrBuf *sb, const char *s, size_t len) {
 }
 
 #ifndef COMPILE_ONLY
-void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
+char *__magic_file_mrender(RMagic *ms, struct r_magic *m) {
 	char pp[ASCTIME_BUF_MAXLEN];
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
-		return;
+		return NULL;
 	}
 
 	r_strbuf_appendf (sb, "[%u", m->lineno);
@@ -88,9 +88,7 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		if (m->in_op & FILE_OPINVERSE) {
 			r_strbuf_append (sb, "~");
 		}
-		r_strbuf_appendf (sb, "%c%u),",
-			((m->in_op & FILE_OPS_MASK) < SZOF (FILE_OPS))? FILE_OPS[m->in_op & FILE_OPS_MASK]: '?',
-			m->in_offset);
+		r_strbuf_appendf (sb, "%c%u),", ((m->in_op & FILE_OPS_MASK) < SZOF (FILE_OPS))? FILE_OPS[m->in_op & FILE_OPS_MASK]: '?', m->in_offset);
 	}
 	r_strbuf_appendf (sb, " %s%s", (m->flag & UNSIGNED)? "u": "",
 		/* Note: type is unsigned */
@@ -162,27 +160,23 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		case FILE_LEDATE:
 		case FILE_BEDATE:
 		case FILE_MEDATE:
-			r_strbuf_appendf (sb, "%s,",
-				__magic_file_fmttime (m->value.l, 1, pp));
+			r_strbuf_appendf (sb, "%s,", __magic_file_fmttime (m->value.l, 1, pp));
 			break;
 		case FILE_LDATE:
 		case FILE_LELDATE:
 		case FILE_BELDATE:
 		case FILE_MELDATE:
-			r_strbuf_appendf (sb, "%s,",
-				__magic_file_fmttime (m->value.l, 0, pp));
+			r_strbuf_appendf (sb, "%s,", __magic_file_fmttime (m->value.l, 0, pp));
 			break;
 		case FILE_QDATE:
 		case FILE_LEQDATE:
 		case FILE_BEQDATE:
-			r_strbuf_appendf (sb, "%s,",
-				__magic_file_fmttime ((ut32)m->value.q, 1, pp));
+			r_strbuf_appendf (sb, "%s,", __magic_file_fmttime ((ut32)m->value.q, 1, pp));
 			break;
 		case FILE_QLDATE:
 		case FILE_LEQLDATE:
 		case FILE_BEQLDATE:
-			r_strbuf_appendf (sb, "%s,",
-				__magic_file_fmttime ((ut32)m->value.q, 0, pp));
+			r_strbuf_appendf (sb, "%s,", __magic_file_fmttime ((ut32)m->value.q, 0, pp));
 			break;
 		case FILE_FLOAT:
 		case FILE_BEFLOAT:
@@ -203,7 +197,14 @@ void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
 		}
 	}
 	r_strbuf_appendf (sb, ",\"%s\"]", m->desc);
-	char *msg = r_strbuf_drain (sb);
+	return r_strbuf_drain (sb);
+}
+
+void __magic_file_mdump(RMagic *ms, struct r_magic *m) {
+	char *msg = __magic_file_mrender (ms, m);
+	if (!msg) {
+		return;
+	}
 	R_LOG_DEBUG ("%s", msg);
 	free (msg);
 }

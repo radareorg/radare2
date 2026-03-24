@@ -60,10 +60,10 @@ R_IPI int __magic_file_reset(RMagic *);
 R_IPI int __magic_file_zmagic(RMagic *, int, const char *, const ut8*, size_t);
 R_IPI int __magic_file_is_tar(RMagic *, const unsigned char *, size_t);
 R_IPI int __magic_file_softmagic(RMagic *, const unsigned char *, size_t, int);
-R_IPI struct mlist *__magic_file_apprentice(RMagic *, const char *, size_t, int);
-R_IPI struct mlist *__magic_file_apprentice_buffer(RMagic *, const ut8 *, size_t, int);
+R_IPI bool __magic_file_apprentice(RMagic *, const char *, size_t, int, RVecMagicMList *);
+R_IPI bool __magic_file_apprentice_buffer(RMagic *, const ut8 *, size_t, int, RVecMagicMList *);
 R_IPI ut64 __magic_file_signextend(RMagic *, struct r_magic *, ut64);
-R_IPI void __magic_file_delmagic(struct r_magic *, int type, size_t entries);
+R_IPI void __magic_file_delmagic(struct r_magic *, int type);
 R_IPI void __magic_file_badread(RMagic *);
 R_IPI void __magic_file_badseek(RMagic *);
 R_IPI void __magic_file_oomem(RMagic *, size_t);
@@ -71,10 +71,31 @@ R_IPI void __magic_file_error(RMagic *, int, const char *, ...);
 R_IPI void __magic_file_magerror(RMagic *, const char *, ...);
 R_IPI void __magic_file_magwarn(RMagic *, const char *, ...);
 R_IPI void __magic_file_mdump(RMagic *, struct r_magic *);
-R_IPI void __magic_file_showstr(FILE *, const char *, size_t);
+R_IPI char *__magic_file_mrender(RMagic *, struct r_magic *);
 R_IPI const char *__magic_file_getbuffer(RMagic *);
 R_IPI int __magic_file_check_mem(RMagic *, unsigned int);
 R_IPI int __magic_file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
+
+static inline void file_magic_mlist_fini(struct mlist *ml) {
+	if (!ml) {
+		return;
+	}
+	free (ml->min_bytes);
+	__magic_file_delmagic (ml->magic, ml->mapped);
+}
+
+static inline void file_magic_mlist_vec_clear(RVecMagicMList *vec) {
+	struct mlist *iter;
+	R_VEC_FOREACH (vec, iter) {
+		file_magic_mlist_fini (iter);
+	}
+	RVecMagicMList_clear (vec);
+}
+
+static inline void file_magic_mlist_vec_fini(RVecMagicMList *vec) {
+	file_magic_mlist_vec_clear (vec);
+	RVecMagicMList_fini (vec);
+}
 
 #ifndef HAVE_VASPRINTF
 int vasprintf(char **ptr, const char *format_string, va_list vargs);
@@ -86,5 +107,65 @@ int asprintf(char **ptr, const char *format_string, ...);
 #ifndef O_BINARY
 #define O_BINARY 0
 #endif
+
+static inline bool file_magic_type_is_string16(ut8 type) {
+	return type == FILE_BESTRING16 || type == FILE_LESTRING16;
+}
+
+static inline bool file_magic_type_has_string_value(ut8 type) {
+	return MAGIC_IS_STRING (type) && type != FILE_DEFAULT;
+}
+
+static inline size_t file_magic_type_bytes(const struct r_magic *m, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		return 1;
+	case FILE_SHORT:
+	case FILE_BESHORT:
+	case FILE_LESHORT:
+		return 2;
+	case FILE_LONG:
+	case FILE_BELONG:
+	case FILE_LELONG:
+	case FILE_MELONG:
+	case FILE_DATE:
+	case FILE_BEDATE:
+	case FILE_LEDATE:
+	case FILE_MEDATE:
+	case FILE_LDATE:
+	case FILE_BELDATE:
+	case FILE_LELDATE:
+	case FILE_MELDATE:
+	case FILE_FLOAT:
+	case FILE_BEFLOAT:
+	case FILE_LEFLOAT:
+		return 4;
+	case FILE_QUAD:
+	case FILE_LEQUAD:
+	case FILE_BEQUAD:
+	case FILE_QDATE:
+	case FILE_LEQDATE:
+	case FILE_BEQDATE:
+	case FILE_QLDATE:
+	case FILE_LEQLDATE:
+	case FILE_BEQLDATE:
+	case FILE_DOUBLE:
+	case FILE_BEDOUBLE:
+	case FILE_LEDOUBLE:
+		return 8;
+	case FILE_STRING:
+	case FILE_SEARCH:
+		return m->vallen;
+	case FILE_PSTRING:
+		return (size_t)m->vallen + 1;
+	case FILE_BESTRING16:
+	case FILE_LESTRING16:
+		return (size_t)m->vallen * 2;
+	case FILE_REGEX:
+	case FILE_DEFAULT:
+	default:
+		return 0;
+	}
+}
 
 #endif /* __file_h__ */
