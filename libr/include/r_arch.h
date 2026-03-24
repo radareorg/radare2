@@ -115,6 +115,7 @@ typedef struct r_arch_t {
 	RArchConfig *cfg; // global / default config
 	char *platform;
 	void *user; // probably RCore*
+	bool internal_plugins_loaded;
 } RArch;
 
 typedef struct r_arch_session_t {
@@ -203,6 +204,7 @@ R_API RList *r_arch_session_preludes(RArchSession *as);
 
 // arch.c
 R_API RArch *r_arch_new(void);
+R_API bool r_arch_plugins_ensure(RArch *a);
 R_API RArchPlugin *r_arch_find(RArch *arch, const char *name);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 

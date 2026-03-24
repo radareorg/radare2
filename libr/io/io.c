@@ -21,7 +21,7 @@ R_API void r_io_init(RIO* io) {
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
-	r_io_plugin_init (io);
+	r_io_plugins_init (io);
 	r_io_undo_init (io);
 	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");
@@ -146,10 +146,11 @@ R_API void r_io_close_all(RIO* io) {
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
 	ls_free (io->plugins);
+	io->internal_plugins_loaded = false;
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
-	r_io_plugin_init (io);
+	r_io_plugins_init (io);
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {

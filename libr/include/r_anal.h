@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2026 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H
@@ -590,6 +590,7 @@ typedef struct r_anal_t {
 	RColor tracetagcolors[64]; // each trace color for each bit
 	/* end private */
 	R_DIRTY_VAR;
+	bool internal_plugins_loaded;
 } RAnal;
 
 typedef const char *(*RAnalLabelAt) (RAnalFunction *fcn, ut64);
@@ -1149,11 +1150,12 @@ R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwi
 
 /* anal.c */
 R_API RAnal *r_anal_new(void);
+R_API bool r_anal_plugins_ensure(RAnal *anal);
 R_API void r_anal_purge(RAnal *anal);
 R_API void r_anal_free(RAnal *r);
 R_API void r_anal_set_user_ptr(RAnal *anal, void *user);
 R_API void r_anal_plugin_free(RAnalPlugin *p);
-R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
+R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *plugin);
 R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 
 // Plugin action enum: determines which callback to dispatch

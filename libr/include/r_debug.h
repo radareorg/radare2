@@ -456,6 +456,7 @@ typedef struct r_debug_t {
 	bool glibc_version_resolved; /* is the libc version resolved already? */
 	int glibc_version;
 	double glibc_version_d; // TODO: move over to this only
+	bool internal_plugins_loaded;
 } RDebug;
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
@@ -543,8 +544,9 @@ R_API RList *r_debug_kill_list(RDebug *dbg);
 R_API int r_debug_kill_setup(RDebug *dbg, int sig, int action);
 
 /* handle.c */
-R_API void r_debug_init_plugins(RDebug *dbg);
-R_API void r_debug_fini_plugins(RDebug *dbg);
+R_IPI void r_debug_plugins_init(RDebug *dbg);
+R_API bool r_debug_plugins_ensure(RDebug *dbg);
+R_IPI void r_debug_plugins_fini(RDebug *dbg);
 R_API int r_debug_plugin_set(RDebug *dbg, const char *str);
 R_API bool r_debug_plugin_list(RDebug *dbg, int mode);
 R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin);

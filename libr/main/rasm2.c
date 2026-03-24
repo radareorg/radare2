@@ -42,6 +42,7 @@ static RAsmEnv env[] = {
 };
 
 static void rasm_load_plugins(RAsmState *as);
+static void rasm_load_internal_cb(void *user);
 static void rasm_show_env(bool show_desc);
 
 static void rasm_set_archbits(RAsmState *as) {
@@ -63,7 +64,12 @@ static RAsmState *rasm_new(void) {
 	as->a->num = r_num_new (NULL, NULL, NULL);
 	as->anal->config = r_ref_ptr (as->a->config);
 	r_anal_bind (as->anal, &as->a->analb);
-	rasm_load_plugins (as);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		rasm_load_plugins (as);
+	} else {
+		rasm_load_internal_cb (as);
+	}
 	rasm_set_archbits (as);
 	return as;
 }
@@ -728,8 +734,17 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 	return ret;
 }
 
+static void rasm_load_internal_cb(void *user) {
+	RAsmState *as = (RAsmState *)user;
+	r_asm_plugins_ensure (as->a);
+	r_anal_plugins_ensure (as->anal);
+	r_arch_plugins_ensure (as->anal->arch);
+}
+
 static void rasm_load_plugins(RAsmState *as) {
 	// r_lib_add_handler (as->l, R_LIB_TYPE_ASM, "(dis)assembly plugins", &__lib_asm_cb, NULL, as);
+	as->l->cb_internal = rasm_load_internal_cb;
+	as->l->cb_internal_user = as;
 	r_lib_add_handler (as->l, R_LIB_TYPE_ANAL, "analysis/emulation plugins", &__lib_anal_cb, NULL, as);
 	r_lib_add_handler (as->l, R_LIB_TYPE_ARCH, "architecture plugins", &__lib_arch_cb, NULL, as);
 	r_lib_load_default_paths (as->l, R_LIB_LOAD_DEFAULT);

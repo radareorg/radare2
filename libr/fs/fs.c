@@ -57,8 +57,16 @@ R_API R_MUSTUSE const RFSType *r_fs_type_index(int i) {
 	return &fstypes[i];
 }
 
+R_API bool r_fs_plugins_ensure(RFS *fs) {
+	R_RETURN_VAL_IF_FAIL (fs, false);
+	if (fs->internal_plugins_loaded) {
+		return true;
+	}
+	fs->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (fs, (const void *const *)fs_static_plugins, (RLibPluginAddCb)r_fs_plugin_add);
+}
+
 R_API R_MUSTUSE RFS *r_fs_new(void) {
-	RFSPlugin *static_plugin;
 	RFS *fs = R_NEW0 (RFS);
 	fs->view = R_FS_VIEW_NORMAL;
 	fs->roots = r_list_new ();
@@ -73,19 +81,8 @@ R_API R_MUSTUSE RFS *r_fs_new(void) {
 		return NULL;
 	}
 	fs->plugins->free = free;
-	// XXX fs->roots->free = r_fs_plugin_free;
-	size_t i;
-	for (i = 0; fs_static_plugins[i]; i++) {
-		if (!fs_static_plugins[i]->meta.name) {
-			continue;
-		}
-		static_plugin = R_NEW (RFSPlugin);
-		if (!static_plugin) {
-			continue;
-		}
-		memcpy (static_plugin, fs_static_plugins[i], sizeof (RFSPlugin));
-		r_fs_plugin_add (fs, static_plugin);
-		free (static_plugin);
+	if (r_lib_plugins_init_default ()) {
+		r_fs_plugins_ensure (fs);
 	}
 	return fs;
 }
@@ -136,7 +133,7 @@ R_API void r_fs_free(RFS *fs) {
 
 /* plugins */
 R_API bool r_fs_plugin_add(RFS *fs, RFSPlugin *p) {
-	R_RETURN_VAL_IF_FAIL (fs && p, false);
+	R_RETURN_VAL_IF_FAIL (fs && p && p->meta.name, false);
 	if (p->init) {
 		// TODO. return false if init fails?
 		if (!p->init ()) {

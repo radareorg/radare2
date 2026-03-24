@@ -16,16 +16,24 @@ static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS
 };
 
-R_API void r_debug_init_plugins(RDebug *dbg) {
+R_API bool r_debug_plugins_ensure(RDebug *dbg) {
+	R_RETURN_VAL_IF_FAIL (dbg, false);
+	if (dbg->internal_plugins_loaded) {
+		return true;
+	}
+	dbg->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (dbg, (const void *const *)debug_static_plugins, (RLibPluginAddCb)r_debug_plugin_add);
+}
+
+R_IPI void r_debug_plugins_init(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
 	dbg->plugins = RVecDebugPluginSession_new ();
-	int i;
-	for (i = 0; debug_static_plugins[i]; i++) {
-		r_debug_plugin_add (dbg, debug_static_plugins[i]);
+	if (r_lib_plugins_init_default ()) {
+		r_debug_plugins_ensure (dbg);
 	}
 }
 
-R_API void r_debug_fini_plugins(RDebug *dbg) {
+R_IPI void r_debug_plugins_fini(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
 	RVecDebugPluginSession_free (dbg->plugins);
 }

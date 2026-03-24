@@ -628,15 +628,22 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_config_set_i (core.config, "scr.color", (int)color_val);
 	}
 
-	RLib *l = r_lib_new (NULL, NULL);
-	r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
-		&__lib_bin_cb, &__lib_bin_dt, bin);
-	r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
-		&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
-	r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
-		&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
-	r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
-	r_lib_free (l);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		RLib *l = r_lib_new (NULL, NULL);
+		l->cb_internal = (RLibInternalLoadCallback)r_bin_plugins_ensure;
+		l->cb_internal_user = bin;
+		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
+			&__lib_bin_cb, &__lib_bin_dt, bin);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
+			&__lib_bin_xtr_cb, &__lib_bin_xtr_dt, bin);
+		r_lib_add_handler (l, R_LIB_TYPE_BIN_LDR, "bin ldr plugins",
+			&__lib_bin_ldr_cb, &__lib_bin_ldr_dt, bin);
+		r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
+		r_lib_free (l);
+	} else {
+		r_bin_plugins_ensure (bin);
+	}
 #if 0
 	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {
 		Sdb *config_sdb = sdb_new (NULL, tmp, 0);

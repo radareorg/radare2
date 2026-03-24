@@ -11,16 +11,28 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-static void r_muta_init(RMuta *muta) {
-	R_RETURN_IF_FAIL (muta);
+R_API bool r_muta_plugins_ensure(RMuta *muta) {
+	R_RETURN_VAL_IF_FAIL (muta, false);
+	if (muta->internal_plugins_loaded) {
+		return true;
+	}
+	muta->internal_plugins_loaded = true;
 	int i;
-	muta->user = NULL;
-	muta->plugins = r_list_newf (free);
 	for (i = 0; muta_static_plugins[i]; i++) {
 		RMutaPlugin *p = r_mem_dup (muta_static_plugins[i], sizeof (RMutaPlugin));
 		if (p) {
 			r_muta_add (muta, p);
 		}
+	}
+	return true;
+}
+
+static void r_muta_init(RMuta *muta) {
+	R_RETURN_IF_FAIL (muta);
+	muta->user = NULL;
+	muta->plugins = r_list_newf (free);
+	if (r_lib_plugins_init_default ()) {
+		r_muta_plugins_ensure (muta);
 	}
 }
 

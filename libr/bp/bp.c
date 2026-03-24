@@ -19,6 +19,20 @@ static void r_bp_item_free(RBreakpointItem *b) {
 	}
 }
 
+R_API bool r_bp_plugins_ensure(RBreakpoint *bp) {
+	R_RETURN_VAL_IF_FAIL (bp, false);
+	if (bp->internal_plugins_loaded) {
+		return true;
+	}
+	bp->internal_plugins_loaded = true;
+	int i;
+	for (i = 0; bp_static_plugins[i]; i++) {
+		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
+		r_bp_plugin_add (bp, sp);
+	}
+	return true;
+}
+
 R_API RBreakpoint *r_bp_new(void) {
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);
 	bp->bps_idx_count = 16;
@@ -27,10 +41,8 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
-	int i;
-	for (i = 0; bp_static_plugins[i]; i++) {
-		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
-		r_bp_plugin_add (bp, sp);
+	if (r_lib_plugins_init_default ()) {
+		r_bp_plugins_ensure (bp);
 	}
 	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;

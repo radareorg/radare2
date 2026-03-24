@@ -106,6 +106,7 @@ typedef struct r_egg_t {
 	int bits;
 	ut32 os;
 	int context;
+	bool internal_plugins_loaded;
 } REgg;
 
 /* XXX: this may fail in different arches */
@@ -185,6 +186,7 @@ typedef struct r_egg_emit_t {
 
 #ifdef R_API
 R_API REgg *r_egg_new(void);
+R_API bool r_egg_plugins_ensure(REgg *egg);
 R_API void r_egg_lang_init(REgg *egg);
 R_API void r_egg_lang_fini(REgg *egg);
 R_API char *r_egg_tostring(REgg *egg);

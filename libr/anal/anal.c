@@ -13,6 +13,17 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
+R_API bool r_anal_plugins_ensure(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, false);
+	if (anal->internal_plugins_loaded) {
+		return true;
+	}
+	anal->internal_plugins_loaded = true;
+	return anal->plugins
+		? r_lib_plugins_add_static (anal, (const void *const *)anal_static_plugins, (RLibPluginAddCb)r_anal_plugin_add)
+		: false;
+}
+
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 
@@ -130,7 +141,6 @@ static void r_meta_item_free(void *_item) {
 
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
-	int i;
 	RAnal *anal = R_NEW0 (RAnal);
 	if (!r_str_constpool_init (&anal->constpool)) {
 		free (anal);
@@ -192,10 +202,8 @@ R_API RAnal *r_anal_new(void) {
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
 	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
-	if (anal->plugins) {
-		for (i = 0; anal_static_plugins[i]; i++) {
-			r_anal_plugin_add (anal, anal_static_plugins[i]);
-		}
+	if (r_lib_plugins_init_default ()) {
+		r_anal_plugins_ensure (anal);
 	}
 	R_DIRTY_SET (anal);
 	return anal;
@@ -263,8 +271,8 @@ R_API void r_anal_set_user_ptr(RAnal *anal, void *user) {
 	anal->user = user;
 }
 
-R_API int r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (anal && foo, -1);
+R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
+	R_RETURN_VAL_IF_FAIL (anal && foo, false);
 	if (foo->init) {
 		foo->init (anal->user);
 	}
