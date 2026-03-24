@@ -1046,7 +1046,7 @@ noskip:
 			// skip mov reg, reg
 			if (anal->opt.jmptbl && op->scale && op->ireg) {
 				movdisp = op->disp;
-				movscale = op->scale;
+				movscale = op->refptr? op->refptr: op->ptrsize? op->ptrsize: op->scale;
 				movbasereg = src0? src0->reg: NULL;
 			}
 			if (anal->opt.hpskip && regs_exist (src0, dst) && !strcmp (src0->reg, dst->reg)) {
@@ -2338,23 +2338,53 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 	return name;
 }
 
-static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
-	char *name;
-	const char *lookup_name;
-
-	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
-	lookup_name = function_signature_lookup_name (anal, fcn);
-	name = r_type_func_name (anal->sdb_types, lookup_name);
-	if (name && !strcmp (r_str_get_fail (sdb_const_get (anal->sdb_types, name, 0), ""), "func")) {
-		return name;
-	}
-	free (name);
-	if (lookup_name != fcn->name) {
-		name = r_type_func_name (anal->sdb_types, fcn->name);
-		if (name && !strcmp (r_str_get_fail (sdb_const_get (anal->sdb_types, name, 0), ""), "func")) {
+static char *function_signature_try_type_name(Sdb *types, const char *candidate) {
+	R_RETURN_VAL_IF_FAIL (types && candidate && *candidate, NULL);
+	char *name = r_type_func_name (types, candidate);
+	if (name) {
+		const char *kind = sdb_const_get (types, name, 0);
+		if (kind && !strcmp (kind, "func")) {
 			return name;
 		}
 		free (name);
+	}
+	const char *kind = sdb_const_get (types, candidate, 0);
+	if (kind && !strcmp (kind, "func")) {
+		return strdup (candidate);
+	}
+	return NULL;
+}
+
+static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
+	const char *basename;
+
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && fcn && fcn->name, NULL);
+	const char *lookup_name = function_signature_lookup_name (anal, fcn);
+	char *name = function_signature_try_type_name (anal->sdb_types, lookup_name);
+	if (name) {
+		return name;
+	}
+	if (lookup_name != fcn->name) {
+		name = function_signature_try_type_name (anal->sdb_types, fcn->name);
+		if (name) {
+			return name;
+		}
+	}
+	basename = r_str_rchr (lookup_name, NULL, '.');
+	if (basename && basename[1]) {
+		name = function_signature_try_type_name (anal->sdb_types, basename + 1);
+		if (name) {
+			return name;
+		}
+	}
+	if (lookup_name != fcn->name) {
+		basename = r_str_rchr (fcn->name, NULL, '.');
+		if (basename && basename[1]) {
+			name = function_signature_try_type_name (anal->sdb_types, basename + 1);
+			if (name) {
+				return name;
+			}
+		}
 	}
 	return strdup (lookup_name);
 }
@@ -2657,6 +2687,24 @@ beach:
 	return NULL;
 }
 
+R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
+	char *res = NULL;
+	char *type_name;
+
+	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal && fcn->anal->sdb_types, NULL);
+	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
+	if (!signature) {
+		return NULL;
+	}
+	type_name = function_signature_type_name (fcn->anal, fcn);
+	if (type_name) {
+		res = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+		free (type_name);
+	}
+	r_anal_function_signature_free (signature);
+	return res;
+}
+
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature) {
 	char *decl = NULL;
 	char *type_name;
@@ -2691,25 +2739,6 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 		}
 	}
 	return ok;
-}
-
-// MOVE To function.c
-R_API char *r_anal_function_get_signature_string(RAnalFunction *function) {
-	char *type_name;
-	char *res = NULL;
-
-	R_RETURN_VAL_IF_FAIL (function && function->anal && function->anal->sdb_types, NULL);
-	RAnalFunctionSignature *signature = r_anal_function_get_signature (function);
-	if (!signature) {
-		return NULL;
-	}
-	type_name = function_signature_type_name (function->anal, function);
-	if (type_name) {
-		res = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
-		free (type_name);
-	}
-	r_anal_function_signature_free (signature);
-	return res;
 }
 
 /* set function signature from string */

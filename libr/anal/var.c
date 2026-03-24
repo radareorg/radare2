@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "anal.var"
 
 #include <r_core.h>
+#include <r_anal_priv.h>
 
 #define ACCESS_CMP(x, y) ((st64)((ut64)(x) - ((RAnalVarAccess *)y)->offset))
 
@@ -1864,8 +1865,17 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 	r_list_free (list);
 }
 
-static bool is_default_argname(const char *name) {
-	return r_str_startswith (name, "arg") && IS_DIGIT (name[3]);
+R_IPI bool r_anal_var_is_default_argname(const char *name) {
+	if (!name || !r_str_startswith (name, "arg") || !name[3]) {
+		return false;
+	}
+	const char *ptr = name + 3;
+	for (; *ptr; ptr++) {
+		if (!IS_DIGIT (*ptr)) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RList *rvars) {
@@ -1892,7 +1902,7 @@ static void assign_reg_argnums(RAnal *anal, RAnalFunction *fcn, RList *rvars) {
 			continue;
 		}
 		var->argnum = dense++;
-		if (is_default_argname (var->name)) {
+		if (r_anal_var_is_default_argname (var->name)) {
 			char *newname = r_str_newf ("arg%d", var->argnum + 1);
 			r_anal_var_rename (anal, var, newname);
 			free (newname);

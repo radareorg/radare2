@@ -280,6 +280,44 @@ typedef struct r_anal_function_signature_t {
 	bool noreturn;
 } RAnalFunctionSignature;
 
+typedef enum {
+	R_ANAL_FCN_BASE_BP = 0,
+	R_ANAL_FCN_BASE_SP,
+	R_ANAL_FCN_BASE_NAMED
+} RAnalFcnSlotBase;
+
+typedef enum {
+	R_ANAL_FCN_SLOT_LOCAL = 0,
+	R_ANAL_FCN_SLOT_ARG,
+	R_ANAL_FCN_SLOT_HOME,
+	R_ANAL_FCN_SLOT_UNKNOWN
+} RAnalFcnSlotRole;
+
+typedef struct r_anal_fcn_reg_arg_t {
+	char *name;
+	char *type;
+	char *reg;
+	int arg_index;
+} RAnalFcnRegArg;
+
+typedef struct r_anal_fcn_slot_t {
+	char *name;
+	char *type;
+	RAnalFcnSlotBase base;
+	char *base_name;
+	st64 offset;
+	RAnalFcnSlotRole role;
+	int arg_index;
+	char *arg_name;
+	char *home_reg;
+} RAnalFcnSlot;
+
+typedef struct r_anal_fcn_context_t {
+	RAnalFunctionSignature *signature;
+	RList *reg_args; // RList<RAnalFcnRegArg *>
+	RList *slots; // RList<RAnalFcnSlot *>
+} RAnalFcnContext;
+
 typedef struct r_anal_diff_t {
 	int type;
 	ut64 addr;
@@ -1216,6 +1254,8 @@ R_API void r_anal_function_signature_free(RAnalFunctionSignature *signature);
 R_API char *r_anal_function_get_signature_string(RAnalFunction *function);
 R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionSignature *signature);
 R_API bool r_anal_function_del_signature(RAnal *a, const char *name);
+R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn);
+R_API void r_anal_function_context_free(RAnalFcnContext *ctx);
 R_API int r_anal_str_to_fcn(RAnal *a, RAnalFunction *f, const char *_str);
 R_API int r_anal_function_count(RAnal *a, ut64 from, ut64 to);
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr);
