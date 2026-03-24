@@ -17,24 +17,24 @@ static const char *helpmsg =
 	"Usage: r2pm [-flags] [pkgs...]\n"
 	"Commands:\n"
 	" -a [repository]   add or -delete external repository\n"
-	" -c ([git/dir])    clear source cache (R2PM_GITDIR)\n"
+	" -c <pkgname>      clear cached sources for the given package (see -cp)\n"
 	" -ci <pkgname>     clean + install\n"
 	" -cp               clean the user's home plugin directory\n"
-	" -d,doc [pkgname]  show documentation and source for given package\n"
-	" -e [pkgname]      edit using $EDITOR the given package script\n"
-	" -f                force operation (Use in combination of -U, -i, -u, ..)\n"
+	" -d,doc <pkgname>  show documentation and source for given package\n"
+	" -e <pkgname>      edit using $EDITOR the given package script\n"
+	" -f                force operation (requires -U, -i or -u)\n"
 	" -gi <pkg>         global install (system-wide)\n"
 	" -h                display this help message\n"
 	" -H ([variable])   list all or selected r2pm environment variables\n"
 	" -i <pkgname>      install/update package and its dependencies (see -c, -g)\n"
 	" -I                information about the repository and installed packages\n"
-	" -j                json output\n"
+	" -j                json output (requires -l, -s or -v)\n"
 	" -l                list installed packages\n"
-	" -q                be quiet\n"
-	" -r [cmd ...args]  run shell command with R2PM_BINDIR in PATH\n"
+	" -q                be quiet (requires an action)\n"
+	" -r <cmd ...args>  run shell command with R2PM_BINDIR in PATH\n"
 	" -R <pkgname>      reload plugin (See R2PM_RELOAD code block package)\n"
 	" -s [<keyword>]    search available packages in database matching a string\n"
-	" -t [YYYY-MM-DD]   set a moment in time to pull the code from the git packages\n"
+	" -t <YYYY-MM-DD>   set the package checkout date (requires an action)\n"
 	" -u <pkgname>      uninstall package (see -f to force uninstall)\n"
 	" -uci <pkgname>    uninstall + clean + install\n"
 	" -ui <pkgname>     uninstall + install\n"
@@ -67,6 +67,71 @@ typedef struct r_r2pm_t {
 	int rc;
 	const char *time;
 } R2Pm;
+
+static int r2pm_missing_action(const char *option) {
+	R_LOG_ERROR ("Option '%s' requires an action", option);
+	return 1;
+}
+
+static int r2pm_missing_argument(const char *option, const char *what) {
+	R_LOG_ERROR ("Option '%s' requires %s", option, what);
+	return 1;
+}
+
+static const char *r2pm_modifier_option(const R2Pm *r2pm) {
+	if (r2pm->json) {
+		return "-j";
+	}
+	if (r2pm->quiet) {
+		return "-q";
+	}
+	if (r2pm->force) {
+		return "-f";
+	}
+	if (r2pm->global) {
+		return "-g";
+	}
+	if (r2pm->time) {
+		return "-t";
+	}
+	return NULL;
+}
+
+static int r2pm_check_arguments(R2Pm *r2pm, int argc, int ind, bool action) {
+	if (!action && argc > 1) {
+		const char *modifier = r2pm_modifier_option (r2pm);
+		if (modifier) {
+			return r2pm_missing_action (modifier);
+		}
+		r2pm->help = true;
+		r2pm->rc = 1;
+	}
+	if (ind < argc) {
+		return 0;
+	}
+	if (r2pm->run) {
+		return r2pm_missing_argument ("-r", "a command to run");
+	}
+	if (r2pm->install) {
+		return r2pm_missing_argument ("-i", "one or more packages");
+	}
+	if (r2pm->uninstall && !r2pm->install) {
+		return r2pm_missing_argument ("-u", "one or more packages");
+	}
+	if (r2pm->doc) {
+		return r2pm_missing_argument ("-d", "one or more packages");
+	}
+	if (r2pm->edit) {
+		return r2pm_missing_argument ("-e", "one or more packages");
+	}
+	if (r2pm->reload) {
+		return r2pm_missing_argument ("-R", "one or more packages");
+	}
+	if (r2pm->clean && !r2pm->plugdir && !r2pm->install && !r2pm->uninstall) {
+		return r2pm_missing_argument ("-c", "one or more packages or -cp");
+	}
+	return 0;
+}
 
 static int git_pull(const char *dir, bool verbose, bool reset) {
 	if (strchr (dir, ' ')) {
@@ -1377,13 +1442,13 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 			break;
 		default:
 			r2pm.help = true;
+			r2pm.rc = 1;
 			break;
 		}
 	}
 	r2pm_setenv (&r2pm);
-	if (!action && opt.ind < argc) {
-		r2pm.help = true;
-		r2pm.rc = 1;
+	if (r2pm_check_arguments (&r2pm, argc, opt.ind, action)) {
+		return 1;
 	}
 	if (r2pm.plugdir) {
 		if (r2pm.clean) {
