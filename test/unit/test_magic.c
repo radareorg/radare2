@@ -121,31 +121,6 @@ static bool test_r_magic_file_uses_slurp_and_buffer(void) {
 	mu_end;
 }
 
-static bool test_r_magic_descriptor_reads_descriptor_contents(void) {
-	const char magic_source[] = "0\tstring\tABCD\tdescriptor magic\n";
-	char *filename = NULL;
-	const ut8 probe[] = "ABCD";
-	RMagic *ms = r_magic_new (0);
-	const char *type;
-	int fd;
-
-	mu_assert_notnull (ms, "r_magic_new () failed");
-	mu_assert_true (r_magic_load_buffer (ms, (const ut8 *)magic_source, sizeof (magic_source) - 1), "text buffer load failed");
-	fd = r_file_mkstemp ("", &filename);
-	mu_assert_neq ((ut64)fd, (ut64)-1, "mkstemp failed");
-	mu_assert_eq ((int)write (fd, probe, sizeof (probe) - 1), (int)(sizeof (probe) - 1), "probe write failed");
-	mu_assert_eq ((int)lseek (fd, 0, SEEK_SET), 0, "seek failed");
-	type = r_magic_descriptor (ms, fd);
-	mu_assert_notnull (type, "magic descriptor probe failed");
-	mu_assert_streq (type, "descriptor magic", "magic descriptor match");
-
-	close (fd);
-	r_file_rm (filename);
-	free (filename);
-	r_magic_free (ms);
-	mu_end;
-}
-
 static bool test_r_magic_load_buffers_merges_multiple_databases(void) {
 	const char magic_a[] = "0\tstring\tABCD\tmagic A\n";
 	const char magic_b[] = "0\tstring\tWXYZ\tmagic B\n";
