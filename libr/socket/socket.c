@@ -402,7 +402,7 @@ R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int 
 
 			if (ret == 0) {
 				freeaddrinfo (res);
-				return true;
+				goto success;
 			}
 			if (errno == EINPROGRESS) {
 				struct timeval tv = { timeout, 0 };
