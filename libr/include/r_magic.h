@@ -4,7 +4,7 @@
 #define R2_MAGIC_H
 
 #include <r_types.h>
-#include <r_list.h>
+#include <r_vec.h>
 #include <r_util/r_strbuf.h>
 
 #ifdef __cplusplus
@@ -196,12 +196,13 @@ struct r_magic {
 /* list of magic entries */
 struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
-	ut32 nmagic;			/* number of entries in array */
-	int mapped;  /* allocation type: 0 => apprentice_file
-		      *                  1 => apprentice_map + malloc */
-	size_t bytes_max;		/* conservative max bytes needed */
 	ut32 *min_bytes;		/* min bytes needed per magic entry */
+	ut32 nmagic;			/* number of entries in array */
+	ut32 bytes_max;		/* conservative max bytes needed */
+	ut8 mapped;  /* allocation type: 0 => apprentice_file
+		      *                  1 => apprentice_map + malloc */
 };
+R_VEC_TYPE (RVecMagicMList, struct mlist);
 
 #define R_MAGIC_NONE                0x000000 /* No flags */
 #define R_MAGIC_DEBUG               0x000001 /* Turn on debugging */
@@ -229,7 +230,7 @@ struct mlist {
 #define MAGIC_NO_CHECK_TROFF        0x000000 /* Don't check ascii/troff */
 
 struct r_magic_set {
-	RList *mlist;
+	RVecMagicMList mlist;
 	struct cont {
 		size_t len;
 		struct level_info {
@@ -264,7 +265,7 @@ struct r_magic_set {
 	int magic_file_formats[FILE_NAMES_SIZE];
 	const char *magic_file_names[FILE_NAMES_SIZE];
 	ut32 last_cont_level;
-	size_t bytes_max;
+	ut32 bytes_max;
 };
 
 #if USE_LIB_MAGIC

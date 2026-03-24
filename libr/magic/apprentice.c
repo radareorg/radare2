@@ -1,6 +1,7 @@
-/*	$OpenBSD: apprentice.c,v 1.29 2009/11/11 16:21:51 jsg Exp $ */
+/* $radare2: apprentice.c 2026/03/24 pancake Exp $ */
+/* $OpenBSD: apprentice.c,v 1.29 2009/11/11 16:21:51 jsg Exp $ */
+/* Copyright (c) Ian F. Darwin 1986-1995. */
 /*
- * Copyright (c) Ian F. Darwin 1986-1995.
  * Software written by Ian F. Darwin and others;
  * maintained 1995-present by Christos Zoulas and others.
  *
@@ -25,9 +26,6 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- */
-/*
- * apprentice - make one pass through /etc/magic, learning its secrets.
  */
 #include <r_userconf.h>
 
@@ -62,22 +60,12 @@ struct r_magic_entry {
 	ut32 max_count;
 };
 
+// AITODO: do not use global variables!
 static size_t maxmagic = 0;
-static size_t magicsize = sizeof(struct r_magic);
 
 static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
 static const size_t mime_marker_len = sizeof(mime_marker) - 1;
-
-static void mlist_free(void *p) {
-	struct mlist *const ml = p;
-	if (!ml) {
-		return;
-	}
-	free (ml->min_bytes);
-	__magic_file_delmagic (ml->magic, ml->mapped);
-	free (ml);
-}
 
 static size_t magic_cap_bytes(size_t bytes) {
 	return R_MIN (bytes, (size_t)HOWMANY);
@@ -1855,7 +1843,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 /*
  * Handle one file or directory.
  */
-static int apprentice_1(RMagic *ms, const char *fn, int action, RList *mlist) {
+static int apprentice_1(RMagic *ms, const char *fn, int action, RVecMagicMList *mlist) {
 	struct r_magic *magic = NULL;
 	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
@@ -1866,7 +1854,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RList *mlist) {
 		return -1;
 	}
 	ms->haderr = 0;
-	if (magicsize != FILE_MAGICSIZE) {
+	if (sizeof (struct r_magic) != FILE_MAGICSIZE) {
 		__magic_file_error (ms, 0, "magic element size %lu != %lu", (unsigned long) (size_t)sizeof (*magic), (unsigned long)FILE_MAGICSIZE);
 		return -1;
 	}
@@ -1900,7 +1888,7 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RList *mlist) {
 		return -1;
 	}
 
-	struct mlist *ml = malloc (sizeof (*ml));
+	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
 	if (!ml) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, rv);
@@ -1909,39 +1897,37 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RList *mlist) {
 	}
 
 	ml->magic = magic;
-	ml->nmagic = nmagic;
-	ml->mapped = rv;
-	ml->bytes_max = bytes_max;
 	ml->min_bytes = min_bytes;
-	if (!r_list_append (mlist, ml)) {
-		mlist_free (ml);
-		__magic_file_oomem (ms, sizeof (*ml));
-		return -1;
-	}
+	ml->nmagic = nmagic;
+	ml->bytes_max = (ut32)bytes_max;
+	ml->mapped = (ut8)rv;
 	return 0;
 }
 
 /* const char *fn: list of magic files and directories */
-RList *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action) {
+bool __magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action, RVecMagicMList *mlist) {
 	char *p;
 	int file_err, errs = -1;
 	char *mfn = r_str_ndup (fn, fn_size);
+	const char *it;
+	size_t path_count = 1;
 
-	if (!fn) {
-		return NULL;
+	if (!fn || !mlist) {
+		return false;
 	}
 
 	if (!mfn) {
 		__magic_file_oomem (ms, fn_size);
-		return NULL;
+		return false;
 	}
 	fn = mfn;
-
-	RList *const mlist = r_list_newf (mlist_free);
-	if (!mlist) {
+	for (it = fn; (it = strstr (it, R_SYS_ENVSEP)); it += strlen (R_SYS_ENVSEP)) {
+		path_count++;
+	}
+	if (!RVecMagicMList_reserve (mlist, path_count)) {
 		free (mfn);
-		__magic_file_oomem (ms, sizeof (RList));
-		return NULL;
+		__magic_file_oomem (ms, path_count * sizeof (struct mlist));
+		return false;
 	}
 
 	while (fn) {
@@ -1958,12 +1944,11 @@ RList *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int a
 	}
 	if (errs == -1) {
 		free (mfn);
-		r_list_free (mlist);
 		__magic_file_error (ms, 0, "could not find any magic files!");
-		return NULL;
+		return false;
 	}
 	free (mfn);
-	return mlist;
+	return true;
 }
 
 static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
@@ -1973,60 +1958,52 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 	return buf && buf_size >= sizeof (ut32) * 2 && read_compiled_magic_header (buf, &version, &needsbyteswap) && version == VERSIONNO;
 }
 
-RList *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
+bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action, RVecMagicMList *mlist) {
 	struct r_magic *magic = NULL;
 	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int mapped = 0;
 	size_t bytes_max = 0;
 
-	if (!buf) {
-		return NULL;
+	if (!buf || !mlist) {
+		return false;
 	}
 	if (action == FILE_COMPILE) {
 		__magic_file_error (ms, 0, "magic buffer compilation is not supported");
-		return NULL;
+		return false;
 	}
 	if (is_compiled_magic_buffer (buf, buf_size)) {
 		mapped = apprentice_map_buffer (ms, &magic, &nmagic, buf, buf_size);
 		if (mapped < 0) {
-			return NULL;
+			return false;
 		}
 	} else {
 		if (apprentice_load_buffer (ms, &magic, &nmagic, buf, buf_size, action) != 0) {
-			return NULL;
+			return false;
 		}
 	}
 	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
 		__magic_file_delmagic (magic, mapped);
-		return NULL;
+		return false;
 	}
-	RList *const mlist = r_list_newf (mlist_free);
-	if (!mlist) {
+	if (!RVecMagicMList_reserve (mlist, RVecMagicMList_length (mlist) + 1)) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
-		__magic_file_oomem (ms, sizeof (RList));
-		return NULL;
+		__magic_file_oomem (ms, sizeof (struct mlist));
+		return false;
 	}
-	struct mlist *const ml = malloc (sizeof (*ml));
+	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
 	if (!ml) {
 		free (min_bytes);
 		__magic_file_delmagic (magic, mapped);
-		r_list_free (mlist);
 		__magic_file_oomem (ms, sizeof (*ml));
-		return NULL;
+		return false;
 	}
 	ml->magic = magic;
-	ml->nmagic = nmagic;
-	ml->mapped = mapped;
-	ml->bytes_max = bytes_max;
 	ml->min_bytes = min_bytes;
-	if (!r_list_append (mlist, ml)) {
-		mlist_free (ml);
-		r_list_free (mlist);
-		__magic_file_oomem (ms, sizeof (*ml));
-		return NULL;
-	}
-	return mlist;
+	ml->nmagic = nmagic;
+	ml->bytes_max = (ut32)bytes_max;
+	ml->mapped = (ut8)mapped;
+	return true;
 }
 #endif

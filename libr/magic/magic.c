@@ -92,15 +92,11 @@ R_API int r_magic_api_version(void) {
 
 #include "file.h"
 
-static size_t mlist_bytes_max(const RList *mlist) {
-	RListIter *iter;
+static ut32 mlist_bytes_max(const RVecMagicMList *mlist) {
 	struct mlist *ml;
-	size_t max_bytes = 0;
+	ut32 max_bytes = 0;
 
-	if (!mlist) {
-		return 0;
-	}
-	r_list_foreach (mlist, iter, ml) {
+	R_VEC_FOREACH (mlist, ml) {
 		max_bytes = R_MAX (max_bytes, ml->bytes_max);
 	}
 	return max_bytes;
@@ -125,16 +121,17 @@ static char *magic_default_path(int action) {
 	return path;
 }
 
-static RList *magic_load_path(RMagic *ms, const char *magicfile, int action) {
+static bool magic_load_path(RMagic *ms, const char *magicfile, int action, RVecMagicMList *ml) {
 	char *path = r_magic_getpath (magicfile, action);
-	RList *ml = NULL;
 	if (R_STR_ISNOTEMPTY (path)) {
-		ml = __magic_file_apprentice (ms, path, strlen (path), action);
+		const bool ok = __magic_file_apprentice (ms, path, strlen (path), action, ml);
+		free (path);
+		return ok;
 	} else if (ms) {
 		__magic_file_error (ms, 0, "could not find any magic files!");
 	}
 	free (path);
-	return ml;
+	return false;
 }
 
 /* API */
@@ -151,22 +148,22 @@ R_API RMagic *r_magic_new(int flags) {
 	r_magic_setflags (ms, flags);
 	r_strbuf_init (&ms->o.sb);
 	ms->o.pbuf = NULL;
+	RVecMagicMList_init (&ms->mlist);
 	ms->c.li = malloc ((ms->c.len = 10) * sizeof (*ms->c.li));
 	if (!ms->c.li) {
 		free (ms);
 		return NULL;
 	}
-	__magic_file_reset (ms);
-	ms->mlist = NULL;
 	ms->file = "unknown";
 	ms->line = 0;
 	ms->bytes_max = 0;
+	__magic_file_reset (ms);
 	return ms;
 }
 
 R_API void r_magic_free(RMagic *ms) {
 	R_RETURN_IF_FAIL (ms);
-	r_list_free (ms->mlist);
+	file_magic_mlist_vec_fini (&ms->mlist);
 	free (ms->o.pbuf);
 	r_strbuf_fini (&ms->o.sb);
 	free (ms->c.li);
@@ -176,13 +173,15 @@ R_API void r_magic_free(RMagic *ms) {
 R_API bool r_magic_load_buffer(RMagic *ms, const ut8 *magicdata, size_t magicdata_size) {
 	R_RETURN_VAL_IF_FAIL (ms, false);
 	if (magicdata && magicdata_size > 0) {
-		RList *ml = __magic_file_apprentice_buffer (ms, magicdata, magicdata_size, FILE_LOAD);
-		if (ml) {
-			r_list_free (ms->mlist);
+		RVecMagicMList ml;
+		RVecMagicMList_init (&ml);
+		if (__magic_file_apprentice_buffer (ms, magicdata, magicdata_size, FILE_LOAD, &ml)) {
+			file_magic_mlist_vec_fini (&ms->mlist);
 			ms->mlist = ml;
-			ms->bytes_max = mlist_bytes_max (ml);
+			ms->bytes_max = mlist_bytes_max (&ms->mlist);
 			return true;
 		}
+		file_magic_mlist_vec_fini (&ml);
 	} else {
 		__magic_file_error (ms, 0, "magic buffer is empty");
 	}
@@ -191,28 +190,34 @@ R_API bool r_magic_load_buffer(RMagic *ms, const ut8 *magicdata, size_t magicdat
 
 R_API bool r_magic_load(RMagic *ms, const char *magicfile) {
 	R_RETURN_VAL_IF_FAIL (ms, false);
-	RList *ml = magic_load_path (ms, magicfile, FILE_LOAD);
-	if (ml) {
-		r_list_free (ms->mlist);
+	RVecMagicMList ml;
+	RVecMagicMList_init (&ml);
+	if (magic_load_path (ms, magicfile, FILE_LOAD, &ml)) {
+		file_magic_mlist_vec_fini (&ms->mlist);
 		ms->mlist = ml;
-		ms->bytes_max = mlist_bytes_max (ml);
+		ms->bytes_max = mlist_bytes_max (&ms->mlist);
 		return true;
 	}
+	file_magic_mlist_vec_fini (&ml);
 	return false;
 }
 
 R_API bool r_magic_compile(RMagic *ms, const char *magicfile) {
 	R_RETURN_VAL_IF_FAIL (ms, false);
-	RList *ml = magic_load_path (ms, magicfile, FILE_COMPILE);
-	r_list_free (ml);
-	return ml;
+	RVecMagicMList ml;
+	RVecMagicMList_init (&ml);
+	const bool ok = magic_load_path (ms, magicfile, FILE_COMPILE, &ml);
+	file_magic_mlist_vec_fini (&ml);
+	return ok;
 }
 
 R_API bool r_magic_check(RMagic *ms, const char *magicfile) {
 	R_RETURN_VAL_IF_FAIL (ms, false);
-	RList *ml = magic_load_path (ms, magicfile, FILE_CHECK);
-	r_list_free (ml);
-	return ml;
+	RVecMagicMList ml;
+	RVecMagicMList_init (&ml);
+	const bool ok = magic_load_path (ms, magicfile, FILE_CHECK, &ml);
+	file_magic_mlist_vec_fini (&ml);
+	return ok;
 }
 
 R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
@@ -285,50 +290,55 @@ R_API char *r_magic_getpath(const char *magicfile, int action) {
 }
 
 R_API bool r_magic_load_buffers(RMagic *ms, const void *const *buffers, const size_t *sizes, size_t nbuffers) {
-	RList *merged = NULL;
+	RVecMagicMList merged;
+	RVecMagicMList_init (&merged);
 	size_t i;
 	R_RETURN_VAL_IF_FAIL (ms && buffers && sizes && nbuffers > 0, false);
 	for (i = 0; i < nbuffers; i++) {
-		RList *ml = __magic_file_apprentice_buffer (ms, (const ut8 *)buffers[i], sizes[i], FILE_LOAD);
-		if (!ml) {
-			r_list_free (merged);
+		RVecMagicMList ml;
+		RVecMagicMList_init (&ml);
+		if (!__magic_file_apprentice_buffer (ms, (const ut8 *)buffers[i], sizes[i], FILE_LOAD, &ml)) {
+			file_magic_mlist_vec_fini (&ml);
+			file_magic_mlist_vec_fini (&merged);
 			return false;
 		}
-		if (!merged) {
-			merged = ml;
-			continue;
+		const size_t total = RVecMagicMList_length (&merged) + RVecMagicMList_length (&ml);
+		if (!RVecMagicMList_reserve (&merged, total)) {
+			file_magic_mlist_vec_fini (&ml);
+			file_magic_mlist_vec_fini (&merged);
+			__magic_file_oomem (ms, total * sizeof (struct mlist));
+			return false;
 		}
-		(void)r_list_join (merged, ml);
-		r_list_free (ml);
+		RVecMagicMList_append (&merged, &ml, NULL);
+		RVecMagicMList_fini (&ml);
 	}
-	r_list_free (ms->mlist);
+	file_magic_mlist_vec_fini (&ms->mlist);
 	ms->mlist = merged;
-	ms->bytes_max = mlist_bytes_max (merged);
+	ms->bytes_max = mlist_bytes_max (&ms->mlist);
 	return true;
 }
 
 R_API bool r_magic_list(RMagic *ms, const char *magicfile) {
-	RList *ml;
-	RListIter *iter;
+	RVecMagicMList ml;
 	struct mlist *it;
 	R_RETURN_VAL_IF_FAIL (ms, false);
-	ml = magic_load_path (ms, magicfile, FILE_LOAD);
-	if (!ml) {
+	RVecMagicMList_init (&ml);
+	if (!magic_load_path (ms, magicfile, FILE_LOAD, &ml)) {
 		return false;
 	}
-	r_list_foreach (ml, iter, it) {
+	R_VEC_FOREACH (&ml, it) {
 		ut32 i;
 		for (i = 0; i < it->nmagic; i++) {
 			char *line = __magic_file_mrender (ms, &it->magic[i]);
 			if (!line) {
-				r_list_free (ml);
+				file_magic_mlist_vec_fini (&ml);
 				return false;
 			}
 			(void)fprintf (stdout, "%s\n", line);
 			free (line);
 		}
 	}
-	r_list_free (ml);
+	file_magic_mlist_vec_fini (&ml);
 	return true;
 }
 

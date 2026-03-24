@@ -1214,10 +1214,9 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min
  */
 /*ARGSUSED1*/ /* nbytes passed for regularity, maybe need later */
 int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) {
-	RListIter *iter;
 	struct mlist *ml;
 	int rv;
-	r_list_foreach (ms->mlist, iter, ml) {
+	R_VEC_FOREACH (&ms->mlist, ml) {
 		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
 			return rv;
 		}

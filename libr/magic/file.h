@@ -60,8 +60,8 @@ R_IPI int __magic_file_reset(RMagic *);
 R_IPI int __magic_file_zmagic(RMagic *, int, const char *, const ut8*, size_t);
 R_IPI int __magic_file_is_tar(RMagic *, const unsigned char *, size_t);
 R_IPI int __magic_file_softmagic(RMagic *, const unsigned char *, size_t, int);
-R_IPI RList *__magic_file_apprentice(RMagic *, const char *, size_t, int);
-R_IPI RList *__magic_file_apprentice_buffer(RMagic *, const ut8 *, size_t, int);
+R_IPI bool __magic_file_apprentice(RMagic *, const char *, size_t, int, RVecMagicMList *);
+R_IPI bool __magic_file_apprentice_buffer(RMagic *, const ut8 *, size_t, int, RVecMagicMList *);
 R_IPI ut64 __magic_file_signextend(RMagic *, struct r_magic *, ut64);
 R_IPI void __magic_file_delmagic(struct r_magic *, int type);
 R_IPI void __magic_file_badread(RMagic *);
@@ -75,6 +75,27 @@ R_IPI char *__magic_file_mrender(RMagic *, struct r_magic *);
 R_IPI const char *__magic_file_getbuffer(RMagic *);
 R_IPI int __magic_file_check_mem(RMagic *, unsigned int);
 R_IPI int __magic_file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
+
+static inline void file_magic_mlist_fini(struct mlist *ml) {
+	if (!ml) {
+		return;
+	}
+	free (ml->min_bytes);
+	__magic_file_delmagic (ml->magic, ml->mapped);
+}
+
+static inline void file_magic_mlist_vec_clear(RVecMagicMList *vec) {
+	struct mlist *iter;
+	R_VEC_FOREACH (vec, iter) {
+		file_magic_mlist_fini (iter);
+	}
+	RVecMagicMList_clear (vec);
+}
+
+static inline void file_magic_mlist_vec_fini(RVecMagicMList *vec) {
+	file_magic_mlist_vec_clear (vec);
+	RVecMagicMList_fini (vec);
+}
 
 #ifndef HAVE_VASPRINTF
 int vasprintf(char **ptr, const char *format_string, va_list vargs);

@@ -160,7 +160,7 @@ int __magic_file_reset(RMagic *ms) {
 	r_strbuf_init (&ms->o.sb);
 	ms->haderr = 0;
 	ms->error = -1;
-	if (!ms->mlist) {
+	if (RVecMagicMList_empty (&ms->mlist)) {
 		// eprintf ("no magic files loaded, nothing to scan\n");
 		return -1;
 	}
