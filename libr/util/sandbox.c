@@ -200,103 +200,6 @@ static char *sandbox_extract_host(const char *str) {
 	return (end > host)? r_str_ndup (host, end - host): NULL;
 }
 
-#if R2__UNIX__ && !__wasi__
-static bool sandbox_is_localhost_ipv4(ut32 addr) {
-	addr = ntohl (addr);
-	return (addr & 0xff000000) == 0x7f000000 || addr == 0;
-}
-
-static bool sandbox_is_localhost_ipv6(const struct in6_addr *addr) {
-	static const ut8 v4mapped_prefix[12] = {
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff
-	};
-	if (IN6_IS_ADDR_LOOPBACK (addr) || IN6_IS_ADDR_UNSPECIFIED (addr)) {
-		return true;
-	}
-	if (!memcmp (addr->s6_addr, v4mapped_prefix, sizeof (v4mapped_prefix))) {
-		ut32 ip4;
-		memcpy (&ip4, addr->s6_addr + sizeof (v4mapped_prefix), sizeof (ip4));
-		return sandbox_is_localhost_ipv4 (ip4);
-	}
-	return false;
-}
-#endif
-
-static bool sandbox_is_localhost_host(const char *host) {
-	if (!strcmp (host, "localhost") || r_str_startswith (host, "localhost.")) {
-		return true;
-	}
-#if R2__UNIX__ && !__wasi__
-	struct in_addr addr4;
-	struct in6_addr addr6;
-	if (inet_pton (AF_INET, host, &addr4) == 1) {
-		return sandbox_is_localhost_ipv4 (addr4.s_addr);
-	}
-	if (inet_pton (AF_INET6, host, &addr6) == 1) {
-		return sandbox_is_localhost_ipv6 (&addr6);
-	}
-#else
-	if (r_str_startswith (host, "127.") || !strcmp (host, "0.0.0.0")) {
-		return true;
-	}
-	if (!strcmp (host, "::1") || !strcmp (host, "::")) {
-		return true;
-	}
-	if (r_str_startswith (host, "::ffff:127.") || r_str_startswith (host, "0:0:0:0:0:ffff:127.")) {
-		return true;
-	}
-#endif
-	return false;
-}
-
-#if R2__UNIX__ && !__wasi__
-static bool sandbox_resolves_localhost(const char *host) {
-	struct addrinfo hints, *res = NULL, *rp;
-	memset (&hints, 0, sizeof (hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-	if (getaddrinfo (host, NULL, &hints, &res) != 0 || !res) {
-		return false;
-	}
-	bool ret = true;
-	for (rp = res; rp; rp = rp->ai_next) {
-		if (rp->ai_family == AF_INET) {
-			struct sockaddr_in *addr = (struct sockaddr_in *)rp->ai_addr;
-			ret = sandbox_is_localhost_ipv4 (addr->sin_addr.s_addr);
-		} else if (rp->ai_family == AF_INET6) {
-			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)rp->ai_addr;
-			ret = sandbox_is_localhost_ipv6 (&addr->sin6_addr);
-		} else {
-			ret = false;
-		}
-		if (!ret) {
-			break;
-		}
-	}
-	freeaddrinfo (res);
-	return ret;
-}
-#endif
-
-/**
- * \brief Extract hostname from a URL or host string and check if it's localhost
- * \param str The URL (e.g., "http://example.com:80/path") or "host:port" or hostname to check
- * \return true if the host is localhost, false otherwise (or if resolution fails)
- *
- * This function accepts URLs, "host:port" strings, and plain hostnames. 
- * If the string contains "://", it extracts the hostname portion before checking.
- * If the string contains ":" (but no "://"), it treats it as "host:port" format.
- *
- * It recognizes as localhost:
- * - "localhost" and variants (localhost, localhost.localdomain, etc.)
- * - IPv4 localhost: 127.0.0.0/8 (entire 127.x.x.x range)
- * - IPv6 localhost: ::1
- * - IPv4 0.0.0.0 (often used to mean "local")
- * - IPv6 :: (unspecified, often used to mean "local")
- *
- * For other hostnames, it performs DNS resolution and checks if the resolved
- * addresses belong to localhost.
- */
 R_API bool r_sandbox_check_localhost(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
 	if (*str == '\0') {
@@ -306,12 +209,12 @@ R_API bool r_sandbox_check_localhost(const char *str) {
 	if (!host) {
 		return false;
 	}
-	bool ret = sandbox_is_localhost_host (host);
-#if R2__UNIX__ && !__wasi__
-	if (!ret) {
-		ret = sandbox_resolves_localhost (host);
-	}
-#endif
+	bool ret = !strcmp (host, "localhost")
+		|| r_str_startswith (host, "localhost.")
+		|| r_str_startswith (host, "127.")
+		|| !strcmp (host, "0.0.0.0")
+		|| !strcmp (host, "::1")
+		|| !strcmp (host, "::");
 	free (host);
 	return ret;
 }
