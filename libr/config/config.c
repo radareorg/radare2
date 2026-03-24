@@ -640,7 +640,8 @@ static bool eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 			RConfigNode *node = r_config_node_get (cfg, name);
 			if (node && (
 				r_config_node_is_bool (node) ||
-				(r_config_node_is_int (node) && (!node->setter || !node->options || r_list_empty (node->options))))) {
+				(!r_config_node_is_str (node) && r_config_node_is_int (node) &&
+				(!node->setter || !node->options || r_list_empty (node->options))))) {
 				char *res = NULL;
 				if (!strcmp (eq, "?")) {
 					res = r_config_list (cfg, name, 3);
