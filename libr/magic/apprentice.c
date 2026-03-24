@@ -176,7 +176,7 @@ static const struct type_tbl_s {
 	TBLROW ("double", DOUBLE, DOUBLE),
 	TBLROW ("bedouble", BEDOUBLE, DOUBLE),
 	TBLROW ("ledouble", LEDOUBLE, DOUBLE),
-	{ 0 },
+	{ { 0 }, 0, 0, 0 },
 #undef XX
 };
 
