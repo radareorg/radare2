@@ -36,7 +36,14 @@ static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
+static void __load_internal_cb(void *user) {
+	REggState *es = (REggState *)user;
+	r_egg_plugins_ensure (es->e);
+}
+
 static void __load_plugins(REggState *es) {
+	es->l->cb_internal = __load_internal_cb;
+	es->l->cb_internal_user = es;
 	r_lib_add_handler (es->l, R_LIB_TYPE_EGG, "egg plugins", &__lib_egg_cb, NULL, es);
 	r_lib_load_default_paths (es->l, R_LIB_LOAD_DEFAULT);
 }
@@ -46,7 +53,12 @@ static REggState *__es_new(void) {
 	es->l = r_lib_new (NULL, NULL);
 	es->e = r_egg_new ();
 
-	__load_plugins (es);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		__load_plugins (es);
+	} else {
+		r_egg_plugins_ensure (es->e);
+	}
 	return es;
 }
 
@@ -122,6 +134,7 @@ static void list(REgg *egg) {
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
+	r_bin_plugins_ensure (bin);
 	RBinArchOptions opts;
 	RBuffer *b;
 	r_bin_arch_options_init (&opts, arch, bits);

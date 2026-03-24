@@ -26,6 +26,7 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
+
 static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
 	RBinPlugin *plugin = r_bin_file_cur_plugin (a);
@@ -479,8 +480,12 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 			return false;
 		}
 	}
-	r_list_append (bin->binldrs, foo);
-	return true;
+	RBinLdrPlugin *p = R_NEW0 (RBinLdrPlugin);
+	if (p) {
+		*p = *foo;
+		r_list_append (bin->binldrs, p);
+	}
+	return p != NULL;
 }
 
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
@@ -495,8 +500,12 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 			return false;
 		}
 	}
-	r_list_append (bin->binxtrs, foo);
-	return true;
+	RBinXtrPlugin *p = R_NEW0 (RBinXtrPlugin);
+	if (p) {
+		*p = *foo;
+		r_list_append (bin->binxtrs, p);
+	}
+	return p != NULL;
 }
 
 R_API void r_bin_free(RBin *bin) {
@@ -580,20 +589,33 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
+	RBinPlugin *prefix_bp = NULL;
+	RBinXtrPlugin *prefix_bx = NULL;
 
 	R_RETURN_VAL_IF_FAIL (bin && name, false);
 
 	r_list_foreach (bin->plugins, it, bp) {
-		if (!r_str_startswith (bp->meta.name, name)) {
-			continue;
+		if (!strcmp (bp->meta.name, name)) {
+			return r_bin_print_plugin_details (bin, bp, pj, json);
 		}
-		return r_bin_print_plugin_details (bin, bp, pj, json);
+		if (!prefix_bp && r_str_startswith (bp->meta.name, name)) {
+			prefix_bp = bp;
+		}
+	}
+	if (prefix_bp) {
+		return r_bin_print_plugin_details (bin, prefix_bp, pj, json);
 	}
 	r_list_foreach (bin->binxtrs, it, bx) {
-		if (!r_str_startswith (bx->meta.name, name)) {
-			continue;
+		if (!strcmp (bx->meta.name, name)) {
+			__printXtrPluginDetails (bin, bx, json);
+			return true;
 		}
-		__printXtrPluginDetails (bin, bx, json);
+		if (!prefix_bx && r_str_startswith (bx->meta.name, name)) {
+			prefix_bx = bx;
+		}
+	}
+	if (prefix_bx) {
+		__printXtrPluginDetails (bin, prefix_bx, json);
 		return true;
 	}
 
@@ -855,10 +877,19 @@ R_API bool r_bin_is_static(RBin *bin) {
 	return true;
 }
 
+R_API bool r_bin_plugins_ensure(RBin *bin) {
+	R_RETURN_VAL_IF_FAIL (bin, false);
+	if (bin->internal_plugins_loaded) {
+		return true;
+	}
+	bin->internal_plugins_loaded = true;
+	r_lib_plugins_add_static (bin, (const void *const *)bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
+	r_lib_plugins_add_static (bin, (const void *const *)bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
+	r_lib_plugins_add_static (bin, (const void *const *)bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
+	return true;
+}
+
 R_API RBin *r_bin_new(void) {
-	int i;
-	RBinXtrPlugin *static_xtr_plugin;
-	RBinLdrPlugin *static_ldr_plugin;
 	RBin *bin = R_NEW0 (RBin);
 	if (!r_str_constpool_init (&bin->constpool)) {
 		goto trashbin;
@@ -889,36 +920,17 @@ R_API RBin *r_bin_new(void) {
 	bin->cur = NULL;
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
-	/* bin parsers */
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
-	for (i = (sizeof (bin_static_plugins) / sizeof (RBinPlugin *)) - 1; i;) {
-		if (bin_static_plugins[--i]) {
-			r_bin_plugin_add (bin, bin_static_plugins[i]);
-		}
-	}
-	/* extractors */
 	bin->binxtrs = r_list_new ();
 	if (bin->binxtrs) {
 		bin->binxtrs->free = free;
-		for (i = 0; bin_xtr_static_plugins[i]; i++) {
-			static_xtr_plugin = R_NEW0 (RBinXtrPlugin);
-			*static_xtr_plugin = *bin_xtr_static_plugins[i];
-			if (r_bin_xtr_add (bin, static_xtr_plugin) == false) {
-				free (static_xtr_plugin);
-			}
-		}
 	}
-	/* loaders */
 	bin->binldrs = r_list_new ();
 	if (bin->binldrs) {
 		bin->binldrs->free = free;
-		for (i = 0; bin_ldr_static_plugins[i]; i++) {
-			static_ldr_plugin = R_NEW0 (RBinLdrPlugin);
-			*static_ldr_plugin = *bin_ldr_static_plugins[i];
-			if (r_bin_ldr_add (bin, static_ldr_plugin) == false) {
-				free (static_ldr_plugin);
-			}
-		}
+	}
+	if (r_lib_plugins_init_default ()) {
+		r_bin_plugins_ensure (bin);
 	}
 	return bin;
 trashbin:

@@ -38,6 +38,7 @@ typedef struct r_muta_t {
 	bool bigendian;
 	void *user;
 	RList *plugins;
+	bool internal_plugins_loaded;
 } RMuta;
 
 typedef struct r_muta_session_t {
@@ -102,6 +103,7 @@ typedef struct {
 R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h);
 R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h);
 R_API RMuta *R_NONNULL r_muta_new(void);
+R_API bool r_muta_plugins_ensure(RMuta *muta);
 R_API void r_muta_free(RMuta *muta);
 R_API char *r_muta_list(RMuta *muta, RMutaType type, int mode);
 R_API void r_muta_bind(RMuta *muta, RMutaBind *bnd);

@@ -255,6 +255,15 @@ static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	return count;
 }
 
+R_API bool r_asm_plugins_ensure(RAsm *a) {
+	R_RETURN_VAL_IF_FAIL (a, false);
+	if (a->internal_plugins_loaded) {
+		return true;
+	}
+	a->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (a, (const void *const *)asm_static_plugins, (RLibPluginAddCb)r_asm_plugin_add);
+}
+
 R_API RAsm *r_asm_new(void) {
 	RAsm *a = R_NEW0 (RAsm);
 	a->codealign = 1;
@@ -264,9 +273,8 @@ R_API RAsm *r_asm_new(void) {
 	a->sessions = r_list_newf (free);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
-	size_t i;
-	for (i = 0; asm_static_plugins[i]; i++) {
-		r_asm_plugin_add (a, asm_static_plugins[i]);
+	if (r_lib_plugins_init_default ()) {
+		r_asm_plugins_ensure (a);
 	}
 	return a;
 }

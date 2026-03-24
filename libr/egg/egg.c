@@ -28,8 +28,16 @@ void egg_patch_free(void *p) {
 	}
 }
 
+R_API bool r_egg_plugins_ensure(REgg *egg) {
+	R_RETURN_VAL_IF_FAIL (egg, false);
+	if (egg->internal_plugins_loaded) {
+		return true;
+	}
+	egg->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (egg, (const void *const *)egg_static_plugins, (RLibPluginAddCb)r_egg_plugin_add);
+}
+
 R_API REgg *r_egg_new(void) {
-	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
 		return NULL;
@@ -70,8 +78,8 @@ R_API REgg *r_egg_new(void) {
 		goto beach;
 	}
 	egg->plugins = r_list_new ();
-	for (i = 0; egg_static_plugins[i]; i++) {
-		r_egg_plugin_add (egg, egg_static_plugins[i]);
+	if (r_lib_plugins_init_default ()) {
+		r_egg_plugins_ensure (egg);
 	}
 	return egg;
 

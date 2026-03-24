@@ -35,13 +35,12 @@ static void r_lang_session_free(void *p) {
 	free (s);
 }
 
-R_API RLang *r_lang_new(void) {
-	RLang *lang = R_NEW0 (RLang);
-	lang->user = NULL;
-	lang->langs = r_list_new ();
-	lang->defs = r_list_new ();
-	lang->sessions = r_list_newf (r_lang_session_free);
-	lang->defs->free = (RListFree)r_lang_def_free;
+R_API bool r_lang_plugins_ensure(RLang *lang) {
+	R_RETURN_VAL_IF_FAIL (lang, false);
+	if (lang->internal_plugins_loaded) {
+		return true;
+	}
+	lang->internal_plugins_loaded = true;
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_DEBUG_NOLANG");
 	if (load_plugins) {
 #if HAVE_SYSTEM
@@ -68,6 +67,19 @@ R_API RLang *r_lang_new(void) {
 #if WANT_QJS
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
 #endif
+	return true;
+}
+
+R_API RLang *r_lang_new(void) {
+	RLang *lang = R_NEW0 (RLang);
+	lang->user = NULL;
+	lang->langs = r_list_new ();
+	lang->defs = r_list_new ();
+	lang->sessions = r_list_newf (r_lang_session_free);
+	lang->defs->free = (RListFree)r_lang_def_free;
+	if (r_lib_plugins_init_default ()) {
+		r_lang_plugins_ensure (lang);
+	}
 	return lang;
 }
 

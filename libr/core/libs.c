@@ -32,6 +32,27 @@ CB(egg, egg)
 CB(fs, fs)
 CB(arch, anal->arch);
 
+static void core_load_internal_plugins(void *user) {
+	RCore *core = (RCore *)user;
+	if (core->internal_plugins_loaded) {
+		return;
+	}
+	core->internal_plugins_loaded = true;
+	r_io_plugins_ensure (core->io);
+	r_bin_plugins_ensure (core->bin);
+	r_anal_plugins_ensure (core->anal);
+	r_asm_plugins_ensure (core->rasm);
+	r_arch_plugins_ensure (core->anal->arch);
+	r_debug_plugins_ensure (core->dbg);
+	r_bp_plugins_ensure (core->dbg->bp);
+	r_esil_plugins_ensure (core->anal->esil);
+	r_egg_plugins_ensure (core->egg);
+	r_fs_plugins_ensure (core->fs);
+	r_lang_plugins_ensure (core->lang);
+	r_core_plugins_ensure (core->rcmd);
+	r_muta_plugins_ensure (core->muta);
+}
+
 #if R2_LOADLIBS
 static void load_plugins(RCore *core, int where, const char *path) {
 	if (!where) {
@@ -58,6 +79,8 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
+	core->lib->cb_internal = core_load_internal_plugins;
+	core->lib->cb_internal_user = core;
 	DF (IO, "io plugins", io);
 	DF (CORE, "core plugins", core);
 	DF (DBG, "debugger plugins", debug);

@@ -21,17 +21,22 @@ R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_io_plugin_init(RIO *io) {
-	int i;
+R_API bool r_io_plugins_ensure(RIO *io) {
+	R_RETURN_VAL_IF_FAIL (io, false);
+	if (io->internal_plugins_loaded) {
+		return true;
+	}
+	io->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (io, (const void *const *)io_static_plugins, (RLibPluginAddCb)r_io_plugin_add);
+}
+
+R_IPI bool r_io_plugins_init(RIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = ls_newf (NULL); // fine to use NULL here?
-	for (i = 0; io_static_plugins[i]; i++) {
-		if (!io_static_plugins[i]->meta.name) {
-			continue;
-		}
-		r_io_plugin_add (io, io_static_plugins[i]);
+	io->plugins = ls_newf (NULL);
+	if (r_lib_plugins_init_default ()) {
+		r_io_plugins_ensure (io);
 	}
 	return true;
 }

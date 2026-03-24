@@ -10,6 +10,15 @@ static void plugin_free(void *p) {
 	// XXX
 }
 
+R_API bool r_arch_plugins_ensure(RArch *a) {
+	R_RETURN_VAL_IF_FAIL (a, false);
+	if (a->internal_plugins_loaded) {
+		return true;
+	}
+	a->internal_plugins_loaded = true;
+	return r_lib_plugins_add_static (a, (const void *const *)arch_static_plugins, (RLibPluginAddCb)r_arch_plugin_add);
+}
+
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
 	a->plugins = r_list_newf ((RListFree)plugin_free);
@@ -19,9 +28,8 @@ R_API RArch *r_arch_new(void) {
 	}
 	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
-	ut32 i = 0;
-	while (arch_static_plugins[i]) {
-		r_arch_plugin_add (a, (RArchPlugin*)arch_static_plugins[i++]);
+	if (r_lib_plugins_init_default ()) {
+		r_arch_plugins_ensure (a);
 	}
 	return a;
 }
