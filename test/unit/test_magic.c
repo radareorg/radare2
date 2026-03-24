@@ -1,7 +1,5 @@
 #include <r_magic.h>
 #include <r_util.h>
-#include <string.h>
-#include <unistd.h>
 #include "minunit.h"
 
 static bool check_magic_output(const char *magic_source, const ut8 *probe, size_t probe_len, const char *expected) {
