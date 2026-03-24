@@ -48,6 +48,31 @@ static RAnalFcnSlot *find_stack_slot(RAnalFcnContext *ctx, const char *name) {
 	return NULL;
 }
 
+typedef struct {
+	int count;
+	ut64 block_addr;
+	ut64 switch_addr;
+	ut64 default_addr;
+	ut64 first_case_addr;
+	ut64 first_case_value;
+} SwitchForeachCtx;
+
+static bool count_switches_cb(RAnalFunction *fcn, RAnalBlock *block, RAnalSwitchOp *op, void *user) {
+	SwitchForeachCtx *ctx = user;
+	mu_assert_notnull (fcn, "switch callback function");
+	mu_assert_notnull (block, "switch callback block");
+	mu_assert_notnull (op, "switch callback switch");
+	ctx->count++;
+	ctx->block_addr = block->addr;
+	ctx->switch_addr = op->addr;
+	ctx->default_addr = op->def_val;
+	RAnalCaseOp *caseop = r_list_first (op->cases);
+	mu_assert_notnull (caseop, "switch callback first case");
+	ctx->first_case_addr = caseop->jump;
+	ctx->first_case_value = caseop->value;
+	return true;
+}
+
 static bool function_check_invariants(RAnal *anal) {
 	if (!block_check_invariants (anal)) {
 		return false;
@@ -543,6 +568,35 @@ bool test_r_anal_function_context_collect_is_conservative_for_stack_slots(void) 
 	mu_end;
 }
 
+bool test_r_anal_function_switches_foreach(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+	RAnalFunction *fcn = r_anal_create_function (anal, "switchy", 0x1000, R_ANAL_FCN_TYPE_FCN, NULL);
+	mu_assert_notnull (fcn, "Couldn't create function for switch iteration test");
+	RAnalBlock *switch_bb = r_anal_create_block (anal, 0x1000, 0x10);
+	RAnalBlock *fallthrough_bb = r_anal_create_block (anal, 0x1010, 0x10);
+	mu_assert_notnull (switch_bb, "Couldn't create switch block");
+	mu_assert_notnull (fallthrough_bb, "Couldn't create fallthrough block");
+	r_anal_function_add_block (fcn, switch_bb);
+	r_anal_function_add_block (fcn, fallthrough_bb);
+	r_anal_block_add_switch_case (switch_bb, 0x1008, 0, 0x1020);
+	r_anal_block_add_switch_case (switch_bb, 0x1008, 1, 0x1030);
+	switch_bb->switch_op->def_val = 0x1040;
+	switch_bb->switch_op->amount = 2;
+	SwitchForeachCtx ctx = {0};
+	mu_assert_true (r_anal_function_switches_foreach (fcn, count_switches_cb, &ctx), "switch iteration must succeed");
+	mu_assert_eq (ctx.count, 1, "switch iteration count");
+	mu_assert_eq (ctx.block_addr, 0x1000, "switch iteration block addr");
+	mu_assert_eq (ctx.switch_addr, 0x1008, "switch iteration switch addr");
+	mu_assert_eq (ctx.default_addr, 0x1040, "switch iteration default addr");
+	mu_assert_eq (ctx.first_case_addr, 0x1020, "switch iteration first case addr");
+	mu_assert_eq (ctx.first_case_value, 0, "switch iteration first case value");
+	r_unref (switch_bb);
+	r_unref (fallthrough_bb);
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_anal_function_relocate);
 	mu_run_test (test_r_anal_function_labels);
@@ -556,6 +610,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_function_get_signature_string_hides_variadic_placeholder);
 	mu_run_test (test_r_anal_function_get_signature_falls_back_to_valid_callconv);
 	mu_run_test (test_r_anal_function_context_collect_is_conservative_for_stack_slots);
+	mu_run_test (test_r_anal_function_switches_foreach);
 	return tests_passed != tests_run;
 }
 

@@ -991,6 +991,7 @@ R_API char *r_anal_cmd(RAnal *a, const char *cmd);
 /* block.c */
 typedef bool (*RAnalBlockCb)(RAnalBlock *block, void *user);
 typedef bool (*RAnalAddrCb)(ut64 addr, void *user);
+typedef bool (*RAnalFunctionSwitchCb)(RAnalFunction *fcn, RAnalBlock *block, RAnalSwitchOp *op, void *user);
 
 // lifetime
 R_API void r_anal_block_reset(RAnal *a);
@@ -1144,6 +1145,7 @@ R_API bool r_anal_function_contains(RAnalFunction *fcn, ut64 addr);
 R_API bool r_anal_function_was_modified(RAnalFunction *fcn);
 
 R_API RGraph *r_anal_function_get_graph(RAnalFunction *fcn, RGraphNode **node_ptr, ut64 addr);
+R_API bool r_anal_function_switches_foreach(RAnalFunction *fcn, RAnalFunctionSwitchCb cb, void *user);
 
 /* anal.c */
 R_API RAnal *r_anal_new(void);

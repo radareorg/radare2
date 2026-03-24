@@ -428,6 +428,92 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 	return ret;
 }
 
+static bool block_belongs_to_function(const RAnalBlock *block, const RAnalFunction *fcn) {
+	if (!block || !fcn) {
+		return false;
+	}
+	return r_list_contains ((RList *)block->fcns, (void *)fcn);
+}
+
+static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
+	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
+	if (block) {
+		if (!block_belongs_to_function (block, fcn)) {
+			r_anal_function_add_block (fcn, block);
+		}
+		return true;
+	}
+	block = r_anal_bb_from_offset (anal, case_addr);
+	if (!block) {
+		return false;
+	}
+	if (block->addr != case_addr) {
+		if (!r_anal_block_op_starts_at (block, case_addr)) {
+			return false;
+		}
+		RAnalBlock *split = r_anal_block_split (block, case_addr);
+		if (!split) {
+			return false;
+		}
+		if (!block_belongs_to_function (split, fcn)) {
+			r_anal_function_add_block (fcn, split);
+		}
+		r_unref (split);
+		return true;
+	}
+	if (!block_belongs_to_function (block, fcn)) {
+		r_anal_function_add_block (fcn, block);
+	}
+	return true;
+}
+
+static bool reset_switch_case_stub(RAnal *anal, RAnalBlock *block) {
+	R_RETURN_VAL_IF_FAIL (anal && block, false);
+	RList *fcns = r_list_new ();
+	if (!fcns) {
+		return false;
+	}
+	RListIter *iter;
+	RAnalFunction *fcn;
+	r_list_foreach (block->fcns, iter, fcn) {
+		r_list_append (fcns, fcn);
+	}
+	r_anal_delete_block (block);
+	r_list_foreach (fcns, iter, fcn) {
+		if (fcn->type == R_ANAL_FCN_TYPE_LOC && r_list_empty (fcn->bbs)) {
+			r_anal_function_delete (anal, fcn);
+		}
+	}
+	r_list_free (fcns);
+	return true;
+}
+
+R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && case_addr != UT64_MAX && case_addr, false);
+	RAnalBlock *block = r_anal_get_block_at (anal, case_addr);
+	if (block) {
+		if (block->ninstr < 1) {
+			if (!reset_switch_case_stub (anal, block)) {
+				return false;
+			}
+		} else {
+			if (!block_belongs_to_function (block, fcn)) {
+				r_anal_function_add_block (fcn, block);
+			}
+			return true;
+		}
+	}
+	if (add_switch_case_block (anal, fcn, case_addr)) {
+		return true;
+	}
+	(void)r_anal_function_bb (anal, fcn, case_addr, depth > 0? depth - 1: depth);
+	block = r_anal_get_block_at (anal, case_addr);
+	if (block && block->ninstr < 1) {
+		return false;
+	}
+	return add_switch_case_block (anal, fcn, case_addr);
+}
+
 typedef struct {
 	RAnalFunction *fcn;
 	const int stack_diff;

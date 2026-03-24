@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_anal.h>
+#include <r_anal_priv.h>
 
 #include <r_vec.h>
 
@@ -86,57 +87,6 @@ beach:
 	return valid;
 }
 
-// R2R db/anal/x86_64 db/anal/x86_32
-
-static inline bool block_belongs_to_function(const RAnalBlock *block, const RAnalFunction *fcn) {
-	if (!block || !fcn) {
-		return false;
-	}
-	return r_list_contains ((RList *)block->fcns, (void *)fcn);
-}
-
-static bool add_case_target_block(RAnal *anal, RAnalFunction *fcn, ut64 case_addr) {
-	RAnalBlock *block;
-	R_RETURN_VAL_IF_FAIL (anal && fcn && case_addr != UT64_MAX && case_addr, false);
-	block = r_anal_get_block_at (anal, case_addr);
-	if (block) {
-		if (!block_belongs_to_function (block, fcn)) {
-			r_anal_function_add_block (fcn, block);
-		}
-		return true;
-	}
-	block = r_anal_bb_from_offset (anal, case_addr);
-	if (!block) {
-		return false;
-	}
-	if (block->addr != case_addr) {
-		RAnalBlock *split = r_anal_block_split (block, case_addr);
-		if (!split) {
-			return false;
-		}
-		if (!block_belongs_to_function (split, fcn)) {
-			r_anal_function_add_block (fcn, split);
-		}
-		r_unref (split);
-		return true;
-	}
-	if (!block_belongs_to_function (block, fcn)) {
-		r_anal_function_add_block (fcn, block);
-	}
-	return true;
-}
-
-static void materialize_case_target(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth) {
-	if (!anal || !fcn || case_addr == UT64_MAX || !case_addr) {
-		return;
-	}
-	if (add_case_target_block (anal, fcn, case_addr)) {
-		return;
-	}
-	(void)r_anal_function_bb (anal, fcn, case_addr, depth > 0? depth - 1: depth);
-	(void)add_case_target_block (anal, fcn, case_addr);
-}
-
 static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
@@ -160,10 +110,39 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 	}
 }
 
-static void apply_switch(RAnal *anal, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
+static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_case_addr, ut64 cases_count) {
+	if (!block || !block->switch_op) {
+		return;
+	}
+	block->switch_op->def_val = default_case_addr;
+	block->switch_op->amount = cases_count;
+	if (!block->switch_op->cases) {
+		return;
+	}
+	RListIter *iter;
+	RAnalCaseOp *caseop;
+	bool first = true;
+	r_list_foreach (block->switch_op->cases, iter, caseop) {
+		if (first) {
+			block->switch_op->min_val = caseop->value;
+			block->switch_op->max_val = caseop->value;
+			first = false;
+			continue;
+		}
+		if (caseop->value < block->switch_op->min_val) {
+			block->switch_op->min_val = caseop->value;
+		}
+		if (caseop->value > block->switch_op->max_val) {
+			block->switch_op->max_val = caseop->value;
+		}
+	}
+}
+
+static void apply_switch(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
 	char tmp[64];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, switch_addr, tmp);
+	update_switch_op (block, switch_addr, default_case_addr, cases_count);
 	if (anal->flb.set) {
 		snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, switch_addr);
 		anal->flb.set (anal->flb.f, tmp, switch_addr, 1);
@@ -183,7 +162,7 @@ R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 
 static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
 	const ut64 block_size = block? block->size: 0;
-	materialize_case_target (anal, fcn, jmpptr, depth);
+	r_anal_function_materialize_switch_case (anal, fcn, jmpptr, depth);
 	if (block && block->size != block_size) {
 		// block was split during anal and does not contain the
 		// jmp instruction anymore, so we need to search for it and get it again
@@ -347,7 +326,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		if (default_case == 0) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
+		apply_switch (anal, block, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
 	}
 
 	free (jmptbl);
@@ -487,7 +466,7 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		if (default_target == 0) {
 			default_target = UT64_MAX;
 		}
-		apply_switch (anal, ip, jmptbl_loc, offs / sz, default_target);
+		apply_switch (anal, block, ip, jmptbl_loc, offs / sz, default_target);
 	}
 
 	free (jmptbl);
@@ -666,7 +645,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 		if (default_case == 0 || default_case == UT32_MAX) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch (anal, block, ip, jmptbl_loc, offs / sz, default_case);
 	}
 	jmptbl_target_ctx_fini (&target_ctx);
 	return ret;
@@ -833,6 +812,6 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
 		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 	}
-	apply_switch (anal, saddr, jaddr, r_list_length (cases), UT64_MAX);
+	apply_switch (anal, bb, saddr, jaddr, r_list_length (cases), UT64_MAX);
 	set_u_free (s);
 }
