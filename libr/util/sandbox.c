@@ -143,72 +143,20 @@ R_API bool r_sandbox_check(int mask) {
 	return true;
 }
 
-static const char *sandbox_authority_end(const char *host) {
-	const char *p;
-	for (p = host; *p; p++) {
-		if (*p == '/' || *p == '?' || *p == '#') {
-			break;
-		}
-	}
-	return p;
-}
-
-static const char *sandbox_find_last_char(const char *from, const char *to, char ch) {
-	const char *p;
-	for (p = to; p > from; p--) {
-		if (p[-1] == ch) {
-			return p - 1;
-		}
-	}
-	return NULL;
-}
-
-static char *sandbox_extract_host(const char *str) {
-	const char *host = str;
-	const char *end = str + strlen (str);
-	const char *scheme = strstr (str, "://");
-	if (scheme) {
-		host = scheme + 3;
-		end = sandbox_authority_end (host);
-		const char *userinfo = sandbox_find_last_char (host, end, '@');
-		if (userinfo) {
-			host = userinfo + 1;
-		}
-	}
-	if (*host == '[') {
-		const char *bracket_end = strchr (host + 1, ']');
-		if (!bracket_end || bracket_end >= end) {
-			return NULL;
-		}
-		return r_str_ndup (host + 1, bracket_end - host - 1);
-	}
-	if (scheme) {
-		const char *p;
-		for (p = host; p < end; p++) {
-			if (*p == ':') {
-				end = p;
-				break;
-			}
-		}
-	} else {
-		const char *first_colon = strchr (host, ':');
-		const char *last_colon = strrchr (host, ':');
-		if (first_colon && first_colon == last_colon) {
-			end = first_colon;
-		}
-	}
-	return (end > host)? r_str_ndup (host, end - host): NULL;
-}
-
 R_API bool r_sandbox_check_localhost(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
-	if (*str == '\0') {
-		return false;
+	char *peekaboo = strstr (str, "://");
+	if (peekaboo) {
+		str = peekaboo + 3;
 	}
-	char *host = sandbox_extract_host (str);
-	if (!host) {
-		return false;
+	char *end = strchr (str, '/');
+	if (!end) {
+		end = strchr (str, ':');
+		if (!end) {
+			end = strchr (str, '?');
+		}
 	}
+	char *host = end? r_str_ndup (str, end - str): strdup (str);
 	bool ret = !strcmp (host, "localhost")
 		|| r_str_startswith (host, "localhost.")
 		|| r_str_startswith (host, "127.")
