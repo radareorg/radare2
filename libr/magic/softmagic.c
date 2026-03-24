@@ -888,8 +888,7 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
 		l = 0;
-		v = file_strncmp (m->value.s, p->s, (size_t)m->vallen,
-			file_magic_type_is_string16 (m->type)? 0: m->str_flags);
+		v = file_strncmp (m->value.s, p->s, (size_t)m->vallen, file_magic_type_is_string16 (m->type)? 0: m->str_flags);
 		break;
 	case FILE_SEARCH: { /* search ms->search.s for the string m->value.s */
 		size_t idx;
