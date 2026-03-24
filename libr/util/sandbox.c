@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2012-2025 - pancake */
+/* radare - LGPL - Copyright 2012-2026 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
@@ -143,6 +143,141 @@ R_API bool r_sandbox_check(int mask) {
 	return true;
 }
 
+static const char *sandbox_authority_end(const char *host) {
+	const char *p;
+	for (p = host; *p; p++) {
+		if (*p == '/' || *p == '?' || *p == '#') {
+			break;
+		}
+	}
+	return p;
+}
+
+static const char *sandbox_find_last_char(const char *from, const char *to, char ch) {
+	const char *p;
+	for (p = to; p > from; p--) {
+		if (p[-1] == ch) {
+			return p - 1;
+		}
+	}
+	return NULL;
+}
+
+static char *sandbox_extract_host(const char *str) {
+	const char *host = str;
+	const char *end = str + strlen (str);
+	const char *scheme = strstr (str, "://");
+	if (scheme) {
+		host = scheme + 3;
+		end = sandbox_authority_end (host);
+		const char *userinfo = sandbox_find_last_char (host, end, '@');
+		if (userinfo) {
+			host = userinfo + 1;
+		}
+	}
+	if (*host == '[') {
+		const char *bracket_end = strchr (host + 1, ']');
+		if (!bracket_end || bracket_end >= end) {
+			return NULL;
+		}
+		return r_str_ndup (host + 1, bracket_end - host - 1);
+	}
+	if (scheme) {
+		const char *p;
+		for (p = host; p < end; p++) {
+			if (*p == ':') {
+				end = p;
+				break;
+			}
+		}
+	} else {
+		const char *first_colon = strchr (host, ':');
+		const char *last_colon = strrchr (host, ':');
+		if (first_colon && first_colon == last_colon) {
+			end = first_colon;
+		}
+	}
+	return (end > host)? r_str_ndup (host, end - host): NULL;
+}
+
+#if R2__UNIX__ && !__wasi__
+static bool sandbox_is_localhost_ipv4(ut32 addr) {
+	addr = ntohl (addr);
+	return (addr & 0xff000000) == 0x7f000000 || addr == 0;
+}
+
+static bool sandbox_is_localhost_ipv6(const struct in6_addr *addr) {
+	static const ut8 v4mapped_prefix[12] = {
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff
+	};
+	if (IN6_IS_ADDR_LOOPBACK (addr) || IN6_IS_ADDR_UNSPECIFIED (addr)) {
+		return true;
+	}
+	if (!memcmp (addr->s6_addr, v4mapped_prefix, sizeof (v4mapped_prefix))) {
+		ut32 ip4;
+		memcpy (&ip4, addr->s6_addr + sizeof (v4mapped_prefix), sizeof (ip4));
+		return sandbox_is_localhost_ipv4 (ip4);
+	}
+	return false;
+}
+#endif
+
+static bool sandbox_is_localhost_host(const char *host) {
+	if (!strcmp (host, "localhost") || r_str_startswith (host, "localhost.")) {
+		return true;
+	}
+#if R2__UNIX__ && !__wasi__
+	struct in_addr addr4;
+	struct in6_addr addr6;
+	if (inet_pton (AF_INET, host, &addr4) == 1) {
+		return sandbox_is_localhost_ipv4 (addr4.s_addr);
+	}
+	if (inet_pton (AF_INET6, host, &addr6) == 1) {
+		return sandbox_is_localhost_ipv6 (&addr6);
+	}
+#else
+	if (r_str_startswith (host, "127.") || !strcmp (host, "0.0.0.0")) {
+		return true;
+	}
+	if (!strcmp (host, "::1") || !strcmp (host, "::")) {
+		return true;
+	}
+	if (r_str_startswith (host, "::ffff:127.") || r_str_startswith (host, "0:0:0:0:0:ffff:127.")) {
+		return true;
+	}
+#endif
+	return false;
+}
+
+#if R2__UNIX__ && !__wasi__
+static bool sandbox_resolves_localhost(const char *host) {
+	struct addrinfo hints, *res = NULL, *rp;
+	memset (&hints, 0, sizeof (hints));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	if (getaddrinfo (host, NULL, &hints, &res) != 0 || !res) {
+		return false;
+	}
+	bool ret = true;
+	for (rp = res; rp; rp = rp->ai_next) {
+		if (rp->ai_family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)rp->ai_addr;
+			ret = sandbox_is_localhost_ipv4 (addr->sin_addr.s_addr);
+		} else if (rp->ai_family == AF_INET6) {
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)rp->ai_addr;
+			ret = sandbox_is_localhost_ipv6 (&addr->sin6_addr);
+		} else {
+			ret = false;
+		}
+		if (!ret) {
+			break;
+		}
+	}
+	freeaddrinfo (res);
+	return ret;
+}
+#endif
+
 /**
  * \brief Extract hostname from a URL or host string and check if it's localhost
  * \param str The URL (e.g., "http://example.com:80/path") or "host:port" or hostname to check
@@ -164,160 +299,21 @@ R_API bool r_sandbox_check(int mask) {
  */
 R_API bool r_sandbox_check_localhost(const char *str) {
 	R_RETURN_VAL_IF_FAIL (str, false);
-
-	/* Empty string is not valid */
 	if (*str == '\0') {
 		return false;
 	}
-
-	const char *host = str;
-	char *host_copy = NULL;
-
-	/* If this looks like a URL (contains "://"), extract the hostname */
-	const char *proto_end = strstr (str, "://");
-	if (proto_end) {
-		host = proto_end + 3;
-		/* Find end of host (port, path, query, or fragment) */
-		const char *host_end = host;
-		/* Handle IPv6 addresses in brackets */
-		if (*host == '[') {
-			host++;
-			const char *bracket_end = strchr (host, ']');
-			if (bracket_end) {
-				host_copy = r_str_ndup (host, bracket_end - host);
-				host = host_copy;
-			} else {
-				/* Malformed IPv6 address */
-				return false;
-			}
-		} else {
-			while (*host_end && *host_end != ':' && *host_end != '/' &&
-			       *host_end != '?' && *host_end != '#') {
-				host_end++;
-			}
-			if (host_end == host) {
-				/* No hostname found */
-				return false;
-			}
-			host_copy = r_str_ndup (host, host_end - host);
-			host = host_copy;
-		}
-	} else {
-		/* No "://" - could be "host:port" or just a hostname */
-		const char *colon = strchr (str, ':');
-		if (colon) {
-			/* It's "host:port" format - extract just the host part */
-			/* Handle IPv6 addresses (they have colons but start with [) */
-			if (*str == '[') {
-				const char *bracket_end = strchr (str, ']');
-				if (bracket_end && bracket_end > str + 1) {
-					host_copy = r_str_ndup (str + 1, bracket_end - str - 1);
-					host = host_copy;
-				}
-			} else {
-				host_copy = r_str_ndup (str, colon - str);
-				host = host_copy;
-			}
-		}
-		/* else: pure hostname, use str directly */
+	char *host = sandbox_extract_host (str);
+	if (!host) {
+		return false;
 	}
-
-	/* Check for "localhost" and common variants */
-	bool is_localhost = false;
-	if (r_str_startswith (host, "localhost")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv4 localhost (127.0.0.0/8) */
-	if (r_str_startswith (host, "127.")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv4 0.0.0.0 */
-	if (!strcmp (host, "0.0.0.0")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv6 localhost (::1) */
-	if (!strcmp (host, "::1") || !strcmp (host, "0:0:0:0:0:0:0:1")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv6 unspecified address (::) */
-	if (!strcmp (host, "::") || !strcmp (host, "0:0:0:0:0:0:0:0")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv6 loopback with brackets (used in URLs) */
-	if (r_str_startswith (host, "[::1]") || r_str_startswith (host, "[::]")) {
-		is_localhost = true;
-		goto beach;
-	}
-
-	/* Check for IPv4-mapped IPv6 localhost */
-	if (r_str_startswith (host, "::ffff:127.") ||
-	    r_str_startswith (host, "0:0:0:0:0:ffff:127.")) {
-		is_localhost = true;
-		goto beach;
-	}
-
+	bool ret = sandbox_is_localhost_host (host);
 #if R2__UNIX__ && !__wasi__
-	/* Try to resolve the hostname and check if it resolves to localhost */
-	struct addrinfo hints, *res = NULL;
-	memset (&hints, 0, sizeof (hints));
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_socktype = SOCK_STREAM;
-
-	if (getaddrinfo (host, NULL, &hints, &res) == 0 && res) {
-		struct addrinfo *rp;
-		is_localhost = true; /* Assume localhost until proven otherwise */
-
-		for (rp = res; rp; rp = rp->ai_next) {
-			if (rp->ai_family == AF_INET) {
-				struct sockaddr_in *addr = (struct sockaddr_in *)rp->ai_addr;
-				/* Check if address is in 127.0.0.0/8 range */
-				if ((ntohl (addr->sin_addr.s_addr) & 0xff000000) != 0x7f000000) {
-					is_localhost = false;
-					break;
-				}
-			} else if (rp->ai_family == AF_INET6) {
-				struct sockaddr_in6 *addr = (struct sockaddr_in6 *)rp->ai_addr;
-				/* Check if address is ::1 (IPv6 loopback) */
-				unsigned char *bytes = addr->sin6_addr.s6_addr;
-				bool is_loopback6 = true;
-				int i;
-				for (i = 0; i < 15; i++) {
-					if (bytes[i] != 0) {
-						is_loopback6 = false;
-						break;
-					}
-				}
-				if (!is_loopback6 || bytes[15] != 1) {
-					is_localhost = false;
-					break;
-				}
-			} else {
-				/* Unknown address family - not localhost */
-				is_localhost = false;
-				break;
-			}
-		}
-		freeaddrinfo (res);
-		goto beach;
+	if (!ret) {
+		ret = sandbox_resolves_localhost (host);
 	}
 #endif
-
-	/* If we can't resolve, treat as non-localhost for safety */
-	is_localhost = false;
-
-beach:
-	free (host_copy);
-	return is_localhost;
+	free (host);
+	return ret;
 }
 
 R_API bool r_sandbox_enable(bool e) {
