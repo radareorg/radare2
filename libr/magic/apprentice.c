@@ -81,6 +81,138 @@ static const char usg_hdr[] = "cont\toffset\ttype\topcode\tmask\tvalue\tdesc";
 static const char mime_marker[] = "!:mime";
 static const size_t mime_marker_len = sizeof(mime_marker) - 1;
 
+static size_t magic_cap_bytes(size_t bytes) {
+	return R_MIN (bytes, (size_t)HOWMANY);
+}
+
+static size_t magic_cap_sum(size_t base, size_t extra) {
+	if (base >= (size_t)HOWMANY || extra >= (size_t)HOWMANY) {
+		return HOWMANY;
+	}
+	if (base > SIZE_MAX - extra) {
+		return HOWMANY;
+	}
+	return magic_cap_bytes (base + extra);
+}
+
+static size_t magic_type_bytes(const struct r_magic *m, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		return 1;
+	case FILE_SHORT:
+	case FILE_BESHORT:
+	case FILE_LESHORT:
+		return 2;
+	case FILE_LONG:
+	case FILE_BELONG:
+	case FILE_LELONG:
+	case FILE_MELONG:
+	case FILE_DATE:
+	case FILE_BEDATE:
+	case FILE_LEDATE:
+	case FILE_MEDATE:
+	case FILE_LDATE:
+	case FILE_BELDATE:
+	case FILE_LELDATE:
+	case FILE_MELDATE:
+	case FILE_FLOAT:
+	case FILE_BEFLOAT:
+	case FILE_LEFLOAT:
+		return 4;
+	case FILE_QUAD:
+	case FILE_LEQUAD:
+	case FILE_BEQUAD:
+	case FILE_QDATE:
+	case FILE_LEQDATE:
+	case FILE_BEQDATE:
+	case FILE_QLDATE:
+	case FILE_LEQLDATE:
+	case FILE_BEQLDATE:
+	case FILE_DOUBLE:
+	case FILE_BEDOUBLE:
+	case FILE_LEDOUBLE:
+		return 8;
+	case FILE_STRING:
+		return m->vallen;
+	case FILE_PSTRING:
+		return (size_t)m->vallen + 1;
+	case FILE_BESTRING16:
+	case FILE_LESTRING16:
+		return (size_t)m->vallen * 2;
+	case FILE_SEARCH:
+		return m->vallen;
+	case FILE_REGEX:
+	case FILE_DEFAULT:
+	default:
+		return 0;
+	}
+}
+
+static size_t magic_min_bytes(const struct r_magic *m) {
+	size_t need = magic_type_bytes (m, m->type);
+	size_t offset = m->offset;
+
+	if (m->flag & INDIR) {
+		size_t indir_need = magic_type_bytes (m, m->in_type);
+		need = R_MAX (need, indir_need);
+		if ((m->in_op & FILE_OPINDIRECT) && m->in_offset > 0) {
+			need = R_MAX (need, (size_t)m->in_offset + indir_need);
+		}
+	}
+	return magic_cap_sum (offset, need);
+}
+
+static size_t magic_max_bytes(const struct r_magic *m) {
+	size_t need;
+
+	if (m->flag & (INDIR | OFFADD | INDIROFFADD)) {
+		return HOWMANY;
+	}
+	switch (m->type) {
+	case FILE_SEARCH:
+		if (m->str_range == 0) {
+			return HOWMANY;
+		}
+		need = m->vallen;
+		if (need > 0) {
+			need += (size_t)m->str_range - 1;
+		}
+		break;
+	case FILE_REGEX:
+		return HOWMANY;
+	default:
+		need = magic_type_bytes (m, m->type);
+		break;
+	}
+	return magic_cap_sum (m->offset, need);
+}
+
+static bool magic_prepare_requirements(RMagic *ms, struct r_magic *magic, ut32 nmagic, size_t *bytes_max, ut32 **min_bytes) {
+	ut32 i;
+	size_t max_bytes = 0;
+	ut32 *req;
+
+	if (nmagic == 0) {
+		*bytes_max = 0;
+		*min_bytes = NULL;
+		return true;
+	}
+	req = calloc (nmagic, sizeof (*req));
+	if (!req) {
+		__magic_file_oomem (ms, sizeof (*req) * nmagic);
+		return false;
+	}
+	for (i = 0; i < nmagic; i++) {
+		size_t min_need = magic_min_bytes (&magic[i]);
+		size_t max_need = magic_max_bytes (&magic[i]);
+		req[i] = (ut32)magic_cap_bytes (min_need);
+		max_bytes = R_MAX (max_bytes, max_need);
+	}
+	*bytes_max = max_bytes;
+	*min_bytes = req;
+	return true;
+}
+
 static const struct type_tbl_s {
 	const char name[16];
 	const size_t len;
@@ -1840,8 +1972,10 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
  */
 static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *mlist) {
 	struct r_magic *magic = NULL;
+	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int rv = -1;
+	size_t bytes_max = 0;
 
 	if (!ms) {
 		return -1;
@@ -1876,9 +2010,14 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 		__magic_file_delmagic (magic, rv, nmagic);
 		return -1;
 	}
+	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
+		__magic_file_delmagic (magic, rv, nmagic);
+		return -1;
+	}
 
 	struct mlist *ml = malloc (sizeof (*ml));
 	if (!ml) {
+		free (min_bytes);
 		__magic_file_delmagic (magic, rv, nmagic);
 		__magic_file_oomem (ms, sizeof (*ml));
 		return -1;
@@ -1887,6 +2026,8 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, struct mlist *ml
 	ml->magic = magic;
 	ml->nmagic = nmagic;
 	ml->mapped = rv;
+	ml->bytes_max = bytes_max;
+	ml->min_bytes = min_bytes;
 
 	mlist->prev->next = ml;
 	ml->prev = mlist->prev;
@@ -1918,6 +2059,8 @@ struct mlist *__magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size
 		return NULL;
 	}
 	mlist->next = mlist->prev = mlist;
+	mlist->bytes_max = 0;
+	mlist->min_bytes = NULL;
 
 	while (fn) {
 		p = strstr (fn, R_SYS_ENVSEP);
@@ -1952,8 +2095,10 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 
 struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {
 	struct r_magic *magic = NULL;
+	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int mapped = 0;
+	size_t bytes_max = 0;
 
 	if (!buf) {
 		return NULL;
@@ -1972,15 +2117,23 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 			return NULL;
 		}
 	}
+	if (!magic_prepare_requirements (ms, magic, nmagic, &bytes_max, &min_bytes)) {
+		__magic_file_delmagic (magic, mapped, nmagic);
+		return NULL;
+	}
 	struct mlist *mlist = malloc (sizeof (*mlist));
 	if (!mlist) {
+		free (min_bytes);
 		__magic_file_delmagic (magic, mapped, nmagic);
 		__magic_file_oomem (ms, sizeof (*mlist));
 		return NULL;
 	}
 	mlist->next = mlist->prev = mlist;
+	mlist->bytes_max = 0;
+	mlist->min_bytes = NULL;
 	struct mlist *ml = malloc (sizeof (*ml));
 	if (!ml) {
+		free (min_bytes);
 		__magic_file_delmagic (magic, mapped, nmagic);
 		free (mlist);
 		__magic_file_oomem (ms, sizeof (*ml));
@@ -1989,6 +2142,8 @@ struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t 
 	ml->magic = magic;
 	ml->nmagic = nmagic;
 	ml->mapped = mapped;
+	ml->bytes_max = bytes_max;
+	ml->min_bytes = min_bytes;
 	mlist->prev->next = ml;
 	ml->prev = mlist->prev;
 	ml->next = mlist;

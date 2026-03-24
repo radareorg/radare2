@@ -5,6 +5,7 @@
 #include <r_magic.h>
 #include <r_lib.h>
 #include <r_util.h>
+#include <limits.h>
 #include <unistd.h>
 
 R_LIB_VERSION(r_magic);
@@ -94,6 +95,7 @@ static void free_mlist(struct mlist *mlist) {
 	for (ml = mlist->next; ml != mlist;) {
 		struct mlist *next = ml->next;
 		struct r_magic *mg = ml->magic;
+		free (ml->min_bytes);
 		__magic_file_delmagic (mg, ml->mapped, ml->nmagic);
 		free (ml);
 		ml = next;
@@ -112,6 +114,19 @@ static void mlist_append(struct mlist *dst, struct mlist *src) {
 	last->next = dst;
 	dst->prev = last;
 	src->next = src->prev = src;
+}
+
+static size_t mlist_bytes_max(const struct mlist *mlist) {
+	const struct mlist *ml;
+	size_t max_bytes = 0;
+
+	if (!mlist) {
+		return 0;
+	}
+	for (ml = mlist->next; ml != mlist; ml = ml->next) {
+		max_bytes = R_MAX (max_bytes, ml->bytes_max);
+	}
+	return max_bytes;
 }
 
 static char *magic_default_path(int action) {
@@ -151,62 +166,6 @@ static const char *magic_buffer_from_mem(RMagic *ms, char *buf, size_t sz) {
 	return res;
 }
 
-static char *slurp_fd(int fd, size_t *sz) {
-	char *buf = NULL;
-	size_t cap = 0;
-	size_t len = 0;
-	off_t pos = lseek (fd, 0, SEEK_CUR);
-	bool restore = pos != (off_t)-1 && lseek (fd, 0, SEEK_SET) != (off_t)-1;
-
-	for (;;) {
-		if (len == cap) {
-			size_t newcap = cap? cap * 2: 4096;
-			if (newcap <= cap) {
-				free (buf);
-				buf = NULL;
-				break;
-			}
-			char *nbuf = realloc (buf, newcap);
-			if (!nbuf) {
-				free (buf);
-				buf = NULL;
-				break;
-			}
-			buf = nbuf;
-			cap = newcap;
-		}
-		int r = r_sandbox_read (fd, (ut8 *)buf + len, (int)(cap - len));
-		if (r < 0) {
-			free (buf);
-			buf = NULL;
-			break;
-		}
-		if (r == 0) {
-			break;
-		}
-		len += (size_t)r;
-	}
-	if (restore) {
-		(void)lseek (fd, pos, SEEK_SET);
-	}
-	if (!buf) {
-		buf = calloc (1, 1);
-		if (!buf) {
-			return NULL;
-		}
-	}
-	char *nbuf = realloc (buf, len + 1);
-	if (!nbuf) {
-		free (buf);
-		return NULL;
-	}
-	nbuf[len] = 0;
-	if (sz) {
-		*sz = len;
-	}
-	return nbuf;
-}
-
 /* API */
 
 extern void init_file_tables(RMagic *m);
@@ -230,6 +189,7 @@ R_API RMagic *r_magic_new(int flags) {
 	ms->mlist = NULL;
 	ms->file = "unknown";
 	ms->line = 0;
+	ms->bytes_max = 0;
 	return ms;
 }
 
@@ -249,6 +209,7 @@ R_API bool r_magic_load_buffer(RMagic *ms, const ut8 *magicdata, size_t magicdat
 		if (ml) {
 			free_mlist (ms->mlist);
 			ms->mlist = ml;
+			ms->bytes_max = mlist_bytes_max (ml);
 			return true;
 		}
 	} else {
@@ -263,6 +224,7 @@ R_API bool r_magic_load(RMagic *ms, const char *magicfile) {
 	if (ml) {
 		free_mlist (ms->mlist);
 		ms->mlist = ml;
+		ms->bytes_max = mlist_bytes_max (ml);
 		return true;
 	}
 	return false;
@@ -295,24 +257,20 @@ R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
 
 R_API const char *r_magic_file(RMagic *ms, const char *filename) {
 	R_RETURN_VAL_IF_FAIL (ms && filename, NULL);
-	size_t sz = 0;
-	char *buf = r_file_slurp (filename, &sz);
+	size_t limit = ms->bytes_max? ms->bytes_max: HOWMANY;
+	int osz = 0;
+	char *buf = r_file_slurp_range (filename, 0, (int)R_MIN (limit, (size_t)INT_MAX), &osz);
 	if (!buf) {
 		__magic_file_error (ms, errno, "cannot read `%s'", filename);
 		return NULL;
 	}
-	return magic_buffer_from_mem (ms, buf, sz);
+	return magic_buffer_from_mem (ms, buf, (size_t)osz);
 }
 
 R_API const char *r_magic_descriptor(RMagic *ms, int fd) {
 	R_RETURN_VAL_IF_FAIL (ms && fd >= 0, NULL);
-	size_t sz = 0;
-	char *buf = slurp_fd (fd, &sz);
-	if (!buf) {
-		__magic_file_error (ms, errno, "cannot read descriptor %d", fd);
-		return NULL;
-	}
-	return magic_buffer_from_mem (ms, buf, sz);
+	__magic_file_error (ms, 0, "descriptor lookups are not supported");
+	return NULL;
 }
 
 R_API const char *r_magic_error(RMagic *ms) {
@@ -372,6 +330,7 @@ R_API bool r_magic_load_buffers(RMagic *ms, const void *const *buffers, const si
 	}
 	free_mlist (ms->mlist);
 	ms->mlist = merged;
+	ms->bytes_max = mlist_bytes_max (merged);
 	return true;
 }
 

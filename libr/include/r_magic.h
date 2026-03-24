@@ -199,6 +199,8 @@ struct mlist {
 	int mapped;  /* allocation type: 0 => apprentice_file
 		      *                  1 => apprentice_map + malloc
 		      *                  2 => apprentice_map + mmap */
+	size_t bytes_max;		/* conservative max bytes needed */
+	ut32 *min_bytes;		/* min bytes needed per magic entry */
 	struct mlist *next, *prev;
 };
 
@@ -263,6 +265,7 @@ struct r_magic_set {
 	int magic_file_formats[FILE_NAMES_SIZE];
 	const char *magic_file_names[FILE_NAMES_SIZE];
 	ut32 last_cont_level;
+	size_t bytes_max;
 };
 
 #if USE_LIB_MAGIC

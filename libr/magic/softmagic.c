@@ -52,6 +52,72 @@ static void magic_debug(RMagic *ms, const char *fmt, ...) {
 	}
 }
 
+static size_t magic_type_bytes(const struct r_magic *m, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		return 1;
+	case FILE_SHORT:
+	case FILE_BESHORT:
+	case FILE_LESHORT:
+		return 2;
+	case FILE_LONG:
+	case FILE_BELONG:
+	case FILE_LELONG:
+	case FILE_MELONG:
+	case FILE_DATE:
+	case FILE_BEDATE:
+	case FILE_LEDATE:
+	case FILE_MEDATE:
+	case FILE_LDATE:
+	case FILE_BELDATE:
+	case FILE_LELDATE:
+	case FILE_MELDATE:
+	case FILE_FLOAT:
+	case FILE_BEFLOAT:
+	case FILE_LEFLOAT:
+		return 4;
+	case FILE_QUAD:
+	case FILE_LEQUAD:
+	case FILE_BEQUAD:
+	case FILE_QDATE:
+	case FILE_LEQDATE:
+	case FILE_BEQDATE:
+	case FILE_QLDATE:
+	case FILE_LEQLDATE:
+	case FILE_BEQLDATE:
+	case FILE_DOUBLE:
+	case FILE_BEDOUBLE:
+	case FILE_LEDOUBLE:
+		return 8;
+	case FILE_STRING:
+		return m->vallen;
+	case FILE_PSTRING:
+		return (size_t)m->vallen + 1;
+	case FILE_BESTRING16:
+	case FILE_LESTRING16:
+		return (size_t)m->vallen * 2;
+	case FILE_SEARCH:
+		return m->vallen;
+	case FILE_REGEX:
+	case FILE_DEFAULT:
+	default:
+		return 0;
+	}
+}
+
+static bool magic_hasbytes(size_t nbytes, st64 offset, size_t need) {
+	size_t uoffset;
+
+	if (offset < 0) {
+		return false;
+	}
+	uoffset = (size_t)offset;
+	if (uoffset > nbytes) {
+		return false;
+	}
+	return need <= nbytes - uoffset;
+}
+
 /*
  * Macro to give description string according to whether we want plain
  * text or MIME type
@@ -684,8 +750,12 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	if (m->flag & INDIR) {
 		int off = m->in_offset;
 		if (m->in_op & FILE_OPINDIRECT) {
+			st64 qoff = (st64)offset + off;
+			if (!magic_hasbytes (nbytes, qoff, magic_type_bytes (m, m->in_type))) {
+				return 0;
+			}
 			const union VALUETYPE *q =
-				((const void *) (s + offset + off));
+				((const void *) (s + (size_t)qoff));
 			switch (m->in_type) {
 			case FILE_BYTE:
 				off = q->b;
@@ -715,59 +785,67 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 		}
 		switch (m->in_type) {
 		case FILE_BYTE:
-			if (nbytes < (offset + 1)) {
+			if (!magic_hasbytes (nbytes, offset, 1)) {
 				return 0;
 			}
-			offset = apply_indir_op (p->b, off, m->in_op);
+			off = apply_indir_op (p->b, off, m->in_op);
 			break;
 		case FILE_BESHORT:
-			if (nbytes < (offset + 2)) {
+			if (!magic_hasbytes (nbytes, offset, 2)) {
 				return 0;
 			}
-			offset = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
+			off = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
 			break;
 		case FILE_LESHORT:
-			if (nbytes < (offset + 2)) {
+			if (!magic_hasbytes (nbytes, offset, 2)) {
 				return 0;
 			}
-			offset = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
+			off = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
 			break;
 		case FILE_SHORT:
-			if (nbytes < (offset + 2)) {
+			if (!magic_hasbytes (nbytes, offset, 2)) {
 				return 0;
 			}
-			offset = apply_indir_op (p->h, off, m->in_op);
+			off = apply_indir_op (p->h, off, m->in_op);
 			break;
 		case FILE_BELONG:
-			if (nbytes < (offset + 4)) {
+			if (!magic_hasbytes (nbytes, offset, 4)) {
 				return 0;
 			}
-			offset = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
+			off = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
 			break;
 		case FILE_LELONG:
-			if (nbytes < (offset + 4)) {
+			if (!magic_hasbytes (nbytes, offset, 4)) {
 				return 0;
 			}
-			offset = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
+			off = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
 			break;
 		case FILE_MELONG:
-			if (nbytes < (offset + 4)) {
+			if (!magic_hasbytes (nbytes, offset, 4)) {
 				return 0;
 			}
-			offset = apply_indir_op ((st32)(
+			off = apply_indir_op ((st32)(
 				(p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | p->hl[2]
 			), off, m->in_op);
 			break;
 		case FILE_LONG:
-			if (nbytes < (offset + 4)) {
+			if (!magic_hasbytes (nbytes, offset, 4)) {
 				return 0;
 			}
-			offset = apply_indir_op (p->l, off, m->in_op);
+			off = apply_indir_op (p->l, off, m->in_op);
 			break;
 		}
+		if (off < 0) {
+			return 0;
+		}
+		offset = (ut32)off;
 
 		if (m->flag & INDIROFFADD) {
-			offset += ms->c.li[cont_level - 1].off;
+			st64 noff = (st64)offset + ms->c.li[cont_level - 1].off;
+			if (noff < 0) {
+				return 0;
+			}
+			offset = (ut32)noff;
 		}
 		if (mcopy (ms, p, m->type, 0, s, offset, nbytes, count) == -1) {
 			return -1;
@@ -778,60 +856,8 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 	}
 
 	/* Verify we have enough data to match magic type */
-	switch (m->type) {
-	case FILE_BYTE:
-		if (nbytes < (offset + 1)) { /* should alway be true */
-			return 0;
-		}
-		break;
-	case FILE_SHORT:
-	case FILE_BESHORT:
-	case FILE_LESHORT:
-		if (nbytes < (offset + 2)) {
-			return 0;
-		}
-		break;
-	case FILE_LONG:
-	case FILE_BELONG:
-	case FILE_LELONG:
-	case FILE_MELONG:
-	case FILE_DATE:
-	case FILE_BEDATE:
-	case FILE_LEDATE:
-	case FILE_MEDATE:
-	case FILE_LDATE:
-	case FILE_BELDATE:
-	case FILE_LELDATE:
-	case FILE_MELDATE:
-	case FILE_FLOAT:
-	case FILE_BEFLOAT:
-	case FILE_LEFLOAT:
-		if (nbytes < (offset + 4)) {
-			return 0;
-		}
-		break;
-	case FILE_DOUBLE:
-	case FILE_BEDOUBLE:
-	case FILE_LEDOUBLE:
-		if (nbytes < (offset + 8)) {
-			return 0;
-		}
-		break;
-	case FILE_STRING:
-	case FILE_PSTRING:
-	case FILE_SEARCH:
-		if (nbytes < (offset + m->vallen)) {
-			return 0;
-		}
-		break;
-	case FILE_REGEX:
-		if (nbytes < offset) {
-			return 0;
-		}
-		break;
-	case FILE_DEFAULT: /* nothing to check */
-	default:
-		break;
+	if (m->type != FILE_DEFAULT && !magic_hasbytes (nbytes, offset, magic_type_bytes (m, m->type))) {
+		return 0;
 	}
 	return mconvert (ms, m);
 }
@@ -1145,7 +1171,7 @@ static int print_sep(RMagic *ms, int firstline) {
  *	If a continuation matches, we bump the current continuation level
  *	so that higher-level continuations are processed.
  */
-static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, size_t nbytes, int mode) {
+static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut32 *min_bytes, const ut8 *s, size_t nbytes, int mode) {
 	ut32 magindex = 0;
 	unsigned int cont_level = 0;
 	int need_separator = 0;
@@ -1166,6 +1192,12 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				continue;
 			}
 			continue; /* Skip to next top-level test*/
+		}
+		if (min_bytes && min_bytes[magindex] > nbytes) {
+			while (magindex < nmagic - 1 && magic[magindex + 1].cont_level) {
+				magindex++;
+			}
+			continue;
 		}
 
 		ms->offset = m->offset;
@@ -1232,6 +1264,9 @@ static int match(RMagic *ms, struct r_magic *magic, ut32 nmagic, const ut8 *s, s
 				if (ms->c.li[cont_level].last_match == 1) {
 					continue;
 				}
+			}
+			if (min_bytes && min_bytes[magindex] > nbytes) {
+				continue;
 			}
 			flush = !mget (ms, s, m, nbytes, cont_level);
 			if (flush && m->reln != '!') {
@@ -1300,7 +1335,7 @@ int __magic_file_softmagic(RMagic *ms, const ut8 *buf, size_t nbytes, int mode) 
 	struct mlist *ml;
 	int rv;
 	for (ml = ms->mlist->next; ml != ms->mlist; ml = ml->next) {
-		if ((rv = match (ms, ml->magic, ml->nmagic, buf, nbytes, mode)) != 0) {
+		if ((rv = match (ms, ml->magic, ml->nmagic, ml->min_bytes, buf, nbytes, mode)) != 0) {
 			return rv;
 		}
 	}
