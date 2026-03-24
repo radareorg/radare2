@@ -197,8 +197,7 @@ struct mlist {
 	struct r_magic *magic;		/* array of magic entries */
 	ut32 nmagic;			/* number of entries in array */
 	int mapped;  /* allocation type: 0 => apprentice_file
-		      *                  1 => apprentice_map + malloc
-		      *                  2 => apprentice_map + mmap */
+		      *                  1 => apprentice_map + malloc */
 	size_t bytes_max;		/* conservative max bytes needed */
 	ut32 *min_bytes;		/* min bytes needed per magic entry */
 	struct mlist *next, *prev;

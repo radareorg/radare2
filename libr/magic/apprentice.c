@@ -37,14 +37,6 @@
 #include "file.h"
 #include "patchlevel.h"
 
-#if R2__UNIX__ && !defined(_MSC_VER) && !(defined(__wasi__))
-#define QUICK 1
-#include <sys/mman.h>
-#include <sys/param.h>
-#else
-#define QUICK 0
-#endif
-
 #ifdef __wasi__
 #define MAXPATHLEN 255
 #endif
@@ -63,10 +55,6 @@
 		} \
 	}
 #define LOWCASE(l) (isupper ((ut8) (l))? tolower ((ut8) (l)): (l))
-
-#ifndef MAP_FILE
-#define MAP_FILE 0
-#endif
 
 struct r_magic_entry {
 	struct r_magic *mp;
@@ -166,7 +154,7 @@ static const struct type_tbl_s {
 	const int type;
 	const int format;
 } type_tbl[] = {
-#define XX(s) s,(sizeof (s) - 1)
+#define XX(s) s,(sizeof(s) - 1)
 #define XX_NULL "", 0
 	{ XX ("byte"), FILE_BYTE, FILE_FMT_NUM },
 	{ XX ("short"), FILE_SHORT, FILE_FMT_NUM },
@@ -239,12 +227,6 @@ void init_file_tables(RMagic *m) {
 void __magic_file_delmagic(struct r_magic *p, int type, size_t entries) {
 	if (p) {
 		switch (type) {
-#if QUICK
-		case 2:
-			p--;
-			(void)munmap ((void *)p, sizeof (*p) *(entries + 1));
-			break;
-#endif
 		case 1:
 			p--;
 			/*FALLTHROUGH*/
@@ -438,7 +420,7 @@ static bool bgets(char *line, size_t line_sz, const char **data) {
 		return false;
 	}
 	const char *nl = strchr (p, '\n');
-	size_t adv = nl? (size_t)(nl - p) + 1: strlen (p);
+	size_t adv = nl? (size_t) (nl - p) + 1: strlen (p);
 	size_t len = R_MIN (adv, line_sz - 1);
 	r_str_ncpy (line, p, len + 1);
 	*data = p + adv;
@@ -712,7 +694,7 @@ static int check_format_type(const char *ptr, int type) {
 	default:
 		return -1;
 	}
-	return (int)(ptr - start);
+	return (int) (ptr - start);
 }
 
 /*
@@ -1484,7 +1466,7 @@ static int apprentice_finish(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp,
 			mentrycount += marray[i].cont_count;
 		}
 
-		if (!(*magicp = malloc (1 + (sizeof (**magicp) * mentrycount)))) {
+		if (! (*magicp = malloc (1 + (sizeof (**magicp) * mentrycount)))) {
 			__magic_file_oomem (ms, sizeof (**magicp) * mentrycount);
 			errs++;
 		} else {
@@ -1585,39 +1567,6 @@ static int apprentice_load_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nma
 	return apprentice_finish (ms, magicp, nmagicp, marray, marraycount, errs);
 }
 
-/*
- * Print a string containing C character escapes.
- */
-void __magic_file_showstr(FILE *fp, const char *s, size_t len) {
-	for (;;) {
-		char c = *s++;
-		if (len == ~0U) {
-			if (c == '\0') {
-				break;
-			}
-		} else {
-			if (len-- == 0) {
-				break;
-			}
-		}
-		if (c >= 040 && c <= 0176) { /* TODO isprint && !iscntrl */
-			fputc (c, fp);
-		} else {
-			fputc ('\\', fp);
-			switch (c) {
-			case '\a': fputc ('a', fp); break;
-			case '\b': fputc ('b', fp); break;
-			case '\f': fputc ('f', fp); break;
-			case '\n': fputc ('n', fp); break;
-			case '\r': fputc ('r', fp); break;
-			case '\t': fputc ('t', fp); break;
-			case '\v': fputc ('v', fp); break;
-			default: fprintf (fp, "%.3o", c & 0377); break;
-			}
-		}
-	}
-}
-
 static const char ext[] = ".mgc";
 /*
  * make a dbname
@@ -1713,7 +1662,7 @@ static bool read_compiled_magic_header(const ut8 *buf, ut32 *version, bool *be) 
  * handle a compiled file.
  */
 static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, const char *fn) {
-	int fd;
+	int fd = -1;
 	struct stat st;
 	ut32 version = 0;
 	bool be = false;
@@ -1736,17 +1685,6 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 		__magic_file_error (ms, 0, "file `%s' is too small", dbname);
 		goto error1;
 	}
-
-#if QUICK
-	if ((mm = mmap (0, (size_t)st.st_size, PROT_READ | PROT_WRITE,
-		MAP_PRIVATE | MAP_FILE,
-		fd,
-		(off_t)0)) == MAP_FAILED) {
-		__magic_file_error (ms, errno, "cannot map `%s'", dbname);
-		goto error1;
-	}
-#define RET 2
-#else
 	if (! (mm = malloc ((size_t)st.st_size))) {
 		__magic_file_oomem (ms, (size_t)st.st_size);
 		goto error1;
@@ -1755,8 +1693,6 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 		__magic_file_badread (ms);
 		goto error1;
 	}
-#define RET 1
-#endif
 	*magicp = mm;
 	(void)close (fd);
 	fd = -1;
@@ -1782,18 +1718,14 @@ static int apprentice_map(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp, co
 	(*magicp)++;
 	decode_compiled_magic (*magicp, *nmagicp, be);
 	free (dbname);
-	return RET;
+	return 1;
 
 error1:
 	if (fd != -1) {
 		(void)close (fd);
 	}
 	if (mm) {
-#if QUICK
-		(void)munmap ((void *)mm, (size_t)st.st_size);
-#else
 		free (mm);
-#endif
 	} else {
 		*magicp = NULL;
 		*nmagicp = 0;
@@ -1833,7 +1765,7 @@ static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmag
 		*nmagicp = 0;
 		return -1;
 	}
-	*nmagicp = (ut32)(buf_size / sizeof (struct r_magic));
+	*nmagicp = (ut32) (buf_size / sizeof (struct r_magic));
 	if (*nmagicp > 0) {
 		(*nmagicp)--;
 	}
@@ -1862,7 +1794,7 @@ static int apprentice_compile(RMagic *ms, struct r_magic **magicp, ut32 *nmagicp
 	int fd = -1;
 	int rv = -1;
 	size_t buf_size = 0;
-	struct r_magic hdr = {0};
+	struct r_magic hdr = { 0 };
 	struct r_magic *encoded = NULL;
 	char *dbname = mkdbname (fn, 1);
 	if (!dbname) {
@@ -2031,9 +1963,7 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 	ut32 version = 0;
 	bool needsbyteswap = false;
 
-	return buf && buf_size >= sizeof (ut32) * 2
-		&& read_compiled_magic_header (buf, &version, &needsbyteswap)
-		&& version == VERSIONNO;
+	return buf && buf_size >= sizeof (ut32) * 2 && read_compiled_magic_header (buf, &version, &needsbyteswap) && version == VERSIONNO;
 }
 
 struct mlist *__magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action) {

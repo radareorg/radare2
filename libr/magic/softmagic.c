@@ -92,20 +92,6 @@ static int check_fmt(RMagic *ms, struct r_magic *m) {
 	}
 }
 
-char *strdupn(const char *str, size_t n) {
-	size_t len;
-	char *copy;
-
-	for (len = 0; len < n && str[len]; len++) {
-	}
-	if (! (copy = malloc (len + 1))) {
-		return NULL;
-	}
-	(void)memcpy (copy, str, len);
-	copy[len] = '\0';
-	return copy;
-}
-
 static st32 mprint(RMagic *ms, struct r_magic *m) {
 	ut64 v;
 	float vf;
@@ -443,6 +429,48 @@ static st32 apply_indir_op(st32 value, st32 off, int op) {
 	return (op & FILE_OPINVERSE)? ~value: value;
 }
 
+static st32 magic_melong(const ut8 *hl) {
+	return (st32) ((hl[1] << 24) | (hl[0] << 16) | (hl[3] << 8) | hl[2]);
+}
+
+static bool magic_get_indir_value(st32 *out, const union VALUETYPE *p, int type) {
+	switch (type) {
+	case FILE_BYTE:
+		*out = p->b;
+		return true;
+	case FILE_SHORT:
+		*out = p->h;
+		return true;
+	case FILE_BESHORT:
+		*out = (st16)r_read_be16 (p->hs);
+		return true;
+	case FILE_LESHORT:
+		*out = (st16)r_read_le16 (p->hs);
+		return true;
+	case FILE_LONG:
+		*out = p->l;
+		return true;
+	case FILE_BELONG:
+		*out = (st32)r_read_be32 (p->hl);
+		return true;
+	case FILE_LELONG:
+		*out = (st32)r_read_le32 (p->hl);
+		return true;
+	case FILE_MELONG:
+		*out = magic_melong (p->hl);
+		return true;
+	default:
+		return false;
+	}
+}
+
+static void magic_rstrip_newline(char *s) {
+	size_t len = strlen (s);
+	if (len > 0 && s[len - 1] == '\n') {
+		s[len - 1] = '\0';
+	}
+}
+
 /*
  * Convert the byte order of the data we are looking at
  * While we're here, let's apply the mask operation
@@ -471,17 +499,9 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_STRING:
 	case FILE_BESTRING16:
 	case FILE_LESTRING16:
-		{
-			size_t len;
-
-			/* Null terminate and eat *trailing* return */
-			p->s[sizeof (p->s) - 1] = '\0';
-			len = strlen (p->s);
-			if (len-- && p->s[len] == '\n') {
-				p->s[len] = '\0';
-			}
-			return 1;
-		}
+		p->s[sizeof (p->s) - 1] = '\0';
+		magic_rstrip_newline (p->s);
+		return 1;
 	case FILE_PSTRING:
 		{
 			char *ptr1 = p->s, *ptr2 = ptr1 + 1;
@@ -493,10 +513,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 				*ptr1++ = *ptr2++;
 			}
 			*ptr1 = '\0';
-			len = strlen (p->s);
-			if (len-- && p->s[len] == '\n') {
-				p->s[len] = '\0';
-			}
+			magic_rstrip_newline (p->s);
 			return 1;
 		}
 	case FILE_BESHORT:
@@ -534,7 +551,7 @@ static int mconvert(RMagic *ms, struct r_magic *m) {
 	case FILE_MELONG:
 	case FILE_MEDATE:
 	case FILE_MELDATE:
-		p->l = (st32) ((p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | (p->hl[2]));
+		p->l = magic_melong (p->hl);
 		cvt_32 (p, m);
 		return 1;
 	case FILE_FLOAT:
@@ -703,84 +720,17 @@ static int mget(RMagic *ms, const ut8 *s, struct r_magic *m, size_t nbytes, unsi
 			}
 			const union VALUETYPE *q =
 				((const void *) (s + (size_t)qoff));
-			switch (m->in_type) {
-			case FILE_BYTE:
-				off = q->b;
-				break;
-			case FILE_SHORT:
-				off = q->h;
-				break;
-			case FILE_BESHORT:
-				off = (st16)r_read_be16 (q->hs);
-				break;
-			case FILE_LESHORT:
-				off = (st16)r_read_le16 (q->hs);
-				break;
-			case FILE_LONG:
-				off = q->l;
-				break;
-			case FILE_BELONG:
-				off = (st32)r_read_be32 (q->hl);
-				break;
-			case FILE_LELONG:
-				off = (st32)r_read_le32 (q->hl);
-				break;
-			case FILE_MELONG:
-				off = (st32) ((q->hl[1] << 24) | (q->hl[0] << 16) | (q->hl[3] << 8) | (q->hl[2]));
-				break;
+			st32 qvalue;
+			if (magic_get_indir_value (&qvalue, q, m->in_type)) {
+				off = qvalue;
 			}
 		}
-		switch (m->in_type) {
-		case FILE_BYTE:
-			if (!magic_hasbytes (nbytes, offset, 1)) {
-				return 0;
-			}
-			off = apply_indir_op (p->b, off, m->in_op);
-			break;
-		case FILE_BESHORT:
-			if (!magic_hasbytes (nbytes, offset, 2)) {
-				return 0;
-			}
-			off = apply_indir_op ((st32)(st16)r_read_be16 (p->hs), off, m->in_op);
-			break;
-		case FILE_LESHORT:
-			if (!magic_hasbytes (nbytes, offset, 2)) {
-				return 0;
-			}
-			off = apply_indir_op ((st32)(st16)r_read_le16 (p->hs), off, m->in_op);
-			break;
-		case FILE_SHORT:
-			if (!magic_hasbytes (nbytes, offset, 2)) {
-				return 0;
-			}
-			off = apply_indir_op (p->h, off, m->in_op);
-			break;
-		case FILE_BELONG:
-			if (!magic_hasbytes (nbytes, offset, 4)) {
-				return 0;
-			}
-			off = apply_indir_op ((st32)r_read_be32 (p->hl), off, m->in_op);
-			break;
-		case FILE_LELONG:
-			if (!magic_hasbytes (nbytes, offset, 4)) {
-				return 0;
-			}
-			off = apply_indir_op ((st32)r_read_le32 (p->hl), off, m->in_op);
-			break;
-		case FILE_MELONG:
-			if (!magic_hasbytes (nbytes, offset, 4)) {
-				return 0;
-			}
-			off = apply_indir_op ((st32)(
-				(p->hl[1] << 24) | (p->hl[0] << 16) | (p->hl[3] << 8) | p->hl[2]
-			), off, m->in_op);
-			break;
-		case FILE_LONG:
-			if (!magic_hasbytes (nbytes, offset, 4)) {
-				return 0;
-			}
-			off = apply_indir_op (p->l, off, m->in_op);
-			break;
+		if (!magic_hasbytes (nbytes, offset, file_magic_type_bytes (m, m->in_type))) {
+			return 0;
+		}
+		st32 pvalue;
+		if (magic_get_indir_value (&pvalue, p, m->in_type)) {
+			off = apply_indir_op (pvalue, off, m->in_op);
 		}
 		if (off < 0) {
 			return 0;

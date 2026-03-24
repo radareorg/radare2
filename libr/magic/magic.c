@@ -56,6 +56,12 @@ R_API bool r_magic_load(RMagic *m, const char *f) {
 	R_RETURN_VAL_IF_FAIL (m, false);
 	return magic_load (m, f) != -1;
 }
+R_API bool r_magic_load_buffer(RMagic *m, const ut8 *magicdata, size_t magicdata_size) {
+	R_RETURN_VAL_IF_FAIL (m && magicdata && magicdata_size > 0, false);
+	const void *buffers[] = { magicdata };
+	const size_t sizes[] = { magicdata_size };
+	return magic_load_buffers (m, (void **)buffers, (size_t *)sizes, 1) != -1;
+}
 R_API bool r_magic_compile(RMagic *m, const char *x) {
 	R_RETURN_VAL_IF_FAIL (m, false);
 	return magic_compile (m, x) != -1;

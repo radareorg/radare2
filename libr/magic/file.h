@@ -72,7 +72,6 @@ R_IPI void __magic_file_magerror(RMagic *, const char *, ...);
 R_IPI void __magic_file_magwarn(RMagic *, const char *, ...);
 R_IPI void __magic_file_mdump(RMagic *, struct r_magic *);
 R_IPI char *__magic_file_mrender(RMagic *, struct r_magic *);
-R_IPI void __magic_file_showstr(FILE *, const char *, size_t);
 R_IPI const char *__magic_file_getbuffer(RMagic *);
 R_IPI int __magic_file_check_mem(RMagic *, unsigned int);
 R_IPI int __magic_file_looks_utf8(const unsigned char *, size_t, unichar *, size_t *);
