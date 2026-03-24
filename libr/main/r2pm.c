@@ -97,6 +97,42 @@ static const char *r2pm_modifier_option(const R2Pm *r2pm) {
 	return NULL;
 }
 
+static int r2pm_check_arguments(R2Pm *r2pm, int argc, int ind, bool action) {
+	if (!action && argc > 1) {
+		const char *modifier = r2pm_modifier_option (r2pm);
+		if (modifier) {
+			return r2pm_missing_action (modifier);
+		}
+		r2pm->help = true;
+		r2pm->rc = 1;
+	}
+	if (ind < argc) {
+		return 0;
+	}
+	if (r2pm->run) {
+		return r2pm_missing_argument ("-r", "a command to run");
+	}
+	if (r2pm->install) {
+		return r2pm_missing_argument ("-i", "one or more packages");
+	}
+	if (r2pm->uninstall && !r2pm->install) {
+		return r2pm_missing_argument ("-u", "one or more packages");
+	}
+	if (r2pm->doc) {
+		return r2pm_missing_argument ("-d", "one or more packages");
+	}
+	if (r2pm->edit) {
+		return r2pm_missing_argument ("-e", "one or more packages");
+	}
+	if (r2pm->reload) {
+		return r2pm_missing_argument ("-R", "one or more packages");
+	}
+	if (r2pm->clean && !r2pm->plugdir && !r2pm->install && !r2pm->uninstall) {
+		return r2pm_missing_argument ("-c", "one or more packages or -cp");
+	}
+	return 0;
+}
+
 static int git_pull(const char *dir, bool verbose, bool reset) {
 	if (strchr (dir, ' ')) {
 		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
@@ -1411,34 +1447,8 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		}
 	}
 	r2pm_setenv (&r2pm);
-	if (!action && argc > 1) {
-		const char *modifier = r2pm_modifier_option (&r2pm);
-		if (modifier) {
-			return r2pm_missing_action (modifier);
-		}
-		r2pm.help = true;
-		r2pm.rc = 1;
-	}
-	if (r2pm.run && opt.ind >= argc) {
-		return r2pm_missing_argument ("-r", "a command to run");
-	}
-	if (r2pm.install && opt.ind >= argc) {
-		return r2pm_missing_argument ("-i", "one or more packages");
-	}
-	if (r2pm.uninstall && !r2pm.install && opt.ind >= argc) {
-		return r2pm_missing_argument ("-u", "one or more packages");
-	}
-	if (r2pm.doc && opt.ind >= argc) {
-		return r2pm_missing_argument ("-d", "one or more packages");
-	}
-	if (r2pm.edit && opt.ind >= argc) {
-		return r2pm_missing_argument ("-e", "one or more packages");
-	}
-	if (r2pm.reload && opt.ind >= argc) {
-		return r2pm_missing_argument ("-R", "one or more packages");
-	}
-	if (r2pm.clean && !r2pm.plugdir && !r2pm.install && !r2pm.uninstall && opt.ind >= argc) {
-		return r2pm_missing_argument ("-c", "one or more packages or -cp");
+	if (r2pm_check_arguments (&r2pm, argc, opt.ind, action)) {
+		return 1;
 	}
 	if (r2pm.plugdir) {
 		if (r2pm.clean) {
