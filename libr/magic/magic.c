@@ -294,30 +294,19 @@ R_API const char *r_magic_buffer(RMagic *ms, const void *buf, size_t nb) {
 }
 
 R_API const char *r_magic_file(RMagic *ms, const char *filename) {
+	R_RETURN_VAL_IF_FAIL (ms && filename, NULL);
 	size_t sz = 0;
-	char *buf = NULL;
-	R_RETURN_VAL_IF_FAIL (ms, NULL);
-	if (filename) {
-		buf = r_file_slurp (filename, &sz);
-		if (!buf) {
-			__magic_file_error (ms, errno, "cannot read `%s'", filename);
-			return NULL;
-		}
-	} else {
-		int isz = 0;
-		buf = r_stdin_slurp (&isz);
-		sz = isz > 0? (size_t)isz: 0;
-		if (!buf) {
-			__magic_file_error (ms, errno, "cannot read stdin");
-			return NULL;
-		}
+	char *buf = r_file_slurp (filename, &sz);
+	if (!buf) {
+		__magic_file_error (ms, errno, "cannot read `%s'", filename);
+		return NULL;
 	}
 	return magic_buffer_from_mem (ms, buf, sz);
 }
 
 R_API const char *r_magic_descriptor(RMagic *ms, int fd) {
-	size_t sz = 0;
 	R_RETURN_VAL_IF_FAIL (ms && fd >= 0, NULL);
+	size_t sz = 0;
 	char *buf = slurp_fd (fd, &sz);
 	if (!buf) {
 		__magic_file_error (ms, errno, "cannot read descriptor %d", fd);
