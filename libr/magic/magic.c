@@ -6,7 +6,6 @@
 #include <r_lib.h>
 #include <r_util.h>
 #include <limits.h>
-#include <unistd.h>
 
 R_LIB_VERSION(r_magic);
 
