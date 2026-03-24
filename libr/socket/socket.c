@@ -254,6 +254,13 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 
 R_API bool r_socket_connect(RSocket *s, const char *host, const char *port, int proto, unsigned int timeout) {
 	R_RETURN_VAL_IF_FAIL (s, false);
+	/* Check sandbox network permission - only allow localhost if NETWORK grain is not set */
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		if (!r_sandbox_check_localhost (host)) {
+			R_LOG_ERROR ("sandbox: network access denied for '%s'", host);
+			return false;
+		}
+	}
 #if R2__WINDOWS__
 #define gai_strerror gai_strerrorA
 	WSADATA wsadata;

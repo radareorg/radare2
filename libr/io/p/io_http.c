@@ -4,11 +4,17 @@
 #include "../io_memory.h"
 
 static bool __check(RIO *io, const char *pathname, bool many) {
-	return r_str_startswith (pathname, "http://");
+	return r_str_startswith (pathname, "http://") || r_str_startswith (pathname, "https://");
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (__check (io, pathname, 0)) {
+		/* Check sandbox network permission */
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+			if (!r_sandbox_check_localhost (pathname)) {
+				return NULL;
+			}
+		}
 		int rlen, code;
 		RIOMalloc *mal = R_NEW0 (RIOMalloc);
 		if (!mal) {

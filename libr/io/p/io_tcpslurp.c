@@ -17,7 +17,7 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 		eprintf ("Usage: $ nc -l -p 9999 < /bin/ls ; r2 tcp-slurp://localhost:9999\n");
 		eprintf ("   or: $ nc localhost 9999 < /bin/ls ; r2 tcp-slurp://:9999\n");
 	} else if (*pathname == ':') {
-		/* listen and wait for connection */
+		/* listen and wait for connection - this is localhost only */
 		RSocket *sl = r_socket_new (false);
 		if (!r_socket_listen (sl, pathname + 1, NULL)) {
 			R_LOG_ERROR ("Cannot listen");
@@ -33,7 +33,14 @@ static ut8 *tcpme(const char *pathname, int *code, int *len) {
 			return res;
 		}
 	} else {
-		/* connect and slurp the end point */
+		/* connect and slurp the end point - check if localhost */
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+			if (!r_sandbox_check_localhost (pathname)) {
+				R_LOG_ERROR ("sandbox: network access denied for '%s'", pathname);
+				*code = 403;
+				return NULL;
+			}
+		}
 		char *host = strdup (pathname);
 		if (!host) {
 			return NULL;

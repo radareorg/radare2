@@ -105,6 +105,12 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	char *out;
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
+		/* Check sandbox network permission */
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+			if (!r_sandbox_check_localhost (pathname)) {
+				return NULL;
+			}
+		}
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
 		if (!mal) {
 			return NULL;

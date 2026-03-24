@@ -1604,7 +1604,7 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (strstr (node->value, "?")) {
 		static RCoreHelpMessage help_msg_grain = {
-			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out", "Grain types:", "", "", "", "all", "", "", "none", "", "", "disk", "", "", "files", "", "", "exec", "", "", "socket", "", NULL
+			"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out", "Grain types:", "", "", "", "all", "", "", "none", "", "", "disk", "", "", "files", "", "", "exec", "", "", "socket", "", "", "network", "", NULL
 		};
 		r_core_cmd_help ((RCore *)user, help_msg_grain);
 		return false;
@@ -1626,6 +1626,9 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 		}
 		if (strstr (node->value, "disk")) {
 			gt |= R_SANDBOX_GRAIN_DISK;
+		}
+		if (strstr (node->value, "network") || strstr (node->value, "inet")) {
+			gt |= R_SANDBOX_GRAIN_NETWORK;
 		}
 	}
 	return r_sandbox_grain (gt);
