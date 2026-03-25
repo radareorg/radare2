@@ -91,6 +91,346 @@ static ut32 dotnet_max_rows_at(PE *pe, const ut8 *row_ptr, ut32 row_size) {
 	return (ut32)(remaining_size / row_size);
 }
 
+static bool dotnet_parse_tilde_rows(PE *pe, PTILDE_HEADER tilde_header, R_OUT ROWS *rows, R_OUT INDEX_SIZES *index_sizes) {
+	int bit_check, matched_bits = 0;
+
+	if (!pe || !rows || !index_sizes || !struct_fits_in_pe (pe, tilde_header, TILDE_HEADER)) {
+		return false;
+	}
+
+	memset (rows, 0, sizeof (ROWS));
+	memset (index_sizes, 2, sizeof (INDEX_SIZES));
+
+	if (tilde_header->HeapSizes & 0x01) {
+		index_sizes->string = 4;
+	}
+	if (tilde_header->HeapSizes & 0x02) {
+		index_sizes->guid = 4;
+	}
+	if (tilde_header->HeapSizes & 0x04) {
+		index_sizes->blob = 4;
+	}
+
+	ut32 *row_offset = (ut32 *)(tilde_header + 1);
+	for (bit_check = 0; bit_check < 64; bit_check++) {
+		ut32 *row = NULL;
+		ut8 *index_size = NULL;
+
+		if (!((tilde_header->Valid >> bit_check) & 0x01)) {
+			continue;
+		}
+		if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (ut32))) {
+			return false;
+		}
+		ut32 row_count = *(row_offset + matched_bits);
+		switch (bit_check) {
+		case BIT_MODULE:
+			row = &rows->module;
+			break;
+		case BIT_MODULEREF:
+			row = &rows->moduleref;
+			index_size = &index_sizes->moduleref;
+			break;
+		case BIT_ASSEMBLYREF:
+			row = &rows->assemblyref;
+			index_size = &index_sizes->assemblyref;
+			break;
+		case BIT_TYPEREF:
+			row = &rows->typeref;
+			break;
+		case BIT_METHODDEF:
+			row = &rows->methoddef;
+			index_size = &index_sizes->methoddef;
+			break;
+		case BIT_MEMBERREF:
+			row = &rows->memberref;
+			index_size = &index_sizes->memberref;
+			break;
+		case BIT_TYPEDEF:
+			row = &rows->typedef_;
+			index_size = &index_sizes->typedef_;
+			break;
+		case BIT_TYPESPEC:
+			row = &rows->typespec;
+			break;
+		case BIT_FIELD:
+			row = &rows->field;
+			index_size = &index_sizes->field;
+			break;
+		case BIT_PARAM:
+			row = &rows->param;
+			index_size = &index_sizes->param;
+			break;
+		case BIT_PROPERTY:
+			row = &rows->property;
+			index_size = &index_sizes->property;
+			break;
+		case BIT_INTERFACEIMPL:
+			row = &rows->interfaceimpl;
+			break;
+		case BIT_EVENT:
+			row = &rows->event;
+			index_size = &index_sizes->event;
+			break;
+		case BIT_STANDALONESIG:
+			row = &rows->standalonesig;
+			break;
+		case BIT_ASSEMBLY:
+			row = &rows->assembly;
+			break;
+		case BIT_FILE:
+			row = &rows->file;
+			break;
+		case BIT_EXPORTEDTYPE:
+			row = &rows->exportedtype;
+			break;
+		case BIT_MANIFESTRESOURCE:
+			row = &rows->manifestresource;
+			break;
+		case BIT_GENERICPARAM:
+			row = &rows->genericparam;
+			index_size = &index_sizes->genericparam;
+			break;
+		case BIT_GENERICPARAMCONSTRAINT:
+			row = &rows->genericparamconstraint;
+			break;
+		case BIT_METHODSPEC:
+			row = &rows->methodspec;
+			break;
+		case BIT_ASSEMBLYREFPROCESSOR:
+			row = &rows->assemblyrefprocessor;
+			index_size = &index_sizes->assemblyrefprocessor;
+			break;
+		default:
+			break;
+		}
+
+		if (row) {
+			*row = row_count;
+			if (index_size && row_count > 0xFFFF) {
+				*index_size = 4;
+			}
+		}
+		matched_bits++;
+	}
+	return true;
+}
+
+static bool dotnet_tilde_table_size(R_IN const ROWS *rows, R_IN const INDEX_SIZES *index_sizes, int bit_check, ut32 num_rows, R_OUT ut32 *table_size) {
+	ut32 row_count = 0;
+	ut64 table_size64 = 0;
+
+	if (!rows || !index_sizes || !table_size) {
+		return false;
+	}
+
+	switch (bit_check) {
+	case BIT_MODULE:
+		table_size64 = (ut64)(2 + index_sizes->string + (index_sizes->guid * 3)) * num_rows;
+		break;
+	case BIT_TYPEREF:
+		row_count = max_rows (3, rows->module, rows->moduleref, rows->assemblyref);
+		table_size64 = (ut64)((row_count > (0xFFFF >> 0x02)? 4: 2) + (index_sizes->string * 2)) * num_rows;
+		break;
+	case BIT_TYPEDEF:
+		row_count = max_rows (3, rows->typedef_, rows->typeref, rows->typespec);
+		table_size64 = (ut64)(4 + (index_sizes->string * 2) + (row_count > (0xFFFF >> 0x02)? 4: 2) +
+			index_sizes->field + index_sizes->methoddef) * num_rows;
+		break;
+	case BIT_FIELDPTR:
+		table_size64 = (ut64)(index_sizes->field) * num_rows;
+		break;
+	case BIT_FIELD:
+		table_size64 = (ut64)(2 + index_sizes->string + index_sizes->blob) * num_rows;
+		break;
+	case BIT_METHODDEFPTR:
+		table_size64 = (ut64)(index_sizes->methoddef) * num_rows;
+		break;
+	case BIT_METHODDEF:
+		table_size64 = (ut64)(4 + 2 + 2 + index_sizes->string + index_sizes->blob + index_sizes->param) * num_rows;
+		break;
+	case BIT_PARAMPTR:
+		table_size64 = (ut64)(index_sizes->param) * num_rows;
+		break;
+	case BIT_PARAM:
+		table_size64 = (ut64)(2 + 2 + index_sizes->string) * num_rows;
+		break;
+	case BIT_INTERFACEIMPL:
+		row_count = max_rows (3, rows->typedef_, rows->typeref, rows->typespec);
+		table_size64 = (ut64)(index_sizes->typedef_ + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
+		break;
+	case BIT_MEMBERREF:
+		row_count = max_rows (4, rows->methoddef, rows->memberref, rows->typeref, rows->typespec);
+		table_size64 = (ut64)((row_count > (0xFFFF >> 0x03)? 4: 2) + index_sizes->string + index_sizes->blob) * num_rows;
+		break;
+	case BIT_CONSTANT:
+		row_count = max_rows (3, rows->field, rows->param, rows->property);
+		table_size64 = (ut64)(2 + (row_count > (0xFFFF >> 0x02)? 4: 2) + index_sizes->blob) * num_rows;
+		break;
+	case BIT_CUSTOMATTRIBUTE:
+		row_count = max_rows (3, rows->methoddef, rows->field, rows->param);
+		table_size64 = (ut64)((row_count > (0xFFFF >> 0x05)? 4: 2) + index_sizes->memberref + index_sizes->blob) * num_rows;
+		break;
+	case BIT_FIELDMARSHAL:
+		row_count = max_rows (2, rows->field, rows->param);
+		table_size64 = (ut64)((row_count > (0xFFFF >> 0x01)? 4: 2) + index_sizes->blob) * num_rows;
+		break;
+	case BIT_DECLSECURITY:
+		row_count = max_rows (3, rows->typedef_, rows->methoddef, rows->assembly);
+		table_size64 = (ut64)(2 + (row_count > (0xFFFF >> 0x02)? 4: 2) + index_sizes->blob) * num_rows;
+		break;
+	case BIT_CLASSLAYOUT:
+		table_size64 = (ut64)(2 + 4 + index_sizes->typedef_) * num_rows;
+		break;
+	case BIT_FIELDLAYOUT:
+		table_size64 = (ut64)(4 + index_sizes->field) * num_rows;
+		break;
+	case BIT_STANDALONESIG:
+		table_size64 = (ut64)(index_sizes->blob) * num_rows;
+		break;
+	case BIT_EVENTMAP:
+		table_size64 = (ut64)(index_sizes->typedef_ + index_sizes->event) * num_rows;
+		break;
+	case BIT_EVENTPTR:
+		table_size64 = (ut64)(index_sizes->event) * num_rows;
+		break;
+	case BIT_EVENT:
+		table_size64 = (ut64)(2 + index_sizes->string + index_sizes->typedef_) * num_rows;
+		break;
+	case BIT_PROPERTYMAP:
+		table_size64 = (ut64)(index_sizes->typedef_ + index_sizes->property) * num_rows;
+		break;
+	case BIT_PROPERTYPTR:
+		table_size64 = (ut64)(index_sizes->property) * num_rows;
+		break;
+	case BIT_PROPERTY:
+		table_size64 = (ut64)(2 + index_sizes->string + index_sizes->blob) * num_rows;
+		break;
+	case BIT_METHODSEMANTICS:
+		row_count = max_rows (2, rows->event, rows->property);
+		table_size64 = (ut64)(2 + index_sizes->methoddef + (row_count > (0xFFFF >> 0x01)? 4: 2)) * num_rows;
+		break;
+	case BIT_METHODIMPL:
+		row_count = max_rows (2, rows->methoddef, rows->memberref);
+		table_size64 = (ut64)(index_sizes->typedef_ + index_sizes->methoddef + (row_count > (0xFFFF >> 0x01)? 4: 2)) * num_rows;
+		break;
+	case BIT_MODULEREF:
+		table_size64 = (ut64)(index_sizes->string) * num_rows;
+		break;
+	case BIT_TYPESPEC:
+		table_size64 = (ut64)(index_sizes->blob) * num_rows;
+		break;
+	case BIT_IMPLMAP:
+		row_count = max_rows (3, rows->field, rows->methoddef, rows->typedef_);
+		table_size64 = (ut64)(2 + (row_count > (0xFFFF >> 0x01)? 4: 2) + index_sizes->string + index_sizes->moduleref) * num_rows;
+		break;
+	case BIT_FIELDRVA:
+		table_size64 = (ut64)(4 + index_sizes->field) * num_rows;
+		break;
+	case BIT_ENCLOG:
+		table_size64 = (ut64)(4) * num_rows;
+		break;
+	case BIT_ENCMAP:
+		table_size64 = (ut64)(4) * num_rows;
+		break;
+	case BIT_ASSEMBLY:
+		table_size64 = (ut64)(2 + 2 + 2 + 2 + 4 + index_sizes->blob + (index_sizes->string * 2)) * num_rows;
+		break;
+	case BIT_ASSEMBLYPROCESSOR:
+		table_size64 = (ut64)(4) * num_rows;
+		break;
+	case BIT_ASSEMBLYOS:
+		table_size64 = (ut64)(4 + 4 + 4) * num_rows;
+		break;
+	case BIT_ASSEMBLYREF:
+		table_size64 = (ut64)(2 + 2 + 2 + 2 + 4 + (index_sizes->blob * 2) + (index_sizes->string * 2)) * num_rows;
+		break;
+	case BIT_ASSEMBLYREFPROCESSOR:
+		table_size64 = (ut64)(4 + index_sizes->assemblyrefprocessor) * num_rows;
+		break;
+	case BIT_ASSEMBLYREFOS:
+		table_size64 = (ut64)(4 + 4 + 4 + index_sizes->assemblyref) * num_rows;
+		break;
+	case BIT_FILE:
+		table_size64 = (ut64)(4 + index_sizes->string + index_sizes->blob) * num_rows;
+		break;
+	case BIT_EXPORTEDTYPE:
+		row_count = max_rows (3, rows->file, rows->assemblyref, rows->exportedtype);
+		table_size64 = (ut64)(4 + 4 + (index_sizes->string * 2) + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
+		break;
+	case BIT_MANIFESTRESOURCE:
+		row_count = max_rows (2, rows->file, rows->assemblyref);
+		table_size64 = (ut64)(4 + 4 + index_sizes->string + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
+		break;
+	case BIT_NESTEDCLASS:
+		table_size64 = (ut64)(index_sizes->typedef_ * 2) * num_rows;
+		break;
+	case BIT_GENERICPARAM:
+		row_count = max_rows (2, rows->typedef_, rows->methoddef);
+		table_size64 = (ut64)(2 + 2 + (row_count > (0xFFFF >> 0x01)? 4: 2) + index_sizes->string) * num_rows;
+		break;
+	case BIT_METHODSPEC:
+		row_count = max_rows (2, rows->methoddef, rows->memberref);
+		table_size64 = (ut64)((row_count > (0xFFFF >> 0x01)? 4: 2) + index_sizes->blob) * num_rows;
+		break;
+	case BIT_GENERICPARAMCONSTRAINT:
+		row_count = max_rows (3, rows->typedef_, rows->typeref, rows->typespec);
+		table_size64 = (ut64)(index_sizes->genericparam + (row_count > (0xFFFF >> 0x02)? 4: 2)) * num_rows;
+		break;
+	default:
+		return false;
+	}
+
+	if (table_size64 > UT32_MAX) {
+		return false;
+	}
+	*table_size = (ut32)table_size64;
+	return true;
+}
+
+static const ut8 *dotnet_tilde_table_offset(PE *pe, PTILDE_HEADER tilde_header, R_IN const ROWS *rows, R_IN const INDEX_SIZES *index_sizes, int target_bit, R_OUT ut32 *target_rows) {
+	int bit_check, matched_bits = 0, valid_tables = 0;
+
+	if (!pe || !rows || !index_sizes || !target_rows || !struct_fits_in_pe (pe, tilde_header, TILDE_HEADER)) {
+		return NULL;
+	}
+
+	ut32 *row_offset = (ut32 *)(tilde_header + 1);
+	for (bit_check = 0; bit_check < 64; bit_check++) {
+		valid_tables += ((tilde_header->Valid >> bit_check) & 0x01);
+	}
+	ut64 table_offset = (const ut8 *)row_offset - pe->data;
+	table_offset += (ut64)sizeof (ut32) * valid_tables;
+
+	for (bit_check = 0; bit_check < 64; bit_check++) {
+		ut32 num_rows;
+		ut32 table_size;
+
+		if (!((tilde_header->Valid >> bit_check) & 0x01)) {
+			continue;
+		}
+		if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (ut32))) {
+			return NULL;
+		}
+
+		num_rows = *(row_offset + matched_bits);
+		if (!dotnet_tilde_table_size (rows, index_sizes, bit_check, num_rows, &table_size)) {
+			return NULL;
+		}
+		if (table_offset > pe->data_size || table_size > pe->data_size - table_offset) {
+			return NULL;
+		}
+		if (bit_check == target_bit) {
+			*target_rows = num_rows;
+			return pe->data + table_offset;
+		}
+
+		table_offset += table_size;
+		matched_bits++;
+	}
+	return NULL;
+}
+
 static STREAMS dotnet_parse_stream_headers(PE *pe, ut64 offset, ut64 metadata_root, ut32 num_streams) {
 	char stream_name[DOTNET_STREAM_NAME_SIZE + 1];
 	STREAMS headers = { 0 };
@@ -1554,89 +1894,24 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 				// Try to parse Assembly table
 				if (headers.tilde && headers.string) {
 					PTILDE_HEADER tilde_header;
-					uint32_t *row_offset = NULL;
+					const ut8 *assembly_row;
+					ROWS rows;
 					INDEX_SIZES index_sizes;
-					memset (&index_sizes, 2, sizeof (index_sizes));
+					ut32 num_rows = 0;
 
 					if (metadata_root + headers.tilde->Offset >= pe->data_size) {
 						return version_info;
 					}
 					tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + headers.tilde->Offset);
 
-					if (fits_in_pe (pe, (uint8_t *)tilde_header, sizeof (TILDE_HEADER))) {
-						if (tilde_header->HeapSizes & 0x01) {
-							index_sizes.string = 4;
-						}
-						if (tilde_header->HeapSizes & 0x02) {
-							index_sizes.guid = 4;
-						}
-						if (tilde_header->HeapSizes & 0x04) {
-							index_sizes.blob = 4;
-						}
-
-						row_offset = (uint32_t *) (tilde_header + 1);
-						uint8_t *table_offset = (uint8_t *)row_offset;
-
-						// Count tables and advance to Assembly table
-						// (This is a simplified version - in production we'd calculate exact sizes)
-
-						// Check if Assembly table exists
-						if ((tilde_header->Valid >> BIT_ASSEMBLY) & 0x01) {
-							// Get row count for Assembly table
-							int matched_bits = 0;
-							for (i = 0; i < BIT_ASSEMBLY; i++) {
-								if ((tilde_header->Valid >> i) & 0x01) {
-									matched_bits++;
-								}
-							}
-							if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
-								free (version_info);
-								return NULL;
-							}
-							uint32_t num_rows = *(row_offset + matched_bits);
-							if (num_rows > 0) {
-								// Find Assembly table offset - count matched bits to know where to start
-								matched_bits = 0;
-								for (i = 0; i < 64; i++) {
-									matched_bits += ((tilde_header->Valid >> i) & 0x01);
-								}
-								table_offset = (uint8_t *)row_offset;
-								table_offset += sizeof (uint32_t) * matched_bits;
-								if (!fits_in_pe (pe, table_offset, 12)) {
-									return version_info;
-								}
-
-								matched_bits = 0;
-								int bit_check;
-								for (bit_check = 0; bit_check < BIT_ASSEMBLY && bit_check < 64; bit_check++) {
-									if ((tilde_header->Valid >> bit_check) & 0x01) {
-										if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
-											break;
-										}
-										uint32_t rows = *(row_offset + matched_bits);
-										uint32_t table_size = 0;
-										switch (bit_check) {
-										case BIT_MODULE:
-											table_size = (2 + index_sizes.string + (index_sizes.guid * 3)) * rows;
-											break;
-										default:
-											break;
-										}
-										if (table_size > 0) {
-											table_offset += table_size;
-										}
-										matched_bits++;
-									}
-								}
-
-								// Now read Assembly table first row
-								if (fits_in_pe (pe, table_offset, 4 + 2 + 2 + 2 + 2)) {
-									version_info->asm_major = r_read_le16 (table_offset + 4);
-									version_info->asm_minor = r_read_le16 (table_offset + 6);
-									version_info->asm_build = r_read_le16 (table_offset + 8);
-									version_info->asm_revision = r_read_le16 (table_offset + 10);
-								}
-							}
+					if (dotnet_parse_tilde_rows (pe, tilde_header, &rows, &index_sizes) &&
+						((tilde_header->Valid >> BIT_ASSEMBLY) & 0x01)) {
+						assembly_row = dotnet_tilde_table_offset (pe, tilde_header, &rows, &index_sizes, BIT_ASSEMBLY, &num_rows);
+						if (assembly_row && num_rows > 0 && fits_in_pe (pe, assembly_row, 12)) {
+							version_info->asm_major = r_read_le16 (assembly_row + 4);
+							version_info->asm_minor = r_read_le16 (assembly_row + 6);
+							version_info->asm_build = r_read_le16 (assembly_row + 8);
+							version_info->asm_revision = r_read_le16 (assembly_row + 10);
 						}
 					}
 				}
