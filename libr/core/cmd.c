@@ -4256,6 +4256,54 @@ static char *getarg(char *ptr) {
 	return NULL;
 }
 
+static bool tmpseek_reg(RCore *core, char *ptr) {
+	char *arg = getarg (ptr);
+	if (!arg) {
+		R_LOG_ERROR ("Invalid register name for @r");
+		core->num->nc.errors++;
+		return false;
+	}
+	bool err = false;
+	ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
+	free (arg);
+	if (err) {
+		R_LOG_ERROR ("Invalid register name for @r");
+		core->num->nc.errors++;
+		return false;
+	}
+	r_core_seek (core, v, true);
+	core->tmpseek = true;
+	return true;
+}
+
+static bool tmpseek_pid(RCore *core, char *ptr, int *old_pid, int *old_tid, bool *pid_changed) {
+	char *arg = getarg (ptr);
+	if (!arg) {
+		R_LOG_ERROR ("Invalid pid for @p");
+		core->num->nc.errors++;
+		return false;
+	}
+	const char *err = NULL;
+	ut64 pidnum = r_num_math_err (core->num, arg, &err);
+	free (arg);
+	if (err || r_num_failed (core->num) || pidnum > ST32_MAX) {
+		R_LOG_ERROR ("Invalid pid for @p");
+		core->num->nc.errors++;
+		return false;
+	}
+	if (!*pid_changed) {
+		*old_pid = core->dbg->pid;
+		*old_tid = core->dbg->tid;
+	}
+	if (!r_debug_select (core->dbg, (int)pidnum, -1)) {
+		R_LOG_ERROR ("Cannot select pid %d", (int)pidnum);
+		core->num->nc.errors++;
+		return false;
+	}
+	*pid_changed = true;
+	return true;
+}
+
 static bool cmd_subst_parse_dot_grep(const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (cmd, false);
 	if (*cmd != '.') {
@@ -4299,6 +4347,9 @@ static int r_core_cmd_subst_i(RCore *core, char *cmd, char *colon, bool *tmpseek
 	bool oldfixedarch = core->fixedarch;
 	bool oldfixedbits = core->fixedbits;
 	bool cmd_tmpseek = false;
+	int old_pid = -1;
+	int old_tid = -1;
+	bool pid_changed = false;
 	ut64 tmpbsz = core->blocksize;
 	int cmd_ignbithints = -1;
 	if (!cmd) {
@@ -4969,7 +5020,7 @@ repeat_arroba:
 		}
 		ptr = (char *)r_str_trim_head_ro (ptr);
 
-		if (*ptr && ptr[1] == ':') {
+		if (*ptr && (ptr[1] == ':' || (ptr[1] && ptr[2] == ':'))) {
 			/* do nothing here */
 		} else {
 			ptr--;
@@ -5079,24 +5130,23 @@ repeat_arroba:
 					R_LOG_ERROR ("Cannot open at-f '%s'", ptr + 3);
 				}
 				break;
-			case 'r': // "@r:" "@r{}" // regname
-				{
-					char *arg = getarg (ptr + 1);
-					if (arg) {
-						bool err = false;
-						ut64 v = r_debug_reg_get_err (core->dbg, arg, &err, 0);
-						free (arg);
-						if (err) {
-							R_LOG_ERROR ("Invalid register name for @r");
-							core->num->nc.errors ++;
-						} else {
-							r_core_seek (core, v, true);
-							cmd_tmpseek = core->tmpseek = true;
-						}
-					} else {
-						R_LOG_ERROR ("Invalid register name for @r");
-						core->num->nc.errors ++;
+			case 'd': // "@dr:" "@dp:"
+				if (ptr[1] == 'r' && (ptr[2] == ':' || ptr[2] == '{')) {
+					if (tmpseek_reg (core, ptr + 2)) {
+						cmd_tmpseek = true;
 					}
+				} else if (ptr[1] == 'p' && (ptr[2] == ':' || ptr[2] == '{')) {
+					tmpseek_pid (core, ptr + 2, &old_pid, &old_tid, &pid_changed);
+				} else {
+					goto ignore;
+				}
+				break;
+			case 'p': // "@p:" "@p{}" // pid
+				tmpseek_pid (core, ptr + 1, &old_pid, &old_tid, &pid_changed);
+				break;
+			case 'r': // "@r:" "@r{}" // regname
+				if (tmpseek_reg (core, ptr + 1)) {
+					cmd_tmpseek = true;
 				}
 				break;
 			case 'b': // "@b:" // bits
@@ -5503,6 +5553,10 @@ fuji:
 		r_core_return_value (core, rc);
 	}
 beach:
+	if (pid_changed) {
+		r_debug_select (core->dbg, old_pid, old_tid);
+		pid_changed = false;
+	}
 	if (grep) {
 		char *old_grep = grep;
 		grep = unescape_special_chars (old_grep, SPECIAL_CHARS);
