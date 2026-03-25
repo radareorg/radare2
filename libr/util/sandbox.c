@@ -1,10 +1,17 @@
-/* radare - LGPL - Copyright 2012-2025 - pancake */
+/* radare - LGPL - Copyright 2012-2026 - pancake */
 
 #include <r_util.h>
 #include <signal.h>
 #if _MSC_VER
 #include <process.h> // to compile execl under msvc windows
 #include <direct.h>  // to compile chdir under msvc windows
+#endif
+
+#if R2__UNIX__ && !__wasi__
+#include <sys/socket.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #endif
 
 #if HAVE_CAPSICUM
@@ -134,6 +141,40 @@ R_API bool r_sandbox_check(int mask) {
 		R_SANDBOX_GUARD (mask, false);
 	}
 	return true;
+}
+
+R_API bool r_sandbox_check_localhost(const char *str) {
+	R_RETURN_VAL_IF_FAIL (str, false);
+	char *peekaboo = strstr (str, "://");
+	if (peekaboo) {
+		str = peekaboo + 3;
+	}
+	char *end = strchr (str, '/');
+	if (!end) {
+		if (*str != ':' && *str != '[') {
+			end = strchr (str, ':');
+		}
+		if (!end) {
+			end = strchr (str, '?');
+		}
+	}
+	char *host = end? r_str_ndup (str, end - str): strdup (str);
+	char *authority = strchr (host, '@');
+	if (authority) {
+		char *nhost = strdup (authority + 1);
+		free (host);
+		host = nhost;
+	}
+	bool ret = 0
+		|| !strcmp (host, "0.0.0.0")
+		|| !strcmp (host, "localhost")
+		|| r_str_startswith (host, "localhost:")
+		|| r_str_startswith (host, "127.")
+		|| r_str_startswith (host, "[::1]")
+		|| !strcmp (host, "::1")
+		|| !strcmp (host, "::");
+	free (host);
+	return ret;
 }
 
 R_API bool r_sandbox_enable(bool e) {

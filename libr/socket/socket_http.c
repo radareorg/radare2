@@ -15,6 +15,20 @@ extern char* r2_js_http_post(const char *url, const char *headers_str, const cha
 #define SOCKET_HTTP_MAX_HEADER_LENGTH 0x2000
 #define SOCKET_HTTP_MAX_REDIRECTS 5
 
+/* Check sandbox network permission for URL or host */
+static bool socket_http_sandbox_check(const char *url_or_host) {
+	if (r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		/* NETWORK grain is set, allow all */
+		return true;
+	}
+	/* Check if host is localhost (function handles URL parsing internally) */
+	if (!r_sandbox_check_localhost (url_or_host)) {
+		R_LOG_ERROR ("sandbox: network access denied for '%s'", url_or_host);
+		return false;
+	}
+	return true;
+}
+
 static bool socket_http_requires_curl(const char *url) {
 #if !HAVE_LIB_SSL && !R2__WINDOWS__
 	return r_str_startswith (url, "https://");
@@ -213,6 +227,10 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 	}
 	if (rlen) {
 		*rlen = 0;
+	}
+	/* Check sandbox network permission */
+	if (!socket_http_sandbox_check (url)) {
+		return NULL;
 	}
 #if R2_WASM_BROWSER
 	if ((void*)r2_js_http_get != NULL) {
@@ -427,6 +445,10 @@ R_API bool r_socket_http_download(const char *url, const char **headers, const c
 }
 
 R_API char *r_socket_http_post(const char *url, const char *headers[], const char *data, int *code, int *rlen) {
+	/* Check sandbox network permission */
+	if (!socket_http_sandbox_check (url)) {
+		return NULL;
+	}
 #if R2_WASM_BROWSER
 	if ((void*)r2_js_http_post != NULL) {
 		char *headers_str = NULL;

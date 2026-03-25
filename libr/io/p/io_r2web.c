@@ -93,7 +93,7 @@ static ut64 __lseek(RIO *io, RIODesc *fd, ut64 offset, int whence) {
 }
 
 static bool __plugin_open(RIO *io, const char *pathname, bool many) {
-	const char *uri = "r2web://";
+	const char uri[] = "r2web://";
 	return r_str_startswith (pathname, uri);
 }
 
@@ -106,9 +106,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	int rlen, code;
 	if (__plugin_open (io, pathname, 0)) {
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
-		if (!mal) {
-			return NULL;
-		}
 		char *path = strdup (pathname + 8);
 		int path_len = strlen (path);
 		if (path_len > 0) {

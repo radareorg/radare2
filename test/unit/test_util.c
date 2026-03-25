@@ -354,6 +354,37 @@ bool test_endian_roundtrip(void) {
 	mu_end;
 }
 
+bool test_sandbox_localhost(void) {
+	static const char *ok_inputs[] = {
+		"localhost",
+		// "localhost.localdomain",
+		"127.0.0.1",
+		"0.0.0.0",
+		"::1",
+		"[::1]:9090",
+		"http://localhost:9090/cmd/",
+		"http://user:pass@localhost:9090/cmd/",
+		"r2web://[::1]:9090/cmd/"
+	};
+	static const char *bad_inputs[] = {
+		"",
+		"localhostevil.com",
+		"http://example.com:80/",
+		"http://user:pass@example.com:80/",
+		"http://:9090",
+		"[::1"
+	};
+	int i;
+
+	for (i = 0; i < R_ARRAY_SIZE (ok_inputs); i++) {
+		mu_assert_true (r_sandbox_check_localhost (ok_inputs[i]), ok_inputs[i]);
+	}
+	for (i = 0; i < R_ARRAY_SIZE (bad_inputs); i++) {
+		mu_assert_false (r_sandbox_check_localhost (bad_inputs[i]), bad_inputs[i]);
+	}
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_ignore_prefixes);
 	mu_run_test (test_remove_r2_prefixes);
@@ -368,6 +399,7 @@ int all_tests(void) {
 	mu_run_test (test_endian_fromstring);
 	mu_run_test (test_endian_is);
 	mu_run_test (test_endian_roundtrip);
+	mu_run_test (test_sandbox_localhost);
 	return tests_passed != tests_run;
 }
 
