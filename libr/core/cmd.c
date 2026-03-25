@@ -5020,7 +5020,7 @@ repeat_arroba:
 		}
 		ptr = (char *)r_str_trim_head_ro (ptr);
 
-		if (*ptr && (ptr[1] == ':' || (ptr[1] && ptr[2] == ':'))) {
+		if (*ptr && ptr[0] != '@' && (ptr[1] == ':' || (ptr[1] && ptr[2] == ':'))) {
 			/* do nothing here */
 		} else {
 			ptr--;
