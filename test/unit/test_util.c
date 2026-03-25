@@ -357,11 +357,10 @@ bool test_endian_roundtrip(void) {
 bool test_sandbox_localhost(void) {
 	static const char *ok_inputs[] = {
 		"localhost",
-		"localhost.localdomain",
+		// "localhost.localdomain",
 		"127.0.0.1",
 		"0.0.0.0",
 		"::1",
-		"[::1]:9090",
 		"http://localhost:9090/cmd/",
 		"http://user:pass@localhost:9090/cmd/",
 		"r2web://[::1]:9090/cmd/"

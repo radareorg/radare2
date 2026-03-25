@@ -151,16 +151,26 @@ R_API bool r_sandbox_check_localhost(const char *str) {
 	}
 	char *end = strchr (str, '/');
 	if (!end) {
-		end = strchr (str, ':');
+		if (*str != ':') {
+			end = strchr (str, ':');
+		}
 		if (!end) {
 			end = strchr (str, '?');
 		}
 	}
 	char *host = end? r_str_ndup (str, end - str): strdup (str);
-	bool ret = !strcmp (host, "localhost")
-		|| r_str_startswith (host, "localhost.")
-		|| r_str_startswith (host, "127.")
+	char *authority = strchr (host, '@');
+	if (authority) {
+		char *nhost = strdup (authority + 1);
+		free (host);
+		host = nhost;
+	}
+	bool ret = 0
 		|| !strcmp (host, "0.0.0.0")
+		|| !strcmp (host, "localhost")
+		|| r_str_startswith (host, "localhost:")
+		|| r_str_startswith (host, "127.")
+		|| r_str_startswith (host, "[::1]")
 		|| !strcmp (host, "::1")
 		|| !strcmp (host, "::");
 	free (host);
