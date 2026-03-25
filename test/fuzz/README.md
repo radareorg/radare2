@@ -2,18 +2,18 @@
 
 ## Setup
 
-Get libFuzzer-capable clang
+In macOS:
 
 ```shell
+brew install llvm@22 meson ninja
 eval $(make env)
-make setup
+make b
 ```
 
 Running with the provided Makefile
 
 ```shell
 cd test/fuzz
-make setup
 make build
 make run-fuzzer T=fuzz_types_parser
 ```
