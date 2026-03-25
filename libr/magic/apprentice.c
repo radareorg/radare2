@@ -1921,7 +1921,7 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 }
 
 bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action, RVecMagicMList *mlist) {
-	RMagic *magic = NULL;
+	struct r_magic *magic = NULL;
 	ut32 *min_bytes = NULL;
 	ut32 nmagic = 0;
 	int mapped = 0;
