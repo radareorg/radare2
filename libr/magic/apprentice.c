@@ -60,9 +60,6 @@ static size_t magic_cap_sum(size_t base, size_t extra) {
 	if (base >= (size_t)HOWMANY || extra >= (size_t)HOWMANY) {
 		return HOWMANY;
 	}
-	if (base > SIZE_MAX - extra) {
-		return HOWMANY;
-	}
 	return magic_cap_bytes (base + extra);
 }
 
@@ -1703,7 +1700,7 @@ static int apprentice_map_buffer(RMagic *ms, struct r_magic **magicp, ut32 *nmag
 	bool be = false;
 	void *mm = NULL;
 
-	if (!buf || buf_size < sizeof (struct r_magic)) {
+	if (buf_size < sizeof (struct r_magic)) {
 		__magic_file_error (ms, 0, "magic buffer is too small");
 		return -1;
 	}
@@ -1873,7 +1870,6 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RVecMagicMList *
 bool __magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int action, RVecMagicMList *mlist) {
 	char *p;
 	int file_err, errs = -1;
-	char *mfn = r_str_ndup (fn, fn_size);
 	const char *it;
 	size_t path_count = 1;
 
@@ -1881,6 +1877,7 @@ bool __magic_file_apprentice(RMagic *ms, const char *fn, size_t fn_size, int act
 		return false;
 	}
 
+	char *mfn = r_str_ndup (fn, fn_size);
 	if (!mfn) {
 		__magic_file_oomem (ms, fn_size);
 		return false;
@@ -1920,7 +1917,7 @@ static bool is_compiled_magic_buffer(const ut8 *buf, size_t buf_size) {
 	ut32 version = 0;
 	bool needsbyteswap = false;
 
-	return buf && buf_size >= sizeof (ut32) * 2 && read_compiled_magic_header (buf, &version, &needsbyteswap) && version == VERSIONNO;
+	return buf_size >= sizeof (ut32) * 2 && read_compiled_magic_header (buf, &version, &needsbyteswap) && version == VERSIONNO;
 }
 
 bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size, int action, RVecMagicMList *mlist) {
