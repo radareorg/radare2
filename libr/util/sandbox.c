@@ -151,7 +151,7 @@ R_API bool r_sandbox_check_localhost(const char *str) {
 	}
 	char *end = strchr (str, '/');
 	if (!end) {
-		if (*str != ':') {
+		if (*str != ':' && *str != '[') {
 			end = strchr (str, ':');
 		}
 		if (!end) {
