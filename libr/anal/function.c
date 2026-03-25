@@ -491,13 +491,12 @@ static RAnalFcnSlotRole fcn_context_classify_slot(const RAnalVar *var, RAnalVar 
 }
 
 static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnContext *ctx, RAnalVar *var) {
+	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
 	RAnalFcnRegArg *arg = R_NEW0 (RAnalFcnRegArg);
 	const int arg_index = r_anal_var_get_argnum (var);
 	const RAnalFunctionParam *signature_param = (ctx->signature && arg_index >= 0)
 		? r_list_get_n (ctx->signature->params, arg_index)
 		: NULL;
-
-	R_RETURN_VAL_IF_FAIL (anal && ctx && var, NULL);
 	arg->arg_index = arg_index;
 	if (signature_param && R_STR_ISNOTEMPTY (signature_param->name) && r_anal_var_is_default_argname (var->name)) {
 		arg->name = strdup (signature_param->name);
@@ -521,10 +520,10 @@ static RAnalFcnRegArg *fcn_context_collect_reg_arg(RAnal *anal, const RAnalFcnCo
 
 static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext *ctx, RAnalFunction *fcn, RAnalVar *var, RAnalVar *home_source) {
 	const RAnalFunctionParam *signature_param = NULL;
-	RAnalFcnSlot *slot = R_NEW0 (RAnalFcnSlot);
-	int arg_index = -1;
 
 	R_RETURN_VAL_IF_FAIL (anal && ctx && fcn && var, NULL);
+	RAnalFcnSlot *slot = R_NEW0 (RAnalFcnSlot);
+	int arg_index = -1;
 	if (R_STR_ISNOTEMPTY (var->name)) {
 		slot->name = strdup (var->name);
 	}
