@@ -565,16 +565,6 @@ R_API void r_cons_line(RCons *cons, int x, int y, int x2, int y2, int ch) {
 	}
 }
 
-R_API int r_cons_get_cur_line(void) {
-	int curline = 0;
-#if R2__WINDOWS__
-	CONSOLE_SCREEN_BUFFER_INFO info;
-	if (!GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info)) {
-		return 0;
-	}
-	curline = info.dwCursorPosition.Y - info.srWindow.Top;
-#endif
-
 #ifdef __sun
 	static inline void cfmakeraw (struct termios * tm) {
 		tm->c_cflag &= ~ (CSIZE | PARENB);
@@ -583,6 +573,16 @@ R_API int r_cons_get_cur_line(void) {
 		tm->c_oflag &= ~OPOST;
 		tm->c_lflag &= ~ (ECHO | ECHONL | ICANON | ISIG | IEXTEN);
 	}
+#endif
+
+R_API int r_cons_get_cur_line(void) {
+	int curline = 0;
+#if R2__WINDOWS__
+	CONSOLE_SCREEN_BUFFER_INFO info;
+	if (!GetConsoleScreenBufferInfo (GetStdHandle (STD_OUTPUT_HANDLE), &info)) {
+		return 0;
+	}
+	curline = info.dwCursorPosition.Y - info.srWindow.Top;
 #endif
 
 #if R2__UNIX__ && !__wasi__

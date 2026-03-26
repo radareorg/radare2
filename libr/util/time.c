@@ -1,5 +1,9 @@
 /* radare - LGPL - Copyright 2007-2025 - pancake, thestr4ng3r */
 
+#if defined(__sun)
+#define _POSIX_PTHREAD_SEMANTICS
+#endif
+
 #include <r_util.h>
 #include <r_util/r_print.h>
 
