@@ -57,12 +57,8 @@ R_IPI void applyHexMode(RCore *core);
 #define COUNT(x) (sizeof ((x)) / sizeof ((*x)) - 1)
 #define PP(pos, off) (*(int *)((char *)&(pos) + (off)))
 
-typedef enum {
-	LEFT,
-	RIGHT,
-	UP,
-	DOWN
-} Direction;
+// Direction values use vi keys: h=left, j=down, k=up, l=right
+typedef int Direction;
 
 typedef struct {
 	const char *name;
@@ -2563,25 +2559,25 @@ static bool __move_to_direction(RCore *core, Direction direction) {
 		int temp_x0 = tp->x, temp_x1 = tp->x + tp->w - 1;
 		int temp_y0 = tp->y, temp_y1 = tp->y + tp->h - 1;
 		switch (direction) {
-		case LEFT:
+		case 'h':
 			if (temp_x1 == cx0 && !(temp_y1 <= cy0 || cy1 <= temp_y0)) {
 				__set_curnode (core, i);
 				return true;
 			}
 			break;
-		case RIGHT:
+		case 'l':
 			if (temp_x0 == cx1 && !(temp_y1 <= cy0 || cy1 <= temp_y0)) {
 				__set_curnode (core, i);
 				return true;
 			}
 			break;
-		case UP:
+		case 'k':
 			if (temp_y1 == cy0 && !(temp_x1 <= cx0 || cx1 <= temp_x0)) {
 				__set_curnode (core, i);
 				return true;
 			}
 			break;
-		case DOWN:
+		case 'j':
 			if (temp_y0 == cy1 && !(temp_x1 <= cx0 || cx1 <= temp_x0)) {
 				__set_curnode (core, i);
 				return true;
@@ -2599,23 +2595,23 @@ static void __direction_default_cb(void *user, int direction) {
 	RCore *core = (RCore *)user;
 	RPanel *cur = __get_cur_panel (core->panels);
 	cur->view->refresh = true;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (cur->view->sx > 0) {
 			cur->view->sx--;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (cur->view->sx < MAX_CANVAS_SIZE) {
 			cur->view->sx++;
 		}
 		break;
-	case UP:
+	case 'k':
 		if (cur->view->sy > 0) {
 			cur->view->sy--;
 		}
 		break;
-	case DOWN:
+	case 'j':
 		if (cur->view->sy < MAX_CANVAS_SIZE) {
 			cur->view->sy++;
 		}
@@ -2633,8 +2629,8 @@ static void __direction_disassembly_cb(void *user, int direction) {
 	}
 	int cols = core->print->cols;
 	cur->view->refresh = true;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (core->print->cur_enabled) {
 			__cursor_left (core);
 			r_core_block_read (core);
@@ -2645,7 +2641,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			cur->view->sx--;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (core->print->cur_enabled) {
 			__cursor_right (core);
 			r_core_block_read (core);
@@ -2656,7 +2652,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			cur->view->sx++;
 		}
 		break;
-	case UP:
+	case 'k':
 		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			__cursor_up (core);
@@ -2668,7 +2664,7 @@ static void __direction_disassembly_cb(void *user, int direction) {
 			__set_panel_addr (core, cur, core->addr);
 		}
 		break;
-	case DOWN:
+	case 'j':
 		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			__cursor_down (core);
@@ -2695,21 +2691,21 @@ static void __direction_graph_cb(void *user, int direction) {
 	}
 	cur->view->refresh = true;
 	const int speed = r_config_get_i (core->config, "graph.scroll") * 2;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (cur->view->sx > 0) {
 			cur->view->sx -= speed;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		cur->view->sx +=  speed;
 		break;
-	case UP:
+	case 'k':
 		if (cur->view->sy > 0) {
 			cur->view->sy -= speed;
 		}
 		break;
-	case DOWN:
+	case 'j':
 		cur->view->sy += speed;
 		break;
 	}
@@ -2722,8 +2718,8 @@ static void __direction_register_cb(void *user, int direction) {
 	int cols = core->dbg->regcols;
 	cols = cols > 0 ? cols : 3;
 	cur->view->refresh = true;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (core->print->cur_enabled) {
 			__cursor_left (core);
 		} else if (cur->view->sx > 0) {
@@ -2731,7 +2727,7 @@ static void __direction_register_cb(void *user, int direction) {
 			cur->view->refresh = true;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (core->print->cur_enabled) {
 			__cursor_right (core);
 		} else {
@@ -2739,7 +2735,7 @@ static void __direction_register_cb(void *user, int direction) {
 			cur->view->refresh = true;
 		}
 		break;
-	case UP:
+	case 'k':
 		if (core->print->cur_enabled) {
 			int tmp = core->print->cur;
 			tmp -= cols;
@@ -2748,7 +2744,7 @@ static void __direction_register_cb(void *user, int direction) {
 			}
 		}
 		break;
-	case DOWN:
+	case 'j':
 		if (core->print->cur_enabled) {
 			core->print->cur += cols;
 		}
@@ -2765,8 +2761,8 @@ static void __direction_stack_cb(void *user, int direction) {
 		cols = 16;
 	}
 	cur->view->refresh = true;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (core->print->cur_enabled) {
 			__cursor_left (core);
 		} else if (cur->view->sx > 0) {
@@ -2774,7 +2770,7 @@ static void __direction_stack_cb(void *user, int direction) {
 			cur->view->refresh = true;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (core->print->cur_enabled) {
 			__cursor_right (core);
 		} else {
@@ -2782,12 +2778,12 @@ static void __direction_stack_cb(void *user, int direction) {
 			cur->view->refresh = true;
 		}
 		break;
-	case UP:
+	case 'k':
 		r_config_set_i (core->config, "stack.delta",
 				r_config_get_i (core->config, "stack.delta") + cols);
 		cur->model->addr -= cols;
 		break;
-	case DOWN:
+	case 'j':
 		r_config_set_i (core->config, "stack.delta",
 				r_config_get_i (core->config, "stack.delta") - cols);
 		cur->model->addr += cols;
@@ -2811,8 +2807,8 @@ static void __direction_hexdump_cb(void *user, int direction) {
 		cols = 16;
 	}
 	cur->view->refresh = true;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (!core->print->cur) {
 			cur->model->addr -= cols;
 			core->print->cur += cols - 1;
@@ -2822,7 +2818,7 @@ static void __direction_hexdump_cb(void *user, int direction) {
 			cur->model->addr--;
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (core->print->cur / cols + 1 > cur->view->pos.h - 5
 				&& core->print->cur % cols == cols - 1) {
 			cur->model->addr += cols;
@@ -2833,7 +2829,7 @@ static void __direction_hexdump_cb(void *user, int direction) {
 			cur->model->addr++;
 		}
 		break;
-	case UP:
+	case 'k':
 		if (!cur->model->cache) {
 			if (core->print->cur_enabled) {
 				if (!(core->print->cur / cols)) {
@@ -2852,7 +2848,7 @@ static void __direction_hexdump_cb(void *user, int direction) {
 			cur->view->sy--;
 		}
 		break;
-	case DOWN:
+	case 'j':
 		if (!cur->model->cache) {
 			if (core->print->cur_enabled) {
 				if (core->print->cur / cols + 1 > cur->view->pos.h - 5) {
@@ -2877,8 +2873,8 @@ static void __direction_panels_cursor_cb(void *user, int direction) {
 	cur->view->refresh = true;
 	const int THRESHOLD = cur->view->pos.h / 3;
 	int sub;
-	switch ((Direction)direction) {
-	case LEFT:
+	switch (direction) {
+	case 'h':
 		if (core->print->cur_enabled) {
 			break;
 		}
@@ -2886,13 +2882,13 @@ static void __direction_panels_cursor_cb(void *user, int direction) {
 			cur->view->sx -= r_config_get_i (core->config, "graph.scroll");
 		}
 		break;
-	case RIGHT:
+	case 'l':
 		if (core->print->cur_enabled) {
 			break;
 		}
 		cur->view->sx += r_config_get_i (core->config, "graph.scroll");
 		break;
-	case UP:
+	case 'k':
 		if (core->print->cur_enabled) {
 			if (cur->view->curpos > 0) {
 				cur->view->curpos--;
@@ -2910,7 +2906,7 @@ static void __direction_panels_cursor_cb(void *user, int direction) {
 			}
 		}
 		break;
-	case DOWN:
+	case 'j':
 		core->addr = cur->model->addr;
 		if (core->print->cur_enabled) {
 			cur->view->curpos++;
@@ -2942,8 +2938,8 @@ static void __resize_panel(RPanels *panels, Direction dir) {
 	if (!cur) {
 		return;
 	}
-	bool horiz = (dir == LEFT || dir == RIGHT);
-	bool neg = (dir == LEFT || dir == UP);
+	bool horiz = (dir == 'h' || dir == 'l');
+	bool neg = (dir == 'h' || dir == 'k');
 	int d = horiz ? PANEL_CONFIG_RESIZE_W : PANEL_CONFIG_RESIZE_H;
 	int pmax = horiz ? panels->can->w : panels->can->h;
 	// offsets into RPanelPos for primary axis (pos/size) and secondary axis
@@ -3020,8 +3016,8 @@ static void __resize_panel(RPanels *panels, Direction dir) {
 			}
 		}
 	}
-	// for neg (LEFT/UP): try t1 first, fallback t3
-	// for pos (RIGHT/DOWN): try t3 first, fallback t1
+	// for neg (h/k): try t1 first, fallback t3
+	// for pos (l/j): try t3 first, fallback t1
 	RPanel **ta, **tb, **tc, **td;
 	int na, nb, nc, nd;
 	if (neg) {
@@ -3114,7 +3110,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x--;
 		} else {
-			(void)__move_to_direction (core, LEFT);
+			(void)__move_to_direction (core, 'h');
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 				__reset_snow (panels);
 			}
@@ -3124,7 +3120,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y++;
 		} else {
-			(void)__move_to_direction (core, DOWN);
+			(void)__move_to_direction (core, 'j');
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 				__reset_snow (panels);
 			}
@@ -3134,7 +3130,7 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.y--;
 		} else {
-			(void)__move_to_direction (core, UP);
+			(void)__move_to_direction (core, 'k');
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 				__reset_snow (panels);
 			}
@@ -3144,42 +3140,25 @@ static bool __handle_window_mode(RCore *core, const int key) {
 		if (core->print->cur_enabled) {
 			core->cons->cpos.x++;
 		} else {
-			(void)__move_to_direction (core, RIGHT);
+			(void)__move_to_direction (core, 'l');
 			if (panels->fun == PANEL_FUN_SNOW || panels->fun == PANEL_FUN_SAKURA) {
 				__reset_snow (panels);
 			}
 		}
 		break;
 	case 'H':
-		if (r_config_get_b (core->config, "scr.cursor")) {
-			core->cons->cpos.x += 5;
-		} else {
-			r_cons_switchbuf (core->cons, false);
-			__resize_panel (panels, LEFT);
-		}
-		break;
 	case 'L':
-		if (r_config_get_b (core->config, "scr.cursor")) {
-			core->cons->cpos.x += 5;
-		} else {
-			r_cons_switchbuf (core->cons, false);
-			__resize_panel (panels, RIGHT);
-		}
-		break;
 	case 'J':
-		if (r_config_get_b (core->config, "scr.cursor")) {
-			core->cons->cpos.y += 5;
-		} else {
-			r_cons_switchbuf (core->cons, false);
-			__resize_panel (panels, DOWN);
-		}
-		break;
 	case 'K':
 		if (r_config_get_b (core->config, "scr.cursor")) {
-			core->cons->cpos.y -= 5;
+			if (key == 'H' || key == 'L') {
+				core->cons->cpos.x += 5;
+			} else {
+				core->cons->cpos.y += (key == 'J') ? 5 : -5;
+			}
 		} else {
 			r_cons_switchbuf (core->cons, false);
-			__resize_panel (panels, UP);
+			__resize_panel (panels, key | 0x20);
 		}
 		break;
 	case 'n':
@@ -4014,8 +3993,8 @@ static void __handle_vmark(RCore *core) {
 
 static void __move_panel_to(RCore *core, RPanel *panel, int src, Direction dir) {
 	RPanels *panels = core->panels;
-	bool neg = (dir == LEFT || dir == UP);
-	bool horiz = (dir == LEFT || dir == RIGHT);
+	bool neg = (dir == 'h' || dir == 'k');
+	bool horiz = (dir == 'h' || dir == 'l');
 	if (neg) {
 		__shrink_panels_backward (core, src);
 		panels->panel[0] = panel;
@@ -4075,26 +4054,12 @@ static void __move_panel_to(RCore *core, RPanel *panel, int src, Direction dir) 
 }
 
 static void __move_panel_to_dir(RCore *core, RPanel *panel, int src) {
-	RPanels *panels = core->panels;
-	__dismantle_panel (panels, panel);
+	__dismantle_panel (core->panels, panel);
 	int key = __show_status (core, "Move the current panel to direction (h/j/k/l): ");
 	key = r_cons_arrow_to_hjkl (core->cons, key);
 	__set_refresh_all (core, false, true);
-	switch (key) {
-	case 'h':
-		__move_panel_to (core, panel, src, LEFT);
-		break;
-	case 'l':
-		__move_panel_to (core, panel, src, RIGHT);
-		break;
-	case 'k':
-		__move_panel_to (core, panel, src, UP);
-		break;
-	case 'j':
-		__move_panel_to (core, panel, src, DOWN);
-		break;
-	default:
-		break;
+	if (key == 'h' || key == 'j' || key == 'k' || key == 'l') {
+		__move_panel_to (core, panel, src, key);
 	}
 }
 
@@ -6553,17 +6518,17 @@ virtualmouse:
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
 				if (cur->model->directionCb) {
-					cur->model->directionCb (core, (int)DOWN);
+					cur->model->directionCb (core, 'j');
 					break;
 				} else {
-					__direction_panels_cursor_cb (core, DOWN);
+					__direction_panels_cursor_cb (core, 'j');
 				}
 			}
 			nextOpcode (core);
 		} else {
 			if (cur->model->directionCb) {
 				r_cons_switchbuf (core->cons, false);
-				cur->model->directionCb (core, (int)DOWN);
+				cur->model->directionCb (core, 'j');
 			}
 		}
 		break;
@@ -6575,7 +6540,7 @@ virtualmouse:
 			if (cp) {
 				if (strstr (cp->model->cmd, "pd")) {
 					if (cur->model->directionCb) {
-						cur->model->directionCb (core, (int)UP);
+						cur->model->directionCb (core, 'k');
 						break;
 					}
 					int op = cp->view->curpos;
@@ -6585,13 +6550,13 @@ virtualmouse:
 						prevOpcode (core);
 					}
 				} else {
-					__direction_panels_cursor_cb (core, UP);
+					__direction_panels_cursor_cb (core, 'k');
 				}
 			}
 		} else if (cur->model->directionCb) {
 			prevOpcode (core);
 			r_cons_switchbuf (core->cons, false);
-			cur->model->directionCb (core, (int)UP);
+			cur->model->directionCb (core, 'k');
 		}
 		break;
 	case 'K':
@@ -6601,7 +6566,7 @@ virtualmouse:
 			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-					cur->model->directionCb (core, (int)UP);
+					cur->model->directionCb (core, 'k');
 				}
 			} else {
 				if (core->print->cur_enabled) {
@@ -6620,7 +6585,7 @@ virtualmouse:
 			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.h / 2 - 6; i++) {
-					cur->model->directionCb (core, (int)DOWN);
+					cur->model->directionCb (core, 'j');
 				}
 			} else {
 				if (core->print->cur_enabled) {
@@ -6639,7 +6604,7 @@ virtualmouse:
 			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-					cur->model->directionCb (core, (int)LEFT);
+					cur->model->directionCb (core, 'h');
 				}
 			}
 		}
@@ -6651,7 +6616,7 @@ virtualmouse:
 			r_cons_switchbuf (core->cons, false);
 			if (cur->model->directionCb) {
 				for (i = 0; i < __get_cur_panel (panels)->view->pos.w / 3; i++) {
-					cur->model->directionCb (core, (int)RIGHT);
+					cur->model->directionCb (core, 'l');
 				}
 			}
 		}
@@ -6757,7 +6722,7 @@ virtualmouse:
 			core->cons->cpos.x--;
 			core->print->cur--;
 		} else if (core->print->cur_enabled) {
-			cur->model->directionCb (core, (int)LEFT);
+			cur->model->directionCb (core, 'h');
 			RPanel *cp = __get_cur_panel (core->panels);
 			if (cp) {
 				core->cons->cpos.x--;
@@ -6765,14 +6730,14 @@ virtualmouse:
 			}
 		} else if (cur->model->directionCb) {
 			r_cons_switchbuf (core->cons, false);
-			cur->model->directionCb (core, (int)LEFT);
+			cur->model->directionCb (core, 'h');
 		}
 		break;
 	case 'l':
 		if (r_config_get_b (core->config, "scr.cursor")) {
 			core->cons->cpos.x++;
 		} else if (cur->model->directionCb) {
-			cur->model->directionCb (core, (int)RIGHT);
+			cur->model->directionCb (core, 'l');
 			r_cons_switchbuf (core->cons, false);
 		} else if (core->print->cur_enabled) {
 			core->print->cur++;
