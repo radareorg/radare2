@@ -2,8 +2,7 @@ include ../config.mk
 
 NAME=r_io
 PCLIBS_PRIVATE=-lr_shlr @PKGCFG_LIBZIPLIBS@
-R2DEPS+=r_util r_socket r_muta r_cons r_debug
-LINK+=-L../debug -lr_debug
+R2DEPS+=r_util r_socket r_muta r_cons
 STATIC_OBJS=$(subst ..,p/..,$(subst io_,p/io_,$(STATIC_OBJ)))
 OBJS=${STATIC_OBJS}
 OBJS+=io.o io_plugin.o io_map.o io_desc.o io_cache.o p_cache.o io_stream.o

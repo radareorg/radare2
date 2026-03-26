@@ -8,6 +8,8 @@ dtsc branch
 dtst ./
 dtsf ./
 dtsj
+dtsr 1
+dtsj
 rm ./session.sdb
 rm ./registers.sdb
 rm ./memory.sdb
@@ -16,5 +18,6 @@ EOF
 EXPECT=<<EOF
 2
 [{"id":1,"parent":null,"cnum":0,"label":"","current":false,"index":0},{"id":2,"parent":1,"cnum":0,"label":"branch","current":true,"index":1}]
+[{"id":1,"parent":null,"cnum":0,"label":"","current":true,"index":0},{"id":2,"parent":1,"cnum":0,"label":"branch","current":false,"index":1}]
 EOF
 RUN

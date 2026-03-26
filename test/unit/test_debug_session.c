@@ -349,6 +349,73 @@ static bool test_session_branch_roundtrip(void) {
 	mu_end;
 }
 
+static bool test_session_deserialize_sorts_checkpoints_by_cnum_then_id(void) {
+	RDebugSession *session = r_debug_session_new ();
+	Sdb *db = sdb_new0 ();
+	Sdb *checkpoints_sdb;
+	RDebugCheckpoint *first;
+	RDebugCheckpoint *second;
+	mu_assert ("session", session != NULL);
+	mu_assert ("db", db != NULL);
+
+	sdb_num_set (db, "next_checkpoint_id", 3, 0);
+	sdb_num_set (db, "current_checkpoint_id", 2, 0);
+	sdb_bool_set (db, "linear_history_valid", false, 0);
+	mu_assert ("memory ns", sdb_ns (db, "memory", true) != NULL);
+	mu_assert ("registers ns", sdb_ns (db, "registers", true) != NULL);
+	checkpoints_sdb = sdb_ns (db, "checkpoints", true);
+	mu_assert ("checkpoints ns", checkpoints_sdb != NULL);
+	sdb_set (checkpoints_sdb, "0x2", "{\"id\":2,\"cnum\":0,\"parent\":1,\"label\":\"second\",\"registers\":[],\"snaps\":[],\"replay\":[]}", 0);
+	sdb_set (checkpoints_sdb, "0x1", "{\"id\":1,\"cnum\":0,\"parent\":null,\"label\":\"first\",\"registers\":[],\"snaps\":[],\"replay\":[]}", 0);
+
+	r_debug_session_deserialize (session, db);
+	mu_assert_eq (RVecDebugCheckpoint_length (session->checkpoints), 2, "checkpoints length");
+	first = RVecDebugCheckpoint_at (session->checkpoints, 0);
+	second = RVecDebugCheckpoint_at (session->checkpoints, 1);
+	mu_assert ("first checkpoint", first != NULL);
+	mu_assert ("second checkpoint", second != NULL);
+	mu_assert_eq (first->id, 1, "sorted first id");
+	mu_assert_eq (second->id, 2, "sorted second id");
+	mu_assert_eq (session->current_checkpoint_id, 2, "current checkpoint id");
+
+	sdb_free (db);
+	r_debug_session_free (session);
+	mu_end;
+}
+
+static bool test_session_replay_clear(void) {
+	RDebugSession *session = r_debug_session_new ();
+	RDebugCheckpoint checkpoint = {0};
+	RDebugReplayStream *stream;
+	mu_assert ("session", session != NULL);
+
+	checkpoint.id = 1;
+	checkpoint.parent_id = UT64_MAX;
+	checkpoint.replay = ht_up_new (NULL, replay_pair_free, NULL);
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	mu_assert ("checkpoint replay", checkpoint.replay != NULL);
+	mu_assert ("checkpoint snaps", checkpoint.snaps != NULL);
+	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
+	ht_up_insert (session->checkpoint_index, 1, (void *)1);
+
+	mu_assert ("append replay fd0", r_debug_session_checkpoint_replay_append (session, 1, 0, (const ut8 *)"AB", 2, "stdin"));
+	mu_assert ("append replay fd3", r_debug_session_checkpoint_replay_append (session, 1, 3, (const ut8 *)"CD", 2, "aux"));
+	mu_assert ("clear one replay fd", r_debug_session_checkpoint_replay_clear (session, 1, 0));
+	mu_assert ("fd0 cleared", ht_up_find (RVecDebugCheckpoint_at (session->checkpoints, 0)->replay, 0, NULL) == NULL);
+	stream = ht_up_find (RVecDebugCheckpoint_at (session->checkpoints, 0)->replay, 3, NULL);
+	mu_assert ("fd3 preserved", stream != NULL);
+	mu_assert_eq (stream->fd, 3, "fd3 stream fd");
+	mu_assert_eq (stream->consumed, 0, "fd3 stream consumed");
+	mu_assert_streq (stream->label, "aux", "fd3 stream label");
+	mu_assert_eq (r_buf_size (stream->data), 2, "fd3 stream size");
+	mu_assert ("clear missing replay fd fails", !r_debug_session_checkpoint_replay_clear (session, 1, 0));
+	mu_assert ("clear all replay fds", r_debug_session_checkpoint_replay_clear (session, 1, -1));
+	mu_assert ("fd3 cleared by clear-all", ht_up_find (RVecDebugCheckpoint_at (session->checkpoints, 0)->replay, 3, NULL) == NULL);
+
+	r_debug_session_free (session);
+	mu_end;
+}
+
 static bool test_session_replay_apply(void) {
 #if HAVE_PTY
 	RDebugSession *session = r_debug_session_new ();
@@ -399,6 +466,8 @@ int all_tests(void) {
 	mu_run_test (test_session_save);
 	mu_run_test (test_session_load);
 	mu_run_test (test_session_branch_roundtrip);
+	mu_run_test (test_session_deserialize_sorts_checkpoints_by_cnum_then_id);
+	mu_run_test (test_session_replay_clear);
 	mu_run_test (test_session_replay_apply);
 	return tests_passed != tests_run;
 }

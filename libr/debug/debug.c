@@ -532,50 +532,6 @@ R_API void r_debug_free(RDebug *dbg) {
 	}
 }
 
-R_API void r_debug_replay_bindings_reset(RDebug *dbg) {
-	R_RETURN_IF_FAIL (dbg);
-	if (!dbg->replay_bindings) {
-		dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
-		return;
-	}
-	ht_up_foreach (dbg->replay_bindings, free_replay_binding_cb, NULL);
-	ht_up_free (dbg->replay_bindings);
-	dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
-}
-
-R_API bool r_debug_replay_binding_add_pty(RDebug *dbg, int fd, int host_fd, const char *slave_name) {
-	R_RETURN_VAL_IF_FAIL (dbg && fd >= 0 && host_fd >= 0, false);
-	if (!dbg->replay_bindings) {
-		dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
-		if (!dbg->replay_bindings) {
-			return false;
-		}
-	}
-	RDebugReplayBinding *old = ht_up_find (dbg->replay_bindings, (ut64)(ut32)fd, NULL);
-	if (old) {
-		r_debug_replay_binding_free (old);
-		ht_up_delete (dbg->replay_bindings, (ut64)(ut32)fd);
-	}
-	RDebugReplayBinding *binding = R_NEW0 (RDebugReplayBinding);
-	if (!binding) {
-		return false;
-	}
-	binding->fd = fd;
-	binding->kind = R_DEBUG_REPLAY_BINDING_PTY;
-	binding->host_fd = host_fd;
-	binding->slave_name = R_STR_ISNOTEMPTY (slave_name)? strdup (slave_name): NULL;
-	binding->owned = true;
-	binding->resettable = true;
-	binding->writable = true;
-	ht_up_insert (dbg->replay_bindings, (ut64)(ut32)fd, binding);
-	return true;
-}
-
-R_API RDebugReplayBinding *r_debug_replay_binding_get(RDebug *dbg, int fd) {
-	R_RETURN_VAL_IF_FAIL (dbg && dbg->replay_bindings && fd >= 0, NULL);
-	return ht_up_find (dbg->replay_bindings, (ut64)(ut32)fd, NULL);
-}
-
 R_API void r_debug_fasttime_reset(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
 	if (!dbg->fasttime_threads) {

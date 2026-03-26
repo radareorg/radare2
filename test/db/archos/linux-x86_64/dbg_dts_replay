@@ -11,10 +11,13 @@ dtsw 2 0 4142
 dtswj
 dtsra 2 0
 dtswj
+dtswc 2 0
+dtswj
 EOF
 EXPECT=<<EOF
 2
 [{"id":1,"replay":[]},{"id":2,"replay":[{"fd":0,"size":2,"consumed":0,"remaining":2,"label":"","backend":"pty","owned":true,"resettable":true,"hex":"4142"}]}]
 [{"id":1,"replay":[]},{"id":2,"replay":[{"fd":0,"size":2,"consumed":2,"remaining":0,"label":"","backend":"pty","owned":true,"resettable":true,"hex":"4142"}]}]
+[{"id":1,"replay":[]},{"id":2,"replay":[]}]
 EOF
 RUN
