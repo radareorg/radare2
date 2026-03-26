@@ -519,9 +519,18 @@ static RCoreHelpMessage help_msg_dts = {
 	"Usage:", "dts[*]", "Trace sessions",
 	"dts+", "", "start trace session",
 	"dts-", "", "stop trace session",
+	"dtsc", " [label]", "create a branchable checkpoint from current state",
 	"dtst", " [dir] ", "save trace sessions to disk",
 	"dtsf", " [dir] ", "read trace sessions from disk",
+	"dtsj", "", "list checkpoints in JSON",
+	"dtsl", "", "list checkpoints",
 	"dtsm", "", "list current memory map and hash",
+	"dtsdj", " <json-spec>", "dump typed debugger state snapshot as JSON",
+	"dtsr", " <id>", "restore checkpoint by id and switch to live branch mode",
+	"dtsra", " <id> [fd]", "restore checkpoint and apply queued replay bytes",
+	"dtsw", " <id> <fd> <hex>", "append replay bytes to a checkpoint fd stream",
+	"dtswc", " <id> [fd]", "clear replay bytes for one fd or all fds on a checkpoint",
+	"dtswj", "", "list checkpoint replay streams in JSON",
 	NULL
 };
 
@@ -5920,12 +5929,29 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case '-': // "dts-"
 				if (core->dbg->session) {
+					r_debug_session_fini_runtime (core->dbg);
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				} else {
 					R_LOG_INFO ("No session started");
 				}
 				break;
+			case 'c': { // "dtsc"
+				if (!core->dbg->session) {
+					R_LOG_ERROR ("No session started");
+					break;
+				}
+				const char *label = r_str_trim_head_ro (input + 3);
+				ut64 checkpoint_id = r_debug_checkpoint_create (core->dbg,
+					core->dbg->session->current_checkpoint_id,
+					R_STR_ISNOTEMPTY (label)? label: NULL);
+				if (!checkpoint_id) {
+					R_LOG_ERROR ("Failed to create checkpoint");
+					break;
+				}
+				r_cons_printf (core->cons, "%"PFMT64u"\n", checkpoint_id);
+				break;
+			}
 			case 't': // "dtst"
 				if (core->dbg->session) {
 					const char *sname = r_str_trim_head_ro (input + 3);
@@ -5940,6 +5966,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'f': // "dtsf"
 				if (core->dbg->session) {
+					r_debug_session_fini_runtime (core->dbg);
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}
@@ -5958,6 +5985,164 @@ static int cmd_debug(void *data, const char *input) {
 					r_debug_session_list_memory (core->dbg);
 				}
 				break;
+			case 'd': // "dtsd*"
+				if (!core->dbg->session) {
+					R_LOG_ERROR ("No session started");
+					break;
+				}
+				if (input[3] != 'j') {
+					R_LOG_ERROR ("Usage: dtsdj <json-spec>");
+					break;
+				}
+				{
+					const char *json = r_str_trim_head_ro (input + 4);
+					if (R_STR_ISEMPTY (json)) {
+						R_LOG_ERROR ("Usage: dtsdj <json-spec>");
+						break;
+					}
+					RDebugStateRequest *request = r_debug_state_request_parse_json (json);
+					if (!request) {
+						R_LOG_ERROR ("Invalid state dump json spec");
+						break;
+					}
+					RDebugStateSnapshot *snapshot = r_debug_state_snapshot_collect (core->dbg, request);
+					r_debug_state_request_free (request);
+					if (!snapshot) {
+						R_LOG_ERROR ("Failed to collect debugger state snapshot");
+						break;
+					}
+					char *snapshot_json = r_debug_state_snapshot_to_json (snapshot);
+					r_debug_state_snapshot_free (snapshot);
+					if (!snapshot_json) {
+						R_LOG_ERROR ("Failed to serialize debugger state snapshot");
+						break;
+					}
+					r_cons_println (core->cons, snapshot_json);
+					free (snapshot_json);
+				}
+				break;
+			case 'j': // "dtsj"
+				if (core->dbg->session) {
+					r_debug_session_list_checkpoints (core->dbg, 'j');
+				} else {
+					R_LOG_INFO ("No session started");
+				}
+				break;
+			case 'l': // "dtsl"
+				if (core->dbg->session) {
+					r_debug_session_list_checkpoints (core->dbg, 0);
+				} else {
+					R_LOG_INFO ("No session started");
+				}
+				break;
+			case 'r': { // "dtsr"
+				if (!core->dbg->session) {
+					R_LOG_ERROR ("No session started");
+					break;
+				}
+				if (input[3] == 'a') { // "dtsra"
+					char *args = strdup (r_str_trim_head_ro (input + 4));
+					if (!args) {
+						break;
+					}
+					char *saveptr = NULL;
+					char *tok = strtok_r (args, " \t", &saveptr);
+					if (!tok) {
+						R_LOG_ERROR ("Missing checkpoint id");
+						free (args);
+						break;
+					}
+					ut64 checkpoint_id = r_num_math (core->num, tok);
+					int fd = -1;
+					tok = strtok_r (NULL, " \t", &saveptr);
+					if (tok) {
+						fd = (int)r_num_math (core->num, tok);
+					}
+					bool ok = r_debug_session_restore_checkpoint (core->dbg, checkpoint_id);
+					if (ok) {
+						ok = r_debug_session_checkpoint_replay_apply (core->dbg, checkpoint_id, fd);
+					}
+					if (!ok) {
+						R_LOG_ERROR ("Failed to restore and apply replay");
+					}
+					free (args);
+					break;
+				}
+				const char *arg = r_str_trim_head_ro (input + 3);
+				if (R_STR_ISEMPTY (arg)) {
+					R_LOG_ERROR ("Missing checkpoint id");
+					break;
+				}
+				ut64 checkpoint_id = r_num_math (core->num, arg);
+				if (!r_debug_session_restore_checkpoint (core->dbg, checkpoint_id)) {
+					R_LOG_ERROR ("Failed to restore checkpoint");
+				}
+				break;
+			}
+			case 'w': { // "dtsw*"
+				if (!core->dbg->session) {
+					R_LOG_ERROR ("No session started");
+					break;
+				}
+				if (input[3] == 'j') {
+					r_debug_session_list_checkpoint_replay (core->dbg, 'j');
+					break;
+				}
+				if (input[3] == 'c') {
+					char *args = strdup (r_str_trim_head_ro (input + 4));
+					if (!args) {
+						break;
+					}
+					char *saveptr = NULL;
+					char *id_s = strtok_r (args, " \t", &saveptr);
+					if (!id_s) {
+						R_LOG_ERROR ("Missing checkpoint id");
+						free (args);
+						break;
+					}
+					ut64 checkpoint_id = r_num_math (core->num, id_s);
+					int fd = -1;
+					char *fd_s = strtok_r (NULL, " \t", &saveptr);
+					if (fd_s) {
+						fd = (int)r_num_math (core->num, fd_s);
+					}
+					if (!r_debug_session_checkpoint_replay_clear (core->dbg->session, checkpoint_id, fd)) {
+						R_LOG_ERROR ("Failed to clear checkpoint replay");
+					}
+					free (args);
+					break;
+				}
+				char *args = strdup (r_str_trim_head_ro (input + 3));
+				if (!args) {
+					break;
+				}
+				char *saveptr = NULL;
+				char *id_s = strtok_r (args, " \t", &saveptr);
+				char *fd_s = strtok_r (NULL, " \t", &saveptr);
+				char *hex_s = strtok_r (NULL, " \t", &saveptr);
+				if (!id_s || !fd_s || !hex_s) {
+					R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
+					free (args);
+					break;
+				}
+				ut64 checkpoint_id = r_num_math (core->num, id_s);
+				int fd = (int)r_num_math (core->num, fd_s);
+				size_t hexlen = 0;
+				ut8 *bytes = r_hex_str2bin_dup (hex_s, &hexlen);
+				if (!bytes && *hex_s) {
+					R_LOG_ERROR ("Invalid replay hex payload");
+					free (args);
+					break;
+				}
+				bool ok = r_debug_session_checkpoint_replay_append (core->dbg->session, checkpoint_id, fd,
+					bytes? bytes: (const ut8 *)"", hexlen, NULL);
+				free (bytes);
+				free (args);
+				if (!ok) {
+					R_LOG_ERROR ("Failed to append checkpoint replay");
+				}
+				break;
+			}
 			default:
 				r_core_cmd_help (core, help_msg_dts);
 			}
