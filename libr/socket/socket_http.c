@@ -286,7 +286,7 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 			return NULL;
 		}
 		RStrBuf *sb = r_strbuf_new ("curl -s -D ");
-		r_strbuf_appendf (sb, "'%s' -o '%s' -L --max-redirs %u", escaped_header_file, escaped_body_file, redirections);
+		r_strbuf_appendf (sb, "\"%s\" -o \"%s\" -L --max-redirs %u", escaped_header_file, escaped_body_file, redirections);
 		if (headers) {
 			const char **header = headers;
 			while (*header) {
@@ -300,12 +300,12 @@ static char *socket_http_get_recursive(const char *url, const char **headers, in
 					free (body_file);
 					return NULL;
 				}
-				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
+				r_strbuf_appendf (sb, " -H \"%s\"", escaped_header);
 				free (escaped_header);
 				header++;
 			}
 		}
-		r_strbuf_appendf (sb, " '%s'", escaped_url);
+		r_strbuf_appendf (sb, " \"%s\"", escaped_url);
 		char *command = r_strbuf_drain (sb);
 		free (escaped_url);
 		free (escaped_header_file);
