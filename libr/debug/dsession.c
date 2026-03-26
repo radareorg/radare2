@@ -2,7 +2,7 @@
 
 #include <r_debug.h>
 #include <r_util/r_json.h>
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 #include <fcntl.h>
 #include <termios.h>
 #include <unistd.h>
@@ -214,7 +214,7 @@ static const char *replay_binding_kind_name(int kind) {
 }
 
 static bool replay_binding_reset_pty(const RDebugReplayBinding *binding) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	R_RETURN_VAL_IF_FAIL (binding, false);
 	if (R_STR_ISNOTEMPTY (binding->slave_name)) {
 		int slave_fd = open (binding->slave_name, O_RDWR | O_NOCTTY);
@@ -231,7 +231,7 @@ static bool replay_binding_reset_pty(const RDebugReplayBinding *binding) {
 }
 
 static bool replay_binding_write_all(const RDebugReplayBinding *binding, const ut8 *bytes, ut64 remaining) {
-#if R2__UNIX__
+#if R2__UNIX__ && !__wasi__
 	R_RETURN_VAL_IF_FAIL (binding && bytes, false);
 	while (remaining > 0) {
 		size_t chunk = remaining > INT_MAX? INT_MAX: (size_t)remaining;
