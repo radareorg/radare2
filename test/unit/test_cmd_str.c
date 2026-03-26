@@ -45,9 +45,37 @@ bool test_prompt_utf8_ellipsis_width(void) {
 	mu_end;
 }
 
+bool test_prompt_format_preserves_trailing_escaped_space(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+
+	char *prompt = r_core_prompt_format (core, "R2\\s");
+	mu_assert_notnull (prompt, "Prompt format should render");
+	mu_assert_streq (prompt, "R2 ", "Trailing escaped space should be preserved");
+
+	free (prompt);
+	r_core_free (core);
+	mu_end;
+}
+
+bool test_prompt_format_preserves_trailing_escaped_newline(void) {
+	RCore *core = r_core_new ();
+	mu_assert_notnull (core, "Couldn't create new RCore");
+
+	char *prompt = r_core_prompt_format (core, "R2\\n");
+	mu_assert_notnull (prompt, "Prompt format should render");
+	mu_assert_streq (prompt, "R2\n", "Trailing escaped newline should be preserved");
+
+	free (prompt);
+	r_core_free (core);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_cmd_str_issue_18799);
 	mu_run_test (test_prompt_utf8_ellipsis_width);
+	mu_run_test (test_prompt_format_preserves_trailing_escaped_space);
+	mu_run_test (test_prompt_format_preserves_trailing_escaped_newline);
 	return tests_passed != tests_run;
 }
 

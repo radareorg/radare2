@@ -3563,34 +3563,114 @@ static void __del_menu(RCore *core) {
 	menu->n_refresh = menu->depth - 1;
 }
 
-static RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item) {
+static void __menu_bar_range(RPanelsMenuItem *root, int sel, int bar_room, int *out_first, int *out_last) {
+	int i, n = root->n_sub;
+	*out_first = 0;
+	*out_last = n - 1;
+	int total = 0;
+	for (i = 0; i < n; i++) {
+		total += strlen (root->sub[i]->name) + 2;
+	}
+	if (total <= bar_room) {
+		return;
+	}
+	int vis = 0;
+	for (i = 0; i <= sel && i < n; i++) {
+		vis += strlen (root->sub[i]->name) + 2;
+	}
+	while (*out_first < sel && vis > bar_room - 4) {
+		vis -= strlen (root->sub[*out_first]->name) + 2;
+		(*out_first)++;
+	}
+	int used = 0;
+	int reserve = (*out_first > 0 ? 2 : 0) + 2;
+	for (i = *out_first; i < n; i++) {
+		int iw = strlen (root->sub[i]->name) + 2;
+		if (used + iw > bar_room - reserve && i > sel) {
+			break;
+		}
+		used += iw;
+	}
+	*out_last = i - 1;
+}
+
+static int __menu_bar_x(RPanelsMenu *menu, int index, int canw) {
+	int first, last;
+	__menu_bar_range (menu->root, index, canw - 16, &first, &last);
+	int x = 4;
+	if (first > 0) {
+		x += 2;
+	}
+	int i;
+	for (i = first; i < index && i < menu->root->n_sub; i++) {
+		x += strlen (menu->root->sub[i]->name) + 2;
+	}
+	return x;
+}
+
+static RStrBuf *__draw_menu(RCore *core, RPanelsMenuItem *item, int max_items) {
 	RStrBuf *buf = r_strbuf_new (NULL);
 	if (!buf) {
 		return NULL;
 	}
-	size_t i;
-	for (i = 0; i < item->n_sub; i++) {
-		if (i == item->selectedIndex) {
+	int i, n = item->n_sub;
+	int sel = item->selectedIndex;
+	int first = 0, last = n - 1;
+	bool top_ell = false, bot_ell = false;
+	if (max_items > 2 && n > max_items) {
+		first = sel - max_items / 2;
+		if (first < 0) {
+			first = 0;
+		}
+		last = first + max_items - 1;
+		if (last >= n) {
+			last = n - 1;
+			first = R_MAX (0, last - max_items + 1);
+		}
+		top_ell = first > 0;
+		bot_ell = last < n - 1;
+		if (top_ell) {
+			first++;
+		}
+		if (bot_ell) {
+			last--;
+		}
+	}
+	if (top_ell) {
+		r_strbuf_append (buf, "  (...)          \n");
+	}
+	for (i = first; i <= last; i++) {
+		if (i == sel) {
 			r_strbuf_appendf (buf, "%s> %s"Color_RESET, PANEL_HL_COLOR, item->sub[i]->name);
 		} else {
 			r_strbuf_appendf (buf, "  %s", item->sub[i]->name);
 		}
 		r_strbuf_append (buf, "          \n");
 	}
+	if (bot_ell) {
+		r_strbuf_append (buf, "  (...)          \n");
+	}
 	return buf;
 }
 
 static void __update_menu_contents(RCore *core, RPanelsMenu *menu, RPanelsMenuItem *parent) {
 	RPanel *p = parent->p;
-	RStrBuf *buf = __draw_menu (core, parent);
+	RConsCanvas *can = core->panels->can;
+	int max_items = can->h - p->view->pos.y - 4;
+	if (max_items < 3) {
+		max_items = 3;
+	}
+	RStrBuf *buf = __draw_menu (core, parent, max_items);
 	if (!buf) {
 		return;
 	}
 	free (p->model->title);
 	p->model->title = r_strbuf_drain (buf);
-	int new_w = r_str_bounds (p->model->title, &p->view->pos.h);
-	p->view->pos.w = new_w;
+	p->view->pos.w = r_str_bounds (p->model->title, &p->view->pos.h);
 	p->view->pos.h += 4;
+	if (p->view->pos.y + p->view->pos.h > can->h) {
+		p->view->pos.h = can->h - p->view->pos.y;
+	}
 	p->model->type = PANEL_TYPE_MENU;
 	p->view->refresh = true;
 	if (menu->n_refresh > 0) {
@@ -4938,7 +5018,8 @@ static int __config_value_cb(void *user) {
 	r_config_set (core->config, r_strbuf_get (tmp), v);
 	r_strbuf_free (tmp);
 	free (parent->p->model->title);
-	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
+	int _mi = core->panels->can->h - parent->p->view->pos.y - 4;
+	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent, R_MAX (_mi, 3)));
 	size_t i;
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
@@ -4964,7 +5045,8 @@ static int __config_toggle_cb(void *user) {
 	r_config_toggle (core->config, r_strbuf_get (tmp));
 	r_strbuf_free (tmp);
 	free (parent->p->model->title);
-	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent));
+	int _mi2 = core->panels->can->h - parent->p->view->pos.y - 4;
+	parent->p->model->title = r_strbuf_drain (__draw_menu (core, parent, R_MAX (_mi2, 3)));
 	size_t i;
 	for (i = 1; i < menu->depth; i++) {
 		RPanel *p = menu->history[i]->p;
@@ -5286,17 +5368,30 @@ static int __quit_cb(void *user) {
 static int __open_menu_cb(void *user) {
 	RCore* core = (RCore *)user;
 	RPanelsMenu *menu = core->panels->panels_menu;
+	RConsCanvas *can = core->panels->can;
 	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
 	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	int x, y;
 	if (menu->depth < 2) {
-		__set_pos (&child->p->view->pos, menu->root->selectedIndex * 6, 1);
+		x = __menu_bar_x (menu, menu->root->selectedIndex, can->w);
+		y = 1;
 	} else {
 		RPanelsMenuItem *p = menu->history[menu->depth - 2];
 		RPanelsMenuItem *parent2 = p->sub[p->selectedIndex];
-		__set_pos (&child->p->view->pos, parent2->p->view->pos.x + parent2->p->view->pos.w - 1,
-				menu->depth == 2 ? parent2->p->view->pos.y + parent2->selectedIndex : parent2->p->view->pos.y);
+		x = parent2->p->view->pos.x + parent2->p->view->pos.w - 1;
+		y = menu->depth == 2 ? parent2->p->view->pos.y + parent2->selectedIndex : parent2->p->view->pos.y;
 	}
-	RStrBuf *buf = __draw_menu (core, child);
+	if (y < 0) {
+		y = 0;
+	}
+	if (y >= can->h) {
+		y = can->h - 1;
+	}
+	int max_items = can->h - y - 4;
+	if (max_items < 3) {
+		max_items = 3;
+	}
+	RStrBuf *buf = __draw_menu (core, child, max_items);
 	if (!buf) {
 		return 0;
 	}
@@ -5304,6 +5399,13 @@ static int __open_menu_cb(void *user) {
 	child->p->model->title = r_strbuf_drain (buf);
 	child->p->view->pos.w = r_str_bounds (child->p->model->title, &child->p->view->pos.h);
 	child->p->view->pos.h += 4;
+	if (y + child->p->view->pos.h > can->h) {
+		child->p->view->pos.h = can->h - y;
+	}
+	if (x + child->p->view->pos.w > can->w) {
+		x = R_MAX (0, can->w - child->p->view->pos.w);
+	}
+	__set_pos (&child->p->view->pos, x, y);
 	child->p->model->type = PANEL_TYPE_MENU;
 	child->p->view->refresh = true;
 	menu->refreshPanels[menu->n_refresh++] = child->p;
@@ -5747,13 +5849,21 @@ static void __panels_refresh(RCore *core) {
 				r_strbuf_append (title, "[m]");
 			}
 		}
-		for (i = 0; i < parent->n_sub; i++) {
+		int menu_first, menu_last;
+		__menu_bar_range (parent, parent->selectedIndex, w - 16, &menu_first, &menu_last);
+		if (menu_first > 0) {
+			r_strbuf_append (title, "< ");
+		}
+		for (i = menu_first; i <= menu_last && i < parent->n_sub; i++) {
 			RPanelsMenuItem *item = parent->sub[i];
 			if (panels->mode == PANEL_MODE_MENU && i == parent->selectedIndex) {
 				r_strbuf_appendf (title, "%s[%s]"Color_RESET, PANEL_HL_COLOR, item->name);
 			} else {
 				r_strbuf_appendf (title, " %s ", item->name);
 			}
+		}
+		if (menu_last < parent->n_sub - 1) {
+			r_strbuf_append (title, " >");
 		}
 	}
 	if (panels->mode == PANEL_MODE_MENU) {
