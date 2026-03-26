@@ -76,6 +76,7 @@ r_io_deps = [
   r_socket_dep,
   r_cons_dep,
   r_muta_dep,
+  r_debug_dep,
   bochs_dep,
   gdb_dep,
   winkd_dep,
@@ -122,6 +123,7 @@ r_io_static_deps = [
   r_cons_static_dep,
   r_muta_static_dep,
   r_socket_static_dep,
+  r_debug_static_dep,
   winkd_static_dep,
   bochs_static_dep,
   gdb_static_dep,
@@ -152,7 +154,8 @@ pkgconfig_mod.generate(r_io,
     'r_util',
     'r_cons',
     'r_muta',
-    'r_socket'
+    'r_socket',
+    'r_debug'
   ],
   description: 'radare foundation libraries'
 )

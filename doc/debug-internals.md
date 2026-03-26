@@ -96,6 +96,23 @@ without a user interface of some kind. The CLI commands exposed to radare are
 implemented in here. To get more information about this interface, consult the
 user manual or try "d?" to get a crash course.
 
+## Debug Sessions and Replay
+
+Session recording lives in `libr/debug/dsession.c`. The debugger tracks both a
+linear change counter (`cnum`) and stable checkpoint ids. The `cnum` tells you
+where a checkpoint was created in the reversible history, while the checkpoint
+id is the persistent identity used for branching, save/load, and replay.
+
+Serialized sessions store checkpoints by id and keep `cnum`, parent id, label,
+register arenas, memory snapshots, and replay streams inside each checkpoint
+record. This matters because multiple branch checkpoints may legitimately share
+the same `cnum`.
+
+Replay data is attached per checkpoint and per file descriptor. At runtime the
+debugger can bind those descriptors to backends such as `pty`, which is exposed
+to users through `rarun2` directives like `replayfd0=pty` and debugger commands
+such as `dtsw`, `dtsra`, and `dtswj`.
+
 
 ## Debugger Plug-Ins
 

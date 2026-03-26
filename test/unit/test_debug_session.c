@@ -2,14 +2,42 @@
 #include <r_util.h>
 #include <r_reg.h>
 #include "minunit.h"
-#if R2__UNIX__
+#if HAVE_PTY
+#if __linux__ && !__ANDROID__
 #include <pty.h>
+#include <utmp.h>
+#elif defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <util.h>
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+#include <libutil.h>
+#endif
 #include <termios.h>
 #include <unistd.h>
 #endif
 
 static void replay_pair_free(HtUPKv *kv) {
 	r_debug_replay_stream_free ((RDebugReplayStream *)kv->value);
+}
+
+static bool checkpoint_add_replay(RDebugCheckpoint *checkpoint, int fd, const char *label, const ut8 *bytes, ut64 len, ut64 consumed) {
+	RDebugReplayStream *stream;
+	R_RETURN_VAL_IF_FAIL (checkpoint && checkpoint->replay, false);
+	stream = R_NEW0 (RDebugReplayStream);
+	if (!stream) {
+		return false;
+	}
+	stream->fd = fd;
+	stream->consumed = consumed;
+	if (R_STR_ISNOTEMPTY (label)) {
+		stream->label = strdup (label);
+	}
+	stream->data = r_buf_new_with_bytes (bytes, len);
+	if (!stream->data) {
+		r_debug_replay_stream_free (stream);
+		return false;
+	}
+	ht_up_insert (checkpoint->replay, (ut64)(ut32)fd, stream);
+	return true;
 }
 
 static Sdb *ref_db(void) {
@@ -28,8 +56,9 @@ static Sdb *ref_db(void) {
 	sdb_set (memory_sdb, "0x7ffffffff001", "[{\"cnum\":0,\"data\":0},{\"cnum\":1,\"data\":1}]", 0);
 
 	Sdb *checkpoints_sdb = sdb_ns (db, "checkpoints", true);
-	sdb_set (checkpoints_sdb, "0x0", "{"
+	sdb_set (checkpoints_sdb, "0x1", "{"
 		"\"id\":1,"
+		"\"cnum\":0,"
 		"\"parent\":null,"
 		"\"label\":\"root\","
 		"\"registers\":["
@@ -76,6 +105,7 @@ static RDebugSession *ref_session(void) {
 	RDebugCheckpoint checkpoint = {0};
 	checkpoint.id = 1;
 	checkpoint.parent_id = UT64_MAX;
+	checkpoint.cnum = 0;
 	checkpoint.label = strdup ("root");
 	checkpoint.replay = ht_up_new (NULL, replay_pair_free, NULL);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -99,14 +129,7 @@ static RDebugSession *ref_session(void) {
 		memset (snap->data, 0xf0, snap->size);
 		r_list_append (checkpoint.snaps, snap);
 	}
-	RDebugReplayStream *stream = R_NEW0 (RDebugReplayStream);
-	if (stream) {
-		stream->fd = 3;
-		stream->consumed = 1;
-		stream->label = strdup ("seed");
-		stream->data = r_buf_new_with_bytes ((const ut8 *)"AB", 2);
-		ht_up_insert (checkpoint.replay, 3, stream);
-	}
+	checkpoint_add_replay (&checkpoint, 3, "seed", (const ut8 *)"AB", 2, 1);
 	RVecDebugCheckpoint_push_back (s->checkpoints, &checkpoint);
 	ht_up_insert (s->checkpoint_index, checkpoint.id, (void *)1);
 	s->current_checkpoint_id = checkpoint.id;
@@ -129,24 +152,6 @@ static bool test_session_save(void) {
 	Sdb *actual = sdb_new0 ();
 	RDebugSession *s = ref_session ();
 	r_debug_session_serialize (s, actual);
-
-	Sdb *actual_registers = sdb_ns (actual, "registers", false);
-	if (actual_registers) {
-		const char *regv = sdb_const_get (actual_registers, "0x100", NULL);
-		printf ("actual registers 0x100: %s\n", regv);
-	}
-	Sdb *actual_memory = sdb_ns (actual, "memory", false);
-	if (actual_memory) {
-		const char *mem0 = sdb_const_get (actual_memory, "0x7ffffffff000", NULL);
-		printf ("actual memory 0x7ffffffff000: %s\n", mem0);
-		const char *mem1 = sdb_const_get (actual_memory, "0x7ffffffff001", NULL);
-		printf ("actual memory 0x7ffffffff001: %s\n", mem1);
-	}
-	Sdb *actual_checkpoints = sdb_ns (actual, "checkpoints", false);
-	if (actual_checkpoints) {
-		const char *chk = sdb_const_get (actual_checkpoints, "0x0", NULL);
-		printf ("actual checkpoint 0x0: %s\n", chk);
-	}
 
 	mu_assert ("save", sdb_diff (expected, actual, diff_cb, NULL));
 
@@ -251,12 +256,13 @@ static bool test_session_load(void) {
 	mu_assert_eq (RVecDebugCheckpoint_length (s->checkpoints), RVecDebugCheckpoint_length (ref->checkpoints), "checkpoints length");
 	chkpt_idx = 0;
 	R_VEC_FOREACH (s->checkpoints, chkpt) {
-		ref_chkpt = RVecDebugCheckpoint_at (ref->checkpoints, chkpt_idx++);
-		mu_assert_eq (chkpt->id, ref_chkpt->id, "checkpoint id");
-		mu_assert_eq (chkpt->parent_id, ref_chkpt->parent_id, "checkpoint parent");
-		mu_assert_streq (chkpt->label, ref_chkpt->label, "checkpoint label");
-		// Registers
-		for (i = 0; i < R_REG_TYPE_LAST; i++) {
+			ref_chkpt = RVecDebugCheckpoint_at (ref->checkpoints, chkpt_idx++);
+			mu_assert_eq (chkpt->id, ref_chkpt->id, "checkpoint id");
+			mu_assert_eq (chkpt->parent_id, ref_chkpt->parent_id, "checkpoint parent");
+			mu_assert_eq (chkpt->cnum, ref_chkpt->cnum, "checkpoint cnum");
+			mu_assert_streq (chkpt->label, ref_chkpt->label, "checkpoint label");
+			// Registers
+			for (i = 0; i < R_REG_TYPE_LAST; i++) {
 			arena_eq (chkpt->arena[i], ref_chkpt->arena[i]);
 		}
 		// Snaps
@@ -281,8 +287,70 @@ static bool test_session_load(void) {
 	mu_end;
 }
 
+static bool test_session_branch_roundtrip(void) {
+	RDebugSession *ref = r_debug_session_new ();
+	RDebugSession *s = r_debug_session_new ();
+	Sdb *db = sdb_new0 ();
+	RDebugCheckpoint root = {0};
+	RDebugCheckpoint branch = {0};
+	RDebugCheckpoint *root_chkpt;
+	RDebugCheckpoint *branch_chkpt;
+	mu_assert ("ref session", ref != NULL);
+	mu_assert ("session", s != NULL);
+	mu_assert ("db", db != NULL);
+
+	root.id = 1;
+	root.parent_id = UT64_MAX;
+	root.cnum = 0;
+	root.label = strdup ("root");
+	root.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	root.replay = ht_up_new (NULL, replay_pair_free, NULL);
+	mu_assert ("root replay", root.replay != NULL);
+	mu_assert ("root replay data", checkpoint_add_replay (&root, 0, "stdin", (const ut8 *)"AA", 2, 0));
+	RVecDebugCheckpoint_push_back (ref->checkpoints, &root);
+
+	branch.id = 2;
+	branch.parent_id = 1;
+	branch.cnum = 0;
+	branch.label = strdup ("branch");
+	branch.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	branch.replay = ht_up_new (NULL, replay_pair_free, NULL);
+	mu_assert ("branch replay", branch.replay != NULL);
+	mu_assert ("branch replay data", checkpoint_add_replay (&branch, 0, "stdin", (const ut8 *)"AB", 2, 1));
+	RVecDebugCheckpoint_push_back (ref->checkpoints, &branch);
+
+	ht_up_insert (ref->checkpoint_index, 1, (void *)1);
+	ht_up_insert (ref->checkpoint_index, 2, (void *)2);
+	ref->current_checkpoint_id = 2;
+	ref->next_checkpoint_id = 3;
+	ref->linear_history_valid = false;
+
+	r_debug_session_serialize (ref, db);
+	r_debug_session_deserialize (s, db);
+
+	mu_assert_eq (RVecDebugCheckpoint_length (s->checkpoints), 2, "branched checkpoints length");
+	root_chkpt = r_debug_session_checkpoint_get (s, 1);
+	branch_chkpt = r_debug_session_checkpoint_get (s, 2);
+	mu_assert ("root checkpoint", root_chkpt != NULL);
+	mu_assert ("branch checkpoint", branch_chkpt != NULL);
+	mu_assert_eq (root_chkpt->cnum, 0, "root cnum");
+	mu_assert_eq (branch_chkpt->cnum, 0, "branch cnum");
+	mu_assert_eq (branch_chkpt->parent_id, 1, "branch parent");
+	mu_assert_streq (branch_chkpt->label, "branch", "branch label");
+	mu_assert_eq (s->current_checkpoint_id, 2, "current checkpoint id");
+	mu_assert_eq (s->next_checkpoint_id, 3, "next checkpoint id");
+	mu_assert_eq ((int)s->linear_history_valid, false, "linear history valid");
+	replay_stream_eq (ht_up_find (root_chkpt->replay, 0, NULL), ht_up_find (RVecDebugCheckpoint_at (ref->checkpoints, 0)->replay, 0, NULL));
+	replay_stream_eq (ht_up_find (branch_chkpt->replay, 0, NULL), ht_up_find (RVecDebugCheckpoint_at (ref->checkpoints, 1)->replay, 0, NULL));
+
+	sdb_free (db);
+	r_debug_session_free (s);
+	r_debug_session_free (ref);
+	mu_end;
+}
+
 static bool test_session_replay_apply(void) {
-#if R2__UNIX__
+#if HAVE_PTY
 	RDebugSession *session = r_debug_session_new ();
 	mu_assert ("session", session != NULL);
 	RDebugCheckpoint checkpoint = {0};
@@ -330,6 +398,7 @@ static bool test_session_replay_apply(void) {
 int all_tests(void) {
 	mu_run_test (test_session_save);
 	mu_run_test (test_session_load);
+	mu_run_test (test_session_branch_roundtrip);
 	mu_run_test (test_session_replay_apply);
 	return tests_passed != tests_run;
 }

@@ -17,7 +17,11 @@ static int cmp_cnum_mem(const RDebugChangeMem *a, const RDebugChangeMem *b) {
 }
 
 static int cmp_cnum_chkpt(const RDebugCheckpoint *a, const RDebugCheckpoint *b) {
-	return (a->cnum > b->cnum) - (a->cnum < b->cnum);
+	int cmp = (a->cnum > b->cnum) - (a->cnum < b->cnum);
+	if (cmp) {
+		return cmp;
+	}
+	return (a->id > b->id) - (a->id < b->id);
 }
 
 static int cmp_int_fd(const void *a, const void *b) {
@@ -477,7 +481,7 @@ static void _restore_memory(RDebug *dbg, ut32 cnum) {
 
 static RDebugCheckpoint *_get_checkpoint_before(RDebugSession *session, ut32 cnum) {
 	RDebugCheckpoint *checkpoint = NULL;
-	ut64 index = RVecDebugCheckpoint_upper_bound (session->checkpoints, &(RDebugCheckpoint){ .cnum = (int)cnum }, cmp_cnum_chkpt);
+	ut64 index = RVecDebugCheckpoint_upper_bound (session->checkpoints, &(RDebugCheckpoint){ .cnum = (int)cnum, .id = UT64_MAX }, cmp_cnum_chkpt);
 	if (index > 0 && index <= RVecDebugCheckpoint_length (session->checkpoints)) {
 		checkpoint = RVecDebugCheckpoint_at (session->checkpoints, index - 1);
 	}
@@ -696,7 +700,7 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 	RListIter *iter;
 
 	R_VEC_FOREACH (checkpoints, chkpt) {
-		// 0x<cnum>={
+		// 0x<id>={
 		//   registers:{ "<RRegisterType>":<RRegArena>, ...},
 		//   snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
 		// }
@@ -706,6 +710,7 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 		}
 		pj_o (j);
 		pj_kn (j, "id", chkpt->id);
+		pj_kn (j, "cnum", chkpt->cnum);
 		if (chkpt->parent_id != UT64_MAX) {
 			pj_kn (j, "parent", chkpt->parent_id);
 		} else {
@@ -780,7 +785,7 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 		pj_end (j);
 
 		pj_end (j);
-		r_strf_var (key, 32, "0x%x", chkpt->cnum);
+		r_strf_var (key, 32, "0x%"PFMT64x, chkpt->id);
 		sdb_set (db, key, pj_string (j), 0);
 		pj_free (j);
 	}
@@ -799,7 +804,9 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
  *     0x<addr>={ "size":<size_t>, "a":[<RDebugChangeMem>]}
  *
  *   /checkpoints
- *     0x<cnum>={
+ *     0x<id>={
+ *       id:<ut64>,
+ *       cnum:<int>,
  *       registers:{ "<RRegisterType>":<RRegArena>, ...},
  *       snaps:{ "size":<size_t>, "a":[<RDebugSnap>]}
  *     }
@@ -986,7 +993,7 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 	sdb_foreach (db, deserialize_registers_cb, registers);
 }
 
-static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
+static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v) {
 	const RJson *child;
 	char *json_str = strdup (v);
 	if (!json_str) {
@@ -1000,15 +1007,23 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 
 	RVecDebugCheckpoint *checkpoints = user;
 	RDebugCheckpoint checkpoint = {0};
-	checkpoint.cnum = (int)sdb_atoi (cnum);
-	checkpoint.id = checkpoint.cnum;
+	checkpoint.id = sdb_atoi (id);
 	checkpoint.parent_id = UT64_MAX;
 
 	// Extract RRegArena's from "registers"
 	const RJson *id_json = r_json_get (chkpt_json, "id");
-	if (id_json && id_json->type == R_JSON_INTEGER) {
-		checkpoint.id = id_json->num.u_value;
+	if (!id_json || id_json->type != R_JSON_INTEGER || id_json->num.u_value != checkpoint.id) {
+		free (json_str);
+		r_json_free (chkpt_json);
+		return true;
 	}
+	const RJson *cnum_json = r_json_get (chkpt_json, "cnum");
+	if (!cnum_json || cnum_json->type != R_JSON_INTEGER) {
+		free (json_str);
+		r_json_free (chkpt_json);
+		return true;
+	}
+	checkpoint.cnum = cnum_json->num.s_value;
 	const RJson *parent_json = r_json_get (chkpt_json, "parent");
 	if (parent_json) {
 		if (parent_json->type == R_JSON_INTEGER) {
@@ -1098,14 +1113,16 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		snap->user = userj->num.s_value;
 		snap->shared = sharedj->num.u_value;
 
-		r_list_append (checkpoint.snaps, snap);
-	}
+			r_list_append (checkpoint.snaps, snap);
+		}
+	{
+		const RJson *replay_json;
 replay:
-	const RJson *replay_json = r_json_get (chkpt_json, "replay");
-	if (replay_json && replay_json->type == R_JSON_ARRAY) {
-		for (child = replay_json->children.first; child; child = child->next) {
-			const RJson *fdj = r_json_get (child, "fd");
-			CHECK_TYPE (fdj, R_JSON_INTEGER);
+		replay_json = r_json_get (chkpt_json, "replay");
+		if (replay_json && replay_json->type == R_JSON_ARRAY) {
+			for (child = replay_json->children.first; child; child = child->next) {
+				const RJson *fdj = r_json_get (child, "fd");
+				CHECK_TYPE (fdj, R_JSON_INTEGER);
 			const RJson *consumedj = r_json_get (child, "consumed");
 			CHECK_TYPE (consumedj, R_JSON_INTEGER);
 			const RJson *hexj = r_json_get (child, "hex");
@@ -1123,7 +1140,8 @@ replay:
 				continue;
 			}
 			stream->consumed = consumedj->num.u_value;
-			ht_up_insert (checkpoint.replay, (ut64)(ut32)stream->fd, stream);
+				ht_up_insert (checkpoint.replay, (ut64)(ut32)stream->fd, stream);
+			}
 		}
 	}
 	free (json_str);
@@ -1134,6 +1152,7 @@ replay:
 
 static void deserialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 	sdb_foreach (db, deserialize_checkpoints_cb, checkpoints);
+	RVecDebugCheckpoint_sort (checkpoints, cmp_cnum_chkpt);
 }
 
 static bool session_sdb_load_ns(Sdb *db, const char *nspath, const char *filename) {
@@ -1212,12 +1231,19 @@ R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db) {
 }
 
 R_API bool r_debug_session_load(RDebug *dbg, const char *path) {
+	RDebugSession *session;
 	Sdb *db = session_sdb_load (path);
 	if (!db) {
 		return false;
 	}
-	r_debug_session_deserialize (dbg->session, db);
-	// Restore debugger to the beginning of the session
+	session = r_debug_session_new ();
+	if (!session) {
+		sdb_free (db);
+		return false;
+	}
+	r_debug_session_deserialize (session, db);
+	r_debug_session_free (dbg->session);
+	dbg->session = session;
 	r_debug_session_restore_reg_mem (dbg, 0);
 	sdb_free (db);
 	return true;

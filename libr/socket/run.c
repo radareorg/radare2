@@ -33,6 +33,7 @@
 
 #if R2__UNIX__
 #include <sys/ioctl.h>
+#include <unistd.h>
 #ifndef __wasi__
 #include <sys/resource.h>
 #include <grp.h>
@@ -470,11 +471,6 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	close (saved_stdout);
 	return 0;
 #else
-#ifdef _MSC_VER
-#pragma message("TODO: handle_redirection_proc: Not implemented for this platform")
-#else
-#warning handle_redirection_proc : unimplemented for this platform
-#endif
 	return -1;
 #endif
 }
@@ -839,17 +835,18 @@ R_API const char *r_run_help(void) {
 }
 
 static bool run_replay_profile_valid(RRunProfile *p) {
+	const int stdin_fd = 0;
 	if (!p || !p->replay_fds) {
 		return true;
 	}
 	RRunReplayFd *rf;
 	RListIter *it;
 	r_list_foreach (p->replay_fds, it, rf) {
-		if (rf->target_fd == STDIN_FILENO && R_STR_ISNOTEMPTY (p->_stdin)) {
+		if (rf->target_fd == stdin_fd && R_STR_ISNOTEMPTY (p->_stdin)) {
 			R_LOG_ERROR ("replayfd0 conflicts with stdin redirection");
 			return false;
 		}
-		if (rf->target_fd == STDIN_FILENO && R_STR_ISNOTEMPTY (p->_stdio)) {
+		if (rf->target_fd == stdin_fd && R_STR_ISNOTEMPTY (p->_stdio)) {
 			R_LOG_ERROR ("replayfd0 conflicts with stdio redirection");
 			return false;
 		}

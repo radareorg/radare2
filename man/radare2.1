@@ -126,6 +126,24 @@ Type '?' for help
 To enter visual mode use the 'V' command. Then press '?' for help
 .Sh DEBUGGER
 In r2 the debugger commands are implemented under the 'd' command. Type 'd?' for help
+.Pp
+Useful debugger additions include:
+.Bl -tag -width Fl
+.It Cm e dbg.fasttime=true
+Virtualize supported timer syscalls during
+.Cm dc
+on native Linux backends so sleep-heavy targets can continue without waiting in real time.
+.It Cm dts+
+Start recording reversible debugger session state.
+.It Cm dtsc Op Ar label
+Create a checkpoint from the current live state. Checkpoints carry a stable id and may branch from the current checkpoint.
+.It Cm dtsr Ar id
+Restore a checkpoint by id and continue from that branch.
+.It Cm dtst Ar dir No / Cm dtsf Ar dir
+Save and load the current debug session, including checkpoint ids, parent links, and replay streams.
+.It Cm dtsw Ar id Ar fd Ar hex No / Cm dtsra Ar id Op Ar fd No / Cm dtswj
+Queue replay bytes on a checkpoint file descriptor, apply them on restore, and inspect replay state in JSON form.
+.El
 .Sh ENVIRONMENT
  R2_ARGS           run radare2 with defined arguments in environment and ignore cli ones
  R2_IGNVER         load plugins ignoring the specified version. (be careful)
