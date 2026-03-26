@@ -2606,6 +2606,7 @@ static void do_unkjmp_search(RCore *core, struct search_parameters *param, bool 
 	param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
 	if (r_list_empty (param->boundaries)) {
 		where = r_config_get (core->config, "anal.in");
+		r_list_free (param->boundaries);
 		param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
 	}
 	if (!core->anal->esil) {
@@ -2799,6 +2800,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 	param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
 	if (r_list_empty (param->boundaries)) {
 		where = r_config_get (core->config, "anal.in");
+		r_list_free (param->boundaries);
 		param->boundaries = r_core_get_boundaries_prot (core, R_PERM_X, where, "search");
 	}
 	ut64 at;
