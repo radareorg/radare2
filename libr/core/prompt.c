@@ -405,7 +405,5 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 			p++;
 		}
 	}
-	char *res = r_strbuf_drain (sb);
-	r_str_trim (res);
-	return res;
+	return r_strbuf_drain (sb);
 }
