@@ -9,12 +9,16 @@
 #include <r_cons.h>
 #include <r_hash.h>
 #include <r_util.h>
+#include <r_util/r_buf.h>
 #include <r_reg.h>
 #include <r_egg.h>
 #include <r_bp.h>
 #include <r_cmd.h>
 #include <r_io.h>
 #include <r_syscall.h>
+#if R2__UNIX__
+#include <unistd.h>
+#endif
 
 #include <r_config.h>
 #include "r_bind.h"
@@ -189,16 +193,174 @@ typedef struct {
 	ut8 data;
 } RDebugChangeMem;
 
+typedef struct r_debug_replay_stream_t {
+	int fd;
+	ut64 consumed;
+	RBuffer *data;
+	char *label;
+} RDebugReplayStream;
+
+typedef enum {
+	R_DEBUG_REPLAY_BINDING_NONE = 0,
+	R_DEBUG_REPLAY_BINDING_PTY = 1,
+} RDebugReplayBindingKind;
+
+typedef struct r_debug_replay_binding_t {
+	int fd;
+	int kind; /* RDebugReplayBindingKind */
+	int host_fd;
+	char *slave_name;
+	bool owned;
+	bool resettable;
+	bool writable;
+} RDebugReplayBinding;
+
+static inline void r_debug_replay_stream_free(RDebugReplayStream *stream) {
+	if (!stream) {
+		return;
+	}
+	if (stream->data) {
+		r_buf_fini (stream->data);
+		free (stream->data);
+	}
+	stream->data = NULL;
+	free (stream->label);
+	stream->label = NULL;
+	free (stream);
+}
+
+static inline void r_debug_replay_binding_free(RDebugReplayBinding *binding) {
+	if (!binding) {
+		return;
+	}
+	free (binding->slave_name);
+	binding->slave_name = NULL;
+	if (binding->host_fd >= 0) {
+		close (binding->host_fd);
+		binding->host_fd = -1;
+	}
+	free (binding);
+}
+
+typedef struct r_debug_fasttime_thread_t {
+	bool in_syscall;
+	bool skip_timer;
+	int pending_syscall;
+} RDebugFasttimeThread;
+
+static inline void r_debug_fasttime_thread_free(RDebugFasttimeThread *thread_state) {
+	free (thread_state);
+}
+
+typedef struct r_debug_state_reg_spec_t {
+	char *name;
+} RDebugStateRegSpec;
+
+static inline void r_debug_state_reg_spec_free(RDebugStateRegSpec *spec) {
+	if (!spec) {
+		return;
+	}
+	free (spec->name);
+	free (spec);
+}
+
+typedef struct r_debug_state_mem_spec_t {
+	ut64 addr;
+	ut32 size;
+	char *label;
+} RDebugStateMemSpec;
+
+static inline void r_debug_state_mem_spec_free(RDebugStateMemSpec *spec) {
+	if (!spec) {
+		return;
+	}
+	free (spec->label);
+	free (spec);
+}
+
+typedef struct r_debug_state_request_t {
+	RList *registers; /* RDebugStateRegSpec* */
+	RList *memory; /* RDebugStateMemSpec* */
+	bool include_threads;
+} RDebugStateRequest;
+
+typedef struct r_debug_state_reg_value_t {
+	char *name;
+	ut64 value;
+	bool found;
+} RDebugStateRegValue;
+
+static inline void r_debug_state_reg_value_free(RDebugStateRegValue *value) {
+	if (!value) {
+		return;
+	}
+	free (value->name);
+	free (value);
+}
+
+typedef struct r_debug_state_mem_value_t {
+	ut64 addr;
+	ut32 size;
+	char *label;
+	ut8 *bytes;
+	bool ok;
+} RDebugStateMemValue;
+
+static inline void r_debug_state_mem_value_free(RDebugStateMemValue *value) {
+	if (!value) {
+		return;
+	}
+	free (value->label);
+	free (value->bytes);
+	free (value);
+}
+
+typedef struct r_debug_state_thread_t {
+	int pid;
+	int tid;
+	char status;
+} RDebugStateThread;
+
+static inline void r_debug_state_thread_free(RDebugStateThread *thread) {
+	free (thread);
+}
+
+typedef struct r_debug_state_snapshot_t {
+	ut64 pc;
+	int pid;
+	int tid;
+	int reason_type;
+	RList *registers; /* RDebugStateRegValue* */
+	RList *memory; /* RDebugStateMemValue* */
+	RList *threads; /* RDebugStateThread* */
+} RDebugStateSnapshot;
+
+static inline void r_debug_state_snapshot_free(RDebugStateSnapshot *snapshot) {
+	if (!snapshot) {
+		return;
+	}
+	r_list_free (snapshot->registers);
+	r_list_free (snapshot->memory);
+	r_list_free (snapshot->threads);
+	free (snapshot);
+}
+
 typedef struct r_debug_checkpoint_t {
+	ut64 id;
+	ut64 parent_id;
 	int cnum;
+	char *label;
 	RRegArena *arena[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
+	HtUP *replay; // fd -> RDebugReplayStream*
 } RDebugCheckpoint;
 
 static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
 	if (!chkpt) {
 		return;
 	}
+	free (chkpt->label);
+	chkpt->label = NULL;
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_reg_arena_free (chkpt->arena[i]);
@@ -206,6 +368,8 @@ static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
 	}
 	r_list_free (chkpt->snaps);
 	chkpt->snaps = NULL;
+	ht_up_free (chkpt->replay);
+	chkpt->replay = NULL;
 }
 
 R_VEC_TYPE_WITH_FINI (RVecDebugCheckpoint, RDebugCheckpoint, r_debug_checkpoint_fini_vec);
@@ -217,8 +381,14 @@ typedef struct r_debug_session_t {
 	ut32 maxcnum;
 	RDebugCheckpoint *cur_chkpt;
 	RVecDebugCheckpoint *checkpoints;
+	HtUP *checkpoint_index; /* checkpoint_id -> index + 1 */
 	HtUP *memory; /* RVecDebugChangeMem */
 	HtUP *registers; /* RVecDebugChangeReg */
+	ut64 current_checkpoint_id;
+	ut64 next_checkpoint_id;
+	ut64 replay_scratch_addr;
+	ut32 replay_scratch_size;
+	bool linear_history_valid;
 	int reasontype /*RDebugReasonType*/;
 	RBreakpointItem *bp;
 } RDebugSession;
@@ -399,6 +569,8 @@ typedef struct r_debug_t {
 	bool consbreak; /* SIGINT handle for attached processes */
 	bool continue_all_threads;
 	int coredump_filter; /* override coredump filter, -1 to use default */
+	bool fasttime; /* virtualize timer syscalls during continue */
+	bool fasttime_suppress; /* disable fasttime during explicit syscall tracing */
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */
@@ -441,6 +613,8 @@ typedef struct r_debug_t {
 	bool trace_continue;
 	RAnalOp *cur_op;
 	RDebugSession *session;
+	HtUP *replay_bindings; /* fd -> RDebugReplayBinding* */
+	HtUP *fasttime_threads; /* tid -> RDebugFasttimeThread* */
 
 	Sdb *sgnls;
 	RCoreBind coreb;
@@ -579,6 +753,9 @@ R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, co
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *value);
+R_API bool r_debug_reg_set_alias(RDebug *dbg, RRegAlias alias, ut64 num);
+R_API ut64 r_debug_reg_get_alias(RDebug *dbg, RRegAlias alias);
+R_API ut64 r_debug_reg_get_alias_err(RDebug *dbg, RRegAlias alias, bool *err, utX *value);
 
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack);
 R_API bool r_debug_map_sync(RDebug *dbg);
@@ -635,6 +812,24 @@ R_API void r_debug_esil_prestep(RDebug *d, int p);
 /* record & replay */
 // R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
 R_API bool r_debug_add_checkpoint(RDebug *dbg);
+R_API ut64 r_debug_checkpoint_create(RDebug *dbg, ut64 parent_id, const char *label);
+R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, ut64 checkpoint_id);
+R_API bool r_debug_session_restore_checkpoint(RDebug *dbg, ut64 checkpoint_id);
+R_API void r_debug_session_list_checkpoints(RDebug *dbg, int mode);
+R_API bool r_debug_session_checkpoint_replay_append(RDebugSession *session, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len, const char *label);
+R_API bool r_debug_session_checkpoint_replay_clear(RDebugSession *session, ut64 checkpoint_id, int fd);
+R_API bool r_debug_session_checkpoint_replay_apply(RDebug *dbg, ut64 checkpoint_id, int fd);
+R_API void r_debug_session_list_checkpoint_replay(RDebug *dbg, int mode);
+R_API void r_debug_session_fini_runtime(RDebug *dbg);
+R_API void r_debug_replay_bindings_reset(RDebug *dbg);
+R_API bool r_debug_replay_binding_add_pty(RDebug *dbg, int fd, int host_fd, const char *slave_name);
+R_API RDebugReplayBinding *r_debug_replay_binding_get(RDebug *dbg, int fd);
+R_API void r_debug_fasttime_reset(RDebug *dbg);
+R_API bool r_debug_fasttime_prepare_syscall_entry(RDebug *dbg, int tid, int syscall_num);
+R_API RDebugStateRequest *r_debug_state_request_parse_json(const char *json);
+R_API void r_debug_state_request_free(RDebugStateRequest *request);
+R_API RDebugStateSnapshot *r_debug_state_snapshot_collect(RDebug *dbg, const RDebugStateRequest *request);
+R_API char *r_debug_state_snapshot_to_json(const RDebugStateSnapshot *snapshot);
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data);
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);

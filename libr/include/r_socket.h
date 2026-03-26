@@ -225,6 +225,19 @@ R_API ut64 r_socket_rap_client_seek(RSocket *s, ut64 offset, int whence);
 
 /* run.c */
 #define R_RUN_PROFILE_NARGS 512
+typedef enum {
+	R_RUN_REPLAY_KIND_NONE = 0,
+	R_RUN_REPLAY_KIND_PTY = 1,
+} RRunReplayKind;
+
+typedef struct r_run_replay_fd_t {
+	int target_fd;
+	int kind; /* RRunReplayKind */
+	int parent_fd;
+	int child_fd;
+	char *slave_name;
+} RRunReplayFd;
+
 typedef struct r_run_profile_t {
 	char *_args[R_RUN_PROFILE_NARGS];
 	int _argc;
@@ -267,6 +280,7 @@ typedef struct r_run_profile_t {
 	int _nice;
 	bool _stderrout;
 	bool _noprogram;
+	RList *replay_fds; /* <RRunReplayFd *> */
 } RRunProfile;
 
 R_API RRunProfile *r_run_new(const char *R_NULLABLE str);
@@ -276,6 +290,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b);
 R_API const char *r_run_help(void);
 R_API bool r_run_config_env(RRunProfile *p);
 R_API bool r_run_start(RRunProfile *p);
+R_API bool r_run_prepare_replay(RRunProfile *p);
 R_API void r_run_reset(RRunProfile *p);
 R_API void r_run_fini(RRunProfile *p);
 R_API bool r_run_parsefile(RRunProfile *p, const char *b);

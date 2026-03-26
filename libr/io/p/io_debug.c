@@ -233,7 +233,7 @@ static void handle_posix_error(int err) {
 }
 #endif
 
-static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
+static RRunProfile* _build_run_profile(RIO *io, int bits, char **argv) {
 	char *expr = NULL;
 	int i;
 	RRunProfile *rp = r_run_new ("");
@@ -277,11 +277,6 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		r_run_parseline (rp, expr = strdup ("bits=32"));
 	}
 	free (expr);
-	if (!r_run_config_env (rp)) {
-		R_LOG_ERROR ("Cannot configure the environment");
-		r_run_free (rp);
-		return NULL;
-	}
 	return rp;
 }
 
@@ -332,10 +327,16 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		posix_spawn_file_actions_destroy (&fileActions);
 		return -1;
 	}
-	RRunProfile *rp = _get_run_profile (io, bits, argv);
+	RRunProfile *rp = _build_run_profile (io, bits, argv);
 	if (!rp) {
 		r_str_argv_free (argv);
 		posix_spawn_file_actions_destroy (&fileActions);
+		return -1;
+	}
+	if (!r_run_config_env (rp)) {
+		r_str_argv_free (argv);
+		posix_spawn_file_actions_destroy (&fileActions);
+		r_run_free (rp);
 		return -1;
 	}
 	handle_posix_redirection (rp, &fileActions);
@@ -363,27 +364,40 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 
 #if (!(__APPLE__ && !__POWERPC__))
 typedef struct fork_child_data_t {
-	RIO *io;
-	int bits;
-	const char *cmd;
+	RRunProfile *rp;
 } fork_child_data;
+
+static void bind_replayfds_to_debugger(RIO *io, RRunProfile *rp) {
+	R_RETURN_IF_FAIL (io && io->coreb.core && rp);
+	if (!rp->replay_fds || r_list_empty (rp->replay_fds)) {
+		return;
+	}
+	RCore *core = io->coreb.core;
+	RDebug *dbg = core->dbg;
+	if (!dbg) {
+		return;
+	}
+	r_debug_replay_bindings_reset (dbg);
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (rp->replay_fds, it, rf) {
+		if (rf->kind == R_RUN_REPLAY_KIND_PTY && rf->parent_fd >= 0) {
+			if (!r_debug_replay_binding_add_pty (dbg, rf->target_fd, rf->parent_fd, rf->slave_name)) {
+				close (rf->parent_fd);
+			}
+			rf->parent_fd = -1;
+		}
+	}
+}
 
 static void fork_child_callback(void *user) {
 	fork_child_data *data = user;
-	char **argv = r_str_argv (data->cmd, NULL);
-	if (!argv) {
-		exit (1);
-	}
 	r_sys_clearenv ();
-	RRunProfile *rp = _get_run_profile (data->io, data->bits, argv);
-	if (!rp) {
-		r_str_argv_free (argv);
+	if (!r_run_config_env (data->rp)) {
 		exit (1);
 	}
 	trace_me ();
-	r_run_start (rp);
-	r_run_free (rp);
-	r_str_argv_free (argv);
+	r_run_start (data->rp);
 	exit (1);
 }
 
@@ -393,16 +407,38 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 	int ret, status, child_pid;
 	void *bed = NULL;
 	fork_child_data child_data;
-	child_data.io = io;
-	child_data.bits = bits;
-	child_data.cmd = cmd;
+	if (io && io->coreb.core) {
+		RCore *core = io->coreb.core;
+		if (core->dbg) {
+			r_debug_replay_bindings_reset (core->dbg);
+		}
+	}
+	char *ncmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup (cmd);
+	char **argv = r_str_argv (ncmd, NULL);
+	if (!argv) {
+		free (ncmd);
+		return -1;
+	}
+	RRunProfile *rp = _build_run_profile (io, bits, argv);
+	r_str_argv_free (argv);
+	free (ncmd);
+	if (!rp) {
+		return -1;
+	}
+	if (!r_run_prepare_replay (rp)) {
+		r_run_free (rp);
+		return -1;
+	}
+	child_data.rp = rp;
 	child_pid = r_io_ptrace_fork (io, fork_child_callback, &child_data);
 	if (child_pid == -1 || child_pid == 0) {
+		r_run_free (rp);
 		r_sys_perror ("fork_and_ptraceme");
 		return -1;
 	} do {
 		ret = waitpid (child_pid, &status, WNOHANG);
 		if (ret == -1) {
+			r_run_free (rp);
 			r_sys_perror ("waitpid");
 			return -1;
 		}
@@ -411,22 +447,23 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 		r_cons_sleep_end (cons, bed);
 	} while (ret != child_pid && !r_cons_is_breaked (cons));
 	if (!WIFSTOPPED (status)) {
+		r_run_free (rp);
 		return -1;
 	}
 	if (WEXITSTATUS (status) == MAGIC_EXIT || r_cons_is_breaked (cons)) {
 		R_LOG_INFO ("Killing child process %d due to an error", (int)child_pid);
 		kill (child_pid, SIGSTOP);
+		r_run_free (rp);
 		return -1;
 	}
+	bind_replayfds_to_debugger (io, rp);
+	r_run_free (rp);
 	return child_pid;
 }
 #endif
 
 static int fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
-	char *_eff_cmd = io->args ? r_str_appendf (strdup (cmd), " %s", io->args) : strdup (cmd);
-	int r = platform_fork_and_ptraceme (io, bits, _eff_cmd);
-	free (_eff_cmd);
-	return r;
+	return platform_fork_and_ptraceme (io, bits, cmd);
 }
 #endif
 

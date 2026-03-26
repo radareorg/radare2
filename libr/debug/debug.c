@@ -395,6 +395,8 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
 	dbg->glibc_version_d = 0; /* no default glibc version */
 	dbg->coredump_filter = -1;
+	dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
+	dbg->fasttime_threads = ht_up_new (NULL, NULL, NULL);
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
@@ -403,6 +405,81 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->bp->baddr = 0;
 	}
 	return dbg;
+}
+
+static bool free_replay_binding_cb(void *user, const ut64 key, const void *value) {
+	(void)user;
+	(void)key;
+	r_debug_replay_binding_free ((RDebugReplayBinding *)value);
+	return true;
+}
+
+static bool free_fasttime_thread_cb(void *user, const ut64 key, const void *value) {
+	(void)user;
+	(void)key;
+	r_debug_fasttime_thread_free ((RDebugFasttimeThread *)value);
+	return true;
+}
+
+static RDebugFasttimeThread *fasttime_thread_state(RDebug *dbg, int tid, bool create) {
+	R_RETURN_VAL_IF_FAIL (dbg && tid > 0, NULL);
+	if (!dbg->fasttime_threads) {
+		if (!create) {
+			return NULL;
+		}
+		dbg->fasttime_threads = ht_up_new (NULL, NULL, NULL);
+		if (!dbg->fasttime_threads) {
+			return NULL;
+		}
+	}
+	RDebugFasttimeThread *thread_state = ht_up_find (dbg->fasttime_threads, (ut64)(ut32)tid, NULL);
+	if (!thread_state && create) {
+		thread_state = R_NEW0 (RDebugFasttimeThread);
+		if (!thread_state) {
+			return NULL;
+		}
+		thread_state->pending_syscall = -1;
+		ht_up_insert (dbg->fasttime_threads, (ut64)(ut32)tid, thread_state);
+	}
+	return thread_state;
+}
+
+static void fasttime_clear_thread_state(RDebug *dbg, int tid) {
+	R_RETURN_IF_FAIL (dbg && dbg->fasttime_threads && tid > 0);
+	RDebugFasttimeThread *thread_state = ht_up_find (dbg->fasttime_threads, (ut64)(ut32)tid, NULL);
+	if (!thread_state) {
+		return;
+	}
+	thread_state->in_syscall = false;
+	thread_state->skip_timer = false;
+	thread_state->pending_syscall = -1;
+}
+
+static bool fasttime_is_timer_syscall(RDebug *dbg, int syscall_num) {
+	R_RETURN_VAL_IF_FAIL (dbg, false);
+	if (!dbg->anal || !dbg->anal->syscall || syscall_num < 0) {
+		return false;
+	}
+	const int nanosleep_num = r_syscall_get_num (dbg->anal->syscall, "nanosleep");
+	const int clock_nanosleep_num = r_syscall_get_num (dbg->anal->syscall, "clock_nanosleep");
+	return syscall_num == nanosleep_num || syscall_num == clock_nanosleep_num;
+}
+
+R_API bool r_debug_fasttime_prepare_syscall_entry(RDebug *dbg, int tid, int syscall_num) {
+	R_RETURN_VAL_IF_FAIL (dbg && tid > 0, false);
+	RDebugFasttimeThread *thread_state = fasttime_thread_state (dbg, tid, true);
+	if (!thread_state) {
+		return false;
+	}
+	thread_state->in_syscall = true;
+	thread_state->pending_syscall = syscall_num;
+	thread_state->skip_timer = dbg->fasttime && !dbg->fasttime_suppress
+		&& fasttime_is_timer_syscall (dbg, syscall_num);
+	if (thread_state->skip_timer && !r_debug_reg_set_alias (dbg, R_REG_ALIAS_SN, UT64_MAX)) {
+		thread_state->skip_timer = false;
+		return false;
+	}
+	return true;
 }
 
 static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
@@ -435,6 +512,14 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_debug_signal_fini (dbg);
 		r_debug_trace_free (dbg->trace);
 		r_list_free (dbg->snaps);
+		if (dbg->replay_bindings) {
+			ht_up_foreach (dbg->replay_bindings, free_replay_binding_cb, NULL);
+			ht_up_free (dbg->replay_bindings);
+		}
+		if (dbg->fasttime_threads) {
+			ht_up_foreach (dbg->fasttime_threads, free_fasttime_thread_cb, NULL);
+			ht_up_free (dbg->fasttime_threads);
+		}
 		r_debug_session_free (dbg->session);
 		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
@@ -445,6 +530,61 @@ R_API void r_debug_free(RDebug *dbg) {
 		free (dbg->glob_unlibs);
 		free (dbg);
 	}
+}
+
+R_API void r_debug_replay_bindings_reset(RDebug *dbg) {
+	R_RETURN_IF_FAIL (dbg);
+	if (!dbg->replay_bindings) {
+		dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
+		return;
+	}
+	ht_up_foreach (dbg->replay_bindings, free_replay_binding_cb, NULL);
+	ht_up_free (dbg->replay_bindings);
+	dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
+}
+
+R_API bool r_debug_replay_binding_add_pty(RDebug *dbg, int fd, int host_fd, const char *slave_name) {
+	R_RETURN_VAL_IF_FAIL (dbg && fd >= 0 && host_fd >= 0, false);
+	if (!dbg->replay_bindings) {
+		dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
+		if (!dbg->replay_bindings) {
+			return false;
+		}
+	}
+	RDebugReplayBinding *old = ht_up_find (dbg->replay_bindings, (ut64)(ut32)fd, NULL);
+	if (old) {
+		r_debug_replay_binding_free (old);
+		ht_up_delete (dbg->replay_bindings, (ut64)(ut32)fd);
+	}
+	RDebugReplayBinding *binding = R_NEW0 (RDebugReplayBinding);
+	if (!binding) {
+		return false;
+	}
+	binding->fd = fd;
+	binding->kind = R_DEBUG_REPLAY_BINDING_PTY;
+	binding->host_fd = host_fd;
+	binding->slave_name = R_STR_ISNOTEMPTY (slave_name)? strdup (slave_name): NULL;
+	binding->owned = true;
+	binding->resettable = true;
+	binding->writable = true;
+	ht_up_insert (dbg->replay_bindings, (ut64)(ut32)fd, binding);
+	return true;
+}
+
+R_API RDebugReplayBinding *r_debug_replay_binding_get(RDebug *dbg, int fd) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->replay_bindings && fd >= 0, NULL);
+	return ht_up_find (dbg->replay_bindings, (ut64)(ut32)fd, NULL);
+}
+
+R_API void r_debug_fasttime_reset(RDebug *dbg) {
+	R_RETURN_IF_FAIL (dbg);
+	if (!dbg->fasttime_threads) {
+		dbg->fasttime_threads = ht_up_new (NULL, NULL, NULL);
+		return;
+	}
+	ht_up_foreach (dbg->fasttime_threads, free_fasttime_thread_cb, NULL);
+	ht_up_free (dbg->fasttime_threads);
+	dbg->fasttime_threads = ht_up_new (NULL, NULL, NULL);
 }
 
 R_API bool r_debug_attach(RDebug *dbg, int pid) {
@@ -459,6 +599,7 @@ R_API bool r_debug_attach(RDebug *dbg, int pid) {
 		if (ret) {
 			dbg->pid = pid;
 			dbg->tid = pid;
+			r_debug_fasttime_reset (dbg);
 			// dbg->pid = pid;
 			// r_debug_select (dbg, pid, ret);
 			r_debug_select (dbg, dbg->pid, dbg->tid);
@@ -636,6 +777,7 @@ R_API bool r_debug_detach(RDebug *dbg, int pid) {
 	if (plugin && plugin->detach) {
 		ret = plugin->detach (dbg, pid);
 		if (dbg->pid == pid) {
+			r_debug_fasttime_reset (dbg);
 			dbg->pid = -1;
 			dbg->tid = -1;
 		}
@@ -1158,6 +1300,10 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("linear session history is disabled after checkpoint restore");
+		return false;
+	}
 	if (cnum > dbg->session->maxcnum) {
 		R_LOG_ERROR ("out of cnum range");
 		return false;
@@ -1170,6 +1316,10 @@ R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 
 R_API int r_debug_step_back(RDebug *dbg, int steps) {
 	R_RETURN_VAL_IF_FAIL (dbg, -1);
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("step back is unavailable after checkpoint restore");
+		return -1;
+	}
 	if (steps > dbg->session->cnum) {
 		steps = dbg->session->cnum;
 	}
@@ -1196,7 +1346,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 
 	// If the debugger is not at the end of the changes
 	// Go to the end or the next breakpoint in the changes
-	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
+	if (dbg->session && dbg->session->linear_history_valid && dbg->session->cnum != dbg->session->maxcnum) {
 		bool has_bp = false;
 		RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 		RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
@@ -1506,6 +1656,10 @@ R_API bool r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
 }
 
 R_API bool r_debug_continue_back(RDebug *dbg) {
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("continue back is unavailable after checkpoint restore");
+		return false;
+	}
 	int cnum;
 	bool has_bp = false;
 
@@ -1576,24 +1730,32 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
 	int i, reg;
+	const bool prev_fasttime_suppress = dbg->fasttime_suppress;
+	dbg->fasttime_suppress = true;
 	if (!dbg->current || r_debug_is_dead (dbg)) {
+		dbg->fasttime_suppress = prev_fasttime_suppress;
 		return -1;
 	}
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && !plugin->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
-		return show_syscall (dbg, "A0");
+		reg = show_syscall (dbg, "A0");
+		dbg->fasttime_suppress = prev_fasttime_suppress;
+		fasttime_clear_thread_state (dbg, dbg->tid);
+		return reg;
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 		R_LOG_ERROR ("--> cannot read registers");
+		dbg->fasttime_suppress = prev_fasttime_suppress;
 		return -1;
 	}
 	bool err;
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
 		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");
+		dbg->fasttime_suppress = prev_fasttime_suppress;
 		return -1;
 	}
 	for (;;) {
@@ -1624,6 +1786,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			R_LOG_ERROR ("cannot sync regs, process is probably dead");
+			dbg->fasttime_suppress = prev_fasttime_suppress;
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1636,15 +1799,20 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			continue;
 		}
 		if (n_sc == 0) {
+			dbg->fasttime_suppress = prev_fasttime_suppress;
+			fasttime_clear_thread_state (dbg, dbg->tid);
 			break;
 		}
 		for (i = 0; i < n_sc; i++) {
 			if (sc[i] == reg) {
+				dbg->fasttime_suppress = prev_fasttime_suppress;
+				fasttime_clear_thread_state (dbg, dbg->tid);
 				return reg;
 			}
 		}
 		// TODO: must use r_core_cmd(as)..import code from rcore
 	}
+	dbg->fasttime_suppress = prev_fasttime_suppress;
 	return -1;
 }
 
