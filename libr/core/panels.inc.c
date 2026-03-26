@@ -147,6 +147,77 @@ static const char *cache_white_list_cmds[] = {
 	"agf", "Help"
 };
 
+typedef struct {
+	const char *title;
+	const char *cmd;
+} PanelDbEntry;
+
+static const PanelDbEntry panels_db[] = {
+	{ "Symbols", "isq" },
+	{ "Stack", "pxr@r:SP" },
+	{ "Locals", "afvd" },
+	{ "Registers", "dr" },
+	{ "Bit Registers", "dr 1" },
+	{ "FPU Registers", "dr fpu;drf" },
+	{ "XMM Registers", "drm" },
+	{ "YMM Registers", "drmy" },
+	{ "RegisterRefs", "drr" },
+	{ "RegisterCols", "dr=" },
+	{ "Disassembly", "pd" },
+	{ "Disassemble Summary", "pdsf" },
+	{ "Decompiler", "pdc" },
+	{ "Decompiler With Offsets", "pdco" },
+	{ "Graph", "agf" },
+	{ "Tiny Graph", "agft" },
+	{ "Info", "i" },
+	{ "Database", "k ***" },
+	{ "Console", "cat $console" },
+	{ "Hexdump", "xc $r*16" },
+	{ "Xrefs", "ax" },
+	{ "Xrefs Here", "ax." },
+	{ "Functions", "afl" },
+	{ "Function Calls", "aflm" },
+	{ "Comments", "CC" },
+	{ "Entropy", "p=e 100" },
+	{ "Entropy Fire", "p==e 100" },
+	{ "DRX", "drx" },
+	{ "Sections", "iSq" },
+	{ "Segments", "iSSq" },
+	{ "Strings in data sections", "izq" },
+	{ "Strings in the whole bin", "izzq" },
+	{ "Maps", "dm" },
+	{ "Modules", "dmm" },
+	{ "Backtrace", "dbt" },
+	{ "Breakpoints", "db" },
+	{ "Imports", "iiq" },
+	{ "Clipboard", "yx" },
+	{ "New", "o" },
+	{ "Var READ address", "afvR" },
+	{ "Var WRITE address", "afvW" },
+	{ "Summary", "pdsf" },
+	{ "Classes", "icq" },
+	{ "Methods", "ic" },
+	{ "Relocs", "ir" },
+	{ "Headers", "iH" },
+	{ "File Hashes", "it" }
+};
+
+typedef struct {
+	const char *cmd;
+	RPanelRotateCallback cb;
+} RotateEntry;
+
+typedef struct {
+	char *name;
+	RPanelAlmightyCallback cb;
+} ModalEntry;
+
+static RotateEntry rotate_entries[8];
+static int n_rotate_entries;
+
+static ModalEntry *modal_entries;
+static int n_modal_entries;
+
 static RCoreHelpMessage help_msg_panels = {
 	"|",        "split current panel vertically",
 	"-",        "split current panel horizontally",
@@ -424,8 +495,13 @@ static void r_panels_cache_white_list(RCore *core, RPanel *panel) {
 }
 
 static char *r_panels_search_db(RCore *core, const char *title) {
-	Sdb *db = core->panels->db;
-	return db ? sdb_get (db, title, 0) : NULL;
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (panels_db); i++) {
+		if (!strcmp (panels_db[i].title, title)) {
+			return strdup (panels_db[i].cmd);
+		}
+	}
+	return NULL;
 }
 
 static int r_panels_show_status(RCore *core, const char *msg) {
@@ -536,25 +612,6 @@ static void r_panels_set_cmd_str_cache(RCore *core, RPanel *p, char *s) {
 	set_dcb (core, p);
 	set_pcb (p);
 }
-
-#if 0
-static void r_panels_set_decompiler_cache(RCore *core, char *s) {
-	RAnalFunction *func = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
-	if (func) {
-		if (core->panels_root->cur_pdc_cache) {
-			sdb_ptr_set (core->panels_root->cur_pdc_cache, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
-		} else {
-			Sdb *sdb = sdb_new0 ();
-			const char *pdc_now = r_config_get (core->config, "cmd.pdc");
-			sdb_ptr_set (sdb, r_num_as_string (NULL, func->addr, false), strdup (s), 0);
-			core->panels_root->cur_pdc_cache = sdb;
-			if (!sdb_exists (core->panels_root->pdc_caches, pdc_now)) {
-				sdb_ptr_set (core->panels_root->pdc_caches, strdup (pdc_now), sdb, 0);
-			}
-		}
-	}
-}
-#endif
 
 static void r_panels_set_read_only(RCore *core, RPanel *p, const char * R_NULLABLE s) {
 	free (p->model->readOnly);
@@ -990,18 +1047,13 @@ static bool r_panels_check_panel_num(RCore *core) {
 }
 
 static void r_panels_set_rcb(RPanels *ps, RPanel *p) {
-	SdbKv *kv;
-	SdbListIter *sdb_iter;
-	SdbList *sdb_list = sdb_foreach_list (ps->rotate_db, false);
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		char *key =  sdbkv_key (kv);
-		if (!r_panels_check_panel_type (p, key)) {
-			continue;
+	int i;
+	for (i = 0; i < n_rotate_entries; i++) {
+		if (r_panels_check_panel_type (p, rotate_entries[i].cmd)) {
+			p->model->rotateCb = rotate_entries[i].cb;
+			return;
 		}
-		p->model->rotateCb = (RPanelRotateCallback)sdb_ptr_get (ps->rotate_db, key, 0);
-		break;
 	}
-	ls_free (sdb_list);
 }
 
 static void r_panels_init_panel_param(RCore *core, RPanel *p, const char *title, const char *cmd) {
@@ -1724,9 +1776,6 @@ static bool r_panels_init(RCore *core, RPanels *panels, int w, int h) {
 	panels->mouse_orig_x = 0;
 	panels->mouse_orig_y = 0;
 	panels->can = r_panels_create_new_canvas (core, w, h);
-	panels->db = sdb_new0 ();
-	panels->rotate_db = sdb_new0 ();
-	panels->modal_db = sdb_new0 ();
 	panels->mht = ht_pp_new (NULL, (HtPPKvFreeFunc)r_panels_mht_free_kv, (HtPPCalcSizeV)strlen);
 	panels->fun = PANEL_FUN_NOFUN;
 	panels->prevMode = PANEL_MODE_DEFAULT;
@@ -2624,11 +2673,11 @@ static bool r_panels_draw_modal(RCore *core, RModal *modal, int range_end, int s
 	return true;
 }
 
-static void r_panels_update_modal(RCore *core, Sdb *menu_db, RModal *modal, int delta) {
+static void r_panels_update_modal(RCore *core, RModal *modal, int delta) {
 	RPanels *panels = core->panels;
 	RConsCanvas *can = panels->can;
 	modal->data = r_strbuf_new (NULL);
-	int count = sdb_count (menu_db);
+	int count = n_modal_entries;
 	if (modal->idx >= count) {
 		modal->idx = 0;
 		modal->offset = 0;
@@ -2645,14 +2694,11 @@ static void r_panels_update_modal(RCore *core, Sdb *menu_db, RModal *modal, int 
 	} else if (modal->idx < modal->offset) {
 		modal->offset -= delta;
 	}
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
+	int i;
 	int max_h = R_MIN (modal->offset + modal->pos.h, count);
-	ls_foreach (l, iter, kv) {
-		if (r_panels_draw_modal (core, modal, max_h, i, sdbkv_key (kv))) {
-			i++;
+	for (i = 0; i < n_modal_entries; i++) {
+		if (!r_panels_draw_modal (core, modal, max_h, i, modal_entries[i].name)) {
+			break;
 		}
 	}
 	r_cons_gotoxy (core->cons, 0, 0);
@@ -2669,33 +2715,25 @@ static void r_panels_update_modal(RCore *core, Sdb *menu_db, RModal *modal, int 
 	r_panels_show_cursor (core);
 }
 
-static void r_panels_exec_modal(RCore *core, RPanel *panel, RModal *modal, Sdb *menu_db, RPanelLayout dir) {
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
-	ls_foreach (l, iter, kv) {
-		if (i++ == modal->idx) {
-			RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, sdbkv_key (kv), 0);
-			if (cb) {
-				cb (core, panel, dir, sdbkv_key (kv));
-			}
-			break;
+static void r_panels_exec_modal(RCore *core, RPanel *panel, RModal *modal, RPanelLayout dir) {
+	if (modal->idx >= 0 && modal->idx < n_modal_entries) {
+		RPanelAlmightyCallback cb = modal_entries[modal->idx].cb;
+		if (cb) {
+			cb (core, panel, dir, modal_entries[modal->idx].name);
 		}
 	}
 	panel->view->sy = 0;
 	panel->view->sx = 0;
 }
 
-static void r_panels_delete_modal(RCore *core, RModal *modal, Sdb *menu_db) {
-	SdbList *l = sdb_foreach_list (menu_db, true);
-	SdbKv *kv;
-	SdbListIter *iter;
-	int i = 0;
-	ls_foreach (l, iter, kv) {
-		if (i++ == modal->idx) {
-			sdb_remove (menu_db, sdbkv_key (kv), 0);
+static void r_panels_delete_modal(RCore *core, RModal *modal) {
+	if (modal->idx >= 0 && modal->idx < n_modal_entries) {
+		free (modal_entries[modal->idx].name);
+		int i;
+		for (i = modal->idx; i < n_modal_entries - 1; i++) {
+			modal_entries[i] = modal_entries[i + 1];
 		}
+		n_modal_entries--;
 	}
 }
 
@@ -2712,7 +2750,7 @@ static void r_panels_free_modal(RModal **modal) {
 	*modal = NULL;
 }
 
-static void r_panels_create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
+static void r_panels_create_modal(RCore *core, RPanel *panel) {
 	r_panels_set_cursor (core, false);
 	const int w = 40;
 	const int h = 20;
@@ -2723,7 +2761,7 @@ static void r_panels_create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 	int okey, key, cx, cy;
 	char *word = NULL;
 	RCons *cons = core->cons;
-	r_panels_update_modal (core, menu_db, modal, 1);
+	r_panels_update_modal (core, modal, 1);
 	while (modal) {
 		r_cons_set_raw (cons, true);
 		okey = r_cons_readchar (cons);
@@ -2737,7 +2775,14 @@ static void r_panels_create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 				} else {
 					word = r_panels_get_word_from_canvas_for_menu (core, core->panels, cx, cy);
 					if (word) {
-						RPanelAlmightyCallback cb = sdb_ptr_get (menu_db, word, 0);
+						RPanelAlmightyCallback cb = NULL;
+						int mi;
+						for (mi = 0; mi < n_modal_entries; mi++) {
+							if (!strcmp (modal_entries[mi].name, word)) {
+								cb = modal_entries[mi].cb;
+								break;
+							}
+						}
 						if (cb) {
 							cb (core, panel, PANEL_LAYOUT_NONE, word);
 							r_panels_free_modal (&modal);
@@ -2765,36 +2810,36 @@ static void r_panels_create_modal(RCore *core, RPanel *panel, Sdb *menu_db) {
 			break;
 		case 'j':
 			modal->idx++;
-			r_panels_update_modal (core, menu_db, modal, 1);
+			r_panels_update_modal (core, modal, 1);
 			break;
 		case 'k':
 			modal->idx--;
-			r_panels_update_modal (core, menu_db, modal, 1);
+			r_panels_update_modal (core, modal, 1);
 			break;
 		case 'J':
 			modal->idx += 5;
-			r_panels_update_modal (core, menu_db, modal, 5);
+			r_panels_update_modal (core, modal, 5);
 			break;
 		case 'K':
 			modal->idx -= 5;
-			r_panels_update_modal (core, menu_db, modal, 5);
+			r_panels_update_modal (core, modal, 5);
 			break;
 		case 'v':
-			r_panels_exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_VERTICAL);
+			r_panels_exec_modal (core, panel, modal, PANEL_LAYOUT_VERTICAL);
 			r_panels_free_modal (&modal);
 			break;
 		case 'h':
-			r_panels_exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_HORIZONTAL);
+			r_panels_exec_modal (core, panel, modal, PANEL_LAYOUT_HORIZONTAL);
 			r_panels_free_modal (&modal);
 			break;
 		case ' ':
 		case 0x0d:
-			r_panels_exec_modal (core, panel, modal, menu_db, PANEL_LAYOUT_NONE);
+			r_panels_exec_modal (core, panel, modal, PANEL_LAYOUT_NONE);
 			r_panels_free_modal (&modal);
 			break;
 		case '-':
-			r_panels_delete_modal (core, modal, menu_db);
-			r_panels_update_modal (core, menu_db, modal, 1);
+			r_panels_delete_modal (core, modal);
+			r_panels_update_modal (core, modal, 1);
 			break;
 		case 'q':
 		case '"':
@@ -2823,7 +2868,7 @@ static bool r_panels_handle_mouse_on_X(RCore *core, int x, int y) {
 		} else if (x > fx && x < (fx + 5)) {
 			r_panels_dismantle_del_panel (core, ppos, idx);
 		} else {
-			r_panels_create_modal (core, r_panels_get_panel (panels, 0), panels->modal_db);
+			r_panels_create_modal (core, r_panels_get_panel (panels, 0));
 			r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 		}
 		free (word);
@@ -3723,57 +3768,6 @@ static void handle_print_rotate(RCore *core) {
 	}
 }
 
-static void init_sdb(RCore *core) {
-	Sdb *db = core->panels->db;
-	sdb_set (db, "Symbols", "isq", 0);
-	sdb_set (db, "Stack", "pxr@r:SP", 0);
-	sdb_set (db, "Locals", "afvd", 0);
-	sdb_set (db, "Registers", "dr", 0);
-	sdb_set (db, "Bit Registers", "dr 1", 0);
-	sdb_set (db, "FPU Registers", "dr fpu;drf", 0);
-	sdb_set (db, "XMM Registers", "drm", 0);
-	sdb_set (db, "YMM Registers", "drmy", 0);
-	sdb_set (db, "RegisterRefs", "drr", 0);
-	sdb_set (db, "RegisterCols", "dr=", 0);
-	sdb_set (db, "Disassembly", "pd", 0);
-	sdb_set (db, "Disassemble Summary", "pdsf", 0);
-	sdb_set (db, "Decompiler", "pdc", 0);
-	sdb_set (db, "Decompiler With Offsets", "pdco", 0);
-	sdb_set (db, "Graph", "agf", 0);
-	sdb_set (db, "Tiny Graph", "agft", 0);
-	sdb_set (db, "Info", "i", 0);
-	sdb_set (db, "Database", "k ***", 0);
-	sdb_set (db, "Console", "cat $console", 0);
-	sdb_set (db, "Hexdump", "xc $r*16", 0);
-	sdb_set (db, "Xrefs", "ax", 0);
-	sdb_set (db, "Xrefs Here", "ax.", 0);
-	sdb_set (db, "Functions", "afl", 0);
-	sdb_set (db, "Function Calls", "aflm", 0);
-	sdb_set (db, "Comments", "CC", 0);
-	sdb_set (db, "Entropy", "p=e 100", 0);
-	sdb_set (db, "Entropy Fire", "p==e 100", 0);
-	sdb_set (db, "DRX", "drx", 0);
-	sdb_set (db, "Sections", "iSq", 0);
-	sdb_set (db, "Segments", "iSSq", 0);
-	sdb_set (db, "Strings in data sections", "izq", 0);
-	sdb_set (db, "Strings in the whole bin", "izzq", 0);
-	sdb_set (db, "Maps", "dm", 0);
-	sdb_set (db, "Modules", "dmm", 0);
-	sdb_set (db, "Backtrace", "dbt", 0);
-	sdb_set (db, "Breakpoints", "db", 0);
-	sdb_set (db, "Imports", "iiq", 0);
-	sdb_set (db, "Clipboard", "yx", 0);
-	sdb_set (db, "New", "o", 0);
-	sdb_set (db, "Var READ address", "afvR", 0);
-	sdb_set (db, "Var WRITE address", "afvW", 0);
-	sdb_set (db, "Summary", "pdsf", 0);
-	sdb_set (db, "Classes", "icq", 0);
-	sdb_set (db, "Methods", "ic", 0);
-	sdb_set (db, "Relocs", "ir", 0);
-	sdb_set (db, "Headers", "iH", 0);
-	sdb_set (db, "File Hashes", "it", 0);
-}
-
 static void replace_cmd(RCore *core, const char *title, const char *cmd) {
 	RPanels *panels = core->panels;
 	RPanel *cur = r_panels_get_cur_panel (panels);
@@ -3815,11 +3809,12 @@ static void create_panel(RCore *core, RPanel *panel, const RPanelLayout dir, con
 
 static void create_panel_db(void *user, RPanel *panel, const RPanelLayout dir, const char * R_NULLABLE title) {
 	RCore *core = (RCore *)user;
-	char *cmd = sdb_get (core->panels->db, title, 0);
+	char *cmd = r_panels_search_db (core, title);
 	if (!cmd) {
 		return;
 	}
 	create_panel (core, panel, dir, title, cmd);
+	free (cmd);
 	RPanel *p = r_panels_get_cur_panel (core->panels);
 	r_panels_cache_white_list (core, p);
 }
@@ -4023,24 +4018,26 @@ static void delegate_show_all_decompiler_cb(void *user, RPanel *panel, const RPa
 }
 
 static void init_modal_db(RCore *core) {
-	Sdb *db = core->panels->modal_db;
-	SdbKv *kv;
-	SdbListIter *sdb_iter;
-	SdbList *sdb_list = sdb_foreach_list (core->panels->db, true);
-	ls_foreach (sdb_list, sdb_iter, kv) {
-		const char *key = sdbkv_key (kv);
-		sdb_ptr_set (db, strdup (key), &create_panel_db, 0);
+	free (modal_entries);
+	int cap = R_ARRAY_SIZE (panels_db) + 10;
+	modal_entries = R_NEWS0 (ModalEntry, cap);
+	n_modal_entries = 0;
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (panels_db); i++) {
+		modal_entries[n_modal_entries].name = strdup (panels_db[i].title);
+		modal_entries[n_modal_entries].cb = create_panel_db;
+		n_modal_entries++;
 	}
-	sdb_ptr_set (db, "Search strings in data sections", &search_strings_data_create, 0);
-	sdb_ptr_set (db, "Search strings in the whole bin", &search_strings_bin_create, 0);
-	sdb_ptr_set (db, "Create New", &create_panel_input, 0);
-	sdb_ptr_set (db, "Change Command of Current Panel", &replace_current_panel_input, 0);
-	sdb_ptr_set (db, "Show All Decompiler Output", &delegate_show_all_decompiler_cb, 0);
+	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Search strings in data sections"), search_strings_data_create };
+	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Search strings in the whole bin"), search_strings_bin_create };
+	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Create New"), create_panel_input };
+	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Change Command of Current Panel"), replace_current_panel_input };
+	modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Show All Decompiler Output"), delegate_show_all_decompiler_cb };
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		sdb_ptr_set (db, "Put Breakpoints", &put_breakpoints_cb, 0);
-		sdb_ptr_set (db, "Continue", &continue_modal_cb, 0);
-		sdb_ptr_set (db, "Step", &step_modal_cb, 0);
-		sdb_ptr_set (db, "Step Over", &step_over_modal_cb, 0);
+		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Put Breakpoints"), put_breakpoints_cb };
+		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Continue"), continue_modal_cb };
+		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Step"), step_modal_cb };
+		modal_entries[n_modal_entries++] = (ModalEntry){ strdup ("Step Over"), step_over_modal_cb };
 	}
 }
 
@@ -4150,18 +4147,17 @@ static void rotate_disasm_cb(void *user, bool rev) {
 }
 
 static void init_rotate_db(RCore *core) {
-	Sdb *db = core->panels->rotate_db;
-	sdb_ptr_set (db, "pd", &rotate_disasm_cb, 0);
-	sdb_ptr_set (db, "p==", &rotate_entropy_h_cb, 0);
-	sdb_ptr_set (db, "p=", &rotate_entropy_v_cb, 0);
-	sdb_ptr_set (db, "px", &rotate_hexdump_cb, 0);
-	sdb_ptr_set (db, "dr", &rotate_register_cb, 0);
-	sdb_ptr_set (db, "af", &rotate_function_cb, 0);
-	sdb_ptr_set (db, "xc", &rotate_hexdump_cb, 0);
+	n_rotate_entries = 0;
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "pd", rotate_disasm_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "p==", rotate_entropy_h_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "p=", rotate_entropy_v_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "px", rotate_hexdump_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "dr", rotate_register_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "af", rotate_function_cb };
+	rotate_entries[n_rotate_entries++] = (RotateEntry){ "xc", rotate_hexdump_cb };
 }
 
 static void init_all_dbs(RCore *core) {
-	init_sdb (core);
 	init_modal_db (core);
 	init_rotate_db (core);
 }
@@ -4854,18 +4850,6 @@ static void print_decompiler_cb(void *user, void *p) {
 		}
 	}
 	return;
-#if 0
-	if (core->panels_root->cur_pdc_cache) {
-		cmdstr = strdup ((char *)sdb_ptr_get (core->panels_root->cur_pdc_cache,
-					r_num_as_string (NULL, func->addr, false), 0));
-		if (R_STR_ISNOTEMPTY (cmdstr)) {
-			r_panels_set_cmd_str_cache (core, panel, cmdstr);
-			r_panels_reset_scroll_pos (panel);
-			r_panels_update_pdc_contents (core, panel, cmdstr);
-			return;
-		}
-	}
-#endif
 }
 
 static void print_disasmsummary_cb(void *user, void *p) {
@@ -5091,21 +5075,6 @@ static int settings_decompiler_cb(void *user) {
 		}
 	}
 	r_config_set (core->config, "cmd.pdc", pdc_next);
-#if 0
-	// seems unnecessary to me
-	int j = 0;
-	for (j = 0; j < core->panels->n_panels; j++) {
-		RPanel *panel = r_panels_get_panel (core->panels, j);
-		if (r_str_startswith (panel->model->cmd, "pdc")) {
-			char *cmdstr = r_core_cmd_strf (core, "pdc@0x%08"PFMT64x, panel->model->addr);
-			if (R_STR_ISNOTEMPTY (cmdstr)) {
-				r_panels_update_panel_contents (core, panel, cmdstr);
-				r_panels_reset_scroll_pos (panel);
-			}
-			free (cmdstr);
-		}
-	}
-#endif
 	r_panels_set_refresh_all (core, true, false);
 	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 	return 0;
@@ -6128,7 +6097,7 @@ static void handle_menu(RCore *core, const int key) {
 		break;
 	case '"':
 		menu->n_refresh = 0;
-		r_panels_create_modal (core, r_panels_get_panel (panels, 0), panels->modal_db);
+		r_panels_create_modal (core, r_panels_get_panel (panels, 0));
 		r_panels_set_mode (core, PANEL_MODE_DEFAULT);
 		break;
 	}
@@ -6603,7 +6572,7 @@ virtualmouse:
 		break;
 	case '"':
 		r_cons_switchbuf (core->cons, false);
-		r_panels_create_modal (core, cur, panels->modal_db);
+		r_panels_create_modal (core, cur);
 		if (r_panels_check_root_state (core, ROTATE)) {
 			goto exit;
 		}
