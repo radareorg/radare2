@@ -27,10 +27,10 @@ dr SN
 q!
 EOF
 EXPECT=<<EOF
-Running child until syscalls:230 35
 0x00000023
 EOF
-EXPECT_ERR=<<EOF
+REGEXP_ERR=<<EOF
 child received signal 9
+Running child until syscalls:230 35 ?
 EOF
 RUN
