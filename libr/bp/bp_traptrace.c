@@ -31,32 +31,25 @@ R_API void r_bp_traptrace_enable(RBreakpoint *bp, int enable) {
 }
 
 R_API void r_bp_traptrace_reset(RBreakpoint *bp, int hard) {
-	RListIter *iter;
-	RBreakpointTrace *trace;
-	r_list_foreach (bp->traces, iter, trace) {
-		if (hard) {
-			r_bp_traptrace_free (trace);
-			// XXX: This segfaults
-			//r_list_delete (bp->traces, r_list_iter_cur (iter));
-		} else {
+	if (hard) {
+		r_list_purge (bp->traces);
+	} else {
+		RListIter *iter;
+		RBreakpointTrace *trace;
+		r_list_foreach (bp->traces, iter, trace) {
 			memset (trace->bits, 0x00, trace->bitlen);
 		}
-	}
-	if (hard) {
-		// XXX: traces not freed correctly (memleak)
-		bp->traces = r_list_new ();
-		bp->traces->free = r_bp_traptrace_free;
 	}
 }
 
 // FIX: efficiency
 R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
-	int i, delta;
+	int i;
 	RListIter *iter;
 	RBreakpointTrace *trace;
 	r_list_foreach (bp->traces, iter, trace) {
 		if (addr>=trace->addr && addr<=trace->addr_end) {
-			delta = (int)(addr-trace->addr);
+			int delta = (int)(addr-trace->addr);
 			for (i = delta; i < trace->length; i++) {
 				if (R_BIT_CHK (trace->bits, i)) {
 					return addr + i;
@@ -68,10 +61,6 @@ R_API ut64 r_bp_traptrace_next(RBreakpoint *bp, ut64 addr) {
 }
 
 R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
-	RBreakpointTrace *trace;
-	ut8 *buf, *trap, *bits;
-	ut64 len;
-	int bitlen;
 	/* cannot map addr 0 */
 	if (from == 0LL) {
 		return false;
@@ -79,42 +68,27 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	if (from > to) {
 		return false;
 	}
-	len = to-from;
+	ut64 len = to - from;
 	if (len >= ST32_MAX) {
 		return false;
 	}
-	buf = (ut8*) malloc ((int)len);
-	if (!buf) {
-		return false;
-	}
-	trap = (ut8*) malloc ((int)len + 4);
-	if (!trap) {
-		free (buf);
-		return false;
-	}
-	bitlen = (len >> 4) + 1;
-	bits = malloc (bitlen);
-	if (!bits) {
-		free (buf);
-		free (trap);
-		return false;
+	ut8 *buf = (ut8*) malloc ((int)len);
+	ut8 *trap = (ut8*) malloc ((int)len + 4);
+	int bitlen = (len >> 4) + 1;
+	ut8 *bits = malloc (bitlen);
+	if (!buf || !trap || !bits) {
+		goto cleanup;
 	}
 	int rd = bp->iob.read_at (bp->iob.io, from, buf, (int)len);
 	if (rd != (int)len) {
-		free (buf);
-		free (trap);
-		free (bits);
-		return false;
+		goto cleanup;
 	}
 	memset (bits, 0x00, bitlen);
 	r_bp_get_bytes (bp, trap, (int)len, bp->endian, 0);
 
-	trace = R_NEW (RBreakpointTrace);
+	RBreakpointTrace *trace = R_NEW (RBreakpointTrace);
 	if (!trace) {
-		free (buf);
-		free (trap);
-		free (bits);
-		return false;
+		goto cleanup;
 	}
 	trace->addr = from;
 	trace->addr_end = to;
@@ -123,14 +97,15 @@ R_API int r_bp_traptrace_add(RBreakpoint *bp, ut64 from, ut64 to) {
 	trace->buffer = buf;
 	trace->length = len;
 	if (!r_list_append (bp->traces, trace)) {
-		free (buf);
-		free (trap);
-		free (trace);
+		r_bp_traptrace_free (trace);
 		return false;
 	}
-	// read a memory, overwrite it as breakpointing area
-	// every time it is hitted, instruction is restored
 	return true;
+cleanup:
+	free (buf);
+	free (trap);
+	free (bits);
+	return false;
 }
 
 R_API int r_bp_traptrace_free_at(RBreakpoint *bp, ut64 from) {

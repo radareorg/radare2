@@ -2,23 +2,19 @@
 
 #include <r_core.h>
 
-#define MAX_CANVAS_SIZE 0xffffff
 R_IPI void applyDisMode(RCore *core);
 R_IPI void applyHexMode(RCore *core);
 
 #define MENU_Y 1
 #define PANEL_NUM_LIMIT 16
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2
-
-
-
 #define PANEL_CONFIG_SIDEPANEL_W 60
 #define PANEL_CONFIG_MIN_SIZE    2
 #define PANEL_CONFIG_RESIZE_W    4
 #define PANEL_CONFIG_RESIZE_H    4
+#define MAX_CANVAS_SIZE 0xffffff
 
 #define PP(pos, off) (*(int *)((char *)&(pos) + (off)))
-
 
 #define R_INCLUDE_BEGIN 1
 #include "panels.inc.c"

@@ -1,12 +1,11 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
 
 R_LIB_VERSION (r_bp);
 
-static struct r_bp_plugin_t *bp_static_plugins[] =
-	{ R_BP_STATIC_PLUGINS };
+static RBreakpointPlugin *bp_static_plugins[] = { R_BP_STATIC_PLUGINS };
 
 static void r_bp_item_free(RBreakpointItem *b) {
 	if (b) {
@@ -21,8 +20,6 @@ static void r_bp_item_free(RBreakpointItem *b) {
 }
 
 R_API RBreakpoint *r_bp_new(void) {
-	int i;
-	RBreakpointPlugin *static_plugin;
 	RBreakpoint *bp = R_NEW0 (RBreakpoint);
 	bp->bps_idx_count = 16;
 	bp->bps_idx = R_NEWS0 (RBreakpointItem*, bp->bps_idx_count);
@@ -30,17 +27,15 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
 	bp->plugins = r_list_newf ((RListFree)free);
+	int i;
 	for (i = 0; bp_static_plugins[i]; i++) {
-		static_plugin = R_NEW (RBreakpointPlugin);
-		memcpy (static_plugin, bp_static_plugins[i],
-			sizeof (RBreakpointPlugin));
-		r_bp_plugin_add (bp, static_plugin);
+		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
+		r_bp_plugin_add (bp, sp);
 	}
 	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;
 }
 
-// AIRPDO return void
 R_API void r_bp_free(RBreakpoint *bp) {
 	if (bp) {
 		r_list_free (bp->bps);
@@ -53,25 +48,29 @@ R_API void r_bp_free(RBreakpoint *bp) {
 
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
 	int i;
-	struct r_bp_arch_t *b;
+	RBreakpointArch *b;
 	if (bp->cur) {
-		// find matching size breakpoint
-repeat:
-		for (i = 0; i < bp->cur->nbps; i++) {
-			b = &bp->cur->bps[i];
-			if (bp->cur->bps[i].bits) {
-				if (bp->bits != bp->cur->bps[i].bits) {
-					continue;
+		// find matching size breakpoint, fall back to len=4
+		bool retried = false;
+		for (;;) {
+			for (i = 0; i < bp->cur->nbps; i++) {
+				b = &bp->cur->bps[i];
+				if (bp->cur->bps[i].bits) {
+					if (bp->bits != bp->cur->bps[i].bits) {
+						continue;
+					}
+				}
+				if (bp->cur->bps[i].length == len && bp->cur->bps[i].endian == endian) {
+					memcpy (buf, b->bytes, b->length);
+					return b->length;
 				}
 			}
-			if (bp->cur->bps[i].length == len && bp->cur->bps[i].endian == endian) {
-				memcpy (buf, b->bytes, b->length);
-				return b->length;
+			if (!retried && len != 4) {
+				len = 4;
+				retried = true;
+				continue;
 			}
-		}
-		if (len != 4) {
-			len = 4;
-			goto repeat;
+			break;
 		}
 		/* if not found try to pad with the first one */
 		b = &bp->cur->bps[0];
@@ -205,12 +204,15 @@ static RBreakpointItem *r_bp_add(RBreakpoint *bp, const ut8 * R_NULLABLE obytes,
 	if (!hw) {
 		b->bbytes = calloc (size + 16, 1);
 		if (!b->bbytes) {
+			unlinkBreakpoint (bp, b);
+			r_bp_item_free (b);
 			return NULL;
 		}
 		if (obytes) {
 			b->obytes = malloc (size);
 			if (!b->obytes) {
-				free (b->bbytes);
+				unlinkBreakpoint (bp, b);
+				r_bp_item_free (b);
 				return NULL;
 			}
 			memcpy (b->obytes, obytes, size);
@@ -238,12 +240,11 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int per
 		size = 1;
 	}
 	ut8 *bytes = calloc (1, size);
-	if (!bytes) {
-		return NULL;
+	if (bytes) {
+		bp->iob.read_at (bp->iob.io, addr, bytes, size);
+		RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
+		free (bytes);
 	}
-	bp->iob.read_at (bp->iob.io, addr, bytes, size);
-	RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
-	free (bytes);
 	return item;
 }
 
@@ -270,7 +271,6 @@ R_API bool r_bp_del(RBreakpoint *bp, ut64 addr) {
 	r_list_foreach (bp->bps, iter, b) {
 		if (b->addr == addr) {
 			unlinkBreakpoint (bp, b);
-			// r_list_delete (bp->bps, iter);
 			return true;
 		}
 	}
@@ -278,6 +278,7 @@ R_API bool r_bp_del(RBreakpoint *bp, ut64 addr) {
 }
 
 R_API bool r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
+	R_RETURN_VAL_IF_FAIL (bp, false);
 	RBreakpointItem *b = r_bp_get_in (bp, addr, 0);
 	if (b) {
 		b->trace = set;
@@ -287,6 +288,7 @@ R_API bool r_bp_set_trace(RBreakpoint *bp, ut64 addr, int set) {
 }
 
 R_API void r_bp_set_trace_all(RBreakpoint *bp, int set) {
+	R_RETURN_IF_FAIL (bp);
 	RListIter *iter;
 	RBreakpointItem *b;
 	r_list_foreach (bp->bps, iter, b) {
@@ -351,26 +353,26 @@ R_API char *r_bp_list(RBreakpoint *bp, int rad) {
 }
 
 R_API RBreakpointItem *r_bp_item_new(RBreakpoint *bp) {
-	int i, j;
+	int i;
 	/* find empty slot */
 	for (i = 0; i < bp->bps_idx_count; i++) {
 		if (!bp->bps_idx[i]) {
-			goto return_slot;
+			return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
 		}
 	}
 	/* allocate new slot */
-	bp->bps_idx_count += 16; // allocate space for 16 more bps
+	bp->bps_idx_count += 16;
 	RBreakpointItem **newbps = realloc (bp->bps_idx, bp->bps_idx_count * sizeof (RBreakpointItem*));
 	if (newbps) {
 		bp->bps_idx = newbps;
 	} else {
-		bp->bps_idx_count -= 16; // allocate space for 16 more bps
+		bp->bps_idx_count -= 16;
+		return NULL;
 	}
+	int j;
 	for (j = i; j < bp->bps_idx_count; j++) {
 		bp->bps_idx[j] = NULL;
 	}
-return_slot:
-	/* empty slot */
 	return (bp->bps_idx[i] = R_NEW0 (RBreakpointItem));
 }
 
@@ -401,13 +403,12 @@ R_API bool r_bp_del_index(RBreakpoint *bp, int idx) {
 }
 
 R_API int r_bp_size(RBreakpoint *bp) {
-	RBreakpointArch *bpa;
 	int i, bpsize = 8;
 	if (!bp || !bp->cur) {
 		return 0;
 	}
 	for (i = 0; bp->cur->bps[i].bytes; i++) {
-		bpa = &bp->cur->bps[i];
+		RBreakpointArch *bpa = &bp->cur->bps[i];
 		if (bpa->bits && bpa->bits != bp->bits) {
 			continue;
 		}
