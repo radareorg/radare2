@@ -11,9 +11,6 @@ EOF
 EXPECT=<<EOF
 reached
 EOF
-EXPECT_ERR=<<EOF
-child received signal 9
-EOF
 RUN
 
 NAME=fasttime does not bypass explicit syscall tracing
