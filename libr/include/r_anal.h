@@ -1794,6 +1794,7 @@ extern RAnalPlugin r_anal_plugin_drcov;
 extern RAnalPlugin r_anal_plugin_path;
 extern RAnalPlugin r_anal_plugin_sbpf;
 extern RAnalPlugin r_anal_plugin_tcc;
+extern RAnalPlugin r_anal_plugin_gopclntab;
 extern RAnalPlugin r_anal_plugin_six;
 extern RAnalPlugin r_anal_plugin_tp;
 
