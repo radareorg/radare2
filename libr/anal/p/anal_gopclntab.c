@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2026 - pancake */
+/* radare - MIT - Copyright 2026 - AsherDLL */
+// vibetranspiled from the original Python code from AsherDLL
+// -> https://github.com/AsherDLL/r2gopclntabParser
 
 #define R_LOG_ORIGIN "anal.gopclntab"
 
 #include <r_core.h>
-#include <r_anal.h>
-#include <r_flag.h>
 #include <r_util/r_json.h>
 
 #define GO_MAGIC_120 0xfffffff1U
