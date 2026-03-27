@@ -87,11 +87,11 @@ static void linux_dbg_wait_break_main(RDebug *dbg);
 static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
-static bool linux_is_syscall_stop(int status) {
+static bool is_syscall_stop(int status) {
 	return WIFSTOPPED (status) && WSTOPSIG (status) == (SIGTRAP | 0x80);
 }
 
-static RDebugFasttimeThread *linux_fasttime_thread_state(RDebug *dbg, int tid, bool create) {
+static RDebugFasttimeThread *ft_thread_state(RDebug *dbg, int tid, bool create) {
 	R_RETURN_VAL_IF_FAIL (dbg && tid > 0, NULL);
 	if (!dbg->fasttime_threads) {
 		if (!create) {
@@ -105,20 +105,13 @@ static RDebugFasttimeThread *linux_fasttime_thread_state(RDebug *dbg, int tid, b
 	RDebugFasttimeThread *thread_state = ht_up_find (dbg->fasttime_threads, (ut64)(ut32)tid, NULL);
 	if (!thread_state && create) {
 		thread_state = R_NEW0 (RDebugFasttimeThread);
-		if (!thread_state) {
-			return NULL;
-		}
 		thread_state->pending_syscall = -1;
 		ht_up_insert (dbg->fasttime_threads, (ut64)(ut32)tid, thread_state);
 	}
 	return thread_state;
 }
 
-static bool linux_fasttime_enabled(RDebug *dbg) {
-	return dbg && dbg->fasttime && !dbg->fasttime_suppress;
-}
-
-static bool linux_fasttime_resume_syscall(RDebug *dbg, int tid) {
+static bool ft_resume_syscall(RDebug *dbg, int tid) {
 	if (r_debug_ptrace (dbg, PTRACE_SYSCALL, tid, 0, 0) == -1) {
 		r_sys_perror ("PTRACE_SYSCALL");
 		return false;
@@ -126,16 +119,15 @@ static bool linux_fasttime_resume_syscall(RDebug *dbg, int tid) {
 	return true;
 }
 
-static bool linux_fasttime_handle_syscall_stop(RDebug *dbg, int tid) {
-	if (!linux_fasttime_enabled (dbg)) {
+static bool ft_handle_syscall_stop(RDebug *dbg, int tid) {
+	if (!r_debug_fasttime_enabled (dbg)) {
 		return false;
 	}
-	RDebugFasttimeThread *thread_state = linux_fasttime_thread_state (dbg, tid, true);
+	RDebugFasttimeThread *thread_state = ft_thread_state (dbg, tid, true);
 	if (!thread_state) {
 		return false;
 	}
 	r_debug_select (dbg, dbg->pid, tid);
-	dbg->tid = tid;
 	bool err = false;
 	int syscall_num = (int)r_debug_reg_get_alias_err (dbg, R_REG_ALIAS_SN, &err, NULL);
 	if (err) {
@@ -153,7 +145,7 @@ static bool linux_fasttime_handle_syscall_stop(RDebug *dbg, int tid) {
 		thread_state->skip_timer = false;
 		thread_state->pending_syscall = -1;
 	}
-	return linux_fasttime_resume_syscall (dbg, tid);
+	return ft_resume_syscall (dbg, tid);
 }
 
 int linux_handle_signals(RDebug *dbg, int tid) {
@@ -596,7 +588,7 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 		} else {
 			tid = ret;
 
-			if (linux_is_syscall_stop (status) && linux_fasttime_handle_syscall_stop (dbg, tid)) {
+			if (is_syscall_stop (status) && ft_handle_syscall_stop (dbg, tid)) {
 				continue;
 			}
 

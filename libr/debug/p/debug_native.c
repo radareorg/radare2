@@ -225,7 +225,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
 #else
 	int ret = -1;
-	const int ptrace_cmd = (dbg->fasttime && !dbg->fasttime_suppress)? PTRACE_SYSCALL: PTRACE_CONT;
+	const int ptrace_cmd = r_debug_fasttime_enabled (dbg)? PTRACE_SYSCALL: PTRACE_CONT;
 	if (sig == -1) {
 		   sig = dbg->reason.signum;
 	}

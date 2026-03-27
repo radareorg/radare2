@@ -427,9 +427,6 @@ static RDebugFasttimeThread *fasttime_thread_state(RDebug *dbg, int tid, bool cr
 	RDebugFasttimeThread *thread_state = ht_up_find (dbg->fasttime_threads, (ut64)(ut32)tid, NULL);
 	if (!thread_state && create) {
 		thread_state = R_NEW0 (RDebugFasttimeThread);
-		if (!thread_state) {
-			return NULL;
-		}
 		thread_state->pending_syscall = -1;
 		ht_up_insert (dbg->fasttime_threads, (ut64)(ut32)tid, thread_state);
 	}
@@ -472,6 +469,12 @@ R_API bool r_debug_fasttime_prepare_syscall_entry(RDebug *dbg, int tid, int sysc
 		return false;
 	}
 	return true;
+}
+
+R_API void r_debug_fasttime_set(RDebug *dbg, bool enabled) {
+	R_RETURN_IF_FAIL (dbg);
+	dbg->fasttime = enabled;
+	r_debug_fasttime_reset (dbg);
 }
 
 static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
