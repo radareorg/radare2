@@ -1,0 +1,36 @@
+NAME=fasttime continue reaches post-sleep code without waiting
+FILE=bins/elf/analysis/fasttime-sleep
+ARGS=-d -e log.level=0
+CMDS=<<EOF
+ood
+e dbg.fasttime=true
+dcu sym.after_sleep
+?e reached
+q!
+EOF
+EXPECT=<<EOF
+reached
+EOF
+EXPECT_ERR=<<EOF
+child received signal 9
+EOF
+RUN
+
+NAME=fasttime does not bypass explicit syscall tracing
+FILE=bins/elf/analysis/fasttime-sleep
+ARGS=-d -e log.level=0
+CMDS=<<EOF
+ood
+e dbg.fasttime=true
+dcs clock_nanosleep nanosleep
+dr SN
+q!
+EOF
+EXPECT=<<EOF
+Running child until syscalls:230 35
+0x00000023
+EOF
+EXPECT_ERR=<<EOF
+child received signal 9
+EOF
+RUN

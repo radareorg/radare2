@@ -76,6 +76,13 @@ Write pid to a file
 Preload a library (not supported on Windows, only linux,osx,bsd)
 .It Ar pty=
 Use a pty for connection over socket (true|false)
+.It Ar replayfdN=
+Bind file descriptor N to a replay backend. Use
+.Cm replayfd0=pty
+to allocate a PTY-backed descriptor that debugger checkpoint replay can write into later with
+.Cm dtsw
+and
+.Cm dtsra .
 .It Ar r2preload=
 Preload with libr2, kill -USR1 for r2 shell, -USR2 for webserver
 .It Ar r2preweb=

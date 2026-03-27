@@ -33,6 +33,7 @@
 
 #if R2__UNIX__
 #include <sys/ioctl.h>
+#include <unistd.h>
 #ifndef __wasi__
 #include <sys/resource.h>
 #include <grp.h>
@@ -106,6 +107,36 @@ R_API RRunProfile *r_run_new(const char *R_NULLABLE str) {
 	return p;
 }
 
+static void run_replay_fd_free(void *ptr) {
+	RRunReplayFd *rf = ptr;
+	if (!rf) {
+		return;
+	}
+	free (rf->slave_name);
+	rf->slave_name = NULL;
+	if (rf->parent_fd >= 0) {
+		close (rf->parent_fd);
+		rf->parent_fd = -1;
+	}
+	if (rf->child_fd >= 0) {
+		close (rf->child_fd);
+		rf->child_fd = -1;
+	}
+	free (rf);
+}
+
+static RRunReplayFd *run_replay_fd_get(RRunProfile *p, int target_fd) {
+	R_RETURN_VAL_IF_FAIL (p && p->replay_fds, NULL);
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (p->replay_fds, it, rf) {
+		if (rf->target_fd == target_fd) {
+			return rf;
+		}
+	}
+	return NULL;
+}
+
 R_API void r_run_fini(RRunProfile *p) {
 	R_RETURN_IF_FAIL (p);
 	int i;
@@ -132,6 +163,8 @@ R_API void r_run_fini(RRunProfile *p) {
 	R_FREE (p->_seteuid);
 	R_FREE (p->_setgid);
 	R_FREE (p->_setegid);
+	r_list_free (p->replay_fds);
+	p->replay_fds = NULL;
 }
 
 R_API void r_run_reset(RRunProfile *p) {
@@ -438,11 +471,6 @@ static int handle_redirection_proc(const char *cmd, bool in, bool out, bool err)
 	close (saved_stdout);
 	return 0;
 #else
-#ifdef _MSC_VER
-#pragma message("TODO: handle_redirection_proc: Not implemented for this platform")
-#else
-#warning handle_redirection_proc : unimplemented for this platform
-#endif
 	return -1;
 #endif
 }
@@ -655,6 +683,39 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		p->_timeout = atoi (e);
 	} else if (!strcmp (b, "timeoutsig")) {
 		p->_timeout_sig = r_signal_from_string (e);
+	} else if (r_str_startswith (b, "replayfd")) {
+		char *endptr = NULL;
+		long target_fd = strtol (b + strlen ("replayfd"), &endptr, 10);
+		if (!endptr || *endptr || target_fd < 0 || target_fd > INT_MAX) {
+			R_LOG_ERROR ("Invalid replay fd directive '%s'", b);
+		} else if (!strcmp (e, "pty")) {
+			if (!p->replay_fds) {
+				p->replay_fds = r_list_newf (run_replay_fd_free);
+			}
+			if (!p->replay_fds) {
+				if (must_free == true) {
+					free (e);
+				}
+				return false;
+			}
+			RRunReplayFd *rf = run_replay_fd_get (p, (int)target_fd);
+			if (!rf) {
+				rf = R_NEW0 (RRunReplayFd);
+				if (!rf) {
+					if (must_free == true) {
+						free (e);
+					}
+					return false;
+				}
+				rf->target_fd = (int)target_fd;
+				rf->parent_fd = -1;
+				rf->child_fd = -1;
+				r_list_append (p->replay_fds, rf);
+			}
+			rf->kind = R_RUN_REPLAY_KIND_PTY;
+		} else {
+			R_LOG_ERROR ("Unsupported replay backend '%s'", e);
+		}
 	} else if (r_str_startswith (b, "arg")) {
 		int n = atoi (b + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
@@ -759,6 +820,7 @@ R_API const char *r_run_help(void) {
 	"# #stderrout=false\n"
 	"# stdout=foo.txt\n"
 	"# stdin=input.txt # or !program to redirect input from another program\n"
+	"# replayfd0=pty\n"
 	"# input=input.txt\n"
 	"# chdir=/\n"
 	"# chroot=/mnt/chroot\n"
@@ -770,6 +832,115 @@ R_API const char *r_run_help(void) {
 	"# setgid=2001\n"
 	"# setegid=2001\n"
 	"# nice=5\n";
+}
+
+static bool run_replay_profile_valid(RRunProfile *p) {
+	const int stdin_fd = 0;
+	if (!p || !p->replay_fds) {
+		return true;
+	}
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (p->replay_fds, it, rf) {
+		if (rf->target_fd == stdin_fd && R_STR_ISNOTEMPTY (p->_stdin)) {
+			R_LOG_ERROR ("replayfd0 conflicts with stdin redirection");
+			return false;
+		}
+		if (rf->target_fd == stdin_fd && R_STR_ISNOTEMPTY (p->_stdio)) {
+			R_LOG_ERROR ("replayfd0 conflicts with stdio redirection");
+			return false;
+		}
+	}
+	return true;
+}
+
+R_API bool r_run_prepare_replay(RRunProfile *p) {
+	R_RETURN_VAL_IF_FAIL (p, false);
+	if (!p->replay_fds || r_list_empty (p->replay_fds)) {
+		return true;
+	}
+	if (!run_replay_profile_valid (p)) {
+		return false;
+	}
+#if HAVE_PTY
+	dyn_init ();
+	if (!dyn_openpty) {
+		R_LOG_ERROR ("Replay PTY backend unavailable");
+		return false;
+	}
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (p->replay_fds, it, rf) {
+		if (rf->kind != R_RUN_REPLAY_KIND_PTY) {
+			R_LOG_ERROR ("Unsupported replay backend");
+			return false;
+		}
+		if (rf->parent_fd >= 0 && rf->child_fd >= 0) {
+			continue;
+		}
+		char slave_name[128] = {0};
+		if (dyn_openpty (&rf->parent_fd, &rf->child_fd, slave_name, NULL, NULL) == -1) {
+			r_sys_perror ("openpty");
+			rf->parent_fd = -1;
+			rf->child_fd = -1;
+			return false;
+		}
+		free (rf->slave_name);
+		rf->slave_name = strdup (slave_name);
+		if (!rf->slave_name) {
+			return false;
+		}
+	}
+	return true;
+#else
+	R_LOG_ERROR ("Replay PTY backend not supported in this build");
+	return false;
+#endif
+}
+
+static bool run_replay_should_preserve_fd(RRunProfile *p, int fd) {
+	if (!p || !p->replay_fds) {
+		return false;
+	}
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (p->replay_fds, it, rf) {
+		if (rf->parent_fd == fd || rf->child_fd == fd || rf->target_fd == fd) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool run_replay_setup_child(RRunProfile *p) {
+	if (!p || !p->replay_fds) {
+		return true;
+	}
+	RRunReplayFd *rf;
+	RListIter *it;
+	r_list_foreach (p->replay_fds, it, rf) {
+		if (rf->kind != R_RUN_REPLAY_KIND_PTY) {
+			R_LOG_ERROR ("Unsupported replay backend");
+			return false;
+		}
+		if (rf->parent_fd >= 0) {
+			close (rf->parent_fd);
+			rf->parent_fd = -1;
+		}
+		if (rf->child_fd < 0) {
+			R_LOG_ERROR ("Replay child fd not prepared");
+			return false;
+		}
+		if (rf->child_fd != rf->target_fd && dup2 (rf->child_fd, rf->target_fd) == -1) {
+			r_sys_perror ("dup2 replay fd");
+			return false;
+		}
+		if (rf->child_fd != rf->target_fd) {
+			close (rf->child_fd);
+		}
+		rf->child_fd = rf->target_fd;
+	}
+	return true;
 }
 
 #if HAVE_PTY
@@ -1388,8 +1559,14 @@ R_API bool r_run_start(RRunProfile *p) {
 		{
 			int i;
 			for (i = 3; i < 1024; i++) {
+				if (run_replay_should_preserve_fd (p, i)) {
+					continue;
+				}
 				close (i);
 			}
+		}
+		if (!run_replay_setup_child (p)) {
+			return false;
 		}
 		// TODO: use posix_spawn
 		if (p->_setgid) {

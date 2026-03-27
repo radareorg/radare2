@@ -2044,6 +2044,14 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	return true;
 }
 
+static bool cb_dbg_fasttime(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->dbg->fasttime = node->i_value;
+	r_debug_fasttime_reset (core->dbg);
+	return true;
+}
+
 static bool cb_runprofile(void *user, void *data) {
 	RCore *r = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4490,6 +4498,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.threads", "false", &cb_stopthreads, "stop all threads when debugger breaks (see dbg.forks)");
 	SETCB ("dbg.clone", "false", &cb_dbg_clone, "stop execution if new thread is created");
 	SETCB ("dbg.aftersyscall", "true", &cb_dbg_aftersc, "stop execution before the syscall is executed (see dcs)");
+	SETCB ("dbg.fasttime", "false", &cb_dbg_fasttime, "virtualize timer syscalls during continue on supported debugger backends");
 	SETCB ("dbg.profile", "", &cb_runprofile, "path to RRunProfile file (or base64:string)");
 	SETCB ("dbg.args", "", &cb_dbg_args, "set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "continue tracing the child process on fork. By default the parent process is traced");
