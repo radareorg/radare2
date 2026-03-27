@@ -1,12 +1,11 @@
-/* radare2 - LGPL - Copyright 2009-2025 - pancake */
+/* radare2 - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_bp.h>
 #include <config.h>
 
 R_LIB_VERSION (r_bp);
 
-static struct r_bp_plugin_t *bp_static_plugins[] =
-	{ R_BP_STATIC_PLUGINS };
+static RBreakpointPlugin *bp_static_plugins[] = { R_BP_STATIC_PLUGINS };
 
 static void r_bp_item_free(RBreakpointItem *b) {
 	if (b) {
@@ -30,10 +29,8 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->plugins = r_list_newf ((RListFree)free);
 	int i;
 	for (i = 0; bp_static_plugins[i]; i++) {
-		RBreakpointPlugin *static_plugin = R_NEW (RBreakpointPlugin);
-		memcpy (static_plugin, bp_static_plugins[i],
-			sizeof (RBreakpointPlugin));
-		r_bp_plugin_add (bp, static_plugin);
+		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
+		r_bp_plugin_add (bp, sp);
 	}
 	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;
@@ -51,7 +48,7 @@ R_API void r_bp_free(RBreakpoint *bp) {
 
 R_API int r_bp_get_bytes(RBreakpoint *bp, ut8 *buf, int len, int endian, int idx) {
 	int i;
-	struct r_bp_arch_t *b;
+	RBreakpointArch *b;
 	if (bp->cur) {
 		// find matching size breakpoint, fall back to len=4
 		bool retried = false;
@@ -243,12 +240,11 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int per
 		size = 1;
 	}
 	ut8 *bytes = calloc (1, size);
-	if (!bytes) {
-		return NULL;
+	if (bytes) {
+		bp->iob.read_at (bp->iob.io, addr, bytes, size);
+		RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
+		free (bytes);
 	}
-	bp->iob.read_at (bp->iob.io, addr, bytes, size);
-	RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
-	free (bytes);
 	return item;
 }
 
@@ -407,13 +403,12 @@ R_API bool r_bp_del_index(RBreakpoint *bp, int idx) {
 }
 
 R_API int r_bp_size(RBreakpoint *bp) {
-	RBreakpointArch *bpa;
 	int i, bpsize = 8;
 	if (!bp || !bp->cur) {
 		return 0;
 	}
 	for (i = 0; bp->cur->bps[i].bytes; i++) {
-		bpa = &bp->cur->bps[i];
+		RBreakpointArch *bpa = &bp->cur->bps[i];
 		if (bpa->bits && bpa->bits != bp->bits) {
 			continue;
 		}
