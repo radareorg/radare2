@@ -2680,6 +2680,9 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_gprintf;
 	core->dbg->cb_printf = r_cons_gprintf;
 	core->dbg->ev = core->ev;
+#if USE_NEW_ESIL
+	r_core_esil_init (core);
+#endif
 	r_core_config_init (core);
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
@@ -2775,6 +2778,12 @@ R_API void r_core_fini(RCore *c) {
 	free (c->sessionfile);
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
+	/*
+	r_unref (c->anal->config);
+	*/
+#if USE_NEW_ESIL
+	r_core_esil_fini (&c->esil);
+#endif
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}

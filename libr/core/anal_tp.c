@@ -1,9 +1,8 @@
 /* radare - LGPL - Copyright 2016-2025 - oddcoder, sivaramaaa, pancake */
 /* type matching - type propagation */
 
-#include <r_anal.h>
+#include <r_core.h>
 #define LOOP_MAX 10
-#define TYPE_MATCH_MAX_BACKTRACE 512
 
 typedef struct type_trace_change_reg_t {
 	int idx;
@@ -13,32 +12,16 @@ typedef struct type_trace_change_reg_t {
 	ut64 odata;
 } TypeTraceRegChange;
 
-static void type_trace_reg_change_fini(void *data) {
-	if (data) {
-		TypeTraceRegChange *change = data;
-		free (change->name);
-	}
-}
-
-typedef struct type_trace_mem_range_t {
+typedef struct type_trace_change_mem_t {
 	int idx;
 	ut32 cc;
 	ut64 addr;
-	ut32 len;
-	ut8 *data;
-	ut8 *odata;
-} TypeTraceMemRange;
-
-static void type_trace_mem_range_fini(void *data) {
-	TypeTraceMemRange *range = data;
-	if (range) {
-		free (range->data);
-		free (range->odata);
-	}
-}
+	ut8 data;
+	ut8 odata;
+} TypeTraceMemChange;
 
 typedef struct {
-	char *name;
+	const char *name;
 	ut64 value;
 	// TODO: size
 } TypeTraceRegAccess;
@@ -66,7 +49,6 @@ typedef struct {
 
 static inline void tt_fini_access(TypeTraceAccess *access) {
 	if (access->is_reg) {
-		free (access->reg.name);
 		return;
 	}
 	free (access->mem.data);
@@ -74,8 +56,6 @@ static inline void tt_fini_access(TypeTraceAccess *access) {
 
 R_VEC_TYPE(VecTraceOp, TypeTraceOp);
 R_VEC_TYPE_WITH_FINI(VecAccess, TypeTraceAccess, tt_fini_access);
-R_VEC_TYPE_WITH_FINI(VecRegChange, TypeTraceRegChange, type_trace_reg_change_fini);
-R_VEC_TYPE_WITH_FINI(VecMemRange, TypeTraceMemRange, type_trace_mem_range_fini);
 
 typedef struct {
 	VecTraceOp ops;
@@ -91,14 +71,12 @@ typedef struct type_trace_t {
 	int cur_idx;
 	RReg *reg;
 	HtUP *registers;
-	VecMemRange memory;
+	HtUP *memory;
 	ut32 voy[4];
-	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
-	bool enable_rollback;
-	// TODO: Add REsil instance here
 } TypeTrace;
 
 #define CMP_REG_CHANGE(x, y) ((x) - ((TypeTraceRegChange *)y)->idx)
+#define CMP_MEM_CHANGE(x, y) ((x) - ((TypeTraceMemChange *)y)->idx)
 
 static void update_trace_db_op(TypeTraceDB *db) {
 	const ut32 trace_op_len = VecTraceOp_length (&db->ops);
@@ -117,7 +95,7 @@ static void update_trace_db_op(TypeTraceDB *db) {
 	last->end = vec_idx; //  - 1;
 }
 
-static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
+static void type_trace_voyeur_reg_read (void *user, const char *name, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
 	char *name_dup = strdup (name);
 	if (!name_dup) {
@@ -141,23 +119,21 @@ static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata) {
 	R_RETURN_IF_FAIL (trace && ri);
 	ut64 addr = ri->offset | (ri->arena << 16);
-	VecRegChange *vreg = ht_up_find (trace->registers, addr, NULL);
+	RVector *vreg = ht_up_find (trace->registers, addr, NULL);
 	if (R_UNLIKELY (!vreg)) {
-		vreg = R_NEW0 (VecRegChange);
+		vreg = r_vector_new (sizeof (TypeTraceRegChange), NULL, NULL);
 		if (R_UNLIKELY (!vreg)) {
 			R_LOG_ERROR ("creating a register vector");
 			return;
 		}
-		VecRegChange_init (vreg);
 		ht_up_insert (trace->registers, addr, vreg);
 	}
-	TypeTraceRegChange *reg = VecRegChange_emplace_back (vreg);
-	if (reg) {
-		*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, strdup (ri->name), data, odata };
-	}
+	TypeTraceRegChange reg = {trace->cur_idx, trace->cc++,
+		strdup (ri->name), data, odata};
+	r_vector_push (vreg, &reg);
 }
 
-static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, ut64 val) {
+static void type_trace_voyeur_reg_write (void *user, const char *name, ut64 old, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
 	TypeTrace *trace = user;
 	RRegItem *ri = r_reg_get (trace->reg, name, -1);
@@ -166,34 +142,34 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 	}
 	char *name_dup = strdup (name);
 	if (!name_dup) {
-		r_unref (ri);
 		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
-		return;
+		goto fail_name_dup;
 	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	if (!access) {
-		free (name_dup);
-		r_unref (ri);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
+		goto fail_emplace_back;
 	}
 	access->is_reg = true;
 	access->reg.name = name_dup;
 	access->reg.value = val;
 	access->is_write = true;
-	if (trace->enable_rollback) {
-		r_strbuf_prependf (&trace->rollback, "0x%" PFMT64x ",%s,:=,", old, name);
-	}
+
 	add_reg_change (trace, ri, val, old);
 	update_trace_db_op (&trace->db);
 	r_unref (ri);
+	return;
+fail_emplace_back:
+	free (name_dup);
+fail_name_dup:
+	r_unref (ri);
 }
 
-static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, int len) {
+static void type_trace_voyeur_mem_read (void *user, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
-	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
 	if (!hexbuf) {
-		R_LOG_ERROR ("r_hex_bin2strdup fail");
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
 		return;
 	}
 	TypeTraceDB *db = user;
@@ -210,11 +186,11 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	update_trace_db_op (db);
 }
 
-static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+static void type_trace_voyeur_mem_write (void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
-	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
+	char *hexbuf = r_hex_bin2strdup (buf, len);	//why?
 	if (!hexbuf) {
-		R_LOG_ERROR ("r_hex_bin2strdup fail");
+		R_LOG_ERROR ("Failed to allocate(r_hex_bin2strdup) memory for storing access");
 		return;
 	}
 	TypeTrace *trace = user;
@@ -228,49 +204,28 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	access->mem.data = hexbuf;
 	access->mem.addr = addr;
 	access->is_write = true;
-
-	if (trace->enable_rollback && old) {
-		int i;
-		for (i = len - 1; i >= 0; i--) {
-			r_strbuf_prependf (&trace->rollback,
-				"0x%02x,0x%" PFMT64x ",=[1],", old[i], addr + i);
+	ut32 i;
+	for (i = 0; i < len; i++) {
+		//adding each byte one by one is utterly stupid, typical gsoc crap
+		//ideally this would use a tree structure, that splits nodes when necessary
+		RVector *vmem = ht_up_find (trace->memory, addr, NULL);
+		if (!vmem) {
+			vmem = r_vector_new (sizeof (TypeTraceMemChange), NULL, NULL);
+			if (!vmem) {
+				R_LOG_ERROR ("creating a memory vector");
+				break;
+			}
+			ht_up_insert (trace->memory, addr, vmem);
 		}
+		TypeTraceMemChange mem = {trace->idx, trace->cc++, addr, buf[i], old[i]};
+		r_vector_push (vmem, &mem);
 	}
-
-	TypeTraceMemRange *mem = VecMemRange_emplace_back (&trace->memory);
-	if (!mem) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		goto update_db;
-	}
-	*mem = (TypeTraceMemRange){ 0 };
-	ut8 *data = malloc (len);
-	if (!data) {
-		VecMemRange_erase_back (&trace->memory, mem);
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		goto update_db;
-	}
-	memcpy (data, buf, len);
-	ut8 *odata = NULL;
-	if (old) {
-		odata = malloc (len);
-		if (!odata) {
-			free (data);
-			mem->data = NULL;
-			mem->odata = NULL;
-			VecMemRange_erase_back (&trace->memory, mem);
-			R_LOG_ERROR ("Failed to allocate memory for storing access");
-			goto update_db;
-		}
-		memcpy (odata, old, len);
-	}
-	*mem = (TypeTraceMemRange){ trace->idx, trace->cc++, addr, (ut32)len, data, odata };
-update_db:
 	update_trace_db_op (&trace->db);
 }
 
-static void htup_regvec_free(HtUPKv *kv) {
-	if (kv && kv->value) {
-		VecRegChange_free (kv->value);
+static void htup_vector_free(HtUPKv *kv) {
+	if (kv) {
+		r_vector_free (kv->value);
 	}
 }
 
@@ -280,25 +235,17 @@ static void trace_db_init(TypeTraceDB *db) {
 	db->loop_counts = ht_uu_new0 ();
 }
 
-static void trace_db_fini(TypeTraceDB *db) {
-	if (db) {
-		VecTraceOp_fini (&db->ops);
-		VecAccess_fini (&db->accesses);
-		ht_uu_free (db->loop_counts);
-		db->loop_counts = NULL;
-	}
-}
-
 static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg) {
 	R_RETURN_VAL_IF_FAIL (trace && esil && reg, false);
-	*trace = (const TypeTrace){ 0 };
+	*trace = (const TypeTrace){0};
 	trace_db_init (&trace->db);
-	r_strbuf_init (&trace->rollback);
-	trace->enable_rollback = false; // Disabled by default for performance
-	VecMemRange_init (&trace->memory);
-	trace->registers = ht_up_new (NULL, htup_regvec_free, NULL);
+	trace->registers = ht_up_new (NULL, htup_vector_free, NULL);
 	if (!trace->registers) {
 		goto fail_registers_ht;
+	}
+	trace->memory = ht_up_new (NULL, htup_vector_free, NULL);
+	if (!trace->memory) {
+		goto fail_memory_ht;
 	}
 	trace->voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
@@ -329,11 +276,12 @@ fail_memr_voy:
 fail_regw_voy:
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
 fail_regr_voy:
+	ht_up_free (trace->memory);
+	trace->memory = NULL;
+fail_memory_ht:
 	ht_up_free (trace->registers);
 	trace->registers = NULL;
 fail_registers_ht:
-	VecMemRange_fini (&trace->memory);
-	trace_db_fini (&trace->db);
 	return false;
 }
 
@@ -348,103 +296,217 @@ static void type_trace_loopcount_increment(TypeTrace *trace, ut64 addr) {
 	ht_uu_update (trace->db.loop_counts, addr, count + 1);
 }
 
-// Execute rollback ESIL to restore state, then clear buffer
-static void type_trace_rollback(TypeTrace *trace, REsil *esil) {
-	R_RETURN_IF_FAIL (trace && esil);
-	if (r_strbuf_length (&trace->rollback) > 0) {
-		const char *expr = r_strbuf_get (&trace->rollback);
-		if (expr && *expr) {
-			// Disable rollback recording during rollback execution
-			// to prevent voyeur callbacks from adding to the buffer
-			bool was_enabled = trace->enable_rollback;
-			trace->enable_rollback = false;
-			r_esil_parse (esil, expr);
-			r_esil_stack_free (esil);
-			trace->enable_rollback = was_enabled;
-		}
-		r_strbuf_fini (&trace->rollback);
-		r_strbuf_init (&trace->rollback);
-	}
-}
-
-// Clear rollback buffer without executing
-static void type_trace_rollback_clear(TypeTrace *trace) {
-	R_RETURN_IF_FAIL (trace);
-	r_strbuf_fini (&trace->rollback);
-	r_strbuf_init (&trace->rollback);
-}
-
+//XXX: trace should be the only parameter
 static void type_trace_fini(TypeTrace *trace, REsil *esil) {
 	R_RETURN_IF_FAIL (trace && esil);
-	trace_db_fini (&trace->db);
-	r_strbuf_fini (&trace->rollback);
+	VecTraceOp_fini (&trace->db.ops);
+	VecAccess_fini (&trace->db.accesses);
+	ht_uu_free (trace->db.loop_counts);
 	ht_up_free (trace->registers);
-	trace->registers = NULL;
-	VecMemRange_fini (&trace->memory);
+	ht_up_free (trace->memory);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_WRITE]);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
 	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
 	r_reg_free (trace->reg);
-	trace->reg = NULL;
-	*trace = (const TypeTrace){ 0 };
+	trace[0] = (const TypeTrace){0};
 }
 
 static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (trace && esil && op, false);
 	const char *expr = r_strbuf_get (&op->esil);
-	if (R_STR_ISEMPTY (expr)) {
-		// empty expressions are nops or unimplemented, we can move forward here
-		return true;
-	}
-	trace->cc = 0;
-
-	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
-	if (R_UNLIKELY (!to)) {
-		R_LOG_ERROR ("Failed to allocate trace op at 0x%08" PFMT64x, op->addr);
+	if (R_UNLIKELY (!expr || !strlen (expr))) {
+		R_LOG_WARN ("expr is empty or null");
 		return false;
 	}
-	ut32 vec_idx = VecAccess_length (&trace->db.accesses);
-	to->start = vec_idx;
-	to->end = vec_idx;
-	to->addr = op->addr;
+	trace->cc = 0;
+	
+	RRegItem *ri = r_reg_get (trace->reg, "PC", -1);
+	if (ri) {
+		const bool suc = r_esil_reg_write_silent (esil, ri->name, op->addr + op->size);
+		r_unref (ri);
+		if (!suc) {
+			return false;
+		}
+	}
+
+	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
+	if (R_LIKELY (to)) {
+		ut32 vec_idx = VecAccess_length (&trace->db.accesses);
+		to->start = vec_idx;
+		to->end = vec_idx;
+		to->addr = op->addr;
+	} else {
+		R_LOG_WARN ("Couldn't allocate(emplace_back) trace op");
+		//anything to do here?
+	}
 	const bool ret = r_esil_parse (esil, expr);
 	r_esil_stack_free (esil);
 	trace->idx++;
-	trace->end_idx++;
+	trace->end_idx++;	// should be vector length?
 	return ret;
 }
 
-// TODO: type_trace_restore() for state rollback during backtracking
-// was removed as dead code - can be re-implemented if needed for
-// more accurate cross-basic-block type propagation
+#if 0
+static bool count_changes_above_idx_cb (void *user, const ut64 key, const void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	ut64 *v = user;
+	const int idx = v[0] >> 32;
+	ut32 count = v[0] & UT32_MAX;
+	v[0] &= UT64_MAX ^ UT64_MAX;
+	ut32 i = r_vector_length (vec) - 1;
+	TypeTraceMemChange *change = r_vector_index_ptr (vec, i);
+	//idx is guaranteed to be at struct offset 0 for MemChange and RegChange, so this hack is fine
+	while (change->idx >= idx) {
+		count++;
+		if (!i) {
+			break;
+		}
+		i--;
+		change = r_vector_index_ptr (vec, i);
+	}
+	v[0] |= count;
+	return true;
+}
 
-R_VEC_TYPE(RVecUT64, ut64);
-R_VEC_TYPE(RVecBuf, ut8);
+typedef struct {
+	int idx;
+	union {
+		TypeTraceRegChange *rc_ptr;
+		TypeTraceMemChange *mc_ptr;
+		void *data;
+	};
+} TTChangeCollector;
 
-// TPState - Isolated ESIL environment for type propagation
-// Design inspired by RCoreEsil from PR #24428:
-// - Centralized ESIL state (esil, reg_if, mem_if)
-// - Tracing with rollback capability (tt)
-// - Hook callbacks for extensibility
-typedef struct tp_state_t {
-	// ESIL engine and interfaces
+static bool collect_reg_changes_cb (void *user, const ut64 key, const void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	TTChangeCollector *cc = user;
+	ut32 i = r_vector_length (vec) - 1;
+	TypeTraceRegChange *rc = r_vector_index_ptr (vec, i);
+	while (rc->idx >= cc->idx) {
+		r_vector_remove_at (vec, i, cc->rc_ptr);
+		cc->rc_ptr++;
+		if (!i) {
+			return true;
+		}
+		i--;
+	}
+	return true;
+}
+
+static bool collect_mem_changes_cb (void *user, const ut64 key, const void *val) {
+	RVector *vec = val;
+	if (R_UNLIKELY (r_vector_empty (vec))) {
+		return true;
+	}
+	TTChangeCollector *cc = user;
+	ut32 i = r_vector_length (vec) - 1;
+	TypeTraceMemChange *rc = r_vector_index_ptr (vec, i);
+	while (rc->idx >= cc->idx) {
+		r_vector_remove_at (vec, i, cc->mc_ptr);
+		cc->mc_ptr++;
+		if (!i) {
+			return true;
+		}
+		i--;
+	}
+	return true;
+}
+
+static int sort_reg_changes_cb (const void *v0, const void *v1) {
+	const TypeTraceRegChange *a = v0;
+	const TypeTraceRegChange *b = v1;
+	if (a->idx == b->idx) {
+		return (int)b->cc - (int)a->cc;
+	}
+	return b->idx - a->idx;
+}
+
+static int sort_mem_changes_cb (const void *v0, const void *v1) {
+	const TypeTraceMemChange *a = v0;
+	const TypeTraceMemChange *b = v1;
+	if (a->idx == b->idx) {
+		return (int)b->cc - (int)a->cc;
+	}
+	return b->idx - a->idx;
+}
+
+static void type_trace_restore(TypeTrace *trace, REsil *esil, int idx) {
+	R_RETURN_IF_FAIL (trace && esil && (idx < trace->idx));
+	ut64 v = ((ut64)idx) << 32;
+	ht_up_foreach (trace->registers, count_changes_above_idx_cb, &v);
+	ut32 c_num = v & UT32_MAX;
+	void *data = NULL;
+	if (c_num) {
+		data = R_NEWS (TypeTraceRegChange, c_num);
+		TTChangeCollector collector = {.idx = idx, .data = data};
+		ht_up_foreach (trace->registers, collect_reg_changes_cb, &collector);
+		//sort collected reg changes so that the newest come first
+		qsort (data, c_num, sizeof (TypeTraceRegChange), sort_reg_changes_cb);
+		collector.data = data;
+		ut32 i = 0;
+		for (; i < c_num; i++) {
+			r_esil_reg_write_silent (esil, collector.rc_ptr[i].name, collector.rc_ptr[i].odata);
+			R_FREE (collector.rc_ptr[i].name);
+		}
+	}
+	v &= UT64_MAX ^ UT32_MAX;
+	ht_up_foreach (trace->memory, count_changes_above_idx_cb, &v);
+	if (data && (((v & UT32_MAX) * sizeof (TypeTraceMemChange)) >
+		(c_num * sizeof (TypeTraceRegChange)))) {
+		c_num = v & UT32_MAX;
+		void *new_data = realloc (data, sizeof (TypeTraceMemChange) * c_num);
+		if (!new_data) {
+			free (data);
+			return;
+		}
+		data = new_data;
+	} else {
+		c_num = v & UT32_MAX;
+	}
+	if (!c_num) {
+		free (data);
+		return;
+	}
+	if (R_UNLIKELY (!data)) {
+		data = R_NEWS (TypeTraceMemChange, c_num);
+		if (!data) {
+			return;
+		}
+	}
+	TTChangeCollector collector = {.idx = idx, .data = data};
+	ht_up_foreach (trace->memory, collect_mem_changes_cb, &collector);
+	//sort collected mem changes so that the newest come first
+	qsort (data, c_num, sizeof (TypeTraceMemChange), sort_mem_changes_cb);
+	collector.data = data;
+	ut32 i = 0;
+	for (;i < c_num; i++) {
+		r_esil_mem_write_silent (esil, collector.mc_ptr[i].addr, &collector.rc_ptr[i].odata, 1);
+	}
+}
+#endif
+
+R_VEC_TYPE (RVecUT64, ut64);
+R_VEC_TYPE (RVecBuf, ut8);
+
+typedef struct {
 	REsil esil;
-	REsilRegInterface reg_if;
-	REsilMemInterface mem_if;
 	TypeTrace tt;
 	ut64 stack_base;
+	RCore *core;
+	RReg *anal_reg;
 	int stack_fd;
 	ut32 stack_map;
-	RAnal *anal;
-	// RConfigHold *hc;
+	RConfigHold *hc;
 	char *cfg_spec;
 	bool cfg_breakoninvalid;
 	bool cfg_chk_constraint;
-	bool cfg_rollback;
-	bool old_follow;
-	void (*on_call)(struct tp_state_t *tps, ut64 addr, const char *name);
-	void *hook_user;
 } TPState;
 
 /// BEGIN /////////////////// esil trace helpers ///////////////////////
@@ -460,61 +522,52 @@ static ut64 etrace_addrof(TypeTrace *etrace, ut32 idx) {
 	return op? op->addr: 0;
 }
 
-typedef bool (*AccessPredicate)(const TypeTraceAccess *access, void *user);
-
-static const TypeTraceAccess *etrace_find_access(TypeTrace *etrace, ut32 idx, AccessPredicate pred, void *user) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (!op || op->start == op->end) {
-		return NULL;
-	}
-	const TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-	const TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-	if (!start || !end || start > end) {
-		return NULL;
-	}
-	while (start <= end) {
-		if (pred (start, user)) {
-			return start;
-		}
-		start++;
-	}
-	return NULL;
-}
-
-static bool etrace_is_memwrite(const TypeTraceAccess *access, void *user) {
-	(void)user;
-	return !access->is_reg && access->is_write;
-}
-
-static bool etrace_is_memread(const TypeTraceAccess *access, void *user) {
-	(void)user;
-	return !access->is_reg && !access->is_write;
-}
-
-static bool etrace_is_regread(const TypeTraceAccess *access, void *user) {
-	const char *rname = (const char *)user;
-	return access->is_reg && !access->is_write && !strcmp (rname, access->reg.name);
-}
-
 static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
-	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memwrite, NULL);
-	if (access) {
-		return access->mem.addr;
+	if (op && op->start != op->end) {
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		while (start <= end) {
+			if (!start->is_reg && start->is_write) {
+				return start->mem.addr;
+			}
+			start++;
+		}
 	}
 	return 0;
 }
 
 static bool etrace_have_memread(TypeTrace *etrace, ut32 idx) {
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
 	R_LOG_DEBUG ("memread %d %d", etrace->idx, idx);
-	return etrace_find_access (etrace, idx, etrace_is_memread, NULL) != NULL;
+	if (op && op->start != op->end) {
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		while (start <= end) {
+			if (!start->is_reg && !start->is_write) {
+				return true;
+			}
+			start++;
+		}
+	}
+	return false;
 }
 
 static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regread %d %d", etrace->idx, idx);
-	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_regread, (void *)rname);
-	if (access) {
-		return access->reg.value;
+	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
+	if (op && op->start != op->end) {
+		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
+		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
+		while (start <= end) {
+			if (start->is_reg && !start->is_write) {
+				if (!strcmp (rname, start->reg.name)) {
+					return start->reg.value;
+				}
+			}
+			start++;
+		}
 	}
 	return 0;
 }
@@ -525,9 +578,6 @@ static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 	if (op && op->start != op->end) {
 		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return NULL;
-		}
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				return start->reg.name;
@@ -547,9 +597,6 @@ static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rn
 	if (op && op->start != op->end) {
 		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
 		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return false;
-		}
 		while (start <= end) {
 			if (start->is_reg && start->is_write) {
 				if (!strcmp (rname, start->reg.name)) {
@@ -576,10 +623,11 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	if (!name || !v) {
 		return;
 	}
-	if (!*name || !strcmp (name, "...")) {
+	if (!*name || !strcmp (name , "...")) {
 		return;
 	}
-	bool is_default = (r_str_startswith (v->name, VARPREFIX) || r_str_startswith (v->name, ARGPREFIX));
+	bool is_default = (r_str_startswith (v->name, VARPREFIX)
+			|| r_str_startswith (v->name, ARGPREFIX));
 	if (*name == '*') {
 		name++;
 	}
@@ -589,11 +637,11 @@ static void var_rename(RAnal *anal, RAnalVar *v, const char *name, ut64 addr) {
 	}
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
 	if (fcn) {
-		r_anal_var_rename (anal, v, name);
+		r_anal_var_rename (v, name, false);
 	}
 }
 
-static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, int ref, bool pfx) {
+static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char *type, bool ref, bool pfx) {
 	R_LOG_DEBUG ("Var retype %s %s", var->name, type);
 	R_RETURN_IF_FAIL (anal && var && type);
 	// XXX types should be passed without spaces to trim
@@ -639,34 +687,22 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 	}
 	if (r_str_startswith (r_strbuf_get (sb), "const ")) {
 		// Dropping const from type
-		// TODO: Inferring const type
+		//TODO: Inferring const type
 		r_strbuf_setf (sb, "%s", type + 6);
 	}
 	if (is_ptr) {
-		// type *ptr => type *
+		//type *ptr => type *
 		r_strbuf_append (sb, " *");
 	}
-	while (ref > 0) {
+	if (ref) {
 		if (r_str_endswith (r_strbuf_get (sb), "*")) { // type * => type **
 			r_strbuf_append (sb, "*");
-		} else { //  type => type *
+		} else {   //  type => type *
 			r_strbuf_append (sb, " *");
 		}
-		ref--;
-	}
-	while (ref < 0) {
-		char *s = r_strbuf_get (sb);
-		if (!s) {
-			break;
-		}
-		r_str_trim (s);
-		if (r_str_endswith (s, "*")) {
-			r_strbuf_slice (sb, 0, r_strbuf_length (sb) - 1);
-		}
-		ref++;
 	}
 
-	char *tmp1 = r_strbuf_get (sb);
+	char* tmp1 = r_strbuf_get (sb);
 	if (r_str_startswith (tmp1, "unsigned long long")) {
 		r_strbuf_set (sb, "uint64_t");
 	} else if (r_str_startswith (tmp1, "unsigned")) {
@@ -674,16 +710,15 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 	} else if (r_str_startswith (tmp1, "int")) {
 		r_strbuf_set (sb, "int32_t");
 	}
-	r_anal_var_set_type (anal, var, r_strbuf_get (sb));
+	r_anal_var_set_type (var, r_strbuf_get (sb));
 	r_strbuf_free (sb);
 }
 
-static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
-
-static void get_src_regname(RAnal *anal, ut64 addr, char *regname, int size) {
-	R_RETURN_IF_FAIL (anal && regname && size > 0);
+static void get_src_regname(RCore *core, ut64 addr, char *regname, int size) {
+	R_RETURN_IF_FAIL (core && regname && size > 0);
+	RAnal *anal = core->anal;
 	regname[0] = 0;
-	RAnalOp *op = tp_anal_op (anal, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
+	RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL);
 	if (!op || r_strbuf_is_empty (&op->esil)) {
 		r_anal_op_free (op);
 		return;
@@ -708,7 +743,7 @@ static void get_src_regname(RAnal *anal, ut64 addr, char *regname, int size) {
 		R_LOG_DEBUG ("===================regitem %s", regname);
 		r_unref (ri);
 	} else {
-		R_LOG_DEBUG ("no regitem %s at 0x%" PFMT64x, op_esil, addr);
+		R_LOG_DEBUG ("no regitem %s at 0x%"PFMT64x, op_esil, addr);
 	}
 	r_anal_op_free (op);
 }
@@ -749,18 +784,16 @@ static RAnalCondType cond_invert(RAnal *anal, RAnalCondType cond) {
 	the opposite of any condition not in the list above is "always"? */
 }
 
-typedef const char *String;
-R_VEC_TYPE(RVecString, String); // no fini, these are owned by SDB
-
-static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
+typedef const char* String;
+R_VEC_TYPE (RVecString, String);  // no fini, these are owned by SDB
 
 static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 	if (R_STR_ISEMPTY (fmt)) {
 		return false;
 	}
 
-	Sdb *s = tps->anal->sdb_fmts;
-	char arr[32] = { 0 };
+	Sdb *s = tps->core->anal->sdb_fmts;
+	char arr[32] = {0};
 	const char *ptr = strchr (fmt, '%');
 	while (ptr) {
 		ptr++;
@@ -805,7 +838,6 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		}
 		RAnalVar *rvar = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, item->index);
 		if (!rvar) {
-			r_unref (item);
 			return;
 		}
 		char *t = strdup (type);
@@ -815,48 +847,7 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 			var_retype (anal, lvar, NULL, t, false, false);
 		}
 		free (t);
-		r_unref (item);
 	}
-}
-
-static bool etrace_memread_contains_addr(TypeTrace *etrace, ut32 idx, ut64 addr) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return false;
-		}
-		while (start <= end) {
-			if (!start->is_reg && !start->is_write && start->mem.addr == addr) {
-				return true;
-			}
-			start++;
-		}
-	}
-	return false;
-}
-
-static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (!op || op->start == op->end) {
-		return false;
-	}
-	TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-	TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-	if (!start || !end || start > end) {
-		return false;
-	}
-	while (start <= end) {
-		if (!start->is_reg && !start->is_write) {
-			if (addr) {
-				*addr = start->mem.addr;
-			}
-			return true;
-		}
-		start++;
-	}
-	return false;
 }
 
 #define DEFAULT_MAX 3
@@ -874,15 +865,15 @@ static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
  * \param userfnc whether the callee is a user function (affects propagation direction)
  * \param caddr addr of the callee
  */
-static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, const char *cc,
-	int prev_idx, bool userfnc, ut64 caddr) {
-	RAnal *anal = tps->anal;
-	TypeTrace *tt = &tps->tt;
+static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, const char* cc,
+		int prev_idx, bool userfnc, ut64 caddr) {
+	RAnal *anal = tps->core->anal;
+	TypeTrace *et = &tps->tt;
 	Sdb *TDB = anal->sdb_types;
-	const int idx = etrace_index (tt) - 1;
-	const bool verbose = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "types.verbose"): false;
+	const int idx = etrace_index (et) -1;
+	const bool verbose = r_config_get_b (tps->core->config, "anal.types.verbose"); // XXX
 	bool stack_rev = false, in_stack = false, format = false;
-	R_LOG_DEBUG ("type_match %s %" PFMT64x " %" PFMT64x " %s %d", fcn_name, addr, baddr, cc, prev_idx);
+	R_LOG_DEBUG ("type_match %s %"PFMT64x" %"PFMT64x" %s %d", fcn_name, addr, baddr, cc, prev_idx);
 
 	if (!fcn_name || !cc) {
 		return;
@@ -890,7 +881,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	int lastarg = ST32_MAX;
 	const char *place = r_anal_cc_arg (anal, cc, lastarg, -1);
-	r_cons_break_push (r_cons_singleton (), NULL, NULL);
+	r_cons_break_push (NULL, NULL);
 
 	if (place && !strcmp (place, "stack_rev")) {
 		stack_rev = true;
@@ -903,7 +894,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		R_LOG_WARN ("Missing function definition for '%s'", fcn_name + 8);
 	}
 	if (!max) {
-		max = in_stack? DEFAULT_MAX: r_anal_cc_max_arg (anal, cc);
+		max = in_stack? DEFAULT_MAX : r_anal_cc_max_arg (anal, cc);
 	}
 	// TODO: if function takes more than 7 args is usually bad analysis
 	if (max > 7) {
@@ -913,9 +904,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	RVecString types;
 	RVecString_init (&types);
 	const int bytes = anal->config->bits / 8;
-	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
+	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL;
 	for (i = 0; i < max; i++) {
-		int arg_num = stack_rev? (max - 1 - i): i;
+		int arg_num = stack_rev ? (max - 1 - i) : i;
 		char *type = NULL;
 		const char *name = NULL;
 		R_LOG_DEBUG ("ARG NUM %d %d %d", i, arg_num, format);
@@ -924,7 +915,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			const String *type_ = RVecString_at (&types, pos++);
-			type = type_? strdup (*type_): NULL;
+			type = type_ ? R_STR_DUP (*type_) : NULL;
 			R_LOG_DEBUG ("TYPE (%s)", type);
 		} else {
 			type = r_type_func_args_type (TDB, fcn_name, arg_num);
@@ -945,72 +936,51 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			}
 			place = p;
 		}
-		char regname[REGNAME_SIZE] = { 0 };
+		char regname[REGNAME_SIZE] = {0};
 		ut64 xaddr = UT64_MAX;
-		int memref = 0;
+		bool memref = false;
 		bool cmt_set = false;
 		bool res = false;
-		bool memref_addr_valid = false;
-		ut64 memref_addr = UT64_MAX;
 		// Backtrace instruction from source sink to prev source sink
-		// Limit iterations to avoid quadratic blowup on large traces
-		const int bt_limit = R_MIN (idx - prev_idx + 1, TYPE_MATCH_MAX_BACKTRACE);
-		int bt_count = 0;
-		for (j = idx; j >= prev_idx && bt_count < bt_limit; j--, bt_count++) {
+			///// eprintf ("ii %d %d\n", j, prev_idx);
+		for (j = idx; j >= prev_idx; j--) {
 			// r_strf_var (k, 32, "%d.addr", j);
 			// ut64 instr_addr = sdb_num_get (trace, k, 0);
-			ut64 instr_addr = etrace_addrof (tt, j);
-			R_LOG_DEBUG ("0x%08" PFMT64x " back traceing %d", instr_addr, j);
+			ut64 instr_addr = etrace_addrof (et, j);
+			R_LOG_DEBUG ("0x%08"PFMT64x" back traceing %d", instr_addr, j);
 			if (instr_addr < baddr) {
 				break;
 			}
-			RAnalOp *op = tp_anal_op (anal, instr_addr, opmask);
+			RAnalOp *op = r_core_anal_op (tps->core, instr_addr, opmask);
 			if (!op) {
+				r_anal_op_free (op);
 				break;
 			}
-			RAnalOp *next_op = tp_anal_op (anal, instr_addr + op->size, opmask);
+			RAnalOp *next_op = r_core_anal_op (tps->core, instr_addr + op->size, opmask);
 			if (!next_op || (j != idx && (next_op->type == R_ANAL_OP_TYPE_CALL || next_op->type == R_ANAL_OP_TYPE_JMP))) {
 				r_anal_op_free (op);
 				r_anal_op_free (next_op);
 				break;
 			}
 			RAnalVar *var = r_anal_get_used_function_var (anal, op->addr);
-			bool related = false;
-			const char *esil_str = r_strbuf_get (&op->esil);
-			if (esil_str) {
-				if (regname[0]) {
-					if (strstr (esil_str, regname)) {
-						related = true;
-					}
-				} else {
-					if (place && strstr (esil_str, place)) {
-						related = true;
-					}
-					if (!related && in_stack) {
-						ut64 sp = r_reg_getv (tps->tt.reg, "SP");
-						if (etrace_memread_contains_addr (tt, j, sp + size)) {
-							related = true;
-						}
-					}
-				}
+			if (op->type == R_ANAL_OP_TYPE_MOV && etrace_have_memread (et, j)) {
+				memref = ! (!memref && var && (var->kind != R_ANAL_VAR_KIND_REG));
 			}
-
 			// Match type from function param to instr
 			if (type_pos_hit (tps, in_stack, j, size, place)) {
 				R_LOG_DEBUG ("InHit");
 				if (!cmt_set && type && name) {
-					char *ms = r_str_newf ("%s%s%s", type, r_str_endswith (type, "*")? "": " ", name);
+					char *ms = r_str_newf ("%s%s%s", type, r_str_endswith (type, "*") ? "" : " ", name);
 					r_meta_set_string (anal, R_META_TYPE_VARTYPE, instr_addr, ms);
 					free (ms);
 					cmt_set = true;
 					if ((op->ptr && op->ptr != UT64_MAX) && !strcmp (name, "format")) {
-						RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, op->ptr, "strings", NULL): NULL;
-						if (f && f->size > 0) {
+						RFlagItem *f = r_flag_get_by_spaces (tps->core->flags, false, op->ptr, R_FLAGS_FS_STRINGS, NULL);
+						if (f) {
 							char formatstr[0x200];
-							int len = R_MIN (sizeof (formatstr) - 1, f->size);
-							bool ok = anal->iob.read_at? anal->iob.read_at (anal->iob.io, f->addr, (ut8 *)formatstr, len): false;
-							if (ok) {
-								formatstr[len] = '\0';
+							int read = r_io_nread_at (tps->core->io, f->addr, (ut8 *)formatstr, R_MIN (sizeof (formatstr) - 1, f->size));
+							if (read > 0) {
+								formatstr[read] = '\0';
 								RVecString_clear (&types);
 								if (parse_format (tps, formatstr, &types)) {
 									max += RVecString_length (&types);
@@ -1022,13 +992,9 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				}
 				if (var) {
 					R_LOG_DEBUG ("retype var %s", name);
-					int var_memref = var->isarg? 0: memref;
-					if (op->type == R_ANAL_OP_TYPE_LEA) {
-						var_memref--;
-					}
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_retype (anal, var, name, type, var_memref, false);
+						var_retype (anal, var, name, type, memref, false);
 						var_rename (anal, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -1036,35 +1002,16 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					}
 					res = true;
 				} else {
-					char src_reg[REGNAME_SIZE] = { 0 };
-					get_src_regname (anal, instr_addr, src_reg, sizeof (src_reg));
-					if (src_reg[0]) {
-						r_str_ncpy (regname, src_reg, sizeof (regname));
-					}
-					xaddr = get_addr (tt, regname, j);
+					get_src_regname (tps->core, instr_addr, regname, sizeof (regname));
+					xaddr = get_addr (et, regname, j);
 				}
 			}
-
 			// Type propagate by following source reg
-			if (!res && *regname && etrace_regwrite_contains (tt, j, regname)) {
-				if (op->type == R_ANAL_OP_TYPE_MOV && etrace_have_memread (tt, j)) {
-					if (!var || var->kind == R_ANAL_VAR_KIND_REG) {
-						ut64 addr_read = UT64_MAX;
-						bool has_addr = etrace_memread_first_addr (tt, j, &addr_read);
-						if (!has_addr || !memref_addr_valid || addr_read != memref_addr) {
-							memref++;
-							if (has_addr) {
-								memref_addr = addr_read;
-								memref_addr_valid = true;
-							}
-						}
-					}
-				}
+			if (!res && *regname && etrace_regwrite_contains (et, j, regname)) {
 				if (var) {
-					int var_memref = var->isarg? 0: memref;
 					if (!userfnc) {
 						// not a userfunction, propagate the callee's arg types into our function's vars
-						var_retype (anal, var, name, type, var_memref, false);
+						var_retype (anal, var, name, type, memref, false);
 						var_rename (anal, var, name, addr);
 					} else {
 						// callee is a userfunction, propagate our variable's type into the callee's args
@@ -1075,7 +1022,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					switch (op->type) {
 					case R_ANAL_OP_TYPE_MOV:
 					case R_ANAL_OP_TYPE_PUSH:
-						get_src_regname (anal, instr_addr, regname, sizeof (regname));
+						get_src_regname (tps->core, instr_addr, regname, sizeof (regname));
 						break;
 					case R_ANAL_OP_TYPE_LEA:
 					case R_ANAL_OP_TYPE_LOAD:
@@ -1085,12 +1032,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 					}
 				}
 			} else if (var && res && (xaddr && xaddr != UT64_MAX)) { // Type progation using value
-				char tmp[REGNAME_SIZE] = { 0 };
-				get_src_regname (anal, instr_addr, tmp, sizeof (tmp));
-				ut64 ptr = get_addr (tt, tmp, j);
+				char tmp[REGNAME_SIZE] = {0};
+				get_src_regname (tps->core, instr_addr, tmp, sizeof (tmp));
+				ut64 ptr = get_addr (et, tmp, j);
 				if (ptr == xaddr) {
-					int var_memref = var->isarg? 0: memref;
-					var_retype (anal, var, name, r_str_get_fail (type, "int"), var_memref, false);
+					var_retype (anal, var, name, r_str_get_fail (type, "int"), memref, false);
 				}
 			}
 			r_anal_op_free (op);
@@ -1100,7 +1046,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 		free (type);
 	}
 	RVecString_fini (&types);
-	r_cons_break_pop (r_cons_singleton ());
+	r_cons_break_pop ();
 }
 
 static int bb_cmpaddr(const void *_a, const void *_b) {
@@ -1110,21 +1056,13 @@ static int bb_cmpaddr(const void *_a, const void *_b) {
 
 static void tps_fini(TPState *tps) {
 	R_RETURN_IF_FAIL (tps);
+	tps->core->anal->reg = tps->anal_reg;
 	type_trace_fini (&tps->tt, &tps->esil);
 	r_esil_fini (&tps->esil);
-	if (tps->anal->iob.fd_close) {
-		tps->anal->iob.fd_close (tps->anal->iob.io, tps->stack_fd);
-	}
+	r_io_fd_close (tps->core->io, tps->stack_fd);
 	free (tps->cfg_spec);
-	if (tps->anal->coreb.cmd) {
-		if (tps->old_follow) {
-			tps->anal->coreb.cmd (tps->anal->coreb.core, "e dbg.follow=true");
-		} else {
-			tps->anal->coreb.cmd (tps->anal->coreb.core, "e dbg.follow=false");
-		}
-	}
-	// r_config_hold_restore (tps->hc);
-	// r_config_hold_free (tps->hc);
+	r_config_hold_restore (tps->hc);
+	r_config_hold_free (tps->hc);
 	free (tps);
 }
 
@@ -1142,9 +1080,7 @@ static bool tt_reg_read(void *reg, const char *name, ut64 *val) {
 	if (!ri) {
 		return false;
 	}
-	if (val) {
-		*val = r_reg_get_value ((RReg *)reg, ri);
-	}
+	*val = r_reg_get_value ((RReg *)reg, ri);
 	r_unref (ri);
 	return true;
 }
@@ -1159,261 +1095,140 @@ static ut32 tt_reg_size(void *reg, const char *name) {
 	return size;
 }
 
-static bool tt_reg_alias(void *reg, const char *name, const char *alias) {
-	int alias_type = r_reg_alias_fromstring (alias);
-	if (alias_type < 0) {
-		return false;
-	}
-	return r_reg_alias_setname (reg, alias_type, name);
-}
+static REsilRegInterface type_trace_reg_if = {
+	.is_reg = tt_is_reg,
+	.reg_read = tt_reg_read,
+	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_size = tt_reg_size,
+	// .reg_alias = default_reg_alias
+};
 
-static bool tt_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
+static bool tt_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
-	if (tps->anal->iob.read_at) {
-		return tps->anal->iob.read_at (tps->anal->iob.io, addr, buf, len);
-	}
-	return false;
+	return r_io_read_at (tps->core->io, addr, buf, len);
 }
 
 // ensures type trace esil engine only writes to it's designated stack map.
 // writes outside of that itv will be assumed as valid and return true.
 // this function assumes, that stack map has highest priority,
 // or does not overlap with any other map.
-static bool tt_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
+static bool tt_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
-	RIOMap *map = tps->anal->iob.map_get? tps->anal->iob.map_get (tps->anal->iob.io, tps->stack_map): NULL;
-	if (!map) {
-		R_LOG_WARN ("stack map unavailable for type propagation writes");
-		return false;
-	}
-	RInterval itv = { addr, len };
+	RIOMap *map = r_io_map_get (tps->core->io, tps->stack_map);
+	RInterval itv = {addr, len};
 	if (!r_itv_overlap (map->itv, itv)) {
 		return true;
 	}
 	itv = r_itv_intersect (map->itv, itv);
-	if (tps->anal->iob.write_at) {
-		return tps->anal->iob.write_at (tps->anal->iob.io, itv.addr, &buf[itv.addr - addr], (int)itv.size);
-	}
-	return false;
+	return r_io_write_at (tps->core->io, itv.addr, &buf[itv.addr - addr], (int)itv.size);
 }
 
-static bool tt_esil_reg_write(REsil *esil, const char *name, ut64 val) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->reg_if.reg_read || !tps->reg_if.reg_write) {
-		return false;
-	}
-	ut64 old = 0;
-	if (!tps->reg_if.reg_read (tps->reg_if.reg, name, &old)) {
-		return false;
-	}
-	if (!tps->reg_if.reg_write (tps->reg_if.reg, name, val)) {
-		return false;
-	}
-	type_trace_voyeur_reg_write (&tps->tt, name, old, val);
-	return true;
-}
+static REsilMemInterface type_trace_mem_if = {
+		.mem_read = tt_mem_read,
+		.mem_write = tt_mem_write
+};
 
-static bool tt_esil_reg_read(REsil *esil, const char *name, ut64 *val, int *size) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->reg_if.reg_read) {
-		return false;
-	}
-	ut64 tmp = 0;
-	ut64 *out = val? val: &tmp;
-	if (!tps->reg_if.reg_read (tps->reg_if.reg, name, out)) {
-		return false;
-	}
-	if (size) {
-		ut32 rsz = tps->reg_if.reg_size
-			? tps->reg_if.reg_size (tps->reg_if.reg, name)
-			: 0;
-		*size = rsz? (int)rsz: 64;
-	}
-	type_trace_voyeur_reg_read (&tps->tt, name, *out);
-	return true;
-}
-
-static bool tt_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->mem_if.mem_read) {
-		return false;
-	}
-	if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, buf, len)) {
-		return false;
-	}
-	type_trace_voyeur_mem_read (&tps->tt, addr, buf, len);
-	return true;
-}
-
-static bool tt_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	TPState *tps = esil->user;
-	if (!tps || !tps->mem_if.mem_read || !tps->mem_if.mem_write) {
-		return false;
-	}
-	ut8 *old = malloc (len);
-	if (!old) {
-		return false;
-	}
-	if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, old, len)) {
-		memset (old, 0xff, len);
-	}
-	bool ret = tps->mem_if.mem_write (tps->mem_if.mem, addr, buf, len);
-	if (ret) {
-		type_trace_voyeur_mem_write (&tps->tt, addr, old, buf, len);
-	}
-	free (old);
-	return ret;
-}
-
-static TPState *tps_init(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal && anal->iob.io && anal->esil, NULL);
-	RIO *io = anal->iob.io;
+//XXX: this name is wrong
+static TPState *tps_init(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->esil, NULL);
 	TPState *tps = R_NEW0 (TPState);
-	tps->anal = anal;
-	int align = r_arch_info (anal->arch, R_ARCH_INFO_DATA_ALIGN);
-	align = R_MAX (r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
+	RConfig *cfg = core->config;
+	tps->core = core;
+	int align = r_arch_info (core->anal->arch, R_ARCH_INFO_DATA_ALIGN);
+	align = R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), align);
 	align = R_MAX (align, 1);
-	tps->stack_base = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.addr"): 0x100000;
-	ut64 stack_size = anal->coreb.cfgGetI? anal->coreb.cfgGetI (anal->coreb.core, "esil.stack.size"): 0xf0000;
-	// ideally this all would happen in a dedicated temporal io bank
-	if (anal->iob.map_locate && !anal->iob.map_locate (io, &tps->stack_base, stack_size, align)) {
+	tps->stack_base = r_config_get_i (core->config, "esil.stack.addr");
+	ut64 stack_size = r_config_get_i (core->config, "esil.stack.size");
+	//ideally this all would happen in a dedicated temporal io bank
+	if (!r_io_map_locate (core->io, &tps->stack_base, stack_size, align)) {
 		free (tps);
 		return NULL;
 	}
-	char *uri = r_str_newf ("malloc://0x%" PFMT64x, stack_size);
+	char *uri = r_str_newf ("malloc://0x%"PFMT64x, stack_size);
 	if (!uri) {
 		free (tps);
 		return NULL;
 	}
-	tps->stack_fd = anal->iob.fd_open? anal->iob.fd_open (io, uri, R_PERM_RW, 0): -1;
+	tps->stack_fd = r_io_fd_open (core->io, uri, R_PERM_RW, 0);
 	free (uri);
-	if (tps->stack_fd < 0) {
-		free (tps);
-		return NULL;
-	}
-	RIOMap *map = anal->iob.map_add? anal->iob.map_add (io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size): NULL;
+	RIOMap *map = r_io_map_add (core->io, tps->stack_fd, R_PERM_RW, 0, tps->stack_base, stack_size);
 	if (!map) {
-		if (anal->iob.fd_close) {
-			anal->iob.fd_close (io, tps->stack_fd);
-		}
+		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
 	}
-	// XXX: r_reg_clone should be invoked in type_trace_init
-	RReg *reg = r_reg_clone (anal->reg);
+	//XXX: r_reg_clone should be invoked in type_trace_init
+	RReg *reg = r_reg_clone (core->anal->reg);
 	if (!reg) {
-		if (anal->iob.fd_close) {
-			anal->iob.fd_close (io, tps->stack_fd);
-		}
+		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
 	}
 	tps->stack_map = map->id;
-	tps->reg_if.reg = reg;
-	tps->reg_if.is_reg = tt_is_reg;
-	tps->reg_if.reg_read = tt_reg_read;
-	tps->reg_if.reg_write = (REsilRegWrite)r_reg_setv;
-	tps->reg_if.reg_size = tt_reg_size;
-	tps->reg_if.reg_alias = tt_reg_alias;
-	tps->mem_if.mem = tps;
-	tps->mem_if.mem_read = tt_mem_read;
-	tps->mem_if.mem_write = tt_mem_write;
+	//todo fix addrsize
+	type_trace_reg_if.reg = reg;
+	type_trace_mem_if.mem = tps;
 	ut64 sp = tps->stack_base + stack_size - (stack_size % align) - align * 8;
-	// todo: this probably needs some boundary checks
+	//todo: this probably needs some boundary checks
 	r_reg_setv (reg, "SP", sp);
 	r_reg_setv (reg, "BP", sp);
-	if (!r_esil_init (&tps->esil, 4096, false, anal->config->bits, &tps->reg_if, &tps->mem_if, NULL)) {
+	if (!r_esil_init (&tps->esil, 4096, false, 64, &type_trace_reg_if, &type_trace_mem_if)) {
 		r_reg_free (reg);
-		if (anal->iob.fd_close) {
-			anal->iob.fd_close (io, tps->stack_fd);
-		}
+		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
 	}
-	tps->esil.user = tps;
-	tps->esil.cb.reg_read = tt_esil_reg_read;
-	tps->esil.cb.reg_write = tt_esil_reg_write;
-	tps->esil.cb.mem_read = tt_esil_mem_read;
-	tps->esil.cb.mem_write = tt_esil_mem_write;
-
 	if (!type_trace_init (&tps->tt, &tps->esil, reg)) {
 		r_esil_fini (&tps->esil);
 		r_reg_free (reg);
-		if (anal->iob.fd_close) {
-			anal->iob.fd_close (io, tps->stack_fd);
-		}
+		r_io_fd_close (core->io, tps->stack_fd);
 		free (tps);
 		return NULL;
 	}
-	tps->esil.anal = anal;
-	// Config hold requires RConfig which we get through coreb.core
-	void *core = anal->coreb.core;
-	if (core && anal->coreb.cfgGet && anal->coreb.cfgGetB) {
-		const char *spec = anal->coreb.cfgGet (core, "types.spec");
-		tps->cfg_spec = strdup (spec? spec: "gcc");
-		tps->cfg_breakoninvalid = anal->coreb.cfgGetB (core, "esil.breakoninvalid");
-		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "types.constraint");
-		tps->cfg_rollback = anal->coreb.cfgGetB (core, "types.rollback");
-		if (anal->coreb.cfgGetI && anal->coreb.cmd) {
-			tps->old_follow = anal->coreb.cfgGetI (core, "dbg.follow");
-			anal->coreb.cmd (core, "e dbg.follow=0");
-		}
-	} else {
-		tps->cfg_spec = strdup ("gcc");
-		tps->cfg_breakoninvalid = false;
-		tps->cfg_chk_constraint = false;
-		tps->cfg_rollback = false;
-	}
-	tps->tt.enable_rollback = tps->cfg_rollback;
+//XXX: HACK
+	tps->anal_reg = core->anal->reg;
+	tps->esil.anal = core->anal;
+	core->anal->reg = reg;
+	tps->hc = r_config_hold_new (cfg);
+	tps->cfg_spec = strdup (r_config_get (cfg, "anal.types.spec"));
+	tps->cfg_breakoninvalid = r_config_get_b (cfg, "esil.breakoninvalid");
+	tps->cfg_chk_constraint = r_config_get_b (cfg, "anal.types.constraint");
+	r_config_hold (tps->hc, "dbg.follow", NULL);
+	r_config_set_i (cfg, "dbg.follow", 0);
 	return tps;
 }
 
-typedef struct type_prop_state_t {
-	char *ret_type;
-	char *ret_reg;
-	bool resolved;
-	bool userfnc;
-	const char *prev_dest;
-	RAnalVar *prev_var;
-	bool str_flag;
-	bool prop;
-	char prev_type[256];
-} TypePropState;
-
-static inline void tp_state_reset(TypePropState *state) {
-	state->str_flag = false;
-	state->prop = false;
-	state->prev_dest = NULL;
-}
-
-static inline void tp_state_fini(TypePropState *state) {
-	R_FREE (state->ret_type);
-	R_FREE (state->ret_reg);
-}
-
-R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
-	R_RETURN_IF_FAIL (anal && fcn);
+R_API void r_core_anal_type_match(RCore *core, RAnalFunction *fcn) {
+	R_RETURN_IF_FAIL (core && core->anal && fcn);
 
 	// const int op_tions = R_ARCH_OP_MASK_BASIC ;//| R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	const int op_tions = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_ESIL;
 	RAnalBlock *bb;
 	RListIter *it;
-	RAnalOp aop = { 0 };
-	TypePropState tp_state = { 0 };
+	RAnalOp aop = {0};
+	bool resolved = false;
+	RAnal *anal = core->anal;
 	Sdb *TDB = anal->sdb_types;
 	int ret;
 	const int mininstrsz = r_anal_archinfo (anal, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	int cur_idx, prev_idx = 0;
-	TPState *tps = tps_init (anal);
+	TPState *tps = tps_init (core);
 	if (!tps) {
 		return;
 	}
 
 	tps->tt.cur_idx = 0;
-	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (anal->config);
+	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 	char *fcn_name = NULL;
-	r_cons_break_push (r_cons_singleton (), NULL, NULL);
+	char *ret_type = NULL;
+	bool str_flag = false;
+	bool prop = false;
+	bool prev_var = false;
+	char prev_type[256] = {0};
+	const char *prev_dest = NULL;
+	char *ret_reg = NULL;
+	r_cons_break_push (NULL, NULL);
 	RVecBuf buf;
 	RVecBuf_init (&buf);
 	RVecUT64 bblist;
@@ -1423,13 +1238,8 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	int retries = 2;
 repeat:
 	if (retries < 0) {
-		R_FREE (next_op);
-		tp_state_fini (&tp_state);
 		tps_fini (tps);
 		return;
-	}
-	if (tps->cfg_rollback && retries < 2) {
-		type_trace_rollback (&tps->tt, &tps->esil);
 	}
 	RVecUT64_clear (&bblist);
 	size_t bblist_size = r_list_length (fcn->bbs); // TODO: Use ut64
@@ -1440,12 +1250,11 @@ repeat:
 	}
 	int i, j;
 	TypeTrace *etrace = &tps->tt;
-	RIO *io = anal->iob.io;
 	for (j = 0; j < bblist_size; j++) {
 		const ut64 bbat = *RVecUT64_at (&bblist, j);
-		bb = r_anal_get_block_at (anal, bbat);
+		bb = r_anal_get_block_at (core->anal, bbat);
 		if (!bb) {
-			R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", bbat);
+			R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", bbat);
 			retries--;
 			goto repeat;
 		}
@@ -1456,34 +1265,29 @@ repeat:
 			break;
 		}
 		ut8 *buf_ptr = R_VEC_START_ITER (&buf);
-		if (!anal->iob.read_at || anal->iob.read_at (io, bb_addr, buf_ptr, bb_size) < 1) {
+		if (r_io_read_at (core->io, bb_addr, buf_ptr, bb_size) < 1) {
 			break;
 		}
 		ut64 addr = bb_addr;
-		bool have_cached_op = false;
 		for (i = 0; i < bb_size;) {
-			if (r_cons_is_breaked (r_cons_singleton ())) {
+			if (r_cons_is_breaked ()) {
 				goto out_function;
 			}
+			// XXX fail sometimes
+			/// addr = bb_addr + i;
+			r_reg_setv (etrace->reg, "PC", addr);
 			ut64 bb_left = bb_size - i;
 			if ((addr >= bb_addr + bb_size) || (addr < bb_addr)) {
 				// stop emulating this bb if pc is outside the basic block boundaries
 				break;
 			}
-			if (have_cached_op) {
-				// Reuse next_op from previous iteration instead of re-parsing
-				aop = *next_op;
-				memset (next_op, 0, sizeof (RAnalOp));
-				ret = aop.size;
-				have_cached_op = false;
-			} else {
-				ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_left, op_tions);
-				if (ret <= 0) {
-					i += minopcode;
-					addr += minopcode;
-					r_anal_op_fini (&aop);
-					continue;
-				}
+			ret = r_anal_op (anal, &aop, addr, buf_ptr + i, bb_left, op_tions);
+			if (ret <= 0) {
+				i += minopcode;
+				addr += minopcode;
+				r_reg_setv (etrace->reg, "PC", addr);
+				r_anal_op_fini (&aop);
+				continue;
 			}
 			const int loop_count = type_trace_loopcount (etrace, addr);
 #if 1
@@ -1495,36 +1299,36 @@ repeat:
 			type_trace_loopcount_increment (etrace, addr);
 			r_reg_setv (etrace->reg, "PC", addr + aop.size);
 			if (!r_anal_op_nonlinear (aop.type)) { // skip jmp/cjmp/trap/ret/call ops
-				// this shit probably needs further refactoring. i hate this code
+//this shit probably needs further refactoring. i hate this code
 				if (aop.type == R_ANAL_OP_TYPE_ILL || aop.type == R_ANAL_OP_TYPE_UNK) {
 					if (tps->cfg_breakoninvalid) {
-						R_LOG_ERROR ("step failed at 0x%08" PFMT64x, addr);
+						R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 						r_anal_op_fini (&aop);
 						retries = -1;
 						goto repeat;
 					}
-					goto skip_trace;
+					goto bla;
 				}
-				if (!type_trace_op (etrace, &tps->esil, &aop) && tps->cfg_breakoninvalid) {
-					R_LOG_ERROR ("step failed at 0x%08" PFMT64x, addr);
+				if ((type_trace_op (etrace, &tps->esil, &aop)) && tps->cfg_breakoninvalid) {
+					R_LOG_ERROR ("step failed at 0x%08"PFMT64x, addr);
 					retries--;
 					goto repeat;
 				}
 			}
-		skip_trace:
+bla:
 #if 1
 			// XXX this code looks wrong and slow maybe is not needed
 			// maybe the basic block is gone after the step
 			if (i < bblist_size) {
-				bb = r_anal_get_block_at (anal, bb_addr);
+				bb = r_anal_get_block_at (core->anal, bb_addr);
 				if (!bb) {
-					R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", *RVecUT64_at (&bblist, i));
+					R_LOG_WARN ("basic block at 0x%08"PFMT64x" was removed during analysis", *RVecUT64_at (&bblist, i));
 					retries--;
 					goto repeat;
 				}
 			}
 #endif
-			tp_state.userfnc = false;
+			bool userfnc = false;
 			cur_idx = etrace_index (etrace) - 1;
 			if (cur_idx < 0) {
 				cur_idx = 0;
@@ -1532,35 +1336,35 @@ repeat:
 			tps->tt.cur_idx = etrace_index (etrace);
 			RAnalVar *var = r_anal_get_used_function_var (anal, aop.addr);
 
-			// Parse next_op with full options so it can be reused as aop next iteration
+			// XXX this is analyzing the same op twice wtf this is so wrong
+#if 0
+			RAnalOp *next_op = r_core_anal_op (core, addr + ret, R_ARCH_OP_MASK_BASIC); // | _VAL ?
+#else
 			if (i + aop.size < bb_size) {
-				int left = bb_left - ret;
-				if (left < 1) {
-					r_anal_op_fini (&aop);
-					break;
-				}
-				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, left, op_tions);
+				r_anal_op_fini (next_op);
+				// int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, bb_left - ret, op_tions);
+				int ret2 = r_anal_op (anal, next_op, addr + ret, buf_ptr + i + ret, bb_left - ret, R_ARCH_OP_MASK_BASIC);
 				if (ret2 < 1) {
 					r_anal_op_fini (&aop);
-					r_anal_op_fini (next_op);
 					break;
 				}
-				have_cached_op = true;
+			} else {
+				r_anal_op_fini (next_op);
 			}
+#endif
 
 			ut32 type = aop.type & R_ANAL_OP_TYPE_MASK;
-			if (type == R_ANAL_OP_TYPE_CALL || type & R_ANAL_OP_TYPE_UCALL) {
+			if (aop.type == R_ANAL_OP_TYPE_CALL || aop.type & R_ANAL_OP_TYPE_UCALL) {
 				char *full_name = NULL;
-				RAnalFunction *fcn_call = NULL;
 				ut64 callee_addr = UT64_MAX;
-				if (type == R_ANAL_OP_TYPE_CALL) {
-					fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
+				if (aop.type == R_ANAL_OP_TYPE_CALL) {
+					RAnalFunction *fcn_call = r_anal_get_fcn_in (anal, aop.jump, -1);
 					if (fcn_call) {
 						full_name = fcn_call->name;
 						callee_addr = fcn_call->addr;
 					}
 				} else if (aop.ptr != UT64_MAX) {
-					RFlagItem *flag = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, aop.ptr, "imports", NULL): NULL;
+					RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, aop.ptr, R_FLAGS_FS_IMPORTS, NULL);
 					if (flag && flag->realname) {
 						full_name = flag->realname;
 						callee_addr = aop.ptr;
@@ -1574,45 +1378,36 @@ repeat:
 					}
 					if (!fcn_name) {
 						fcn_name = strdup (full_name);
-						tp_state.userfnc = true;
+						userfnc = true;
 					}
-					const char *Cc = NULL;
-					if (fcn_call && fcn_call->callconv) {
-						Cc = fcn_call->callconv;
-					}
-					if (!Cc) {
-						Cc = r_anal_cc_func (anal, fcn_name);
-					}
+					const char* Cc = r_anal_cc_func (anal, fcn_name);
 					R_LOG_DEBUG ("CC can %s %s", Cc, fcn_name);
 					if (Cc && r_anal_cc_exist (anal, Cc)) {
 						char *cc = strdup (Cc);
-						if (tps->on_call) {
-							tps->on_call (tps, callee_addr, fcn_name);
-						}
-						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, tp_state.userfnc, callee_addr);
+						type_match (tps, fcn_name, addr, bb->addr, cc, prev_idx, userfnc, callee_addr);
 						// prev_idx = tps->tt.cur_idx;
 						prev_idx = etrace->cur_idx;
-						R_FREE (tp_state.ret_type);
+						R_FREE (ret_type);
 						const char *rt = r_type_func_ret (TDB, fcn_name);
 						if (rt) {
-							tp_state.ret_type = strdup (rt);
+							ret_type = strdup (rt);
 						}
-						R_FREE (tp_state.ret_reg);
+						R_FREE (ret_reg);
 						const char *rr = r_anal_cc_ret (anal, cc);
 						if (rr) {
-							tp_state.ret_reg = strdup (rr);
+							ret_reg = strdup (rr);
 						}
-						tp_state.resolved = false;
+						resolved = false;
 						free (cc);
 					}
-					if (r_str_endswith (fcn_name, "stack_chk_fail")) {
+					if (!strcmp (fcn_name, "__stack_chk_fail")) {
 						// r_strf_var (query, 32, "%d.addr", cur_idx - 1);
 						// ut64 mov_addr = sdb_num_get (trace, query, 0);
 						// cur_idx = tps->tt.cur_idx - 2;
 						cur_idx = etrace->cur_idx - 2;
 						// eprintf (Color_GREEN"ADDROF %d\n"Color_RESET, cur_idx);
 						ut64 mov_addr = etrace_addrof (etrace, cur_idx);
-						RAnalOp *mop = tp_anal_op (anal, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
+						RAnalOp *mop = r_core_anal_op (core, mov_addr, R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_BASIC);
 						if (mop) {
 							RAnalVar *mopvar = r_anal_get_used_function_var (anal, mop->addr);
 							ut32 vt = mop->type & R_ANAL_OP_TYPE_MASK;
@@ -1624,24 +1419,24 @@ repeat:
 					}
 					free (fcn_name);
 				}
-			} else if (!tp_state.resolved && tp_state.ret_type && tp_state.ret_reg) {
+			} else if (!resolved && ret_type && ret_reg) {
 				// Forward propgation of function return type
-				char src[REGNAME_SIZE] = { 0 };
+				char src[REGNAME_SIZE] = {0};
 				// r_strf_var (query, 32, "%d.reg.write", cur_idx);
 				// const char *cur_dest = sdb_const_get (trace, query, 0);
 				// sdb_const_get (trace, query, 0);
 				// cur_idx = tps->tt.cur_idx - 1;
 				cur_idx = etrace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
-				get_src_regname (anal, aop.addr, src, sizeof (src));
-				if (tp_state.ret_reg && *src && strstr (tp_state.ret_reg, src)) {
+				get_src_regname (core, aop.addr, src, sizeof (src));
+				if (ret_reg && *src && strstr (ret_reg, src)) {
 					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
-						var_retype (anal, var, NULL, tp_state.ret_type, false, false);
-						tp_state.resolved = true;
+						var_retype (anal, var, NULL, ret_type, false, false);
+						resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV) {
-						R_FREE (tp_state.ret_reg);
+						R_FREE (ret_reg);
 						if (cur_dest) {
-							tp_state.ret_reg = strdup (cur_dest);
+							ret_reg = strdup (cur_dest);
 						}
 					}
 				} else if (cur_dest) {
@@ -1650,16 +1445,16 @@ repeat:
 					if (tmp) {
 						*tmp++ = '\0';
 					}
-					if (tp_state.ret_reg && (strstr (tp_state.ret_reg, foo) || (tmp && strstr (tp_state.ret_reg, tmp)))) {
-						tp_state.resolved = true;
+					if (ret_reg && (strstr (ret_reg, foo) || (tmp && strstr (ret_reg, tmp)))) {
+						resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
-						// int *ret; *ret = strlen (s);
+						// int *ret; *ret = strlen(s);
 						// TODO: memref check , dest and next src match
-						char nsrc[REGNAME_SIZE] = { 0 };
-						get_src_regname (anal, next_op->addr, nsrc, sizeof (nsrc));
-						if (tp_state.ret_reg && *nsrc && strstr (tp_state.ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
-							var_retype (anal, var, NULL, tp_state.ret_type, true, false);
+						char nsrc[REGNAME_SIZE] = {0};
+						get_src_regname (core, next_op->addr, nsrc, sizeof (nsrc));
+						if (ret_reg && *nsrc && strstr (ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
+							var_retype (anal, var, NULL, ret_type, true, false);
 						}
 					}
 					free (foo);
@@ -1682,40 +1477,41 @@ repeat:
 				}
 				// lea rax , str.hello  ; mov [local_ch], rax;
 				// mov rdx , [local_4h] ; mov [local_8h], rdx;
-				if (tp_state.prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
-					char reg[REGNAME_SIZE] = { 0 };
-					get_src_regname (anal, addr, reg, sizeof (reg));
-					bool match = strstr (tp_state.prev_dest, reg);
-					if (tp_state.str_flag && match) {
+				if (prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
+					char reg[REGNAME_SIZE] = {0};
+					get_src_regname (core, addr, reg, sizeof (reg));
+					bool match = strstr (prev_dest, reg);
+					if (str_flag && match) {
 						var_retype (anal, var, NULL, "const char *", false, false);
 					}
-					if (tp_state.prop && match && tp_state.prev_var) {
-						var_retype (anal, var, NULL, tp_state.prev_type, false, false);
+					if (prop && match && prev_var) {
+						var_retype (anal, var, NULL, prev_type, false, false);
 					}
 				}
-				if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX) && next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
+				if (tps->cfg_chk_constraint && var && (type == R_ANAL_OP_TYPE_CMP && aop.disp != UT64_MAX)
+						&& next_op && next_op->type == R_ANAL_OP_TYPE_CJMP) {
 					bool jmp = false;
-					RAnalOp *jmp_op = { 0 };
+					RAnalOp *jmp_op = {0};
 					ut64 jmp_addr = next_op->jump;
 					RAnalBlock *jmpbb = r_anal_function_bbget_in (anal, fcn, jmp_addr);
-					RAnalBlock jbb = { 0 };
+					RAnalBlock jbb = {0};
 					if (jmpbb) {
-						// Copy only fields needed for r_anal_block_contains check.
-						// The bb can be invalidated in the loop below, so avoid
-						// shallow-copying pointer members from jmpbb.
+						// the bb can be invalidated in the loop below, causing
+					        // a crash, so we copy that into a stack ghosty struct
 						jbb.addr = jmpbb->addr;
 						jbb.size = jmpbb->size;
 					}
 
 					// Check exit status of jmp branch
 					for (i = 0; i < MAX_INSTR; i++) {
-						jmp_op = tp_anal_op (anal, jmp_addr, R_ARCH_OP_MASK_BASIC);
+						jmp_op = r_core_anal_op (core, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
 							r_anal_op_free (jmp_op);
 							r_anal_op_fini (&aop);
 							break;
 						}
-						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr)) || jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
+						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr))
+								|| jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
 							r_anal_op_fini (&aop);
@@ -1731,51 +1527,49 @@ repeat:
 					r_anal_var_add_constraint (var, &constr);
 				}
 			}
-			tp_state.prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ)? var: NULL;
-			tp_state_reset (&tp_state);
+			prev_var = (var && aop.direction == R_ANAL_OP_DIR_READ);
+			str_flag = false;
+			prop = false;
+			prev_dest = NULL;
 			switch (type) {
 			case R_ANAL_OP_TYPE_MOV:
 			case R_ANAL_OP_TYPE_LEA:
 			case R_ANAL_OP_TYPE_LOAD:
 				if (aop.ptr && aop.refptr && aop.ptr != UT64_MAX) {
 					if (type == R_ANAL_OP_TYPE_LOAD) {
-						ut8 sbuf[256] = { 0 };
-						if (anal->iob.read_at) {
-							anal->iob.read_at (io, aop.ptr, sbuf, sizeof (sbuf) - 1);
-						}
+						ut8 sbuf[256] = {0};
+						r_io_read_at (core->io, aop.ptr, sbuf, sizeof (sbuf) - 1);
 						ut64 ptr = r_read_ble (sbuf, be, aop.refptr * 8);
 						if (ptr && ptr != UT64_MAX) {
-							RFlagItem *f = anal->flb.f? r_flag_get_by_spaces (anal->flb.f, false, ptr, "strings", NULL): NULL;
+							RFlagItem *f = r_flag_get_by_spaces (core->flags, false, ptr, R_FLAGS_FS_STRINGS, NULL);
 							if (f) {
-								tp_state.str_flag = true;
+								str_flag = true;
 							}
 						}
-					} else if (anal->flb.f && r_flag_exist_at (anal->flb.f, "str", 3, aop.ptr)) {
-						tp_state.str_flag = true;
+					} else if (r_flag_exist_at (core->flags, "str", 3, aop.ptr)) {
+						str_flag = true;
 					}
 				}
 				// mov dword [local_4h], str.hello;
-				if (var && tp_state.str_flag) {
+				if (var && str_flag) {
 					var_retype (anal, var, NULL, "const char *", false, false);
 				}
-				tp_state.prev_dest = etrace_regwrite (etrace, cur_idx);
+				prev_dest = etrace_regwrite (etrace, cur_idx);
 				if (var) {
-					r_str_ncpy (tp_state.prev_type, var->type, sizeof (tp_state.prev_type) - 1);
-					tp_state.prop = true;
+					r_str_ncpy (prev_type, var->type, sizeof (prev_type) - 1);
+					prop = true;
 				}
 			}
 			i += ret;
 			addr += ret;
+			// XXX its slow to analyze 2 instructions for every instruction :facepalm: we can reuse
+			r_anal_op_fini (next_op);
 			r_anal_op_fini (&aop);
 		}
-		// Clean up any cached op that wasn't used (e.g., at end of BB)
-		if (have_cached_op) {
-			r_anal_op_fini (next_op);
-		}
-		if (tps->cfg_rollback) {
-			type_trace_rollback_clear (etrace);
-		}
 	}
+	R_FREE (next_op);
+	RVecBuf_fini (&buf);
+	RVecUT64_fini (&bblist);
 
 	// Type propagation for register based args
 	RList *list = r_anal_var_list (anal, fcn, R_ANAL_VAR_KIND_REG);
@@ -1793,153 +1587,11 @@ repeat:
 	}
 	r_list_free (list);
 out_function:
-	R_FREE (next_op);
-	tp_state_fini (&tp_state);
+	R_FREE (ret_reg);
+	R_FREE (ret_type);
 	r_anal_op_fini (&aop);
-	r_cons_break_pop (r_cons_singleton ());
+	r_cons_break_pop ();
 	RVecBuf_fini (&buf);
 	RVecUT64_fini (&bblist);
 	tps_fini (tps);
 }
-// TODO: infer const qualifier from usage patterns
-// TODO: struct/union field type propagation
-
-static bool tp_requirements_met(RAnal *anal, bool noisy) {
-	if (!anal) {
-		if (noisy) {
-			R_LOG_WARN ("analysis context not ready");
-		}
-		return false;
-	}
-	if (!anal->iob.io) {
-		if (noisy) {
-			R_LOG_WARN ("IO not ready");
-		}
-		return false;
-	}
-	if (!anal->esil) {
-		if (noisy) {
-			R_LOG_WARN ("Run 'aei' to initialize ESIL");
-		}
-		return false;
-	}
-	bool is_debug = anal->coreb.cfgGetB? anal->coreb.cfgGetB (anal->coreb.core, "cfg.debug"): false;
-	if (is_debug) {
-		if (noisy) {
-			R_LOG_WARN ("Type propagation is disabled in debugger mode");
-		}
-		return false;
-	}
-	return true;
-}
-
-static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask) {
-	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	int maxopsz = r_anal_archinfo (anal, R_ARCH_INFO_MAXOP_SIZE);
-	if (maxopsz <= 0) {
-		maxopsz = 32;
-	}
-	ut8 stack_buf[64];
-	ut8 *buf = stack_buf;
-	if (maxopsz > (int)sizeof (stack_buf)) {
-		buf = malloc (maxopsz);
-		if (!buf) {
-			return NULL;
-		}
-	}
-	RAnalOp *op = NULL;
-	if (!anal->iob.read_at || anal->iob.read_at (anal->iob.io, addr, buf, maxopsz) < 1) {
-		goto beach;
-	}
-	op = R_NEW0 (RAnalOp);
-	if (!op) {
-		goto beach;
-	}
-	if (r_anal_op (anal, op, addr, buf, maxopsz, mask) < 1) {
-		r_anal_op_free (op);
-		op = NULL;
-		goto beach;
-	}
-beach:
-	if (buf != stack_buf) {
-		free (buf);
-	}
-	return op;
-}
-
-static RCoreHelpMessage help_msg_tp = {
-	"Usage:", "a:tp", "propagate types for current function",
-	"a:tp", "all", "propagate types for every function (aaft)",
-	"a:tp", "?", "show this help",
-	NULL
-};
-
-static char *tp_cmd(RAnal *anal, const char *input) {
-	R_RETURN_VAL_IF_FAIL (anal && input, NULL);
-	if (!r_str_startswith (input, "tp")) {
-		return NULL;
-	}
-	const char *args = r_str_trim_head_ro (input + 2);
-	void *core = anal->coreb.core;
-	if (*args == '?') {
-		if (anal->coreb.help && core) {
-			anal->coreb.help (core, help_msg_tp);
-		}
-		return strdup ("");
-	}
-	if (!core) {
-		return strdup ("");
-	}
-	if (!tp_requirements_met (anal, true)) {
-		return strdup ("");
-	}
-	if (!*args) {
-		ut64 cur_addr = anal->coreb.numGet? anal->coreb.numGet (core, "$$"): 0;
-		RAnalFunction *fcn = r_anal_get_fcn_in (anal, cur_addr, -1);
-		if (!fcn) {
-			R_LOG_WARN ("Cannot find function at current offset");
-			return strdup ("");
-		}
-		r_cons_break_push (r_cons_singleton (), NULL, NULL);
-		r_esil_set_pc (anal->esil, fcn->addr);
-		r_anal_type_match (anal, fcn);
-		r_cons_break_pop (r_cons_singleton ());
-		return strdup ("");
-	}
-	if (!strcmp (args, "all")) {
-		if (anal->coreb.cmd) {
-			anal->coreb.cmd (core, "aaft");
-		} else {
-			R_LOG_WARN ("Cannot run 'aaft' because core bindings are missing");
-		}
-		return strdup ("");
-	}
-	if (anal->coreb.help && core) {
-		anal->coreb.help (core, help_msg_tp);
-	}
-	return strdup ("");
-}
-
-static int tp_plugin_eligible(RAnal *anal) {
-	return tp_requirements_met (anal, false) ? 0 : -1;
-}
-
-RAnalPlugin r_anal_plugin_tp = {
-	.meta = {
-		.name = "tp",
-		.desc = "Type propagation analysis",
-		.author = "radare2",
-		.license = "LGPL3",
-	},
-	.depends = "esil",
-	.cmd = tp_cmd,
-	.eligible = tp_plugin_eligible,
-};
-
-#ifndef R2_PLUGIN_INCORE
-R_API RLibStruct radare_plugin = {
-	.type = R_LIB_TYPE_ANAL,
-	.data = &r_anal_plugin_tp,
-	.version = R2_VERSION
-};
-#endif
