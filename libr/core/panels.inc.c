@@ -75,7 +75,7 @@ static const char *menus_View[] = {
 static const char *menus_Tools[] = {
 	"Calculator", "Assembler",
 	"--",
-	"R2 Shell", "System Shell", "FSMount Shell", "R2JS Shell", 
+	"R2 Shell", "System Shell", "FSMount Shell", "R2JS Shell",
 	"--",
 	"File Manager"
 };
