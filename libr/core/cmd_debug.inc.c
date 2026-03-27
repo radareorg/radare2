@@ -6045,16 +6045,16 @@ static int cmd_debug(void *data, const char *input) {
 					if (!args) {
 						break;
 					}
-					char *saveptr = NULL;
-					char *tok = strtok_r (args, " \t", &saveptr);
-					if (!tok) {
+					int argc = r_str_word_set0 (args);
+					if (argc < 1) {
 						R_LOG_ERROR ("Missing checkpoint id");
 						free (args);
 						break;
 					}
+					const char *tok = r_str_word_get0 (args, 0);
 					ut64 checkpoint_id = r_num_math (core->num, tok);
 					int fd = -1;
-					tok = strtok_r (NULL, " \t", &saveptr);
+					tok = argc > 1? r_str_word_get0 (args, 1): NULL;
 					if (tok) {
 						fd = (int)r_num_math (core->num, tok);
 					}
@@ -6093,16 +6093,16 @@ static int cmd_debug(void *data, const char *input) {
 					if (!args) {
 						break;
 					}
-					char *saveptr = NULL;
-					char *id_s = strtok_r (args, " \t", &saveptr);
-					if (!id_s) {
+					int argc = r_str_word_set0 (args);
+					if (argc < 1) {
 						R_LOG_ERROR ("Missing checkpoint id");
 						free (args);
 						break;
 					}
+					const char *id_s = r_str_word_get0 (args, 0);
 					ut64 checkpoint_id = r_num_math (core->num, id_s);
 					int fd = -1;
-					char *fd_s = strtok_r (NULL, " \t", &saveptr);
+					const char *fd_s = argc > 1? r_str_word_get0 (args, 1): NULL;
 					if (fd_s) {
 						fd = (int)r_num_math (core->num, fd_s);
 					}
@@ -6116,15 +6116,15 @@ static int cmd_debug(void *data, const char *input) {
 				if (!args) {
 					break;
 				}
-				char *saveptr = NULL;
-				char *id_s = strtok_r (args, " \t", &saveptr);
-				char *fd_s = strtok_r (NULL, " \t", &saveptr);
-				char *hex_s = strtok_r (NULL, " \t", &saveptr);
-				if (!id_s || !fd_s || !hex_s) {
+				int argc = r_str_word_set0 (args);
+				if (argc < 3) {
 					R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
 					free (args);
 					break;
 				}
+				const char *id_s = r_str_word_get0 (args, 0);
+				const char *fd_s = r_str_word_get0 (args, 1);
+				const char *hex_s = r_str_word_get0 (args, 2);
 				ut64 checkpoint_id = r_num_math (core->num, id_s);
 				int fd = (int)r_num_math (core->num, fd_s);
 				size_t hexlen = 0;
