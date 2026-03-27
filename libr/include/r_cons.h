@@ -1306,9 +1306,6 @@ typedef struct r_panels_t {
 	bool mouse_on_edge_x;
 	bool mouse_on_edge_y;
 	RPanelsMenu *panels_menu;
-	Sdb *db;
-	Sdb *rotate_db;
-	Sdb *modal_db;
 	HtPP *mht;
 	RPanelsMode mode;
 	RPanelsFun fun;
