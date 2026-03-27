@@ -47,6 +47,7 @@ r_anal_sources = [
   'p/anal_tp.c',
   'p/anal_a2f.c',
   'p/anal_blaze.c',
+  'p/anal_gopclntab.c',
   'p/anal_path.c',
   'p/anal_drcov.c',
 ]
