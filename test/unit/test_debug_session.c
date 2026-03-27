@@ -2,7 +2,14 @@
 #include <r_util.h>
 #include <r_reg.h>
 #include "minunit.h"
-#if HAVE_PTY
+
+#if HAVE_PTY && ((__linux__ && !__ANDROID__) || defined(__APPLE__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__DragonFly__))
+#define TEST_DEBUG_SESSION_HAVE_OPENPTY 1
+#else
+#define TEST_DEBUG_SESSION_HAVE_OPENPTY 0
+#endif
+
+#if TEST_DEBUG_SESSION_HAVE_OPENPTY
 #if __linux__ && !__ANDROID__
 #include <pty.h>
 #include <utmp.h>
@@ -417,7 +424,7 @@ static bool test_session_replay_clear(void) {
 }
 
 static bool test_session_replay_apply(void) {
-#if HAVE_PTY
+#if TEST_DEBUG_SESSION_HAVE_OPENPTY
 	RDebugSession *session = r_debug_session_new ();
 	mu_assert ("session", session != NULL);
 	RDebugCheckpoint checkpoint = {0};
