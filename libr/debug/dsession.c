@@ -213,18 +213,39 @@ static const char *replay_binding_kind_name(int kind) {
 	}
 }
 
-static bool replay_binding_reset_pty(const RDebugReplayBinding *binding) {
+static bool replay_binding_write_all(const RDebugReplayBinding *binding, const ut8 *bytes, ut64 remaining);
+
+static bool replay_binding_apply_pty(const RDebugReplayBinding *binding, const ut8 *bytes, ut64 remaining) {
 #if R2__UNIX__ && !__wasi__
-	R_RETURN_VAL_IF_FAIL (binding, false);
+	R_RETURN_VAL_IF_FAIL (binding && bytes, false);
+	int slave_fd = -1;
+	bool flushed = false;
+	bool restore_termios = false;
+	struct termios saved_termios;
 	if (R_STR_ISNOTEMPTY (binding->slave_name)) {
-		int slave_fd = open (binding->slave_name, O_RDWR | O_NOCTTY);
+		slave_fd = open (binding->slave_name, O_RDWR | O_NOCTTY);
 		if (slave_fd >= 0) {
-			bool ok = tcflush (slave_fd, TCIFLUSH) == 0;
-			close (slave_fd);
-			return ok;
+			if (tcgetattr (slave_fd, &saved_termios) == 0) {
+				struct termios raw_termios = saved_termios;
+				cfmakeraw (&raw_termios);
+				if (tcsetattr (slave_fd, TCSANOW, &raw_termios) == 0) {
+					restore_termios = true;
+				}
+			}
+			flushed = tcflush (slave_fd, TCIFLUSH) == 0;
 		}
 	}
-	return tcflush (binding->host_fd, TCIFLUSH) == 0;
+	if (!flushed) {
+		flushed = tcflush (binding->host_fd, TCIFLUSH) == 0;
+	}
+	bool ok = flushed && replay_binding_write_all (binding, bytes, remaining);
+	if (restore_termios && tcsetattr (slave_fd, TCSANOW, &saved_termios) != 0) {
+		R_LOG_WARN ("Failed to restore replay PTY termios");
+	}
+	if (slave_fd >= 0) {
+		close (slave_fd);
+	}
+	return ok;
 #else
 	return false;
 #endif
@@ -287,6 +308,7 @@ static void restore_checkpoint_snapshot(RDebug *dbg, const RDebugCheckpoint *chk
 	r_list_foreach (chkpt->snaps, iter, snap) {
 		dbg->iob.write_at (dbg->iob.io, snap->addr, snap->data, snap->size);
 	}
+	dbg->reason.bp_addr = chkpt->resume_bp_addr;
 }
 
 R_API void r_debug_session_free(RDebugSession *session) {
@@ -349,6 +371,7 @@ R_API ut64 r_debug_checkpoint_create(RDebug *dbg, ut64 parent_id, const char *la
 	checkpoint.parent_id = parent_id;
 	checkpoint.cnum = session->cnum;
 	checkpoint.label = R_STR_ISNOTEMPTY (label)? strdup (label): NULL;
+	checkpoint.resume_bp_addr = dbg->reason.bp_addr;
 	RDebugCheckpoint *parent = parent_id == UT64_MAX? NULL: r_debug_session_checkpoint_get (session, parent_id);
 	checkpoint.replay = parent? replay_table_clone (parent->replay): ht_up_new (NULL, htup_replay_stream_free, NULL);
 	if (!checkpoint.replay) {
@@ -711,6 +734,7 @@ static void serialize_checkpoints(Sdb *db, RVecDebugCheckpoint *checkpoints) {
 		pj_o (j);
 		pj_kn (j, "id", chkpt->id);
 		pj_kn (j, "cnum", chkpt->cnum);
+		pj_kn (j, "resume_bp_addr", chkpt->resume_bp_addr);
 		if (chkpt->parent_id != UT64_MAX) {
 			pj_kn (j, "parent", chkpt->parent_id);
 		} else {
@@ -1024,6 +1048,10 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 		return true;
 	}
 	checkpoint.cnum = cnum_json->num.s_value;
+	const RJson *resume_bp_addr_json = r_json_get (chkpt_json, "resume_bp_addr");
+	if (resume_bp_addr_json && resume_bp_addr_json->type == R_JSON_INTEGER) {
+		checkpoint.resume_bp_addr = resume_bp_addr_json->num.u_value;
+	}
 	const RJson *parent_json = r_json_get (chkpt_json, "parent");
 	if (parent_json) {
 		if (parent_json->type == R_JSON_INTEGER) {
@@ -1315,7 +1343,7 @@ static bool replay_apply_stream(RDebug *dbg, RDebugReplayStream *stream) {
 	bool ok = false;
 	switch (binding->kind) {
 	case R_DEBUG_REPLAY_BINDING_PTY:
-		ok = replay_binding_reset_pty (binding) && replay_binding_write_all (binding, bytes, remaining);
+		ok = replay_binding_apply_pty (binding, bytes, remaining);
 		break;
 	default:
 		R_LOG_ERROR ("Unsupported replay binding backend");

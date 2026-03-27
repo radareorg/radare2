@@ -340,6 +340,7 @@ typedef struct r_debug_checkpoint_t {
 	ut64 parent_id;
 	int cnum;
 	char *label;
+	ut64 resume_bp_addr;
 	RRegArena *arena[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
 	HtUP *replay; // fd -> RDebugReplayStream*

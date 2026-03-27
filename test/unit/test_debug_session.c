@@ -10,6 +10,7 @@
 #endif
 
 #if TEST_DEBUG_SESSION_HAVE_OPENPTY
+#include <fcntl.h>
 #if __linux__ && !__ANDROID__
 #include <pty.h>
 #include <utmp.h>
@@ -47,6 +48,12 @@ static bool checkpoint_add_replay(RDebugCheckpoint *checkpoint, int fd, const ch
 	return true;
 }
 
+static void termios_make_raw(struct termios *tio) {
+	cfmakeraw (tio);
+	tio->c_cc[VMIN] = 1;
+	tio->c_cc[VTIME] = 0;
+}
+
 static Sdb *ref_db(void) {
 	Sdb *db = sdb_new0 ();
 
@@ -66,6 +73,7 @@ static Sdb *ref_db(void) {
 	sdb_set (checkpoints_sdb, "0x1", "{"
 		"\"id\":1,"
 		"\"cnum\":0,"
+		"\"resume_bp_addr\":4201677,"
 		"\"parent\":null,"
 		"\"label\":\"root\","
 		"\"registers\":["
@@ -114,6 +122,7 @@ static RDebugSession *ref_session(void) {
 	checkpoint.parent_id = UT64_MAX;
 	checkpoint.cnum = 0;
 	checkpoint.label = strdup ("root");
+	checkpoint.resume_bp_addr = 0x401ccd;
 	checkpoint.replay = ht_up_new (NULL, replay_pair_free, NULL);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegArena *a = r_reg_arena_new (0x10);
@@ -267,6 +276,7 @@ static bool test_session_load(void) {
 			mu_assert_eq (chkpt->id, ref_chkpt->id, "checkpoint id");
 			mu_assert_eq (chkpt->parent_id, ref_chkpt->parent_id, "checkpoint parent");
 			mu_assert_eq (chkpt->cnum, ref_chkpt->cnum, "checkpoint cnum");
+			mu_assert_eq (chkpt->resume_bp_addr, ref_chkpt->resume_bp_addr, "checkpoint resume bp addr");
 			mu_assert_streq (chkpt->label, ref_chkpt->label, "checkpoint label");
 			// Registers
 			for (i = 0; i < R_REG_TYPE_LAST; i++) {
@@ -469,6 +479,87 @@ static bool test_session_replay_apply(void) {
 #endif
 }
 
+static bool test_session_replay_apply_preserves_tty_input_across_late_raw_mode(void) {
+#if TEST_DEBUG_SESSION_HAVE_OPENPTY
+	RDebugSession *session = r_debug_session_new ();
+	mu_assert ("session", session != NULL);
+	RDebugCheckpoint checkpoint = {0};
+	checkpoint.id = 1;
+	checkpoint.parent_id = UT64_MAX;
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	checkpoint.replay = ht_up_new (NULL, replay_pair_free, NULL);
+	mu_assert ("checkpoint replay", checkpoint.replay != NULL);
+	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
+	ht_up_insert (session->checkpoint_index, 1, (void *)1);
+	mu_assert ("append replay", r_debug_session_checkpoint_replay_append (session, 1, 3, (const ut8 *)"k", 1, "stdin"));
+
+	RDebug dbg = {0};
+	dbg.session = session;
+	dbg.replay_bindings = ht_up_new (NULL, NULL, NULL);
+	mu_assert ("replay bindings", dbg.replay_bindings != NULL);
+
+	int master = -1;
+	int slave = -1;
+	mu_assert ("openpty", openpty (&master, &slave, NULL, NULL, NULL) == 0);
+	const char *slave_name = ttyname (slave);
+	mu_assert ("slave tty", slave_name != NULL);
+	mu_assert ("bind replay pty", r_debug_replay_binding_add_pty (&dbg, 3, master, slave_name));
+
+	struct termios before;
+	mu_assert ("tcgetattr before", tcgetattr (slave, &before) == 0);
+	mu_assert ("apply replay", r_debug_session_checkpoint_replay_apply (&dbg, 1, 3));
+
+	struct termios after_apply;
+	mu_assert ("tcgetattr after apply", tcgetattr (slave, &after_apply) == 0);
+	mu_assert_eq ((int)(!!(after_apply.c_lflag & ICANON)), (int)(!!(before.c_lflag & ICANON)), "canonical mode restored");
+	mu_assert_eq ((int)(!!(after_apply.c_lflag & ECHO)), (int)(!!(before.c_lflag & ECHO)), "echo mode restored");
+
+	struct termios raw = after_apply;
+	termios_make_raw (&raw);
+	mu_assert ("tcsetattr raw", tcsetattr (slave, TCSANOW, &raw) == 0);
+	int old_flags = fcntl (slave, F_GETFL, 0);
+	mu_assert ("fcntl getfl", old_flags >= 0);
+	mu_assert ("fcntl set nonblock", fcntl (slave, F_SETFL, old_flags | O_NONBLOCK) == 0);
+	ut8 buf[2] = {0};
+	mu_assert_eq ((int)read (slave, buf, 1), 1, "read replay byte after late raw mode");
+	mu_assert_memeq (buf, "k", 1, "replayed byte preserved");
+	(void)fcntl (slave, F_SETFL, old_flags);
+
+	close (slave);
+	r_debug_replay_bindings_reset (&dbg);
+	r_debug_session_free (session);
+	mu_end;
+#else
+	mu_end;
+#endif
+}
+
+static bool test_checkpoint_restore_preserves_resume_breakpoint_addr(void) {
+	RDebugSession *session = r_debug_session_new ();
+	mu_assert ("session", session != NULL);
+	RDebugCheckpoint checkpoint = {0};
+	checkpoint.id = 1;
+	checkpoint.parent_id = UT64_MAX;
+	checkpoint.resume_bp_addr = 0x401dd0;
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
+	checkpoint.replay = ht_up_new (NULL, replay_pair_free, NULL);
+	mu_assert ("checkpoint replay", checkpoint.replay != NULL);
+	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
+	ht_up_insert (session->checkpoint_index, 1, (void *)1);
+	RDebug dbg = {0};
+	dbg.session = session;
+	dbg.reg = r_reg_new ();
+	mu_assert ("debug reg", dbg.reg != NULL);
+
+	dbg.reason.bp_addr = 0;
+	mu_assert ("restore checkpoint", r_debug_session_restore_checkpoint (&dbg, 1));
+	mu_assert_eq (dbg.reason.bp_addr, (ut64)0x401dd0, "resume breakpoint restored");
+
+	r_reg_free (dbg.reg);
+	r_debug_session_free (session);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_session_save);
 	mu_run_test (test_session_load);
@@ -476,6 +567,8 @@ int all_tests(void) {
 	mu_run_test (test_session_deserialize_sorts_checkpoints_by_cnum_then_id);
 	mu_run_test (test_session_replay_clear);
 	mu_run_test (test_session_replay_apply);
+	mu_run_test (test_session_replay_apply_preserves_tty_input_across_late_raw_mode);
+	mu_run_test (test_checkpoint_restore_preserves_resume_breakpoint_addr);
 	return tests_passed != tests_run;
 }
 
