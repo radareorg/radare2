@@ -48,11 +48,13 @@ static bool checkpoint_add_replay(RDebugCheckpoint *checkpoint, int fd, const ch
 	return true;
 }
 
+#if TEST_DEBUG_SESSION_HAVE_OPENPTY
 static void termios_make_raw(struct termios *tio) {
 	cfmakeraw (tio);
 	tio->c_cc[VMIN] = 1;
 	tio->c_cc[VTIME] = 0;
 }
+#endif
 
 static Sdb *ref_db(void) {
 	Sdb *db = sdb_new0 ();
