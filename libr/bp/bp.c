@@ -240,9 +240,10 @@ R_API RBreakpointItem* r_bp_add_sw(RBreakpoint *bp, ut64 addr, int size, int per
 		size = 1;
 	}
 	ut8 *bytes = calloc (1, size);
+	RBreakpointItem *item = NULL;
 	if (bytes) {
 		bp->iob.read_at (bp->iob.io, addr, bytes, size);
-		RBreakpointItem *item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
+		item = r_bp_add (bp, bytes, addr, size, R_BP_TYPE_SW, perm);
 		free (bytes);
 	}
 	return item;
