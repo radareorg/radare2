@@ -617,6 +617,7 @@ R_API char* r_core_add_asmqjmp(RCore *core, ut64 addr);
 
 // core/panels.c
 R_API bool r_core_panels_root(RCore *core, RPanelsRoot *panels_root);
+R_API void r_panels_root_free(RPanelsRoot *panels_root);
 R_API void r_core_panels_save(RCore *core, const char *_name);
 R_API bool r_core_panels_load(RCore *core, const char *_name);
 

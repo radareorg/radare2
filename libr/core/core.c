@@ -2762,6 +2762,9 @@ R_API void r_core_fini(RCore *c) {
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);
 
+	r_panels_root_free (c->panels_root);
+	c->panels_root = NULL;
+	c->panels = NULL;
 	r_list_free (c->gadgets);
 	r_list_free (c->undos);
 	r_unref (c->num);

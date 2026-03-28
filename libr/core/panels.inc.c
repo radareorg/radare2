@@ -1925,6 +1925,21 @@ static void r_panels_free_partial(RPanels *panels) {
 	free (panels);
 }
 
+R_API void r_panels_root_free(RPanelsRoot *panels_root) {
+	if (!panels_root) {
+		return;
+	}
+	if (panels_root->panels) {
+		int i;
+		for (i = 0; i < panels_root->n_panels; i++) {
+			r_panels_free_partial (panels_root->panels[i]);
+		}
+		free (panels_root->panels);
+	}
+	sdb_free (panels_root->pdc_caches);
+	free (panels_root);
+}
+
 static bool r_panels_init(RCore *core, RPanels *panels, int w, int h) {
 	panels->panel = NULL;
 	panels->n_panels = 0;
@@ -3995,10 +4010,12 @@ static void r_panels_del_panels(RCore *core) {
 		core->panels_root->root_state = QUIT;
 		return;
 	}
+	r_panels_free_partial (panels_root->panels[panels_root->cur_panels]);
 	int i;
 	for (i = panels_root->cur_panels; i < panels_root->n_panels - 1; i++) {
 		panels_root->panels[i] = panels_root->panels[i + 1];
 	}
+	panels_root->panels[panels_root->n_panels - 1] = NULL;
 	panels_root->n_panels--;
 	if (panels_root->cur_panels >= panels_root->n_panels) {
 		panels_root->cur_panels = panels_root->n_panels - 1;
