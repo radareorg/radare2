@@ -773,7 +773,11 @@ static bool go_ctx_init(GoPclnCtx *ctx, RAnal *anal) {
 	ctx->big_endian = anal->coreb.cfgGetB? anal->coreb.cfgGetB (ctx->core, "cfg.bigendian"): false;
 	if (go_try_named_section (ctx) && go_parse_header (ctx)) {
 		go_resolve_text_base (ctx);
-		return go_parse_functions (ctx)? (go_parse_source_files (ctx), true): false;
+		if (go_parse_functions (ctx)) {
+			go_parse_source_files (ctx);
+			return true;
+		}
+		goto error;
 	}
 	free (ctx->section_data);
 	ctx->section_data = NULL;
@@ -782,15 +786,18 @@ static bool go_ctx_init(GoPclnCtx *ctx, RAnal *anal) {
 	memset (&ctx->header, 0, sizeof (ctx->header));
 	if (!go_try_scan_sections (ctx) || !go_parse_header (ctx)) {
 		R_LOG_ERROR ("Could not find valid gopclntab data");
-		return false;
+		goto error;
 	}
 	go_resolve_text_base (ctx);
 	if (!go_parse_functions (ctx)) {
 		R_LOG_ERROR ("Failed to parse gopclntab functions");
-		return false;
+		goto error;
 	}
 	go_parse_source_files (ctx);
 	return true;
+error:
+	go_ctx_fini (ctx);
+	return false;
 }
 
 static char *go_format_header(const GoPclnCtx *ctx) {

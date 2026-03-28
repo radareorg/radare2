@@ -2094,7 +2094,7 @@ static void r_panels_resize_panel(RPanels *panels, Direction dir) {
 		}
 		// t4: same trailing edge as cur
 		if (tp1 == cp1) {
-			if (neg ? (tp1 + d < pmax) : (tp1 + d < pmax)) {
+			if (neg ? (tp1 - d > tp0) : (tp1 + d < pmax)) {
 				t4[n4++] = p;
 			}
 		}
@@ -3213,31 +3213,42 @@ static void r_panels_print_snow(RPanels *panels) {
 		{
 			RListIter *it;
 			RPanelsSnow *snw;
+			bool collision = false;
+			bool is_down_right = false;
+			bool is_down_left = false;
 			r_list_foreach (panels->snows, it, snw) {
 				if (snw->stuck) {
 					if (snw->x == snow->x && snw->y == snow->y) {
-						bool is_down_right = (snw->x == snow->x + 1 && snw->y == snow->y);
-						bool is_down_left = (snw->x == snow->x - 1 && snw->y == snow->y);
-						fall = false;
-						if (is_down_right) {
-							if (!is_down_left) {
-								snow->x--;
-								snow->y--;
-								fall = true;
-							}
-						} else {
-							if (is_down_left) {
-								snow->x++;
-								snow->y--;
-								fall = true;
-							}
-						}
-						if (!fall) {
-							snow->stuck = true;
-							snow->y--;
-						}
-						goto print_this_snow;
+						collision = true;
+						continue;
 					}
+					if (snw->x == snow->x + 1 && snw->y == snow->y) {
+						is_down_right = true;
+						continue;
+					}
+					if (snw->x == snow->x - 1 && snw->y == snow->y) {
+						is_down_left = true;
+					}
+				}
+			}
+			if (collision) {
+				if (is_down_right) {
+					if (!is_down_left) {
+						snow->x--;
+						snow->y--;
+						fall = true;
+					}
+				} else {
+					if (is_down_left) {
+						snow->x++;
+						snow->y--;
+						fall = true;
+					}
+				}
+				if (!fall) {
+					snow->stuck = true;
+					snow->y--;
+					goto print_this_snow;
 				}
 			}
 		}
