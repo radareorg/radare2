@@ -6797,6 +6797,7 @@ toro:
 		// ds_update_pc (ds, ds->at);
 		r_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
+		r_anal_op_fini (&ds->analop);
 		ret = r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		if (ret < 1) {
 			ret = ds->analop.size;
@@ -6912,6 +6913,7 @@ toro:
 		ds_atabs_option (ds);
 		if (ds->analop.addr != ds->at) {
 			// TODO : check for error
+			r_anal_op_fini (&ds->analop);
 			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
 		}
 		if (ret < 1) {
