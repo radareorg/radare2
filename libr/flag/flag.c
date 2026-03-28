@@ -1065,8 +1065,11 @@ R_API int r_flag_unset_glob(RFlag *f, const char *glob) {
 R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f, false);
 	RFlagItem *item = ht_pp_find (f->ht_name, name, NULL);
-	R_DIRTY_SET (f);
-	return item && r_flag_unset (f, item);
+	if (item && r_flag_unset (f, item)) {
+		R_DIRTY_SET (f);
+		return true;
+	}
+	return false;
 }
 
 /* unset all flag items in the RFlag f */
