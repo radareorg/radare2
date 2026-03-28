@@ -12,9 +12,34 @@ R_API RList *r_flag_tags_set(RFlag *f, const char *name, const char *words) {
 R_API RList *r_flag_tags_list(RFlag *f, const char * R_NULLABLE name) {
 	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (name) {
+		RListIter *iter;
+		char *word;
 		r_strf_var (k, 64, "tag.%s", name);
 		char *words = sdb_get (f->tags, k, NULL);
-		return r_str_split_list (words, " ", 0);
+		RList *list = r_str_split_list (words, " ", 0);
+		if (!list) {
+			free (words);
+			return NULL;
+		}
+		RList *res = r_list_newf (free);
+		if (!res) {
+			r_list_free (list);
+			free (words);
+			return NULL;
+		}
+		r_list_foreach (list, iter, word) {
+			char *dup = strdup (word);
+			if (!dup) {
+				r_list_free (res);
+				r_list_free (list);
+				free (words);
+				return NULL;
+			}
+			r_list_append (res, dup);
+		}
+		r_list_free (list);
+		free (words);
+		return res;
 	}
 	RList *res = r_list_newf (free);
 	SdbList *o = sdb_foreach_list (f->tags, false);
