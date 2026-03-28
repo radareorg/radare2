@@ -681,3 +681,49 @@ va       true
 - 2 3 x86-64 ba:0x100000000 sz:72800 ./bins/mach0/ls-m1
 EOF
 RUN
+
+NAME=obf?
+FILE=--
+CMDS=obf?
+EXPECT=<<EOF
+| obf ([file])  load bininfo for current file (useful for r2 -n)
+EOF
+RUN
+
+NAME=ob subcommand help suffixes
+FILE=--
+CMDS=<<EOF
+ob*?~?r2 commands
+ob-?~?delete all binfiles
+ob--?~?delete the last binfile
+ob.?~?show bfid at current address
+ob=?~?ascii art table
+oba?~?open bin info from the given address
+obf?~?load bininfo for current file
+obi?~?alias for 'i'
+obio?~?bin.io
+obj?~?JSON format
+obL?~?same as iL or Li
+obm?~?merge current selected binfile
+obm-?~?same as obm, but deletes the current binfile
+obo?~?fd number
+obr?~?rebase current bin object
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+EOF
+RUN
