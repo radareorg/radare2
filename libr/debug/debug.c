@@ -395,6 +395,7 @@ R_API RDebug *r_debug_new(int hard) {
 	dbg->glibc_version = 231; /* default version ubuntu 20 */
 	dbg->glibc_version_d = 0; /* no default glibc version */
 	dbg->coredump_filter = -1;
+	dbg->replay_bindings = ht_up_new (NULL, NULL, NULL);
 	r_debug_signal_init (dbg);
 	if (hard) {
 		dbg->bp = r_bp_new ();
@@ -403,6 +404,13 @@ R_API RDebug *r_debug_new(int hard) {
 		dbg->bp->baddr = 0;
 	}
 	return dbg;
+}
+
+static bool free_replay_binding_cb(void *user, const ut64 key, const void *value) {
+	(void)user;
+	(void)key;
+	r_debug_replay_binding_free ((RDebugReplayBinding *)value);
+	return true;
 }
 
 static int free_tracenodes_entry(RDebug *dbg, const char *k, const char *v) {
@@ -435,6 +443,10 @@ R_API void r_debug_free(RDebug *dbg) {
 		r_debug_signal_fini (dbg);
 		r_debug_trace_free (dbg->trace);
 		r_list_free (dbg->snaps);
+		if (dbg->replay_bindings) {
+			ht_up_foreach (dbg->replay_bindings, free_replay_binding_cb, NULL);
+			ht_up_free (dbg->replay_bindings);
+		}
 		r_debug_session_free (dbg->session);
 		r_anal_op_free (dbg->cur_op);
 		dbg->trace = NULL;
@@ -1158,6 +1170,10 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("linear session history is disabled after checkpoint restore");
+		return false;
+	}
 	if (cnum > dbg->session->maxcnum) {
 		R_LOG_ERROR ("out of cnum range");
 		return false;
@@ -1170,6 +1186,10 @@ R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 
 R_API int r_debug_step_back(RDebug *dbg, int steps) {
 	R_RETURN_VAL_IF_FAIL (dbg, -1);
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("step back is unavailable after checkpoint restore");
+		return -1;
+	}
 	if (steps > dbg->session->cnum) {
 		steps = dbg->session->cnum;
 	}
@@ -1196,7 +1216,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 
 	// If the debugger is not at the end of the changes
 	// Go to the end or the next breakpoint in the changes
-	if (dbg->session && dbg->session->cnum != dbg->session->maxcnum) {
+	if (dbg->session && dbg->session->linear_history_valid && dbg->session->cnum != dbg->session->maxcnum) {
 		bool has_bp = false;
 		RRegItem *ripc = r_reg_get (dbg->reg, "PC", R_REG_TYPE_GPR);
 		RVecDebugChangeReg *vreg = ht_up_find (dbg->session->registers, ripc->offset | (ripc->arena << 16), NULL);
@@ -1506,6 +1526,10 @@ R_API bool r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
 }
 
 R_API bool r_debug_continue_back(RDebug *dbg) {
+	if (dbg->session && !dbg->session->linear_history_valid) {
+		R_LOG_ERROR ("continue back is unavailable after checkpoint restore");
+		return false;
+	}
 	int cnum;
 	bool has_bp = false;
 
