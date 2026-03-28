@@ -16,13 +16,22 @@ static bool init_panels_menu(RCore *core);
 static void init_menu_color_settings_layout(void *core, const char *parent);
 static void init_menu_disasm_asm_settings_layout(void *_core, const char *parent);
 static void init_menu_screen_settings_layout(void *_core, const char *parent);
+static int open_menu_cb(void *user);
+static int anal_plugins_cb(void *user);
 
 typedef int Direction;
 
 typedef struct {
 	const char *name;
+	const char *desc;
 	RPanelsMenuCallback cb;
 } MenuItem;
+
+typedef struct {
+	char *name;
+	char *desc;
+	char *args;
+} AnalPluginMenuEntry;
 
 // clang-format off
 
@@ -36,6 +45,19 @@ static const char *panels_static[] = {
 
 static const char *menus[] = {
 	"File", "Settings", "Edit", "View", "Tools", "Search", "Emulate", "Debug", "Analyze", "Help"
+};
+
+static const char *menus_desc[] = {
+	"File and project operations",
+	"Configuration, themes and layouts",
+	"Clipboard and write operations",
+	"Open analysis and data views",
+	"Tools, shells and file manager",
+	"String, code and pattern searches",
+	"ESIL execution helpers",
+	"Debugger views and actions",
+	"Core analysis actions and plugin commands",
+	"Help, versions and manpages"
 };
 
 static const char *menus_File[] = {
@@ -96,7 +118,7 @@ static const char *menus_Debug[] = {
 };
 
 static const char *menus_Analyze[] = {
-	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "Preludes", "References"
+	"Function", "Symbols", "Program", "BasicBlocks", "Calls", "Preludes", "References", "Plugins..."
 };
 
 static const char *menus_settings_disassembly[] = {
@@ -687,6 +709,48 @@ static void r_panels_bottom_panel_line(RCore *core) {
 		r_cons_printf (cons, "%s", hline);
 	}
 	r_cons_write (cons, br_corner, strlen (br_corner));
+}
+
+static RPanelsMenuItem *r_panels_get_selected_menu_item(RPanels *panels) {
+	RPanelsMenu *menu = panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	if (!parent || !parent->sub || parent->selectedIndex < 0 || parent->selectedIndex >= parent->n_sub) {
+		return NULL;
+	}
+	return parent->sub[parent->selectedIndex];
+}
+
+static char *r_panels_menu_status_text(RPanelsMenuItem *item) {
+	if (!item || !item->name) {
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (item->args) && R_STR_ISNOTEMPTY (item->desc)) {
+		return r_str_newf ("%s %s - %s", item->name, item->args, item->desc);
+	}
+	if (R_STR_ISNOTEMPTY (item->args)) {
+		return r_str_newf ("%s %s", item->name, item->args);
+	}
+	if (R_STR_ISNOTEMPTY (item->desc)) {
+		return r_str_newf ("%s: %s", item->name, item->desc);
+	}
+	return strdup (item->name);
+}
+
+static void r_panels_print_menu_status(RCore *core, const char *msg) {
+	int rows;
+	const int cols = r_cons_get_size (core->cons, &rows);
+	if (rows < 1 || cols < 1) {
+		return;
+	}
+	r_cons_gotoxy (core->cons, 0, rows - 1);
+	if (R_STR_ISEMPTY (msg)) {
+		r_cons_printf (core->cons, R_CONS_CLEAR_LINE);
+		return;
+	}
+	char *cropped = r_str_ansi_crop (msg, 0, 0, R_MAX (1, cols - 1), 1);
+	r_cons_printf (core->cons, R_CONS_CLEAR_LINE"%s%s"Color_RESET,
+		PANEL_HL_COLOR, cropped? cropped: msg);
+	free (cropped);
 }
 
 static void r_panels_menu_panel_print(RConsCanvas *can, RPanel *panel, int x, int y, int w, int h) {
@@ -1766,19 +1830,99 @@ static void r_panels_free_menu_item(RPanelsMenuItem *item) {
 	}
 	size_t i;
 	free (item->name);
-	free (item->p->model);
-	free (item->p->view);
-	free (item->p);
+	free (item->desc);
+	free (item->args);
 	for (i = 0; i < item->n_sub; i++) {
 		r_panels_free_menu_item (item->sub[i]);
 	}
 	free (item->sub);
+	if (item->p) {
+		if (item->p->model) {
+			free (item->p->model->cmd);
+			free (item->p->model->title);
+			free (item->p->model->bgcolor);
+			free (item->p->model->cmdStrCache);
+			free (item->p->model->readOnly);
+			free (item->p->model->funcName);
+			if (item->p->model->filter) {
+				for (i = 0; i < item->p->model->n_filter; i++) {
+					free (item->p->model->filter[i]);
+				}
+				free (item->p->model->filter);
+			}
+			free (item->p->model);
+		}
+		free (item->p->view);
+		free (item->p);
+	}
 	free (item);
 }
 
 static void r_panels_mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
 	r_panels_free_menu_item ((RPanelsMenuItem *)kv->value);
+}
+
+static void r_panels_free_root_menu(RPanelsMenu *menu) {
+	if (!menu) {
+		return;
+	}
+	if (menu->root) {
+		free (menu->root->name);
+		free (menu->root->desc);
+		free (menu->root->args);
+		free (menu->root->sub);
+		free (menu->root);
+	}
+	free (menu->history);
+	free (menu->refreshPanels);
+	free (menu);
+}
+
+static void r_panels_free_panel(RPanel *panel) {
+	if (!panel) {
+		return;
+	}
+	if (panel->model) {
+		free (panel->model->cmd);
+		free (panel->model->title);
+		free (panel->model->bgcolor);
+		free (panel->model->cmdStrCache);
+		free (panel->model->readOnly);
+		free (panel->model->funcName);
+		if (panel->model->filter) {
+			int i;
+			for (i = 0; i < panel->model->n_filter; i++) {
+				free (panel->model->filter[i]);
+			}
+			free (panel->model->filter);
+		}
+		free (panel->model);
+	}
+	free (panel->view);
+	free (panel);
+}
+
+static void r_panels_free_partial(RPanels *panels) {
+	if (!panels) {
+		return;
+	}
+	if (panels->mht) {
+		ht_pp_free (panels->mht);
+		panels->mht = NULL;
+	}
+	r_panels_free_root_menu (panels->panels_menu);
+	if (panels->panel) {
+		int i;
+		for (i = 0; i < PANEL_NUM_LIMIT; i++) {
+			r_panels_free_panel (panels->panel[i]);
+		}
+		free (panels->panel);
+	}
+	r_cons_canvas_free (panels->can);
+	r_list_free (panels->snows);
+	free (panels->name);
+	free (panels);
 }
 
 static bool r_panels_init(RCore *core, RPanels *panels, int w, int h) {
@@ -3324,26 +3468,66 @@ static char *r_panels_config_path(bool syspath) {
 	return r_xdg_datadir ("r2panels");
 }
 
-static void r_panels_add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {
+static void r_panels_set_menu_item_desc(RPanelsMenuItem *item, const char *desc) {
+	if (!item) {
+		return;
+	}
+	free (item->desc);
+	item->desc = R_STR_ISNOTEMPTY (desc)? strdup (desc): NULL;
+}
+
+static void r_panels_set_menu_item_args(RPanelsMenuItem *item, const char *args) {
+	if (!item) {
+		return;
+	}
+	free (item->args);
+	item->args = R_STR_ISNOTEMPTY (args)? strdup (args): NULL;
+}
+
+static void r_panels_add_menu_full(RCore *core, const char *parent, const char *name,
+		const char *desc, const char *args, RPanelsMenuCallback cb) {
 	RPanels *panels = core->panels;
 	RPanelsMenuItem *p_item;
 	RPanelsMenuItem *item = R_NEW0 (RPanelsMenuItem);
-	r_strf_buffer (128);
+	char *key;
+	const bool add_to_ht = strcmp (name, "--");
 	if (parent) {
 		void *addr = ht_pp_find (panels->mht, parent, NULL);
 		p_item = (RPanelsMenuItem *)addr;
-		ht_pp_insert (panels->mht, r_strf ("%s.%s", parent, name), item);
+		key = add_to_ht? r_str_newf ("%s.%s", parent, name): NULL;
 	} else {
 		p_item = panels->panels_menu->root;
-		ht_pp_insert (panels->mht, r_strf ("%s", name), item);
+		key = add_to_ht? strdup (name): NULL;
+	}
+	if (add_to_ht && !key) {
+		r_panels_free_menu_item (item);
+		return;
 	}
 	if (p_item == NULL) {
 		R_LOG_WARN ("Cannot find panel %s", parent);
-		r_sys_sleep (1);
+		free (key);
+		r_panels_free_menu_item (item);
+		return;
+	}
+	if (add_to_ht) {
+		void *addr = ht_pp_find (panels->mht, key, NULL);
+		if (addr) {
+			RPanelsMenuItem *existing = (RPanelsMenuItem *)addr;
+			r_panels_set_menu_item_desc (existing, desc);
+			r_panels_set_menu_item_args (existing, args);
+			if (cb) {
+				existing->cb = cb;
+			}
+			free (key);
+			r_panels_free_menu_item (item);
+			return;
+		}
 	}
 	item->n_sub = 0;
 	item->selectedIndex = 0;
 	item->name = strdup (name);
+	item->desc = R_STR_ISNOTEMPTY (desc)? strdup (desc): NULL;
+	item->args = R_STR_ISNOTEMPTY (args)? strdup (args): NULL;
 	item->sub = NULL;
 	item->cb = cb;
 	item->p = R_NEW0 (RPanel);
@@ -3354,18 +3538,168 @@ static void r_panels_add_menu(RCore *core, const char *parent, const char *name,
 			p_item->n_sub++;
 			RPanelsMenuItem **sub = realloc (p_item->sub, sizeof (RPanelsMenuItem *) * p_item->n_sub);
 			if (sub) {
+				if (add_to_ht) {
+					ht_pp_insert (panels->mht, key, item);
+				}
 				p_item->sub = sub;
 				p_item->sub[p_item->n_sub - 1] = item;
 				item = NULL;
+				key = NULL;
 			}
 		}
 	}
+	free (key);
 	r_panels_free_menu_item (item);
+}
+
+static void r_panels_add_menu(RCore *core, const char *parent, const char *name, RPanelsMenuCallback cb) {
+	r_panels_add_menu_full (core, parent, name, NULL, NULL, cb);
 }
 
 static int r_panels_cmpstr(const void *_a, const void *_b) {
 	char *a = (char *)_a, *b = (char *)_b;
 	return strcmp (a, b);
+}
+
+static int r_panels_cmp_plugin_menu_entry(const void *_a, const void *_b) {
+	const AnalPluginMenuEntry *a = _a;
+	const AnalPluginMenuEntry *b = _b;
+	return strcmp (a->name, b->name);
+}
+
+static void r_panels_free_plugin_menu_entry(void *p) {
+	AnalPluginMenuEntry *entry = (AnalPluginMenuEntry *)p;
+	if (!entry) {
+		return;
+	}
+	free (entry->name);
+	free (entry->desc);
+	free (entry->args);
+	free (entry);
+}
+
+static bool r_panels_is_blank_char(char ch) {
+	return ch == ' ' || ch == '\t';
+}
+
+static bool r_panels_parse_anal_plugin_line(const char *line, char **out_name, char **out_desc, char **out_args) {
+	*out_name = NULL;
+	*out_desc = NULL;
+	*out_args = NULL;
+	if (R_STR_ISEMPTY (line)) {
+		return false;
+	}
+	char *trimmed = r_str_trim_dup (line);
+	if (R_STR_ISEMPTY (trimmed)) {
+		free (trimmed);
+		return false;
+	}
+	char *s = trimmed;
+	if (*s == '|') {
+		s = (char *)r_str_trim_head_ro (s + 1);
+	} else if (r_str_startswith (s, "Usage:")) {
+		s = (char *)r_str_trim_head_ro (s + strlen ("Usage:"));
+	}
+	if (*s != 'a') {
+		free (trimmed);
+		return false;
+	}
+	char *end = s;
+	while (*end && !r_panels_is_blank_char (*end) && *end != '[' && *end != '<') {
+		end++;
+	}
+	if (end == s) {
+		free (trimmed);
+		return false;
+	}
+	char saved = *end;
+	*end = 0;
+	*out_name = strdup (s);
+	*end = saved;
+	if (!*out_name) {
+		free (trimmed);
+		return false;
+	}
+	char *rest = (char *)r_str_trim_head_ro (end);
+	RStrBuf *args = r_strbuf_new (NULL);
+	if (!args) {
+		free (*out_name);
+		*out_name = NULL;
+		free (trimmed);
+		return false;
+	}
+	while (*rest == '[' || *rest == '<') {
+		const char closech = *rest == '[' ? ']' : '>';
+		char *close = strchr (rest, closech);
+		if (!close) {
+			break;
+		}
+		char *arg = R_STR_NDUP (rest, (int)(close - rest) + 1);
+		if (R_STR_ISNOTEMPTY (arg)) {
+			if (r_strbuf_length (args) > 0) {
+				r_strbuf_append (args, " ");
+			}
+			r_strbuf_append (args, arg);
+		}
+		free (arg);
+		rest = (char *)r_str_trim_head_ro (close + 1);
+	}
+	if (*rest == '-') {
+		rest = (char *)r_str_trim_head_ro (rest + 1);
+	}
+	if (R_STR_ISNOTEMPTY (rest)) {
+		*out_desc = strdup (rest);
+	}
+	char *argstr = r_strbuf_drain (args);
+	if (R_STR_ISNOTEMPTY (argstr)) {
+		*out_args = argstr;
+	} else {
+		free (argstr);
+	}
+	free (trimmed);
+	return true;
+}
+
+static AnalPluginMenuEntry *r_panels_find_plugin_menu_entry(RList *list, const char *name) {
+	RListIter *iter;
+	AnalPluginMenuEntry *entry;
+	r_list_foreach (list, iter, entry) {
+		if (!strcmp (entry->name, name)) {
+			return entry;
+		}
+	}
+	return NULL;
+}
+
+static void r_panels_merge_plugin_menu_entry(AnalPluginMenuEntry *entry, const char *desc, const char *args) {
+	if (!entry) {
+		return;
+	}
+	if (R_STR_ISNOTEMPTY (args) && R_STR_ISEMPTY (entry->args)) {
+		entry->args = strdup (args);
+	}
+	if (R_STR_ISEMPTY (desc)) {
+		return;
+	}
+	if (R_STR_ISEMPTY (entry->desc)) {
+		entry->desc = strdup (desc);
+		return;
+	}
+	if (!strstr (entry->desc, desc)) {
+		char *merged = r_str_newf ("%s; %s", entry->desc, desc);
+		free (entry->desc);
+		entry->desc = merged;
+	}
+}
+
+static char *r_panels_menu_fallback_desc(RCore *core, const char *name, RPanelsMenuCallback cb, const char *desc) {
+	if (R_STR_ISNOTEMPTY (desc)) {
+		return strdup (desc);
+	}
+	if (cb == open_menu_cb) {
+		return r_str_newf ("Open %s submenu", name);
+	}
+	return r_panels_search_db (core, name);
 }
 
 static RList *r_panels_sorted_list(RCore *core, const char *menu[], int count) {
@@ -3380,11 +3714,11 @@ static RList *r_panels_sorted_list(RCore *core, const char *menu[], int count) {
 	return list;
 }
 
-static RPanelsMenuCallback r_panels_find_menu_cb(const MenuItem *items, const char *name) {
+static const MenuItem *r_panels_find_menu_item(const MenuItem *items, const char *name) {
 	int i;
 	for (i = 0; items && items[i].name; i++) {
 		if (!strcmp (name, items[i].name)) {
-			return items[i].cb;
+			return &items[i];
 		}
 	}
 	return NULL;
@@ -3581,6 +3915,12 @@ static void r_panels_refresh(RCore *core) {
 		if (core->scr_gadgets) {
 			r_core_cmd_call (core, "pg");
 		}
+		if (panels->mode == PANEL_MODE_MENU) {
+			RPanelsMenuItem *item = r_panels_get_selected_menu_item (panels);
+			char *status = r_panels_menu_status_text (item);
+			r_panels_print_menu_status (core, status);
+			free (status);
+		}
 		r_panels_show_cursor (core);
 		r_cons_flush (core->cons);
 	}
@@ -3699,6 +4039,136 @@ static int add_cmd_panel(void *user) {
 	return 0;
 }
 
+static char *r_panels_prompt_menu_args(RCore *core, const RPanelsMenuItem *item) {
+	R_RETURN_VAL_IF_FAIL (item && item->name, NULL);
+	RStrBuf *buf = r_strbuf_new (item->name);
+	if (!buf) {
+		return NULL;
+	}
+	const char *args = item->args;
+	while (R_STR_ISNOTEMPTY (args)) {
+		const char *open = strchr (args, '[');
+		if (!open) {
+			break;
+		}
+		const char *close = strchr (open + 1, ']');
+		if (!close) {
+			break;
+		}
+		char *label = R_STR_NDUP (open + 1, (int)(close - open) - 1);
+		if (!label) {
+			break;
+		}
+		char *prompt = r_str_newf ("%s %s: ", item->name, label);
+		char *value = r_panels_show_status_input (core, prompt);
+		free (prompt);
+		free (label);
+		if (!value) {
+			r_strbuf_free (buf);
+			return NULL;
+		}
+		if (R_STR_ISEMPTY (value)) {
+			free (value);
+			break;
+		}
+		r_strbuf_append (buf, " ");
+		r_strbuf_append (buf, value);
+		free (value);
+		args = close + 1;
+	}
+	return r_strbuf_drain (buf);
+}
+
+static int anal_plugins_cb(void *user) {
+	RCore *core = (RCore *)user;
+	if (!r_panels_check_panel_num (core)) {
+		return 0;
+	}
+	RPanelsMenu *menu = core->panels->panels_menu;
+	RPanelsMenuItem *parent = menu->history[menu->depth - 1];
+	RPanelsMenuItem *child = parent->sub[parent->selectedIndex];
+	char *cmd = R_STR_ISNOTEMPTY (child->args)
+		? r_panels_prompt_menu_args (core, child)
+		: strdup (child->name);
+	if (!cmd) {
+		return 0;
+	}
+	r_panels_adjust_and_add_panel (core, child->name, cmd);
+	r_panels_set_mode (core, PANEL_MODE_DEFAULT);
+	free (cmd);
+	menu->n_refresh = 0;
+	return 0;
+}
+
+static void init_menu_anal_plugins(void *_core, const char *parent) {
+	RCore *core = (RCore *)_core;
+	RList *entries = r_list_newf (r_panels_free_plugin_menu_entry);
+	if (!entries) {
+		return;
+	}
+	RListIter *iter;
+	RAnalPlugin *ap;
+	r_list_foreach (core->anal->plugins, iter, ap) {
+		if (!ap->cmd) {
+			continue;
+		}
+		char *help = r_core_cmd_strf (core, "a:%s?", ap->meta.name);
+		if (!help) {
+			continue;
+		}
+		RList *lines = r_str_split_list (help, "\n", 0);
+		if (!lines) {
+			free (help);
+			continue;
+		}
+		RListIter *line_iter;
+		char *line;
+		bool found = false;
+		r_list_foreach (lines, line_iter, line) {
+			char *name = NULL, *desc = NULL, *args = NULL;
+			if (!r_panels_parse_anal_plugin_line (line, &name, &desc, &args)) {
+				continue;
+			}
+			if (R_STR_ISEMPTY (desc) && R_STR_ISNOTEMPTY (ap->meta.desc)) {
+				desc = strdup (ap->meta.desc);
+			}
+			AnalPluginMenuEntry *entry = r_panels_find_plugin_menu_entry (entries, name);
+			if (!entry) {
+				entry = R_NEW0 (AnalPluginMenuEntry);
+				if (entry) {
+					entry->name = name;
+					entry->desc = desc;
+					entry->args = args;
+					r_list_append (entries, entry);
+					name = desc = args = NULL;
+				}
+			} else {
+				r_panels_merge_plugin_menu_entry (entry, desc, args);
+			}
+			free (name);
+			free (desc);
+			free (args);
+			found = true;
+		}
+		if (!found) {
+			AnalPluginMenuEntry *entry = R_NEW0 (AnalPluginMenuEntry);
+			if (entry) {
+				entry->name = r_str_newf ("a:%s", ap->meta.name);
+				entry->desc = R_STR_ISNOTEMPTY (ap->meta.desc)? strdup (ap->meta.desc): strdup ("analysis plugin command");
+				r_list_append (entries, entry);
+			}
+		}
+		r_list_free (lines);
+		free (help);
+	}
+	r_list_sort (entries, r_panels_cmp_plugin_menu_entry);
+	AnalPluginMenuEntry *entry;
+	r_list_foreach (entries, iter, entry) {
+		r_panels_add_menu_full (core, parent, entry->name, entry->desc, entry->args, anal_plugins_cb);
+	}
+	r_list_free (entries);
+}
+
 static void r_panels_add_menu_items(RCore *core, const char *parent,
 		const MenuItem *items, const char **menu_list, int count, RPanelsMenuCallback default_cb) {
 	int i;
@@ -3708,8 +4178,12 @@ static void r_panels_add_menu_items(RCore *core, const char *parent,
 			r_panels_add_menu (core, parent, name, r_panels_separator);
 			continue;
 		}
-		RPanelsMenuCallback cb = r_panels_find_menu_cb (items, name);
-		r_panels_add_menu (core, parent, name, cb? cb: (default_cb? default_cb: add_cmd_panel));
+		const MenuItem *item = r_panels_find_menu_item (items, name);
+		RPanelsMenuCallback cb = item? item->cb: NULL;
+		RPanelsMenuCallback final_cb = cb? cb: (default_cb? default_cb: add_cmd_panel);
+		char *desc = r_panels_menu_fallback_desc (core, name, final_cb, item? item->desc: NULL);
+		r_panels_add_menu_full (core, parent, name, desc, NULL, final_cb);
+		free (desc);
 	}
 }
 
@@ -3719,8 +4193,12 @@ static void r_panels_add_menu_items_sorted(RCore *core, const char *parent,
 	char *pos;
 	RListIter *iter;
 	r_list_foreach (list, iter, pos) {
-		RPanelsMenuCallback cb = r_panels_find_menu_cb (items, pos);
-		r_panels_add_menu (core, parent, pos, cb? cb: (default_cb? default_cb: add_cmd_panel));
+		const MenuItem *item = r_panels_find_menu_item (items, pos);
+		RPanelsMenuCallback cb = item? item->cb: NULL;
+		RPanelsMenuCallback final_cb = cb? cb: (default_cb? default_cb: add_cmd_panel);
+		char *desc = r_panels_menu_fallback_desc (core, pos, final_cb, item? item->desc: NULL);
+		r_panels_add_menu_full (core, parent, pos, desc, NULL, final_cb);
+		free (desc);
 	}
 	r_list_free (list);
 }
@@ -5854,120 +6332,121 @@ static void load_config_menu(RCore *core) {
 }
 
 static const MenuItem file_items[] = {
-	{ "Open File", open_file_cb },
-	{ "Reopen...", open_menu_cb },
-	{ "Close File", close_file_cb },
-	{ "--", NULL },
-	{ "Open Project", project_open_cb },
-	{ "Save Project", project_save_cb },
-	{ "Close Project", project_close_cb },
-	{ "--", NULL },
-	{ "Quit", quit_cb },
-	{ NULL, NULL }
+	{ "Open File", "Prompt for a file and open it", open_file_cb },
+	{ "Reopen...", "Reopen the current file with a different mode", open_menu_cb },
+	{ "Close File", "Close the current file descriptor", close_file_cb },
+	{ "--", NULL, NULL },
+	{ "Open Project", "Load a project into the current session", project_open_cb },
+	{ "Save Project", "Save the current project state", project_save_cb },
+	{ "Close Project", "Close the active project", project_close_cb },
+	{ "--", NULL, NULL },
+	{ "Quit", "Leave panels mode", quit_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem settings_items[] = {
-	{ "Edit radare2rc", r2rc_cb },
-	{ "Save Layout", save_layout_cb },
-	{ "Load Layout", open_menu_cb },
-	{ "Clear Saved Layouts", clear_layout_cb },
-	{ NULL, NULL }
+	{ "Edit radare2rc", "Open the user radare2rc file", r2rc_cb },
+	{ "Save Layout", "Save the current panels layout", save_layout_cb },
+	{ "Load Layout", "Load a saved or default layout", open_menu_cb },
+	{ "Clear Saved Layouts", "Delete every saved panels layout", clear_layout_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem edit_items[] = {
-	{ "Copy", copy_cb },
-	{ "Paste", paste_cb },
-	{ "Write String", write_str_cb },
-	{ "Write Hex", write_hex_cb },
-	{ "Write Value", writeValueCb },
-	{ "Assemble", assemble_cb },
-	{ "Fill", fill_cb },
-	{ "io.cache", open_menu_cb },
-	{ NULL, NULL }
+	{ "Copy", "Copy the current selection or line", copy_cb },
+	{ "Paste", "Paste the clipboard at the current offset", paste_cb },
+	{ "Write String", "Write an ASCII string", write_str_cb },
+	{ "Write Hex", "Write raw hexpairs", write_hex_cb },
+	{ "Write Value", "Write a numeric value", writeValueCb },
+	{ "Assemble", "Assemble and write instructions", assemble_cb },
+	{ "Fill", "Fill a block with a repeated value", fill_cb },
+	{ "io.cache", "Toggle io.cache helpers", open_menu_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem view_items[] = {
-	{ "Show All Decompiler Output", show_all_decompiler_cb },
-	{ NULL, NULL }
+	{ "Show All Decompiler Output", "Expand the full decompiler output", show_all_decompiler_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem tools_items[] = {
-	{ "Calculator", calculator_cb },
-	{ "Assembler", r2_assembler_cb },
-	{ "R2 Shell", shell_r2_cb },
-	{ "System Shell", shell_system_cb },
-	{ "FSMount Shell", shell_fs_cb },
-	{ "R2JS Shell", shell_r2js_cb },
-	{ "File Manager", shell_mmc_cb },
-	{ NULL, NULL }
+	{ "Calculator", "Open the expression calculator", calculator_cb },
+	{ "Assembler", "Open the assembler helper", r2_assembler_cb },
+	{ "R2 Shell", "Run commands inside an r2 shell", shell_r2_cb },
+	{ "System Shell", "Open a system shell", shell_system_cb },
+	{ "FSMount Shell", "Browse mounted filesystems", shell_fs_cb },
+	{ "R2JS Shell", "Open an R2JS shell", shell_r2js_cb },
+	{ "File Manager", "Open the file manager", shell_mmc_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem search_items[] = {
-	{ "String (Whole Bin)", string_whole_bin_cb },
-	{ "String (Data Sections)", string_data_sec_cb },
-	{ "ROP", rop_cb },
-	{ "Magic", magic_cb },
-	{ "Code", code_cb },
-	{ "Hexpairs", hexpairs_cb },
-	{ NULL, NULL }
+	{ "String (Whole Bin)", "Search strings in the whole binary", string_whole_bin_cb },
+	{ "String (Data Sections)", "Search strings in data sections only", string_data_sec_cb },
+	{ "ROP", "Search for ROP gadgets", rop_cb },
+	{ "Magic", "Run magic signatures", magic_cb },
+	{ "Code", "Search for code sequences", code_cb },
+	{ "Hexpairs", "Search for raw hexpairs", hexpairs_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem emulate_items[] = {
-	{ "Step From", esil_init_cb },
-	{ "Step To", esil_step_to_cb },
-	{ "Step Range", esil_step_range_cb },
-	{ NULL, NULL }
+	{ "Step From", "Emulate from the current address", esil_init_cb },
+	{ "Step To", "Emulate until a target address", esil_step_to_cb },
+	{ "Step Range", "Emulate a range of addresses", esil_step_range_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem debug_items[] = {
-	{ "Breakpoints", break_points_cb },
-	{ "Watchpoints", watch_points_cb },
-	{ "Continue", continue_cb },
-	{ "Step", step_cb },
-	{ "Step Over", step_over_cb },
-	{ "Reload", reload_cb },
-	{ NULL, NULL }
+	{ "Breakpoints", "Open the breakpoints panel", break_points_cb },
+	{ "Watchpoints", "Open the watchpoints panel", watch_points_cb },
+	{ "Continue", "Resume execution", continue_cb },
+	{ "Step", "Single-step into the next instruction", step_cb },
+	{ "Step Over", "Single-step over the next instruction", step_over_cb },
+	{ "Reload", "Reload the current debugging session", reload_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem analyze_items[] = {
-	{ "Function", function_cb },
-	{ "Symbols", symbols_cb },
-	{ "Program", program_cb },
-	{ "BasicBlocks", basic_blocks_cb },
-	{ "Preludes", aap_cb },
-	{ "Emulation", aae_cb },
-	{ "Calls", calls_cb },
-	{ "References", references_cb },
-	{ NULL, NULL }
+	{ "Function", "Analyze the current function", function_cb },
+	{ "Symbols", "Analyze symbols into functions and metadata", symbols_cb },
+	{ "Program", "Run broad program analysis", program_cb },
+	{ "BasicBlocks", "Analyze basic blocks", basic_blocks_cb },
+	{ "Preludes", "Find function preludes", aap_cb },
+	{ "Emulation", "Analyze through emulation", aae_cb },
+	{ "Calls", "Analyze calls and callees", calls_cb },
+	{ "References", "Analyze references", references_cb },
+	{ "Plugins...", "Browse analysis plugin commands", open_menu_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem help_items[] = {
-	{ "License", license_cb },
-	{ "Version", version_cb },
-	{ "Full Version", version2_cb },
-	{ "Fortune", fortune_cb },
-	{ "2048", game_cb },
-	{ "Manpages...", open_menu_cb },
-	{ "Toggle Help", help_cb },
-	{ NULL, NULL }
+	{ "License", "Show the software license", license_cb },
+	{ "Version", "Show the short version", version_cb },
+	{ "Full Version", "Show the full version report", version2_cb },
+	{ "Fortune", "Print a random fortune", fortune_cb },
+	{ "2048", "Open the 2048 game", game_cb },
+	{ "Manpages...", "Browse bundled manpages", open_menu_cb },
+	{ "Toggle Help", "Toggle the panels help view", help_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem reopen_items[] = {
-	{ "In Read+Write", rw_cb },
-	{ "In Debugger", debugger_cb },
-	{ NULL, NULL }
+	{ "In Read+Write", "Reopen the file in read-write mode", rw_cb },
+	{ "In Debugger", "Reopen the file in debugger mode", debugger_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem loadlayout_items[] = {
-	{ "Saved..", open_menu_cb },
-	{ "Default", load_layout_default_cb },
-	{ NULL, NULL }
+	{ "Saved..", "Choose one of the saved layouts", open_menu_cb },
+	{ "Default", "Restore the default layout", load_layout_default_cb },
+	{ NULL, NULL, NULL }
 };
 
 static const MenuItem iocache_items[] = {
-	{ "On", io_cache_on_cb },
-	{ "Off", io_cache_off_cb },
-	{ NULL, NULL }
+	{ "On", "Enable io.cache", io_cache_on_cb },
+	{ "Off", "Disable io.cache", io_cache_off_cb },
+	{ NULL, NULL, NULL }
 };
 
 static bool init_panels_menu(RCore *core) {
@@ -5984,7 +6463,7 @@ static bool init_panels_menu(RCore *core) {
 
 	int i;
 	for (i = 0; i < R_ARRAY_SIZE (menus); i++) {
-		r_panels_add_menu (core, NULL, menus[i], open_menu_cb);
+		r_panels_add_menu_full (core, NULL, menus[i], menus_desc[i], NULL, open_menu_cb);
 	}
 
 	r_panels_add_menu_items (core, "File", file_items, menus_File, R_ARRAY_SIZE (menus_File), add_cmd_panel);
@@ -6003,6 +6482,7 @@ static bool init_panels_menu(RCore *core) {
 	init_menu_saved_layout (core, "Settings.Load Layout.Saved..");
 	init_menu_color_settings_layout (core, "Settings.Color Themes...");
 	init_menu_manpages (core, "Help.Manpages...");
+	init_menu_anal_plugins (core, "Analyze.Plugins...");
 
 	{
 		const char *parent = "Settings.Decompiler...";
@@ -7056,10 +7536,14 @@ static void init_new_panels_root(RCore *core) {
 	core->panels = panels;
 	panels_root->panels[panels_root->n_panels++] = panels;
 	if (!init_panels_menu (core)) {
+		panels_root->panels[--panels_root->n_panels] = NULL;
+		r_panels_free_partial (panels);
 		core->panels = prev;
 		return;
 	}
 	if (!r_panels_alloc (core, panels)) {
+		panels_root->panels[--panels_root->n_panels] = NULL;
+		r_panels_free_partial (panels);
 		core->panels = prev;
 		return;
 	}

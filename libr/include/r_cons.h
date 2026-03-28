@@ -1249,6 +1249,8 @@ typedef int (*RPanelsMenuCallback)(void *user);
 typedef struct r_panels_menu_item {
 	int n_sub, selectedIndex;
 	char *name;
+	char *desc;
+	char *args;
 	struct r_panels_menu_item **sub;
 	RPanelsMenuCallback cb;
 	RPanel *p;
