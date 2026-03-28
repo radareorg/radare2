@@ -256,9 +256,11 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	n->id = item->id;
 	n->name = STRDUP_OR_NULL (item->name);
 	n->realname = STRDUP_OR_NULL (item->realname);
+	n->rawname = STRDUP_OR_NULL (item->rawname);
 	n->addr = item->addr;
 	n->size = item->size;
 	n->space = item->space;
+	n->demangled = item->demangled;
 	return n;
 }
 
