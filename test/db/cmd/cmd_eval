@@ -130,6 +130,32 @@ all
 EOF
 RUN
 
+NAME=e asm.cpu rejects invalid value
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e asm.cpu=cortex
+e asm.cpu=tetris
+e asm.cpu
+EOF
+EXPECT=<<EOF
+cortex
+EOF
+RUN
+
+NAME=e asm.cpu clears invalid value on arch switch
+FILE=-
+ARGS=-a arm -b 16
+CMDS=<<EOF
+e asm.cpu=cortex
+e asm.arch=v850
+e asm.cpu
+EOF
+EXPECT=<<EOF
+
+EOF
+RUN
+
 NAME=e asm.syntax
 FILE=-
 CMDS=<<EOF
