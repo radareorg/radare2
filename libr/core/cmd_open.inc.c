@@ -106,21 +106,21 @@ static RCoreHelpMessage help_msg_ob = {
 	"ob", "", "list opened binary files and objid",
 	"ob*", "", "list opened binary files and objid (r2 commands)",
 	"ob", " *", "select all bins (use 'ob bfid' to pick one)",
-	"obi", "?[..]", "alias for 'i'",
-	"obio", "", "Load bin info from the io plugin forcing the use of bin.io",
-	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
-	"obm-", "([id])", "same as obm, but deletes the current binfile",
 	"ob-", "*", "delete all binfiles",
 	"ob-", "[objid]", "delete binfile by binobjid",
 	"ob--", "", "delete the last binfile",
 	"ob.", " ([addr])", "show bfid at current address",
 	"ob=", "", "show ascii art table having the list of open files",
-	"obL", "", "same as iL or Li",
 	"oba", " [addr] [baddr]", "open file and load bin info at given address",
 	"oba", " [addr] [filename]", "open file and load bin info at given address",
 	"oba", " [addr]", "open bin info from the given address",
 	"obf", " ([file])", "load bininfo for current file (useful for r2 -n)",
+	"obi", "?[..]", "alias for 'i'",
+	"obio", "", "Load bin info from the io plugin forcing the use of bin.io",
 	"obj", "", "list opened binary files and objid (JSON format)",
+	"obL", "", "same as iL or Li",
+	"obm", "([id])", "merge current selected binfile into previous binfile (id-1)",
+	"obm-", "([id])", "same as obm, but deletes the current binfile",
 	"obo", " [fd]", "switch to open binfile by fd number",
 	"obr", " [baddr]", "rebase current bin object",
 	NULL
@@ -231,18 +231,42 @@ static void cmd_open_bin(RCore *core, const char *input) {
 
 	switch (input[1]) {
 	case 'L': // "obL"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "obL");
+			break;
+		}
 		r_core_cmd0 (core, "iL");
 		break;
 	case '\0': // "ob"
-	case 'q': // "obj"
-	case 'j': // "obj"
-	case '*': // "ob*"
 		r_core_bin_list (core, input[1]);
-		if (input[1] == 'j') {
-			r_cons_newline (core->cons);
+		break;
+	case 'q': // "obq"
+		if (input[2] == '?') {
+			r_core_cmd_help (core, help_msg_ob);
+			break;
 		}
+		r_core_bin_list (core, input[1]);
+		break;
+	case 'j': // "obj"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "obj");
+			break;
+		}
+		r_core_bin_list (core, input[1]);
+		r_cons_newline (core->cons);
+		break;
+	case '*': // "ob*"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "ob*");
+			break;
+		}
+		r_core_bin_list (core, input[1]);
 		break;
 	case '.': // "ob."
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "ob.");
+			break;
+		}
 		{
 			const char *arg = r_str_trim_head_ro (input + 2);
 			ut64 at = core->addr;
@@ -341,6 +365,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 	{
 		ut32 id;
 		const char *tmp;
+		if (input[2] == '?' && !input[3]) {
+			r_core_cmd_help_match (core, help_msg_o, "ob");
+			break;
+		}
 		if (input[2] == '-' || input[2] == '*') {
 			core->allbins = true;
 			break;
@@ -379,7 +407,9 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "obf"
-		if (input[2] == ' ') {
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "obf");
+		} else if (input[2] == ' ') {
 			r_core_cmdf (core, "oba 0 %s", input + 3);
 		} else {
 			r_core_bin_load (core, NULL, UT64_MAX);
@@ -387,7 +417,13 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'i': // "obi"
-		if (input[2] == 'o') { // "obio"
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "obi");
+		} else if (input[2] == 'o') { // "obio"
+			if (input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_ob, "obio");
+				break;
+			}
 			r_bin_force_plugin (core->bin, "io");
 			r_core_bin_load (core, NULL, 0);
 		} else {
@@ -396,6 +432,14 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		break;
 	case 'm': // "obm"
 		{
+			if (input[2] == '?') {
+				r_core_cmd_help_match (core, help_msg_ob, "obm");
+				break;
+			}
+			if (input[2] == '-' && input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_ob, "obm-");
+				break;
+			}
 			int dstid = atoi (input + 2);
 			// TODO take argument with given id to merge to
 			RBinFile *src = r_bin_cur (core->bin);
@@ -441,9 +485,19 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case '-': // "ob-"
-		if (input[2] == '*') {
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "ob-");
+		} else if (input[2] == '*') {
+			if (input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_ob, "ob-");
+				break;
+			}
 			r_bin_file_delete_all (core->bin);
 		} else if (input[2] == '-') {
+			if (input[3] == '?') {
+				r_core_cmd_help_match (core, help_msg_ob, "ob--");
+				break;
+			}
 			RBinFile *bf = r_bin_cur (core->bin);
 			int current = bf? bf->id: 0;
 			if (current >= 0) {
@@ -471,6 +525,10 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case '=': // "ob="
+		if (input[2] == '?') {
+			r_core_cmd_help_match (core, help_msg_ob, "ob=");
+			break;
+		}
 		{
 			char temp[SDB_NUM_BUFSZ];
 			RListIter *iter;
