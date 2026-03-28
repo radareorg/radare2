@@ -187,12 +187,12 @@ R_API char *r_flag_zone_list(RFlag *f, int mode) {
 	r_list_foreach (db, iter, zi) {
 		if (mode == '*') {
 			r_strbuf_appendf (sb, "'@0x%08"PFMT64x"'fz %s\n", zi->from, zi->name);
-			r_strbuf_appendf (sb, "'f %s %"PFMT64d" 0x08%"PFMT64x"\n", zi->name,
+			r_strbuf_appendf (sb, "'f %s %"PFMT64d" 0x%08"PFMT64x"\n", zi->name,
 				zi->to - zi->from, zi->from);
 		} else if (mode == 'q') {
 			r_strbuf_appendf (sb, "%s\n", zi->name);
 		} else {
-			r_strbuf_appendf (sb, "0x08%"PFMT64x"  0x%08"PFMT64x"  %s\n",
+			r_strbuf_appendf (sb, "0x%08"PFMT64x"  0x%08"PFMT64x"  %s\n",
 					zi->from, zi->to, zi->name);
 		}
 	}
