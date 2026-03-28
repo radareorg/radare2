@@ -516,9 +516,33 @@ static bool r_panels_show_status_yesno(RCore *core, int def, const char *msg) {
 	return r_cons_yesno (cons, def, R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 }
 
+static void r_panels_clamp_console_size(RCore *core, int *w, int *h) {
+	int rows;
+	int cols = r_cons_get_size (core->cons, &rows);
+	if (cols < 1) {
+		cols = 1;
+	} else if (cols > 1024) {
+		cols = 1024;
+	}
+	if (rows < 1) {
+		rows = 1;
+	} else if (rows > 1024) {
+		rows = 1024;
+	}
+	core->cons->columns = cols;
+	core->cons->rows = rows;
+	if (w) {
+		*w = cols;
+	}
+	if (h) {
+		*h = rows;
+	}
+}
+
 static char *r_panels_show_status_input(RCore *core, const char *msg) {
 	char *n_msg = r_str_newf (R_CONS_CLEAR_LINE"%s[Status] %s"Color_RESET, PANEL_HL_COLOR, msg);
 	RCons *cons = core->cons;
+	r_panels_clamp_console_size (core, NULL, NULL);
 	r_cons_gotoxy (cons, 0, 0);
 	r_cons_flush (cons);
 	char *out = r_cons_input (cons, n_msg);
@@ -1785,14 +1809,9 @@ static bool r_panels_init(RCore *core, RPanels *panels, int w, int h) {
 
 static RPanels *r_panels_new(RCore *core) {
 	RPanels *panels = R_NEW0 (RPanels);
-	int h, w = r_cons_get_size (core->cons, &h);
+	int h, w;
+	r_panels_clamp_console_size (core, &w, &h);
 	core->visual.firstRun = true;
-	if (w < 1) {
-		w = 1;
-	}
-	if (h < 1) {
-		h = 1;
-	}
 	if (!r_panels_init (core, panels, w, h)) {
 		free (panels);
 		return NULL;
@@ -4440,14 +4459,22 @@ static void direction_stack_cb(void *user, int direction) {
 		}
 		break;
 	case 'k':
-		r_config_set_i (core->config, "stack.delta",
-				r_config_get_i (core->config, "stack.delta") + cols);
-		cur->model->addr -= cols;
+		{
+			ut64 delta = r_config_get_i (core->config, "stack.delta");
+			if (cur->model->addr >= (ut64)cols && delta <= UT64_MAX - (ut64)cols) {
+				r_config_set_i (core->config, "stack.delta", delta + cols);
+				cur->model->addr -= cols;
+			}
+		}
 		break;
 	case 'j':
-		r_config_set_i (core->config, "stack.delta",
-				r_config_get_i (core->config, "stack.delta") - cols);
-		cur->model->addr += cols;
+		{
+			ut64 delta = r_config_get_i (core->config, "stack.delta");
+			if (delta >= (ut64)cols && cur->model->addr <= UT64_MAX - (ut64)cols) {
+				r_config_set_i (core->config, "stack.delta", delta - cols);
+				cur->model->addr += cols;
+			}
+		}
 		break;
 	}
 }
@@ -5801,9 +5828,18 @@ static void load_config_menu(RCore *core) {
 	RListIter *th_iter;
 	char *th;
 	int i = 0;
-	r_list_foreach (themes_list, th_iter, th) {
-		core->visual.menus_Colors[i++] = th;
+	for (i = 0; i < R_ARRAY_SIZE (core->visual.menus_Colors); i++) {
+		free (core->visual.menus_Colors[i]);
+		core->visual.menus_Colors[i] = NULL;
 	}
+	i = 0;
+	r_list_foreach (themes_list, th_iter, th) {
+		if (i >= R_ARRAY_SIZE (core->visual.menus_Colors)) {
+			break;
+		}
+		core->visual.menus_Colors[i++] = strdup (th);
+	}
+	r_list_free (themes_list);
 }
 
 static const MenuItem file_items[] = {
