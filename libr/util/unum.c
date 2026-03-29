@@ -333,7 +333,32 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
-			// TODO: Only take underscores separated every 4 chars starting at the end
+			// Validate underscores are every 4 hex chars from the end
+			const char *hex = str + 2;
+			int hlen = strlen (hex);
+			int digit_count = 0;
+			bool valid_sep = true;
+			int k;
+			for (k = hlen - 1; k >= 0; k--) {
+				if (hex[k] == '_') {
+					if (digit_count != 4) {
+						valid_sep = false;
+						break;
+					}
+					digit_count = 0;
+				} else if (isxdigit ((unsigned char)hex[k])) {
+					digit_count++;
+				} else {
+					valid_sep = false;
+					break;
+				}
+			}
+			if (digit_count < 1 || digit_count > 4) {
+				valid_sep = false;
+			}
+			if (!valid_sep) {
+				error (num, "misplaced underscore in hex literal");
+			}
 			char *s = strdup (str + 2);
 			if (s) {
 				r_str_replace_char (s, '_', 0);
