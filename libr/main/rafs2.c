@@ -110,7 +110,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		pj_a (pj);
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (r_fs_plugins (s->fs), iter, plugin) {
+		r_list_foreach (s->fs->libstore->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				pj_o (pj);
 				pj_ks (pj, "name", plugin->meta.name);
@@ -127,7 +127,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		printf ("Available filesystem types:\n");
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (r_fs_plugins (s->fs), iter, plugin) {
+		r_list_foreach (s->fs->libstore->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
 				printf ("  %-12s %s\n", plugin->meta.name, desc);

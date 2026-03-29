@@ -34,7 +34,7 @@ R_IPI bool r_esil_plugins_init(REsil *esil) {
 
 R_IPI void r_esil_plugins_fini(REsil *esil) {
 	R_RETURN_IF_FAIL (esil);
-	if (!r_esil_plugins (esil) || !esil->active_plugins) {
+	if (!esil->libstore->plugins || !esil->active_plugins) {
 		r_libstore_free (esil->libstore);
 		esil->libstore = NULL;
 		return;
@@ -51,19 +51,19 @@ R_IPI void r_esil_plugins_fini(REsil *esil) {
 }
 
 R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (esil && r_esil_plugins (esil) && plugin, false);
-	r_list_append (r_esil_plugins (esil), plugin);
+	R_RETURN_VAL_IF_FAIL (esil && esil->libstore->plugins && plugin, false);
+	r_list_append (esil->libstore->plugins, plugin);
 	return true;
 }
 
 R_API void r_esil_plugin_del(REsil *esil, const char *name) {
-	R_RETURN_IF_FAIL (esil && r_esil_plugins (esil) && name);
+	R_RETURN_IF_FAIL (esil && esil->libstore->plugins && name);
 	r_esil_plugin_deactivate(esil, name);
 	RListIter *iter;
 	REsilPlugin *ep;
-	r_list_foreach (r_esil_plugins (esil), iter, ep) {
+	r_list_foreach (esil->libstore->plugins, iter, ep) {
 		if (!strcmp (ep->meta.name, name)) {
-			r_list_delete (r_esil_plugins (esil), iter);
+			r_list_delete (esil->libstore->plugins, iter);
 			return;
 		}
 	}
@@ -71,10 +71,10 @@ R_API void r_esil_plugin_del(REsil *esil, const char *name) {
 
 //this crap solely exists for trash generics in core
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (esil && r_esil_plugins (esil) && plugin && plugin->meta.name, false);
+	R_RETURN_VAL_IF_FAIL (esil && esil->libstore->plugins && plugin && plugin->meta.name, false);
 	RListIter *iter;
 	REsilPlugin *ep;
-	r_list_foreach (r_esil_plugins (esil), iter, ep) {
+	r_list_foreach (esil->libstore->plugins, iter, ep) {
 		if (ep == plugin) {
 			r_esil_plugin_del (esil, ep->meta.name);
 			return true;
@@ -95,7 +95,7 @@ static REsilActivePlugin *_get_active_plugin(REsil *esil, const char *name) {
 }
 
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
-	R_RETURN_VAL_IF_FAIL (esil && r_esil_plugins (esil) &&
+	R_RETURN_VAL_IF_FAIL (esil && esil->libstore->plugins &&
 				esil->active_plugins && name, false);
 	// check if plugin is already activated
 	if (_get_active_plugin (esil, name)) {
@@ -103,7 +103,7 @@ R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
 	}
 	RListIter *iter;
 	REsilPlugin *ep;
-	r_list_foreach (r_esil_plugins (esil), iter, ep) {
+	r_list_foreach (esil->libstore->plugins, iter, ep) {
 		if (!strcmp (ep->meta.name, name)) {
 			REsilActivePlugin *eap = R_NEW (REsilActivePlugin);
 			if (!eap) {

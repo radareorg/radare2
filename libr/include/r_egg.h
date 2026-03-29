@@ -108,10 +108,6 @@ typedef struct r_egg_t {
 	RLibStore *libstore;
 } REgg;
 
-static inline RList *r_egg_plugins(REgg *egg) {
-	return egg && egg->libstore? egg->libstore->plugins: NULL;
-}
-
 /* XXX: this may fail in different arches */
 #if 0
 // XXX should be a ph subcommand to hash strings. ?h must be removed
@@ -206,7 +202,6 @@ R_API void r_egg_label(REgg *egg, const char *name);
 R_API bool r_egg_raw(REgg *egg, const ut8 *b, int len);
 R_API bool r_egg_encode(REgg *egg, const char *name);
 R_API bool r_egg_shellcode(REgg *egg, const char *name);
-#define r_egg_get_shellcodes(x) r_egg_plugins (x)
 R_API void r_egg_option_set(REgg *egg, const char *k, const char *v);
 R_API char *r_egg_option_get(REgg *egg, const char *k);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);

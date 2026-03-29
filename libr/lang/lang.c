@@ -171,7 +171,7 @@ R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
 			supported = foo->init (NULL);
 		}
 		if (supported) {
-			r_list_append (r_lang_plugins (lang), foo);
+			r_list_append (lang->libstore->plugins, foo);
 			return true;
 		}
 	}
@@ -189,7 +189,7 @@ R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 	if (p) {
 		ext = p + 1;
 	}
-	r_list_foreach (r_lang_plugins (lang), iter, h) {
+	r_list_foreach (lang->libstore->plugins, iter, h) {
 		if (!r_str_casecmp (h->ext, ext)) {
 			return h;
 		}
@@ -200,7 +200,7 @@ R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
-	r_list_foreach (r_lang_plugins (lang), iter, h) {
+	r_list_foreach (lang->libstore->plugins, iter, h) {
 		if (!r_str_casecmp (h->meta.name, name)) {
 			return h;
 		}

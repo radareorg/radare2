@@ -213,7 +213,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	RList *plugins = as && as->anal? r_arch_plugins (as->anal->arch): NULL;
+	RList *plugins = as && as->anal? as->anal->arch->libstore->plugins: NULL;
 	r_list_foreach (plugins, iter, h) {
 		if (arch && strcmp (arch, h->meta.name)) {
 			continue;
@@ -229,7 +229,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		bool has_parse = false;
 		RListIter *iter_parse;
 		RAsmPluginSession *aps;
-		r_list_foreach (r_asm_sessions (as->a), iter_parse, aps) {
+		r_list_foreach (as->a->libstore->plugins, iter_parse, aps) {
 			if (r_str_startswith (h->meta.name, aps->plugin->meta.name)) {
 				has_parse = true;
 				break;
@@ -304,7 +304,7 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_list_foreach (r_asm_sessions (as->a), iter, aps) {
+	r_list_foreach (as->a->libstore->plugins, iter, aps) {
 		if (arch && strcmp (arch, aps->plugin->meta.name)) {
 			continue;
 		}

@@ -6,12 +6,12 @@ R_API bool r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bp && name, false);
 	RListIter *iter;
 	RBreakpointPlugin *h;
-	r_list_foreach (r_bp_plugins (bp), iter, h) {
+	r_list_foreach (bp->libstore->plugins, iter, h) {
 		if (!strcmp (h->meta.name, name)) {
 			if (bp->cur == h) {
 				bp->cur = NULL;
 			}
-			r_list_delete (r_bp_plugins (bp), iter);
+			r_list_delete (bp->libstore->plugins, iter);
 			return true;
 		}
 	}
@@ -22,12 +22,12 @@ R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (bp && foo, false);
 	RListIter *iter;
 	RBreakpointPlugin *h;
-	r_list_foreach (r_bp_plugins (bp), iter, h) {
+	r_list_foreach (bp->libstore->plugins, iter, h) {
 		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
-	r_list_append (r_bp_plugins (bp), foo);
+	r_list_append (bp->libstore->plugins, foo);
 	return true;
 }
 
@@ -41,7 +41,7 @@ R_API bool r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	RListIter *iter;
 	bp->bits = bits;
 	RBreakpointPlugin *h;
-	r_list_foreach (r_bp_plugins (bp), iter, h) {
+	r_list_foreach (bp->libstore->plugins, iter, h) {
 		if (!strcmp (h->meta.name, name)) {
 			bp->cur = h;
 			return true;
@@ -55,7 +55,7 @@ R_API char *r_bp_plugin_list(RBreakpoint *bp) {
 	RListIter *iter;
 	RBreakpointPlugin *b;
 	RStrBuf *sb = r_strbuf_new ("");
-	r_list_foreach (r_bp_plugins (bp), iter, b) {
+	r_list_foreach (bp->libstore->plugins, iter, b) {
 		r_strbuf_appendf (sb, "bp %c %s\n",
 			(bp->cur && !strcmp (bp->cur->meta.name, b->meta.name))? '*': '-',
 			b->meta.name);

@@ -15,7 +15,7 @@ static RAnalPlugin *anal_static_plugins[] = {
 
 static bool anal_load_plugins(void *user) {
 	RAnal *anal = user;
-	return r_anal_plugins (anal)
+	return anal->libstore->plugins
 		? r_lib_add_static (anal, (const void *const *)anal_static_plugins, (RLibPluginAddCb)r_anal_plugin_add)
 		: false;
 }
@@ -272,7 +272,7 @@ R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init) {
 		foo->init (anal->user);
 	}
-	r_list_append (r_anal_plugins (anal), foo);
+	r_list_append (anal->libstore->plugins, foo);
 	return true;
 }
 
@@ -843,7 +843,7 @@ R_API char *r_anal_cmd(RAnal *anal, const char *cmd) {
 	RListIter *iter;
 	RAnalPlugin *ap;
 	char *res = NULL;
-	r_list_foreach (r_anal_plugins (anal), iter, ap) {
+	r_list_foreach (anal->libstore->plugins, iter, ap) {
 		if (ap->cmd) {
 			res = ap->cmd (anal, cmd);
 			if (res) {

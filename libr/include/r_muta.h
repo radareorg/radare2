@@ -40,10 +40,6 @@ typedef struct r_muta_t {
 	RLibStore *libstore;
 } RMuta;
 
-static inline RList *r_muta_plugins(RMuta *muta) {
-	return muta && muta->libstore? muta->libstore->plugins: NULL;
-}
-
 typedef struct r_muta_session_t {
 	struct r_muta_plugin_t* h;
 	struct r_muta_t* c;

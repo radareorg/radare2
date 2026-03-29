@@ -28,10 +28,6 @@ typedef struct r_fs_t {
 	RLibStore *libstore;
 } RFS;
 
-static inline RList *r_fs_plugins(RFS *fs) {
-	return fs && fs->libstore? fs->libstore->plugins: NULL;
-}
-
 typedef struct r_fs_partition_plugin_t {
 	const char *name;
 } RFSPartitionPlugin;

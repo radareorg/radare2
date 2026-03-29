@@ -476,7 +476,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_a (pj);
 			}
-			r_list_foreach (r_anal_plugins (core->anal), iter, item) {
+			r_list_foreach (core->anal->libstore->plugins, iter, item) {
 				switch (mode) {
 				case 'j':
 				pj_o (pj);
@@ -528,7 +528,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (pj) {
 				pj_a (pj);
 			}
-			r_list_foreach (r_arch_plugins (core->anal->arch), iter, item) {
+			r_list_foreach (core->anal->arch->libstore->plugins, iter, item) {
 				char *cpu;
 				RListIter *iter2;
 				switch (mode) {
