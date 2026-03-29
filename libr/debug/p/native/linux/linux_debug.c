@@ -87,6 +87,67 @@ static void linux_dbg_wait_break_main(RDebug *dbg);
 static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
+static bool is_syscall_stop(int status) {
+	return WIFSTOPPED (status) && WSTOPSIG (status) == (SIGTRAP | 0x80);
+}
+
+static RDebugFasttimeThread *ft_thread_state(RDebug *dbg, int tid, bool create) {
+	R_RETURN_VAL_IF_FAIL (dbg && tid > 0, NULL);
+	if (!dbg->fasttime_threads) {
+		if (!create) {
+			return NULL;
+		}
+		dbg->fasttime_threads = ht_up_new (NULL, NULL, NULL);
+		if (!dbg->fasttime_threads) {
+			return NULL;
+		}
+	}
+	RDebugFasttimeThread *thread_state = ht_up_find (dbg->fasttime_threads, (ut64)(ut32)tid, NULL);
+	if (!thread_state && create) {
+		thread_state = R_NEW0 (RDebugFasttimeThread);
+		thread_state->pending_syscall = -1;
+		ht_up_insert (dbg->fasttime_threads, (ut64)(ut32)tid, thread_state);
+	}
+	return thread_state;
+}
+
+static bool ft_resume_syscall(RDebug *dbg, int tid) {
+	if (r_debug_ptrace (dbg, PTRACE_SYSCALL, tid, 0, 0) == -1) {
+		r_sys_perror ("PTRACE_SYSCALL");
+		return false;
+	}
+	return true;
+}
+
+static bool ft_handle_syscall_stop(RDebug *dbg, int tid) {
+	if (!r_debug_fasttime_enabled (dbg)) {
+		return false;
+	}
+	RDebugFasttimeThread *thread_state = ft_thread_state (dbg, tid, true);
+	if (!thread_state) {
+		return false;
+	}
+	r_debug_select (dbg, dbg->pid, tid);
+	bool err = false;
+	int syscall_num = (int)r_debug_reg_get_alias_err (dbg, R_REG_ALIAS_SN, &err, NULL);
+	if (err) {
+		return false;
+	}
+	if (!thread_state->in_syscall) {
+		if (!r_debug_fasttime_prepare_syscall_entry (dbg, tid, syscall_num)) {
+			return false;
+		}
+	} else {
+		thread_state->in_syscall = false;
+		if (thread_state->skip_timer && !r_debug_reg_set_alias (dbg, R_REG_ALIAS_R0, 0)) {
+			return false;
+		}
+		thread_state->skip_timer = false;
+		thread_state->pending_syscall = -1;
+	}
+	return ft_resume_syscall (dbg, tid);
+}
+
 int linux_handle_signals(RDebug *dbg, int tid) {
 	RCore *core = dbg->coreb.core;
 	siginfo_t siginfo = {0};
@@ -526,6 +587,10 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			flags &= ~WNOHANG;
 		} else {
 			tid = ret;
+
+			if (is_syscall_stop (status) && ft_handle_syscall_stop (dbg, tid)) {
+				continue;
+			}
 
 			// Handle SIGTRAP with PTRACE_EVENT_*
 			reason = linux_ptrace_event (dbg, tid, status, true);

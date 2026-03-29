@@ -324,6 +324,11 @@ beach:
 	return n != 0;
 }
 
+static const char *debug_reg_alias_name(RDebug *dbg, RRegAlias alias) {
+	R_RETURN_VAL_IF_FAIL (dbg && dbg->reg, NULL);
+	return r_reg_alias_getname (dbg->reg, alias);
+}
+
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 	R_RETURN_VAL_IF_FAIL (dbg && name, false);
 	if (!dbg->reg) {
@@ -342,6 +347,11 @@ R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num) {
 		r_unref (ri);
 	}
 	return (ri);
+}
+
+R_API bool r_debug_reg_set_alias(RDebug *dbg, RRegAlias alias, ut64 num) {
+	const char *name = debug_reg_alias_name (dbg, alias);
+	return R_STR_ISNOTEMPTY (name)? r_debug_reg_set (dbg, name, num): false;
 }
 
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *value) {
@@ -388,7 +398,21 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *va
 	return ret;
 }
 
+R_API ut64 r_debug_reg_get_alias_err(RDebug *dbg, RRegAlias alias, bool *err, utX *value) {
+	const char *name = debug_reg_alias_name (dbg, alias);
+	if (R_STR_ISEMPTY (name)) {
+		if (err) {
+			*err = true;
+		}
+		return UT64_MAX;
+	}
+	return r_debug_reg_get_err (dbg, name, err, value);
+}
+
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
 	return r_debug_reg_get_err (dbg, name, NULL, NULL);
 }
 
+R_API ut64 r_debug_reg_get_alias(RDebug *dbg, RRegAlias alias) {
+	return r_debug_reg_get_alias_err (dbg, alias, NULL, NULL);
+}
