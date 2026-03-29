@@ -18,18 +18,9 @@ static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS
 };
 
-static inline RList *dbg_plugins(RDebug *dbg) {
-	return dbg && dbg->libstore? dbg->libstore->plugins: NULL;
-}
-
-static bool debug_load_plugins(void *user) {
-	RDebug *dbg = user;
-	return r_lib_add_static (dbg, (const void *const *)debug_static_plugins, (RLibPluginAddCb)r_debug_plugin_add);
-}
-
 R_IPI void r_debug_plugins_init(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
-	dbg->libstore = r_libstore_new (dbg, r_list_newf ((RListFree)debug_plugin_session_free), debug_load_plugins);
+	dbg->libstore = r_libstore_new (dbg, (RListFree)debug_plugin_session_free, NULL, (RLibPluginAddCb)r_debug_plugin_add, (const void *const *)debug_static_plugins);
 	if (r_lib_defaults ()) {
 		r_libstore_load (dbg->libstore);
 	}
@@ -44,7 +35,7 @@ R_IPI void r_debug_plugins_fini(RDebug *dbg) {
 static RDebugPluginSession *find_plugin_by_name(RDebug *dbg, const char *name) {
 	RListIter *iter;
 	RDebugPluginSession *ds;
-	r_list_foreach (dbg_plugins (dbg), iter, ds) {
+	r_list_foreach (dbg->libstore->plugins, iter, ds) {
 		if (ds->plugin && !strcmp (ds->plugin->meta.name, name)) {
 			return ds;
 		}
@@ -112,7 +103,7 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 
 	RListIter *iter;
 	RDebugPluginSession *ds;
-	r_list_foreach (dbg_plugins (dbg), iter, ds) {
+	r_list_foreach (dbg->libstore->plugins, iter, ds) {
 		RPluginMeta meta = ds->plugin->meta;
 		const int sp = 8 - strlen (meta.name);
 		if (sp > 0) {
@@ -157,19 +148,19 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 		debug_plugin_session_free (ds);
 		return false;
 	}
-	return r_list_append (dbg_plugins (dbg), ds) != NULL;
+	return r_list_append (dbg->libstore->plugins, ds) != NULL;
 }
 
 R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (dbg && plugin, false);
 	RListIter *iter;
 	RDebugPluginSession *ds;
-	r_list_foreach (dbg_plugins (dbg), iter, ds) {
+	r_list_foreach (dbg->libstore->plugins, iter, ds) {
 		if (ds->plugin && !strcmp (ds->plugin->meta.name, plugin->meta.name)) {
 			if (dbg->current == ds) {
 				dbg->current = NULL;
 			}
-			r_list_delete (dbg_plugins (dbg), iter);
+			r_list_delete (dbg->libstore->plugins, iter);
 			return true;
 		}
 	}

@@ -28,11 +28,6 @@ void egg_patch_free(void *p) {
 	}
 }
 
-static bool egg_load_plugins(void *user) {
-	REgg *egg = user;
-	return r_lib_add_static (egg, (const void *const *)egg_static_plugins, (RLibPluginAddCb)r_egg_plugin_add);
-}
-
 R_API REgg *r_egg_new(void) {
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
@@ -73,7 +68,7 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->libstore = r_libstore_new (egg, r_list_new (), egg_load_plugins);
+	egg->libstore = r_libstore_new (egg, NULL, NULL, (RLibPluginAddCb)r_egg_plugin_add, (const void *const *)egg_static_plugins);
 	if (r_lib_defaults ()) {
 		r_libstore_load (egg->libstore);
 	}

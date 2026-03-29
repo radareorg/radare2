@@ -6,19 +6,9 @@
 
 static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
 
-static bool arch_load_plugins(void *user) {
-	RArch *a = user;
-	return r_lib_add_static (a, (const void *const *)arch_static_plugins, (RLibPluginAddCb)r_arch_plugin_add);
-}
-
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
-	RList *plugins = r_list_newf (NULL);
-	if (!plugins) {
-		free (a);
-		return NULL;
-	}
-	a->libstore = r_libstore_new (a, plugins, arch_load_plugins);
+	a->libstore = r_libstore_new (a, NULL, NULL, (RLibPluginAddCb)r_arch_plugin_add, (const void *const *)arch_static_plugins);
 	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
 	if (r_lib_defaults ()) {

@@ -35,8 +35,8 @@ static void r_lang_session_free(void *p) {
 	free (s);
 }
 
-static bool lang_load_plugins(void *user) {
-	RLang *lang = user;
+static bool lang_load_plugins(RLibStore *store) {
+	RLang *lang = store->user;
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_DEBUG_NOLANG");
 	if (load_plugins) {
 #if HAVE_SYSTEM
@@ -72,7 +72,7 @@ R_API RLang *r_lang_new(void) {
 	lang->defs = r_list_new ();
 	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
-	lang->libstore = r_libstore_new (lang, r_list_new (), lang_load_plugins);
+	lang->libstore = r_libstore_new (lang, NULL, lang_load_plugins, NULL, NULL);
 	if (r_lib_defaults ()) {
 		r_libstore_load (lang->libstore);
 	}

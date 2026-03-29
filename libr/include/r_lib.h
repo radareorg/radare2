@@ -119,8 +119,10 @@ enum {
 	R_LIB_TYPE_LAST
 };
 
+typedef struct r_libstore_t RLibStore;
+
 typedef void (*RLibInternalLoadCallback)(void *user);
-typedef bool (*RLibStoreLoadCallback)(void *user);
+typedef bool (*RLibStoreLoadCallback)(RLibStore *store);
 
 typedef struct r_lib_t {
 	char *symname;
@@ -138,12 +140,14 @@ typedef struct r_lib_t {
 	void *cb_internal_user; /* user data for cb_internal */
 } RLib;
 
-typedef struct r_libstore_t RLibStore;
 typedef struct r_libstore_t {
 	void *user;
+	RListFree free;
 	RList *plugins;
 	RList *xtrs;
 	RList *ldrs;
+	const void *const *static_plugins;
+	RLibPluginAddCb add;
 	RLibStoreLoadCallback load;
 	bool loaded;
 } RLibStore;
@@ -188,7 +192,7 @@ R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAd
 
 
 // libstore
-R_API RLibStore *r_libstore_new(void *user, RList *plugins, RLibStoreLoadCallback load);
+R_API RLibStore *r_libstore_new(void *user, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, const void *const static_plugins[]);
 R_API void r_libstore_free(RLibStore *store);
 R_API bool r_libstore_load(RLibStore *store);
 R_API bool r_libstore_loaded(RLibStore *store);

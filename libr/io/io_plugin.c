@@ -7,11 +7,6 @@ static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
 };
 
-static bool io_load_plugins(void *user) {
-	RIO *io = user;
-	return r_lib_add_static (io, (const void *const *)io_static_plugins, (RLibPluginAddCb)r_io_plugin_add);
-}
-
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
 	RList *plugins = io && io->libstore? io->libstore->plugins: NULL;
 	R_RETURN_VAL_IF_FAIL (plugins && plugin, false);
@@ -32,10 +27,10 @@ R_IPI bool r_io_plugins_init(RIO *io) {
 	}
 	if (io->libstore) {
 		r_list_free (io->libstore->plugins);
-		io->libstore->plugins = r_list_newf (NULL);
+		io->libstore->plugins = r_list_newf (io->libstore->free);
 		io->libstore->loaded = false;
 	} else {
-		io->libstore = r_libstore_new (io, r_list_newf (NULL), io_load_plugins);
+		io->libstore = r_libstore_new (io, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add, (const void *const *)io_static_plugins);
 	}
 	if (r_lib_defaults ()) {
 		r_libstore_load (io->libstore);

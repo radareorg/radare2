@@ -13,13 +13,6 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
-static bool anal_load_plugins(void *user) {
-	RAnal *anal = user;
-	return anal->libstore->plugins
-		? r_lib_add_static (anal, (const void *const *)anal_static_plugins, (RLibPluginAddCb)r_anal_plugin_add)
-		: false;
-}
-
 static const char *r_anal_choose_fcnprefix(RAnal *anal, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, "fcn");
 
@@ -197,7 +190,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-	anal->libstore = r_libstore_new (anal, r_list_newf ((RListFree)r_anal_plugin_free), anal_load_plugins);
+	anal->libstore = r_libstore_new (anal, (RListFree)r_anal_plugin_free, NULL, (RLibPluginAddCb)r_anal_plugin_add, (const void *const *)anal_static_plugins);
 	if (r_lib_defaults ()) {
 		r_libstore_load (anal->libstore);
 	}
