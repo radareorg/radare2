@@ -56,7 +56,7 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 	RCons *cons = core->cons;
 	RIOPlugin *plugin;
-	SdbListIter *iter;
+	RListIter *iter;
 	char str[4];
 	int n = 0;
 	PJ *pj = NULL;
@@ -65,7 +65,7 @@ R_API int r_core_list_io(RCore *core, const char *name, int mode) {
 		pj_a (pj);
 	}
 
-	ls_foreach (r_io_plugins (core->io), iter, plugin) {
+	r_list_foreach (r_io_plugins (core->io), iter, plugin) {
 		const char *plugin_name = r_str_get (plugin->meta.name);
 		if (name && strcmp (plugin_name, name)) {
 			continue;
