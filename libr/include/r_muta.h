@@ -37,7 +37,7 @@ typedef struct r_muta_t {
 	struct r_muta_plugin_t* h;
 	bool bigendian;
 	void *user;
-	RList *plugins;
+	RLibStore *libstore;
 } RMuta;
 
 typedef struct r_muta_session_t {

@@ -22,10 +22,10 @@ typedef struct r_fs_t {
 	RIOBind iob;
 	RCoreBind cob;
 	RConsBind csb;
-	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
 	void *ptr;
+	RLibStore *libstore;
 } RFS;
 
 typedef struct r_fs_partition_plugin_t {

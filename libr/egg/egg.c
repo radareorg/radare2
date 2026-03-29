@@ -29,7 +29,6 @@ void egg_patch_free(void *p) {
 }
 
 R_API REgg *r_egg_new(void) {
-	int i;
 	REgg *egg = R_NEW0 (REgg);
 	if (!egg) {
 		return NULL;
@@ -69,9 +68,9 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = r_list_new ();
-	for (i = 0; egg_static_plugins[i]; i++) {
-		r_egg_plugin_add (egg, egg_static_plugins[i]);
+	egg->libstore = r_libstore_new (egg, NULL, NULL, (RLibPluginAddCb)r_egg_plugin_add, (const void *const *)egg_static_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (egg->libstore);
 	}
 	return egg;
 
@@ -88,12 +87,12 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 		return false;
 	}
 	REggPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
+	r_list_foreach (a->libstore->plugins, iter, h) {
 		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
-	r_list_append (a->plugins, foo);
+	r_list_append (a->libstore->plugins, foo);
 	return true;
 }
 
@@ -116,7 +115,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_asm_free (egg->rasm);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
-		r_list_free (egg->plugins);
+		r_libstore_free (egg->libstore);
 		r_list_free (egg->patches);
 		r_egg_lang_fini (egg);
 		free (egg);
@@ -532,7 +531,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
 	RBuffer *b;
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (egg->libstore->plugins, iter, p) {
 		const char *p_name = p->meta.name;
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
 			b = p->build (egg);
@@ -552,7 +551,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {

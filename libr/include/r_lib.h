@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // double-indirection required because cpp is crap
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
-#define R2_ABIVERSION 78
+#define R2_ABIVERSION 80
 #define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
@@ -94,6 +94,7 @@ typedef struct r_lib_struct_t {
 } RLibStruct;
 
 typedef RLibStruct* (*RLibStructFunc) (void);
+typedef bool (*RLibPluginAddCb)(void *ctx, void *plugin);
 
 // order matters because of libr/util/lib.c
 enum {
@@ -118,6 +119,10 @@ enum {
 	R_LIB_TYPE_LAST
 };
 
+typedef struct r_libstore_t RLibStore;
+
+typedef void (*RLibInternalLoadCallback)(void *user);
+typedef bool (*RLibStoreLoadCallback)(RLibStore *store);
 
 typedef struct r_lib_t {
 	char *symname;
@@ -131,7 +136,21 @@ typedef struct r_lib_t {
 	// hashtable plugname = &plugin
 	HtPP *plugins_ht[R_LIB_TYPE_LAST];
 	ut32 abiversion; /* Current ABI version */
+	RLibInternalLoadCallback cb_internal; /* callback to load internal plugins for 'i' in R2_PLUGINS_ORDER */
+	void *cb_internal_user; /* user data for cb_internal */
 } RLib;
+
+typedef struct r_libstore_t {
+	void *user;
+	RListFree free;
+	RList *plugins;
+	RList *xtrs;
+	RList *ldrs;
+	const void *const *static_plugins;
+	RLibPluginAddCb add;
+	RLibStoreLoadCallback load;
+	bool loaded;
+} RLibStore;
 
 
 typedef enum {
@@ -168,6 +187,15 @@ R_API bool r_lib_del_handler(RLib *lib, int type, RLibCallback constructor, RLib
 R_API bool r_lib_close(RLib *lib, const char *file);
 R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path);
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask);
+R_API bool r_lib_defaults(void);
+R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb);
+
+
+// libstore
+R_API RLibStore *r_libstore_new(void *user, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, const void *const static_plugins[]);
+R_API void r_libstore_free(RLibStore *store);
+R_API bool r_libstore_load(RLibStore *store);
+R_API bool r_libstore_loaded(RLibStore *store);
 
 #include <r_util/pj.h>
 R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta);

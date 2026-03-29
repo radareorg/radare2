@@ -74,7 +74,6 @@ typedef struct r_bp_t {
 	RIOBind iob; // compile time dependency
 	RBreakpointPlugin *cur;
 	RList *traces; // XXX
-	RList *plugins;
 	RBreakpointCallback breakpoint;
 	/* storage of breakpoints */
 	RList *bps; // list of breakpoints
@@ -83,6 +82,7 @@ typedef struct r_bp_t {
 	st64 delta;
 	ut64 baddr;
 	int nhwbps;
+	RLibStore *libstore;
 } RBreakpoint;
 
 // DEPRECATED: USE R_PERM

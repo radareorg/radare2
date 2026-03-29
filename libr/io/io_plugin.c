@@ -8,12 +8,12 @@ static RIOPlugin *io_static_plugins[] = {
 };
 
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (io && plugin && io->plugins, false);
+	RList *plugins = io && io->libstore? io->libstore->plugins: NULL;
+	R_RETURN_VAL_IF_FAIL (plugins && plugin, false);
 	if (!plugin->meta.name) {
 		return false;
 	}
-	ls_append (io->plugins, plugin);
-	return true;
+	return r_list_append (plugins, plugin) != NULL;
 }
 
 R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
@@ -21,17 +21,19 @@ R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_io_plugin_init(RIO *io) {
-	int i;
+R_IPI bool r_io_plugins_init(RIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = ls_newf (NULL); // fine to use NULL here?
-	for (i = 0; io_static_plugins[i]; i++) {
-		if (!io_static_plugins[i]->meta.name) {
-			continue;
-		}
-		r_io_plugin_add (io, io_static_plugins[i]);
+	if (io->libstore) {
+		r_list_free (io->libstore->plugins);
+		io->libstore->plugins = r_list_newf (io->libstore->free);
+		io->libstore->loaded = false;
+	} else {
+		io->libstore = r_libstore_new (io, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add, (const void *const *)io_static_plugins);
+	}
+	if (r_lib_defaults ()) {
+		r_libstore_load (io->libstore);
 	}
 	return true;
 }
@@ -40,8 +42,8 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	// TODO: optimization
 	if (strstr (filename, "://")) {
 		RIOPlugin *ret;
-		SdbListIter *iter;
-		ls_foreach (io->plugins, iter, ret) {
+		RListIter *iter;
+		r_list_foreach (io->libstore->plugins, iter, ret) {
 			if (!ret || !ret->check) {
 				continue;
 			}
@@ -54,9 +56,9 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 }
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
-	SdbListIter *iter;
+	RListIter *iter;
 	RIOPlugin *iop;
-	ls_foreach (io->plugins, iter, iop) {
+	r_list_foreach (io->libstore->plugins, iter, iop) {
 		if (!strcmp (name, iop->meta.name)) {
 			return iop;
 		}

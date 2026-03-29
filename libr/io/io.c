@@ -21,7 +21,7 @@ R_API void r_io_init(RIO* io) {
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
-	r_io_plugin_init (io);
+	r_io_plugins_init (io);
 	r_io_undo_init (io);
 	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");
@@ -145,11 +145,13 @@ R_API void r_io_close_all(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	ls_free (io->plugins);
+	r_list_free (io->libstore->plugins);
+	io->libstore->plugins = r_list_newf (NULL);
+	io->libstore->loaded = false;
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
-	r_io_plugin_init (io);
+	r_io_plugins_init (io);
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {
@@ -672,7 +674,7 @@ R_API void r_io_fini(RIO* io) {
 	r_io_map_fini (io);
 	r_io_desc_cache_fini_all (io);
 	r_io_desc_fini (io);
-	ls_free (io->plugins);
+	r_libstore_free (io->libstore);
 	r_io_cache_fini (io);
 	r_list_free (io->undo.w_list);
 	R_FREE (io->runprofile);
