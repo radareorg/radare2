@@ -146,7 +146,7 @@ typedef struct r_libstore_t {
 	RList *plugins;
 	RList *xtrs;
 	RList *ldrs;
-	const void *const *static_plugins;
+	const void *static_plugins;
 	RLibPluginAddCb add;
 	RLibStoreLoadCallback load;
 	bool loaded;
@@ -188,11 +188,11 @@ R_API bool r_lib_close(RLib *lib, const char *file);
 R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path);
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask);
 R_API bool r_lib_defaults(void);
-R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb);
+R_API bool r_lib_add_static(void *ctx, const void *plugins, RLibPluginAddCb add_cb);
 
 
 // libstore
-R_API RLibStore *r_libstore_new(void *user, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, const void *const static_plugins[]);
+R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add);
 R_API void r_libstore_free(RLibStore *store);
 R_API bool r_libstore_load(RLibStore *store);
 R_API bool r_libstore_loaded(RLibStore *store);

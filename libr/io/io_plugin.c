@@ -30,7 +30,7 @@ R_IPI bool r_io_plugins_init(RIO *io) {
 		io->libstore->plugins = r_list_newf (io->libstore->free);
 		io->libstore->loaded = false;
 	} else {
-		io->libstore = r_libstore_new (io, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add, (const void *const *)io_static_plugins);
+		io->libstore = r_libstore_new (io, io_static_plugins, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add);
 	}
 	if (r_lib_defaults ()) {
 		r_libstore_load (io->libstore);

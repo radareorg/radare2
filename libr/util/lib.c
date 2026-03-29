@@ -673,7 +673,8 @@ R_API bool r_lib_defaults(void) {
 	return load;
 }
 
-R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb) {
+R_API bool r_lib_add_static(void *ctx, const void *plugins_, RLibPluginAddCb add_cb) {
+	const void *const *plugins = plugins_;
 	R_RETURN_VAL_IF_FAIL (ctx && plugins && add_cb, false);
 	size_t i;
 	for (i = 0; plugins[i]; i++) {

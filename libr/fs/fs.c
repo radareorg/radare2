@@ -66,7 +66,7 @@ R_API R_MUSTUSE RFS *r_fs_new(void) {
 		return NULL;
 	}
 	fs->roots->free = (RListFree)r_fs_root_free;
-	fs->libstore = r_libstore_new (fs, (RListFree)free, NULL, (RLibPluginAddCb)r_fs_plugin_add, (const void *const *)fs_static_plugins);
+	fs->libstore = r_libstore_new (fs, fs_static_plugins, (RListFree)free, NULL, (RLibPluginAddCb)r_fs_plugin_add);
 	if (r_lib_defaults ()) {
 		r_libstore_load (fs->libstore);
 	}

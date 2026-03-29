@@ -36,7 +36,7 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
-	bp->libstore = r_libstore_new (bp, (RListFree)free, bp_load_plugins, NULL, NULL);
+	bp->libstore = r_libstore_new (bp, NULL, (RListFree)free, bp_load_plugins, NULL);
 	if (r_lib_defaults ()) {
 		r_libstore_load (bp->libstore);
 	}

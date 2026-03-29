@@ -3,7 +3,7 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-R_API RLibStore *r_libstore_new(void *user, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, const void *const static_plugins[]) {
+R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add) {
 	RLibStore *store = R_NEW0 (RLibStore);
 	store->user = user;
 	store->free = freefn;

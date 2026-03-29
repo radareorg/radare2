@@ -261,7 +261,7 @@ R_API RAsm *r_asm_new(void) {
 	a->dataalign = 1;
 	a->pseudo = false;
 	a->use_spp = false;
-	a->libstore = r_libstore_new (a, (RListFree)free, NULL, (RLibPluginAddCb)r_asm_plugin_add, (const void *const *)asm_static_plugins);
+	a->libstore = r_libstore_new (a, asm_static_plugins, (RListFree)free, NULL, (RLibPluginAddCb)r_asm_plugin_add);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
 	if (r_lib_defaults ()) {

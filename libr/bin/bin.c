@@ -28,9 +28,9 @@ static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NUL
 
 static bool bin_load_plugins(RLibStore *store) {
 	RBin *bin = store->user;
-	r_lib_add_static (bin, (const void *const *)bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
-	r_lib_add_static (bin, (const void *const *)bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
-	r_lib_add_static (bin, (const void *const *)bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
+	r_lib_add_static (bin, bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
+	r_lib_add_static (bin, bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
+	r_lib_add_static (bin, bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
 	return true;
 }
 
@@ -935,7 +935,7 @@ R_API RBin *r_bin_new(void) {
 		goto trashbin;
 	}
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
-	bin->libstore = r_libstore_new (bin, (RListFree)free, bin_load_plugins, NULL, NULL);
+	bin->libstore = r_libstore_new (bin, NULL, (RListFree)free, bin_load_plugins, NULL);
 	bin->libstore->xtrs = xtrs;
 	bin->libstore->ldrs = ldrs;
 	if (r_lib_defaults ()) {

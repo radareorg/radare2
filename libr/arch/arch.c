@@ -8,7 +8,7 @@ static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS
 
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
-	a->libstore = r_libstore_new (a, NULL, NULL, (RLibPluginAddCb)r_arch_plugin_add, (const void *const *)arch_static_plugins);
+	a->libstore = r_libstore_new (a, arch_static_plugins, NULL, NULL, (RLibPluginAddCb)r_arch_plugin_add);
 	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
 	if (r_lib_defaults ()) {

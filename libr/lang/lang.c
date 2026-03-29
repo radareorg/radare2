@@ -72,7 +72,7 @@ R_API RLang *r_lang_new(void) {
 	lang->defs = r_list_new ();
 	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
-	lang->libstore = r_libstore_new (lang, NULL, lang_load_plugins, NULL, NULL);
+	lang->libstore = r_libstore_new (lang, NULL, NULL, lang_load_plugins, NULL);
 	if (r_lib_defaults ()) {
 		r_libstore_load (lang->libstore);
 	}

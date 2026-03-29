@@ -68,7 +68,7 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->libstore = r_libstore_new (egg, NULL, NULL, (RLibPluginAddCb)r_egg_plugin_add, (const void *const *)egg_static_plugins);
+	egg->libstore = r_libstore_new (egg, egg_static_plugins, NULL, NULL, (RLibPluginAddCb)r_egg_plugin_add);
 	if (r_lib_defaults ()) {
 		r_libstore_load (egg->libstore);
 	}

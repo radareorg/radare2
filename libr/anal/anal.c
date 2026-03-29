@@ -190,7 +190,7 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-	anal->libstore = r_libstore_new (anal, (RListFree)r_anal_plugin_free, NULL, (RLibPluginAddCb)r_anal_plugin_add, (const void *const *)anal_static_plugins);
+	anal->libstore = r_libstore_new (anal, anal_static_plugins, (RListFree)r_anal_plugin_free, NULL, (RLibPluginAddCb)r_anal_plugin_add);
 	if (r_lib_defaults ()) {
 		r_libstore_load (anal->libstore);
 	}
