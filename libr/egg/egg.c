@@ -92,12 +92,12 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 		return false;
 	}
 	REggPlugin *h;
-	r_list_foreach (r_egg_plugins (a), iter, h) {
+	r_list_foreach (a->libstore->plugins, iter, h) {
 		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
-	r_list_append (r_egg_plugins (a), foo);
+	r_list_append (a->libstore->plugins, foo);
 	return true;
 }
 
@@ -536,7 +536,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
 	RBuffer *b;
-	r_list_foreach (r_egg_plugins (egg), iter, p) {
+	r_list_foreach (egg->libstore->plugins, iter, p) {
 		const char *p_name = p->meta.name;
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
 			b = p->build (egg);
@@ -556,7 +556,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
-	r_list_foreach (r_egg_plugins (egg), iter, p) {
+	r_list_foreach (egg->libstore->plugins, iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {

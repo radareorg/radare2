@@ -274,10 +274,6 @@ typedef struct r_esil_t {
 	RLibStore *libstore;
 } REsil;
 
-static inline RList *r_esil_plugins(REsil *esil) {
-	return esil && esil->libstore? esil->libstore->plugins: NULL;
-}
-
 enum {
 	R_ESIL_PARM_INVALID = 0,
 	R_ESIL_PARM_REG,

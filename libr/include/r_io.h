@@ -175,10 +175,6 @@ typedef struct r_io_t {
 	RLibStore *libstore;
 } RIO;
 
-static inline RList *r_io_plugins(RIO *io) {
-	return io && io->libstore? io->libstore->plugins: NULL;
-}
-
 typedef struct r_io_desc_t {
 	int fd;
 	int perm;

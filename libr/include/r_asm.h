@@ -83,10 +83,6 @@ typedef struct r_asm_t {
 	RLibStore *libstore;
 } RAsm;
 
-static inline RList *r_asm_sessions(RAsm *a) {
-	return a && a->libstore? a->libstore->plugins: NULL;
-}
-
 typedef struct r_asm_plugin_session_t {
 	struct r_asm_t *rasm;
 	struct r_asm_plugin_t *plugin;

@@ -592,10 +592,6 @@ typedef struct r_anal_t {
 	RLibStore *libstore;
 } RAnal;
 
-static inline RList *r_anal_plugins(RAnal *anal) {
-	return anal && anal->libstore? anal->libstore->plugins: NULL;
-}
-
 typedef const char *(*RAnalLabelAt) (RAnalFunction *fcn, ut64);
 
 typedef enum {

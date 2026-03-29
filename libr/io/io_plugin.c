@@ -48,7 +48,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	if (strstr (filename, "://")) {
 		RIOPlugin *ret;
 		RListIter *iter;
-		r_list_foreach (r_io_plugins (io), iter, ret) {
+		r_list_foreach (io->libstore->plugins, iter, ret) {
 			if (!ret || !ret->check) {
 				continue;
 			}
@@ -63,7 +63,7 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
 	RListIter *iter;
 	RIOPlugin *iop;
-	r_list_foreach (r_io_plugins (io), iter, iop) {
+	r_list_foreach (io->libstore->plugins, iter, iop) {
 		if (!strcmp (name, iop->meta.name)) {
 			return iop;
 		}

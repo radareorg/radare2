@@ -28,10 +28,6 @@ typedef struct r_lang_t {
 	RLibStore *libstore;
 } RLang;
 
-static inline RList *r_lang_plugins(RLang *lang) {
-	return lang && lang->libstore? lang->libstore->plugins: NULL;
-}
-
 typedef struct r_lang_session_t _RLangSession;
 
 typedef bool (*RLangPluginInit)(_RLangSession *s);

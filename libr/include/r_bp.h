@@ -85,10 +85,6 @@ typedef struct r_bp_t {
 	RLibStore *libstore;
 } RBreakpoint;
 
-static inline RList *r_bp_plugins(RBreakpoint *bp) {
-	return bp && bp->libstore? bp->libstore->plugins: NULL;
-}
-
 // DEPRECATED: USE R_PERM
 enum {
 	R_BP_PROT_EXEC = 1,

@@ -9315,7 +9315,7 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			REsilPlugin *p;
 			RListIter *iter;
 			if (core->anal->esil) {
-				r_list_foreach (r_esil_plugins (core->anal->esil), iter, p) {
+				r_list_foreach (core->anal->esil->libstore->plugins, iter, p) {
 					r_cons_printf (core->cons, "%s\n", p->meta.name);
 				}
 			} else {
@@ -16326,7 +16326,7 @@ static int cmd_anal(void *data, const char *input) {
 			RListIter *iter;
 			RAnalPlugin *ap;
 			r_core_cmd_help (core, help_msg_acolon);
-			r_list_foreach (r_anal_plugins (core->anal), iter, ap) {
+			r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 				if (ap->cmd) {
 					char *res = r_core_cmd_strf (core, "a:%s?", ap->meta.name);
 					RList *lines = r_str_split_list (res, "\n", 0);
@@ -16349,7 +16349,7 @@ static int cmd_anal(void *data, const char *input) {
 		} else if (!input[1]) {
 			RListIter *iter;
 			RAnalPlugin *ap;
-			r_list_foreach (r_anal_plugins (core->anal), iter, ap) {
+			r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 				r_cons_println (core->cons, ap->meta.name);
 			}
 		} else {

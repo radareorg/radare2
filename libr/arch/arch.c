@@ -59,7 +59,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	RArchPlugin *ap = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
-	r_list_foreach (r_arch_plugins (arch), iter, p) {
+	r_list_foreach (arch->libstore->plugins, iter, p) {
 #if 1
 		if (enc) {
 			if (!p->encode) {
@@ -85,7 +85,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	if (!ap) {
 		RListIter *iter;
 		RArchPlugin *p;
-		r_list_foreach (r_arch_plugins (arch), iter, p) {
+		r_list_foreach (arch->libstore->plugins, iter, p) {
 			if (enc && !p->encode) {
 				continue;
 			}
@@ -228,7 +228,7 @@ R_API RArchPlugin *r_arch_find(RArch *arch, const char *name) {
 #if 0
 	RArchPlugin *arch_plugin;
 	RListIter *iter;
-	r_list_foreach (r_arch_plugins (r->anal->arch), iter, arch_plugin) {
+	r_list_foreach (r->anal->arch->libstore->plugins, iter, arch_plugin) {
 		if (!arch_plugin->arch) {
 			continue;
 		}
@@ -246,19 +246,19 @@ R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
 	if (!ap->meta.name || !ap->arch) {
 		return false;
 	}
-	return r_list_append (r_arch_plugins (a), ap) != NULL;
+	return r_list_append (a->libstore->plugins, ap) != NULL;
 }
 
 R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 	R_RETURN_VAL_IF_FAIL (arch && ap, false);
 	RArchPlugin *p;
 	RListIter *iter;
-	r_list_foreach (r_arch_plugins (arch), iter, p) {
+	r_list_foreach (arch->libstore->plugins, iter, p) {
 		if (p == ap) {
 			if (ap->fini) {
 				ap->fini (NULL); // sessions associated will be leaked
 			}
-			r_list_delete (r_arch_plugins (arch), iter);
+			r_list_delete (arch->libstore->plugins, iter);
 			break;
 		}
 	}
@@ -266,7 +266,7 @@ R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {
-	R_RETURN_VAL_IF_FAIL (arch && r_arch_plugins (arch) && name, false);
+	R_RETURN_VAL_IF_FAIL (arch && arch->libstore->plugins && name, false);
 	RArchPlugin *ap = r_arch_find (arch, name);
 	find_bestmatch (arch, NULL, name, false);
 #if 0
@@ -274,7 +274,7 @@ R_API bool r_arch_del(RArch *arch, const char *name) {
 		arch->current = NULL;
 	}
 #endif
-	r_list_delete_data (r_arch_plugins (arch), ap);
+	r_list_delete_data (arch->libstore->plugins, ap);
 	return false;
 }
 

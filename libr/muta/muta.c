@@ -33,14 +33,14 @@ static void r_muta_init(RMuta *muta) {
 }
 
 R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h) {
-	R_RETURN_VAL_IF_FAIL (muta && r_muta_plugins (muta) && h, false);
-	r_list_append (r_muta_plugins (muta), h);
+	R_RETURN_VAL_IF_FAIL (muta && muta->libstore->plugins && h, false);
+	r_list_append (muta->libstore->plugins, h);
 	return true;
 }
 
 R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h) {
 	R_RETURN_VAL_IF_FAIL (muta && h, false);
-	r_list_delete_data (r_muta_plugins (muta), h);
+	r_list_delete_data (muta->libstore->plugins, h);
 	return true;
 }
 
@@ -58,10 +58,10 @@ R_API void r_muta_free(RMuta *muta) {
 }
 
 R_API RMutaPlugin *r_muta_find(RMuta *muta, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (muta && r_muta_plugins (muta) && algo, NULL);
+	R_RETURN_VAL_IF_FAIL (muta && muta->libstore->plugins && algo, NULL);
 	RListIter *iter;
 	RMutaPlugin *h;
-	r_list_foreach (r_muta_plugins (muta), iter, h) {
+	r_list_foreach (muta->libstore->plugins, iter, h) {
 		if (!h) {
 			continue;
 		}
@@ -167,7 +167,7 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 	}
 	RListIter *iter;
 	RMutaPlugin *cp;
-	r_list_foreach (r_muta_plugins (cry), iter, cp) {
+	r_list_foreach (cry->libstore->plugins, iter, cp) {
 		if (cp->type != type && type != R_MUTA_TYPE_ALL) {
 			continue;
 		}

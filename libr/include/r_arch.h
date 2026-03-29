@@ -117,10 +117,6 @@ typedef struct r_arch_t {
 	RLibStore *libstore;
 } RArch;
 
-static inline RList *r_arch_plugins(RArch *arch) {
-	return arch && arch->libstore? arch->libstore->plugins: NULL;
-}
-
 typedef struct r_arch_session_t {
 	char *name; // used by .use to chk if it was set already
 	// TODO: name it "peer" instead of encoder. so the encoder can back reference the decoder

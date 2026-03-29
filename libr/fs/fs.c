@@ -88,7 +88,7 @@ R_API RFSPlugin *r_fs_plugin_get(RFS *fs, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
 	RListIter *iter;
 	RFSPlugin *p;
-	r_list_foreach (r_fs_plugins (fs), iter, p) {
+	r_list_foreach (fs->libstore->plugins, iter, p) {
 		if (!strcmp (p->meta.name, name)) {
 			return p;
 		}
@@ -110,7 +110,7 @@ R_API bool r_fs_cmd(RFS *fs, const char *cmd) {
 		}
 	}
 	RListIter *iter;
-	r_list_foreach (r_fs_plugins (fs), iter, p) {
+	r_list_foreach (fs->libstore->plugins, iter, p) {
 		if (p->cmd && p->cmd (fs, cmd)) {
 			return true;
 		}
@@ -139,7 +139,7 @@ R_API bool r_fs_plugin_add(RFS *fs, RFSPlugin *p) {
 	}
 	RFSPlugin *sp = R_NEW0 (RFSPlugin);
 	memcpy (sp, p, sizeof (RFSPlugin));
-	r_list_append (r_fs_plugins (fs), sp);
+	r_list_append (fs->libstore->plugins, sp);
 	return true;
 }
 

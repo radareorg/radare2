@@ -1035,7 +1035,7 @@ static void autocomplete_analysis_plugins(RCore *core, RLineCompletion *completi
 	size_t len = strlen (str);
 	RListIter *iter;
 	RAnalPlugin *ap;
-	r_list_foreach (r_anal_plugins (core->anal), iter, ap) {
+	r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 		if (!len || !strncmp (str, ap->meta.name, len)) {
 			char *cmd = r_str_newf ("a:%s", ap->meta.name);
 			r_line_completion_push (completion, cmd);
