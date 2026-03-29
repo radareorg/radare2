@@ -361,18 +361,23 @@ static void cmd_write_bits(RCore *core, int set, ut64 val) {
 }
 
 static void cmd_write_inc(RCore *core, int size, st64 num) {
-	ut64 *v64;
-	ut32 *v32;
-	ut16 *v16;
-	ut8 *v8;
+	const bool be = r_config_get_b (core->config, "cfg.bigendian");
+	ut8 *b = core->block;
 	switch (size) {
-	case 1: v8 = (ut8*)core->block; *v8 += num; break;
-	case 2: v16 = (ut16*)core->block; *v16 += num; break;
-	case 4: v32 = (ut32*)core->block; *v32 += num; break;
-	case 8: v64 = (ut64*)core->block; *v64 += num; break;
+	case 1:
+		b[0] += num;
+		break;
+	case 2:
+		r_write_ble16 (b, r_read_ble16 (b, be) + num, be);
+		break;
+	case 4:
+		r_write_ble32 (b, r_read_ble32 (b, be) + num, be);
+		break;
+	case 8:
+		r_write_ble64 (b, r_read_ble64 (b, be) + num, be);
+		break;
 	}
-	// TODO: obey endian here
-	if (!r_core_write_at (core, core->addr, core->block, size)) {
+	if (!r_core_write_at (core, core->addr, b, size)) {
 		cmd_write_fail (core);
 	}
 }
