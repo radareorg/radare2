@@ -123,6 +123,7 @@ typedef struct r_libstore_t RLibStore;
 
 typedef void (*RLibInternalLoadCallback)(void *user);
 typedef bool (*RLibStoreLoadCallback)(RLibStore *store);
+typedef void (*RLibStorePluginFiniCb)(void *user, void *plugin);
 
 typedef struct r_lib_t {
 	char *symname;
@@ -147,6 +148,7 @@ typedef struct r_libstore_t {
 	RList *xtrs;
 	RList *ldrs;
 	const void *static_plugins;
+	RLibStorePluginFiniCb fini;
 	RLibPluginAddCb add;
 	RLibStoreLoadCallback load;
 	bool loaded;

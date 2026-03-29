@@ -16,6 +16,13 @@ R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFre
 
 R_API void r_libstore_free(RLibStore *store) {
 	if (store) {
+		if (store->fini && store->plugins) {
+			RListIter *iter;
+			void *plugin;
+			r_list_foreach (store->plugins, iter, plugin) {
+				store->fini (store->user, plugin);
+			}
+		}
 		r_list_free (store->plugins);
 		r_list_free (store->xtrs);
 		r_list_free (store->ldrs);

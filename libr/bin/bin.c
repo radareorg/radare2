@@ -34,6 +34,13 @@ static bool bin_load_plugins(RLibStore *store) {
 	return true;
 }
 
+static void bin_plugin_fini(void *user, void *plugin) {
+	RBinPlugin *plug = plugin;
+	if (plug && plug->fini) {
+		plug->fini (user);
+	}
+}
+
 
 static int __getoffset(RBin *bin, int type, int idx) {
 	RBinFile *a = r_bin_cur (bin);
@@ -526,20 +533,12 @@ R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
 
 R_API void r_bin_free(RBin *bin) {
 	if (bin) {
-		RList *plugins = bin->libstore? bin->libstore->plugins: NULL;
 		bin->file = NULL;
 		free (bin->force);
 		free (bin->srcdir);
 		free (bin->strenc);
 		// r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
-		RListIter *iter;
-		RBinPlugin *plug;
-		r_list_foreach (plugins, iter, plug) {
-			if (plug->fini) {
-				plug->fini (bin);
-			}
-		}
 		r_libstore_free (bin->libstore);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
@@ -936,6 +935,7 @@ R_API RBin *r_bin_new(void) {
 	}
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	bin->libstore = r_libstore_new (bin, NULL, (RListFree)free, bin_load_plugins, NULL);
+	bin->libstore->fini = bin_plugin_fini;
 	bin->libstore->xtrs = xtrs;
 	bin->libstore->ldrs = ldrs;
 	if (r_lib_defaults ()) {
