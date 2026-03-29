@@ -9,23 +9,13 @@ static REsilPlugin *esil_static_plugins[] = {
 	R_ESIL_STATIC_PLUGINS
 };
 
-static bool esil_load_plugins(void *user) {
-	REsil *esil = user;
-	return r_lib_add_static (esil, (const void *const *)esil_static_plugins, (RLibPluginAddCb)r_esil_plugin_add);
-}
-
 R_IPI bool r_esil_plugins_init(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	RList *plugins = r_list_new ();
-	if (R_UNLIKELY (!plugins)) {
-		return false;
-	}
 	esil->active_plugins = r_list_new ();
 	if (R_UNLIKELY (!esil->active_plugins)) {
-		r_list_free (plugins);
 		return false;
 	}
-	esil->libstore = r_libstore_new (esil, plugins, esil_load_plugins);
+	esil->libstore = r_libstore_new (esil, NULL, NULL, (RLibPluginAddCb)r_esil_plugin_add, (const void *const *)esil_static_plugins);
 	if (r_lib_defaults ()) {
 		r_libstore_load (esil->libstore);
 	}

@@ -17,11 +17,6 @@ static const char *directives[] = {
 	".else", ".set", ".get", ".extern", NULL
 };
 
-static bool asm_load_plugins(void *user) {
-	RAsm *a = user;
-	return r_lib_add_static (a, (const void *const *)asm_static_plugins, (RLibPluginAddCb)r_asm_plugin_add);
-}
-
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (a && foo, false);
 	RAsmPluginSession *aps = R_NEW0 (RAsmPluginSession);
@@ -266,7 +261,7 @@ R_API RAsm *r_asm_new(void) {
 	a->dataalign = 1;
 	a->pseudo = false;
 	a->use_spp = false;
-	a->libstore = r_libstore_new (a, r_list_newf (free), asm_load_plugins);
+	a->libstore = r_libstore_new (a, (RListFree)free, NULL, (RLibPluginAddCb)r_asm_plugin_add, (const void *const *)asm_static_plugins);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
 	if (r_lib_defaults ()) {

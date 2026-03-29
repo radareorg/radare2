@@ -50,11 +50,6 @@ static const RFSType fstypes[] = {
 	{ NULL }
 };
 
-static bool fs_load_plugins(void *user) {
-	RFS *fs = user;
-	return r_lib_add_static (fs, (const void *const *)fs_static_plugins, (RLibPluginAddCb)r_fs_plugin_add);
-}
-
 R_API R_MUSTUSE const RFSType *r_fs_type_index(int i) {
 	if (i < 0 || i >= R_ARRAY_SIZE (fstypes)) {
 		return NULL;
@@ -71,13 +66,7 @@ R_API R_MUSTUSE RFS *r_fs_new(void) {
 		return NULL;
 	}
 	fs->roots->free = (RListFree)r_fs_root_free;
-	RList *plugins = r_list_new ();
-	if (!plugins) {
-		r_fs_free (fs);
-		return NULL;
-	}
-	plugins->free = free;
-	fs->libstore = r_libstore_new (fs, plugins, fs_load_plugins);
+	fs->libstore = r_libstore_new (fs, (RListFree)free, NULL, (RLibPluginAddCb)r_fs_plugin_add, (const void *const *)fs_static_plugins);
 	if (r_lib_defaults ()) {
 		r_libstore_load (fs->libstore);
 	}

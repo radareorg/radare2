@@ -11,8 +11,8 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-static bool muta_load_plugins(void *user) {
-	RMuta *muta = user;
+static bool muta_load_plugins(RLibStore *store) {
+	RMuta *muta = store->user;
 	int i;
 	for (i = 0; muta_static_plugins[i]; i++) {
 		RMutaPlugin *p = r_mem_dup (muta_static_plugins[i], sizeof (RMutaPlugin));
@@ -26,7 +26,7 @@ static bool muta_load_plugins(void *user) {
 static void r_muta_init(RMuta *muta) {
 	R_RETURN_IF_FAIL (muta);
 	muta->user = NULL;
-	muta->libstore = r_libstore_new (muta, r_list_newf (free), muta_load_plugins);
+	muta->libstore = r_libstore_new (muta, (RListFree)free, muta_load_plugins, NULL, NULL);
 	if (r_lib_defaults ()) {
 		r_libstore_load (muta->libstore);
 	}

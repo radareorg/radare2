@@ -19,8 +19,8 @@ static void r_bp_item_free(RBreakpointItem *b) {
 	}
 }
 
-static bool bp_load_plugins(void *user) {
-	RBreakpoint *bp = user;
+static bool bp_load_plugins(RLibStore *store) {
+	RBreakpoint *bp = store->user;
 	int i;
 	for (i = 0; bp_static_plugins[i]; i++) {
 		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
@@ -36,7 +36,7 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
-	bp->libstore = r_libstore_new (bp, r_list_newf ((RListFree)free), bp_load_plugins);
+	bp->libstore = r_libstore_new (bp, (RListFree)free, bp_load_plugins, NULL, NULL);
 	if (r_lib_defaults ()) {
 		r_libstore_load (bp->libstore);
 	}

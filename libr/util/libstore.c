@@ -3,11 +3,14 @@
 #include <r_util.h>
 #include <r_lib.h>
 
-R_API RLibStore *r_libstore_new(void *user, RList *plugins, RLibStoreLoadCallback load) {
+R_API RLibStore *r_libstore_new(void *user, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, const void *const static_plugins[]) {
 	RLibStore *store = R_NEW0 (RLibStore);
 	store->user = user;
-	store->plugins = plugins;
+	store->free = freefn;
+	store->plugins = r_list_newf (freefn);
+	store->add = add;
 	store->load = load;
+	store->static_plugins = static_plugins;
 	return store;
 }
 
@@ -21,11 +24,19 @@ R_API void r_libstore_free(RLibStore *store) {
 }
 
 R_API bool r_libstore_load(RLibStore *store) {
-	R_RETURN_VAL_IF_FAIL (store && store->load, false);
+	R_RETURN_VAL_IF_FAIL (store, false);
 	if (store->loaded) {
 		return true;
 	}
-	if (!store->load (store->user)) {
+	if (store->load) {
+		if (!store->load (store)) {
+			return false;
+		}
+	} else if (store->static_plugins && store->add) {
+		if (!r_lib_add_static (store->user, store->static_plugins, store->add)) {
+			return false;
+		}
+	} else {
 		return false;
 	}
 	store->loaded = true;
