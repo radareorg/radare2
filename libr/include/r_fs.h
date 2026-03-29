@@ -22,12 +22,15 @@ typedef struct r_fs_t {
 	RIOBind iob;
 	RCoreBind cob;
 	RConsBind csb;
-	RList /*<RFSPlugin>*/ *plugins;
 	RList /*<RFSRoot>*/ *roots;
 	int view;
 	void *ptr;
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 } RFS;
+
+static inline RList *r_fs_plugins(RFS *fs) {
+	return fs && fs->libstore? fs->libstore->plugins: NULL;
+}
 
 typedef struct r_fs_partition_plugin_t {
 	const char *name;
@@ -152,7 +155,6 @@ enum {
 
 #ifdef R_API
 R_API RFS *r_fs_new(void);
-R_API bool r_fs_plugins_ensure(RFS *fs);
 R_API void r_fs_free(RFS* fs);
 
 R_API void r_fs_view(RFS* fs, int view);

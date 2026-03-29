@@ -157,7 +157,7 @@ static bool plugin_in_list(RList *list, RAnalPlugin *plugin) {
 static RAnalPlugin *plugin_find_by_name(RAnal *anal, const char *name) {
 	RListIter *iter;
 	RAnalPlugin *p;
-	r_list_foreach (anal->plugins, iter, p) {
+	r_list_foreach (r_anal_plugins (anal), iter, p) {
 		if (!strcmp (p->meta.name, name)) {
 			return p;
 		}
@@ -196,7 +196,7 @@ static void plugin_append_all(RList *list, RAnal *anal, RAnalPluginAction action
 	RListIter *iter;
 	RAnalPlugin *p;
 	RList *scored = r_list_newf (free);
-	r_list_foreach (anal->plugins, iter, p) {
+	r_list_foreach (r_anal_plugins (anal), iter, p) {
 		if (!plugin_has_callback (p, action)) {
 			continue;
 		}
@@ -324,7 +324,7 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 	}
 
 	// Fallback: iterate all plugins in registration order with eligibility check
-	r_list_foreach (anal->plugins, iter, p) {
+	r_list_foreach (r_anal_plugins (anal), iter, p) {
 		if (!plugin_has_callback (p, action) || !plugin_is_eligible (anal, p)) {
 			continue;
 		}

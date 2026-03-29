@@ -11,12 +11,8 @@ static RMutaPlugin *muta_static_plugins[] = {
 	R_MUTA_STATIC_PLUGINS
 };
 
-R_API bool r_muta_plugins_ensure(RMuta *muta) {
-	R_RETURN_VAL_IF_FAIL (muta, false);
-	if (muta->internal_plugins_loaded) {
-		return true;
-	}
-	muta->internal_plugins_loaded = true;
+static bool muta_load_plugins(void *user) {
+	RMuta *muta = user;
 	int i;
 	for (i = 0; muta_static_plugins[i]; i++) {
 		RMutaPlugin *p = r_mem_dup (muta_static_plugins[i], sizeof (RMutaPlugin));
@@ -30,21 +26,21 @@ R_API bool r_muta_plugins_ensure(RMuta *muta) {
 static void r_muta_init(RMuta *muta) {
 	R_RETURN_IF_FAIL (muta);
 	muta->user = NULL;
-	muta->plugins = r_list_newf (free);
-	if (r_lib_plugins_init_default ()) {
-		r_muta_plugins_ensure (muta);
+	muta->libstore = r_libstore_new (muta, r_list_newf (free), muta_load_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (muta->libstore);
 	}
 }
 
 R_API bool r_muta_add(RMuta *muta, RMutaPlugin *h) {
-	R_RETURN_VAL_IF_FAIL (muta && muta->plugins && h, false);
-	r_list_append (muta->plugins, h);
+	R_RETURN_VAL_IF_FAIL (muta && r_muta_plugins (muta) && h, false);
+	r_list_append (r_muta_plugins (muta), h);
 	return true;
 }
 
 R_API bool r_muta_del(RMuta *muta, RMutaPlugin *h) {
 	R_RETURN_VAL_IF_FAIL (muta && h, false);
-	r_list_delete_data (muta->plugins, h);
+	r_list_delete_data (r_muta_plugins (muta), h);
 	return true;
 }
 
@@ -56,16 +52,16 @@ R_API RMuta *r_muta_new(void) {
 
 R_API void r_muta_free(RMuta *muta) {
 	if (muta) {
-		r_list_free (muta->plugins);
+		r_libstore_free (muta->libstore);
 		free (muta);
 	}
 }
 
 R_API RMutaPlugin *r_muta_find(RMuta *muta, const char *algo) {
-	R_RETURN_VAL_IF_FAIL (muta && muta->plugins && algo, NULL);
+	R_RETURN_VAL_IF_FAIL (muta && r_muta_plugins (muta) && algo, NULL);
 	RListIter *iter;
 	RMutaPlugin *h;
-	r_list_foreach (muta->plugins, iter, h) {
+	r_list_foreach (r_muta_plugins (muta), iter, h) {
 		if (!h) {
 			continue;
 		}
@@ -171,7 +167,7 @@ R_API char *r_muta_list(RMuta *cry, RMutaType type, int mode) {
 	}
 	RListIter *iter;
 	RMutaPlugin *cp;
-	r_list_foreach (cry->plugins, iter, cp) {
+	r_list_foreach (r_muta_plugins (cry), iter, cp) {
 		if (cp->type != type && type != R_MUTA_TYPE_ALL) {
 			continue;
 		}

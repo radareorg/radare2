@@ -38,7 +38,7 @@ static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 
 static void __load_internal_cb(void *user) {
 	REggState *es = (REggState *)user;
-	r_egg_plugins_ensure (es->e);
+	r_libstore_load (es->e->libstore);
 }
 
 static void __load_plugins(REggState *es) {
@@ -57,7 +57,7 @@ static REggState *__es_new(void) {
 	if (load_plugins) {
 		__load_plugins (es);
 	} else {
-		r_egg_plugins_ensure (es->e);
+		r_libstore_load (es->e->libstore);
 	}
 	return es;
 }
@@ -119,13 +119,13 @@ static void list(REgg *egg) {
 	RListIter *iter;
 	REggPlugin *p;
 	printf ("shellcodes:\n");
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (r_egg_plugins (egg), iter, p) {
 		if (p->type == R_EGG_PLUGIN_SHELLCODE) {
 			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
 	}
 	printf ("encoders:\n");
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (r_egg_plugins (egg), iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER) {
 			printf ("%10s : %s\n", p->meta.name, p->meta.desc);
 		}
@@ -134,7 +134,7 @@ static void list(REgg *egg) {
 
 static int create(const char *format, const char *arch, int bits, const ut8 *code, int codelen) {
 	RBin *bin = r_bin_new ();
-	r_bin_plugins_ensure (bin);
+	r_libstore_load (bin->libstore);
 	RBinArchOptions opts;
 	RBuffer *b;
 	r_bin_arch_options_init (&opts, arch, bits);

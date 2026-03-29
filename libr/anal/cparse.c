@@ -8,7 +8,7 @@ static RAnalPlugin *resolve_plugin (RAnal *anal, int type) {
 	RAnalPlugin *p;
 	RListIter *iter;
 	const char *tpp = anal->opt.tparser;
-	r_list_foreach (anal->plugins, iter, p) {
+	r_list_foreach (r_anal_plugins (anal), iter, p) {
 		if (!strcmp (tpp, p->meta.name)) {
 			switch (type) {
 			case 0:

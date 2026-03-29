@@ -17,13 +17,18 @@ static const char *directives[] = {
 	".else", ".set", ".get", ".extern", NULL
 };
 
+static bool asm_load_plugins(void *user) {
+	RAsm *a = user;
+	return r_lib_add_static (a, (const void *const *)asm_static_plugins, (RLibPluginAddCb)r_asm_plugin_add);
+}
+
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (a && foo, false);
 	RAsmPluginSession *aps = R_NEW0 (RAsmPluginSession);
 	aps->rasm = a;
 	aps->plugin = foo;
 	aps->data = NULL; // to be used by the plugin
-	r_list_append (a->sessions, aps);
+	r_list_append (r_asm_sessions (a), aps);
 	return true;
 }
 
@@ -31,7 +36,7 @@ R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (a && plugin, false);
 	RListIter *iter;
 	RAsmPluginSession *aps;
-	r_list_foreach (a->sessions, iter, aps) {
+	r_list_foreach (r_asm_sessions (a), iter, aps) {
 		if (aps->plugin == plugin) {
 			if (aps == a->cur) {
 				a->cur = NULL;
@@ -39,7 +44,7 @@ R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
 			if (aps->plugin->fini) {
 				aps->plugin->fini (aps);
 			}
-			r_list_delete (a->sessions, iter);
+			r_list_delete (r_asm_sessions (a), iter);
 			return true;
 		}
 	}
@@ -255,26 +260,17 @@ static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	return count;
 }
 
-R_API bool r_asm_plugins_ensure(RAsm *a) {
-	R_RETURN_VAL_IF_FAIL (a, false);
-	if (a->internal_plugins_loaded) {
-		return true;
-	}
-	a->internal_plugins_loaded = true;
-	return r_lib_plugins_add_static (a, (const void *const *)asm_static_plugins, (RLibPluginAddCb)r_asm_plugin_add);
-}
-
 R_API RAsm *r_asm_new(void) {
 	RAsm *a = R_NEW0 (RAsm);
 	a->codealign = 1;
 	a->dataalign = 1;
 	a->pseudo = false;
 	a->use_spp = false;
-	a->sessions = r_list_newf (free);
+	a->libstore = r_libstore_new (a, r_list_newf (free), asm_load_plugins);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
-	if (r_lib_plugins_init_default ()) {
-		r_asm_plugins_ensure (a);
+	if (r_lib_defaults ()) {
+		r_libstore_load (a->libstore);
 	}
 	return a;
 }
@@ -291,13 +287,13 @@ R_API void r_asm_free(RAsm *a) {
 	a->pair = NULL;
 	RListIter *iter;
 	RAsmPluginSession *aps;
-	r_list_foreach (a->sessions, iter, aps) {
+	r_list_foreach (r_asm_sessions (a), iter, aps) {
 		RAsmParseFini fini = aps->plugin->fini;
 		if (fini) {
 			fini (aps);
 		}
 	}
-	r_list_free (a->sessions);
+	r_libstore_free (a->libstore);
 	r_parse_free (a->parse);
 	r_arch_free (a->arch);
 	free (a);
@@ -356,7 +352,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 
 	RListIter *iter;
 	RAsmPluginSession *aps;
-	r_list_foreach (a->sessions, iter, aps) {
+	r_list_foreach (r_asm_sessions (a), iter, aps) {
 		RAsmPlugin *ap = aps->plugin;
 		if (!strcmp (ap->meta.name, name)) {
 			useparser (a, aps);
@@ -366,7 +362,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 	bool found = false;
 	if (strchr (name, '.')) {
 		char *sname = predotname (name);
-		r_list_foreach (a->sessions, iter, aps) {
+		r_list_foreach (r_asm_sessions (a), iter, aps) {
 			RAsmPlugin *ap = aps->plugin;
 			char *shname = predotname (ap->meta.name);
 			found = !strcmp (shname, sname);
@@ -381,7 +377,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 		// Try to match arch name with arch.pseudo pattern
 		char *dotname = r_str_newf ("%s.pseudo", name);
 		if (dotname) {
-			r_list_foreach (a->sessions, iter, aps) {
+			r_list_foreach (r_asm_sessions (a), iter, aps) {
 				RAsmPlugin *ap = aps->plugin;
 				if (!strcmp (ap->meta.name, dotname)) {
 					useparser (a, aps);
@@ -401,7 +397,7 @@ R_API bool r_asm_use_parser(RAsm *a, const char *name) {
 			}
 		}
 		// check if p->cur
-		r_list_foreach (a->sessions, iter, aps) {
+		r_list_foreach (r_asm_sessions (a), iter, aps) {
 			RAsmPlugin *h = aps->plugin;
 			if (r_str_startswith (h->meta.name, "null")) {
 				R_LOG_INFO ("Fallback to null");

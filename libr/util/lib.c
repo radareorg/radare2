@@ -666,14 +666,14 @@ static void open_plugins_at(RLib *lib, const char *arg, const char *config_path)
 	}
 }
 
-R_API bool r_lib_plugins_init_default(void) {
+R_API bool r_lib_defaults(void) {
 	char *order = r_sys_getenv ("R2_PLUGINS_ORDER");
 	bool load = R_STR_ISEMPTY (order);
 	free (order);
 	return load;
 }
 
-R_API bool r_lib_plugins_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb) {
+R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb) {
 	R_RETURN_VAL_IF_FAIL (ctx && plugins && add_cb, false);
 	size_t i;
 	for (i = 0; plugins[i]; i++) {

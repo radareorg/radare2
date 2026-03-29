@@ -107,7 +107,6 @@ typedef enum {
 } RAnalOpMask;
 
 typedef struct r_arch_t {
-	RList *plugins;	// all plugins
 	RBinBind binb; // required for java, dalvik, wasm, pickle and pyc plugin... pending refactor
 	struct r_esil_t *esil;
 	RNum *num; // XXX maybe not required
@@ -115,8 +114,12 @@ typedef struct r_arch_t {
 	RArchConfig *cfg; // global / default config
 	char *platform;
 	void *user; // probably RCore*
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 } RArch;
+
+static inline RList *r_arch_plugins(RArch *arch) {
+	return arch && arch->libstore? arch->libstore->plugins: NULL;
+}
 
 typedef struct r_arch_session_t {
 	char *name; // used by .use to chk if it was set already
@@ -204,7 +207,6 @@ R_API RList *r_arch_session_preludes(RArchSession *as);
 
 // arch.c
 R_API RArch *r_arch_new(void);
-R_API bool r_arch_plugins_ensure(RArch *a);
 R_API RArchPlugin *r_arch_find(RArch *arch, const char *name);
 R_API bool r_arch_use(RArch *arch, RArchConfig *config, const char *name);
 

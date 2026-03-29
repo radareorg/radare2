@@ -464,7 +464,7 @@ struct r_core_t {
 	int skiplines; // used only for disasm
 	void *priv; // Its RCorePriv but only used internally to not break abi
 	bool esil_anal_stop; // sounds like must be deprecated
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 };
 
 // maybe move into RAnal

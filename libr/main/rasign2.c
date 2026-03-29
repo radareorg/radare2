@@ -154,12 +154,12 @@ static int signs_from_file(const char *fname, RasignOptions *conf) {
 static RList *get_ar_file_uris(const char *fname) {
 	R_RETURN_VAL_IF_FAIL (fname, NULL);
 	RIO *io = r_io_new ();
-	r_io_plugins_ensure (io);
 	// core is only used to to list uri's in archive, then it's free'd
 	if (!io) {
 		R_LOG_ERROR ("Failed to alloc io");
 		return NULL;
 	}
+	r_libstore_load (io->libstore);
 
 	char *allfiles = r_str_newf ("arall://%s", fname);
 	if (!allfiles) {

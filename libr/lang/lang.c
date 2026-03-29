@@ -35,12 +35,8 @@ static void r_lang_session_free(void *p) {
 	free (s);
 }
 
-R_API bool r_lang_plugins_ensure(RLang *lang) {
-	R_RETURN_VAL_IF_FAIL (lang, false);
-	if (lang->internal_plugins_loaded) {
-		return true;
-	}
-	lang->internal_plugins_loaded = true;
+static bool lang_load_plugins(void *user) {
+	RLang *lang = user;
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_DEBUG_NOLANG");
 	if (load_plugins) {
 #if HAVE_SYSTEM
@@ -73,12 +69,12 @@ R_API bool r_lang_plugins_ensure(RLang *lang) {
 R_API RLang *r_lang_new(void) {
 	RLang *lang = R_NEW0 (RLang);
 	lang->user = NULL;
-	lang->langs = r_list_new ();
 	lang->defs = r_list_new ();
 	lang->sessions = r_list_newf (r_lang_session_free);
 	lang->defs->free = (RListFree)r_lang_def_free;
-	if (r_lib_plugins_init_default ()) {
-		r_lang_plugins_ensure (lang);
+	lang->libstore = r_libstore_new (lang, r_list_new (), lang_load_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (lang->libstore);
 	}
 	return lang;
 }
@@ -86,7 +82,7 @@ R_API RLang *r_lang_new(void) {
 R_API void r_lang_free(RLang *lang) {
 	if (lang) {
 		r_lang_undef (lang, NULL);
-		r_list_free (lang->langs);
+		r_libstore_free (lang->libstore);
 		r_list_free (lang->defs);
 		r_list_free (lang->sessions);
 		// TODO: remove langs plugins
@@ -175,7 +171,7 @@ R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
 			supported = foo->init (NULL);
 		}
 		if (supported) {
-			r_list_append (lang->langs, foo);
+			r_list_append (r_lang_plugins (lang), foo);
 			return true;
 		}
 	}
@@ -193,7 +189,7 @@ R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 	if (p) {
 		ext = p + 1;
 	}
-	r_list_foreach (lang->langs, iter, h) {
+	r_list_foreach (r_lang_plugins (lang), iter, h) {
 		if (!r_str_casecmp (h->ext, ext)) {
 			return h;
 		}
@@ -204,7 +200,7 @@ R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
 	RListIter *iter;
 	RLangPlugin *h;
-	r_list_foreach (lang->langs, iter, h) {
+	r_list_foreach (r_lang_plugins (lang), iter, h) {
 		if (!r_str_casecmp (h->meta.name, name)) {
 			return h;
 		}

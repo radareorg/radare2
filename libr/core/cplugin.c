@@ -88,7 +88,7 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 R_IPI bool r_core_plugins_ensure(RCmd *cmd) {
 	R_RETURN_VAL_IF_FAIL (cmd, false);
 	RCore *core = cmd->data;
-	if (core && core->internal_plugins_loaded) {
+	if (core && core->libstore && r_libstore_loaded (core->libstore)) {
 		return true;
 	}
 	size_t i;
@@ -104,7 +104,7 @@ R_IPI bool r_core_plugins_ensure(RCmd *cmd) {
 R_IPI bool r_core_plugins_init(RCmd *cmd) {
 	R_RETURN_VAL_IF_FAIL (cmd, false);
 	cmd->plist = r_list_newf (NULL);
-	if (r_lib_plugins_init_default ()) {
+	if (r_lib_defaults ()) {
 		r_core_plugins_ensure (cmd);
 	}
 	return true;

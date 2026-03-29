@@ -3,6 +3,7 @@
 
 #include <r_types.h>
 #include <r_list.h>
+#include <r_lib.h>
 #include <r_util/r_table.h>
 
 #ifdef __cplusplus
@@ -19,14 +20,17 @@ typedef struct r_lang_t {
 	void *user;
 	RCons *cons; // TODO: maybe just have RCore
 	RList *defs;
-	RList *langs;
 	RCoreCmdStrCallback cmd_str;
 	RCoreCmdfCallback cmdf;
 	RCoreCallAtCallback call_at;
 	RList *sessions;
 	struct r_lang_session_t *session;
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 } RLang;
+
+static inline RList *r_lang_plugins(RLang *lang) {
+	return lang && lang->libstore? lang->libstore->plugins: NULL;
+}
 
 typedef struct r_lang_session_t _RLangSession;
 
@@ -71,7 +75,6 @@ typedef struct r_lang_session_t {
 
 #ifdef R_API
 R_API RLang *r_lang_new(void);
-R_API bool r_lang_plugins_ensure(RLang *lang);
 R_API void r_lang_free(RLang *lang);
 R_API bool r_lang_setup(RLang *lang);
 R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *plugin);

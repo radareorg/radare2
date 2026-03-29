@@ -28,13 +28,9 @@ void egg_patch_free(void *p) {
 	}
 }
 
-R_API bool r_egg_plugins_ensure(REgg *egg) {
-	R_RETURN_VAL_IF_FAIL (egg, false);
-	if (egg->internal_plugins_loaded) {
-		return true;
-	}
-	egg->internal_plugins_loaded = true;
-	return r_lib_plugins_add_static (egg, (const void *const *)egg_static_plugins, (RLibPluginAddCb)r_egg_plugin_add);
+static bool egg_load_plugins(void *user) {
+	REgg *egg = user;
+	return r_lib_add_static (egg, (const void *const *)egg_static_plugins, (RLibPluginAddCb)r_egg_plugin_add);
 }
 
 R_API REgg *r_egg_new(void) {
@@ -77,9 +73,9 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	egg->plugins = r_list_new ();
-	if (r_lib_plugins_init_default ()) {
-		r_egg_plugins_ensure (egg);
+	egg->libstore = r_libstore_new (egg, r_list_new (), egg_load_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (egg->libstore);
 	}
 	return egg;
 
@@ -96,12 +92,12 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 		return false;
 	}
 	REggPlugin *h;
-	r_list_foreach (a->plugins, iter, h) {
+	r_list_foreach (r_egg_plugins (a), iter, h) {
 		if (!strcmp (h->meta.name, foo->meta.name)) {
 			return false;
 		}
 	}
-	r_list_append (a->plugins, foo);
+	r_list_append (r_egg_plugins (a), foo);
 	return true;
 }
 
@@ -124,7 +120,7 @@ R_API void r_egg_free(REgg *egg) {
 		r_asm_free (egg->rasm);
 		r_syscall_free (egg->syscall);
 		sdb_free (egg->db);
-		r_list_free (egg->plugins);
+		r_libstore_free (egg->libstore);
 		r_list_free (egg->patches);
 		r_egg_lang_fini (egg);
 		free (egg);
@@ -540,7 +536,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
 	RBuffer *b;
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (r_egg_plugins (egg), iter, p) {
 		const char *p_name = p->meta.name;
 		if (p->type == R_EGG_PLUGIN_SHELLCODE && !strcmp (name, p_name)) {
 			b = p->build (egg);
@@ -560,7 +556,7 @@ R_API bool r_egg_shellcode(REgg *egg, const char *name) {
 R_API bool r_egg_encode(REgg *egg, const char *name) {
 	REggPlugin *p;
 	RListIter *iter;
-	r_list_foreach (egg->plugins, iter, p) {
+	r_list_foreach (r_egg_plugins (egg), iter, p) {
 		if (p->type == R_EGG_PLUGIN_ENCODER && !strcmp (name, p->meta.name)) {
 			RBuffer *b = p->build (egg);
 			if (b) {

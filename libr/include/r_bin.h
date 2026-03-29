@@ -545,9 +545,6 @@ struct r_bin_t {
 	Sdb *sdb;
 	RIDStorage *ids;
 	RMutaBind mb;
-	RList/*<RBinPlugin>*/ *plugins;
-	RList/*<RBinXtrPlugin>*/ *binxtrs;
-	RList/*<RBinLdrPlugin>*/ *binldrs;
 	RList/*<RBinFile>*/ *binfiles;
 	PrintfCallback cb_printf;
 	int loadany;
@@ -565,7 +562,7 @@ struct r_bin_t {
 	ut64 filter_rules;
 	RStrConstPool constpool;
 	RBinOptions options;
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 };
 
 typedef struct r_bin_xtr_metadata_t {
@@ -850,7 +847,6 @@ R_API void r_bin_arch_options_init(RBinArchOptions *opt, const char *arch, int b
 
 // open/close/reload functions
 R_API RBin *r_bin_new(void);
-R_API bool r_bin_plugins_ensure(RBin *bin);
 R_API void r_bin_free(RBin *bin);
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt);
 R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt);

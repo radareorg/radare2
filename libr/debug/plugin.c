@@ -3,54 +3,64 @@
 #include <r_debug.h>
 #include <config.h>
 
-static inline void debug_plugin_session_fini(RDebugPluginSession *ds) {
+static void debug_plugin_session_free(RDebugPluginSession *ds) {
+	if (!ds) {
+		return;
+	}
 	if (ds->plugin && ds->plugin->fini_plugin && !ds->plugin->fini_plugin (ds->dbg, ds)) {
 		R_LOG_DEBUG ("Failed to finalize debug plugin");
 	}
 	R_FREE (ds->plugin_data);
+	free (ds);
 }
-
-R_VEC_TYPE_WITH_FINI(RVecDebugPluginSession, RDebugPluginSession, debug_plugin_session_fini);
 
 static RDebugPlugin *debug_static_plugins[] = {
 	R_DEBUG_STATIC_PLUGINS
 };
 
-R_API bool r_debug_plugins_ensure(RDebug *dbg) {
-	R_RETURN_VAL_IF_FAIL (dbg, false);
-	if (dbg->internal_plugins_loaded) {
-		return true;
-	}
-	dbg->internal_plugins_loaded = true;
-	return r_lib_plugins_add_static (dbg, (const void *const *)debug_static_plugins, (RLibPluginAddCb)r_debug_plugin_add);
+static inline RList *dbg_plugins(RDebug *dbg) {
+	return dbg && dbg->libstore? dbg->libstore->plugins: NULL;
+}
+
+static bool debug_load_plugins(void *user) {
+	RDebug *dbg = user;
+	return r_lib_add_static (dbg, (const void *const *)debug_static_plugins, (RLibPluginAddCb)r_debug_plugin_add);
 }
 
 R_IPI void r_debug_plugins_init(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
-	dbg->plugins = RVecDebugPluginSession_new ();
-	if (r_lib_plugins_init_default ()) {
-		r_debug_plugins_ensure (dbg);
+	dbg->libstore = r_libstore_new (dbg, r_list_newf ((RListFree)debug_plugin_session_free), debug_load_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (dbg->libstore);
 	}
 }
 
 R_IPI void r_debug_plugins_fini(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
-	RVecDebugPluginSession_free (dbg->plugins);
+	r_libstore_free (dbg->libstore);
+	dbg->libstore = NULL;
 }
 
-static inline int find_plugin_by_name(const RDebugPluginSession *ds, const void *name) {
-	return ds->plugin && strcmp (ds->plugin->meta.name, name);
+static RDebugPluginSession *find_plugin_by_name(RDebug *dbg, const char *name) {
+	RListIter *iter;
+	RDebugPluginSession *ds;
+	r_list_foreach (dbg_plugins (dbg), iter, ds) {
+		if (ds->plugin && !strcmp (ds->plugin->meta.name, name)) {
+			return ds;
+		}
+	}
+	return NULL;
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
 	const char *aname = R_UNWRAP4 (dbg, anal, config, arch);
 	if (R_STR_ISNOTEMPTY (str)) {
-		RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins, (void*)str, find_plugin_by_name);
+		RDebugPluginSession *ds = find_plugin_by_name (dbg, str);
 		if (!ds) {
-			ds = RVecDebugPluginSession_find (dbg->plugins, (void*)"esil", find_plugin_by_name);
+			ds = find_plugin_by_name (dbg, "esil");
 			if (!ds) {
-				ds = RVecDebugPluginSession_find (dbg->plugins, (void*)"null", find_plugin_by_name);
+				ds = find_plugin_by_name (dbg, "null");
 			}
 		}
 		if (ds) {
@@ -100,8 +110,9 @@ R_API bool r_debug_plugin_list(RDebug *dbg, int mode) {
 		pj_a (pj);
 	}
 
+	RListIter *iter;
 	RDebugPluginSession *ds;
-	R_VEC_FOREACH (dbg->plugins, ds) {
+	r_list_foreach (dbg_plugins (dbg), iter, ds) {
 		RPluginMeta meta = ds->plugin->meta;
 		const int sp = 8 - strlen (meta.name);
 		if (sp > 0) {
@@ -133,30 +144,34 @@ R_API bool r_debug_plugin_add(RDebug *dbg, RDebugPlugin *plugin) {
 	if (!plugin->meta.name) {
 		return false;
 	}
-	RDebugPluginSession *ds = RVecDebugPluginSession_emplace_back (dbg->plugins);
+	RDebugPluginSession *ds = R_NEW0 (RDebugPluginSession);
 	if (!ds) {
 		return false;
 	}
 	ds->dbg = dbg;
 	ds->plugin = plugin;
-	// memcpy (&ds->plugin, plugin, sizeof (RDebugPlugin));
 	ds->plugin_data = NULL;
 
 	if (ds->plugin && ds->plugin->init_plugin && !ds->plugin->init_plugin (dbg, ds)) {
 		R_LOG_DEBUG ("Failed to initialize debug plugin");
+		debug_plugin_session_free (ds);
 		return false;
 	}
-
-	return true;
+	return r_list_append (dbg_plugins (dbg), ds) != NULL;
 }
 
 R_API bool r_debug_plugin_remove(RDebug *dbg, RDebugPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (dbg && plugin, false);
-	RDebugPluginSession *ds = RVecDebugPluginSession_find (dbg->plugins,
-		(void*)plugin->meta.name, find_plugin_by_name);
-	if (ds) {
-		RVecDebugPluginSession_pop_back (dbg->plugins);
-		return true;
+	RListIter *iter;
+	RDebugPluginSession *ds;
+	r_list_foreach (dbg_plugins (dbg), iter, ds) {
+		if (ds->plugin && !strcmp (ds->plugin->meta.name, plugin->meta.name)) {
+			if (dbg->current == ds) {
+				dbg->current = NULL;
+			}
+			r_list_delete (dbg_plugins (dbg), iter);
+			return true;
+		}
 	}
 	return false;
 }
