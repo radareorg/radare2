@@ -978,7 +978,7 @@ R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *fi, const char * R_
 
 /* change the name of a flag item, if the new name is available.
 ** true is returned if everything works well, false otherwise */
-R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
+R_API bool r_flag_rename(RFlag *f, RFlagItem *item, const char *name) {
 	R_RETURN_VAL_IF_FAIL (f && item && name && *name, false);
 	return update_flag_item_name (f, item, name, false);
 }

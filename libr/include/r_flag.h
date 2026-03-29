@@ -142,7 +142,7 @@ R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *fi, const char *
 R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, const char * R_NULLABLE color);
 
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
-R_API int r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
+R_API bool r_flag_rename(RFlag *f, RFlagItem *item, const char *name);
 R_API int r_flag_relocate(RFlag *f, ut64 addr, ut64 addr_mask, ut64 to);
 R_API bool r_flag_move(RFlag *f, ut64 at, ut64 to);
 R_API int r_flag_count(RFlag *f, const char *glob);
