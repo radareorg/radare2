@@ -106,7 +106,15 @@ static int is_string(const ut8 *buf, int size, int *len) {
 		return 0;
 	}
 	if (size > 3 && buf[0] && !buf[1] && buf[2] && !buf[3]) {
-		*len = 1; // XXX: TODO: Measure wide string length
+		int wlen = 0;
+		int j;
+		for (j = 0; j + 1 < size; j += 2) {
+			if (!buf[j] && !buf[j + 1]) {
+				break;
+			}
+			wlen++;
+		}
+		*len = R_MAX (wlen, 1);
 		return 2; // is wide
 	}
 	for (i = 0; i < size; i++) {
