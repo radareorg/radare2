@@ -363,10 +363,18 @@ static void cmd_write_bits(RCore *core, int set, ut64 val) {
 static void cmd_write_inc(RCore *core, int size, st64 num) {
 	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	switch (size) {
-	case 1: core->block[0] += num; break;
-	case 2: r_write_ble16 (core->block, r_read_ble16 (core->block, be) + num, be); break;
-	case 4: r_write_ble32 (core->block, r_read_ble32 (core->block, be) + num, be); break;
-	case 8: r_write_ble64 (core->block, r_read_ble64 (core->block, be) + num, be); break;
+	case 1:
+		core->block[0] += num;
+		break;
+	case 2:
+		r_write_ble16 (core->block, r_read_ble16 (core->block, be) + num, be);
+		break;
+	case 4:
+		r_write_ble32 (core->block, r_read_ble32 (core->block, be) + num, be);
+		break;
+	case 8:
+		r_write_ble64 (core->block, r_read_ble64 (core->block, be) + num, be);
+		break;
 	}
 	if (!r_core_write_at (core, core->addr, core->block, size)) {
 		cmd_write_fail (core);
