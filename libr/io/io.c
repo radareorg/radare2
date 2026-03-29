@@ -145,9 +145,6 @@ R_API void r_io_close_all(RIO* io) {
 	R_RETURN_IF_FAIL (io);
 	r_io_desc_fini (io);
 	r_io_map_fini (io);
-	r_list_free (io->libstore->plugins);
-	io->libstore->plugins = r_list_newf (NULL);
-	io->libstore->loaded = false;
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
