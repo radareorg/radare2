@@ -230,13 +230,7 @@ static void wrap_items(RTable *t, RList *items) {
 
 R_API void r_table_add_row_list(RTable *t, RList *items) {
 	R_RETURN_IF_FAIL (t && items);
-	int ncols = r_list_length (t->cols);
-	if (ncols > 0) {
-		int nitems = r_list_length (items);
-		if (nitems != ncols) {
-			R_LOG_WARN ("row has %d columns, but table header has %d", nitems, ncols);
-		}
-	}
+	R_RETURN_IF_FAIL (r_list_length (t->cols) == 0 || r_list_length (t->cols) == r_list_length (items));
 	RTableRow *row = r_table_row_new (items);
 	wrap_items (t, items);
 	r_list_append (t->rows, row);
@@ -358,13 +352,7 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 		col++;
 	}
 	va_end (ap);
-	int ncols = r_list_length (t->cols);
-	if (ncols > 0) {
-		int nitems = r_list_length (items);
-		if (nitems != ncols) {
-			R_LOG_WARN ("row has %d columns, but table header has %d", nitems, ncols);
-		}
-	}
+	R_RETURN_IF_FAIL (r_list_length (t->cols) == 0 || r_list_length (t->cols) == r_list_length (items));
 	wrap_items (t, items);
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
