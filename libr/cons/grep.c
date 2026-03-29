@@ -57,6 +57,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" ....",     "", "internal 'hud' in one line",
 	" :)",       "", "parse C-like output from decompiler",
 	" :))",      "", "code syntax highlight",
+	" :}",       "", "indent C code honoring braces",
 	" <50",      "", "perform zoom to the given text width on the buffer",
 	" <>",       "", "xml indentation",
 	" {:",       "", "human friendly indentation (yes, it's a smiley)",
@@ -158,6 +159,9 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 						ptr++;
 					}
 					grep->code = true;
+					ptr++;
+				} else if (ptr[1] == '}') { // ":}"
+					grep->codindent = true;
 					ptr++;
 				}
 				goto while_end;
@@ -607,6 +611,20 @@ R_API void r_cons_grepbuf(RCons *cons) {
 	if (cons->context->filter) {
 		cons->context->buffer_len = 0;
 		R_FREE (cons->context->buffer);
+		return;
+	}
+	if (grep->codindent) {
+		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
+		if (sbuf) {
+			char *res = r_print_code_indent (sbuf);
+			free (sbuf);
+			if (res) {
+				cons->context->buffer_len = strlen (res);
+				cons->context->buffer_sz = cons->context->buffer_len;
+				free (cons->context->buffer);
+				cons->context->buffer = res;
+			}
+		}
 		return;
 	}
 	if (grep->colorcode) {

@@ -386,8 +386,108 @@ R_API void r_print_code(RPrint *p, ut64 addr, const ut8 *buf, int len, char lang
 }
 
 R_API char *r_print_code_indent(const char *s) {
-	// TODO: implement code indentation honoring the braces {}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (s, NULL);
+	int indent = 0;
+	bool in_string = false;
+	bool in_char = false;
+	bool in_comment = false;
+	RStrBuf *out = r_strbuf_new ("");
+	const char *p = s;
+	while (*p) {
+		// find end of current line
+		const char *nl = strchr (p, '\n');
+		int linelen = nl ? (int)(nl - p) : (int)strlen (p);
+		// skip leading whitespace to get the trimmed line
+		const char *trimmed = p;
+		int trimlen = linelen;
+		while (trimlen > 0 && (*trimmed == ' ' || *trimmed == '\t')) {
+			trimmed++;
+			trimlen--;
+		}
+		// scan line for brace changes, respecting strings and comments
+		int opens = 0;
+		int closes = 0;
+		bool line_comment = false;
+		int j;
+		for (j = 0; j < trimlen; j++) {
+			char c = trimmed[j];
+			char next = (j + 1 < trimlen) ? trimmed[j + 1] : 0;
+			if (line_comment) {
+				break;
+			}
+			if (in_comment) {
+				if (c == '*' && next == '/') {
+					in_comment = false;
+					j++;
+				}
+				continue;
+			}
+			if (in_string) {
+				if (c == '\\') {
+					j++;
+				} else if (c == '"') {
+					in_string = false;
+				}
+				continue;
+			}
+			if (in_char) {
+				if (c == '\\') {
+					j++;
+				} else if (c == '\'') {
+					in_char = false;
+				}
+				continue;
+			}
+			if (c == '/' && next == '/') {
+				line_comment = true;
+				break;
+			}
+			if (c == '/' && next == '*') {
+				in_comment = true;
+				j++;
+				continue;
+			}
+			if (c == '"') {
+				in_string = true;
+				continue;
+			}
+			if (c == '\'') {
+				in_char = true;
+				continue;
+			}
+			if (c == '{') {
+				opens++;
+			} else if (c == '}') {
+				if (opens > 0) {
+					opens--;
+				} else {
+					closes++;
+				}
+			}
+		}
+		// decrease indent for closing braces on this line
+		if (indent >= closes) {
+			indent -= closes;
+		} else {
+			indent = 0;
+		}
+		// emit indentation and line content
+		int i;
+		for (i = 0; i < indent; i++) {
+			r_strbuf_append (out, "  ");
+		}
+		r_strbuf_append_n (out, trimmed, trimlen);
+		r_strbuf_append (out, "\n");
+		// increase indent for opening braces on this line
+		indent += opens;
+		// advance to next line
+		if (nl) {
+			p = nl + 1;
+		} else {
+			break;
+		}
+	}
+	return r_strbuf_drain (out);
 }
 
 static bool is_identifier_char(char c) {
