@@ -18,8 +18,8 @@ R_API void r_core_list_lang(RCore *core, int mode) {
 		table = r_core_table_new (core, "langs");
 		RTableColumnType *typeString = r_table_type ("string");
 		r_table_add_column (table, typeString, "name", 0);
+		r_table_add_column (table, typeString, "license", 0);
 		r_table_add_column (table, typeString, "desc", 0);
-		// r_table_add_column (table, typeString, "license", 0);
 	}
 	r_list_foreach (lang->langs, iter, h) {
 		const char *license = h->meta.license
