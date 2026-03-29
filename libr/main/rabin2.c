@@ -631,8 +631,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
 	if (load_plugins) {
 		RLib *l = r_lib_new (NULL, NULL);
-		l->cb_internal = (RLibInternalLoadCallback)r_bin_plugins_ensure;
-		l->cb_internal_user = bin;
+		l->cb_internal = (RLibInternalLoadCallback)r_libstore_load;
+		l->cb_internal_user = bin->libstore;
 		r_lib_add_handler (l, R_LIB_TYPE_BIN, "bin plugins",
 			&__lib_bin_cb, &__lib_bin_dt, bin);
 		r_lib_add_handler (l, R_LIB_TYPE_BIN_XTR, "bin xtr plugins",
@@ -642,7 +642,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		r_lib_load_default_paths (l, R_LIB_LOAD_DEFAULT);
 		r_lib_free (l);
 	} else {
-		r_bin_plugins_ensure (bin);
+		r_libstore_load (bin->libstore);
 	}
 #if 0
 	if ((tmp = r_sys_getenv ("R2_CONFIG"))) {

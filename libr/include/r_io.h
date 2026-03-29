@@ -155,7 +155,6 @@ typedef struct r_io_t {
 	int write_mask_len;
 	ut64 mask;
 	RIOUndo undo;
-	SdbList *plugins;
 	bool nodup;
 	char *runprofile;
 	char *envprofile;
@@ -173,8 +172,12 @@ typedef struct r_io_t {
 	// TODO: rename to dbgwrap
 	struct ptrace_wrap_instance_t *ptrace_wrap;
 #endif
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 } RIO;
+
+static inline RList *r_io_plugins(RIO *io) {
+	return io && io->libstore? io->libstore->plugins: NULL;
+}
 
 typedef struct r_io_desc_t {
 	int fd;
@@ -509,7 +512,6 @@ R_API void r_io_free(RIO *io);
 #define r_io_bind_init(x) (x) = (const RIOBind){0}
 
 R_IPI bool r_io_plugins_init(RIO *io);
-R_API bool r_io_plugins_ensure(RIO *io);
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
 R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin);
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len);

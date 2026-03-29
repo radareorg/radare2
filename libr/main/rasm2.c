@@ -213,7 +213,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	RList *plugins = R_UNWRAP4 (as, anal, arch, plugins);
+	RList *plugins = as && as->anal? r_arch_plugins (as->anal->arch): NULL;
 	r_list_foreach (plugins, iter, h) {
 		if (arch && strcmp (arch, h->meta.name)) {
 			continue;
@@ -229,7 +229,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		bool has_parse = false;
 		RListIter *iter_parse;
 		RAsmPluginSession *aps;
-		r_list_foreach (as->a->sessions, iter_parse, aps) {
+		r_list_foreach (r_asm_sessions (as->a), iter_parse, aps) {
 			if (r_str_startswith (h->meta.name, aps->plugin->meta.name)) {
 				has_parse = true;
 				break;
@@ -304,7 +304,7 @@ static void rasm2_list_parse_plugins(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	r_list_foreach (as->a->sessions, iter, aps) {
+	r_list_foreach (r_asm_sessions (as->a), iter, aps) {
 		if (arch && strcmp (arch, aps->plugin->meta.name)) {
 			continue;
 		}
@@ -736,9 +736,9 @@ static int print_assembly_output(RAsmState *as, const char *buf, ut64 offset, ut
 
 static void rasm_load_internal_cb(void *user) {
 	RAsmState *as = (RAsmState *)user;
-	r_asm_plugins_ensure (as->a);
-	r_anal_plugins_ensure (as->anal);
-	r_arch_plugins_ensure (as->anal->arch);
+	r_libstore_load (as->a->libstore);
+	r_libstore_load (as->anal->libstore);
+	r_libstore_load (as->anal->arch->libstore);
 }
 
 static void rasm_load_plugins(RAsmState *as) {

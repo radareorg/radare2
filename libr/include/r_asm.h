@@ -70,7 +70,6 @@ typedef struct r_asm_t {
 	RArchSession *ecur; // encode current
 	RArchSession *dcur; // decode current
 	struct r_asm_plugin_session_t *cur;
-	RList *sessions; // NOTE: one session per plugin! both lists must have the same length
 	RAnalBind analb; // Should be RArchBind instead, but first we need to move all the anal plugins.. well not really we can kill it imho
 	Sdb *pair;
 	RSyscall *syscall;
@@ -81,8 +80,12 @@ typedef struct r_asm_t {
 	bool pseudo; // should be implicit by RParse
 	bool use_spp;
 	RParse *parse;
-	bool internal_plugins_loaded;
+	RLibStore *libstore;
 } RAsm;
+
+static inline RList *r_asm_sessions(RAsm *a) {
+	return a && a->libstore? a->libstore->plugins: NULL;
+}
 
 typedef struct r_asm_plugin_session_t {
 	struct r_asm_t *rasm;
@@ -123,7 +126,6 @@ R_API char *r_asm_parse_patch(RAsm *a, RAnalOp *aop, const char *newop);
 
 /* asm.c */
 R_API RAsm *r_asm_new(void);
-R_API bool r_asm_plugins_ensure(RAsm *a);
 R_API void r_asm_free(RAsm *a);
 R_API bool r_asm_modify(RAsm *a, ut8 *buf, int field, ut64 val);
 R_API char *r_asm_mnemonics(RAsm *a, int id, bool json);

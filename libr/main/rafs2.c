@@ -33,8 +33,8 @@ static bool __lib_fs_cb(RLibPlugin *pl, void *user, void *data) {
 
 static void rafs2_load_internal_cb(void *user) {
 	Rafs2State *s = (Rafs2State *)user;
-	r_io_plugins_ensure (s->io);
-	r_fs_plugins_ensure (s->fs);
+	r_libstore_load (s->io->libstore);
+	r_libstore_load (s->fs->libstore);
 }
 
 static void rafs2_load_plugins(Rafs2State *s) {
@@ -110,7 +110,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		pj_a (pj);
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (s->fs->plugins, iter, plugin) {
+		r_list_foreach (r_fs_plugins (s->fs), iter, plugin) {
 			if (plugin->meta.name) {
 				pj_o (pj);
 				pj_ks (pj, "name", plugin->meta.name);
@@ -127,7 +127,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		printf ("Available filesystem types:\n");
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (s->fs->plugins, iter, plugin) {
+		r_list_foreach (r_fs_plugins (s->fs), iter, plugin) {
 			if (plugin->meta.name) {
 				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
 				printf ("  %-12s %s\n", plugin->meta.name, desc);

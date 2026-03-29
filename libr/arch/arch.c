@@ -6,30 +6,23 @@
 
 static const RArchPlugin * const arch_static_plugins[] = { R_ARCH_STATIC_PLUGINS };
 
-static void plugin_free(void *p) {
-	// XXX
-}
-
-R_API bool r_arch_plugins_ensure(RArch *a) {
-	R_RETURN_VAL_IF_FAIL (a, false);
-	if (a->internal_plugins_loaded) {
-		return true;
-	}
-	a->internal_plugins_loaded = true;
-	return r_lib_plugins_add_static (a, (const void *const *)arch_static_plugins, (RLibPluginAddCb)r_arch_plugin_add);
+static bool arch_load_plugins(void *user) {
+	RArch *a = user;
+	return r_lib_add_static (a, (const void *const *)arch_static_plugins, (RLibPluginAddCb)r_arch_plugin_add);
 }
 
 R_API RArch *r_arch_new(void) {
 	RArch *a = R_NEW0 (RArch);
-	a->plugins = r_list_newf ((RListFree)plugin_free);
-	if (!a->plugins) {
+	RList *plugins = r_list_newf (NULL);
+	if (!plugins) {
 		free (a);
 		return NULL;
 	}
+	a->libstore = r_libstore_new (a, plugins, arch_load_plugins);
 	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
-	if (r_lib_plugins_init_default ()) {
-		r_arch_plugins_ensure (a);
+	if (r_lib_defaults ()) {
+		r_libstore_load (a->libstore);
 	}
 	return a;
 }
@@ -66,7 +59,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	RArchPlugin *ap = NULL;
 	RListIter *iter;
 	RArchPlugin *p;
-	r_list_foreach (arch->plugins, iter, p) {
+	r_list_foreach (r_arch_plugins (arch), iter, p) {
 #if 1
 		if (enc) {
 			if (!p->encode) {
@@ -92,7 +85,7 @@ static RArchPlugin *find_bestmatch(RArch *arch, RArchConfig *cfg, const char *na
 	if (!ap) {
 		RListIter *iter;
 		RArchPlugin *p;
-		r_list_foreach (arch->plugins, iter, p) {
+		r_list_foreach (r_arch_plugins (arch), iter, p) {
 			if (enc && !p->encode) {
 				continue;
 			}
@@ -235,7 +228,7 @@ R_API RArchPlugin *r_arch_find(RArch *arch, const char *name) {
 #if 0
 	RArchPlugin *arch_plugin;
 	RListIter *iter;
-	r_list_foreach (r->anal->arch->plugins, iter, arch_plugin) { // XXX: fix this properly after 5.8
+	r_list_foreach (r_arch_plugins (r->anal->arch), iter, arch_plugin) {
 		if (!arch_plugin->arch) {
 			continue;
 		}
@@ -253,19 +246,19 @@ R_API bool r_arch_plugin_add(RArch *a, RArchPlugin *ap) {
 	if (!ap->meta.name || !ap->arch) {
 		return false;
 	}
-	return r_list_append (a->plugins, ap) != NULL;
+	return r_list_append (r_arch_plugins (a), ap) != NULL;
 }
 
 R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 	R_RETURN_VAL_IF_FAIL (arch && ap, false);
 	RArchPlugin *p;
 	RListIter *iter;
-	r_list_foreach (arch->plugins, iter, p) {
+	r_list_foreach (r_arch_plugins (arch), iter, p) {
 		if (p == ap) {
 			if (ap->fini) {
 				ap->fini (NULL); // sessions associated will be leaked
 			}
-			r_list_delete (arch->plugins, iter);
+			r_list_delete (r_arch_plugins (arch), iter);
 			break;
 		}
 	}
@@ -273,7 +266,7 @@ R_API bool r_arch_plugin_remove(RArch *arch, RArchPlugin *ap) {
 }
 
 R_API bool r_arch_del(RArch *arch, const char *name) {
-	R_RETURN_VAL_IF_FAIL (arch && arch->plugins && name, false);
+	R_RETURN_VAL_IF_FAIL (arch && r_arch_plugins (arch) && name, false);
 	RArchPlugin *ap = r_arch_find (arch, name);
 	find_bestmatch (arch, NULL, name, false);
 #if 0
@@ -281,7 +274,7 @@ R_API bool r_arch_del(RArch *arch, const char *name) {
 		arch->current = NULL;
 	}
 #endif
-	r_list_delete_data (arch->plugins, ap);
+	r_list_delete_data (r_arch_plugins (arch), ap);
 	return false;
 }
 
@@ -289,7 +282,7 @@ R_API void r_arch_free(RArch *arch) {
 	if (arch) {
 		r_unref (arch->num);
 		free (arch->platform);
-		r_list_free (arch->plugins);
+		r_libstore_free (arch->libstore);
 		r_unref (arch->session);
 		r_unref (arch->cfg);
 		free (arch);

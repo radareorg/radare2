@@ -7,13 +7,18 @@ static RIOPlugin *io_static_plugins[] = {
 	R_IO_STATIC_PLUGINS
 };
 
+static bool io_load_plugins(void *user) {
+	RIO *io = user;
+	return r_lib_add_static (io, (const void *const *)io_static_plugins, (RLibPluginAddCb)r_io_plugin_add);
+}
+
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (io && plugin && io->plugins, false);
+	RList *plugins = io && io->libstore? io->libstore->plugins: NULL;
+	R_RETURN_VAL_IF_FAIL (plugins && plugin, false);
 	if (!plugin->meta.name) {
 		return false;
 	}
-	ls_append (io->plugins, plugin);
-	return true;
+	return r_list_append (plugins, plugin) != NULL;
 }
 
 R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
@@ -21,22 +26,19 @@ R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
 	return true;
 }
 
-R_API bool r_io_plugins_ensure(RIO *io) {
-	R_RETURN_VAL_IF_FAIL (io, false);
-	if (io->internal_plugins_loaded) {
-		return true;
-	}
-	io->internal_plugins_loaded = true;
-	return r_lib_plugins_add_static (io, (const void *const *)io_static_plugins, (RLibPluginAddCb)r_io_plugin_add);
-}
-
 R_IPI bool r_io_plugins_init(RIO *io) {
 	if (!io) {
 		return false;
 	}
-	io->plugins = ls_newf (NULL);
-	if (r_lib_plugins_init_default ()) {
-		r_io_plugins_ensure (io);
+	if (io->libstore) {
+		r_list_free (io->libstore->plugins);
+		io->libstore->plugins = r_list_newf (NULL);
+		io->libstore->loaded = false;
+	} else {
+		io->libstore = r_libstore_new (io, r_list_newf (NULL), io_load_plugins);
+	}
+	if (r_lib_defaults ()) {
+		r_libstore_load (io->libstore);
 	}
 	return true;
 }
@@ -45,8 +47,8 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	// TODO: optimization
 	if (strstr (filename, "://")) {
 		RIOPlugin *ret;
-		SdbListIter *iter;
-		ls_foreach (io->plugins, iter, ret) {
+		RListIter *iter;
+		r_list_foreach (r_io_plugins (io), iter, ret) {
 			if (!ret || !ret->check) {
 				continue;
 			}
@@ -59,9 +61,9 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 }
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
-	SdbListIter *iter;
+	RListIter *iter;
 	RIOPlugin *iop;
-	ls_foreach (io->plugins, iter, iop) {
+	r_list_foreach (r_io_plugins (io), iter, iop) {
 		if (!strcmp (name, iop->meta.name)) {
 			return iop;
 		}

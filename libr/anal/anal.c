@@ -13,14 +13,10 @@ static RAnalPlugin *anal_static_plugins[] = {
 	R_ANAL_STATIC_PLUGINS
 };
 
-R_API bool r_anal_plugins_ensure(RAnal *anal) {
-	R_RETURN_VAL_IF_FAIL (anal, false);
-	if (anal->internal_plugins_loaded) {
-		return true;
-	}
-	anal->internal_plugins_loaded = true;
-	return anal->plugins
-		? r_lib_plugins_add_static (anal, (const void *const *)anal_static_plugins, (RLibPluginAddCb)r_anal_plugin_add)
+static bool anal_load_plugins(void *user) {
+	RAnal *anal = user;
+	return r_anal_plugins (anal)
+		? r_lib_add_static (anal, (const void *const *)anal_static_plugins, (RLibPluginAddCb)r_anal_plugin_add)
 		: false;
 }
 
@@ -201,9 +197,9 @@ R_API RAnal *r_anal_new(void) {
 	anal->fcns = r_list_newf ((RListFree)r_anal_function_free);
 	anal->leaddrs = NULL;
 	anal->imports = r_list_newf (free);
-	anal->plugins = r_list_newf ((RListFree) r_anal_plugin_free);
-	if (r_lib_plugins_init_default ()) {
-		r_anal_plugins_ensure (anal);
+	anal->libstore = r_libstore_new (anal, r_list_newf ((RListFree)r_anal_plugin_free), anal_load_plugins);
+	if (r_lib_defaults ()) {
+		r_libstore_load (anal->libstore);
 	}
 	R_DIRTY_SET (anal);
 	return anal;
@@ -246,7 +242,7 @@ R_API void r_anal_free(RAnal *a) {
 	a->arch = NULL;
 	free (a->zign_path);
 	free (a->opt.tparser);
-	r_list_free (a->plugins);
+	r_libstore_free (a->libstore);
 	r_rbtree_free (a->bb_tree, __block_free_rb, NULL);
 	r_spaces_fini (&a->meta_spaces);
 	r_spaces_fini (&a->zign_spaces);
@@ -276,7 +272,7 @@ R_API bool r_anal_plugin_add(RAnal *anal, RAnalPlugin *foo) {
 	if (foo->init) {
 		foo->init (anal->user);
 	}
-	r_list_append (anal->plugins, foo);
+	r_list_append (r_anal_plugins (anal), foo);
 	return true;
 }
 
@@ -847,7 +843,7 @@ R_API char *r_anal_cmd(RAnal *anal, const char *cmd) {
 	RListIter *iter;
 	RAnalPlugin *ap;
 	char *res = NULL;
-	r_list_foreach (anal->plugins, iter, ap) {
+	r_list_foreach (r_anal_plugins (anal), iter, ap) {
 		if (ap->cmd) {
 			res = ap->cmd (anal, cmd);
 			if (res) {

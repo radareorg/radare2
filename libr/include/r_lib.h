@@ -119,8 +119,8 @@ enum {
 	R_LIB_TYPE_LAST
 };
 
-
 typedef void (*RLibInternalLoadCallback)(void *user);
+typedef bool (*RLibStoreLoadCallback)(void *user);
 
 typedef struct r_lib_t {
 	char *symname;
@@ -137,6 +137,16 @@ typedef struct r_lib_t {
 	RLibInternalLoadCallback cb_internal; /* callback to load internal plugins for 'i' in R2_PLUGINS_ORDER */
 	void *cb_internal_user; /* user data for cb_internal */
 } RLib;
+
+typedef struct r_libstore_t RLibStore;
+typedef struct r_libstore_t {
+	void *user;
+	RList *plugins;
+	RList *xtrs;
+	RList *ldrs;
+	RLibStoreLoadCallback load;
+	bool loaded;
+} RLibStore;
 
 
 typedef enum {
@@ -173,8 +183,15 @@ R_API bool r_lib_del_handler(RLib *lib, int type, RLibCallback constructor, RLib
 R_API bool r_lib_close(RLib *lib, const char *file);
 R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path);
 R_API void r_lib_load_default_paths(RLib *lib, RLibLoadMask mask);
-R_API bool r_lib_plugins_init_default(void);
-R_API bool r_lib_plugins_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb);
+R_API bool r_lib_defaults(void);
+R_API bool r_lib_add_static(void *ctx, const void *const plugins[], RLibPluginAddCb add_cb);
+
+
+// libstore
+R_API RLibStore *r_libstore_new(void *user, RList *plugins, RLibStoreLoadCallback load);
+R_API void r_libstore_free(RLibStore *store);
+R_API bool r_libstore_load(RLibStore *store);
+R_API bool r_libstore_loaded(RLibStore *store);
 
 #include <r_util/pj.h>
 R_API void r_lib_meta_pj(PJ *pj, const RPluginMeta *meta);
