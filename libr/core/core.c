@@ -1035,7 +1035,7 @@ static void autocomplete_analysis_plugins(RCore *core, RLineCompletion *completi
 	size_t len = strlen (str);
 	RListIter *iter;
 	RAnalPlugin *ap;
-	r_list_foreach (core->anal->plugins, iter, ap) {
+	r_list_foreach (core->anal->libstore->plugins, iter, ap) {
 		if (!len || !strncmp (str, ap->meta.name, len)) {
 			char *cmd = r_str_newf ("a:%s", ap->meta.name);
 			r_line_completion_push (completion, cmd);
@@ -2688,12 +2688,12 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_gprintf;
 	core->dbg->cb_printf = r_cons_gprintf;
 	core->dbg->ev = core->ev;
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
+	r_core_plugins_init (core->rcmd);
 	r_core_config_init (core);
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
-	core->autocomplete = R_NEW0 (RCoreAutocomplete);
-	r_core_plugin_init (core->rcmd);
 	r_core_loadlibs_init (core);
 	// r_core_loadlibs (core);
 	//  TODO: get arch from r_bin or from native arch
@@ -2784,6 +2784,8 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->scriptstack);
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
+	r_libstore_free (c->libstore);
+	c->libstore = NULL;
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
 	if (c->anal->esil) {

@@ -35,13 +35,8 @@ static void r_lang_session_free(void *p) {
 	free (s);
 }
 
-R_API RLang *r_lang_new(void) {
-	RLang *lang = R_NEW0 (RLang);
-	lang->user = NULL;
-	lang->langs = r_list_new ();
-	lang->defs = r_list_new ();
-	lang->sessions = r_list_newf (r_lang_session_free);
-	lang->defs->free = (RListFree)r_lang_def_free;
+static bool lang_load_plugins(RLibStore *store) {
+	RLang *lang = store->user;
 	const bool load_plugins = !r_sys_getenv_asbool ("R2_DEBUG_NOLANG");
 	if (load_plugins) {
 #if HAVE_SYSTEM
@@ -68,13 +63,23 @@ R_API RLang *r_lang_new(void) {
 #if WANT_QJS
 	r_lang_plugin_add (lang, &r_lang_plugin_qjs);
 #endif
+	return true;
+}
+
+R_API RLang *r_lang_new(void) {
+	RLang *lang = R_NEW0 (RLang);
+	lang->user = NULL;
+	lang->defs = r_list_new ();
+	lang->sessions = r_list_newf (r_lang_session_free);
+	lang->defs->free = (RListFree)r_lang_def_free;
+	r_libstore_new (&lang->libstore, lang, NULL, NULL, lang_load_plugins, (RLibPluginAddCb)r_lang_plugin_add, NULL);
 	return lang;
 }
 
 R_API void r_lang_free(RLang *lang) {
 	if (lang) {
 		r_lang_undef (lang, NULL);
-		r_list_free (lang->langs);
+		r_libstore_free (lang->libstore);
 		r_list_free (lang->defs);
 		r_list_free (lang->sessions);
 		// TODO: remove langs plugins
@@ -88,6 +93,24 @@ R_API void r_lang_free(RLang *lang) {
 // XXX: Depcreate!!
 R_API void r_lang_set_user_ptr(RLang *lang, void *user) {
 	lang->user = user;
+}
+
+static int lang_plugin_cmp_ext(const void *a, const void *b) {
+	const RLangPlugin *h = a;
+	const char *ext = b;
+	return (h && h->ext && ext)? r_str_casecmp (h->ext, ext): 1;
+}
+
+static int lang_plugin_cmp_alias(const void *a, const void *b) {
+	const RLangPlugin *h = a;
+	const char *name = b;
+	if (!h || !name) {
+		return 1;
+	}
+	if (h->alias && !r_str_casecmp (h->alias, name)) {
+		return 0;
+	}
+	return 1;
 }
 
 R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *value) {
@@ -163,7 +186,7 @@ R_API bool r_lang_plugin_add(RLang *lang, RLangPlugin *foo) {
 			supported = foo->init (NULL);
 		}
 		if (supported) {
-			r_list_append (lang->langs, foo);
+			r_list_append (lang->libstore->plugins, foo);
 			return true;
 		}
 	}
@@ -175,32 +198,21 @@ R_API bool r_lang_plugin_remove(RLang *lang, RLangPlugin *plugin) {
 }
 
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
-	RListIter *iter;
-	RLangPlugin *h;
+	R_RETURN_VAL_IF_FAIL (lang && ext, NULL);
 	const char *p = r_str_lchr (ext, '.');
 	if (p) {
 		ext = p + 1;
 	}
-	r_list_foreach (lang->langs, iter, h) {
-		if (!r_str_casecmp (h->ext, ext)) {
-			return h;
-		}
-	}
-	return NULL;
+	return r_libstore_find (lang->libstore, ext, lang_plugin_cmp_ext);
 }
 
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
-	RListIter *iter;
-	RLangPlugin *h;
-	r_list_foreach (lang->langs, iter, h) {
-		if (!r_str_casecmp (h->meta.name, name)) {
-			return h;
-		}
-		if (h->alias && !r_str_casecmp (h->alias, name)) {
-			return h;
-		}
+	R_RETURN_VAL_IF_FAIL (lang && name, NULL);
+	RLangPlugin *h = r_libstore_find_name (lang->libstore, name);
+	if (h) {
+		return h;
 	}
-	return NULL;
+	return r_libstore_find (lang->libstore, name, lang_plugin_cmp_alias);
 }
 
 R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {

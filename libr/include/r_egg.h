@@ -98,7 +98,6 @@ typedef struct r_egg_t {
 	RSyscall *syscall;
 	REggLang lang;
 	Sdb *db;
-	RList *plugins;
 	RList *patches; // <RBuffer>
 	struct r_egg_emit_t *remit;
 	int arch;
@@ -106,6 +105,7 @@ typedef struct r_egg_t {
 	int bits;
 	ut32 os;
 	int context;
+	RLibStore *libstore;
 } REgg;
 
 /* XXX: this may fail in different arches */
@@ -189,8 +189,6 @@ R_API void r_egg_lang_init(REgg *egg);
 R_API void r_egg_lang_fini(REgg *egg);
 R_API char *r_egg_tostring(REgg *egg);
 R_API void r_egg_free(REgg *egg);
-R_API bool r_egg_plugin_add(REgg *a, REggPlugin *plugin);
-R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin);
 R_API void r_egg_reset(REgg *egg);
 R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os);
 R_API bool r_egg_include(REgg *egg, const char *file, int format);
@@ -202,7 +200,6 @@ R_API void r_egg_label(REgg *egg, const char *name);
 R_API bool r_egg_raw(REgg *egg, const ut8 *b, int len);
 R_API bool r_egg_encode(REgg *egg, const char *name);
 R_API bool r_egg_shellcode(REgg *egg, const char *name);
-#define r_egg_get_shellcodes(x) x->plugins
 R_API void r_egg_option_set(REgg *egg, const char *k, const char *v);
 R_API char *r_egg_option_get(REgg *egg, const char *k);
 R_API void r_egg_if(REgg *egg, const char *reg, char cmp, int v);

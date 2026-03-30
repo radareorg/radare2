@@ -500,10 +500,11 @@ static bool r_cmd_java_reload_bin_from_buf(RCore *core, RBinJavaObj *obj, ut8 *b
 	int res = r_bin_java_load_bin (obj, buffer, len);
 
 	if (res == true) {
+		RList *plugins = core->bin->libstore->plugins;
 		//RBinPlugin *cp = NULL;
 		RBinPlugin *tmp;
 		RListIter *iter;
-		r_list_foreach (core->bin->plugins, iter, tmp) {
+		r_list_foreach (plugins, iter, tmp) {
 			if (!strncmp ("java", tmp->meta.name, 4)) {
 				//cp = tmp;
 				break;

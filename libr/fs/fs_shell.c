@@ -170,7 +170,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		} else {
 			RFSPlugin *plug;
 			eprintf ("Usage: mount [fstype] [path]\nfstypes:");
-			r_list_foreach (fs->plugins, iter, plug) {
+			r_list_foreach (fs->libstore->plugins, iter, plug) {
 				eprintf (" %s", plug->meta.name);
 			}
 			eprintf ("\n");

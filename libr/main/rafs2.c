@@ -31,7 +31,15 @@ static bool __lib_fs_cb(RLibPlugin *pl, void *user, void *data) {
 	return true;
 }
 
+static void rafs2_load_internal_cb(void *user) {
+	Rafs2State *s = (Rafs2State *)user;
+	r_libstore_load (s->io->libstore);
+	r_libstore_load (s->fs->libstore);
+}
+
 static void rafs2_load_plugins(Rafs2State *s) {
+	s->l->cb_internal = rafs2_load_internal_cb;
+	s->l->cb_internal_user = s;
 	r_lib_add_handler (s->l, R_LIB_TYPE_FS, "filesystem plugins", &__lib_fs_cb, NULL, s);
 	r_lib_load_default_paths (s->l, R_LIB_LOAD_DEFAULT);
 }
@@ -43,7 +51,12 @@ static Rafs2State *rafs2_new(void) {
 	s->fs = r_fs_new ();
 	s->cons = r_cons_new ();
 
-	rafs2_load_plugins (s);
+	const bool load_plugins = !r_sys_getenv_asbool ("R2_NOPLUGINS");
+	if (load_plugins) {
+		rafs2_load_plugins (s);
+	} else {
+		rafs2_load_internal_cb (s);
+	}
 	return s;
 }
 
@@ -97,7 +110,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		pj_a (pj);
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (s->fs->plugins, iter, plugin) {
+		r_list_foreach (s->fs->libstore->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				pj_o (pj);
 				pj_ks (pj, "name", plugin->meta.name);
@@ -114,7 +127,7 @@ static int rafs2_list_plugins(Rafs2State *s) {
 		printf ("Available filesystem types:\n");
 		RListIter *iter;
 		RFSPlugin *plugin;
-		r_list_foreach (s->fs->plugins, iter, plugin) {
+		r_list_foreach (s->fs->libstore->plugins, iter, plugin) {
 			if (plugin->meta.name) {
 				const char *desc = plugin->meta.desc? plugin->meta.desc: "";
 				printf ("  %-12s %s\n", plugin->meta.name, desc);

@@ -244,7 +244,6 @@ typedef struct r_esil_t {
 	//this is a disgusting workaround, because we have no ht-like storage without magic keys, that you cannot use, with int-keys
 	REsilHandler *intr0;
 	REsilHandler *sysc0;
-	RList *plugins;
 	RList *active_plugins;
 	/* deep esil parsing fills this */
 	Sdb *stats;
@@ -272,6 +271,7 @@ typedef struct r_esil_t {
 #if 0
 	bool trace_enabled;
 #endif
+	RLibStore *libstore;
 } REsil;
 
 enum {
@@ -396,9 +396,8 @@ R_API char *r_esil_compiler_unparse(REsilCompiler *ec, const char *expr);
 R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
 
 // esil_plugin.c
-R_API bool r_esil_plugins_init(REsil *esil);
-R_API void r_esil_plugins_fini(REsil *esil);
-R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin);
+R_IPI bool r_esil_plugins_init(REsil *esil);
+R_IPI void r_esil_plugins_fini(REsil *esil);
 R_API void r_esil_plugin_del(REsil *esil, const char *name);
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin);
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name);

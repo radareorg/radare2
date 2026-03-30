@@ -666,6 +666,23 @@ static void open_plugins_at(RLib *lib, const char *arg, const char *config_path)
 	}
 }
 
+R_API bool r_lib_defaults(void) {
+	char *order = r_sys_getenv ("R2_PLUGINS_ORDER");
+	bool load = R_STR_ISEMPTY (order);
+	free (order);
+	return load;
+}
+
+R_API bool r_lib_add_static(void *ctx, const void *plugins_, RLibPluginAddCb add_cb) {
+	const void *const *plugins = plugins_;
+	R_RETURN_VAL_IF_FAIL (ctx && plugins && add_cb, false);
+	size_t i;
+	for (i = 0; plugins[i]; i++) {
+		add_cb (ctx, (void *)plugins[i]);
+	}
+	return true;
+}
+
 R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_path) {
 	R_RETURN_IF_FAIL (lib);
 	if (r_sys_getenv_asbool ("R2_NOPLUGINS")) {
@@ -678,12 +695,17 @@ R_API void r_lib_load_paths(RLib *lib, RLibLoadMask mask, const char *config_pat
 	char *order_env = r_sys_getenv ("R2_PLUGINS_ORDER");
 	const char *order = R_STR_ISNOTEMPTY (order_env)
 		? order_env
-		: ((mask & R_LIB_LOAD_CONFIG) ? "cehs" : "ehs");
+		: ((mask & R_LIB_LOAD_CONFIG) ? "icehs" : "iehs");
 	int i;
 	for (i = 0; order[i]; i++) {
 		switch (order[i]) {
 		case '?':
-			R_LOG_INFO ("R2_PLUGINS_ORDER: e=env(%s), h=home, s=system, c=config; default=cehs", R_LIB_ENV);
+			R_LOG_INFO ("R2_PLUGINS_ORDER: i=internal, e=env(%s), h=home, s=system, c=config; default=icehs", R_LIB_ENV);
+			break;
+		case 'i':
+			if (lib->cb_internal) {
+				lib->cb_internal (lib->cb_internal_user);
+			}
 			break;
 		case 'c':
 			if ((mask & R_LIB_LOAD_CONFIG) && R_STR_ISNOTEMPTY (config_path)) {

@@ -159,6 +159,7 @@ static RList *get_ar_file_uris(const char *fname) {
 		R_LOG_ERROR ("Failed to alloc io");
 		return NULL;
 	}
+	r_libstore_load (io->libstore);
 
 	char *allfiles = r_str_newf ("arall://%s", fname);
 	if (!allfiles) {

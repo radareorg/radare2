@@ -26,12 +26,7 @@ R_API RBreakpoint *r_bp_new(void) {
 	bp->stepcont = R_BP_CONT_NORMAL;
 	bp->traces = r_bp_traptrace_new ();
 	bp->bps = r_list_newf ((RListFree)r_bp_item_free);
-	bp->plugins = r_list_newf ((RListFree)free);
-	int i;
-	for (i = 0; bp_static_plugins[i]; i++) {
-		RBreakpointPlugin *sp = r_mem_dup (bp_static_plugins[i], sizeof (RBreakpointPlugin));
-		r_bp_plugin_add (bp, sp);
-	}
+	r_libstore_new (&bp->libstore, bp, bp_static_plugins, NULL, NULL, NULL, (RLibPluginAddCb)r_bp_plugin_remove);
 	memset (&bp->iob, 0, sizeof (bp->iob));
 	return bp;
 }
@@ -39,7 +34,7 @@ R_API RBreakpoint *r_bp_new(void) {
 R_API void r_bp_free(RBreakpoint *bp) {
 	if (bp) {
 		r_list_free (bp->bps);
-		r_list_free (bp->plugins);
+		r_libstore_free (bp->libstore);
 		r_list_free (bp->traces);
 		free (bp->bps_idx);
 		free (bp);
