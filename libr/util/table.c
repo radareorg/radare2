@@ -351,7 +351,11 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 		col++;
 	}
 	va_end (ap);
-	R_RETURN_IF_FAIL (r_list_length (t->cols) == 0 || r_list_length (t->cols) == r_list_length (items));
+	if (r_list_length (t->cols) != 0 && r_list_length (t->cols) != r_list_length (items)) {
+		R_LOG_WARN ("%s: column count mismatch (line %d)", R_FUNCTION, __LINE__);
+		r_list_free (items);
+		return;
+	}
 	wrap_items (t, items);
 	RTableRow *row = r_table_row_new (items);
 	r_list_append (t->rows, row);
