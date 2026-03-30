@@ -1201,14 +1201,97 @@ R_API void r_flag_foreach_space(RFlag *f, const RSpace *space, RFlagItemCb cb, v
 	FOREACH_BODY (IS_FI_IN_SPACE (fi, space));
 }
 
-R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr, ut64 radius) {
-	R_RETURN_VAL_IF_FAIL (f, NULL);
+typedef bool (*RFlagItemMatchCb)(const RFlagItem *fi, const void *user);
+
+static bool flag_match_space(const RFlagItem *fi, const void *user) {
+	const RSpace *sp = (const RSpace *)user;
+	return fi->space == sp;
+}
+
+static bool flag_match_prefix(const RFlagItem *fi, const void *user) {
+	const char *pfx = (const char *)user;
+	return fi->name && r_str_startswith (fi->name, pfx);
+}
+
+static RFlagItem *flag_closest_match(RFlag *f, ut64 addr, ut64 radius, RFlagItemMatchCb match, const void *user) {
+	const RFlagsAtOffset *exact, *left, *right;
+	RListIter *it;
+	RFlagItem *fi;
+
+	R_RETURN_VAL_IF_FAIL (f && match, NULL);
 	if (f->mask) {
 		addr &= f->mask;
 	}
 
-	// Resolve space: if name provided, use it; else use current space
+	R_CRITICAL_ENTER (f);
+
+	exact = r_flag_get_nearest_list (f, addr, 0);
+	if (exact) {
+		r_list_foreach (exact->flags, it, fi) {
+			if (match (fi, user)) {
+				RFlagItem *ret = evalFlag (f, fi);
+				R_CRITICAL_LEAVE (f);
+				return ret;
+			}
+		}
+	}
+
+	left = r_flag_get_nearest_list (f, addr, -1);
+	if (left && left->addr == addr) {
+		if (addr) {
+			left = r_flag_get_nearest_list (f, addr - 1, -1);
+		} else {
+			left = NULL;
+		}
+	}
+	right = r_flag_get_nearest_list (f, addr, +1);
+	if (right && right->addr == addr) {
+		if (addr != UT64_MAX) {
+			right = r_flag_get_nearest_list (f, addr + 1, +1);
+		} else {
+			right = NULL;
+		}
+	}
+
+	for (;;) {
+		const RFlagsAtOffset *node;
+		ut64 ld = left ? (addr - left->addr) : UT64_MAX;
+		ut64 rd = right ? (right->addr - addr) : UT64_MAX;
+		bool go_left = false;
+
+		if (left && right) {
+			go_left = ld <= rd;
+		} else if (left) {
+			go_left = true;
+		} else if (!right) {
+			break;
+		}
+		node = go_left ? left : right;
+		if ((go_left ? ld : rd) > radius) {
+			break;
+		}
+		r_list_foreach (node->flags, it, fi) {
+			if (match (fi, user)) {
+				RFlagItem *ret = evalFlag (f, fi);
+				R_CRITICAL_LEAVE (f);
+				return ret;
+			}
+		}
+		if (go_left) {
+			left = node->addr ? r_flag_get_nearest_list (f, node->addr - 1, -1) : NULL;
+		} else {
+			right = (node->addr != UT64_MAX) ? r_flag_get_nearest_list (f, node->addr + 1, +1) : NULL;
+		}
+	}
+
+	R_CRITICAL_LEAVE (f);
+	return NULL;
+}
+
+R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr, ut64 radius) {
 	RSpace *sp = NULL;
+
+	R_RETURN_VAL_IF_FAIL (f, NULL);
 	if (space && *space) {
 		sp = r_flag_space_get (f, space);
 		if (!sp) {
@@ -1220,180 +1303,10 @@ R_API RFlagItem *r_flag_closest_in_space(RFlag *f, const char *space, ut64 addr,
 			return NULL;
 		}
 	}
-
-	R_CRITICAL_ENTER (f);
-
-	// 1) Check exact address first
-	const RFlagsAtOffset *exact = r_flag_get_nearest_list (f, addr, 0);
-	if (exact) {
-		RListIter *it;
-		RFlagItem *fi;
-		r_list_foreach (exact->flags, it, fi) {
-			if (fi->space == sp) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
-		}
-	}
-
-	// 2) Walk outwards using the skiplist: left (<= addr) and right (>= addr)
-	const RFlagsAtOffset *left = r_flag_get_nearest_list (f, addr, -1);
-	if (left && left->addr == addr) {
-		if (addr) {
-			left = r_flag_get_nearest_list (f, addr - 1, -1);
-		} else {
-			left = NULL;
-		}
-	}
-	const RFlagsAtOffset *right = r_flag_get_nearest_list (f, addr, +1);
-	if (right && right->addr == addr) {
-		if (addr != (ut64)(-1)) {
-			right = r_flag_get_nearest_list (f, addr + 1, +1);
-		} else {
-			right = NULL;
-		}
-	}
-
-	for (;;) {
-		ut64 ld = left ? (addr - left->addr) : (ut64)(-1);
-		ut64 rd = right ? (right->addr - addr) : (ut64)(-1);
-
-		// Choose the nearest side; on ties prefer left (<= addr)
-		bool go_left = false;
-		if (left && right) {
-			go_left = (ld <= rd);
-		} else if (left) {
-			go_left = true;
-		} else if (right) {
-			go_left = false;
-		} else {
-			break; // no more nodes
-		}
-
-		ut64 mind = go_left ? ld : rd;
-		if (mind > radius) {
-			break; // out of radius
-		}
-
-		const RFlagsAtOffset *node = go_left ? left : right;
-		RListIter *it;
-		RFlagItem *fi;
-		r_list_foreach (node->flags, it, fi) {
-			if (fi->space == sp) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
-		}
-
-		// advance on the side we just processed
-		if (go_left) {
-			if (node->addr) {
-				left = r_flag_get_nearest_list (f, node->addr - 1, -1);
-			} else {
-				left = NULL;
-			}
-		} else {
-			if (node->addr != (ut64)(-1)) {
-				right = r_flag_get_nearest_list (f, node->addr + 1, +1);
-			} else {
-				right = NULL;
-			}
-		}
-	}
-
-	R_CRITICAL_LEAVE (f);
-	return NULL;
+	return flag_closest_match (f, addr, radius, flag_match_space, sp);
 }
 
 R_API RFlagItem *r_flag_closest_with_prefix(RFlag *f, const char *pfx, ut64 addr, ut64 radius) {
 	R_RETURN_VAL_IF_FAIL (f && pfx, NULL);
-	if (f->mask) {
-		addr &= f->mask;
-	}
-
-	R_CRITICAL_ENTER (f);
-
-	// 1) Check exact address first
-	const RFlagsAtOffset *exact = r_flag_get_nearest_list (f, addr, 0);
-	if (exact) {
-		RListIter *it;
-		RFlagItem *fi;
-		r_list_foreach (exact->flags, it, fi) {
-			if (fi->name && r_str_startswith (fi->name, pfx)) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
-		}
-	}
-
-	// 2) Walk outwards using the skiplist: left (<= addr) and right (>= addr)
-	const RFlagsAtOffset *left = r_flag_get_nearest_list (f, addr, -1);
-	if (left && left->addr == addr) {
-		if (addr) {
-			left = r_flag_get_nearest_list (f, addr - 1, -1);
-		} else {
-			left = NULL;
-		}
-	}
-	const RFlagsAtOffset *right = r_flag_get_nearest_list (f, addr, +1);
-	if (right && right->addr == addr) {
-		if (addr != (ut64)(-1)) {
-			right = r_flag_get_nearest_list (f, addr + 1, +1);
-		} else {
-			right = NULL;
-		}
-	}
-
-	for (;;) {
-		ut64 ld = left ? (addr - left->addr) : (ut64)(-1);
-		ut64 rd = right ? (right->addr - addr) : (ut64)(-1);
-
-		bool go_left = false;
-		if (left && right) {
-			go_left = (ld <= rd); // prefer left on tie
-		} else if (left) {
-			go_left = true;
-		} else if (right) {
-			go_left = false;
-		} else {
-			break; // no more nodes
-		}
-
-		ut64 mind = go_left ? ld : rd;
-		if (mind > radius) {
-			break; // out of radius
-		}
-
-		const RFlagsAtOffset *node = go_left ? left : right;
-		RListIter *it;
-		RFlagItem *fi;
-		r_list_foreach (node->flags, it, fi) {
-			if (fi->name && r_str_startswith (fi->name, pfx)) {
-				RFlagItem *ret = evalFlag (f, fi);
-				R_CRITICAL_LEAVE (f);
-				return ret;
-			}
-		}
-
-		// advance
-		if (go_left) {
-			if (node->addr) {
-				left = r_flag_get_nearest_list (f, node->addr - 1, -1);
-			} else {
-				left = NULL;
-			}
-		} else {
-			if (node->addr != (ut64)(-1)) {
-				right = r_flag_get_nearest_list (f, node->addr + 1, +1);
-			} else {
-				right = NULL;
-			}
-		}
-	}
-
-	R_CRITICAL_LEAVE (f);
-	return NULL;
+	return flag_closest_match (f, addr, radius, flag_match_prefix, pfx);
 }
