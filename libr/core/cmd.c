@@ -3395,9 +3395,8 @@ static int cmd_json(void *data, const char *input) {
 		r_cons_printf (core->cons, "Usage: {\"cmd\":\"...\",\"json\":false,\"trim\":true} # `cmd` is required\n");
 		return 0;
 	}
-	char *s_input = strdup (input - 1);
 	const RJson *j_cmd = NULL;
-	RJson *j = r_json_parse (s_input);
+	RJson *j = r_json_parsedup (input - 1);
 	if (j) {
 		j_cmd = r_json_get (j, "cmd");
 	}
@@ -3462,7 +3461,6 @@ static int cmd_json(void *data, const char *input) {
 	r_cons_printf (core->cons, "%s\n", j_res);
 	free (j_res);
 	r_json_free (j);
-	free (s_input);
 	return 0;
 }
 

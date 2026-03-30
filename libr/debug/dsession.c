@@ -472,13 +472,9 @@ R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 
 static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
-		return true;
-	}
-	RJson *reg_json = r_json_parse (json_str);
+	RJson *reg_json = r_json_parsedup (v);
 	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
-		free (json_str);
+		r_json_free (reg_json);
 		return true;
 	}
 
@@ -487,7 +483,6 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RVecDebugChangeMem *vmem = RVecDebugChangeMem_new ();
 	if (!vmem) {
 		R_LOG_ERROR ("failed to allocate RVecDebugChangeMem vmem");
-		free (json_str);
 		r_json_free (reg_json);
 		return false;
 	}
@@ -510,7 +505,6 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RVecDebugChangeMem_push_back (vmem, &mem);
 }
 
-	free (json_str);
 	r_json_free (reg_json);
 	return true;
 }
@@ -521,13 +515,9 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 
 static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
-		return true;
-	}
-	RJson *reg_json = r_json_parse (json_str);
+	RJson *reg_json = r_json_parsedup (v);
 	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
-		free (json_str);
+		r_json_free (reg_json);
 		return true;
 	}
 
@@ -537,7 +527,6 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 	if (!vreg) {
 		R_LOG_ERROR ("failed to allocate RVecDebugChangeReg vreg");
 		r_json_free (reg_json);
-		free (json_str);
 		return true;
 	}
 	ht_up_insert (registers, sdb_atoi (addr), vreg);
@@ -560,7 +549,6 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 }
 
 	r_json_free (reg_json);
-	free (json_str);
 	return true;
 }
 
@@ -570,13 +558,9 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 
 static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
 	const RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
-		return true;
-	}
-	RJson *chkpt_json = r_json_parse (json_str);
+	RJson *chkpt_json = r_json_parsedup (v);
 	if (!chkpt_json || chkpt_json->type != R_JSON_OBJECT) {
-		free (json_str);
+		r_json_free (chkpt_json);
 		return true;
 	}
 
@@ -587,7 +571,7 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 	// Extract RRegArena's from "registers"
 	const RJson *regs_json = r_json_get (chkpt_json, "registers");
 	if (!regs_json || regs_json->type != R_JSON_ARRAY) {
-		free (json_str);
+		r_json_free (chkpt_json);
 		return true;
 	}
 	for (child = regs_json->children.first; child; child = child->next) {
@@ -659,7 +643,6 @@ static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char 
 		r_list_append (checkpoint.snaps, snap);
 	}
 end:
-	free (json_str);
 	r_json_free (chkpt_json);
 	RVecDebugCheckpoint_push_back (checkpoints, &checkpoint);
 	return true;

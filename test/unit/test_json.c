@@ -999,11 +999,8 @@ static int test_pj_param_raw(void) {
 
 	const char *json = pj_string (pj);
 	mu_assert_notnull (json, "pj_string");
-	char *copy = strdup (json);
-	mu_assert_notnull (copy, "json copy");
+	RJson *parsed = r_json_parsedup (json);
 	pj_free (pj);
-
-	RJson *parsed = r_json_parse (copy);
 	mu_assert_notnull (parsed, "parse failed");
 	mu_assert_eq (parsed->type, R_JSON_ARRAY, "root type");
 	mu_assert_eq (parsed->children.count, 2, "root size");
@@ -1073,7 +1070,6 @@ static int test_pj_param_raw(void) {
 	mu_assert_null (second, "array tail");
 
 	r_json_free (parsed);
-	free (copy);
 	mu_end;
 }
 

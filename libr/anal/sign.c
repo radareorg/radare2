@@ -3344,6 +3344,7 @@ static bool sign_load_json(RAnal *a, const char *path) {
 		}
 	}
 	r_json_free (rj);
+	free (text);
 	return res;
 }
 
