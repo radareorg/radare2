@@ -698,19 +698,17 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		return;
 	}
 	if (grep->gron) {
-		char *a = strdup (cons->context->buffer);
-		RJson *node = r_json_parse (a);
+		RJson *node = r_json_parse (cons->context->buffer);
 		RStrBuf *sb = r_strbuf_new ("");
 		gron (sb, node, "json");
 		char *s = r_strbuf_drain (sb);
+		r_json_free (node);
 		R_FREE (cons->context->buffer);
 		cons->context->buffer_len = 0;
 		cons->context->buffer_sz = 0;
 		r_cons_print (cons, s);
 		in = buf = cons->context->buffer;
 		len = cons->context->buffer_len;
-		r_json_free (node);
-		free (a);
 		free (s);
 		goto continuation;
 	}

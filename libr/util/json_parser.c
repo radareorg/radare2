@@ -375,7 +375,9 @@ static char *parse_value(RJson *parent, const char * R_NULLABLE key, char *p) {
 	return NULL;
 }
 
-R_API R_MUSTUSE RJson *r_json_parse(R_UNOWNED char *text) {
+// Parse JSON in-place. The caller retains ownership of `text` and must
+// keep it alive until after r_json_free. The string WILL be modified.
+R_API R_MUSTUSE RJson *r_json_parseown(R_UNOWNED char *text) {
 	R_RETURN_VAL_IF_FAIL (text, NULL);
 	RJson js = {0};
 	bool res = parse_value (&js, 0, text);
@@ -386,16 +388,15 @@ R_API R_MUSTUSE RJson *r_json_parse(R_UNOWNED char *text) {
 	return js.children.first;
 }
 
-// Like r_json_parse, but duplicates the input string and owns it.
-// The caller does not need to keep the original string alive.
-// The duplicated string is freed automatically by r_json_free.
-R_API R_MUSTUSE RJson *r_json_parsedup(R_OWNED const char *text) {
+// Duplicate the input string and parse it. The RJson owns the copy,
+// which is freed automatically by r_json_free.
+R_API R_MUSTUSE RJson *r_json_parse(const char *text) {
 	R_RETURN_VAL_IF_FAIL (text, NULL);
 	char *dup = strdup (text);
 	if (!dup) {
 		return NULL;
 	}
-	RJson *js = r_json_parse (dup);
+	RJson *js = r_json_parseown (dup);
 	if (!js) {
 		free (dup);
 		return NULL;

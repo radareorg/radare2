@@ -19,7 +19,7 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 	}
 	rfuzz_normalize_text (text, len, ' ');
 
-	RJson *json = r_json_parse (text);
+	RJson *json = r_json_parseown (text);
 	if (json) {
 		if (json->type == R_JSON_OBJECT && json->children.first && json->children.first->key) {
 			(void)r_json_get (json, json->children.first->key);
