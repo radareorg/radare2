@@ -70,7 +70,7 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen) {
 	R_RETURN_VAL_IF_FAIL (in, NULL);
 	if (len < 0) {
-		len = strlen (in) + 1;
+		len = strlen (in);
 	}
 	if (olen) {
 		*olen = 0;
