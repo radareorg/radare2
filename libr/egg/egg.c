@@ -98,8 +98,16 @@ R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
 }
 
 R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
-	// XXX TODO
-	return true;
+	R_RETURN_VAL_IF_FAIL (a && plugin, false);
+	RListIter *iter;
+	REggPlugin *h;
+	r_list_foreach (a->plugins, iter, h) {
+		if (!strcmp (h->meta.name, plugin->meta.name)) {
+			r_list_delete (a->plugins, iter);
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API char *r_egg_tostring(REgg *egg) {
