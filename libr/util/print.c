@@ -61,7 +61,7 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	size_t i, j;
-	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
+	int cols = (p->consb.get_size && p->consb.cons) ? p->consb.get_size (p->consb.cons, NULL) : 78;
 	int rows = height > 0 ? height : 10;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
