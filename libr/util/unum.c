@@ -210,6 +210,19 @@ static void error(RNum * R_NULLABLE num, const char *err_str) {
 	}
 }
 
+static bool is_valid_binary_string(const char *str) {
+	if (R_STR_ISEMPTY (str)) {
+		return false;
+	}
+	while (*str) {
+		if (*str != '0' && *str != '1' && *str != '_') {
+			return false;
+		}
+		str++;
+	}
+	return true;
+}
+
 static ut64 r_num_from_binary(RNum *num, const char *str) {
 	int i, j;
 	ut64 ret = 0;
@@ -317,7 +330,7 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 			return (ut64) ((s << 4) + a);
 		}
 	}
-	if (str[0] == '0' && str[1] == 'b') { // XXX this is wrong and causes bugs
+	if (str[0] == '0' && str[1] == 'b' && is_valid_binary_string (str + 2)) {
 		ret = r_num_from_binary (num, str + 2);
 	} else if (str[0] == '\'') {
 		ret = str[1] & 0xff;
