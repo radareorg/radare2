@@ -850,7 +850,8 @@ R_API bool r_bin_is_static(RBin *bin) {
 R_API RBin *r_bin_new(void) {
 	RBin *bin = R_NEW0 (RBin);
 	if (!r_str_constpool_init (&bin->constpool)) {
-		goto trashbin;
+		free (bin);
+		return NULL;
 	}
 	bin->force = NULL;
 	bin->filter_rules = UT64_MAX;
