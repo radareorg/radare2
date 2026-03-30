@@ -6,7 +6,6 @@
 #include "mach0_classes.h"
 
 #define RO_META (1 << 0)
-// should be aligned to R_FLAG_NAME_SIZE i guess
 #define MAX_CLASS_NAME_LEN 512
 #define MAX_SWIFT_MEMBERS 256
 

@@ -494,7 +494,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			char *str = (core->bin->prefix)
 				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);
-			r_name_filter (str, R_FLAG_NAME_SIZE);
+			r_name_filter (str, -1);
 			r_cons_printf (core->cons, "'f %s %u 0x%08" PFMT64x "\n"
 						"'@0x%08" PFMT64x "'Cs %u\n",
 				str, string->size, vaddr,
@@ -809,7 +809,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 
 static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	int i, j, v;
-	char str[R_FLAG_NAME_SIZE];
+	char str[32];
 	RBinInfo *info = r_bin_get_info (core->bin);
 	RBinFile *bf = r_bin_cur (core->bin);
 	if (!bf) {
@@ -857,7 +857,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 			if (info->arch) {
 				r_config_set (core->config, "asm.arch", info->arch);
 				r_config_set (core->config, "anal.arch", info->arch);
-				snprintf (str, R_FLAG_NAME_SIZE, "%i", info->bits);
+				snprintf (str, sizeof (str), "%i", info->bits);
 				r_config_set (core->config, "asm.bits", str);
 			}
 			// r_config_set (core->config, "arch.decoder", info->arch);
@@ -1450,7 +1450,7 @@ static inline bool is_initfini(RBinAddr *entry) {
 }
 
 static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool inifin) {
-	char str[R_FLAG_NAME_SIZE];
+	char str[32];
 	const RList *entries = r_bin_get_entries (core->bin);
 	RListIter *iter;
 	RBinAddr *entry = NULL;
@@ -1499,13 +1499,13 @@ static bool bin_entry(RCore *core, PJ *pj, int mode, ut64 laddr, int va, bool in
 		if (IS_MODE_SET (mode)) {
 			r_flag_space_set (core->flags, R_FLAGS_FS_SYMBOLS);
 			if (entry->type == R_BIN_ENTRY_TYPE_INIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry.init%i", init_i);
+				snprintf (str, sizeof (str), "entry.init%i", init_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_FINI) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry.fini%i", fini_i);
+				snprintf (str, sizeof (str), "entry.fini%i", fini_i);
 			} else if (entry->type == R_BIN_ENTRY_TYPE_PREINIT) {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry.preinit%i", preinit_i);
+				snprintf (str, sizeof (str), "entry.preinit%i", preinit_i);
 			} else {
-				snprintf (str, R_FLAG_NAME_SIZE, "entry%i", i);
+				snprintf (str, sizeof (str), "entry%i", i);
 			}
 			r_flag_set (core->flags, str, at, 1);
 			if (is_initfini (entry) && hvaddr != UT64_MAX) {
@@ -1751,7 +1751,6 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 		free (module);
 	}
 
-	char flagname[R_FLAG_NAME_SIZE];
 	char *reloc_name = construct_reloc_name (reloc, NULL);
 	if (R_STR_ISEMPTY (reloc_name)) {
 		char name[32] = { 0 };
@@ -1769,11 +1768,9 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			return;
 		}
 	}
-	if (core->bin->prefix) {
-		snprintf (flagname, R_FLAG_NAME_SIZE, "%s.reloc.%s", core->bin->prefix, reloc_name);
-	} else {
-		snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", reloc_name);
-	}
+	char *flagname = core->bin->prefix
+		? r_str_newf ("%s.reloc.%s", core->bin->prefix, reloc_name)
+		: r_str_newf ("reloc.%s", reloc_name);
 	if (reloc->laddr) {
 		char *internal_reloc = r_str_newf ("rsym.%s", reloc_name);
 		(void)r_flag_set (core->flags, internal_reloc, reloc->laddr, bin_reloc_size (reloc));
@@ -1784,7 +1781,8 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	if (ri->bin_demangle) {
 		demname = r_bin_demangle (core->bin->cur, ri->lang, flagname, addr, ri->keep_lib);
 		if (demname) {
-			snprintf (flagname, R_FLAG_NAME_SIZE, "reloc.%s", demname);
+			free (flagname);
+			flagname = r_str_newf ("reloc.%s", demname);
 		}
 	}
 	r_name_filter (flagname, 0);
@@ -1802,6 +1800,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 	}
 
 	free (demname);
+	free (flagname);
 }
 
 /* Define new data at relocation address if it's not in an executable section */
@@ -2326,10 +2325,10 @@ static const char *symbol_flag_prefix(RBinSymbol *sym) {
 	return "sym";
 }
 
-static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname, int len) {
+static char *construct_symbol_flagname(const char *pfx, const char *libname, const char *symname) {
 	char *s = r_str_newf ("%s.%s%s%s", pfx, r_str_get (libname), libname? "_": "", symname);
 	if (s) {
-		r_name_filter (s, len); // maybe unnecessary..
+		r_name_filter (s, -1);
 		char *R = r_name_filter_quoted_shell (s);
 		free (s);
 		return R;
@@ -2358,7 +2357,7 @@ static bool rawname_matches(const char *raw, const char *name) {
 
 static char *unique_symflag_for_addr(RCore *core, const char *pfx, const char *lib,
 	const char *basename, ut64 vaddr, const char *mangled) {
-	char *base = construct_symbol_flagname (pfx, lib, basename, R_FLAG_NAME_SIZE);
+	char *base = construct_symbol_flagname (pfx, lib, basename);
 	if (!base) {
 		return NULL;
 	}
@@ -2533,23 +2532,23 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 				sn->nameflag = unique_symflag_for_addr (core, pfx, sym->libname, symname, sym->vaddr, mangled);
 			}
 		} else {
-			sn->nameflag = construct_symbol_flagname (pfx, sym->libname, basename, R_FLAG_NAME_SIZE);
+			sn->nameflag = construct_symbol_flagname (pfx, sym->libname, basename);
 			if (!sn->nameflag && basename != symname) {
-				sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, R_FLAG_NAME_SIZE);
+				sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname);
 			}
 		}
 		free (demflagbase);
 		if (!sn->nameflag) {
-			sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, R_FLAG_NAME_SIZE);
+			sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname);
 		}
 	} else {
-		sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname, R_FLAG_NAME_SIZE);
+		sn->nameflag = construct_symbol_flagname (pfx, sym->libname, symname);
 	}
 	free (resymname);
 	if (R_STR_ISNOTEMPTY (sym->classname)) {
 		sn->classname = strdup (sym->classname);
 		sn->classflag = r_str_newf ("sym.%s.%s", sn->classname, sn->name);
-		r_name_filter (sn->classflag, R_FLAG_NAME_SIZE);
+		r_name_filter (sn->classflag, -1);
 		sn->methname = r_str_newf ("%s::%s", sn->classname, sym_name);
 		sn->methflag = r_str_newf ("sym.%s.%s", sn->classname, sym_name);
 		r_name_filter (sn->methflag, strlen (sn->methflag));
@@ -2565,7 +2564,7 @@ static void snInit(RCore *core, SymName *sn, RBinSymbol *sym, const char *lang, 
 		sn->demname = r_bin_demangle (core->bin->cur, lang, sn->name, sym->vaddr, keep_lib);
 		if (sn->demname) {
 			// XXX LEAK
-			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname, -1);
+			sn->demflag = construct_symbol_flagname (pfx, sym->libname, sn->demname);
 		}
 	}
 }
@@ -2937,7 +2936,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				lastfs = 's';
 			}
 			if (core->bin->prefix || *n) { // we don't want unnamed symbol flags
-				char *flagname = construct_symbol_flagname ("sym", sn.libname, n, R_FLAG_NAME_SIZE);
+				char *flagname = construct_symbol_flagname ("sym", sn.libname, n);
 				if (!flagname) {
 					goto next;
 				}
@@ -3223,7 +3222,7 @@ static void add_section(RCore *core, RBinSection *sec, ut64 addr, int fd) {
 	if (!map_name) {
 		return;
 	}
-	r_name_filter (map_name, R_FLAG_NAME_SIZE);
+	r_name_filter (map_name, -1);
 	int perm = sec->perm;
 	// workaround to force exec bit in text section
 	if (sec->name && strstr (sec->name, "text")) {
@@ -3485,7 +3484,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			} else {
 				str = r_str_newf ("%s.%s", type, section->name);
 			}
-			r_name_filter (str, R_FLAG_NAME_SIZE);
+			r_name_filter (str, -1);
 
 			r_flag_set (core->flags, str, addr, size);
 			R_FREE (str);
@@ -4055,7 +4054,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		}
 
 		if (IS_MODE_SET (mode)) {
-			r_strf_var (classname, R_FLAG_NAME_SIZE, "class.%s", name);
+			char *classname = r_str_newf ("class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
 			r_list_foreach (c->methods, iter2, sym) {
 				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
@@ -4065,10 +4064,11 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				} else {
 					const char *sym_name = r_bin_name_tostring (sym->name);
 					// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
-				char *mflags = r_bin_attr_tostring (sym->attr, false);
+					char *mflags = r_bin_attr_tostring (sym->attr, false);
 					r_str_replace_char (mflags, ' ', '.');
 					// XXX probably access flags should not be part of the flag name
-					r_strf_var (method, R_FLAG_NAME_SIZE, "method%s%s.%s.%s", R_STR_ISEMPTY (mflags)? "": ".", mflags, cname, sym_name);
+					char *method = r_str_newf ("method%s%s.%s.%s",
+						R_STR_ISEMPTY (mflags)? "": ".", mflags, cname, sym_name);
 					R_FREE (mflags);
 					r_name_filter (method, -1);
 					RFlagItem *fi = r_flag_set (core->flags, method, maddr, 1);
@@ -4082,6 +4082,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 							}
 						}
 					}
+					free (method);
 				}
 			}
 			r_list_foreach (c->fields, iter2, f) {
@@ -4093,6 +4094,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				r_flag_set (core->flags, fn, at, 1);
 				free (fn);
 			}
+			free (classname);
 		} else if (IS_MODE_SIMPLEST (mode)) {
 			r_cons_printf (core->cons, "%s\n", cname);
 		} else if (IS_MODE_SIMPLE (mode)) {

@@ -12,9 +12,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_flag);
 
-// XXX this is a soft limitation, there's no limits in the rflag api
-#define R_FLAG_NAME_SIZE 512
-
 /* zones.c */
 
 typedef struct r_flag_zone_item_t {
