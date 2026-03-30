@@ -39,9 +39,7 @@ static void apfs_cleanup_ctx(ApfsFS *ctx) {
 	if (!ctx) {
 		return;
 	}
-	if (ctx->inodes) {
-		ht_up_free (ctx->inodes);
-	}
+	ht_up_free (ctx->inodes);
 	free (ctx->nx_sb);
 	free (ctx->vol_sb);
 	free (ctx);
@@ -270,13 +268,10 @@ typedef struct {
 static bool apfs_find_child_cb(void *user, const ut64 key, const void *value) {
 	ApfsFindChildCtx *fc = (ApfsFindChildCtx *)user;
 	ApfsInodeCache *c = (ApfsInodeCache *)value;
-	if (!c || !c->name) {
-		return true; // continue scanning
-	}
-	if (c->parent_inode_num != fc->parent) {
+	if (!c || !c->name || c->parent_inode_num != fc->parent) {
 		return true;
 	}
-	if (strcmp (c->name, fc->name) == 0) {
+	if (!strcmp (c->name, fc->name)) {
 		fc->found = c->inode_num;
 	}
 	return true;
@@ -342,18 +337,12 @@ static ut64 apfs_inode_get_size(ApfsFS *ctx, ApfsInodeCache *cache) {
 }
 
 static int apfs_dir_entry_cmp(const void *a, const void *b) {
-	const RFSFile *fa = (const RFSFile *)a;
-	const RFSFile *fb = (const RFSFile *)b;
-	if (!fa || !fb) {
-		return 0;
+	const RFSFile *fa = a;
+	const RFSFile *fb = b;
+	if (!fa || !fa->name) {
+		return (fb && fb->name) ? -1 : 0;
 	}
-	if (!fa->name) {
-		return fb->name ? -1 : 0;
-	}
-	if (!fb->name) {
-		return 1;
-	}
-	return strcmp (fa->name, fb->name);
+	return (fb && fb->name) ? strcmp (fa->name, fb->name) : 1;
 }
 
 static RList *fs_apfs_dir(RFSRoot *root, const char *path, int view) {
@@ -427,7 +416,6 @@ static RFSFile *fs_apfs_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
-static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **data, ut64 *size);
 static bool apfs_read_file_extents(ApfsFS *ctx, ApfsInodeCache *cache, ut8 **data, ut64 *size) {
 	if (!ctx || !cache || !cache->inode || !data || !size) {
 		return false;
@@ -614,21 +602,22 @@ static bool apfs_parse_dir_record(ApfsFS *ctx, ut64 obj_id, ut8 *key_data, ut16 
 static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode_num);
 
 static bool apfs_parse_omap_btree(ApfsFS *ctx, ut64 omap_oid) {
-	// Read object map structure
 	ut64 omap_paddr;
-	if (apfs_resolve_omap (ctx, omap_oid, &omap_paddr)) {
-		ApfsOmapPhys *omap = malloc (ctx->block_size);
-		if (omap) {
-			ut64 offset = apfs_block_to_offset (ctx, omap_paddr);
-			if (offset != UT64_MAX && apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
-				ctx->omap_tree_oid = apfs_read64 (ctx, (ut8 *)&omap->om_tree_oid);
-				ctx->omap = omap;
-				return true;
-			}
-			free (omap);
-		}
+	if (!apfs_resolve_omap (ctx, omap_oid, &omap_paddr)) {
+		return false;
 	}
-	return false;
+	ApfsOmapPhys *omap = malloc (ctx->block_size);
+	if (!omap) {
+		return false;
+	}
+	ut64 offset = apfs_block_to_offset (ctx, omap_paddr);
+	if (offset == UT64_MAX || !apfs_read_at (ctx, offset, (ut8 *)omap, ctx->block_size)) {
+		free (omap);
+		return false;
+	}
+	ctx->omap_tree_oid = apfs_read64 (ctx, (ut8 *)&omap->om_tree_oid);
+	ctx->omap = omap;
+	return true;
 }
 
 static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target_oid, ut64 target_xid, ut64 *paddr);
@@ -636,23 +625,18 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 static bool apfs_resolve_omap(ApfsFS *ctx, ut64 oid, ut64 *paddr) {
 	R_LOG_DEBUG ("apfs_resolve_omap: resolving OID %" PFMT64u ", omap_tree_oid=%" PFMT64u, oid, ctx->omap_tree_oid);
 
-	if (ctx->omap_tree_oid) {
-		*paddr = 0;
-	} else {
-		// Direct mapping for simple cases
+	if (!ctx->omap_tree_oid) {
 		*paddr = oid;
 		R_LOG_DEBUG ("apfs_resolve_omap: direct mapping to paddr %" PFMT64u, *paddr);
 		return true;
 	}
+	*paddr = 0;
 
-	// Use the current transaction ID from the volume superblock
-	ut64 target_xid = 0;
-	if (ctx->vol_sb) {
-		target_xid = apfs_read64 (ctx, (ut8 *)&ctx->vol_sb->apfs_o.o_xid);
-	}
+	ut64 target_xid = ctx->vol_sb
+		? apfs_read64 (ctx, (ut8 *)&ctx->vol_sb->apfs_o.o_xid)
+		: 0;
 	R_LOG_DEBUG ("apfs_resolve_omap: target_xid=%" PFMT64u, target_xid);
 
-	// Start traversal from the object map tree root
 	bool result = apfs_resolve_omap_btree_node (ctx, ctx->omap_tree_oid, oid, target_xid, paddr);
 	R_LOG_DEBUG ("apfs_resolve_omap: result=%d, paddr=%" PFMT64u, result, *paddr);
 	return result;
@@ -749,6 +733,12 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 			}
 		} else {
 			// Variable KV size mode (original code path)
+			size_t kvloc_offset = (ut8 *)node->btn_data - node_data;
+			if (kvloc_offset >= ctx->block_size
+				|| nkeys > (ctx->block_size - kvloc_offset) / sizeof (ApfsKvloc)) {
+				free (node_data);
+				return false;
+			}
 			ApfsKvloc *kvloc_table = (ApfsKvloc *)node->btn_data;
 
 			ut16 i;
@@ -810,7 +800,15 @@ static bool apfs_resolve_omap_btree_node(ApfsFS *ctx, ut64 node_oid, ut64 target
 				}
 			}
 		} else {
-			ApfsKvloc *kvloc_table = (ApfsKvloc *) (node_data + sizeof (ApfsBtreeNodePhys) + table_space_off);
+			ut32 table_start = sizeof (ApfsBtreeNodePhys) + table_space_off;
+			ut32 kvloc_table_size;
+			if (table_start >= ctx->block_size
+				|| r_mul_overflow (nkeys, (ut32)sizeof (ApfsKvloc), &kvloc_table_size)
+				|| kvloc_table_size > ctx->block_size - table_start) {
+				free (node_data);
+				return false;
+			}
+			ApfsKvloc *kvloc_table = (ApfsKvloc *) (node_data + table_start);
 
 			ut16 i;
 			for (i = 0; i < nkeys; i++) {
@@ -975,20 +973,12 @@ static bool apfs_parse_btree_node(ApfsFS *ctx, ut64 block_num, ut64 parent_inode
 	} else {
 		// Non-leaf node: recursively process child nodes
 		ut16 table_space_off = apfs_read16 (ctx, (ut8 *)&node->btn_table_space.off);
-
-		if (table_space_off >= ctx->block_size) {
-			R_LOG_DEBUG ("apfs: invalid table_space_off=%u >= block_size=%u", table_space_off, ctx->block_size);
-			free (node);
-			return false;
-		}
-
-		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
-
 		if (!apfs_validate_kvloc_bounds (ctx, nkeys, table_space_off)) {
 			R_LOG_DEBUG ("apfs: invalid kvloc bounds for internal node, nkeys=%u", nkeys);
 			free (node);
 			return false;
 		}
+		ApfsKvloc *kvloc_table = (ApfsKvloc *) ((ut8 *)node + table_space_off);
 
 		ut16 i;
 		for (i = 0; i < nkeys; i++) {
@@ -1318,43 +1308,17 @@ static bool apfs_scan_for_btree_nodes(ApfsFS *ctx) {
 
 		R_LOG_DEBUG ("Found B-tree block %" PFMT64u " (0x%" PFMT64x "): type=0x%x", block, offset, obj_type);
 
-		if (obj_type == APFS_OBJECT_TYPE_BTREE_NODE) {
+		if (obj_type == APFS_OBJECT_TYPE_BTREE_NODE || obj_type == APFS_OBJECT_TYPE_FSTREE) {
 			R_LOG_DEBUG ("Found B-tree node at block %" PFMT64u " (offset 0x%" PFMT64x ")", block, offset);
 			valid_nodes_found++;
 			if (apfs_parse_btree_node (ctx, block, 0)) {
 				found_any = true;
 			}
-		}
-
-		// Also check for file system tree type (these contain file records)
-		if (obj_type == APFS_OBJECT_TYPE_FSTREE) {
-			R_LOG_DEBUG ("Found FS tree node at block %" PFMT64u " (offset 0x%" PFMT64x ")", block, offset);
+		} else if (obj_type == APFS_OBJECT_TYPE_BTREE) {
+			R_LOG_DEBUG ("Attempting to parse BTREE node at offset 0x%" PFMT64x, offset);
 			valid_nodes_found++;
-			if (apfs_parse_btree_node (ctx, block, 0)) {
+			if (apfs_parse_btree_node_from_data (ctx, header, offset)) {
 				found_any = true;
-			}
-		}
-#if 0
-		// Look for specific patterns indicating file records
-		if (!memcmp (header + 20, "APSB", 4)) {
-			R_LOG_DEBUG ("Found APSB at block %" PFMT64u, block);
-		}
-#endif
-		// Also check for known B-tree patterns in the data
-		if (obj_type == 0x03 || obj_type == 0x02 || obj_type == 0x05) {
-			R_LOG_DEBUG ("Found potential node type 0x%x at block %" PFMT64u " (offset 0x%" PFMT64x ")",
-				obj_type, block, offset);
-			valid_nodes_found++;
-			// Temporarily parse B-tree node with scan context
-			// NOTE: We'll implement this safely to avoid segfaults
-			if (obj_type == APFS_OBJECT_TYPE_BTREE) {
-				// This is a BTREE node, parse it carefully
-				R_LOG_DEBUG ("Attempting to parse BTREE node at offset 0x%" PFMT64x, offset);
-
-				// Parse directly from the header we already read
-				if (apfs_parse_btree_node_from_data (ctx, header, offset)) {
-					found_any = true;
-				}
 			}
 		}
 	}
@@ -1377,22 +1341,21 @@ static bool apfs_dir_iter_cb(void *user, const ut64 key, const void *value) {
 	}
 
 	RFSFile *fsf = r_fs_file_new (ctx->root, cache->name? cache->name: "");
-	if (fsf) {
-		ut16 mode = apfs_read16 (apfs_ctx, (ut8 *)&cache->inode->mode);
-		if (apfs_is_directory (mode)) {
-			fsf->type = R_FS_FILE_TYPE_DIRECTORY;
-		} else if (apfs_is_regular_file (mode)) {
-			fsf->type = R_FS_FILE_TYPE_REGULAR;
-			fsf->size = apfs_inode_get_size (apfs_ctx, cache);
-		} else {
-			fsf->type = R_FS_FILE_TYPE_SPECIAL;
-		}
-		fsf->ptr = (void *) (size_t)cache->inode_num;
-		const ut64 useconds = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time);
-		uint64_t seconds = useconds / 1000000000; // Convert to seconds
-		fsf->time = seconds;
-		r_list_append (list, fsf);
+	if (!fsf) {
+		return true;
 	}
+	ut16 mode = apfs_read16 (apfs_ctx, (ut8 *)&cache->inode->mode);
+	if (apfs_is_directory (mode)) {
+		fsf->type = R_FS_FILE_TYPE_DIRECTORY;
+	} else if (apfs_is_regular_file (mode)) {
+		fsf->type = R_FS_FILE_TYPE_REGULAR;
+		fsf->size = apfs_inode_get_size (apfs_ctx, cache);
+	} else {
+		fsf->type = R_FS_FILE_TYPE_SPECIAL;
+	}
+	fsf->ptr = (void *) (size_t)cache->inode_num;
+	fsf->time = apfs_read64 (apfs_ctx, (ut8 *)&cache->inode->mod_time) / 1000000000;
+	r_list_append (list, fsf);
 	return true;
 }
 
