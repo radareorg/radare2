@@ -85,7 +85,6 @@ R_API ut64 r_num_tail(RNum *num, ut64 addr, const char *hex);
 R_API ut64 r_num_tail_base(RNum *num, ut64 addr, ut64 off);
 R_API bool r_num_segaddr(ut64 addr, ut64 sb, int sg, ut32 *a, ut32 *b);
 R_API void r_num_minmax_swap(ut64 *a, ut64 *b);
-R_API void r_num_minmax_swap_i(int *a, int *b); // XXX this can be a cpp macro :??
 
 R_API ut64 r_num_get(RNum *num, const char *str);
 R_API ut64 r_num_get_err(RNum *num, const char *str, const char **err);

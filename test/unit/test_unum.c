@@ -44,16 +44,6 @@ bool test_r_num_units(void) {
 	mu_end;
 }
 
-bool test_r_num_minmax_swap_i(void) {
-	int a = -1, b = 2;
-	r_num_minmax_swap_i (&a, &b);
-	mu_assert_eq (a == -1 && b == 2, 1, "a < b -> a < b");
-	a = 2, b = -1;
-	r_num_minmax_swap_i (&a, &b);
-	mu_assert_eq (a == -1 && b == 2, 1, "b < a -> a < b");
-	mu_end;
-}
-
 bool test_r_num_minmax_swap(void) {
 	ut64 a = 1, b = 2;
 	r_num_minmax_swap (&a, &b);
@@ -128,7 +118,6 @@ bool test_r_num_str_split_list(void) {
 
 bool all_tests(void) {
 	mu_run_test (test_r_num_units);
-	mu_run_test (test_r_num_minmax_swap_i);
 	mu_run_test (test_r_num_minmax_swap);
 	mu_run_test (test_r_num_between);
 	mu_run_test (test_r_num_str_len);

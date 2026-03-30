@@ -88,14 +88,6 @@ R_API void r_num_minmax_swap(ut64 *a, ut64 *b) {
 	}
 }
 
-R_API void r_num_minmax_swap_i(int *a, int *b) {
-	if (*a > *b) {
-		ut64 tmp = *a;
-		*a = *b;
-		*b = tmp;
-	}
-}
-
 R_API RNum *r_num_new(RNumCallback cb, RNumCallback2 cb2, void *ptr) {
 	RNum *num = R_NEW0 (RNum);
 	r_ref_init (num, r_num_free);
