@@ -2688,12 +2688,12 @@ R_API bool r_core_init(RCore *core) {
 	core->io->cb_printf = r_cons_gprintf;
 	core->dbg->cb_printf = r_cons_gprintf;
 	core->dbg->ev = core->ev;
+	core->autocomplete = R_NEW0 (RCoreAutocomplete);
+	r_core_plugins_init (core->rcmd);
 	r_core_config_init (core);
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
-	core->autocomplete = R_NEW0 (RCoreAutocomplete);
-	r_core_plugins_init (core->rcmd);
 	r_core_loadlibs_init (core);
 	// r_core_loadlibs (core);
 	//  TODO: get arch from r_bin or from native arch

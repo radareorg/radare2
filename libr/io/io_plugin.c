@@ -29,11 +29,11 @@ R_IPI bool r_io_plugins_init(RIO *io) {
 		r_list_free (io->libstore->plugins);
 		io->libstore->plugins = r_list_newf (io->libstore->free);
 		io->libstore->loaded = false;
+		if (r_lib_defaults ()) {
+			r_libstore_load (io->libstore);
+		}
 	} else {
-		io->libstore = r_libstore_new (io, io_static_plugins, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add);
-	}
-	if (r_lib_defaults ()) {
-		r_libstore_load (io->libstore);
+		r_libstore_new (&io->libstore, io, io_static_plugins, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add);
 	}
 	return true;
 }

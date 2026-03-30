@@ -13,7 +13,7 @@ static int plugin_cmp_name(const void *a, const void *b) {
 	return (plugin && plugin->meta.name && name)? strcmp (plugin->meta.name, name): 1;
 }
 
-R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add) {
+R_API RLibStore *r_libstore_new(RLibStore **dest, void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add) {
 	RLibStore *store = R_NEW0 (RLibStore);
 	store->user = user;
 	store->free = freefn;
@@ -21,6 +21,9 @@ R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFre
 	store->add = add;
 	store->load = load;
 	store->static_plugins = static_plugins;
+	if (dest) {
+		*dest = store;
+	}
 	if (r_lib_defaults ()) {
 		r_libstore_load (store);
 	}

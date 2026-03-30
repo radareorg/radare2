@@ -1690,8 +1690,9 @@ static bool cb_cmdpdc(void *user, void *data) {
 	if (*node->value == '?') {
 		r_cons_printf (core->cons, "pdc\n");
 		RListIter *iter;
-		RCorePlugin *cp;
-		r_list_foreach (core->rcmd->plist, iter, cp) {
+		RCorePluginSession *cps;
+		r_list_foreach (core->rcmd->libstore->plugins, iter, cps) {
+			RCorePlugin *cp = cps->plugin;
 			if (!strcmp (cp->meta.name, "r2retdec")) {
 				r_cons_println (core->cons, "pdz");
 			} else if (!strcmp (cp->meta.name, "decai")) {

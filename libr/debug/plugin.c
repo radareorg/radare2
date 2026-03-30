@@ -20,7 +20,7 @@ static RDebugPlugin *debug_static_plugins[] = {
 
 R_IPI void r_debug_plugins_init(RDebug *dbg) {
 	R_RETURN_IF_FAIL (dbg);
-	dbg->libstore = r_libstore_new (dbg, debug_static_plugins, (RListFree)debug_plugin_session_free, NULL, (RLibPluginAddCb)r_debug_plugin_add);
+	r_libstore_new (&dbg->libstore, dbg, debug_static_plugins, (RListFree)debug_plugin_session_free, NULL, (RLibPluginAddCb)r_debug_plugin_add);
 }
 
 R_IPI void r_debug_plugins_fini(RDebug *dbg) {

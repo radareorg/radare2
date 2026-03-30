@@ -1044,12 +1044,11 @@ extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
 
-R_IPI bool r_core_plugins_init(RCmd *cmd);
-R_IPI bool r_core_plugins_ensure(RCmd *cmd);
+R_IPI void r_core_plugins_init(RCmd *cmd);
+R_IPI void r_core_plugins_fini(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0);
-R_API void r_core_plugin_fini(RCmd *cmd);
 
 #endif
 

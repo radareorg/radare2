@@ -50,7 +50,7 @@ static bool core_plugins_load(RLibStore *store) {
 	r_libstore_load (core->egg->libstore);
 	r_libstore_load (core->fs->libstore);
 	r_libstore_load (core->lang->libstore);
-	r_core_plugins_ensure (core->rcmd);
+	r_libstore_load (core->rcmd->libstore);
 	r_libstore_load (core->muta->libstore);
 	return true;
 }
@@ -81,7 +81,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
-	core->libstore = r_libstore_new (core, NULL, NULL, core_plugins_load, NULL);
+	r_libstore_new (&core->libstore, core, NULL, NULL, core_plugins_load, NULL);
 	core->lib->cb_internal = core_load_internal_plugins;
 	core->lib->cb_internal_user = core;
 	DF (IO, "io plugins", io);

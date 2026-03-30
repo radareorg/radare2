@@ -881,7 +881,7 @@ R_API RBin *r_bin_new(void) {
 	RList *xtrs = r_list_newf ((RListFree)free);
 	RList *ldrs = r_list_newf ((RListFree)free);
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
-	bin->libstore = r_libstore_new (bin, NULL, (RListFree)free, bin_load_plugins, NULL);
+	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, NULL);
 	bin->libstore->fini = bin_plugin_fini;
 	bin->libstore->xtrs = xtrs;
 	bin->libstore->ldrs = ldrs;

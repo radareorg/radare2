@@ -78,7 +78,6 @@ R_API RCmd *r_cmd_new(void *data) {
 	int i;
 	RCmd *cmd = R_NEW0 (RCmd);
 	cmd->data = data;
-	cmd->lcmds = r_list_newf (free);
 	for (i = 0; i < NCMDS; i++) {
 		cmd->cmds[i] = NULL;
 	}
@@ -99,10 +98,7 @@ R_API void r_cmd_free(RCmd *cmd) {
 	r_cmd_alias_free (cmd);
 	r_cmd_macro_fini (&cmd->macro);
 	ht_pp_free (cmd->ht_cmds);
-	// de-initialize plugin commands
-	r_core_plugin_fini (cmd);
-	r_list_free (cmd->plist);
-	r_list_free (cmd->lcmds);
+	r_core_plugins_fini (cmd);
 	for (i = 0; i < NCMDS; i++) {
 		if (cmd->cmds[i]) {
 			R_FREE (cmd->cmds[i]);
@@ -369,7 +365,6 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 	struct r_cmd_item_t *c;
 	int ret = -1;
 	RListIter *iter;
-	//RCorePlugin *cp;
 	R_RETURN_VAL_IF_FAIL (cmd && input, -1);
 	if (!*input) {
 		if (cmd->nullcallback) {
@@ -386,22 +381,13 @@ R_API int r_cmd_call(RCmd *cmd, const char *input) {
 			return true;
 		}
 		RCorePluginSession *cps;
-		r_list_foreach (cmd->lcmds, iter, cps) {
+		r_list_foreach (cmd->libstore->plugins, iter, cps) {
 			RCorePlugin *plugin = cps->plugin;
 			if (plugin->call && plugin->call (cps, input)) {
 				free (nstr);
 				return true;
 			}
 		}
-#if 0
-		r_list_foreach (cmd->plist, iter, cp) {
-			/// XXX the plugin call have no plugin context!! we cant have multiple plugins here
-			if (cp->call && cp->call (cmd->data, input)) {
-				free (nstr);
-				return true;
-			}
-		}
-#endif
 		if (!*input) {
 			free (nstr);
 			return -1;
