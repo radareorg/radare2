@@ -3662,21 +3662,24 @@ R_API bool r_str_isnumber(const char *str) {
 	return true;
 }
 
-/* TODO: optimize to start searching by the end of the string */
 R_API const char *r_str_last(const char *str, const char *ch) {
-	char *ptr, *end = NULL;
 	if (!str || !ch) {
 		return NULL;
 	}
-	do {
-		ptr = strstr (str, ch);
-		if (!ptr) {
-			break;
+	const size_t slen = strlen (str);
+	const size_t clen = strlen (ch);
+	if (clen == 0 || clen > slen) {
+		return NULL;
+	}
+	// search backwards from the end of the string
+	const char *p = str + slen - clen;
+	while (p >= str) {
+		if (!memcmp (p, ch, clen)) {
+			return p;
 		}
-		end = ptr;
-		str = ptr + 1;
-	} while (true);
-	return end;
+		p--;
+	}
+	return NULL;
 }
 
 // copies the WHOLE string but check n against non color code chars only.
