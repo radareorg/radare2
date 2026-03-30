@@ -52,8 +52,14 @@ R_API void *r_libstore_find_name(const RLibStore *store, const char *name) {
 
 R_API void *r_libstore_find_in(const RLibStore *store, RList *list, const void *needle, RListComparator cmp) {
 	R_RETURN_VAL_IF_FAIL (store && cmp, NULL);
-	RListIter *iter = r_list_find (list, needle, cmp);
-	return iter? iter->data: NULL;
+	RListIter *iter;
+	void *plugin;
+	r_list_foreach (list, iter, plugin) {
+		if (!cmp (plugin, needle)) {
+			return plugin;
+		}
+	}
+	return NULL;
 }
 
 R_API void *r_libstore_find(const RLibStore *store, const void *needle, RListComparator cmp) {
