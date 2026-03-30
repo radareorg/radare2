@@ -10,6 +10,8 @@ R_LIB_VERSION (r_flag);
 #define IS_FI_IN_SPACE(fi, sp) (!(sp) || (fi)->space == (sp))
 #define STRDUP_OR_NULL(s) (!R_STR_ISEMPTY (s)? strdup (s): NULL)
 
+static bool flag_count_foreach(RFlagItem *fi, void *user);
+
 static const char *str_callback(RNum *user, ut64 addr, bool *ok) {
 	if (ok) {
 		*ok = false;
@@ -199,12 +201,6 @@ static void ht_free_meta(HtUPKv *kv) {
 	}
 }
 
-static bool count_flags(RFlagItem *fi, void *user) {
-	int *count = (int *)user;
-	(*count)++;
-	return true;
-}
-
 static bool unset_flags_space(RFlagItem *fi, void *user) {
 	fi->space = NULL;
 	return true;
@@ -214,7 +210,7 @@ static void count_flags_in_space(REvent *ev, int type, void *user, void *data) {
 	RSpaces *sp = (RSpaces *)ev->user;
 	RFlag *f = container_of (sp, RFlag, spaces);
 	RSpaceEvent *spe = (RSpaceEvent *)data;
-	r_flag_foreach_space (f, spe->data.count.space, count_flags, &spe->res);
+	r_flag_foreach_space (f, spe->data.count.space, flag_count_foreach, &spe->res);
 }
 
 static void unset_flagspace(REvent *ev, int type, void *user, void *data) {
