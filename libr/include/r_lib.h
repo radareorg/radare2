@@ -150,6 +150,7 @@ typedef struct r_libstore_t {
 	const void *static_plugins;
 	RLibStorePluginFiniCb fini;
 	RLibPluginAddCb add;
+	RLibPluginAddCb remove;
 	RLibStoreLoadCallback load;
 	bool loaded;
 } RLibStore;

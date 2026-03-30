@@ -5,45 +5,28 @@
 
 #define CB(x, y) \
 	static bool __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
+		RPluginMeta *meta = (RPluginMeta *)data; \
 		pl->free = NULL; \
-		pl->name = strdup (hand->meta.name); \
-		r_ ## x ## _plugin_add (core->y, hand); \
-		return true; \
+		pl->name = strdup (meta->name); \
+		return r_libstore_add (core->y->libstore, data); \
 	} \
 	static bool __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
 		RCore *core = (RCore *)user; \
 		free (pl->name); \
-		return r_ ## x ## _plugin_remove (core->y, hand); \
+		return r_libstore_remove (core->y->libstore, data); \
 	}
 
-#define CB_SIMPLE(x, y) \
-	static bool __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
-		RCore *core = (RCore *)user; \
-		pl->free = NULL; \
-		pl->name = strdup (hand->meta.name); \
-		return r_libstore_add (core->y->libstore, hand); \
-	} \
-	static bool __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
-		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
-		RCore *core = (RCore *)user; \
-		free (pl->name); \
-		return r_libstore_remove (core->y->libstore, hand); \
-	}
-
-CB_SIMPLE(io, io)
+CB(io, io)
 CB(core, rcmd)
 CB(debug, dbg)
-CB_SIMPLE(bp, dbg->bp)
+CB(bp, dbg->bp)
 CB(lang, lang)
 CB(anal, anal)
-CB_SIMPLE(esil, anal->esil)
+CB(esil, anal->esil)
 CB(asm, rasm)
 CB(bin, bin)
-CB_SIMPLE(egg, egg)
+CB(egg, egg)
 CB(fs, fs)
 CB(arch, anal->arch);
 

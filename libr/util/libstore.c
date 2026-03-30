@@ -75,6 +75,9 @@ R_API void *r_libstore_find(const RLibStore *store, const void *needle, RListCom
 
 R_API bool r_libstore_add(RLibStore *store, void *plugin) {
 	R_RETURN_VAL_IF_FAIL (store && plugin, false);
+	if (store->add) {
+		return store->add (store->user, plugin);
+	}
 	const RLibStoreNamedPlugin *np = plugin;
 	if (!np->meta.name) {
 		return false;
@@ -87,6 +90,9 @@ R_API bool r_libstore_add(RLibStore *store, void *plugin) {
 
 R_API bool r_libstore_remove(RLibStore *store, void *plugin) {
 	R_RETURN_VAL_IF_FAIL (store && plugin, false);
+	if (store->remove) {
+		return store->remove (store->user, plugin);
+	}
 	return r_list_delete_data (store->plugins, plugin);
 }
 
@@ -107,10 +113,6 @@ R_API bool r_libstore_load(RLibStore *store) {
 	}
 	if (store->load) {
 		if (!store->load (store)) {
-			return false;
-		}
-	} else if (store->static_plugins && store->add) {
-		if (!r_lib_add_static (store->user, store->static_plugins, store->add)) {
 			return false;
 		}
 	} else if (store->static_plugins) {
