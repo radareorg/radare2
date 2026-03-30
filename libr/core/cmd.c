@@ -3396,7 +3396,7 @@ static int cmd_json(void *data, const char *input) {
 		return 0;
 	}
 	const RJson *j_cmd = NULL;
-	RJson *j = r_json_parse (input - 1);
+	RJson *j = r_json_parsedup (input - 1);
 	if (j) {
 		j_cmd = r_json_get (j, "cmd");
 	}

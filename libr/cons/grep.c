@@ -698,7 +698,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		return;
 	}
 	if (grep->gron) {
-		RJson *node = r_json_parse (cons->context->buffer);
+		RJson *node = r_json_parsedup (cons->context->buffer);
 		RStrBuf *sb = r_strbuf_new ("");
 		gron (sb, node, "json");
 		char *s = r_strbuf_drain (sb);

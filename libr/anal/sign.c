@@ -3324,7 +3324,7 @@ static bool sign_load_json(RAnal *a, const char *path) {
 		return false;
 	}
 	bool res = false;
-	RJson *rj = r_json_parseown (text);
+	RJson *rj = r_json_parse (text);
 	if (rj->type != R_JSON_ARRAY) {
 		R_LOG_ERROR ("Invalid json");
 	} else {

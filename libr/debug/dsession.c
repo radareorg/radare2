@@ -472,7 +472,7 @@ R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 
 static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	RJson *reg_json = r_json_parse (v);
+	RJson *reg_json = r_json_parsedup (v);
 	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
 		r_json_free (reg_json);
 		return true;
@@ -515,7 +515,7 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 
 static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	RJson *reg_json = r_json_parse (v);
+	RJson *reg_json = r_json_parsedup (v);
 	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
 		r_json_free (reg_json);
 		return true;
@@ -558,7 +558,7 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 
 static bool deserialize_checkpoints_cb(void *user, const char *cnum, const char *v) {
 	const RJson *child;
-	RJson *chkpt_json = r_json_parse (v);
+	RJson *chkpt_json = r_json_parsedup (v);
 	if (!chkpt_json || chkpt_json->type != R_JSON_OBJECT) {
 		r_json_free (chkpt_json);
 		return true;

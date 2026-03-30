@@ -999,7 +999,7 @@ static int test_pj_param_raw(void) {
 
 	const char *json = pj_string (pj);
 	mu_assert_notnull (json, "pj_string");
-	RJson *parsed = r_json_parse (json);
+	RJson *parsed = r_json_parsedup (json);
 	pj_free (pj);
 	mu_assert_notnull (parsed, "parse failed");
 	mu_assert_eq (parsed->type, R_JSON_ARRAY, "root type");
@@ -1290,7 +1290,7 @@ JsonTest tests[] = {
 };
 
 static int test_json(int test_number, char *input, int(*check)(RJson *j)) {
-	RJson *json = r_json_parseown (input);
+	RJson *json = r_json_parse (input);
 	if (!check) {
 		mu_assert_null (json, "parse failure expected");
 	} else {

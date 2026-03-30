@@ -106,7 +106,7 @@ static RList *fs_io_dir(RFSRoot *root, const char *path, int view /*ignored*/) {
 	}
 	char *res = root->iob.system (root->iob.io, cmd);
 	if (res && *res == '[') {
-		RJson *json = r_json_parseown (res);
+		RJson *json = r_json_parse (res);
 		if (json) {
 			if (json->type == R_JSON_ARRAY) {
 				size_t i, count = json->children.count;

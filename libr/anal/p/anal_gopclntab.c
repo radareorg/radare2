@@ -394,7 +394,7 @@ static bool go_sections_foreach(GoPclnCtx *ctx, GoSectionIterCb cb, void *user) 
 	if (!json) {
 		return false;
 	}
-	RJson *root = r_json_parseown (json);
+	RJson *root = r_json_parse (json);
 	if (!root || root->type != R_JSON_ARRAY) {
 		r_json_free (root);
 		free (json);
