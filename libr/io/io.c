@@ -25,7 +25,7 @@ R_API void r_io_init(RIO* io) {
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
-	r_libstore_new (&io->libstore, io, io_static_plugins, NULL, NULL, NULL);
+	r_libstore_new (&io->libstore, io, io_static_plugins, NULL, NULL, NULL, NULL);
 	r_io_undo_init (io);
 	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");

@@ -25,7 +25,7 @@ static bool muta_load_plugins(RLibStore *store) {
 static void r_muta_init(RMuta *muta) {
 	R_RETURN_IF_FAIL (muta);
 	muta->user = NULL;
-	r_libstore_new (&muta->libstore, muta, NULL, (RListFree)free, muta_load_plugins, NULL);
+	r_libstore_new (&muta->libstore, muta, NULL, (RListFree)free, muta_load_plugins, NULL, NULL);
 }
 
 

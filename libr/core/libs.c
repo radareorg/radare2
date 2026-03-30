@@ -79,7 +79,7 @@ R_API void r_core_loadlibs_init(RCore *core) {
 	ut64 prev = r_time_now_mono ();
 #define DF(x, y, z) r_lib_add_handler(core->lib, R_LIB_TYPE_ ## x, y, &__lib_ ## z ## _cb, &__lib_ ## z ## _dt, core);
 	core->lib = r_lib_new (NULL, NULL);
-	r_libstore_new (&core->libstore, core, NULL, NULL, core_plugins_load, NULL);
+	r_libstore_new (&core->libstore, core, NULL, NULL, core_plugins_load, NULL, NULL);
 	core->lib->cb_internal = core_load_internal_plugins;
 	core->lib->cb_internal_user = core;
 	DF (IO, "io plugins", io);

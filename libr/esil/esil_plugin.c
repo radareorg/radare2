@@ -15,7 +15,7 @@ R_IPI bool r_esil_plugins_init(REsil *esil) {
 	if (R_UNLIKELY (!esil->active_plugins)) {
 		return false;
 	}
-	r_libstore_new (&esil->libstore, esil, esil_static_plugins, NULL, NULL, NULL);
+	r_libstore_new (&esil->libstore, esil, esil_static_plugins, NULL, NULL, NULL, (RLibPluginAddCb)r_esil_plugin_remove);
 	return true;
 }
 

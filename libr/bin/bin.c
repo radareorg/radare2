@@ -882,7 +882,7 @@ R_API RBin *r_bin_new(void) {
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
-	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, NULL);
+	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, (RLibPluginAddCb)r_bin_plugin_add, (RLibPluginAddCb)r_bin_plugin_remove);
 	return bin;
 }
 

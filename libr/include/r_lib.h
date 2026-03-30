@@ -195,7 +195,7 @@ R_API bool r_lib_add_static(void *ctx, const void *plugins, RLibPluginAddCb add_
 
 
 // libstore
-R_API RLibStore *r_libstore_new(RLibStore **dest, void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add);
+R_API RLibStore *r_libstore_new(RLibStore **dest, void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add, RLibPluginAddCb remove);
 R_API void r_libstore_free(RLibStore *store);
 R_API void *r_libstore_find_name(const RLibStore *store, const char *name);
 R_API void *r_libstore_find_name_in(const RLibStore *store, RList *list, const char *name);

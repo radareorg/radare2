@@ -68,7 +68,7 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	r_libstore_new (&egg->libstore, egg, egg_static_plugins, NULL, NULL, NULL);
+	r_libstore_new (&egg->libstore, egg, egg_static_plugins, NULL, NULL, NULL, NULL);
 	return egg;
 
 beach:
