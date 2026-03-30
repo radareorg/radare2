@@ -73,6 +73,33 @@ R_API void *r_libstore_find(const RLibStore *store, const void *needle, RListCom
 	return r_libstore_find_in (store, store->plugins, needle, cmp);
 }
 
+R_API bool r_libstore_add(RLibStore *store, void *plugin) {
+	R_RETURN_VAL_IF_FAIL (store && plugin, false);
+	const RLibStoreNamedPlugin *np = plugin;
+	if (!np->meta.name) {
+		return false;
+	}
+	if (r_libstore_find_name (store, np->meta.name)) {
+		return false;
+	}
+	return r_list_append (store->plugins, plugin) != NULL;
+}
+
+R_API bool r_libstore_remove(RLibStore *store, void *plugin) {
+	R_RETURN_VAL_IF_FAIL (store && plugin, false);
+	return r_list_delete_data (store->plugins, plugin);
+}
+
+static bool libstore_add_static(RLibStore *store) {
+	const void *const *plugins = store->static_plugins;
+	R_RETURN_VAL_IF_FAIL (plugins, false);
+	size_t i;
+	for (i = 0; plugins[i]; i++) {
+		r_libstore_add (store, (void *)plugins[i]);
+	}
+	return true;
+}
+
 R_API bool r_libstore_load(RLibStore *store) {
 	R_RETURN_VAL_IF_FAIL (store, false);
 	if (store->loaded) {
@@ -84,6 +111,10 @@ R_API bool r_libstore_load(RLibStore *store) {
 		}
 	} else if (store->static_plugins && store->add) {
 		if (!r_lib_add_static (store->user, store->static_plugins, store->add)) {
+			return false;
+		}
+	} else if (store->static_plugins) {
+		if (!libstore_add_static (store)) {
 			return false;
 		}
 	} else {

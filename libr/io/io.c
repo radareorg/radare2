@@ -6,6 +6,10 @@
 
 R_LIB_VERSION (r_io);
 
+static RIOPlugin *io_static_plugins[] = {
+	R_IO_STATIC_PLUGINS
+};
+
 R_API RIO* r_io_new(void) {
 	RIO *io = R_NEW0 (RIO);
 	r_io_init (io);
@@ -21,7 +25,7 @@ R_API void r_io_init(RIO* io) {
 	r_io_bank_init (io);
 	r_io_map_init (io);
 	r_io_cache_init (io);
-	r_io_plugins_init (io);
+	r_libstore_new (&io->libstore, io, io_static_plugins, NULL, NULL, NULL);
 	r_io_undo_init (io);
 	io->event = r_event_new (io);
 	RIOBank *bank = r_io_bank_new ("default");
@@ -148,7 +152,7 @@ R_API void r_io_close_all(RIO* io) {
 	r_io_desc_init (io);
 	r_io_map_init (io);
 	r_io_cache_reset (io);
-	r_io_plugins_init (io);
+	r_io_plugins_reset (io);
 }
 
 R_API int r_io_pread_at(RIO* io, ut64 paddr, ut8* buf, int len) {

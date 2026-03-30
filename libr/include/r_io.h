@@ -507,9 +507,7 @@ R_API void r_io_fini(RIO *io);
 R_API void r_io_free(RIO *io);
 #define r_io_bind_init(x) (x) = (const RIOBind){0}
 
-R_IPI bool r_io_plugins_init(RIO *io);
-R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin);
-R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin);
+R_IPI bool r_io_plugins_reset(RIO *io);
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len);
 R_API int r_io_plugin_write(RIODesc *desc, const ut8 *buf, int len);
 R_API int r_io_plugin_read_at(RIODesc *desc, ut64 addr, ut8 *buf, int len);

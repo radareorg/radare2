@@ -15,15 +15,6 @@ R_API bool r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	return false;
 }
 
-R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (bp && foo, false);
-	if (r_libstore_find_name (bp->libstore, foo->meta.name)) {
-		return false;
-	}
-	r_list_append (bp->libstore->plugins, foo);
-	return true;
-}
-
 R_API bool r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (bp && plugin, false);
 	return r_bp_plugin_del (bp, plugin->meta.name);

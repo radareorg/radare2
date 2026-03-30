@@ -398,7 +398,6 @@ R_API void r_esil_compiler_use(REsilCompiler *ec, REsil *esil);
 // esil_plugin.c
 R_IPI bool r_esil_plugins_init(REsil *esil);
 R_IPI void r_esil_plugins_fini(REsil *esil);
-R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin);
 R_API void r_esil_plugin_del(REsil *esil, const char *name);
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin);
 R_API bool r_esil_plugin_activate(REsil *esil, const char *name);

@@ -200,6 +200,8 @@ R_API void *r_libstore_find_name(const RLibStore *store, const char *name);
 R_API void *r_libstore_find_name_in(const RLibStore *store, RList *list, const char *name);
 R_API void *r_libstore_find(const RLibStore *store, const void *needle, RListComparator cmp);
 R_API void *r_libstore_find_in(const RLibStore *store, RList *list, const void *needle, RListComparator cmp);
+R_API bool r_libstore_add(RLibStore *store, void *plugin);
+R_API bool r_libstore_remove(RLibStore *store, void *plugin);
 R_API bool r_libstore_load(RLibStore *store);
 R_API bool r_libstore_loaded(RLibStore *store);
 

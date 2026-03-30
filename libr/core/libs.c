@@ -19,16 +19,31 @@
 		return r_ ## x ## _plugin_remove (core->y, hand); \
 	}
 
-CB(io, io)
+#define CB_SIMPLE(x, y) \
+	static bool __lib_ ## x ## _cb (RLibPlugin *pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		RCore *core = (RCore *)user; \
+		pl->free = NULL; \
+		pl->name = strdup (hand->meta.name); \
+		return r_libstore_add (core->y->libstore, hand); \
+	} \
+	static bool __lib_ ## x ## _dt (RLibPlugin *pl, void *user, void *data) { \
+		struct r_ ## x ## _plugin_t *hand = (struct r_ ## x ## _plugin_t *)data; \
+		RCore *core = (RCore *)user; \
+		free (pl->name); \
+		return r_libstore_remove (core->y->libstore, hand); \
+	}
+
+CB_SIMPLE(io, io)
 CB(core, rcmd)
 CB(debug, dbg)
-CB(bp, dbg->bp)
+CB_SIMPLE(bp, dbg->bp)
 CB(lang, lang)
 CB(anal, anal)
-CB(esil, anal->esil)
+CB_SIMPLE(esil, anal->esil)
 CB(asm, rasm)
 CB(bin, bin)
-CB(egg, egg)
+CB_SIMPLE(egg, egg)
 CB(fs, fs)
 CB(arch, anal->arch);
 

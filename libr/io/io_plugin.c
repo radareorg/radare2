@@ -1,39 +1,16 @@
-/* radare - LGPL - Copyright 2008-2024 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_io.h>
 #include "config.h"
 
-static RIOPlugin *io_static_plugins[] = {
-	R_IO_STATIC_PLUGINS
-};
-
-R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	R_RETURN_VAL_IF_FAIL (io && plugin, false);
-	RList *plugins = io->libstore->plugins;
-	if (!plugin->meta.name) {
-		return false;
-	}
-	return r_list_append (plugins, plugin) != NULL;
-}
-
-R_API bool r_io_plugin_remove(RIO *io, RIOPlugin *plugin) {
-	// XXX TODO
-	return true;
-}
-
-R_IPI bool r_io_plugins_init(RIO *io) {
-	if (!io) {
-		return false;
-	}
-	if (io->libstore) {
-		r_list_free (io->libstore->plugins);
-		io->libstore->plugins = r_list_newf (io->libstore->free);
-		io->libstore->loaded = false;
-		if (r_lib_defaults ()) {
-			r_libstore_load (io->libstore);
-		}
-	} else {
-		r_libstore_new (&io->libstore, io, io_static_plugins, NULL, NULL, (RLibPluginAddCb)r_io_plugin_add);
+// reset and reload plugins (used by r_io_close_all)
+R_IPI bool r_io_plugins_reset(RIO *io) {
+	R_RETURN_VAL_IF_FAIL (io && io->libstore, false);
+	r_list_free (io->libstore->plugins);
+	io->libstore->plugins = r_list_newf (io->libstore->free);
+	io->libstore->loaded = false;
+	if (r_lib_defaults ()) {
+		r_libstore_load (io->libstore);
 	}
 	return true;
 }

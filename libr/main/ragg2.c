@@ -32,7 +32,7 @@ static void ragg_show_env(bool show_desc);
 static bool __lib_egg_cb(RLibPlugin *pl, void *user, void *data) {
 	REggPlugin *hand = (REggPlugin *)data;
 	REggState *es = (REggState *)user;
-	r_egg_plugin_add (es->e, hand);
+	r_libstore_add (es->e->libstore, hand);
 	return true;
 }
 

@@ -68,7 +68,7 @@ R_API REgg *r_egg_new(void) {
 	if (!egg->patches) {
 		goto beach;
 	}
-	r_libstore_new (&egg->libstore, egg, egg_static_plugins, NULL, NULL, (RLibPluginAddCb)r_egg_plugin_add);
+	r_libstore_new (&egg->libstore, egg, egg_static_plugins, NULL, NULL, NULL);
 	return egg;
 
 beach:
@@ -90,23 +90,6 @@ static int egg_plugin_cmp_query(const void *a, const void *b) {
 	return (p->meta.name && q->name)? strcmp (p->meta.name, q->name): 1;
 }
 
-R_API bool r_egg_plugin_add(REgg *a, REggPlugin *foo) {
-	R_RETURN_VAL_IF_FAIL (a && foo, false);
-	// TODO: cache foo->name length and use memcmp instead of strcmp
-	if (!foo->meta.name) {
-		return false;
-	}
-	if (r_libstore_find_name (a->libstore, foo->meta.name)) {
-		return false;
-	}
-	r_list_append (a->libstore->plugins, foo);
-	return true;
-}
-
-R_API bool r_egg_plugin_remove(REgg *a, REggPlugin *plugin) {
-	// XXX TODO
-	return true;
-}
 
 R_API char *r_egg_tostring(REgg *egg) {
 	R_RETURN_VAL_IF_FAIL (egg, NULL);
