@@ -26,6 +26,7 @@ extern SdbGperf gperf_types_16;
 extern SdbGperf gperf_types_32;
 extern SdbGperf gperf_types_64;
 extern SdbGperf gperf_types_android;
+extern SdbGperf gperf_types_jni;
 extern SdbGperf gperf_types_arm_ios_16;
 extern SdbGperf gperf_types_arm_ios_32;
 extern SdbGperf gperf_types_arm_ios_64;
@@ -64,6 +65,7 @@ static const SdbGperf *gperfs_types[] = {
 	&gperf_types_32,
 	&gperf_types_64,
 	&gperf_types_android,
+	&gperf_types_jni,
 	&gperf_types_arm_ios_16,
 	&gperf_types_arm_ios_32,
 	&gperf_types_arm_ios_64,
@@ -95,7 +97,7 @@ R_API SdbGperf *r_anal_get_gperf_types(const char *k) {
 	R_RETURN_VAL_IF_FAIL (k, NULL);
 	SdbGperf **gp = (SdbGperf**)gperfs_types;
 	char *s = strdup (k);
-	r_str_replace_char (s, '-', '_');
+	r_str_replace_char (s, '_', '-');
 	while (*gp) {
 		SdbGperf *g = *gp;
 		if (!strcmp (s, g->name)) {

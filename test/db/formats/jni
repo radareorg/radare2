@@ -1,0 +1,101 @@
+NAME=jni types auto-load arm64
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk jboolean
+tk jstring
+tk JNIEnv
+tk JNINativeInterface
+EOF
+EXPECT=<<EOF
+typedef
+typedef
+typedef
+struct
+EOF
+RUN
+
+NAME=jni types not loaded without android
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+tk jboolean
+tk JNINativeInterface
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=jni jobjectRefType enum
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+te jobjectRefType
+EOF
+EXPECT=<<EOF
+JNIInvalidRefType = 0x0
+JNILocalRefType = 0x1
+JNIGlobalRefType = 0x2
+JNIWeakGlobalRefType = 0x3
+EOF
+RUN
+
+NAME=jni JNINativeInterface has NewStringUTF
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+ts JNINativeInterface~NewStringUTF?
+ts JNINativeInterface~GetVersion?
+ts JNINativeInterface~FindClass?
+ts JNINativeInterface~GetMethodID?
+EOF
+EXPECT=<<EOF
+1
+1
+1
+1
+EOF
+RUN
+
+NAME=jni function signature arm64
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+aaa
+s sym.Java_JNIFoo_apiTest
+afvt arg1 JNIEnv*
+afvt arg2 jobject
+pdf~apiTest
+EOF
+EXPECT=<<EOF
+/ 80: sym.Java_JNIFoo_apiTest (JNIEnv*arg1, jobject arg2);
+EOF
+RUN
+
+NAME=jni function signature x86
+FILE=bins/elf/jni/jniO0-x86
+CMDS=<<EOF
+e asm.os=android
+aaa
+s sym.Java_JNIFoo_apiTest
+afvt arg_8h JNIEnv*
+pdf~apiTest
+EOF
+EXPECT=<<EOF
+/ 77: sym.Java_JNIFoo_apiTest (JNIEnv*arg_8h, int32_t arg_24h);
+EOF
+RUN
+
+NAME=jni types mips
+FILE=bins/elf/jni/jniO0-mips
+CMDS=<<EOF
+e asm.os=android
+tk JNINativeInterface
+tk jint
+tk jobject
+EOF
+EXPECT=<<EOF
+struct
+typedef
+typedef
+EOF
+RUN

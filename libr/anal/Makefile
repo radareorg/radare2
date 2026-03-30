@@ -62,6 +62,7 @@ OBJS+=d/types-16.o
 OBJS+=d/types-32.o
 OBJS+=d/types-64.o
 OBJS+=d/types-android.o
+OBJS+=d/types-jni.o
 OBJS+=d/types-arm-ios-16.o
 OBJS+=d/types-arm-ios-32.o
 OBJS+=d/types-arm-ios-64.o

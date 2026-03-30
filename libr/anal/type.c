@@ -99,6 +99,9 @@ R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
 	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
 		load_types_from (anal, NULL, "types-darwin");
 	}
+	if (!strcmp (os, "android")) {
+		load_types_from (anal, NULL, "types-jni");
+	}
 	load_types_from (anal, NULL, "types-%d", bits);
 	load_types_from (anal, NULL, "types-%s-%d", os, bits);
 	load_types_from (anal, NULL, "types-%s-%d", arch, bits);
@@ -136,6 +139,9 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	if (subsystem && !strcmp (subsystem, "xnu")) {
 		load_types_from (anal, dir_prefix, "types-iokit");
 	}
+	if (!strcmp (os, "android")) {
+		load_types_from (anal, dir_prefix, "types-jni");
+	}
 	load_types_from (anal, dir_prefix, "types-%d", bits);
 	load_types_from (anal, dir_prefix, "types-%s-%d", os, bits);
 	load_types_from (anal, dir_prefix, "types-%s-%d", arch, bits);
@@ -143,6 +149,11 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 	load_types_from (anal, dir_prefix, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
+}
+
+R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
+	R_RETURN_IF_FAIL (anal && name);
+	load_types_from (anal, NULL, "%s", name);
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {

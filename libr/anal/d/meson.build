@@ -25,6 +25,7 @@ sdb_files = [
   'types-arm-ios-32',
   'types-arm-ios-64',
   'types-android',
+  'types-jni',
   'types-darwin',
   'types-iokit',
   'types-linux',
