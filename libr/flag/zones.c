@@ -89,7 +89,7 @@ R_API bool r_flag_zone_around(RFlag *f, ut64 addr, const char ** R_NULLABLE prev
 	if (next) {
 		*next = NULL;
 	}
-	ut64 h = UT64_MAX, l = 0LL;
+	ut64 h = UT64_MAX, l = UT64_MAX;
 	RList *db = f->zones;
 
 	bool res = false;
