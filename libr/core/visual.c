@@ -1206,8 +1206,8 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 		return addr - amisize;
 	}
 
-	const int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	const int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	const int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	if (minop == maxop) {
 		if (minop == -1) {
 			return addr - 4;
@@ -2044,8 +2044,8 @@ static void cursor_ocur(RCore *core, bool use_ocur) {
 }
 
 static ut64 insoff(RCore *core, int delta) {
-	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 addr = core->addr + delta; // should be core->print->cur
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
 	if (bb) {
@@ -4721,7 +4721,7 @@ R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 		*cols = core->addr - r_anal_function_max_addr (f);
 	} else {
 		r_asm_set_pc (core->rasm, core->addr);
-		int maxopsize = r_anal_archinfo (core->anal,
+		int maxopsize = r_arch_info (core->anal->arch,
 			R_ARCH_INFO_MAXOP_SIZE);
 		size_t bufsize = maxopsize > -1? R_MAX (maxopsize, 32): 32;
 		ut8 *buf = calloc (bufsize, sizeof (ut8));

@@ -1528,8 +1528,8 @@ static void r_panels_cursor_right(RCore *core) {
 
 // copypasta from visual
 static ut64 r_panels_insoff(RCore *core, int delta) {
-	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int maxop = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 addr = core->addr + delta; // should be core->print->cur
 	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, addr - minop);
 	if (bb) {

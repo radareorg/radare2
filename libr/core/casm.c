@@ -87,7 +87,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 		return NULL;
 	}
 
-	const int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const bool bytewise = everyByte || mode == 'i' || mode == 'e';
 	size_t bs = core->blocksize;
 	if (bs < minopsz) {

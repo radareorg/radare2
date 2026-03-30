@@ -455,31 +455,9 @@ R_API void r_anal_purge(RAnal *anal) {
 	r_anal_purge_imports (anal);
 }
 
-static int default_archinfo(int res, int q) {
-	if (res < 1) {
-		return 1;
-	}
-	return res;
-}
-
-// XXX deprecate. use r_arch_info() when all anal plugs get moved
-// XXX this function should NEVER return -1. it should provide all valid values, even if the delegate does not
-R_API R_DEPRECATE int r_anal_archinfo(RAnal *anal, int query) { // R2_590
-	R_RETURN_VAL_IF_FAIL (anal, -1);
-	int res = -1;
-	if (anal->arch->session) {
-		const char *const a = anal->arch->session? anal->arch->session->config->arch: "";
-		const char *const b = anal->config->arch;
-		if (!strcmp (a, b)) {
-			res = r_arch_info (anal->arch, query);
-		}
-	}
-	return default_archinfo (res, query);
-}
-
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (anal, false);
-	const int align = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
+	const int align = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	return align <= 1 || !(addr % align);
 }
 
@@ -774,7 +752,7 @@ R_API bool r_anal_is_prelude(RAnal *anal, ut64 addr, const ut8 *data, int len) {
 		}
 	}
 	if (!data) {
-		const int maxis = r_anal_archinfo (anal, R_ARCH_INFO_MAXOP_SIZE);
+		const int maxis = r_arch_info (anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 		owned = malloc (maxis);
 		if (!owned) {
 			return false;

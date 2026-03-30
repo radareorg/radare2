@@ -1189,7 +1189,7 @@ R_API RAnalOp* r_core_anal_op(RCore *core, ut64 addr, int mask) {
 	}
 	ut8 buf[32];
 	RAnalOp *op = R_NEW0 (RAnalOp);
-	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	if (maxopsz > sizeof (buf)) {
 		maxopsz = sizeof (buf);
 	}
@@ -4702,9 +4702,9 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 	r_cons_break_push (core->cons, NULL, NULL);
 	at = from;
 	st64 asm_sub_varmin = r_config_get_i (core->config, "asm.sub.varmin");
-	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int codealign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (maxopsz < 1) {
 		maxopsz = 4;
 	}
@@ -6021,7 +6021,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = 0; // addr - start;
 	size_t i_old = 0;
 	size_t buf_size = 128 * 1024; // 512KB
-	const size_t maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	const size_t maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 buf_addr = start;
 	buf = malloc (buf_size);
 	size_t buf_i = 0;

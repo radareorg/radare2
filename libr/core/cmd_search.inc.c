@@ -480,7 +480,7 @@ R_API int r_core_search_prelude(RCore *core, ut64 from, ut64 to, const ut8 *buf,
 	r_search_reset (core->search, R_SEARCH_KEYWORD);
 	RSearchKeyword *kw = r_search_keyword_new (buf, blen, mask, mlen, NULL);
 	const bool badpages = r_config_get_b (core->config, "search.badpages");
-	const int afuncali = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
+	const int afuncali = r_arch_info (core->anal->arch, R_ARCH_INFO_FUNC_ALIGN);
 	const int ufuncali = r_config_get_i (core->config, "cfg.fcnalign");
 	if (ufuncali > 1) {
 		kw->align = ufuncali;
@@ -2044,7 +2044,7 @@ static const char *get_syscall_register(RCore *core) {
 static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	int i, bsize = R_MIN (64, core->blocksize);
 	RAnalOp aop;
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	RRegItem *reg_pc = r_reg_get (core->dbg->reg, "PC", -1);
 	const char *screg = get_syscall_register (core);
@@ -2053,7 +2053,7 @@ static int emulateSyscallPrelude(RCore *core, ut64 at, ut64 curpc) {
 	if (!arr) {
 		return -1;
 	}
-	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int codealign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	r_reg_set_value (core->dbg->reg, reg_pc, curpc);
 	// XXX maybe i is not necessary
 	for (i = 0; curpc < at; curpc++, i++) {
@@ -2110,7 +2110,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	int kwidx = core->search->n_kws;
 	RIOMap* map;
 	RListIter *iter;
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	REsil *esil;
 	int align = core->search->align;
@@ -4158,8 +4158,8 @@ static void cmd_slash_ab(RCore *core, int delta, bool infunc) {
 	RAnalOp analop;
 	ut64 at;
 	r_cons_break_push (core->cons, NULL, NULL);
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	if (minopsz < 1 || maxopsz < 1) {
 		R_LOG_ERROR ("Invalid MAX_OPSIZE. assuming 4");
 		minopsz = 4;
@@ -4320,7 +4320,7 @@ static void cmd_search_baddr_asm(RCore *core, RList *res, RIOMap *map) {
 		return;
 	}
 	r_io_read_at (core->io, from, buf, len);
-	int codealign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int codealign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	ut64 idx;
 	for (idx = 0; idx < len; idx++) {
 		ut64 at = from + idx;

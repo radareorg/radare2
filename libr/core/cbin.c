@@ -831,7 +831,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 	}
 	bool havecode = is_executable (obj) | (!!obj->entries);
 	const char *compiled = get_compile_time (bf->sdb);
-	const bool isvm = r_anal_archinfo (core->anal, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+	const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 
 	if (IS_MODE_SET (mode)) {
 		r_config_set (core->config, "file.type", info->rclass);
@@ -900,7 +900,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				r_str_bool (info->big_endian),
 				info->bits,
 				r_str_bool (R_BIN_DBG_STRIPPED & info->dbg_info));
-			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+			int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf (core->cons, "e arch.codealign=%d\n", (v > 0)? v: 0);
 			if (R_STR_ISNOTEMPTY (info->lang) && info->lang[0] != '?') {
 				r_cons_printf (core->cons, "e bin.lang=%s\n", info->lang);
