@@ -54,7 +54,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 	} else {
 		ut8 data[32];
 		addr = core->addr;
-		const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+		const int mininstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 		for (i = 0; i < numinstr; i++) {
 			ut64 prev_addr = r_core_prevop_addr_force (core, addr, 1);
 			if (prev_addr == UT64_MAX) {

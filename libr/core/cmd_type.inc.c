@@ -1748,7 +1748,7 @@ R_API int r_core_get_stacksz(RCore *core, ut64 from, ut64 to) {
 	if (from >= to) {
 		return 0;
 	}
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	while (at < to) {
 		RAnalOp *op = r_core_anal_op (core, at, R_ARCH_OP_MASK_BASIC);
@@ -1817,8 +1817,8 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	}
 	r_esil_setup (esil, core->anal, 0, 0, 0);
 	int i, ret, bsize = R_MAX (64, core->blocksize);
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	const int maxinstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int maxinstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	ut8 *buf = malloc (bsize);
 	if (!buf) {

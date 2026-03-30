@@ -9,7 +9,7 @@
 R_IPI bool isregornum(REsil *esil, const char *str, ut64 *num);
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr) {
-	// r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
+	// r_arch_info (esil->anal->arch, R_ARCH_INFO_DATA_ALIGN);
 	const ut32 da = esil->data_align;
 	return !(da > 0 && addr % da);
 }

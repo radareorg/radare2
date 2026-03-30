@@ -1167,7 +1167,6 @@ typedef enum {
 // Unified plugin action dispatcher (replaces per-action APIs)
 R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFunction *fcn);
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn);
-R_API int r_anal_archinfo(RAnal *anal, int query);
 R_API bool r_anal_is_aligned(RAnal *anal, const ut64 addr);
 R_API bool r_anal_use(RAnal *anal, const char *name);
 R_API bool r_anal_set_reg_profile(RAnal *anal, const char *rp);

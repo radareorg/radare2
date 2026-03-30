@@ -736,7 +736,7 @@ static bool cb_asmcpu(void *user, void *data) {
 		return 0;
 	}
 	r_arch_config_set_cpu (core->rasm->config, node->value);
-	const int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	const int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (v >= 0) {
 		core->anal->config->codealign = v;
 	}
@@ -850,7 +850,7 @@ static bool cb_asmarch(void *user, void *data) {
 		update_asmcpu_options (core, asmcpu);
 	}
 	{
-		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+		int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 		r_config_set_i (core->config, "arch.codealign", (v != -1)? v: 0);
 	}
 	/* reload types and cc info */
@@ -953,7 +953,7 @@ static bool cb_asmbits(void *user, void *data) {
 			r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
 		}
 		/* set codealign */
-		int v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+		int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 		r_config_set_i (core->config, "arch.codealign", (v != -1)? v: 0);
 	}
 	if (core->print) {
@@ -1603,7 +1603,7 @@ static bool cb_dirsrc_base(void *user, void *data) {
 // clang-format off
 static RCoreHelpMessage help_msg_grain = {
 	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select which sandbox permissions stay enabled",
-	"Grain types:", "", "", "",
+	"Grain types:", "", "",
 	"all", "", "allow every sandbox grain",
 	"none", "", "block every optional grain",
 	"disk", "", "allow low-level file descriptors and file open operations",

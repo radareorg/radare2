@@ -300,8 +300,8 @@ static int cmd_seek_opcode_backward(RCore *core, int numinstr) {
 		val = addr - addr2;
 		addr = addr2;
 	} else {
-		const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-		const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+		const int mininstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+		const int maxinstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 		const ut64 bufsize = (ut64)maxinstrsize * numinstr;
 		if (maxinstrsize == mininstrsize) {
 			val = bufsize;
@@ -362,8 +362,8 @@ static int cmd_seek_opcode_forward(RCore *core, int numinstr) {
 	const ut64 oaddr = addr;
 	int val = 0;
 	// N forward instructions
-	const int mininstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	const int maxinstrsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	const int mininstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int maxinstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 bufsize = (ut64)maxinstrsize * numinstr;
 	if (maxinstrsize == mininstrsize) {
 		val = bufsize;

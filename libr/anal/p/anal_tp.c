@@ -1393,7 +1393,7 @@ R_API void r_anal_type_match(RAnal *anal, RAnalFunction *fcn) {
 	TypePropState tp_state = { 0 };
 	Sdb *TDB = anal->sdb_types;
 	int ret;
-	const int mininstrsz = r_anal_archinfo (anal, R_ARCH_INFO_MINOP_SIZE);
+	const int mininstrsz = r_arch_info (anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	int cur_idx, prev_idx = 0;
 	TPState *tps = tps_init (anal);
@@ -1826,7 +1826,7 @@ static bool tp_requirements_met(RAnal *anal, bool noisy) {
 
 static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
-	int maxopsz = r_anal_archinfo (anal, R_ARCH_INFO_MAXOP_SIZE);
+	int maxopsz = r_arch_info (anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	if (maxopsz <= 0) {
 		maxopsz = 32;
 	}

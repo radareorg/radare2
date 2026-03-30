@@ -844,7 +844,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool has_variadic_reg = !!variadic_reg;
 	bool nopskip = anal->opt.nopskip;
 	if (nopskip) {
-		const bool isvm = r_anal_archinfo (anal, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+		const bool isvm = r_arch_info (anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (isvm) {
 			nopskip = false;
 		}
@@ -906,7 +906,7 @@ repeat:
 
 		skip_fail = false;
 		if (nopskip && fcn->addr == at) {
-			const int codealign = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
+			const int codealign = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			if (codealign > 1) {
 				if (at % codealign) {
 					goto noskip;
@@ -3270,7 +3270,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 	}
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
-	const int align = r_anal_archinfo (anal, R_ARCH_INFO_CODE_ALIGN);
+	const int align = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	const ut64 end_write = addr + size;
 
 	r_list_foreach (blocks, it, bb) {

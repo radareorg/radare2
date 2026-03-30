@@ -7097,7 +7097,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	int tail_return_value = 0;
 	int ret;
 	ut8 code[64];
-	int maxopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	RAnalOp op = {0};
 	REsil *esil = core->anal->esil;
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -7116,8 +7116,8 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	ut64 addr = -1;
 	ut64 oaddr = -1;
 	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
-	// int dataAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_DATA_ALIGN);
-	int codeAlign = r_anal_archinfo (esil->anal, R_ARCH_INFO_CODE_ALIGN);
+	// int dataAlign = r_arch_info (esil->anal->arch, R_ARCH_INFO_DATA_ALIGN);
+	int codeAlign = r_arch_info (esil->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	ut64 naddr = addr + minopsz;
 	bool notfirst = false;
 	if (maxopsz > sizeof (code)) {
@@ -7524,30 +7524,30 @@ static void cmd_anal_info(RCore *core, const char *input) {
 		if (input[1] == 'j') { // "aiaj"
 			PJ *pj = r_core_pj_new (core);
 			pj_o (pj);
-			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+			int v = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 			pj_ki (pj, "minopsz", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 			pj_ki (pj, "maxopsz", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_INVOP_SIZE);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_INVOP_SIZE);
 			pj_ki (pj, "invopsz", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_DATA_ALIGN);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_DATA_ALIGN);
 			pj_ki (pj, "dtalign", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			pj_ki (pj, "codealign", v);
 			pj_end (pj);
 			char *s = pj_drain (pj);
 			r_cons_printf (core->cons, "%s\n", s);
 			free (s);
 		} else {
-			int v = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+			int v = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 			r_cons_printf (core->cons, "minopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 			r_cons_printf (core->cons, "maxopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_INVOP_SIZE);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_INVOP_SIZE);
 			r_cons_printf (core->cons, "invopsz %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_DATA_ALIGN);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_DATA_ALIGN);
 			r_cons_printf (core->cons, "dtalign %d\n", v);
-			v = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+			v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf (core->cons, "codealign %d\n", v);
 		}
 		break;
@@ -7972,7 +7972,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	if (!core) {
 		return false;
 	}
-	int maxopsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	int maxopsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	if (maxopsize < 1) {
 		maxopsize = 16;
 	}
@@ -7995,7 +7995,7 @@ static bool cmd_aea_stuff(RCore* core, int mode, ut64 addr, int length, const ch
 	if (!buf) {
 		return false;
 	}
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	(void)r_io_read_at (core->io, addr, (ut8 *)buf, buf_sz);
 	aea_stats_init (&stats);
 	r_reg_arena_push (core->anal->reg);
@@ -8186,7 +8186,7 @@ static void cmd_aespc(RCore *core, ut64 addr, ut64 until_addr, int ninstr) {
 	int i, j = 0;
 	RAnalOp aop = {0};
 	int ret , bsize = R_MAX (4096, core->blocksize);
-	const int mininstrsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
 	ut8 *buf = malloc (bsize);
 	if (R_UNLIKELY (!buf)) {
@@ -10138,7 +10138,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 		return;
 	}
 	memset (block1, -1, bsz);
-	int minop = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	if (minop < 1) {
 		minop = 1;
 	}
@@ -13479,7 +13479,7 @@ static bool archIsThumbable(RCore *core) {
 
 static void aav_cb(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 	const bool asterisk = user;
-	const int arch_align = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	const int arch_align = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	bool vinfun = r_config_get_b (core->config, "anal.vinfun");
 	const int search_align = r_config_get_i (core->config, "search.align");
 	const int align = (search_align > 0)? search_align: arch_align;
@@ -13557,7 +13557,7 @@ static void cmd_anal_aav(RCore *core, const char *input) {
 	char *tmp = strdup (analin);
 	bool asterisk = strchr (input, '*');
 	const bool is_debug = r_config_get_b (core->config, "cfg.debug");
-	int archAlign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int archAlign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	r_config_set_i (core->config, "search.align", archAlign);
 	// r_config_set (core->config, "anal.in", "io.maps.x");
 
@@ -15647,7 +15647,7 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 	ut8 *prelude = (ut8 *)strdup (input);
 	int prelude_sz = r_hex_str2bin (input, prelude);
 	const int bufsz = core->blocksize;
-	int fcnalign = r_anal_archinfo (core->anal, R_ARCH_INFO_FUNC_ALIGN);
+	int fcnalign = r_arch_info (core->anal->arch, R_ARCH_INFO_FUNC_ALIGN);
 	if (fcnalign < 2) {
 		fcnalign = 4;
 	}

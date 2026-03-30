@@ -4077,7 +4077,7 @@ static void ds_print_bytes(RDisasmState *ds) {
 			str = r_hex_bin2strdup (&ds->asmop->bytes, &ds->asmop->size);
 #else
 			if (ds->oplen < 1) {
-				int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+				int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 				ds->oplen = minopsz;
 			}
 			if (ds->analop.bytes && ds->analop.size > ds->oplen) {
@@ -6596,7 +6596,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	bool calc_row_offsets = p->calc_row_offsets;
 	int skip_bytes_flag = 0, skip_bytes_bb = 0;
 	ut8 *nbuf = NULL;
-	const int max_op_size = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
+	const int max_op_size = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 
 	/* pdu vars */
 	bool pdu_condition_met = false;
@@ -7956,8 +7956,8 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 		}
 		pj_a (pj);
 	}
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int opalign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	r_cons_break_push (core->cons, NULL, NULL);
 	for (i = 0; i < l; i += minopsz) {
 		RAnalOp asmop;
@@ -8115,8 +8115,8 @@ R_API int r_core_disasm_pdi_with_buf(RCore *core, ut64 address, ut8 *buf, ut32 n
 	r_cons_break_push (core->cons, NULL, NULL);
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	int midbb = r_config_get_i (core->config, "asm.bbmiddle");
-	int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
-	int opalign = r_anal_archinfo (core->anal, R_ARCH_INFO_CODE_ALIGN);
+	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	int opalign = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	int opinc = (minopsz < opalign)? opalign: minopsz;
 	bool asmmarks = r_config_get_i (core->config, "asm.marks");
 	r_config_set_b (core->config, "asm.marks", false);
@@ -8381,8 +8381,8 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	r_config_set_b (core->config, "asm.lines", false);
 	r_io_cache_push (core->io);
 	const char *strip = r_config_get (core->config, "asm.strip");
-	const int max_op_size = r_anal_archinfo (core->anal, R_ARCH_INFO_MAXOP_SIZE);
-	int min_op_size = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int max_op_size = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	int min_op_size = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;

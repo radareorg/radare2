@@ -6444,7 +6444,7 @@ static void core_print_decompile(RCore *core, const char *input) {
 		count = 1;
 	}
 	ut64 addr = core->addr;
-	int minopsize = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	int minopsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int bits = r_config_get_i (core->config, "asm.bits");
 	RCons *cons = core->cons;
 	REsilC *ec = r_esil_toc_new (core->anal, bits);
@@ -6841,7 +6841,7 @@ static ut64 find_nextop(RCore *core, ut64 addr) {
 	if (op && (int)op->size > 0) {
 		return addr + op->size;
 	}
-	const int minopsz = r_anal_archinfo (core->anal, R_ARCH_INFO_MINOP_SIZE);
+	const int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	// Check for possible integer overflow
 	if (UT64_MAX - (ut64)minopsz < addr) {
 		return UT64_MAX;
