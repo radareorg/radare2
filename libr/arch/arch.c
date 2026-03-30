@@ -293,7 +293,11 @@ R_API int r_arch_info(RArch *a, int query) {
 	// XXX should be unused, because its not tied to a session
 	RArchSession *session = R_UNWRAP2 (a, session);
 	RArchPluginInfoCallback info = R_UNWRAP4 (a, session, plugin, info);
-	return info? info (session, query): -1;
+	int ret = info? info (session, query): -1;
+	if (query == R_ARCH_INFO_INVOP_SIZE && ret < 1) {
+		return 1;
+	}
+	return ret;
 }
 
 R_API bool r_arch_esilcb(RArch *a, RArchEsilAction action) {
