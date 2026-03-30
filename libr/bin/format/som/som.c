@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2025 - pancake */
 
 #define R_LOG_ORIGIN "bin.som"
+#define SOM_STRING_TABLE_LIMIT (1U << 24)
 
 #include "som.h"
 #include <string.h>
@@ -68,6 +69,10 @@ R_IPI bool r_bin_som_check_buffer(RBuffer *b) {
 
 static void read_string_table(RBuffer *b, ut64 location, ut32 size, char **strings) {
 	if (location > 0 && size > 0) {
+		const ut64 file_size = r_buf_size (b);
+		if (size > SOM_STRING_TABLE_LIMIT || location >= file_size || (ut64)size > file_size - location) {
+			return;
+		}
 		char *data = malloc (size);
 		if (data) {
 			if (r_buf_read_at (b, location, (ut8 *)data, size) == size) {
