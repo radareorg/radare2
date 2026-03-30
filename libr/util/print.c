@@ -362,7 +362,11 @@ R_API bool r_print_have_cursor(RPrint *p, int cur, int len) {
 	if (p->ocur != -1) {
 		int from = p->ocur;
 		int to = p->cur;
-		r_num_minmax_swap_i (&from, &to);
+		if (from > to) {
+				int tmp = from;
+				from = to;
+				to = tmp;
+			}
 		do {
 			if (cur + len - 1 >= from && cur + len - 1 <= to) {
 				return true;
