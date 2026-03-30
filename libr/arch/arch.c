@@ -294,8 +294,13 @@ R_API int r_arch_info(RArch *a, int query) {
 	RArchSession *session = R_UNWRAP2 (a, session);
 	RArchPluginInfoCallback info = R_UNWRAP4 (a, session, plugin, info);
 	int ret = info? info (session, query): -1;
-	if (query == R_ARCH_INFO_INVOP_SIZE && ret < 1) {
-		return 1;
+	switch (query) {
+	case R_ARCH_INFO_INVOP_SIZE:
+	case R_ARCH_INFO_CODE_ALIGN:
+	case R_ARCH_INFO_DATA_ALIGN:
+		if (ret < 1) {
+			return 1;
+		}
 	}
 	return ret;
 }
