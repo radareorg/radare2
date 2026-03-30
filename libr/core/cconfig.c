@@ -1602,15 +1602,16 @@ static bool cb_dirsrc_base(void *user, void *data) {
 
 // clang-format off
 static RCoreHelpMessage help_msg_grain = {
-	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "set grain types to mask out",
+	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select which sandbox permissions stay enabled",
 	"Grain types:", "", "", "",
-	"all", "", "",
-	"none", "", "",
-	"disk", "", "",
-	"files", "", "",
-	"exec", "", "",
-	"socket", "", "",
-	"network", "", NULL
+	"all", "", "allow every sandbox grain",
+	"none", "", "block every optional grain",
+	"disk", "", "allow low-level file descriptors and file open operations",
+	"files", "", "allow stdio-style file and directory access (fopen, opendir, chdir)",
+	"exec", "", "allow process execution and kill/system helpers",
+	"socket", "", "allow socket creation, listening and socket state checks",
+	"network", "", "allow non-localhost network connections and HTTP requests",
+	NULL
 };
 // clang-format on
 
@@ -4330,7 +4331,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("cfg.fortunes.tts", "false", "speak out the fortune");
 	SETS ("cfg.prefixdump", "dump", "filename prefix for automated dumps");
 	SETCB ("cfg.sandbox", "false", &cb_cfgsanbox, "sandbox mode disables systems and open on upper directories");
-	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select which sand grains must pass the filter (all, net, files, socket, exec, disk)");
+	SETCB ("cfg.sandbox.grain", "all", &cb_cfgsanbox_grain, "select sandbox permissions to keep enabled (all, none, disk, files, exec, socket, network)");
 	SETB ("cfg.wseek", "false", "Seek after write");
 	SETCB ("cfg.bigendian", "false", &cb_bigendian, "use little (false) or big (true) endianness");
 	SETCB ("cfg.float", "ieee754", &cb_cfg_float, "FPU profile for floating point operations (use -e cfg.float=? for list)");
