@@ -1603,7 +1603,7 @@ static bool cb_dirsrc_base(void *user, void *data) {
 // clang-format off
 static RCoreHelpMessage help_msg_grain = {
 	"Usage:", "e cfg.sandbox.grain=arg[,arg...]", "select which sandbox permissions stay enabled",
-	"Grain types:", "", "", "",
+	"Grain types:", "", "",
 	"all", "", "allow every sandbox grain",
 	"none", "", "block every optional grain",
 	"disk", "", "allow low-level file descriptors and file open operations",
