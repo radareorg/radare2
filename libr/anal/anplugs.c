@@ -155,14 +155,8 @@ static bool plugin_in_list(RList *list, RAnalPlugin *plugin) {
 }
 
 static RAnalPlugin *plugin_find_by_name(RAnal *anal, const char *name) {
-	RListIter *iter;
-	RAnalPlugin *p;
-	r_list_foreach (anal->libstore->plugins, iter, p) {
-		if (!strcmp (p->meta.name, name)) {
-			return p;
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
+	return r_libstore_find_name (anal->libstore, name);
 }
 
 static void plugin_append_if_valid(RList *list, RAnal *anal, RAnalPlugin *p, RAnalPluginAction action) {

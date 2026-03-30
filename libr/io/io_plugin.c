@@ -8,8 +8,8 @@ static RIOPlugin *io_static_plugins[] = {
 };
 
 R_API bool r_io_plugin_add(RIO *io, RIOPlugin *plugin) {
-	RList *plugins = io && io->libstore? io->libstore->plugins: NULL;
-	R_RETURN_VAL_IF_FAIL (plugins && plugin, false);
+	R_RETURN_VAL_IF_FAIL (io && plugin, false);
+	RList *plugins = io->libstore->plugins;
 	if (!plugin->meta.name) {
 		return false;
 	}
@@ -56,14 +56,8 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 }
 
 R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
-	RListIter *iter;
-	RIOPlugin *iop;
-	r_list_foreach (io->libstore->plugins, iter, iop) {
-		if (!strcmp (name, iop->meta.name)) {
-			return iop;
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (io && name, NULL);
+	return r_libstore_find_name (io->libstore, name);
 }
 
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {

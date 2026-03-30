@@ -48,27 +48,19 @@ R_API bool r_esil_plugin_add(REsil *esil, REsilPlugin *plugin) {
 
 R_API void r_esil_plugin_del(REsil *esil, const char *name) {
 	R_RETURN_IF_FAIL (esil && esil->libstore->plugins && name);
-	r_esil_plugin_deactivate(esil, name);
-	RListIter *iter;
-	REsilPlugin *ep;
-	r_list_foreach (esil->libstore->plugins, iter, ep) {
-		if (!strcmp (ep->meta.name, name)) {
-			r_list_delete (esil->libstore->plugins, iter);
-			return;
-		}
+	r_esil_plugin_deactivate (esil, name);
+	REsilPlugin *ep = r_libstore_find_name (esil->libstore, name);
+	if (ep) {
+		r_list_delete_data (esil->libstore->plugins, ep);
 	}
 }
 
 //this crap solely exists for trash generics in core
 R_API bool r_esil_plugin_remove(REsil *esil, REsilPlugin *plugin) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->libstore->plugins && plugin && plugin->meta.name, false);
-	RListIter *iter;
-	REsilPlugin *ep;
-	r_list_foreach (esil->libstore->plugins, iter, ep) {
-		if (ep == plugin) {
-			r_esil_plugin_del (esil, ep->meta.name);
-			return true;
-		}
+	if (r_libstore_find_name (esil->libstore, plugin->meta.name)) {
+		r_esil_plugin_del (esil, plugin->meta.name);
+		return true;
 	}
 	return false;
 }
@@ -91,19 +83,16 @@ R_API bool r_esil_plugin_activate(REsil *esil, const char *name) {
 	if (_get_active_plugin (esil, name)) {
 		return false;
 	}
-	RListIter *iter;
-	REsilPlugin *ep;
-	r_list_foreach (esil->libstore->plugins, iter, ep) {
-		if (!strcmp (ep->meta.name, name)) {
-			REsilActivePlugin *eap = R_NEW (REsilActivePlugin);
-			if (!eap) {
-				return false;
-			}
-			eap->plugin = ep;
-			eap->user = ep->init (esil);
-			r_list_append (esil->active_plugins, eap);
-			return true;
+	REsilPlugin *ep = r_libstore_find_name (esil->libstore, name);
+	if (ep) {
+		REsilActivePlugin *eap = R_NEW (REsilActivePlugin);
+		if (!eap) {
+			return false;
 		}
+		eap->plugin = ep;
+		eap->user = ep->init (esil);
+		r_list_append (esil->active_plugins, eap);
+		return true;
 	}
 	return false;
 }

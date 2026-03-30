@@ -75,14 +75,7 @@ R_API R_MUSTUSE RFS *r_fs_new(void) {
 
 R_API RFSPlugin *r_fs_plugin_get(RFS *fs, const char *name) {
 	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
-	RListIter *iter;
-	RFSPlugin *p;
-	r_list_foreach (fs->libstore->plugins, iter, p) {
-		if (!strcmp (p->meta.name, name)) {
-			return p;
-		}
-	}
-	return NULL;
+	return r_libstore_find_name (fs->libstore, name);
 }
 
 R_API bool r_fs_cmd(RFS *fs, const char *cmd) {

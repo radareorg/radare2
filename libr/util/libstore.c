@@ -3,6 +3,16 @@
 #include <r_util.h>
 #include <r_lib.h>
 
+typedef struct {
+	RPluginMeta meta;
+} RLibStoreNamedPlugin;
+
+static int plugin_cmp_name(const void *a, const void *b) {
+	const RLibStoreNamedPlugin *plugin = a;
+	const char *name = b;
+	return (plugin && plugin->meta.name && name)? strcmp (plugin->meta.name, name): 1;
+}
+
 R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFree freefn, RLibStoreLoadCallback load, RLibPluginAddCb add) {
 	RLibStore *store = R_NEW0 (RLibStore);
 	store->user = user;
@@ -28,6 +38,27 @@ R_API void r_libstore_free(RLibStore *store) {
 		r_list_free (store->ldrs);
 	}
 	free (store);
+}
+
+R_API void *r_libstore_find_name_in(const RLibStore *store, RList *list, const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	return r_libstore_find_in (store, list, name, plugin_cmp_name);
+}
+
+R_API void *r_libstore_find_name(const RLibStore *store, const char *name) {
+	R_RETURN_VAL_IF_FAIL (name, NULL);
+	return r_libstore_find (store, name, plugin_cmp_name);
+}
+
+R_API void *r_libstore_find_in(const RLibStore *store, RList *list, const void *needle, RListComparator cmp) {
+	R_RETURN_VAL_IF_FAIL (store && cmp, NULL);
+	RListIter *iter = r_list_find (list, needle, cmp);
+	return iter? iter->data: NULL;
+}
+
+R_API void *r_libstore_find(const RLibStore *store, const void *needle, RListComparator cmp) {
+	R_RETURN_VAL_IF_FAIL (store && cmp, NULL);
+	return r_libstore_find_in (store, store->plugins, needle, cmp);
 }
 
 R_API bool r_libstore_load(RLibStore *store) {

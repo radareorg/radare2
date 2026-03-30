@@ -98,6 +98,24 @@ R_API void r_lang_set_user_ptr(RLang *lang, void *user) {
 	lang->user = user;
 }
 
+static int lang_plugin_cmp_ext(const void *a, const void *b) {
+	const RLangPlugin *h = a;
+	const char *ext = b;
+	return (h && h->ext && ext)? r_str_casecmp (h->ext, ext): 1;
+}
+
+static int lang_plugin_cmp_alias(const void *a, const void *b) {
+	const RLangPlugin *h = a;
+	const char *name = b;
+	if (!h || !name) {
+		return 1;
+	}
+	if (h->alias && !r_str_casecmp (h->alias, name)) {
+		return 0;
+	}
+	return 1;
+}
+
 R_API bool r_lang_define(RLang *lang, const char *type, const char *name, void *value) {
 	RLangDef *def;
 	RListIter *iter;
@@ -183,32 +201,21 @@ R_API bool r_lang_plugin_remove(RLang *lang, RLangPlugin *plugin) {
 }
 
 R_API RLangPlugin *r_lang_get_by_extension(RLang *lang, const char *ext) {
-	RListIter *iter;
-	RLangPlugin *h;
+	R_RETURN_VAL_IF_FAIL (lang && ext, NULL);
 	const char *p = r_str_lchr (ext, '.');
 	if (p) {
 		ext = p + 1;
 	}
-	r_list_foreach (lang->libstore->plugins, iter, h) {
-		if (!r_str_casecmp (h->ext, ext)) {
-			return h;
-		}
-	}
-	return NULL;
+	return r_libstore_find (lang->libstore, ext, lang_plugin_cmp_ext);
 }
 
 R_API RLangPlugin *r_lang_get_by_name(RLang *lang, const char *name) {
-	RListIter *iter;
-	RLangPlugin *h;
-	r_list_foreach (lang->libstore->plugins, iter, h) {
-		if (!r_str_casecmp (h->meta.name, name)) {
-			return h;
-		}
-		if (h->alias && !r_str_casecmp (h->alias, name)) {
-			return h;
-		}
+	R_RETURN_VAL_IF_FAIL (lang && name, NULL);
+	RLangPlugin *h = r_libstore_find_name (lang->libstore, name);
+	if (h) {
+		return h;
 	}
-	return NULL;
+	return r_libstore_find (lang->libstore, name, lang_plugin_cmp_alias);
 }
 
 R_API RLangSession *r_lang_session(RLang *lang, RLangPlugin *h) {

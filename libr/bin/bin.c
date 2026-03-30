@@ -393,25 +393,15 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 }
 
 R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
-	R_RETURN_VAL_IF_FAIL (plugins && name, NULL);
-
-	RBinPlugin *plugin;
-	RListIter *it;
-	r_list_foreach (plugins, it, plugin) {
-		if (!strcmp (plugin->meta.name, name)) {
-			return plugin;
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
+	return r_libstore_find_name (bin->libstore, name);
 }
 
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
+	R_RETURN_VAL_IF_FAIL (bin && buf, NULL);
+	RList *plugins = bin->libstore->plugins;
 	RBinPlugin *plugin;
 	RListIter *it;
-
-	R_RETURN_VAL_IF_FAIL (plugins && buf, NULL);
 
 	r_list_foreach (plugins, it, plugin) {
 		if (plugin->check) {
@@ -424,45 +414,29 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer
 }
 
 R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
-	RList *xtrs = bin && bin->libstore? bin->libstore->xtrs: NULL;
-	RBinXtrPlugin *xtr;
-	RListIter *it;
-
-	R_RETURN_VAL_IF_FAIL (xtrs && name, NULL);
-
-	// TODO: use a hashtable here
-	r_list_foreach (xtrs, it, xtr) {
-		if (!strcmp (xtr->meta.name, name)) {
-			return xtr;
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
+	return r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
 }
 
 R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
-	RListIter *it;
-	RBinPlugin *plugin;
-
-	R_RETURN_VAL_IF_FAIL (plugins && foo, false);
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
+	RList *plugins = bin->libstore->plugins;
 	if (foo->init) {
 		foo->init (bin);
 	}
 
-	r_list_foreach (plugins, it, plugin) {
-		if (!strcmp (plugin->meta.name, foo->meta.name)) {
-			return false;
-		}
+	if (r_libstore_find_name (bin->libstore, foo->meta.name)) {
+		return false;
 	}
-	plugin = R_NEW0 (RBinPlugin);
+	RBinPlugin *plugin = R_NEW0 (RBinPlugin);
 	memcpy (plugin, foo, sizeof (RBinPlugin));
 	r_list_prepend (plugins, plugin);
 	return true;
 }
 
 R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
-	R_RETURN_VAL_IF_FAIL (plugins && plugin, false);
+	R_RETURN_VAL_IF_FAIL (bin && plugin, false);
+	RList *plugins = bin->libstore->plugins;
 	RListIter *iter;
 	RBinPlugin *plug;
 	// this loop is necessary because r_bin_plugin_add dups the passed RBinPlugin
@@ -490,17 +464,10 @@ R_API bool r_bin_plugin_remove(RBin *bin, RBinPlugin *plugin) {
 }
 
 R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
-	RList *ldrs = bin && bin->libstore? bin->libstore->ldrs: NULL;
-	RListIter *it;
-	RBinLdrPlugin *ldr;
-
-	R_RETURN_VAL_IF_FAIL (ldrs && foo, false);
-
-	// avoid duplicates
-	r_list_foreach (ldrs, it, ldr) {
-		if (!strcmp (ldr->meta.name, foo->meta.name)) {
-			return false;
-		}
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
+	RList *ldrs = bin->libstore->ldrs;
+	if (r_libstore_find_name_in (bin->libstore, ldrs, foo->meta.name)) {
+		return false;
 	}
 	RBinLdrPlugin *p = R_NEW0 (RBinLdrPlugin);
 	if (p) {
@@ -511,17 +478,10 @@ R_API bool r_bin_ldr_add(RBin *bin, RBinLdrPlugin *foo) {
 }
 
 R_API bool r_bin_xtr_add(RBin *bin, RBinXtrPlugin *foo) {
-	RList *xtrs = bin && bin->libstore? bin->libstore->xtrs: NULL;
-	RListIter *it;
-	RBinXtrPlugin *xtr;
-
-	R_RETURN_VAL_IF_FAIL (xtrs && foo, false);
-
-	// avoid duplicates
-	r_list_foreach (xtrs, it, xtr) {
-		if (!strcmp (xtr->meta.name, foo->meta.name)) {
-			return false;
-		}
+	R_RETURN_VAL_IF_FAIL (bin && foo, false);
+	RList *xtrs = bin->libstore->xtrs;
+	if (r_libstore_find_name_in (bin->libstore, xtrs, foo->meta.name)) {
+		return false;
 	}
 	RBinXtrPlugin *p = R_NEW0 (RBinXtrPlugin);
 	if (p) {
@@ -600,20 +560,20 @@ static void __printXtrPluginDetails(RBin *bin, RBinXtrPlugin *bx, int json) {
 
 // TODO: move to libr/core/clist
 R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
-	RList *xtrs = bin && bin->libstore? bin->libstore->xtrs: NULL;
+	R_RETURN_VAL_IF_FAIL (bin && name, false);
+	RList *plugins = bin->libstore->plugins;
+	RList *xtrs = bin->libstore->xtrs;
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinPlugin *prefix_bp = NULL;
 	RBinXtrPlugin *prefix_bx = NULL;
 
-	R_RETURN_VAL_IF_FAIL (plugins && xtrs && name, false);
-
+	bp = r_bin_get_binplugin_by_name (bin, name);
+	if (bp) {
+		return r_bin_print_plugin_details (bin, bp, pj, json);
+	}
 	r_list_foreach (plugins, it, bp) {
-		if (!strcmp (bp->meta.name, name)) {
-			return r_bin_print_plugin_details (bin, bp, pj, json);
-		}
 		if (!prefix_bp && r_str_startswith (bp->meta.name, name)) {
 			prefix_bp = bp;
 		}
@@ -621,11 +581,12 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	if (prefix_bp) {
 		return r_bin_print_plugin_details (bin, prefix_bp, pj, json);
 	}
+	bx = r_bin_get_xtrplugin_by_name (bin, name);
+	if (bx) {
+		__printXtrPluginDetails (bin, bx, json);
+		return true;
+	}
 	r_list_foreach (xtrs, it, bx) {
-		if (!strcmp (bx->meta.name, name)) {
-			__printXtrPluginDetails (bin, bx, json);
-			return true;
-		}
 		if (!prefix_bx && r_str_startswith (bx->meta.name, name)) {
 			prefix_bx = bx;
 		}
@@ -641,9 +602,10 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 
 // TODO: this is now a generic function that can reuse RPluginMeta
 R_API void r_bin_list(RBin *bin, PJ *pj, int format) {
-	RList *plugins = bin && bin->libstore? bin->libstore->plugins: NULL;
-	RList *xtrs = bin && bin->libstore? bin->libstore->xtrs: NULL;
-	RList *ldrs = bin && bin->libstore? bin->libstore->ldrs: NULL;
+	R_RETURN_IF_FAIL (bin);
+	RList *plugins = bin->libstore->plugins;
+	RList *xtrs = bin->libstore->xtrs;
+	RList *ldrs = bin->libstore->ldrs;
 	RListIter *it;
 	RBinPlugin *bp;
 	RBinXtrPlugin *bx;

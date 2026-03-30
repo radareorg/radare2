@@ -5,24 +5,23 @@
 R_IPI char* kvc_parse(const char* header_content, char **errmsg);
 
 static RAnalPlugin *resolve_plugin (RAnal *anal, int type) {
-	RAnalPlugin *p;
-	RListIter *iter;
+	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	const char *tpp = anal->opt.tparser;
-	r_list_foreach (anal->libstore->plugins, iter, p) {
-		if (!strcmp (tpp, p->meta.name)) {
-			switch (type) {
-			case 0:
-				if (p->tparse_text) {
-					return p;
-				}
-				break;
-			case 1:
-				if (p->tparse_file) {
-					return p;
-				}
-				break;
-			}
+	RAnalPlugin *p = r_libstore_find_name (anal->libstore, tpp);
+	if (!p) {
+		return NULL;
+	}
+	switch (type) {
+	case 0:
+		if (p->tparse_text) {
+			return p;
 		}
+		break;
+	case 1:
+		if (p->tparse_file) {
+			return p;
+		}
+		break;
 	}
 	return NULL;
 }

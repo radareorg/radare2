@@ -4,28 +4,21 @@
 
 R_API bool r_bp_plugin_del(RBreakpoint *bp, const char *name) {
 	R_RETURN_VAL_IF_FAIL (bp && name, false);
-	RListIter *iter;
-	RBreakpointPlugin *h;
-	r_list_foreach (bp->libstore->plugins, iter, h) {
-		if (!strcmp (h->meta.name, name)) {
-			if (bp->cur == h) {
-				bp->cur = NULL;
-			}
-			r_list_delete (bp->libstore->plugins, iter);
-			return true;
+	RBreakpointPlugin *h = r_libstore_find_name (bp->libstore, name);
+	if (h) {
+		if (bp->cur == h) {
+			bp->cur = NULL;
 		}
+		r_list_delete_data (bp->libstore->plugins, h);
+		return true;
 	}
 	return false;
 }
 
 R_API bool r_bp_plugin_add(RBreakpoint *bp, RBreakpointPlugin *foo) {
 	R_RETURN_VAL_IF_FAIL (bp && foo, false);
-	RListIter *iter;
-	RBreakpointPlugin *h;
-	r_list_foreach (bp->libstore->plugins, iter, h) {
-		if (!strcmp (h->meta.name, foo->meta.name)) {
-			return false;
-		}
+	if (r_libstore_find_name (bp->libstore, foo->meta.name)) {
+		return false;
 	}
 	r_list_append (bp->libstore->plugins, foo);
 	return true;
@@ -38,14 +31,11 @@ R_API bool r_bp_plugin_remove(RBreakpoint *bp, RBreakpointPlugin *plugin) {
 
 R_API bool r_bp_use(RBreakpoint *bp, const char *name, int bits) {
 	R_RETURN_VAL_IF_FAIL (bp && name, false);
-	RListIter *iter;
 	bp->bits = bits;
-	RBreakpointPlugin *h;
-	r_list_foreach (bp->libstore->plugins, iter, h) {
-		if (!strcmp (h->meta.name, name)) {
-			bp->cur = h;
-			return true;
-		}
+	RBreakpointPlugin *h = r_libstore_find_name (bp->libstore, name);
+	if (h) {
+		bp->cur = h;
+		return true;
 	}
 	return false;
 }

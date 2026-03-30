@@ -32,15 +32,15 @@ R_IPI void r_debug_plugins_fini(RDebug *dbg) {
 	dbg->libstore = NULL;
 }
 
+static int debug_plugin_session_cmp_name(const void *a, const void *b) {
+	const RDebugPluginSession *ds = a;
+	const char *name = b;
+	return (ds && ds->plugin && ds->plugin->meta.name && name)? strcmp (ds->plugin->meta.name, name): 1;
+}
+
 static RDebugPluginSession *find_plugin_by_name(RDebug *dbg, const char *name) {
-	RListIter *iter;
-	RDebugPluginSession *ds;
-	r_list_foreach (dbg->libstore->plugins, iter, ds) {
-		if (ds->plugin && !strcmp (ds->plugin->meta.name, name)) {
-			return ds;
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (dbg && name, NULL);
+	return r_libstore_find (dbg->libstore, name, debug_plugin_session_cmp_name);
 }
 
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
