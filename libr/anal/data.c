@@ -284,6 +284,13 @@ R_API char *r_anal_data_tostring(RAnalData *d, RConsPrintablePalette * R_NULLABL
 	case R_ANAL_DATA_TYPE_PATTERN:
 		r_strbuf_append (sb, "pattern");
 		break;
+	case R_ANAL_DATA_TYPE_ZERO:
+		if (pal) {
+			r_strbuf_appendf (sb, "%szero"Color_RESET, pal->b0x00);
+		} else {
+			r_strbuf_append (sb, "zero");
+		}
+		break;
 	case R_ANAL_DATA_TYPE_UNKNOWN:
 		if (pal) {
 			r_strbuf_appendf (sb, "%sunknown"Color_RESET, pal->invalid);
@@ -428,7 +435,7 @@ R_API RAnalData *r_anal_data(RAnal *anal, ut64 addr, const ut8 *buf, int size, i
 			}
 		}
 		if (zeros == len) {
-			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_INVALID, -1, buf, 0); // XXX should be TYPE_ZERO
+			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_ZERO, -1, buf, 0);
 		}
 		if (is_sequence > len - 2) {
 			return r_anal_data_new (addr, R_ANAL_DATA_TYPE_SEQUENCE, -1, buf, is_sequence);
