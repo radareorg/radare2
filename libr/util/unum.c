@@ -191,7 +191,7 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 }
 
 // check that underscores in "1000_f000" are every 4 hex digits from the right
-static bool r_hex_validate_underscore(const char *s) {
+static bool validate_hex_underscores(const char *s) {
 	int i, n = 0;
 	for (i = strlen (s) - 1; i >= 0; i--) {
 		if (s[i] == '_') {
@@ -349,7 +349,7 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
-			if (!r_hex_validate_underscore (str + 2)) {
+			if (!validate_hex_underscores (str + 2)) {
 				error (num, "misplaced underscore in hex literal");
 			}
 			char *s = strdup (str + 2);
