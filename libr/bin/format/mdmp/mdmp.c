@@ -5,9 +5,16 @@
 #include "mdmp.h"
 
 static ut32 safe_loop_count(ut64 offset, ut32 count, size_t item_size, ut64 obj_size, const char *item_name) {
-	if (offset + (ut64)count * item_size > obj_size) {
+	ut64 total_size;
+
+	if (!item_size || offset >= obj_size) {
+		R_LOG_WARN ("%s descriptor out of bounds, reducing from %u to 0",
+			item_name, count);
+		return 0;
+	}
+	if (r_mul_overflow ((ut64)count, (ut64)item_size, &total_size) || offset > obj_size - total_size) {
 		ut32 max_count = (obj_size - offset) / item_size;
-		R_LOG_WARN ("%s descriptor out of bounds, reducing from %d to %d",
+		R_LOG_WARN ("%s descriptor out of bounds, reducing from %u to %u",
 			item_name, count, max_count);
 		return max_count;
 	}
