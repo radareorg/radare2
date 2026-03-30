@@ -767,12 +767,12 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 addr) {
 		addr &= f->mask;
 	}
 	const RList *list = r_flag_get_list (f, addr);
-	char *p = NULL;
+	RStrBuf *sb = r_strbuf_new ("");
 	r_list_foreach (list, iter, fi) {
-		p = r_str_appendf (p, "%s%s",
+		r_strbuf_appendf (sb, "%s%s",
 			fi->realname, iter->n? ",": "");
 	}
-	return p;
+	return r_strbuf_drain (sb);
 }
 
 // Set a new flag named `name` at addr. If there's already a flag with
