@@ -26,19 +26,22 @@ static RBinPlugin *bin_static_plugins[] = { R_BIN_STATIC_PLUGINS, NULL };
 static RBinXtrPlugin *bin_xtr_static_plugins[] = { R_BIN_XTR_STATIC_PLUGINS, NULL };
 static RBinLdrPlugin *bin_ldr_static_plugins[] = { R_BIN_LDR_STATIC_PLUGINS, NULL };
 
-static bool bin_load_plugins(RLibStore *store) {
-	RBin *bin = store->user;
-	r_lib_add_static (bin, bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
-	r_lib_add_static (bin, bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
-	r_lib_add_static (bin, bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
-	return true;
-}
-
 static void bin_plugin_fini(void *user, void *plugin) {
 	RBinPlugin *plug = plugin;
 	if (plug && plug->fini) {
 		plug->fini (user);
 	}
+}
+
+static bool bin_load_plugins(RLibStore *store) {
+	RBin *bin = store->user;
+	store->fini = bin_plugin_fini;
+	store->xtrs = r_list_newf ((RListFree)free);
+	store->ldrs = r_list_newf ((RListFree)free);
+	r_lib_add_static (bin, bin_static_plugins, (RLibPluginAddCb)r_bin_plugin_add);
+	r_lib_add_static (bin, bin_xtr_static_plugins, (RLibPluginAddCb)r_bin_xtr_add);
+	r_lib_add_static (bin, bin_ldr_static_plugins, (RLibPluginAddCb)r_bin_ldr_add);
+	return true;
 }
 
 
@@ -878,13 +881,8 @@ R_API RBin *r_bin_new(void) {
 	bin->cur = NULL;
 	bin->ids = r_id_storage_new (0, ST32_MAX);
 
-	RList *xtrs = r_list_newf ((RListFree)free);
-	RList *ldrs = r_list_newf ((RListFree)free);
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	r_libstore_new (&bin->libstore, bin, NULL, (RListFree)free, bin_load_plugins, NULL);
-	bin->libstore->fini = bin_plugin_fini;
-	bin->libstore->xtrs = xtrs;
-	bin->libstore->ldrs = ldrs;
 	return bin;
 }
 
