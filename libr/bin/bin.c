@@ -392,11 +392,6 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	return res;
 }
 
-R_IPI RBinPlugin *r_bin_get_binplugin_by_name(RBin *bin, const char *name) {
-	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
-	return r_libstore_find_name (bin->libstore, name);
-}
-
 R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer *buf) {
 	R_RETURN_VAL_IF_FAIL (bin && buf, NULL);
 	RList *plugins = bin->libstore->plugins;
@@ -411,11 +406,6 @@ R_API RBinPlugin *r_bin_get_binplugin_by_buffer(RBin *bin, RBinFile *bf, RBuffer
 		}
 	}
 	return NULL;
-}
-
-R_IPI RBinXtrPlugin *r_bin_get_xtrplugin_by_name(RBin *bin, const char *name) {
-	R_RETURN_VAL_IF_FAIL (bin && name, NULL);
-	return r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
 }
 
 R_API bool r_bin_plugin_add(RBin *bin, RBinPlugin *foo) {
@@ -569,7 +559,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	RBinPlugin *prefix_bp = NULL;
 	RBinXtrPlugin *prefix_bx = NULL;
 
-	bp = r_bin_get_binplugin_by_name (bin, name);
+	bp = r_libstore_find_name (bin->libstore, name);
 	if (bp) {
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
@@ -581,7 +571,7 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	if (prefix_bp) {
 		return r_bin_print_plugin_details (bin, prefix_bp, pj, json);
 	}
-	bx = r_bin_get_xtrplugin_by_name (bin, name);
+	bx = r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, name);
 	if (bx) {
 		__printXtrPluginDetails (bin, bx, json);
 		return true;
@@ -1200,7 +1190,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 R_API RBuffer *r_bin_create(RBin *bin, const char *p, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && p && opt, NULL);
 
-	RBinPlugin *plugin = r_bin_get_binplugin_by_name (bin, p);
+	RBinPlugin *plugin = r_libstore_find_name (bin->libstore, p);
 	if (!plugin) {
 		R_LOG_WARN ("Cannot find RBin plugin named '%s'", p);
 		return NULL;

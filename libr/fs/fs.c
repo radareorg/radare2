@@ -73,11 +73,6 @@ R_API R_MUSTUSE RFS *r_fs_new(void) {
 	return fs;
 }
 
-R_API RFSPlugin *r_fs_plugin_get(RFS *fs, const char *name) {
-	R_RETURN_VAL_IF_FAIL (fs && name, NULL);
-	return r_libstore_find_name (fs->libstore, name);
-}
-
 R_API bool r_fs_cmd(RFS *fs, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (fs && cmd, false);
 	RFSRoot *root = NULL;
@@ -154,7 +149,7 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *pa
 	if (fstype == NULL) {
 		return NULL;
 	}
-	RFSPlugin *p = r_fs_plugin_get (fs, fstype);
+	RFSPlugin *p = r_libstore_find_name (fs->libstore, fstype);
 	if (!p) {
 		R_LOG_ERROR ("Invalid filesystem type '%s'", fstype);
 		free (heapFsType);

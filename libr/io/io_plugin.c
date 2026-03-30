@@ -55,11 +55,6 @@ R_API RIOPlugin *r_io_plugin_resolve(RIO *io, const char *filename, bool many) {
 	return &r_io_plugin_default;
 }
 
-R_API RIOPlugin *r_io_plugin_byname(RIO *io, const char *name) {
-	R_RETURN_VAL_IF_FAIL (io && name, NULL);
-	return r_libstore_find_name (io->libstore, name);
-}
-
 R_API int r_io_plugin_read(RIODesc *desc, ut8 *buf, int len) {
 	if (!buf || !desc || !desc->plugin || len < 1 || !(desc->perm & R_PERM_R)) {
 		return 0;

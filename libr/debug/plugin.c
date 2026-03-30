@@ -38,20 +38,15 @@ static int debug_plugin_session_cmp_name(const void *a, const void *b) {
 	return (ds && ds->plugin && ds->plugin->meta.name && name)? strcmp (ds->plugin->meta.name, name): 1;
 }
 
-static RDebugPluginSession *find_plugin_by_name(RDebug *dbg, const char *name) {
-	R_RETURN_VAL_IF_FAIL (dbg && name, NULL);
-	return r_libstore_find (dbg->libstore, name, debug_plugin_session_cmp_name);
-}
-
 R_API bool r_debug_use(RDebug *dbg, const char *str) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
 	const char *aname = R_UNWRAP4 (dbg, anal, config, arch);
 	if (R_STR_ISNOTEMPTY (str)) {
-		RDebugPluginSession *ds = find_plugin_by_name (dbg, str);
+		RDebugPluginSession *ds = r_libstore_find (dbg->libstore, str, debug_plugin_session_cmp_name);
 		if (!ds) {
-			ds = find_plugin_by_name (dbg, "esil");
+			ds = r_libstore_find (dbg->libstore, "esil", debug_plugin_session_cmp_name);
 			if (!ds) {
-				ds = find_plugin_by_name (dbg, "null");
+				ds = r_libstore_find (dbg->libstore, "null", debug_plugin_session_cmp_name);
 			}
 		}
 		if (ds) {

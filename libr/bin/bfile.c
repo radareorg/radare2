@@ -736,7 +736,7 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 	bf->file = file ? r_arena_push_str (arena, file) : NULL;
 	bf->rawstr = opt->rawstr;
 	bf->fd = opt->fd;
-	bf->curxtr = opt->pluginname? r_bin_get_xtrplugin_by_name (bin, opt->pluginname) : NULL;
+	bf->curxtr = opt->pluginname? r_libstore_find_name_in (bin->libstore, bin->libstore->xtrs, opt->pluginname) : NULL;
 	if ((st64)file_sz < 0) {
 		file_sz = 1024 * 64;
 	}
@@ -750,13 +750,13 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 }
 
 static RBinPlugin *get_plugin_from_buffer(RBin *bin, RBinFile *bf, const char *pluginname, RBuffer *buf) {
-	RBinPlugin *plugin = bin->force? r_bin_get_binplugin_by_name (bin, bin->force): NULL;
+	RBinPlugin *plugin = bin->force? r_libstore_find_name (bin->libstore, bin->force): NULL;
 	if (!plugin) {
-		plugin = pluginname? r_bin_get_binplugin_by_name (bin, pluginname): NULL;
+		plugin = pluginname? r_libstore_find_name (bin->libstore, pluginname): NULL;
 		if (!plugin) {
 			plugin = r_bin_get_binplugin_by_buffer (bin, bf, buf);
 			if (!plugin) {
-				return r_bin_get_binplugin_by_name (bin, "any");
+				return r_libstore_find_name (bin->libstore, "any");
 			}
 		}
 	}

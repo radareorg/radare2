@@ -154,11 +154,6 @@ static bool plugin_in_list(RList *list, RAnalPlugin *plugin) {
 	return false;
 }
 
-static RAnalPlugin *plugin_find_by_name(RAnal *anal, const char *name) {
-	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
-	return r_libstore_find_name (anal->libstore, name);
-}
-
 static void plugin_append_if_valid(RList *list, RAnal *anal, RAnalPlugin *p, RAnalPluginAction action) {
 	if (!plugin_has_callback (p, action)) {
 		return;
@@ -256,7 +251,7 @@ static RList *plugin_order_list(RAnal *anal, RAnalPluginAction action) {
 			plugin_append_all (plugins, anal, action);
 			continue;
 		}
-		RAnalPlugin *p = plugin_find_by_name (anal, name);
+		RAnalPlugin *p = r_libstore_find_name (anal->libstore, name);
 		if (p) {
 			plugin_append_if_valid (plugins, anal, p, action);
 		}
