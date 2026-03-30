@@ -161,16 +161,17 @@ R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 	char *oname = r_str_newf ("o.0.%c.%s", sym->is_imported ? 'i' : 's', name);
 	char *uname = r_str_newf ("%" PFMT64x ".%c.%s", vaddr, sym->is_imported ? 'i' : 's', name);
 	bool res = ht_pp_insert (ht, uname, sym);
+	free (uname);
 	if (!res) {
-		free (uname);
 		free (oname);
 		return false;
 	}
 	sym->dup_count = 0;
 	RBinSymbol *prev_sym = ht_pp_find (ht, oname, NULL);
 	if (!prev_sym) {
-		if (!ht_pp_insert (ht, oname, sym)) {
-			free (oname);
+		res = ht_pp_insert (ht, oname, sym);
+		free (oname);
+		if (!res) {
 			R_LOG_WARN ("Failed to insert dup_count in ht");
 			return false;
 		}
