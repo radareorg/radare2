@@ -207,10 +207,7 @@ R_API RSearchKeyword* r_search_keyword_new_hexmask(const char *kwstr, const char
 R_API RSearchKeyword *r_search_keyword_new_regexp(const char *str, const char *data) {
 	int i = 0, start, length;
 
-	// TODO: use r_str_trim_head_ro (str);
-	while (isspace ((const unsigned char)str[i])) {
-		i++;
-	}
+	str = r_str_trim_head_ro (str);
 
 	if (str[i++] != '/') {
 		return NULL;
