@@ -2785,6 +2785,7 @@ R_API void r_core_fini(RCore *c) {
 	r_core_task_scheduler_fini (&c->tasks);
 	free (c->sessionfile);
 	r_libstore_free (c->libstore);
+	c->libstore = NULL;
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
 	if (c->anal->esil) {
