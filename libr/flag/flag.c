@@ -772,6 +772,10 @@ R_API char *r_flag_get_liststr(RFlag *f, ut64 addr) {
 		r_strbuf_appendf (sb, "%s%s",
 			fi->realname, iter->n? ",": "");
 	}
+	if (r_strbuf_is_empty (sb)) {
+		r_strbuf_free (sb);
+		return NULL;
+	}
 	return r_strbuf_drain (sb);
 }
 
