@@ -492,7 +492,10 @@ static char *autoname_basic(RCore *core, RAnalFunction *fcn, int mode) {
 			}
 		}
 		if (!best_name) {
-			best_name = r_list_first (names);
+			const char *first_name = r_list_first (names);
+			if (first_name) {
+				best_name = strdup (first_name);
+			}
 		}
 		if (best_name) {
 			final_name = best_name;
