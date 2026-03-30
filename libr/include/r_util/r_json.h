@@ -19,6 +19,12 @@ extern "C" {
  * This means all string values in RJson point directly into the input string,
  * removing the need to copy them.
  *
+ * r_json_parse does NOT own the input string. The caller must keep it alive
+ * and free it after calling r_json_free.
+ *
+ * r_json_parsedup duplicates the input string and owns it. The duplicated
+ * string is freed automatically by r_json_free.
+ *
  * It also supports both line and block style comments.
  */
 
@@ -35,6 +41,7 @@ typedef enum r_json_type_t {
 typedef struct r_json_t {
 	RJsonType type;             // type of json node, see above
 	const char *key;            // key of the property; for object's children only
+	R_OWNED char *owned_text;   // non-NULL only on root node returned by r_json_parsedup
 	union {
 		const char *str_value;  // text value of STRING node
 		struct {
@@ -54,6 +61,7 @@ typedef struct r_json_t {
 } RJson;
 
 R_API R_MUSTUSE RJson *r_json_parse(R_UNOWNED char *text);
+R_API R_MUSTUSE RJson *r_json_parsedup(R_OWNED const char *text);
 R_API void r_json_free(RJson *js);
 R_API const RJson *r_json_get(const RJson *json, const char *key); // get object's property by key
 R_API const RJson *r_json_item(const RJson *json, size_t idx); // get array element by index

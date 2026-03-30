@@ -27,6 +27,7 @@ R_API void r_json_free(RJson *js) {
 	if (!js) {
 		return;
 	}
+	free (js->owned_text);
 	if (js->type == R_JSON_OBJECT || js->type == R_JSON_ARRAY) {
 		RJson *p = js->children.first;
 		RJson *p1;
@@ -383,6 +384,24 @@ R_API R_MUSTUSE RJson *r_json_parse(R_UNOWNED char *text) {
 		return NULL;
 	}
 	return js.children.first;
+}
+
+// Like r_json_parse, but duplicates the input string and owns it.
+// The caller does not need to keep the original string alive.
+// The duplicated string is freed automatically by r_json_free.
+R_API R_MUSTUSE RJson *r_json_parsedup(R_OWNED const char *text) {
+	R_RETURN_VAL_IF_FAIL (text, NULL);
+	char *dup = strdup (text);
+	if (!dup) {
+		return NULL;
+	}
+	RJson *js = r_json_parse (dup);
+	if (!js) {
+		free (dup);
+		return NULL;
+	}
+	js->owned_text = dup;
+	return js;
 }
 
 R_API const RJson *r_json_get(const RJson *json, const char *key) {

@@ -36,6 +36,7 @@ Optionally run `sys/lint.sh` script if you are unsure about the linter.
 - Never use `alloca()` or variable-length stack arrays
 - Do not check for NULL before calling `free()` or `*_free` functions
 - `r_json_parse` does not own the input string; free it after freeing the parser
+- `r_json_parsedup` duplicates and owns the input string; it is freed by `r_json_free`
 
 ### API Usage
 
