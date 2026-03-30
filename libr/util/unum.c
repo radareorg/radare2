@@ -190,6 +190,22 @@ R_API const char *r_num_get_name(RNum *num, ut64 n) {
 	return NULL;
 }
 
+// check that underscores in "1000_f000" are every 4 hex digits from the right
+static bool r_hex_validate_underscore(const char *s) {
+	int i, n = 0;
+	for (i = strlen (s) - 1; i >= 0; i--) {
+		if (s[i] == '_') {
+			if (n != 4) {
+				return false;
+			}
+			n = 0;
+		} else {
+			n++;
+		}
+	}
+	return n > 0 && n <= 4;
+}
+
 static void error(RNum * R_NULLABLE num, const char *err_str) {
 	if (num) {
 		if (err_str) {
@@ -333,30 +349,7 @@ R_API ut64 r_num_get_err(RNum * R_NULLABLE num, const char *str, const char **er
 		const char *lodash = strchr (str + 2, '_');
 		if (lodash) {
 			// Support 0x1000_f000_4000
-			// Validate underscores are every 4 hex chars from the end
-			const char *hex = str + 2;
-			int hlen = strlen (hex);
-			int digit_count = 0;
-			bool valid_sep = true;
-			int k;
-			for (k = hlen - 1; k >= 0; k--) {
-				if (hex[k] == '_') {
-					if (digit_count != 4) {
-						valid_sep = false;
-						break;
-					}
-					digit_count = 0;
-				} else if (isxdigit ((unsigned char)hex[k])) {
-					digit_count++;
-				} else {
-					valid_sep = false;
-					break;
-				}
-			}
-			if (digit_count < 1 || digit_count > 4) {
-				valid_sep = false;
-			}
-			if (!valid_sep) {
+			if (!r_hex_validate_underscore (str + 2)) {
 				error (num, "misplaced underscore in hex literal");
 			}
 			char *s = strdup (str + 2);
