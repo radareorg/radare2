@@ -16,9 +16,6 @@ R_IPI bool r_esil_plugins_init(REsil *esil) {
 		return false;
 	}
 	esil->libstore = r_libstore_new (esil, esil_static_plugins, NULL, NULL, (RLibPluginAddCb)r_esil_plugin_add);
-	if (r_lib_defaults ()) {
-		r_libstore_load (esil->libstore);
-	}
 	return true;
 }
 

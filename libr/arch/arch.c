@@ -11,9 +11,6 @@ R_API RArch *r_arch_new(void) {
 	a->libstore = r_libstore_new (a, arch_static_plugins, NULL, NULL, (RLibPluginAddCb)r_arch_plugin_add);
 	a->num = r_num_new (NULL, NULL, NULL);
 	a->cfg = r_arch_config_new ();
-	if (r_lib_defaults ()) {
-		r_libstore_load (a->libstore);
-	}
 	return a;
 }
 

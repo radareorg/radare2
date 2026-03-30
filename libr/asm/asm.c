@@ -264,9 +264,6 @@ R_API RAsm *r_asm_new(void) {
 	a->libstore = r_libstore_new (a, asm_static_plugins, (RListFree)free, NULL, (RLibPluginAddCb)r_asm_plugin_add);
 	a->config = r_arch_config_new ();
 	a->parse = r_parse_new ();
-	if (r_lib_defaults ()) {
-		r_libstore_load (a->libstore);
-	}
 	return a;
 }
 

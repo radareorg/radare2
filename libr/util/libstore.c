@@ -21,6 +21,9 @@ R_API RLibStore *r_libstore_new(void *user, const void *static_plugins, RListFre
 	store->add = add;
 	store->load = load;
 	store->static_plugins = static_plugins;
+	if (r_lib_defaults ()) {
+		r_libstore_load (store);
+	}
 	return store;
 }
 

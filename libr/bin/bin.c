@@ -554,12 +554,11 @@ R_API bool r_bin_list_plugin(RBin *bin, const char *name, PJ *pj, int json) {
 	RList *plugins = bin->libstore->plugins;
 	RList *xtrs = bin->libstore->xtrs;
 	RListIter *it;
-	RBinPlugin *bp;
 	RBinXtrPlugin *bx;
 	RBinPlugin *prefix_bp = NULL;
 	RBinXtrPlugin *prefix_bx = NULL;
 
-	bp = r_libstore_find_name (bin->libstore, name);
+	RBinPlugin *bp = r_libstore_find_name (bin->libstore, name);
 	if (bp) {
 		return r_bin_print_plugin_details (bin, bp, pj, json);
 	}
@@ -880,23 +879,12 @@ R_API RBin *r_bin_new(void) {
 
 	RList *xtrs = r_list_newf ((RListFree)free);
 	RList *ldrs = r_list_newf ((RListFree)free);
-	if (!xtrs || !ldrs) {
-		r_list_free (xtrs);
-		r_list_free (ldrs);
-		goto trashbin;
-	}
 	bin->binfiles = r_list_newf ((RListFree)r_bin_file_free);
 	bin->libstore = r_libstore_new (bin, NULL, (RListFree)free, bin_load_plugins, NULL);
 	bin->libstore->fini = bin_plugin_fini;
 	bin->libstore->xtrs = xtrs;
 	bin->libstore->ldrs = ldrs;
-	if (r_lib_defaults ()) {
-		r_libstore_load (bin->libstore);
-	}
 	return bin;
-trashbin:
-	free (bin);
-	return NULL;
 }
 
 R_API bool r_bin_use_arch(RBin *bin, const char *arch, int bits, const char *name) {
