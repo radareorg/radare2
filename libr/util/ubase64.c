@@ -49,6 +49,10 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 	if (len < 0) {
 		len = strlen (bin);
 	}
+	if (len == 0) {
+		bout[0] = 0;
+		return 0;
+	}
 	for (in = out = 0; in + 3 < len; in += 4) {
 		int ret = local_b64_decode (bin + in, bout + out);
 		if (ret < 1) {
@@ -56,20 +60,25 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 		}
 		out += ret;
 	}
+	if (in != len) {
+		return -1;
+	}
 	bout[out] = 0;
-	/* XXX this makes no sense, just return out? */
-	return (in != out)? out: -1;
+	return out;
 }
 
 R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen) {
 	R_RETURN_VAL_IF_FAIL (in, NULL);
 	if (len < 0) {
-		len = strlen (in) + 1;
+		len = strlen (in);
 	}
 	if (olen) {
 		*olen = 0;
 	}
-	ut8 *bout = calloc (4, len + 1);
+	ut8 *bout = malloc ((len / 4) * 3 + 1);
+	if (!bout) {
+		return NULL;
+	}
 	int res = r_base64_decode (bout, in, len);
 	if (res == -1) {
 		free (bout);
@@ -100,8 +109,8 @@ R_API char *r_base64_encode_dyn(const ut8 *str, int len) {
 	if (len < 0) {
 		len = strlen ((const char*)str);
 	}
-	const int olen = (len * 4) + 2;
-	if (olen < len) {
+	const int olen = ((len + 2) / 3) * 4 + 1;
+	if (olen < 1) {
 		return NULL;
 	}
 	char *bout = (char *)malloc (olen);
@@ -114,4 +123,3 @@ R_API char *r_base64_encode_dyn(const ut8 *str, int len) {
 	}
 	return bout;
 }
-

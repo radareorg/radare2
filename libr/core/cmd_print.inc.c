@@ -9222,7 +9222,7 @@ static int cmd_print(void *data, const char *input) {
 					} else {
 						char *a = r_str_trim_dup (input + 3);
 						char *out = malloc ((4 + strlen (a)) * 4);
-						if (r_base64_decode ((ut8 *)out, (const char *)a, strlen (a))) {
+						if (out && r_base64_decode ((ut8 *)out, (const char *)a, strlen (a)) > 0) {
 							r_cons_println (core->cons, (const char *)out);
 						} else {
 							R_LOG_ERROR ("r_base64_decode: invalid stream");
@@ -9236,17 +9236,16 @@ static int cmd_print(void *data, const char *input) {
 						r_core_cmd_help_match (core, help_msg_p6, "p6dz");
 					} else {
 						len = r_str_nlen ((const char *)block, len);
-						if (r_base64_decode (buf, (const char *)block, len)) {
+						if (r_base64_decode (buf, (const char *)block, len) > 0) {
 							r_cons_println (core->cons, (const char *)buf);
 						} else {
 							R_LOG_ERROR ("r_base64_decode: invalid stream");
 						}
-						r_cons_println (core->cons, (const char *)buf);
 					}
 					break;
 				default:
 					len = len > core->blocksize? core->blocksize: len;
-					if (r_base64_decode (buf, (const char *)block, len)) {
+					if (r_base64_decode (buf, (const char *)block, len) > 0) {
 						r_cons_println (core->cons, (const char *)buf);
 					} else {
 						R_LOG_ERROR ("r_base64_decode: invalid stream");

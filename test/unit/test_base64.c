@@ -26,6 +26,31 @@ bool test_r_base64_decode_invalid(void) {
 	mu_end;
 }
 
+bool test_r_base64_decode_empty(void) {
+	ut8* hello = malloc (1);
+	int status = r_base64_decode (hello, "", -1);
+	mu_assert_eq (status, 0, "empty base64 decoding");
+	mu_assert_streq ((char *)hello, "", "empty base64 output");
+	free (hello);
+	mu_end;
+}
+
+bool test_r_base64_decode_short_invalid(void) {
+	ut8* hello = malloc (8);
+	int status = r_base64_decode (hello, "a", -1);
+	mu_assert_eq (status, -1, "short base64 decoding");
+	free (hello);
+	mu_end;
+}
+
+bool test_r_base64_decode_tail_invalid(void) {
+	ut8* hello = malloc (8);
+	int status = r_base64_decode (hello, "aGVsbG8=x", -1);
+	mu_assert_eq (status, -1, "tail garbage base64 decoding");
+	free (hello);
+	mu_end;
+}
+
 int test_r_base64_encode_dyn(void) {
 	char* hello = r_base64_encode_dyn ((const ut8*)"hello", -1);
 	mu_assert_streq (hello, "aGVsbG8=", "base64_encode_dyn");
@@ -45,6 +70,9 @@ int all_tests(void) {
 	mu_run_test (test_r_base64_decode_dyn);
 	mu_run_test (test_r_base64_decode);
 	mu_run_test (test_r_base64_decode_invalid);
+	mu_run_test (test_r_base64_decode_empty);
+	mu_run_test (test_r_base64_decode_short_invalid);
+	mu_run_test (test_r_base64_decode_tail_invalid);
 	mu_run_test (test_r_base64_encode_dyn);
 	mu_run_test (test_r_base64_encode);
 	return tests_passed != tests_run;
