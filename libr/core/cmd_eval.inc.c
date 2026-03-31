@@ -380,8 +380,7 @@ done:
 R_API void r_core_echo(RCore *core, const char *input) {
 	if (r_str_startswith (input, "64 ")) {
 		char *buf = strdup (input);
-		r_base64_decode ((ut8 *)buf, input + 3, -1);
-		if (*buf) {
+		if (r_base64_decode ((ut8 *)buf, input + 3, -1) > 0) {
 			r_cons_echo (core->cons, buf);
 		}
 		free (buf);

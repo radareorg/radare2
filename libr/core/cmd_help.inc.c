@@ -755,7 +755,9 @@ static int cmd_help(void *data, const char *input) {
 				return false;
 			}
 			if (input[3] == '-') {
-				r_base64_decode ((ut8*)buf, input + 4, -1);
+				if (r_base64_decode ((ut8*)buf, input + 4, -1) < 1) {
+					*buf = 0;
+				}
 			} else if (input[3] == ' ') {
 				r_base64_encode (buf, (const ut8*)input + 4, -1);
 			}
