@@ -35,6 +35,7 @@ R_API RSocketRapServer *r_socket_rap_server_create(const char *pathname) {
 R_API void r_socket_rap_server_free(RSocketRapServer *s) {
 	if (s) {
 		r_socket_free (s->fd);
+		free (s->port);
 		free (s);
 	}
 }
@@ -74,7 +75,7 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 			s->buf[total_needed - 1] = 0;
 			int fd = s->open (s->user, (const char *)&s->buf[3], (int)s->buf[1], 0);
 			s->buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
-			eprintf ("REPLY BACK %d\n", fd);
+			R_LOG_DEBUG ("REPLY BACK %d", fd);
 			r_write_be32 (s->buf + 1, fd);
 		}
 		r_socket_write (s->fd, s->buf, 5);
@@ -147,7 +148,7 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 		r_socket_flush (s->fd);
 		break;
 	default:
-		eprintf ("unknown command 0x%02x\n", (ut8)(s->buf[0] & 0xff));
+		R_LOG_ERROR ("unknown command 0x%02x", (ut8)(s->buf[0] & 0xff));
 		r_socket_close (s->fd);
 		return false;
 	}

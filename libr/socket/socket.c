@@ -206,7 +206,7 @@ R_API bool r_socket_spawn(RSocket *s, const char *cmd, unsigned int timeout) {
 	const int port = 2000 + r_num_rand (2000);
 	int childPid = r_sys_fork ();
 	if (childPid == 0) {
-		char *a = r_str_replace (strdup (cmd), "\\", "\\\\", true);
+		char *a = r_str_escape_sh (cmd);
 		int res = r_sys_cmdf ("rarun2 system=\"%s\" listen=%d", a, port);
 		free (a);
 #if 0
@@ -525,11 +525,9 @@ R_API void r_socket_free(RSocket *s) {
 	(void)r_socket_close (s);
 #if HAVE_LIB_SSL
 	if (s && s->is_ssl) {
-		if (s->sfd) {
-			SSL_free (s->sfd);
-		}
 		if (s->ctx) {
 			SSL_CTX_free (s->ctx);
+			s->ctx = NULL;
 		}
 	}
 #endif

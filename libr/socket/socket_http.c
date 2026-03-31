@@ -488,6 +488,11 @@ R_API char *r_socket_http_post(const char *url, const char *headers[], const cha
 			const char **header = headers;
 			while (*header) {
 				char *escaped_header = r_str_escape_sh (*header);
+				if (!escaped_header) {
+					r_strbuf_free (sb);
+					free (escaped_url);
+					return NULL;
+				}
 				r_strbuf_appendf (sb, " -H '%s'", escaped_header);
 				free (escaped_header);
 				header++;

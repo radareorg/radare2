@@ -550,9 +550,14 @@ R_API bool r_run_parsefile(RRunProfile *p, const char *b) {
 }
 
 R_API bool r_run_parseline(RRunProfile *p, const char *b) {
+	char *s = strdup (b);
+	if (!s) {
+		return false;
+	}
 	int must_free = false;
-	char *e = strchr (b, '=');
-	if (!e || *b == '#') {
+	char *e = strchr (s, '=');
+	if (!e || *s == '#') {
+		free (s);
 		return 0;
 	}
 	*e++ = 0;
@@ -561,37 +566,38 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		e = r_sys_getenv (e);
 	}
 	if (!e) {
+		free (s);
 		return 0;
 	}
-	if (!strcmp (b, "program")) {
+	if (!strcmp (s, "program")) {
 		p->_args[0] = strdup (e);
 		p->_program = strdup (e);
-	} else if (!strcmp (b, "noprogram")) {
+	} else if (!strcmp (s, "noprogram")) {
 		p->_noprogram = true;
-	} else if (!strcmp (b, "daemon")) {
+	} else if (!strcmp (s, "daemon")) {
 		p->_daemon = true;
-	} else if (!strcmp (b, "system")) {
+	} else if (!strcmp (s, "system")) {
 		p->_system = strdup (e);
-	} else if (!strcmp (b, "runlib")) {
+	} else if (!strcmp (s, "runlib")) {
 		p->_runlib = strdup (e);
-	} else if (!strcmp (b, "runlib.fcn")) {
+	} else if (!strcmp (s, "runlib.fcn")) {
 		p->_runlib_fcn = strdup (e);
-	} else if (!strcmp (b, "aslr")) {
+	} else if (!strcmp (s, "aslr")) {
 		p->_aslr = r_str_is_true (e);
-	} else if (!strcmp (b, "pid") || !strcmp (b, "getpid")) {
+	} else if (!strcmp (s, "pid") || !strcmp (s, "getpid")) {
 		p->_pid = atoi (e);
 		if (!p->_pid) {
 			p->_pid = r_str_is_true (e);
 		}
-	} else if (!strcmp (b, "pidfile")) {
+	} else if (!strcmp (s, "pidfile")) {
 		p->_pidfile = strdup (e);
-	} else if (!strcmp (b, "connect")) {
+	} else if (!strcmp (s, "connect")) {
 		p->_connect = strdup (e);
-	} else if (!strcmp (b, "listen")) {
+	} else if (!strcmp (s, "listen")) {
 		p->_listen = strdup (e);
-	} else if (!strcmp (b, "pty")) {
+	} else if (!strcmp (s, "pty")) {
 		p->_pty = r_str_is_true (e);
-	} else if (!strcmp (b, "stdio")) {
+	} else if (!strcmp (s, "stdio")) {
 		if (e[0] == '!') {
 			p->_stdio = strdup (e);
 		} else {
@@ -599,64 +605,64 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			p->_stderr = strdup (e);
 			p->_stdin = strdup (e);
 		}
-	} else if (!strcmp (b, "stdout")) {
+	} else if (!strcmp (s, "stdout")) {
 		p->_stdout = getstr (e, NULL, false);
-	} else if (!strcmp (b, "stdin")) {
+	} else if (!strcmp (s, "stdin")) {
 		p->_stdin = getstr (e, NULL, false);
-	} else if (!strcmp (b, "stderr")) {
+	} else if (!strcmp (s, "stderr")) {
 		p->_stderr = strdup (e);
-	} else if (!strcmp (b, "input")) {
+	} else if (!strcmp (s, "input")) {
 		// p->_input = getstr (e, NULL, false);
 		p->_input = strdup (e);
-	} else if (!strcmp (b, "chdir")) {
+	} else if (!strcmp (s, "chdir")) {
 		p->_chgdir = strdup (e);
-	} else if (!strcmp (b, "core")) {
+	} else if (!strcmp (s, "core")) {
 		p->_docore = r_str_is_true (e);
-	} else if (!strcmp (b, "fork")) {
+	} else if (!strcmp (s, "fork")) {
 		p->_dofork = r_str_is_true (e);
-	} else if (!strcmp (b, "sleep")) {
+	} else if (!strcmp (s, "sleep")) {
 		p->_r2sleep = atoi (e);
-	} else if (!strcmp (b, "maxstack")) {
+	} else if (!strcmp (s, "maxstack")) {
 		p->_maxstack = atoi (e);
-	} else if (!strcmp (b, "maxproc")) {
+	} else if (!strcmp (s, "maxproc")) {
 		p->_maxproc = atoi (e);
-	} else if (!strcmp (b, "maxfd")) {
+	} else if (!strcmp (s, "maxfd")) {
 		p->_maxfd = atoi (e);
-	} else if (!strcmp (b, "bits")) {
+	} else if (!strcmp (s, "bits")) {
 		p->_bits = atoi (e);
-	} else if (!strcmp (b, "time")) {
+	} else if (!strcmp (s, "time")) {
 		p->_time = true;
-	} else if (!strcmp (b, "chroot")) {
+	} else if (!strcmp (s, "chroot")) {
 		p->_chroot = strdup (e);
-	} else if (!strcmp (b, "libpath")) {
+	} else if (!strcmp (s, "libpath")) {
 		p->_libpath = strdup (e);
-	} else if (!strcmp (b, "preload")) {
+	} else if (!strcmp (s, "preload")) {
 		if (!p->_preload) {
 			p->_preload = r_list_newf (free);
 		}
 		r_list_append (p->_preload, strdup (e));
-	} else if (!strcmp (b, "r2preload")) {
+	} else if (!strcmp (s, "r2preload")) {
 		p->_r2preload = r_str_is_true (e);
-	} else if (!strcmp (b, "r2preweb")) {
+	} else if (!strcmp (s, "r2preweb")) {
 		r_sys_setenv ("RARUN2_WEB", "yes");
-	} else if (!strcmp (b, "setuid")) {
+	} else if (!strcmp (s, "setuid")) {
 		p->_setuid = strdup (e);
-	} else if (!strcmp (b, "seteuid")) {
+	} else if (!strcmp (s, "seteuid")) {
 		p->_seteuid = strdup (e);
-	} else if (!strcmp (b, "setgid")) {
+	} else if (!strcmp (s, "setgid")) {
 		p->_setgid = strdup (e);
-	} else if (!strcmp (b, "stderrout")) {
+	} else if (!strcmp (s, "stderrout")) {
 		p->_stderrout = r_str_is_true (e);
-	} else if (!strcmp (b, "setegid")) {
+	} else if (!strcmp (s, "setegid")) {
 		p->_setegid = strdup (e);
-	} else if (!strcmp (b, "nice")) {
+	} else if (!strcmp (s, "nice")) {
 		p->_nice = atoi (e);
-	} else if (!strcmp (b, "timeout")) {
+	} else if (!strcmp (s, "timeout")) {
 		p->_timeout = atoi (e);
-	} else if (!strcmp (b, "timeoutsig")) {
+	} else if (!strcmp (s, "timeoutsig")) {
 		p->_timeout_sig = r_signal_from_string (e);
-	} else if (r_str_startswith (b, "arg")) {
-		int n = atoi (b + 3);
+	} else if (r_str_startswith (s, "arg")) {
+		int n = atoi (s + 3);
 		if (n >= 0 && n < R_RUN_PROFILE_NARGS) {
 			free (p->_args[n]);
 			p->_args[n] = getstr (e, NULL, true);
@@ -664,8 +670,8 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 		} else {
 			R_LOG_ERROR ("Out of bounds args index: %d", n);
 		}
-	} else if (!strcmp (b, "envfile")) {
-		char *p, buf[1024];
+	} else if (!strcmp (s, "envfile")) {
+		char *q, buf[1024];
 		size_t len;
 		FILE *fd = r_sandbox_fopen (e, "r");
 		if (!fd) {
@@ -673,6 +679,7 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			if (must_free == true) {
 				free (e);
 			}
+			free (s);
 			return false;
 		}
 		for (;;) {
@@ -682,23 +689,23 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 			if (feof (fd)) {
 				break;
 			}
-			p = strchr (buf, '=');
-			if (p) {
-				*p++ = 0;
-				len = strlen (p);
-				if (len > 0 && p[len - 1] == '\n') {
-					p[len - 1] = 0;
+			q = strchr (buf, '=');
+			if (q) {
+				*q++ = 0;
+				len = strlen (q);
+				if (len > 0 && q[len - 1] == '\n') {
+					q[len - 1] = 0;
 				}
-				if (len > 1 && p[len - 2] == '\r') {
-					p[len - 2] = 0;
+				if (len > 1 && q[len - 2] == '\r') {
+					q[len - 2] = 0;
 				}
-				r_sys_setenv (buf, p);
+				r_sys_setenv (buf, q);
 			}
 		}
 		fclose (fd);
-	} else if (!strcmp (b, "unsetenv")) {
+	} else if (!strcmp (s, "unsetenv")) {
 		r_sys_setenv (e, NULL);
-	} else if (!strcmp (b, "setenv")) {
+	} else if (!strcmp (s, "setenv")) {
 		char *v = strchr (e, '=');
 		if (v) {
 			*v++ = 0;
@@ -712,14 +719,15 @@ R_API bool r_run_parseline(RRunProfile *p, const char *b) {
 #endif
 			free (V);
 		}
-	} else if (!strcmp (b, "clearenv")) {
+	} else if (!strcmp (s, "clearenv")) {
 		r_sys_clearenv ();
 	} else {
-		R_LOG_DEBUG ("Unknown directive %s", b);
+		R_LOG_DEBUG ("Unknown directive %s", s);
 	}
 	if (must_free == true) {
 		free (e);
 	}
+	free (s);
 	return true;
 }
 

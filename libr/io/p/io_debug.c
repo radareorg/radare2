@@ -234,7 +234,6 @@ static void handle_posix_error(int err) {
 #endif
 
 static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
-	char *expr = NULL;
 	int i;
 	RRunProfile *rp = r_run_new ("");
 	if (!rp) {
@@ -272,11 +271,10 @@ static RRunProfile* _get_run_profile(RIO *io, int bits, char **argv) {
 		}
 	}
 	if (bits == 64) {
-		r_run_parseline (rp, expr = strdup ("bits=64"));
+		r_run_parseline (rp, "bits=64");
 	} else if (bits == 32) {
-		r_run_parseline (rp, expr = strdup ("bits=32"));
+		r_run_parseline (rp, "bits=32");
 	}
-	free (expr);
 	if (!r_run_config_env (rp)) {
 		R_LOG_ERROR ("Cannot configure the environment");
 		r_run_free (rp);
