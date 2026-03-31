@@ -85,7 +85,7 @@ static RCoreHelpMessage help_msg_to = {
 	"to", " <path>", "load types from C header file",
 	"tos", " <path>", "load types from parsed Sdb database",
 	"toe", " [type.name]", "open cfg.editor to edit types",
-	"tos", " <path>", "load types from parsed Sdb database",
+	"tol", " <name>", "load types from a built-in type database (e.g. types-jni)",
 	"touch", " <file>", "create or update timestamp in file",
 	NULL
 };
@@ -2482,6 +2482,13 @@ static int cmd_type(void *data, const char *input) {
 					sdb_merge (TDB, db_tmp);
 					sdb_close (db_tmp);
 					sdb_free (db_tmp);
+				}
+			} else if (input[1] == 'l') { // "tol"
+				const char *dbname = r_str_trim_head_ro (input + 2);
+				if (R_STR_ISNOTEMPTY (dbname)) {
+					r_anal_types_load_sdb (core->anal, dbname);
+				} else {
+					r_core_cmd_help_match (core, help_msg_to, "tol");
 				}
 			}  else if (input[1] == 'e') { // "toe"
 				char *str = r_core_cmd_strf (core , "tc %s", input + 2);
