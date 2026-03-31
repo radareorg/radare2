@@ -61,7 +61,7 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	R_RETURN_VAL_IF_FAIL (p, NULL);
 	RStrBuf *sb = r_strbuf_new ("");
 	size_t i, j;
-	int cols = 78; // TODO: do not hardcode this value, columns should be defined by the user
+	int cols = (p->consb.get_size && p->consb.cons) ? p->consb.get_size (p->consb.cons, NULL) : 78;
 	int rows = height > 0 ? height : 10;
 	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
 	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
@@ -74,40 +74,28 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	kol[2] = pal->cjmp;
 	kol[3] = pal->mov;
 	kol[4] = pal->nop;
-	if (colors) {
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			size_t koli = i * 5 / rows;
-			for (j = 0; j < cols; j++) {
-				int realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold || (i + 1 == rows)) {
-					const char *line = p->histblock? block: vline;
-					r_strbuf_appendf (sb, "%s%s%s", kol[koli], line, Color_RESET);
+	const char *line = p->histblock ? block : vline;
+	const char *hit_suffix = (colors || p->histblock) ? Color_RESET : "";
+	bool has_color = colors || p->histblock;
+	for (i = 0; i < rows; i++) {
+		size_t threshold = i * (0xff / rows);
+		const char *hit_prefix = colors ? kol[i * 5 / rows] : (p->histblock ? Color_BGGRAY : "");
+		bool is_bottom = (i + 1 == rows);
+		for (j = 0; j < cols; j++) {
+			size_t realJ = j * len / cols;
+			if (255 - buf[realJ] < threshold || (colors && is_bottom)) {
+				if (has_color) {
+					r_strbuf_appendf (sb, "%s%s%s", hit_prefix, line, hit_suffix);
 				} else {
-					r_strbuf_append (sb, " ");
+					r_strbuf_append (sb, line);
 				}
+			} else if (is_bottom) {
+				r_strbuf_append (sb, "_");
+			} else {
+				r_strbuf_append (sb, " ");
 			}
-			r_strbuf_append (sb, "\n");
 		}
-	} else {
-		for (i = 0; i < rows; i++) {
-			size_t threshold = i * (0xff / rows);
-			for (j = 0; j < cols; j++) {
-				size_t realJ = j * len / cols;
-				if (255 - buf[realJ] < threshold) {
-					if (p->histblock) {
-						r_strbuf_appendf (sb, "%s%s%s", Color_BGGRAY, block, Color_RESET);
-					} else {
-						r_strbuf_append (sb, vline);
-					}
-				} else if (i + 1 == rows) {
-					r_strbuf_append (sb, "_");
-				} else {
-					r_strbuf_append (sb, " ");
-				}
-			}
-			r_strbuf_append (sb, "\n");
-		}
+		r_strbuf_append (sb, "\n");
 	}
 	return r_strbuf_drain (sb);
 }
