@@ -5,6 +5,14 @@ e,key/str/color.op,:html
 EOF
 EXPECT=<<EOF
 <table>
+  <thead><tr>
+    <th>ro</th>
+    <th>type</th>
+    <th>key</th>
+    <th>value</th>
+    <th>desc</th>
+  </tr></thead>
+  <tbody>
   <tr>
     <td></td>
     <td>bool</td>
@@ -19,6 +27,7 @@ EXPECT=<<EOF
     <td>true</td>
     <td>colorize numbers and registers in opcodes</td>
   </tr>
+  </tbody>
 </table>
 
 EOF
