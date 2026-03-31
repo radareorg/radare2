@@ -118,7 +118,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 	}
 	switch (ch) {
 	case 0x1b:
-		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
+		ch = R_CONS_KEY_ESC;
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar (cons);
