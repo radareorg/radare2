@@ -1204,8 +1204,8 @@ R_API int r_str_unescape(char *buf) {
 				R_LOG_ERROR ("Unexpected end of string");
 				return 0;
 			}
-			err |= r_hex_to_byte (&ch, buf[i + 2]);
-			err |= r_hex_to_byte (&ch2, buf[i + 3]);
+			err |= !r_hex_to_byte (&ch, buf[i + 2]);
+			err |= !r_hex_to_byte (&ch2, buf[i + 3]);
 			if (err) {
 				R_LOG_ERROR ("Non-hexadecimal chars in input");
 				return 0; // -1?

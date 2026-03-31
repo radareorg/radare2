@@ -80,8 +80,8 @@ static char *unescape_string(char *s, char **end) {
 			case 'u': { // unicode
 				char *ps = p - 1;
 				ut8 high = 0, low = 0;
-				if (r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
-						|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
+				if (!r_hex_to_byte (&high, p[1]) || !r_hex_to_byte (&high, p[2])
+						|| !r_hex_to_byte (&low, p[3]) || !r_hex_to_byte (&low, p[4])) {
 					R_LOG_ERROR ("invalid unicode escape (%s)", p - 1);
 					return NULL;
 				}
@@ -90,8 +90,8 @@ static char *unescape_string(char *s, char **end) {
 					p += 6;
 					high = low = 0;
 					if (p[-1] != '\\' || *p != 'u'
-							|| r_hex_to_byte (&high, p[1]) || r_hex_to_byte (&high, p[2])
-							|| r_hex_to_byte (&low, p[3]) || r_hex_to_byte (&low, p[4])) {
+							|| !r_hex_to_byte (&high, p[1]) || !r_hex_to_byte (&high, p[2])
+							|| !r_hex_to_byte (&low, p[3]) || !r_hex_to_byte (&low, p[4])) {
 						R_LOG_ERROR ("invalid unicode surrogate (%s)", ps);
 						return NULL;
 					}

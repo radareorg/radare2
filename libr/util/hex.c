@@ -15,16 +15,15 @@ static int hex_digit_value(char c) {
 	return -1;
 }
 
-// XXX this function returns true when there's an error wtf
 R_API bool r_hex_to_byte(ut8 *val, ut8 c) {
 	R_RETURN_VAL_IF_FAIL (val, false);
 	int v = hex_digit_value (c);
 	if (v != -1) {
 		*val <<= 4;
 		*val |= v & 0xf;
-		return false;
+		return true;
 	}
-	return true;
+	return false;
 }
 
 // takes 'c' byte and fills 2 bytes in the val string
@@ -338,7 +337,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 			break;
 		}
 		d = c;
-		if (*ptr != '.' && r_hex_to_byte (&c, *ptr)) {
+		if (*ptr != '.' && !r_hex_to_byte (&c, *ptr)) {
 			R_LOG_ERROR ("Invalid hexa string at char '%c' (%s)", *ptr, arg);
 			return -1;
 		}
@@ -406,7 +405,7 @@ R_API int r_hex_str2bin(const char *in, ut8 *out) {
 			in += 2;
 		}
 		/* read hex digits */
-		while (!r_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
+		while (r_hex_to_byte (out ? &out[nibbles/2] : &tmp, *in)) {
 			nibbles++;
 			in++;
 		}
@@ -456,7 +455,7 @@ R_API int r_hex_str2bin_until_new(const char *in, ut8 **out) {
 	size_t nibbles = 0;
 	ut8 *buf = calloc (1, len);
 	if (buf) {
-		while (!r_hex_to_byte (buf + (nibbles / 2), *in)) {
+		while (r_hex_to_byte (buf + (nibbles / 2), *in)) {
 			nibbles++;
 			in++;
 		}
