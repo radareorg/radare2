@@ -874,8 +874,6 @@ R_API bool r_debug_session_checkpoint_replay_clear(RDebugSession *session, ut64 
 R_API bool r_debug_session_checkpoint_replay_apply(RDebug *dbg, ut64 checkpoint_id, int fd);
 R_API void r_debug_session_list_checkpoint_replay(RDebug *dbg, int mode);
 R_API void r_debug_session_fini_runtime(RDebug *dbg);
-R_API void r_debug_fasttime_reset(RDebug *dbg);
-R_API bool r_debug_fasttime_prepare_syscall_entry(RDebug *dbg, int tid, int syscall_num);
 R_API RDebugStateRequest *r_debug_state_request_parse_json(const char *json);
 R_API void r_debug_state_request_free(RDebugStateRequest *request);
 R_API RDebugStateSnapshot *r_debug_state_snapshot_collect(RDebug *dbg, const RDebugStateRequest *request);
