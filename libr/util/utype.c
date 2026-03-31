@@ -938,8 +938,8 @@ R_API R_OWNED char *r_type_func_guess(Sdb *TDB, const char *R_NONNULL func_name)
 		result = type_func_try_guess (TDB, str_copy + 1);
 	}
 
-	// auto-detect JNI native functions (Java_Package_Class_method)
-	if (!result && r_str_startswith (str, "Java_")) {
+	// auto-detect JNI native functions and callbacks
+	if (!result && (r_str_startswith (str, "Java_") || r_str_startswith (str, "JNI_"))) {
 		result = type_func_try_guess (TDB, "jni_native");
 	}
 	free (str_copy);
