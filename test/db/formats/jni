@@ -6,10 +6,14 @@ tk jboolean
 tk jstring
 tk JNIEnv
 tk JNINativeInterface
+tk JavaVM
+tk JNIInvokeInterface
 EOF
 EXPECT=<<EOF
 typedef
 typedef
+typedef
+struct
 typedef
 struct
 EOF
@@ -39,6 +43,19 @@ JNIWeakGlobalRefType = 0x3
 EOF
 RUN
 
+NAME=jni jvalue union
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk jvalue
+tk union.jvalue
+EOF
+EXPECT=<<EOF
+union
+z,b,c,s,i,j,f,d,l
+EOF
+RUN
+
 NAME=jni JNINativeInterface has NewStringUTF
 FILE=bins/elf/jni/jniO0-arm64
 CMDS=<<EOF
@@ -56,32 +73,59 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=jni function signature arm64
+NAME=jni JNINativeInterface field offsets
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk struct.JNINativeInterface.GetVersion
+tk struct.JNINativeInterface.FindClass
+tk struct.JNINativeInterface.NewStringUTF
+tk struct.JNINativeInterface.GetObjectRefType
+EOF
+EXPECT=<<EOF
+void *,32,0
+void *,48,0
+void *,1336,0
+void *,1856,0
+EOF
+RUN
+
+NAME=jni JNIInvokeInterface field offsets
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+e asm.os=android
+tk struct.JNIInvokeInterface.DestroyJavaVM
+tk struct.JNIInvokeInterface.GetEnv
+EOF
+EXPECT=<<EOF
+void *,24,0
+void *,48,0
+EOF
+RUN
+
+NAME=jni auto-apply types for Java_ functions arm64
 FILE=bins/elf/jni/jniO0-arm64
 CMDS=<<EOF
 e asm.os=android
 aaa
 s sym.Java_JNIFoo_apiTest
-afvt arg1 JNIEnv*
-afvt arg2 jobject
 pdf~apiTest
 EOF
 EXPECT=<<EOF
-/ 80: sym.Java_JNIFoo_apiTest (JNIEnv*arg1, jobject arg2);
+/ 80: void *sym.Java_JNIFoo_apiTest (JNIEnv *env, jobject thiz);
 EOF
 RUN
 
-NAME=jni function signature x86
+NAME=jni auto-apply types for Java_ functions x86
 FILE=bins/elf/jni/jniO0-x86
 CMDS=<<EOF
 e asm.os=android
 aaa
 s sym.Java_JNIFoo_apiTest
-afvt arg_8h JNIEnv*
 pdf~apiTest
 EOF
 EXPECT=<<EOF
-/ 77: sym.Java_JNIFoo_apiTest (JNIEnv*arg_8h, int32_t arg_24h);
+/ 77: void *sym.Java_JNIFoo_apiTest (JNIEnv *env, jobject thiz);
 EOF
 RUN
 
@@ -96,6 +140,19 @@ EOF
 EXPECT=<<EOF
 struct
 typedef
+typedef
+EOF
+RUN
+
+NAME=jni tol load types manually
+FILE=bins/elf/jni/jniO0-arm64
+CMDS=<<EOF
+tol types-jni
+tk JNINativeInterface
+tk JNIEnv
+EOF
+EXPECT=<<EOF
+struct
 typedef
 EOF
 RUN

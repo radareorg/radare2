@@ -2472,6 +2472,20 @@ static char *function_signature_type_name(RAnal *anal, RAnalFunction *fcn) {
 			}
 		}
 	}
+	// auto-detect JNI native functions (Java_Package_Class_method)
+	if (r_str_startswith (lookup_name, "Java_")) {
+		name = function_signature_try_type_name (anal->sdb_types, "jni_native");
+		if (name) {
+			return name;
+		}
+	}
+	basename = r_str_rchr (lookup_name, NULL, '.');
+	if (basename && r_str_startswith (basename + 1, "Java_")) {
+		name = function_signature_try_type_name (anal->sdb_types, "jni_native");
+		if (name) {
+			return name;
+		}
+	}
 	return strdup (lookup_name);
 }
 
