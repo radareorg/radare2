@@ -6020,10 +6020,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	size_t i = 0; // addr - start;
 	size_t i_old = 0;
 	size_t buf_size = 128 * 1024; // 512KB
-	size_t maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
-	if (maxopsz < 1) {
-		maxopsz = 4;
-	}
+	const size_t maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 buf_addr = start;
 	buf = malloc (buf_size);
 	if (!buf) {
