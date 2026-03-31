@@ -5935,10 +5935,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 
 	R_LOG_DEBUG ("aae length (%s) 0x%"PFMT64x, str, end);
 	R_LOG_DEBUG ("aae addr (%s) 0x%"PFMT64x, target, start);
-#if 0
-	R_LOG_INFO ("-%llx -> %llx", start, end);
-	R_LOG_INFO ("+%llx -> %llx", core->addr, end);
-#endif
 	if (end < start) {
 		R_LOG_DEBUG ("end < start");
 		return;
@@ -6027,14 +6023,16 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	const size_t maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
 	ut64 buf_addr = start;
 	buf = malloc (buf_size);
+	if (!buf) {
+		free (spname);
+		r_reg_arena_pop (core->anal->reg);
+		return;
+	}
 	size_t buf_i = 0;
 
 	int opflags = R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT;
 	if (needOpVals) {
 		opflags |= R_ARCH_OP_MASK_VAL;
-	}
-	if (newstack) {
-		opflags |= R_ARCH_OP_MASK_DISASM;
 	}
 	opflags |= R_ARCH_OP_MASK_DISASM;
 
@@ -6051,42 +6049,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (!r_io_is_valid_offset (core->io, cur, 0)) {
 			break;
 		}
-#if 0
-		// disabled because it causes some tests to fail
-		{
-			RVecIntervalNodePtr *list = r_meta_get_all_in (core->anal, cur, R_META_TYPE_ANY);
-			RIntervalNode **it;
-			R_VEC_FOREACH (list, it) {
-				RIntervalNode *node = *it;
-				RAnalMetaItem *meta = node->data;
-				switch (meta->type) {
-				case R_META_TYPE_DATA:
-				case R_META_TYPE_STRING:
-				case R_META_TYPE_FORMAT:
-#if 0
-					{
-						int msz = r_meta_get_size (core->anal, meta->type);
-						i += (msz > 0)? msz: minopsize;
-					}
-					RVecIntervalNodePtr_free (list);
-					goto loopback;
-#elif 0
-					{
-						int msz = r_meta_get_size (core->anal, meta->type);
-						i += (msz > 0)? msz: minopsize;
-						i--;
-					}
-#else
-					i += 4;
-					goto repeat;
-#endif
-				default:
-					break;
-				}
-			}
-			RVecIntervalNodePtr_free (list);
-		}
-#endif
 		/* realign address if needed */
 		r_core_seek_arch_bits (core, cur);
 		int opalign = core->anal->config->codealign;
@@ -6097,16 +6059,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 		if (i >= iend) {
 			goto repeat;
 		}
-		if (buf_i > buf_size) {
-			R_LOG_WARN ("Invalid buffer index (%d) - %d / %d", i, buf_size, buf_i);
+		if (buf_i >= buf_size) {
 			break;
 		}
-#if 0
-		// eprintf ("%llx %02x %02x\n", cur, buf[buf_i], buf[buf_i+1]);
-		if (buf[buf_i] == 0 && buf[buf_i + 1] == 0 && buf[buf_i + 2] == 0) {
-			eprintf ("INVALID at 0x%llx\n", cur);
-		}
-#endif
 		size_t opsz = R_MIN (buf_size - buf_i, maxopsz);
 		if (!r_anal_op (core->anal, &op, cur, buf + buf_i, opsz, opflags)) {
 			i += minopsize - 1;
@@ -6156,9 +6111,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			case R_ANAL_OP_TYPE_NULL:
 			case R_ANAL_OP_TYPE_CSWI:
 			case R_ANAL_OP_TYPE_TRAP:
-				i += op.size - 1;
-				goto repeat;
-			//  those require write support
 			case R_ANAL_OP_TYPE_PUSH:
 			case R_ANAL_OP_TYPE_POP:
 				i += op.size - 1;
@@ -6174,13 +6126,9 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 				r_flag_space_set (core->flags, R_FLAGS_FS_SYSCALLS);
 				RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, -1);
 				if (si) {
-				//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
 					r_flag_set_next (core->flags, r_strf ("syscall.%s", si->name), cur, 1);
 					r_syscall_item_free (si);
 				} else {
-					//todo were doing less filtering up top because we can't match against 80 on all platforms
-					// might get too many of this path now..
-				//	eprintf ("0x%08"PFMT64x" SYSCALL %d\n", cur, snv);
 					r_flag_set_next (core->flags, r_strf ("syscall.%d", snv), cur, 1);
 				}
 				r_flag_space_set (core->flags, NULL);
@@ -6198,9 +6146,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 			r_reg_setv (core->anal->reg, gp_reg, gp);
 		}
 		(void)r_esil_parse (ESIL, esilstr);
-		// looks like ^C is handled by esil_parse !!!!
-		//r_esil_dumpstack (ESIL);
-		//r_esil_stack_free (ESIL);
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_LEA:
 			// arm64
@@ -6216,37 +6161,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 					}
 					r_anal_xrefs_set (core->anal, cur, ESIL->cur, type);
 				}
-#if 0
-				ut64 dst = esilbreak_last_read;
-				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (core, dst)) {
-						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst);
-						}
-					}
-				}
-#if 0
-				dst = r_reg_getv (core->anal->reg, "tmp");
-				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (core, dst)) {
-						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst);
-						}
-					}
-				}
-#endif
-				dst = esilbreak_last_data;
-				if (dst != UT64_MAX && CHECKREF (dst)) {
-					if (myvalid (core, dst)) {
-						r_anal_xrefs_set (core->anal, cur, dst, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
-						if (cfg_anal_strings) {
-							add_string_ref (core, op.addr, dst);
-						}
-					}
-				}
-#endif
 			} else if (archIsX86) {
 				const ut64 dst = op.ptr? op.ptr: ESIL->cur;
 				if ((target && dst == ntarget) || !target) {
@@ -6334,13 +6248,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						}
 					}
 				}
-#if 0
-			} else {
-				R_LOG_DEBUG ("add aae string refs for this arch here");
-				if (cfg_anal_strings) {
-					add_string_ref (core, op.addr, dst);
-				}
-#endif
 			}
 			break;
 		case R_ANAL_OP_TYPE_LOAD:
@@ -6408,12 +6315,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 						if (!xrefs_only) {
 							r_core_anal_fcn (core, dst, UT64_MAX, R_ANAL_REF_TYPE_NULL, 1);
 						}
-// analyze function here
-#if 0
-						if (op.type == R_ANAL_OP_TYPE_UCALL || op.type == R_ANAL_OP_TYPE_RCALL) {
-							eprintf ("0x%08"PFMT64x"  RCALL TO %llx\n", cur, dst);
-						}
-#endif
 					}
 				}
 			}
@@ -6449,8 +6350,6 @@ repeat:
 	ESIL->user = NULL;
 	r_anal_op_fini (&op);
 	r_cons_break_pop (core->cons);
-	// r_core_cmd0 (core, "wc--");
-	// restore register
 	r_reg_arena_pop (core->anal->reg);
 }
 
