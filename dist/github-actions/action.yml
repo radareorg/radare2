@@ -32,12 +32,17 @@ runs:
     - name: Resolve version
       id: resolve
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         set -e
         R2V="${{ inputs.version }}"
         if [ -z "$R2V" ] && [ "${{ inputs.from-git }}" != "true" ]; then
-          R2V=$(curl -sf https://api.github.com/repos/radareorg/radare2/releases/latest \
-            | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+          R2V=$(gh api repos/radareorg/radare2/releases/latest --jq .tag_name) || true
+          if [ -z "$R2V" ]; then
+            echo "::error::Failed to resolve latest radare2 release version"
+            exit 1
+          fi
           echo "Resolved latest release: $R2V"
         fi
         echo "r2v=$R2V" >> "$GITHUB_OUTPUT"
