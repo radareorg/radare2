@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 - pancake */
+/* radare - LGPL - Copyright 2010-2026 - pancake */
 
 #include <r_anal.h>
 
@@ -75,46 +75,43 @@ R_API const char *r_anal_value_type_tostring(RAnalValue *value) {
 
 R_API char *r_anal_value_tostring(RAnalValue *value) {
 	R_RETURN_VAL_IF_FAIL (value, NULL);
-	char *out = NULL;
-	if (value) {
-		out = strdup ("");
-		if (!value->base && !value->reg) {
-			if (value->imm != -1LL) {
-				out = r_str_appendf (out, "0x%"PFMT64x, value->imm);
-			} else {
-				out = r_str_append (out, "-1");
-			}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!value->base && !value->reg) {
+		if (value->imm != -1LL) {
+			r_strbuf_appendf (sb, "0x%"PFMT64x, value->imm);
 		} else {
-			if (value->memref) {
-				switch (value->memref) {
-				case 1: out = r_str_append (out, "(char)"); break;
-				case 2: out = r_str_append (out, "(short)"); break;
-				case 4: out = r_str_append (out, "(word)"); break;
-				case 8: out = r_str_append (out, "(dword)"); break;
-				}
-				out = r_str_append (out, "[");
+			r_strbuf_append (sb, "-1");
+		}
+	} else {
+		if (value->memref) {
+			switch (value->memref) {
+			case 1: r_strbuf_append (sb, "(char)"); break;
+			case 2: r_strbuf_append (sb, "(short)"); break;
+			case 4: r_strbuf_append (sb, "(word)"); break;
+			case 8: r_strbuf_append (sb, "(dword)"); break;
 			}
-			if (value->mul) {
-				out = r_str_appendf (out, "%d*", value->mul);
-			}
-			if (value->reg) {
-				out = r_str_appendf (out, "%s", value->reg);
-			}
-			if (value->regdelta) {
-				out = r_str_appendf (out, "+%s", value->regdelta);
-			}
-			if (value->base != 0) {
-				out = r_str_appendf (out, "0x%" PFMT64x, value->base);
-			}
-			if (value->delta > 0) {
-				out = r_str_appendf (out, "+0x%" PFMT64x, value->delta);
-			} else if (value->delta < 0) {
-				out = r_str_appendf (out, "-0x%" PFMT64x, -value->delta);
-			}
-			if (value->memref) {
-				out = r_str_append (out, "]");
-			}
+			r_strbuf_append (sb, "[");
+		}
+		if (value->mul) {
+			r_strbuf_appendf (sb, "%d*", value->mul);
+		}
+		if (value->reg) {
+			r_strbuf_appendf (sb, "%s", value->reg);
+		}
+		if (value->regdelta) {
+			r_strbuf_appendf (sb, "+%s", value->regdelta);
+		}
+		if (value->base != 0) {
+			r_strbuf_appendf (sb, "0x%" PFMT64x, value->base);
+		}
+		if (value->delta > 0) {
+			r_strbuf_appendf (sb, "+0x%" PFMT64x, value->delta);
+		} else if (value->delta < 0) {
+			r_strbuf_appendf (sb, "-0x%" PFMT64x, -value->delta);
+		}
+		if (value->memref) {
+			r_strbuf_append (sb, "]");
 		}
 	}
-	return out;
+	return r_strbuf_drain (sb);
 }

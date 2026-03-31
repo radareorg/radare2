@@ -77,8 +77,11 @@ runs:
         $buildDir = Join-Path $env:RUNNER_TEMP '_r2build'
         & git @cloneArgs 'https://github.com/radareorg/radare2.git' $buildDir
         Set-Location $buildDir
-        pip install meson ninja --break-system-packages
+        pip install meson ninja
         $prefix = '${{ inputs.prefix }}'
+        if (-not $prefix -or $prefix -eq '/usr') {
+          $prefix = Join-Path $env:RUNNER_TEMP 'radare2'
+        }
         meson setup --buildtype=release --prefix="$prefix" build
         ninja -C build
         ninja -C build install
@@ -126,10 +129,19 @@ runs:
       run: |
         $ErrorActionPreference = 'Stop'
         $R2V = "${{ steps.resolve.outputs.r2v }}"
-        $url = "https://github.com/radareorg/radare2/releases/download/$R2V/radare2-$R2V-w64.zip"
+        $arch = $env:PROCESSOR_ARCHITECTURE
+        switch ($arch) {
+          'ARM64' { $pkgArch = 'w64-arm64' }
+          'x86'   { $pkgArch = 'w32' }
+          default  { $pkgArch = 'w64' }
+        }
+        $url = "https://github.com/radareorg/radare2/releases/download/$R2V/radare2-$R2V-$pkgArch.zip"
         $dest = Join-Path $env:RUNNER_TEMP 'radare2.zip'
         Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
         $prefix = '${{ inputs.prefix }}'
+        if (-not $prefix -or $prefix -eq '/usr') {
+          $prefix = Join-Path $env:RUNNER_TEMP 'radare2'
+        }
         if (Test-Path $prefix) { Remove-Item -Path $prefix -Recurse -Force }
         Expand-Archive -Path $dest -DestinationPath $prefix -Force
         # Flatten nested subdirectory if present
