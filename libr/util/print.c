@@ -63,17 +63,19 @@ R_API char *r_print_columns(RPrint *p, const ut8 *buf, int len, int height) {
 	size_t i, j;
 	int cols = (p->consb.get_size && p->consb.cons) ? p->consb.get_size (p->consb.cons, NULL) : 78;
 	int rows = height > 0 ? height : 10;
-	bool colors = p->flags & R_PRINT_FLAGS_COLOR;
-	RConsPrintablePalette *pal = &p->consb.cons->context->pal;
+	bool colors = (p->flags & R_PRINT_FLAGS_COLOR) && p->consb.cons;
 	const bool useutf8 = p->flags & R_PRINT_FLAGS_USEUTF8;
 	const char *vline = useutf8 ? RUNE_LINE_VERT : "|";
 	const char *block = useutf8 ? R_UTF8_BLOCK : "#";
-	const char *kol[5];
-	kol[0] = pal->call;
-	kol[1] = pal->jmp;
-	kol[2] = pal->cjmp;
-	kol[3] = pal->mov;
-	kol[4] = pal->nop;
+	const char *kol[5] = {0};
+	if (colors) {
+		RConsPrintablePalette *pal = &p->consb.cons->context->pal;
+		kol[0] = pal->call;
+		kol[1] = pal->jmp;
+		kol[2] = pal->cjmp;
+		kol[3] = pal->mov;
+		kol[4] = pal->nop;
+	}
 	const char *line = p->histblock ? block : vline;
 	const char *hit_suffix = (colors || p->histblock) ? Color_RESET : "";
 	bool has_color = colors || p->histblock;

@@ -1311,9 +1311,9 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 	}
 	if (item && comment) {
 		r_flag_item_set_comment (core->flags, item, comment);
-		if (comment_needs_free) {
-			free (comment);
-		}
+	}
+	if (comment_needs_free) {
+		free (comment);
 	}
 	return true;
 }

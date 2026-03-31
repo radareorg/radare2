@@ -583,7 +583,11 @@ static RCFValueData *r_cf_value_data_new(char *string) {
 		R_FREE (data);
 		return NULL;
 	}
-	r_base64_decode (out, string, len, false);
+	if (r_base64_decode (out, string, len, false) < 1) {
+		free (out);
+		R_FREE (data);
+		return NULL;
+	}
 
 	data->type = R_CF_DATA;
 	data->value = r_buf_new_with_pointers (out, out_len, true);

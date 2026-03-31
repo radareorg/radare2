@@ -6024,6 +6024,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	ut64 buf_addr = start;
 	buf = malloc (buf_size);
 	if (!buf) {
+		free (sn);
 		free (spname);
 		r_reg_arena_pop (core->anal->reg);
 		return;

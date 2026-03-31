@@ -158,7 +158,12 @@ runs:
     - name: Export prefix
       id: prefix
       shell: bash
-      run: echo "prefix=${{ inputs.prefix }}" >> "$GITHUB_OUTPUT"
+      run: |
+        PREFIX="${{ inputs.prefix }}"
+        if [ "$RUNNER_OS" = "Windows" ] && [ "$PREFIX" = "/usr" ]; then
+          PREFIX="$RUNNER_TEMP/radare2"
+        fi
+        echo "prefix=$PREFIX" >> "$GITHUB_OUTPUT"
 
     # --- VERIFY ---
     - name: Verify installation
