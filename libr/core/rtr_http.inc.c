@@ -500,7 +500,12 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 				}
 				// FD IS OK HERE
 				if (rs->path [strlen (rs->path) - 1] == '/') {
-					path = (*index == '/')? strdup (index): r_str_append (path, index);
+					if (*index == '/') {
+						free (path);
+						path = strdup (index);
+					} else {
+						path = r_str_append (path, index);
+					}
 				} else {
 					//snprintf (path, sizeof (path), "%s/%s", root, rs->path);
 					if (r_file_is_directory (path)) {

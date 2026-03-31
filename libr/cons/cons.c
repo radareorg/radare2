@@ -2128,9 +2128,5 @@ R_API void r_cons_set_embedded(RCons *cons, bool embedded) {
 		cons = r_cons_singleton ();
 	}
 	cons->is_embedded = embedded;
-	if (embedded) {
-		// when embedded in a GUI, disable signal-based interruption
-		// the host application should set context->breaked directly
-		r_sys_signable (false);
-	}
+	r_sys_signable (!embedded);
 }

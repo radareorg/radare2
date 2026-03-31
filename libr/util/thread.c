@@ -75,14 +75,12 @@ static void *_r_th_launcher(void *_th) {
 			break;
 		case R_TH_FREED:
 		default:
-			r_th_lock_enter (th->lock);
 			th->ready = false;
 			th->running = false;
 			r_th_lock_leave (th->lock);
 #if HAVE_PTHREAD
 			pthread_exit (&ret);
 #endif
-			r_th_lock_leave (th->lock);
 			return 0;
 		}
 	} while (repeat && !th->breaked);
@@ -206,7 +204,11 @@ R_API RThread *r_th_new(RThreadFunction fun, void *user, ut32 delay) {
 			pattr = &attr;
 		}
 	}
-	pthread_create (&th->tid, pattr, _r_th_launcher, th);
+	if (pthread_create (&th->tid, pattr, _r_th_launcher, th) != 0) {
+		r_th_lock_free (th->lock);
+		free (th);
+		return NULL;
+	}
 #elif R2__WINDOWS__
 	th->tid = CreateThread (NULL, 0, _r_th_launcher, th, 0, 0);
 #endif
