@@ -38,11 +38,11 @@ int avr_decode(RArchSession *a, char *out, int out_len, ut64 addr, cut8 *buf, in
 		if (disassembleInstruction (&context, &dins, ins)) {
 			return -1;
 		}
-		if (printDisassembledInstruction (a, &context, out, out_len, dins, opt) < 0) {
+		if (avr_format_insn (a, &context, out, out_len, dins, opt) < 0) {
 			return -1;
 		}
 		opsize = 4;
-	} else if (printDisassembledInstruction (a, &context, out, out_len, dins, opt) < 0) {
+	} else if (avr_format_insn (a, &context, out, out_len, dins, opt) < 0) {
 		return -1;
 	}
 	if (out[0] == '.' || !out[0]) {
@@ -85,11 +85,11 @@ int avr_anal(RArchSession *as, char *out, int out_size, ut64 addr, cut8 *buf, in
 		if (disassembleInstruction (&context, &dins, ins)) {
 			return -1;
 		}
-		if (analPrintDisassembledInstruction (as, &context, out, out_size, dins, opt) < 0) {
+		if (avr_format_insn (as, &context, out, out_size, dins, opt) < 0) {
 			return -1;
 		}
 		opsize = 4;
-	} else if (analPrintDisassembledInstruction (as, &context, out, out_size, dins, opt) < 0) {
+	} else if (avr_format_insn (as, &context, out, out_size, dins, opt) < 0) {
 		return -1;
 	}
 	if (out[0] == '.' || !out[0]) {

@@ -79,9 +79,7 @@ struct _formattingOptions {
 typedef struct _formattingOptions formattingOptions;
 
 
-/* Prints a disassembled instruction, formatted with options set in the formattingOptions structure. */
-int printDisassembledInstruction(RArchSession *as, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions);
-int analPrintDisassembledInstruction(RArchSession *as, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions);
+int avr_format_insn(RArchSession *as, avrDisassembleContext *context, char *out, int out_len, const disassembledInstruction dInstruction, formattingOptions fOptions);
 int parse_registerpair(const char *operand);
 
 #endif
