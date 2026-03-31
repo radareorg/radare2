@@ -14,9 +14,17 @@ inputs:
     required: false
     default: 'false'
   prefix:
-    description: 'Installation prefix (git builds on Unix only)'
+    description: 'Installation prefix'
     required: false
     default: '/usr'
+
+outputs:
+  version:
+    description: 'Installed radare2 version'
+    value: ${{ steps.resolve.outputs.r2v }}
+  prefix:
+    description: 'Installation prefix'
+    value: ${{ steps.prefix.outputs.prefix }}
 
 runs:
   using: 'composite'
@@ -25,6 +33,7 @@ runs:
       id: resolve
       shell: bash
       run: |
+        set -e
         R2V="${{ inputs.version }}"
         if [ -z "$R2V" ] && [ "${{ inputs.from-git }}" != "true" ]; then
           R2V=$(curl -sf https://api.github.com/repos/radareorg/radare2/releases/latest \
@@ -38,6 +47,7 @@ runs:
       if: inputs.from-git == 'true' && runner.os != 'Windows'
       shell: bash
       run: |
+        set -e
         R2V="${{ steps.resolve.outputs.r2v }}"
         CLONEARGS="--depth=1"
         if [ -n "$R2V" ]; then
@@ -53,27 +63,28 @@ runs:
     # --- BUILD FROM GIT (Windows) ---
     - name: Build from git (Windows)
       if: inputs.from-git == 'true' && runner.os == 'Windows'
-      shell: bash
+      shell: powershell
       run: |
-        R2V="${{ steps.resolve.outputs.r2v }}"
-        CLONEARGS="--depth=1"
-        if [ -n "$R2V" ]; then
-          CLONEARGS="$CLONEARGS --branch $R2V"
-        fi
-        git clone $CLONEARGS https://github.com/radareorg/radare2.git "${RUNNER_TEMP}/_r2build"
-        cd "${RUNNER_TEMP}/_r2build"
-        pip install meson ninja
-        INSTALLDIR="${RUNNER_TEMP}/radare2"
-        meson --buildtype=release --prefix="$INSTALLDIR" build
+        $ErrorActionPreference = 'Stop'
+        $R2V = "${{ steps.resolve.outputs.r2v }}"
+        $cloneArgs = @('clone', '--depth=1')
+        if ($R2V) { $cloneArgs += @('--branch', $R2V) }
+        $buildDir = Join-Path $env:RUNNER_TEMP '_r2build'
+        & git @cloneArgs 'https://github.com/radareorg/radare2.git' $buildDir
+        Set-Location $buildDir
+        pip install meson ninja --break-system-packages
+        $prefix = '${{ inputs.prefix }}'
+        meson setup --buildtype=release --prefix="$prefix" build
         ninja -C build
         ninja -C build install
-        echo "$INSTALLDIR/bin" >> "$GITHUB_PATH"
+        "$prefix\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
 
     # --- INSTALL FROM RELEASE (Linux) ---
     - name: Install from release (Linux)
       if: inputs.from-git != 'true' && runner.os == 'Linux'
       shell: bash
       run: |
+        set -e
         R2V="${{ steps.resolve.outputs.r2v }}"
         ARCH=$(dpkg --print-architecture 2>/dev/null || echo amd64)
         BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
@@ -89,6 +100,7 @@ runs:
       if: inputs.from-git != 'true' && runner.os == 'macOS'
       shell: bash
       run: |
+        set -e
         R2V="${{ steps.resolve.outputs.r2v }}"
         ARCH=$(uname -m)
         case "$ARCH" in
@@ -104,15 +116,30 @@ runs:
     # --- INSTALL FROM RELEASE (Windows) ---
     - name: Install from release (Windows)
       if: inputs.from-git != 'true' && runner.os == 'Windows'
-      shell: bash
+      shell: powershell
       run: |
-        R2V="${{ steps.resolve.outputs.r2v }}"
-        BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
-        cd "${RUNNER_TEMP}"
-        wget -q "${BASE}/radare2-${R2V}-w64.zip" -O r2.zip
-        python3 -m zipfile -e r2.zip .
-        mv "radare2-${R2V}-w64" radare2
-        echo "${RUNNER_TEMP}/radare2/bin" >> "$GITHUB_PATH"
+        $ErrorActionPreference = 'Stop'
+        $R2V = "${{ steps.resolve.outputs.r2v }}"
+        $url = "https://github.com/radareorg/radare2/releases/download/$R2V/radare2-$R2V-w64.zip"
+        $dest = Join-Path $env:RUNNER_TEMP 'radare2.zip'
+        Invoke-WebRequest -Uri $url -OutFile $dest -UseBasicParsing
+        $prefix = '${{ inputs.prefix }}'
+        if (Test-Path $prefix) { Remove-Item -Path $prefix -Recurse -Force }
+        Expand-Archive -Path $dest -DestinationPath $prefix -Force
+        # Flatten nested subdirectory if present
+        $subdirs = Get-ChildItem -Path $prefix -Directory
+        if ($subdirs.Count -eq 1) {
+          $subdir = $subdirs[0]
+          Get-ChildItem -Path $subdir.FullName | Move-Item -Destination $prefix -Force
+          Remove-Item -Path $subdir.FullName -Recurse -Force
+        }
+        "$prefix\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+
+    # --- EXPORT PREFIX ---
+    - name: Export prefix
+      id: prefix
+      shell: bash
+      run: echo "prefix=${{ inputs.prefix }}" >> "$GITHUB_OUTPUT"
 
     # --- VERIFY ---
     - name: Verify installation
