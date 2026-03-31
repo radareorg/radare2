@@ -356,12 +356,11 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_arch_config_set_syntax (egg->rasm->config, R_ARCH_SYNTAX_INTEL);
 		char *code = r_buf_tostring (egg->buf);
 		if (R_STR_ISEMPTY (code)) {
+			free (code);
 			if (r_buf_size (egg->bin) == 0) {
 				R_LOG_DEBUG ("The egg compiler generated no code to assemble");
-				ret = true;
-			} else {
-				ret = true;
 			}
+			ret = true;
 		} else {
 			RAsmCode *asmcode = r_asm_assemble (egg->rasm, code);
 			if (asmcode && asmcode->len > 0) {
@@ -585,7 +584,6 @@ R_API void r_egg_finalize(REgg *egg) {
 	struct egg_patch_t *ep;
 	RListIter *iter;
 	if (!egg->bin) {
-		r_unref (egg->bin);
 		egg->bin = r_buf_new ();
 	}
 	r_list_foreach (egg->patches, iter, ep) {
