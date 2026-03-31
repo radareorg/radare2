@@ -944,6 +944,10 @@ static int parsedatachar(REgg *egg, char c) {
 		}
 	}
 	if (egg->lang.dstval) {
+		if (egg->lang.ndstval + 1 >= 4096) {
+			R_LOG_ERROR ("data block too large");
+			return -1;
+		}
 		egg->lang.dstval[egg->lang.ndstval++] = c;
 	}
 	return 0;
@@ -986,6 +990,10 @@ static int parseinlinechar(REgg *egg, char c) {
 		}
 	}
 	if (egg->lang.dstval) {
+		if (egg->lang.ndstval + 2 >= 4096) {
+			R_LOG_ERROR ("inline block too large");
+			return -1;
+		}
 		egg->lang.dstval[egg->lang.ndstval++] = c;
 		egg->lang.dstval[egg->lang.ndstval] = 0;
 	}

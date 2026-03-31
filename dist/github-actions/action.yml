@@ -82,7 +82,8 @@ runs:
         meson setup --buildtype=release --prefix="$prefix" build
         ninja -C build
         ninja -C build install
-        "$prefix\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+        $resolvedBin = (Resolve-Path "$prefix\bin").Path
+        $resolvedBin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
 
     # --- INSTALL FROM RELEASE (Linux) ---
     - name: Install from release (Linux)
@@ -110,11 +111,11 @@ runs:
         ARCH=$(uname -m)
         case "$ARCH" in
           arm64|aarch64) PKG_ARCH="arm64" ;;
-          *) PKG_ARCH="x86_64" ;;
+          *) PKG_ARCH="x64" ;;
         esac
         BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
         cd /tmp
-        wget -q "${BASE}/radare2-${R2V}-${PKG_ARCH}.pkg" -O r2.pkg
+        curl -fSL "${BASE}/radare2-${PKG_ARCH}-${R2V}.pkg" -o r2.pkg
         sudo installer -pkg r2.pkg -target /
         rm -f r2.pkg
 
@@ -138,7 +139,8 @@ runs:
           Get-ChildItem -Path $subdir.FullName | Move-Item -Destination $prefix -Force
           Remove-Item -Path $subdir.FullName -Recurse -Force
         }
-        "$prefix\bin" | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
+        $resolvedBin = (Resolve-Path "$prefix\bin").Path
+        $resolvedBin | Out-File -Append -Encoding utf8 $env:GITHUB_PATH
 
     # --- EXPORT PREFIX ---
     - name: Export prefix
