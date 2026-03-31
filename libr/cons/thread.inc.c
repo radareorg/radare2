@@ -1,28 +1,19 @@
 #include <r_cons.h>
 
-static R_TH_LOCAL RCons s_cons_thread = {0};
-
-// conceptually wrong, needs redesign
+// Call from background threads before using r_core_cmd via a GUI wrapper.
+// Marks the console context as unbreakable (no SIGINT handler installation)
+// and disables signal handling for the calling thread. Does NOT overwrite
+// the global singleton pointer, so r_cons_singleton() keeps working.
 R_API void r_cons_thready(void) {
-	I = &s_cons_thread;
-#if 0
-	if (I->refcnt > 0) {
-		R_CRITICAL_ENTER (I);
-	}
-#endif
 	RCons *cons = r_cons_singleton ();
+	if (!cons) {
+		return;
+	}
 	RConsContext *ctx = cons->context;
 	if (ctx) {
 		ctx->unbreakable = true;
 	}
-	r_sys_signable (false); // disable signal handling
-#if 0
-	if (I->refcnt == 0) {
-		r_cons_new ();
-	}
-	if (I->refcnt > 0) {
-		R_CRITICAL_LEAVE (I);
-	}
-#endif
+	cons->is_embedded = true;
+	r_sys_signable (false);
 }
 

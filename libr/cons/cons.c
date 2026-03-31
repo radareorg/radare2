@@ -300,6 +300,8 @@ R_API RCons *r_cons_new2(void) {
 	cons->pager = NULL; /* no pager by default */
 	cons->mouse = 0;
 	cons->show_vals = false;
+	cons->is_embedded = false;
+	cons->main_tid = r_th_self ();
 	r_cons_reset (cons);
 	cons->line = r_line_new (cons);
 	return cons;
@@ -463,7 +465,7 @@ R_API void r_cons_context_break_push(RCons *cons, RConsContext *context, RConsBr
 	RConsBreakStack *b = R_NEW0 (RConsBreakStack);
 	if (r_stack_is_empty (context->break_stack)) {
 #if R2__UNIX__
-		if (!context->unbreakable) {
+		if (!context->unbreakable && !cons->is_embedded) {
 			if (sig && r_cons_context_is_main (cons, context)) {
 				r_sys_signal (SIGINT, __break_signal);
 			}
@@ -494,7 +496,7 @@ R_API void r_cons_context_break_pop(RCons *cons, RConsContext *context, bool sig
 	} else {
 		// there is not more elements in the stack
 #if R2__UNIX__ && !__wasi__
-		if (sig && r_cons_context_is_main (cons, context)) {
+		if (sig && !cons->is_embedded && r_cons_context_is_main (cons, context)) {
 			if (!context->unbreakable) {
 				r_sys_signal (SIGINT, SIG_IGN);
 			}
@@ -1588,7 +1590,7 @@ R_API void r_cons_break_end(RCons *cons) {
 	C->breaked = false;
 	cons->timeout = 0;
 #if R2__UNIX__ && !__wasi__
-	if (!C->unbreakable) {
+	if (!C->unbreakable && !cons->is_embedded) {
 		r_sys_signal (SIGINT, SIG_IGN);
 	}
 #endif
@@ -2112,7 +2114,23 @@ R_API void r_cons_break(RCons *cons) {
 	}
 	r_cons_context_break (cons->context);
 #if R2__UNIX__ && !__wasi__
-	/* Trigger a SIGINT so threads or blocking syscalls can be interrupted. */
-	raise (SIGINT);
+	if (!cons->is_embedded) {
+		/* Trigger a SIGINT so threads or blocking syscalls can be interrupted.
+		 * Skip when embedded in a GUI (is_embedded) because raise(SIGINT)
+		 * would kill the host application's event loop. */
+		raise (SIGINT);
+	}
 #endif
+}
+
+R_API void r_cons_set_embedded(RCons *cons, bool embedded) {
+	if (!cons) {
+		cons = r_cons_singleton ();
+	}
+	cons->is_embedded = embedded;
+	if (embedded) {
+		// when embedded in a GUI, disable signal-based interruption
+		// the host application should set context->breaked directly
+		r_sys_signable (false);
+	}
 }
