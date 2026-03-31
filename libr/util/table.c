@@ -743,7 +743,15 @@ R_API char *r_table_tohtml(RTable *t) {
 	RListIter *iter, *iter2;
 	RStrBuf *sb = r_strbuf_new ("");
 	r_strbuf_append (sb, "<table>\n");
-	// TODO: add th
+	if (r_list_length (t->cols) > 0) {
+		RTableColumn *col;
+		r_strbuf_append (sb, "  <thead><tr>\n");
+		r_list_foreach (t->cols, iter, col) {
+			r_strbuf_appendf (sb, "    <th>%s</th>\n", col->name);
+		}
+		r_strbuf_append (sb, "  </tr></thead>\n");
+	}
+	r_strbuf_append (sb, "  <tbody>\n");
 	r_list_foreach (t->rows, iter, row) {
 		char *item;
 		r_strbuf_append (sb, "  <tr>\n");
@@ -752,6 +760,7 @@ R_API char *r_table_tohtml(RTable *t) {
 		}
 		r_strbuf_append (sb, "  </tr>\n");
 	}
+	r_strbuf_append (sb, "  </tbody>\n");
 	r_strbuf_append (sb, "</table>\n");
 	return r_strbuf_drain (sb);
 }
