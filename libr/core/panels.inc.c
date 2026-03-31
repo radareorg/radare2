@@ -1860,7 +1860,6 @@ static void r_panels_free_menu_item(RPanelsMenuItem *item) {
 
 static void r_panels_mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
-	r_panels_free_menu_item ((RPanelsMenuItem *)kv->value);
 }
 
 static void r_panels_free_root_menu(RPanelsMenu *menu) {
@@ -1868,11 +1867,7 @@ static void r_panels_free_root_menu(RPanelsMenu *menu) {
 		return;
 	}
 	if (menu->root) {
-		free (menu->root->name);
-		free (menu->root->desc);
-		free (menu->root->args);
-		free (menu->root->sub);
-		free (menu->root);
+		r_panels_free_menu_item (menu->root);
 	}
 	free (menu->history);
 	free (menu->refreshPanels);
@@ -3464,6 +3459,7 @@ static void r_panels_update_menu(RCore *core, const char *parent, R_NULLABLE RPa
 		r_strf_var (key, 128, "%s.%s", parent, sub->name);
 		ht_pp_delete (core->panels->mht, key);
 	}
+	free (p_item->sub);
 	p_item->sub = NULL;
 	p_item->n_sub = 0;
 	if (cb) {
