@@ -10,10 +10,10 @@ ii
 ir
 EOF
 EXPECT=<<EOF
-0x00000ae0 arg1
-0x00000ae4 arg2
+0x00000ae0 env
+0x00000ae4 thiz
 0x00000ae8 arg3
-0x00000aec arg1
+0x00000aec env
 0x00000af8 bl rsym._ZN7_JNIEnv14GetArrayLengthEP7_jarray
 0x00000b24 bl rsym._ZN7_JNIEnv21GetObjectArrayElementEP13_jobjectArrayi
 0x00000b3c bl rsym._ZN7_JNIEnv17GetStringUTFCharsEP8_jstringPh
