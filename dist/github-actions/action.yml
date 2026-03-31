@@ -1,0 +1,120 @@
+name: 'Install Radare2'
+description: 'Install radare2 from release packages or build from git source'
+branding:
+  icon: 'terminal'
+  color: 'yellow'
+
+inputs:
+  version:
+    description: 'Radare2 version (e.g., "6.1.2"). Empty for latest release or latest git.'
+    required: false
+    default: ''
+  from-git:
+    description: 'Build from git source instead of using release packages'
+    required: false
+    default: 'false'
+  prefix:
+    description: 'Installation prefix (git builds on Unix only)'
+    required: false
+    default: '/usr'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Resolve version
+      id: resolve
+      shell: bash
+      run: |
+        R2V="${{ inputs.version }}"
+        if [ -z "$R2V" ] && [ "${{ inputs.from-git }}" != "true" ]; then
+          R2V=$(curl -sf https://api.github.com/repos/radareorg/radare2/releases/latest \
+            | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+          echo "Resolved latest release: $R2V"
+        fi
+        echo "r2v=$R2V" >> "$GITHUB_OUTPUT"
+
+    # --- BUILD FROM GIT (Unix) ---
+    - name: Build from git (Unix)
+      if: inputs.from-git == 'true' && runner.os != 'Windows'
+      shell: bash
+      run: |
+        R2V="${{ steps.resolve.outputs.r2v }}"
+        CLONEARGS="--depth=1"
+        if [ -n "$R2V" ]; then
+          CLONEARGS="$CLONEARGS --branch $R2V"
+        fi
+        git clone $CLONEARGS https://github.com/radareorg/radare2.git /tmp/_r2build
+        cd /tmp/_r2build
+        export CFLAGS="-O2 -Wno-unused-result"
+        ./sys/install.sh "${{ inputs.prefix }}"
+        cd /
+        rm -rf /tmp/_r2build
+
+    # --- BUILD FROM GIT (Windows) ---
+    - name: Build from git (Windows)
+      if: inputs.from-git == 'true' && runner.os == 'Windows'
+      shell: bash
+      run: |
+        R2V="${{ steps.resolve.outputs.r2v }}"
+        CLONEARGS="--depth=1"
+        if [ -n "$R2V" ]; then
+          CLONEARGS="$CLONEARGS --branch $R2V"
+        fi
+        git clone $CLONEARGS https://github.com/radareorg/radare2.git "${RUNNER_TEMP}/_r2build"
+        cd "${RUNNER_TEMP}/_r2build"
+        pip install meson ninja
+        INSTALLDIR="${RUNNER_TEMP}/radare2"
+        meson --buildtype=release --prefix="$INSTALLDIR" build
+        ninja -C build
+        ninja -C build install
+        echo "$INSTALLDIR/bin" >> "$GITHUB_PATH"
+
+    # --- INSTALL FROM RELEASE (Linux) ---
+    - name: Install from release (Linux)
+      if: inputs.from-git != 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        R2V="${{ steps.resolve.outputs.r2v }}"
+        ARCH=$(dpkg --print-architecture 2>/dev/null || echo amd64)
+        BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
+        cd /tmp
+        wget -q "${BASE}/radare2_${R2V}_${ARCH}.deb"
+        wget -q "${BASE}/radare2-dev_${R2V}_${ARCH}.deb"
+        sudo dpkg -i "radare2_${R2V}_${ARCH}.deb"
+        sudo dpkg -i "radare2-dev_${R2V}_${ARCH}.deb"
+        rm -f radare2*.deb
+
+    # --- INSTALL FROM RELEASE (macOS) ---
+    - name: Install from release (macOS)
+      if: inputs.from-git != 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        R2V="${{ steps.resolve.outputs.r2v }}"
+        ARCH=$(uname -m)
+        case "$ARCH" in
+          arm64|aarch64) PKG_ARCH="arm64" ;;
+          *) PKG_ARCH="x86_64" ;;
+        esac
+        BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
+        cd /tmp
+        wget -q "${BASE}/radare2-${R2V}-${PKG_ARCH}.pkg" -O r2.pkg
+        sudo installer -pkg r2.pkg -target /
+        rm -f r2.pkg
+
+    # --- INSTALL FROM RELEASE (Windows) ---
+    - name: Install from release (Windows)
+      if: inputs.from-git != 'true' && runner.os == 'Windows'
+      shell: bash
+      run: |
+        R2V="${{ steps.resolve.outputs.r2v }}"
+        BASE="https://github.com/radareorg/radare2/releases/download/${R2V}"
+        cd "${RUNNER_TEMP}"
+        wget -q "${BASE}/radare2-${R2V}-w64.zip" -O r2.zip
+        python3 -m zipfile -e r2.zip .
+        mv "radare2-${R2V}-w64" radare2
+        echo "${RUNNER_TEMP}/radare2/bin" >> "$GITHUB_PATH"
+
+    # --- VERIFY ---
+    - name: Verify installation
+      shell: bash
+      run: radare2 -v
