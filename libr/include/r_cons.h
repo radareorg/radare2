@@ -570,6 +570,8 @@ typedef struct r_cons_t {
 	ut64 prev;
 	RStrBuf *echodata;
 	bool lasti;
+	bool is_embedded; // when true, r_cons_break won't raise(SIGINT) and break_push won't install signal handlers
+	R_TH_TID main_tid; // thread that initialized cons, for signal-safety checks
 #if R2__WINDOWS__
 	HANDLE hStdout;
 	HANDLE hStderr;
@@ -860,6 +862,7 @@ R_API void r_cons_break_clear(RCons *cons);
 R_API void r_cons_break_timeout(RCons *cons, int timeout);
 R_API void r_cons_break_end(RCons *cons);
 R_API void r_cons_break(RCons *cons);
+R_API void r_cons_set_embedded(RCons *cons, bool embedded); // disable raise(SIGINT) and signal handler installation for GUI embedding
 
 /* pipe */
 R_API int r_cons_pipe_open(RCons *cons, const char *file, int fdn, int append);
