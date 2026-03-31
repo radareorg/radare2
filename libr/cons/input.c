@@ -18,7 +18,7 @@ R_API int r_cons_controlz(RCons *cons, int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int mouse_event(RCons *cons) {
+static int r_cons_mouse_event(RCons *cons) {
 	char xpos[32];
 	char ypos[32];
 	(void) r_cons_readchar (cons); // skip first char
@@ -236,7 +236,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			mouse_event (cons);
+			r_cons_mouse_event (cons);
 			return 0;
 		case '2':
 			ch = r_cons_readchar (cons);
@@ -343,7 +343,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		case 'M': ch = mouse_event (cons); break; // mouse up
+		case 'M': ch = r_cons_mouse_event (cons); break; // mouse up
 		}
 		break;
 	}

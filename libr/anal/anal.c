@@ -216,6 +216,7 @@ R_API void r_anal_plugin_free(RAnalPlugin *p) {
 void __block_free_rb(RBNode *node, void *user);
 
 static void anal_priv_free(RAnal * R_NONNULL a) {
+	free (R_ANAL_PRIV (a)->dir_prefix);
 	free (a->priv);
 }
 

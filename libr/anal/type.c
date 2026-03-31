@@ -43,7 +43,7 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	}
 }
 
-static void load_types_from(RAnal *anal, const char *dir_prefix, const char *fmt, ...) {
+static void load_types_from(RAnal *anal, const char *fmt, ...) {
 	R_RETURN_IF_FAIL (anal && fmt);
 	va_list ap;
 	va_start (ap, fmt);
@@ -63,12 +63,15 @@ static void load_types_from(RAnal *anal, const char *dir_prefix, const char *fmt
 			sdb_free (gd);
 		}
 #endif
-	} else if (R_STR_ISNOTEMPTY (dir_prefix)) {
-		char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
-		if (dbpath && r_file_exists (dbpath)) {
-			sdb_concat_by_path (anal->sdb_types, dbpath);
+	} else {
+		const char *dir_prefix = R_ANAL_PRIV (anal)->dir_prefix;
+		if (R_STR_ISNOTEMPTY (dir_prefix)) {
+			char *dbpath = r_str_newf ("%s/%s/%s.sdb", dir_prefix, R2_SDB_FCNSIGN, s);
+			if (dbpath && r_file_exists (dbpath)) {
+				sdb_concat_by_path (anal->sdb_types, dbpath);
+			}
+			free (dbpath);
 		}
-		free (dbpath);
 	}
 	free (s);
 }
@@ -93,20 +96,20 @@ R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
 	if (!merge) {
 		sdb_reset (anal->sdb_types);
 	}
-	load_types_from (anal, NULL, "types");
-	load_types_from (anal, NULL, "types-%s", arch);
-	load_types_from (anal, NULL, "types-%s", os);
+	load_types_from (anal, "types");
+	load_types_from (anal, "types-%s", arch);
+	load_types_from (anal, "types-%s", os);
 	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
-		load_types_from (anal, NULL, "types-darwin");
+		load_types_from (anal, "types-darwin");
 	}
 	if (!strcmp (os, "android")) {
-		load_types_from (anal, NULL, "types-jni");
+		load_types_from (anal, "types-jni");
 	}
-	load_types_from (anal, NULL, "types-%d", bits);
-	load_types_from (anal, NULL, "types-%s-%d", os, bits);
-	load_types_from (anal, NULL, "types-%s-%d", arch, bits);
-	load_types_from (anal, NULL, "types-%s-%s", arch, os);
-	load_types_from (anal, NULL, "types-%s-%s-%d", arch, os, bits);
+	load_types_from (anal, "types-%d", bits);
+	load_types_from (anal, "types-%s-%d", os, bits);
+	load_types_from (anal, "types-%s-%d", arch, bits);
+	load_types_from (anal, "types-%s-%s", arch, os);
+	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
 }
@@ -114,6 +117,10 @@ R_IPI void r_anal_types_ensure_loaded(RAnal *anal) {
 R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *os, const char *subsystem) {
 	R_RETURN_IF_FAIL (anal && anal->config && anal->sdb_types);
 	RAnalPriv *priv = R_ANAL_PRIV (anal);
+	if (R_STR_ISNOTEMPTY (dir_prefix)) {
+		free (priv->dir_prefix);
+		priv->dir_prefix = strdup (dir_prefix);
+	}
 	const char *arch = anal->config->arch;
 	const int bits = anal->config->bits;
 	// Check if types need to be reloaded due to bits change
@@ -130,30 +137,30 @@ R_API void r_anal_types_reload(RAnal *anal, const char *dir_prefix, const char *
 		os = "";
 	}
 	sdb_reset (anal->sdb_types);
-	load_types_from (anal, dir_prefix, "types");
-	load_types_from (anal, dir_prefix, "types-%s", arch);
-	load_types_from (anal, dir_prefix, "types-%s", os);
+	load_types_from (anal, "types");
+	load_types_from (anal, "types-%s", arch);
+	load_types_from (anal, "types-%s", os);
 	if (!strcmp (os, "ios") || !strcmp (os, "macos")) {
-		load_types_from (anal, dir_prefix, "types-darwin");
+		load_types_from (anal, "types-darwin");
 	}
 	if (subsystem && !strcmp (subsystem, "xnu")) {
-		load_types_from (anal, dir_prefix, "types-iokit");
+		load_types_from (anal, "types-iokit");
 	}
 	if (!strcmp (os, "android")) {
-		load_types_from (anal, dir_prefix, "types-jni");
+		load_types_from (anal, "types-jni");
 	}
-	load_types_from (anal, dir_prefix, "types-%d", bits);
-	load_types_from (anal, dir_prefix, "types-%s-%d", os, bits);
-	load_types_from (anal, dir_prefix, "types-%s-%d", arch, bits);
-	load_types_from (anal, dir_prefix, "types-%s-%s", arch, os);
-	load_types_from (anal, dir_prefix, "types-%s-%s-%d", arch, os, bits);
+	load_types_from (anal, "types-%d", bits);
+	load_types_from (anal, "types-%s-%d", os, bits);
+	load_types_from (anal, "types-%s-%d", arch, bits);
+	load_types_from (anal, "types-%s-%s", arch, os);
+	load_types_from (anal, "types-%s-%s-%d", arch, os, bits);
 	priv->types_dirty = false;
 	priv->types_loaded_bits = bits;
 }
 
 R_API void r_anal_types_load_sdb(RAnal *anal, const char *name) {
 	R_RETURN_IF_FAIL (anal && name);
-	load_types_from (anal, NULL, "%s", name);
+	load_types_from (anal, "%s", name);
 }
 
 R_API void r_anal_remove_parsed_type(RAnal *anal, const char *name) {
