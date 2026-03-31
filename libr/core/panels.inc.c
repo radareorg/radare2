@@ -1860,12 +1860,27 @@ static void r_panels_free_menu_item(RPanelsMenuItem *item) {
 
 static void r_panels_mht_free_kv(HtPPKv *kv) {
 	free (kv->key);
+	// values are borrowed pointers owned by the menu tree - do not free
+}
+
+// recursively remove item and all descendants from the hashtable index
+static void r_panels_mht_remove(HtPP *mht, const char *prefix, RPanelsMenuItem *item) {
+	int i;
+	for (i = 0; i < item->n_sub; i++) {
+		RPanelsMenuItem *sub = item->sub[i];
+		if (sub && sub->name && strcmp (sub->name, "--")) {
+			r_strf_var (key, 256, "%s.%s", prefix, sub->name);
+			r_panels_mht_remove (mht, key, sub);
+			ht_pp_delete (mht, key);
+		}
+	}
 }
 
 static void r_panels_free_root_menu(RPanelsMenu *menu) {
 	if (!menu) {
 		return;
 	}
+	// items are freed here; mht must already be freed or cleared before this
 	if (menu->root) {
 		r_panels_free_menu_item (menu->root);
 	}
@@ -1903,9 +1918,11 @@ static void r_panels_free_partial(RPanels *panels) {
 		return;
 	}
 	if (panels->mht) {
+		// free hashtable first: it only owns keys, values are borrowed from the menu tree
 		ht_pp_free (panels->mht);
 		panels->mht = NULL;
 	}
+	// then free the menu tree which owns all RPanelsMenuItem objects
 	r_panels_free_root_menu (panels->panels_menu);
 	if (panels->panel) {
 		int i;
@@ -3453,11 +3470,11 @@ static void r_panels_update_menu(RCore *core, const char *parent, R_NULLABLE RPa
 	RPanels *panels = core->panels;
 	void *addr = ht_pp_find (panels->mht, parent, NULL);
 	RPanelsMenuItem *p_item = (RPanelsMenuItem *)addr;
+	// remove all descendants from the hashtable index, then free the items
+	r_panels_mht_remove (panels->mht, parent, p_item);
 	int i;
 	for (i = 0; i < p_item->n_sub; i++) {
-		RPanelsMenuItem *sub = p_item->sub[i];
-		r_strf_var (key, 128, "%s.%s", parent, sub->name);
-		ht_pp_delete (core->panels->mht, key);
+		r_panels_free_menu_item (p_item->sub[i]);
 	}
 	free (p_item->sub);
 	p_item->sub = NULL;
