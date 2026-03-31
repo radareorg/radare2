@@ -274,7 +274,7 @@ static bool replay_binding_write_all(const RDebugReplayBinding *binding, const u
 }
 
 R_API void r_debug_session_fini_runtime(RDebug *dbg) {
-	r_debug_fasttime_reset (dbg);
+	R_RETURN_IF_FAIL (dbg);
 }
 
 static void reset_resume_state(RDebug *dbg) {
