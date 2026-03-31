@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_cons.h>
 
@@ -18,7 +18,7 @@ R_API int r_cons_controlz(RCons *cons, int ch) {
 // 97 - wheel down
 // 95 - mouse up
 // 92 - mouse down
-static int parseMouseEvent(RCons *cons) {
+static int mouse_event(RCons *cons) {
 	char xpos[32];
 	char ypos[32];
 	(void) r_cons_readchar (cons); // skip first char
@@ -118,7 +118,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 	}
 	switch (ch) {
 	case 0x1b:
-		ch = 'q'; // XXX: must be 0x1b (R_CONS_KEY_ESC)
+		ch = 'q'; // i think this must be 0x1b (R_CONS_KEY_ESC)
 		break;
 	case 0x4f: // function keys from f1 to f4
 		ch = r_cons_readchar (cons);
@@ -236,7 +236,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
-			parseMouseEvent (cons);
+			mouse_event (cons);
 			return 0;
 		case '2':
 			ch = r_cons_readchar (cons);
@@ -343,7 +343,7 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 		case 'b': ch = 'J'; break; // shift+down
 		case 'c': ch = 'L'; break; // shift+right
 		case 'd': ch = 'H'; break; // shift+left
-		case 'M': ch = parseMouseEvent (cons); break; // mouse up
+		case 'M': ch = mouse_event (cons); break; // mouse up
 		}
 		break;
 	}

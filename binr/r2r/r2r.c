@@ -200,7 +200,7 @@ static bool r2r_test_run_unit(void) {
 		return false;
 	}
 	char *cmd = r_str_newf ("%s -C unit run", make);
-	int rc = r_sandbox_system (cmd, 1) == 0;
+	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
 	free (make);
 	return rc == 0;

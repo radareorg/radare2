@@ -1160,10 +1160,11 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	const char **envk = rlist_to_argv (envvars, &env_size);
 	const char **envv = rlist_to_argv (envvals, &env_size);
 
-	R2RProcessOutput *out;
+	R2RProcessOutput *out = NULL;
 	if (repeat > 1) {
 		int rep = repeat;
 		while (rep-- > 0) {
+			r2r_process_output_free (out);
 			out = runner (config->r2_cmd, argv, args_size, envk, envv, env_size, timeout_ms, user);
 		}
 	} else {
@@ -1911,7 +1912,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 				}
 			}
 			ret->proc_out = out;
-			ret->timeout = out->timeout;
+			ret->timeout = out? out->timeout: false;
 			ret->run_failed = !out;
 		}
 		break;
@@ -1923,7 +1924,7 @@ R_API R2RTestResultInfo *r2r_run_test(R2RRunConfig *config, R2RTest *test) {
 			R2RProcessOutput *out = r2r_run_fuzz_test (config, test->path, subprocess_runner, NULL);
 			success = r2r_check_fuzz_test (out);
 			ret->proc_out = out;
-			ret->timeout = out->timeout;
+			ret->timeout = out? out->timeout: false;
 			ret->run_failed = !out;
 		}
 		break;

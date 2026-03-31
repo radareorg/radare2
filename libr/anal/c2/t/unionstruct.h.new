@@ -1,0 +1,9 @@
+PadStr=struct
+struct.PadStr.pad=char,0,6
+struct.PadStr.str1=char,6,11
+struct.PadStr=pad,str1
+Str=union
+union.Str.str0=char,0,5
+union.Str.str1=PadStr,0,0
+union.Str=str0,str1
+
