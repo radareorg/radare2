@@ -93,6 +93,11 @@ static char *regs(RArchSession *as) {
 }
 
 static int info(RArchSession *as, ut32 q) {
+	switch (q) {
+	case R_ARCH_INFO_MINOP_SIZE:
+	case R_ARCH_INFO_MAXOP_SIZE:
+		return 4;
+	}
 	return 0;
 }
 
