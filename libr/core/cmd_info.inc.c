@@ -2258,6 +2258,8 @@ static bool is_entrypoint_symbol(const char *name) {
 		"sceneWillEnterForeground",
 		"sceneDidEnterBackground",
 		"application:handleWatchKitExtensionRequest:reply",
+		"JNI_OnLoad",
+		"JNI_OnUnload",
 		// clang-format on
 	};
 	size_t i, size = sizeof (words) / sizeof (words[0]);
