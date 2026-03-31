@@ -44,7 +44,7 @@ static int local_b64_decode(const char in[4], ut8 out[3]) {
 	return len;
 }
 
-R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
+R_API int r_base64_decode(ut8 *bout, const char *bin, int len, bool strict) {
 	int in, out;
 	if (len < 0) {
 		len = strlen (bin);
@@ -56,11 +56,14 @@ R_API int r_base64_decode(ut8 *bout, const char *bin, int len) {
 	for (in = out = 0; in + 3 < len; in += 4) {
 		int ret = local_b64_decode (bin + in, bout + out);
 		if (ret < 1) {
-			return -1;
+			if (strict) {
+				return -1;
+			}
+			break;
 		}
 		out += ret;
 	}
-	if (in != len) {
+	if (strict && in != len) {
 		return -1;
 	}
 	bout[out] = 0;
@@ -79,7 +82,7 @@ R_API ut8 *r_base64_decode_dyn(const char *in, int len, int *olen) {
 	if (!bout) {
 		return NULL;
 	}
-	int res = r_base64_decode (bout, in, len);
+	int res = r_base64_decode (bout, in, len, false);
 	if (res == -1) {
 		free (bout);
 		return NULL;

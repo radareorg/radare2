@@ -928,7 +928,7 @@ static int cmd_alias(void *data, const char *input) {
 						 * than strlen() of input */
 						ut8* decoded = malloc (b64_len);
 						if (decoded) {
-							int decoded_sz = r_base64_decode (decoded, def+7, b64_len);
+							int decoded_sz = r_base64_decode (decoded, def+7, b64_len, true);
 							if (decoded_sz > 0) {
 								r_cmd_alias_set_raw (core->rcmd, buf, decoded, decoded_sz);
 							} else {

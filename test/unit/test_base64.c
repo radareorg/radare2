@@ -10,7 +10,7 @@ bool test_r_base64_decode_dyn(void) {
 
 bool test_r_base64_decode(void) {
 	ut8* hello = malloc (50);
-	int status = r_base64_decode (hello, "aGVsbG8=", -1);
+	int status = r_base64_decode (hello, "aGVsbG8=", -1, false);
 	mu_assert_eq (status, (int)strlen ("hello"), "valid base64 decoding");
 	mu_assert_streq((char*)hello, "hello", "base64 decoding");
 	free (hello);
@@ -19,16 +19,19 @@ bool test_r_base64_decode(void) {
 
 bool test_r_base64_decode_invalid(void) {
 	ut8* hello = malloc (50);
-	int status = r_base64_decode (hello, "\x01\x02\x03\x04\x00", -1);
-	// Returns the length of the decoded string, 0 == invalid input.
-	mu_assert_eq (status, -1, "invalid base64 decoding");
+	// strict rejects invalid characters
+	int status = r_base64_decode (hello, "\x01\x02\x03\x04\x00", -1, true);
+	mu_assert_eq (status, -1, "strict invalid base64 decoding");
+	// lenient returns 0 decoded bytes
+	status = r_base64_decode (hello, "\x01\x02\x03\x04\x00", -1, false);
+	mu_assert_eq (status, 0, "lenient invalid base64 decoding");
 	free (hello);
 	mu_end;
 }
 
 bool test_r_base64_decode_empty(void) {
 	ut8* hello = malloc (1);
-	int status = r_base64_decode (hello, "", -1);
+	int status = r_base64_decode (hello, "", -1, false);
 	mu_assert_eq (status, 0, "empty base64 decoding");
 	mu_assert_streq ((char *)hello, "", "empty base64 output");
 	free (hello);
@@ -37,16 +40,25 @@ bool test_r_base64_decode_empty(void) {
 
 bool test_r_base64_decode_short_invalid(void) {
 	ut8* hello = malloc (8);
-	int status = r_base64_decode (hello, "a", -1);
-	mu_assert_eq (status, -1, "short base64 decoding");
+	// strict rejects non-multiple-of-4 length
+	int status = r_base64_decode (hello, "a", -1, true);
+	mu_assert_eq (status, -1, "strict short base64 decoding");
+	// lenient returns 0 decoded bytes
+	status = r_base64_decode (hello, "a", -1, false);
+	mu_assert_eq (status, 0, "lenient short base64 returns 0");
 	free (hello);
 	mu_end;
 }
 
 bool test_r_base64_decode_tail_invalid(void) {
 	ut8* hello = malloc (8);
-	int status = r_base64_decode (hello, "aGVsbG8=x", -1);
-	mu_assert_eq (status, -1, "tail garbage base64 decoding");
+	// strict rejects trailing garbage
+	int status = r_base64_decode (hello, "aGVsbG8=x", -1, true);
+	mu_assert_eq (status, -1, "strict tail garbage rejected");
+	// lenient decodes valid part
+	status = r_base64_decode (hello, "aGVsbG8=x", -1, false);
+	mu_assert_eq (status, 5, "lenient tail garbage ignored");
+	mu_assert_streq ((char *)hello, "hello", "lenient tail garbage output");
 	free (hello);
 	mu_end;
 }

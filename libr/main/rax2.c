@@ -540,7 +540,7 @@ dotherax:
 		int n = strlen (str);
 		ut8 *out = calloc (1, (n / 4 * 3) + 1);
 		if (out) {
-			n = r_base64_decode (out, str, n);
+			n = r_base64_decode (out, str, n, false);
 			if (n > 0) {
 				fwrite (out, n, 1, stdout);
 				rax2_newline (*flags);

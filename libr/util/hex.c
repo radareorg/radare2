@@ -268,7 +268,7 @@ R_API char *r_hex_from_js(const char *code) {
 		return NULL;
 	}
 
-	int olen = r_base64_decode (b64d, str, slen - 1);
+	int olen = r_base64_decode (b64d, str, slen - 1, true);
 	free (str);
 	if (olen < 1) {
 		free (b64d);

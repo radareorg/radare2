@@ -43,7 +43,6 @@ EOF
 EXPECT=<<EOF
 hello world
 hello world
-hello world
 EOF
 RUN
 

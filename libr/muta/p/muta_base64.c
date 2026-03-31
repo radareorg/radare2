@@ -34,7 +34,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 		if (!obuf) {
 			return false;
 		}
-		olen = r_base64_decode (obuf, (const char *)buf, len);
+		olen = r_base64_decode (obuf, (const char *)buf, len, false);
 		break;
 	}
 	if (olen > 0) {

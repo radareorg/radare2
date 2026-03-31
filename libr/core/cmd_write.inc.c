@@ -1038,7 +1038,7 @@ static int cmd_w6(void *data, const char *input) {
 		case 'd': // "w6d"
 			buf = malloc (str_len);
 			if (buf) {
-				len = r_base64_decode (buf, str, -1);
+				len = r_base64_decode (buf, str, -1, false);
 				if (len < 0) {
 					R_LOG_WARN ("Invalid hexpair string");
 					R_FREE (buf);
