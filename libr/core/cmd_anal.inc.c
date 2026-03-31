@@ -7158,7 +7158,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		const int perm = esil->exectrap ? R_PERM_X: 0;
 		if (!r_io_is_valid_offset (core->io, addr, perm)) {
 			esil->trap = R_ANAL_TRAP_EXEC_ERR;
-			esil->trap_code = addr;
+			esil->trap_code = addr == UT64_MAX? UT32_MAX: (ut32)addr;
 			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
 			if (esil->cmd_trap) {
 				esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);

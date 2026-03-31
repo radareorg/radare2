@@ -52,7 +52,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 	if (r_core_prevop_addr (core, core->addr, numinstr, &addr)) {
 		val = addr;
 	} else {
-		ut8 data[32];
+		ut8 data[32] = {0};
 		addr = core->addr;
 		const int mininstrsize = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 		for (i = 0; i < numinstr; i++) {
@@ -64,6 +64,7 @@ static ut64 numvar_instruction_prev(RCore *core, int n, bool *ok) {
 				break;
 			}
 			RAnalOp op = {0};
+			r_io_read_at (core->io, prev_addr, data, sizeof (data));
 			r_anal_op (core->anal, &op, prev_addr, data,
 				sizeof (data), R_ARCH_OP_MASK_BASIC);
 			if (op.size < mininstrsize) {
