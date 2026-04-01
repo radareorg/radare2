@@ -746,7 +746,9 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 		break;
 	}
 	pj_k (pj, "result");
-	switch (result->result) {
+	if (result->run_skipped) {
+		pj_s (pj, "skipped");
+	} else switch (result->result) {
 	case R2R_TEST_RESULT_OK:
 		pj_s (pj, "ok");
 		break;
@@ -761,6 +763,7 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 		break;
 	}
 	pj_kb (pj, "run_failed", result->run_failed);
+	pj_kb (pj, "skipped", result->run_skipped);
 	pj_kn (pj, "time_elapsed", result->time_elapsed);
 	pj_kb (pj, "timeout", result->timeout);
 	pj_end (pj);
@@ -953,7 +956,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = *RVecR2RTestResultInfoPtr_at (&state->results, i);
-		if (state->test_results && !result->run_skipped) {
+		if (state->test_results) {
 			test_result_to_json (state->test_results, result);
 		}
 		/* In quiet mode only print failing tests; otherwise follow verbose flag rules */
