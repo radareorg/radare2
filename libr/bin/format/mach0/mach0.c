@@ -648,6 +648,14 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 		return false;
 	}
 
+	// free previous allocations in case of duplicate LC_DYSYMTAB
+	R_FREE (mo->toc);
+	R_FREE (mo->modtab);
+	R_FREE (mo->indirectsyms);
+	mo->ntoc = 0;
+	mo->nmodtab = 0;
+	mo->nindirectsyms = 0;
+
 	len = r_buf_read_at (mo->b, off, dysym, sizeof (struct dysymtab_command));
 	if (len != sizeof (struct dysymtab_command)) {
 		R_LOG_ERROR ("read (dysymtab)");
@@ -903,7 +911,8 @@ static void set_malformed_entitlement(struct MACH0_(obj_t) * mo) {
 static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	int i, len;
 	ut32 data;
-	mo->signature = NULL;
+	// free previous allocation in case of duplicate LC_CODE_SIGNATURE
+	R_FREE (mo->signature);
 	struct linkedit_data_command link = { 0 };
 	ut8 lit[sizeof (struct linkedit_data_command)] = { 0 };
 	struct blob_index_t idx = { 0 };
@@ -1266,7 +1275,9 @@ static bool parse_function_starts(struct MACH0_(obj_t) * mo, ut64 off) {
 	if (off > mo->size || off + sizeof (struct linkedit_data_command) > mo->size) {
 		R_LOG_DEBUG ("Likely overflow while parsing LC_FUNCTION_STARTS command");
 	}
-	mo->func_start = NULL;
+	// free previous allocation in case of duplicate LC_FUNCTION_STARTS
+	R_FREE (mo->func_start);
+	mo->func_size = 0;
 	int len = r_buf_read_at (mo->b, off, sfc, sizeof (struct linkedit_data_command));
 	if (len < 1) {
 		R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS command");
@@ -1608,6 +1619,21 @@ static size_t get_word_size(struct MACH0_(obj_t) * mo) {
 	return R_MAX (word_size, 4);
 }
 
+static void free_chained_starts(struct MACH0_(obj_t) * mo) {
+	if (mo->chained_starts) {
+		size_t i;
+		size_t count = R_MIN (mo->nsegs, mo->segs_count);
+		for (i = 0; i < count; i++) {
+			if (mo->chained_starts[i]) {
+				free (mo->chained_starts[i]->page_start);
+				free (mo->chained_starts[i]);
+			}
+		}
+		R_FREE (mo->chained_starts);
+	}
+	mo->segs_count = 0;
+}
+
 static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 size) {
 	struct dyld_chained_fixups_header header;
 	if (size < sizeof (header)) {
@@ -1628,6 +1654,8 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 	if (segs_count == UT32_MAX || segs_count == 0) {
 		return false;
 	}
+	// free previous allocation in case of duplicate LC_DYLD_CHAINED_FIXUPS
+	free_chained_starts (mo);
 	mo->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
 	if (!mo->chained_starts) {
 		return false;
@@ -1681,6 +1709,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	if (!mo->nsegs) {
 		return false;
 	}
+	free_chained_starts (mo);
 	mo->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, mo->nsegs);
 	if (!mo->chained_starts) {
 		return false;
@@ -2311,7 +2340,6 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 		return NULL;
 	}
 
-	size_t i;
 	free (mo->segs);
 	free (mo->sects);
 	free (mo->symtab);
@@ -2342,15 +2370,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	if (mo->relocs_loaded) {
 		r_skiplist_free (mo->relocs_cache);
 	}
-	if (mo->chained_starts) {
-		for (i = 0; i < mo->nsegs && i < mo->segs_count; i++) {
-			if (mo->chained_starts[i]) {
-				free (mo->chained_starts[i]->page_start);
-				free (mo->chained_starts[i]);
-			}
-		}
-		free (mo->chained_starts);
-	}
+	free_chained_starts (mo);
 	sdb_free (mo->kv);
 	r_unref (mo->b);
 	free (mo);
