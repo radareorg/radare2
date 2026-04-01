@@ -691,6 +691,24 @@ R_API char *r_table_tosql(RTable *t) {
 	return r_strbuf_drain (sb);
 }
 
+static bool needs_csv_quoting(const char *s, char sep) {
+	return strchr (s, sep) || strchr (s, '"') || strchr (s, '\n') || strchr (s, '\r');
+}
+
+static void csv_append_field(RStrBuf *sb, const char *prefix, const char *field) {
+	r_strbuf_append (sb, prefix);
+	r_strbuf_append (sb, "\"");
+	const char *p;
+	for (p = field; *p; p++) {
+		if (*p == '"') {
+			r_strbuf_append (sb, "\"\"");
+		} else {
+			r_strbuf_appendf (sb, "%c", *p);
+		}
+	}
+	r_strbuf_append (sb, "\"");
+}
+
 static char *tocsv(RTable *t, const char *sep) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
@@ -699,9 +717,8 @@ static char *tocsv(RTable *t, const char *sep) {
 	if (SHOULD_SHOW_HEADER (t)) {
 		const char *comma = "";
 		r_list_foreach (t->cols, iter, col) {
-			if (strchr (col->name, *sep)) {
-				// TODO. escaped string?
-				r_strbuf_appendf (sb, "%s\"%s\"", comma, col->name);
+			if (needs_csv_quoting (col->name, *sep)) {
+				csv_append_field (sb, comma, col->name);
 			} else {
 				r_strbuf_appendf (sb, "%s%s", comma, col->name);
 			}
@@ -716,8 +733,8 @@ static char *tocsv(RTable *t, const char *sep) {
 		r_list_foreach (row->items, iter2, item) {
 			RTableColumn *col = r_list_get_n (t->cols, c);
 			if (col) {
-				if (strchr (item, *sep)) {
-					r_strbuf_appendf (sb, "%s\"%s\"", comma, item);
+				if (needs_csv_quoting (item, *sep)) {
+					csv_append_field (sb, comma, item);
 				} else {
 					r_strbuf_appendf (sb, "%s%s", comma, item);
 				}
