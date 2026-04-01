@@ -1129,7 +1129,7 @@ noskip:
 				fcn->bp_off = fcn->stack;
 			}
 			// Is this a mov of immediate value into a register?
-			if (op_dst && op->val > 0 && op->val != UT64_MAX) {
+			if (dst && dst->reg && op->val > 0 && op->val != UT64_MAX) {
 				last_reg_mov_lea_name = dst->reg;
 				last_reg_mov_lea_val = op->val;
 				last_is_reg_mov_lea = true;
@@ -1138,7 +1138,7 @@ noskip:
 			if (anal->opt.jmptbl && op->scale && op->ireg) {
 				movdisp = op->disp;
 				movscale = op->refptr? op->refptr: op->ptrsize? op->ptrsize: op->scale;
-				movbasereg = op_src;
+				movbasereg = src0? src0->reg: NULL;
 			}
 			if (anal->opt.hpskip && op_dst && op_src && !strcmp (op_src, op_dst)) {
 				const int skip_ret = skip_hp (anal, fcn, op, bb, addr, oplen, delay.un_idx, &idx);
@@ -1184,20 +1184,23 @@ noskip:
 				leaddr_pair *pair = R_NEW0 (leaddr_pair);
 				pair->op_addr = op->addr;
 				pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
-				const char *preg = op->reg? op->reg: op_dst;
-				pair->reg = preg? strdup (preg): NULL;
+				pair->reg = op->reg
+					? strdup (op->reg)
+					: dst && dst->reg
+					? strdup (dst->reg)
+					: NULL;
 				lea_cnt++;
 				r_list_append (anal->leaddrs, pair);
 			}
 			if (has_stack_regs && op_is_set_bp (op_dst, op_src, bp_reg, sp_reg)) {
 				fcn->bp_off = fcn->stack - src0->delta;
 			}
-			if (op_dst && op->ptr > 0 && op->ptr != UT64_MAX) {
+			if (dst && dst->reg && op->ptr > 0 && op->ptr != UT64_MAX) {
 				last_reg_mov_lea_name = dst->reg;
 				last_reg_mov_lea_val = op->ptr;
 				last_is_reg_mov_lea = true;
 			}
-			if (op->type == R_ANAL_OP_TYPE_ADD && op_dst && last_reg_mov_lea_name && !strcmp (op_dst, last_reg_mov_lea_name) && op->val != UT64_MAX) {
+			if (op->type == R_ANAL_OP_TYPE_ADD && dst && dst->reg && last_reg_mov_lea_name && !strcmp (dst->reg, last_reg_mov_lea_name) && op->val != UT64_MAX) {
 				last_reg_mov_lea_val += op->val;
 			}
 #endif
@@ -1750,9 +1753,10 @@ bx = jmptbl_base + (byte[x9]<<2)
 						anal->iob.read_at (anal->iob.io, op->addr - op->size, buf, sizeof (buf));
 						if (r_anal_op (anal, &prev_op_storage, op->addr - op->size, buf, sizeof (buf), R_ARCH_OP_MASK_VAL) > 0) {
 							RAnalValue *prev_dst = RVecRArchValue_at (&prev_op_storage.dsts, 0);
-							const char *prev_dst_reg = (prev_dst && prev_dst->reg)? prev_dst->reg: NULL;
-							bool same_reg = (op->ireg && prev_dst_reg && !strcmp (op->ireg, prev_dst_reg))
-								|| (op_src && prev_dst_reg && !strcmp (op_src, prev_dst_reg));
+							bool prev_op_has_dst_name = prev_dst && prev_dst->reg;
+							bool op_has_src_name = src0 && src0->reg;
+							bool same_reg = (op->ireg && prev_op_has_dst_name && !strcmp (op->ireg, prev_dst->reg))
+								|| (op_has_src_name && prev_op_has_dst_name && !strcmp (src0->reg, prev_dst->reg));
 							if (prev_op_storage.type == R_ANAL_OP_TYPE_MOV && prev_op_storage.disp && prev_op_storage.disp != UT64_MAX && same_reg) {
 								//	movzx reg, byte [reg + case_table]
 								//	jmp dword [reg*4 + jump_table]
@@ -1931,7 +1935,7 @@ analopfinish:
 			break;
 		case R_ANAL_OP_TYPE_UPUSH:
 			if ((op->type & R_ANAL_OP_TYPE_REG) && last_is_reg_mov_lea \
-				&& op_src && !strcmp (op_src, last_reg_mov_lea_name)) {
+				&& (src0 && src0->reg && !strcmp (src0->reg, last_reg_mov_lea_name))) {
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
@@ -1992,20 +1996,23 @@ analopfinish:
 			variadic_reg = "rax";
 #if 1
 			// XXX arm_cs plugin
-			bool dst_is_variadic = false;
-			if (op_dst) {
+			bool dst_is_variadic = dst && dst->reg && variadic_reg;
+			if (dst_is_variadic) {
+				dst_is_variadic = false;
 				RRegItem *ri0 = r_reg_get (anal->reg, dst->reg, R_REG_TYPE_GPR);
 				RRegItem *ri1 = r_reg_get (anal->reg, variadic_reg, R_REG_TYPE_GPR);
-				dst_is_variadic = ri0 && ri1 && ri0->offset == ri1->offset;
+				if (ri0 && ri1 && ri0->offset == ri1->offset) {
+					dst_is_variadic = true;
+				}
 			}
 #else
-			bool dst_is_variadic = op_dst && !strcmp (op_dst, variadic_reg);
+			bool dst_is_variadic = dst && dst->reg && variadic_reg && !strcmp (dst->reg, variadic_reg);
 #endif
 			bool op_is_cmp = (op->type == R_ANAL_OP_TYPE_CMP) || op->type == R_ANAL_OP_TYPE_ACMP;
 			if (dst_is_variadic && !op_is_cmp) {
 				has_variadic_reg = false;
 			} else if (op_is_cmp) {
-				if (op_dst && op_src && dst->reg == src0->reg && dst_is_variadic) {
+				if (dst_is_variadic && src0 && src0->reg && (dst->reg == src0->reg)) {
 					fcn->is_variadic = true;
 				}
 			}
