@@ -4,21 +4,20 @@
 
 #include "mdmp.h"
 
-static ut32 safe_loop_count(ut64 offset, ut32 count, size_t item_size, ut64 obj_size, const char *item_name) {
-	ut64 total_size;
-
+static ut32 safe_loop_count(ut64 offset, ut64 count, size_t item_size, ut64 obj_size, const char *item_name) {
 	if (!item_size || offset >= obj_size) {
-		R_LOG_WARN ("%s descriptor out of bounds, reducing from %u to 0",
+		R_LOG_WARN ("%s descriptor out of bounds, reducing from %" PFMT64u " to 0",
 			item_name, count);
 		return 0;
 	}
-	if (r_mul_overflow ((ut64)count, (ut64)item_size, &total_size) || offset > obj_size - total_size) {
-		ut32 max_count = (obj_size - offset) / item_size;
-		R_LOG_WARN ("%s descriptor out of bounds, reducing from %u to %u",
+	ut64 available = obj_size - offset;
+	ut32 max_count = available / item_size;
+	if (count > max_count) {
+		R_LOG_WARN ("%s descriptor out of bounds, reducing from %" PFMT64u " to %u",
 			item_name, count, max_count);
 		return max_count;
 	}
-	return count;
+	return (ut32)count;
 }
 
 ut64 r_bin_mdmp_get_paddr(struct r_bin_mdmp_obj *obj, ut64 vaddr) {
@@ -740,7 +739,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			"SizeOfHeader SizeOfEntry NumberOfEntries", 0);
 
 		offset = entry->location.rva + sizeof (unloaded_module_list);
-		for (i = 0; i < unloaded_module_list.number_of_entries && offset < obj->size; i++) {
+		ut32 max_unloaded = safe_loop_count (offset, unloaded_module_list.number_of_entries,
+			sizeof (struct minidump_unloaded_module), obj->size, "UnloadedModule");
+		for (i = 0; i < max_unloaded; i++) {
 			struct minidump_unloaded_module *module = R_NEW (struct minidump_unloaded_module);
 			if (!module) {
 				break;
@@ -795,7 +796,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			0);
 
 		offset = entry->location.rva + sizeof (memory_info_list);
-		for (i = 0; i < memory_info_list.number_of_entries && offset < obj->size; i++) {
+		ut32 max_mem_infos = safe_loop_count (offset, memory_info_list.number_of_entries,
+			sizeof (struct minidump_memory_info), obj->size, "MemoryInfo");
+		for (i = 0; i < max_mem_infos; i++) {
 			struct minidump_memory_info *info = R_NEW (struct minidump_memory_info);
 			if (!info) {
 				break;
@@ -825,7 +828,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			"SizeOfHeader SizeOfEntry NumberOfEntries", 0);
 
 		offset = entry->location.rva + sizeof (thread_info_list);
-		for (i = 0; i < thread_info_list.number_of_entries && offset < obj->size; i++) {
+		ut32 max_thread_infos = safe_loop_count (offset, thread_info_list.number_of_entries,
+			sizeof (struct minidump_thread_info), obj->size, "ThreadInfo");
+		for (i = 0; i < max_thread_infos; i++) {
 			struct minidump_thread_info *info = R_NEW (struct minidump_thread_info);
 			if (!info) {
 				break;
@@ -851,7 +856,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			"SizeOfHeader SizeOfEntry NumberOfEntries Reserved", 0);
 
 		offset = entry->location.rva + sizeof (handle_operation_list);
-		for (i = 0; i < handle_operation_list.number_of_entries && offset < obj->size; i++) {
+		ut32 max_handle_ops = safe_loop_count (offset, handle_operation_list.number_of_entries,
+			sizeof (struct avrf_handle_operation), obj->size, "HandleOperation");
+		for (i = 0; i < max_handle_ops; i++) {
 			struct avrf_handle_operation *op = R_NEW (struct avrf_handle_operation);
 			if (!op) {
 				break;
@@ -881,7 +888,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			"TokenListSize TokenListEntries ListHeaderSize ElementHeaderSize", 0);
 
 		offset = entry->location.rva + sizeof (token_info_list);
-		for (i = 0; i < token_info_list.number_of_entries && offset < obj->size; i++) {
+		ut32 max_tokens = safe_loop_count (offset, token_info_list.number_of_entries,
+			sizeof (struct minidump_token_info), obj->size, "TokenInfo");
+		for (i = 0; i < max_tokens; i++) {
 			struct minidump_token_info *info = R_NEW (struct minidump_token_info);
 			if (!info) {
 				break;
