@@ -950,6 +950,9 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 }
 
 static Sdb *store_versioninfo_gnu_versym(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
+	if (!eo->strtab) {
+		return NULL;
+	}
 	if (!eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]) {
 		return NULL;
 	}
@@ -1175,14 +1178,17 @@ static inline bool _process_verdefs(ELFOBJ *eo, ProcessVerdefsState *state) {
 }
 
 static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
+	if (!eo->dynstr) {
+		return NULL;
+	}
 	if (shdr->sh_link >= eo->ehdr.e_shnum) {
-		return false;
+		return NULL;
 	}
 	if (shdr->sh_size < sizeof (Elf_(Verdef)) || shdr->sh_size < sizeof (Elf_(Verdaux))) {
-		return false;
+		return NULL;
 	}
 	if (shdr->sh_size > ST32_MAX) {
-		return false;
+		return NULL;
 	}
 
 	Elf_(Verdef) *defs = calloc (shdr->sh_size, 1);
@@ -1351,7 +1357,7 @@ static inline bool _process_verneed_state(ELFOBJ *eo, ProcessVerneedState *state
 #endif
 
 static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
-	if (!eo || !eo->dynstr) {
+	if (!eo->dynstr) {
 		return NULL;
 	}
 	if (shdr->sh_link >= eo->ehdr.e_shnum) {
@@ -1424,7 +1430,7 @@ static Sdb *store_versioninfo_gnu_verneed(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) 
 }
 
 static Sdb *store_versioninfo(ELFOBJ *eo) {
-	if (!eo || !eo->shdr) {
+	if (!eo->shdr) {
 		return NULL;
 	}
 
@@ -1438,17 +1444,15 @@ static Sdb *store_versioninfo(ELFOBJ *eo) {
 	int num_versym = 0;
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_shnum; i++) {
-		int size = eo->shdr[i].sh_size;
-
-		if (size - (i * sizeof (Elf_(Shdr)) > eo->size)) {
-			size = eo->size - (i*sizeof (Elf_(Shdr)));
+		const ut64 sh_offset = eo->shdr[i].sh_offset;
+		if (sh_offset >= eo->size) {
+			continue;
 		}
-
-		int left = size - (i * sizeof (Elf_(Shdr)));
-		left = R_MIN (left, eo->shdr[i].sh_size);
-		if (left < 0) {
-			break;
+		const ut64 left64 = R_MIN ((ut64)eo->shdr[i].sh_size, eo->size - sh_offset);
+		if (!left64 || left64 > ST32_MAX) {
+			continue;
 		}
+		const int left = (int)left64;
 
 		Sdb *sdb = NULL;
 		char key[32] = {0};
@@ -1521,7 +1525,7 @@ static bool init_dynstr(ELFOBJ *eo) {
 			}
 			if (!(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
 				R_LOG_ERROR ("Cannot allocate 0x%x bytes for strings", (int)shsz);
-				return true;
+				return false;
 			}
 			if (eo->shdr[i].sh_offset > eo->size) {
 				R_LOG_DEBUG ("section offset is beyond eof");
