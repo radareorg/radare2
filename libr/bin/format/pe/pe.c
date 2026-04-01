@@ -907,7 +907,12 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 	if (!buf) {
 		return NULL;
 	}
-	exports_sz = export_t_sz * num;
+	st64 tmp_exports_sz;
+	if (r_mul_overflow ((st64)export_t_sz, (st64)num, &tmp_exports_sz) || tmp_exports_sz > ST32_MAX) {
+		free (buf);
+		return NULL;
+	}
+	exports_sz = (int)tmp_exports_sz;
 	if (exports) {
 		int osz = sz;
 		sz += exports_sz;
