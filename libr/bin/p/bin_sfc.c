@@ -163,15 +163,15 @@ static RList *mem(RBinFile *bf) {
 	m->addr = LOWRAM_START_ADDRESS;
 	m->size = LOWRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
+	m->mirrors = r_list_new ();
 	r_list_append (ret, m);
 
 	RBinMem *mirror = R_NEW0 (RBinMem);
-	mirror->mirrors = r_list_new ();
 	mirror->name = strdup ("LOWRAM_MIRROR");
 	mirror->addr = LOWRAM_MIRROR_START_ADDRESS;
 	mirror->size = LOWRAM_MIRROR_SIZE;
 	mirror->perms = r_str_rwx ("rwx");
-	r_list_append (mirror->mirrors, mirror);
+	r_list_append (m->mirrors, mirror);
 
 	m = R_NEW0 (RBinMem);
 	m->name = strdup ("HIRAM");

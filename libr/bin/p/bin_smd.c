@@ -151,7 +151,7 @@ static const char *smd_vector_names[64] = {
 };
 
 static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}

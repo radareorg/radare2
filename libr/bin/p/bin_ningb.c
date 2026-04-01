@@ -117,7 +117,7 @@ static void gb_addsym(RList *ret, const char *name, ut64 addr, int ordinal) {
 }
 
 static RList* symbols(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (!ret) {
 		return NULL;
 	}
