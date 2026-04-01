@@ -453,9 +453,9 @@ static bool init_strtab(ELFOBJ *eo) {
 		return false;
 	}
 
+	R_FREE (eo->shstrtab);
 	if (!(eo->shstrtab = calloc (1, eo->shstrtab_size + 1))) {
 		r_sys_perror ("malloc");
-		eo->shstrtab = NULL;
 		return false;
 	}
 	int res = r_buf_read_at (eo->b, eo->shstrtab_section->sh_offset, (ut8*)eo->shstrtab,
@@ -1523,20 +1523,26 @@ static bool init_dynstr(ELFOBJ *eo) {
 				R_LOG_WARN ("Shrinking the dynstr size to file bounds");
 				shsz = left;
 			}
+			// free previous allocation in case of duplicate .dynstr section
+			R_FREE (eo->dynstr);
+			eo->dynstr_size = 0;
 			if (!(eo->dynstr = (char*) calloc (shsz + 1, sizeof (char)))) {
 				R_LOG_ERROR ("Cannot allocate 0x%x bytes for strings", (int)shsz);
 				return false;
 			}
 			if (eo->shdr[i].sh_offset > eo->size) {
 				R_LOG_DEBUG ("section offset is beyond eof");
+				R_FREE (eo->dynstr);
 				return false;
 			}
 			if (eo->shdr[i].sh_offset + eo->shdr[i].sh_size > eo->size) {
 				R_LOG_DEBUG ("section end is beyond eof");
+				R_FREE (eo->dynstr);
 				return false;
 			}
 			if (eo->shdr[i].sh_offset + eo->shdr[i].sh_size < eo->shdr[i].sh_size) {
 				R_LOG_DEBUG ("section end is beyond section boundaries");
+				R_FREE (eo->dynstr);
 				return false;
 			}
 			int r = r_buf_read_at (eo->b, eo->shdr[i].sh_offset, (ut8*)eo->dynstr, eo->shdr[i].sh_size);
@@ -4905,18 +4911,18 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	// XXX refactor this code, also allocated in another place, but this is used in other situations..
 	size_t ret_size = RVecRBinElfSymbol_length (ret) + 1;  // + 1 because ordinals are 1-based
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !eo->imports_by_ord_size) {
-		eo->imports_by_ord_size = ret_size;
 		if (ret_size > 0) {
 			eo->imports_by_ord = (RBinImport**) calloc (ret_size, sizeof (RBinImport*));
-		} else {
-			eo->imports_by_ord = NULL;
+			if (eo->imports_by_ord) {
+				eo->imports_by_ord_size = ret_size;
+			}
 		}
 	} else if (type == R_BIN_ELF_ALL_SYMBOLS && !eo->symbols_by_ord_size) {
-		eo->symbols_by_ord_size = ret_size;
 		if (ret_size > 0) {
 			eo->symbols_by_ord = (RBinSymbol**) calloc (ret_size, sizeof (RBinSymbol*));
-		} else {
-			eo->symbols_by_ord = NULL;
+			if (eo->symbols_by_ord) {
+				eo->symbols_by_ord_size = ret_size;
+			}
 		}
 	}
 
