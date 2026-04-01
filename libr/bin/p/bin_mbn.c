@@ -21,28 +21,14 @@ static SblHeader *sbl_from_bf(RBinFile *bf) {
 }
 
 static void sbl_destroy(RBinFile *bf) {
-	if (!bf || !bf->bo) {
-		return;
-	}
-	if (bf->bo->bin_obj) {
-		R_FREE (bf->bo->bin_obj);
-		bf->bo->bin_obj = NULL;
-	}
+	R_FREE (bf->bo->bin_obj);
 }
 
 static bool parse_sbl(RBuffer *b, SblHeader *h) {
-	if (!b || !h) {
-		return false;
-	}
-	int ret = r_buf_fread_at (b, 0, (ut8 *)h, "10i", 1);
-	if (!ret) {
-		return false;
-	}
-	return true;
+	return r_buf_fread_at (b, 0, (ut8 *)h, "10i", 1) > 0;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 bufsz = r_buf_size (b);
 	SblHeader h = { 0 };
 	if (!parse_sbl (b, &h)) {
@@ -80,12 +66,9 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	if (!bf || !bf->bo) {
-		return false;
-	}
 	SblHeader *hdr = R_NEW0 (SblHeader);
 	if (!parse_sbl (b, hdr)) {
-		R_FREE (hdr);
+		free (hdr);
 		return false;
 	}
 	bf->bo->bin_obj = hdr;

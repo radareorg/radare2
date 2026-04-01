@@ -73,42 +73,23 @@ static RList *sections(RBinFile *bf) {
 
 static RList *entries(RBinFile *bf) {
 	struct n3ds_firm_hdr *loaded_header = (void*)bf->bo->bin_obj;
-	RList *ret = r_list_new ();
-	RBinAddr *ptr9 = NULL, *ptr11 = NULL;
-
-	if (bf && bf->buf) {
-		if (!ret) {
-			return NULL;
-		}
-		ret->free = free;
-		if (!(ptr9 = R_NEW0 (RBinAddr))) {
-			r_list_free (ret);
-			return NULL;
-		}
-		if (!(ptr11 = R_NEW0 (RBinAddr))) {
-			r_list_free (ret);
-			free (ptr9);
-			return NULL;
-		}
-
-		/* ARM9 entry point */
-		ptr9->vaddr = loaded_header->arm9_ep;
-		r_list_append (ret, ptr9);
-
-		/* ARM11 entry point */
-		ptr11->vaddr = loaded_header->arm11_ep;
-		r_list_append (ret, ptr11);
+	RList *ret = r_list_newf (free);
+	if (!ret) {
+		return NULL;
 	}
+
+	RBinAddr *ptr9 = R_NEW0 (RBinAddr);
+	ptr9->vaddr = loaded_header->arm9_ep;
+	r_list_append (ret, ptr9);
+
+	RBinAddr *ptr11 = R_NEW0 (RBinAddr);
+	ptr11->vaddr = loaded_header->arm11_ep;
+	r_list_append (ret, ptr11);
 	return ret;
 }
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!bf || !bf->buf) {
-		free (ret);
-		return NULL;
-	}
-
 	ret->type = strdup ("FIRM");
 	ret->machine = strdup ("Nintendo 3DS");
 	ret->os = strdup ("n3ds");

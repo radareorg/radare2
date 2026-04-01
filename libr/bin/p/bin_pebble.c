@@ -51,24 +51,14 @@ static ut64 baddr(RBinFile *bf) {
 	return 0LL;
 }
 
-/* accelerate binary load */
-static RList *strings(RBinFile *bf) {
-	return NULL;
-}
-
 static RBinInfo* info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	PebbleAppInfo pai;
-	memset (&pai, 0, sizeof (pai));
+	PebbleAppInfo pai = {0};
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
 	if (reat != sizeof (pai)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
-	ret->lang = NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
 	ret->bclass = r_str_ndup (pai.name, 32);
@@ -185,7 +175,6 @@ RBinPlugin r_bin_plugin_pebble = {
 	.baddr = &baddr,
 	.entries = entries,
 	.sections = sections,
-	.strings = &strings,
 	.info = &info,
 	//.relocs = &relocs
 };

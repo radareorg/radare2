@@ -52,14 +52,11 @@ static void destroy(RBinFile *bf) {
 }
 
 static RBinAddr *binsym(RBinFile *bf, int type) {
-	if (!bf || !bf->buf || type != R_BIN_SYM_MAIN) {
+	if (type != R_BIN_SYM_MAIN) {
 		return NULL;
 	}
 	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
 	RBinAddr *ret = R_NEW0 (RBinAddr);
-	if (!ret) {
-		return NULL;
-	}
 	ret->vaddr = obj->header.ep ^ obj->ep_key;
 	ret->paddr = ret->vaddr - obj->header.base;
 	return ret;
@@ -297,7 +294,7 @@ static RList *symbols(RBinFile *bf) {
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index > 0 && thunk_index <= XBE_MAX_THUNK) {
-			eprintf ("thunk_index %d\n", thunk_index);
+			R_LOG_DEBUG ("thunk_index %d", thunk_index);
 			sym->name = r_bin_name_new_from (r_str_newf ("kt.%s", kt_name[thunk_index - 1]));
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - h->base;
@@ -315,24 +312,11 @@ out_error:
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	r_bin_xbe_obj_t *obj;
-	RBinInfo *ret;
-	ut8 dbg_name[256];
-
-	if (!bf || !bf->buf) {
-		return NULL;
-	}
-
-	ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
-
-	obj = bf->bo->bin_obj;
-
-	memset (dbg_name, 0, sizeof (dbg_name));
-	r_buf_read_at (bf->buf, obj->header.debug_name_addr -\
-		obj->header.base, dbg_name, sizeof (dbg_name));
+	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	ut8 dbg_name[256] = {0};
+	r_buf_read_at (bf->buf, obj->header.debug_name_addr - obj->header.base,
+		dbg_name, sizeof (dbg_name));
 	dbg_name[sizeof (dbg_name) - 1] = 0;
 	ret->file = strdup ((char *) dbg_name);
 	ret->bclass = strdup ("program");
@@ -342,9 +326,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->arch = strdup ("x86");
 	ret->has_va = 1;
 	ret->bits = 32;
-	ret->big_endian = 0;
-	ret->dbg_info = 0;
-	ret->lang = NULL;
 	return ret;
 }
 

@@ -31,7 +31,7 @@ typedef struct {
 	RBuffer *buf;
 } ArtObj;
 
-static int art_header_load(ArtObj *ao, Sdb *db) {
+static bool art_header_load(ArtObj *ao, Sdb *db) {
 	/* TODO: handle read errors here */
 	if (r_buf_size (ao->buf) < sizeof (ARTHeader)) {
 		return false;
@@ -55,29 +55,22 @@ static int art_header_load(ArtObj *ao, Sdb *db) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->bo;
-	if (!o) {
-		return NULL;
-	}
-	ArtObj *ao = o->bin_obj;
-	return ao? ao->kv: NULL;
+	ArtObj *ao = (ArtObj *)R_UNWRAP3 (bf, bo, bin_obj);
+	return ao ? ao->kv : NULL;
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	ArtObj *ao = R_NEW0 (ArtObj);
-	if (ao) {
-		ao->kv = sdb_new0 ();
-		if (!ao->kv) {
-			free (ao);
-			return false;
-		}
-		ao->buf = r_ref (buf);
-		art_header_load (ao, ao->kv);
-		sdb_ns_set (bf->sdb, "info", ao->kv);
-		bf->bo->bin_obj = ao;
-		return true;
+	ao->kv = sdb_new0 ();
+	if (!ao->kv) {
+		free (ao);
+		return false;
 	}
-	return false;
+	ao->buf = r_ref (buf);
+	art_header_load (ao, ao->kv);
+	sdb_ns_set (bf->sdb, "info", ao->kv);
+	bf->bo->bin_obj = ao;
+	return true;
 }
 
 static void destroy(RBinFile *bf) {
@@ -92,14 +85,12 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
+	ArtObj *ao = bf->bo->bin_obj;
+	if (!ao) {
 		return NULL;
 	}
-	ArtObj *ao = bf->bo->bin_obj;
-	ret->lang = NULL;
-	ret->file = bf->file? strdup (bf->file): NULL;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
+	ret->file = bf->file ? strdup (bf->file) : NULL;
 	ret->type = strdup ("ART");
 
 	ret->bclass = malloc (5);
@@ -128,13 +119,11 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
-	if (ret) {
-		RBinAddr *ptr = R_NEW0 (RBinAddr);
-		if (ptr) {
-			ptr->paddr = ptr->vaddr = 0;
-			r_list_append (ret, ptr);
-		}
+	if (!ret) {
+		return NULL;
 	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -149,52 +138,43 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	RBinSection *ptr = R_NEW0 (RBinSection);
-	if (R_LIKELY (ptr)) {
-		ptr->name = strdup ("load");
-		ptr->size = r_buf_size (bf->buf);
-		ptr->vsize = art.image_size; // TODO: align?
-		ptr->paddr = 0;
-		ptr->vaddr = art.image_base;
-		ptr->perm = R_PERM_R;
-		ptr->add = true;
-		r_list_append (ret, ptr);
-	}
+	ptr->name = strdup ("load");
+	ptr->size = r_buf_size (bf->buf);
+	ptr->vsize = art.image_size;
+	ptr->vaddr = art.image_base;
+	ptr->perm = R_PERM_R;
+	ptr->add = true;
+	r_list_append (ret, ptr);
 
 	ptr = R_NEW0 (RBinSection);
-	if (R_LIKELY (ptr)) {
-		ptr->name = strdup ("bitmap");
-		ptr->size = art.bitmap_size;
-		ptr->vsize = art.bitmap_size;
-		ptr->paddr = art.bitmap_offset;
-		ptr->vaddr = art.image_base + art.bitmap_offset;
-		ptr->perm = R_PERM_RX; // r-x
-		ptr->add = true;
-		r_list_append (ret, ptr);
-	}
+	ptr->name = strdup ("bitmap");
+	ptr->size = art.bitmap_size;
+	ptr->vsize = art.bitmap_size;
+	ptr->paddr = art.bitmap_offset;
+	ptr->vaddr = art.image_base + art.bitmap_offset;
+	ptr->perm = R_PERM_RX;
+	ptr->add = true;
+	r_list_append (ret, ptr);
 
 	ptr = R_NEW0 (RBinSection);
-	if (R_LIKELY (ptr)) {
-		ptr->name = strdup ("oat");
-		ptr->paddr = art.bitmap_offset;
-		ptr->vaddr = art.oat_file_begin;
-		ptr->size = art.oat_file_end - art.oat_file_begin;
-		ptr->vsize = ptr->size;
-		ptr->perm = R_PERM_RX;
-		ptr->add = true;
-		r_list_append (ret, ptr);
-	}
+	ptr->name = strdup ("oat");
+	ptr->paddr = art.bitmap_offset;
+	ptr->vaddr = art.oat_file_begin;
+	ptr->size = art.oat_file_end - art.oat_file_begin;
+	ptr->vsize = ptr->size;
+	ptr->perm = R_PERM_RX;
+	ptr->add = true;
+	r_list_append (ret, ptr);
 
 	ptr = R_NEW0 (RBinSection);
-	if (R_LIKELY (ptr)) {
-		ptr->name = strdup ("oat_data");
-		ptr->paddr = art.bitmap_offset;
-		ptr->vaddr = art.oat_data_begin;
-		ptr->size = art.oat_data_end - art.oat_data_begin;
-		ptr->vsize = ptr->size;
-		ptr->perm = R_PERM_R;
-		ptr->add = true;
-		r_list_append (ret, ptr);
-	}
+	ptr->name = strdup ("oat_data");
+	ptr->paddr = art.bitmap_offset;
+	ptr->vaddr = art.oat_data_begin;
+	ptr->size = art.oat_data_end - art.oat_data_begin;
+	ptr->vsize = ptr->size;
+	ptr->perm = R_PERM_R;
+	ptr->add = true;
+	r_list_append (ret, ptr);
 
 	return ret;
 }

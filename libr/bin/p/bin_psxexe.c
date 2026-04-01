@@ -17,18 +17,12 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 }
 
 static RBinInfo* info(RBinFile* bf) {
-	RBinInfo* ret = NULL;
 	psxexe_header psxheader = {{0}};
-
 	if (r_buf_read_at (bf->buf, 0, (ut8*)&psxheader, sizeof (psxexe_header)) < sizeof (psxexe_header)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
-
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("Sony PlayStation 1 Executable");
 	ret->machine = strdup ("Sony PlayStation 1");
@@ -40,29 +34,17 @@ static RBinInfo* info(RBinFile* bf) {
 }
 
 static RList* sections(RBinFile* bf) {
-	RList* ret = NULL;
-	RBinSection* sect = NULL;
 	psxexe_header psxheader = {0};
-	ut64 sz = 0;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
-	if (!(sect = R_NEW0 (RBinSection))) {
-		r_list_free (ret);
-		return NULL;
-	}
-
 	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) != sizeof (psxexe_header)) {
 		R_LOG_ERROR ("Truncated Header");
-		free (sect);
-		r_list_free (ret);
 		return NULL;
 	}
-
-	sz = r_buf_size (bf->buf);
-
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	ut64 sz = r_buf_size (bf->buf);
+	RBinSection *sect = R_NEW0 (RBinSection);
 	sect->name = strdup ("TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;
@@ -77,29 +59,18 @@ static RList* sections(RBinFile* bf) {
 }
 
 static RList* entries(RBinFile* bf) {
-	RList* ret = NULL;
-	RBinAddr* addr = NULL;
 	psxexe_header psxheader;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
-	if (!(addr = R_NEW0 (RBinAddr))) {
-		r_list_free (ret);
-		return NULL;
-	}
-
 	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) != sizeof (psxexe_header)) {
 		R_LOG_ERROR ("PSXEXE Header truncated");
-		r_list_free (ret);
-		free (addr);
 		return NULL;
 	}
-
+	RList *ret = r_list_new ();
+	if (!ret) {
+		return NULL;
+	}
+	RBinAddr *addr = R_NEW0 (RBinAddr);
 	addr->paddr = (psxheader.pc0 - psxheader.t_addr) + PSXEXE_TEXTSECTION_OFFSET;
 	addr->vaddr = psxheader.pc0;
-
 	r_list_append (ret, addr);
 	return ret;
 }

@@ -89,7 +89,6 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
 	char *filepath = lh

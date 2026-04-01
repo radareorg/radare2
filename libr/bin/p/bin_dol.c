@@ -52,40 +52,34 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (r_buf_size (buf) < sizeof (DolHeader)) {
 		return false;
 	}
-	DolHeader *dol = R_NEW0 (DolHeader);
 	char *lowername = strdup (bf->file);
 	if (!lowername) {
-		goto dol_err;
+		return false;
 	}
 	r_str_case (lowername, 0);
 	char *ext = strstr (lowername, ".dol");
-	if (!ext || ext[4] != 0) {
-		goto lowername_err;
-	}
+	bool valid = ext && ext[4] == 0;
 	free (lowername);
+	if (!valid) {
+		return false;
+	}
+	DolHeader *dol = R_NEW0 (DolHeader);
 	if (r_buf_fread_at (bf->buf, 0, (void *) dol, "67I", 1) < 1) {
 		free (dol);
 		return false;
 	}
 	bf->bo->bin_obj = dol;
 	return true;
-
-lowername_err:
-	free (lowername);
-dol_err:
-	free (dol);
-	return false;
 }
 
 static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	int i;
-	RList *ret;
-	RBinSection *s;
 	DolHeader *dol = bf->bo->bin_obj;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
+	int i;
+	RBinSection *s;
 
 	/* text sections */
 	for (i = 0; i < N_TEXT; i++) {
@@ -132,7 +126,6 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *entries(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RList *ret = r_list_new ();
 	RBinAddr *addr = R_NEW0 (RBinAddr);
 	DolHeader *dol = bf->bo->bin_obj;
@@ -143,7 +136,6 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->big_endian = true;

@@ -51,10 +51,6 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return true;
 }
 
-static RBinAddr *binsym(RBinFile *bf, int type) {
-	return NULL; // TODO
-}
-
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_new ();
 	ret->free = free;
@@ -165,8 +161,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	eprintf ("Base Address 0x%08"PFMT64x "\n", ba);
-	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
+	R_LOG_INFO ("Base Address 0x%08"PFMT64x, ba);
+	R_LOG_INFO ("BSS Size 0x%08"PFMT64x, (ut64)
 			r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
 	r_list_append (ret, ptr);
 	return ret;
@@ -188,10 +184,6 @@ static RList *imports(RBinFile *bf) {
 	}
 	bin = (RBinNXOObj*) bf->bo->bin_obj;
 	return bin->imports_list;
-}
-
-static RList *libs(RBinFile *bf) {
-	return NULL;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -222,8 +214,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->has_lit = true;
 	ret->big_endian = false;
-	ret->dbg_info = 0;
-	ret->dbg_info = 0;
 	return ret;
 }
 
@@ -239,14 +229,12 @@ RBinPlugin r_bin_plugin_nro = {
 	.load = &load,
 	.check = &check,
 	.baddr = &baddr,
-	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
 	.get_sdb = &get_sdb,
 	.symbols = &symbols,
 	.imports = &imports,
 	.info = &info,
-	.libs = &libs,
 };
 
 #ifndef R2_PLUGIN_INCORE

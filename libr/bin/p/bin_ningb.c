@@ -24,33 +24,27 @@ static ut64 baddr(RBinFile *bf) {
 }
 
 static RBinAddr* binsym(RBinFile *bf, int type) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
-	if (type == R_BIN_SYM_MAIN) {
-		ut8 init_jmp[4];
+	if (type != R_BIN_SYM_MAIN) {
+		return NULL;
+	}
+	ut8 init_jmp[4];
+	r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
+	if (init_jmp[1] == 0xc3) {
 		RBinAddr *ret = R_NEW0 (RBinAddr);
-		if (ret) {
-			r_buf_read_at (bf->buf, 0x100, init_jmp, 4);
-			if (init_jmp[1] == 0xc3) {
-				ret->paddr = ret->vaddr = init_jmp[3]*0x100 + init_jmp[2];
-				return ret;
-			}
-			free (ret);
-		}
+		ret->paddr = ret->vaddr = init_jmp[3] * 0x100 + init_jmp[2];
+		return ret;
 	}
 	return NULL;
 }
 
 static RList* entries(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->buf, NULL);
 	RList *ret = r_list_newf (free);
 	if (!ret) {
 		return NULL;
 	}
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (ptr) {
-		ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
-		r_list_append (ret, ptr);
-	}
+	ptr->paddr = ptr->vaddr = ptr->hpaddr = 0x100;
+	r_list_append (ret, ptr);
 	return ret;
 }
 
@@ -113,87 +107,37 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
+static void gb_addsym(RList *ret, const char *name, ut64 addr, int ordinal) {
+	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+	sym->name = r_bin_name_new (name);
+	sym->paddr = sym->vaddr = addr;
+	sym->size = 1;
+	sym->ordinal = ordinal;
+	r_list_append (ret, sym);
+}
+
 static RList* symbols(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSymbol *ptr[13];
-	int i;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-
+	int i;
 	for (i = 0; i < 8; i++) {
-		if (!(ptr[i] = R_NEW0 (RBinSymbol))) {
-			ret->free (ret);
-			return NULL;
-		}
-		ptr[i]->name = r_bin_name_new_from (r_str_newf ("rst_%i", i * 8));
-		ptr[i]->paddr = ptr[i]->vaddr = i*8;
-		ptr[i]->size = 1;
-		ptr[i]->ordinal = i;
-		r_list_append (ret, ptr[i]);
+		char name[16];
+		snprintf (name, sizeof (name), "rst_%i", i * 8);
+		gb_addsym (ret, name, i * 8, i);
 	}
-
-	if (!(ptr[8] = R_NEW0 (RBinSymbol))) {
-		return ret;
-	}
-
-	ptr[8]->name = r_bin_name_new ("Interrupt_Vblank");
-	ptr[8]->paddr = ptr[8]->vaddr = 64;
-	ptr[8]->size = 1;
-	ptr[8]->ordinal = 8;
-	r_list_append (ret, ptr[8]);
-
-	if (!(ptr[9] = R_NEW0 (RBinSymbol))) {
-		return ret;
-	}
-
-	ptr[9]->name = r_bin_name_new ("Interrupt_LCDC-Status");
-	ptr[9]->paddr = ptr[9]->vaddr = 72;
-	ptr[9]->size = 1;
-	ptr[9]->ordinal = 9;
-	r_list_append (ret, ptr[9]);
-
-	if (!(ptr[10] = R_NEW0 (RBinSymbol))) {
-		return ret;
-	}
-
-	ptr[10]->name = r_bin_name_new ("Interrupt_Timer-Overflow");
-	ptr[10]->paddr = ptr[10]->vaddr = 80;
-	ptr[10]->size = 1;
-	ptr[10]->ordinal = 10;
-	r_list_append (ret, ptr[10]);
-
-	if (!(ptr[11] = R_NEW0 (RBinSymbol))) {
-		return ret;
-	}
-
-	ptr[11]->name = r_bin_name_new ("Interrupt_Serial-Transfere");
-	ptr[11]->paddr = ptr[11]->vaddr = 88;
-	ptr[11]->size = 1;
-	ptr[11]->ordinal = 11;
-	r_list_append (ret, ptr[11]);
-
-	if (!(ptr[12] = R_NEW0 (RBinSymbol))) {
-		return ret;
-	}
-
-	ptr[12]->name = r_bin_name_new ("Interrupt_Joypad");
-	ptr[12]->paddr = ptr[12]->vaddr = 96;
-	ptr[12]->size = 1;
-	ptr[12]->ordinal = 12;
-	r_list_append (ret, ptr[12]);
-
+	gb_addsym (ret, "Interrupt_Vblank", 64, 8);
+	gb_addsym (ret, "Interrupt_LCDC-Status", 72, 9);
+	gb_addsym (ret, "Interrupt_Timer-Overflow", 80, 10);
+	gb_addsym (ret, "Interrupt_Serial-Transfere", 88, 11);
+	gb_addsym (ret, "Interrupt_Joypad", 96, 12);
 	return ret;
 }
 
 static RBinInfo* info(RBinFile *bf) {
 	ut8 rom_header[76];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret || !bf || !bf->buf) {
-		free (ret);
-		return NULL;
-	}
 	r_buf_read_at (bf->buf, 0x104, rom_header, 76);
 	ret->file = r_str_ndup ((const char*)&rom_header[48], 16);
 	ret->type = malloc (128);
@@ -211,65 +155,48 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 RList *mem (RBinFile *bf) {
-	RList *ret;
-	RBinMem *m, *n;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+
+	RBinMem *m = R_NEW0 (RBinMem);
 	m->name = strdup ("fastram");
 	m->addr = 0xff80LL;
 	m->size = 0x80;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("ioports");
 	m->addr = 0xff00LL;
 	m->size = 0x4c;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("oam");
 	m->addr = 0xfe00LL;
 	m->size = 0xa0;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("videoram");
 	m->addr = 0x8000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("iram");
 	m->addr = 0xc000LL;
 	m->size = 0x2000;
 	m->perms = r_str_rwx ("rwx");
+	m->mirrors = r_list_new ();
 	r_list_append (ret, m);
-	if (!(m->mirrors = r_list_new ())) {
-		return ret;
-	}
-	if (!(n = R_NEW0 (RBinMem))) {
-		r_list_free (m->mirrors);
-		m->mirrors = NULL;
-		return ret;
-	}
+
+	RBinMem *n = R_NEW0 (RBinMem);
 	n->name = strdup ("iram_echo");
 	n->addr = 0xe000LL;
 	n->size = 0x1e00;

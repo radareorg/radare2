@@ -5,16 +5,11 @@
 #include "te/te.h"
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->bo;
-	if (!o) {
-		return NULL;
-	}
-	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *) o->bin_obj;
-	return bin? bin->kv: NULL;
+	struct r_bin_te_obj_t *bin = (struct r_bin_te_obj_t *)R_UNWRAP3 (bf, bo, bin_obj);
+	return bin ? bin->kv : NULL;
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	R_RETURN_VAL_IF_FAIL (bf && b, false);
 	ut64 sz = r_buf_size (b);
 	if (sz == 0 || sz == UT64_MAX) {
 		return false;
@@ -50,17 +45,16 @@ static RBinAddr *binsym(RBinFile *bf, int type) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
-	if (ret) {
-		RBinAddr *entry = r_bin_te_get_entrypoint (bf->bo->bin_obj);
-		if (entry) {
-			RBinAddr *ptr = R_NEW0 (RBinAddr);
-			if (ptr) {
-				ptr->paddr = entry->paddr;
-				ptr->vaddr = entry->vaddr;
-				r_list_append (ret, ptr);
-			}
-			free (entry);
-		}
+	if (!ret) {
+		return NULL;
+	}
+	RBinAddr *entry = r_bin_te_get_entrypoint (bf->bo->bin_obj);
+	if (entry) {
+		RBinAddr *ptr = R_NEW0 (RBinAddr);
+		ptr->paddr = entry->paddr;
+		ptr->vaddr = entry->vaddr;
+		r_list_append (ret, ptr);
+		free (entry);
 	}
 	return ret;
 }
@@ -114,11 +108,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->bclass = strdup ("TE");
 	ret->rclass = strdup ("te");
