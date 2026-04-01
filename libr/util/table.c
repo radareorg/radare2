@@ -696,17 +696,9 @@ static bool needs_csv_quoting(const char *s, char sep) {
 }
 
 static void csv_append_field(RStrBuf *sb, const char *prefix, const char *field) {
-	r_strbuf_append (sb, prefix);
-	r_strbuf_append (sb, "\"");
-	const char *p;
-	for (p = field; *p; p++) {
-		if (*p == '"') {
-			r_strbuf_append (sb, "\"\"");
-		} else {
-			r_strbuf_appendf (sb, "%c", *p);
-		}
-	}
-	r_strbuf_append (sb, "\"");
+	char *escaped = r_str_replace_all (strdup (field), "\"", "\"\"");
+	r_strbuf_appendf (sb, "%s\"%s\"", prefix, escaped);
+	free (escaped);
 }
 
 static char *tocsv(RTable *t, const char *sep) {
