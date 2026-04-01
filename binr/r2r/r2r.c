@@ -12,6 +12,10 @@
 // global lock
 static RThreadLock *Glock = NULL;
 
+// global state for signal handler to flush partial JSON on kill
+static R2RState *Gstate = NULL;
+static const char *Goutput_file = NULL;
+
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 #define TIMEOUT_DEFAULT (60 * 60)
 #define STRV(x) #x
@@ -1063,6 +1067,16 @@ static void r2r_write_output(R2RState *state, const char *output_file) {
 		R_LOG_ERROR ("Cannot write to %s", output_file);
 	}
 	free (output);
+	state->test_results = NULL;
+}
+
+static void flush_partial_json(int sig) {
+	R2RState *state = Gstate;
+	const char *output_file = Goutput_file;
+	if (state && output_file && state->test_results) {
+		r2r_write_output (state, output_file);
+	}
+	r_sys_exit (1, true);
 }
 
 static RThreadFunctionRet worker_th(RThread *th) {
@@ -1259,6 +1273,14 @@ int main(int argc, char **argv) {
 	if (opt.log_mode) {
 		r2r_setup_log_mode (&state);
 	}
+	if (opt.output_file) {
+		Gstate = &state;
+		Goutput_file = opt.output_file;
+#if R2__UNIX__
+		r_sys_signal (SIGTERM, flush_partial_json);
+		r_sys_signal (SIGINT, flush_partial_json);
+#endif
+	}
 	ut64 time_start = r_time_now_mono ();
 	if (!r2r_run_workers (&state, &opt)) {
 		ret = -1;
@@ -1269,6 +1291,7 @@ int main(int argc, char **argv) {
 	}
 	if (opt.output_file) {
 		r2r_write_output (&state, opt.output_file);
+		Gstate = NULL;
 	}
 	if (opt.interactive) {
 		interact (&state);
