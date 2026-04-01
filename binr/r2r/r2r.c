@@ -32,6 +32,7 @@ typedef struct r2r_state_t {
 	RVecConstCharPtr completed_paths;
 	ut64 counters[4]; // indexed by R2RTestResult: OK, FAILED, BROKEN, FIXED
 	ut64 sk_count;
+	ut64 total_paths; // total unique test paths (for log mode progress)
 	RVecR2RTestPtr queue;
 	RVecR2RTestResultInfoPtr results;
 } R2RState;
@@ -685,6 +686,7 @@ static int r2r_load_tests(R2RState *state, R2ROptions *opt, int arg_ind, int arg
 static void r2r_setup_log_mode(R2RState *state) {
 	state->path_left = ht_pp_new (NULL, path_left_free_kv, NULL);
 	if (state->path_left) {
+		ut64 path_count = 0;
 		R2RTest **it;
 		R_VEC_FOREACH (&state->queue, it) {
 			R2RTest *test = *it;
@@ -693,9 +695,11 @@ static void r2r_setup_log_mode(R2RState *state) {
 				count = malloc (sizeof (ut64));
 				*count = 0;
 				ht_pp_insert (state->path_left, test->path, count);
+				path_count++;
 			}
 			(*count)++;
 		}
+		state->total_paths = path_count;
 	}
 }
 
@@ -1024,10 +1028,9 @@ static void print_log(R2RState *state, ut64 prev_completed, ut64 prev_paths_comp
 		return;
 	}
 	ut64 paths_completed = RVecConstCharPtr_length (&state->completed_paths);
-	int a = (int)RVecR2RTestPtr_length (&state->queue);
 	for (; prev_paths_completed < paths_completed; prev_paths_completed++) {
 		const char *testpath = *RVecConstCharPtr_at (&state->completed_paths, prev_paths_completed);
-		printf ("[%d/%d] %30s ", (int)paths_completed, (int) (a + prev_paths_completed), shortpath (testpath));
+		printf ("[%" PFMT64u "/%" PFMT64u "] %30s ", paths_completed, state->total_paths, shortpath (testpath));
 		print_state_counts (state);
 		printf ("\n");
 	}
@@ -1079,20 +1082,22 @@ static RThreadFunctionRet worker_th(RThread *th) {
 			int rn = r_num_rand (100);
 			if (rn < cfg->shallow) {
 				mustrun = false;
-				state->sk_count++;
 			}
 		}
 		if (mustrun) {
 			result = r2r_run_test (cfg, test);
 		} else {
 			result = R_NEW0 (R2RTestResultInfo);
+			result->test = test;
 			result->result = R2R_TEST_RESULT_OK;
 			result->run_skipped = true;
 		}
 		r_th_lock_enter (state->lock);
 		RVecR2RTestResultInfoPtr_push_back (&state->results, &result);
 
-		if (!result->run_skipped) {
+		if (result->run_skipped) {
+			state->sk_count++;
+		} else {
 			state->counters[result->result]++;
 		}
 		if (test && state->path_left) {
