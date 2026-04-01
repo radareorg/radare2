@@ -62,8 +62,7 @@ static bool parse_header(RBuffer *b, MclfHeader *h) {
 		return false;
 	}
 
-	typedef ut32 (*R32)(const void *);
-	R32 rd = h->be ? r_read_be32 : r_read_le32;
+	ut32 (*rd)(const void *) = h->be ? r_read_be32 : r_read_le32;
 
 	h->version = rd (buf + 0x4);
 	h->flags = rd (buf + 0x8);
