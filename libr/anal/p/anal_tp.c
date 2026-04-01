@@ -8,13 +8,16 @@
 typedef struct type_trace_change_reg_t {
 	int idx;
 	ut32 cc;
-	const char *name;
+	char *name;
 	ut64 data;
 	ut64 odata;
 } TypeTraceRegChange;
 
 static void type_trace_reg_change_fini(void *data) {
-	// name is a borrowed pointer, no free needed
+	TypeTraceRegChange *change = data;
+	if (change) {
+		free (change->name);
+	}
 }
 
 typedef struct type_trace_mem_range_t {
@@ -35,7 +38,7 @@ static void type_trace_mem_range_fini(void *data) {
 }
 
 typedef struct {
-	const char *name;
+	char *name;
 	ut64 value;
 	// TODO: size
 } TypeTraceRegAccess;
@@ -62,7 +65,9 @@ typedef struct {
 } TypeTraceOp;
 
 static inline void tt_fini_access(TypeTraceAccess *access) {
-	if (!access->is_reg) {
+	if (access->is_reg) {
+		free (access->reg.name);
+	} else {
 		free (access->mem.data);
 	}
 }
@@ -120,7 +125,7 @@ static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
 		return;
 	}
-	access->reg.name = name;
+	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_reg = true;
 	access->is_write = false;
@@ -142,7 +147,7 @@ static void add_reg_change(TypeTrace *trace, RRegItem *ri, ut64 data, ut64 odata
 	}
 	TypeTraceRegChange *reg = VecRegChange_emplace_back (vreg);
 	if (reg) {
-		*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, ri->name, data, odata };
+		*reg = (TypeTraceRegChange){ trace->cur_idx, trace->cc++, strdup (ri->name), data, odata };
 	}
 }
 
@@ -160,7 +165,7 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 		return;
 	}
 	access->is_reg = true;
-	access->reg.name = name;
+	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_write = true;
 	if (trace->enable_rollback) {
