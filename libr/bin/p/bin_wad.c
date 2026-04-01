@@ -10,7 +10,7 @@ typedef struct {
 	RBuffer *buf;
 } WadObj;
 
-static int wad_header_load(WadObj *wo, Sdb *kv) {
+static bool wad_header_load(WadObj *wo, Sdb *kv) {
 	if (r_buf_size (wo->buf) < sizeof (WADHeader)) {
 		return false;
 	}
@@ -24,16 +24,11 @@ static int wad_header_load(WadObj *wo, Sdb *kv) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	RBinObject *o = bf->bo;
-	if (!o) {
-		return NULL;
-	}
-	WadObj *wo = o->bin_obj;
-	return wo? wo->kv: NULL;
+	WadObj *wo = (WadObj *)R_UNWRAP3 (bf, bo, bin_obj);
+	return wo ? wo->kv : NULL;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	R_RETURN_VAL_IF_FAIL (b, false);
 	ut8 sig[4];
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
 		return false;
@@ -46,28 +41,18 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	WadObj *wo = R_NEW0 (WadObj);
-	R_RETURN_VAL_IF_FAIL (wo, false);
-#if 0
-	// we can just use bf->sdb in here
-	wad_header_load (wo, bf->sdb);
-#else
 	wo->kv = sdb_new0 ();
 	if (wo->kv) {
 		wad_header_load (wo, wo->kv);
 		sdb_ns_set (bf->sdb, "info", wo->kv);
 	}
-#endif
 	wo->buf = r_ref (buf);
 	bf->bo->bin_obj = wo;
 	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("WAD");
 	ret->machine = strdup ("DOOM Engine");

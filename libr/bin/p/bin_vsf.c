@@ -27,9 +27,8 @@ static const struct {
 static const int MACHINES_MAX = sizeof (_machines) / sizeof (_machines[0]);
 
 static Sdb* get_sdb(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
-	struct r_bin_vsf_obj* bin = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
-	return bin->kv;
+	struct r_bin_vsf_obj *bin = (struct r_bin_vsf_obj *)R_UNWRAP3 (bf, bo, bin_obj);
+	return bin ? bin->kv : NULL;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -46,9 +45,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	struct r_bin_vsf_obj* res = NULL;
 	if (check (bf, bf->buf)) {
 		int i = 0;
-		if (!(res = R_NEW0 (struct r_bin_vsf_obj))) {
-		    return false;
-		}
+		res = R_NEW0 (struct r_bin_vsf_obj);
 		offset = r_offsetof (struct vsf_hdr, machine);
 		if (offset > bf->size) {
 			free (res);
@@ -126,23 +123,17 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 }
 
 static RList *mem(RBinFile *bf) {
-	// FIXME: What does Mem do? Should I remove it ?
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
+	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-	RList *ret;
-	RBinMem *m;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+	RBinMem *m = R_NEW0 (RBinMem);
 	m->name = strdup ("RAM");
-	m->addr = 0;	// start address
+	m->addr = 0;
 	m->size = _machines[vsf_obj->machine_idx].ram_size;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
@@ -306,25 +297,18 @@ static RList* sections(RBinFile* bf) {
 }
 
 static RBinInfo* info(RBinFile *bf) {
-
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
+	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-
 	const int m_idx = vsf_obj->machine_idx;
-
-	RBinInfo *ret = NULL;
-	struct vsf_hdr hdr;
-	memset (&hdr, 0, sizeof (hdr));
+	struct vsf_hdr hdr = {0};
 	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof (hdr));
 	if (read != sizeof (hdr)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("Snapshot");
 	ret->machine = strdup (_machines[m_idx].desc);
@@ -498,16 +482,9 @@ static RList* symbols(RBinFile *bf) {
 	ret->free = free;
 
 	int i;
-	for (i = 0; i < SYMBOLS_MAX; i++)
-	{
-		if (!(ptr = R_NEW0 (RBinSymbol))) {
-			return ret;
-		}
-		if (!ptr->name) {
-			ptr->name = calloc(1, R_BIN_SIZEOF_STRINGS);
-		}
-		char *name = r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS);
-		ptr->name = r_bin_name_new_from (name);
+	for (i = 0; i < SYMBOLS_MAX; i++) {
+		ptr = R_NEW0 (RBinSymbol);
+		ptr->name = r_bin_name_new_from (r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS));
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
@@ -525,22 +502,17 @@ static void destroy(RBinFile *bf) {
 }
 
 static RList* entries(RBinFile *bf) {
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
+	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-	const int m_idx = vsf_obj->machine_idx;
-
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
+	const int m_idx = vsf_obj->machine_idx;
 	int offset = _machines[m_idx].offset_mem;
-	// PC
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = vsf_obj->mem + offset;
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
 	r_list_append (ret, ptr);

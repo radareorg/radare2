@@ -44,7 +44,7 @@ typedef struct {
 	RBuffer *buf;
 } BootImageObj;
 
-static int bootimg_header_load(BootImageObj *obj, Sdb *db) {
+static bool bootimg_header_load(BootImageObj *obj, Sdb *db) {
 	char *n;
 	int i;
 	if (r_buf_size (obj->buf) < sizeof (BootImage)) {
@@ -78,9 +78,6 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	BootImageObj *bio = R_NEW0 (BootImageObj);
-	if (R_UNLIKELY (!bio)) {
-		return false;
-	}
 	bio->kv = sdb_new0 ();
 	if (!bio->kv) {
 		free (bio);
@@ -108,29 +105,17 @@ static ut64 baddr(RBinFile *bf) {
 	return bio? bio->bi.kernel_addr: 0;
 }
 
-static RList *strings(RBinFile *bf) {
-	return NULL;
-}
-
 static RBinInfo *info(RBinFile *bf) {
-	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
-	}
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (R_LIKELY (ret)) {
-		ret->file = bf->file? strdup (bf->file): NULL;
-		ret->type = strdup ("Android Boot Image");
-		ret->os = strdup ("android");
-		ret->subsystem = strdup ("unknown");
-		ret->machine = strdup ("arm");
-		ret->arch = strdup ("arm");
-		ret->has_va = true;
-		ret->has_pi = false;
-		ret->bits = 16;
-		ret->big_endian = false;
-		ret->dbg_info = false;
-		ret->rclass = strdup ("image");
-	}
+	ret->file = bf->file ? strdup (bf->file) : NULL;
+	ret->type = strdup ("Android Boot Image");
+	ret->os = strdup ("android");
+	ret->subsystem = strdup ("unknown");
+	ret->machine = strdup ("arm");
+	ret->arch = strdup ("arm");
+	ret->has_va = true;
+	ret->bits = 16;
+	ret->rclass = strdup ("image");
 	return ret;
 }
 
@@ -142,21 +127,16 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 
 static RList *entries(RBinFile *bf) {
 	BootImageObj *bio = R_UNWRAP3 (bf, bo, bin_obj);
-	RBinAddr *ptr = NULL;
 	if (!bio) {
 		return NULL;
 	}
-	BootImage *bi = &bio->bi;
-	RList *ret;
-
-	if (!(ret = r_list_newf (free))) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
-	ptr->paddr = bi->page_size;
-	ptr->vaddr = bi->kernel_addr;
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = bio->bi.page_size;
+	ptr->vaddr = bio->bi.kernel_addr;
 	r_list_append (ret, ptr);
 	return ret;
 }
@@ -167,64 +147,51 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	BootImage *bi = &bio->bi;
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
-	ptr->paddr = 0;
-	ptr->vaddr = 0;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
 	ptr->paddr = bi->page_size;
 	ptr->vaddr = bi->kernel_addr;
-	ptr->perm = R_PERM_R; // r--
+	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->ramdisk_addr;
-		ptr->perm = R_PERM_RX; // r-x
+		ptr->perm = R_PERM_RX;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
 		ptr->paddr = ROUND_DOWN (base, bi->page_size);
 		ptr->vaddr = bi->second_addr;
-		ptr->perm = R_PERM_RX; // r-x
+		ptr->perm = R_PERM_RX;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -246,7 +213,6 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.baddr = &baddr,
 	.sections = &sections,
 	.entries = entries,
-	.strings = &strings,
 	.info = &info,
 };
 

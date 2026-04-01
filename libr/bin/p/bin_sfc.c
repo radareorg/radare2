@@ -64,9 +64,7 @@ static RBinInfo* info(RBinFile *bf) {
 		}
 	}
 
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Super NES / Super Famicom");
@@ -79,9 +77,6 @@ static RBinInfo* info(RBinFile *bf) {
 
 static void addrom(RList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
-	if (!ptr) {
-		return;
-	}
 	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
@@ -105,16 +100,10 @@ static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RList* symbols(RBinFile *bf) {
-	return NULL;
-}
-
 static RList* sections(RBinFile *bf) {
-	RList *ret = NULL;
-	// RBinSection *ptr = NULL;
 	int hdroffset = 0;
 	bool is_hirom = false;
-	int i = 0; //0x8000-long bank number for loops
+	int i;
 #if THIS_IS_ALWAYS_FALSE_WTF
 	if ((bf->size & 0x8000) == 0x200) {
 		hdroffset = 0x200;
@@ -142,10 +131,10 @@ static RList* sections(RBinFile *bf) {
 		is_hirom = true;
 	}
 
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
-
 	if (is_hirom) {
 		for (i = 0; i < ((bf->size - hdroffset) / 0x8000) ; i++) {
 			// XXX check integer overflow here
@@ -164,80 +153,62 @@ static RList* sections(RBinFile *bf) {
 }
 
 static RList *mem(RBinFile *bf) {
-	RList *ret;
-	RBinMem *m;
-	RBinMem *m_bak;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+
+	RBinMem *m = R_NEW0 (RBinMem);
 	m->name = strdup ("LOWRAM");
 	m->addr = LOWRAM_START_ADDRESS;
 	m->size = LOWRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
+	m->mirrors = r_list_new ();
 	r_list_append (ret, m);
 
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
-	m->mirrors = r_list_new ();
-	m->name = strdup ("LOWRAM_MIRROR");
-	m->addr = LOWRAM_MIRROR_START_ADDRESS;
-	m->size = LOWRAM_MIRROR_SIZE;
-	m->perms = r_str_rwx ("rwx");
-	r_list_append (m->mirrors, m);
-	m_bak = m;
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (m_bak->mirrors);
-		return ret;
-	}
+	RBinMem *mirror = R_NEW0 (RBinMem);
+	mirror->name = strdup ("LOWRAM_MIRROR");
+	mirror->addr = LOWRAM_MIRROR_START_ADDRESS;
+	mirror->size = LOWRAM_MIRROR_SIZE;
+	mirror->perms = r_str_rwx ("rwx");
+	r_list_append (m->mirrors, mirror);
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("HIRAM");
 	m->addr = HIRAM_START_ADDRESS;
 	m->size = HIRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("EXTRAM");
 	m->addr = EXTRAM_START_ADDRESS;
 	m->size = EXTRAM_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		return ret;
-	}
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("PPU1_REG");
 	m->addr = PPU1_REG_ADDRESS;
 	m->size = PPU1_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("DSP_REG");
 	m->addr = DSP_REG_ADDRESS;
 	m->size = DSP_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("OLDJOY_REG");
 	m->addr = OLDJOY_REG_ADDRESS;
 	m->size = OLDJOY_REG_SIZE;
 	m->perms = r_str_rwx ("rwx");
 	r_list_append (ret, m);
-	if (!(m = R_NEW0 (RBinMem))) {
-		r_list_free (ret);
-		return NULL;
-	}
+
+	m = R_NEW0 (RBinMem);
 	m->name = strdup ("PPU2_REG");
 	m->addr = PPU2_REG_ADDRESS;
 	m->size = PPU2_REG_SIZE;
@@ -275,7 +246,6 @@ RBinPlugin r_bin_plugin_sfc = {
 	.check = &check,
 	.entries = &entries,
 	.sections = sections,
-	.symbols = &symbols,
 	.info = &info,
 	.mem = &mem,
 };

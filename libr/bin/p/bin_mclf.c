@@ -45,26 +45,15 @@ static MclfHeader *mclf_from_bf(RBinFile *bf) {
 }
 
 static void mclf_destroy(RBinFile *bf) {
-	if (!bf || !bf->bo) {
-		return;
-	}
-	if (bf->bo->bin_obj) {
-		R_FREE (bf->bo->bin_obj);
-		bf->bo->bin_obj = NULL;
-	}
+	R_FREE (bf->bo->bin_obj);
 }
 
 static bool parse_header(RBuffer *b, MclfHeader *h) {
 	ut8 buf[512];
 	int r = r_buf_read_at (b, 0, buf, sizeof (buf));
-	/* Single read: require at least the fixed header through entry (0x48)
-	 * so we can parse mandatory fields. Other fields are optional and
-	 * will be read only if present in the buffer. */
-	if (r <= 0 || (size_t)r < 0x48) {
+	if (r < 0x48) {
 		return false;
 	}
-
-	h->be = false;
 	if (!memcmp (buf, "MCLF", 4)) {
 		h->be = false;
 	} else if (!memcmp (buf, "FLCM", 4)) {
@@ -73,70 +62,34 @@ static bool parse_header(RBuffer *b, MclfHeader *h) {
 		return false;
 	}
 
-/* Helper to read 32-bit values from the local buffer honoring endianness */
-#define READ32(off) (h->be ? r_read_be32 (buf + (off)) : r_read_le32 (buf + (off)))
+	ut32 (*rd)(const void *) = h->be ? r_read_be32 : r_read_le32;
 
-	h->version = READ32 (0x4);
-	h->flags = READ32 (0x8);
-	h->memType = READ32 (0xC);
-	h->serviceType = READ32 (0x10);
-	h->numInstances = READ32 (0x14);
+	h->version = rd (buf + 0x4);
+	h->flags = rd (buf + 0x8);
+	h->memType = rd (buf + 0xC);
+	h->serviceType = rd (buf + 0x10);
+	h->numInstances = rd (buf + 0x14);
 	memcpy (h->uuid, buf + 0x18, sizeof (h->uuid));
-	h->driverId = READ32 (0x28);
-	h->numThreads = READ32 (0x2C);
-	h->text_va = READ32 (0x30);
-	h->text_len = READ32 (0x34);
-	h->data_va = READ32 (0x38);
-	h->data_len = READ32 (0x3C);
-	h->bss_len = READ32 (0x40);
-	h->entry = READ32 (0x44);
+	h->driverId = rd (buf + 0x28);
+	h->numThreads = rd (buf + 0x2C);
+	h->text_va = rd (buf + 0x30);
+	h->text_len = rd (buf + 0x34);
+	h->data_va = rd (buf + 0x38);
+	h->data_len = rd (buf + 0x3C);
+	h->bss_len = rd (buf + 0x40);
+	h->entry = rd (buf + 0x44);
 
-	/* serviceVersion may be missing in some early samples; only read if present */
-	if ( (size_t)r >= 0x48 + 4) {
-		h->serviceVersion = READ32 (0x48);
-	} else {
-		h->serviceVersion = 0;
+	if (r >= 0x4C) {
+		h->serviceVersion = rd (buf + 0x48);
 	}
-
-	/* Parse Text Header at paddr 0x80 if available */
-	if ( (size_t)r >= 0x80 + 4) {
-		h->text_hdr_version = READ32 (0x80);
-		if ( (size_t)r >= 0x84 + 4) {
-			h->text_hdr_len = READ32 (0x84);
-		} else {
-			h->text_hdr_len = 0;
-		}
-		if ( (size_t)r >= 0x88 + 4) {
-			h->requiredFeat = READ32 (0x88);
-		} else {
-			h->requiredFeat = 0;
-		}
-		if ( (size_t)r >= 0x8C + 4) {
-			h->mcLibEntry = READ32 (0x8C);
-		} else {
-			h->mcLibEntry = 0;
-		}
-		/* tlApi/drApi versions are placed after mcIMD; read if present */
-		if ( (size_t)r >= 0x9C + 4) {
-			h->tlApiVers = READ32 (0x9C);
-		} else {
-			h->tlApiVers = 0;
-		}
-		if ( (size_t)r >= 0xA0 + 4) {
-			h->drApiVers = READ32 (0xA0);
-		} else {
-			h->drApiVers = 0;
-		}
-	} else {
-		h->text_hdr_version = 0;
-		h->text_hdr_len = 0;
-		h->requiredFeat = 0;
-		h->mcLibEntry = 0;
-		h->tlApiVers = 0;
-		h->drApiVers = 0;
+	if (r >= 0xA4) {
+		h->text_hdr_version = rd (buf + 0x80);
+		h->text_hdr_len = rd (buf + 0x84);
+		h->requiredFeat = rd (buf + 0x88);
+		h->mcLibEntry = rd (buf + 0x8C);
+		h->tlApiVers = rd (buf + 0x9C);
+		h->drApiVers = rd (buf + 0xA0);
 	}
-
-#undef READ32
 	return true;
 }
 
@@ -167,12 +120,9 @@ static bool check(RBinFile *bf, RBuffer *b) {
 }
 
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	if (!bf || !bf->bo) {
-		return false;
-	}
 	MclfHeader *hdr = R_NEW0 (MclfHeader);
 	if (!parse_header (b, hdr)) {
-		R_FREE (hdr);
+		free (hdr);
 		return false;
 	}
 	bf->bo->bin_obj = hdr;
@@ -314,10 +264,6 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 	RBinAddr *ea = R_NEW0 (RBinAddr);
-	if (!ea) {
-		r_list_free (res);
-		return NULL;
-	}
 	ut64 entry = hdr->entry;
 	// If Thumb bit is set, clear it; analysis will detect Thumb automatically later
 	if (entry & 1) {

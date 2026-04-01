@@ -109,10 +109,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	RBinInfo *ret = NULL;
-	if (!(ret = R_NEW0 (RBinInfo))) {
-		return NULL;
-	}
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("ROM");
 	ret->machine = strdup ("Sega Megadrive");
@@ -129,27 +126,33 @@ static RBinInfo *info(RBinFile *bf) {
 
 static void addsym(RList *ret, const char *name, ut64 addr) {
 	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (R_LIKELY (ptr)) {
-		ptr->name = r_bin_name_new (r_str_get (name));
-		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = 0;
-		ptr->ordinal = 0;
-		r_list_append (ret, ptr);
-	}
+	ptr->name = r_bin_name_new (r_str_get (name));
+	ptr->paddr = ptr->vaddr = addr;
+	ptr->size = 0;
+	ptr->ordinal = 0;
+	r_list_append (ret, ptr);
 }
 
 static void showstr(const char *str, const ut8 *s, size_t len) {
 	char *msg = r_str_ndup ((const char *) s, len);
-	eprintf ("%s: %s\n", str, msg);
+	R_LOG_INFO ("%s: %s", str, msg);
 	free (msg);
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = NULL;
-	const char *name = NULL;
-	int i;
+static const char *smd_vector_names[64] = {
+	"SSP", "Reset", "BusErr", "AdrErr", "InvOpCode", "DivBy0", "Check", "TrapV",
+	"GPF", "Trace", "Reserv0", "Reserv1", "Reserv2", "Reserv3", "Reserv4", "BadInt",
+	"Reserv10", "Reserv11", "Reserv12", "Reserv13", "Reserv14", "Reserv15", "Reserv16", "Reserv17",
+	"BadIRQ", "IRQ1", "EXT", "IRQ3", "HBLANK", "IRQ5", "VBLANK", "IRQ7",
+	"Trap0", "Trap1", "Trap2", "Trap3", "Trap4", "Trap5", "Trap6", "Trap7",
+	"Trap8", "Trap9", "Trap10", "Trap11", "Trap12", "Trap13", "Trap14", "Trap15",
+	"Reserv30", "Reserv31", "Reserv32", "Reserv33", "Reserv34", "Reserv35", "Reserv36", "Reserv37",
+	"Reserv38", "Reserv39", "Reserv3A", "Reserv3B", "Reserv3C", "Reserv3D", "Reserv3E", "Reserv3F",
+};
 
-	if (!(ret = r_list_newf (free))) {
+static RList *symbols(RBinFile *bf) {
+	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
+	if (!ret) {
 		return NULL;
 	}
 	SMD_Header hdr = {{0}};
@@ -157,7 +160,6 @@ static RList *symbols(RBinFile *bf) {
 	if (left < sizeof (SMD_Header)) {
 		return NULL;
 	}
-	// TODO: store all this stuff in SDB
 	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
 	addsym (ret, "rom_end", r_read_be32 (&hdr.RomEnd));
 	addsym (ret, "ram_start", r_read_be32 (&hdr.RamStart));
@@ -166,99 +168,29 @@ static RList *symbols(RBinFile *bf) {
 	showstr ("DomesticName", hdr.DomesticName, sizeof (hdr.DomesticName));
 	showstr ("OverseasName", hdr.OverseasName, sizeof (hdr.OverseasName));
 	showstr ("ProductCode", hdr.ProductCode, sizeof (hdr.ProductCode));
-	eprintf ("Checksum: 0x%04x\n", (ut32) hdr.CheckSum);
+	R_LOG_INFO ("Checksum: 0x%04x", (ut32) hdr.CheckSum);
 	showstr ("Peripherals", hdr.Peripherals, sizeof (hdr.Peripherals));
 	showstr ("SramCode", hdr.SramCode, sizeof (hdr.SramCode));
 	showstr ("ModemCode", hdr.ModemCode, sizeof (hdr.ModemCode));
 	showstr ("CountryCode", hdr.CountryCode, sizeof (hdr.CountryCode));
 	ut32 vtable[64];
 	r_buf_read_at (bf->buf, 0, (ut8*)&vtable, sizeof (ut32) * 64);
-	/* parse vtable */
+	int i;
 	for (i = 0; i < 64; i++) {
-		switch (i) {
-		case 0: name = "SSP"; break;
-		case 1: name = "Reset"; break;
-		case 2: name = "BusErr"; break;
-		case 3: name = "AdrErr"; break;
-		case 4: name = "InvOpCode"; break;
-		case 5: name = "DivBy0"; break;
-		case 6: name = "Check"; break;
-		case 7: name = "TrapV"; break;
-		case 8: name = "GPF"; break;
-		case 9: name = "Trace"; break;
-		case 10: name = "Reserv0"; break;
-		case 11: name = "Reserv1"; break;
-		case 12: name = "Reserv2"; break;
-		case 13: name = "Reserv3"; break;
-		case 14: name = "Reserv4"; break;
-		case 15: name = "BadInt"; break;
-		case 16: name = "Reserv10"; break;
-		case 17: name = "Reserv11"; break;
-		case 18: name = "Reserv12"; break;
-		case 19: name = "Reserv13"; break;
-		case 20: name = "Reserv14"; break;
-		case 21: name = "Reserv15"; break;
-		case 22: name = "Reserv16"; break;
-		case 23: name = "Reserv17"; break;
-		case 24: name = "BadIRQ"; break;
-		case 25: name = "IRQ1"; break;
-		case 26: name = "EXT"; break;
-		case 27: name = "IRQ3"; break;
-		case 28: name = "HBLANK"; break;
-		case 29: name = "IRQ5"; break;
-		case 30: name = "VBLANK"; break;
-		case 31: name = "IRQ7"; break;
-		case 32: name = "Trap0"; break;
-		case 33: name = "Trap1"; break;
-		case 34: name = "Trap2"; break;
-		case 35: name = "Trap3"; break;
-		case 36: name = "Trap4"; break;
-		case 37: name = "Trap5"; break;
-		case 38: name = "Trap6"; break;
-		case 39: name = "Trap7"; break;
-		case 40: name = "Trap8"; break;
-		case 41: name = "Trap9"; break;
-		case 42: name = "Trap10"; break;
-		case 43: name = "Trap11"; break;
-		case 44: name = "Trap12"; break;
-		case 45: name = "Trap13"; break;
-		case 46: name = "Trap14"; break;
-		case 47: name = "Trap15"; break;
-		case 48: name = "Reserv30"; break;
-		case 49: name = "Reserv31"; break;
-		case 50: name = "Reserv32"; break;
-		case 51: name = "Reserv33"; break;
-		case 52: name = "Reserv34"; break;
-		case 53: name = "Reserv35"; break;
-		case 54: name = "Reserv36"; break;
-		case 55: name = "Reserv37"; break;
-		case 56: name = "Reserv38"; break;
-		case 57: name = "Reserv39"; break;
-		case 58: name = "Reserv3A"; break;
-		case 59: name = "Reserv3B"; break;
-		case 60: name = "Reserv3C"; break;
-		case 61: name = "Reserv3D"; break;
-		case 62: name = "Reserv3E"; break;
-		case 63: name = "Reserv3F"; break;
-		default: name = NULL;
-		}
-		if (name && vtable[i]) {
-			ut32 addr = r_read_be32 (&vtable[i]);
-			addsym (ret, name, addr);
+		if (vtable[i]) {
+			addsym (ret, smd_vector_names[i], r_read_be32 (&vtable[i]));
 		}
 	}
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_new ())) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
-	RBinSection *ptr;
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
@@ -266,9 +198,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
@@ -276,17 +206,13 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	SMD_Header hdr = {{0}};
+	r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
+
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
-	ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
-	{
-		SMD_Header hdr = {{0}};
-		r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
-		ut64 baddr = r_read_be32 (&hdr.RomStart);
-		ptr->vaddr += baddr;
-	}
+	ptr->paddr = 0x100 + sizeof (SMD_Header);
+	ptr->vaddr = ptr->paddr + r_read_be32 (&hdr.RomStart);
 	ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->paddr;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
@@ -294,25 +220,21 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *entries(RBinFile *bf) { // Should be 3 offsets pointed by NMI, RESET, IRQ after mapping && default = 1st CHR
-	RList *ret;
-	RBinAddr *ptr = NULL;
-	if (!(ret = r_list_new ())) {
+static RList *entries(RBinFile *bf) {
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
-	if (!(ptr = R_NEW0 (RBinAddr))) {
-		return ret;
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	if (bf->size < sizeof (SMD_Vectors)) {
-		eprintf ("ERR: binfile too small!\n");
+		R_LOG_WARN ("binfile too small");
 		ptr->paddr = ptr->vaddr = 0x100 + sizeof (SMD_Header);
-		r_list_append (ret, ptr);
 	} else {
 		SMD_Vectors vectors;
 		r_buf_read_at (bf->buf, 0, (ut8*)&vectors, sizeof (vectors));
 		ptr->paddr = ptr->vaddr = r_read_be32 (&vectors.Reset);
-		r_list_append (ret, ptr);
 	}
+	r_list_append (ret, ptr);
 	return ret;
 }
 

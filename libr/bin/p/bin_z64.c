@@ -106,10 +106,6 @@ static RList *sections(RBinFile *bf) {
 		return NULL;
 	}
 	RBinSection *text = R_NEW0 (RBinSection);
-	if (!text) {
-		r_list_free (ret);
-		return NULL;
-	}
 	text->name = strdup ("text");
 	text->size = r_buf_size (bf->buf) - N64_ROM_START;
 	text->vsize = text->size;

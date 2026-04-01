@@ -8,7 +8,6 @@
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 lict[156];
-	R_RETURN_VAL_IF_FAIL (b, false);
 	r_buf_read_at (b, 4, (ut8*)lict, sizeof (lict));
 	return !memcmp (lict, lic_gba, 156);
 }
@@ -19,35 +18,18 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 
 static RList *entries(RBinFile *bf) {
 	RList *ret = r_list_newf (free);
-	RBinAddr *ptr = NULL;
-
-	if (bf && bf->buf) {
-		if (!ret) {
-			return NULL;
-		}
-		if (!(ptr = R_NEW0 (RBinAddr))) {
-			return ret;
-		}
-		ptr->paddr = ptr->vaddr = 0x8000000;
-		r_list_append (ret, ptr);
+	if (!ret) {
+		return NULL;
 	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = ptr->vaddr = 0x8000000;
+	r_list_append (ret, ptr);
 	return ret;
 }
 
 static RBinInfo *info(RBinFile *bf) {
 	ut8 rom_info[16];
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-
-	if (!ret) {
-		return NULL;
-	}
-
-	if (!bf || !bf->buf) {
-		free (ret);
-		return NULL;
-	}
-
-	ret->lang = NULL;
 	r_buf_read_at (bf->buf, 0xa0, rom_info, 16);
 	ret->file = r_str_ndup ((const char *) rom_info, 12);
 	ret->type = r_str_ndup ((char *) &rom_info[12], 4);
@@ -62,13 +44,12 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *s = R_NEW0 (RBinSection);
-	ut64 sz = r_buf_size (bf->buf);
-	if (!(ret = r_list_new ())) {
-		free (s);
+	RList *ret = r_list_new ();
+	if (!ret) {
 		return NULL;
 	}
+	ut64 sz = r_buf_size (bf->buf);
+	RBinSection *s = R_NEW0 (RBinSection);
 	s->name = strdup ("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;

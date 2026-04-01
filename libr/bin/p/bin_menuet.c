@@ -81,68 +81,56 @@ static ut64 menuetEntry(const ut8 *buf, int buf_size) {
 }
 
 static RList *entries(RBinFile *bf) {
-	RList *ret;
-	ut8 buf[64] = { 0 };
-	RBinAddr *ptr = NULL;
+	ut8 buf[64] = {0};
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
-
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
 	ut64 entry = menuetEntry (buf, buf_size);
 	if (entry == UT64_MAX) {
 		return NULL;
 	}
-	if (! (ret = r_list_new ())) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	ret->free = free;
-	if ((ptr = R_NEW0 (RBinAddr))) {
-		ptr->paddr = r_read_ble32 (buf + 12, false);
-		ptr->vaddr = ptr->paddr + baddr (bf);
-		r_list_append (ret, ptr);
-	}
+	RBinAddr *ptr = R_NEW0 (RBinAddr);
+	ptr->paddr = r_read_ble32 (buf + 12, false);
+	ptr->vaddr = ptr->paddr + baddr (bf);
+	r_list_append (ret, ptr);
 	return ret;
 }
 
 static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	ut8 buf[64] = { 0 };
+	ut8 buf[64] = {0};
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
-
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
 	if (!bf->bo->info) {
 		return NULL;
 	}
-
-	if (! (ret = r_list_newf (free))) {
+	RList *ret = r_list_newf (free);
+	if (!ret) {
 		return NULL;
 	}
-	// add text segment
-	if (! (ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->size = r_read_ble32 (buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
 	ptr->paddr = r_read_ble32 (buf + 12, false);
 	ptr->vaddr = ptr->paddr + baddr (bf);
-	ptr->perm = R_PERM_RX; // r-x
+	ptr->perm = R_PERM_RX;
 	ptr->add = true;
 	r_list_append (ret, ptr);
 
 	if (MENUET_VERSION (buf)) {
-		/* add data section */
-		if (! (ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("idata");
 		const ut32 idata_start = r_read_ble32 (buf + 40, false);
 		const ut32 idata_end = r_read_ble32 (buf + 44, false);
 		ptr->size = idata_end - idata_start;
 		ptr->vsize = ptr->size + (ptr->size % 4096);
-		ptr->paddr = r_read_ble32 (buf + 40, false);
+		ptr->paddr = idata_start;
 		ptr->vaddr = ptr->paddr + baddr (bf);
-		ptr->perm = R_PERM_R; // r--
+		ptr->perm = R_PERM_R;
 		ptr->add = true;
 		r_list_append (ret, ptr);
 	}
@@ -152,21 +140,16 @@ static RList *sections(RBinFile *bf) {
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (ret) {
-		ret->file = strdup (bf->file);
-		ret->bclass = strdup ("program");
-		ret->rclass = strdup ("menuet");
-		ret->os = strdup ("MenuetOS");
-		ret->arch = strdup ("x86");
-		ret->machine = strdup (ret->arch);
-		ret->subsystem = strdup ("kolibri");
-		ret->type = strdup ("EXEC");
-		ret->bits = 32;
-		ret->has_va = true;
-		ret->big_endian = 0;
-		ret->dbg_info = 0;
-		ret->dbg_info = 0;
-	}
+	ret->file = strdup (bf->file);
+	ret->bclass = strdup ("program");
+	ret->rclass = strdup ("menuet");
+	ret->os = strdup ("MenuetOS");
+	ret->arch = strdup ("x86");
+	ret->machine = strdup (ret->arch);
+	ret->subsystem = strdup ("kolibri");
+	ret->type = strdup ("EXEC");
+	ret->bits = 32;
+	ret->has_va = true;
 	return ret;
 }
 
