@@ -917,7 +917,12 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 	exports_sz = (int)tmp_exports_sz;
 	if (exports) {
 		int osz = sz;
-		sz += exports_sz;
+		int newsz;
+		if (r_add_overflow (sz, exports_sz, &newsz) || newsz < 0 || (size_t)newsz + export_t_sz < (size_t)newsz) {
+			free (buf);
+			return NULL;
+		}
+		sz = newsz;
 		new_exports = realloc (exports, sz + export_t_sz);
 		if (!new_exports) {
 			free (buf);
