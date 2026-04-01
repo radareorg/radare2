@@ -324,6 +324,7 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 
 	RVecR2RAsmTestPtr *ret = RVecR2RAsmTestPtr_new ();
 	if (!ret) {
+		free (contents);
 		return NULL;
 	}
 
@@ -399,10 +400,12 @@ R_API RVecR2RAsmTestPtr *r2r_load_asm_test_file(RStrConstPool *strpool, const ch
 		}
 		int bytesz = r_hex_str2bin (hex, bytes);
 		if (bytesz == 0) {
+			free (bytes);
 			R_LOG_ERROR (LINEFMT "Expected hex chars", file, linenum);
 			goto fail;
 		}
 		if (bytesz < 0) {
+			free (bytes);
 			R_LOG_ERROR (LINEFMT ": Odd number of hex chars: %s", file, linenum, hex);
 			goto fail;
 		}

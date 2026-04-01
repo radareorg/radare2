@@ -432,11 +432,13 @@ R_API void r2r_subprocess_stdin_write(R2RSubprocess *proc, const ut8 *buf, size_
 }
 
 R_API R2RProcessOutput *r2r_subprocess_drain(R2RSubprocess *proc) {
-	// XXX, duplicate from the unix path
 	R2RProcessOutput *out = R_NEW (R2RProcessOutput);
+	r_th_lock_enter (proc->lock);
 	out->out = r_strbuf_drain_nofree (&proc->out);
 	out->err = r_strbuf_drain_nofree (&proc->err);
 	out->ret = proc->ret;
+	out->timeout = false;
+	r_th_lock_leave (proc->lock);
 	return out;
 }
 
@@ -1104,6 +1106,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	RList *args = r_list_new ();
 	RList *envvars = r_list_new ();
 	RList *envvals = r_list_new ();
+	RList *env_dups = r_list_newf (free);
 
 	r_list_append (args, (void *)"-escr.utf8=0");
 	r_list_append (args, (void *)"-escr.color=0");
@@ -1148,6 +1151,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 					*equal = 0;
 					r_list_append (envvars, (void *)dup);
 					r_list_append (envvals, (void *) (equal + 1));
+					r_list_append (env_dups, dup);
 				} else {
 					free (dup);
 				}
@@ -1180,6 +1184,7 @@ static R2RProcessOutput *run_r2_test(R2RRunConfig *config, ut64 timeout_ms, int 
 	r_list_free (args);
 	r_list_free (envvars);
 	r_list_free (envvals);
+	r_list_free (env_dups);
 	return out;
 }
 
@@ -1437,7 +1442,7 @@ R_API bool r2r_check_asm_test(R2RAsmTestOutput *out, R2RAsmTest *test) {
 		}
 	}
 	if (test->mode & R2R_ASM_TEST_MODE_DISASSEMBLE) {
-		if (!out->disasm || !test->disasm || out->as_timeout) {
+		if (!out->disasm || !test->disasm || out->disas_timeout) {
 			return false;
 		}
 		if (strcmp (out->disasm, test->disasm)) {
@@ -1525,6 +1530,7 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 	RList *args = r_list_new ();
 	RList *envvars = r_list_new ();
 	RList *envvals = r_list_new ();
+	RList *env_dups = r_list_newf (free);
 	// Add valgrind arguments
 	r_list_append (args, (void *)"--leak-check=full");
 	r_list_append (args, (void *)"-s");
@@ -1577,6 +1583,7 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 					*equal = 0;
 					r_list_append (envvars, (void *)dup);
 					r_list_append (envvals, (void *) (equal + 1));
+					r_list_append (env_dups, dup);
 				} else {
 					free (dup);
 				}
@@ -1600,6 +1607,7 @@ static R2RProcessOutput *run_r2_test_with_valgrind(R2RRunConfig *config, ut64 ti
 	r_list_free (args);
 	r_list_free (envvars);
 	r_list_free (envvals);
+	r_list_free (env_dups);
 	return out;
 }
 #endif
