@@ -771,6 +771,7 @@ int PE_(read_nt_headers)(RBuffer *b, ut64 addr, PE_(image_nt_headers) * headers)
 }
 
 static int bin_pe_init_hdr(RBinPEObj *pe) {
+	R_FREE (pe->dos_header);
 	if (! (pe->dos_header = malloc (sizeof (PE_(image_dos_header))))) {
 		r_sys_perror ("malloc (dos header)");
 		return false;
@@ -789,6 +790,7 @@ static int bin_pe_init_hdr(RBinPEObj *pe) {
 		R_LOG_WARN ("Invalid e_lfanew field");
 		return false;
 	}
+	R_FREE (pe->nt_headers);
 	if (! (pe->nt_headers = malloc (sizeof (PE_(image_nt_headers))))) {
 		r_sys_perror ("malloc (nt header)");
 		return false;
@@ -1034,6 +1036,7 @@ static int bin_pe_init_sections(RBinPEObj *pe) {
 		// R_LOG_WARN ("Invalid NumberOfSections value");
 		// goto out_error;
 	}
+	R_FREE (pe->section_header);
 	if (! (pe->section_header = malloc (sections_size))) {
 		r_sys_perror ("malloc (section header)");
 		goto out_error;
@@ -1342,9 +1345,6 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 	PE_(image_metadata_header) *metadata = R_NEW0 (PE_(image_metadata_header));
 	PE_(image_metadata_stream) **streams = NULL;
 	int parsed_streams = 0;
-	if (!metadata) {
-		return false;
-	}
 	PE_DWord metadata_directory = pe->clr_hdr? PE_(va2pa) (pe, pe->clr_hdr->MetaDataDirectoryAddress): 0;
 	if (!metadata_directory) {
 		free (metadata);
@@ -1407,9 +1407,6 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 	int count;
 	for (count = 0; count < metadata->NumberOfStreams; count++) {
 		stream = R_NEW0 (PE_(image_metadata_stream));
-		if (!stream) {
-			goto fail;
-		}
 		if (r_buf_size (pe->b) < (stream_addr + 8 + MAX_METADATA_STRING_LENGTH)) {
 			R_LOG_DEBUG ("metadata strnig truncated");
 			free (stream);
@@ -1438,6 +1435,14 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 		streams[count] = stream;
 		parsed_streams++;
 		stream_addr += 8 + c;
+	}
+	// free previous allocations in case of duplicate metadata header
+	if (pe->metadata_header) {
+		int old_n_streams = pe->metadata_header->NumberOfStreams;
+		bin_pe_free_metadata_streams (pe->streams, old_n_streams);
+		pe->streams = NULL;
+		free (pe->metadata_header->VersionString);
+		R_FREE (pe->metadata_header);
 	}
 	pe->metadata_header = metadata;
 	pe->streams = streams;
@@ -1525,12 +1530,9 @@ static int bin_pe_init_clr_hdr(RBinPEObj *pe) {
 	PE_(image_data_directory) *clr_dir = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR];
 	PE_DWord image_clr_hdr_paddr = PE_(va2pa) (pe, clr_dir->VirtualAddress);
 	// int clr_dir_size = clr_dir? clr_dir->Size: 0;
+	R_FREE (pe->clr_hdr);
 	PE_(image_clr_header) *clr_hdr = R_NEW0 (PE_(image_clr_header));
 	int len = sizeof (PE_(image_clr_header));
-
-	if (!clr_hdr) {
-		return 0;
-	}
 	int rr = read_image_clr_header (pe->b, image_clr_hdr_paddr, clr_hdr);
 
 	//	printf ("%x\n", clr_hdr->HeaderSize);
@@ -1756,6 +1758,7 @@ static int bin_pe_init_exports(RBinPEObj *pe) {
 	}
 	// sdb_setn (DB, "hdr.exports_directory", export_dir_paddr);
 	// R_LOG_WARN ("Pexports paddr at 0x%"PFMT64x, export_dir_paddr);
+	R_FREE (pe->export_directory);
 	if (! (pe->export_directory = malloc (sizeof (PE_(image_export_directory))))) {
 		R_LOG_ERROR ("malloc (export directory)");
 		return false;
@@ -1801,12 +1804,16 @@ static int bin_pe_init_resource(RBinPEObj *pe) {
 		return false;
 	}
 
+	r_list_free (pe->resources);
 	pe->resources = r_list_newf ((RListFree)_free_resource);
 	if (!pe->resources) {
 		return false;
 	}
+	R_FREE (pe->resource_directory);
 	if (! (pe->resource_directory = malloc (sizeof (*pe->resource_directory)))) {
 		r_sys_perror ("malloc (resource directory)");
+		r_list_free (pe->resources);
+		pe->resources = NULL;
 		return false;
 	}
 	if (read_image_resource_directory (pe->b, resource_dir_paddr, pe->resource_directory) < 0) {
@@ -1880,6 +1887,7 @@ static int bin_pe_init_tls(RBinPEObj *pe) {
 	PE_(image_data_directory) *data_dir_tls = &pe->data_directory[PE_IMAGE_DIRECTORY_ENTRY_TLS];
 	PE_DWord tls_paddr = PE_(va2pa) (pe, data_dir_tls->VirtualAddress);
 
+	R_FREE (pe->tls_directory);
 	image_tls_directory = R_NEW0 (PE_(image_tls_directory));
 	if (read_tls_directory (pe->b, tls_paddr, image_tls_directory) < 0) {
 		R_LOG_WARN ("read (image_tls_directory)");
@@ -3371,6 +3379,22 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	_store_resource_sdb (pe);
 }
 
+static void free_security_directory(Pe_image_security_directory *security_directory) {
+	if (!security_directory) {
+		return;
+	}
+	size_t numCert = 0;
+	for (; numCert < security_directory->length; numCert++) {
+		Pe_certificate *cert = security_directory->certificates[numCert];
+		if (cert) {
+			free (cert->bCertificate);
+			free (cert);
+		}
+	}
+	free (security_directory->certificates);
+	free (security_directory);
+}
+
 static int bin_pe_init_security(RBinPEObj *pe) {
 	if (!pe || !pe->nt_headers) {
 		return false;
@@ -3389,10 +3413,8 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		return false;
 	}
 
+	free_security_directory (pe->security_directory);
 	Pe_image_security_directory *security_directory = R_NEW0 (Pe_image_security_directory);
-	if (!security_directory) {
-		return false;
-	}
 	pe->security_directory = security_directory;
 
 	PE_DWord offset = paddr;
@@ -3403,9 +3425,6 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 		}
 		security_directory->certificates = tmp;
 		Pe_certificate *cert = R_NEW0 (Pe_certificate);
-		if (!cert) {
-			return false;
-		}
 		cert->dwLength = r_buf_read_le32_at (pe->b, offset);
 		cert->dwLength += (8 - (cert->dwLength & 7)) & 7; // align32
 		if (offset + cert->dwLength > paddr + size) {
@@ -3454,18 +3473,6 @@ static int bin_pe_init_security(RBinPEObj *pe) {
 	}
 	pe->is_signed = pe->cms;
 	return true;
-}
-
-static void free_security_directory(Pe_image_security_directory *security_directory) {
-	if (!security_directory) {
-		return;
-	}
-	size_t numCert = 0;
-	for (; numCert < security_directory->length; numCert++) {
-		free (security_directory->certificates[numCert]);
-	}
-	free (security_directory->certificates);
-	free (security_directory);
 }
 
 static int bin_pe_init(RBinPEObj *pe) {
