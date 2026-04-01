@@ -2861,7 +2861,7 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 			ut8 *bufop = blk + blk_off;
 			size_t bufop_len = R_MIN (32, (blksz + 32) - blk_off);
 
-			ret = r_anal_op (core->anal, &aop, at, bufop, bufop_len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
+			ret = r_anal_op (core->anal, &aop, at, bufop, bufop_len, R_ARCH_OP_MASK_BASIC);
 			if (ret) {
 				if (hasch > 0) {
 					hasch--;
