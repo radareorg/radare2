@@ -248,6 +248,10 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 	free (dex->protos);
 	free (dex->version);
 	r_list_free (dex->lines_list);
+	r_list_free (dex->trycatch_list);
+	r_strbuf_free (dex->sb);
+	sdb_free (dex->mdb);
+	sdb_free (dex->kv);
 	r_unref (dex->b);
 	free (dex);
 }

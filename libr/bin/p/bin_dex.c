@@ -816,7 +816,7 @@ static RList *strings(RBinFile *bf) {
 		return NULL;
 	}
 	if (bin->header.strings_size > bin->size) {
-		bin->strings = NULL;
+		R_FREE (bin->strings);
 		return NULL;
 	}
 	if (!(ret = r_list_newf (free))) {
@@ -1587,8 +1587,8 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	dex->code_from = UT64_MAX;
 	dex->code_to = 0;
-	RVecRBinImport_init (&dex->imports_vec);
-	RVecRBinClass_init (&dex->classes_vec);
+	RVecRBinImport_fini (&dex->imports_vec);
+	RVecRBinClass_fini (&dex->classes_vec);
 	if (!dex->lines_list) {
 		dex->lines_list = r_list_newf ((RListFree)free);
 		if (!dex->lines_list) {
@@ -2032,6 +2032,7 @@ static RList *sections(RBinFile *bf) {
 static char *dex_header(RBinFile *bf, int mode) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	DexHeader *hdr = &dex->header;
+	r_strbuf_free (dex->sb);
 	dex->sb = r_strbuf_new ("");
 #define p(f,...) r_strbuf_appendf (dex->sb, f, ##__VA_ARGS__)
 	p ("DEX file header:\n");
@@ -2060,7 +2061,7 @@ static char *dex_header(RBinFile *bf, int mode) {
 #undef p
 	// TODO: print information stored in the RBIN not this ugly fix
 	// Free previously allocated resources before reloading
-	RVecRBinSymbol_clear (&dex->symbols_vec);
+	RVecRBinSymbol_fini (&dex->symbols_vec);
 	RVecRBinImport_fini (&dex->imports_vec);
 	RVecRBinClass_fini (&dex->classes_vec);
 	r_list_free (dex->lines_list);
