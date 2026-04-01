@@ -696,8 +696,8 @@ static bool needs_csv_quoting(const char *s, char sep) {
 }
 
 static void csv_append_field(RStrBuf *sb, const char *prefix, const char *field) {
-	char *escaped = r_str_replace_all (strdup (field), "\"", "\"\"");
-	r_strbuf_appendf (sb, "%s\"%s\"", prefix, escaped);
+	char *escaped = r_str_replace (strdup (field), "\"", "\"\"", 1);
+	r_strbuf_appendf (sb, "%s\"%s\"", prefix, r_str_get (escaped));
 	free (escaped);
 }
 
