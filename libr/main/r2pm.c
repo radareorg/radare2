@@ -12,6 +12,7 @@
 #endif
 
 static int r2pm_install(RList *targets, bool uninstall, bool clean, bool force, bool global);
+static bool r2pm_bindir_in_path = false;
 
 static const char *helpmsg =
 	"Usage: r2pm [-flags] [pkgs...]\n"
@@ -201,6 +202,139 @@ static char *r2pm_dbdir(void) {
 	char *res = r_str_newf ("%s/radare2-pm/db", gitdir);
 	free (gitdir);
 	return res;
+}
+
+static bool path_has_dir(const char *path, const char *dir) {
+	char *ptr, *path_copy, *entry;
+	if (R_STR_ISEMPTY (path) || R_STR_ISEMPTY (dir)) {
+		return false;
+	}
+	path_copy = strdup (path);
+	if (!path_copy) {
+		return false;
+	}
+	entry = path_copy;
+	do {
+		ptr = strchr (entry, R_SYS_ENVSEP[0]);
+		if (ptr) {
+			*ptr = '\0';
+		}
+		if (!strcmp (entry, dir)) {
+			free (path_copy);
+			return true;
+		}
+		if (ptr) {
+			entry = ptr + 1;
+		}
+	} while (ptr);
+	free (path_copy);
+	return false;
+}
+
+static const char *r2pm_shellrc_name(void) {
+	char *shell = r_sys_getenv ("SHELL");
+	const char *res = ".profile";
+	if (R_STR_ISNOTEMPTY (shell)) {
+		const char *shell_name = r_str_lchr (shell, '/');
+		shell_name = shell_name? shell_name + 1: shell;
+		if (!strcmp (shell_name, "bash")) {
+			res = ".bashrc";
+		} else if (!strcmp (shell_name, "zsh")) {
+			res = ".zshrc";
+		}
+	}
+	free (shell);
+	return res;
+}
+
+static void r2pm_suggest_bindir_in_shellrc(void) {
+	char *bindir = r_sys_getenv ("R2PM_BINDIR");
+	const char *shellrc;
+	if (R_STR_ISEMPTY (bindir)) {
+		free (bindir);
+		return;
+	}
+	shellrc = r2pm_shellrc_name ();
+	R_LOG_INFO ("Your shell PATH does not include %s", bindir);
+	R_LOG_INFO ("Add it to ~/%s with:", shellrc);
+	R_LOG_INFO ("  printf '\\nexport PATH=\"$PATH:%s\"\\n' >> ~/%s", bindir, shellrc);
+	free (bindir);
+}
+
+static bool list_has_string(RList *list, const char *name) {
+	RListIter *iter;
+	const char *entry;
+	if (!list || !name) {
+		return false;
+	}
+	r_list_foreach (list, iter, entry) {
+		if (!strcmp (entry, name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static RList *r2pm_bindir_snapshot(void) {
+	char *bindir = r_sys_getenv ("R2PM_BINDIR");
+	if (R_STR_ISEMPTY (bindir)) {
+		free (bindir);
+		return NULL;
+	}
+	RList *files = r_sys_dir (bindir);
+	free (bindir);
+	return files;
+}
+
+static RList *r2pm_bindir_new_files(RList *before, RList *after) {
+	RListIter *iter;
+	const char *file;
+	RList *res = r_list_newf (free);
+	if (!res || !after) {
+		r_list_free (res);
+		return NULL;
+	}
+	r_list_foreach (after, iter, file) {
+		if (*file == '.') {
+			continue;
+		}
+		if (!list_has_string (before, file)) {
+			r_list_append (res, strdup (file));
+		}
+	}
+	return res;
+}
+
+static void r2pm_report_new_bindir_files(const char *pkg, RList *new_files) {
+	RListIter *iter;
+	const char *file;
+	char *bindir = r_sys_getenv ("R2PM_BINDIR");
+	RStrBuf *sb;
+	char *files;
+	if (R_STR_ISEMPTY (bindir) || !new_files || r_list_empty (new_files)) {
+		free (bindir);
+		return;
+	}
+	sb = r_strbuf_new ("");
+	if (!sb) {
+		free (bindir);
+		return;
+	}
+	r_list_foreach (new_files, iter, file) {
+		if (!r_strbuf_length (sb)) {
+			r_strbuf_appendf (sb, "%s", file);
+		} else {
+			r_strbuf_appendf (sb, ", %s", file);
+		}
+	}
+	files = r_strbuf_drain (sb);
+	R_LOG_INFO ("New files in %s after installing %s: %s", bindir, pkg, files);
+	R_LOG_INFO ("Run them from your shell with 'r2pm -r <programname>'");
+	if (!r2pm_bindir_in_path) {
+		r2pm_suggest_bindir_in_shellrc ();
+	}
+	free (files);
+	free (bindir);
 }
 
 static char *r2pm_pkgdir(void) {
@@ -562,6 +696,9 @@ static void r2pm_setenv(R2Pm *r2pm) {
 	free (pkgcfg);
 
 	char *r2pm_bindir = r_str_newf ("%s/bin", r2_prefix);
+	char *path = r_sys_getenv ("PATH");
+	r2pm_bindir_in_path = path_has_dir (path, r2pm_bindir);
+	free (path);
 	r_sys_mkdirp (r2pm_bindir);
 	r_sys_setenv ("R2PM_BINDIR", r2pm_bindir);
 	r_sys_setenv_sep ("PATH", r2pm_bindir, false);
@@ -940,6 +1077,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	}
 	char *srcdir = r2pm_gitdir ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
+	RList *bindir_before = r2pm_bindir_snapshot ();
 	char *qjs_script = r2pm_get (pkg, "\nR2PM_INSTALL_QJS() {\n", TT_CODEBLOCK);
 	if (qjs_script) {
 		int res = 0;
@@ -950,6 +1088,9 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		int child = fork ();
 		if (child == -1) {
 			R_LOG_ERROR ("Cannot find radare2 in PATH");
+			free (qjs_script);
+			r_list_free (bindir_before);
+			free (srcdir);
 			return -1;
 		}
 		if (child) {
@@ -963,8 +1104,16 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		R_LOG_WARN ("r2pm.qjs support is experimental");
 		res = 1;
 #endif
+		if (res == 0) {
+			RList *bindir_after = r2pm_bindir_snapshot ();
+			RList *new_files = r2pm_bindir_new_files (bindir_before, bindir_after);
+			r2pm_report_new_bindir_files (pkg, new_files);
+			r_list_free (new_files);
+			r_list_free (bindir_after);
+		}
 		// run script!
 		free (qjs_script);
+		r_list_free (bindir_before);
 		free (srcdir);
 		return res;
 	}
@@ -972,6 +1121,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
+		r_list_free (bindir_before);
 		return 1;
 	}
 	script = r_str_replace_all (script, "\r\n", " & ");
@@ -985,10 +1135,20 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	}
 	int res = r_sandbox_system (s, 1);
 	free (s);
+	if (res == 0) {
+		r2pm_register (pkg, global);
+		RList *bindir_after = r2pm_bindir_snapshot ();
+		RList *new_files = r2pm_bindir_new_files (bindir_before, bindir_after);
+		r2pm_report_new_bindir_files (pkg, new_files);
+		r_list_free (new_files);
+		r_list_free (bindir_after);
+	}
+	r_list_free (bindir_before);
 #else
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("Cannot find '%s' package or missing R2PM_INSTALL block", pkg);
+		r_list_free (bindir_before);
 		free (srcdir);
 		return 1;
 	}
@@ -1004,6 +1164,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	if (have_builddir && !r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
+		r_list_free (bindir_before);
 		return 1;
 	}
 	char *s = have_builddir
@@ -1015,7 +1176,13 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	free (s);
 	if (res == 0) {
 		r2pm_register (pkg, global);
+		RList *bindir_after = r2pm_bindir_snapshot ();
+		RList *new_files = r2pm_bindir_new_files (bindir_before, bindir_after);
+		r2pm_report_new_bindir_files (pkg, new_files);
+		r_list_free (new_files);
+		r_list_free (bindir_after);
 	}
+	r_list_free (bindir_before);
 #endif
 	free (script);
 	free (srcdir);
