@@ -191,17 +191,33 @@ static ut64 is_pointer(RAnal *anal, const ut8 *buf, int size) {
 }
 
 static bool is_bin(const ut8 *buf, int size) {
-	// TODO: add more magic signatures heres
 	if (size >= 4) {
 		if (!memcmp (buf, "\xcf\xfa\xed\xfe", 4)) {
-			return true;
+			return true; // Mach-O 64-bit
 		}
-		if (!memcmp (buf, "\x7f\x45\x4c\x46", 4)) { // \x7fELF
-			return true;
+		if (!memcmp (buf, "\xce\xfa\xed\xfe", 4)) {
+			return true; // Mach-O 32-bit
+		}
+		if (!memcmp (buf, "\xbe\xba\xfe\xca", 4)) {
+			return true; // Mach-O fat binary
+		}
+		if (!memcmp (buf, "\x7f\x45\x4c\x46", 4)) {
+			return true; // ELF
+		}
+		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+			return true; // Java class or Mach-O fat (big-endian)
+		}
+if (!memcmp (buf, "dex\n", 4)) {
+			return true; // DEX (Android Dalvik)
+		}
+		if (!memcmp (buf, "\x00\x61\x73\x6d", 4)) {
+			return true; // WebAssembly
 		}
 	}
-	if ((size >= 2 && !memcmp (buf, "MZ", 2))) {
-		return true;
+	if (size >= 2) {
+		if (!memcmp (buf, "MZ", 2)) {
+			return true; // PE/DOS
+		}
 	}
 	return false;
 }
