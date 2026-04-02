@@ -59,14 +59,19 @@ R_IPI int io_memory_write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 
 R_IPI bool io_memory_resize(RIO *io, RIODesc *fd, ut64 count) {
 	R_RETURN_VAL_IF_FAIL (io && fd, false);
-	if (count == 0) { // TODO: why cant truncate to 0 bytes
-		return false;
-	}
-	ut32 mallocsz = _io_malloc_sz (fd);
-	if (_io_malloc_off (fd) > mallocsz) {
-		return false;
-	}
 	RIOMalloc *mal = (RIOMalloc*)fd->data;
+	if (!mal) {
+		return false;
+	}
+	if (count == 0) {
+		R_FREE (mal->buf);
+		mal->size = 0;
+		mal->offset = 0;
+		return true;
+	}
+	if (mal->offset > mal->size) {
+		return false;
+	}
 	ut8 *new_buf = realloc (mal->buf, count);
 	if (!new_buf) {
 		return false;
@@ -94,7 +99,9 @@ R_IPI int io_memory_read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 	if (off + count > mallocsz) {
 		left = mallocsz - off;
 	}
-	memcpy (buf, _io_malloc_buf (fd) + off, left);
+	if (left > 0) {
+		memcpy (buf, _io_malloc_buf (fd) + off, left);
+	}
 	_io_malloc_set_off (fd, off + left);
 	return count;
 }

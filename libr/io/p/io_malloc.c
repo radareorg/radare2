@@ -183,15 +183,23 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	}
 	if (r_str_startswith (fd->uri, "hex://")) {
 		RIOMalloc *mal = (RIOMalloc *)fd->data;
-		char *hex = r_hex_bin2strdup (mal->buf, mal->size);
-		if (!hex) {
-			return true;
-		}
-		char *uri = r_str_newf ("hex://%s", hex);
-		free (hex);
-		if (uri) {
-			free (fd->uri);
-			fd->uri = uri;
+		if (mal->buf && mal->size > 0) {
+			char *hex = r_hex_bin2strdup (mal->buf, mal->size);
+			if (!hex) {
+				return true;
+			}
+			char *uri = r_str_newf ("hex://%s", hex);
+			free (hex);
+			if (uri) {
+				free (fd->uri);
+				fd->uri = uri;
+			}
+		} else {
+			char *uri = strdup ("hex://");
+			if (uri) {
+				free (fd->uri);
+				fd->uri = uri;
+			}
 		}
 	}
 	return true;

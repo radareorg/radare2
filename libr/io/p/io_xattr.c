@@ -106,7 +106,7 @@ static bool __close(RIODesc *fd) {
 	RIOMalloc *riom = fd->data;
 	char *attrname;
 	char *path = split_xattr_uri (fd->name, &attrname);
-	if (attrname) {
+	if (attrname && riom->buf && riom->size > 0) {
 		write_xattr (path, attrname, riom->buf, riom->size);
 	}
 	free (path);

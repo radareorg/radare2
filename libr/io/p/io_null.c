@@ -65,6 +65,10 @@ static ut64 __lseek(RIO* io, RIODesc* fd, ut64 offset, int whence) {
 		return offset;
 	}
 	null = (RIONull*) fd->data;
+	if (null->size == 0) {
+		null->offset = 0;
+		return 0;
+	}
 	switch (whence) {
 	case R_IO_SEEK_SET:
 		if (offset >= null->size) {

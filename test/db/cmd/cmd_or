@@ -1,0 +1,119 @@
+NAME=or resize malloc to zero
+FILE=malloc://16
+CMDS=<<EOF
+w hello
+s 0
+p8 5
+or 3 0
+p8 8
+EOF
+EXPECT=<<EOF
+68656c6c6f
+ffffffffffffffff
+EOF
+RUN
+
+NAME=or resize malloc to zero and back
+FILE=malloc://16
+CMDS=<<EOF
+w hello
+or 3 0
+or 3 16
+omu 3 0 16 rwx
+s 0
+p8 16
+EOF
+EXPECT=<<EOF
+00000000000000000000000000000000
+EOF
+RUN
+
+NAME=or resize malloc to zero and write after grow
+FILE=malloc://16
+CMDS=<<EOF
+w hello
+or 3 0
+or 3 16
+omu 3 0 16 rwx
+s 0
+w world
+p8 5
+EOF
+EXPECT=<<EOF
+776f726c64
+EOF
+RUN
+
+NAME=or shrink preserves data
+FILE=malloc://16
+CMDS=<<EOF
+w ABCDEFGH
+or 3 4
+s 0
+p8 4
+EOF
+EXPECT=<<EOF
+41424344
+EOF
+RUN
+
+NAME=or shrink and grow preserves partial data
+FILE=malloc://16
+CMDS=<<EOF
+w ABCDEFGH
+or 3 4
+or 3 8
+omu 3 0 8 rwx
+s 0
+p8 8
+EOF
+EXPECT=<<EOF
+4142434400000000
+EOF
+RUN
+
+NAME=or resize zero map is removed
+FILE=malloc://16
+CMDS=<<EOF
+or 3 0
+om~[0]
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=or resize malloc seek after zero
+FILE=malloc://16
+CMDS=<<EOF
+or 3 0
+s 0
+s
+or 3 8
+omu 3 0 8 rwx
+s 4
+s
+EOF
+EXPECT=<<EOF
+0x0
+0x4
+EOF
+RUN
+
+NAME=or resize hex to zero and back
+FILE=hex://41424344
+CMDS=<<EOF
+s 0
+p8 4
+or 3 0
+p8 4
+or 3 4
+omu 3 0 4 rwx
+s 0
+p8 4
+EOF
+EXPECT=<<EOF
+41424344
+ffffffff
+00000000
+EOF
+RUN
