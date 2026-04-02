@@ -19,8 +19,8 @@ static bool esil_forth_syscall_handler(REsil *esil, ut32 sysc, void *user) {
 
 static bool esil_over(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	char *a = r_esil_pop (esil);
-	char *b = r_esil_pop (esil);
+	const char *a = r_esil_pop (esil);
+	const char *b = r_esil_pop (esil);
 	r_esil_push (esil, b);
 	r_esil_push (esil, a);
 	r_esil_push (esil, b);
