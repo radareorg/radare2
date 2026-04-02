@@ -213,9 +213,6 @@ if (!memcmp (buf, "dex\n", 4)) {
 		if (!memcmp (buf, "\x00\x61\x73\x6d", 4)) {
 			return true; // WebAssembly
 		}
-		if (!memcmp (buf, "\x7fCGC", 4)) {
-			return true; // CGC binary (Cyber Grand Challenge)
-		}
 	}
 	if (size >= 2) {
 		if (!memcmp (buf, "MZ", 2)) {
