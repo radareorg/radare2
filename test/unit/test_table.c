@@ -310,6 +310,82 @@ bool test_r_table_columns (void) {
 #undef CREATE_TABLE
 }
 
+bool test_r_table_tocsv_escape(void) {
+	RTable *t = r_table_new ("csv_escape");
+	RTableColumnType *typeString = r_table_type ("string");
+	r_table_add_column (t, typeString, "name", 0);
+	r_table_add_column (t, typeString, "value", 0);
+
+	// field with embedded double quote
+	r_table_add_row (t, "he said \"hello\"", "normal", NULL);
+	char *s = r_table_tocsv (t);
+	mu_assert_notnull (s, "csv with quotes not null");
+	mu_assert_streq (s,
+		"name,value\n"
+		"he said \\\"hello\\\",normal\n",
+		"csv escapes double quotes");
+	free (s);
+	r_table_free (t);
+
+	// field with embedded newline
+	t = r_table_new ("csv_newline");
+	r_table_add_column (t, typeString, "col1", 0);
+	r_table_add_column (t, typeString, "col2", 0);
+	r_table_add_row (t, "line1\nline2", "ok", NULL);
+	s = r_table_tocsv (t);
+	mu_assert_notnull (s, "csv with newline not null");
+	mu_assert_streq (s,
+		"col1,col2\n"
+		"line1\\nline2,ok\n",
+		"csv escapes newlines");
+	free (s);
+	r_table_free (t);
+
+	// field with embedded tab
+	t = r_table_new ("csv_tab");
+	r_table_add_column (t, typeString, "col1", 0);
+	r_table_add_column (t, typeString, "col2", 0);
+	r_table_add_row (t, "a\tb", "ok", NULL);
+	s = r_table_tocsv (t);
+	mu_assert_notnull (s, "csv with tab not null");
+	mu_assert_streq (s,
+		"col1,col2\n"
+		"a\\tb,ok\n",
+		"csv escapes tabs");
+	free (s);
+	r_table_free (t);
+
+	// field with embedded comma (separator) gets quoted
+	t = r_table_new ("csv_comma");
+	r_table_add_column (t, typeString, "col1", 0);
+	r_table_add_column (t, typeString, "col2", 0);
+	r_table_add_row (t, "a,b", "ok", NULL);
+	s = r_table_tocsv (t);
+	mu_assert_notnull (s, "csv with comma not null");
+	mu_assert_streq (s,
+		"col1,col2\n"
+		"\"a,b\",ok\n",
+		"csv quotes fields containing separator");
+	free (s);
+	r_table_free (t);
+
+	// field with backslash
+	t = r_table_new ("csv_backslash");
+	r_table_add_column (t, typeString, "col1", 0);
+	r_table_add_column (t, typeString, "col2", 0);
+	r_table_add_row (t, "c:\\path\\file", "ok", NULL);
+	s = r_table_tocsv (t);
+	mu_assert_notnull (s, "csv with backslash not null");
+	mu_assert_streq (s,
+		"col1,col2\n"
+		"c:\\\\path\\\\file,ok\n",
+		"csv escapes backslashes");
+	free (s);
+	r_table_free (t);
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test(test_r_table);
 	mu_run_test(test_r_table_column_type);
@@ -318,6 +394,7 @@ bool all_tests(void) {
 	mu_run_test(test_r_table_uniq);
 	mu_run_test(test_r_table_group);
 	mu_run_test (test_r_table_columns);
+	mu_run_test (test_r_table_tocsv_escape);
 	return tests_passed != tests_run;
 }
 
