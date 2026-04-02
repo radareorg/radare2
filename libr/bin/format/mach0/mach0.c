@@ -758,17 +758,21 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 	mo->nindirectsyms = mo->dysymtab.nindirectsyms;
 	if (mo->nindirectsyms > 0) {
 		if (!UT32_MUL (&size_tab, mo->nindirectsyms, sizeof (ut32))) {
+			mo->nindirectsyms = 0;
 			return false;
 		}
 		if (!size_tab) {
+			mo->nindirectsyms = 0;
 			return false;
 		}
 		if (mo->dysymtab.indirectsymoff > mo->size ||
 			mo->dysymtab.indirectsymoff + size_tab > mo->size) {
+			mo->nindirectsyms = 0;
 			return false;
 		}
 		if (! (mo->indirectsyms = calloc (mo->nindirectsyms, sizeof (ut32)))) {
 			r_sys_perror ("calloc (indirectsyms)");
+			mo->nindirectsyms = 0;
 			return false;
 		}
 		for (i = 0; i < mo->nindirectsyms; i++) {
@@ -776,6 +780,7 @@ static bool parse_dysymtab(struct MACH0_(obj_t) * mo, ut64 off) {
 			if (len == -1) {
 				R_LOG_ERROR ("read (indirect syms)");
 				R_FREE (mo->indirectsyms);
+				mo->nindirectsyms = 0;
 				return false;
 			}
 			mo->indirectsyms[i] = r_read_ble32 (&idsyms[0], be);
@@ -2722,6 +2727,12 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 	if (!bin || !bin->sects) {
 		return false;
 	}
+	if (!bin->indirectsyms || bin->nindirectsyms <= 0) {
+		return false;
+	}
+	if (!bin->symtab || bin->nsymtab <= 0) {
+		return false;
+	}
 	for (i = 0; i < bin->nsects; i++) {
 		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS && bin->sects[i].reserved2 > 0) {
 			ut64 sect_size = bin->sects[i].size;
@@ -2736,17 +2747,13 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 			}
 			nsyms = (int) (sect_size / sect_fragment);
 			for (j = 0; j < nsyms; j++) {
-				if (bin->sects) {
-					if (bin->nindirectsyms < 0 || bin->sects[i].reserved1 + j >= bin->nindirectsyms) {
-						continue;
-					}
+				if ((ut64)bin->sects[i].reserved1 + j >= (ut64)bin->nindirectsyms) {
+					continue;
 				}
-				if (bin->indirectsyms) {
-					if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j]) {
-						continue;
-					}
+				if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j]) {
+					continue;
 				}
-				if (idx > bin->nsymtab) {
+				if (idx >= bin->nsymtab) {
 					continue;
 				}
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
