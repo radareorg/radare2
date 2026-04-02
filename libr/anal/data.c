@@ -207,10 +207,7 @@ static bool is_bin(const ut8 *buf, int size) {
 		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
 			return true; // Java class or Mach-O fat (big-endian)
 		}
-		if (!memcmp (buf, "\x50\x4b\x03\x04", 4)) {
-			return true; // ZIP (APK, JAR, etc)
-		}
-		if (!memcmp (buf, "dex\n", 4)) {
+if (!memcmp (buf, "dex\n", 4)) {
 			return true; // DEX (Android Dalvik)
 		}
 		if (!memcmp (buf, "\x00\x61\x73\x6d", 4)) {
