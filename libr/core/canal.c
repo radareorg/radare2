@@ -3910,6 +3910,8 @@ typedef struct {
 	bool argonly;
 	RAnalFunction *fcn;
 	RCore *core;
+	ut8 *buf;
+	size_t buf_size;
 } BlockRecurseCtx;
 
 static void reg_set_clear(RVecIntPtr *vec) {
@@ -3952,10 +3954,15 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 	if (bb->size > ctx->core->anal->opt.bb_max_size) {
 		return true;
 	}
-	ut8 *buf = malloc (bb->size);
-	if (!buf) {
-		return false;
+	if (bb->size > ctx->buf_size) {
+		ut8 *tmp = realloc (ctx->buf, bb->size);
+		if (!tmp) {
+			return false;
+		}
+		ctx->buf = tmp;
+		ctx->buf_size = bb->size;
 	}
+	ut8 *buf = ctx->buf;
 	bool skip_bb = false;
 	if (r_io_read_at (ctx->core->io, bb->addr, buf, bb->size) < 1) {
 		skip_bb = true;
@@ -3969,11 +3976,9 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 	}
 	if (skip_bb) {
-		free (buf);
 		return false;
 	}
 	if (RVecIntPtr_length (&ctx->reg_set) == 0) {
-		free (buf);
 		return false;
 	}
 	int *parent_reg_set = *RVecIntPtr_at (&ctx->reg_set, RVecIntPtr_length (&ctx->reg_set) - 1);
@@ -4039,7 +4044,6 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		opaddr += opsize;
 	}
-	free (buf);
 	return true;
 }
 
@@ -4076,6 +4080,7 @@ R_API void r_core_recover_vars(RCore *core, RAnalFunction *fcn, bool argonly) {
 		(RAnalBlockCb)anal_block_on_exit, &ctx);
 	reg_set_clear (&ctx.reg_set);
 	RVecIntPtr_fini (&ctx.reg_set);
+	free (ctx.buf);
 	fcn->stack = saved_stack;
 }
 

@@ -151,7 +151,7 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 				RAnalOp analop = {0};
 				ut64 len = R_MIN (15, bs - idx);
 				if (r_anal_op (core->anal, &analop, addr, buf + idx, len,
-						R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM) < 1) {
+						R_ARCH_OP_MASK_BASIC) < 1) {
 					idx += bytewise? 1: minopsz;
 					continue;
 				}
@@ -167,6 +167,10 @@ R_API RList *r_core_asm_strsearch(RCore *core, const char *input, ut64 from, ut6
 					match = (val != UT64_MAX && val >= usrimm && val <= usrimm2);
 				}
 				if (match) {
+					// re-decode with DISASM to get mnemonic for matched hit
+					r_anal_op_fini (&analop);
+					r_anal_op (core->anal, &analop, addr, buf + idx, len,
+							R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
 					RCoreAsmHit *hit = r_core_asm_hit_new ();
 					if (!hit) {
 						r_anal_op_fini (&analop);
