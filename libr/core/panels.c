@@ -102,22 +102,8 @@ R_API bool r_core_panels_load(RCore *core, const char *_name) {
 		RPanel *p = r_panels_get_panel (panels, panels->n_panels);
 		r_panels_set_geometry (&p->view->pos, atoi (x), atoi (y), atoi (w),atoi (h));
 		r_panels_init_panel_param (core, p, title, cmd);
-		// TODO: fix code duplication with r_panels_update_help
 		if (r_str_endswith (cmd, "Help")) {
-			free (p->model->title);
-			free (p->model->cmd);
-			p->model->title = strdup ("Help");
-			p->model->cmd = strdup ("Help");
-			RStrBuf *rsb = r_strbuf_new (NULL);
-			r_core_visual_append_help (core, rsb, "Panels Mode", help_msg_panels);
-			if (!rsb) {
-				return false;
-			}
-			char *drained_string = r_strbuf_drain (rsb);
-			if (drained_string) {
-				r_panels_set_read_only (core, p, drained_string);
-				free (drained_string);
-			}
+			r_panels_setup_help_panel(core, p, "Panels Mode", help_msg_panels);
 		}
 		tmp_cfg += strlen (tmp_cfg) + 1;
 	}

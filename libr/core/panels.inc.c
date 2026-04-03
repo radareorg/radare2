@@ -1039,6 +1039,24 @@ static unsigned int r_panels_adjust_side_panels(RCore *core) {
 	return space;
 }
 
+static void r_panels_setup_help_panel(RCore *core, RPanel *p, const char *title, const char * const *msg) {
+	const char *help = "Help";
+	free (p->model->title);
+	free (p->model->cmd);
+	p->model->title = strdup (help);
+	p->model->cmd = strdup (help);
+	RStrBuf *rsb = r_strbuf_new (NULL);
+	r_core_visual_append_help (core, rsb, title, msg);
+	if (!rsb) {
+		return;
+	}
+	char *drained_string = r_strbuf_drain (rsb);
+	if (drained_string) {
+		r_panels_set_read_only (core, p, drained_string);
+		free (drained_string);
+	}
+}
+
 static void r_panels_update_help(RCore *core, RPanels *ps) {
 	const char *help = "Help";
 	int i;
@@ -1048,7 +1066,6 @@ static void r_panels_update_help(RCore *core, RPanels *ps) {
 			continue;
 		}
 		if (!strncmp (p->model->cmd, help, strlen (help))) {
-			RStrBuf *rsb = r_strbuf_new (NULL);
 			const char *title;
 			const char * const * msg;
 			switch (ps->mode) {
@@ -1065,20 +1082,7 @@ static void r_panels_update_help(RCore *core, RPanels *ps) {
 				msg = help_msg_panels;
 				break;
 			}
-			// panel's title does not change, keep it short and simple
-			free (p->model->title);
-			p->model->title = strdup (help);
-			free (p->model->cmd);
-			p->model->cmd = strdup (help);
-			r_core_visual_append_help (core, rsb, title, msg);
-			if (!rsb) {
-				break;
-			}
-			char *drained = r_strbuf_drain (rsb);
-			if (drained) {
-				r_panels_set_read_only (core, p, drained);
-				free (drained);
-			}
+			r_panels_setup_help_panel(core, p, title, msg);
 			p->view->refresh = true;
 		}
 	}
