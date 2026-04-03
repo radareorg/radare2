@@ -2050,20 +2050,27 @@ static void cmd_idl(RCore *core, const char *input) {
 			bool found = false;
 			char *path;
 			r_list_foreach (paths, iter, path) {
-				char *f = r_str_newf ("%s/%s", path, info->dbglink);
+				char *safe_dbglink = strdup (info->dbglink);
+				r_str_sanitize (safe_dbglink);
+				char *f = r_str_newf ("%s/%s", path, safe_dbglink);
 				if (r_file_exists (f)) {
 					found = true;
 					r_cons_printf (core->cons, "'obf %s\n", f);
 					free (f);
+					free (safe_dbglink);
 					break;
 				}
 				free (f);
+				free (safe_dbglink);
 			}
 			r_list_free (paths);
 			free (dirlink);
 			if (!found) {
-				R_LOG_ERROR ("Cannot find %s in dir.debuglink. Use idld instead", info->dbglink);
-				r_cons_printf (core->cons, "'obf %s\n", info->dbglink);
+				char *safe_dbglink = strdup (info->dbglink);
+				r_str_sanitize (safe_dbglink);
+				R_LOG_ERROR ("Cannot find %s in dir.debuglink. Use idld instead", safe_dbglink);
+				r_cons_printf (core->cons, "'obf %s\n", safe_dbglink);
+				free (safe_dbglink);
 			}
 		}
 		break;
