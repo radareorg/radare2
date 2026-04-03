@@ -498,11 +498,8 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 			// perform a redirection!
 			char *uri = r_str_newf ("%s%s\n", bclass, bf->file);
 			r_core_cmdf (r, "ob-*");
-			r_core_cmdf (r, "o %s", uri);
-			// r_core_cmdf (r, "o-%d", fd); // XXX segfault
+			r_core_cmdf (r, "'o %s", uri);
 			free (uri);
-			// r_io_close_fd (r->io, fd);
-			// r_bin_file_close (r->bin, bf);
 			return false;
 		}
 	}
