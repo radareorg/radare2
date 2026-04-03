@@ -44,6 +44,7 @@ static RBinInfo *info(RBinFile *bf) {
 	ut8 tmp[32];
 	r_buf_read_at (bf->buf, 0x100, tmp, sizeof (tmp));
 	ret->bclass = r_str_ndup ((char *)tmp, 32);
+	r_str_sanitize (ret->bclass);
 	ret->os = strdup ("io");
 	ret->arch = strdup ("arm");
 	ret->bits = 64;

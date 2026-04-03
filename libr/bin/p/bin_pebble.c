@@ -62,6 +62,7 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("pebble");
 	ret->bclass = r_str_ndup (pai.name, 32);
+	r_str_sanitize (ret->bclass);
 	ret->rclass = r_str_ndup (pai.company, 32);
 	ret->os = strdup ("rtos");
 	ret->subsystem = strdup ("pebble");
