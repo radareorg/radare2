@@ -495,14 +495,35 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	if (bf) {
 		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
 		if (bclass && strstr (bclass, "://")) {
-			// perform a redirection!
-			char *uri = r_str_newf ("%s%s\n", bclass, bf->file);
-			r_core_cmdf (r, "ob-*");
-			r_core_cmdf (r, "o %s", uri);
-			// r_core_cmdf (r, "o-%d", fd); // XXX segfault
-			free (uri);
-			// r_io_close_fd (r->io, fd);
-			// r_bin_file_close (r->bin, bf);
+			// bclass containing "://" signals a bin-to-io plugin
+			// redirection (e.g. UF2 bin plugin sets bclass to
+			// "uf2://" so the file is reopened via the uf2 IO
+			// plugin which decodes the container format).
+			//
+			// Validate the scheme resolves to a real IO plugin
+			// to prevent crafted binaries from injecting URIs.
+			// Also guard against infinite redirection loops by
+			// only allowing this once per load.
+			static bool redirecting;
+			if (redirecting) {
+				R_LOG_WARN ("Skipping recursive bclass IO redirection");
+			} else {
+				char *uri = r_str_newf ("%s%s", bclass, bf->file);
+				RIOPlugin *iop = r_io_plugin_resolve (r->io, uri, false);
+				if (iop && strcmp (iop->meta.name, "default")) {
+					redirecting = true;
+					r_bin_file_delete_all (r->bin);
+					RIODesc *desc = r_core_file_open (r, uri, R_PERM_R, 0);
+					if (desc) {
+						r_core_bin_load (r, uri, UT64_MAX);
+					}
+					redirecting = false;
+				} else {
+					R_LOG_WARN ("bclass URI scheme has no matching IO plugin, ignoring redirection");
+				}
+				free (uri);
+			}
+			R_CRITICAL_LEAVE (r);
 			return false;
 		}
 	}
