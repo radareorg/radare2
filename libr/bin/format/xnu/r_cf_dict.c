@@ -76,6 +76,16 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 	int i;
 	char *content = NULL;
 
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return NULL;
+	}
+	int buf_len = r_buf_read_at (file_buf, offset, buf, size);
+	if (buf_len < 1) {
+		free (buf);
+		return NULL;
+	}
+
 	RXml *x = r_xml_new (4096);
 
 	RList *stack = r_list_newf ((RListFree)&r_cf_parse_state_free);
@@ -92,9 +102,8 @@ RCFValueDict *r_cf_value_dict_parse (RBuffer *file_buf, ut64 offset, ut64 size, 
 
 	r_list_push (stack, r_cf_parse_state_new (R_CF_STATE_ROOT));
 
-	for (i = 0; i < size; i++) {
-		ut8 doc = 0;
-		r_buf_read_at (file_buf, offset + i, &doc, 1);
+	for (i = 0; i < buf_len; i++) {
+		ut8 doc = buf[i];
 		if (!doc) {
 			break;
 		}
@@ -379,6 +388,7 @@ beach:
 	r_list_free (stack);
 	r_list_free (idlist);
 	free (content);
+	free (buf);
 
 	return result;
 }

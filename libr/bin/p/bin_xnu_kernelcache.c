@@ -207,6 +207,7 @@ static int ut64_compare(const void *pa, const void *pb);
 static ut64 next_vtable_after(const ut64 *arr, size_t n, ut64 self_start);
 static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob);
 static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va);
+static const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n);
 static bool try_read_exec_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
 static bool try_read_data_va(RBinFile *bf, RKext *kext, ut64 va, void *dst, size_t len);
 static bool try_read_printable_cstr(RBinFile *bf, RKext *kext, ut64 va, char **cstr);
@@ -2003,6 +2004,11 @@ static RList *resolve_iokit_classes(RVecRBinSymbol *symbols, ut64 start_offset, 
 static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offset, RBinFile *bf, RKext *kext) {
 	RList *classes = r_list_newf (r_iokit_class_free);
 
+	RKextTextBlob tb;
+	if (!load_kext_text_blob (bf, kext, &tb)) {
+		return classes;
+	}
+
 	ut64 i;
 	ut64 end_offset = RVecRBinSymbol_length (symbols);
 	for (i = start_offset; i != end_offset; i++) {
@@ -2019,8 +2025,8 @@ static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offse
 
 		ut64 pc;
 		for (pc = func_vaddr; true; pc += 4) {
-			ut8 bytes[8];
-			if (!try_read_exec_va (bf, kext, pc, bytes, sizeof (bytes))) {
+			const ut8 *bytes = text_ptr_n (&tb, pc, 8);
+			if (!bytes) {
 				break;
 			}
 
@@ -2081,12 +2087,6 @@ static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offse
 			}
 			w3_site = 0;
 
-			/*
-			 * const int off26 = (int) ((insn & 0x03FFFFFFu) << 6) >> 6;
-			 * const ut64 bl_target = pc + ((ut64) off26 << 2);
-			 * TODO: Implement renaming of bl_target.
-			 */
-
 			char *name = NULL;
 			if (!try_read_printable_cstr (bf, kext, name_va, &name)) {
 				continue;
@@ -2101,6 +2101,7 @@ static RList *find_class_registrations(RVecRBinSymbol *symbols, ut64 start_offse
 		}
 	}
 
+	free (tb.buf);
 	return classes;
 }
 
@@ -2441,6 +2442,13 @@ static bool load_kext_text_blob(RBinFile *bf, RKext *kext, RKextTextBlob *blob) 
 
 static const ut8 *text_ptr(const RKextTextBlob *tb, ut64 va) {
 	if (va < tb->va || va + 4 > tb->va + tb->size) {
+		return NULL;
+	}
+	return tb->buf + (va - tb->va);
+}
+
+static const ut8 *text_ptr_n(const RKextTextBlob *tb, ut64 va, size_t n) {
+	if (va < tb->va || va + n > tb->va + tb->size) {
 		return NULL;
 	}
 	return tb->buf + (va - tb->va);
