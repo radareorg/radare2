@@ -688,20 +688,27 @@ static RCFValue *r_cf_value_clone(RCFValue *value) {
 			RCFKeyValue *item;
 			r_list_foreach (((RCFValueDict *)value)->pairs, iter, item) {
 				char *key = strdup (item->key);
-				if (key) {
-					RCFValue *clone = r_cf_value_clone (item->value);
-					if (clone) {
-						RCFKeyValue *pair = r_cf_key_value_new (key, clone);
-						if (pair) {
-							r_cf_value_dict_add (dict, pair);
-						}
-						r_cf_value_free (clone);
-					}
-					R_FREE (key);
+				if (!key) {
+					r_cf_value_dict_free (dict);
+					copy = NULL;
+					break;
 				}
-				r_cf_value_dict_free (dict);
-				copy = NULL;
-				break;
+				RCFValue *clone = r_cf_value_clone (item->value);
+				if (!clone) {
+					free (key);
+					r_cf_value_dict_free (dict);
+					copy = NULL;
+					break;
+				}
+				RCFKeyValue *pair = r_cf_key_value_new (key, clone);
+				if (!pair) {
+					r_cf_value_free (clone);
+					free (key);
+					r_cf_value_dict_free (dict);
+					copy = NULL;
+					break;
+				}
+				r_cf_value_dict_add (dict, pair);
 			}
 		}
 		break;
