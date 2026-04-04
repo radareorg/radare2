@@ -854,7 +854,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
-	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
+	// only request ESIL when needed (ARM uses it for pattern matching in analysis)
+	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT
+		| (is_arm ? R_ARCH_OP_MASK_ESIL : 0);
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			last_reg_mov_lea_name = NULL;
