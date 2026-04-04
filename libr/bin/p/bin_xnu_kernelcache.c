@@ -1268,7 +1268,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFi
 	struct section_t *section;
 	bool is_paddr_global = true;
 	R_VEC_FOREACH (sections, section) {
-		if (section->paddr != 0 && section->paddr + bf->bo->boffset < paddr) {
+		if (section->paddr != 0 && section->paddr < paddr) {
 			is_paddr_global = false;
 			break;
 		}
@@ -1287,7 +1287,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFi
 		handle_data_sections (ptr);
 		ptr->size = section->size;
 		ptr->vsize = section->vsize;
-		ptr->paddr = section->paddr + bf->bo->boffset;
+		ptr->paddr = section->paddr;
 		if (!is_paddr_global) {
 			ptr->paddr += paddr;
 		}
