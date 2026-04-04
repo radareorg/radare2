@@ -1364,6 +1364,7 @@ R_API ut8 *r_asm_from_string(RAsm *a, ut64 addr, const char *b, int *l) {
 	RAsmCode *code = r_asm_assemble (a, b);
 	if (code) {
 		ut8 *buf = code->bytes;
+		code->bytes = NULL;
 		if (l) {
 			*l = code->len;
 		}
