@@ -143,6 +143,7 @@ typedef struct r_disasm_state_t {
 	bool show_emu_write;
 	bool show_optype;
 	bool show_emu_ssa;
+	ut32 decode_mask; // computed once based on display settings
 	bool show_section;
 	int show_section_col;
 	bool show_section_perm;
@@ -976,6 +977,11 @@ static RDisasmState *ds_init(RCore *core) {
 	// Prevent palette reload during disassembly to avoid UAF of cached color pointers
 	ds->pal_batch_save = core->cons->context->pal_batch;
 	core->cons->context->pal_batch = true;
+	// compute decode mask once based on display settings to avoid unnecessary work
+	ds->decode_mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_DISASM;
+	if (ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb) {
+		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
+	}
 	return ds;
 }
 
@@ -6683,7 +6689,7 @@ toro:
 		// TODO: support in-the-middle-of-instruction too
 		r_anal_op_fini (&ds->analop);
 		if (r_anal_op (core->anal, &ds->analop, core->addr + core->print->cur,
-			buf + core->print->cur, (int)(len - core->print->cur), R_ARCH_OP_MASK_ALL)) {
+			buf + core->print->cur, (int)(len - core->print->cur), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT)) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
 		}
@@ -6798,7 +6804,7 @@ toro:
 		r_asm_set_pc (core->rasm, ds->at);
 		ds_update_ref_lines (ds);
 		r_anal_op_fini (&ds->analop);
-		ret = r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
+		ret = r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), ds->decode_mask);
 		if (ret < 1) {
 			ret = ds->analop.size;
 			inc = minopsz;
@@ -6914,7 +6920,7 @@ toro:
 		if (ds->analop.addr != ds->at) {
 			// TODO : check for error
 			r_anal_op_fini (&ds->analop);
-			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), R_ARCH_OP_MASK_ALL);
+			r_anal_op (core->anal, &ds->analop, ds->at, ds_bufat (ds), ds_left (ds), ds->decode_mask);
 		}
 		if (ret < 1) {
 			r_strbuf_fini (&ds->analop.esil);
@@ -7369,7 +7375,7 @@ toro:
 		const size_t delta = addrbytes * i;
 		r_anal_op_init (&ds->analop);
 		const int oret = r_anal_op (core->anal, &ds->analop, ds->at,
-			buf + delta, nb_bytes - delta, R_ARCH_OP_MASK_ALL);
+			buf + delta, nb_bytes - delta, ds->decode_mask);
 		ret = oret;
 		ds->oplen = ds->analop.size;
 		if (ret > 0) {
@@ -7719,7 +7725,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 
 		ds->has_description = false;
 		r_anal_op_fini (&ds->analop);
-		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, R_ARCH_OP_MASK_ALL);
+		r_anal_op (core->anal, &ds->analop, at, buf + i, nb_bytes - i, ds->decode_mask);
 
 		if (ds->pseudo) {
 			char *res = r_asm_parse_pseudo (core->rasm, opstr);
@@ -8008,7 +8014,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					if (scr_color) {
 						RAnalOp aop;
 						RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
-						r_anal_op (core->anal, &aop, addr, buf + i, l - i, R_ARCH_OP_MASK_ALL);
+						r_anal_op (core->anal, &aop, addr, buf + i, l - i, R_ARCH_OP_MASK_BASIC);
 						char *buf_asm = r_print_colorize_opcode (core->print, res? res: asmop.mnemonic,
 								core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
 						if (buf_asm) {

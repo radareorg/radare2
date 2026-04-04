@@ -4692,22 +4692,42 @@ static inline bool is_valid_mnemonic(const char *m) {
 
 static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh *cs_handle = cs_handle_for_session (as);
-	cs_insn *insn = NULL;
 	op->size = (as->config->bits == 16)? 2: 4;
 	op->addr = addr;
 	if (!buf) {
 		buf = op->bytes;
 		len = op->size;
 	}
-	int n = cs_disasm (*cs_handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
+	// Use cs_disasm_iter (iterator API) instead of cs_disasm to avoid
+	// per-instruction malloc/free overhead. Stack-allocate the insn struct.
+	cs_detail detail_buf = {{0}};
+	cs_insn insn_buf = {0};
+	insn_buf.detail = &detail_buf;
+	cs_insn *insn = &insn_buf;
+	const uint8_t *code_ptr = (const uint8_t *)buf;
+	size_t code_remaining = len;
+	uint64_t iter_addr = addr;
+	bool ok = cs_disasm_iter (*cs_handle, &code_ptr, &code_remaining, &iter_addr, insn);
+	if (ok && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
-			op->mnemonic = r_str_newf ("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0]? " ": "",
-				insn->op_str);
-			r_str_replace_char (op->mnemonic, '#', '\x00');
+			if (insn->op_str[0]) {
+				// Build mnemonic string directly, avoiding r_str_newf overhead
+				size_t mlen = strlen (insn->mnemonic);
+				size_t olen = strlen (insn->op_str);
+				char *mn = malloc (mlen + 1 + olen + 1);
+				if (mn) {
+					memcpy (mn, insn->mnemonic, mlen);
+					mn[mlen] = ' ';
+					memcpy (mn + mlen + 1, insn->op_str, olen + 1);
+					r_str_replace_char (mn, '#', '\x00');
+					op->mnemonic = mn;
+				} else {
+					op->mnemonic = NULL;
+				}
+			} else {
+				op->mnemonic = strdup (insn->mnemonic);
+			}
 		}
 		//bool thumb = cs_insn_group (cs_handle, insn, ARM_GRP_THUMB);
 		bool thumb = as->config->bits == 16;
@@ -4734,9 +4754,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (as, op, *cs_handle, insn, as->config->bits);
 		}
-		cs_free (insn, n);
 	} else {
-		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (!buf || len < 4) {
