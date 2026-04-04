@@ -109,7 +109,9 @@ static bool __close(RIODesc *fd) {
 	}
 	*attrname = 0;
 	attrname += 2;
-	write_xattr (path, attrname, (const ut8*)riom->buf, riom->size);
+	if (riom->buf && riom->size > 0) {
+		write_xattr (path, attrname, (const ut8*)riom->buf, riom->size);
+	}
 	free (path);
 	io_memory_close (fd);
 	return true;
