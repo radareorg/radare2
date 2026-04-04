@@ -496,7 +496,10 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
 		if (bclass && strstr (bclass, "://")) {
 			// perform a redirection!
-			char *uri = r_str_newf ("%s%s\n", bclass, bf->file);
+			char *sb = strdup (bclass);
+			r_str_sanitize (sb);
+			char *uri = r_str_newf ("%s%s", sb, bf->file);
+			free (sb);
 			r_core_cmdf (r, "ob-*");
 			r_core_cmdf (r, "'o %s", uri);
 			free (uri);
