@@ -239,6 +239,23 @@ R_API void r_anal_xrefs_free(RAnal *anal) {
 	ref_manager_free (anal->rm);
 }
 
+static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
+	RAnalRefType type = _type;
+	if (!R_ANAL_REF_TYPE_PERM (type)) {
+		switch (R_ANAL_REF_TYPE_MASK (type)) {
+		case R_ANAL_REF_TYPE_CODE:
+		case R_ANAL_REF_TYPE_CALL:
+		case R_ANAL_REF_TYPE_JUMP:
+			type |= R_ANAL_REF_TYPE_EXEC;
+			break;
+		default:
+			type |= R_ANAL_REF_TYPE_READ;
+			break;
+		}
+	}
+	return type;
+}
+
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType _type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
@@ -255,20 +272,7 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 		}
 	}
 
-	RAnalRefType type = _type;
-	if (!R_ANAL_REF_TYPE_PERM (type)) {
-		// type |= R_ANAL_REF_TYPE_READ;
-		switch (R_ANAL_REF_TYPE_MASK (type)) {
-		case R_ANAL_REF_TYPE_CODE:
-		case R_ANAL_REF_TYPE_CALL:
-		case R_ANAL_REF_TYPE_JUMP:
-			type |= R_ANAL_REF_TYPE_EXEC;
-			break;
-		default:
-			type |= R_ANAL_REF_TYPE_READ;
-			break;
-		}
-	}
+	RAnalRefType type = xref_resolve_type (_type);
 
 	ref_manager_add_entry (anal->rm, from, to, type);
 	R_DIRTY_SET (anal);
@@ -281,6 +285,26 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
 	if (fcn_to) {
 		fcn_to->meta.numrefs = -1;
+	}
+
+	return true;
+}
+
+// fast-path xref setter for use during analysis when the calling function is already known.
+// skips validity checks and function lookups since the caller already validated addresses.
+R_IPI bool r_anal_xrefs_set_fast(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
+	if (from == to || from == UT64_MAX || to == UT64_MAX) {
+		return false;
+	}
+
+	RAnalRefType type = xref_resolve_type (_type);
+	ref_manager_add_entry (anal->rm, from, to, type);
+	R_DIRTY_SET (anal);
+
+	// invalidate the known function's ref counts directly
+	if (fcn) {
+		fcn->meta.numcallrefs = -1;
+		fcn->meta.numrefs = -1;
 	}
 
 	return true;
@@ -313,7 +337,6 @@ R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
@@ -326,7 +349,6 @@ R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
@@ -339,7 +361,6 @@ R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
