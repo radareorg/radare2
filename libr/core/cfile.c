@@ -495,12 +495,17 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	if (bf) {
 		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
 		if (bclass && strstr (bclass, "://")) {
-			// perform a redirection!
-			char *uri = r_str_newf ("%s%s\n", bclass, bf->file);
-			r_core_cmdf (r, "ob-*");
-			r_core_cmdf (r, "'o %s", uri);
-			free (uri);
-			return false;
+			// sanitize bclass to prevent command injection via crafted binaries
+			if (strchr (bclass, '\n') || strchr (bclass, '\r') || strchr (bclass, '!') || strchr (bclass, ';')) {
+				R_LOG_WARN ("Refusing to redirect: bclass contains invalid characters");
+			} else {
+				// perform a redirection!
+				char *uri = r_str_newf ("%s%s", bclass, bf->file);
+				r_core_cmdf (r, "ob-*");
+				r_core_cmdf (r, "'o %s", uri);
+				free (uri);
+				return false;
+			}
 		}
 	}
 	plugin = r_bin_file_cur_plugin (bf);
