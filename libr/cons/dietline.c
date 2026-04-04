@@ -1496,7 +1496,7 @@ static bool __vi_mode(RCons *cons) {
 		case '^':
 		case '0':
 			if (D.gcomp > 0) {
-				strcpy (line->buffer.data, gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
 				line->buffer.length = strlen (line->buffer.data);
 				line->buffer.index = 0;
 				D.gcomp = 0;
@@ -1505,7 +1505,7 @@ static bool __vi_mode(RCons *cons) {
 			break;
 		case 'A':
 			if (D.gcomp > 0) {
-				strcpy (line->buffer.data, gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
 				line->buffer.index = strlen (line->buffer.data);
 				line->buffer.length = line->buffer.index;
 				D.gcomp = 0;
@@ -1519,7 +1519,7 @@ static bool __vi_mode(RCons *cons) {
 			break;
 		case '$':
 			if (D.gcomp > 0) {
-				strcpy (line->buffer.data, gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
 				line->buffer.index = strlen (line->buffer.data);
 				line->buffer.length = line->buffer.index;
 				D.gcomp = 0;
@@ -1792,7 +1792,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			break;
 		case 1: // ^A
 			if (D.gcomp > 0) {
-				strcpy (line->buffer.data, gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
 				line->buffer.length = strlen (line->buffer.data);
 				line->buffer.index = 0;
 				D.gcomp = 0;
@@ -1804,7 +1804,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			break;
 		case 5: // ^E
 			if (D.gcomp > 0) {
-				strcpy (line->buffer.data, gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
 				line->buffer.index = strlen (line->buffer.data);
 				line->buffer.length = line->buffer.index;
 				D.gcomp = 0;
@@ -2354,9 +2354,8 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 				break;
 			}
 			if (D.gcomp > 0 && line->buffer.length > 0) {
-				strncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE - 1);
-				line->buffer.data[R_LINE_BUFSIZE - 1] = '\0';
-				line->buffer.length = strlen (gcomp_line);
+				r_str_ncpy (line->buffer.data, gcomp_line, R_LINE_BUFSIZE);
+				line->buffer.length = strlen (line->buffer.data);
 			}
 			D.gcomp_idx = 0;
 			D.gcomp = 0;
