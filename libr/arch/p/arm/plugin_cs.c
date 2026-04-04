@@ -17,6 +17,7 @@ typedef char RStringShort[32];
 typedef struct plugin_data_t {
 	bool bigendian;
 	int bits;
+	int last_syntax;
 	char *cpu;
 	csh cs_handle;
 	HtUU *ht_itblock;
@@ -4781,11 +4782,15 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		fini (as);
 		init (as);
 	}
-	csh *handle = cs_handle_for_session (as);
-	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else {
-		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+	PluginData *pd = (PluginData *)as->data;
+	if (as->config->syntax != pd->last_syntax) {
+		csh *handle = cs_handle_for_session (as);
+		if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		} else {
+			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		}
+		pd->last_syntax = as->config->syntax;
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }
