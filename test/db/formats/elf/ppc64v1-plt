@@ -1,0 +1,62 @@
+NAME=ppc64be ELF v1 exec: import fileno resolves to BSS-PLT stub in .text not PLT slot
+FILE=bins/elf/ppc64v1-more
+CMDS=ii~fileno[1]
+EXPECT=<<EOF
+0x000030e0
+EOF
+RUN
+
+NAME=ppc64be ELF v1 exec: import getopt_long stub address is in .text range
+FILE=bins/elf/ppc64v1-more
+CMDS=ii~getopt_long[1]
+EXPECT=<<EOF
+0x000031c0
+EOF
+RUN
+
+NAME=ppc64be ELF v1 exec: no bogus 0xffffff import addresses
+FILE=bins/elf/ppc64v1-more
+CMDS=ii~0xffffff
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc64be ELF v1 shared lib: import strlen resolves to lazy PLT stub in .text
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=ii~strlen[1]
+EXPECT=<<EOF
+0x000194dc
+EOF
+RUN
+
+NAME=ppc64be ELF v1 shared lib: import write stub address is in .text range
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=ii~write[1]
+EXPECT=<<EOF
+0x000194ec
+EOF
+RUN
+
+NAME=ppc64be ELF v1 shared lib: no bogus 0xffffff import addresses
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=ii~0xffffff
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ppc64be ELF v1 shared lib: R_PPC64_RELATIVE reloc at 0x2efb8 appears as ADD_64 not conversion error
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=ir~0x0002efb8[2]
+EXPECT=<<EOF
+ADD_64
+EOF
+RUN
+
+NAME=ppc64be ELF v1 shared lib: R_PPC64_ADDR64 reloc for __gmon_start__ appears as SET_64
+FILE=bins/elf/ppc64v1-libz.so
+CMDS=ir~__gmon_start__[2]
+EXPECT=<<EOF
+SET_64
+SET_64
+EOF
+RUN

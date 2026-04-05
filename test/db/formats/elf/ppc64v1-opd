@@ -1,0 +1,45 @@
+NAME=ppc64be ELF v1: entry point dereferenced through .opd to .text
+FILE=bins/elf/ppc64v1-more
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x00004bac
+EOF
+RUN
+
+NAME=ppc64be ELF v1: entry0 points to real code not .opd data
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+pi 2 @ entry0
+EOF
+EXPECT=<<EOF
+mr r9, r1
+rldicr r1, r1, 0, 0x3b
+EOF
+RUN
+
+NAME=ppc64be ELF v2: entry point already in .text, unaffected by opd deref (regression)
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x10000c20
+EOF
+RUN
+
+NAME=ppc64be ELF v1: ppc32 entry point unaffected by opd deref (regression)
+FILE=bins/elf/hello.ppc
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x10000308
+EOF
+RUN
+
+NAME=ppc64be ELF v1: ppc64le entry point unaffected by opd deref (regression)
+FILE=bins/elf/mosquito-ppc64le
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x10001854
+EOF
+RUN
