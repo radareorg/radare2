@@ -1038,16 +1038,18 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	s = str_removeprefix (s, "reloc.");
 	s = str_removeprefix (s, "__");
 
-	// normalize $s prefix: Swift 5+ uses $s as the mangling prefix
-	// strip it so the inner parser sees 's' followed by the mangled body
-	if (r_str_startswith (s, "$s") || r_str_startswith (s, "$S")) {
-		s += 1; // keep the 's', strip the '$'
+	// determine if we have a $s or bare s prefix for Swift 5+ symbols
+	const char *swift5_body = NULL;
+	if (r_str_startswith (s, "$s")) {
+		swift5_body = s + 2;
+	} else if (s[0] == 's' && !r_str_startswith (s, "__T") && !r_str_startswith (s, "_T")) {
+		swift5_body = s + 1;
 	}
 
-	// handle sSo<N><name>C pattern: ObjC class imports ($sSo8UIButtonC -> __C.UIButton)
-	if (r_str_startswith (s, "sSo") && isdigit (s[3]) && r_str_endswith (s, "C")) {
-		int len = atoi (s + 3);
-		const char *p = s + 3;
+	// handle So<N><name>C pattern: ObjC class imports ($sSo8UIButtonC -> __C.UIButton)
+	if (swift5_body && r_str_startswith (swift5_body, "So") && isdigit (swift5_body[2]) && r_str_endswith (s, "C")) {
+		int len = atoi (swift5_body + 2);
+		const char *p = swift5_body + 2;
 		while (isdigit (*p)) {
 			p++;
 		}
@@ -1060,15 +1062,13 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	}
 
 	// handle bare standard type abbreviations: $sSi -> Swift.Int, $sSd -> Swift.Double, etc.
-	// these are 's' (Swift module) followed by a known type abbreviation with no other components
-	if (s[0] == 's' && s[1] == 'S' && !s[2]) {
-		return strdup ("Swift.String");
-	}
-	if (s[0] == 's') {
+	if (swift5_body) {
+		if (swift5_body[0] == 'S' && !swift5_body[1]) {
+			return strdup ("Swift.String");
+		}
 		const char *attr = NULL;
-		const char *rest = resolve (types, s + 1, &attr);
+		const char *rest = resolve (types, swift5_body, &attr);
 		if (attr && rest && !*rest) {
-			// fully consumed: bare type abbreviation
 			if (r_str_startswith (attr, "Swift.")) {
 				return strdup (attr);
 			}
@@ -1078,20 +1078,22 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 
 	// reject non-swift symbols early
 	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
-		switch (*s) {
-		case 'S':
-		case 'B':
-			{
-				const char *attr = NULL;
-				resolve (types, s, &attr);
-				if (attr) {
-					return strdup (attr);
+		if (!r_str_startswith (s, "$s")) {
+			switch (*s) {
+			case 'S':
+			case 'B':
+				{
+					const char *attr = NULL;
+					resolve (types, s, &attr);
+					if (attr) {
+						return strdup (attr);
+					}
 				}
+				break;
 			}
-			break;
-		}
-		if (s > os) {
-			s--;
+			if (s > os) {
+				s--;
+			}
 		}
 	} else {
 		// TIFF ones found on COFF binaries, swift-unrelated, return early to avoid FP
