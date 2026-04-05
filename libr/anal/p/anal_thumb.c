@@ -1,44 +1,40 @@
 /* radare - LGPL - Copyright 2026 - pancake */
 
 #include <r_anal.h>
-#include <r_core.h>
 
-// Scan executable regions for ARM/Thumb mode switches by looking at BL/BLX
-// immediate instructions and their targets. Creates ahb hints so that the
-// analysis loop can correctly switch between ARM32 and Thumb modes.
+// Scan executable sections for ARM/Thumb mode switches by looking at BL/BLX
+// immediate instructions. Creates ahb hints at mode-switch targets.
 static int thumb_scan(RAnal *anal) {
-	if (!anal->coreb.core) {
+	if (!anal->iob.read_at || !anal->binb.get_sections) {
 		return 0;
 	}
-	RCore *core = anal->coreb.core;
 	int bits = anal->config->bits;
 	const int bsz = 4096;
 	ut8 *buf = malloc (bsz);
 	if (!buf) {
 		return 0;
 	}
-	RList *ranges = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
-	if (!ranges) {
-		free (buf);
-		return 0;
-	}
-	r_cons_break_push (core->cons, NULL, NULL);
-	RListIter *iter;
-	RIOMap *map;
 	int hints_added = 0;
-	r_list_foreach (ranges, iter, map) {
-		ut64 addr = r_io_map_begin (map);
-		ut64 end = r_io_map_end (map);
+	RList *sections = anal->binb.get_sections (anal->binb.bin);
+	RListIter *iter;
+	RBinSection *section;
+	r_list_foreach (sections, iter, section) {
+		if (!(section->perm & R_PERM_X)) {
+			continue;
+		}
+		ut64 addr = section->vaddr;
+		ut64 end = addr + section->vsize;
 		if (end - addr > 32 * 1024 * 1024) {
 			continue;
 		}
 		int cur_bits = bits;
-		while (addr < end && !r_cons_is_breaked (core->cons)) {
-			int remaining = end - addr;
+		while (addr < end) {
+			ut64 remaining = end - addr;
 			int toread = R_MIN (remaining, bsz);
-			if (!r_io_read_at (core->io, addr, buf, toread)) {
+			if (!anal->iob.read_at (anal->iob.io, addr, buf, toread)) {
 				break;
 			}
+			// check existing hints for this region
 			RAnalHint *hint = r_anal_hint_get (anal, addr);
 			if (hint) {
 				if (hint->bits) {
@@ -47,9 +43,10 @@ static int thumb_scan(RAnal *anal) {
 				r_anal_hint_free (hint);
 			}
 			int i = 0;
-			while (i < toread - 3 && !r_cons_is_breaked (core->cons)) {
+			while (i < toread - 3) {
 				int insn_size;
 				if (cur_bits == 32) {
+					// ARM32 mode: 4-byte aligned instructions
 					if ((addr + i) & 3) {
 						i++;
 						continue;
@@ -60,6 +57,7 @@ static int thumb_scan(RAnal *anal) {
 					ut32 insn = r_read_le32 (buf + i);
 					insn_size = 4;
 					// ARM BLX immediate: 1111 101H xxxx xxxx xxxx xxxx xxxx xxxx
+					// This always switches to Thumb mode
 					if ((insn & 0xfe000000) == 0xfa000000) {
 						st32 offset = (st32)((insn & 0x00ffffff) << 2);
 						if (offset & 0x02000000) {
@@ -72,6 +70,7 @@ static int thumb_scan(RAnal *anal) {
 						hints_added++;
 					}
 				} else {
+					// Thumb mode: 2-byte or 4-byte instructions
 					if ((addr + i) & 1) {
 						i++;
 						continue;
@@ -81,6 +80,7 @@ static int thumb_scan(RAnal *anal) {
 					}
 					ut16 hw0 = r_read_le16 (buf + i);
 					insn_size = 2;
+					// Check for 32-bit Thumb instruction (BL/BLX)
 					if ((hw0 & 0xf800) == 0xf000 && i + 4 <= toread) {
 						ut16 hw1 = r_read_le16 (buf + i + 2);
 						insn_size = 4;
@@ -106,6 +106,7 @@ static int thumb_scan(RAnal *anal) {
 					}
 				}
 				i += insn_size;
+				// update bits from hints periodically
 				if ((i & 0xff) == 0) {
 					RAnalHint *h = r_anal_hint_get (anal, addr + i);
 					if (h) {
@@ -119,8 +120,6 @@ static int thumb_scan(RAnal *anal) {
 			addr += toread;
 		}
 	}
-	r_cons_break_pop (core->cons);
-	r_list_free (ranges);
 	free (buf);
 	return hints_added;
 }
