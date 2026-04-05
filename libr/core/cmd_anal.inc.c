@@ -14335,7 +14335,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// Scan for ARM/Thumb mode switches before function analysis
 	if (r_str_startswith (asm_arch, "arm")) {
 		logline (core, 12, "Scanning for ARM/Thumb mode switches (a:thumb)");
-		r_core_cmd0 (core, "a:thumb");
+		free (r_core_cmd_str (core, "a:thumb"));
 		r_core_task_yield (&core->tasks);
 		if (r_cons_is_breaked (core->cons)) {
 			goto jacuzzi;

@@ -3081,15 +3081,17 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 			if (symbols) {
 				int thumb_count = 0;
 				int arm_count = 0;
+				int map_thumb = 0;
+				int map_arm = 0;
 				RBinElfSymbol *symbol;
 				R_VEC_FOREACH (symbols, symbol) {
 					const char *name = symbol->name;
 					// $t/$t.N = thumb mapping symbol, $a/$a.N = arm mapping symbol
-					if (name[0] == '$' && (!name[2] || name[2] == '.')) {
+					if (name[0] == '$' && name[1] && (!name[2] || name[2] == '.')) {
 						if (name[1] == 't') {
-							thumb_count++;
+							map_thumb++;
 						} else if (name[1] == 'a') {
-							arm_count++;
+							map_arm++;
 						}
 						continue;
 					}
@@ -3101,12 +3103,15 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 					ut64 paddr = symbol->offset;
 					if (paddr & 1) {
 						thumb_count++;
-					} else if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_FUNC_STR)) {
-						arm_count++;
 					}
 				}
-				// use thumb as default only if majority of symbols are thumb
-				if (thumb_count > 0 && thumb_count > arm_count) {
+				// prefer mapping symbols as they are authoritative
+				if (map_thumb + map_arm > 0) {
+					if (map_thumb > map_arm) {
+						return 16;
+					}
+				} else if (thumb_count > 0) {
+					// fallback to LSB/type heuristic
 					return 16;
 				}
 			}
