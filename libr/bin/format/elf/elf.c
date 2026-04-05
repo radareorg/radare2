@@ -3069,25 +3069,51 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 
 	// Hack for Thumb
 	if (eo->ehdr.e_machine == EM_ARM) {
+		ut64 entry = Elf_(get_entry_offset) (eo);
+		if (entry & 1) {
+			return 16;
+		}
 		if (eo->ehdr.e_type != ET_EXEC) {
 			RVecRBinElfSymbol *symbols = NULL;
 			if (Elf_(load_symbols) (eo)) {
 				symbols = eo->g_symbols_vec;
 			}
 			if (symbols) {
+				int thumb_count = 0;
+				int map_thumb = 0;
+				int map_arm = 0;
 				RBinElfSymbol *symbol;
 				R_VEC_FOREACH (symbols, symbol) {
+					const char *name = symbol->name;
+					// $t/$t.N = thumb mapping symbol, $a/$a.N = arm mapping symbol
+					if (name[0] == '$' && name[1] && (!name[2] || name[2] == '.')) {
+						if (name[1] == 't') {
+							map_thumb++;
+						} else if (name[1] == 'a') {
+							map_arm++;
+						}
+						continue;
+					}
+					// STT_ARM_TFUNC (LOPROC) marks thumb functions
+					if (symbol->type && !strcmp (symbol->type, R_BIN_TYPE_LOPROC_STR)) {
+						thumb_count++;
+						continue;
+					}
 					ut64 paddr = symbol->offset;
 					if (paddr & 1) {
-						return 16;
+						thumb_count++;
 					}
 				}
+				// prefer mapping symbols as they are authoritative
+				if (map_thumb + map_arm > 0) {
+					if (map_thumb > map_arm) {
+						return 16;
+					}
+				} else if (thumb_count > 0) {
+					// fallback to LSB/type heuristic
+					return 16;
+				}
 			}
-		}
-
-		ut64 entry = Elf_(get_entry_offset) (eo);
-		if (entry & 1) {
-			return 16;
 		}
 	}
 
@@ -5005,7 +5031,7 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	int bin_bits = Elf_(get_bits) (eo);
 	const char *name = r_bin_name_tostring2 (sym->name, 'o');
 	int len = strlen (name);
-	if (name[0] == '$' && (len >= 2 && !name[2])) {
+	if (name[0] == '$' && len >= 2 && (!name[2] || name[2] == '.')) {
 		switch (name[1]) {
 		case 'a' : // arm
 			sym->bits = 32;
@@ -5021,6 +5047,9 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 			return;
 		case 'd': // data
 			return;
+		case 'x': // aarch64
+			sym->bits = 64;
+			return;
 		default:
 			break;
 		}
@@ -5028,6 +5057,10 @@ static void _set_arm_thumb_bits(struct Elf_(obj_t) *eo, RBinSymbol *sym) {
 	sym->bits = bin_bits;
 	if (bin_bits != 64) {
 		sym->bits = 32;
+		// STT_ARM_TFUNC (STT_LOPROC) indicates a Thumb function in ARM ELF
+		if (sym->type && !strcmp (sym->type, R_BIN_TYPE_LOPROC_STR)) {
+			sym->bits = 16;
+		}
 		if (sym->paddr != UT64_MAX) {
 			if (sym->vaddr & 1) {
 				sym->vaddr--;

@@ -14332,6 +14332,15 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
+	// Scan for ARM/Thumb mode switches before function analysis
+	if (r_str_startswith (asm_arch, "arm")) {
+		logline (core, 12, "Scanning for ARM/Thumb mode switches (a:thumb)");
+		free (r_core_cmd_str (core, "a:thumb"));
+		r_core_task_yield (&core->tasks);
+		if (r_cons_is_breaked (core->cons)) {
+			goto jacuzzi;
+		}
+	}
 #if 1
 	// TODO: should not be run sometimes
 	// Run afvn in all fcns
