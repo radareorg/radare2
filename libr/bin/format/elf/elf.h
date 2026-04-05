@@ -175,6 +175,7 @@ struct Elf_(obj_t) {
 	bool plt_symbols_cached;
 	RList *inits;
 	HtUU *rel_cache;
+	HtUU *ppc64_plt_stubs; // ppc64be ELF v1: slot_vaddr -> stub_vaddr (lazy, NULL until first use)
 	ut32 g_reloc_num;
 	bool relocs_loaded;
 	RVecRBinElfReloc g_relocs;

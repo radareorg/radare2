@@ -1819,7 +1819,177 @@ static ut64 get_import_addr_s390x(ELFOBJ *eo, RBinElfReloc *rel) {
 	return a - 14;
 }
 
+#if R_BIN_ELF64
+// PowerPC 64-bit ELF v1 (big-endian) uses an Official Procedure Descriptor (.opd)
+// section.  Every function symbol's st_value — including e_entry — points to a
+// 24-byte descriptor [code_addr(8), toc(8), env(8)] rather than directly to code.
+// Dereference the first 8 bytes of the descriptor to get the real code address.
+// Returns UT64_MAX when the address does not fall inside .opd or the arch/endian
+// does not match.
+static ut64 ppc64be_opd_deref(ELFOBJ *eo, ut64 vaddr) {
+	if (eo->ehdr.e_machine != EM_PPC64 || !eo->endian) {
+		return UT64_MAX;
+	}
+	if (!eo->sections_loaded) {
+		_load_elf_sections (eo);
+	}
+	RBinElfSection *opd = get_section_by_name (eo, ".opd");
+	if (!opd || vaddr < opd->rva || vaddr + 8 > opd->rva + opd->size) {
+		return UT64_MAX;
+	}
+	ut64 foff = opd->offset + (vaddr - opd->rva);
+	ut64 code_addr = r_buf_read_ble64_at (eo->b, foff, eo->endian);
+	return (code_addr == UT64_MAX) ? UT64_MAX : code_addr;
+}
+#endif
+
+#if R_BIN_ELF64
+// Read the TOC base (r2) for a ppc64be binary from the second word of the first OPD entry.
+static ut64 ppc64be_get_toc(ELFOBJ *eo) {
+	if (!eo->sections_loaded) {
+		_load_elf_sections (eo);
+	}
+	RBinElfSection *opd = get_section_by_name (eo, ".opd");
+	if (!opd || opd->size < 16) {
+		return UT64_MAX;
+	}
+	return r_buf_read_ble64_at (eo->b, opd->offset + 8, eo->endian);
+}
+
+// Scan all executable sections for ppc64be ELF v1 PLT stubs and return a map
+// of PLT slot vaddr -> stub vaddr.  Two stub variants are handled:
+//
+// Secure/BSS-PLT (32 bytes, used in executables):
+//   std r2, 40(r1)       f8410028
+//   addis r11, r2, N     3d62NNNN
+//   ld r12, M(r11)       e98bMMMM   <- loads from PLT slot
+//   mtctr r12            7d8903a6
+//   ld r2, M2(r11)       e84bMMMM
+//   bctr                 4e800420
+//
+// Lazy-PLT (8 bytes, used in shared libraries):
+//   li r0, N             3800NNNN   <- N = PLT entry index (0-based)
+//   b <resolver>         4bXXXXXX
+// PLT slot k lives at DT_PLTGOT + 24 + k*24.
+static HtUU *ppc64be_build_plt_stubs(ELFOBJ *eo) {
+	HtUU *map = ht_uu_new0 ();
+	if (!map) {
+		return NULL;
+	}
+	if (!eo->sections_loaded) {
+		_load_elf_sections (eo);
+	}
+
+	// --- Secure/BSS-PLT pass: needs the TOC to decode slot addresses ---
+	ut64 toc = ppc64be_get_toc (eo);
+	if (toc != UT64_MAX) {
+		RBinElfSection *sec;
+		R_VEC_FOREACH (&eo->g_sections, sec) {
+			if (!(sec->flags & SHF_EXECINSTR) || sec->size < 24 || sec->offset == UT64_MAX) {
+				continue;
+			}
+			ut64 i;
+			for (i = 0; i + 24 <= sec->size; i += 4) {
+				ut8 buf[24];
+				if (r_buf_read_at (eo->b, sec->offset + i, buf, 24) != 24) {
+					break;
+				}
+				ut32 w0 = r_read_be32 (buf);
+				ut32 w1 = r_read_be32 (buf + 4);
+				ut32 w2 = r_read_be32 (buf + 8);
+				ut32 w3 = r_read_be32 (buf + 12);
+				ut32 w4 = r_read_be32 (buf + 16);
+				ut32 w5 = r_read_be32 (buf + 20);
+				if (w0 != 0xf8410028 || (w1 >> 16) != 0x3d62 || (w2 >> 16) != 0xe98b ||
+				    w3 != 0x7d8903a6 || (w4 >> 16) != 0xe84b || w5 != 0x4e800420) {
+					continue;
+				}
+				st16 simm = (st16)(w1 & 0xffff);
+				st16 disp = (st16)(w2 & 0xffff);
+				ut64 slot_vaddr = (toc + ((st64)simm << 16) + disp);
+				ht_uu_insert (map, slot_vaddr, sec->rva + i);
+			}
+		}
+	}
+
+	// --- Lazy-PLT pass: li r0,N + b resolver, N increments per entry ---
+	// PLT slot for entry N = DT_PLTGOT + 24 + N*24 (one 24-byte reserved header)
+	ut64 plt_base = eo->dyn_info.dt_pltgot;
+	if (plt_base != R_BIN_ELF_ADDR_MAX) {
+		RBinElfSection *sec;
+		R_VEC_FOREACH (&eo->g_sections, sec) {
+			if (!(sec->flags & SHF_EXECINSTR) || sec->size < 16 || sec->offset == UT64_MAX) {
+				continue;
+			}
+			ut64 i;
+			for (i = 0; i + 16 <= sec->size; i += 4) {
+				ut8 buf[16];
+				if (r_buf_read_at (eo->b, sec->offset + i, buf, 16) != 16) {
+					break;
+				}
+				ut32 w0 = r_read_be32 (buf);
+				ut32 w1 = r_read_be32 (buf + 4);
+				ut32 w2 = r_read_be32 (buf + 8);
+				ut32 w3 = r_read_be32 (buf + 12);
+				if (w0 != 0x38000000 || (w1 >> 26) != 18 ||
+				    w2 != 0x38000001 || (w3 >> 26) != 18) {
+					continue;
+				}
+				ut64 pc1 = sec->rva + i + 4;
+				ut64 pc2 = sec->rva + i + 4 + 8;
+				st64 bd1 = (st64)(w1 & 0x3fffffc); if (bd1 & 0x2000000) { bd1 |= ~(st64)0x3ffffff; }
+				st64 bd2 = (st64)(w3 & 0x3fffffc); if (bd2 & 0x2000000) { bd2 |= ~(st64)0x3ffffff; }
+				ut64 target1 = pc1 + bd1;
+				ut64 target2 = pc2 + bd2;
+				if (target1 != target2) {
+					continue;
+				}
+				// Found the start of a lazy PLT stub run.
+				ut64 j = i;
+				ut32 expected_n = 0;
+				while (j + 8 <= sec->size) {
+					ut8 s[8];
+					if (r_buf_read_at (eo->b, sec->offset + j, s, 8) != 8) {
+						break;
+					}
+					ut32 sw0 = r_read_be32 (s);
+					ut32 sw1 = r_read_be32 (s + 4);
+					ut32 n = sw0 & 0xffff;
+					if ((sw0 >> 16) != 0x3800 || (sw1 >> 26) != 18 || n != expected_n) {
+						break;
+					}
+					ut64 slot_vaddr = plt_base + 24 + (ut64)n * 24;
+					ht_uu_insert (map, slot_vaddr, sec->rva + j);
+					expected_n++;
+					j += 8;
+				}
+				i = j;
+			}
+		}
+	}
+	return map;
+}
+#endif
+
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
+#if R_BIN_ELF64
+	if (eo->ehdr.e_machine == EM_PPC64 && eo->endian) {
+		// ppc64be ELF v1: PLT stubs live in .text; find the one that loads from rel->rva
+		if (!eo->ppc64_plt_stubs) {
+			eo->ppc64_plt_stubs = ppc64be_build_plt_stubs (eo);
+		}
+		if (eo->ppc64_plt_stubs) {
+			bool found = false;
+			ut64 stub = ht_uu_find (eo->ppc64_plt_stubs, rel->rva, &found);
+			if (found) {
+				return stub;
+			}
+		}
+		// Fallback: return the PLT slot address (correct for shared libs or
+		// binaries where stubs do not match the BSS-PLT pattern)
+		return rel->rva;
+	}
+#endif
 	ut64 plt_addr = eo->dyn_info.dt_pltgot;
 	if (plt_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
@@ -2208,6 +2378,12 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 
 	ut64 entry = eo->ehdr.e_entry;
 	if (entry) {
+#if R_BIN_ELF64
+		ut64 code_addr = ppc64be_opd_deref (eo, entry);
+		if (code_addr != UT64_MAX) {
+			entry = code_addr;
+		}
+#endif
 		return Elf_(v2p) (eo, entry);
 	}
 
@@ -4756,6 +4932,14 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			tsize = new_symbol.st_size;
 			toffset = (ut64) new_symbol.st_value;
 			is_sht_null = new_symbol.st_shndx == SHT_NULL;
+#if R_BIN_ELF64
+			if (ELF64_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
+				ut64 code_addr = ppc64be_opd_deref (eo, toffset);
+				if (code_addr != UT64_MAX) {
+					toffset = code_addr;
+				}
+			}
+#endif
 		} else {
 			// why continue here?
 			continue;
@@ -5382,6 +5566,14 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			tsize = sym.st_size;
 			toffset = (ut64)sym.st_value;
 			is_sht_null = sym.st_shndx == SHT_NULL;
+#if R_BIN_ELF64
+			if (ELF64_ST_TYPE (sym.st_info) == STT_FUNC) {
+				ut64 code_addr = ppc64be_opd_deref (eo, toffset);
+				if (code_addr != UT64_MAX) {
+					toffset = code_addr;
+				}
+			}
+#endif
 		}
 
 		if (is_bin_etrel (eo)) {
@@ -5734,6 +5926,7 @@ void Elf_(free)(ELFOBJ* eo) {
 		RVecRBinSymbol_fini (&eo->plt_symbols_cache);
 	}
 	ht_uu_free (eo->rel_cache);
+	ht_uu_free (eo->ppc64_plt_stubs);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);

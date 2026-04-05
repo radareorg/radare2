@@ -664,16 +664,14 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		break;
 	case EM_PPC64:
 		switch (rel->type) {
-		case R_PPC64_JMP_SLOT: // 21
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = got_addr + rel->offset; //  - 0x01028;
-			return r;
-		case R_PPC64_ADDR64: // 38
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = got_addr + rel->offset; //  - 0x10028 + 0x1000;
-			return r;
+		case R_PPC64_JMP_SLOT:  // 21 - PLT slot; vaddr = r_offset (slot address)
+			SET (64);
+		case R_PPC64_ADDR64:    // 38 - absolute 64-bit address
+			SET (64);
+		case R_PPC64_RELATIVE:  // 22 - B + A; handled by dynamic linker at load time
+			ADD (64, B);
 		default:
-			R_LOG_DEBUG ("Unimplemented ELF/BPF reloc type %d", rel->type);
+			R_LOG_DEBUG ("Unimplemented ELF/PPC64 reloc type %d", rel->type);
 			break;
 		}
 		break;
