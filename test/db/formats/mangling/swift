@@ -39,7 +39,7 @@ CMDS=<<EOF
 iD swift _$s10CartFacade0aB13ModalItemViewC14moreItemsLabelSo7UILabelCSgvgTq
 EOF
 EXPECT=<<EOF
-CartFacade: ', ModalItemView.moreItemsLabel: ', C.more.UILabel(...gvgTq)
+CartFacade.'.ModalItemView.moreItemsLabel.UILabel(...gvgTq)
 EOF
 RUN
 
@@ -181,5 +181,97 @@ EXPECT=<<EOF
 0x1000031f0 c++   method   3      Lazy<(anonymous namespace)::ConformanceState>::defaultInitCallback(void*)
 0x100003650 c++   method   4      getRootSuperclass()::$_0::operator()() const::{lambda(void*)#1}::__invoke(void*)
 0x100008568 c++   method   5      getRootSuperclass()::$_0::operator()() const::TheLazy
+EOF
+RUN
+
+NAME=swift5 bare type abbreviations
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift $sSi
+iD swift $sSd
+iD swift $sSf
+iD swift $sSb
+iD swift $sSu
+iD swift $sSS
+iD swift $sSa
+iD swift $sSq
+iD swift $sSD
+iD swift $sSH
+EOF
+EXPECT=<<EOF
+Swift.Int
+Swift.Double
+Swift.Float
+Swift.Bool
+Swift.UInt
+Swift.String
+Swift.Array
+Swift.Optional
+Swift.Dictionary
+Swift.Set
+EOF
+RUN
+
+NAME=swift5 module.type.member demangling
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift $s9CryptoKit8Curve448O7SigningO9PublicKeyV17rawRepresentation10Foundation4DataVvg
+iD swift $s9CryptoKit4P384O12KeyAgreementO07PrivateD0V20compactRepresentableAGSb_tcfC
+iD swift $s10HomeWallet0A13DeeplinkModelV10launchIDFASSSgvM
+EOF
+EXPECT=<<EOF
+CryptoKit.Curve448.Signing.PublicKey.rawRepresentation.Foundation.Data...Vvg
+CryptoKit.P384.KeyAgreement.Private(...cfC)
+HomeWallet.DeeplinkModel.launchIDFA(...SgvM)
+EOF
+RUN
+
+NAME=swift5 _TtCs class pattern
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift _TtCs12_SwiftObject
+iD swift _TtCs7_NSZone
+EOF
+EXPECT=<<EOF
+Swift._SwiftObject
+Swift._NSZone
+EOF
+RUN
+
+NAME=swift5 conformsto protocol resolution
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift s16IOSSecuritySuite11FailedCheckO30restrictedDirectoriesWriteableyA2CmFWC
+EOF
+EXPECT=<<EOF
+IOSSecuritySuite.FailedCheck.restrictedDirectoriesWriteable(...A2CmFWC)
+EOF
+RUN
+
+NAME=swift5 new type abbreviations SD SH SJ
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift $s10HomeWallet0A12FileProviderC013getContentsOfC04with4type10Foundation4DataVSgSS_SStF
+EOF
+EXPECT=<<EOF
+HomeWallet.FileProvider.getContentsOf.with.type__String(...tF)
+EOF
+RUN
+
+NAME=swift5 So objc class import
+FILE=--
+ARGS=-e bin.demangle.trylib=false
+CMDS=<<EOF
+iD swift _$sSo8UIButtonC
+iD swift _$sSo11UITableViewC
+EOF
+EXPECT=<<EOF
+__C.UIButton
+__C.UITableView
 EOF
 RUN

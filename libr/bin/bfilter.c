@@ -142,16 +142,20 @@ R_IPI bool r_bin_filter_sym(RBinFile *bf, HtPP *ht, ut64 vaddr, RBinSymbol *sym)
 		if (R_STR_ISNOTEMPTY (dn)) {
 			r_bin_name_demangled (sym->name, dn);
 			// extract class information from demangled symbol name
+			// swift demangled names follow Module.Type.member pattern
 			char *p = strchr (dn, '.');
 			if (p) {
-				if (isupper (*dn)) {
-					sym->classname = strdup (dn);
-					sym->classname[p - dn] = 0;
+				char *p2 = strchr (p + 1, '.');
+				if (p2 && isupper (*dn) && isupper (p[1])) {
+					// Module.Class.method - use Module.Class as classname
+					sym->classname = r_str_ndup (dn, p2 - dn);
+				} else if (isupper (*dn)) {
+					sym->classname = r_str_ndup (dn, p - dn);
 				} else if (isupper (p[1])) {
 					sym->classname = strdup (p + 1);
-					p = strchr (sym->classname, '.');
-					if (p) {
-						*p = 0;
+					char *dot = strchr (sym->classname, '.');
+					if (dot) {
+						*dot = 0;
 					}
 				}
 			}

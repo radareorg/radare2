@@ -906,22 +906,22 @@ EXPECT=<<EOF
         "addr": 4295060756
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvg)",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvg_",
+        "name": "options_dict.allocator__Dictionary: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvg)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator__Dictionary:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvg_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvg",
         "lang": "swift",
         "addr": 4295061180
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvs)",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvs_",
+        "name": "options_dict.allocator__Dictionary: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvs)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator__Dictionary:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvs_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvs",
         "lang": "swift",
         "addr": 4295061256
       },
       {
-        "name": "options_dict.allocator: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvM)",
-        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvM_",
+        "name": "options_dict.allocator__Dictionary: allocator, options_dict: allocator, S(...ySSAC03WebE7SettingCGvM)",
+        "flag": "method.WKWebViewPreferencesManager.options_dict.allocator__Dictionary:_allocator__options_dict:_allocator__S_...ySSAC03WebE7SettingCGvM_",
         "rawname": "_$s15WheresMyBrowser27WKWebViewPreferencesManagerC12options_dictSDySSAC03WebE7SettingCGvM",
         "lang": "swift",
         "addr": 4295061348
@@ -1027,7 +1027,7 @@ EXPECT=<<EOF
       {
         "name": "options_dict",
         "kind": "property",
-        "type": "SDySS\u0001\u0096\u00c9\u00ff\u00ffG",
+        "type": "Dictionary",
         "addr": 4295135002
       }
     ]

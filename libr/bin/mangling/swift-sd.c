@@ -21,8 +21,11 @@ typedef struct {
 	const char *name;
 } SwiftType;
 
-/* basic types */
+/* basic types
+ * See https://github.com/swiftlang/swift/blob/main/docs/ABI/Mangling.rst
+ * for the full Swift ABI mangling specification */
 static const SwiftType types[] = {
+	/* Builtin types */
 	{ "Bi1", "Builtin.Int1" },
 	{ "Bb", "Builtin.BridgeObject" },
 	{ "BB", "Builtin.UnsafeValueBuffer" },
@@ -32,29 +35,36 @@ static const SwiftType types[] = {
 	{ "Bp", "Builtin.RawPointer" },
 	{ "Bt", "Builtin.SILToken" },
 	{ "Bw", "Builtin.Word" },
-	{ "FS", "String" },
-	{ "GV", "mutableAddressor" },
+	/* Standard library types (Sx abbreviations) */
 	{ "Sa", "Array" },
 	{ "Sb", "Bool" },
-	{ "Sg", "GenericAccessor" },
-	{ "SC", "Syntesized" },
 	{ "Sc", "UnicodeScalar" },
+	{ "SD", "Dictionary" },
 	{ "Sd", "Swift.Double" },
 	{ "Sf", "Swift.Float" },
+	{ "SH", "Set" },
 	{ "Si", "Swift.Int" },
+	{ "SJ", "Character" },
+	{ "SN", "ClosedRange" },
+	{ "Sn", "Range" },
 	{ "Sp", "UnsafeMutablePointer" },
 	{ "SP", "UnsafePointer" },
 	{ "SQ", "ImplicitlyUnwrappedOptional" },
 	{ "Sq", "Optional" },
 	{ "SR", "UnsafeBufferPointer" },
 	{ "Sr", "UnsafeMutableBufferPointer" },
-	// { "So", "Swift.Optional" },
-	{ "Ss", "generic" },
+	// { "So", "__C" },  // ObjC namespace
+	{ "Ss", "Swift.String" },
 	{ "SS", "Swift.String" },
 	{ "Su", "UInt" },
 	{ "Sv", "UnsafeMutableRawPointer" },
 	{ "SV", "UnsafeRawPointer" },
 	{ "S_", "Generic" },
+	/* Other known prefixes */
+	{ "FS", "String" },
+	{ "GV", "mutableAddressor" },
+	{ "Sg", "GenericAccessor" },
+	{ "SC", "Synthesized" },
 	{ "TF", "GenericSpec" },
 	{ "Ts", "String" },
 	{ NULL, NULL }
@@ -76,11 +86,19 @@ static const SwiftType flags[] = {
 	//{ "f", "function" }, // this is not an accessor
 	{ "s", "setter" },
 	{ "g", "getter" },
-	{ "m", "method" }, // field?
+	{ "G", "globalGetter" },
+	{ "m", "method" },
 	{ "d", "destructor" },
 	{ "D", "deallocator" },
 	{ "c", "constructor" },
 	{ "C", "allocator" },
+	{ "w", "didSet" },
+	{ "W", "willSet" },
+	{ "r", "read" },
+	{ "M", "modify" },
+	{ "a", "addressor" },
+	{ "l", "mutableAddressor" },
+	{ "p", "subscript" },
 	{ NULL, NULL }
 };
 
@@ -231,34 +249,60 @@ static inline const char *str_removeprefix(const char *s, const char *prefix) {
 
 static const char *conformsto(char p) {
 	switch (p) {
-	case 'Q':
-		return "Equatable";
-	case 'Y':
-		return "RawRepresentable";
-	case 'X':
-		return "RangeExpression";
-	case 'Z':
-		return "SignedInteger";
-	case 'U':
-		return "UnsignedInteger";
-	case 'T':
-		return "Sequence";
-	case 'M':
-		return "MutableCollection";
-	case 'L':
-		return "Comparable";
-	case 'K':
-		return "BidirectionalCollection";
-	case 'G':
-		return "RandomNumberGenerator";
-	case 'F':
-		return "FloatingPoint";
-	case 'E':
-		return "Encodable";
+	case 'A':
+		return "AnyObject";
 	case 'B':
 		return "BinaryFloatingPoint";
+	case 'C':
+		return "Collection";
+	case 'D':
+		return "Decodable";
+	case 'E':
+		return "Encodable";
+	case 'F':
+		return "FloatingPoint";
+	case 'G':
+		return "RandomNumberGenerator";
 	case 'H':
 		return "Hashable";
+	case 'I':
+		return "IteratorProtocol";
+	case 'J':
+		return "Numeric";
+	case 'K':
+		return "BidirectionalCollection";
+	case 'L':
+		return "Comparable";
+	case 'M':
+		return "MutableCollection";
+	case 'N':
+		return "RangeReplaceableCollection";
+	case 'O':
+		return "Error";
+	case 'P':
+		return "CaseIterable";
+	case 'Q':
+		return "Equatable";
+	case 'R':
+		return "RandomAccessCollection";
+	case 'S':
+		return "StringProtocol";
+	case 'T':
+		return "Sequence";
+	case 'U':
+		return "UnsignedInteger";
+	case 'V':
+		return "AdditiveArithmetic";
+	case 'X':
+		return "RangeExpression";
+	case 'Y':
+		return "RawRepresentable";
+	case 'Z':
+		return "SignedInteger";
+	case 'e':
+		return "Sendable";
+	case 'j':
+		return "Identifiable";
 	}
 	return NULL;
 }
@@ -268,19 +312,24 @@ static bool looks_valid(char p) {
 		return true;
 	}
 	switch (p) {
+	case 'A': // type alias
+	case 'C': // class, enum case
+	case 'E': // extension
 	case 'F':
 	case 'I':
 	case 'M':
-	case 'o':
-	case 'f':
 	case 'N': // ON
-	case 's':
+	case 'O': // enum
+	case 'P': // protocol
 	case 'S': // SHA SQAAMc
-	case 't':
 	case 'T':
-	case 'v':
 	case 'V':
 	case 'W':
+	case 'f':
+	case 'o':
+	case 's':
+	case 't':
+	case 'v':
 		return true;
 	}
 	return false;
@@ -309,6 +358,14 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	}
 	switch (p[1]) {
 	case 'T':
+		switch (p[2]) {
+		case 'W':
+			return "..witness.thunk";
+		case 'w':
+			return "..protocol.witness";
+		case 'o':
+			return "..objc.thunk";
+		}
 		break;
 	case 'W':
 		switch (p[2]) {
@@ -359,6 +416,34 @@ static const char *get_mangled_tail(const char **pp, RStrBuf *out) {
 	case 'I': // interfaces
 		// TODO: Fix __TIFF demangling
 		return "..interface";
+	case 'V':
+		return "..property.descriptor";
+	case 'v':
+		switch (p[2]) {
+		case 's':
+			return "..setter";
+		case 'g':
+			return "..getter";
+		case 'W':
+			return "..willSet";
+		case 'w':
+			return "..didSet";
+		case 'r':
+			return "..read";
+		case 'M':
+			return "..modify";
+		}
+		return "..variable";
+	case 'E':
+		return "..extension";
+	case 'e':
+		return "..extension";
+	case 'A':
+		switch (p[2]) {
+		case 'i':
+			return "..default.arg";
+		}
+		return "..partial.apply";
 	}
 	return NULL;
 }
@@ -898,11 +983,20 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 #if USE_THIS_CODE
 	syscmd = trylib = false; // useful for debugging the embedded demangler on macos
 #endif
-	if (!trylib && !strcmp (s, "_TtCs12_SwiftObject")) {
-		// this hack is for class tests to work, but the parser should be fixed
-		// to support this: the "Swift" module comes from the known-module abbreviation "s",
-		// see https://github.com/swiftlang/swift/blob/c998bbc4d98b4b4ca16831b33054fa750456e053/docs/ABI/Mangling.rst#declaration-contexts
-		return strdup ("Swift._SwiftObject");
+	// handle _TtCs<N><name> pattern: _Tt prefix + C (class) + s (Swift module) + length-prefixed name
+	// see https://github.com/swiftlang/swift/blob/main/docs/ABI/Mangling.rst#declaration-contexts
+	if (r_str_startswith (s, "_TtCs") && isdigit (s[5])) {
+		int len = atoi (s + 5);
+		const char *p = s + 5;
+		while (isdigit (*p)) {
+			p++;
+		}
+		if (len > 0 && len <= (int)strlen (p)) {
+			char *name = r_str_ndup (p, len);
+			char *result = r_str_newf ("Swift.%s", name);
+			free (name);
+			return result;
+		}
 	}
 	if (trylib) {
 		char *res = swift_demangle_lib (s);
@@ -913,15 +1007,13 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 	const char *os = s;
 	bool hasdollar = *s == '$';
 
+	// strip leading _$ (common in Mach-O symbols)
 	if (r_str_startswith (s, "_$")) {
 		hasdollar = true;
 		s += 2;
 	}
-#if 0
-	if (strstr (s, "UITableViewHeaderFoote")) {
-		eprintf ("==> (%s)\n", s);
-	}
-#endif
+
+	// handle "symbolic ..." and space-separated prefixed symbols
 	const char *space = strchr (s, ' ');
 	if (space) {
 		if (isdigit (space[1])) {
@@ -930,62 +1022,76 @@ R_API char *r_bin_demangle_swift(const char *s, bool syscmd, bool trylib) {
 			free (ss);
 			return res;
 		}
-		if (space) {
-			char *res = r_bin_demangle_swift (space + 1, syscmd, trylib);
-			if (res) {
-				if (strstr (s, "symbolic")) {
-					char *ss = r_str_newf ("symbolic %s", res);
-					free (res);
-					return ss;
-				}
-				return res;
+		char *res = r_bin_demangle_swift (space + 1, syscmd, trylib);
+		if (res) {
+			if (strstr (s, "symbolic")) {
+				char *ss = r_str_newf ("symbolic %s", res);
+				free (res);
+				return ss;
 			}
+			return res;
 		}
 	}
-#if 0
-	// uncommenting this causes inconsistencies between rabin2 -D and iD
-	if (!syscmd && !trylib) {
-		if (r_str_startswith (s, "$s")) {
-			s += 2;
-		}
-		if (r_str_startswith (s, "So") && r_str_endswith (s, "C")) {
-			int len = atoi (s + 2);
-			s += 2;
-			while (isdigit (*s)) {
-				s++;
-			}
-			char *ns = r_str_ndup (s, len);
-			char *fs = r_str_newf ("__C.%s", ns);
-			free (ns);
-			return fs;
-		}
-	}
-#endif
+
+	// strip linker prefixes
 	s = str_removeprefix (s, "imp.");
 	s = str_removeprefix (s, "reloc.");
-	// check if string doesnt start with __ then return
-	s = str_removeprefix (s, "__"); // NOOO
+	s = str_removeprefix (s, "__");
 
+	// normalize $s prefix: Swift 5+ uses $s as the mangling prefix
+	// strip it so the inner parser sees 's' followed by the mangled body
+	if (r_str_startswith (s, "$s") || r_str_startswith (s, "$S")) {
+		s += 1; // keep the 's', strip the '$'
+	}
+
+	// handle sSo<N><name>C pattern: ObjC class imports ($sSo8UIButtonC -> __C.UIButton)
+	if (r_str_startswith (s, "sSo") && isdigit (s[3]) && r_str_endswith (s, "C")) {
+		int len = atoi (s + 3);
+		const char *p = s + 3;
+		while (isdigit (*p)) {
+			p++;
+		}
+		if (len > 0 && len <= (int)strlen (p) - 1) { // -1 for trailing 'C'
+			char *name = r_str_ndup (p, len);
+			char *result = r_str_newf ("__C.%s", name);
+			free (name);
+			return result;
+		}
+	}
+
+	// handle bare standard type abbreviations: $sSi -> Swift.Int, $sSd -> Swift.Double, etc.
+	// these are 's' (Swift module) followed by a known type abbreviation with no other components
+	if (s[0] == 's' && s[1] == 'S' && !s[2]) {
+		return strdup ("Swift.String");
+	}
+	if (s[0] == 's') {
+		const char *attr = NULL;
+		const char *rest = resolve (types, s + 1, &attr);
+		if (attr && rest && !*rest) {
+			// fully consumed: bare type abbreviation
+			if (r_str_startswith (attr, "Swift.")) {
+				return strdup (attr);
+			}
+			return r_str_newf ("Swift.%s", attr);
+		}
+	}
+
+	// reject non-swift symbols early
 	if (*s != 's' && *s != 'T' && !r_str_startswith (s, "_T") && !r_str_startswith (s, "__T")) {
-		// modern swift symbols not yet supported in this parser (only via trylib)
-		if (!r_str_startswith (s, "$s")) {
-			switch (*s) {
-			case 'S':
-			case 'B':
-				{
-					const char *attr = NULL;
-					resolve (types, s, &attr); // type
-					if (attr) {
-						return strdup (attr);
-					}
+		switch (*s) {
+		case 'S':
+		case 'B':
+			{
+				const char *attr = NULL;
+				resolve (types, s, &attr);
+				if (attr) {
+					return strdup (attr);
 				}
-				break;
 			}
-			if (s > os) {
-				s--;
-			}
-			// return NULL;
-		} else {
+			break;
+		}
+		if (s > os) {
+			s--;
 		}
 	} else {
 		// TIFF ones found on COFF binaries, swift-unrelated, return early to avoid FP
