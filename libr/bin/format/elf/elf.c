@@ -3080,7 +3080,6 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 			}
 			if (symbols) {
 				int thumb_count = 0;
-				int arm_count = 0;
 				int map_thumb = 0;
 				int map_arm = 0;
 				RBinElfSymbol *symbol;
