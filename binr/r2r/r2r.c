@@ -509,6 +509,10 @@ static bool validate_suite(R2RState *state) {
 		state->run_config.r2_cmd = r_file_path ("radare2");
 	}
 	free (r2_binary);
+	if (!state->run_config.r2_cmd) {
+		R_LOG_ERROR ("Cannot find radare2 in PATH. Set R2R_RADARE2 env to specify its location");
+		return false;
+	}
 	// check for rasm2
 	char *rasm2_binary = r_sys_getenv ("R2R_RASM2");
 	if (R_STR_ISNOTEMPTY (rasm2_binary)) {
@@ -517,6 +521,10 @@ static bool validate_suite(R2RState *state) {
 		state->run_config.rasm2_cmd = r_file_path ("rasm2");
 	}
 	free (rasm2_binary);
+	if (!state->run_config.rasm2_cmd) {
+		R_LOG_ERROR ("Cannot find rasm2 in PATH. Set R2R_RASM2 env to specify its location");
+		return false;
+	}
 	R_LOG_INFO ("R2R_RADARE2: %s", state->run_config.r2_cmd);
 	R_LOG_INFO ("R2R_RASM2: %s", state->run_config.rasm2_cmd);
 	if (r_sys_cmdf ("%s -v", state->run_config.r2_cmd) != 0) {
