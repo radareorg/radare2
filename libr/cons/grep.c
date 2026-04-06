@@ -595,10 +595,11 @@ static void colorcode(RCons *cons) {
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
 	RConsCodeColors codepal = r_cons_codecolors (cons);
 	char *cres = r_print_code_tocolor (res, &codepal);
-	cons->context->buffer_len = strlen (cres);
-	cons->context->buffer_sz = cons->context->buffer_len;
+	free (res);
 	free (cons->context->buffer);
 	cons->context->buffer = cres;
+	cons->context->buffer_len = strlen (cres);
+	cons->context->buffer_sz = cons->context->buffer_len;
 }
 
 R_API void r_cons_grepbuf(RCons *cons) {
@@ -638,18 +639,18 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		if (sbuf) {
 			char *res = r_str_tokenize_json (sbuf);
 			if (!res) {
+				free (sbuf);
 				return;
 			}
 			char *nres = r_print_json_indent (res, I(context->color_mode), "  ", NULL);
 			free (res);
-			res = r_str_newf ("%s\n", nres);
-			free (nres);
 			free (sbuf);
-			if (res) {
-				cons->context->buffer_len = strlen (res);
-				cons->context->buffer_sz = cons->context->buffer_len;
+			if (nres) {
+				nres = r_str_append (nres, "\n");
 				free (cons->context->buffer);
-				cons->context->buffer = res;
+				cons->context->buffer = nres;
+				cons->context->buffer_len = strlen (nres);
+				cons->context->buffer_sz = cons->context->buffer_len;
 			} else {
 				cons->context->buffer_len = 0;
 				cons->context->buffer_sz = 0;
@@ -667,7 +668,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		return;
 	}
 	if (grep->ascart) {
-		char *sbuf = strdup (cons->context->buffer);
+		char *sbuf = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
 		r_str_ansi_filter (sbuf, NULL, NULL, -1);
 		char *out = r_str_ss (sbuf, NULL, 0);
 		free (sbuf);
@@ -678,13 +679,6 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		return;
 	}
 	if (grep->zoom) {
-		char *sin = calloc (cons->context->buffer_len + 2, 4);
-		if (R_UNLIKELY (!sin)) {
-			grep->zoom = 0;
-			grep->zoomy = 0;
-			return;
-		}
-		strcpy (sin, cons->context->buffer);
 		char *out = r_str_scale (in, grep->zoom * 2, grep->zoomy? grep->zoomy: grep->zoom);
 		if (out) {
 			free (cons->context->buffer);
@@ -694,7 +688,6 @@ R_API void r_cons_grepbuf(RCons *cons) {
 		}
 		grep->zoom = 0;
 		grep->zoomy = 0;
-		free (sin);
 		return;
 	}
 	if (grep->gron) {
@@ -742,7 +735,7 @@ R_API void r_cons_grepbuf(RCons *cons) {
 				Color_RESET,
 				NULL
 			};
-			char *bb = strdup (buf);
+			char *bb = r_str_ndup (buf, len);
 			r_str_ansi_filter (bb, NULL, NULL, -1);
 			char *out = (cons->context->grep.human)
 				? r_print_json_human (bb)
@@ -880,8 +873,8 @@ continuation:
 			}
 			if ((!ret && is_range_line_grep_only) || ret > 0) {
 				if (show) {
-					char *str = r_str_ndup (tline, ret);
 					if (cons->context->grep_highlight) {
+						char *str = r_str_ndup (tline, ret);
 						RListIter *iter;
 						RConsGrepWord *gw;
 						r_list_foreach (grep->strings, iter, gw) {
@@ -895,11 +888,14 @@ continuation:
 							}
 							free (newstr);
 						}
-					}
-					if (str) {
-						r_strbuf_append (ob, str);
+						if (str) {
+							r_strbuf_append (ob, str);
+							r_strbuf_append (ob, "\n");
+							free (str);
+						}
+					} else {
+						r_strbuf_append_n (ob, tline, ret);
 						r_strbuf_append (ob, "\n");
-						free (str);
 					}
 				}
 				if (!grep->range_line) {
@@ -1018,11 +1014,7 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 	if (!in) {
 		return 0;
 	}
-	char *out = calloc (1, len + 2);
-	if (!out) {
-		free (in);
-		return 0;
-	}
+	char *out = NULL;
 	memcpy (in, buf, len);
 	const bool have_strings = !r_list_empty (grep->strings);
 
@@ -1078,6 +1070,11 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 			use_tok = true;
 		}
 		if (use_tok && grep->tokens_used) {
+			out = calloc (1, len + 2);
+			if (!out) {
+				free (in);
+				return 0;
+			}
 			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
 				tok = r_str_tok_r (i? NULL: in, delims, &save_ptr);
 				if (tok) {

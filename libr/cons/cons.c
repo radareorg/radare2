@@ -683,7 +683,7 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
-		const size_t click_len = strlen (click);
+		const size_t click_len = 18;
 		if (write (2, click, click_len) != click_len) {
 			enabled = false;
 		} else {
@@ -805,11 +805,9 @@ R_API void r_cons_flush(RCons *cons) {
 		if (ctx->pageable && R_STR_ISNOTEMPTY (cons->pager) && ctx->buffer_len > 0 && r_str_char_count (ctx->buffer, '\n') >= cons->rows) {
 			ctx->buffer[ctx->buffer_len - 1] = 0;
 			if (!strcmp (cons->pager, "..")) {
-				char *str = r_str_ndup (ctx->buffer, ctx->buffer_len);
 				ctx->pageable = false;
-				r_cons_less_str (cons, str, NULL);
+				r_cons_less_str (cons, ctx->buffer, NULL);
 				r_cons_reset (cons);
-				free (str);
 				goto beach;
 			}
 			r_sys_cmd_str_full (cons->pager, ctx->buffer, -1, NULL, NULL, NULL);
