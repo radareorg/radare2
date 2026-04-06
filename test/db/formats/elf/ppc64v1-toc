@@ -1,0 +1,54 @@
+NAME=PPC64 ELFv1: addis+ld TOC chain resolves op->ptr
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e anal.gp=0x37f00
+ao 2 @ 0x30e4~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0002f5d0
+EOF
+RUN
+
+NAME=PPC64 ELFv1: second ld from same addis — toc_map persists through intervening instruction
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e anal.gp=0x37f00
+ao 4 @ 0x30e4~^ptr
+EOF
+EXPECT=<<EOF
+ptr: 0x0002f5d0
+ptr: 0x0002f5d8
+EOF
+RUN
+
+NAME=PPC64 ELFv1: addis+addi TOC chain resolves op->val (address materialisation)
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e anal.gp=0x37f00
+ao 2 @ 0x3fac~^val
+EOF
+EXPECT=<<EOF
+val: 0x0002ef58
+EOF
+RUN
+
+NAME=PPC64 ELFv1: r1-relative load does not get spurious ptr from toc_map (regression)
+FILE=bins/elf/ppc64v1-more
+CMDS=<<EOF
+e anal.gp=0x37f00
+ao 1 @ 0x3f54~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=PPC64 ELFv1: ppc32 binary unaffected by toc_map logic (regression)
+FILE=bins/elf/hello.ppc
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+ao 6 @ 0x10000308~^ptr
+EOF
+EXPECT=<<EOF
+EOF
+RUN
