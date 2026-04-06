@@ -2175,7 +2175,17 @@ static int cmd_flag(void *data, const char *input) {
 				item = r_flag_get_in (core->flags, core->addr);
 			}
 			if (item) {
-				r_flag_item_set_realname (core->flags, item, realname);
+				if (r_str_startswith (realname, "base64:")) {
+					char *dec = (char *)r_base64_decode_dyn (realname + 7, -1, NULL);
+					if (dec) {
+						r_flag_item_set_realname (core->flags, item, dec);
+						free (dec);
+					} else {
+						R_LOG_ERROR ("Failed to decode base64-encoded realname");
+					}
+				} else {
+					r_flag_item_set_realname (core->flags, item, realname);
+				}
 			}
 			break;
 		}

@@ -1455,7 +1455,11 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 					gdata->symtype,
 					PDB_SIZEOF_SECTION_NAME,
 					sctn_header->name);
-				pdb->cb_printf ("\"fN pdb.%s %s\"\n", filtered_name, name);
+				char *b64name = r_base64_encode_dyn ((const ut8 *)name, strlen (name));
+				if (b64name) {
+					pdb->cb_printf ("fN pdb.%s base64:%s\n", filtered_name, b64name);
+					free (b64name);
+				}
 				free (filtered_name);
 				break;
 			case 'd':
