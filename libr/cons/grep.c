@@ -1042,8 +1042,7 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 					: p == in
 				: !gw->neg;
 
-			// TODO: optimize without strlen without breaking t/feat_grep (grep end)
-			if (gw->end && (strlen (gw->str) != strlen (p))) {
+			if (gw->end && (strlen (gw->str) != (size_t)(len - (p - in)))) {
 				hit = false;
 			}
 			all_hits &= hit;

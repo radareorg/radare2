@@ -182,7 +182,7 @@ static inline void __delete_current_char(RLine *line) {
 		int len = r_str_utf8_charsize (line->buffer.data + line->buffer.index);
 		memmove (line->buffer.data + line->buffer.index,
 			line->buffer.data + line->buffer.index + len,
-			strlen (line->buffer.data + line->buffer.index + 1) + 1);
+			line->buffer.length - line->buffer.index - len + 1);
 		line->buffer.length -= len;
 		if (line->buffer.index > 0 && line->buffer.index == line->buffer.length) {
 			line->buffer.index--;
@@ -227,8 +227,7 @@ static inline void shift_buffer(RLine *line, int start, int end) {
 	line->clipboard = r_str_ndup (line->buffer.data + start, len);
 	r_line_clipboard_push (line, line->clipboard);
 	memmove (line->buffer.data + start, line->buffer.data + end, line->buffer.length - end + 1);
-	/* resize buffer to take into account the word we deleted */
-	line->buffer.length = strlen (line->buffer.data);
+	line->buffer.length -= (end - start);
 }
 
 /* https://www.gnu.org/software/bash/manual/html_node/Commands-For-Killing.html */
@@ -374,7 +373,7 @@ static void unix_word_rubout(RCons *cons) {
 		memmove (line->buffer.data + i,
 			line->buffer.data + line->buffer.index,
 			line->buffer.length - line->buffer.index + 1);
-		line->buffer.length = strlen (line->buffer.data);
+		line->buffer.length = i + (line->buffer.length - line->buffer.index);
 		line->buffer.index = i;
 	}
 }
@@ -721,9 +720,9 @@ R_API int r_line_hist_list(RLine *line, bool full) {
 	if (line->history.data) {
 		i = full? 0: line->history.load_index;
 		for (; i < line->history.size && line->history.data[i]; i++) {
-			char *pad = r_str_pad (NULL, 0, ' ', 32 - strlen (line->history.data[i]));
-			r_cons_printf (line->cons, "%s %s # !%d\n", line->history.data[i], pad, i);
-			free (pad);
+			int slen = strlen (line->history.data[i]);
+			int padlen = (32 > slen) ? 32 - slen : 0;
+			r_cons_printf (line->cons, "%s %*s# !%d\n", line->history.data[i], padlen, "", i);
 		}
 	}
 	return i;
@@ -932,14 +931,16 @@ static void selection_widget_select(RLine *line) {
 	RSelWidget *sel_widget = line->sel_widget;
 	if (sel_widget && sel_widget->selection < sel_widget->options_len) {
 		char *sp = strchr (line->buffer.data, ' ');
+		const char *opt = sel_widget->options[sel_widget->selection];
+		size_t optlen = strlen (opt);
 		if (sp) {
 			int delta = sp - line->buffer.data + 1;
-			line->buffer.length = R_MIN (delta + strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
-			memcpy (line->buffer.data + delta, sel_widget->options[sel_widget->selection], strlen (sel_widget->options[sel_widget->selection]));
+			line->buffer.length = R_MIN (delta + optlen, R_LINE_BUFSIZE - 1);
+			memcpy (line->buffer.data + delta, opt, optlen);
 			line->buffer.index = line->buffer.length;
 			return;
 		}
-		line->buffer.length = R_MIN (strlen (sel_widget->options[sel_widget->selection]), R_LINE_BUFSIZE - 1);
+		line->buffer.length = R_MIN (optlen, R_LINE_BUFSIZE - 1);
 		memcpy (line->buffer.data, sel_widget->options[sel_widget->selection], line->buffer.length);
 		line->buffer.data[line->buffer.length] = '\0';
 		line->buffer.index = line->buffer.length;
@@ -1413,6 +1414,7 @@ static void __update_prompt_color(RCons *cons) {
 	char *prompt = r_str_escape (line->prompt); // remove the color
 	free (line->prompt);
 	line->prompt = r_str_newf ("%s%s%s", BEGIN, prompt, END);
+	free (prompt);
 }
 
 static bool __vi_mode(RCons *cons) {
