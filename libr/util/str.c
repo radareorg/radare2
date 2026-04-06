@@ -1428,11 +1428,17 @@ R_API char *r_str_sanitize_r2(const char *buf) {
 	char *q = new_buf;
 	while (*p) {
 		switch (*p) {
+		case '\n':
+		case '\r':
 		case ';':
+		case '|':
 		case '$':
 		case '`':
 		case '\\':
 		case '"':
+		case '@':
+		case '~':
+		case '#':
 			*q++ = ' ';
 			p++;
 			break;
