@@ -52,10 +52,8 @@ static TAG_CALLBACK(sh_endpipe) {
 
 static PUT_CALLBACK(sh_fputs) {
 	if (sh_pipe_enabled) {
-		size_t buflen = strlen (buf) + strlen (sh_pipe_cmd) + 16;
-		char *str = malloc (buflen);
+		char *str = r_str_newf ("echo '%s' | %s", buf, sh_pipe_cmd);
 		if (str) {
-			snprintf (str, buflen, "echo '%s' | %s", buf, sh_pipe_cmd);
 #if HAVE_FORK
 			int r = system (str);
 			if (errno) {
