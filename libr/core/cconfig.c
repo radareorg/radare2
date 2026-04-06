@@ -3421,8 +3421,12 @@ static bool cb_anal_roregs(RCore *core, RConfigNode *node) {
 
 static bool cb_anal_gp(RCore *core, RConfigNode *node) {
 	ut64 gpv = node->i_value;
-	gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~ (ut64)0xf;
-	node->i_value = gpv;
+	/* 16-byte boundary alignment is a MIPS ABI requirement; skip it for other
+	 * architectures (e.g. PPC64 ELFv1 TOC base) to avoid corrupting the value. */
+	if (r_str_startswith (core->rasm->config->arch, "mips")) {
+		gpv = (gpv == UT64_MAX)? gpv: (gpv + 0xf) & ~(ut64)0xf;
+		node->i_value = gpv;
+	}
 	core->anal->gp = gpv;
 	r_reg_setv (core->anal->reg, "gp", gpv);
 	core->anal->config->gp = gpv;
@@ -3912,7 +3916,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("anal.mask", "false", "use the smart aobm command to compute the binary mask of the instruction"); // TODO: must be true by default
 	SETCB ("anal.roregs", "gp,zero", (RConfigCallback)&cb_anal_roregs, "comma separated list of register names to be readonly");
 	SETICB ("anal.cs", 0, (RConfigCallback)&cb_anal_cs, "set the value for the x86-16 CS segment register (see asm.addr.segment and asm.addr.segment.bits)");
-	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "set the value of the GP register (MIPS)");
+	SETICB ("anal.gp", 0, (RConfigCallback)&cb_anal_gp, "global pointer value: MIPS gp register / PPC64 ELFv1 TOC base (r2); auto-detected on file load");
 	SETB ("anal.fixed.gp", "true", "set gp register to anal.gp before emulating each instruction in aae");
 	SETCB ("anal.fixed.arch", "false", &cb_anal_fixed_arch, "permit arch changes during analysis");
 	SETCB ("anal.fixed.bits", "false", &cb_anal_fixed_bits, "permit bits changes during analysis (arm/thumb)");

@@ -27,6 +27,42 @@ static inline bool its_a_mips(RCore *core) {
 	return cfg && r_str_startswith (cfg->arch, "mips");
 }
 
+static inline bool its_a_ppc64be(RCore *core) {
+	RArchConfig *cfg = core->rasm->config;
+	return cfg && r_str_startswith (cfg->arch, "ppc")
+		&& cfg->bits == 64
+		&& R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
+}
+
+// PPC64 ELFv1: every function symbol points into .opd, an array of
+// 24-byte descriptors [code_ptr(8), toc(8), env(8)].  The TOC base used
+// throughout the binary is the toc field of the *first* .opd entry (offset
+// +8).  We read it here and populate anal->gp / config->gp so that the
+// ppc_cs arch plugin can resolve addis+ld/addi TOC-relative chains.
+// We set the fields directly rather than going through r_config_set_i() to
+// avoid the MIPS-specific 16-byte alignment applied in cb_anal_gp.
+static void load_toc(RCore *core) {
+	if (!its_a_ppc64be (core)) {
+		return;
+	}
+	ut64 opd = r_num_math (core->num, "section..opd");
+	if (!opd || opd == UT64_MAX) {
+		return;
+	}
+	ut8 buf[8];
+	if (!r_io_read_at (core->io, opd + 8, buf, 8)) {
+		return;
+	}
+	ut64 toc = r_read_be64 (buf);
+	if (!toc || toc == UT64_MAX) {
+		return;
+	}
+	R_LOG_DEBUG ("[ppc64v1] toc: 0x%"PFMT64x, toc);
+	core->anal->gp = toc;
+	core->anal->config->gp = toc;
+	r_reg_setv (core->anal->reg, "r2", toc);
+}
+
 static void load_gp(RCore *core) {
 	// R2R db/cmd/cmd_eval
 	if (its_a_mips (core)) {
@@ -206,6 +242,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		r_core_cmd_call (core, "sr PC");
 	} else {
 		load_gp (core);
+		load_toc (core);
 	}
 	// update anal io bind
 	r_io_bind (core->io, &(core->anal->iob));
@@ -818,6 +855,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	}
 	if (!r_config_get_b (r->config, "cfg.debug")) {
 		load_gp (r);
+		load_toc (r);
 	}
 	if (r_config_get_b (r->config, "bin.libs")) {
 		const char *lib;

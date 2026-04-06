@@ -641,7 +641,18 @@ typedef struct plugin_data_t {
 	CapstonePluginData cpd;
 	char cspr[16];
 	char words[8][64];
+	/* PPC64 ELFv1 TOC-relative address resolution.
+	 * addis rX, r2, HA  stores  config->gp + (HA<<16)  in toc_map[X].
+	 * A later ld/addi/st rY, LO(rX)  resolves op->ptr/val from toc_map[X].
+	 * Indexed by logical GPR number (0..31); 0 means "no pending value". */
+	ut64 toc_map[32];
 } PluginData;
+
+/* Map a capstone PPC register ID to a GPR index 0..31, or -1 for non-GPRs. */
+static inline int toc_reg_idx(unsigned int cs_reg) {
+	int idx = (int)cs_reg - (int)PPC_REG_R0;
+	return (idx >= 0 && idx < 32) ? idx : -1;
+}
 
 static const char* getspr(PluginData *pd, struct Getarg *gop, int n) {
 	ut32 spr = 0;
@@ -771,7 +782,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	int ret;
+	int ret, ridx;
 	cs_insn *insn;
 	char *op1;
 
@@ -937,6 +948,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_STWCX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[4]"));
+			/* PPC64 ELFv1 TOC chain: stw rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STWU:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -949,6 +967,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				op->stackop = R_ANAL_STACK_INC;
 				op->stackptr = -atoi (op1);
 			}
+			/* PPC64 ELFv1 TOC chain: stwu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -956,6 +981,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_STB:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[1]"));
+			/* PPC64 ELFv1 TOC chain: stb rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STBU:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -964,10 +996,24 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[1],%s=", ARG (0), op1, op1);
+			/* PPC64 ELFv1 TOC chain: stbu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STH:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[2]"));
+			/* PPC64 ELFv1 TOC chain: sth rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STHU:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -976,10 +1022,24 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[2],%s=", ARG (0), op1, op1);
+			/* PPC64 ELFv1 TOC chain: sthu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STD:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
+			/* PPC64 ELFv1 TOC chain: std rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_STDU:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -988,6 +1048,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,%s,=[8],%s=", ARG (0), op1, op1);
+			/* PPC64 ELFv1 TOC chain: stdu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LBZU:
 		case PPC_INS_LBZUX:
@@ -997,6 +1064,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,[1],%s,=,%s=", op1, ARG (0), op1);
+			/* PPC64 ELFv1 TOC chain: lbzu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LBZ:
 #if CS_API_MAJOR >= 4
@@ -1005,6 +1079,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_LBZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[1]"), ARG (0));
+			/* PPC64 ELFv1 TOC chain: lbz rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LD:
 		case PPC_INS_LDARX:
@@ -1014,11 +1095,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_LDU:
 		case PPC_INS_LDUX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			op1 = shrink(ARG(1));
+			op1 = shrink (ARG(1));
 			if (!op1) {
 				break;
 			}
 			esilprintf (op, "%s,[8],%s,=,%s=", op1, ARG (0), op1);
+			/* PPC64 ELFv1 TOC chain: ld rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LDX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1039,6 +1127,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_LFSX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
+			/* PPC64 ELFv1 TOC chain: lfd/lfs fY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LHA:
 		case PPC_INS_LHAU:
@@ -1052,6 +1147,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,[2],%s,=,%s=", op1, ARG (0), op1);
+			/* PPC64 ELFv1 TOC chain: lha/lhz rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LHBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1067,6 +1169,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_LWZX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			esilprintf (op, "%s,%s,=", ARG2 (1, "[4]"), ARG (0));
+			/* PPC64 ELFv1 TOC chain: lwz rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LWZU:
 		case PPC_INS_LWZUX:
@@ -1076,6 +1185,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				break;
 			}
 			esilprintf (op, "%s,[4],%s,=,%s=", op1, ARG (0), op1);
+			/* PPC64 ELFv1 TOC chain: lwzu rY, LO(rX) following addis rX, r2, HA */
+			if (INSOP(1).type == PPC_OP_MEM) {
+				ridx = toc_reg_idx (INSOP(1).mem.base);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->ptr = pd->toc_map[ridx] + INSOP(1).mem.disp;
+				}
+			}
 			break;
 		case PPC_INS_LWBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
@@ -1110,6 +1226,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->sign = true;
 			op->type = R_ANAL_OP_TYPE_ADD;
 			esilprintf (op, "%s,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			/* PPC64 ELFv1 TOC chain: addi rY, rX, LO following addis rX, r2, HA
+			 * materialises a TOC-relative address (e.g. address-of-global). */
+			if (INSOP(1).type == PPC_OP_REG && INSOP(2).type == PPC_OP_IMM) {
+				ridx = toc_reg_idx (INSOP(1).reg);
+				if (ridx >= 0 && pd->toc_map[ridx]) {
+					op->val = pd->toc_map[ridx] + (ut64)(st64)INSOP(2).imm;
+				}
+			}
 			break;
 		case PPC_INS_CRCLR:
 		case PPC_INS_CRSET:
@@ -1128,6 +1252,26 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_ADDIS:
 			op->type = R_ANAL_OP_TYPE_ADD;
 			esilprintf (op, "16,%s,<<,%s,+,%s,=", ARG (2), ARG (1), ARG (0));
+			/* PPC64 ELFv1 TOC-relative pair, first instruction.
+			 * Pattern: addis rX, r2, HA  where r2 holds the TOC base.
+			 * Record  config->gp + (HA<<16)  in toc_map[X] so that any later
+			 * ld/addi/st using rX as base can resolve the full address.
+			 * config->gp is auto-detected by load_toc() or set via
+			 * e anal.gp=<toc_addr>. */
+			if (INSOP(0).type == PPC_OP_REG) {
+				ridx = toc_reg_idx (INSOP(0).reg);
+				if (ridx >= 0) {
+					if (as->config->gp
+							&& INSOP(1).type == PPC_OP_REG
+							&& INSOP(1).reg  == PPC_REG_R2
+							&& INSOP(2).type == PPC_OP_IMM) {
+						pd->toc_map[ridx] = as->config->gp
+							+ (ut64)((st64)INSOP(2).imm << 16);
+					} else {
+						pd->toc_map[ridx] = 0; /* dest clobbered, invalidate */
+					}
+				}
+			}
 			break;
 		case PPC_INS_ADDE:
 		case PPC_INS_ADDME:
