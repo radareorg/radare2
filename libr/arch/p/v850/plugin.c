@@ -89,7 +89,7 @@
 #define F13_IMM(instr) (((instr) & 0x3E) >> 1)
 // Also a subopcode
 #define F13_REG2(instr) (((instr) & 0x1F0000) >> 16)
-#define F13_LIST(instr) (((instr) && 0xFFE00000) >> 21)
+#define F13_LIST(instr) (((instr) & 0xFFE00000) >> 21)
 
 #define F13_RN2(instr) (V850_REG_NAMES[F13_REG2(instr)])
 
@@ -374,15 +374,18 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		r_strbuf_appendf (&op->esil, "%s,pc,:=", F1_RN1(word1));
 		break;
 	case V850_JARL2:
-		// TODO: fix displacement reading
-		op->type = R_ANAL_OP_TYPE_JMP;
+		// JARL disp22, reg2 - saves return address in reg2, jumps to PC+disp
+		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
+		op->fail = addr + 4;
 		r_strbuf_appendf (&op->esil, "pc,%s,:=,0x%"PFMT64x",pc,:=", F5_RN2 (word1), op->jump);
 		break;
 	case V850_JARL1:
-		op->type = R_ANAL_OP_TYPE_JMP;
+		// JARL disp22, reg2 - saves return address in reg2, jumps to PC+disp
+		op->type = R_ANAL_OP_TYPE_CALL;
 		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
-		r_strbuf_appendf (&op->esil, "0x%"PFMT64x",pc,:=", op->jump);
+		op->fail = addr + 4;
+		r_strbuf_appendf (&op->esil, "pc,lp,:=,0x%"PFMT64x",pc,:=", op->jump);
 		break;
 	case V850_OR:
 		op->type = R_ANAL_OP_TYPE_OR;
@@ -742,13 +745,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->fail = addr + inst.size;
 		break;
 	case R_ANAL_OP_TYPE_POP:
-		if (inst.op && strstr (inst.op->esil, "#2")) {
+		if (inst.op && inst.op->esil && strstr (inst.op->esil, "#2")) {
 			op->type = R_ANAL_OP_TYPE_RET;
 		}
 		break;
 	case R_ANAL_OP_TYPE_CALL:
 		op->jump = addr + inst.value;
 		op->fail = addr + inst.size;
+		break;
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+		// Detect stack pointer modifications: add/addi/sub with sp as destination
+		if (inst.text && strstr (inst.text, ", sp")) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = (op->type == R_ANAL_OP_TYPE_SUB)? inst.value: -inst.value;
+			op->val = inst.value;
+		}
 		break;
 	}
 	op->size = inst.size;
