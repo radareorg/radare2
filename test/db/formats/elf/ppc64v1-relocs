@@ -1,0 +1,56 @@
+NAME=ELF v1 exec: patch_relocs — fileno GOT slot filled with GLINK stub addr
+FILE=bins/elf/ppc64v1-more
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~fileno[2]
+?v [0x0002f5d0]
+EOF
+EXPECT=<<EOF
+SET_64
+0xdb7c
+EOF
+RUN
+
+NAME=ELF v1 exec: patch_relocs — getopt_long GOT slot filled with GLINK stub addr
+FILE=bins/elf/ppc64v1-more
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~getopt_long[2]
+?v [0x0002f480]
+EOF
+EXPECT=<<EOF
+SET_64
+0xdb0c
+EOF
+RUN
+
+NAME=ELF v1 exec: patch_relocs — fcntl GOT slot filled with GLINK stub addr
+FILE=bins/elf/ppc64v1-more
+ARGS=-e bin.relocs.apply=true
+CMDS=?v [0x0002f540]
+EXPECT=<<EOF
+0xdb4c
+EOF
+RUN
+
+NAME=ELF v1 shared lib: patch_relocs — strlen GOT slot filled with lazy-PLT stub addr
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e bin.relocs.apply=true
+CMDS=<<EOF
+ir~strlen[2]
+?v [0x00030048]
+EOF
+EXPECT=<<EOF
+SET_64
+0x194dc
+EOF
+RUN
+
+NAME=ELF v1 shared lib: patch_relocs — write GOT slot filled with lazy-PLT stub addr
+FILE=bins/elf/ppc64v1-libz.so
+ARGS=-e bin.relocs.apply=true
+CMDS=?v [0x00030078]
+EXPECT=<<EOF
+0x194ec
+EOF
+RUN

@@ -664,16 +664,14 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		break;
 	case EM_PPC64:
 		switch (rel->type) {
-		case R_PPC64_JMP_SLOT: // 21
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = got_addr + rel->offset; //  - 0x01028;
-			return r;
-		case R_PPC64_ADDR64: // 38
-			r->type = R_BIN_RELOC_64;
-			r->vaddr = got_addr + rel->offset; //  - 0x10028 + 0x1000;
-			return r;
+		case R_PPC64_JMP_SLOT:  // 21 - PLT slot; vaddr = r_offset (slot address)
+			SET (64);
+		case R_PPC64_ADDR64:    // 38 - absolute 64-bit address
+			SET (64);
+		case R_PPC64_RELATIVE:  // 22 - B + A; handled by dynamic linker at load time
+			ADD (64, B);
 		default:
-			R_LOG_DEBUG ("Unimplemented ELF/BPF reloc type %d", rel->type);
+			R_LOG_DEBUG ("Unimplemented ELF/PPC64 reloc type %d", rel->type);
 			break;
 		}
 		break;
@@ -1038,6 +1036,22 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			word = 4;
 			V = S + A - P;
 			break;
+		case R_PPC64_JMP_SLOT: { // 21 — write PLT stub vaddr to GOT slot (big-endian)
+			// For PPC64 ELFv1 the PLT stubs live in .text; look up the
+			// stub that loads from this GOT slot.  Falls back to S when not found.
+			ut64 stub = Elf_(ppc64v1_get_plt_stub_for_slot) (bo, rel->rva);
+			word = 8;
+			V = (stub != UT64_MAX) ? stub : S;
+			break;
+		}
+		case R_PPC64_ADDR64: // 38 — S + A (absolute 64-bit)
+			word = 8;
+			V = S + A;
+			break;
+		case R_PPC64_RELATIVE: // 22 — B + A (base-relative, filled by dynamic linker)
+			word = 8;
+			V = B + A;
+			break;
 		default:
 			break;
 		}
@@ -1058,7 +1072,7 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 				break;
 			}
 		} else if (word) {
-			// TODO big-endian
+			// TODO big-endian for word == 2, 4
 			switch (word) {
 			case 2:
 				r_write_le16 (buf, V);
@@ -1067,6 +1081,10 @@ static void _patch_reloc(ELFOBJ *bo, ut16 e_machine, RIOBind *iob, RBinElfReloc 
 			case 4:
 				r_write_le32 (buf, V);
 				iob->overlay_write_at (iob->io, rel->rva, buf, 4);
+				break;
+			case 8: // ppc64be: big-endian 64-bit write
+				r_write_ble64 (buf, V, bo->endian);
+				iob->overlay_write_at (iob->io, rel->rva, buf, 8);
 				break;
 			}
 		}
@@ -1321,7 +1339,12 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	ELFOBJ *eo = obj->bin_obj;
 	size_t cdsz = obj->info? (obj->info->bits / 8): 0;
-	if (eo->ehdr.e_type != ET_REL && eo->ehdr.e_type != ET_DYN) {
+	// PPC64 ELFv1 executables (ET_EXEC) have JMP_SLOT/ADDR64 relocs that need
+	// patching at analysis time just like shared libs — the dynamic linker fills these
+	// at runtime but r2 must do it statically.
+	bool is_ppc64v1_exec = (eo->ehdr.e_machine == EM_PPC64 && eo->endian &&
+		eo->ehdr.e_type == ET_EXEC);
+	if (eo->ehdr.e_type != ET_REL && eo->ehdr.e_type != ET_DYN && !is_ppc64v1_exec) {
 		return NULL;
 	}
 	ut64 size = eo->g_reloc_num * cdsz;
