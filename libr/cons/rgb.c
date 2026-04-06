@@ -158,7 +158,10 @@ R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rc
 	}
 	*outstr = 0;
 	if (rcolor->a == ALPHA_RESET) {
-		snprintf (outstr, sz, "%s", Color_RESET);
+		size_t rlen = strlen (Color_RESET);
+		if (sz > rlen) {
+			memcpy (outstr, Color_RESET, rlen + 1);
+		}
 		return outstr;
 	}
 	// If the color handles both foreground and background, also add background
