@@ -100,12 +100,26 @@ static void decode_esil(RAnalOp *op) {
 		char *dr = r_list_get_n (args, 0);
 		char *si = r_list_get_n (args, 1);
 		r_strbuf_setf (&op->esil, "12,%s,<<,%s,:=", si, dr);
-	} else if (is_any ("j")) {
-		char *di = r_list_get_n (args, 0);
-		r_strbuf_setf (&op->esil, "%s,pc,:=", di);
+	} else if (is_any ("jral5")) {
+		char *dr = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "pc,2,+,lp,:=,%s,pc,:=", dr);
+	} else if (is_any ("jral")) {
+		// jral rt, rb: rt = pc + 4, pc = rb
+		char *rt = r_list_get_n (args, 0);
+		char *rb = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "pc,4,+,%s,:=,%s,pc,:=", rt, rb);
+	} else if (is_any ("jal")) {
+		char *addr = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "pc,4,+,lp,:=,%s,pc,:=", addr);
+	} else if (is_any ("jr5")) {
+		char *dr = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "%s,pc,:=", dr);
 	} else if (is_any ("jr")) {
 		char *dr = r_list_get_n (args, 0);
 		r_strbuf_setf (&op->esil, "%s,pc,:=", dr);
+	} else if (is_any ("j8", "j")) {
+		char *di = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "%s,pc,:=", di);
 	} else if (is_any ("ret", "ret5")) {
 		r_strbuf_set (&op->esil, "lp,pc,:=");
 	} else if (is_any ("beq")) {
@@ -146,7 +160,7 @@ static void decode_esil(RAnalOp *op) {
 			if (end) {
 				*end = 0;
 			}
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[1],:=", val, num);
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[1]", val, num);
 		}
 	} else if (is_any ("lbi.gp")) {
 		char *reg = r_list_get_n (args, 0);
@@ -201,7 +215,7 @@ static void decode_esil(RAnalOp *op) {
 			if (end) {
 				*end = 0;
 			}
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[4],:=", val, num);
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[4]", val, num);
 		}
 	} else if (is_any ("shi.gp")) {
 		char *val = r_list_get_n (args, 0);
@@ -219,7 +233,7 @@ static void decode_esil(RAnalOp *op) {
 			if (end) {
 				*end = 0;
 			}
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,[2],:=", val, num);
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[2]", val, num);
 		}
 	} else if (is_any ("shi")) {
 		char *val = r_list_get_n (args, 0);
@@ -238,13 +252,13 @@ static void decode_esil(RAnalOp *op) {
 				if (end) {
 					*end = 0;
 				}
-				r_strbuf_setf (&op->esil, "%s,%s,%s,+,[2],:=", val, reg, off);
+				r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[2]", val, reg, off);
 			} else {
 				char *end = strchr (addr, ']');
 				if (end) {
 					*end = 0;
 				}
-				r_strbuf_setf (&op->esil, "%s,%s,[2],:=", val, addr);
+				r_strbuf_setf (&op->esil, "%s,%s,=[2]", val, addr);
 			}
 		}
 	} else if (is_any ("addi.gp")) {
@@ -314,7 +328,7 @@ static void decode_esil(RAnalOp *op) {
 	} else if (is_any ("swi")) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
-		r_strbuf_setf (&op->esil, "%s,%s,[4],:=", sr, dr);
+		r_strbuf_setf (&op->esil, "%s,%s,=[4]", sr, dr);
 		// else if (is_any ("addi", "addri"))
 	} else if (is_any ("pop25")) {
 		char *reg = r_list_get_n (args, 0);
@@ -374,10 +388,16 @@ static void decode_esil(RAnalOp *op) {
 		char *ra = r_list_get_n (args, 1);
 		char *rb = r_list_get_n (args, 2);
 		r_strbuf_setf (&op->esil, "%s,%s,*,%s,:=", rb, ra, rt);
-	} else if (is_any ("slt45")) {
+	} else if (is_any ("slts45")) {
+		// slts45 rt, ra: ta = (rt <s ra) ? 1 : 0 (signed)
 		char *rt = r_list_get_n (args, 0);
 		char *ra = r_list_get_n (args, 1);
-		r_strbuf_setf (&op->esil, "%s,%s,<,?{,1,0,},%s,:=", rt, ra, rt);
+		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", ra, rt);
+	} else if (is_any ("slt45")) {
+		// slt45 rt, ra: ta = (rt < ra) ? 1 : 0 (unsigned)
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", ra, rt);
 	} else if (is_any ("mul33")) {
 		char *rt = r_list_get_n (args, 0);
 		char *ra = r_list_get_n (args, 1);
@@ -417,11 +437,11 @@ static void decode_esil(RAnalOp *op) {
 	} else if (is_any ("sbi")) {
 		char *sr = r_list_get_n (args, 0);
 		char *dr = r_list_get_n (args, 1);
-		r_strbuf_setf (&op->esil, "%s,%s,[1],:=", sr, dr);
+		r_strbuf_setf (&op->esil, "%s,%s,=[1]", sr, dr);
 	} else if (is_any ("push25")) {
 		char *reg = r_list_get_n (args, 0);
 		// push reg to stack: sp -= 4, [sp] = reg
-		r_strbuf_setf (&op->esil, "sp,4,-,sp,:=,%s,sp,[4],:=", reg);
+		r_strbuf_setf (&op->esil, "sp,4,-,sp,:=,%s,sp,=[4]", reg);
 	} else if (is_any ("ex9.it")) {
 		// execute IT instruction, probably no ESIL effect
 		r_strbuf_set (&op->esil, "");
@@ -430,11 +450,259 @@ static void decode_esil(RAnalOp *op) {
 		char *imm = r_list_get_n (args, 1);
 		// field extract: assume rt = rt &((1 << imm) - 1)
 		r_strbuf_setf (&op->esil, "1,%s,<<,1,-,%s,&,%s,:=", imm, rt, rt);
-	} else if (is_any ("slti45")) {
+	} else if (is_any ("sltsi45")) {
+		// sltsi45 rt, imm: ta = (rt <s imm) ? 1 : 0 (signed)
 		char *rt = r_list_get_n (args, 0);
 		char *imm = r_list_get_n (args, 1);
-		// set if less than immediate: rt = (rt < imm)? 1: 0
-		r_strbuf_setf (&op->esil, "%s,%s,<,?{,1,0,},%s,:=", rt, imm, rt);
+		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", imm, rt);
+	} else if (is_any ("slti45")) {
+		// slti45 rt, imm: ta = (rt < imm) ? 1 : 0 (unsigned)
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", imm, rt);
+	// --- missing branch ESIL ---
+	} else if (is_any ("beqzs8")) {
+		char *di = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "r5,!,?{,%s,pc,:=,}", di);
+	} else if (is_any ("bgez")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		// branch if reg >= 0: sign bit (bit 31) is 0
+		r_strbuf_setf (&op->esil, "31,%s,>>,!,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("bltz")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		// branch if reg < 0: sign bit (bit 31) is 1
+		r_strbuf_setf (&op->esil, "31,%s,>>,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("blez")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		// branch if reg <= 0: reg == 0 or sign bit set
+		r_strbuf_setf (&op->esil, "%s,!,31,%s,>>,|,?{,%s,pc,:=,}", reg, reg, addr);
+	} else if (is_any ("beqz38")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,!,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("bnez38")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("beqs38")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,r5,==,$z,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("bnes38")) {
+		char *reg = r_list_get_n (args, 0);
+		char *addr = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,r5,==,$z,!,?{,%s,pc,:=,}", reg, addr);
+	} else if (is_any ("beqc")) {
+		char *reg = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		char *addr = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", imm, reg, addr);
+	} else if (is_any ("bnec")) {
+		char *reg = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		char *addr = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", imm, reg, addr);
+	// --- missing ALU 3-reg ESIL ---
+	} else if (is_any ("add ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", rb, ra, rt);
+	} else if (is_any ("sub ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", rb, ra, rt);
+	} else if (is_any ("and ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", rb, ra, rt);
+	} else if (is_any ("or ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", rb, ra, rt);
+	} else if (is_any ("xor ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", rb, ra, rt);
+	} else if (is_any ("nor ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,|,~,%s,:=", rb, ra, rt);
+	} else if (is_any ("sll ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", rb, ra, rt);
+	} else if (is_any ("srl ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", rb, ra, rt);
+	} else if (is_any ("sra ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,ASR,%s,:=", rb, ra, rt);
+	} else if (is_any ("slt ")) {
+		// slt rt, ra, rb: rt = (ra < rb) ? 1 : 0 (unsigned)
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", rb, ra, rt);
+	} else if (is_any ("slts ")) {
+		// slts rt, ra, rb: rt = (ra <s rb) ? 1 : 0 (signed)
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", rb, ra, rt);
+	} else if (is_any ("slti ")) {
+		// slti rt, ra, imm: rt = (ra < imm) ? 1 : 0
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", imm, ra, rt);
+	} else if (is_any ("sltsi ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", imm, ra, rt);
+	} else if (is_any ("bitc")) {
+		// bitc rt, ra, rb: rt = ra & ~rb
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,~,%s,&,%s,:=", rb, ra, rt);
+	} else if (is_any ("bitci")) {
+		// bitci rt, ra, imm: rt = ra & ~imm
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,~,%s,&,%s,:=", imm, ra, rt);
+	} else if (is_any ("cmovz")) {
+		// cmovz rt, ra, rb: if rb == 0 then rt = ra
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,!,?{,%s,%s,:=,}", rb, ra, rt);
+	} else if (is_any ("cmovn")) {
+		// cmovn rt, ra, rb: if rb != 0 then rt = ra
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *rb = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,?{,%s,%s,:=,}", rb, ra, rt);
+	// --- missing 16-bit compact ESIL ---
+	} else if (is_any ("mov55")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,:=", ra, rt);
+	} else if (is_any ("movi55")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,:=", imm, rt);
+	} else if (is_any ("add45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", ra, rt, rt);
+	} else if (is_any ("sub45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", ra, rt, rt);
+	} else if (is_any ("subi45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", imm, rt, rt);
+	} else if (is_any ("srai45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,ASR,%s,:=", imm, rt, rt);
+	} else if (is_any ("slli333")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", imm, ra, rt);
+	} else if (is_any ("addi333")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", imm, ra, rt);
+	} else if (is_any ("neg33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "0,%s,-,%s,:=", ra, rt);
+	} else if (is_any ("not33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,~,%s,:=", ra, rt);
+	} else if (is_any ("and33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", ra, rt, rt);
+	} else if (is_any ("xor33")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", ra, rt, rt);
+	} else if (is_any ("seb33")) {
+		// sign extend byte
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "24,%s,<<,24,ASR,%s,:=", ra, rt);
+	} else if (is_any ("seh33")) {
+		// sign extend halfword
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "16,%s,<<,16,ASR,%s,:=", ra, rt);
+	} else if (is_any ("seb ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "24,%s,<<,24,ASR,%s,:=", ra, rt);
+	} else if (is_any ("seh ")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "16,%s,<<,16,ASR,%s,:=", ra, rt);
+	} else if (is_any ("zeh ")) {
+		// zero extend halfword
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "0xffff,%s,&,%s,:=", ra, rt);
+	} else if (is_any ("zeb33")) {
+		// zero extend byte
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "0xff,%s,&,%s,:=", ra, rt);
+	} else if (is_any ("xlsb33")) {
+		// extract LSB
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "1,%s,&,%s,:=", ra, rt);
+	} else if (is_any ("movpi45")) {
+		char *rt = r_list_get_n (args, 0);
+		char *imm = r_list_get_n (args, 1);
+		r_strbuf_setf (&op->esil, "%s,%s,:=", imm, rt);
+	} else if (is_any ("addi10s")) {
+		char *imm = r_list_get_n (args, 0);
+		r_strbuf_setf (&op->esil, "%s,sp,+,sp,:=", imm);
+	} else if (is_any ("rotri")) {
+		char *rt = r_list_get_n (args, 0);
+		char *ra = r_list_get_n (args, 1);
+		char *imm = r_list_get_n (args, 2);
+		r_strbuf_setf (&op->esil, "%s,%s,>>>,%s,:=", imm, ra, rt);
+	} else if (is_any ("nop")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("dsb", "msync", "isync", "standby")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("mfusr")) {
+		r_strbuf_set (&op->esil, "");
+	} else if (is_any ("lmw", "smw")) {
+		// complex multi-register load/store - skip ESIL
+		r_strbuf_set (&op->esil, "");
 	}
 	r_list_free (args);
 	free (name);
@@ -445,7 +713,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	const ut8 *buf = op->bytes;
 	ut8 bytes[8] = { 0 };
-	insn_t word = { 0 };
 	struct disassemble_info disasm_obj = { 0 };
 	RStrBuf *sb = r_strbuf_new (NULL);
 	memcpy (bytes, buf, R_MIN (sizeof (bytes), len)); // TODO handle thumb
@@ -518,71 +785,118 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 		}
 	}
-	if (is_any ("jral5")) {
-		op->type = R_ANAL_OP_TYPE_RJMP; // call?
-		// jump to register r1.. if .. 5?
-	} else if (is_any ("jal ", "jral ", "j ")) {
-// decide whether it's jump or call
-#ifndef OP_MASK_RD
-#define OP_MASK_RD 0x1f
-#define OP_SH_RD 11
-#endif
-		int rd = (word >> OP_SH_RD) & OP_MASK_RD;
-		op->type = (rd == 0)? R_ANAL_OP_TYPE_JMP: R_ANAL_OP_TYPE_CALL;
-		// op->jump = EXTRACT_UJTYPE_IMM (word) + addr;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		if (op->type == R_ANAL_OP_TYPE_CALL) {
-			op->fail = addr + op->size;
-		}
-	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		decode_esil (op);
 	}
-	if (is_any ("jr ")) {
-		op->type = R_ANAL_OP_TYPE_RJMP;
+	// control flow
+	if (is_any ("jral5")) {
+		op->type = R_ANAL_OP_TYPE_RCALL;
 	} else if (is_any ("jral ")) {
 		op->type = R_ANAL_OP_TYPE_RCALL;
-	} else if (is_any ("swi")) {
-		op->type = R_ANAL_OP_TYPE_SWI;
-	} else if (is_any ("ori")) {
-		op->type = R_ANAL_OP_TYPE_OR;
+		op->fail = addr + op->size;
+	} else if (is_any ("jr5")) {
+		op->type = R_ANAL_OP_TYPE_RJMP;
+	} else if (is_any ("jr ")) {
+		op->type = R_ANAL_OP_TYPE_RJMP;
+	} else if (is_any ("jal ")) {
+		op->type = R_ANAL_OP_TYPE_CALL;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
+	} else if (is_any ("j8", "j ")) {
+		op->type = R_ANAL_OP_TYPE_JMP;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
 	} else if (is_any ("ret", "iret")) {
 		op->type = R_ANAL_OP_TYPE_RET;
-	} else if (is_any ("addi", "addri")) {
-		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if (is_any ("subi", "subri", "sub")) {
-		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (is_any ("xori")) {
-		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if (is_any ("andi")) {
-		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (is_any ("xori")) {
-		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if (is_any ("sh", "sl", "slli")) {
-		op->type = R_ANAL_OP_TYPE_SHL;
-	} else if (is_any ("srli", "srai")) {
-		op->type = R_ANAL_OP_TYPE_SHR;
-	} else if (is_any ("lb", "lw", "ld", "lh", "lwi", "lbi", "lbi.gp", "lwi.gp")) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else if (is_any ("mov", "movi")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (is_any ("st", "sb", "sd", "sh", "swi", "sbi", "sbi.gp", "swi.gp", "shi.gp")) {
-		op->type = R_ANAL_OP_TYPE_STORE;
-	} else if (is_any ("addi.gp", "addri36.sp")) {
-		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (is_any ("bgezal", "bltzal")) {
+		op->type = R_ANAL_OP_TYPE_CCALL;
+		op->jump = arg? r_num_get (NULL, arg): op->addr;
+		op->fail = addr + op->size;
 	} else if (is_any ("ifcall")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
-	} else if (is_any ("bl")) { // "bgezal ", "bltzal ")) {
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		op->fail = addr + op->size;
-	} else if (is_any ("beqz", "bnes", "beq", "blez", "bgez", "ble", "bltz", "bgtz", "bnez", "bne ", "bnezs8")) {
+	} else if (is_any ("beqz", "bnez", "beq", "bne ", "blez", "bgez", "bltz", "bgtz",
+			"beqs38", "bnes38", "beqz38", "bnez38", "beqzs8", "bnezs8",
+			"beqc", "bnec")) {
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		// op->jump = EXTRACT_SBTYPE_IMM (word) + addr;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
+	// arithmetic
+	} else if (is_any ("addi", "addri", "addi.gp", "addri36.sp", "addi10s", "addi333", "addi45",
+			"add333", "add45", "add5.pc", "add_slli", "add_srli", "add.sc", "add.wc", "add ")) {
+		op->type = R_ANAL_OP_TYPE_ADD;
+	} else if (is_any ("subi", "subri", "sub333", "sub45", "subi333", "subi45",
+			"sub_slli", "sub_srli", "sub.sc", "sub.wc", "sub ")) {
+		op->type = R_ANAL_OP_TYPE_SUB;
+	} else if (is_any ("mul33", "mul ", "maddr32", "msubr32", "madd", "msub", "mult")) {
+		op->type = R_ANAL_OP_TYPE_MUL;
+	} else if (is_any ("divr", "divsr", "divs", "div ")) {
+		op->type = R_ANAL_OP_TYPE_DIV;
+	// bitwise
+	} else if (is_any ("ori", "or33", "or_slli", "or_srli", "or ")) {
+		op->type = R_ANAL_OP_TYPE_OR;
+	} else if (is_any ("xori", "xor33", "xor_slli", "xor_srli", "xor ")) {
+		op->type = R_ANAL_OP_TYPE_XOR;
+	} else if (is_any ("andi", "and33", "and_slli", "and_srli", "and ", "bitci")) {
+		op->type = R_ANAL_OP_TYPE_AND;
+	} else if (is_any ("nor ")) {
+		op->type = R_ANAL_OP_TYPE_NOR;
+	} else if (is_any ("not33")) {
+		op->type = R_ANAL_OP_TYPE_NOT;
+	// shifts
+	} else if (is_any ("slli", "sll ", "slli333")) {
+		op->type = R_ANAL_OP_TYPE_SHL;
+	} else if (is_any ("srli", "srl ", "srai", "sra ", "srli45", "srai45")) {
+		op->type = R_ANAL_OP_TYPE_SHR;
+	} else if (is_any ("rotri", "rotr ")) {
+		op->type = R_ANAL_OP_TYPE_ROR;
+	// load/store - more specific first to avoid startswith issues
+	} else if (is_any ("lbi.gp", "lbsi.gp", "lwi.gp", "lhi.gp", "lhsi.gp")) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	} else if (is_any ("sbi.gp", "swi.gp", "shi.gp")) {
+		op->type = R_ANAL_OP_TYPE_STORE;
+	} else if (is_any ("lwi", "lbi", "lhi", "ldi", "lbsi", "lhsi", "lwsi",
+			"lwi333", "lbi333", "lhi333", "lwi450", "lwi37", "lwi45",
+			"lw ", "lb ", "lh ", "ld ", "lbs", "lhs", "lws", "llw",
+			"lmw", "fls", "fld", "flsi", "fldi")) {
+		op->type = R_ANAL_OP_TYPE_LOAD;
+	} else if (is_any ("swi", "sbi", "shi", "sdi",
+			"swi333", "sbi333", "shi333", "swi450", "swi37",
+			"sw ", "sb ", "sd ", "scw",
+			"smw", "fss", "fsd", "fssi", "fsdi")) {
+		op->type = R_ANAL_OP_TYPE_STORE;
+	// move
+	} else if (is_any ("mov55", "mov ", "movi55", "movi", "movpi45", "movd44",
+			"sethi", "mfsr", "mtsr", "mfusr")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	} else if (is_any ("cmovz", "cmovn")) {
+		op->type = R_ANAL_OP_TYPE_CMOV;
+	// compare
+	} else if (is_any ("slt ", "slts ", "slt45", "slts45", "slti", "sltsi")) {
+		op->type = R_ANAL_OP_TYPE_CMP;
+	// sign/zero extend
+	} else if (is_any ("zeh", "zeb", "seh", "seb", "xlsb")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
+	// stack
+	} else if (is_any ("push25")) {
+		op->type = R_ANAL_OP_TYPE_PUSH;
+	} else if (is_any ("pop25")) {
+		op->type = R_ANAL_OP_TYPE_POP;
+	// system
+	} else if (is_any ("syscall")) {
+		op->type = R_ANAL_OP_TYPE_SWI;
+	} else if (is_any ("break", "trap", "teqz", "tnez")) {
+		op->type = R_ANAL_OP_TYPE_TRAP;
+	} else if (is_any ("nop")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+	} else if (is_any ("neg33")) {
+		op->type = R_ANAL_OP_TYPE_SUB;
+	} else if (is_any ("abs ")) {
+		op->type = R_ANAL_OP_TYPE_ABS;
+	} else if (is_any ("dsb", "isb", "msync", "isync", "standby", "cctl")) {
+		op->type = R_ANAL_OP_TYPE_NOP;
+	} else if (is_any ("mtusr")) {
+		op->type = R_ANAL_OP_TYPE_MOV;
 	}
 	free (name);
 	r_strbuf_free (sb);
