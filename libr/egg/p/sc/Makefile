@@ -7,6 +7,7 @@ all: out
 	@echo HAVE_PYTHON=$(HAVE_PYTHON)
 
 out:
+	-xattr -cr src/ 2>/dev/null
 ifeq ($(HAVE_PYTHON),1)
 	$(PYTHON3) scmangle.py --out-dir out/ src/*
 else

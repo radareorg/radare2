@@ -330,7 +330,14 @@ def main(argv: List[str]) -> int:
 
     # Process each input
     for p in expanded_inputs:
-        process_file(p, args.out_dir, ops)
+        if not os.path.isfile(p):
+            print(f"[skip] Not a file: {p}")
+            continue
+        try:
+            process_file(p, args.out_dir, ops)
+        except PermissionError as e:
+            print(f"[skip] Permission denied: {p} ({e})")
+            continue
 
     return 0
 
