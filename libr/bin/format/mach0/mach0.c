@@ -3027,9 +3027,14 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 			char *demangled = r_bin_demangle (bf, oname, oname, sym->vaddr, false);
 			if (demangled) {
 				r_bin_name_demangled (sym->name, demangled);
+				// swift demangled names follow Module.Type.member pattern
 				char *p = strchr (demangled, '.');
 				if (p) {
-					if (isupper (*demangled)) {
+					char *p2 = strchr (p + 1, '.');
+					if (p2 && isupper (*demangled) && isupper (p[1])) {
+						// Module.Class.method - use Module.Class
+						sym->classname = r_str_ndup (demangled, p2 - demangled);
+					} else if (isupper (*demangled)) {
 						sym->classname = r_str_ndup (demangled, (p - demangled));
 					} else if (isupper (p[1])) {
 						sym->classname = strdup (p + 1);
