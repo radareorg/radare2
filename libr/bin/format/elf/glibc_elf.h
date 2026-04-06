@@ -4102,6 +4102,38 @@ enum
 #define R_ARC_TLS_LE_S9		0x4a
 #define R_ARC_TLS_LE_32		0x4b
 
+/* V850 relocations */
+#define R_V850_NONE		0
+#define R_V850_9_PCREL		1
+#define R_V850_22_PCREL		2
+#define R_V850_HI16_S		3
+#define R_V850_HI16		4
+#define R_V850_LO16		5
+#define R_V850_ABS32		6
+#define R_V850_16		7
+#define R_V850_8		8
+#define R_V850_SDA_16_16_OFFSET	9
+#define R_V850_SDA_15_16_OFFSET	10
+#define R_V850_ZDA_16_16_OFFSET	11
+#define R_V850_ZDA_15_16_OFFSET	12
+#define R_V850_TDA_6_8_OFFSET	13
+#define R_V850_TDA_7_8_OFFSET	14
+#define R_V850_TDA_7_7_OFFSET	15
+#define R_V850_TDA_16_16_OFFSET	16
+#define R_V850_TDA_4_5_OFFSET	17
+#define R_V850_TDA_4_4_OFFSET	18
+#define R_V850_SDA_16_16_SPLIT_OFFSET	19
+#define R_V850_ZDA_16_16_SPLIT_OFFSET	20
+#define R_V850_CALLT_6_7_OFFSET	21
+#define R_V850_CALLT_16_16_OFFSET	22
+#define R_V850_32_PCREL		23
+#define R_V850_17_PCREL		24
+#define R_V850_23		25
+#define R_V850_RELATIVE		26
+#define R_V850_COPY		27
+#define R_V850_GLOB_DAT		28
+#define R_V850_JMP_SLOT		29
+
 __END_DECLS
 
 #endif	/* elf.h */
