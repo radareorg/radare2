@@ -1257,6 +1257,12 @@ R_API void r_str_sanitize(char *c) {
 			case '\r':
 			case '<':
 			case '>':
+			case '!':
+			case '\n':
+			case '\r':
+			case '\\':
+			case '"':
+			case '\'':
 				*c = '_';
 				continue;
 			}
