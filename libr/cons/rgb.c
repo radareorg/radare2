@@ -158,9 +158,8 @@ R_API char *r_cons_rgb_str_mode(RCons *cons, char *outstr, size_t sz, RColor *rc
 	}
 	*outstr = 0;
 	if (rcolor->a == ALPHA_RESET) {
-		size_t rlen = strlen (Color_RESET);
-		if (sz > rlen) {
-			memcpy (outstr, Color_RESET, rlen + 1);
+		if (sz >= sizeof (Color_RESET)) {
+			memcpy (outstr, Color_RESET, sizeof (Color_RESET));
 		}
 		return outstr;
 	}

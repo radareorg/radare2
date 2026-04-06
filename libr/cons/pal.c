@@ -512,16 +512,12 @@ static void r_cons_pal_show_gs(RCons *cons) {
 	r_cons_print (cons, "\nGreyscale:\n");
 	RColor rcolor = RColor_BLACK;
 	for (i = 0x08, n = 0;  i <= 0xee; i += 0xa) {
-		char fg[32], bg[32];
+		char bg[32];
 		rcolor.r = i;
 		rcolor.g = i;
 		rcolor.b = i;
 
-		if (i < 0x76) {
-			strcpy (fg, Color_WHITE);
-		} else {
-			strcpy (fg, Color_BLACK);
-		}
+		const char *fg = (i < 0x76) ? Color_WHITE : Color_BLACK;
 		r_cons_rgb_str (cons, bg, sizeof (bg), &rcolor);
 		r_cons_printf (cons, "%s%s rgb:%02x%02x%02x "Color_RESET,
 			fg, bg, i, i, i);
@@ -572,12 +568,12 @@ static void r_cons_pal_show_rgb(RCons *cons) {
 	for (i = n = 0; i <= 0xf; i += inc) {
 		for (k = 0; k <= 0xf; k += inc) {
 			for (j = 0; j <= 0xf; j += inc) {
-				char fg[32], bg[32];
+				char bg[32];
 				rc.r = i * 16;
 				rc.g = j * 16;
 				rc.b = k * 16;
-				strcpy (fg, ((i < 6) && (j < 5))
-					? Color_WHITE: Color_BLACK);
+				const char *fg = ((i < 6) && (j < 5))
+					? Color_WHITE: Color_BLACK;
 				r_cons_rgb_str (cons, bg, sizeof (bg), &rc);
 				r_cons_printf (cons, "%s%s rgb:%02x%02x%02x "
 					Color_RESET, fg, bg, rc.r, rc.g, rc.b);
