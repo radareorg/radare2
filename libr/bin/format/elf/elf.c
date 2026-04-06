@@ -512,6 +512,7 @@ static void set_default_value_dynamic_info(ELFOBJ *eo) {
 	eo->dyn_info.dt_jmprel = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_pltgot = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_mips_pltgot = R_BIN_ELF_ADDR_MAX;
+	eo->dyn_info.dt_ppc64_glink = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_crel = R_BIN_ELF_ADDR_MAX;
 	eo->dyn_info.dt_bind_now = false;
 	eo->dyn_info.dt_flags = R_BIN_ELF_XWORD_MAX;
@@ -607,6 +608,9 @@ static void fill_dynamic_entries(ELFOBJ *eo, ut64 loaded_offset, ut64 dyn_size) 
 			break;
 		case DT_MIPS_PLTGOT:
 			eo->dyn_info.dt_mips_pltgot = d.d_un.d_ptr;
+			break;
+		case DT_PPC64_GLINK:
+			eo->dyn_info.dt_ppc64_glink = d.d_un.d_ptr;
 			break;
 		case DT_CREL:
 			eo->dyn_info.dt_crel = d.d_un.d_ptr;
@@ -1819,7 +1823,114 @@ static ut64 get_import_addr_s390x(ELFOBJ *eo, RBinElfReloc *rel) {
 	return a - 14;
 }
 
+#if R_BIN_ELF64
+// PowerPC 64-bit ELF v1 uses an Official Procedure Descriptor (.opd) section.
+// Every function symbol's st_value — including e_entry — points to a 24-byte
+// descriptor [code_addr(8), toc(8), env(8)] rather than directly to code.
+// Dereference the first 8 bytes of the descriptor to get the real code address.
+// Returns UT64_MAX when the address does not fall inside .opd or the arch/endian
+// does not match.
+static ut64 ppc64v1_opd_deref(ELFOBJ *eo, ut64 vaddr) {
+	if (eo->ehdr.e_machine != EM_PPC64 || !eo->endian) {
+		return UT64_MAX;
+	}
+	if (!eo->sections_loaded) {
+		_load_elf_sections (eo);
+	}
+	RBinElfSection *opd = get_section_by_name (eo, ".opd");
+	if (!opd || vaddr < opd->rva || vaddr + 8 > opd->rva + opd->size) {
+		return UT64_MAX;
+	}
+	ut64 foff = opd->offset + (vaddr - opd->rva);
+	ut64 code_addr = r_buf_read_ble64_at (eo->b, foff, eo->endian);
+	return (code_addr == UT64_MAX) ? UT64_MAX : code_addr;
+}
+#endif
+
+#if R_BIN_ELF64
+// Build a map of PLT slot vaddr -> lazy stub vaddr for PPC64 ELFv1 big-endian
+// binaries using the DT_PPC64_GLINK anchor.  Mirrors the algorithm in
+// ppc64_elf_get_synthetic_symtab () in binutils bfd/elf64-ppc.c.
+//
+// DT_PPC64_GLINK = glink_section_vma + GLINK_PLTRESOLVE_SIZE - 32, so:
+//   first_stub_vma = DT_PPC64_GLINK + 32
+//
+// Stubs 0-32767: 8 bytes each; stubs 32768+: 12 bytes each.
+// Stub N corresponds to the N-th DT_JMPREL entry (same order); that
+// entry's r_offset is the PLT slot vaddr.
+static HtUU *ppc64v1_build_glink_map(ELFOBJ *eo) {
+	size_t relsize;
+	ut64 stub_vma, num_plts, rela_off, slot_vaddr, n;
+	HtUU *map;
+	if (eo->dyn_info.dt_ppc64_glink == R_BIN_ELF_ADDR_MAX) {
+		return NULL;
+	}
+	if (eo->dyn_info.dt_jmprel == R_BIN_ELF_ADDR_MAX || !eo->dyn_info.dt_pltrelsz) {
+		return NULL;
+	}
+	relsize = get_size_rel_mode (eo->dyn_info.dt_pltrel);
+	if (!relsize) {
+		return NULL;
+	}
+	map = ht_uu_new0 ();
+	if (!map) {
+		return NULL;
+	}
+	stub_vma = eo->dyn_info.dt_ppc64_glink + 8 * 4;
+	num_plts = eo->dyn_info.dt_pltrelsz / relsize;
+	for (n = 0; n < num_plts; n++) {
+		rela_off = Elf_(v2p_new) (eo, eo->dyn_info.dt_jmprel + n * relsize);
+		if (rela_off == UT64_MAX) {
+			break;
+		}
+		slot_vaddr = r_buf_read_ble64_at (eo->b, rela_off, eo->endian);
+		if (slot_vaddr == UT64_MAX) {
+			break;
+		}
+		ht_uu_insert (map, slot_vaddr, stub_vma);
+		stub_vma += 8;
+		if (n >= 0x8000) {
+			stub_vma += 4;
+		}
+	}
+	return map;
+}
+#endif
+
+// Public API: return the PLT stub vaddr for the given GOT slot address in a
+// PPC64 ELFv1 big-endian binary, building the stub cache if necessary.
+// Returns UT64_MAX when the slot has no known stub (wrong arch, or no match).
+ut64 Elf_(ppc64v1_get_plt_stub_for_slot)(ELFOBJ *eo, ut64 slot_vaddr) {
+#if R_BIN_ELF64
+	if (eo->ehdr.e_machine == EM_PPC64 && eo->endian) {
+		if (!eo->ppc64_plt_stubs) {
+			eo->ppc64_plt_stubs = ppc64v1_build_glink_map (eo);
+		}
+		if (eo->ppc64_plt_stubs) {
+			bool found = false;
+			ut64 stub = ht_uu_find (eo->ppc64_plt_stubs, slot_vaddr, &found);
+			if (found) {
+				return stub;
+			}
+		}
+	}
+#endif
+	return UT64_MAX;
+}
+
 static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
+#if R_BIN_ELF64
+	if (eo->ehdr.e_machine == EM_PPC64 && eo->endian) {
+		// PPC64 ELFv1: PLT stubs live in .text; look up via stub cache
+		ut64 stub = Elf_(ppc64v1_get_plt_stub_for_slot) (eo, rel->rva);
+		if (stub != UT64_MAX) {
+			return stub;
+		}
+		// Fallback: return the PLT slot address (when DT_PPC64_GLINK is
+		// absent or the GLINK map lookup fails)
+		return rel->rva;
+	}
+#endif
 	ut64 plt_addr = eo->dyn_info.dt_pltgot;
 	if (plt_addr == R_BIN_ELF_ADDR_MAX) {
 		return UT64_MAX;
@@ -2208,6 +2319,12 @@ ut64 Elf_(get_entry_offset)(ELFOBJ *eo) {
 
 	ut64 entry = eo->ehdr.e_entry;
 	if (entry) {
+#if R_BIN_ELF64
+		ut64 code_addr = ppc64v1_opd_deref (eo, entry);
+		if (code_addr != UT64_MAX) {
+			entry = code_addr;
+		}
+#endif
 		return Elf_(v2p) (eo, entry);
 	}
 
@@ -4756,6 +4873,14 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			tsize = new_symbol.st_size;
 			toffset = (ut64) new_symbol.st_value;
 			is_sht_null = new_symbol.st_shndx == SHT_NULL;
+#if R_BIN_ELF64
+			if (ELF64_ST_TYPE (new_symbol.st_info) == STT_FUNC) {
+				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
+				if (code_addr != UT64_MAX) {
+					toffset = code_addr;
+				}
+			}
+#endif
 		} else {
 			// why continue here?
 			continue;
@@ -5382,6 +5507,14 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			tsize = sym.st_size;
 			toffset = (ut64)sym.st_value;
 			is_sht_null = sym.st_shndx == SHT_NULL;
+#if R_BIN_ELF64
+			if (ELF64_ST_TYPE (sym.st_info) == STT_FUNC) {
+				ut64 code_addr = ppc64v1_opd_deref (eo, toffset);
+				if (code_addr != UT64_MAX) {
+					toffset = code_addr;
+				}
+			}
+#endif
 		}
 
 		if (is_bin_etrel (eo)) {
@@ -5734,6 +5867,7 @@ void Elf_(free)(ELFOBJ* eo) {
 		RVecRBinSymbol_fini (&eo->plt_symbols_cache);
 	}
 	ht_uu_free (eo->rel_cache);
+	ht_uu_free (eo->ppc64_plt_stubs);
 	sdb_free (eo->kv);
 	r_list_free (eo->inits);
 	free (eo);
