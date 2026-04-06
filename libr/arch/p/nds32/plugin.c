@@ -1,4 +1,4 @@
-/* radare - MIT - Copyright 2023-2025 - pancake, decaduto */
+/* radare - MIT - Copyright 2023-2026 - pancake, decaduto */
 
 #include <r_arch.h>
 #include <r_lib.h>
@@ -38,11 +38,7 @@ static bool _is_any(const char *str, ...) {
 static void fill_args(RList *args, char **av, int avsz) {
 	RListIter *iter;
 	char *arg;
-	int i;
-	for (i = 0; i < avsz; i++) {
-		av[i] = "";
-	}
-	i = 0;
+	int i = 0;
 	r_list_foreach (args, iter, arg) {
 		if (i >= avsz) {
 			break;
@@ -50,12 +46,12 @@ static void fill_args(RList *args, char **av, int avsz) {
 		r_str_trim (arg);
 		av[i++] = arg;
 	}
+	for (; i < avsz; i++) {
+		av[i] = "";
+	}
 }
 
 static char *parse_gp_off(char *off) {
-	if (!off || !*off) {
-		return "";
-	}
 	r_str_trim (off);
 	if (*off == '[') {
 		off++;
@@ -72,9 +68,6 @@ static char *parse_gp_off(char *off) {
 }
 
 static char *parse_mem_addr(char *addr) {
-	if (!addr || !*addr) {
-		return "";
-	}
 	r_str_trim (addr);
 	if (*addr == '[') {
 		addr++;
