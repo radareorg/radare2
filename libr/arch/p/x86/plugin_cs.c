@@ -4140,12 +4140,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 }
 
-static int cs_len_prefix_opcode(uint8_t *item) {
-	int i, len = 0;
-	for (i = 0; i < 4; i++) {
-		len += (item[i] != 0) ? 1 : 0;
-	}
-	return len;
+static inline int cs_len_prefix_opcode(const uint8_t *item) {
+	return (item[0] != 0) + (item[1] != 0) + (item[2] != 0) + (item[3] != 0);
 }
 
 static bool plugin_changed(RArchSession *as) {
@@ -4191,7 +4187,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 
 	op->cycles = 1; // aprox
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
+	// CS_OPT_DETAIL is already set during init, no need to set per-instruction
 	// capstone-next
 #if USE_ITER_API
 	cs_detail insnack_detail = {{0}};
@@ -4222,22 +4218,37 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->size = 1;
 	} else {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
-			op->mnemonic = r_str_newf ("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0]?" ":"",
-				insn->op_str);
-			if (op->mnemonic) {
+			// Build mnemonic string directly, avoiding r_str_newf + r_str_replace overhead.
+			// This is the hot path for disassembly output.
+			const char *mn = insn->mnemonic;
+			const char *ops = insn->op_str;
+			size_t mlen = strlen (mn);
+			size_t olen = ops[0] ? strlen (ops) : 0;
+			char *buf = malloc (mlen + 1 + olen + 1);
+			if (buf) {
+				memcpy (buf, mn, mlen);
+				if (olen) {
+					buf[mlen] = ' ';
+					memcpy (buf + mlen + 1, ops, olen + 1);
+				} else {
+					buf[mlen] = '\0';
+				}
+				// Remove "ptr " in-place (non-MASM syntax) instead of reallocating
 				if (as->config->syntax != R_ARCH_SYNTAX_MASM) {
-					op->mnemonic = r_str_replace (op->mnemonic, "ptr ", "", true);
+					char *p;
+					while ((p = strstr (buf, "ptr ")) != NULL) {
+						memmove (p, p + 4, strlen (p + 4) + 1);
+					}
 				}
 				if (as->config->syntax == R_ARCH_SYNTAX_JZ) {
-					if (r_str_startswith (op->mnemonic, "je ")) {
-						op->mnemonic[1] = 'z';
-					} else if (r_str_startswith (op->mnemonic, "jne ")) {
-						op->mnemonic[2] = 'z';
+					if (r_str_startswith (buf, "je ")) {
+						buf[1] = 'z';
+					} else if (r_str_startswith (buf, "jne ")) {
+						buf[2] = 'z';
 					}
 				}
 			}
+			op->mnemonic = buf;
 		}
 		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
 			+ cs_len_prefix_opcode (insn->detail->x86.opcode);

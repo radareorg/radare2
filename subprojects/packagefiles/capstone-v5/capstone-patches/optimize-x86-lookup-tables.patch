@@ -1,0 +1,636 @@
+diff --git a/MCInst.c b/MCInst.c
+index 1e876ce..407ee3a 100644
+--- a/MCInst.c
++++ b/MCInst.c
+@@ -33,8 +33,9 @@ void MCInst_Init(MCInst *inst)
+ 	inst->assembly[0] = '\0';
+ 	inst->wasm_data.type = WASM_OP_INVALID;
+ 	inst->xAcquireRelease = 0;
+-	for (int i = 0; i < MAX_MC_OPS; ++i)
+-		inst->tied_op_idx[i] = -1;
++	// Use memset instead of per-element loop for tied_op_idx initialization.
++	// Setting all bytes to 0xff makes each int8_t element equal to -1.
++	memset(inst->tied_op_idx, 0xff, sizeof(inst->tied_op_idx));
+ }
+ 
+ void MCInst_clear(MCInst *inst)
+diff --git a/SStream.c b/SStream.c
+index 1e4e370..845f6e9 100644
+--- a/SStream.c
++++ b/SStream.c
+@@ -32,8 +32,11 @@ void SStream_concat0(SStream *ss, const char *s)
+ {
+ #ifndef CAPSTONE_DIET
+ 	unsigned int len = (unsigned int) strlen(s);
++	unsigned int remaining = SSTREAM_BUF_LEN - ss->index - 1;
++
++	if (len > remaining)
++		len = remaining;
+ 
+-	SSTREAM_OVERFLOW_CHECK(ss, len);
+ 	memcpy(ss->buffer + ss->index, s, len);
+ 	ss->index += len;
+ 	ss->buffer[ss->index] = '\0';
+@@ -67,31 +70,116 @@ void SStream_concat(SStream *ss, const char *fmt, ...)
+ #endif
+ }
+ 
++// Fast integer to hex string conversion, avoiding vsnprintf overhead.
++// Returns number of characters written (not including null terminator).
++static int fast_utoa_hex(char *buf, uint64_t val)
++{
++	static const char hex_chars[] = "0123456789abcdef";
++	char tmp[17]; // max 16 hex digits + null
++	int len = 0;
++
++	if (val == 0) {
++		buf[0] = '0';
++		buf[1] = '\0';
++		return 1;
++	}
++
++	// generate digits in reverse
++	while (val) {
++		tmp[len++] = hex_chars[val & 0xf];
++		val >>= 4;
++	}
++
++	// reverse into output
++	for (int i = 0; i < len; i++) {
++		buf[i] = tmp[len - 1 - i];
++	}
++	buf[len] = '\0';
++	return len;
++}
++
++// Fast unsigned integer to decimal string conversion.
++static int fast_utoa_dec(char *buf, uint64_t val)
++{
++	char tmp[21]; // max 20 decimal digits + null
++	int len = 0;
++
++	if (val == 0) {
++		buf[0] = '0';
++		buf[1] = '\0';
++		return 1;
++	}
++
++	while (val) {
++		tmp[len++] = '0' + (char)(val % 10);
++		val /= 10;
++	}
++
++	for (int i = 0; i < len; i++) {
++		buf[i] = tmp[len - 1 - i];
++	}
++	buf[len] = '\0';
++	return len;
++}
++
++// Fast SStream append for integer values with optional prefix/sign.
++// This replaces SStream_concat(O, "prefix0x%x", val) patterns
++// that were the #4 bottleneck due to vsnprintf overhead.
++static void SStream_concat_num(SStream *ss, const char *prefix, uint64_t val, bool use_hex)
++{
++#ifndef CAPSTONE_DIET
++	char *dst = ss->buffer + ss->index;
++	char *end = ss->buffer + SSTREAM_BUF_LEN - 1;
++	const char *p = prefix;
++	int num_len;
++
++	// copy prefix
++	while (*p && dst < end) {
++		*dst++ = *p++;
++	}
++
++	if (dst >= end) {
++		*dst = '\0';
++		ss->index = (int)(dst - ss->buffer);
++		return;
++	}
++
++	if (use_hex) {
++		num_len = fast_utoa_hex(dst, val);
++	} else {
++		num_len = fast_utoa_dec(dst, val);
++	}
++
++	dst += num_len;
++	ss->index = (int)(dst - ss->buffer);
++#endif
++}
++
+ // print number with prefix #
+ void printInt64Bang(SStream *O, int64_t val)
+ {
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+-			SStream_concat(O, "#0x%"PRIx64, val);
++			SStream_concat_num(O, "#0x", (uint64_t)val, true);
+ 		else
+-			SStream_concat(O, "#%"PRIu64, val);
++			SStream_concat_num(O, "#", (uint64_t)val, false);
+ 	} else {
+ 		if (val <- HEX_THRESHOLD) {
+ 			if (val == LONG_MIN)
+-				SStream_concat(O, "#-0x%"PRIx64, (uint64_t)val);
++				SStream_concat_num(O, "#-0x", (uint64_t)val, true);
+ 			else
+-				SStream_concat(O, "#-0x%"PRIx64, (uint64_t)-val);
++				SStream_concat_num(O, "#-0x", (uint64_t)-val, true);
+ 		} else
+-			SStream_concat(O, "#-%"PRIu64, -val);
++			SStream_concat_num(O, "#-", (uint64_t)-val, false);
+ 	}
+ }
+ 
+ void printUInt64Bang(SStream *O, uint64_t val)
+ {
+ 	if (val > HEX_THRESHOLD)
+-		SStream_concat(O, "#0x%"PRIx64, val);
++		SStream_concat_num(O, "#0x", val, true);
+ 	else
+-		SStream_concat(O, "#%"PRIu64, val);
++		SStream_concat_num(O, "#", val, false);
+ }
+ 
+ // print number
+@@ -99,38 +187,38 @@ void printInt64(SStream *O, int64_t val)
+ {
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+-			SStream_concat(O, "0x%"PRIx64, val);
++			SStream_concat_num(O, "0x", (uint64_t)val, true);
+ 		else
+-			SStream_concat(O, "%"PRIu64, val);
++			SStream_concat_num(O, "", (uint64_t)val, false);
+ 	} else {
+ 		if (val <- HEX_THRESHOLD) {
+ 			if (val == LONG_MIN)
+-				SStream_concat(O, "-0x%"PRIx64, (uint64_t)val);
++				SStream_concat_num(O, "-0x", (uint64_t)val, true);
+ 			else
+-				SStream_concat(O, "-0x%"PRIx64, (uint64_t)-val);
++				SStream_concat_num(O, "-0x", (uint64_t)-val, true);
+ 		} else
+-			SStream_concat(O, "-%"PRIu64, -val);
++			SStream_concat_num(O, "-", (uint64_t)-val, false);
+ 	}
+ }
+ 
+ void printUInt64(SStream *O, uint64_t val)
+ {
+ 	if (val > HEX_THRESHOLD)
+-		SStream_concat(O, "0x%"PRIx64, val);
++		SStream_concat_num(O, "0x", val, true);
+ 	else
+-		SStream_concat(O, "%"PRIu64, val);
++		SStream_concat_num(O, "", val, false);
+ }
+ 
+ // print number in decimal mode
+ void printInt32BangDec(SStream *O, int32_t val)
+ {
+ 	if (val >= 0)
+-		SStream_concat(O, "#%u", val);
++		SStream_concat_num(O, "#", (uint64_t)(uint32_t)val, false);
+ 	else {
+ 		if (val == INT_MIN)
+-			SStream_concat(O, "#-%u", val);
++			SStream_concat_num(O, "#-", (uint64_t)(uint32_t)val, false);
+ 		else
+-			SStream_concat(O, "#-%u", (uint32_t)-val);
++			SStream_concat_num(O, "#-", (uint64_t)(uint32_t)-val, false);
+ 	}
+ }
+ 
+@@ -138,17 +226,17 @@ void printInt32Bang(SStream *O, int32_t val)
+ {
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+-			SStream_concat(O, "#0x%x", val);
++			SStream_concat_num(O, "#0x", (uint64_t)(uint32_t)val, true);
+ 		else
+-			SStream_concat(O, "#%u", val);
++			SStream_concat_num(O, "#", (uint64_t)(uint32_t)val, false);
+ 	} else {
+ 		if (val <- HEX_THRESHOLD) {
+ 			if (val == INT_MIN)
+-				SStream_concat(O, "#-0x%x", (uint32_t)val);
++				SStream_concat_num(O, "#-0x", (uint64_t)(uint32_t)val, true);
+ 			else
+-				SStream_concat(O, "#-0x%x", (uint32_t)-val);
++				SStream_concat_num(O, "#-0x", (uint64_t)(uint32_t)-val, true);
+ 		} else
+-			SStream_concat(O, "#-%u", -val);
++			SStream_concat_num(O, "#-", (uint64_t)(uint32_t)-val, false);
+ 	}
+ }
+ 
+@@ -156,32 +244,32 @@ void printInt32(SStream *O, int32_t val)
+ {
+ 	if (val >= 0) {
+ 		if (val > HEX_THRESHOLD)
+-			SStream_concat(O, "0x%x", val);
++			SStream_concat_num(O, "0x", (uint64_t)(uint32_t)val, true);
+ 		else
+-			SStream_concat(O, "%u", val);
++			SStream_concat_num(O, "", (uint64_t)(uint32_t)val, false);
+ 	} else {
+ 		if (val <- HEX_THRESHOLD) {
+ 			if (val == INT_MIN)
+-				SStream_concat(O, "-0x%x", (uint32_t)val);
++				SStream_concat_num(O, "-0x", (uint64_t)(uint32_t)val, true);
+ 			else
+-				SStream_concat(O, "-0x%x", (uint32_t)-val);
++				SStream_concat_num(O, "-0x", (uint64_t)(uint32_t)-val, true);
+ 		} else
+-			SStream_concat(O, "-%u", -val);
++			SStream_concat_num(O, "-", (uint64_t)(uint32_t)-val, false);
+ 	}
+ }
+ 
+ void printUInt32Bang(SStream *O, uint32_t val)
+ {
+ 	if (val > HEX_THRESHOLD)
+-		SStream_concat(O, "#0x%x", val);
++		SStream_concat_num(O, "#0x", (uint64_t)val, true);
+ 	else
+-		SStream_concat(O, "#%u", val);
++		SStream_concat_num(O, "#", (uint64_t)val, false);
+ }
+ 
+ void printUInt32(SStream *O, uint32_t val)
+ {
+ 	if (val > HEX_THRESHOLD)
+-		SStream_concat(O, "0x%x", val);
++		SStream_concat_num(O, "0x", (uint64_t)val, true);
+ 	else
+-		SStream_concat(O, "%u", val);
++		SStream_concat_num(O, "", (uint64_t)val, false);
+ }
+diff --git a/arch/X86/X86ATTInstPrinter.c b/arch/X86/X86ATTInstPrinter.c
+index 216efb2..edf8087 100644
+--- a/arch/X86/X86ATTInstPrinter.c
++++ b/arch/X86/X86ATTInstPrinter.c
+@@ -536,6 +536,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			imm = imm & 0xffffffff;
+ 		}
+ 
++		if (MI->csh->mode == CS_MODE_16)
++			imm |= (MI->address >> 16) << 16;
++
+ 		if (imm < 0) {
+ 			SStream_concat(O, "0x%"PRIx64, imm);
+ 		} else {
+@@ -960,7 +963,7 @@ void X86_ATT_printInst(MCInst *MI, SStream *OS, void *info)
+ 
+ 		//printf(">>> opcode = %u\n", MCInst_getOpcode(MI));
+ 
+-		reg = X86_insn_reg_att(MCInst_getOpcode(MI), &access1);
++		reg = X86_insn_reg_att_h(MI->csh, MCInst_getOpcode(MI), &access1);
+ 		if (reg) {
+ 			// shift all the ops right to leave 1st slot for this new register op
+ 			memmove(&(MI->flat_insn->detail->x86.operands[1]), &(MI->flat_insn->detail->x86.operands[0]),
+diff --git a/arch/X86/X86IntelInstPrinter.c b/arch/X86/X86IntelInstPrinter.c
+index 6167e85..35b5c2d 100644
+--- a/arch/X86/X86IntelInstPrinter.c
++++ b/arch/X86/X86IntelInstPrinter.c
+@@ -711,7 +711,7 @@ void X86_Intel_printInst(MCInst *MI, SStream *O, void *Info)
+ 	X86_lockrep(MI, O);
+ 	printInstruction(MI, O);
+ 
+-	reg = X86_insn_reg_intel(MCInst_getOpcode(MI), &access1);
++	reg = X86_insn_reg_intel_h(MI->csh, MCInst_getOpcode(MI), &access1);
+ 	if (MI->csh->detail) {
+ #ifndef CAPSTONE_DIET
+ 		uint8_t access[6] = {0};
+@@ -767,6 +767,9 @@ static void printPCRelImm(MCInst *MI, unsigned OpNo, SStream *O)
+ 			imm = imm & 0xffffffff;
+ 		}
+ 
++		if (MI->csh->mode == CS_MODE_16)
++			imm |= (MI->address >> 16) << 16;
++
+ 		printImm(MI, O, imm, true);
+ 
+ 		if (MI->csh->detail) {
+diff --git a/arch/X86/X86Mapping.c b/arch/X86/X86Mapping.c
+index 1a46065..c77e441 100644
+--- a/arch/X86/X86Mapping.c
++++ b/arch/X86/X86Mapping.c
+@@ -976,18 +976,28 @@ static void arr_replace(uint16_t *arr, uint8_t max, x86_reg r1, x86_reg r2)
+ }
+ #endif
+ 
+-// look for @id in @insns
+-// return -1 if not found
++// X86_build_lookup_tables() is defined later in this file (after insn_regs_* arrays).
++// It builds per-handle O(1) lookup tables in cs_struct for thread safety.
++
++// O(1) lookup with per-handle table. Used by functions that have a cs_struct *.
++static inline unsigned int find_insn_h(cs_struct *h, unsigned int id)
++{
++	if (h && h->x86_insn_lut && id <= h->x86_insn_lut_max)
++		return h->x86_insn_lut[id];
++
++	return find_insn(id);
++}
++
++// Fallback find_insn for callers without a cs_struct * (e.g., the decoder).
++// Uses binary search since no per-handle table is available.
+ unsigned int find_insn(unsigned int id)
+ {
+-	// binary searching since the IDs are sorted in order
+ 	unsigned int left, right, m;
+ 	unsigned int max = ARR_SIZE(insns);
+ 
+ 	right = max - 1;
+ 
+ 	if (id < insns[0].id || id > insns[right].id)
+-		// not found
+ 		return -1;
+ 
+ 	left = 0;
+@@ -1004,15 +1014,13 @@ unsigned int find_insn(unsigned int id)
+ 			left = m + 1;
+ 	}
+ 
+-	// not found
+-	// printf("NOT FOUNDDDDDDDDDDDDDDD id = %u\n", id);
+ 	return -1;
+ }
+ 
+ // given internal insn id, return public instruction info
+ void X86_get_insn_id(cs_struct *h, cs_insn *insn, unsigned int id)
+ {
+-	unsigned int i = find_insn(id);
++	unsigned int i = find_insn_h(h, id);
+ 	if (i != -1) {
+ 		insn->id = insns[i].mapid;
+ 
+@@ -1515,33 +1523,103 @@ static int binary_search2(const struct insn_reg2 *insns, unsigned int max, unsig
+ 	return -1;
+ }
+ 
++// Build per-handle O(1) lookup tables for instruction mapping.
++// Called from X86_global_init() during cs_open(). Each handle gets its own
++// copy of the lookup tables, making this thread-safe.
++void X86_build_lookup_tables(cs_struct *h)
++{
++	unsigned int i;
++	unsigned int max = ARR_SIZE(insns);
++	unsigned int id_max;
++
++	if (h->x86_insn_lut)
++		return;
++
++	id_max = insns[max - 1].id;
++	h->x86_insn_lut_max = id_max;
++
++	h->x86_insn_lut = (unsigned int *)cs_mem_malloc((id_max + 1) * sizeof(unsigned int));
++	if (!h->x86_insn_lut)
++		return;
++
++	memset(h->x86_insn_lut, 0xff, (id_max + 1) * sizeof(unsigned int));
++
++	for (i = 0; i < max; i++) {
++		h->x86_insn_lut[insns[i].id] = i;
++	}
++
++	// Build insn_reg lookup tables (packed: low 16 bits = reg, bits 16-23 = access)
++	h->x86_insn_reg_intel_lut = (uint32_t *)cs_mem_calloc(id_max + 1, sizeof(uint32_t));
++	if (h->x86_insn_reg_intel_lut) {
++		for (i = 0; i < ARR_SIZE(insn_regs_intel); i++) {
++			unsigned int insn_id = insn_regs_intel[i].insn;
++			if (insn_id <= id_max)
++				h->x86_insn_reg_intel_lut[insn_id] = (uint32_t)insn_regs_intel[i].reg | ((uint32_t)insn_regs_intel[i].access << 16);
++		}
++		for (i = 0; i < ARR_SIZE(insn_regs_intel_extra); i++) {
++			unsigned int insn_id = insn_regs_intel_extra[i].insn;
++			if (insn_id && insn_id <= id_max && !h->x86_insn_reg_intel_lut[insn_id])
++				h->x86_insn_reg_intel_lut[insn_id] = (uint32_t)insn_regs_intel_extra[i].reg | ((uint32_t)insn_regs_intel_extra[i].access << 16);
++		}
++	}
++
++	h->x86_insn_reg_att_lut = (uint32_t *)cs_mem_calloc(id_max + 1, sizeof(uint32_t));
++	if (h->x86_insn_reg_att_lut) {
++		for (i = 0; i < ARR_SIZE(insn_regs_att); i++) {
++			unsigned int insn_id = insn_regs_att[i].insn;
++			if (insn_id <= id_max)
++				h->x86_insn_reg_att_lut[insn_id] = (uint32_t)insn_regs_att[i].reg | ((uint32_t)insn_regs_att[i].access << 16);
++		}
++		for (i = 0; i < ARR_SIZE(insn_regs_att_extra); i++) {
++			unsigned int insn_id = insn_regs_att_extra[i].insn;
++			if (insn_id && insn_id <= id_max && !h->x86_insn_reg_att_lut[insn_id])
++				h->x86_insn_reg_att_lut[insn_id] = (uint32_t)insn_regs_att_extra[i].reg | ((uint32_t)insn_regs_att_extra[i].access << 16);
++		}
++	}
++}
++
+ // return register of given instruction id
+ // return 0 if not found
+ // this is to handle instructions embedding accumulate registers into AsmStrs[]
++// Falls back to binary search when per-handle LUT is not available.
+ x86_reg X86_insn_reg_intel(unsigned int id, enum cs_ac_type *access)
+ {
++	// The per-handle LUT is used via X86_insn_reg_intel_h() from the printer.
++	// This fallback uses binary search for safety.
+ 	int i;
+ 
+ 	i = binary_search1(insn_regs_intel, ARR_SIZE(insn_regs_intel), id);
+ 	if (i != -1) {
+-		if (access) {
++		if (access)
+ 			*access = insn_regs_intel[i].access;
+-		}
+ 		return insn_regs_intel[i].reg;
+ 	}
+ 
+ 	i = binary_search1(insn_regs_intel_extra, ARR_SIZE(insn_regs_intel_extra), id);
+ 	if (i != -1) {
+-		if (access) {
++		if (access)
+ 			*access = insn_regs_intel_extra[i].access;
+-		}
+ 		return insn_regs_intel_extra[i].reg;
+ 	}
+ 
+-	// not found
+ 	return 0;
+ }
+ 
++// Fast per-handle variant used from the printer (which has access to cs_struct via MCInst).
++x86_reg X86_insn_reg_intel_h(cs_struct *h, unsigned int id, enum cs_ac_type *access)
++{
++	if (h && h->x86_insn_reg_intel_lut && id <= h->x86_insn_lut_max) {
++		uint32_t val = h->x86_insn_reg_intel_lut[id];
++		if (val) {
++			if (access)
++				*access = (enum cs_ac_type)(val >> 16);
++			return (x86_reg)(val & 0xffff);
++		}
++		return 0;
++	}
++	return X86_insn_reg_intel(id, access);
++}
++
+ bool X86_insn_reg_intel2(unsigned int id, x86_reg *reg1, enum cs_ac_type *access1, x86_reg *reg2, enum cs_ac_type *access2)
+ {
+ 	int i = binary_search2(insn_regs_intel2, ARR_SIZE(insn_regs_intel2), id);
+@@ -1577,10 +1655,23 @@ x86_reg X86_insn_reg_att(unsigned int id, enum cs_ac_type *access)
+ 		return insn_regs_att_extra[i].reg;
+ 	}
+ 
+-	// not found
+ 	return 0;
+ }
+ 
++x86_reg X86_insn_reg_att_h(cs_struct *h, unsigned int id, enum cs_ac_type *access)
++{
++	if (h && h->x86_insn_reg_att_lut && id <= h->x86_insn_lut_max) {
++		uint32_t val = h->x86_insn_reg_att_lut[id];
++		if (val) {
++			if (access)
++				*access = (enum cs_ac_type)(val >> 16);
++			return (x86_reg)(val & 0xffff);
++		}
++		return 0;
++	}
++	return X86_insn_reg_att(id, access);
++}
++
+ // ATT just reuses Intel data, but with the order of registers reversed
+ bool X86_insn_reg_att2(unsigned int id, x86_reg *reg1, enum cs_ac_type *access1, x86_reg *reg2, enum cs_ac_type *access2)
+ {
+@@ -1603,7 +1694,7 @@ bool X86_insn_reg_att2(unsigned int id, x86_reg *reg1, enum cs_ac_type *access1,
+ static bool valid_repne(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+ 		switch(id) {
+@@ -1671,7 +1762,7 @@ static bool valid_repne(cs_struct *h, unsigned int opcode)
+ static bool valid_bnd(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+ 		switch(id) {
+@@ -1730,7 +1821,7 @@ static bool xchg_mem(unsigned int opcode)
+ static bool valid_rep(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+ 		switch(id) {
+@@ -1788,7 +1879,7 @@ static bool valid_rep(cs_struct *h, unsigned int opcode)
+ static bool valid_ret_repz(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+@@ -1803,7 +1894,7 @@ static bool valid_ret_repz(cs_struct *h, unsigned int opcode)
+ static bool valid_repe(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+ 		switch(id) {
+@@ -1842,7 +1933,7 @@ static bool valid_repe(cs_struct *h, unsigned int opcode)
+ static bool valid_notrack(cs_struct *h, unsigned int opcode)
+ {
+ 	unsigned int id;
+-	unsigned int i = find_insn(opcode);
++	unsigned int i = find_insn_h(h, opcode);
+ 	if (i != -1) {
+ 		id = insns[i].mapid;
+ 		switch(id) {
+@@ -2109,7 +2200,7 @@ static const insn_op insn_ops[] = {
+ // given internal insn id, return operand access info
+ const uint8_t *X86_get_op_access(cs_struct *h, unsigned int id, uint64_t *eflags)
+ {
+-	unsigned int i = find_insn(id);
++	unsigned int i = find_insn_h(h, id);
+ 	if (i != -1) {
+ 		*eflags = insn_ops[i].flags;
+ 		return insn_ops[i].access;
+diff --git a/arch/X86/X86Mapping.h b/arch/X86/X86Mapping.h
+index c6dc403..28500fe 100644
+--- a/arch/X86/X86Mapping.h
++++ b/arch/X86/X86Mapping.h
+@@ -48,7 +48,9 @@ const char *X86_group_name(csh handle, unsigned int id);
+ // return 0 if not found
+ // this is to handle instructions embedding accumulate registers into AsmStrs[]
+ x86_reg X86_insn_reg_intel(unsigned int id, enum cs_ac_type *access);
++x86_reg X86_insn_reg_intel_h(cs_struct *h, unsigned int id, enum cs_ac_type *access);
+ x86_reg X86_insn_reg_att(unsigned int id, enum cs_ac_type *access);
++x86_reg X86_insn_reg_att_h(cs_struct *h, unsigned int id, enum cs_ac_type *access);
+ bool X86_insn_reg_intel2(unsigned int id, x86_reg *reg1, enum cs_ac_type *access1, x86_reg *reg2, enum cs_ac_type *access2);
+ bool X86_insn_reg_att2(unsigned int id, x86_reg *reg1, enum cs_ac_type *access1, x86_reg *reg2, enum cs_ac_type *access2);
+ 
+@@ -91,6 +93,9 @@ unsigned short X86_register_map(unsigned short id);
+ 
+ unsigned int find_insn(unsigned int id);
+ 
++// Build per-handle O(1) lookup tables for x86. Called from X86_global_init().
++void X86_build_lookup_tables(cs_struct *h);
++
+ void X86_postprinter(csh handle, cs_insn *insn, char *mnem, MCInst *mci);
+ 
+ #endif
+diff --git a/arch/X86/X86Module.c b/arch/X86/X86Module.c
+index ed080a7..d375356 100644
+--- a/arch/X86/X86Module.c
++++ b/arch/X86/X86Module.c
+@@ -36,6 +36,9 @@ cs_err X86_global_init(cs_struct *ud)
+ 	else
+ 		ud->regsize_map = regsize_map_32;
+ 
++	// Build per-handle O(1) lookup tables for instruction mapping
++	X86_build_lookup_tables(ud);
++
+ 	return CS_ERR_OK;
+ }
+ 
+diff --git a/cs.c b/cs.c
+index 59243fd..823462a 100644
+--- a/cs.c
++++ b/cs.c
+@@ -534,6 +534,9 @@ cs_err CAPSTONE_API cs_close(csh *handle)
+ 	}
+ 
+ 	cs_mem_free(ud->insn_cache);
++	cs_mem_free(ud->x86_insn_lut);
++	cs_mem_free(ud->x86_insn_reg_intel_lut);
++	cs_mem_free(ud->x86_insn_reg_att_lut);
+ 
+ 	memset(ud, 0, sizeof(*ud));
+ 	cs_mem_free(ud);
+diff --git a/cs_priv.h b/cs_priv.h
+index e473b71..1a6f294 100644
+--- a/cs_priv.h
++++ b/cs_priv.h
+@@ -71,6 +71,11 @@ struct cs_struct {
+ 	bool doing_SME_Index; // handling a SME instruction that has index
+ 	unsigned short *insn_cache;	// index caching for mapping.c
+ 	GetRegisterName_t get_regname;
++	// per-handle O(1) lookup tables for x86 (built lazily, freed on cs_close)
++	unsigned int *x86_insn_lut;	// insn id -> index in insns[] array
++	uint32_t *x86_insn_reg_intel_lut;	// packed reg+access for intel syntax
++	uint32_t *x86_insn_reg_att_lut;	// packed reg+access for att syntax
++	unsigned int x86_insn_lut_max;	// max insn id in lookup tables
+ 	bool skipdata;	// set this to True if we skip data when disassembling
+ 	uint8_t skipdata_size;	// how many bytes to skip
+ 	cs_opt_skipdata skipdata_setup;	// user-defined skipdata setup
