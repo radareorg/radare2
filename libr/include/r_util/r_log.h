@@ -3,10 +3,6 @@
 
 #include <r_userconf.h>
 #include <r_list.h>
-#include <r_types.h>
-#include <stdarg.h>
-// NOTE: avoid including <r_vec.h> here because it includes r_assert.h, which
-// includes this header, causing a circular dependency.
 
 #ifdef __cplusplus
 extern "C" {
