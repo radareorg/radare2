@@ -277,7 +277,9 @@ static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
 	char *prj_path = r_file_new (prjdir, prj_name, NULL);
 	char *rc_path = r_file_new (prj_path, "rc.r2", NULL);
 	char *notes_path = r_file_new (prj_path, "notes.txt", NULL);
+	char *prj_bin_path = r_file_new (prj_path, "prj.bin", NULL);
 	bool is_current = R_STR_ISNOTEMPTY (fileproject) && !strcmp (fileproject, prj_name);
+	bool has_prj_new = r_file_exists (prj_bin_path);
 	struct stat st;
 	char *mtime_str = NULL;
 	if (stat (rc_path, &st) == 0) {
@@ -313,6 +315,7 @@ static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
 			pj_ks (pj, "file", file_str);
 		}
 		pj_kb (pj, "current", is_current);
+		pj_kb (pj, "prj.new", has_prj_new);
 		if (mtime_str) {
 			pj_ks (pj, "modified", mtime_str);
 		}
@@ -329,6 +332,7 @@ static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
 			r_cons_printf (core->cons, "file: %s\n", file_str);
 		}
 		r_cons_printf (core->cons, "current: %s\n", r_str_bool (is_current));
+		r_cons_printf (core->cons, "prj.new: %s\n", r_str_bool (has_prj_new));
 		if (mtime_str) {
 			r_cons_printf (core->cons, "modified: %s\n", mtime_str);
 		}
@@ -339,6 +343,7 @@ static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
 	free (file_str);
 	free (notes);
 	free (mtime_str);
+	free (prj_bin_path);
 	free (notes_path);
 	free (rc_path);
 	free (prj_path);
