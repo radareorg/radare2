@@ -265,9 +265,19 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				ptr += 2;
 				esc = 0;
 				str = ptr;
-			} else if (ptr[0] == '1') {
-				// ignore bold
+			} else if (ptr[0] == '1' && ptr[1] == 'm') {
+				// standalone bold: \x1b[1m
 				has_bold = true;
+				need_to_set = true;
+				ptr++;
+				str = ptr + 1;
+				esc = 0;
+				continue;
+			} else if (ptr[0] == '1' && ptr[1] == ';') {
+				// bold prefix in combined sequence like \x1b[1;31m
+				has_bold = true;
+				ptr++;
+				continue;
 			} else if (!memcmp (ptr, "2K", 2)) {
 				ptr += 2;
 				esc = 0;
@@ -324,6 +334,7 @@ R_API char *r_str_html_strip(const char *ptr, int *newlen) {
 				str = ptr + 1;
 				esc = 0;
 				inv = false;
+				has_bold = false;
 				text_color[0] = '\0';
 				background_color[0] = '\0';
 				need_to_set = need_to_clear = true;

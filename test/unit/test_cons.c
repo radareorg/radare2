@@ -160,6 +160,18 @@ bool test_cons_to_html(void) {
 	html = r_str_html_strip ("\x1b[41m\x1b[31mBB\x1b[49mCC", NULL);
 	mu_assert_streq_free (html, "<span style='color:#f00;background-color:#f00'>BB</span><span style='color:#f00'>CC</span>", "Default background color");
 
+	// standalone bold
+	html = r_str_html_strip ("\x1b[1mBOLD\x1b[0m", NULL);
+	mu_assert_streq_free (html, "<span style='font-weight:bold'>BOLD</span>", "Standalone bold");
+
+	// bold + separate color
+	html = r_str_html_strip ("\x1b[1m\x1b[31mBOLD\x1b[0m", NULL);
+	mu_assert_streq_free (html, "<span style='color:#f00;font-weight:bold'>BOLD</span>", "Bold then color");
+
+	// bold prefix in combined sequence
+	html = r_str_html_strip ("\x1b[1;31mBOLD\x1b[0m", NULL);
+	mu_assert_streq_free (html, "<span style='color:#f00;font-weight:bold'>BOLD</span>", "Bold combined with color");
+
 	mu_end;
 }
 
