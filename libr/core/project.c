@@ -26,12 +26,10 @@ static bool is_valid_project_name(const char *name) {
 }
 
 static char *get_project_script_path(RCore *core, const char *file) {
-	R_RETURN_VAL_IF_FAIL (core && file, NULL);
-	if (!*file) {
+	if (!core || !file || !*file) {
 		return NULL;
 	}
-	const char *magic = "# r2 rdb project file";
-	char *data, *prjfile;
+	char *prjfile;
 	if (r_file_is_abspath (file)) {
 		prjfile = strdup (file);
 	} else {
@@ -45,19 +43,17 @@ static char *get_project_script_path(RCore *core, const char *file) {
 			prjfile = r_str_append (prjfile, R_SYS_DIR "rc.r2");
 		}
 	}
-	data = r_file_slurp (prjfile, NULL);
-	if (data) {
-		if (!r_str_startswith (data, magic)) {
-			R_FREE (prjfile);
-		}
+	char *data = r_file_slurp (prjfile, NULL);
+	if (data && !r_str_startswith (data, "# r2 rdb project file")) {
+		R_FREE (prjfile);
 	}
 	free (data);
 	return prjfile;
 }
 
-static int make_projects_directory(RCore *core) {
+static bool make_projects_directory(RCore *core) {
 	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
-	int ret = r_sys_mkdirp (prjdir);
+	bool ret = r_sys_mkdirp (prjdir);
 	if (!ret) {
 		R_LOG_ERROR ("Cannot mkdir dir.projects");
 	}
@@ -171,22 +167,18 @@ R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 }
 
 static bool load_project_rop(RCore *core, const char *prjfile) {
-	R_RETURN_VAL_IF_FAIL (core && R_STR_ISNOTEMPTY (prjfile), false);
-	char *path, *db = NULL, *path_ns;
-	bool found = 0;
+	if (!core || R_STR_ISEMPTY (prjfile)) {
+		return false;
+	}
+	char *path, *db = NULL;
+	bool found = false;
 	SdbListIter *it;
 	SdbNs *ns;
 
 	Sdb *rop_db = sdb_ns (core->sdb, "rop", false);
-	Sdb *nop_db = sdb_ns (rop_db, "nop", false);
-	Sdb *mov_db = sdb_ns (rop_db, "mov", false);
-	Sdb *const_db = sdb_ns (rop_db, "const", false);
-	Sdb *arithm_db = sdb_ns (rop_db, "arithm", false);
-	Sdb *arithmct_db = sdb_ns (rop_db, "arithm_ct", false);
-
 	char *rc_path = get_project_script_path (core, prjfile);
 	char *prj_dir = r_file_dirname (rc_path);
-	R_FREE (rc_path);
+	free (rc_path);
 	if (r_str_endswith (prjfile, R_SYS_DIR "rc.r2")) {
 		path = strdup (prjfile);
 		path[strlen (path) - 3] = 0;
@@ -235,24 +227,15 @@ static bool load_project_rop(RCore *core, const char *prjfile) {
 	}
 	sdb_ns_set (core->sdb, "rop", rop_db);
 
-	path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prj_dir);
+	char *path_ns = r_str_newf ("%s" R_SYS_DIR "rop", prj_dir);
 	if (!r_file_exists (path_ns)) {
 		path_ns = r_str_append (path_ns, ".sdb");
 	}
-	nop_db = sdb_new (path_ns, "nop", 0);
-	sdb_ns_set (rop_db, "nop", nop_db);
-
-	mov_db = sdb_new (path_ns, "mov", 0);
-	sdb_ns_set (rop_db, "mov", mov_db);
-
-	const_db = sdb_new (path_ns, "const", 0);
-	sdb_ns_set (rop_db, "const", const_db);
-
-	arithm_db = sdb_new (path_ns, "arithm", 0);
-	sdb_ns_set (rop_db, "arithm", arithm_db);
-
-	arithmct_db = sdb_new (path_ns, "arithm_ct", 0);
-	sdb_ns_set (rop_db, "arithm_ct", arithmct_db);
+	sdb_ns_set (rop_db, "nop", sdb_new (path_ns, "nop", 0));
+	sdb_ns_set (rop_db, "mov", sdb_new (path_ns, "mov", 0));
+	sdb_ns_set (rop_db, "const", sdb_new (path_ns, "const", 0));
+	sdb_ns_set (rop_db, "arithm", sdb_new (path_ns, "arithm", 0));
+	sdb_ns_set (rop_db, "arithm_ct", sdb_new (path_ns, "arithm_ct", 0));
 
 	free (path);
 	free (path_ns);
@@ -266,10 +249,8 @@ R_API void r_core_project_execute_cmds(RCore *core, const char *prjfile) {
 	char *data = r_file_slurp (str, NULL);
 	free (str);
 	R_RETURN_IF_FAIL (data);
-	Output out;
-	out.fout = NULL;
+	Output out = {0};
 	out.cout = r_strbuf_new (NULL);
-	r_strbuf_init (out.cout);
 	struct Proc proc;
 	spp_proc_set (&proc, "spp", 1);
 	spp_eval (data, &out);
@@ -292,8 +273,23 @@ typedef struct {
 	char *rc_path;
 } ProjectState;
 
+// extract the binary file path from the "o " line in the project rc script data
+static char *project_extract_file(const char *rc_data) {
+	const char *line = strstr (rc_data, "\no \"");
+	if (line) {
+		line += 4; // skip \no "
+		const char *end = strchr (line, '"');
+		if (end) {
+			return r_str_ndup (line, end - line);
+		}
+	}
+	return NULL;
+}
+
 static bool r_core_project_load(RCore *core, const char *prj_name, const char *rcpath) {
-	R_RETURN_VAL_IF_FAIL (core, false);
+	if (!core) {
+		return false;
+	}
 	if (R_STR_ISEMPTY (prj_name)) {
 		prj_name = r_core_project_name (core, rcpath);
 	}
@@ -308,20 +304,48 @@ static bool r_core_project_load(RCore *core, const char *prj_name, const char *r
 	const bool scr_interactive = r_cons_is_interactive (core->cons);
 	const bool scr_prompt = r_config_get_b (core->config, "scr.prompt");
 	(void) load_project_rop (core, prj_name);
+
+	// check if the target binary file exists before loading the project script
+	char *rc_abspath = r_file_abspath (rcpath);
+	char *rc_data = r_file_slurp (rc_abspath? rc_abspath: rcpath, NULL);
+	free (rc_abspath);
+	if (!rc_data) {
+		R_LOG_ERROR ("Cannot read project script '%s'", rcpath);
+		return false;
+	}
+	char *prj_file = project_extract_file (rc_data);
+	if (prj_file && !strstr (prj_file, "://") && !r_file_exists (prj_file)) {
+		R_LOG_ERROR ("File associated with the project is missing: %s", prj_file);
+		if (r_config_get_b (core->config, "prj.prompt") && r_cons_is_interactive (core->cons)) {
+			char *prompt = r_str_newf ("New path for '%s': ", prj_file);
+			char *new_path = r_cons_input (core->cons, prompt);
+			free (prompt);
+			if (R_STR_ISNOTEMPTY (new_path)) {
+				// replace old path with the new one in the rc script
+				char *old_o_line = r_str_newf ("o \"%s\"", prj_file);
+				char *new_o_line = r_str_newf ("o \"%s\"", new_path);
+				char *patched = r_str_replace (rc_data, old_o_line, new_o_line, 0);
+				free (old_o_line);
+				free (new_o_line);
+				rc_data = patched;
+			}
+			free (new_path);
+		}
+	}
+	free (prj_file);
+
 	const bool sandy = r_config_get_b (core->config, "prj.sandbox");
 	bool ret = false;
 	if (sandy) {
-		// enable sandbox (only allow file access, no network or program exec)
-		// projects can also tweak the cmd. eval vars to run code after the project is loaded
-		// users must be careful on that.
 		int oldgrain = r_sandbox_grain (R_SANDBOX_GRAIN_DISK | R_SANDBOX_GRAIN_FILES);
 		r_sandbox_enable (true);
-		ret = r_core_cmd_file (core, rcpath);
+		ret = r_core_cmd_lines (core, rc_data);
 		r_sandbox_disable (true);
 		r_sandbox_grain (oldgrain);
 	} else {
-		ret = r_core_cmd_file (core, rcpath);
+		ret = r_core_cmd_lines (core, rc_data);
 	}
+	free (rc_data);
 	char *prj_path = r_file_dirname (rcpath);
 	if (prj_path) {
 		//check if the project uses git
@@ -481,7 +505,7 @@ R_API char *r_core_project_name(RCore *core, const char *prjfile) {
 }
 
 static void flush(RCore *core, RStrBuf *sb) {
-	char * s = r_cons_drain (core->cons);
+	char *s = r_cons_drain (core->cons);
 	if (s) {
 		r_strbuf_append (sb, s);
 		free (s);
@@ -725,28 +749,21 @@ R_API bool r_core_project_save(RCore *core, const char *prj_name) {
 			}
 		}
 		RList *paths = r_list_new ();
-		if (paths) {
-			if (r_list_append (paths, prj_dir)) {
-				const char *author = r_config_get (core->config, "cfg.user");
-				const char *message = r_config_get (core->config, "prj.vc.message");
-				if (!rvc_commit (core->prj->rvc, message, author, paths)) {
-					r_list_free (paths);
-					free (prj_dir);
-					free (script_path);
-					return false;
-				}
-				rvc_save (core->prj->rvc);
-			} else {
-				r_list_free (paths);
-				free (prj_dir);
-				free (script_path);
-				return false;
-			}
-		} else {
+		if (!paths || !r_list_append (paths, prj_dir)) {
+			r_list_free (paths);
 			free (prj_dir);
 			free (script_path);
 			return false;
 		}
+		const char *author = r_config_get (core->config, "cfg.user");
+		const char *message = r_config_get (core->config, "prj.vc.message");
+		if (!rvc_commit (core->prj->rvc, message, author, paths)) {
+			r_list_free (paths);
+			free (prj_dir);
+			free (script_path);
+			return false;
+		}
+		rvc_save (core->prj->rvc);
 	}
 	if (r_config_get_b (core->config, "prj.history")) {
 		char *history = r_core_cmd_str (core, "!!");
