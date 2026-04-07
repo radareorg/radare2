@@ -3201,6 +3201,7 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 			}
 			if (symbols) {
 				int thumb_count = 0;
+				int arm_count = 0;
 				int map_thumb = 0;
 				int map_arm = 0;
 				RBinElfSymbol *symbol;
@@ -3223,6 +3224,8 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 					ut64 paddr = symbol->offset;
 					if (paddr & 1) {
 						thumb_count++;
+					} else if (paddr > 0) {
+						arm_count++;
 					}
 				}
 				// prefer mapping symbols as they are authoritative
@@ -3230,8 +3233,8 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 					if (map_thumb > map_arm) {
 						return 16;
 					}
-				} else if (thumb_count > 0) {
-					// fallback to LSB/type heuristic
+				} else if (thumb_count > arm_count) {
+					// fallback: thumb if majority of symbols are thumb
 					return 16;
 				}
 			}
