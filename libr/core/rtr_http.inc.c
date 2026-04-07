@@ -97,6 +97,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	if (!path) {
 		return HTTP_RUN_ERROR;
 	}
+	RCorePriv *priv = core->priv;
 	RConfig *newcfg = NULL, *origcfg = NULL;
 	char headers[128] = {0};
 	RSocketHTTPRequest *rs;
@@ -155,6 +156,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		}
 	}
 	memset (&so, 0, sizeof (so));
+	so.accept_timeout = 1;
 	if (!r_socket_listen (s, port, NULL)) {
 		r_socket_free (s);
 		R_LOG_ERROR ("Cannot listen on http.port");
@@ -195,6 +197,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 	eprintf ("r2 -C http://%s:%s/cmd/\n", host, port);
 	eprintf ("r2 r2web://%s:%s/cmd/\n", host, port);
 	core->http_up = true;
+	priv->listenport = port;
 
 	/* Register this HTTP session so r2agent -L can discover it */
 	r_core_session_register (core, "r2web", atoi (port));
@@ -244,11 +247,11 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 
 		void *bed = r_cons_sleep_begin (core->cons);
 		rs = r_socket_http_accept (s, &so);
+		r_cons_sleep_end (core->cons, bed);
 		if (!core->http_up) {
-			eprintf ("^C\n");
+			rtr_http_request_free (rs);
 			break;
 		}
-		r_cons_sleep_end (core->cons, bed);
 
 		if (!rs) {
 			bed = r_cons_sleep_begin (core->cons);
@@ -288,7 +291,6 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 		core->blocksize = newblksz;
 		/* set environment */
 		// backup and restore offset and blocksize
-		core->http_up = true;
 		core->config = newcfg;
 #if WEBCONFIG
 		r_config_set_b (newcfg, "scr.html", r_config_get_b (newcfg, "scr.html"));
@@ -618,6 +620,7 @@ the_end:
 	}
 	r_cons_break_pop (core->cons);
 	core->http_up = false;
+	priv->listenport = NULL;
 	r_list_free (so.authtokens);
 	free (pfile);
 	r_socket_free (s);
@@ -662,8 +665,9 @@ R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path)
 	}
 	if (launch == '-') {
 		if (priv->httpthread) {
-			R_LOG_INFO ("Press ^C to stop the webserver");
-			r_th_kill_free (priv->httpthread);
+			r_core_rtr_http_stop (core);
+			r_th_wait (priv->httpthread);
+			r_th_free (priv->httpthread);
 			priv->httpthread = NULL;
 		} else {
 			R_LOG_ERROR ("No webserver running");
