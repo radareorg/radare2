@@ -683,7 +683,7 @@ R_API bool r_cons_enable_mouse(RCons *cons, const bool enable) {
 		const char *click = enable
 			? "\x1b[?1000;1006;1015h"
 			: "\x1b[?1000;1006;1015l";
-		const size_t click_len = 18;
+		const size_t click_len = strlen (click);
 		if (write (2, click, click_len) != click_len) {
 			enabled = false;
 		} else {
