@@ -48,6 +48,7 @@ typedef struct plugin_data_t {
 	int bits;
 	int syntax;
 	int omode; // XXX unused?
+	int cs_mode; // cached CS_MODE value
 // 	char *cpu;
 } PluginData;
 
@@ -69,6 +70,13 @@ static bool init(RArchSession *as) {
 	}
 	pd->bits = as->config->bits;
 	pd->syntax = as->config->syntax;
+	switch (as->config->bits) {
+	case 16: pd->cs_mode = CS_MODE_16; break;
+	case 32: pd->cs_mode = CS_MODE_32; break;
+	case 64: pd->cs_mode = CS_MODE_64; break;
+	default: pd->cs_mode = 0; break;
+	}
+	cs_option (pd->cpd.cs_handle, CS_OPT_DETAIL, CS_OPT_ON);
 	as->data = pd;
 	return true;
 }
@@ -4164,17 +4172,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (handle == 0) {
 		return false;
 	}
-	int mode = as->config->bits;
-	switch (mode) {
-	case 16: mode = CS_MODE_16; break;
-	case 32: mode = CS_MODE_32; break;
-	case 64: mode = CS_MODE_64; break;
-	}
 	if (plugin_changed (as)) {
 		fini (as);
 		init (as);
 		handle = cs_handle_for_session (as);
 	}
+	const int mode = ((PluginData *)as->data)->cs_mode;
 
 	cs_insn *insn = NULL;
 	int n;
@@ -4191,7 +4194,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 
 	op->cycles = 1; // aprox
-	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
 	// capstone-next
 #if USE_ITER_API
 	cs_detail insnack_detail = {{0}};

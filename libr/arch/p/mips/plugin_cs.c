@@ -870,6 +870,7 @@ typedef struct plugin_data_t {
 	char *cpu;
 	int bigendian;
 	ut64 t9_pre;
+	int last_syntax;
 } PluginData;
 
 
@@ -936,18 +937,20 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	csh handle = cs_handle_for_session (as);
 	PluginData *pd;
 	cs_insn *insn = NULL;
-	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else {
-		cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
-	}
-
 	if (plugin_changed (as)) {
 		fini (as);
 		init (as);
 		handle = cs_handle_for_session (as);
 	}
 	pd = as->data;
+	if (pd && as->config->syntax != pd->last_syntax) {
+		pd->last_syntax = as->config->syntax;
+		if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+			cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		} else {
+			cs_option (handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		}
+	}
 	if (!pd || handle == 0) {
 		return false;
 	}
