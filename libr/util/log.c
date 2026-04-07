@@ -257,6 +257,7 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 		return;
 	}
 	if (rlog->iterating) {
+		R_LOG_ERROR ("cannot add log callback while iterating");
 		return;
 	}
 	if (!rlog->cbs) {
@@ -272,6 +273,7 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 R_API void r_log_del_callback(RLogCallback cb) {
 	if (r_log_init ()) {
 		if (rlog->iterating) {
+			R_LOG_ERROR ("cannot delete log callback while iterating");
 			return;
 		}
 		size_t i;
