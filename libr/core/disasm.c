@@ -5054,8 +5054,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 	} else if (((st64)p) > 0 || ((st64)refaddr) > 0) {
 		const char *kind;
 		char *msg = calloc (sizeof (char), len);
+		ut64 last_flag_addr = UT64_MAX;
 		if (((st64)p) > 0) {
 			f = r_flag_get_in (core->flags, p);
+			last_flag_addr = p;
 			if (f) {
 				ut64 subrel_addr = core->rasm->parse->subrel_addr;
 				if (subrel_addr && subrel_addr != p) {
@@ -5080,7 +5082,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			st32 n32 = (st32)(n & UT32_MAX);
 			if (ds->analop.type == R_ANAL_OP_TYPE_LEA) {
 				char str[128] = {0};
-				f = r_flag_get_in (core->flags, refaddr);
+				if (last_flag_addr != refaddr) {
+					f = r_flag_get_in (core->flags, refaddr);
+					last_flag_addr = refaddr;
+				}
 				if (!f && ds->show_slow) {
 					r_io_read_at (ds->core->io, ds->analop.ptr,
 						      (ut8 *)str, sizeof (str) - 1);
@@ -5183,7 +5188,10 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			msg[len - 1] = 0;
 		}
 #endif
-		f = r_flag_get_in (core->flags, refaddr);
+		if (last_flag_addr != refaddr) {
+			f = r_flag_get_in (core->flags, refaddr);
+			last_flag_addr = refaddr;
+		}
 		if (f) {
 			if (strlen (msg) != 1) {
 				char *msg2 = strdup (msg);
