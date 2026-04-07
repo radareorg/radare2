@@ -245,13 +245,18 @@ R_API void rxml_dom_free(RXmlNode *node);
 
 // Node introspection
 R_API const char *rxml_dom_get_attribute(const RXmlNode *node, const char *key);
+R_API ut64 rxml_dom_attr_ullong(const RXmlNode *node, const char *key, ut64 def);
+R_API int rxml_dom_attr_int(const RXmlNode *node, const char *key, int def);
+R_API ut32 rxml_dom_attr_uint(const RXmlNode *node, const char *key, ut32 def);
 R_API const char *rxml_dom_child_value(const RXmlNode *node);
+R_API const char *rxml_dom_text(const RXmlNode *node);
 R_API const char *rxml_dom_name(const RXmlNode *node);
-R_API int rxml_dom_is_element(const RXmlNode *node);
-R_API int rxml_dom_is_text(const RXmlNode *node);
+R_API bool rxml_dom_is_element(const RXmlNode *node);
+R_API bool rxml_dom_is_text(const RXmlNode *node);
 
 // Navigation
 R_API RXmlNode *rxml_dom_first_child(const RXmlNode *node);
+R_API RXmlNode *rxml_dom_child(const RXmlNode *node, const char *name);
 R_API RXmlNode *rxml_dom_next_sibling(const RXmlNode *node);
 R_API RXmlNode *rxml_dom_parent(const RXmlNode *node);
 
