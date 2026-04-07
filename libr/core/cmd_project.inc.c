@@ -14,7 +14,7 @@ static RCoreHelpMessage help_msg_P = {
 	"P!", "([cmd])", "open a shell or run command in the project directory",
 	"Pc", "", "close current project",
 	"Pd", " [N]", "diff Nth commit",
-	"Pi", " [file]", "show project information",
+	"Pi", "[j] [file]", "show project information",
 	"Pl", "", "list all projects",
 	"Pn", " -", "edit current loaded project notes using cfg.editor",
 	"Pn", "[j]", "manage notes associated with the project",
@@ -253,6 +253,98 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 	}
 }
 
+static void cmd_Pi(RCore *core, const char *input, const char *fileproject) {
+	int mode = 0;
+	const char *prj_arg = NULL;
+	if (*input == 'j') {
+		mode = 'j';
+		if (input[1] == ' ' && input[2]) {
+			prj_arg = r_str_trim_head_ro (input + 2);
+		}
+	} else if (*input == ' ' && input[1]) {
+		prj_arg = r_str_trim_head_ro (input + 1);
+	}
+	const char *prj_name = R_STR_ISNOTEMPTY (prj_arg)? prj_arg: fileproject;
+	if (R_STR_ISEMPTY (prj_name)) {
+		R_LOG_ERROR ("No project specified");
+		return;
+	}
+	if (!r_core_is_project (core, prj_name)) {
+		R_LOG_ERROR ("Unknown project '%s'", prj_name);
+		return;
+	}
+	char *prjdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	char *prj_path = r_file_new (prjdir, prj_name, NULL);
+	char *rc_path = r_file_new (prj_path, "rc.r2", NULL);
+	char *notes_path = r_file_new (prj_path, "notes.txt", NULL);
+	bool is_current = R_STR_ISNOTEMPTY (fileproject) && !strcmp (fileproject, prj_name);
+	struct stat st;
+	char *mtime_str = NULL;
+	if (stat (rc_path, &st) == 0) {
+		mtime_str = r_time_secs_tostring (st.st_mtime);
+	}
+	// parse "o " line from rc.r2 to get file path
+	char *file_str = NULL;
+	{
+		char *rc_data = r_file_slurp (rc_path, NULL);
+		if (rc_data) {
+			const char *line = strstr (rc_data, "\no \"");
+			if (line) {
+				line += 4; // skip \no "
+				const char *end = strchr (line, '"');
+				if (end) {
+					file_str = r_str_ndup (line, end - line);
+				}
+			}
+			free (rc_data);
+		}
+	}
+	char *notes = NULL;
+	if (r_file_exists (notes_path)) {
+		notes = r_file_slurp (notes_path, NULL);
+		r_str_trim (notes);
+	}
+	if (mode == 'j') {
+		PJ *pj = r_core_pj_new (core);
+		pj_o (pj);
+		pj_ks (pj, "name", prj_name);
+		pj_ks (pj, "path", prj_path);
+		if (file_str) {
+			pj_ks (pj, "file", file_str);
+		}
+		pj_kb (pj, "current", is_current);
+		if (mtime_str) {
+			pj_ks (pj, "modified", mtime_str);
+		}
+		if (R_STR_ISNOTEMPTY (notes)) {
+			pj_ks (pj, "notes", notes);
+		}
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
+	} else {
+		r_cons_printf (core->cons, "name: %s\n", prj_name);
+		r_cons_printf (core->cons, "path: %s\n", prj_path);
+		if (file_str) {
+			r_cons_printf (core->cons, "file: %s\n", file_str);
+		}
+		r_cons_printf (core->cons, "current: %s\n", r_str_bool (is_current));
+		if (mtime_str) {
+			r_cons_printf (core->cons, "modified: %s\n", mtime_str);
+		}
+		if (R_STR_ISNOTEMPTY (notes)) {
+			r_cons_printf (core->cons, "notes: %s\n", notes);
+		}
+	}
+	free (file_str);
+	free (notes);
+	free (mtime_str);
+	free (notes_path);
+	free (rc_path);
+	free (prj_path);
+	free (prjdir);
+}
+
 static int cmd_project(void *data, const char *input) {
 	RCore *core = (RCore *) data;
 	const char *file;
@@ -407,21 +499,8 @@ static int cmd_project(void *data, const char *input) {
 	case 'n': // "Pn"
 		cmd_Pn (core, input, fileproject);
 		break;
-	case 'i': // "Pi" DEPRECATE
-		if (R_STR_ISNOTEMPTY (file)) {
-			char *prj_name = r_core_project_name (core, file);
-			if (!R_STR_ISEMPTY (prj_name)) {
-				r_cons_println (core->cons, prj_name);
-				free (prj_name);
-			}
-		} else if (r_project_is_loaded (core->prj)) {
-			if (R_STR_ISNOTEMPTY (core->prj->name)) {
-				r_cons_println (core->cons, core->prj->name);
-			}
-			if (R_STR_ISNOTEMPTY (core->prj->path)) {
-				r_cons_println (core->cons, core->prj->path);
-			}
-		}
+	case 'i': // "Pi"
+		cmd_Pi (core, input + 1, fileproject);
 		break;
 	case '.': // "P."
 		r_cons_printf (core->cons, "%s\n", fileproject);
