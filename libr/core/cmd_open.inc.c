@@ -1987,10 +1987,14 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", buri, bf->bo->baddr, r_str_rwx_i (desc->perm));
 			r_print_printf (p, "popd\n");
 		} else {
-			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", desc->uri, bf->bo->baddr, r_str_rwx_i (desc->perm));
+			char *apath = (!strstr (desc->uri, "://"))? r_file_abspath (desc->uri): NULL;
+			r_print_printf (p, "o \"%s\" 0x%08"PFMT64x" %s\n", r_str_get_fail (apath, desc->uri), bf->bo->baddr, r_str_rwx_i (desc->perm));
+			free (apath);
 		}
 	} else {
-		r_print_printf (p, "onnu %s %s\n", desc->uri, r_str_rwx_i (desc->perm));
+		char *apath = (!strstr (desc->uri, "://"))? r_file_abspath (desc->uri): NULL;
+		r_print_printf (p, "onnu %s %s\n", r_str_get_fail (apath, desc->uri), r_str_rwx_i (desc->perm));
+		free (apath);
 	}
 	if (strstr (desc->uri, "null://")) {
 		// null descs dont want to be mapped
