@@ -12,6 +12,10 @@
 // global lock
 static RThreadLock *Glock = NULL;
 
+// global state for signal handler to flush partial JSON on kill
+static R2RState *Gstate = NULL;
+static const char *Goutput_file = NULL;
+
 #define JSON_TEST_FILE_DEFAULT "bins/elf/crackme0x00b"
 #define TIMEOUT_DEFAULT (60 * 60)
 #define STRV(x) #x
@@ -754,7 +758,9 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 		break;
 	}
 	pj_k (pj, "result");
-	switch (result->result) {
+	if (result->run_skipped) {
+		pj_s (pj, "skipped");
+	} else switch (result->result) {
 	case R2R_TEST_RESULT_OK:
 		pj_s (pj, "ok");
 		break;
@@ -769,6 +775,7 @@ static void test_result_to_json(PJ *pj, R2RTestResultInfo *result) {
 		break;
 	}
 	pj_kb (pj, "run_failed", result->run_failed);
+	pj_kb (pj, "skipped", result->run_skipped);
 	pj_kn (pj, "time_elapsed", result->time_elapsed);
 	pj_kb (pj, "timeout", result->timeout);
 	pj_end (pj);
@@ -961,7 +968,7 @@ static void print_new_results(R2RState *state, ut64 prev_completed) {
 	ut64 i;
 	for (i = prev_completed; i < completed; i++) {
 		R2RTestResultInfo *result = *RVecR2RTestResultInfoPtr_at (&state->results, i);
-		if (state->test_results && !result->run_skipped) {
+		if (state->test_results) {
 			test_result_to_json (state->test_results, result);
 		}
 		/* In quiet mode only print failing tests; otherwise follow verbose flag rules */
@@ -1068,6 +1075,16 @@ static void r2r_write_output(R2RState *state, const char *output_file) {
 		R_LOG_ERROR ("Cannot write to %s", output_file);
 	}
 	free (output);
+	state->test_results = NULL;
+}
+
+static void flush_partial_json(int sig) {
+	R2RState *state = Gstate;
+	const char *output_file = Goutput_file;
+	if (state && output_file && state->test_results) {
+		r2r_write_output (state, output_file);
+	}
+	r_sys_exit (1, true);
 }
 
 static RThreadFunctionRet worker_th(RThread *th) {
@@ -1264,6 +1281,14 @@ int main(int argc, char **argv) {
 	if (opt.log_mode) {
 		r2r_setup_log_mode (&state);
 	}
+	if (opt.output_file) {
+		Gstate = &state;
+		Goutput_file = opt.output_file;
+#if R2__UNIX__
+		r_sys_signal (SIGTERM, flush_partial_json);
+		r_sys_signal (SIGINT, flush_partial_json);
+#endif
+	}
 	ut64 time_start = r_time_now_mono ();
 	if (!r2r_run_workers (&state, &opt)) {
 		ret = -1;
@@ -1274,6 +1299,7 @@ int main(int argc, char **argv) {
 	}
 	if (opt.output_file) {
 		r2r_write_output (&state, opt.output_file);
+		Gstate = NULL;
 	}
 	if (opt.interactive) {
 		interact (&state);
