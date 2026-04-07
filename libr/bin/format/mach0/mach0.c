@@ -3010,9 +3010,12 @@ static void _update_main_addr_if_needed(struct MACH0_(obj_t) * mo, const RBinSym
 }
 
 static void _handle_arm_thumb(RBinSymbol *sym) {
+	if (sym->vaddr & 1) {
+		sym->vaddr--;
+		sym->bits = 16;
+	}
 	if (sym->paddr & 1) {
 		sym->paddr--;
-		sym->vaddr--;
 		sym->bits = 16;
 	}
 }
