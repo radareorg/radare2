@@ -8442,7 +8442,7 @@ static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
 	RCore *core = esil->user;
 	int type = core_type_by_addr (core, *val);
 	if (type != -1) {
-		r_anal_xrefs_set (core->anal, esil->addr, *val, type);
+		r_anal_xrefs_set (core->anal, NULL, esil->addr, *val, type);
 	}
 	return false;
 }
@@ -10210,7 +10210,7 @@ static void _anal_calls(RCore *core, ut64 addr, ut64 addr_end, bool printCommand
 						r_cons_printf (core->cons, "af @ 0x%08" PFMT64x"\n", op.jump);
 					} else {
 						// add xref here
-						r_anal_xrefs_set (core->anal, addr, op.jump, R_ANAL_REF_TYPE_CALL);
+						r_anal_xrefs_set (core->anal, NULL, addr, op.jump, R_ANAL_REF_TYPE_CALL);
 						if (r_io_is_valid_offset (core->io, op.jump, 1)) {
 							r_core_anal_fcn (core, op.jump, addr, R_ANAL_REF_TYPE_CALL, depth - 1);
 						}
@@ -10864,7 +10864,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_cons_printf (core->cons, "0x%"PFMT64x" %s %s\n", ref->addr,
 				r_anal_ref_perm_tostring (ref),
 				r_anal_ref_type_tostring (ref->type));
-			r_anal_xrefs_set (core->anal, ref->addr, at, ref->type);
+			r_anal_xrefs_set (core->anal, NULL, ref->addr, at, ref->type);
 		}
 		RVecAnalRef_free (list);
 		free (ptr);
@@ -11338,7 +11338,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 				free (ptr);
 				return false;
 			}
-			r_anal_xrefs_set (core->anal, at, addr, reftype);
+			r_anal_xrefs_set (core->anal, NULL, at, addr, reftype);
 			free (ptr);
 		}
 	   	break;
@@ -13513,7 +13513,7 @@ static void aav_cb(RCore *core, ut64 from, ut64 to, int vsize, void *user) {
 		r_cons_printf (core->cons, "Cd %d @ 0x%"PFMT64x "\n", vsize, from);
 		r_cons_printf (core->cons, "f+ aav.0x%08"PFMT64x "= 0x%08"PFMT64x, to, to);
 	} else {
-		r_anal_xrefs_set (core->anal, from, to, R_ANAL_REF_TYPE_NULL);
+		r_anal_xrefs_set (core->anal, NULL, from, to, R_ANAL_REF_TYPE_NULL);
 		// r_meta_set (core->anal, 'd', from, from + vsize, NULL);
 		r_core_cmdf (core, "Cd %d @ 0x%"PFMT64x, vsize, from);
 		if (!r_flag_get_at (core->flags, to, false)) {
