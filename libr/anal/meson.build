@@ -50,6 +50,7 @@ r_anal_sources = [
   'p/anal_gopclntab.c',
   'p/anal_path.c',
   'p/anal_drcov.c',
+  'p/anal_thumb.c',
 ]
 
 r_anal_sources += r_anal_d_sources
