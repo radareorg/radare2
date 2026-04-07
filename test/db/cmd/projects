@@ -33,6 +33,7 @@ NAME=Reloading a project twice fails
 FILE=bins/mach0/ls-m1
 ARGS=-a x86 -b 64
 CMDS=<<EOF
+e prj.abspath=false
 e prj.vc=false
 e scr.interactive=false
 e dir.projects = bins/other/projects
@@ -383,6 +384,7 @@ NAME=Save project for a binary and checking opened files
 FILE=bins/elf/analysis/main
 CMDS=<<EOF
 e prj.vc=false
+e prj.abspath=false
 e dir.projects = .tmp/
 o
 ?e --
