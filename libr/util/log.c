@@ -11,6 +11,8 @@ typedef struct r_log_cbuser_t {
 	RLogCallback cb;
 } RLogCallbackUser;
 
+R_VEC_TYPE (RVecRLogCallbackUser, RLogCallbackUser);
+
 static const char *level_tags[] = { // Log level to tag string lookup array
 	[R_LOG_LEVEL_FATAL] = "FATAL",
 	[R_LOG_LEVEL_ERROR] = "ERROR",
@@ -78,7 +80,7 @@ R_API void r_log_fini(void) {
 	if (rlog) {
 		RLog *log = rlog;
 		rlog = NULL;
-		r_list_free (log->cbs);
+		RVecRLogCallbackUser_free (log->cbs);
 		free (log->file);
 		free (log->filter);
 		free (log);
@@ -161,13 +163,15 @@ R_API bool r_log_match(int level, const char *origin) {
 		}
 	}
 	if (rlog->cbs) {
-		RListIter *iter;
-		RLogCallbackUser *cbu;
-		r_list_foreach (rlog->cbs, iter, cbu) {
-			if (cbu->cb (cbu->user, level, origin, NULL)) {
+		RLogCallbackUser *iter;
+		rlog->iterating = true;
+		R_VEC_FOREACH (rlog->cbs, iter) {
+			if (iter->cb (iter->user, level, origin, NULL)) {
+				rlog->iterating = false;
 				return true;
 			}
 		}
+		rlog->iterating = false;
 	}
 	return level <= rlog->level;
 }
@@ -179,13 +183,15 @@ R_API void r_log_vmessage(RLogLevel level, const char *origin, const char *func,
 	}
 	vsnprintf (out, sizeof (out), fmt, ap);
 	if (rlog->cbs) {
-		RListIter *iter;
-		RLogCallbackUser *cbu;
-		r_list_foreach (rlog->cbs, iter, cbu) {
-			if (cbu->cb (cbu->user, level, origin, out)) {
+		RLogCallbackUser *iter;
+		rlog->iterating = true;
+		R_VEC_FOREACH (rlog->cbs, iter) {
+			if (iter->cb (iter->user, level, origin, out)) {
+				rlog->iterating = false;
 				return;
 			}
 		}
+		rlog->iterating = false;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
 	if (func && r_str_startswith (func, "./")) {
@@ -250,22 +256,29 @@ R_API void r_log_add_callback(RLogCallback cb, void *user) {
 	if (!r_log_init ()) {
 		return;
 	}
-	if (!rlog->cbs) {
-		rlog->cbs = r_list_newf (free);
+	if (rlog->iterating) {
+		return;
 	}
-	RLogCallbackUser *cbu = R_NEW (RLogCallbackUser);
-	cbu->cb = cb;
-	cbu->user = user;
-	r_list_append (rlog->cbs, cbu);
+	if (!rlog->cbs) {
+		rlog->cbs = RVecRLogCallbackUser_new ();
+	}
+	RLogCallbackUser cbu = {
+		.cb = cb,
+		.user = user,
+	};
+	RVecRLogCallbackUser_push_back (rlog->cbs, &cbu);
 }
 
 R_API void r_log_del_callback(RLogCallback cb) {
 	if (r_log_init ()) {
-		RLogCallbackUser *p;
-		RListIter *iter;
-		r_list_foreach (rlog->cbs, iter, p) {
-			if (cb == p->cb) {
-				r_list_delete (rlog->cbs, iter);
+		if (rlog->iterating) {
+			return;
+		}
+		size_t i;
+		for (i = 0; rlog->cbs && i < RVecRLogCallbackUser_length (rlog->cbs); i++) {
+			RLogCallbackUser *p = RVecRLogCallbackUser_at (rlog->cbs, i);
+			if (p && cb == p->cb) {
+				RVecRLogCallbackUser_remove (rlog->cbs, i);
 				return;
 			}
 		}

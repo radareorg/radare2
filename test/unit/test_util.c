@@ -14,6 +14,40 @@ static Sdb *setup_sdb(void) {
 	return res;
 }
 
+typedef struct {
+	int calls;
+} LogCbCtx;
+
+static bool log_cb_counter(void *user, int type, const char *origin, const char *msg) {
+	(void)type;
+	(void)origin;
+	if (msg) {
+		LogCbCtx *ctx = (LogCbCtx *)user;
+		ctx->calls++;
+	}
+	return false;
+}
+
+static bool log_cb_add_during_iter(void *user, int type, const char *origin, const char *msg) {
+	(void)type;
+	(void)origin;
+	if (msg) {
+		// Attempt to add a callback during iteration; should be a no-op
+		r_log_add_callback (log_cb_counter, user);
+	}
+	return false;
+}
+
+static bool log_cb_del_during_iter(void *user, int type, const char *origin, const char *msg) {
+	(void)type;
+	(void)origin;
+	if (msg) {
+		// Attempt to delete self during iteration; should be a no-op
+		r_log_del_callback (log_cb_del_during_iter);
+	}
+	return false;
+}
+
 bool test_dll_names(void) {
 	Sdb *TDB = setup_sdb ();
 	char *s;
@@ -236,6 +270,33 @@ bool test_log(void) {
 
 	// https://github.com/radareorg/radare2/issues/22468
 	R_LOG_INFO ("%s", "");
+
+	// Test r_log_del_callback unregisters a callback
+	LogCbCtx ctx = { 0 };
+	r_log_add_callback (log_cb_counter, &ctx);
+	R_LOG_INFO ("hi");
+	r_log_del_callback (log_cb_counter);
+	R_LOG_INFO ("bye");
+	mu_assert_eq (ctx.calls, 1, "r_log_del_callback should unregister callback");
+
+	// Test that add during iteration is a no-op (no crash or corruption)
+	LogCbCtx ctx2 = { 0 };
+	r_log_add_callback (log_cb_add_during_iter, &ctx2);
+	R_LOG_INFO ("trigger add during iter");
+	r_log_del_callback (log_cb_add_during_iter);
+	// log_cb_counter should NOT have been added during iteration
+	R_LOG_INFO ("after cleanup");
+	mu_assert_eq (ctx2.calls, 0, "callback added during iteration should be ignored");
+
+	// Test that del during iteration is a no-op (no crash or corruption)
+	LogCbCtx ctx3 = { 0 };
+	r_log_add_callback (log_cb_del_during_iter, &ctx3);
+	r_log_add_callback (log_cb_counter, &ctx3);
+	R_LOG_INFO ("trigger del during iter");
+	// Both callbacks should still have fired since del was no-op
+	mu_assert_eq (ctx3.calls, 1, "callback should fire even when del attempted during iteration");
+	r_log_del_callback (log_cb_del_during_iter);
+	r_log_del_callback (log_cb_counter);
 
 	r_core_free (core);
 	mu_end;
