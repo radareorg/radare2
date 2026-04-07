@@ -798,14 +798,16 @@ CMDS=<<EOF
 e prj.vc=false
 P- hjkl
 P+ hjkl
-Pi~!/
+Pi~name
 Pi~prj.new
 Pc
-Pi hjkl
+Pi hjkl~current
+Pi hjkl~prj.new
 EOF
 EXPECT=<<EOF
-false
-hjkl
+name: hjkl
+prj.new: false
+current: false
 prj.new: false
 EOF
 RUN
@@ -819,11 +821,11 @@ P- neon
 e prj.new=true
 P+ neon
 Pi~prj.new
-Pij~prj.new
+Pij~{name}
 EOF
 EXPECT=<<EOF
-true
-true
+prj.new: true
+neon
 EOF
 RUN
 
