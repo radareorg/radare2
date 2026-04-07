@@ -4300,7 +4300,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("prj.gpg", "false", "TODO: encrypt project with GnuPGv2");
 	SETB ("prj.history", "false", "per-project command history");
 	SETB ("prj.sandbox", "false", "sandbox r2 while loading project files");
-	SETB ("prj.alwasyprompt", "false", "even when the project is already saved, ask the user to save the project when qutting");
+	SETB ("prj.prompt", "false", "even when the project is already saved, ask the user to save the project when quitting");
 
 	/* cfg */
 	SETCB ("cfg.codevar", "", &cb_codevar, "define alternative variable name for `pc` (print-code) subcommands");
