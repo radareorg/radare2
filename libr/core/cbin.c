@@ -2596,20 +2596,29 @@ static ut64 compute_addr(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
 static void handle_arm_special_symbol(RCore *core, RBinSymbol *symbol, int va) {
 	ut64 addr = compute_addr (core->bin, symbol->paddr, symbol->vaddr, va);
 	const char *oname = r_bin_name_tostring2 (symbol->name, 'o');
-	if (!strcmp (oname, "$a")) {
-		r_anal_hint_set_bits (core->anal, addr, 32);
-	} else if (!strcmp (oname, "$x")) {
-		r_anal_hint_set_bits (core->anal, addr, 64);
-	} else if (!strcmp (oname, "$t")) {
-		r_anal_hint_set_bits (core->anal, addr, 16);
-	} else if (!strcmp (oname, "$d")) {
-		// TODO: we could add data meta type at addr, but sometimes $d
-		// is in the middle of the code and it would make the code less
-		// readable.
-	} else {
-		if (core->bin->options.verbose) {
-			R_LOG_WARN ("Special symbol %s not handled", oname);
+	// handle $a, $t, $d, $x and their numbered variants ($a.0, $t.1, etc)
+	if (oname[0] == '$' && oname[1] && (!oname[2] || oname[2] == '.')) {
+		switch (oname[1]) {
+		case 'a':
+			r_anal_hint_set_bits (core->anal, addr, 32);
+			return;
+		case 'x':
+			r_anal_hint_set_bits (core->anal, addr, 64);
+			return;
+		case 't':
+			r_anal_hint_set_bits (core->anal, addr, 16);
+			return;
+		case 'd':
+			// TODO: we could add data meta type at addr, but sometimes $d
+			// is in the middle of the code and it would make the code less
+			// readable.
+			return;
+		default:
+			break;
 		}
+	}
+	if (core->bin->options.verbose) {
+		R_LOG_WARN ("Special symbol %s not handled", oname);
 	}
 }
 
