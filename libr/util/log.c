@@ -276,13 +276,14 @@ R_API void r_log_del_callback(RLogCallback cb) {
 			R_LOG_ERROR ("cannot delete log callback while iterating");
 			return;
 		}
-		size_t i;
-		for (i = 0; rlog->cbs && i < RVecRLogCallbackUser_length (rlog->cbs); i++) {
-			RLogCallbackUser *p = RVecRLogCallbackUser_at (rlog->cbs, i);
-			if (p && cb == p->cb) {
+		size_t i = 0;
+		RLogCallbackUser *p;
+		R_VEC_FOREACH (rlog->cbs, p) {
+			if (cb == p->cb) {
 				RVecRLogCallbackUser_remove (rlog->cbs, i);
 				return;
 			}
+			i++;
 		}
 	}
 }
