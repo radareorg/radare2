@@ -184,29 +184,21 @@ R_API char *r_cons_rgb_tostring(ut8 r, ut8 g, ut8 b) {
 	const char *str = NULL;
 	if (r == 0x00 && g == b && g == 0) {
 		str = "black";
-	}
-	if (r == 0xff && g == b && g == 0xff) {
+	} else if (r == 0xff && g == b && g == 0xff) {
 		str = "white";
-	}
-	if (r == 0xff && g == b && g == 0) {
+	} else if (r == 0xff && g == b && g == 0) {
 		str = "red";
-	}
-	if (g == 0xff && r == 0x80 && b == 0) {
+	} else if (g == 0xff && r == 0x80 && b == 0) {
 		str = "orange";
-	}
-	if (g == 0xff && r == b && r == 0) {
+	} else if (g == 0xff && r == b && r == 0) {
 		str = "green";
-	}
-	if (b == 0xff && r == g && r == 0) {
+	} else if (b == 0xff && r == g && r == 0) {
 		str = "blue";
-	}
-	if (r == 0xff && g == 0xff && b == 0x00) {
+	} else if (r == 0xff && g == 0xff && b == 0x00) {
 		str = "yellow";
-	}
-	if (r == 0x00 && g == 0xff && b == 0xff) {
+	} else if (r == 0x00 && g == 0xff && b == 0xff) {
 		str = "cyan";
-	}
-	if (r == 0xff && g == 0x00 && b == 0xff) {
+	} else if (r == 0xff && g == 0x00 && b == 0xff) {
 		str = "magenta";
 	}
 	return str? strdup (str) : r_str_newf ("#%02x%02x%02x", r, g, b);
