@@ -14,8 +14,8 @@ typedef struct type_trace_change_reg_t {
 } TypeTraceRegChange;
 
 static void type_trace_reg_change_fini(void *data) {
-	if (data) {
-		TypeTraceRegChange *change = data;
+	TypeTraceRegChange *change = data;
+	if (change) {
 		free (change->name);
 	}
 }
@@ -67,9 +67,9 @@ typedef struct {
 static inline void tt_fini_access(TypeTraceAccess *access) {
 	if (access->is_reg) {
 		free (access->reg.name);
-		return;
+	} else {
+		free (access->mem.data);
 	}
-	free (access->mem.data);
 }
 
 R_VEC_TYPE(VecTraceOp, TypeTraceOp);
@@ -119,19 +119,13 @@ static void update_trace_db_op(TypeTraceDB *db) {
 
 static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
-	char *name_dup = strdup (name);
-	if (!name_dup) {
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
-		return;
-	}
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
 	if (!access) {
-		free (name_dup);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
 		return;
 	}
-	access->reg.name = name_dup;
+	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_reg = true;
 	access->is_write = false;
@@ -164,21 +158,14 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 	if (!ri) {
 		return;
 	}
-	char *name_dup = strdup (name);
-	if (!name_dup) {
-		r_unref (ri);
-		R_LOG_ERROR ("Failed to allocate(strdup) memory for storing access");
-		return;
-	}
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	if (!access) {
-		free (name_dup);
 		r_unref (ri);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
 		return;
 	}
 	access->is_reg = true;
-	access->reg.name = name_dup;
+	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_write = true;
 	if (trace->enable_rollback) {
@@ -438,7 +425,7 @@ typedef struct tp_state_t {
 	ut32 stack_map;
 	RAnal *anal;
 	// RConfigHold *hc;
-	char *cfg_spec;
+	const char *cfg_spec;
 	bool cfg_breakoninvalid;
 	bool cfg_chk_constraint;
 	bool cfg_rollback;
@@ -1115,7 +1102,6 @@ static void tps_fini(TPState *tps) {
 	if (tps->anal->iob.fd_close) {
 		tps->anal->iob.fd_close (tps->anal->iob.io, tps->stack_fd);
 	}
-	free (tps->cfg_spec);
 	if (tps->anal->coreb.cmd) {
 		if (tps->old_follow) {
 			tps->anal->coreb.cmd (tps->anal->coreb.core, "e dbg.follow=true");
@@ -1341,7 +1327,7 @@ static TPState *tps_init(RAnal *anal) {
 	void *core = anal->coreb.core;
 	if (core && anal->coreb.cfgGet && anal->coreb.cfgGetB) {
 		const char *spec = anal->coreb.cfgGet (core, "types.spec");
-		tps->cfg_spec = strdup (spec? spec: "gcc");
+		tps->cfg_spec = spec? spec: "gcc";
 		tps->cfg_breakoninvalid = anal->coreb.cfgGetB (core, "esil.breakoninvalid");
 		tps->cfg_chk_constraint = anal->coreb.cfgGetB (core, "types.constraint");
 		tps->cfg_rollback = anal->coreb.cfgGetB (core, "types.rollback");
@@ -1350,7 +1336,7 @@ static TPState *tps_init(RAnal *anal) {
 			anal->coreb.cmd (core, "e dbg.follow=0");
 		}
 	} else {
-		tps->cfg_spec = strdup ("gcc");
+		tps->cfg_spec = "gcc";
 		tps->cfg_breakoninvalid = false;
 		tps->cfg_chk_constraint = false;
 		tps->cfg_rollback = false;
