@@ -799,11 +799,31 @@ e prj.vc=false
 P- hjkl
 P+ hjkl
 Pi~!/
+Pi~prj.new
 Pc
-Pi
+Pi hjkl
 EOF
 EXPECT=<<EOF
+false
 hjkl
+prj.new: false
+EOF
+RUN
+
+NAME=Project info shows prj.new artifacts
+FILE=bins/elf/analysis/main
+ARGS=-A -eprj.vc=false -edir.projects=.tmp/
+CMDS=<<EOF
+e prj.vc=false
+P- neon
+e prj.new=true
+P+ neon
+Pi~prj.new
+Pij~prj.new
+EOF
+EXPECT=<<EOF
+true
+true
 EOF
 RUN
 
