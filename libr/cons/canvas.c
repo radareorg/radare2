@@ -113,11 +113,18 @@ static const char *set_attr(RConsCanvas *c, const char *s) {
 
 	const int slen = p - s;
 	if (slen > 0) {
-		RStrBuf tmp;
-		r_strbuf_init (&tmp);
-		r_strbuf_append_n (&tmp, s, slen);
-		c->attr = r_str_constpool_get (&c->constpool, r_strbuf_get (&tmp));
-		r_strbuf_fini (&tmp);
+		char tmp[256];
+		if (slen < (int)sizeof (tmp)) {
+			memcpy (tmp, s, slen);
+			tmp[slen] = '\0';
+			c->attr = r_str_constpool_get (&c->constpool, tmp);
+		} else {
+			char *h = r_str_ndup (s, slen);
+			if (h) {
+				c->attr = r_str_constpool_get (&c->constpool, h);
+				free (h);
+			}
+		}
 	}
 	return p;
 }
@@ -186,20 +193,13 @@ static bool __expandLine(RConsCanvas *c, int real_len, int utf8_len) {
 		}
 		int size = R_MAX (c->blen[c->y] - c->x - goback, 0);
 		char *start = c->b[c->y] + c->x + goback;
-		char *tmp = malloc (size);
-		if (!tmp) {
-			return false;
-		}
-		memcpy (tmp, start, size);
 		if (padding < 0) {
 			int lap = R_MAX (0, c->b[c->y] - (start + padding));
-			memcpy (start + padding + lap, tmp + lap, size - lap);
-			free (tmp);
+			memmove (start + padding + lap, start + lap, size - lap);
 			c->blen[c->y] += padding;
 			return true;
 		}
-		memcpy (start + padding, tmp, size);
-		free (tmp);
+		memmove (start + padding, start, size);
 		c->blen[c->y] += padding;
 	}
 	return true;
@@ -352,8 +352,7 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 		return;
 	}
 	RCons *cons = c->cons;
-	char *oos = strdup (_s);
-	char *os = r_str_ansi_resetbg (oos, c->bgcolor);
+	char *os = r_str_ansi_resetbg (_s, c->bgcolor);
 	const char *s = os;
 	char ch;
 	int left, slen, attr_len, piece_len;
@@ -415,7 +414,6 @@ R_API void r_cons_canvas_write(RConsCanvas *c, const char *_s) {
 	} while (*s && !r_cons_is_breaked (cons));
 	r_cons_break_pop (cons);
 	c->x = orig_x;
-	free (oos);
 	free (os);
 }
 
@@ -441,12 +439,11 @@ R_API char *r_cons_canvas_tostring(RConsCanvas *c) {
 	for (y = 0; y < c->h; y++) {
 		olen += c->blen[y] + 1;
 	}
-	char *o = calloc (1, olen * 4 * CONS_MAX_ATTR_SZ);
-	if (!o) {
+	if (!olen) {
 		return NULL;
 	}
-	if (!olen) {
-		free (o);
+	char *o = calloc (1, olen * 4 * CONS_MAX_ATTR_SZ);
+	if (!o) {
 		return NULL;
 	}
 

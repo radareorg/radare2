@@ -284,21 +284,18 @@ static void mht_free_kv(HtPPKv *kv) {
 }
 
 static void hud_render_prompt(RCons *cons, const char *user_input, RList *filtered_list) {
-	char *s = strdup (user_input);
 	int w = r_cons_get_size (cons, NULL);
-	size_t ss = strlen (s);
-	if (ss + 12 > w) {
-		char *r = strdup (s + (ss - w + 12));
-		free (s);
-		s = r;
+	size_t ss = strlen (user_input);
+	const char *s = user_input;
+	if (ss + 12 > (size_t)w) {
+		s = user_input + (ss - w + 12);
 	}
 	char *p = r_str_newf ("(%08d)> %s", r_list_length (filtered_list), s);
-	if (strlen (p) > w) {
+	if (strlen (p) > (size_t)w) {
 		p[w] = 0;
 	}
 	r_cons_println (cons, p);
 	free (p);
-	free (s);
 }
 
 static void hud_render(RHudData *data) {
