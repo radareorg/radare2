@@ -21,6 +21,7 @@ typedef struct plugin_data_t {
 	csh cs_handle;
 	HtUU *ht_itblock;
 	HtUU *ht_it;
+	int last_syntax;
 } PluginData;
 
 static inline csh *cs_handle_for_session(RArchSession *as) {
@@ -4782,10 +4783,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		init (as);
 	}
 	csh *handle = cs_handle_for_session (as);
-	if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-	} else {
-		cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+	PluginData *pd = as->data;
+	if (pd && as->config->syntax != pd->last_syntax) {
+		pd->last_syntax = as->config->syntax;
+		if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
+			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
+		} else {
+			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
+		}
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }
