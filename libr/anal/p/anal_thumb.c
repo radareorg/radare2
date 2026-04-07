@@ -8,18 +8,15 @@ static int thumb_scan(RAnal *anal) {
 	if (!anal->iob.read_at || !anal->binb.get_sections) {
 		return 0;
 	}
-	int bits = anal->config->bits;
+	const int bits = anal->config->bits;
 	const int bsz = 4096;
-	ut8 *buf = malloc (bsz);
-	if (!buf) {
-		return 0;
-	}
+	ut8 *buf = R_NEWS (ut8, bsz);
 	int hints_added = 0;
 	RList *sections = anal->binb.get_sections (anal->binb.bin);
 	RListIter *iter;
 	RBinSection *section;
 	r_list_foreach (sections, iter, section) {
-		if (!(section->perm & R_PERM_X)) {
+		if (! (section->perm & R_PERM_X)) {
 			continue;
 		}
 		ut64 addr = section->vaddr;
@@ -29,19 +26,15 @@ static int thumb_scan(RAnal *anal) {
 		}
 		int cur_bits = bits;
 		while (addr < end) {
-			ut64 remaining = end - addr;
-			int toread = R_MIN (remaining, bsz);
+			int toread = R_MIN (end - addr, bsz);
 			if (!anal->iob.read_at (anal->iob.io, addr, buf, toread)) {
 				break;
 			}
-			// check existing hints for this region
 			RAnalHint *hint = r_anal_hint_get (anal, addr);
-			if (hint) {
-				if (hint->bits) {
-					cur_bits = hint->bits;
-				}
-				r_anal_hint_free (hint);
+			if (hint && hint->bits) {
+				cur_bits = hint->bits;
 			}
+			r_anal_hint_free (hint);
 			int i = 0;
 			while (i < toread - 3) {
 				int insn_size;
@@ -59,7 +52,7 @@ static int thumb_scan(RAnal *anal) {
 					// ARM BLX immediate: 1111 101H xxxx xxxx xxxx xxxx xxxx xxxx
 					// This always switches to Thumb mode
 					if ((insn & 0xfe000000) == 0xfa000000) {
-						st32 offset = (st32)((insn & 0x00ffffff) << 2);
+						st32 offset = (st32) ((insn & 0x00ffffff) << 2);
 						if (offset & 0x02000000) {
 							offset |= (st32)0xfc000000;
 						}
@@ -80,21 +73,19 @@ static int thumb_scan(RAnal *anal) {
 					}
 					ut16 hw0 = r_read_le16 (buf + i);
 					insn_size = 2;
-					// Check for 32-bit Thumb instruction (BL/BLX)
+					// Check for 32-bit Thumb BLX (switches to ARM)
 					if ((hw0 & 0xf800) == 0xf000 && i + 4 <= toread) {
 						ut16 hw1 = r_read_le16 (buf + i + 2);
 						insn_size = 4;
-						if ((hw1 & 0xd000) == 0xd000) {
-							// BL stays in Thumb
-						} else if ((hw1 & 0xd000) == 0xc000) {
+						if ((hw1 & 0xd000) == 0xc000) {
 							// BLX from Thumb to ARM
 							st32 S = (hw0 >> 10) & 1;
 							st32 imm10 = hw0 & 0x3ff;
 							st32 J1 = (hw1 >> 13) & 1;
 							st32 J2 = (hw1 >> 11) & 1;
 							st32 imm11 = hw1 & 0x7ff;
-							st32 I1 = !(J1 ^ S);
-							st32 I2 = !(J2 ^ S);
+							st32 I1 = ! (J1 ^ S);
+							st32 I2 = ! (J2 ^ S);
 							st32 offset = (S << 24) | (I1 << 23) | (I2 << 22) | (imm10 << 12) | (imm11 << 1);
 							if (S) {
 								offset |= (st32)0xfe000000;
@@ -106,15 +97,12 @@ static int thumb_scan(RAnal *anal) {
 					}
 				}
 				i += insn_size;
-				// update bits from hints periodically
 				if ((i & 0xff) == 0) {
 					RAnalHint *h = r_anal_hint_get (anal, addr + i);
-					if (h) {
-						if (h->bits) {
-							cur_bits = h->bits;
-						}
-						r_anal_hint_free (h);
+					if (h && h->bits) {
+						cur_bits = h->bits;
 					}
+					r_anal_hint_free (h);
 				}
 			}
 			addr += toread;
@@ -128,11 +116,9 @@ static char *thumbcmd(RAnal *anal, const char *cmd) {
 	if (!r_str_startswith (cmd, "thumb")) {
 		return NULL;
 	}
-	const char *arg = cmd + 5;
-	if (*arg == '?') {
+	if (cmd[5] == '?') {
 		return strdup (
-			"| a:thumb    scan for ARM/Thumb mode switches and create ahb hints\n"
-		);
+			"| a:thumb    scan for ARM/Thumb mode switches and create ahb hints\n");
 	}
 	int n = thumb_scan (anal);
 	if (n > 0) {
