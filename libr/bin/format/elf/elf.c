@@ -3201,7 +3201,6 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 			}
 			if (symbols) {
 				int thumb_count = 0;
-				int arm_count = 0;
 				int map_thumb = 0;
 				int map_arm = 0;
 				RBinElfSymbol *symbol;
@@ -3224,17 +3223,15 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 					ut64 paddr = symbol->offset;
 					if (paddr & 1) {
 						thumb_count++;
-					} else if (paddr > 0) {
-						arm_count++;
 					}
 				}
 				// prefer mapping symbols as they are authoritative
 				if (map_thumb + map_arm > 0) {
-					if (map_thumb > map_arm) {
+					if (map_thumb > 0) {
 						return 16;
 					}
-				} else if (thumb_count > arm_count) {
-					// fallback: thumb if majority of symbols are thumb
+				} else if (thumb_count > 0) {
+					// any thumb function means the binary uses thumb
 					return 16;
 				}
 			}
