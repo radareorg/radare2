@@ -13,106 +13,10 @@ typedef struct plugin_data_t {
 	HtSU *insns;
 } PluginData;
 
-typedef enum {
-	NDS32_ESIL_NONE,
-	NDS32_ESIL_EMPTY,
-	NDS32_ESIL_SETHI,
-	NDS32_ESIL_JRAL5,
-	NDS32_ESIL_JRAL,
-	NDS32_ESIL_JUMP,
-	NDS32_ESIL_RET,
-	NDS32_ESIL_IFRET,
-	NDS32_ESIL_IFCALL,
-	NDS32_ESIL_BEQ,
-	NDS32_ESIL_BNE,
-	NDS32_ESIL_BEQZ,
-	NDS32_ESIL_BNEZ,
-	NDS32_ESIL_BNEZS8,
-	NDS32_ESIL_STORE_GP1,
-	NDS32_ESIL_LOAD_GP1,
-	NDS32_ESIL_LOAD_GP4,
-	NDS32_ESIL_STORE_GP4,
-	NDS32_ESIL_STORE_GP2,
-	NDS32_ESIL_STORE_MEM2,
-	NDS32_ESIL_ADDI_GP,
-	NDS32_ESIL_ADDI_SP,
-	NDS32_ESIL_ORI,
-	NDS32_ESIL_ADDI,
-	NDS32_ESIL_SUBRI,
-	NDS32_ESIL_ANDI,
-	NDS32_ESIL_ADDI45,
-	NDS32_ESIL_XORI,
-	NDS32_ESIL_SLLI,
-	NDS32_ESIL_SRLI,
-	NDS32_ESIL_SRAI,
-	NDS32_ESIL_MOV,
-	NDS32_ESIL_LWI,
-	NDS32_ESIL_SWI,
-	NDS32_ESIL_POP25,
-	NDS32_ESIL_MADDR32,
-	NDS32_ESIL_ADD_SLLI,
-	NDS32_ESIL_SUB333,
-	NDS32_ESIL_ADD333,
-	NDS32_ESIL_ZEH,
-	NDS32_ESIL_SRLI45,
-	NDS32_ESIL_DIVR,
-	NDS32_ESIL_OR33,
-	NDS32_ESIL_MUL,
-	NDS32_ESIL_SLTS45,
-	NDS32_ESIL_SLT45,
-	NDS32_ESIL_MUL33,
-	NDS32_ESIL_BGTZ,
-	NDS32_ESIL_LBI,
-	NDS32_ESIL_SBI,
-	NDS32_ESIL_PUSH25,
-	NDS32_ESIL_FEXTI33,
-	NDS32_ESIL_SLTSI45,
-	NDS32_ESIL_SLTI45,
-	NDS32_ESIL_BEQZS8,
-	NDS32_ESIL_BGEZ,
-	NDS32_ESIL_BLTZ,
-	NDS32_ESIL_BLEZ,
-	NDS32_ESIL_BEQZ38,
-	NDS32_ESIL_BNEZ38,
-	NDS32_ESIL_BEQS38,
-	NDS32_ESIL_BNES38,
-	NDS32_ESIL_BEQC,
-	NDS32_ESIL_BNEC,
-	NDS32_ESIL_ADD,
-	NDS32_ESIL_SUB,
-	NDS32_ESIL_AND,
-	NDS32_ESIL_OR,
-	NDS32_ESIL_XOR,
-	NDS32_ESIL_NOR,
-	NDS32_ESIL_SLL,
-	NDS32_ESIL_SRL,
-	NDS32_ESIL_SRA,
-	NDS32_ESIL_SLT,
-	NDS32_ESIL_SLTS,
-	NDS32_ESIL_SLTI,
-	NDS32_ESIL_SLTSI,
-	NDS32_ESIL_BITC,
-	NDS32_ESIL_CMOVZ,
-	NDS32_ESIL_CMOVN,
-	NDS32_ESIL_SUB45,
-	NDS32_ESIL_SUBI45,
-	NDS32_ESIL_SRAI45,
-	NDS32_ESIL_SLLI333,
-	NDS32_ESIL_NEG33,
-	NDS32_ESIL_NOT33,
-	NDS32_ESIL_AND33,
-	NDS32_ESIL_XOR33,
-	NDS32_ESIL_SEB,
-	NDS32_ESIL_SEH,
-	NDS32_ESIL_ZEB,
-	NDS32_ESIL_XLSB,
-	NDS32_ESIL_ADDI10S,
-	NDS32_ESIL_ROTRI,
-} Nds32EsilKind;
-
+// esil: NULL=no esil, ""=empty, "$0"-"$7" expanded to av[0]-av[7], "@X"=special
 typedef struct {
 	const char *name;
-	Nds32EsilKind esil;
+	const char *esil;
 	int type;
 	signed char jump_arg;
 	bool set_fail;
@@ -125,211 +29,211 @@ typedef struct {
 } Nds32Insn;
 
 #define NDS32_OP_NONE (-1)
-#define NDS32_DESC(_name, _esil, _type) { _name, NDS32_ESIL_ ## _esil, _type, -1, false }
-#define NDS32_JDESC(_name, _esil, _type, _jump_arg, _set_fail) { _name, NDS32_ESIL_ ## _esil, _type, _jump_arg, _set_fail }
+#define NDS32_DESC(_name, _esil, _type) { _name, _esil, _type, -1, false }
+#define NDS32_JDESC(_name, _esil, _type, _jump_arg, _set_fail) { _name, _esil, _type, _jump_arg, _set_fail }
 
 static const Nds32InsnDesc nds32_insns[] = {
-	NDS32_DESC ("sethi", SETHI, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("jral5", JRAL5, R_ANAL_OP_TYPE_RCALL),
-	NDS32_JDESC ("jral", JRAL, R_ANAL_OP_TYPE_RCALL, -1, true),
-	NDS32_JDESC ("jal", JUMP, R_ANAL_OP_TYPE_CALL, 0, true),
-	NDS32_DESC ("jr5", JUMP, R_ANAL_OP_TYPE_RJMP),
-	NDS32_DESC ("jr", JUMP, R_ANAL_OP_TYPE_RJMP),
-	NDS32_JDESC ("j8", JUMP, R_ANAL_OP_TYPE_JMP, 0, false),
-	NDS32_JDESC ("j", JUMP, R_ANAL_OP_TYPE_JMP, 0, false),
-	NDS32_DESC ("ret", RET, R_ANAL_OP_TYPE_RET),
-	NDS32_DESC ("ret5", RET, R_ANAL_OP_TYPE_RET),
-	NDS32_DESC ("iret", NONE, R_ANAL_OP_TYPE_RET),
-	NDS32_DESC ("ifret16", IFRET, R_ANAL_OP_TYPE_CRET),
-	NDS32_DESC ("ifret", IFRET, R_ANAL_OP_TYPE_CRET),
-	NDS32_JDESC ("ifcall", IFCALL, R_ANAL_OP_TYPE_CCALL, 0, true),
-	NDS32_JDESC ("bgezal", NONE, R_ANAL_OP_TYPE_CCALL, 1, true),
-	NDS32_JDESC ("bltzal", NONE, R_ANAL_OP_TYPE_CCALL, 1, true),
-	NDS32_JDESC ("beq", BEQ, R_ANAL_OP_TYPE_CJMP, 2, true),
-	NDS32_JDESC ("bne", BNE, R_ANAL_OP_TYPE_CJMP, 2, true),
-	NDS32_JDESC ("beqz", BEQZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bnez", BNEZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bnezs8", BNEZS8, R_ANAL_OP_TYPE_CJMP, 0, true),
-	NDS32_JDESC ("beqzs8", BEQZS8, R_ANAL_OP_TYPE_CJMP, 0, true),
-	NDS32_JDESC ("bgtz", BGTZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bgez", BGEZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bltz", BLTZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("blez", BLEZ, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("beqz38", BEQZ38, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bnez38", BNEZ38, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("beqs38", BEQS38, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("bnes38", BNES38, R_ANAL_OP_TYPE_CJMP, 1, true),
-	NDS32_JDESC ("beqc", BEQC, R_ANAL_OP_TYPE_CJMP, 2, true),
-	NDS32_JDESC ("bnec", BNEC, R_ANAL_OP_TYPE_CJMP, 2, true),
-	NDS32_DESC ("addi", ADDI, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addri", NONE, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addi.gp", ADDI_GP, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addri36.sp", ADDI_SP, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addi10s", ADDI10S, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addi333", ADD333, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("addi45", ADDI45, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add333", ADD333, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add45", ADDI45, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add5.pc", NONE, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add_slli", ADD_SLLI, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add_srli", NONE, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add.sc", NONE, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add.wc", NONE, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("add", ADD, R_ANAL_OP_TYPE_ADD),
-	NDS32_DESC ("subi", NONE, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("subri", SUBRI, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub333", SUB333, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub45", SUB45, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("subi333", SUB333, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("subi45", SUBI45, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub_slli", NONE, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub_srli", NONE, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub.sc", NONE, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub.wc", NONE, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("sub", SUB, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("mul33", MUL33, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("mul", MUL, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("maddr32", MADDR32, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("msubr32", NONE, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("madd", NONE, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("msub", NONE, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("mult", NONE, R_ANAL_OP_TYPE_MUL),
-	NDS32_DESC ("divr", DIVR, R_ANAL_OP_TYPE_DIV),
-	NDS32_DESC ("divsr", NONE, R_ANAL_OP_TYPE_DIV),
-	NDS32_DESC ("divs", NONE, R_ANAL_OP_TYPE_DIV),
-	NDS32_DESC ("div", NONE, R_ANAL_OP_TYPE_DIV),
-	NDS32_DESC ("ori", ORI, R_ANAL_OP_TYPE_OR),
-	NDS32_DESC ("or33", OR33, R_ANAL_OP_TYPE_OR),
-	NDS32_DESC ("or_slli", NONE, R_ANAL_OP_TYPE_OR),
-	NDS32_DESC ("or_srli", NONE, R_ANAL_OP_TYPE_OR),
-	NDS32_DESC ("or", OR, R_ANAL_OP_TYPE_OR),
-	NDS32_DESC ("xori", XORI, R_ANAL_OP_TYPE_XOR),
-	NDS32_DESC ("xor33", XOR33, R_ANAL_OP_TYPE_XOR),
-	NDS32_DESC ("xor_slli", NONE, R_ANAL_OP_TYPE_XOR),
-	NDS32_DESC ("xor_srli", NONE, R_ANAL_OP_TYPE_XOR),
-	NDS32_DESC ("xor", XOR, R_ANAL_OP_TYPE_XOR),
-	NDS32_DESC ("andi", ANDI, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("and33", AND33, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("and_slli", NONE, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("and_srli", NONE, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("and", AND, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("bitci", BITC, R_ANAL_OP_TYPE_AND),
-	NDS32_DESC ("nor", NOR, R_ANAL_OP_TYPE_NOR),
-	NDS32_DESC ("not33", NOT33, R_ANAL_OP_TYPE_NOT),
-	NDS32_DESC ("slli", SLLI, R_ANAL_OP_TYPE_SHL),
-	NDS32_DESC ("sll", SLL, R_ANAL_OP_TYPE_SHL),
-	NDS32_DESC ("slli333", SLLI333, R_ANAL_OP_TYPE_SHL),
-	NDS32_DESC ("srli", SRLI, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("srl", SRL, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("srai", SRAI, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("sra", SRA, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("srli45", SRLI45, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("srai45", SRAI45, R_ANAL_OP_TYPE_SHR),
-	NDS32_DESC ("rotri", ROTRI, R_ANAL_OP_TYPE_ROR),
-	NDS32_DESC ("rotr", NONE, R_ANAL_OP_TYPE_ROR),
-	NDS32_DESC ("lbi.gp", LOAD_GP1, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lbsi.gp", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwi.gp", LOAD_GP4, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhi.gp", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhsi.gp", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("sbi.gp", STORE_GP1, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("swi.gp", STORE_GP4, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("shi.gp", STORE_GP2, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("lwi", LWI, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lbi", LBI, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("ldi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lbsi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhsi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwsi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwi333", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lbi333", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhi333", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwi450", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwi37", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lwi45", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lw", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lb", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lh", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("ld", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lbs", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lhs", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lws", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("llw", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lmw", EMPTY, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("lmw.adm", EMPTY, NDS32_OP_NONE),
-	NDS32_DESC ("fls", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("fld", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("flsi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("fldi", NONE, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("swi", SWI, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sbi", SBI, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("shi", STORE_MEM2, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sdi", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("swi333", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sbi333", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("shi333", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("swi450", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("swi37", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sw", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sb", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sd", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("scw", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("smw", EMPTY, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("smw.adm", EMPTY, NDS32_OP_NONE),
-	NDS32_DESC ("fss", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("fsd", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("fssi", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("fsdi", NONE, R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("mov55", MOV, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("mov", MOV, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("movi55", MOV, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("movi", MOV, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("movpi45", MOV, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("movd44", NONE, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("mfsr", NONE, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("mtsr", NONE, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("mfusr", EMPTY, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("mtusr", EMPTY, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("cmovz", CMOVZ, R_ANAL_OP_TYPE_CMOV),
-	NDS32_DESC ("cmovn", CMOVN, R_ANAL_OP_TYPE_CMOV),
-	NDS32_DESC ("slt", SLT, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("slts", SLTS, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("slt45", SLT45, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("slts45", SLTS45, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("slti", SLTI, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("sltsi", SLTSI, R_ANAL_OP_TYPE_CMP),
-	NDS32_DESC ("slti45", SLTI45, NDS32_OP_NONE),
-	NDS32_DESC ("sltsi45", SLTSI45, NDS32_OP_NONE),
-	NDS32_DESC ("zeh", ZEH, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("zeh33", ZEH, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("zeb", ZEB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("zeb33", ZEB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("seh", SEH, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("seh33", SEH, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("seb", SEB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("seb33", SEB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("xlsb", XLSB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("xlsb33", XLSB, R_ANAL_OP_TYPE_MOV),
-	NDS32_DESC ("push25", PUSH25, R_ANAL_OP_TYPE_PUSH),
-	NDS32_DESC ("pop25", POP25, R_ANAL_OP_TYPE_POP),
-	NDS32_DESC ("syscall", NONE, R_ANAL_OP_TYPE_SWI),
-	NDS32_DESC ("break", NONE, R_ANAL_OP_TYPE_TRAP),
-	NDS32_DESC ("trap", NONE, R_ANAL_OP_TYPE_TRAP),
-	NDS32_DESC ("teqz", NONE, R_ANAL_OP_TYPE_TRAP),
-	NDS32_DESC ("tnez", NONE, R_ANAL_OP_TYPE_TRAP),
-	NDS32_DESC ("nop", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("neg33", NEG33, R_ANAL_OP_TYPE_SUB),
-	NDS32_DESC ("abs", NONE, R_ANAL_OP_TYPE_ABS),
-	NDS32_DESC ("dsb", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("isb", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("msync", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("isync", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("standby", EMPTY, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("cctl", NONE, R_ANAL_OP_TYPE_NOP),
-	NDS32_DESC ("fexti33", FEXTI33, NDS32_OP_NONE),
-	NDS32_DESC ("ex9.it", EMPTY, NDS32_OP_NONE),
-	NDS32_DESC ("bitc", BITC, NDS32_OP_NONE),
+	NDS32_DESC ("sethi", "12,$1,<<,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("jral5", "pc,2,+,lp,:=,$0,pc,:=", R_ANAL_OP_TYPE_RCALL),
+	NDS32_JDESC ("jral", "pc,4,+,$0,:=,$1,pc,:=", R_ANAL_OP_TYPE_RCALL, -1, true),
+	NDS32_JDESC ("jal", "$0,pc,:=", R_ANAL_OP_TYPE_CALL, 0, true),
+	NDS32_DESC ("jr5", "$0,pc,:=", R_ANAL_OP_TYPE_RJMP),
+	NDS32_DESC ("jr", "$0,pc,:=", R_ANAL_OP_TYPE_RJMP),
+	NDS32_JDESC ("j8", "$0,pc,:=", R_ANAL_OP_TYPE_JMP, 0, false),
+	NDS32_JDESC ("j", "$0,pc,:=", R_ANAL_OP_TYPE_JMP, 0, false),
+	NDS32_DESC ("ret", "lp,pc,:=", R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("ret5", "lp,pc,:=", R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("iret", NULL, R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("ifret16", "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}", R_ANAL_OP_TYPE_CRET),
+	NDS32_DESC ("ifret", "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}", R_ANAL_OP_TYPE_CRET),
+	NDS32_JDESC ("ifcall", "@ifcall", R_ANAL_OP_TYPE_CCALL, 0, true),
+	NDS32_JDESC ("bgezal", NULL, R_ANAL_OP_TYPE_CCALL, 1, true),
+	NDS32_JDESC ("bltzal", NULL, R_ANAL_OP_TYPE_CCALL, 1, true),
+	NDS32_JDESC ("beq", "$0,$1,==,$z,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("bne", "$0,$1,==,$z,!,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("beqz", "$0,0,==,$z,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnez", "$0,0,==,$z,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnezs8", "r5,0,==,$z,!,?{,$0,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 0, true),
+	NDS32_JDESC ("beqzs8", "r5,!,?{,$0,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 0, true),
+	NDS32_JDESC ("bgtz", "$0,0,>,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bgez", "31,$0,>>,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bltz", "31,$0,>>,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("blez", "$0,!,31,$0,>>,|,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqz38", "$0,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnez38", "$0,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqs38", "$0,r5,==,$z,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnes38", "$0,r5,==,$z,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqc", "$1,$0,==,$z,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("bnec", "$1,$0,==,$z,!,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_DESC ("addi", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addri", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi.gp", "gp,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addri36.sp", "sp,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi10s", "$0,sp,+,sp,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi333", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi45", "$1,$0,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add333", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add45", "$1,$0,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add5.pc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add_slli", "$3,$2,<<,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add_srli", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add.sc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add.wc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("subi", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subri", "$1,$2,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub333", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub45", "$1,$0,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subi333", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subi45", "$1,$0,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub_slli", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub_srli", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub.sc", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub.wc", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("mul33", "$1,$0,*,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("mul", "$2,$1,*,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("maddr32", "$2,$1,*,$0,+,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("msubr32", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("madd", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("msub", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("mult", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("divr", "$2,$1,/,$0,:=", R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("divsr", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("divs", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("div", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("ori", "$2,$1,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or33", "$1,$0,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or_slli", NULL, R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or_srli", NULL, R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or", "$2,$1,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("xori", "$2,$1,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor33", "$1,$0,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor_slli", NULL, R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor_srli", NULL, R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor", "$2,$1,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("andi", "$2,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and33", "$1,$0,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and_slli", NULL, R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and_srli", NULL, R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and", "$2,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("bitci", "$2,~,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("nor", "$2,$1,|,~,$0,:=", R_ANAL_OP_TYPE_NOR),
+	NDS32_DESC ("not33", "$1,~,$0,:=", R_ANAL_OP_TYPE_NOT),
+	NDS32_DESC ("slli", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("sll", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("slli333", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("srli", "$2,$1,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srl", "$2,$1,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srai", "$2,$1,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("sra", "$2,$1,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srli45", "$1,$0,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srai45", "$1,$0,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("rotri", "$2,$1,>>>,$0,:=", R_ANAL_OP_TYPE_ROR),
+	NDS32_DESC ("rotr", NULL, R_ANAL_OP_TYPE_ROR),
+	NDS32_DESC ("lbi.gp", "@gl1", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbsi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi.gp", "@gl4", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhsi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("sbi.gp", "@gs1", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi.gp", "@gs4", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi.gp", "@gs2", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("lwi", "$1,[4],$0,:=", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbi", "@ml1", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("ldi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi450", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi37", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi45", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lw", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lb", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lh", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("ld", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbs", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhs", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lws", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("llw", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lmw", "", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lmw.adm", "", NDS32_OP_NONE),
+	NDS32_DESC ("fls", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("fld", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("flsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("fldi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("swi", "$0,$1,=[4]", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sbi", "$0,$1,=[1]", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi", "@ms2", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sdi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sbi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi450", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi37", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sw", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sb", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sd", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("scw", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("smw", "", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("smw.adm", "", NDS32_OP_NONE),
+	NDS32_DESC ("fss", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fsd", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fssi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fsdi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("mov55", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mov", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movi55", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movi", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movpi45", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movd44", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mfsr", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mtsr", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mfusr", "", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mtusr", "", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("cmovz", "$2,!,?{,$1,$0,:=,}", R_ANAL_OP_TYPE_CMOV),
+	NDS32_DESC ("cmovn", "$2,?{,$1,$0,:=,}", R_ANAL_OP_TYPE_CMOV),
+	NDS32_DESC ("slt", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slts", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slt45", "$1,$0,<,ta,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slts45", "$1,$0,<,ta,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slti", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("sltsi", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slti45", "$1,$0,<,ta,:=", NDS32_OP_NONE),
+	NDS32_DESC ("sltsi45", "$1,$0,<,ta,:=", NDS32_OP_NONE),
+	NDS32_DESC ("zeh", "0xffff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeh33", "0xffff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeb", "0xff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeb33", "0xff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seh", "16,$1,<<,16,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seh33", "16,$1,<<,16,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seb", "24,$1,<<,24,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seb33", "24,$1,<<,24,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("xlsb", "1,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("xlsb33", "1,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("push25", "sp,4,-,sp,:=,$0,sp,=[4]", R_ANAL_OP_TYPE_PUSH),
+	NDS32_DESC ("pop25", "sp,[4],$0,:=,sp,4,+,sp,:=", R_ANAL_OP_TYPE_POP),
+	NDS32_DESC ("syscall", NULL, R_ANAL_OP_TYPE_SWI),
+	NDS32_DESC ("break", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("trap", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("teqz", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("tnez", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("nop", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("neg33", "0,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("abs", NULL, R_ANAL_OP_TYPE_ABS),
+	NDS32_DESC ("dsb", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("isb", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("msync", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("isync", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("standby", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("cctl", NULL, R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("fexti33", "1,$1,<<,1,-,$0,&,$0,:=", NDS32_OP_NONE),
+	NDS32_DESC ("ex9.it", "", NDS32_OP_NONE),
+	NDS32_DESC ("bitc", "$2,~,$1,&,$0,:=", NDS32_OP_NONE),
 };
 
 static void nds32_init_args(char **av, int avsz) {
@@ -445,53 +349,65 @@ static bool split_mem_addr(char *addr, char **reg, char **off) {
 	return true;
 }
 
-static void set_esil_empty(RAnalOp *op) {
-	r_strbuf_set (&op->esil, "");
-}
-
-static void set_esil_assign(RAnalOp *op, const char *src, const char *dst) {
-	r_strbuf_setf (&op->esil, "%s,%s,:=", src, dst);
-}
-
-static void set_esil_binop(RAnalOp *op, const char *lhs, const char *rhs, const char *esilop, const char *dst) {
-	r_strbuf_setf (&op->esil, "%s,%s,%s,%s,:=", lhs, rhs, esilop, dst);
-}
-
-static void set_esil_gp_store(RAnalOp *op, const char *src, char *offarg, int size) {
-	char *off = parse_gp_off (offarg);
-	if (*off) {
-		r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[%d]", src, off, size);
+// expand $0-$7 placeholders in ESIL template to av[0]-av[7]
+static void apply_esil_template(RAnalOp *op, const char *fmt, char **av) {
+	char buf[256];
+	char *dst = buf;
+	char *end = buf + sizeof (buf) - 1;
+	const char *src = fmt;
+	while (*src && dst < end) {
+		if (src[0] == '$' && src[1] >= '0' && src[1] <= '7') {
+			const char *val = av[src[1] - '0'];
+			while (*val && dst < end) {
+				*dst++ = *val++;
+			}
+			src += 2;
+		} else {
+			*dst++ = *src++;
+		}
 	}
+	*dst = 0;
+	r_strbuf_set (&op->esil, buf);
 }
 
-static void set_esil_gp_load(RAnalOp *op, char *offarg, const char *dst, int size) {
-	char *off = parse_gp_off (offarg);
-	if (*off) {
-		r_strbuf_setf (&op->esil, "gp,%s,+,[%d],%s,:=", off, size, dst);
+// handle @-prefixed special ESIL cases that need address parsing
+static void apply_esil_special(RAnalOp *op, const char *tag, char **av) {
+	int size = tag[3] - '0';
+	switch (tag[1]) {
+	case 'g': { // @gl1..@gl4, @gs1..@gs4: gp load/store
+		char *off = parse_gp_off (av[1]);
+		if (*off) {
+			if (tag[2] == 'l') {
+				r_strbuf_setf (&op->esil, "gp,%s,+,[%d],%s,:=", off, size, av[0]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[%d]", av[0], off, size);
+			}
+		}
+		break;
 	}
-}
-
-static void set_esil_mem_store(RAnalOp *op, const char *src, char *addrarg, int size) {
-	char *reg, *off;
-	if (!split_mem_addr (addrarg, &reg, &off)) {
-		return;
+	case 'm': { // @ml1..@ml4, @ms1..@ms4: mem load/store
+		char *reg, *off;
+		if (!split_mem_addr (av[1], &reg, &off)) {
+			break;
+		}
+		if (tag[2] == 'l') {
+			if (off && *off) {
+				r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,:=", reg, off, size, av[0]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,[%d],%s,:=", reg, size, av[0]);
+			}
+		} else {
+			if (off && *off) {
+				r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[%d]", av[0], reg, off, size);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,%s,=[%d]", av[0], reg, size);
+			}
+		}
+		break;
 	}
-	if (off && *off) {
-		r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[%d]", src, reg, off, size);
-	} else {
-		r_strbuf_setf (&op->esil, "%s,%s,=[%d]", src, reg, size);
-	}
-}
-
-static void set_esil_mem_load(RAnalOp *op, char *addrarg, const char *dst, int size) {
-	char *reg, *off;
-	if (!split_mem_addr (addrarg, &reg, &off)) {
-		return;
-	}
-	if (off && *off) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,:=", reg, off, size, dst);
-	} else {
-		r_strbuf_setf (&op->esil, "%s,[%d],%s,:=", reg, size, dst);
+	case 'i': // @ifcall
+		r_strbuf_setf (&op->esil, "pc,%d,+,ifc_lp,:=,1,ifc_on,:=,%s,pc,:=", op->size, av[0]);
+		break;
 	}
 }
 
@@ -567,267 +483,15 @@ static bool fini(RArchSession *as) {
 }
 
 static void decode_esil(RAnalOp *op, const Nds32InsnDesc *desc, char **av) {
-	if (!desc) {
+	if (!desc || !desc->esil) {
 		return;
 	}
-	switch (desc->esil) {
-	case NDS32_ESIL_NONE:
-		break;
-	case NDS32_ESIL_EMPTY:
-		set_esil_empty (op);
-		break;
-	case NDS32_ESIL_SETHI:
-		r_strbuf_setf (&op->esil, "12,%s,<<,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_JRAL5:
-		r_strbuf_setf (&op->esil, "pc,2,+,lp,:=,%s,pc,:=", av[0]);
-		break;
-	case NDS32_ESIL_JRAL:
-		r_strbuf_setf (&op->esil, "pc,4,+,%s,:=,%s,pc,:=", av[0], av[1]);
-		break;
-	case NDS32_ESIL_JUMP:
-		r_strbuf_setf (&op->esil, "%s,pc,:=", av[0]);
-		break;
-	case NDS32_ESIL_RET:
-		r_strbuf_set (&op->esil, "lp,pc,:=");
-		break;
-	case NDS32_ESIL_IFRET:
-		r_strbuf_set (&op->esil, "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}");
-		break;
-	case NDS32_ESIL_IFCALL:
-		r_strbuf_setf (&op->esil, "pc,%d,+,ifc_lp,:=,1,ifc_on,:=,%s,pc,:=", op->size, av[0]);
-		break;
-	case NDS32_ESIL_BEQ:
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", av[0], av[1], av[2]);
-		break;
-	case NDS32_ESIL_BNE:
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", av[0], av[1], av[2]);
-		break;
-	case NDS32_ESIL_BEQZ:
-		r_strbuf_setf (&op->esil, "%s,0,==,$z,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BNEZ:
-		r_strbuf_setf (&op->esil, "%s,0,==,$z,!,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BNEZS8:
-		r_strbuf_setf (&op->esil, "r5,0,==,$z,!,?{,%s,pc,:=,}", av[0]);
-		break;
-	case NDS32_ESIL_STORE_GP1:
-		set_esil_gp_store (op, av[0], av[1], 1);
-		break;
-	case NDS32_ESIL_LOAD_GP1:
-		set_esil_gp_load (op, av[1], av[0], 1);
-		break;
-	case NDS32_ESIL_LOAD_GP4:
-		set_esil_gp_load (op, av[1], av[0], 4);
-		break;
-	case NDS32_ESIL_STORE_GP4:
-		set_esil_gp_store (op, av[0], av[1], 4);
-		break;
-	case NDS32_ESIL_STORE_GP2:
-		set_esil_gp_store (op, av[0], av[1], 2);
-		break;
-	case NDS32_ESIL_STORE_MEM2:
-		set_esil_mem_store (op, av[0], av[1], 2);
-		break;
-	case NDS32_ESIL_ADDI_GP:
-		r_strbuf_setf (&op->esil, "gp,%s,+,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_ADDI_SP:
-		r_strbuf_setf (&op->esil, "sp,%s,+,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_ORI:
-		set_esil_binop (op, av[2], av[1], "|", av[0]);
-		break;
-	case NDS32_ESIL_ADDI:
-	case NDS32_ESIL_ADD333:
-	case NDS32_ESIL_ADD:
-		set_esil_binop (op, av[2], av[1], "+", av[0]);
-		break;
-	case NDS32_ESIL_SLLI333:
-		set_esil_binop (op, av[2], av[1], "<<", av[0]);
-		break;
-	case NDS32_ESIL_SUBRI:
-		set_esil_binop (op, av[1], av[2], "-", av[0]);
-		break;
-	case NDS32_ESIL_ANDI:
-		set_esil_binop (op, av[2], av[1], "&", av[0]);
-		break;
-	case NDS32_ESIL_ADDI45:
-		set_esil_binop (op, av[1], av[0], "+", av[0]);
-		break;
-	case NDS32_ESIL_XORI:
-		set_esil_binop (op, av[2], av[1], "^", av[0]);
-		break;
-	case NDS32_ESIL_SLLI:
-	case NDS32_ESIL_SLL:
-		set_esil_binop (op, av[2], av[1], "<<", av[0]);
-		break;
-	case NDS32_ESIL_SRLI:
-	case NDS32_ESIL_SRL:
-		set_esil_binop (op, av[2], av[1], ">>", av[0]);
-		break;
-	case NDS32_ESIL_SRAI:
-	case NDS32_ESIL_SRA:
-		set_esil_binop (op, av[2], av[1], "ASR", av[0]);
-		break;
-	case NDS32_ESIL_MOV:
-		set_esil_assign (op, av[1], av[0]);
-		break;
-	case NDS32_ESIL_LWI:
-		r_strbuf_setf (&op->esil, "%s,[4],%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_SWI:
-		r_strbuf_setf (&op->esil, "%s,%s,=[4]", av[0], av[1]);
-		break;
-	case NDS32_ESIL_POP25:
-		r_strbuf_setf (&op->esil, "sp,[4],%s,:=,sp,4,+,sp,:=", av[0]);
-		break;
-	case NDS32_ESIL_MADDR32:
-		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,:=", av[2], av[1], av[0], av[0]);
-		break;
-	case NDS32_ESIL_ADD_SLLI:
-		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,+,%s,:=", av[3], av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_SUB333:
-	case NDS32_ESIL_SUB:
-		set_esil_binop (op, av[2], av[1], "-", av[0]);
-		break;
-	case NDS32_ESIL_ZEH:
-		r_strbuf_setf (&op->esil, "0xffff,%s,&,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_SRLI45:
-		set_esil_binop (op, av[1], av[0], ">>", av[0]);
-		break;
-	case NDS32_ESIL_DIVR:
-		set_esil_binop (op, av[2], av[1], "/", av[0]);
-		break;
-	case NDS32_ESIL_OR33:
-		set_esil_binop (op, av[1], av[0], "|", av[0]);
-		break;
-	case NDS32_ESIL_MUL:
-		set_esil_binop (op, av[2], av[1], "*", av[0]);
-		break;
-	case NDS32_ESIL_SLTS45:
-	case NDS32_ESIL_SLTI45:
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_SLT45:
-	case NDS32_ESIL_SLTSI45:
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_MUL33:
-		set_esil_binop (op, av[1], av[0], "*", av[0]);
-		break;
-	case NDS32_ESIL_BGTZ:
-		r_strbuf_setf (&op->esil, "%s,0,>,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_LBI:
-		set_esil_mem_load (op, av[1], av[0], 1);
-		break;
-	case NDS32_ESIL_SBI:
-		r_strbuf_setf (&op->esil, "%s,%s,=[1]", av[0], av[1]);
-		break;
-	case NDS32_ESIL_PUSH25:
-		r_strbuf_setf (&op->esil, "sp,4,-,sp,:=,%s,sp,=[4]", av[0]);
-		break;
-	case NDS32_ESIL_FEXTI33:
-		r_strbuf_setf (&op->esil, "1,%s,<<,1,-,%s,&,%s,:=", av[1], av[0], av[0]);
-		break;
-	case NDS32_ESIL_BEQZS8:
-		r_strbuf_setf (&op->esil, "r5,!,?{,%s,pc,:=,}", av[0]);
-		break;
-	case NDS32_ESIL_BGEZ:
-		r_strbuf_setf (&op->esil, "31,%s,>>,!,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BLTZ:
-		r_strbuf_setf (&op->esil, "31,%s,>>,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BLEZ:
-		r_strbuf_setf (&op->esil, "%s,!,31,%s,>>,|,?{,%s,pc,:=,}", av[0], av[0], av[1]);
-		break;
-	case NDS32_ESIL_BEQZ38:
-		r_strbuf_setf (&op->esil, "%s,!,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BNEZ38:
-		r_strbuf_setf (&op->esil, "%s,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BEQS38:
-		r_strbuf_setf (&op->esil, "%s,r5,==,$z,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BNES38:
-		r_strbuf_setf (&op->esil, "%s,r5,==,$z,!,?{,%s,pc,:=,}", av[0], av[1]);
-		break;
-	case NDS32_ESIL_BEQC:
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", av[1], av[0], av[2]);
-		break;
-	case NDS32_ESIL_BNEC:
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", av[1], av[0], av[2]);
-		break;
-	case NDS32_ESIL_AND:
-		set_esil_binop (op, av[2], av[1], "&", av[0]);
-		break;
-	case NDS32_ESIL_OR:
-		set_esil_binop (op, av[2], av[1], "|", av[0]);
-		break;
-	case NDS32_ESIL_XOR:
-		set_esil_binop (op, av[2], av[1], "^", av[0]);
-		break;
-	case NDS32_ESIL_NOR:
-		r_strbuf_setf (&op->esil, "%s,%s,|,~,%s,:=", av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_SLT:
-	case NDS32_ESIL_SLTS:
-	case NDS32_ESIL_SLTI:
-	case NDS32_ESIL_SLTSI:
-		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_BITC:
-		r_strbuf_setf (&op->esil, "%s,~,%s,&,%s,:=", av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_CMOVZ:
-		r_strbuf_setf (&op->esil, "%s,!,?{,%s,%s,:=,}", av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_CMOVN:
-		r_strbuf_setf (&op->esil, "%s,?{,%s,%s,:=,}", av[2], av[1], av[0]);
-		break;
-	case NDS32_ESIL_SUB45:
-	case NDS32_ESIL_SUBI45:
-		set_esil_binop (op, av[1], av[0], "-", av[0]);
-		break;
-	case NDS32_ESIL_SRAI45:
-		set_esil_binop (op, av[1], av[0], "ASR", av[0]);
-		break;
-	case NDS32_ESIL_NEG33:
-		r_strbuf_setf (&op->esil, "0,%s,-,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_NOT33:
-		r_strbuf_setf (&op->esil, "%s,~,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_AND33:
-		set_esil_binop (op, av[1], av[0], "&", av[0]);
-		break;
-	case NDS32_ESIL_XOR33:
-		set_esil_binop (op, av[1], av[0], "^", av[0]);
-		break;
-	case NDS32_ESIL_SEB:
-		r_strbuf_setf (&op->esil, "24,%s,<<,24,ASR,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_SEH:
-		r_strbuf_setf (&op->esil, "16,%s,<<,16,ASR,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_ZEB:
-		r_strbuf_setf (&op->esil, "0xff,%s,&,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_XLSB:
-		r_strbuf_setf (&op->esil, "1,%s,&,%s,:=", av[1], av[0]);
-		break;
-	case NDS32_ESIL_ADDI10S:
-		r_strbuf_setf (&op->esil, "%s,sp,+,sp,:=", av[0]);
-		break;
-	case NDS32_ESIL_ROTRI:
-		r_strbuf_setf (&op->esil, "%s,%s,>>>,%s,:=", av[2], av[1], av[0]);
-		break;
+	if (!*desc->esil) {
+		r_strbuf_set (&op->esil, "");
+	} else if (desc->esil[0] == '@') {
+		apply_esil_special (op, desc->esil, av);
+	} else {
+		apply_esil_template (op, desc->esil, av);
 	}
 }
 
