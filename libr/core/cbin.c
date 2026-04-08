@@ -1762,7 +1762,7 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			free (reloc_name);
 			reloc_name = r_str_newf ("fixup.%s", name);
 			// add xref from fixup to string
-			r_anal_xrefs_set (core->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
+			r_anal_xrefs_set (core->anal, NULL, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
 		} else {
 			free (reloc_name);
 			return;

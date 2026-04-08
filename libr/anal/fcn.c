@@ -662,11 +662,6 @@ static inline bool does_arch_destroys_dst(const char *arch) {
 			r_str_startswith (arch, "ppc"));
 }
 
-static inline bool has_vars(RAnal *anal, ut64 addr) {
-	RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
-	return fcn && r_anal_var_count_all (fcn) > 0;
-}
-
 static void fcn_rename_readdr(RAnalFunction *fcn, ut64 to) {
 	r_strf_var (addrstr, 64, "%08"PFMT64x, fcn->addr);
 	char *s = strstr (fcn->name, addrstr);
@@ -810,7 +805,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	}
 	int loadsize = 0;
 
-	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
+	bool varset = r_anal_var_count_all (fcn) > 0;
 
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov Reg,[Reg*Scale+Disp]"
 	ut64 movscale = 0;
@@ -1093,7 +1088,7 @@ noskip:
 			if (op->direction & R_ANAL_OP_DIR_EXEC) {
 				dir |= R_ANAL_REF_TYPE_EXEC;
 			}
-			r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA | dir);
+			r_anal_xrefs_set (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA | dir);
 		}
 		if (anal->opt.vars && !varset) {
 			// XXX uses op.src/dst and fails because regprofile invalidates the regitems
@@ -1278,16 +1273,16 @@ noskip:
 							v1 = da;
 						}
 					}
-					// r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
+					// r_anal_xrefs_set (anal, fcn, op->addr, da, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_DATA);
 					// Register an indirect code pointer reference
-					r_anal_xrefs_set (anal, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
+					r_anal_xrefs_set (anal, fcn, op->addr, da, R_ANAL_REF_TYPE_ICOD | R_ANAL_REF_TYPE_EXEC);
 				} else {
 					R_LOG_DEBUG ("Invalid refs 0x%08"PFMT64x" .. 0x%08"PFMT64x" .. 0x%08"PFMT64x" not adding", op->addr, op->ptr, da);
 					/// XXX this breaks the db/esil/apple tests
 				//	r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
 				}
 				// maybe optional or in the else
-				// r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
+				// r_anal_xrefs_set (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_DATA);
 				if (anal->opt.loads) {
 					// set this address as data if destination is not code
 					r_meta_set (anal, R_META_TYPE_DATA, op->ptr, 4, "");
@@ -1375,7 +1370,7 @@ noskip:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			if (anal->opt.jmpref) {
-				(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+				(void) r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 			}
 			if (!anal->opt.jmpabove && (op->jump < fcn->addr)) {
 				gotoBeach (R_ANAL_RET_END);
@@ -1416,9 +1411,9 @@ noskip:
 					// XXX using type-jump wont analyze the destination as a function
 					// calling fcn_recurse wont make it analyze it either
 #if 0
-					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
+					(void) r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 #else
-					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
+					(void) r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_JUMP | R_ANAL_REF_TYPE_EXEC);
 					// using type-jump wont analyze the destination as a function
 					// fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					/// XXX RAnalFunction *fcn = r_anal_function_new (anal, op->jump);
@@ -1433,7 +1428,7 @@ noskip:
 			if (tc) {
 				int diff = op->jump - op->addr;
 				if (tc > 0 && R_ABS (diff) > tc) {
-					(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
+					(void) r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 					fcn_recurse (anal, fcn, op->jump, anal->opt.bb_max_size, depth - 1);
 					gotoBeach (R_ANAL_RET_END);
 				}
@@ -1484,7 +1479,7 @@ noskip:
 				}
 			}
 			if (anal->opt.cjmpref) {
-				const bool is_success = r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
+				const bool is_success = r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CODE);
 				if (!is_success) {
 					R_LOG_DEBUG ("failed to add xref @ %"PFMT64u" -> %"PFMT64u, op->addr, op->jump);
 				}
@@ -1559,7 +1554,7 @@ noskip:
 		case R_ANAL_OP_TYPE_IRCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
-			(void) r_anal_xrefs_set (anal, op->addr, op->ptr, R_ANAL_REF_TYPE_CALL);
+			(void) r_anal_xrefs_set (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_CALL);
 
 			if (propagate_noreturn && r_anal_noreturn_at (anal, op->ptr)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->ptr);
@@ -1572,7 +1567,7 @@ noskip:
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
 			/* call dst */
-			(void) r_anal_xrefs_set (anal, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
+			(void) r_anal_xrefs_set (anal, fcn, op->addr, op->jump, R_ANAL_REF_TYPE_CALL | R_ANAL_REF_TYPE_EXEC);
 
 			if (propagate_noreturn && r_anal_noreturn_at (anal, op->jump)) {
 				RAnalFunction *f = r_anal_get_function_at (anal, op->jump);
@@ -1930,7 +1925,7 @@ analopfinish:
 			last_is_push = true;
 			last_push_addr = op->val;
 			if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
-				(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+				(void) r_anal_xrefs_set (anal, fcn, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 			}
 			break;
 		case R_ANAL_OP_TYPE_UPUSH:
@@ -1939,7 +1934,7 @@ analopfinish:
 				last_is_push = true;
 				last_push_addr = last_reg_mov_lea_val;
 				if (anal->iob.is_valid_offset (anal->iob.io, last_push_addr, 1)) {
-					(void) r_anal_xrefs_set (anal, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
+					(void) r_anal_xrefs_set (anal, fcn, op->addr, last_push_addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_WRITE);
 				}
 			}
 			break;
