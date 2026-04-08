@@ -1446,7 +1446,7 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 			case 'r': // r2 script
 				filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
 				pdb->cb_printf ("'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
-				free (filename_name);
+				free (filtered_name);
 				break;
 			// case 'd':
 			default:
