@@ -921,6 +921,9 @@ typedef RList *(*RAnalRecoverVarsCallback)(RAnal *a, RAnalFunction *fcn);
 // Returns vector of RAnalRef for data flow xrefs
 typedef RVecAnalRef *(*RAnalDataRefsCallback)(RAnal *a, RAnalFunction *fcn);
 
+// Pre-analysis callback (called early in aaa, after aa, before per-function work)
+typedef bool (*RAnalPreAnalysisCallback)(RAnal *a);
+
 // Post-analysis callback (called at end of aaaa)
 typedef bool (*RAnalPostAnalysisCallback)(RAnal *a);
 
@@ -956,6 +959,8 @@ typedef struct r_anal_plugin_t {
 	RAnalRecoverVarsCallback recover_vars;    // Called during afva, returns vars
 	RAnalDataRefsCallback get_data_refs;      // Called during aar, returns refs
 
+	// Pre-analysis hook (called early in aaa, filtered by eligible)
+	RAnalPreAnalysisCallback pre_analysis;
 	// Post-analysis hook (for aaaa)
 	RAnalPostAnalysisCallback post_analysis;
 } RAnalPlugin;
@@ -1158,6 +1163,7 @@ R_API bool r_anal_plugin_remove(RAnal *anal, RAnalPlugin *plugin);
 
 // Plugin action enum: determines which callback to dispatch
 typedef enum {
+	R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS,   // aaa hook: call pre_analysis on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_ANALYZE_FCN,   // af hook: call analyze_fcn on all eligible plugins
 	R_ANAL_PLUGIN_ACTION_RECOVER_VARS,  // afva hook: first plugin returning vars wins
 	R_ANAL_PLUGIN_ACTION_GET_DATA_REFS, // aar hook: merge data refs from all eligible plugins

@@ -133,6 +133,8 @@ static bool plugin_is_eligible(RAnal *anal, RAnalPlugin *p) {
 
 static bool plugin_has_callback(RAnalPlugin *p, RAnalPluginAction action) {
 	switch (action) {
+	case R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS:
+		return p->pre_analysis != NULL;
 	case R_ANAL_PLUGIN_ACTION_ANALYZE_FCN:
 		return p->analyze_fcn != NULL;
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
@@ -225,6 +227,8 @@ static void plugin_append_all(RList *list, RAnal *anal, RAnalPluginAction action
 
 static const char *plugin_action_config_key(RAnalPluginAction action) {
 	switch (action) {
+	case R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS:
+		return "anal.plugins.pre";
 	case R_ANAL_PLUGIN_ACTION_ANALYZE_FCN:
 		return "anal.plugins.fcn";
 	case R_ANAL_PLUGIN_ACTION_RECOVER_VARS:
@@ -301,6 +305,9 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 	if (ordered) {
 		r_list_foreach (ordered, iter, p) {
 			switch (action) {
+			case R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS:
+				p->pre_analysis (anal);
+				break;
 			case R_ANAL_PLUGIN_ACTION_ANALYZE_FCN:
 				p->analyze_fcn (anal, fcn);
 				break;
@@ -331,6 +338,9 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 			continue;
 		}
 		switch (action) {
+		case R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS:
+			p->pre_analysis (anal);
+			break;
 		case R_ANAL_PLUGIN_ACTION_ANALYZE_FCN:
 			p->analyze_fcn (anal, fcn);
 			break;
