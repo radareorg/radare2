@@ -2344,6 +2344,7 @@ static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, str
 		r_core_cmd (core, param->cmd_hit, 0);
 		r_core_seek (core, here, true);
 	}
+	free (disasm);
 	free (buf_fcn);
 	r_anal_op_fini (&asmop);
 }
