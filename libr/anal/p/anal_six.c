@@ -6,7 +6,7 @@
 #include <r_core.h>
 
 static void addref(RAnal *anal, ut64 from, ut64 to, RAnalRefType type) {
-	r_anal_xrefs_set (anal, from, to, type);
+	r_anal_xrefs_set (anal, NULL, from, to, type);
 }
 
 static const char *lookup_inst_name(uint32_t opc_size) {

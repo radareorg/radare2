@@ -274,7 +274,7 @@ for (ut64 pc = f->addr; pc < r_anal_function_max_addr (f); pc += aop.size) {
         break;
     }
     if (aop.jump != UT64_MAX) {
-        r_anal_xrefs_set (anal, pc, aop.jump, R_ANAL_REF_TYPE_CALL);
+        r_anal_xrefs_set (anal, NULL, pc, aop.jump, R_ANAL_REF_TYPE_CALL);
     }
 }
 r_anal_op_fini (&aop);

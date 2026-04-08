@@ -87,7 +87,7 @@ beach:
 	return valid;
 }
 
-static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
+static void apply_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 switch_addr, ut64 offset_sz, ut64 case_addr, ut64 id, ut64 case_addr_loc, bool case_is_insn) {
 	// eprintf("case!\n");
 	// eprintf ("** apply_case: 0x%"PFMT64x " from 0x%"PFMT64x "\n", case_addr, case_addr_loc);
 	/*
@@ -98,7 +98,7 @@ static void apply_case(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 of
 		r_meta_set_data_at (anal, case_addr_loc, offset_sz);
 		r_anal_hint_set_immbase (anal, case_addr_loc, 10);
 	}
-	r_anal_xrefs_set (anal, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+	r_anal_xrefs_set (anal, fcn, switch_addr, case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 	if (block) {
 		r_anal_block_add_switch_case (block, switch_addr, id, case_addr);
 	}
@@ -138,7 +138,7 @@ static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_c
 	}
 }
 
-static void apply_switch(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
+static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
 	char tmp[64];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, switch_addr, tmp);
@@ -147,7 +147,7 @@ static void apply_switch(RAnal *anal, RAnalBlock *block, ut64 switch_addr, ut64 
 		snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, switch_addr);
 		anal->flb.set (anal->flb.f, tmp, switch_addr, 1);
 		if (default_case_addr != UT64_MAX) {
-			r_anal_xrefs_set (anal, switch_addr, default_case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+			r_anal_xrefs_set (anal, fcn, switch_addr, default_case_addr, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
 			snprintf (tmp, sizeof (tmp), "case.default.0x%"PFMT64x, switch_addr);
 			anal->flb.set (anal->flb.f, tmp, default_case_addr, 1);
 		}
@@ -318,7 +318,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		}
 
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, jmptbl_loc == jmptbl_off ? 1 : sz, jmpptr, casenum, jmptbl_loc == jmptbl_off ? casetbl_loc + case_idx : jmptbl_loc + jmpptr_idx * sz, false);
+		apply_case (anal, fcn, block, ip, jmptbl_loc == jmptbl_off ? 1 : sz, jmpptr, casenum, jmptbl_loc == jmptbl_off ? casetbl_loc + case_idx : jmptbl_loc + jmpptr_idx * sz, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -326,7 +326,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		if (default_case == 0) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, block, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
 	}
 
 	free (jmptbl);
@@ -451,13 +451,13 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		}
 		int case_idx = offs / sz;
 		int casenum = case_idx + start_casenum_shift;
-		apply_case (anal, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);
+		apply_case (anal, fcn, block, ip, sz, jmpptr, casenum, jmptbl_loc + offs, false);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 	if (is_mips) {
 		// default case for mips is right after the 'jr v0' instruction unless specified otherwise
 		ut64 mips_default = default_target != UT64_MAX ? default_target : ip + 8;
-		apply_case (anal, block, ip, sz, mips_default, -1, jmptbl_loc + offs, false);
+		apply_case (anal, fcn, block, ip, sz, mips_default, -1, jmptbl_loc + offs, false);
 		analyze_new_case (anal, fcn, block, ip, mips_default, depth);
 		default_target = mips_default;
 	}
@@ -466,7 +466,7 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		if (default_target == 0) {
 			default_target = UT64_MAX;
 		}
-		apply_switch (anal, block, ip, jmptbl_loc, offs / sz, default_target);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_target);
 	}
 
 	free (jmptbl);
@@ -637,7 +637,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 		if (!is_valid_jmptbl_case_target (anal, &target_ctx, jmpptr)) {
 			continue;
 		}
-		apply_case (anal, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, true);
+		apply_case (anal, fcn, block, ip, sz, jmpptr, offs / sz, jmptbl_loc + offs, true);
 		analyze_new_case (anal, fcn, block, ip, jmpptr, depth);
 	}
 
@@ -645,7 +645,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 		if (default_case == 0 || default_case == UT32_MAX) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, block, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_case);
 	}
 	jmptbl_target_ctx_fini (&target_ctx);
 	return ret;
@@ -805,13 +805,13 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 		if (set_u_contains (s, kase->jump)) {
 			continue;
 		}
-		apply_case (anal, bb, saddr,
+		apply_case (anal, fcn, bb, saddr,
 				loadsz, kase->jump, kase->value,
 				kase->jump, true);
 		set_u_add (s, kase->jump);
 	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
 		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 	}
-	apply_switch (anal, bb, saddr, jaddr, r_list_length (cases), UT64_MAX);
+	apply_switch (anal, fcn, bb, saddr, jaddr, r_list_length (cases), UT64_MAX);
 	set_u_free (s);
 }

@@ -312,7 +312,7 @@ static bool objc_find_refs(RCore *core) {
 				RAnalRef *ref;
 				R_VEC_FOREACH (xrefs, ref) {
 					// maybe ICOD?
-					r_anal_xrefs_set (core->anal, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
+					r_anal_xrefs_set (core->anal, NULL, ref->addr, funcVA, R_ANAL_REF_TYPE_CODE);
 					total_xrefs++;
 				}
 			}
