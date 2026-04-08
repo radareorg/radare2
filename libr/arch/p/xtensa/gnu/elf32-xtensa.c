@@ -1471,14 +1471,14 @@ add_extra_plt_sections (struct bfd_link_info *info, int count)
 	       | SEC_LINKER_CREATED | SEC_READONLY);
 
       sname = (char *) bfd_malloc (10);
-      sprintf (sname, ".plt.%u", chunk);
+      snprintf (sname, 10, ".plt.%u", chunk);
       s = bfd_make_section_anyway_with_flags (dynobj, sname, flags | SEC_CODE);
       if (s == NULL
 	  || ! bfd_set_section_alignment (dynobj, s, 2))
 	return FALSE;
 
       sname = (char *) bfd_malloc (14);
-      sprintf (sname, ".got.plt.%u", chunk);
+      snprintf (sname, 14, ".got.plt.%u", chunk);
       s = bfd_make_section_anyway_with_flags (dynobj, sname, flags);
       if (s == NULL
 	  || ! bfd_set_section_alignment (dynobj, s, 2))
@@ -10846,7 +10846,7 @@ elf_xtensa_get_plt_section (struct bfd_link_info *info, int chunk)
     }
 
   dynobj = elf_hash_table (info)->dynobj;
-  sprintf (plt_name, ".plt.%u", chunk);
+  snprintf (plt_name, sizeof (plt_name), ".plt.%u", chunk);
   return bfd_get_linker_section (dynobj, plt_name);
 }
 
@@ -10867,7 +10867,7 @@ elf_xtensa_get_gotplt_section (struct bfd_link_info *info, int chunk)
     }
 
   dynobj = elf_hash_table (info)->dynobj;
-  sprintf (got_name, ".got.plt.%u", chunk);
+  snprintf (got_name, sizeof (got_name), ".got.plt.%u", chunk);
   return bfd_get_linker_section (dynobj, got_name);
 }
 
@@ -11256,7 +11256,7 @@ xtensa_callback_required_dependence (bfd *abfd,
 	  BFD_ASSERT (sec->name[4] == '.');
 	  chunk = strtol (&sec->name[5], NULL, 10);
 
-	  sprintf (got_name, ".got.plt.%u", chunk);
+	  snprintf (got_name, sizeof (got_name), ".got.plt.%u", chunk);
 	  sgotplt = bfd_get_linker_section (sec->owner, got_name);
 	}
       BFD_ASSERT (sgotplt);
