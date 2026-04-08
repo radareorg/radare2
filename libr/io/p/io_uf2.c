@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - aviciano */
+/* radare - LGPL - Copyright 2024-2026 - aviciano */
 
 #include <r_io.h>
 
@@ -8,40 +8,39 @@
 
 #define UF2_MAGIC_START0 0x0A324655UL // "UF2\n"
 #define UF2_MAGIC_START1 0x9E5D5157UL // Randomly selected
-#define UF2_MAGIC_END 0x0AB16F30UL    // Ditto
+#define UF2_MAGIC_END 0x0AB16F30UL // Ditto
 
 enum UF2_Flags {
 	NOT_MAIN_FLASH = 0x1 << 0,
 	FILE_CONTAINER = 0x1 << 12,
-	FAMILY_ID      = 0x1 << 13,
-	MD5_CHECKSUM   = 0x1 << 14,
+	FAMILY_ID = 0x1 << 13,
+	MD5_CHECKSUM = 0x1 << 14,
 	EXTENSION_TAGS = 0x1 << 15,
 };
 
-
-#define ETAG_DESCRIPTION 0x650d9d // description of device for which the firmware file is destined (UTF8)
-#define ETAG_FW_VERSION  0x9fc7bc // version of firmware file - UTF8 semver string
-#define ETAG_PAGE_SIZE   0x0be9f7 // page size of target device (32 bit unsigned number)
-#define ETAG_FW_CHECKSUM 0xb46db0 // SHA-2 checksum of firmware (can be of various size)
-#define ETAG_DEVICE_ID   0xc8a729 // device type identifier - a refinement of familyID meant to identify a kind of device (eg., a toaster with specific pinout and heating unit), not only MCU; 32 or 64 bit number; can be hash of 0x650d9d
+#define ETAG_DESCRIPTION 0x650d9d // description of device for which the firmware file is destined(UTF8)
+#define ETAG_FW_VERSION 0x9fc7bc // version of firmware file - UTF8 semver string
+#define ETAG_PAGE_SIZE 0x0be9f7 // page size of target device(32 bit unsigned number)
+#define ETAG_FW_CHECKSUM 0xb46db0 // SHA-2 checksum of firmware(can be of various size)
+#define ETAG_DEVICE_ID 0xc8a729 // device type identifier - a refinement of familyID meant to identify a kind of device(eg., a toaster with specific pinout and heating unit), not only MCU; 32 or 64 bit number; can be hash of 0x650d9d
 
 typedef struct {
 	// 32 byte header
 	ut32 magicStart0; // First magic number, 0x0A324655 ("UF2\n")
 	ut32 magicStart1; // Second magic number, 0x9E5D5157
 	ut32 flags;
-	ut32 targetAddr;  // Address in flash where the data should be written
+	ut32 targetAddr; // Address in flash where the data should be written
 	ut32 payloadSize; // Number of bytes used in data (often 256)
-	ut32 blockNo;     // Sequential block number; starts at 0
-	ut32 numBlocks;   // Total number of blocks in file
-	ut32 fileSize;    // File size or board family ID or zero
+	ut32 blockNo; // Sequential block number; starts at 0
+	ut32 numBlocks; // Total number of blocks in file
+	ut32 fileSize; // File size or board family ID or zero
 
 	// raw data
 	// ut8 data[476];    // Data, padded with zeros
-	ut8 *data;        // Data, padded with zeros
+	ut8 *data; // Data, padded with zeros
 
 	// store magic also at the end to limit damage from partial block reads
-	ut32 magicEnd;    // Final magic number, 0x0AB16F30
+	ut32 magicEnd; // Final magic number, 0x0AB16F30
 } UF2_Block;
 
 #if 0
@@ -50,11 +49,11 @@ static void dump(UF2_Block *block) {
 	eprintf ("- magicStart0 : 0x%08x\n", block->magicStart0); // First magic number, 0x0A324655 ("UF2\n")
 	eprintf ("- magicStart1 : 0x%08x\n", block->magicStart1); // Second magic number, 0x9E5D5157
 	eprintf ("- flags       : 0x%08x (", block->flags);
-	eprintf ("%s", (block->flags & NOT_MAIN_FLASH) == 0 ? "" : " NOT_MAIN_FLASH");
-	eprintf ("%s", (block->flags & FILE_CONTAINER) == 0 ? "" : " FILE_CONTAINER");
-	eprintf ("%s", (block->flags & FAMILY_ID     ) == 0 ? "" : " FAMILY_ID");
-	eprintf ("%s", (block->flags & MD5_CHECKSUM  ) == 0 ? "" : " MD5_CHECKSUM");
-	eprintf ("%s", (block->flags & EXTENSION_TAGS) == 0 ? "" : " EXTENSION_TAGS");
+	eprintf ("%s", (block->flags & NOT_MAIN_FLASH) == 0? "": " NOT_MAIN_FLASH");
+	eprintf ("%s", (block->flags & FILE_CONTAINER) == 0? "": " FILE_CONTAINER");
+	eprintf ("%s", (block->flags & FAMILY_ID     ) == 0? "": " FAMILY_ID");
+	eprintf ("%s", (block->flags & MD5_CHECKSUM  ) == 0? "": " MD5_CHECKSUM");
+	eprintf ("%s", (block->flags & EXTENSION_TAGS) == 0? "": " EXTENSION_TAGS");
 	eprintf (" )\n");
 	eprintf ("- targetAddr  : 0x%08x\n", block->targetAddr);  // Address in flash where the data should be written
 	eprintf ("- payloadSize : %u\n", block->payloadSize); // Number of bytes used in data (often 256)
@@ -70,11 +69,11 @@ static void dump(UF2_Block *block) {
 	while (i < block->payloadSize) {
 		eprintf ("%02x ", block->data[i++] & 0xff);
 		if (i % 16 == 0) {
-			eprintf("\n");
+			eprintf ("\n");
 		}
 	}
 	if (i % 16 != 0) {
-		eprintf("\n");
+		eprintf ("\n");
 	}
 	eprintf ("- magicEnd    : 0x%08x\n", block->magicEnd);    // Final magic number, 0x0AB16F30
 	eprintf ("\n");
@@ -108,6 +107,7 @@ static UF2_Family uf2families[] = {
 	{ 0x2b88d29c, "ESP32C2", "ESP32-C2", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x2dc309c5, "STM32F411xE", "ST STM32F411xE", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x300f5633, "STM32G0", "ST STM32G0xx", "arm", "cortex", 32 }, // Arm Cortex-M0+ 32-bit
+	{ 0x3101f7c1, "ESP32S31", "ESP32-S31", "xtensa", NULL, 32 }, // Xtensa LX7 32-bit
 	{ 0x31d228c6, "GD32F350", "GD32F350", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x332726f6, "ESP32H2", "ESP32-H2", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x3379CFE2, "RTL8720D", "Realtek AmebaD RTL8720D", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
@@ -115,7 +115,7 @@ static UF2_Family uf2families[] = {
 	{ 0x4b684d71, "MaixPlay-U4", "Sipeed MaixPlay-U4(BL618)", "riscv", NULL, 32 }, // RISC-V 32-bit
 	{ 0x4c71240a, "STM32G4", "ST STM32G4xx", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x4e8f1c5d, "STM32H5", "ST STM32H5xx", "arm", "cortex", 32 }, // Arm Cortex-M33 32-bit
-	{ 0x4f6ace52, "CSK4", "LISTENAI CSK300x/400x", "riscv", NULL, 32 }, // ???
+	{ 0x4f6ace52, "CSK4", "LISTENAI CSK300x/400x", "riscv", NULL, 32 }, //???
 	{ 0x4fb2d5bd, "MIMXRT10XX", "NXP i.MX RT10XX", "arm", "cortex", 32 }, // Arm Cortex-M7 32-bit
 	{ 0x51e903a8, "XR809", "Xradiotech 809", "arm", "cortex", 32 }, // Arm Cortex-M4 32-bit
 	{ 0x53b80f00, "STM32F7", "ST STM32F7xx", "arm", "cortex", 32 }, // Arm Cortex-M7 32-bit
@@ -172,7 +172,7 @@ static UF2_Family uf2families[] = {
 };
 
 static int binary_search(UF2_Family *A, ut32 key, int imin, int imax) {
-	int imid;
+	int imid = 0;
 
 	// continually narrow search until just one element remains
 	while (imin < imax) {
@@ -198,7 +198,7 @@ static int binary_search(UF2_Family *A, ut32 key, int imin, int imax) {
 
 static void process_family_id(RIO *io, ut32 family_id) {
 	const int n = sizeof (uf2families) / sizeof (uf2families[0]);
-	const int idx = binary_search (uf2families, family_id,  0, n - 1);
+	const int idx = binary_search (uf2families, family_id, 0, n - 1);
 	if (idx < 0) {
 		R_LOG_WARN ("uf2: FAMILY_ID: 0x%08x => Unknown", family_id);
 		return;
@@ -206,7 +206,12 @@ static void process_family_id(RIO *io, ut32 family_id) {
 
 	const UF2_Family family = uf2families[idx];
 	R_LOG_DEBUG ("uf2: FAMILY_ID: 0x%08x => { name:%s, desc:%s, arch:%s, cpu:%s, bits:%d }",
-			family_id, family.name, family.desc, family.arch, family.cpu, family.bits);
+		family_id,
+		family.name,
+		family.desc,
+		family.arch,
+		family.cpu,
+		family.bits);
 
 	if (family.arch != NULL) {
 		io->coreb.cmdf (io->coreb.core, "e asm.arch=%s", family.arch);
@@ -221,32 +226,33 @@ static void process_family_id(RIO *io, ut32 family_id) {
 	}
 }
 
-static inline int pad(int offset, int n) {
-	if (n < 1) {
-		return 0;
-	}
-	return (offset % n != 0
-		? (offset / n + 1)
-		: (offset / n)) * n;
+static inline int pad(int x, int n) {
+	return (n > 0)? (x + n - 1) / n * n: 0;
 }
 
-static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
-	const bool has_debug = r_sys_getenv_asbool ("R2_DEBUG");
+static bool uf2_read(RIO *io, RBuffer *rbuf, const ut8 *buf, size_t filesz) {
 	ut32 family_id = 0;
 
+	if (filesz < 512 || (filesz % 512) != 0) {
+		R_LOG_ERROR ("uf2: Invalid file size (must be multiple of 512)");
+		return false;
+	}
+	const size_t total_blocks = filesz / 512;
+	size_t i;
+
 	UF2_Block block;
-	do {
-		block.magicStart0 = *(ut32 *)(buf + 0x00); // First magic number, 0x0A324655 ("UF2\n")
-		block.magicStart1 = *(ut32 *)(buf + 0x04); // Second magic number, 0x9E5D5157
-		block.flags       = *(ut32 *)(buf + 0x08);
-		block.targetAddr  = *(ut32 *)(buf + 0x0c); // Address in flash where the data should be written
-		block.payloadSize = *(ut32 *)(buf + 0x10); // Number of bytes used in data (often 256)
-		block.blockNo     = *(ut32 *)(buf + 0x14); // Sequential block number; starts at 0
-		block.numBlocks   = *(ut32 *)(buf + 0x18); // Total number of blocks in file
-		block.fileSize    = *(ut32 *)(buf + 0x1c); // File size or board family ID or zero
-		block.data        = (ut8 *)(buf + 0x20); // Raw Data, padded with zeros [476]
-		block.magicEnd    = *(ut32 *)(buf + 0x1fc); // Final magic number, 0x0AB16F30
-		buf += 512;
+	for (i = 0; i < total_blocks; i++) {
+		const ut8 *p = buf + (i * 512);
+		block.magicStart0 = r_read_le32 (p + 0x00);
+		block.magicStart1 = r_read_le32 (p + 0x04);
+		block.flags = r_read_le32 (p + 0x08);
+		block.targetAddr = r_read_le32 (p + 0x0c);
+		block.payloadSize = r_read_le32 (p + 0x10);
+		block.blockNo = r_read_le32 (p + 0x14);
+		block.numBlocks = r_read_le32 (p + 0x18);
+		block.fileSize = r_read_le32 (p + 0x1c);
+		block.data = (ut8 *) (p + 0x20);
+		block.magicEnd = r_read_le32 (p + 0x1fc);
 
 		// dump (&block);
 
@@ -265,8 +271,13 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			return false;
 		}
 
+		if (block.payloadSize > 476) {
+			R_LOG_ERROR ("uf2: Invalid payload size %u @ block %d", block.payloadSize, block.blockNo);
+			return false;
+		}
+
 		if ((block.flags & NOT_MAIN_FLASH) != 0) {
-			R_LOG_WARN ("uf2: Found NOT_MAIN_FLASH flag @ block #%d, skiping", block.blockNo);
+			R_LOG_WARN ("uf2: Found NOT_MAIN_FLASH flag @ block #%d, skipping", block.blockNo);
 			// this block should be skipped when writing the device flash;
 			// it can be used to store "comments" in the file, typically embedded source code
 			// or debug info that does not fit on the device flash
@@ -280,10 +291,14 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			// The field fileSize holds the file size of the current file,
 			// and the field targetAddr holds the offset in current file.
 			// The file name is stored at &data[payloadSize] and terminated with a 0x00.
-			const char *file_name = (const char *)(block.data + block.payloadSize);
+			const char *file_name = (const char *) (block.data + block.payloadSize);
 			R_LOG_WARN ("uf2: Found FILE_CONTAINER flag @ block #%d, TODO"
-					"{ file_name: \"%s\", chunk: %d, total_size: %d, offset: %d }", block.blockNo,
-					file_name, block.payloadSize, block.fileSize, block.targetAddr);
+				"{ file_name: \"%s\", chunk: %d, total_size: %d, offset: %d }",
+				block.blockNo,
+				file_name,
+				block.payloadSize,
+				block.fileSize,
+				block.targetAddr);
 			continue;
 		}
 
@@ -294,7 +309,7 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 				if (family_id != 0) {
 					R_LOG_WARN ("uf2: FAMILY_ID 0x%08x changed", block.fileSize);
 				}
-				family_id =  block.fileSize;
+				family_id = block.fileSize;
 				process_family_id (io, family_id);
 			}
 		}
@@ -311,11 +326,14 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 		if ((block.flags & EXTENSION_TAGS) != 0) {
 			// Extension tags can, but don't have to, be repeated in all blocks.
 			R_LOG_WARN ("uf2: Found EXTENSION_TAGS flag @ block #%d", block.blockNo);
-			ut16 offset = block.payloadSize;
-			while (offset < 476) {
-				ut32 tag_sz = *(ut32 *)(block.data + offset);
+			int offset = block.payloadSize;
+			while (offset + 4 <= 476) {
+				ut32 tag_sz = r_read_le32 (block.data + offset);
 				ut32 tag = (tag_sz >> 8) & 0xffffff;
-				ut8 size = (ut8)(tag_sz & 0xff);
+				ut8 size = (ut8) (tag_sz & 0xff);
+				if (size < 4) {
+					break;
+				}
 				switch (tag) {
 				case ETAG_FW_VERSION:
 				case ETAG_FW_CHECKSUM:
@@ -324,7 +342,6 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 				case ETAG_PAGE_SIZE:
 				default:
 					R_LOG_WARN ("uf2: Unknown EXTENSION TAG 0x%04x, TODO", tag);
-					// TODO dump size
 					break;
 				}
 				// Every tag starts at 4 byte boundary
@@ -337,14 +354,11 @@ static bool uf2_read(RIO *io, RBuffer *rbuf, char *buf) {
 			return false;
 		}
 
-		if (has_debug) {
-			R_LOG_DEBUG ("uf2: Block #%02d (%d bytes @ 0x%08x)", block.blockNo, block.payloadSize, block.targetAddr);
-		}
+		R_LOG_DEBUG ("uf2: Block #%02d (%d bytes @ 0x%08x)", block.blockNo, block.payloadSize, block.targetAddr);
 
-		r_strf_var (comment, 64,  "CC uf2 block #%02d (%d bytes)", block.blockNo, block.payloadSize);
+		r_strf_var (comment, 64, "CC uf2 block #%02d (%d bytes)", block.blockNo, block.payloadSize);
 		io->coreb.callAt (io->coreb.core, block.targetAddr, comment);
-
-	} while (block.blockNo < block.numBlocks - 1);
+	}
 
 	return true;
 }
@@ -365,17 +379,13 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 
-	char *buf = r_file_slurp (pathname + 6, NULL);
+	size_t filesz = 0;
+	char *buf = r_file_slurp (pathname + 6, &filesz);
 	if (!buf) {
 		return NULL;
 	}
 
 	Ruf2 *mal = R_NEW0 (Ruf2);
-	if (!mal) {
-		free (buf);
-		return NULL;
-	}
-
 	mal->rbuf = r_buf_new_sparse (io->Oxff);
 	if (!mal->rbuf) {
 		free (buf);
@@ -383,7 +393,7 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 
-	if (!uf2_read (io, mal->rbuf, buf)) {
+	if (!uf2_read (io, mal->rbuf, (const ut8 *)buf, filesz)) {
 		R_LOG_ERROR ("uf2: Failed to read UF2 file");
 		free (buf);
 		r_unref (mal->rbuf);
@@ -394,7 +404,6 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	free (buf);
 	return r_io_desc_new (io, &r_io_plugin_uf2, pathname, rw, mode, mal);
 }
-
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int count) {
 	if (!desc || !desc->data || (count <= 0)) {
@@ -455,8 +464,7 @@ RIOPlugin r_io_plugin_uf2 = {
 		.name = "uf2",
 		.desc = "Open UF2 files",
 		.license = "LGPL-3.0-only",
-		.author = "aviciano"
-	},
+		.author = "aviciano" },
 	.uris = "uf2://",
 	.open = __open,
 	.close = __close,
@@ -475,4 +483,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-
