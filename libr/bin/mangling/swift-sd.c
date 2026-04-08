@@ -135,7 +135,7 @@ static const char *hasdigit(const char *n) {
 }
 
 static inline void strbuf_append_n(RStrBuf *sb, const char *s, int len) {
-	if (len > 0 && s && r_str_nlen (s, len) == (size_t)len) {
+	if (len > 0 && len <= 255 && s && r_str_nlen (s, len) == (size_t)len) {
 		r_strbuf_append_n (sb, s, (size_t)len);
 	}
 }
