@@ -4298,7 +4298,11 @@ static void seek_to_node(RANode *n, RCore *core) {
 	ut64 off = r_anal_get_bbaddr (core->anal, core->addr);
 	char *title = get_title (off);
 	if (title && strcmp (title, n->title)) {
-		r_core_cmdf (core, "s %s", n->title);
+		const char *err = NULL;
+		ut64 addr = r_num_get_err (core->num, n->title, &err);
+		if (!err) {
+			r_core_seek (core, addr, true);
+		}
 	}
 	free (title);
 }
