@@ -2336,6 +2336,47 @@ static int cmd_interpret(void *data, const char *input) {
 	case '\0': // "."
 		lastcmd_repeat (core, 0);
 		break;
+	case '\'': // "'"
+		{
+			const char *cmd = input + 1;
+			ut64 addr = core->addr;
+			if (input[1] == '@') {
+				cmd = strchr (input + 1, '\'');
+				if (!cmd) {
+					R_LOG_ERROR ("Missing ' separator after .'@");
+					return 0;
+				}
+				size_t len = cmd - input + 2;
+				char *saddr = r_str_ndup (input + 2, len);
+				addr = r_num_get (core->num, saddr);
+				free (saddr);
+			}
+			char *res = r_core_cmd_call_str_at (core, addr, cmd);
+			r_cons_break_push (core->cons, NULL, NULL);
+			for (ptr = res;;) {
+				if (r_cons_is_breaked (core->cons)) {
+					break;
+				}
+				eol = strchr (ptr, '\n');
+				if (eol) {
+					*eol = '\0';
+				}
+				if (*ptr) {
+					int res = r_core_cmd_call (core, ptr);
+					if (res != 0) {
+						R_LOG_ERROR ("Wrong command %s", ptr);
+						break;
+					}
+				}
+				if (!eol) {
+					break;
+				}
+				ptr = eol + 1;
+			}
+			r_cons_break_pop (core->cons);
+			free (res);
+		}
+		break;
 	case '.': // ".." same as \n
 		if (input[1] == '.') { // "..." run the last command repeated
 				       // same as \n with e cmd.repeat=true
@@ -2417,7 +2458,7 @@ bypass:
 		if (filter) {
 			*filter = 0;
 		}
-		int tmp_html = core->cons->context->is_html;
+		bool tmp_html = core->cons->context->is_html;
 		core->cons->context->is_html = false;
 		ptr = str = r_core_cmd_str (core, inp);
 		core->cons->context->is_html = tmp_html;
