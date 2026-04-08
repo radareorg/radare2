@@ -70,7 +70,7 @@ cd "$(dirname $0)"/..
 (git grep -n 'x ""' libr) && exit 1
 (git grep -n 'x""' libr) && exit 1
 ( git grep '){$' libr| grep if) && exit 1
-(git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v :static | grep -v :R_API | grep c:) && exit 1
+(git grep -e 'sizeof(' -e 'for(' -e 'while(' -e 'if(' libr | grep -v gnu | grep -v :static | grep -v :R_API | grep c:) && exit 1
 ( git grep 'else$' libr | grep -v '#' | grep '}' | grep 'c:') && exit 1
 ( git grep 'return(' libr | grep -v R_API | grep -v static | grep -v define | grep c:) && exit 1
 # ( git grep if' (' libr| grep ')$'| grep -v '//'|grep -v '#' | grep c:) && exit 1
