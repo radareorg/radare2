@@ -93,16 +93,8 @@ R_API void r_anal_op_init(RAnalOp *op) {
 		op->jump = UT64_MAX;
 		op->fail = UT64_MAX;
 		op->ptr = UT64_MAX;
-		op->refptr = 0;
 		op->val = UT64_MAX;
 		op->disp = UT64_MAX;
-
-		RVecRArchValue_init (&op->srcs);
-		RVecRArchValue_init (&op->dsts);
-#if 0
-		RVecRArchValue_reserve (&op->srcs, 3);
-		RVecRArchValue_reserve (&op->dsts, 1);
-#endif
 	}
 }
 
