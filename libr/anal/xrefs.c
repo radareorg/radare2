@@ -258,7 +258,7 @@ static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
 
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
 // when fcn is known (the function containing FROM), pass it to skip hash lookups.
-R_API bool r_anal_xrefs_set(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
+R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
@@ -293,6 +293,10 @@ R_API bool r_anal_xrefs_set(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to,
 	}
 
 	return true;
+}
+
+R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
+	return r_anal_xrefs_setf (anal, NULL, from, to, type);
 }
 
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {

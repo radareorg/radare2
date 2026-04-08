@@ -6,11 +6,11 @@ bool test_r_anal_xrefs_count(void) {
 
 	mu_assert_eq (r_anal_xrefs_count (anal), 0, "xrefs count");
 
-	r_anal_xrefs_set (anal, NULL, 0x1337, 42, R_ANAL_REF_TYPE_NULL);
-	r_anal_xrefs_set (anal, NULL, 0x1337, 43, R_ANAL_REF_TYPE_CODE);
-	r_anal_xrefs_set (anal, NULL, 1234, 43, R_ANAL_REF_TYPE_CALL);
-	r_anal_xrefs_set (anal, NULL, 12345, 43, R_ANAL_REF_TYPE_CALL);
-	r_anal_xrefs_set (anal, NULL, 4321, 4242, R_ANAL_REF_TYPE_CALL);
+	r_anal_xrefs_set (anal, 0x1337, 42, R_ANAL_REF_TYPE_NULL);
+	r_anal_xrefs_set (anal, 0x1337, 43, R_ANAL_REF_TYPE_CODE);
+	r_anal_xrefs_set (anal, 1234, 43, R_ANAL_REF_TYPE_CALL);
+	r_anal_xrefs_set (anal, 12345, 43, R_ANAL_REF_TYPE_CALL);
+	r_anal_xrefs_set (anal, 4321, 4242, R_ANAL_REF_TYPE_CALL);
 
 	mu_assert_eq (r_anal_xrefs_count (anal), 5, "xrefs count");
 

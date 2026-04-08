@@ -1297,7 +1297,8 @@ R_API RVecAnalRef *r_anal_function_get_all_xrefs(RAnalFunction *fcn);
 R_API RVecAnalRef *r_anal_function_get_xrefs(RAnalFunction *fcn);
 R_API ut64 r_anal_function_count_refs(RAnalFunction *fcn, RAnalRefType type);
 R_API ut64 r_anal_function_count_xrefs(RAnalFunction *fcn, RAnalRefType type);
-R_API bool r_anal_xrefs_set(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type);
+R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type);
+R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType type);
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to);
 
 R_API RList *r_anal_get_fcns(RAnal *anal);

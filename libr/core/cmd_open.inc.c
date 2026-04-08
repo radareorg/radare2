@@ -1790,7 +1790,7 @@ static void __rebase_everything(RCore *core, RList *old_sections, ut64 old_base)
 		R_VEC_FOREACH (old_refs, ref) {
 			ref->addr += diff;
 			ref->at += diff;
-			r_anal_xrefs_set (core->anal, NULL, ref->at, ref->addr, ref->type);
+			r_anal_xrefs_set (core->anal, ref->at, ref->addr, ref->type);
 		}
 	}
 

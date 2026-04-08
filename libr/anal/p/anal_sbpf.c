@@ -308,7 +308,7 @@ static void sbpf_create_string(RAnal *anal, ut64 addr, ut32 size, ut64 xref_addr
 
 	// Create xref from the instruction to the string
 	if (xref_addr != UT64_MAX) {
-		r_anal_xrefs_set (anal, NULL, xref_addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
+		r_anal_xrefs_set (anal, xref_addr, addr, R_ANAL_REF_TYPE_STRN | R_ANAL_REF_TYPE_READ);
 		char *s = r_str_ndup ((char *)buf, str_size);
 		r_str_filter (s, -1);
 		char *comment_str = r_str_newf ("\"%s\"", s);
@@ -416,7 +416,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 
 		// Always create the xref
 		if (anal->flb.set) {
-			r_anal_xrefs_set (anal, NULL, ref->xref_addr, ref->addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
+			r_anal_xrefs_set (anal, ref->xref_addr, ref->addr, R_ANAL_REF_TYPE_DATA | R_ANAL_REF_TYPE_READ);
 		}
 
 		if (already_created) {

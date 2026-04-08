@@ -131,6 +131,11 @@ disassembly or relocation processing.
 .Pp
 Creates a cross-reference from one address to another.
 .Pp
+.Ft bool
+.Fn r_anal_xrefs_setf "RAnal *anal" "RAnalFunction *fcn" "ut64 from" "ut64 to" "RAnalRefType type"
+.Pp
+Like r_anal_xrefs_set, but takes the calling function to skip hash lookups.
+.Pp
 .Ft RVecAnalRef *
 .Fn r_anal_xrefs_get "RAnal *anal" "ut64 to"
 .Pp
@@ -274,7 +279,7 @@ for (ut64 pc = f->addr; pc < r_anal_function_max_addr (f); pc += aop.size) {
         break;
     }
     if (aop.jump != UT64_MAX) {
-        r_anal_xrefs_set (anal, NULL, pc, aop.jump, R_ANAL_REF_TYPE_CALL);
+        r_anal_xrefs_set (anal, pc, aop.jump, R_ANAL_REF_TYPE_CALL);
     }
 }
 r_anal_op_fini (&aop);
