@@ -42,6 +42,7 @@ r_anal_sources = [
   'vtable.c',
   'xrefs.c',
   'p/anal_null.c',
+  'p/anal_autoname.c',
   'p/anal_sbpf.c',
   'p/anal_tcc.c',
   'p/anal_tp.c',

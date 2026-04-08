@@ -3872,7 +3872,10 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0);
 		if (fcn) {
 			const char ch = (input[1] == 'j')? 'j': 's'; // "afnsj"
-			free (r_core_anal_fcn_autoname (core, fcn, ch));
+			char *cmd = r_str_newf ("autoname fcn 0x%08"PFMT64x" %c", fcn->addr, ch);
+			char *res = r_anal_cmd (core->anal, cmd);
+			free (cmd);
+			free (res);
 		} else {
 			R_LOG_ERROR ("No function at 0x%08"PFMT64x, addr);
 		}
@@ -3893,16 +3896,11 @@ static void cmd_afn(RCore *core, const char *input, bool quiet) {
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_afna);
 		} else {
-			fcn = r_anal_get_fcn_in (core->anal, addr, 0);
-			if (fcn) {
-				char *name = r_core_anal_fcn_autoname (core, fcn, 'v');
-				if (name) {
-					r_cons_printf (core->cons, "'0x%08"PFMT64x"'afnq %s\n", fcn->addr, name);
-					free (name);
-				}
-			} else {
-				R_LOG_ERROR ("No function at 0x%08"PFMT64x, addr);
+			char *res = r_anal_cmd (core->anal, "autoname");
+			if (R_STR_ISNOTEMPTY (res)) {
+				r_cons_println (core->cons, res);
 			}
+			free (res);
 		}
 		break;
 	case '.': // "afn."
@@ -14357,7 +14355,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (*input == 'a') { // "aaa" .. which is checked just in the case above
 		if (r_str_startswith (r_config_get (core->config, "bin.lang"), "go")) {
 			logline (core, 20, "Find function and symbol names from golang binaries (aang)");
-			r_core_anal_autoname_all_golang_fcns (core);
+			free (r_anal_cmd (core->anal, "autoname golang"));
 			logline (core, 25, "Analyze all flags starting with sym.go. (aF @@f:sym.go.*)");
 			r_core_cmd0 (core, "aF @@@F:sym.go.*");
 		}
@@ -14471,7 +14469,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		}
 		if (r_config_get_b (core->config, "anal.autoname")) {
 			logline (core, 75, "Speculatively constructing a function name for fcn.* and sym.func.* functions (aan)");
-			r_core_anal_autoname_all_fcns (core);
+			free (r_anal_cmd (core->anal, "autoname all"));
 			r_core_task_yield (&core->tasks);
 		}
 		if (core->anal->opt.vars) {
@@ -14747,14 +14745,14 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			r_core_anal_propagate_noreturn (core, UT64_MAX);
 			break;
 		case 'g': // "aang"
-			r_core_anal_autoname_all_golang_fcns (core);
+			free (r_anal_cmd (core->anal, "autoname golang"));
 			break;
 		case '?':
 			r_core_cmd_help (core, help_msg_aan);
 			break;
 		case 'f': // "aanf" same as "aan" but more friendly
 		case 0: // "aan"
-			r_core_anal_autoname_all_fcns (core);
+			free (r_anal_cmd (core->anal, "autoname all"));
 			break;
 		default:
 			r_core_return_invalid_command (core, "aan", input[1]);
@@ -16100,11 +16098,18 @@ static void cmd_an(RCore *core, const char *input) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
 		if (fcn) {
 			if (list) {
-				free (r_core_anal_fcn_autoname (core, fcn, 'l'));
+				char *cmd = r_str_newf ("autoname fcn 0x%08"PFMT64x" l", fcn->addr);
+				free (r_anal_cmd (core->anal, cmd));
+				free (cmd);
 			} else {
-				char *n = r_core_anal_fcn_autoname (core, fcn, 0);
-				r_cons_println (core->cons, n? n: fcn->name);
+				char *n = r_str_newf ("autoname fcn 0x%08"PFMT64x" 0", fcn->addr);
+				char *res = r_anal_cmd (core->anal, n);
 				free (n);
+				if (R_STR_ISNOTEMPTY (res)) {
+					r_str_trim (res);
+				}
+				r_cons_println (core->cons, R_STR_ISNOTEMPTY (res) ? res : fcn->name);
+				free (res);
 			}
 		} else {
 			R_LOG_WARN ("cant find a function here");

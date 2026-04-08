@@ -1787,6 +1787,7 @@ R_API void r_anal_backtrace_fini(RAnal *a);
 R_API void r_anal_backtrace_list(RAnal *a, ut64 addr, int opt);
 
 /* plugin pointers */
+extern RAnalPlugin r_anal_plugin_autoname;
 extern RAnalPlugin r_anal_plugin_blaze;
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_a2f;
