@@ -371,8 +371,9 @@ R_API void r_core_anal_autoname_all_fcns(RCore *core) {
 	free (r_anal_cmd (core->anal, "autoname all"));
 }
 
+// Delegate to gopclntab plugin for go binary function recovery
 R_API void r_core_anal_autoname_all_golang_fcns(RCore *core) {
-	free (r_anal_cmd (core->anal, "autoname golang"));
+	free (r_anal_cmd (core->anal, "gopclntab apply"));
 }
 
 static bool check_string_at(RCore *core, ut64 addr) {
