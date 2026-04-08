@@ -1664,13 +1664,13 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 #if __APPLE__
 	switch (mode) {
 	case R_MODE_SET:
-		r_core_cmdf (core, ".dmi* 0x%08"PFMT64x" %s", baseaddr, file);
+		r_core_cmd_callf (core, ".dmi* 0x%08"PFMT64x" %s", baseaddr, file);
 		break;
 	case R_MODE_RADARE:
-		r_core_cmdf (core, "!!rabin2 -rsEB 0x%08"PFMT64x" %s", baseaddr, file);
+		r_core_cmd_callf (core, "!!rabin2 -rsEB 0x%08"PFMT64x" %s", baseaddr, file);
 		break;
 	default:
-		r_core_cmdf (core, "!!rabin2 -E -B 0x%08"PFMT64x" %s", baseaddr, file);
+		r_core_cmd_callf (core, "!!rabin2 -E -B 0x%08"PFMT64x" %s", baseaddr, file);
 		break;
 	}
 	return true;
@@ -1919,7 +1919,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_core_cmd (core, "dmm", 0);
 			break;
 		case 's': // "dmis"
-			r_core_cmdf (core, ".dmi* %s", input + 2);
+			r_core_callf (core, ".dmi* %s", input + 2);
 			break;
 		case ' ': // "dmi "
 		case '*': // "dmi*"
