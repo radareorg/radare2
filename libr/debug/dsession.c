@@ -53,7 +53,9 @@ static void checkpoint_warn_if_large(RDebugSession *session) {
 }
 
 static void reset_resume_state(RDebug *dbg) {
-	R_RETURN_IF_FAIL (dbg);
+	if (!dbg) {
+		return;
+	}
 	dbg->reason.type = R_DEBUG_REASON_NONE;
 	dbg->reason.signum = -1;
 	dbg->reason.bp_addr = 0;
@@ -162,7 +164,7 @@ R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char
 	}
 
 	// Save current memory maps
-	checkpoint.snaps = r_list_new ();
+	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	if (!checkpoint.snaps) {
 		free (checkpoint.label);
 		return 0;
