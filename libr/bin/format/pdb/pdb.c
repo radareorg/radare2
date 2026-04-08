@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2014-2025 - inisider, pancake */
+/* radare - LGPL - Copyright 2014-2026 - inisider, pancake */
 
 #include <r_bin.h>
 
@@ -207,7 +207,7 @@ static int count_pages(int length, int page_size) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount, EStream indx, int root_size, int page_size) {
-	R_PDB_STREAM *pdb_stream = 0;
+	R_PDB_STREAM *pdb_stream = NULL;
 	int tmp_data_max_size = 0;
 	char *tmp_data = NULL, *data_end;
 	int stream_size = 0;
@@ -324,7 +324,7 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 			page->num_pages = num_pages;
 		} else {
 			page->stream_size = 0;
-			page->stream_pages = 0;
+			page->stream_pages = NULL;
 			page->num_pages = 0;
 			// R_LOG_WARN ("stream_size (%d) is 0", i);
 			free (tmp);
@@ -356,7 +356,7 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
 
-	tmp->names = 0;
+	tmp->names = NULL;
 
 	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ version);
 	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ time_date_stamp);
@@ -395,7 +395,7 @@ static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, ESt
 			return;
 		}
 	} else {
-		stream_parse_func->stream = 0;
+		stream_parse_func->stream = NULL;
 	}
 	r_list_append (list, stream_parse_func);
 }
@@ -420,7 +420,7 @@ static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbi
 static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 	SStreamParseFunc *stream_parse_func;
 	RListIter *it;
-	*res = 0;
+	*res = NULL;
 	r_list_foreach (l, it, stream_parse_func) {
 		if (index == stream_parse_func->indx) {
 			*res = stream_parse_func;
@@ -434,16 +434,16 @@ static int pdb_read_root(RBinPdb *pdb) {
 	int i = 0;
 	RList *pList = pdb->pdb_streams;
 	R_PDB7_ROOT_STREAM *root_stream = pdb->root_stream;
-	R_PDB_STREAM *pdb_stream = 0;
-	SPDBInfoStream *pdb_info_stream = 0;
-	STpiStream *ss = 0;
+	R_PDB_STREAM *pdb_stream = NULL;
+	SPDBInfoStream *pdb_info_stream = NULL;
+	STpiStream *ss = NULL;
 	R_STREAM_FILE stream_file;
 	RListIter *it;
-	SPage *page = 0;
-	SStreamParseFunc *stream_parse_func = 0;
+	SPage *page = NULL;
+	SStreamParseFunc *stream_parse_func = NULL;
 
 	r_list_foreach (root_stream->streams_list, it, page) {
-		if (page->stream_pages == 0) {
+		if (page->stream_pages == NULL) {
 			R_LOG_DEBUG ("no stream pages. Skipping");
 			r_list_append (pList, NULL);
 			i++;
@@ -503,25 +503,19 @@ static int pdb_read_root(RBinPdb *pdb) {
 
 static bool pdb7_parse(RBinPdb *pdb) {
 	char signature[PDB7_SIGNATURE_LEN + 1];
-	int num_root_index_pages = 0;
-	int *root_index_pages = 0;
-	void *root_page_data = 0;
-	int *root_page_list = 0;
-	int num_root_pages = 0;
-	int num_file_pages = 0;
-	int alloc_tbl_ptr = 0;
-	int bytes_read = 0;
-	int page_size = 0;
-	int root_size = 0;
-	int reserved = 0;
+	int *root_index_pages = NULL;
+	void *root_page_data = NULL;
+	int *root_page_list = NULL;
+
 	void *p_tmp;
 	int i = 0;
 
-	bytes_read = r_buf_read (pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
+	int bytes_read = r_buf_read (pdb->buf, (unsigned char *)signature, PDB7_SIGNATURE_LEN);
 	if (bytes_read != PDB7_SIGNATURE_LEN) {
 		// R_LOG_ERROR ("while reading PDB7_SIGNATURE");
 		goto error;
 	}
+	int page_size, alloc_tbl_ptr, num_file_pages, reserved, root_size;
 	if (!read_int_var ("page_size", &page_size, pdb)) {
 		goto error;
 	}
@@ -542,12 +536,12 @@ static bool pdb7_parse(RBinPdb *pdb) {
 		goto error;
 	}
 
-	num_root_pages = count_pages (root_size, page_size);
+	int num_root_pages = count_pages (root_size, page_size);
 	if (num_root_pages < 1) {
 		R_LOG_ERROR ("Invalid page count");
 		goto error;
 	}
-	num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
+	int num_root_index_pages = count_pages ((num_root_pages * 4), page_size);
 	if (num_root_pages > UT16_MAX) {
 		R_LOG_ERROR ("Invalid page count");
 		goto error;
@@ -625,6 +619,7 @@ error:
 	return false;
 }
 
+// TODO: shouldnt this be named "fini" instead?
 static void finish_pdb_parse(RBinPdb *pdb) {
 	if (!pdb) {
 		return;
@@ -638,9 +633,6 @@ static void finish_pdb_parse(RBinPdb *pdb) {
 		r_unref (pdb->buf);
 		pdb->buf = NULL;
 	}
-
-	// fclose (pdb->fp);
-	// printf ("finish_pdb_parse()\n");
 }
 
 static SimpleTypeMode get_simple_type_mode(PDB_SIMPLE_TYPES type) {
@@ -1384,10 +1376,10 @@ static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 
 ///////////////////////////////////////////////////////////////////////////////
 static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
-	SStreamParseFunc *omap = 0, *sctns = 0, *sctns_orig = 0, *gsym = 0, *tmp;
-	SIMAGE_SECTION_HEADER *sctn_header = 0;
-	SGDATAStream *gsym_data_stream = 0;
-	SPEStream *pe_stream = 0;
+	SStreamParseFunc *omap = NULL, *sctns = NULL, *sctns_orig = NULL, *gsym = NULL, *tmp;
+	SIMAGE_SECTION_HEADER *sctn_header = NULL;
+	SGDATAStream *gsym_data_stream = NULL;
+	SPEStream *pe_stream = NULL;
 	SGlobal *gdata;
 	RListIter *it;
 	char *name;
@@ -1433,43 +1425,34 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
 			char *filtered_name;
+			char sname[PDB_SIZEOF_SECTION_NAME + 1];
+			r_str_ncpy (sname, sctn_header->name, sizeof (sname));
+			r_str_sanitize (sname);
 			name = r_bin_demangle_msvc (gdata->name.name);
 			name = (name)? name: strdup (gdata->name.name);
+			ut64 addr = img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address);
 			switch (format) {
 			case 2:
 			case 'j': // JSON
 				pj_o (pj);
 				pj_kN (pj, "address", (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)));
 				pj_kN (pj, "symtype", gdata->symtype);
-				pj_ks (pj, "section_name", sctn_header->name);
+				pj_ks (pj, "section_name", sname);
 				pj_ks (pj, "gdata_name", name);
 				pj_end (pj);
 				break;
 			case 1:
 			case '*':
-			case 'r':
+			case 'r': // r2 script
 				filtered_name = r_name_filter_dup (r_str_trim_head_ro (name));
-				pdb->cb_printf ("f pdb.%s = 0x%" PFMT64x " # %d %.*s\n",
-					filtered_name,
-					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype,
-					PDB_SIZEOF_SECTION_NAME,
-					sctn_header->name);
-				char *b64name = r_base64_encode_dyn ((const ut8 *)name, strlen (name));
-				if (b64name) {
-					pdb->cb_printf ("fN pdb.%s base64:%s\n", filtered_name, b64name);
-					free (b64name);
-				}
+				pdb->cb_printf ("'@0x%" PFMT64x "'f pdb.%s\n", addr, filtered_name);
 				free (filtered_name);
 				break;
-			case 'd':
+			// case 'd':
 			default:
-				pdb->cb_printf ("0x%08" PFMT64x "  %d  %.*s  %s\n",
+				pdb->cb_printf ("0x%08" PFMT64x "  %d  %s  %s\n",
 					(ut64) (img_base + omap_remap ((omap)? (omap->stream): 0, gdata->offset + sctn_header->virtual_address)),
-					gdata->symtype,
-					PDB_SIZEOF_SECTION_NAME,
-					sctn_header->name,
-					name);
+					gdata->symtype, sname, name);
 				break;
 			}
 			free (name);
@@ -1516,7 +1499,7 @@ R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, R_OWNED RBuffer *buf) {
 		pdb->pdb_parse = pdb7_parse;
 		R_FREE (signature);
 		pdb->pdb_streams = r_list_new ();
-		pdb->stream_map = 0;
+		pdb->stream_map = NULL;
 		pdb->finish_pdb_parse = finish_pdb_parse;
 		pdb->print_types = print_types;
 		pdb->print_gvars = print_gvars;
