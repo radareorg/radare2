@@ -532,14 +532,27 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	if (bf) {
 		const char *bclass = R_UNWRAP4 (bf, bo, info, bclass);
 		if (bclass && strstr (bclass, "://")) {
-			// perform a redirection!
-			char *sb = strdup (bclass);
-			r_str_sanitize (sb);
-			char *uri = r_str_newf ("%s%s", sb, bf->file);
-			free (sb);
-			r_core_cmdf (r, "ob-*");
-			r_core_cmdf (r, "'o %s", uri);
+			if (bf->file && strstr (bf->file, "://")) {
+				R_LOG_ERROR ("Skipping IO redirection for already-redirected file");
+				R_CRITICAL_LEAVE (r);
+				return false;
+			}
+			char *uri = r_str_newf ("%s%s", bclass, bf->file);
+			RIOPlugin *iop = r_io_plugin_resolve (r->io, uri, false);
+			if (iop && strcmp (iop->meta.name, "default")) {
+				r_bin_file_delete_all (r->bin);
+				RIODesc *desc = r_core_file_open (r, uri, R_PERM_R, 0);
+				if (desc) {
+					r_core_bin_load (r, uri, UT64_MAX);
+					free (uri);
+					R_CRITICAL_LEAVE (r);
+					return true;
+				}
+			} else {
+				R_LOG_WARN ("bclass URI scheme has no matching IO plugin");
+			}
 			free (uri);
+			R_CRITICAL_LEAVE (r);
 			return false;
 		}
 	}
