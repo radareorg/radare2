@@ -39,7 +39,7 @@ typedef enum r_log_level {
 
 typedef bool (*RLogCallback)(void *user, int type, const char *origin, const char *msg);
 
-typedef struct r_vec_RVecRLogCallbackUser_t RVecRLogCallbackUser;
+R_VEC_TYPE_FORWARD (RVecRLogCallbackUser);
 
 typedef struct r_log_t {
 	int level; // skip messages lower than this level
