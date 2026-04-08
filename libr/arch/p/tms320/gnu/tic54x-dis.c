@@ -36,15 +36,15 @@ static int print_instruction (disassemble_info *, bfd_vma,
 static int print_parallel_instruction (disassemble_info *, bfd_vma,
                                        unsigned short,
                                        const insn_template *, int);
-static int sprint_dual_address (disassemble_info *,char [],
+static int sprint_dual_address (disassemble_info *,char [],size_t,
                                 unsigned short);
-static int sprint_indirect_address (disassemble_info *,char [],
+static int sprint_indirect_address (disassemble_info *,char [],size_t,
                                     unsigned short);
-static int sprint_direct_address (disassemble_info *,char [],
+static int sprint_direct_address (disassemble_info *,char [],size_t,
                                   unsigned short);
-static int sprint_mmr (disassemble_info *,char [],int);
-static int sprint_condition (disassemble_info *,char *,unsigned short);
-static int sprint_cc2 (disassemble_info *,char *,unsigned short);
+static int sprint_mmr (disassemble_info *,char [],size_t,int);
+static int sprint_condition (disassemble_info *,char *,size_t,unsigned short);
+static int sprint_cc2 (disassemble_info *,char *,size_t,unsigned short);
 
 int
 print_insn_tic54x (bfd_vma memaddr, disassemble_info *info)
@@ -212,11 +212,11 @@ print_instruction (disassemble_info *info,
       switch (OPTYPE (tm_operands[i]))
         {
         case OP_Xmem:
-          sprint_dual_address (info, operand[i], XMEM (opcode));
+          sprint_dual_address (info, operand[i], sizeof (operand[i]),XMEM (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_Ymem:
-          sprint_dual_address (info, operand[i], YMEM (opcode));
+          sprint_dual_address (info, operand[i], sizeof (operand[i]),YMEM (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_Smem:
@@ -242,7 +242,7 @@ print_instruction (disassemble_info *info,
                 }
               else
                 {
-                  sprint_indirect_address (info, operand[i], opcode);
+                  sprint_indirect_address (info, operand[i], sizeof (operand[i]), opcode);
                   info->fprintf_func (info->stream, "%s", operand[i]);
                 }
             }
@@ -250,7 +250,7 @@ print_instruction (disassemble_info *info,
           {
             /* FIXME -- use labels (print_address_func) */
             /* in order to do this, we need to guess what DP is */
-            sprint_direct_address (info, operand[i], opcode);
+            sprint_direct_address (info, operand[i], sizeof (operand[i]), opcode);
             info->fprintf_func (info->stream, "%s", operand[i]);
           }
           break;
@@ -267,63 +267,63 @@ print_instruction (disassemble_info *info,
           (*(info->print_address_func)) ((bfd_vma) opcode2, info);
           break;
         case OP_MMRX:
-          sprint_mmr (info, operand[i], MMRX (opcode));
+          sprint_mmr (info, operand[i], sizeof (operand[i]), MMRX (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_MMRY:
-          sprint_mmr (info, operand[i], MMRY (opcode));
+          sprint_mmr (info, operand[i], sizeof (operand[i]), MMRY (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_MMR:
-          sprint_mmr (info, operand[i], MMR (opcode));
+          sprint_mmr (info, operand[i], sizeof (operand[i]), MMR (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_PA:
-          sprintf (operand[i], "pa%d", (unsigned) opcode2);
+          snprintf (operand[i], sizeof (operand[i]), "pa%d", (unsigned) opcode2);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_SRC:
           src = SRC (ext ? opcode2 : opcode) ? OP_B : OP_A;
-          sprintf (operand[i], (src == OP_B) ? "b" : "a");
+          snprintf (operand[i], sizeof (operand[i]), (src == OP_B) ? "b" : "a");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_SRC1:
           src = SRC1 (ext ? opcode2 : opcode) ? OP_B : OP_A;
-          sprintf (operand[i], (src == OP_B) ? "b" : "a");
+          snprintf (operand[i], sizeof (operand[i]), (src == OP_B) ? "b" : "a");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_RND:
           dst = DST (opcode) ? OP_B : OP_A;
-          sprintf (operand[i], (dst == OP_B) ? "a" : "b");
+          snprintf (operand[i], sizeof (operand[i]), (dst == OP_B) ? "a" : "b");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_DST:
           dst = DST (ext ? opcode2 : opcode) ? OP_B : OP_A;
           if (!optional || dst != src)
             {
-              sprintf (operand[i], (dst == OP_B) ? "b" : "a");
+              snprintf (operand[i], sizeof (operand[i]), (dst == OP_B) ? "b" : "a");
               info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
             }
           else
             next_comma = comma;
           break;
         case OP_B:
-          sprintf (operand[i], "b");
+          snprintf (operand[i], sizeof (operand[i]), "b");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_A:
-          sprintf (operand[i], "a");
+          snprintf (operand[i], sizeof (operand[i]), "a");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_ARX:
-          sprintf (operand[i], "ar%d", (int) ARX (opcode));
+          snprintf (operand[i], sizeof (operand[i]), "ar%d", (int) ARX (opcode));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_SHIFT:
           shift = SHIFT (ext ? opcode2 : opcode);
           if (!optional || shift != 0)
             {
-              sprintf (operand[i], "%d", shift);
+              snprintf (operand[i], sizeof (operand[i]), "%d", shift);
               info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
             }
           else
@@ -333,48 +333,48 @@ print_instruction (disassemble_info *info,
           shift = SHFT (opcode);
           if (!optional || shift != 0)
             {
-              sprintf (operand[i], "%d", (unsigned) shift);
+              snprintf (operand[i], sizeof (operand[i]), "%d", (unsigned) shift);
               info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
             }
           else
             next_comma = comma;
           break;
         case OP_lk:
-          sprintf (operand[i], "#%d", (int) (short) opcode2);
+          snprintf (operand[i], sizeof (operand[i]), "#%d", (int) (short) opcode2);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_T:
-          sprintf (operand[i], "t");
+          snprintf (operand[i], sizeof (operand[i]), "t");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_TS:
-          sprintf (operand[i], "ts");
+          snprintf (operand[i], sizeof (operand[i]), "ts");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_k8:
-          sprintf (operand[i], "%d", (int) ((signed char) (opcode & 0xFF)));
+          snprintf (operand[i], sizeof (operand[i]), "%d", (int) ((signed char) (opcode & 0xFF)));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_16:
-          sprintf (operand[i], "16");
+          snprintf (operand[i], sizeof (operand[i]), "16");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_ASM:
-          sprintf (operand[i], "asm");
+          snprintf (operand[i], sizeof (operand[i]), "asm");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_BITC:
-          sprintf (operand[i], "%d", (int) (opcode & 0xF));
+          snprintf (operand[i], sizeof (operand[i]), "%d", (int) (opcode & 0xF));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_CC:
           /* put all CC operands in the same operand */
-          sprint_condition (info, operand[i], opcode);
+          sprint_condition (info, operand[i], sizeof (operand[i]), opcode);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           i = MAX_OPERANDS;
           break;
         case OP_CC2:
-          sprint_cc2 (info, operand[i], opcode);
+          sprint_cc2 (info, operand[i], sizeof (operand[i]), opcode);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_CC3:
@@ -383,36 +383,36 @@ print_instruction (disassemble_info *info,
 
 	  /* Do not use sprintf with only two parameters as a
 	     compiler warning could be generated in such conditions.  */
-	  sprintf (operand[i], "%s", code[CC3 (opcode)]);
+	  snprintf (operand[i], sizeof (operand[i]), "%s", code[CC3 (opcode)]);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         }
         case OP_123:
           {
             int code = (opcode >> 8) & 0x3;
-            sprintf (operand[i], "%d", (code == 0) ? 1 : (code == 2) ? 2 : 3);
+            snprintf (operand[i], sizeof (operand[i]), "%d", (code == 0) ? 1 : (code == 2) ? 2 : 3);
             info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
             break;
           }
         case OP_k5:
-          sprintf (operand[i], "#%d", ((opcode & 0x1F) ^ 0x10) - 0x10);
+          snprintf (operand[i], sizeof (operand[i]), "#%d", ((opcode & 0x1F) ^ 0x10) - 0x10);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_k8u:
-          sprintf (operand[i], "#%d", (unsigned) (opcode & 0xFF));
+          snprintf (operand[i], sizeof (operand[i]), "#%d", (unsigned) (opcode & 0xFF));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_k3:
-          sprintf (operand[i], "#%d", (int) (opcode & 0x7));
+          snprintf (operand[i], sizeof (operand[i]), "#%d", (int) (opcode & 0x7));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_lku:
-          sprintf (operand[i], "#%d", (unsigned) opcode2);
+          snprintf (operand[i], sizeof (operand[i]), "#%d", (unsigned) opcode2);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_N:
           n = (opcode >> 9) & 0x1;
-          sprintf (operand[i], "st%d", n);
+          snprintf (operand[i], sizeof (operand[i]), "st%d", n);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_SBIT:
@@ -426,38 +426,38 @@ print_instruction (disassemble_info *info,
             "cmpt", "frct", "c16", "sxm", "ovm", "10",
             "intm", "hm", "xf", "cpl", "braf"
           };
-          sprintf (operand[i], "%s",
+          snprintf (operand[i], sizeof (operand[i]), "%s",
                    n ? status1[SBIT (opcode)] : status0[SBIT (opcode)]);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         }
         case OP_12:
-          sprintf (operand[i], "%d", (int) ((opcode >> 9) & 1) + 1);
+          snprintf (operand[i], sizeof (operand[i]), "%d", (int) ((opcode >> 9) & 1) + 1);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_TRN:
-          sprintf (operand[i], "trn");
+          snprintf (operand[i], sizeof (operand[i]), "trn");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_DP:
-          sprintf (operand[i], "dp");
+          snprintf (operand[i], sizeof (operand[i]), "dp");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_k9:
           /* FIXME-- this is DP, print the original address? */
-          sprintf (operand[i], "#%d", (int) (opcode & 0x1FF));
+          snprintf (operand[i], sizeof (operand[i]), "#%d", (int) (opcode & 0x1FF));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_ARP:
-          sprintf (operand[i], "arp");
+          snprintf (operand[i], sizeof (operand[i]), "arp");
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         case OP_031:
-          sprintf (operand[i], "%d", (int) (opcode & 0x1F));
+          snprintf (operand[i], sizeof (operand[i]), "%d", (int) (opcode & 0x1F));
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         default:
-          sprintf (operand[i], "??? (0x%x)", tm_operands[i]);
+          snprintf (operand[i], sizeof (operand[i]), "??? (0x%x)", tm_operands[i]);
           info->fprintf_func (info->stream, "%s%s", comma, operand[i]);
           break;
         }
@@ -483,6 +483,7 @@ print_parallel_instruction (disassemble_info *info,
 static int
 sprint_dual_address (disassemble_info *info ATTRIBUTE_UNUSED,
 		     char buf[],
+		     size_t bufsize,
 		     unsigned short code)
 {
   const char *formats[] = {
@@ -491,12 +492,13 @@ sprint_dual_address (disassemble_info *info ATTRIBUTE_UNUSED,
     "*ar%d+",
     "*ar%d+0%%",
   };
-  return sprintf (buf, formats[XMOD (code)], XARX (code));
+  return snprintf (buf, bufsize, formats[XMOD (code)], XARX (code));
 }
 
 static int
 sprint_indirect_address (disassemble_info *info ATTRIBUTE_UNUSED,
 			 char buf[],
+			 size_t bufsize,
 			 unsigned short opcode)
 {
   const char *formats[] = {
@@ -513,21 +515,23 @@ sprint_indirect_address (disassemble_info *info ATTRIBUTE_UNUSED,
     "*ar%d+%%",
     "*ar%d+0%%",
   };
-  return sprintf (buf, formats[MOD (opcode)], ARF (opcode));
+  return snprintf (buf, bufsize, formats[MOD (opcode)], ARF (opcode));
 }
 
 static int
 sprint_direct_address (disassemble_info *info ATTRIBUTE_UNUSED,
 		       char buf[],
+		       size_t bufsize,
 		       unsigned short opcode)
 {
   /* FIXME -- look up relocation if available */
-  return sprintf (buf, "DP+0x%02x", (int) (opcode & 0x7F));
+  return snprintf (buf, bufsize, "DP+0x%02x", (int) (opcode & 0x7F));
 }
 
 static int
 sprint_mmr (disassemble_info *info ATTRIBUTE_UNUSED,
 	    char buf[],
+	    size_t bufsize,
 	    int mmr)
 {
   const tic54x_symbol *reg = tic54x_mmregs;
@@ -535,61 +539,66 @@ sprint_mmr (disassemble_info *info ATTRIBUTE_UNUSED,
     {
       if (mmr == reg->value)
         {
-          sprintf (buf, "%s", (reg + 1)->name);
+          snprintf (buf, bufsize, "%s", (reg + 1)->name);
           return 1;
         }
       ++reg;
     }
-  sprintf (buf, "MMR(%d)", mmr); /* FIXME -- different targets.  */
+  snprintf (buf, bufsize, "MMR(%d)", mmr); /* FIXME -- different targets.  */
   return 0;
 }
 
 static int
 sprint_cc2 (disassemble_info *info ATTRIBUTE_UNUSED,
 	    char *buf,
+	    size_t bufsize,
 	    unsigned short opcode)
 {
   const char *cc2[] = {
     "??", "??", "ageq", "alt", "aneq", "aeq", "agt", "aleq",
     "??", "??", "bgeq", "blt", "bneq", "beq", "bgt", "bleq",
   };
-  return sprintf (buf, "%s", cc2[opcode & 0xF]);
+  return snprintf (buf, bufsize, "%s", cc2[opcode & 0xF]);
 }
 
 static int
 sprint_condition (disassemble_info *info ATTRIBUTE_UNUSED,
 		  char *buf,
+		  size_t bufsize,
 		  unsigned short opcode)
 {
   char *start = buf;
+  char *bufend = buf + bufsize;
   const char *cmp[] = {
       "??", "??", "geq", "lt", "neq", "eq", "gt", "leq"
   };
+#define COND_REM() ((size_t)(bufend > buf ? bufend - buf : 0))
   if (opcode & 0x40)
     {
       char acc = (opcode & 0x8) ? 'b' : 'a';
       if (opcode & 0x7)
-          buf += sprintf (buf, "%c%s%s", acc, cmp[(opcode & 0x7)],
+          buf += snprintf (buf, COND_REM(), "%c%s%s", acc, cmp[(opcode & 0x7)],
                           (opcode & 0x20) ? ", " : "");
       if (opcode & 0x20)
-          buf += sprintf (buf, "%c%s", acc, (opcode & 0x10) ? "ov" : "nov");
+          buf += snprintf (buf, COND_REM(), "%c%s", acc, (opcode & 0x10) ? "ov" : "nov");
     }
   else if (opcode & 0x3F)
     {
       if (opcode & 0x30)
-        buf += sprintf (buf, "%s%s",
+        buf += snprintf (buf, COND_REM(), "%s%s",
                         ((opcode & 0x30) == 0x30) ? "tc" : "ntc",
                         (opcode & 0x0F) ? ", " : "");
       if (opcode & 0x0C)
-        buf += sprintf (buf, "%s%s",
+        buf += snprintf (buf, COND_REM(), "%s%s",
                         ((opcode & 0x0C) == 0x0C) ? "c" : "nc",
                         (opcode & 0x03) ? ", " : "");
       if (opcode & 0x03)
-        buf += sprintf (buf, "%s",
+        buf += snprintf (buf, COND_REM(), "%s",
                         ((opcode & 0x03) == 0x03) ? "bio" : "nbio");
     }
   else
-    buf += sprintf (buf, "unc");
+    buf += snprintf (buf, COND_REM(), "unc");
+#undef COND_REM
 
   return buf - start;
 }
