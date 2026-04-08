@@ -1611,6 +1611,7 @@ static RCoreHelpMessage help_msg_grain = {
 	"exec", "", "allow process execution and kill/system helpers",
 	"socket", "", "allow socket creation, listening and socket state checks",
 	"network", "", "allow non-localhost network connections and HTTP requests",
+	"environ", "", "allow environment variable read, write, clear operations",
 	NULL
 };
 // clang-format on
@@ -1630,20 +1631,24 @@ static bool cb_cfgsanbox_grain(void *user, void *data) {
 		if (strstr (node->value, "exec")) {
 			gt |= R_SANDBOX_GRAIN_EXEC;
 		}
-		if (strstr (node->value, "socket") || strstr (node->value, "net")) {
+		if (strstr (node->value, "socket")) {
 			gt |= R_SANDBOX_GRAIN_SOCKET;
 		}
-		if (strstr (node->value, "file") || strstr (node->value, "files")) {
+		if (strstr (node->value, "file")) {
 			gt |= R_SANDBOX_GRAIN_FILES;
 		}
 		if (strstr (node->value, "disk")) {
 			gt |= R_SANDBOX_GRAIN_DISK;
 		}
-		if (strstr (node->value, "network") || strstr (node->value, "inet")) {
+		if (strstr (node->value, "network")) {
 			gt |= R_SANDBOX_GRAIN_NETWORK;
 		}
+		if (strstr (node->value, "environ")) {
+			gt |= R_SANDBOX_GRAIN_ENVIRON;
+		}
 	}
-	return r_sandbox_grain (gt);
+	r_sandbox_grain (gt);
+	return true;
 }
 
 static bool cb_cfgsanbox(void *user, void *data) {

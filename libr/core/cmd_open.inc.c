@@ -2604,7 +2604,7 @@ static int cmd_open(void *data, const char *input) {
 		pj_free (pj);
 		break;
 	case 'L': // "oL"
-		if (r_sandbox_enable (0)) {
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
@@ -2910,7 +2910,7 @@ static int cmd_open(void *data, const char *input) {
 		if (input[1] == '?') {
 			r_core_cmd_help_match (core, help_msg_o, "oc");
 		} else if (input[1] && input[2]) {
-			if (r_sandbox_enable (0)) {
+			if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 				R_LOG_ERROR ("This command is disabled in sandbox mode");
 				return 0;
 			}

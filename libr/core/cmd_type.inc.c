@@ -2426,7 +2426,7 @@ static int cmd_type(void *data, const char *input) {
 	case 'o': // "to"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_to);
-		} else if (!r_sandbox_enable (0)) {
+		} else if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			if (input[1] == ' ') {
 				const char *dir = r_config_get (core->config, "dir.types");
 				const char *filename = r_str_trim_head_ro (input + 2);

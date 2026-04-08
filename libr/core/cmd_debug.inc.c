@@ -5658,7 +5658,7 @@ static int cmd_debug(void *data, const char *input) {
 	int ret = 0;
 	ut64 old_seek = core->addr;
 
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		R_LOG_INFO ("Debugger commands disabled in sandbox mode");
 		return 0;
 	}

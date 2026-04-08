@@ -8055,7 +8055,7 @@ static int cmd_print(void *data, const char *input) {
 		if (input[1] == 'n') { // "pwn"
 			cmd_print_pwn (core);
 		} else if (input[1] == 'd') { // "pwd"
-			if (!r_sandbox_enable (0)) {
+			if (r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 				char *cwd = r_sys_getdir ();
 				if (cwd) {
 					r_cons_println (core->cons, cwd);
