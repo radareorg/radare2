@@ -429,7 +429,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 							r_str_uri_decode (cmd);
 							// r_config_set_b (core->config, "scr.interactive", false);
 
-							if (!r_sandbox_enable (0) &&
+							if (r_sandbox_check (R_SANDBOX_GRAIN_EXEC) &&
 									(!strcmp (cmd, "=h*") ||
 									 !strcmp (cmd, "=h--"))) {
 								out = NULL;
@@ -452,7 +452,7 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 								r_socket_http_response (rs, 200, "", 0, headers);
 							}
 
-							if (!r_sandbox_enable (0)) {
+							if (r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 								if (!strcmp (cmd, "=h*")) {
 									/* do stuff */
 									rtr_http_request_free (rs);
@@ -659,7 +659,7 @@ static RThreadFunctionRet r_core_rtr_http_thread(RThread *th) {
 R_API int r_core_rtr_http(RCore *core, int launch, int browse, const char *path) {
 	RCorePriv *priv = core->priv;
 	HttpRunResult ret;
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
 		R_LOG_ERROR ("sandbox: connect is not permitted");
 		return 1;
 	}

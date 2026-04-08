@@ -19,7 +19,7 @@ static RCoreHelpMessage help_msg_hash = {
 };
 
 static int cmd_hash_bang(RCore *core, const char *input) {
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		R_LOG_ERROR ("hashbang disabled in sandbox mode");
 		return false;
 	}

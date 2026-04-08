@@ -2614,7 +2614,7 @@ static int cmd_kuery(void *data, const char *input) {
 		r_line_set_hist_callback (core->cons->line, &r_line_hist_cmd_up, &r_line_hist_cmd_down);
 		break;
 	case 'o': // "ko"
-		if (r_sandbox_enable (0)) {
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			return 0;
 		}
@@ -2648,7 +2648,7 @@ static int cmd_kuery(void *data, const char *input) {
 		}
 		break;
 	case 'd': // "kd"
-		if (r_sandbox_enable (0)) {
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 			R_LOG_ERROR ("The 'kd' command is disabled in sandbox mode");
 			return 0;
 		}
@@ -3482,7 +3482,7 @@ static int cmd_system(void *data, const char *input) {
 			r_core_cmd_help_match (core, help_msg_exclamation, "!=!");
 			r_core_cmd_help_match (core, help_msg_exclamation, "=!=");
 		} else {
-			if (!r_sandbox_enable (0)) {
+			if (r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 				R_FREE (core->cmdremote);
 			}
 		}
@@ -3506,7 +3506,7 @@ static int cmd_system(void *data, const char *input) {
 			free (cmd);
 		} else {
 			if (input[1]) {
-				if (r_sandbox_enable (0)) {
+				if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 					R_LOG_ERROR ("The !! command is disabled in sandbox mode");
 					return 0;
 				}
@@ -3807,7 +3807,7 @@ static int cmdpipe_internal(RCore *core, char *radare_cmd, char *shell_cmd) {
 }
 
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd) {
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		R_LOG_ERROR ("Pipes are not allowed in sandbox mode");
 		return -1;
 	}
@@ -4053,7 +4053,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 		rep = 1;
 	}
 	// XXX if output is a pipe then we don't want to be interactive
-	if ((st64)rep > 1 && r_sandbox_enable (0)) {
+	if ((st64)rep > 1 && !r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 		R_LOG_ERROR ("The command repeat syntax sugar is disabled in sandbox mode (%s)", cmd);
 		goto beach;
 	}
@@ -6642,7 +6642,7 @@ R_API int r_core_cmd(RCore *core, const char *cstr, bool log) {
 		goto beach; // false;
 	}
 	if (r_str_startswith (cstr, "/*")) {
-		if (r_sandbox_enable (0)) {
+		if (!r_sandbox_check (R_SANDBOX_GRAIN_EXEC)) {
 			R_LOG_ERROR ("This command is disabled in sandbox mode");
 			goto beach; // false
 		}

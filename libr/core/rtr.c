@@ -653,8 +653,8 @@ static int r_core_rtr_gdb_run(RCore *core, int launch, const char *path) {
 
 R_API int r_core_rtr_gdb(RCore *core, int launch, const char *path) {
 	int ret;
-	if (r_sandbox_enable (0)) {
-		R_LOG_ERROR ("connect disable the sandbox");
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
+		R_LOG_ERROR ("connect disabled in sandbox mode");
 		return -1;
 	}
 	// TODO: do stuff with launch
@@ -815,7 +815,7 @@ R_API void r_core_rtr_add(RCore *core, const char *_input) {
 		}
 	}
 
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_NETWORK)) {
 		R_LOG_ERROR ("sandbox: connect disabled");
 		return;
 	}

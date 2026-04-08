@@ -24,7 +24,7 @@
 
 static R_TH_LOCAL bool G_enabled = false;
 static R_TH_LOCAL bool G_disabled = false;
-static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_NONE;
+static R_TH_LOCAL int G_graintype = R_SANDBOX_GRAIN_ALL;
 
 #define R_SANDBOX_GUARD(x,y) if (G_enabled && !(G_graintype & (x))) { return (y); }
 
@@ -184,7 +184,6 @@ R_API bool r_sandbox_enable(bool e) {
 		}
 		return true;
 	}
-	G_graintype = R_SANDBOX_GRAIN_ALL;
 	G_enabled = e;
 #if LIBC_HAVE_PLEDGE
 	if (G_enabled && pledge ("stdio rpath tty prot_exec inet", NULL) == -1) {
@@ -277,10 +276,6 @@ static inline int bytify(int v) {
 R_API int r_sandbox_system(const char *x, int n) {
 	R_RETURN_VAL_IF_FAIL (x, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);
-	if (G_enabled) {
-		R_LOG_ERROR ("sandbox: system call disabled");
-		return bytify (-1);
-	}
 #if R2__WINDOWS__
 	return system (x);
 #elif LIBC_HAVE_FORK
@@ -359,8 +354,9 @@ R_API int r_sandbox_system(const char *x, int n) {
 }
 
 R_API bool r_sandbox_creat(const char *path, int mode) {
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, false);
 	if (G_enabled) {
-		return false;
+		return false; // creating files is not allowed in sandbox even with DISK grain
 #if 0
 		if (mode & O_CREAT) {
 			return -1;
@@ -386,16 +382,12 @@ static inline char *expand_home(const char *p) {
 }
 
 R_API int r_sandbox_lseek(int fd, ut64 addr, int whence) {
-	if (G_enabled) {
-		return -1;
-	}
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
 	return lseek (fd, (off_t)addr, whence);
 }
 
 R_API int r_sandbox_truncate(int fd, ut64 length) {
-	if (G_enabled) {
-		return -1;
-	}
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
 #ifdef _MSC_VER
 	return _chsize_s (fd, length);
 #else
@@ -404,15 +396,18 @@ R_API int r_sandbox_truncate(int fd, ut64 length) {
 }
 
 R_API int r_sandbox_read(int fd, ut8 *buf, int len) {
-	return G_enabled? -1: read (fd, buf, len);
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
+	return read (fd, buf, len);
 }
 
 R_API int r_sandbox_write(int fd, const ut8* buf, int len) {
-	return G_enabled? -1: write (fd, buf, len);
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
+	return write (fd, buf, len);
 }
 
 R_API int r_sandbox_close(int fd) {
-	return G_enabled? -1: close (fd);
+	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_DISK, -1);
+	return close (fd);
 }
 
 /* perm <-> mode */
@@ -537,14 +532,9 @@ R_API int r_sandbox_chdir(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, -1);
 	if (G_enabled) {
-		// TODO: check path
-		if (strstr (path, "../")) {
+		if (strstr (path, "../") || *path == '/') {
 			return -1;
 		}
-		if (*path == '/') {
-			return -1;
-		}
-		return -1;
 	}
 	return chdir (path);
 }
@@ -552,10 +542,6 @@ R_API int r_sandbox_chdir(const char *path) {
 R_API int r_sandbox_kill(int pid, int sig) {
 	R_RETURN_VAL_IF_FAIL (pid != -1, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, -1);
-	// XXX: fine-tune. maybe we want to enable kill for child?
-	if (G_enabled) {
-		return -1;
-	}
 #if HAVE_SYSTEM && R2__UNIX__
 	int ret = kill (pid, sig);
 	const bool sync_kill = false;
@@ -598,9 +584,6 @@ R_API DIR* r_sandbox_opendir(const char *path) {
 #endif
 R_API bool r_sys_stop(void) {
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_EXEC, false);
-	if (G_enabled) {
-		return false;
-	}
 #if R2__UNIX__
 	return !r_sandbox_kill (0, SIGTSTP);
 #else

@@ -125,7 +125,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		R_LOG_ERROR ("Cannot reopen in sandbox");
 		free (obinfilepath);
 		return false;

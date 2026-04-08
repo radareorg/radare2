@@ -136,7 +136,7 @@ R_API int r_core_project_list(RCore *core, int mode) {
 
 R_API int r_core_project_delete(RCore *core, const char *prjfile) {
 	RCons *cons = core->cons;
-	if (r_sandbox_enable (0)) {
+	if (!r_sandbox_check (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK)) {
 		R_LOG_ERROR ("Cannot delete project in sandbox mode");
 		return 0;
 	}

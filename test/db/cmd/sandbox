@@ -21,3 +21,120 @@ EXPECT=<<EOF
 malloc://512
 EOF
 RUN
+
+NAME=sandbox grain default is all
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+all
+EOF
+RUN
+
+NAME=sandbox grain=none blocks exec
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+!!echo hello 2>/dev/null
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=sandbox grain=exec allows exec
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=exec
+e cfg.sandbox=true
+!!echo hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=sandbox grain=all allows exec
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=all
+e cfg.sandbox=true
+!!echo hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=sandbox grain order does not matter
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox=true
+e cfg.sandbox.grain=exec
+!!echo hello
+EOF
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=sandbox grain=none blocks oc
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+o~[4]
+oc /bin/ls
+EOF
+EXPECT=<<EOF
+malloc://512
+EOF
+RUN
+
+NAME=sandbox grain=none blocks environ
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=none
+e cfg.sandbox=true
+%SHELL
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=sandbox grain=environ allows environ
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=environ
+e cfg.sandbox=true
+%SHELL
+EOF
+EXPECT=<<EOF
+/bin/bash
+EOF
+RUN
+
+NAME=sandbox grain=disk,exec combined
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=disk,exec
+e cfg.sandbox=true
+!!echo works
+EOF
+EXPECT=<<EOF
+works
+EOF
+RUN
+
+NAME=sandbox grain persist after enable
+FILE=-
+CMDS=<<EOF
+e cfg.sandbox.grain=exec
+e cfg.sandbox=true
+e cfg.sandbox.grain
+EOF
+EXPECT=<<EOF
+exec
+EOF
+RUN
