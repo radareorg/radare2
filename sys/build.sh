@@ -65,6 +65,19 @@ if [ "${USE_CSNEXT}" = 1 ]; then
 	CFGARG="${CFGARG} --with-capstone-next"
 fi
 
+# On distros like Fedora/RHEL/SUSE, 64-bit libraries live in lib64, not lib.
+# Detect this the same way RPM-based distros do, via the compiler's multi-os
+# directory, so installed .so files and .pc files end up in the right place.
+if [ "${OSNAME}" = Linux -a -z "${LIBDIR}" ]; then
+	_r2_multiosdir=$(${CC:-cc} -print-multi-os-directory 2>/dev/null)
+	case "${_r2_multiosdir}" in
+	../lib64)
+		CFGARG="${CFGARG} --libdir=${PREFIX}/lib64"
+		;;
+	esac
+	unset _r2_multiosdir
+fi
+
 if [ "${OSNAME}" = Linux -a -n "${PREFIX}" -a "${PREFIX}" != /usr ]; then
 	CFGARG="${CFGARG} --with-rpath"
 fi
