@@ -432,6 +432,7 @@ R_API bool r_anal_op_is_eob(RAnalOp *op) {
 	case R_ANAL_OP_TYPE_IRJMP:
 	case R_ANAL_OP_TYPE_CJMP:
 	case R_ANAL_OP_TYPE_RET:
+	case R_ANAL_OP_TYPE_CRET:
 	case R_ANAL_OP_TYPE_TRAP:
 		return true;
 	default:
