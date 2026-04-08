@@ -1943,6 +1943,15 @@ analopfinish:
 				}
 			}
 			break;
+		case R_ANAL_OP_TYPE_CRET:
+			// conditional return: end block, analyze fall-through path
+			bb->fail = op->addr + op->size;
+			{
+				int saved_stack = fcn->stack;
+				ret = r_anal_function_bb (anal, fcn, bb->fail, depth);
+				fcn->stack = saved_stack;
+			}
+			goto beach;
 		case R_ANAL_OP_TYPE_RET:
 			if (op->family == R_ANAL_OP_FAMILY_PRIV) {
 				fcn->type = R_ANAL_FCN_TYPE_INT;
