@@ -257,16 +257,17 @@ static bfd_vma bfd_getm32_ac(unsigned int) ATTRIBUTE_UNUSED;
 #define WRITE_FORMAT_COMMA_x(x)      WRITE_FORMAT(x,", ","",", ","")
 #define WRITE_FORMAT_x_COMMA(x)      WRITE_FORMAT(x,"",", ","",", ")
 #define WRITE_FORMAT_x(x)            WRITE_FORMAT(x,"","","","")
-#define WRITE_FORMAT(x,cb1,ca1,cb,ca) strcat(formatString,              \
+#define WRITE_FORMAT(x,cb1,ca1,cb,ca) strncat(formatString,              \
                                      (IS_SIMD_128_REG(x) ? cb1"%S"ca1:  \
                                       IS_SIMD_16_REG(x)  ? cb1"%I"ca1:  \
                                       IS_SIMD_DATA_REG(x)? cb1"%D"ca1:  \
                                       IS_REG(x)          ? cb1"%r"ca1:  \
                                       usesAuxReg         ?  cb"%a"ca :  \
-                                      IS_SMALL(x) ? cb"%d"ca : cb"%h"ca))
+                                      IS_SMALL(x) ? cb"%d"ca : cb"%h"ca), \
+                                     sizeof(formatString) - strlen(formatString) - 1)
 
-#define WRITE_FORMAT_LB() strcat(formatString, "[")
-#define WRITE_FORMAT_RB() strcat(formatString, "]")
+#define WRITE_FORMAT_LB() strncat(formatString, "[", sizeof(formatString) - strlen(formatString) - 1)
+#define WRITE_FORMAT_RB() strncat(formatString, "]", sizeof(formatString) - strlen(formatString) - 1)
 #define WRITE_COMMENT(str)	(state->comm[state->commNum++] = (str))
 #define WRITE_NOP_COMMENT() if (!fieldAisReg && !flag) WRITE_COMMENT("nop");
 
@@ -348,6 +349,9 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
   const char *p;
   int size, leading_zero, regMap[2];
   va_list ap;
+  /* Compute remaining buffer space to prevent overflows */
+  size_t bufsize = sizeof (state->operandBuffer) - (buf - state->operandBuffer);
+  char *bufend = buf + bufsize;
 
   va_start(ap,format);
   bp = buf;
@@ -359,7 +363,9 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  switch (*p++) {
 	  case 0: goto DOCOMM; /*(return) */
 	  default:
-		  *bp++ = p[-1];
+		  if (bp < bufend - 1) {
+			  *bp++ = p[-1];
+		  }
 		  break;
 	  case '%':
 		  size = 0;
@@ -386,7 +392,8 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 			  }
 			  goto RETRY;
 		  }
-#define inc_bp() bp = bp+strlen(bp)
+#define inc_bp() do { bp = bp+strlen(bp); if (bp >= bufend) { bp = bufend - 1; *bp = 0; goto DOCOMM; } } while(0)
+#define REMAINING() ((size_t)(bufend > bp ? bufend - bp : 0))
 
 	case 'h':
 	  {
@@ -399,12 +406,12 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 #define CDT_DEBUG
 	    if (u > 65536) {
 #ifndef CDT_DEBUG
-	      sprintf(bp,"0x%x_%04x",u >> 16, u & 0xffff);
+	      snprintf(bp,REMAINING(),"0x%x_%04x",u >> 16, u & 0xffff);
 #else
-	      sprintf(bp,"0x%08x",u);
+	      snprintf(bp,REMAINING(),"0x%08x",u);
 #endif // CDT_DEBUG
 	    } else {
-		    sprintf (bp, "0x%x", u);
+		    snprintf (bp, REMAINING(), "0x%x", u);
 	    }
 	    inc_bp();
 	  }
@@ -414,12 +421,12 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    int val = va_arg(ap,int);
 	    if (size != 0) {
 		    if (leading_zero) {
-			    sprintf (bp, "0x%0*x", size, val);
+			    snprintf (bp, REMAINING(), "0x%0*x", size, val);
 		    } else {
-			    sprintf (bp, "%*x", size, val);
+			    snprintf (bp, REMAINING(), "%*x", size, val);
 		    }
 	    } else {
-		    sprintf (bp, "0x%x", val);
+		    snprintf (bp, REMAINING(), "0x%x", val);
 	    }
 	    inc_bp();
 	  }
@@ -428,9 +435,9 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	    int val = va_arg(ap,int);
 	    if (size != 0) {
-		    sprintf (bp, "%*d", size, val);
+		    snprintf (bp, REMAINING(), "%*d", size, val);
 	    } else {
-		    sprintf (bp, "%d", val);
+		    snprintf (bp, REMAINING(), "%d", val);
 	    }
 	    inc_bp();
 	  }
@@ -440,7 +447,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    /* Register. */
 	    int val = va_arg(ap,int);
 
-#define REG2NAME(num, name) case num: sprintf(bp,""name); \
+#define REG2NAME(num, name) case num: snprintf(bp,REMAINING(),""name); \
 			regMap[((num)<32)?0:1] |= 1<<((num)-(((num)<32)?0:32)); break;
 	    switch (val)
 	      {
@@ -457,9 +464,9 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 		  const char *ext;
 		  ext = core_reg_name(state, val);
 		  if (ext) {
-			  sprintf (bp, "%s", ext);
+			  snprintf (bp, REMAINING(), "%s", ext);
 		  } else {
-			  sprintf (bp, "r%d", val);
+			  snprintf (bp, REMAINING(), "r%d", val);
 		  }
 		}break;
 	      }
@@ -473,12 +480,12 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	    const char *ret;
 	    ret = arc_aux_reg_name(val);
 	    if (ret) {
-		    sprintf (bp, "%s", ret);
+		    snprintf (bp, REMAINING(), "%s", ret);
 	    } else {
 		    const char *ext;
 		    ext = aux_reg_name (state, val);
 		    if (ext) {
-			    sprintf (bp, "%s", ext);
+			    snprintf (bp, REMAINING(), "%s", ext);
 		    } else {
 			    my_sprintf (state, bp, "%h", val);
 		    }
@@ -489,7 +496,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  break;
 	case 's':
 	  {
-	    sprintf(bp,"%s",va_arg(ap,char*));
+	    snprintf(bp,REMAINING(),"%s",va_arg(ap,char*));
 	    inc_bp();
 	  }
 	  break;
@@ -514,7 +521,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	    int val = va_arg (ap,int);
 
-	    sprintf (bp, "vr%d",val);
+	    snprintf (bp, REMAINING(), "vr%d",val);
 	    inc_bp ();
 	    break;
 	  }
@@ -522,7 +529,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	    int val = va_arg (ap,int);
 
-	    sprintf (bp, "i%d",val);
+	    snprintf (bp, REMAINING(), "i%d",val);
 	    inc_bp ();
 	    break;
 	  }
@@ -530,7 +537,7 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
 	  {
 	    int val = va_arg (ap,int);
 
-	    sprintf (bp, "dr%d",val);
+	    snprintf (bp, REMAINING(), "dr%d",val);
 	    inc_bp ();
 	    break;
 	  }
@@ -545,6 +552,9 @@ my_sprintf (struct arcDisState *state, char *buf, const char*format, ...)
  DOCOMM:
   *bp = 0;
   va_end (ap);
+#undef inc_bp
+#undef REMAINING
+#undef REG2NAME
 }
 
 static const char *condName[] =
@@ -570,11 +580,13 @@ write_instr_name_(struct arcDisState *state,
 		return;
 	}
 	strncpy (state->instrBuffer, instrName, sizeof (state->instrBuffer) - 1);
+	state->instrBuffer[sizeof (state->instrBuffer) - 1] = '\0';
+	size_t bufsize = sizeof (state->instrBuffer);
 	if (cond > 0) {
 		int condlim = 0; /* condition code limit*/
 		const char *cc = 0;
 		if (!condCodeIsPartOfName) {
-			strcat (state->instrBuffer, ".");
+			strncat (state->instrBuffer, ".", bufsize - strlen (state->instrBuffer) - 1);
 		}
 		condlim = 18;
 		if (cond < condlim) {
@@ -585,26 +597,26 @@ write_instr_name_(struct arcDisState *state,
 		if (!cc) {
 			cc = "???";
 		}
-		strcat (state->instrBuffer, cc);
+		strncat (state->instrBuffer, cc, bufsize - strlen (state->instrBuffer) - 1);
     }
     if (flag) {
-	    strcat (state->instrBuffer, ".f");
+	    strncat (state->instrBuffer, ".f", bufsize - strlen (state->instrBuffer) - 1);
     }
     if (state->nullifyMode) {
 	    if (strstr (state->instrBuffer, ".d") == NULL) {
-		    strcat (state->instrBuffer, ".d");
+		    strncat (state->instrBuffer, ".d", bufsize - strlen (state->instrBuffer) - 1);
 	    }
     }
     if (signExtend) {
-	    strcat (state->instrBuffer, ".x");
+	    strncat (state->instrBuffer, ".x", bufsize - strlen (state->instrBuffer) - 1);
     }
     switch (addrWriteBack) {
-    case 1: strcat(state->instrBuffer, ".a"); break;
-    case 2: strcat(state->instrBuffer, ".ab"); break;
-    case 3: strcat(state->instrBuffer, ".as"); break;
+    case 1: strncat(state->instrBuffer, ".a", bufsize - strlen (state->instrBuffer) - 1); break;
+    case 2: strncat(state->instrBuffer, ".ab", bufsize - strlen (state->instrBuffer) - 1); break;
+    case 3: strncat(state->instrBuffer, ".as", bufsize - strlen (state->instrBuffer) - 1); break;
   }
   if (directMem) {
-	  strcat (state->instrBuffer, ".di");
+	  strncat (state->instrBuffer, ".di", bufsize - strlen (state->instrBuffer) - 1);
   }
 }
 
@@ -2651,8 +2663,8 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 	}
 
       write_instr_name();
-      strcat(formatString,
-	     IS_REG(C)?"[%r]":"%s"); /* address/label name */
+      strncat(formatString,
+	     IS_REG(C)?"[%r]":"%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
 
       if (IS_REG (C)) {
 	      my_sprintf (state, state->operandBuffer, formatString, fieldC);
@@ -2721,7 +2733,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (IS_REG (A)) {
 	      WRITE_FORMAT_x_COMMA_LB (A);
       } else {
-	      strcat (formatString, "%*");
+	      strncat (formatString, "%*", sizeof(formatString) - strlen(formatString) - 1);
 	      WRITE_FORMAT_LB ();
 	}
 
@@ -2778,7 +2790,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       if (IS_REG (A)) {
 	      WRITE_FORMAT_x_COMMA_LB (A);
       } else {
-	      strcat (formatString, "%*");
+	      strncat (formatString, "%*", sizeof(formatString) - strlen(formatString) - 1);
 	      WRITE_FORMAT_LB ();
 	}
       if (!fieldBisReg)
@@ -2898,7 +2910,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       state->flow = state->_opcode == op_BLC ? direct_call : direct_jump;
       WRITE_FORMAT_x(B);
       WRITE_FORMAT_COMMA_x(C);
-      strcat(formatString, ",%s"); /* address/label name */
+      strncat(formatString, ",%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldC, post_address(state, fieldA));
       break;
@@ -2952,7 +2964,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
       state->flow = state->_opcode == op_BLC ? direct_call : direct_jump;
 
       fieldCisReg = 0;
-      strcat(formatString, "%s"); /* address/label name */
+      strncat(formatString, "%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldC));
       break;
 
@@ -3046,7 +3058,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         /* indirect calls are achieved by "lr blink,[status]; */
         /*      lr dest<- func addr; j [dest]" */
 
-      strcat(formatString, "%s"); /* address/label name */
+      strncat(formatString, "%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldA));
       break;
 
@@ -3327,7 +3339,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
         /* indirect calls are achieved by "lr blink,[status]; */
         /*      lr dest<- func addr; j [dest]" */
 
-      strcat(formatString, "%s"); /* address/label name */
+      strncat(formatString, "%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
       my_sprintf(state, state->operandBuffer, formatString, post_address(state, fieldA));
       break;
 
@@ -3349,7 +3361,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       WRITE_FORMAT_x(B);
       WRITE_FORMAT_COMMA_x(A);
-      strcat(formatString, ",%s"); /* address/label name */
+      strncat(formatString, ",%s", sizeof(formatString) - strlen(formatString) - 1); /* address/label name */
       WRITE_NOP_COMMENT();
       my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldA, post_address(state, fieldC));
       break;
@@ -3368,7 +3380,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
       FIELD_B_AC();
       write_instr_name();
-      strcat(formatString,"[%r]");
+      strncat(formatString,"[%r]", sizeof(formatString) - strlen(formatString) - 1);
       my_sprintf(state, state->operandBuffer, formatString, fieldB);
       break;
 
@@ -3492,7 +3504,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
     fieldCisReg = 0;
     fieldBisReg = 0;
     write_instr_name();
-    strcat(formatString,"%d");
+    strncat(formatString,"%d", sizeof(formatString) - strlen(formatString) - 1);
     my_sprintf(state,state->operandBuffer,formatString, ((fieldB << 3) | fieldC));
     break;
 
@@ -3534,7 +3546,7 @@ dsmOneArcInst (bfd_vma addr, struct arcDisState *state, disassemble_info * info)
 
     FIELD_B_AC();
     write_instr_name();
-    strcat(formatString,"%r,%r,%r");
+    strncat(formatString,"%r,%r,%r", sizeof(formatString) - strlen(formatString) - 1);
     my_sprintf(state, state->operandBuffer, formatString, fieldB, fieldB, fieldB);
     break;
 
