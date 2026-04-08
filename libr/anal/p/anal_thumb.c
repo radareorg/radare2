@@ -141,6 +141,10 @@ static char *thumbcmd(RAnal *anal, const char *cmd) {
 	return strdup ("");
 }
 
+static bool thumb_pre_analysis(RAnal *anal) {
+	return thumb_scan (anal) > 0;
+}
+
 static int thumb_eligible(RAnal *anal) {
 	const char *arch = anal->config->arch;
 	if (!arch || !r_str_startswith (arch, "arm")) {
@@ -162,6 +166,7 @@ RAnalPlugin r_anal_plugin_thumb = {
 	},
 	.cmd = thumbcmd,
 	.eligible = thumb_eligible,
+	.pre_analysis = thumb_pre_analysis,
 };
 
 #ifndef R2_PLUGIN_INCORE

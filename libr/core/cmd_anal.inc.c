@@ -14330,6 +14330,12 @@ static void cmd_aaa(RCore *core, const char *input) {
 	if (r_cons_is_breaked (core->cons)) {
 		goto jacuzzi;
 	}
+	logline (core, 12, "Running plugin pre-analysis hooks");
+	r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_PRE_ANALYSIS, NULL);
+	r_core_task_yield (&core->tasks);
+	if (r_cons_is_breaked (core->cons)) {
+		goto jacuzzi;
+	}
 #if 1
 	// TODO: should not be run sometimes
 	// Run afvn in all fcns
