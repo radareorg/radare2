@@ -241,10 +241,13 @@ R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length) {
 }
 
 static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmode) {
+	const ut32 max_len = 2048;
 	ut32 i;
+	ut32 length;
 	if (!obj || !obj->sector) {
 		return NULL;
 	}
+	length = R_MIN (obj->length, max_len);
 	if (!sb) {
 		sb = r_strbuf_new ("");
 	} else {
@@ -254,7 +257,7 @@ static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmo
 	if (depth > 0 && fmtmode == 'q') {
 		r_strbuf_pad (sb, ' ', (depth * 2) - 2);
 	}
-	for (i = 0; i < obj->length; i++) {
+	for (i = 0; i < length; i++) {
 		r_strbuf_appendf (sb, "%02x", obj->sector[i]);
 	}
 	return sb? r_strbuf_drain (sb): NULL;
