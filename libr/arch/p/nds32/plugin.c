@@ -160,6 +160,12 @@ static void decode_esil(RAnalOp *op) {
 		r_strbuf_setf (&op->esil, "%s,pc,:=", av[0]);
 	} else if (is_any ("ret", "ret5")) {
 		r_strbuf_set (&op->esil, "lp,pc,:=");
+	} else if (is_any ("ifret16", "ifret")) {
+		// IFC return: if IFC_ON, jump to IFC_LP and clear IFC_ON; else NOP
+		r_strbuf_set (&op->esil, "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}");
+	} else if (is_any ("ifcall")) {
+		// IFC call: save return addr in IFC_LP, set IFC_ON, jump to target
+		r_strbuf_setf (&op->esil, "pc,%d,+,ifc_lp,:=,1,ifc_on,:=,%s,pc,:=", op->size, av[0]);
 	} else if (is_any ("beq")) {
 		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", av[0], av[1], av[2]);
 	} else if (is_any ("bne")) {
@@ -547,6 +553,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
 		op->fail = addr + op->size;
+	} else if (is_any ("ifret16", "ifret")) {
+		op->type = R_ANAL_OP_TYPE_CRET;
 	} else if (is_any ("ifcall")) {
 		op->type = R_ANAL_OP_TYPE_CCALL;
 		op->jump = arg? r_num_get (NULL, arg): op->addr;
@@ -721,7 +729,9 @@ static char *regs(RArchSession *as) {
 		"gpr	lr	4	120	0\n"
 		"gpr	r31	4	124	0\n"
 		"gpr	sp	4	124	0\n"
-		"gpr	pc	4	128	0\n";
+		"gpr	pc	4	128	0\n"
+		"gpr	ifc_lp	4	132	0\n"
+		"gpr	ifc_on	4	136	0\n";
 	return strdup (p);
 }
 
