@@ -1919,6 +1919,19 @@ s4:
 EOF
 RUN
 
+
+NAME=z* sanitizes script fields
+FILE=-
+CMDS=<<EOF
+za foo b aa
+za foo c a${b}c~d
+z*~za foo c
+EOF
+EXPECT=<<EOF
+za foo c a__b_c
+EOF
+RUN
+
 NAME=Generate zignature and show only one
 FILE=bins/elf/arg
 CMDS=<<EOF
