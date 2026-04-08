@@ -759,4 +759,7 @@ static inline void r_run_call10(void *fcn, void *arg1, void *arg2, void *arg3, v
 #define container_of(ptr, type, member) ((ptr)? ((type *)(void *)((char *)(ptr) - r_offsetof(type, member))): NULL)
 #endif
 
+// Forward-declare an RVec type without pulling in r_vec.h
+#define R_VEC_TYPE_FORWARD(vec_type) typedef struct r_vec_ ## vec_type ## _t vec_type
+
 #endif // R2_TYPES_H
