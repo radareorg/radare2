@@ -716,6 +716,56 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 			break;
 		}
 		break;
+	case EM_NDS32:
+		switch (rel->type) {
+		case R_NDS32_NONE:           break;
+		case R_NDS32_16_RELA:        ADD(16, 0); break;
+		case R_NDS32_32_RELA:        ADD(32, 0); break;
+		case R_NDS32_20_RELA:        ADD(32, 0); break;
+		case R_NDS32_9_PCREL_RELA:   ADD(16, -(st64)P); break;
+		case R_NDS32_15_PCREL_RELA:  ADD(16, -(st64)P); break;
+		case R_NDS32_17_PCREL_RELA:  ADD(32, -(st64)P); break;
+		case R_NDS32_25_PCREL_RELA:  ADD(32, -(st64)P); break;
+		case R_NDS32_HI20_RELA:      ADD(32, 0); break;
+		case R_NDS32_LO12S3_RELA:    ADD(32, 0); break;
+		case R_NDS32_LO12S2_RELA:    ADD(32, 0); break;
+		case R_NDS32_LO12S1_RELA:    ADD(32, 0); break;
+		case R_NDS32_LO12S0_RELA:    ADD(32, 0); break;
+		case R_NDS32_SDA15S3_RELA:   ADD(32, 0); break;
+		case R_NDS32_SDA15S2_RELA:   ADD(32, 0); break;
+		case R_NDS32_SDA15S1_RELA:   ADD(32, 0); break;
+		case R_NDS32_SDA15S0_RELA:   ADD(32, 0); break;
+		case R_NDS32_15_RELA:        ADD(16, 0); break;
+		case R_NDS32_GOT20:          ADD(32, got_addr); break;
+		case R_NDS32_25_PLTREL:      ADD(32, -(st64)P); break;
+		case R_NDS32_COPY:           ADD(32, 0); break;
+		case R_NDS32_GLOB_DAT:       SET(32); break;
+		case R_NDS32_JMP_SLOT:       SET(32); break;
+		case R_NDS32_RELATIVE:       ADD(32, B); break;
+		case R_NDS32_GOTOFF:         ADD(32, -(st64)got_addr); break;
+		case R_NDS32_GOTPC20:        ADD(32, got_addr - P); break;
+		case R_NDS32_GOT_HI20:       ADD(32, got_addr); break;
+		case R_NDS32_GOT_LO12:       ADD(32, got_addr); break;
+		case R_NDS32_GOTPC_HI20:     ADD(32, got_addr - P); break;
+		case R_NDS32_GOTPC_LO12:     ADD(32, got_addr - P); break;
+		case R_NDS32_GOTOFF_HI20:    ADD(32, -(st64)got_addr); break;
+		case R_NDS32_GOTOFF_LO12:    ADD(32, -(st64)got_addr); break;
+		case R_NDS32_INSN16:         break; // linker relaxation hint
+		case R_NDS32_LABEL:          break; // linker relaxation hint
+		case R_NDS32_LONGCALL1:      break; // linker relaxation hint
+		case R_NDS32_LONGCALL2:      break; // linker relaxation hint
+		case R_NDS32_LONGCALL3:      break; // linker relaxation hint
+		case R_NDS32_LONGJUMP1:      break; // linker relaxation hint
+		case R_NDS32_LONGJUMP2:      break; // linker relaxation hint
+		case R_NDS32_LONGJUMP3:      break; // linker relaxation hint
+		case R_NDS32_LOADSTORE:      break; // linker relaxation hint
+		case R_NDS32_PLTREL_HI20:    ADD(32, -(st64)P); break;
+		case R_NDS32_PLTREL_LO12:    ADD(32, -(st64)P); break;
+		case R_NDS32_PLT_GOTREL_HI20: ADD(32, got_addr); break;
+		case R_NDS32_PLT_GOTREL_LO12: ADD(32, got_addr); break;
+		default: ADD(32, 0); break;
+		}
+		break;
 	default:
 		R_LOG_ERROR ("Unimplemented ELF reloc type %d for arch %d",
 			rel->type, eo->ehdr.e_machine);

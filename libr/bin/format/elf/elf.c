@@ -2103,6 +2103,8 @@ static ut64 get_import_addr(ELFOBJ *eo, int sym) {
 	case EM_V800:
 	case EM_V850:
 		return rel->offset;
+	case EM_NDS32:
+		return rel->offset;
 	default:
 		R_LOG_WARN ("Unsupported relocs type %" PFMT64u " for arch %d",
 				(ut64) rel->type, eo->ehdr.e_machine);
