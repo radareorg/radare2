@@ -2,53 +2,303 @@
 
 #include <r_arch.h>
 #include <r_lib.h>
+#include <sdb/ht_su.h>
 
 #define _GNU_SOURCE
 #include <stdio.h>
 #include "nds32-opc.h"
 #include "nds32-dis.h"
 
-typedef uint32_t insn_t;
-#define OP_MASK_OP 0x7f
-
 typedef struct plugin_data_t {
-	bool init0;
-	const struct nds32_opcode *nds32_hash[OP_MASK_OP + 1];
+	HtSU *insns;
 } PluginData;
 
-#define is_any(...) _is_any (name, __VA_ARGS__, NULL)
-static bool _is_any(const char *str, ...) {
-	char *cur;
-	va_list va;
-	va_start (va, str);
-	while (true) {
-		cur = va_arg (va, char *);
-		if (!cur) {
-			break;
-		}
-		if (r_str_startswith (str, cur)) {
-			va_end (va);
-			return true;
-		}
-	}
-	va_end (va);
-	return false;
-}
+// esil: NULL=no esil, ""=empty, "$0"-"$7" expanded to av[0]-av[7], "@X"=special
+typedef struct {
+	const char *name;
+	const char *esil;
+	int type;
+	signed char jump_arg;
+	bool set_fail;
+} Nds32InsnDesc;
 
-static void fill_args(RList *args, char **av, int avsz) {
-	RListIter *iter;
-	char *arg;
-	int i = 0;
-	r_list_foreach (args, iter, arg) {
-		if (i >= avsz) {
-			break;
-		}
-		r_str_trim (arg);
-		av[i++] = arg;
-	}
-	for (; i < avsz; i++) {
+typedef struct {
+	char *buf;
+	char *name;
+	char *av[8];
+} Nds32Insn;
+
+#define NDS32_OP_NONE (-1)
+#define NDS32_DESC(_name, _esil, _type) { _name, _esil, _type, -1, false }
+#define NDS32_JDESC(_name, _esil, _type, _jump_arg, _set_fail) { _name, _esil, _type, _jump_arg, _set_fail }
+
+static const Nds32InsnDesc nds32_insns[] = {
+	NDS32_DESC ("sethi", "12,$1,<<,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("jral5", "pc,2,+,lp,:=,$0,pc,:=", R_ANAL_OP_TYPE_RCALL),
+	NDS32_JDESC ("jral", "pc,4,+,$0,:=,$1,pc,:=", R_ANAL_OP_TYPE_RCALL, -1, true),
+	NDS32_JDESC ("jal", "$0,pc,:=", R_ANAL_OP_TYPE_CALL, 0, true),
+	NDS32_DESC ("jr5", "$0,pc,:=", R_ANAL_OP_TYPE_RJMP),
+	NDS32_DESC ("jr", "$0,pc,:=", R_ANAL_OP_TYPE_RJMP),
+	NDS32_JDESC ("j8", "$0,pc,:=", R_ANAL_OP_TYPE_JMP, 0, false),
+	NDS32_JDESC ("j", "$0,pc,:=", R_ANAL_OP_TYPE_JMP, 0, false),
+	NDS32_DESC ("ret", "lp,pc,:=", R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("ret5", "lp,pc,:=", R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("iret", NULL, R_ANAL_OP_TYPE_RET),
+	NDS32_DESC ("ifret16", "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}", R_ANAL_OP_TYPE_CRET),
+	NDS32_DESC ("ifret", "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}", R_ANAL_OP_TYPE_CRET),
+	NDS32_JDESC ("ifcall", "@ifcall", R_ANAL_OP_TYPE_CCALL, 0, true),
+	NDS32_JDESC ("bgezal", NULL, R_ANAL_OP_TYPE_CCALL, 1, true),
+	NDS32_JDESC ("bltzal", NULL, R_ANAL_OP_TYPE_CCALL, 1, true),
+	NDS32_JDESC ("beq", "$0,$1,==,$z,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("bne", "$0,$1,==,$z,!,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("beqz", "$0,0,==,$z,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnez", "$0,0,==,$z,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnezs8", "r5,0,==,$z,!,?{,$0,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 0, true),
+	NDS32_JDESC ("beqzs8", "r5,!,?{,$0,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 0, true),
+	NDS32_JDESC ("bgtz", "$0,0,>,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bgez", "31,$0,>>,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bltz", "31,$0,>>,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("blez", "$0,!,31,$0,>>,|,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqz38", "$0,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnez38", "$0,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqs38", "$0,r5,==,$z,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("bnes38", "$0,r5,==,$z,!,?{,$1,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 1, true),
+	NDS32_JDESC ("beqc", "$1,$0,==,$z,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_JDESC ("bnec", "$1,$0,==,$z,!,?{,$2,pc,:=,}", R_ANAL_OP_TYPE_CJMP, 2, true),
+	NDS32_DESC ("addi", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addri", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi.gp", "gp,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addri36.sp", "sp,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi10s", "$0,sp,+,sp,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi333", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("addi45", "$1,$0,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add333", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add45", "$1,$0,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add5.pc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add_slli", "$3,$2,<<,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add_srli", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add.sc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add.wc", NULL, R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("add", "$2,$1,+,$0,:=", R_ANAL_OP_TYPE_ADD),
+	NDS32_DESC ("subi", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subri", "$1,$2,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub333", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub45", "$1,$0,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subi333", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("subi45", "$1,$0,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub_slli", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub_srli", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub.sc", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub.wc", NULL, R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("sub", "$2,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("mul33", "$1,$0,*,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("mul", "$2,$1,*,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("maddr32", "$2,$1,*,$0,+,$0,:=", R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("msubr32", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("madd", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("msub", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("mult", NULL, R_ANAL_OP_TYPE_MUL),
+	NDS32_DESC ("divr", "$2,$1,/,$0,:=", R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("divsr", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("divs", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("div", NULL, R_ANAL_OP_TYPE_DIV),
+	NDS32_DESC ("ori", "$2,$1,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or33", "$1,$0,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or_slli", NULL, R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or_srli", NULL, R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("or", "$2,$1,|,$0,:=", R_ANAL_OP_TYPE_OR),
+	NDS32_DESC ("xori", "$2,$1,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor33", "$1,$0,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor_slli", NULL, R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor_srli", NULL, R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("xor", "$2,$1,^,$0,:=", R_ANAL_OP_TYPE_XOR),
+	NDS32_DESC ("andi", "$2,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and33", "$1,$0,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and_slli", NULL, R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and_srli", NULL, R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("and", "$2,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("bitci", "$2,~,$1,&,$0,:=", R_ANAL_OP_TYPE_AND),
+	NDS32_DESC ("nor", "$2,$1,|,~,$0,:=", R_ANAL_OP_TYPE_NOR),
+	NDS32_DESC ("not33", "$1,~,$0,:=", R_ANAL_OP_TYPE_NOT),
+	NDS32_DESC ("slli", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("sll", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("slli333", "$2,$1,<<,$0,:=", R_ANAL_OP_TYPE_SHL),
+	NDS32_DESC ("srli", "$2,$1,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srl", "$2,$1,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srai", "$2,$1,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("sra", "$2,$1,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srli45", "$1,$0,>>,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("srai45", "$1,$0,ASR,$0,:=", R_ANAL_OP_TYPE_SHR),
+	NDS32_DESC ("rotri", "$2,$1,>>>,$0,:=", R_ANAL_OP_TYPE_ROR),
+	NDS32_DESC ("rotr", NULL, R_ANAL_OP_TYPE_ROR),
+	NDS32_DESC ("lbi.gp", "@gl1", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbsi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi.gp", "@gl4", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhsi.gp", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("sbi.gp", "@gs1", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi.gp", "@gs4", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi.gp", "@gs2", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("lwi", "$1,[4],$0,:=", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbi", "@ml1", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("ldi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhi333", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi450", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi37", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi45", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lw", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lb", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lh", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("ld", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lbs", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lhs", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lws", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("llw", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lmw", "", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lmw.adm", "", NDS32_OP_NONE),
+	NDS32_DESC ("fls", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("fld", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("flsi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("fldi", NULL, R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("swi", "$0,$1,=[4]", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sbi", "$0,$1,=[1]", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi", "@ms2", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sdi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sbi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("shi333", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi450", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi37", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sw", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sb", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sd", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("scw", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("smw", "", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("smw.adm", "", NDS32_OP_NONE),
+	NDS32_DESC ("fss", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fsd", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fssi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("fsdi", NULL, R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("mov55", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mov", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movi55", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movi", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movpi45", "$1,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("movd44", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mfsr", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mtsr", NULL, R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mfusr", "", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("mtusr", "", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("cmovz", "$2,!,?{,$1,$0,:=,}", R_ANAL_OP_TYPE_CMOV),
+	NDS32_DESC ("cmovn", "$2,?{,$1,$0,:=,}", R_ANAL_OP_TYPE_CMOV),
+	NDS32_DESC ("slt", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slts", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slt45", "$1,$0,<,ta,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slts45", "$1,$0,<,ta,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slti", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("sltsi", "$2,$1,<,$0,:=", R_ANAL_OP_TYPE_CMP),
+	NDS32_DESC ("slti45", "$1,$0,<,ta,:=", NDS32_OP_NONE),
+	NDS32_DESC ("sltsi45", "$1,$0,<,ta,:=", NDS32_OP_NONE),
+	NDS32_DESC ("zeh", "0xffff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeh33", "0xffff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeb", "0xff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("zeb33", "0xff,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seh", "16,$1,<<,16,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seh33", "16,$1,<<,16,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seb", "24,$1,<<,24,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("seb33", "24,$1,<<,24,ASR,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("xlsb", "1,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("xlsb33", "1,$1,&,$0,:=", R_ANAL_OP_TYPE_MOV),
+	NDS32_DESC ("push25", "sp,4,-,sp,:=,$0,sp,=[4]", R_ANAL_OP_TYPE_PUSH),
+	NDS32_DESC ("pop25", "sp,[4],$0,:=,sp,4,+,sp,:=", R_ANAL_OP_TYPE_POP),
+	NDS32_DESC ("syscall", NULL, R_ANAL_OP_TYPE_SWI),
+	NDS32_DESC ("break", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("trap", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("teqz", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("tnez", NULL, R_ANAL_OP_TYPE_TRAP),
+	NDS32_DESC ("nop", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("neg33", "0,$1,-,$0,:=", R_ANAL_OP_TYPE_SUB),
+	NDS32_DESC ("abs", NULL, R_ANAL_OP_TYPE_ABS),
+	NDS32_DESC ("dsb", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("isb", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("msync", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("isync", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("standby", "", R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("cctl", NULL, R_ANAL_OP_TYPE_NOP),
+	NDS32_DESC ("fexti33", "1,$1,<<,1,-,$0,&,$0,:=", NDS32_OP_NONE),
+	NDS32_DESC ("ex9.it", "", NDS32_OP_NONE),
+	NDS32_DESC ("bitc", "$2,~,$1,&,$0,:=", NDS32_OP_NONE),
+};
+
+static void nds32_init_args(char **av, int avsz) {
+	int i;
+	for (i = 0; i < avsz; i++) {
 		av[i] = "";
 	}
+}
+
+static void nds32_parse_insn(Nds32Insn *insn, const char *mnemonic) {
+	R_RETURN_IF_FAIL (insn);
+	memset (insn, 0, sizeof (*insn));
+	nds32_init_args (insn->av, R_ARRAY_SIZE (insn->av));
+	insn->buf = strdup (mnemonic? mnemonic: "");
+	if (!insn->buf) {
+		insn->name = "";
+		return;
+	}
+	insn->name = insn->buf;
+	char *args = strchr (insn->buf, ' ');
+	if (!args) {
+		return;
+	}
+	*args++ = 0;
+	for (; *args == ' '; args++) {
+	}
+	int i = 0;
+	while (*args && i < R_ARRAY_SIZE (insn->av)) {
+		char *next = strchr (args, ',');
+		if (next) {
+			*next++ = 0;
+		}
+		r_str_trim (args);
+		insn->av[i++] = args;
+		if (!next) {
+			break;
+		}
+		args = next;
+		for (; *args == ' '; args++) {
+		}
+	}
+}
+
+static void nds32_fini_insn(Nds32Insn *insn) {
+	free (insn->buf);
+}
+
+static const Nds32InsnDesc *nds32_lookup_insn(RArchSession *as, const char *name) {
+	PluginData *pd = as? as->data: NULL;
+	bool found = false;
+	if (!pd || !pd->insns || R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
+	ut64 value = ht_su_find (pd->insns, name, &found);
+	return found? (const Nds32InsnDesc *)(size_t)value: NULL;
+}
+
+static bool nds32_build_insn_db(HtSU *db) {
+	int i;
+	for (i = 0; i < R_ARRAY_SIZE (nds32_insns); i++) {
+		if (!ht_su_insert (db, nds32_insns[i].name, (ut64)(size_t)&nds32_insns[i])) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static char *parse_gp_off(char *off) {
@@ -78,6 +328,87 @@ static char *parse_mem_addr(char *addr) {
 	}
 	r_str_trim (addr);
 	return addr;
+}
+
+static bool split_mem_addr(char *addr, char **reg, char **off) {
+	char *base = parse_mem_addr (addr);
+	if (!*base) {
+		return false;
+	}
+	char *plus = strstr (base, " + ");
+	if (!plus) {
+		*reg = base;
+		*off = NULL;
+		return true;
+	}
+	*plus = 0;
+	*reg = base;
+	*off = plus + 3;
+	r_str_trim (*reg);
+	r_str_trim (*off);
+	return true;
+}
+
+// expand $0-$7 placeholders in ESIL template to av[0]-av[7]
+static void apply_esil_template(RAnalOp *op, const char *fmt, char **av) {
+	char buf[256];
+	char *dst = buf;
+	char *end = buf + sizeof (buf) - 1;
+	const char *src = fmt;
+	while (*src && dst < end) {
+		if (src[0] == '$' && src[1] >= '0' && src[1] <= '7') {
+			const char *val = av[src[1] - '0'];
+			while (*val && dst < end) {
+				*dst++ = *val++;
+			}
+			src += 2;
+		} else {
+			*dst++ = *src++;
+		}
+	}
+	*dst = 0;
+	r_strbuf_set (&op->esil, buf);
+}
+
+// handle @-prefixed special ESIL cases that need address parsing
+static void apply_esil_special(RAnalOp *op, const char *tag, char **av) {
+	int size = tag[3] - '0';
+	switch (tag[1]) {
+	case 'g': { // @gl1..@gl4, @gs1..@gs4: gp load/store
+		char *off = parse_gp_off (av[1]);
+		if (*off) {
+			if (tag[2] == 'l') {
+				r_strbuf_setf (&op->esil, "gp,%s,+,[%d],%s,:=", off, size, av[0]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[%d]", av[0], off, size);
+			}
+		}
+		break;
+	}
+	case 'm': { // @ml1..@ml4, @ms1..@ms4: mem load/store
+		char *reg, *off;
+		if (!split_mem_addr (av[1], &reg, &off)) {
+			break;
+		}
+		if (tag[2] == 'l') {
+			if (off && *off) {
+				r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,:=", reg, off, size, av[0]);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,[%d],%s,:=", reg, size, av[0]);
+			}
+		} else {
+			if (off && *off) {
+				r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[%d]", av[0], reg, off, size);
+			} else {
+				r_strbuf_setf (&op->esil, "%s,%s,=[%d]", av[0], reg, size);
+			}
+		}
+		break;
+	}
+	case 'i': // @ifcall
+		r_strbuf_setf (&op->esil, "pc,%d,+,ifc_lp,:=,1,ifc_on,:=,%s,pc,:=", op->size, av[0]);
+		break;
+	}
 }
 
 static int info(RArchSession *as, ut32 q) {
@@ -127,327 +458,41 @@ static bool _init(RArchSession *as) {
 		return false;
 	}
 
-	as->data = R_NEW0 (PluginData);
-	return !!as->data;
+	PluginData *pd = R_NEW0 (PluginData);
+	if (!pd) {
+		return false;
+	}
+	pd->insns = ht_su_new0 ();
+	if (!pd->insns || !nds32_build_insn_db (pd->insns)) {
+		ht_su_free (pd->insns);
+		free (pd);
+		return false;
+	}
+	as->data = pd;
+	return true;
 }
 
-static void decode_esil(RAnalOp *op) {
-	char *name = strdup (op->mnemonic);
-	char *space = strchr (name, ' ');
-	RList *args = NULL;
-	char *av[8];
-	if (space) {
-		*space++ = 0;
-		args = r_str_split_list (space, ",", 0);
+static bool fini(RArchSession *as) {
+	R_RETURN_VAL_IF_FAIL (as, false);
+	PluginData *pd = as->data;
+	if (pd) {
+		ht_su_free (pd->insns);
+	}
+	R_FREE (as->data);
+	return true;
+}
+
+static void decode_esil(RAnalOp *op, const Nds32InsnDesc *desc, char **av) {
+	if (!desc || !desc->esil) {
+		return;
+	}
+	if (!*desc->esil) {
+		r_strbuf_set (&op->esil, "");
+	} else if (desc->esil[0] == '@') {
+		apply_esil_special (op, desc->esil, av);
 	} else {
-		args = r_list_new ();
+		apply_esil_template (op, desc->esil, av);
 	}
-	fill_args (args, av, R_ARRAY_SIZE (av));
-	if (is_any ("sethi")) {
-		r_strbuf_setf (&op->esil, "12,%s,<<,%s,:=", av[1], av[0]);
-	} else if (is_any ("jral5")) {
-		r_strbuf_setf (&op->esil, "pc,2,+,lp,:=,%s,pc,:=", av[0]);
-	} else if (is_any ("jral")) {
-		// jral rt, rb: rt = pc + 4, pc = rb
-		r_strbuf_setf (&op->esil, "pc,4,+,%s,:=,%s,pc,:=", av[0], av[1]);
-	} else if (is_any ("jal")) {
-		r_strbuf_setf (&op->esil, "pc,4,+,lp,:=,%s,pc,:=", av[0]);
-	} else if (is_any ("jr5")) {
-		r_strbuf_setf (&op->esil, "%s,pc,:=", av[0]);
-	} else if (is_any ("jr")) {
-		r_strbuf_setf (&op->esil, "%s,pc,:=", av[0]);
-	} else if (is_any ("j8", "j")) {
-		r_strbuf_setf (&op->esil, "%s,pc,:=", av[0]);
-	} else if (is_any ("ret", "ret5")) {
-		r_strbuf_set (&op->esil, "lp,pc,:=");
-	} else if (is_any ("ifret16", "ifret")) {
-		// IFC return: if IFC_ON, jump to IFC_LP and clear IFC_ON; else NOP
-		r_strbuf_set (&op->esil, "ifc_on,?{,ifc_lp,pc,:=,0,ifc_on,:=,}");
-	} else if (is_any ("ifcall")) {
-		// IFC call: save return addr in IFC_LP, set IFC_ON, jump to target
-		r_strbuf_setf (&op->esil, "pc,%d,+,ifc_lp,:=,1,ifc_on,:=,%s,pc,:=", op->size, av[0]);
-	} else if (is_any ("beq")) {
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", av[0], av[1], av[2]);
-	} else if (is_any ("bne")) {
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", av[0], av[1], av[2]);
-	} else if (is_any ("beqz")) {
-		r_strbuf_setf (&op->esil, "%s,0,==,$z,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("bnez")) {
-		r_strbuf_setf (&op->esil, "%s,0,==,$z,!,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("bnezs8")) {
-		r_strbuf_setf (&op->esil, "r5,0,==,$z,!,?{,%s,pc,:=,}", av[0]);
-	} else if (is_any ("sbi.gp")) {
-		char *num = parse_gp_off (av[1]);
-		if (*num) {
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[1]", av[0], num);
-		}
-	} else if (is_any ("lbi.gp")) {
-		char *num = parse_gp_off (av[1]);
-		if (*num) {
-			r_strbuf_setf (&op->esil, "gp,%s,+,[1],%s,:=", num, av[0]);
-		}
-	} else if (is_any ("lwi.gp")) {
-		char *num = parse_gp_off (av[1]);
-		if (*num) {
-			r_strbuf_setf (&op->esil, "gp,%s,+,[4],%s,:=", num, av[0]);
-		}
-	} else if (is_any ("swi.gp")) {
-		char *num = parse_gp_off (av[1]);
-		if (*num) {
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[4]", av[0], num);
-		}
-	} else if (is_any ("shi.gp")) {
-		char *num = parse_gp_off (av[1]);
-		if (*num) {
-			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[2]", av[0], num);
-		}
-	} else if (is_any ("shi")) {
-		char *addr = parse_mem_addr (av[1]);
-		if (*addr) {
-			char *plus = strstr (addr, " + ");
-			if (plus) {
-				*plus = 0;
-				char *reg = addr;
-				char *off = plus + 3;
-				r_str_trim (reg);
-				r_str_trim (off);
-				r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[2]", av[0], reg, off);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,%s,=[2]", av[0], addr);
-			}
-		}
-	} else if (is_any ("addi.gp")) {
-		r_strbuf_setf (&op->esil, "gp,%s,+,%s,:=", av[1], av[0]);
-	} else if (is_any ("addri36.sp")) {
-		r_strbuf_setf (&op->esil, "sp,%s,+,%s,:=", av[1], av[0]);
-	} else if (is_any ("ori")) {
-		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("addi")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("subri")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[1], av[2], av[0]);
-	} else if (is_any ("andi")) {
-		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("addi45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("xori")) {
-		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("slli")) {
-		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("srli")) {
-		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("srai")) {
-		r_strbuf_setf (&op->esil, "%s,%s,ASR,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("movi")) {
-		r_strbuf_setf (&op->esil, "%s,%s,:=", av[1], av[0]);
-	} else if (is_any ("mov")) {
-		r_strbuf_setf (&op->esil, "%s,%s,:=", av[1], av[0]);
-	} else if (is_any ("lwi")) {
-		r_strbuf_setf (&op->esil, "%s,[4],%s,:=", av[1], av[0]);
-	} else if (is_any ("swi")) {
-		r_strbuf_setf (&op->esil, "%s,%s,=[4]", av[0], av[1]);
-		// else if (is_any ("addi", "addri"))
-	} else if (is_any ("pop25")) {
-		// pop reg from stack: reg = [sp], sp += 4
-		r_strbuf_setf (&op->esil, "sp,[4],%s,:=,sp,4,+,sp,:=", av[0]);
-	} else if (is_any ("maddr32")) {
-		r_strbuf_setf (&op->esil, "%s,%s,*,%s,+,%s,:=", av[2], av[1], av[0], av[0]);
-	} else if (is_any ("add_slli")) {
-		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,+,%s,:=", av[3], av[2], av[1], av[0]);
-	} else if (is_any ("sub333")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("add333")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("lmw.adm")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("smw.adm")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("subi333")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("mtusr")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("zeh33")) {
-		r_strbuf_setf (&op->esil, "0xffff,%s,&,%s,:=", av[1], av[0]);
-	} else if (is_any ("srli45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("divr")) {
-		r_strbuf_setf (&op->esil, "%s,%s,/,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("or33")) {
-		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("mul")) {
-		r_strbuf_setf (&op->esil, "%s,%s,*,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("slts45")) {
-		// slts45 rt, ra: ta = (rt <s ra) ? 1 : 0 (signed)
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-	} else if (is_any ("slt45")) {
-		// slt45 rt, ra: ta = (rt < ra) ? 1 : 0 (unsigned)
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-	} else if (is_any ("mul33")) {
-		r_strbuf_setf (&op->esil, "%s,%s,*,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("isb")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("bgtz")) {
-		r_strbuf_setf (&op->esil, "%s,0,>,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("lbi")) {
-		char *addr = parse_mem_addr (av[1]);
-		if (*addr) {
-			char *plus = strstr (addr, " + ");
-			if (plus) {
-				*plus = 0;
-				char *reg = addr;
-				char *off = plus + 3;
-				r_str_trim (reg);
-				r_str_trim (off);
-				r_strbuf_setf (&op->esil, "%s,%s,+,[1],%s,:=", reg, off, av[0]);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,[1],%s,:=", addr, av[0]);
-			}
-		}
-	} else if (is_any ("sbi")) {
-		r_strbuf_setf (&op->esil, "%s,%s,=[1]", av[0], av[1]);
-	} else if (is_any ("push25")) {
-		// push reg to stack: sp -= 4, [sp] = reg
-		r_strbuf_setf (&op->esil, "sp,4,-,sp,:=,%s,sp,=[4]", av[0]);
-	} else if (is_any ("ex9.it")) {
-		// execute IT instruction, probably no ESIL effect
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("fexti33")) {
-		// field extract: assume rt = rt &((1 << imm) - 1)
-		r_strbuf_setf (&op->esil, "1,%s,<<,1,-,%s,&,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("sltsi45")) {
-		// sltsi45 rt, imm: ta = (rt <s imm) ? 1 : 0 (signed)
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-	} else if (is_any ("slti45")) {
-		// slti45 rt, imm: ta = (rt < imm) ? 1 : 0 (unsigned)
-		r_strbuf_setf (&op->esil, "%s,%s,<,ta,:=", av[1], av[0]);
-	// --- missing branch ESIL ---
-	} else if (is_any ("beqzs8")) {
-		r_strbuf_setf (&op->esil, "r5,!,?{,%s,pc,:=,}", av[0]);
-	} else if (is_any ("bgez")) {
-		// branch if reg >= 0: sign bit (bit 31) is 0
-		r_strbuf_setf (&op->esil, "31,%s,>>,!,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("bltz")) {
-		// branch if reg < 0: sign bit (bit 31) is 1
-		r_strbuf_setf (&op->esil, "31,%s,>>,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("blez")) {
-		// branch if reg <= 0: reg == 0 or sign bit set
-		r_strbuf_setf (&op->esil, "%s,!,31,%s,>>,|,?{,%s,pc,:=,}", av[0], av[0], av[1]);
-	} else if (is_any ("beqz38")) {
-		r_strbuf_setf (&op->esil, "%s,!,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("bnez38")) {
-		r_strbuf_setf (&op->esil, "%s,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("beqs38")) {
-		r_strbuf_setf (&op->esil, "%s,r5,==,$z,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("bnes38")) {
-		r_strbuf_setf (&op->esil, "%s,r5,==,$z,!,?{,%s,pc,:=,}", av[0], av[1]);
-	} else if (is_any ("beqc")) {
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,?{,%s,pc,:=,}", av[1], av[0], av[2]);
-	} else if (is_any ("bnec")) {
-		r_strbuf_setf (&op->esil, "%s,%s,==,$z,!,?{,%s,pc,:=,}", av[1], av[0], av[2]);
-	// --- missing ALU 3-reg ESIL ---
-	} else if (is_any ("add ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("sub ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("and ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("or ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,|,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("xor ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("nor ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,|,~,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("sll ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("srl ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,>>,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("sra ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,ASR,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("slt ")) {
-		// slt rt, ra, rb: rt = (ra < rb) ? 1 : 0 (unsigned)
-		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("slts ")) {
-		// slts rt, ra, rb: rt = (ra <s rb) ? 1 : 0 (signed)
-		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("slti ")) {
-		// slti rt, ra, imm: rt = (ra < imm) ? 1 : 0
-		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("sltsi ")) {
-		r_strbuf_setf (&op->esil, "%s,%s,<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("bitc")) {
-		// bitc rt, ra, rb: rt = ra & ~rb
-		r_strbuf_setf (&op->esil, "%s,~,%s,&,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("bitci")) {
-		// bitci rt, ra, imm: rt = ra & ~imm
-		r_strbuf_setf (&op->esil, "%s,~,%s,&,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("cmovz")) {
-		// cmovz rt, ra, rb: if rb == 0 then rt = ra
-		r_strbuf_setf (&op->esil, "%s,!,?{,%s,%s,:=,}", av[2], av[1], av[0]);
-	} else if (is_any ("cmovn")) {
-		// cmovn rt, ra, rb: if rb != 0 then rt = ra
-		r_strbuf_setf (&op->esil, "%s,?{,%s,%s,:=,}", av[2], av[1], av[0]);
-	// --- missing 16-bit compact ESIL ---
-	} else if (is_any ("mov55")) {
-		r_strbuf_setf (&op->esil, "%s,%s,:=", av[1], av[0]);
-	} else if (is_any ("movi55")) {
-		r_strbuf_setf (&op->esil, "%s,%s,:=", av[1], av[0]);
-	} else if (is_any ("add45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("sub45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("subi45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,-,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("srai45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,ASR,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("slli333")) {
-		r_strbuf_setf (&op->esil, "%s,%s,<<,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("addi333")) {
-		r_strbuf_setf (&op->esil, "%s,%s,+,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("neg33")) {
-		r_strbuf_setf (&op->esil, "0,%s,-,%s,:=", av[1], av[0]);
-	} else if (is_any ("not33")) {
-		r_strbuf_setf (&op->esil, "%s,~,%s,:=", av[1], av[0]);
-	} else if (is_any ("and33")) {
-		r_strbuf_setf (&op->esil, "%s,%s,&,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("xor33")) {
-		r_strbuf_setf (&op->esil, "%s,%s,^,%s,:=", av[1], av[0], av[0]);
-	} else if (is_any ("seb33")) {
-		// sign extend byte
-		r_strbuf_setf (&op->esil, "24,%s,<<,24,ASR,%s,:=", av[1], av[0]);
-	} else if (is_any ("seh33")) {
-		// sign extend halfword
-		r_strbuf_setf (&op->esil, "16,%s,<<,16,ASR,%s,:=", av[1], av[0]);
-	} else if (is_any ("seb ")) {
-		r_strbuf_setf (&op->esil, "24,%s,<<,24,ASR,%s,:=", av[1], av[0]);
-	} else if (is_any ("seh ")) {
-		r_strbuf_setf (&op->esil, "16,%s,<<,16,ASR,%s,:=", av[1], av[0]);
-	} else if (is_any ("zeh ")) {
-		// zero extend halfword
-		r_strbuf_setf (&op->esil, "0xffff,%s,&,%s,:=", av[1], av[0]);
-	} else if (is_any ("zeb33")) {
-		// zero extend byte
-		r_strbuf_setf (&op->esil, "0xff,%s,&,%s,:=", av[1], av[0]);
-	} else if (is_any ("xlsb33")) {
-		// extract LSB
-		r_strbuf_setf (&op->esil, "1,%s,&,%s,:=", av[1], av[0]);
-	} else if (is_any ("movpi45")) {
-		r_strbuf_setf (&op->esil, "%s,%s,:=", av[1], av[0]);
-	} else if (is_any ("addi10s")) {
-		r_strbuf_setf (&op->esil, "%s,sp,+,sp,:=", av[0]);
-	} else if (is_any ("rotri")) {
-		r_strbuf_setf (&op->esil, "%s,%s,>>>,%s,:=", av[2], av[1], av[0]);
-	} else if (is_any ("nop")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("dsb", "msync", "isync", "standby")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("mfusr")) {
-		r_strbuf_set (&op->esil, "");
-	} else if (is_any ("lmw", "smw")) {
-		// complex multi-register load/store - skip ESIL
-		r_strbuf_set (&op->esil, "");
-	}
-	r_list_free (args);
-	free (name);
 }
 
 static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
@@ -504,145 +549,25 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		r_str_replace_in (op->mnemonic, -1, "#", "", true);
 		r_str_replace_in (op->mnemonic, -1, "+ -", "-", true);
 	}
-	char *name = strdup (op->mnemonic);
-#if 0
-	PluginData *pd = as->data;
-	struct nds32_opcode *o = nds32_get_opcode (pd, word);
-	if (o) {
-		if (op->mnemonic) {
-			name = op->mnemonic;
-		}
-	}
-#endif
-
-	const char *arg = strstr (name, "0x");
-	if (!arg) {
-		arg = strstr (name, ", ");
-		if (arg) {
-			arg += 2;
-		} else {
-			arg = strchr (name, ' ');
-			if (arg) {
-				arg++;
-			}
-		}
-	}
+	Nds32Insn insn;
+	nds32_parse_insn (&insn, op->mnemonic);
+	const Nds32InsnDesc *desc = nds32_lookup_insn (as, insn.name);
 	if (mask & R_ARCH_OP_MASK_ESIL) {
-		decode_esil (op);
+		decode_esil (op, desc, insn.av);
 	}
-	// control flow
-	if (is_any ("jral5")) {
-		op->type = R_ANAL_OP_TYPE_RCALL;
-	} else if (is_any ("jral ")) {
-		op->type = R_ANAL_OP_TYPE_RCALL;
-		op->fail = addr + op->size;
-	} else if (is_any ("jr5")) {
-		op->type = R_ANAL_OP_TYPE_RJMP;
-	} else if (is_any ("jr ")) {
-		op->type = R_ANAL_OP_TYPE_RJMP;
-	} else if (is_any ("jal ")) {
-		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		op->fail = addr + op->size;
-	} else if (is_any ("j8", "j ")) {
-		op->type = R_ANAL_OP_TYPE_JMP;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-	} else if (is_any ("ret", "iret")) {
-		op->type = R_ANAL_OP_TYPE_RET;
-	} else if (is_any ("bgezal", "bltzal")) {
-		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		op->fail = addr + op->size;
-	} else if (is_any ("ifret16", "ifret")) {
-		op->type = R_ANAL_OP_TYPE_CRET;
-	} else if (is_any ("ifcall")) {
-		op->type = R_ANAL_OP_TYPE_CCALL;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		op->fail = addr + op->size;
-	} else if (is_any ("beqz", "bnez", "beq", "bne ", "blez", "bgez", "bltz", "bgtz",
-			"beqs38", "bnes38", "beqz38", "bnez38", "beqzs8", "bnezs8",
-			"beqc", "bnec")) {
-		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = arg? r_num_get (NULL, arg): op->addr;
-		op->fail = addr + op->size;
-	// arithmetic
-	} else if (is_any ("addi", "addri", "addi.gp", "addri36.sp", "addi10s", "addi333", "addi45",
-			"add333", "add45", "add5.pc", "add_slli", "add_srli", "add.sc", "add.wc", "add ")) {
-		op->type = R_ANAL_OP_TYPE_ADD;
-	} else if (is_any ("subi", "subri", "sub333", "sub45", "subi333", "subi45",
-			"sub_slli", "sub_srli", "sub.sc", "sub.wc", "sub ")) {
-		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (is_any ("mul33", "mul ", "maddr32", "msubr32", "madd", "msub", "mult")) {
-		op->type = R_ANAL_OP_TYPE_MUL;
-	} else if (is_any ("divr", "divsr", "divs", "div ")) {
-		op->type = R_ANAL_OP_TYPE_DIV;
-	// bitwise
-	} else if (is_any ("ori", "or33", "or_slli", "or_srli", "or ")) {
-		op->type = R_ANAL_OP_TYPE_OR;
-	} else if (is_any ("xori", "xor33", "xor_slli", "xor_srli", "xor ")) {
-		op->type = R_ANAL_OP_TYPE_XOR;
-	} else if (is_any ("andi", "and33", "and_slli", "and_srli", "and ", "bitci")) {
-		op->type = R_ANAL_OP_TYPE_AND;
-	} else if (is_any ("nor ")) {
-		op->type = R_ANAL_OP_TYPE_NOR;
-	} else if (is_any ("not33")) {
-		op->type = R_ANAL_OP_TYPE_NOT;
-	// shifts
-	} else if (is_any ("slli", "sll ", "slli333")) {
-		op->type = R_ANAL_OP_TYPE_SHL;
-	} else if (is_any ("srli", "srl ", "srai", "sra ", "srli45", "srai45")) {
-		op->type = R_ANAL_OP_TYPE_SHR;
-	} else if (is_any ("rotri", "rotr ")) {
-		op->type = R_ANAL_OP_TYPE_ROR;
-	// load/store - more specific first to avoid startswith issues
-	} else if (is_any ("lbi.gp", "lbsi.gp", "lwi.gp", "lhi.gp", "lhsi.gp")) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else if (is_any ("sbi.gp", "swi.gp", "shi.gp")) {
-		op->type = R_ANAL_OP_TYPE_STORE;
-	} else if (is_any ("lwi", "lbi", "lhi", "ldi", "lbsi", "lhsi", "lwsi",
-			"lwi333", "lbi333", "lhi333", "lwi450", "lwi37", "lwi45",
-			"lw ", "lb ", "lh ", "ld ", "lbs", "lhs", "lws", "llw",
-			"lmw", "fls", "fld", "flsi", "fldi")) {
-		op->type = R_ANAL_OP_TYPE_LOAD;
-	} else if (is_any ("swi", "sbi", "shi", "sdi",
-			"swi333", "sbi333", "shi333", "swi450", "swi37",
-			"sw ", "sb ", "sd ", "scw",
-			"smw", "fss", "fsd", "fssi", "fsdi")) {
-		op->type = R_ANAL_OP_TYPE_STORE;
-	// move
-	} else if (is_any ("mov55", "mov ", "movi55", "movi", "movpi45", "movd44",
-			"sethi", "mfsr", "mtsr", "mfusr")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
-	} else if (is_any ("cmovz", "cmovn")) {
-		op->type = R_ANAL_OP_TYPE_CMOV;
-	// compare
-	} else if (is_any ("slt ", "slts ", "slt45", "slts45", "slti", "sltsi")) {
-		op->type = R_ANAL_OP_TYPE_CMP;
-	// sign/zero extend
-	} else if (is_any ("zeh", "zeb", "seh", "seb", "xlsb")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
-	// stack
-	} else if (is_any ("push25")) {
-		op->type = R_ANAL_OP_TYPE_PUSH;
-	} else if (is_any ("pop25")) {
-		op->type = R_ANAL_OP_TYPE_POP;
-	// system
-	} else if (is_any ("syscall")) {
-		op->type = R_ANAL_OP_TYPE_SWI;
-	} else if (is_any ("break", "trap", "teqz", "tnez")) {
-		op->type = R_ANAL_OP_TYPE_TRAP;
-	} else if (is_any ("nop")) {
-		op->type = R_ANAL_OP_TYPE_NOP;
-	} else if (is_any ("neg33")) {
-		op->type = R_ANAL_OP_TYPE_SUB;
-	} else if (is_any ("abs ")) {
-		op->type = R_ANAL_OP_TYPE_ABS;
-	} else if (is_any ("dsb", "isb", "msync", "isync", "standby", "cctl")) {
-		op->type = R_ANAL_OP_TYPE_NOP;
-	} else if (is_any ("mtusr")) {
-		op->type = R_ANAL_OP_TYPE_MOV;
+	if (desc) {
+		if (desc->type != NDS32_OP_NONE) {
+			op->type = desc->type;
+		}
+		if (desc->jump_arg >= 0) {
+			const char *arg = insn.av[(int)desc->jump_arg];
+			op->jump = *arg? r_num_get (NULL, arg): op->addr;
+		}
+		if (desc->set_fail) {
+			op->fail = addr + op->size;
+		}
 	}
-	free (name);
+	nds32_fini_insn (&insn);
 	r_strbuf_free (sb);
 	return op->size > 0;
 }
@@ -789,6 +714,7 @@ const RArchPlugin r_arch_plugin_nds32 = {
 	.decode = &decode,
 	.regs = regs,
 	.init = &_init,
+	.fini = fini,
 	.info = &info,
 };
 
