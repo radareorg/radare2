@@ -239,8 +239,26 @@ R_API void r_anal_xrefs_free(RAnal *anal) {
 	ref_manager_free (anal->rm);
 }
 
+static inline RAnalRefType xref_resolve_type(const RAnalRefType _type) {
+	RAnalRefType type = _type;
+	if (!R_ANAL_REF_TYPE_PERM (type)) {
+		switch (R_ANAL_REF_TYPE_MASK (type)) {
+		case R_ANAL_REF_TYPE_CODE:
+		case R_ANAL_REF_TYPE_CALL:
+		case R_ANAL_REF_TYPE_JUMP:
+			type |= R_ANAL_REF_TYPE_EXEC;
+			break;
+		default:
+			type |= R_ANAL_REF_TYPE_READ;
+			break;
+		}
+	}
+	return type;
+}
+
 // set a reference from FROM to TO and a cross-reference(xref) from TO to FROM.
-R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType _type) {
+// when fcn is known (the function containing FROM), pass it to skip hash lookups.
+R_API bool r_anal_xrefs_setf(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to, const RAnalRefType _type) {
 	R_RETURN_VAL_IF_FAIL (anal && anal->rm, false);
 
 	if (from == to || from == UT64_MAX || to == UT64_MAX) {
@@ -255,35 +273,30 @@ R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType 
 		}
 	}
 
-	RAnalRefType type = _type;
-	if (!R_ANAL_REF_TYPE_PERM (type)) {
-		// type |= R_ANAL_REF_TYPE_READ;
-		switch (R_ANAL_REF_TYPE_MASK (type)) {
-		case R_ANAL_REF_TYPE_CODE:
-		case R_ANAL_REF_TYPE_CALL:
-		case R_ANAL_REF_TYPE_JUMP:
-			type |= R_ANAL_REF_TYPE_EXEC;
-			break;
-		default:
-			type |= R_ANAL_REF_TYPE_READ;
-			break;
-		}
-	}
-
+	const RAnalRefType type = xref_resolve_type (_type);
 	ref_manager_add_entry (anal->rm, from, to, type);
 	R_DIRTY_SET (anal);
 
 	// Invalidate function ref counts
-	RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
-	if (fcn_from) {
-		fcn_from->meta.numcallrefs = -1;
-	}
-	RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
-	if (fcn_to) {
-		fcn_to->meta.numrefs = -1;
+	if (fcn) {
+		fcn->meta.numcallrefs = -1;
+		fcn->meta.numrefs = -1;
+	} else {
+		RAnalFunction *fcn_from = r_anal_get_function_at (anal, from);
+		if (fcn_from) {
+			fcn_from->meta.numcallrefs = -1;
+		}
+		RAnalFunction *fcn_to = r_anal_get_function_at (anal, to);
+		if (fcn_to) {
+			fcn_to->meta.numrefs = -1;
+		}
 	}
 
 	return true;
+}
+
+R_API bool r_anal_xrefs_set(RAnal *anal, ut64 from, ut64 to, const RAnalRefType type) {
+	return r_anal_xrefs_setf (anal, NULL, from, to, type);
 }
 
 R_API bool r_anal_xref_del(RAnal *anal, ut64 from, ut64 to) {
