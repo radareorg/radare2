@@ -1239,10 +1239,9 @@ R_API int r_str_unescape(char *buf) {
 }
 
 R_API void r_str_sanitize(char *c) {
-	char *d = c;
-	if (d) {
-		for (; *d; c++, d++) {
-			switch (*d) {
+	if (c) {
+		for (; *c; c++) {
+			switch (*c) {
 			case '`':
 			case '$':
 			case '{':
@@ -1253,12 +1252,14 @@ R_API void r_str_sanitize(char *c) {
 			case '#':
 			case '@':
 			case '&':
+			case '\\':
+			case '"':
 			case '\n':
 			case '\r':
 			case '<':
 			case '>':
 				*c = '_';
-				continue;
+				break;
 			}
 		}
 	}
@@ -1420,34 +1421,10 @@ R_API char *r_str_escape(const char *buf) {
 
 R_API char *r_str_sanitize_r2(const char *buf) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
-	char *new_buf = malloc (1 + strlen (buf) * 2);
-	if (!new_buf) {
-		return NULL;
+	char *new_buf = strdup (buf);
+	if (new_buf) {
+		r_str_sanitize (new_buf);
 	}
-	const char *p = buf;
-	char *q = new_buf;
-	while (*p) {
-		switch (*p) {
-		case '\n':
-		case '\r':
-		case ';':
-		case '|':
-		case '$':
-		case '`':
-		case '\\':
-		case '"':
-		case '@':
-		case '~':
-		case '#':
-			*q++ = ' ';
-			p++;
-			break;
-		default:
-			*q++ = *p++;
-			break;
-		}
-	}
-	*q = '\0';
 	return new_buf;
 }
 
