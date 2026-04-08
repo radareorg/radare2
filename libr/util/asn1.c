@@ -241,13 +241,11 @@ R_API RASN1Binary *r_asn1_binary_new(const ut8 *buffer, ut32 length) {
 }
 
 static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmode) {
-	const ut32 max_len = 2048;
 	ut32 i;
-	ut32 length;
 	if (!obj || !obj->sector) {
 		return NULL;
 	}
-	length = R_MIN (obj->length, max_len);
+	const ut32 length = R_MIN (obj->length, 2048);
 	if (!sb) {
 		sb = r_strbuf_new ("");
 	} else {
