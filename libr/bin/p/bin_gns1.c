@@ -78,9 +78,11 @@ static bool check_buffer(RBuffer *b) {
 		return false;
 	}
 	ut64 buf_size = r_buf_size (b);
+	ut64 seg_size = entry.size;
+	ut64 seg_off = entry.offset;
 	if (entry.size == 0 || entry.size > buf_size ||
-		entry.offset < 0x64 || entry.offset >= buf_size ||
-		entry.offset + entry.size > buf_size) {
+		entry.offset < 0x64 || seg_off >= buf_size ||
+		seg_off > buf_size - seg_size) {
 		return false;
 	}
 	return r_buf_read_le32_at (b, entry.offset - 4) == 0;
@@ -95,10 +97,12 @@ static Gns1Obj *load_buffer(RBuffer *b) {
 	ut64 file_size = r_buf_size (b);
 	int invalid = 0;
 	while (parse_segment (b, &off, &entry)) {
+		ut64 seg_size = entry.size;
+		ut64 seg_off = entry.offset;
 		if (entry.size == 0) {
 			break;
 		}
-		if (entry.offset >= file_size || entry.offset + entry.size > file_size) {
+		if (seg_size > file_size || seg_off >= file_size || seg_off > file_size - seg_size) {
 			if (invalid++ > 3) {
 				R_LOG_ERROR ("GNS1: Too many invalid segments found");
 				break;
