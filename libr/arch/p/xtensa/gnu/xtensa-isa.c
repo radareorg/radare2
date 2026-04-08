@@ -588,7 +588,7 @@ xtensa_format_lookup (xtensa_isa isa, const char *fmtname)
     }
 
   xtisa_errno = xtensa_isa_bad_format;
-  sprintf (xtisa_error_msg, "format \"%s\" not recognized", fmtname);
+  snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "format \"%s\" not recognized", fmtname);
   return XTENSA_UNDEFINED;
 }
 
@@ -723,7 +723,7 @@ xtensa_opcode_lookup (xtensa_isa isa, const char *opname)
   if (!result)
     {
       xtisa_errno = xtensa_isa_bad_opcode;
-      sprintf (xtisa_error_msg, "opcode \"%s\" not recognized", opname);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "opcode \"%s\" not recognized", opname);
       return XTENSA_UNDEFINED;
     }
 
@@ -772,7 +772,7 @@ xtensa_opcode_encode (xtensa_isa isa, xtensa_format fmt, int slot,
   if (!encode_fn)
     {
       xtisa_errno = xtensa_isa_wrong_slot;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "opcode \"%s\" is not allowed in slot %d of format \"%s\"",
 	       intisa->opcodes[opc].name, slot, intisa->formats[fmt].name);
       return -1;
@@ -892,7 +892,7 @@ xtensa_opcode_funcUnit_use (xtensa_isa isa, xtensa_opcode opc, int u)
   if (u < 0 || u >= intisa->opcodes[opc].num_funcUnit_uses)
     {
       xtisa_errno = xtensa_isa_bad_funcUnit;
-      sprintf (xtisa_error_msg, "invalid functional unit use number (%d); "
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "invalid functional unit use number (%d); "
 	       "opcode \"%s\" has %d", u, intisa->opcodes[opc].name,
 	       intisa->opcodes[opc].num_funcUnit_uses);
       return NULL;
@@ -910,7 +910,7 @@ xtensa_opcode_funcUnit_use (xtensa_isa isa, xtensa_opcode opc, int u)
     if ((OPND) < 0 || (OPND) >= (ICLASS)->num_operands) \
       { \
 	xtisa_errno = xtensa_isa_bad_operand; \
-	sprintf (xtisa_error_msg, "invalid operand number (%d); " \
+	snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "invalid operand number (%d); " \
 		 "opcode \"%s\" has %d operands", (OPND), \
 		 (INTISA)->opcodes[(OPC)].name, (ICLASS)->num_operands); \
 	return (ERRVAL); \
@@ -1027,7 +1027,7 @@ xtensa_operand_get_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
   if (!get_fn)
     {
       xtisa_errno = xtensa_isa_wrong_slot;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "operand \"%s\" does not exist in slot %d of format \"%s\"",
 	       intop->name, slot, intisa->formats[fmt].name);
       return -1;
@@ -1066,7 +1066,7 @@ xtensa_operand_set_field (xtensa_isa isa, xtensa_opcode opc, int opnd,
   if (!set_fn)
     {
       xtisa_errno = xtensa_isa_wrong_slot;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "operand \"%s\" does not exist in slot %d of format \"%s\"",
 	       intop->name, slot, intisa->formats[fmt].name);
       return -1;
@@ -1143,7 +1143,7 @@ xtensa_operand_encode (xtensa_isa isa, xtensa_opcode opc, int opnd,
       || test_val != orig_val)
     {
       xtisa_errno = xtensa_isa_bad_value;
-      sprintf (xtisa_error_msg, "cannot encode operand value 0x%08x", *valp);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "cannot encode operand value 0x%08x", *valp);
       return -1;
     }
 
@@ -1171,7 +1171,7 @@ xtensa_operand_decode (xtensa_isa isa, xtensa_opcode opc, int opnd,
   if ((*intop->decode) (valp))
     {
       xtisa_errno = xtensa_isa_bad_value;
-      sprintf (xtisa_error_msg, "cannot decode operand value 0x%08x", *valp);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "cannot decode operand value 0x%08x", *valp);
       return -1;
     }
   return 0;
@@ -1288,7 +1288,7 @@ xtensa_operand_do_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
   if ((*intop->do_reloc) (valp, pc))
     {
       xtisa_errno = xtensa_isa_bad_value;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "do_reloc failed for value 0x%08x at PC 0x%08x", *valp, pc);
       return -1;
     }
@@ -1323,7 +1323,7 @@ xtensa_operand_undo_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
   if ((*intop->undo_reloc) (valp, pc))
     {
       xtisa_errno = xtensa_isa_bad_value;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "undo_reloc failed for value 0x%08x at PC 0x%08x", *valp, pc);
       return -1;
     }
@@ -1341,7 +1341,7 @@ xtensa_operand_undo_reloc (xtensa_isa isa, xtensa_opcode opc, int opnd,
     if ((STOP) < 0 || (STOP) >= (ICLASS)->num_stateOperands) \
       { \
 	xtisa_errno = xtensa_isa_bad_operand; \
-	sprintf (xtisa_error_msg, "invalid state operand number (%d); " \
+	snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "invalid state operand number (%d); " \
 		 "opcode \"%s\" has %d state operands", (STOP), \
 		 (INTISA)->opcodes[(OPC)].name, (ICLASS)->num_stateOperands); \
 	return (ERRVAL); \
@@ -1388,7 +1388,7 @@ xtensa_stateOperand_inout (xtensa_isa isa, xtensa_opcode opc, int stOp)
     if ((IFOP) < 0 || (IFOP) >= (ICLASS)->num_interfaceOperands) \
       { \
 	xtisa_errno = xtensa_isa_bad_operand; \
-	sprintf (xtisa_error_msg, "invalid interface operand number (%d); " \
+	snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "invalid interface operand number (%d); " \
 		 "opcode \"%s\" has %d interface operands", (IFOP), \
 		 (INTISA)->opcodes[(OPC)].name, \
 		 (ICLASS)->num_interfaceOperands); \
@@ -1450,7 +1450,7 @@ xtensa_regfile_lookup (xtensa_isa isa, const char *name)
     }
 
   xtisa_errno = xtensa_isa_bad_regfile;
-  sprintf (xtisa_error_msg, "regfile \"%s\" not recognized", name);
+  snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "regfile \"%s\" not recognized", name);
   return XTENSA_UNDEFINED;
 }
 
@@ -1482,7 +1482,7 @@ xtensa_regfile_lookup_shortname (xtensa_isa isa, const char *shortname)
     }
 
   xtisa_errno = xtensa_isa_bad_regfile;
-  sprintf (xtisa_error_msg, "regfile shortname \"%s\" not recognized",
+  snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "regfile shortname \"%s\" not recognized",
 	   shortname);
   return XTENSA_UNDEFINED;
 }
@@ -1571,7 +1571,7 @@ xtensa_state_lookup (xtensa_isa isa, const char *name)
   if (!result)
     {
       xtisa_errno = xtensa_isa_bad_state;
-      sprintf (xtisa_error_msg, "state \"%s\" not recognized", name);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "state \"%s\" not recognized", name);
       return XTENSA_UNDEFINED;
     }
 
@@ -1681,7 +1681,7 @@ xtensa_sysreg_lookup_name (xtensa_isa isa, const char *name)
   if (!result)
     {
       xtisa_errno = xtensa_isa_bad_sysreg;
-      sprintf (xtisa_error_msg, "sysreg \"%s\" not recognized", name);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "sysreg \"%s\" not recognized", name);
       return XTENSA_UNDEFINED;
     }
 
@@ -1758,7 +1758,7 @@ xtensa_interface_lookup (xtensa_isa isa, const char *ifname)
   if (!result)
     {
       xtisa_errno = xtensa_isa_bad_interface;
-      sprintf (xtisa_error_msg, "interface \"%s\" not recognized", ifname);
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg), "interface \"%s\" not recognized", ifname);
       return XTENSA_UNDEFINED;
     }
 
@@ -1853,7 +1853,7 @@ xtensa_funcUnit_lookup (xtensa_isa isa, const char *fname)
   if (!result)
     {
       xtisa_errno = xtensa_isa_bad_funcUnit;
-      sprintf (xtisa_error_msg,
+      snprintf (xtisa_error_msg, sizeof (xtisa_error_msg),
 	       "functional unit \"%s\" not recognized", fname);
       return XTENSA_UNDEFINED;
     }
