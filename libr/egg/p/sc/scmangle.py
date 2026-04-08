@@ -336,7 +336,12 @@ def main(argv: List[str]) -> int:
         try:
             process_file(p, args.out_dir, ops)
         except PermissionError as e:
-            print(f"[skip] Permission denied: {p} ({e})")
+            # Write a stub so #include in C code doesn't fail
+            os.makedirs(args.out_dir, exist_ok=True)
+            out_path = os.path.join(args.out_dir, os.path.basename(p))
+            with open(out_path, 'w', encoding='utf-8') as f:
+                f.write('""')
+            print(f"[skip] Permission denied: {p} ({e}), wrote stub {out_path}")
             continue
 
     return 0
