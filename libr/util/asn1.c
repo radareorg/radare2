@@ -245,6 +245,7 @@ static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmo
 	if (!obj || !obj->sector) {
 		return NULL;
 	}
+	const ut32 length = R_MIN (obj->length, 2048);
 	if (!sb) {
 		sb = r_strbuf_new ("");
 	} else {
@@ -254,7 +255,7 @@ static char *asn1_hexstring(RASN1Object *obj, RStrBuf *sb, ut32 depth, int fmtmo
 	if (depth > 0 && fmtmode == 'q') {
 		r_strbuf_pad (sb, ' ', (depth * 2) - 2);
 	}
-	for (i = 0; i < obj->length; i++) {
+	for (i = 0; i < length; i++) {
 		r_strbuf_appendf (sb, "%02x", obj->sector[i]);
 	}
 	return sb? r_strbuf_drain (sb): NULL;
