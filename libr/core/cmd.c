@@ -250,6 +250,7 @@ static RCoreHelpMessage help_msg_dot = {
 	".", " foo.py", "also works for running r2pipe and rlang scripts",
 	".-", "", "open cfg.editor and interpret tmp file",
 	".*", " file ...", "same as #!pipe open cfg.editor and interpret tmp file",
+	".'", "cmd", "run the output lines of a command as quoted commands",
 	".!", "rabin -ri $FILE", "interpret output of command",
 	".", "(foo 1 2 3)", "run macro 'foo' with args 1, 2, 3",
 	"./", " ELF", "interpret output of command /m ELF as r. commands",
