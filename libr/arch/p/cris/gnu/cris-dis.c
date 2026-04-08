@@ -530,12 +530,13 @@ cris_constraint (const char *cs,
 static char *
 format_hex (unsigned long number,
 	    char *outbuffer,
+	    size_t outsize,
 	    struct cris_disasm_data *disdata)
 {
   /* Truncate negative numbers on >32-bit hosts.  */
   number &= 0xffffffff;
 
-  sprintf (outbuffer, "0x%lx", number);
+  snprintf (outbuffer, outsize, "0x%lx", number);
 
   /* Save this value for the "case" support.  */
   if (TRACE_CASE) {
@@ -550,10 +551,10 @@ format_hex (unsigned long number,
    unsigned (== 0).  */
 
 static char *
-format_dec (long number, char *outbuffer, int signedp)
+format_dec (long number, char *outbuffer, size_t outsize, int signedp)
 {
   last_immediate = number;
-  sprintf (outbuffer, signedp ? "%ld" : "%lu", number);
+  snprintf (outbuffer, outsize, signedp ? "%ld" : "%lu", number);
 
   return outbuffer + strlen (outbuffer);
 }
@@ -564,12 +565,14 @@ static char *
 format_reg (struct cris_disasm_data *disdata,
 	    int regno,
 	    char *outbuffer_start,
+	    size_t outsize,
 	    bfd_boolean with_reg_prefix)
 {
   char *outbuffer = outbuffer_start;
 
-  if (with_reg_prefix) {
+  if (with_reg_prefix && outsize > 1) {
 	  *outbuffer++ = REGISTER_PREFIX_CHAR;
+	  outsize--;
   }
 
   switch (regno)
@@ -577,18 +580,18 @@ format_reg (struct cris_disasm_data *disdata,
     case 15:
       /* For v32, there is no context in which we output PC.  */
       if (disdata->distype == cris_dis_v32) {
-	      strcpy (outbuffer, "acr");
+	      snprintf (outbuffer, outsize, "acr");
       } else {
-	      strcpy (outbuffer, "pc");
+	      snprintf (outbuffer, outsize, "pc");
       }
       break;
 
     case 14:
-      strcpy (outbuffer, "sp");
+      snprintf (outbuffer, outsize, "sp");
       break;
 
     default:
-      sprintf (outbuffer, "r%d", regno);
+      snprintf (outbuffer, outsize, "r%d", regno);
       break;
     }
 
@@ -600,25 +603,27 @@ format_reg (struct cris_disasm_data *disdata,
 static char *
 format_sup_reg (unsigned int regno,
 		char *outbuffer_start,
+		size_t outsize,
 		bfd_boolean with_reg_prefix)
 {
   char *outbuffer = outbuffer_start;
   int i;
 
-  if (with_reg_prefix) {
+  if (with_reg_prefix && outsize > 1) {
 	  *outbuffer++ = REGISTER_PREFIX_CHAR;
+	  outsize--;
   }
 
   for (i = 0; cris_support_regs[i].name; i++) {
 	  if (cris_support_regs[i].number == regno) {
-		  sprintf (outbuffer, "%s", cris_support_regs[i].name);
+		  snprintf (outbuffer, outsize, "%s", cris_support_regs[i].name);
 		  return outbuffer_start + strlen (outbuffer_start);
 	  }
   }
 
   /* There's supposed to be register names covering all numbers, though
      some may be generic names.  */
-  sprintf (outbuffer, "format_sup_reg-BUG");
+  snprintf (outbuffer, outsize, "format_sup_reg-BUG");
   return outbuffer_start + strlen (outbuffer_start);
 }
 
@@ -719,6 +724,7 @@ print_with_operands (const struct cris_opcode *opcodep,
      intermediate parts of the insn.  */
   char temp[sizeof (".d [$r13=$r12-2147483648],$r10") * 2];
   char *tp = temp;
+#define TP_REM() ((size_t)(sizeof(temp) - (size_t)(tp - temp)))
   static const char mode_char[] = "bwd?";
   const char *s;
   const char *cs;
@@ -777,7 +783,7 @@ print_with_operands (const struct cris_opcode *opcodep,
     switch (*s)
       {
       case 'T':
-	tp = format_sup_reg ((insn >> 12) & 15, tp, with_reg_prefix);
+	tp = format_sup_reg ((insn >> 12) & 15, tp, TP_REM(), with_reg_prefix);
 	break;
 
       case 'A':
@@ -816,10 +822,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 
       case 'D':
       case 'r':
-		tp = format_reg (disdata, insn & 15, tp, with_reg_prefix);
+		tp = format_reg (disdata, insn & 15, tp, TP_REM(), with_reg_prefix);
 		break;
       case 'R':
-		tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
+		tp = format_reg (disdata, (insn >> 12) & 15, tp, TP_REM(), with_reg_prefix);
 		break;
 
       case 'n':
@@ -926,13 +932,13 @@ print_with_operands (const struct cris_opcode *opcodep,
 		break;
 
 	      default:
-		strcpy (tp, "bug");
-		tp += 3;
+		snprintf (tp, TP_REM(), "bug");
+		tp += strlen (tp);
 		number = 42;
 	      }
 
 	      if ((*cs == 'z' && (insn & 0x20)) || (opcodep->match == BDAP_QUICK_OPCODE && (nbytes <= 2 || buffer[1 + nbytes] == 0))) {
-		      tp = format_dec (number, tp, signedp);
+		      tp = format_dec (number, tp, TP_REM(), signedp);
 	      } else {
 		      unsigned int highbyte = (number >> 24) & 0xff;
 
@@ -953,7 +959,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 
 			      info->target = number;
 		      } else {
-			      tp = format_hex (number, tp, disdata);
+			      tp = format_hex (number, tp, TP_REM(), disdata);
 		      }
 	      }
 	  }
@@ -999,7 +1005,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	      {
 		if (insn & 0x400)
 		  {
-		    tp = format_reg (disdata, insn & 15, tp, with_reg_prefix);
+		    tp = format_reg (disdata, insn & 15, tp, TP_REM(), with_reg_prefix);
 		    *tp++ = '=';
 		  }
 
@@ -1042,7 +1048,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 			info->target2 = prefix_insn & 15;
 
 			*tp++ = '[';
-			tp = format_reg (disdata, prefix_insn & 15, tp,
+			tp = format_reg (disdata, prefix_insn & 15, tp, TP_REM(),
 					 with_reg_prefix);
 			if (prefix_insn & 0x400) {
 				*tp++ = '+';
@@ -1061,12 +1067,12 @@ print_with_operands (const struct cris_opcode *opcodep,
 		      }
 
 		      /* Output "reg+num" or, if num < 0, "reg-num".  */
-		      tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp,
+		      tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp, TP_REM(),
 				       with_reg_prefix);
 		      if (number >= 0) {
 			      *tp++ = '+';
 		      }
-		      tp = format_dec (number, tp, 1);
+		      tp = format_dec (number, tp, TP_REM(), 1);
 
 		      info->flags |= CRIS_DIS_FLAG_MEM_TARGET_IS_REG;
 		      info->target = (prefix_insn >> 12) & 15;
@@ -1076,10 +1082,10 @@ print_with_operands (const struct cris_opcode *opcodep,
 
 		  case BIAP_OPCODE:
 		    /* Output "r+R.m".  */
-		    tp = format_reg (disdata, prefix_insn & 15, tp,
+		    tp = format_reg (disdata, prefix_insn & 15, tp, TP_REM(),
 				     with_reg_prefix);
 		    *tp++ = '+';
-		    tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp,
+		    tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp, TP_REM(),
 				     with_reg_prefix);
 		    *tp++ = '.';
 		    *tp++ = mode_char[(prefix_insn >> 4) & 3];
@@ -1103,7 +1109,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 		  case BDAP_INDIR_OPCODE:
 		    /* Output "r+s.m", or, if "s" is [pc+], "r+s" or
 		       "r-s".  */
-		    tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp,
+		    tp = format_reg (disdata, (prefix_insn >> 12) & 15, tp, TP_REM(),
 				     with_reg_prefix);
 
 		    if ((prefix_insn & 0x400) && (prefix_insn & 15) == 15)
@@ -1144,8 +1150,8 @@ print_with_operands (const struct cris_opcode *opcodep,
 			    break;
 
 			  default:
-			    strcpy (tp, "bug");
-			    tp += 3;
+			    snprintf (tp, TP_REM(), "bug");
+			    tp += strlen (tp);
 			    number = 42;
 			  }
 
@@ -1170,7 +1176,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 				  if (number >= 0) {
 					  *tp++ = '+';
 				  }
-				  tp = format_dec (number, tp, 1);
+				  tp = format_dec (number, tp, TP_REM(), 1);
 			  }
 		      }
 		    else
@@ -1178,7 +1184,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 			/* Output "r+[R].m" or "r+[R+].m".  */
 			*tp++ = '+';
 			*tp++ = '[';
-			tp = format_reg (disdata, prefix_insn & 15, tp,
+			tp = format_reg (disdata, prefix_insn & 15, tp, TP_REM(),
 					 with_reg_prefix);
 			if (prefix_insn & 0x400) {
 				*tp++ = '+';
@@ -1209,7 +1215,7 @@ print_with_operands (const struct cris_opcode *opcodep,
 	      }
 	    else
 	      {
-		tp = format_reg (disdata, insn & 15, tp, with_reg_prefix);
+		tp = format_reg (disdata, insn & 15, tp, TP_REM(), with_reg_prefix);
 
 		info->flags |= CRIS_DIS_FLAG_MEM_TARGET_IS_REG;
 		info->target = insn & 15;
@@ -1223,13 +1229,13 @@ print_with_operands (const struct cris_opcode *opcodep,
 	break;
 
       case 'x':
-	tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
+	tp = format_reg (disdata, (insn >> 12) & 15, tp, TP_REM(), with_reg_prefix);
 	*tp++ = '.';
 	*tp++ = mode_char[(insn >> 4) & 3];
 	break;
 
       case 'I':
-	tp = format_dec (insn & 63, tp, 0);
+	tp = format_dec (insn & 63, tp, TP_REM(), 0);
 	break;
 
       case 'b':
@@ -1260,11 +1266,11 @@ print_with_operands (const struct cris_opcode *opcodep,
       break;
 
     case 'c':
-      tp = format_dec (insn & 31, tp, 0);
+      tp = format_dec (insn & 31, tp, TP_REM(), 0);
       break;
 
     case 'C':
-      tp = format_dec (insn & 15, tp, 0);
+      tp = format_dec (insn & 15, tp, TP_REM(), 0);
       break;
 
     case 'o':
@@ -1300,9 +1306,9 @@ print_with_operands (const struct cris_opcode *opcodep,
 		number = number - 256;
 	}
 
-	tp = format_dec (number, tp, 1);
+	tp = format_dec (number, tp, TP_REM(), 1);
 	*tp++ = ',';
-	tp = format_reg (disdata, (insn >> 12) & 15, tp, with_reg_prefix);
+	tp = format_reg (disdata, (insn >> 12) & 15, tp, TP_REM(), with_reg_prefix);
       }
       break;
 
@@ -1311,7 +1317,7 @@ print_with_operands (const struct cris_opcode *opcodep,
       break;
 
     case 'i':
-      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, 1);
+      tp = format_dec ((insn & 32) ? (insn & 31) | ~31L : insn & 31, tp, TP_REM(), 1);
       break;
 
     case 'P':
@@ -1327,7 +1333,7 @@ if (sregp) {
 		if (with_reg_prefix) {
 			*tp++ = REGISTER_PREFIX_CHAR;
 		}
-		strcpy (tp, sregp->name);
+		snprintf (tp, TP_REM(), "%s", sregp->name);
 		tp += strlen (tp);
 	  }
 }
@@ -1335,8 +1341,8 @@ if (sregp) {
       break;
 
     default:
-      strcpy (tp, "???");
-      tp += 3;
+      snprintf (tp, TP_REM(), "???");
+      tp += strlen (tp);
     }
   }
 
