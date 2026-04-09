@@ -519,11 +519,68 @@ static RCoreHelpMessage help_msg_dts = {
 	"Usage:", "dts[*]", "Trace sessions",
 	"dts+", "", "start trace session",
 	"dts-", "", "stop trace session",
+	"dtsc", " [label]", "create a branchable checkpoint from current state",
+	"dtsd", " <id>", "delete a non-current leaf checkpoint by id",
 	"dtst", " [dir] ", "save trace sessions to disk",
 	"dtsf", " [dir] ", "read trace sessions from disk",
+	"dtsj", "", "list checkpoints in JSON",
+	"dtsl", "", "list checkpoints",
 	"dtsm", "", "list current memory map and hash",
+	"dtsr", " <id>", "restore checkpoint by id and switch to live branch mode",
 	NULL
 };
+
+static void cmd_dtsc(RCore *core, const char *input) {
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
+		return;
+	}
+	const char *label = r_str_trim_head_ro (input + 3);
+	ut64 checkpoint_id = r_debug_add_checkpoint_branch (core->dbg,
+		core->dbg->session->current_checkpoint_id,
+		R_STR_ISNOTEMPTY (label)? label: NULL);
+	if (!checkpoint_id) {
+		R_LOG_ERROR ("Failed to create checkpoint");
+		return;
+	}
+	r_cons_printf (core->cons, "%"PFMT64u"\n", checkpoint_id);
+}
+
+static void cmd_dtsd(RCore *core, const char *input) {
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
+		return;
+	}
+	if (input[3] == '?') {
+		r_core_cmd_help_match (core, help_msg_dts, "dtsd");
+		return;
+	}
+	const char *arg = r_str_trim_head_ro (input + 3);
+	if (R_STR_ISEMPTY (arg)) {
+		R_LOG_ERROR ("Usage: dtsd <id>");
+		return;
+	}
+	ut64 checkpoint_id = r_num_math (core->num, arg);
+	if (!r_debug_session_delete (core->dbg, checkpoint_id)) {
+		R_LOG_ERROR ("Failed to delete checkpoint");
+	}
+}
+
+static void cmd_dtsr(RCore *core, const char *input) {
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
+		return;
+	}
+	const char *arg = r_str_trim_head_ro (input + 3);
+	if (R_STR_ISEMPTY (arg)) {
+		R_LOG_ERROR ("Missing checkpoint id");
+		return;
+	}
+	ut64 checkpoint_id = r_num_math (core->num, arg);
+	if (!r_debug_session_restore (core->dbg, checkpoint_id)) {
+		R_LOG_ERROR ("Failed to restore checkpoint");
+	}
+}
 
 static RCoreHelpMessage help_msg_dx = {
 	"Usage: dx", "[aers]", " Debug execution commands",
@@ -5926,6 +5983,9 @@ static int cmd_debug(void *data, const char *input) {
 					R_LOG_INFO ("No session started");
 				}
 				break;
+			case 'c': // "dtsc"
+				cmd_dtsc (core, input);
+				break;
 			case 't': // "dtst"
 				if (core->dbg->session) {
 					const char *sname = r_str_trim_head_ro (input + 3);
@@ -5957,6 +6017,26 @@ static int cmd_debug(void *data, const char *input) {
 				if (core->dbg->session) {
 					r_debug_session_list_memory (core->dbg);
 				}
+				break;
+			case 'd': // "dtsd"
+				cmd_dtsd (core, input);
+				break;
+			case 'j': // "dtsj"
+				if (core->dbg->session) {
+					r_debug_session_list (core->dbg, 'j');
+				} else {
+					R_LOG_INFO ("No session started");
+				}
+				break;
+			case 'l': // "dtsl"
+				if (core->dbg->session) {
+					r_debug_session_list (core->dbg, 0);
+				} else {
+					R_LOG_INFO ("No session started");
+				}
+				break;
+			case 'r': // "dtsr"
+				cmd_dtsr (core, input);
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_dts);

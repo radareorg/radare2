@@ -190,7 +190,11 @@ typedef struct {
 } RDebugChangeMem;
 
 typedef struct r_debug_checkpoint_t {
+	ut64 id;
+	ut64 parent_id;
 	int cnum;
+	char *label;
+	ut64 resume_bp_addr;
 	RRegArena *arena[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
 } RDebugCheckpoint;
@@ -199,6 +203,8 @@ static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
 	if (!chkpt) {
 		return;
 	}
+	free (chkpt->label);
+	chkpt->label = NULL;
 	size_t i;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_reg_arena_free (chkpt->arena[i]);
@@ -219,6 +225,9 @@ typedef struct r_debug_session_t {
 	RVecDebugCheckpoint *checkpoints;
 	HtUP *memory; /* RVecDebugChangeMem */
 	HtUP *registers; /* RVecDebugChangeReg */
+	ut64 current_checkpoint_id;
+	ut64 next_checkpoint_id;
+	bool linear_history_valid;
 	int reasontype /*RDebugReasonType*/;
 	RBreakpointItem *bp;
 } RDebugSession;
@@ -632,9 +641,14 @@ R_API void r_debug_esil_watch_list(RDebug *dbg);
 R_API bool r_debug_esil_watch_empty(RDebug *dbg);
 R_API void r_debug_esil_prestep(RDebug *d, int p);
 
-/* record & replay */
+/* debug session checkpoints */
 // R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
 R_API bool r_debug_add_checkpoint(RDebug *dbg);
+R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char *label);
+R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, ut64 checkpoint_id);
+R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id);
+R_API bool r_debug_session_restore(RDebug *dbg, ut64 checkpoint_id);
+R_API void r_debug_session_list(RDebug *dbg, int mode);
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data);
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);
