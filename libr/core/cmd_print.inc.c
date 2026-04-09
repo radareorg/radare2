@@ -1062,13 +1062,11 @@ static bool print_format_apply(RCore *core, RStrBuf *sb, char conv, const char *
 	case 'u':
 		r_strbuf_appendf (sb, "%" PFMT64u, val);
 		return true;
-	case 'x':
 	case 'o':
-		if (conv == 'o') {
-			r_strbuf_appendf (sb, "%" PFMT64o, val);
-		} else {
-			r_strbuf_appendf (sb, "%" PFMT64x, val);
-		}
+		r_strbuf_appendf (sb, "%" PFMT64o, val);
+		return true;
+	case 'x':
+		r_strbuf_appendf (sb, "%" PFMT64x, val);
 		return true;
 	}
 	return false;
@@ -1180,14 +1178,14 @@ static void cmd_printmsg(RCore *core, const char *input) {
 
 static void cmd_prc_zoom(RCore *core, const char *input) {
 	const char *chars = " .,:;!O@#";
-	bool square = r_config_get_i (core->config, "scr.square");
+	bool square = r_config_get_b (core->config, "scr.square");
 	int i, j;
 	char ch, ch2, *color;
 	int cols = r_config_get_i (core->config, "hex.cols");
-	bool show_color = r_config_get_i (core->config, "scr.color");
-	bool show_flags = r_config_get_i (core->config, "asm.flags");
+	bool show_color = r_config_get_b (core->config, "scr.color");
+	bool show_flags = r_config_get_b (core->config, "asm.flags");
 	bool show_cursor = core->print->cur_enabled;
-	bool show_offset = r_config_get_i (core->config, "hex.addr");
+	bool show_offset = r_config_get_b (core->config, "hex.addr");
 	bool show_unalloc = core->print->flags & R_PRINT_FLAGS_UNALLOC;
 	RVecRIORegion *regions = NULL;
 	RIORegion *region = NULL;
@@ -1197,19 +1195,15 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		RInterval itv = { core->addr, (ut64)len };
 		regions = r_io_bank_get_regions (core->io, core->io->bank, itv);
 	}
-	ut64 from = 0;
-	ut64 to = 0;
-	RIOMap *map;
-	RListIter *iter;
-
+	ut64 from = 0, to = 0;
 	if (cols < 1 || cols > 0xfffff) {
 		cols = 32;
 	}
 	RList *list = r_core_get_boundaries_prot (core, -1, NULL, "zoom");
 	if (list && r_list_length (list) > 0) {
-		RListIter *iter1 = list->head;
-		RIOMap *map1 = iter1->data;
-		from = map1->itv.addr;
+		RIOMap *map;
+		RListIter *iter;
+		from = ((RIOMap *)list->head->data)->itv.addr;
 		r_list_foreach (list, iter, map) {
 			to = r_io_map_end (map);
 		}
@@ -1217,20 +1211,12 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 		from = core->addr;
 		to = from + len;
 	}
-	if (list) {
-		r_list_free (list);
-		list = NULL;
-	}
+	r_list_free (list);
 
 	core->print->zoom->mode = (input && *input)? input[1]: 'e';
 	r_print_zoom_buf (core->print, printzoomcallback, core, from, to, len, len);
 	ut8 *block = core->print->zoom->buf;
 	RStrBuf *sb = r_strbuf_new ("");
-	if (!sb) {
-		RVecRIORegion_free (regions);
-		return;
-	}
-
 	for (i = 0; i < len; i += cols) {
 		append_section_addr_prefix (core, core->addr + i, false, show_offset, sb);
 		for (j = i; j < i + cols; j++) {
@@ -1263,13 +1249,7 @@ static void cmd_prc_zoom(RCore *core, const char *input) {
 				if (show_flags) {
 					RFlagItem *fi = r_flag_get_in (core->flags, core->addr + j);
 					if (fi) {
-						if (fi->name[1]) {
-							ch = fi->name[0];
-							ch2 = fi->name[1];
-						} else {
-							ch = ' ';
-							ch2 = fi->name[0];
-						}
+						first_flag_chars (fi->name, &ch, &ch2);
 					} else {
 						ch2 = ch;
 					}
@@ -1302,7 +1282,6 @@ static void cmd_pCd(RCore *core, const char *input) {
 	int rows = h - 2;
 	int obsz = core->blocksize;
 	int user_rows = r_num_math (core->num, input);
-	char *o_ao = strdup (r_config_get (core->config, "asm.addr"));
 	char *o_ab = strdup (r_config_get (core->config, "asm.bytes"));
 	r_config_set_b (core->config, "asm.bytes", false);
 	if (user_rows > 0) {
@@ -1329,7 +1308,6 @@ static void cmd_pCd(RCore *core, const char *input) {
 	r_cons_canvas_print (c);
 	r_cons_canvas_free (c);
 	r_config_set (core->config, "asm.bytes", o_ab);
-	free (o_ao);
 	free (o_ab);
 }
 
@@ -1354,11 +1332,10 @@ static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
 }
 
 static ut64 findClassBounds(RCore *core, const char *input, int *len) {
-	ut64 min = 0, max = 0;
-	RListIter *iter;
-	RBinClass *c;
 	RList *cs = r_bin_get_classes (core->bin);
-	r_list_foreach (cs, iter, c) {
+	RBinClass *c = r_list_first (cs);
+	if (c) {
+		ut64 min = 0, max = 0;
 		findMethodBounds (c->methods, &min, &max);
 		if (len) {
 			*len = (max - min);
@@ -2710,7 +2687,6 @@ err_args:
 		r_strbuf_append (schars, (x)); \
 	} while (0)
 static void annotated_hexdump(RCore *core, const char *str, int len) {
-	R_RETURN_IF_FAIL (core);
 	if (!str || len < 1) {
 		return;
 	}
@@ -3345,12 +3321,12 @@ static void cmd_print_pwn(const RCore *core) {
 
 static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	RConsPrintablePalette *pal = &core->cons->context->pal;
-	int show_offset = true;
+	bool show_offset = true;
 	int cols = r_config_get_i (core->config, "hex.cols");
-	int show_color = r_config_get_i (core->config, "scr.color");
-	int onechar = r_config_get_i (core->config, "hex.onechar");
-	bool hex_offset = r_config_get_i (core->config, "hex.addr");
-	int bgcolor_in_heap = false;
+	bool show_color = r_config_get_b (core->config, "scr.color");
+	bool onechar = r_config_get_b (core->config, "hex.onechar");
+	bool hex_offset = r_config_get_b (core->config, "hex.addr");
+	bool bgcolor_in_heap = false;
 	bool show_cursor = core->print->cur_enabled;
 	char buf[2];
 	char *bgcolor, *fgcolor, *text;
@@ -3789,8 +3765,6 @@ static void printraw(RCore *core, int len, int mode) {
 }
 
 static void _handle_call(RCore *core, char *line, char **str) {
-	// XXX: rewrite this function
-	R_RETURN_IF_FAIL (core && line && str);
 	if (core->rasm && core->rasm->config && !strcmp (core->rasm->config->arch, "x86")) {
 		*str = strstr (line, "call ");
 		if (!*str) {
@@ -3821,31 +3795,18 @@ static void _handle_call(RCore *core, char *line, char **str) {
 }
 
 static char *strpfx(char *line) {
-	char *str = strstr (line, " reloc.");
-	if (!str) {
-		// XXX leak
-		str = strstr (line, " fn.");
+	static const char *prefixes[] = {
+		" reloc.", " fn.", " obj.", " str.",
+		" imp.", " fcn.", " hit.", " sub.", NULL
+	};
+	int i;
+	for (i = 0; prefixes[i]; i++) {
+		char *str = strstr (line, prefixes[i]);
 		if (str) {
 			return str;
 		}
-		str = strstr (line, " obj.");
-		if (!str) {
-			str = strstr (line, " str.");
-			if (!str) {
-				str = strstr (line, " imp.");
-				if (!str) {
-					str = strstr (line, " fcn.");
-					if (!str) {
-						str = strstr (line, " hit.");
-						if (!str) {
-							str = strstr (line, " sub.");
-						}
-					}
-				}
-			}
-		}
 	}
-	return str;
+	return NULL;
 }
 // TODO: this is just a PoC, the disasm loop should be rewritten
 // TODO: this is based on string matching, it should be written upon RAnalOp to know
@@ -4260,13 +4221,6 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 	ut64 off = addr;
 	r_cons_break_push (core->cons, NULL, NULL);
 	while (remaining > 0 && !r_cons_is_breaked (core->cons)) {
-		if (r_cons_is_breaked (core->cons)) {
-			R_LOG_INFO ("Interrupted");
-			free (buf);
-			r_muta_session_free (ms);
-			r_cons_break_pop (core->cons);
-			return NULL;
-		}
 		ut64 toread = R_MIN (remaining, chunksize);
 		r_io_read_at (core->io, off, buf, toread);
 		r_muta_session_update (ms, buf, toread);
@@ -4274,6 +4228,11 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 		off += toread;
 	}
 	r_cons_break_pop (core->cons);
+	if (remaining > 0) {
+		free (buf);
+		r_muta_session_free (ms);
+		return NULL;
+	}
 	free (buf);
 	r_muta_session_end (ms, NULL, 0);
 	int outlen = 0;
@@ -4287,7 +4246,6 @@ static char *cmd_print_hash_incremental(RCore *core, const char *algo, ut64 addr
 static bool cmd_print_ph(RCore *core, const char *input) {
 	char *algo = NULL;
 	ut64 len = core->blocksize;
-	int handled_cmd = false;
 
 	const char i0 = input[0];
 	if (i0 == '?') {
@@ -4351,7 +4309,7 @@ static bool cmd_print_ph(RCore *core, const char *input) {
 	free (buf);
 	free (cmd);
 	r_list_free (args);
-	return handled_cmd;
+	return false;
 }
 
 static ut32 convert(ut8 *data, const char *bo) {
@@ -5675,43 +5633,30 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 }
 
 static void disasm_until_optype(RCore *core, ut64 addr, char type_print, int optype, int limit) {
-	int p = 0;
 	const bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
+	const char *offsetColor = show_color? core->cons->context->pal.addr: "";
 	int i;
 	for (i = 0; i < limit; i++) {
 		RAnalOp *op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_DISASM);
-		if (op) {
-			char *mnem = op->mnemonic;
-			char *m = malloc ((strlen (mnem) * 2) + 32);
-			strcpy (m, mnem);
-			if (type_print == 'q') {
-				r_cons_printf (core->cons, "%s\n", m);
-			} else {
-				if (show_color) {
-					const char *offsetColor = core->cons->context->pal.addr; // TODO etooslow. must cache
-					r_cons_printf (core->cons, "%s0x%08" PFMT64x Color_RESET "  %10s %s\n", offsetColor, addr + p, "", m);
-				} else {
-					r_cons_printf (core->cons, "0x%08" PFMT64x "  %10s %s\n", addr + p, "", m);
-				}
-			}
-			if ((op->type & 0xfffff) == optype) {
-				goto beach;
-			}
-			if (op->type == R_ANAL_OP_TYPE_JMP) {
-				addr = op->jump;
-			} else {
-				addr += op->size;
-			}
+		if (!op) {
+			R_LOG_ERROR ("[pdp] Cannot get op at 0x%08" PFMT64x, addr);
+			break;
+		}
+		const char *mnem = op->mnemonic;
+		if (type_print == 'q') {
+			r_cons_printf (core->cons, "%s\n", mnem);
+		} else if (show_color) {
+			r_cons_printf (core->cons, "%s0x%08" PFMT64x Color_RESET "  %10s %s\n", offsetColor, addr, "", mnem);
 		} else {
-			R_LOG_ERROR ("[pdp] Cannot get op at 0x%08" PFMT64x, addr + p);
+			r_cons_printf (core->cons, "0x%08" PFMT64x "  %10s %s\n", addr, "", mnem);
+		}
+		if ((op->type & 0xfffff) == optype) {
 			r_anal_op_free (op);
 			break;
 		}
-		// r_io_read_at (core->io, n, rbuf, 512);
+		addr = (op->type == R_ANAL_OP_TYPE_JMP)? op->jump: addr + op->size;
 		r_anal_op_free (op);
 	}
-beach:
-	return;
 }
 
 static void disasm_ropchain(RCore *core, ut64 addr, char type_print) {
@@ -6683,34 +6628,17 @@ static void cmd_pri(RCore *core, const char *input, int l) {
 static bool check_string_pointer(RCore *core, ut64 addr) {
 	ut8 buf[16];
 	r_io_read_at (core->io, addr, buf, sizeof (buf));
-	// check for 64bit pointer to string
-	ut64 p1 = r_read_le64 (buf);
-	if (check_string_at (core, p1, true)) {
-		return true;
-	}
-	// check for 32bit pointer to string
-	ut64 p2 = (ut64)r_read_le32 (buf);
-	if (check_string_at (core, p2, true)) {
-		return true;
-	}
-	// check for self reference pointer to string used by swift
-	st32 p3 = (st32)r_read_le32 (buf);
-	ut64 dst = core->addr + p3;
-	if (check_string_at (core, dst, true)) {
-		return true;
-	}
-	return false;
+	ut64 p64 = r_read_le64 (buf);
+	ut64 p32 = (ut64)r_read_le32 (buf);
+	ut64 prel = core->addr + (st32)r_read_le32 (buf);
+	return check_string_at (core, p64, true)
+		|| check_string_at (core, p32, true)
+		|| check_string_at (core, prel, true);
 }
 
 static void cmd_psa(RCore *core, const char *_) {
-	bool found = true;
-	if (!check_string_at (core, core->addr, true)) {
-		if (!check_string_pointer (core, core->addr)) {
-			found = false;
-		}
-	}
-	RCmdReturnCode rc = found? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE;
-	r_core_return_value (core, rc);
+	bool found = check_string_at (core, core->addr, true) || check_string_pointer (core, core->addr);
+	r_core_return_value (core, found? R_CMD_RC_SUCCESS: R_CMD_RC_FAILURE);
 }
 
 static void core_print_string_or_json(RCore *core, const ut8 *data, int len, const char *type, int options, bool json) {
