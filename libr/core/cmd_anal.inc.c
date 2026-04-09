@@ -1608,8 +1608,25 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 	}
 	if (type == '*') {
 		r_list_foreach (list, iter, var) {
-			r_cons_printf (core->cons, "afv%c %d %s %s\n", var->kind, var->delta,
-					var->name, var->type);
+			char *sname = r_name_filter_dup (var->name);
+			char *stype = r_str_sanitize_r2 (var->type);
+			if (sname && stype) {
+				if (var->kind == R_ANAL_VAR_KIND_REG) {
+					RRegItem *ri = r_reg_index_get (core->anal->reg, var->delta);
+					if (ri) {
+						r_cons_printf (core->cons, "'afvr %s %s %s\n",
+								ri->name, sname, stype);
+					}
+				} else {
+					int delta = (var->kind == R_ANAL_VAR_KIND_BPV)
+						? var->delta + fcn->bp_off
+						: var->delta;
+					r_cons_printf (core->cons, "'afv%c %d %s %s\n",
+							var->kind, delta, sname, stype);
+				}
+			}
+			free (sname);
+			free (stype);
 		}
 		r_list_free (list);
 		return;
