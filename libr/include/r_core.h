@@ -566,7 +566,10 @@ static inline int r_core_cmd_call(RCore *core, const char *cmd) {
 }
 R_API int r_core_callf(RCore *core, const char *cmd, ...);
 #define r_core_cmd_callf r_core_callf
+R_API int r_core_callf_at(RCore *core, ut64 addr, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+
 // CMDSTR
+
 R_API int r_core_cmd_pipe(RCore *core, char *radare_cmd, char *shell_cmd);
 R_API R_MUSTUSE char *r_core_cmd_str(RCore *core, const char *cmd);
 R_API R_MUSTUSE char *r_core_cmd_str_r(RCore *core, const char *cmd);
