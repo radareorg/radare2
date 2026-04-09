@@ -5601,7 +5601,7 @@ R_API void r_core_anal_esil(RCore *core, const char *str /* len */, const char *
 	}
 	ut8 *buf = NULL;
 	esilbreak_last_read = UT64_MAX;
-	// maybe r_core_cmd_call (core, "aeim");
+	// maybe r_core_call (core, "aeim");
 	const char *kspname = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SP);
 	if (R_STR_ISEMPTY (kspname)) {
 		R_LOG_ERROR ("No =SP defined in the reg profile");
@@ -6412,12 +6412,12 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 			int newbs = a1 - a0;
 			int oldbs = core->blocksize;
 			r_core_block_size (core, newbs);
-			r_core_cmd_call_at (core, a0, "aab");
+			r_core_call_at (core, a0, "aab");
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, a0, 0);
 			if (fcn) {
 				eprintf ("0x%08"PFMT64x"  af %"PFMT64d" # %s\n", a0, sz, fcn->name);
 			} else {
-				r_core_cmd_call_at (core, a0, "af");
+				r_core_call_at (core, a0, "af");
 				fcn = r_anal_get_fcn_in (core->anal, a0, 0);
 				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
 			}

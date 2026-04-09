@@ -1390,7 +1390,7 @@ static bool cmd_anal_aaft(RCore *core) {
 	r_reg_arena_push (core->anal->reg);
 	r_reg_arena_zero (core->anal->reg);
 	cmd_aei (core);
-	r_core_cmd_call (core, "aeim");
+	r_core_call (core, "aeim");
 	int saved_arena_size = 0;
 	ut8 *saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
 	// Iterating Reverse so that we get function in top-bottom call order
@@ -1889,9 +1889,9 @@ static int cmd_afv(RCore *core, const char *str) {
 	if (!str[0]) {
 		if (fcn) {
 			// "afv"
-			r_core_cmd_call (core, "afvr");
-			r_core_cmd_call (core, "afvs");
-			r_core_cmd_call (core, "afvb");
+			r_core_call (core, "afvr");
+			r_core_call (core, "afvs");
+			r_core_call (core, "afvb");
 		} else {
 			R_LOG_WARN ("Cannot find function in 0x%08"PFMT64x, core->addr);
 		}
@@ -4658,7 +4658,7 @@ static void save_regstate_in_destinations(RCore *core, RVecBlocks *blocks, Block
 	R_VEC_FOREACH (blocks, b2) {
 		if (!b2->regstate && b0->to == b2->from) {
 			char *cmd = r_str_newf ("abe %s", regstate);
-			int res = r_core_cmd_call_at (core, b2->from, cmd);
+			int res = r_core_call_at (core, b2->from, cmd);
 			if (res != 0) {
 				R_LOG_WARN ("Abe failed");
 			}
@@ -4682,10 +4682,10 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 		char *regstate = r_core_cmd_str (core, "dre");
 		r_str_trim (regstate);
 		char *cmd = r_str_newf ("abe %s", regstate);
-		r_core_cmd_call_at (core, b0->from, cmd);
+		r_core_call_at (core, b0->from, cmd);
 		free (cmd);
 		free (regstate);
-		r_core_cmd_call_at (core, b0->from, "aeb");
+		r_core_call_at (core, b0->from, "aeb");
 		b0->regstate = strdup ("dr0,#!"); //initial regstate
 		save_regstate_in_destinations (core, blocks, b0, NULL);
 	}
@@ -6004,7 +6004,7 @@ static int cmd_af(RCore *core, const char *input) {
 			char *sig = r_core_cmd_str (core, "afs");
 			char *data = r_core_editor (core, NULL, sig);
 			if (sig && data) {
-				r_core_cmd_callf (core, "afs %s", data);
+				r_core_callf (core, "afs %s", data);
 			}
 			free (sig);
 			free (data);
@@ -6171,7 +6171,7 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'i':
 			if (input[3] == 'j') {
-				r_core_cmd_call (core, "afcfj");
+				r_core_call (core, "afcfj");
 			} else if (input[3] == '?') {
 				r_core_cmd_help_match (core, help_msg_afc, "afci");
 			} else if (input[3] == ' ') {
@@ -6213,7 +6213,7 @@ static int cmd_af(RCore *core, const char *input) {
 			  }
 			break;
 		case 'j': // "afcj"
-			r_core_cmd_call (core, "afcfj");
+			r_core_call (core, "afcfj");
 			break;
 		case 'r': { // "afcr"
 			int i;
@@ -8284,7 +8284,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 			until_addr = op->addr + op->size;
 		}
 		r_core_esil_step (core, until_addr, NULL, NULL, false);
-		r_core_cmd_call (core, "arA");
+		r_core_call (core, "arA");
 		r_core_seek (core, at, true);
 		int delta = r_num_get (core->num, "$is");
 		if (delta < 1) {
@@ -8297,7 +8297,7 @@ static void r_anal_aefa(RCore *core, const char *arg) {
 
 	// the logic of identifying args by function types and
 	// show json format and arg name goes into arA
-	r_core_cmd_call (core, "arA");
+	r_core_call (core, "arA");
 #if 0
 	// get results
 	const char *fcn_type = r_type_func_ret (core->anal->sdb_types, fcn->name);
@@ -8333,7 +8333,7 @@ static void cmd_aeC(RCore *core, const char *input) {
 	r_reg_setv (core->anal->reg, "SP", 0);
 
 	r_reg_setv (core->anal->reg, "PC", core->addr);
-	r_core_cmd_call (core, "aesu 0");
+	r_core_call (core, "aesu 0");
 
 	r_reg_setv (core->anal->reg, "SP", sp);
 	free (inp);
@@ -8451,11 +8451,11 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	RAnalBlock *bb;
 #if 0
 	if (!core->anal->esil) {
-		r_core_cmd_call (core, "aei");
+		r_core_call (core, "aei");
 	}
 #endif
 	if (!sdb_const_get (core->sdb, "aeim.fd", 0)) {
-		r_core_cmd_call (core, "aeim"); // should be set by default imho
+		r_core_call (core, "aeim"); // should be set by default imho
 	}
 	void *u = core->anal->esil->user;
 	core->anal->esil->user = core;
@@ -9874,7 +9874,7 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 		break;
 	case 't': // "aot"
 		if (input[1] == 'l') {
-			r_core_cmd_call (core, "/atl");
+			r_core_call (core, "/atl");
 		} else if (input[1] == '\0') {
 			r_core_cmd0 (core, "ao~^type[1]");
 		} else {
@@ -10881,7 +10881,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_core_cmd_help (core, help_msg_axl);
 			break;
 		case 'j': // "axlj"
-			// XXX axj != axlj r_core_cmd_call (core, "axj");
+			// XXX axj != axlj r_core_call (core, "axj");
 			r_anal_xrefs_list (core->anal, 'j', 0, NULL);
 			break;
 		case 'c': // "axlc"
@@ -10891,10 +10891,10 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			}
 			break;
 		case 'q': // "axlq"
-			r_core_cmd_call (core, "axq");
+			r_core_call (core, "axq");
 			break;
 		default:
-			r_core_cmd_call (core, "ax");
+			r_core_call (core, "ax");
 			break;
 		}
 		break;
@@ -12084,7 +12084,7 @@ R_API void cmd_aggb(RCore *core) {
 	r_cons_push (core->cons);
 	int ograph_zoom = r_config_get_i (core->config, "graph.zoom");
 	r_config_set_i (core->config, "graph.zoom", 1);
-	r_core_cmd_call (core, "agg");
+	r_core_call (core, "agg");
 	r_config_set_i (core->config, "scr.color", c);
 	char *s = strdup (core->cons->context->buffer);
 	r_cons_pop (core->cons);
@@ -13768,7 +13768,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 				r_cons_printf (core->cons, "aepc orip\n");
 			} else {
 			//	r_core_cmd0 (core, "dr=");
-				r_core_cmd_call (core, "aepc orip");
+				r_core_call (core, "aepc orip");
 			}
 			free (paths);
 		}
@@ -14369,7 +14369,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		r_core_task_yield (&core->tasks);
 		if (!cfg_debug) {
 			if (dh_orig && strcmp (dh_orig, "esil")) {
-				r_core_cmd_call (core, "dL esil");
+				r_core_call (core, "dL esil");
 				r_core_task_yield (&core->tasks);
 			}
 		}
@@ -14420,7 +14420,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		}
 		r_core_task_yield (&core->tasks);
 		logline (core, 50, "Finding and parsing C++ vtables (avrr)");
-		r_core_cmd_call (core, "avrr");
+		r_core_call (core, "avrr");
 		logline (core, 65, "Analyzing methods (af @@ method.*)");
 		r_core_cmd0 (core, "af @@ method.*");
 		r_core_task_yield (&core->tasks);
@@ -14460,14 +14460,14 @@ static void cmd_aaa(RCore *core, const char *input) {
 						r_config_set_b (core->config, "io.pcache", true);
 					}
 					logline (core, 70, "Emulate functions to find computed references (aaef)");
-					r_core_cmd_call (core, "aaef");
+					r_core_call (core, "aaef");
 					r_core_task_yield (&core->tasks);
 					if (use_pcache) {
 						r_config_set_b (core->config, "io.pcache", io_cache);
 					}
 				} else {
 					logline (core, 70, "Emulate functions to find computed references (aaef)");
-					r_core_cmd_call (core, "aaef");
+					r_core_call (core, "aaef");
 				}
 			}
 		}
@@ -14500,7 +14500,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 		}
 		if (!sdb_isempty (core->anal->sdb_zigns)) {
 			logline (core, 85, "Check for zignature from zigns folder (z/)");
-			r_core_cmd_call (core, "z/");
+			r_core_call (core, "z/");
 			r_core_task_yield (&core->tasks);
 		}
 		if (cfg_debug) {
@@ -14508,7 +14508,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			// nothing to do
 		} else {
 			logline (core, 90, "Type matching analysis for all functions (aaft)");
-			r_core_cmd_call (core, "aaft");
+			r_core_call (core, "aaft");
 		}
 		r_core_task_yield (&core->tasks);
 
@@ -14531,7 +14531,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 
 		if (input[1] == 'a') { // "aaaa"
 			logline (core, 95, "Scanning for strings constructed in code (/azs)");
-			r_core_cmd_call (core, "/azs");
+			r_core_call (core, "/azs");
 			if (!didAap) {
 				didAap = true;
 				logline (core, 96, "Finding function preludes (aap)");
@@ -14545,7 +14545,7 @@ static void cmd_aaa(RCore *core, const char *input) {
 			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
 			if (input[2] == 'a') { // "aaaaa"
 				logline (core, 97, "Reanalyzing graph references to adjust functions count (aarr)");
-				r_core_cmd_call (core, "aarr");
+				r_core_call (core, "aarr");
 				// const char *mode = core->anal->opt.slow? "slow": "fast";
 				logline (core, 98, "Autoname all functions (.afna@@c:afla)");
 				r_core_cmd0 (core, ".afna@@c:afla");
@@ -14557,14 +14557,14 @@ static void cmd_aaa(RCore *core, const char *input) {
 			logline (core, 99, "Finding xrefs in noncode sections (e anal.in=io.maps.x; aav)");
 			int isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 			if (!isvm) {
-				r_core_cmd_call (core, "aavq");
+				r_core_call (core, "aavq");
 			}
 			r_core_task_yield (&core->tasks);
 		}
 		if (is_swift (core)) {
 			r_core_cmd0 (core, "aavr@e:anal.in=bin.sections.rw");
 		}
-		r_core_cmd_call (core, "s-");
+		r_core_call (core, "s-");
 		if (dh_orig) {
 			r_core_cmdf (core, "dL %s", dh_orig);
 			r_core_task_yield (&core->tasks);
@@ -14632,7 +14632,7 @@ static int cmd_anal_all(RCore *core, const char *input) {
 				r_list_foreach (list, iter, map) {
 					r_core_seek (core, r_io_map_begin (map), true);
 					r_config_set_b (core->config, "anal.hasnext", true);
-					r_core_cmd_call (core, "afr");
+					r_core_call (core, "afr");
 					r_config_set_b (core->config, "anal.hasnext", hasnext);
 				}
 				r_core_seek (core, cur, true);
@@ -15794,7 +15794,7 @@ static void cmd_ab(RCore *core, const char *input) {
 	}
 	switch (*input) {
 	case '.': // "ab."
-		r_core_cmd_call (core, "ab $$");
+		r_core_call (core, "ab $$");
 		break;
 	case 'a': // "aba"
 		r_core_cmdf (core, "aeab%s", input + 1);
@@ -15836,7 +15836,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		if (input[1] && input[1] != '.') {
 			addr = r_num_math (core->num, input + 2);
 		}
-		r_core_cmd_call_at (core, addr, "afbij");
+		r_core_call_at (core, addr, "afbij");
 		break;
 	case '-': // "ab-"
 		  if (input[1] == '*') {
@@ -15854,7 +15854,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		if (input[0] && input[0] != '.') {
 			addr = r_num_math (core->num, input);
 		}
-		r_core_cmd_call_at (core, addr, "afbi");
+		r_core_call_at (core, addr, "afbi");
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_ab);
@@ -16157,7 +16157,7 @@ static int cmd_anal(void *data, const char *input) {
 	ut32 tbs = core->blocksize;
 	switch (input[0]) {
 	case 0: // "a"
-		r_core_cmd_call (core, "aai");
+		r_core_call (core, "aai");
 		break;
 	case 'p': // "ap"
 		cmd_ap (core, input);
@@ -16264,9 +16264,9 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case '*': // "a*"
-		r_core_cmd_call (core, "afl*");
-		r_core_cmd_call (core, "ah*");
-		r_core_cmd_call (core, "ax*");
+		r_core_call (core, "afl*");
+		r_core_call (core, "ah*");
+		r_core_call (core, "ax*");
 		break;
 	case 'a': // "aa"
 		if (!cmd_anal_all (core, input + 1)) {
@@ -16371,7 +16371,7 @@ static int cmd_anal(void *data, const char *input) {
 		}
 		break;
 	case 'j': // "aj"
-		r_core_cmd_call (core, "aflj");
+		r_core_call (core, "aflj");
 		break;
 	case '?':
 		if (input[1] == 'j') {

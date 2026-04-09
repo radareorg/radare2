@@ -3019,10 +3019,10 @@ static bool do_anal_search(RCore *core, struct search_parameters *param, const c
 				}
 				break;
 			case 's': // "als"
-				r_core_cmd_call (core, "asl");
+				r_core_call (core, "asl");
 				break;
 			case 0:
-				r_core_cmd_call (core, "aoml");
+				r_core_call (core, "aoml");
 				break;
 			default:
 				R_LOG_ERROR ("Unknown command");
@@ -4799,7 +4799,7 @@ reread:
 				if (input[2] == '?') {
 					r_core_cmd_help_match (core, help_msg_slash_a, "/as");
 				} else {
-					r_core_cmd_call (core, "asl");
+					r_core_call (core, "asl");
 				}
 			} else { // "/as" "/asj"
 				do_syscall_search (core, &param);

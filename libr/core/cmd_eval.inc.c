@@ -365,7 +365,7 @@ done:
 		// nextpal (core, mode);
 	} else if (mode == 'n' || mode == 'p') {
 		if (R_STR_ISNOTEMPTY (core->theme)) {
-			r_core_cmd_callf (core, "eco %s", core->theme);
+			r_core_callf (core, "eco %s", core->theme);
 		}
 	}
 	r_list_free (files);

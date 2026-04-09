@@ -153,7 +153,7 @@ static int textlog_chat(RCore *core) {
 			return 0;
 		} else if (!strcmp (buf, "/clear")) {
 			// r_core_log_del (core, 0);
-			r_core_cmd_call (core, "T-");
+			r_core_call (core, "T-");
 			return 0;
 		} else if (!strcmp (buf, "/quit")) {
 			return 0;
@@ -340,7 +340,7 @@ static int cmd_log(void *data, const char *input) {
 			if (input[2] == '&') { // "T=&&"
 				r_cons_break_push (core->cons, NULL, NULL);
 				while (!r_cons_is_breaked (core->cons)) {
-					r_core_cmd_call (core, "T=");
+					r_core_call (core, "T=");
 					void *bed = r_cons_sleep_begin (core->cons);
 					r_sys_sleep (1);
 					r_cons_sleep_end (core->cons, bed);
@@ -428,9 +428,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 't': // "Lt"
 		if (input[1] == 'j') {
-			r_core_cmd_call (core, "ecoj");
+			r_core_call (core, "ecoj");
 		} else {
-			r_core_cmd_call (core, "eco");
+			r_core_call (core, "eco");
 		}
 		break;
 	case 'b': // "Lb"
@@ -446,9 +446,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'm': // "Lm"
 		if (input[1] == 'j') {
-			r_core_cmd_call (core, "mLj");
+			r_core_call (core, "mLj");
 		} else {
-			r_core_cmd_call (core, "mL");
+			r_core_call (core, "mL");
 		}
 		break;
 	case 'e': // "Le"
@@ -459,9 +459,9 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'h': // "Lh"
 		switch (input[1]) {
-		case 'j': r_core_cmd_call (core, "phj"); break;
-		case 'q': r_core_cmd_call (core, "phq"); break;
-		case 0: r_core_cmd_call (core, "ph"); break;
+		case 'j': r_core_call (core, "phj"); break;
+		case 'q': r_core_call (core, "phq"); break;
+		case 0: r_core_call (core, "ph"); break;
 		default: r_core_cmd_help_match (core, help_msg_L, "Lh"); break;
 		}
 		break;
@@ -600,7 +600,7 @@ static int cmd_plugins(void *data, const char *input) {
 				free (s);
 			}
 		} else {
-			r_core_cmd_call (core, "e asm.parser=?");
+			r_core_call (core, "e asm.parser=?");
 		}
 		break;
 	case 'D': // "LD"
@@ -627,7 +627,7 @@ static int cmd_plugins(void *data, const char *input) {
 			r_list_free (list);
 			free (decos);
 		} else {
-			r_core_cmd_call (core, "e cmd.pdc=?");
+			r_core_call (core, "e cmd.pdc=?");
 		}
 		break;
 	case 'l': // "Ll"
@@ -652,14 +652,14 @@ static int cmd_plugins(void *data, const char *input) {
 		break;
 	case 'g': // "Lg"
 		if (input[1] == 'j') {
-			r_core_cmd_call (core, "gLj");
+			r_core_call (core, "gLj");
 		} else {
-			r_core_cmd_call (core, "gL");
+			r_core_call (core, "gL");
 		}
 		break;
 	case 'o': // "Lo"
 	case 'i': // "Li"
-		r_core_cmd_callf (core, "%cL%s", input[0], input + 1);
+		r_core_callf (core, "%cL%s", input[0], input + 1);
 		break;
 	case 'c': { // "Lc"
 		RListIter *iter;
@@ -694,7 +694,7 @@ static int cmd_plugins(void *data, const char *input) {
 			if (!r_lib_close (core->lib, r_str_trim_head_ro (input + 2))) {
 				R_LOG_WARN ("Cannot find plugin");
 			}
-			// r_core_cmd_callf (core, "L-%s", r_str_trim_head_ro (input + 2));
+			// r_core_callf (core, "L-%s", r_str_trim_head_ro (input + 2));
 			break;
 		case ' ':
 			{

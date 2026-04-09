@@ -605,10 +605,10 @@ static bool cb_scrrainbow(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (node->i_value) {
 		core->print->flags |= R_PRINT_FLAGS_RAINBOW;
-		r_core_cmd_call (core, "ecr");
+		r_core_call (core, "ecr");
 	} else {
 		core->print->flags &= (~R_PRINT_FLAGS_RAINBOW);
-		r_core_cmd_call (core, "ecoo");
+		r_core_call (core, "ecoo");
 	}
 	r_print_set_flags (core->print, core->print->flags);
 	return true;
@@ -2698,7 +2698,7 @@ static bool cb_scrtheme(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
 	if (*node->value) {
 		if (*node->value == '?') {
-			r_core_cmd_call (core, "eco");
+			r_core_call (core, "eco");
 		} else {
 			r_core_cmdf (core, "'eco %s", node->value);
 		}
@@ -3389,7 +3389,7 @@ static bool cb_dirpfx(RCore *core, RConfigNode *node) {
 static bool cb_analsyscc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
 		if (*node->value == '?') {
-			r_core_cmd_call (core, "afcl");
+			r_core_call (core, "afcl");
 			return false;
 		}
 		r_anal_set_syscc_default (core->anal, node->value);
@@ -3410,7 +3410,7 @@ static bool cb_analcc(RCore *core, RConfigNode *node) {
 	if (core && core->anal) {
 		node->getter = (RConfigCallback)cb_analcc_getter;
 		if (*node->value == '?') {
-			r_core_cmd_call (core, "afcl");
+			r_core_call (core, "afcl");
 			return false;
 		}
 		r_anal_set_cc_default (core->anal, node->value);
