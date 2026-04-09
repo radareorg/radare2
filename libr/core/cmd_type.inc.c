@@ -538,7 +538,7 @@ static void cmd_type_noreturn(RCore *core, const char *input) {
 		}
 		break;
 	case 'f': // "tnf"
-		r_core_cmd_call (core, "afl,noret/eq/1");
+		r_core_call (core, "afl,noret/eq/1");
 		break;
 	case 'a': // "tna"
 		if (input[1] == ' ') {
@@ -587,7 +587,7 @@ static void cmd_type_edit(RCore *core, const char *typename, const char *c_cmd) 
 		char *str_trimmed = strdup (str);
 		r_str_trim (str_trimmed);
 		if (strcmp (tmp, str_trimmed)) {
-			r_core_cmdf (core, "t- %s", typename);
+			r_core_callf (core, "t- %s", typename);
 			char *errmsg = NULL;
 			char *out = r_anal_cparse (core->anal, tmp, &errmsg);
 			if (out) {
@@ -1391,6 +1391,51 @@ static void print_type_view(RCore *core, const char *arg) {
 	}
 }
 
+static void enum_members_to_json(PJ *pj, Sdb *TDB, const char *name) {
+	RList *list = r_type_get_enum (TDB, name);
+	if (!r_list_empty (list)) {
+		RListIter *iter;
+		RTypeEnum *member;
+		pj_o (pj);
+		r_list_foreach (list, iter, member) {
+			pj_kn (pj, member->name, r_num_math (NULL, member->val));
+		}
+		pj_end (pj);
+	}
+	r_list_free (list);
+}
+
+static void print_enum_list_json(RCore *core, Sdb *TDB, const char *name) {
+	PJ *pj = r_core_pj_new (core);
+	if (name) {
+		pj_o (pj);
+		pj_ks (pj, "name", name);
+		pj_k (pj, "values");
+		enum_members_to_json (pj, TDB, name);
+		pj_end (pj);
+	} else {
+		char *n = NULL;
+		SdbKv *kv;
+		SdbListIter *iter;
+		SdbList *l = sdb_foreach_list (TDB, true);
+		pj_o (pj);
+		ls_foreach (l, iter, kv) {
+			if (!strcmp (sdbkv_value (kv), "enum")
+					&& (!n || strcmp (sdbkv_value (kv), n))) {
+				free (n);
+				n = strdup (sdbkv_key (kv));
+				pj_k (pj, n);
+				enum_members_to_json (pj, TDB, n);
+			}
+		}
+		pj_end (pj);
+		free (n);
+		ls_free (l);
+	}
+	r_cons_printf (core->cons, "%s\n", pj_string (pj));
+	pj_free (pj);
+}
+
 static void print_enum_in_c_format(RCore *core, Sdb *TDB, const char *arg, bool multiline) {
 	char *name = NULL;
 	SdbKv *kv;
@@ -1618,20 +1663,22 @@ static bool print_link_readable_cb(void *p, const char *k, const char *v) {
 		return 1;
 	}
 	r_cons_printf (core->cons, "(%s)\n", v);
-	r_core_cmdf (core, "pf %s @ 0x%s", fmt, k + strlen ("link."));
+	ut64 at = (ut64)strtoull (k + strlen ("link."), NULL, 16);
+	r_core_callf_at (core, at, "pf %s", fmt);
 	return true;
 }
 
 static bool print_link_readable_json_cb(void *p, const char *k, const char *v) {
 	RCore *core = (RCore *)p;
 	char *fmt = r_type_format (core->anal->sdb_types, v);
-	if (!fmt) {
+	if (fmt) {
+		r_cons_printf (core->cons, "{\"%s\":", v);
+		ut64 at = (ut64)strtoull (k + strlen ("link."), NULL, 16);
+		r_core_callf_at (core, at, "pfj %s", fmt);
+		r_cons_printf (core->cons, "}");
+	} else {
 		R_LOG_ERROR ("Can't find type %s", v);
-		return true;
 	}
-	r_cons_printf (core->cons, "{\"%s\":", v);
-	r_core_cmdf (core, "pfj %s @ 0x%s", fmt, k + strlen ("link."));
-	r_cons_printf (core->cons, "}");
 	return true;
 }
 
@@ -1806,13 +1853,13 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 	const char *varpfx;
 	int dbg_follow = r_config_get_i (core->config, "dbg.follow");
 	Sdb *TDB = core->anal->sdb_types;
-	REsil *esil;
 	int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
 	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
 	RRegItem *pc = r_reg_get (core->anal->reg, "PC", -1);
 
-	if (!(esil = r_esil_new (stacksize, iotrap, addrsize))) {
+	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	if (!esil) {
 		return;
 	}
 	r_esil_setup (esil, core->anal, 0, 0, 0);
@@ -1840,7 +1887,7 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		}
 	} else {
 		// initialize stack
-		r_core_cmd_call (core, "aeim");
+		r_core_call (core, "aeim");
 		stack_set = true;
 	}
 	r_config_set_b (core->config, "io.cache", true);
@@ -1935,11 +1982,11 @@ R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn) {
 		}
 	}
 beach:
-	r_core_cmd_call (core, "wc-*"); // drop cache writes
+	r_core_call (core, "wc-*"); // drop cache writes
 	r_config_set_b (core->config, "io.cache", ioCache);
 	r_config_set_i (core->config, "dbg.follow", dbg_follow);
 	if (stack_set) {
-		r_core_cmd_call (core, "aeim-");
+		r_core_call (core, "aeim-");
 	}
 	r_core_seek (core, oldoff, true);
 	r_esil_free (esil);
@@ -2019,7 +2066,7 @@ static int cmd_type(void *data, const char *input) {
 			if (strchr (arg, '*') || strchr (arg, ' ')) {
 				types_remove_glob (core, stdifunion, arg);
 			} else {
-				r_core_cmd_callf (core, "t-%s", arg);
+				r_core_callf (core, "t-%s", arg);
 			}
 			break;
 		}
@@ -2039,7 +2086,11 @@ static int cmd_type(void *data, const char *input) {
 		case '.': // "tu."
 			if (input[2]) {
 				const char *typename = r_str_trim_head_ro (input + 2);
-				r_core_cmdf (core, ".tu %s", typename);
+				char *safe = r_str_sanitize_r2 (typename);
+				if (safe) {
+					r_core_cmdf (core, ".tu %s", safe);
+					free (safe);
+				}
 			}
 			break;
 		case 'j': // "tuj"
@@ -2116,15 +2167,15 @@ static int cmd_type(void *data, const char *input) {
 			if (name && type) {
 				name++; // skip the '.'
 				if (r_str_startswith (type, "struct")) {
-					r_core_cmdf (core, "tsc %s", name);
+					r_core_callf (core, "tsc %s", name);
 				} else if (r_str_startswith (type, "union")) {
-					r_core_cmdf (core, "tuc %s", name);
+					r_core_callf (core, "tuc %s", name);
 				} else if (r_str_startswith (type, "enum")) {
-					r_core_cmdf (core, "tec %s", name);
+					r_core_callf (core, "tec %s", name);
 				} else if (r_str_startswith (type, "typedef")) {
-					r_core_cmdf (core, "ttc %s", name);
+					r_core_callf (core, "ttc %s", name);
 				} else if (r_str_startswith (type, "func")) {
-					r_core_cmdf (core, "tfc %s", name);
+					r_core_callf (core, "tfc %s", name);
 				} else {
 					R_LOG_ERROR ("unk");
 				}
@@ -2132,7 +2183,7 @@ static int cmd_type(void *data, const char *input) {
 			break;
 		}
 		case '*': // "tc*"
-			r_core_cmd_call (core, "ts*");
+			r_core_call (core, "ts*");
 			break;
 		case 0: // "tc"
 			r_core_cmd0 (core, "tfc;tuc;tsc;ttc;tec");
@@ -2170,7 +2221,11 @@ static int cmd_type(void *data, const char *input) {
 		case '.': // "ts."
 			if (input[2]) {
 				const char *typename = r_str_trim_head_ro (input + 2);
-				r_core_cmdf (core, ".ts %s", typename);
+				char *safe = r_str_sanitize_r2 (typename);
+				if (safe) {
+					r_core_cmdf (core, ".ts %s", safe);
+					free (safe);
+				}
 			}
 			break;
 		case '-': { // "ts-"
@@ -2178,7 +2233,7 @@ static int cmd_type(void *data, const char *input) {
 			if (strchr (arg, '*') || strchr (arg, ' ')) {
 				types_remove_glob (core, stdifstruct, arg);
 			} else {
-				r_core_cmd_callf (core, "t-%s", arg);
+				r_core_callf (core, "t-%s", arg);
 			}
 			break;
 		}
@@ -2242,7 +2297,7 @@ static int cmd_type(void *data, const char *input) {
 			if (strchr (arg, '*') || strchr (arg, ' ')) {
 				types_remove_glob (core, stdifenum, arg);
 			} else {
-				r_core_cmd_callf (core, "t-%s", arg);
+				r_core_callf (core, "t-%s", arg);
 			}
 			free (name);
 			break;
@@ -2256,65 +2311,12 @@ static int cmd_type(void *data, const char *input) {
 		case '-': // "te-" (handled above)
 			break;
 		case 'j': // "tej"
-			if (input[2] == '\0') { // "tej"
-				char *name = NULL;
-				SdbKv *kv;
-				SdbListIter *iter;
-				SdbList *l = sdb_foreach_list (TDB, true);
-				PJ *pj = r_core_pj_new (core);
-				pj_o (pj);
-				ls_foreach (l, iter, kv) {
-					if (!strcmp (sdbkv_value (kv), "enum")
-							&& (!name || strcmp (sdbkv_value (kv), name))) {
-						RList *list;
-						free (name);
-						name = strdup (sdbkv_key (kv));
-						pj_k (pj, name);
-						list = r_type_get_enum (TDB, name);
-						if (!r_list_empty (list)) {
-							RListIter *iter;
-							RTypeEnum *member;
-							pj_o (pj);
-							r_list_foreach (list, iter, member) {
-								pj_kn (pj, member->name,
-										r_num_math (NULL, member->val));
-							}
-							pj_end (pj);
-						}
-						r_list_free (list);
-					}
-				}
-				pj_end (pj);
-				r_cons_printf (core->cons, "%s\n", pj_string (pj));
-				pj_free (pj);
-				free (name);
-				ls_free (l);
-			} else if (input[2] == '?') {
+			if (input[2] == '?') {
 				r_core_cmd_help_contains (core, help_msg_te, "tej");
-			} else { // "tej ENUM"
-				RListIter *iter;
-				PJ *pj = r_core_pj_new (core);
-				RTypeEnum *member;
-				pj_o (pj);
-				if (member_name) {
-					res = r_type_enum_member (TDB, name, NULL, r_num_math (core->num, member_name));
-					// NEVER REACHED
-				} else {
-					RList *list = r_type_get_enum (TDB, name);
-					if (!r_list_empty (list)) {
-						pj_ks (pj, "name", name);
-						pj_k (pj, "values");
-						pj_o (pj);
-						r_list_foreach (list, iter, member) {
-							pj_kn (pj, member->name, r_num_math (NULL, member->val));
-						}
-						pj_end (pj);
-						pj_end (pj);
-					}
-					r_cons_printf (core->cons, "%s\n", pj_string (pj));
-					pj_free (pj);
-					r_list_free (list);
-				}
+			} else if (input[2] == '\0') {
+				print_enum_list_json (core, TDB, NULL);
+			} else {
+				print_enum_list_json (core, TDB, name);
 			}
 			break;
 		case 'b': // "teb"
@@ -2785,7 +2787,13 @@ static int cmd_type(void *data, const char *input) {
 			char *fmt = r_type_format (TDB, type_name);
 			if (fmt && *fmt) {
 				ut64 val = core->addr;
-				r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, fmt, val);
+				{
+				char *safe = r_str_sanitize_r2 (fmt);
+				if (safe) {
+					r_core_cmdf (core, "pf %s @v:0x%08" PFMT64x, safe, val);
+					free (safe);
+				}
+			}
 			} else {
 				r_core_cmd_help_match (core, help_msg_tp, "tpv");
 			}
@@ -2813,7 +2821,13 @@ static int cmd_type(void *data, const char *input) {
 					break;
 				}
 				if (input[1] == 'x' && arg) { // "tpx"
-					r_core_cmdf (core, "pf %s @x:%s", fmt, arg);
+					{
+					char *safe = r_str_sanitize_r2 (fmt);
+					if (safe) {
+						r_core_cmdf (core, "pf %s @x:%s", safe, arg);
+						free (safe);
+					}
+				}
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->addr;
 					ut64 original_addr = addr;
@@ -2832,9 +2846,9 @@ static int cmd_type(void *data, const char *input) {
 						r_core_block_size (core, type_size);
 					}
 					if (addr != UT64_MAX) {
-						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, fmt, addr);
+						r_core_callf_at (core, addr, "pf %s", fmt);
 					} else if (original_addr == 0) {
-						r_core_cmdf (core, "pf %s @ 0x%08"PFMT64x, fmt, original_addr);
+						r_core_callf_at (core, original_addr, "pf %s", fmt);
 					}
 					if (type_size > obs) {
 						r_core_block_size (core, obs);
