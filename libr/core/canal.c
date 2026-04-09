@@ -6386,8 +6386,8 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 		if (!addr || !addr2) {
 			break;
 		}
-		ut64 a0 = r_num_get (NULL, addr);
-		ut64 a1 = r_num_get (NULL, addr2);
+		const ut64 a0 = r_num_get (NULL, addr);
+		const ut64 a1 = r_num_get (NULL, addr2);
 		if (a0 == a1) {
 			// ignore
 			continue;
@@ -6403,18 +6403,25 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 		}
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
-			r_core_cmdf (core, "af+ %s fcn.%s", addr, fi? fi->name: addr);
-			r_core_cmdf (core, "afb+ %s %s %d", addr, addr, (int)sz);
+			char *fcn_name = strdup (fi? fi->name: addr);
+			r_name_filter (fcn_name, -1);
+			r_core_cmdf (core, "'af+ 0x%08"PFMT64x" fcn.%s", a0, fcn_name);
+			r_core_cmdf (core, "afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %d", a0, a0, (int)sz);
+			free (fcn_name);
 		} else {
-			r_core_cmdf (core, "aab@%s!%s-%s", addr, addr2, addr);
-			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
+			int newbs = a1 - a0;
+			int oldbs = core->blocksize;
+			r_core_block_size (core, newbs);
+			r_core_cmd_call_at (core, a0, "aab");
+			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, a0, 0);
 			if (fcn) {
-				eprintf ("%s  %s %"PFMT64d"    # %s\n", addr, "af", sz, fcn->name);
+				eprintf ("0x%08"PFMT64x"  af %"PFMT64d" # %s\n", a0, sz, fcn->name);
 			} else {
-				r_core_cmdf (core, "af@%s!%s-%s", addr, addr2, addr);
-				fcn = r_anal_get_fcn_in (core->anal, r_num_math (core->num, addr), 0);
+				r_core_cmd_call_at (core, a0, "af");
+				fcn = r_anal_get_fcn_in (core->anal, a0, 0);
 				eprintf ("%s  %s %.4"PFMT64d"   # %s\n", addr, "aab", sz, fcn?fcn->name: "");
 			}
+			r_core_block_size (core, oldbs);
 		}
 	}
 	r_list_free (addrs);
