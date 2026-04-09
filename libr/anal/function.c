@@ -567,7 +567,6 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 
 	if ((R_STR_ISNOTEMPTY (var->name) && !slot->name)
 		|| (R_STR_ISNOTEMPTY (var->type) && !slot->type)
-		|| (slot->arg_index >= 0 && R_STR_ISNOTEMPTY (slot->arg_name) && !slot->arg_name)
 		|| (home_source && !slot->home_reg)) {
 		fcn_context_slot_free (slot);
 		return NULL;
