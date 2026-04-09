@@ -5395,8 +5395,9 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 			}
 		}
 		if (can_store && keep_symbol) {
-			r_bin_symbol_free (eo->symbols_by_ord[isym->ordinal]);
-			eo->symbols_by_ord[isym->ordinal] = isym;
+			const ut32 ord = isym->ordinal;
+			r_bin_symbol_free (eo->symbols_by_ord[ord]);
+			eo->symbols_by_ord[ord] = isym;
 		} else {
 			r_bin_symbol_free (isym);
 		}
