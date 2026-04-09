@@ -2581,7 +2581,7 @@ static bool cb_ioaslr(void *user, void *data) {
 static bool cb_binaslr(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	core->bin->options.fake_aslr = (bool)node->i_value;
+	core->bin->options.aslr = (bool)node->i_value;
 	return true;
 }
 

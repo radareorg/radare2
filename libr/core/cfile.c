@@ -117,7 +117,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		}
 	}
 	if (new_baddr == UT64_MAX) {
-		if (r_config_get_b (core->config, "bin.aslr")) {
+		if (core->bin->options.aslr) {
 			new_baddr = ((ut64)r_num_rand (32)) << 24;
 			r_config_set_i (core->config, "bin.baddr", new_baddr);
 		} else {
@@ -202,7 +202,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 			} else if (new_baddr != UT64_MAX) {
 				baddr = new_baddr;
 			} else {
-				if (r_config_get_b (core->config, "bin.aslr")) {
+				if (core->bin->options.aslr) {
 					baddr = r_num_rand (32) << 24;
 					r_config_set_i (core->config, "bin.baddr", baddr);
 				} else {
@@ -509,8 +509,7 @@ static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr
 	R_CRITICAL_ENTER (r);
 	r_io_use_fd (r->io, fd);
 	if (baseaddr == UT64_MAX) {
-		// ASLR - this is probably the only place where bin.aslr is used. maybe move into rbin.options before R2_600
-		if (r_config_get_b (r->config, "bin.aslr")) {
+		if (r->bin->options.aslr) {
 			baseaddr = ((ut64)r_num_rand (32)) << 24;
 			r_config_set_i (r->config, "bin.baddr", baseaddr);
 		}
@@ -651,29 +650,6 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	free (libdir);
 	return ret;
 }
-
-#if 0
-static void load_scripts_for(RCore *core, const char *name) {
-	// imho nobody uses this: run scripts depending on a specific filetype
-	char *file;
-	RListIter *iter;
-	char *hdir = r_str_newf ("%s%s%s%sbin-%s", R2_HOME_BINRC, R_SYS_DIR, "bin-%s", R_SYS_DIR, name);
-	char *path = r_file_home (hdir);
-	RList *files = r_sys_dir (path);
-	if (!r_list_empty (files)) {
-		R_LOG_INFO ("[binrc] path: %s", path);
-	}
-	r_list_foreach (files, iter, file) {
-		if (*file && *file != '.') {
-			R_LOG_INFO ("[binrc] loading %s", file);
-			r_core_cmdf (core, ". %s/%s", path, file);
-		}
-	}
-	r_list_free (files);
-	free (path);
-	free (hdir);
-}
-#endif
 
 typedef struct {
 	const char *name;
