@@ -2823,10 +2823,12 @@ static int cmd_type(void *data, const char *input) {
 				if (input[1] == 'x' && arg) { // "tpx"
 					{
 					char *safe = r_str_sanitize_r2 (fmt);
-					if (safe) {
-						r_core_cmdf (core, "pf %s @x:%s", safe, arg);
-						free (safe);
+					char *safe_arg = r_str_sanitize_r2 (arg);
+					if (safe && safe_arg) {
+						r_core_cmdf (core, "pf %s @x:%s", safe, safe_arg);
 					}
+					free (safe);
+					free (safe_arg);
 				}
 				} else {
 					ut64 addr = arg ? r_num_math (core->num, arg): core->addr;

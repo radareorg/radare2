@@ -892,7 +892,7 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 		}
 		if (info->type && !strcmp (info->type, "fs")) {
 			r_cons_printf (core->cons, "e file.type=fs\n");
-			r_cons_printf (core->cons, "m /root %s 0\n", info->arch);
+			r_cons_printf (core->cons, "'m /root %s 0\n", info->arch);
 		} else {
 			r_cons_printf (core->cons, "e cfg.bigendian=%s\n"
 						"e asm.bits=%i\n"
@@ -903,28 +903,28 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 			int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			r_cons_printf (core->cons, "e arch.codealign=%d\n", (v > 0)? v: 0);
 			if (R_STR_ISNOTEMPTY (info->lang) && info->lang[0] != '?') {
-				r_cons_printf (core->cons, "e bin.lang=%s\n", info->lang);
+				r_cons_printf (core->cons, "'e bin.lang=%s\n", info->lang);
 			}
 			if (R_STR_ISNOTEMPTY (info->charset)) {
-				r_cons_printf (core->cons, "e cfg.charset=%s\n", info->charset);
+				r_cons_printf (core->cons, "'e cfg.charset=%s\n", info->charset);
 			}
 			if (R_STR_ISNOTEMPTY (info->rclass)) {
-				r_cons_printf (core->cons, "e file.type=%s\n", info->rclass);
+				r_cons_printf (core->cons, "'e file.type=%s\n", info->rclass);
 			}
 			if (info->os) {
-				r_cons_printf (core->cons, "e asm.os=%s\n", info->os);
+				r_cons_printf (core->cons, "'e asm.os=%s\n", info->os);
 			}
 			if (info->arch) {
-				r_cons_printf (core->cons, "e asm.arch=%s\n", info->arch);
+				r_cons_printf (core->cons, "'e asm.arch=%s\n", info->arch);
 			}
 			if (R_STR_ISNOTEMPTY (info->cpu)) {
-				r_cons_printf (core->cons, "e asm.cpu=%s\n", info->cpu);
+				r_cons_printf (core->cons, "'e asm.cpu=%s\n", info->cpu);
 			}
 			if (R_STR_ISNOTEMPTY (info->abi)) {
-				r_cons_printf (core->cons, "e asm.abi=%s\n", info->abi);
+				r_cons_printf (core->cons, "'e asm.abi=%s\n", info->abi);
 			}
 			if (R_STR_ISNOTEMPTY (info->default_cc)) {
-				r_cons_printf (core->cons, "e anal.cc=%s", info->default_cc);
+				r_cons_printf (core->cons, "'e anal.cc=%s\n", info->default_cc);
 			}
 		}
 	} else {

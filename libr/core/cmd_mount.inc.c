@@ -85,7 +85,7 @@ static char *readman(RCore *core, const char *page) {
 	char *n = r_str_newf (R2_DATDIR "/doc/radare2/%s", page);
 	if (r_file_exists (n)) {
 		if (r_str_endswith (page, ".r2.md")) {
-			r_core_cmdf (core, ". %s", n);
+			r_core_cmd_callf (core, ". %s", n);
 			free (n);
 			return NULL;
 		}
