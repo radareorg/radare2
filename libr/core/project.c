@@ -640,7 +640,11 @@ static void r_core_project_zip(RCore *core, const char *prj_dir) {
 			char *zipfile = r_str_newf ("%s.zip", prj_name);
 			r_file_rm (zipfile);
 			// XXX use the ZIP api instead!
-			r_sys_cmdf ("zip -r %s %s", zipfile, prj_name);
+			char *ezip = r_str_escape_sh (zipfile);
+			char *ename = r_str_escape_sh (prj_name);
+			r_sys_cmdf ("zip -r \"%s\" \"%s\"", ezip, ename);
+			free (ezip);
+			free (ename);
 			free (zipfile);
 		} else {
 			R_LOG_WARN ("Command injection attempt?");

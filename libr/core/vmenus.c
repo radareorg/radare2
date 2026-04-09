@@ -4298,7 +4298,9 @@ onemoretime:
 				}
 				r_cons_clear (core->cons);
 				r_cons_flush (core->cons);
-				r_sys_cmdf ("man %s", man);
+				char *eman = r_str_escape_sh (man);
+				r_sys_cmdf ("man \"%s\"", eman);
+				free (eman);
 				free (man);
 			}
 			r_cons_any_key (core->cons, NULL);

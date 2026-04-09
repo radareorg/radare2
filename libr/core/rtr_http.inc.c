@@ -165,8 +165,11 @@ static HttpRunResult r_core_rtr_http_run(RCore *core, int launch, int browse, co
 
 	if (browse == 'H') {
 		const char *browser = r_config_get (core->config, "http.browser");
-		r_sys_cmdf ("%s http://%s:%d/%s &",
-			browser, host, atoi (port), r_str_get (path));
+		char *url = r_str_newf ("http://%s:%d/%s", host, atoi (port), r_str_get (path));
+		char *eurl = r_str_escape_sh (url);
+		r_sys_cmdf ("%s \"%s\" &", browser, eurl);
+		free (eurl);
+		free (url);
 	}
 
 	so.httpauth = r_config_get_i (core->config, "http.auth");

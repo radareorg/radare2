@@ -61,7 +61,11 @@ static bool r_core_project_zip_import(RCore *core, const char *inzip) {
 		R_LOG_ERROR ("Cannot mkdir dir.projects");
 	}
 	// unzip in there
-	int res = r_sys_cmdf ("unzip %s -d %s", inzip, prjdir);
+	char *ezip = r_str_escape_sh (inzip);
+	char *edir = r_str_escape_sh (prjdir);
+	int res = r_sys_cmdf ("unzip \"%s\" -d \"%s\"", ezip, edir);
+	free (ezip);
+	free (edir);
 	free (prjdir);
 	return res == 0;
 }
@@ -86,7 +90,11 @@ static void r_core_project_zip_export(RCore *core, const char *prjname, const ch
 			// XXX use the ZIP api instead!
 			const char *ofn = outzip? outzip: zipfile;
 			char *out = (*ofn == '/')? strdup (ofn): r_str_newf ("%s/%s", cwd, ofn);
-			r_sys_cmdf ("zip -r %s %s", out, prj_name);
+			char *eout = r_str_escape_sh (out);
+			char *ename = r_str_escape_sh (prj_name);
+			r_sys_cmdf ("zip -r \"%s\" \"%s\"", eout, ename);
+			free (eout);
+			free (ename);
 			free (out);
 			free (zipfile);
 		} else {
@@ -174,7 +182,9 @@ static void cmd_Pn(RCore *core, const char *input, const char *fileproject) {
 			// edit with cfg.editor
 			const char *editor = r_config_get (core->config, "cfg.editor");
 			if (*notes_file && editor && *editor) {
-				r_sys_cmdf ("%s %s", editor, notes_file);
+				char *epath = r_str_escape_sh (notes_file);
+				r_sys_cmdf ("%s \"%s\"", editor, epath);
+				free (epath);
 			} else {
 				R_LOG_ERROR ("No cfg.editor configured");
 			}
