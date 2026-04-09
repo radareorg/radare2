@@ -186,7 +186,8 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 		return -1;
 	}
 
-	ut64 *lines_cache = R_NEWS0 (ut64, bsz);
+	int cache_sz = bsz;
+	ut64 *lines_cache = R_NEWS0 (ut64, cache_sz);
 	if (!lines_cache) {
 		free (core->print->lines_cache);
 		core->print->lines_cache = NULL;
@@ -213,14 +214,10 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 			if (buf[i] != '\n') {
 				continue;
 			}
-			if ((line_count + 1) >= bsz) {
-				break;
-			}
-
-			// Check if realloc is needed before accessing the array
-			if (line_count % bsz == 0 && line_count > 0) {
+			if (line_count + 1 >= cache_sz) {
+				cache_sz += bsz;
 				ut64 *tmp = realloc (core->print->lines_cache,
-					(line_count + bsz) * sizeof (ut64));
+					cache_sz * sizeof (ut64));
 				if (!tmp) {
 					R_FREE (core->print->lines_cache);
 					line_count = -1;
@@ -228,7 +225,6 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 				}
 				core->print->lines_cache = tmp;
 			}
-
 			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
 			line_count++;
 		}
