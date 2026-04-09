@@ -3121,7 +3121,6 @@ static bool r_panels_handle_mouse(RCore *core, RPanel *panel, int *key) {
 	}
 	if (key && *key == INT8_MAX) {
 		*key = '"';
-		return false;
 	}
 	return false;
 }
@@ -3868,7 +3867,7 @@ static void r_panels_refresh(RCore *core) {
 		print_notch (core);
 		r_cons_canvas_print (can);
 		if (core->scr_gadgets) {
-			r_core_cmd_call (core, "pg");
+			r_core_call (core, "pg");
 		}
 		if (panels->mode == PANEL_MODE_MENU) {
 			RPanelsMenuItem *item = r_panels_get_selected_menu_item (panels);
@@ -5110,7 +5109,7 @@ static void insert_value(RCore *core, int wat) {
 		if (creg) {
 			const char *buf = r_cons_visual_readln (core->cons, "new-reg-value> ", NULL);
 			if (buf) {
-				r_core_cmdf (core, "dr %s = %s", creg, buf);
+				r_core_callf (core, "dr %s = %s", creg, buf);
 				cur->view->refresh = true;
 			}
 		}
@@ -5574,7 +5573,7 @@ static int load_layout_default_cb(void *user) {
 
 static int close_file_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd_call (core, "o-*");
+	r_core_call (core, "o-*");
 	return 0;
 }
 
@@ -5586,13 +5585,13 @@ static int project_open_cb(void *user) {
 
 static int project_save_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd_call (core, "Ps");
+	r_core_call (core, "Ps");
 	return 0;
 }
 
 static int project_close_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd_call (core, "Pc");
+	r_core_call (core, "Pc");
 	return 0;
 }
 
@@ -5681,7 +5680,7 @@ static int copy_cb(void *user) {
 
 static int paste_cb(void *user) {
 	RCore *core = (RCore *)user;
-	r_core_cmd_call (core, "yy");
+	r_core_call (core, "yy");
 	return 0;
 }
 
@@ -6543,7 +6542,7 @@ static void handle_menu(RCore *core, const int key) {
 		}
 		break;
 	case '$':
-		r_core_cmd_call (core, "dr PC=$$");
+		r_core_call (core, "dr PC=$$");
 		break;
 	case ' ':
 	case '\r':
@@ -6840,7 +6839,7 @@ virtualmouse:
 		if (core->print->cur_enabled) {
 			r_core_cmdf (core, "dr PC=$$+%d", core->print->cur);
 		} else {
-			r_core_cmd_call (core, "dr PC=$$");
+			r_core_call (core, "dr PC=$$");
 		}
 		break;
 	case 's':
@@ -6895,9 +6894,9 @@ virtualmouse:
 		break;
 	case 'R':
 		if (r_config_get_b (core->config, "scr.randpal")) {
-			r_core_cmd_call (core, "ecr");
+			r_core_call (core, "ecr");
 		} else {
-			r_core_cmd_call (core, "ecn");
+			r_core_call (core, "ecn");
 		}
 		r_panels_do_panels_refresh (core);
 		break;
@@ -7202,10 +7201,10 @@ virtualmouse:
 				if (!strcmp (format, "hexdump")) {
 					replace_cmd (core, "px", "px");
 				} else if (!strcmp (format, "analyze function")) {
-					r_core_cmd_call (core, "af");
-					r_core_cmd_call (core, "aaef");
+					r_core_call (core, "af");
+					r_core_call (core, "aaef");
 				} else if (!strcmp (format, "analyze program")) {
-					r_core_cmd_call (core, "aaa");
+					r_core_call (core, "aaa");
 				} else if (!strcmp (format, "address")) {
 					r_config_toggle (core->config, "asm.addr");
 				} else if (!strcmp (format, "esil")) {
@@ -7266,9 +7265,7 @@ virtualmouse:
 		if (r_panels_check_func (core)) {
 			r_cons_canvas_free (can);
 			panels->can = NULL;
-
 			replace_cmd (core, "Decompiler", "pdc");
-
 			int h, w = r_panels_get_size (core, &h);
 			panels->can = r_panels_create_new_canvas (core, w, h);
 		}
@@ -7291,13 +7288,13 @@ virtualmouse:
 		break;
 	case R_CONS_KEY_F1:
 		cmd = r_config_get (core->config, "key.f1");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F2:
 		cmd = r_config_get (core->config, "key.f2");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panel_breakpoint (core);
@@ -7305,31 +7302,31 @@ virtualmouse:
 		break;
 	case R_CONS_KEY_F3:
 		cmd = r_config_get (core->config, "key.f3");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F4:
 		cmd = r_config_get (core->config, "key.f4");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F5:
 		cmd = r_config_get (core->config, "key.f5");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F6:
 		cmd = r_config_get (core->config, "key.f6");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F7:
 		cmd = r_config_get (core->config, "key.f7");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panel_single_step_in (core);
@@ -7340,7 +7337,7 @@ virtualmouse:
 		break;
 	case R_CONS_KEY_F8:
 		cmd = r_config_get (core->config, "key.f8");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			panel_single_step_over (core);
@@ -7351,7 +7348,7 @@ virtualmouse:
 		break;
 	case R_CONS_KEY_F9:
 		cmd = r_config_get (core->config, "key.f9");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		} else {
 			if (r_panels_check_panel_type (cur, "pd")) {
@@ -7362,19 +7359,19 @@ virtualmouse:
 		break;
 	case R_CONS_KEY_F10:
 		cmd = r_config_get (core->config, "key.f10");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F11:
 		cmd = r_config_get (core->config, "key.f11");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
 	case R_CONS_KEY_F12:
 		cmd = r_config_get (core->config, "key.f12");
-		if (cmd && *cmd) {
+		if (R_STR_ISNOTEMPTY (cmd)) {
 			(void)r_core_cmd0 (core, cmd);
 		}
 		break;
@@ -7409,8 +7406,6 @@ exit:
 	core->panels = prev;
 	r_cons_set_interactive (core->cons, o_interactive);
 }
-
-
 
 static void init_new_panels_root(RCore *core) {
 	RPanelsRoot *panels_root = core->panels_root;
