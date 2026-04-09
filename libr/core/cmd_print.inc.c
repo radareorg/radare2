@@ -5415,7 +5415,6 @@ static void cmd_pp(RCore *core, const char *_input) {
 		return;
 	}
 	RStrBuf *sb = r_strbuf_new ("");
-	const bool be = r_config_get_b (core->config, "cfg.bigendian");
 	switch (input[0]) {
 	case 'd': // "ppd"
 		// debruijn pattern
@@ -5443,12 +5442,7 @@ static void cmd_pp(RCore *core, const char *_input) {
 		{
 			int min = (core->addr & 0xffff);
 			for (i = 0; i < len; i++) {
-				ut16 val = (ut16)((i + min) & 0xffff);
-				if (be) {
-					r_strbuf_appendf (sb, "%04x", val);
-				} else {
-					r_strbuf_appendf (sb, "%02x%02x", val & 0xff, (val >> 8) & 0xff);
-				}
+				r_strbuf_appendf (sb, "%04x", (int)(i + min) & 0xffff);
 			}
 		}
 		break;
@@ -5457,14 +5451,7 @@ static void cmd_pp(RCore *core, const char *_input) {
 		{
 			ut32 min = (core->addr & UT32_MAX);
 			for (i = 0; i < len; i++) {
-				ut32 val = (ut32)((i + min) & UT32_MAX);
-				if (be) {
-					r_strbuf_appendf (sb, "%08x", val);
-				} else {
-					r_strbuf_appendf (sb, "%02x%02x%02x%02x",
-						val & 0xff, (val >> 8) & 0xff,
-						(val >> 16) & 0xff, (val >> 24) & 0xff);
-				}
+				r_strbuf_appendf (sb, "%08x", (ut32)((i + min) & UT32_MAX));
 			}
 		}
 		break;
@@ -5473,16 +5460,7 @@ static void cmd_pp(RCore *core, const char *_input) {
 		{
 			ut64 min = (core->addr);
 			for (i = 0; i < len; i++) {
-				ut64 val = i + min;
-				if (be) {
-					r_strbuf_appendf (sb, "%016" PFMT64x, val);
-				} else {
-					r_strbuf_appendf (sb, "%02x%02x%02x%02x%02x%02x%02x%02x",
-						(ut32)(val & 0xff), (ut32)((val >> 8) & 0xff),
-						(ut32)((val >> 16) & 0xff), (ut32)((val >> 24) & 0xff),
-						(ut32)((val >> 32) & 0xff), (ut32)((val >> 40) & 0xff),
-						(ut32)((val >> 48) & 0xff), (ut32)((val >> 56) & 0xff));
-				}
+				r_strbuf_appendf (sb, "%016" PFMT64x, i + min);
 			}
 		}
 		break;
