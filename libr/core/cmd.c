@@ -4904,7 +4904,9 @@ repeat:;
 		if (use_editor) {
 			const char *editor = r_config_get (core->config, "cfg.editor");
 			if (R_STR_ISNOTEMPTY (editor)) {
-				r_sys_cmdf ("%s '%s'", editor, str);
+				char *estr = r_str_escape_sh (str);
+				r_sys_cmdf ("%s \"%s\"", editor, estr);
+				free (estr);
 				r_file_rm (str);
 			} else {
 				R_LOG_ERROR ("No value defined for cfg.editor");

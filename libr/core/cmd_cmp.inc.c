@@ -1123,7 +1123,9 @@ static void _core_cmp_info(RCore *core, const char *input) {
 
 static void cmd_curl(RCore *core, const char *arg) {
 	if (r_sys_getenv_asbool ("R2_CURL")) {
-		r_sys_cmdf ("curl %s", arg);
+		char *earg = r_str_escape_sh (arg);
+		r_sys_cmdf ("curl \"%s\"", earg);
+		free (earg);
 	} else {
 		char *postdata = NULL;
 		arg = r_str_trim_head_ro (arg);
