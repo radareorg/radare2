@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2007-2025 - pancake */
+/* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #define R_LOG_ORIGIN "util.file"
 
@@ -55,6 +55,9 @@ R_API char *r_file_new(const char *root, ...) {
 	va_list ap;
 	va_start (ap, root);
 	RStrBuf *sb = r_strbuf_new ("");
+	if (!root) {
+		root = "";
+	}
 	if (!strcmp (root, "~")) {
 		char *h = r_file_home (NULL);
 		if (!h) {
