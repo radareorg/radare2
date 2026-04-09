@@ -523,7 +523,11 @@ static int rafind_open_file(RafindOptions *ro, const char *file, const ut8 *data
 	if (ro->mode == R_SEARCH_ESIL) {
 		/* TODO: implement using api */
 		r_list_foreach (ro->keywords, iter, kw) {
-			r_sys_cmdf ("r2 -qc \"/E %s\" \"%s\"", kw, efile);
+			char *ekw = r_str_escape_sh (kw);
+			if (ekw) {
+				r_sys_cmdf ("r2 -qc \"/E %s\" \"%s\"", ekw, efile);
+				free (ekw);
+			}
 		}
 		goto done;
 	}

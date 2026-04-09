@@ -8,7 +8,7 @@ extern const RvcPlugin r_vc_plugin_git;
 static Rvc *open_git(const char *path) {
 	char *git_path = r_file_new (path, ".git", NULL);
 	if (!git_path || !r_file_is_directory (git_path)) {
-		char *escpath = r_str_escape (path);
+		char *escpath = r_str_escape_sh (path);
 		int ret = r_sys_cmdf ("git init \"%s\" > %s", escpath, R_SYS_DEVNULL);
 		if (ret != 0) {
 			R_LOG_WARN ("git init failed");
@@ -34,11 +34,11 @@ static Rvc *open_git(const char *path) {
 }
 
 static bool _git_branch(Rvc *vc, const char *name) {
-	char *escpath = r_str_escape (vc->path);
+	char *escpath = r_str_escape_sh (vc->path);
 	if (!escpath) {
 		return false;
 	}
-	char *escname = r_str_escape (name);
+	char *escname = r_str_escape_sh (name);
 	if (!escname) {
 		free (escpath);
 		return false;
@@ -50,8 +50,8 @@ static bool _git_branch(Rvc *vc, const char *name) {
 }
 
 static bool checkout_git(Rvc *vc, const char *name) {
-	char *escpath = r_str_escape (vc->path);
-	char *escname = r_str_escape (name);
+	char *escpath = r_str_escape_sh (vc->path);
+	char *escname = r_str_escape_sh (name);
 	int ret = r_sys_cmdf ("git -C \"%s\" checkout \"%s\"", escpath, escname);
 	free (escname);
 	free (escpath);
@@ -71,12 +71,12 @@ static bool add_git(Rvc *vc, const RList *files) {
 	}
 	bool ret = true;
 	r_list_foreach (files, iter, fname) {
-		char *escfname = r_str_escape (fname);
+		char *escfname = r_str_escape_sh (fname);
 		if (!escfname) {
 			ret = false;
 			break;
 		}
-		ret &= !r_sys_cmdf ("git add \"%s\"", escfname);
+		ret &= !r_sys_cmdf ("git add -- \"%s\"", escfname);
 		free (escfname);
 	}
 	if (!r_sys_chdir (cwd)) {
@@ -95,10 +95,10 @@ static bool commit_git(Rvc *vc, const char *_message, const char *author, const 
 	char *escauth;
 	if (!author) {
 		char *user = r_sys_whoami ();
-		escauth = r_str_escape (user);
+		escauth = r_str_escape_sh (user);
 		free (user);
 	} else {
-		escauth = r_str_escape (author);
+		escauth = r_str_escape_sh (author);
 	}
 	if (!escauth) {
 		free (message);
@@ -110,7 +110,7 @@ static bool commit_git(Rvc *vc, const char *_message, const char *author, const 
 	}
 	if (R_STR_ISEMPTY (message)) {
 		R_FREE (message);
-		char *epath = r_str_escape (vc->path);
+		char *epath = r_str_escape_sh (vc->path);
 		if (epath) {
 			// XXX ensure CWD in the same line?
 			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"", epath, escauth, escauth);
@@ -120,9 +120,9 @@ static bool commit_git(Rvc *vc, const char *_message, const char *author, const 
 		}
 		return false;
 	}
-	char *epath = r_str_escape (vc->path);
+	char *epath = r_str_escape_sh (vc->path);
 	if (epath) {
-		char *emsg = r_str_escape (message);
+		char *emsg = r_str_escape_sh (message);
 		if (emsg) {
 			int res = r_sys_cmdf ("git -C \"%s\" commit -m \"%s\" --author \"%s <%s@localhost>\"",
 					epath, emsg, escauth, escauth);
@@ -172,9 +172,9 @@ R_API bool r_vc_git_repo_exists(const RCore *core, const char *path) {
 
 R_API RList *branches_git(Rvc *rvc) {
 	RList *ret = NULL;
-	char *esc_path = r_str_escape (rvc->path);
+	char *esc_path = r_str_escape_sh (rvc->path);
 	if (esc_path) {
-		char *output = r_sys_cmd_strf ("git -C %s branch --color=never", esc_path);
+		char *output = r_sys_cmd_strf ("git -C \"%s\" branch --color=never", esc_path);
 		r_str_trim (output);
 		free (esc_path);
 		if (!R_STR_ISEMPTY (output)) {
@@ -195,9 +195,9 @@ R_API RList *branches_git(Rvc *rvc) {
 
 static RList *uncommited_git(Rvc *rvc) {
 	RList *ret = NULL;
-	char *esc_path = r_str_escape (rvc->path);
+	char *esc_path = r_str_escape_sh (rvc->path);
 	if (esc_path) {
-		char *output = r_sys_cmd_strf ("git -C %s status --short",
+		char *output = r_sys_cmd_strf ("git -C \"%s\" status --short",
 				esc_path);
 		free (esc_path);
 		if (!R_STR_ISEMPTY (output)) {
@@ -228,9 +228,9 @@ static RList *uncommited_git(Rvc *rvc) {
 
 static bool log_git(Rvc *rvc) {
 	bool ret = true;
-	char *esc_path = r_str_escape (rvc->path);
+	char *esc_path = r_str_escape_sh (rvc->path);
 	if (esc_path) {
-		ret = !r_sys_cmdf ("git -C %s log", esc_path);
+		ret = !r_sys_cmdf ("git -C \"%s\" log", esc_path);
 		free (esc_path);
 	}
 	return ret;
@@ -238,9 +238,9 @@ static bool log_git(Rvc *rvc) {
 
 R_API char *curbranch_git(Rvc *rvc) {
 	char *ret = NULL;
-	char *esc_path = r_str_escape (rvc->path);
+	char *esc_path = r_str_escape_sh (rvc->path);
 	if (esc_path) {
-		char *branch = r_sys_cmd_strf ("git -C %s rev-parse --abbrev-ref HEAD", esc_path);
+		char *branch = r_sys_cmd_strf ("git -C \"%s\" rev-parse --abbrev-ref HEAD", esc_path);
 		if (!R_STR_ISEMPTY (branch)) {
 			ret = r_str_ndup (branch, strlen (branch) - 1);
 		}
@@ -251,9 +251,9 @@ R_API char *curbranch_git(Rvc *rvc) {
 }
 
 static bool reset_git(Rvc *rvc) {
-	char *esc_path = r_str_escape (rvc->path);
+	char *esc_path = r_str_escape_sh (rvc->path);
 	if (esc_path) {
-		bool ret = r_sys_cmdf ("git -C %s checkout .", esc_path);
+		bool ret = r_sys_cmdf ("git -C \"%s\" checkout .", esc_path);
 		free (esc_path);
 		return !ret;
 	}
@@ -261,11 +261,11 @@ static bool reset_git(Rvc *rvc) {
 }
 
 static bool clone_git(const Rvc *rvc, const char *dst) {
-	char *esc_src = r_str_escape (rvc->path);
-	char *esc_dst = r_str_escape (dst);
+	char *esc_src = r_str_escape_sh (rvc->path);
+	char *esc_dst = r_str_escape_sh (dst);
 	bool ret = false;
 	if (esc_src && esc_dst) {
-		ret = !r_sys_cmdf ("git clone %s %s", esc_src, esc_dst);
+		ret = !r_sys_cmdf ("git clone \"%s\" \"%s\"", esc_src, esc_dst);
 	}
 	free (esc_src);
 	free (esc_dst);

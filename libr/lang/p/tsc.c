@@ -76,8 +76,10 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 	int rc = 0;
 	/// check of ofile exists and its newer than file
 	if (!r_file_is_newer (qjs_ofile, file)) {
+		char *efile = r_str_escape_sh (file);
+		char *ejs_ofile = r_str_escape_sh (js_ofile);
 		if (use_node) {
-			rc = r_sys_cmdf ("tsc %s", file);
+			rc = (efile)? r_sys_cmdf ("tsc \"%s\"", efile): -1;
 		} else {
 			char *name = strdup (file);
 			char *dot = strchr (name, '.');
@@ -85,7 +87,9 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 				*dot = 0;
 			}
 			// TODO: compile to stdout and remove the need of another tmp file
-			rc = r_sys_cmdf ("tsc --target es2020 --allowJs --outFile %s --lib es2020,dom --moduleResolution node --module amd %s", js_ofile, file);
+			rc = (efile && ejs_ofile)
+				? r_sys_cmdf ("tsc --target es2020 --allowJs --outFile \"%s\" --lib es2020,dom --moduleResolution node --module amd \"%s\"", ejs_ofile, efile)
+				: -1;
 			if (rc == 0) {
 				char *js_ifile = r_file_slurp (js_ofile, NULL);
 				RStrBuf *sb = r_strbuf_new ("");
@@ -107,6 +111,8 @@ static bool lang_tsc_file(RLangSession *s, const char *file) {
 				r_file_rm (js_ofile);
 			}
 		}
+		free (efile);
+		free (ejs_ofile);
 	} else {
 		R_LOG_DEBUG ("no need to compile");
 	}
