@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #if R_INCLUDE_BEGIN
 
@@ -164,8 +164,8 @@ static RCoreHelpMessage help_msg_fz = {
 	NULL
 };
 
-static bool listFlag(RFlagItem *flag, void *user) {
-	r_list_append (user, flag);
+static bool listFlag(RFlagItem *fi, void *user) {
+	r_list_append ((RList *)user, fi);
 	return true;
 }
 
@@ -284,8 +284,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
-						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
+						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
 						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
@@ -300,8 +300,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
-						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
+						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
 						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, name + parent_len);
@@ -318,8 +318,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 				if (!ht_pp_find (ctx->processed, name, NULL) && strcmp (name, parent_prefix) != 0) {
 					ht_pp_insert (ctx->processed, name, (void *)1);
 					if (mode == '*') {
-						r_cons_printf (core->cons, "agn %s %s\n", name, name + parent_len);
-						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
+						r_cons_printf (core->cons, "'agn %s %s\n", name, name + parent_len);
+						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", name);
 					} else {
 						char *pad = r_str_pad (NULL, 0, ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", pad, name + parent_len);
@@ -354,8 +354,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					ht_pp_insert (ctx->processed, group, (void *)1);
 					/* Print the group prefix */
 					if (mode == '*') {
-						r_cons_printf (core->cons, "agn %s %s\n", group, group + parent_len);
-						r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
+						r_cons_printf (core->cons, "'agn %s %s\n", group, group + parent_len);
+						r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", group);
 					} else {
 						r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 						r_cons_printf (core->cons, "%s %s\n", padstr, group + parent_len);
@@ -396,8 +396,8 @@ static void __printRecursive(RCore *core, RList *flags, const char *prefix, int 
 					if (!ht_pp_find (ctx->processed, fname, NULL) && strcmp (fname, parent_prefix) != 0) {
 						ht_pp_insert (ctx->processed, fname, (void *)1);
 						if (mode == '*') {
-							r_cons_printf (core->cons, "agn %s %s\n", fname, fname + parent_len);
-							r_cons_printf (core->cons, "age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
+							r_cons_printf (core->cons, "'agn %s %s\n", fname, fname + parent_len);
+							r_cons_printf (core->cons, "'age %s %s\n", *parent_prefix ? parent_prefix : "root", fname);
 						} else {
 							r_str_pad (padstr, sizeof (padstr), ' ', parent_len);
 							r_cons_printf (core->cons, "%s %s\n", padstr, fname + parent_len);
@@ -686,7 +686,6 @@ static bool flag_to_flag_foreach(RFlagItem *fi, void *user) {
 }
 
 static int flag_to_flag(RCore *core, const char *glob) {
-	R_RETURN_VAL_IF_FAIL (glob, 0);
 	glob = r_str_trim_head_ro (glob);
 	struct flag_to_flag_t u = { .next = UT64_MAX, .addr = core->addr };
 	r_flag_foreach_glob (core->flags, glob, flag_to_flag_foreach, &u);
@@ -738,7 +737,6 @@ static void cmd_flag_table(RCore *core, const char *input) {
 }
 
 static void load_default_flag_tags(RCore *core) {
-	R_RETURN_IF_FAIL (core);
 	RCorePriv *priv = core->priv;
 	if (priv->tags_loaded) {
 		return;
@@ -759,6 +757,7 @@ static void load_default_flag_tags(RCore *core) {
 static void cmd_flag_tags(RCore *core, const char *input) {
 	load_default_flag_tags (core);
 	char mode = input[1];
+	char submode = mode ? input[2] : 0;
 	for (; *input && !IS_WHITESPACE (*input); input++) {}
 	char *inp = strdup (input);
 	char *arg = inp;
@@ -784,8 +783,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RListIter *iter;
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
-		//	r_cons_printf (core->cons, "%s:\n", tag);
-			r_core_cmdf (core, "ftn %s", tag);
+			r_core_callf (core, "ftn %s", tag);
 		}
 		r_list_free (list);
 		free (inp);
@@ -798,7 +796,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		r_list_foreach (list, iter, tag) {
 			r_strf_var (key, 128, "tag.%s", tag);
 			const char *flags = sdb_get (core->flags->tags, key, NULL);
-			r_cons_printf (core->cons, "ft %s %s\n", tag, flags);
+			r_cons_printf (core->cons, "'ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);
 		free (inp);
@@ -838,12 +836,24 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RList *flags = r_flag_tags_get (core->flags, arg);
 		switch (mode) {
 		case 'n': // "ftn"
-			  // TODO : implement ftnj
-			  // TODO : implement ftn, -> using table api
-			r_list_foreach (flags, iter, flag) {
-				// r_cons_printf (core->cons, "0x%08"PFMT64x"\n", flag->addr);
-				r_cons_printf (core->cons, "0x%08"PFMT64x"  %s  %s\n",
-						flag->addr, arg, flag->name);
+			if (submode == 'j') { // "ftnj"
+				PJ *pj = r_core_pj_new (core);
+				pj_a (pj);
+				r_list_foreach (flags, iter, flag) {
+					pj_o (pj);
+					pj_kn (pj, "addr", flag->addr);
+					pj_ks (pj, "tag", arg);
+					pj_ks (pj, "name", flag->name);
+					pj_end (pj);
+				}
+				pj_end (pj);
+				r_cons_printf (core->cons, "%s\n", pj_string (pj));
+				pj_free (pj);
+			} else {
+				r_list_foreach (flags, iter, flag) {
+					r_cons_printf (core->cons, "0x%08"PFMT64x"  %s  %s\n",
+							flag->addr, arg, flag->name);
+				}
 			}
 			break;
 		default:
@@ -888,33 +898,6 @@ static void flag_ordinals(RCore *core, const char *str) {
 static int cmpflag(const void *_a, const void *_b) {
 	const RFlagItem *flag1 = _a , *flag2 = _b;
 	return (flag1->addr - flag2->addr);
-}
-
-struct find_flag_t {
-	RFlagItem *win;
-	ut64 at;
-};
-
-static bool find_flag_after(RFlagItem *flag, void *user) {
-	struct find_flag_t *u = (struct find_flag_t *)user;
-	if (flag->addr > u->at && (!u->win || flag->addr < u->win->addr)) {
-		u->win = flag;
-	}
-	return true;
-}
-
-static bool find_flag_after_foreach(RFlagItem *flag, void *user) {
-	if (flag->size != 0) {
-		return true;
-	}
-
-	RFlag *flags = (RFlag *)user;
-	struct find_flag_t u = { .win = NULL, .at = flag->addr };
-	r_flag_foreach (flags, find_flag_after, &u);
-	if (u.win) {
-		flag->size = u.win->addr - flag->addr;
-	}
-	return true;
 }
 
 static bool adjust_offset(RFlagItem *flag, void *user) {
@@ -1005,54 +988,39 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 static void cmd_fd_dot(RCore *core, const char *input) {
 	RFlagItem *flag;
 	RListIter *iter;
-	bool isJson = false;
-	const RList *flaglist;
 	const char *arg = strchr (input, ' ');
 	ut64 addr = core->addr;
 	if (arg) {
 		addr = r_num_math (core->num, arg + 1);
 	}
-	flaglist = r_flag_get_list (core->flags, addr);
-	isJson = strchr (input, 'j');
-	PJ *pj = r_core_pj_new (core);
-	if (isJson) {
+	const RList *flaglist = r_flag_get_list (core->flags, addr);
+	bool isJson = strchr (input, 'j') != NULL;
+	PJ *pj = isJson? r_core_pj_new (core): NULL;
+	if (pj) {
 		pj_a (pj);
 	}
-
-	// Sometime an address has multiple flags assigned to, show them all
 	r_list_foreach (flaglist, iter, flag) {
-		if (flag) {
-			if (isJson) {
-				pj_o (pj);
-				pj_ks (pj, "name", flag->name);
-				if (flag->realname) {
-					pj_ks (pj, "realname", flag->realname);
-				}
-				pj_end (pj);
-
-			} else {
-				// Print realname if exists and asm.flags.real is enabled
-				if (core->flags->realnames && flag->realname) {
-					r_cons_println (core->cons, flag->realname);
-				} else {
-					r_cons_println (core->cons, flag->name);
-				}
+		if (isJson) {
+			pj_o (pj);
+			pj_ks (pj, "name", flag->name);
+			if (flag->realname) {
+				pj_ks (pj, "realname", flag->realname);
 			}
+			pj_end (pj);
+		} else {
+			const char *name = (core->flags->realnames && flag->realname)
+				? flag->realname : flag->name;
+			r_cons_println (core->cons, name);
 		}
 	}
-
-	if (isJson) {
+	if (pj) {
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));
-	}
-
-	if (pj) {
 		pj_free (pj);
 	}
 }
 
 static void print_function_labels_for(RCore *core, RAnalFunction *fcn, int rad, PJ *pj) {
-	R_RETURN_IF_FAIL (fcn && (rad != 'j' || pj));
 	bool json = rad == 'j';
 	if (json) {
 		pj_o (pj);
@@ -1065,7 +1033,6 @@ static void print_function_labels_for(RCore *core, RAnalFunction *fcn, int rad, 
 }
 
 static void print_function_labels(RCore *core, RAnalFunction *fcn, int rad) {
-	R_RETURN_IF_FAIL (core || fcn);
 	RAnal *anal = core->anal;
 	PJ *pj = NULL;
 	bool json = rad == 'j';
@@ -1226,17 +1193,7 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 	char* comment = NULL;
 	bool comment_needs_free = false;
 	RFlagItem *item;
-	ut32 bsze = 1; // core->blocksize;
-#if 0
-	int eqdir = 0;
-	if (eq && eq > cstr) {
-		if (sign > 0) {
-			eqdir = 1;
-		} else if (sign < 0) {
-			eqdir = -1;
-		}
-	}
-#endif
+	ut32 bsze = 1;
 	// Get outta here as fast as we can so we can make sure that the comment
 	// buffer used on later code can be freed properly if necessary.
 	if (*cstr == '.') {
@@ -1252,14 +1209,6 @@ static bool cmd_flag_add(RCore * R_NONNULL core, const char *str, bool addsign) 
 			return 0;
 		}
 		off = arg;
-#if 0
-		RFlagItem *item = r_flag_get (core->flags, cstr);
-		if (sign && item) {
-			off = item->offset + (arg * eqdir);
-		} else {
-			off = arg;
-		}
-#endif
 	}
 	if (s) {
 		*s = '\0';
@@ -1413,7 +1362,6 @@ static void cmd_flag_spaces(RCore *core, const char *input) {
 			r_core_cmd_help_match (core, help_msg_fs, "fsr");
 		} else if (input[2] == ' ') {
 			char *newname = r_str_trim_dup (input + 3);
-			r_str_trim (newname);
 			r_flag_space_rename (core->flags, NULL, newname);
 			free (newname);
 		} else {
@@ -1446,7 +1394,6 @@ static void cmd_flag_spaces(RCore *core, const char *input) {
 	case ' ':
 		{
 			char *name = r_str_trim_dup (input + 2);
-			r_str_trim (name);
 			r_flag_space_set (core->flags, name);
 			free (name);
 			break;
@@ -1796,9 +1743,6 @@ static int cmd_flag(void *data, const char *input) {
 			r_flag_unset_all (core->flags);
 		} else if (input[1]) {
 			const char *flagname = r_str_trim_head_ro (input + 1);
-			while (*flagname == ' ') {
-				flagname++;
-			}
 			if (*flagname == '?') {
 				r_core_cmd_help_contains (core, help_msg_f, "f-");
 			} else if (isdigit (*flagname)) {
@@ -1875,16 +1819,36 @@ static int cmd_flag(void *data, const char *input) {
 		if (input[1] == '?') { // "fl?"
 			r_core_cmd_help_contains (core, help_msg_f, "fl");
 		} else if (input[1] == 'a') { // "fla"
-			// TODO: we can optimize this if core->flags->flags is sorted by flagitem->offset
-			char *glob;
 			if (input[2] == '?') { // "fla?"
 				r_core_cmd_help_match (core, help_msg_f, "fla");
+				break;
 			}
-			glob = strchr (input, ' ');
+			char *glob = strchr (input, ' ');
 			if (glob) {
 				glob++;
 			}
-			r_flag_foreach_glob (core->flags, glob, find_flag_after_foreach, core->flags);
+			// collect all flags sorted by addr (skip list order), then single O(n) pass
+			RList *all_flags = r_list_newf (NULL);
+			r_flag_foreach (core->flags, listFlag, all_flags);
+			RListIter *iter;
+			RFlagItem *fi;
+			r_list_foreach (all_flags, iter, fi) {
+				if (fi->size != 0) {
+					continue;
+				}
+				if (glob && !r_str_glob (fi->name, glob)) {
+					continue;
+				}
+				RListIter *ni;
+				for (ni = iter->n; ni; ni = ni->n) {
+					RFlagItem *nf = ni->data;
+					if (nf->addr > fi->addr) {
+						fi->size = nf->addr - fi->addr;
+						break;
+					}
+				}
+			}
+			r_list_free (all_flags);
 		} else if (input[1] == ' ') { // "fl ..."
 			char *p, *arg = strdup (input + 2);
 			r_str_trim (arg);
@@ -1916,23 +1880,6 @@ static int cmd_flag(void *data, const char *input) {
 			}
 		}
 		break;
-#if 0
-	case 'd':
-		if (input[1] == ' ') {
-			char cmd[128];
-			RFlagItem *item = r_flag_get_in (core->flags,
-				r_num_math (core->num, input+2));
-			if (item) {
-				r_cons_printf (core->cons, "0x%08"PFMT64x"\n", item->offset);
-				snprintf (cmd, sizeof (cmd), "pD@%"PFMT64d":%"PFMT64d,
-					 item->offset, item->size);
-				r_core_cmd0 (core, cmd);
-			}
-		} else {
-			R_LOG_ERROR ("add help here");
-		}
-		break;
-#endif
 	case 'z': // "fz" or "fzs"
 		if (input[1] == 's') {
 			cmd_fzs (core, input + 2);
