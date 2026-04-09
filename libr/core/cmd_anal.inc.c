@@ -1635,8 +1635,12 @@ static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const c
 		const char *bp = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_BP);
 		r_cons_printf (core->cons, "f-fcnvar*\n");
 		r_list_foreach (list, iter, var) {
-			r_cons_printf (core->cons, "f fcnvar.%s @ %s%s%d\n", var->name, bp,
-				var->delta >= 0? "+":"", var->delta);
+			char *fname = r_name_filter_dup (var->name);
+			if (fname) {
+				r_cons_printf (core->cons, "'@%s%s%d'f fcnvar.%s\n",
+					bp, var->delta >= 0? "+":"", var->delta, fname);
+				free (fname);
+			}
 		}
 		r_list_free (list);
 		return;
@@ -1708,14 +1712,17 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 		goto failure;
 	}
 	RAnalVar *var = r_anal_get_used_function_var (core->anal, op.addr);
-	// RFlagItem *fi = r_flag_get_at (core->flags, at, false);
 
 	ut64 tgt_addr = op.jump != UT64_MAX? op.jump: op.ptr;
 	if (var) {
 		if (name) {
 			ret = r_anal_var_rename (core->anal, var, name) ? 0 : -1;
 		} else if (mode == '*') {
-			r_cons_printf (core->cons, "f %s=0x%" PFMT64x "\n", var->name, tgt_addr);
+			char *fname = r_name_filter_dup (var->name);
+			if (fname) {
+				r_cons_printf (core->cons, "'f %s=0x%" PFMT64x "\n", fname, tgt_addr);
+				free (fname);
+			}
 		} else if (mode == 'j') {
 			pj_o (pj);
 			pj_ks (pj, "name", var->name);
@@ -1738,7 +1745,11 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 			if (name) {
 				ret = r_anal_function_rename (fcn, name)? 0: -1;
 			} else if (mode == '*') {
-				r_cons_printf (core->cons, "f %s=0x%" PFMT64x "\n", fcn->name, core->addr);
+				char *fname = r_name_filter_dup (fcn->name);
+				if (fname) {
+					r_cons_printf (core->cons, "'f %s=0x%" PFMT64x "\n", fname, core->addr);
+					free (fname);
+				}
 			} else if (mode == 'j') {
 				pj_o (pj);
 				pj_ks (pj, "name", fcn->name);
@@ -1764,7 +1775,11 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					name = hname;
 				}
 				if (mode == '*') {
-					r_cons_printf (core->cons, "f %s=0x%" PFMT64x "\n", name, core->addr);
+					char *fname = r_name_filter_dup (name);
+					if (fname) {
+						r_cons_printf (core->cons, "'f %s=0x%" PFMT64x "\n", fname, core->addr);
+						free (fname);
+					}
 				} else if (mode == 'j') {
 					pj_o (pj);
 					pj_ks (pj, "name", f->name);
@@ -1795,7 +1810,11 @@ static int cmd_an2(RCore *core, const char *name, int mode) {
 					name = hname;
 				}
 				if (mode == '*') {
-					r_cons_printf (core->cons, "f %s=0x%" PFMT64x "\n", name, core->addr);
+					char *fname = r_name_filter_dup (name);
+					if (fname) {
+						r_cons_printf (core->cons, "'f %s=0x%" PFMT64x "\n", fname, core->addr);
+						free (fname);
+					}
 				} else if (mode == 'j') {
 					pj_o (pj);
 					pj_ks (pj, "name", name);
@@ -3861,7 +3880,9 @@ static bool __setFunctionName(RCore *core, ut64 addr, const char *_name, bool pr
 		RFlagItem *flag = r_flag_get (core->flags, fcn->name);
 		if (flag && flag->space && strcmp (flag->space->name, R_FLAGS_FS_FUNCTIONS) == 0) {
 			// Only flags in the functions fs should be renamed, e.g. we don't want to rename symbol flags.
-			r_flag_rename (core->flags, flag, fname);
+			if (fname) {
+				r_flag_rename (core->flags, flag, fname);
+			}
 		} else {
 			// No flag or not specific to the function, create a new one.
 			r_flag_space_push (core->flags, R_FLAGS_FS_FUNCTIONS);
@@ -5927,15 +5948,19 @@ static int cmd_af(RCore *core, const char *input) {
 				ls_foreach (keys, liter, kv) {
 					const char *key = sdbkv_key (kv);
 					const char *value = sdbkv_value (kv);
-				    if (verbose) {
+					if (verbose) {
 						ut64 fcn_xref_addr = r_num_get (NULL, key);
 						RAnalFunction *xref = r_anal_get_fcn_in (core->anal, fcn_xref_addr, R_ANAL_FCN_TYPE_ANY);
 						if (xref) {
 							r_cons_printf (core->cons, "%s %s\n",  xref->name, value);
 							continue;
 						}
-					} else if (rad) {                                                                                                                                                                                      r_cons_printf (core->cons, "s %s;af-;af;s-\n", (const char *)kv->base.key);
-						r_cons_printf (core->cons, "s %s;af-;af;s-\n", key);
+					} else if (rad) {
+						char *skey = r_str_sanitize_r2 (key);
+						if (skey) {
+							r_cons_printf (core->cons, "'s %s\n'af-\n'af\n's-\n", skey);
+							free (skey);
+						}
 						continue;
 					}
 					r_cons_printf (core->cons, "%s %s\n", key, value);
@@ -11357,7 +11382,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 			r_anal_xrefs_set (core->anal, at, addr, reftype);
 			free (ptr);
 		}
-	   	break;
+		break;
 	default:
 	case '?':
 		r_core_cmd_help (core, help_msg_ax);
@@ -11510,16 +11535,16 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 				base = 11;
 			} else {
 				base = (input[2] == 's') ? 1 :
-				       (input[2] == 'b') ? 2 :
-				       (input[2] == 'p') ? 3 :
-				       (input[2] == 'o') ? 8 :
-				       (input[2] == 'l') ? 31 : // smaLL integers (SMI)
-				       (input[2] == 'd') ? 10 :
-				       (input[2] == 'h') ? 16 :
-				       (input[2] == 'i') ? 32 : // ip address
-				       (input[2] == '3') ? (input[3] == '1') ? 31: 36 : // base36 // could trick 31
-				       (input[2] == 'S') ? 80 : // syscall
-				       (int) r_num_math (core->num, input + 1);
+					(input[2] == 'b') ? 2 :
+					(input[2] == 'p') ? 3 :
+					(input[2] == 'o') ? 8 :
+					(input[2] == 'l') ? 31 : // smaLL integers (SMI)
+					(input[2] == 'd') ? 10 :
+					(input[2] == 'h') ? 16 :
+					(input[2] == 'i') ? 32 : // ip address
+					(input[2] == '3') ? (input[3] == '1') ? 31: 36 : // base36 // could trick 31
+					(input[2] == 'S') ? 80 : // syscall
+					(int) r_num_math (core->num, input + 1);
 			}
 			r_anal_hint_set_immbase (a, core->addr, base);
 		} else if (!input[1]) {
@@ -12500,9 +12525,9 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 		break;
 	case 'g':
 		r_cons_printf (core->cons, "graph\n[\n"
-			       "hierarchic 1\n"
-			       "label \"\"\n"
-			       "directed 1\n");
+				"hierarchic 1\n"
+				"label \"\"\n"
+				"directed 1\n");
 		r_agraph_foreach (core->graph, agraph_print_node_gml, NULL);
 		r_agraph_foreach_edge (core->graph, agraph_print_edge_gml, NULL);
 		r_cons_print (core->cons, "]\n");
@@ -12667,16 +12692,16 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		break;
 	case 'g': // "ag_j"
 		r_cons_printf (core->cons, "graph\n[\n"
-			       "hierarchic 1\n"
-			       "label \"\"\n"
-			       "directed 1\n");
+				"hierarchic 1\n"
+				"label \"\"\n"
+				"directed 1\n");
 		r_list_foreach (graph->nodes, it, graphNode) {
 			print_node = graphNode->data;
 			r_cons_printf (core->cons, "  node [\n"
-				       "    id  %d\n"
-				       "    label  \"%s\"\n"
-				       "  ]\n",
-				graphNode->idx, print_node->title);
+					"    id  %d\n"
+					"    label  \"%s\"\n"
+					"  ]\n",
+					graphNode->idx, print_node->title);
 		}
 		r_list_foreach (graph->nodes, it, graphNode) {
 			print_node = graphNode->data;

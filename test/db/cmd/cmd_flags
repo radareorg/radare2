@@ -435,10 +435,10 @@ f.*
 f.**
 EOF
 EXPECT=<<EOF
-f.patata@0x00400410
+'@0x00400410'f.patata
 outside
 all
-f.patata@0x00400410
+'@0x00400410'f.patata
 EOF
 EXPECT_ERR=<<EOF
 WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
@@ -721,8 +721,8 @@ EXPECT=<<EOF
 [32m0x00400c90[0m  5dc3 0f1f 4000 662e 0f1f 8400 0000 0000[0m  ]...@.f.........[0m
 0x00400c30  entry0    red
 0x00400c30  sym._startred
-fc entry0=red
-fc sym._start=red
+'fc entry0=red
+'fc sym._start=red
 [32m- offset -   0 1  2 3  4 5  6 7  8 9  A B  C D  E F  0123456789ABCDEF[0m
 [32m0x00400c20[0m  feff ff66 2e0f 1f84 0000 0000 000f 1f00[0m  ...f............[0m
 [33m/fcn.entry0[0m
