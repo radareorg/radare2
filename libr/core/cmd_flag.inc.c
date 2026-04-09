@@ -784,8 +784,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RListIter *iter;
 		RList *list = r_flag_tags_list (core->flags, NULL);
 		r_list_foreach (list, iter, tag) {
-		//	r_cons_printf (core->cons, "%s:\n", tag);
-			r_core_cmdf (core, "ftn %s", tag);
+			r_core_callf (core, "ftn %s", tag);
 		}
 		r_list_free (list);
 		free (inp);
@@ -798,7 +797,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		r_list_foreach (list, iter, tag) {
 			r_strf_var (key, 128, "tag.%s", tag);
 			const char *flags = sdb_get (core->flags->tags, key, NULL);
-			r_cons_printf (core->cons, "ft %s %s\n", tag, flags);
+			r_cons_printf (core->cons, "'ft %s %s\n", tag, flags);
 		}
 		r_list_free (list);
 		free (inp);
@@ -838,7 +837,7 @@ static void cmd_flag_tags(RCore *core, const char *input) {
 		RList *flags = r_flag_tags_get (core->flags, arg);
 		switch (mode) {
 		case 'n': // "ftn"
-			  // TODO : implement ftnj
+			  // AITODO : implement ftnj
 			  // TODO : implement ftn, -> using table api
 			r_list_foreach (flags, iter, flag) {
 				// r_cons_printf (core->cons, "0x%08"PFMT64x"\n", flag->addr);
