@@ -1884,7 +1884,7 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 		{
 			char *safe = r_str_sanitize_r2 (input + 3);
 			if (safe) {
-				r_core_cmdf (core, ".idpi* %s", safe);
+				r_core_callf (core, ".idpi* %s", safe);
 				free (safe);
 			}
 		}
