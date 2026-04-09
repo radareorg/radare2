@@ -6992,6 +6992,17 @@ R_API int r_core_cmd_callf(RCore *core, const char *fmt, ...) {
 	return res;
 }
 
+R_API int r_core_callf_at(RCore *core, ut64 addr, const char *fmt, ...) {
+	R_RETURN_VAL_IF_FAIL (core && fmt, -1);
+	va_list ap;
+	va_start (ap, fmt);
+	char *cmd = r_str_newvf (fmt, ap);
+	int res = r_core_cmd_call_at (core, addr, cmd);
+	free (cmd);
+	va_end (ap);
+	return res;
+}
+
 R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd) {
 	ut64 oseek = core->addr;
 	r_core_seek (core, addr, true);

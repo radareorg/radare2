@@ -8740,7 +8740,6 @@ static void cmd_aep(RCore *core, const char *input) {
 			const char *pin_name = last? last + 1: f->name;
 			const char *havepin = r_anal_pin_get (core->anal, pin_name);
 			if (havepin) {
-				// AITODO: implement r_core_callf_at (similar to r_core_cmdf, but using r_core_cmd_call_at and formatting a string. the line below should work as an example usage
 				r_core_callf_at (core, addr, "aep %s", pin_name);
 			}
 		}
