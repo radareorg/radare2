@@ -850,26 +850,26 @@ static void __core_visual_step_over(RCore *core) {
 	r_config_set_b (core->config, "io.cache", false);
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		if (core->print->cur_enabled) {
-			r_core_cmd_call (core, "dcr");
+			r_core_call (core, "dcr");
 			core->print->cur_enabled = 0;
 		} else {
-			r_core_cmd_call (core, "dso");
+			r_core_call (core, "dso");
 			r_core_cmd (core, ".dr*", 0);
 		}
 	} else {
-		r_core_cmd_call (core, "aeso");
+		r_core_call (core, "aeso");
 		r_core_cmd (core, ".ar*", 0);
 	}
 	r_config_set_b (core->config, "io.cache", io_cache);
 }
 
 static void visual_breakpoint(RCore *core) {
-	r_core_cmd_call (core, "dbs $$");
+	r_core_call (core, "dbs $$");
 }
 
 static void visual_continue(RCore *core) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
-		r_core_cmd_call (core, "dc");
+		r_core_call (core, "dc");
 	} else {
 		r_core_cmd (core, "aec;.ar*", 0);
 	}
@@ -1384,7 +1384,7 @@ static void add_ref(RCore *core) {
 	// read name provided by user
 	char *fn = r_cons_input (core->cons, "Reference From: ");
 	if (R_STR_ISNOTEMPTY (fn)) {
-		r_core_cmd_callf (core, "ax $$ %s", fn);
+		r_core_callf (core, "ax $$ %s", fn);
 	}
 	free (fn);
 }
@@ -1496,7 +1496,7 @@ repeat:
 		int h, w = r_cons_get_size (cons, &h);
 		bool asm_bytes = r_config_get_b (core->config, "asm.bytes");
 		r_config_set_i (core->config, "asm.bytes", false);
-		r_core_cmd_call (core, "fd");
+		r_core_call (core, "fd");
 
 		int secondColumn = (w > 120)? 80: 0;
 		const char *ellipsis = r_print_ellipsis (core->print, NULL, NULL);
@@ -2540,10 +2540,10 @@ static bool insert_mode_enabled(RCore *core) {
 		}
 		break;
 	case 'u':
-		r_core_cmd_call (core, "wcu");
+		r_core_call (core, "wcu");
 		break;
 	case 'U':
-		r_core_cmd_call (core, "wcU");
+		r_core_call (core, "wcU");
 		break;
 	case 'r':
 		r_core_cmdf (core, "r-1 @ 0x%08"PFMT64x, core->addr + core->print->cur);
@@ -2700,7 +2700,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 				R_LOG_WARN ("sandbox not enabled");
 			} else {
 				if (r_cons_is_interactive (core->cons)) {
-					r_core_cmd_call (core, "TT");
+					r_core_call (core, "TT");
 				}
 			}
 			break;
@@ -3199,13 +3199,13 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					r_flag_unset_addr (core->flags, core->addr + core->print->cur);
 				} else if (*n == '.') {
 					if (n[1] == '-') {
-						//unset
-						r_core_cmdf (core, "f.-%s@0x%"PFMT64x, n + 1, core->addr + min);
+						// unset
+						r_core_callf_at (core, core->addr + min, "f.-%s", n + 1);
 					} else {
-						r_core_cmdf (core, "f.%s@0x%"PFMT64x, n + 1, core->addr + min);
+						r_core_callf_at (core, core->addr + min, "f.%s", n + 1);
 					}
 				} else if (*n == '-') {
-					if (*n) {
+					if (n[1]) {
 						r_flag_unset_name (core->flags, n + 1);
 					}
 				} else {
@@ -3317,7 +3317,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					if (R_STR_ISNOTEMPTY (tmp)) {
 						const char *creg = core->dbg->creg;
 						if (creg) {
-							r_core_cmdf (core, "dr %s = %s", creg, tmp);
+							r_core_callf (core, "dr %s = %s", creg, tmp);
 						}
 					}
 					return true;
@@ -3378,9 +3378,9 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'R':
 			if (r_config_get_i (core->config, "scr.randpal")) {
-				r_core_cmd_call (core, "ecr");
+				r_core_call (core, "ecr");
 			} else {
-				r_core_cmd_call (core, "ecn");
+				r_core_call (core, "ecn");
 			}
 			break;
 		case 'e':
@@ -3408,22 +3408,22 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 		case 'r':
 			// TODO: toggle shortcut hotkeys
 			if (r_config_get_b (core->config, "asm.hint.call")) {
-				r_core_cmd_call (core, "e!asm.hint.call");
-				r_core_cmd_call (core, "e asm.hint.jmp=true");
+				r_core_call (core, "e!asm.hint.call");
+				r_core_call (core, "e asm.hint.jmp=true");
 			} else if (r_config_get_b (core->config, "asm.hint.jmp")) {
-				r_core_cmd_call (core, "e!asm.hint.jmp");
-				r_core_cmd_call (core, "e asm.hint.imm=true");
+				r_core_call (core, "e!asm.hint.jmp");
+				r_core_call (core, "e asm.hint.imm=true");
 			} else if (r_config_get_b (core->config, "asm.hint.imm")) {
-				r_core_cmd_call (core, "e!asm.hint.imm");
-				r_core_cmd_call (core, "e asm.hint.emu=true");
+				r_core_call (core, "e!asm.hint.imm");
+				r_core_call (core, "e asm.hint.emu=true");
 			} else if (r_config_get_b (core->config, "asm.hint.emu")) {
-				r_core_cmd_call (core, "e!asm.hint.emu");
-				r_core_cmd_call (core, "e asm.hint.lea=true");
+				r_core_call (core, "e!asm.hint.emu");
+				r_core_call (core, "e asm.hint.lea=true");
 			} else if (r_config_get_b (core->config, "asm.hint.lea")) {
-				r_core_cmd_call (core, "e!asm.hint.lea");
-				r_core_cmd_call (core, "e asm.hint.call=true");
+				r_core_call (core, "e!asm.hint.lea");
+				r_core_call (core, "e asm.hint.call=true");
 			} else {
-				r_core_cmd_call (core, "e asm.hint.call=true");
+				r_core_call (core, "e asm.hint.call=true");
 			}
 			visual_refresh (core);
 			break;
@@ -3529,7 +3529,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						distance =  1;
 					}
 					for (i = 0; i < distance; i++) {
-						r_core_cmd_call (core, "sn");
+						r_core_call (core, "sn");
 					}
 				} else {
 					int times = R_MAX (1, wheelspeed);
@@ -3641,7 +3641,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						distance =  1;
 					}
 					for (i = 0; i < distance; i++) {
-						r_core_cmd_call (core, "sp");
+						r_core_call (core, "sp");
 					}
 				} else {
 					int times = wheelspeed;
@@ -4645,7 +4645,7 @@ R_IPI void visual_refresh(RCore *core) {
 		r_cons_reset (cons);
 	}
 	if (core->scr_gadgets) {
-		r_core_cmd_call (core, "pg");
+		r_core_call (core, "pg");
 		r_cons_flush (cons);
 	}
 	cons->blankline = false;
