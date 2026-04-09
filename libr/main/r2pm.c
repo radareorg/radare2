@@ -134,46 +134,51 @@ static int r2pm_check_arguments(R2Pm *r2pm, int argc, int ind, bool action) {
 }
 
 static int git_pull(const char *dir, bool verbose, bool reset) {
-	if (strchr (dir, ' ')) {
-		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
-		return -1;
-	}
 	if (!r_file_is_directory (dir)) {
 		R_LOG_ERROR ("Directory '%s' does not exist", dir);
 		return -1;
 	}
+	char *edir = r_str_escape_sh (dir);
+	if (!edir) {
+		return -1;
+	}
 	if (reset) {
-		char *s = r_str_newf ("cd %s && git clean -xdf && git reset --hard @~2 && git checkout", dir);
+		char *s = r_str_newf ("cd \"%s\" && git clean -xdf && git reset --hard @~2 && git checkout", edir);
 		R_UNUSED_RESULT (r_sandbox_system (s, 1));
 		free (s);
 	}
 	const char *quiet = verbose? "": "--quiet";
 #if R2__WINDOWS__
-	char *s = r_str_newf ("cd /d %s && git pull %s && git diff", dir, quiet);
+	char *s = r_str_newf ("cd /d \"%s\" && git pull %s && git diff", edir, quiet);
 #else
-	char *s = r_str_newf ("cd '%s' && git pull %s", dir, quiet);
+	char *s = r_str_newf ("cd \"%s\" && git pull %s", edir, quiet);
 #endif
 	int rc = r_sandbox_system (s, 1);
 	free (s);
+	free (edir);
 	return rc;
 }
 
 static int git_clone(const char *dir, const char *url) {
-	if (strchr (dir, ' ')) {
-		R_LOG_ERROR ("Directory '%s' cannot contain spaces", dir);
-		return -1;
-	}
 	char *git = r_file_path ("git");
 	if (!git) {
 		R_LOG_ERROR ("Cannot find `git` in $PATH");
 		return 1;
 	}
 	free (git);
-
-	char *cmd = r_str_newf ("git clone --depth=1 --recursive -c core.autocrlf=input %s %s", url, dir);
+	char *eurl = r_str_escape_sh (url);
+	char *edir = r_str_escape_sh (dir);
+	if (!eurl || !edir) {
+		free (eurl);
+		free (edir);
+		return -1;
+	}
+	char *cmd = r_str_newf ("git clone --depth=1 --recursive -c core.autocrlf=input \"%s\" \"%s\"", eurl, edir);
 	R_LOG_INFO ("%s", cmd);
 	int rc = r_sandbox_system (cmd, 1);
 	free (cmd);
+	free (eurl);
+	free (edir);
 	return rc;
 }
 
@@ -445,8 +450,13 @@ static void r2pm_check_pull_age(void) {
 		return;
 	}
 	/* Get unix epoch of last commit */
-	char *out = r_sys_cmd_strf ("git -C '%s' log -1 --format=%%ct 2>/dev/null", pmpath);
+	char *epmpath = r_str_escape_sh (pmpath);
 	free (pmpath);
+	if (!epmpath) {
+		return;
+	}
+	char *out = r_sys_cmd_strf ("git -C \"%s\" log -1 --format=%%ct 2>/dev/null", epmpath);
+	free (epmpath);
 	if (!out) {
 		return;
 	}
@@ -706,9 +716,13 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	char *s = have_builddir
-		? r_str_newf ("cd /d %s && cd %s && %s", srcdir, pkg, script)
+	char *esrcdir = r_str_escape_sh (srcdir);
+	char *epkg = r_str_escape_sh (pkg);
+	char *s = (have_builddir && esrcdir && epkg)
+		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, epkg, script)
 		: r_str_newf ("%s", script);
+	free (esrcdir);
+	free (epkg);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -718,9 +732,13 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 		free (srcdir);
 		return 1;
 	}
-	char *s = have_builddir
-		? r_str_newf ("cd %s/%s\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", srcdir, pkg, script)
+	char *esrcdir = r_str_escape_sh (srcdir);
+	char *epkg = r_str_escape_sh (pkg);
+	char *s = (have_builddir && esrcdir && epkg)
+		? r_str_newf ("cd \"%s/%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", esrcdir, epkg, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\n}\n%s", script);
+	free (esrcdir);
+	free (epkg);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 
@@ -732,32 +750,54 @@ static int r2pm_uninstall_pkg(const char *pkg, bool global) {
 
 static bool download(const char *url, const char *outfile) {
 	/// XXX add support for windows powershell download
+	char *eurl = r_str_escape_sh (url);
+	char *eout = r_str_escape_sh (outfile);
+	if (!eurl || !eout) {
+		free (eurl);
+		free (eout);
+		return false;
+	}
 	char *tool = r_file_path ("curl");
 	int res = 1;
 	R_LOG_INFO ("download: %s into %s", url, outfile);
 	if (tool) {
-		res = r_sys_cmdf ("%s -sfL -o '%s' '%s'", tool, outfile, url);
+		res = r_sys_cmdf ("%s -sfL -o \"%s\" \"%s\"", tool, eout, eurl);
 		free (tool);
+		free (eurl);
+		free (eout);
 		return res == 0;
 	}
 	tool = r_file_path ("wget");
 	if (tool) {
-		res = r_sys_cmdf ("%s -qO '%s' '%s'", tool, outfile, url);
+		res = r_sys_cmdf ("%s -qO \"%s\" \"%s\"", tool, eout, eurl);
 		free (tool);
+		free (eurl);
+		free (eout);
 		return res == 0;
 	}
+	free (eurl);
+	free (eout);
 	R_LOG_ERROR ("Please install `curl` or `wget`");
 	return false;
 }
 
 static bool unzip(const char *file, const char *dir) {
+	char *efile = r_str_escape_sh (file);
+	char *edir = r_str_escape_sh (dir);
+	if (!efile || !edir) {
+		free (efile);
+		free (edir);
+		return false;
+	}
+	bool res = false;
 	if (r_str_endswith (file, ".tgz") || r_str_endswith (file, ".tar.gz")) {
-		return 0 == r_sys_cmdf ("tar -xzvf '%s' -C '%s'", file, dir);
+		res = 0 == r_sys_cmdf ("tar -xzvf \"%s\" -C \"%s\"", efile, edir);
+	} else if (r_str_endswith (file, ".zip")) {
+		res = 0 == r_sys_cmdf ("unzip \"%s\" -d \"%s\"", efile, edir);
 	}
-	if (r_str_endswith (file, ".zip")) {
-		return 0 == r_sys_cmdf ("unzip '%s' -d '%s'", file, dir);
-	}
-	return false;
+	free (efile);
+	free (edir);
+	return res;
 }
 
 static int r2pm_clone(const char *pkg) {
@@ -829,10 +869,18 @@ static int r2pm_clone(const char *pkg) {
 	if (r2pm_time) {
 		if (git_source) {
 			char *gitdir = r2pm_gitdir ();
-			R_LOG_INFO ("Going back to %s", r2pm_time);
-			int rc = r_sys_cmdf ("cd %s/%s && git reset --hard && git pull --tags && git reset --hard %s",
-				gitdir, pkg, r2pm_time);
+			char *egitdir = r_str_escape_sh (gitdir);
+			char *epkg = r_str_escape_sh (pkg);
+			char *etime = r_str_escape_sh (r2pm_time);
 			free (gitdir);
+			R_LOG_INFO ("Going back to %s", r2pm_time);
+			int rc = (egitdir && epkg && etime)
+				? r_sys_cmdf ("cd \"%s/%s\" && git reset --hard && git pull --tags && git reset --hard \"%s\"",
+					egitdir, epkg, etime)
+				: -1;
+			free (egitdir);
+			free (epkg);
+			free (etime);
 			if (rc != 0) {
 				R_LOG_ERROR ("Unable to travel back in time");
 				free (r2pm_time);
@@ -978,11 +1026,13 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	script = r_str_replace_all (script, "\n", " & ");
 
 	char *dirname = r2pm_get (pkg, "\nR2PM_DIR ", TT_TEXTLINE);
-	char *s = r_str_newf ("cd /d %s && cd %s && %s", srcdir, pkg, script);
-	if (dirname) {
-		free (s);
-		s = r_str_newf ("cd /d %s && cd %s && %s", srcdir, dirname, script);
-	}
+	char *esrcdir = r_str_escape_sh (srcdir);
+	char *etarget = r_str_escape_sh (dirname? dirname: pkg);
+	char *s = (esrcdir && etarget)
+		? r_str_newf ("cd /d \"%s\" && cd \"%s\" && %s", esrcdir, etarget, script)
+		: r_str_newf ("%s", script);
+	free (esrcdir);
+	free (etarget);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -1006,9 +1056,11 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		free (pkgdir);
 		return 1;
 	}
-	char *s = have_builddir
-		? r_str_newf ("cd '%s'\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", pkgdir, script)
+	char *epkgdir = r_str_escape_sh (pkgdir);
+	char *s = (have_builddir && epkgdir)
+		? r_str_newf ("cd \"%s\"\nexport MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", epkgdir, script)
 		: r_str_newf ("export MAKE=make\nR2PM_FAIL(){\n  echo $@\nexit 1\n}\n%s", script);
+	free (epkgdir);
 	// if no srcdir is defined because no file to pull just dont cd
 	free (pkgdir);
 	int res = r_sandbox_system (s, 1);
@@ -1093,15 +1145,22 @@ static int r2pm_edit(RList *targets) {
 		char *pkgpath = r2pm_pkgpath (t);
 		if (pkgpath) {
 			char *editor = r_sys_getenv ("EDITOR");
-			if (R_STR_ISNOTEMPTY (editor)) {
-				rc = r_sys_cmdf ("%s '%s'", editor, pkgpath);
-			} else {
+			char *epkgpath = r_str_escape_sh (pkgpath);
+			if (R_STR_ISNOTEMPTY (editor) && epkgpath) {
+				char *eeditor = r_str_escape_sh (editor);
+				rc = eeditor
+					? r_sys_cmdf ("\"%s\" \"%s\"", eeditor, epkgpath)
+					: -1;
+				free (eeditor);
+			} else if (epkgpath) {
 #if R2__WINDOWS__
-				rc = r_sys_cmdf ("notepad '%s'", pkgpath);
+				rc = r_sys_cmdf ("notepad \"%s\"", epkgpath);
 #else
-				rc = r_sys_cmdf ("vim '%s'", pkgpath);
+				rc = r_sys_cmdf ("vim \"%s\"", epkgpath);
 #endif
 			}
+			free (epkgpath);
+			free (editor);
 #if 0
 			r_line_dietline_init ();
 			r_cons_editor (pkgpath, NULL);

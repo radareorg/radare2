@@ -203,7 +203,7 @@ R_API int r_main_r2agent(int argc, const char **argv) {
 			} else if (r_str_startswith (rs->path, "/file/open/")) {
 				int session_port = 3000 + r_num_rand (1024);
 				char *filename = rs->path + strlen ("/file/open/");
-				char *escaped_filename = r_str_escape (filename);
+				char *escaped_filename = r_str_escape_sh (filename);
 				char *cmd = r_str_newf ("r2 -q %s-e http.port=%d -c=h \"%s\"",
 					listenlocal? "": "-e http.bind=public ",
 					session_port, escaped_filename);

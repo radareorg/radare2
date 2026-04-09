@@ -696,10 +696,16 @@ R_API int r_main_rahash2(int argc, const char **argv) {
 		// TODO: support p=%s (horizontal bars)
 		// TODO: list supported statistical metrics
 		// TODO: support -f and -t
+		char *eptype = r_str_escape_sh (ptype);
 		for (i = opt.ind; i < argc; i++) {
 			printf ("%s:\n", argv[i]);
-			r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", ptype, argv[i]);
+			char *eargv = r_str_escape_sh (argv[i]);
+			if (eptype && eargv) {
+				r_sys_cmdf ("r2 -qfnc \"p==%s 100\" \"%s\"", eptype, eargv);
+			}
+			free (eargv);
 		}
+		free (eptype);
 		ret (0);
 	}
 	// convert iv to hex or string.

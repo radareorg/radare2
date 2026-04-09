@@ -32,7 +32,13 @@ static bool lang_dart_file(RLangSession *s, const char *file) {
 		char *file_dart = r_str_newf ("%s.dart", file);
 		r_file_dump (file_dart, (const ut8*)b, strlen (b), false);
 		free (b);
-		rc = r_sys_cmdf ("dart compile js -o %s %s", js_ofile, file_dart);
+		char *ejs_ofile = r_str_escape_sh (js_ofile);
+		char *efile_dart = r_str_escape_sh (file_dart);
+		rc = (ejs_ofile && efile_dart)
+			? r_sys_cmdf ("dart compile js -o \"%s\" \"%s\"", ejs_ofile, efile_dart)
+			: -1;
+		free (ejs_ofile);
+		free (efile_dart);
 		if (rc == 0) {
 			char *a = r_file_slurp (js_ofile, NULL);
 			char *b = r_str_newf ("var self = global;\n%s", a);

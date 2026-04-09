@@ -2403,19 +2403,23 @@ static int cmd_open(void *data, const char *input) {
 				{
 					const char *sp = strchr (input, ' ');
 					if (sp) {
+						char *epath = r_str_escape_sh (sp + 1);
+						if (epath) {
 #if R2__WINDOWS__
-						r_sys_cmdf ("start %s", sp + 1);
+							r_sys_cmdf ("start \"%s\"", epath);
 #else
-						if (r_file_exists ("/usr/bin/xdg-open")) {
-							r_sys_cmdf ("xdg-open %s", sp + 1);
-						} else if (r_file_exists ("/usr/local/bin/xdg-open")) {
-							r_sys_cmdf ("xdg-open %s", sp + 1);
-						} else if (r_file_exists ("/usr/bin/open")) {
-							r_sys_cmdf ("open %s", sp + 1);
-						} else {
-							R_LOG_ERROR ("Unknown open tool. Cannot find xdg-open");
-						}
+							if (r_file_exists ("/usr/bin/xdg-open")) {
+								r_sys_cmdf ("xdg-open \"%s\"", epath);
+							} else if (r_file_exists ("/usr/local/bin/xdg-open")) {
+								r_sys_cmdf ("xdg-open \"%s\"", epath);
+							} else if (r_file_exists ("/usr/bin/open")) {
+								r_sys_cmdf ("open \"%s\"", epath);
+							} else {
+								R_LOG_ERROR ("Unknown open tool. Cannot find xdg-open");
+							}
 #endif
+							free (epath);
+						}
 					} else {
 						r_core_cmd_help_match (core, help_msg_o, "open");
 					}

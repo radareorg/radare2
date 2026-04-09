@@ -21,8 +21,13 @@ static bool lang_nim_file(RLangSession *s, const char *file) {
 			*dot = 0;
 		}
 		// TODO: compile to stdout and remove the need of another tmp file
-		// eprintf ("nim c -d:release --backend=js -o:%s %s\n", js_ofile, file);
-		rc = r_sys_cmdf ("nim c -d:release --backend=js -o:%s %s", js_ofile, file);
+		char *efile = r_str_escape_sh (file);
+		char *ejs_ofile = r_str_escape_sh (js_ofile);
+		rc = (efile && ejs_ofile)
+			? r_sys_cmdf ("nim c -d:release --backend=js -o:\"%s\" \"%s\"", ejs_ofile, efile)
+			: -1;
+		free (efile);
+		free (ejs_ofile);
 	} else {
 		R_LOG_DEBUG ("no need to compile");
 	}

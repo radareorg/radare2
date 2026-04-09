@@ -914,17 +914,20 @@ R_API bool r_file_move(const char *src, const char *dst) {
 	// rename fails when files are in different mountpoints
 	// in this situation it needs to be copied and removed
 	if (rename (src, dst) != 0) {
-		char *a = r_str_escape (src);
-		char *b = r_str_escape (dst);
-		char *input = r_str_newf ("\"%s\" \"%s\"", a, b);
+		char *a = r_str_escape_sh (src);
+		char *b = r_str_escape_sh (dst);
+		if (!a || !b) {
+			free (a);
+			free (b);
+			return false;
+		}
 #if R2__WINDOWS__
-		int rc = r_sys_cmdf ("move %s", input);
+		int rc = r_sys_cmdf ("move \"%s\" \"%s\"", a, b);
 #else
-		int rc = r_sys_cmdf ("mv %s", input);
+		int rc = r_sys_cmdf ("mv \"%s\" \"%s\"", a, b);
 #endif
 		free (a);
 		free (b);
-		free (input);
 		return rc == 0;
 	}
 	return true;
@@ -1192,9 +1195,14 @@ R_API bool r_file_copy(const char *src, const char *dst) {
 	free (d);
 	return ret;
 #else
-	char *src2 = r_str_replace (strdup (src), "'", "\\'", 1);
-	char *dst2 = r_str_replace (strdup (dst), "'", "\\'", 1);
-	int rc = r_sys_cmdf ("cp -f '%s' '%s'", src2, dst2);
+	char *src2 = r_str_escape_sh (src);
+	char *dst2 = r_str_escape_sh (dst);
+	if (!src2 || !dst2) {
+		free (src2);
+		free (dst2);
+		return false;
+	}
+	int rc = r_sys_cmdf ("cp -f \"%s\" \"%s\"", src2, dst2);
 	free (src2);
 	free (dst2);
 	return rc == 0;

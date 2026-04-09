@@ -2115,17 +2115,21 @@ static int cmd_debug_map(RCore *core, const char *input) {
 					baddr = map->addr;
 					char *res;
 					const char *file = map->file? map->file: map->name;
-					char *name = r_str_escape ((char *)r_file_basename (file));
-					char *filesc = r_str_escape (file);
+					char *name = r_str_escape_sh ((char *)r_file_basename (file));
+					char *filesc = r_str_escape_sh (file);
 					/* TODO: do not spawn. use RBin API */
 					if (sectname) {
-						char *sect = r_str_escape (sectname);
-						res  = r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"
-							PFMT64x" -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect);
+						char *sect = r_str_escape_sh (sectname);
+						res = (name && filesc && sect)
+							? r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"
+								PFMT64x" -S \"%s\" | grep \"%s\"", name, mode, baddr, filesc, sect)
+							: NULL;
 						free (sect);
 					} else {
-						res = r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"
-							PFMT64x" -S \"%s\"", name, mode, baddr, filesc);
+						res = (name && filesc)
+							? r_sys_cmd_strf ("env RABIN2_PREFIX=\"%s\" rabin2 %s-B 0x%08"
+								PFMT64x" -S \"%s\"", name, mode, baddr, filesc)
+							: NULL;
 					}
 					free (filesc);
 					r_cons_println (core->cons, res);

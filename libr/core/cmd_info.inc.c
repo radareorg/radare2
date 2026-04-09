@@ -2516,9 +2516,15 @@ static int cmd_info(void *data, const char *input) {
 		char *res = NULL;
 		switch (input[1]) {
 		case ' ':
-			res = r_sys_cmd_strf ("rabin2 -O \"%s\" \"%s\"",
-				r_str_trim_head_ro (input + 1),
-				desc->name);
+			{
+				char *einput = r_str_escape_sh (r_str_trim_head_ro (input + 1));
+				char *ename = r_str_escape_sh (desc->name);
+				res = (einput && ename)
+					? r_sys_cmd_strf ("rabin2 -O \"%s\" \"%s\"", einput, ename)
+					: NULL;
+				free (einput);
+				free (ename);
+			}
 			break;
 		default:
 			res = r_sys_cmd_strf ("rabin2 -O help");
