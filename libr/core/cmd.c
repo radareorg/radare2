@@ -601,7 +601,7 @@ static bool lastcmd_repeat(RCore *core, int next) {
 	case '$':
 		if (!strncmp (core->lastcmd, "pd", 2)) {
 			if (core->lastcmd[2]== ' ') {
-				r_core_cmd_callf (core, "so %s", r_str_trim_head_ro (core->lastcmd + 3));
+				r_core_callf (core, "so %s", r_str_trim_head_ro (core->lastcmd + 3));
 			} else {
 				r_core_cmd0 (core, "so `pi~?`");
 			}
@@ -713,7 +713,7 @@ static int cmd_uniq(void *data, const char *input) { // "uniq"
 			arg = "";
 		}
 		if (r_fs_check (core->fs, arg)) {
-			r_core_cmd_callf (core, "md %s", arg);
+			r_core_callf (core, "md %s", arg);
 		} else {
 			char *res = r_syscmd_uniq (arg);
 			if (res) {
@@ -1793,7 +1793,7 @@ static int cmd_j(void *data, const char *input) { // "j"
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == 'q') { // "jq"
-		r_core_cmd_callf (core, "!jq%s", input + 1);
+		r_core_callf (core, "!jq%s", input + 1);
 		return R_CMD_RC_SUCCESS;
 	}
 	if (input[0] == 's') { // "js"
@@ -1900,16 +1900,16 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'v': // "-v"
 		case 'V': // "-V"
 			if (input[1] == 'j') {
-				r_core_cmd_call (core, "?Vj");
+				r_core_call (core, "?Vj");
 			} else {
-				r_core_cmd_call (core, "?V");
+				r_core_call (core, "?V");
 			}
 			break;
 		case 'L': // "-L"
 			if (input[1]) {
-				r_core_cmd_callf (core, "L%c", input[1]);
+				r_core_callf (core, "L%c", input[1]);
 			} else {
-				r_core_cmd_call (core, "Lo");
+				r_core_call (core, "Lo");
 			}
 			break;
 		case 'P': // "-P"
@@ -1929,16 +1929,16 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'p': // "-p"
 			if (input[1]) {
-				r_core_cmd_callf (core, "P %s", r_str_trim_head_ro (input + 1));
+				r_core_callf (core, "P %s", r_str_trim_head_ro (input + 1));
 			} else {
-				r_core_cmd_call (core, "P");
+				r_core_call (core, "P");
 			}
 			break;
 		case 'H': // "-H"
-			r_core_cmd_callf (core, "r2 -H%s", input + 1);
+			r_core_callf (core, "r2 -H%s", input + 1);
 			break;
 		case 'D': // "-a"
-			r_core_cmd_callf (core, "iD%s", input + 1);
+			r_core_callf (core, "iD%s", input + 1);
 			break;
 		case 'a': // "-a"
 			if (R_STR_ISEMPTY (arg)) {
@@ -1968,7 +1968,7 @@ static int cmd_stdin(void *data, const char *input) {
 			}
 			break;
 		case 'j': // "-j"
-			r_core_cmd_call (core, "js:");
+			r_core_call (core, "js:");
 			break;
 		case 'c': // "-c"
 			r_core_cmdf (core, "e asm.cpu=%s", arg);
@@ -1986,16 +1986,16 @@ static int cmd_stdin(void *data, const char *input) {
 			break;
 		case 'A': // -A
 			if (*arg == '?') {
-				r_core_cmd_call (core, "aaa?");
+				r_core_call (core, "aaa?");
 			} else {
 				if (R_STR_ISEMPTY (arg)) {
-					r_core_cmd_call (core, "aaa");
+					r_core_call (core, "aaa");
 				} else if (!strcmp (arg, "A")) {
-					r_core_cmd_call (core, "aaaa");
+					r_core_call (core, "aaaa");
 				} else if (!strcmp (arg, "AA")) {
-					r_core_cmd_call (core, "aaaaa");
+					r_core_call (core, "aaaaa");
 				} else {
-					r_core_cmd_call (core, "aaa?");
+					r_core_call (core, "aaa?");
 				}
 			}
 			break;
@@ -2352,7 +2352,7 @@ static int cmd_interpret(void *data, const char *input) {
 				addr = r_num_get (core->num, saddr);
 				free (saddr);
 			}
-			char *res = r_core_cmd_call_str_at (core, addr, cmd);
+			char *res = r_core_call_str_at (core, addr, cmd);
 			r_cons_break_push (core->cons, NULL, NULL);
 			for (ptr = res;;) {
 				if (r_cons_is_breaked (core->cons)) {
@@ -2363,7 +2363,7 @@ static int cmd_interpret(void *data, const char *input) {
 					*eol = '\0';
 				}
 				if (*ptr) {
-					int res = r_core_cmd_call (core, ptr);
+					int res = r_core_call (core, ptr);
 					if (res != 0) {
 						R_LOG_ERROR ("Wrong command %s", ptr);
 						break;
@@ -2754,7 +2754,7 @@ static int cmd_bsize(void *data, const char *input) {
 			char *cmd = (char *)sdb_decode (input + 3, &len);
 			if (cmd) {
 				cmd[len] = 0;
-				r_core_cmd_call (core, cmd);
+				r_core_call (core, cmd);
 				free (cmd);
 			} else {
 				R_LOG_ERROR ("Missing base64 string after b64:");
@@ -3960,7 +3960,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 				ut64 addr = core->addr;
 				ut64 at = r_num_math (core->num, arg);
 				r_core_seek (core, at, true);
-				res = r_core_cmd_call (core, cmd);
+				res = r_core_call (core, cmd);
 				r_core_seek (core, addr, true);
 				free (arg);
 			} else {
@@ -3969,7 +3969,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 			}
 			return res;
 		}
-		return r_core_cmd_call (core, cmd);
+		return r_core_call (core, cmd);
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "\"\""))) {
 		R_LOG_DEBUG ("The double quote syntax is now deprecated, use the single quote instead");
@@ -3987,13 +3987,13 @@ static int handle_command_call(RCore *core, const char *cmd) {
 				ut64 addr = core->addr;
 				ut64 at = r_num_math (core->num, arg + 1);
 				r_core_seek (core, at, true);
-				res = r_core_cmd_call (core, cmd);
+				res = r_core_call (core, cmd);
 				r_core_seek (core, addr, true);
 				free (arg);
 			}
 			return res;
 		}
-		return r_core_cmd_call (core, cmd + 2);
+		return r_core_call (core, cmd + 2);
 	}
 	return -1;
 }
@@ -4013,10 +4013,10 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	if (R_UNLIKELY (r_str_startswith (cmd, "?t"))) {
 		if (r_str_startswith (cmd + 2, "\"\"")) {
-			return r_core_cmd_callf (core, "?t'%s", cmd + 4);
+			return r_core_callf (core, "?t'%s", cmd + 4);
 		}
 		if (r_str_startswith (cmd + 2, "'")) {
-			return r_core_cmd_callf (core, "?t'%s", cmd + 3);
+			return r_core_callf (core, "?t'%s", cmd + 3);
 		}
 	}
 
@@ -6480,7 +6480,7 @@ R_API int r_core_cmd_foreach(RCore *core, const char *cmd, char *each) {
 				r_list_foreach (rows, iter, row) {
 					ut64 addr = r_num_math (core->num, row);
 					if (core->num->nc.errors == 0) {
-						r_core_cmd_call_at (core, addr, cmd);
+						r_core_call_at (core, addr, cmd);
 					}
 					if (!foreach_newline (core)) {
 						break;
@@ -6962,7 +6962,7 @@ R_API char *r_core_cmd_strf(RCore *core, const char *fmt, ...) {
 	return ret;
 }
 
-R_API int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd) {
+R_API int r_core_call_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && cmd, -1);
 	R_LOG_DEBUG ("RCoreCallAt(0x%08"PFMT64x"): %s", addr, cmd);
 	const ut64 oaddr = core->addr;
@@ -6978,11 +6978,11 @@ R_API int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd) {
 }
 
 // run an r2 command without evaluating any special character
-R_API int r_core_cmd_call(RCore *core, const char *cmd) {
+R_API int r_core_call(RCore *core, const char *cmd) {
 	return r_cmd_call (core->rcmd, cmd);
 }
 
-R_API int r_core_cmd_callf(RCore *core, const char *fmt, ...) {
+R_API int r_core_callf(RCore *core, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	char *cmd = r_str_newvf (fmt, ap);
@@ -7088,10 +7088,7 @@ R_API int r_core_cmd_task_sync(RCore *core, const char *cmd, bool log) {
 
 static int cmd_ox(void *data, const char *input) { // "0x"
 	RCore *core = (RCore*)data;
-	char *s = r_str_newf ("s 0%s", input);
-	int ret = r_core_cmd_call (core, s);
-	free (s);
-	return ret;
+	return r_core_callf (core, "s 0%s", input);
 }
 
 static int core_cmd0_wrapper(void *core, const char *cmd) {

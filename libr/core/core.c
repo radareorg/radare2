@@ -307,7 +307,7 @@ static bool __syncDebugMaps(RCore *core) {
 	return false;
 }
 
-R_API char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
+R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	R_RETURN_VAL_IF_FAIL (core && core->cons, NULL);
 	r_cons_push (core->cons);
 	core->cons->context->noflush = true;
