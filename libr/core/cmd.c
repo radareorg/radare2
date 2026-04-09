@@ -1984,6 +1984,12 @@ static int cmd_stdin(void *data, const char *input) {
 		case 'e': // "-e"
 			r_core_cmdf (core, "%s", input);
 			break;
+		case 'E': // "-E"
+			r_core_cmd0 (core, "ed!");
+			char *file = r_file_home (".radare2rc");
+			r_core_callf (core, ". %s", file);
+			free (file);
+			break;
 		case 'A': // -A
 			if (*arg == '?') {
 				r_core_call (core, "aaa?");
