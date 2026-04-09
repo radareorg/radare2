@@ -1881,7 +1881,13 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 
 	switch (input[2]) {
 	case ' ': // "idp file.pdb"
-		r_core_cmdf (core, ".idpi* %s", input + 3);
+		{
+			char *safe = r_str_sanitize_r2 (input + 3);
+			if (safe) {
+				r_core_cmdf (core, ".idpi* %s", safe);
+				free (safe);
+			}
+		}
 		break;
 	case '\0': // "idp"
 		r_core_cmd0 (core, ".idpi*");
