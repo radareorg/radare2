@@ -518,7 +518,7 @@ typedef struct r_bin_create_options_t {
 
 // R2_600 - move all the options from rbin into this struct
 typedef struct r_bin_options_t {
-	bool fake_aslr;
+	bool aslr;
 	bool demangle_usecmd;
 	bool demangle_trylib;
 	bool verbose;
