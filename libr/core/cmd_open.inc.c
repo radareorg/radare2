@@ -457,12 +457,12 @@ static void cmd_open_bin(RCore *core, const char *input) {
 						if (core->io->desc) {
 							curfd = core->io->desc->fd;
 						}
-						r_core_cmd_callf (core, "op %d", dst->fd);
+						r_core_callf (core, "op %d", dst->fd);
 						r_bin_file_set_cur_binfile (core->bin, dst);
 						r_bin_file_delete (core->bin, current);
 						if (curfd >= 0) {
 							r_io_fd_close (core->io, curfd);
-							// r_core_cmd_callf (core, "o-%d", curfd);
+							// r_core_callf (core, "o-%d", curfd);
 						}
 					}
 					break;
@@ -501,8 +501,8 @@ static void cmd_open_bin(RCore *core, const char *input) {
 			RBinFile *bf = r_bin_cur (core->bin);
 			int current = bf? bf->id: 0;
 			if (current >= 0) {
-				r_core_cmd_callf (core, "ob-%d", current);
-				r_core_cmd_callf (core, "ob %d", current -1);
+				r_core_callf (core, "ob-%d", current);
+				r_core_callf (core, "ob %d", current -1);
 			}
 		} else {
 			ut32 id;
@@ -2883,7 +2883,7 @@ static int cmd_open(void *data, const char *input) {
 						r_core_cmd0 (core, "ob-*");
 						r_io_close_all (core->io);
 						r_config_set_b (core->config, "cfg.debug", false);
-						r_core_cmdf (core, "o %s", file);
+						r_core_callf (core, "o %s", file);
 
 						r_core_block_read (core);
 						__rebase_everything (core, orig_sections, orig_baddr);
