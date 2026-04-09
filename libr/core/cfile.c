@@ -652,29 +652,6 @@ R_API bool r_core_file_loadlib(RCore *core, const char *lib, ut64 libaddr) {
 	return ret;
 }
 
-#if 0
-static void load_scripts_for(RCore *core, const char *name) {
-	// imho nobody uses this: run scripts depending on a specific filetype
-	char *file;
-	RListIter *iter;
-	char *hdir = r_str_newf ("%s%s%s%sbin-%s", R2_HOME_BINRC, R_SYS_DIR, "bin-%s", R_SYS_DIR, name);
-	char *path = r_file_home (hdir);
-	RList *files = r_sys_dir (path);
-	if (!r_list_empty (files)) {
-		R_LOG_INFO ("[binrc] path: %s", path);
-	}
-	r_list_foreach (files, iter, file) {
-		if (*file && *file != '.') {
-			R_LOG_INFO ("[binrc] loading %s", file);
-			r_core_cmdf (core, ". %s/%s", path, file);
-		}
-	}
-	r_list_free (files);
-	free (path);
-	free (hdir);
-}
-#endif
-
 typedef struct {
 	const char *name;
 	bool found;
