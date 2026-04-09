@@ -970,7 +970,13 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	switch (ctx->rad) {
 	case '*':
 	case 1:
-		r_cons_printf (cons, "f.%s@0x%08"PFMT64x"\n", name, addr);
+		{
+			char *fname = r_name_filter_dup (name);
+			if (fname) {
+				r_cons_printf (cons, "'@0x%08"PFMT64x"'f.%s\n", addr, fname);
+				free (fname);
+			}
+		}
 		break;
 	case 'j':
 		pj_kn (ctx->pj, name, addr);
@@ -1955,7 +1961,11 @@ static int cmd_flag(void *data, const char *input) {
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
 					if (input[1] && input[2] == '*') {
-						r_cons_printf (core->cons, "fc %s=%s\n", fi->name, fim->color);
+						char *fname = r_name_filter_dup (fi->name);
+						if (fname) {
+							r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
+							free (fname);
+						}
 					} else {
 						char padstr[16];
 						r_str_pad (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
@@ -1982,7 +1992,11 @@ static int cmd_flag(void *data, const char *input) {
 			r_list_foreach (list, iter, fi) {
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
-					r_cons_printf (core->cons, "fc %s=%s\n", fi->name, fim->color);
+					char *fname = r_name_filter_dup (fi->name);
+					if (fname) {
+						r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
+						free (fname);
+					}
 				}
 			}
 			r_list_free (list);
@@ -2172,7 +2186,13 @@ static int cmd_flag(void *data, const char *input) {
 			r_list_foreach (list, iter, item) {
 				switch (mode) {
 				case '*':
-					r_cons_printf (core->cons, "f %s = 0x%08"PFMT64x"\n", item->name, item->addr);
+					{
+					char *fname = r_name_filter_dup (item->name);
+					if (fname) {
+						r_cons_printf (core->cons, "'f %s = 0x%08"PFMT64x"\n", fname, item->addr);
+						free (fname);
+					}
+				}
 					break;
 				case 'j':
 					{
