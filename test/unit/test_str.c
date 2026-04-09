@@ -406,7 +406,7 @@ bool test_r_str_escape_sh(void) {
 	mu_assert_streq (escaped, "Hello, \\\"World\\\"", "escaped \"double quotes\"");
 	free (escaped);
 	escaped = r_str_escape_sh ("Hello, \\World\\");
-	mu_assert_streq (escaped, "Hello, \\\\World\\\\", "escaped backspace");
+	mu_assert_streq (escaped, "Hello, \\\\World\\\\", "escaped backslash");
 	free (escaped);
 #if R2__UNIX__
 	escaped = r_str_escape_sh ("Hello, $(World)");
@@ -414,6 +414,9 @@ bool test_r_str_escape_sh(void) {
 	free (escaped);
 	escaped = r_str_escape_sh ("Hello, `World`");
 	mu_assert_streq (escaped, "Hello, \\`World\\`", "escaped `command`");
+	free (escaped);
+	escaped = r_str_escape_sh ("Hello, !World!");
+	mu_assert_streq (escaped, "Hello, \\!World\\!", "escaped history expansion");
 	free (escaped);
 #endif
 	mu_end;

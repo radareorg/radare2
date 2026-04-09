@@ -1446,13 +1446,25 @@ R_API char *r_str_escape_sh(const char *buf) {
 	while (*p) {
 		switch (*p) {
 #if R2__UNIX__
+		case '!':
 		case '$':
 		case '`':
 #endif
 		case '\\':
 		case '"':
 			*q++ = '\\';
-			/* FALLTHRU */
+			*q++ = *p++;
+			break;
+#if R2__WINDOWS__
+		case '%':
+			*q++ = '%';
+			*q++ = *p++;
+			break;
+		case '!':
+			*q++ = '^';
+			*q++ = *p++;
+			break;
+#endif
 		default:
 			*q++ = *p++;
 			break;
