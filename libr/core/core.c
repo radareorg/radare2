@@ -312,7 +312,7 @@ R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd) {
 	r_cons_push (core->cons);
 	core->cons->context->noflush = true;
 	core->cons->context->cmd_str_depth++;
-	if (cmd && r_core_cmd_call_at (core, addr, cmd) == -1) {
+	if (cmd && r_core_call_at (core, addr, cmd) == -1) {
 		// eprintf ("Invalid command: %s\n", cmd);
 		if (--core->cons->context->cmd_str_depth == 0) {
 			core->cons->context->noflush = false;
@@ -339,7 +339,7 @@ R_API void r_core_bind(RCore *core, RCoreBind *bnd) {
 	bnd->sysHit = (RCoreDebugSyscallHit)r_core_debug_syscall_hit;
 	bnd->cmd = (RCoreCmd)r_core_cmd0;
 	bnd->cmdf = (RCoreCmdF)r_core_cmdf;
-	bnd->callAt = (RCoreCallAt)r_core_cmd_call_str_at;
+	bnd->callAt = (RCoreCallAt)r_core_call_str_at;
 	bnd->cmdStr = (RCoreCmdStr)r_core_cmd_str;
 	bnd->cmdStrF = (RCoreCmdStrF)r_core_cmd_strf;
 	bnd->help = (RCoreBindHelp)core_help;
@@ -2575,7 +2575,7 @@ R_API bool r_core_init(RCore *core) {
 	core->lang->cons = core->cons;
 	core->lang->cmd_str = (char *(*) (void *, const char *))r_core_cmd_str;
 	core->lang->cmdf = (RCoreCmdF)r_core_cmdf;
-	core->lang->call_at = (RCoreCallAtCallback)r_core_cmd_call_str_at;
+	core->lang->call_at = (RCoreCallAtCallback)r_core_call_str_at;
 	r_core_bind_cons (core);
 	core->table = NULL;
 	r_lang_define (core->lang, "RCore", "core", core);

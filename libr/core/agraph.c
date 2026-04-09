@@ -3657,7 +3657,7 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 			mustFlush = true;
 		}
 		if (core && core->scr_gadgets) {
-			r_core_cmd_call (core, "pg");
+			r_core_call (core, "pg");
 		}
 		if (mustFlush) {
 			r_cons_flush (core->cons);
@@ -3719,7 +3719,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 		addr = r_anal_get_bbaddr (core->anal, addr);
 		char *title = get_title (addr);
 		if (!acur || strcmp (acur->title, title)) {
-			r_core_cmd_call (core, "sr PC");
+			r_core_call (core, "sr PC");
 		}
 		free (title);
 		g->is_instep = false;
@@ -3733,7 +3733,7 @@ static int agraph_refresh(struct agraph_refresh_data *grd) {
 					if (!r_cons_yesno (cons, 'y', "\rNo function at 0x%08" PFMT64x ". Define it here (Y/n)? ", core->addr)) {
 						return 0;
 					}
-					r_core_cmd_call (core, "af");
+					r_core_call (core, "af");
 				}
 				f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 				g->need_reload_nodes = true;
@@ -4886,21 +4886,21 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			}
 			// TODO: toggle shortcut hotkeys
 			if (r_config_get_b (core->config, "asm.hint.call")) {
-				r_core_cmd_call (core, "e!asm.hint.call");
-				r_core_cmd_call (core, "e!asm.hint.jmp");
+				r_core_call (core, "e!asm.hint.call");
+				r_core_call (core, "e!asm.hint.jmp");
 			} else if (r_config_get_b (core->config, "asm.hint.jmp")) {
-				r_core_cmd_call (core, "e!asm.hint.jmp");
-				r_core_cmd_call (core, "e!asm.hint.lea");
+				r_core_call (core, "e!asm.hint.jmp");
+				r_core_call (core, "e!asm.hint.lea");
 			} else if (r_config_get_b (core->config, "asm.hint.lea")) {
-				r_core_cmd_call (core, "e!asm.hint.lea");
-				r_core_cmd_call (core, "e!asm.hint.call");
+				r_core_call (core, "e!asm.hint.lea");
+				r_core_call (core, "e!asm.hint.call");
 			}
 			break;
 		case 'R':
 			if (r_config_get_b (core->config, "scr.randpal")) {
-				r_core_cmd_call (core, "ecr");
+				r_core_call (core, "ecr");
 			} else {
-				r_core_cmd_call (core, "ecn");
+				r_core_call (core, "ecn");
 			}
 			g->edgemode = r_config_get_i (core->config, "graph.edges");
 			fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
@@ -5105,7 +5105,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			break;
 		case 'j':
 			if (g->is_dis) {
-				r_core_cmd_call (core, "so 1");
+				r_core_call (core, "so 1");
 			} else {
 				if (core->visual.graphCursor) {
 					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;
@@ -5118,7 +5118,7 @@ R_API bool r_core_visual_graph(RCore *core, RAGraph *g, RAnalFunction *_fcn, int
 			break;
 		case 'k':
 			if (g->is_dis) {
-				r_core_cmd_call (core, "so -1");
+				r_core_call (core, "so -1");
 			} else {
 				if (core->visual.graphCursor) {
 					int speed = (okey == 27)? PAGEKEY_SPEED: movspeed;

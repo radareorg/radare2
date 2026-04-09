@@ -570,7 +570,7 @@ static void perform_analysis(RCore *r, int do_analysis) {
 	case 2: acmd = "aaa"; break;
 	case 3: acmd = "aaaa"; break;
 	}
-	r_core_cmd_call (r, acmd);
+	r_core_call (r, acmd);
 	r_cons_flush (r->cons);
 	r->times->file_anal_time = r_time_now_mono () - r->times->file_anal_time;
 }
@@ -1201,11 +1201,11 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	}
 	if (mr.json) {
 		if (mr.qjs_script) {
-			r_core_cmd_callf (r, "js %s", mr.qjs_script);
+			r_core_callf (r, "js %s", mr.qjs_script);
 		} else if (opt.ind < argc) {
-			r_core_cmd_callf (r, "js:%s", argv[opt.ind]);
+			r_core_callf (r, "js:%s", argv[opt.ind]);
 		} else {
-			r_core_cmd_call (r, "js:");
+			r_core_call (r, "js:");
 		}
 		mainr2_fini (&mr);
 		return 0;

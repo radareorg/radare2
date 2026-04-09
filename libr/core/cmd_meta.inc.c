@@ -564,7 +564,7 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmd_call_at (core, addr, "CC-");
+				r_core_call_at (core, addr, "CC-");
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);
@@ -744,7 +744,7 @@ typedef struct {
 static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
 	if (where - sso->addr >= sso->bufsz) {
-		r_core_cmd_call_at (sso->core, where, "Csz");
+		r_core_call_at (sso->core, where, "Csz");
 	} else {
 		const char *name = (const char *)(sso->buf + (where - sso->addr));
 		const size_t maxlen = sso->bufsz - (where - sso->addr);
@@ -937,7 +937,7 @@ static int cmd_meta_others(RCore *core, const char *input) {
 			if (out) {
 				r_str_ansi_strip (out);
 				//r_meta_set (core->anal->meta, R_META_TYPE_COMMENT, addr, 0, out);
-				r_core_cmd_call_at (core, addr, "CC-");
+				r_core_call_at (core, addr, "CC-");
 				//r_meta_del (core->anal->meta, input[0], addr, addr+1);
 				r_meta_set_string (core->anal, R_META_TYPE_COMMENT, addr, out);
 				free (out);

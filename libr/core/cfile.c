@@ -239,7 +239,7 @@ R_API bool r_core_file_reopen(RCore *core, const char *args, int perm, int loadb
 		// r_debug_reg_sync (core->dbg, R_REG_TYPE_GPR, false); // does nothing
 		r_core_cmd0 (core, ".dm*");
 		r_core_cmd0 (core, ".dr*");
-		r_core_cmd_call (core, "sr PC");
+		r_core_call (core, "sr PC");
 	} else {
 		load_gp (core);
 		load_toc (core);
@@ -964,9 +964,9 @@ beach:
 			// Skip symbols for dSYM since they duplicate main binary
 			bool old_skipsyms = r->bin->options.skip_symbols;
 			r->bin->options.skip_symbols = true;
-			r_core_cmd_callf (r, "o %s", macdwarf);
+			r_core_callf (r, "o %s", macdwarf);
 			r->bin->options.skip_symbols = old_skipsyms;
-			r_core_cmd_call (r, "obm-");
+			r_core_call (r, "obm-");
 		}
 		free (macdwarf);
 	}

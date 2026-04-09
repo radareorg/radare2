@@ -1664,13 +1664,13 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 #if __APPLE__
 	switch (mode) {
 	case R_MODE_SET:
-		r_core_cmd_callf (core, ".dmi* 0x%08"PFMT64x" %s", baseaddr, file);
+		r_core_callf (core, ".dmi* 0x%08"PFMT64x" %s", baseaddr, file);
 		break;
 	case R_MODE_RADARE:
 		{
 			char *esc = r_str_escape_sh (file);
 			if (esc) {
-				r_core_cmd_callf (core, "!!rabin2 -rsEB 0x%08"PFMT64x" \"%s\"", baseaddr, esc);
+				r_core_callf (core, "!!rabin2 -rsEB 0x%08"PFMT64x" \"%s\"", baseaddr, esc);
 				free (esc);
 			}
 		}
@@ -1679,7 +1679,7 @@ static bool get_bin_info(RCore *core, const char *file, ut64 baseaddr, PJ *pj, i
 		{
 			char *esc = r_str_escape_sh (file);
 			if (esc) {
-				r_core_cmd_callf (core, "!!rabin2 -E -B 0x%08"PFMT64x" \"%s\"", baseaddr, esc);
+				r_core_callf (core, "!!rabin2 -E -B 0x%08"PFMT64x" \"%s\"", baseaddr, esc);
 				free (esc);
 			}
 		}
@@ -1931,7 +1931,7 @@ static int cmd_debug_map(RCore *core, const char *input) {
 			r_core_cmd (core, "dmm", 0);
 			break;
 		case 's': // "dmis"
-			r_core_cmd_callf (core, ".dmi* %s", input + 2);
+			r_core_callf (core, ".dmi* %s", input + 2);
 			break;
 		case ' ': // "dmi "
 		case '*': // "dmi*"
@@ -4948,7 +4948,7 @@ static int cmd_debug_continue(RCore *core, const char *input) {
 		} else {
 			// we should stop in fork and vfork syscalls
 			//TODO: multiple syscalls not handled yet
-			r_core_cmd_call (core, "dcs vfork fork clone");
+			r_core_call (core, "dcs vfork fork clone");
 		}
 		break;
 	case 'c': // "dcc"
@@ -6375,7 +6375,7 @@ static int cmd_debug(void *data, const char *input) {
 			// Remove registers from the flag list
 			r_core_cmd0 (core, ".dr-*");
 			// Reopen and rebase the original file
-			r_core_cmd_call (core, "oo");
+			r_core_call (core, "oo");
 			break;
 		case '?': // "do?"
 		default:
@@ -6551,7 +6551,7 @@ static int cmd_debug(void *data, const char *input) {
 		ut64 pc = r_debug_reg_get (core->dbg, "PC");
 		// Is PC before offset or after the follow cutoff?
 		if (!R_BETWEEN (core->addr, pc, core->addr + follow)) {
-			r_core_cmd_call (core, "sr PC");
+			r_core_call (core, "sr PC");
 		}
 	}
 

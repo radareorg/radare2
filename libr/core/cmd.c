@@ -6997,7 +6997,7 @@ R_API int r_core_callf_at(RCore *core, ut64 addr, const char *fmt, ...) {
 	va_list ap;
 	va_start (ap, fmt);
 	char *cmd = r_str_newvf (fmt, ap);
-	int res = r_core_cmd_call_at (core, addr, cmd);
+	int res = r_core_call_at (core, addr, cmd);
 	free (cmd);
 	va_end (ap);
 	return res;

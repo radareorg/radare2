@@ -1415,7 +1415,7 @@ static bool bin_main(RCore *core, PJ *pj, int mode, int va) {
 		r_flag_space_set (core->flags, R_FLAGS_FS_SYMBOLS);
 		r_flag_set (core->flags, "main", addr, core->blocksize);
 		if (isthumb) {
-			r_core_cmd_call_at (core, addr, "ahb 16");
+			r_core_call_at (core, addr, "ahb 16");
 		}
 	} else if (IS_MODE_SIMPLE (mode)) {
 		r_cons_printf (core->cons, "%" PFMT64d, addr);
@@ -3668,7 +3668,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			// This is damn slow if section vsize is HUGE
 			if (section->vsize < 1024 * 1024 * 2) {
 				R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
-				r_core_cmd_call_at (core, section->vaddr, section->format);
+				r_core_call_at (core, section->vaddr, section->format);
 			}
 		}
 	}
