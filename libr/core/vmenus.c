@@ -381,15 +381,15 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'o':
 			{
 				char *s = r_cons_input (cons, "offset: ");
-				r_core_cmd_callf (core, "s %s", s);
+				r_core_callf (core, "s %s", s);
 				free (s);
 			}
 			break;
 		case 'j':
-			r_core_cmd_call (core, "so");
+			r_core_call (core, "so");
 			break;
 		case 'k':
-			r_core_cmd_call (core, "so -1");
+			r_core_call (core, "so -1");
 			break;
 		case 's':
 			// eprintf ("step ((%s))\n", word);
@@ -398,10 +398,10 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			r_esil_runword (esil, word);
 			break;
 		case '$':
-			r_core_cmd_call (core, "ar PC=$$");
+			r_core_call (core, "ar PC=$$");
 			break;
 		case 'S':
-			r_core_cmd_call (core, "aeso");
+			r_core_call (core, "aeso");
 			break;
 		case 'h':
 			if (x > 0) {
@@ -714,7 +714,7 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			if (analop.bytes) {
 				char *op_hex = r_hex_bin2strdup (analop.bytes, analop.size);
 				char *res = r_print_hexpair (core->print, op_hex, -1);
-				r_core_cmd_callf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
+				r_core_callf (core, "wx %02x%02x%02x%02x", buf[0], buf[1], buf[2], buf[3]);
 				free (res);
 				free (op_hex);
 			}
@@ -750,11 +750,11 @@ R_API bool r_core_visual_bit_editor(RCore *core) {
 			}
 			break;
 		case 'J':
-			r_core_cmd_call (core, "so+1");
+			r_core_call (core, "so+1");
 			r_io_read_at (core->io, core->addr + cur, buf, sizeof (ut64));
 			break;
 		case 'K':
-			r_core_cmd_call (core, "so-1");
+			r_core_call (core, "so-1");
 			r_io_read_at (core->io, core->addr + cur, buf, sizeof (ut64));
 			break;
 		case 'j':
@@ -1111,7 +1111,7 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 			break;
 		case 'b':
-			r_core_cmdf (core, "tl %s", vt.curname);
+			r_core_callf (core, "tl %s", vt.curname);
 			break;
 		case -1: // EOF
 		case 'Q':
@@ -1141,7 +1141,7 @@ R_API int r_core_visual_types(RCore *core) {
 			}
 		       break;
 		case 'd':
-			r_core_cmdf (core, "t- %s", vt.curname);
+			r_core_callf (core, "t- %s", vt.curname);
 			break;
 		case '-':
 			r_core_cmd0 (core, "to -");
@@ -2371,14 +2371,14 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 			break;
 		case '+':
 			if (menu == 1) {
-				r_core_cmdf (core, "f %s=%s+1", fs2, fs2);
+				r_core_callf (core, "f %s=%s+1", fs2, fs2);
 			} else {
 				r_core_block_size (core, core->blocksize + 1);
 			}
 			break;
 		case '-':
 			if (menu == 1) {
-				r_core_cmdf (core, "f %s=%s-1", fs2, fs2);
+				r_core_callf (core, "f %s=%s-1", fs2, fs2);
 			} else {
 				r_core_block_size (core, core->blocksize-1);
 			}
@@ -2389,7 +2389,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				r_cons_flush (core->cons);
 				const char *line = r_cons_visual_readln (core->cons, ":> ", NULL);
 				if (*line) {
-					r_core_cmdf (core, "fr %s %s", fs2, line);
+					r_core_callf (core, "fr %s %s", fs2, line);
 				}
 			}
 			break;
@@ -2399,7 +2399,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 				r_cons_flush (core->cons);
 				const char *line = r_cons_visual_readln (core->cons, ":> ", NULL);
 				if (*line) {
-					r_core_cmdf (core, "afr %s %s", line, fs2);
+					r_core_callf (core, "afr %s %s", line, fs2);
 				}
 			}
 			break;
@@ -2414,7 +2414,7 @@ R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
 		case '\r':
 		case '\n':
 			if (menu == 1) {
-				r_core_cmdf (core, "s %s", fs2);
+				r_core_callf (core, "s %s", fs2);
 				return true;
 			}
 			r_flag_space_set (core->flags, fs);
@@ -4746,7 +4746,7 @@ R_API void r_core_visual_colors(RCore *core) {
 			opt = r_cons_pal_len () - 1;
 			break;
 		case '@':
-			r_core_cmd_call (core, "ecr");
+			r_core_call (core, "ecr");
 			break;
 		case 'p':
 		case 'P':
