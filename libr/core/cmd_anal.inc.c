@@ -4655,21 +4655,19 @@ static void save_regstate_in_destinations(RCore *core, RVecBlocks *blocks, Block
 	char *regstate = r_core_cmd_str (core, "dre");
 	r_str_trim (regstate);
 	R_LOG_DEBUG ("dre # %s", regstate);
-	bool unused = true;
 	R_VEC_FOREACH (blocks, b2) {
 		if (!b2->regstate && b0->to == b2->from) {
-			R_LOG_DEBUG ("abe %s @ 0x%08"PFMT64x, regstate, b2->from);
-			r_core_cmdf (core, "abe %s @ 0x%08"PFMT64x, regstate, b2->from);
-			// eprintf ("abe %s @ 0x%"PFMT64x"\n", regstate, b2->from);
-			b0->regstate = regstate;
+			char *cmd = r_str_newf ("abe %s", regstate);
+			int res = r_core_cmd_call_at (core, b2->from, cmd);
+			if (res != 0) {
+				R_LOG_WARN ("Abe failed");
+			}
+			free (cmd);
+			b0->regstate = strdup (regstate);
 			emulate_block (core, blocks, b2);
-			unused = false;
-			// break;
 		}
 	}
-	if (unused) {
-		free (regstate);
-	}
+	free (regstate);
 }
 
 static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
@@ -4677,18 +4675,17 @@ static void emulate_block(RCore *core, RVecBlocks *blocks, BlockItem *b0) {
 	if (b1) {
 		if (b1->regstate) {
 			save_regstate_in_destinations (core, blocks, b0, b1);
-		} else {
-			// b1->regstate;
-	//		emulate_block (core, blocks, b1);
 		}
 	} else {
 		// root node, assume initial regstate
 		R_LOG_INFO ("# root node 0x%"PFMT64x, b0->from);
 		char *regstate = r_core_cmd_str (core, "dre");
 		r_str_trim (regstate);
-		r_core_cmdf (core, "abe %s @0x%"PFMT64x, regstate, b0->from);
+		char *cmd = r_str_newf ("abe %s", regstate);
+		r_core_cmd_call_at (core, b0->from, cmd);
+		free (cmd);
 		free (regstate);
-		r_core_cmdf (core, "aeb @0x%"PFMT64x, b0->from);
+		r_core_cmd_call_at (core, b0->from, "aeb");
 		b0->regstate = strdup ("dr0,#!"); //initial regstate
 		save_regstate_in_destinations (core, blocks, b0, NULL);
 	}
@@ -5008,7 +5005,11 @@ static void cmd_aflxj(RCore *core) {
 
 static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
 	const char *cc = mycc? mycc: (fcn && fcn->callconv)? fcn->callconv: "reg";
-	r_core_cmdf (core, "afcll~%s (", cc);
+	char *safe = r_str_sanitize_r2 (cc);
+	if (safe) {
+		r_core_cmdf (core, "afcll~%s (", safe);
+		free (safe);
+	}
 }
 
 static void cmd_afix(RCore *core, const char *input) {
@@ -8739,7 +8740,8 @@ static void cmd_aep(RCore *core, const char *input) {
 			const char *pin_name = last? last + 1: f->name;
 			const char *havepin = r_anal_pin_get (core->anal, pin_name);
 			if (havepin) {
-				r_core_cmdf (core, "aep %s @ 0x%08" PFMT64x, pin_name, addr);
+				// AITODO: implement r_core_callf_at (similar to r_core_cmdf, but using r_core_cmd_call_at and formatting a string. the line below should work as an example usage
+				r_core_callf_at (core, addr, "aep %s", pin_name);
 			}
 		}
 		break;
@@ -14626,18 +14628,17 @@ static int cmd_anal_all(RCore *core, const char *input) {
 			RListIter *iter;
 			RIOMap *map;
 			RList *list = r_core_get_boundaries_prot (core, R_PERM_X, NULL, "anal");
-			if (!list) {
-				break;
+			if (list) {
+				bool hasnext = r_config_get_b (core->config, "anal.hasnext");
+				r_list_foreach (list, iter, map) {
+					r_core_seek (core, r_io_map_begin (map), true);
+					r_config_set_b (core->config, "anal.hasnext", true);
+					r_core_cmd_call (core, "afr");
+					r_config_set_b (core->config, "anal.hasnext", hasnext);
+				}
+				r_core_seek (core, cur, true);
+				r_list_free (list);
 			}
-			bool hasnext = r_config_get_b (core->config, "anal.hasnext");
-			r_list_foreach (list, iter, map) {
-				r_core_seek (core, r_io_map_begin (map), true);
-				r_config_set_b (core->config, "anal.hasnext", true);
-				r_core_cmd_call (core, "afr");
-				r_config_set_b (core->config, "anal.hasnext", hasnext);
-			}
-			r_list_free (list);
-			r_core_seek (core, cur, true);
 		} else if (input[1] == 't') { // "aaft"
 			cmd_anal_aaft (core);
 		} else if (input[1] == 'f') { // "aaff"
@@ -15661,11 +15662,6 @@ static bool match_prelude_internal(RCore *core, const char *input, ut64 *fcnaddr
 		return false;
 	}
 	ut64 off = core->addr;
-#if 0
-	if (input[1] == ' ') {
-		off = r_num_math (core->num, input + 1);
-	}
-#endif
 	ut8 *p = prelude;
 	r_mem_swap (p, prelude_sz);
 	r_io_read_at (core->io, off - bufsz + prelude_sz, buf, bufsz);
@@ -15768,6 +15764,27 @@ static int cmd_apt(RCore *core, const char *input) {
 	return 0;
 }
 
+static void cmd_abe(RCore *core, const char *input) {
+	const char *arg = r_str_trim_head_ro (input + 1);
+	if (*arg == '?') {
+		r_core_cmd_help_match (core, help_msg_ab, "abe");
+		return;
+	}
+	RListIter *iter;
+	RAnalBlock *bb;
+	RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
+	r_list_foreach (blocks, iter, bb) {
+		if (*arg) {
+			free (bb->esil);
+			bb->esil = strdup (arg);
+		} else {
+			if (bb->esil) {
+				r_cons_println (core->cons, bb->esil);
+			}
+		}
+	}
+}
+
 static void cmd_ab(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	if (input[0] && input[0] != 'p' && input[0] != 't' && input[1] == '?') {
@@ -15796,26 +15813,7 @@ static void cmd_ab(RCore *core, const char *input) {
 		r_core_cmdf (core, "afb%s", input);
 		break;
 	case 'e': // "abe"
-		{
-			const char *arg = r_str_trim_head_ro (input + 1);
-			if (*arg == '?') {
-				r_core_cmd_help_match (core, help_msg_ab, "abe");
-			} else {
-				RListIter *iter;
-				RAnalBlock *bb;
-				RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
-				r_list_foreach (blocks, iter, bb) {
-					if (*arg) {
-						free (bb->esil);
-						bb->esil = strdup (arg);
-					} else {
-						if (bb->esil) {
-							r_cons_printf (core->cons, "%s\n", bb->esil);
-						}
-					}
-				}
-			}
-		}
+		cmd_abe (core, input);
 		// OLD not confuse with aeb: r_core_cmdf (core, "aeb%s", input + 2);
 		break;
 	case 'f': // "abf"
