@@ -9,16 +9,12 @@
 #include <r_cons.h>
 #include <r_hash.h>
 #include <r_util.h>
-#include <r_util/r_buf.h>
 #include <r_reg.h>
 #include <r_egg.h>
 #include <r_bp.h>
 #include <r_cmd.h>
 #include <r_io.h>
 #include <r_syscall.h>
-#if R2__UNIX__
-#include <unistd.h>
-#endif
 
 #include <r_config.h>
 #include "r_bind.h"
@@ -227,7 +223,6 @@ typedef struct r_debug_session_t {
 	ut32 maxcnum;
 	RDebugCheckpoint *cur_chkpt;
 	RVecDebugCheckpoint *checkpoints;
-	HtUP *checkpoint_index; /* checkpoint_id -> index + 1 */
 	HtUP *memory; /* RVecDebugChangeMem */
 	HtUP *registers; /* RVecDebugChangeReg */
 	ut64 current_checkpoint_id;

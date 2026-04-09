@@ -531,9 +531,6 @@ static RCoreHelpMessage help_msg_dts = {
 };
 
 static void cmd_dtsc(RCore *core, const char *input) {
-	if (!core || !input) {
-		return;
-	}
 	if (!core->dbg->session) {
 		R_LOG_ERROR ("No session started");
 		return;
@@ -550,9 +547,6 @@ static void cmd_dtsc(RCore *core, const char *input) {
 }
 
 static void cmd_dtsd(RCore *core, const char *input) {
-	if (!core || !input) {
-		return;
-	}
 	if (!core->dbg->session) {
 		R_LOG_ERROR ("No session started");
 		return;
@@ -573,9 +567,6 @@ static void cmd_dtsd(RCore *core, const char *input) {
 }
 
 static void cmd_dtsr(RCore *core, const char *input) {
-	if (!core || !input) {
-		return;
-	}
 	if (!core->dbg->session) {
 		R_LOG_ERROR ("No session started");
 		return;

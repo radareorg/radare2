@@ -21,30 +21,6 @@ static int cmp_cnum_chkpt(const RDebugCheckpoint *a, const RDebugCheckpoint *b) 
 
 #define R_DEBUG_SESSION_CHECKPOINT_WARN 1024
 
-static size_t checkpoint_index_slot(const RDebugSession *session, ut64 checkpoint_id) {
-	return (size_t)ht_up_find (session->checkpoint_index, checkpoint_id, NULL);
-}
-
-static void checkpoint_index_insert(RDebugSession *session, ut64 checkpoint_id, size_t index) {
-	ht_up_insert (session->checkpoint_index, checkpoint_id, (void *)(index + 1));
-}
-
-static void checkpoint_index_rebuild(RDebugSession *session) {
-	if (!session || !session->checkpoint_index || !session->checkpoints) {
-		return;
-	}
-	ht_up_free (session->checkpoint_index);
-	session->checkpoint_index = ht_up_new (NULL, NULL, NULL);
-	if (!session->checkpoint_index) {
-		return;
-	}
-	RDebugCheckpoint *chkpt;
-	size_t index = 0;
-	R_VEC_FOREACH (session->checkpoints, chkpt) {
-		checkpoint_index_insert (session, chkpt->id, index++);
-	}
-}
-
 static void checkpoint_warn_if_large(RDebugSession *session) {
 	size_t count = RVecDebugCheckpoint_length (session->checkpoints);
 	if (count > 0 && !(count % R_DEBUG_SESSION_CHECKPOINT_WARN)) {
@@ -94,7 +70,6 @@ static void restore_checkpoint_snapshot(RDebug *dbg, const RDebugCheckpoint *chk
 R_API void r_debug_session_free(RDebugSession *session) {
 	if (session) {
 		RVecDebugCheckpoint_free (session->checkpoints);
-		ht_up_free (session->checkpoint_index);
 		ht_up_free (session->registers);
 		ht_up_free (session->memory);
 		free (session);
@@ -113,11 +88,6 @@ R_API RDebugSession *r_debug_session_new(void) {
 	RDebugSession *session = R_NEW0 (RDebugSession);
 	session->checkpoints = RVecDebugCheckpoint_new ();
 	if (!session->checkpoints) {
-		r_debug_session_free (session);
-		return NULL;
-	}
-	session->checkpoint_index = ht_up_new (NULL, NULL, NULL);
-	if (!session->checkpoint_index) {
 		r_debug_session_free (session);
 		return NULL;
 	}
@@ -182,7 +152,6 @@ R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char
 	}
 
 	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
-	checkpoint_index_insert (session, checkpoint.id, RVecDebugCheckpoint_length (session->checkpoints) - 1);
 	session->current_checkpoint_id = checkpoint.id;
 	checkpoint_warn_if_large (session);
 
@@ -293,25 +262,30 @@ static bool checkpoint_has_children(RDebugSession *session, ut64 checkpoint_id) 
 }
 
 R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, ut64 checkpoint_id) {
-	R_RETURN_VAL_IF_FAIL (session && session->checkpoint_index, NULL);
-	size_t slot = checkpoint_index_slot (session, checkpoint_id);
-	if (!slot) {
-		return NULL;
+	R_RETURN_VAL_IF_FAIL (session, NULL);
+	RDebugCheckpoint *chkpt;
+	R_VEC_FOREACH (session->checkpoints, chkpt) {
+		if (chkpt->id == checkpoint_id) {
+			return chkpt;
+		}
 	}
-	return RVecDebugCheckpoint_at (session->checkpoints, slot - 1);
+	return NULL;
 }
 
 R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id) {
 	R_RETURN_VAL_IF_FAIL (dbg && dbg->session, false);
 	RDebugSession *session = dbg->session;
-	size_t slot = checkpoint_index_slot (session, checkpoint_id);
-	if (!slot) {
-		R_LOG_ERROR ("Unknown checkpoint id %"PFMT64u, checkpoint_id);
-		return false;
+	RDebugCheckpoint *chkpt;
+	size_t index = 0;
+	bool found = false;
+	R_VEC_FOREACH (session->checkpoints, chkpt) {
+		if (chkpt->id == checkpoint_id) {
+			found = true;
+			break;
+		}
+		index++;
 	}
-	size_t index = slot - 1;
-	RDebugCheckpoint *chkpt = RVecDebugCheckpoint_at (session->checkpoints, index);
-	if (!chkpt) {
+	if (!found) {
 		R_LOG_ERROR ("Unknown checkpoint id %"PFMT64u, checkpoint_id);
 		return false;
 	}
@@ -324,7 +298,6 @@ R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id) {
 		return false;
 	}
 	RVecDebugCheckpoint_remove (session->checkpoints, index);
-	checkpoint_index_rebuild (session);
 	return true;
 }
 
@@ -690,13 +663,12 @@ R_API bool r_debug_session_save(RDebugSession *session, const char *path) {
 
 static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
+	RJson *reg_json = r_json_parsedup (v);
+	if (!reg_json) {
 		return true;
 	}
-	RJson *reg_json = r_json_parse (json_str);
-	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
-		free (json_str);
+	if (reg_json->type != R_JSON_ARRAY) {
+		r_json_free (reg_json);
 		return true;
 	}
 
@@ -705,7 +677,6 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RVecDebugChangeMem *vmem = RVecDebugChangeMem_new ();
 	if (!vmem) {
 		R_LOG_ERROR ("failed to allocate RVecDebugChangeMem vmem");
-		free (json_str);
 		r_json_free (reg_json);
 		return false;
 	}
@@ -728,7 +699,6 @@ static bool deserialize_memory_cb(void *user, const char *addr, const char *v) {
 	RVecDebugChangeMem_push_back (vmem, &mem);
 }
 
-	free (json_str);
 	r_json_free (reg_json);
 	return true;
 }
@@ -739,13 +709,12 @@ static void deserialize_memory(Sdb *db, HtUP *memory) {
 
 static bool deserialize_registers_cb(void *user, const char *addr, const char *v) {
 	RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
+	RJson *reg_json = r_json_parsedup (v);
+	if (!reg_json) {
 		return true;
 	}
-	RJson *reg_json = r_json_parse (json_str);
-	if (!reg_json || reg_json->type != R_JSON_ARRAY) {
-		free (json_str);
+	if (reg_json->type != R_JSON_ARRAY) {
+		r_json_free (reg_json);
 		return true;
 	}
 
@@ -755,7 +724,6 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 	if (!vreg) {
 		R_LOG_ERROR ("failed to allocate RVecDebugChangeReg vreg");
 		r_json_free (reg_json);
-		free (json_str);
 		return true;
 	}
 	ht_up_insert (registers, sdb_atoi (addr), vreg);
@@ -778,7 +746,6 @@ static bool deserialize_registers_cb(void *user, const char *addr, const char *v
 }
 
 	r_json_free (reg_json);
-	free (json_str);
 	return true;
 }
 
@@ -788,13 +755,12 @@ static void deserialize_registers(Sdb *db, HtUP *registers) {
 
 static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v) {
 	const RJson *child;
-	char *json_str = strdup (v);
-	if (!json_str) {
+	RJson *chkpt_json = r_json_parsedup (v);
+	if (!chkpt_json) {
 		return true;
 	}
-	RJson *chkpt_json = r_json_parse (json_str);
-	if (!chkpt_json || chkpt_json->type != R_JSON_OBJECT) {
-		free (json_str);
+	if (chkpt_json->type != R_JSON_OBJECT) {
+		r_json_free (chkpt_json);
 		return true;
 	}
 
@@ -806,13 +772,11 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 	// Extract RRegArena's from "registers"
 	const RJson *id_json = r_json_get (chkpt_json, "id");
 	if (!id_json || id_json->type != R_JSON_INTEGER || id_json->num.u_value != checkpoint.id) {
-		free (json_str);
 		r_json_free (chkpt_json);
 		return true;
 	}
 	const RJson *cnum_json = r_json_get (chkpt_json, "cnum");
 	if (!cnum_json || cnum_json->type != R_JSON_INTEGER) {
-		free (json_str);
 		r_json_free (chkpt_json);
 		return true;
 	}
@@ -835,7 +799,8 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 	}
 	const RJson *regs_json = r_json_get (chkpt_json, "registers");
 	if (!regs_json || regs_json->type != R_JSON_ARRAY) {
-		free (json_str);
+		r_debug_checkpoint_fini_vec (&checkpoint);
+		r_json_free (chkpt_json);
 		return true;
 	}
 	for (child = regs_json->children.first; child; child = child->next) {
@@ -900,7 +865,6 @@ static bool deserialize_checkpoints_cb(void *user, const char *id, const char *v
 			r_list_append (checkpoint.snaps, snap);
 		}
 	}
-	free (json_str);
 	r_json_free (chkpt_json);
 	RVecDebugCheckpoint_push_back (checkpoints, &checkpoint);
 	return true;
@@ -973,7 +937,6 @@ R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db) {
 	DESERIALIZE ("memory", deserialize_memory (subdb, session->memory));
 	DESERIALIZE ("registers", deserialize_registers (subdb, session->registers));
 	DESERIALIZE ("checkpoints", deserialize_checkpoints (subdb, session->checkpoints));
-	checkpoint_index_rebuild (session);
 	if (!session->next_checkpoint_id) {
 		RDebugCheckpoint *chkpt;
 		ut64 max_checkpoint_id = 0;

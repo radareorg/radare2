@@ -90,7 +90,6 @@ static RDebugSession *ref_session(void) {
 		r_list_append (checkpoint.snaps, snap);
 	}
 	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
-	ht_up_insert (session->checkpoint_index, checkpoint.id, (void *)1);
 	session->current_checkpoint_id = checkpoint.id;
 	session->next_checkpoint_id = 2;
 	session->linear_history_valid = true;
@@ -252,8 +251,6 @@ static bool test_session_branch_roundtrip(void) {
 	branch.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	RVecDebugCheckpoint_push_back (ref->checkpoints, &branch);
 
-	ht_up_insert (ref->checkpoint_index, 1, (void *)1);
-	ht_up_insert (ref->checkpoint_index, 2, (void *)2);
 	ref->current_checkpoint_id = 2;
 	ref->next_checkpoint_id = 3;
 	ref->linear_history_valid = false;
@@ -331,8 +328,6 @@ static bool test_session_delete_leaf_checkpoint(void) {
 	leaf.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &root);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &leaf);
-	ht_up_insert (session->checkpoint_index, 1, (void *)1);
-	ht_up_insert (session->checkpoint_index, 2, (void *)2);
 	session->current_checkpoint_id = 1;
 	dbg.session = session;
 
@@ -360,8 +355,6 @@ static bool test_session_delete_rejects_current_or_parent(void) {
 	leaf.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &root);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &leaf);
-	ht_up_insert (session->checkpoint_index, 1, (void *)1);
-	ht_up_insert (session->checkpoint_index, 2, (void *)2);
 	dbg.session = session;
 
 	session->current_checkpoint_id = 1;
@@ -385,7 +378,6 @@ static bool test_checkpoint_restore_preserves_resume_breakpoint_addr(void) {
 	checkpoint.resume_bp_addr = 0x401dd0;
 	checkpoint.snaps = r_list_newf ((RListFree)r_debug_snap_free);
 	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
-	ht_up_insert (session->checkpoint_index, 1, (void *)1);
 	dbg.session = session;
 	dbg.reg = r_reg_new ();
 	mu_assert ("debug reg", dbg.reg != NULL);
