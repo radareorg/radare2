@@ -37,3 +37,69 @@ Usage: pp[0|1|2|4|8|a|d|f|n] [len]  print patterns
 | pp0 [len]  print buffer filled with zeros
 EOF
 RUN
+
+NAME=pp2 little endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+pp2 4
+EOF
+EXPECT=<<EOF
+0000000100020003
+EOF
+RUN
+
+NAME=pp2 big endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=true
+pp2 4
+EOF
+EXPECT=<<EOF
+0000010002000300
+EOF
+RUN
+
+NAME=pp4 little endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+pp4 2
+EOF
+EXPECT=<<EOF
+0000000000000001
+EOF
+RUN
+
+NAME=pp4 big endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=true
+pp4 2
+EOF
+EXPECT=<<EOF
+0000000001000000
+EOF
+RUN
+
+NAME=pp8 little endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=false
+pp8 2
+EOF
+EXPECT=<<EOF
+00000000000000000000000000000001
+EOF
+RUN
+
+NAME=pp8 big endian
+FILE=-
+CMDS=<<EOF
+e cfg.bigendian=true
+pp8 2
+EOF
+EXPECT=<<EOF
+00000000000000000100000000000000
+EOF
+RUN
