@@ -1549,7 +1549,7 @@ static void ds_show_refs(RDisasmState *ds) {
 
 static void ds_show_anos(RDisasmState *ds) {
 	if (ds->show_anos) {
-		r_core_cmd_call_at (ds->core, ds->at, "anol");
+		r_core_call_at (ds->core, ds->at, "anol");
 	}
 }
 
@@ -6886,7 +6886,7 @@ toro:
 			char *fmt = r_type_format (core->anal->sdb_types, link_type);
 			if (fmt) {
 				r_cons_printf (core->cons, "(%s)\n", link_type);
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, fmt, ds->addr + ds->index);
+				r_core_callf_at (core, ds->addr + ds->index, "pf %s", fmt);
 				const ut32 type_bitsize = r_type_get_bitsize (core->anal->sdb_types, link_type);
 				// always round up when calculating byte_size from bit_size of types
 				// could be struct with a bitfield entry
