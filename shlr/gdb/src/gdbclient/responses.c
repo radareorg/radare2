@@ -2,12 +2,10 @@
 
 #include "arch.h"
 #include "gdbclient/responses.h"
-#include "gdbclient/core.h"
 #include "gdbr_common.h"
 #include "utils.h"
 #include "r_util/r_str.h"
 #include "r_util/r_log.h"
-
 
 int handle_g(libgdbr_t *g) {
 	if (unpack_hex (g->data, g->data_len, g->data) < 0) {
@@ -26,11 +24,7 @@ int handle_M(libgdbr_t *g) {
 }
 
 int handle_P(libgdbr_t *g) {
-	if (g->data_len == 0) {
-		g->last_code = MSG_NOT_SUPPORTED;
-	} else {
-		g->last_code = MSG_OK;
-	}
+	g->last_code = g->data_len? MSG_OK: MSG_NOT_SUPPORTED;
 	return send_ack (g);
 }
 
@@ -58,14 +52,14 @@ int handle_qStatus(libgdbr_t *g) {
 		return -1;
 	}
 	// TODO: We do not yet handle the case where a trace is already running
-	if (strncmp (tok, "T0", 2)) {
+	if (!r_str_startswith (tok, "T0")) {
 		send_ack (g);
 		free (data);
 		return -1;
 	}
 	// Ensure that trace was never run
-	while (tok != NULL) {
-		if (!strncmp (tok, "tnotrun:0", 9)) {
+	while (tok) {
+		if (r_str_startswith (tok, "tnotrun:0")) {
 			free (data);
 			return send_ack (g);
 		}
@@ -89,31 +83,6 @@ int handle_qC(libgdbr_t *g) {
 	}
 	return send_ack (g);
 }
-
-/*
-int handle_execFileRead(libgdbr_t *g) {
-	if (g->data[0] == 'E') {
-		send_ack (g);
-		return -1;
-	}
-	if (!g->data[1]) {
-		// We're supposed to get filename too
-		send_ack (g);
-		return -1;
-	}
-	g->exec_file_name = strdup (g->data + 1);
-	return send_ack (g);
-}
-
-int handle_fOpen(libgdbr_t *g) {
-	if (!*g->data || g->data[0] != 'F') {
-		send_ack (g);
-		return -1;
-	}
-	g->exec_fd = strtol (g->data + 1, NULL, 16);
-	return send_ack (g);
-}
- */
 
 int handle_setbp(libgdbr_t *g) {
 	return send_ack (g);
@@ -189,60 +158,42 @@ int handle_vFile_close(libgdbr_t *g) {
 #include <r_debug.h>
 #include <gdbclient/commands.h>
 
-static int stop_reason_exit(libgdbr_t *g) {
-	int status = 0, pid = g->pid;
-	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
-	if (g->stub_features.multiprocess && g->data_len > 3) {
-		if (sscanf (g->data + 1, "%x;process:%x", &status, &pid) != 2) {
-			R_LOG_DEBUG ("Message from remote: %s", g->data);
-			return -1;
-		}
-		R_LOG_DEBUG ("Process %d exited with status %d", pid, status);
-		g->stop_reason.thread.pid = pid;
-		g->stop_reason.thread.tid = pid;
-		g->stop_reason.is_valid = true;
-		return 0;
+static bool parse_thread_stop(const char *data, const char *prefix, int *pid, int *tid, bool multiprocess, bool *present) {
+	if (*present || !r_str_startswith (data, prefix)) {
+		return false;
 	}
-	if (!isxdigit ((unsigned char)g->data[1])) {
-		R_LOG_DEBUG ("Message from remote: %s", g->data);
-		return -1;
+	const char *colon = strchr (data, ':');
+	if (!colon || read_thread_id (colon + 1, pid, tid, multiprocess) < 0) {
+		return false;
 	}
-	status = (int) strtol (g->data + 1, NULL, 16);
-	R_LOG_DEBUG ("Process %d exited with status %d", g->pid, status);
-	g->stop_reason.thread.pid = pid;
-	g->stop_reason.thread.tid = pid;
-	g->stop_reason.is_valid = true;
-	// Just to be sure, disconnect
-	return gdbr_disconnect (g);
+	*present = true;
+	return true;
 }
 
-static int stop_reason_terminated(libgdbr_t *g) {
-	int signal = 0, pid = g->pid;
+static int stop_reason_death(libgdbr_t *g, bool is_signal) {
+	int value = 0, pid = g->pid;
+	bool multi = g->stub_features.multiprocess && g->data_len > 3;
 	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
-	if (g->stub_features.multiprocess && g->data_len > 3) {
-		if (sscanf (g->data + 1, "%x;process:%x", &signal, &pid) != 2) {
+	if (multi) {
+		if (sscanf (g->data + 1, "%x;process:%x", &value, &pid) != 2) {
 			R_LOG_DEBUG ("Message from remote: %s", g->data);
 			return -1;
 		}
-		R_LOG_DEBUG ("Process %d terminated with signal %d", pid, signal);
-		g->stop_reason.thread.pid = pid;
-		g->stop_reason.thread.tid = pid;
-		g->stop_reason.signum = signal;
-		g->stop_reason.is_valid = true;
-		return 0;
-	}
-	if (!isxdigit ((unsigned char)g->data[1])) {
+	} else if (!isxdigit ((unsigned char)g->data[1])) {
 		R_LOG_DEBUG ("Message from remote: %s", g->data);
 		return -1;
+	} else {
+		value = (int) strtol (g->data + 1, NULL, 16);
 	}
-	signal = (int) strtol (g->data + 1, NULL, 16);
-	R_LOG_DEBUG ("Process %d terminated with signal %d", g->pid, signal);
+	R_LOG_DEBUG ("Process %d %s %d", pid,
+		is_signal? "terminated with signal": "exited with status", value);
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
-	g->stop_reason.signum = signal;
+	if (is_signal) {
+		g->stop_reason.signum = value;
+	}
 	g->stop_reason.is_valid = true;
-	// Just to be sure, disconnect
-	return gdbr_disconnect (g);
+	return multi? 0: gdbr_disconnect (g);
 }
 
 int handle_stop_reason(libgdbr_t *g) {
@@ -253,7 +204,6 @@ int handle_stop_reason(libgdbr_t *g) {
 	switch (g->data[0]) {
 	case 'O':
 		unpack_hex (g->data + 1, g->data_len - 1, g->data + 1);
-		//g->data[g->data_len - 1] = '\0';
 		R_LOG_DEBUG ("%s: %s", __func__, g->data + 1);
 		if (send_ack (g) < 0) {
 			return -1;
@@ -263,9 +213,9 @@ int handle_stop_reason(libgdbr_t *g) {
 		g->stop_reason.reason = R_DEBUG_REASON_NONE;
 		return 0;
 	case 'W':
-		return stop_reason_exit (g);
+		return stop_reason_death (g, false);
 	case 'X':
-		return stop_reason_terminated (g);
+		return stop_reason_death (g, true);
 	}
 	if (g->data[0] != 'T') {
 		return -1;
@@ -275,7 +225,6 @@ int handle_stop_reason(libgdbr_t *g) {
 	g->data[g->data_len] = '\0';
 	R_FREE (g->stop_reason.exec.path);
 	memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
-	g->stop_reason.exec.path = NULL;  // Ensure pointer is explicitly NULL after memset
 	g->stop_reason.core = -1;
 	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
 		return -1;
@@ -283,17 +232,9 @@ int handle_stop_reason(libgdbr_t *g) {
 	g->stop_reason.is_valid = true;
 	g->stop_reason.reason = R_DEBUG_REASON_SIGNAL;
 	for (ptr1 = r_str_tok_r (g->data + 3, ";", &save_ptr); ptr1; ptr1 = r_str_tok_r (NULL, ";", &save_ptr)) {
-		if (r_str_startswith (ptr1, "thread") && !g->stop_reason.thread.present) {
-			if (!(ptr2 = strchr (ptr1, ':'))) {
-				continue;
-			}
-			ptr2++;
-			if (read_thread_id (ptr2, &g->stop_reason.thread.pid,
-					    &g->stop_reason.thread.tid,
-					    g->stub_features.multiprocess) < 0) {
-				continue;
-			}
-			g->stop_reason.thread.present = true;
+		if (parse_thread_stop (ptr1, "thread", &g->stop_reason.thread.pid,
+				&g->stop_reason.thread.tid, g->stub_features.multiprocess,
+				&g->stop_reason.thread.present)) {
 			continue;
 		}
 		if (r_str_startswith (ptr1, "core")) {
@@ -327,7 +268,6 @@ int handle_stop_reason(libgdbr_t *g) {
 					continue;
 				}
 				ptr2++;
-				R_FREE (g->stop_reason.exec.path);
 				if (!(g->stop_reason.exec.path = calloc (strlen (ptr1) / 2, 1))) {
 					continue;
 				}
@@ -335,31 +275,14 @@ int handle_stop_reason(libgdbr_t *g) {
 				g->stop_reason.exec.present = true;
 				continue;
 			}
-			if (r_str_startswith (ptr1, "fork") && !g->stop_reason.fork.present) {
-				// TODO: reverse the conditions to add more nesting and reduce the amount of 'continue' statements. do the same in every other similar pattern you can find in this file
-				if (!(ptr2 = strchr (ptr1, ':'))) {
-					continue;
-				}
-				ptr2++;
-				if (read_thread_id (ptr2, &g->stop_reason.fork.pid,
-						    &g->stop_reason.fork.tid,
-						    g->stub_features.multiprocess) < 0) {
-					continue;
-				}
-				g->stop_reason.fork.present = true;
+			if (parse_thread_stop (ptr1, "fork", &g->stop_reason.fork.pid,
+					&g->stop_reason.fork.tid, g->stub_features.multiprocess,
+					&g->stop_reason.fork.present)) {
 				continue;
 			}
-			if (r_str_startswith (ptr1, "vfork") && !g->stop_reason.vfork.present) {
-				if (!(ptr2 = strchr (ptr1, ':'))) {
-					continue;
-				}
-				ptr2++;
-				if (read_thread_id (ptr2, &g->stop_reason.vfork.pid,
-						    &g->stop_reason.vfork.tid,
-						    g->stub_features.multiprocess) < 0) {
-					continue;
-				}
-				g->stop_reason.vfork.present = true;
+			if (parse_thread_stop (ptr1, "vfork", &g->stop_reason.vfork.pid,
+					&g->stop_reason.vfork.tid, g->stub_features.multiprocess,
+					&g->stop_reason.vfork.present)) {
 				continue;
 			}
 			if (r_str_startswith (ptr1, "vforkdone")) {
@@ -418,22 +341,13 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		return -1;
 	}
 	while (ptr) {
-		if (!isxdigit ((unsigned char)*ptr)) {
-			// This is not a reg value. Skip
-			ptr = r_str_tok_r (NULL, ";", &save_ptr);
-			continue;
+		if (isxdigit ((unsigned char)*ptr)) {
+			regnum = (int) strtoul (ptr, NULL, 16);
+			if (regnum < tot_regs && (ptr2 = strchr (ptr, ':'))) {
+				unpack_hex (ptr2 + 1, strlen (ptr2 + 1), buf + g->registers[regnum].offset);
+			}
 		}
-		// Get register number
-		regnum = (int) strtoul (ptr, NULL, 16);
-		if (regnum >= tot_regs || !(ptr2 = strchr (ptr, ':'))) {
-			ptr = r_str_tok_r (NULL, ";", &save_ptr);
-			continue;
-		}
-		ptr2++;
-		// Write to offset
-		unpack_hex (ptr2, strlen (ptr2), buf + g->registers[regnum].offset);
 		ptr = r_str_tok_r (NULL, ";", &save_ptr);
-		continue;
 	}
 	memcpy (g->data, buf, buflen);
 	g->data_len = buflen;
