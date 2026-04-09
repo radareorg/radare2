@@ -6404,7 +6404,7 @@ R_API void r_core_anal_inflags(RCore *core, const char * R_NULLABLE glob) {
 		if (simple) {
 			RFlagItem *fi = r_flag_get_at (core->flags, a0, 0);
 			char *fcn_name = strdup (fi? fi->name: addr);
-			r_name_filter (fcn_name);
+			r_name_filter (fcn_name, -1);
 			r_core_cmdf (core, "'af+ 0x%08"PFMT64x" fcn.%s", a0, fcn_name);
 			r_core_cmdf (core, "afb+ 0x%08"PFMT64x" 0x%08"PFMT64x" %d", a0, a0, (int)sz);
 			free (fcn_name);
