@@ -2827,8 +2827,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			RAnalMetaItem *meta = meta_node? meta_node->data: NULL;
 			if (meta && meta->type == R_META_TYPE_FORMAT && meta_node->start == addr + j) {
 				r_cons_printf (core->cons, ".format %s ; size=", meta->str);
-				r_core_cmd_callf (core, "pfs %s", meta->str);
-				r_core_cmdf (core, "pf %s @ 0x%08" PFMT64x, meta->str, meta_node->start);
+				r_core_callf (core, "pfs %s", meta->str);
+				r_core_callf_at (core, meta_node->start, "pf %s", meta->str);
 				if (usecolor) {
 					append_both (Color_INVERT);
 				}
@@ -8736,7 +8736,7 @@ static int cmd_print(void *data, const char *input) {
 				if (data) {
 					const char *const fn = ".tmp.py";
 					r_file_dump (fn, (ut8 *)data, sz, false);
-					r_core_cmd_callf (core, ". %s", fn);
+					r_core_callf (core, ". %s", fn);
 					r_file_rm (fn);
 					free (data);
 				}
@@ -8745,7 +8745,7 @@ static int cmd_print(void *data, const char *input) {
 			}
 			break;
 		case ':':
-			r_core_cmd_callf (core, "#!python %s", input + 2);
+			r_core_callf (core, "#!python %s", input + 2);
 			break;
 		case ' ':
 			{
@@ -8754,14 +8754,14 @@ static int cmd_print(void *data, const char *input) {
 				if (R_STR_ISNOTEMPTY (data)) {
 					const char *const fn = ".tmp.py";
 					if (r_file_dump (fn, (ut8 *)data, sz, false)) {
-						r_core_cmd_callf (core, ". %s", fn);
+						r_core_callf (core, ". %s", fn);
 					}
 					r_file_rm (fn);
 				}
 			}
 			break;
 		case 0:
-			r_core_cmd_call (core, "yp");
+			r_core_call (core, "yp");
 			break;
 		}
 		break;
