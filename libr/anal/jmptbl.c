@@ -352,8 +352,8 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		return false;
 	}
 	ut64 jmpptr, offs;
-	int jmptblsz = jmptbl_size * sz;
-	if (jmptblsz < 1) {
+	const ut64 jmptblsz = jmptbl_size * sz;
+	if (jmptblsz < 1 || jmptblsz > ST32_MAX) {
 		R_LOG_DEBUG ("Invalid jump table size at 0x%08"PFMT64x, jmptbl_loc);
 		return false;
 	}
@@ -374,7 +374,7 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 	jmptbl_target_ctx_init (&target_ctx, anal, ip);
 	// eprintf ("JMPTBL AT 0x%"PFMT64x"\n", jmptbl_loc);
 	anal->iob.read_at (anal->iob.io, jmptbl_loc, jmptbl, jmptblsz);
-	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
+	for (offs = 0; offs + sz - 1 < jmptblsz; offs += sz) {
 		switch (sz) {
 		case 1:
 			jmpptr = (ut64)(ut8)r_read_le8 (jmptbl + offs);
@@ -499,11 +499,6 @@ static bool detect_casenum_shift(RAnalOp *op, const char **cmp_reg, st64 *start_
 }
 
 R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_addr, ut64 lea_addr, ut64 *table_size, ut64 *default_case, st64 *start_casenum_shift) {
-	bool isValid = false;
-	bool foundCmp = false;
-	ut64 i;
-
-	RAnalOp tmp_aop = {0};
 	if (lea_addr > jmp_addr) {
 		return false;
 	}
@@ -512,17 +507,21 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 	if (!buf) {
 		return false;
 	}
-	// search for a cmp register with a reasonable size
-	if (!anal->iob.read_at (anal->iob.io, lea_addr, (ut8 *)buf, search_sz)) {
-		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, lea_addr);
-		return false;
-	}
-
+	bool isValid = false;
 	RVecUT64 v;
 	RVecUT64_init (&v);
+	RAnalOp tmp_aop = {0};
+	// search for a cmp register with a reasonable size
+	if (!anal->iob.read_at (anal->iob.io, lea_addr, buf, search_sz)) {
+		R_LOG_ERROR ("Cannot read at 0x%08"PFMT64x, lea_addr);
+		goto out;
+	}
+
+	bool foundCmp = false;
 	int len = 0;
 	const char *cmp_reg = NULL;
 	ut64 cmp_val = 0;
+	ut64 i;
 	for (i = 0; i + 8 < search_sz; i += len) {
 		len = r_anal_op (anal, &tmp_aop, lea_addr + i, buf + i, search_sz - i, R_ARCH_OP_MASK_BASIC);
 		if (len < 1) {
@@ -534,7 +533,9 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 				r_anal_op_fini (&tmp_aop);
 				continue;
 			}
-			*default_case = tmp_aop.jump == tmp_aop.jump + len ? tmp_aop.fail : tmp_aop.jump;
+			// pick the fall-through edge as default when the jump targets the table dispatcher
+			const ut64 fallthrough = lea_addr + i + len;
+			*default_case = (tmp_aop.jump == fallthrough) ? tmp_aop.fail : tmp_aop.jump;
 			if (tmp_aop.cond == R_ANAL_CONDTYPE_HI) {
 				*table_size = cmp_val;
 			}
@@ -597,6 +598,7 @@ R_API bool try_get_delta_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 jmp_a
 			r_anal_op_fini (&tmp_aop);
 		}
 	}
+out:
 	RVecUT64_fini (&v);
 	free (buf);
 	return isValid;
