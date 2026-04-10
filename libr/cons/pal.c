@@ -762,15 +762,11 @@ R_API void r_cons_pal_reload(RCons *cons) {
 R_API void r_cons_rainbow_new(RCons *cons, size_t sz) {
 	if (sz < 1) {
 		R_LOG_ERROR ("Negative rainbow");
+		return;
 	}
+	r_cons_context_rainbow_free (cons->context);
+	cons->context->pal.rainbow = (char **)calloc (sizeof (char *), sz);
 	cons->context->pal.rainbow_sz = sz;
-	if (!cons->context->pal.rainbow) {
-		cons->context->pal.rainbow = (char **)calloc (sizeof (char *), sz);
-	}
-	int i;
-	for (i = 0; i < sz; i++) {
-		cons->context->pal.rainbow[i] = NULL;
-	}
 }
 
 R_API void r_cons_rainbow_free(RCons *cons) {
