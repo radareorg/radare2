@@ -373,11 +373,15 @@ int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
 			  sizeof (g->recv.pkt.hdr);
 		if (rcv_len <= 0) break;
 		if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
+			int remaining = len - tot_len;
+			if (rcv_len > remaining) {
+				rcv_len = remaining;
+			}
 			memcpy (data + tot_len, g->recv.pkt.okdata.data, rcv_len);
 			tot_len += rcv_len;
 		} else
 			break;
-	} while (tot_len != len);
+	} while (tot_len < (int)len);
 
 	return tot_len;
 }
