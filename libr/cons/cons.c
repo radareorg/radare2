@@ -421,7 +421,7 @@ R_API void r_cons_print_at(RCons *cons, const char *_str, int x, char y, int w, 
 			size_t ansilen = r_str_ansi_len (str + o);
 			cols = R_MIN (w, ansilen);
 			const char *end = r_str_ansi_chrn (str + o, cols);
-			cols = end - str + o;
+			cols = end - (str + o);
 			r_cons_write (cons, str + o, R_MIN (len, cols));
 			o = i + 1;
 			len = 0;
@@ -1292,10 +1292,9 @@ R_API bool r_cons_write(RCons *cons, const void *data, size_t len) {
 	}
 
 	if (cons->echo) {
-		// Here to silent pedantic meson flags ...
 		int rlen = write (2, str, len);
-		if (rlen != len) {
-			return rlen;
+		if (rlen != (int)len) {
+			return false;
 		}
 	}
 	if (str && len > 0 && !cons->null) {
