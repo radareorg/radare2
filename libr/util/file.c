@@ -1095,19 +1095,18 @@ err_r_file_mkstemp:
 #elif __wasi__
 	// nothing to do for wasm, drops to return -1
 #else
-		char *name = file_fmt_template (prefix);
-		if (name) {
-			h = mkstemp (name);
-			if (h != -1) {
-				if (oname) {
-					*oname = name;
-				} else {
-					free (name);
-				}
-			} else {
-				free (name);
-			}
+	char *name = file_fmt_template (prefix);
+	if (name) {
+		// enforce 0600 perms regardless of process umask (CERT FIO22-C)
+		mode_t mask = umask (0077);
+		h = mkstemp (name);
+		umask (mask);
+		if (h != -1 && oname) {
+			*oname = name;
+		} else {
+			free (name);
 		}
+	}
 #endif
 	return h;
 }
