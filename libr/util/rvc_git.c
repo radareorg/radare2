@@ -88,53 +88,30 @@ static bool add_git(Rvc *vc, const RList *files) {
 }
 
 static bool commit_git(Rvc *vc, const char *_message, const char *author, const RList *files) {
-	char *message = _message? strdup (_message): NULL;
 	if (!add_git (vc, files)) {
 		return false;
 	}
 	char *escauth;
-	if (!author) {
+	if (author) {
+		escauth = r_str_escape_sh (author);
+	} else {
 		char *user = r_sys_whoami ();
 		escauth = r_str_escape_sh (user);
 		free (user);
-	} else {
-		escauth = r_str_escape_sh (author);
 	}
-	if (!escauth) {
-		free (message);
-		return false;
-	}
-	if (R_STR_ISEMPTY (message)) {
-		R_FREE (message);
-		message = strdup ("default message");
-	}
-	if (R_STR_ISEMPTY (message)) {
-		R_FREE (message);
-		char *epath = r_str_escape_sh (vc->path);
-		if (epath) {
-			// XXX ensure CWD in the same line?
-			int res = r_sys_cmdf ("git -C \"%s\" commit --author \"%s <%s@localhost>\"", epath, escauth, escauth);
-			free (escauth);
-			free (epath);
-			return res == 0;
-		}
-		return false;
-	}
+	const char *msg = R_STR_ISEMPTY (_message) ? "default message" : _message;
+	char *emsg = r_str_escape_sh (msg);
 	char *epath = r_str_escape_sh (vc->path);
-	if (epath) {
-		char *emsg = r_str_escape_sh (message);
-		if (emsg) {
-			int res = r_sys_cmdf ("git -C \"%s\" commit -m \"%s\" --author \"%s <%s@localhost>\"",
-					epath, emsg, escauth, escauth);
-			free (escauth);
-			free (message);
-			free (epath);
-			free (emsg);
-			return res == 0;
-		}
+	bool ok = false;
+	if (escauth && emsg && epath) {
+		int res = r_sys_cmdf ("git -C \"%s\" commit -m \"%s\" --author \"%s <%s@localhost>\"",
+				epath, emsg, escauth, escauth);
+		ok = (res == 0);
 	}
-	free (message);
-	return false;
+	free (escauth);
+	free (emsg);
+	free (epath);
+	return ok;
 }
 
 #if 0
