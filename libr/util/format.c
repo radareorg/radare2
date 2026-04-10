@@ -2317,7 +2317,7 @@ R_API int r_print_format_internal(RPrint *p, RPrintFormat *pf, ut64 seek, const 
 						if (r < 1 || (buf[0] == 0xff && buf[1] == 0xff)) {
 								memset (buf, 0, len);
 							}
-						if (((i + 3) < len) || ((i + 7) < len)) {
+						if ((i + 7) < len) {
 								// Skip updateAddr for 'D' - we want to disassemble at addr, not at dereferenced value
 								if (tmp != 'D') {
 									updateAddr (buf + i, len - i, pf->endian, &addr, &addr64);

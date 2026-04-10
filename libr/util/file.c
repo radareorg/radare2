@@ -544,9 +544,11 @@ R_API ut8 *r_file_slurp_hexpairs(const char *str, int *usz) {
 	if (!fd) {
 		return NULL;
 	}
-	(void) fseek (fd, 0, SEEK_END);
-	sz = ftell (fd);
-	(void) fseek (fd, 0, SEEK_SET);
+	if (fseek (fd, 0, SEEK_END) < 0 || (sz = ftell (fd)) < 0
+			|| fseek (fd, 0, SEEK_SET) < 0) {
+		fclose (fd);
+		return NULL;
+	}
 	ret = (ut8*)malloc ((sz>>1)+1);
 	if (!ret) {
 		fclose (fd);
@@ -579,30 +581,28 @@ R_API char *r_file_slurp_range(const char *file, ut64 off, int sz, int *osz) {
 	if (sz < 1) {
 		return NULL;
 	}
-	size_t read_items;
 	FILE *fd = r_sandbox_fopen (file, "rb");
 	if (!fd) {
 		return NULL;
 	}
-	// XXX handle out of bound reads (eof)
 	if (fseek (fd, off, SEEK_SET) < 0) {
 		fclose (fd);
 		return NULL;
 	}
 	char *ret = (char *) malloc (sz + 1);
-	if (ret) {
-		if (osz) {
-			*osz = (int)(size_t) fread (ret, 1, sz, fd);
-		} else {
-			read_items = fread (ret, 1, sz, fd);
-			if (!read_items) {
-				fclose (fd);
-				return ret;
-			}
-		}
-		ret[sz] = '\0';
+	if (!ret) {
+		fclose (fd);
+		return NULL;
 	}
+	size_t n = fread (ret, 1, sz, fd);
 	fclose (fd);
+	if (osz) {
+		*osz = (int)n;
+	} else if (n == 0) {
+		free (ret);
+		return NULL;
+	}
+	ret[n] = '\0';
 	return ret;
 }
 
