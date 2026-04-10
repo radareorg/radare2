@@ -1158,7 +1158,10 @@ R_API int r_debug_step_over(RDebug *dbg, int steps) {
 
 R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
-	if (dbg->session && !dbg->session->linear_history_valid) {
+	if (!dbg->session) {
+		return false;
+	}
+	if (!dbg->session->linear_history_valid) {
 		R_LOG_ERROR ("linear session history is disabled after checkpoint restore; use dtsr to move between checkpoints");
 		return false;
 	}
@@ -1174,7 +1177,10 @@ R_API bool r_debug_goto_cnum(RDebug *dbg, ut32 cnum) {
 
 R_API int r_debug_step_back(RDebug *dbg, int steps) {
 	R_RETURN_VAL_IF_FAIL (dbg, -1);
-	if (dbg->session && !dbg->session->linear_history_valid) {
+	if (!dbg->session) {
+		return -1;
+	}
+	if (!dbg->session->linear_history_valid) {
 		R_LOG_ERROR ("step back is unavailable after checkpoint restore; use dtsr to move between checkpoints");
 		return -1;
 	}
@@ -1514,7 +1520,10 @@ R_API bool r_debug_continue_until_nonblock(RDebug *dbg, ut64 addr) {
 }
 
 R_API bool r_debug_continue_back(RDebug *dbg) {
-	if (dbg->session && !dbg->session->linear_history_valid) {
+	if (!dbg->session) {
+		return false;
+	}
+	if (!dbg->session->linear_history_valid) {
 		R_LOG_ERROR ("continue back is unavailable after checkpoint restore; use dtsr to move between checkpoints");
 		return false;
 	}
