@@ -11456,7 +11456,10 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 			// show in r2
 			RAnalHint *hint = r_anal_hint_get (a, core->addr);
 			if (hint && hint->opcode) {
-				r_cons_printf (core->cons, "aho %s @ 0x%08"PFMT64x"\n", hint->opcode, hint->addr);
+				char *s = strdup (hint->opcode);
+				r_str_sanitize_space (s);
+				r_cons_printf (core->cons, "'@0x%08"PFMT64x"'aho %s\n", hint->addr, s);
+				free (s);
 			}
 			r_anal_hint_free (hint);
 		} else if (input[1] == 0) {

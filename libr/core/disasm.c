@@ -4729,11 +4729,9 @@ static void ds_print_dwarf(RDisasmState *ds) {
 		if (!line) {
 			return;
 		}
-		r_str_replace_char (line, '\t', ' ');
 		r_str_replace_char (line, '\x1b', ' ');
-		r_str_replace_char (line, '\r', ' ');
 		r_str_replace_char (line, '\n', '\x00');
-		r_str_trim (line);
+		r_str_sanitize_space (line);
 		if (!*line) {
 			free (line);
 			return;

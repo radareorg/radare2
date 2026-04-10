@@ -866,6 +866,28 @@ typedef struct {
 	};
 } HintNode;
 
+// emit `'@addr'<fmt>` for a hint with numeric/safe args. the `'` prefix
+// disables `;|@~$` parsing for the rest of the line.
+static void hint_addr(RCore *core, ut64 addr, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	r_cons_printf (core->cons, "'@0x%"PFMT64x"'", addr);
+	r_cons_printf_list (core->cons, fmt, ap);
+	r_cons_print (core->cons, "\n");
+	va_end (ap);
+}
+
+// emit `'@addr'cmd val` after collapsing whitespace in val. the `'` prefix
+// disables `;|@~$` parsing for the rest of the line, so we only need to strip
+// newlines/tabs. we avoid r_str_sanitize_r2 here because esil/opcode strings
+// legitimately contain `|`, `&`, `$`, `<`, `>` which would otherwise be mangled.
+static void hint_addr_str(RCore *core, ut64 addr, const char *cmd, const char *val) {
+	char *s = strdup (val);
+	r_str_sanitize_space (s);
+	r_cons_printf (core->cons, "'@0x%"PFMT64x"'%s %s\n", addr, cmd, s);
+	free (s);
+}
+
 static void print_hint_h_format(RCore *core, HintNode *node) {
 	switch (node->type) {
 	case HINT_NODE_ADDR: {
@@ -949,60 +971,59 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 	switch (mode) {
 	case '*':
-#define HINTCMD_ADDR(hint,fmt,x) r_cons_printf (core->cons, fmt" @ 0x%"PFMT64x"\n", x, (hint)->addr)
 		switch (node->type) {
 		case HINT_NODE_ADDR: {
 			const RAnalAddrHintRecord *record;
 			R_VEC_FOREACH (node->addr_hints, record) {
 				switch (record->type) {
 				case R_ANAL_ADDR_HINT_TYPE_IMMBASE:
-					HINTCMD_ADDR (node, "ahi %d", record->immbase);
+					hint_addr (core, node->addr, "ahi %d", record->immbase);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_JUMP:
-					HINTCMD_ADDR (node, "ahc 0x%"PFMT64x, record->jump);
+					hint_addr (core, node->addr, "ahc 0x%"PFMT64x, record->jump);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_FAIL:
-					HINTCMD_ADDR (node, "ahf 0x%"PFMT64x, record->fail);
+					hint_addr (core, node->addr, "ahf 0x%"PFMT64x, record->fail);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_STACKFRAME:
-					HINTCMD_ADDR (node, "ahF 0x%"PFMT64x, record->stackframe);
+					hint_addr (core, node->addr, "ahF 0x%"PFMT64x, record->stackframe);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_PTR:
-					HINTCMD_ADDR (node, "ahp 0x%"PFMT64x, record->ptr);
+					hint_addr (core, node->addr, "ahp 0x%"PFMT64x, record->ptr);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_NWORD:
 					// no command for this
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_RET:
-					HINTCMD_ADDR (node, "ahr 0x%"PFMT64x, record->retval);
+					hint_addr (core, node->addr, "ahr 0x%"PFMT64x, record->retval);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_NEW_BITS:
 					// no command for this
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_SIZE:
-					HINTCMD_ADDR (node, "ahs 0x%"PFMT64x, record->size);
+					hint_addr (core, node->addr, "ahs 0x%"PFMT64x, record->size);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_SYNTAX:
-					HINTCMD_ADDR (node, "ahS %s", record->syntax); // TODO: escape for newcmd
+					hint_addr_str (core, node->addr, "ahS", record->syntax);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_OPTYPE: {
 					const char *type = r_anal_optype_tostring (record->optype);
 					if (type) {
-						HINTCMD_ADDR (node, "aho %s", type); // TODO: escape for newcmd
+						hint_addr (core, node->addr, "aho %s", type);
 					}
 					break;
 				}
 				case R_ANAL_ADDR_HINT_TYPE_OPCODE:
-					HINTCMD_ADDR (node, "ahd %s", record->opcode);
+					hint_addr_str (core, node->addr, "ahd", record->opcode);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_TYPE_OFFSET:
-					HINTCMD_ADDR (node, "aht %s", record->type_offset); // TODO: escape for newcmd
+					hint_addr_str (core, node->addr, "aht", record->type_offset);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_ESIL:
-					HINTCMD_ADDR (node, "ahe %s", record->esil); // TODO: escape for newcmd
+					hint_addr_str (core, node->addr, "ahe", record->esil);
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_HIGH:
-					r_cons_printf (core->cons, "'@0x0x%"PFMT64x"'ahh\n", node->addr);
+					hint_addr (core, node->addr, "ahh");
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_VAL:
 					// no command for this
@@ -1012,13 +1033,12 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 			break;
 		}
 		case HINT_NODE_ARCH:
-			HINTCMD_ADDR (node, "aha %s", r_str_get_fail (node->arch, "0"));
+			hint_addr_str (core, node->addr, "aha", r_str_get_fail (node->arch, "0"));
 			break;
 		case HINT_NODE_BITS:
-			HINTCMD_ADDR (node, "ahb %d", node->bits);
+			hint_addr (core, node->addr, "ahb %d", node->bits);
 			break;
 		}
-#undef HINTCMD_ADDR
 		break;
 	case 'j':
 		switch (node->type) {

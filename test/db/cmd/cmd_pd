@@ -1656,14 +1656,14 @@ EXPECT=<<EOF
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
 0x00005c20      31ed4989       ldc p9, c8, [r1, -0x124]!
 0x00005c20      31ed4989       stmdbhi sb, {r0, r4, r5, r8, sl, fp, sp, lr, pc} ^
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+'@0x5c20'aha arm
+'@0x5c20'ahb 16
 0000:5c20     31ed           xor bp, bp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+'@0x5c20'aha arm
+'@0x5c20'ahb 16
 0x00005c20      31ed           xor ebp, ebp
-aha arm @ 0x5c20
-ahb 16 @ 0x5c20
+'@0x5c20'aha arm
+'@0x5c20'ahb 16
 EOF
 RUN
 
@@ -1799,9 +1799,9 @@ pd 1 @b:32 @0xc
 ah*
 EOF
 EXPECT=<<EOF
-ahb 16 @ 0xc
+'@0xc'ahb 16
             0x0000000c      01207047       ldrbmi r2, [r0, -r1]!
-ahb 16 @ 0xc
+'@0xc'ahb 16
 EOF
 RUN
 
