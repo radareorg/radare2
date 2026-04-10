@@ -321,6 +321,14 @@ static void print_str(PDCState *state, const char *fmt, ...) {
 	va_end (ap);
 }
 
+static void asm_append(RStrBuf *sb, RCore *core, ut64 addr, const char *prefix) {
+	int pad;
+	char *s = disat (core, addr, &pad);
+	r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | %s", prefix, addr, s);
+	r_strbuf_pad (sb, ' ', pad);
+	free (s);
+}
+
 static void print_pipe_header(PDCState *state, ut64 addr) {
 	print_str (state, " 0x%08" PFMT64x " | ", addr);
 	r_strbuf_pad (state_sb (state), ' ', 30);
@@ -329,10 +337,7 @@ static void print_pipe_header(PDCState *state, ut64 addr) {
 
 static void print_newline(PDCState *state, ut64 addr, int indent) {
 	const size_t isz = sizeof (state->indentstr);
-	int eos = indent * 2;
-	if (eos < 0) {
-		eos = 0;
-	}
+	int eos = (indent > 0)? indent * 2: 0;
 	if ((size_t)eos > isz - 2) {
 		eos = isz - 2;
 	}
@@ -342,12 +347,8 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 	RStrBuf *sb = state_sb (state);
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
-		int asm_pad;
-		char *asm_str = disat (state->core, addr, &asm_pad);
-		r_strbuf_appendf (sb, "0x%08" PFMT64x " | %s", addr, asm_str);
-		r_strbuf_pad (sb, ' ', asm_pad);
+		asm_append (sb, state->core, addr, "");
 		r_strbuf_append (sb, state->indentstr);
-		free (asm_str);
 	} else if (state->show_addr) {
 		const char *lead = state->pj? "": " ";
 		r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | %s", lead, addr, state->indentstr);
@@ -360,54 +361,43 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	if (dst_addr == UT64_MAX || curr_addr == dst_addr) {
 		return;
 	}
-	char *src_dst_key = r_str_newf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr);
-	char *addr_dst_key = r_str_newf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr);
-	char *dst_key = r_str_newf ("%" PFMT64x, dst_addr);
-	char *mark_key = r_str_newf ("mark.%" PFMT64x, dst_addr);
-	char *src_key = r_str_newf ("%" PFMT64x ".src", curr_addr);
-	char *return_key = r_str_newf ("return.%" PFMT64x, bb->addr);
-
-	if (!sdb_exists (state->goto_cache, src_dst_key)
-		&& !sdb_exists (state->goto_cache, addr_dst_key)
-		&& !sdb_exists (state->goto_cache, src_key)
-		&& !sdb_const_get (state->db, mark_key, 0)
-		&& !sdb_exists (state->goto_cache, return_key)) {
-		sdb_set (state->goto_cache, src_dst_key, "1", 0);
-		sdb_set (state->goto_cache, addr_dst_key, "1", 0);
-		sdb_set (state->goto_cache, src_key, "1", 0);
-		sdb_set (state->goto_cache, dst_key, "1", 0);
-
-		if (dst_addr != bb->addr) {
-			print_newline (state, curr_addr, indent);
-			if (state->show_asm) {
-				print_pipe_header (state, bb->addr);
-			}
-			print_str (state, " goto loc_0x%08" PFMT64x, dst_addr);
-		}
+	r_strf_buffer (64);
+	Sdb *gc = state->goto_cache;
+	if (sdb_exists (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr))
+		|| sdb_exists (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr))
+		|| sdb_exists (gc, r_strf ("%" PFMT64x ".src", curr_addr))
+		|| sdb_const_get (state->db, r_strf ("mark.%" PFMT64x, dst_addr), 0)
+		|| sdb_exists (gc, r_strf ("return.%" PFMT64x, bb->addr))) {
+		return;
 	}
+	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr), "1", 0);
+	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr), "1", 0);
+	sdb_set (gc, r_strf ("%" PFMT64x ".src", curr_addr), "1", 0);
+	sdb_set (gc, r_strf ("%" PFMT64x, dst_addr), "1", 0);
 
-	free (src_dst_key);
-	free (addr_dst_key);
-	free (dst_key);
-	free (mark_key);
-	free (src_key);
-	free (return_key);
+	if (dst_addr != bb->addr) {
+		print_newline (state, curr_addr, indent);
+		if (state->show_asm) {
+			print_pipe_header (state, bb->addr);
+		}
+		print_str (state, " goto loc_0x%08" PFMT64x, dst_addr);
+	}
 }
 
 static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr_addr, int indent) {
 	if (dst_addr == UT64_MAX) {
 		return;
 	}
-	char *src_addr_key = r_str_newf ("%" PFMT64x ".addr", curr_addr);
-	if (!sdb_exists (state->goto_cache, src_addr_key)) {
-		sdb_set (state->goto_cache, src_addr_key, "1", 0);
+	r_strf_buffer (64);
+	const char *key = r_strf ("%" PFMT64x ".addr", curr_addr);
+	if (!sdb_exists (state->goto_cache, key)) {
+		sdb_set (state->goto_cache, key, "1", 0);
 		print_newline (state, curr_addr, indent);
 		if (state->show_asm) {
 			print_pipe_header (state, bb->addr);
 		}
 		print_str (state, "goto loc_0x%08" PFMT64x ";", dst_addr);
 	}
-	free (src_addr_key);
 }
 
 // Define macros that call these functions
@@ -625,16 +615,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					if (R_STR_ISNOTEMPTY (line)) {
 						NEWLINE (addr, indent);
 						if (state.show_asm) {
-							int asm_pad;
-							char *asm_str = disat (state.core, addr, &asm_pad);
-							RStrBuf *sb = r_strbuf_new ("");
-							r_strbuf_appendf (sb, " 0x%08" PFMT64x " | %s", addr, asm_str);
-							r_strbuf_pad (sb, ' ', asm_pad);
+							RStrBuf *sb = state_sb (&state);
+							asm_append (sb, state.core, addr, " ");
 							r_strbuf_appendf (sb, " | %s", line);
-							char *newline = r_strbuf_drain (sb);
-							PRINTF ("%s", newline);
-							free (newline);
-							free (asm_str);
 						} else {
 							PRINTF ("%s", line);
 						}
@@ -649,14 +632,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		bool resume_from_indent = false;
 		ut64 gotoaddr = UT64_MAX;
 		const bool has_jump = bb->jump != UT64_MAX;
-		if (bb->fail == UT64_MAX) {
-			if (has_jump) {
-				gotoaddr = bb->jump;
-			} else {
-				closed = true;
-			}
-		} else {
+		if (bb->fail != UT64_MAX) {
 			PRINTGOTO_DIRECT (bb->fail, bb->addr);
+		} else if (has_jump) {
+			gotoaddr = bb->jump;
+		} else {
+			closed = true;
 		}
 		if (sdb_const_get (state.db, K_INDENT (bb->addr), 0)) {
 			// already analyzed, go pop and continue
@@ -669,14 +650,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (state.show_asm) {
 					print_pipe_header (&state, bb->addr);
 				}
-				if (r0) {
-					PRINTF ("return %s;", r0);
-				} else {
-					PRINTF ("return;");
-				}
-				char *return_key = r_str_newf ("return.%" PFMT64x, bb->addr);
-				sdb_set (state.goto_cache, return_key, "1", 0);
-				free (return_key);
+				PRINTF (r0? "return %s;": "return;", r0);
+				sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
 				if (r_list_contains (visited, nbb)) {
 					nbb = r_anal_bb_from_offset (core->anal, bb->jump);
@@ -789,11 +764,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				PRINTF ("goto loc_0x%08" PFMT64x ";", addr);
 				indent = nindent;
 			}
-			if (bb) {
-				PRINTGOTO (bb->addr, gotoaddr);
-			} else {
-				PRINTGOTO (UT64_MAX, gotoaddr);
-			}
+			PRINTGOTO (bb? bb->addr: UT64_MAX, gotoaddr);
 		}
 	}
 	RListIter *iter;
@@ -837,12 +808,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (space) {
 					row = (char *)r_str_trim_head_ro (space + 1);
 				}
-				int asm_pad;
-				char *asm_str = disat (state.core, at, &asm_pad);
-				r_strbuf_appendf (sb, " 0x%08" PFMT64x " | %s", at, asm_str);
-				r_strbuf_pad (sb, ' ', asm_pad);
+				asm_append (sb, state.core, at, " ");
 				r_strbuf_appendf (sb, " | %s\n", row);
-				free (asm_str);
 			}
 			free (s);
 			r_list_free (rows);
@@ -872,13 +839,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		}
 		if (codelen > 0) {
 			if (state.show_asm) {
-				ut64 a = bb->addr;
-				int asm_pad;
-				char *asm_str = disat (core, a, &asm_pad);
-				r_strbuf_appendf (state.codestr, "\n 0x%08" PFMT64x " | %s", a, asm_str);
-				r_strbuf_pad (state.codestr, ' ', asm_pad);
+				asm_append (state.codestr, core, bb->addr, "\n ");
 				r_strbuf_append (state.codestr, state.indentstr);
-				free (asm_str);
 			} else if (state.show_addr) {
 				r_strbuf_appendf (state.out, "\n 0x%08" PFMT64x " | ", bb->addr);
 			} else {
@@ -910,14 +872,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					r_strbuf_pad (state_sb (&state), ' ', 30 - 3);
 					PRINTF (" | ");
 				}
-				if (r0) {
-					PRINTF ("return %s;", r0);
-				} else {
-					PRINTF ("return;");
-				}
-				char *return_key = r_str_newf ("return.%" PFMT64x, bb->addr);
-				sdb_set (state.goto_cache, return_key, "1", 0);
-				free (return_key);
+				PRINTF (r0? "return %s;": "return;", r0);
+				sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
 				if (state.show_asm) {
 					PRINTF ("\n");
 					print_pipe_header (&state, bb->addr);
