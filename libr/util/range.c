@@ -392,24 +392,15 @@ RRange *r_range_inverse(RRange *rgs, ut64 fr, ut64 to, int flags) {
 	return true if overlap
 	in *d
 */
-// TODO: make it a macro
 // TODO: move to num.c ?
 R_API int r_range_overlap(ut64 a0, ut64 a1, ut64 b0, ut64 b1, int *d) {
-	// TODO: ensure ranges minmax .. innecesary at runtime?
-	//r_num_minmax_swap (&a0, &a1);
-	//r_num_minmax_swap (&b0, &b1);
-	return *d = (b0 - a0), !(a1 < b0 || a0 > b1);
-#if 0
 	// does not overlap
 	// a  |__|           |__|
 	// b      |__|   |__|
-	if (a1<b0 || a0>b1)
-		return 0;
-
+	//
 	// a     |____|   |_____|  |____|     |_____|
 	// b  |____|        |_|       |____| |_______|
 	//      b needs    a needs   a needs   b needs
 	// delta required
-	return (b0-a0);
-#endif
+	return *d = (b0 - a0), R_INBETWEEN (a0, a1, b0, b1);
 }

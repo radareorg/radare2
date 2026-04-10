@@ -155,7 +155,10 @@ typedef struct _utX {
 #define UT32_LO(x) ((ut32)((x)&UT32_MAX))
 #define UT32_HI(x) ((ut32)(((ut64)(x))>>32)&UT32_MAX)
 
+// point in range:   x---y---z   (is y inside [x,z]?)
 #define R_BETWEEN(x,y,z) (((y)>=(x)) && ((y)<=(z)))
+// interval overlap: [a..b] vs [x..y]   (do the two ranges touch?)
+#define R_INBETWEEN(a,b,x,y) ((a)<=(y) && (b)>=(x))
 #define R_ROUND(x,y) ((x)%(y))?(x)+((y)-((x)%(y))):(x)
 #define R_DIM(x,y,z) (((x)<(y))?(y):((x)>(z))?(z):(x))
 #ifndef R_MAX_DEFINED

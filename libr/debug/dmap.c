@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_debug.h>
 #include <r_core.h>
@@ -189,18 +189,7 @@ static int cmp(const void *a, const void *b) {
 	return ma->addr - mb->addr;
 }
 
-/**
- * \brief Find the min and max addresses in an RList of maps.
- * \param maps RList of maps that will be searched through
- * \param min Pointer to a ut64 that the min will be stored in
- * \param max Pointer to a ut64 that the max will be stored in
- * \param skip How many maps to skip at the start of iteration
- * \param width Divisor for the return value
- * \return (max-min)/width
- *
- * Used to determine the min & max addresses of maps and
- * scale the ascii bar to the width of the terminal
- */
+// Find the min and max addresses in an RList of maps.
 static int findMinMax(RList *maps, ut64 *min, ut64 *max, int skip, int width) {
 	RDebugMap *map;
 	RListIter *iter;
@@ -318,7 +307,7 @@ R_API void r_debug_map_list_visual(RDebug *dbg, ut64 addr, const char *input, in
 R_API RDebugMap * R_NONNULL r_debug_map_new(char *name, ut64 addr, ut64 addr_end, int perm, int user) {
 	/* range could be 0k on OpenBSD, it's a honeypot */
 	if (!name || addr > addr_end) {
-		R_LOG_ERROR ("r_debug_map_new: invalid (0x%" PFMT64x " > 0x%" PFMT64x ")", addr, addr_end);
+		R_LOG_ERROR ("invalid (0x%" PFMT64x " > 0x%" PFMT64x ")", addr, addr_end);
 		return NULL;
 	}
 	RDebugMap *map = R_NEW0 (RDebugMap);
