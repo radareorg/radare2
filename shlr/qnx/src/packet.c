@@ -24,12 +24,11 @@ static ut8 ch_text_packet[] =
 	{FRAME_CHAR, SET_CHANNEL_TEXT, 0xfd, FRAME_CHAR};
 
 static int append (libqnxr_t *g, char ch) {
-	if (g->data_len == DS_DATA_MAX_SIZE + 16) {
+	if ((size_t)g->data_len >= sizeof (g->recv)) {
 		eprintf ("%s: data too long\n", __func__);
 		return -1;
 	}
-
-	g->recv.data[g->data_len++] = ch;
+	((ut8 *)&g->recv)[g->data_len++] = ch;
 	return 0;
 }
 
@@ -87,8 +86,7 @@ int qnxr_read_packet (libqnxr_t *g) {
 
 			g->read_ptr = 0;
 			g->read_len = r_socket_read (g->sock, (void *)g->read_buff,
-
-						     DS_DATA_MAX_SIZE * 2);
+						     sizeof (g->recv) * 2 + 16);
 			if (g->read_len <= 0) {
 				g->read_len = 0;
 				eprintf ("%s: read failed\n", __func__);
@@ -155,12 +153,12 @@ int qnxr_send_packet (libqnxr_t *g) {
 	p = g->send_buff;
 	*p++ = FRAME_CHAR;
 
-	if (g->send_len >= sizeof (g->tran.data)) {
-		eprintf ("Too large packet %d vs %d\n", (int)g->send_len, (int)sizeof (g->send_len));
+	if ((size_t)g->send_len > sizeof (g->tran)) {
+		eprintf ("Too large packet %d vs %d\n", (int)g->send_len, (int)sizeof (g->tran));
 		return false;
 	}
 	for (i = 0; i < g->send_len; i++) {
-		ut8 c = g->tran.data[i];
+		ut8 c = ((const ut8 *)&g->tran)[i];
 		csum += c;
 
 		switch (c) {

@@ -100,11 +100,13 @@ int qnxr_init(libqnxr_t *g) {
 	R_RETURN_VAL_IF_FAIL (g, -1);
 	memset (g, 0, sizeof (libqnxr_t));
 	g->send_len = 0;
-	g->send_buff = (char *)calloc (DS_DATA_MAX_SIZE * 2, 1);
+	/* worst case: every payload byte is escaped (2x), plus frame/csum overhead. */
+	const size_t bufsz = sizeof (g->tran) * 2 + 16;
+	g->send_buff = (char *)calloc (bufsz, 1);
 	if (!g->send_buff) {
 		return -1;
 	}
-	g->read_buff = (char *)calloc (DS_DATA_MAX_SIZE * 2, 1);
+	g->read_buff = (char *)calloc (bufsz, 1);
 	if (!g->read_buff) {
 		R_FREE (g->send_buff);
 		return -1;
@@ -321,90 +323,118 @@ int qnxr_read_registers(libqnxr_t *g) {
 	if (!g) return -1;
 
 	while (g->registers[i].size > 0) {
+		const ut32 roff = g->registers[i].offset;
 		regset = i386nto_regset_id (i);
 		len = i386nto_register_area (i, regset, &off);
 		if (len < 1) {
 			eprintf ("%s: unknown register %d\n", __func__, (int)i);
 			len = g->registers[i].size;
 		}
+		if (len < 0 || roff >= sizeof (buf) || (size_t)len > sizeof (buf) - roff) {
+			eprintf ("%s: register %d out of bounds\n", __func__, i);
+			return -1;
+		}
 		nto_send_init (g, DStMsg_regrd, regset, SET_CHANNEL_DEBUG);
 		g->tran.pkt.regrd.offset = EXTRACT_SIGNED_INTEGER (&off, 2);
 		g->tran.pkt.regrd.size = EXTRACT_SIGNED_INTEGER (&len, 2);
 		rlen = nto_send (g, sizeof (g->tran.pkt.regrd), 1);
 
-		if (rlen > 0) {
-			if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
-				memcpy (buf + g->registers[i].offset,
-					g->recv.pkt.okdata.data, len);
-				n += len;
-			} else {
-				memset (buf + g->registers[i].offset,
-					0, len);
-			}
-		} else {
+		if (rlen <= 0) {
 			eprintf ("%s: couldn't read register %d\n", __func__, (int)i);
 			return -1;
+		}
+		if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
+			const int hdrsz = (int)sizeof (g->recv.pkt.hdr);
+			int payload = rlen - hdrsz;
+			if (payload < 0) {
+				payload = 0;
+			}
+			if (len > payload) {
+				len = payload;
+			}
+			memcpy (buf + roff, g->recv.pkt.okdata.data, len);
+			n += len;
+		} else {
+			memset (buf + roff, 0, len);
 		}
 		i++;
 	}
 
+	if ((size_t)n > sizeof (g->recv.data)) {
+		n = sizeof (g->recv.data);
+	}
 	memcpy (g->recv.data, buf, n);
 	return n;
 }
 
 int qnxr_read_memory (libqnxr_t *g, ut64 address, ut8 *data, ut64 len) {
-	int rcv_len, tot_len, ask_len;
+	ut64 tot_len = 0;
 	ut64 addr;
+	int rcv_len, ask_len;
 
 	if (!g || !data) return -1;
 
-	tot_len = rcv_len = ask_len = 0;
-
-	do {
+	while (tot_len < len) {
+		const ut64 remaining = len - tot_len;
+		ask_len = (remaining > DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (int)remaining;
 		nto_send_init (g, DStMsg_memrd, 0, SET_CHANNEL_DEBUG);
 		addr = address + tot_len;
 		g->tran.pkt.memrd.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8);
-		ask_len = ((len - tot_len) > DS_DATA_MAX_SIZE) ?
-				  DS_DATA_MAX_SIZE :
-				  (len - tot_len);
-
 		g->tran.pkt.memrd.size = EXTRACT_SIGNED_INTEGER (&ask_len, 2);
 		rcv_len = nto_send (g, sizeof (g->tran.pkt.memrd), 0) -
 			  sizeof (g->recv.pkt.hdr);
-		if (rcv_len <= 0) break;
-		if (g->recv.pkt.hdr.cmd == DSrMsg_okdata) {
-			int remaining = len - tot_len;
-			if (rcv_len > remaining) {
-				rcv_len = remaining;
-			}
-			memcpy (data + tot_len, g->recv.pkt.okdata.data, rcv_len);
-			tot_len += rcv_len;
-		} else
+		if (rcv_len <= 0) {
 			break;
-	} while (tot_len < (int)len);
+		}
+		if (g->recv.pkt.hdr.cmd != DSrMsg_okdata) {
+			break;
+		}
+		if ((ut64)rcv_len > remaining) {
+			rcv_len = (int)remaining;
+		}
+		memcpy (data + tot_len, g->recv.pkt.okdata.data, rcv_len);
+		tot_len += rcv_len;
+	}
 
-	return tot_len;
+	return (int)tot_len;
 }
 
 int qnxr_write_memory (libqnxr_t *g, ut64 address, const ut8 *data, ut64 len) {
+	ut64 tot_len = 0;
 	ut64 addr;
 
 	if (!g || !data) return -1;
 
-	nto_send_init (g, DStMsg_memwr, 0, SET_CHANNEL_DEBUG);
-	addr = address;
-	g->tran.pkt.memwr.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8);
-	memcpy (g->tran.pkt.memwr.data, data, len);
-	nto_send (g, offsetof (DStMsg_memwr_t, data) + len, 0);
+	while (tot_len < len) {
+		const ut64 remaining = len - tot_len;
+		const ut32 chunk = (remaining > DS_DATA_MAX_SIZE) ? DS_DATA_MAX_SIZE : (ut32)remaining;
+		nto_send_init (g, DStMsg_memwr, 0, SET_CHANNEL_DEBUG);
+		addr = address + tot_len;
+		g->tran.pkt.memwr.addr = EXTRACT_UNSIGNED_INTEGER (&addr, 8);
+		memcpy (g->tran.pkt.memwr.data, data + tot_len, chunk);
+		nto_send (g, offsetof (DStMsg_memwr_t, data) + chunk, 0);
 
-	switch (g->recv.pkt.hdr.cmd) {
-	case DSrMsg_ok:
-		return len;
-	case DSrMsg_okstatus:
-		return EXTRACT_SIGNED_INTEGER (&g->recv.pkt.okstatus.status, 4);
+		switch (g->recv.pkt.hdr.cmd) {
+		case DSrMsg_ok:
+			tot_len += chunk;
+			continue;
+		case DSrMsg_okstatus: {
+			const int status = EXTRACT_SIGNED_INTEGER (&g->recv.pkt.okstatus.status, 4);
+			if (status <= 0) {
+				return (int)tot_len;
+			}
+			tot_len += (ut64)status;
+			if ((ut64)status < chunk) {
+				return (int)tot_len;
+			}
+			continue;
+		}
+		default:
+			return (int)tot_len;
+		}
 	}
 
-	return 0;
+	return (int)tot_len;
 }
 
 void qnxr_pidlist (libqnxr_t *g, void *ctx, pidlist_cb_t *cb) {
@@ -470,7 +500,7 @@ int qnxr_write_register (libqnxr_t *g, int index, char *value, int len) {
 
 	regset = i386nto_regset_id (index);
 	tdep_len = i386nto_register_area (index, regset, &off);
-	if (len < 0 || tdep_len != len) {
+	if (len < 0 || tdep_len != len || (size_t)len > sizeof (g->tran.pkt.regwr.data)) {
 		eprintf ("%s: invalid length\n", __func__);
 		return -1;
 	}
