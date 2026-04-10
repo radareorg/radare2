@@ -10,16 +10,18 @@
 #if R2__WINDOWS__
 
 static void __fill_tail(int cols, int lines) {
-	lines++;
-	if (lines > 0) {
-		char white[1024];
-		cols = R_MIN (cols, sizeof (white));
-		memset (white, ' ', cols - 1);
-		lines--;
-		white[cols] = '\n';
-		while (lines-- > 0) {
-			write (1, white, cols);
-		}
+	if (lines < 1 || cols < 1) {
+		return;
+	}
+	char white[1024];
+	if (cols > (int)sizeof (white) - 1) {
+		cols = (int)sizeof (white) - 1;
+	}
+	memset (white, ' ', cols);
+	white[cols] = '\n';
+	const int row_len = cols + 1;
+	while (lines-- > 0) {
+		(void)write (1, white, row_len);
 	}
 }
 
