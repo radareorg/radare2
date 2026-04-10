@@ -1265,18 +1265,20 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
-// Collapse whitespace in-place: replace \n, \r, \t with ' ', then trim
-// leading/trailing spaces. Useful for normalizing untrusted single-line
-// fields (hints, comments, paths) before emitting them as script output.
 R_API void r_str_sanitize_space(char *c) {
 	R_RETURN_IF_FAIL (c);
 	char *p;
+	bool maytrim = false;
 	for (p = c; *p; p++) {
-		if (*p == '\n' || *p == '\r' || *p == '\t') {
+		const ch = *p;
+		if (ch == '\n' || c == '\r' || ch == '\t' || ch == ' ') {
 			*p = ' ';
+			maytrim = true;
 		}
 	}
-	r_str_trim (c);
+	if (maytrim) {
+		r_str_trim (c);
+	}
 }
 
 R_API char *r_str_sanitize_sdb_key(const char *s) {
