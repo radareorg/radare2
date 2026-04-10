@@ -20,7 +20,7 @@ static RFlagZoneItem *r_flag_zone_get_inrange(RFlag *f, ut64 from, ut64 to) {
 	RFlagZoneItem *zi;
 	RList *db = f->zones;
 	r_list_foreach (db, iter, zi) {
-		if (R_BETWEEN (from, zi->from, to)) {
+		if (R_INBETWEEN (zi->from, zi->to, from, to)) {
 			return zi;
 		}
 	}
