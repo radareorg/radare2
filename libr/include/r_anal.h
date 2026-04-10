@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2009-2025 - nibble, pancake, xvilka */
+/* radare2 - LGPL - Copyright 2009-2026 - nibble, pancake, xvilka */
 
 #ifndef R2_ANAL_H
 #define R2_ANAL_H

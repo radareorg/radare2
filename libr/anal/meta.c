@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - nibble, pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2008-2026 - nibble, pancake, thestr4ng3r */
 
 #include <r_core.h>
 
@@ -223,20 +223,23 @@ R_API RVecIntervalNodePtr *r_meta_get_all_intersect(RAnal *a, ut64 start, ut64 s
 	return collect_nodes_intersect (a, type, r_spaces_current (&a->meta_spaces), start, end);
 }
 
+static const char *meta_type_tags[] = {
+	[R_META_TYPE_BIND] = "Cb",
+	[R_META_TYPE_CODE] = "Cc",
+	[R_META_TYPE_DATA] = "Cd",
+	[R_META_TYPE_STRING] = "Cs",
+	[R_META_TYPE_FORMAT] = "Cf",
+	[R_META_TYPE_MAGIC] = "Cm",
+	[R_META_TYPE_HIDE] = "Ch",
+	[R_META_TYPE_COMMENT] = "CCu",
+	[R_META_TYPE_RUN] = "Cr",
+	[R_META_TYPE_HIGHLIGHT] = "ecHi",
+	[R_META_TYPE_VARTYPE] = "Ct",
+};
+
 R_API const char *r_meta_type_tostring(int type) {
-	// XXX: use type as '%c'
-	switch (type) {
-	case R_META_TYPE_BIND: return "Cb";
-	case R_META_TYPE_CODE: return "Cc";
-	case R_META_TYPE_DATA: return "Cd";
-	case R_META_TYPE_STRING: return "Cs";
-	case R_META_TYPE_FORMAT: return "Cf";
-	case R_META_TYPE_MAGIC: return "Cm";
-	case R_META_TYPE_HIDE: return "Ch";
-	case R_META_TYPE_COMMENT: return "CCu";
-	case R_META_TYPE_RUN: return "Cr"; // not in C? help
-	case R_META_TYPE_HIGHLIGHT: return "ecHi"; // not in C?
-	case R_META_TYPE_VARTYPE: return "Ct";
+	if (type > 0 && type < R_ARRAY_SIZE (meta_type_tags) && meta_type_tags[type]) {
+		return meta_type_tags[type];
 	}
 	return "# unknown meta # ";
 }
@@ -353,8 +356,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 							a->cb_printf ("%s base64:%s @ 0x%08" PFMT64x "\n",
 								type, s, start);
 						} else {
-							a->cb_printf ("%s %s @ 0x%08" PFMT64x "\n",
-								type, pstr, start);
+							a->cb_printf ("%s base64:%s @ 0x%08" PFMT64x "\n",
+								type, s, start);
 						}
 					} else {
 						if (!strcmp (type, "CCu")) {
@@ -380,9 +383,10 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 						break;
 					default:
 						cmd[2] = 0;
+						break;
 					}
-					a->cb_printf ("%s %" PFMT64u " @ 0x%08" PFMT64x " # %s\n",
-						cmd, size, start, pstr);
+					a->cb_printf ("'@0x%08" PFMT64x "'%s %" PFMT64u "\n",
+						start, cmd, size);
 				} else {
 					const char *enc;
 					switch (d->subtype) {
@@ -422,9 +426,11 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 			case R_META_TYPE_MAGIC:
 			case R_META_TYPE_FORMAT:
 				if (rad) {
-					a->cb_printf ("%s %" PFMT64u " %s @ 0x%08" PFMT64x "\n",
-						r_meta_type_tostring (d->type),
-						size, pstr, start);
+					char *spstr = r_str_sanitize_r2 (pstr);
+					a->cb_printf ("'@0x%08" PFMT64x "'%s %" PFMT64u " %s\n",
+						start, r_meta_type_tostring (d->type),
+						size, spstr);
+					free (spstr);
 				} else {
 					if (show_full) {
 						const char *dtype = d->type == 'm'? "magic": "format";
@@ -437,15 +443,17 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 				break;
 			case R_META_TYPE_BIND:
 				if (rad) {
-					a->cb_printf ("Cb 0x%08" PFMT64x " %s\n", start, pstr);
+					char *spstr = r_str_sanitize_r2 (pstr);
+					a->cb_printf ("'Cb 0x%08" PFMT64x " %s\n", start, r_str_get (spstr));
+					free (spstr);
 				} else {
 					a->cb_printf ("BIND 0x%08" PFMT64x " %s\n", start, pstr);
 				}
 				break;
 			case R_META_TYPE_VARTYPE:
 				if (rad) {
-					a->cb_printf ("%s %s @ 0x%08" PFMT64x "\n",
-						r_meta_type_tostring (d->type), pstr, start);
+					a->cb_printf ("'@0x%08" PFMT64x "'%s %s\n",
+						start, r_meta_type_tostring (d->type), pstr);
 				} else {
 					a->cb_printf ("0x%08" PFMT64x " %s\n", start, pstr);
 				}

@@ -455,24 +455,24 @@ EXPECT=<<EOF
 0x00000300 format 4 x
 0x00000380 magic 8 wwww
 ----
-Cs 12 @ 0x00000000 # hello world
+'@0x00000000'Cs 12
 ----
 Cd 3 @ 0x00000100
 ----
 Ch 2 @ 0x00000200
 ----
-Cf 4 x @ 0x00000300
+'@0x00000300'Cf 4 x
 ----
 CCu base64:SGVsbG8h @ 0x00000000
 ----
-Cm 8 wwww @ 0x00000380
+'@0x00000380'Cm 8 wwww
 ----
-Cs 12 @ 0x00000000 # hello world
+'@0x00000000'Cs 12
 CCu base64:SGVsbG8h @ 0x00000000
 Cd 3 @ 0x00000100
 Ch 2 @ 0x00000200
-Cf 4 x @ 0x00000300
-Cm 8 wwww @ 0x00000380
+'@0x00000300'Cf 4 x
+'@0x00000380'Cm 8 wwww
 ----
 [{"offset":0,"type":"Cs","name":"aGVsbG8gd29ybGQ=","enc":"latin1","ascii":true}]
 ----
@@ -540,12 +540,12 @@ Cs..
 Cs.. @ 0x14001601c  # should print nothing
 EOF
 EXPECT=<<EOF
-Csa 2 @ 0x140016018 # \t
+'@0x140016018'Csa 2
 "\t"
 ascii[2] "\t"
             ;-- str._twideesc:_e_0m:
             0x140016018     .string "\t" ; len=2
-Cs 19 @ 0x140016018 # \twide\\esc: \x1b[0m\xa1\r\n
+'@0x140016018'Cs 19
 "\twide\\esc: \x1b[0m\xa1\r\n"
 latin1[19] "\twide\\esc: \x1b[0m\xa1\r\n"
             ;-- str._twideesc:_e_0m:
@@ -589,12 +589,12 @@ Cs..
 pd 1
 EOF
 EXPECT=<<EOF
-Cs 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n
+'@0x004021ff'Cs 61
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
 latin1[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n"
             ;-- str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n:
             0x004021ff     .string "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\e[33m \xc2\xa2\xe2\x82\xac\xf0\x90\x8d\x88 \e[0m\n" ; len=61
-Cs8 61 @ 0x004021ff # utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n
+'@0x004021ff'Cs8 61
 "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
 utf8[61] "utf8> \\u00a2\\u20ac\\U00010348 in yellow:\x1b[33m \u00a2\u20ac\U00010348 \x1b[0m\n"
             ;-- str.utf8__u00a2u20acU00010348_in_yellow:e_33m__e_0m_n:
