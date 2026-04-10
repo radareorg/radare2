@@ -101,9 +101,13 @@ static ut8 *get_whole_buf(RBuffer *b, ut64 *sz) {
 	if (!b->whole_buf) {
 		return NULL;
 	}
-	r_buf_read_at (b, 0, b->whole_buf, bsz);
+	st64 n = r_buf_read_at (b, 0, b->whole_buf, bsz);
+	if (n < 0) {
+		R_FREE (b->whole_buf);
+		return NULL;
+	}
 	if (sz) {
-		*sz = bsz;
+		*sz = (ut64)n;
 	}
 	return b->whole_buf;
 }
@@ -298,11 +302,12 @@ R_API char *r_buf_tostring(RBuffer *b) {
 	if (!s) {
 		return NULL;
 	}
-	if (r_buf_read_at (b, 0, (ut8 *)s, sz) < 0) {
+	st64 n = r_buf_read_at (b, 0, (ut8 *)s, sz);
+	if (n < 0) {
 		free (s);
 		return NULL;
 	}
-	s[sz] = '\0';
+	s[n] = '\0';
 	return s;
 }
 
