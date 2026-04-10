@@ -531,10 +531,8 @@ R_API FILE *r_sandbox_fopen(const char *path, const char *mode) {
 R_API int r_sandbox_chdir(const char *path) {
 	R_RETURN_VAL_IF_FAIL (path, -1);
 	R_SANDBOX_GUARD (R_SANDBOX_GRAIN_FILES | R_SANDBOX_GRAIN_DISK, -1);
-	if (G_enabled) {
-		if (strstr (path, "../") || *path == '/') {
-			return -1;
-		}
+	if (G_enabled && !r_sandbox_check_path (path)) {
+		return -1;
 	}
 	return chdir (path);
 }
