@@ -791,11 +791,13 @@ typedef struct r_bin_map_t {
 typedef bool (*RBinWriteAddLib)(RBinFile *bf, const char *lib);
 typedef ut64 (*RBinWriteScnResize)(RBinFile *bf, const char *name, ut64 newsize);
 typedef bool (*RBinWriteScnPerms)(RBinFile *bf, const char *name, int perms);
+typedef bool (*RBinWriteSegPerms)(RBinFile *bf, const char *name, int perms);
 typedef bool (*RBinWriteEntry)(RBinFile *bf, ut64 addr);
 typedef int (*RBinWriteRpathDel)(RBinFile *bf);
 typedef struct r_bin_write_t {
 	RBinWriteScnResize scn_resize;
 	RBinWriteScnPerms scn_perms;
+	RBinWriteSegPerms seg_perms;
 	RBinWriteRpathDel rpath_del;
 	RBinWriteEntry entry;
 	RBinWriteAddLib addlib;
@@ -998,6 +1000,7 @@ R_API char *r_bin_addrline_tostring(RBin *bin, ut64 addr, int origin);
 R_API bool r_bin_wr_addlib(RBin *bin, const char *lib);
 R_API ut64 r_bin_wr_scn_resize(RBin *bin, const char *name, ut64 size);
 R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms);
+R_API bool r_bin_wr_seg_perms(RBin *bin, const char *name, int perms);
 R_API bool r_bin_wr_rpath_del(RBin *bin);
 R_API bool r_bin_wr_entry(RBin *bin, ut64 addr);
 R_API bool r_bin_wr_output(RBin *bin, const char *filename);

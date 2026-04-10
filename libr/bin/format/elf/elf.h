@@ -240,6 +240,7 @@ void Elf_(free)(struct Elf_(obj_t)* bin);
 
 ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size);
 bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms);
+bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms);
 bool Elf_(entry_write)(RBinFile *bf, ut64 addr);
 bool Elf_(del_rpath)(RBinFile *bf);
 

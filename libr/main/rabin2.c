@@ -465,6 +465,7 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 		rc = r_bin_wr_output (bin, output);
 		break;
 	case 'p':
+	case 'P':
 		{
 			int perms = (int)r_num_math (NULL, ptr2);
 			if (perms < 1) {
@@ -473,8 +474,20 @@ static int rabin_do_operation(RCons *cons, RBin *bin, const char *op, int rad, c
 					R_LOG_ERROR ("Invalid permissions string (%s)", ptr2);
 				}
 			}
-			r_bin_wr_scn_perms (bin, ptr, perms);
-			rc = r_bin_wr_output (bin, output);
+			if (arg[0] == 'P') {
+				rc = r_bin_wr_seg_perms (bin, ptr, perms);
+				if (!rc) {
+					R_LOG_ERROR ("Cannot patch segment '%s' permissions (unsupported or not found)", ptr);
+				}
+			} else {
+				rc = r_bin_wr_scn_perms (bin, ptr, perms);
+				if (!rc) {
+					R_LOG_ERROR ("Cannot patch section '%s' permissions (unsupported or not found)", ptr);
+				}
+			}
+			if (rc) {
+				rc = r_bin_wr_output (bin, output);
+			}
 		}
 		break;
 	default:
@@ -852,6 +865,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				" R                 remove RPATH\n"
 				" a/l/libfoo.dylib  add library\n"
 				" p/.data/rwx       change section permissions\n"
+				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...)\n"
 				" c                 show Codesign data\n"
 				" C                 show LDID entitlements\n");
 				r_core_fini (&core);
