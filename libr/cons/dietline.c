@@ -1162,6 +1162,16 @@ static inline void delete_till_end(RLine *line) {
 	line->buffer.index = line->buffer.index > 0? line->buffer.index - 1: 0;
 }
 
+static inline void delete_till_start(RLine *line) {
+	if (line->buffer.index > 0) {
+		int tail = line->buffer.length - line->buffer.index;
+		memmove (line->buffer.data, line->buffer.data + line->buffer.index, tail);
+		line->buffer.length = tail;
+		line->buffer.index = 0;
+		line->buffer.data[line->buffer.length] = '\0';
+	}
+}
+
 static const char *promptcolor(RCons *cons) {
 	if (cons->line->demo) {
 		return cons->context->pal.prompt;
@@ -1366,9 +1376,7 @@ static inline void vi_delete_commands(RCons *cons, int rep) {
 			break;
 		case '^':
 		case '0':
-			strncpy (line->buffer.data, line->buffer.data + line->buffer.index, line->buffer.length);
-			line->buffer.length -= line->buffer.index;
-			line->buffer.index = 0;
+			delete_till_start (line);
 			break;
 		case 'c':
 		case 'd':
@@ -1928,11 +1936,7 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 			unix_word_rubout (cons);
 			break;
 		case 24: // ^X
-			if (line->buffer.index > 0) {
-				strncpy (line->buffer.data, line->buffer.data + line->buffer.index, line->buffer.length);
-				line->buffer.length -= line->buffer.index;
-				line->buffer.index = 0;
-			}
+			delete_till_start (line);
 			break;
 		case 25: // ^Y - paste
 			paste (line);
