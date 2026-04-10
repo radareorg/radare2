@@ -573,10 +573,8 @@ R_API int r_cons_readchar_timeout(RCons *cons, ut32 msec) {
 	FD_ZERO (&fdset);
 	FD_ZERO (&errset);
 	FD_SET (0, &fdset);
-	ut32 secs = msec / 1000;
-	tv.tv_sec = secs;
-	ut32 usec = (msec - secs) * 1000;
-	tv.tv_usec = usec;
+	tv.tv_sec = msec / 1000;
+	tv.tv_usec = (msec % 1000) * 1000;
 	r_cons_set_raw (cons, true);
 	if (select (1, &fdset, NULL, &errset, &tv) == 1) {
 		return r_cons_readchar (cons);
