@@ -3155,12 +3155,11 @@ struct count_pz_t {
 
 static bool count_pzs(RFlagItem *fi, void *u) {
 	struct count_pz_t *user = (struct count_pz_t *)u;
-	if (fi->space == user->flagspace &&
-		((user->addr <= fi->addr && fi->addr < user->addr + user->size) ||
-			(user->addr <= fi->addr + fi->size && fi->addr + fi->size < user->addr + user->size))) {
+	if (fi->space == user->flagspace && fi->size > 0 && user->size > 0
+			&& R_INBETWEEN (user->addr, user->addr + user->size - 1,
+				fi->addr, fi->addr + fi->size - 1)) {
 		(*user->ret)++;
 	}
-
 	return true;
 }
 static bool count_pzf(RFlagItem *fi, void *u) {

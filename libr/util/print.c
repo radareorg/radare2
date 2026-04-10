@@ -2063,7 +2063,7 @@ R_API void r_print_rangebar(RPrint *p, ut64 startA, ut64 endA, ut64 min, ut64 ma
 	for (j = 0; j < cols; j++) {
 		ut64 startB = min + (j * mul);
 		ut64 endB = min + (((ut64)j + 1) * (ut64)mul);
-		if (startA <= endB && endA >= startB) {
+		if (R_INBETWEEN (startA, endA, startB, endB)) {
 			if (show_colors & isFirst) {
 				r_strbuf_append (sb, Color_GREEN);
 				isFirst = false;

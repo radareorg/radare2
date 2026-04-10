@@ -51,7 +51,7 @@ R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map) {
 }
 
 R_API bool r_debug_snap_contains(RDebugSnap *snap, ut64 addr) {
-	return (snap->addr <= addr && addr >= snap->addr_end);
+	return (snap->addr <= addr && addr < snap->addr_end);
 }
 
 R_API ut8 *r_debug_snap_get_hash(RDebug *dbg, RDebugSnap *snap, int *size) {
