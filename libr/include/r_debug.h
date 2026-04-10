@@ -225,6 +225,7 @@ typedef struct r_debug_session_t {
 	RVecDebugCheckpoint *checkpoints;
 	HtUP *memory; /* RVecDebugChangeMem */
 	HtUP *registers; /* RVecDebugChangeReg */
+	HtUP *replay; /* checkpoint_id -> fd -> DebugReplayStream */
 	ut64 current_checkpoint_id;
 	ut64 next_checkpoint_id;
 	bool linear_history_valid;
@@ -649,6 +650,9 @@ R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, u
 R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id);
 R_API bool r_debug_session_restore(RDebug *dbg, ut64 checkpoint_id);
 R_API void r_debug_session_list(RDebug *dbg, int mode);
+R_API bool r_debug_session_cp_replay_append(RDebugSession *session, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len, const char *label);
+R_API bool r_debug_session_cp_replay_clear(RDebugSession *session, ut64 checkpoint_id, int fd);
+R_API void r_debug_session_cp_list_replays(RDebug *dbg, int mode);
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data);
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);

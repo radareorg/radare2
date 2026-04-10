@@ -139,6 +139,8 @@ Restore a checkpoint by id and continue from that branch.
 Delete a non-current leaf checkpoint.
 .It Cm dtst Ar dir No / Cm dtsf Ar dir
 Save and load the current debug session, including checkpoint ids and parent links.
+.It Cm dtsw Ar id Ar fd Ar hex No / Cm dtswc Ar id Op Ar fd No / Cm dtswj
+Queue replay bytes on a checkpoint file descriptor, clear queued bytes, and inspect replay state in JSON form.
 .El
 .Sh ENVIRONMENT
  R2_ARGS           run radare2 with defined arguments in environment and ignore cli ones

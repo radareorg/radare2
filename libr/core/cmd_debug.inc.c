@@ -527,6 +527,9 @@ static RCoreHelpMessage help_msg_dts = {
 	"dtsl", "", "list checkpoints",
 	"dtsm", "", "list current memory map and hash",
 	"dtsr", " <id>", "restore checkpoint by id and switch to live branch mode",
+	"dtsw", " <id> <fd> <hex>", "append replay bytes to a checkpoint fd stream",
+	"dtswc", " <id> [fd]", "clear replay bytes for one fd or all fds on a checkpoint",
+	"dtswj", "", "list checkpoint replay streams in JSON",
 	NULL
 };
 
@@ -580,6 +583,72 @@ static void cmd_dtsr(RCore *core, const char *input) {
 	if (!r_debug_session_restore (core->dbg, checkpoint_id)) {
 		R_LOG_ERROR ("Failed to restore checkpoint");
 	}
+}
+
+static void cmd_dtsw(RCore *core, const char *input) {
+	if (!core->dbg->session) {
+		R_LOG_ERROR ("No session started");
+		return;
+	}
+	if (input[4] == '?') {
+		r_core_cmd_help_match (core, help_msg_dts, "dtsw");
+		return;
+	}
+	if (input[3] == 'j') {
+		r_debug_session_cp_list_replays (core->dbg, 'j');
+		return;
+	}
+	if (input[3] == 'c') {
+		char *args = strdup (r_str_trim_head_ro (input + 4));
+		if (!args) {
+			return;
+		}
+		int argc = r_str_word_set0 (args);
+		if (argc < 1) {
+			R_LOG_ERROR ("Missing checkpoint id");
+			free (args);
+			return;
+		}
+		const char *id_s = r_str_word_get0 (args, 0);
+		ut64 checkpoint_id = r_num_math (core->num, id_s);
+		int fd = -1;
+		const char *fd_s = argc > 1? r_str_word_get0 (args, 1): NULL;
+		if (fd_s) {
+			fd = (int)r_num_math (core->num, fd_s);
+		}
+		if (!r_debug_session_cp_replay_clear (core->dbg->session, checkpoint_id, fd)) {
+			R_LOG_ERROR ("Failed to clear checkpoint replay");
+		}
+		free (args);
+		return;
+	}
+	char *args = strdup (r_str_trim_head_ro (input + 3));
+	if (!args) {
+		return;
+	}
+	int argc = r_str_word_set0 (args);
+	if (argc < 3) {
+		R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
+		free (args);
+		return;
+	}
+	const char *id_s = r_str_word_get0 (args, 0);
+	const char *fd_s = r_str_word_get0 (args, 1);
+	const char *hex_s = r_str_word_get0 (args, 2);
+	ut64 checkpoint_id = r_num_math (core->num, id_s);
+	int fd = (int)r_num_math (core->num, fd_s);
+	size_t hexlen = 0;
+	ut8 *bytes = r_hex_str2bin_dup (hex_s, &hexlen);
+	if (!bytes && *hex_s) {
+		R_LOG_ERROR ("Invalid replay hex payload");
+		free (args);
+		return;
+	}
+	if (!r_debug_session_cp_replay_append (core->dbg->session, checkpoint_id, fd, bytes? bytes: (const ut8 *)"", hexlen, NULL)) {
+		R_LOG_ERROR ("Failed to append checkpoint replay");
+	}
+	free (bytes);
+	free (args);
 }
 
 static RCoreHelpMessage help_msg_dx = {
@@ -6053,6 +6122,9 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'r': // "dtsr"
 				cmd_dtsr (core, input);
+				break;
+			case 'w': // "dtsw*"
+				cmd_dtsw (core, input);
 				break;
 			default:
 				r_core_cmd_help (core, help_msg_dts);

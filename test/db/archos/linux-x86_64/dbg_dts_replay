@@ -1,0 +1,22 @@
+NAME=checkpoint replay streams (dtsw, dtswj, dtswc)
+FILE=bins/elf/analysis/x64-loop
+ARGS=-d
+CMDS=<<EOF
+ood
+dcu main
+dts+
+dtsc sink
+dtsw 2 0 4142
+dtswj
+dtsw 2 0 43
+dtswj
+dtswc 2 0
+dtswj
+EOF
+EXPECT=<<EOF
+2
+[{"id":1,"replay":[]},{"id":2,"replay":[{"fd":0,"size":2,"consumed":0,"remaining":2,"label":"","hex":"4142"}]}]
+[{"id":1,"replay":[]},{"id":2,"replay":[{"fd":0,"size":3,"consumed":0,"remaining":3,"label":"","hex":"414243"}]}]
+[{"id":1,"replay":[]},{"id":2,"replay":[]}]
+EOF
+RUN
