@@ -533,55 +533,48 @@ R_API void r_cons_canvas_print(RConsCanvas *c) {
 }
 
 R_API int r_cons_canvas_resize(RConsCanvas *c, int w, int h) {
-	int i;
 	if (!c || w < 0 || h <= 0) {
 		return false;
 	}
 	const int old_h = c->h;
-	int *newblen = realloc (c->blen, sizeof (int) * h);
-	if (!newblen) {
-		r_cons_canvas_free (c);
-		return false;
-	}
-	c->blen = newblen;
-	int *newbsize = realloc (c->bsize, sizeof (int) * h);
-	if (!newbsize) {
-		r_cons_canvas_free (c);
-		return false;
-	}
-	c->bsize = newbsize;
-
-	// Don't lose the end of the array if size is being reduced
+	int i;
+	// shrink: free dropped lines before resizing the pointer array
 	for (i = h; i < old_h; i++) {
-		free (c->b[i]);
+		R_FREE (c->b[i]);
 	}
-
 	char **newb = realloc (c->b, sizeof (*c->b) * h);
 	if (!newb) {
 		r_cons_canvas_free (c);
 		return false;
 	}
 	c->b = newb;
-	char *newline = NULL;
+	// NULL-init grown slots so failure cleanup never frees uninit pointers
+	for (i = old_h; i < h; i++) {
+		c->b[i] = NULL;
+	}
+	c->h = h;
+	// blen/bsize are fully overwritten below; replace rather than realloc-preserve
+	free (c->blen);
+	free (c->bsize);
+	c->blen = R_NEWS (int, h);
+	c->bsize = R_NEWS (int, h);
+	if (!c->blen || !c->bsize) {
+		r_cons_canvas_free (c);
+		return false;
+	}
 	for (i = 0; i < h; i++) {
-		if (i < old_h) {
-			newline = realloc (c->b[i], sizeof (*c->b[i]) * (w + 1));
-			if (newline) {
-				c->b[i] = newline;
-			}
-		} else {
-			newline = malloc (w + 1);
-		}
-		c->blen[i] = w;
-		c->bsize[i] = w + 1;
-		if (!newline) {
+		char *line = c->b[i]
+			? realloc (c->b[i], w + 1)
+			: malloc (w + 1);
+		if (!line) {
 			r_cons_canvas_free (c);
 			return false;
 		}
-		c->b[i] = newline;
+		c->b[i] = line;
+		c->blen[i] = w;
+		c->bsize[i] = w + 1;
 	}
 	c->w = w;
-	c->h = h;
 	c->x = 0;
 	c->y = 0;
 	r_cons_canvas_clear (c, R_CONS_CANVAS_FLAG_DEFAULT);
