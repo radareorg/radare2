@@ -268,7 +268,7 @@ bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
 	const char *strtab = bin->shstrtab;
 	int i, patchoff;
 
-	/* calculate delta */
+	/* try to match a section header by name */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		const char *shname = &strtab[shdrp->sh_name];
 		int operms = shdrp->sh_flags;
@@ -291,6 +291,44 @@ bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
 			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
 			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
 			r_buf_write_at (bf->buf, patchoff, (ut8*)&newperms, 1);
+			return true;
+		}
+	}
+	/* also match program headers by synthetic name (LOAD%d / DYNAMIC / ...)
+	 * so we can patch segment permissions on stripped ELFs that have no
+	 * section headers. The perms bitmask passed here is R_PERM style
+	 * (R_PERM_X=1, R_PERM_W=2, R_PERM_R=4) which happens to match the
+	 * ELF PF_X/PF_W/PF_R bits. */
+	if (bin->phdr && ehdr->e_phnum > 0) {
+		int load_idx = 0;
+		for (i = 0; i < ehdr->e_phnum; i++) {
+			Elf_(Phdr) *phdrp = &bin->phdr[i];
+			char synthetic[32];
+			const char *pname = NULL;
+			switch (phdrp->p_type) {
+			case PT_LOAD:
+				snprintf (synthetic, sizeof (synthetic), "LOAD%d", load_idx++);
+				pname = synthetic;
+				break;
+			case PT_DYNAMIC: pname = "DYNAMIC"; break;
+			case PT_INTERP:  pname = "INTERP";  break;
+			case PT_NOTE:    pname = "NOTE";    break;
+			case PT_TLS:     pname = "TLS";     break;
+			case PT_PHDR:    pname = "PHDR";    break;
+			case PT_GNU_STACK:    pname = "GNU_STACK";    break;
+			case PT_GNU_RELRO:    pname = "GNU_RELRO";    break;
+			case PT_GNU_EH_FRAME: pname = "GNU_EH_FRAME"; break;
+			default: pname = NULL; break;
+			}
+			if (!pname || strcmp (name, pname)) {
+				continue;
+			}
+			ut32 newflags = (ut32)(perms & 7); // PF_X|PF_W|PF_R
+			phdrp->p_flags = newflags;
+			patchoff = (int)(ehdr->e_phoff + (i * sizeof (Elf_(Phdr))));
+			patchoff += r_offsetof (Elf_(Phdr), p_flags);
+			printf ("wv4 0x%x @ 0x%x\n", newflags, patchoff);
+			r_buf_write_at (bf->buf, patchoff, (ut8*)&newflags, sizeof (newflags));
 			return true;
 		}
 	}
