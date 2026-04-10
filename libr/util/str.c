@@ -1270,8 +1270,8 @@ R_API void r_str_sanitize_space(char *c) {
 	char *p;
 	bool maytrim = false;
 	for (p = c; *p; p++) {
-		const ch = *p;
-		if (ch == '\n' || c == '\r' || ch == '\t' || ch == ' ') {
+		const char ch = *p;
+		if (ch == '\n' || ch == '\r' || ch == '\t' || ch == ' ') {
 			*p = ' ';
 			maytrim = true;
 		}
