@@ -11,6 +11,10 @@ static RCons *I = NULL;
 
 #define MAX_PAGES 100
 
+// Write a string literal/array to fd; returns true on full write.
+// The argument MUST be a string literal or char[] (sizeof must be the array size).
+#define WRITE_LIT(fd, s) (write ((fd), (s), sizeof (s) - 1) == (ssize_t)(sizeof (s) - 1))
+
 #if R2__UNIX__ || R2__WINDOWS__
 static void __break_signal(int sig) {
 	if (I) {
@@ -596,7 +600,7 @@ R_API int r_cons_get_cur_line(void) {
 	cfmakeraw (&raw);
 	(void)tcsetattr (0, TCSANOW, &raw);
 	if (isatty (fileno (stdin))) {
-		if (write (1, R_CONS_GET_CURSOR_POSITION, sizeof (R_CONS_GET_CURSOR_POSITION)) != -1) {
+		if (WRITE_LIT (1, R_CONS_GET_CURSOR_POSITION)) {
 			if (read (0, buf, sizeof (buf)) != sizeof (buf)) {
 				if (isdigit ((ut8)buf[2])) {
 					curline = (buf[2] - '0');
@@ -946,8 +950,7 @@ R_API void r_cons_invert(RCons *cons, int set, int color) {
 #if R2__WINDOWS__
 static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 	int ypos = 0;
-	const char *get_pos = R_CONS_GET_CURSOR_POSITION;
-	if (write (cons->fdout, get_pos, sizeof (get_pos)) < 1) {
+	if (!WRITE_LIT (cons->fdout, R_CONS_GET_CURSOR_POSITION)) {
 		return 0;
 	}
 	int ch;
@@ -998,23 +1001,19 @@ static int win_xterm_get_cur_pos(RCons *cons, int *xpos) {
 }
 
 static bool w32_xterm_get_size(RCons *cons) {
-	if (write (cons->fdout, R_CONS_CURSOR_SAVE, sizeof (R_CONS_CURSOR_SAVE)) < 1) {
+	if (!WRITE_LIT (cons->fdout, R_CONS_CURSOR_SAVE)) {
 		return false;
 	}
-	int rows, columns;
-	const char nainnain[] = "\x1b[999;999H";
-	if (write (cons->fdout, nainnain, sizeof (nainnain)) != sizeof (nainnain)) {
+	if (!WRITE_LIT (cons->fdout, "\x1b[999;999H")) {
 		return false;
 	}
-	rows = win_xterm_get_cur_pos (cons, &columns);
+	int columns;
+	int rows = win_xterm_get_cur_pos (cons, &columns);
 	if (rows) {
 		cons->rows = rows;
 		cons->columns = columns;
 	} // otherwise reuse previous values
-	if (write (cons->fdout, R_CONS_CURSOR_RESTORE, sizeof (R_CONS_CURSOR_RESTORE) != sizeof (R_CONS_CURSOR_RESTORE))) {
-		return false;
-	}
-	return true;
+	return WRITE_LIT (cons->fdout, R_CONS_CURSOR_RESTORE);
 }
 #endif
 
