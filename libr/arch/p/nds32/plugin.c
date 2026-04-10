@@ -139,7 +139,7 @@ static const Nds32InsnDesc nds32_insns[] = {
 	NDS32_DESC ("sbi.gp", "@gs1", R_ANAL_OP_TYPE_STORE),
 	NDS32_DESC ("swi.gp", "@gs4", R_ANAL_OP_TYPE_STORE),
 	NDS32_DESC ("shi.gp", "@gs2", R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("lwi", "$1,[4],$0,:=", R_ANAL_OP_TYPE_LOAD),
+	NDS32_DESC ("lwi", "@ml4", R_ANAL_OP_TYPE_LOAD),
 	NDS32_DESC ("lbi", "@ml1", R_ANAL_OP_TYPE_LOAD),
 	NDS32_DESC ("lhi", NULL, R_ANAL_OP_TYPE_LOAD),
 	NDS32_DESC ("ldi", NULL, R_ANAL_OP_TYPE_LOAD),
@@ -166,8 +166,8 @@ static const Nds32InsnDesc nds32_insns[] = {
 	NDS32_DESC ("fld", NULL, R_ANAL_OP_TYPE_LOAD),
 	NDS32_DESC ("flsi", NULL, R_ANAL_OP_TYPE_LOAD),
 	NDS32_DESC ("fldi", NULL, R_ANAL_OP_TYPE_LOAD),
-	NDS32_DESC ("swi", "$0,$1,=[4]", R_ANAL_OP_TYPE_STORE),
-	NDS32_DESC ("sbi", "$0,$1,=[1]", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("swi", "@ms4", R_ANAL_OP_TYPE_STORE),
+	NDS32_DESC ("sbi", "@ms1", R_ANAL_OP_TYPE_STORE),
 	NDS32_DESC ("shi", "@ms2", R_ANAL_OP_TYPE_STORE),
 	NDS32_DESC ("sdi", NULL, R_ANAL_OP_TYPE_STORE),
 	NDS32_DESC ("swi333", NULL, R_ANAL_OP_TYPE_STORE),
@@ -301,51 +301,40 @@ static bool nds32_build_insn_db(HtSU *db) {
 	return true;
 }
 
-static char *parse_gp_off(char *off) {
-	r_str_trim (off);
-	if (*off == '[') {
-		off++;
-	}
-	if (*off == '+') {
-		off++;
-	}
-	char *end = strchr (off, ']');
-	if (end) {
-		*end = 0;
-	}
-	r_str_trim (off);
-	return off;
-}
-
-static char *parse_mem_addr(char *addr) {
-	r_str_trim (addr);
-	if (*addr == '[') {
-		addr++;
-	}
-	char *end = strchr (addr, ']');
-	if (end) {
-		*end = 0;
-	}
-	r_str_trim (addr);
-	return addr;
-}
-
-static bool split_mem_addr(char *addr, char **reg, char **off) {
-	char *base = parse_mem_addr (addr);
-	if (!*base) {
+// Parse memory operand "[base + off]" / "[base]" / "[off]" in place.
+// Strips brackets, whitespace, and optional '+' / '#' immediate-prefix, and
+// splits around " + ". *reg holds the base (or sole expression for
+// implicit-base forms); *off holds the offset or NULL. Returns false when
+// the input is NULL/empty to keep literal "" args from being mutated.
+static bool parse_bracket(char *s, char **reg, char **off) {
+	if (R_STR_ISEMPTY (s)) {
 		return false;
 	}
-	char *plus = strstr (base, " + ");
-	if (!plus) {
-		*reg = base;
-		*off = NULL;
-		return true;
+	while (*s == ' ' || *s == '\t' || *s == '[' || *s == '+' || *s == '#') {
+		s++;
 	}
-	*plus = 0;
-	*reg = base;
-	*off = plus + 3;
-	r_str_trim (*reg);
-	r_str_trim (*off);
+	char *end = strchr (s, ']');
+	if (end) {
+		*end = 0;
+	}
+	char *p = strstr (s, " + ");
+	if (p) {
+		*p = 0;
+		char *o = p + 3;
+		while (*o == ' ' || *o == '+' || *o == '#') {
+			o++;
+		}
+		*off = *o? o: NULL;
+		if (*off) {
+			r_str_trim (*off);
+		}
+	} else {
+		*off = NULL;
+	}
+	if (*s) {
+		r_str_trim (s);
+	}
+	*reg = s;
 	return true;
 }
 
@@ -372,32 +361,34 @@ static void apply_esil_template(RAnalOp *op, const char *fmt, char **av) {
 
 // handle @-prefixed special ESIL cases that need address parsing
 static void apply_esil_special(RAnalOp *op, const char *tag, char **av) {
-	int size = tag[3] - '0';
+	const int size = tag[3] - '0';
+	const bool load = tag[2] == 'l';
 	switch (tag[1]) {
-	case 'g': { // @gl1..@gl4, @gs1..@gs4: gp load/store
-		char *off = parse_gp_off (av[1]);
-		if (*off) {
-			if (tag[2] == 'l') {
-				r_strbuf_setf (&op->esil, "gp,%s,+,[%d],%s,:=", off, size, av[0]);
-			} else {
-				r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[%d]", av[0], off, size);
-			}
+	case 'g': { // @gl1..@gl4, @gs1..@gs4: gp load/store "[+ off]"
+		char *reg, *off;
+		if (!parse_bracket (av[1], &reg, &off) || !*reg) {
+			break;
+		}
+		if (load) {
+			r_strbuf_setf (&op->esil, "gp,%s,+,[%d],%s,:=", reg, size, av[0]);
+		} else {
+			r_strbuf_setf (&op->esil, "%s,gp,%s,+,=[%d]", av[0], reg, size);
 		}
 		break;
 	}
-	case 'm': { // @ml1..@ml4, @ms1..@ms4: mem load/store
+	case 'm': { // @ml1..@ml4, @ms1..@ms4: mem load/store "[base + off]"
 		char *reg, *off;
-		if (!split_mem_addr (av[1], &reg, &off)) {
+		if (!parse_bracket (av[1], &reg, &off) || !*reg) {
 			break;
 		}
-		if (tag[2] == 'l') {
-			if (off && *off) {
+		if (load) {
+			if (off) {
 				r_strbuf_setf (&op->esil, "%s,%s,+,[%d],%s,:=", reg, off, size, av[0]);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,[%d],%s,:=", reg, size, av[0]);
 			}
 		} else {
-			if (off && *off) {
+			if (off) {
 				r_strbuf_setf (&op->esil, "%s,%s,%s,+,=[%d]", av[0], reg, off, size);
 			} else {
 				r_strbuf_setf (&op->esil, "%s,%s,=[%d]", av[0], reg, size);
