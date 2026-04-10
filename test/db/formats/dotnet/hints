@@ -11,16 +11,16 @@ pd 10
 il
 EOF
 EXPECT=<<EOF
-aha x86 @ 0x10002000
-aha cil @ 0x10002050
-aha cil @ 0x10002073
-aha cil @ 0x10002084
-aha cil @ 0x100020bc
-aha cil @ 0x10002124
-aha cil @ 0x100021b4
-aha cil @ 0x10002218
-aha cil @ 0x100022f4
-aha x86 @ 0x10002fba
+'@0x10002000'aha x86
+'@0x10002050'aha cil
+'@0x10002073'aha cil
+'@0x10002084'aha cil
+'@0x100020bc'aha cil
+'@0x10002124'aha cil
+'@0x100021b4'aha cil
+'@0x10002218'aha cil
+'@0x100022f4'aha cil
+'@0x10002fba'aha x86
 ---
             ;-- entry0:
             0x10002fba      ff2500200010   jmp dword [sym.imp.mscoree.dll__CorDllMain] ; 0x10002000

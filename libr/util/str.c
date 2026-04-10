@@ -1265,6 +1265,22 @@ R_API void r_str_sanitize(char *c) {
 	}
 }
 
+R_API void r_str_sanitize_space(char *c) {
+	R_RETURN_IF_FAIL (c);
+	char *p;
+	bool maytrim = false;
+	for (p = c; *p; p++) {
+		const char ch = *p;
+		if (ch == '\n' || ch == '\r' || ch == '\t' || ch == ' ') {
+			*p = ' ';
+			maytrim = true;
+		}
+	}
+	if (maytrim) {
+		r_str_trim (c);
+	}
+}
+
 R_API char *r_str_sanitize_sdb_key(const char *s) {
 	if (!s || !*s) {
 		return NULL;

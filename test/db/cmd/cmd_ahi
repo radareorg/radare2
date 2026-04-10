@@ -249,7 +249,7 @@ ahi 10 @ 0x00404879
 ah*
 EOF
 EXPECT=<<EOF
-ahi 10 @ 0x404879
+'@0x404879'ahi 10
 EOF
 RUN
 
