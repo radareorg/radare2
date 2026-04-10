@@ -13,7 +13,7 @@ static RCons *I = NULL;
 
 // Write a string literal/array to fd; returns true on full write.
 // The argument MUST be a string literal or char[] (sizeof must be the array size).
-#define WRITE_LIT(fd, s) (write ((fd), (s), sizeof (s) - 1) == (ssize_t)(sizeof (s) - 1))
+#define WRITE_LIT(fd, s) (write ((fd), (s), sizeof (s) - 1) == (int)(sizeof (s) - 1))
 
 #if R2__UNIX__ || R2__WINDOWS__
 static void __break_signal(int sig) {
