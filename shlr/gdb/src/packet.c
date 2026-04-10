@@ -62,7 +62,7 @@ static int unpack(libgdbr_t *g, struct parse_ctx *ctx, int len) {
 				    (g->read_buff[i + 1] == '+' && g->read_buff[i + 2] == '$')) {
 					// Packets clubbed together
 					g->read_len = len - i - 1;
-					memcpy (g->read_buff, g->read_buff + i + 1, g->read_len);
+					memmove (g->read_buff, g->read_buff + i + 1, g->read_len);
 					g->read_buff[g->read_len] = '\0';
 					return 0;
 				}
@@ -197,8 +197,10 @@ int pack(libgdbr_t *g, const char *msg) {
 	size_t msg_len;
 	const char *src;
 	char prev;
+	/* Buffer layout: '$' + payload + "#xx" + '\0'. Reserve 5 bytes overhead. */
+	const size_t payload_max = (g->send_max > 5) ? (size_t)g->send_max - 5 : 0;
 	msg_len = strlen (msg);
-	if (msg_len > g->send_max + 5) {
+	if (msg_len > payload_max) {
 		R_LOG_ERROR ("%s: message too long: %s", __func__, msg);
 		return -1;
 	}
@@ -211,7 +213,7 @@ int pack(libgdbr_t *g, const char *msg) {
 	while (*src) {
 		if (*src == '#' || *src == '$' || *src == '}') {
 			msg_len += 1;
-			if (msg_len > g->send_max + 5) {
+			if (msg_len > payload_max) {
 				R_LOG_ERROR ("%s: message too long: %s", __func__, msg);
 				return -1;
 			}

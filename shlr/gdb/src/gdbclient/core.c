@@ -768,16 +768,10 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 			goto end;
 		}
 		int delta = (pkt * data_sz);
-
-		if (delta > len) {
-			R_LOG_ERROR ("%s: delta is greater than len (%d > %d)",
-			        __func__, delta, len);
-			break;
-		}
 		int left = R_MIN (g->data_len, len - delta);
 		if (left > 0) {
 			memcpy (buf + delta, g->data, left);
-			ret_len += g->data_len;
+			ret_len += left;
 		}
 	}
 	if (last) {
@@ -804,7 +798,7 @@ static int gdbr_read_memory_page(libgdbr_t *g, ut64 address, ut8 *buf, int len) 
 		int left = R_MIN (g->data_len, len - delta);
 		if (left > 0) {
 			memcpy (buf + delta, g->data, left);
-			ret_len += g->data_len;
+			ret_len += left;
 		}
 	}
 end:
@@ -1087,7 +1081,13 @@ int gdbr_write_reg(libgdbr_t *g, const char *name, char *value, int len) {
 
 	// Use 'G' if write_register failed/isn't supported
 	gdbr_read_registers (g);
-	memcpy (g->data + (g->registers[i].offset / 8), value, len);
+	const size_t roff = g->registers[i].offset / 8;
+	if (len < 0 || roff >= (size_t)g->data_max || (size_t)len > (size_t)g->data_max - roff) {
+		R_LOG_ERROR ("%s: register write overflows data buffer", __func__);
+		ret = -1;
+		goto end;
+	}
+	memcpy (g->data + roff, value, len);
 	gdbr_write_bin_registers (g, g->data, g->data_len);
 
 	ret = 0;

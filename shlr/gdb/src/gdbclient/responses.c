@@ -332,6 +332,10 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		}
 	}
 	tot_regs = regnum;
+	if (buflen > (size_t)g->read_max || buflen > (size_t)g->data_max) {
+		R_LOG_ERROR ("%s: register buffer %zu exceeds io buffers", __func__, buflen);
+		return -1;
+	}
 
 	// We're not using the receive buffer till next packet anyway. Better use it
 	buf = g->read_buff;
@@ -344,7 +348,15 @@ int handle_lldb_read_reg(libgdbr_t *g) {
 		if (isxdigit ((unsigned char)*ptr)) {
 			regnum = (int) strtoul (ptr, NULL, 16);
 			if (regnum < tot_regs && (ptr2 = strchr (ptr, ':'))) {
-				unpack_hex (ptr2 + 1, strlen (ptr2 + 1), buf + g->registers[regnum].offset);
+				const size_t roff = g->registers[regnum].offset;
+				const size_t rsz = g->registers[regnum].size;
+				if (roff < buflen && rsz <= buflen - roff) {
+					size_t hexlen = strlen (ptr2 + 1);
+					if (hexlen / 2 > rsz) {
+						hexlen = rsz * 2;
+					}
+					unpack_hex (ptr2 + 1, hexlen, buf + roff);
+				}
 			}
 		}
 		ptr = r_str_tok_r (NULL, ";", &save_ptr);

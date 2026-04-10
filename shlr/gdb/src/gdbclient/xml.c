@@ -391,6 +391,10 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		column += sizeof ("<column name=\"pid\">") - 1;
 		column_data_len = column_end - column;
+		if (column_data_len < 0 || column_data_len > MAX_PID_CHARS) {
+			ret = -1;
+			goto end;
+		}
 
 		memcpy (pidstr, column, column_data_len);
 		pidstr[column_data_len] = '\0';
@@ -409,6 +413,10 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 
 		column += sizeof ("<column name=\"command\">") - 1;
 		column_data_len = column_end - column;
+		if (column_data_len < 0 || (size_t)column_data_len >= sizeof (cmdline)) {
+			ret = -1;
+			goto end;
+		}
 
 		memcpy (cmdline, column, column_data_len);
 		cmdline[column_data_len] = '\0';
