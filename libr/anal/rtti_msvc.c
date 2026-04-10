@@ -1,10 +1,10 @@
-/* radare - LGPL - Copyright 2009-2018 - pancake, maijin, thestr4ng3r */
+/* radare - LGPL - Copyright 2009-2026 - pancake, maijin, thestr4ng3r */
 
-#include "r_anal.h"
 #include <r_core.h>
 #include <r_vec.h>
 
 #define NAME_BUF_SIZE    64
+#define NAME_LEN_MAX     4096
 #define BASE_CLASSES_MAX 32
 
 typedef struct rtti_complete_object_locator_t {
@@ -279,61 +279,45 @@ static RList *rtti_msvc_read_base_class_array(RVTableContext *context, ut32 num_
 	return ret;
 }
 
+static char *rtti_msvc_read_name(RVTableContext *context, ut64 addr) {
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	ut8 buf[NAME_BUF_SIZE];
+	ut64 off = 0;
+	while (r_strbuf_length (&sb) < NAME_LEN_MAX) {
+		if (!context->anal->iob.read_at (context->anal->iob.io, addr + off, buf, sizeof (buf))) {
+			break;
+		}
+		size_t i;
+		for (i = 0; i < sizeof (buf); i++) {
+			if (buf[i] == 0xff) {
+				goto err;
+			}
+			if (buf[i] == '\0') {
+				r_strbuf_append_n (&sb, (const char *)buf, i);
+				return r_strbuf_drain_nofree (&sb);
+			}
+		}
+		r_strbuf_append_n (&sb, (const char *)buf, sizeof (buf));
+		off += sizeof (buf);
+	}
+err:
+	r_strbuf_fini (&sb);
+	return NULL;
+}
+
 static bool rtti_msvc_read_type_descriptor(RVTableContext *context, ut64 addr, rtti_type_descriptor *td) {
 	if (addr == UT64_MAX) {
 		return false;
 	}
-
 	if (!context->read_addr (context->anal, addr, &td->vtable_addr)) {
 		return false;
 	}
 	if (!context->read_addr (context->anal, addr + context->word_size, &td->spare)) {
 		return false;
 	}
-
-	ut64 nameAddr = addr + 2 * context->word_size;
-	ut8 buf[NAME_BUF_SIZE];
-	ut64 bufOffset = 0;
-	size_t nameLen = 0;
-	bool endFound = false;
-	bool endInvalid = false;
-	while (1) {
-		context->anal->iob.read_at (context->anal->iob.io, nameAddr + bufOffset, buf, sizeof (buf));
-		int i;
-		for (i = 0; i < sizeof (buf); i++) {
-			if (buf[i] == '\0') {
-				endFound = true;
-				break;
-			}
-			if (buf[i] == 0xff) {
-				endInvalid = true;
-				break;
-			}
-			nameLen++;
-		}
-		if (endFound || endInvalid) {
-			break;
-		}
-		bufOffset += sizeof (buf);
-	}
-
-	if (endInvalid) {
-		return false;
-	}
-
-	td->name = malloc (nameLen + 1);
-	if (!td->name) {
-		return false;
-	}
-
-	if (bufOffset == 0) {
-		memcpy (td->name, buf, nameLen + 1);
-	} else {
-		context->anal->iob.read_at (context->anal->iob.io, nameAddr,
-									(ut8 *)td->name, (int) (nameLen + 1));
-	}
-
-	return true;
+	td->name = rtti_msvc_read_name (context, addr + 2 * context->word_size);
+	return td->name != NULL;
 }
 
 static void rtti_msvc_print_complete_object_locator(rtti_complete_object_locator *col, ut64 addr, const char *prefix) {
