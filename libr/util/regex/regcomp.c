@@ -743,12 +743,12 @@ static void p_bracket(struct parse *p) {
 	int invert = 0;
 
 	/* Dept of Truly Sickening Special-Case Kludges */
-	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:<:]]")) {
+	if (p->end - p->next > 5 && r_str_startswith (p->next, "[:<:]]")) {
 		EMIT (OBOW, 0);
 		NEXTn (6);
 		return;
 	}
-	if (p->next + 5 < p->end && r_str_startswith (p->next, "[:>:]]")) {
+	if (p->end - p->next > 5 && r_str_startswith (p->next, "[:>:]]")) {
 		EMIT (OEOW, 0);
 		NEXTn (6);
 		return;
@@ -1019,13 +1019,12 @@ static void p_fakebracket(struct parse *p, char *bracket, size_t len) {
 
 static void bothcases(struct parse *p, int ch) {
 	char bracket[] = { 0, ']', 0 };
-
 	ch = (ut8)ch;
 	if (othercase (ch) == ch) {
 		return;
 	}
 	bracket[0] = ch;
-	p_fakebracket (p, bracket, 2);
+	p_fakebracket (p, bracket, sizeof (bracket) - 1);
 }
 
 /*
@@ -1093,9 +1092,8 @@ special(struct parse *p, int ch) {
  */
 static void
 nonnewline(struct parse *p) {
-	char bracket[] = { '^', '\n', ']', 0 };
-
-	p_fakebracket (p, bracket, 3);
+	char bracket[] = "^\n]";
+	p_fakebracket (p, bracket, sizeof (bracket) - 1);
 }
 
 /*
