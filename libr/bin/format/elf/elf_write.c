@@ -268,7 +268,8 @@ bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
 	const char *strtab = bin->shstrtab;
 	int i, patchoff;
 
-	/* try to match a section header by name */
+	/* ELF has no SHF_READ, so the R bit of `perms` is intentionally ignored —
+	 * sections are always readable if SHF_ALLOC is set. */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		const char *shname = &strtab[shdrp->sh_name];
 		int operms = shdrp->sh_flags;
@@ -289,48 +290,61 @@ bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
 			patchoff = bin->ehdr.e_shoff;
 			patchoff += ((const ut8*)shdrp - (const ut8*)bin->shdr);
 			patchoff += r_offsetof (Elf_(Shdr), sh_flags);
-			printf ("wx %02x @ 0x%x\n", newperms, patchoff);
+			R_LOG_DEBUG ("wx %02x @ 0x%x", newperms, patchoff);
 			r_buf_write_at (bf->buf, patchoff, (ut8*)&newperms, 1);
 			return true;
 		}
 	}
-	/* also match program headers by synthetic name (LOAD%d / DYNAMIC / ...)
-	 * so we can patch segment permissions on stripped ELFs that have no
-	 * section headers. The perms bitmask passed here is R_PERM style
-	 * (R_PERM_X=1, R_PERM_W=2, R_PERM_R=4) which happens to match the
-	 * ELF PF_X/PF_W/PF_R bits. */
-	if (bin->phdr && ehdr->e_phnum > 0) {
-		int load_idx = 0;
-		for (i = 0; i < ehdr->e_phnum; i++) {
-			Elf_(Phdr) *phdrp = &bin->phdr[i];
-			char synthetic[32];
-			const char *pname = NULL;
-			switch (phdrp->p_type) {
-			case PT_LOAD:
-				snprintf (synthetic, sizeof (synthetic), "LOAD%d", load_idx++);
-				pname = synthetic;
-				break;
-			case PT_DYNAMIC: pname = "DYNAMIC"; break;
-			case PT_INTERP:  pname = "INTERP";  break;
-			case PT_NOTE:    pname = "NOTE";    break;
-			case PT_TLS:     pname = "TLS";     break;
-			case PT_PHDR:    pname = "PHDR";    break;
-			case PT_GNU_STACK:    pname = "GNU_STACK";    break;
-			case PT_GNU_RELRO:    pname = "GNU_RELRO";    break;
-			case PT_GNU_EH_FRAME: pname = "GNU_EH_FRAME"; break;
-			default: pname = NULL; break;
-			}
-			if (!pname || strcmp (name, pname)) {
-				continue;
-			}
-			ut32 newflags = (ut32)(perms & 7); // PF_X|PF_W|PF_R
-			phdrp->p_flags = newflags;
-			patchoff = (int)(ehdr->e_phoff + (i * sizeof (Elf_(Phdr))));
-			patchoff += r_offsetof (Elf_(Phdr), p_flags);
-			printf ("wv4 0x%x @ 0x%x\n", newflags, patchoff);
-			r_buf_write_at (bf->buf, patchoff, (ut8*)&newflags, sizeof (newflags));
-			return true;
+	return false;
+}
+
+/* Return a stable synthetic name for a program header, or NULL if the type
+ * is not one we expose. Variable names (LOAD0, LOAD1, ...) are formatted
+ * into the caller-provided buffer. Keep in sync with elf.c segment naming. */
+static const char *phdr_synthetic_name(Elf_(Phdr) *phdrp, int load_idx, char *buf, size_t buflen) {
+	switch (phdrp->p_type) {
+	case PT_LOAD:
+		snprintf (buf, buflen, "LOAD%d", load_idx);
+		return buf;
+	case PT_DYNAMIC:      return "DYNAMIC";
+	case PT_INTERP:       return "INTERP";
+	case PT_NOTE:         return "NOTE";
+	case PT_TLS:          return "TLS";
+	case PT_PHDR:         return "PHDR";
+	case PT_GNU_STACK:    return "GNU_STACK";
+	case PT_GNU_RELRO:    return "GNU_RELRO";
+	case PT_GNU_EH_FRAME: return "GNU_EH_FRAME";
+	}
+	return NULL;
+}
+
+/* Patch segment permissions by matching a program header by synthetic name
+ * (LOAD0, DYNAMIC, GNU_STACK, ...). Useful for stripped ELFs with no section
+ * headers. The perms bitmask is R_PERM style (X=1, W=2, R=4), which matches
+ * the ELF PF_X/PF_W/PF_R bit layout. */
+bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms) {
+	struct Elf_(obj_t) *bin = bf->bo->bin_obj;
+	Elf_(Ehdr) *ehdr = &bin->ehdr;
+	if (!bin->phdr || ehdr->e_phnum <= 0) {
+		return false;
+	}
+	int i, load_idx = 0;
+	for (i = 0; i < ehdr->e_phnum; i++) {
+		Elf_(Phdr) *phdrp = &bin->phdr[i];
+		char synthetic[32];
+		int this_idx = (phdrp->p_type == PT_LOAD)? load_idx++: 0;
+		const char *pname = phdr_synthetic_name (phdrp, this_idx, synthetic, sizeof (synthetic));
+		if (!pname || strcmp (name, pname)) {
+			continue;
 		}
+		/* preserve OS/processor-specific bits in the upper nibbles */
+		ut32 newflags = (phdrp->p_flags & ~(ut32)7) | (ut32)(perms & 7);
+		phdrp->p_flags = newflags;
+		int patchoff = (int)(ehdr->e_phoff + (i * sizeof (Elf_(Phdr))));
+		patchoff += r_offsetof (Elf_(Phdr), p_flags);
+		R_LOG_DEBUG ("wv4 0x%x @ 0x%x", newflags, patchoff);
+		r_buf_write_at (bf->buf, patchoff, (ut8*)&newflags, sizeof (newflags));
+		return true;
 	}
 	return false;
 }

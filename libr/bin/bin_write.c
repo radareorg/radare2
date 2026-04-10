@@ -26,6 +26,17 @@ R_API bool r_bin_wr_scn_perms(RBin *bin, const char *name, int perms) {
 	return false;
 }
 
+R_API bool r_bin_wr_seg_perms(RBin *bin, const char *name, int perms) {
+	R_RETURN_VAL_IF_FAIL (bin && name, false);
+	RBinFile *bf = r_bin_cur (bin);
+	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+	RBinWriteSegPerms seg_perms = R_UNWRAP3 (plugin, write, seg_perms);
+	if (seg_perms) {
+		return seg_perms (bf, name, perms);
+	}
+	return false;
+}
+
 R_API bool r_bin_wr_rpath_del(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, false);
 	RBinFile *bf = r_bin_cur (bin);

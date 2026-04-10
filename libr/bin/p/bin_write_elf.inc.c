@@ -11,6 +11,10 @@ static bool scn_perms(RBinFile *bf, const char *name, int perms) {
 	return Elf_(section_perms) (bf, name, perms);
 }
 
+static bool seg_perms(RBinFile *bf, const char *name, int perms) {
+	return Elf_(segment_perms) (bf, name, perms);
+}
+
 static int rpath_del(RBinFile *bf) {
 	return Elf_(del_rpath) (bf);
 }
