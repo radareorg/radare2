@@ -10,5 +10,6 @@ RBinWrite r_bin_write_mach064 = {
 	.rpath_del = &rpath_del,
 	.entry = &chentry,
 #endif
+	.seg_perms = &seg_perms,
 	.addlib = &addlib,
 };

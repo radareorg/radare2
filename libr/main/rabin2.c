@@ -865,7 +865,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 				" R                 remove RPATH\n"
 				" a/l/libfoo.dylib  add library\n"
 				" p/.data/rwx       change section permissions\n"
-				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...)\n"
+				" P/LOAD0/rwx       change segment permissions (elf: LOAD0, GNU_STACK, PHDR, ...; mach-o: __TEXT, __DATA, ...)\n"
 				" c                 show Codesign data\n"
 				" C                 show LDID entitlements\n");
 				r_core_fini (&core);

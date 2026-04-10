@@ -75,6 +75,73 @@ static bool addlib(RBinFile *bf, const char *lib) {
 	return MACH0_(write_addlib) (bf, lib);
 }
 
+static bool seg_name_matches(const char *segname, const char *user) {
+	size_t nlen = strlen (user);
+	if (nlen > 16) {
+		return false;
+	}
+	if (memcmp (segname, user, nlen)) {
+		return false;
+	}
+	return (nlen == 16) || segname[nlen] == 0;
+}
+
+static bool seg_perms(RBinFile *bf, const char *name, int perms) {
+	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	if (!mo || !mo->segs || mo->nsegs <= 0) {
+		return false;
+	}
+	/* VM_PROT_READ/WRITE/EXECUTE (0x1/0x2/0x4) match R_PERM_R/W/X. */
+	const ut32 seg_lc =
+#if R_BIN_MACH064
+		LC_SEGMENT_64;
+#else
+		LC_SEGMENT;
+#endif
+	/* walk load commands to locate the on-disk offset of each segment_command
+	 * so we can patch the initprot/maxprot fields in place. */
+	ut64 off = sizeof (struct MACH0_(mach_header)) + mo->header_at;
+	ut32 ncmds = mo->hdr.ncmds;
+	int seg_idx = 0;
+	ut32 i;
+	for (i = 0; i < ncmds; i++) {
+		ut32 loadc[2] = {0};
+		if (r_buf_read_at (bf->buf, off, (ut8*)loadc, sizeof (loadc)) != sizeof (loadc)) {
+			return false;
+		}
+		ut32 cmd = r_read_ble32 (&loadc[0], mo->big_endian);
+		ut32 cmdsize = r_read_ble32 (&loadc[1], mo->big_endian);
+		if (cmdsize == 0) {
+			return false;
+		}
+		if (cmd == seg_lc) {
+			if (seg_idx >= mo->nsegs) {
+				return false;
+			}
+			if (seg_name_matches (mo->segs[seg_idx].segname, name)) {
+				/* ensure maxprot is not more restrictive than the new
+				 * initprot, or the kernel will silently cap our request. */
+				ut32 new_initprot = (ut32)(perms & 7);
+				ut32 new_maxprot = mo->segs[seg_idx].maxprot | new_initprot;
+				ut8 le_max[4], le_init[4];
+				r_write_ble32 (le_max, new_maxprot, mo->big_endian);
+				r_write_ble32 (le_init, new_initprot, mo->big_endian);
+				ut64 maxprot_off = off + r_offsetof (struct MACH0_(segment_command), maxprot);
+				ut64 initprot_off = off + r_offsetof (struct MACH0_(segment_command), initprot);
+				r_buf_write_at (bf->buf, maxprot_off, le_max, 4);
+				r_buf_write_at (bf->buf, initprot_off, le_init, 4);
+				mo->segs[seg_idx].initprot = new_initprot;
+				mo->segs[seg_idx].maxprot = new_maxprot;
+				R_LOG_DEBUG ("wv4 0x%x @ 0x%"PFMT64x" (initprot)", new_initprot, initprot_off);
+				return true;
+			}
+			seg_idx++;
+		}
+		off += cmdsize;
+	}
+	return false;
+}
+
 #if !R_BIN_MACH064
 RBinWrite r_bin_write_mach0 = {
 #if 0
@@ -83,6 +150,7 @@ RBinWrite r_bin_write_mach0 = {
 	.rpath_del = &rpath_del,
 	.entry = &chentry,
 #endif
+	.seg_perms = &seg_perms,
 	.addlib = &addlib,
 };
 #endif

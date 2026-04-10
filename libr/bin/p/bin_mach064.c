@@ -6,6 +6,8 @@
 #include "objc/mach064_classes.h"
 #include "../format/mach0/mach064_is_kernelcache.c"
 
+extern RBinWrite r_bin_write_mach064;
+
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 buf[4] = {0};
 	if (r_buf_size (b) > 4) {
@@ -308,7 +310,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.fields = &MACH0_(mach_fields),
 	.create = &create,
 	.classes = &classes,
-	.write = &r_bin_write_mach0,
+	.write = &r_bin_write_mach064,
 };
 
 #ifndef R2_PLUGIN_INCORE

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2010-2024 pancake, nibble */
+/* radare - LGPL - Copyright 2010-2026 pancake, nibble */
 
 #include <r_util.h>
 #include "elf.h"
@@ -318,10 +318,6 @@ static const char *phdr_synthetic_name(Elf_(Phdr) *phdrp, int load_idx, char *bu
 	return NULL;
 }
 
-/* Patch segment permissions by matching a program header by synthetic name
- * (LOAD0, DYNAMIC, GNU_STACK, ...). Useful for stripped ELFs with no section
- * headers. The perms bitmask is R_PERM style (X=1, W=2, R=4), which matches
- * the ELF PF_X/PF_W/PF_R bit layout. */
 bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms) {
 	struct Elf_(obj_t) *bin = bf->bo->bin_obj;
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
