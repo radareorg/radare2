@@ -385,10 +385,8 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 						cmd[2] = 0;
 						break;
 					}
-					char *spstr = r_str_sanitize_r2 (pstr);
-					a->cb_printf ("'@0x%08" PFMT64x "'%s %" PFMT64u " # %s\n",
-						start, cmd, size, spstr);
-					free (spstr);
+					a->cb_printf ("'@0x%08" PFMT64x "'%s %" PFMT64u "\n",
+						start, cmd, size);
 				} else {
 					const char *enc;
 					switch (d->subtype) {
