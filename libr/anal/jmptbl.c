@@ -6,9 +6,6 @@
 #include <r_vec.h>
 
 #define JMPTBL_MAXSZ 512
-// How many instructions back from the indirect branch to scan when
-// looking for the load/add dispatcher pattern. 16 * 4 = 64 bytes, which
-// easily covers any reasonable scheduling of movs between load/add/br.
 #define JMPTBL_DISPATCH_LOOKBACK 16
 
 R_VEC_TYPE (RVecUT64, ut64);
@@ -19,9 +16,7 @@ typedef struct {
 } JmptblTargetCtx;
 
 R_IPI void r_anal_jmptbl_leaddrs_bump(RList *leaddrs, const char *reg, ut64 delta) {
-	if (!leaddrs || !reg) {
-		return;
-	}
+	R_RETURN_IF_FAIL (leaddrs && reg);
 	RListIter *iter;
 	RLeaddrPair *la;
 	r_list_foreach_prev (leaddrs, iter, la) {
@@ -32,10 +27,6 @@ R_IPI void r_anal_jmptbl_leaddrs_bump(RList *leaddrs, const char *reg, ut64 delt
 	}
 }
 
-// Return the most recent RLeaddrPair matching `reg` whose op_addr is
-// strictly less than `before`. This lets the dispatcher resolver pick
-// the right value of a register that gets reassigned between the load
-// and the add (classic `adr Rt, table; ldr ..., [Rt]; adr Rt, base; add ..., Rt`).
 static RLeaddrPair *leaddrs_find_before(RList *leaddrs, const char *reg, ut64 before) {
 	RListIter *iter;
 	RLeaddrPair *la;
@@ -50,9 +41,7 @@ static RLeaddrPair *leaddrs_find_before(RList *leaddrs, const char *reg, ut64 be
 static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs,
 		ut64 br_addr, const char *target_reg,
 		ut64 *opaddr, ut64 *basptr, ut64 *tblptr) {
-	if (!anal || !leaddrs || !target_reg || !opaddr || !basptr || !tblptr) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (anal && leaddrs && target_reg && opaddr && basptr && tblptr, false);
 	const ut64 lookback_bytes = JMPTBL_DISPATCH_LOOKBACK * 4;
 	if (br_addr < lookback_bytes) {
 		return false;
@@ -63,8 +52,7 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs,
 		return false;
 	}
 	// Locate the `add Rdst, Rs0, Rs1[, lsl N]` whose destination matches
-	// the indirect branch's target register. Scan the most recent
-	// instructions first so unrelated adds don't fool us.
+	// the indirect branch's target register. Scan the most recent instructions
 	char add_s0[32] = {0};
 	char add_s1[32] = {0};
 	ut64 add_addr = UT64_MAX;
@@ -141,11 +129,11 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs,
 }
 
 static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
-	ut64 gp = anal ? anal->gp : 0;
-	if (!gp && anal && anal->reg) {
+	ut64 gp = anal->gp;
+	if (!gp && anal->reg) {
 		gp = r_reg_getv (anal->reg, "gp");
 	}
-	if (!gp && anal && anal->config) {
+	if (!gp && anal->config) {
 		gp = anal->config->gp;
 	}
 	if (!gp || gp == UT64_MAX) {
@@ -155,61 +143,50 @@ static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
 }
 
 static void jmptbl_target_ctx_init(JmptblTargetCtx *ctx, RAnal *anal, ut64 switch_addr) {
-	if (!ctx) {
-		return;
-	}
-	ctx->switch_map = anal && anal->iob.map_get_at
+	ctx->switch_map = anal->iob.map_get_at
 		? anal->iob.map_get_at (anal->iob.io, switch_addr)
 		: NULL;
 	ctx->validated_targets = ht_up_new0 ();
 }
 
 static void jmptbl_target_ctx_fini(JmptblTargetCtx *ctx) {
-	if (!ctx) {
-		return;
-	}
 	ht_up_free (ctx->validated_targets);
 	ctx->validated_targets = NULL;
 	ctx->switch_map = NULL;
 }
 
-static bool is_valid_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 case_addr) {
-	if (!anal || !anal->iob.io) {
-		return false;
-	}
-	bool found = false;
-	if (ctx && ctx->validated_targets) {
-		void *v = ht_up_find (ctx->validated_targets, case_addr, &found);
-		if (found) {
-			return v == (void *)1;
-		}
-	}
-	bool valid = false;
+static bool check_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 case_addr) {
 	if (!anal->iob.is_valid_offset (anal->iob.io, case_addr, 0)) {
-		goto beach;
+		return false;
 	}
 	if (anal->iob.map_get_at) {
 		RIOMap *case_map = anal->iob.map_get_at (anal->iob.io, case_addr);
 		if (!case_map) {
-			goto beach;
+			return false;
 		}
 		// Keep jump-table targets in the same map as the dispatcher, matching direct-jump behavior.
-		if (ctx && ctx->switch_map && !r_io_map_contain (ctx->switch_map, case_addr)) {
-			goto beach;
+		if (ctx->switch_map && !r_io_map_contain (ctx->switch_map, case_addr)) {
+			return false;
 		}
 	}
 	ut8 probe[32];
 	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, sizeof (probe))) {
-		goto beach;
+		return false;
 	}
-	if (r_anal_is_invalid_code (anal, probe, sizeof (probe), true)) {
-		goto beach;
+	return !r_anal_is_invalid_code (anal, probe, sizeof (probe), true);
+}
+
+static bool is_valid_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 case_addr) {
+	if (!anal->iob.io) {
+		return false;
 	}
-	valid = true;
-beach:
-	if (ctx && ctx->validated_targets) {
-		ht_up_insert (ctx->validated_targets, case_addr, valid? (void *)1: (void *)2);
+	bool found = false;
+	void *v = ht_up_find (ctx->validated_targets, case_addr, &found);
+	if (found) {
+		return v == (void *)1;
 	}
+	bool valid = check_jmptbl_case_target (anal, ctx, case_addr);
+	ht_up_insert (ctx->validated_targets, case_addr, valid? (void *)1: (void *)2);
 	return valid;
 }
 
@@ -240,26 +217,22 @@ static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_c
 	if (!block || !block->switch_op) {
 		return;
 	}
-	block->switch_op->def_val = default_case_addr;
-	block->switch_op->amount = cases_count;
-	if (!block->switch_op->cases) {
+	RAnalSwitchOp *sop = block->switch_op;
+	sop->def_val = default_case_addr;
+	sop->amount = cases_count;
+	if (!sop->cases || r_list_empty (sop->cases)) {
 		return;
 	}
 	RListIter *iter;
 	RAnalCaseOp *caseop;
-	bool first = true;
-	r_list_foreach (block->switch_op->cases, iter, caseop) {
-		if (first) {
-			block->switch_op->min_val = caseop->value;
-			block->switch_op->max_val = caseop->value;
-			first = false;
-			continue;
+	sop->min_val = UT64_MAX;
+	sop->max_val = 0;
+	r_list_foreach (sop->cases, iter, caseop) {
+		if (caseop->value < sop->min_val) {
+			sop->min_val = caseop->value;
 		}
-		if (caseop->value < block->switch_op->min_val) {
-			block->switch_op->min_val = caseop->value;
-		}
-		if (caseop->value > block->switch_op->max_val) {
-			block->switch_op->max_val = caseop->value;
+		if (caseop->value > sop->max_val) {
+			sop->max_val = caseop->value;
 		}
 	}
 }
@@ -372,11 +345,6 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 			ret = false;
 			break;
 		}
-#if 0
-		if (jmptbl_loc == jmptbl_off) {
-			jmpptr = jmptbl_off + (jmpptr_idx << (sz >> 1));
-		}
-#endif
 		switch (sz) {
 		case 1:
 			jmpptr = r_read_le8 (jmptbl + jmpptr_idx);
