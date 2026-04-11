@@ -4,7 +4,6 @@
 
 // R2R db/cmd/cmd_pdc
 
-// Structure to hold state for decompilation
 typedef struct {
 	RCore *core;
 	RStrBuf *out;
@@ -12,10 +11,10 @@ typedef struct {
 	PJ *pj;
 	bool show_asm;
 	bool show_addr;
-	Sdb *goto_cache; // Cache to avoid duplicate goto statements
-	Sdb *db; // General purpose DB for the algorithm
+	Sdb *goto_cache;
+	Sdb *db;
 	RAnalFunction *fcn;
-	const char *r0; // return-value register alias name
+	const char *r0;
 	char indentstr[1024];
 } PDCState;
 
@@ -74,23 +73,17 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 		return;
 	}
 
-	// Navigate back to find function name
 	ctx->right = (char *) (in - 1);
 	while (isalpha (*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 		ctx->right--;
 	}
-
-	// Handle return type if present
 	if (*ctx->right == ' ') {
 		ctx->right--;
 		while (isalpha (*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 			ctx->right--;
 		}
-		// Move back to start of function name
 		ctx->right++;
 	}
-
-	// Set color offset for the right token
 	set_right_token (ctx, ctx->right);
 }
 
@@ -101,7 +94,6 @@ static void swap_strings(RFindCTX *ctx) {
 		return;
 	}
 	if (ctx->leftlen > ctx->rightlen) {
-		// Left string is longer than right string
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -114,7 +106,6 @@ static void swap_strings(RFindCTX *ctx) {
 		memmove (ctx->right - ctx->leftlen + ctx->rightlen, copy, ctx->leftlen);
 	} else if (ctx->leftlen < ctx->rightlen) {
 		if (ctx->linecount < 1) {
-			// Right string is longer than left string
 			len = ctx->rightlen;
 			copy = R_NEWS (char, len);
 			if (!copy) {
@@ -125,14 +116,12 @@ static void swap_strings(RFindCTX *ctx) {
 			memmove (ctx->comment + ctx->rightlen - ctx->leftlen, ctx->comment, ctx->right - ctx->comment);
 			memmove (ctx->left + ctx->rightlen - ctx->leftlen, copy, ctx->rightlen);
 		} else {
-			// Special case handling
 			memset (ctx->right - ctx->leftpos, ' ', ctx->leftpos);
 			*(ctx->right - ctx->leftpos - 1) = '\n';
 			memset (ctx->left, ' ', ctx->leftlen);
 			memset (ctx->linebegin - ctx->leftlen, ' ', ctx->leftlen);
 		}
 	} else {
-		// Equal length strings - simple swap
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -147,13 +136,11 @@ static void swap_strings(RFindCTX *ctx) {
 }
 
 static void find_and_change(char *in, int len) {
-	// just to avoid underflows.. len can't be < then len(padding).
 	if (!in || len < 1) {
 		return;
 	}
 	RFindCTX ctx = { 0 };
 	char *end = in + len;
-	//	type = TYPE_NONE;
 	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
@@ -190,7 +177,6 @@ static void find_and_change(char *in, int len) {
 		} else if (ctx.type == TYPE_SYM) {
 			set_left_length (&ctx, in, 3);
 			if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
-				// Handle function definition format: "type fcn_name(args)"
 				find_function_name (&ctx, in);
 			} else if (ctx.comment && *in == ')' && in[1] != '\'') {
 				set_right_length (&ctx, in, 1);
@@ -255,7 +241,6 @@ static void remove_double_spaces(char *s) {
 }
 
 static char *cleancomments(char *s) {
-	// trim newline+spaces before //
 	char *p = s;
 	char *nl = NULL;
 	int spaces = 0;
@@ -286,7 +271,6 @@ static char *cleancomments(char *s) {
 		}
 		p++;
 	}
-	// remove empty lines
 	s = r_str_replace (s, "\n\n", "\n", true);
 	remove_double_spaces (s);
 	return s;
@@ -351,8 +335,7 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 	}
 }
 
-// Emits a fresh line whose asm column is empty (for synthetic lines like
-// goto/return/labels/braces that have no real instruction to show).
+// Synthetic lines (goto/return/labels/braces) leave the asm column blank.
 static void print_newline_synthetic(PDCState *state, ut64 addr, int indent) {
 	prepare_indentstr (state, indent);
 	RStrBuf *sb = state_sb (state);
@@ -453,7 +436,6 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 	}
 }
 
-// Define macros that call these functions
 #define PRINTF(...) print_str(&state, __VA_ARGS__)
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
@@ -506,9 +488,6 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	return code;
 }
 
-// Check whether `addr` is the header of a structured loop we intend to
-// render. The pre-pass populates `loop_header.ADDR` in state->db so the
-// walker can strip redundant `goto loc_ADDR` lines from entry bbs.
 static bool is_known_loop_header(PDCState *state, ut64 addr) {
 	r_strf_buffer (64);
 	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
@@ -529,9 +508,7 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			line = s? r_str_trim_head_ro (s + 1): "";
 		}
 		if (R_STR_ISNOTEMPTY (line)) {
-			// Suppress tail `goto loc_0xHEADER` emitted right before
-			// entering a structured loop: the `while`/`do` that
-			// follows provides the control flow already.
+			// drop tail goto into a structured loop header (the while/do owns that edge)
 			const char *t = r_str_trim_head_ro (line);
 			if (r_str_startswith (t, "goto ") || r_str_startswith (t, "jmp ")) {
 				const char *num = strstr (t, "0x");
@@ -776,126 +753,62 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	free (arr);
 }
 
-// Map an x86 conditional jump mnemonic to a C operator. The mnemonic is
-// interpreted as "condition to TAKE the jump", so for a while-header whose
-// jump goes back into the loop body the operator describes the loop guard.
-static const char *jcc_to_c_op(const char *mnem) {
-	if (!mnem) {
+// Pull the loop guard from the test bb's asm.pseudo output: the arch
+// pseudo plugins already render conditional branches as `if (cond) goto N`,
+// so we just locate the tail one targeting back_target and slice cond out.
+static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_target) {
+	char *code = fetch_bb_pseudo (state, test_bb);
+	if (!code) {
 		return NULL;
-	}
-	if (!strcmp (mnem, "je") || !strcmp (mnem, "jz")) {
-		return "==";
-	}
-	if (!strcmp (mnem, "jne") || !strcmp (mnem, "jnz")) {
-		return "!=";
-	}
-	if (!strcmp (mnem, "jl") || !strcmp (mnem, "jnge")) {
-		return "<";
-	}
-	if (!strcmp (mnem, "jle") || !strcmp (mnem, "jng")) {
-		return "<=";
-	}
-	if (!strcmp (mnem, "jg") || !strcmp (mnem, "jnle")) {
-		return ">";
-	}
-	if (!strcmp (mnem, "jge") || !strcmp (mnem, "jnl")) {
-		return ">=";
-	}
-	if (!strcmp (mnem, "jb") || !strcmp (mnem, "jnae") || !strcmp (mnem, "jc")) {
-		return "<";
-	}
-	if (!strcmp (mnem, "jbe") || !strcmp (mnem, "jna")) {
-		return "<=";
-	}
-	if (!strcmp (mnem, "ja") || !strcmp (mnem, "jnbe")) {
-		return ">";
-	}
-	if (!strcmp (mnem, "jae") || !strcmp (mnem, "jnb") || !strcmp (mnem, "jnc")) {
-		return ">=";
-	}
-	if (!strcmp (mnem, "js")) {
-		return "<";
-	}
-	if (!strcmp (mnem, "jns")) {
-		return ">=";
-	}
-	return NULL;
-}
-
-// Extract a human-readable loop guard from a test bb. Looks for a cmp/test
-// immediately before the tail conditional jump and renders it as a C
-// expression. Returns NULL on failure.
-static char *extract_loop_cond(RCore *core, RAnalBlock *test_bb) {
-	int ninstr = (test_bb->ninstr > 0)? test_bb->ninstr: 8;
-	char *dis = r_core_cmd_strf (core,
-		"pi %d @e:asm.pseudo=0@e:scr.color=0@ 0x%08" PFMT64x,
-		ninstr, test_bb->addr);
-	if (R_STR_ISEMPTY (dis)) {
-		free (dis);
-		return NULL;
-	}
-	RList *lines = r_str_split_list (dis, "\n", 0);
-	RListIter *iter;
-	char *line;
-	char *last_cmp_lhs = NULL;
-	char *last_cmp_rhs = NULL;
-	bool cmp_is_test = false;
-	const char *jcc_op = NULL;
-	r_list_foreach (lines, iter, line) {
-		const char *t = r_str_trim_head_ro (line);
-		if (R_STR_ISEMPTY (t)) {
-			continue;
-		}
-		const char *sp = strchr (t, ' ');
-		if (!sp) {
-			continue;
-		}
-		char *mnem = r_str_ndup (t, sp - t);
-		if (!mnem) {
-			continue;
-		}
-		if (!strcmp (mnem, "cmp") || !strcmp (mnem, "test")) {
-			cmp_is_test = !strcmp (mnem, "test");
-			const char *ops = r_str_trim_head_ro (sp + 1);
-			const char *comma = strchr (ops, ',');
-			if (comma && comma > ops) {
-				free (last_cmp_lhs);
-				free (last_cmp_rhs);
-				last_cmp_lhs = r_str_ndup (ops, comma - ops);
-				last_cmp_rhs = strdup (r_str_trim_head_ro (comma + 1));
-				if (last_cmp_lhs) {
-					r_str_trim (last_cmp_lhs);
-				}
-				if (last_cmp_rhs) {
-					r_str_trim (last_cmp_rhs);
-				}
-			}
-		} else if (mnem[0] == 'j' && strcmp (mnem, "jmp")) {
-			const char *op = jcc_to_c_op (mnem);
-			if (op) {
-				jcc_op = op;
-			}
-		}
-		free (mnem);
 	}
 	char *result = NULL;
-	if (jcc_op && last_cmp_lhs && last_cmp_rhs) {
-		if (cmp_is_test && !strcmp (last_cmp_lhs, last_cmp_rhs)) {
-			result = r_str_newf ("%s %s 0", last_cmp_lhs, jcc_op);
-		} else {
-			result = r_str_newf ("%s %s %s", last_cmp_lhs, jcc_op, last_cmp_rhs);
+	RList *lines = r_str_split_list (code, "\n", 0);
+	RListIter *iter;
+	char *line;
+	r_list_foreach (lines, iter, line) {
+		const char *t = r_str_trim_head_ro (line);
+		if (*t == '0') {
+			const char *s = strchr (t, ' ');
+			t = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (!r_str_startswith (t, "if ")) {
+			continue;
+		}
+		const char *g = strstr (t, "goto");
+		if (!g) {
+			continue;
+		}
+		const char *num = strstr (g, "0x");
+		if (!num || r_num_get (NULL, num) != back_target) {
+			continue;
+		}
+		const char *open = strchr (t, '(');
+		if (!open) {
+			continue;
+		}
+		int depth = 0;
+		const char *p, *close = NULL;
+		for (p = open; *p; p++) {
+			if (*p == '(') {
+				depth++;
+			} else if (*p == ')' && --depth == 0) {
+				close = p;
+				break;
+			}
+		}
+		if (close && close > open + 1) {
+			free (result);
+			result = r_str_ndup (open + 1, close - open - 1);
+			if (result) {
+				r_str_trim (result);
+			}
 		}
 	}
-	free (last_cmp_lhs);
-	free (last_cmp_rhs);
 	r_list_free (lines);
-	free (dis);
+	free (code);
 	return result;
 }
 
-// Returns true if the pseudo-source line is a branch-to-target that
-// should be suppressed when the loop structure is responsible for the
-// back-edge: `goto 0xNNNN`, `jmp 0xNNNN`, or `if (...) goto 0xNNNN`.
 static bool line_is_branch_to(const char *line, const char *target_hex) {
 	const char *t = r_str_trim_head_ro (line);
 	if (R_STR_ISEMPTY (t)) {
@@ -913,12 +826,8 @@ static bool line_is_branch_to(const char *line, const char *target_hex) {
 	return false;
 }
 
-// Forward decls for mutual recursion between render_loop_while and the
-// body emitter, so nested loops can be handled inline.
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent);
 
-// Emit a bb's pseudo code while dropping the tail jump back to a known
-// loop header. Used when rendering the body of a structured loop.
 static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back_target, int indent) {
 	char *code = fetch_bb_pseudo (state, bb);
 	if (!code) {
@@ -949,8 +858,6 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 				|| line_is_branch_to (rendered, back_hex_short)) {
 			continue;
 		}
-		// Also strip tail `goto` to any structured loop header, since
-		// the wrapping while/do construct owns those edges.
 		const char *rt = r_str_trim_head_ro (rendered);
 		if (r_str_startswith (rt, "goto ") || r_str_startswith (rt, "jmp ")) {
 			const char *num = strstr (rt, "0x");
@@ -968,10 +875,7 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 	free (code);
 }
 
-// Render a structured `while` loop for the "body + tail test" GCC -O0
-// pattern, or a `do { ... } while` loop for the single-bb self-loop shape.
-// Returns the post-loop exit bb, or NULL if the caller should fall back
-// to the default walker.
+// Renders body+tail-test as while, single-bb self-loop as do/while; returns post-loop exit bb or NULL.
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent) {
 	r_strf_buffer (64);
 	if (!test_bb || test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX) {
@@ -987,14 +891,10 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 	if (!self_loop && test_bb->jump >= test_bb->addr) {
 		return NULL;
 	}
-	char *cond = extract_loop_cond (state->core, test_bb);
+	char *cond = extract_loop_cond (state, test_bb, test_bb->jump);
 	print_newline (state, test_bb->addr, indent);
 	if (self_loop) {
-		if (cond) {
-			print_str (state, "do {");
-		} else {
-			print_str (state, "do {");
-		}
+		print_str (state, "do {");
 	} else {
 		if (cond) {
 			print_str (state, "while (%s) {", cond);
@@ -1026,10 +926,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 				}
 			}
 		}
-		// Pre-scan for nested loop tests: any bb inside our range
-		// whose conditional backward jump stays inside the range.
-		// Record the owned [lo, hi) intervals so the emit pass skips
-		// body bbs and only recurses at the nested test bb.
+		// nested loop tests: bbs in [body_start,body_end) whose back-jump stays inside.
 		ut64 owned_lo[16];
 		ut64 owned_hi[16];
 		int nowned = 0;
@@ -1070,10 +967,6 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 			if (owned) {
 				continue;
 			}
-			// Recurse into nested switch dispatchers: they may live
-			// inside a while body (e.g. the big option loop in /bin/ls
-			// main), and the walker-level integration only triggers
-			// for top-level bbs.
 			if (b->switch_op) {
 				render_switch (state, b, visited, indent + 1);
 				mark_bb_visited (state, visited, b);
@@ -1175,16 +1068,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_core_cmd0 (core, "aeim");
 
 	r_strf_buffer (64);
-	// walk all basic blocks
-	// define depth level for each block
-	// use it for indentation
-	// asm.pseudo=true
-	// asm.decode=true
 	RAnalBlock *bb = r_list_first (state.fcn->bbs);
 	int indent = 0;
 	int nindent = 1;
-	// XXX sorting basic blocks is nice for the reader, but introduces conceptual problems
-	// when the entrypoint is not starting at the lowest address. // r_list_sort (fcn->bbs, cmpnbbs);
 	int n_bb = r_list_length (state.fcn->bbs);
 
 	if (state.pj) {
@@ -1246,9 +1132,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = state.fcn->addr;
-	// Pre-pass: record every bb that our structured-loop detector
-	// will treat as a loop header, so emit_code_lines can strip tail
-	// `goto loc_0xheader` from preceding bbs.
+	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
 	{
 		RListIter *piter;
 		RAnalBlock *pbb;
@@ -1265,10 +1149,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	while (bb) {
 		r_list_append (visited, bb);
 		indent = 2;
-		// If a structural renderer (loop/switch) already emitted this
-		// bb, drain the indent stack until we find an unvisited target
-		// or break out cleanly. This prevents stale pops from producing
-		// spurious `return rax;` lines after a while/do block closes.
+		// drain indent stack after a structural renderer to avoid spurious trailing returns
 		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)
 				&& sdb_num_get (state.db,
 					r_strf ("structured.%" PFMT64x, bb->addr), 0)) {
@@ -1292,12 +1173,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			bb = next;
 			continue;
 		}
-		// Walker-level loop integration (pre-emit): recognize the "body
-		// + tail test" GCC -O0 pattern where this bb's conditional jump
-		// points backward to a body bb that appears earlier in the
-		// function, and render it as a structured while loop. The body
-		// code is emitted by render_loop_while itself, so we must not
-		// emit this bb's code on the normal path.
+		// body+tail-test loop pattern: bb's back-edge points into an earlier body bb
 		if (!sdb_const_get (state.db, K_MARK (bb->addr), 0)
 				&& bb->fail != UT64_MAX
 				&& bb->jump != UT64_MAX
@@ -1341,9 +1217,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		free (code);
-		// Walker-level switch integration: if this bb is a switch
-		// dispatcher (has switch_op) or a bounds-check that feeds one,
-		// render the full switch structure here and stop the walker.
 		{
 			RAnalBlock *sw_bb = NULL;
 			if (bb->switch_op) {
@@ -1382,7 +1255,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			closed = true;
 		}
 		if (sdb_const_get (state.db, K_INDENT (bb->addr), 0)) {
-			// already analyzed, go pop and continue
 			unvisit (visited, bb);
 			R_LOG_DEBUG ("// 0x%08" PFMT64x " already analyzed", bb->addr);
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
@@ -1431,11 +1303,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			sdb_set (state.db, K_INDENT (bb->addr), "passed", 0);
 			if (has_jump) {
 				int swap = 1;
-				// TODO: determine which branch take first
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
-				// If a conditional branch leaves the current function, do not
-				// descend into the foreign CFG. Prefer the in-function branch.
 				const bool jump_in_fcn = jump != UT64_MAX && r_anal_function_contains (state.fcn, jump);
 				if (!jump_in_fcn) {
 					NEWLINE (jump, indent);
@@ -1449,7 +1318,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 				}
 				if (sdb_get (state.db, K_INDENT (jump), 0)) {
-					// already tracekd
 					if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else if (fail == UT64_MAX) {
@@ -1502,9 +1370,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	RListIter *iter;
 	bool use_html = r_config_get_b (core->config, "scr.html");
-	// First pass: render any switch dispatchers that the walker did not
-	// consume. This runs before orphan labels so cases are hoisted above
-	// their bodies instead of appearing inside the last case.
+	// hoist unconsumed switch dispatchers before orphan labels
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (!bb->switch_op) {
 			continue;
