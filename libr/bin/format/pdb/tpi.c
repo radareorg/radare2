@@ -1853,19 +1853,17 @@ int parse_sctring(SCString *sctr, ut8 *leaf_data, ut32 *read_bytes, ut32 len) {
 	ut32 c = 0;
 	sctr->name = NULL;
 	sctr->size = 0;
-	while (*leaf_data) {
+	for (;;) {
 		if (!can_read (*read_bytes + c, 1, len)) {
 			return 0;
 		}
+		if (!leaf_data[c]) {
+			break;
+		}
 		c++;
-		leaf_data++;
 	}
-	if (!can_read (*read_bytes, 1, len)) {
-		return 0;
-	}
-	leaf_data += 1;
 	*read_bytes += (c + 1);
-	init_scstring (sctr, c + 1, (char *)leaf_data - (c + 1));
+	init_scstring (sctr, c + 1, (char *)leaf_data);
 	return 1;
 }
 
@@ -2608,7 +2606,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	unsigned int read_bytes = 0;
 
 	stream_file_read (stream, 2, (char *)&type->length);
-	if (type->length < 1) {
+	if (type->length < 2) {
 		return 0;
 	}
 	leaf_data = (uint8_t *)malloc (type->length);
@@ -2616,7 +2614,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 		return 0;
 	}
 	stream_file_read (stream, type->length, (char *)leaf_data);
-	type->type_data.leaf_type = *(uint16_t *)leaf_data;
+	type->type_data.leaf_type = r_read_le16 (leaf_data);
 	read_bytes += 2;
 	switch (type->type_data.leaf_type) {
 	case eLF_FIELDLIST:

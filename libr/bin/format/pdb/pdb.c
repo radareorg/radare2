@@ -236,20 +236,21 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	}
 	stream_file_get_data (&pdb_stream->stream_file, data);
 
-	num_streams = *(int *)data;
+	const ut32 num_streams_u = r_read_le32 (data);
+	if (data_size < 4 || num_streams_u > (ut32)((data_size - 4) / 4)) {
+		R_FREE (data);
+		R_LOG_ERROR ("Too many streams: current PDB file is incorrect");
+		return 0;
+	}
+	num_streams = (int)num_streams_u;
 	tmp_data = data;
 	tmp_data += 4;
 
 	root_stream7->num_streams = num_streams;
 
-	tmp_data_max_size = (data_size - (num_streams * 4) - 4);
+	tmp_data_max_size = data_size - (num_streams * 4) - 4;
 	data_end = data + tmp_data_max_size;
-	if (tmp_data_max_size > data_size) {
-		R_FREE (data);
-		R_LOG_ERROR ("Invalid max tmp data size");
-		return 0;
-	}
-	if (num_streams < 0 || tmp_data_max_size <= 0) {
+	if (tmp_data_max_size <= 0) {
 		R_FREE (data);
 		R_LOG_ERROR ("Too many streams: current PDB file is incorrect");
 		return 0;
@@ -367,8 +368,21 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	stream_file_read (stream, 8, (char *)&tmp->/*data.*/ guid.data4);
 	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ cb_names);
 
-	tmp->/*data.*/ names = (char *)calloc (1, tmp->/*data.*/ cb_names);
-	stream_file_read (stream, tmp->/*data.*/ cb_names, tmp->/*data.*/ names);
+	const int remaining = stream_file_get_size (stream);
+	if (remaining < 0 || tmp->cb_names > (ut32)remaining) {
+		R_LOG_ERROR ("Invalid cb_names in PDB info stream");
+		tmp->cb_names = 0;
+		return;
+	}
+	if (tmp->cb_names == 0) {
+		return;
+	}
+	tmp->names = (char *)calloc (1, tmp->cb_names);
+	if (!tmp->names) {
+		tmp->cb_names = 0;
+		return;
+	}
+	stream_file_read (stream, tmp->cb_names, tmp->names);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
