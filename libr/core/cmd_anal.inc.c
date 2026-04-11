@@ -15495,23 +15495,6 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	}
 }
 
-static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
-	int i;
-	char regname[16];
-	if (nargs < 0) {
-		nargs = 4; // default args if not defined
-	}
-	for (i = 0; i < nargs; i++) {
-		snprintf (regname, sizeof (regname), "A%d", i);
-		ut64 v = r_reg_getv (core->anal->reg, regname);
-		if (sb) {
-			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i? ", ": "", v);
-		} else {
-			r_cons_printf (core->cons, "A%d 0x%08"PFMT64x"\n", i, v);
-		}
-	}
-}
-
 // Output mode for aCe: plaintext summary, structured JSON or r2 comment commands.
 typedef enum {
 	ACE_MODE_PLAIN = 0,
@@ -15519,12 +15502,92 @@ typedef enum {
 	ACE_MODE_R2,
 } AceMode;
 
+// Sentinel written into arg registers before emulation. Any register that
+// still holds this value afterwards has not been touched by the path
+// emulation, so the argument is reported as "unknown" rather than as 0.
+// The value is arbitrary but deliberately avoids small integers and common
+// pointer patterns so that simple arithmetic on SP won't accidentally
+// produce it.
+#define ACE_SENTINEL  ((ut64)0xdeadbeefcafebabeULL)
+
+// Upper bound on the number of register slots we watch with a sentinel. It
+// covers the widest common calling conventions (amd64 = 6, aarch64 = 8).
+#define ACE_MAX_REG_ARGS 8
+
+// Above this basic-block count the shortest-path emulation becomes too
+// expensive, so we fall back to emulating just the enclosing basic block.
+#define ACE_MAX_FCN_BBS 256
+
+// True if `v` equals the sentinel, meaning the path emulation never wrote
+// to this register.
+static inline bool ace_is_unknown(ut64 v) {
+	return v == ACE_SENTINEL;
+}
+
+// Return a "displayable" value for `v`. Strips 32-bit sign extension that
+// the ESIL engine often carries around on 64-bit architectures (e.g.
+// 0xffffffff80001000 -> 0x80001000) so that rendered values match the
+// literal the code loaded.
+static ut64 ace_display_value(ut64 v) {
+	if ((v >> 32) == 0xffffffffULL && (v & 0x80000000ULL)) {
+		return v & 0xffffffffULL;
+	}
+	return v;
+}
+
+// Reset the ESIL register file (ar0) while preserving SP, then seed the
+// arg-register aliases A0..A{nregs-1} with a sentinel. Callers run this
+// immediately before driving emulation so that untouched registers stay
+// recognisable after the run.
+static void ace_prime_regs(RCore *core, int nregs) {
+	// Ensure ESIL and its stack memory exist; both commands are idempotent.
+	r_core_cmd0 (core, "aei");
+	r_core_cmd0 (core, "aeim");
+	ut64 sp = r_reg_getv (core->anal->reg, "SP");
+	r_reg_arena_zero (core->anal->reg);
+	if (sp != 0 && sp != UT64_MAX) {
+		r_reg_setv (core->anal->reg, "SP", sp);
+	}
+	if (nregs > ACE_MAX_REG_ARGS) {
+		nregs = ACE_MAX_REG_ARGS;
+	}
+	int i;
+	char name[16];
+	for (i = 0; i < nregs; i++) {
+		snprintf (name, sizeof (name), "A%d", i);
+		r_reg_setv (core->anal->reg, name, ACE_SENTINEL);
+	}
+}
+
+// Pick an emulation strategy and execute it. For functions whose CFG is
+// small enough we rely on `abpe` (shortest-path ESIL from function entry),
+// otherwise we emulate only within the enclosing basic block - that keeps
+// the command responsive on very large functions or on code outside any
+// analysed function.
+static void ace_run_emulation(RCore *core, ut64 pcv) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, pcv, -1);
+	if (fcn && r_list_length (fcn->bbs) <= ACE_MAX_FCN_BBS) {
+		r_core_cmdf (core, "abpe 0x%08"PFMT64x, pcv);
+		return;
+	}
+	RList *bbs = r_anal_get_blocks_in (core->anal, pcv);
+	RAnalBlock *bb = bbs ? (RAnalBlock *)r_list_first (bbs) : NULL;
+	if (bb) {
+		r_core_cmdf (core, "aepc 0x%08"PFMT64x, bb->addr);
+		r_core_cmdf (core, "aesou 0x%08"PFMT64x, pcv);
+	}
+	r_list_free (bbs);
+}
+
 // Append a formatted argument (typed value + raw numeric) to either a JSON
 // array being built in `pj` or a plaintext buffer `sb`. Exactly one of pj/sb
-// must be non-NULL.
+// must be non-NULL. Arguments whose backing register still holds the
+// sentinel are reported as unknown instead of being printed as 0.
 static void ace_append_arg(RCore *core, RAnalFuncArg *arg, bool on_stack, int idx, PJ *pj, RStrBuf *sb) {
+	bool unknown = ace_is_unknown (arg->src);
+	ut64 disp = ace_display_value (arg->src);
 	char *typed = NULL;
-	if (arg->fmt) {
+	if (!unknown && arg->fmt) {
 		typed = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
 		if (typed) {
 			r_str_trim (typed);
@@ -15548,9 +15611,12 @@ static void ace_append_arg(RCore *core, RAnalFuncArg *arg, bool on_stack, int id
 			pj_ks (pj, "source", arg->cc_source);
 		}
 		pj_kn (pj, "size", arg->size);
-		pj_kn (pj, "raw", arg->src);
-		if (typed) {
-			pj_ks (pj, "value", typed);
+		pj_kb (pj, "known", !unknown);
+		if (!unknown) {
+			pj_kn (pj, "raw", disp);
+			if (typed) {
+				pj_ks (pj, "value", typed);
+			}
 		}
 		pj_end (pj);
 	} else {
@@ -15560,45 +15626,64 @@ static void ace_append_arg(RCore *core, RAnalFuncArg *arg, bool on_stack, int id
 		if (R_STR_ISNOTEMPTY (arg->name)) {
 			r_strbuf_appendf (sb, "%s=", arg->name);
 		}
-		if (typed) {
-			r_strbuf_appendf (sb, "%s /*0x%"PFMT64x"*/", typed, arg->src);
+		if (unknown) {
+			r_strbuf_append (sb, "?");
+		} else if (typed) {
+			r_strbuf_appendf (sb, "%s /*0x%"PFMT64x"*/", typed, disp);
 		} else {
-			r_strbuf_appendf (sb, "0x%"PFMT64x, arg->src);
+			r_strbuf_appendf (sb, "0x%"PFMT64x, disp);
 		}
 	}
 	free (typed);
 }
 
-// Append raw register-based arguments (A0..A{n-1}) when no signature is known.
+// Append raw register-based arguments (A0..A{n-1}) when no signature is
+// known. Sentinel-valued registers are rendered as "?" / "known":false.
 static void ace_append_raw(RCore *core, int nargs, PJ *pj, RStrBuf *sb) {
 	if (nargs < 0) {
 		nargs = DEFAULT_NARGS;
+	}
+	if (nargs > ACE_MAX_REG_ARGS) {
+		nargs = ACE_MAX_REG_ARGS;
 	}
 	int i;
 	char regname[16];
 	for (i = 0; i < nargs; i++) {
 		snprintf (regname, sizeof (regname), "A%d", i);
 		ut64 v = r_reg_getv (core->anal->reg, regname);
+		bool unknown = ace_is_unknown (v);
+		ut64 disp = ace_display_value (v);
 		if (pj) {
 			pj_o (pj);
 			pj_kn (pj, "index", i);
 			pj_ks (pj, "source", regname);
-			pj_kn (pj, "raw", v);
+			pj_kb (pj, "known", !unknown);
+			if (!unknown) {
+				pj_kn (pj, "raw", disp);
+			}
 			pj_end (pj);
 		} else {
 			if (i > 0) {
 				r_strbuf_append (sb, ", ");
 			}
-			r_strbuf_appendf (sb, "%s=0x%"PFMT64x, regname, v);
+			if (unknown) {
+				r_strbuf_appendf (sb, "%s=?", regname);
+			} else {
+				r_strbuf_appendf (sb, "%s=0x%"PFMT64x, regname, disp);
+			}
 		}
 	}
 }
 
-// Core routine: emulate the shortest path from function entry to `pcv` and
+// Core routine: prime the ESIL register file with a sentinel, emulate the
+// shortest path (or the enclosing basic block as a fallback) to `pcv`, and
 // render the arguments of the call found there in the requested mode.
 static void cmd_anal_aCe_at(RCore *core, ut64 pcv, AceMode mode) {
-	// Emulate from enclosing function's entry to the call site.
-	r_core_cmdf (core, "abpe 0x%08"PFMT64x, pcv);
+	// Prime A0..A{MAX-1} with a sentinel so we can tell afterwards which
+	// arg registers the emulation actually wrote to.
+	ace_prime_regs (core, ACE_MAX_REG_ARGS);
+	// Emulate from function entry (or enclosing BB for large functions).
+	ace_run_emulation (core, pcv);
 
 	RAnalOp *op = r_core_anal_op (core, pcv, -1);
 	if (!op) {
