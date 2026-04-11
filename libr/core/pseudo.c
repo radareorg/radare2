@@ -406,6 +406,207 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
 
+// Phase 1: switch/case rendering from RAnalBlock->switch_op
+
+typedef struct {
+	ut64 value;
+	ut64 jump;
+} PDCSwCase;
+
+static int pdc_case_cmp(const void *a, const void *b) {
+	const PDCSwCase *ca = a;
+	const PDCSwCase *cb = b;
+	if (ca->value < cb->value) {
+		return -1;
+	}
+	if (ca->value > cb->value) {
+		return 1;
+	}
+	return 0;
+}
+
+static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb) {
+	RListIter *iter;
+	RAnalBlock *pred;
+	char *result = NULL;
+	r_list_foreach (fcn->bbs, iter, pred) {
+		if (pred == sw_bb) {
+			continue;
+		}
+		if (pred->jump != sw_bb->addr && pred->fail != sw_bb->addr) {
+			continue;
+		}
+		int ninstr = (pred->ninstr > 0)? pred->ninstr: 8;
+		char *dis = r_core_cmd_strf (core, "pi %d @e:asm.pseudo=0@e:scr.color=0@ 0x%08" PFMT64x, ninstr, pred->addr);
+		if (R_STR_ISEMPTY (dis)) {
+			free (dis);
+			continue;
+		}
+		RList *lines = r_str_split_list (dis, "\n", 0);
+		RListIter *liter;
+		char *line;
+		r_list_foreach (lines, liter, line) {
+			const char *t = r_str_trim_head_ro (line);
+			if (!(r_str_startswith (t, "cmp ") || r_str_startswith (t, "subs "))) {
+				continue;
+			}
+			const char *sp = strchr (t, ' ');
+			if (!sp) {
+				continue;
+			}
+			const char *op1 = r_str_trim_head_ro (sp + 1);
+			const char *comma = strchr (op1, ',');
+			if (!comma || comma <= op1) {
+				continue;
+			}
+			free (result);
+			result = r_str_ndup (op1, comma - op1);
+			if (result) {
+				r_str_trim (result);
+			}
+		}
+		r_list_free (lines);
+		free (dis);
+		if (result) {
+			return result;
+		}
+	}
+	return strdup ("switch_var");
+}
+
+static void render_case_body_lines(PDCState *state, ut64 case_addr, int indent) {
+	RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, case_addr);
+	if (!cbb) {
+		return;
+	}
+	r_cons_push (state->core->cons);
+	bool html = r_config_get_b (state->core->config, "scr.html");
+	r_config_set_b (state->core->config, "scr.html", false);
+	char *code = r_core_cmd_strf (state->core, "pD %" PFMT64d " @ 0x%08" PFMT64x, cbb->size, cbb->addr);
+	r_cons_pop (state->core->cons);
+	r_config_set_b (state->core->config, "scr.html", html);
+	if (R_STR_ISEMPTY (code)) {
+		free (code);
+		return;
+	}
+	code = r_str_replace (code, "\n\n", "\n", true);
+	code = r_str_replace (code, ";", "//", true);
+	code = cleancomments (code);
+	size_t len = strlen (code);
+	if (len < 1) {
+		free (code);
+		return;
+	}
+	code[len - 1] = 0;
+	find_and_change (code, len);
+	RList *lines = r_str_split_list (code, "\n", 0);
+	RListIter *iter;
+	const char *line;
+	ut64 addr = cbb->addr;
+	r_list_foreach (lines, iter, line) {
+		if (*line == '0') {
+			ut64 at = r_num_get (NULL, line);
+			if (at && at != UT64_MAX) {
+				addr = at;
+			}
+			const char *s = strchr (line, ' ');
+			line = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (R_STR_ISNOTEMPTY (line)) {
+			print_newline (state, addr, indent);
+			print_str (state, "%s", line);
+		}
+	}
+	r_list_free (lines);
+	free (code);
+}
+
+static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, int indent) {
+	RAnalSwitchOp *sop = sw_bb->switch_op;
+	if (!sop || !sop->cases) {
+		return;
+	}
+	int n = r_list_length (sop->cases);
+	if (n < 1) {
+		return;
+	}
+	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
+	print_newline (state, sw_bb->addr, indent);
+	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
+		expr, n, sw_bb->addr);
+	free (expr);
+
+	PDCSwCase *arr = calloc (n, sizeof (PDCSwCase));
+	if (!arr) {
+		print_newline (state, sw_bb->addr, indent);
+		print_str (state, "}");
+		return;
+	}
+	int i = 0;
+	RListIter *iter;
+	RAnalCaseOp *co;
+	r_list_foreach (sop->cases, iter, co) {
+		if (i >= n) {
+			break;
+		}
+		arr[i].value = co->value;
+		arr[i].jump = co->jump;
+		i++;
+	}
+	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
+
+	char key[64];
+	int c = 0;
+	while (c < i) {
+		int k = c;
+		while (k + 1 < i && arr[k + 1].jump == arr[c].jump) {
+			k++;
+		}
+		int j;
+		for (j = c; j <= k; j++) {
+			print_newline (state, arr[j].jump, indent + 1);
+			print_str (state, "case %" PFMT64d ":", arr[j].value);
+		}
+		RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, arr[c].jump);
+		if (cbb && r_list_contains (visited, cbb)) {
+			print_str (state, " goto loc_0x%08" PFMT64x ";", arr[c].jump);
+		} else {
+			render_case_body_lines (state, arr[c].jump, indent + 2);
+			print_newline (state, arr[c].jump, indent + 2);
+			print_str (state, "break;");
+			if (cbb) {
+				snprintf (key, sizeof (key), "mark.%" PFMT64x, cbb->addr);
+				sdb_num_set (state->db, key, 1, 0);
+				r_list_append (visited, cbb);
+			}
+		}
+		c = k + 1;
+	}
+
+	if (sop->def_val != UT64_MAX) {
+		print_newline (state, sop->def_val, indent + 1);
+		print_str (state, "default:");
+		RAnalBlock *dbb = r_anal_bb_from_offset (state->core->anal, sop->def_val);
+		bool in_fcn = r_anal_function_contains (state->fcn, sop->def_val);
+		if (!in_fcn || !dbb) {
+			print_str (state, " goto 0x%08" PFMT64x ";", sop->def_val);
+		} else if (r_list_contains (visited, dbb)) {
+			print_str (state, " goto loc_0x%08" PFMT64x ";", sop->def_val);
+		} else {
+			render_case_body_lines (state, sop->def_val, indent + 2);
+			print_newline (state, sop->def_val, indent + 2);
+			print_str (state, "break;");
+			snprintf (key, sizeof (key), "mark.%" PFMT64x, dbb->addr);
+			sdb_num_set (state->db, key, 1, 0);
+			r_list_append (visited, dbb);
+		}
+	}
+
+	print_newline (state, sw_bb->addr, indent);
+	print_str (state, "}");
+	free (arr);
+}
+
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool show_c_headers = *input == 'c';
 	if (*input == '?') {
@@ -771,6 +972,11 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	bool use_html = r_config_get_b (core->config, "scr.html");
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
+			continue;
+		}
+		if (bb->switch_op) {
+			render_switch (&state, bb, visited, 2);
+			r_list_append (visited, bb);
 			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
