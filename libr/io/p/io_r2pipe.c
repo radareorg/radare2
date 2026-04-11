@@ -6,48 +6,40 @@
 #define R2P(x) ((R2Pipe*)(x)->data)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	char fmt[4096];
-	char *bufn, bufnum[4096];
-	int i, rv, rescount = -1;
-	char *res, *r;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	bufn = bufnum;
-	*bufn = 0;
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
 	for (i = 0; i < count; i++) {
-		int bufn_sz = sizeof (bufnum) - (bufn - bufnum);
-		snprintf (bufn, bufn_sz, "%s%d", i ? "," : "", buf[i]);
-		bufn += strlen (bufn);
+		r_strbuf_appendf (sb, "%s%d", i ? "," : "", buf[i]);
 	}
+	char *nums = r_strbuf_drain (sb);
 	//TODO PJ (?)
-	int len = snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
-		io->off, bufnum);
-	if (len >= sizeof (fmt)) {
-		R_LOG_ERROR ("fmt string has been truncated");
-		return -1;
-	}
-	rv = r2pipe_write (R2P (fd), fmt);
+	char *fmt = r_str_newf ("{\"op\":\"write\",\"address\":%" PFMT64d ",\"data\":[%s]}",
+		io->off, nums);
+	free (nums);
+	int rv = r2pipe_write (R2P (fd), fmt);
+	free (fmt);
 	if (rv < 1) {
 		R_LOG_ERROR ("r2pipe_write failed");
 		return -1;
 	}
-	res = r2pipe_read (R2P (fd));
+	char *res = r2pipe_read (R2P (fd));
+	if (!res) {
+		return -1;
+	}
+	int rescount = -1;
 	/* TODO: parse json back */
-	r = strstr (res, "result");
+	char *r = strstr (res, "result");
 	if (r && r[6]) {
-		count = atoi (r + 6 + 1);
+		rescount = atoi (r + 6 + 1);
 	}
 	free (res);
 	return rescount;
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	char fmt[4096], num[128];
-	int rv, rescount = -1;
-	int bufi, numi;
-	char *res, *r;
 	if (!fd || !fd->data) {
 		return -1;
 	}
@@ -55,58 +47,49 @@ static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
 		count = 1024;
 	}
 	//TODO PJ (?)
-	snprintf (fmt, sizeof (fmt),
-		"{\"op\":\"read\",\"address\":%"PFMT64d",\"count\":%d}",
+	char *fmt = r_str_newf ("{\"op\":\"read\",\"address\":%" PFMT64d ",\"count\":%d}",
 		io->off, count);
-	rv = r2pipe_write (R2P (fd), fmt);
+	int rv = r2pipe_write (R2P (fd), fmt);
+	free (fmt);
 	if (rv < 1) {
 		R_LOG_ERROR ("r2pipe_write failed");
 		return -1;
 	}
-	res = r2pipe_read (R2P (fd));
+	char *res = r2pipe_read (R2P (fd));
+	if (!res) {
+		return -1;
+	}
 
+	int rescount = -1;
 	/* TODO: parse json back */
-	r = strstr (res, "result");
+	char *r = strstr (res, "result");
 	if (r) {
 		rescount = atoi (r + 6 + 2);
 	}
 	r = strstr (res, "data");
 	if (r) {
 		char *arr = strchr (r, ':');
-		if (!arr || arr[1]!='[') {
+		if (!arr || arr[1] != '[') {
 			goto beach;
 		}
-		arr += 2;
-		for (num[0] = numi = bufi = 0; bufi < count && *arr; arr++) {
-			switch (*arr) {
-			case '0':
-			case '1':
-			case '2':
-			case '3':
-			case '4':
-			case '5':
-			case '6':
-			case '7':
-			case '8':
-			case '9':
-				num[numi++] = *arr;
-				num[numi] = 0;
-				break;
-			case ' ':
-			case ',':
-			case ']':
+		char num[128];
+		int bufi = 0, numi = 0;
+		num[0] = 0;
+		for (arr += 2; bufi < count && *arr; arr++) {
+			const char c = *arr;
+			if (IS_DIGIT (c)) {
+				if (numi < (int)sizeof (num) - 1) {
+					num[numi++] = c;
+					num[numi] = 0;
+				}
+			} else if (c == ' ' || c == ',' || c == ']') {
 				if (num[0]) {
 					buf[bufi++] = atoi (num);
-					num[numi = 0] = 0;
+					num[0] = 0;
+					numi = 0;
 				}
-				break;
-			case 'n':
-			case 'u':
-			case 'l':
-				break;
-			default:
+			} else if (c != 'n' && c != 'u' && c != 'l') {
 				goto beach;
-				break;
 			}
 		}
 	}
@@ -138,12 +121,14 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	R2Pipe *r2p = NULL;
-	if (__check (io, pathname, 0)) {
-		r2p = r2pipe_open (pathname + 9);
+	if (!__check (io, pathname, false)) {
+		return NULL;
 	}
-	return r2p? r_io_desc_new (io, &r_io_plugin_r2pipe,
-		pathname, rw, mode, r2p): NULL;
+	R2Pipe *r2p = r2pipe_open (pathname + 9);
+	if (!r2p) {
+		return NULL;
+	}
+	return r_io_desc_new (io, &r_io_plugin_r2pipe, pathname, rw, mode, r2p);
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *msg) {
