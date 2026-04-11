@@ -370,14 +370,8 @@ static void check_purity(HtUP *ht, RAnalFunction *fcn) {
 	RVecAnalRef_free (refs);
 }
 
-typedef struct {
-	ut64 op_addr;
-	ut64 leaddr;
-	char *reg;
-} leaddr_pair;
-
 static void leaddr_free(void *pair) {
-	leaddr_pair *_pair = pair;
+	RLeaddrPair *_pair = pair;
 	free (_pair->reg);
 	free (_pair);
 }
@@ -1159,9 +1153,9 @@ noskip:
 				ut8 buf[4];
 				anal->iob.read_at (anal->iob.io, op->ptr, buf, sizeof (buf));
 				if ((buf[2] == 0xff || buf[2] == 0xfe) && buf[3] == 0xff) {
-					leaddr_pair *pair = R_NEW0 (leaddr_pair);
+					RLeaddrPair *pair = R_NEW0 (RLeaddrPair);
 					if (!pair) {
-						R_LOG_ERROR ("Cannot create leaddr_pair");
+						R_LOG_ERROR ("Cannot create RLeaddrPair");
 						gotoBeach (R_ANAL_RET_ERROR);
 					}
 					pair->op_addr = op->addr;
@@ -1181,7 +1175,7 @@ noskip:
 			}
 #else
 			if (op->ptr != UT64_MAX) {
-				leaddr_pair *pair = R_NEW0 (leaddr_pair);
+				RLeaddrPair *pair = R_NEW0 (RLeaddrPair);
 				pair->op_addr = op->addr;
 				pair->leaddr = op->ptr; // XXX movdisp is dupped but seems to be trashed sometimes(?), better track leaddr separately
 				pair->reg = op->reg
@@ -1312,19 +1306,14 @@ noskip:
 #if JTDBG
 					eprintf ("0x%08llx - ADD %lld\n", op->addr, op->val);
 #endif
-					// ut64 jmpptr_table = UT64_MAX;
-					// ut64 jmptbl_addr = UT64_MAX;
-					if (last_is_reg_mov_lea) {
-						// incremement the leaddr
-						leaddr_pair *la;
-						last_is_reg_mov_lea = false;
-						RListIter *iter;
-						r_list_foreach_prev (anal->leaddrs, iter, la) {
-							la->leaddr += op->val;
-							// jmptbl_addr = la->leaddr;
-							break;
-						}
+					// Finalise `adrp Rd, page; add Rd, Rd, #imm` by bumping
+					// the matching leaddr entry. Done per-register so that
+					// multiple in-flight adrp's don't cross-contaminate.
+					if (op->val != UT64_MAX && dst && dst->reg && src0 && src0->reg
+							&& !strcmp (dst->reg, src0->reg)) {
+						r_anal_jmptbl_leaddrs_bump (anal->leaddrs, dst->reg, op->val);
 					}
+					last_is_reg_mov_lea = false;
 #if 0
 					ut64 casetbl_addr = jmptbl_addr;
 					RAnalOp jmp_aop ;
@@ -1594,106 +1583,10 @@ noskip:
 					break;
 				}
 			} else if (is_arm && anal->config->bits == 64 && anal->opt.jmptbl) {
-#if 0
-0x183997020      cmp x20, 6           ; x20 is the index
-0x183997024      b.hi 0x183997054
-0x183997028      adrp x8, 0x1da2f6000
-0x18399702c      add x8, x8, 0x370    ; unrelated
-0x183997030      adrp x9, 0xbaseaddr  ; tableptr
-0x183997034      add x9, x9, 0x8ef    ; tableptr += delta
-0x183997038      adr x10, 0x183997048 ; basedest_addr
-0x18399703c      ldrb w11, [x9, x20]
-0x183997040      add x10, x10, x11, lsl 2 ; TODO: the code assumes <<2 right now
-0x183997044      br x10
-
-x9 = lea + add
-jmptbl_base = x10 = lea
-bx = jmptbl_base + (byte[x9]<<2)
-
---- example for ldrsw in macs /bin/ls
-
-0x100000b08      sub w16, w0, 0x25
-0x100000b0c      cmp w16, 0x5b
-0x100000b10      b.hi 0x100000fd8
-0x100000b14      cmp x16, 0x5b
-0x100000b18      csel x16, x16, xzr, ls
-0x100000b1c      adrp x17, 0x100001000
-0x100000b20      add x17, x17, 0x558
-0x100000b24      ldrsw x16, [x17, x16, lsl 2]
-0x100000b28      adr x17, 0x100000b28
-0x100000b2c      add x16, x17, x16
-0x100000b30      br x16
-#endif
-				if (anal->leaddrs && r_list_length (anal->leaddrs) >= 2) {
-					leaddr_pair *x10 = r_list_pop (anal->leaddrs);
-					leaddr_pair *x9 = r_list_pop (anal->leaddrs);
-					ut64 opaddr = x10->op_addr;
-					ut64 basptr = x10->leaddr;
-					ut64 tblptr = x9->leaddr;
-					leaddr_free (x9);
-					leaddr_free (x10);
-
-					if (loadsize == 0) {
-						R_LOG_DEBUG ("Probably not not a SwitchTable, just indirect branch at 0x%08"PFMT64x, op->addr);
-						anal->cmpval = 0;
-						loadsize = 0;
-						break;
-					}
-					if (loadsize == 8) {
-						R_LOG_DEBUG ("Not a SwitchTable so maybe just indirect branch at 0x%08"PFMT64x, op->addr);
-						anal->cmpval = 0;
-						loadsize = 0;
-						break;
-					}
-					if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
-						R_LOG_WARN ("SwitchTable of %d not properly supported at 0x%08"PFMT64x, loadsize, op->addr);
-						anal->cmpval = 0;
-						loadsize = 0;
-						break;
-					}
-					// TODO: move this code into jmptbl.c
-					lea_cnt -= 2; // XXX eliminate this thing . we have r_list_length
-					int i, delta;
-					const size_t sizeof_table = 4096;
-					ut8 *table = calloc (sizeof_table, 1);
-					st16 *table2 = (st16*)table;
-					st32 *table4 = (st32*)table;
-					// TODO: eliminate hard limit
-					int max = R_MIN (anal->cmpval, sizeof_table / loadsize);
-					R_LOG_DEBUG ("JumpTable for 0x%08"PFMT64x" is at 0x%"PFMT64x, op->addr, tblptr);
-					(void)anal->iob.read_at (anal->iob.io, tblptr, (ut8 *) table, sizeof_table);
-					ut64 caseaddr;
-					RList *kases = r_list_newf (free);
-					for (i = 0; i < max; i++) {
-						if (loadsize == 1) {
-							delta = table[i];
-							caseaddr = basptr + (delta << 2);
-						} else if (loadsize == 2) {
-							delta = table2[i];
-							caseaddr = basptr + (delta << 1);
-						} else if (loadsize == 4) {
-							delta = table4[i];
-							delta = r_read_le32 (&table4[i]);
-							caseaddr = basptr + delta;
-						}
-						if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
-							R_LOG_DEBUG ("Invalid case %d offset 0x%08"PFMT64x" for switch at 0x%08"PFMT64x, i, caseaddr, op->addr);
-							continue;
-						}
-						RAnalCaseOp *kase = R_NEW0 (RAnalCaseOp);
-						kase->addr = caseaddr; // wtf? <- is this jaddr too?
-						kase->jump = caseaddr;
-						kase->value = i;
-						r_list_append (kases, kase);
-					}
-					r_anal_jmptbl_list (anal, fcn, bb, opaddr, tblptr, kases, loadsize);
-					anal->cmpval = 0;
-					loadsize = 0;
-					free (table);
-				} else {
-					R_LOG_DEBUG ("arm64 SwitchTable dont have enough leas to work at 0x%08"PFMT64x, op->addr);
-				}
-		//		gotoBeach (R_ANAL_RET_END);
+				// arm64 jmptbl dispatcher resolved in libr/anal/jmptbl.c.
+				r_anal_jmptbl_arm64_from_br (anal, fcn, bb, depth, op, loadsize);
+				anal->cmpval = 0;
+				loadsize = 0;
 				break;
 			} else if (is_mips && anal->opt.jmptbl) {
 				// lw v1, -0x7fc4(gp) ; gp = 0x684c00 - 0x7fc4 // read 4 bytes at gp-0x7fc4
@@ -1782,7 +1675,7 @@ bx = jmptbl_base + (byte[x9]<<2)
 					ut64 jmptbl_base = 0; //UT64_MAX;
 					ut64 lea_op_off = UT64_MAX;
 					RListIter *iter;
-					leaddr_pair *pair;
+					RLeaddrPair *pair;
 					if (movbasereg) {
 						// find nearest candidate leaddr before op.addr
 						r_list_foreach_prev (anal->leaddrs, iter, pair) {
@@ -1844,7 +1737,7 @@ bx = jmptbl_base + (byte[x9]<<2)
 					ALGO
 						x10 = [..4000+0x114]
 #endif
-						leaddr_pair *la;
+						RLeaddrPair *la;
 						RListIter *iter;
 						ut64 table_addr = UT64_MAX;
 						int count = 0;
@@ -2029,7 +1922,7 @@ analopfinish:
 	}
 beach:
 	while (lea_cnt > 0) {
-		leaddr_pair *lea = r_list_pop (anal->leaddrs);
+		RLeaddrPair *lea = r_list_pop (anal->leaddrs);
 		if (!lea) {
 			lea_cnt = 0;
 			break;
