@@ -1,16 +1,4 @@
-/* radare - LGPL - Copyright 2009-2026 - pancake, nibble */
-/* Autoname analysis plugin.
- *
- * Score-based strategy: several collectors push naming candidates into a
- * shared bag with a weight; duplicates accumulate so repeated hints
- * reinforce each other; the highest ranked name wins. Adding a new
- * heuristic only requires calling cand_add() from a new collector.
- *
- * Sources (all arch-agnostic, metadata only):
- *   - outgoing refs: callees (flags) and string literals (meta strings)
- *   - incoming xrefs: the sole named caller when there is exactly one
- *   - string shape: "foo:", "foo()", "... foo failed" → __func__-style
- */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #define R_LOG_ORIGIN "anal.autoname"
 
@@ -162,11 +150,9 @@ static int cand_cmp(const void *a, const void *b) {
  * Detects __func__-style tags ("name:", "name()", "... name failed"),
  * pure identifiers, and the first identifier-like token as fallback. */
 static void digest_string(const char *s, RList *bag) {
+	s = r_str_trim_head_ro (s);
 	if (R_STR_ISEMPTY (s)) {
 		return;
-	}
-	while (*s == ' ' || *s == '\t') {
-		s++;
 	}
 	const char *start = s, *p = s;
 	while (*p && (isalnum ((unsigned char)*p) || *p == '_')) {
