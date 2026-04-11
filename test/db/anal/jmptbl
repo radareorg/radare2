@@ -675,3 +675,20 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=arm64 jmptbl with multiple adrp before adds
+FILE=bins/elf/libarm64.so
+CMDS=<<EOF
+aaa
+CC.@0x00005ba4
+CC.@0x0000aa4c
+CC.@0x0000b5a4
+CC.@0x0000badc
+EOF
+EXPECT=<<EOF
+switch table (7 cases) at 0xe080
+switch table (7 cases) at 0xe09c
+switch table (14 cases) at 0xe100
+switch table (31 cases) at 0xe13c
+EOF
+RUN
