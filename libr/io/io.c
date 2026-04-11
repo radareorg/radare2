@@ -613,7 +613,7 @@ R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr) {
 
 static ptrace_wrap_instance *io_ptrace_wrap_instance(RIO *io) {
 	if (!io->ptrace_wrap) {
-		io->ptrace_wrap = R_NEW (ptrace_wrap_instance);
+		io->ptrace_wrap = R_NEW0 (ptrace_wrap_instance);
 		if (ptrace_wrap_instance_start (io->ptrace_wrap) < 0) {
 			R_FREE (io->ptrace_wrap);
 			return NULL;
@@ -628,7 +628,6 @@ R_API long r_io_ptrace(RIO *io, r_ptrace_request_t request, pid_t pid, void *add
 	if (io->want_ptrace_wrap) {
 		ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
 		if (!wrap) {
-			errno = 0;
 			return -1;
 		}
 		return ptrace_wrap (wrap, request, pid, addr, (void*)(size_t)data);
@@ -642,7 +641,6 @@ R_API pid_t r_io_ptrace_fork(RIO *io, void(*child_callback)(void *), void *child
 	if (io->want_ptrace_wrap) {
 		ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
 		if (!wrap) {
-			errno = 0;
 			return -1;
 		}
 		return ptrace_wrap_fork (wrap, child_callback, child_callback_user);
@@ -657,9 +655,11 @@ R_API pid_t r_io_ptrace_fork(RIO *io, void(*child_callback)(void *), void *child
 
 R_API void *r_io_ptrace_func(RIO *io, void *(*func)(void *), void *user) {
 #if USE_PTRACE_WRAP
-	ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
-	if (wrap) {
-		return ptrace_wrap_func (wrap, func, user);
+	if (io->want_ptrace_wrap) {
+		ptrace_wrap_instance *wrap = io_ptrace_wrap_instance (io);
+		if (wrap) {
+			return ptrace_wrap_func (wrap, func, user);
+		}
 	}
 #endif
 	return func (user);
@@ -677,10 +677,10 @@ R_API void r_io_fini(RIO* io) {
 	r_list_free (io->undo.w_list);
 	R_FREE (io->runprofile);
 	r_event_free (io->event);
-#if R_IO_USE_PTRACE_WRAP
+#if USE_PTRACE_WRAP
 	if (io->ptrace_wrap) {
 		ptrace_wrap_instance_stop (io->ptrace_wrap);
-		free (io->ptrace_wrap);
+		R_FREE (io->ptrace_wrap);
 	}
 #endif
 }

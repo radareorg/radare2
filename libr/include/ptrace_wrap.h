@@ -59,12 +59,14 @@ typedef struct ptrace_wrap_request_t {
 		struct {
 			ptrace_wrap_func_func func;
 			void *user;
+			int *_errno;
 		} func;
 	};
 } ptrace_wrap_request;
 
 typedef struct ptrace_wrap_instance_t {
 	pthread_t th;
+	pthread_mutex_t req_mtx;
 	sem_t request_sem;
 	ptrace_wrap_request request;
 	sem_t result_sem;

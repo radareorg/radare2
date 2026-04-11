@@ -1936,7 +1936,13 @@ static bool cb_dbg_maxsnapsize(void *user, void *data) {
 static bool cb_dbg_wrap(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	core->io->want_ptrace_wrap = node->i_value;
+	bool want = node->i_value;
+#if USE_PTRACE_WRAP
+	if (core->io->ptrace_wrap && want != core->io->want_ptrace_wrap) {
+		R_LOG_WARN ("dbg.wrap: toggling after the ptrace_wrap worker started may break the existing tracer");
+	}
+#endif
+	core->io->want_ptrace_wrap = want;
 	return true;
 }
 
