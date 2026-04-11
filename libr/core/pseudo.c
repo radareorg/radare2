@@ -703,8 +703,6 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		i++;
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
-	// Dedupe adjacent entries that share (value, jump); some jmptbl
-	// analyses emit each case twice for mirrored lookups.
 	{
 		int w = 0;
 		int r;
@@ -753,23 +751,26 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	free (arr);
 }
 
-// Pull the loop guard from the test bb's asm.pseudo output: the arch
-// pseudo plugins already render conditional branches as `if (cond) goto N`,
-// so we just locate the tail one targeting back_target and slice cond out.
 static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_target) {
-	char *code = fetch_bb_pseudo (state, test_bb);
-	if (!code) {
+	int ninstr = (test_bb->ninstr > 0)? test_bb->ninstr: 8;
+	char *code = r_core_cmd_strf (state->core,
+		"pi %d @e:asm.pseudo=1@e:scr.color=0@e:asm.addr=0@ 0x%08" PFMT64x,
+		ninstr, test_bb->addr);
+	if (R_STR_ISEMPTY (code)) {
+		free (code);
 		return NULL;
 	}
 	char *result = NULL;
+	char *vexpr = NULL;
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
 	char *line;
 	r_list_foreach (lines, iter, line) {
 		const char *t = r_str_trim_head_ro (line);
-		if (*t == '0') {
-			const char *s = strchr (t, ' ');
-			t = s? r_str_trim_head_ro (s + 1): "";
+		if (r_str_startswith (t, "v = ")) {
+			free (vexpr);
+			vexpr = strdup (t + 4);
+			continue;
 		}
 		if (!r_str_startswith (t, "if ")) {
 			continue;
@@ -806,6 +807,30 @@ static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_t
 	}
 	r_list_free (lines);
 	free (code);
+	if (result && vexpr) {
+		const char *minus = strstr (vexpr, " - ");
+		char *vlhs = minus? r_str_ndup (vexpr, minus - vexpr): NULL;
+		const char *vrhs = minus? r_str_trim_head_ro (minus + 3): NULL;
+		char *folded = NULL;
+		if (!strcmp (result, "v")) {
+			folded = strdup (vexpr);
+		} else if (!strcmp (result, "!v")) {
+			folded = vlhs? r_str_newf ("%s == %s", vlhs, vrhs): r_str_newf ("!(%s)", vexpr);
+		} else if (r_str_startswith (result, "v ") && vlhs && r_str_endswith (result, " 0")) {
+			char *op = r_str_ndup (result + 2, strlen (result + 2) - 2);
+			r_str_trim (op);
+			folded = r_str_newf ("%s %s %s", vlhs, op, vrhs);
+			free (op);
+		} else if (r_str_startswith (result, "v ")) {
+			folded = r_str_newf ("(%s)%s", vexpr, result + 1);
+		}
+		free (vlhs);
+		if (folded) {
+			free (result);
+			result = folded;
+		}
+	}
+	free (vexpr);
 	return result;
 }
 
