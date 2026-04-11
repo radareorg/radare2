@@ -37,11 +37,12 @@ static void list_xattr(const char *path) {
 	if (!namebuf) {
 		return;
 	}
-	int i, res = r_listxattr (path, namebuf, total);
-	for (i = 0; i < res; i++) {
-		const char *n = namebuf + i;
-		printf ("%s\n", n);
-		i += strlen (n);
+	int res = r_listxattr (path, namebuf, total);
+	const char *p = namebuf;
+	const char *end = namebuf + res;
+	while (p < end) {
+		printf ("%s\n", p);
+		p += strlen (p) + 1;
 	}
 	free (namebuf);
 }
@@ -50,66 +51,64 @@ static bool write_xattr(const char *path, const char *attrname, const ut8 *data,
 	return r_setxattr (path, attrname, data, size, 0) == 0;
 }
 
-static char *read_xattr(const char *path, const char *attrname, int *osize) {
+static ut8 *read_xattr(const char *path, const char *attrname, int *osize) {
 	int size = r_getxattr (path, attrname, NULL, 0);
 	if (size < 1) {
 		return NULL;
 	}
-	char *buf = calloc (size, 1);
+	ut8 *buf = malloc (size);
+	if (!buf) {
+		return NULL;
+	}
 	r_getxattr (path, attrname, buf, size);
 	*osize = size;
 	return buf;
+}
+
+// splits "xattr://path//attr" into an owned path string and an attrname pointer into it
+static char *split_xattr_uri(const char *pathname, char **attrname) {
+	char *path = strdup (pathname + strlen ("xattr://"));
+	char *sep = strstr (path, "//");
+	if (sep) {
+		*sep = 0;
+		*attrname = sep + 2;
+	} else {
+		*attrname = NULL;
+	}
+	return path;
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 	if (!__check (io, pathname, 0)) {
 		return NULL;
 	}
-	char *path = strdup (pathname + 8);
-	char *attrname = strstr (path, "//");
+	char *attrname;
+	char *path = split_xattr_uri (pathname, &attrname);
 	if (!attrname) {
 		list_xattr (path);
 		free (path);
 		return NULL;
 	}
-	*attrname = 0;
-	attrname += 2;
-
 	int size = 0;
-	char *attrvalue = read_xattr (path, attrname, &size);
+	ut8 *attrvalue = read_xattr (path, attrname, &size);
 	free (path);
-	if (!attrvalue || size < 1) {
+	if (!attrvalue) {
 		return NULL;
 	}
-
 	RIOMalloc *mal = R_NEW0 (RIOMalloc);
-	if (!mal) {
-		return NULL;
-	}
 	mal->size = size;
-	mal->buf = (ut8*)attrvalue;
-	mal->offset = 0;
-	if (mal->buf) {
-		return r_io_desc_new (io, &r_io_plugin_xattr, pathname,
-			R_PERM_RW | (rw & R_PERM_X), mode, mal);
-	}
-	R_LOG_ERROR ("Cannot allocate %d bytes for %s", mal->size, pathname);
-	free (mal);
-	return NULL;
+	mal->buf = attrvalue;
+	return r_io_desc_new (io, &r_io_plugin_xattr, pathname,
+		R_PERM_RW | (rw & R_PERM_X), mode, mal);
 }
 
 static bool __close(RIODesc *fd) {
 	RIOMalloc *riom = fd->data;
-	const char *pathname = fd->name;
-	char *path = strdup (pathname + 8);
-	char *attrname = strstr (path, "//");
-	if (!attrname) {
-		// should never happen, but just in case
-		return NULL;
+	char *attrname;
+	char *path = split_xattr_uri (fd->name, &attrname);
+	if (attrname) {
+		write_xattr (path, attrname, riom->buf, riom->size);
 	}
-	*attrname = 0;
-	attrname += 2;
-	write_xattr (path, attrname, (const ut8*)riom->buf, riom->size);
 	free (path);
 	io_memory_close (fd);
 	return true;
