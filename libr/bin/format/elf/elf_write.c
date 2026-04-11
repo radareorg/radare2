@@ -144,7 +144,8 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	/* rewrite program headers */
-	for (i = 0, phdrp = phdr; i < ehdr->e_phnum; i++, phdrp++) {
+	const ut64 phnum = Elf_(get_phnum) (bin);
+	for (i = 0, phdrp = phdr; i < phnum; i++, phdrp++) {
 #if 0
 		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
 			phdrp->p_filesz += delta;
@@ -224,7 +225,8 @@ bool Elf_(del_rpath)(RBinFile *bf) {
 	if (!bin->phdr) {
 		return false;
 	}
-	for (i = 0; i < bin->ehdr.e_phnum; i++) {
+	const ut64 phnum = Elf_(get_phnum) (bin);
+	for (i = 0; i < phnum; i++) {
 		if (bin->phdr[i].p_type != PT_DYNAMIC) {
 			continue;
 		}
@@ -320,12 +322,14 @@ static const char *phdr_synthetic_name(Elf_(Phdr) *phdrp, int load_idx, char *bu
 
 bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms) {
 	struct Elf_(obj_t) *bin = bf->bo->bin_obj;
-	Elf_(Ehdr) *ehdr = &bin->ehdr;
-	if (!bin->phdr || ehdr->e_phnum <= 0) {
+	if (!bin->phdr) {
 		return false;
 	}
-	int i, load_idx = 0;
-	for (i = 0; i < ehdr->e_phnum; i++) {
+	Elf_(Ehdr) *ehdr = &bin->ehdr;
+	const ut64 phnum = Elf_(get_phnum) (bin);
+	int load_idx = 0;
+	ut64 i;
+	for (i = 0; i < phnum; i++) {
 		Elf_(Phdr) *phdrp = &bin->phdr[i];
 		char synthetic[32];
 		int this_idx = (phdrp->p_type == PT_LOAD)? load_idx++: 0;
@@ -336,9 +340,8 @@ bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms) {
 		/* preserve OS/processor-specific bits in the upper nibbles */
 		ut32 newflags = (phdrp->p_flags & ~(ut32)7) | (ut32)(perms & 7);
 		phdrp->p_flags = newflags;
-		int patchoff = (int)(ehdr->e_phoff + (i * sizeof (Elf_(Phdr))));
-		patchoff += r_offsetof (Elf_(Phdr), p_flags);
-		R_LOG_DEBUG ("wv4 0x%x @ 0x%x", newflags, patchoff);
+		ut64 patchoff = ehdr->e_phoff + (i * sizeof (Elf_(Phdr))) + r_offsetof (Elf_(Phdr), p_flags);
+		R_LOG_DEBUG ("wv4 0x%x @ 0x%"PFMT64x, newflags, patchoff);
 		r_buf_write_at (bf->buf, patchoff, (ut8*)&newflags, sizeof (newflags));
 		return true;
 	}
