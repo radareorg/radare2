@@ -476,11 +476,6 @@ static int bb_last_op_type(RCore *core, RAnalBlock *bb) {
 	return t;
 }
 
-static bool bb_ends_in_tail_jmp(RCore *core, RAnalBlock *bb) {
-	int t = bb_last_op_type (core, bb);
-	return t == R_ANAL_OP_TYPE_JMP || t == R_ANAL_OP_TYPE_UJMP;
-}
-
 static bool bb_ends_with_terminator(RCore *core, RAnalBlock *bb) {
 	int t = bb_last_op_type (core, bb);
 	return t == R_ANAL_OP_TYPE_JMP || t == R_ANAL_OP_TYPE_UJMP
@@ -511,6 +506,14 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	return code;
 }
 
+// Check whether `addr` is the header of a structured loop we intend to
+// render. The pre-pass populates `loop_header.ADDR` in state->db so the
+// walker can strip redundant `goto loc_ADDR` lines from entry bbs.
+static bool is_known_loop_header(PDCState *state, ut64 addr) {
+	r_strf_buffer (64);
+	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
+}
+
 static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent, bool emit_pj) {
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
@@ -524,6 +527,21 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			}
 			const char *s = strchr (line, ' ');
 			line = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (R_STR_ISNOTEMPTY (line)) {
+			// Suppress tail `goto loc_0xHEADER` emitted right before
+			// entering a structured loop: the `while`/`do` that
+			// follows provides the control flow already.
+			const char *t = r_str_trim_head_ro (line);
+			if (r_str_startswith (t, "goto ") || r_str_startswith (t, "jmp ")) {
+				const char *num = strstr (t, "0x");
+				if (num) {
+					ut64 dst = r_num_get (NULL, num);
+					if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
+						continue;
+					}
+				}
+			}
 		}
 		if (emit_pj && state->pj) {
 			pj_o (state->pj);
@@ -692,16 +710,8 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	if (n < 1) {
 		return;
 	}
-	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
-	print_newline (state, sw_bb->addr, indent);
-	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
-		expr, n, sw_bb->addr);
-	free (expr);
-
 	PDCSwCase *arr = calloc (n, sizeof (PDCSwCase));
 	if (!arr) {
-		print_newline (state, sw_bb->addr, indent);
-		print_str (state, "}");
 		return;
 	}
 	int i = 0;
@@ -716,6 +726,25 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		i++;
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
+	// Dedupe adjacent entries that share (value, jump); some jmptbl
+	// analyses emit each case twice for mirrored lookups.
+	{
+		int w = 0;
+		int r;
+		for (r = 0; r < i; r++) {
+			if (w > 0 && arr[w - 1].value == arr[r].value
+					&& arr[w - 1].jump == arr[r].jump) {
+				continue;
+			}
+			arr[w++] = arr[r];
+		}
+		i = w;
+	}
+	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
+	print_newline (state, sw_bb->addr, indent);
+	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
+		expr, i, sw_bb->addr);
+	free (expr);
 
 	int c = 0;
 	while (c < i) {
@@ -745,6 +774,331 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	print_newline (state, sw_bb->addr, indent);
 	print_str (state, "}");
 	free (arr);
+}
+
+// Map an x86 conditional jump mnemonic to a C operator. The mnemonic is
+// interpreted as "condition to TAKE the jump", so for a while-header whose
+// jump goes back into the loop body the operator describes the loop guard.
+static const char *jcc_to_c_op(const char *mnem) {
+	if (!mnem) {
+		return NULL;
+	}
+	if (!strcmp (mnem, "je") || !strcmp (mnem, "jz")) {
+		return "==";
+	}
+	if (!strcmp (mnem, "jne") || !strcmp (mnem, "jnz")) {
+		return "!=";
+	}
+	if (!strcmp (mnem, "jl") || !strcmp (mnem, "jnge")) {
+		return "<";
+	}
+	if (!strcmp (mnem, "jle") || !strcmp (mnem, "jng")) {
+		return "<=";
+	}
+	if (!strcmp (mnem, "jg") || !strcmp (mnem, "jnle")) {
+		return ">";
+	}
+	if (!strcmp (mnem, "jge") || !strcmp (mnem, "jnl")) {
+		return ">=";
+	}
+	if (!strcmp (mnem, "jb") || !strcmp (mnem, "jnae") || !strcmp (mnem, "jc")) {
+		return "<";
+	}
+	if (!strcmp (mnem, "jbe") || !strcmp (mnem, "jna")) {
+		return "<=";
+	}
+	if (!strcmp (mnem, "ja") || !strcmp (mnem, "jnbe")) {
+		return ">";
+	}
+	if (!strcmp (mnem, "jae") || !strcmp (mnem, "jnb") || !strcmp (mnem, "jnc")) {
+		return ">=";
+	}
+	if (!strcmp (mnem, "js")) {
+		return "<";
+	}
+	if (!strcmp (mnem, "jns")) {
+		return ">=";
+	}
+	return NULL;
+}
+
+// Extract a human-readable loop guard from a test bb. Looks for a cmp/test
+// immediately before the tail conditional jump and renders it as a C
+// expression. Returns NULL on failure.
+static char *extract_loop_cond(RCore *core, RAnalBlock *test_bb) {
+	int ninstr = (test_bb->ninstr > 0)? test_bb->ninstr: 8;
+	char *dis = r_core_cmd_strf (core,
+		"pi %d @e:asm.pseudo=0@e:scr.color=0@ 0x%08" PFMT64x,
+		ninstr, test_bb->addr);
+	if (R_STR_ISEMPTY (dis)) {
+		free (dis);
+		return NULL;
+	}
+	RList *lines = r_str_split_list (dis, "\n", 0);
+	RListIter *iter;
+	char *line;
+	char *last_cmp_lhs = NULL;
+	char *last_cmp_rhs = NULL;
+	bool cmp_is_test = false;
+	const char *jcc_op = NULL;
+	r_list_foreach (lines, iter, line) {
+		const char *t = r_str_trim_head_ro (line);
+		if (R_STR_ISEMPTY (t)) {
+			continue;
+		}
+		const char *sp = strchr (t, ' ');
+		if (!sp) {
+			continue;
+		}
+		char *mnem = r_str_ndup (t, sp - t);
+		if (!mnem) {
+			continue;
+		}
+		if (!strcmp (mnem, "cmp") || !strcmp (mnem, "test")) {
+			cmp_is_test = !strcmp (mnem, "test");
+			const char *ops = r_str_trim_head_ro (sp + 1);
+			const char *comma = strchr (ops, ',');
+			if (comma && comma > ops) {
+				free (last_cmp_lhs);
+				free (last_cmp_rhs);
+				last_cmp_lhs = r_str_ndup (ops, comma - ops);
+				last_cmp_rhs = strdup (r_str_trim_head_ro (comma + 1));
+				if (last_cmp_lhs) {
+					r_str_trim (last_cmp_lhs);
+				}
+				if (last_cmp_rhs) {
+					r_str_trim (last_cmp_rhs);
+				}
+			}
+		} else if (mnem[0] == 'j' && strcmp (mnem, "jmp")) {
+			const char *op = jcc_to_c_op (mnem);
+			if (op) {
+				jcc_op = op;
+			}
+		}
+		free (mnem);
+	}
+	char *result = NULL;
+	if (jcc_op && last_cmp_lhs && last_cmp_rhs) {
+		if (cmp_is_test && !strcmp (last_cmp_lhs, last_cmp_rhs)) {
+			result = r_str_newf ("%s %s 0", last_cmp_lhs, jcc_op);
+		} else {
+			result = r_str_newf ("%s %s %s", last_cmp_lhs, jcc_op, last_cmp_rhs);
+		}
+	}
+	free (last_cmp_lhs);
+	free (last_cmp_rhs);
+	r_list_free (lines);
+	free (dis);
+	return result;
+}
+
+// Returns true if the pseudo-source line is a branch-to-target that
+// should be suppressed when the loop structure is responsible for the
+// back-edge: `goto 0xNNNN`, `jmp 0xNNNN`, or `if (...) goto 0xNNNN`.
+static bool line_is_branch_to(const char *line, const char *target_hex) {
+	const char *t = r_str_trim_head_ro (line);
+	if (R_STR_ISEMPTY (t)) {
+		return false;
+	}
+	if (r_str_startswith (t, "goto ") && strstr (t, target_hex)) {
+		return true;
+	}
+	if (r_str_startswith (t, "jmp ") && strstr (t, target_hex)) {
+		return true;
+	}
+	if (r_str_startswith (t, "if ") && strstr (t, "goto ") && strstr (t, target_hex)) {
+		return true;
+	}
+	return false;
+}
+
+// Forward decls for mutual recursion between render_loop_while and the
+// body emitter, so nested loops can be handled inline.
+static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent);
+
+// Emit a bb's pseudo code while dropping the tail jump back to a known
+// loop header. Used when rendering the body of a structured loop.
+static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back_target, int indent) {
+	char *code = fetch_bb_pseudo (state, bb);
+	if (!code) {
+		return;
+	}
+	RList *lines = r_str_split_list (code, "\n", 0);
+	RListIter *iter;
+	const char *line;
+	ut64 addr = bb->addr;
+	char back_hex[32];
+	snprintf (back_hex, sizeof (back_hex), "0x%08" PFMT64x, back_target);
+	char back_hex_short[32];
+	snprintf (back_hex_short, sizeof (back_hex_short), "0x%" PFMT64x, back_target);
+	r_list_foreach (lines, iter, line) {
+		const char *rendered = line;
+		if (*rendered == '0') {
+			ut64 at = r_num_get (NULL, rendered);
+			if (at && at != UT64_MAX) {
+				addr = at;
+			}
+			const char *s = strchr (rendered, ' ');
+			rendered = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (R_STR_ISEMPTY (rendered)) {
+			continue;
+		}
+		if (line_is_branch_to (rendered, back_hex)
+				|| line_is_branch_to (rendered, back_hex_short)) {
+			continue;
+		}
+		// Also strip tail `goto` to any structured loop header, since
+		// the wrapping while/do construct owns those edges.
+		const char *rt = r_str_trim_head_ro (rendered);
+		if (r_str_startswith (rt, "goto ") || r_str_startswith (rt, "jmp ")) {
+			const char *num = strstr (rt, "0x");
+			if (num) {
+				ut64 dst = r_num_get (NULL, num);
+				if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
+					continue;
+				}
+			}
+		}
+		print_newline (state, addr, indent);
+		print_str (state, "%s", rendered);
+	}
+	r_list_free (lines);
+	free (code);
+}
+
+// Render a structured `while` loop for the "body + tail test" GCC -O0
+// pattern, or a `do { ... } while` loop for the single-bb self-loop shape.
+// Returns the post-loop exit bb, or NULL if the caller should fall back
+// to the default walker.
+static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent) {
+	r_strf_buffer (64);
+	if (!test_bb || test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX) {
+		return NULL;
+	}
+	if (!r_anal_function_contains (state->fcn, test_bb->jump)) {
+		return NULL;
+	}
+	if (!r_anal_function_contains (state->fcn, test_bb->fail)) {
+		return NULL;
+	}
+	bool self_loop = (test_bb->jump == test_bb->addr);
+	if (!self_loop && test_bb->jump >= test_bb->addr) {
+		return NULL;
+	}
+	char *cond = extract_loop_cond (state->core, test_bb);
+	print_newline (state, test_bb->addr, indent);
+	if (self_loop) {
+		if (cond) {
+			print_str (state, "do {");
+		} else {
+			print_str (state, "do {");
+		}
+	} else {
+		if (cond) {
+			print_str (state, "while (%s) {", cond);
+		} else {
+			print_str (state, "while (/* 0x%08" PFMT64x " */) {",
+				test_bb->addr);
+		}
+	}
+	if (self_loop) {
+		emit_bb_body_no_back_jump (state, test_bb, test_bb->addr, indent + 1);
+		mark_bb_visited (state, visited, test_bb);
+		print_newline (state, test_bb->addr, indent);
+		if (cond) {
+			print_str (state, "} while (%s);", cond);
+		} else {
+			print_str (state, "} while (/* 0x%08" PFMT64x " */);",
+				test_bb->addr);
+		}
+	} else {
+		ut64 body_start = test_bb->jump;
+		ut64 body_end = test_bb->addr;
+		RList *sorted = r_list_new ();
+		RListIter *iter;
+		RAnalBlock *b;
+		if (sorted) {
+			r_list_foreach (state->fcn->bbs, iter, b) {
+				if (b->addr >= body_start && b->addr < body_end) {
+					r_list_append (sorted, b);
+				}
+			}
+		}
+		// Pre-scan for nested loop tests: any bb inside our range
+		// whose conditional backward jump stays inside the range.
+		// Record the owned [lo, hi) intervals so the emit pass skips
+		// body bbs and only recurses at the nested test bb.
+		ut64 owned_lo[16];
+		ut64 owned_hi[16];
+		int nowned = 0;
+		r_list_foreach (sorted, iter, b) {
+			if (b->jump != UT64_MAX && b->fail != UT64_MAX
+					&& b->jump < b->addr
+					&& b->jump >= body_start
+					&& b->addr < body_end
+					&& nowned < 16) {
+				owned_lo[nowned] = b->jump;
+				owned_hi[nowned] = b->addr;
+				nowned++;
+			}
+		}
+		r_list_foreach (sorted, iter, b) {
+			if (sdb_const_get (state->db, K_MARK (b->addr), 0)) {
+				continue;
+			}
+			bool is_nested_test = false;
+			int oi;
+			for (oi = 0; oi < nowned; oi++) {
+				if (owned_hi[oi] == b->addr) {
+					is_nested_test = true;
+					break;
+				}
+			}
+			if (is_nested_test) {
+				render_loop_while (state, b, visited, indent + 1);
+				continue;
+			}
+			bool owned = false;
+			for (oi = 0; oi < nowned; oi++) {
+				if (b->addr >= owned_lo[oi] && b->addr < owned_hi[oi]) {
+					owned = true;
+					break;
+				}
+			}
+			if (owned) {
+				continue;
+			}
+			// Recurse into nested switch dispatchers: they may live
+			// inside a while body (e.g. the big option loop in /bin/ls
+			// main), and the walker-level integration only triggers
+			// for top-level bbs.
+			if (b->switch_op) {
+				render_switch (state, b, visited, indent + 1);
+				mark_bb_visited (state, visited, b);
+				continue;
+			}
+			if (b->fail != UT64_MAX) {
+				RAnalBlock *fb = r_anal_bb_from_offset (state->core->anal, b->fail);
+				if (fb && fb->switch_op) {
+					emit_bb_body_no_back_jump (state, b, test_bb->addr, indent + 1);
+					mark_bb_visited (state, visited, b);
+					render_switch (state, fb, visited, indent + 1);
+					mark_bb_visited (state, visited, fb);
+					continue;
+				}
+			}
+			emit_bb_body_no_back_jump (state, b, test_bb->addr, indent + 1);
+			mark_bb_visited (state, visited, b);
+		}
+		r_list_free (sorted);
+		mark_bb_visited (state, visited, test_bb);
+		print_newline (state, test_bb->addr, indent);
+		print_str (state, "}");
+	}
+	free (cond);
+	return r_anal_bb_from_offset (state->core->anal, test_bb->fail);
 }
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
@@ -892,9 +1246,81 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = state.fcn->addr;
+	// Pre-pass: record every bb that our structured-loop detector
+	// will treat as a loop header, so emit_code_lines can strip tail
+	// `goto loc_0xheader` from preceding bbs.
+	{
+		RListIter *piter;
+		RAnalBlock *pbb;
+		r_list_foreach (state.fcn->bbs, piter, pbb) {
+			if (pbb->jump != UT64_MAX && pbb->fail != UT64_MAX
+					&& pbb->jump <= pbb->addr
+					&& r_anal_function_contains (state.fcn, pbb->jump)
+					&& r_anal_function_contains (state.fcn, pbb->fail)) {
+				sdb_num_set (state.db,
+					r_strf ("loop_header.%" PFMT64x, pbb->addr), 1, 0);
+			}
+		}
+	}
 	while (bb) {
 		r_list_append (visited, bb);
 		indent = 2;
+		// If a structural renderer (loop/switch) already emitted this
+		// bb, drain the indent stack until we find an unvisited target
+		// or break out cleanly. This prevents stale pops from producing
+		// spurious `return rax;` lines after a while/do block closes.
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)
+				&& sdb_num_get (state.db,
+					r_strf ("structured.%" PFMT64x, bb->addr), 0)) {
+			RAnalBlock *next = NULL;
+			while (true) {
+				ut64 pop_addr = sdb_array_pop_num (state.db, "indent", NULL);
+				if (pop_addr == UT64_MAX) {
+					break;
+				}
+				if (sdb_num_get (state.db, K_MARK (pop_addr), 0)) {
+					continue;
+				}
+				next = r_anal_bb_from_offset (core->anal, pop_addr);
+				if (next) {
+					break;
+				}
+			}
+			if (!next) {
+				break;
+			}
+			bb = next;
+			continue;
+		}
+		// Walker-level loop integration (pre-emit): recognize the "body
+		// + tail test" GCC -O0 pattern where this bb's conditional jump
+		// points backward to a body bb that appears earlier in the
+		// function, and render it as a structured while loop. The body
+		// code is emitted by render_loop_while itself, so we must not
+		// emit this bb's code on the normal path.
+		if (!sdb_const_get (state.db, K_MARK (bb->addr), 0)
+				&& bb->fail != UT64_MAX
+				&& bb->jump != UT64_MAX
+				&& bb->jump <= bb->addr
+				&& r_anal_function_contains (state.fcn, bb->jump)
+				&& r_anal_function_contains (state.fcn, bb->fail)) {
+			ut64 test_addr = bb->addr;
+			RAnalBlock *exit_bb = render_loop_while (&state, bb, visited, indent - 1);
+			if (exit_bb) {
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".addr", test_addr), "1", 0);
+				sdb_num_set (state.db, K_MARK (test_addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, test_addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, exit_bb->addr), 1, 0);
+				if (sdb_const_get (state.db, K_MARK (exit_bb->addr), 0)) {
+					break;
+				}
+				bb = exit_bb;
+				continue;
+			}
+		}
 		char *code = fetch_bb_pseudo (&state, bb);
 		if (!code) {
 			R_LOG_ERROR ("Empty code here");
@@ -915,6 +1341,35 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		free (code);
+		// Walker-level switch integration: if this bb is a switch
+		// dispatcher (has switch_op) or a bounds-check that feeds one,
+		// render the full switch structure here and stop the walker.
+		{
+			RAnalBlock *sw_bb = NULL;
+			if (bb->switch_op) {
+				sw_bb = bb;
+			} else if (bb->fail != UT64_MAX) {
+				RAnalBlock *fb = r_anal_bb_from_offset (core->anal, bb->fail);
+				if (fb && fb->switch_op) {
+					sw_bb = fb;
+				}
+			}
+			if (sw_bb) {
+				render_switch (&state, sw_bb, visited, indent - 1);
+				sdb_num_set (state.db, K_MARK (sw_bb->addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, sw_bb->addr), 1, 0);
+				if (!r_list_contains (visited, sw_bb)) {
+					r_list_append (visited, sw_bb);
+				}
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".addr", bb->addr), "1", 0);
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, sw_bb->addr),
+					"1", 0);
+				break;
+			}
+		}
 		bool closed = false;
 		bool resume_from_indent = false;
 		ut64 gotoaddr = UT64_MAX;
@@ -933,7 +1388,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				closed = true;
-				if (!bb_ends_in_tail_jmp (core, bb)) {
+				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
@@ -1047,13 +1502,29 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	RListIter *iter;
 	bool use_html = r_config_get_b (core->config, "scr.html");
+	// First pass: render any switch dispatchers that the walker did not
+	// consume. This runs before orphan labels so cases are hoisted above
+	// their bodies instead of appearing inside the last case.
+	r_list_foreach (state.fcn->bbs, iter, bb) {
+		if (!bb->switch_op) {
+			continue;
+		}
+		if (r_list_contains (visited, bb)) {
+			continue;
+		}
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+			continue;
+		}
+		render_switch (&state, bb, visited, 2);
+		r_list_append (visited, bb);
+		sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
+	}
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
-		if (bb->switch_op) {
-			render_switch (&state, bb, visited, 2);
-			r_list_append (visited, bb);
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
 		if (iter->n) {
@@ -1146,7 +1617,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				PRINTF ("%s", s);
 			}
 			if (bb->jump == UT64_MAX) {
-				if (!bb_ends_in_tail_jmp (core, bb)) {
+				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
