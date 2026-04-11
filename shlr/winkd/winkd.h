@@ -115,6 +115,7 @@ int winkd_wait_packet(WindCtx *ctx, const ut32 type, kd_packet_t **p);
 int winkd_sync(WindCtx *ctx);
 bool winkd_read_ver(WindCtx *ctx);
 int winkd_continue(WindCtx *ctx);
+int winkd_step(WindCtx *ctx);
 bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size);
 int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size);
 int winkd_query_mem(WindCtx *ctx, const ut64 addr, int *address_space, int *flags);

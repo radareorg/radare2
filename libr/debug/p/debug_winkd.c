@@ -24,7 +24,11 @@ typedef struct plugin_data_t {
 } PluginData;
 
 static bool r_debug_winkd_step(RDebug *dbg) {
-	return true;
+	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
+	if (!pd) {
+		return false;
+	}
+	return !!winkd_step (pd->wctx);
 }
 
 static bool r_debug_winkd_reg_read(RDebug *dbg, int type, ut8 *buf, int size) {
@@ -92,8 +96,28 @@ static RDebugReasonType r_debug_winkd_wait(RDebug *dbg, int pid) {
 		dbg->reason.signum = stc->state;
 		winkd_set_cpu (pd->wctx, stc->cpu);
 		if (stc->state == DbgKdExceptionStateChange) {
-			dbg->reason.type = R_DEBUG_REASON_INT;
-			reason = R_DEBUG_REASON_INT;
+			// Map NTSTATUS exception codes to r2 reasons.
+			switch (stc->exception.code) {
+			case 0x80000003: // STATUS_BREAKPOINT
+				reason = R_DEBUG_REASON_BREAKPOINT;
+				break;
+			case 0x80000004: // STATUS_SINGLE_STEP
+				reason = R_DEBUG_REASON_STEP;
+				break;
+			case 0xc0000005: // STATUS_ACCESS_VIOLATION
+				reason = R_DEBUG_REASON_SEGFAULT;
+				break;
+			case 0xc000001d: // STATUS_ILLEGAL_INSTRUCTION
+				reason = R_DEBUG_REASON_ILLEGAL;
+				break;
+			case 0xc0000094: // STATUS_INTEGER_DIVIDE_BY_ZERO
+				reason = R_DEBUG_REASON_DIVBYZERO;
+				break;
+			default:
+				reason = R_DEBUG_REASON_INT;
+				break;
+			}
+			dbg->reason.type = reason;
 			break;
 		} else if (stc->state == DbgKdLoadSymbolsStateChange) {
 			dbg->reason.type = R_DEBUG_REASON_NEW_LIB;
@@ -144,7 +168,11 @@ static bool r_debug_winkd_attach(RDebug *dbg, int pid) {
 }
 
 static bool r_debug_winkd_detach(RDebug *dbg, int pid) {
-	eprintf ("Detaching...\n");
+	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
+	if (pd && pd->wctx) {
+		// Resume the target before dropping the session.
+		winkd_continue (pd->wctx);
+	}
 	return true;
 }
 
@@ -153,7 +181,12 @@ static char *r_debug_winkd_reg_profile(RDebug *dbg) {
 	if (dbg->arch && strcmp (dbg->arch, "x86")) {
 		return NULL;
 	}
-	r_debug_winkd_attach (dbg, 0);
+	// Only attach here if we haven't synced yet; reg_profile can be called many
+	// times by the core and must not re-do the handshake each time.
+	PluginData *pd = R_UNWRAP3 (dbg, current, plugin_data);
+	if (!pd || !pd->wctx || !pd->wctx->syncd) {
+		r_debug_winkd_attach (dbg, 0);
+	}
 	if (R_SYS_BITS_CHECK (dbg->bits, 64)) {
 #include "native/reg/windows-x64.h"
 	} else if (R_SYS_BITS_CHECK (dbg->bits, 32)) {
@@ -168,15 +201,15 @@ static bool r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 	if (!pd || !b) {
 		return false;
 	}
+	if (b->hw) {
+		R_LOG_WARN ("winkd: hardware breakpoints are not implemented, falling back to software");
+	}
 	// Use a 32 bit word here to keep this compatible with 32 bit hosts
 	if (!b->data) {
 		b->data = (char *)R_NEW0 (int);
-		if (!b->data) {
-			return false;
-		}
 	}
 	int *tag = (int *) b->data;
-	return !!winkd_bkpt (pd->wctx, b->addr, set, b->hw, tag);
+	return !!winkd_bkpt (pd->wctx, b->addr, set, 0, tag);
 }
 
 static bool r_debug_winkd_init(RDebug *dbg) {
@@ -294,12 +327,7 @@ static RList *r_debug_winkd_modules(RDebug *dbg) {
 
 	r_list_foreach (modules, it, m) {
 		RDebugMap *mod = R_NEW0 (RDebugMap);
-		if (!mod) {
-			r_list_free (modules);
-			r_list_free (ret);
-			return NULL;
-		}
-		mod->file = m->name;
+		mod->file = strdup (m->name? m->name: "");
 		mod->size = m->size;
 		mod->addr = m->addr;
 		mod->addr_end = m->addr + m->size;

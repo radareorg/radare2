@@ -95,7 +95,7 @@ int winkd_get_cpus(WindCtx *ctx) {
 }
 
 bool winkd_set_cpu(WindCtx *ctx, int cpu) {
-	if (!ctx || cpu > ctx->cpu_count) {
+	if (!ctx || cpu < 0 || cpu >= ctx->cpu_count) {
 		return false;
 	}
 	ctx->cpu = cpu;
@@ -344,13 +344,17 @@ RList *winkd_list_process(WindCtx *ctx) {
 
 	ptr = 0;
 	// Grab the PsActiveProcessHead from _KDDEBUGGER_DATA64
-	winkd_read_at (ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_PsActiveProcessHead, ctx->ptr_size);
+	if (winkd_read_at (ctx, (uint8_t *)&ptr, ctx->dbg_addr + K_PsActiveProcessHead, ctx->ptr_size) != ctx->ptr_size) {
+		return NULL;
+	}
 
 	base = ptr;
 	WIND_DBG eprintf ("Process list head : 0x%016" PFMT64x "\n", ptr);
 
 	// Walk the LIST_ENTRY
-	winkd_read_at (ctx, (uint8_t *)&ptr, ptr, ctx->ptr_size);
+	if (winkd_read_at (ctx, (uint8_t *)&ptr, ptr, ctx->ptr_size) != ctx->ptr_size) {
+		return NULL;
+	}
 
 	// Check for empty list
 	if (ptr == 0) {
@@ -358,16 +362,21 @@ RList *winkd_list_process(WindCtx *ctx) {
 	}
 	ret = r_list_newf (free);
 
+	int guard = 0;
 	do {
 		uint8_t buf[17];
-		ut64 next;
+		ut64 next = 0;
 
-		next = 0;
 		// Read the ActiveProcessLinks entry
-		winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
+		if (winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size) != ctx->ptr_size) {
+			break;
+		}
 
 		// This points to the 'ActiveProcessLinks' list, adjust the ptr so that it point to the
 		// EPROCESS base
+		if (ptr < O_(E_ActiveProcessLinks)) {
+			break;
+		}
 		ptr -= O_(E_ActiveProcessLinks);
 
 		// Read the short name
@@ -384,9 +393,8 @@ RList *winkd_list_process(WindCtx *ctx) {
 		winkd_read_at (ctx, (uint8_t *)&peb, ptr + O_(E_Peb), ctx->ptr_size);
 		winkd_read_at (ctx, (uint8_t *)&dir_base_table, ptr + O_(P_DirectoryTableBase), ctx->ptr_size);
 
-		WindProc *proc = calloc (1, sizeof (WindProc));
-
-		strcpy (proc->name, (const char *)buf);
+		WindProc *proc = R_NEW0 (WindProc);
+		r_str_ncpy (proc->name, (const char *)buf, sizeof (proc->name));
 		proc->eprocess = ptr;
 		proc->vadroot = vadroot;
 		proc->uniqueid = uniqueid;
@@ -395,8 +403,11 @@ RList *winkd_list_process(WindCtx *ctx) {
 
 		r_list_append (ret, proc);
 
-		// winkd_walk_vadtree (ctx, vadroot, -1);
 		ptr = next;
+		if (++guard > 65536) {
+			R_LOG_WARN ("process list walk exceeded guard, aborting");
+			break;
+		}
 	} while (ptr != base);
 
 	ctx->plist_cache = ret;
@@ -440,6 +451,14 @@ int winkd_read_at_uva(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
 	return totread;
 }
 
+static void wind_module_free(void *p) {
+	WindModule *m = p;
+	if (m) {
+		free (m->name);
+		free (m);
+	}
+}
+
 RList *winkd_list_modules(WindCtx *ctx) {
 	RList *ret;
 	ut64 ptr, base;
@@ -462,7 +481,9 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	ut64 ldroff = ctx->is_x64? 0x18: 0xC;
 
 	// Grab the _PEB_LDR_DATA from PEB
-	winkd_read_at_uva (ctx, (uint8_t *)&ptr, ctx->target->peb + ldroff, ctx->ptr_size);
+	if (winkd_read_at_uva (ctx, (uint8_t *)&ptr, ctx->target->peb + ldroff, ctx->ptr_size) != ctx->ptr_size) {
+		return NULL;
+	}
 
 	WIND_DBG eprintf ("_PEB_LDR_DATA : 0x%016" PFMT64x "\n", ptr);
 
@@ -471,11 +492,13 @@ RList *winkd_list_modules(WindCtx *ctx) {
 
 	base = ptr + mlistoff;
 
-	winkd_read_at_uva (ctx, (uint8_t *)&ptr, base, ctx->ptr_size);
+	if (winkd_read_at_uva (ctx, (uint8_t *)&ptr, base, ctx->ptr_size) != ctx->ptr_size) {
+		return NULL;
+	}
 
 	WIND_DBG eprintf ("InMemoryOrderModuleList : 0x%016" PFMT64x "\n", ptr);
 
-	ret = r_list_newf (free);
+	ret = r_list_newf (wind_module_free);
 
 	const ut64 baseoff = ctx->is_x64? 0x30: 0x18;
 	const ut64 sizeoff = ctx->is_x64? 0x40: 0x20;
@@ -484,7 +507,9 @@ RList *winkd_list_modules(WindCtx *ctx) {
 	do {
 
 		ut64 next = 0;
-		winkd_read_at_uva (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
+		if (winkd_read_at_uva (ctx, (uint8_t *)&next, ptr, ctx->ptr_size) != ctx->ptr_size) {
+			break;
+		}
 		WIND_DBG eprintf ("_LDR_DATA_TABLE_ENTRY : 0x%016" PFMT64x "\n", next);
 
 		if (!next) {
@@ -495,37 +520,41 @@ RList *winkd_list_modules(WindCtx *ctx) {
 		ptr -= ctx->ptr_size * 2;
 
 		WindModule *mod = R_NEW0 (WindModule);
-		if (!mod) {
-			break;
-		}
 		winkd_read_at_uva (ctx, (uint8_t *)&mod->addr, ptr + baseoff, ctx->ptr_size);
 		winkd_read_at_uva (ctx, (uint8_t *)&mod->size, ptr + sizeoff, ctx->ptr_size);
 
 		ut16 length = 0;
 		winkd_read_at_uva (ctx, (uint8_t *)&length, ptr + nameoff, sizeof (ut16));
-		if (!length) {
-			free (mod);
+		// Cap at a sane upper bound; LDR entry unicode names are <= 520 bytes in practice.
+		if (!length || length > 4096) {
+			wind_module_free (mod);
 			break;
 		}
 
 		ut64 bufferaddr = 0;
 		winkd_read_at_uva (ctx, (uint8_t *)&bufferaddr, ptr + nameoff + sizeof (ut32), ctx->ptr_size);
 
-		wchar_t *unname = calloc ((ut64)length + 2, 1);
+		ut8 *unname = calloc (length, 1);
 		if (!unname) {
-			free (mod);
+			wind_module_free (mod);
 			break;
 		}
 
-		winkd_read_at_uva (ctx, (uint8_t *)unname, bufferaddr, length);
+		if (winkd_read_at_uva (ctx, unname, bufferaddr, length) != length) {
+			free (unname);
+			wind_module_free (mod);
+			break;
+		}
 
-		mod->name = calloc ((ut64)length + 1, 1);
+		// UTF-16LE -> UTF-8. Worst case is 3 UTF-8 bytes per UTF-16 code unit plus NUL.
+		const int utf8sz = (int)length * 3 + 1;
+		mod->name = calloc (utf8sz, 1);
 		if (!mod->name) {
 			free (unname);
-			free (mod);
+			wind_module_free (mod);
 			break;
 		}
-		wcstombs (mod->name, unname, length);
+		r_str_utf16_to_utf8 ((ut8 *)mod->name, utf8sz, unname, length, true);
 		free (unname);
 		ptr = next;
 
@@ -560,7 +589,9 @@ RList *winkd_list_threads(WindCtx *ctx) {
 	}
 
 	// Grab the ThreadListHead from _EPROCESS
-	winkd_read_at (ctx, (uint8_t *)&ptr, ptr + O_(E_ThreadListHead), ctx->ptr_size);
+	if (winkd_read_at (ctx, (uint8_t *)&ptr, ptr + O_(E_ThreadListHead), ctx->ptr_size) != ctx->ptr_size) {
+		return NULL;
+	}
 	if (!ptr) {
 		return NULL;
 	}
@@ -569,16 +600,22 @@ RList *winkd_list_threads(WindCtx *ctx) {
 
 	ret = r_list_newf (free);
 
+	int guard = 0;
 	do {
 		ut64 next = 0;
 
-		winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size);
+		if (winkd_read_at (ctx, (uint8_t *)&next, ptr, ctx->ptr_size) != ctx->ptr_size) {
+			break;
+		}
 		if (!next) {
 			eprintf ("Corrupted ThreadListEntry found at: 0x%" PFMT64x "\n", ptr);
 			break;
 		}
 
 		// Adjust the ptr so that it points to the ETHREAD base
+		if (ptr < O_(ET_ThreadListEntry)) {
+			break;
+		}
 		ptr -= O_(ET_ThreadListEntry);
 
 		ut64 entrypoint = 0;
@@ -598,6 +635,10 @@ RList *winkd_list_threads(WindCtx *ctx) {
 		}
 
 		ptr = next;
+		if (++guard > 65536) {
+			R_LOG_WARN ("thread list walk exceeded guard, aborting");
+			break;
+		}
 	} while (ptr != base);
 
 	ctx->tlist_cache = ret;
@@ -879,21 +920,20 @@ end:
 	return ret;
 }
 
-int winkd_continue(WindCtx *ctx) {
-	kd_req_t req = {
-		0
-	};
+static int winkd_continue_ex(WindCtx *ctx, bool trace) {
+	kd_req_t req = { 0 };
 	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
 	}
-	req.req = DbgKdContinueApi;
+	// DbgKdContinueApi2 understands DBGKD_CONTINUE2 (ContinueStatus + X86_DBGKD_CONTROL_SET).
+	// TraceFlag = 1 single-steps the target, 0 resumes normally.
+	req.req = DbgKdContinueApi2;
 	req.cpu = ctx->cpu;
 	req.r_cont.reason = 0x10001;
-	// The meaning of 0x400 is unknown, but Windows doesn't
-	// behave like suggested by ReactOS source
-	req.r_cont.tf = 0x400;
+	req.r_cont.tf = trace? 1: 0;
+	req.r_cont.dr7 = 0;
 
 	winkd_lock_enter (ctx);
 
@@ -912,6 +952,14 @@ int winkd_continue(WindCtx *ctx) {
 end:
 	winkd_lock_leave (ctx);
 	return ret;
+}
+
+int winkd_continue(WindCtx *ctx) {
+	return winkd_continue_ex (ctx, false);
+}
+
+int winkd_step(WindCtx *ctx) {
+	return winkd_continue_ex (ctx, true);
 }
 
 bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
@@ -1190,14 +1238,11 @@ error:
 	return 0;
 }
 
-int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
+static int read_at_virt_once(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
 	kd_req_t *rr, req = { 0 };
 	kd_packet_t *pkt;
 	int ret;
 
-	if (!ctx || !ctx->desc || !ctx->syncd) {
-		return 0;
-	}
 	req.req = DbgKdReadVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.r_mem.addr = offset;
@@ -1243,19 +1288,27 @@ error:
 	return 0;
 }
 
-int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
-	kd_packet_t *pkt;
-	kd_req_t req = {
-		0
-	},
-		*rr;
-	int payload, ret;
-
-	if (!ctx || !ctx->desc || !ctx->syncd) {
+int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count) {
+	if (!ctx || !ctx->desc || !ctx->syncd || count < 0) {
 		return 0;
 	}
+	int totread = 0;
+	while (totread < count) {
+		int n = read_at_virt_once (ctx, buf + totread, offset + totread, count - totread);
+		if (n <= 0) {
+			break;
+		}
+		totread += n;
+	}
+	return totread;
+}
 
-	payload = R_MIN (count, KD_MAX_PAYLOAD - sizeof (kd_req_t));
+static int write_at_virt_once(WindCtx *ctx, const uint8_t *buf, ut64 offset, int count) {
+	kd_packet_t *pkt;
+	kd_req_t req = { 0 }, *rr;
+	int payload, ret;
+
+	payload = R_MIN (count, (int)(KD_MAX_PAYLOAD - sizeof (kd_req_t)));
 	req.req = DbgKdWriteVirtualMemoryApi;
 	req.cpu = ctx->cpu;
 	req.r_mem.addr = offset;
@@ -1293,6 +1346,21 @@ int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const in
 error:
 	winkd_lock_leave (ctx);
 	return 0;
+}
+
+int winkd_write_at(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
+	if (!ctx || !ctx->desc || !ctx->syncd || count < 0) {
+		return 0;
+	}
+	int totwritten = 0;
+	while (totwritten < count) {
+		int n = write_at_virt_once (ctx, buf + totwritten, offset + totwritten, count - totwritten);
+		if (n <= 0) {
+			break;
+		}
+		totwritten += n;
+	}
+	return totwritten;
 }
 
 int winkd_write_at_phys(WindCtx *ctx, const uint8_t *buf, const ut64 offset, const int count) {
