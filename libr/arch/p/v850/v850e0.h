@@ -161,9 +161,9 @@ enum v850_sysregs {
 
 enum v850_flags {
 	V850_FLAG_CY = 1,
-	V850_FLAG_OV,
-	V850_FLAG_S,
-	V850_FLAG_Z,
+	V850_FLAG_OV = 2,
+	V850_FLAG_S = 4,
+	V850_FLAG_Z = 8,
 };
 
 struct v850_cmd {

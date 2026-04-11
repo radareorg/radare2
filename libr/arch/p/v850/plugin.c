@@ -1,6 +1,5 @@
-/* radare - MIT - Copyright 2021-2023 - pancake, brainstorm, condret */
+/* radare - MIT - Copyright 2021-2026 - pancake, brainstorm, condret */
 
-#include <r_lib.h>
 #include <r_anal.h>
 #include "v850dis.h"
 #include "v850e0.h"
@@ -30,8 +29,12 @@
 
 // Format V
 #define F5_REG2(instr) F1_REG2(instr)
-#define F5_DISP(instr) ((((ut32)(instr) & 0xffff) << 31) | (((ut32)(instr) & 0xffff0000) << 1))
 #define F5_RN2(instr) (V850_REG_NAMES[F5_REG2(instr)])
+
+static inline st32 f5_disp22(ut16 word1, ut16 word2) {
+	const ut32 ret = (word2 & 0xfffe) | ((ut32)(word1 & 0x3f) << 16);
+	return (st32)((ret ^ 0x200000) - 0x200000);
+}
 
 // Format VI
 #define F6_REG1(instr) F1_REG1(instr)
@@ -180,7 +183,7 @@ static char *get_sysreg(ut32 regid) {
 
 static void update_flags(RAnalOp *op, int flags) {
 	if (flags & V850_FLAG_CY) {
-		r_strbuf_append (&op->esil, "31,$c,cy,:=");
+		r_strbuf_append (&op->esil, ",31,$c,cy,:=");
 	}
 	if (flags & V850_FLAG_OV) {
 		r_strbuf_append (&op->esil, ",31,$o,ov,:=");
@@ -376,14 +379,14 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 	case V850_JARL2:
 		// JARL disp22, reg2 - saves return address in reg2, jumps to PC+disp
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
+		op->jump = addr + f5_disp22 (word1, word2);
 		op->fail = addr + 4;
 		r_strbuf_appendf (&op->esil, "pc,%s,:=,0x%"PFMT64x",pc,:=", F5_RN2 (word1), op->jump);
 		break;
 	case V850_JARL1:
 		// JARL disp22, reg2 - saves return address in reg2, jumps to PC+disp
 		op->type = R_ANAL_OP_TYPE_CALL;
-		op->jump = addr + F5_DISP (((ut32)word2 << 16) | word1);
+		op->jump = addr + f5_disp22 (word1, word2);
 		op->fail = addr + 4;
 		r_strbuf_appendf (&op->esil, "pc,lp,:=,0x%"PFMT64x",pc,:=", op->jump);
 		break;
@@ -574,7 +577,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			case V850_BIT_CLR1:
 				bitmask = (1 << F8_BIT(word1));
 				r_strbuf_appendf (&op->esil,
-					"0%x,%s,+,0xffffffff,&,[1],DUP,0x%x,&,!,z,:=,0x%x,&,0x%x,%s,+,0xffffffff,&,=[1]",
+					"0x%x,%s,+,0xffffffff,&,[1],DUP,0x%x,&,!,z,:=,0x%x,&,0x%x,%s,+,0xffffffff,&,=[1]",
 					SEXT_IMM16_32 (word2), F8_RN1 (word1), bitmask,
 					bitmask ^ 0xff, SEXT_IMM16_32 (word2), F8_RN1 (word1));
 				break;
@@ -707,8 +710,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 // static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int cpumodel = cpumodel_from_string (as->config->cpu);
 	if (cpumodel == V850_CPU_E0) {
-		//  RAnal *anal = ((RCore*)(as->user))->anal;
-		return v850e0_op (as, op, op->addr, buf, len, mask);
+		return v850e0_op (as, op, op->addr, buf, len, mask) > 0;
 	}
 #if 0
 	cpumodel |= V850_CPU_OPTION_ALIAS;
@@ -775,7 +777,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	} else {
 		free (inst.text);
 	}
-	return inst.size;
+	return inst.size > 0;
 }
 
 static char *regs(RArchSession *s) {
@@ -899,14 +901,12 @@ static int archinfo(RArchSession *as, ut32 q) {
 }
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
-	R_RETURN_VAL_IF_FAIL (s && op, false);
-	const char *str = op->mnemonic;
-	if (!strcmp (str, "nop")) {
+	R_RETURN_VAL_IF_FAIL (s && op && op->mnemonic, false);
+	if (!strcmp (op->mnemonic, "nop")) {
 		r_anal_op_set_bytes (op, op->addr, (const ut8* const)"\x00\x00", 2);
-		// memset (op->bytes, 0, R_MIN (op->size, 2));
-		return 2;
+		return true;
 	}
-	return 0;
+	return false;
 }
 
 const RArchPlugin r_arch_plugin_v850 = {
