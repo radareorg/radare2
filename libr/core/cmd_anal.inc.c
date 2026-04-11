@@ -34,7 +34,6 @@ static RCoreHelpMessage help_msg_a = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
-	"aC", "[?]", "analyze function call",
 	"ad", "[?]", "analyze data trampoline (wip) (see 'aod' to describe mnemonics)", // XXX rename to at?
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",
@@ -154,13 +153,6 @@ static RCoreHelpMessage help_msg_avg = {
 	"avg", "", "list global variables",
 	"avg", " [type] [name]", "add global variable with given type and name",
 	"avg-", "", "delete global",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_aC = {
-	"Usage:", "aC[fej] [addr-of-call]", " # analyze call args",
-	"aCe", "", "use ESIL emulation to find out arguments of a call (uses 'abpe')",
-	"aCf", "", "same as .aCe* $$ @@=`pdr~call`",
 	NULL
 };
 
@@ -15491,170 +15483,6 @@ static void cmd_anal_classes(RCore *core, const char *input) {
 	}
 }
 
-static void show_reg_args(RCore *core, int nargs, RStrBuf *sb) {
-	int i;
-	char regname[16];
-	if (nargs < 0) {
-		nargs = 4; // default args if not defined
-	}
-	for (i = 0; i < nargs; i++) {
-		snprintf (regname, sizeof (regname), "A%d", i);
-		ut64 v = r_reg_getv (core->anal->reg, regname);
-		if (sb) {
-			r_strbuf_appendf (sb, "%s0x%08"PFMT64x, i? ", ": "", v);
-		} else {
-			r_cons_printf (core->cons, "A%d 0x%08"PFMT64x"\n", i, v);
-		}
-	}
-}
-
-// ripped from disasm.c: dupe code from there
-// TODO: Implement aC* and aCj
-static void cmd_anal_aC(RCore *core, const char *input) {
-	bool is_aCer = false;
-	const char *cc = r_anal_cc_default (core->anal);
-	RAnalFuncArg *arg;
-	RListIter *iter;
-	RListIter *nextele;
-	const char *iarg = strchr (input, ' ');
-	if (input[0] == 'e' && input[1] == 'f') { // "aCf"
-		// hacky :D
-		r_core_cmdf (core, ".aCe* $$ @@=`pdr~call`");
-		return;
-	}
-	if (iarg) {
-		iarg++;
-	}
-	if (!iarg) {
-		r_core_cmd_help (core, help_msg_aC);
-		return;
-	}
-	RStrBuf *sb = r_strbuf_new ("");
-	ut64 pcv = r_num_math (core->num, iarg);
-	if (input[0] == 'e') { // "aCe"
-		is_aCer = (input[1] == '*');
-		r_core_cmdf (core, "abpe 0x%08"PFMT64x, pcv);
-	}
-	RAnalOp* op = r_core_anal_op (core, pcv, -1);
-	if (!op) {
-		r_strbuf_free (sb);
-		return;
-	}
-	bool go_on = true;
-	if (op->type != R_ANAL_OP_TYPE_CALL) {
-		show_reg_args (core, -1, sb);
-		go_on = false;
-	}
-	const char *fcn_name = NULL;
-	RAnalFunction *fcn;
-	if (go_on) {
-		fcn = r_anal_get_function_at (core->anal, pcv);
-		if (fcn) {
-			fcn_name = fcn->name;
-		} else {
-			RFlagItem *item = r_flag_get_in (core->flags, op->jump);
-			if (item) {
-				fcn_name = item->name;
-			}
-		}
-		char *key = fcn_name? r_type_func_name (core->anal->sdb_types, fcn_name): NULL;
-		if (key) {
-			const char *fcn_type = r_type_func_ret (core->anal->sdb_types, key);
-			int nargs = r_type_func_args_count (core->anal->sdb_types, key);
-			// remove other comments
-			if (fcn_type) {
-				r_strbuf_appendf (sb, "%s%s%s(", r_str_getf (fcn_type),
-						(*fcn_type && fcn_type[strlen (fcn_type) - 1] == '*') ? "" : " ",
-						r_str_getf (key));
-				if (!nargs) {
-					r_strbuf_append (sb, "void)\n");
-				}
-			} else {
-				R_LOG_ERROR ("Cannot find any function signature");
-			}
-			free (key);
-		} else {
-			if (is_aCer) {
-				show_reg_args (core, -1, sb);
-				go_on = true;
-			} else {
-				show_reg_args (core, -1, NULL);
-				go_on = false;
-			}
-		}
-	}
-	if (go_on) {
-		int s_width = (core->anal->config->bits == 64)? 8: 4;
-		ut64 spv = r_reg_getv (core->anal->reg, "SP");
-		r_reg_setv (core->anal->reg, "SP", spv + s_width); // temporarily set stack ptr to sync with carg.c
-		RList *list = r_core_get_func_args (core, fcn_name);
-		if (!r_list_empty (list)) {
-			bool on_stack = false;
-			r_list_foreach (list, iter, arg) {
-				if (r_str_startswith (arg->cc_source, "stack")) {
-					on_stack = true;
-				}
-				if (!arg->size) {
-					r_strbuf_appendf (sb, "%s: unk_size", arg->c_type);
-				}
-			}
-			r_list_foreach (list, iter, arg) {
-				nextele = r_list_iter_get_next (iter);
-				if (!arg->fmt) {
-					r_strbuf_appendf (sb, "?%s", nextele? ", ": "");
-				} else {
-					char *argstr = print_fcn_arg (core, arg->orig_c_type, arg->name, arg->fmt, arg->src, on_stack, 0);
-					if (R_STR_ISNOTEMPTY (argstr)) {
-						r_strbuf_appendf (sb, "%s", argstr);
-					} else {
-						// const char *fmt = arg->orig_c_type;
-						ut64 addr = arg->src;
-						char *res = r_core_cmd_strf (core, "pfq %s @ 0x%08" PFMT64x, arg->fmt, addr);
-						// r_cons_printf (core->cons, "pfq *%s @ 0x%08" PFMT64x"\n", arg->fmt, addr);
-						r_str_trim (res);
-						r_strbuf_appendf (sb, "%s", res);
-						free (res);
-					}
-					free (argstr);
-				}
-			}
-			r_strbuf_append (sb, ")");
-		} else {
-			// function name not resolved
-			int i, nargs = DEFAULT_NARGS;
-			if (fcn) {
-				// @TODO: fcn->nargs should be updated somewhere and used here instead
-				nargs = r_anal_var_count_args (fcn);
-			}
-			if (nargs > 0) {
-				if (fcn_name) {
-					r_strbuf_appendf (sb, "; %s(", fcn_name);
-				} else {
-					r_strbuf_appendf (sb, "; 0x%"PFMT64x"(", pcv);
-				}
-				for (i = 0; i < nargs; i++) {
-					ut64 v = r_debug_arg_get (core->dbg, cc, i);
-					r_strbuf_appendf (sb, "%s0x%"PFMT64x, i?", ":"", v);
-				}
-				r_strbuf_append (sb, ")");
-			}
-		}
-		r_list_free (list);
-		r_reg_setv (core->anal->reg, "SP", spv); // reset stack ptr
-	}
-	r_anal_op_free (op);
-	char *s = r_strbuf_drain (sb);
-	if (is_aCer) {
-		char *u = (char *)r_base64_encode_dyn ((const ut8 *)s, -1);
-		if (u) {
-			r_cons_printf (core->cons, "'CCu base64:%s\n", u);
-			free (u);
-		}
-	} else {
-		r_cons_println (core->cons, s);
-	}
-	free (s);
-}
 
 static bool core_anal_abf(RCore *core, const char* input) {
 	if (strchr (input, '?')) {
@@ -16226,9 +16054,6 @@ static int cmd_anal(void *data, const char *input) {
 		break;
 	case 'c': // "ac"
 		cmd_anal_classes (core, input + 1);
-		break;
-	case 'C': // "aC"
-		cmd_anal_aC (core, input + 1);
 		break;
 	case 'i': // "ai"
 	       	cmd_anal_info (core, input + 1);
