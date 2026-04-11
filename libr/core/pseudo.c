@@ -328,16 +328,39 @@ static void print_pipe_header(PDCState *state, ut64 addr) {
 	print_str (state, " | ");
 }
 
-static void print_newline(PDCState *state, ut64 addr, int indent) {
+static void prepare_indentstr(PDCState *state, int indent) {
 	const size_t isz = sizeof (state->indentstr);
 	size_t pos = R_MIN (isz - 1, (size_t) R_MAX (indent, 0) * 4);
 	memset (state->indentstr, ' ', isz);
 	state->indentstr[pos] = '\0';
+}
 
+static void print_newline(PDCState *state, ut64 addr, int indent) {
+	prepare_indentstr (state, indent);
 	RStrBuf *sb = state_sb (state);
 	r_strbuf_append (sb, "\n");
 	if (state->show_asm) {
-		asm_append (sb, state->core, addr, "");
+		asm_append (sb, state->core, addr, " ");
+		r_strbuf_append (sb, " | ");
+		r_strbuf_append (sb, state->indentstr);
+	} else if (state->show_addr) {
+		const char *lead = state->pj? "": " ";
+		r_strbuf_appendf (sb, "%s0x%08" PFMT64x " | %s", lead, addr, state->indentstr);
+	} else {
+		r_strbuf_append (sb, state->indentstr);
+	}
+}
+
+// Emits a fresh line whose asm column is empty (for synthetic lines like
+// goto/return/labels/braces that have no real instruction to show).
+static void print_newline_synthetic(PDCState *state, ut64 addr, int indent) {
+	prepare_indentstr (state, indent);
+	RStrBuf *sb = state_sb (state);
+	r_strbuf_append (sb, "\n");
+	if (state->show_asm) {
+		r_strbuf_appendf (sb, " 0x%08" PFMT64x " | ", addr);
+		r_strbuf_pad (sb, ' ', 30);
+		r_strbuf_append (sb, " | ");
 		r_strbuf_append (sb, state->indentstr);
 	} else if (state->show_addr) {
 		const char *lead = state->pj? "": " ";
@@ -412,10 +435,7 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr), "1", 0);
 
 	if (dst_addr != bb->addr) {
-		print_newline (state, curr_addr, indent);
-		if (state->show_asm) {
-			print_pipe_header (state, bb->addr);
-		}
+		print_newline_synthetic (state, bb->addr, indent);
 		print_goto_or_return (state, dst_addr, " ");
 	}
 }
@@ -428,10 +448,7 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 	const char *key = r_strf ("%" PFMT64x ".addr", curr_addr);
 	if (!sdb_exists (state->goto_cache, key)) {
 		sdb_set (state->goto_cache, key, "1", 0);
-		print_newline (state, curr_addr, indent);
-		if (state->show_asm) {
-			print_pipe_header (state, bb->addr);
-		}
+		print_newline_synthetic (state, bb->addr, indent);
 		print_goto_or_return (state, dst_addr, "");
 	}
 }
@@ -518,13 +535,7 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 		}
 		if (R_STR_ISNOTEMPTY (line)) {
 			print_newline (state, addr, indent);
-			if (state->show_asm) {
-				RStrBuf *sb = state_sb (state);
-				asm_append (sb, state->core, addr, " ");
-				r_strbuf_appendf (sb, " | %s", line);
-			} else {
-				print_str (state, "%s", line);
-			}
+			print_str (state, "%s", line);
 		}
 	}
 	r_list_free (lines);
@@ -896,10 +907,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					queuegoto = 0LL;
 				}
 				if (bb_addr_is_goto_target (state.fcn, bb->addr)) {
-					NEWLINE (bb->addr, indent - 1);
-					if (state.show_asm) {
-						print_pipe_header (&state, bb->addr);
-					}
+					print_newline_synthetic (&state, bb->addr, indent - 1);
 					PRINTF ("loc_0x%08" PFMT64x ":", bb->addr);
 				}
 				addr = emit_code_lines (&state, code, bb->addr, indent, true);
@@ -926,10 +934,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (addr == UT64_MAX) {
 				closed = true;
 				if (!bb_ends_in_tail_jmp (core, bb)) {
-					NEWLINE (bb->addr, indent);
-					if (state.show_asm) {
-						print_pipe_header (&state, bb->addr);
-					}
+					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
 				}
@@ -1115,20 +1120,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			r_strbuf_append (state.codestr, s);
 		}
 		if (codelen > 0) {
-			if (state.show_asm) {
-				asm_append (state.codestr, core, bb->addr, "\n ");
-				r_strbuf_append (state.codestr, state.indentstr);
-			} else if (state.show_addr) {
+			if (state.show_addr && !state.show_asm) {
 				r_strbuf_appendf (state.out, "\n 0x%08" PFMT64x " | ", bb->addr);
-			} else {
+			} else if (!state.show_asm) {
 				NEWLINE (bb->addr, 1);
 			}
 			RFlagItem *fi = r_flag_get_in (core->flags, bb->addr);
-			if (state.show_asm) {
-				r_strbuf_appendf (state.codestr, "\n0x%08" PFMT64x " | ", bb->addr);
-				r_strbuf_pad (state.codestr, ' ', 30);
-				r_strbuf_append (state.codestr, " | ");
-			}
 			if (bb_addr_is_goto_target (state.fcn, bb->addr)) {
 				char tagbuf[32];
 				const char *tag = "orphan";
@@ -1150,18 +1147,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (bb->jump == UT64_MAX) {
 				if (!bb_ends_in_tail_jmp (core, bb)) {
-					NEWLINE (bb->addr, indent);
-					if (state.show_asm) {
-						PRINTF (" 0x%08" PFMT64x " | ret", bb->addr);
-						r_strbuf_pad (state_sb (&state), ' ', 30 - 3);
-						PRINTF (" | ");
-					}
+					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
-					if (state.show_asm) {
-						PRINTF ("\n");
-						print_pipe_header (&state, bb->addr);
-					}
 				}
 			} else {
 				PRINTGOTO (nextbbaddr, bb->jump);
@@ -1171,10 +1159,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	r_list_free (visited);
 	indent = 0;
-	NEWLINE (addr, indent);
 	if (state.show_asm && bb) {
-		PRINTF ("\n");
-		print_pipe_header (&state, bb->addr);
+		print_newline_synthetic (&state, bb->addr, indent);
+	} else {
+		NEWLINE (addr, indent);
 	}
 	PRINTF ("}\n");
 	r_config_hold_restore (hc);
