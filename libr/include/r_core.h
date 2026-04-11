@@ -1060,6 +1060,7 @@ extern RCorePlugin r_core_plugin_java;
 extern RCorePlugin r_core_plugin_prj;
 extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
+extern RCorePlugin r_core_plugin_callargs;
 
 R_API bool r_core_plugin_init(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
