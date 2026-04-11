@@ -97,14 +97,12 @@ static void strip_addr_tail(char *name) {
 		if (!p || p == name) {
 			return;
 		}
-		const char *h;
-		size_t n = 0;
-		for (h = p + 1; *h; h++, n++) {
-			if (!isxdigit ((unsigned char)*h)) {
-				return;
-			}
+		const char *h = p + 1;
+		while (*h && IS_HEXCHAR (*h)) {
+			h++;
 		}
-		if (n < 3 || n > 16) {
+		size_t n = h - (p + 1);
+		if (*h || n < 3 || n > 16) {
 			return;
 		}
 		*p = 0;
@@ -120,7 +118,7 @@ static void cand_free(void *p) {
 }
 
 static void cand_add(RList *bag, const char *raw, int score) {
-	if (!raw || !*raw || score <= 0) {
+	if (R_STR_ISEMPTY (raw) || score <= 0) {
 		return;
 	}
 	const char *base = strip_prefix (raw);
@@ -146,10 +144,6 @@ static void cand_add(RList *bag, const char *raw, int score) {
 		}
 	}
 	c = R_NEW0 (ANCand);
-	if (!c) {
-		free (name);
-		return;
-	}
 	c->name = name;
 	c->score = score;
 	r_list_append (bag, c);
@@ -168,7 +162,7 @@ static int cand_cmp(const void *a, const void *b) {
  * Detects __func__-style tags ("name:", "name()", "... name failed"),
  * pure identifiers, and the first identifier-like token as fallback. */
 static void digest_string(const char *s, RList *bag) {
-	if (!s || !*s) {
+	if (R_STR_ISEMPTY (s)) {
 		return;
 	}
 	while (*s == ' ' || *s == '\t') {
@@ -212,78 +206,86 @@ static void digest_string(const char *s, RList *bag) {
 	}
 }
 
-/* Pull candidates from everything the function references or is referenced by. */
-static void collect(RAnal *a, RAnalFunction *fcn, RList *bag) {
+static bool is_anonymous_name(const char *n) {
+	return r_str_startswith (n, "fcn.")
+		|| r_str_startswith (n, "sym.func.")
+		|| r_str_startswith (n, "sub.")
+		|| r_str_startswith (n, "auto.sub.");
+}
+
+/* Pull candidates from outgoing refs: callees (flags) and string literals. */
+static void collect_refs(RAnal *a, RAnalFunction *fcn, RList *bag) {
 	RVecAnalRef *refs = r_anal_function_get_refs (fcn);
-	if (refs) {
-		int n_call = 0, n_sym = 0;
-		const char *sole_call = NULL, *sole_sym = NULL;
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			const int t = ref->type & R_ANAL_REF_TYPE_MASK;
-			RFlagItem *f = a->flb.get_at
-				? a->flb.get_at (a->flb.f, ref->addr, false) : NULL;
-			if (t == R_ANAL_REF_TYPE_CALL || t == R_ANAL_REF_TYPE_ICOD
-				|| t == R_ANAL_REF_TYPE_CODE || t == R_ANAL_REF_TYPE_JUMP) {
-				if (f && !blacklisted (f->name)) {
-					cand_add (bag, f->name, W_CALLEE);
-					n_call++;
-					sole_call = f->name;
-					if (r_str_startswith (f->name, "sym.")) {
-						n_sym++;
-						sole_sym = f->name;
-					}
+	if (!refs) {
+		return;
+	}
+	int n_call = 0, n_sym = 0;
+	const char *sole_call = NULL, *sole_sym = NULL;
+	RAnalRef *ref;
+	R_VEC_FOREACH (refs, ref) {
+		const int t = ref->type & R_ANAL_REF_TYPE_MASK;
+		RFlagItem *f = a->flb.get_at (a->flb.f, ref->addr, false);
+		if (t == R_ANAL_REF_TYPE_CALL || t == R_ANAL_REF_TYPE_ICOD
+			|| t == R_ANAL_REF_TYPE_CODE || t == R_ANAL_REF_TYPE_JUMP) {
+			if (f && !blacklisted (f->name)) {
+				cand_add (bag, f->name, W_CALLEE);
+				n_call++;
+				sole_call = f->name;
+				if (r_str_startswith (f->name, "sym.")) {
+					n_sym++;
+					sole_sym = f->name;
 				}
-			} else if (t == R_ANAL_REF_TYPE_DATA || t == R_ANAL_REF_TYPE_STRN) {
-				const char *s = r_meta_get_string (a, R_META_TYPE_STRING, ref->addr);
-				if (s) {
-					digest_string (s, bag);
-				} else if (f && !blacklisted (f->name)) {
-					/* obj.* / sym.* data symbols: solid hints */
-					if (r_str_startswith (f->name, "obj.")
-						|| r_str_startswith (f->name, "sym.")
-						|| r_str_startswith (f->name, "reloc.")) {
-						cand_add (bag, f->name, W_IDENT);
-					} else if (r_str_startswith (f->name, "str.")) {
-						cand_add (bag, f->name + 4, W_TOKEN);
-					}
+			}
+		} else if (t == R_ANAL_REF_TYPE_DATA || t == R_ANAL_REF_TYPE_STRN) {
+			const char *s = r_meta_get_string (a, R_META_TYPE_STRING, ref->addr);
+			if (s) {
+				digest_string (s, bag);
+			} else if (f && !blacklisted (f->name)) {
+				/* obj.* / sym.* data symbols: solid hints */
+				if (r_str_startswith (f->name, "obj.")
+					|| r_str_startswith (f->name, "sym.")
+					|| r_str_startswith (f->name, "reloc.")) {
+					cand_add (bag, f->name, W_IDENT);
+				} else if (r_str_startswith (f->name, "str.")) {
+					cand_add (bag, f->name + 4, W_TOKEN);
 				}
 			}
 		}
-		if (n_call == 1 && sole_call) {
-			cand_add (bag, sole_call, W_SOLECALL);
-		}
-		if (n_sym == 1 && sole_sym) {
-			cand_add (bag, sole_sym, W_SYMIMP);
-		}
-		RVecAnalRef_free (refs);
 	}
+	if (n_call == 1 && sole_call) {
+		cand_add (bag, sole_call, W_SOLECALL);
+	}
+	if (n_sym == 1 && sole_sym) {
+		cand_add (bag, sole_sym, W_SYMIMP);
+	}
+	RVecAnalRef_free (refs);
+}
+
+/* Pull candidates from incoming xrefs: a single named caller is a strong hint. */
+static void collect_xrefs(RAnal *a, RAnalFunction *fcn, RList *bag) {
 	RVecAnalRef *xrefs = r_anal_function_get_xrefs (fcn);
-	if (xrefs) {
-		int n = 0;
-		const char *sole = NULL;
-		RAnalRef *ref;
-		R_VEC_FOREACH (xrefs, ref) {
-			const int t = ref->type & R_ANAL_REF_TYPE_MASK;
-			if (t != R_ANAL_REF_TYPE_CALL && t != R_ANAL_REF_TYPE_ICOD) {
-				continue;
-			}
-			RAnalFunction *c = r_anal_get_fcn_in (a, ref->at, 0);
-			if (!c || !c->name
-				|| r_str_startswith (c->name, "fcn.")
-				|| r_str_startswith (c->name, "sym.func.")
-				|| r_str_startswith (c->name, "sub.")
-				|| r_str_startswith (c->name, "auto.sub.")) {
-				continue;
-			}
-			n++;
-			sole = c->name;
-		}
-		if (n == 1 && sole) {
-			cand_add (bag, sole, W_CALLER);
-		}
-		RVecAnalRef_free (xrefs);
+	if (!xrefs) {
+		return;
 	}
+	int n = 0;
+	const char *sole = NULL;
+	RAnalRef *ref;
+	R_VEC_FOREACH (xrefs, ref) {
+		const int t = ref->type & R_ANAL_REF_TYPE_MASK;
+		if (t != R_ANAL_REF_TYPE_CALL && t != R_ANAL_REF_TYPE_ICOD) {
+			continue;
+		}
+		RAnalFunction *c = r_anal_get_fcn_in (a, ref->at, 0);
+		if (!c || is_anonymous_name (c->name)) {
+			continue;
+		}
+		n++;
+		sole = c->name;
+	}
+	if (n == 1 && sole) {
+		cand_add (bag, sole, W_CALLER);
+	}
+	RVecAnalRef_free (xrefs);
 }
 
 static char *autoname_fcn(RAnal *anal, RAnalFunction *fcn, int mode) {
@@ -296,10 +298,8 @@ static char *autoname_fcn(RAnal *anal, RAnalFunction *fcn, int mode) {
 		return NULL;
 	}
 	RList *bag = r_list_newf (cand_free);
-	if (!bag) {
-		return NULL;
-	}
-	collect (anal, fcn, bag);
+	collect_refs (anal, fcn, bag);
+	collect_xrefs (anal, fcn, bag);
 	r_list_sort (bag, cand_cmp);
 
 	if (mode == 'l' || mode == 's') {
@@ -307,19 +307,14 @@ static char *autoname_fcn(RAnal *anal, RAnalFunction *fcn, int mode) {
 		RListIter *it;
 		ANCand *c;
 		r_list_foreach (bag, it, c) {
-			if (core && core->cons) {
-				r_cons_printf (core->cons, "%4d %s\n", c->score, c->name);
-			}
+			r_cons_printf (core->cons, "%4d %s\n", c->score, c->name);
 		}
 	}
 
-	char *result = NULL;
+	/* Always suffix with the function address to guarantee that the
+	 * resulting flag is unique across the whole binary. */
 	ANCand *best = r_list_first (bag);
-	if (best) {
-		/* Always suffix with the function address to guarantee that the
-		 * resulting flag is unique across the whole binary. */
-		result = r_str_newf ("sub.%s_%"PFMT64x, best->name, fcn->addr);
-	}
+	char *result = best? r_str_newf ("sub.%s_%"PFMT64x, best->name, fcn->addr): NULL;
 	r_list_free (bag);
 	return result;
 }
@@ -341,11 +336,9 @@ static void autoname_all(RAnal *anal) {
 			if (!name) {
 				continue;
 			}
-			if (anal->flb.f && anal->coreb.cmd) {
-				char *cmd = r_str_newf ("fr %s %s", fcn->name, name);
-				anal->coreb.cmd (anal->coreb.core, cmd);
-				free (cmd);
-			}
+			char *cmd = r_str_newf ("fr %s %s", fcn->name, name);
+			anal->coreb.cmd (anal->coreb.core, cmd);
+			free (cmd);
 			free (fcn->name);
 			fcn->name = name;
 			changed = true;
@@ -368,27 +361,21 @@ static char *autonamecmd(RAnal *anal, const char *input) {
 		NULL
 	};
 	const char *arg = r_str_trim_head_ro (input + 8);
-	if (*arg == '?' || (!*arg && !anal->coreb.numGet)) {
-		if (anal->coreb.help) {
-			anal->coreb.help (anal->coreb.core, help_msg);
-		}
-		return strdup ("");
-	}
 	if (!*arg || r_str_startswith (arg, "list")) {
 		int mode = *arg ? 'l' : 'v';
 		ut64 addr = anal->coreb.numGet (anal->coreb.core, "$$");
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
-		if (fcn) {
-			char *name = autoname_fcn (anal, fcn, mode);
-			if (name && mode == 'v') {
-				char *res = r_str_newf ("'0x%08"PFMT64x"'afnq %s", fcn->addr, name);
-				free (name);
-				return res;
-			}
-			free (name);
-		} else {
+		if (!fcn) {
 			R_LOG_ERROR ("No function at 0x%08"PFMT64x, addr);
+			return strdup ("");
 		}
+		char *name = autoname_fcn (anal, fcn, mode);
+		if (name && mode == 'v') {
+			char *res = r_str_newf ("'0x%08"PFMT64x"'afnq %s", fcn->addr, name);
+			free (name);
+			return res;
+		}
+		free (name);
 		return strdup ("");
 	}
 	if (r_str_startswith (arg, "fcn ")) {
@@ -397,19 +384,17 @@ static char *autonamecmd(RAnal *anal, const char *input) {
 		const char *sp = strchr (p, ' ');
 		int mode = (sp && sp[1] && sp[1] != '0') ? sp[1] : 0;
 		RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
-		if (fcn) {
-			char *name = autoname_fcn (anal, fcn, mode);
-			return name ? name : strdup ("");
+		if (!fcn) {
+			return strdup ("");
 		}
-		return strdup ("");
+		char *name = autoname_fcn (anal, fcn, mode);
+		return name? name: strdup ("");
 	}
 	if (r_str_startswith (arg, "all")) {
 		autoname_all (anal);
 		return strdup ("");
 	}
-	if (anal->coreb.help) {
-		anal->coreb.help (anal->coreb.core, help_msg);
-	}
+	anal->coreb.help (anal->coreb.core, help_msg);
 	return strdup ("");
 }
 
