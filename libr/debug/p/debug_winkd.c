@@ -201,15 +201,14 @@ static bool r_debug_winkd_breakpoint(RBreakpoint *bp, RBreakpointItem *b, bool s
 	if (!pd || !b) {
 		return false;
 	}
-	if (b->hw) {
-		R_LOG_WARN ("winkd: hardware breakpoints are not implemented, falling back to software");
-	}
-	// Use a 32 bit word here to keep this compatible with 32 bit hosts
+	// Use a 32 bit word here to keep this compatible with 32 bit hosts.
+	// For sw BPs this stores the kernel-side breakpoint handle; for hw BPs
+	// it stores slot+1 so we can clear the right DRn on remove.
 	if (!b->data) {
 		b->data = (char *)R_NEW0 (int);
 	}
 	int *tag = (int *) b->data;
-	return !!winkd_bkpt (pd->wctx, b->addr, set, 0, tag);
+	return !!winkd_bkpt (pd->wctx, b->addr, set, b->hw, tag);
 }
 
 static bool r_debug_winkd_init(RDebug *dbg) {

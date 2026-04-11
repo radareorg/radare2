@@ -1127,6 +1127,77 @@ error:
 	return 0;
 }
 
+// Hardware breakpoints are not a dedicated KD API — they are programmed by
+// patching DR0..DR3/DR7 inside the CPU CONTEXT and sending it back with
+// DbgKdSetContextApi. We use local-enable only, execute type (RW=00), 1-byte
+// length (LEN=00). Slot index + 1 is stored in *handle so clears can find it.
+static int winkd_bkpt_hw(WindCtx *ctx, ut64 addr, int set, int *handle) {
+	ut8 ctxbuf[4096];
+	int ctxsize = winkd_read_reg (ctx, ctxbuf, sizeof (ctxbuf));
+	if (ctxsize <= 0) {
+		return 0;
+	}
+
+	const int ctxflags_off = ctx->is_x64? 0x30: 0x00;
+	const int dr0_off = ctx->is_x64? 0x48: 0x04;
+	const int dr_step = ctx->is_x64? 8: 4;
+	const int dr7_off = ctx->is_x64? 0x70: 0x18;
+	const int dr_end = dr7_off + dr_step;
+	if (ctxsize < dr_end) {
+		R_LOG_ERROR ("winkd: CONTEXT too small for debug registers (%d)", ctxsize);
+		return 0;
+	}
+
+	ut64 dr7 = ctx->is_x64? r_read_le64 (ctxbuf + dr7_off): r_read_le32 (ctxbuf + dr7_off);
+	int slot;
+
+	if (set) {
+		for (slot = 0; slot < 4; slot++) {
+			if (!(dr7 & (1ULL << (slot * 2)))) {
+				break;
+			}
+		}
+		if (slot == 4) {
+			R_LOG_ERROR ("winkd: no free hardware breakpoint slot");
+			return 0;
+		}
+		if (ctx->is_x64) {
+			r_write_le64 (ctxbuf + dr0_off + slot * dr_step, addr);
+		} else {
+			r_write_le32 (ctxbuf + dr0_off + slot * dr_step, (ut32)addr);
+		}
+		dr7 &= ~((3ULL << (slot * 2)) | (0xfULL << (16 + slot * 4)));
+		dr7 |= (1ULL << (slot * 2));
+		if (handle) {
+			*handle = slot + 1;
+		}
+	} else {
+		slot = (handle? *handle: 0) - 1;
+		if (slot < 0 || slot >= 4) {
+			return 0;
+		}
+		dr7 &= ~((3ULL << (slot * 2)) | (0xfULL << (16 + slot * 4)));
+		if (ctx->is_x64) {
+			r_write_le64 (ctxbuf + dr0_off + slot * dr_step, 0);
+		} else {
+			r_write_le32 (ctxbuf + dr0_off + slot * dr_step, 0);
+		}
+	}
+
+	if (ctx->is_x64) {
+		r_write_le64 (ctxbuf + dr7_off, dr7);
+	} else {
+		r_write_le32 (ctxbuf + dr7_off, (ut32)dr7);
+	}
+
+	// Ensure ContextFlags inside the CONTEXT advertises DEBUG so the kernel
+	// actually commits our DRn changes to the target thread on SetContext.
+	ut32 cflags = r_read_le32 (ctxbuf + ctxflags_off);
+	r_write_le32 (ctxbuf + ctxflags_off, cflags | 0x10);
+
+	return winkd_write_reg (ctx, ctxbuf, ctxsize)? 1: 0;
+}
+
 int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *handle) {
 	kd_req_t req = {
 		0
@@ -1136,6 +1207,9 @@ int winkd_bkpt(WindCtx *ctx, const ut64 addr, const int set, const int hw, int *
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
 		return 0;
+	}
+	if (hw) {
+		return winkd_bkpt_hw (ctx, addr, set, handle);
 	}
 
 	req.req = set? DbgKdWriteBreakPointApi: DbgKdRestoreBreakPointApi;
