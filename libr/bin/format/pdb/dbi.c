@@ -139,8 +139,7 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 		if (!dbi_ex_header) {
 			break;
 		}
-		// TODO: rewrite for signature where can to do chech CAN_READ true?
-		sz = parse_dbi_ex_header (p_tmp, size, dbi_ex_header);
+		sz = parse_dbi_ex_header (p_tmp, size - i, dbi_ex_header);
 		if (sz < 1) {
 			free (dbi_ex_header->modName.name);
 			free (dbi_ex_header->objName.name);

@@ -2681,16 +2681,33 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	return read_bytes;
 }
 
-// XXX this function never return false.. which is probably incorrect. needs review
 bool parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
 	ss->types = r_list_new ();
 	// Initialize context for parsing session
 	stream_file_read (stream, sizeof (STPIHeader), (char *)&ss->header);
+	if (stream->error) {
+		return false;
+	}
 
 	ss->ctx.base_idx = ss->header.idx_begin;
 	ss->ctx.types_list = ss->types;
 
-	int i;
+	if (ss->header.idx_end < ss->header.idx_begin) {
+		R_LOG_ERROR ("Invalid TPI index range");
+		return false;
+	}
+	const int remaining = stream_file_get_size (stream);
+	if (remaining < 0) {
+		return false;
+	}
+	// each record carries at least a 2-byte length prefix + 2-byte leaf
+	const ut32 max_count = (ut32)remaining / 4;
+	if (ss->header.idx_end - ss->header.idx_begin > max_count) {
+		R_LOG_ERROR ("TPI index range exceeds stream size");
+		return false;
+	}
+
+	ut32 i;
 	for (i = ss->header.idx_begin; i < ss->header.idx_end; i++) {
 		SType *type = R_NEW0 (SType);
 		type->tpi_idx = i;
@@ -2701,6 +2718,9 @@ bool parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
 			r_list_append (ss->types, type);
 		} else {
 			free (type);
+			if (stream->error) {
+				break;
+			}
 		}
 	}
 	return true;
