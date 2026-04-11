@@ -294,38 +294,40 @@ R_PACKED(
 	})
 mmvad_short;
 
-int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
+#define WINKD_VAD_MAX_DEPTH 256
+
+static int walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent, int depth) {
+	if (depth > WINKD_VAD_MAX_DEPTH) {
+		R_LOG_WARN ("VAD tree too deep, aborting walk at 0x%" PFMT64x, address);
+		return 0;
+	}
+	if (address < 4) {
+		return 0;
+	}
 	mmvad_short entry = { { 0 } };
-	ut64 start, end;
-	ut32 prot;
-
 	if (winkd_read_at (ctx, (uint8_t *)&entry, address - 0x4, sizeof (mmvad_short)) != sizeof (mmvad_short)) {
-		eprintf ("0x%" PFMT64x " Could not read the node!\n", (ut64)address);
+		R_LOG_ERROR ("0x%" PFMT64x " Could not read the node", address);
 		return 0;
 	}
-
 	if (parent != UT64_MAX && entry.parent != parent) {
-		eprintf ("Wrong parent!\n");
+		R_LOG_ERROR ("Wrong parent");
 		return 0;
 	}
-
-	start = entry.start_vpn << 12;
-	end = ((entry.end_vpn + 1) << 12) - 1;
-	prot = (entry.flags >> 24) & 0x1F;
-
-	eprintf ("Start 0x%016" PFMT64x " End 0x%016" PFMT64x " Prot 0x%08" PFMT64x "\n",
-		(ut64)start,
-		(ut64)end,
-		(ut64)prot);
-
+	const ut64 start = (ut64)entry.start_vpn << 12;
+	const ut64 end = (((ut64)entry.end_vpn + 1) << 12) - 1;
+	const ut32 prot = (entry.flags >> 24) & 0x1F;
+	eprintf ("Start 0x%016" PFMT64x " End 0x%016" PFMT64x " Prot 0x%08x\n", start, end, prot);
 	if (entry.left) {
-		winkd_walk_vadtree (ctx, entry.left, address);
+		walk_vadtree (ctx, entry.left, address, depth + 1);
 	}
 	if (entry.right) {
-		winkd_walk_vadtree (ctx, entry.right, address);
+		walk_vadtree (ctx, entry.right, address, depth + 1);
 	}
-
 	return 1;
+}
+
+int winkd_walk_vadtree(WindCtx *ctx, ut64 address, ut64 parent) {
+	return walk_vadtree (ctx, address, parent, 0);
 }
 
 RList *winkd_list_process(WindCtx *ctx) {
@@ -1009,11 +1011,11 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 		return 0;
 	}
 
-	memcpy (buf, rr->data, R_MIN (size, pkt->length - sizeof (*rr)));
-
+	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
+	int n = R_MIN (size, avail);
+	memcpy (buf, rr->data, n);
 	free (pkt);
-
-	return size;
+	return n;
 error:
 	winkd_lock_leave (ctx);
 	return 0;
@@ -1178,8 +1180,9 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 		return 0;
 	}
 
-	memcpy (buf, rr->data, rr->r_mem.read);
-	ret = rr->r_mem.read;
+	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
+	ret = R_MIN (count, R_MIN ((int)rr->r_mem.read, avail));
+	memcpy (buf, rr->data, ret);
 	free (pkt);
 	return ret;
 error:
@@ -1230,8 +1233,9 @@ int winkd_read_at(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int count
 		return 0;
 	}
 
-	memcpy (buf, rr->data, rr->r_mem.read);
-	ret = rr->r_mem.read;
+	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
+	ret = R_MIN (count, R_MIN ((int)rr->r_mem.read, avail));
+	memcpy (buf, rr->data, ret);
 	free (pkt);
 	return ret;
 error:

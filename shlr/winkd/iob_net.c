@@ -497,6 +497,12 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 		// Remove padding from the buffer
 		ut8 padsize = r_read_at_be64 (obj->buf, sizeof (kdnet_packet_t)) & 0xF;
+		const int minsize = (int)(sizeof (kdnet_packet_t) + KDNET_DATA_SIZE + KDNET_HMAC_SIZE) + padsize;
+		if (obj->size < minsize) {
+			R_LOG_ERROR ("KdNet truncated packet");
+			obj->size = 0;
+			return -1;
+		}
 		obj->size -= KDNET_HMAC_SIZE + padsize;
 
 		// Seek to KD packet
@@ -504,12 +510,12 @@ static int iob_net_read(void *p, uint8_t *obuf, const uint64_t count, const int 
 
 		// KD_PACKET_TYPE_UNUSED KD packet does not have a checksum,
 		// but kd_read_packet always read for the 4-byte checksum
-		if (r_read_at_be16 (obj->buf, obj->off + 4) == KD_PACKET_TYPE_UNUSED) {
+		if (obj->off + 6 <= obj->size && r_read_at_be16 (obj->buf, obj->off + 4) == KD_PACKET_TYPE_UNUSED) {
 			obj->size += 4;
 		}
 	}
 
-	if ((ut64)count + obj->off > obj->size) {
+	if (obj->off < 0 || obj->size < 0 || (ut64)count + (ut64)obj->off > (ut64)obj->size) {
 		R_LOG_ERROR ("KdNet out-of-bounds read");
 		obj->size = 0;
 		return -1;

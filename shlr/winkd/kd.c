@@ -85,31 +85,31 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 
 	if (!kd_packet_is_valid (&pkt)) {
 		KD_DBG R_LOG_DEBUG ("invalid leader %08x, trying to recover", pkt.leader);
-		while (!kd_packet_is_valid (&pkt)) {
-			kd_send_ctrl_packet (desc, KD_PACKET_TYPE_RESEND, 0);
-			char sig[4];
-			// Read byte-by-byte searching for the start of a packet
-			int ret;
-			while ((ret = iob_read (desc, (uint8_t *)&sig, 1)) > 0) {
-				if (sig[0] == '0' || sig[0] == 'i') {
-					if (iob_read (desc, (uint8_t *)&sig + 1, 3) == 3) {
-						if (strncmp (sig, "000", 3) && strncmp (sig, "iii", 3)) {
-							continue;
-						}
-						memcpy (&pkt, sig, sizeof (sig));
-						if (iob_read (desc, (uint8_t *)&pkt + 4, sizeof (kd_packet_t) - 4) <= 0) {
-							return KD_E_IOERR;
-						}
-						break;
-					} else {
-						return KD_E_IOERR;
-					}
-				}
-			}
-			if (!ret) {
+		kd_send_ctrl_packet (desc, KD_PACKET_TYPE_RESEND, 0);
+		// Slide a 4-byte window byte-by-byte until a valid leader appears.
+		// Capped to KD_MAX_PAYLOAD bytes so a hostile peer can't make us spin forever.
+		int scanned;
+		for (scanned = 0; scanned < KD_MAX_PAYLOAD; scanned++) {
+			ut8 b;
+			if (iob_read (desc, &b, 1) <= 0) {
 				return KD_E_IOERR;
 			}
+			pkt.leader = (pkt.leader >> 8) | ((ut32)b << 24);
+			if (kd_packet_is_valid (&pkt)) {
+				break;
+			}
 		}
+		if (!kd_packet_is_valid (&pkt)) {
+			return KD_E_MALFORMED;
+		}
+		if (iob_read (desc, (uint8_t *)&pkt + 4, sizeof (kd_packet_t) - 4) <= 0) {
+			return KD_E_IOERR;
+		}
+	}
+
+	if (pkt.length > KD_MAX_PAYLOAD) {
+		KD_DBG R_LOG_DEBUG ("packet length %u exceeds KD_MAX_PAYLOAD", pkt.length);
+		return KD_E_MALFORMED;
 	}
 
 	buf = malloc (sizeof (kd_packet_t) + pkt.length);
@@ -119,7 +119,10 @@ int kd_read_packet(io_desc_t *desc, kd_packet_t **p) {
 	memcpy (buf, &pkt, sizeof (kd_packet_t));
 
 	if (pkt.length) {
-		iob_read (desc, (uint8_t *)buf + sizeof (kd_packet_t), pkt.length);
+		if (iob_read (desc, buf + sizeof (kd_packet_t), pkt.length) != pkt.length) {
+			free (buf);
+			return KD_E_IOERR;
+		}
 	}
 
 	if (pkt.checksum != kd_data_checksum (buf + sizeof (kd_packet_t), pkt.length)) {
