@@ -314,10 +314,6 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 		return -1;
 	}
 	switch (*input) {
-	case 'c':
-		// reset bytes counter for case operations
-		r_java_new_method ();
-		break;
 	case 'u':
 		if (input[1] == 't') {
 			java_update_anal_types (anal, obj);

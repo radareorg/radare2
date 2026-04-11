@@ -213,13 +213,6 @@ R_API int java_print_opcode(RBinJavaObj *obj, ut64 addr, int idx, const ut8 *byt
 	return JAVA_OPS[idx].size;
 }
 
-R_API void r_java_new_method(void) {
-	// no-op: switch state is now local to each disasm call
-}
-
-R_API void U(r_java_set_obj)(RBinJavaObj *obj) {
-}
-
 R_API int r_java_disasm(RBinJavaObj *obj, ut64 addr, const ut8 *bytes, int len, char *output, int outlen) {
 	R_RETURN_VAL_IF_FAIL (bytes && output && outlen > 0, -1);
 	if (len > 0) {
