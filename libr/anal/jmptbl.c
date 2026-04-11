@@ -6,6 +6,10 @@
 #include <r_vec.h>
 
 #define JMPTBL_MAXSZ 512
+// How many instructions back from the indirect branch to scan when
+// looking for the load/add dispatcher pattern. 16 * 4 = 64 bytes, which
+// easily covers any reasonable scheduling of movs between load/add/br.
+#define JMPTBL_DISPATCH_LOOKBACK 16
 
 R_VEC_TYPE (RVecUT64, ut64);
 
@@ -13,6 +17,128 @@ typedef struct {
 	RIOMap *switch_map;
 	HtUP *validated_targets;
 } JmptblTargetCtx;
+
+R_IPI void r_anal_jmptbl_leaddrs_bump(RList *leaddrs, const char *reg, ut64 delta) {
+	if (!leaddrs || !reg) {
+		return;
+	}
+	RListIter *iter;
+	RLeaddrPair *la;
+	r_list_foreach_prev (leaddrs, iter, la) {
+		if (la->reg && !strcmp (la->reg, reg)) {
+			la->leaddr += delta;
+			return;
+		}
+	}
+}
+
+// Return the most recent RLeaddrPair matching `reg` whose op_addr is
+// strictly less than `before`. This lets the dispatcher resolver pick
+// the right value of a register that gets reassigned between the load
+// and the add (classic `adr Rt, table; ldr ..., [Rt]; adr Rt, base; add ..., Rt`).
+static RLeaddrPair *leaddrs_find_before(RList *leaddrs, const char *reg, ut64 before) {
+	RListIter *iter;
+	RLeaddrPair *la;
+	r_list_foreach_prev (leaddrs, iter, la) {
+		if (la->reg && !strcmp (la->reg, reg) && la->op_addr < before) {
+			return la;
+		}
+	}
+	return NULL;
+}
+
+static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs,
+		ut64 br_addr, const char *target_reg,
+		ut64 *opaddr, ut64 *basptr, ut64 *tblptr) {
+	if (!anal || !leaddrs || !target_reg || !opaddr || !basptr || !tblptr) {
+		return false;
+	}
+	const ut64 lookback_bytes = JMPTBL_DISPATCH_LOOKBACK * 4;
+	if (br_addr < lookback_bytes) {
+		return false;
+	}
+	ut8 buf[JMPTBL_DISPATCH_LOOKBACK * 4];
+	const ut64 scan_base = br_addr - lookback_bytes;
+	if (!anal->iob.read_at (anal->iob.io, scan_base, buf, sizeof (buf))) {
+		return false;
+	}
+	// Locate the `add Rdst, Rs0, Rs1[, lsl N]` whose destination matches
+	// the indirect branch's target register. Scan the most recent
+	// instructions first so unrelated adds don't fool us.
+	char add_s0[32] = {0};
+	char add_s1[32] = {0};
+	ut64 add_addr = UT64_MAX;
+	int add_idx = -1;
+	int i;
+	for (i = JMPTBL_DISPATCH_LOOKBACK - 1; i >= 0; i--) {
+		RAnalOp op = {0};
+		if (r_anal_op (anal, &op, scan_base + i * 4, buf + i * 4, 4,
+				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) > 0
+				&& (op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_ADD) {
+			RAnalValue *d = RVecRArchValue_at (&op.dsts, 0);
+			if (d && d->reg && !strcmp (d->reg, target_reg)) {
+				RAnalValue *s0 = RVecRArchValue_at (&op.srcs, 0);
+				RAnalValue *s1 = RVecRArchValue_at (&op.srcs, 1);
+				if (s0 && s0->reg) {
+					r_str_ncpy (add_s0, s0->reg, sizeof (add_s0));
+				}
+				if (s1 && s1->reg) {
+					r_str_ncpy (add_s1, s1->reg, sizeof (add_s1));
+				}
+				add_addr = scan_base + i * 4;
+				add_idx = i;
+				r_anal_op_fini (&op);
+				break;
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	if (add_idx < 0 || (!*add_s0 && !*add_s1)) {
+		return false;
+	}
+	// Walk back from the add to find the `ldr* Rload, [Rtable, ...]`
+	// whose destination is one of the add's sources.
+	char table_reg[32] = {0};
+	char load_reg[32] = {0};
+	ut64 load_addr = UT64_MAX;
+	for (i = add_idx - 1; i >= 0; i--) {
+		RAnalOp op = {0};
+		if (r_anal_op (anal, &op, scan_base + i * 4, buf + i * 4, 4,
+				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) > 0
+				&& (op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_LOAD) {
+			RAnalValue *ld = RVecRArchValue_at (&op.dsts, 0);
+			RAnalValue *ls = RVecRArchValue_at (&op.srcs, 0);
+			if (ld && ld->reg && ls && ls->reg
+					&& ((*add_s0 && !strcmp (add_s0, ld->reg))
+						|| (*add_s1 && !strcmp (add_s1, ld->reg)))) {
+				r_str_ncpy (load_reg, ld->reg, sizeof (load_reg));
+				r_str_ncpy (table_reg, ls->reg, sizeof (table_reg));
+				load_addr = scan_base + i * 4;
+				r_anal_op_fini (&op);
+				break;
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	if (!*load_reg || !*table_reg) {
+		return false;
+	}
+	// The dispatch base is the add source that is not the loaded value.
+	const char *base_reg = (*add_s0 && strcmp (add_s0, load_reg)) ? add_s0
+		: (*add_s1 && strcmp (add_s1, load_reg)) ? add_s1 : NULL;
+	if (!base_reg) {
+		return false;
+	}
+	RLeaddrPair *bp = leaddrs_find_before (leaddrs, base_reg, add_addr);
+	RLeaddrPair *tp = leaddrs_find_before (leaddrs, table_reg, load_addr);
+	if (!bp || !tp) {
+		return false;
+	}
+	*opaddr = bp->op_addr;
+	*basptr = bp->leaddr;
+	*tblptr = tp->leaddr;
+	return true;
+}
 
 static inline ut64 get_mips_gp_base(RAnal *anal, ut64 ip) {
 	ut64 gp = anal ? anal->gp : 0;
@@ -816,4 +942,74 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	}
 	apply_switch (anal, fcn, bb, saddr, jaddr, r_list_length (cases), UT64_MAX);
 	set_u_free (s);
+}
+
+R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn,
+		RAnalBlock *bb, int depth, RAnalOp *op, int loadsize) {
+	if (!anal || !op || !op->reg || !anal->leaddrs) {
+		return false;
+	}
+	if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
+		return false;
+	}
+	ut64 opaddr = UT64_MAX, basptr = UT64_MAX, tblptr = UT64_MAX;
+	if (!arm64_resolve_dispatch (anal, anal->leaddrs, op->addr, op->reg,
+			&opaddr, &basptr, &tblptr)) {
+		return false;
+	}
+	// anal->cmpval can be stale (clobbered by another branch of the
+	// function that was analysed first); when the predecessor-bb walker
+	// yields a clearly larger count, trust that one instead.
+	ut64 table_size = anal->cmpval;
+	ut64 alt_size = 0, alt_default = 0;
+	st64 alt_shift = 0;
+	if (try_get_jmptbl_info (anal, fcn, op->addr, bb, &alt_size, &alt_default, &alt_shift)
+			&& alt_size > anal->cmpval + 1) {
+		table_size = alt_size;
+	}
+	if (table_size == 0 || table_size == UT64_MAX) {
+		return false;
+	}
+	const size_t table_bytes = R_MIN ((size_t)table_size * loadsize, 4096);
+	ut8 *table = calloc (1, table_bytes);
+	if (!table) {
+		return false;
+	}
+	if (!anal->iob.read_at (anal->iob.io, tblptr, table, table_bytes)) {
+		free (table);
+		return false;
+	}
+	RList *kases = r_list_newf (free);
+	const size_t max = table_bytes / loadsize;
+	size_t i;
+	for (i = 0; i < max; i++) {
+		st64 delta;
+		ut64 caseaddr;
+		switch (loadsize) {
+		case 1:
+			delta = ((st8 *)table)[i];
+			caseaddr = basptr + (delta << 2);
+			break;
+		case 2:
+			delta = (st16)r_read_le16 (table + i * 2);
+			caseaddr = basptr + (delta << 1);
+			break;
+		default:
+			delta = (st32)r_read_le32 (table + i * 4);
+			caseaddr = basptr + delta;
+			break;
+		}
+		if (!anal->iob.is_valid_offset (anal->iob.io, caseaddr, 0)) {
+			continue;
+		}
+		RAnalCaseOp *kase = R_NEW0 (RAnalCaseOp);
+		kase->addr = caseaddr;
+		kase->jump = caseaddr;
+		kase->value = i;
+		r_list_append (kases, kase);
+	}
+	r_anal_jmptbl_list (anal, fcn, bb, opaddr, tblptr, kases, loadsize);
+	r_list_free (kases);
+	free (table);
+	return true;
 }
