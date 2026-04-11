@@ -193,7 +193,7 @@ typedef struct r_xml_t {
 extern "C" {
 #endif
 
-R_API void r_xml_init(RXml *, void *, size_t);
+R_API bool r_xml_init(RXml *, size_t);
 R_API RXmlRet r_xml_parse(RXml *, int);
 
 R_API RXml *r_xml_new(int stacksize);
