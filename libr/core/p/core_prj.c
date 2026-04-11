@@ -272,24 +272,27 @@ static void rprj_entry_end(RBuffer *b, ut64 at) {
 }
 
 static bool rprj_string_read(RBuffer *b, char **s) {
+	*s = NULL;
 	ut8 buf[sizeof (ut32)] = {0};
-	r_buf_read (b, buf, sizeof (buf));
-	int len = r_read_le32 (buf);
-	if (len < 1) {
+	if (r_buf_read (b, buf, sizeof (buf)) != (st64)sizeof (buf)) {
+		return false;
+	}
+	const ut32 len = r_read_le32 (buf);
+	const ut64 remaining = r_buf_size (b) - r_buf_at (b);
+	if (len < 1 || len > remaining) {
 		return false;
 	}
 	ut8 *data = malloc (len + 1);
-	*s = NULL;
-	if (R_LIKELY (data)) {
-		if (r_buf_read (b, data, len) < 1) {
-			free (data);
-			return false;
-		}
-		data[len] = 0;
-		*s = (char *)data;
-		return true;
+	if (!data) {
+		return false;
 	}
-	return false;
+	if (r_buf_read (b, data, len) != (st64)len) {
+		free (data);
+		return false;
+	}
+	data[len] = 0;
+	*s = (char *)data;
+	return true;
 }
 
 static void rprj_string_write(RBuffer *b, const char *script) {
