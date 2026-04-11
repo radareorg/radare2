@@ -301,7 +301,7 @@ static char *__infoPointer(RIODscObject * dsc, ut64 size, int mode) {
 		r_list_foreach (infos, iter, trimmed_info) {
 			ut64 remaining_size = trimmed_info->count;
 			ut64 cursor = 0;
-			while (remaining_size > 0) {
+			while (remaining_size >= 8) {
 				ut8 raw_value_buf[8];
 				bool got_raw_value;
 				ut64 off_local = trimmed_info->off_local + cursor;
