@@ -365,15 +365,11 @@ static void print_goto(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut64 curr
 	Sdb *gc = state->goto_cache;
 	if (sdb_exists (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr))
 		|| sdb_exists (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr))
-		|| sdb_exists (gc, r_strf ("%" PFMT64x ".src", curr_addr))
-		|| sdb_const_get (state->db, r_strf ("mark.%" PFMT64x, dst_addr), 0)
 		|| sdb_exists (gc, r_strf ("return.%" PFMT64x, bb->addr))) {
 		return;
 	}
 	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, dst_addr), "1", 0);
 	sdb_set (gc, r_strf ("%" PFMT64x ".to.%" PFMT64x, curr_addr, dst_addr), "1", 0);
-	sdb_set (gc, r_strf ("%" PFMT64x ".src", curr_addr), "1", 0);
-	sdb_set (gc, r_strf ("%" PFMT64x, dst_addr), "1", 0);
 
 	if (dst_addr != bb->addr) {
 		print_newline (state, curr_addr, indent);
@@ -405,8 +401,6 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
 #define PRINTGOTO_DIRECT(dst_addr, curr_addr) print_goto_direct(&state, bb, dst_addr, curr_addr, indent)
-
-// Phase 1: switch/case rendering from RAnalBlock->switch_op
 
 typedef struct {
 	ut64 value;
@@ -474,54 +468,7 @@ static char *find_switch_expr(RCore *core, RAnalFunction *fcn, RAnalBlock *sw_bb
 	return strdup ("switch_var");
 }
 
-static void render_case_body_lines(PDCState *state, ut64 case_addr, int indent) {
-	RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, case_addr);
-	if (!cbb) {
-		return;
-	}
-	r_cons_push (state->core->cons);
-	bool html = r_config_get_b (state->core->config, "scr.html");
-	r_config_set_b (state->core->config, "scr.html", false);
-	char *code = r_core_cmd_strf (state->core, "pD %" PFMT64d " @ 0x%08" PFMT64x, cbb->size, cbb->addr);
-	r_cons_pop (state->core->cons);
-	r_config_set_b (state->core->config, "scr.html", html);
-	if (R_STR_ISEMPTY (code)) {
-		free (code);
-		return;
-	}
-	code = r_str_replace (code, "\n\n", "\n", true);
-	code = r_str_replace (code, ";", "//", true);
-	code = cleancomments (code);
-	size_t len = strlen (code);
-	if (len < 1) {
-		free (code);
-		return;
-	}
-	code[len - 1] = 0;
-	find_and_change (code, len);
-	RList *lines = r_str_split_list (code, "\n", 0);
-	RListIter *iter;
-	const char *line;
-	ut64 addr = cbb->addr;
-	r_list_foreach (lines, iter, line) {
-		if (*line == '0') {
-			ut64 at = r_num_get (NULL, line);
-			if (at && at != UT64_MAX) {
-				addr = at;
-			}
-			const char *s = strchr (line, ' ');
-			line = s? r_str_trim_head_ro (s + 1): "";
-		}
-		if (R_STR_ISNOTEMPTY (line)) {
-			print_newline (state, addr, indent);
-			print_str (state, "%s", line);
-		}
-	}
-	r_list_free (lines);
-	free (code);
-}
-
-static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, int indent) {
+static void render_switch(PDCState *state, RAnalBlock *sw_bb, int indent) {
 	RAnalSwitchOp *sop = sw_bb->switch_op;
 	if (!sop || !sop->cases) {
 		return;
@@ -555,7 +502,6 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
 
-	char key[64];
 	int c = 0;
 	while (c < i) {
 		int k = c;
@@ -563,43 +509,19 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 			k++;
 		}
 		int j;
-		for (j = c; j <= k; j++) {
+		for (j = c; j < k; j++) {
 			print_newline (state, arr[j].jump, indent + 1);
 			print_str (state, "case %" PFMT64d ":", arr[j].value);
 		}
-		RAnalBlock *cbb = r_anal_bb_from_offset (state->core->anal, arr[c].jump);
-		if (cbb && r_list_contains (visited, cbb)) {
-			print_str (state, " goto loc_0x%08" PFMT64x ";", arr[c].jump);
-		} else {
-			render_case_body_lines (state, arr[c].jump, indent + 2);
-			print_newline (state, arr[c].jump, indent + 2);
-			print_str (state, "break;");
-			if (cbb) {
-				snprintf (key, sizeof (key), "mark.%" PFMT64x, cbb->addr);
-				sdb_num_set (state->db, key, 1, 0);
-				r_list_append (visited, cbb);
-			}
-		}
+		print_newline (state, arr[k].jump, indent + 1);
+		print_str (state, "case %" PFMT64d ": goto loc_0x%08" PFMT64x ";",
+			arr[k].value, arr[k].jump);
 		c = k + 1;
 	}
 
 	if (sop->def_val != UT64_MAX) {
 		print_newline (state, sop->def_val, indent + 1);
-		print_str (state, "default:");
-		RAnalBlock *dbb = r_anal_bb_from_offset (state->core->anal, sop->def_val);
-		bool in_fcn = r_anal_function_contains (state->fcn, sop->def_val);
-		if (!in_fcn || !dbb) {
-			print_str (state, " goto 0x%08" PFMT64x ";", sop->def_val);
-		} else if (r_list_contains (visited, dbb)) {
-			print_str (state, " goto loc_0x%08" PFMT64x ";", sop->def_val);
-		} else {
-			render_case_body_lines (state, sop->def_val, indent + 2);
-			print_newline (state, sop->def_val, indent + 2);
-			print_str (state, "break;");
-			snprintf (key, sizeof (key), "mark.%" PFMT64x, dbb->addr);
-			sdb_num_set (state->db, key, 1, 0);
-			r_list_append (visited, dbb);
-		}
+		print_str (state, "default: goto loc_0x%08" PFMT64x ";", sop->def_val);
 	}
 
 	print_newline (state, sw_bb->addr, indent);
@@ -847,12 +769,28 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				closed = true;
-				NEWLINE (bb->addr, indent);
-				if (state.show_asm) {
-					print_pipe_header (&state, bb->addr);
+				bool emit_ret = true;
+				if (bb->ninstr > 0) {
+					ut64 last_addr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+					if (last_addr != UT64_MAX) {
+						RAnalOp *lop = r_core_anal_op (core, last_addr, R_ARCH_OP_MASK_BASIC);
+						if (lop) {
+							int t = lop->type & R_ANAL_OP_TYPE_MASK;
+							if (t == R_ANAL_OP_TYPE_JMP || t == R_ANAL_OP_TYPE_UJMP) {
+								emit_ret = false;
+							}
+							r_anal_op_free (lop);
+						}
+					}
 				}
-				PRINTF (r0? "return %s;": "return;", r0);
-				sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
+				if (emit_ret) {
+					NEWLINE (bb->addr, indent);
+					if (state.show_asm) {
+						print_pipe_header (&state, bb->addr);
+					}
+					PRINTF (r0? "return %s;": "return;", r0);
+					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
+				}
 				RAnalBlock *nbb = r_anal_bb_from_offset (core->anal, bb->fail);
 				if (r_list_contains (visited, nbb)) {
 					nbb = r_anal_bb_from_offset (core->anal, bb->jump);
@@ -975,9 +913,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			continue;
 		}
 		if (bb->switch_op) {
-			render_switch (&state, bb, visited, 2);
+			render_switch (&state, bb, 2);
 			r_list_append (visited, bb);
-			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
 		if (iter->n) {
@@ -1072,17 +1009,33 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				PRINTF ("loc_0x%08" PFMT64x ": // orphan\n%s", bb->addr, s);
 			}
 			if (bb->jump == UT64_MAX) {
-				NEWLINE (bb->addr, indent);
-				if (state.show_asm) {
-					PRINTF (" 0x%08" PFMT64x " | ret", bb->addr);
-					r_strbuf_pad (state_sb (&state), ' ', 30 - 3);
-					PRINTF (" | ");
+				bool emit_ret = true;
+				if (bb->ninstr > 0) {
+					ut64 last_addr = r_anal_bb_opaddr_i (bb, bb->ninstr - 1);
+					if (last_addr != UT64_MAX) {
+						RAnalOp *lop = r_core_anal_op (core, last_addr, R_ARCH_OP_MASK_BASIC);
+						if (lop) {
+							int t = lop->type & R_ANAL_OP_TYPE_MASK;
+							if (t == R_ANAL_OP_TYPE_JMP || t == R_ANAL_OP_TYPE_UJMP) {
+								emit_ret = false;
+							}
+							r_anal_op_free (lop);
+						}
+					}
 				}
-				PRINTF (r0? "return %s;": "return;", r0);
-				sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
-				if (state.show_asm) {
-					PRINTF ("\n");
-					print_pipe_header (&state, bb->addr);
+				if (emit_ret) {
+					NEWLINE (bb->addr, indent);
+					if (state.show_asm) {
+						PRINTF (" 0x%08" PFMT64x " | ret", bb->addr);
+						r_strbuf_pad (state_sb (&state), ' ', 30 - 3);
+						PRINTF (" | ");
+					}
+					PRINTF (r0? "return %s;": "return;", r0);
+					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
+					if (state.show_asm) {
+						PRINTF ("\n");
+						print_pipe_header (&state, bb->addr);
+					}
 				}
 			} else {
 				PRINTGOTO (nextbbaddr, bb->jump);
