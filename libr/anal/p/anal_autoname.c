@@ -33,7 +33,8 @@ typedef struct {
 
 static const char *blacklist[] = {
 	"0x", "*", "func.", "\\", "fcn.0", "plt", "assert",
-	"segment.", "section.", "LOAD", "entry.",
+	"segment.", "realloc", "free", "malloc", "strncmp",
+	"getc", "strlen", "section.", "LOAD", "entry.",
 	"__stack_chk_guard", "__stack_chk_fail",
 	"__stderrp", "__stdinp", "__stdoutp", "_DefaultRuneLocale"
 };
