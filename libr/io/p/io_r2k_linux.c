@@ -379,6 +379,52 @@ int WriteMemory(RIO *io, RIODesc *iodesc, int ioctl_n, size_t pid, ut64 address,
 	return ret;
 }
 
+static void print_proc_info(RIO *io, struct r2k_proc_info *pd, bool fflag) {
+	const ut64 count = R_ARRAY_SIZE (pd->vmareastruct);
+	if (!fflag) {
+		io->cb_printf ("pid = %d\nprocess name = %s\n", pd->pid, pd->comm);
+		io->cb_printf ("task_struct = 0x%08zu\n", pd->task);
+	}
+	ut64 i = 0;
+	int j = 0;
+	while (i + 7 < count) {
+		if (!pd->vmareastruct[i] && !pd->vmareastruct[i + 1]) {
+			break;
+		}
+		const char *name = (const char *)&pd->vmareastruct[i + 7];
+		const size_t maxbytes = (count - (i + 7)) * sizeof (size_t);
+		const size_t namelen = r_str_nlen (name, maxbytes);
+		if (namelen == 0 || namelen >= maxbytes) {
+			break;
+		}
+		const ut64 nextstart = i + 7 + (namelen - 1 + sizeof (size_t)) / sizeof (size_t);
+		if (nextstart <= i || nextstart > count) {
+			break;
+		}
+		if (fflag) {
+			io->cb_printf ("'f pid.%d.%s.%d.start=0x%"PFMT64x"\n", pd->pid, name, j, (ut64) pd->vmareastruct[i]);
+			io->cb_printf ("'f pid.%d.%s.%d.end=0x%"PFMT64x"\n", pd->pid, name, j, (ut64) pd->vmareastruct[i + 1]);
+		} else {
+			const size_t flags = pd->vmareastruct[i + 2];
+			io->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %c%c%c%c 0x%08"PFMT64x" %02zu:%02zu %-8"PFMT64u"  %s\n",
+				(ut64) pd->vmareastruct[i], (ut64) pd->vmareastruct[i + 1],
+				(flags & VM_READ) ? 'r' : '-',
+				(flags & VM_WRITE) ? 'w' : '-',
+				(flags & VM_EXEC) ? 'x' : '-',
+				(flags & VM_MAYSHARE) ? 's' : 'p',
+				(ut64) pd->vmareastruct[i + 3], pd->vmareastruct[i + 4],
+				pd->vmareastruct[i + 5], (ut64) pd->vmareastruct[i + 6], name);
+		}
+		j++;
+		i = nextstart;
+	}
+	if (fflag) {
+		io->cb_printf ("'f pid.%d.task_struct = 0x%08zu\n", pd->pid, pd->task);
+	} else {
+		io->cb_printf ("STACK BASE ADDRESS = 0x%p\n", (void*)pd->stack);
+	}
+}
+
 int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 	int ret, inphex, ioctl_n;
 	size_t pid, addr, len;
@@ -667,19 +713,13 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 		{
 			//Print process info
 			//: p pid
-			ut64 i;
-			ut64 nextstart;
-			ut64 buffsize;
-			bool fflag = 0;
+			bool fflag = false;
 			struct r2k_proc_info proc_data = {0};
 
-			if (*(buf + 1) == '*') {
-				fflag = 1;
-			}
-			switch (*(buf + 1)) {
+			switch (buf[1]) {
 			case '*':
-				fflag = 1;
-				if (*(buf + 2) != ' ') {
+				fflag = true;
+				if (buf[2] != ' ') {
 					print_help (io, "p*", 0);
 					goto end;
 				}
@@ -705,51 +745,7 @@ int run_old_command(RIO *io, RIODesc *iodesc, const char *buf) {
 				R_LOG_ERROR ("ioctl err: %s", strerror (errno));
 				break;
 			}
-
-			buffsize = (ut64) (sizeof (proc_data.vmareastruct) / sizeof (proc_data.vmareastruct[0]));
-			if (fflag) {
-				int j = 0;
-				for (i = 0; i + 1 < buffsize;) {
-					nextstart = 0;
-					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
-					}
-					if (!proc_data.vmareastruct[i] && (i + 1 < buffsize) &&
-						!proc_data.vmareastruct[i + 1] &&
-					    nextstart > 0 && nextstart - 1 < buffsize) {
-						break;
-					}
-					io->cb_printf ("'f pid.%d.%s.%d.start=0x%"PFMT64x"\n", proc_data.pid, (char*)&(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i]);
-					io->cb_printf ("'f pid.%d.%s.%d.end=0x%"PFMT64x"\n", proc_data.pid, (char*)&(proc_data.vmareastruct[i + 7]), j, (ut64) proc_data.vmareastruct[i + 1]);
-					j ++;
-					i = nextstart;
-				}
-				io->cb_printf ("'f pid.%d.task_struct = 0x%08zu\n", proc_data.pid, proc_data.task);
-			} else {
-				io->cb_printf ("pid = %d\nprocess name = %s\n", proc_data.pid, proc_data.comm);
-				io->cb_printf ("task_struct = 0x%08zu\n", proc_data.task);
-				for (i = 0; i < buffsize && i  + 8 < sizeof (proc_data.vmareastruct) ;) {
-					nextstart = 0;
-					if (i + 7 < buffsize) {
-						nextstart = i + 7 + (strlen ((const char *)&(proc_data.vmareastruct[i + 7])) - 1 + sizeof (size_t)) / sizeof (size_t);
-					}
-					if (!proc_data.vmareastruct[i] && !proc_data.vmareastruct[i + 1] &&
-					    nextstart > 0 && nextstart - 1 < buffsize) {
-						break;
-					}
-					io->cb_printf ("0x%08"PFMT64x" - 0x%08"PFMT64x" %c%c%c%c 0x%08"PFMT64x" %02zu:%02zu %-8"PFMT64u"",
-							(ut64) proc_data.vmareastruct[i], (ut64) proc_data.vmareastruct[i+1],
-							proc_data.vmareastruct[i + 2] & VM_READ ? 'r' : '-',
-							proc_data.vmareastruct[i + 2] & VM_WRITE ? 'w' : '-',
-							proc_data.vmareastruct[i + 2] & VM_EXEC ? 'x' : '-',
-							proc_data.vmareastruct[i + 2] & VM_MAYSHARE ? 's' : 'p',
-							(ut64) proc_data.vmareastruct[i + 3], proc_data.vmareastruct[i + 4],
-							proc_data.vmareastruct[i + 5], (ut64) proc_data.vmareastruct[i + 6]);
-					io->cb_printf ("  %s\n", (char*)&(proc_data.vmareastruct[i + 7]));
-					i = nextstart;
-				}
-				io->cb_printf ("STACK BASE ADDRESS = 0x%p\n", (void*)proc_data.stack);
-			}
+			print_proc_info (io, &proc_data, fflag);
 		}
 		break;
 	default:
