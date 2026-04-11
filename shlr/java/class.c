@@ -101,7 +101,6 @@ static char *r_bin_java_get_desc_from_bin_cp_list(RBinJavaObj *bin, ut64 idx);
 static char *r_bin_java_get_desc_from_cp_item_list(RList *cp_list, ut64 idx);
 static void r_bin_java_get_field_json_definition(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj);
 static void r_bin_java_get_field_json_definitions(RBinJavaObj *bin, PJ *pj);
-static RList *r_bin_java_get_fields(RBinJavaObj *bin);
 static void r_bin_java_get_fm_type_definition_json(RBinJavaObj *bin, RBinJavaField *fm_type, PJ *pj, bool is_method);
 static void r_bin_java_get_import_json_definitions(RBinJavaObj *bin, PJ *pj);
 static char *r_bin_java_get_item_desc_from_bin_cp_list(RBinJavaObj *bin, RBinJavaCPTypeObj *obj);
@@ -2745,19 +2744,6 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_cp_idx(RBinJavaObj *bin, ut
 		}
 	}
 	return sym;
-}
-
-static RList *r_bin_java_get_fields(RBinJavaObj *bin) {
-	RListIter *iter = NULL, *iter_tmp = NULL;
-	RList *fields = r_list_new ();
-	RBinJavaField *fm_type;
-	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		RBinField *field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
-		if (field) {
-			r_list_append (fields, field);
-		}
-	}
-	return fields;
 }
 
 static void add_import(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, const char *type) {
