@@ -61,6 +61,8 @@ static int parse_ssymbol_range(const ut8 *data, ut32 max_len, SSymbolRange *symb
 
 static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_header) {
 	const ut32 fixed_size = 64;
+	dbi_ex_header->modName.name = NULL;
+	dbi_ex_header->objName.name = NULL;
 	if (!can_read (0, fixed_size, max_len)) {
 		return 0;
 	}
@@ -139,6 +141,12 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 		}
 		// TODO: rewrite for signature where can to do chech CAN_READ true?
 		sz = parse_dbi_ex_header (p_tmp, size, dbi_ex_header);
+		if (sz < 1) {
+			free (dbi_ex_header->modName.name);
+			free (dbi_ex_header->objName.name);
+			free (dbi_ex_header);
+			break;
+		}
 		if ((sz % PDB_ALIGN)) {
 			sz = sz + (PDB_ALIGN - (sz % PDB_ALIGN));
 		}
