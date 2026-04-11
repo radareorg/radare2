@@ -13,12 +13,11 @@ typedef struct io_treebuf_chunk_t {
 } IOTreeBufChunk;
 
 static void _treebuf_chunk_free(void *data) {
-	if (!data) {
-		return;
-	}
 	IOTreeBufChunk *chunk = (IOTreeBufChunk *)data;
-	free (chunk->buf);
-	free (chunk);
+	if (chunk) {
+		free (chunk->buf);
+		free (chunk);
+	}
 }
 
 static bool __check(RIO *io, const char *pathname, bool many) {
@@ -27,15 +26,9 @@ static bool __check(RIO *io, const char *pathname, bool many) {
 
 static char *__system(RIO *io, RIODesc *desc, const char *cmd) {
 	if (cmd && !strcmp (cmd, "reset")) {
-		RRBTree *tree = r_crbtree_new (_treebuf_chunk_free);
-		if (!tree) {
-			free (tree);
-			R_LOG_ERROR ("Allocation failed");
-			return NULL;
-		}
 		IOTreeBuf *treebuf = (IOTreeBuf *)desc->data;
 		r_crbtree_free (treebuf->tree);
-		treebuf->tree = tree;
+		treebuf->tree = r_crbtree_new (_treebuf_chunk_free);
 	}
 	return NULL;
 }
@@ -45,27 +38,18 @@ static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
 		return NULL;
 	}
 	IOTreeBuf *treebuf = R_NEW0 (IOTreeBuf);
-	if (!treebuf) {
-		R_LOG_ERROR ("Allocation failed");
-		return NULL;
-	}
 	treebuf->tree = r_crbtree_new (_treebuf_chunk_free);
-	if (!treebuf->tree) {
-		free (treebuf);
-		R_LOG_ERROR ("Allocation failed");
-		return NULL;
-	}
 	RIODesc *desc = r_io_desc_new (io, &r_io_plugin_treebuf, pathname, R_PERM_RW, mode, treebuf);
 	if (!desc) {
 		r_crbtree_free (treebuf->tree);
 		free (treebuf);
-		R_LOG_ERROR ("Allocation failed");
 	}
 	return desc;
 }
 
 static bool __close(RIODesc *desc) {
-	r_crbtree_free (((IOTreeBuf *)desc->data)->tree);
+	IOTreeBuf *treebuf = desc->data;
+	r_crbtree_free (treebuf->tree);
 	R_FREE (desc->data);
 	return true;
 }
@@ -84,16 +68,49 @@ static ut64 __lseek(RIO* io, RIODesc *desc, ut64 offset, int whence) {
 	return treebuf->seek;
 }
 
-static int _treebuf_chunk_find (void *incoming, void *in, void *user) {
+static int _treebuf_chunk_find(void *incoming, void *in, void *user) {
 	RInterval *itv = (RInterval *)incoming;
 	IOTreeBufChunk *chunk = (IOTreeBufChunk *)in;
 	if (r_itv_overlap (itv[0], chunk->itv)) {
 		return 0;
 	}
-	if (r_itv_begin (itv[0]) < r_itv_begin (chunk->itv)) {
+	return (r_itv_begin (itv[0]) < r_itv_begin (chunk->itv))? -1: 1;
+}
+
+static int _treebuf_chunk_insert(void *incoming, void *in, void *user) {
+	const ut64 ia = r_itv_begin (((IOTreeBufChunk *)incoming)->itv);
+	const ut64 na = r_itv_begin (((IOTreeBufChunk *)in)->itv);
+	if (ia < na) {
 		return -1;
 	}
-	return 1;
+	return (ia > na)? 1: 0;
+}
+
+static RRBNode *_first_overlap(RRBNode *node, RInterval itv) {
+	RRBNode *prev = r_rbnode_prev (node);
+	while (prev) {
+		IOTreeBufChunk *chunk = (IOTreeBufChunk *)prev->data;
+		if (!r_itv_overlap (chunk->itv, itv)) {
+			break;
+		}
+		node = prev;
+		prev = r_rbnode_prev (prev);
+	}
+	return node;
+}
+
+static int _treebuf_new_chunk(IOTreeBuf *treebuf, RInterval itv, const ut8 *buf) {
+	IOTreeBufChunk *chunk = R_NEW0 (IOTreeBufChunk);
+	chunk->itv = itv;
+	chunk->buf = R_NEWS (ut8, itv.size);
+	if (!chunk->buf || !r_crbtree_insert (treebuf->tree, chunk, _treebuf_chunk_insert, NULL)) {
+		free (chunk->buf);
+		free (chunk);
+		return -1;
+	}
+	memcpy (chunk->buf, buf, itv.size);
+	treebuf->seek = r_itv_end (itv);
+	return (int)itv.size;
 }
 
 static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
@@ -105,39 +122,20 @@ static int __read(RIO *io, RIODesc *desc, ut8 *buf, int len) {
 		treebuf->seek = r_itv_end (search_itv);
 		return (int)r_itv_size (search_itv);
 	}
-	IOTreeBufChunk *chunk = NULL;
-	RRBNode *prev = r_rbnode_prev (node);
-	while (prev) {
-		chunk = (IOTreeBufChunk *)prev->data;
-		if (!r_itv_overlap (chunk->itv, search_itv)) {
-			break;
-		}
-		node = prev;
-		prev = r_rbnode_prev (prev);
-	}
-	chunk = (IOTreeBufChunk *)node->data;
+	node = _first_overlap (node, search_itv);
+	IOTreeBufChunk *chunk = (IOTreeBufChunk *)node->data;
+	const ut64 sbeg = r_itv_begin (search_itv);
+	const ut64 send = r_itv_end (search_itv);
 	do {
-		ut64 addr = R_MAX (r_itv_begin (search_itv), r_itv_begin (chunk->itv));
-		ut8 *dst = &buf[addr - r_itv_begin (search_itv)];
-		ut8 *src = &chunk->buf[addr - r_itv_begin (chunk->itv)];
-		memcpy (dst, src, (size_t)(R_MIN (r_itv_end (search_itv), r_itv_end (chunk->itv)) - addr));
+		const ut64 cbeg = r_itv_begin (chunk->itv);
+		const ut64 addr = R_MAX (sbeg, cbeg);
+		const ut64 end = R_MIN (send, r_itv_end (chunk->itv));
+		memcpy (&buf[addr - sbeg], &chunk->buf[addr - cbeg], (size_t)(end - addr));
 		node = r_rbnode_next (node);
 		chunk = node? (IOTreeBufChunk *)node->data: NULL;
 	} while (chunk && r_itv_overlap (chunk->itv, search_itv));
-	treebuf->seek = r_itv_end (search_itv);
+	treebuf->seek = send;
 	return (int)r_itv_size (search_itv);
-}
-
-static int _treebuf_chunk_insert (void *incoming, void *in, void *user) {
-	IOTreeBufChunk *incoming_chunk = (IOTreeBufChunk *)incoming;
-	IOTreeBufChunk *in_chunk = (IOTreeBufChunk *)in;
-	if (r_itv_begin (incoming_chunk->itv) < r_itv_begin (in_chunk->itv)) {
-		return -1;
-	}
-	if (r_itv_begin (incoming_chunk->itv) > r_itv_begin (in_chunk->itv)) {
-		return 1;
-	}
-	return 0;
 }
 
 static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
@@ -145,35 +143,13 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 	RInterval search_itv = {treebuf->seek, R_MIN ((ut64)len, UT64_MAX - treebuf->seek)};
 	RRBNode *node = r_crbtree_find_node (treebuf->tree, &search_itv, _treebuf_chunk_find, NULL);
 	if (!node) {
-		IOTreeBufChunk *chunk = R_NEW0 (IOTreeBufChunk);
-		if (!chunk) {
-			return -1;
-		}
-		chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
-		chunk->itv = search_itv;
-		if (!chunk->buf || !r_crbtree_insert (treebuf->tree, chunk, _treebuf_chunk_insert, NULL)) {
-			free (chunk->buf);
-			free (chunk);
-			return -1;
-		}
-		memcpy (chunk->buf, buf, r_itv_size (search_itv));
-		treebuf->seek = r_itv_end (search_itv);
-		return (int)r_itv_size (search_itv);
+		return _treebuf_new_chunk (treebuf, search_itv, buf);
 	}
-	IOTreeBufChunk *chunk = NULL;
-	RRBNode *prev = r_rbnode_prev (node);
-	while (prev) {
-		chunk = (IOTreeBufChunk *)prev->data;
-		if (!r_itv_overlap (chunk->itv, search_itv)) {
-			break;
-		}
-		node = prev;
-		prev = r_rbnode_prev (prev);
-	}
-	chunk = (IOTreeBufChunk *)node->data;
+	node = _first_overlap (node, search_itv);
+	IOTreeBufChunk *chunk = (IOTreeBufChunk *)node->data;
 	if (r_itv_include (chunk->itv, search_itv)) {
-		ut8 *dst = &chunk->buf[r_itv_begin (search_itv) - r_itv_begin (chunk->itv)];
-		memcpy (dst, buf, r_itv_size (search_itv));
+		memcpy (&chunk->buf[r_itv_begin (search_itv) - r_itv_begin (chunk->itv)],
+			buf, r_itv_size (search_itv));
 		treebuf->seek = r_itv_end (search_itv);
 		return (int)r_itv_size (search_itv);
 	}
@@ -201,13 +177,7 @@ static int __write(RIO *io, RIODesc *desc, const ut8 *buf, int len) {
 			return (int)r_itv_size (search_itv);
 		}
 	}
-	chunk = R_NEW0 (IOTreeBufChunk);
-	chunk->buf = R_NEWS (ut8, r_itv_size (search_itv));
-	chunk->itv = search_itv;
-	memcpy (chunk->buf, buf, r_itv_size (search_itv));
-	r_crbtree_insert (treebuf->tree, chunk, _treebuf_chunk_insert, NULL);
-	treebuf->seek = r_itv_end (search_itv);
-	return (int)r_itv_size (search_itv);
+	return _treebuf_new_chunk (treebuf, search_itv, buf);
 }
 
 RIOPlugin r_io_plugin_treebuf = {
