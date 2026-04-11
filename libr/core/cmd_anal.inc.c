@@ -34,7 +34,6 @@ static RCoreHelpMessage help_msg_a = {
 	"a8", " [hexpairs]", "analyze bytes",
 	"ab", "[?]", "analyze basic block",
 	"ac", "[?]", "manage classes",
-	"aC", "[?]", "analyze function call",
 	"ad", "[?]", "analyze data trampoline (wip) (see 'aod' to describe mnemonics)", // XXX rename to at?
 	"ad", " [from] [to]", "analyze data pointers to (from-to)",
 	"ae", "[?] [expr]", "analyze opcode eval expression (see ao)",

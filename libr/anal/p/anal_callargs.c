@@ -7,14 +7,16 @@
 #define MAX_FCN_BBS 256
 #define DEFAULT_NARGS 4
 
-typedef enum { OUT_PLAIN, OUT_JSON, OUT_STAR } OutMode;
+typedef enum { OUT_PLAIN, OUT_QUIET, OUT_JSON, OUT_STAR } OutMode;
 
 static RCoreHelpMessage help = {
-	"Usage:", "a:callargs", "[j*f] [addr] # analyze call args via ESIL",
+	"Usage:", "a:callargs", "[qj*f] [addr] # analyze call args via ESIL",
 	"a:callargs", " [addr]", "plaintext summary of args at call [addr]",
+	"a:callargs q", " [addr]", "quiet plaintext (stripped symbol, no arg names or raw)",
 	"a:callargs j", " [addr]", "same in JSON",
 	"a:callargs *", " [addr]", "emit a CCu comment command for the call",
 	"a:callargs f", "", "apply to every call in the current function",
+	"a:callargs fq", "", "same as 'f' but quiet",
 	"a:callargs fj", "", "same as 'f' but as a JSON array",
 	"a:callargs f*", "", "same as 'f' but as r2 commands",
 	NULL
@@ -88,7 +90,7 @@ static const char *resolve_callee(RAnal *a, ut64 target) {
 
 static void emit_arg(RAnal *a, int idx, const char *name, const char *type,
 		const char *source, const char *fmt, int size, ut64 raw,
-		bool on_stack, PJ *pj, RStrBuf *sb) {
+		bool on_stack, bool quiet, PJ *pj, RStrBuf *sb) {
 	bool unknown = (raw == SENT);
 	ut64 disp = normalize (raw);
 	char *typed = NULL;
@@ -117,11 +119,15 @@ static void emit_arg(RAnal *a, int idx, const char *name, const char *type,
 		pj_end (pj);
 	} else {
 		if (idx > 0) { r_strbuf_append (sb, ", "); }
-		if (name) { r_strbuf_appendf (sb, "%s=", name); }
+		if (!quiet && name) { r_strbuf_appendf (sb, "%s=", name); }
 		if (unknown) {
 			r_strbuf_append (sb, "?");
 		} else if (typed) {
-			r_strbuf_appendf (sb, "%s /*0x%"PFMT64x"*/", typed, disp);
+			if (quiet) {
+				r_strbuf_append (sb, typed);
+			} else {
+				r_strbuf_appendf (sb, "%s /*0x%"PFMT64x"*/", typed, disp);
+			}
 		} else {
 			r_strbuf_appendf (sb, "0x%"PFMT64x, disp);
 		}
@@ -129,7 +135,7 @@ static void emit_arg(RAnal *a, int idx, const char *name, const char *type,
 	free (typed);
 }
 
-static int emit_signature(RAnal *a, const char *fcn_name, PJ *pj, RStrBuf *sb) {
+static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RStrBuf *sb) {
 	if (!fcn_name) {
 		return -1;
 	}
@@ -169,14 +175,14 @@ static int emit_signature(RAnal *a, const char *fcn_name, PJ *pj, RStrBuf *sb) {
 		} else if (src) {
 			raw = r_reg_getv (a->reg, src);
 		}
-		emit_arg (a, i, name, type, src, fmt, size, raw, on_stack, pj, sb);
+		emit_arg (a, i, name, type, src, fmt, size, raw, on_stack, quiet, pj, sb);
 		free (type);
 	}
 	free (key);
 	return nargs;
 }
 
-static void emit_raw(RAnal *a, ut64 target, PJ *pj, RStrBuf *sb) {
+static void emit_raw(RAnal *a, ut64 target, bool quiet, PJ *pj, RStrBuf *sb) {
 	int nargs = DEFAULT_NARGS;
 	RAnalFunction *callee = (target && target != UT64_MAX) ? r_anal_get_function_at (a, target) : NULL;
 	if (callee) {
@@ -192,7 +198,7 @@ static void emit_raw(RAnal *a, ut64 target, PJ *pj, RStrBuf *sb) {
 	char rn[16];
 	for (i = 0; i < nargs; i++) {
 		snprintf (rn, sizeof (rn), "A%d", i);
-		emit_arg (a, i, rn, NULL, rn, NULL, 0, r_reg_getv (a->reg, rn), false, pj, sb);
+		emit_arg (a, i, rn, NULL, rn, NULL, 0, r_reg_getv (a->reg, rn), false, quiet, pj, sb);
 	}
 }
 
@@ -211,6 +217,8 @@ static char *analyze_call(RAnal *a, ut64 pcv, OutMode mode) {
 	if (!cc) {
 		cc = r_anal_cc_default (a);
 	}
+	bool quiet = (mode == OUT_QUIET);
+	const char *disp_name = quiet && key ? key : fcn_name;
 	PJ *pj = NULL;
 	RStrBuf *sb = NULL;
 	if (mode == OUT_JSON) {
@@ -224,11 +232,11 @@ static char *analyze_call(RAnal *a, ut64 pcv, OutMode mode) {
 		pj_ka (pj, "args");
 	} else {
 		sb = r_strbuf_new ("");
-		if (fcn_name && ret_type) {
+		if (disp_name && ret_type) {
 			r_strbuf_appendf (sb, "%s%s%s(", ret_type,
-				ret_type[strlen (ret_type) - 1] == '*' ? "" : " ", fcn_name);
-		} else if (fcn_name) {
-			r_strbuf_appendf (sb, "%s(", fcn_name);
+				ret_type[strlen (ret_type) - 1] == '*' ? "" : " ", disp_name);
+		} else if (disp_name) {
+			r_strbuf_appendf (sb, "%s(", disp_name);
 		} else if (op->jump != UT64_MAX && op->jump) {
 			r_strbuf_appendf (sb, "0x%08"PFMT64x"(", op->jump);
 		} else {
@@ -239,8 +247,8 @@ static char *analyze_call(RAnal *a, ut64 pcv, OutMode mode) {
 	int s_width = (a->config->bits == 64) ? 8 : 4;
 	ut64 spv = r_reg_getv (a->reg, "SP");
 	r_reg_setv (a->reg, "SP", spv + s_width);
-	if (emit_signature (a, fcn_name, pj, sb) < 0) {
-		emit_raw (a, op->jump, pj, sb);
+	if (emit_signature (a, fcn_name, quiet, pj, sb) < 0) {
+		emit_raw (a, op->jump, quiet, pj, sb);
 	}
 	r_reg_setv (a->reg, "SP", spv);
 	r_anal_op_free (op);
@@ -322,11 +330,13 @@ static char *callargscmd(RAnal *a, const char *input) {
 		arg++;
 		if (*arg == 'j') { mode = OUT_JSON; arg++; }
 		else if (*arg == '*') { mode = OUT_STAR; arg++; }
+		else if (*arg == 'q') { mode = OUT_QUIET; arg++; }
 		while (*arg == ' ') { arg++; }
 		return analyze_fcn (a, mode);
 	}
 	if (*arg == 'j') { mode = OUT_JSON; arg++; }
 	else if (*arg == '*') { mode = OUT_STAR; arg++; }
+	else if (*arg == 'q') { mode = OUT_QUIET; arg++; }
 	while (*arg == ' ') { arg++; }
 	ut64 pcv = R_STR_ISEMPTY (arg)
 		? a->coreb.numGet (a->coreb.core, "$$")
