@@ -261,7 +261,7 @@ install: install-doc install-man install-panels install-www install-pkgconfig
 	cp -f doc/hud "${DESTDIR}${DATADIR}/radare2/${VERSION}/hud/main"
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)$(LIBDIR)/radare2/last/
-	cp -f subprojects/sdb/sdb "${DESTDIR}${BINDIR}/r2sdb"
+	${INSTALL_PROGRAM} "subprojects/sdb/sdb${EXT_EXE}" "${DESTDIR}${BINDIR}/r2sdb${EXT_EXE}"
 
 install-panels:
 	rm -rf "${DESTDIR}${PANELS}"
@@ -328,9 +328,12 @@ symstall install-symlink: install-man-symlink install-doc-symlink install-pkgcon
 	cd "$(DESTDIR)$(DATADIR)/radare2/" && rm -f last && ln -fs $(VERSION) last
 	mkdir -p "${DESTDIR}${DATADIR}/radare2/${VERSION}/"
 	$(SHELL) ./configure-plugins --rm-static $(DESTDIR)/$(LIBDIR)/radare2/last/
+	rm -f "${DESTDIR}${BINDIR}/r2sdb${EXT_EXE}"
+	ln -fs "${PWD}/subprojects/sdb/sdb${EXT_EXE}" "${DESTDIR}${BINDIR}/r2sdb${EXT_EXE}"
 
 deinstall uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/clang-format-radare2
+	rm -f "$(DESTDIR)$(BINDIR)/r2sdb${EXT_EXE}"
 	cd libr && ${MAKE} uninstall
 	cd binr && ${MAKE} uninstall
 	cd shlr && ${MAKE} uninstall
