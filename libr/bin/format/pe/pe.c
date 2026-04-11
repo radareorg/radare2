@@ -2953,9 +2953,6 @@ static void bin_pe_init_rich_info(RBinPEObj *pe) {
 	off -= sizeof (ut32);
 	while (((data = r_buf_read_le32_at (pe->b, off)) != magic) && data ^ mask && off > 0x80) {
 		Pe_image_rich_entry *entry = R_NEW0 (Pe_image_rich_entry);
-		if (!entry) {
-			return;
-		}
 		entry->timesUsed = data ^ mask;
 		off -= sizeof (ut32);
 		data = r_buf_read_le32_at (pe->b, off) ^ mask;
@@ -3233,9 +3230,6 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 		R_FREE (resourceEntryName);
 
 		Pe_image_resource_data_entry *data = R_NEW0 (Pe_image_resource_data_entry);
-		if (!data) {
-			break;
-		}
 		off = rsrc_base + entry.u2.OffsetToData;
 		if (off > pe->size || off + sizeof (*data) > pe->size) {
 			free (data);
@@ -3287,10 +3281,6 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 			sdb_ns_set (pe->kv, "vs_version_info", sdb);
 		}
 		r_pe_resource *rs = R_NEW0 (r_pe_resource);
-		if (!rs) {
-			free (data);
-			break;
-		}
 		/* Compare compileTimeStamp to resource timestamp to figure out if DOS date or POSIX date */
 		if (is_dos_time ((ut32)sdb_num_get (pe->kv, "image_file_header.TimeDateStamp", 0), dir->TimeDateStamp)) {
 			int tz = 0; // TODO: use configurable timezone

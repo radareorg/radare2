@@ -1233,18 +1233,23 @@ static inline void add_sdb_addrline(RBinFile *bf, ut64 addr, const char *file, u
 	switch (mode) {
 	case 1:
 	case 'r':
-	case '*':
+	case '*': {
+		// sanitize filename to prevent r2 script injection via embedded newlines
+		char *sp = strdup (p);
+		r_str_sanitize (sp);
 #if R2_590
 		/// XXX CL must take filename as last argument to support spaces imho
-		print ("'CL %s|%d|%d 0x%08" PFMT64x "\n", p, (int)line, (int)column, addr);
+		print ("'CL %s|%d|%d 0x%08" PFMT64x "\n", sp, (int)line, (int)column, addr);
 #else
 		if (column) {
-			print ("'CL %s:%d:%d 0x%08" PFMT64x "\n", p, (int)line, (int)column, addr);
+			print ("'CL %s:%d:%d 0x%08" PFMT64x "\n", sp, (int)line, (int)column, addr);
 		} else if (line > 0) {
-			print ("'CL %s:%d 0x%08" PFMT64x "\n", p, (int)line, addr);
+			print ("'CL %s:%d 0x%08" PFMT64x "\n", sp, (int)line, addr);
 		}
 #endif
+		free (sp);
 		break;
+		}
 	}
 	bf->addrline.al_add (&bf->addrline, addr, file, NULL, line, column);
 }
