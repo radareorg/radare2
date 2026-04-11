@@ -103,7 +103,6 @@ EXPECT=<<EOF
 \           0x00402076      ff1584304000   call dword [ExitProcess]    ; 0x403084 ; VOID ExitProcess(UINT uExitCode)
 // callconv: eax cdecl (stack);
 int entry0 (int stack) {
-    loc_0x0040200f:
         si = 3
         fcn.00402000 ()
         
@@ -141,7 +140,6 @@ int entry0 (int stack) {
 
  0x0040200f |                                | // callconv: eax cdecl (stack);
  0x0040200f |                                | int entry0 (int stack) {
- 0x0040200f |     loc_0x0040200f:
  0x0040200f |         si = 3
  0x00402013 |         fcn.00402000 ()
  0x00402018 |         
@@ -191,17 +189,16 @@ EOF
 EXPECT=<<EOF
 // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
 void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
-    loc_0x100003a54:
         x8 = [x0 + 0x60] // arg1
         x8 = [x8 + 0x60]
         x9 = [x1 + 0x60] // arg2
         x9 = [x9 + 0x60]
         (a, b) = compare (x8, x9)
         if (a <= b) goto 0x100003a74 // likely
-        goto loc_0x100003a6c;
+        return x0;
     loc_0x100003a74:
         if (a >= b) goto 0x100003a80 // likely
-        goto loc_0x100003a78;
+        return x0;
     loc_0x100003a80:
         x8 = x1 + 0x68 // arg2
         x1 = x0 + 0x68 // arg1
@@ -248,17 +245,16 @@ EOF
 EXPECT=<<EOF
  0x100003a54 |                                | // callconv: x0 arm64 (x0, x1, x2, x3, x4, x5, x6, x7, stack);
  0x100003a54 |                                | void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
- 0x100003a54 |     loc_0x100003a54:
  0x100003a54 |         x8 = [x0 + 0x60] // arg1
  0x100003a58 |         x8 = [x8 + 0x60]
  0x100003a5c |         x9 = [x1 + 0x60] // arg2
  0x100003a60 |         x9 = [x9 + 0x60]
  0x100003a64 |         (a, b) = compare (x8, x9)
  0x100003a68 |         if (a <= b) goto 0x100003a74 // likely
- 0x100003a54 |         goto loc_0x100003a6c;
+ 0x100003a54 |         return x0;
  0x100003a74 |     loc_0x100003a74:
  0x100003a74 |         if (a >= b) goto 0x100003a80 // likely
- 0x100003a74 |         goto loc_0x100003a78;
+ 0x100003a74 |         return x0;
  0x100003a80 |     loc_0x100003a80:
  0x100003a80 |         x8 = x1 + 0x68 // arg2
  0x100003a84 |         x1 = x0 + 0x68 // arg1
