@@ -4,7 +4,6 @@
 
 // R2R db/cmd/cmd_pdc
 
-// Structure to hold state for decompilation
 typedef struct {
 	RCore *core;
 	RStrBuf *out;
@@ -12,10 +11,10 @@ typedef struct {
 	PJ *pj;
 	bool show_asm;
 	bool show_addr;
-	Sdb *goto_cache; // Cache to avoid duplicate goto statements
-	Sdb *db; // General purpose DB for the algorithm
+	Sdb *goto_cache;
+	Sdb *db;
 	RAnalFunction *fcn;
-	const char *r0; // return-value register alias name
+	const char *r0;
 	char indentstr[1024];
 } PDCState;
 
@@ -74,23 +73,17 @@ static void find_function_name(RFindCTX *ctx, const char *in) {
 		return;
 	}
 
-	// Navigate back to find function name
 	ctx->right = (char *) (in - 1);
 	while (isalpha (*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 		ctx->right--;
 	}
-
-	// Handle return type if present
 	if (*ctx->right == ' ') {
 		ctx->right--;
 		while (isalpha (*ctx->right) || *ctx->right == '_' || *ctx->right == '*') {
 			ctx->right--;
 		}
-		// Move back to start of function name
 		ctx->right++;
 	}
-
-	// Set color offset for the right token
 	set_right_token (ctx, ctx->right);
 }
 
@@ -101,7 +94,6 @@ static void swap_strings(RFindCTX *ctx) {
 		return;
 	}
 	if (ctx->leftlen > ctx->rightlen) {
-		// Left string is longer than right string
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -114,7 +106,6 @@ static void swap_strings(RFindCTX *ctx) {
 		memmove (ctx->right - ctx->leftlen + ctx->rightlen, copy, ctx->leftlen);
 	} else if (ctx->leftlen < ctx->rightlen) {
 		if (ctx->linecount < 1) {
-			// Right string is longer than left string
 			len = ctx->rightlen;
 			copy = R_NEWS (char, len);
 			if (!copy) {
@@ -125,14 +116,12 @@ static void swap_strings(RFindCTX *ctx) {
 			memmove (ctx->comment + ctx->rightlen - ctx->leftlen, ctx->comment, ctx->right - ctx->comment);
 			memmove (ctx->left + ctx->rightlen - ctx->leftlen, copy, ctx->rightlen);
 		} else {
-			// Special case handling
 			memset (ctx->right - ctx->leftpos, ' ', ctx->leftpos);
 			*(ctx->right - ctx->leftpos - 1) = '\n';
 			memset (ctx->left, ' ', ctx->leftlen);
 			memset (ctx->linebegin - ctx->leftlen, ' ', ctx->leftlen);
 		}
 	} else {
-		// Equal length strings - simple swap
 		len = ctx->leftlen;
 		copy = R_NEWS (char, len);
 		if (!copy) {
@@ -147,13 +136,11 @@ static void swap_strings(RFindCTX *ctx) {
 }
 
 static void find_and_change(char *in, int len) {
-	// just to avoid underflows.. len can't be < then len(padding).
 	if (!in || len < 1) {
 		return;
 	}
 	RFindCTX ctx = { 0 };
 	char *end = in + len;
-	//	type = TYPE_NONE;
 	for (ctx.linebegin = in; in < end; in++) {
 		if (*in == '\n' || !*in) {
 			if (ctx.type == TYPE_SYM && ctx.linecount < 1) {
@@ -190,7 +177,6 @@ static void find_and_change(char *in, int len) {
 		} else if (ctx.type == TYPE_SYM) {
 			set_left_length (&ctx, in, 3);
 			if (ctx.comment && *in == '(' && isalpha (in[-1]) && !ctx.right) {
-				// Handle function definition format: "type fcn_name(args)"
 				find_function_name (&ctx, in);
 			} else if (ctx.comment && *in == ')' && in[1] != '\'') {
 				set_right_length (&ctx, in, 1);
@@ -255,7 +241,6 @@ static void remove_double_spaces(char *s) {
 }
 
 static char *cleancomments(char *s) {
-	// trim newline+spaces before //
 	char *p = s;
 	char *nl = NULL;
 	int spaces = 0;
@@ -286,7 +271,6 @@ static char *cleancomments(char *s) {
 		}
 		p++;
 	}
-	// remove empty lines
 	s = r_str_replace (s, "\n\n", "\n", true);
 	remove_double_spaces (s);
 	return s;
@@ -351,8 +335,7 @@ static void print_newline(PDCState *state, ut64 addr, int indent) {
 	}
 }
 
-// Emits a fresh line whose asm column is empty (for synthetic lines like
-// goto/return/labels/braces that have no real instruction to show).
+// Synthetic lines (goto/return/labels/braces) leave the asm column blank.
 static void print_newline_synthetic(PDCState *state, ut64 addr, int indent) {
 	prepare_indentstr (state, indent);
 	RStrBuf *sb = state_sb (state);
@@ -453,7 +436,6 @@ static void print_goto_direct(PDCState *state, RAnalBlock *bb, ut64 dst_addr, ut
 	}
 }
 
-// Define macros that call these functions
 #define PRINTF(...) print_str(&state, __VA_ARGS__)
 #define NEWLINE(addr, indent) print_newline(&state, addr, indent)
 #define PRINTGOTO(dst_addr, curr_addr) print_goto(&state, bb, dst_addr, curr_addr, indent)
@@ -474,11 +456,6 @@ static int bb_last_op_type(RCore *core, RAnalBlock *bb) {
 	int t = lop->type & R_ANAL_OP_TYPE_MASK;
 	r_anal_op_free (lop);
 	return t;
-}
-
-static bool bb_ends_in_tail_jmp(RCore *core, RAnalBlock *bb) {
-	int t = bb_last_op_type (core, bb);
-	return t == R_ANAL_OP_TYPE_JMP || t == R_ANAL_OP_TYPE_UJMP;
 }
 
 static bool bb_ends_with_terminator(RCore *core, RAnalBlock *bb) {
@@ -511,6 +488,11 @@ static char *fetch_bb_pseudo(PDCState *state, RAnalBlock *bb) {
 	return code;
 }
 
+static bool is_known_loop_header(PDCState *state, ut64 addr) {
+	r_strf_buffer (64);
+	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
+}
+
 static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent, bool emit_pj) {
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
@@ -524,6 +506,19 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			}
 			const char *s = strchr (line, ' ');
 			line = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (R_STR_ISNOTEMPTY (line)) {
+			// drop tail goto into a structured loop header (the while/do owns that edge)
+			const char *t = r_str_trim_head_ro (line);
+			if (r_str_startswith (t, "goto ") || r_str_startswith (t, "jmp ")) {
+				const char *num = strstr (t, "0x");
+				if (num) {
+					ut64 dst = r_num_get (NULL, num);
+					if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
+						continue;
+					}
+				}
+			}
 		}
 		if (emit_pj && state->pj) {
 			pj_o (state->pj);
@@ -692,16 +687,8 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	if (n < 1) {
 		return;
 	}
-	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
-	print_newline (state, sw_bb->addr, indent);
-	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
-		expr, n, sw_bb->addr);
-	free (expr);
-
 	PDCSwCase *arr = calloc (n, sizeof (PDCSwCase));
 	if (!arr) {
-		print_newline (state, sw_bb->addr, indent);
-		print_str (state, "}");
 		return;
 	}
 	int i = 0;
@@ -716,6 +703,23 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		i++;
 	}
 	qsort (arr, i, sizeof (PDCSwCase), pdc_case_cmp);
+	{
+		int w = 0;
+		int r;
+		for (r = 0; r < i; r++) {
+			if (w > 0 && arr[w - 1].value == arr[r].value
+					&& arr[w - 1].jump == arr[r].jump) {
+				continue;
+			}
+			arr[w++] = arr[r];
+		}
+		i = w;
+	}
+	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
+	print_newline (state, sw_bb->addr, indent);
+	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
+		expr, i, sw_bb->addr);
+	free (expr);
 
 	int c = 0;
 	while (c < i) {
@@ -745,6 +749,274 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 	print_newline (state, sw_bb->addr, indent);
 	print_str (state, "}");
 	free (arr);
+}
+
+static char *extract_loop_cond(PDCState *state, RAnalBlock *test_bb, ut64 back_target) {
+	int ninstr = (test_bb->ninstr > 0)? test_bb->ninstr: 8;
+	char *code = r_core_cmd_strf (state->core,
+		"pi %d @e:asm.pseudo=1@e:scr.color=0@e:asm.addr=0@ 0x%08" PFMT64x,
+		ninstr, test_bb->addr);
+	if (R_STR_ISEMPTY (code)) {
+		free (code);
+		return NULL;
+	}
+	char *result = NULL;
+	char *vexpr = NULL;
+	RList *lines = r_str_split_list (code, "\n", 0);
+	RListIter *iter;
+	char *line;
+	r_list_foreach (lines, iter, line) {
+		const char *t = r_str_trim_head_ro (line);
+		if (r_str_startswith (t, "v = ")) {
+			free (vexpr);
+			vexpr = strdup (t + 4);
+			continue;
+		}
+		if (!r_str_startswith (t, "if ")) {
+			continue;
+		}
+		const char *g = strstr (t, "goto");
+		if (!g) {
+			continue;
+		}
+		const char *num = strstr (g, "0x");
+		if (!num || r_num_get (NULL, num) != back_target) {
+			continue;
+		}
+		const char *open = strchr (t, '(');
+		if (!open) {
+			continue;
+		}
+		int depth = 0;
+		const char *p, *close = NULL;
+		for (p = open; *p; p++) {
+			if (*p == '(') {
+				depth++;
+			} else if (*p == ')' && --depth == 0) {
+				close = p;
+				break;
+			}
+		}
+		if (close && close > open + 1) {
+			free (result);
+			result = r_str_ndup (open + 1, close - open - 1);
+			if (result) {
+				r_str_trim (result);
+			}
+		}
+	}
+	r_list_free (lines);
+	free (code);
+	if (result && vexpr) {
+		const char *minus = strstr (vexpr, " - ");
+		char *vlhs = minus? r_str_ndup (vexpr, minus - vexpr): NULL;
+		const char *vrhs = minus? r_str_trim_head_ro (minus + 3): NULL;
+		char *folded = NULL;
+		if (!strcmp (result, "v")) {
+			folded = strdup (vexpr);
+		} else if (!strcmp (result, "!v")) {
+			folded = vlhs? r_str_newf ("%s == %s", vlhs, vrhs): r_str_newf ("!(%s)", vexpr);
+		} else if (r_str_startswith (result, "v ") && vlhs && r_str_endswith (result, " 0")) {
+			char *op = r_str_ndup (result + 2, strlen (result + 2) - 2);
+			r_str_trim (op);
+			folded = r_str_newf ("%s %s %s", vlhs, op, vrhs);
+			free (op);
+		} else if (r_str_startswith (result, "v ")) {
+			folded = r_str_newf ("(%s)%s", vexpr, result + 1);
+		}
+		free (vlhs);
+		if (folded) {
+			free (result);
+			result = folded;
+		}
+	}
+	free (vexpr);
+	return result;
+}
+
+static bool line_is_branch_to(const char *line, const char *target_hex) {
+	const char *t = r_str_trim_head_ro (line);
+	if (R_STR_ISEMPTY (t)) {
+		return false;
+	}
+	if (r_str_startswith (t, "goto ") && strstr (t, target_hex)) {
+		return true;
+	}
+	if (r_str_startswith (t, "jmp ") && strstr (t, target_hex)) {
+		return true;
+	}
+	if (r_str_startswith (t, "if ") && strstr (t, "goto ") && strstr (t, target_hex)) {
+		return true;
+	}
+	return false;
+}
+
+static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent);
+
+static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back_target, int indent) {
+	char *code = fetch_bb_pseudo (state, bb);
+	if (!code) {
+		return;
+	}
+	RList *lines = r_str_split_list (code, "\n", 0);
+	RListIter *iter;
+	const char *line;
+	ut64 addr = bb->addr;
+	char back_hex[32];
+	snprintf (back_hex, sizeof (back_hex), "0x%08" PFMT64x, back_target);
+	char back_hex_short[32];
+	snprintf (back_hex_short, sizeof (back_hex_short), "0x%" PFMT64x, back_target);
+	r_list_foreach (lines, iter, line) {
+		const char *rendered = line;
+		if (*rendered == '0') {
+			ut64 at = r_num_get (NULL, rendered);
+			if (at && at != UT64_MAX) {
+				addr = at;
+			}
+			const char *s = strchr (rendered, ' ');
+			rendered = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (R_STR_ISEMPTY (rendered)) {
+			continue;
+		}
+		if (line_is_branch_to (rendered, back_hex)
+				|| line_is_branch_to (rendered, back_hex_short)) {
+			continue;
+		}
+		const char *rt = r_str_trim_head_ro (rendered);
+		if (r_str_startswith (rt, "goto ") || r_str_startswith (rt, "jmp ")) {
+			const char *num = strstr (rt, "0x");
+			if (num) {
+				ut64 dst = r_num_get (NULL, num);
+				if (dst && dst != UT64_MAX && is_known_loop_header (state, dst)) {
+					continue;
+				}
+			}
+		}
+		print_newline (state, addr, indent);
+		print_str (state, "%s", rendered);
+	}
+	r_list_free (lines);
+	free (code);
+}
+
+// Renders body+tail-test as while, single-bb self-loop as do/while; returns post-loop exit bb or NULL.
+static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent) {
+	r_strf_buffer (64);
+	if (!test_bb || test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX) {
+		return NULL;
+	}
+	if (!r_anal_function_contains (state->fcn, test_bb->jump)) {
+		return NULL;
+	}
+	if (!r_anal_function_contains (state->fcn, test_bb->fail)) {
+		return NULL;
+	}
+	bool self_loop = (test_bb->jump == test_bb->addr);
+	if (!self_loop && test_bb->jump >= test_bb->addr) {
+		return NULL;
+	}
+	char *cond = extract_loop_cond (state, test_bb, test_bb->jump);
+	print_newline (state, test_bb->addr, indent);
+	if (self_loop) {
+		print_str (state, "do {");
+	} else {
+		if (cond) {
+			print_str (state, "while (%s) {", cond);
+		} else {
+			print_str (state, "while (/* 0x%08" PFMT64x " */) {",
+				test_bb->addr);
+		}
+	}
+	if (self_loop) {
+		emit_bb_body_no_back_jump (state, test_bb, test_bb->addr, indent + 1);
+		mark_bb_visited (state, visited, test_bb);
+		print_newline (state, test_bb->addr, indent);
+		if (cond) {
+			print_str (state, "} while (%s);", cond);
+		} else {
+			print_str (state, "} while (/* 0x%08" PFMT64x " */);",
+				test_bb->addr);
+		}
+	} else {
+		ut64 body_start = test_bb->jump;
+		ut64 body_end = test_bb->addr;
+		RList *sorted = r_list_new ();
+		RListIter *iter;
+		RAnalBlock *b;
+		if (sorted) {
+			r_list_foreach (state->fcn->bbs, iter, b) {
+				if (b->addr >= body_start && b->addr < body_end) {
+					r_list_append (sorted, b);
+				}
+			}
+		}
+		// nested loop tests: bbs in [body_start,body_end) whose back-jump stays inside.
+		ut64 owned_lo[16];
+		ut64 owned_hi[16];
+		int nowned = 0;
+		r_list_foreach (sorted, iter, b) {
+			if (b->jump != UT64_MAX && b->fail != UT64_MAX
+					&& b->jump < b->addr
+					&& b->jump >= body_start
+					&& b->addr < body_end
+					&& nowned < 16) {
+				owned_lo[nowned] = b->jump;
+				owned_hi[nowned] = b->addr;
+				nowned++;
+			}
+		}
+		r_list_foreach (sorted, iter, b) {
+			if (sdb_const_get (state->db, K_MARK (b->addr), 0)) {
+				continue;
+			}
+			bool is_nested_test = false;
+			int oi;
+			for (oi = 0; oi < nowned; oi++) {
+				if (owned_hi[oi] == b->addr) {
+					is_nested_test = true;
+					break;
+				}
+			}
+			if (is_nested_test) {
+				render_loop_while (state, b, visited, indent + 1);
+				continue;
+			}
+			bool owned = false;
+			for (oi = 0; oi < nowned; oi++) {
+				if (b->addr >= owned_lo[oi] && b->addr < owned_hi[oi]) {
+					owned = true;
+					break;
+				}
+			}
+			if (owned) {
+				continue;
+			}
+			if (b->switch_op) {
+				render_switch (state, b, visited, indent + 1);
+				mark_bb_visited (state, visited, b);
+				continue;
+			}
+			if (b->fail != UT64_MAX) {
+				RAnalBlock *fb = r_anal_bb_from_offset (state->core->anal, b->fail);
+				if (fb && fb->switch_op) {
+					emit_bb_body_no_back_jump (state, b, test_bb->addr, indent + 1);
+					mark_bb_visited (state, visited, b);
+					render_switch (state, fb, visited, indent + 1);
+					mark_bb_visited (state, visited, fb);
+					continue;
+				}
+			}
+			emit_bb_body_no_back_jump (state, b, test_bb->addr, indent + 1);
+			mark_bb_visited (state, visited, b);
+		}
+		r_list_free (sorted);
+		mark_bb_visited (state, visited, test_bb);
+		print_newline (state, test_bb->addr, indent);
+		print_str (state, "}");
+	}
+	free (cond);
+	return r_anal_bb_from_offset (state->core->anal, test_bb->fail);
 }
 
 R_API int r_core_pseudo_code(RCore *core, const char *input) {
@@ -821,16 +1093,9 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	r_core_cmd0 (core, "aeim");
 
 	r_strf_buffer (64);
-	// walk all basic blocks
-	// define depth level for each block
-	// use it for indentation
-	// asm.pseudo=true
-	// asm.decode=true
 	RAnalBlock *bb = r_list_first (state.fcn->bbs);
 	int indent = 0;
 	int nindent = 1;
-	// XXX sorting basic blocks is nice for the reader, but introduces conceptual problems
-	// when the entrypoint is not starting at the lowest address. // r_list_sort (fcn->bbs, cmpnbbs);
 	int n_bb = r_list_length (state.fcn->bbs);
 
 	if (state.pj) {
@@ -892,9 +1157,71 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	indent++;
 	RList *visited = r_list_newf (NULL);
 	ut64 addr = state.fcn->addr;
+	// pre-pass: mark loop header bbs so emit_code_lines can strip stale gotos to them
+	{
+		RListIter *piter;
+		RAnalBlock *pbb;
+		r_list_foreach (state.fcn->bbs, piter, pbb) {
+			if (pbb->jump != UT64_MAX && pbb->fail != UT64_MAX
+					&& pbb->jump <= pbb->addr
+					&& r_anal_function_contains (state.fcn, pbb->jump)
+					&& r_anal_function_contains (state.fcn, pbb->fail)) {
+				sdb_num_set (state.db,
+					r_strf ("loop_header.%" PFMT64x, pbb->addr), 1, 0);
+			}
+		}
+	}
 	while (bb) {
 		r_list_append (visited, bb);
 		indent = 2;
+		// drain indent stack after a structural renderer to avoid spurious trailing returns
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)
+				&& sdb_num_get (state.db,
+					r_strf ("structured.%" PFMT64x, bb->addr), 0)) {
+			RAnalBlock *next = NULL;
+			while (true) {
+				ut64 pop_addr = sdb_array_pop_num (state.db, "indent", NULL);
+				if (pop_addr == UT64_MAX) {
+					break;
+				}
+				if (sdb_num_get (state.db, K_MARK (pop_addr), 0)) {
+					continue;
+				}
+				next = r_anal_bb_from_offset (core->anal, pop_addr);
+				if (next) {
+					break;
+				}
+			}
+			if (!next) {
+				break;
+			}
+			bb = next;
+			continue;
+		}
+		// body+tail-test loop pattern: bb's back-edge points into an earlier body bb
+		if (!sdb_const_get (state.db, K_MARK (bb->addr), 0)
+				&& bb->fail != UT64_MAX
+				&& bb->jump != UT64_MAX
+				&& bb->jump <= bb->addr
+				&& r_anal_function_contains (state.fcn, bb->jump)
+				&& r_anal_function_contains (state.fcn, bb->fail)) {
+			ut64 test_addr = bb->addr;
+			RAnalBlock *exit_bb = render_loop_while (&state, bb, visited, indent - 1);
+			if (exit_bb) {
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".addr", test_addr), "1", 0);
+				sdb_num_set (state.db, K_MARK (test_addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, test_addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, exit_bb->addr), 1, 0);
+				if (sdb_const_get (state.db, K_MARK (exit_bb->addr), 0)) {
+					break;
+				}
+				bb = exit_bb;
+				continue;
+			}
+		}
 		char *code = fetch_bb_pseudo (&state, bb);
 		if (!code) {
 			R_LOG_ERROR ("Empty code here");
@@ -915,6 +1242,32 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 		}
 		free (code);
+		{
+			RAnalBlock *sw_bb = NULL;
+			if (bb->switch_op) {
+				sw_bb = bb;
+			} else if (bb->fail != UT64_MAX) {
+				RAnalBlock *fb = r_anal_bb_from_offset (core->anal, bb->fail);
+				if (fb && fb->switch_op) {
+					sw_bb = fb;
+				}
+			}
+			if (sw_bb) {
+				render_switch (&state, sw_bb, visited, indent - 1);
+				sdb_num_set (state.db, K_MARK (sw_bb->addr), 1, 0);
+				sdb_num_set (state.db,
+					r_strf ("structured.%" PFMT64x, sw_bb->addr), 1, 0);
+				if (!r_list_contains (visited, sw_bb)) {
+					r_list_append (visited, sw_bb);
+				}
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".addr", bb->addr), "1", 0);
+				sdb_set (state.goto_cache,
+					r_strf ("%" PFMT64x ".to.%" PFMT64x, bb->addr, sw_bb->addr),
+					"1", 0);
+				break;
+			}
+		}
 		bool closed = false;
 		bool resume_from_indent = false;
 		ut64 gotoaddr = UT64_MAX;
@@ -927,13 +1280,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			closed = true;
 		}
 		if (sdb_const_get (state.db, K_INDENT (bb->addr), 0)) {
-			// already analyzed, go pop and continue
 			unvisit (visited, bb);
 			R_LOG_DEBUG ("// 0x%08" PFMT64x " already analyzed", bb->addr);
 			ut64 addr = sdb_array_pop_num (state.db, "indent", NULL);
 			if (addr == UT64_MAX) {
 				closed = true;
-				if (!bb_ends_in_tail_jmp (core, bb)) {
+				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);
@@ -976,11 +1328,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			sdb_set (state.db, K_INDENT (bb->addr), "passed", 0);
 			if (has_jump) {
 				int swap = 1;
-				// TODO: determine which branch take first
 				ut64 jump = swap? bb->jump: bb->fail;
 				ut64 fail = swap? bb->fail: bb->jump;
-				// If a conditional branch leaves the current function, do not
-				// descend into the foreign CFG. Prefer the in-function branch.
 				const bool jump_in_fcn = jump != UT64_MAX && r_anal_function_contains (state.fcn, jump);
 				if (!jump_in_fcn) {
 					NEWLINE (jump, indent);
@@ -994,7 +1343,6 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					}
 				}
 				if (sdb_get (state.db, K_INDENT (jump), 0)) {
-					// already tracekd
 					if (fail != UT64_MAX && !sdb_get (state.db, K_INDENT (fail), 0)) {
 						bb = r_anal_bb_from_offset (core->anal, fail);
 					} else if (fail == UT64_MAX) {
@@ -1047,13 +1395,27 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	RListIter *iter;
 	bool use_html = r_config_get_b (core->config, "scr.html");
+	// hoist unconsumed switch dispatchers before orphan labels
+	r_list_foreach (state.fcn->bbs, iter, bb) {
+		if (!bb->switch_op) {
+			continue;
+		}
+		if (r_list_contains (visited, bb)) {
+			continue;
+		}
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+			continue;
+		}
+		render_switch (&state, bb, visited, 2);
+		r_list_append (visited, bb);
+		sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
+	}
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
-		if (bb->switch_op) {
-			render_switch (&state, bb, visited, 2);
-			r_list_append (visited, bb);
+		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
 		if (iter->n) {
@@ -1146,7 +1508,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				PRINTF ("%s", s);
 			}
 			if (bb->jump == UT64_MAX) {
-				if (!bb_ends_in_tail_jmp (core, bb)) {
+				if (!bb_ends_with_terminator (core, bb)) {
 					print_newline_synthetic (&state, bb->addr, indent);
 					PRINTF (r0? "return %s;": "return;", r0);
 					sdb_set (state.goto_cache, r_strf ("return.%" PFMT64x, bb->addr), "1", 0);

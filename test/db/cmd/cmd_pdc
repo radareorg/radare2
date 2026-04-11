@@ -106,7 +106,7 @@ int entry0 (int stack) {
         si = 3
         fcn.00402000 ()
         
-    loc_0x00402018:
+    do {
         push (0)
         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -117,9 +117,7 @@ int entry0 (int stack) {
         esp += 4
         si--
         v = si - 0
-        if (v > 0) goto loc_0x402018 // unlikely
-        goto loc_0x00402042;
-        return eax;
+    } while (si > 0);
     loc_0x00402042:
         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -135,7 +133,6 @@ int entry0 (int stack) {
         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
         push (0)
         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
-        return eax;
 }
 
  0x0040200f |                                | // callconv: eax cdecl (stack);
@@ -143,20 +140,18 @@ int entry0 (int stack) {
  0x0040200f |         si = 3
  0x00402013 |         fcn.00402000 ()
  0x00402018 |         
- 0x00402018 |     loc_0x00402018:
+ 0x00402018 |     do {
  0x00402018 |         push (0)
  0x0040201a |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
  0x0040201f |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
  0x00402024 |         push (0)
- 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // (pstr 0x0040100e) "LABEL" // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
+ 0x00402026 |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x4542414c, NULL)
  0x0040202c |         push ("LABEL") // 0x40100e // (pstr 0x0040100e) "LABEL"
- 0x00402031 |         dword [puts] () // 0x4030dc // reloc.crtdll.dll_puts // int puts("LABEL")
+ 0x00402031 |         dword [puts] () // 0x4030dc // (pstr 0x00401000) "Hello, World!" // reloc.crtdll.dll_puts // int puts("LABEL")
  0x00402037 |         esp += 4
  0x0040203a |         si--
  0x0040203c |         v = si - 0
- 0x00402040 |         if (v > 0) goto loc_0x402018 // unlikely
- 0x00402018 |         goto loc_0x00402042;
- 0x00402018 |         return eax;
+ 0x00402018 |     } while (si > 0);
  0x00402042 |     loc_0x00402042:
  0x00402042 |         eax = dword [puts] // [0x4030dc:4]=0x30e8 reloc.crtdll.dll_puts // reloc.crtdll.dll_puts
  0x00402047 |         push ("Hello, World!") // section..data // 0x401000 // (pstr 0x00401000) "Hello, World!"
@@ -172,7 +167,6 @@ int entry0 (int stack) {
  0x0040206e |         dword [MessageBoxA] () // 0x4030b8 // reloc.user32.dll_MessageBoxA // int MessageBoxA(NULL, 0x6c6c6548, 0x6c6c6548, NULL)
  0x00402074 |         push (0)
  0x00402076 |         dword [ExitProcess] () // 0x403084 // reloc.kernel32.dll_ExitProcess // VOID ExitProcess(NULL)
- 0x00402042 |         return eax;
  0x00402076 | }
 
 EOF
@@ -204,11 +198,9 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
         x1 = x0 + 0x68 // arg1
         x0 = x8
         goto sym.imp.strcoll // int strcoll("", "")
-        return x0;
     loc_0x100003a6c: // orphan
          w0 = 1
 
-        return x0;
 }
 
 EOF
@@ -260,11 +252,9 @@ EXPECT=<<EOF
  0x100003a84 |         x1 = x0 + 0x68 // arg1
  0x100003a88 |         x0 = x8
  0x100003a8c |         goto sym.imp.strcoll // int strcoll("", "")
- 0x100003a6c |         return x0;
  0x100003a6c | loc_0x100003a6c: // orphan
  0x100003a6c      w0 = 1
 
- 0x100003a6c |         return x0;
  0x100003a8c | }
 
 EOF
