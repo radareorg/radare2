@@ -13,21 +13,16 @@ typedef struct {
 #define rURL(x) (((RIOR2Web*)(x)->data)->url)
 
 static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
-	if (!fd || !fd->data) {
+	if (!fd || !fd->data || count < 1 || count > ST32_MAX / 2 - 1) {
 		return -1;
 	}
-	if (count * 3 < count) {
-		return -1;
-	}
-	char *hexbuf = malloc (count * 3);
+	char *hexbuf = malloc (count * 2 + 1);
 	if (!hexbuf) {
 		return -1;
 	}
-	hexbuf[0] = 0;
 	r_hex_bin2str (buf, count, hexbuf);
-	RIOR2Web *r2w= fd->data;
-	char *url = r_str_newf ("%s/wx%%20%s@%"PFMT64d,
-		rURL (fd), hexbuf, r2w->addr);
+	RIOR2Web *r2w = fd->data;
+	char *url = r_str_newf ("%s/wx%%20%s@%"PFMT64d, rURL (fd), hexbuf, r2w->addr);
 	int code, rlen;
 	char *out = r_socket_http_get (url, NULL, &code, &rlen);
 	r2w->addr += count;
@@ -38,31 +33,27 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int count) {
 }
 
 static int __read(RIO *io, RIODesc *fd, ut8 *buf, int count) {
-	int ret = 0;
 	if (!fd || !fd->data) {
 		return -1;
 	}
-	RIOR2Web *r2w= fd->data;
-	char *url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x,
-		rURL(fd), count, r2w->addr);
-	int code, rlen;
+	RIOR2Web *r2w = fd->data;
+	char *url = r_str_newf ("%s/p8%%20%d@0x%"PFMT64x, rURL (fd), count, r2w->addr);
+	int code, rlen, ret = 0;
 	char *out = r_socket_http_get (url, NULL, &code, &rlen);
-	if (out && rlen > 0) {
-		ut8 *tmp = calloc (1, rlen+1);
-		if (!tmp) {
-			goto beach;
-		}
-		ret = r_hex_str2bin (out, tmp);
-		memcpy (buf, tmp, R_MIN (count, rlen));
-		free (tmp);
-		if (ret < 0) {
-			ret = -ret;
-		}
-		r2w->addr += ret;
-	}
-beach:
-	free (out);
 	free (url);
+	if (out && rlen > 0) {
+		ut8 *tmp = calloc (1, rlen + 1);
+		if (tmp) {
+			ret = r_hex_str2bin (out, tmp);
+			if (ret < 0) {
+				ret = -ret;
+			}
+			memcpy (buf, tmp, R_MIN (count, ret));
+			free (tmp);
+			r2w->addr += ret;
+		}
+	}
+	free (out);
 	return ret;
 }
 
@@ -102,38 +93,30 @@ static inline int getmalfd(RIOR2Web *mal) {
 }
 
 static RIODesc *__open(RIO *io, const char *pathname, int rw, int mode) {
-	char *out;
+	if (!__plugin_open (io, pathname, 0)) {
+		return NULL;
+	}
+	char *path = strdup (pathname + 8);
+	size_t path_len = strlen (path);
+	if (path_len > 0 && path[path_len - 1] == '/') {
+		path[path_len - 1] = 0;
+	}
 	int rlen, code;
-	if (__plugin_open (io, pathname, 0)) {
+	char *url = r_str_newf ("http://%s/?V", path);
+	char *out = r_socket_http_get (url, NULL, &code, &rlen);
+	free (url);
+	RIODesc *desc = NULL;
+	if (out && rlen > 0) {
 		RIOR2Web *mal = R_NEW0 (RIOR2Web);
-		char *path = strdup (pathname + 8);
-		int path_len = strlen (path);
-		if (path_len > 0) {
-			if (path[path_len - 1] == '/') {
-				path[path_len - 1] = 0;
-			}
-		}
-		char *url = r_str_newf ("http://%s/?V", path);
-		//eprintf  ("URL:(%s)\n", url);
-		out = r_socket_http_get (url, NULL, &code, &rlen);
-		//eprintf ("RES %d %d\n", code, rlen);
-		//eprintf ("OUT(%s)\n", out);
-		if (out && rlen > 0) {
-			mal->fd = getmalfd (mal);
-			mal->url = r_str_newf ("http://%s", path);
-			free (path);
-			free (out);
-			free (url);
-			return r_io_desc_new (io, &r_io_plugin_r2web,
-				pathname, rw, mode, mal);
-		}
-		free (url);
-		free (mal);
-		free (out);
-		free (path);
+		mal->fd = getmalfd (mal);
+		mal->url = r_str_newf ("http://%s", path);
+		desc = r_io_desc_new (io, &r_io_plugin_r2web, pathname, rw, mode, mal);
+	} else {
 		R_LOG_WARN ("Try http://localhost:9090/cmd/");
 	}
-	return NULL;
+	free (out);
+	free (path);
+	return desc;
 }
 
 static char *__system(RIO *io, RIODesc *fd, const char *command) {
