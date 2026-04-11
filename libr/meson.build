@@ -8,7 +8,7 @@ core_plugins = []
 
 esil_plugins = [ 'dummy', 'forth', 'null' ]
 asm_plugins = [ 'null', 'att2intel' ]
-anal_plugins = [ 'null', 'autoname', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path', 'drcov' ]
+anal_plugins = [ 'null', 'autoname', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path', 'drcov', 'callargs' ]
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
@@ -22,7 +22,7 @@ if get_option('use_zip')
 endif
 bp_plugins = [ 'null' ]
 muta_plugins = [ 'null' ]
-core_plugins += [ 'prj', 'writedwarf', 'agD', 'callargs' ]
+core_plugins += [ 'prj', 'writedwarf', 'agD' ]
 egg_plugins = [ 'xor' ]
 debug_plugins = [ 'null', 'io', 'esil', 'rap' ]
 lang_plugins = [ 'lib', 'pipe', 'qjs', 'tsc', 'spp' ]

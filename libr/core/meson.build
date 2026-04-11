@@ -47,7 +47,6 @@ r_core_sources += [
   'vmenus_zigns.c',
   'yank.c',
   'p/core_agD.c',
-  'p/core_callargs.c',
   'p/core_writedwarf.c',
   'p/core_prj.c',
   'p/core_java.c'
