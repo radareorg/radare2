@@ -2462,3 +2462,20 @@ esp before :0x00178000
 esp after  :0x00178000
 EOF
 RUN
+
+NAME=push ax
+FILE=-
+ARGS=-a x86 -b 32
+CMDS=<<EOF
+aeim
+aets+
+wa push eax
+dr?esp
+aes
+dr?esp
+EOF
+EXPECT=<<EOF
+0x00178000
+0x00177ffc
+EOF
+RUN
