@@ -77,7 +77,7 @@ NAME=x86_64 getenv call args (quiet)
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
-a:callargs q 0x10000143e
+a:callargs-q 0x10000143e
 EOF
 EXPECT=<<EOF
 char *getenv("COLUMNS")
@@ -88,7 +88,7 @@ NAME=x86_64 getenv call args (json)
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
-a:callargs j 0x10000143e
+a:callargs-j 0x10000143e
 EOF
 EXPECT=<<EOF
 {"addr":4294972478,"target":4294985150,"function":"sym.imp.getenv","return_type":"char *","calling_convention":"amd64","args":[{"index":0,"name":"name","type":"const char *","source":"rdi","size":8,"known":true,"raw":4294986545,"value":"\"COLUMNS\""}]}
@@ -99,7 +99,7 @@ NAME=x86_64 getenv call args (r2)
 FILE=bins/mach0/ls-osx-x86_64
 CMDS=<<EOF
 af
-a:callargs * 0x10000143e
+a:callargs-* 0x10000143e
 EOF
 EXPECT=<<EOF
 '@0x10000143e'CCu base64:Y2hhciAqc3ltLmltcC5nZXRlbnYobmFtZT0iQ09MVU1OUyIgLyoweDEwMDAwNGIzMSovKQ==
