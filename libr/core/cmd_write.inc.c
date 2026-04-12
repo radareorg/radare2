@@ -849,6 +849,9 @@ static bool cmd_wfs(RCore *core, const char *input) {
 				break;
 			}
 			done += rc;
+			if (done > sz) {
+				done = sz;
+			}
 		}
 		r_socket_free (c);
 		if (r_io_write_at (core->io, core->addr, buf, done)) {
