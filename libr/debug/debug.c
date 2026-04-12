@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake, jduck, TheLemonMan, saucec0de */
+/* radare - LGPL - Copyright 2009-2026 - pancake, jduck, TheLemonMan, saucec0de */
 
 #include <r_core.h>
 #include <r_drx.h>
@@ -105,7 +105,7 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 				/* handle the case of hw breakpoints - notify the user */
 				int drx_reg_idx = r_debug_drx_get (dbg, pc);
 				if (drx_reg_idx != -1) {
-					R_LOG_INFO ("hit hardware breakpoint %d at: %" PFMT64x,
+					R_LOG_DEBUG ("hit hardware breakpoint %d at: %" PFMT64x,
 						drx_reg_idx, pc);
 				}
 				/* Couldn't find the break point. Nothing more to do... */
@@ -171,7 +171,7 @@ static bool r_debug_bp_hit(RDebug *dbg, RRegItem *pc_ri, ut64 pc, RBreakpointIte
 
 	/* inform the user of what happened */
 	if (dbg->hitinfo) {
-		R_LOG_INFO ("hit %spoint at: 0x%" PFMT64x,
+		R_LOG_DEBUG ("hit %spoint at: 0x%" PFMT64x,
 			b->trace ? "trace" : "break", pc);
 	}
 
@@ -1221,7 +1221,7 @@ R_API int r_debug_continue_kill(RDebug *dbg, int sig) {
 			}
 			has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 			if (has_bp) {
-				R_LOG_INFO ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
+				R_LOG_DEBUG ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
 				r_debug_goto_cnum (dbg, reg->cnum);
 				return dbg->tid;
 			}
@@ -1544,7 +1544,7 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 		has_bp = r_bp_get_in (dbg->bp, reg->data, R_BP_PROT_EXEC);
 		if (has_bp) {
 			cnum = reg->cnum;
-			R_LOG_INFO ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
+			R_LOG_DEBUG ("hit breakpoint at: 0x%" PFMT64x " cnum: %d", reg->data, reg->cnum);
 			break;
 		}
 	}
