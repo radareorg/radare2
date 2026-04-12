@@ -75,6 +75,8 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2yara](https://github.com/radareorg/r2yara) Run Yara from r2 or use r2 primitives from Yara
 * [radius2](https://github.com/radareorg/radius2): A fast symbolic execution engine based on boolector and esil
 * [r2sarif](https://github.com/radareorg/r2sarif) import/extend/export SARIF documents
+* [r2hermes](https://github.com/radareorg/r2hermes) Disassembler and analyzer for React Native Hermes bytecode
+* [r2renef](https://github.com/Ahmeth4n/r2renef) Renef IO Plugin for Radare2 - Dynamic Android Instrumentation
 
 ## Usage
 
