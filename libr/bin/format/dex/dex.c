@@ -18,28 +18,22 @@ R_IPI char* r_bin_dex_get_version(RBinDexObj *bin) {
 }
 
 static char *getstr(RBinDexObj *bin, int idx) {
-	ut8 buf[6];
-	ut64 len;
-	int uleblen;
-	// null terminate the buf wtf
 	if (!bin || idx < 0 || idx >= bin->header.strings_size || !bin->strings) {
 		return NULL;
 	}
 	if (bin->strings[idx] >= bin->size) {
 		return NULL;
 	}
+	ut8 buf[6];
 	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
 		return NULL;
 	}
-	r_buf_write_at (bin->b, r_buf_size (bin->b) - 1, (ut8 *)"\x00", 1);
-	uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
+	ut64 len;
+	int uleblen = r_uleb128 (buf, sizeof (buf), &len, NULL) - buf;
 	if (!uleblen || uleblen >= bin->size) {
 		return NULL;
 	}
 	if (!len || len >= bin->size) {
-		return NULL;
-	}
-	if (bin->strings[idx] + uleblen >= bin->strings[idx] + bin->header.strings_size) {
 		return NULL;
 	}
 	ut8 *ptr = R_NEWS (ut8, len + 1);
@@ -47,13 +41,12 @@ static char *getstr(RBinDexObj *bin, int idx) {
 		r_buf_read_at (bin->b, bin->strings[idx] + uleblen, ptr, len + 1);
 		ptr[len] = 0;
 		if (len != r_utf8_strlen (ptr)) {
-			// R_LOG_WARN ("Invalid string for index %d", idx);
+			free (ptr);
 			return NULL;
 		}
 	}
 	return (char *)ptr;
 }
-
 
 static char *className(RBinDexObj *dex, int idx) {
 	if (idx < 0 || idx >= dex->header.types_size) {
@@ -62,19 +55,6 @@ static char *className(RBinDexObj *dex, int idx) {
 	DexType dt = dex->types[idx];
 	return getstr (dex, dt.descriptor_id);
 }
-
-#if 0
-static const char *dex_type_descriptor(RBinDexObj *dex, int type_idx) {
-	if (type_idx < 0 || type_idx >= dex->header.types_size) {
-		return NULL;
-	}
-	return getstr (dex, dex->types[type_idx].descriptor_id);
-}
-
-static ut64 parseNumber(RBinDexObj *dex) {
-	return 0LL;
-}
-#endif
 
 static void parseValue(RBinDexObj *dex) {
 	ut8 argAndType = r_buf_read8 (dex->b);
@@ -89,7 +69,8 @@ static void parseValue(RBinDexObj *dex) {
 	} else {
 		bprintf ("      value value = %d\n", type);
 	}
-	bprintf ("      value type = %d (%s)\n", arg, className (dex, arg));
+	const char *argName = className (dex, arg);
+	bprintf ("      value type = %d (%s)\n", arg, r_str_get (argName));
 	bprintf ("      value ");
 	switch (type) {
 	case R_DEX_ENCVAL_BYTE:
@@ -260,21 +241,13 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
 	int i;
 	RBinDexObj *dex = R_NEW0 (RBinDexObj);
-	if (!dex) {
-		goto fail;
-	}
 	dex->size = r_buf_size (buf);
 	dex->b = r_ref (buf);
 	dex->verbose = verbose;
-	/* header */
 	if (dex->size < sizeof (struct dex_header_t)) {
 		goto fail;
 	}
 	struct dex_header_t *dexhdr = &dex->header;
-	memset (dexhdr, 0, sizeof (DexHeader));
-	if (dex->size < 112) {
-		goto fail;
-	}
 
 	r_buf_seek (dex->b, 0, R_BUF_SET);
 	r_buf_read (dex->b, (ut8 *)&dexhdr->magic, 8);
@@ -304,7 +277,6 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	dexhdr->data_offset = r_buf_read_le32 (dex->b);
 
 	/* strings */
-	#define STRINGS_SIZE ((dexhdr->strings_size + 1) * sizeof (ut32))
 	if (dexhdr->strings_size > dex->size) {
 		goto fail;
 	}
@@ -377,26 +349,17 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	}
 
 	/* types */
-	int types_size = dexhdr->types_size * sizeof (struct dex_type_t);
-	if (types_size < 0) {
+	size_t types_size = (size_t)dexhdr->types_size * sizeof (struct dex_type_t);
+	if (types_size / sizeof (struct dex_type_t) != dexhdr->types_size
+		|| dexhdr->types_offset >= dex->size) {
 		goto fail;
 	}
-	if (dexhdr->types_offset + types_size > dex->size) {
+	if (types_size > dex->size - dexhdr->types_offset) {
 		types_size = dex->size - dexhdr->types_offset;
-	}
-	if (dexhdr->types_offset + types_size >= dex->size) {
-		types_size = dex->size - dexhdr->types_offset;
-	}
-	if (types_size < 0) {
-		goto fail;
-	}
-	if (types_size > dex->size) {
-		R_LOG_DEBUG ("oom prevented in huge types section %d / %d", types_size, dex->size);
-		goto fail;
 	}
 	dexhdr->types_size = types_size / sizeof (struct dex_type_t);
 
-	dex->types = (struct dex_type_t *) calloc (types_size + 1, sizeof (struct dex_type_t));
+	dex->types = (struct dex_type_t *) calloc (dexhdr->types_size + 1, sizeof (struct dex_type_t));
 	for (i = 0; i < dexhdr->types_size; i++) {
 		ut64 offset = dexhdr->types_offset + i * sizeof (struct dex_type_t);
 		if (offset + 4 > dex->size) {
@@ -450,8 +413,8 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 	}
 	bprintf ("Parse annotations\n");
 	for (i = 0; i < dexhdr->class_size; i++) {
-		ut64 at = dex->classes[i].anotations_offset;
-		if (!at || at == UT64_MAX) {
+		ut32 at = dex->classes[i].anotations_offset;
+		if (!at || at == UT32_MAX) {
 			continue;
 		}
 		int j;
@@ -466,7 +429,7 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			continue;
 		}
 
-		bprintf ("0x%08"PFMT64x"  annotationOffset\n", at);
+		bprintf ("0x%08"PFMT64x"  annotationOffset\n", (ut64)at);
 		bprintf ("0x%08"PFMT64x"  classAnnotationOffset\n", (ut64)classAnnotationsOffset);
 		bprintf ("            className %s\n", cn);
 		bprintf ("            fieldsCount %d\n", fieldsCount);
@@ -518,28 +481,6 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 				break;
 			}
 		}
-#if 0
-		for (j = 0; j < annotatedParametersCount ; j++) {
-			ut32 methodId = r_buf_read_le32 (dex->b);
-			ut32 annotationsOffset = r_buf_read_le32 (dex->b);
-			ut32 size = r_buf_read_le32 (dex->b);
-			if (size == UT32_MAX || methodId == UT32_MAX || annotationsOffset == UT32_MAX) {
-				break;
-			}
-			int k;
-			for (k = 0; k < size ; k++) {
-				ut32 paramIndex = r_buf_read_le32 (dex->b);
-				if (paramIndex == UT32_MAX) {
-					break;
-				}
-				ut64 cur = r_buf_seek (dex->b, 0, R_BUF_CUR);
-				eprintf ("        Annotations for methodId %d + paramIndex: %d\n", methodId, paramIndex);
-				eprintf ("        %s + %s\n", getstr(dex,methodId), getstr(dex,paramIndex));
-				readAnnotationSet (dex, annotationsOffset);
-				r_buf_seek (dex->b, cur, R_BUF_SET);
-			}
-		}
-#endif
 	}
 
 	return dex;

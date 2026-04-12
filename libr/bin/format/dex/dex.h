@@ -134,7 +134,7 @@ typedef struct dex_class_data_item_t {
 }) RBinDexClassData;
 
 typedef struct r_bin_dex_obj_t {
-	int size;
+	ut32 size;
 	const char *file;
 	RBuffer *b;
 	struct dex_header_t header;
