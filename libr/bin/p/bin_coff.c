@@ -541,10 +541,8 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 		if (!co->scn_hdrs[i].s_nreloc) {
 			continue;
 		}
-		int len = 0, size = co->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
-		if (size < 0) {
-			break;
-		}
+		int len = 0;
+		size_t size = (size_t)co->scn_hdrs[i].s_nreloc * sizeof (struct coff_reloc);
 		struct coff_reloc *rel = calloc (1, size + sizeof (struct coff_reloc));
 		if (!rel) {
 			break;
