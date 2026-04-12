@@ -3672,6 +3672,7 @@ struct r_bin_pe_export_t *PE_(r_bin_pe_get_exports)(RBinPEObj *pe) {
 			// we dont stop if dll name cant be read, we set dllname to null and continue
 			dll_name[0] = '\0';
 		}
+		dll_name[PE_NAME_LENGTH] = '\0';
 		functions_paddr = PE_(va2pa) (pe, pe->export_directory->AddressOfFunctions);
 		names_paddr = PE_(va2pa) (pe, pe->export_directory->AddressOfNames);
 		ordinals_paddr = PE_(va2pa) (pe, pe->export_directory->AddressOfOrdinals);
