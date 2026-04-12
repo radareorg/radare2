@@ -1722,7 +1722,13 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			goto beach;
 		}
 		ut8 *array_cursor = cursor + K_MIG_SUBSYSTEM_SIZE;
-		ut8 *end_array = array_cursor + n_routines * K_MIG_ROUTINE_SIZE;
+		ut32 array_size = n_routines * K_MIG_ROUTINE_SIZE;
+		if (array_cursor >= end || array_size > (size_t)(end - array_cursor)) {
+			free (routines);
+			cursor += 16;
+			continue;
+		}
+		ut8 *end_array = array_cursor + array_size;
 		bool is_consistent = true;
 		int idx = 0;
 		while (array_cursor < end_array) {
