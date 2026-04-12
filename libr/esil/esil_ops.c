@@ -1221,6 +1221,38 @@ static bool esil_signed_div(REsil *esil) {
 	return ret;
 }
 
+static bool esil_divh(REsil *esil) {
+	bool ret = false;
+	ut64 a, b;
+	char *dst = r_esil_pop (esil);
+	char *src = r_esil_pop (esil);
+	if (src && r_esil_get_parm (esil, src, &b)) {
+		if (dst && r_esil_get_parm (esil, dst, &a)) {
+			st16 dividend = (st16)(a >> 16);
+			st16 divisor = (st16)(b & 0xFFFF);
+			if (divisor == 0) {
+				esil->trap = R_ANAL_TRAP_DIVBYZERO;
+				esil->trap_code = 0;
+				r_esil_pushnum (esil, 0);
+			} else {
+				st32 q = dividend / divisor;
+				st32 rm = dividend % divisor;
+				if (q > 32767) {
+					q = 32767;
+				}
+				ut64 result = ((ut64)(rm & 0xFFFF) << 16) | (ut64)(q & 0xFFFF);
+				r_esil_pushnum (esil, result);
+			}
+			ret = true;
+		}
+	} else {
+		R_LOG_DEBUG ("esil_divh: invalid parameters");
+	}
+	free (src);
+	free (dst);
+	return ret;
+}
+
 static bool esil_diveq(REsil *esil) {
 	bool ret = false;
 	ut64 s, d;
@@ -2905,6 +2937,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("LSR", esil_lsr, 1, 2, OT_MATH);
 	ret &= OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
+	ret &= OP ("DIVH", esil_divh, 1, 2, OT_MATH);
 	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
 	ret &= OP ("ROL", esil_rol, 1, 2, OT_MATH);
 	ret &= OP ("&", esil_and, 1, 2, OT_MATH);
