@@ -9,16 +9,25 @@
 
 typedef enum { OUT_PLAIN, OUT_QUIET, OUT_JSON, OUT_STAR } OutMode;
 
+static OutMode parse_mode(const char **p) {
+	switch (**p) {
+	case 'j': (*p)++; return OUT_JSON;
+	case '*': (*p)++; return OUT_STAR;
+	case 'q': (*p)++; return OUT_QUIET;
+	}
+	return OUT_PLAIN;
+}
+
 static RCoreHelpMessage help = {
-	"Usage:", "a:callargs", "[qj*f] [addr] # analyze call args via ESIL",
+	"Usage:", "a:callargs", "[-qj*f] [addr] # analyze call args via ESIL",
 	"a:callargs", " [addr]", "plaintext summary of args at call [addr]",
-	"a:callargs q", " [addr]", "quiet plaintext (stripped symbol, no arg names or raw)",
-	"a:callargs j", " [addr]", "same in JSON",
-	"a:callargs *", " [addr]", "emit a CCu comment command for the call",
-	"a:callargs f", "", "apply to every call in the current function",
-	"a:callargs fq", "", "same as 'f' but quiet",
-	"a:callargs fj", "", "same as 'f' but as a JSON array",
-	"a:callargs f*", "", "same as 'f' but as r2 commands",
+	"a:callargs-q", " [addr]", "quiet plaintext (stripped symbol, no arg names or raw)",
+	"a:callargs-j", " [addr]", "same in JSON",
+	"a:callargs-*", " [addr]", "emit a CCu comment command for the call",
+	"a:callargs-f", "", "apply to every call in the current function",
+	"a:callargs-fq", "", "same as 'f' but quiet",
+	"a:callargs-fj", "", "same as 'f' but as a JSON array",
+	"a:callargs-f*", "", "same as 'f' but as r2 commands",
 	NULL
 };
 
@@ -191,9 +200,7 @@ static void emit_raw(RAnal *a, ut64 target, bool quiet, PJ *pj, RStrBuf *sb) {
 			nargs = n;
 		}
 	}
-	if (nargs > MAX_REGS) {
-		nargs = MAX_REGS;
-	}
+	nargs = R_MIN (nargs, MAX_REGS);
 	int i;
 	char rn[16];
 	for (i = 0; i < nargs; i++) {
@@ -281,8 +288,9 @@ static char *analyze_fcn(RAnal *a, OutMode mode) {
 	RAnalBlock *bb;
 	bool first = true;
 	r_list_foreach (fcn->bbs, it, bb) {
+		ut64 bb_end = bb->addr + bb->size;
 		ut64 at = bb->addr;
-		while (at < bb->addr + bb->size) {
+		while (at < bb_end) {
 			RAnalOp *op = decode (a, at);
 			if (!op || op->size < 1) {
 				r_anal_op_free (op);
@@ -318,7 +326,7 @@ static char *callargscmd(RAnal *a, const char *input) {
 	if (!r_str_startswith (input, "callargs")) {
 		return NULL;
 	}
-	const char *arg = r_str_trim_head_ro (input + 8);
+	const char *arg = input + 8;
 	if (*arg == '?' || (!*arg && !a->coreb.numGet)) {
 		if (a->coreb.help) {
 			a->coreb.help (a->coreb.core, help);
@@ -326,21 +334,16 @@ static char *callargscmd(RAnal *a, const char *input) {
 		return strdup ("");
 	}
 	OutMode mode = OUT_PLAIN;
-	if (*arg == 'f') {
+	if (*arg == '-') {
 		arg++;
-		if (*arg == 'j') { mode = OUT_JSON; arg++; }
-		else if (*arg == '*') { mode = OUT_STAR; arg++; }
-		else if (*arg == 'q') { mode = OUT_QUIET; arg++; }
-		while (*arg == ' ') { arg++; }
-		return analyze_fcn (a, mode);
+		if (*arg == 'f') {
+			arg++;
+			return analyze_fcn (a, parse_mode (&arg));
+		}
+		mode = parse_mode (&arg);
 	}
-	if (*arg == 'j') { mode = OUT_JSON; arg++; }
-	else if (*arg == '*') { mode = OUT_STAR; arg++; }
-	else if (*arg == 'q') { mode = OUT_QUIET; arg++; }
 	while (*arg == ' ') { arg++; }
-	ut64 pcv = R_STR_ISEMPTY (arg)
-		? a->coreb.numGet (a->coreb.core, "$$")
-		: r_num_math (NULL, arg);
+	ut64 pcv = a->coreb.numGet (a->coreb.core, R_STR_ISEMPTY (arg) ? "$$" : arg);
 	if (!pcv || pcv == UT64_MAX) {
 		if (a->coreb.help) {
 			a->coreb.help (a->coreb.core, help);

@@ -1728,10 +1728,10 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 			cursor += 16;
 			continue;
 		}
-		ut8 *end_array = array_cursor + array_size;
+		ut8 *end_array = R_MIN (array_cursor + array_size, end);
 		bool is_consistent = true;
 		int idx = 0;
-		while (array_cursor < end_array) {
+		while (array_cursor + K_MIG_ROUTINE_SIZE <= end_array) {
 			ut64 should_be_null = r_read_le64 (array_cursor);
 			if (should_be_null != 0) {
 				is_consistent = false;
