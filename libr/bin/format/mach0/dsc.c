@@ -14,20 +14,14 @@ typedef struct {
 
 static RDSCHeader * dsc_header_new(ut8 * data, ut64 data_len, const RDSCField fields[]) {
 	RDSCHeader * self = R_NEW0 (RDSCHeader);
-	if (!self) {
-		return NULL;
-	}
-
 	RBuffer * buf = r_buf_new_with_bytes (data, data_len);
 	if (!buf) {
 		free (self);
 		return NULL;
 	}
-
 	self->fields = fields;
 	self->buf = buf;
 	self->data = data;
-
 	return self;
 }
 

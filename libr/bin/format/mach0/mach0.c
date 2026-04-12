@@ -1287,17 +1287,11 @@ static bool parse_function_starts(struct MACH0_(obj_t) * mo, ut64 off) {
 	if (len < 1) {
 		R_LOG_WARN ("Failed to get data while parsing LC_FUNCTION_STARTS command");
 	}
-	if (mo->big_endian) {
-		fc.cmd = r_read_be32 (&sfc[0]);
-		fc.cmdsize = r_read_be32 (&sfc[4]);
-		fc.dataoff = r_read_be32 (&sfc[8]);
-		fc.datasize = r_read_be32 (&sfc[12]);
-	} else {
-		fc.cmd = r_read_le32 (&sfc[0]);
-		fc.cmdsize = r_read_le32 (&sfc[4]);
-		fc.dataoff = r_read_le32 (&sfc[8]);
-		fc.datasize = r_read_le32 (&sfc[12]);
-	}
+	const bool be = mo->big_endian;
+	fc.cmd = r_read_ble32 (&sfc[0], be);
+	fc.cmdsize = r_read_ble32 (&sfc[4], be);
+	fc.dataoff = r_read_ble32 (&sfc[8], be);
+	fc.datasize = r_read_ble32 (&sfc[12], be);
 
 	if ((int)fc.datasize > 0) {
 		ut8 *buf = calloc (1, fc.datasize + 1);
@@ -1726,7 +1720,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	ut64 seg_off = 0;
 	ut64 segment_size = 0;
 	size_t bind_size = mo->dyld_info->bind_size;
-	if (!bind_size || bind_size < 1) {
+	if (!bind_size) {
 		return false;
 	}
 	if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_size)) {
@@ -2062,10 +2056,12 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					dy.cmdsize = r_read_ble32 (&sdy[4], mo->big_endian);
 					dy.name = r_read_ble32 (&sdy[8], mo->big_endian);
 
-					int len = dy.cmdsize;
+					ut32 len = dy.cmdsize;
+					if (len < 1 || off + 0xc + len > mo->size) {
+						break;
+					}
 					char *buf = malloc (len + 1);
 					if (buf) {
-						// wtf @ off + 0xc?
 						r_buf_read_at (mo->b, off + 0xc, (ut8 *)buf, len);
 						buf[len] = 0;
 						free (mo->intrp);
@@ -3674,13 +3670,13 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 		return;
 	}
 
-	ut64 total_size = num * sizeof (struct relocation_info);
+	ut64 total_size = (ut64)num * sizeof (struct relocation_info);
 	if (offset > mo->size) {
 		return;
 	}
 	if (total_size > mo->size) {
 		total_size = mo->size - offset;
-		num = total_size /= sizeof (struct relocation_info);
+		num = total_size / sizeof (struct relocation_info);
 	}
 	const int amount = clamp_count (num, mo->limit);
 	if (amount < 1) {
@@ -4341,7 +4337,7 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 	sdb_num_set (mo->kv, "mach0.entry.vaddr", entry->addr, 0);
 	sdb_num_set (mo->kv, "mach0.entry.paddr", mo->entry, 0);
 
-	if (entry->offset == 0 && !mo->sects) {
+	if (entry->offset == 0 && mo->sects) {
 		int i;
 		for (i = 0; i < mo->nsects; i++) {
 			// XXX: section name shoudnt matter .. just check for exec flags

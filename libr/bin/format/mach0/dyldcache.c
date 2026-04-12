@@ -1,11 +1,10 @@
-/* radare - LGPL - Copyright 2010-2018 - nibble, pancake  */
+/* radare - LGPL - Copyright 2010-2026 - nibble, pancake  */
 
-#include <stdio.h>
 #include <r_types.h>
 #include <r_util.h>
 #include "dyldcache.h"
 
-static int r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
+static bool r_bin_dyldcache_init(struct r_bin_dyldcache_obj_t* bin) {
 	int len = r_buf_fread_at (bin->b, 0, (ut8*)&bin->hdr, "16c4i7l", 1);
 	if (len == -1) {
 		r_sys_perror ("read (cache_header)");
@@ -49,13 +48,13 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	ut64 cmdptr;
 	int cmd, libsz = 0;
 	RBuffer* dbuf = NULL;
-	char *libname;
+	char *libname = NULL;
 
 	if (!bin) {
 		return NULL;
 	}
 	if (bin->size < 1) {
-		eprintf ("Empty file? (%s)\n", r_str_getf (bin->file));
+		R_LOG_WARN ("Empty file? (%s)", r_str_getf (bin->file));
 		return NULL;
 	}
 	if (bin->nlibs < 0 || idx < 0 || idx >= bin->nlibs) {
@@ -63,19 +62,14 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	*nlib = bin->nlibs;
 	ret = R_NEW0 (struct r_bin_dyldcache_lib_t);
-	if (!ret) {
-		return NULL;
-	}
-	if (bin->hdr.startaddr > bin->size) {
-		R_LOG_ERROR ("corrupted dyldcache");
-		goto ret_err;
-	}
-
 	if (bin->hdr.startaddr > bin->size || bin->hdr.baseaddroff > bin->size) {
 		R_LOG_ERROR ("corrupted dyldcache");
 		goto ret_err;
 	}
-	int sz = bin->nlibs * sizeof (struct dyld_cache_image_info);
+	ut64 sz = (ut64)bin->nlibs * sizeof (struct dyld_cache_image_info);
+	if (sz > bin->size) {
+		goto ret_err;
+	}
 	image_infos = malloc (sz);
 	if (!image_infos) {
 		goto ret_err;
@@ -94,6 +88,10 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 		goto ret_err;
 	}
 	libname = r_buf_read_string (bin->b, pfo, 64);
+	if (!libname) {
+		R_LOG_ERROR ("failed to read library name");
+		goto ret_err;
+	}
 	/* Locate lib hdr in cache */
 	int r = r_buf_read_at (bin->b, liboff, (ut8 *)&mh, sizeof (mh));
 	if (r != sizeof (mh)) {
@@ -101,16 +99,17 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	/* Check it is mach-o */
 	if (mh.magic != MH_MAGIC && mh.magic != MH_MAGIC_64) {
-		if (mh.magic == 0xbebafeca) { //FAT binary
-			eprintf ("FAT Binary\n");
+		if (mh.magic == 0xbebafeca) {
+			R_LOG_WARN ("FAT Binary");
 		}
-		eprintf ("Not mach-o\n");
+		R_LOG_WARN ("Not mach-o");
 		goto ret_err;
 	}
 	addend = mh.magic == MH_MAGIC? sizeof (struct mach_header) : sizeof (struct mach_header_64);
 	/* Write mach-o hdr */
-	if (!(dbuf = r_buf_new ())) {
-		eprintf ("new (dbuf)\n");
+	dbuf = r_buf_new ();
+	if (!dbuf) {
+		R_LOG_ERROR ("failed to create buffer");
 		goto ret_err;
 	}
 	if (!r_buf_append_buf_slice (dbuf, bin->b, liboff, addend)) {
@@ -223,13 +222,17 @@ struct r_bin_dyldcache_lib_t *r_bin_dyldcache_extract(struct r_bin_dyldcache_obj
 	}
 	/* Fill r_bin_dyldcache_lib_t ret */
 	ret->b = dbuf;
-	strncpy (ret->path, libname, sizeof (ret->path) - 1);
+	r_str_ncpy (ret->path, libname, sizeof (ret->path));
 	ret->size = libsz;
+	free (libname);
+	free (image_infos);
 	return ret;
 
 dbuf_err:
 	r_unref (dbuf);
 ret_err:
+	free (libname);
+	free (image_infos);
 	free (ret);
 	return NULL;
 }
@@ -244,25 +247,12 @@ void* r_bin_dyldcache_free(struct r_bin_dyldcache_obj_t* bin) {
 }
 
 void r_bin_dydlcache_get_libname(struct r_bin_dyldcache_lib_t *lib, char **libname) {
-	char *cur = lib->path;
-	char *res = lib->path;
-	int path_length = strlen (lib->path);
-	while (cur < cur + path_length - 1) {
-		cur = strchr (cur, '/');
-		if (!cur) {
-			break;
-		}
-		cur++;
-		res = cur;
-	}
-	*libname = res;
+	const char *last_slash = r_str_rchr (lib->path, NULL, '/');
+	*libname = (char *)(last_slash? last_slash + 1: lib->path);
 }
 
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
-	struct r_bin_dyldcache_obj_t *bin;
-	if (!(bin = R_NEW0 (struct r_bin_dyldcache_obj_t))) {
-		return NULL;
-	}
+	struct r_bin_dyldcache_obj_t *bin = R_NEW0 (struct r_bin_dyldcache_obj_t);
 	bin->file = file;
 	size_t binsz;
 	ut8 *buf = (ut8 *)r_file_slurp (file, &binsz);
@@ -284,9 +274,6 @@ struct r_bin_dyldcache_obj_t* r_bin_dyldcache_new(const char* file) {
 
 struct r_bin_dyldcache_obj_t* r_bin_dyldcache_from_bytes_new(const ut8* buf, ut64 size) {
 	struct r_bin_dyldcache_obj_t *bin = R_NEW0 (struct r_bin_dyldcache_obj_t);
-	if (!bin) {
-		return NULL;
-	}
 	if (!buf) {
 		return r_bin_dyldcache_free (bin);
 	}
