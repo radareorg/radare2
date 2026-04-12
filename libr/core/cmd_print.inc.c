@@ -924,10 +924,10 @@ static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
 			if (bitsmode) {
 				char color0bits[8] = { 0 };
 				char color1bits[8] = { 0 };
-				const ut8 b0 = ch0 | ch0 << 4;
-				const ut8 b1 = ch1 | ch1 << 4;
-				r_str_bits (color0bits, &b0, 4, NULL);
-				r_str_bits (color1bits, &b1, 4, NULL);
+				const ut8 b0[1] = { ch0 | ch0 << 4 };
+				const ut8 b1[1] = { ch1 | ch1 << 4 };
+				r_str_bits (color0bits, b0, 4, NULL);
+				r_str_bits (color1bits, b1, 4, NULL);
 				r_strbuf_appendf (sb, "%s%s%s%s%s ", color0, color0bits, color1, color1bits, show_color ? Color_RESET : "");
 			} else {
 				r_strbuf_appendf (sb, "%s%01x%s%01x%s", color0, ch0, color1, ch1, show_color ? Color_RESET : "");
