@@ -5,21 +5,20 @@
 #include "wad/wad.h"
 
 typedef struct {
-	Sdb *kv; // we can just use bf->sdb
+	Sdb *kv;
 	WADHeader hdr;
 	RBuffer *buf;
 } WadObj;
 
-static bool wad_header_load(WadObj *wo, Sdb *kv) {
+static bool wad_header_load(WadObj *wo) {
 	if (r_buf_size (wo->buf) < sizeof (WADHeader)) {
 		return false;
 	}
-	WADHeader *hdr = &wo->hdr;
-	if (r_buf_fread_at (wo->buf, 0, (ut8 *) hdr, "iii", 1) != sizeof (WADHeader)) {
+	if (r_buf_fread_at (wo->buf, 0, (ut8 *)&wo->hdr, "iii", 1) != sizeof (WADHeader)) {
 		return false;
 	}
-	sdb_num_set (kv, "header.num_lumps", (ut64)(hdr->numlumps), 0);
-	sdb_num_set (kv, "header.diroffset", (ut64)(hdr->diroffset), 0);
+	sdb_num_set (wo->kv, "header.num_lumps", wo->hdr.numlumps, 0);
+	sdb_num_set (wo->kv, "header.diroffset", wo->hdr.diroffset, 0);
 	return true;
 }
 
@@ -33,20 +32,16 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_read_at (b, 0, sig, sizeof (sig)) != 4) {
 		return false;
 	}
-	if (memcmp (sig, "IWAD", 4) && memcmp (sig, "PWAD", 4)) {
-		return false;
-	}
-	return true;
+	return !memcmp (sig, "IWAD", 4) || !memcmp (sig, "PWAD", 4);
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	WadObj *wo = R_NEW0 (WadObj);
+	wo->buf = r_ref (buf);
 	wo->kv = sdb_new0 ();
-	if (wo->kv) {
-		wad_header_load (wo, wo->kv);
+	if (wo->kv && wad_header_load (wo)) {
 		sdb_ns_set (bf->sdb, "info", wo->kv);
 	}
-	wo->buf = r_ref (buf);
 	bf->bo->bin_obj = wo;
 	return true;
 }
@@ -72,20 +67,26 @@ static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
 	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
-	ptr->ordinal = 0;
 	r_list_append (ret, ptr);
 }
 
 static RList *symbols(RBinFile *bf) {
 	RList *ret = r_list_new ();
-	WAD_DIR_Entry dir;
-	size_t i = 0;
 	WadObj *wo = bf->bo->bin_obj;
-	while (i < wo->hdr.numlumps) {
-		memset (&dir, 0, sizeof (dir));
-		r_buf_read_at (bf->buf, wo->hdr.diroffset + (i * 16), (ut8*)&dir, sizeof (dir));
-		addsym (ret, r_str_ndup (dir.name, 8), dir.filepos, dir.size);
-		i++;
+	ut64 bsize = r_buf_size (bf->buf);
+	ut32 numlumps = wo->hdr.numlumps;
+	ut32 diroff = wo->hdr.diroffset;
+	if (diroff >= bsize || numlumps > (bsize - diroff) / sizeof (WAD_DIR_Entry)) {
+		return ret;
+	}
+	size_t i;
+	for (i = 0; i < numlumps; i++) {
+		ut64 off = diroff + (i * sizeof (WAD_DIR_Entry));
+		ut32 filepos = r_buf_read_le32_at (bf->buf, off);
+		ut32 sz = r_buf_read_le32_at (bf->buf, off + 4);
+		char name[9] = {0};
+		r_buf_read_at (bf->buf, off + 8, (ut8 *)name, 8);
+		addsym (ret, r_str_ndup (name, 8), filepos, sz);
 	}
 	return ret;
 }
@@ -102,7 +103,7 @@ static char *wad_header_fields(RBinFile *bf, int mode) {
 }
 
 static RList *wad_fields(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_new ();
 	if (!ret) {
 		return NULL;
 	}
@@ -121,6 +122,7 @@ static RList *wad_fields(RBinFile *bf) {
 
 static void destroy(RBinFile *bf) {
 	WadObj *obj = bf->bo->bin_obj;
+	sdb_free (obj->kv);
 	r_unref (obj->buf);
 	free (obj);
 }
