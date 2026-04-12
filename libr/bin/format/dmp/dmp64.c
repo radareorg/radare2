@@ -10,7 +10,7 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	ut64 num_runs = mem_desc->NumberOfRuns;
-	if (num_runs * sizeof (dmp_p_memory_run) >= r_offsetof (dmp64_header, ContextRecord)) {
+	if (num_runs < 1 || num_runs * sizeof (dmp_p_memory_run) >= r_offsetof (dmp64_header, ContextRecord)) {
 		R_LOG_WARN ("Invalid PhysicalMemoryDescriptor");
 		return false;
 	}
@@ -19,8 +19,8 @@ static int r_bin_dmp64_init_memory_runs(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	dmp_p_memory_run *runs = calloc (num_runs, sizeof (dmp_p_memory_run));
-	ut64 num_runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, NumberOfRuns);
-	if (r_buf_read_at (obj->b, num_runs_offset, (ut8*)runs, num_runs * sizeof (dmp_p_memory_run)) < 0) {
+	ut64 runs_offset = r_offsetof (dmp64_header, PhysicalMemoryBlockBuffer) + r_offsetof (dmp64_p_memory_desc, Run);
+	if (r_buf_read_at (obj->b, runs_offset, (ut8*)runs, num_runs * sizeof (dmp_p_memory_run)) < 0) {
 		R_LOG_WARN ("read memory runs");
 		free (runs);
 		return false;
