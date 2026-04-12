@@ -92,6 +92,9 @@ static ut64 parseStringR(RLuaHeader *lh, const ut8 *data, ut64 offset, const ut6
 		offset += lh->sizeSize;
 	}
 	if (functionNameSize != 0) {
+		if (offset + functionNameSize - 1 > size) {
+			return 0;
+		}
 		if (str_ptr) {
 			*str_ptr = r_str_ndup ((char *) (data + offset), functionNameSize - 1);
 		}
@@ -121,18 +124,27 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 
 	int i;
 	for (i = 0; i < length; i++) {
+		if (offset >= size) {
+			return 0;
+		}
 		R_LOG_DEBUG ("%d: ", i);
-		ut8 type = data[offset + 0];
+		ut8 type = data[offset];
 		offset += 1;
 		switch (type) {
 		case 0: // Nil
 			R_LOG_DEBUG ("Nil");
 			break;
 		case 1: // Boolean
-			R_LOG_DEBUG ("Boolean %d", data[offset + 0]);
+			if (offset >= size) {
+				return 0;
+			}
+			R_LOG_DEBUG ("Boolean %d", data[offset]);
 			offset += 1;
 			break;
 		case (3 | (0 << 4)): // Number
+			if (offset + lh->luaNumberSize > size) {
+				return 0;
+			}
 		{
 #ifdef LUA_DEBUG
 			ut64 num = parseLuaNumber (data + offset);
@@ -142,12 +154,18 @@ static ut64 parseConstants(RLuaHeader *lh, const ut8 *data, ut64 offset, const u
 		}
 		break;
 		case (3 | (1 << 4)): // Integer
+			if (offset + lh->luaIntSize > size) {
+				return 0;
+			}
 			R_LOG_DEBUG ("Integer %" PFMT64x, parseLuaInt (data + offset));
 			offset += lh->luaIntSize;
 			break;
 		case (4 | (0 << 4)): // Short String
 		case (4 | (1 << 4)): // Long String
 			offset = parseString (lh, data, offset, size, parseStruct);
+			if (!offset) {
+				return 0;
+			}
 			break;
 		default:
 			R_LOG_DEBUG ("Invalid");

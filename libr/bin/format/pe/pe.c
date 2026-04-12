@@ -1382,8 +1382,8 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 		(ut64)metadata_directory, (ut64)metadata->Signature, (int)metadata->VersionStringLength);
 
 	// read the version string
-	int len = metadata->VersionStringLength; // XXX: dont trust this length
-	if (len > 0) {
+	int len = metadata->VersionStringLength;
+	if (len > 0 && len < 1024) {
 		metadata->VersionString = calloc (1, len + 1);
 		if (!metadata->VersionString) {
 			goto fail;

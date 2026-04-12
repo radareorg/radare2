@@ -51,7 +51,13 @@ void stream_file_read(R_STREAM_FILE *stream_file, int size, char *res) {
 		GET_PAGE (pn_start, off_start, stream_file->pos, stream_file->page_size);
 		GET_PAGE (pn_end, off_end, stream_file->pos + size, stream_file->page_size);
 		(void)off_end;
-		char *pdata = (char *)calloc (stream_file->page_size * (pn_end + 1 - pn_start), 1);
+		size_t n_pages = pn_end + 1 - pn_start;
+		size_t alloc_size;
+		if (r_mul_overflow (n_pages, (size_t)stream_file->page_size, &alloc_size) || alloc_size > ST32_MAX) {
+			stream_file->error = READ_PAGE_FAIL;
+			return;
+		}
+		char *pdata = (char *)calloc (alloc_size, 1);
 		if (!pdata) {
 			stream_file->error = READ_PAGE_FAIL;
 			return;

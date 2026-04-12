@@ -1587,7 +1587,10 @@ static char *header(RBinFile *bf, int mode) {
 	if (cache->hdr->imagesTextCount) {
 		pj_k (pj, "images");
 		pj_a (pj);
-		ut64 total_size = cache->hdr->imagesTextCount * sizeof (cache_text_info_t);
+		ut64 total_size;
+		if (r_mul_overflow (cache->hdr->imagesTextCount, (ut64)sizeof (cache_text_info_t), &total_size) || total_size > ST32_MAX) {
+			goto beach;
+		}
 		cache_text_info_t * text_infos = malloc (total_size);
 		if (!text_infos) {
 			goto beach;

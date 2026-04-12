@@ -262,10 +262,11 @@ static RList *symbols(RBinFile *bf) {
 	}
 	ret->free = free;
 	int limit = h->sections;
-	if (h->sechdr_addr > bf->size || h->sechdr_addr < h->base) {
+	if (h->sechdr_addr < h->base) {
 		goto out_error;
 	}
-	if (limit * (sizeof (xbe_section)) >= bf->size - h->sechdr_addr) {
+	ut32 sechdr_off = h->sechdr_addr - h->base;
+	if (sechdr_off >= bf->size || limit * sizeof (xbe_section) > bf->size - sechdr_off) {
 		goto out_error;
 	}
 	for (i = 0; found == false && i < limit; i++) {
