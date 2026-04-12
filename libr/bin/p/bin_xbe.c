@@ -1,4 +1,4 @@
-/* radare - LGPL - 2014-2019 - thatlemon@gmail.com, pancake */
+/* radare - LGPL - 2014-2026 - thatlemon@gmail.com, pancake */
 
 #include <r_types.h>
 #include <r_util.h>
@@ -66,7 +66,7 @@ static RList *entries(RBinFile *bf) {
 	const r_bin_xbe_obj_t *obj;
 	RList *ret;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	if (!bf || !bf->buf || !bf->bo->bin_obj || !ptr) {
+	if (!bf || !bf->buf || !bf->bo->bin_obj) {
 		free (ptr);
 		return NULL;
 	}
@@ -262,6 +262,9 @@ static RList *symbols(RBinFile *bf) {
 	}
 	ret->free = free;
 	int limit = h->sections;
+	if (h->sechdr_addr > bf->size || h->sechdr_addr < h->base) {
+		goto out_error;
+	}
 	if (limit * (sizeof (xbe_section)) >= bf->size - h->sechdr_addr) {
 		goto out_error;
 	}
@@ -270,7 +273,10 @@ static RList *symbols(RBinFile *bf) {
 		if (addr > bf->size || addr + sizeof (sect) > bf->size) {
 			goto out_error;
 		}
-		r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof (sect));
+		st64 r = r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof (sect));
+		if (r != sizeof (sect)) {
+			goto out_error;
+		}
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
@@ -288,9 +294,6 @@ static RList *symbols(RBinFile *bf) {
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			goto out_error;
-		}
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index > 0 && thunk_index <= XBE_MAX_THUNK) {
@@ -315,8 +318,12 @@ static RBinInfo *info(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ut8 dbg_name[256] = {0};
-	r_buf_read_at (bf->buf, obj->header.debug_name_addr - obj->header.base,
-		dbg_name, sizeof (dbg_name));
+	if (obj->header.debug_name_addr >= obj->header.base) {
+		ut64 dbg_off = obj->header.debug_name_addr - obj->header.base;
+		if (dbg_off < bf->size) {
+			r_buf_read_at (bf->buf, dbg_off, dbg_name, sizeof (dbg_name));
+		}
+	}
 	dbg_name[sizeof (dbg_name) - 1] = 0;
 	ret->file = strdup ((char *) dbg_name);
 	ret->bclass = strdup ("program");
