@@ -185,7 +185,7 @@ static RList *sections(RBinFile *bf) {
 	ut16 lon;
 	ut16 lonCR;
 	int left;
-	ut16 x = 0;
+	ut32 x = 0;
 	bool endw = false;
 	int rec = 0;
 	int sym = 0;
