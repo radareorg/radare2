@@ -432,6 +432,7 @@ static int pdb_read_root(RBinPdb *pdb) {
 			ss = R_NEW0 (STpiStream);
 			init_tpi_stream (ss);
 			if (!parse_tpi_stream (ss, &stream_file)) {
+				r_list_free (ss->types);
 				free (ss);
 				return 0;
 			}
