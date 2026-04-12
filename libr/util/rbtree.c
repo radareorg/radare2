@@ -281,8 +281,8 @@ R_API bool r_rbtree_aug_update_sum(RBNode *root, void *data, RBNode *node, RBCom
 		const int direction = cmp (data, cur, cmp_user);
 		cur = cur->child[(direction < 0)? 0: 1];
 	}
-	for (; depth > 0; depth--) {
-		sum (path[depth - 1]);
+	while (depth > 0) {
+		sum (path[--depth]);
 	}
 	return true;
 }
