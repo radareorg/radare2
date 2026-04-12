@@ -130,6 +130,7 @@ R_VEC_TYPE (RVecRBinElfField, RBinElfField);
 struct Elf_(obj_t) {
 	Elf_(Ehdr) ehdr;
 	Elf_(Phdr) *phdr;
+	ut64 phnum;
 	Elf_(Shdr) *shdr;
 
 	Elf_(Shdr) *strtab_section;

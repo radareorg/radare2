@@ -158,8 +158,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	/* rewrite program headers */
-	const ut64 phnum = Elf_(get_phnum) (bin);
-	for (i = 0, phdrp = phdr; i < phnum; i++, phdrp++) {
+	for (i = 0, phdrp = phdr; i < bin->phnum; i++, phdrp++) {
 #if 0
 		if (phdrp->p_offset < rsz_offset && phdrp->p_offset + phdrp->p_filesz > rsz_offset) {
 			phdrp->p_filesz += delta;
@@ -239,8 +238,7 @@ bool Elf_(del_rpath)(RBinFile *bf) {
 	if (!bin->phdr) {
 		return false;
 	}
-	const ut64 phnum = Elf_(get_phnum) (bin);
-	for (i = 0; i < phnum; i++) {
+	for (i = 0; i < bin->phnum; i++) {
 		if (bin->phdr[i].p_type != PT_DYNAMIC) {
 			continue;
 		}
@@ -343,10 +341,9 @@ bool Elf_(segment_perms)(RBinFile *bf, const char *name, int perms) {
 		return false;
 	}
 	Elf_(Ehdr) *ehdr = &bin->ehdr;
-	const ut64 phnum = Elf_(get_phnum) (bin);
 	int load_idx = 0;
 	ut64 i;
-	for (i = 0; i < phnum; i++) {
+	for (i = 0; i < bin->phnum; i++) {
 		Elf_(Phdr) *phdrp = &bin->phdr[i];
 		char synthetic[32];
 		int this_idx = (phdrp->p_type == PT_LOAD)? load_idx++: 0;

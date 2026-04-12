@@ -213,7 +213,7 @@ ut64 Elf_(get_phnum)(ELFOBJ *eo) {
 }
 
 static bool read_phdr(ELFOBJ *eo) {
-	const ut64 phnum = Elf_(get_phnum) (eo);
+	const ut64 phnum = eo->phnum;
 
 	/*
 	 * Here is the where all the fun starts.
@@ -312,15 +312,15 @@ static int init_phdr(ELFOBJ *eo) {
 	if (eo->ehdr.e_phoff > eo->size || eo->ehdr.e_phoff + phdr_size > eo->size) {
 		return false;
 	}
-	ut64 phnum = Elf_(get_phnum) (eo);
-	if (phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
+	eo->phnum = Elf_(get_phnum) (eo);
+	if (eo->phnum > SIZE_MAX / sizeof (Elf_(Phdr))) {
 		return false;
 	}
 	// Ensure phnum-based allocation doesn't exceed file size
-	if (phnum * sizeof (Elf_(Phdr)) > eo->size) {
+	if (eo->phnum * sizeof (Elf_(Phdr)) > eo->size) {
 		return false;
 	}
-	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), phnum))) {
+	if (!(eo->phdr = R_NEWS0 (Elf_(Phdr), eo->phnum))) {
 		r_sys_perror ("malloc (phdr)");
 		return false;
 	}
@@ -4602,7 +4602,7 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 	// program headers is another section
 	ut16 mach = eo->ehdr.e_machine;
 
-	ut64 num = Elf_(get_phnum) (eo);
+	ut64 num = eo->phnum;
 	const int limit = bf->rbin->options.limit;
 	if (limit > 0 && num > limit) {
 		R_LOG_WARN ("eo.limit reached for sections");
