@@ -147,8 +147,8 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		R_LOG_WARN ("Invalid Bitmap Magic");
 		return false;
 	}
-	int bitmapsize = obj->bmp_header->Pages / 8;
-	if (bitmapsize < 1) {
+	ut64 bitmapsize = obj->bmp_header->Pages / 8;
+	if (bitmapsize < 1 || bitmapsize > ST32_MAX) {
 		R_LOG_WARN ("Invalid Bitmap Size");
 		return false;
 	}

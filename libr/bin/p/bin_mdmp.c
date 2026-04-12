@@ -344,6 +344,10 @@ static RList *sections(RBinFile *bf) {
 		}
 		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
 		ut32 str_length = r_read_le32 (b);
+		if (str_length > sizeof (b) - 4) {
+			R_FREE (ptr);
+			continue;
+		}
 		int ptr_name_len = (str_length + 2) * 4;
 		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
 			R_FREE (ptr);
