@@ -64,15 +64,14 @@ R_API bool r_socket_rap_server_continue(RSocketRapServer *s) {
 	case RAP_PACKET_OPEN:
 		r_socket_read_block (s->fd, &s->buf[1], 2);
 		{
-			size_t len = (ut8)s->buf[2];
-			size_t total_needed = len + 4;
-			if (total_needed > sizeof (s->buf)) {
-				R_LOG_ERROR ("rap: filename too long %zu", total_needed);
+			int len = (ut8)s->buf[2];
+			if (len < 1 || len + 4 > sizeof (s->buf)) {
+				R_LOG_ERROR ("rap: invalid filename length %d", len);
 				r_socket_close (s->fd);
 				return false;
 			}
 			r_socket_read_block (s->fd, &s->buf[3], len);
-			s->buf[total_needed - 1] = 0;
+			s->buf[len + 3] = 0;
 			int fd = s->open (s->user, (const char *)&s->buf[3], (int)s->buf[1], 0);
 			s->buf[0] = RAP_PACKET_OPEN | RAP_PACKET_REPLY;
 			R_LOG_DEBUG ("REPLY BACK %d", fd);
