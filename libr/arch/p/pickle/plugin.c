@@ -597,7 +597,7 @@ static bool pickle_encode(RArchSession *s, RAnalOp *op, RArchEncodeMask mask) {
 	int outsz = strlen (str);
 
 	// _outbuf is kept for free'ing while outbuff will get ++
-	ut8 *_outbuf = malloc (outsz);
+	ut8 *_outbuf = malloc (outsz + 1);
 	if (!_outbuf) {
 		return false;
 	}
