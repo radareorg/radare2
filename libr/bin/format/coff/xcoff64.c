@@ -17,29 +17,24 @@ R_IPI bool r_xcoff64_supported_arch(const ut8 *buf) {
 
 R_IPI char *r_xcoff64_symbol_name(RBinXCoff64Obj *obj, ut32 offset) {
 	char n[1024] = {0};
-	int len = 0;
 	ut64 paddr = obj->nametbl_off + offset;
-	if (paddr > obj->size) {
+	if (paddr >= obj->size) {
 		return NULL;
 	}
-	len = r_buf_read_at (obj->b, paddr, (ut8*)n, sizeof (n));
+	int len = r_buf_read_at (obj->b, paddr, (ut8*)n, sizeof (n));
 	if (len < 1) {
 		return NULL;
 	}
-	/* ensure null terminated string */
+	// ensure null terminated string
 	n[sizeof (n) - 1] = 0;
 	return strdup (n);
 }
 
 R_IPI RBinAddr *r_xcoff64_get_entry(RBinXCoff64Obj *obj) {
-	RBinAddr *addr = R_NEW0 (RBinAddr);
-	if (!addr) {
-		return NULL;
-	}
-	/* XXX Are XCOFF64 without auxiliary header valid? */
 	if (!obj->hdr.f_opthdr) {
 		return NULL;
 	}
+	RBinAddr *addr = R_NEW0 (RBinAddr);
 	addr->hpaddr = sizeof (struct xcoff64_hdr) + r_offsetof (struct xcoff64_opt_hdr, entry);
 	addr->vaddr = obj->opt_hdr.entry;
 	if (addr->vaddr >= obj->opt_hdr.text_start) {
@@ -60,8 +55,7 @@ static bool r_bin_xcoff64_init_hdr(RBinXCoff64Obj *obj) {
 		R_LOG_ERROR ("unsupported xcoff64 magic: %#x", magic);
 		return false;
 	}
-	int ret = 0;
-	ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S1I1L2S1I": "2s1i1l2s1i", 1);
+	int ret = r_buf_fread_at (obj->b, 0, (ut8 *)&obj->hdr, obj->endian? "2S1I1L2S1I": "2s1i1l2s1i", 1);
 	if (ret != sizeof (struct xcoff64_hdr)) {
 		return false;
 	}
@@ -70,24 +64,20 @@ static bool r_bin_xcoff64_init_hdr(RBinXCoff64Obj *obj) {
 }
 
 static bool r_bin_xcoff64_init_opt_hdr(RBinXCoff64Obj *obj) {
-	int ret;
 	if (obj->hdr.f_opthdr != 0x78) {
 		R_LOG_ERROR ("unexpected auxiliary header size in xcoff64: %#x", obj->hdr.f_opthdr);
 		return false;
 	}
-	ret = r_buf_fread_at (obj->b, sizeof (struct xcoff64_hdr),
-						 (ut8 *)&obj->opt_hdr, obj->endian? "2S1I3L8S8c6L4S3I": "2s1i3l8s8c6l4s3i", 1);
-	if (ret != sizeof (struct coff_opt_hdr)) {
-		return false;
-	}
-	return true;
+	int ret = r_buf_fread_at (obj->b, sizeof (struct xcoff64_hdr),
+		(ut8 *)&obj->opt_hdr, obj->endian? "2S1I3L8S8c6L4S3I": "2s1i3l8s8c6l4s3i", 1);
+	return ret == sizeof (struct coff_opt_hdr);
 }
 
 static bool r_bin_xcoff64_init_scn_hdr(RBinXCoff64Obj *obj) {
-	int ret, size;
+	int ret;
 	ut64 offset = sizeof (struct xcoff64_hdr) + obj->hdr.f_opthdr;
-	size = obj->hdr.f_nscns * sizeof (struct xcoff64_scn_hdr);
-	if (offset > obj->size || offset + size > obj->size || size < 0) {
+	size_t size = (size_t)obj->hdr.f_nscns * sizeof (struct xcoff64_scn_hdr);
+	if (offset > obj->size || offset + size > obj->size) {
 		obj->hdr.f_nscns = 0;
 		obj->scn_hdrs = NULL;
 		return false;
@@ -105,14 +95,13 @@ static bool r_bin_xcoff64_init_scn_hdr(RBinXCoff64Obj *obj) {
 }
 
 static bool r_bin_coff_init_symtable(RBinXCoff64Obj *obj) {
-	int ret, size;
+	int ret;
 	ut64 offset = obj->hdr.f_symptr;
 	if (obj->hdr.f_nsyms >= 0xffffff || !obj->hdr.f_nsyms) { // too much symbols, probably not allocatable
 		return false;
 	}
-	size = obj->hdr.f_nsyms * sizeof (struct xcoff64_symbol);
-	if (size < 0 ||
-		size > obj->size ||
+	size_t size = (size_t)obj->hdr.f_nsyms * sizeof (struct xcoff64_symbol);
+	if (size > obj->size ||
 		offset > obj->size ||
 		offset + size > obj->size) {
 		return false;
@@ -138,20 +127,22 @@ static bool r_bin_xcoff64_init_scn_va(RBinXCoff64Obj *obj) {
 		return false;
 	}
 
-	/* Use predefined virtual addresses */
+	// use predefined virtual addresses (o_sn* are 1-based section numbers)
 	if (obj->hdr.f_opthdr) {
-		if (obj->opt_hdr.o_sntext < obj->hdr.f_nscns) {
-			obj->scn_va[obj->opt_hdr.o_sntext] = obj->opt_hdr.text_start;
+		ut16 snt = obj->opt_hdr.o_sntext;
+		if (snt >= 1 && snt <= obj->hdr.f_nscns) {
+			obj->scn_va[snt - 1] = obj->opt_hdr.text_start;
 			va = R_MAX (va, obj->opt_hdr.text_start + obj->opt_hdr.tsize);
 		}
-		if (obj->opt_hdr.o_sndata < obj->hdr.f_nscns) {
-			obj->scn_va[obj->opt_hdr.o_sndata] = obj->opt_hdr.data_start;
+		ut16 snd = obj->opt_hdr.o_sndata;
+		if (snd >= 1 && snd <= obj->hdr.f_nscns) {
+			obj->scn_va[snd - 1] = obj->opt_hdr.data_start;
 			va = R_MAX (va, obj->opt_hdr.data_start + obj->opt_hdr.dsize);
 		}
 	}
 	va = R_ROUND (va, 0x100ULL);
 
-	/* Place other sections after predefined */
+	// place other sections after predefined
 	for (i = 0; i < obj->hdr.f_nscns; i++) {
 		if (obj->scn_va[i]) {
 			continue;
@@ -168,7 +159,7 @@ static bool r_bin_xcoff64_init_scn_va(RBinXCoff64Obj *obj) {
 }
 
 static bool r_bin_xcoff64_init(RBinXCoff64Obj *obj, RBuffer *buf, bool verbose) {
-	if (!obj || !buf) {
+	if (!buf) {
 		return false;
 	}
 	obj->b = r_ref (buf);
@@ -209,7 +200,10 @@ R_IPI void r_bin_xcoff64_free(RBinXCoff64Obj *obj) {
 }
 
 R_IPI RBinXCoff64Obj *r_bin_xcoff64_new_buf(RBuffer *buf, bool verbose) {
-	RBinXCoff64Obj* bin = R_NEW0 (RBinXCoff64Obj);
-	r_bin_xcoff64_init (bin, buf, verbose);
+	RBinXCoff64Obj *bin = R_NEW0 (RBinXCoff64Obj);
+	if (!r_bin_xcoff64_init (bin, buf, verbose)) {
+		r_bin_xcoff64_free (bin);
+		return NULL;
+	}
 	return bin;
 }
