@@ -1209,15 +1209,15 @@ static Sdb *store_versioninfo_gnu_verdef(ELFOBJ *eo, Elf_(Shdr) *shdr, int sz) {
 
 	size_t shsize = shdr->sh_size;
 	if (shdr->sh_size > eo->size) {
-		R_LOG_DEBUG ("Truncating shsize from %d to %d", (int)shdr->sh_size, (int)eo->size);
+		R_LOG_DEBUG ("Truncating shsize from %"PFMT64d" to %"PFMT64d, (ut64)shdr->sh_size, (ut64)eo->size);
 		shsize = eo->size > shdr->sh_offset ? eo->size - shdr->sh_offset : eo->size;
 	}
 
 	Elf_(Shdr) *link_shdr = &eo->shdr[shdr->sh_link];
-	const char *link_section_name = link_shdr && eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size
+	const char *link_section_name = (eo->shstrtab && link_shdr->sh_name < eo->shstrtab_size)
 		? &eo->shstrtab[link_shdr->sh_name] : "";
-	const char *section_name = eo->shstrtab && shdr->sh_name < eo->shstrtab_size
-		? section_name = &eo->shstrtab[shdr->sh_name] : "";
+	const char *section_name = (eo->shstrtab && shdr->sh_name < eo->shstrtab_size)
+		? &eo->shstrtab[shdr->sh_name] : "";
 	sdb_set (sdb, "section_name", section_name, 0);
 	sdb_num_set (sdb, "entries", shdr->sh_info, 0);
 	sdb_num_set (sdb, "addr", shdr->sh_addr, 0);
@@ -2191,7 +2191,7 @@ int Elf_(has_relro)(ELFOBJ *bin) {
 		bool have_bind_now = false;
 		if (bin->dyn_info.dt_bind_now) {
 			have_bind_now = true;
-		} else if (bin->dyn_info.dt_flags != R_BIN_ELF_XWORD_MAX && bin->dyn_info.dt_flags != R_BIN_ELF_XWORD_MAX) {
+		} else if (bin->dyn_info.dt_flags != R_BIN_ELF_XWORD_MAX && bin->dyn_info.dt_flags_1 != R_BIN_ELF_XWORD_MAX) {
 			have_bind_now = bin->dyn_info.dt_flags_1 & DF_1_NOW;
 		}
 		size_t i;
@@ -2275,7 +2275,7 @@ ut64 Elf_(get_init_offset)(ELFOBJ *eo) {
 			}
 		}
 	}
-	return 0; // XXX should be UT64_MAX
+	return UT64_MAX;
 }
 
 ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
@@ -2288,7 +2288,7 @@ ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
 		ut8 buf[512]; // can we lower this to 64 or 128?
 		if (r_buf_read_at (eo->b, entry + 11, buf, sizeof (buf)) == -1) {
 			R_LOG_ERROR ("read (get_fini)");
-			return 0;
+			return UT64_MAX;
 		}
 		if (*buf == 0x68) { // push // x86/32 only
 			memmove (buf, buf + 1, 4);
@@ -2296,15 +2296,11 @@ ut64 Elf_(get_fini_offset)(ELFOBJ *eo) {
 			return Elf_(v2p) (eo, addr);
 		}
 	}
-	return 0; // XXX should be UT64_MAX
+	return UT64_MAX;
 }
 
 static ut64 get_entry_offset_from_shdr(ELFOBJ *eo) {
 	ut64 sectionOffset = Elf_(get_section_offset)(eo, ".init.text");
-	if (sectionOffset != UT64_MAX) {
-		return sectionOffset;
-	}
-	sectionOffset = Elf_(get_section_offset)(eo, ".text");
 	if (sectionOffset != UT64_MAX) {
 		return sectionOffset;
 	}
@@ -2472,7 +2468,7 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 		if (!memcmp (buf, "\x31\xed\x49\x89", 4)) { // linux
 			ut8 n32s[sizeof (ut32)] = {0};
 			ut64 maddr = entry + 0x24 + r_read_le32 (buf + 0x20);
-			if (r_buf_read_at (eo->b, maddr, n32s, sizeof (ut32)) == UT64_MAX) {
+			if (r_buf_read_at (eo->b, maddr, n32s, sizeof (ut32)) != sizeof (ut32)) {
 				R_LOG_ERROR ("read (maddr) 2");
 				return 0;
 			}
@@ -3725,7 +3721,6 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	static RelrInfo relr_info = {0};
 	// Handle RELR entries
 	if (rel_mode == DT_RELR) {
-		size_t i;
 		ut64 offset = Elf_(v2p_new) (eo, vaddr);
 		if (offset == UT64_MAX) {
 			return false;
@@ -3735,10 +3730,11 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 		if (res != sizeof (Elf_(Addr))) {
 			return false;
 		}
-		ut64 entry = 0;
-		for (i = 0; i < sizeof (Elf_(Addr)); i++) {
-			entry |= (ut64)(buf[i]) << (i * 8);
-		}
+#if R_BIN_ELF64
+		ut64 entry = r_read_ble64 (buf, eo->endian);
+#else
+		ut64 entry = (ut64)r_read_ble32 (buf, eo->endian);
+#endif
 		return read_relr_entry (eo, r, vaddr, entry, &relr_info);
 	}
 	// Handle CREL entries differently
@@ -4890,7 +4886,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		bool is_sht_null = false;
 		bool is_vaddr = false;
 		bool is_imported = new_symbol.st_shndx == STN_UNDEF;
-		int tsize;
+		int tsize = 0;
 		ut64 toffset = 0;
 		// Zero symbol is always empty
 		// Examine entry and maybe store
@@ -4941,11 +4937,11 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 
 		// R2_590 - getting symbol name requires a unified function to read outside strtab, current code is wrong
 		// get name before alocating it in the vector
-		int st_name = new_symbol.st_name;
+		ut32 st_name = new_symbol.st_name;
 		const size_t rest = ELF_STRING_LENGTH - 1;
-		int maxsize = eo->size; //R_MIN (eo->size, eo->strtab_size);
+		ut64 maxsize = eo->size;
 		int namelen = 0;
-		if (st_name < 0 || st_name >= maxsize) {
+		if (st_name >= maxsize) {
 			namelen = 0;
 		} else {
 			namelen = r_str_nlen (eo->strtab + st_name, rest) + 1;
@@ -5106,7 +5102,7 @@ static int Elf_(fix_symbols)(ELFOBJ *eo, int nsym, int type, RVecRBinElfSymbol *
 			if (d) {
 				symbol->in_shdr = true;
 				if (*symbol->name && *d->name == '$') {
-					strcpy (d->name, symbol->name);
+					r_str_ncpy (d->name, symbol->name, ELF_STRING_LENGTH - 1);
 				}
 			}
 		}
@@ -5576,7 +5572,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 
 		const size_t st_name = sym.st_name;
-		int maxsize = strtab_section->sh_size; // R_MIN (r_buf_size (eo->b), strtab_section->sh_size);
+		ut64 maxsize = strtab_section->sh_size;
 		RBinElfSymbol *es = RVecRBinElfSymbol_emplace_back (ret);
 		if (!es) {
 			free (strtab);
@@ -5601,7 +5597,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
 				r_buf_read_at (eo->b, at, (ut8*)es->name, sizeof (es->name));
 			}
-		} else if (st_name <= 0 || st_name >= maxsize) {
+		} else if (!st_name || st_name >= maxsize) {
 			es->name[0] = 0;
 		} else {
 			r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
@@ -6040,7 +6036,12 @@ static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
 
 		ut64 offset = 0;
 		bool found = false;
+		const ut64 seg_size = eo->phdr[ph].p_filesz;
 		while (!found) {
+			if (offset + elf_nhdr_size > seg_size) {
+				free (elf_nhdr);
+				return false;
+			}
 			int ret = r_buf_read_at (eo->b, eo->phdr[ph].p_offset + offset, elf_nhdr, elf_nhdr_size);
 			if (ret != elf_nhdr_size) {
 				R_LOG_ERROR ("Cannot read more NOTES header from CORE");
@@ -6052,6 +6053,11 @@ static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
 			ut32 n_namesz = round_up (((Elf_(Nhdr)*)elf_nhdr)->n_namesz);
 			ut32 n_type = ((Elf_(Nhdr)*)elf_nhdr)->n_type;
 
+			// round_up can overflow to 0 for values near UT32_MAX
+			if (!n_descsz || !n_namesz) {
+				free (elf_nhdr);
+				return false;
+			}
 			if (n_type == NT_FILE) {
 				found = true;
 				offset += elf_nhdr_size + n_namesz;
@@ -6065,6 +6071,9 @@ static bool get_nt_file_maps(ELFOBJ *eo, RList *core_maps) {
 		(void)R_BIN_ELF_BREADWORD (eo->b, i);
 
 		const size_t size_of = sizeof (Elf_(Addr));
+		if (n_maps > seg_size / (size_of * 3)) {
+			return false;
+		}
 		const ut64 jump = ((size_of * 3) * n_maps) + i;
 		int len_str = 0;
 		while (n_maps > 0) {
@@ -6158,9 +6167,8 @@ char *Elf_(compiler)(ELFOBJ *eo) {
 	buf[sz] = 0;
 
 	const size_t buflen = strlen (buf);
-	char *nullbyte = buf + buflen;
-	if (buflen != sz && nullbyte[1] && buflen < sz) {
-		nullbyte[0] = ' ';
+	if (buflen < sz && buflen + 1 < sz && buf[buflen + 1]) {
+		buf[buflen] = ' ';
 	}
 	buf[sz] = 0;
 	r_str_trim (buf);

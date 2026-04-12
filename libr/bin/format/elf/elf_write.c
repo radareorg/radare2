@@ -15,7 +15,8 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	const char *strtab = bin->shstrtab;
 	ut64 off, got_offset = 0, got_addr = 0, rsz_offset = 0, delta = 0;
 	ut64 rsz_osize = 0, rsz_size = size, rest_size = 0;
-	int i, j, done = 0;
+	int i, j;
+	bool done = false;
 
 	if (size == 0) {
 		R_LOG_ERROR ("0 size section?");
@@ -30,7 +31,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			continue;
 		}
 		const char *sh_name = &strtab[shdrp->sh_name];
-		if (sh_name && !strncmp (name, sh_name, ELF_STRING_LENGTH)) {
+		if (!strncmp (name, sh_name, ELF_STRING_LENGTH)) {
 			section_not_found = false;
 			if (shdrp->sh_type == 8) {
 				// is virtual section. so we only need to patch the headers
@@ -56,6 +57,9 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 
 	/* rewrite rel's (imports) */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
+		if (shdrp->sh_name >= bin->shstrtab_size) {
+			continue;
+		}
 		if (!strncmp (&strtab[shdrp->sh_name], ".got", ELF_STRING_LENGTH)) {
 			got_addr = (ut64)shdrp->sh_addr;
 			got_offset = (ut64)shdrp->sh_offset;
@@ -66,15 +70,20 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	}
 
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
+		if (shdrp->sh_name >= bin->shstrtab_size) {
+			continue;
+		}
 		if (!strncmp (&strtab[shdrp->sh_name], ".rel.plt", ELF_STRING_LENGTH)) {
 			Elf_(Rel) *rel, *relp;
-			rel = (Elf_(Rel) *)malloc (1 + shdrp->sh_size);
+			rel = (Elf_(Rel) *)malloc (shdrp->sh_size);
 			if (!rel) {
 				r_sys_perror ("malloc");
 				return 0;
 			}
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				r_sys_perror ("read (rel)");
+				free (rel);
+				break;
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof (Elf_(Rel)), relp++) {
 				/* rewrite relp->r_offset */
@@ -90,13 +99,15 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 			break;
 		} else if (!strcmp (&strtab[shdrp->sh_name], ".rela.plt")) {
 			Elf_(Rela) *rel, *relp;
-			rel = (Elf_(Rela) *)malloc (shdrp->sh_size + 1);
+			rel = (Elf_(Rela) *)malloc (shdrp->sh_size);
 			if (!rel) {
 				r_sys_perror ("malloc");
 				return 0;
 			}
 			if (r_buf_read_at (bin->b, shdrp->sh_offset, (ut8*)rel, shdrp->sh_size) == -1) {
 				r_sys_perror ("read (rel)");
+				free (rel);
+				break;
 			}
 			for (j = 0, relp = rel; j < shdrp->sh_size; j += sizeof (Elf_(Rela)), relp++) {
 				/* rewrite relp->r_offset */
@@ -116,8 +127,11 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	/* rewrite section headers */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
 		off = ehdr->e_shoff + (i * sizeof (Elf_(Shdr)));
+		if (shdrp->sh_name >= bin->shstrtab_size) {
+			continue;
+		}
 		if (!done && !strncmp (name, strtab + shdrp->sh_name, ELF_STRING_LENGTH)) {
-			R_LOG_INFO ("patching the virtual section size from %d to %d", shdrp->sh_size, rsz_size);
+			R_LOG_INFO ("patching the virtual section size from %"PFMT64d" to %"PFMT64d, (ut64)shdrp->sh_size, rsz_size);
 			Elf_(Shdr) *es = (Elf_(Shdr)*)shdrp;
 			es->sh_size = rsz_size; // XXX this is tied to endian
 			// r_write_le64 (&es->sh_size, rsz_size);
@@ -140,7 +154,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		}
 #endif
 #endif
-		R_LOG_DEBUG ("-> elf section (%s)", strtab + shdrp->sh_name);
+		R_LOG_DEBUG ("-> elf section (%s)", &strtab[shdrp->sh_name]);
 	}
 
 	/* rewrite program headers */
@@ -196,9 +210,9 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 	if (delta == 0) {
 		R_LOG_INFO ("Size unchanged");
 	} else {
-		ut8 *buf = (ut8 *)malloc (1 + bin->size);
+		ut8 *buf = (ut8 *)malloc (bin->size);
 		if (!buf) {
-			R_LOG_ERROR ("Cannot allocate %d", bin->size);
+			R_LOG_ERROR ("Cannot allocate %"PFMT64d, (ut64)bin->size);
 			return 0;
 		}
 		r_buf_read_at (bin->b, 0, (ut8*)buf, bin->size);
@@ -207,7 +221,7 @@ ut64 Elf_(resize_section)(RBinFile *bf, const char *name, ut64 size) {
 		r_buf_read_at (bin->b, rsz_offset + rsz_osize, (ut8*)buf, rest_size);
 		printf ("COPY TO 0x%08"PFMT64x"\n", (ut64)(rsz_offset + rsz_size));
 		r_buf_write_at (bin->b, rsz_offset + rsz_size, (ut8*)buf, rest_size);
-		printf ("Shifted %d byte(s)\n", (int)delta);
+		printf ("Shifted %"PFMT64d" byte(s)\n", delta);
 		bin->size = r_buf_size (bin->b);
 		free (buf);
 	}
@@ -230,7 +244,7 @@ bool Elf_(del_rpath)(RBinFile *bf) {
 		if (bin->phdr[i].p_type != PT_DYNAMIC) {
 			continue;
 		}
-		if (!(dyn = malloc (bin->phdr[i].p_filesz + 1))) {
+		if (!(dyn = malloc (bin->phdr[i].p_filesz))) {
 			r_sys_perror ("malloc (dyn)");
 			return false;
 		}
@@ -273,6 +287,9 @@ bool Elf_(section_perms)(RBinFile *bf, const char *name, int perms) {
 	/* ELF has no SHF_READ, so the R bit of `perms` is intentionally ignored —
 	 * sections are always readable if SHF_ALLOC is set. */
 	for (i = 0, shdrp = shdr; i < ehdr->e_shnum; i++, shdrp++) {
+		if (shdrp->sh_name >= bin->shstrtab_size) {
+			continue;
+		}
 		const char *shname = &strtab[shdrp->sh_name];
 		int operms = shdrp->sh_flags;
 		if (!strncmp (name, shname, ELF_STRING_LENGTH)) {
