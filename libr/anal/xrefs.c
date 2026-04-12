@@ -326,7 +326,6 @@ R_API RVecAnalRef *r_anal_refs_get(RAnal *anal, ut64 from) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
@@ -339,7 +338,6 @@ R_API RVecAnalRef *r_anal_xrefs_get(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
@@ -352,7 +350,6 @@ R_API RVecAnalRef *r_anal_xrefs_get_from(RAnal *anal, ut64 to) {
 		return NULL;
 	}
 
-	RVecAnalRef_sort (anal_refs, compare_ref); // XXX not needed?
 	return anal_refs;
 }
 
