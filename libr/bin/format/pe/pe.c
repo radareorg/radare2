@@ -4462,7 +4462,7 @@ static struct r_bin_pe_section_t *PE_(r_bin_pe_get_sections)(RBinPEObj *pe) {
 				sym_tbl_off + off + idx < pe->size &&
 				sym_tbl_off + off + idx > off) {
 				int sz = PE_IMAGE_SIZEOF_SHORT_NAME * 3;
-				char *buf[64] = { 0 };
+				char buf[64] = { 0 };
 				if (r_buf_read_at (pe->b,
 					sym_tbl_off + off + idx,
 					(ut8 *)buf, 64)) {

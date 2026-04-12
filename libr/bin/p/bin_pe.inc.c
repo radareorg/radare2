@@ -769,7 +769,9 @@ static bool check_inlined_canary(RBinFile *bf) {
 			goto out_fail;
 		}
 		ut64 canaddr = 0;
-		r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4);
+		if (r_buf_read_at (bf->buf, calldst + 16, (ut8*)&canaddr, 4) < 1) {
+			goto out_fail;
+		}
 
 		ut32 panaddr = canaddr - 0x40; // PE_(va2pa)(bf->bo->bin_obj, canaddr);
 
