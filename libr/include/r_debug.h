@@ -251,6 +251,16 @@ typedef struct r_snap_entry {
 	int perm;
 } RSnapEntry;
 
+typedef struct r_debug_fasttime_thread_t {
+	bool in_syscall;
+	bool skip_timer;
+	int pending_syscall;
+} RDebugFasttimeThread;
+
+static inline void r_debug_fasttime_thread_free(RDebugFasttimeThread *thread_state) {
+	free (thread_state);
+}
+
 R_VEC_FORWARD_DECLARE (RVecDebugTracepoint);
 
 typedef struct r_debug_trace_t {
@@ -408,6 +418,8 @@ typedef struct r_debug_t {
 	bool consbreak; /* SIGINT handle for attached processes */
 	bool continue_all_threads;
 	int coredump_filter; /* override coredump filter, -1 to use default */
+	bool fasttime; /* skip sleep syscalls during continue */
+	bool fasttime_suppress; /* disable fasttime during explicit syscall tracing */
 
 	/* tracking debugger state */
 	int steps; /* counter of steps done */
@@ -450,6 +462,7 @@ typedef struct r_debug_t {
 	bool trace_continue;
 	RAnalOp *cur_op;
 	RDebugSession *session;
+	HtUP *fasttime_threads; /* tid -> RDebugFasttimeThread* */
 
 	Sdb *sgnls;
 	RCoreBind coreb;
@@ -466,6 +479,10 @@ typedef struct r_debug_t {
 	int glibc_version;
 	double glibc_version_d; // TODO: move over to this only
 } RDebug;
+
+static inline bool r_debug_fasttime_enabled(RDebug *dbg) {
+	return dbg->fasttime && !dbg->fasttime_suppress;
+}
 
 // TODO: rename to r_debug_process_t ? maybe a thread too ?
 typedef struct r_debug_pid_t {
@@ -586,8 +603,11 @@ R_API int r_debug_desc_list(RDebug *dbg, bool show_commands);
 R_API bool r_debug_reg_sync(RDebug *dbg, int type, int write);
 R_API bool r_debug_reg_list(RDebug *dbg, int type, int size, PJ *pj, int rad, const char *use_color);
 R_API bool r_debug_reg_set(RDebug *dbg, const char *name, ut64 num);
+R_API bool r_debug_reg_set_alias(RDebug *dbg, RRegAlias alias, ut64 num);
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name);
+R_API ut64 r_debug_reg_get_alias(RDebug *dbg, RRegAlias alias);
 R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *value);
+R_API ut64 r_debug_reg_get_alias_err(RDebug *dbg, RRegAlias alias, bool *err, utX *value);
 
 R_API bool r_debug_execute(RDebug *dbg, const ut8 *buf, int len, R_OUT ut64 *ret, bool restore, bool ignore_stack);
 R_API bool r_debug_map_sync(RDebug *dbg);
@@ -602,6 +622,9 @@ R_API bool r_debug_map_protect(RDebug *dbg, ut64 addr, int size, int perms);
 /* args XXX: weird food */
 R_API ut64 r_debug_arg_get(RDebug *dbg, const char *cc, int num);
 R_API bool r_debug_arg_set(RDebug *dbg, const char *cc, int num, ut64 value);
+R_API void r_debug_fasttime_reset(RDebug *dbg);
+R_API void r_debug_fasttime_set(RDebug *dbg, bool enabled);
+R_API bool r_debug_fasttime_prepare_syscall_entry(RDebug *dbg, int tid, int syscall_num);
 
 /* breakpoints (most in r_bp, this calls those) */
 R_API RBreakpointItem *r_debug_bp_add(RDebug *dbg, ut64 addr, int hw, bool watch, int rw, char *module, st64 m_delta);

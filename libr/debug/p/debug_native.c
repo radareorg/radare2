@@ -225,6 +225,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
 #else
 	int ret = -1;
+	const int ptrace_cmd = r_debug_fasttime_enabled (dbg)? PTRACE_SYSCALL: PTRACE_CONT;
 	if (sig == -1) {
 		   sig = dbg->reason.signum;
 	}
@@ -237,15 +238,15 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 		RDebugPid *th;
 		RListIter *it;
 		r_list_foreach (dbg->threads, it, th) {
-			ret = r_debug_ptrace (dbg, PTRACE_CONT, th->pid, 0, 0);
+			ret = r_debug_ptrace (dbg, ptrace_cmd, th->pid, 0, 0);
 			if (ret) {
 				R_LOG_ERROR ("(%d) is running or dead", th->pid);
 			}
 		}
 	} else {
-		ret = r_debug_ptrace (dbg, PTRACE_CONT, tid, NULL, (r_ptrace_data_t)(size_t) sig);
+		ret = r_debug_ptrace (dbg, ptrace_cmd, tid, NULL, (r_ptrace_data_t)(size_t) sig);
 		if (ret) {
-			r_sys_perror ("PTRACE_CONT");
+			r_sys_perror (ptrace_cmd == PTRACE_SYSCALL? "PTRACE_SYSCALL": "PTRACE_CONT");
 		}
 	}
 	return ret >= 0;
