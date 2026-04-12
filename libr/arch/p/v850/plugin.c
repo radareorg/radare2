@@ -710,7 +710,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 // static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int cpumodel = cpumodel_from_string (as->config->cpu);
 	if (cpumodel == V850_CPU_E0) {
-		return v850e0_op (as, op, op->addr, buf, len, mask) > 0;
+		bool ret = v850e0_op (as, op, op->addr, buf, len, mask) > 0;
+		if (ret && (mask & R_ARCH_OP_MASK_ESIL)) {
+			r_strbuf_append (&op->esil, ",0,r0,:=");
+		}
+		return ret;
 	}
 #if 0
 	cpumodel |= V850_CPU_OPTION_ALIAS;
@@ -723,6 +727,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
+		r_strbuf_append (&op->esil, ",0,r0,:=");
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
