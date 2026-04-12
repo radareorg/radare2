@@ -2984,7 +2984,7 @@ R_API bool r_esil_setup_ops(REsil *esil) {
 	ret &= OP ("LSR", esil_lsr, 1, 2, OT_MATH);
 	ret &= OP (">>=", esil_lsreq, 0, 2, OT_MATH | OT_REGW);
 	ret &= OP ("ASR", esil_asr, 1, 2, OT_MATH);
-	ret &= OP ("DIVH", esil_divh, 1, 2, OT_MATH);
+	ret &= OP ("DIVH", esil_divh, 2, 2, OT_MATH);
 	ret &= OP ("MULH", esil_mulh, 1, 2, OT_MATH);
 	ret &= OP ("VDIV", esil_vdiv, 0, 3, OT_MATH | OT_REGW);
 	ret &= OP ("ROR", esil_ror, 1, 2, OT_MATH);
