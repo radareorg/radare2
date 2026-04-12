@@ -881,7 +881,8 @@ static char *regs(RArchSession *s) {
 		"gpr	eiwr	.32	$	0\n"
 		"gpr	fewr	.32	$	0\n"
 		"gpr	dbwr	.32	$	0\n"
-		"gpr	bsel	.32	$	0\n";
+		"gpr	bsel	.32	$	0\n"
+		"gpr	tmp	.32	136 0\n";
 	return strdup (p);
 }
 

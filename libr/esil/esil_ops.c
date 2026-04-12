@@ -1228,20 +1228,18 @@ static bool esil_divh(REsil *esil) {
 	char *src = r_esil_pop (esil);
 	if (src && r_esil_get_parm (esil, src, &b)) {
 		if (dst && r_esil_get_parm (esil, dst, &a)) {
-			st16 dividend = (st16)(a >> 16);
-			st16 divisor = (st16)(b & 0xFFFF);
+			st32 dividend = (st32)a;
+			st32 divisor = (st32)(st16)(b & 0xFFFF);
 			if (divisor == 0) {
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
 				r_esil_pushnum (esil, 0);
+				r_esil_pushnum (esil, 0);
 			} else {
 				st32 q = dividend / divisor;
 				st32 rm = dividend % divisor;
-				if (q > 32767) {
-					q = 32767;
-				}
-				ut64 result = ((ut64)(rm & 0xFFFF) << 16) | (ut64)(q & 0xFFFF);
-				r_esil_pushnum (esil, result);
+				r_esil_pushnum (esil, (ut64)(ut32)rm);
+				r_esil_pushnum (esil, (ut64)(ut32)q);
 			}
 			ret = true;
 		}
@@ -1288,19 +1286,8 @@ static bool esil_vdiv(REsil *esil) {
 			} else {
 				st32 q = (st32)dividend / (st32)divisor;
 				st32 r = (st32)dividend % (st32)divisor;
-				r_esil_reg_write (esil, dst, (ut64)(ut32)q);
-				char *p = dst;
-				while (*p && *p != 'r' && *p != 'R') {
-					p++;
-				}
-				if (*p == 'r' || *p == 'R') {
-					int regnum = atoi (p + 1);
-					if (regnum >= 0 && regnum < 31) {
-						char rmreg[8];
-						snprintf (rmreg, sizeof (rmreg), "r%d", regnum + 1);
-						r_esil_reg_write (esil, rmreg, (ut64)(ut32)r);
-					}
-				}
+				r_esil_reg_write (esil, src, (ut64)(ut32)q);
+				r_esil_reg_write (esil, dst, (ut64)(ut32)r);
 			}
 			ret = true;
 		}
