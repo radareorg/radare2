@@ -424,6 +424,9 @@ static void carve_deps_at_address(RDyldCache *cache, cache_img_t *img, HtSU *pat
 	while (cursor < end) {
 		ut32 cmd = r_read_le32 (cursor);
 		ut32 cmdsize = r_read_le32 (cursor + sizeof (ut32));
+		if (cmdsize < 8 || cursor + cmdsize > end) {
+			break;
+		}
 		ut8 *cmd_end = cursor + cmdsize;
 		if (cmd == LC_LOAD_DYLIB ||
 				cmd == LC_LOAD_WEAK_DYLIB ||
