@@ -58,10 +58,13 @@ static int r_bin_te_init_hdr(struct r_bin_te_obj_t *bin) {
 }
 
 R_IPI ut64 r_bin_te_get_main_paddr(struct r_bin_te_obj_t *bin) {
+	if (!bin) {
+		return 0LL;
+	}
 	RBinAddr *entry = r_bin_te_get_entrypoint (bin);
 	ut64 addr = 0LL;
 	ut8 buf[512];
-	if (!bin) {
+	if (!entry) {
 		return 0LL;
 	}
 	if (r_buf_read_at (bin->b, entry->paddr, buf, sizeof (buf)) == -1) {

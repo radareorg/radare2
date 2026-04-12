@@ -561,9 +561,14 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 		bin->ne_header->FileAlnSzShftCnt = 15;
 	}
 	ut64 from = bin->ne_header->ModRefTable + bin->header_offset;
-	ut64 left = r_buf_size (bin->buf) - from;
-	if (from + bin->ne_header->ModRefs * sizeof (ut16) >= left) {
-		bin->ne_header->ModRefs = left / sizeof (ut16);
+	ut64 bufsz = r_buf_size (bin->buf);
+	if (from >= bufsz) {
+		bin->ne_header->ModRefs = 0;
+	} else {
+		ut64 left = bufsz - from;
+		if (bin->ne_header->ModRefs * sizeof (ut16) > left) {
+			bin->ne_header->ModRefs = left / sizeof (ut16);
+		}
 	}
 	bin->alignment = 1 << bin->ne_header->FileAlnSzShftCnt;
 	if (!bin->alignment) {

@@ -969,7 +969,7 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 					} else {
 						char *longname, name[128];
 						ut32 idx = r_read_le32 (buf + i + 4);
-						if (r_buf_read_at (pe->b, sym_tbl_off + idx + shsz, (ut8 *)name, 128)) { // == 128) {
+						if (r_buf_read_at (pe->b, sym_tbl_off + idx + shsz, (ut8 *)name, sizeof (name)) == sizeof (name)) {
 							longname = name;
 							name[sizeof (name) - 1] = 0;
 							strncpy ((char *)exp[symctr].name, longname, PE_NAME_LENGTH - 1);

@@ -82,7 +82,7 @@ static bool load_bytes(RBinFile *bf, const ut8 *buf, ut64 sz, ut64 loadaddr) {
 	ut32 rosize = r_buf_read_le32_at (bf->buf, NSO_OFF (ro_size));
 	ut32 doff = r_buf_read_le32_at (bf->buf, NSO_OFF (data_memoffset));
 	ut32 dsize = r_buf_read_le32_at (bf->buf, NSO_OFF (data_size));
-	ut64 total_size = tsize + rosize + dsize;
+	ut64 total_size = (ut64)tsize + rosize + dsize;
 	if (total_size > MAX_UNCOMPRESSED_SIZE) {
 		R_LOG_WARN ("prevented oom");
 		return false;
