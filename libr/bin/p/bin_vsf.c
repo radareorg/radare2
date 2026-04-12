@@ -41,83 +41,73 @@ static bool check(RBinFile *bf, RBuffer *b) {
 
 // XXX b vs bf->buf
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
-	ut64 offset = 0;
-	struct r_bin_vsf_obj* res = NULL;
-	if (check (bf, bf->buf)) {
-		int i = 0;
-		res = R_NEW0 (struct r_bin_vsf_obj);
-		offset = r_offsetof (struct vsf_hdr, machine);
-		if (offset > bf->size) {
+	if (!check (bf, bf->buf)) {
+		return false;
+	}
+	struct r_bin_vsf_obj *res = R_NEW0 (struct r_bin_vsf_obj);
+	ut64 offset = r_offsetof (struct vsf_hdr, machine);
+	if (offset > bf->size) {
+		free (res);
+		return false;
+	}
+	char machine[20];
+	if (r_buf_read_at (bf->buf, offset, (ut8 *)machine, sizeof (machine)) < 0) {
+		free (res);
+		return false;
+	}
+	int i;
+	for (i = 0; i < MACHINES_MAX; i++) {
+		if (offset + strlen (_machines[i].name) > bf->size) {
 			free (res);
 			return false;
 		}
-		char machine[20];
-		int l = r_buf_read_at (bf->buf, offset, (ut8 *)machine, sizeof (machine));
-		if (l < 0) {
+		if (r_str_startswith (machine, _machines[i].name)) {
+			res->machine_idx = i;
+			break;
+		}
+	}
+	if (i >= MACHINES_MAX) {
+		R_LOG_WARN ("Unsupported machine type");
+		free (res);
+		return false;
+	}
+	// read all VSF modules
+	offset = sizeof (struct vsf_hdr);
+	ut8 vice_version[sizeof (VICE_VERSION)];
+	if (r_buf_read_at (bf->buf, offset, vice_version, sizeof (VICE_VERSION)) == sizeof (VICE_VERSION)) {
+		if (!memcmp (vice_version, VICE_VERSION, sizeof (VICE_VERSION) - 1)) {
+			offset += sizeof (VICE_VERSION) + 7;
+		}
+	}
+	ut64 sz = r_buf_size (bf->buf);
+	while (offset < sz) {
+		struct vsf_module module;
+		int rd = r_buf_fread_at (bf->buf, offset, (ut8 *)&module, "16ccci", 1);
+		if (rd != sizeof (module)) {
+			R_LOG_ERROR ("Truncated Header");
 			free (res);
 			return false;
 		}
-		for (; i < MACHINES_MAX; i++) {
-			if (offset + strlen (_machines[i].name) > bf->size) {
-				free (res);
-				return false;
-			}
-			if (r_str_startswith (machine, _machines[i].name)) {
-				res->machine_idx = i;
-				break;
-			}
+		if (module.length == 0) {
+			R_LOG_ERROR ("Malformed VSF module with length 0");
+			break;
 		}
-		if (i >= MACHINES_MAX) {
-			R_LOG_WARN ("Unsupported machine type");
-			free (res);
-			return false;
-		}
-		// read all VSF modules
-		offset = sizeof (struct vsf_hdr);
-		ut8 vice_version[sizeof (VICE_VERSION)];
-		if (r_buf_read_at (bf->buf, offset, vice_version, sizeof (VICE_VERSION)) == sizeof (VICE_VERSION)) {
-			if (!memcmp (vice_version, VICE_VERSION, sizeof (VICE_VERSION) - 1)) {
-				offset += sizeof (VICE_VERSION) + 7;
-			}
-		}
-		ut64 sz = r_buf_size (bf->buf);
-		while (offset < sz) {
-			struct vsf_module module;
-			int read = r_buf_fread_at (bf->buf, offset, (ut8*)&module, "16ccci", 1);
-			if (read != sizeof (module)) {
-				R_LOG_ERROR ("Truncated Header");
-				free (res);
-				return false;
-			}
 #define CMP_MODULE(x) memcmp (module.module_name, x, sizeof (x) - 1)
-			if (!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS) && !module.major) {
-				res->mem = offset + read;
-			} else if (!CMP_MODULE (VICE_C64ROM) && !module.major) {
-				res->rom = offset + read;
-			} else if (!CMP_MODULE (VICE_C128MEM) && !module.major) {
-				res->mem = offset + read;
-			} else if (!CMP_MODULE (VICE_C128ROM) && !module.major) {
-				res->rom = offset + read;
-			} else if (!CMP_MODULE (VICE_MAINCPU) && module.major == 1) {
-				res->maincpu = R_NEW (struct vsf_maincpu);
-				r_buf_read_at (bf->buf, offset + read, (ut8 *)res->maincpu, sizeof (*res->maincpu));
-			} else {
-				char safe_name[sizeof (module.module_name) + 1];
-				r_str_ncpy (safe_name, module.module_name, sizeof (safe_name));
-				R_LOG_TODO ("Ignoring unsupported module: %s", safe_name);
+		if (!module.major) {
+			if ((!CMP_MODULE (VICE_C64MEM) && CMP_MODULE (VICE_C64MEMHACKS)) || !CMP_MODULE (VICE_C128MEM)) {
+				res->mem = offset + rd;
+			} else if (!CMP_MODULE (VICE_C64ROM) || !CMP_MODULE (VICE_C128ROM)) {
+				res->rom = offset + rd;
 			}
-#undef CMP_MODULE
-			offset += module.length;
-			if (module.length == 0) {
-				R_LOG_ERROR ("Malformed VSF module with length 0");
-				break;
-			}
+		} else if (module.major == 1 && !CMP_MODULE (VICE_MAINCPU)) {
+			res->maincpu = R_NEW0 (struct vsf_maincpu);
+			r_buf_read_at (bf->buf, offset + rd, (ut8 *)res->maincpu, sizeof (*res->maincpu));
 		}
+#undef CMP_MODULE
+		offset += module.length;
 	}
-	if (res) {
-		res->kv = sdb_new0 ();
-		sdb_ns_set (bf->sdb, "info", res->kv);
-	}
+	res->kv = sdb_new0 ();
+	sdb_ns_set (bf->sdb, "info", res->kv);
 	bf->bo->bin_obj = res;
 	return true;
 }
@@ -128,9 +118,6 @@ static RList *mem(RBinFile *bf) {
 		return NULL;
 	}
 	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
 	RBinMem *m = R_NEW0 (RBinMem);
 	m->name = strdup ("RAM");
 	m->addr = 0;
@@ -140,174 +127,57 @@ static RList *mem(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile* bf) {
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
+static void add_section(RList *list, const char *name, ut64 paddr, int size, ut64 vaddr, int perm) {
+	RBinSection *s = R_NEW0 (RBinSection);
+	s->name = strdup (name);
+	s->paddr = paddr;
+	s->size = size;
+	s->vaddr = vaddr;
+	s->vsize = size;
+	s->perm = perm;
+	s->add = true;
+	r_list_append (list, s);
+}
+
+static RList *sections(RBinFile *bf) {
+	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RList *ret = r_list_new ();
 	const int m_idx = vsf_obj->machine_idx;
-	// Radare doesn't support BANK switching.
-	// But by adding the ROM sections first, and then the RAM
-	// it kind of simulate bank switching since users can remove existing sections
-	// and the RAM section won't overwrite the ROM since it was added last.
+	// ROM sections first, then RAM, to simulate bank switching
 	if (vsf_obj->rom) {
-		if (!vsf_obj->machine_idx) {
-			// Commodore 64 ROMS
-			// BASIC (0xa000 - 0xbfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("BASIC");
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c64rom, basic);
-			ptr->size = 1024 * 8; // (8k)
-			ptr->vaddr = 0xa000;
-			ptr->vsize = 1024 * 8;	// BASIC size (8k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("KERNAL");
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c64rom, kernal);
-			ptr->size = 1024 * 8; // (8k)
-			ptr->vaddr = 0xe000;
-			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// CHARGEN section ignored
+		if (!m_idx) {
+			add_section (ret, "BASIC", vsf_obj->rom + r_offsetof (struct vsf_c64rom, basic), 1024 * 8, 0xa000, R_PERM_RX);
+			add_section (ret, "KERNAL", vsf_obj->rom + r_offsetof (struct vsf_c64rom, kernal), 1024 * 8, 0xe000, R_PERM_RX);
 		} else {
-			// Commodore 128 ROMS
-			// BASIC (0x4000 - 0xafff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("BASIC");
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, basic);
-			ptr->size = 1024 * 28; // (28k)
-			ptr->vaddr = 0x4000;
-			ptr->vsize = 1024 * 28;	// BASIC size (28k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// MONITOR (0xb000 - 0xbfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("MONITOR");
-			// skip first 28kb  since "BASIC" and "MONITOR" share the same section in VSF
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, basic) + 1024 * 28;
-			ptr->size = 1024 * 4; // (4k)
-			ptr->vaddr = 0xb000;
-			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// EDITOR (0xc000 - 0xcfff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("EDITOR");
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, editor);
-			ptr->size = 1024 * 4; // (4k)
-			ptr->vaddr = 0xc000;
-			ptr->vsize = 1024 * 4;	// BASIC size (4k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// KERNAL (0xe000 - 0xffff)
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("KERNAL");
-			ptr->paddr = vsf_obj->rom + r_offsetof (struct vsf_c128rom, kernal);
-			ptr->size = 1024 * 8; // (8k)
-			ptr->vaddr = 0xe000;
-			ptr->vsize = 1024 * 8;	// KERNAL size (8k)
-			ptr->perm = R_PERM_RX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			// CHARGEN section ignored
+			ut64 basic_off = vsf_obj->rom + r_offsetof (struct vsf_c128rom, basic);
+			add_section (ret, "BASIC", basic_off, 1024 * 28, 0x4000, R_PERM_RX);
+			add_section (ret, "MONITOR", basic_off + 1024 * 28, 1024 * 4, 0xb000, R_PERM_RX);
+			add_section (ret, "EDITOR", vsf_obj->rom + r_offsetof (struct vsf_c128rom, editor), 1024 * 4, 0xc000, R_PERM_RX);
+			add_section (ret, "KERNAL", vsf_obj->rom + r_offsetof (struct vsf_c128rom, kernal), 1024 * 8, 0xe000, R_PERM_RX);
 		}
 	}
-
 	if (vsf_obj->mem) {
 		int offset = _machines[m_idx].offset_mem;
-		if (!vsf_obj->machine_idx) {
-			// RAM C64 (0x0000 - 0xffff)
-			int size = _machines[m_idx].ram_size;
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("RAM");
-			ptr->paddr = vsf_obj->mem + offset;
-			ptr->size = size;
-			ptr->vaddr = 0x0;
-			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
+		if (!m_idx) {
+			add_section (ret, "RAM", vsf_obj->mem + offset, _machines[m_idx].ram_size, 0, R_PERM_RWX);
 		} else {
-			// RAM C128 (0x0000 - 0xffff): Bank 0
-			// RAM C128 (0x0000 - 0xffff): Bank 1
-
-			// size of each bank: 64k
-			int size = 1024 * 64;
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("RAM BANK 0");
-			ptr->paddr = vsf_obj->mem + offset;
-			ptr->size = size;
-			ptr->vaddr = 0x0;
-			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
-
-			if (!(ptr = R_NEW0 (RBinSection))) {
-				return ret;
-			}
-			ptr->name = strdup ("RAM BANK 1");
-			ptr->paddr = vsf_obj->mem + offset + size;
-			ptr->size = size;
-			ptr->vaddr = 0x0;
-			ptr->vsize = size;
-			ptr->perm = R_PERM_RWX;
-			ptr->add = true;
-			r_list_append (ret, ptr);
+			int bank_size = 1024 * 64;
+			add_section (ret, "RAM BANK 0", vsf_obj->mem + offset, bank_size, 0, R_PERM_RWX);
+			add_section (ret, "RAM BANK 1", vsf_obj->mem + offset + bank_size, bank_size, 0, R_PERM_RWX);
 		}
 	}
-
 	return ret;
 }
 
-static RBinInfo* info(RBinFile *bf) {
+static RBinInfo *info(RBinFile *bf) {
 	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 	const int m_idx = vsf_obj->machine_idx;
-	struct vsf_hdr hdr = {0};
-	int read = r_buf_read_at (bf->buf, 0, (ut8*)&hdr, sizeof (hdr));
-	if (read != sizeof (hdr)) {
-		R_LOG_ERROR ("Truncated Header");
-		return NULL;
-	}
 	RBinInfo *ret = R_NEW0 (RBinInfo);
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("Snapshot");
@@ -317,19 +187,18 @@ static RBinInfo* info(RBinFile *bf) {
 	ret->bits = 8;
 	ret->has_va = true;
 
-	if (!vsf_obj->maincpu) {
-		//safe to return, sdb will not be populated
+	struct vsf_maincpu *cpu = vsf_obj->maincpu;
+	if (!cpu) {
 		return ret;
 	}
-
-	sdb_num_set (vsf_obj->kv, "vsf.reg_a", vsf_obj->maincpu->ac, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.reg_x", vsf_obj->maincpu->xr, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.reg_y", vsf_obj->maincpu->yr, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.reg_sp", vsf_obj->maincpu->sp, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.reg_pc", vsf_obj->maincpu->pc, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.reg_st", vsf_obj->maincpu->st, 0);
-	sdb_num_set (vsf_obj->kv, "vsf.clock", vsf_obj->maincpu->clk, 0);
-
+	Sdb *kv = vsf_obj->kv;
+	sdb_num_set (kv, "vsf.reg_a", cpu->ac, 0);
+	sdb_num_set (kv, "vsf.reg_x", cpu->xr, 0);
+	sdb_num_set (kv, "vsf.reg_y", cpu->yr, 0);
+	sdb_num_set (kv, "vsf.reg_sp", cpu->sp, 0);
+	sdb_num_set (kv, "vsf.reg_pc", cpu->pc, 0);
+	sdb_num_set (kv, "vsf.reg_st", cpu->st, 0);
+	sdb_num_set (kv, "vsf.clock", cpu->clk, 0);
 	return ret;
 }
 
@@ -468,22 +337,15 @@ static RList* symbols(RBinFile *bf) {
 		{0xDD0F, "CIA2_CRB" },
 	};
 	static const int SYMBOLS_MAX = sizeof (_symbols) / sizeof (_symbols[0]);
-	struct r_bin_vsf_obj* vsf_obj = (struct r_bin_vsf_obj*) bf->bo->bin_obj;
+	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
-	const int m_idx = vsf_obj->machine_idx;
-	int offset = _machines[m_idx].offset_mem;
-	RList *ret = NULL;
-	RBinSymbol *ptr;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
-
+	int offset = _machines[vsf_obj->machine_idx].offset_mem;
+	RList *ret = r_list_newf (free);
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++) {
-		ptr = R_NEW0 (RBinSymbol);
+		RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 		ptr->name = r_bin_name_new_from (r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS));
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
@@ -491,7 +353,6 @@ static RList* symbols(RBinFile *bf) {
 		ptr->ordinal = i;
 		r_list_append (ret, ptr);
 	}
-
 	return ret;
 }
 
@@ -501,29 +362,17 @@ static void destroy(RBinFile *bf) {
 	free (obj);
 }
 
-static RList* entries(RBinFile *bf) {
+static RList *entries(RBinFile *bf) {
 	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
 		return NULL;
 	}
 	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
-	const int m_idx = vsf_obj->machine_idx;
-	int offset = _machines[m_idx].offset_mem;
+	int offset = _machines[vsf_obj->machine_idx].offset_mem;
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ptr->paddr = vsf_obj->mem + offset;
 	ptr->vaddr = vsf_obj->maincpu ? vsf_obj->maincpu->pc : 0;
 	r_list_append (ret, ptr);
-
-	// IRQ: 0xFFFE or 0x0314 ?
-//	if (!(ptr = R_NEW0 (RBinAddr)))
-//		return ret;
-//	ptr->paddr = (vsf_obj->mem + offset) - (void*) bf->buf->buf;
-//	ptr->vaddr = 0x314; // or 0xfffe ?
-//	r_list_append (ret, ptr);
-
 	return ret;
 }
 
