@@ -1703,7 +1703,7 @@ static RList *resolve_mig_subsystem(RKernelCacheObj *obj) {
 
 	ut8 *cursor = data_const;
 	ut8 *end = data_const + data_const_size;
-	while (cursor < end) {
+	while (cursor + 16 <= end) {
 		ut64 subs_p = K_PPTR (r_read_le64 (cursor));
 		if (subs_p < text_exec_vaddr || subs_p >= text_exec_vaddr + text_exec_size) {
 			cursor += 8;
