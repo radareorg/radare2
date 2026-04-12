@@ -117,7 +117,7 @@ static int download(struct SPDBDownloader *pd) {
 		res = download_and_write (opt, archive_name);
 
 		if (opt->extract > 0 && res) {
-			eprintf ("Attempting to decompress pdb\n");
+			R_LOG_INFO ("Attempting to decompress pdb");
 			if (res && ((cmd_ret = r_sys_cmd (extractor_cmd)) != 0)) {
 				R_LOG_ERROR ("cab extractor exited with error %d", cmd_ret);
 				res = 0;
@@ -129,8 +129,7 @@ static int download(struct SPDBDownloader *pd) {
 		free (extractor_cmd);
 	}
 	if (res == 0) {
-		eprintf ("Falling back to uncompressed pdb\n");
-		eprintf ("Attempting to download uncompressed pdb in %s\n", abspath_to_file);
+		R_LOG_INFO ("Falling back to uncompressed pdb download: %s", abspath_to_file);
 		res = download_and_write (opt, opt->dbg_file);
 	}
 	free (abspath_to_file);
@@ -139,11 +138,6 @@ static int download(struct SPDBDownloader *pd) {
 
 void init_pdb_downloader(SPDBDownloaderOpt *opt, SPDBDownloader *pd) {
 	pd->opt = R_NEW0 (SPDBDownloaderOpt);
-	if (!pd->opt) {
-		pd->download = 0;
-		R_LOG_ERROR ("Cannot allocate memory for SPDBDownloaderOpt");
-		return;
-	}
 	pd->opt->dbg_file = strdup (opt->dbg_file);
 	pd->opt->guid = strdup (opt->guid);
 	pd->opt->symbol_server = strdup (opt->symbol_server);

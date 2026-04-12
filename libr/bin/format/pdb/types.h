@@ -6,23 +6,10 @@
 
 #define READ_PAGE_FAIL 0x01
 
-///////////////////////////////////////////////////////////////////////////////
 #define GET_PAGE(pn, off, pos, page_size)	{ \
 	(pn) = (pos) / (page_size); \
 	(off) = (pos) % (page_size); \
 }
-
-///////////////////////////////////////////////////////////////////////////////
-#define READ_PAGES(start_indx, end_indx) { \
-	for (i = start_indx; i < end_indx; i++) { \
-		fseek(stream_file->fp, stream_file->pages[i] * stream_file->page_size, SEEK_SET); \
-		fread(tmp, stream_file->page_size, 1, stream_file->fp); \
-		tmp += stream_file->page_size; \
-	} \
-}
-
-///////////////////////////////////////////////////////////////////////////////
-#define SWAP_UINT16(x) (((x) >> 8) | ((x) << 8))
 
 static inline bool can_read(ut32 pos, ut32 n, ut32 len) {
 	return pos <= len && n <= len - pos;

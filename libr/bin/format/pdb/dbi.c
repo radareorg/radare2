@@ -5,7 +5,6 @@
 
 #define PDB_ALIGN 4
 
-///////////////////////////////////////////////////////////////////////////////
 static void free_dbi_stream(STpiStream *ss, void *stream) {
 	SDbiStream *t = (SDbiStream *)stream;
 	SDBIExHeader *dbi_ex_header = NULL;
@@ -19,7 +18,6 @@ static void free_dbi_stream(STpiStream *ss, void *stream) {
 	r_list_free (t->dbiexhdrs);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void parse_dbi_header(SDBIHeader *dbi_header, R_STREAM_FILE *stream_file) {
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->magic);
 	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->version);
@@ -67,7 +65,7 @@ static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_hea
 		return 0;
 	}
 	dbi_ex_header->opened = r_read_le32 (data);
-	const int range_sz = parse_ssymbol_range (data + 4, max_len - 4, &dbi_ex_header->range);
+	int range_sz = parse_ssymbol_range (data + 4, max_len - 4, &dbi_ex_header->range);
 	if (range_sz == 0) {
 		return 0;
 	}
@@ -91,7 +89,6 @@ static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_hea
 	return read_bytes;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 static void parse_dbg_header(SDbiDbgHeader *dbg_header, R_STREAM_FILE *stream_file) {
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_fpo);
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_exception);
@@ -106,40 +103,34 @@ static void parse_dbg_header(SDbiDbgHeader *dbg_header, R_STREAM_FILE *stream_fi
 	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_section_hdr_orig);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void init_dbi_stream(SDbiStream *dbi_stream) {
 	dbi_stream->free_ = free_dbi_stream;
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 	SDbiStream *dbi_stream = (SDbiStream *)parsed_pdb_stream;
-	SDBIExHeader *dbi_ex_header = NULL;
-	int pos = 0;
-	ut8 *dbiexhdr_data = NULL, *p_tmp = NULL;
-	int size = 0, sz = 0;
-	int i = 0;
 
 	parse_dbi_header (&dbi_stream->dbi_header, stream_file);
-	pos += sizeof (SDBIHeader) - 2; // 2 because enum in C equal to 4, but
-				// to read just 2;
+	// 2 because enum in C is 4 bytes, but we only read 2
+	int pos = sizeof (SDBIHeader) - 2;
 	stream_file_seek (stream_file, pos, 0);
 
-	size = dbi_stream->dbi_header.module_size;
-	dbiexhdr_data = malloc (size);
+	int size = dbi_stream->dbi_header.module_size;
+	ut8 *dbiexhdr_data = malloc (size);
 	if (!dbiexhdr_data) {
 		return;
 	}
 	stream_file_read (stream_file, size, (char *)dbiexhdr_data);
 
 	dbi_stream->dbiexhdrs = r_list_new ();
-	p_tmp = dbiexhdr_data;
+	ut8 *p_tmp = dbiexhdr_data;
+	int i = 0;
 	while (i < size) {
-		dbi_ex_header = (SDBIExHeader *)malloc (sizeof (SDBIExHeader));
+		SDBIExHeader *dbi_ex_header = malloc (sizeof (SDBIExHeader));
 		if (!dbi_ex_header) {
 			break;
 		}
-		sz = parse_dbi_ex_header (p_tmp, size - i, dbi_ex_header);
+		int sz = parse_dbi_ex_header (p_tmp, size - i, dbi_ex_header);
 		if (sz < 1) {
 			free (dbi_ex_header->modName.name);
 			free (dbi_ex_header->objName.name);
@@ -153,18 +144,13 @@ void parse_dbi_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream_file) {
 		p_tmp += sz;
 		r_list_append (dbi_stream->dbiexhdrs, dbi_ex_header);
 	}
-
 	free (dbiexhdr_data);
 
-	// "Section Contribution"
+	// skip unparsed sections
 	stream_file_seek (stream_file, dbi_stream->dbi_header.seccon_size, 1);
-	// "Section Map"
 	stream_file_seek (stream_file, dbi_stream->dbi_header.secmap_size, 1);
-	// "File Info"
 	stream_file_seek (stream_file, dbi_stream->dbi_header.filinf_size, 1);
-	// "TSM"
 	stream_file_seek (stream_file, dbi_stream->dbi_header.tsmap_size, 1);
-	// "EC"
 	stream_file_seek (stream_file, dbi_stream->dbi_header.ecinfo_size, 1);
 
 	parse_dbg_header (&dbi_stream->dbg_header, stream_file);

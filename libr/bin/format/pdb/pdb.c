@@ -31,11 +31,10 @@ typedef struct {
 
 static void free_info_stream(STpiStream *ss, void *stream);
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void free_pdb_stream(STpiStream *ss, void *stream) {
 	R_PDB_STREAM *pdb_stream = (R_PDB_STREAM *)stream;
 	if (pdb_stream) {
-		// R_FREE (pdb_stream->pages);
 		pdb_stream->pages = NULL;
 	}
 }
@@ -141,36 +140,19 @@ static void free_pdb_streams(RBinPdb *pdb) {
 	pdb->pdb_streams = NULL;
 }
 
-/**
- * @brief Create a type name from offset
- *
- * @param offset
- * @return char* Name or NULL if error
- */
 static char *create_type_name_from_offset(ut64 offset) {
 	return r_str_newf ("type_0x%" PFMT64x, offset);
 }
 
-// static void pdb_stream_get_data (R_PDB_STREAM *pdb_stream, char *data)
-// {
-// int pos = stream_file_tell (&pdb_stream->stream_file);
-// stream_file_seek (&pdb_stream->stream_file, 0, 0);
-// stream_file_read (&pdb_stream->stream_file, -1, data);
-// stream_file_seek (&pdb_stream->stream_file, pos, 0);
-// }
-
-///////////////////////////////////////////////////////////////////////////////
-/// size - default value = -1
-/// page_size - default value = 0x1000
-///////////////////////////////////////////////////////////////////////////////
-static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/, int *pages, int pages_amount, int index, int size, int page_size) {
+// size = -1 (default), page_size = 0x1000 (default)
+static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf, int *pages, int pages_amount, int index, int size, int page_size) {
 	pdb_stream->buf = buf;
 	pdb_stream->pages = pages;
 	pdb_stream->indx = index;
 	pdb_stream->page_size = page_size;
 	pdb_stream->pages_amount = pages_amount;
 	if (size == -1) {
-		pdb_stream->size = pages_amount * page_size;
+		pdb_stream->size = (size_t)pages_amount * page_size;
 	} else {
 		pdb_stream->size = size;
 	}
@@ -180,7 +162,7 @@ static int init_r_pdb_stream(R_PDB_STREAM *pdb_stream, RBuffer *buf /*FILE *fp*/
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static int read_int_var(char *var_name, int *var, RBinPdb *pdb) {
 	if (var) {
 		*var = 0;
@@ -193,7 +175,7 @@ static int read_int_var(char *var_name, int *var, RBinPdb *pdb) {
 	return bytes_read;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static int count_pages(int length, int page_size) {
 	int num_pages = 0;
 	if (page_size > 0) {
@@ -205,7 +187,7 @@ static int count_pages(int length, int page_size) {
 	return num_pages;
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_amount, EStream indx, int root_size, int page_size) {
 	R_PDB_STREAM *pdb_stream = NULL;
 	int tmp_data_max_size = 0;
@@ -313,21 +295,13 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 			}
 			memcpy (tmp, tmp_data + pos, num_pages * 4);
 			pos += size;
-			// sprintf (tmp_file_name, "%s%d", "/root/test.pdb", i);
-			// tmp_file = fopen (tmp_file_name, "wb");
-			// fwrite (tmp, num_pages * 4, 1, tmp_file);
-			// fclose (tmp_file);
 			page->stream_size = sizes[i];
-			if (sizes[i] == 0) {
-				// R_LOG_WARN ("stream_size (%d) is 0", i);
-			}
 			page->stream_pages = tmp;
 			page->num_pages = num_pages;
 		} else {
 			page->stream_size = 0;
 			page->stream_pages = NULL;
 			page->num_pages = 0;
-			// R_LOG_WARN ("stream_size (%d) is 0", i);
 			free (tmp);
 		}
 
@@ -335,38 +309,20 @@ static int init_pdb7_root_stream(RBinPdb *pdb, int *root_page_list, int pages_am
 	}
 	free (sizes);
 	free (data);
-	// printf ("init_pdb7_root_stream()\n");
 	return 1;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// R2: ugly indentation
-// static void init_parsed_pdb_stream (SParsedPDBStream *pdb_stream, FILE *fp, int *pages,
-// int pages_amount, int index, int size,
-// int page_size, f_load pLoad)
-// {
-// pdb_stream->pdb_stream = (R_PDB_STREAM *) malloc (sizeof (R_PDB_STREAM));
-// init_r_pdb_stream (pdb_stream->pdb_stream, fp, pages, pages_amount, index, size, page_size);
-// pdb_stream->load = pLoad;
-// if (pLoad) {
-// pLoad (pdb_stream, &(pdb_stream->pdb_stream->stream_file));
-// }
-// }
-
-///////////////////////////////////////////////////////////////////////////////
 static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream) {
 	SPDBInfoStream *tmp = (SPDBInfoStream *)parsed_pdb_stream;
-
 	tmp->names = NULL;
-
-	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ version);
-	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ time_date_stamp);
-	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ age);
-	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ guid.data1);
-	stream_file_read (stream, 2, (char *)&tmp->/*data.*/ guid.data2);
-	stream_file_read (stream, 2, (char *)&tmp->/*data.*/ guid.data3);
-	stream_file_read (stream, 8, (char *)&tmp->/*data.*/ guid.data4);
-	stream_file_read (stream, 4, (char *)&tmp->/*data.*/ cb_names);
+	stream_file_read (stream, 4, (char *)&tmp->version);
+	stream_file_read (stream, 4, (char *)&tmp->time_date_stamp);
+	stream_file_read (stream, 4, (char *)&tmp->age);
+	stream_file_read (stream, 4, (char *)&tmp->guid.data1);
+	stream_file_read (stream, 2, (char *)&tmp->guid.data2);
+	stream_file_read (stream, 2, (char *)&tmp->guid.data3);
+	stream_file_read (stream, 8, (char *)&tmp->guid.data4);
+	stream_file_read (stream, 4, (char *)&tmp->cb_names);
 
 	const int remaining = stream_file_get_size (stream);
 	if (remaining < 0 || tmp->cb_names > (ut32)remaining) {
@@ -385,13 +341,13 @@ static void parse_pdb_info_stream(void *parsed_pdb_stream, R_STREAM_FILE *stream
 	stream_file_read (stream, tmp->cb_names, tmp->names);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void free_info_stream(STpiStream *ss, void *stream) {
 	SPDBInfoStream *info_stream = (SPDBInfoStream *)stream;
 	free (info_stream->names);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, EStream stream_type, free_func ff, parse_stream_ parse_func) {
 	if (index == -1) {
 		return;
@@ -414,7 +370,7 @@ static void add_index(RList *list, RBinPdb *pdb, int index, int stream_size, ESt
 	r_list_append (list, stream_parse_func);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbis) {
 	add_index (l, pdb, dbis->dbi_header.symrecStream, sizeof (SGDATAStream), ePDB_STREAM_GSYM, free_gdata_stream, parse_gdata_stream);
 	add_index (l, pdb, dbis->dbg_header.sn_section_hdr, sizeof (SPEStream), ePDB_STREAM_SECT_HDR, free_pe_stream, parse_pe_stream);
@@ -430,7 +386,7 @@ static void fill_list_for_stream_parsing(RList *l, RBinPdb *pdb, SDbiStream *dbi
 	add_index (l, pdb, dbis->dbg_header.sn_token_rid_map, 0, ePDB_STREAM_TOKEN_RID_MAP, 0, 0);
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 	SStreamParseFunc *stream_parse_func;
 	RListIter *it;
@@ -443,7 +399,7 @@ static void find_indx_in_list(RList *l, int index, SStreamParseFunc **res) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static int pdb_read_root(RBinPdb *pdb) {
 	int i = 0;
 	RList *pList = pdb->pdb_streams;
@@ -633,7 +589,6 @@ error:
 	return false;
 }
 
-// TODO: shouldnt this be named "fini" instead?
 static void finish_pdb_parse(RBinPdb *pdb) {
 	if (!pdb) {
 		return;
@@ -672,13 +627,7 @@ static SimpleTypeKind get_simple_type_kind(PDB_SIMPLE_TYPES type) {
 	return (value & 0x00000000000FF);
 }
 
-/**
- * @brief Maps simple type into a format string for `pf`
- *
- * @param simple_type
- * @param member_format pointer to assert member format to
- * @return int -1 if it's unparsable, -2 if it should be skipped, 0 if all is correct
- */
+// returns -1 if unparsable, -2 if skipped, 0 if ok
 static int direct_type_to_format(ut32 simple_type, char **member_format) {
 	SimpleTypeKind kind = get_simple_type_kind (simple_type);
 	switch (kind) {
@@ -824,19 +773,10 @@ static int simple_type_to_format(const SLF_SIMPLE_TYPE *simple_type, char **memb
 	return 0;
 }
 
-/**
- * @brief Creates the format string and puts it into format
- *
- * @param ss TPI stream context
- * @param type_info Information about the member type
- * @param format buffer for the formatting string
- * @param names buffer for the member names
- * @return int -1 if it can't build the format
- */
 static int build_member_format(STpiStream *ss, STypeInfo *type_info, RStrBuf *format, RStrBuf *names) {
-	R_RETURN_VAL_IF_FAIL (type_info && format && names && type_info->type_info, -1);
-	// THOUGHT: instead of not doing anything for unknown types I can just skip the bytes
-	// format is 2 chars tops + null terminator
+	if (!type_info || !format || !names || !type_info->type_info) {
+		return -1;
+	}
 
 	char *name = NULL;
 	if (type_info->get_name) {
@@ -973,13 +913,6 @@ static inline bool is_printable_type(ELeafType type) {
 		type == eLF_CLASS);
 }
 
-/**
- * @brief Gets the name of the enum base type
- *
- * @param ss TPI stream context
- * @param type_info Enum TypeInfo
- * @return char* name of the base type
- */
 static char *get_enum_base_type_name(STpiStream *ss, STypeInfo *type_info) {
 	char *base_type_name = NULL;
 	if (type_info->get_utype) {
@@ -996,17 +929,10 @@ static char *get_enum_base_type_name(STpiStream *ss, STypeInfo *type_info) {
 	return base_type_name;
 }
 
-/**
- * @brief Prints out structure and class leaf types
- *
- * @param ss TPI stream context
- * @param name Name of the structure/class
- * @param size Size of the structure/class
- * @param members List of members
- * @param printf Print function
- */
 static void print_struct(STpiStream *ss, const char *name, const int size, const RList *members, PrintfCallback printf) {
-	R_RETURN_IF_FAIL (name && printf);
+	if (!name || !printf) {
+		return;
+	}
 	printf ("struct %s { // size 0x%x\n", name, size);
 
 	STypeInfo *type_info;
@@ -1030,17 +956,10 @@ static void print_struct(STpiStream *ss, const char *name, const int size, const
 	printf ("};\n");
 }
 
-/**
- * @brief Prints out union leaf type
- *
- * @param ss TPI stream context
- * @param name Name of the union
- * @param size Size of the union
- * @param members List of members
- * @param printf Print function
- */
 static void print_union(STpiStream *ss, const char *name, const int size, const RList *members, PrintfCallback printf) {
-	R_RETURN_IF_FAIL (printf);
+	if (!printf) {
+		return;
+	}
 	const char *n = R_STR_ISEMPTY (name)? "<unnamed>": name;
 	printf ("union %s { // size 0x%x\n", n, size);
 
@@ -1065,17 +984,10 @@ static void print_union(STpiStream *ss, const char *name, const int size, const 
 	printf ("};\n");
 }
 
-/**
- * @brief Prints out enum leaf type
- *
- * @param ss TPI stream context
- * @param name Name of the enum
- * @param type type of the enum
- * @param members List of cases
- * @param printf Print function
- */
 static void print_enum(STpiStream *ss, const char *name, const char *type, const RList *members, PrintfCallback printf) {
-	R_RETURN_IF_FAIL (name && printf);
+	if (!name || !printf) {
+		return;
+	}
 	printf ("enum %s { // type: %s\n", name, type);
 
 	STypeInfo *type_info;
@@ -1094,15 +1006,10 @@ static void print_enum(STpiStream *ss, const char *name, const char *type, const
 	printf ("};\n");
 }
 
-/**
- * @brief Prints out types in a default format "idpi" command
- *
- * @param pdb pdb structure for printing function
- * @param ss TPI stream context
- * @param types List of types
- */
 static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
-	R_RETURN_IF_FAIL (pdb && types);
+	if (!pdb || !types) {
+		return;
+	}
 	SType *type;
 	RListIter *it;
 	r_list_foreach (types, it, type) {
@@ -1151,15 +1058,10 @@ static void print_types_regular(const RBinPdb *pdb, STpiStream *ss, const RList 
 	}
 }
 
-/**
- * @brief Prints out types in a json format - "idpij" command
- *
- * @param pdb pdb structure for printing function
- * @param ss TPI stream context
- * @param types List of types
- */
 static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const RList *types) {
-	R_RETURN_IF_FAIL (pdb && types && pj);
+	if (!pdb || !types || !pj) {
+		return;
+	}
 
 	SType *type;
 	RListIter *it;
@@ -1278,18 +1180,12 @@ static void print_types_json(const RBinPdb *pdb, PJ *pj, STpiStream *ss, const R
 	pj_end (pj);
 }
 
-/**
- * @brief Creates pf commands from PDB types - "idpi*" command
- *
- * @param pdb pdb structure for printing function
- * @param ss TPI stream context
- * @param types List of types
- */
 static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *types) {
-	R_RETURN_IF_FAIL (pdb && types);
+	if (!pdb || !types) {
+		return;
+	}
 	SType *type;
 	RListIter *it;
-	bool to_free_name = false;
 	r_list_foreach (types, it, type) {
 		STypeInfo *type_info = &type->type_data;
 		// skip unprintable types and enums
@@ -1308,9 +1204,10 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 		if (type_info->get_name) {
 			type_info->get_name (ss, type_info, &name);
 		}
+		bool owned_name = false;
 		if (!name) {
 			name = create_type_name_from_offset (type->tpi_idx);
-			to_free_name = true;
+			owned_name = true;
 		}
 		int size = 0;
 		if (type_info->get_val) {
@@ -1320,16 +1217,16 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 		if (type_info->get_members) {
 			type_info->get_members (ss, type_info, &members);
 		}
-		// pf.name <format chars> <member names>
 		RStrBuf format;
 		r_strbuf_init (&format);
 		RStrBuf member_names;
 		r_strbuf_init (&member_names);
 
 		if (type_info->leaf_type == eLF_UNION) {
-			r_strbuf_append (&format, "0"); // every type start from the offset 0
+			r_strbuf_append (&format, "0");
 		}
 
+		bool failed = false;
 		STypeInfo *member_info;
 		RListIter *member_iter;
 		r_list_foreach (members, member_iter, member_info) {
@@ -1337,43 +1234,31 @@ static void print_types_format(const RBinPdb *pdb, STpiStream *ss, const RList *
 			case eLF_STRUCTURE:
 			case eLF_CLASS:
 			case eLF_UNION:
-				if (build_member_format (ss, member_info, &format, &member_names) == -1) { // if failed
-					goto fail; // skip to the next one, we can't build format from this
+				if (build_member_format (ss, member_info, &format, &member_names) == -1) {
+					failed = true;
 				}
 				break;
 			default:
 				R_WARN_IF_REACHED ();
 			}
+			if (failed) {
+				break;
+			}
 			r_strbuf_append (&member_names, " ");
 		}
-		if (format.len == 0) { // if it has no members, it's useless for us then?
-			goto fail;
+		if (!failed && format.len > 0) {
+			char *sanitized_name = r_str_sanitize_sdb_key (name);
+			pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
+			free (sanitized_name);
 		}
-		char *sanitized_name = r_str_sanitize_sdb_key (name);
-		pdb->cb_printf ("pf.%s %s %s\n", sanitized_name, r_strbuf_get (&format), r_strbuf_get (&member_names));
-
-		if (to_free_name) { // name can be generated or part of the PDB data
-			R_FREE (name);
-		}
-		R_FREE (sanitized_name);
-		r_strbuf_fini (&format);
-		r_strbuf_fini (&member_names);
-
-fail: // if we can't print whole type correctly, don't print at all
-		if (to_free_name) {
-			R_FREE (name);
+		if (owned_name) {
+			free (name);
 		}
 		r_strbuf_fini (&format);
 		r_strbuf_fini (&member_names);
 	}
 }
 
-/**
- * @brief Prints out all the type information in regular,json or pf format
- *
- * @param pdb PDB information
- * @param mode printing mode
- */
 static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 	RList *plist = pdb->pdb_streams;
 	STpiStream *ss = r_list_get_n (plist, ePDB_STREAM_TPI);
@@ -1388,7 +1273,7 @@ static void print_types(const RBinPdb *pdb, PJ *pj, const int mode) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	SStreamParseFunc *omap = NULL, *sctns = NULL, *sctns_orig = NULL, *gsym = NULL, *tmp;
 	SIMAGE_SECTION_HEADER *sctn_header = NULL;
@@ -1479,7 +1364,7 @@ static void print_gvars(RBinPdb *pdb, ut64 img_base, PJ *pj, int format) {
 	}
 }
 
-///////////////////////////////////////////////////////////////////////////////
+
 R_API bool r_bin_pdb_parser_with_buf(RBinPdb *pdb, R_OWNED RBuffer *buf) {
 	char *signature = NULL;
 

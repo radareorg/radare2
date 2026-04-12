@@ -2,14 +2,7 @@
 #include "stream_pe.h"
 #include "stream_file.h"
 
-///////////////////////////////////////////////////////////////////////////////
 void parse_pe_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
-	char *ptmp = 0;
-	int read_bytes = 0;
-	SIMAGE_SECTION_HEADER *sctn_header = 0;
-	SPEStream *pe_stream = (SPEStream *)stream;
-	int sctn_header_size = 0;
-
 	int data_size = stream_file_get_size (stream_file);
 	if (data_size < 1) {
 		return;
@@ -20,11 +13,13 @@ void parse_pe_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
 	}
 	stream_file_get_data (stream_file, data);
 
-	sctn_header_size = sizeof (SIMAGE_SECTION_HEADER);
-	ptmp = data;
-	pe_stream->sections_hdrs = r_list_new ();
-	while (read_bytes < data_size) {
-		sctn_header = (SIMAGE_SECTION_HEADER *)malloc (sctn_header_size);
+	SPEStream *pe_stream = (SPEStream *)stream;
+	int sctn_header_size = sizeof (SIMAGE_SECTION_HEADER);
+	char *ptmp = data;
+	pe_stream->sections_hdrs = r_list_newf (free);
+	int read_bytes = 0;
+	while (read_bytes + sctn_header_size <= data_size) {
+		SIMAGE_SECTION_HEADER *sctn_header = malloc (sctn_header_size);
 		if (!sctn_header) {
 			break;
 		}
@@ -33,20 +28,10 @@ void parse_pe_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
 		r_list_append (pe_stream->sections_hdrs, sctn_header);
 		read_bytes += sctn_header_size;
 	}
-
 	free (data);
 }
 
-///////////////////////////////////////////////////////////////////////////////
 void free_pe_stream(STpiStream *ss, void *stream) {
 	SPEStream *pe_stream = (SPEStream *)stream;
-	SIMAGE_SECTION_HEADER *sctn_header = 0;
-	RListIter *it = 0;
-
-	it = r_list_iterator (pe_stream->sections_hdrs);
-	while (r_list_iter_next (it)) {
-		sctn_header = (SIMAGE_SECTION_HEADER *)r_list_iter_get (it);
-		free (sctn_header);
-	}
 	r_list_free (pe_stream->sections_hdrs);
 }

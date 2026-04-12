@@ -38,11 +38,11 @@ void parse_fpo_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) 
 	stream_file_get_data (stream_file, (char *)data);
 
 	SFPOStream *fpo_stream = (SFPOStream *)stream;
-	fpo_stream->fpo_data_list = r_list_new ();
+	fpo_stream->fpo_data_list = r_list_newf (free);
 	ut32 pos = 0;
 	while (pos < (ut32)data_size) {
 		SFPO_DATA *fpo_data = R_NEW0 (SFPO_DATA);
-		const int sz = parse_fpo_data (data + pos, data_size, pos, fpo_data);
+		int sz = parse_fpo_data (data + pos, data_size, pos, fpo_data);
 		if (!sz) {
 			free (fpo_data);
 			break;
@@ -55,27 +55,11 @@ void parse_fpo_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) 
 
 void free_fpo_stream(STpiStream *ss, void *stream) {
 	SFPOStream *fpo_stream = (SFPOStream *)stream;
-	RListIter *it = 0;
-	SFPO_DATA *fpo_data = 0;
-
-	it = r_list_iterator (fpo_stream->fpo_data_list);
-	while (r_list_iter_next (it)) {
-		fpo_data = (SFPO_DATA *)r_list_iter_get (it);
-		free (fpo_data);
-	}
 	r_list_free (fpo_stream->fpo_data_list);
 }
 
 void free_fpo_new_stream(STpiStream *ss, void *stream) {
 	SFPONewStream *fpo_stream = (SFPONewStream *)stream;
-	RListIter *it = 0;
-	SFPO_DATA_V2 *fpo_data = 0;
-
-	it = r_list_iterator (fpo_stream->fpo_data_list);
-	while (r_list_iter_next (it)) {
-		fpo_data = (SFPO_DATA_V2 *)r_list_iter_get (it);
-		free (fpo_data);
-	}
 	r_list_free (fpo_stream->fpo_data_list);
 }
 
@@ -91,14 +75,14 @@ void parse_fpo_new_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_fi
 	stream_file_get_data (stream_file, (char *)data);
 
 	SFPONewStream *fpo_stream = (SFPONewStream *)stream;
-	fpo_stream->fpo_data_list = r_list_new ();
+	fpo_stream->fpo_data_list = r_list_newf (free);
 	ut32 pos = 0;
 	while (pos < (ut32)data_size) {
 		SFPO_DATA_V2 *fpo_data = malloc (sizeof (SFPO_DATA_V2));
 		if (!fpo_data) {
 			break;
 		}
-		const int sz = parse_fpo_data_v2 (data + pos, data_size, pos, fpo_data);
+		int sz = parse_fpo_data_v2 (data + pos, data_size, pos, fpo_data);
 		if (!sz) {
 			free (fpo_data);
 			break;
