@@ -392,16 +392,16 @@ static void debug_test_type(RMagic *ms, struct r_magic *m) {
 /*
  * Load and parse from buffer.
  */
+// read one line from data, advance *data, strip trailing \n and/or \r (CRLF-safe)
 static bool bgets(char *line, size_t line_sz, const char **data) {
 	const char *p = *data;
 	if (R_STR_ISEMPTY (p)) {
 		return false;
 	}
-	const char *nl = strchr (p, '\n');
-	size_t adv = nl? (size_t) (nl - p) + 1: strlen (p);
-	size_t len = R_MIN (adv, line_sz - 1);
-	r_str_ncpy (line, p, len + 1);
-	*data = p + adv;
+	size_t adv = strcspn (p, "\n");
+	size_t len = (adv > 0 && p[adv - 1] == '\r')? adv - 1: adv;
+	*data = p + adv + (p[adv] == '\n');
+	r_str_ncpy (line, p, R_MIN (len, line_sz - 1) + 1);
 	return true;
 }
 
@@ -1363,13 +1363,6 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 }
 
 static bool parse_line(RMagic *ms, int action, struct r_magic_entry **marray, ut32 *marraycount, char *line, size_t lineno) {
-	const size_t len = strlen (line);
-	if (len == 0) {
-		return true;
-	}
-	if (line[len - 1] == '\n') {
-		line[len - 1] = '\0';
-	}
 	if (R_STR_ISEMPTY (line) || *line == '#') {
 		return true;
 	}
