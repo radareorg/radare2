@@ -40,9 +40,9 @@ ALL=$(basename $(wildcard *.mk))
 
 default: $(DEPS)
 
-all: $(DEPS)
+all: $(ALL)
 
 clean:
 	rm -rf $(ALL)
 
-include $(addsuffix .mk,$(DEPS))
+include *.mk
