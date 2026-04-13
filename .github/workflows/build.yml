@@ -105,6 +105,15 @@ jobs:
       uses: actions/checkout@v6
     - name: Creating zip and tarball
       run: sys/tarball.sh
+    - name: Building from the generated tarball
+      run: |
+        set -e
+        mkdir -p /tmp/tarball-build
+        tar -xf radare2-?.?.?.tar.xz -C /tmp/tarball-build
+        cd /tmp/tarball-build/radare2-*
+        ./configure --prefix=/tmp/tarball-install
+        make -j$(nproc)
+        make install
     - uses: actions/upload-artifact@v7
       with:
         name: tarball

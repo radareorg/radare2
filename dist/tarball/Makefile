@@ -20,7 +20,7 @@ all:
 	git log --decorate=short $(GIT_TIP) > $(R2V)/ChangeLog
 
 # Subprojects
-	make -C $(R2V)/subprojects all
+	make -C $(R2V)/subprojects alldeps
 	rm -rf $(R2V)/subprojects/*/.git
 	mv $(R2V)/subprojects/Makefile $(R2V)/subprojects/Makefile.orig
 	echo "default:" > $(R2V)/subprojects/Makefile

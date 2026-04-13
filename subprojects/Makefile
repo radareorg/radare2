@@ -36,11 +36,14 @@ ifeq ($(WANT_BUNDLED_CAPSTONE),1)
   endif
 endif
 
-ALL=$(basename $(wildcard *.mk))
+ALLDEPS=binaryninja capstone-next capstone-v4 capstone-v5 otezip qjs sdb
+ALL=$(addsuffix .mk $(ALLDEPS))
 
 default: $(DEPS)
 
 all: $(DEPS)
+
+alldeps: $(ALL)
 
 clean:
 	rm -rf $(ALL)
