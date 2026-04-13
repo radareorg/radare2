@@ -1363,13 +1363,8 @@ static int parse_mime(RMagic *ms, struct r_magic_entry **mentryp, ut32 *nmentryp
 }
 
 static bool parse_line(RMagic *ms, int action, struct r_magic_entry **marray, ut32 *marraycount, char *line, size_t lineno) {
-	const size_t len = strlen (line);
-	if (len == 0) {
-		return true;
-	}
-	if (line[len - 1] == '\n') {
-		line[len - 1] = '\0';
-	}
+	// strip trailing whitespace so Windows CRLF magic files parse correctly
+	r_str_trim_tail (line);
 	if (R_STR_ISEMPTY (line) || *line == '#') {
 		return true;
 	}

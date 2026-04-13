@@ -333,50 +333,36 @@ static RList *sections(RBinFile *bf) {
 		index += memory64->data_size;
 	}
 
-	// XXX: Never add here as they are covered above
+	/* Module ranges already overlap the memory sections added above, so each
+	 * module entry must stay informational (add = false, perm = 0) — its role
+	 * is just to name the region and host the PE subsections parsed below. */
 	r_list_foreach (obj->streams.modules, it, module) {
-		ut8 b[512];
-
-		ptr = R_NEW0 (RBinSection);
-		if (module->module_name_rva + sizeof (struct minidump_string) >= r_buf_size (obj->b)) {
-			R_FREE (ptr);
+		ut8 b[512] = {0};
+		st64 nread = r_buf_read_at (obj->b, module->module_name_rva, b, sizeof (b));
+		if (nread < (st64)sizeof (ut32)) {
 			continue;
 		}
-		r_buf_read_at (obj->b, module->module_name_rva, (ut8*)&b, sizeof (b));
 		ut32 str_length = r_read_le32 (b);
-		if (str_length > sizeof (b) - 4) {
-			R_FREE (ptr);
+		if (str_length == 0 || str_length > (ut32)nread - sizeof (ut32)) {
 			continue;
 		}
-		int ptr_name_len = (str_length + 2) * 4;
-		if (ptr_name_len < 1 || ptr_name_len > sizeof (b) - 4) {
-			R_FREE (ptr);
-			continue;
-		}
-		if (module->module_name_rva + str_length > r_buf_size (obj->b)) {
-			R_FREE (ptr);
-			break;
-		}
-		ptr->name = calloc (1, ptr_name_len);
+		ptr = R_NEW0 (RBinSection);
+		/* utf8 expansion is at most 3/2 of utf16 bytes; *2+1 fits with a nul */
+		ptr->name = calloc (1, str_length * 2 + 1);
 		if (!ptr->name) {
-			R_FREE (ptr);
+			free (ptr);
 			continue;
 		}
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str_length * 4,
-				(const ut8 *)(b + sizeof (ut32)), str_length, obj->endian);
+		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str_length * 2,
+				b + sizeof (ut32), str_length, obj->endian);
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
 		ptr->size = module->size_of_image;
 		ptr->add = false;
 		ptr->has_strings = false;
-		/* As this is an encompassing section we will set the RWX to 0 */
 		ptr->perm = 0;
-
-		if (!r_list_append (ret, ptr)) {
-			R_FREE (ptr);
-			break;
-		}
+		r_list_append (ret, ptr);
 
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
