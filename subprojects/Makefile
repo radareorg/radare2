@@ -1,4 +1,4 @@
-.PHONY: default all clean
+.PHONY: all alldeps clean
 
 -include ../config-user.mk
 
@@ -39,8 +39,6 @@ endif
 ALLDEPS=binaryninja capstone-next capstone-v4 capstone-v5 otezip qjs sdb
 ALL=$(addsuffix .mk $(ALLDEPS))
 
-default: $(DEPS)
-
 all: $(DEPS)
 
 alldeps: $(ALLDEPS)
@@ -48,4 +46,4 @@ alldeps: $(ALLDEPS)
 clean:
 	rm -rf $(ALL)
 
-include $(addsuffix .mk,$(DEPS))
+include $(ALL)
