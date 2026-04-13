@@ -43,7 +43,7 @@ default: $(DEPS)
 
 all: $(DEPS)
 
-alldeps: $(ALL)
+alldeps: $(ALLDEPS)
 
 clean:
 	rm -rf $(ALL)
