@@ -77,6 +77,7 @@ Using the `r2pm` tool you can browse and install many plugins and tools that use
 * [r2sarif](https://github.com/radareorg/r2sarif) import/extend/export SARIF documents
 * [r2hermes](https://github.com/radareorg/r2hermes) Disassembler and analyzer for React Native Hermes bytecode
 * [r2renef](https://github.com/Ahmeth4n/r2renef) Renef IO Plugin for Radare2 - Dynamic Android Instrumentation
+* [warrp](https://github.com/radareorg/warrp) Native radare2 plugin for the binary ninja's WARP format
 
 ## Usage
 
