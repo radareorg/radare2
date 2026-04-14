@@ -22,9 +22,9 @@ lang     c
 linenum  true
 lsyms    false
 machine  all
-nx       false
+nx       true
 os       macos
-pic      false
+pic      true
 relocs   false
 sanitize false
 static   true
