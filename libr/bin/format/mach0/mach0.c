@@ -2570,25 +2570,27 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 				}
 				memset (s, 0, sizeof (RBinSection)); // XXX redundant?
 
-				s->vaddr = (ut64)mo->sects[i].addr;
-				s->vsize = (ut64)mo->sects[i].size;
+				struct MACH0_(section) *sect = &mo->sects[i];
+				s->vaddr = (ut64)sect->addr;
+				s->vsize = (ut64)sect->size;
 				s->is_segment = false;
-				s->size = (mo->sects[i].flags == S_ZEROFILL)? 0: (ut64)mo->sects[i].size;
-				s->type = macho_section_type_tostring (mo->sects[i].flags);
-				s->paddr = (ut64)mo->sects[i].offset;
+				s->size = (sect->flags == S_ZEROFILL)? 0: (ut64)sect->size;
+				s->type = macho_section_type_tostring (sect->flags);
+				s->paddr = (ut64)sect->offset;
 
 				int segment_index = 0;
 				size_t j;
 				for (j = 0; j < mo->nsegs; j++) {
-					if (s->vaddr >= mo->segs[j].vmaddr &&
-						s->vaddr < (mo->segs[j].vmaddr + mo->segs[j].vmsize)) {
-						s->perm = prot2perm (mo->segs[j].initprot);
+					struct MACH0_(segment_command) *seg = &mo->segs[j];
+					if (s->vaddr >= seg->vmaddr &&
+						s->vaddr < (seg->vmaddr + seg->vmsize)) {
+						s->perm = prot2perm (seg->initprot);
 						segment_index = j;
 						break;
 					}
 				}
 
-				char *section_name = r_str_ndup (mo->sects[i].sectname, 16);
+				char *section_name = r_str_ndup (sect->sectname, 16);
 				char *segment_name = r_str_newf ("%u.%s", (ut32)i, mo->segs[segment_index].segname);
 				s->name = r_str_newf ("%s.%s", segment_name, section_name);
 				if (strstr (s->name, "__const")) {
@@ -2692,20 +2694,22 @@ const RVecSection *MACH0_(load_sections)(struct MACH0_(obj_t) * mo) {
 	}
 	for (i = 0; i < to; i++) {
 		struct section_t *section = RVecSection_emplace_back (&mo->sections_cache);
-		section->paddr = (ut64)mo->sects[i].offset;
-		section->vaddr = (ut64)mo->sects[i].addr;
-		section->size = (mo->sects[i].flags == S_ZEROFILL)? 0: (ut64)mo->sects[i].size;
-		section->vsize = (ut64)mo->sects[i].size;
-		section->align = mo->sects[i].align;
-		section->flags = mo->sects[i].flags;
-		r_str_ncpy (sectname, mo->sects[i].sectname, 17);
+		struct MACH0_(section) *sect = &mo->sects[i];
+		section->paddr = (ut64)sect->offset;
+		section->vaddr = (ut64)sect->addr;
+		section->size = (sect->flags == S_ZEROFILL)? 0: (ut64)sect->size;
+		section->vsize = (ut64)sect->size;
+		section->align = sect->align;
+		section->flags = sect->flags;
+		r_str_ncpy (sectname, sect->sectname, 17);
 		r_str_filter (sectname, -1);
-		r_str_ncpy (raw_segname, mo->sects[i].segname, 17);
+		r_str_ncpy (raw_segname, sect->segname, 17);
 		r_str_filter (raw_segname, -1);
 		for (j = 0; j < mo->nsegs; j++) {
-			if (section->vaddr >= mo->segs[j].vmaddr &&
-				section->vaddr < (mo->segs[j].vmaddr + mo->segs[j].vmsize)) {
-				section->perm = prot2perm (mo->segs[j].initprot);
+			struct MACH0_(segment_command) *seg = &mo->segs[j];
+			if (section->vaddr >= seg->vmaddr &&
+				section->vaddr < (seg->vmaddr + seg->vmsize)) {
+				section->perm = prot2perm (seg->initprot);
 				break;
 			}
 		}
