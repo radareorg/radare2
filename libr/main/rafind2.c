@@ -85,9 +85,12 @@ static int rafind_open(RafindOptions *ro, const char *file);
 static RBin *rafind_bin(RafindOptions *ro) {
 	if (!ro->bin) {
 		ro->bin = r_bin_new ();
+		if (!ro->bin) {
+			return NULL;
+		}
 		r_libstore_load (ro->bin->libstore);
 	}
-	if (ro->bin && ro->io) {
+	if (ro->io) {
 		r_io_bind (ro->io, &ro->bin->iob);
 	}
 	return ro->bin;

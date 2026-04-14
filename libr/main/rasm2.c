@@ -213,7 +213,7 @@ static void rarch2_list(RAsmState *as, const char *arch) {
 		pj = pj_new ();
 		pj_a (pj);
 	}
-	RList *plugins = as && as->anal? as->anal->arch->libstore->plugins: NULL;
+	RList *plugins = as->anal? as->anal->arch->libstore->plugins: NULL;
 	r_list_foreach (plugins, iter, h) {
 		if (arch && strcmp (arch, h->meta.name)) {
 			continue;
