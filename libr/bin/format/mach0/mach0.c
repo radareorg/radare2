@@ -2739,36 +2739,37 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 		return false;
 	}
 	for (i = 0; i < bin->nsects; i++) {
-		if ((bin->sects[i].flags & SECTION_TYPE) == S_SYMBOL_STUBS && bin->sects[i].reserved2 > 0) {
-			ut64 sect_size = bin->sects[i].size;
-			ut32 sect_fragment = bin->sects[i].reserved2;
-			if (bin->sects[i].offset > bin->size) {
+		struct MACH0_(section) *sect = &bin->sects[i];
+		if ((sect->flags & SECTION_TYPE) == S_SYMBOL_STUBS && sect->reserved2 > 0) {
+			ut64 sect_size = sect->size;
+			ut32 sect_fragment = sect->reserved2;
+			if (sect->offset > bin->size) {
 				R_LOG_DEBUG ("section offset starts way beyond the end of the file");
 				continue;
 			}
 			if (sect_size > bin->size) {
 				R_LOG_DEBUG ("Invalid symbol table size");
-				sect_size = bin->size - bin->sects[i].offset;
+				sect_size = bin->size - sect->offset;
 			}
 			nsyms = (int) (sect_size / sect_fragment);
 			for (j = 0; j < nsyms; j++) {
-				if ((ut64)bin->sects[i].reserved1 + j >= (ut64)bin->nindirectsyms) {
+				if ((ut64)sect->reserved1 + j >= (ut64)bin->nindirectsyms) {
 					continue;
 				}
-				if (idx != bin->indirectsyms[bin->sects[i].reserved1 + j]) {
+				if (idx != bin->indirectsyms[sect->reserved1 + j]) {
 					continue;
 				}
 				if (idx >= bin->nsymtab) {
 					continue;
 				}
 				symbol->type = R_BIN_MACH0_SYMBOL_TYPE_LOCAL;
-				int delta = j * bin->sects[i].reserved2;
+				int delta = j * sect->reserved2;
 				if (delta < 0) {
 					R_LOG_DEBUG ("corrupted reserved2 value leads to int overflow");
 					continue;
 				}
-				symbol->offset = bin->sects[i].offset + delta;
-				symbol->addr = bin->sects[i].addr + delta;
+				symbol->offset = sect->offset + delta;
+				symbol->addr = sect->addr + delta;
 				symbol->size = 0;
 				stridx = bin->symtab[idx].n_strx;
 				if (stridx < bin->symstrlen) {
@@ -3251,11 +3252,12 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		}
 
 		for (i = from; i < to && j < symbols_count; i++) {
-			ut64 vaddr = mo->symtab[i].n_value;
+			struct MACH0_(nlist) *nl = &mo->symtab[i];
+			ut64 vaddr = nl->n_value;
 			if (vaddr < 100) {
 				continue;
 			}
-			int stridx = mo->symtab[i].n_strx;
+			int stridx = nl->n_strx;
 			char *sym_name = get_name (mo, stridx, false);
 			if (!sym_name) {
 				continue;
@@ -3269,9 +3271,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				sym->vaddr = vaddr;
 				sym->paddr = addr_to_offset (mo, sym->vaddr) + obj->boffset;
 				sym->size = 0; /* TODO: Is it anywhere? */
-				sym->bits = mo->symtab[i].n_desc & N_ARM_THUMB_DEF? 16: bits;
+				sym->bits = nl->n_desc & N_ARM_THUMB_DEF? 16: bits;
 				sym->is_imported = false;
-				sym->type = mo->symtab[i].n_type & N_EXT? "EXT": "LOCAL";
+				sym->type = nl->n_type & N_EXT? "EXT": "LOCAL";
 				sym->name = r_bin_name_new (sym_name);
 				if (is_stripped && !apple_symbol (sym_name)) {
 					is_stripped = false;
@@ -3545,9 +3547,10 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 	reloc->addend = 0;
 	reloc->ntype = stype;
 	for (i = 0; i < mo->nsects; i++) {
-		if ((mo->sects[i].flags & SECTION_TYPE) == stype) {
-			for (j = 0, sym = -1; mo->sects[i].reserved1 + j < mo->nindirectsyms; j++) {
-				int indidx = mo->sects[i].reserved1 + j;
+		struct MACH0_(section) *sect = &mo->sects[i];
+		if ((sect->flags & SECTION_TYPE) == stype) {
+			for (j = 0, sym = -1; sect->reserved1 + j < mo->nindirectsyms; j++) {
+				int indidx = sect->reserved1 + j;
 				if (indidx < 0 || indidx >= mo->nindirectsyms) {
 					break;
 				}
@@ -3556,8 +3559,8 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 					break;
 				}
 			}
-			reloc->offset = sym == -1? 0: mo->sects[i].offset + sym * wordsize;
-			reloc->addr = sym == -1? 0: mo->sects[i].addr + sym * wordsize;
+			reloc->offset = sym == -1? 0: sect->offset + sym * wordsize;
+			reloc->addr = sym == -1? 0: sect->addr + sym * wordsize;
 			return reloc;
 		}
 	}
@@ -4356,11 +4359,12 @@ struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) * mo) {
 	if (entry->offset == 0 && mo->sects) {
 		int i;
 		for (i = 0; i < mo->nsects; i++) {
+			struct MACH0_(section) *sect = &mo->sects[i];
 			// XXX: section name shoudnt matter .. just check for exec flags
-			if (r_str_startswith (mo->sects[i].sectname, "__text")) {
-				entry->offset = (ut64)mo->sects[i].offset;
+			if (r_str_startswith (sect->sectname, "__text")) {
+				entry->offset = (ut64)sect->offset;
 				sdb_num_set (mo->kv, "mach0.entry", entry->offset, 0);
-				entry->addr = (ut64)mo->sects[i].addr;
+				entry->addr = (ut64)sect->addr;
 				if (!entry->addr) { // workaround for object files
 					R_LOG_INFO ("entrypoint is 0");
 					// XXX (lowlyw) there's technically not really entrypoints
@@ -5279,8 +5283,9 @@ void MACH0_(iterate_chained_fixups)(struct MACH0_(obj_t) * mo, ut64 limit_start,
 		if (page_size < 1) {
 			page_size = 4096;
 		}
-		ut64 start = mo->segs[i].fileoff;
-		ut64 end = start + mo->segs[i].filesize;
+		struct MACH0_(segment_command) *seg = &mo->segs[i];
+		ut64 start = seg->fileoff;
+		ut64 end = start + seg->filesize;
 		if (end >= limit_start && start <= limit_end) {
 			ut64 page_idx = (R_MAX (start, limit_start) - start) / page_size;
 			ut64 page_end_idx = (R_MIN (limit_end, end) - start) / page_size;
