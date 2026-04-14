@@ -971,9 +971,9 @@ const struct v850_opcode v850_opcodes[] = {
 	{ "rotl", two (0x07e0, 0x00c6), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
 	{ "rotl", two (0x07e0, 0x00c4), two (0x07e0, 0x07ff), {I5U, R2, R3}, 0, V850_CPU_E3V5_UP, R_ANAL_OP_TYPE_ROL },
 	{ "reti", two (0x07e0, 0x0140), two (0xffff, 0xffff), {0}, 0, V850_CPU_ALL , R_ANAL_OP_TYPE_RET},
-	{ "sar", two (0x07e0, 0x00a2), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,31,$s,$z,s,:=,z,:=,0,ov,:=,tmp,#2,:=" },
-	{ "sar", OP (0x15), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,31,$s,$z,s,:=,z,:=,0,ov,:=,tmp,#1,:=" },
-	{ "sar", two (0x07e0, 0x00a0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,31,$s,$z,s,:=,z,:=,0,ov,:=,tmp,#1,:=" },
+	{ "sar", two (0x07e0, 0x00a2), two (0x07e0, 0x07ff), {R1, R2, R3}, 0, V850_CPU_E2_UP, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,$z,31,$s,s,:=,z,:=,0,ov,:=,tmp,#2,:=" },
+	{ "sar", OP (0x15), OP_MASK, {I5U, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,$z,31,$s,s,:=,z,:=,0,ov,:=,tmp,#1,:=" },
+	{ "sar", two (0x07e0, 0x00a0), two (0x07e0, 0xffff), {R1, R2}, 0, V850_CPU_ALL, R_ANAL_OP_TYPE_SAR, "#1,tmp,:=,#0,1,-,tmp,>>,1,&,cy,:=,#0,#1,ASR,tmp,:=,0,tmp,+=,$z,31,$s,s,:=,z,:=,0,ov,:=,tmp,#1,:=" },
 
 	{ "sasf", two (0x07e0, 0x0200), two (0x07f0, 0xffff), {CCCC, R2}, 0, V850_CPU_NON0 },
 

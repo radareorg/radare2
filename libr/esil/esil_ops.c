@@ -1235,6 +1235,9 @@ static bool esil_divh(REsil *esil) {
 				esil->trap_code = 0;
 				r_esil_pushnum (esil, 0);
 				r_esil_pushnum (esil, 0);
+			} else if (dividend == (st32)0x80000000 && divisor == -1) {
+				r_esil_pushnum (esil, 0);
+				r_esil_pushnum (esil, (ut64)(ut32)dividend);
 			} else {
 				st32 q = dividend / divisor;
 				st32 rm = dividend % divisor;
@@ -1283,6 +1286,9 @@ static bool esil_vdiv(REsil *esil) {
 			if (divisor == 0) {
 				esil->trap = R_ANAL_TRAP_DIVBYZERO;
 				esil->trap_code = 0;
+			} else if ((st32)dividend == (st32)0x80000000 && (st32)divisor == -1) {
+				r_esil_reg_write (esil, src, (ut64)(ut32)dividend);
+				r_esil_reg_write (esil, dst, 0);
 			} else {
 				st32 q = (st32)dividend / (st32)divisor;
 				st32 r = (st32)dividend % (st32)divisor;
