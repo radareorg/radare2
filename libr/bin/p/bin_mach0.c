@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_core.h>
 #include "../i/private.h"
@@ -82,6 +82,7 @@ static ut64 baddr(RBinFile *bf) {
 
 // R2_600 return RVecSegment
 static RList *sections(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
 	return MACH0_(get_segments) (bf, mo); // TODO split up sections and segments?
 }
@@ -156,8 +157,10 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits, int limit) 
 }
 
 static RList *entries(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
+	RBinObject *bo = bf->bo;
+	struct MACH0_(obj_t) *mo = bo->bin_obj;
 	struct addr_t *entry = NULL;
 	int limit = bf->rbin->options.limit;
 
@@ -166,12 +169,12 @@ static RList *entries(RBinFile *bf) {
 		return NULL;
 	}
 
-	int bits = MACH0_(get_bits) (bf->bo->bin_obj);
-	if (!(entry = MACH0_(get_entrypoint) (bf->bo->bin_obj))) {
+	int bits = MACH0_(get_bits) (mo);
+	if (!(entry = MACH0_(get_entrypoint) (mo))) {
 		return ret;
 	}
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	ptr->paddr = entry->offset + bf->bo->boffset;
+	ptr->paddr = entry->offset + bo->boffset;
 	ptr->vaddr = entry->addr;
 	ptr->hpaddr = entry->haddr;
 	ptr->bits = bits;
@@ -241,17 +244,18 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 }
 
 static bool imports_vec(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
-	if (!RVecRBinImport_empty (&bf->bo->imports_vec)) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	RBinObject *bo = bf->bo;
+	if (!RVecRBinImport_empty (&bo->imports_vec)) {
 		return true;
 	}
-	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	struct MACH0_(obj_t) *mo = bo->bin_obj;
 	RVecRBinImport *imports = MACH0_(load_imports) (bf, mo);
 	if (!imports) {
 		return false;
 	}
 	// Transfer ownership: swap vectors and reset source
-	bf->bo->imports_vec = mo->imports_cache;
+	bo->imports_vec = mo->imports_cache;
 	RVecRBinImport_init (&mo->imports_cache);
 	mo->imports_loaded = false;
 	return true;
@@ -260,7 +264,7 @@ static bool imports_vec(RBinFile *bf) {
 static RList *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
-	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
+	const RSkipList *relocs = MACH0_(load_relocs) (mo);
 	if (!relocs) {
 		return NULL;
 	}
@@ -338,56 +342,48 @@ static RList *libs(RBinFile *bf) {
 }
 
 static RBinInfo *info(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-	RBinInfo *ret = R_NEW0 (RBinInfo);
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
+	RBinInfo *ret = R_NEW0 (RBinInfo);
 	if (bf->file) {
 		ret->file = strdup (bf->file);
 	}
-
-	char *str = MACH0_(get_class) (mo);
-	if (str) {
-		ret->bclass = str;
-	}
-	if (mo) {
-		ret->has_canary = mo->has_canary;
-		ret->has_retguard = -1;
-		ret->has_sanitizers = mo->has_sanitizers;
-		ret->has_libinjprot = mo->has_libinjprot;
-		ret->dbg_info = mo->dbg_info;
-		ret->lang = mo->lang;
-		if (mo->dyld_info) {
-			ut64 allbinds = 0;
-			if ((int)mo->dyld_info->bind_size > 0) {
-				allbinds += mo->dyld_info->bind_size;
-			}
-			if ((int)mo->dyld_info->lazy_bind_size > 0) {
-				allbinds += mo->dyld_info->lazy_bind_size;
-			}
-			if ((int)mo->dyld_info->weak_bind_size > 0) {
-				allbinds += mo->dyld_info->weak_bind_size;
-			}
-			if (allbinds > 0) {
-				ret->dbg_info |= R_BIN_DBG_RELOCS;
-			}
+	ret->bclass = MACH0_(get_class) (mo);
+	ret->has_canary = mo->has_canary;
+	ret->has_retguard = -1;
+	ret->has_sanitizers = mo->has_sanitizers;
+	ret->has_libinjprot = mo->has_libinjprot;
+	ret->dbg_info = mo->dbg_info;
+	ret->lang = mo->lang;
+	struct dyld_info_command *di = mo->dyld_info;
+	if (di) {
+		ut64 allbinds = 0;
+		if ((int)di->bind_size > 0) {
+			allbinds += di->bind_size;
+		}
+		if ((int)di->lazy_bind_size > 0) {
+			allbinds += di->lazy_bind_size;
+		}
+		if ((int)di->weak_bind_size > 0) {
+			allbinds += di->weak_bind_size;
+		}
+		if (allbinds > 0) {
+			ret->dbg_info |= R_BIN_DBG_RELOCS;
 		}
 	}
-	const char *intrp = MACH0_(get_intrp)(mo);
+	const char *intrp = MACH0_(get_intrp) (mo);
 	ret->intrp = intrp? strdup (intrp): NULL;
 	ret->compiler = strdup ("clang");
 	ret->rclass = strdup ("mach0");
-	ret->os = strdup (MACH0_(get_os)(mo));
+	ret->os = strdup (MACH0_(get_os) (mo));
 	ret->subsystem = strdup ("darwin");
 	ret->arch = strdup (MACH0_(get_cputype) (mo));
 	ret->machine = MACH0_(get_cpusubtype) (mo);
 	ret->has_lit = true;
 	ret->type = MACH0_(get_filetype) (mo);
 	ret->big_endian = MACH0_(is_big_endian) (mo);
-	ret->bits = 32;
-	if (mo) {
-		ret->has_crypto = mo->has_crypto;
-		ret->bits = MACH0_(get_bits) (mo);
-	}
+	ret->has_crypto = mo->has_crypto;
+	ret->bits = MACH0_(get_bits) (mo);
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (mo);
 	ret->has_nx = MACH0_(has_nx) (mo);
@@ -449,13 +445,14 @@ static RList* patch_relocs(RBinFile *bf) {
 	RIODesc *gotr2desc = NULL;
 
 	RBin *b = bf->rbin;
-	RIO *io = b->iob.io;
+	RIOBind *iob = &b->iob;
+	RIO *io = iob->io;
 	if (!io || !io->desc) {
 		return NULL;
 	}
 
 	RBinObject *obj = r_bin_cur_object (b);
-	if (!obj) {
+	if (!obj || !obj->bin_obj) {
 		return NULL;
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
@@ -500,9 +497,9 @@ static RList* patch_relocs(RBinFile *bf) {
 			}
 			ut64 paddr = r->paddr + mo->baddr;
 			r_write_ble64 (buf, r->vaddr, false);
-			b->iob.read_at (b->iob.io, paddr, obuf, 8);
+			iob->read_at (io, paddr, obuf, 8);
 			if (memcmp (buf, obuf, 8)) {
-				if (!b->iob.overlay_write_at (b->iob.io, paddr, buf, 8)) {
+				if (!iob->overlay_write_at (io, paddr, buf, 8)) {
 					R_LOG_ERROR ("write error at 0x%"PFMT64x, paddr);
 				}
 			}
@@ -517,11 +514,11 @@ static RList* patch_relocs(RBinFile *bf) {
 	const int cdsz = obj->info ? obj->info->bits / 8 : 8;
 
 	ut64 offset = 0;
-	RIOBank *bank = b->iob.bank_get (io, io->bank);
+	RIOBank *bank = iob->bank_get (io, io->bank);
 	RListIter *iter;
 	RIOMapRef *mapref;
 	r_list_foreach (bank->maprefs, iter, mapref) {
-		RIOMap *map = b->iob.map_get (io, mapref->id);
+		RIOMap *map = iob->map_get (io, mapref->id);
 		if (r_io_map_from (map) > offset) {
 			offset = r_io_map_from (map);
 			g = map;
@@ -534,13 +531,13 @@ static RList* patch_relocs(RBinFile *bf) {
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
 	ut64 size = num_ext_relocs * cdsz;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
-	gotr2desc = b->iob.open_at (io, muri, R_PERM_R, 0664, n_vaddr);
+	gotr2desc = iob->open_at (io, muri, R_PERM_R, 0664, n_vaddr);
 	free (muri);
 	if (!gotr2desc) {
 		goto beach;
 	}
 
-	RIOMap *gotr2map = b->iob.map_get_at (io, n_vaddr);
+	RIOMap *gotr2map = iob->map_get_at (io, n_vaddr);
 	if (!gotr2map) {
 		R_LOG_WARN ("no maps for 0x%"PFMT64x, n_vaddr);
 		goto beach;
@@ -564,7 +561,7 @@ static RList* patch_relocs(RBinFile *bf) {
 			ht_uu_insert (relocs_by_sym, reloc->ord, vaddr);
 			vaddr += cdsz;
 		}
-		if (!_patch_reloc (mo, &b->iob, reloc, sym_addr)) {
+		if (!_patch_reloc (mo, iob, reloc, sym_addr)) {
 			continue;
 		}
 		RBinReloc *ptr = R_NEW0 (RBinReloc);
@@ -624,20 +621,22 @@ static void add_fixup(RList *list, ut64 addr, ut64 value) {
 
 static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
 	RFixupRebaseContext *ctx = context;
+	struct MACH0_(obj_t) *obj = ctx->obj;
+	RBuffer *buf = obj->b;
+	const ut32 psz = event_details->ptr_size;
 	ut64 in_buf = event_details->offset - ctx->off;
-	RList *rflist = ctx->obj->reloc_fixups;
+	RList *rflist = obj->reloc_fixups;
 	if (!rflist) {
 		rflist = r_list_newf (free);
-		ctx->obj->reloc_fixups = rflist;
+		obj->reloc_fixups = rflist;
 	}
-	// r_buf_write_at (ctx->obj->b, 0x000a36780, "\x00\x00\x00\x10", 4);
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
 		{
 			ut8 data[8] = {0};
-			r_buf_write_at (ctx->obj->b, in_buf, (const ut8*)"\x00\x00\x00\x00\x00\x00\x00", event_details->ptr_size);
-			r_buf_read_at (ctx->obj->b, in_buf, data, event_details->ptr_size);
+			r_buf_write_at (buf, in_buf, (const ut8*)"\x00\x00\x00\x00\x00\x00\x00", psz);
+			r_buf_read_at (buf, in_buf, data, psz);
 			add_fixup (rflist, in_buf, 0);
 			if (data[0]) {
 				R_LOG_ERROR ("DATA0 write has failed");
@@ -650,8 +649,8 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			ut8 data[8] = {0};
 			ut64 v = event_details->ptr_value;
 			add_fixup (rflist, in_buf, v);
-			memcpy (&data, &v, event_details->ptr_size);
-			r_buf_write_at (ctx->obj->b, in_buf, data, event_details->ptr_size);
+			memcpy (&data, &v, psz);
+			r_buf_write_at (buf, in_buf, data, psz);
 		}
 		break;
 	default:
@@ -950,18 +949,14 @@ static RBuffer *create(RBin *bin, const ut8 *code, int clen, const ut8 *data, in
 
 static RBinAddr *binsym(RBinFile *bf, int sym) {
 	RBinAddr *ret = NULL;
-	switch (sym) {
-	case R_BIN_SYM_MAIN:
-		{
-			struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
-			ut64 addr = MACH0_(get_main) (mo);
-			if (addr != UT64_MAX && addr != 0) {
-				ret = R_NEW0 (RBinAddr);
-				ret->vaddr = ((addr >> 1) << 1);
-				ret->paddr = ret->vaddr;
-			}
+	if (sym == R_BIN_SYM_MAIN) {
+		struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
+		ut64 addr = MACH0_(get_main) (mo);
+		if (addr != UT64_MAX && addr != 0) {
+			ret = R_NEW0 (RBinAddr);
+			ret->vaddr = ((addr >> 1) << 1);
+			ret->paddr = ret->vaddr;
 		}
-		break;
 	}
 	return ret;
 }

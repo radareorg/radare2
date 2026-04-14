@@ -107,14 +107,15 @@ static bool segment_filebacked_size(struct MACH0_(obj_t) * mo, int seg_idx, R_OU
 	if (seg_idx < 0 || seg_idx >= mo->nsegs) {
 		return false;
 	}
-	ut64 fileoff = mo->segs[seg_idx].fileoff;
-	ut64 filesize = mo->segs[seg_idx].filesize;
+	struct MACH0_(segment_command) *seg = &mo->segs[seg_idx];
+	ut64 fileoff = seg->fileoff;
+	ut64 filesize = seg->filesize;
 	if (fileoff > mo->size) {
 		return false;
 	}
 	ut64 max_filesize = mo->size - fileoff;
 	ut64 filebacked_size = R_MIN (filesize, max_filesize);
-	filebacked_size = R_MIN (filebacked_size, mo->segs[seg_idx].vmsize);
+	filebacked_size = R_MIN (filebacked_size, seg->vmsize);
 	*size = filebacked_size;
 	return true;
 }
@@ -360,38 +361,40 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 		return false;
 	}
 	const ut8 *scp = (const ut8 *)&segcom;
-	mo->segs[j].cmd = r_read_ble32 (scp, mo->big_endian);
+	const bool be = mo->big_endian;
+	struct MACH0_(segment_command) *seg = &mo->segs[j];
+	seg->cmd = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].cmdsize = r_read_ble32 (scp, mo->big_endian);
+	seg->cmdsize = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	memcpy (&mo->segs[j].segname, scp, 16);
+	memcpy (&seg->segname, scp, 16);
 	scp += 16;
 #if R_BIN_MACH064
-	mo->segs[j].vmaddr = r_read_ble64 (scp, mo->big_endian);
+	seg->vmaddr = r_read_ble64 (scp, be);
 	scp += sizeof (ut64);
-	mo->segs[j].vmsize = r_read_ble64 (scp, mo->big_endian);
+	seg->vmsize = r_read_ble64 (scp, be);
 	scp += sizeof (ut64);
-	mo->segs[j].fileoff = r_read_ble64 (scp, mo->big_endian);
+	seg->fileoff = r_read_ble64 (scp, be);
 	scp += sizeof (ut64);
-	mo->segs[j].filesize = r_read_ble64 (scp, mo->big_endian);
+	seg->filesize = r_read_ble64 (scp, be);
 	scp += sizeof (ut64);
 #else
-	mo->segs[j].vmaddr = r_read_ble32 (scp, mo->big_endian);
+	seg->vmaddr = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].vmsize = r_read_ble32 (scp, mo->big_endian);
+	seg->vmsize = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].fileoff = r_read_ble32 (scp, mo->big_endian);
+	seg->fileoff = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].filesize = r_read_ble32 (scp, mo->big_endian);
+	seg->filesize = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
 #endif
-	mo->segs[j].maxprot = r_read_ble32 (scp, mo->big_endian);
+	seg->maxprot = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].initprot = r_read_ble32 (scp, mo->big_endian);
+	seg->initprot = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].nsects = r_read_ble32 (scp, mo->big_endian);
+	seg->nsects = r_read_ble32 (scp, be);
 	scp += sizeof (ut32);
-	mo->segs[j].flags = r_read_ble32 (scp, mo->big_endian);
+	seg->flags = r_read_ble32 (scp, be);
 
 	char *segment_flagname = NULL;
 #if R_BIN_MACH064
@@ -1719,19 +1722,20 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	int seg_idx = 0;
 	ut64 seg_off = 0;
 	ut64 segment_size = 0;
-	size_t bind_size = mo->dyld_info->bind_size;
+	struct dyld_info_command *di = mo->dyld_info;
+	size_t bind_size = di->bind_size;
 	if (!bind_size) {
 		return false;
 	}
-	if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_size)) {
+	if (!fits_in (mo->size, di->bind_off, bind_size)) {
 		return false;
 	}
 	ut8 *opcodes = calloc (1, bind_size + 1);
 	if (!opcodes) {
 		return false;
 	}
-	if (r_buf_read_at (mo->b, mo->dyld_info->bind_off, opcodes, bind_size) != bind_size) {
-		R_LOG_ERROR ("read (dyld_info bind) at 0x%08" PFMT64x, (ut64) (size_t)mo->dyld_info->bind_off);
+	if (r_buf_read_at (mo->b, di->bind_off, opcodes, bind_size) != bind_size) {
+		R_LOG_ERROR ("read (dyld_info bind) at 0x%08" PFMT64x, (ut64) (size_t)di->bind_off);
 		R_FREE (opcodes);
 		return false;
 	}
@@ -2141,18 +2145,19 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 						R_LOG_DEBUG ("read (LC_DYLD_INFO) at 0x%08" PFMT64x, off);
 					} else {
 						const bool be = mo->big_endian;
-						mo->dyld_info->cmd = r_read_ble32 (&dyldi[0], be);
-						mo->dyld_info->cmdsize = r_read_ble32 (&dyldi[4], be);
-						mo->dyld_info->rebase_off = r_read_ble32 (&dyldi[8], be);
-						mo->dyld_info->rebase_size = r_read_ble32 (&dyldi[12], be);
-						mo->dyld_info->bind_off = r_read_ble32 (&dyldi[16], be);
-						mo->dyld_info->bind_size = r_read_ble32 (&dyldi[20], be);
-						mo->dyld_info->weak_bind_off = r_read_ble32 (&dyldi[24], be);
-						mo->dyld_info->weak_bind_size = r_read_ble32 (&dyldi[28], be);
-						mo->dyld_info->lazy_bind_off = r_read_ble32 (&dyldi[32], be);
-						mo->dyld_info->lazy_bind_size = r_read_ble32 (&dyldi[36], be);
-						mo->dyld_info->export_off = r_read_ble32 (&dyldi[40], be) + mo->symbols_off;
-						mo->dyld_info->export_size = r_read_ble32 (&dyldi[44], be);
+						struct dyld_info_command *di = mo->dyld_info;
+						di->cmd = r_read_ble32 (&dyldi[0], be);
+						di->cmdsize = r_read_ble32 (&dyldi[4], be);
+						di->rebase_off = r_read_ble32 (&dyldi[8], be);
+						di->rebase_size = r_read_ble32 (&dyldi[12], be);
+						di->bind_off = r_read_ble32 (&dyldi[16], be);
+						di->bind_size = r_read_ble32 (&dyldi[20], be);
+						di->weak_bind_off = r_read_ble32 (&dyldi[24], be);
+						di->weak_bind_size = r_read_ble32 (&dyldi[28], be);
+						di->lazy_bind_off = r_read_ble32 (&dyldi[32], be);
+						di->lazy_bind_size = r_read_ble32 (&dyldi[36], be);
+						di->export_off = r_read_ble32 (&dyldi[40], be) + mo->symbols_off;
+						di->export_size = r_read_ble32 (&dyldi[44], be);
 					}
 				}
 			}
@@ -3948,7 +3953,8 @@ static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_
 	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 	reloc->addr = state->addr;
 	if (state->seg_idx >= 0) {
-		reloc->offset = state->addr - mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].fileoff;
+		struct MACH0_(segment_command) *seg = &mo->segs[state->seg_idx];
+		reloc->offset = state->addr - seg->vmaddr + seg->fileoff;
 		reloc->addend = state->addend;
 		if (state->type == BIND_TYPE_TEXT_PCREL32) {
 			reloc->addend -= (mo->baddr + state->addr);
@@ -3981,10 +3987,11 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 		return;
 	}
 	int cur_seg_idx = (state->seg_idx != -1)? state->seg_idx: 0;
+	struct MACH0_(segment_command) *cur_seg = &mo->segs[cur_seg_idx];
 	ut64 n_threaded_binds = RVecRelocRef_length (threaded_binds);
 	while (state->addr < state->segment_end_addr) {
 		ut8 tmp[8];
-		ut64 paddr = state->addr - mo->segs[cur_seg_idx].vmaddr + mo->segs[cur_seg_idx].fileoff;
+		ut64 paddr = state->addr - cur_seg->vmaddr + cur_seg->fileoff;
 		mo->rebasing_buffer = true;
 		if (r_buf_read_at (mo->b, paddr, tmp, 8) != 8) {
 			break;
@@ -4175,8 +4182,11 @@ static bool parse_bind_op(struct MACH0_(obj_t) * mo, RVecRelocRef **threaded_bin
 			R_LOG_ERROR ("BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB has no segment %d", state->seg_idx);
 			return false;
 		}
-		state->addr = mo->segs[state->seg_idx].vmaddr + read_uleb128 (p, end);
-		state->segment_end_addr = mo->segs[state->seg_idx].vmaddr + mo->segs[state->seg_idx].vmsize;
+		{
+			struct MACH0_(segment_command) *seg = &mo->segs[state->seg_idx];
+			state->addr = seg->vmaddr + read_uleb128 (p, end);
+			state->segment_end_addr = seg->vmaddr + seg->vmsize;
+		}
 		return true;
 	case BIND_OPCODE_ADD_ADDR_ULEB:
 		state->addr += read_uleb128 (p, end);
@@ -4201,9 +4211,10 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 		if (!rel_type) {
 			return false;
 		}
-		size_t bind_size = mo->dyld_info->bind_size;
-		size_t lazy_size = mo->dyld_info->lazy_bind_size;
-		size_t weak_size = mo->dyld_info->weak_bind_size;
+		struct dyld_info_command *di = mo->dyld_info;
+		size_t bind_size = di->bind_size;
+		size_t lazy_size = di->lazy_bind_size;
+		size_t weak_size = di->weak_bind_size;
 		ut64 bind_lazy_size = 0;
 
 		if (!bind_size && !lazy_size) {
@@ -4212,16 +4223,16 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 		if (!UT64_ADD (&bind_lazy_size, bind_size, lazy_size)) {
 			return false;
 		}
-		if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_size)) {
+		if (!fits_in (mo->size, di->bind_off, bind_size)) {
 			return false;
 		}
-		if (!fits_in (mo->size, mo->dyld_info->lazy_bind_off, lazy_size)) {
+		if (!fits_in (mo->size, di->lazy_bind_off, lazy_size)) {
 			return false;
 		}
-		if (!fits_in (mo->size, mo->dyld_info->bind_off, bind_lazy_size)) {
+		if (!fits_in (mo->size, di->bind_off, bind_lazy_size)) {
 			return false;
 		}
-		if (!fits_in (mo->size, mo->dyld_info->weak_bind_off, weak_size)) {
+		if (!fits_in (mo->size, di->weak_bind_off, weak_size)) {
 			return false;
 		}
 		ut64 amount = 0;
@@ -4236,11 +4247,11 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 			return false;
 		}
 
-		st64 len = r_buf_read_at (mo->b, mo->dyld_info->bind_off, opcodes, bind_size);
-		len += r_buf_read_at (mo->b, mo->dyld_info->lazy_bind_off, opcodes + bind_size, lazy_size);
-		len += r_buf_read_at (mo->b, mo->dyld_info->weak_bind_off, opcodes + bind_size + lazy_size, weak_size);
+		st64 len = r_buf_read_at (mo->b, di->bind_off, opcodes, bind_size);
+		len += r_buf_read_at (mo->b, di->lazy_bind_off, opcodes + bind_size, lazy_size);
+		len += r_buf_read_at (mo->b, di->weak_bind_off, opcodes + bind_size + lazy_size, weak_size);
 		if (len < 0 || (ut64)len < amount) {
-			R_LOG_ERROR ("read (dyld_info bind) at 0x%08" PFMT64x, (ut64) (size_t)mo->dyld_info->bind_off);
+			R_LOG_ERROR ("read (dyld_info bind) at 0x%08" PFMT64x, (ut64) (size_t)di->bind_off);
 			R_FREE (opcodes);
 			return false;
 		}
@@ -4256,10 +4267,11 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 			}
 
 			RBindOpState state = { 0 };
+			struct MACH0_(segment_command) *seg0 = &mo->segs[0];
 			state.seg_idx = -1;
 			state.sym_ord = -1;
-			state.addr = mo->segs[0].vmaddr;
-			state.segment_end_addr = mo->segs[0].vmaddr + mo->segs[0].vmsize;
+			state.addr = seg0->vmaddr;
+			state.segment_end_addr = seg0->vmaddr + seg0->vmsize;
 
 			ut8 *p = opcodes + opcodes_offset;
 			ut8 *end = p + partition_size;
