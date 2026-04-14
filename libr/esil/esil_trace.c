@@ -385,8 +385,8 @@ static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
 	if (vreg) {
 		REsilRegChange needle = { .idx = idx };
 		index = RVecEsilRegChange_upper_bound (vreg, &needle, reg_change_compare);
-		if (index > 0 && index <= RVecEsilRegChange_length (vreg)) {
-			REsilRegChange *c = RVecEsilRegChange_at (vreg, index - 2);
+		if (index > 1 && index <= RVecEsilRegChange_length (vreg)) {
+			REsilRegChange *c = RVecEsilRegChange_at (vreg, index - 1);
 			if (c) {
 				// printf ("set value %s 0x%"PFMT64x"\n", ri->name, c->data);
 				r_reg_set_value (esil->anal->reg, ri, c->data);
