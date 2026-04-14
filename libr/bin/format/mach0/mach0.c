@@ -4674,12 +4674,17 @@ char *MACH0_(get_cpusubtype)(struct MACH0_(obj_t) * mo) {
 }
 
 bool MACH0_(is_pie)(struct MACH0_(obj_t) * mo) {
-	return (mo && mo->hdr.filetype == MH_EXECUTE && mo->hdr.flags & MH_PIE);
+	if (mo->hdr.filetype != MH_EXECUTE) {
+		return true;
+	}
+	return (mo->hdr.flags & MH_PIE) != 0;
 }
 
 bool MACH0_(has_nx)(struct MACH0_(obj_t) * mo) {
-	return (mo && mo->hdr.filetype == MH_EXECUTE &&
-		mo->hdr.flags & MH_NO_HEAP_EXECUTION);
+	if (mo->hdr.flags & MH_NO_HEAP_EXECUTION) {
+		return true;
+	}
+	return (mo->hdr.flags & MH_ALLOW_STACK_EXECUTION) == 0;
 }
 
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {
