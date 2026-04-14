@@ -98,17 +98,15 @@ RUN
 
 NAME=float div 1.0 / 1.0
 FILE=-
-BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,/"
+CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F/"
 EXPECT=<<EOF
 0x3ff0000000000000
 EOF
 RUN
 
-NAME=float mul 1.0 6502 8051 apple arm-16 arm-32 arm-64 brainfuck cmd_aae cmd_aea cmd_aetr cmd_aex cmd_pae cmp cond debug_esil esil flag_tests intreg math mips sh step step-back step-over syscall x86-32 x86-64 xtensa 1.0
+NAME=float mul 1.0 * 1.0
 FILE=-
-BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,*"
+CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F*"
 EXPECT=<<EOF
 0x3ff0000000000000
 EOF
@@ -116,8 +114,7 @@ RUN
 
 NAME=float add 1.0 + 1.0
 FILE=-
-BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,+"
+CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F+"
 EXPECT=<<EOF
 0x4000000000000000
 EOF
@@ -125,9 +122,8 @@ RUN
 
 NAME=float sub 1.0 - 1.0
 FILE=-
-BROKEN=1
-CMDS="ae Fx3ff0000000000000,Fx3ff0000000000000,-"
+CMDS="ae 0x3ff0000000000000,0x3ff0000000000000,F-"
 EXPECT=<<EOF
-0x0
+0
 EOF
 RUN
