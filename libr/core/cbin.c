@@ -1013,30 +1013,9 @@ static bool bin_info(RCore *core, PJ *pj, int mode, ut64 laddr) {
 				free (tmp_buf);
 			}
 			pair_str (core, pj, "rpath", info->rpath);
-			if (info->rclass
-					&& (!strcmp (info->rclass, "pe")
-						|| !strcmp (info->rclass, "mach0"))) {
+			if (info->rclass && !strcmp (info->rclass, "pe")) {
+				// this should be moved if added to mach0 (or others)
 				pair_bool (core, pj, "signed", info->signature);
-				if (R_STR_ISNOTEMPTY (info->signature_info)) {
-					pair_str (core, pj, "signing", info->signature_info);
-				}
-				if (info->signature_flags) {
-					// mach0 CS_* flag bits
-					RStrBuf *sb = r_strbuf_new ("");
-					if (info->signature_flags & 0x00000002) r_strbuf_append (sb, "adhoc ");
-					if (info->signature_flags & 0x00000100) r_strbuf_append (sb, "hard ");
-					if (info->signature_flags & 0x00000200) r_strbuf_append (sb, "kill ");
-					if (info->signature_flags & 0x00000800) r_strbuf_append (sb, "restrict ");
-					if (info->signature_flags & 0x00002000) r_strbuf_append (sb, "require-lv ");
-					if (info->signature_flags & 0x00010000) r_strbuf_append (sb, "runtime ");
-					if (info->signature_flags & 0x00020000) r_strbuf_append (sb, "linker-signed ");
-					char *s = r_strbuf_drain (sb);
-					r_str_trim (s);
-					if (R_STR_ISNOTEMPTY (s)) {
-						pair_str (core, pj, "cdflags", s);
-					}
-					free (s);
-				}
 			}
 			pair_bool (core, pj, "sanitize", info->has_sanitizers);
 			pair_bool (core, pj, "static", r_bin_is_static (core->bin));

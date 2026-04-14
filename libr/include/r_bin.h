@@ -309,8 +309,6 @@ typedef struct r_bin_info_t {
 	char *claimed_checksum;
 	int pe_overlay;
 	bool signature;
-	char *signature_info; // signing classification string (e.g. "ad-hoc", "developer-signed")
-	ut32 signature_flags; // format-specific code-signing flags (mach0 CS_* bits)
 	ut64 dbg_info;
 	RBinHash sum[3];
 	ut64 baddr;

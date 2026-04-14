@@ -267,8 +267,8 @@ CMDS=ik ***~uuid
 EXPECT=<<EOF
 info/mach0_uuid_command.format=[4]Ed[16]b (mach0_load_command_type)cmd cmdsize uuid
 info/mach0_cmd_8.format=mach0_uuid_command
-info/mach0_cmd_8.cmd=uuid
 info/uuid.0=ff4d6c2e1dc0369d98d0d3040a8049e8
+info/mach0_cmd_8.cmd=uuid
 EOF
 RUN
 
@@ -365,25 +365,24 @@ RUN
 
 NAME=mach0 signing platform-binary
 FILE=bins/mach0/ls-m1
-CMDS=i~signed,signing
+CMDS=ik info/mach0.signing
 EXPECT=<<EOF
-signed   true
-signing  platform-binary
+platform-binary
 EOF
 RUN
 
 NAME=mach0 signing linker-signed
 FILE=bins/mach0/hello-macos-arm64-chained
-CMDS=i~signing
+CMDS=ik info/mach0.signing
 EXPECT=<<EOF
-signing  linker-signed
+linker-signed
 EOF
 RUN
 
 NAME=mach0 signing unsigned
 FILE=bins/mach0/a.out
-CMDS=i~signing
+CMDS=ik info/mach0.signing
 EXPECT=<<EOF
-signing  unsigned
+unsigned
 EOF
 RUN

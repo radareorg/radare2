@@ -2355,6 +2355,8 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	return true;
 }
 
+static const char *mach0_signing_class(struct MACH0_(obj_t) * mo);
+
 static bool init(struct MACH0_(obj_t) * mo) {
 	if (!init_hdr (mo)) {
 		return false;
@@ -2365,6 +2367,10 @@ static bool init(struct MACH0_(obj_t) * mo) {
 	mo->baddr = MACH0_(get_baddr) (mo);
 	mo->libs_loaded = true;
 	RVecMach0Lib_shrink_to_fit (&mo->libs_cache);
+	sdb_set (mo->kv, "mach0.signing", mach0_signing_class (mo), 0);
+	if (mo->cs_present && mo->cs_flags) {
+		sdb_num_set (mo->kv, "mach0.signing.flags", mo->cs_flags, 0);
+	}
 	return true;
 }
 
@@ -4743,13 +4749,13 @@ bool MACH0_(has_nx)(struct MACH0_(obj_t) * mo) {
 
 // Classify the code signature following the same rules used by Apple's
 // codesign(1) and tools like macchk:
-//   - no LC_CODE_SIGNATURE            => "unsigned"
-//   - CS_LINKER_SIGNED flag            => "linker-signed"
-//   - no CMS blob                      => "ad-hoc"
-//   - CodeDirectory platform != 0      => "platform-binary"
-//   - otherwise                        => "developer-signed"
-const char *MACH0_(get_signing)(struct MACH0_(obj_t) * mo) {
-	if (!mo || !mo->cs_present) {
+//   - no LC_CODE_SIGNATURE   => "unsigned"
+//   - CS_LINKER_SIGNED flag  => "linker-signed"
+//   - no CMS blob            => "ad-hoc"
+//   - CodeDirectory platform => "platform-binary"
+//   - otherwise              => "developer-signed"
+static const char *mach0_signing_class(struct MACH0_(obj_t) * mo) {
+	if (!mo->cs_present) {
 		return "unsigned";
 	}
 	if (mo->cs_flags & CS_LINKER_SIGNED) {

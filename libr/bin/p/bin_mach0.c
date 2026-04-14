@@ -387,9 +387,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->has_pi = MACH0_(is_pie) (mo);
 	ret->has_nx = MACH0_(has_nx) (mo);
-	ret->signature = mo->cs_present;
-	ret->signature_info = strdup (MACH0_(get_signing) (mo));
-	ret->signature_flags = mo->cs_flags;
 	return ret;
 }
 
