@@ -663,7 +663,7 @@ lang     c
 linenum  false
 lsyms    false
 machine  v7
-nx       false
+nx       true
 os       ios
 pic      true
 relocs   true
