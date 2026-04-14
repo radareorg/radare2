@@ -341,10 +341,11 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 		to->addr = op->addr;
 	}
 
+	// Tag every change recorded for this op with a fresh step number, so
+	// later restore lookups can locate the post-state of any prior step.
+	esil->trace->cur_idx = esil->trace->idx + 1;
 	RRegItem *pc_ri = r_reg_get (esil->anal->reg, "PC", -1);
-	if (pc_ri) {
-		add_reg_change (esil->trace, pc_ri, op->addr);
-	}
+	const ut64 pc_before = pc_ri? r_reg_get_value (esil->anal->reg, pc_ri): 0;
 	/* set hooks */
 	esil->cb.hook_reg_read = trace_hook_reg_read;
 	esil->cb.hook_reg_write = trace_hook_reg_write;
@@ -360,6 +361,15 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	esil->cb = esil->ocb;
 	esil->ocb_set = false;
 	// update_last_trace_op (esil);
+	// Record the post-state PC so a later step-back finds the right value.
+	// If the ESIL expression did not modify PC, the caller will advance it
+	// to op->addr + op->size, so persist that value as the final PC.
+	if (pc_ri) {
+		const ut64 pc_after = r_reg_get_value (esil->anal->reg, pc_ri);
+		const ut64 final_pc = (pc_after == pc_before)? op->addr + op->size: pc_after;
+		add_reg_change (esil->trace, pc_ri, final_pc);
+		r_unref (pc_ri);
+	}
 	/* increment idx */
 	esil->trace->idx++;
 	esil->trace->end_idx++; // should be vector length
@@ -385,7 +395,7 @@ static bool restore_register(REsil *esil, RRegItem *ri, int idx) {
 	if (vreg) {
 		REsilRegChange needle = { .idx = idx };
 		index = RVecEsilRegChange_upper_bound (vreg, &needle, reg_change_compare);
-		if (index > 1 && index <= RVecEsilRegChange_length (vreg)) {
+		if (index > 0 && index <= RVecEsilRegChange_length (vreg)) {
 			REsilRegChange *c = RVecEsilRegChange_at (vreg, index - 1);
 			if (c) {
 				// printf ("set value %s 0x%"PFMT64x"\n", ri->name, c->data);
