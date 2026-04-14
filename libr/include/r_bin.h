@@ -386,6 +386,7 @@ R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE(RVecRBinSection, RBinSection);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
+R_VEC_TYPE(RVecBinSymclassGlob, char *);
 
 typedef struct r_bin_object_t {
 	ut64 baddr;
@@ -543,6 +544,7 @@ struct r_bin_t {
 	/* preconfigured values */
 	bool strings_nofp; // move to options struct passed instead of min, dump raw on every getstrings call
 	Sdb *sdb;
+	RVecBinSymclassGlob symclass_globs; // glob keys cached from symclass.sdb for r_bin_import_tags
 	RIDStorage *ids;
 	RMutaBind mb;
 	RList/*<RBinFile>*/ *binfiles;

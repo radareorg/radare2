@@ -216,8 +216,18 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 // query the symbol name into the symtypes database
 R_API const char *r_bin_import_tags(RBin *bin, const char *name) {
 	Sdb *db = sdb_ns (bin->sdb, "symclass", true); // R2_600 - rename to imptags
-	if (db) {
-		return sdb_const_get (db, name, 0);
+	if (!db) {
+		return NULL;
+	}
+	const char *v = sdb_const_get (db, name, 0);
+	if (v) {
+		return v;
+	}
+	char **pat;
+	R_VEC_FOREACH (&bin->symclass_globs, pat) {
+		if (r_str_glob (name, *pat)) {
+			return sdb_const_get (db, *pat, 0);
+		}
 	}
 	return NULL;
 }
@@ -492,6 +502,11 @@ R_API void r_bin_free(RBin *bin) {
 		free (bin->strenc);
 		// r_bin_free_bin_files (bin);
 		r_list_free (bin->binfiles);
+		char **pat;
+		R_VEC_FOREACH (&bin->symclass_globs, pat) {
+			free (*pat);
+		}
+		RVecBinSymclassGlob_fini (&bin->symclass_globs);
 		r_libstore_free (bin->libstore);
 		sdb_free (bin->sdb);
 		r_id_storage_free (bin->ids);
@@ -850,6 +865,14 @@ R_API bool r_bin_is_static(RBin *bin) {
 	return true;
 }
 
+static bool collect_symclass_glob(void *user, const char *k, const char *v) {
+	if (strchr (k, '*')) {
+		char *dup = strdup (k);
+		RVecBinSymclassGlob_push_back ((RVecBinSymclassGlob *)user, &dup);
+	}
+	return true;
+}
+
 R_API RBin *r_bin_new(void) {
 	RBin *bin = R_NEW0 (RBin);
 	if (!r_str_constpool_init (&bin->constpool)) {
@@ -868,6 +891,7 @@ R_API RBin *r_bin_new(void) {
 		free (cs);
 		if (res) {
 			sdb_ns_set (bin->sdb, "symclass", db);
+			sdb_foreach (db, collect_symclass_glob, &bin->symclass_globs);
 		} else {
 			R_LOG_DEBUG ("Cannot find symclass.sdb");
 			sdb_free (db);
