@@ -954,6 +954,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	}
 	ut64 max_slots = (super.blob.length - sizeof (struct super_blob_t)) / sizeof (struct blob_index_t);
 	ut32 slots = (ut32)R_MIN ((ut64)super.count, max_slots);
+	mo->cs_present = true;
 	// XXX deprecate
 	bool isVerbose = r_sys_getenv_asbool ("RABIN2_CODESIGN_VERBOSE");
 	// to dump all certificates
@@ -981,10 +982,22 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 		ut64 slot_off = (ut64)data + idx.offset;
 
 		if (idx.type == CSSLOT_CODEDIRECTORY || (idx.type >= CSSLOT_ALTERNATE_CODEDIRECTORIES && idx.type < CSSLOT_ALTERNATE_CODEDIRECTORY_LIMIT)) {
+			ut32 slot_magic = r_buf_read_ble32_at (mo->b, slot_off, mach0_endian);
+			ut32 slot_size = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
+			bool slot_ok = slot_magic == CSMAGIC_CODEDIRECTORY
+				&& slot_size >= 40 && slot_size <= super.blob.length
+				&& idx.offset <= super.blob.length - slot_size;
+			// Record flags/platform from the primary CodeDirectory only
+			if (slot_ok && idx.type == CSSLOT_CODEDIRECTORY) {
+				mo->cs_flags = r_buf_read_ble32_at (mo->b, slot_off + 12, mach0_endian);
+				ut8 platform = 0;
+				if (r_buf_read_at (mo->b, slot_off + 38, &platform, 1) == 1) {
+					mo->cs_platform = platform;
+				}
+			}
 			if (isVerbose) {
 				RBinFile *bf = mo->options.bf;
-				ut32 slot_size = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
-				if (slot_size >= sizeof (struct blob_t) && slot_size <= super.blob.length && idx.offset <= super.blob.length - slot_size) {
+				if (slot_ok) {
 					if (bf && bf->rbin && bf->rbin->mb.hash) {
 						parseCodeDirectory (&bf->rbin->mb, mo->b, slot_off, slot_size);
 					}
@@ -1032,6 +1045,16 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 			}
 			break;
 		case CSSLOT_SIGNATURESLOT: // ASN1/DER certificate
+			{
+				// Detect a real CMS signature: the blobwrapper header is 8
+				// bytes, so anything larger implies a developer signature.
+				ut32 sig_length = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
+				if (sig_length > sizeof (struct blob_t)
+					&& sig_length <= super.blob.length
+					&& idx.offset <= super.blob.length - sig_length) {
+					mo->cs_has_cms = true;
+				}
+			}
 			if (isVerbose) {
 				ut8 header[8] = { 0 };
 				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) < sizeof (header)) {
@@ -4716,6 +4739,29 @@ bool MACH0_(has_nx)(struct MACH0_(obj_t) * mo) {
 		return true;
 	}
 	return (mo->hdr.flags & MH_ALLOW_STACK_EXECUTION) == 0;
+}
+
+// Classify the code signature following the same rules used by Apple's
+// codesign(1) and tools like macchk:
+//   - no LC_CODE_SIGNATURE            => "unsigned"
+//   - CS_LINKER_SIGNED flag            => "linker-signed"
+//   - no CMS blob                      => "ad-hoc"
+//   - CodeDirectory platform != 0      => "platform-binary"
+//   - otherwise                        => "developer-signed"
+const char *MACH0_(get_signing)(struct MACH0_(obj_t) * mo) {
+	if (!mo || !mo->cs_present) {
+		return "unsigned";
+	}
+	if (mo->cs_flags & CS_LINKER_SIGNED) {
+		return "linker-signed";
+	}
+	if (!mo->cs_has_cms) {
+		return "ad-hoc";
+	}
+	if (mo->cs_platform != 0) {
+		return "platform-binary";
+	}
+	return "developer-signed";
 }
 
 char *MACH0_(get_filetype_from_hdr)(struct MACH0_(mach_header) * hdr) {

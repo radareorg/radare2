@@ -18,6 +18,18 @@
 
 #define CS_PAGE_SIZE 4096
 
+// CodeDirectory flags (subset used for signing classification)
+#define CS_VALID          0x00000001
+#define CS_ADHOC          0x00000002
+#define CS_GET_TASK_ALLOW 0x00000004
+#define CS_HARD           0x00000100
+#define CS_KILL           0x00000200
+#define CS_RESTRICT       0x00000800
+#define CS_ENFORCEMENT    0x00001000
+#define CS_REQUIRE_LV     0x00002000
+#define CS_RUNTIME        0x00010000
+#define CS_LINKER_SIGNED  0x00020000
+
 #define CS_HASHTYPE_SHA1 1
 #define CS_HASHTYPE_SHA256 2
 #define CS_HASHTYPE_SHA256_TRUNCATED 3
@@ -188,6 +200,10 @@ struct MACH0_(obj_t) {
 	int nmodtab;
 	struct thread_command thread;
 	ut8 *signature;
+	bool cs_present; // LC_CODE_SIGNATURE parsed successfully
+	bool cs_has_cms; // CMS blob (developer signature) present and non-empty
+	ut32 cs_flags; // CodeDirectory flags word
+	ut8 cs_platform; // CodeDirectory platform byte (nonzero => platform binary)
 	union {
 		struct x86_thread_state32 x86_32;
 		struct x86_thread_state64 x86_64;
@@ -281,6 +297,7 @@ int MACH0_(get_bits)(struct MACH0_(obj_t) *bin);
 bool MACH0_(is_big_endian)(struct MACH0_(obj_t) *bin);
 bool MACH0_(is_pie)(struct MACH0_(obj_t) *bin);
 bool MACH0_(has_nx)(struct MACH0_(obj_t) *bin);
+const char *MACH0_(get_signing)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_intrp)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_os)(struct MACH0_(obj_t) *bin);
 const char *MACH0_(get_cputype)(struct MACH0_(obj_t) *bin);

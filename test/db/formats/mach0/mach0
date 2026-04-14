@@ -362,3 +362,28 @@ EXPECT=<<EOF
 canary   true
 EOF
 RUN
+
+NAME=mach0 signing platform-binary
+FILE=bins/mach0/ls-m1
+CMDS=i~signed,signing
+EXPECT=<<EOF
+signed   true
+signing  platform-binary
+EOF
+RUN
+
+NAME=mach0 signing linker-signed
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=i~signing
+EXPECT=<<EOF
+signing  linker-signed
+EOF
+RUN
+
+NAME=mach0 signing unsigned
+FILE=bins/mach0/a.out
+CMDS=i~signing
+EXPECT=<<EOF
+signing  unsigned
+EOF
+RUN

@@ -161,6 +161,7 @@ R_API void r_bin_info_free(RBinInfo *rb) {
 	free (rb->os);
 	free (rb->rclass);
 	free (rb->rpath);
+	free (rb->signature_info);
 	free (rb->subsystem);
 	free (rb->type);
 	free (rb);
