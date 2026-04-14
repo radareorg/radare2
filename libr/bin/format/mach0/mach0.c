@@ -162,10 +162,11 @@ static ut64 addr_to_offset(struct MACH0_(obj_t) * mo, ut64 addr) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
-			const ut64 segment_base = (ut64)mo->segs[i].vmaddr;
-			const ut64 segment_size = (ut64)mo->segs[i].vmsize;
+			struct MACH0_(segment_command) *seg = &mo->segs[i];
+			const ut64 segment_base = (ut64)seg->vmaddr;
+			const ut64 segment_size = (ut64)seg->vmsize;
 			if (addr >= segment_base && addr < segment_base + segment_size) {
-				return mo->segs[i].fileoff + (addr - segment_base);
+				return seg->fileoff + (addr - segment_base);
 			}
 		}
 	}
@@ -176,10 +177,11 @@ static ut64 offset_to_vaddr(struct MACH0_(obj_t) * mo, ut64 offset) {
 	if (mo->segs) {
 		size_t i;
 		for (i = 0; i < mo->nsegs; i++) {
-			ut64 segment_base = (ut64)mo->segs[i].fileoff;
-			ut64 segment_size = (ut64)mo->segs[i].filesize;
+			struct MACH0_(segment_command) *seg = &mo->segs[i];
+			ut64 segment_base = (ut64)seg->fileoff;
+			ut64 segment_size = (ut64)seg->filesize;
 			if (offset >= segment_base && offset < segment_base + segment_size) {
-				return mo->segs[i].vmaddr + (offset - segment_base);
+				return seg->vmaddr + (offset - segment_base);
 			}
 		}
 	}
@@ -455,50 +457,51 @@ static bool parse_segments(struct MACH0_(obj_t) * mo, ut64 off) {
 				return false;
 			}
 
+			struct MACH0_(section) *sk = &mo->sects[k];
 			i = 0;
-			memcpy (&mo->sects[k].sectname, &sec[i], 16); // INFO: this string is not null terminated!
+			memcpy (&sk->sectname, &sec[i], 16); // INFO: this string is not null terminated!
 			i += 16;
-			memcpy (&mo->sects[k].segname, &sec[i], 16); // INFO: Remember: it's not null terminated!
+			memcpy (&sk->segname, &sec[i], 16); // INFO: Remember: it's not null terminated!
 			i += 16;
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset", mo->sects[k].segname, mo->sects[k].sectname);
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.offset", sk->segname, sk->sectname);
 			sdb_num_set (mo->kv, section_flagname, offset, 0);
 #if R_BIN_MACH064
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", mo->sects[k].segname, mo->sects[k].sectname);
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 			sdb_set (mo->kv, section_flagname, "mach0_section64", 0);
 #else
-			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", mo->sects[k].segname, mo->sects[k].sectname);
+			snprintf (section_flagname, sizeof (section_flagname), "mach0_section_%.16s_%.16s.format", sk->segname, sk->sectname);
 			sdb_set (mo->kv, section_flagname, "mach0_section", 0);
 #endif
 
 			const ut8 *scp = &sec[i];
 			const bool be = mo->big_endian;
 #if R_BIN_MACH064
-			mo->sects[k].addr = r_read_ble64 (scp, be);
+			sk->addr = r_read_ble64 (scp, be);
 			scp += sizeof (ut64);
-			mo->sects[k].size = r_read_ble64 (scp, be);
+			sk->size = r_read_ble64 (scp, be);
 			scp += sizeof (ut64);
 #else
-			mo->sects[k].addr = r_read_ble32 (scp, be);
+			sk->addr = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].size = r_read_ble32 (scp, be);
+			sk->size = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
 #endif
-			mo->sects[k].offset = r_read_ble32 (scp, be);
+			sk->offset = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].align = r_read_ble32 (scp, be);
+			sk->align = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].reloff = r_read_ble32 (scp, be);
+			sk->reloff = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].nreloc = r_read_ble32 (scp, be);
+			sk->nreloc = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].flags = r_read_ble32 (scp, be);
+			sk->flags = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].reserved1 = r_read_ble32 (scp, be);
+			sk->reserved1 = r_read_ble32 (scp, be);
 			scp += sizeof (ut32);
-			mo->sects[k].reserved2 = r_read_ble32 (scp, be);
+			sk->reserved2 = r_read_ble32 (scp, be);
 #if R_BIN_MACH064
 			scp += sizeof (ut32);
-			mo->sects[k].reserved3 = r_read_ble32 (scp, be);
+			sk->reserved3 = r_read_ble32 (scp, be);
 #endif
 		}
 	}
