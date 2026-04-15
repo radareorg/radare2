@@ -2622,16 +2622,17 @@ static int cmd_type(void *data, const char *input) {
 			{
 				r_list_foreach (core->anal->fcns, iter, fcn) {
 					RList *uniq = r_anal_types_from_fcn (core->anal, fcn);
+					char *fname = r_str_sanitize_r2 (fcn->name);
 					if (r_list_length (uniq)) {
-						r_cons_printf (core->cons, "agn %s\n", fcn->name);
+						r_cons_printf (core->cons, "'agn %s\n", fname);
 					}
 					r_list_foreach (uniq , iter2, type) {
-						char *myType = strdup (type);
+						char *myType = r_str_sanitize_r2 (type);
 						r_str_replace_ch (myType, ' ', '_', true);
-						r_cons_printf (core->cons, "agn %s\n", myType);
-						r_cons_printf (core->cons, "age %s %s\n", myType, fcn->name);
+						r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", myType, myType, fname);
 						free (myType);
 					}
+					free (fname);
 				}
 			}
 			break;
