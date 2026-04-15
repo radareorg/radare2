@@ -1588,7 +1588,8 @@ static bool import_dwarf_function_fallback(RAnal *anal, const char *typed_name, 
 	free (ret_key);
 
 	char *cc_key = r_str_newf ("func.%s.cc", typed_name);
-	sdb_set (types, cc_key, "cdecl", 0);
+	const char *default_cc = r_anal_cc_default (anal);
+	sdb_set (types, cc_key, default_cc? default_cc: "cdecl", 0);
 	free (cc_key);
 
 	RStrBuf argnames;
