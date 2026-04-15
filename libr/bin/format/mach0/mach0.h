@@ -13,6 +13,7 @@
 #define CSMAGIC_EMBEDDED_SIGNATURE 0xfade0cc0
 #define CSMAGIC_DETACHED_SIGNATURE 0xfade0cc1 /* multi-arch collection of embedded signatures */
 #define CSMAGIC_ENTITLEMENTS       0xfade7171
+#define CSMAGIC_DER_ENTITLEMENTS   0xfade7172
 #define CSMAGIC_REQUIREMENT        0xfade0c00 /* single Requirement blob */
 #define CSMAGIC_REQUIREMENTS       0xfade0c01 /* Requirements vector (internal requirements) */
 
@@ -201,6 +202,8 @@ struct MACH0_(obj_t) {
 	int nmodtab;
 	struct thread_command thread;
 	ut8 *signature;
+	ut8 *signature_der; // CSSLOT_DER_ENTITLEMENTS payload (slot 7, magic 0xfade7172)
+	ut32 signature_der_size; // size of signature_der payload
 	bool cs_present; // LC_CODE_SIGNATURE parsed successfully
 	bool cs_has_cms; // CMS blob (developer signature) present and non-empty
 	ut32 cs_flags; // CodeDirectory flags word

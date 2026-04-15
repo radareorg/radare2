@@ -30,20 +30,59 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return mo? mo->kv: NULL;
 }
 
+static char *decode_der_entitlements(const ut8 *buf, ut32 len, bool json) {
+	if (!buf || !len) {
+		return NULL;
+	}
+	RAsn1 *a = r_asn1_new (buf, (int)len, json? 'j': 0);
+	if (!a) {
+		return NULL;
+	}
+	char *res = r_asn1_tostring (a);
+	r_asn1_free (a);
+	return res;
+}
+
 static char *entitlements(RBinFile *bf, bool json) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
-	if (mo) {
-		const char *s = (const char *)mo->signature;
-		if (s) {
-			if (json) {
-				PJ *pj = pj_new ();
-				pj_s (pj, s);
-				return pj_drain (pj);
-			}
-			return strdup (s);
-		}
+	if (!mo) {
+		return NULL;
 	}
-	return NULL;
+	const char *xml = (const char *)mo->signature;
+	char *der = decode_der_entitlements (mo->signature_der, mo->signature_der_size, json);
+	if (!xml && !der) {
+		return NULL;
+	}
+	if (json) {
+		PJ *pj = pj_new ();
+		if (xml && der) {
+			pj_o (pj);
+			pj_ks (pj, "plist", xml);
+			pj_k (pj, "der");
+			pj_j (pj, der);
+			pj_end (pj);
+		} else if (xml) {
+			pj_s (pj, xml);
+		} else {
+			pj_o (pj);
+			pj_k (pj, "der");
+			pj_j (pj, der);
+			pj_end (pj);
+		}
+		free (der);
+		return pj_drain (pj);
+	}
+	if (xml && der) {
+		char *res = r_str_newf ("%s\n;; DER entitlements (slot 7, magic 0xfade7172)\n%s", xml, der);
+		free (der);
+		return res;
+	}
+	if (xml) {
+		return strdup (xml);
+	}
+	char *res = r_str_newf (";; DER entitlements (slot 7, magic 0xfade7172)\n%s", der);
+	free (der);
+	return res;
 }
 
 // TODO: remove laddr, just pass RBinFileOptions which should be inside rbinfile

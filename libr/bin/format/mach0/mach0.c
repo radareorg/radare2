@@ -1111,10 +1111,40 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 			}
 		}
 		break;
+		case CSSLOT_DER_ENTITLEMENTS: // 7 (magic 0xfade7172)
+			{
+				struct blob_t der_blob = { 0 };
+				if (!fits_in (mo->size, slot_off, sizeof (struct blob_t))) {
+					break;
+				}
+				der_blob.magic = r_buf_read_ble32_at (mo->b, slot_off, mach0_endian);
+				der_blob.length = r_buf_read_ble32_at (mo->b, slot_off + 4, mach0_endian);
+				if (der_blob.magic != CSMAGIC_DER_ENTITLEMENTS) {
+					break;
+				}
+				if (der_blob.length <= sizeof (struct blob_t) || der_blob.length > super.blob.length || idx.offset > super.blob.length - der_blob.length) {
+					break;
+				}
+				ut32 der_size = der_blob.length - sizeof (struct blob_t);
+				if (!der_size || !fits_in (mo->size, slot_off + sizeof (struct blob_t), der_size)) {
+					break;
+				}
+				free (mo->signature_der);
+				mo->signature_der = calloc (1, der_size);
+				if (!mo->signature_der) {
+					break;
+				}
+				st64 dgot = r_buf_read_at (mo->b, slot_off + sizeof (struct blob_t), mo->signature_der, der_size);
+				if (dgot < 0 || (ut64)dgot < der_size) {
+					R_FREE (mo->signature_der);
+					break;
+				}
+				mo->signature_der_size = der_size;
+			}
+			break;
 		case CSSLOT_INFOSLOT: // 1
 		case CSSLOT_RESOURCEDIR: // 3
 		case CSSLOT_APPLICATION: // 4
-		case CSSLOT_DER_ENTITLEMENTS:
 		case CSSLOT_LAUNCH_CONSTRAINT_SELF:
 		case CSSLOT_LAUNCH_CONSTRAINT_PARENT:
 		case CSSLOT_LAUNCH_CONSTRAINT_RESPONSIBLE:
@@ -2440,6 +2470,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	}
 	free (mo->func_start);
 	free (mo->signature);
+	free (mo->signature_der);
 	free (mo->intrp);
 	free (mo->compiler);
 	if (mo->imports_loaded) {
