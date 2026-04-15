@@ -1019,15 +1019,17 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 		esil->trap_code = addr;
 		return false;
 	}
-	if (!iob->is_valid_offset (io, addr, false)) {
+	if (iob->is_valid_offset (io, addr, false)) {
+		if (!iob->read_at (io, addr, buf, len) && esil->iotrap) {
+			esil->trap = R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
+		}
+	} else {
 		memset (buf, io->Oxff, len);
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
-	} else if (!iob->read_at (io, addr, buf, len) && esil->iotrap) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
 	}
 	return true;
 }
