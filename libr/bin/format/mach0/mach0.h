@@ -146,6 +146,7 @@ struct super_blob_t {
 // TODO generalize into RBinFileOptions
 struct MACH0_(opts_t) {
 	bool verbose;
+	bool show_codesign;
 	ut64 header_at;
 	ut64 symbols_off;
 	int maxsymlen;

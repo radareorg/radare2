@@ -523,6 +523,7 @@ typedef struct r_bin_options_t {
 	bool demangle_usecmd;
 	bool demangle_trylib;
 	bool verbose;
+	bool show_codesign; // dump Mach-O code signature details at parse time
 	bool use_xtr; // use extract plugins when loading a file?
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;

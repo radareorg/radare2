@@ -955,8 +955,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 	ut64 max_slots = (super.blob.length - sizeof (struct super_blob_t)) / sizeof (struct blob_index_t);
 	ut32 slots = (ut32)R_MIN ((ut64)super.count, max_slots);
 	mo->cs_present = true;
-	// XXX deprecate
-	bool isVerbose = r_sys_getenv_asbool ("RABIN2_CODESIGN_VERBOSE");
+	const bool show_codesign = mo->options.show_codesign;
 	// to dump all certificates
 	// [0x00053f75]> b 5K;/x 30800609;wtf @@ hit*
 	// then do this:
@@ -995,7 +994,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 					mo->cs_platform = platform;
 				}
 			}
-			if (isVerbose) {
+			if (show_codesign) {
 				RBinFile *bf = mo->options.bf;
 				if (slot_ok) {
 					if (bf && bf->rbin && bf->rbin->mb.hash) {
@@ -1055,7 +1054,7 @@ static bool parse_signature(struct MACH0_(obj_t) * mo, ut64 off) {
 					mo->cs_has_cms = true;
 				}
 			}
-			if (isVerbose) {
+			if (show_codesign) {
 				ut8 header[8] = { 0 };
 				if (r_buf_read_at (mo->b, slot_off, header, sizeof (header)) < sizeof (header)) {
 					break;
@@ -2422,6 +2421,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RBinFile *bf) {
 	options->header_at = 0;
 	options->symbols_off = 0;
 	options->verbose = bf->rbin->options.verbose;
+	options->show_codesign = bf->rbin->options.show_codesign;
 	options->maxsymlen = bf->rbin->options.maxsymlen;
 	options->parse_start_symbols = false;
 }

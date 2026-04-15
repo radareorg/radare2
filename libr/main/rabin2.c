@@ -16,7 +16,6 @@ static Rabin2Env env[] = {
 	{ "R2_NOPLUGINS", "                      # same as r2 -N. Dont load shared plugins" },
 	{ "RABIN2_ARGS", "                      # ignore cli and use these program arguments" },
 	{ "RABIN2_CHARSET", "e cfg.charset         # set default value charset for -z strings" },
-	{ "RABIN2_CODESIGN_VERBOSE", "                      # show codesign details at parse time" },
 	// TODO { "RABIN2_MACHO_CODESIGN",	"" },
 	{ "RABIN2_STRALIGN", "e bin.str.align       # only accept aligned strings (default=0)" },
 	{ "RABIN2_DEBASE64", "e bin.str.debase64    # try to debase64 all strings" },
@@ -861,7 +860,7 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 			op = opt.arg;
 			set_action (R_BIN_REQ_OPERATION);
 			if (*op == 'c') {
-				r_sys_setenv ("RABIN2_CODESIGN_VERBOSE", "1");
+				bin->options.show_codesign = true;
 			}
 			if (isBinopHelp (op)) {
 				printf ("Usage: iO [expression]:\n"
