@@ -3143,7 +3143,9 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 
 	const char *oname = r_bin_name_tostring2 (sym->name, 'o');
 	if (oname) {
-		bin->dbg_info = r_str_startswith (oname, "radr://");
+		if (r_str_startswith (oname, "radr://")) {
+			bin->dbg_info |= R_BIN_DBG_STRIPPED;
+		}
 		if (*oname == '_' && !sym->is_imported) {
 			char *demangled = r_bin_demangle (bf, oname, oname, sym->vaddr, false);
 			if (demangled) {
@@ -3512,8 +3514,8 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 	ut32 i = RVecRBinSymbol_length (mo->symbols_vec);
 
 	// functions from LC_FUNCTION_STARTS
-	bool is_stripped = false;
 	if (!mo->func_start) {
+		mo->dbg_info |= R_BIN_DBG_STRIPPED;
 		return true;
 	}
 	const int limit = bf->rbin->options.limit;
@@ -3522,11 +3524,12 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 	const ut8 *temp = mo->func_start;
 	const ut8 *temp_end = mo->func_start + mo->func_size;
 	strcpy (symstr, "sym0x");
+	ut32 total_funcs = 0;
+	ut32 named_funcs = 0;
 	while (temp + 3 < temp_end && *temp) {
 		temp = r_uleb128_decode (temp, NULL, &value);
 		address += value;
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
-		// probably not necessary if we fill all the fields below, just in case.. but maybe we can have another rvec method for this
 		memset (sym, 0, sizeof (RBinSymbol));
 		sym->vaddr = mo->baddr + address;
 		sym->paddr = address + obj->boffset;
@@ -3541,28 +3544,30 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 		if (mo->hdr.cputype == CPU_TYPE_ARM && wordsize < 64) {
 			_handle_arm_thumb (sym);
 		}
-		// if any func is not found in syms then we consider it to be stripped
-		// XXX this is slow. we can check with addr ht/set
-		if (!is_stripped) {
-			snprintf (symstr + 5, sizeof (symstr) - 5, "%" PFMT64x, sym->vaddr);
-			bool found = false;
-			ht_pp_find (symcache, symstr, &found);
-			if (!found) {
-				is_stripped = true;
-			}
+		total_funcs++;
+		snprintf (symstr + 5, sizeof (symstr) - 5, "%" PFMT64x, sym->vaddr);
+		bool found = false;
+		ht_pp_find (symcache, symstr, &found);
+		if (found) {
+			named_funcs++;
 		}
 		if (exceeds_bin_limit (limit, sym->ordinal)) {
 			R_LOG_WARN ("funcstart mo.limit reached");
 			break;
 		}
 	}
+	// A binary is stripped when most LC_FUNCTION_STARTS entries have no matching
+	// named symbol. A single miss is not enough: Swift binaries legitimately mix
+	// named functions with synthetic unnamed thunks (closures, key paths, protocol
+	// witnesses) that never appear in LC_SYMTAB, so the previous "any miss => stripped"
+	// heuristic produced false positives for any non-trivial Swift binary.
+	const bool is_stripped = total_funcs > 0 && named_funcs * 2 < total_funcs;
 	if (is_stripped) {
 		mo->dbg_info |= R_BIN_DBG_STRIPPED;
-	} else if (mo->dbg_info & R_BIN_DBG_STRIPPED) {
+	} else {
 		mo->dbg_info &= ~R_BIN_DBG_STRIPPED;
-		// R_BIT_UNSET (mo->dbg_info, R_BIN_DBG_STRIPPED);
 	}
-	return mo->dbg_info & ~R_BIN_DBG_STRIPPED;
+	return is_stripped;
 }
 
 #if 0

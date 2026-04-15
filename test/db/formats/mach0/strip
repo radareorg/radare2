@@ -97,3 +97,15 @@ stripped true
 uncaps   false
 EOF
 RUN
+
+NAME=stripped check 8 swift thunks
+FILE=bins/mach0/libswift-thunks.dylib
+CMDS=<<EOF
+i~^stripp
+i~^uncaps
+EOF
+EXPECT=<<EOF
+stripped false
+uncaps   false
+EOF
+RUN
