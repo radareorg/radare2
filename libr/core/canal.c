@@ -2317,9 +2317,11 @@ repeat:
 			default:
 				if (refgraph || R_ANAL_REF_TYPE_MASK (fcnr->type) == R_ANAL_REF_TYPE_CALL) {
 					// TODO: avoid recreating nodes unnecessarily
-					r_cons_printf (core->cons, "agn %s\n", fcni->name);
-					r_cons_printf (core->cons, "agn %s\n", fcnr_name);
-					r_cons_printf (core->cons, "age %s %s\n", fcni->name, fcnr_name);
+					char *sfi = r_str_sanitize_r2 (fcni->name);
+					char *sfr = r_str_sanitize_r2 (fcnr_name);
+					r_cons_printf (core->cons, "'agn %s\n'agn %s\n'age %s %s\n", sfi, sfr, sfi, sfr);
+					free (sfi);
+					free (sfr);
 				} else {
 					r_cons_printf (core->cons, "# - 0x%08"PFMT64x" (%c)\n", fcnr->addr, fcnr->type);
 				}

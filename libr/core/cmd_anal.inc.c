@@ -10516,7 +10516,9 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, addr, -1);
 		if (fcn) {
 			if (is_r2) {
-				r_cons_printf (core->cons, "agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
+				char *sn = r_str_sanitize_r2 (fcn->name);
+				r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n", fcn->addr, sn);
+				free (sn);
 			} else if (is_json) {
 				char taddr[64];
 				pj_o (pj);
@@ -10558,8 +10560,10 @@ static void anal_axg(RCore *core, const char *input, int level, Sdb *db, int opt
 			RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ref->addr, -1);
 			if (fcn) {
 				if (is_r2) {
-					r_cons_printf (core->cons, "agn 0x%08"PFMT64x" %s\n", fcn->addr, fcn->name);
-					r_cons_printf (core->cons, "age 0x%08"PFMT64x" 0x%08"PFMT64x"\n", fcn->addr, addr);
+					char *sn = r_str_sanitize_r2 (fcn->name);
+					r_cons_printf (core->cons, "'agn 0x%08"PFMT64x" %s\n'age 0x%08"PFMT64x" 0x%08"PFMT64x"\n",
+						fcn->addr, sn, fcn->addr, addr);
+					free (sn);
 				} else if (is_json) {
 					if (level == 0) {
 						char taddr[64];
