@@ -217,7 +217,7 @@ static void init_sdb_formats(struct MACH0_(obj_t) * mo) {
 		"{MH_OBJECT=1, MH_EXECUTE=2, MH_FVMLIB=3, MH_CORE=4, MH_PRELOAD=5, MH_DYLIB=6, MH_DYLINKER=7, MH_BUNDLE=8, MH_DYLIB_STUB=9, MH_DSYM=10, MH_KEXT_BUNDLE=11};",
 		0);
 	sdb_set (kv, "mach0_header_flags.cparse", "enum mach0_header_flags"
-		"{MH_NOUNDEFS=1, MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10, MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80, MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400, MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000, MH_SUBSECTIONS_VIA_SYMBOLS=0x2000, MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000, MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000, MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000, MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000, MH_DEAD_STRIPPABLE_DYLIB=0x400000, MH_HAS_TLV_DESCRIPTORS=0x800000, MH_NO_HEAP_EXECUTION=0x1000000};",
+		"{MH_NOUNDEFS=1, MH_INCRLINK=2,MH_DYLDLINK=4,MH_BINDATLOAD=8,MH_PREBOUND=0x10, MH_SPLIT_SEGS=0x20,MH_LAZY_INIT=0x40,MH_TWOLEVEL=0x80, MH_FORCE_FLAT=0x100,MH_NOMULTIDEFS=0x200,MH_NOFIXPREBINDING=0x400, MH_PREBINDABLE=0x800, MH_ALLMODSBOUND=0x1000, MH_SUBSECTIONS_VIA_SYMBOLS=0x2000, MH_CANONICAL=0x4000,MH_WEAK_DEFINES=0x8000, MH_BINDS_TO_WEAK=0x10000,MH_ALLOW_STACK_EXECUTION=0x20000, MH_ROOT_SAFE=0x40000,MH_SETUID_SAFE=0x80000, MH_NO_REEXPORTED_DYLIBS=0x100000,MH_PIE=0x200000, MH_DEAD_STRIPPABLE_DYLIB=0x400000, MH_HAS_TLV_DESCRIPTORS=0x800000, MH_NO_HEAP_EXECUTION=0x1000000, MH_APP_EXTENSION_SAFE=0x2000000};",
 		0);
 	sdb_set (kv, "mach0_section_types.cparse", "enum mach0_section_types"
 		"{S_REGULAR=0, S_ZEROFILL=1, S_CSTRING_LITERALS=2, S_4BYTE_LITERALS=3, S_8BYTE_LITERALS=4, S_LITERAL_POINTERS=5, S_NON_LAZY_SYMBOL_POINTERS=6, S_LAZY_SYMBOL_POINTERS=7, S_SYMBOL_STUBS=8, S_MOD_INIT_FUNC_POINTERS=9, S_MOD_TERM_FUNC_POINTERS=0xa, S_COALESCED=0xb, S_GB_ZEROFILL=0xc, S_INTERPOSING=0xd, S_16BYTE_LITERALS=0xe, S_DTRACE_DOF=0xf, S_LAZY_DYLIB_SYMBOL_POINTERS=0x10, S_THREAD_LOCAL_REGULAR=0x11, S_THREAD_LOCAL_ZEROFILL=0x12, S_THREAD_LOCAL_VARIABLES=0x13, S_THREAD_LOCAL_VARIABLE_POINTERS=0x14, S_THREAD_LOCAL_INIT_FUNCTION_POINTERS=0x15, S_INIT_FUNC_OFFSETS=0x16};",
@@ -1506,7 +1506,7 @@ static const char *cmd_to_pf_definition(ut32 cmd) {
 	case LC_DYLD_INFO_ONLY:
 		return "mach0_dyld_info_only_command";
 	case LC_DYLD_ENVIRONMENT:
-		return NULL;
+		return "mach0_load_dylinker_command";
 	case LC_DYLIB_CODE_SIGN_DRS:
 		return NULL;
 	case LC_DYSYMTAB:
@@ -2068,6 +2068,34 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 				}
 			}
 			break;
+		case LC_DYLD_ENVIRONMENT:
+			{
+				sdb_set (mo->kv, cmd_flagname, "dyld_environment", 0);
+				struct dylinker_command dy = { 0 };
+				ut8 sdy[sizeof (struct dylinker_command)] = { 0 };
+				if (off + sizeof (struct dylinker_command) > mo->size) {
+					R_LOG_DEBUG ("Cannot parse LC_DYLD_ENVIRONMENT command");
+					break;
+				}
+				if (r_buf_read_at (mo->b, off, sdy, sizeof (struct dylinker_command)) != -1) {
+					dy.cmd = r_read_ble32 (&sdy[0], mo->big_endian);
+					dy.cmdsize = r_read_ble32 (&sdy[4], mo->big_endian);
+					dy.name = r_read_ble32 (&sdy[8], mo->big_endian);
+					ut32 name_off = (dy.name >= sizeof (struct dylinker_command))? dy.name: sizeof (struct dylinker_command);
+					if (name_off < dy.cmdsize && off + dy.cmdsize <= mo->size && dy.cmdsize < ST32_MAX) {
+						ut32 str_len = dy.cmdsize - name_off;
+						char *buf = malloc ((size_t)str_len + 1);
+						if (buf) {
+							r_buf_read_at (mo->b, off + name_off, (ut8 *)buf, str_len);
+							buf[str_len] = 0;
+							r_strf_var (key, 64, "mach0.dyld_environment.%d", i);
+							sdb_set (mo->kv, key, buf, 0);
+							free (buf);
+						}
+					}
+				}
+			}
+			break;
 		case LC_LOAD_DYLINKER:
 			{
 				sdb_set (mo->kv, cmd_flagname, "dylinker", 0);
@@ -2087,7 +2115,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 					dy.name = r_read_ble32 (&sdy[8], mo->big_endian);
 
 					ut32 len = dy.cmdsize;
-					if (len < 1 || off + 0xc + len > mo->size) {
+					if (len < 1 || off + 0xc + len > mo->size || len >= ST32_MAX) {
 						break;
 					}
 					char *buf = malloc (len + 1);
@@ -2356,6 +2384,20 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 
 static const char *mach0_signing_class(struct MACH0_(obj_t) * mo);
 
+// Detects the __RESTRICT/__restrict section that dyld uses to mark a binary
+// as restricted (DYLD_* environment variables are ignored for such binaries).
+static bool mach0_has_restrict_section(struct MACH0_(obj_t) * mo) {
+	ut32 i;
+	for (i = 0; i < mo->nsects; i++) {
+		struct MACH0_(section) *sect = &mo->sects[i];
+		if (!strncmp (sect->segname, "__RESTRICT", 16) &&
+			!strncmp (sect->sectname, "__restrict", 16)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool init(struct MACH0_(obj_t) * mo) {
 	if (!init_hdr (mo)) {
 		return false;
@@ -2370,6 +2412,9 @@ static bool init(struct MACH0_(obj_t) * mo) {
 	if (mo->cs_present && mo->cs_flags) {
 		sdb_num_set (mo->kv, "mach0.signing.flags", mo->cs_flags, 0);
 	}
+	sdb_bool_set (mo->kv, "mach0.app_extension_safe",
+		(mo->hdr.flags & MH_APP_EXTENSION_SAFE) != 0, 0);
+	sdb_bool_set (mo->kv, "mach0.restrict", mach0_has_restrict_section (mo), 0);
 	return true;
 }
 
