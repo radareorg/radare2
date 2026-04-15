@@ -731,11 +731,17 @@ static void prj_load(RCore *core, const char *file, int mode) {
 					R2ProjectMod *mod = r_list_get_n (cur.mods, cmnt.mod);
 					if (mod) {
 						ut64 va = mod->vmin + cmnt.delta;
-						if (mode & MODE_SCRIPT) {
-							eprintf ("'@0x%08"PFMT64x"'CCu %s\n", va, cmnt_text);
-						}
-						if (mode & MODE_LOAD) {
-							r_core_cmdf (core, "'@0x%08"PFMT64x"'CCu %s", va, cmnt_text);
+						char *b64 = sdb_encode ((const ut8 *)cmnt_text, strlen (cmnt_text));
+						if (b64) {
+							char *cmd = r_str_newf ("CCu base64:%s", b64);
+							if (mode & MODE_SCRIPT) {
+								eprintf ("'@0x%08"PFMT64x"'%s\n", va, cmd);
+							}
+							if (mode & MODE_LOAD) {
+								r_core_call_at (core, va, cmd);
+							}
+							free (cmd);
+							free (b64);
 						}
 					} else {
 						R_LOG_WARN ("Cant find map for %s", cmnt_text);
