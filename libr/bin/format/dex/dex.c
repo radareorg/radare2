@@ -21,11 +21,12 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	if (!bin || idx < 0 || idx >= bin->header.strings_size || !bin->strings) {
 		return NULL;
 	}
-	if (bin->strings[idx] >= bin->size) {
+	const ut32 sidx = bin->strings[idx];
+	if (sidx >= bin->size) {
 		return NULL;
 	}
 	ut8 buf[6];
-	if (r_buf_read_at (bin->b, bin->strings[idx], buf, sizeof (buf)) < 1) {
+	if (r_buf_read_at (bin->b, sidx, buf, sizeof (buf)) < 1) {
 		return NULL;
 	}
 	ut64 len;
@@ -38,7 +39,7 @@ static char *getstr(RBinDexObj *bin, int idx) {
 	}
 	ut8 *ptr = R_NEWS (ut8, len + 1);
 	if (ptr) {
-		r_buf_read_at (bin->b, bin->strings[idx] + uleblen, ptr, len + 1);
+		r_buf_read_at (bin->b, sidx + uleblen, ptr, len + 1);
 		ptr[len] = 0;
 		if (len != r_utf8_strlen (ptr)) {
 			free (ptr);
@@ -312,14 +313,15 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			goto fail;
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
-		dex->classes[i].class_id = r_buf_read_le32 (dex->b);
-		dex->classes[i].access_flags = r_buf_read_le32 (dex->b);
-		dex->classes[i].super_class = r_buf_read_le32 (dex->b);
-		dex->classes[i].interfaces_offset = r_buf_read_le32 (dex->b);
-		dex->classes[i].source_file = r_buf_read_le32 (dex->b);
-		dex->classes[i].anotations_offset = r_buf_read_le32 (dex->b);
-		dex->classes[i].class_data_offset = r_buf_read_le32 (dex->b);
-		dex->classes[i].static_values_offset = r_buf_read_le32 (dex->b);
+		struct dex_class_t *c = &dex->classes[i];
+		c->class_id = r_buf_read_le32 (dex->b);
+		c->access_flags = r_buf_read_le32 (dex->b);
+		c->super_class = r_buf_read_le32 (dex->b);
+		c->interfaces_offset = r_buf_read_le32 (dex->b);
+		c->source_file = r_buf_read_le32 (dex->b);
+		c->anotations_offset = r_buf_read_le32 (dex->b);
+		c->class_data_offset = r_buf_read_le32 (dex->b);
+		c->static_values_offset = r_buf_read_le32 (dex->b);
 	}
 
 	/* methods */
@@ -385,9 +387,10 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			goto fail;
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
-		dex->fields[i].class_id = r_buf_read_le16 (dex->b);
-		dex->fields[i].type_id = r_buf_read_le16 (dex->b);
-		dex->fields[i].name_id = r_buf_read_le32 (dex->b);
+		struct dex_field_t *f = &dex->fields[i];
+		f->class_id = r_buf_read_le16 (dex->b);
+		f->type_id = r_buf_read_le16 (dex->b);
+		f->name_id = r_buf_read_le32 (dex->b);
 	}
 
 	/* proto */
@@ -407,18 +410,20 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 			goto fail;
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
-		dex->protos[i].shorty_id = r_buf_read_le32 (dex->b);
-		dex->protos[i].return_type_id = r_buf_read_le32 (dex->b);
-		dex->protos[i].parameters_off = r_buf_read_le32 (dex->b);
+		struct dex_proto_t *p = &dex->protos[i];
+		p->shorty_id = r_buf_read_le32 (dex->b);
+		p->return_type_id = r_buf_read_le32 (dex->b);
+		p->parameters_off = r_buf_read_le32 (dex->b);
 	}
 	bprintf ("Parse annotations\n");
 	for (i = 0; i < dexhdr->class_size; i++) {
-		ut32 at = dex->classes[i].anotations_offset;
+		struct dex_class_t *c = &dex->classes[i];
+		ut32 at = c->anotations_offset;
 		if (!at || at == UT32_MAX) {
 			continue;
 		}
 		int j;
-		char *cn = className (dex, dex->classes[i].class_id);
+		char *cn = className (dex, c->class_id);
 		r_buf_seek (dex->b, at, R_BUF_SET);
 		ut32 classAnnotationsOffset = r_buf_read_le32 (dex->b);
 		ut32 fieldsCount = r_buf_read_le32 (dex->b);
