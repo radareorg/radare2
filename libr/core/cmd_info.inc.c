@@ -1020,28 +1020,34 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 			if (!strstr (kname, match)) {
 				continue;
 			}
-			r_cons_printf (core->cons, "'agn %s\n", kname);
+			char *sk = r_str_sanitize_r2 (kname);
+			r_cons_printf (core->cons, "'agn %s\n", sk);
 			if (cls->super) {
 				RBinName *bn;
 				r_list_foreach (cls->super, iter2, bn) {
-					const char *sk = r_bin_name_tostring2 (bn, pref);
-					if (strstr (sk, match)) {
-						r_cons_printf (core->cons, "'agn %s\n", sk);
-						r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
+					const char *sname = r_bin_name_tostring2 (bn, pref);
+					if (strstr (sname, match)) {
+						char *ss = r_str_sanitize_r2 (sname);
+						r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", ss, ss, sk);
+						free (ss);
 					}
 				}
 			}
+			free (sk);
 		}
 	} else if (fullGraph) {
 		r_list_foreach (obj->classes, iter, cls) {
 			const char *kname = r_bin_name_tostring2 (cls->name, pref);
 			RBinName *bn;
-			r_cons_printf (core->cons, "'agn %s\n", kname);
+			char *sk = r_str_sanitize_r2 (kname);
+			r_cons_printf (core->cons, "'agn %s\n", sk);
 			r_list_foreach (cls->super, iter2, bn) {
-				const char *sk = r_bin_name_tostring2 (bn, pref);
-				r_cons_printf (core->cons, "'agn %s\n", sk);
-				r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
+				const char *sname = r_bin_name_tostring2 (bn, pref);
+				char *ss = r_str_sanitize_r2 (sname);
+				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", ss, ss, sk);
+				free (ss);
 			}
+			free (sk);
 		}
 	} else {
 		r_list_foreach (obj->classes, iter, cls) {
