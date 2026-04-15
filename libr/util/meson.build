@@ -78,6 +78,7 @@ r_util_sources = [
   'str_trim.c',
   'str.c',
   'strbuf.c',
+  'strs.c',
   'strpool.c',
   'sys_sh.c',
   'sys_w32.c',
