@@ -30,29 +30,24 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return mo? mo->kv: NULL;
 }
 
-static char *decode_der_entitlements(const ut8 *buf, ut32 len, bool json) {
-	if (!buf || !len) {
-		return NULL;
-	}
-	RAsn1 *a = r_asn1_new (buf, (int)len, json? 'j': 0);
-	if (!a) {
-		return NULL;
-	}
-	char *res = r_asn1_tostring (a);
-	r_asn1_free (a);
-	return res;
-}
-
 static char *entitlements(RBinFile *bf, bool json) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (!mo) {
 		return NULL;
 	}
 	const char *xml = (const char *)mo->signature;
-	char *der = decode_der_entitlements (mo->signature_der, mo->signature_der_size, json);
+	char *der = NULL;
+	if (mo->signature_der && mo->signature_der_size) {
+		RAsn1 *a = r_asn1_new (mo->signature_der, (int)mo->signature_der_size, json? 'j': 0);
+		if (a) {
+			der = r_asn1_tostring (a);
+			r_asn1_free (a);
+		}
+	}
 	if (!xml && !der) {
 		return NULL;
 	}
+	char *res = NULL;
 	if (json) {
 		PJ *pj = pj_new ();
 		if (xml && der) {
@@ -69,18 +64,14 @@ static char *entitlements(RBinFile *bf, bool json) {
 			pj_j (pj, der);
 			pj_end (pj);
 		}
-		free (der);
-		return pj_drain (pj);
+		res = pj_drain (pj);
+	} else if (xml && der) {
+		res = r_str_newf ("%s\n;; DER entitlements (slot 7, magic 0xfade7172)\n%s", xml, der);
+	} else if (xml) {
+		res = strdup (xml);
+	} else {
+		res = r_str_newf (";; DER entitlements (slot 7, magic 0xfade7172)\n%s", der);
 	}
-	if (xml && der) {
-		char *res = r_str_newf ("%s\n;; DER entitlements (slot 7, magic 0xfade7172)\n%s", xml, der);
-		free (der);
-		return res;
-	}
-	if (xml) {
-		return strdup (xml);
-	}
-	char *res = r_str_newf (";; DER entitlements (slot 7, magic 0xfade7172)\n%s", der);
 	free (der);
 	return res;
 }
