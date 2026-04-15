@@ -1019,13 +1019,17 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 		esil->trap_code = addr;
 		return false;
 	}
-	if (!iob->read_at (io, addr, buf, len)) {
+	// r_io_bank_read_at returns true for fully unmapped ranges, so also
+	// check is_valid_offset to detect unmapped reads.
+	const bool ok = iob->read_at (io, addr, buf, len);
+	if (!ok || !iob->is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
-		return false;
 	}
+	// keep the 0xff-filled buffer and let emulation continue; the trap is
+	// set so callers can react, without halting the parse loop.
 	return true;
 }
 
@@ -1051,7 +1055,11 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 			}
 		}
 	}
-	if (!iob->read_at (io, addr, buf, len)) {
+	// TODO: Check if read_at fails
+	(void)esil->anal->iob.read_at (io, addr, buf, len);
+	// check if request address is mapped , if don't fire trap and esil ioer callback
+	// now with siol, read_at return true/false can't be used to check error vs len
+	if (!esil->anal->iob.is_valid_offset (io, addr, false)) {
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
@@ -1059,9 +1067,8 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
 			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
 		}
-		return false;
 	}
-	return true;
+	return len;
 }
 
 /* register callbacks using this anal module. */
