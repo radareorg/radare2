@@ -266,7 +266,9 @@ static bool print_addrinfo2(void *user, const RBinAddrline *item) {
 		const char *file = r_bin_addrline_str (fs->core->bin, item->file);
 		if (fs->filter_format) {
 			// TODO add column if defined
-			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, file, item->line);
+			char *sfile = r_str_sanitize_r2 (file);
+			r_cons_printf (fs->core->cons, "'CL 0x%08"PFMT64x" %s:%d\n", item->addr, sfile, item->line);
+			free (sfile);
 		} else {
 			r_cons_printf (fs->core->cons, "file: %s\nline: %d\ncolu: %d\naddr: 0x%08"PFMT64x"\n",
 				file, item->line, item->column, item->addr);
