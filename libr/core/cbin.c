@@ -1260,6 +1260,10 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 
 				pj_end (pj);
 			} else {
+				r_str_sanitize (file);
+				if (line) {
+					r_str_sanitize (line);
+				}
 				r_cons_printf (core->cons, "'@0x%08" PFMT64x "'CL %s:%d\n",
 					row->addr, file, (int)row->line);
 				r_cons_printf (core->cons, "'@0x%08" PFMT64x "'CC %s:%d %s\n",
