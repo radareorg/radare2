@@ -107,12 +107,10 @@ static inline RStrs r_strs_sub(RStrs s, size_t from, size_t to) {
 	return r;
 }
 
-/* Navigation */
+/* Navigation. Mutators require a valid `s`; passing NULL is a caller bug. */
 static inline bool r_strs_advance(RStrs *s, size_t n) {
-	if (!s || n > r_strs_len (*s)) {
-		if (s) {
-			s->a = s->b;
-		}
+	if (n > r_strs_len (*s)) {
+		s->a = s->b;
 		return false;
 	}
 	s->a += n;
@@ -120,7 +118,7 @@ static inline bool r_strs_advance(RStrs *s, size_t n) {
 }
 
 static inline char r_strs_pop_front(RStrs *s) {
-	if (!s || r_strs_empty (*s)) {
+	if (r_strs_empty (*s)) {
 		return 0;
 	}
 	const char c = *s->a;
@@ -129,7 +127,7 @@ static inline char r_strs_pop_front(RStrs *s) {
 }
 
 static inline char r_strs_pop_back(RStrs *s) {
-	if (!s || r_strs_empty (*s)) {
+	if (r_strs_empty (*s)) {
 		return 0;
 	}
 	s->b--;
@@ -212,48 +210,29 @@ R_API void r_strs_skip_chars(RStrs *s, const char *set);
 R_API RStrs r_strs_take_ident(RStrs *s);
 R_API bool r_strs_next_token(RStrs *s, const char *seps, RStrs *out);
 
-/* Splitting — inline wrappers around the search primitives */
+/* Splitting — inline wrappers around the search primitives. Both `head` and
+ * `tail` must be non-NULL; pass a throwaway slot if a side is unwanted. */
 static inline bool r_strs_split(RStrs s, char sep, RStrs *head, RStrs *tail) {
 	const char *p = r_strs_findc (s, sep);
 	if (!p) {
-		if (head) {
-			*head = s;
-		}
-		if (tail) {
-			tail->a = tail->b = s.b;
-		}
+		*head = s;
+		tail->a = tail->b = s.b;
 		return false;
 	}
-	if (head) {
-		head->a = s.a;
-		head->b = p;
-	}
-	if (tail) {
-		tail->a = p + 1;
-		tail->b = s.b;
-	}
+	head->a = s.a; head->b = p;
+	tail->a = p + 1; tail->b = s.b;
 	return true;
 }
 
 static inline bool r_strs_split_any(RStrs s, const char *seps, RStrs *head, RStrs *tail) {
 	const char *p = r_strs_find_any (s, seps);
 	if (!p) {
-		if (head) {
-			*head = s;
-		}
-		if (tail) {
-			tail->a = tail->b = s.b;
-		}
+		*head = s;
+		tail->a = tail->b = s.b;
 		return false;
 	}
-	if (head) {
-		head->a = s.a;
-		head->b = p;
-	}
-	if (tail) {
-		tail->a = p + 1;
-		tail->b = s.b;
-	}
+	head->a = s.a; head->b = p;
+	tail->a = p + 1; tail->b = s.b;
 	return true;
 }
 
@@ -261,22 +240,12 @@ static inline bool r_strs_split_strs(RStrs s, RStrs sep, RStrs *head, RStrs *tai
 	const size_t n = r_strs_len (sep);
 	const char *p = n? r_strs_find_strs (s, sep): NULL;
 	if (!p) {
-		if (head) {
-			*head = s;
-		}
-		if (tail) {
-			tail->a = tail->b = s.b;
-		}
+		*head = s;
+		tail->a = tail->b = s.b;
 		return false;
 	}
-	if (head) {
-		head->a = s.a;
-		head->b = p;
-	}
-	if (tail) {
-		tail->a = p + n;
-		tail->b = s.b;
-	}
+	head->a = s.a; head->b = p;
+	tail->a = p + n; tail->b = s.b;
 	return true;
 }
 
