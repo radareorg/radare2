@@ -149,7 +149,7 @@ static char *r2r_test_directory(const char *argv0) {
 		: r_file_path (argv0);
 	if (r2r_path) {
 		char *check_path = r2r_path;
-		ssize_t len = readlink (r2r_path, src_path, PATH_MAX - 1);
+		ssize_t len = readlink (r2r_path, src_path, sizeof (src_path) - 1);
 		if (len != -1) {
 			src_path[len] = '\0';
 			check_path = src_path;
