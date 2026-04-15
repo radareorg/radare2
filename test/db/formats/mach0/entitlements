@@ -82,3 +82,38 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=DER entitlements mach with iC
+FILE=bins/mach0/MASTestApp
+CMDS=iC
+EXPECT=<<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>application-identifier</key>
+	<string>D4WYSK5293.org.owasp.mastestapp.MASTestApp-iOS</string>
+	<key>com.apple.developer.team-identifier</key>
+	<string>D4WYSK5293</string>
+	<key>get-task-allow</key>
+	<true/>
+</dict>
+</plist>
+
+;; DER entitlements (slot 7, magic 0xfade7172)
+  OFFSET  HDR +    OBJ DEPTH FORM NAME                : VALUE
+       0  0x3 +   0x98     0 cons Application_16      : 30
+     0x3  0x2 +    0x1     1 prim INTEGER             : 01
+     0x6  0x3 +   0x92     1 cons Context [16]        : 30
+     0x9  0x2 +   0x48     2 cons SEQUENCE            : 30
+     0xb  0x2 +   0x16     3 prim UTF8String          : application-identifier
+    0x23  0x2 +   0x2e     3 prim UTF8String          : D4WYSK5293.org.owasp.mastestapp.MASTestApp-iOS
+    0x53  0x2 +   0x31     2 cons SEQUENCE            : 30
+    0x55  0x2 +   0x23     3 prim UTF8String          : com.apple.developer.team-identifier
+    0x7a  0x2 +    0xa     3 prim UTF8String          : D4WYSK5293
+    0x86  0x2 +   0x13     2 cons SEQUENCE            : 30
+    0x88  0x2 +    0xe     3 prim UTF8String          : get-task-allow
+    0x98  0x2 +    0x1     3 prim BOOLEAN             : true
+
+EOF
+RUN
