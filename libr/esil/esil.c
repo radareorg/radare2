@@ -1019,17 +1019,16 @@ static bool internal_esil_mem_read_no_null(REsil *esil, ut64 addr, ut8 *buf, int
 		esil->trap_code = addr;
 		return false;
 	}
-	// r_io_bank_read_at returns true for fully unmapped ranges, so also
-	// check is_valid_offset to detect unmapped reads.
-	const bool ok = iob->read_at (io, addr, buf, len);
-	if (!ok || !iob->is_valid_offset (io, addr, false)) {
+	if (!iob->is_valid_offset (io, addr, false)) {
+		memset (buf, io->Oxff, len);
 		if (esil->iotrap) {
 			esil->trap = R_ANAL_TRAP_READ_ERR;
 			esil->trap_code = addr;
 		}
+	} else if (!iob->read_at (io, addr, buf, len) && esil->iotrap) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
 	}
-	// keep the 0xff-filled buffer and let emulation continue; the trap is
-	// set so callers can react, without halting the parse loop.
 	return true;
 }
 
