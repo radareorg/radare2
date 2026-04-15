@@ -1872,6 +1872,13 @@ static void __cmd_afvf(RCore *core, const char *input) {
 
 }
 
+R_IPI char *core_varvalue(RCore *core, const char *name) {
+	char *safe = r_str_sanitize_r2 (name);
+	char *res = r_core_cmd_strf (core, ".afvd %s", safe);
+	free (safe);
+	return res;
+}
+
 static int cmd_afv(RCore *core, const char *str) {
 	int delta, type = *str, res = true;
 	RAnalVar *v1;
@@ -2080,7 +2087,7 @@ static int cmd_afv(RCore *core, const char *str) {
 			RAnalVar *p;
 			RList *list = r_anal_var_all_list (core->anal, fcn);
 			r_list_foreach (list, iter, p) {
-				char *a = r_core_cmd_strf (core, ".afvd %s", p->name);
+				char *a = core_varvalue (core, p->name);
 				if ((a && !*a) || !a) {
 					free (a);
 					a = strdup ("\n");

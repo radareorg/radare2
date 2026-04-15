@@ -734,6 +734,7 @@ R_API void r_core_anal_fcn_merge(RCore *core, ut64 addr, ut64 addr2);
 R_API const char *r_core_anal_optype_colorfor(RCore *core, ut64 addr, ut8 ch, bool verbose);
 R_API ut64 r_core_anal_address(RCore *core, ut64 addr);
 R_API void r_core_anal_undefine(RCore *core, ut64 off);
+R_IPI char *core_varvalue(RCore *core, const char *name);
 R_API void r_core_anal_hint_print(RCore* core, ut64 addr, int mode);
 R_API void r_core_anal_hint_list(RCore *core, int mode);
 R_API int r_core_anal_search(RCore *core, ut64 from, ut64 to, ut64 ref, int mode);

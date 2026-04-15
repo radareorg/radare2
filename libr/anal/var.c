@@ -665,7 +665,9 @@ R_API const char *r_anal_function_get_var_reg_at(RAnalFunction *fcn, st64 delta,
 }
 
 R_API bool r_anal_var_check_name(const char *name) {
-	return !isdigit ((unsigned char)*name) && strcspn (name, "., =/");
+	return R_STR_ISNOTEMPTY (name)
+		&& !isdigit ((unsigned char)*name)
+		&& strcspn (name, "., =/") == strlen (name);
 }
 
 R_API bool r_anal_var_rename(RAnal *anal, RAnalVar *var, const char *new_name) {

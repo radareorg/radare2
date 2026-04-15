@@ -1970,7 +1970,7 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 			COLOR_ARG (ds, color_var_addr), constr? " { ":"", r_str_get (constr), constr? " } ":"",
 			base, sign, delta);
 	if (ds->show_varsum == -1) {
-		char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
+		char *val = core_varvalue (ds->core, var->name);
 		if (val) {
 			r_str_replace_char (val, '\n', '\0');
 			r_cons_printf (ds->core->cons, " = %s", val);
@@ -2370,7 +2370,7 @@ static void ds_show_functions(RDisasmState *ds) {
 						COLOR_ARG (ds, color_var_name), var->name,
 						COLOR_ARG (ds, color_var_addr), i->name);
 					if (ds->show_varsum == -1) {
-						char *val = r_core_cmd_strf (ds->core, ".afvd %s", var->name);
+						char *val = core_varvalue (ds->core, var->name);
 						if (val) {
 							r_str_replace_char (val, '\n', '\0');
 							r_cons_printf (cons, "%s", val);
@@ -5791,31 +5791,31 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 	}
 	if (fmt) {
 		char *res = NULL;
-		if (!strcmp (fmt, "z")) {
-			const char *strconv = r_config_get (core->config, "scr.strconv");
-			if (strconv && strstr (strconv, "raw")) { // TODO. raw or none?
-				// dupe from ds_getstring
-				char *s = r_core_cmd_strf (core, "prz@0x%08"PFMT64x, addr);
-				r_str_trim (s);
-				res = r_str_newf ("\"%s\"", s);
-				free (s);
-			} else {
-				res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
-						(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
-			}
-			if (strconv && strstr (strconv, "dot")) {
-				int i;
-				size_t len = strlen (res);
-				for (i = 0; i < len ; i++) {
-					if (!IS_PRINTABLE (res[i])) {
-						res[i] = '.';
-					}
+		char *safe_name = r_str_sanitize_r2 (name);
+		const bool is_z = !strcmp (fmt, "z");
+		const char *strconv = is_z ? r_config_get (core->config, "scr.strconv") : NULL;
+		if (is_z && strconv && strstr (strconv, "raw")) { // TODO. raw or none?
+			// dupe from ds_getstring
+			char *s = r_core_cmd_strf (core, "prz@0x%08"PFMT64x, addr);
+			r_str_trim (s);
+			res = r_str_newf ("\"%s\"", s);
+			free (s);
+		} else {
+			char *cmd = r_str_newf ("pf%s %s%s %s",
+				(asm_types == 2)? "": "q", (on_stack == 1) ? "*" : "", fmt, safe_name);
+			res = r_core_call_str_at (core, addr, cmd);
+			free (cmd);
+		}
+		if (is_z && strconv && strstr (strconv, "dot")) {
+			int i;
+			size_t len = strlen (res);
+			for (i = 0; i < len; i++) {
+				if (!IS_PRINTABLE (res[i])) {
+					res[i] = '.';
 				}
 			}
-		} else {
-			res = r_core_cmd_strf (core, "pf%s %s%s %s @ 0x%08" PFMT64x,
-					(asm_types==2)? "": "q", (on_stack == 1) ? "*" : "", fmt, name, addr);
 		}
+		free (safe_name);
 		r_str_trim (res);
 		if (r_str_startswith (res, "\"\\xff\\xff")) {
 			r_cons_printf (core->cons, "\"\"");
