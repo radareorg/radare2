@@ -1704,6 +1704,7 @@ static bool esil_mem_modeq_n(REsil *esil, int bits) {
 			ret = !!esil_peek_n (esil, bits);
 			const RStrs src1 = r_esil_pop (esil);
 			if (!r_strs_empty (src1) && r_esil_get_parm (esil, src1, &d) && s >= 1) {
+				r_esil_pushnum (esil, d % s);
 				d = d % s;
 				r_esil_pushnum (esil, d);
 				r_esil_push (esil, dst);
@@ -1950,24 +1951,20 @@ static bool esil_mem_lsreq_n(REsil *esil, int bits) {
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src0 = r_esil_pop (esil);
 	if (!r_strs_empty (dst) && !r_strs_empty (src0) && r_esil_get_parm (esil, src0, &s)) {
-		if (s > sizeof (ut64) * 8) {
-			R_LOG_DEBUG ("esil_mem_lsreq_n: shift is too big");
-		} else {
-			r_esil_push (esil, dst);
-			ret = !!esil_peek_n (esil, bits);
-			const RStrs src1 = r_esil_pop (esil);
-			if (!r_strs_empty (src1) && r_esil_get_parm (esil, src1, &d)) {
-				if (s > 63) {
-					d = 0;
-				} else {
-					d >>= s;
-				}
-				r_esil_pushnum (esil, d);
-				r_esil_push (esil, dst);
-				ret &= (!!esil_poke_n (esil, bits));
+		r_esil_push (esil, dst);
+		ret = !!esil_peek_n (esil, bits);
+		const RStrs src1 = r_esil_pop (esil);
+		if (!r_strs_empty (src1) && r_esil_get_parm (esil, src1, &d)) {
+			if (s > 63) {
+				d = 0;
 			} else {
-				ret = false;
+				d >>= s;
 			}
+			r_esil_pushnum (esil, d);
+			r_esil_push (esil, dst);
+			ret &= (!!esil_poke_n (esil, bits));
+		} else {
+			ret = false;
 		}
 	}
 	if (!ret) {
