@@ -449,7 +449,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_appendf (&op->esil, "%s,%s,&", F1_RN1(word1), F1_RN2(word1));
+		r_strbuf_appendf (&op->esil, "%s,%s,&,tmp,:=,0,tmp,+=", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
@@ -490,22 +490,51 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_SHR_IMM5:
 		op->type = R_ANAL_OP_TYPE_SHR;
-		r_strbuf_appendf (&op->esil, "%u,%s,>>=", (ut8)F2_IMM (word1), F2_RN2 (word1));
-		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+		{
+			ut8 shift = (ut8)F2_IMM (word1);
+			reg2 = F2_RN2 (word1);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
+			r_strbuf_appendf (&op->esil, ",%u,%s,>>=", shift, reg2);
+			if (shift) {
+				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", shift - 1);
+			} else {
+				r_strbuf_append (&op->esil, ",0,cy,:=");
+			}
+		}
+		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SAR_IMM5:
 		op->type = R_ANAL_OP_TYPE_SAR;
-		ut16 imm5 = F2_IMM(word1);
-		reg2 = F2_RN2(word1);
-		r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=", reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
-		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+		{
+			ut16 imm5 = F2_IMM(word1);
+			reg2 = F2_RN2(word1);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
+			r_strbuf_appendf (&op->esil, ",31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=",
+				reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
+			if (imm5) {
+				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", (ut8)imm5 - 1);
+			} else {
+				r_strbuf_append (&op->esil, ",0,cy,:=");
+			}
+		}
+		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SHL_IMM5:
 		op->type = R_ANAL_OP_TYPE_SHL;
-		r_strbuf_appendf (&op->esil, "%u,%s,<<=", (ut8)F2_IMM(word1), F2_RN2(word1));
-		update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+		{
+			ut8 shift = (ut8)F2_IMM(word1);
+			reg2 = F2_RN2(word1);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
+			r_strbuf_appendf (&op->esil, ",%u,%s,<<=", shift, reg2);
+			if (shift) {
+				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", 32 - shift);
+			} else {
+				r_strbuf_append (&op->esil, ",0,cy,:=");
+			}
+		}
+		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
 	case V850_SATADD:
@@ -634,22 +663,25 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			break;
 		case V850_EXT_SHL:
 			op->type = R_ANAL_OP_TYPE_SHL;
-			r_strbuf_appendf (&op->esil, "%s,%s,<<=", F9_RN1(word1), F9_RN2(word1));
-			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=,%s,%s,<<=,32,%s,-,tmp,>>,1,&,cy,:=", F9_RN2(word1), F9_RN1(word1), F9_RN2(word1), F9_RN1(word1));
+			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_SHR:
 			op->type = R_ANAL_OP_TYPE_SHR;
-			r_strbuf_appendf (&op->esil, "%s,%s,>>=", F9_RN1(word1), F9_RN2(word1));
-			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=,%s,%s,>>=,%s,1,-,tmp,>>,1,&,cy,:=", F9_RN2(word1), F9_RN1(word1), F9_RN2(word1), F9_RN1(word1));
+			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_SAR:
 			op->type = R_ANAL_OP_TYPE_SAR;
 			reg1 = F9_RN1 (word1);
 			reg2 = F9_RN2 (word1);
-			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=", reg2, reg1, reg1, reg1, reg2, reg2);
-			update_flags (op, V850_FLAG_CY | V850_FLAG_S | V850_FLAG_Z);
+			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
+			r_strbuf_appendf (&op->esil, ",31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=",
+				reg2, reg1, reg1, reg1, reg2, reg2);
+			r_strbuf_appendf (&op->esil, ",%s,1,-,tmp,>>,1,&,cy,:=", reg1);
+			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_RETI:
@@ -710,7 +742,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 // static int v850_op(RAnal *anal, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	int cpumodel = cpumodel_from_string (as->config->cpu);
 	if (cpumodel == V850_CPU_E0) {
-		return v850e0_op (as, op, op->addr, buf, len, mask) > 0;
+		bool ret = v850e0_op (as, op, op->addr, buf, len, mask) > 0;
+		if (ret && (mask & R_ARCH_OP_MASK_ESIL)) {
+			r_strbuf_append (&op->esil, ",0,r0,:=");
+		}
+		return ret;
 	}
 #if 0
 	cpumodel |= V850_CPU_OPTION_ALIAS;
@@ -723,6 +759,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		r_strbuf_set (&op->esil, inst.esil);
+		r_strbuf_append (&op->esil, ",0,r0,:=");
 	}
 	if (inst.op) {
 		op->type = inst.op->type;
@@ -876,7 +913,8 @@ static char *regs(RArchSession *s) {
 		"gpr	eiwr	.32	$	0\n"
 		"gpr	fewr	.32	$	0\n"
 		"gpr	dbwr	.32	$	0\n"
-		"gpr	bsel	.32	$	0\n";
+		"gpr	bsel	.32	$	0\n"
+		"gpr	tmp	.32	136 0\n";
 	return strdup (p);
 }
 
