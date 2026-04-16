@@ -37,7 +37,10 @@ R_API const char *r_strs_find_strs(RStrs s, RStrs needle) {
 	if (nl > sl) {
 		return NULL;
 	}
-	return (const char *)r_mem_mem ((const ut8 *)s.a, sl, (const ut8 *)needle.a, nl);
+	if (sl > INT_MAX || nl > INT_MAX) {
+		return NULL;
+	}
+	return (const char *)r_mem_mem ((const ut8 *)s.a, (int)sl, (const ut8 *)needle.a, (int)nl);
 }
 
 R_API const char *r_strs_findc(RStrs s, char c) {
@@ -47,13 +50,10 @@ R_API const char *r_strs_findc(RStrs s, char c) {
 
 R_API const char *r_strs_rfindc(RStrs s, char c) {
 	R_RETURN_VAL_IF_FAIL (s.a, NULL);
-	if (s.a >= s.b) {
-		return NULL;
-	}
-	const char *p;
-	for (p = s.b - 1; p >= s.a; p--) {
-		if (*p == c) {
-			return p;
+	size_t i = r_strs_len (s);
+	while (i-- > 0) {
+		if (s.a[i] == c) {
+			return s.a + i;
 		}
 	}
 	return NULL;

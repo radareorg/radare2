@@ -24,12 +24,15 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 	if (len < 0) {
 		len = strlen (s);
 	}
-	ut32 need = ss->base_len + len;
+	ut32 need;
+	if (r_add_overflow (ss->base_len, (ut32)len, &need)) {
+		return -1;
+	}
 	if (need > ss->base_cap) {
-		if (need > ST32_MAX) {
+		ut32 nc;
+		if (r_mul_overflow (need, (ut32)2, &nc)) {
 			return -1;
 		}
-		ut32 nc = need * 2;
 		char *nb = realloc (ss->base, nc);
 		if (!nb) {
 			return -1;
@@ -38,10 +41,10 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 		ss->base_cap = nc;
 	}
 	if (ss->count >= ss->cap) {
-		if (ss->cap > ST32_MAX) {
+		ut32 nc;
+		if (r_mul_overflow (ss->cap, (ut32)2, &nc)) {
 			return -1;
 		}
-		ut32 nc = ss->cap * 2;
 		RStrsEntry *ne = realloc (ss->entries, nc * sizeof (RStrsEntry));
 		if (!ne) {
 			return -1;
@@ -99,7 +102,11 @@ R_API RStrsStore *r_strs_store_from_entries(const char *buf, ut32 buf_len, const
 R_API RStrsStore *r_strs_store_from_utf16le(const ut8 *src, ut32 src_len, const RStrsEntry *src_entries, ut32 count) {
 	R_RETURN_VAL_IF_FAIL (src && src_entries, NULL);
 	/* worst case: each UTF-16 code unit (2 bytes) → 3 UTF-8 bytes */
-	ut32 max_utf8 = (src_len / 2) * 3;
+	ut64 max64 = (ut64)(src_len / 2) * 3;
+	if (max64 > UT32_MAX) {
+		return NULL;
+	}
+	ut32 max_utf8 = (ut32)max64;
 	RStrsStore *ss = r_strs_store_new (count);
 	if (!ss) {
 		return NULL;
