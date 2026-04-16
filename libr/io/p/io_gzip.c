@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2024 - pancake */
+/* radare - LGPL - Copyright 2008-2026 - pancake */
 
 #include <r_io.h>
 
@@ -99,7 +99,9 @@ static bool __resize(RIO *io, RIODesc *fd, ut64 count) {
 	if (!new_buf) {
 		return false;
 	}
-	memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
+	if (mallocsz > 0) {
+		memcpy (new_buf, _io_malloc_buf (fd), R_MIN (count, mallocsz));
+	}
 	if (count > mallocsz) {
 		memset (new_buf + mallocsz, 0, count - mallocsz);
 	}
