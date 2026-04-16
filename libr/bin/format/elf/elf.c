@@ -5964,14 +5964,28 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 
 ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
-	if (!eo->phdr) {
-		return is_bin_etrel (eo) ? eo->baddr + paddr : UT64_MAX;
+	if (eo->phdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+				return p->p_vaddr + paddr - p->p_offset;
+			}
+		}
+		return UT64_MAX;
 	}
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
-			return p->p_vaddr + paddr - p->p_offset;
+	if (is_bin_etrel (eo)) {
+		return eo->baddr + paddr;
+	}
+	if (eo->shdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			Elf_(Shdr) *s = &eo->shdr[i];
+			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
+					&& paddr >= s->sh_offset
+					&& paddr < s->sh_offset + s->sh_size) {
+				return s->sh_addr + paddr - s->sh_offset;
+			}
 		}
 	}
 	return UT64_MAX;
@@ -5979,14 +5993,28 @@ ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 
 ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
-	if (!eo->phdr) {
-		return is_bin_etrel (eo) ? vaddr - eo->baddr : UT64_MAX;
+	if (eo->phdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+				return p->p_offset + vaddr - p->p_vaddr;
+			}
+		}
+		return UT64_MAX;
 	}
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
-			return p->p_offset + vaddr - p->p_vaddr;
+	if (is_bin_etrel (eo)) {
+		return vaddr - eo->baddr;
+	}
+	if (eo->shdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			Elf_(Shdr) *s = &eo->shdr[i];
+			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
+					&& vaddr >= s->sh_addr
+					&& vaddr < s->sh_addr + s->sh_size) {
+				return s->sh_offset + vaddr - s->sh_addr;
+			}
 		}
 	}
 	return UT64_MAX;
