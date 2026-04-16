@@ -1589,8 +1589,12 @@ static bool elf_init(ELFOBJ *eo) {
 		eo->has_nx = compute_has_nx (eo);
 		if (!init_strtab (eo)) {
 			R_LOG_DEBUG ("Cannot initialize strings table");
-			// discard section headers because without stringtable we fallback to phdr synthesis
-			R_FREE (eo->shdr);
+			if (eo->shdr) {
+				// init_shdr parsed headers but strtab is garbage:
+				// this is a memory image where sections are not mapped
+				R_FREE (eo->shdr);
+				eo->is_memimage = true;
+			}
 		}
 		if (!init_dynstr (eo) && !is_bin_etrel (eo)) {
 			R_LOG_DEBUG ("Cannot initialize dynamic strings");
@@ -5939,6 +5943,11 @@ ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
 		return paddr;
 	}
 
+	// memory image: buffer offsets are virtual offsets from baddr
+	if (eo->is_memimage) {
+		return eo->baddr + paddr;
+	}
+
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
@@ -5964,6 +5973,11 @@ ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 		return vaddr;
 	}
 
+	// memory image: buffer offsets are virtual offsets from baddr
+	if (eo->is_memimage) {
+		return (vaddr >= eo->baddr) ? vaddr - eo->baddr : vaddr;
+	}
+
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
@@ -5986,6 +6000,11 @@ ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
 		return is_bin_etrel (eo) ? eo->baddr + paddr : UT64_MAX;
 	}
 
+	// memory image: buffer offsets are virtual offsets from baddr
+	if (eo->is_memimage) {
+		return eo->baddr + paddr;
+	}
+
 	size_t i;
 	for (i = 0; i < eo->ehdr.e_phnum; i++) {
 		Elf_(Phdr) *p = &eo->phdr[i];
@@ -6004,6 +6023,15 @@ ut64 Elf_(v2p_new) (ELFOBJ *eo, ut64 vaddr) {
 
 	if (!eo->phdr) {
 		return is_bin_etrel (eo) ? vaddr - eo->baddr : UT64_MAX;
+	}
+
+	// memory image: buffer offsets are virtual offsets from baddr
+	if (eo->is_memimage) {
+		if (vaddr < eo->baddr) {
+			return UT64_MAX;
+		}
+		ut64 off = vaddr - eo->baddr;
+		return (off < eo->size) ? off : UT64_MAX;
 	}
 
 	size_t i;
