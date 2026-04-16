@@ -2028,8 +2028,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *eo, RBinElfReloc *rel) {
 		plt_sym_addr = R_BIN_ELF_READWORD (buf, i);
 
 		//relative address
-		ut64 v2p_sym = Elf_(v2p) (eo, plt_sym_addr);
-		if (v2p_sym != UT64_MAX && (plt_addr + 6 + v2p_sym) == rel->rva) {
+		if ((plt_addr + 6 + plt_sym_addr) == rel->rva) {
 			return plt_addr;
 		}
 		if (plt_sym_addr == rel->rva) {
@@ -2539,7 +2538,8 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 			}
 		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
-			return (ut64)(ut32)r_read_le32 (p);
+			ut64 addr = (ut64)(ut32)r_read_le32 (p);
+			return Elf_(v2p) (eo, addr);
 		}
 	}
 	return lookup_main_symbol_offset (eo);
