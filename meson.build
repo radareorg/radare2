@@ -142,8 +142,10 @@ else
 endif
 
 platform_deps = []
+platform_socket_deps = []
 if host_machine.system() == 'windows'
-  platform_deps = [cc.find_library('ws2_32'), cc.find_library('wininet'), cc.find_library('psapi')]
+  platform_deps = [cc.find_library('psapi')]
+  platform_socket_deps = [cc.find_library('ws2_32'), cc.find_library('wininet')]
 endif
 platform_inc = include_directories(['.', 'libr/include'])
 

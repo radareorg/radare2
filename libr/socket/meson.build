@@ -10,9 +10,9 @@ r_socket_sources = [
   'run.c',
 ]
 
-r_socket_deps = [r_util_dep, platform_deps]
+r_socket_deps = [r_util_dep, platform_deps, platform_socket_deps]
 if get_option('blob')
-  r_socket_static_deps = [r_util_static_dep, platform_deps]
+  r_socket_static_deps = [r_util_static_dep, platform_deps, platform_socket_deps]
   if use_sys_openssl
     r_socket_static_deps += [sys_openssl]
   endif
