@@ -813,6 +813,11 @@ R_API char *r_core_project_notes_file(RCore *core, const char *prj_name) {
 	const char *prjdir = r_config_get (core->config, "dir.projects");
 	char *prjpath = r_file_abspath (prjdir);
 	char *notes_txt = r_file_new (prjpath, prj_name, "notes.txt", NULL);
+	char *link = notes_txt? r_file_readlink (notes_txt): NULL;
+	if (link && strcmp (link, notes_txt)) {
+		R_FREE (notes_txt);
+	}
+	free (link);
 	free (prjpath);
 	return notes_txt;
 }

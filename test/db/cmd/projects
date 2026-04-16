@@ -676,6 +676,50 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Ignore symlinked notes in an imported .zrp project
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects = /tmp/r2r-project-import-notes
+!rm -rf /tmp/r2r-project-import-notes /tmp/r2r-zrp-malicious /tmp/r2r-zrp-outside /tmp/r2r-malicious.zrp
+!mkdir -p /tmp/r2r-zrp-malicious/evil /tmp/r2r-zrp-outside
+!printf '# r2 rdb project file\n' > /tmp/r2r-zrp-malicious/evil/rc.r2
+!ln -sf /tmp/r2r-zrp-outside/owned.txt /tmp/r2r-zrp-malicious/evil/notes.txt
+!cd /tmp/r2r-zrp-malicious && zip -y -r /tmp/r2r-malicious.zrp evil >/dev/null
+Pzi /tmp/r2r-malicious.zrp > /dev/null
+P evil > /dev/null
+Pn hello
+!python3 -c "import os; print('clean' if not os.path.exists('/tmp/r2r-zrp-outside/owned.txt') else 'written')"
+!rm -rf /tmp/r2r-project-import-notes /tmp/r2r-zrp-malicious /tmp/r2r-zrp-outside /tmp/r2r-malicious.zrp
+EOF
+EXPECT=<<EOF
+clean
+EOF
+RUN
+
+NAME=Import a .zrp project without symlinked notes
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=<<EOF
+e prj.vc=false
+e dir.projects = /tmp/r2r-project-import-ok
+!rm -rf /tmp/r2r-project-import-ok /tmp/r2r-zrp-regular /tmp/r2r-regular.zrp
+!mkdir -p /tmp/r2r-zrp-regular/ok
+!printf '# r2 rdb project file\n' > /tmp/r2r-zrp-regular/ok/rc.r2
+!printf 'SAFE_NOTE\n' > /tmp/r2r-zrp-regular/ok/notes.txt
+!cd /tmp/r2r-zrp-regular && zip -r /tmp/r2r-regular.zrp ok >/dev/null
+Pzi /tmp/r2r-regular.zrp > /dev/null
+P ok > /dev/null
+Pn
+!rm -rf /tmp/r2r-project-import-ok /tmp/r2r-zrp-regular /tmp/r2r-regular.zrp
+EOF
+EXPECT=<<EOF
+SAFE_NOTE
+
+EOF
+RUN
+
 NAME=Delete a saved project and used directory (with Pd)
 FILE=bins/elf/analysis/main
 ARGS=-n
