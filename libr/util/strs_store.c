@@ -29,10 +29,10 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 	}
 	if (ss->base_len + len > ss->base_cap) {
 		ut32 need = ss->base_len + len;
-		ut32 nc = ss->base_cap;
-		while (nc < need) {
-			nc *= 2;
+		if (need > ST32_MAX) {
+			return -1;
 		}
+		ut32 nc = need * 2;
 		char *nb = realloc (ss->base, nc);
 		if (!nb) {
 			return -1;
@@ -41,6 +41,9 @@ R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len) {
 		ss->base_cap = nc;
 	}
 	if (ss->count >= ss->cap) {
+		if (ss->cap > ST32_MAX) {
+			return -1;
+		}
 		ut32 nc = ss->cap * 2;
 		RStrsEntry *ne = realloc (ss->entries, nc * sizeof (RStrsEntry));
 		if (!ne) {
