@@ -638,6 +638,43 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=Reject deleting an absolute-path project outside dir.projects
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=<<EOF
+e prj.vc=false
+e scr.interactive=false
+e dir.projects = .tmp/
+!rm -rf /tmp/r2r-project-delete-absolute-path
+!mkdir -p /tmp/r2r-project-delete-absolute-path/sub
+!printf '# r2 rdb project file\n' > /tmp/r2r-project-delete-absolute-path/rc.r2
+P- /tmp/r2r-project-delete-absolute-path/rc.r2 > /dev/null
+!python3 -c "import os; print('kept' if os.path.isdir('/tmp/r2r-project-delete-absolute-path') else 'deleted')"
+!rm -rf /tmp/r2r-project-delete-absolute-path
+EOF
+EXPECT=<<EOF
+kept
+EOF
+RUN
+
+NAME=Allow deleting an absolute-path project inside dir.projects
+FILE=bins/elf/analysis/main
+ARGS=-n
+CMDS=<<EOF
+e prj.vc=false
+e scr.interactive=false
+e dir.projects = /tmp/r2r-project-delete-root
+!rm -rf /tmp/r2r-project-delete-root
+P+ inside > /dev/null
+P- /tmp/r2r-project-delete-root/inside/rc.r2 > /dev/null
+!python3 -c "import os; print('removed' if not os.path.exists('/tmp/r2r-project-delete-root/inside') else 'still-there')"
+!rm -rf /tmp/r2r-project-delete-root
+EOF
+EXPECT=<<EOF
+removed
+EOF
+RUN
+
 NAME=Delete a saved project and used directory (with Pd)
 FILE=bins/elf/analysis/main
 ARGS=-n
