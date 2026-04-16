@@ -28,15 +28,14 @@ typedef struct {
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
 
 static char *collapse_whitespace(RStrs s) {
+	r_strs_trim (&s);
 	char *out = r_strs_tostring (s);
 	if (!out) {
 		return NULL;
 	}
-	r_str_trim (out);
 	char *d = out;
-	const char *src = out;
 	bool in_space = false;
-	while (*src) {
+	for (const char *src = out; *src; src++) {
 		if (isspace ((unsigned char)*src)) {
 			if (!in_space) {
 				*d++ = ' ';
@@ -46,7 +45,6 @@ static char *collapse_whitespace(RStrs s) {
 			*d++ = *src;
 			in_space = false;
 		}
-		src++;
 	}
 	*d = 0;
 	return out;
@@ -107,8 +105,9 @@ static void massage_type(char **s) {
 			}
 			star--;
 		}
-		char *type = r_str_ndup (*s, star - *s);
-		r_str_trim (type);
+		RStrs type_tok = { *s, star };
+		r_strs_trim (&type_tok);
+		char *type = r_strs_tostring (type_tok);
 		char *res = r_str_newf ("%s %s", type, ostar);
 		free (*s);
 		free (type);
@@ -1253,15 +1252,17 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			const char *starp = strstr (start, " (*");
 			if (starp) {
 				// return type
-				char *rtype = r_str_ndup (start, starp - start);
-				r_str_trim (rtype);
+				RStrs rtype_tok = { start, starp };
+				r_strs_trim (&rtype_tok);
+				char *rtype = r_strs_tostring (rtype_tok);
 				// member name
 				const char *name_start = starp + 3;
 				const char *name_end = strchr (name_start, ')');
 				char *mname = NULL;
 				if (name_end && name_end > name_start) {
-					mname = r_str_ndup (name_start, name_end - name_start);
-					r_str_trim (mname);
+					RStrs mname_tok = { name_start, name_end };
+					r_strs_trim (&mname_tok);
+					mname = r_strs_tostring (mname_tok);
 				}
 				// argument types
 				const char *args_start = NULL;
@@ -1325,9 +1326,9 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						p = strstr (tdef, " * (");
 					}
 					if (p) {
-						int rlen = p - tdef;
-						char *rtype = r_str_ndup (tdef, rlen);
-						r_str_trim (rtype);
+						RStrs rtype_tok = { tdef, p };
+						r_strs_trim (&rtype_tok);
+						char *rtype = r_strs_tostring (rtype_tok);
 						// find args
 						const char *args_open = strchr (p, '(');
 						char *args_str = NULL;
@@ -1535,8 +1536,9 @@ static int emit_func_signature(KVCParser *kvc, const char *fn, RStrs fun_parm, b
 			token_typename (&arg_type, &arg_name);
 			char *an = r_strs_tostring (arg_name);
 			char *at = r_strs_tostring (arg_type);
-			char *full = r_strs_tostring ((RStrs){ argp, pa });
-			r_str_trim (full);
+			RStrs full_tok = { argp, pa };
+			r_strs_trim (&full_tok);
+			char *full = r_strs_tostring (full_tok);
 			if (!strcmp (full, "...")) {
 				free (at);
 				at = full;
