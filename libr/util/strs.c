@@ -19,12 +19,10 @@ R_API int r_strs_cmpi(RStrs a, RStrs b) {
 	const size_t la = r_strs_len (a);
 	const size_t lb = r_strs_len (b);
 	const size_t m = R_MIN (la, lb);
-	size_t i;
-	for (i = 0; i < m; i++) {
-		const int ca = tolower ((unsigned char)a.a[i]);
-		const int cb = tolower ((unsigned char)b.a[i]);
-		if (ca != cb) {
-			return ca - cb;
+	if (m > 0) {
+		const int r = r_str_ncasecmp (a.a, b.a, m);
+		if (r) {
+			return r;
 		}
 	}
 	return (la < lb)? -1: (la > lb)? 1: 0;
@@ -44,13 +42,7 @@ R_API const char *r_strs_find_strs(RStrs s, RStrs needle) {
 
 R_API const char *r_strs_findc(RStrs s, char c) {
 	R_RETURN_VAL_IF_FAIL (s.a, NULL);
-	const char *p;
-	for (p = s.a; p < s.b; p++) {
-		if (*p == c) {
-			return p;
-		}
-	}
-	return NULL;
+	return (const char *)memchr (s.a, c, r_strs_len (s));
 }
 
 R_API const char *r_strs_rfindc(RStrs s, char c) {
@@ -127,15 +119,7 @@ R_API bool r_strs_next_token(RStrs *s, const char *seps, RStrs *out) {
 }
 
 R_API char *r_strs_tostring(RStrs s) {
-	const size_t n = r_strs_len (s);
-	char *out = malloc (n + 1);
-	if (R_LIKELY (out)) {
-		if (n) {
-			memcpy (out, s.a, n);
-		}
-		out[n] = 0;
-	}
-	return out;
+	return r_str_ndup (s.a, (int)r_strs_len (s));
 }
 
 R_API size_t r_strs_ncopy(char *dst, size_t dstsize, RStrs s) {
