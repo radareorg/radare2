@@ -41,6 +41,10 @@ static inline bool r_strs_empty(RStrs s) {
 	return !s.a || s.b <= s.a;
 }
 
+static inline char r_strs_at(RStrs s, size_t i) {
+	return (i < r_strs_len (s))? s.a[i]: 0;
+}
+
 /* Subslicing */
 static inline RStrs r_strs_sub(RStrs s, size_t from, size_t to) {
 	const size_t l = r_strs_len (s);
@@ -104,6 +108,7 @@ R_API const char *r_strs_find_any(RStrs s, const char *set);
 
 /* Char-set skip, tokenization (out of line) */
 R_API void r_strs_skip_chars(RStrs *s, const char *set);
+R_API void r_strs_trim_chars(RStrs *s, const char *set);
 R_API RStrs r_strs_take_ident(RStrs *s);
 R_API bool r_strs_next_token(RStrs *s, const char *seps, RStrs *out);
 

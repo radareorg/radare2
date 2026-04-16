@@ -4,10 +4,6 @@
 
 #include <r_util.h>
 
-static inline char r_strs_at(RStrs s, size_t i) {
-	return (i < r_strs_len (s))? s.a[i]: 0;
-}
-
 static inline char r_strs_first(RStrs s) {
 	return r_strs_empty (s)? 0: s.a[0];
 }
@@ -142,16 +138,6 @@ R_API const char *r_strs_rfindc(RStrs s, char c) {
 		}
 	}
 	return NULL;
-}
-
-R_API void r_strs_trim_chars(RStrs *s, const char *set) {
-	R_RETURN_IF_FAIL (s && set);
-	while (s->a < s->b && strchr (set, *s->a)) {
-		s->a++;
-	}
-	while (s->b > s->a && strchr (set, s->b[-1])) {
-		s->b--;
-	}
 }
 
 R_API size_t r_strs_ncopy(char *dst, size_t dstsize, RStrs s) {

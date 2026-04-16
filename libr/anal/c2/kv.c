@@ -27,23 +27,29 @@ typedef struct {
 
 typedef bool(*KVCParserCallback)(KVCParser *, const char *);
 
-static void collapse_whitespace(char *s) {
-	r_str_trim (s);
-	char *d = s;
+static char *collapse_whitespace(RStrs s) {
+	char *out = r_strs_tostring (s);
+	if (!out) {
+		return NULL;
+	}
+	r_str_trim (out);
+	char *d = out;
+	const char *src = out;
 	bool in_space = false;
-	while (*s) {
-		if (isspace ((unsigned char)*s)) {
+	while (*src) {
+		if (isspace ((unsigned char)*src)) {
 			if (!in_space) {
 				*d++ = ' ';
 				in_space = true;
 			}
 		} else {
-			*d++ = *s;
+			*d++ = *src;
 			in_space = false;
 		}
-		s++;
+		src++;
 	}
 	*d = 0;
+	return out;
 }
 
 #include "pp.inc.c"
@@ -60,11 +66,8 @@ static const char kvc_getch(KVCParser *kvc) {
 	return 0; // EOF
 }
 
-static const char kvc_peek(KVCParser *kvc, int delta) { // rename to peek_at
-	if (delta >= 0 && kvc->s.a + delta < kvc->s.b) {
-		return kvc->s.a[delta];
-	}
-	return 0;
+static const char kvc_peek(KVCParser *kvc, int delta) {
+	return (delta >= 0)? r_strs_at (kvc->s, (size_t)delta): 0;
 }
 
 static void kvc_error(KVCParser *kvc, const char *msg) {
@@ -268,33 +271,30 @@ static bool parse_attributes(KVCParser *kvc) {
 			break;
 		}
 		kvc_getch (kvc);
-		RStrs attr_name = { .a = consume_word (kvc) };
-		if (!attr_name.a) {
+		const char *name_start = consume_word (kvc);
+		if (!name_start) {
 			R_LOG_ERROR ("Cannot consume word");
 			return false;
 		}
-		attr_name.b = kvc->s.a;
+		RStrs attr_name = r_strs_new (name_start, kvc->s.a);
 		ch = kvc_peek (kvc, 0);
 		RStrs attr_value = { 0 };
 		if (ch == '(') {
-			// parse value
 			kvc_getch (kvc);
-			attr_value.a = consume_word (kvc);
-			if (!attr_value.a) {
+			const char *val_start = consume_word (kvc);
+			if (!val_start) {
 				R_LOG_ERROR ("Cannot consume word in value");
 				return false;
 			}
-			// kvc->s.a = attr
 			ch = kvc_peek (kvc, 0);
 			if (ch != ')') {
 				R_LOG_ERROR ("Expected )");
 				return false;
 			}
-			attr_value.b = kvc->s.a;
+			attr_value = r_strs_new (val_start, kvc->s.a);
 			kvc_getch (kvc);
 		} else {
-			attr_value.a = "true";
-			attr_value.b = attr_value.a + 4;
+			attr_value = R_STRS_LIT ("true");
 		}
 		int atidx = kvc->attrs.count;
 		bool duppedkey = false;
@@ -312,22 +312,14 @@ static bool parse_attributes(KVCParser *kvc) {
 			kvc->attrs.count++;
 			kvc->attrs.keys[atidx] = attr_name;
 		}
-		if (attr_value.a) {
-			kvc->attrs.values[atidx] = attr_value;
-		} else {
-			kvc->attrs.values[atidx].a = "true";
-			kvc->attrs.values[atidx].b = kvc->attrs.values[atidx].a + 4;
-		}
+		kvc->attrs.values[atidx] = attr_value;
 	}
 	skip_until (kvc, '\n');
 	return true;
 }
 
 static bool parse_trailing_attributes(KVCParser *kvc) {
-	char ch;
-	while ((ch = kvc_peek (kvc, 0)) == ' ' || ch == '\t') {
-		kvc_getch (kvc);
-	}
+	r_strs_skip_chars (&kvc->s, " \t");
 	const char *begin = kvc_peekn (kvc, 3);
 	if (!begin || !r_str_startswith (begin, "///")) {
 		return false;
@@ -350,12 +342,7 @@ static void apply_attributes(KVCParser *kvc, const char *type, const char *scope
 }
 
 static void token_trim_semi(RStrs *t) {
-	while (t->a < t->b && (isspace ((unsigned char)*t->a) || *t->a == ';')) {
-		t->a++;
-	}
-	while (t->b > t->a && (isspace ((unsigned char)t->b[-1]) || t->b[-1] == ';')) {
-		t->b--;
-	}
+	r_strs_trim_chars (t, " \t\n\r\v\f;");
 }
 
 static void token_typename(RStrs *fun_rtyp, RStrs *fun_name) {
@@ -1075,9 +1062,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 						args_end--;
 					}
 					if (args_end > args_open) {
-						RStrs args_tok = { .a = args_open + 1, .b = args_end };
-						args_str = r_strs_tostring (args_tok);
-						collapse_whitespace (args_str);
+						args_str = collapse_whitespace (r_strs_new (args_open + 1, args_end));
 					}
 				}
 				char *fulltype = r_str_newf ("%s * (%s)", rtype, args_str? args_str: "");
@@ -1297,8 +1282,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					if (args_end > args_start && args_end[-1] == ')') {
 						args_end--;
 					}
-					args = r_str_ndup (args_start + 1, args_end - args_start - 1);
-					collapse_whitespace (args);
+					args = collapse_whitespace (r_strs_new (args_start + 1, args_end));
 				}
 				// build full type string
 				char *fulltype = r_str_newf ("%s * (%s)", rtype, args? args: "");
@@ -1357,8 +1341,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 						if (args_open) {
 							const char *args_close = strrchr (tdef, ')');
 							if (args_close && args_close > args_open) {
-								args_str = r_str_ndup (args_open + 1, args_close - args_open - 1);
-								collapse_whitespace (args_str);
+								args_str = collapse_whitespace (r_strs_new (args_open + 1, args_close));
 							}
 						}
 						// For typedef function-pointer types, reference the typedef alias as the field's type

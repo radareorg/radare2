@@ -42,6 +42,16 @@ R_API void r_strs_skip_chars(RStrs *s, const char *set) {
 	}
 }
 
+R_API void r_strs_trim_chars(RStrs *s, const char *set) {
+	R_RETURN_IF_FAIL (s && set);
+	while (s->a < s->b && strchr (set, *s->a)) {
+		s->a++;
+	}
+	while (s->b > s->a && strchr (set, s->b[-1])) {
+		s->b--;
+	}
+}
+
 R_API RStrs r_strs_take_ident(RStrs *s) {
 	R_RETURN_VAL_IF_FAIL (s, ((RStrs) { 0 }));
 	RStrs out = { s->a, s->a };
