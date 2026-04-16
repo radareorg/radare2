@@ -52,23 +52,14 @@ static char *get_project_script_path(RCore *core, const char *file) {
 }
 
 static bool project_path_is_within_projects_dir(RCore *core, const char *path) {
-	if (!core || R_STR_ISEMPTY (path)) {
-		return false;
-	}
-	char *projects_dir = r_file_abspath (r_config_get (core->config, "dir.projects"));
-	char *project_path = r_file_abspath (path);
-	if (!projects_dir || !project_path) {
-		free (projects_dir);
-		free (project_path);
-		return false;
-	}
-	const size_t projects_dir_len = strlen (projects_dir);
-	const bool in_projects_dir = !strncmp (project_path, projects_dir, projects_dir_len)
-		&& (project_path[projects_dir_len] == '\0'
-			|| project_path[projects_dir_len] == R_SYS_DIR[0]);
-	free (projects_dir);
-	free (project_path);
-	return in_projects_dir;
+	char *pdir = r_file_abspath (r_config_get (core->config, "dir.projects"));
+	char *ppath = r_file_abspath (path);
+	char *prefix = (pdir && ppath) ? r_str_newf ("%s%s", pdir, R_SYS_DIR) : NULL;
+	bool inside = prefix ? r_str_startswith (ppath, prefix) : false;
+	free (prefix);
+	free (pdir);
+	free (ppath);
+	return inside;
 }
 
 static bool make_projects_directory(RCore *core) {
