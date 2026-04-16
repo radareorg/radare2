@@ -375,7 +375,12 @@ R_API bool r_bin_open_io(RBin *bin, RBinFileOptions *opt) {
 	RBuffer *buf = NULL;
 	if (is_debugger) {
 		buf = r_buf_new_file (fname, O_RDONLY, 0);
-		is_debugger = false;
+		if (buf) {
+			// reading from the backing file on disk, not process memory
+			is_debugger = false;
+			opt->loadaddr = 0;
+			opt->sz = 0;
+		}
 	}
 	if (!buf) {
 		buf = r_buf_new_with_io (&bin->iob, opt->fd);

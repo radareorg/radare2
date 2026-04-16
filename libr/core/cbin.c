@@ -5255,9 +5255,11 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 	RBinFile *bf = r_bin_file_at (core->bin, core->addr);
 	if (bf) {
 		r_io_use_fd (core->io, bf->fd);
+		r_core_bin_set_env (core, bf);
 	}
 	core->switch_file_view = 0;
-	return bf && r_core_bin_set_env (core, bf) && r_core_block_read (core);
+	r_core_block_read (core);
+	return true;
 }
 
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {

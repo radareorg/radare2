@@ -224,6 +224,118 @@ static bool isfile(const char *filename) {
 		);
 }
 
+// Compute the span of a memory-mapped binary from debug maps.
+// Finds all maps sharing the same name as the one at `addr`.
+static ut64 oba_memsize(RDebug *dbg, ut64 addr) {
+	if (!dbg || !dbg->maps) {
+		return 0;
+	}
+	RDebugMap *hit = r_debug_map_get (dbg, addr);
+	if (!hit || R_STR_ISEMPTY (hit->name)) {
+		return 0;
+	}
+	ut64 lo = UT64_MAX;
+	ut64 hi = 0;
+	RDebugMap *map;
+	RListIter *iter;
+	r_list_foreach (dbg->maps, iter, map) {
+		if (R_STR_ISEMPTY (map->name) || strcmp (map->name, hit->name)) {
+			continue;
+		}
+		if (map->addr < lo) {
+			lo = map->addr;
+		}
+		if (map->addr_end > hi) {
+			hi = map->addr_end;
+		}
+	}
+	if (lo == UT64_MAX || hi <= lo) {
+		return 0;
+	}
+	return R_MIN (hi - lo, (ut64)32 * 1024 * 1024);
+}
+
+static void cmd_oba(RCore *core, const char *input) {
+	if (input[2] == '?') {
+		r_core_cmd_help (core, help_msg_oba);
+		return;
+	}
+	if (input[2] && input[3]) {
+		char *arg = strdup (input + 3);
+		const bool rawstr = core->bin->options.rawstr;
+		char *filename = strchr (arg, ' ');
+		if (filename && isfile (filename + 1)) {
+			int saved_fd = r_io_fd_get_current (core->io);
+			RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
+			if (desc) {
+				*filename = 0;
+				ut64 addr = r_num_math (core->num, arg);
+				RBinFileOptions opt;
+				r_bin_file_options_init (&opt, desc->fd, addr, 0, rawstr);
+				r_bin_open_io (core->bin, &opt);
+				r_core_bin_load (core, NULL, UT64_MAX);
+				r_core_cmd0 (core, ".is*");
+				r_io_desc_close (desc);
+				r_io_use_fd (core->io, saved_fd);
+			} else {
+				R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename + 1));
+			}
+		} else if (R_STR_ISNOTEMPTY (filename)) {
+			ut64 baddr = r_num_math (core->num, filename);
+			ut64 addr = r_num_math (core->num, input + 2); // mapaddr
+			int fd = r_io_fd_get_current (core->io);
+			RIODesc *desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				RBinFileOptions opt;
+				r_bin_file_options_init (&opt, desc->fd, baddr, addr, rawstr);
+				opt.sz = oba_memsize (core->dbg, addr);
+				if (!opt.sz) {
+					opt.sz = 1024 * 1024;
+				}
+				r_bin_open_io (core->bin, &opt);
+				r_core_cmd0 (core, ".is*");
+			} else {
+				R_LOG_ERROR ("No file to load bin from?");
+			}
+		} else {
+			ut64 addr = r_num_math (core->num, input + 2);
+			int fd = r_io_fd_get_current (core->io);
+			RIODesc *desc = r_io_desc_get (core->io, fd);
+			if (desc) {
+				RBinFileOptions opt;
+				r_bin_file_options_init (&opt, desc->fd, addr, addr, rawstr);
+				opt.sz = oba_memsize (core->dbg, addr);
+				if (!opt.sz) {
+					opt.sz = 1024 * 1024;
+				}
+				r_bin_open_io (core->bin, &opt);
+				r_core_cmd0 (core, ".is*");
+			} else {
+				R_LOG_ERROR ("No file to load bin from?");
+			}
+		}
+		free (arg);
+	} else {
+		RList *ofiles = r_id_storage_list (&core->io->files);
+		RIODesc *desc;
+		RListIter *iter;
+		RList *files = r_list_newf (NULL);
+		r_list_foreach (ofiles, iter, desc) {
+			r_list_append (files, (void*)(size_t)desc->fd);
+		}
+		void *_fd;
+		r_list_foreach (files, iter, _fd) {
+			int fd = (size_t)_fd;
+			RBinFileOptions opt;
+			r_bin_file_options_init (&opt, fd, core->addr, 0, core->bin->options.rawstr);
+			r_bin_open_io (core->bin, &opt);
+			r_core_cmd0 (core, ".ie*");
+			break;
+		}
+		r_list_free (files);
+	}
+}
+
 // HONOR bin.at
 static void cmd_open_bin(RCore *core, const char *input) {
 	const char *value = NULL;
@@ -283,83 +395,7 @@ static void cmd_open_bin(RCore *core, const char *input) {
 		}
 		break;
 	case 'a': // "oba"
-		if (input[2] == '?') {
-			r_core_cmd_help (core, help_msg_oba);
-			break;
-		}
-		if (input[2] && input[3]) {
-			char *arg = strdup (input + 3);
-			const bool rawstr = core->bin->options.rawstr;
-			char *filename = strchr (arg, ' ');
-			if (filename && isfile (filename + 1)) {
-				int saved_fd = r_io_fd_get_current (core->io);
-				RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
-				if (desc) {
-					*filename = 0;
-					ut64 addr = r_num_math (core->num, arg);
-					RBinFileOptions opt;
-					r_bin_file_options_init (&opt, desc->fd, addr, 0, rawstr);
-					r_bin_open_io (core->bin, &opt);
-					r_core_bin_load (core, NULL, UT64_MAX);
-					r_core_cmd0 (core, ".is*");
-					r_io_desc_close (desc);
-					r_io_use_fd (core->io, saved_fd);
-				} else {
-					R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename + 1));
-				}
-			} else if (R_STR_ISNOTEMPTY (filename)) {
-				ut64 baddr = r_num_math (core->num, filename);
-				ut64 addr = r_num_math (core->num, input + 2); // mapaddr
-				int fd = r_io_fd_get_current (core->io);
-				RIODesc *desc = r_io_desc_get (core->io, fd);
-				if (desc) {
-					RBinFileOptions opt;
-					opt.baseaddr = baddr;
-					opt.loadaddr = addr;
-					opt.sz = 1024 * 1024 * 1;
-					r_bin_file_options_init (&opt, desc->fd, baddr, addr, rawstr);
-					r_bin_open_io (core->bin, &opt);
-					r_core_cmd0 (core, ".is*");
-				} else {
-					R_LOG_ERROR ("No file to load bin from?");
-				}
-			} else {
-				ut64 addr = r_num_math (core->num, input + 2);
-				int fd = r_io_fd_get_current (core->io);
-				RIODesc *desc = r_io_desc_get (core->io, fd);
-				if (desc) {
-					RBinFileOptions opt;
-					opt.baseaddr = addr;
-					opt.loadaddr = addr;
-					opt.sz = 1024 * 1024 * 1;
-					r_bin_file_options_init (&opt, desc->fd, addr, addr, rawstr);
-					r_bin_open_io (core->bin, &opt);
-					r_core_cmd0 (core, ".is*");
-				} else {
-					R_LOG_ERROR ("No file to load bin from?");
-				}
-			}
-			free (arg);
-		} else {
-			RList *ofiles = r_id_storage_list (&core->io->files);
-			RIODesc *desc;
-			RListIter *iter;
-			RList *files = r_list_newf (NULL);
-			r_list_foreach (ofiles, iter, desc) {
-				r_list_append (files, (void*)(size_t)desc->fd);
-			}
-
-			void *_fd;
-			r_list_foreach (files, iter, _fd) {
-				int fd = (size_t)_fd;
-				RBinFileOptions opt;
-				r_bin_file_options_init (&opt, fd, core->addr, 0, core->bin->options.rawstr);
-				r_bin_open_io (core->bin, &opt);
-				r_core_cmd0 (core, ".ie*");
-				break;
-			}
-			r_list_free (files);
-		}
+		cmd_oba (core, input);
 		break;
 	case ' ': // "ob " // select bf by id or name
 	{
