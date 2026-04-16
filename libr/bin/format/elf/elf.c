@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2008-2025 - nibble, pancake, alvaro_fe */
+/* radare - LGPL - Copyright 2008-2026 - nibble, pancake, alvaro_fe */
 
 // R2R db/formats/elf/versioninfo
 // R2R db/formats/elf/reloc
@@ -1589,6 +1589,8 @@ static bool elf_init(ELFOBJ *eo) {
 		eo->has_nx = compute_has_nx (eo);
 		if (!init_strtab (eo)) {
 			R_LOG_DEBUG ("Cannot initialize strings table");
+			// discard section headers because without stringtable we fallback to phdr synthesis
+			R_FREE (eo->shdr);
 		}
 		if (!init_dynstr (eo) && !is_bin_etrel (eo)) {
 			R_LOG_DEBUG ("Cannot initialize dynamic strings");
