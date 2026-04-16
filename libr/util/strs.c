@@ -2,32 +2,6 @@
 
 #include <r_util.h>
 
-R_API int r_strs_cmp(RStrs a, RStrs b) {
-	const size_t la = r_strs_len (a);
-	const size_t lb = r_strs_len (b);
-	const size_t m = R_MIN (la, lb);
-	if (m > 0) {
-		const int r = memcmp (a.a, b.a, m);
-		if (r) {
-			return r;
-		}
-	}
-	return (la < lb)? -1: (la > lb)? 1: 0;
-}
-
-R_API int r_strs_cmpi(RStrs a, RStrs b) {
-	const size_t la = r_strs_len (a);
-	const size_t lb = r_strs_len (b);
-	const size_t m = R_MIN (la, lb);
-	if (m > 0) {
-		const int r = r_str_ncasecmp (a.a, b.a, m);
-		if (r) {
-			return r;
-		}
-	}
-	return (la < lb)? -1: (la > lb)? 1: 0;
-}
-
 R_API const char *r_strs_find_strs(RStrs s, RStrs needle) {
 	const size_t sl = r_strs_len (s);
 	const size_t nl = r_strs_len (needle);
@@ -48,17 +22,6 @@ R_API const char *r_strs_findc(RStrs s, char c) {
 	return (const char *)memchr (s.a, c, r_strs_len (s));
 }
 
-R_API const char *r_strs_rfindc(RStrs s, char c) {
-	R_RETURN_VAL_IF_FAIL (s.a, NULL);
-	size_t i = r_strs_len (s);
-	while (i-- > 0) {
-		if (s.a[i] == c) {
-			return s.a + i;
-		}
-	}
-	return NULL;
-}
-
 R_API const char *r_strs_find_any(RStrs s, const char *set) {
 	if (!set || !*set) {
 		return NULL;
@@ -70,16 +33,6 @@ R_API const char *r_strs_find_any(RStrs s, const char *set) {
 		}
 	}
 	return NULL;
-}
-
-R_API void r_strs_trim_chars(RStrs *s, const char *set) {
-	R_RETURN_IF_FAIL (s && set);
-	while (s->a < s->b && strchr (set, *s->a)) {
-		s->a++;
-	}
-	while (s->b > s->a && strchr (set, s->b[-1])) {
-		s->b--;
-	}
 }
 
 R_API void r_strs_skip_chars(RStrs *s, const char *set) {
@@ -120,21 +73,6 @@ R_API bool r_strs_next_token(RStrs *s, const char *seps, RStrs *out) {
 
 R_API char *r_strs_tostring(RStrs s) {
 	return r_str_ndup (s.a, (int)r_strs_len (s));
-}
-
-R_API size_t r_strs_ncopy(char *dst, size_t dstsize, RStrs s) {
-	if (!dst || dstsize == 0) {
-		return 0;
-	}
-	size_t n = r_strs_len (s);
-	if (n >= dstsize) {
-		n = dstsize - 1;
-	}
-	if (n) {
-		memcpy (dst, s.a, n);
-	}
-	dst[n] = 0;
-	return n;
 }
 
 R_API ut64 r_strs_tonum(RStrs s) {
