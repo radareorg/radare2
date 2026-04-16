@@ -66,7 +66,9 @@ static inline ut32 r_strs_store_count(const RStrsStore *ss) {
 static inline RStrs r_strs_store_get(const RStrsStore *ss, ut32 idx) {
 	if (R_LIKELY (ss && idx < ss->count)) {
 		const RStrsEntry *e = ss->entries + idx;
-		return r_strs_from_len (ss->base + e->off, e->len);
+		if (R_LIKELY (e->off + e->len <= ss->base_len)) {
+			return r_strs_from_len (ss->base + e->off, e->len);
+		}
 	}
 	RStrs r = {0};
 	return r;
