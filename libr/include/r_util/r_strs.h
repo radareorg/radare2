@@ -14,8 +14,6 @@ typedef struct r_strs_t {
 	const char *b;
 } RStrs;
 
-/* Build a slice from a string literal with no runtime strlen. The `"" s`
- * concatenation forces `s` to be a string literal (compile error otherwise). */
 #define R_STRS_LIT(s) r_strs_from_len ((s), sizeof ("" s) - 1)
 
 /* Constructors */

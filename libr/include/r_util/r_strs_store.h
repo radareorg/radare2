@@ -45,12 +45,13 @@ typedef struct {
 } RStrsEntry;
 
 typedef struct {
-	char *base;          /* shared UTF-8 buffer (owned) */
+	char *base;          /* shared UTF-8 buffer (owned unless borrowed_base) */
 	ut32 base_len;       /* bytes used in base */
 	ut32 base_cap;       /* allocated capacity (= base_len after seal) */
 	RStrsEntry *entries; /* array of (off, len) pairs */
 	ut32 count;          /* number of strings */
 	ut32 cap;            /* allocated entry slots (= count after seal) */
+	bool borrowed_base;  /* base not owned — do not free, do not grow */
 } RStrsStore;
 
 /* Convert a standalone entry + base pointer into an RStrs slice */
@@ -87,6 +88,12 @@ static inline int r_strs_store_addstrs(RStrsStore *ss, RStrs s) {
 /* Bulk construction (out of line) — returns a sealed store */
 R_API RStrsStore *r_strs_store_from_entries(const char *buf, ut32 buf_len, const RStrsEntry *entries, ut32 count);
 R_API RStrsStore *r_strs_store_from_utf16le(const ut8 *src, ut32 src_len, const RStrsEntry *src_entries, ut32 count);
+
+/* Borrowing split: slices `s` on any char in `seps` into (off, len) entries.
+ * The base buffer is NOT copied and must outlive the store. Only the entries
+ * array and the store header are allocated. If `trim`, leading/trailing
+ * whitespace is stripped from each token (empty tokens are preserved). */
+R_API RStrsStore *r_strs_store_split(const char *s, int len, const char *seps, bool trim);
 
 #ifdef __cplusplus
 }
