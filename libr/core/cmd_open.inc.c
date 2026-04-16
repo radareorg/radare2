@@ -2458,7 +2458,11 @@ static int cmd_open(void *data, const char *input) {
 		if (argc > 1) {
 			const int fd = (int)r_num_math (core->num, argv[0]);
 			const ut64 size = r_num_math (core->num, argv[1]);
-			r_io_fd_resize (core->io, fd, size);
+			if (r_io_fd_resize (core->io, fd, size)) {
+				R_LOG_WARN ("maps cant have zero size, use omu command to re-create it when file resized");
+			} else {
+				R_LOG_ERROR ("fdresize failed");
+			}
 		}
 		r_str_argv_free (argv);
 		return 0;
