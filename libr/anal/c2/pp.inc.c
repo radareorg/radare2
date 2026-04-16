@@ -1,4 +1,4 @@
-/* Basic C Preprocessor implementation using KVCToken and r_strbuf */
+/* Basic C Preprocessor implementation using RStrs and r_strbuf */
 
 #define PP_DEFAULT_CAP 16
 #define PP_MAX_IF_NEST 64
@@ -299,13 +299,13 @@ static void pp_process_line(PPState *st, RStrBuf *out, const char *line_start, c
 			while (rptr < line_end && is_identifier_char (*rptr)) {
 				rptr++;
 			}
-			KVCToken tok = { id_start, rptr };
-			char *name = kvctoken_tostring (tok);
+			RStrs tok = { id_start, rptr };
+			char *name = r_strs_tostring (tok);
 			const char *val = pp_get_define (st, name);
 			if (val) {
 				r_strbuf_append (out, val);
 			} else {
-				r_strbuf_append_n (out, tok.a, kvctoken_len (tok));
+				r_strbuf_append_n (out, tok.a, r_strs_len (tok));
 			}
 			free (name);
 		} else {
