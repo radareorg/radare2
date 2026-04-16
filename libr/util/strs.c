@@ -43,6 +43,7 @@ R_API const char *r_strs_find_strs(RStrs s, RStrs needle) {
 }
 
 R_API const char *r_strs_findc(RStrs s, char c) {
+	R_RETURN_VAL_IF_FAIL (s.a, NULL);
 	const char *p;
 	for (p = s.a; p < s.b; p++) {
 		if (*p == c) {
@@ -53,6 +54,10 @@ R_API const char *r_strs_findc(RStrs s, char c) {
 }
 
 R_API const char *r_strs_rfindc(RStrs s, char c) {
+	R_RETURN_VAL_IF_FAIL (s.a, NULL);
+	if (s.a >= s.b) {
+		return NULL;
+	}
 	const char *p;
 	for (p = s.b - 1; p >= s.a; p--) {
 		if (*p == c) {
