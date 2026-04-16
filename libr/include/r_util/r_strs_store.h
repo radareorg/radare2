@@ -75,7 +75,7 @@ static inline RStrs r_strs_store_get(const RStrsStore *ss, ut32 idx) {
 }
 
 /* Builder API (out of line) */
-R_API RStrsStore *r_strs_store_new(void);
+R_API RStrsStore *r_strs_store_new(ut32 capacity);
 R_API int r_strs_store_add(RStrsStore *ss, const char *s, int len);
 R_API void r_strs_store_seal(RStrsStore *ss);
 R_API void r_strs_store_free(RStrsStore *ss);
