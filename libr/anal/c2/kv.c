@@ -239,7 +239,7 @@ static const char *consume_word(KVCParser *kvc) {
 }
 
 static const char *kvc_attr(KVCParser *kvc, const char *k) {
-	RStrs s = { .a = k, .b = k + strlen (k) };
+	RStrs s = r_strs_from (k);
 	int i;
 	for (i = 0; i < kvc->attrs.count; i++) {
 		if (r_strs_equals (kvc->attrs.keys[i], s)) {
@@ -442,28 +442,27 @@ static bool parse_c_attributes(KVCParser *kvc) {
 		return false;
 	}
 	// Parse attribute name
-	RStrs attr_name = { .a = kvc->s.a };
+	const char *name_start = kvc->s.a;
 	while (isalnum (*kvc->s.a) || *kvc->s.a == '_') {
 		kvc_getch (kvc);
 	}
-	attr_name.b = kvc->s.a;
+	RStrs attr_name = r_strs_new (name_start, kvc->s.a);
 	skip_spaces (kvc);
 	trim_underscores (&attr_name);
 	// Parse optional value
-	RStrs attr_value = { 0 };
+	RStrs attr_value;
 	if (kvc_peek (kvc, 0) == '(') {
 		kvc_getch (kvc);
-		attr_value.a = kvc->s.a;
+		const char *val_start = kvc->s.a;
 		const char *close = kvc_find (kvc, ")");
 		if (!close) {
 			kvc_error (kvc, "Missing ')' in __attribute__");
 			return false;
 		}
-		attr_value.b = close;
-		kvc_skipn (kvc, close - kvc->s.a + 1);
+		attr_value = r_strs_new (val_start, close);
+		kvc_skipn (kvc, close - val_start + 1);
 	} else {
-		attr_value.a = "true";
-		attr_value.b = attr_value.a + strlen ("true");
+		attr_value = R_STRS_LIT ("true");
 	}
 	skip_spaces (kvc);
 	if (kvc_getch (kvc) != ')') {
@@ -619,13 +618,12 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		RStrs tag = { 0 };
 		bool has_tag = false;
 		if (*kvc->s.a != '{') {
-			// There is a tag (or tag name) present.
-			tag.a = consume_word (kvc);
-			if (!tag.a) {
+			const char *tag_start = consume_word (kvc);
+			if (!tag_start) {
 				kvc_error (kvc, "Expected struct tag in typedef");
 				return false;
 			}
-			tag.b = kvc->s.a;
+			tag = r_strs_new (tag_start, kvc->s.a);
 			has_tag = true;
 			skip_spaces (kvc);
 		}
@@ -668,7 +666,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				kvc_getch (kvc);
 				break;
 			}
-			memcpy (&member_name, &member_type, sizeof (member_name));
+			member_name = member_type;
 			token_typename (&member_type, &member_name);
 #if 1
 			kvc_getch (kvc); // Skip the semicolon
@@ -774,13 +772,12 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		RStrs tag = { 0 };
 		bool has_tag = false;
 		if (*kvc->s.a != '{') {
-			// There is a tag (or tag name) present.
-			tag.a = consume_word (kvc);
-			if (!tag.a) {
+			const char *tag_start = consume_word (kvc);
+			if (!tag_start) {
 				kvc_error (kvc, "Expected union tag in typedef");
 				return false;
 			}
-			tag.b = kvc->s.a;
+			tag = r_strs_new (tag_start, kvc->s.a);
 			has_tag = true;
 			skip_spaces (kvc);
 		}
@@ -824,7 +821,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				kvc_getch (kvc);
 				break;
 			}
-			memcpy (&member_name, &member_type, sizeof (member_name));
+			member_name = member_type;
 			token_typename (&member_type, &member_name);
 			kvc_getch (kvc); // Skip the semicolon
 			parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
@@ -913,13 +910,12 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		RStrs tag = { 0 };
 		bool has_tag = false;
 		if (*kvc->s.a != '{') {
-			// There is a tag (or tag name) present.
-			tag.a = consume_word (kvc);
-			if (!tag.a) {
+			const char *tag_start = consume_word (kvc);
+			if (!tag_start) {
 				kvc_error (kvc, "Expected enum tag in typedef");
 				return false;
 			}
-			tag.b = kvc->s.a;
+			tag = r_strs_new (tag_start, kvc->s.a);
 			has_tag = true;
 			skip_spaces (kvc);
 		}
@@ -941,26 +937,25 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		while (!closing) {
 			parse_attributes (kvc);
 			skip_spaces (kvc);
-			RStrs member_name = { 0 };
 			RStrs member_value = { 0 };
-			member_name.a = consume_word (kvc);
-			if (!member_name.a) {
+			const char *name_start = consume_word (kvc);
+			if (!name_start) {
 				R_LOG_ERROR ("a");
 				free (enum_tag);
 				return false;
 			}
-			member_name.b = kvc->s.a;
+			RStrs member_name = r_strs_new (name_start, kvc->s.a);
 			skip_spaces (kvc);
 			char ch = kvc_getch (kvc);
 			if (ch == '=') {
 				skip_spaces (kvc);
-				member_value.a = consume_word (kvc);
-				if (!member_value.a) {
+				const char *val_start = consume_word (kvc);
+				if (!val_start) {
 					R_LOG_ERROR ("a");
 					free (enum_tag);
 					return false;
 				}
-				member_value.b = kvc->s.a;
+				member_value = r_strs_new (val_start, kvc->s.a);
 				skip_spaces (kvc);
 				ch = kvc_getch (kvc);
 				// equal
@@ -1044,10 +1039,10 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 				name_end++;
 			}
 			if (name_end < semicolon) {
-				RStrs alias = { .a = name_start, .b = name_end };
+				RStrs alias = r_strs_new (name_start, name_end);
 				r_strs_trim (&alias);
 				char *alias_str = r_strs_tostring (alias);
-				RStrs rtype_tok = { .a = start, .b = fp_marker };
+				RStrs rtype_tok = r_strs_new (start, fp_marker);
 				r_strs_trim (&rtype_tok);
 				char *rtype = r_strs_tostring (rtype_tok);
 				/* find args */
@@ -1101,10 +1096,8 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 		if (p < start || (!isalnum (*p) && *p != '_')) {
 			p++;
 		}
-		// Alias token
-		RStrs alias = { .a = p, .b = alias_end };
-		// Original type spans from start up to alias start
-		RStrs orig_type = { .a = start, .b = p };
+		RStrs alias = r_strs_new (p, alias_end);
+		RStrs orig_type = r_strs_new (start, p);
 		r_strs_trim (&alias);
 		r_strs_trim (&orig_type);
 		char *alias_str = r_strs_tostring (alias);
@@ -1183,7 +1176,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 					p = name_end;
 					continue;
 				}
-				RStrs mtok = { .a = name_start, .b = name_end };
+				RStrs mtok = r_strs_new (name_start, name_end);
 				r_strs_trim (&mtok);
 				char *mname_look = r_strs_tostring (mtok);
 				if (mname_look) {
@@ -1248,7 +1241,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			kvc_getch (kvc);
 			break;
 		}
-		memcpy (&member_name, &member_type, sizeof (member_name));
+		member_name = member_type;
 		token_typename (&member_type, &member_name);
 		skip_semicolons (kvc);
 		parse_trailing_attributes (kvc); // Handle trailing /// comments on same line
@@ -1462,24 +1455,23 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 	while (!closing) {
 		parse_attributes (kvc);
 		skip_spaces (kvc);
-		RStrs member_name = { 0 };
 		RStrs member_value = { 0 };
-		member_name.a = consume_word (kvc);
-		if (!member_name.a) {
+		const char *name_start = consume_word (kvc);
+		if (!name_start) {
 			R_LOG_ERROR ("a");
 			return false;
 		}
-		member_name.b = kvc->s.a;
+		RStrs member_name = r_strs_new (name_start, kvc->s.a);
 		skip_spaces (kvc);
 		char ch = kvc_getch (kvc);
 		if (ch == '=') {
 			skip_spaces (kvc);
-			member_value.a = consume_word (kvc);
-			if (!member_value.a) {
+			const char *val_start = consume_word (kvc);
+			if (!val_start) {
 				R_LOG_ERROR ("a");
 				return false;
 			}
-			member_value.b = kvc->s.a;
+			member_value = r_strs_new (val_start, kvc->s.a);
 			skip_spaces (kvc);
 			ch = kvc_getch (kvc);
 			// equal
@@ -1607,25 +1599,24 @@ static bool parse_function(KVCParser *kvc) {
 		is_static = true;
 	}
 	RStrs fun_name = { 0 };
-	RStrs fun_rtyp = { 0 };
 	RStrs fun_parm = { 0 };
 	const char *saved_pos = kvc->s.a;
-	fun_rtyp.a = consume_word (kvc);
-	if (!fun_rtyp.a) {
+	const char *rtyp_start = consume_word (kvc);
+	if (!rtyp_start) {
 		return false;
 	}
-	fun_rtyp.b = kvc->s.a;
-	fun_name.a = fun_rtyp.a;
+	RStrs fun_rtyp = r_strs_new (rtyp_start, kvc->s.a);
+	fun_name.a = rtyp_start;
 	skip_spaces (kvc);
 	if (kvc_peek (kvc, 0) == '(' && kvc_peek (kvc, 1) == '*') {
 		kvc_skipn (kvc, 2);
 		skip_spaces (kvc);
-		RStrs fp_name = { .a = consume_word (kvc) };
-		if (!fp_name.a) {
+		const char *fp_start = consume_word (kvc);
+		if (!fp_start) {
 			kvc->s.a = saved_pos;
 			return false;
 		}
-		fp_name.b = kvc->s.a;
+		RStrs fp_name = r_strs_new (fp_start, kvc->s.a);
 		skip_spaces (kvc);
 		if (kvc_peek (kvc, 0) != ')') {
 			kvc->s.a = saved_pos;
@@ -1638,12 +1629,12 @@ static bool parse_function(KVCParser *kvc) {
 			return false;
 		}
 		kvc_getch (kvc);
-		fun_parm.a = kvc->s.a;
+		const char *parm_start = kvc->s.a;
 		if (!skip_until (kvc, ')')) {
 			kvc->s.a = saved_pos;
 			return false;
 		}
-		fun_parm.b = kvc->s.a;
+		fun_parm = r_strs_new (parm_start, kvc->s.a);
 		kvc_getch (kvc);
 		skip_ws (kvc);
 		char *fn = r_strs_tostring (fp_name);
@@ -1658,13 +1649,13 @@ static bool parse_function(KVCParser *kvc) {
 		return false;
 	}
 	fun_name.b = kvc->s.a;
-	fun_parm.a = kvc->s.a + 1;
+	const char *parm_start = kvc->s.a + 1;
 	if (!skip_until (kvc, ')')) {
 		kvc_error (kvc, "Cannot find ) in function definition");
 		return false;
 	}
 	token_typename (&fun_rtyp, &fun_name);
-	fun_parm.b = kvc->s.a;
+	fun_parm = r_strs_new (parm_start, kvc->s.a);
 	kvc_skipn (kvc, 1);
 	skip_ws (kvc);
 	char *fn = r_strs_tostring (fun_name);
