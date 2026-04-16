@@ -256,7 +256,10 @@ static bool read_phdr(ELFOBJ *eo) {
 		}
 		if (!load_header_found) {
 			const ut64 load_addr = Elf_(get_baddr) (eo);
-			eo->ehdr.e_phoff = Elf_(v2p) (eo, load_addr + eo->ehdr.e_phoff);
+			ut64 phoff = Elf_(v2p) (eo, load_addr + eo->ehdr.e_phoff);
+			if (phoff != UT64_MAX) {
+				eo->ehdr.e_phoff = phoff;
+			}
 		}
 	}
 
@@ -676,7 +679,7 @@ static int init_dynamic_section(ELFOBJ *eo) {
 		return false;
 	}
 
-  ut64 loaded_offset = Elf_(v2p_new) (eo, dyn_phdr->p_vaddr);
+  ut64 loaded_offset = Elf_(v2p) (eo, dyn_phdr->p_vaddr);
   if (loaded_offset == UT64_MAX) {
 	  return false;
   }
@@ -692,7 +695,7 @@ static int init_dynamic_section(ELFOBJ *eo) {
 	RBinElfDynamicInfo *di = &eo->dyn_info;
 	ut64 strtabaddr = 0;
 	if (di->dt_strtab != R_BIN_ELF_ADDR_MAX) {
-		strtabaddr = Elf_(v2p_new) (eo, di->dt_strtab);
+		strtabaddr = Elf_(v2p) (eo, di->dt_strtab);
 	}
 
 	size_t strsize = (di->dt_strsz > 0)? di->dt_strsz: 0;
@@ -776,6 +779,11 @@ static inline ut16 *_parse_edata(ELFOBJ *eo, EDataState *edata_state) {
 	}
 
 	ut64 off = Elf_(v2p) (eo, eo->version_info[DT_VERSIONTAGIDX (DT_VERSYM)]);
+	if (off == UT64_MAX) {
+		free (data);
+		free (edata);
+		return NULL;
+	}
 	const char *section_name = "";
 	if (eo->shstrtab && shdr->sh_name < eo->shstrtab_size) {
 		section_name = &eo->shstrtab[shdr->sh_name];
@@ -821,6 +829,9 @@ static inline bool _maybe_parse_aux_ver_needed_info(ELFOBJ *eo, ParseVernauxStat
 
 	Elf_(Verneed) vn;
 	ut64 offset = Elf_(v2p) (eo, eo->version_info[DT_VERSIONTAGIDX (DT_VERNEED)]);
+	if (offset == UT64_MAX) {
+		return false;
+	}
 	do {
 		if (offset > eo->size || offset + sizeof (vn) > eo->size) {
 			return false;
@@ -901,7 +912,7 @@ static inline bool _maybe_parse_version_definition_info(ELFOBJ *eo, ParseVerDefS
 	Elf_(Verdef) vd;
 	ut8 svd[sizeof (Elf_(Verdef))] = {0};
 	ut64 offset = Elf_(v2p) (eo, vinfoaddr);
-	if (offset > eo->size || offset + sizeof (vd) > eo->size) {
+	if (offset == UT64_MAX || offset > eo->size || offset + sizeof (vd) > eo->size) {
 		return false;
 	}
 
@@ -1589,8 +1600,11 @@ static bool elf_init(ELFOBJ *eo) {
 		eo->has_nx = compute_has_nx (eo);
 		if (!init_strtab (eo)) {
 			R_LOG_DEBUG ("Cannot initialize strings table");
-			// discard section headers because without stringtable we fallback to phdr synthesis
-			R_FREE (eo->shdr);
+			if (eo->shdr) {
+				// shdr was parsed but strtab is garbage, likely a
+				// memory image where section data is not mapped
+				R_FREE (eo->shdr);
+			}
 		}
 		if (!init_dynstr (eo) && !is_bin_etrel (eo)) {
 			R_LOG_DEBUG ("Cannot initialize dynamic strings");
@@ -1639,7 +1653,7 @@ static ut64 get_got_entry(ELFOBJ *eo, RBinElfReloc *rel) {
 	if (!rel || !rel->rva || rel->rva == UT64_MAX) {
 		return UT64_MAX;
 	}
-	ut64 p_sym_got_addr = Elf_(v2p_new) (eo, rel->rva);
+	ut64 p_sym_got_addr = Elf_(v2p) (eo, rel->rva);
 	ut64 addr = R_BIN_ELF_BREADWORD (eo->b, p_sym_got_addr);
 	return (!addr || addr == R_BIN_ELF_WORD_MAX) ? UT64_MAX : addr;
 }
@@ -1735,7 +1749,7 @@ static ut64 get_import_addr_mips(ELFOBJ *bin, RBinElfReloc *rel) {
 		ut64 pos = COMPUTE_PLTGOT_POSITION (rel, got_addr, 0x2);
 		ut8 buf[128]; /// XXX why arbitrary 128
 		ut64 plt_addr = jmprel_addr + bin->dyn_info.dt_pltrelsz;
-		ut64 p_plt_addr = Elf_(v2p_new) (bin, plt_addr);
+		ut64 p_plt_addr = Elf_(v2p) (bin, plt_addr);
 		int res = r_buf_read_at (bin->b, p_plt_addr, buf, sizeof (buf));
 		if (res == sizeof (buf)) {
 			const ut8 *base = r_mem_mem_aligned (buf, sizeof (buf), (const ut8 *)"\x3c\x0f\x00", 3, 4);
@@ -1872,7 +1886,7 @@ static HtUU *ppc64v1_build_glink_map(ELFOBJ *eo) {
 	stub_vma = di->dt_ppc64_glink + 8 * 4;
 	num_plts = di->dt_pltrelsz / relsize;
 	for (n = 0; n < num_plts; n++) {
-		rela_off = Elf_(v2p_new) (eo, di->dt_jmprel + n * relsize);
+		rela_off = Elf_(v2p) (eo, di->dt_jmprel + n * relsize);
 		if (rela_off == UT64_MAX) {
 			break;
 		}
@@ -1938,7 +1952,7 @@ static ut64 get_import_addr_ppc(ELFOBJ *eo, RBinElfReloc *rel) {
 		return orva;
 	}
 
-	ut64 p_plt_addr = Elf_(v2p_new) (eo, plt_addr);
+	ut64 p_plt_addr = Elf_(v2p) (eo, plt_addr);
 	if (p_plt_addr == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -1974,7 +1988,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *eo, RBinElfReloc *rel) {
 		return UT64_MAX;
 	}
 
-	ut64 got_offset = Elf_(v2p_new) (eo, got_addr);
+	ut64 got_offset = Elf_(v2p) (eo, got_addr);
 	if (got_offset == UT64_MAX) {
 		return UT64_MAX;
 	}
@@ -2014,7 +2028,7 @@ static ut64 get_import_addr_x86_manual(ELFOBJ *eo, RBinElfReloc *rel) {
 		plt_sym_addr = R_BIN_ELF_READWORD (buf, i);
 
 		//relative address
-		if ((plt_addr + 6 + Elf_(v2p) (eo, plt_sym_addr)) == rel->rva) {
+		if ((plt_addr + 6 + plt_sym_addr) == rel->rva) {
 			return plt_addr;
 		}
 		if (plt_sym_addr == rel->rva) {
@@ -2363,10 +2377,12 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 
 	// ARM64
 	if (buf[0x18 + 3] == 0x58 && buf[0x2f] == 0x00) {
-		ut32 entry_vaddr = Elf_(p2v) (eo, entry);
-		ut32 main_addr = r_read_le32 (&buf[0x30]);
-		if ((main_addr >> 16) == (entry_vaddr >> 16)) {
-			return Elf_(v2p) (eo, main_addr);
+		ut64 entry_vaddr = Elf_(p2v) (eo, entry);
+		if (entry_vaddr != UT64_MAX) {
+			ut32 main_addr = r_read_le32 (&buf[0x30]);
+			if (((main_addr >> 16) == ((ut32)entry_vaddr >> 16))) {
+				return Elf_(v2p) (eo, main_addr);
+			}
 		}
 	}
 
@@ -2388,11 +2404,13 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 			bool thumb = pa & 1;
 			if (thumb) {
 				pa = Elf_(v2p) (eo, pa & ~1);
-				pa++;
+				if (pa != UT64_MAX) {
+					pa++;
+				}
 			} else {
 				pa = Elf_(v2p) (eo, pa);
 			}
-			if (pa < r_buf_size (eo->b)) {
+			if (pa != UT64_MAX && pa < r_buf_size (eo->b)) {
 				return pa;
 			}
 		}
@@ -2446,8 +2464,11 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 	if (buf[0] == 0xe8 && !memcmp (buf + 5, "\x50\xe8\x00\x00\x00\x00\xb8\x01\x00\x00\x00\x53", 12)) {
 		size_t SIZEOF_CALL = 5;
 		ut64 rel_addr = (ut64)((int)(buf[1] + (buf[2] << 8) + (buf[3] << 16) + (buf[4] << 24)));
-		const ut64 addr = Elf_(p2v)(eo, entry + SIZEOF_CALL) + rel_addr;
-		return Elf_(v2p) (eo, addr);
+		const ut64 p2v_val = Elf_(p2v)(eo, entry + SIZEOF_CALL);
+		if (p2v_val != UT64_MAX) {
+			const ut64 addr = p2v_val + rel_addr;
+			return Elf_(v2p) (eo, addr);
+		}
 	}
 
 	// X86-PIE
@@ -2455,7 +2476,7 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 		ut32 *pmain = (ut32*)(buf + 0x30);
 		ut64 vmain = Elf_(p2v) (eo, (ut64)*pmain);
 		ut64 ventry = Elf_(p2v) (eo, entry);
-		if (vmain >> 16 == ventry >> 16) {
+		if (vmain != UT64_MAX && ventry != UT64_MAX && vmain >> 16 == ventry >> 16) {
 			return (ut64) vmain;
 		}
 	}
@@ -2512,12 +2533,13 @@ ut64 Elf_(get_main_offset)(ELFOBJ *eo) {
 			st32 maindelta = (st32)r_read_le32 (p);
 			ut64 vmain = (ut64)(entry + bo + maindelta) + 7;
 			ut64 ventry = Elf_(p2v) (eo, entry);
-			if ((vmain >> 16) == (ventry >> 16)) {
+			if (ventry != UT64_MAX && (vmain >> 16) == (ventry >> 16)) {
 				return (ut64)vmain;
 			}
 		} else if (ch == 0xc7) { // mov rdi, 0xADDR
 			ut8 *p = buf + bo + 3;
-			return (ut64)(ut32)r_read_le32 (p);
+			ut64 addr = (ut64)(ut32)r_read_le32 (p);
+			return Elf_(v2p) (eo, addr);
 		}
 	}
 	return lookup_main_symbol_offset (eo);
@@ -3461,7 +3483,8 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_
 		if (idx < eo->ehdr.e_shnum) {
 			ut64 pa = eo->shdr[idx].sh_offset + r->offset;
 			r->offset = pa;
-			r->rva = Elf_(p2v) (eo, pa);
+			ut64 rva = Elf_(p2v) (eo, pa);
+			r->rva = (rva != UT64_MAX) ? rva : pa;
 		} else {
 			R_LOG_WARN ("fix_rva_and_offset_reloc have an invalid index");
 		}
@@ -3473,7 +3496,10 @@ static void fix_rva_and_offset_relocable_file(ELFOBJ *eo, RBinElfReloc *r, size_
 
 static void fix_rva_and_offset_exec_file(ELFOBJ *eo, RBinElfReloc *r) {
 	r->rva = r->offset;
-	r->offset = Elf_(v2p)(eo, r->offset);
+	ut64 pa = Elf_(v2p)(eo, r->offset);
+	if (pa != UT64_MAX) {
+		r->offset = pa;
+	}
 }
 
 static void fix_rva_and_offset(ELFOBJ *eo, RBinElfReloc *r, size_t pos) {
@@ -3588,7 +3614,7 @@ static bool read_crel_header(ELFOBJ *eo, CrelInfo *info) {
 static bool read_crel_reloc(ELFOBJ *eo, RBinElfReloc *r, ut64 vaddr, ut64 *next_offset) {
 	static CrelInfo crel_info = {0};
 	static ut64 last_section_offset = 0;
-	ut64 offset = Elf_(v2p_new) (eo, vaddr);
+	ut64 offset = Elf_(v2p) (eo, vaddr);
 	if (offset == UT64_MAX) {
 		return false;
 	}
@@ -3724,7 +3750,7 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 	static RelrInfo relr_info = {0};
 	// Handle RELR entries
 	if (rel_mode == DT_RELR) {
-		ut64 offset = Elf_(v2p_new) (eo, vaddr);
+		ut64 offset = Elf_(v2p) (eo, vaddr);
 		if (offset == UT64_MAX) {
 			return false;
 		}
@@ -3746,7 +3772,7 @@ static bool read_reloc(ELFOBJ *eo, RBinElfReloc *r, Elf_(Xword) rel_mode, ut64 v
 		return read_crel_reloc (eo, r, vaddr, &next_offset);
 	}
 	// Regular REL/RELA processing
-	ut64 offset = Elf_(v2p_new) (eo, vaddr);
+	ut64 offset = Elf_(v2p) (eo, vaddr);
 	if (offset == UT64_MAX) {
 		return false;
 	}
@@ -3937,7 +3963,9 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 			ht_uu_insert (eo->rel_cache, reloc->sym + 1, index + 1);
 			// For CREL relocations from dynamic table, we need to convert offset to address
 			ut64 vaddr = Elf_(p2v) (eo, reloc->offset);
-			reloc->rva = vaddr;  // Ensure rva is properly set
+			if (vaddr != UT64_MAX) {
+				reloc->rva = vaddr;
+			}
 			fix_rva_and_offset_exec_file (eo, reloc);
 			pos++;
 		}
@@ -4153,7 +4181,7 @@ static void create_section_from_phdr(ELFOBJ *eo, const char *name, ut64 addr, ut
 	R_RETURN_IF_FAIL (eo);
 	if (addr && addr != UT64_MAX) {
 		RBinElfSection *section = RVecRBinElfSection_emplace_back (&eo->g_sections);
-		section->offset = Elf_(v2p_new) (eo, addr);
+		section->offset = Elf_(v2p) (eo, addr);
 		section->rva = addr;
 		section->size = sz;
 		r_str_ncpy (section->name, name, R_ARRAY_SIZE (section->name) - 1);
@@ -4347,6 +4375,9 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 	int big_endian = Elf_(is_big_endian) (eo);
 	ut64 _baddr = Elf_(get_baddr) (bf->bo->bin_obj);
 	ut64 from = Elf_(v2p) (eo, preinit_addr);
+	if (from == UT64_MAX) {
+		return;
+	}
 	ut64 to = from + preinit_size;
 	if (to > eo->size) {
 		to = eo->size;
@@ -4364,8 +4395,8 @@ static void dtproceed(RBinFile *bf, ut64 preinit_addr, ut64 preinit_size, int sy
 			break;
 		}
 		ut64 caddr = Elf_(v2p) (eo, addr);
-		if (!caddr) {
-			R_LOG_DEBUG ("v2p failed for 0x%08"PFMT64x, caddr);
+		if (!caddr || caddr == UT64_MAX) {
+			R_LOG_DEBUG ("v2p failed for 0x%08"PFMT64x, addr);
 			break;
 		}
 		ba = R_NEW0 (RBinAddr);
@@ -4914,7 +4945,7 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 			break;
 		}
 
-		ut64 tmp_offset = Elf_(v2p_new) (eo, toffset);
+		ut64 tmp_offset = Elf_(v2p) (eo, toffset);
 		if (tmp_offset == UT64_MAX) {
 			tmp_offset = toffset;
 			is_vaddr = true;
@@ -4984,7 +5015,7 @@ static ut64 get_phdr_symtab_upper_bound(ELFOBJ *eo, ut64 addr_sym_table) {
 	ut64 bound = eo->size;
 	const RBinElfDynamicInfo *di = &eo->dyn_info;
 	if (di->dt_strtab != R_BIN_ELF_ADDR_MAX) {
-		ut64 strtab_addr = Elf_(v2p_new) (eo, di->dt_strtab);
+		ut64 strtab_addr = Elf_(v2p) (eo, di->dt_strtab);
 		if (strtab_addr != UT64_MAX && strtab_addr > addr_sym_table) {
 			bound = R_MIN (bound, strtab_addr);
 		}
@@ -5013,6 +5044,9 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	}
 
 	Elf_(Addr) addr_sym_table = Elf_(v2p) (eo, di->dt_symtab);
+	if (addr_sym_table == UT64_MAX) {
+		return NULL;
+	}
 	ut32 sym_size = di->dt_syment;
 	if (!sym_size) {
 		return NULL;
@@ -5210,7 +5244,7 @@ static void fill_symbol(ELFOBJ *eo, RBinElfSymbol *symbol, RBinSymbol *sym) {
 		vaddr = symbol->offset;
 	} else {
 		paddr = symbol->offset;
-		ut64 va = Elf_(p2v_new) (eo, paddr);
+		ut64 va = Elf_(p2v) (eo, paddr);
 		vaddr = (va != UT64_MAX) ? va : paddr;
 	}
 	memset (sym, 0, sizeof (RBinSymbol));
@@ -5555,7 +5589,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				offset = sym.st_value + eo->shdr[sym.st_shndx].sh_offset;
 			}
 		} else {
-			offset = Elf_(v2p_new) (eo, toffset);
+			offset = Elf_(v2p) (eo, toffset);
 			if (offset == UT64_MAX) {
 				offset = toffset;
 				is_vaddr = true;
@@ -5928,92 +5962,61 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 	return addr >= p->p_vaddr && addr < p->p_vaddr + p->p_filesz;
 }
 
-// Deprecated temporarily. Use r_bin_elf_p2v_new in new code for now.
-ut64 Elf_(p2v) (ELFOBJ *eo, ut64 paddr) {
-	R_RETURN_VAL_IF_FAIL (eo, 0);
-
-	if (!eo->phdr) {
-		if (is_bin_etrel (eo)) {
-			return eo->baddr + paddr;
-		}
-		return paddr;
-	}
-
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
-			if (!p->p_vaddr && !p->p_offset) {
-				continue;
-			}
-			ut64 vaddr = p->p_vaddr + paddr - p->p_offset;
-			return vaddr;
-		}
-	}
-
-	return paddr;
-}
-
-// Deprecated temporarily. Use r_bin_elf_v2p_new in new code for now.
-ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
-	R_RETURN_VAL_IF_FAIL (eo, 0); // UT64_MAX or vaddr?
-	if (!eo->phdr) {
-		if (is_bin_etrel (eo)) {
-			return vaddr - eo->baddr;
-		}
-		return vaddr;
-	}
-
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
-			if (!p->p_offset && !p->p_vaddr) {
-				continue;
-			}
-			return p->p_offset + vaddr - p->p_vaddr;
-		}
-	}
-	return vaddr;
-}
-
-/* converts a physical address to the virtual address, looking
- * at the program headers in the binary bin */
-ut64 Elf_(p2v_new) (ELFOBJ *eo, ut64 paddr) {
+ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
-
-	if (!eo->phdr) {
-		return is_bin_etrel (eo) ? eo->baddr + paddr : UT64_MAX;
+	if (eo->phdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
+				return p->p_vaddr + paddr - p->p_offset;
+			}
+		}
+		return UT64_MAX;
 	}
-
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_pphdr (p, paddr)) {
-			return p->p_vaddr + paddr - p->p_offset;
+	if (is_bin_etrel (eo)) {
+		return eo->baddr + paddr;
+	}
+	if (eo->shdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			Elf_(Shdr) *s = &eo->shdr[i];
+			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
+					&& paddr >= s->sh_offset
+					&& paddr < s->sh_offset + s->sh_size) {
+				return s->sh_addr + paddr - s->sh_offset;
+			}
 		}
 	}
-
 	return UT64_MAX;
 }
 
-/* converts a virtual address to the relative physical address, looking
- * at the program headers in the binary bin */
-ut64 Elf_(v2p_new) (ELFOBJ *eo, ut64 vaddr) {
+ut64 Elf_(v2p)(ELFOBJ *eo, ut64 vaddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
-
-	if (!eo->phdr) {
-		return is_bin_etrel (eo) ? vaddr - eo->baddr : UT64_MAX;
+	if (eo->phdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_phnum; i++) {
+			Elf_(Phdr) *p = &eo->phdr[i];
+			if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
+				return p->p_offset + vaddr - p->p_vaddr;
+			}
+		}
+		return UT64_MAX;
 	}
-
-	size_t i;
-	for (i = 0; i < eo->ehdr.e_phnum; i++) {
-		Elf_(Phdr) *p = &eo->phdr[i];
-		if (p->p_type == PT_LOAD && is_in_vphdr (p, vaddr)) {
-			return p->p_offset + vaddr - p->p_vaddr;
+	if (is_bin_etrel (eo)) {
+		return vaddr - eo->baddr;
+	}
+	if (eo->shdr) {
+		size_t i;
+		for (i = 0; i < eo->ehdr.e_shnum; i++) {
+			Elf_(Shdr) *s = &eo->shdr[i];
+			if ((s->sh_flags & SHF_ALLOC) && s->sh_size > 0
+					&& vaddr >= s->sh_addr
+					&& vaddr < s->sh_addr + s->sh_size) {
+				return s->sh_offset + vaddr - s->sh_addr;
+			}
 		}
 	}
-
 	return UT64_MAX;
 }
 

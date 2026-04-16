@@ -131,7 +131,8 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
 	ELFOBJ *eo = bf->bo->bin_obj;
-	ptr->paddr = Elf_(v2p) (eo, vaddr);
+	ut64 paddr = Elf_(v2p) (eo, vaddr);
+	ptr->paddr = (paddr != UT64_MAX) ? paddr : 0;
 	ptr->vaddr = vaddr;
 	ptr->hpaddr = hpaddr;
 	ptr->hvaddr = hvaddr;
@@ -139,7 +140,9 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 	ptr->type = type;
 	// realign due to thumb
 	if (bits == 16 && ptr->vaddr & 1) {
-		ptr->paddr--;
+		if (ptr->paddr > 0) {
+			ptr->paddr--;
+		}
 		ptr->vaddr--;
 	}
 	return ptr;
@@ -257,7 +260,7 @@ static RList* entries(RBinFile *bf) {
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
-			ptr->hvaddr = Elf_(p2v_new) (eo, ptr->hpaddr);
+			ptr->hvaddr = Elf_(p2v) (eo, ptr->hpaddr);
 		}
 
 		if (eo->ehdr.e_machine == EM_ARM) {

@@ -1,5 +1,5 @@
 NAME=compact relocs
-FILE=bins/elf/new/compact-relocs.o
+FILE=bins/elf/new/compact-relocs.oo
 CMDS=<<EOF
 iS;ir;s0x08000040;af;pdf
 EOF
