@@ -673,11 +673,7 @@ ls -q /tmp/r2r-project-delete-inside-root~inside[0]
 rmrf /tmp/r2r-project-delete-inside-root
 EOF
 EXPECT=<<EOF
-/tmp/r2r-project-delete-inside-root/./
-/tmp/r2r-project-delete-inside-root/../
 /tmp/r2r-project-delete-inside-root/inside/
-/tmp/r2r-project-delete-inside-root/./
-/tmp/r2r-project-delete-inside-root/../
 EOF
 RUN
 

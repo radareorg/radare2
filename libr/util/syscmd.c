@@ -315,6 +315,9 @@ R_API char *r_syscmd_ls(const char *input, int cons_width) {
 	int linelen = 0;
 	bool lacks_newline = false;
 	r_list_foreach (files, iter, name) {
+		if (*name == '.') {
+			continue;
+		}
 		char *n = r_str_newf ("%s%s", dir, name);
 		if (r_str_glob (name, pi->pattern)) {
 			if (*n) {
