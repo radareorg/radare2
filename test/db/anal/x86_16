@@ -71,7 +71,7 @@ EXPECT=<<EOF
     "bytes": "9c",
     "size": 1,
     "type": "upush",
-    "esilcost": 0,
+    "esilcost": 6,
     "cycles": 2,
     "failcycles": 0,
     "delay": 0,
