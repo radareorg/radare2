@@ -375,6 +375,10 @@ R_API int r_esil_condition(REsil *esil, const char *str);
 R_API int r_esil_get_parm_type(REsil *esil, const char *str);
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num);
 R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *size);
+// Slice-native variants — avoid the NUL-scan on every lookup.
+R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s);
+R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size);
+R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num);
 
 // esil_handler.c
 R_API bool r_esil_handlers_init(REsil *esil);
