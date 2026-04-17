@@ -628,36 +628,13 @@ R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	if (esil->stackptr >= esil->stacksize) {
 		return false;
 	}
-	// Worst case: "0x" + 16 hex digits + NUL = 19 bytes. r_esil_parse
-	// pre-sizes the arena for SDB_NUM_BUFSZ per slot.
-	char *dst = stack_arena_reserve (esil, 20);
+	char *dst = stack_arena_reserve (esil, SDB_NUM_BUFSZ);
 	if (!dst) {
 		R_LOG_DEBUG ("esil stack arena exhausted");
 		return false;
 	}
-	size_t n;
-	if (num == 0) {
-		dst[0] = '0';
-		dst[1] = '\0';
-		n = 1;
-	} else {
-		static const char lookup[] = "0123456789abcdef";
-		char tmp[16];
-		int t = 0;
-		ut64 v = num;
-		while (v) {
-			tmp[t++] = lookup[v & 0xf];
-			v >>= 4;
-		}
-		dst[0] = '0';
-		dst[1] = 'x';
-		int j;
-		for (j = 0; j < t; j++) {
-			dst[2 + j] = tmp[t - 1 - j];
-		}
-		n = (size_t)(t + 2);
-		dst[n] = '\0';
-	}
+	sdb_itoa (num, 16, dst, SDB_NUM_BUFSZ);
+	const size_t n = strlen (dst);
 	esil->stack[esil->stackptr++] = r_strs_from_len (dst, n);
 	esil->stack_buf_len += (ut32)(n + 1);
 	return true;
@@ -738,71 +715,6 @@ R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *si
 // XXX deprecate
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 	return r_esil_get_parm_size (esil, str, num, NULL);
-}
-
-/* RStrs-native parm classification. Uses the slice length, never scans to NUL.
- * For register names the slice is already NUL-terminated in all ESIL-internal
- * call sites (parse-time tokens live in stack_buf, pushnum results live in the
- * arena, external pushes get copied into the arena), so we can pass s.a into
- * r_reg_get directly. */
-R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
-	const size_t n = r_strs_len (s);
-	if (n == 0) {
-		return R_ESIL_PARM_INVALID;
-	}
-	const char *p = s.a;
-	if (n >= 2 && p[0] == '0' && p[1] == 'x') {
-		return R_ESIL_PARM_NUM;
-	}
-	const unsigned char c0 = (unsigned char)p[0];
-	if (!(isdigit (c0) || c0 == '-')) {
-		RRegItem *ri = r_reg_get (esil->anal->reg, p, -1);
-		if (ri) {
-			r_unref (ri);
-			return R_ESIL_PARM_REG;
-		}
-		return R_ESIL_PARM_INVALID;
-	}
-	size_t i;
-	for (i = 1; i < n; i++) {
-		if (!isdigit ((unsigned char)p[i])) {
-			RRegItem *ri = r_reg_get (esil->anal->reg, p, -1);
-			if (ri) {
-				r_unref (ri);
-				return R_ESIL_PARM_REG;
-			}
-			return R_ESIL_PARM_INVALID;
-		}
-	}
-	return R_ESIL_PARM_NUM;
-}
-
-R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size) {
-	R_RETURN_VAL_IF_FAIL (esil && num, false);
-	if (size) {
-		*size = 0;
-	}
-	if (r_strs_empty (s)) {
-		return false;
-	}
-	switch (r_esil_get_parm_type_strs (esil, s)) {
-	case R_ESIL_PARM_NUM:
-		*num = r_num_get (NULL, s.a);
-		if (size) {
-			*size = esil->anal->config->bits;
-		}
-		return true;
-	case R_ESIL_PARM_REG:
-		return r_esil_reg_read (esil, s.a, num, (ut32 *)size);
-	default:
-		R_LOG_DEBUG ("Invalid esil arg to find parm size (%.*s)", (int)r_strs_len (s), s.a);
-		esil->parse_stop = 1;
-		return false;
-	}
-}
-
-R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num) {
-	return r_esil_get_parm_size_strs (esil, s, num, NULL);
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
@@ -948,24 +860,20 @@ static bool runword_strs(REsil *esil, RStrs w) {
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return false;
 	}
-	// Control-flow braces: short tokens, check bytes directly to avoid the
-	// r_strs_equals_str strlen+memcmp roundtrip on the hot path.
-	const size_t wlen = (size_t)(w.b - w.a);
-	if (wlen == 0) {
+	if (r_strs_empty (w)) {
 		return true;
 	}
-	const char c0 = w.a[0];
-	if (wlen == 2 && c0 == '}' && w.a[1] == '{') {
+	if (r_strs_equals_str (w, "}{")) {
 		esil->skip = (esil->skip == 0);
 		return true;
 	}
-	if (wlen == 1 && c0 == '}') {
+	if (r_strs_equals_str (w, "}")) {
 		if (esil->skip) {
 			esil->skip--;
 		}
 		return true;
 	}
-	if (esil->skip && !(wlen == 2 && c0 == '?' && w.a[1] == '{')) {
+	if (esil->skip && !r_strs_equals_str (w, "?{")) {
 		return true;
 	}
 	// RStrs-native op lookup — slice-vs-slice compare via custom HT hash/cmp

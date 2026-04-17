@@ -375,10 +375,17 @@ R_API int r_esil_condition(REsil *esil, const char *str);
 R_API int r_esil_get_parm_type(REsil *esil, const char *str);
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num);
 R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *size);
-// Slice-native variants — avoid the NUL-scan on every lookup.
-R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s);
-R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size);
-R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num);
+// Slice-native wrappers. The ESIL stack arena always NUL-terminates each
+// pushed slice, so `s.a` can be passed to the NUL-terminated variants.
+static inline int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
+	return r_strs_empty (s)? R_ESIL_PARM_INVALID: r_esil_get_parm_type (esil, s.a);
+}
+static inline bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size) {
+	return !r_strs_empty (s) && r_esil_get_parm_size (esil, s.a, num, size);
+}
+static inline bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num) {
+	return !r_strs_empty (s) && r_esil_get_parm (esil, s.a, num);
+}
 
 // esil_handler.c
 R_API bool r_esil_handlers_init(REsil *esil);
