@@ -90,30 +90,18 @@ static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	return false;
 }
 
-static bool isnum_strs(REsil *esil, RStrs str, ut64 *num) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	if (!r_strs_empty (str) && isdigit ((unsigned char)str.a[0])) {
-		if (num) {
-			*num = r_strs_num (str);
-		}
-		return true;
-	}
-	if (num) {
-		*num = 0;
-	}
-	return false;
-}
-
 R_IPI bool isregornum_strs(REsil *esil, RStrs str, ut64 *num) {
 	if (r_strs_empty (str)) {
 		return false;
 	}
-	if (!r_esil_reg_read (esil, str.a, num, NULL)) {
-		if (!isnum_strs (esil, str, num)) {
-			return false;
-		}
+	// Fast path: digit prefix means it's a number literal (pushnum output is
+	// always "0x..."). Avoids a wasted HT probe for the common case.
+	const unsigned char c0 = (unsigned char)str.a[0];
+	if (isdigit (c0)) {
+		*num = r_strs_tonum (str, 0, NULL);
+		return true;
 	}
-	return true;
+	return r_esil_reg_read (esil, str.a, num, NULL);
 }
 
 R_IPI bool isregornum(REsil *esil, const char *str, ut64 *num) {
@@ -214,7 +202,7 @@ static bool esil_cf(REsil *esil) {
 		return false;
 	}
 	// already classified as NUM — parse directly
-	const ut64 bit = r_strs_num (src);
+	const ut64 bit = r_strs_tonum (src, 0, NULL);
 	//carry from bit <src>
 	//range of src goes from 0 to 63
 	//
@@ -233,7 +221,7 @@ static bool esil_bf(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, src) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	const ut64 bit = r_strs_num (src);
+	const ut64 bit = r_strs_tonum (src, 0, NULL);
 	//borrow from bit <src>
 	//range of src goes from 1 to 64
 	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
@@ -267,7 +255,7 @@ static bool esil_of(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, p_bit) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	const ut64 bit = r_strs_num (p_bit);
+	const ut64 bit = r_strs_tonum (p_bit, 0, NULL);
 
 	const ut64 m[2] = {r_num_genmask (bit & 0x3f), r_num_genmask ((bit + 0x3f) & 0x3f)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
@@ -288,7 +276,7 @@ static bool esil_sf(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, p_size) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	const ut64 size = r_strs_num (p_size);
+	const ut64 size = r_strs_tonum (p_size, 0, NULL);
 	ut64 num;
 
 	if (size > 63) {
@@ -354,8 +342,8 @@ static bool esil_eq(REsil *esil) {
 	}
 	if (is128reg && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop_strs (esil);
-		const ut64 n0 = r_strs_num (src);
-		const ut64 n1 = r_strs_num (src2);
+		const ut64 n0 = r_strs_tonum (src, 0, NULL);
+		const ut64 n1 = r_strs_tonum (src2, 0, NULL);
 		ret = r_esil_reg_write (esil, dst.a, n1);
 		char *dst2 = r_str_newf ("%sh", dst.a);
 		ret = r_esil_reg_write (esil, dst2, n0);
@@ -366,7 +354,7 @@ static bool esil_eq(REsil *esil) {
 		if (r_esil_get_parm_strs (esil, src2, &num2)) {
 			ret = r_esil_reg_write (esil, newreg, num2);
 		} else {
-			const ut64 n0 = r_strs_num (src);
+			const ut64 n0 = r_strs_tonum (src, 0, NULL);
 			ret = r_esil_reg_write (esil, dst.a, n0);
 		}
 		free (newreg);
@@ -490,7 +478,7 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	ut32 sn, ret = false;
 	const RStrs usn = r_esil_pop_strs (esil);
 	if (!r_strs_empty (usn)) {
-		sn = (ut32) r_strs_num (usn);
+		sn = (ut32) r_strs_tonum (usn, 0, NULL);
 	} else sn = 0x80;
 
 	if (sn == 3) {
@@ -1443,7 +1431,6 @@ static bool esil_peek_n(REsil *esil, int bits) {
 	}
 	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config);
 	bool ret = false;
-	char res[SDB_NUM_BUFSZ];
 	ut64 addr;
 	ut32 bytes = bits / 8;
 	const RStrs dst = r_esil_pop_strs (esil);
@@ -1456,15 +1443,13 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		if (bits == 128) {
 			ut8 a[sizeof (ut64) * 2] = {0};
 			ret = r_esil_mem_read (esil, addr, a, bytes);
-			ut64 b = r_read_ble64 (&a, be);
-			ut64 c = r_read_ble64 (&a[8], be);
-			sdb_itoa (b, 16, res, sizeof (res));
-			r_esil_push (esil, res);
-			sdb_itoa (c, 16, res, sizeof (res));
-			r_esil_push (esil, res);
+			const ut64 b = r_read_ble64 (&a, be);
+			const ut64 c = r_read_ble64 (&a[8], be);
+			r_esil_pushnum (esil, b);
+			r_esil_pushnum (esil, c);
 			return ret;
 		}
-		ut64 bitmask = r_num_genmask (bits - 1);
+		const ut64 bitmask = r_num_genmask (bits - 1);
 		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_esil_mem_read (esil, addr, a, bytes);
 #if 0
@@ -1475,8 +1460,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 			r_mem_swapendian ((ut8*)&b, (const ut8*)&b, bytes);
 		}
 #endif
-		sdb_itoa (b & bitmask, 16, res, sizeof (res));
-		r_esil_push (esil, res);
+		r_esil_pushnum (esil, b & bitmask);
 		esil->lastsz = bits;
 	}
 	return ret;

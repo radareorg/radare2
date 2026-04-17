@@ -682,7 +682,7 @@ R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size)
 	const unsigned char c0 = (unsigned char)s.a[0];
 	// Fast path: "0x..." hex literal (pushnum output is always this form)
 	if (c0 == '0' && n >= 2 && s.a[1] == 'x') {
-		*num = r_strs_num (s);
+		*num = r_strs_tonum (s, 0, NULL);
 		if (size) {
 			*size = esil->anal->config->bits;
 		}
@@ -696,7 +696,7 @@ R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size)
 				goto try_reg;
 			}
 		}
-		*num = r_strs_num (s);
+		*num = r_strs_tonum (s, 0, NULL);
 		if (size) {
 			*size = esil->anal->config->bits;
 		}
@@ -885,6 +885,17 @@ static bool runword_strs(REsil *esil, RStrs w) {
 	}
 	if (esil->skip && !(wlen == 2 && c0 == '?' && w.a[1] == '{')) {
 		return true;
+	}
+	// Fast-screen: no ESIL op starts with a digit, so number literals
+	// (0x…, 42, …) skip the op HT probe and go straight to push.
+	if (R_LIKELY (c0 >= '0' && c0 <= '9')) {
+		if (R_UNLIKELY (esil->stackptr > esil->stacksize - 1)) {
+			R_LOG_DEBUG ("ESIL stack is full");
+			esil->trap = 1;
+			esil->trap_code = 1;
+			return true;
+		}
+		return r_esil_push_strs (esil, w);
 	}
 	// RStrs-native op lookup — slice-vs-slice compare via custom HT hash/cmp
 	REsilOp *op = r_esil_get_op_strs (esil, w);

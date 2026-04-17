@@ -153,15 +153,19 @@ static inline bool r_strs_split_strs(RStrs s, RStrs sep, RStrs *head, RStrs *tai
 
 /* Conversion (out of line) */
 R_API char *r_strs_tostring(RStrs s);
-R_API ut64 r_strs_tonum(RStrs s);
 R_API st64 r_strs_tosnum(RStrs s, bool *ok);
 
-/* Fast slice → number parser. Respects slice bounds (no strlen, no malloc).
- * Recognizes just "0x..." hex and leading-digit decimal — the two forms
- * pushed into ESIL stack arenas. For richer syntax (signed, 0b, 0o, 0t,
- * expressions, special literals) call r_num_get. Returns 0 for empty
- * slices or slices that don't match the recognized forms. */
-R_API ut64 r_strs_num(RStrs s);
+/* Parse a slice as an unsigned integer, respecting slice bounds (no strlen,
+ * no malloc). Only recognises plain integer literals — for richer syntax
+ * (signed, 0b, 0o, 0t, expressions, …) call r_num_get.
+ *
+ *   base = 0   auto-detect: "0x" / "0X" prefix → hex, else decimal
+ *   base = 10  decimal only (digits)
+ *   base = 16  hex (optional "0x" / "0X" prefix, then hex digits)
+ *
+ * If error is non-NULL, *error is set to true on empty/malformed input and
+ * false on success. On error the return value is 0. */
+R_API ut64 r_strs_tonum(RStrs s, int base, bool *error);
 
 /* Write `n` as a "0x…" hex string into `buf` (capacity `cap`) and return the
  * resulting slice. `cap` must be at least 19 (worst case: "0x" + 16 hex + NUL).
