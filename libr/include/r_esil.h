@@ -243,10 +243,6 @@ typedef struct r_esil_t {
 	ut8 lastsz;	//in bits //used for signature-flag
 	/* native ops and custom ops — HtPP keyed by RStrs slice */
 	HtPP *ops;
-	/* longest registered op name; lets runword_strs fast-skip the op HT
-	 * lookup for tokens that can't be ops (e.g. long hex literals, reg
-	 * names). Updated in r_esil_set_op as new ops are registered. */
-	ut32 max_op_len;
 	struct r_esil_plugin_t *curplug; // ???
 	char *current_opstr;
 	SdbMini *interrupts;

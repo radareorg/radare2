@@ -263,10 +263,6 @@ R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push,
 			free (eop);
 			return false;
 		}
-		const ut32 namelen = (ut32)r_strs_len (k);
-		if (namelen > esil->max_op_len) {
-			esil->max_op_len = namelen;
-		}
 	}
 	eop->code = code;
 	eop->push = push;
@@ -878,8 +874,8 @@ static bool runword_strs(REsil *esil, RStrs w) {
 	if (esil->skip && !(wlen == 2 && c0 == '?' && w.a[1] == '{')) {
 		return true;
 	}
-	// Fast-screen: skip op HT for digit-leading or too-long tokens.
-	if (R_LIKELY ((c0 >= '0' && c0 <= '9') || wlen > esil->max_op_len)) {
+	// Fast-screen: skip op HT for digit-leading tokens.
+	if (R_LIKELY (c0 >= '0' && c0 <= '9')) {
 		if (R_UNLIKELY (esil->stackptr > esil->stacksize - 1)) {
 			R_LOG_DEBUG ("ESIL stack is full");
 			esil->trap = 1;
