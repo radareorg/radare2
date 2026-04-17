@@ -940,9 +940,12 @@ static int r_bin_java_extract_reference_name(const char *input_str, char **ref_s
 	free (*ref_str);
 	str_len += len;
 	*ref_str = malloc (str_len + 1);
+	if (!*ref_str) {
+		return -1;
+	}
 	new_str = *ref_str;
-	memcpy (new_str, str_pos, str_len);
-	new_str[str_len] = 0;
+	memcpy (new_str, str_pos, len);
+	new_str[len] = 0;
 	while (*new_str) {
 		if (*new_str == '/') {
 			*new_str = '.';
