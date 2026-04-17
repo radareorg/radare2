@@ -1851,15 +1851,16 @@ static RBinJavaAttrInfo *r_bin_java_get_attr_from_field(RBinJavaField *field, R_
 }
 
 static ut8 *r_bin_java_get_attr_buf(RBinJavaObj *bin, ut64 sz, const ut64 offset, const ut8 *buf, const ut64 len) {
-	// XXX this pending is wrong and too expensive
-	int pending = len - offset;
-	const ut8 *a_buf = offset + buf;
-	ut8 *attr_buf = (ut8 *)calloc (pending + 1, 1);
+	if (offset >= len) {
+		return NULL;
+	}
+	const ut64 pending = len - offset;
+	ut8 *attr_buf = (ut8 *)calloc (1, pending + 1);
 	if (!attr_buf) {
 		R_LOG_ERROR ("Unable to allocate 0x%04" PFMT64x "for an attribute", sz);
-		return attr_buf;
+		return NULL;
 	}
-	memcpy (attr_buf, a_buf, pending); // sz+1);
+	memcpy (attr_buf, buf + offset, pending);
 	return attr_buf;
 }
 
@@ -3538,9 +3539,8 @@ static RBinJavaAttrInfo *r_bin_java_inner_classes_attr_new(RBinJavaObj *bin, ut8
 			}
 			icattr->name = r_bin_java_get_item_name_from_bin_cp_list (bin, obj);
 			if (!icattr->name) {
-				icattr->name = strdup ("NULL");
 				R_LOG_WARN ("Unable to find inner class name for index: %d", icattr->inner_name_idx);
-				free (icattr);
+				r_bin_java_inner_classes_attr_entry_free (icattr);
 				break;
 			}
 		}
@@ -3655,23 +3655,20 @@ static RBinJavaAttrInfo *r_bin_java_source_debug_attr_new(RBinJavaObj *bin, ut8 
 		return NULL;
 	}
 	attr->type = R_BIN_JAVA_ATTR_TYPE_SOURCE_DEBUG_EXTENTSION_ATTR;
-	if (attr->length == 0) {
-		R_LOG_WARN ("Attempting to allocate 0 bytes for debug_extension");
+	const ut64 avail = sz - offset;
+	const ut32 n = (attr->length <= avail) ? attr->length : (ut32)avail;
+	if (n == 0) {
 		attr->info.debug_extensions.debug_extension = NULL;
-		return attr;
-	} else if ((attr->length + offset) > sz) {
-		R_LOG_WARN ("Expected %d byte(s) got %" PFMT64d " bytes for debug_extension", attr->length, (offset + sz));
-	}
-	attr->info.debug_extensions.debug_extension = (ut8 *)malloc (attr->length);
-	if (attr->info.debug_extensions.debug_extension && (attr->length > (sz - offset))) {
-		memcpy (attr->info.debug_extensions.debug_extension, buffer + offset, sz - offset);
-	} else if (attr->info.debug_extensions.debug_extension) {
-		memcpy (attr->info.debug_extensions.debug_extension, buffer + offset, attr->length);
 	} else {
-		R_LOG_ERROR ("Unable to allocate data for debug_extension");
+		attr->info.debug_extensions.debug_extension = (ut8 *)malloc (n);
+		if (!attr->info.debug_extensions.debug_extension) {
+			R_LOG_ERROR ("Unable to allocate data for debug_extension");
+		} else {
+			memcpy (attr->info.debug_extensions.debug_extension, buffer + offset, n);
+		}
 	}
-	offset += attr->length;
-	attr->size = offset;
+	attr->length = n;
+	attr->size = offset + n;
 	return attr;
 }
 
@@ -4112,8 +4109,8 @@ static RBinJavaAttrInfo *r_bin_java_record_attr_new(RBinJavaObj *bin, ut8 *buffe
 		comp->attributes = r_list_newf (r_bin_java_attribute_free);
 		ut32 j;
 		ut16 attr_count = R_MIN (comp->attributes_count, UT16_MAX / 8);
-		for (j = 0; j < attr_count && offset < sz; j++) {
-			RBinJavaAttrInfo *cattr = r_bin_java_read_next_attr (bin, buf_offset + offset, buffer, sz);
+		for (j = 0; j < attr_count && offset + 6 <= sz; j++) {
+			RBinJavaAttrInfo *cattr = r_bin_java_read_next_attr_from_buffer (bin, buffer + offset, sz - offset, buf_offset + offset);
 			if (cattr) {
 				r_list_append (comp->attributes, cattr);
 				offset += cattr->size;
@@ -4876,38 +4873,28 @@ static ut64 double_cp_calc_size(RBinJavaCPTypeObj *obj) {
 
 static RBinJavaCPTypeObj *utf8_cp_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz) {
 	ut8 tag = buffer[0];
-	RBinJavaCPTypeObj *obj;
 	int quick_check = r_bin_java_quick_check (R_BIN_JAVA_CP_UTF8, tag, sz, "Utf8");
-	if (quick_check > 0) {
+	if (quick_check > 0 || sz < 3) {
 		return NULL;
 	}
-	if ((obj = R_NEW0 (RBinJavaCPTypeObj))) {
-		obj->tag = tag;
-		obj->metas = R_NEW0 (RBinJavaMetaInfo);
-		obj->metas->type_info = (void *)&R_BIN_JAVA_CP_METAS[tag];
-		obj->name = strdup ((const char *)R_BIN_JAVA_CP_METAS[tag].name);
-		obj->info.cp_utf8.length = R_BIN_JAVA_USHORT (buffer, 1);
-		if (obj->info.cp_utf8.length > sz - 3) {
-			obj->info.cp_utf8.length = (sz > 3) ? sz - 3 : 0;
-		}
-		obj->info.cp_utf8.bytes = (ut8 *) malloc (obj->info.cp_utf8.length + 1);
-		if (obj->info.cp_utf8.bytes) {
-			memset (obj->info.cp_utf8.bytes, 0, obj->info.cp_utf8.length + 1);
-			if (obj->info.cp_utf8.length < (sz - 3)) {
-				memcpy (obj->info.cp_utf8.bytes, buffer + 3, (sz - 3));
-				obj->info.cp_utf8.length = sz - 3;
-			} else {
-				// Validate before memcpy
-				if (sz >= 3 && obj->info.cp_utf8.length <= (sz - 3)) {
-					memcpy (obj->info.cp_utf8.bytes, buffer + 3, obj->info.cp_utf8.length);
-				}
-			}
-			obj->value = obj->info.cp_utf8.bytes;
-		} else {
-			r_bin_java_obj_free (obj);
-			obj = NULL;
-		}
+	RBinJavaCPTypeObj *obj = R_NEW0 (RBinJavaCPTypeObj);
+	obj->tag = tag;
+	obj->metas = R_NEW0 (RBinJavaMetaInfo);
+	obj->metas->type_info = (void *)&R_BIN_JAVA_CP_METAS[tag];
+	obj->name = strdup ((const char *)R_BIN_JAVA_CP_METAS[tag].name);
+	const ut64 avail = sz - 3;
+	ut16 declared = R_BIN_JAVA_USHORT (buffer, 1);
+	ut16 n = (declared <= avail) ? declared : (ut16)avail;
+	obj->info.cp_utf8.length = n;
+	obj->info.cp_utf8.bytes = calloc (1, (ut64)n + 1);
+	if (!obj->info.cp_utf8.bytes) {
+		r_bin_java_obj_free (obj);
+		return NULL;
 	}
+	if (n > 0) {
+		memcpy (obj->info.cp_utf8.bytes, buffer + 3, n);
+	}
+	obj->value = obj->info.cp_utf8.bytes;
 	return obj;
 }
 
@@ -6517,10 +6504,11 @@ static RBinJavaElementValue *r_bin_java_element_value_new(RBinJavaObj *bin, ut8 
 static void r_bin_java_bootstrap_method_argument_free(void /*RBinJavaBootStrapArgument*/ *b) {
 	RBinJavaBootStrapArgument *bsm_arg = b;
 	if (bsm_arg) {
-		RBinJavaCPTypeMetas *tm = (RBinJavaCPTypeMetas *)bsm_arg->argument_info_cp_obj;
-		if (tm) {
-			if (tm && (size_t) (tm->allocs) > 1024 && tm->allocs->delete_obj) {
-				tm->allocs->delete_obj (tm);
+		RBinJavaCPTypeObj *obj = bsm_arg->argument_info_cp_obj;
+		if (obj && obj->metas) {
+			RBinJavaCPTypeMetas *tm = (RBinJavaCPTypeMetas *)obj->metas->type_info;
+			if (tm && tm->allocs && tm->allocs->delete_obj) {
+				tm->allocs->delete_obj (obj);
 			}
 			bsm_arg->argument_info_cp_obj = NULL;
 		}
@@ -6873,7 +6861,7 @@ static ut64 r_bin_java_rtv_annotations_attr_calc_size(RBinJavaAttrInfo *attr) {
 static RBinJavaAttrInfo *r_bin_java_rti_annotations_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	ut64 offset = 0;
-	if (buf_offset + 32 >= sz) {
+	if (sz < 8) {
 		return NULL;
 	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
@@ -6883,14 +6871,15 @@ static RBinJavaAttrInfo *r_bin_java_rti_annotations_attr_new(RBinJavaObj *bin, u
 		attr->info.annotation_array.num_annotations = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		attr->info.annotation_array.annotations = r_list_newf (r_bin_java_annotation_free);
-		for (i = 0; i < attr->info.rtv_annotations_attr.num_annotations; i++) {
+		for (i = 0; i < attr->info.annotation_array.num_annotations; i++) {
 			if (offset >= sz) {
 				break;
 			}
 			RBinJavaAnnotation *annotation = r_bin_java_annotation_new (bin, buffer + offset, sz - offset, buf_offset + offset);
-			if (annotation) {
-				offset += annotation->size;
+			if (!annotation) {
+				break;
 			}
+			offset += annotation->size;
 			r_list_append (attr->info.annotation_array.annotations, (void *)annotation);
 		}
 		attr->size = offset;
@@ -7008,13 +6997,14 @@ static RBinJavaAttrInfo *r_bin_java_rtvp_annotations_attr_new(RBinJavaObj *bin, 
 		offset += 1;
 		attr->info.rtvp_annotations_attr.parameter_annotations = r_list_newf (r_bin_java_annotation_array_free);
 		for (i = 0; i < attr->info.rtvp_annotations_attr.num_parameters; i++) {
-			if (offset > sz) {
+			if (offset >= sz) {
 				break;
 			}
 			annotation_array = r_bin_java_annotation_array_new (bin, buffer + offset, sz - offset, buf_offset + offset);
-			if (annotation_array) {
-				offset += annotation_array->size;
+			if (!annotation_array) {
+				break;
 			}
+			offset += annotation_array->size;
 			r_list_append (attr->info.rtvp_annotations_attr.parameter_annotations, (void *)annotation_array);
 		}
 		attr->size = offset;
