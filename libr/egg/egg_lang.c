@@ -251,38 +251,49 @@ static const char *find_alias(REgg *egg, const char *str) {
 }
 
 static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
-	char *p, *q, *oldp; // avoid mem leak
+	char *q, *oldp;
+	const char *p;
+	char *allocated = NULL; // extra heap pointer that needs freeing
 	char type = ' ';
 	char buf[64]; // may cause stack overflow
-	oldp = p = q = strdup (ptr);
+	oldp = q = strdup (ptr);
 	if (get_op (&q)) {
 		*q = '\x00';
 	}
 	REggEmit *e = egg->remit;
-	p = (char *)r_str_trim_head_ro (p);
-	if (is_var (p)) {
-		p = r_egg_mkvar (egg, buf, p, 0);
+	p = r_str_trim_head_ro (oldp);
+	/* also strip trailing whitespace in-place (we own oldp) */
+	{
+		char *end = (char *)p + strlen (p);
+		while (end > p && (end[-1] == ' ' || end[-1] == '\t')) {
+			end--;
+			*end = '\0';
+		}
+	}
+	if (is_var ((char *)p)) {
+		allocated = r_egg_mkvar (egg, buf, p, 0);
+		p = allocated;
 		if (egg->lang.varxs == '*') {
 			e->load (egg, p, egg->lang.varsize);
-			R_FREE (oldp);
-			oldp = p = strdup (e->regs (egg, 0));
+			R_FREE (allocated);
+			allocated = strdup (e->regs (egg, 0));
+			p = allocated;
 			// XXX: which will go wrong in arm
 			// for reg used in emit.load in arm is r7 not r0
 		} else if (egg->lang.varxs == '&') {
 			e->load_ptr (egg, p);
-			R_FREE (oldp);
-			oldp = p = strdup (e->regs (egg, 0));
+			R_FREE (allocated);
+			allocated = strdup (e->regs (egg, 0));
+			p = allocated;
 		}
 		type = ' ';
 	} else {
 		type = '$';
 	}
-	if (*p) {
+	if (p && *p) {
 		e->mathop (egg, op, egg->lang.varsize, type, p, ep);
 	}
-	if (p != oldp) {
-		R_FREE (p);
-	}
+	R_FREE (allocated);
 	R_FREE (oldp);
 	R_FREE (ep);
 }
@@ -1188,10 +1199,20 @@ static void rcc_next(REgg *egg) {
 	} else { // handle mathop
 		int vs = 'l';
 		char type, *eq, *ptr = egg->lang.elem, *tmp;
+		char compound_op = 0; // 0 = plain '=', otherwise +,-,*,/,|,&,^
 		egg->lang.elem[egg->lang.elem_n] = '\0';
 		ptr = (char *)r_str_trim_head_ro (ptr);
 		if (*ptr) {
 			eq = strchr (ptr, '=');
+			if (eq && eq > ptr) {
+				/* detect compound operators: +=, -=, *=, /=, |=, &=, ^= */
+				char prev = eq[-1];
+				if (prev == '+' || prev == '-' || prev == '*' || prev == '/'
+				    || prev == '|' || prev == '&' || prev == '^') {
+					compound_op = prev;
+					eq[-1] = '\x00'; /* chop the operator off the LHS */
+				}
+			}
 			if (eq) {
 				vs = egg->lang.varsize;
 				*buf = *eq = '\x00';
@@ -1218,7 +1239,12 @@ static void rcc_next(REgg *egg) {
 				} else {
 					type = '$';
 				}
-				e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
+				if (compound_op) {
+					/* emit: p <compound_op>= tmpreg */
+					e->mathop (egg, compound_op, vs, type, e->regs (egg, 1), p);
+				} else {
+					e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
+				}
 				free (p);
 #if 0
 				char str2[64], *p, ch = *(eq-1);
@@ -1259,6 +1285,9 @@ static void rcc_next(REgg *egg) {
 		}
 	}
 	free (str);
+	/* reset the element buffer so the next statement starts clean */
+	egg->lang.elem[0] = '\0';
+	egg->lang.elem_n = 0;
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
