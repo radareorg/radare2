@@ -634,15 +634,6 @@ R_API RStrs r_esil_pop_strs(REsil *esil) {
 	return esil->stack[--esil->stackptr];
 }
 
-// R2_600 - deprecated: use r_esil_pop_strs instead. Kept as a thin wrapper
-// for plugin compat — the arena NUL-terminates every entry, so the slice's
-// .a is a valid C string.
-R_API const char *r_esil_pop(REsil *esil) {
-	R_RETURN_VAL_IF_FAIL (esil, NULL);
-	const RStrs s = r_esil_pop_strs (esil);
-	return r_strs_empty (s)? NULL: s.a;
-}
-
 static int not_a_number(REsil *esil, const char *str) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, str, -1);
 	if (ri) {
@@ -652,59 +643,8 @@ static int not_a_number(REsil *esil, const char *str) {
 	return R_ESIL_PARM_INVALID;
 }
 
-R_API int r_esil_get_parm_type(REsil *esil, const char *str) {
-	R_RETURN_VAL_IF_FAIL (esil && str, R_ESIL_PARM_INVALID);
-	if (R_STR_ISEMPTY (str)) {
-		return R_ESIL_PARM_INVALID;
-	}
-	if (r_str_startswith (str, "0x")) {
-		return R_ESIL_PARM_NUM;
-	}
-	if (!((isdigit(str[0])) || str[0] == '-')) {
-		return not_a_number (esil, str);
-	}
-	size_t i;
-	for (i = 1; str[i]; i++) {
-		if (!isdigit (str[i])) {
-			return not_a_number (esil, str);
-		}
-	}
-	return R_ESIL_PARM_NUM;
-}
-
-R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *size) {
-	R_RETURN_VAL_IF_FAIL (esil && num, false);
-	if (size) {
-		*size = 0;
-	}
-	if (R_STR_ISEMPTY (str)) {
-		return false;
-	}
-	const int parm_type = r_esil_get_parm_type (esil, str);
-	switch (parm_type) {
-	case R_ESIL_PARM_NUM:
-		*num = r_num_get (NULL, str);
-		if (size) {
-			*size = esil->anal->config->bits;
-		}
-		return true;
-	case R_ESIL_PARM_REG:
-		return r_esil_reg_read (esil, str, num, (ut32 *)size);
-	default:
-		R_LOG_DEBUG ("Invalid esil arg to find parm size (%s)", str);
-		esil->parse_stop = 1;
-		return false;
-	}
-}
-
-// XXX deprecate
-R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
-	return r_esil_get_parm_size (esil, str, num, NULL);
-}
-
 /* Slice-native parm classification. Hot path: called per src/dst in every
- * binop. Open-coded on s.a[0]/s.a[1] to avoid routing through
- * r_esil_get_parm_type → r_str_startswith → strncmp at -O0. */
+ * binop. Open-coded on s.a[0]/s.a[1] to avoid strncmp at -O0. */
 R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
 	const size_t n = r_strs_len (s);
 	if (n == 0) {

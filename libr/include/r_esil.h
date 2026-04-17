@@ -335,7 +335,6 @@ R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, const char *str);
 R_API bool r_esil_push_strs(REsil *esil, RStrs s);
-R_API const char *r_esil_pop(REsil *esil);
 R_API RStrs r_esil_pop_strs(REsil *esil);
 typedef bool (*REsilOpCb)(REsil *esil);
 
@@ -371,13 +370,8 @@ R_API void r_esil_del_op(REsil *esil, const char *op);
 R_API void r_esil_stack_free(REsil *esil);
 R_API int r_esil_condition(REsil *esil, const char *str);
 
-// R2_600 - unify these 3 functions into one
-R_API int r_esil_get_parm_type(REsil *esil, const char *str);
-R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num);
-R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *size);
 // Slice-native parm accessors. Fast path — open-coded slice scans avoid
-// routing through the NUL-term versions at -O0 where static inlines don't
-// inline.
+// routing through NUL-term versions at -O0 where static inlines don't inline.
 R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s);
 R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size);
 R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num);

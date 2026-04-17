@@ -59,10 +59,10 @@ temporary values used during expression evaluation.
 .Pp
 Pushes a value or expression onto the ESIL stack.
 .Pp
-.Ft char *
-.Fn r_esil_pop "REsil *esil"
+.Ft RStrs
+.Fn r_esil_pop_strs "REsil *esil"
 .Pp
-Pops the top value from the ESIL stack.
+Pops the top value from the ESIL stack as a slice.
 .Pp
 .Ft bool
 .Fn r_esil_pushnum "REsil *esil" "ut64 num"
@@ -216,10 +216,11 @@ int main(void) {
     // Evaluate an expression that reads RAX, adds 8 and leaves the result on the stack
     r_esil_parse (esil, "rax,8,+");
 
-    // Pop the result as a string (caller frees it)
-    char *res = r_esil_pop (esil);
-    printf ("esil result: %s\n", res);
-    free (res);
+    // Pop the result as a slice (arena-backed, no free needed)
+    RStrs res = r_esil_pop_strs (esil);
+    if (!r_strs_empty (res)) {
+        printf ("esil result: %s\n", res.a);
+    }
 
     r_esil_free (esil);
     return 0;
@@ -235,9 +236,8 @@ r_esil_pushnum (esil, 2);
 r_esil_pushnum (esil, 3);
 // run the '+' word directly (same as parsing "2,3,+")
 r_esil_runword (esil, "+");
-char *sum = r_esil_pop (esil);
-printf ("2 + 3 = %s\n", sum);
-free (sum);
+RStrs sum = r_esil_pop_strs (esil);
+printf ("2 + 3 = %s\n", sum.a);
 
 // dump stack state (useful when interactively debugging expressions)
 r_esil_dumpstack (esil);
