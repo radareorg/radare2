@@ -110,6 +110,7 @@ R_API bool r_reg_set_double(RReg *reg, RRegItem *item, double value) {
 		}
 	}
 
+	r_reg_arena_materialize (arena);
 	r_mem_copybits (arena->bytes + off, tmp, item->size);
 	return true;
 }
@@ -187,6 +188,7 @@ R_API bool r_reg_set_longdouble(RReg *reg, RRegItem *item, long double value) {
 		}
 	}
 
+	r_reg_arena_materialize (arena);
 	r_mem_copybits (arena->bytes + off, tmp, item->size);
 	return true;
 }
@@ -245,6 +247,7 @@ R_API bool r_reg_set_float(RReg *reg, RRegItem *item, float value) {
 		return false;
 	}
 
+	r_reg_arena_materialize (arena);
 	r_mem_copybits (arena->bytes + off, tmp, item->size);
 	return true;
 }

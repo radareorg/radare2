@@ -2514,9 +2514,12 @@ static void cmd_reg_profile(RCore *core, char from, const char *str) { // "arp" 
 				r_list_foreach (rs->pool, iter, arena) {
 					ut8 *newbytes = calloc (1, n);
 					if (newbytes) {
-						free (arena->bytes);
+						if (!arena->shared) {
+							free (arena->bytes);
+						}
 						arena->bytes = newbytes;
 						arena->size = n;
+						arena->shared = false;
 					} else {
 						R_LOG_ERROR ("Cannot allocate %d", (int)n);
 					}

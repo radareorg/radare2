@@ -46,6 +46,20 @@ static int __write(RIO *io, RIODesc *fd, const ut8 *buf, int len) {
 	if (io->off >= arena->size) {
 		return -1;
 	}
+	// break CoW share before mutating bytes (mirrors r_reg_arena_materialize,
+	// kept inline so r_io doesn't need to link against r_reg)
+	if (arena->shared) {
+		const int sz = arena->size;
+		ut8 *fresh = calloc (1, sz + 8);
+		if (!fresh) {
+			return -1;
+		}
+		if (arena->bytes && sz > 0) {
+			memcpy (fresh, arena->bytes, sz);
+		}
+		arena->bytes = fresh;
+		arena->shared = false;
+	}
 	int left = arena->size - io->off;
 	memcpy (arena->bytes + io->off, buf, R_MIN (left, len));
 	return len;

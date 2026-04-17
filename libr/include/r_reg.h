@@ -117,6 +117,7 @@ typedef struct r_reg_item_t {
 typedef struct r_reg_arena_t {
 	ut8 *bytes;
 	int size;
+	bool shared; // bytes borrowed from parent arena (copy-on-write)
 } RRegArena;
 
 typedef struct r_reg_set_t {
@@ -249,6 +250,8 @@ R_API int r_reg_arena_set_bytes(RReg *reg, const char *str);
 R_API RRegArena *r_reg_arena_new(int size);
 R_API RRegArena *r_reg_arena_clone(RRegArena *a);
 R_API void r_reg_arena_free(RRegArena *ra);
+// break COW: allocate a private copy if shared, no-op otherwise
+R_API void r_reg_arena_materialize(RRegArena *a);
 R_API void r_reg_fit_arena(RReg *reg);
 R_API void r_reg_arena_swap(RReg *reg, int copy);
 R_API int r_reg_arena_push(RReg *reg);

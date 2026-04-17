@@ -201,6 +201,7 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
+	r_reg_arena_materialize (arena);
 	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
 	switch (item->size) {
 	case 80:
@@ -377,6 +378,7 @@ R_API bool r_reg_set_pack(RReg *reg, RRegItem *item, int packidx, int packbits, 
 	}
 	int off = BITS2BYTES (item->offset) + (packidx * packbytes);
 	if (reg->regset[item->arena].arena->size - BITS2BYTES (off) - BITS2BYTES (packbytes) >= 0) {
+		r_reg_arena_materialize (reg->regset[item->arena].arena);
 		ut8 *dst = reg->regset[item->arena].arena->bytes + off;
 		int i;
 		for (i = 0; i < packbytes; i++, val >>= 8) {
