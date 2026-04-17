@@ -156,6 +156,11 @@ R_API char *r_strs_tostring(RStrs s);
 R_API ut64 r_strs_tonum(RStrs s);
 R_API st64 r_strs_tosnum(RStrs s, bool *ok);
 
+/* Write `n` as a "0x…" hex string into `buf` (capacity `cap`) and return the
+ * resulting slice. `cap` must be at least 19 (worst case: "0x" + 16 hex + NUL).
+ * On overflow returns an empty RStrs. Buf is always NUL-terminated on success. */
+R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n);
+
 #ifdef __cplusplus
 }
 #endif

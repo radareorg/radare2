@@ -628,15 +628,14 @@ R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
 	if (esil->stackptr >= esil->stacksize) {
 		return false;
 	}
-	char *dst = stack_arena_reserve (esil, SDB_NUM_BUFSZ);
+	char *dst = stack_arena_reserve (esil, 20);
 	if (!dst) {
 		R_LOG_DEBUG ("esil stack arena exhausted");
 		return false;
 	}
-	sdb_itoa (num, 16, dst, SDB_NUM_BUFSZ);
-	const size_t n = strlen (dst);
-	esil->stack[esil->stackptr++] = r_strs_from_len (dst, n);
-	esil->stack_buf_len += (ut32)(n + 1);
+	const RStrs s = r_strs_u64hex (dst, 20, num);
+	esil->stack[esil->stackptr++] = s;
+	esil->stack_buf_len += (ut32)(r_strs_len (s) + 1);
 	return true;
 }
 
@@ -715,6 +714,59 @@ R_API bool r_esil_get_parm_size(REsil *esil, const char *str, ut64 *num, int *si
 // XXX deprecate
 R_API int r_esil_get_parm(REsil *esil, const char *str, ut64 *num) {
 	return r_esil_get_parm_size (esil, str, num, NULL);
+}
+
+/* Slice-native parm classification. Hot path: called per src/dst in every
+ * binop. Open-coded on s.a[0]/s.a[1] to avoid routing through
+ * r_esil_get_parm_type → r_str_startswith → strncmp at -O0. */
+R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
+	const size_t n = r_strs_len (s);
+	if (n == 0) {
+		return R_ESIL_PARM_INVALID;
+	}
+	const char *p = s.a;
+	if (n >= 2 && p[0] == '0' && p[1] == 'x') {
+		return R_ESIL_PARM_NUM;
+	}
+	const unsigned char c0 = (unsigned char)p[0];
+	if (!(isdigit (c0) || c0 == '-')) {
+		return not_a_number (esil, p);
+	}
+	size_t i;
+	for (i = 1; i < n; i++) {
+		if (!isdigit ((unsigned char)p[i])) {
+			return not_a_number (esil, p);
+		}
+	}
+	return R_ESIL_PARM_NUM;
+}
+
+R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size) {
+	R_RETURN_VAL_IF_FAIL (esil && num, false);
+	if (size) {
+		*size = 0;
+	}
+	if (r_strs_empty (s)) {
+		return false;
+	}
+	switch (r_esil_get_parm_type_strs (esil, s)) {
+	case R_ESIL_PARM_NUM:
+		*num = r_num_get (NULL, s.a);
+		if (size) {
+			*size = esil->anal->config->bits;
+		}
+		return true;
+	case R_ESIL_PARM_REG:
+		return r_esil_reg_read (esil, s.a, num, (ut32 *)size);
+	default:
+		R_LOG_DEBUG ("Invalid esil arg to find parm size (%.*s)", (int)r_strs_len (s), s.a);
+		esil->parse_stop = 1;
+		return false;
+	}
+}
+
+R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num) {
+	return r_esil_get_parm_size_strs (esil, s, num, NULL);
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
@@ -860,20 +912,24 @@ static bool runword_strs(REsil *esil, RStrs w) {
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return false;
 	}
-	if (r_strs_empty (w)) {
+	// Hot path: check braces inline. At -O0 the r_strs_equals_str helpers
+	// don't inline; 3× per token becomes many function calls per word.
+	const size_t wlen = (size_t)(w.b - w.a);
+	if (wlen == 0) {
 		return true;
 	}
-	if (r_strs_equals_str (w, "}{")) {
+	const char c0 = w.a[0];
+	if (wlen == 2 && c0 == '}' && w.a[1] == '{') {
 		esil->skip = (esil->skip == 0);
 		return true;
 	}
-	if (r_strs_equals_str (w, "}")) {
+	if (wlen == 1 && c0 == '}') {
 		if (esil->skip) {
 			esil->skip--;
 		}
 		return true;
 	}
-	if (esil->skip && !r_strs_equals_str (w, "?{")) {
+	if (esil->skip && !(wlen == 2 && c0 == '?' && w.a[1] == '{')) {
 		return true;
 	}
 	// RStrs-native op lookup — slice-vs-slice compare via custom HT hash/cmp

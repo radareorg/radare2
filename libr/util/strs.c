@@ -102,6 +102,33 @@ R_API ut64 r_strs_tonum(RStrs s) {
 	return r;
 }
 
+R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n) {
+	if (!buf || cap < 19) {
+		return (RStrs) { NULL, NULL };
+	}
+	if (n == 0) {
+		buf[0] = '0';
+		buf[1] = '\0';
+		return r_strs_from_len (buf, 1);
+	}
+	static const char lookup[] = "0123456789abcdef";
+	char tmp[16];
+	int t = 0;
+	while (n) {
+		tmp[t++] = lookup[n & 0xf];
+		n >>= 4;
+	}
+	buf[0] = '0';
+	buf[1] = 'x';
+	int j;
+	for (j = 0; j < t; j++) {
+		buf[2 + j] = tmp[t - 1 - j];
+	}
+	const size_t len = (size_t)(t + 2);
+	buf[len] = '\0';
+	return r_strs_from_len (buf, len);
+}
+
 R_API st64 r_strs_tosnum(RStrs s, bool *ok) {
 	char buf[64];
 	const size_t n = r_strs_len (s);
