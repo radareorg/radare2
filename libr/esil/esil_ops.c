@@ -168,19 +168,12 @@ static bool r_esil_signext(REsil *esil, bool assign) {
 	return ret;
 }
 
-// sign extension operator for use in idiv, imul, movsx*
-// and other instructions involving signed values, extends n bit value to 64 bit value
-// example : >"ae 8,0x81,~" ( <src bit width>,<value>,~ )
-// output  : 0xffffffffffffff81
+// Sign-extend n-bit value to 64 bits. Example: "ae 8,0x81,~" -> 0xffffffffffffff81.
 static bool esil_signext(REsil *esil) {
 	return r_esil_signext (esil, false);
 }
 
-// sign extension assignement
-// example : > "ae 0x81,a0,="
-//           > "ae 8,a0,~="   ( <src bit width>,register,~= )
-// output  : > ar a0
-//           0xffffff81
+// Sign-extend and assign. Example: "ae 0x81,a0,=; ae 8,a0,~=" -> a0 = 0xffffff81.
 static bool esil_signexteq(REsil *esil) {
 	return r_esil_signext (esil, true);
 }
@@ -196,17 +189,12 @@ static bool esil_cf(REsil *esil) {
 		return false;
 	}
 	if (r_esil_get_parm_type_strs (esil, src) != R_ESIL_PARM_NUM) {
-		//I'd wish we could enforce consts here
-		//I can't say why, but I feel like "al,$c" would be cancer af
-		//	- condret
+		// Only NUM accepted — "al,$c" would be awful. - condret
 		return false;
 	}
 	// already classified as NUM — parse directly
 	const ut64 bit = r_strs_tonum (src, 0, NULL);
-	//carry from bit <src>
-	//range of src goes from 0 to 63
-	//
-	//implements bit mod 64
+	// Carry from bit <src> (range 0..63, mod 64).
 	const ut64 mask = r_num_genmask (bit & 0x3f);
 	return r_esil_pushnum (esil, (esil->cur & mask) < (esil->old & mask));
 }
@@ -222,11 +210,7 @@ static bool esil_bf(REsil *esil) {
 		return false;
 	}
 	const ut64 bit = r_strs_tonum (src, 0, NULL);
-	//borrow from bit <src>
-	//range of src goes from 1 to 64
-	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
-	//
-	//implements (bit - 1) mod 64
+	// Borrow from bit <src> (range 1..64; no bit 0 — bit -1 doesn't exist). Implements (bit-1) mod 64.
 	const ut64 mask = r_num_genmask ((bit + 0x3f) & 0x3f);
 	return r_esil_pushnum (esil, (esil->old & mask) < (esil->cur & mask));
 }
@@ -242,9 +226,7 @@ static bool esil_pf(REsil *esil) {
 	return r_esil_pushnum (esil, !((((lsb * c1) & c2) % c3) & 1));
 }
 
-// like carry
-// checks overflow from bit x (x,$o)
-//	x,$o ===> x,$c,x-1,$c,^
+// Overflow from bit x: (x,$o) == (x,$c,x-1,$c,^).
 static bool esil_of(REsil *esil) {
 	const RStrs p_bit = r_esil_pop_strs (esil);
 
@@ -581,12 +563,7 @@ static bool esil_cmd(REsil *esil) {
 	return false;
 }
 
-// NOTE on following comparison functions:
-// The push to top of the stack is based on a
-// signed compare (as this causes least surprise to the users).
-// If an unsigned comparison is necessary, one must not use the
-// result pushed onto the top of the stack, but rather test the flags which
-// are set as a result of the compare.
+// Comparison functions below push a SIGNED-compare result; for unsigned, test flags.
 
 static int signed_compare_gt(ut64 a, ut64 b, ut64 size) {
 	int result;
@@ -682,20 +659,8 @@ JBE: CF = 1 || ZF = 1
 
 #endif
 
-/*
- * Expects a string in the stack. Each char of the string represents a CPU flag.
- * Those relations are associated by the CPU itself and are used to move values
- * from the internal ESIL into the RReg instance.
- *
- * For example:
- *   zco,?=     # update zf, cf and of
- *
- * If we want to update the esil value of a specific flag we use the =? command
- *
- *    zf,z,=?    # esil[zf] = r_reg[zf]
- *
- * Defining new cpu flags
- */
+// Flag words map string chars to CPU flags, e.g. "zco,?=" updates zf/cf/of
+// and "zf,z,=?" copies r_reg[zf] into esil[zf].
 #if 0
 #define FLG(x) R_ESIL_FLAG_##x
 #define cpuflag(x, y)\

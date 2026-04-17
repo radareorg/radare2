@@ -16,11 +16,8 @@ R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 	return !(da > 0 && addr % da);
 }
 
-/* ---- Ops hashtable: HtPP keyed by RStrs slices -------------------------
- * Keys are `RStrs *` pointing into `REsilOp.name`, which holds the caller's
- * NUL-terminated `const char *` verbatim. No key duplication, no byte copy:
- * registered names must outlive the REsil instance (all in-tree callers
- * register string literals, satisfying this trivially). */
+// Ops HtPP: keys are RStrs* into REsilOp.name (caller's const char*). No key
+// dup — registered names must outlive the REsil (in-tree: string literals).
 
 static ut32 esil_ops_hash(const void *k) {
 	const RStrs *s = k;
@@ -60,8 +57,7 @@ static HtPP *esil_ops_new(void) {
 	return ht_pp_new_opt (&opt);
 }
 
-/* Average token width used to size the shared arena (stacksize * 32 bytes).
- * Individual tokens may be any length as long as they fit in the arena. */
+// Average token width for sizing the stack arena (stacksize * 32 bytes).
 #define R_ESIL_STACK_ARENA_WIDTH 32
 
 static bool esil_stack_alloc(REsil *esil, int stacksize) {
@@ -266,6 +262,10 @@ R_API bool r_esil_set_op(REsil *esil, const char *op, REsilOpCb code, ut32 push,
 			R_LOG_ERROR ("Cannot set esil-operation %s", op);
 			free (eop);
 			return false;
+		}
+		const ut32 namelen = (ut32)r_strs_len (k);
+		if (namelen > esil->max_op_len) {
+			esil->max_op_len = namelen;
 		}
 	}
 	eop->code = code;
@@ -545,10 +545,7 @@ static bool internal_esil_reg_write(REsil *esil, const char *regname, ut64 num) 
 	return false;
 }
 
-//WTF IS THIS!!!
-//Are you really trying to prevent the analyzed binary from doing anything that would cause it to segfault irl?
-//WHY?
-//	- condret
+// Blocks writes of 0 to PC/SP/BP — guards emulated binary from NULL-deref. - condret
 static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut64 num) {
 	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->anal->reg, false);
 	RReg *reg = esil->anal->reg;
@@ -581,10 +578,8 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	return false;
 }
 
-/* Push a slice. Slices already inside stack_buf (re-pushed popped values)
- * are stored by reference. Slices from external memory are copied into the
- * arena so the reference stays valid after the caller's storage goes away.
- * The arena never reallocs — it's sized once at init (stacksize × width). */
+// Push a slice. Arena-backed slices are stored by reference; external ones
+// are copied into the arena (fixed-size, never reallocs).
 R_API bool r_esil_push_strs(REsil *esil, RStrs s) {
 	if (esil->stackptr >= esil->stacksize || s.a >= s.b) {
 		return false;
@@ -643,8 +638,7 @@ static int not_a_number(REsil *esil, const char *str) {
 	return R_ESIL_PARM_INVALID;
 }
 
-/* Slice-native parm classification. Hot path: called per src/dst in every
- * binop. Open-coded on s.a[0]/s.a[1] to avoid strncmp at -O0. */
+// Slice-native parm classify. Hot path — open-coded on s.a[0]/s.a[1].
 R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
 	const size_t n = r_strs_len (s);
 	if (n == 0) {
@@ -667,9 +661,8 @@ R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
 	return R_ESIL_PARM_NUM;
 }
 
-/* Fused classify+read. Hot path — every binop calls this twice. Avoids the
- * double HT lookup of "classify via r_reg_get, then reg_read (another r_reg_get)"
- * by trying number parse first and falling straight into reg_read otherwise. */
+// Fused classify+read — parse number first, fall to reg_read. One HT lookup
+// per reg parm (vs classify+read's two). Hot path: twice per binop.
 R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size) {
 	R_RETURN_VAL_IF_FAIL (esil && num, false);
 	if (size) {
@@ -866,8 +859,7 @@ static bool runword_strs(REsil *esil, RStrs w) {
 		esil->parse_stop = 1; // INTERNAL ERROR
 		return false;
 	}
-	// Hot path: check braces inline. At -O0 the r_strs_equals_str helpers
-	// don't inline; 3× per token becomes many function calls per word.
+	// Brace checks inlined — r_strs_equals_str wouldn't inline at -O0.
 	const size_t wlen = (size_t)(w.b - w.a);
 	if (wlen == 0) {
 		return true;
@@ -886,9 +878,8 @@ static bool runword_strs(REsil *esil, RStrs w) {
 	if (esil->skip && !(wlen == 2 && c0 == '?' && w.a[1] == '{')) {
 		return true;
 	}
-	// Fast-screen: no ESIL op starts with a digit, so number literals
-	// (0x…, 42, …) skip the op HT probe and go straight to push.
-	if (R_LIKELY (c0 >= '0' && c0 <= '9')) {
+	// Fast-screen: skip op HT for digit-leading or too-long tokens.
+	if (R_LIKELY ((c0 >= '0' && c0 <= '9') || wlen > esil->max_op_len)) {
 		if (R_UNLIKELY (esil->stackptr > esil->stacksize - 1)) {
 			R_LOG_DEBUG ("ESIL stack is full");
 			esil->trap = 1;
@@ -897,11 +888,9 @@ static bool runword_strs(REsil *esil, RStrs w) {
 		}
 		return r_esil_push_strs (esil, w);
 	}
-	// RStrs-native op lookup — slice-vs-slice compare via custom HT hash/cmp
 	REsilOp *op = r_esil_get_op_strs (esil, w);
 	if (op) {
-		// stored name is the caller's const char* — already NUL-terminated,
-		// no copy needed for callbacks that take `const char *`.
+		// op->name.a is the caller's NUL-terminated const char*.
 		const char *name = op->name.a;
 #if USE_NEW_ESIL
 		ut32 i;
@@ -951,11 +940,7 @@ static const char *goto_word(const char *str, int n) {
 	return NULL;
 }
 
-/* 0: restart parse loop (new iteration)
- * 1: stop execution
- * 2: continue loop body without advancing separator
- * 3: normal continuation
- */
+// Return: 0=restart loop, 1=stop, 2=continue (no separator advance), 3=normal.
 static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	if (esil->parse_goto != -1) {
 		// TODO: detect infinite loop
@@ -1004,11 +989,8 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
 		esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
 	}
-	// Each parse starts with a clean operand stack and arena. Slices are
-	// sliced in-place off the caller's input; r_esil_push_strs copies them
-	// into the arena on push (needed for NUL-termination). The arena must
-	// hold at most one copy per pushed slice plus pushnum results — sized
-	// once at init to stacksize * R_ESIL_STACK_ARENA_WIDTH and never grown.
+	// Fresh stack+arena per parse — slices come from the input directly
+	// and are copied into the arena on push to guarantee NUL-termination.
 	esil->stackptr = 0;
 	esil->stack_buf_len = 0;
 	const bool in_delay = esil->delay > 0;
@@ -1169,10 +1151,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	// esil->debug = 0;
 	esil->cb.reg_read = internal_esil_reg_read;
 	if (nonull) {
-		// this is very questionable, most platforms allow accessing NULL
-		// never writes zero to PC, BP, SP, why? because writing
-		// zeros to these registers is equivalent to accessing NULL
-		// pointer somehow
+		// Disallow writing 0 to PC/SP/BP — treats it as NULL deref.
 		esil->cb.reg_write = internal_esil_reg_write_no_null;
 		esil->cb.mem_read = internal_esil_mem_read_no_null;
 		esil->cb.mem_write = internal_esil_mem_write_no_null;
