@@ -85,12 +85,67 @@ R_API char *r_strs_tostring(RStrs s) {
 	return r_str_ndup (s.a, (int)r_strs_len (s));
 }
 
-R_API ut64 r_strs_tonum(RStrs s) {
-	char buf[64];
+R_API ut64 r_strs_num(RStrs s) {
 	const size_t n = r_strs_len (s);
 	if (n == 0) {
 		return 0;
 	}
+	const char *p = s.a;
+	const char *const e = s.b;
+	if (n >= 2 && p[0] == '0' && p[1] == 'x') {
+		ut64 v = 0;
+		p += 2;
+		while (p < e) {
+			const unsigned char c = (unsigned char)*p++;
+			ut64 d;
+			if (c >= '0' && c <= '9') {
+				d = c - '0';
+			} else if (c >= 'a' && c <= 'f') {
+				d = c - 'a' + 10;
+			} else if (c >= 'A' && c <= 'F') {
+				d = c - 'A' + 10;
+			} else {
+				break;
+			}
+			v = (v << 4) | d;
+		}
+		return v;
+	}
+	ut64 v = 0;
+	while (p < e) {
+		const unsigned char c = (unsigned char)*p++;
+		if (c < '0' || c > '9') {
+			break;
+		}
+		v = v * 10 + (c - '0');
+	}
+	return v;
+}
+
+R_API ut64 r_strs_tonum(RStrs s) {
+	const size_t n = r_strs_len (s);
+	if (n == 0) {
+		return 0;
+	}
+	// Fast path: "0x..." hex or leading-digit decimal — no copy, no strlen
+	const unsigned char c0 = (unsigned char)s.a[0];
+	if (c0 == '0' && n >= 2 && s.a[1] == 'x') {
+		return r_strs_num (s);
+	}
+	if (c0 >= '0' && c0 <= '9') {
+		// decimal only if entire slice is digits; else fall through
+		size_t i;
+		for (i = 1; i < n; i++) {
+			if (s.a[i] < '0' || s.a[i] > '9') {
+				break;
+			}
+		}
+		if (i == n) {
+			return r_strs_num (s);
+		}
+	}
+	// Fall back to r_num_get for richer syntax (signed, 0b, 0o, etc)
+	char buf[64];
 	if (n < sizeof (buf)) {
 		memcpy (buf, s.a, n);
 		buf[n] = 0;

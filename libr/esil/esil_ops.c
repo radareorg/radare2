@@ -94,7 +94,7 @@ static bool isnum_strs(REsil *esil, RStrs str, ut64 *num) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	if (!r_strs_empty (str) && isdigit ((unsigned char)str.a[0])) {
 		if (num) {
-			*num = r_num_get (NULL, str.a);
+			*num = r_strs_num (str);
 		}
 		return true;
 	}
@@ -213,8 +213,8 @@ static bool esil_cf(REsil *esil) {
 		//	- condret
 		return false;
 	}
-	ut64 bit;
-	r_esil_get_parm_strs (esil, src, &bit);
+	// already classified as NUM — parse directly
+	const ut64 bit = r_strs_num (src);
 	//carry from bit <src>
 	//range of src goes from 0 to 63
 	//
@@ -233,8 +233,7 @@ static bool esil_bf(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, src) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	ut64 bit;
-	r_esil_get_parm_strs (esil, src, &bit);
+	const ut64 bit = r_strs_num (src);
 	//borrow from bit <src>
 	//range of src goes from 1 to 64
 	//	you cannot borrow from bit 0, bc bit -1 cannot not exist
@@ -268,12 +267,7 @@ static bool esil_of(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, p_bit) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	ut64 bit;
-
-	if (!r_esil_get_parm_strs (esil, p_bit, &bit)) {
-		R_LOG_DEBUG ("esil_of: empty stack");
-		return false;
-	}
+	const ut64 bit = r_strs_num (p_bit);
 
 	const ut64 m[2] = {r_num_genmask (bit & 0x3f), r_num_genmask ((bit + 0x3f) & 0x3f)};
 	const ut64 result = ((esil->cur & m[0]) < (esil->old & m[0])) ^ ((esil->cur & m[1]) < (esil->old & m[1]));
@@ -294,8 +288,8 @@ static bool esil_sf(REsil *esil) {
 	if (r_esil_get_parm_type_strs (esil, p_size) != R_ESIL_PARM_NUM) {
 		return false;
 	}
-	ut64 size, num;
-	r_esil_get_parm_strs (esil, p_size, &size);
+	const ut64 size = r_strs_num (p_size);
+	ut64 num;
 
 	if (size > 63) {
 		num = 0;
@@ -360,8 +354,8 @@ static bool esil_eq(REsil *esil) {
 	}
 	if (is128reg && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop_strs (esil);
-		ut64 n0 = r_num_get (NULL, src.a);
-		ut64 n1 = r_num_get (NULL, src2.a);
+		const ut64 n0 = r_strs_num (src);
+		const ut64 n1 = r_strs_num (src2);
 		ret = r_esil_reg_write (esil, dst.a, n1);
 		char *dst2 = r_str_newf ("%sh", dst.a);
 		ret = r_esil_reg_write (esil, dst2, n0);
@@ -372,7 +366,7 @@ static bool esil_eq(REsil *esil) {
 		if (r_esil_get_parm_strs (esil, src2, &num2)) {
 			ret = r_esil_reg_write (esil, newreg, num2);
 		} else {
-			ut64 n0 = r_num_get (NULL, src.a);
+			const ut64 n0 = r_strs_num (src);
 			ret = r_esil_reg_write (esil, dst.a, n0);
 		}
 		free (newreg);
@@ -496,7 +490,7 @@ static int esil_interrupt_linux_i386(REsil *esil) { 		//move this into a plugin
 	ut32 sn, ret = false;
 	const RStrs usn = r_esil_pop_strs (esil);
 	if (!r_strs_empty (usn)) {
-		sn = (ut32) r_num_get (NULL, usn.a);
+		sn = (ut32) r_strs_num (usn);
 	} else sn = 0x80;
 
 	if (sn == 3) {
@@ -1253,8 +1247,7 @@ static bool esil_inc(REsil *esil) {
 static bool esil_inceq(REsil *esil) {
 	ut64 sd;
 	const RStrs src_dst = r_esil_pop_strs (esil);
-	if (r_esil_get_parm_type_strs (esil, src_dst) == R_ESIL_PARM_REG
-			&& r_esil_get_parm_strs (esil, src_dst, &sd)) {
+	if (!r_strs_empty (src_dst) && r_esil_reg_read (esil, src_dst.a, &sd, NULL)) {
 		esil->old = sd++;
 		esil->cur = sd;
 		r_esil_reg_write (esil, src_dst.a, sd);
@@ -1320,7 +1313,7 @@ static bool esil_deceq(REsil *esil) {
 	bool ret = false;
 	ut64 sd;
 	const RStrs src_dst = r_esil_pop_strs (esil);
-	if (!r_strs_empty (src_dst) && (r_esil_get_parm_type_strs (esil, src_dst) == R_ESIL_PARM_REG) && r_esil_get_parm_strs (esil, src_dst, &sd)) {
+	if (!r_strs_empty (src_dst) && r_esil_reg_read (esil, src_dst.a, &sd, NULL)) {
 		esil->old = sd;
 		sd--;
 		esil->cur = sd;

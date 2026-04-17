@@ -667,48 +667,60 @@ R_API int r_esil_get_parm_type_strs(REsil *esil, RStrs s) {
 	return R_ESIL_PARM_NUM;
 }
 
+/* Fused classify+read. Hot path — every binop calls this twice. Avoids the
+ * double HT lookup of "classify via r_reg_get, then reg_read (another r_reg_get)"
+ * by trying number parse first and falling straight into reg_read otherwise. */
 R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size) {
 	R_RETURN_VAL_IF_FAIL (esil && num, false);
 	if (size) {
 		*size = 0;
 	}
-	if (r_strs_empty (s)) {
+	const size_t n = r_strs_len (s);
+	if (n == 0) {
 		return false;
 	}
-	switch (r_esil_get_parm_type_strs (esil, s)) {
-	case R_ESIL_PARM_NUM:
+	const unsigned char c0 = (unsigned char)s.a[0];
+	// Fast path: "0x..." hex literal (pushnum output is always this form)
+	if (c0 == '0' && n >= 2 && s.a[1] == 'x') {
+		*num = r_strs_num (s);
+		if (size) {
+			*size = esil->anal->config->bits;
+		}
+		return true;
+	}
+	// Fast path: decimal. Validate rest is digits.
+	if (isdigit (c0)) {
+		size_t i;
+		for (i = 1; i < n; i++) {
+			if (!isdigit ((unsigned char)s.a[i])) {
+				goto try_reg;
+			}
+		}
+		*num = r_strs_num (s);
+		if (size) {
+			*size = esil->anal->config->bits;
+		}
+		return true;
+	}
+	// Signed decimal — rare in ESIL; let r_num_get handle it
+	if (c0 == '-' && n > 1) {
 		*num = r_num_get (NULL, s.a);
 		if (size) {
 			*size = esil->anal->config->bits;
 		}
 		return true;
-	case R_ESIL_PARM_REG:
-		return r_esil_reg_read (esil, s.a, num, (ut32 *)size);
-	default:
-		R_LOG_DEBUG ("Invalid esil arg to find parm size (%.*s)", (int)r_strs_len (s), s.a);
-		esil->parse_stop = 1;
-		return false;
 	}
+try_reg:
+	if (r_esil_reg_read (esil, s.a, num, (ut32 *)size)) {
+		return true;
+	}
+	R_LOG_DEBUG ("Invalid esil arg (%.*s)", (int)n, s.a);
+	esil->parse_stop = 1;
+	return false;
 }
 
-// Hot path — inlined body avoids the extra call frame that going through
-// r_esil_get_parm_size_strs would cost at -O0. Every binop calls this twice.
 R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num) {
-	R_RETURN_VAL_IF_FAIL (esil && num, false);
-	if (r_strs_empty (s)) {
-		return false;
-	}
-	switch (r_esil_get_parm_type_strs (esil, s)) {
-	case R_ESIL_PARM_NUM:
-		*num = r_num_get (NULL, s.a);
-		return true;
-	case R_ESIL_PARM_REG:
-		return r_esil_reg_read (esil, s.a, num, NULL);
-	default:
-		R_LOG_DEBUG ("Invalid esil arg (%.*s)", (int)r_strs_len (s), s.a);
-		esil->parse_stop = 1;
-		return false;
-	}
+	return r_esil_get_parm_size_strs (esil, s, num, NULL);
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {

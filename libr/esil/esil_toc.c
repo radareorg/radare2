@@ -12,7 +12,7 @@ static bool esil2c_eq(REsil *esil) {
 	}
 	const char *pc = r_reg_alias_getname (esil->anal->reg, R_REG_ALIAS_PC);
 	if (pc && !strcmp (dst.a, pc)) {
-		r_strbuf_appendf (user->sb, "  goto addr_0x%08"PFMT64x"_0;\n", r_num_get (NULL, src.a));
+		r_strbuf_appendf (user->sb, "  goto addr_0x%08"PFMT64x"_0;\n", r_strs_num (src));
 	} else {
 		r_strbuf_appendf (user->sb, "  %s = %s;\n", dst.a, src.a);
 	}

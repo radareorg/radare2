@@ -156,6 +156,13 @@ R_API char *r_strs_tostring(RStrs s);
 R_API ut64 r_strs_tonum(RStrs s);
 R_API st64 r_strs_tosnum(RStrs s, bool *ok);
 
+/* Fast slice → number parser. Respects slice bounds (no strlen, no malloc).
+ * Recognizes just "0x..." hex and leading-digit decimal — the two forms
+ * pushed into ESIL stack arenas. For richer syntax (signed, 0b, 0o, 0t,
+ * expressions, special literals) call r_num_get. Returns 0 for empty
+ * slices or slices that don't match the recognized forms. */
+R_API ut64 r_strs_num(RStrs s);
+
 /* Write `n` as a "0x…" hex string into `buf` (capacity `cap`) and return the
  * resulting slice. `cap` must be at least 19 (worst case: "0x" + 16 hex + NUL).
  * On overflow returns an empty RStrs. Buf is always NUL-terminated on success. */
