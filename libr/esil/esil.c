@@ -580,41 +580,31 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	return false;
 }
 
-/* Internal: reserve `need` bytes at the arena tip. Returns NULL on overflow.
- * NEVER reallocs mid-parse: the parse stack holds slices pointing into
- * stack_buf, and a realloc would invalidate them. r_esil_parse sizes the
- * arena up-front before any slice is pushed. */
-static char *stack_arena_reserve(REsil *esil, size_t need) {
-	if (esil->stack_buf_len + need > esil->stack_buf_cap) {
-		return NULL;
-	}
-	return esil->stack_buf + esil->stack_buf_len;
-}
-
-/* Push a slice. Slices already living inside stack_buf (parse-time tokens,
- * pushnum results, re-pushed popped values) are stored by reference — no
- * copy. Slices from external memory (register literals, handler-local
- * buffers) are materialised into the arena so the reference stays valid
- * once the caller's storage goes out of scope. */
+/* Push a slice. Slices already inside stack_buf (re-pushed popped values)
+ * are stored by reference. Slices from external memory are copied into the
+ * arena so the reference stays valid after the caller's storage goes away.
+ * The arena never reallocs — it's sized once at init (stacksize × width). */
 R_API bool r_esil_push_strs(REsil *esil, RStrs s) {
-	if (r_strs_empty (s) || esil->stackptr >= esil->stacksize) {
+	if (esil->stackptr >= esil->stacksize || s.a >= s.b) {
 		return false;
 	}
-	const char *bufbeg = esil->stack_buf;
-	const char *bufend = bufbeg + esil->stack_buf_len;
+	const char *const bufbeg = esil->stack_buf;
+	const char *const bufend = bufbeg + esil->stack_buf_len;
 	if (s.a >= bufbeg && s.b <= bufend) {
 		esil->stack[esil->stackptr++] = s;
 		return true;
 	}
 	const size_t n = (size_t)(s.b - s.a);
-	char *dst = stack_arena_reserve (esil, n + 1);
-	if (!dst) {
+	if (esil->stack_buf_len + n + 1 > esil->stack_buf_cap) {
 		R_LOG_DEBUG ("esil stack arena exhausted");
 		return false;
 	}
+	char *const dst = esil->stack_buf + esil->stack_buf_len;
 	memcpy (dst, s.a, n);
 	dst[n] = '\0';
-	esil->stack[esil->stackptr++] = r_strs_from_len (dst, n);
+	esil->stack[esil->stackptr].a = dst;
+	esil->stack[esil->stackptr].b = dst + n;
+	esil->stackptr++;
 	esil->stack_buf_len += (ut32)(n + 1);
 	return true;
 }
@@ -625,25 +615,20 @@ R_API bool r_esil_push(REsil *esil, const char *str) {
 }
 
 R_API bool r_esil_pushnum(REsil *esil, ut64 num) {
-	if (esil->stackptr >= esil->stacksize) {
+	if (esil->stackptr >= esil->stacksize
+			|| esil->stack_buf_len + 20 > esil->stack_buf_cap) {
 		return false;
 	}
-	char *dst = stack_arena_reserve (esil, 20);
-	if (!dst) {
-		R_LOG_DEBUG ("esil stack arena exhausted");
-		return false;
-	}
+	char *const dst = esil->stack_buf + esil->stack_buf_len;
 	const RStrs s = r_strs_u64hex (dst, 20, num);
 	esil->stack[esil->stackptr++] = s;
-	esil->stack_buf_len += (ut32)(r_strs_len (s) + 1);
+	esil->stack_buf_len += (ut32)((s.b - s.a) + 1);
 	return true;
 }
 
 R_API RStrs r_esil_pop_strs(REsil *esil) {
-	RStrs empty = { NULL, NULL };
-	R_RETURN_VAL_IF_FAIL (esil, empty);
 	if (esil->stackptr < 1) {
-		return empty;
+		return (RStrs) { NULL, NULL };
 	}
 	return esil->stack[--esil->stackptr];
 }
@@ -765,8 +750,24 @@ R_API bool r_esil_get_parm_size_strs(REsil *esil, RStrs s, ut64 *num, int *size)
 	}
 }
 
+// Hot path — inlined body avoids the extra call frame that going through
+// r_esil_get_parm_size_strs would cost at -O0. Every binop calls this twice.
 R_API bool r_esil_get_parm_strs(REsil *esil, RStrs s, ut64 *num) {
-	return r_esil_get_parm_size_strs (esil, s, num, NULL);
+	R_RETURN_VAL_IF_FAIL (esil && num, false);
+	if (r_strs_empty (s)) {
+		return false;
+	}
+	switch (r_esil_get_parm_type_strs (esil, s)) {
+	case R_ESIL_PARM_NUM:
+		*num = r_num_get (NULL, s.a);
+		return true;
+	case R_ESIL_PARM_REG:
+		return r_esil_reg_read (esil, s.a, num, NULL);
+	default:
+		R_LOG_DEBUG ("Invalid esil arg (%.*s)", (int)r_strs_len (s), s.a);
+		esil->parse_stop = 1;
+		return false;
+	}
 }
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
@@ -969,22 +970,19 @@ static bool runword_strs(REsil *esil, RStrs w) {
 	return r_esil_push_strs (esil, w);
 }
 
-/* Return start of the nth NUL-separated word within [str, end). */
-static const char *goto_word(const char *str, const char *end, int n) {
-	if (n <= 0) {
-		return str;
-	}
-	const char *p = str;
-	while (p < end) {
-		while (p < end && *p) {
-			p++;
+/* Return start of the nth comma-separated word within [str, eol). */
+static const char *goto_word(const char *str, int n) {
+	const char *ostr = str;
+	int count = 0;
+	while (*str && *str != ';') {
+		if (count == n) {
+			return ostr;
 		}
-		if (p < end) {
-			p++; // step past the NUL
-			if (--n == 0) {
-				return p;
-			}
+		if (*str == ',') {
+			ostr = str + 1;
+			count++;
 		}
+		str++;
 	}
 	return NULL;
 }
@@ -994,10 +992,10 @@ static const char *goto_word(const char *str, const char *end, int n) {
  * 2: continue loop body without advancing separator
  * 3: normal continuation
  */
-static int eval_word(REsil *esil, const char *ostr, const char *end, const char **str) {
+static int eval_word(REsil *esil, const char *ostr, const char **str) {
 	if (esil->parse_goto != -1) {
 		// TODO: detect infinite loop
-		*str = goto_word (ostr, end, esil->parse_goto);
+		*str = goto_word (ostr, esil->parse_goto);
 		if (*str) {
 			esil->parse_goto = -1;
 			return 2;
@@ -1042,68 +1040,45 @@ R_API bool r_esil_parse(REsil *esil, const char *str) {
 	if (esil->cmd && esil->cmd_todo && r_str_startswith (str, "TODO")) {
 		esil->cmd (esil, esil->cmd_todo, esil->addr, 0);
 	}
+	// Each parse starts with a clean operand stack and arena. Slices are
+	// sliced in-place off the caller's input; r_esil_push_strs copies them
+	// into the arena on push (needed for NUL-termination). The arena must
+	// hold at most one copy per pushed slice plus pushnum results — sized
+	// once at init to stacksize * R_ESIL_STACK_ARENA_WIDTH and never grown.
 	esil->stackptr = 0;
-	// Copy the command into stack_buf, replacing ',' with NUL and stopping at
-	// the first ';'. Operand slices point into this stable, NUL-separated copy
-	// so r_esil_push_strs is a single store — no per-token memcpy. pushnum
-	// results append after the command region.
-	const char *src = str;
-	size_t slen = 0;
-	while (src[slen] && src[slen] != ';') {
-		slen++;
-	}
-	// Reserve headroom for pushnum results (SDB_NUM_BUFSZ per stack slot)
-	const size_t need = slen + 1 + (size_t)esil->stacksize * SDB_NUM_BUFSZ;
-	if (need > esil->stack_buf_cap) {
-		char *grown = realloc (esil->stack_buf, need);
-		if (!grown) {
-			return false;
-		}
-		esil->stack_buf = grown;
-		esil->stack_buf_cap = (ut32)need;
-	}
-	char *const buf = esil->stack_buf;
-	size_t i;
-	for (i = 0; i < slen; i++) {
-		const char c = src[i];
-		buf[i] = (c == ',')? '\0': c;
-	}
-	buf[slen] = '\0';
-	esil->stack_buf_len = (ut32)(slen + 1);
-	const char *const ostr = buf;
-	const char *const cmd_end = buf + slen;
+	esil->stack_buf_len = 0;
 	const bool in_delay = esil->delay > 0;
+	const char *ostr = str;
 	int rc = 0;
 loop:
 	esil->skip = 0;
 	esil->parse_goto = -1;
 	esil->parse_stop = 0;
 	esil->parse_goto_count = esil->anal? esil->anal->esil_goto_limit: R_ESIL_GOTO_LIMIT;
-	{
-		const char *p = ostr;
-		while (p < cmd_end) {
-			while (p < cmd_end && *p == '\0') {
-				p++;
-			}
-			if (p >= cmd_end) {
-				break;
-			}
-			const char *tok_start = p;
-			while (p < cmd_end && *p) {
-				p++;
-			}
-			const RStrs tok = { tok_start, p };
+	str = ostr;
+	while (*str) {
+		// slice the next token directly off the input — no intermediate buffer
+		const char *start = str;
+		while (*str && *str != ',' && *str != ';') {
+			str++;
+		}
+		const char sep = *str;
+		const RStrs tok = { start, str };
+		if (!r_strs_empty (tok)) {
 			if (!runword_strs (esil, tok)) {
 				goto step_out;
 			}
-			switch (eval_word (esil, ostr, cmd_end, &p)) {
+			switch (eval_word (esil, ostr, &str)) {
 			case 0: goto loop;
 			case 1: goto step_out;
 			case 2: continue;
 			}
-			if (p < cmd_end) {
-				p++; // advance past the NUL
+			if (sep == ';') {
+				goto step_out;
 			}
+		}
+		if (sep) {
+			str++;
 		}
 	}
 	rc = 1;
