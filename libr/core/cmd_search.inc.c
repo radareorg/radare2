@@ -1870,8 +1870,8 @@ bad:
 static bool esil_addrinfo(REsil *esil) {
 	RCore *core = (RCore *) esil->cb.user;
 	ut64 num = 0;
-	const char *src = r_esil_pop (esil);
-	if (src && *src && r_esil_get_parm (esil, src, &num)) {
+	const RStrs src = r_esil_pop_strs (esil);
+	if (!r_strs_empty (src) && r_esil_get_parm_strs (esil, src, &num)) {
 		num = r_core_anal_address (core, num);
 		r_esil_pushnum (esil, num);
 	} else {
@@ -1964,8 +1964,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				break;
 			}
 			hit_happens = false;
-			const char *res = r_esil_pop (esil);
-			if (r_esil_get_parm (esil, res, &nres)) {
+			const RStrs res = r_esil_pop_strs (esil);
+			if (r_esil_get_parm_strs (esil, res, &nres)) {
 				R_LOG_DEBUG ("RES 0x%08"PFMT64x" %"PFMT64d, addr, nres);
 				if (nres) {
 					eprintf ("hits: %d\r", kw.count);

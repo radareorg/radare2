@@ -15,9 +15,9 @@ static bool core_esil_op_todo(REsil *esil) {
 }
 
 static bool core_esil_op_interrupt(REsil *esil) {
-	const char *str = r_esil_pop (esil);
+	const RStrs str = r_esil_pop_strs (esil);
 	ut64 interrupt;
-	if (!r_esil_get_parm (esil, str, &interrupt)) {
+	if (!r_esil_get_parm_strs (esil, str, &interrupt)) {
 		return false;
 	}
 	RCore *core = esil->user;

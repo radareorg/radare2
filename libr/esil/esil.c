@@ -8,6 +8,7 @@
 #include <r_reg.h>
 
 R_IPI bool isregornum(REsil *esil, const char *str, ut64 *num);
+R_IPI bool isregornum_strs(REsil *esil, RStrs str, ut64 *num);
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr) {
 	// r_arch_info (esil->anal->arch, R_ARCH_INFO_DATA_ALIGN);
@@ -633,13 +634,13 @@ R_API RStrs r_esil_pop_strs(REsil *esil) {
 	return esil->stack[--esil->stackptr];
 }
 
-// AITODO: we may want to use the strs variant as much as possible to avoid depending on null terminated strings and the stack arena
+// R2_600 - deprecated: use r_esil_pop_strs instead. Kept as a thin wrapper
+// for plugin compat — the arena NUL-terminates every entry, so the slice's
+// .a is a valid C string.
 R_API const char *r_esil_pop(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, NULL);
-	if (esil->stackptr < 1) {
-		return NULL;
-	}
-	return esil->stack[--esil->stackptr].a;
+	const RStrs s = r_esil_pop_strs (esil);
+	return r_strs_empty (s)? NULL: s.a;
 }
 
 static int not_a_number(REsil *esil, const char *str) {
@@ -1112,10 +1113,10 @@ R_API int r_esil_condition(REsil *esil, const char *str) {
 	int ret = -1;
 	str = r_str_trim_head_ro (str);
 	(void) r_esil_parse (esil, str);
-	const char *popped = r_esil_pop (esil);
-	if (popped) {
+	const RStrs popped = r_esil_pop_strs (esil);
+	if (!r_strs_empty (popped)) {
 		ut64 num;
-		if (isregornum (esil, popped, &num)) {
+		if (isregornum_strs (esil, popped, &num)) {
 			ret = !!num;
 		} else {
 			ret = 0;

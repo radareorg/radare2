@@ -686,9 +686,9 @@ static inline void gb_anal_cb_srl(RAnalOp *op, const ut8 data) {
 
 static bool gb_custom_daa(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	const char *v = r_esil_pop (esil);
+	const RStrs v = r_esil_pop_strs (esil);
 	ut64 n;
-	if (!v || !r_esil_get_parm (esil, v, &n)) {
+	if (r_strs_empty (v) || !r_esil_get_parm_strs (esil, v, &n)) {
 		return false;
 	}
 	ut8 val = (ut8)n;

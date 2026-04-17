@@ -19,11 +19,11 @@ static bool esil_forth_syscall_handler(REsil *esil, ut32 sysc, void *user) {
 
 static bool esil_over(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	const char *a = r_esil_pop (esil);
-	const char *b = r_esil_pop (esil);
-	r_esil_push (esil, b);
-	r_esil_push (esil, a);
-	r_esil_push (esil, b);
+	const RStrs a = r_esil_pop_strs (esil);
+	const RStrs b = r_esil_pop_strs (esil);
+	r_esil_push_strs (esil, b);
+	r_esil_push_strs (esil, a);
+	r_esil_push_strs (esil, b);
 	return true;
 }
 
