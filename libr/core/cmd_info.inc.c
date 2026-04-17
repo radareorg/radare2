@@ -53,6 +53,19 @@ static RCoreHelpMessage help_msg_ic = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_ii = {
+	"Usage: ii", "[+-?cj*,]", "List/edit imports (volatile, does not modify the binary)",
+	"ii", "", "list imports",
+	"ii,", "[table-query]", "query imports with table syntax",
+	"ii*", "", "list imports as radare2 commands",
+	"iij", "", "list imports as JSON",
+	"iiq", "", "list imports in quiet mode",
+	"ii+", " name [libname] [type] [bind] [ordinal]", "add an import to the loaded bin object",
+	"ii-", " name [libname]", "remove an import matching name (and optionally libname)",
+	"iic", "[?]", "classify imports (see iic?)",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_iy = {
 	"Usage: iy", "", "Display type information",
 	"iy", "", "List types (structs, enums, function signatures)",
@@ -1005,6 +1018,100 @@ void cmd_ic_add(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_ii_add(RCore *core, const char *input) {
+	if (R_STR_ISEMPTY (input) || *input == '?') {
+		r_core_cmd_help_match (core, help_msg_ii, "ii+");
+		return;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->bo) {
+		R_LOG_ERROR ("No file selected");
+		return;
+	}
+	// force lazy population of imports_vec from the legacy RList
+	(void)r_bin_get_imports_vec (core->bin);
+	char *args = strdup (r_str_trim_head_ro (input));
+	const int n = r_str_word_set0 (args);
+	const char *name = r_str_word_get0 (args, 0);
+	if (R_STR_ISEMPTY (name)) {
+		R_LOG_ERROR ("Missing import name");
+		free (args);
+		return;
+	}
+	RVecRBinImport *vec = &bf->bo->imports_vec;
+	RBinImport *imp = RVecRBinImport_emplace_back (vec);
+	if (!imp) {
+		free (args);
+		return;
+	}
+	memset (imp, 0, sizeof (*imp));
+	imp->name = r_bin_name_new (name);
+	imp->is_imported = true;
+	imp->bind = R_BIN_BIND_GLOBAL_STR;
+	imp->type = R_BIN_TYPE_FUNC_STR;
+	if (n > 1) {
+		const char *libname = r_str_word_get0 (args, 1);
+		if (R_STR_ISNOTEMPTY (libname)) {
+			imp->libname = strdup (libname);
+		}
+	}
+	if (n > 2) {
+		char *t = (char *)r_str_word_get0 (args, 2);
+		if (R_STR_ISNOTEMPTY (t)) {
+			r_str_case (t, true);
+			imp->type = r_str_constpool_get (&core->bin->constpool, t);
+		}
+	}
+	if (n > 3) {
+		char *b = (char *)r_str_word_get0 (args, 3);
+		if (R_STR_ISNOTEMPTY (b)) {
+			r_str_case (b, true);
+			imp->bind = r_str_constpool_get (&core->bin->constpool, b);
+		}
+	}
+	imp->ordinal = (n > 4)
+		? r_num_get (NULL, r_str_word_get0 (args, 4))
+		: RVecRBinImport_length (vec);
+	free (args);
+}
+
+static void cmd_ii_sub(RCore *core, const char *input) {
+	if (R_STR_ISEMPTY (input) || *input == '?') {
+		r_core_cmd_help_match (core, help_msg_ii, "ii-");
+		return;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->bo) {
+		R_LOG_ERROR ("No file selected");
+		return;
+	}
+	(void)r_bin_get_imports_vec (core->bin);
+	char *args = strdup (r_str_trim_head_ro (input));
+	const int n = r_str_word_set0 (args);
+	const char *name = r_str_word_get0 (args, 0);
+	const char *libname = (n > 1)? r_str_word_get0 (args, 1): NULL;
+	if (R_STR_ISEMPTY (name)) {
+		R_LOG_ERROR ("Missing import name");
+		free (args);
+		return;
+	}
+	RVecRBinImport *vec = &bf->bo->imports_vec;
+	size_t idx = 0;
+	RBinImport *it;
+	R_VEC_FOREACH (vec, it) {
+		const char *iname = it->name? r_bin_name_tostring (it->name): NULL;
+		if (iname && !strcmp (iname, name)
+				&& (!libname || (it->libname && !strcmp (it->libname, libname)))) {
+			RVecRBinImport_remove (vec, idx);
+			free (args);
+			return;
+		}
+		idx++;
+	}
+	R_LOG_ERROR ("Cannot find matching import");
+	free (args);
+}
+
 static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 0: 'o';
 	RListIter *iter, *iter2;
@@ -1012,57 +1119,26 @@ static void cmd_icg(RCore *core, RBinObject *obj, const char *arg) { // "icg"
 	if (!obj) {
 		return;
 	}
-	bool fullGraph = true;
-	const char *match = r_str_trim_head_ro (arg);
-	if (R_STR_ISNOTEMPTY (match)) {
-		r_list_foreach (obj->classes, iter, cls) {
-			const char *kname = r_bin_name_tostring2 (cls->name, pref);
-			if (!strstr (kname, match)) {
+	const char *trimmed = r_str_trim_head_ro (arg);
+	const char *match = R_STR_ISNOTEMPTY (trimmed)? trimmed: NULL;
+	r_list_foreach (obj->classes, iter, cls) {
+		const char *kname = r_bin_name_tostring2 (cls->name, pref);
+		if (match && !strstr (kname, match)) {
+			continue;
+		}
+		char *sk = r_str_sanitize_r2 (kname);
+		r_cons_printf (core->cons, "'agn %s\n", sk);
+		RBinName *bn;
+		r_list_foreach (cls->super, iter2, bn) {
+			const char *sname = r_bin_name_tostring2 (bn, pref);
+			if (match && !strstr (sname, match)) {
 				continue;
 			}
-			char *sk = r_str_sanitize_r2 (kname);
-			r_cons_printf (core->cons, "'agn %s\n", sk);
-			if (cls->super) {
-				RBinName *bn;
-				r_list_foreach (cls->super, iter2, bn) {
-					const char *sname = r_bin_name_tostring2 (bn, pref);
-					if (strstr (sname, match)) {
-						char *ss = r_str_sanitize_r2 (sname);
-						r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", ss, ss, sk);
-						free (ss);
-					}
-				}
-			}
-			free (sk);
+			char *ss = r_str_sanitize_r2 (sname);
+			r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", ss, ss, sk);
+			free (ss);
 		}
-	} else if (fullGraph) {
-		r_list_foreach (obj->classes, iter, cls) {
-			const char *kname = r_bin_name_tostring2 (cls->name, pref);
-			RBinName *bn;
-			char *sk = r_str_sanitize_r2 (kname);
-			r_cons_printf (core->cons, "'agn %s\n", sk);
-			r_list_foreach (cls->super, iter2, bn) {
-				const char *sname = r_bin_name_tostring2 (bn, pref);
-				char *ss = r_str_sanitize_r2 (sname);
-				r_cons_printf (core->cons, "'agn %s\n'age %s %s\n", ss, ss, sk);
-				free (ss);
-			}
-			free (sk);
-		}
-	} else {
-		r_list_foreach (obj->classes, iter, cls) {
-			const char *kname = r_bin_name_tostring2 (cls->name, pref);
-			char *sk;
-			RListIter *iter;
-			r_list_foreach (cls->super, iter, sk) {
-				if (strstr (sk, "NSObject")) {
-					continue;
-				}
-				r_cons_printf (core->cons, "'agn %s\n", sk);
-				r_cons_printf (core->cons, "'agn %s\n", kname);
-				r_cons_printf (core->cons, "'age %s %s\n", sk, kname);
-			}
-		}
+		free (sk);
 	}
 }
 
@@ -2501,6 +2577,9 @@ static int cmd_info(void *data, const char *input) {
 		case 'c': // "ic?"
 			r_core_cmd_help (core, help_msg_ic);
 			break;
+		case 'i': // "ii?"
+			r_core_cmd_help (core, help_msg_ii);
+			break;
 		case 'y': // "iy?"
 			r_core_cmd_help (core, help_msg_iy);
 			break;
@@ -2545,6 +2624,10 @@ static int cmd_info(void *data, const char *input) {
 	case 'i': // "ii"
 		if (input[1] == 'c') { // "iic"
 			return cmd_iic (core, input);
+		} else if (input[1] == '+') { // "ii+"
+			cmd_ii_add (core, r_str_trim_head_ro (input + 2));
+		} else if (input[1] == '-') { // "ii-"
+			cmd_ii_sub (core, r_str_trim_head_ro (input + 2));
 		} else {
 			RList *objs = r_core_bin_files (core);
 			RListIter *iter;
