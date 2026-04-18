@@ -627,8 +627,24 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				snprintf (out, 32, "%s", e->regs (egg, atoi (str + 4)));
 			}
 		} else {
-			out = str; /* TODO: show error, invalid var name? */
-			R_LOG_ERROR ("Something is really wrong in here");
+			/* Unknown keyword: first check for a user-defined alias
+			 * (e.g. `foo@alias(rax)` then `.foo` becomes "rax"); if
+			 * nothing matches, treat the name as a native register or
+			 * symbol name. This allows the .r program to directly
+			 * reference target registers like `.rax` or `.x0`. */
+			const char *name = str + 1;
+			int i;
+			for (i = 0; i < egg->lang.nalias; i++) {
+				const char *aname = egg->lang.aliases[i].name;
+				if (aname && !strcmp (name, aname)) {
+					const char *content = egg->lang.aliases[i].content;
+					r_str_ncpy (out, content? content: "", 32);
+					break;
+				}
+			}
+			if (i == egg->lang.nalias) {
+				r_str_ncpy (out, name, 32);
+			}
 		}
 		ret = strdup (out);
 		free (oldstr);

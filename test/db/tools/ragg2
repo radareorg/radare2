@@ -531,8 +531,44 @@ EXPECT=<<EOF
 
 .global main
 main:
-42,a1,:=, 60,$,
+42,a1,:=,60,$,
 
+
+EOF
+RUN
+
+NAME=ragg2 esil direct register access
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = 5; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,rax,:=,
+
+EOF
+RUN
+
+NAME=ragg2 esil direct register in expression
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = .rcx + 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+rcx,r1,:=,3,r1,+=,r1,rax,:=,
+
+EOF
+RUN
+
+NAME=ragg2 esil alias directive
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'myreg@alias(rax) main@global(16,0) { .myreg = 42; }'
+EXPECT=<<EOF
+
+.global main
+main:
+42,r1,:=,r1,rax,:=,
 
 EOF
 RUN

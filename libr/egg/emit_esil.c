@@ -50,8 +50,9 @@ static char *emit_syscall(REgg *egg, int num) {
 	 * must be valid .r syntax. Use the ":" prefix to escape into raw mode
 	 * and terminate with a newline so the parser leaves raw mode cleanly.
 	 * The syscall number is injected through the `.arg` backtick expansion
-	 * which the parser resolves from the current @syscall declaration. */
-	return strdup ("\n: `.arg`,$,\n");
+	 * which the parser resolves from the current @syscall declaration.
+	 * Note: no space after ":" so the raw line does not add a leading space. */
+	return strdup ("\n:`.arg`,$,\n");
 }
 
 static void emit_frame(REgg *egg, int sz) {
