@@ -397,6 +397,9 @@ R_API bool r_egg_compile(REgg *egg) {
 		R_LOG_ERROR ("expected '}' at the end of the file. %d left", egg->context);
 		return false;
 	}
+	if (egg->remit && egg->remit->finalize) {
+		egg->remit->finalize (egg);
+	}
 	return true;
 }
 

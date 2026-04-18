@@ -387,7 +387,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,
+5,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -399,7 +399,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,3,r1,+=,r1,v8,:=,
+5,r1,:=,3,r1,+=,r1,v8,:=
 
 EOF
 RUN
@@ -411,7 +411,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,3,r1,:=,r1,v8,+=,
+5,r1,:=,r1,v8,:=,3,r1,:=,r1,v8,+=
 
 EOF
 RUN
@@ -423,7 +423,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-10,r1,:=,r1,v8,:=,4,r1,:=,r1,v8,-=,
+10,r1,:=,r1,v8,:=,4,r1,:=,r1,v8,-=
 
 EOF
 RUN
@@ -435,7 +435,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r2,:=,3,r2,*=,r2,r1,:=,r1,v8,:=,
+5,r2,:=,3,r2,*=,r2,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -447,7 +447,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-20,r2,:=,4,r2,/=,r2,r1,:=,r1,v8,:=,
+20,r2,:=,4,r2,/=,r2,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -459,7 +459,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-0xff,r3,:=,0x0f,r3,&=,r3,r1,:=,r1,v8,:=,
+0xff,r3,:=,0x0f,r3,&=,r3,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -471,7 +471,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-1,r3,:=,2,r3,|=,4,r3,|=,r3,r1,:=,r1,v8,:=,
+1,r3,:=,2,r3,|=,4,r3,|=,r3,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -483,7 +483,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r3,:=,3,r3,^=,r3,r1,:=,r1,v8,:=,
+5,r3,:=,3,r3,^=,r3,r1,:=,r1,v8,:=
 
 EOF
 RUN
@@ -495,7 +495,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-2,r1,:=,3,r2,:=,4,r2,*=,r2,r1,+=,r1,v8,:=,
+2,r1,:=,3,r2,:=,4,r2,*=,r2,r1,+=,r1,v8,:=
 
 EOF
 RUN
@@ -507,7 +507,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,r1,:=,1,r1,+=,r1,v16,:=,
+5,r1,:=,r1,v8,:=,v8,r1,:=,1,r1,+=,r1,v16,:=
 
 EOF
 RUN
@@ -519,7 +519,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-0x1000,r1,:=,r1,v8,:=,v8,[4],r0,:=,r0,r1,:=,r1,v16,:=,
+0x1000,r1,:=,r1,v8,:=,v8,[4],r0,:=,r0,r1,:=,r1,v16,:=
 
 EOF
 RUN
@@ -531,7 +531,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-42,a1,:=,60,$,
+42,a1,:=,60,$
 
 
 EOF
@@ -544,7 +544,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,rax,:=,
+5,r1,:=,r1,rax,:=
 
 EOF
 RUN
@@ -556,7 +556,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-rcx,r1,:=,3,r1,+=,r1,rax,:=,
+rcx,r1,:=,3,r1,+=,r1,rax,:=
 
 EOF
 RUN
@@ -576,7 +576,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-42,r1,:=,r1,rax,:=,
+42,r1,:=,r1,rax,:=
 
 EOF
 RUN
@@ -588,8 +588,8 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,!,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
-__end_0_1_0,PC,:=,
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,!,?{,26,GOTO,},99,r1,:=,r1,v8,:=,26,GOTO,26,GOTO
+
 EOF
 RUN
 
@@ -600,8 +600,8 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
-__end_0_1_0,PC,:=,
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,25,GOTO,},99,r1,:=,r1,v8,:=,25,GOTO,25,GOTO
+
 EOF
 RUN
 
@@ -612,8 +612,8 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},0,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
-__end_0_1_0,PC,:=,
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,25,GOTO,},0,r1,:=,r1,v8,:=,25,GOTO,25,GOTO
+
 EOF
 RUN
 
@@ -624,7 +624,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-3,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},1,r1,:=,r1,v8,-=,v8,a1,:=,__begin_0_1_0,PC,:=,
+3,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,28,GOTO,},1,r1,:=,r1,v8,-=,v8,a1,:=,9,GOTO
 
 EOF
 RUN

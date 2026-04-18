@@ -1,16 +1,22 @@
-/* conditionals: if/else and while
+/* conditionals: if and while
  *
  *   ragg2 -a esil -s t/cond.r
  *   ragg2 -a x86 -b 64 -s t/cond.r
  *
- * The ESIL backend emits:
- *   - "X,a1,OP,?{,__end,PC,:=,}" for ordered comparisons
- *   - "X,a1,==,$z,!,?{,__end,PC,:=,}" for equality tests
- * so that the body is skipped when the condition is false.
+ * The ESIL backend compiles each function into a single expression
+ * of comma-separated tokens. Labels are resolved at finalize time
+ * into numeric word indices so the output is pure ESIL and can be
+ * fed to r2's `ae` command:
  *
- * While loops additionally re-push the condition variable into a1
- * at the bottom of the body and unconditionally jump back to the
- * begin label, where the same check re-runs.
+ *   - "X,a1,OP,?{,N,GOTO,}"        for ordered comparisons
+ *   - "X,a1,==,$z,[!,]?{,N,GOTO,}" for equality tests
+ *   - "N,GOTO"                     unconditional branch
+ *
+ * where N is the word position of the target inside the expression.
+ *
+ * While loops additionally refresh a1 from the loop variable at the
+ * bottom of the body before jumping back to the begin position, so
+ * the same comparison re-runs against the updated value.
  */
 
 main@global(16, 0) {
@@ -31,7 +37,7 @@ main@global(16, 0) {
 		.var0 = 1;
 	}
 
-	/* countdown loop: keep looping while .var0 > 0 */
+	/* countdown loop: keep looping while .var0 is non-zero */
 	.var0 = 3;
 	while (.var0) {
 		.var0 -= 1;

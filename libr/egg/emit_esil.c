@@ -15,6 +15,13 @@
 
 #include <r_egg.h>
 
+/* Sentinels used to defer label / jump resolution until finalize.
+ * Both are emitted in place of a regular token and stripped or
+ * rewritten during emit_finalize(). They use characters that never
+ * appear in a valid ESIL token so recognition is unambiguous. */
+#define ESIL_LABEL_MARK "#L#"
+#define ESIL_JUMP_MARK  "#J#"
+
 #define EMIT_NAME emit_esil
 #define R_ARCH "esil"
 #define R_SZ 8
@@ -70,9 +77,11 @@ static void emit_comment(REgg *egg, const char *fmt, ...) {
 }
 
 static void emit_label(REgg *egg, const char *name) {
-	/* Branch-target labels are not valid ESIL tokens. They're
-	 * referenced symbolically by the jmp/branch emissions; definitions
-	 * are dropped from the output. */
+	/* Emit a sentinel token that records where the label sits in the
+	 * expression. emit_finalize() later converts every jump reference
+	 * into an N,GOTO pair using these positions and then strips the
+	 * sentinels from the output. */
+	r_egg_printf (egg, ESIL_LABEL_MARK "%s,", name);
 }
 
 static void emit_equ(REgg *egg, const char *key, const char *value) {
@@ -98,15 +107,17 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 	}
 	flush_pending_zero (egg);
 	if (atr) {
+		/* dereference-then-branch: load the pointer then set PC. */
 		r_egg_printf (egg, "%s,[%d],PC,:=,", str, (egg->bits == 64) ? 8 : 4);
 	} else {
-		r_egg_printf (egg, "%s,PC,:=,", str);
+		/* plain unconditional branch -> N,GOTO (N resolved in finalize). */
+		r_egg_printf (egg, ESIL_JUMP_MARK "%s,GOTO,", str);
 	}
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
-	/* a call is represented as a direct PC assignment. Real return
-	 * semantics are left to higher-level analysis tooling. */
+	/* A call has no dedicated ESIL opcode: model it as a GOTO to the
+	 * symbolic target. Return semantics are left to higher-level tools. */
 	if (!str) {
 		return;
 	}
@@ -114,7 +125,7 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	if (atr) {
 		r_egg_printf (egg, "%s,[%d],PC,:=,", str, (egg->bits == 64) ? 8 : 4);
 	} else {
-		r_egg_printf (egg, "%s,PC,:=,", str);
+		r_egg_printf (egg, ESIL_JUMP_MARK "%s,GOTO,", str);
 	}
 }
 
@@ -155,9 +166,9 @@ static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const 
 	 * jump back to the begin label, where emit_branch will re-check
 	 * the comparison against the fresh value. */
 	if (ctxpush && label) {
-		snprintf (str, 64, "%s,a1,:=,%s,PC,:=,", ctxpush, label);
+		snprintf (str, 64, "%s,a1,:=," ESIL_JUMP_MARK "%s,GOTO,", ctxpush, label);
 	} else if (label) {
-		snprintf (str, 64, "%s,PC,:=,", label);
+		snprintf (str, 64, ESIL_JUMP_MARK "%s,GOTO,", label);
 	} else {
 		*str = '\0';
 	}
@@ -166,7 +177,7 @@ static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const 
 static void emit_while_end(REgg *egg, const char *labelback) {
 	if (labelback) {
 		flush_pending_zero (egg);
-		r_egg_printf (egg, "%s,PC,:=,", labelback);
+		r_egg_printf (egg, ESIL_JUMP_MARK "%s,GOTO,", labelback);
 	}
 }
 
@@ -253,10 +264,10 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		arg = (char *)"0";
 	}
 	if (equality) {
-		r_egg_printf (egg, "%s,a1,==,$z,%s?{,%s,PC,:=,},",
+		r_egg_printf (egg, "%s,a1,==,$z,%s?{," ESIL_JUMP_MARK "%s,GOTO,},",
 			arg, invert ? "!," : "", dst);
 	} else {
-		r_egg_printf (egg, "%s,a1,%s,?{,%s,PC,:=,},",
+		r_egg_printf (egg, "%s,a1,%s,?{," ESIL_JUMP_MARK "%s,GOTO,},",
 			arg, op, dst);
 	}
 }
@@ -341,6 +352,185 @@ static void emit_get_arg(REgg *egg, char *out, int idx) {
 	snprintf (out, 32, "a%d", idx);
 }
 
+static bool is_header_line(const char *line) {
+	/* Lines emitted by the parser as non-ESIL directives: ".global foo",
+	 * "name:" function labels, etc. They are kept verbatim by finalize
+	 * so the overall output still looks like the other backends, while
+	 * the ESIL content between them is resolved to GOTO form. */
+	const char *p = line;
+	while (*p == ' ' || *p == '\t') {
+		p++;
+	}
+	if (*p == '.') {
+		return true;
+	}
+	size_t len = strlen (p);
+	if (len >= 2 && p[len - 1] == '\n' && p[len - 2] == ':') {
+		return true;
+	}
+	if (len >= 1 && p[len - 1] == ':') {
+		return true;
+	}
+	return false;
+}
+
+typedef struct {
+	char *name;
+	int idx;
+} EsilLabel;
+
+static EsilLabel *find_label(EsilLabel *labels, int n, const char *name) {
+	int i;
+	for (i = 0; i < n; i++) {
+		if (!strcmp (labels[i].name, name)) {
+			return &labels[i];
+		}
+	}
+	return NULL;
+}
+
+/* Rewrite one contiguous ESIL block: strip label sentinels (recording
+ * their word indices first) then replace `#J#name` tokens with the
+ * numeric word index of the referenced label. */
+static char *resolve_block(const char *block) {
+	enum { MAX_LABELS = 256 };
+	EsilLabel labels[MAX_LABELS];
+	int nlabels = 0;
+	/* Pass 1: walk comma-separated tokens, record label positions.
+	 * Label sentinels do not occupy a word in the output so the
+	 * counter is not incremented for them. Whitespace tokens are
+	 * ignored entirely. */
+	int word_idx = 0;
+	const char *p = block;
+	while (*p) {
+		const char *start = p;
+		while (*p && *p != ',' && *p != '\n') {
+			p++;
+		}
+		size_t len = p - start;
+		while (len && (*start == ' ' || *start == '\t')) {
+			start++;
+			len--;
+		}
+		while (len && (start[len - 1] == ' ' || start[len - 1] == '\t')) {
+			len--;
+		}
+		if (len > strlen (ESIL_LABEL_MARK)
+				&& !strncmp (start, ESIL_LABEL_MARK, strlen (ESIL_LABEL_MARK))) {
+			if (nlabels < MAX_LABELS) {
+				labels[nlabels].name = r_str_ndup (start + strlen (ESIL_LABEL_MARK),
+					len - strlen (ESIL_LABEL_MARK));
+				labels[nlabels].idx = word_idx;
+				nlabels++;
+			}
+		} else if (len > 0) {
+			word_idx++;
+		}
+		if (*p) {
+			p++;
+		}
+	}
+	/* Pass 2: emit resolved tokens. */
+	RStrBuf *out = r_strbuf_new ("");
+	bool first = true;
+	p = block;
+	while (*p) {
+		const char *start = p;
+		while (*p && *p != ',' && *p != '\n') {
+			p++;
+		}
+		size_t len = p - start;
+		while (len && (*start == ' ' || *start == '\t')) {
+			start++;
+			len--;
+		}
+		while (len && (start[len - 1] == ' ' || start[len - 1] == '\t')) {
+			len--;
+		}
+		if (len == 0) {
+			if (*p) {
+				p++;
+			}
+			continue;
+		}
+		if (len > strlen (ESIL_LABEL_MARK)
+				&& !strncmp (start, ESIL_LABEL_MARK, strlen (ESIL_LABEL_MARK))) {
+			/* label sentinel: drop */
+		} else if (len > strlen (ESIL_JUMP_MARK)
+				&& !strncmp (start, ESIL_JUMP_MARK, strlen (ESIL_JUMP_MARK))) {
+			char *name = r_str_ndup (start + strlen (ESIL_JUMP_MARK),
+				len - strlen (ESIL_JUMP_MARK));
+			EsilLabel *lbl = find_label (labels, nlabels, name);
+			if (!first) {
+				r_strbuf_append (out, ",");
+			}
+			r_strbuf_appendf (out, "%d", lbl ? lbl->idx : 0);
+			first = false;
+			free (name);
+		} else {
+			if (!first) {
+				r_strbuf_append (out, ",");
+			}
+			r_strbuf_append_n (out, start, len);
+			first = false;
+		}
+		if (*p) {
+			p++;
+		}
+	}
+	int i;
+	for (i = 0; i < nlabels; i++) {
+		free (labels[i].name);
+	}
+	r_strbuf_append (out, "\n");
+	return r_strbuf_drain (out);
+}
+
+static void emit_finalize(REgg *egg) {
+	char *src = r_buf_tostring (egg->buf);
+	if (!src) {
+		return;
+	}
+	r_unref (egg->buf);
+	egg->buf = r_buf_new ();
+	RStrBuf *block = r_strbuf_new ("");
+	char *cur = src;
+	while (*cur) {
+		char *nl = strchr (cur, '\n');
+		size_t linelen = nl ? (size_t)(nl - cur) + 1 : strlen (cur);
+		char *line = r_str_ndup (cur, linelen);
+		if (is_header_line (line)) {
+			if (r_strbuf_length (block) > 0) {
+				char *resolved = resolve_block (r_strbuf_get (block));
+				r_buf_append_bytes (egg->buf, (const ut8 *)resolved, strlen (resolved));
+				free (resolved);
+				r_strbuf_set (block, "");
+			}
+			r_buf_append_bytes (egg->buf, (const ut8 *)line, linelen);
+		} else if (*r_str_trim_head_ro (line) == '\0') {
+			/* blank line: treat as a block boundary */
+			if (r_strbuf_length (block) > 0) {
+				char *resolved = resolve_block (r_strbuf_get (block));
+				r_buf_append_bytes (egg->buf, (const ut8 *)resolved, strlen (resolved));
+				free (resolved);
+				r_strbuf_set (block, "");
+			}
+			r_buf_append_bytes (egg->buf, (const ut8 *)line, linelen);
+		} else {
+			r_strbuf_append (block, line);
+		}
+		free (line);
+		cur += linelen;
+	}
+	if (r_strbuf_length (block) > 0) {
+		char *resolved = resolve_block (r_strbuf_get (block));
+		r_buf_append_bytes (egg->buf, (const ut8 *)resolved, strlen (resolved));
+		free (resolved);
+	}
+	r_strbuf_free (block);
+	free (src);
+}
+
 REggEmit EMIT_NAME = {
 	.retvar = R_AX,
 	.arch = R_ARCH,
@@ -355,6 +545,7 @@ REggEmit EMIT_NAME = {
 	.frame_end = emit_frame_end,
 	.comment = emit_comment,
 	.label = emit_label,
+	.finalize = emit_finalize,
 	.push_arg = emit_arg,
 	.restore_stack = emit_restore_stack,
 	.get_result = emit_get_result,
