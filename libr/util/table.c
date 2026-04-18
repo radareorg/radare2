@@ -39,7 +39,7 @@ typedef struct {
 
 
 R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv, int perm, const char *extra) {
-	RListInfo *info = R_NEW (RListInfo);
+	RListInfo *info = R_NEW0 (RListInfo);
 	info->name = name ? strdup (name) : NULL;
 	info->pitv = pitv;
 	info->vitv = vitv;
@@ -51,6 +51,7 @@ R_API RListInfo *r_listinfo_new(const char *name, RInterval pitv, RInterval vitv
 static void r_listinfo_fini(RListInfo *info) {
 	free (info->name);
 	free (info->extra);
+	free (info->color);
 }
 
 R_API void r_listinfo_free(RListInfo *info) {
@@ -1408,9 +1409,14 @@ static void r_table_visual_row(RTable *table, const RListInfo *info, int i, Tabl
 	for (j = 0; j < width; j++) {
 		ut64 pos = min + j * mul;
 		ut64 npos = min + (j + 1) * mul;
-		const char *arg = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos)
-			? block: h_line;
-		r_strbuf_append (buf, arg);
+		bool in_range = (info->pitv.addr < npos && (info->pitv.addr + info->pitv.size) > pos);
+		if (in_range && info->color) {
+			r_strbuf_append (buf, info->color);
+			r_strbuf_append (buf, block);
+			r_strbuf_append (buf, Color_RESET);
+		} else {
+			r_strbuf_append (buf, in_range ? block : h_line);
+		}
 	}
 	r_strf_var (a0, 64, "%d%c", i, (va
 		? r_itv_contain (info->vitv, seek)

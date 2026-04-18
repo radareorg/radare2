@@ -2816,6 +2816,15 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	if (fcn->callconv) {
 		pj_ks (pj, "calltype", fcn->callconv); // calling conventions
 	}
+	{
+		RFlagItem *fi = r_flag_get_in (core->flags, fcn->addr);
+		if (fi) {
+			RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+			if (fim && fim->color) {
+				pj_ks (pj, "color", fim->color);
+			}
+		}
+	}
 	pj_ki (pj, "cost", r_anal_function_cost (fcn)); // execution cost
 	pj_ki (pj, "cc", r_anal_function_complexity (fcn)); // cyclic cost
 	pj_ki (pj, "bits", fcn->bits);
@@ -3471,6 +3480,13 @@ R_API int r_core_anal_fcn_list(RCore *core, const char *input, const char *rad) 
 			free (fcn_name);
 			if (!info) {
 				break;
+			}
+			RFlagItem *fi = r_flag_get_in (core->flags, fcn->addr);
+			if (fi) {
+				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+				if (fim && fim->color) {
+					info->color = r_cons_pal_parse (core->cons, fim->color, NULL);
+				}
 			}
 			r_list_append (flist, info);
 		}

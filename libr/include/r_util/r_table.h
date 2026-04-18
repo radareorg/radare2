@@ -29,6 +29,7 @@ typedef struct {
 	RInterval vitv;
 	int perm;
 	char *extra;
+	char *color;
 } RListInfo;
 
 R_VEC_FORWARD_DECLARE(RVecListInfo);
