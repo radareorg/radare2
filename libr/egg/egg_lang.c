@@ -581,19 +581,39 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
+		/* parse_leading_idx parses only the leading digits (possibly
+		 * with a 0x prefix) of s and returns the number. This avoids
+		 * r_num_math evaluating trailing operators as part of the
+		 * index, so ".var0 == 0" resolves to offset 0 rather than 1. */
+		char numbuf[32];
+#define PARSE_LEADING_IDX(s) ({ \
+		const char *_p = (s); \
+		int _k = 0; \
+		if (_p[0] == '0' && (_p[1] == 'x' || _p[1] == 'X')) { \
+			while (_k < 31 && _p[_k]) { \
+				if (_k < 2 || isxdigit ((unsigned char)_p[_k])) { \
+					numbuf[_k] = _p[_k]; _k++; \
+				} else { break; } \
+			} \
+		} else { \
+			while (_k < 31 && isdigit ((unsigned char)_p[_k])) { \
+				numbuf[_k] = _p[_k]; _k++; \
+			} \
+		} \
+		numbuf[_k] = '\0'; \
+		(int)r_num_math (NULL, numbuf); \
+	})
 		if (r_str_startswith (str + 1, "ret")) {
 			strcpy (out, e->retvar);
 		} else if (r_str_startswith (str + 1, "fix")) {
-			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+			int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - egg->lang.stackfixed);
-			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ-egg->lang.stackfixed));
 		} else if (r_str_startswith (str + 1, "var")) {
-			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+			int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
-			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ));
 		} else if (r_str_startswith (str + 1, "rarg")) {
 			if (e->get_arg) {
-				int idx = (int)r_num_math (NULL, str + 5);
+				int idx = PARSE_LEADING_IDX (str + 5);
 				e->get_arg (egg, out, idx);
 			}
 		} else if (r_str_startswith (str + 1, "arg")) {
@@ -601,7 +621,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				if (egg->lang.stackframe == 0) {
 					e->get_var (egg, 1, out, 4); // idx-4);
 				} else {
-					int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+					int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
 					e->get_var (egg, 2, out, idx + 4);
 				}
 			} else {
@@ -620,11 +640,11 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				}
 			}
 		} else if (r_str_startswith (str + 1, "reg")) {
-			// XXX: can overflow if out is small
+			int idx = PARSE_LEADING_IDX (str + 4);
 			if (egg->lang.attsyntax) {
-				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str + 4)));
+				snprintf (out, 32, "%%%s", e->regs (egg, idx));
 			} else {
-				snprintf (out, 32, "%s", e->regs (egg, atoi (str + 4)));
+				snprintf (out, 32, "%s", e->regs (egg, idx));
 			}
 		} else {
 			/* Unknown keyword: first check for a user-defined alias

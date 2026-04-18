@@ -144,10 +144,12 @@ static void emit_restore_stack(REgg *egg, int size) {
 }
 
 static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	/* Store the back-jump expression - it is emitted at the end of
-	 * the while body by the parser. */
+	/* Inserted at the end of a while-loop body: re-push the loop
+	 * condition value (copy ctxpush into a1) and unconditionally
+	 * jump back to the begin label, where emit_branch will re-check
+	 * the comparison against the fresh value. */
 	if (ctxpush && label) {
-		snprintf (str, 64, "%s,?{,%s,PC,:=,},", ctxpush, label);
+		snprintf (str, 64, "%s,a1,:=,%s,PC,:=,", ctxpush, label);
 	} else if (label) {
 		snprintf (str, 64, "%s,PC,:=,", label);
 	} else {
@@ -196,36 +198,61 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 
 static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
 	flush_pending_zero (egg);
-	/* dst is the branch target label. The accumulator r1 holds the
-	 * just-computed right-hand side; the condition variable was stored
-	 * on the push stack by the parser as ctxpush. The branch fires when
-	 * the resulting condition is FALSE (it is the "skip body" branch).
+	/* The parser has pushed the LHS of the condition via push_arg,
+	 * which in this backend copies it into a1. emit_branch jumps to
+	 * dst when the condition is FALSE (it is the "skip the body"
+	 * branch), so the operator is the negation of the source cmp.
+	 *
+	 * ESIL comparison semantics:
+	 *   a,b,>    pushes 1 if b > a  (ditto for <, >=, <=)
+	 *   a,b,==   sets $z = (a == b), pushes nothing useful
+	 *   X,!      pushes !X (logical not)
 	 */
-	const char *op;
+	const char *op = NULL;
 	char *arg = NULL;
+	int equality = 0;   /* 1 = test via $z, 0 = ordered comparison */
+	int invert = 0;     /* 1 = invert result (for skip-when-equal) */
 	if (b) {
 		*b = '\0';
-		op = e ? "<" : "<=";
+		/* source: < or <=, skip on >= or > */
+		op = e ? ">" : ">=";
 		arg = b + 1;
 	} else if (g) {
 		*g = '\0';
-		op = e ? ">" : ">=";
+		/* source: > or >=, skip on <= or < */
+		op = e ? "<" : "<=";
 		arg = g + 1;
 	} else if (e) {
+		/* source: == or !=, branch on equality */
 		arg = e + 1;
-		op = "!=";
+		equality = 1;
+		/* n != NULL means source was "!=", so skip when equal;
+		 * n == NULL means source was "==", so skip when not equal. */
+		invert = (n == NULL) ? 1 : 0;
 	} else {
+		/* bare `if(x)` (skip when x == 0) or `if(!x)` (skip when x != 0) */
 		arg = (char *)"0";
-		op = n ? "==" : "!=";
+		equality = 1;
+		/* n != NULL means source had '!', so skip when x != 0 (invert).
+		 * n == NULL means bare `if(x)`, so skip when x == 0 (no invert). */
+		invert = n ? 1 : 0;
 	}
 	if (arg && *arg == '=') {
-		arg++;
+		arg++;  /* step over the second char of <=, >= */
 	}
-	if (!arg) {
+	while (arg && (*arg == ' ' || *arg == '\t')) {
+		arg++;   /* drop any whitespace between the operator and the RHS */
+	}
+	if (!arg || !*arg) {
 		arg = (char *)"0";
 	}
-	/* compare r1 (accumulator) against arg with op: skip body if cond fails */
-	r_egg_printf (egg, "%s,r1,%s,?{,%s,PC,:=,},", arg, op, dst);
+	if (equality) {
+		r_egg_printf (egg, "%s,a1,==,$z,%s?{,%s,PC,:=,},",
+			arg, invert ? "!," : "", dst);
+	} else {
+		r_egg_printf (egg, "%s,a1,%s,?{,%s,PC,:=,},",
+			arg, op, dst);
+	}
 }
 
 static void emit_load(REgg *egg, const char *dst, int sz) {

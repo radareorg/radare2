@@ -28,6 +28,7 @@ Files
 - arith.r           arithmetic expressions and operator precedence
 - regs.r            direct native-register access via the `.regname` syntax
 - alias.r           register aliases defined with the `@alias` directive
+- cond.r            conditional statements: if, if/else style, while
 - customsyscall.r   overriding the `@syscall` body with inline asm
 
 Language cheat sheet

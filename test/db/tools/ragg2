@@ -572,3 +572,62 @@ main:
 
 EOF
 RUN
+
+NAME=ragg2 esil if equality skip
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0 == 0) { .var0 = 99; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
+0,a1,==,$z,!,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
+
+  __ifelse_1_0:
+__end_0_1_0,PC,:=,
+EOF
+RUN
+
+NAME=ragg2 esil if not-equal skip
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0 != 0) { .var0 = 99; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
+0,a1,==,$z,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
+
+  __ifelse_1_0:
+__end_0_1_0,PC,:=,
+EOF
+RUN
+
+NAME=ragg2 esil bare truthy if
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0) { .var0 = 0; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
+0,a1,==,$z,?{,__end_0_1_0,PC,:=,},0,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
+
+  __ifelse_1_0:
+__end_0_1_0,PC,:=,
+EOF
+RUN
+
+NAME=ragg2 esil while truthy
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 3; while (.var0) { .var0 -= 1; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+3,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
+0,a1,==,$z,?{,__end_0_1_0,PC,:=,},1,r1,:=,r1,v8,-=,v8,a1,:=,__begin_0_1_0,PC,:=,  __end_0_1_0:
+
+
+EOF
+RUN
