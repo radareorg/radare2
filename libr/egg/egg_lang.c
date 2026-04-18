@@ -556,6 +556,42 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 	R_FREE (egg->lang.dstvar);
 }
 
+/* Emit a branch-target label in a backend-appropriate form. Backends that
+ * assemble to native code keep the classic ".S" style "name:\n"; backends
+ * like ESIL override the callback to drop labels entirely. */
+static void emit_label(REgg *egg, const char *name) {
+	if (egg->remit && egg->remit->label) {
+		egg->remit->label (egg, name);
+	} else {
+		r_egg_printf (egg, "%s:\n", name);
+	}
+}
+
+/* Return the integer value of the leading (decimal or hex) number in s.
+ * Unlike r_num_math this stops at the first non-digit character so that
+ * trailing tokens like "==" or whitespace do not affect the result. This
+ * is used when resolving `.varN` / `.argN` / `.regN` names out of strings
+ * that may still contain comparison operators. */
+static int parse_leading_idx(const char *s) {
+	char buf[32];
+	int k = 0;
+	if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+		buf[k++] = s[0];
+		buf[k++] = s[1];
+		while (k < (int)sizeof (buf) - 1 && isxdigit ((unsigned char)s[k])) {
+			buf[k] = s[k];
+			k++;
+		}
+	} else {
+		while (k < (int)sizeof (buf) - 1 && isdigit ((unsigned char)s[k])) {
+			buf[k] = s[k];
+			k++;
+		}
+	}
+	buf[k] = '\0';
+	return (int)r_num_math (NULL, buf);
+}
+
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	int i, len, qi;
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
@@ -581,39 +617,23 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
-		/* parse_leading_idx parses only the leading digits (possibly
-		 * with a 0x prefix) of s and returns the number. This avoids
-		 * r_num_math evaluating trailing operators as part of the
-		 * index, so ".var0 == 0" resolves to offset 0 rather than 1. */
-		char numbuf[32];
-#define PARSE_LEADING_IDX(s) ({ \
-		const char *_p = (s); \
-		int _k = 0; \
-		if (_p[0] == '0' && (_p[1] == 'x' || _p[1] == 'X')) { \
-			while (_k < 31 && _p[_k]) { \
-				if (_k < 2 || isxdigit ((unsigned char)_p[_k])) { \
-					numbuf[_k] = _p[_k]; _k++; \
-				} else { break; } \
-			} \
-		} else { \
-			while (_k < 31 && isdigit ((unsigned char)_p[_k])) { \
-				numbuf[_k] = _p[_k]; _k++; \
-			} \
-		} \
-		numbuf[_k] = '\0'; \
-		(int)r_num_math (NULL, numbuf); \
-	})
-		if (r_str_startswith (str + 1, "ret")) {
+		if (str[1] == '%') {
+			/* Explicit raw native register: `.%name` skips the alias
+			 * table and copies the register name verbatim. This keeps
+			 * the unambiguous "target register" syntax separate from
+			 * `.varN`, `.regN` and user-defined aliases. */
+			r_str_ncpy (out, str + 2, 32);
+		} else if (r_str_startswith (str + 1, "ret")) {
 			strcpy (out, e->retvar);
 		} else if (r_str_startswith (str + 1, "fix")) {
-			int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
+			int idx = parse_leading_idx (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - egg->lang.stackfixed);
 		} else if (r_str_startswith (str + 1, "var")) {
-			int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
+			int idx = parse_leading_idx (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
 		} else if (r_str_startswith (str + 1, "rarg")) {
 			if (e->get_arg) {
-				int idx = PARSE_LEADING_IDX (str + 5);
+				int idx = parse_leading_idx (str + 5);
 				e->get_arg (egg, out, idx);
 			}
 		} else if (r_str_startswith (str + 1, "arg")) {
@@ -621,7 +641,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				if (egg->lang.stackframe == 0) {
 					e->get_var (egg, 1, out, 4); // idx-4);
 				} else {
-					int idx = PARSE_LEADING_IDX (str + 4) + delta + e->size;
+					int idx = parse_leading_idx (str + 4) + delta + e->size;
 					e->get_var (egg, 2, out, idx + 4);
 				}
 			} else {
@@ -640,18 +660,15 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				}
 			}
 		} else if (r_str_startswith (str + 1, "reg")) {
-			int idx = PARSE_LEADING_IDX (str + 4);
+			int idx = parse_leading_idx (str + 4);
 			if (egg->lang.attsyntax) {
 				snprintf (out, 32, "%%%s", e->regs (egg, idx));
 			} else {
 				snprintf (out, 32, "%s", e->regs (egg, idx));
 			}
 		} else {
-			/* Unknown keyword: first check for a user-defined alias
-			 * (e.g. `foo@alias(rax)` then `.foo` becomes "rax"); if
-			 * nothing matches, treat the name as a native register or
-			 * symbol name. This allows the .r program to directly
-			 * reference target registers like `.rax` or `.x0`. */
+			/* Not a builtin keyword and not the `.%name` raw register
+			 * form: look the bare name up in the `@alias` table. */
 			const char *name = str + 1;
 			int i;
 			for (i = 0; i < egg->lang.nalias; i++) {
@@ -663,7 +680,9 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				}
 			}
 			if (i == egg->lang.nalias) {
-				r_str_ncpy (out, name, 32);
+				R_LOG_ERROR ("Unknown name '.%s' (use .%%%s for a raw register or `%s@alias(...)`)",
+					name, name, name);
+				*out = '\0';
 			}
 		}
 		ret = strdup (out);
@@ -1452,8 +1471,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 						r_str_newf ("  __end_%d_%d_%d",
 							egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
 				}
-				r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
-					egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]); // %s:\n", get_frame_label (0));
+				{
+					char lbl[64];
+					snprintf (lbl, sizeof (lbl), "__begin_%d_%d_%d",
+						egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
+					emit_label (egg, lbl);
+				}
 			}
 			rcc_context (egg, 1);
 			break;
@@ -1474,8 +1497,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 						r_str_newf ("__end_%d_%d_%d",
 							egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				}
-				r_egg_printf (egg, "  __end_%d_%d_%d:\n",
-					egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+				{
+					char lbl[64];
+					snprintf (lbl, sizeof (lbl), "__end_%d_%d_%d",
+						egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+					emit_label (egg, lbl);
+				}
 			}
 			if (CTX > 0) {
 				egg->lang.nbrackets++;
@@ -1489,7 +1516,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				for (i = 0; i < 32; i++) {
 					for (j = 0; j < egg->lang.nestedi[i] && j < 32; j++) {
 						if (egg->lang.ifelse_table[i][j]) {
-							r_egg_printf (egg, "  __ifelse_%d_%d:\n", i, j);
+							char lbl[64];
+							snprintf (lbl, sizeof (lbl), "__ifelse_%d_%d", i, j);
+							emit_label (egg, lbl);
 							e->jmp (egg, egg->lang.ifelse_table[i][j], 0);
 							R_FREE (egg->lang.ifelse_table[i][j]);
 						}

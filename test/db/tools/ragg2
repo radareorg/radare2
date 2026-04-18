@@ -537,9 +537,9 @@ main:
 EOF
 RUN
 
-NAME=ragg2 esil direct register access
+NAME=ragg2 esil raw register access
 FILE=-
-CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = 5; }'
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .%rax = 5; }'
 EXPECT=<<EOF
 
 .global main
@@ -549,15 +549,23 @@ main:
 EOF
 RUN
 
-NAME=ragg2 esil direct register in expression
+NAME=ragg2 esil raw register in expression
 FILE=-
-CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = .rcx + 3; }'
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .%rax = .%rcx + 3; }'
 EXPECT=<<EOF
 
 .global main
 main:
 rcx,r1,:=,3,r1,+=,r1,rax,:=,
 
+EOF
+RUN
+
+NAME=ragg2 esil unknown dotname is an error
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = 5; }'
+EXPECT_ERR=<<EOF
+ERROR: Unknown name '.rax' (use .%rax for a raw register or `rax@alias(...)`)
 EOF
 RUN
 
@@ -580,10 +588,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
-0,a1,==,$z,!,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
-
-  __ifelse_1_0:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,!,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
 __end_0_1_0,PC,:=,
 EOF
 RUN
@@ -595,10 +600,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
-0,a1,==,$z,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
-
-  __ifelse_1_0:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},99,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
 __end_0_1_0,PC,:=,
 EOF
 RUN
@@ -610,10 +612,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-5,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
-0,a1,==,$z,?{,__end_0_1_0,PC,:=,},0,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,  __end_0_1_0:
-
-  __ifelse_1_0:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},0,r1,:=,r1,v8,:=,__ifelse_1_0,PC,:=,
 __end_0_1_0,PC,:=,
 EOF
 RUN
@@ -625,9 +624,7 @@ EXPECT=<<EOF
 
 .global main
 main:
-3,r1,:=,r1,v8,:=,v8,a1,:=,  __begin_0_1_0:
-0,a1,==,$z,?{,__end_0_1_0,PC,:=,},1,r1,:=,r1,v8,-=,v8,a1,:=,__begin_0_1_0,PC,:=,  __end_0_1_0:
-
+3,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,__end_0_1_0,PC,:=,},1,r1,:=,r1,v8,-=,v8,a1,:=,__begin_0_1_0,PC,:=,
 
 EOF
 RUN

@@ -49,8 +49,9 @@ Language cheat sheet
     .arg0, .arg4                     ; function arguments
     .ret                             ; return register (retvar)
     .regN                            ; generic register by index
-    .rax, .ecx, .x0, ...             ; direct native register (new)
+    .%rax, .%ecx, .%x0, ...          ; raw native register (verbatim)
     .foo (after foo@alias(...))      ; alias-resolved register/symbol
+    (any other .name raises an error)
 
     var = expr                       ; assignment
     var += expr, -=, *=, /=          ; compound assignment

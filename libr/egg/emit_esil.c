@@ -69,6 +69,12 @@ static void emit_comment(REgg *egg, const char *fmt, ...) {
 	/* ESIL has no comment syntax, drop comments silently */
 }
 
+static void emit_label(REgg *egg, const char *name) {
+	/* Branch-target labels are not valid ESIL tokens. They're
+	 * referenced symbolically by the jmp/branch emissions; definitions
+	 * are dropped from the output. */
+}
+
 static void emit_equ(REgg *egg, const char *key, const char *value) {
 	/* .equ aliases are resolved at parse time, nothing to emit */
 }
@@ -348,6 +354,7 @@ REggEmit EMIT_NAME = {
 	.frame = emit_frame,
 	.frame_end = emit_frame_end,
 	.comment = emit_comment,
+	.label = emit_label,
 	.push_arg = emit_arg,
 	.restore_stack = emit_restore_stack,
 	.get_result = emit_get_result,
