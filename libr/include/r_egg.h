@@ -181,6 +181,14 @@ typedef struct r_egg_emit_t {
 	void (*branch)(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst);
 	void (*mathop)(REgg *egg, int ch, int sz, int type, const char *eq, const char *p);
 	void (*get_while_end)(REgg *egg, char *out, const char *ctxpush, const char *label);
+	/* Emit a branch-target label. NULL means the default ".S" style
+	 * "name:\n" is used (kept for the native assembler backends). */
+	void (*label)(REgg *egg, const char *name);
+	/* Optional hook called at the end of r_egg_compile, after all
+	 * parsing has finished. Backends use this to post-process the
+	 * accumulated output - e.g. the ESIL backend resolves symbolic
+	 * label names into numeric GOTO word indices here. */
+	void (*finalize)(REgg *egg);
 } REggEmit;
 
 #ifdef R_API

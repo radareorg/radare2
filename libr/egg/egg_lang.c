@@ -251,38 +251,49 @@ static const char *find_alias(REgg *egg, const char *str) {
 }
 
 static void rcc_internal_mathop(REgg *egg, const char *ptr, char *ep, char op) {
-	char *p, *q, *oldp; // avoid mem leak
+	char *q, *oldp;
+	const char *p;
+	char *allocated = NULL; // extra heap pointer that needs freeing
 	char type = ' ';
 	char buf[64]; // may cause stack overflow
-	oldp = p = q = strdup (ptr);
+	oldp = q = strdup (ptr);
 	if (get_op (&q)) {
 		*q = '\x00';
 	}
 	REggEmit *e = egg->remit;
-	p = (char *)r_str_trim_head_ro (p);
-	if (is_var (p)) {
-		p = r_egg_mkvar (egg, buf, p, 0);
+	p = r_str_trim_head_ro (oldp);
+	/* also strip trailing whitespace in-place (we own oldp) */
+	{
+		char *end = (char *)p + strlen (p);
+		while (end > p && (end[-1] == ' ' || end[-1] == '\t')) {
+			end--;
+			*end = '\0';
+		}
+	}
+	if (is_var ((char *)p)) {
+		allocated = r_egg_mkvar (egg, buf, p, 0);
+		p = allocated;
 		if (egg->lang.varxs == '*') {
 			e->load (egg, p, egg->lang.varsize);
-			R_FREE (oldp);
-			oldp = p = strdup (e->regs (egg, 0));
+			R_FREE (allocated);
+			allocated = strdup (e->regs (egg, 0));
+			p = allocated;
 			// XXX: which will go wrong in arm
 			// for reg used in emit.load in arm is r7 not r0
 		} else if (egg->lang.varxs == '&') {
 			e->load_ptr (egg, p);
-			R_FREE (oldp);
-			oldp = p = strdup (e->regs (egg, 0));
+			R_FREE (allocated);
+			allocated = strdup (e->regs (egg, 0));
+			p = allocated;
 		}
 		type = ' ';
 	} else {
 		type = '$';
 	}
-	if (*p) {
+	if (p && *p) {
 		e->mathop (egg, op, egg->lang.varsize, type, p, ep);
 	}
-	if (p != oldp) {
-		R_FREE (p);
-	}
+	R_FREE (allocated);
 	R_FREE (oldp);
 	R_FREE (ep);
 }
@@ -545,6 +556,42 @@ static void rcc_pushstr(REgg *egg, char *str, int filter) {
 	R_FREE (egg->lang.dstvar);
 }
 
+/* Emit a branch-target label in a backend-appropriate form. Backends that
+ * assemble to native code keep the classic ".S" style "name:\n"; backends
+ * like ESIL override the callback to drop labels entirely. */
+static void emit_label(REgg *egg, const char *name) {
+	if (egg->remit && egg->remit->label) {
+		egg->remit->label (egg, name);
+	} else {
+		r_egg_printf (egg, "%s:\n", name);
+	}
+}
+
+/* Return the integer value of the leading (decimal or hex) number in s.
+ * Unlike r_num_math this stops at the first non-digit character so that
+ * trailing tokens like "==" or whitespace do not affect the result. This
+ * is used when resolving `.varN` / `.argN` / `.regN` names out of strings
+ * that may still contain comparison operators. */
+static int parse_leading_idx(const char *s) {
+	char buf[32];
+	int k = 0;
+	if (s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
+		buf[k++] = s[0];
+		buf[k++] = s[1];
+		while (k < (int)sizeof (buf) - 1 && isxdigit ((unsigned char)s[k])) {
+			buf[k] = s[k];
+			k++;
+		}
+	} else {
+		while (k < (int)sizeof (buf) - 1 && isdigit ((unsigned char)s[k])) {
+			buf[k] = s[k];
+			k++;
+		}
+	}
+	buf[k] = '\0';
+	return (int)r_num_math (NULL, buf);
+}
+
 R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	int i, len, qi;
 	char *oldstr = NULL, *str = NULL, foo[32], *q, *ret = NULL;
@@ -570,19 +617,23 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 	}
 	if (str[0] == '.') {
 		REggEmit *e = egg->remit;
-		if (r_str_startswith (str + 1, "ret")) {
+		if (str[1] == '%') {
+			/* Explicit raw native register: `.%name` skips the alias
+			 * table and copies the register name verbatim. This keeps
+			 * the unambiguous "target register" syntax separate from
+			 * `.varN`, `.regN` and user-defined aliases. */
+			r_str_ncpy (out, str + 2, 32);
+		} else if (r_str_startswith (str + 1, "ret")) {
 			strcpy (out, e->retvar);
 		} else if (r_str_startswith (str + 1, "fix")) {
-			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+			int idx = parse_leading_idx (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx - egg->lang.stackfixed);
-			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ-egg->lang.stackfixed));
 		} else if (r_str_startswith (str + 1, "var")) {
-			int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+			int idx = parse_leading_idx (str + 4) + delta + e->size;
 			e->get_var (egg, 0, out, idx);
-			// snprintf (out, 32, "%d(%%"R_BP")", - (atoi (str+4)+delta+R_SZ));
 		} else if (r_str_startswith (str + 1, "rarg")) {
 			if (e->get_arg) {
-				int idx = (int)r_num_math (NULL, str + 5);
+				int idx = parse_leading_idx (str + 5);
 				e->get_arg (egg, out, idx);
 			}
 		} else if (r_str_startswith (str + 1, "arg")) {
@@ -590,7 +641,7 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				if (egg->lang.stackframe == 0) {
 					e->get_var (egg, 1, out, 4); // idx-4);
 				} else {
-					int idx = (int)r_num_math (NULL, str + 4) + delta + e->size;
+					int idx = parse_leading_idx (str + 4) + delta + e->size;
 					e->get_var (egg, 2, out, idx + 4);
 				}
 			} else {
@@ -609,15 +660,30 @@ R_API char *r_egg_mkvar(REgg *egg, char *out, const char *_str, int delta) {
 				}
 			}
 		} else if (r_str_startswith (str + 1, "reg")) {
-			// XXX: can overflow if out is small
+			int idx = parse_leading_idx (str + 4);
 			if (egg->lang.attsyntax) {
-				snprintf (out, 32, "%%%s", e->regs (egg, atoi (str + 4)));
+				snprintf (out, 32, "%%%s", e->regs (egg, idx));
 			} else {
-				snprintf (out, 32, "%s", e->regs (egg, atoi (str + 4)));
+				snprintf (out, 32, "%s", e->regs (egg, idx));
 			}
 		} else {
-			out = str; /* TODO: show error, invalid var name? */
-			R_LOG_ERROR ("Something is really wrong in here");
+			/* Not a builtin keyword and not the `.%name` raw register
+			 * form: look the bare name up in the `@alias` table. */
+			const char *name = str + 1;
+			int i;
+			for (i = 0; i < egg->lang.nalias; i++) {
+				const char *aname = egg->lang.aliases[i].name;
+				if (aname && !strcmp (name, aname)) {
+					const char *content = egg->lang.aliases[i].content;
+					r_str_ncpy (out, content? content: "", 32);
+					break;
+				}
+			}
+			if (i == egg->lang.nalias) {
+				R_LOG_ERROR ("Unknown name '.%s' (use .%%%s for a raw register or `%s@alias(...)`)",
+					name, name, name);
+				*out = '\0';
+			}
 		}
 		ret = strdup (out);
 		free (oldstr);
@@ -1188,10 +1254,20 @@ static void rcc_next(REgg *egg) {
 	} else { // handle mathop
 		int vs = 'l';
 		char type, *eq, *ptr = egg->lang.elem, *tmp;
+		char compound_op = 0; // 0 = plain '=', otherwise +,-,*,/,|,&,^
 		egg->lang.elem[egg->lang.elem_n] = '\0';
 		ptr = (char *)r_str_trim_head_ro (ptr);
 		if (*ptr) {
 			eq = strchr (ptr, '=');
+			if (eq && eq > ptr) {
+				/* detect compound operators: +=, -=, *=, /=, |=, &=, ^= */
+				char prev = eq[-1];
+				if (prev == '+' || prev == '-' || prev == '*' || prev == '/'
+				    || prev == '|' || prev == '&' || prev == '^') {
+					compound_op = prev;
+					eq[-1] = '\x00'; /* chop the operator off the LHS */
+				}
+			}
 			if (eq) {
 				vs = egg->lang.varsize;
 				*buf = *eq = '\x00';
@@ -1218,7 +1294,12 @@ static void rcc_next(REgg *egg) {
 				} else {
 					type = '$';
 				}
-				e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
+				if (compound_op) {
+					/* emit: p <compound_op>= tmpreg */
+					e->mathop (egg, compound_op, vs, type, e->regs (egg, 1), p);
+				} else {
+					e->mathop (egg, '=', vs, type, e->regs (egg, 1), p);
+				}
 				free (p);
 #if 0
 				char str2[64], *p, ch = *(eq-1);
@@ -1259,6 +1340,9 @@ static void rcc_next(REgg *egg) {
 		}
 	}
 	free (str);
+	/* reset the element buffer so the next statement starts clean */
+	egg->lang.elem[0] = '\0';
+	egg->lang.elem_n = 0;
 }
 
 R_API int r_egg_lang_parsechar(REgg *egg, char c) {
@@ -1387,8 +1471,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 						r_str_newf ("  __end_%d_%d_%d",
 							egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
 				}
-				r_egg_printf (egg, "  __begin_%d_%d_%d:\n",
-					egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]); // %s:\n", get_frame_label (0));
+				{
+					char lbl[64];
+					snprintf (lbl, sizeof (lbl), "__begin_%d_%d_%d",
+						egg->lang.nfunctions, CTX, egg->lang.nestedi[CTX]);
+					emit_label (egg, lbl);
+				}
 			}
 			rcc_context (egg, 1);
 			break;
@@ -1409,8 +1497,12 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 						r_str_newf ("__end_%d_%d_%d",
 							egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
 				}
-				r_egg_printf (egg, "  __end_%d_%d_%d:\n",
-					egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+				{
+					char lbl[64];
+					snprintf (lbl, sizeof (lbl), "__end_%d_%d_%d",
+						egg->lang.nfunctions, CTX - 1, egg->lang.nestedi[CTX - 1] - 1);
+					emit_label (egg, lbl);
+				}
 			}
 			if (CTX > 0) {
 				egg->lang.nbrackets++;
@@ -1424,7 +1516,9 @@ R_API int r_egg_lang_parsechar(REgg *egg, char c) {
 				for (i = 0; i < 32; i++) {
 					for (j = 0; j < egg->lang.nestedi[i] && j < 32; j++) {
 						if (egg->lang.ifelse_table[i][j]) {
-							r_egg_printf (egg, "  __ifelse_%d_%d:\n", i, j);
+							char lbl[64];
+							snprintf (lbl, sizeof (lbl), "__ifelse_%d_%d", i, j);
+							emit_label (egg, lbl);
 							e->jmp (egg, egg->lang.ifelse_table[i][j], 0);
 							R_FREE (egg->lang.ifelse_table[i][j]);
 						}
