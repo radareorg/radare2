@@ -247,11 +247,11 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		 * n == NULL means source was "==", so skip when not equal. */
 		invert = (n == NULL) ? 1 : 0;
 	} else {
-		/* bare `if(x)` (skip when x == 0) or `if(!x)` (skip when x != 0) */
+		/* bare `if (x)` (skip when x == 0) or `if (!x)` (skip when x != 0) */
 		arg = (char *)"0";
 		equality = 1;
 		/* n != NULL means source had '!', so skip when x != 0 (invert).
-		 * n == NULL means bare `if(x)`, so skip when x == 0 (no invert). */
+		 * n == NULL means bare `if (x)`, so skip when x == 0 (no invert). */
 		invert = n ? 1 : 0;
 	}
 	if (arg && *arg == '=') {

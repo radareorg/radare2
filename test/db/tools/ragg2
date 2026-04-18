@@ -379,3 +379,252 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=ragg2 esil assign constant
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil addition
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5 + 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,3,r1,+=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil compound plus
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; .var0 += 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,3,r1,:=,r1,v8,+=
+
+EOF
+RUN
+
+NAME=ragg2 esil compound minus
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 10; .var0 -= 4; }'
+EXPECT=<<EOF
+
+.global main
+main:
+10,r1,:=,r1,v8,:=,4,r1,:=,r1,v8,-=
+
+EOF
+RUN
+
+NAME=ragg2 esil multiplication
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5 * 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r2,:=,3,r2,*=,r2,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil division
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 20 / 4; }'
+EXPECT=<<EOF
+
+.global main
+main:
+20,r2,:=,4,r2,/=,r2,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil bitwise and
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 0xff & 0x0f; }'
+EXPECT=<<EOF
+
+.global main
+main:
+0xff,r3,:=,0x0f,r3,&=,r3,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil bitwise or chain
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 1 | 2 | 4; }'
+EXPECT=<<EOF
+
+.global main
+main:
+1,r3,:=,2,r3,|=,4,r3,|=,r3,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil bitwise xor
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5 ^ 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r3,:=,3,r3,^=,r3,r1,:=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil operator precedence
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 2 + 3 * 4; }'
+EXPECT=<<EOF
+
+.global main
+main:
+2,r1,:=,3,r2,:=,4,r2,*=,r2,r1,+=,r1,v8,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil variable as rvalue
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; .var8 = .var0 + 1; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,r1,:=,1,r1,+=,r1,v16,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil pointer dereference
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 0x1000; .var8 = *.var0; }'
+EXPECT=<<EOF
+
+.global main
+main:
+0x1000,r1,:=,r1,v8,:=,v8,[4],r0,:=,r0,r1,:=,r1,v16,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil syscall via @syscall
+FILE=-
+CMDS=!ragg2 -a esil -b 64 -k linux -s -e 'exit@syscall(60); main@global(16,0) { exit(42); }'
+EXPECT=<<EOF
+
+.global main
+main:
+42,a1,:=,60,$
+
+
+EOF
+RUN
+
+NAME=ragg2 esil raw register access
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .%rax = 5; }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,rax,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil raw register in expression
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .%rax = .%rcx + 3; }'
+EXPECT=<<EOF
+
+.global main
+main:
+rcx,r1,:=,3,r1,+=,r1,rax,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil unknown dotname is an error
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .rax = 5; }'
+EXPECT_ERR=<<EOF
+ERROR: Unknown name '.rax' (use .%rax for a raw register or `rax@alias(...)`)
+EOF
+RUN
+
+NAME=ragg2 esil alias directive
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'myreg@alias(rax) main@global(16,0) { .myreg = 42; }'
+EXPECT=<<EOF
+
+.global main
+main:
+42,r1,:=,r1,rax,:=
+
+EOF
+RUN
+
+NAME=ragg2 esil if equality skip
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0 == 0) { .var0 = 99; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,!,?{,26,GOTO,},99,r1,:=,r1,v8,:=,26,GOTO,26,GOTO
+
+EOF
+RUN
+
+NAME=ragg2 esil if not-equal skip
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0 != 0) { .var0 = 99; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,25,GOTO,},99,r1,:=,r1,v8,:=,25,GOTO,25,GOTO
+
+EOF
+RUN
+
+NAME=ragg2 esil bare truthy if
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 5; if (.var0) { .var0 = 0; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+5,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,25,GOTO,},0,r1,:=,r1,v8,:=,25,GOTO,25,GOTO
+
+EOF
+RUN
+
+NAME=ragg2 esil while truthy
+FILE=-
+CMDS=!ragg2 -a esil -s -e 'main@global(16,0) { .var0 = 3; while (.var0) { .var0 -= 1; } }'
+EXPECT=<<EOF
+
+.global main
+main:
+3,r1,:=,r1,v8,:=,v8,a1,:=,0,a1,==,$z,?{,28,GOTO,},1,r1,:=,r1,v8,-=,v8,a1,:=,9,GOTO
+
+EOF
+RUN
