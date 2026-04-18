@@ -136,6 +136,11 @@ static void r2qjs_modules(JSContext *ctx) {
 	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, NULL);
 }
 
+static void free_kv_str(HtPPKv *kv) {
+	free (kv->key);
+	free (kv->value);
+}
+
 static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 	JSRuntime *rt = JS_GetRuntime (ctx);
 	if (!r_str_startswith (buffer, package_marker)) {
@@ -148,7 +153,7 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		return -1;
 	}
 
-	HtPP *ht = ht_pp_new0 ();
+	HtPP *ht = ht_pp_new (NULL, free_kv_str, NULL);
 	JS_SetModuleLoaderFunc (rt, r2qjs_normalize_module_name, r2qjs_load_module, ht);
 	char *entry = NULL;
 	char *entryfname = NULL;
@@ -174,25 +179,16 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		char *filename = r_str_ndup (space + 1, nl - space - 1);
 		char *data = r_str_ndup (assets, size);
 		if (r_str_endswith (filename, ".js")) {
-			// R_LOG_DEBUG ("File: (%s) Size: (%d)", filename, size);
-			// R_LOG_DEBUG ("DATA: %s", data);
-#if 0
-			if (*filename == '/') {
-				char *fn = r_str_newf (".%s", filename);
-				free (filename);
-				filename = fn;
-			}
-			if (*filename == '.') {
-				filename++;
-			}
-#endif
 			R_LOG_DEBUG ("INSERT (%s)", filename);
-			ht_pp_insert (ht, filename, data);
 			if (!entry) {
 				entry = data;
 				entryfname = strdup (filename);
 			}
+			ht_pp_insert (ht, filename, data);
+		} else {
+			free (data);
 		}
+		free (filename);
 		ptr = nl + 1;
 		assets += size + strlen (delimiter_marker);
 	}

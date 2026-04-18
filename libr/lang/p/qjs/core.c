@@ -85,6 +85,17 @@ static bool qjs_core_fini(RCorePluginSession *cps) {
 	return true;
 }
 
+// defined here and also forward-declared in qjs.c so core_plugin_fini can use it
+static void qjs_core_plugin_free(void *data) {
+	RCorePlugin *ap = data;
+	if (ap) {
+		free ((char *)ap->meta.name);
+		free ((char *)ap->meta.desc);
+		free ((char *)ap->meta.license);
+		free (ap);
+	}
+}
+
 // TODO maybe add a function to call by plugin name? (is 1 extra arg)
 static bool r_cmd_qjs_call(RCorePluginSession *cps, const char *input) {
 	Hack *hack = cps->data;
@@ -156,23 +167,21 @@ static JSValue r2plugin_core_load(JSContext *ctx, JSValueConst this_val, int arg
 	ap->call = r_cmd_qjs_call;
 	ap->fini = qjs_core_fini;
 
-	plugin_manager_add_core_plugin (pm, nameptr, ctx, func);
+	plugin_manager_add_core_plugin (pm, nameptr, ctx, func, ap);
 
 	RLibStruct *lib = R_NEW0 (RLibStruct);
 	lib->type = R_LIB_TYPE_CORE;
 	lib->data = ap;
 	lib->version = R2_VERSION;
-	// void *ptr = pm->core->lib;
 	hack = R_NEW0 (Hack);
-	// hack->pm = pm;
 	hack->ctx = ctx;
 	hack->func = func;
 	int ret = r_lib_open_ptr (pm->core->lib, ap->meta.name, NULL, lib);
+	free (lib);
 	if (ret != 1) {
 		free (hack);
-		free (lib);
-	} else {
-		// JS_DupValue(ctx, func);
+		hack = NULL;
+		// ap stays tracked in pm->core_plugins and gets freed at plugin_manager_fini
 	}
 	return JS_NewBool (ctx, ret == 1);
 }

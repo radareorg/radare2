@@ -57,7 +57,7 @@ static void qjs_break_handler(void *user) {
 typedef struct qjs_core_plugin {
 	char *name;
 	QjsContext qctx;
-	// void *data;  // can be added later if needed
+	void *ap; // RCorePlugin * owned by this entry (freed via qjs_core_plugin_free)
 } QjsCorePlugin;
 
 typedef struct qjs_arch_plugin_t {
@@ -93,8 +93,11 @@ static void parse_plugin_fini(QjsAsmPlugin *cp) {
 	free (cp->name);
 }
 
+static void qjs_core_plugin_free(void *data);
+
 static void core_plugin_fini(QjsCorePlugin *cp) {
 	free (cp->name);
+	qjs_core_plugin_free (cp->ap);
 }
 
 static void arch_plugin_fini(QjsArchPlugin *ap) {
@@ -128,13 +131,14 @@ static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt
 	return true;
 }
 
-static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func) {
+static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func, void *ap) {
 	R_RETURN_IF_FAIL (pm);
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
 	if (cp) {
 		cp->name = name? strdup (name): NULL;
 		cp->qctx.ctx = ctx;
 		cp->qctx.call_func = func;
+		cp->ap = ap;
 	}
 }
 
@@ -941,14 +945,13 @@ static bool lang_quickjs_file(RLangSession *s, const char *file) {
 		if (loaded == 1) {
 			rc = true;
 		} else if (loaded == -1) {
-			// Error loading the file
-			return false;
+			rc = false;
 		} else {
 			// not a package
-			rc = eval (qctx->ctx, code) == 0;
-			free (code);
+			eval (qctx->ctx, code);
 			rc = true;
 		}
+		free (code);
 	}
 	return rc;
 }
