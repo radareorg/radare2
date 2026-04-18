@@ -1020,6 +1020,7 @@ typedef struct {
 	ut32 symbols;
 	ut32 strings;
 	ut32 perm;
+	const char *color;
 } RCoreAnalStatsItem;
 typedef struct {
 	RCoreAnalStatsItem *block;

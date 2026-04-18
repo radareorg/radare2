@@ -4788,7 +4788,7 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		switch (mode) {
 		case 'j':
 			pj_o (pj);
-			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].perm) || (as->block[p].strings)) {
+			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].perm) || (as->block[p].strings) || (as->block[p].blocks)) {
 				pj_kn (pj, "offset", at);
 				pj_kn (pj, "size", piece);
 			}
@@ -4797,6 +4797,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			}
 			if (as->block[p].functions) {
 				pj_ki (pj, "functions", as->block[p].functions);
+			}
+			if (as->block[p].blocks) {
+				pj_ki (pj, "blocks", as->block[p].blocks);
 			}
 			if (as->block[p].in_functions) {
 				pj_ki (pj, "in_functions", as->block[p].in_functions);
@@ -4812,6 +4815,9 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			}
 			if (as->block[p].perm) {
 				pj_ks (pj, "perm", r_str_rwx_i (as->block[p].perm));
+			}
+			if (as->block[p].color) {
+				pj_ks (pj, "color", as->block[p].color);
 			}
 			pj_end (pj);
 			break;

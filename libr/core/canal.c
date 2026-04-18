@@ -4639,12 +4639,20 @@ struct block_flags_stat_t {
 	ut64 step;
 	ut64 from;
 	RCoreAnalStats *as;
+	RFlag *f;
 };
 
 static bool block_flags_stat(RFlagItem *fi, void *user) {
 	struct block_flags_stat_t *u = (struct block_flags_stat_t *)user;
 	int piece = (fi->addr - u->from) / u->step;
 	u->as->block[piece].flags++;
+	// cheap: only look up color for this piece if we don't already have one
+	if (!u->as->block[piece].color && u->f) {
+		RFlagItemMeta *fim = r_flag_get_meta (u->f, fi->id);
+		if (fim && fim->color) {
+			u->as->block[piece].color = fim->color;
+		}
+	}
 	return true;
 }
 
@@ -4679,7 +4687,7 @@ R_API RCoreAnalStats* r_core_anal_get_stats(RCore *core, ut64 from, ut64 to, ut6
 		as->block[piece].perm = map ? map->perm: (core->io->desc ? core->io->desc->perm: 0);
 	}
 	// iter all flags
-	struct block_flags_stat_t u = { .step = step, .from = from, .as = as };
+	struct block_flags_stat_t u = { .step = step, .from = from, .as = as, .f = core->flags };
 	r_flag_foreach_range (core->flags, from, to + 1, block_flags_stat, &u);
 	// iter all functions
 	r_list_foreach (core->anal->fcns, iter, F) {
