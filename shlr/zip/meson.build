@@ -5,17 +5,28 @@ if get_option('use_zip')
     zip_dep = dependency('libzip', required: true)
     zlib_dep = dependency('zlib', required: true)
     zip_dep = declare_dependency(dependencies: [zip_dep, zlib_dep])
-  elif get_option('use_otezip')
-    message('Use otezip as libzip replacement (with bundled zlib)')
-    otezip_proj = subproject('otezip')
-    zip_dep = otezip_proj.get_variable('otezip_dep')
-    zlib_dep = declare_dependency()  # otezip has bundled zlib
   else
-    # If use_zip is enabled but no specific implementation chosen,
-    # automatically use otezip as the default bundled implementation
-    message('Using otezip as default libzip implementation (with bundled zlib)')
+    if get_option('use_otezip')
+      message('Use otezip as libzip replacement (with bundled zlib)')
+    else
+      # If use_zip is enabled but no specific implementation chosen,
+      # automatically use otezip as the default bundled implementation
+      message('Using otezip as default libzip implementation (with bundled zlib)')
+    endif
     otezip_proj = subproject('otezip')
-    zip_dep = otezip_proj.get_variable('otezip_dep')
+    otezip_src = otezip_proj.get_variable('otezip_src')
+    otezip_inc = otezip_proj.get_variable('otezip_inc')
+    otezip_hidden_lib = static_library('otezip-hidden',
+      otezip_src,
+      include_directories: otezip_inc,
+      gnu_symbol_visibility: 'hidden',
+      pic: true,
+      install: false
+    )
+    zip_dep = declare_dependency(
+      link_with: otezip_hidden_lib,
+      include_directories: otezip_inc
+    )
     zlib_dep = declare_dependency()  # otezip has bundled zlib
   endif
 else
