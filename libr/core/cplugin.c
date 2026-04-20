@@ -67,7 +67,15 @@ R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin) {
 
 R_IPI void r_core_plugins_init(RCmd *cmd) {
 	R_RETURN_IF_FAIL (cmd);
-	r_libstore_new (&cmd->libstore, cmd, cmd_static_plugins, (RListFree)core_plugin_session_free, NULL, (RLibPluginAddCb)r_core_plugin_add, (RLibPluginAddCb)r_core_plugin_remove);
+	r_libstore_new (&cmd->libstore, cmd, NULL, (RListFree)core_plugin_session_free, NULL, (RLibPluginAddCb)r_core_plugin_add, (RLibPluginAddCb)r_core_plugin_remove);
+	if (cmd->libstore) {
+		cmd->libstore->static_plugins = cmd_static_plugins;
+	}
+}
+
+R_IPI void r_core_plugins_load(RCmd *cmd) {
+	R_RETURN_IF_FAIL (cmd && cmd->libstore);
+	r_libstore_load (cmd->libstore);
 }
 
 R_API bool r_core_plugin_check(RCmd *cmd, const char *a0) {

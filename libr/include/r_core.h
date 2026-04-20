@@ -1065,6 +1065,7 @@ extern RCorePlugin r_core_plugin_writedwarf;
 extern RCorePlugin r_core_plugin_agD;
 
 R_IPI void r_core_plugins_init(RCmd *cmd);
+R_IPI void r_core_plugins_load(RCmd *cmd);
 R_IPI void r_core_plugins_fini(RCmd *cmd);
 R_API bool r_core_plugin_add(RCmd *cmd, RCorePlugin *plugin);
 R_API bool r_core_plugin_remove(RCmd *cmd, RCorePlugin *plugin);

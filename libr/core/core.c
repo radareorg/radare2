@@ -2691,6 +2691,7 @@ R_API bool r_core_init(RCore *core) {
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);
 	r_core_config_init (core);
+	r_core_plugins_load (core->rcmd);
 	core->print->reg = core->anal->reg;
 	core->print->get_register = r_reg_get;
 	core->print->get_register_value = r_reg_get_value;
