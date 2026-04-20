@@ -1305,7 +1305,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalVar *var;
 	size_t arg_count = 0;
 
-	char *args = r_str_newf ("func.%s.args", fcn->name);
 	RList *all_vars = cache.rvars;
 	r_list_join (all_vars, cache.bvars);
 	r_list_join (all_vars, cache.svars);
@@ -1317,14 +1316,9 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 			char *db_type = comma? r_str_ndup (o, comma - o): NULL;
 			char *db_name = comma? strdup (comma + 1): NULL;
 			if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
-				// #if 0
-				char *ks = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
-				// eprintf ("VARNAME %s %s %c", var->name, db_name, 10);
-				// eprintf ("VARTYPE %s %s %c", var->type,db_type, 10);
 				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
 				char *v = r_str_newf ("%s,%s", type, var->name);
-				sdb_set (core->anal->sdb_types, ks, v, 0);
-				free (ks);
+				sdb_set (core->anal->sdb_types, k, v, 0);
 				free (v);
 			} else {
 				char *name = db_name? db_name: var->name;
@@ -1337,15 +1331,12 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
 				char *s = strdup (name);
 				if (o) {
-					char *v2 = r_str_newf ("%s,%s", var->type, name);
 					if (!strstr (var->name, ",arg_")) {
 						free (var->name);
 						var->name = s;
 					} else {
 						free (s);
 					}
-					// sdb_set (core->anal->sdb_types, k, v, 0);
-					free (v2);
 				} else {
 					free (var->name);
 					var->name = s;
@@ -1353,7 +1344,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 				}
 				free (v);
 				free (type);
-				// #endif
 			}
 			free (db_name);
 			free (db_type);
@@ -1370,7 +1360,6 @@ static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 		free (k);
 		free (v);
 	}
-	free (args);
 	r_anal_function_vars_cache_fini (&cache);
 }
 
