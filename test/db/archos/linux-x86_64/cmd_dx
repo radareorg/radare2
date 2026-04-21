@@ -34,7 +34,6 @@ EOF
 RUN
 
 NAME=dx may clobber registers and stack
-BROKEN=1
 FILE=bins/elf/ls-focal
 ARGS=-d
 CMDS=<<EOF

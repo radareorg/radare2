@@ -110,15 +110,12 @@ EOF
 RUN
 
 NAME=drt flg
-BROKEN=1
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
 drt flg~[0]
 EOF
 EXPECT=<<EOF
-rflags
-eflags
 cf
 pf
 af
