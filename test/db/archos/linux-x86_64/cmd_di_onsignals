@@ -711,7 +711,7 @@ RUN
 
 NAME=di on SIGXFSZ
 BROKEN=1
-FILE=1
+FILE=bins/elf/signals/signal-input
 ARGS=-e cfg.fortunes=false -e dbg.args=25 -d
 CMDS=<<EOF
 dc

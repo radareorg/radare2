@@ -1,20 +1,20 @@
 NAME=drt
-BROKEN=1
 FILE=bins/elf/sse2-add
 ARGS=-d
 CMDS=<<EOF
-# pri register bank is unexpected here
 drt
 EOF
 EXPECT=<<EOF
 gpr
 drx
 fpu
-mmx
-xmm
-ymm
+vec64
+vec128
+vec256
+vec512
 flg
 seg
+pri
 EOF
 RUN
 

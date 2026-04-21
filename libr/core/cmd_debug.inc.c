@@ -6446,7 +6446,7 @@ static int cmd_debug(void *data, const char *input) {
 			}
 			int bytes_len = r_hex_str2bin (hexpairs, exec_buf);
 			if (bytes_len > 0) {
-				bool restore = true;
+				bool restore = is_dxr;
 				bool ignore_stack = is_dxrs;
 				const int exec_len = bytes_len + 1;
 				exec_buf[exec_len - 1] = 0xcc;
