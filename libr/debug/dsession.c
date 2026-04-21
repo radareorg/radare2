@@ -44,9 +44,6 @@ static void htup_nested_ht_free(HtUPKv *kv) {
 }
 
 static HtUP *cp_replay_table(RDebugSession *session, ut64 checkpoint_id, bool create) {
-	if (!session) {
-		return NULL;
-	}
 	if (!session->replay) {
 		if (!create) {
 			return NULL;
@@ -65,14 +62,6 @@ static HtUP *cp_replay_table(RDebugSession *session, ut64 checkpoint_id, bool cr
 		ht_up_insert (session->replay, checkpoint_id, table);
 	}
 	return table;
-}
-
-static DebugReplayStream *replay_stream_get(RDebugSession *session, ut64 checkpoint_id, int fd) {
-	if (!session || fd < 0) {
-		return NULL;
-	}
-	HtUP *table = cp_replay_table (session, checkpoint_id, false);
-	return table? ht_up_find (table, (ut64)(ut32)fd, NULL): NULL;
 }
 
 static DebugReplayStream *replay_stream_new(int fd, const ut8 *buf, ut64 len, const char *label) {
@@ -107,19 +96,15 @@ static DebugReplayStream *replay_stream_clone(const DebugReplayStream *stream) {
 	return clone;
 }
 
-typedef struct {
-	HtUP *dst;
-	bool ok;
-} ReplayCloneCtx;
-
 static bool replay_clone_cb(void *user, const ut64 key, const void *value) {
-	ReplayCloneCtx *ctx = user;
+	HtUP **dst = user;
 	DebugReplayStream *clone = replay_stream_clone ((const DebugReplayStream *)value);
 	if (!clone) {
-		ctx->ok = false;
+		ht_up_free (*dst);
+		*dst = NULL;
 		return false;
 	}
-	ht_up_insert (ctx->dst, key, clone);
+	ht_up_insert (*dst, key, clone);
 	return true;
 }
 
@@ -131,15 +116,7 @@ static HtUP *replay_table_clone(HtUP *src) {
 	if (!src) {
 		return dst;
 	}
-	ReplayCloneCtx ctx = {
-		.dst = dst,
-		.ok = true,
-	};
-	ht_up_foreach (src, replay_clone_cb, &ctx);
-	if (!ctx.ok) {
-		ht_up_free (dst);
-		return NULL;
-	}
+	ht_up_foreach (src, replay_clone_cb, &dst);
 	return dst;
 }
 
@@ -170,81 +147,6 @@ static void cp_replay_delete(RDebugSession *session, ut64 checkpoint_id) {
 	if (session && session->replay) {
 		ht_up_delete (session->replay, checkpoint_id);
 	}
-}
-
-static bool replay_count_cb(void *user, const ut64 key, const void *value) {
-	size_t *count = user;
-	(void)key;
-	(void)value;
-	(*count)++;
-	return true;
-}
-
-typedef struct {
-	int *fds;
-	size_t idx;
-} ReplayCollectCtx;
-
-static bool replay_collect_fd_cb(void *user, const ut64 key, const void *value) {
-	ReplayCollectCtx *ctx = user;
-	(void)value;
-	ctx->fds[ctx->idx++] = (int)(ut32)key;
-	return true;
-}
-
-static int cmp_int_fd(const void *a, const void *b) {
-	const int *ia = a;
-	const int *ib = b;
-	return (*ia > *ib) - (*ia < *ib);
-}
-
-static int *cp_replay_sorted_fds(RDebugSession *session, ut64 checkpoint_id, size_t *count) {
-	if (!count) {
-		return NULL;
-	}
-	*count = 0;
-	HtUP *table = cp_replay_table (session, checkpoint_id, false);
-	if (!table) {
-		return NULL;
-	}
-	ht_up_foreach (table, replay_count_cb, count);
-	if (!*count) {
-		return NULL;
-	}
-	int *fds = calloc (*count, sizeof (int));
-	if (!fds) {
-		return NULL;
-	}
-	ReplayCollectCtx ctx = {
-		.fds = fds,
-		.idx = 0,
-	};
-	ht_up_foreach (table, replay_collect_fd_cb, &ctx);
-	qsort (fds, *count, sizeof (int), cmp_int_fd);
-	return fds;
-}
-
-static bool replay_stream_hex(const DebugReplayStream *stream, char **hex, ut64 *size) {
-	if (!stream || !hex || !size) {
-		return false;
-	}
-	*hex = NULL;
-	*size = r_buf_size (stream->data);
-	if (!*size) {
-		*hex = strdup ("");
-		return *hex != NULL;
-	}
-	ut8 *bytes = malloc ((size_t)*size);
-	if (!bytes) {
-		return false;
-	}
-	if (r_buf_read_at (stream->data, 0, bytes, *size) != (st64)*size) {
-		free (bytes);
-		return false;
-	}
-	*hex = r_hex_bin2strdup (bytes, *size);
-	free (bytes);
-	return *hex != NULL;
 }
 
 #define R_DEBUG_SESSION_CHECKPOINT_WARN 1024
@@ -664,65 +566,97 @@ R_API bool r_debug_session_cp_replay_clear(RDebugSession *session, ut64 checkpoi
 		return false;
 	}
 	ht_up_delete (table, (ut64)(ut32)fd);
-	size_t count = 0;
-	ht_up_foreach (table, replay_count_cb, &count);
-	if (!count) {
+	if (!table->count) {
 		ht_up_delete (session->replay, checkpoint_id);
 	}
 	return true;
 }
 
-R_API void r_debug_session_cp_list_replays(RDebug *dbg, int mode) {
-	R_RETURN_IF_FAIL (dbg && dbg->session);
-	RDebugSession *session = dbg->session;
+typedef struct {
+	ut64 checkpoint_id;
+	int mode;
+	bool ok;
+	PJ *pj;
+	RStrBuf *sb;
+} CpReplayListCtx;
+
+static bool cp_replay_list_cb(void *user, const ut64 key, const void *value) {
+	CpReplayListCtx *ctx = user;
+	const DebugReplayStream *stream = value;
+	ut64 size = 0;
+	const ut8 *data = r_buf_data (stream->data, &size);
+	(void)key;
+	if (!data && size > 0) {
+		ctx->ok = false;
+		return false;
+	}
+	char *hex = size > 0? r_hex_bin2strdup (data, size): strdup ("");
+	if (!hex) {
+		ctx->ok = false;
+		return false;
+	}
+	if (ctx->mode == 'j') {
+		pj_o (ctx->pj);
+		pj_kn (ctx->pj, "fd", stream->fd);
+		pj_kn (ctx->pj, "size", size);
+		pj_kn (ctx->pj, "consumed", stream->consumed);
+		pj_kn (ctx->pj, "remaining", size > stream->consumed? size - stream->consumed: 0);
+		pj_ks (ctx->pj, "label", stream->label? stream->label: "");
+		pj_ks (ctx->pj, "hex", hex);
+		pj_end (ctx->pj);
+	} else {
+		r_strbuf_appendf (ctx->sb, "%"PFMT64u" fd=%d size=%"PFMT64u" consumed=%"PFMT64u" remaining=%"PFMT64u"%s%s\n",
+			ctx->checkpoint_id,
+			stream->fd,
+			size,
+			stream->consumed,
+			size > stream->consumed? size - stream->consumed: 0,
+			stream->label? " label=": "",
+			stream->label? stream->label: "");
+	}
+	free (hex);
+	return true;
+}
+
+R_API char *r_debug_session_cp_replay_list(RDebugSession *session, int mode) {
+	R_RETURN_VAL_IF_FAIL (session, NULL);
 	RDebugCheckpoint *chkpt;
 	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
 	if (mode == 'j') {
 		pj = pj_new ();
+		if (!pj) {
+			return NULL;
+		}
 		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
+		if (!sb) {
+			return NULL;
+		}
 	}
 	R_VEC_FOREACH (session->checkpoints, chkpt) {
+		HtUP *table = cp_replay_table (session, chkpt->id, false);
+		CpReplayListCtx ctx = {
+			.checkpoint_id = chkpt->id,
+			.mode = mode,
+			.ok = true,
+			.pj = pj,
+			.sb = sb,
+		};
 		if (mode == 'j') {
 			pj_o (pj);
 			pj_kn (pj, "id", chkpt->id);
 			pj_ka (pj, "replay");
 		}
-		size_t replay_count = 0;
-		int *fds = cp_replay_sorted_fds (session, chkpt->id, &replay_count);
-		size_t i;
-		for (i = 0; fds && i < replay_count; i++) {
-			DebugReplayStream *stream = replay_stream_get (session, chkpt->id, fds[i]);
-			if (!stream) {
-				continue;
-			}
-			ut64 size = r_buf_size (stream->data);
-			if (mode == 'j') {
-				char *hex = NULL;
-				ut64 hex_size = 0;
-				if (!replay_stream_hex (stream, &hex, &hex_size)) {
-					continue;
-				}
-				pj_o (pj);
-				pj_kn (pj, "fd", stream->fd);
-				pj_kn (pj, "size", hex_size);
-				pj_kn (pj, "consumed", stream->consumed);
-				pj_kn (pj, "remaining", hex_size > stream->consumed? hex_size - stream->consumed: 0);
-				pj_ks (pj, "label", stream->label? stream->label: "");
-				pj_ks (pj, "hex", hex);
-				pj_end (pj);
-				free (hex);
-			} else {
-				dbg->cb_printf ("%"PFMT64u" fd=%d size=%"PFMT64u" consumed=%"PFMT64u" remaining=%"PFMT64u"%s%s\n",
-					chkpt->id,
-					stream->fd,
-					size,
-					stream->consumed,
-					size > stream->consumed? size - stream->consumed: 0,
-					stream->label? " label=": "",
-					stream->label? stream->label: "");
-			}
+		if (table) {
+			ht_up_foreach (table, cp_replay_list_cb, &ctx);
 		}
-		free (fds);
+		if (!ctx.ok) {
+			pj_free (pj);
+			r_strbuf_free (sb);
+			return NULL;
+		}
 		if (mode == 'j') {
 			pj_end (pj);
 			pj_end (pj);
@@ -730,9 +664,9 @@ R_API void r_debug_session_cp_list_replays(RDebug *dbg, int mode) {
 	}
 	if (mode == 'j') {
 		pj_end (pj);
-		dbg->cb_printf ("%s\n", pj_string (pj));
-		pj_free (pj);
+		return pj_drain (pj);
 	}
+	return r_strbuf_drain (sb);
 }
 
 R_API void r_debug_session_list_memory(RDebug *dbg) {
