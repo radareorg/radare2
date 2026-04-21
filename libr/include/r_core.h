@@ -550,23 +550,12 @@ R_API void r_core_cmd_queue(RCore *core, const char *line);
 R_API void r_core_cmd_queue_wait(RCore *core);
 R_API void r_core_cmd_init(RCore *core);
 R_API char *r_core_cmd_str_at(RCore *core, ut64 addr, const char *cmd);
+
 // CALL
 R_API int r_core_call_at(RCore *core, ut64 addr, const char *cmd);
-static inline int r_core_cmd_call_at(RCore *core, ut64 addr, const char *cmd) {
-	return r_core_call_at (core, addr, cmd);
-}
-
 R_API char *r_core_call_str_at(RCore *core, ut64 addr, const char *cmd);
-static inline char *r_core_cmd_call_str_at(RCore *core, ut64 addr, const char *cmd) {
-	return r_core_call_str_at (core, addr, cmd);
-}
-
 R_API int r_core_call(RCore *core, const char *cmd);
-static inline int r_core_cmd_call(RCore *core, const char *cmd) {
-	return r_core_call (core, cmd);
-}
 R_API int r_core_callf(RCore *core, const char *cmd, ...);
-#define r_core_cmd_callf r_core_callf
 R_API int r_core_callf_at(RCore *core, ut64 addr, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
 
 // CMDSTR
