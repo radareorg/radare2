@@ -1704,7 +1704,6 @@ static bool esil_mem_modeq_n(REsil *esil, int bits) {
 			ret = !!esil_peek_n (esil, bits);
 			const RStrs src1 = r_esil_pop (esil);
 			if (!r_strs_empty (src1) && r_esil_get_parm (esil, src1, &d) && s >= 1) {
-				r_esil_pushnum (esil, d % s);
 				d = d % s;
 				r_esil_pushnum (esil, d);
 				r_esil_push (esil, dst);
