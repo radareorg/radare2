@@ -5965,9 +5965,7 @@ static int is_in_vphdr(Elf_(Phdr) *p, ut64 addr) {
 ut64 Elf_(p2v)(ELFOBJ *eo, ut64 paddr) {
 	R_RETURN_VAL_IF_FAIL (eo, UT64_MAX);
 	if (eo->phdr) {
-		// When multiple PT_LOAD segments overlap in file-offset space
-		// (e.g. UPX packs a mirror at vaddr=0,offset=0 alongside the
-		// real code segment at a higher p_vaddr), pick the highest
+		// When multiple PT_LOAD segments overlap in file-offset space (UPX)
 		// p_vaddr match so p2v/v2p round-trip at the real code region.
 		Elf_(Phdr) *best = NULL;
 		size_t i;
