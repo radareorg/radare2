@@ -23,6 +23,8 @@ typedef struct r_core_priv_t {
 	bool regnums;
 	bool tags_loaded;
 	bool autocomplete_loaded;
+	RDebugSession *debug_replay_session;
+	HtUP *debug_replay;
 	// disasm cache
 	ut64 goaddr;
 	char *section;

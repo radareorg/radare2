@@ -2821,6 +2821,7 @@ R_API void r_core_fini(RCore *c) {
 	r_fs_shell_free (c->rfs);
 	free (c->times);
 	free (((RCorePriv *)c->priv)->old_arch);
+	ht_up_free (((RCorePriv *)c->priv)->debug_replay);
 	// Free cmd and its plugins before freeing event system
 	r_cmd_free (c->rcmd);
 	c->rcmd = NULL;

@@ -515,6 +515,278 @@ static RCoreHelpMessage help_msg_dte = {
 	NULL
 };
 
+static void debug_replay_fd_buffer_free(HtUPKv *kv) {
+	RBuffer *buf = kv->value;
+	r_unref (buf);
+}
+
+static void debug_replay_checkpoint_table_free(HtUPKv *kv) {
+	ht_up_free ((HtUP *)kv->value);
+}
+
+static void debug_replay_reset(RCore *core) {
+	R_RETURN_IF_FAIL (core && core->priv);
+	RCorePriv *priv = core->priv;
+	ht_up_free (priv->debug_replay);
+	priv->debug_replay = NULL;
+	priv->debug_replay_session = NULL;
+}
+
+static bool debug_replay_sync(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->priv, false);
+	RCorePriv *priv = core->priv;
+	if (priv->debug_replay_session != core->dbg->session) {
+		debug_replay_reset (core);
+		priv->debug_replay_session = core->dbg->session;
+	}
+	return core->dbg->session != NULL;
+}
+
+static HtUP *debug_replay_store(RCore *core, bool create) {
+	RCorePriv *priv;
+	if (!debug_replay_sync (core)) {
+		return NULL;
+	}
+	priv = core->priv;
+	if (!priv->debug_replay && create) {
+		priv->debug_replay = ht_up_new (NULL, debug_replay_checkpoint_table_free, NULL);
+	}
+	return priv->debug_replay;
+}
+
+static HtUP *debug_replay_table(RCore *core, ut64 checkpoint_id, bool create) {
+	HtUP *store = debug_replay_store (core, create);
+	if (!store) {
+		return NULL;
+	}
+	HtUP *table = ht_up_find (store, checkpoint_id, NULL);
+	if (!table && create) {
+		table = ht_up_new (NULL, debug_replay_fd_buffer_free, NULL);
+		if (!table) {
+			return NULL;
+		}
+		ht_up_insert (store, checkpoint_id, table);
+	}
+	return table;
+}
+
+static void debug_replay_drop_checkpoint(RCore *core, ut64 checkpoint_id) {
+	HtUP *store = debug_replay_store (core, false);
+	if (store) {
+		ht_up_delete (store, checkpoint_id);
+	}
+}
+
+static bool debug_replay_append(RCore *core, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && buf && fd >= 0, false);
+	if (!r_debug_session_checkpoint_get (core->dbg->session, checkpoint_id)) {
+		return false;
+	}
+	if (!len) {
+		return true;
+	}
+	HtUP *table = debug_replay_table (core, checkpoint_id, true);
+	if (!table) {
+		return false;
+	}
+	RBuffer *data = ht_up_find (table, (ut64)fd, NULL);
+	if (!data) {
+		data = r_buf_new_with_bytes (buf, len);
+		if (!data) {
+			return false;
+		}
+		ht_up_insert (table, (ut64)fd, data);
+		return true;
+	}
+	return r_buf_append_bytes (data, buf, len);
+}
+
+static bool debug_replay_clear(RCore *core, ut64 checkpoint_id, int fd) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg, false);
+	if (!r_debug_session_checkpoint_get (core->dbg->session, checkpoint_id)) {
+		return false;
+	}
+	HtUP *store = debug_replay_store (core, false);
+	if (!store) {
+		return false;
+	}
+	if (fd < 0) {
+		ht_up_delete (store, checkpoint_id);
+		return true;
+	}
+	HtUP *table = ht_up_find (store, checkpoint_id, NULL);
+	if (!table || !ht_up_find (table, (ut64)fd, NULL)) {
+		return false;
+	}
+	ht_up_delete (table, (ut64)fd);
+	if (!table->count) {
+		ht_up_delete (store, checkpoint_id);
+	}
+	return true;
+}
+
+typedef struct {
+	HtUP *dst;
+	bool ok;
+} DebugReplayMergeCtx;
+
+static bool debug_replay_merge_cb(void *user, const ut64 key, const void *value) {
+	DebugReplayMergeCtx *ctx = user;
+	RBuffer *dst = ht_up_find (ctx->dst, key, NULL);
+	RBuffer *src = (RBuffer *)value;
+	ut64 size = 0;
+	const ut8 *bytes = r_buf_data (src, &size);
+	if (!bytes && size > 0) {
+		ctx->ok = false;
+		return false;
+	}
+	if (!dst) {
+		dst = r_buf_new_with_buf (src);
+		if (!dst) {
+			ctx->ok = false;
+			return false;
+		}
+		ht_up_insert (ctx->dst, key, dst);
+		return true;
+	}
+	if (size > 0 && !r_buf_append_bytes (dst, bytes, size)) {
+		ctx->ok = false;
+		return false;
+	}
+	return true;
+}
+
+static bool debug_replay_merge_table(HtUP *dst, HtUP *src) {
+	DebugReplayMergeCtx ctx = {
+		.dst = dst,
+		.ok = true,
+	};
+	ht_up_foreach (src, debug_replay_merge_cb, &ctx);
+	return ctx.ok;
+}
+
+static bool debug_replay_build_effective(RCore *core, ut64 checkpoint_id, HtUP *dst) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && dst, false);
+	RDebugCheckpoint *chkpt = r_debug_session_checkpoint_get (core->dbg->session, checkpoint_id);
+	if (!chkpt) {
+		return false;
+	}
+	if (chkpt->parent_id != UT64_MAX && !debug_replay_build_effective (core, chkpt->parent_id, dst)) {
+		return false;
+	}
+	HtUP *table = debug_replay_table (core, checkpoint_id, false);
+	return !table || debug_replay_merge_table (dst, table);
+}
+
+typedef struct {
+	ut64 checkpoint_id;
+	int mode;
+	bool ok;
+	PJ *pj;
+	RStrBuf *sb;
+} DebugReplayListCtx;
+
+static bool debug_replay_list_cb(void *user, const ut64 key, const void *value) {
+	DebugReplayListCtx *ctx = user;
+	RBuffer *data = (RBuffer *)value;
+	ut64 size = 0;
+	const ut8 *bytes = r_buf_data (data, &size);
+	if (!bytes && size > 0) {
+		ctx->ok = false;
+		return false;
+	}
+	char *hex = size > 0? r_hex_bin2strdup (bytes, size): strdup ("");
+	if (!hex) {
+		ctx->ok = false;
+		return false;
+	}
+	if (ctx->mode == 'j') {
+		pj_o (ctx->pj);
+		pj_kn (ctx->pj, "fd", key);
+		pj_kn (ctx->pj, "size", size);
+		pj_ks (ctx->pj, "hex", hex);
+		pj_end (ctx->pj);
+	} else {
+		r_strbuf_appendf (ctx->sb, "%"PFMT64u" fd=%"PFMT64u" size=%"PFMT64u" hex=%s\n",
+			ctx->checkpoint_id, key, size, hex);
+	}
+	free (hex);
+	return true;
+}
+
+static char *debug_replay_list(RCore *core, int mode) {
+	R_RETURN_VAL_IF_FAIL (core && core->dbg && core->dbg->session, NULL);
+	if (!debug_replay_sync (core)) {
+		return NULL;
+	}
+	RDebugCheckpoint *chkpt;
+	PJ *pj = NULL;
+	RStrBuf *sb = NULL;
+	if (mode == 'j') {
+		pj = pj_new ();
+		if (!pj) {
+			return NULL;
+		}
+		pj_a (pj);
+	} else {
+		sb = r_strbuf_new ("");
+		if (!sb) {
+			return NULL;
+		}
+	}
+	R_VEC_FOREACH (core->dbg->session->checkpoints, chkpt) {
+		HtUP *effective = ht_up_new (NULL, debug_replay_fd_buffer_free, NULL);
+		if (!effective) {
+			pj_free (pj);
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		if (!debug_replay_build_effective (core, chkpt->id, effective)) {
+			ht_up_free (effective);
+			pj_free (pj);
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		DebugReplayListCtx ctx = {
+			.checkpoint_id = chkpt->id,
+			.mode = mode,
+			.ok = true,
+			.pj = pj,
+			.sb = sb,
+		};
+		if (mode == 'j') {
+			pj_o (pj);
+			pj_kn (pj, "id", chkpt->id);
+			pj_ka (pj, "replay");
+		}
+		ht_up_foreach (effective, debug_replay_list_cb, &ctx);
+		ht_up_free (effective);
+		if (!ctx.ok) {
+			pj_free (pj);
+			r_strbuf_free (sb);
+			return NULL;
+		}
+		if (mode == 'j') {
+			pj_end (pj);
+			pj_end (pj);
+		}
+	}
+	if (mode == 'j') {
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	return r_strbuf_drain (sb);
+}
+
+static RCoreHelpMessage help_msg_dtsw = {
+	"Usage:", "dtsw[acj]", "Checkpoint replay streams",
+	"dtsw", "", "list checkpoint replay streams",
+	"dtswa", " <id> <fd> <hex>", "append replay bytes to a checkpoint fd stream",
+	"dtswc", " <id> [fd]", "clear replay bytes for one fd or all fds on a checkpoint",
+	"dtswj", "", "list checkpoint replay streams in JSON",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_dts = {
 	"Usage:", "dts[*]", "Trace sessions",
 	"dts+", "", "start trace session",
@@ -527,10 +799,7 @@ static RCoreHelpMessage help_msg_dts = {
 	"dtsl", "", "list checkpoints",
 	"dtsm", "", "list current memory map and hash",
 	"dtsr", " <id>", "restore checkpoint by id and switch to live branch mode",
-	"dtsw", "", "list checkpoint replay streams",
-	"dtsw", " <id> <fd> <hex>", "append replay bytes to a checkpoint fd stream",
-	"dtswc", " <id> [fd]", "clear replay bytes for one fd or all fds on a checkpoint",
-	"dtswj", "", "list checkpoint replay streams in JSON",
+	"dtsw", "[?]", "list checkpoint replay streams",
 	NULL
 };
 
@@ -567,7 +836,9 @@ static void cmd_dtsd(RCore *core, const char *input) {
 	ut64 checkpoint_id = r_num_math (core->num, arg);
 	if (!r_debug_session_delete (core->dbg, checkpoint_id)) {
 		R_LOG_ERROR ("Failed to delete checkpoint");
+		return;
 	}
+	debug_replay_drop_checkpoint (core, checkpoint_id);
 }
 
 static void cmd_dtsr(RCore *core, const char *input) {
@@ -591,38 +862,31 @@ static void cmd_dtsw(RCore *core, const char *input) {
 		R_LOG_ERROR ("No session started");
 		return;
 	}
-	const char *arg = r_str_trim_head_ro (input + 3);
-	if (*arg == '?') {
-		r_core_cmd_help_match (core, help_msg_dts, "dtsw");
+	int mode = 0;
+	char sub = input[3];
+	const char *arg = r_str_trim_head_ro (sub? input + 4: input + 3);
+	if (sub == '?' || (sub == ' ' && *arg == '?')) {
+		r_core_cmd_help (core, help_msg_dtsw);
 		return;
 	}
-	if (*arg == 'j' && !arg[1]) {
-		char *list = r_debug_session_cp_replay_list (core->dbg->session, 'j');
-		if (!list) {
-			R_LOG_ERROR ("Failed to list checkpoint replay");
+	if (!sub || sub == ' ') {
+		if (R_STR_ISNOTEMPTY (r_str_trim_head_ro (input + 3))) {
+			R_LOG_ERROR ("Usage: dtsw");
 			return;
 		}
-		r_cons_printf (core->cons, "%s\n", list);
-		free (list);
-		return;
-	}
-	if (R_STR_ISEMPTY (arg)) {
-		char *list = r_debug_session_cp_replay_list (core->dbg->session, 0);
-		if (!list) {
-			R_LOG_ERROR ("Failed to list checkpoint replay");
+	} else if (sub == 'j') {
+		if (R_STR_ISNOTEMPTY (arg)) {
+			R_LOG_ERROR ("Usage: dtswj");
 			return;
 		}
-		r_cons_printf (core->cons, "%s", list);
-		free (list);
-		return;
-	}
-	if (*arg == 'c' && (!arg[1] || arg[1] == ' ')) {
-		char *args = r_str_trim_dup (arg + 1);
+		mode = 'j';
+	} else if (sub == 'c') {
+		char *args = r_str_trim_dup (input + 4);
 		if (!args) {
 			return;
 		}
 		if (R_STR_ISEMPTY (args)) {
-			R_LOG_ERROR ("Missing checkpoint id");
+			R_LOG_ERROR ("Usage: dtswc <id> [fd]");
 			free (args);
 			return;
 		}
@@ -636,52 +900,65 @@ static void cmd_dtsw(RCore *core, const char *input) {
 		}
 		ut64 checkpoint_id = r_num_math (core->num, args);
 		int fd = fd_s? (int)r_num_math (core->num, fd_s): -1;
-		if (!r_debug_session_cp_replay_clear (core->dbg->session, checkpoint_id, fd)) {
+		if (!debug_replay_clear (core, checkpoint_id, fd)) {
 			R_LOG_ERROR ("Failed to clear checkpoint replay");
 		}
 		free (args);
 		return;
-	}
-	char *args = r_str_trim_dup (arg);
-	if (!args) {
-		return;
-	}
-	char *fd_s = strchr (args, ' ');
-	if (!fd_s) {
-		R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
+	} else if (sub == 'a') {
+		char *args = r_str_trim_dup (input + 4);
+		if (!args) {
+			return;
+		}
+		char *fd_s = strchr (args, ' ');
+		if (!fd_s) {
+			R_LOG_ERROR ("Usage: dtswa <id> <fd> <hex>");
+			free (args);
+			return;
+		}
+		*fd_s++ = 0;
+		r_str_trim_head (fd_s);
+		char *hex_s = strchr (fd_s, ' ');
+		if (!hex_s) {
+			R_LOG_ERROR ("Usage: dtswa <id> <fd> <hex>");
+			free (args);
+			return;
+		}
+		*hex_s++ = 0;
+		r_str_trim_head (hex_s);
+		if (R_STR_ISEMPTY (args) || R_STR_ISEMPTY (fd_s) || R_STR_ISEMPTY (hex_s)) {
+			R_LOG_ERROR ("Usage: dtswa <id> <fd> <hex>");
+			free (args);
+			return;
+		}
+		ut64 checkpoint_id = r_num_math (core->num, args);
+		int fd = (int)r_num_math (core->num, fd_s);
+		size_t hexlen = 0;
+		ut8 *bytes = r_hex_str2bin_dup (hex_s, &hexlen);
+		if (!bytes && *hex_s) {
+			R_LOG_ERROR ("Invalid replay hex payload");
+			free (args);
+			return;
+		}
+		if (!debug_replay_append (core, checkpoint_id, fd, bytes? bytes: (const ut8 *)"", hexlen)) {
+			R_LOG_ERROR ("Failed to append checkpoint replay");
+		}
+		free (bytes);
 		free (args);
 		return;
-	}
-	*fd_s++ = 0;
-	r_str_trim_head (fd_s);
-	char *hex_s = strchr (fd_s, ' ');
-	if (!hex_s) {
-		R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
-		free (args);
+	} else {
+		r_core_cmd_help (core, help_msg_dtsw);
 		return;
 	}
-	*hex_s++ = 0;
-	r_str_trim_head (hex_s);
-	if (R_STR_ISEMPTY (args) || R_STR_ISEMPTY (fd_s) || R_STR_ISEMPTY (hex_s)) {
-		R_LOG_ERROR ("Usage: dtsw <id> <fd> <hex>");
-		free (args);
+	char *list = debug_replay_list (core, mode);
+	if (!list) {
+		R_LOG_ERROR ("Failed to list checkpoint replay");
 		return;
 	}
-	ut64 checkpoint_id = r_num_math (core->num, args);
-	int fd = (int)r_num_math (core->num, fd_s);
-	size_t hexlen = 0;
-	ut8 *bytes = r_hex_str2bin_dup (hex_s, &hexlen);
-	if (!bytes && *hex_s) {
-		R_LOG_ERROR ("Invalid replay hex payload");
-		free (args);
-		return;
-	}
-	if (!r_debug_session_cp_replay_append (core->dbg->session, checkpoint_id, fd, bytes? bytes: (const ut8 *)"", hexlen, NULL)) {
-		R_LOG_ERROR ("Failed to append checkpoint replay");
-	}
-	free (bytes);
-	free (args);
+	r_cons_printf (core->cons, mode == 'j'? "%s\n": "%s", list);
+	free (list);
 }
+
 static RCoreHelpMessage help_msg_dx = {
 	"Usage: dx", "[aers]", " Debug execution commands",
 	"dx", " <hexpairs>", "execute opcodes",
@@ -6087,12 +6364,14 @@ static int cmd_debug(void *data, const char *input) {
 				if (core->dbg->session) {
 					R_LOG_INFO ("Session already started");
 				} else {
+					debug_replay_reset (core);
 					core->dbg->session = r_debug_session_new ();
 					r_debug_add_checkpoint (core->dbg);
 				}
 				break;
 			case '-': // "dts-"
 				if (core->dbg->session) {
+					debug_replay_reset (core);
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				} else {
@@ -6116,6 +6395,7 @@ static int cmd_debug(void *data, const char *input) {
 				break;
 			case 'f': // "dtsf"
 				if (core->dbg->session) {
+					debug_replay_reset (core);
 					r_debug_session_free (core->dbg->session);
 					core->dbg->session = NULL;
 				}

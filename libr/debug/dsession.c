@@ -19,136 +19,6 @@ static int cmp_cnum_chkpt(const RDebugCheckpoint *a, const RDebugCheckpoint *b) 
 	return (a->id > b->id) - (a->id < b->id);
 }
 
-typedef struct {
-	int fd;
-	ut64 consumed;
-	RBuffer *data;
-	char *label;
-} DebugReplayStream;
-
-static void debug_replay_stream_free(DebugReplayStream *stream) {
-	if (!stream) {
-		return;
-	}
-	free (stream->label);
-	r_unref (stream->data);
-	free (stream);
-}
-
-static void htup_replay_stream_free(HtUPKv *kv) {
-	debug_replay_stream_free ((DebugReplayStream *)kv->value);
-}
-
-static void htup_nested_ht_free(HtUPKv *kv) {
-	ht_up_free ((HtUP *)kv->value);
-}
-
-static HtUP *cp_replay_table(RDebugSession *session, ut64 checkpoint_id, bool create) {
-	if (!session->replay) {
-		if (!create) {
-			return NULL;
-		}
-		session->replay = ht_up_new (NULL, htup_nested_ht_free, NULL);
-		if (!session->replay) {
-			return NULL;
-		}
-	}
-	HtUP *table = ht_up_find (session->replay, checkpoint_id, NULL);
-	if (!table && create) {
-		table = ht_up_new (NULL, htup_replay_stream_free, NULL);
-		if (!table) {
-			return NULL;
-		}
-		ht_up_insert (session->replay, checkpoint_id, table);
-	}
-	return table;
-}
-
-static DebugReplayStream *replay_stream_new(int fd, const ut8 *buf, ut64 len, const char *label) {
-	DebugReplayStream *stream = R_NEW0 (DebugReplayStream);
-	stream->fd = fd;
-	stream->data = r_buf_new_with_bytes (buf, len);
-	if (!stream->data) {
-		free (stream);
-		return NULL;
-	}
-	if (R_STR_ISNOTEMPTY (label)) {
-		stream->label = strdup (label);
-	}
-	return stream;
-}
-
-static DebugReplayStream *replay_stream_clone(const DebugReplayStream *stream) {
-	if (!stream) {
-		return NULL;
-	}
-	DebugReplayStream *clone = R_NEW0 (DebugReplayStream);
-	clone->fd = stream->fd;
-	clone->consumed = stream->consumed;
-	clone->data = r_buf_new_with_buf (stream->data);
-	if (!clone->data) {
-		free (clone);
-		return NULL;
-	}
-	if (R_STR_ISNOTEMPTY (stream->label)) {
-		clone->label = strdup (stream->label);
-	}
-	return clone;
-}
-
-static bool replay_clone_cb(void *user, const ut64 key, const void *value) {
-	HtUP **dst = user;
-	DebugReplayStream *clone = replay_stream_clone ((const DebugReplayStream *)value);
-	if (!clone) {
-		ht_up_free (*dst);
-		*dst = NULL;
-		return false;
-	}
-	ht_up_insert (*dst, key, clone);
-	return true;
-}
-
-static HtUP *replay_table_clone(HtUP *src) {
-	HtUP *dst = ht_up_new (NULL, htup_replay_stream_free, NULL);
-	if (!dst) {
-		return NULL;
-	}
-	if (!src) {
-		return dst;
-	}
-	ht_up_foreach (src, replay_clone_cb, &dst);
-	return dst;
-}
-
-static bool cp_replay_clone(RDebugSession *session, ut64 parent_id, ut64 checkpoint_id) {
-	if (!session || parent_id == UT64_MAX) {
-		return true;
-	}
-	HtUP *src = cp_replay_table (session, parent_id, false);
-	if (!src) {
-		return true;
-	}
-	HtUP *clone = replay_table_clone (src);
-	if (!clone) {
-		return false;
-	}
-	if (!session->replay) {
-		session->replay = ht_up_new (NULL, htup_nested_ht_free, NULL);
-		if (!session->replay) {
-			ht_up_free (clone);
-			return false;
-		}
-	}
-	ht_up_insert (session->replay, checkpoint_id, clone);
-	return true;
-}
-
-static void cp_replay_delete(RDebugSession *session, ut64 checkpoint_id) {
-	if (session && session->replay) {
-		ht_up_delete (session->replay, checkpoint_id);
-	}
-}
-
 #define R_DEBUG_SESSION_CHECKPOINT_WARN 1024
 
 static void checkpoint_warn_if_large(RDebugSession *session) {
@@ -202,7 +72,6 @@ R_API void r_debug_session_free(RDebugSession *session) {
 		RVecDebugCheckpoint_free (session->checkpoints);
 		ht_up_free (session->registers);
 		ht_up_free (session->memory);
-		ht_up_free (session->replay);
 		free (session);
 	}
 }
@@ -281,11 +150,6 @@ R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char
 			}
 		}
 	}
-	if (!cp_replay_clone (session, parent_id, checkpoint.id)) {
-		r_debug_checkpoint_fini_vec (&checkpoint);
-		return 0;
-	}
-
 	RVecDebugCheckpoint_push_back (session->checkpoints, &checkpoint);
 	session->current_checkpoint_id = checkpoint.id;
 	checkpoint_warn_if_large (session);
@@ -432,7 +296,6 @@ R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id) {
 		R_LOG_ERROR ("Cannot delete checkpoint %"PFMT64u" with child checkpoints", checkpoint_id);
 		return false;
 	}
-	cp_replay_delete (session, checkpoint_id);
 	RVecDebugCheckpoint_remove (session->checkpoints, index);
 	return true;
 }
@@ -513,160 +376,6 @@ R_API void r_debug_session_list(RDebug *dbg, int mode) {
 				chkpt->label? chkpt->label: "");
 		}
 	}
-}
-
-R_API bool r_debug_session_cp_replay_append(RDebugSession *session, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len, const char *label) {
-	R_RETURN_VAL_IF_FAIL (session && fd >= 0, false);
-	if (!r_debug_session_checkpoint_get (session, checkpoint_id)) {
-		return false;
-	}
-	if (!len) {
-		return true;
-	}
-	HtUP *table = cp_replay_table (session, checkpoint_id, true);
-	if (!table) {
-		return false;
-	}
-	DebugReplayStream *stream = ht_up_find (table, (ut64)(ut32)fd, NULL);
-	if (!stream) {
-		stream = replay_stream_new (fd, buf, len, label);
-		if (!stream) {
-			return false;
-		}
-		ht_up_insert (table, (ut64)(ut32)fd, stream);
-		return true;
-	}
-	if (!r_buf_append_bytes (stream->data, buf, len)) {
-		return false;
-	}
-	if (R_STR_ISNOTEMPTY (label)) {
-		free (stream->label);
-		stream->label = strdup (label);
-	}
-	return true;
-}
-
-R_API bool r_debug_session_cp_replay_clear(RDebugSession *session, ut64 checkpoint_id, int fd) {
-	R_RETURN_VAL_IF_FAIL (session, false);
-	if (!r_debug_session_checkpoint_get (session, checkpoint_id)) {
-		return false;
-	}
-	if (!session->replay) {
-		return false;
-	}
-	if (fd < 0) {
-		ht_up_delete (session->replay, checkpoint_id);
-		return true;
-	}
-	HtUP *table = cp_replay_table (session, checkpoint_id, false);
-	if (!table) {
-		return false;
-	}
-	if (!ht_up_find (table, (ut64)(ut32)fd, NULL)) {
-		return false;
-	}
-	ht_up_delete (table, (ut64)(ut32)fd);
-	if (!table->count) {
-		ht_up_delete (session->replay, checkpoint_id);
-	}
-	return true;
-}
-
-typedef struct {
-	ut64 checkpoint_id;
-	int mode;
-	bool ok;
-	PJ *pj;
-	RStrBuf *sb;
-} CpReplayListCtx;
-
-static bool cp_replay_list_cb(void *user, const ut64 key, const void *value) {
-	CpReplayListCtx *ctx = user;
-	const DebugReplayStream *stream = value;
-	ut64 size = 0;
-	const ut8 *data = r_buf_data (stream->data, &size);
-	(void)key;
-	if (!data && size > 0) {
-		ctx->ok = false;
-		return false;
-	}
-	char *hex = size > 0? r_hex_bin2strdup (data, size): strdup ("");
-	if (!hex) {
-		ctx->ok = false;
-		return false;
-	}
-	if (ctx->mode == 'j') {
-		pj_o (ctx->pj);
-		pj_kn (ctx->pj, "fd", stream->fd);
-		pj_kn (ctx->pj, "size", size);
-		pj_kn (ctx->pj, "consumed", stream->consumed);
-		pj_kn (ctx->pj, "remaining", size > stream->consumed? size - stream->consumed: 0);
-		pj_ks (ctx->pj, "label", stream->label? stream->label: "");
-		pj_ks (ctx->pj, "hex", hex);
-		pj_end (ctx->pj);
-	} else {
-		r_strbuf_appendf (ctx->sb, "%"PFMT64u" fd=%d size=%"PFMT64u" consumed=%"PFMT64u" remaining=%"PFMT64u"%s%s\n",
-			ctx->checkpoint_id,
-			stream->fd,
-			size,
-			stream->consumed,
-			size > stream->consumed? size - stream->consumed: 0,
-			stream->label? " label=": "",
-			stream->label? stream->label: "");
-	}
-	free (hex);
-	return true;
-}
-
-R_API char *r_debug_session_cp_replay_list(RDebugSession *session, int mode) {
-	R_RETURN_VAL_IF_FAIL (session, NULL);
-	RDebugCheckpoint *chkpt;
-	PJ *pj = NULL;
-	RStrBuf *sb = NULL;
-	if (mode == 'j') {
-		pj = pj_new ();
-		if (!pj) {
-			return NULL;
-		}
-		pj_a (pj);
-	} else {
-		sb = r_strbuf_new ("");
-		if (!sb) {
-			return NULL;
-		}
-	}
-	R_VEC_FOREACH (session->checkpoints, chkpt) {
-		HtUP *table = cp_replay_table (session, chkpt->id, false);
-		CpReplayListCtx ctx = {
-			.checkpoint_id = chkpt->id,
-			.mode = mode,
-			.ok = true,
-			.pj = pj,
-			.sb = sb,
-		};
-		if (mode == 'j') {
-			pj_o (pj);
-			pj_kn (pj, "id", chkpt->id);
-			pj_ka (pj, "replay");
-		}
-		if (table) {
-			ht_up_foreach (table, cp_replay_list_cb, &ctx);
-		}
-		if (!ctx.ok) {
-			pj_free (pj);
-			r_strbuf_free (sb);
-			return NULL;
-		}
-		if (mode == 'j') {
-			pj_end (pj);
-			pj_end (pj);
-		}
-	}
-	if (mode == 'j') {
-		pj_end (pj);
-		return pj_drain (pj);
-	}
-	return r_strbuf_drain (sb);
 }
 
 R_API void r_debug_session_list_memory(RDebug *dbg) {
