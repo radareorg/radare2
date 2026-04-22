@@ -42,26 +42,6 @@ nospaceflag
 EOF
 RUN
 
-NAME=newprj empty flagspace survives
-FILE=malloc://0x1000
-CMDS=<<EOF
-mkdir .tmp
-rm -f .tmp/newprj-emptyspc.prj
-fs+alpha
-f sym.one=0x100
-fs+emptyone
-prj save .tmp/newprj-emptyspc.prj > /dev/null
-f-*
-fs-*
-prj load .tmp/newprj-emptyspc.prj > /dev/null
-fs~emptyone
-rm .tmp/newprj-emptyspc.prj
-EOF
-EXPECT=<<EOF
-    0 * emptyone
-EOF
-RUN
-
 NAME=newprj flag comment round-trip
 FILE=malloc://0x1000
 CMDS=<<EOF
