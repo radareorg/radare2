@@ -15,7 +15,20 @@ enum {
 	RPRJ_STRS,
 	RPRJ_THEM,
 	RPRJ_HINT,
+	RPRJ_SPCS,
 	RPRJ_MAGIC = 0x4a525052,
+};
+
+// bitmask describing optional fields appended after each R2ProjectFlag head
+enum {
+	RPRJ_FLAG_SPACE     = 1 << 0, // ut32 space id (index in SPCS)
+	RPRJ_FLAG_REALNAME  = 1 << 1, // ut32 string idx
+	RPRJ_FLAG_RAWNAME   = 1 << 2, // ut32 string idx
+	RPRJ_FLAG_TYPE      = 1 << 3, // ut32 string idx (meta)
+	RPRJ_FLAG_COLOR     = 1 << 4, // ut32 string idx (meta)
+	RPRJ_FLAG_COMMENT   = 1 << 5, // ut32 string idx (meta)
+	RPRJ_FLAG_ALIAS     = 1 << 6, // ut32 string idx (meta)
+	RPRJ_FLAG_DEMANGLED = 1 << 7, // no payload, just marks demangled=true
 };
 
 enum {
@@ -34,6 +47,10 @@ typedef struct {
 	ut8 *data;
 	ut32 size;
 	ut32 capacity;
+	// Optional reverse index (save path): key=string, value=(idx+1).
+	// Keeps the string table a pool of unique entries without changing its
+	// on-disk layout, so the reader stays unchanged.
+	HtPP *dedup;
 } R2ProjectStringTable;
 
 typedef struct {
@@ -57,11 +74,13 @@ typedef struct {
 	ut32 csum;
 } R2ProjectMod;
 
+// 21-byte fixed head; extras bits gate a variable tail of ut32 string/id slots.
 typedef struct {
 	ut32 name;
 	ut32 mod;
 	ut64 delta;
-	ut64 size;
+	ut32 size;
+	ut8 extras;
 } R2ProjectFlag;
 
 typedef struct {
@@ -83,6 +102,9 @@ typedef struct {
 	R2ProjectStringTable *st;
 	RBuffer *b;
 	RList *mods;
+	HtUP *space_ids; // save path: RSpace* -> (id+1)
+	RList *space_names; // save: ut32 str-idx per id; load: const char* per id
+	ut32 flag_count; // transient per-entry save counter
 } Cursor;
 
 static const char *entry_type_tostring(int a) {
@@ -97,6 +119,7 @@ static const char *entry_type_tostring(int a) {
 	case RPRJ_STRS: return "Strings";
 	case RPRJ_THEM: return "Theme";
 	case RPRJ_HINT: return "Hints";
+	case RPRJ_SPCS: return "FlagSpaces";
 	}
 	return "UNKNOWN";
 }
@@ -113,6 +136,13 @@ static void rprj_st_write(RBuffer *b, R2ProjectStringTable *st) {
 }
 
 static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
+	if (st->dedup) {
+		bool found = false;
+		void *v = ht_pp_find (st->dedup, s, &found);
+		if (found) {
+			return (ut32)((uintptr_t)v - 1);
+		}
+	}
 	const size_t slen = strlen (s) + 1;
 	const size_t newsize = st->size + slen;
 	if (newsize > st->capacity) {
@@ -127,6 +157,11 @@ static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
 	memcpy (st->data + st->size, s, slen);
 	ut32 index = st->size;
 	st->size += slen;
+	if (st->dedup) {
+		// Key points into the persisted pool so the lifetime matches st->data.
+		ht_pp_insert (st->dedup, (const char *)st->data + index,
+				(void *)(uintptr_t)(index + 1));
+	}
 	return index;
 }
 
@@ -144,31 +179,110 @@ static R2ProjectMod *find_mod(Cursor *cur, ut64 addr, ut32 *mid) {
 	return NULL;
 }
 
-static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
-	R2ProjectFlag flag = {0};
-	ut32 name = rprj_st_append (cur->st, fi->name);
-	ut32 mid = UT32_MAX;
-	R2ProjectMod *mod = find_mod (cur, fi->addr, &mid);
-	r_write_le32 (&flag.name, name);
-	if (mod) {
-		r_write_le32 (&flag.mod, mid);
-		r_write_le64 (&flag.delta, fi->addr - mod->vmin);
-	} else {
-		r_write_le32 (&flag.mod, UT32_MAX);
-		r_write_le64 (&flag.delta, fi->addr);
+// Returns the id for sp, assigning a new one on first sight. UT32_MAX for no space.
+static ut32 space_id_for(Cursor *cur, RSpace *sp) {
+	if (!sp || R_STR_ISEMPTY (sp->name) || !cur->space_ids) {
+		return UT32_MAX;
 	}
-	r_write_le64 (&flag.size, fi->size);
-	r_buf_write (cur->b, (ut8*)&flag, sizeof (flag));
+	bool found = false;
+	void *v = ht_up_find (cur->space_ids, (ut64)(uintptr_t)sp, &found);
+	if (found) {
+		return (ut32)((uintptr_t)v - 1);
+	}
+	ut32 name_idx = rprj_st_append (cur->st, sp->name);
+	ut32 id = (ut32)r_list_length (cur->space_names);
+	r_list_append (cur->space_names, (void *)(uintptr_t)name_idx);
+	ht_up_insert (cur->space_ids, (ut64)(uintptr_t)sp, (void *)(uintptr_t)(id + 1));
+	return id;
+}
+
+static void write_le32(RBuffer *b, ut32 v) {
+	ut8 buf[4];
+	r_write_le32 (buf, v);
+	r_buf_write (b, buf, sizeof (buf));
+}
+
+static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
+	ut32 mid = UT32_MAX;
+	ut64 delta = fi->addr;
+	R2ProjectMod *mod = find_mod (cur, fi->addr, &mid);
+	if (mod) {
+		delta = fi->addr - mod->vmin;
+	}
+	const ut32 space_id = space_id_for (cur, fi->space);
+	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
+	const bool has_realname = fi->realname && fi->realname != fi->name
+		&& strcmp (fi->realname, fi->name) != 0;
+	const bool has_rawname = R_STR_ISNOTEMPTY (fi->rawname)
+		&& strcmp (fi->rawname, fi->name) != 0
+		&& (!has_realname || strcmp (fi->rawname, fi->realname) != 0);
+	// Table order matches on-disk bit layout.
+	const struct { ut8 bit; const char *s; } tail[] = {
+		{ RPRJ_FLAG_REALNAME, has_realname? fi->realname: NULL },
+		{ RPRJ_FLAG_RAWNAME,  has_rawname?  fi->rawname:  NULL },
+		{ RPRJ_FLAG_TYPE,     fim? fim->type:    NULL },
+		{ RPRJ_FLAG_COLOR,    fim? fim->color:   NULL },
+		{ RPRJ_FLAG_COMMENT,  fim? fim->comment: NULL },
+		{ RPRJ_FLAG_ALIAS,    fim? fim->alias:   NULL },
+	};
+	ut8 extras = 0;
+	if (space_id != UT32_MAX) extras |= RPRJ_FLAG_SPACE;
+	if (fi->demangled) extras |= RPRJ_FLAG_DEMANGLED;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (tail); i++) {
+		if (R_STR_ISNOTEMPTY (tail[i].s)) {
+			extras |= tail[i].bit;
+		}
+	}
+	ut8 head[21];
+	r_write_le32 (head + 0, rprj_st_append (cur->st, fi->name));
+	r_write_le32 (head + 4, mid);
+	r_write_le64 (head + 8, delta);
+	r_write_le32 (head + 16, fi->size);
+	head[20] = extras;
+	r_buf_write (cur->b, head, sizeof (head));
+	if (extras & RPRJ_FLAG_SPACE) {
+		write_le32 (cur->b, space_id);
+	}
+	for (i = 0; i < R_ARRAY_SIZE (tail); i++) {
+		if (extras & tail[i].bit) {
+			write_le32 (cur->b, rprj_st_append (cur->st, tail[i].s));
+		}
+	}
 }
 
 static bool flag_foreach_cb(RFlagItem *fi, void *user) {
-	Cursor *cur = (Cursor*) user;
+	Cursor *cur = user;
 	rprj_flag_write_one (cur, fi);
+	cur->flag_count++;
 	return true;
 }
 
 static void rprj_flag_write(Cursor *cur) {
+	ut64 count_at = r_buf_at (cur->b);
+	write_le32 (cur->b, 0); // patched below
+	cur->flag_count = 0;
 	r_flag_foreach (cur->core->flags, flag_foreach_cb, cur);
+	ut8 buf[4];
+	r_write_le32 (buf, cur->flag_count);
+	r_buf_write_at (cur->b, count_at, buf, sizeof (buf));
+}
+
+// Emit every user-visible flag space (including empty ones) so they round-trip.
+static void rprj_spcs_write(Cursor *cur) {
+	RSpaceIter *sit;
+	RSpace *sp;
+	r_flag_space_foreach (cur->core->flags, sit, sp) {
+		if (sp && R_STR_ISNOTEMPTY (sp->name)) {
+			(void)space_id_for (cur, sp);
+		}
+	}
+	write_le32 (cur->b, (ut32)r_list_length (cur->space_names));
+	RListIter *it;
+	void *v;
+	r_list_foreach (cur->space_names, it, v) {
+		write_le32 (cur->b, (ut32)(uintptr_t)v);
+	}
 }
 
 static void rprj_cmnt_write_one(Cursor *cur, RIntervalNode *node, RAnalMetaItem *mi) {
@@ -209,13 +323,26 @@ static void rprj_cmnt_read(RBuffer *b, R2ProjectComment *cmnt) {
 	cmnt->delta = r_read_le64 (buf + r_offsetof (R2ProjectComment, delta));
 	cmnt->size = r_read_le64 (buf + r_offsetof (R2ProjectComment, size));
 }
-static void rprj_flag_read(RBuffer *b, R2ProjectFlag *flag) {
-	ut8 buf[sizeof (R2ProjectFlag)];
-	r_buf_read (b, buf, sizeof (buf));
-	flag->name = r_read_le32 (buf + r_offsetof (R2ProjectFlag, name));
-	flag->mod = r_read_le32 (buf + r_offsetof (R2ProjectFlag, mod));
-	flag->delta = r_read_le64 (buf + r_offsetof (R2ProjectFlag, delta));
-	flag->size = r_read_le64 (buf + r_offsetof (R2ProjectFlag, size));
+static bool rprj_flag_read(RBuffer *b, R2ProjectFlag *flag) {
+	ut8 buf[4 + 4 + 8 + 4 + 1];
+	if (r_buf_read (b, buf, sizeof (buf)) != (st64)sizeof (buf)) {
+		return false;
+	}
+	flag->name = r_read_le32 (buf + 0);
+	flag->mod = r_read_le32 (buf + 4);
+	flag->delta = r_read_le64 (buf + 8);
+	flag->size = r_read_le32 (buf + 16);
+	flag->extras = buf[20];
+	return true;
+}
+
+static bool read_le32(RBuffer *b, ut32 *out) {
+	ut8 buf[4];
+	if (r_buf_read (b, buf, sizeof (buf)) != (st64)sizeof (buf)) {
+		return false;
+	}
+	*out = r_read_le32 (buf);
+	return true;
 }
 
 static void rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
@@ -483,8 +610,15 @@ static void prjhelp(void) {
 static void prj_save(RCore *core, const char *file) {
 	RBuffer *b = r_buf_new ();
 	rprj_header_write (b);
-	R2ProjectStringTable st = {0};
-	Cursor cur = { core, &st, b, r_list_newf (free) };
+	R2ProjectStringTable st = { .dedup = ht_pp_new0 () };
+	Cursor cur = {
+		.core = core,
+		.st = &st,
+		.b = b,
+		.mods = r_list_newf (free),
+		.space_ids = ht_up_new0 (),
+		.space_names = r_list_new (), // borrowed ut32 indices as uintptr_t
+	};
 	// --------
 	ut64 at;
 	if (rprj_entry_begin (b, &at, RPRJ_INFO, 1)) {
@@ -502,8 +636,14 @@ static void prj_save(RCore *core, const char *file) {
 		rprj_mods_write (&cur);
 		rprj_entry_end (b, at);
 	}
+	// Emit flags first so space ids get populated on the fly, then SPCS.
+	// Loader fetches both via rprj_find, so on-disk order is informational.
 	if (rprj_entry_begin (b, &at, RPRJ_FLAG, 1)) {
 		rprj_flag_write (&cur);
+		rprj_entry_end (b, at);
+	}
+	if (rprj_entry_begin (b, &at, RPRJ_SPCS, 1)) {
+		rprj_spcs_write (&cur);
 		rprj_entry_end (b, at);
 	}
 	if (rprj_entry_begin (b, &at, RPRJ_CMNT, 1)) {
@@ -537,6 +677,9 @@ static void prj_save(RCore *core, const char *file) {
 	}
 	r_unref (b);
 	r_list_free (cur.mods);
+	ht_up_free (cur.space_ids);
+	r_list_free (cur.space_names);
+	ht_pp_free (st.dedup);
 	free (st.data);
 }
 
@@ -595,12 +738,20 @@ static void prj_load(RCore *core, const char *file, int mode) {
 		r_cons_printf (core->cons, "  }\n");
 	}
 	R2ProjectStringTable st = {0};
-	Cursor cur = { core, &st, b, r_list_newf (free) };
+	Cursor cur = {
+		.core = core,
+		.st = &st,
+		.b = b,
+		.mods = r_list_newf (free),
+		.space_ids = NULL, // only used on the save path
+		.space_names = r_list_new (), // borrowed const char* (no free)
+	};
 	// load constants
 	st.data = rprj_find (b, RPRJ_STRS, &st.size);
 	if (!st.data) {
 		R_LOG_ERROR ("Missing string table (RPRJ_STRS) in project file");
 		r_list_free (cur.mods);
+		r_list_free (cur.space_names);
 		r_unref (b);
 		return;
 	}
@@ -631,6 +782,33 @@ static void prj_load(RCore *core, const char *file, int mode) {
 			}
 		}
 	}
+
+	// Load spaces upfront so FLAG records can resolve by id and empty user
+	// spaces round-trip.
+	ut32 spcs_size = 0;
+	ut8 *spcsbuf = rprj_find (b, RPRJ_SPCS, &spcs_size);
+	if (spcsbuf && spcs_size >= sizeof (ut32)) {
+		const ut32 count = r_read_le32 (spcsbuf);
+		const ut32 max_entries = (spcs_size - sizeof (ut32)) / sizeof (ut32);
+		const ut32 n_entries = count < max_entries ? count : max_entries;
+		ut32 i;
+		for (i = 0; i < n_entries; i++) {
+			const ut32 str_idx = r_read_le32 (spcsbuf + sizeof (ut32) + i * sizeof (ut32));
+			const char *sp_name = rprj_st_get (&st, str_idx);
+			if (R_STR_ISEMPTY (sp_name)) {
+				r_list_append (cur.space_names, NULL);
+				continue;
+			}
+			if (mode & MODE_LOAD) {
+				r_spaces_add (&core->flags->spaces, sp_name);
+			}
+			if (mode & MODE_SCRIPT) {
+				r_cons_printf (core->cons, "'fs+%s\n", sp_name);
+			}
+			r_list_append (cur.space_names, (void *)sp_name);
+		}
+	}
+	free (spcsbuf);
 
 	R2ProjectEntry entry;
 	r_buf_seek (b, sizeof (R2ProjectHeader), SEEK_SET);
@@ -675,6 +853,17 @@ static void prj_load(RCore *core, const char *file, int mode) {
 		case RPRJ_MODS: // modules
 			if (mode & MODE_LOG) {
 				// walk and print them
+			}
+			break;
+		case RPRJ_SPCS: // flag spaces (already loaded up front)
+			if (mode & MODE_LOG) {
+				RListIter *sit;
+				const char *sn;
+				ut32 idx = 0;
+				r_list_foreach (cur.space_names, sit, sn) {
+					r_cons_printf (core->cons, "    [%u] %s\n", idx++,
+							R_STR_ISEMPTY (sn) ? "(null)" : sn);
+				}
 			}
 			break;
 		case RPRJ_MAPS:
@@ -755,30 +944,104 @@ static void prj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_FLAG:
 			{
-				ut64 at = r_buf_at (b);
-				ut64 last = at + entry.size - 16;
-				while (at < last) {
+				ut32 fcount = 0;
+				if (!read_le32 (b, &fcount)) {
+					break;
+				}
+				// Tail fields in bit-order: realname, rawname, type, color, comment, alias.
+				static const ut8 opt_bits[6] = {
+					RPRJ_FLAG_REALNAME, RPRJ_FLAG_RAWNAME,
+					RPRJ_FLAG_TYPE, RPRJ_FLAG_COLOR,
+					RPRJ_FLAG_COMMENT, RPRJ_FLAG_ALIAS,
+				};
+				ut32 i;
+				for (i = 0; i < fcount; i++) {
 					R2ProjectFlag flag;
-					rprj_flag_read (b, &flag);
+					if (!rprj_flag_read (b, &flag)) {
+						R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
+						break;
+					}
+					ut32 space_id = UT32_MAX;
+					ut32 opt_idx[6] = { UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX };
+					bool tail_ok = !(flag.extras & RPRJ_FLAG_SPACE) || read_le32 (b, &space_id);
+					int k;
+					for (k = 0; tail_ok && k < 6; k++) {
+						if (flag.extras & opt_bits[k]) {
+							tail_ok = read_le32 (b, &opt_idx[k]);
+						}
+					}
+					if (!tail_ok) {
+						R_LOG_WARN ("Truncated flag extras at record %u", i);
+						break;
+					}
 					const char *flag_name = rprj_st_get (&st, flag.name);
 					if (!flag_name) {
 						R_LOG_WARN ("Invalid flag string index %u", flag.name);
-						at += sizeof (flag);
 						continue;
 					}
-					R2ProjectMod *mod = r_list_get_n (cur.mods, flag.mod);
-					if (mod) {
-						ut64 va = mod->vmin + flag.delta;
-						if (mode & MODE_SCRIPT) {
-							eprintf ("'f %s=0x%08"PFMT64x"\n", flag_name, va);
-						}
-						if (mode & MODE_LOAD) {
-							r_flag_set (core->flags, flag_name, va, flag.size);
-						}
+					const char *space_name = (space_id != UT32_MAX)
+						? (const char *)r_list_get_n (cur.space_names, space_id) : NULL;
+					ut64 va;
+					if (flag.mod == UT32_MAX) {
+						va = flag.delta;
 					} else {
-						eprintf ("Cant find map for %s\n", flag_name);
+						R2ProjectMod *mod = r_list_get_n (cur.mods, flag.mod);
+						if (!mod) {
+							R_LOG_WARN ("Cannot find map for %s", flag_name);
+							continue;
+						}
+						va = mod->vmin + flag.delta;
 					}
-					at += sizeof (flag);
+					const char *opt_s[6];
+					for (k = 0; k < 6; k++) {
+						opt_s[k] = rprj_st_get (&st, opt_idx[k]);
+					}
+					if (mode & MODE_SCRIPT) {
+						static const char *const script_fmt[6] = {
+							"'fr %s %s\n", "'fu %s %s\n", "'ft %s %s\n",
+							"'fc %s=%s\n", "'fC %s %s\n", "'fa %s %s\n",
+						};
+						r_cons_printf (core->cons, space_name? "'fs %s\n": "'fs *\n", space_name);
+						r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n",
+								flag_name, flag.size, va);
+						for (k = 0; k < 6; k++) {
+							if (R_STR_ISNOTEMPTY (opt_s[k])) {
+								r_cons_printf (core->cons, script_fmt[k], flag_name, opt_s[k]);
+							}
+						}
+					}
+					if (mode & MODE_LOAD) {
+						RFlagItem *fi = space_name
+							? r_flag_set_inspace (core->flags, space_name, flag_name, va, flag.size)
+							: r_flag_set (core->flags, flag_name, va, flag.size);
+						if (!fi) {
+							continue;
+						}
+						// override autospace's prefix match with what the file encoded
+						fi->space = space_name? r_flag_space_get (core->flags, space_name): NULL;
+						if (flag.extras & RPRJ_FLAG_DEMANGLED) {
+							fi->demangled = true;
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[0])) {
+							r_flag_item_set_realname (core->flags, fi, opt_s[0]);
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[1])) {
+							free (fi->rawname);
+							fi->rawname = strdup (opt_s[1]);
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[2])) {
+							r_flag_item_set_type (core->flags, fi, opt_s[2]);
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[3])) {
+							r_flag_item_set_color (core->flags, fi, opt_s[3]);
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[4])) {
+							r_flag_item_set_comment (core->flags, fi, opt_s[4]);
+						}
+						if (R_STR_ISNOTEMPTY (opt_s[5])) {
+							r_flag_item_set_alias (core->flags, fi, opt_s[5]);
+						}
+					}
 				}
 			}
 			break;
@@ -834,6 +1097,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 	r_unref (mods);
 	free (modsbuf);
 	r_list_free (cur.mods);
+	r_list_free (cur.space_names);
 	free (st.data);
 	r_unref (b);
 }

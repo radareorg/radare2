@@ -1,0 +1,161 @@
+NAME=newprj flagspace round-trip
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-spc.prj
+fs+alpha
+f sym.one=0x100
+fs+beta
+f sym.two=0x200
+prj save .tmp/newprj-spc.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-spc.prj > /dev/null
+fs alpha
+f~sym.one
+fs beta
+f~sym.two
+rm .tmp/newprj-spc.prj
+EOF
+EXPECT=<<EOF
+0x00000100 1 sym.one
+0x00000200 1 sym.two
+EOF
+RUN
+
+NAME=newprj flag with no space
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-ns.prj
+fs *
+f nospaceflag=0x300
+prj save .tmp/newprj-ns.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-ns.prj > /dev/null
+fd 0x300
+rm .tmp/newprj-ns.prj
+EOF
+EXPECT=<<EOF
+nospaceflag
+EOF
+RUN
+
+NAME=newprj empty flagspace survives
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-emptyspc.prj
+fs+alpha
+f sym.one=0x100
+fs+emptyone
+prj save .tmp/newprj-emptyspc.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-emptyspc.prj > /dev/null
+fs~emptyone
+rm .tmp/newprj-emptyspc.prj
+EOF
+EXPECT=<<EOF
+    0 * emptyone
+EOF
+RUN
+
+NAME=newprj flag comment round-trip
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-cmt.prj
+fs+alpha
+f sym.cool=0x100
+fC sym.cool "round tripped comment"
+prj save .tmp/newprj-cmt.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-cmt.prj > /dev/null
+fC sym.cool
+rm .tmp/newprj-cmt.prj
+EOF
+EXPECT=<<EOF
+"round tripped comment"
+EOF
+RUN
+
+NAME=newprj flag color round-trip
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-col.prj
+fs+alpha
+f sym.cool=0x100
+fc sym.cool=red
+prj save .tmp/newprj-col.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-col.prj > /dev/null
+fc*
+rm .tmp/newprj-col.prj
+EOF
+EXPECT=<<EOF
+red
+'fc sym.cool=red
+EOF
+RUN
+
+NAME=newprj realname + rawname round-trip
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-rn.prj
+fs+alpha
+f sym.cool=0x100
+s 0x100
+fu= 1 sym.cool cmF3X25hbWU= cmVhbF9uYW1l
+prj save .tmp/newprj-rn.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-rn.prj > /dev/null
+s 0x100
+fu
+rm .tmp/newprj-rn.prj
+EOF
+EXPECT=<<EOF
+addr 0x00000100
+name sym.cool
+rawn raw_name
+disp real_name
+EOF
+RUN
+
+NAME=newprj multiple flags and spaces
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-multi.prj
+fs+alpha
+f a.one=0x100
+f a.two=0x110
+fs+beta
+f b.one=0x200
+fs *
+f loose=0x300
+prj save .tmp/newprj-multi.prj > /dev/null
+f-*
+fs-*
+prj load .tmp/newprj-multi.prj > /dev/null
+fs alpha
+f~a.
+fs beta
+f~b.
+fs *
+fd 0x300
+rm .tmp/newprj-multi.prj
+EOF
+EXPECT=<<EOF
+0x00000100 1 a.one
+0x00000110 1 a.two
+0x00000200 1 b.one
+loose
+EOF
+RUN
