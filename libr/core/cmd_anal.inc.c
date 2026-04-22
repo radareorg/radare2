@@ -4800,11 +4800,14 @@ static void cmd_afbc(RCore *core, const char *input) {
 		if (del) {
 			ptr++;
 		}
-
 		char *space = strchr (ptr, ' ');
 		if (space) {
 			*space++ = 0;
 			addr = r_num_math (core->num, space);
+		}
+		RAnalBlock *bb = r_anal_get_block_at (core->anal, addr);
+		if (bb) {
+			addr = bb->addr;
 		}
 		RColor color = {0};
 		bool valid_color = false;
