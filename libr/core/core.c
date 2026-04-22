@@ -2770,6 +2770,7 @@ R_API void r_core_fini(RCore *c) {
 	r_list_free (c->visual.tabs);
 	free (c->block);
 	r_core_autocomplete_free (c->autocomplete);
+	c->autocomplete = NULL;
 
 	r_panels_root_free (c->panels_root);
 	c->panels_root = NULL;

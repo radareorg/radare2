@@ -19,6 +19,7 @@ enum {
 	RPRJ_HINT,
 	RPRJ_MAGIC = 0x4a525052,
 };
+#define RPRJ_VERSION 2
 
 // optional ut32 fields that may follow a R2ProjectFlag head, in bit order
 enum {
@@ -222,8 +223,10 @@ static void rprj_flag_write(Cursor *cur) {
 	RSpaceIter *sit;
 	RSpace *sp;
 	r_flag_space_foreach (cur->core->flags, sit, sp) {
-		if (sp && R_STR_ISNOTEMPTY (sp->name)) {
-			sp->privtag = rprj_st_append (cur->st, sp->name);
+		if (sp) {
+			sp->privtag = R_STR_ISNOTEMPTY (sp->name)
+				? rprj_st_append (cur->st, sp->name)
+				: UT32_MAX;
 		}
 	}
 	write_le32 (cur->b, (ut32)r_flag_count (cur->core->flags, NULL));
@@ -302,7 +305,7 @@ static void rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
 static void rprj_header_write(RBuffer *b) {
 	R2ProjectHeader hdr = {0};
 	r_write_le32 (&hdr.magic, RPRJ_MAGIC);
-	r_write_le32 (&hdr.version, 1);
+	r_write_le32 (&hdr.version, RPRJ_VERSION);
 	r_buf_write (b, (ut8*)&hdr, sizeof (hdr));
 }
 
@@ -658,8 +661,8 @@ static void prj_load(RCore *core, const char *file, int mode) {
 		r_unref (b);
 		return;
 	}
-	if (hdr.version != 1) {
-		R_LOG_ERROR ("Unsupported project version %d (this build understands version 1)", hdr.version);
+	if (hdr.version != RPRJ_VERSION) {
+		R_LOG_ERROR ("Unsupported project version %d (this build understands version %d)", hdr.version, RPRJ_VERSION);
 		r_unref (b);
 		return;
 	}
@@ -893,7 +896,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						fi->space = space_name? r_flag_space_get (core->flags, space_name): NULL;
 						if (flag.extras & RPRJ_FLAG_DEMANGLED) fi->demangled = true;
 						if (R_STR_ISNOTEMPTY (realname)) r_flag_item_set_realname (core->flags, fi, realname);
-						if (R_STR_ISNOTEMPTY (rawname))  { free (fi->rawname); fi->rawname = strdup (rawname); }
+						if (R_STR_ISNOTEMPTY (rawname) && strcmp (rawname, flag_name)) r_flag_item_set_rawname (core->flags, fi, rawname);
 						if (R_STR_ISNOTEMPTY (type_s))   r_flag_item_set_type (core->flags, fi, type_s);
 						if (R_STR_ISNOTEMPTY (color))    r_flag_item_set_color (core->flags, fi, color);
 						if (R_STR_ISNOTEMPTY (comment))  r_flag_item_set_comment (core->flags, fi, comment);

@@ -136,6 +136,7 @@ R_API const char *r_flag_item_set_type(RFlag *f, RFlagItem *fi, const char * R_N
 R_API const char *r_flag_item_set_alias(RFlag *f, RFlagItem *item, const char * R_NULLABLE alias);
 R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, const char * R_NULLABLE comment);
 R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *fi, const char * R_NULLABLE realname);
+R_API const char *r_flag_item_set_rawname(RFlag *f, RFlagItem *fi, const char * R_NULLABLE rawname);
 R_API const char *r_flag_item_set_color(RFlag *f, RFlagItem *item, const char * R_NULLABLE color);
 
 R_API int r_flag_unset_glob(RFlag *f, const char *name);
