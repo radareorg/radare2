@@ -266,7 +266,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	const DexProto *p = &bin->protos[proto_id];
 	ut32 params_off = p->parameters_off;
-	if (!params_off || params_off >= bin->size) {
+	if (params_off >= bin->size) {
 		return NULL;
 	}
 	ut32 type_id = p->return_type_id;
@@ -276,6 +276,9 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	const char *return_type = getstr (bin, bin->types[type_id].descriptor_id);
 	if (!return_type) {
 		return NULL;
+	}
+	if (!params_off) {
+		return r_str_newf ("()%s", return_type);
 	}
 	ut8 params_buf[sizeof (ut32)];
 	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
