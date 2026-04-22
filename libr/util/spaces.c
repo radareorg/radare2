@@ -109,6 +109,7 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 		free (s);
 		return NULL;
 	}
+	s->tag = UT32_MAX;
 	r_crbtree_insert (sp->spaces, s, space_cmp, NULL);
 	return s;
 }

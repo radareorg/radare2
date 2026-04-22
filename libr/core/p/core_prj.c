@@ -97,7 +97,6 @@ typedef struct {
 	R2ProjectStringTable *st;
 	RBuffer *b;
 	RList *mods;
-	HtUP *space_cache; // save path: RSpace* -> (name_st_idx + 1)
 } Cursor;
 
 static const char *entry_type_tostring(int a) {
@@ -159,21 +158,6 @@ static R2ProjectMod *find_mod(Cursor *cur, ut64 addr, ut32 *mid) {
 	return NULL;
 }
 
-// Returns the string-table idx of sp's name, caching so each space name hits
-// the table only once. UT32_MAX means the flag has no space.
-static ut32 space_name_idx(Cursor *cur, RSpace *sp) {
-	if (!sp || R_STR_ISEMPTY (sp->name) || !cur->space_cache) {
-		return UT32_MAX;
-	}
-	bool found = false;
-	void *v = ht_up_find (cur->space_cache, (ut64)(uintptr_t)sp, &found);
-	if (found) {
-		return (ut32)((uintptr_t)v - 1);
-	}
-	ut32 idx = rprj_st_append (cur->st, sp->name);
-	ht_up_insert (cur->space_cache, (ut64)(uintptr_t)sp, (void *)(uintptr_t)(idx + 1));
-	return idx;
-}
 
 static void write_le32(RBuffer *b, ut32 v) {
 	ut8 buf[4];
@@ -197,7 +181,7 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	if (mod) {
 		delta = fi->addr - mod->vmin;
 	}
-	const ut32 space_idx = space_name_idx (cur, fi->space);
+	const ut32 space_idx = fi->space? fi->space->tag: UT32_MAX;
 	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
 	const char *rn = (fi->realname && fi->realname != fi->name
 			&& strcmp (fi->realname, fi->name))? fi->realname: NULL;
@@ -233,8 +217,22 @@ static bool flag_foreach_cb(RFlagItem *fi, void *user) {
 }
 
 static void rprj_flag_write(Cursor *cur) {
+	// Stash st-idx in sp->tag so each flag resolves its space to a string
+	// table offset in a single deref. Restored to UT32_MAX at end of pass.
+	RSpaceIter *sit;
+	RSpace *sp;
+	r_flag_space_foreach (cur->core->flags, sit, sp) {
+		if (sp && R_STR_ISNOTEMPTY (sp->name)) {
+			sp->tag = rprj_st_append (cur->st, sp->name);
+		}
+	}
 	write_le32 (cur->b, (ut32)r_flag_count (cur->core->flags, NULL));
 	r_flag_foreach (cur->core->flags, flag_foreach_cb, cur);
+	r_flag_space_foreach (cur->core->flags, sit, sp) {
+		if (sp) {
+			sp->tag = UT32_MAX;
+		}
+	}
 }
 
 static void rprj_cmnt_write_one(Cursor *cur, RIntervalNode *node, RAnalMetaItem *mi) {
@@ -568,7 +566,6 @@ static void prj_save(RCore *core, const char *file) {
 		.st = &st,
 		.b = b,
 		.mods = r_list_newf (free),
-		.space_cache = ht_up_new0 (),
 	};
 	ut64 at;
 	if (rprj_entry_begin (b, &at, RPRJ_INFO, 1)) {
@@ -621,7 +618,6 @@ static void prj_save(RCore *core, const char *file) {
 	}
 	r_unref (b);
 	r_list_free (cur.mods);
-	ht_up_free (cur.space_cache);
 	free (st.data);
 }
 
