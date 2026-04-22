@@ -100,7 +100,6 @@ typedef struct {
 	RList *mods;
 	HtUP *space_ids; // save path: RSpace* -> (id+1)
 	RList *space_names; // save: ut32 str-idx per id; load: const char* per id
-	ut32 flag_count; // transient per-entry save counter
 } Cursor;
 
 static const char *entry_type_tostring(int a) {
@@ -193,6 +192,20 @@ static void write_str_if(Cursor *cur, const char *s) {
 	}
 }
 
+// Returns s if non-empty and distinct from both a and b (NULL-safe), else NULL.
+static const char *keep_if_new(const char *s, const char *a, const char *b) {
+	if (!R_STR_ISNOTEMPTY (s) || s == a || s == b) {
+		return NULL;
+	}
+	if (a && !strcmp (s, a)) {
+		return NULL;
+	}
+	if (b && !strcmp (s, b)) {
+		return NULL;
+	}
+	return s;
+}
+
 static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	ut32 mid = UT32_MAX;
 	ut64 delta = fi->addr;
@@ -202,15 +215,12 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	}
 	const ut32 space_id = space_id_for (cur, fi->space);
 	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
-	const char *realname = (fi->realname && fi->realname != fi->name
-			&& strcmp (fi->realname, fi->name))? fi->realname: NULL;
-	const char *rawname = (R_STR_ISNOTEMPTY (fi->rawname)
-			&& strcmp (fi->rawname, fi->name)
-			&& (!realname || strcmp (fi->rawname, realname)))? fi->rawname: NULL;
-	const char *type_s = (fim && R_STR_ISNOTEMPTY (fim->type))? fim->type: NULL;
-	const char *color = (fim && R_STR_ISNOTEMPTY (fim->color))? fim->color: NULL;
-	const char *comment = (fim && R_STR_ISNOTEMPTY (fim->comment))? fim->comment: NULL;
-	const char *alias = (fim && R_STR_ISNOTEMPTY (fim->alias))? fim->alias: NULL;
+	const char *realname = keep_if_new (fi->realname, fi->name, NULL);
+	const char *rawname = keep_if_new (fi->rawname, fi->name, realname);
+	const char *type_s = fim? keep_if_new (fim->type, NULL, NULL): NULL;
+	const char *color = fim? keep_if_new (fim->color, NULL, NULL): NULL;
+	const char *comment = fim? keep_if_new (fim->comment, NULL, NULL): NULL;
+	const char *alias = fim? keep_if_new (fim->alias, NULL, NULL): NULL;
 	ut8 extras = 0;
 	if (space_id != UT32_MAX) extras |= RPRJ_FLAG_SPACE;
 	if (fi->demangled) extras |= RPRJ_FLAG_DEMANGLED;
@@ -239,20 +249,13 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 }
 
 static bool flag_foreach_cb(RFlagItem *fi, void *user) {
-	Cursor *cur = user;
-	rprj_flag_write_one (cur, fi);
-	cur->flag_count++;
+	rprj_flag_write_one (user, fi);
 	return true;
 }
 
 static void rprj_flag_write(Cursor *cur) {
-	ut64 count_at = r_buf_at (cur->b);
-	write_le32 (cur->b, 0); // patched below
-	cur->flag_count = 0;
+	write_le32 (cur->b, (ut32)r_flag_count (cur->core->flags, NULL));
 	r_flag_foreach (cur->core->flags, flag_foreach_cb, cur);
-	ut8 buf[4];
-	r_write_le32 (buf, cur->flag_count);
-	r_buf_write_at (cur->b, count_at, buf, sizeof (buf));
 }
 
 // Emit every user-visible flag space (including empty ones) so they round-trip.
@@ -330,6 +333,13 @@ static bool read_le32(RBuffer *b, ut32 *out) {
 	}
 	*out = r_read_le32 (buf);
 	return true;
+}
+
+// Consumes a ut32 from b when extras has bit set, and returns the string at
+// that table offset (NULL on bit-unset, short read, or bad index).
+static const char *read_opt_str(RBuffer *b, R2ProjectStringTable *st, ut8 extras, ut8 bit) {
+	ut32 idx;
+	return ((extras & bit) && read_le32 (b, &idx))? rprj_st_get (st, idx): NULL;
 }
 
 static void rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
@@ -939,18 +949,17 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
 						break;
 					}
-					ut32 idx;
-					const char *space_name = NULL, *realname = NULL, *rawname = NULL;
-					const char *type_s = NULL, *color = NULL, *comment = NULL, *alias = NULL;
-					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &idx) && idx != UT32_MAX) {
-						space_name = r_list_get_n (cur.space_names, idx);
+					const char *space_name = NULL;
+					ut32 space_idx;
+					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &space_idx) && space_idx != UT32_MAX) {
+						space_name = r_list_get_n (cur.space_names, space_idx);
 					}
-					if ((flag.extras & RPRJ_FLAG_REALNAME) && read_le32 (b, &idx)) realname = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_RAWNAME)  && read_le32 (b, &idx)) rawname  = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_TYPE)     && read_le32 (b, &idx)) type_s   = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_COLOR)    && read_le32 (b, &idx)) color    = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_COMMENT)  && read_le32 (b, &idx)) comment  = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_ALIAS)    && read_le32 (b, &idx)) alias    = rprj_st_get (&st, idx);
+					const char *realname = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_REALNAME);
+					const char *rawname  = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_RAWNAME);
+					const char *type_s   = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_TYPE);
+					const char *color    = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_COLOR);
+					const char *comment  = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_COMMENT);
+					const char *alias    = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_ALIAS);
 					const char *flag_name = rprj_st_get (&st, flag.name);
 					if (!flag_name) {
 						R_LOG_WARN ("Invalid flag string index %u", flag.name);
