@@ -47,7 +47,6 @@ typedef struct {
 	ut8 *data;
 	ut32 size;
 	ut32 capacity;
-	HtPP *dedup; // save-only: key=string, value=(idx+1); reader ignores it
 } R2ProjectStringTable;
 
 typedef struct {
@@ -133,13 +132,6 @@ static void rprj_st_write(RBuffer *b, R2ProjectStringTable *st) {
 }
 
 static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
-	if (st->dedup) {
-		bool found = false;
-		void *v = ht_pp_find (st->dedup, s, &found);
-		if (found) {
-			return (ut32)((uintptr_t)v - 1);
-		}
-	}
 	const size_t slen = strlen (s) + 1;
 	const size_t newsize = st->size + slen;
 	if (newsize > st->capacity) {
@@ -154,11 +146,6 @@ static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
 	memcpy (st->data + st->size, s, slen);
 	ut32 index = st->size;
 	st->size += slen;
-	if (st->dedup) {
-		// Key points into the persisted pool so the lifetime matches st->data.
-		ht_pp_insert (st->dedup, (const char *)st->data + index,
-				(void *)(uintptr_t)(index + 1));
-	}
 	return index;
 }
 
@@ -199,6 +186,13 @@ static void write_le32(RBuffer *b, ut32 v) {
 	r_buf_write (b, buf, sizeof (buf));
 }
 
+// Appends s to the string table and writes its ut32 index, but only if s is non-NULL.
+static void write_str_if(Cursor *cur, const char *s) {
+	if (s) {
+		write_le32 (cur->b, rprj_st_append (cur->st, s));
+	}
+}
+
 static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	ut32 mid = UT32_MAX;
 	ut64 delta = fi->addr;
@@ -208,29 +202,24 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	}
 	const ut32 space_id = space_id_for (cur, fi->space);
 	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
-	const bool has_realname = fi->realname && fi->realname != fi->name
-		&& strcmp (fi->realname, fi->name) != 0;
-	const bool has_rawname = R_STR_ISNOTEMPTY (fi->rawname)
-		&& strcmp (fi->rawname, fi->name) != 0
-		&& (!has_realname || strcmp (fi->rawname, fi->realname) != 0);
-	// Table order matches on-disk bit layout.
-	const struct { ut8 bit; const char *s; } tail[] = {
-		{ RPRJ_FLAG_REALNAME, has_realname? fi->realname: NULL },
-		{ RPRJ_FLAG_RAWNAME,  has_rawname?  fi->rawname:  NULL },
-		{ RPRJ_FLAG_TYPE,     fim? fim->type:    NULL },
-		{ RPRJ_FLAG_COLOR,    fim? fim->color:   NULL },
-		{ RPRJ_FLAG_COMMENT,  fim? fim->comment: NULL },
-		{ RPRJ_FLAG_ALIAS,    fim? fim->alias:   NULL },
-	};
+	const char *realname = (fi->realname && fi->realname != fi->name
+			&& strcmp (fi->realname, fi->name))? fi->realname: NULL;
+	const char *rawname = (R_STR_ISNOTEMPTY (fi->rawname)
+			&& strcmp (fi->rawname, fi->name)
+			&& (!realname || strcmp (fi->rawname, realname)))? fi->rawname: NULL;
+	const char *type_s = (fim && R_STR_ISNOTEMPTY (fim->type))? fim->type: NULL;
+	const char *color = (fim && R_STR_ISNOTEMPTY (fim->color))? fim->color: NULL;
+	const char *comment = (fim && R_STR_ISNOTEMPTY (fim->comment))? fim->comment: NULL;
+	const char *alias = (fim && R_STR_ISNOTEMPTY (fim->alias))? fim->alias: NULL;
 	ut8 extras = 0;
 	if (space_id != UT32_MAX) extras |= RPRJ_FLAG_SPACE;
 	if (fi->demangled) extras |= RPRJ_FLAG_DEMANGLED;
-	size_t i;
-	for (i = 0; i < R_ARRAY_SIZE (tail); i++) {
-		if (R_STR_ISNOTEMPTY (tail[i].s)) {
-			extras |= tail[i].bit;
-		}
-	}
+	if (realname) extras |= RPRJ_FLAG_REALNAME;
+	if (rawname) extras |= RPRJ_FLAG_RAWNAME;
+	if (type_s) extras |= RPRJ_FLAG_TYPE;
+	if (color) extras |= RPRJ_FLAG_COLOR;
+	if (comment) extras |= RPRJ_FLAG_COMMENT;
+	if (alias) extras |= RPRJ_FLAG_ALIAS;
 	ut8 head[21];
 	r_write_le32 (head + 0, rprj_st_append (cur->st, fi->name));
 	r_write_le32 (head + 4, mid);
@@ -238,14 +227,15 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	r_write_le32 (head + 16, fi->size);
 	head[20] = extras;
 	r_buf_write (cur->b, head, sizeof (head));
-	if (extras & RPRJ_FLAG_SPACE) {
+	if (space_id != UT32_MAX) {
 		write_le32 (cur->b, space_id);
 	}
-	for (i = 0; i < R_ARRAY_SIZE (tail); i++) {
-		if (extras & tail[i].bit) {
-			write_le32 (cur->b, rprj_st_append (cur->st, tail[i].s));
-		}
-	}
+	write_str_if (cur, realname);
+	write_str_if (cur, rawname);
+	write_str_if (cur, type_s);
+	write_str_if (cur, color);
+	write_str_if (cur, comment);
+	write_str_if (cur, alias);
 }
 
 static bool flag_foreach_cb(RFlagItem *fi, void *user) {
@@ -607,7 +597,7 @@ static void prjhelp(void) {
 static void prj_save(RCore *core, const char *file) {
 	RBuffer *b = r_buf_new ();
 	rprj_header_write (b);
-	R2ProjectStringTable st = { .dedup = ht_pp_new0 () };
+	R2ProjectStringTable st = {0};
 	Cursor cur = {
 		.core = core,
 		.st = &st,
@@ -675,7 +665,6 @@ static void prj_save(RCore *core, const char *file) {
 	r_list_free (cur.mods);
 	ht_up_free (cur.space_ids);
 	r_list_free (cur.space_names);
-	ht_pp_free (st.dedup);
 	free (st.data);
 }
 
@@ -943,12 +932,6 @@ static void prj_load(RCore *core, const char *file, int mode) {
 				if (!read_le32 (b, &fcount)) {
 					break;
 				}
-				// Tail fields in bit-order: realname, rawname, type, color, comment, alias.
-				static const ut8 opt_bits[6] = {
-					RPRJ_FLAG_REALNAME, RPRJ_FLAG_RAWNAME,
-					RPRJ_FLAG_TYPE, RPRJ_FLAG_COLOR,
-					RPRJ_FLAG_COMMENT, RPRJ_FLAG_ALIAS,
-				};
 				ut32 i;
 				for (i = 0; i < fcount; i++) {
 					R2ProjectFlag flag;
@@ -956,26 +939,23 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
 						break;
 					}
-					ut32 space_id = UT32_MAX;
-					ut32 opt_idx[6] = { UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX, UT32_MAX };
-					bool tail_ok = !(flag.extras & RPRJ_FLAG_SPACE) || read_le32 (b, &space_id);
-					int k;
-					for (k = 0; tail_ok && k < 6; k++) {
-						if (flag.extras & opt_bits[k]) {
-							tail_ok = read_le32 (b, &opt_idx[k]);
-						}
+					ut32 idx;
+					const char *space_name = NULL, *realname = NULL, *rawname = NULL;
+					const char *type_s = NULL, *color = NULL, *comment = NULL, *alias = NULL;
+					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &idx) && idx != UT32_MAX) {
+						space_name = r_list_get_n (cur.space_names, idx);
 					}
-					if (!tail_ok) {
-						R_LOG_WARN ("Truncated flag extras at record %u", i);
-						break;
-					}
+					if ((flag.extras & RPRJ_FLAG_REALNAME) && read_le32 (b, &idx)) realname = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_RAWNAME)  && read_le32 (b, &idx)) rawname  = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_TYPE)     && read_le32 (b, &idx)) type_s   = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_COLOR)    && read_le32 (b, &idx)) color    = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_COMMENT)  && read_le32 (b, &idx)) comment  = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_ALIAS)    && read_le32 (b, &idx)) alias    = rprj_st_get (&st, idx);
 					const char *flag_name = rprj_st_get (&st, flag.name);
 					if (!flag_name) {
 						R_LOG_WARN ("Invalid flag string index %u", flag.name);
 						continue;
 					}
-					const char *space_name = (space_id != UT32_MAX)
-						? (const char *)r_list_get_n (cur.space_names, space_id) : NULL;
 					ut64 va;
 					if (flag.mod == UT32_MAX) {
 						va = flag.delta;
@@ -987,23 +967,15 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						}
 						va = mod->vmin + flag.delta;
 					}
-					const char *opt_s[6];
-					for (k = 0; k < 6; k++) {
-						opt_s[k] = rprj_st_get (&st, opt_idx[k]);
-					}
 					if (mode & MODE_SCRIPT) {
-						static const char *const script_fmt[6] = {
-							"'fr %s %s\n", "'fu %s %s\n", "'ft %s %s\n",
-							"'fc %s=%s\n", "'fC %s %s\n", "'fa %s %s\n",
-						};
 						r_cons_printf (core->cons, space_name? "'fs %s\n": "'fs *\n", space_name);
-						r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n",
-								flag_name, flag.size, va);
-						for (k = 0; k < 6; k++) {
-							if (R_STR_ISNOTEMPTY (opt_s[k])) {
-								r_cons_printf (core->cons, script_fmt[k], flag_name, opt_s[k]);
-							}
-						}
+						r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n", flag_name, flag.size, va);
+						if (R_STR_ISNOTEMPTY (realname)) r_cons_printf (core->cons, "'fr %s %s\n", flag_name, realname);
+						if (R_STR_ISNOTEMPTY (rawname))  r_cons_printf (core->cons, "'fu %s %s\n", flag_name, rawname);
+						if (R_STR_ISNOTEMPTY (type_s))   r_cons_printf (core->cons, "'ft %s %s\n", flag_name, type_s);
+						if (R_STR_ISNOTEMPTY (color))    r_cons_printf (core->cons, "'fc %s=%s\n", flag_name, color);
+						if (R_STR_ISNOTEMPTY (comment))  r_cons_printf (core->cons, "'fC %s %s\n", flag_name, comment);
+						if (R_STR_ISNOTEMPTY (alias))    r_cons_printf (core->cons, "'fa %s %s\n", flag_name, alias);
 					}
 					if (mode & MODE_LOAD) {
 						RFlagItem *fi = space_name
@@ -1014,28 +986,13 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						}
 						// override autospace's prefix match with what the file encoded
 						fi->space = space_name? r_flag_space_get (core->flags, space_name): NULL;
-						if (flag.extras & RPRJ_FLAG_DEMANGLED) {
-							fi->demangled = true;
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[0])) {
-							r_flag_item_set_realname (core->flags, fi, opt_s[0]);
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[1])) {
-							free (fi->rawname);
-							fi->rawname = strdup (opt_s[1]);
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[2])) {
-							r_flag_item_set_type (core->flags, fi, opt_s[2]);
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[3])) {
-							r_flag_item_set_color (core->flags, fi, opt_s[3]);
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[4])) {
-							r_flag_item_set_comment (core->flags, fi, opt_s[4]);
-						}
-						if (R_STR_ISNOTEMPTY (opt_s[5])) {
-							r_flag_item_set_alias (core->flags, fi, opt_s[5]);
-						}
+						if (flag.extras & RPRJ_FLAG_DEMANGLED) fi->demangled = true;
+						if (R_STR_ISNOTEMPTY (realname)) r_flag_item_set_realname (core->flags, fi, realname);
+						if (R_STR_ISNOTEMPTY (rawname))  { free (fi->rawname); fi->rawname = strdup (rawname); }
+						if (R_STR_ISNOTEMPTY (type_s))   r_flag_item_set_type (core->flags, fi, type_s);
+						if (R_STR_ISNOTEMPTY (color))    r_flag_item_set_color (core->flags, fi, color);
+						if (R_STR_ISNOTEMPTY (comment))  r_flag_item_set_comment (core->flags, fi, comment);
+						if (R_STR_ISNOTEMPTY (alias))    r_flag_item_set_alias (core->flags, fi, alias);
 					}
 				}
 			}
