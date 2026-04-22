@@ -449,7 +449,7 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		break;
 	case V850_TST:
 		op->type = R_ANAL_OP_TYPE_CMP;
-		r_strbuf_appendf (&op->esil, "%s,%s,&,tmp,:=,0,tmp,+=", F1_RN1(word1), F1_RN2(word1));
+		r_strbuf_appendf (&op->esil, "0,%s,%s,&,==", F1_RN1(word1), F1_RN2(word1));
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
 		break;
@@ -493,13 +493,12 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		{
 			ut8 shift = (ut8)F2_IMM (word1);
 			reg2 = F2_RN2 (word1);
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
-			r_strbuf_appendf (&op->esil, ",%u,%s,>>=", shift, reg2);
 			if (shift) {
-				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", shift - 1);
+				r_strbuf_appendf (&op->esil, "%s,%u,>>,1,&,cy,:=,", reg2, shift - 1);
 			} else {
-				r_strbuf_append (&op->esil, ",0,cy,:=");
+				r_strbuf_append (&op->esil, "0,cy,:=,");
 			}
+			r_strbuf_appendf (&op->esil, "%u,%s,>>=", shift, reg2);
 		}
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
@@ -509,14 +508,13 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		{
 			ut16 imm5 = F2_IMM(word1);
 			reg2 = F2_RN2(word1);
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
-			r_strbuf_appendf (&op->esil, ",31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=",
-				reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
 			if (imm5) {
-				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", (ut8)imm5 - 1);
+				r_strbuf_appendf (&op->esil, "%s,%u,>>,1,&,cy,:=,", reg2, (ut8)imm5 - 1);
 			} else {
-				r_strbuf_append (&op->esil, ",0,cy,:=");
+				r_strbuf_append (&op->esil, "0,cy,:=,");
 			}
+			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%u,32,-,%u,1,<<,--,<<,}{,0,},%u,%s,>>,|,%s,=",
+				reg2, (ut8)imm5, (ut8)imm5, (ut8)imm5, reg2, reg2);
 		}
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
@@ -526,13 +524,12 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 		{
 			ut8 shift = (ut8)F2_IMM(word1);
 			reg2 = F2_RN2(word1);
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
-			r_strbuf_appendf (&op->esil, ",%u,%s,<<=", shift, reg2);
 			if (shift) {
-				r_strbuf_appendf (&op->esil, ",tmp,%u,>>,1,&,cy,:=", 32 - shift);
+				r_strbuf_appendf (&op->esil, "%s,%u,>>,1,&,cy,:=,", reg2, 32 - shift);
 			} else {
-				r_strbuf_append (&op->esil, ",0,cy,:=");
+				r_strbuf_append (&op->esil, "0,cy,:=,");
 			}
+			r_strbuf_appendf (&op->esil, "%u,%s,<<=", shift, reg2);
 		}
 		update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 		clear_flags (op, V850_FLAG_OV);
@@ -660,13 +657,15 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			break;
 		case V850_EXT_SHL:
 			op->type = R_ANAL_OP_TYPE_SHL;
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=,%s,%s,<<=,32,%s,-,tmp,>>,1,&,cy,:=", F9_RN2(word1), F9_RN1(word1), F9_RN2(word1), F9_RN1(word1));
+			r_strbuf_appendf (&op->esil, "%s,32,-,%s,>>,1,&,cy,:=,%s,%s,<<=",
+				F9_RN1 (word1), F9_RN2 (word1), F9_RN1 (word1), F9_RN2 (word1));
 			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
 		case V850_EXT_SHR:
 			op->type = R_ANAL_OP_TYPE_SHR;
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=,%s,%s,>>=,%s,1,-,tmp,>>,1,&,cy,:=", F9_RN2(word1), F9_RN1(word1), F9_RN2(word1), F9_RN1(word1));
+			r_strbuf_appendf (&op->esil, "%s,--,%s,>>,1,&,cy,:=,%s,%s,>>=",
+				F9_RN1 (word1), F9_RN2 (word1), F9_RN1 (word1), F9_RN2 (word1));
 			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
@@ -674,10 +673,9 @@ static int v850e0_op(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, in
 			op->type = R_ANAL_OP_TYPE_SAR;
 			reg1 = F9_RN1 (word1);
 			reg2 = F9_RN2 (word1);
-			r_strbuf_appendf (&op->esil, "%s,tmp,:=", reg2);
-			r_strbuf_appendf (&op->esil, ",31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=",
+			r_strbuf_appendf (&op->esil, "%s,--,%s,>>,1,&,cy,:=,", reg1, reg2);
+			r_strbuf_appendf (&op->esil, "31,%s,>>,?{,%s,32,-,%s,1,<<,--,<<,}{,0,},%s,%s,>>,|,%s,=",
 				reg2, reg1, reg1, reg1, reg2, reg2);
-			r_strbuf_appendf (&op->esil, ",%s,1,-,tmp,>>,1,&,cy,:=", reg1);
 			update_flags (op, V850_FLAG_S | V850_FLAG_Z);
 			clear_flags (op, V850_FLAG_OV);
 			break;
@@ -910,8 +908,7 @@ static char *regs(RArchSession *s) {
 		"gpr	eiwr	.32	$	0\n"
 		"gpr	fewr	.32	$	0\n"
 		"gpr	dbwr	.32	$	0\n"
-		"gpr	bsel	.32	$	0\n"
-		"gpr	tmp	.32	136 0\n";
+		"gpr	bsel	.32	$	0\n";
 	return strdup (p);
 }
 
