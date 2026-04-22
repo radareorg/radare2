@@ -77,3 +77,26 @@ EXPECT=<<EOF
 1
 EOF
 RUN
+
+NAME=overlapped segments
+FILE=bins/elf/upxtest
+CMDS=<<EOF
+?ee thur
+iSS;ie
+EOF
+EXPECT=<<EOF
+nth paddr         size vaddr        vsize perm flags type name
+--------------------------------------------------------------
+0   0x00000000  0x1000 0x00000000  0x4018 -rw- 0x0   MAP  LOAD0
+1   0x00000000  0x112d 0x00005000  0x112d -r-x 0x0   MAP  LOAD1
+2   0x00000000     0x0 0x00000000     0x0 -rw- 0x0   MAP  GNU_STACK
+3   0x00000000    0x40 0x00000000    0x40 -rw- 0x0   MAP  ehdr
+paddr      vaddr      phaddr     vhaddr     type
+------------------------------------------------
+0x00000660 0x00005660 0x00000018 0x00005018 program
+EOF
+EXPECT_ERR=<<EOF
+WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e bin.cache=true` next time
+thur
+EOF
+RUN
