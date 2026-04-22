@@ -47,10 +47,7 @@ typedef struct {
 	ut8 *data;
 	ut32 size;
 	ut32 capacity;
-	// Optional reverse index (save path): key=string, value=(idx+1).
-	// Keeps the string table a pool of unique entries without changing its
-	// on-disk layout, so the reader stays unchanged.
-	HtPP *dedup;
+	HtPP *dedup; // save-only: key=string, value=(idx+1); reader ignores it
 } R2ProjectStringTable;
 
 typedef struct {
@@ -636,8 +633,7 @@ static void prj_save(RCore *core, const char *file) {
 		rprj_mods_write (&cur);
 		rprj_entry_end (b, at);
 	}
-	// Emit flags first so space ids get populated on the fly, then SPCS.
-	// Loader fetches both via rprj_find, so on-disk order is informational.
+	// FLAG first so spaces get their ids assigned; SPCS is fetched via rprj_find.
 	if (rprj_entry_begin (b, &at, RPRJ_FLAG, 1)) {
 		rprj_flag_write (&cur);
 		rprj_entry_end (b, at);
@@ -783,8 +779,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 		}
 	}
 
-	// Load spaces upfront so FLAG records can resolve by id and empty user
-	// spaces round-trip.
+	// Load spaces upfront so FLAG records resolve by id and empty spaces round-trip.
 	ut32 spcs_size = 0;
 	ut8 *spcsbuf = rprj_find (b, RPRJ_SPCS, &spcs_size);
 	if (spcsbuf && spcs_size >= sizeof (ut32)) {
