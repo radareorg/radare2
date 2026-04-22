@@ -23,13 +23,13 @@ enum {
 
 // optional ut32 fields that may follow a R2ProjectFlag head, in bit order
 enum {
-	RPRJ_FLAG_SPACE     = 1 << 0, // string idx: flag space name
-	RPRJ_FLAG_REALNAME  = 1 << 1, // string idx
-	RPRJ_FLAG_RAWNAME   = 1 << 2, // string idx
-	RPRJ_FLAG_TYPE      = 1 << 3, // string idx (meta)
-	RPRJ_FLAG_COLOR     = 1 << 4, // string idx (meta)
-	RPRJ_FLAG_COMMENT   = 1 << 5, // string idx (meta)
-	RPRJ_FLAG_ALIAS     = 1 << 6, // string idx (meta)
+	RPRJ_FLAG_SPACE     = 1 << 0, // stridx: flagspace
+	RPRJ_FLAG_REALNAME  = 1 << 1, // stridx
+	RPRJ_FLAG_RAWNAME   = 1 << 2, // stridx
+	RPRJ_FLAG_TYPE      = 1 << 3, // stridx (meta)
+	RPRJ_FLAG_COLOR     = 1 << 4, // stridx (meta)
+	RPRJ_FLAG_COMMENT   = 1 << 5, // stridx (meta)
+	RPRJ_FLAG_ALIAS     = 1 << 6, // stridx (meta)
 	RPRJ_FLAG_DEMANGLED = 1 << 7, // no payload
 };
 
@@ -72,18 +72,17 @@ typedef struct {
 	ut32 csum;
 } R2ProjectMod;
 
-// 21-byte fixed head; extras bits gate a variable tail of ut32 string/id slots.
 typedef struct {
 	ut32 name;
-	ut32 mod;
+	ut32 mod; // associated module, used for rebasing
 	ut64 delta;
-	ut32 size;
-	ut8 extras;
+	ut64 size;
+	ut8 extras; // used to specify the extra bits // alignment issues i think
 } R2ProjectFlag;
 
 typedef struct {
 	ut32 text;
-	ut32 mod;
+	ut32 mod; // ut16 can be enough imho
 	ut64 delta;
 	ut64 size;
 } R2ProjectComment;
@@ -101,6 +100,16 @@ typedef struct {
 	RBuffer *b;
 	RList *mods;
 } Cursor;
+
+typedef struct {
+	const char *space;
+	const char *realname;
+	const char *rawname;
+	const char *type;
+	const char *color;
+	const char *comment;
+	const char *alias;
+} FlagExtras;
 
 static const char *entry_type_tostring(int a) {
 	switch (a) {
@@ -161,19 +170,25 @@ static R2ProjectMod *find_mod(Cursor *cur, ut64 addr, ut32 *mid) {
 	return NULL;
 }
 
+static R2ProjectMod *mod_by_id(Cursor *cur, ut32 id) {
+	if (id == UT32_MAX) {
+		return NULL;
+	}
+	return (R2ProjectMod *)r_list_get_n (cur->mods, id);
+}
+
 static void write_le32(RBuffer *b, ut32 v) {
 	ut8 buf[4];
 	r_write_le32 (buf, v);
 	r_buf_write (b, buf, sizeof (buf));
 }
 
-// Emits a string-table idx when s is non-empty; returns bit (or 0 when skipped).
 static ut8 emit_str(Cursor *cur, ut8 bit, const char *s) {
-	if (!R_STR_ISNOTEMPTY (s)) {
-		return 0;
+	if (R_STR_ISNOTEMPTY (s)) {
+		write_le32 (cur->b, rprj_st_append (cur->st, s));
+		return bit;
 	}
-	write_le32 (cur->b, rprj_st_append (cur->st, s));
-	return bit;
+	return 0;
 }
 
 static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
@@ -649,6 +664,105 @@ static ut8 *rprj_find(RBuffer *b, ut32 type, ut32 *size) {
 	return NULL;
 }
 
+static FlagExtras read_flag_extras(Cursor *cur, ut8 extras) {
+	FlagExtras fe = {0};
+	RBuffer *b = cur->b;
+	R2ProjectStringTable *st = cur->st;
+	ut32 idx;
+	if ((extras & RPRJ_FLAG_SPACE) && read_le32 (b, &idx)) {
+		fe.space = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_REALNAME) && read_le32 (b, &idx)) {
+		fe.realname = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_RAWNAME) && read_le32 (b, &idx)) {
+		fe.rawname = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_TYPE) && read_le32 (b, &idx)) {
+		fe.type = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_COLOR) && read_le32 (b, &idx)) {
+		fe.color = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_COMMENT) && read_le32 (b, &idx)) {
+		fe.comment = rprj_st_get (st, idx);
+	}
+	if ((extras & RPRJ_FLAG_ALIAS) && read_le32 (b, &idx)) {
+		fe.alias = rprj_st_get (st, idx);
+	}
+	return fe;
+}
+
+static void rprj_flag_load(Cursor *cur, int mode) {
+	RCore *core = cur->core;
+	RBuffer *b = cur->b;
+	R2ProjectStringTable *st = cur->st;
+	ut32 fcount = 0;
+	if (!read_le32 (b, &fcount)) {
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < fcount; i++) {
+		R2ProjectFlag flag;
+		if (!rprj_flag_read (b, &flag)) {
+			R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
+			break;
+		}
+		FlagExtras fe = read_flag_extras (cur, flag.extras);
+		const char *flag_name = rprj_st_get (st, flag.name);
+		if (!flag_name) {
+			R_LOG_WARN ("Invalid flag string index %u", flag.name);
+			continue;
+		}
+		ut64 va = flag.delta;
+		if (flag.mod != UT32_MAX) {
+			R2ProjectMod *mod = mod_by_id (cur, flag.mod);
+			if (!mod) {
+				R_LOG_WARN ("Cannot find map for %s", flag_name);
+				continue;
+			}
+			va += mod->vmin;
+		}
+		if (mode & MODE_SCRIPT) {
+			// flag names are sanitized by r_flag_set; meta fields may contain
+			// arbitrary bytes and are intentionally skipped here until the
+			// flag subcommands support a base64 form (like CCu).
+			r_cons_printf (core->cons, fe.space? "'fs %s\n": "'fs *\n", fe.space);
+			r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n",
+				flag_name, flag.size, va);
+		}
+		if (mode & MODE_LOAD) {
+			RFlagItem *fi = fe.space
+				? r_flag_set_inspace (core->flags, fe.space, flag_name, va, flag.size)
+				: r_flag_set (core->flags, flag_name, va, flag.size);
+			if (!fi) {
+				continue;
+			}
+			// override autospace's prefix match with what the file encoded
+			fi->space = fe.space? r_flag_space_get (core->flags, fe.space): NULL;
+			fi->demangled = (flag.extras & RPRJ_FLAG_DEMANGLED);
+			if (fe.realname) {
+				r_flag_item_set_realname (core->flags, fi, fe.realname);
+			}
+			if (fe.rawname && strcmp (fe.rawname, flag_name)) {
+				r_flag_item_set_rawname (core->flags, fi, fe.rawname);
+			}
+			if (fe.type) {
+				r_flag_item_set_type (core->flags, fi, fe.type);
+			}
+			if (fe.color) {
+				r_flag_item_set_color (core->flags, fi, fe.color);
+			}
+			if (fe.comment) {
+				r_flag_item_set_comment (core->flags, fi, fe.comment);
+			}
+			if (R_STR_ISNOTEMPTY (fe.alias)) {
+				r_flag_item_set_alias (core->flags, fi, fe.alias);
+			}
+		}
+	}
+}
+
 static void prj_load(RCore *core, const char *file, int mode) {
 	RBuffer *b = r_buf_new_from_file (file);
 	if (!b) {
@@ -814,7 +928,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						at += sizeof (cmnt);
 						continue;
 					}
-					R2ProjectMod *mod = r_list_get_n (cur.mods, cmnt.mod);
+					R2ProjectMod *mod = mod_by_id (&cur, cmnt.mod);
 					if (mod) {
 						ut64 va = mod->vmin + cmnt.delta;
 						char *b64 = sdb_encode ((const ut8 *)cmnt_text, strlen (cmnt_text));
@@ -837,73 +951,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 			}
 			break;
 		case RPRJ_FLAG:
-			{
-				ut32 fcount = 0;
-				if (!read_le32 (b, &fcount)) {
-					break;
-				}
-				ut32 i;
-				for (i = 0; i < fcount; i++) {
-					R2ProjectFlag flag;
-					if (!rprj_flag_read (b, &flag)) {
-						R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
-						break;
-					}
-					ut32 idx;
-					const char *space_name = NULL, *realname = NULL, *rawname = NULL;
-					const char *type_s = NULL, *color = NULL, *comment = NULL, *alias = NULL;
-					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &idx)) space_name = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_REALNAME) && read_le32 (b, &idx)) realname = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_RAWNAME)  && read_le32 (b, &idx)) rawname  = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_TYPE)     && read_le32 (b, &idx)) type_s   = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_COLOR)    && read_le32 (b, &idx)) color    = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_COMMENT)  && read_le32 (b, &idx)) comment  = rprj_st_get (&st, idx);
-					if ((flag.extras & RPRJ_FLAG_ALIAS)    && read_le32 (b, &idx)) alias    = rprj_st_get (&st, idx);
-					const char *flag_name = rprj_st_get (&st, flag.name);
-					if (!flag_name) {
-						R_LOG_WARN ("Invalid flag string index %u", flag.name);
-						continue;
-					}
-					ut64 va;
-					if (flag.mod == UT32_MAX) {
-						va = flag.delta;
-					} else {
-						R2ProjectMod *mod = r_list_get_n (cur.mods, flag.mod);
-						if (!mod) {
-							R_LOG_WARN ("Cannot find map for %s", flag_name);
-							continue;
-						}
-						va = mod->vmin + flag.delta;
-					}
-					if (mode & MODE_SCRIPT) {
-						r_cons_printf (core->cons, space_name? "'fs %s\n": "'fs *\n", space_name);
-						r_cons_printf (core->cons, "'f %s %u 0x%08"PFMT64x"\n", flag_name, flag.size, va);
-						if (R_STR_ISNOTEMPTY (realname)) r_cons_printf (core->cons, "'fr %s %s\n", flag_name, realname);
-						if (R_STR_ISNOTEMPTY (rawname))  r_cons_printf (core->cons, "'fu %s %s\n", flag_name, rawname);
-						if (R_STR_ISNOTEMPTY (type_s))   r_cons_printf (core->cons, "'ft %s %s\n", flag_name, type_s);
-						if (R_STR_ISNOTEMPTY (color))    r_cons_printf (core->cons, "'fc %s=%s\n", flag_name, color);
-						if (R_STR_ISNOTEMPTY (comment))  r_cons_printf (core->cons, "'fC %s %s\n", flag_name, comment);
-						if (R_STR_ISNOTEMPTY (alias))    r_cons_printf (core->cons, "'fa %s %s\n", flag_name, alias);
-					}
-					if (mode & MODE_LOAD) {
-						RFlagItem *fi = space_name
-							? r_flag_set_inspace (core->flags, space_name, flag_name, va, flag.size)
-							: r_flag_set (core->flags, flag_name, va, flag.size);
-						if (!fi) {
-							continue;
-						}
-						// override autospace's prefix match with what the file encoded
-						fi->space = space_name? r_flag_space_get (core->flags, space_name): NULL;
-						if (flag.extras & RPRJ_FLAG_DEMANGLED) fi->demangled = true;
-						if (R_STR_ISNOTEMPTY (realname)) r_flag_item_set_realname (core->flags, fi, realname);
-						if (R_STR_ISNOTEMPTY (rawname) && strcmp (rawname, flag_name)) r_flag_item_set_rawname (core->flags, fi, rawname);
-						if (R_STR_ISNOTEMPTY (type_s))   r_flag_item_set_type (core->flags, fi, type_s);
-						if (R_STR_ISNOTEMPTY (color))    r_flag_item_set_color (core->flags, fi, color);
-						if (R_STR_ISNOTEMPTY (comment))  r_flag_item_set_comment (core->flags, fi, comment);
-						if (R_STR_ISNOTEMPTY (alias))    r_flag_item_set_alias (core->flags, fi, alias);
-					}
-				}
-			}
+			rprj_flag_load (&cur, mode);
 			break;
 		case RPRJ_HINT:
 			{
@@ -912,16 +960,8 @@ static void prj_load(RCore *core, const char *file, int mode) {
 				while (at < last) {
 					R2ProjectHint hint;
 					rprj_hint_read (b, &hint);
-					ut64 va = 0;
-					if (hint.mod != UT32_MAX) {
-						R2ProjectMod *mod = r_list_get_n (cur.mods, hint.mod);
-						if (mod) {
-							va = mod->vmin + hint.delta;
-						}
-					}
-					if (!va) {
-						va = hint.delta;
-					}
+					R2ProjectMod *mod = mod_by_id (&cur, hint.mod);
+					ut64 va = mod? mod->vmin + hint.delta: hint.delta;
 					if (hint.kind == 1) { // immbase
 						int base = (int)hint.value;
 						if (mode & MODE_SCRIPT) {
