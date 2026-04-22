@@ -390,6 +390,7 @@ R_IPI bool io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 	R_RETURN_VAL_IF_FAIL (io, false);
 	RIOMap *map;
 	if (!newsize || !(map = r_io_map_get (io, id))) {
+		R_LOG_WARN ("Invalid map id or new size, map size cannot be 0");
 		return false;
 	}
 	ut64 addr = r_io_map_begin (map);

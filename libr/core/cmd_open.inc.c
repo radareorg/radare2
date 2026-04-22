@@ -162,7 +162,7 @@ static RCoreHelpMessage help_msg_om = {
 	"omp", " [mapid] rwx", "change map rwx permissions (see dmp for debug)",
 	"ompg", "[+-]rwx", "global change permissions for all maps",
 	"omr", "[?]", "reorder map priority",
-	"oms", " [mapid] [newsize]", "show or change size map with corresponding id",
+	"oms", " [mapid] [newsize]", "show or change size map with corresponding id, map size cannot be 0",
 	"omt", "[?]", "toggle map ties backward or forward",
 	"omu", " fd va sz pa rwx name", "same as `om` but checks for existance (u stands for uniq)",
 	"omv", "[?]", "move map to the given address",
