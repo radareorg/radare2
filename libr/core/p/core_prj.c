@@ -1,5 +1,7 @@
 /* radare - MIT - Copyright 2024-2026 - pancake */
 
+// R2R db/cmd/newprj
+
 #define R_LOG_ORIGIN "prj"
 
 #include <r_core.h>
@@ -158,7 +160,6 @@ static R2ProjectMod *find_mod(Cursor *cur, ut64 addr, ut32 *mid) {
 	return NULL;
 }
 
-
 static void write_le32(RBuffer *b, ut32 v) {
 	ut8 buf[4];
 	r_write_le32 (buf, v);
@@ -217,7 +218,7 @@ static bool flag_foreach_cb(RFlagItem *fi, void *user) {
 }
 
 static void rprj_flag_write(Cursor *cur) {
-	// Seed each space's privtag with its string-table offset so flag writes resolve space name in one deref.
+	// Seed the privtags first
 	RSpaceIter *sit;
 	RSpace *sp;
 	r_flag_space_foreach (cur->core->flags, sit, sp) {
