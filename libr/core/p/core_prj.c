@@ -181,7 +181,7 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	if (mod) {
 		delta = fi->addr - mod->vmin;
 	}
-	const ut32 space_idx = fi->space? fi->space->tag: UT32_MAX;
+	const ut32 space_idx = fi->space? fi->space->privtag: UT32_MAX;
 	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
 	const char *rn = (fi->realname && fi->realname != fi->name
 			&& strcmp (fi->realname, fi->name))? fi->realname: NULL;
@@ -217,22 +217,16 @@ static bool flag_foreach_cb(RFlagItem *fi, void *user) {
 }
 
 static void rprj_flag_write(Cursor *cur) {
-	// Stash st-idx in sp->tag so each flag resolves its space to a string
-	// table offset in a single deref. Restored to UT32_MAX at end of pass.
+	// Seed each space's privtag with its string-table offset so flag writes resolve space name in one deref.
 	RSpaceIter *sit;
 	RSpace *sp;
 	r_flag_space_foreach (cur->core->flags, sit, sp) {
 		if (sp && R_STR_ISNOTEMPTY (sp->name)) {
-			sp->tag = rprj_st_append (cur->st, sp->name);
+			sp->privtag = rprj_st_append (cur->st, sp->name);
 		}
 	}
 	write_le32 (cur->b, (ut32)r_flag_count (cur->core->flags, NULL));
 	r_flag_foreach (cur->core->flags, flag_foreach_cb, cur);
-	r_flag_space_foreach (cur->core->flags, sit, sp) {
-		if (sp) {
-			sp->tag = UT32_MAX;
-		}
-	}
 }
 
 static void rprj_cmnt_write_one(Cursor *cur, RIntervalNode *node, RAnalMetaItem *mi) {

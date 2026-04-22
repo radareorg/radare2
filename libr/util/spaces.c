@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2019-2025 - pancake */
+/* radare - LGPL - Copyright 2019-2026 - pancake */
 
 #include "r_util/r_spaces.h"
 
@@ -109,7 +109,6 @@ R_API RSpace *r_spaces_add(RSpaces *sp, const char *name) {
 		free (s);
 		return NULL;
 	}
-	s->tag = UT32_MAX;
 	r_crbtree_insert (sp->spaces, s, space_cmp, NULL);
 	return s;
 }
