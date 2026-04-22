@@ -185,25 +185,13 @@ static void write_le32(RBuffer *b, ut32 v) {
 	r_buf_write (b, buf, sizeof (buf));
 }
 
-// Appends s to the string table and writes its ut32 index, but only if s is non-NULL.
-static void write_str_if(Cursor *cur, const char *s) {
-	if (s) {
-		write_le32 (cur->b, rprj_st_append (cur->st, s));
+// Emits a string-table idx when s is non-empty; returns bit (or 0 when skipped).
+static ut8 emit_str(Cursor *cur, ut8 bit, const char *s) {
+	if (!R_STR_ISNOTEMPTY (s)) {
+		return 0;
 	}
-}
-
-// Returns s if non-empty and distinct from both a and b (NULL-safe), else NULL.
-static const char *keep_if_new(const char *s, const char *a, const char *b) {
-	if (!R_STR_ISNOTEMPTY (s) || s == a || s == b) {
-		return NULL;
-	}
-	if (a && !strcmp (s, a)) {
-		return NULL;
-	}
-	if (b && !strcmp (s, b)) {
-		return NULL;
-	}
-	return s;
+	write_le32 (cur->b, rprj_st_append (cur->st, s));
+	return bit;
 }
 
 static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
@@ -215,37 +203,32 @@ static void rprj_flag_write_one(Cursor *cur, RFlagItem *fi) {
 	}
 	const ut32 space_id = space_id_for (cur, fi->space);
 	RFlagItemMeta *fim = r_flag_get_meta (cur->core->flags, fi->id);
-	const char *realname = keep_if_new (fi->realname, fi->name, NULL);
-	const char *rawname = keep_if_new (fi->rawname, fi->name, realname);
-	const char *type_s = fim? keep_if_new (fim->type, NULL, NULL): NULL;
-	const char *color = fim? keep_if_new (fim->color, NULL, NULL): NULL;
-	const char *comment = fim? keep_if_new (fim->comment, NULL, NULL): NULL;
-	const char *alias = fim? keep_if_new (fim->alias, NULL, NULL): NULL;
-	ut8 extras = 0;
-	if (space_id != UT32_MAX) extras |= RPRJ_FLAG_SPACE;
-	if (fi->demangled) extras |= RPRJ_FLAG_DEMANGLED;
-	if (realname) extras |= RPRJ_FLAG_REALNAME;
-	if (rawname) extras |= RPRJ_FLAG_RAWNAME;
-	if (type_s) extras |= RPRJ_FLAG_TYPE;
-	if (color) extras |= RPRJ_FLAG_COLOR;
-	if (comment) extras |= RPRJ_FLAG_COMMENT;
-	if (alias) extras |= RPRJ_FLAG_ALIAS;
-	ut8 head[21];
+	const char *rn = (fi->realname && fi->realname != fi->name
+			&& strcmp (fi->realname, fi->name))? fi->realname: NULL;
+	const char *rw = (R_STR_ISNOTEMPTY (fi->rawname)
+			&& strcmp (fi->rawname, fi->name)
+			&& (!rn || strcmp (fi->rawname, rn)))? fi->rawname: NULL;
+	// Reserve head, emit tail (accumulating extras), patch head.
+	ut64 head_at = r_buf_at (cur->b);
+	ut8 head[21] = {0};
+	r_buf_write (cur->b, head, sizeof (head));
+	ut8 extras = fi->demangled? RPRJ_FLAG_DEMANGLED: 0;
+	if (space_id != UT32_MAX) {
+		extras |= RPRJ_FLAG_SPACE;
+		write_le32 (cur->b, space_id);
+	}
+	extras |= emit_str (cur, RPRJ_FLAG_REALNAME, rn);
+	extras |= emit_str (cur, RPRJ_FLAG_RAWNAME, rw);
+	extras |= emit_str (cur, RPRJ_FLAG_TYPE, fim? fim->type: NULL);
+	extras |= emit_str (cur, RPRJ_FLAG_COLOR, fim? fim->color: NULL);
+	extras |= emit_str (cur, RPRJ_FLAG_COMMENT, fim? fim->comment: NULL);
+	extras |= emit_str (cur, RPRJ_FLAG_ALIAS, fim? fim->alias: NULL);
 	r_write_le32 (head + 0, rprj_st_append (cur->st, fi->name));
 	r_write_le32 (head + 4, mid);
 	r_write_le64 (head + 8, delta);
 	r_write_le32 (head + 16, fi->size);
 	head[20] = extras;
-	r_buf_write (cur->b, head, sizeof (head));
-	if (space_id != UT32_MAX) {
-		write_le32 (cur->b, space_id);
-	}
-	write_str_if (cur, realname);
-	write_str_if (cur, rawname);
-	write_str_if (cur, type_s);
-	write_str_if (cur, color);
-	write_str_if (cur, comment);
-	write_str_if (cur, alias);
+	r_buf_write_at (cur->b, head_at, head, sizeof (head));
 }
 
 static bool flag_foreach_cb(RFlagItem *fi, void *user) {
@@ -333,13 +316,6 @@ static bool read_le32(RBuffer *b, ut32 *out) {
 	}
 	*out = r_read_le32 (buf);
 	return true;
-}
-
-// Consumes a ut32 from b when extras has bit set, and returns the string at
-// that table offset (NULL on bit-unset, short read, or bad index).
-static const char *read_opt_str(RBuffer *b, R2ProjectStringTable *st, ut8 extras, ut8 bit) {
-	ut32 idx;
-	return ((extras & bit) && read_le32 (b, &idx))? rprj_st_get (st, idx): NULL;
 }
 
 static void rprj_hint_read(RBuffer *b, R2ProjectHint *hint) {
@@ -949,17 +925,16 @@ static void prj_load(RCore *core, const char *file, int mode) {
 						R_LOG_WARN ("Truncated flag record %u/%u", i, fcount);
 						break;
 					}
-					const char *space_name = NULL;
-					ut32 space_idx;
-					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &space_idx) && space_idx != UT32_MAX) {
-						space_name = r_list_get_n (cur.space_names, space_idx);
-					}
-					const char *realname = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_REALNAME);
-					const char *rawname  = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_RAWNAME);
-					const char *type_s   = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_TYPE);
-					const char *color    = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_COLOR);
-					const char *comment  = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_COMMENT);
-					const char *alias    = read_opt_str (b, &st, flag.extras, RPRJ_FLAG_ALIAS);
+					ut32 idx;
+					const char *space_name = NULL, *realname = NULL, *rawname = NULL;
+					const char *type_s = NULL, *color = NULL, *comment = NULL, *alias = NULL;
+					if ((flag.extras & RPRJ_FLAG_SPACE) && read_le32 (b, &idx) && idx != UT32_MAX) space_name = r_list_get_n (cur.space_names, idx);
+					if ((flag.extras & RPRJ_FLAG_REALNAME) && read_le32 (b, &idx)) realname = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_RAWNAME)  && read_le32 (b, &idx)) rawname  = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_TYPE)     && read_le32 (b, &idx)) type_s   = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_COLOR)    && read_le32 (b, &idx)) color    = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_COMMENT)  && read_le32 (b, &idx)) comment  = rprj_st_get (&st, idx);
+					if ((flag.extras & RPRJ_FLAG_ALIAS)    && read_le32 (b, &idx)) alias    = rprj_st_get (&st, idx);
 					const char *flag_name = rprj_st_get (&st, flag.name);
 					if (!flag_name) {
 						R_LOG_WARN ("Invalid flag string index %u", flag.name);
