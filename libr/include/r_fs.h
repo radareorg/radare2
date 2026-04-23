@@ -228,6 +228,7 @@ extern RFSPlugin r_fs_plugin_xfs;
 extern RFSPlugin r_fs_plugin_zip;
 extern RFSPlugin r_fs_plugin_apfs;
 extern RFSPlugin r_fs_plugin_ubifs;
+extern RFSPlugin r_fs_plugin_fatmacho;
 #endif
 
 #ifdef __cplusplus

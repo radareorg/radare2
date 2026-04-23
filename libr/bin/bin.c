@@ -316,18 +316,27 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 
 	RBinFile *bf = NULL;
 	if (bin->options.use_xtr && !opt->pluginname) {
-		// XXX - for the time being this is fine, but we may want to
-		// change the name to something like
-		// <xtr_name>:<bin_type_name>
-		r_list_foreach (xtrs, it, xtr) {
-			if (!xtr->check) {
-				R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
-				continue;
-			}
-			if (xtr->check (bf, buf)) {
-				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
-					xtr->extract_from_bytes || xtr->extractall_from_bytes) {
-					bf = r_bin_file_xtr_load (bin, xtr, bin->file, buf, opt->baseaddr, opt->loadaddr, opt->xtr_idx, opt->fd, bin->options.rawstr);
+		// fat Mach-O is handled natively (see bfile_fatmach0.c). It used
+		// to be an xtr plugin; the same r_fs plugin "fatmacho" exposes
+		// this to users via `m /mnt fatmacho`.
+		if (r_bin_file_fatmach0_check (buf)) {
+			bf = r_bin_file_fatmach0_load (bin, bin->file, buf,
+				opt->baseaddr, opt->loadaddr, opt->fd, bin->options.rawstr);
+		}
+		if (!bf) {
+			// XXX - for the time being this is fine, but we may want to
+			// change the name to something like
+			// <xtr_name>:<bin_type_name>
+			r_list_foreach (xtrs, it, xtr) {
+				if (!xtr->check) {
+					R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
+					continue;
+				}
+				if (xtr->check (bf, buf)) {
+					if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
+						xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+						bf = r_bin_file_xtr_load (bin, xtr, bin->file, buf, opt->baseaddr, opt->loadaddr, opt->xtr_idx, opt->fd, bin->options.rawstr);
+					}
 				}
 			}
 		}
@@ -1044,8 +1053,8 @@ R_API void r_bin_list_archs(RBin *bin, PJ *pj, RTable *t, int mode) {
 	int narch = binfile? binfile->narch: 0;
 
 	// r_bin_select (bin, "arm", 64, "arm");
-	// are we with xtr format?
-	if (binfile && binfile->curxtr) {
+	// xtr format, or native multi-slice (fat Mach-O) with xtr_data list
+	if (binfile && (binfile->curxtr || !r_list_empty (binfile->xtr_data))) {
 		list_xtr_archs (bin, pj, mode);
 		return;
 	}

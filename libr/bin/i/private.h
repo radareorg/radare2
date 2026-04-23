@@ -38,4 +38,9 @@ R_IPI void r_bin_class_add_field(RBinFile *binfile, const char *classname, const
 
 R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *filename, RBuffer *buf, ut64 baseaddr, ut64 loadaddr, int idx, int fd, int rawstr);
 R_IPI RBinFile *r_bin_file_new_from_buffer(RBin *bin, const char *file, RBuffer *buf, RBinFileOptions *opt);
+
+/* bfile_fatmach0.c — native fat Mach-O dispatch (no xtr plugin) */
+R_IPI bool r_bin_file_fatmach0_check(RBuffer *buf);
+R_IPI RBinFile *r_bin_file_fatmach0_load(RBin *bin, const char *filename, RBuffer *buf,
+	ut64 baseaddr, ut64 loadaddr, int fd, int rawstr);
 #endif

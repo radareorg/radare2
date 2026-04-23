@@ -1118,7 +1118,6 @@ extern RBinPlugin r_bin_plugin_z64;
 extern RBinPlugin r_bin_plugin_zimg;
 extern RBinPlugin r_bin_plugin_gns1;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_dyldcache;
-extern RBinXtrPlugin r_bin_xtr_plugin_xtr_fatmach0;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_pemixed;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_sep64;
 extern RBinXtrPlugin r_bin_xtr_plugin_xtr_xalz;

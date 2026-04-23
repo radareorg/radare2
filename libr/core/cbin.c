@@ -5163,8 +5163,9 @@ R_API bool r_core_bin_set_arch_bits(RCore *core, const char *name, const char *_
 			}
 		}
 	}
-	// set env if the binfile changed or we are dealing with xtr
-	if (curfile != binfile || binfile->curxtr) {
+	// set env if the binfile changed, we are dealing with xtr, or xtr_data
+	// is present (e.g. native fat Mach-O without xtr plugin)
+	if (curfile != binfile || binfile->curxtr || !r_list_empty (binfile->xtr_data)) {
 		r_core_bin_set_cur (core, binfile);
 		return r_core_bin_set_env (core, binfile);
 	}
