@@ -5994,7 +5994,7 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 		isrepop = true;
 	}
 	if (parseOperand (a, args, &(out->operands[0]), isrepop) == -1) {
-		return -1;
+		goto err;
 	}
 	out->operands_count = 1;
 	while (out->operands_count < MAX_OPERANDS) {
@@ -6004,11 +6004,14 @@ static int parseOpcode(RArchSession *a, const char *op, Opcode *out) {
 		}
 		args++;
 		if (parseOperand (a, args, &(out->operands[out->operands_count]), isrepop) == -1) {
-			return -1;
+			goto err;
 		}
 		out->operands_count++;
 	}
 	return 0;
+err:
+	R_FREE (out->mnemonic);
+	return -1;
 }
 
 static int oprep(RArchSession *a, ut8 *data, const Opcode *op) {
