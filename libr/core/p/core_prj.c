@@ -17,6 +17,7 @@ enum {
 	RPRJ_STRS,
 	RPRJ_THEM,
 	RPRJ_HINT,
+	RPRJ_EVAL,
 	RPRJ_MAGIC = 0x4a525052,
 };
 #define RPRJ_VERSION 2
@@ -123,6 +124,7 @@ static const char *entry_type_tostring(int a) {
 	case RPRJ_STRS: return "Strings";
 	case RPRJ_THEM: return "Theme";
 	case RPRJ_HINT: return "Hints";
+	case RPRJ_EVAL: return "Evals";
 	}
 	return "UNKNOWN";
 }
@@ -552,6 +554,105 @@ static void rprj_hints_write(Cursor *cur) {
 	r_anal_addr_hints_foreach (cur->core->anal, rprj_hints_collect_cb, &ctx);
 }
 
+// Problematic eval keys: environment paths, UI/terminal state, project
+// metadata, debugger runtime, and current-file descriptors must not be
+// serialised — replaying them in a different session corrupts host-specific
+// state. Readonly nodes are also skipped because r_config_set refuses them.
+static bool evalkey_is_saveable(RConfigNode *node) {
+	if (r_config_node_is_ro (node)) {
+		return false;
+	}
+	if (R_STR_ISEMPTY (node->name)) {
+		return false;
+	}
+	static const char *skip_prefixes[] = {
+		"dir.",        // host filesystem paths
+		"file.",       // describes the currently loaded binary
+		"prj.",        // project management metadata (set by loader itself)
+		"scr.",        // terminal/cursor/color state (host-specific)
+		"env.",        // shell environment variables
+		"stdin",       // input stream routing
+		"pdb.",        // pdb server endpoints (host-specific)
+		"cfg.user",    // current user id/name
+		"cfg.log.",    // logging destinations
+		"cfg.debug",   // debug toggle for this session
+		"cfg.prefixdump", // local dump path prefix
+		"cmd.log",     // log-sink command
+		"dbg.backend", // runtime debugger backend selection
+		"dbg.btalgo",  // backtrace selection — debugger-session scoped
+		"http.",       // http server endpoints (host-specific)
+		"key.",        // interactive key bindings
+		NULL,
+	};
+	const char *n = node->name;
+	int i;
+	for (i = 0; skip_prefixes[i]; i++) {
+		if (r_str_startswith (n, skip_prefixes[i])) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static void rprj_eval_write(Cursor *cur) {
+	RBuffer *b = cur->b;
+	const ut64 count_at = r_buf_at (b);
+	write_le32 (b, 0); // reserve slot for count, patched below
+	ut32 count = 0;
+	RListIter *iter;
+	RConfigNode *node;
+	r_list_foreach (cur->core->config->nodes, iter, node) {
+		if (!evalkey_is_saveable (node)) {
+			continue;
+		}
+		const char *val = r_str_get (node->value);
+		ut32 k = rprj_st_append (cur->st, node->name);
+		ut32 v = rprj_st_append (cur->st, val);
+		if (k == UT32_MAX || v == UT32_MAX) {
+			continue;
+		}
+		write_le32 (b, k);
+		write_le32 (b, v);
+		count++;
+	}
+	ut8 buf[4];
+	r_write_le32 (buf, count);
+	r_buf_write_at (b, count_at, buf, sizeof (buf));
+}
+
+static void rprj_eval_load(Cursor *cur, int mode) {
+	RBuffer *b = cur->b;
+	RCore *core = cur->core;
+	R2ProjectStringTable *st = cur->st;
+	ut32 count = 0;
+	if (!read_le32 (b, &count)) {
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < count; i++) {
+		ut32 k, v;
+		if (!read_le32 (b, &k) || !read_le32 (b, &v)) {
+			R_LOG_WARN ("Truncated eval record %u/%u", i, count);
+			break;
+		}
+		const char *name = rprj_st_get (st, k);
+		const char *value = rprj_st_get (st, v);
+		if (!name || !value) {
+			R_LOG_WARN ("Invalid eval string index (%u,%u)", k, v);
+			continue;
+		}
+		if (mode & MODE_LOG) {
+			r_cons_printf (core->cons, "      %s = %s\n", name, value);
+		}
+		if (mode & MODE_SCRIPT) {
+			r_cons_printf (core->cons, "'e %s=%s\n", name, value);
+		}
+		if (mode & MODE_LOAD) {
+			r_config_set (core->config, name, value);
+		}
+	}
+}
+
 static void rprj_info_read(RBuffer *b, R2ProjectInfo *info) {
 	ut8 buf[sizeof (R2ProjectInfo)];
 	r_buf_read (b, buf, sizeof (buf));
@@ -606,6 +707,10 @@ static void prj_save(RCore *core, const char *file) {
 	}
 	if (rprj_entry_begin (b, &at, RPRJ_HINT, 1)) {
 		rprj_hints_write (&cur);
+		rprj_entry_end (b, at);
+	}
+	if (rprj_entry_begin (b, &at, RPRJ_EVAL, 1)) {
+		rprj_eval_write (&cur);
 		rprj_entry_end (b, at);
 	}
 	if (rprj_entry_begin (b, &at, RPRJ_STRS, 1)) {
@@ -953,6 +1058,9 @@ static void prj_load(RCore *core, const char *file, int mode) {
 			break;
 		case RPRJ_FLAG:
 			rprj_flag_load (&cur, mode);
+			break;
+		case RPRJ_EVAL:
+			rprj_eval_load (&cur, mode);
 			break;
 		case RPRJ_HINT:
 			{
