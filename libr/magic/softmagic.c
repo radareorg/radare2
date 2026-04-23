@@ -72,7 +72,7 @@ static bool magic_hasbytes(size_t nbytes, st64 offset, size_t need) {
 #define R_MAGIC_DESC ((ms->flags & R_MAGIC_MIME)? m->mimetype: m->desc)
 
 static int check_fmt(RMagic *ms, struct r_magic *m) {
-	RRegex rx;
+	RRegex rx = { 0 };
 	int rc;
 
 	if (!strchr (R_MAGIC_DESC, '%')) {
@@ -916,7 +916,7 @@ static int magiccheck(RMagic *ms, struct r_magic *m) {
 	case FILE_REGEX:
 		{
 			int rc;
-			RRegex rx;
+			RRegex rx = { 0 };
 			char *errmsg;
 
 			if (!ms->search.s) {

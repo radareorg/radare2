@@ -22,7 +22,7 @@ static int test_new_free(void) {
 }
 
 static int test_init_fini(void) {
-	RRegex rx;
+	RRegex rx = { 0 };
 	int rc = r_regex_init (&rx, "hello", R_REGEX_EXTENDED);
 	mu_assert_eq (rc, 0, "r_regex_init should succeed");
 	r_regex_fini (&rx);
@@ -30,6 +30,28 @@ static int test_init_fini(void) {
 	rc = r_regex_init (&rx, "hello", R_REGEX_NOSUB);
 	mu_assert_eq (rc, 0, "r_regex_init nosub");
 	r_regex_fini (&rx);
+	mu_end;
+}
+
+// Issue #16549: r_regex_init/r_regex_new must not leak the prior compilation
+// when called on an already-initialized RRegex. Catches a regression only when
+// the test binary is built with LeakSanitizer (e.g. `make asan` in test/unit).
+static int test_double_init(void) {
+	// Pattern A: r_regex_init twice on the same struct, no fini between.
+	RRegex rx = { 0 };
+	int rc = r_regex_init (&rx, "hello", R_REGEX_EXTENDED);
+	mu_assert_eq (rc, 0, "first init succeeded");
+	rc = r_regex_init (&rx, "world", R_REGEX_EXTENDED);
+	mu_assert_eq (rc, 0, "second init succeeded");
+	r_regex_fini (&rx);
+
+	// Pattern B: r_regex_new then r_regex_init on the returned pointer.
+	RRegex *rxp = r_regex_new ("hello", "");
+	mu_assert_notnull (rxp, "new succeeded");
+	rc = r_regex_init (rxp, "world", R_REGEX_EXTENDED);
+	mu_assert_eq (rc, 0, "init-after-new succeeded");
+	r_regex_free (rxp);
+
 	mu_end;
 }
 
@@ -407,7 +429,7 @@ static int test_match_list(void) {
 // === Error messages ===
 
 static int test_error_messages(void) {
-	RRegex rx;
+	RRegex rx = { 0 };
 	int rc = r_regex_init (&rx, "hello", R_REGEX_EXTENDED);
 	mu_assert_eq (rc, 0, "init for error test");
 
@@ -621,6 +643,7 @@ int main(int argc, char **argv) {
 	// lifecycle
 	mu_run_test (test_new_free);
 	mu_run_test (test_init_fini);
+	mu_run_test (test_double_init);
 	mu_run_test (test_invalid_pattern);
 	mu_run_test (test_flags);
 

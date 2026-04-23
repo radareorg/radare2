@@ -134,7 +134,7 @@ static sopno pluscount(struct parse *, struct re_guts *);
 #define DROP(n) (p->slen -= (n))
 
 R_API bool r_regex_match(const char *pattern, const char *flags, const char *text) {
-	RRegex rx;
+	RRegex rx = { 0 };
 	int re_flags = r_regex_flags (flags);
 	if (r_regex_init (&rx, pattern, re_flags)) {
 		R_LOG_ERROR ("r_regex_match: /%s/ fails to compile", pattern);
@@ -172,6 +172,7 @@ R_API RRegex *r_regex_new(const char *pattern, const char *flags) {
 	}
 	r = R_NEW (RRegex);
 	if (!r) {
+		r_regex_fini (&rx);
 		return NULL;
 	}
 	*r = rx;
@@ -248,6 +249,11 @@ R_API int r_regex_init(RRegex *preg, const char *pattern, int cflags) {
 	if (!preg || ((cflags & R_REGEX_EXTENDED) && (cflags & R_REGEX_NOSPEC))) {
 		return R_REGEX_INVARG;
 	}
+	// Release any prior compilation so re-initializing the same RRegex does
+	// not leak. r_regex_fini magic-checks, so it is a safe no-op on a freshly
+	// zero-initialized struct. Callers must zero-initialize RRegex on first
+	// use (RRegex rx = {0}) so this read sees a defined value.
+	r_regex_fini (preg);
 	if (cflags & R_REGEX_PEND) {
 		if (preg->re_endp < pattern) {
 			return R_REGEX_INVARG;
