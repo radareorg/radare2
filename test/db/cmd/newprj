@@ -139,3 +139,49 @@ EXPECT=<<EOF
 loose
 EOF
 RUN
+
+NAME=newprj eval round-trip
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-eval.prj
+e asm.bits=16
+e asm.syntax=att
+e anal.depth=42
+e cfg.bigendian=true
+prj save .tmp/newprj-eval.prj > /dev/null
+e asm.bits=64
+e asm.syntax=intel
+e anal.depth=128
+e cfg.bigendian=false
+prj load .tmp/newprj-eval.prj > /dev/null
+e asm.bits
+e asm.syntax
+e anal.depth
+e cfg.bigendian
+rm .tmp/newprj-eval.prj
+EOF
+EXPECT=<<EOF
+16
+att
+42
+true
+EOF
+RUN
+
+NAME=newprj eval skipped prefixes are not replayed
+FILE=malloc://0x1000
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-evskip.prj
+e scr.color=3
+prj save .tmp/newprj-evskip.prj > /dev/null
+e scr.color=0
+prj load .tmp/newprj-evskip.prj > /dev/null
+e scr.color
+rm .tmp/newprj-evskip.prj
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

@@ -628,6 +628,11 @@ static void rprj_eval_load(Cursor *cur, int mode) {
 	if (!read_le32 (b, &count)) {
 		return;
 	}
+	// Some config callbacks (e.g. bin.limit) trigger a bin reload that
+	// re-selects a flagspace, which would hide flags we just restored.
+	// Snapshot the active flagspace name and restore it after the replay.
+	const RSpace *saved_sp = r_flag_space_cur (core->flags);
+	char *saved_sp_name = (saved_sp && saved_sp->name)? strdup (saved_sp->name): NULL;
 	ut32 i;
 	for (i = 0; i < count; i++) {
 		ut32 k, v;
@@ -651,6 +656,10 @@ static void rprj_eval_load(Cursor *cur, int mode) {
 			r_config_set (core->config, name, value);
 		}
 	}
+	if (mode & MODE_LOAD) {
+		r_flag_space_set (core->flags, saved_sp_name);
+	}
+	free (saved_sp_name);
 }
 
 static void rprj_info_read(RBuffer *b, R2ProjectInfo *info) {
@@ -756,10 +765,11 @@ static ut8 *rprj_find(RBuffer *b, ut32 type, ut32 *size) {
 			break;
 		}
 		if (entry.type == type) {
-			ut8 *buf = malloc (entry.size);
+			const ut32 data_size = entry.size - sizeof (R2ProjectEntry);
+			ut8 *buf = malloc (data_size);
 			if (buf) {
-				*size = entry.size;
-				r_buf_read_at (b, at + sizeof (R2ProjectEntry), buf, entry.size);
+				*size = data_size;
+				r_buf_read_at (b, at + sizeof (R2ProjectEntry), buf, data_size);
 				return buf;
 			}
 			return NULL;
@@ -920,7 +930,7 @@ static void prj_load(RCore *core, const char *file, int mode) {
 				R_LOG_ERROR ("Cannot read mod");
 				break;
 			}
-			R_LOG_INFO ("MOD: %s + 0x%08"PFMT64x, rprj_st_get (&st, mod.name), mod.vmin);
+			R_LOG_DEBUG ("MOD: %s + 0x%08"PFMT64x, rprj_st_get (&st, mod.name), mod.vmin);
 			r_list_append (cur.mods, r_mem_dup (&mod, sizeof (mod)));
 			n += sizeof (mod);
 		}
