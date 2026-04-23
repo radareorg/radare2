@@ -316,27 +316,18 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 
 	RBinFile *bf = NULL;
 	if (bin->options.use_xtr && !opt->pluginname) {
-		// fat Mach-O is handled natively (see bfile_fatmach0.c). It used
-		// to be an xtr plugin; the same r_fs plugin "fatmacho" exposes
-		// this to users via `m /mnt fatmacho`.
-		if (r_bin_file_fatmach0_check (buf)) {
-			bf = r_bin_file_fatmach0_load (bin, bin->file, buf,
-				opt->baseaddr, opt->loadaddr, opt->fd, bin->options.rawstr);
-		}
-		if (!bf) {
-			// XXX - for the time being this is fine, but we may want to
-			// change the name to something like
-			// <xtr_name>:<bin_type_name>
-			r_list_foreach (xtrs, it, xtr) {
-				if (!xtr->check) {
-					R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
-					continue;
-				}
-				if (xtr->check (bf, buf)) {
-					if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
-						xtr->extract_from_bytes || xtr->extractall_from_bytes) {
-						bf = r_bin_file_xtr_load (bin, xtr, bin->file, buf, opt->baseaddr, opt->loadaddr, opt->xtr_idx, opt->fd, bin->options.rawstr);
-					}
+		// XXX - for the time being this is fine, but we may want to
+		// change the name to something like
+		// <xtr_name>:<bin_type_name>
+		r_list_foreach (xtrs, it, xtr) {
+			if (!xtr->check) {
+				R_LOG_ERROR ("Missing check callback for '%s'", xtr->meta.name);
+				continue;
+			}
+			if (xtr->check (bf, buf)) {
+				if (xtr->extract_from_buffer || xtr->extractall_from_buffer ||
+					xtr->extract_from_bytes || xtr->extractall_from_bytes) {
+					bf = r_bin_file_xtr_load (bin, xtr, bin->file, buf, opt->baseaddr, opt->loadaddr, opt->xtr_idx, opt->fd, bin->options.rawstr);
 				}
 			}
 		}

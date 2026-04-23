@@ -9,7 +9,6 @@ r_bin_sources = [
   'blang.c',
   'bfilter.c',
   'bfile.c',
-  'bfile_fatmach0.c',
   'bobj.c',
 # plugins
   'p/bin_io.c',
