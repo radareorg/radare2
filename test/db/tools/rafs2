@@ -129,6 +129,7 @@ CMDS=!rafs2 -L | grep -E "(ext2|fat|ntfs|iso9660)"
 EXPECT=<<EOF
   ext2         ext2 filesystem
   fat          FAT filesystem
+  fatmacho     Fat Mach-O slice enumeration
   iso9660      ISO9660 filesystem
   ntfs         NTFS filesystem
 EOF
