@@ -29,6 +29,10 @@ R_API void r_fs_file_free(RFSFile* file) {
 		free (file->path);
 		free (file->name);
 		free (file->data);
+		r_unref (file->buf);
+		free (file->arch);
+		free (file->machine);
+		free (file->btype);
 		free (file);
 	}
 }

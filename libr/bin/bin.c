@@ -3,6 +3,7 @@
 #define R_LOG_ORIGIN "bin"
 
 #include <r_bin.h>
+#include <r_fs.h>
 #include <r_muta.h>
 #include <config.h>
 #include "i/private.h"
@@ -301,6 +302,78 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	return res;
 }
 
+R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt, RList *xtr_data) {
+	R_RETURN_VAL_IF_FAIL (bin && opt && xtr_data, false);
+	if (r_list_empty (xtr_data)) {
+		r_list_free (xtr_data);
+		return false;
+	}
+	if (opt->loadaddr == UT64_MAX) {
+		opt->loadaddr = 0;
+	}
+	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
+	if (!bf) {
+		RBinFileOptions *oo = R_NEW0 (RBinFileOptions);
+		*oo = *opt;
+		oo->pluginname = opt->pluginname; // usually the container name
+		ut64 first_sz = 0;
+		RBinXtrData *first = r_list_get_n (xtr_data, 0);
+		if (first && first->buf) {
+			first_sz = r_buf_size (first->buf);
+		}
+		bf = r_bin_file_new (bin, filename, first_sz, oo, bin->sdb, false);
+		if (!bf) {
+			r_list_free (xtr_data);
+			return false;
+		}
+		r_list_append (bin->binfiles, bf);
+		if (!bin->cur) {
+			bin->cur = bf;
+		}
+	}
+	r_list_free (bf->xtr_data);
+	bf->xtr_data = xtr_data;
+	RBinXtrData *x;
+	RListIter *it;
+	r_list_foreach (xtr_data, it, x) {
+		x->baddr = opt->baseaddr? opt->baseaddr: UT64_MAX;
+		x->laddr = opt->loadaddr? opt->loadaddr: UT64_MAX;
+	}
+	bf->loadaddr = opt->loadaddr;
+	// Do NOT eagerly load a slice: downstream r_core_bin_set_arch_bits
+	// consults asm.arch/asm.bits via r_bin_file_find_by_arch_bits and loads
+	// the right slice. Eager-loading here breaks `-a x86 -b 32` selection.
+	r_id_storage_set (bin->ids, bin->cur, bf->id);
+	r_bin_file_set_cur_binfile (bin, bf);
+	bin->cur = bf;
+	return true;
+}
+
+// Convert an r_fs bin-enumeration list (RFSFile) to RBinXtrData list.
+// Takes ownership of `bins` and frees it.
+static RList *xtrdata_from_fsbins(RList *bins) {
+	if (!bins || r_list_empty (bins)) {
+		r_list_free (bins);
+		return NULL;
+	}
+	int narch = r_list_length (bins);
+	RList *xd = r_list_newf (r_bin_xtrdata_free);
+	RFSFile *f;
+	RListIter *it;
+	r_list_foreach (bins, it, f) {
+		RBinXtrMetadata *m = R_NEW0 (RBinXtrMetadata);
+		m->arch = f->arch? strdup (f->arch): NULL;
+		m->bits = f->bits;
+		m->machine = f->machine? strdup (f->machine): NULL;
+		m->type = f->btype? strdup (f->btype): NULL;
+		m->xtr_type = f->container;
+		RBinXtrData *d = r_bin_xtrdata_new (f->buf, f->off, f->size, narch, m);
+		r_list_append (xd, d);
+	}
+	r_list_free (bins);
+	return xd;
+}
+
 R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && opt, false);
 
@@ -312,6 +385,18 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	bin->file = opt->filename;
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
+	}
+
+	// r_fs container probe: if any registered fs plugin claims the buffer
+	// as a bin container (fatmacho, later: apk, dyldcache, ...), use its
+	// slice list and skip the xtr + bin-plugin iteration.
+	if (bin->fs && bin->options.use_xtr && !opt->pluginname) {
+		RList *fsbins = r_fs_dir_bins (bin->fs, buf);
+		RList *xd = xtrdata_from_fsbins (fsbins);
+		if (xd) {
+			const char *fname = opt->filename? opt->filename: (bin->file? bin->file: "?");
+			return r_bin_open_bins (bin, fname, opt, xd);
+		}
 	}
 
 	RBinFile *bf = NULL;

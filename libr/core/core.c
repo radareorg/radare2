@@ -2630,6 +2630,7 @@ R_API bool r_core_init(RCore *core) {
 	core->search = r_search_new (R_SEARCH_KEYWORD);
 	r_io_undo_enable (core->io, 1, 0); // TODO: configurable via eval
 	core->fs = r_fs_new ();
+	core->bin->fs = core->fs; // let r_bin_open_buf probe fs bin containers
 	core->flags = r_flag_new ();
 	int flags = r_cons_canvas_flags (core->cons);
 	core->graph = r_agraph_new (r_cons_canvas_new (core->cons, 1, 1, flags));

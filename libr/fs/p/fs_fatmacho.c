@@ -59,6 +59,30 @@ static const char *cpu_name(ut32 cputype) {
 	return "unknown";
 }
 
+static const char *arch_name(ut32 cputype) {
+	switch (cputype) {
+	case CPU_TYPE_X86:
+	case CPU_TYPE_X86_64:    return "x86";
+	case CPU_TYPE_ARM:
+	case CPU_TYPE_ARM64:     return "arm";
+	case CPU_TYPE_POWERPC:
+	case CPU_TYPE_POWERPC64: return "ppc";
+	case CPU_TYPE_MC680x0:
+	case CPU_TYPE_MC88000:
+	case CPU_TYPE_MC98000:   return "m68k";
+	case CPU_TYPE_SPARC:     return "sparc";
+	case CPU_TYPE_MIPS:      return "mips";
+	case CPU_TYPE_HPPA:      return "hppa";
+	case CPU_TYPE_I860:      return "i860";
+	case CPU_TYPE_VAX:       return "vax";
+	}
+	return NULL;
+}
+
+static int arch_bits(ut32 cputype) {
+	return (cputype & CPU_ARCH_ABI64) ? 64 : 32;
+}
+
 static bool read_fat_header(RIOBind *iob, ut32 *magic, ut32 *nfat, ut64 container_size) {
 	ut8 buf[8] = {0};
 	if (!iob->read_at (iob->io, 0, buf, 8)) {
@@ -296,6 +320,73 @@ static RList *fs_fatmacho_dir(RFSRoot *root, const char *path, R_UNUSED int view
 	return list;
 }
 
+static RList *fs_fatmacho_bins(RBuffer *b) {
+	ut64 sz = r_buf_size (b);
+	if (sz < 8) {
+		return NULL;
+	}
+	ut8 hdr[8];
+	if (r_buf_read_at (b, 0, hdr, sizeof (hdr)) != sizeof (hdr)) {
+		return NULL;
+	}
+	if (r_read_be32 (hdr) != FATMACHO_MAGIC_BE) {
+		return NULL;
+	}
+	ut32 nfat = r_read_be32 (hdr + 4);
+	if (nfat == 0 || nfat > 32 || sz < 8 + (ut64)nfat * 20) {
+		return NULL;
+	}
+	// Disambiguate from Java .class (same magic): the first arch entry's
+	// offset must point at a valid mach-o header.
+	ut8 first[20];
+	if (r_buf_read_at (b, 8, first, 20) != 20) {
+		return NULL;
+	}
+	ut64 off0 = r_read_be32 (first + 8);
+	ut8 macho[4];
+	if (off0 + 4 > sz || r_buf_read_at (b, off0, macho, 4) != 4) {
+		return NULL;
+	}
+	if (memcmp (macho, "\xce\xfa\xed\xfe", 4)
+		&& memcmp (macho, "\xfe\xed\xfa\xce", 4)
+		&& memcmp (macho, "\xfe\xed\xfa\xcf", 4)
+		&& memcmp (macho, "\xcf\xfa\xed\xfe", 4)) {
+		return NULL;
+	}
+	RList *out = r_list_newf ((RListFree)r_fs_file_free);
+	ut32 i;
+	for (i = 0; i < nfat; i++) {
+		ut8 ab[20];
+		if (r_buf_read_at (b, 8 + (ut64)i * 20, ab, 20) != 20) {
+			goto fail;
+		}
+		ut32 cputype = r_read_be32 (ab);
+		ut64 off = r_read_be32 (ab + 8);
+		ut64 size = r_read_be32 (ab + 12);
+		if (off > sz || size > sz || off + size > sz) {
+			goto fail;
+		}
+		const char *arch = arch_name (cputype);
+		char *path = r_str_newf ("%s.%u", cpu_name (cputype), i);
+		RFSFile *f = r_fs_file_new (NULL, path);
+		free (path);
+		if (!f) {
+			goto fail;
+		}
+		f->type = R_FS_FILE_TYPE_REGULAR;
+		f->off = off;
+		f->size = size;
+		f->buf = r_buf_new_slice (b, off, size);
+		f->arch = arch? strdup (arch): NULL;
+		f->bits = arch_bits (cputype);
+		r_list_append (out, f);
+	}
+	return out;
+fail:
+	r_list_free (out);
+	return NULL;
+}
+
 RFSPlugin r_fs_plugin_fatmacho = {
 	.meta = {
 		.name = "fatmacho",
@@ -310,6 +401,7 @@ RFSPlugin r_fs_plugin_fatmacho = {
 	.read = fs_fatmacho_read,
 	.close = fs_fatmacho_close,
 	.dir = fs_fatmacho_dir,
+	.bins = fs_fatmacho_bins,
 };
 
 #ifndef R2_PLUGIN_INCORE

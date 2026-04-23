@@ -497,6 +497,41 @@ static int r_core_file_load_for_debug(RCore *r, ut64 baseaddr, const char * R_NU
 	return true;
 }
 
+// Probe `fd` for an r_fs container (fatmacho, later: apk, dyldcache, ...).
+// On match, build RBinXtrData list from the slice entries and load via
+// r_bin_open_bins. Returns true if a container was matched and loaded.
+R_API bool r_core_bin_open_fs(RCore *r, int fd, const char *fname, RBinFileOptions *opt) {
+	R_RETURN_VAL_IF_FAIL (r && opt && fname, false);
+	RBuffer *buf = r_buf_new_with_io (&r->bin->iob, fd);
+	if (!buf) {
+		return false;
+	}
+	RList *bins = r_fs_dir_bins (r->fs, buf);
+	if (!bins) {
+		r_unref (buf);
+		return false;
+	}
+	int narch = r_list_length (bins);
+	RList *xd = r_list_newf (r_bin_xtrdata_free);
+	RFSFile *f;
+	RListIter *it;
+	r_list_foreach (bins, it, f) {
+		RBinXtrMetadata *m = R_NEW0 (RBinXtrMetadata);
+		m->arch = f->arch? strdup (f->arch): NULL;
+		m->bits = f->bits;
+		m->machine = f->machine? strdup (f->machine): NULL;
+		m->type = f->btype? strdup (f->btype): NULL;
+		m->xtr_type = f->container;
+		RBinXtrData *d = r_bin_xtrdata_new (f->buf, f->off, f->size, narch, m);
+		r_list_append (xd, d);
+	}
+	r_list_free (bins);
+	opt->filename = fname;
+	bool ok = r_bin_open_bins (r->bin, fname, opt, xd);
+	r_unref (buf);
+	return ok;
+}
+
 static int r_core_file_load_for_io_plugin(RCore *r, ut64 baseaddr, ut64 loadaddr) {
 	RIODesc *cd = r->io->desc;
 	int fd = cd ? cd->fd : -1;

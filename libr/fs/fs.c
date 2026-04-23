@@ -333,6 +333,32 @@ R_API int r_fs_read(RFS *fs, RFSFile *file, ut64 addr, int len) {
 	return -1;
 }
 
+R_API RList *r_fs_dir_bins(RFS *fs, RBuffer *buf) {
+	R_RETURN_VAL_IF_FAIL (fs && buf, NULL);
+	RFSPlugin *p;
+	RListIter *iter;
+	r_list_foreach (fs->libstore->plugins, iter, p) {
+		if (!p->bins) {
+			continue;
+		}
+		RList *res = p->bins (buf);
+		if (!res) {
+			continue;
+		}
+		if (r_list_empty (res)) {
+			r_list_free (res);
+			continue;
+		}
+		RFSFile *f;
+		RListIter *it;
+		r_list_foreach (res, it, f) {
+			f->container = p->meta.name;
+		}
+		return res;
+	}
+	return NULL;
+}
+
 R_API RList *r_fs_dir(RFS *fs, const char *p) {
 	R_RETURN_VAL_IF_FAIL (fs && p, NULL);
 	RList *ret = NULL;
