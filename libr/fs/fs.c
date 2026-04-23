@@ -214,6 +214,36 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *pa
 	return root;
 }
 
+R_API RFSRoot *r_fs_mount_buf(RFS *fs, const char *fstype, const char *path, RBuffer *buf) {
+	R_RETURN_VAL_IF_FAIL (fs && fstype && path && buf, NULL);
+	if (path[0] != '/') {
+		R_LOG_ERROR ("Invalid mountpoint %s", path);
+		return NULL;
+	}
+	RFSPlugin *p = r_libstore_find_name (fs->libstore, fstype);
+	if (!p || !p->mount_buf) {
+		return NULL;
+	}
+	RFSRoot *root;
+	RListIter *iter;
+	r_list_foreach (fs->roots, iter, root) {
+		if (!strcmp (root->path, path)) {
+			return NULL; // already mounted
+		}
+	}
+	root = r_fs_root_new (path, 0);
+	root->p = p;
+	root->iob = fs->iob;
+	root->cob = fs->cob;
+	if (!p->mount_buf (root, buf)) {
+		r_fs_root_free (root);
+		return NULL;
+	}
+	r_list_append (fs->roots, root);
+	R_LOG_DEBUG ("Mounted %s on %s", fstype, path);
+	return root;
+}
+
 static inline bool r_fs_match(const char *root, const char *path, int len) {
 	return (!strncmp (path, root, len));
 }

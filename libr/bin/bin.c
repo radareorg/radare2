@@ -389,9 +389,20 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 
 	// r_fs container probe: if any registered fs plugin claims the buffer
 	// as a bin container (fatmacho, later: apk, dyldcache, ...), use its
-	// slice list and skip the xtr + bin-plugin iteration.
+	// slice list and skip the xtr + bin-plugin iteration. Also mount the
+	// container filesystem at /<container> so `m` / `md` can browse it.
 	if (bin->fs && bin->options.use_xtr && !opt->pluginname) {
 		RList *fsbins = r_fs_dir_bins (bin->fs, buf);
+		if (fsbins && !r_list_empty (fsbins)) {
+			RFSFile *first = r_list_get_n (fsbins, 0);
+			const char *cname = first? first->container: NULL;
+			if (cname) {
+				char *mpath = r_str_newf ("/%s", cname);
+				r_fs_umount (bin->fs, mpath);
+				r_fs_mount_buf (bin->fs, cname, mpath, buf);
+				free (mpath);
+			}
+		}
 		RList *xd = xtrdata_from_fsbins (fsbins);
 		if (xd) {
 			const char *fname = opt->filename? opt->filename: (bin->file? bin->file: "?");
@@ -1082,7 +1093,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 					pj_ki (pj, "bits", bits);
 					pj_kN (pj, "offset", xtr_data->offset);
 					pj_kN (pj, "size", xtr_data->size);
-					pj_ks (pj, "machine", machine);
+					pj_ks (pj, "machine", machine? machine: "");
 					pj_end (pj);
 					break;
 				}
@@ -1094,7 +1105,7 @@ static void list_xtr_archs(RBin *bin, PJ *pj, int mode) {
 					xtr_data->size,
 					arch,
 					bits,
-					machine);
+					machine? machine: "");
 				break;
 			}
 		}

@@ -3033,11 +3033,11 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	}
 	r_anal_op_fini (&ds->asmop);
 	ret = r_asm_disassemble (core->rasm, &ds->asmop, buf, len);
-	if (len > ds->asmop.size) {
+	if (ds->asmop.size > 0 && len > ds->asmop.size) {
 		len = ds->asmop.size;
 	}
-	if (!ds->asmop.bytes) {
-		// this happens only when the instruction is truncated
+	if (!ds->asmop.bytes && len > 0) {
+		// disassembly was truncated or the decoder refused the buffer
 		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
 	}
 	// handle meta here //
