@@ -554,10 +554,6 @@ static void rprj_hints_write(Cursor *cur) {
 	r_anal_addr_hints_foreach (cur->core->anal, rprj_hints_collect_cb, &ctx);
 }
 
-// Problematic eval keys: environment paths, UI/terminal state, project
-// metadata, debugger runtime, and current-file descriptors must not be
-// serialised — replaying them in a different session corrupts host-specific
-// state. Readonly nodes are also skipped because r_config_set refuses them.
 static bool evalkey_is_saveable(RConfigNode *node) {
 	if (r_config_node_is_ro (node)) {
 		return false;
@@ -565,23 +561,25 @@ static bool evalkey_is_saveable(RConfigNode *node) {
 	if (R_STR_ISEMPTY (node->name)) {
 		return false;
 	}
+	// TODO this information nust be tied to the config vars and this function must go away soon or late
 	static const char *skip_prefixes[] = {
-		"dir.",        // host filesystem paths
-		"file.",       // describes the currently loaded binary
-		"prj.",        // project management metadata (set by loader itself)
-		"scr.",        // terminal/cursor/color state (host-specific)
-		"env.",        // shell environment variables
-		"stdin",       // input stream routing
-		"pdb.",        // pdb server endpoints (host-specific)
-		"cfg.user",    // current user id/name
-		"cfg.log.",    // logging destinations
-		"cfg.debug",   // debug toggle for this session
-		"cfg.prefixdump", // local dump path prefix
-		"cmd.log",     // log-sink command
-		"dbg.backend", // runtime debugger backend selection
-		"dbg.btalgo",  // backtrace selection — debugger-session scoped
-		"http.",       // http server endpoints (host-specific)
-		"key.",        // interactive key bindings
+		"dir.",
+		"bin.limit", //triggers binreload wtf
+		"file.",
+		"prj.",
+		"scr.",
+		"env.",
+		"stdin",
+		"pdb.",
+		"cfg.user",
+		"cfg.log.",
+		"cfg.debug",
+		"cfg.prefixdump",
+		"cmd.log",
+		"dbg.backend",
+		"dbg.btalgo",
+		"http.",
+		"key.",
 		NULL,
 	};
 	const char *n = node->name;
@@ -597,7 +595,7 @@ static bool evalkey_is_saveable(RConfigNode *node) {
 static void rprj_eval_write(Cursor *cur) {
 	RBuffer *b = cur->b;
 	const ut64 count_at = r_buf_at (b);
-	write_le32 (b, 0); // reserve slot for count, patched below
+	write_le32 (b, 0);
 	ut32 count = 0;
 	RListIter *iter;
 	RConfigNode *node;
@@ -628,11 +626,6 @@ static void rprj_eval_load(Cursor *cur, int mode) {
 	if (!read_le32 (b, &count)) {
 		return;
 	}
-	// Some config callbacks (e.g. bin.limit) trigger a bin reload that
-	// re-selects a flagspace, which would hide flags we just restored.
-	// Snapshot the active flagspace name and restore it after the replay.
-	const RSpace *saved_sp = r_flag_space_cur (core->flags);
-	char *saved_sp_name = (saved_sp && saved_sp->name)? strdup (saved_sp->name): NULL;
 	ut32 i;
 	for (i = 0; i < count; i++) {
 		ut32 k, v;
@@ -656,10 +649,6 @@ static void rprj_eval_load(Cursor *cur, int mode) {
 			r_config_set (core->config, name, value);
 		}
 	}
-	if (mode & MODE_LOAD) {
-		r_flag_space_set (core->flags, saved_sp_name);
-	}
-	free (saved_sp_name);
 }
 
 static void rprj_info_read(RBuffer *b, R2ProjectInfo *info) {
