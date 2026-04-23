@@ -626,7 +626,6 @@ static void rprj_eval_load(Cursor *cur, int mode) {
 	if (!read_le32 (b, &count)) {
 		return;
 	}
-	// cap count by what can physically fit in the remaining buffer (2x ut32 per record)
 	const ut64 bmax = (r_buf_size (b) - r_buf_at (b)) / 8;
 	if (count > bmax) {
 		count = (ut32)bmax;
@@ -811,7 +810,6 @@ static void rprj_flag_load(Cursor *cur, int mode) {
 	if (!read_le32 (b, &fcount)) {
 		return;
 	}
-	// cap fcount by what can physically fit in the remaining buffer (min 21 bytes per record)
 	const ut64 bmax = (r_buf_size (b) - r_buf_at (b)) / 21;
 	if (fcount > bmax) {
 		fcount = (ut32)bmax;
