@@ -37,6 +37,7 @@ typedef struct {
 	ut32 nfat;
 	FatmachoSlice *slices;
 	ut64 container_size;
+	int fd; // -1 if unknown; reads go through fd_read_at to bypass IO maps
 } FatmachoCtx;
 
 typedef bool (*FatmachoReadAt)(void *user, ut64 addr, ut8 *buf, int len);
@@ -146,9 +147,14 @@ static const char *cpu_subtype_name(ut32 cputype, ut32 cpusubtype) {
 	return "unknown";
 }
 
-static bool fatmacho_read_iob(void *user, ut64 addr, ut8 *buf, int len) {
-	RIOBind *iob = user;
-	return iob->read_at (iob->io, addr, buf, len);
+typedef struct {
+	RIOBind *iob;
+	int fd;
+} FatmachoIobFd;
+
+static bool fatmacho_read_iob_fd(void *user, ut64 addr, ut8 *buf, int len) {
+	FatmachoIobFd *u = user;
+	return u->iob->fd_read_at (u->iob->io, u->fd, addr, buf, len) == len;
 }
 
 static bool fatmacho_read_buf(void *user, ut64 addr, ut8 *buf, int len) {
@@ -171,6 +177,7 @@ static FatmachoCtx *fatmacho_parse_read(void *user, FatmachoReadAt read_at, ut64
 		return NULL;
 	}
 	FatmachoCtx *ctx = R_NEW0 (FatmachoCtx);
+	ctx->fd = -1;
 	ctx->container_size = sz;
 	ctx->nfat = nfat;
 	ctx->slices = R_NEWS0 (FatmachoSlice, nfat);
@@ -208,8 +215,25 @@ fail:
 }
 
 static FatmachoCtx *fatmacho_parse(RIOBind *iob) {
-	RIOMap *map = iob->map_get_at (iob->io, 0);
-	return map? fatmacho_parse_read (iob, fatmacho_read_iob, r_itv_size (map->itv), true): NULL;
+	// Reads go through fd_read_at so they survive IO remaps (after slice
+	// selection the container file is no longer mapped at vaddr 0, but the
+	// fd itself stays reachable). We need the fd of the container file: on
+	// auto-mount from r_bin_open_buf this is the current io->desc, since
+	// the descriptor was just opened and no other files are in play yet.
+	if (!iob->io || !iob->io->desc) {
+		return NULL;
+	}
+	int fd = iob->io->desc->fd;
+	ut64 sz = iob->fd_size (iob->io, fd);
+	if (!sz) {
+		return NULL;
+	}
+	FatmachoIobFd u = { iob, fd };
+	FatmachoCtx *ctx = fatmacho_parse_read (&u, fatmacho_read_iob_fd, sz, true);
+	if (ctx) {
+		ctx->fd = fd;
+	}
+	return ctx;
 }
 
 static void fatmacho_free(FatmachoCtx *ctx) {
@@ -304,6 +328,16 @@ static RFSFile *fs_fatmacho_open(RFSRoot *root, const char *path, bool create) {
 	return file;
 }
 
+// Reads via the cached fd so we bypass IO maps — the container file stays
+// reachable through the fd even after slice selection remaps IO.
+static bool fatmacho_slice_read(RFSRoot *root, ut64 offset, ut8 *data, ut64 size) {
+	FatmachoCtx *ctx = root->ptr;
+	if (ctx && ctx->fd >= 0) {
+		return root->iob.fd_read_at (root->iob.io, ctx->fd, offset, data, size) == (int)size;
+	}
+	return root->iob.read_at (root->iob.io, offset, data, size);
+}
+
 static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {
 	RFSFile *file = fs_fatmacho_open (root, path, false);
 	if (!file) {
@@ -315,7 +349,7 @@ static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {
 		r_fs_file_free (file);
 		return NULL;
 	}
-	if (!root->iob.read_at (root->iob.io, s->offset, file->data, s->size)) {
+	if (!fatmacho_slice_read (root, s->offset, file->data, s->size)) {
 		R_LOG_WARN ("fs_fatmacho: short slice read %"PFMT64u, s->size);
 		R_FREE (file->data);
 		r_fs_file_free (file);
@@ -340,7 +374,7 @@ static int fs_fatmacho_read(RFSFile *file, ut64 addr, int len) {
 	if (!file->data) {
 		return -1;
 	}
-	if (!file->root->iob.read_at (file->root->iob.io, s->offset + addr, file->data, len)) {
+	if (!fatmacho_slice_read (file->root, s->offset + addr, file->data, len)) {
 		R_FREE (file->data);
 		return -1;
 	}
