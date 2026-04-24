@@ -2329,10 +2329,7 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	char str[64], snstr[32];
 	st64 N = n;
 	int defVector = r_syscall_get_swi (core->anal->syscall);
-	if (defVector > 0) {
-		n = -1;
-	}
-	if (n == -1 || defVector > 0) {
+	if (n == -1) {
 		n = (int)r_debug_reg_get (core->dbg, "oeax");
 		if (!n || n == -1) {
 			n = r_debug_reg_get (core->dbg, "SN");

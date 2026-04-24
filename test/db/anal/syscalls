@@ -17,3 +17,25 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=as <num> honors user argument
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 64
+-e asm.os=linux
+as 0
+as 1
+as 2
+as 4
+as write
+EOF
+EXPECT=<<EOF
+0 = read (0, 0x00000000, 0)
+1 = write (0, 0x00000000, 0)
+2 = open (0x00000000, 0x00000000, 0x00000000)
+4 = stat (0x00000000, 0x00000000)
+1 = write (0, 0x00000000, 0)
+EOF
+EXPECT_ERR=
+RUN
