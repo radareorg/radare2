@@ -462,6 +462,9 @@ static JSValue r2fload(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	if (R_STR_ISNOTEMPTY (n)) {
 		s = r_file_slurp (n, &sz);
 	}
+	if (!s) {
+		return JS_ThrowPlainError (ctx, "Failed to load file %s", n);
+	}
 	JSValue v = JS_NewString (ctx, r_str_get (s));
 	free (s);
 	return v;
