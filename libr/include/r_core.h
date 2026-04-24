@@ -829,10 +829,6 @@ R_API bool r_core_bin_set_env(RCore *r, RBinFile *binfile);
 R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd);
 R_API bool r_core_bin_set_by_name(RCore *core, const char *name);
 R_API bool r_core_bin_load(RCore *core, const char *file, ut64 baseaddr);
-/* Probe `fd` through r_fs bin containers (fatmacho, ...). On match, load
- * via r_bin_open_bins and return true. Returns false if no container
- * matched; caller falls back to r_bin_open. */
-R_API bool r_core_bin_open_fs(RCore *core, int fd, const char *filename, RBinFileOptions *opt);
 R_API bool r_core_bin_rebase(RCore *core, ut64 baddr);
 R_API void r_core_bin_export_info(RCore *core, int mode);
 R_API bool r_core_bin_list(RCore *core, int mode);

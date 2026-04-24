@@ -80,9 +80,6 @@ typedef struct r_fs_plugin_t {
 	bool (*init)(void);
 	void (*fini)(void);
 	bool (*mount)(RFSRoot *root);
-	/* optional: buffer-backed mount. Used by auto-mount from r_bin_open_buf
-	 * where the container buffer is in hand and no IO map exists yet. */
-	bool (*mount_buf)(RFSRoot *root, RBuffer *buf);
 	void (*umount)(RFSRoot *root);
 	/* callback to run plugin-specific commands (e.g. m:cmd) */
 	bool (*cmd)(RFS *fs, const char *cmd);
@@ -175,9 +172,6 @@ R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p);
 R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
-/* Mount a container fs plugin against an RBuffer (no IO map required).
- * Used for auto-mount from the bin-load path. Plugin must implement .mount_buf. */
-R_API RFSRoot *r_fs_mount_buf(RFS *fs, const char *fstype, const char *path, RBuffer *buf);
 R_API bool r_fs_umount(RFS* fs, const char *path);
 
 R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
@@ -189,8 +183,7 @@ R_API RList *r_fs_dir(RFS* fs, const char *path);
 R_API bool r_fs_dir_dump(RFS* fs, const char *path, const char *name);
 R_API bool r_fs_mkdir(RFS *fs, const char *path);
 
-/* Probe `buf` against every container-capable fs plugin and return the list
- * of RFSBin entries reported by the first match. NULL if nothing matches. */
+/* Probe `buf` against container-capable fs plugins and return RFSFile entries from the first match. */
 R_API RList/*<RFSFile>*/ *r_fs_dir_bins(RFS *fs, RBuffer *buf);
 
 R_API RList *r_fs_find_name(RFS* fs, const char *name, const char *glob);

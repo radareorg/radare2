@@ -89,35 +89,18 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
-	if (r_buf_size (b) <= 32) {
-		return false;
-	}
-	ut8 buf[4];
-	r_buf_read_at (b, 0, buf, sizeof (buf));
-	if (memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
-		return false;
-	}
-	// Disambiguate from fat Mach-O (same magic): reject when the bytes at
-	// offset 16 look like a mach-o header (fat_arch[0].offset points there).
-	ut8 m[4];
-	ut32 off0 = r_buf_read_be32_at (b, 8);
-	if (off0 > 0 && off0 + 4 <= r_buf_size (b) && r_buf_read_at (b, off0, m, 4) == 4) {
-		if (!memcmp (m, "\xce\xfa\xed\xfe", 4)
-			|| !memcmp (m, "\xfe\xed\xfa\xce", 4)
-			|| !memcmp (m, "\xfe\xed\xfa\xcf", 4)
-			|| !memcmp (m, "\xcf\xfa\xed\xfe", 4)) {
-			return false;
+	if (r_buf_size (b) > 32) {
+		ut8 buf[4];
+		r_buf_read_at (b, 0, buf, sizeof (buf));
+		if (!memcmp (buf, "\xca\xfe\xba\xbe", 4)) {
+			int off = r_buf_read_be32_at (b, 4 * sizeof (int));
+			int version = r_buf_read_be16_at (b, 6);
+			if (off > 0 && version < 1024) {
+				return true;
+			}
 		}
 	}
-	// Java class: minor_version (4-5), major_version (6-7). major>=45 since
-	// Java 1.1; <1024 keeps the old sanity bound.
-	ut16 major = r_buf_read_be16_at (b, 6);
-	if (major < 45 || major >= 1024) {
-		return false;
-	}
-	// constant_pool_count at offset 8; must be > 0 per JVM spec.
-	ut16 cp_count = r_buf_read_be16_at (b, 8);
-	return cp_count > 0;
+	return false;
 }
 
 static int retdemangle(const char *str) {

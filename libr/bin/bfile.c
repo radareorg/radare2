@@ -1045,6 +1045,7 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 		opt->pluginname = xtr->meta.name;
 		bf = r_bin_file_new (bin, filename, r_buf_size (buf), opt, bin->sdb, false);
 		if (!bf) {
+			free (opt);
 			return NULL;
 		}
 		r_list_append (bin->binfiles, bf);

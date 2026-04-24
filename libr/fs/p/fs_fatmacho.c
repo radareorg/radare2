@@ -4,11 +4,11 @@
 #include <r_lib.h>
 
 #define FATMACHO_MAGIC_BE 0xcafebabe
-#define FATMACHO_MAGIC_LE 0xbebafeca
+#define FATMACHO_HEADER_SIZE 8
+#define FATMACHO_ARCH_SIZE 20
+#define FATMACHO_NFAT_MAX 32
 
-/* cputype constants: match Apple's loader.h. We intentionally duplicate the
- * small set we care about here rather than pulling mach0_specs.h across the
- * r_fs/r_bin boundary. */
+// cputype constants match Apple's loader.h without pulling mach0 specs into r_fs.
 #define CPU_ARCH_ABI64   0x01000000
 #define CPU_TYPE_VAX     1
 #define CPU_TYPE_MC680x0 6
@@ -37,8 +37,11 @@ typedef struct {
 	ut32 nfat;
 	FatmachoSlice *slices;
 	ut64 container_size;
-	RBuffer *buf; // when mounted from a buffer (auto-mount path); NULL for iob mount
 } FatmachoCtx;
+
+typedef bool (*FatmachoReadAt)(void *user, ut64 addr, ut8 *buf, int len);
+
+static void fatmacho_free(FatmachoCtx *ctx);
 
 static const char *cpu_name(ut32 cputype) {
 	switch (cputype) {
@@ -84,8 +87,7 @@ static int arch_bits(ut32 cputype) {
 	return (cputype & CPU_ARCH_ABI64) ? 64 : 32;
 }
 
-// Compact subtype→string mapping; covers the common subtypes fat containers
-// use. Self-contained so fs_fatmacho stays decoupled from r_bin.
+// Compact subtype string mapping, self-contained to keep fs_fatmacho decoupled from r_bin.
 static const char *cpu_subtype_name(ut32 cputype, ut32 cpusubtype) {
 	ut32 sub = cpusubtype & 0xff;
 	switch (cputype) {
@@ -144,40 +146,31 @@ static const char *cpu_subtype_name(ut32 cputype, ut32 cpusubtype) {
 	return "unknown";
 }
 
-static bool read_fat_header(RIOBind *iob, ut32 *magic, ut32 *nfat, ut64 container_size) {
-	ut8 buf[8] = {0};
-	if (!iob->read_at (iob->io, 0, buf, 8)) {
-		return false;
-	}
-	*magic = r_read_be32 (buf);
-	*nfat = r_read_be32 (buf + 4);
-	if (*magic != FATMACHO_MAGIC_BE) {
-		return false;
-	}
-	if (*nfat == 0 || *nfat > 32) {
-		// 32 is a generous upper bound; Apple tools never produce more than ~5.
-		return false;
-	}
-	if (container_size < 8 + (ut64)(*nfat) * 20) {
-		return false;
-	}
-	return true;
+static bool fatmacho_read_iob(void *user, ut64 addr, ut8 *buf, int len) {
+	RIOBind *iob = user;
+	return iob->read_at (iob->io, addr, buf, len);
 }
 
-static FatmachoCtx *fatmacho_parse(RIOBind *iob) {
-	RIOMap *map = iob->map_get_at (iob->io, 0);
-	if (!map) {
+static bool fatmacho_read_buf(void *user, ut64 addr, ut8 *buf, int len) {
+	return r_buf_read_at ((RBuffer *)user, addr, buf, len) == len;
+}
+
+static FatmachoCtx *fatmacho_parse_read(void *user, FatmachoReadAt read_at, ut64 sz, bool verbose) {
+	ut8 hdr[FATMACHO_HEADER_SIZE] = {0};
+	if (sz < FATMACHO_HEADER_SIZE || !read_at (user, 0, hdr, sizeof (hdr))) {
 		return NULL;
 	}
-	ut64 sz = r_itv_size (map->itv);
-	ut32 magic = 0, nfat = 0;
-	if (!read_fat_header (iob, &magic, &nfat, sz)) {
+	if (r_read_be32 (hdr) != FATMACHO_MAGIC_BE) {
+		return NULL;
+	}
+	ut32 nfat = r_read_be32 (hdr + 4);
+	if (nfat == 0 || nfat > FATMACHO_NFAT_MAX) {
+		return NULL;
+	}
+	if (sz < FATMACHO_HEADER_SIZE + (ut64)nfat * FATMACHO_ARCH_SIZE) {
 		return NULL;
 	}
 	FatmachoCtx *ctx = R_NEW0 (FatmachoCtx);
-	if (!ctx) {
-		return NULL;
-	}
 	ctx->container_size = sz;
 	ctx->nfat = nfat;
 	ctx->slices = R_NEWS0 (FatmachoSlice, nfat);
@@ -187,76 +180,11 @@ static FatmachoCtx *fatmacho_parse(RIOBind *iob) {
 	}
 	ut32 i;
 	for (i = 0; i < nfat; i++) {
-		ut8 ab[20] = {0};
-		if (!iob->read_at (iob->io, 8 + (ut64)i * 20, ab, 20)) {
-			R_LOG_WARN ("fs_fatmacho: short read at arch[%u]", i);
-			goto fail;
-		}
-		FatmachoSlice *s = &ctx->slices[i];
-		s->cputype    = r_read_be32 (ab);
-		s->cpusubtype = r_read_be32 (ab + 4);
-		s->offset     = r_read_be32 (ab + 8);
-		s->size       = r_read_be32 (ab + 12);
-		// align at ab+16 is unused here
-		if (s->offset > sz || s->size > sz || s->offset + s->size > sz) {
-			R_LOG_WARN ("fs_fatmacho: corrupt arch[%u] off=0x%"PFMT64x" sz=0x%"PFMT64x" cont=0x%"PFMT64x,
-				i, s->offset, s->size, sz);
-			goto fail;
-		}
-		// ensure unique names by appending index if two slices share cputype
-		const char *base = cpu_name (s->cputype);
-		s->name = r_str_newf ("%s.%u", base, i);
-	}
-	return ctx;
-fail:
-	for (i = 0; i < nfat; i++) {
-		free (ctx->slices[i].name);
-	}
-	free (ctx->slices);
-	free (ctx);
-	return NULL;
-}
-
-static void fatmacho_free(FatmachoCtx *ctx) {
-	if (!ctx) {
-		return;
-	}
-	ut32 i;
-	for (i = 0; i < ctx->nfat; i++) {
-		free (ctx->slices[i].name);
-	}
-	free (ctx->slices);
-	r_unref (ctx->buf);
-	free (ctx);
-}
-
-// Parse a fat Mach-O container from an RBuffer. Used by bins() and by the
-// buffer-backed mount path (r_fs_mount_buf). Returns NULL if the buffer
-// doesn't look like a fat Mach-O.
-static FatmachoCtx *fatmacho_parse_buf(RBuffer *b) {
-	ut64 sz = r_buf_size (b);
-	if (sz < 8) {
-		return NULL;
-	}
-	ut8 hdr[8];
-	if (r_buf_read_at (b, 0, hdr, sizeof (hdr)) != sizeof (hdr)) {
-		return NULL;
-	}
-	if (r_read_be32 (hdr) != FATMACHO_MAGIC_BE) {
-		return NULL;
-	}
-	ut32 nfat = r_read_be32 (hdr + 4);
-	if (nfat == 0 || nfat > 32 || sz < 8 + (ut64)nfat * 20) {
-		return NULL;
-	}
-	FatmachoCtx *ctx = R_NEW0 (FatmachoCtx);
-	ctx->container_size = sz;
-	ctx->nfat = nfat;
-	ctx->slices = R_NEWS0 (FatmachoSlice, nfat);
-	ut32 i;
-	for (i = 0; i < nfat; i++) {
-		ut8 ab[20];
-		if (r_buf_read_at (b, 8 + (ut64)i * 20, ab, 20) != 20) {
+		ut8 ab[FATMACHO_ARCH_SIZE] = {0};
+		if (!read_at (user, FATMACHO_HEADER_SIZE + (ut64)i * FATMACHO_ARCH_SIZE, ab, sizeof (ab))) {
+			if (verbose) {
+				R_LOG_WARN ("fs_fatmacho: short read at arch[%u]", i);
+			}
 			goto fail;
 		}
 		FatmachoSlice *s = &ctx->slices[i];
@@ -265,6 +193,10 @@ static FatmachoCtx *fatmacho_parse_buf(RBuffer *b) {
 		s->offset     = r_read_be32 (ab + 8);
 		s->size       = r_read_be32 (ab + 12);
 		if (s->offset > sz || s->size > sz || s->offset + s->size > sz) {
+			if (verbose) {
+				R_LOG_WARN ("fs_fatmacho: corrupt arch[%u] off=0x%"PFMT64x" sz=0x%"PFMT64x" cont=0x%"PFMT64x,
+					i, s->offset, s->size, sz);
+			}
 			goto fail;
 		}
 		s->name = r_str_newf ("%s.%u", cpu_name (s->cputype), i);
@@ -273,6 +205,29 @@ static FatmachoCtx *fatmacho_parse_buf(RBuffer *b) {
 fail:
 	fatmacho_free (ctx);
 	return NULL;
+}
+
+static FatmachoCtx *fatmacho_parse(RIOBind *iob) {
+	RIOMap *map = iob->map_get_at (iob->io, 0);
+	return map? fatmacho_parse_read (iob, fatmacho_read_iob, r_itv_size (map->itv), true): NULL;
+}
+
+static void fatmacho_free(FatmachoCtx *ctx) {
+	if (!ctx) {
+		return;
+	}
+	ut32 i;
+	if (ctx->slices) {
+		for (i = 0; i < ctx->nfat; i++) {
+			free (ctx->slices[i].name);
+		}
+	}
+	free (ctx->slices);
+	free (ctx);
+}
+
+static FatmachoCtx *fatmacho_parse_buf(RBuffer *b) {
+	return fatmacho_parse_read (b, fatmacho_read_buf, r_buf_size (b), false);
 }
 
 static FatmachoSlice *find_slice_by_path(FatmachoCtx *ctx, const char *path) {
@@ -320,19 +275,6 @@ static bool fs_fatmacho_mount(RFSRoot *root) {
 	return true;
 }
 
-// Buffer-backed mount: used by the auto-mount path in r_bin_open_buf where
-// the container buffer is already in hand and no IO map exists at address 0.
-// Reads afterwards go through ctx->buf.
-static bool fs_fatmacho_mount_buf(RFSRoot *root, RBuffer *buf) {
-	FatmachoCtx *ctx = fatmacho_parse_buf (buf);
-	if (!ctx) {
-		return false;
-	}
-	ctx->buf = r_ref (buf);
-	root->ptr = ctx;
-	return true;
-}
-
 static void fs_fatmacho_umount(RFSRoot *root) {
 	fatmacho_free (root->ptr);
 	root->ptr = NULL;
@@ -367,20 +309,13 @@ static RFSFile *fs_fatmacho_slurp(RFSRoot *root, const char *path) {
 	if (!file) {
 		return NULL;
 	}
-	FatmachoCtx *ctx = root->ptr;
 	FatmachoSlice *s = file->ptr;
 	file->data = malloc (s->size);
 	if (!file->data) {
 		r_fs_file_free (file);
 		return NULL;
 	}
-	int n;
-	if (ctx->buf) {
-		n = r_buf_read_at (ctx->buf, s->offset, file->data, s->size);
-	} else {
-		n = root->iob.read_at (root->iob.io, s->offset, file->data, s->size)? (int)s->size: 0;
-	}
-	if (n != (int)s->size) {
+	if (!root->iob.read_at (root->iob.io, s->offset, file->data, s->size)) {
 		R_LOG_WARN ("fs_fatmacho: short slice read %"PFMT64u, s->size);
 		R_FREE (file->data);
 		r_fs_file_free (file);
@@ -405,22 +340,11 @@ static int fs_fatmacho_read(RFSFile *file, ut64 addr, int len) {
 	if (!file->data) {
 		return -1;
 	}
-	FatmachoCtx *ctx = file->root->ptr;
-	int n;
-	if (ctx && ctx->buf) {
-		n = r_buf_read_at (ctx->buf, s->offset + addr, file->data, len);
-	} else {
-		n = file->root->iob.read_at (file->root->iob.io, s->offset + addr, file->data, len)? len: 0;
-	}
-	if (n != len) {
+	if (!file->root->iob.read_at (file->root->iob.io, s->offset + addr, file->data, len)) {
 		R_FREE (file->data);
 		return -1;
 	}
 	return len;
-}
-
-static void fs_fatmacho_close(RFSFile *file) {
-	// file->data freed by r_fs_file_free; nothing else owned here.
 }
 
 static RList *fs_fatmacho_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
@@ -511,12 +435,10 @@ RFSPlugin r_fs_plugin_fatmacho = {
 		.license = "LGPL-3.0-only",
 	},
 	.mount = fs_fatmacho_mount,
-	.mount_buf = fs_fatmacho_mount_buf,
 	.umount = fs_fatmacho_umount,
 	.open = fs_fatmacho_open,
 	.slurp = fs_fatmacho_slurp,
 	.read = fs_fatmacho_read,
-	.close = fs_fatmacho_close,
 	.dir = fs_fatmacho_dir,
 	.bins = fs_fatmacho_bins,
 };

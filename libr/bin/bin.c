@@ -302,6 +302,18 @@ R_API bool r_bin_reload(RBin *bin, ut32 bf_id, ut64 baseaddr) {
 	return res;
 }
 
+static ut64 xtrdata_size(RList *xtr_data) {
+	ut64 size = 0;
+	RBinXtrData *x;
+	RListIter *it;
+	r_list_foreach (xtr_data, it, x) {
+		if (x && x->offset <= UT64_MAX - x->size) {
+			size = R_MAX (size, x->offset + x->size);
+		}
+	}
+	return size;
+}
+
 R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt, RList *xtr_data) {
 	R_RETURN_VAL_IF_FAIL (bin && opt && xtr_data, false);
 	if (r_list_empty (xtr_data)) {
@@ -316,13 +328,10 @@ R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt
 		RBinFileOptions *oo = R_NEW0 (RBinFileOptions);
 		*oo = *opt;
 		oo->pluginname = opt->pluginname; // usually the container name
-		ut64 first_sz = 0;
-		RBinXtrData *first = r_list_get_n (xtr_data, 0);
-		if (first && first->buf) {
-			first_sz = r_buf_size (first->buf);
-		}
-		bf = r_bin_file_new (bin, filename, first_sz, oo, bin->sdb, false);
+		ut64 file_sz = opt->sz? opt->sz: xtrdata_size (xtr_data);
+		bf = r_bin_file_new (bin, filename, file_sz, oo, bin->sdb, false);
 		if (!bf) {
+			free (oo);
 			r_list_free (xtr_data);
 			return false;
 		}
@@ -361,6 +370,9 @@ static RList *xtrdata_from_fsbins(RList *bins) {
 	RFSFile *f;
 	RListIter *it;
 	r_list_foreach (bins, it, f) {
+		if (!f->buf) {
+			continue;
+		}
 		RBinXtrMetadata *m = R_NEW0 (RBinXtrMetadata);
 		m->arch = f->arch? strdup (f->arch): NULL;
 		m->bits = f->bits;
@@ -386,23 +398,13 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	if (opt->loadaddr == UT64_MAX) {
 		opt->loadaddr = 0;
 	}
+	if (!opt->sz) {
+		opt->sz = r_buf_size (buf);
+	}
 
-	// r_fs container probe: if any registered fs plugin claims the buffer
-	// as a bin container (fatmacho, later: apk, dyldcache, ...), use its
-	// slice list and skip the xtr + bin-plugin iteration. Also mount the
-	// container filesystem at /<container> so `m` / `md` can browse it.
+	// r_fs container probe: use the first fs plugin that reports loadable bins.
 	if (bin->fs && bin->options.use_xtr && !opt->pluginname) {
 		RList *fsbins = r_fs_dir_bins (bin->fs, buf);
-		if (fsbins && !r_list_empty (fsbins)) {
-			RFSFile *first = r_list_get_n (fsbins, 0);
-			const char *cname = first? first->container: NULL;
-			if (cname) {
-				char *mpath = r_str_newf ("/%s", cname);
-				r_fs_umount (bin->fs, mpath);
-				r_fs_mount_buf (bin->fs, cname, mpath, buf);
-				free (mpath);
-			}
-		}
 		RList *xd = xtrdata_from_fsbins (fsbins);
 		if (xd) {
 			const char *fname = opt->filename? opt->filename: (bin->file? bin->file: "?");
