@@ -405,23 +405,19 @@ R_API bool r_bin_open_buf(RBin *bin, RBuffer *buf, RBinFileOptions *opt) {
 	// r_fs container probe: use the first fs plugin that reports loadable bins.
 	if (bin->fs && bin->options.use_xtr && !opt->pluginname) {
 		RList *fsbins = r_fs_dir_bins (bin->fs, buf);
-		if (fsbins && !r_list_empty (fsbins)) {
+		if (fsbins) {
 			// Auto-mount the container so `md`, `mc`, etc. reveal the slices.
-			// Run before xtrdata_from_fsbins so we can read `container`; the
-			// mount itself happens while IO still has a map over the whole
-			// file, so fs_fatmacho_mount can grab the fd. If mount fails
-			// (already mounted / path clash) we carry on with just xtr_data.
+			// Mount before xtrdata_from_fsbins consumes the list, while IO
+			// still maps the whole file so fs_fatmacho_mount can grab the fd.
 			RFSFile *first = r_list_first (fsbins);
 			if (first && first->container) {
-				r_fs_mount (bin->fs, first->container, "/", 0);
+				r_fs_mount (bin->fs, first->container, "/bin", 0);
 			}
 			RList *xd = xtrdata_from_fsbins (fsbins);
 			if (xd) {
 				const char *fname = opt->filename? opt->filename: (bin->file? bin->file: "?");
 				return r_bin_open_bins (bin, fname, opt, xd);
 			}
-		} else {
-			r_list_free (fsbins);
 		}
 	}
 
