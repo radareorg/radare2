@@ -785,7 +785,10 @@ static int cmd_mount(void *data, const char *_input) {
 				free (uri);
 				if (fd) {
 					r_io_desc_write (fd, file->data, file->size);
-					r_core_cmd_call (core, "oba 0");
+					// oba 0 loads bin info; obo raises the new binfile so
+					// config (arch/bits/baddr) and seek land on it instead
+					// of the previously active slice.
+					r_core_cmdf (core, "oba 0;obo %d", fd->fd);
 				}
 				r_fs_close (core->fs, file);
 				r_fs_file_free (file);

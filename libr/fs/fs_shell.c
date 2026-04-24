@@ -376,8 +376,11 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 				free (uri);
 				if (fd) {
 					fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
-					if (fs->cob.cmd) {
-						fs->cob.cmd (fs->cob.core, "oba 0");
+					if (fs->cob.cmdf) {
+						// oba 0 loads bin info; obo raises the new binfile
+						// so config (arch/bits/baddr) and seek land on it
+						// instead of the previously active slice.
+						fs->cob.cmdf (fs->cob.core, "oba 0;obo %d", fd->fd);
 					}
 					r_fs_close (fs, file);
 					r_fs_file_free (file);
