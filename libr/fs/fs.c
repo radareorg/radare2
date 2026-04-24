@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2011-2024 - pancake */
+/* radare2 - LGPL - Copyright 2011-2026 - pancake */
 
 #define R_LOG_ORIGIN "fs"
 
@@ -208,7 +208,7 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *pa
 		return NULL;
 	}
 	r_list_append (fs->roots, root);
-	R_LOG_INFO ("Mounted %s on %s at 0x%" PFMT64x, fstype, str, delta);
+	R_LOG_DEBUG ("Mounted %s on %s at 0x%" PFMT64x, fstype, str, delta);
 	free (str);
 	free (heapFsType);
 	return root;
