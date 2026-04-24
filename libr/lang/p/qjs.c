@@ -458,8 +458,11 @@ static JSValue r2fload(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	size_t plen;
 	const char *n = JS_ToCStringLen2 (ctx, &plen, argv[0], false);
 	size_t sz = 0;
-	char *s = r_file_slurp (n, &sz);
-	JSValue v = JS_NewString (ctx, s);
+	char *s = NULL;
+	if (R_STR_ISNOTEMPTY (n)) {
+		s = r_file_slurp (n, &sz);
+	}
+	JSValue v = JS_NewString (ctx, r_str_get (s));
 	free (s);
 	return v;
 }
