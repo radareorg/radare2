@@ -311,8 +311,9 @@ R_API bool r_core_bin_set_env(RCore *core, RBinFile *binfile) {
 			r_config_set (config, "asm.cpu", cpu);
 			r_asm_use (core->rasm, arch);
 		}
+		// set cur before running info so r_bin_patch_relocs has a valid bf
+		r_bin_file_set_cur_binfile (core->bin, binfile);
 		r_core_bin_info (core, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
-		r_core_bin_set_cur (core, binfile);
 		return true;
 	}
 	return false;
