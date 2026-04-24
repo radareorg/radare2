@@ -296,6 +296,7 @@ static bool fs_fatmacho_mount(RFSRoot *root) {
 		return false;
 	}
 	root->ptr = ctx;
+	root->fd = ctx->fd;
 	return true;
 }
 

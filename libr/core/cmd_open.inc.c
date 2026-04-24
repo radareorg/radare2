@@ -2730,7 +2730,11 @@ static int cmd_open(void *data, const char *input) {
 			break;
 		default: {
 			int fd = (int)r_num_math (core->num, input + 1);
-			if (!r_io_fd_close (core->io, fd)) {
+			RFSRoot *mounted = r_fs_root_by_fd (core->fs, fd);
+			if (mounted) {
+				R_LOG_ERROR ("fd %d backs mount %s (unmount first with 'm-%s')",
+					fd, mounted->path, mounted->path);
+			} else if (!r_io_fd_close (core->io, fd)) {
 				R_LOG_ERROR ("Unable to find file descriptor %d", fd);
 			}
 			}

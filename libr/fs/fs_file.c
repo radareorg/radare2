@@ -64,6 +64,7 @@ R_API RFSRoot* r_fs_root_new(const char* path, ut64 delta) {
 		*p = 0;        // chop tailing slash
 	}
 	root->delta = delta;
+	root->fd = -1;
 	return root;
 }
 

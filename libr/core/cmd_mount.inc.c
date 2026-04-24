@@ -773,12 +773,22 @@ static int cmd_mount(void *data, const char *_input) {
 		} else {
 			file = r_fs_open (core->fs, input, false);
 			if (file) {
-				r_fs_read (core->fs, file, 0, file->size);
+				int nread = r_fs_read (core->fs, file, 0, file->size);
+				if (nread <= 0 || !file->data) {
+					R_LOG_ERROR ("Cannot read file (backing fd closed?)");
+					r_fs_close (core->fs, file);
+					r_fs_file_free (file);
+					break;
+				}
 				char *uri = r_str_newf ("malloc://%d", file->size);
 				RIODesc *fd = r_io_open (core->io, uri, R_PERM_RW, 0);
+				free (uri);
 				if (fd) {
 					r_io_desc_write (fd, file->data, file->size);
+					r_core_cmd_call (core, "oba 0");
 				}
+				r_fs_close (core->fs, file);
+				r_fs_file_free (file);
 			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}

@@ -218,6 +218,21 @@ static inline bool r_fs_match(const char *root, const char *path, int len) {
 	return (!strncmp (path, root, len));
 }
 
+R_API RFSRoot *r_fs_root_by_fd(RFS *fs, int fd) {
+	R_RETURN_VAL_IF_FAIL (fs, NULL);
+	if (fd < 0) {
+		return NULL;
+	}
+	RListIter *iter;
+	RFSRoot *root;
+	r_list_foreach (fs->roots, iter, root) {
+		if (root->fd == fd) {
+			return root;
+		}
+	}
+	return NULL;
+}
+
 R_API bool r_fs_umount(RFS *fs, const char *path) {
 	R_RETURN_VAL_IF_FAIL (fs && path, false);
 	RFSRoot *root;

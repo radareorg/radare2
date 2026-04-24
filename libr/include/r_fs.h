@@ -62,6 +62,10 @@ typedef struct r_fs_root_t {
 	ut64 delta;
 	struct r_fs_plugin_t *p;
 	void *ptr;
+	// Backing IO fd for container filesystems (fatmacho, etc). -1 when not
+	// applicable. Closing this fd while the mount is active breaks slice
+	// reads, so o- refuses to close fds held by a mount.
+	int fd;
 	// TODO: deprecate
 	RIOBind iob;
 	RCoreBind cob;
@@ -173,6 +177,7 @@ R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
 R_API bool r_fs_umount(RFS* fs, const char *path);
+R_API RFSRoot *r_fs_root_by_fd(RFS *fs, int fd);
 
 R_API RFSFile *r_fs_open(RFS* fs, const char *path, bool create);
 R_API void r_fs_close(RFS* fs, RFSFile *file);

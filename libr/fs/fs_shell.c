@@ -361,16 +361,31 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		if (abspath) {
 			file = r_fs_open (fs, abspath, false);
 			if (file) {
-				r_fs_read (fs, file, 0, file->size);
+				int nread = r_fs_read (fs, file, 0, file->size);
+				if (nread <= 0 || !file->data) {
+					R_LOG_ERROR ("Cannot read file (backing fd closed?)");
+					r_fs_close (fs, file);
+					r_fs_file_free (file);
+					free (abspath);
+					free (data);
+					return true;
+				}
 				char *uri = r_str_newf ("malloc://%d", file->size);
 				RIODesc *fd = fs->iob.open_at (fs->iob.io, uri, R_PERM_RW, 0, 0);
 				free (uri);
 				if (fd) {
 					fs->iob.fd_write (fs->iob.io, fd->fd, file->data, file->size);
+					if (fs->cob.cmd) {
+						fs->cob.cmd (fs->cob.core, "oba 0");
+					}
+					r_fs_close (fs, file);
+					r_fs_file_free (file);
 					free (abspath);
 					free (data);
 					return true;
 				}
+				r_fs_close (fs, file);
+				r_fs_file_free (file);
 			} else {
 				R_LOG_ERROR ("Cannot open file");
 			}
