@@ -501,7 +501,6 @@ typedef struct r_bin_file_t {
 	} dwarf_metadata;
 	struct r_bin_t *rbin;
 	int string_count;
-	RBinFileOptions *options;
 	RArena *arena;
 } RBinFile;
 

@@ -325,13 +325,9 @@ R_API bool r_bin_open_bins(RBin *bin, const char *filename, RBinFileOptions *opt
 	}
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		RBinFileOptions *oo = R_NEW0 (RBinFileOptions);
-		*oo = *opt;
-		oo->pluginname = opt->pluginname; // usually the container name
 		ut64 file_sz = opt->sz? opt->sz: xtrdata_size (xtr_data);
-		bf = r_bin_file_new (bin, filename, file_sz, oo, bin->sdb, false);
+		bf = r_bin_file_new (bin, filename, file_sz, opt, bin->sdb, false);
 		if (!bf) {
-			free (oo);
 			r_list_free (xtr_data);
 			return false;
 		}

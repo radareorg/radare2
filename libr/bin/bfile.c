@@ -729,7 +729,6 @@ R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFi
 		return NULL;
 	}
 	bf->arena = arena;
-	bf->options = opt;
 	addrline_store_init (&bf->addrline);
 	bf->id = bf_id;
 	bf->rbin = bin;
@@ -1038,14 +1037,13 @@ R_IPI RBinFile *r_bin_file_xtr_load(RBin *bin, RBinXtrPlugin *xtr, const char *f
 
 	RBinFile *bf = r_bin_file_find_by_name (bin, filename);
 	if (!bf) {
-		// XXX. str_load should take the RBinFileOptions instead
-		RBinFileOptions *opt = R_NEW0 (RBinFileOptions);
-		opt->rawstr = rawstr;
-		opt->fd = fd;
-		opt->pluginname = xtr->meta.name;
-		bf = r_bin_file_new (bin, filename, r_buf_size (buf), opt, bin->sdb, false);
+		RBinFileOptions opt = {
+			.rawstr = rawstr,
+			.fd = fd,
+			.pluginname = xtr->meta.name,
+		};
+		bf = r_bin_file_new (bin, filename, r_buf_size (buf), &opt, bin->sdb, false);
 		if (!bf) {
-			free (opt);
 			return NULL;
 		}
 		r_list_append (bin->binfiles, bf);
