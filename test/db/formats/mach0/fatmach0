@@ -390,6 +390,7 @@ RUN
 
 NAME=fatmacho switch arm64/arm32 via mis+oba
 FILE=bins/mach0/BatteryLife
+ARGS=-aarm -b64
 CMDS=<<EOF
 mis /bin/arm_32.0
 oba `?vi $$`
