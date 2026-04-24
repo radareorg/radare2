@@ -354,6 +354,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 		free (abspath);
 		free (data);
 	} else if (r_str_startswith (buf, "o ") || r_str_startswith (buf, "open ") || r_str_startswith (buf, "r2 ")) {
+		bool exit_shell = r_str_startswith (buf, "r2 ");
 		char *data = strdup (buf);
 		const char *input = r_str_nextword (data, ' ');
 		input = (char *)r_str_trim_head_ro (input);
@@ -382,7 +383,7 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 					r_fs_file_free (file);
 					free (abspath);
 					free (data);
-					return true;
+					return !exit_shell;
 				}
 				r_fs_close (fs, file);
 				r_fs_file_free (file);

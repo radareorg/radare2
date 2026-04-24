@@ -3036,7 +3036,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 	if (len > ds->asmop.size) {
 		len = ds->asmop.size;
 	}
-	if (!ds->asmop.bytes) {
+	if (!ds->asmop.bytes && buf && len > 0) {
 		// this happens only when the instruction is truncated
 		r_anal_op_set_bytes (&ds->asmop, ds->at, buf, len);
 	}

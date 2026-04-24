@@ -446,3 +446,27 @@ EXPECT=<<EOF
 * 1 4 ppc-32 ba:0x00000000 sz:16384 malloc://13616
 EOF
 RUN
+
+NAME=fatmacho ob- after mo doesn't assert
+FILE=bins/mach0/fatmach0-3true
+CMDS=<<EOF
+mo /bin/ppc_32.2
+ob-1
+ob~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=fatmacho ob- after oba doesn't assert
+FILE=bins/mach0/fatmach0-3true
+CMDS=<<EOF
+oba 0x5000
+ob-1
+ob~?
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
