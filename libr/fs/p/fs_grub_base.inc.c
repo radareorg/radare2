@@ -8,7 +8,14 @@
 
 static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
+	if (!file) {
+		return NULL;
+	}
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
+	if (!gfs) {
+		r_fs_file_free (file);
+		return NULL;
+	}
 	file->ptr = gfs;
 	file->p = root->p;
 	grubfs_bind_io (NULL, file->root->delta);

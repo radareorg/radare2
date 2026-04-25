@@ -44,12 +44,15 @@ static ut32 rprj_st_append(R2ProjectStringTable *st, const char *s) {
 	const size_t newsize = st->size + slen;
 	if (newsize > st->capacity) {
 		const size_t new_capacity = newsize + 1024;
-		ut8 *nb = realloc (st->data, new_capacity);
+		ut8 *nb = st->data? realloc (st->data, new_capacity): malloc (new_capacity);
 		if (!nb) {
 			return UT32_MAX;
 		}
 		st->data = nb;
 		st->capacity = new_capacity;
+	}
+	if (!st->data) {
+		return UT32_MAX;
 	}
 	memcpy (st->data + st->size, s, slen);
 	ut32 index = st->size;

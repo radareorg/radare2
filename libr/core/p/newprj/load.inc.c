@@ -781,6 +781,11 @@ static void rprj_function_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		free (colors);
 		return;
 	}
+	const ut64 fbmax = rprj_entry_remaining (b, next_entry) / RPRJ_FUNCTION_SIZE;
+	if (count > fbmax) {
+		R_LOG_WARN ("Invalid function record count %u", count);
+		count = (ut32)fbmax;
+	}
 	RList *pfcns = (mode & R_CORE_NEWPRJ_MODE_DIFF)? r_list_newf (free): NULL;
 	ut32 i;
 	for (i = 0; i < count && r_buf_at (b) < next_entry; i++) {
@@ -831,6 +836,11 @@ static void rprj_function_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		}
 		RList *pbbs = (mode & R_CORE_NEWPRJ_MODE_DIFF)? r_list_newf (free): NULL;
 		RList *pvars = (mode & R_CORE_NEWPRJ_MODE_DIFF)? r_list_newf ((RListFree)rprj_diff_var_free): NULL;
+		const ut64 bbmax = rprj_entry_remaining (b, next_entry) / RPRJ_BLOCK_SIZE;
+		if (pfcn.nbbs > bbmax) {
+			R_LOG_WARN ("Invalid basic block count %u in function %u/%u", pfcn.nbbs, i, count);
+			pfcn.nbbs = (ut32)bbmax;
+		}
 		ut32 j;
 		for (j = 0; j < pfcn.nbbs && r_buf_at (b) < next_entry; j++) {
 			R2ProjectBlock pbb;
@@ -867,6 +877,11 @@ static void rprj_function_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 			if (resolved) {
 				rprj_block_load (cur, fcn, &pbb, mode, va, colors, ncolors);
 			}
+		}
+		const ut64 vbmax = rprj_entry_remaining (b, next_entry) / RPRJ_VAR_SIZE;
+		if (pfcn.nvars > vbmax) {
+			R_LOG_WARN ("Invalid variable count %u in function %u/%u", pfcn.nvars, i, count);
+			pfcn.nvars = (ut32)vbmax;
 		}
 		for (j = 0; j < pfcn.nvars && r_buf_at (b) < next_entry; j++) {
 			R2ProjectVar pvar;
@@ -1126,7 +1141,7 @@ static void r_core_newprj_load(RCore *core, const char *file, int mode) {
 				ut64 at = r_buf_at (b);
 				ut64 last = at + entry.size - sizeof (R2ProjectEntry);
 				RList *seen = (mode & R_CORE_NEWPRJ_MODE_DIFF)? r_list_newf (free): NULL;
-				while (at + sizeof (R2ProjectComment) <= last) {
+				while (at < last && last - at >= sizeof (R2ProjectComment)) {
 					R2ProjectComment cmnt;
 					if (!rprj_cmnt_read (b, &cmnt)) {
 						R_LOG_WARN ("Truncated comment record at 0x%08"PFMT64x, at);
@@ -1269,7 +1284,7 @@ static void r_core_newprj_load(RCore *core, const char *file, int mode) {
 				ut64 at = r_buf_at (b);
 				ut64 last = at + entry.size - sizeof (R2ProjectEntry);
 				RList *seen = (mode & R_CORE_NEWPRJ_MODE_DIFF)? r_list_newf (free): NULL;
-				while (at + sizeof (R2ProjectHint) <= last) {
+				while (at < last && last - at >= sizeof (R2ProjectHint)) {
 					R2ProjectHint hint;
 					if (!rprj_hint_read (b, &hint)) {
 						R_LOG_WARN ("Truncated hint record at 0x%08"PFMT64x, at);
@@ -1280,7 +1295,7 @@ static void r_core_newprj_load(RCore *core, const char *file, int mode) {
 						.delta = hint.delta,
 					};
 					ut64 va = UT64_MAX;
-					if (!rprj_project_addr_to_va (&cur, &addr, &va)) {
+					if (!rprj_project_addr_to_va (&cur, &addr, &va) || va == UT64_MAX) {
 						R_LOG_WARN ("Cannot resolve hint record at 0x%08"PFMT64x, at);
 						at += sizeof (hint);
 						continue;
