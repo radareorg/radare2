@@ -3117,12 +3117,15 @@ static int fcn_print_detail(RCore *core, RAnalFunction *fcn) {
 	RVecAnalRef_free (refs);
 	/* Saving Function stack frame */
 	r_cons_printf (cons, "'0x%"PFMT64x"'afS %d\n", fcn->addr, fcn->maxstack);
-	if (fcn->pin) {
-		r_cons_printf (cons, "'0x%"PFMT64x"'aflp %s\n", fcn->addr, fcn->pin);
+		if (fcn->pin) {
+			r_cons_printf (cons, "'0x%"PFMT64x"'aflp %s\n", fcn->addr, fcn->pin);
+		}
+		if (R_STR_ISNOTEMPTY (fcn->assumptions_json) && strcmp (fcn->assumptions_json, "[]")) {
+			r_cons_printf (cons, "'@0x%08"PFMT64x"'afAj %s\n", fcn->addr, fcn->assumptions_json);
+		}
+		free (name);
+		return 0;
 	}
-	free (name);
-	return 0;
-}
 
 R_VEC_TYPE(RVecDebugTracepoint, RDebugTracepointItem);
 

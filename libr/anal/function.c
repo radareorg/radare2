@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2019-2025 - pancake, thestr4ng3r */
 
 #include <r_anal_priv.h>
+#include <r_util/r_json.h>
 
 static bool get_functions_block_cb(RAnalBlock *block, void *user) {
 	RList *list = user;
@@ -131,6 +132,7 @@ R_API void r_anal_function_free(RAnalFunction *fcn) {
 	free (fcn->name);
 	free (fcn->realname);
 	free (fcn->pin);
+	free (fcn->assumptions_json);
 	fcn->bbs = NULL;
 	free (fcn->fingerprint);
 	r_anal_diff_free (fcn->diff);
@@ -598,6 +600,258 @@ static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn)
 	return signature;
 }
 
+static bool assumption_json_emit(PJ *pj, const RJson *json) {
+	R_RETURN_VAL_IF_FAIL (pj && json, false);
+	const RJson *child;
+	switch (json->type) {
+	case R_JSON_NULL:
+		pj_null (pj);
+		return true;
+	case R_JSON_OBJECT:
+		pj_o (pj);
+		for (child = json->children.first; child; child = child->next) {
+			if (!child->key) {
+				return false;
+			}
+			pj_k (pj, child->key);
+			if (!assumption_json_emit (pj, child)) {
+				return false;
+			}
+		}
+		pj_end (pj);
+		return true;
+	case R_JSON_ARRAY:
+		pj_a (pj);
+		for (child = json->children.first; child; child = child->next) {
+			if (!assumption_json_emit (pj, child)) {
+				return false;
+			}
+		}
+		pj_end (pj);
+		return true;
+	case R_JSON_STRING:
+		pj_s (pj, json->str_value? json->str_value: "");
+		return true;
+	case R_JSON_INTEGER:
+		if (json->num.s_value < 0) {
+			pj_N (pj, json->num.s_value);
+		} else {
+			pj_n (pj, json->num.u_value);
+		}
+		return true;
+	case R_JSON_DOUBLE: {
+		char numstr[64];
+		snprintf (numstr, sizeof (numstr), "%.17g", json->num.dbl_value);
+		pj_j (pj, numstr);
+		return true;
+	}
+	case R_JSON_BOOLEAN:
+		pj_b (pj, json->num.u_value != 0);
+		return true;
+	default:
+		return false;
+	}
+}
+
+static char *assumption_json_fragment(const RJson *json) {
+	R_RETURN_VAL_IF_FAIL (json, NULL);
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return NULL;
+	}
+	if (!assumption_json_emit (pj, json)) {
+		pj_free (pj);
+		return NULL;
+	}
+	return pj_drain (pj);
+}
+
+static char *assumption_json_field_dup(const RJson *json, const char *key) {
+	const RJson *field = r_json_get (json, key);
+	return field? assumption_json_fragment (field): NULL;
+}
+
+static const char *assumption_target_from_subject(const RJson *json) {
+	const RJson *subject = r_json_get (json, "subject");
+	if (!subject || subject->type != R_JSON_OBJECT) {
+		return NULL;
+	}
+	const RJson *reg = r_json_get (subject, "register");
+	if (reg && reg->type == R_JSON_OBJECT) {
+		const char *name = r_json_get_str (reg, "name");
+		if (R_STR_ISNOTEMPTY (name)) {
+			return name;
+		}
+	}
+	const RJson *stack = r_json_get (subject, "stack");
+	if (stack && stack->type == R_JSON_OBJECT) {
+		const char *name = r_json_get_str (stack, "name");
+		if (R_STR_ISNOTEMPTY (name)) {
+			return name;
+		}
+	}
+	return NULL;
+}
+
+R_API void r_anal_function_assumption_free(RAnalFunctionAssumption *assumption) {
+	if (!assumption) {
+		return;
+	}
+	free (assumption->kind);
+	free (assumption->target);
+	free (assumption->scope);
+	free (assumption->provenance);
+	free (assumption->subject_json);
+	free (assumption->value_json);
+	free (assumption->payload_json);
+	free (assumption);
+}
+
+static RAnalFunctionAssumption *assumption_new_from_json(const RJson *json) {
+	if (!json || json->type != R_JSON_OBJECT) {
+		return NULL;
+	}
+	const char *kind = r_json_get_str (json, "kind");
+	if (R_STR_ISEMPTY (kind)) {
+		kind = "analysis";
+	}
+	RAnalFunctionAssumption *assumption = R_NEW0 (RAnalFunctionAssumption);
+	if (!assumption) {
+		return NULL;
+	}
+	assumption->kind = strdup (kind);
+	const char *target = r_json_get_str (json, "target");
+	if (R_STR_ISEMPTY (target)) {
+		target = assumption_target_from_subject (json);
+	}
+	const char *scope = r_json_get_str (json, "scope");
+	const char *provenance = r_json_get_str (json, "provenance");
+	assumption->target = R_STR_ISNOTEMPTY (target)? strdup (target): NULL;
+	assumption->scope = R_STR_ISNOTEMPTY (scope)? strdup (scope): NULL;
+	assumption->provenance = R_STR_ISNOTEMPTY (provenance)? strdup (provenance): NULL;
+	assumption->subject_json = assumption_json_field_dup (json, "subject");
+	assumption->value_json = assumption_json_field_dup (json, "value");
+	assumption->payload_json = assumption_json_fragment (json);
+	if (!assumption->kind || !assumption->payload_json
+		|| (R_STR_ISNOTEMPTY (target) && !assumption->target)
+		|| (R_STR_ISNOTEMPTY (scope) && !assumption->scope)
+		|| (R_STR_ISNOTEMPTY (provenance) && !assumption->provenance)) {
+		r_anal_function_assumption_free (assumption);
+		return NULL;
+	}
+	return assumption;
+}
+
+static RAnalFunctionAssumption *assumption_clone(const RAnalFunctionAssumption *assumption) {
+	if (!assumption || R_STR_ISEMPTY (assumption->kind)) {
+		return NULL;
+	}
+	RAnalFunctionAssumption *clone = R_NEW0 (RAnalFunctionAssumption);
+	if (!clone) {
+		return NULL;
+	}
+	clone->kind = strdup (assumption->kind);
+	clone->target = R_STR_ISNOTEMPTY (assumption->target)? strdup (assumption->target): NULL;
+	clone->scope = R_STR_ISNOTEMPTY (assumption->scope)? strdup (assumption->scope): NULL;
+	clone->provenance = R_STR_ISNOTEMPTY (assumption->provenance)? strdup (assumption->provenance): NULL;
+	clone->subject_json = R_STR_ISNOTEMPTY (assumption->subject_json)? strdup (assumption->subject_json): NULL;
+	clone->value_json = R_STR_ISNOTEMPTY (assumption->value_json)? strdup (assumption->value_json): NULL;
+	clone->payload_json = R_STR_ISNOTEMPTY (assumption->payload_json)? strdup (assumption->payload_json): NULL;
+	if (!clone->kind
+		|| (R_STR_ISNOTEMPTY (assumption->target) && !clone->target)
+		|| (R_STR_ISNOTEMPTY (assumption->scope) && !clone->scope)
+		|| (R_STR_ISNOTEMPTY (assumption->provenance) && !clone->provenance)
+		|| (R_STR_ISNOTEMPTY (assumption->subject_json) && !clone->subject_json)
+		|| (R_STR_ISNOTEMPTY (assumption->value_json) && !clone->value_json)
+		|| (R_STR_ISNOTEMPTY (assumption->payload_json) && !clone->payload_json)) {
+		r_anal_function_assumption_free (clone);
+		return NULL;
+	}
+	return clone;
+}
+
+static bool assumption_json_fragment_valid(const char *json) {
+	if (R_STR_ISEMPTY (json)) {
+		return false;
+	}
+	RJson *parsed = r_json_parsedup (json);
+	if (!parsed) {
+		return false;
+	}
+	r_json_free (parsed);
+	return true;
+}
+
+static bool assumption_payload_emit(PJ *pj, const RAnalFunctionAssumption *assumption) {
+	R_RETURN_VAL_IF_FAIL (pj && assumption && R_STR_ISNOTEMPTY (assumption->kind), false);
+	if (R_STR_ISNOTEMPTY (assumption->payload_json)) {
+		RJson *parsed = r_json_parsedup (assumption->payload_json);
+		if (!parsed || parsed->type != R_JSON_OBJECT) {
+			r_json_free (parsed);
+			return false;
+		}
+		r_json_free (parsed);
+		pj_j (pj, assumption->payload_json);
+		return true;
+	}
+	pj_o (pj);
+	pj_ks (pj, "kind", assumption->kind);
+	if (R_STR_ISNOTEMPTY (assumption->target)) {
+		pj_ks (pj, "target", assumption->target);
+	}
+	if (R_STR_ISNOTEMPTY (assumption->scope)) {
+		pj_ks (pj, "scope", assumption->scope);
+	}
+	if (R_STR_ISNOTEMPTY (assumption->provenance)) {
+		pj_ks (pj, "provenance", assumption->provenance);
+	}
+	if (R_STR_ISNOTEMPTY (assumption->subject_json)) {
+		if (!assumption_json_fragment_valid (assumption->subject_json)) {
+			return false;
+		}
+		pj_k (pj, "subject");
+		pj_j (pj, assumption->subject_json);
+	}
+	if (R_STR_ISNOTEMPTY (assumption->value_json)) {
+		if (!assumption_json_fragment_valid (assumption->value_json)) {
+			return false;
+		}
+		pj_k (pj, "value");
+		pj_j (pj, assumption->value_json);
+	}
+	pj_end (pj);
+	return true;
+}
+
+static bool assumption_same_key(const RAnalFunctionAssumption *assumption, const char *kind, const char *target) {
+	if (!assumption || R_STR_ISEMPTY (kind) || strcmp (assumption->kind, kind)) {
+		return false;
+	}
+	if (!target) {
+		return true;
+	}
+	return !strcmp (r_str_get (assumption->target), target);
+}
+
+static char *assumptions_list_to_json(RList *assumptions) {
+	R_RETURN_VAL_IF_FAIL (assumptions, NULL);
+	PJ *pj = pj_new ();
+	if (!pj) {
+		return NULL;
+	}
+	pj_a (pj);
+	RListIter *iter;
+	RAnalFunctionAssumption *assumption;
+	r_list_foreach (assumptions, iter, assumption) {
+		if (!assumption_payload_emit (pj, assumption)) {
+			pj_free (pj);
+			return NULL;
+		}
+	}
+	pj_end (pj);
+	return pj_drain (pj);
+}
+
 R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 	if (!ctx) {
 		return;
@@ -605,7 +859,342 @@ R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 	r_anal_function_signature_free (ctx->signature);
 	r_list_free (ctx->reg_args);
 	r_list_free (ctx->fcn_slots);
+	r_list_free (ctx->assumptions);
+	free (ctx->assumptions_json);
 	free (ctx);
+}
+
+R_API ut64 r_anal_function_dirty_epoch(const RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	return fcn->dirty_epoch;
+}
+
+R_API ut64 r_anal_function_bump_dirty_epoch(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, 0);
+	fcn->dirty_epoch++;
+	if (!fcn->dirty_epoch) {
+		fcn->dirty_epoch++;
+	}
+	fcn->has_changed = true;
+	return fcn->dirty_epoch;
+}
+
+static ut64 function_context_hash_mix(ut64 hash, ut64 value) {
+	hash ^= value + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+	return hash;
+}
+
+static ut64 function_context_hash_string(ut64 hash, const char *value) {
+	return function_context_hash_mix (hash, R_STR_ISNOTEMPTY (value)? r_str_hash64 (value): 0);
+}
+
+R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, 0);
+	ut64 hash = 0xcbf29ce484222325ULL;
+	hash = function_context_hash_mix (hash, fcn->addr);
+	hash = function_context_hash_mix (hash, r_anal_function_linear_size (fcn));
+	hash = function_context_hash_mix (hash, r_anal_function_dirty_epoch (fcn));
+	hash = function_context_hash_mix (hash, (ut64)fcn->bits);
+	hash = function_context_hash_mix (hash, (ut64)fcn->maxstack);
+	hash = function_context_hash_string (hash, fcn->name);
+	hash = function_context_hash_string (hash, fcn->callconv);
+	hash = function_context_hash_string (hash, fcn->assumptions_json);
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RAnalVar *var = *it;
+		if (!var) {
+			continue;
+		}
+		hash = function_context_hash_string (hash, var->name);
+		hash = function_context_hash_string (hash, var->type);
+		hash = function_context_hash_string (hash, var->regname);
+		hash = function_context_hash_mix (hash, (ut64)(ut8)var->kind);
+		hash = function_context_hash_mix (hash, (ut64)(st64)var->delta);
+		hash = function_context_hash_mix (hash, var->isarg? 1: 0);
+	}
+	return hash;
+}
+
+R_API char *r_anal_function_get_assumptions_json(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	return strdup (R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]");
+}
+
+R_API RList *r_anal_function_list_assumptions(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
+	RList *list = r_list_newf ((RListFree)r_anal_function_assumption_free);
+	if (!list) {
+		return NULL;
+	}
+	const char *json = R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]";
+	RJson *parsed = r_json_parsedup (json);
+	if (!parsed || parsed->type != R_JSON_ARRAY) {
+		r_json_free (parsed);
+		r_list_free (list);
+		return NULL;
+	}
+	const RJson *child;
+	for (child = parsed->children.first; child; child = child->next) {
+		RAnalFunctionAssumption *assumption = assumption_new_from_json (child);
+		if (!assumption || !r_list_append (list, assumption)) {
+			r_anal_function_assumption_free (assumption);
+			r_json_free (parsed);
+			r_list_free (list);
+			return NULL;
+		}
+	}
+	r_json_free (parsed);
+	return list;
+}
+
+R_API RAnalFunctionAssumption *r_anal_function_get_assumption(RAnal *anal, RAnalFunction *fcn, const char *kind, const char *target) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (kind), NULL);
+	RList *list = r_anal_function_list_assumptions (anal, fcn);
+	if (!list) {
+		return NULL;
+	}
+	RListIter *iter;
+	RAnalFunctionAssumption *assumption;
+	RAnalFunctionAssumption *result = NULL;
+	r_list_foreach (list, iter, assumption) {
+		if (assumption_same_key (assumption, kind, target)) {
+			result = assumption_clone (assumption);
+			break;
+		}
+	}
+	r_list_free (list);
+	return result;
+}
+
+R_API bool r_anal_function_set_assumptions(RAnal *anal, RAnalFunction *fcn, RList *assumptions) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && assumptions, false);
+	char *json = assumptions_list_to_json (assumptions);
+	if (!json) {
+		return false;
+	}
+	bool ok = r_anal_function_set_assumptions_json (anal, fcn, json);
+	free (json);
+	return ok;
+}
+
+R_API bool r_anal_function_set_assumption(RAnal *anal, RAnalFunction *fcn, const RAnalFunctionAssumption *assumption) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && assumption && R_STR_ISNOTEMPTY (assumption->kind), false);
+	RList *current = r_anal_function_list_assumptions (anal, fcn);
+	RList *next = r_list_newf ((RListFree)r_anal_function_assumption_free);
+	if (!current || !next) {
+		r_list_free (current);
+		r_list_free (next);
+		return false;
+	}
+	RListIter *iter;
+	RAnalFunctionAssumption *item;
+	r_list_foreach (current, iter, item) {
+		if (assumption_same_key (item, assumption->kind, assumption->target)) {
+			continue;
+		}
+		RAnalFunctionAssumption *clone = assumption_clone (item);
+		if (!clone || !r_list_append (next, clone)) {
+			r_anal_function_assumption_free (clone);
+			r_list_free (current);
+			r_list_free (next);
+			return false;
+		}
+	}
+	RAnalFunctionAssumption *clone = assumption_clone (assumption);
+	if (!clone || !r_list_append (next, clone)) {
+		r_anal_function_assumption_free (clone);
+		r_list_free (current);
+		r_list_free (next);
+		return false;
+	}
+	bool ok = r_anal_function_set_assumptions (anal, fcn, next);
+	r_list_free (current);
+	r_list_free (next);
+	return ok;
+}
+
+R_API bool r_anal_function_delete_assumption(RAnal *anal, RAnalFunction *fcn, const char *kind, const char *target) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (kind), false);
+	RList *current = r_anal_function_list_assumptions (anal, fcn);
+	RList *next = r_list_newf ((RListFree)r_anal_function_assumption_free);
+	if (!current || !next) {
+		r_list_free (current);
+		r_list_free (next);
+		return false;
+	}
+	bool removed = false;
+	RListIter *iter;
+	RAnalFunctionAssumption *item;
+	r_list_foreach (current, iter, item) {
+		if (assumption_same_key (item, kind, target)) {
+			removed = true;
+			continue;
+		}
+		RAnalFunctionAssumption *clone = assumption_clone (item);
+		if (!clone || !r_list_append (next, clone)) {
+			r_anal_function_assumption_free (clone);
+			r_list_free (current);
+			r_list_free (next);
+			return false;
+		}
+	}
+	bool ok = true;
+	if (removed) {
+		ok = r_anal_function_set_assumptions (anal, fcn, next);
+	}
+	r_list_free (current);
+	r_list_free (next);
+	return ok;
+}
+
+R_API bool r_anal_function_set_assumptions_json(RAnal *anal, RAnalFunction *fcn, const char *json) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && json, false);
+	char *trimmed = r_str_trim_dup (json);
+	if (!trimmed) {
+		return false;
+	}
+	if (R_STR_ISEMPTY (trimmed)) {
+		free (trimmed);
+		trimmed = strdup ("[]");
+		if (!trimmed) {
+			return false;
+		}
+	}
+	RJson *parsed = r_json_parsedup (trimmed);
+	if (!parsed || parsed->type != R_JSON_ARRAY) {
+		r_json_free (parsed);
+		free (trimmed);
+		return false;
+	}
+	const RJson *child;
+	for (child = parsed->children.first; child; child = child->next) {
+		RAnalFunctionAssumption *assumption = assumption_new_from_json (child);
+		if (!assumption) {
+			r_json_free (parsed);
+			free (trimmed);
+			return false;
+		}
+		r_anal_function_assumption_free (assumption);
+	}
+	r_json_free (parsed);
+	free (fcn->assumptions_json);
+	fcn->assumptions_json = trimmed;
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
+}
+
+R_API bool r_anal_function_clear_assumptions(RAnal *anal, RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	R_FREE (fcn->assumptions_json);
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
+}
+
+R_API bool r_anal_function_set_callconv(RAnal *anal, RAnalFunction *fcn, const char *callconv) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (callconv), false);
+	if (!r_anal_cc_exist (anal, callconv)) {
+		return false;
+	}
+	const char *pooled = r_str_constpool_get (&anal->constpool, callconv);
+	if (!pooled) {
+		return false;
+	}
+	if (fcn->callconv && !strcmp (fcn->callconv, pooled)) {
+		return true;
+	}
+	fcn->callconv = pooled;
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
+}
+
+R_API bool r_anal_function_set_signature_string(RAnal *anal, RAnalFunction *fcn, const char *signature) {
+	R_RETURN_VAL_IF_FAIL (anal && fcn && R_STR_ISNOTEMPTY (signature), false);
+	if (!r_anal_str_to_fcn (anal, fcn, signature)) {
+		return false;
+	}
+	r_anal_function_bump_dirty_epoch (fcn);
+	return true;
+}
+
+static bool r_anal_apply_one_mutation(RAnal *anal, const RAnalMutation *mutation) {
+	R_RETURN_VAL_IF_FAIL (anal && mutation, false);
+	switch (mutation->kind) {
+	case R_ANAL_MUTATION_SIGNATURE:
+		if (mutation->signature) {
+			return r_anal_function_set_signature (anal, mutation->fcn, mutation->signature);
+		}
+		return r_anal_function_set_signature_string (anal, mutation->fcn, mutation->signature_string);
+	case R_ANAL_MUTATION_CALLCONV:
+		return r_anal_function_set_callconv (anal, mutation->fcn, mutation->callconv);
+	case R_ANAL_MUTATION_VAR:
+		return mutation->fcn && mutation->name && mutation->size <= INT_MAX
+			&& r_anal_function_set_var (mutation->fcn, mutation->delta, mutation->var_kind,
+				mutation->type, (int)mutation->size, mutation->is_arg, mutation->name);
+	case R_ANAL_MUTATION_VAR_RENAME: {
+		RAnalVar *var = mutation->var;
+		if (!var && mutation->fcn && R_STR_ISNOTEMPTY (mutation->old_name)) {
+			var = r_anal_function_get_var_byname (mutation->fcn, mutation->old_name);
+		}
+		return var && R_STR_ISNOTEMPTY (mutation->name)
+			&& r_anal_var_rename (anal, var, mutation->name);
+	}
+	case R_ANAL_MUTATION_VAR_TYPE: {
+		RAnalVar *var = mutation->var;
+		if (!var && mutation->fcn && R_STR_ISNOTEMPTY (mutation->old_name)) {
+			var = r_anal_function_get_var_byname (mutation->fcn, mutation->old_name);
+		}
+		if (!var || R_STR_ISEMPTY (mutation->type)) {
+			return false;
+		}
+		r_anal_var_set_type (anal, var, mutation->type);
+		return true;
+	}
+	case R_ANAL_MUTATION_XREF:
+		return r_anal_xrefs_setf (anal, mutation->fcn, mutation->from, mutation->to, mutation->ref_type);
+	case R_ANAL_MUTATION_COMMENT:
+		return R_STR_ISNOTEMPTY (mutation->text)
+			&& r_meta_set_string (anal, R_META_TYPE_COMMENT, mutation->addr, mutation->text);
+	case R_ANAL_MUTATION_FLAG:
+		return anal->flb.f && anal->flb.set && R_STR_ISNOTEMPTY (mutation->name) && mutation->size <= UT32_MAX
+			&& anal->flb.set (anal->flb.f, mutation->name, mutation->addr,
+				mutation->size? (ut32)mutation->size: 1);
+	case R_ANAL_MUTATION_TYPE_DECL: {
+		char *errmsg = NULL;
+		if (R_STR_ISEMPTY (mutation->text)) {
+			return false;
+		}
+		bool ok = r_anal_import_c_decls (anal, mutation->text, &errmsg);
+		free (errmsg);
+		return ok;
+	}
+	case R_ANAL_MUTATION_TYPE_LINK:
+		if (!anal->sdb_types || R_STR_ISEMPTY (mutation->type) || !mutation->addr) {
+			return false;
+		}
+		return r_type_set_link (anal->sdb_types, mutation->type, mutation->addr) > 0
+			|| r_type_link_offset (anal->sdb_types, mutation->type, mutation->addr) > 0;
+	default:
+		return false;
+	}
+}
+
+R_API bool r_anal_apply_mutations(RAnal *anal, const RAnalMutation *mutations, size_t mutation_count, RAnalMutationResult *result) {
+	size_t i;
+	RAnalMutationResult local = {0};
+
+	R_RETURN_VAL_IF_FAIL (anal && (mutations || !mutation_count), false);
+	for (i = 0; i < mutation_count; i++) {
+		local.attempted++;
+		if (r_anal_apply_one_mutation (anal, &mutations[i])) {
+			local.applied++;
+		} else {
+			local.failed++;
+		}
+	}
+	if (result) {
+		*result = local;
+	}
+	return local.failed == 0;
 }
 
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
@@ -619,7 +1208,9 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	ctx->signature = fcn_context_collect_signature (fcn);
 	ctx->reg_args = r_list_newf ((RListFree)fcn_context_reg_arg_free);
 	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
-	if (!ctx->reg_args || !ctx->fcn_slots) {
+	ctx->assumptions = r_anal_function_list_assumptions (anal, fcn);
+	ctx->assumptions_json = strdup (R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]");
+	if (!ctx->reg_args || !ctx->fcn_slots || !ctx->assumptions || !ctx->assumptions_json) {
 		r_anal_function_context_free (ctx);
 		return NULL;
 	}

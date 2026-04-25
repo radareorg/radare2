@@ -249,6 +249,7 @@ R_API RAnalVar *r_anal_function_set_var(RAnalFunction *fcn, int delta, char kind
 		free (var->type);
 	}
 	R_DIRTY_SET (fcn->anal);
+	r_anal_function_bump_dirty_epoch (fcn);
 	var->name = strdup (name);
 	var->regname = reg? strdup (reg->name): NULL; // TODO: no strdup here? pool? or not keep regname at all?
 	var->type = strdup (type);
@@ -277,6 +278,7 @@ R_API void r_anal_var_set_type(RAnal *anal, RAnalVar *var, const char * const ty
 	if (nt) {
 		free (var->type);
 		var->type = nt;
+		r_anal_function_bump_dirty_epoch (var->fcn);
 		R_LOG_DEBUG ("set type %s for %s", type, var->name);
 		shadow_var_struct_members (anal, var);
 		{

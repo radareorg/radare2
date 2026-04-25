@@ -2516,7 +2516,14 @@ static char *function_signature_string(const char *name, const char *ret_type, R
 		}
 	}
 	if (ok) {
-		signature = r_str_newf ("%s %s (%s);", r_str_get_fail (ret_type, "void"), r_str_get_fail (sane, name), r_strbuf_get (&args));
+		const char *display_name = r_str_get_fail (sane, name);
+		if (R_STR_ISNOTEMPTY (ret_type)) {
+			signature = r_str_newf ("%s %s (%s);", ret_type, display_name, r_strbuf_get (&args));
+		} else if (fill_defaults) {
+			signature = r_str_newf ("void %s (%s);", display_name, r_strbuf_get (&args));
+		} else {
+			signature = r_str_newf ("%s (%s);", display_name, r_strbuf_get (&args));
+		}
 	}
 	free (sane);
 	r_strbuf_fini (&args);
@@ -2673,7 +2680,9 @@ R_API RAnalFunctionSignature *r_anal_function_get_signature(RAnalFunction *funct
 		&& !function_signature_fallback_to_vars (anal, function, signature)) {
 		goto beach;
 	}
-	signature->signature = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+	signature->signature = function_signature_string (
+		R_STR_ISNOTEMPTY (function->name)? function->name: type_name,
+		signature->ret_type, signature->params, true, false);
 	if (!signature->signature) {
 		goto beach;
 	}
@@ -2705,7 +2714,9 @@ R_API char *r_anal_function_get_signature_string(RAnalFunction *fcn) {
 	}
 	type_name = function_signature_type_name (fcn->anal, fcn);
 	if (type_name) {
-		res = function_signature_string (type_name, signature->ret_type, signature->params, true, false);
+		res = function_signature_string (
+			R_STR_ISNOTEMPTY (fcn->name)? fcn->name: type_name,
+			signature->ret_type, signature->params, true, false);
 		free (type_name);
 	}
 	r_anal_function_signature_free (signature);
@@ -2744,6 +2755,7 @@ R_API bool r_anal_function_set_signature(RAnal *anal, RAnalFunction *fcn, const 
 			function_signature_sync (fcn, signature);
 			r_anal_function_signature_free (signature);
 		}
+		r_anal_function_bump_dirty_epoch (fcn);
 	}
 	return ok;
 }

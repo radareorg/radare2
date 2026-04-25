@@ -573,6 +573,8 @@ static RCoreHelpMessage help_msg_af = {
 	"af+", " addr name [type] [diff]", "hand craft a function (requires afb+)",
 	"af-", " [addr]", "clean all function analysis data (or function at addr)",
 	"afa", "", "analyze function arguments in a call (afal honors dbg.funcarg)",
+	"afAj", " [json-array]", "get/set user-owned function analysis assumptions",
+	"afA-", "", "clear user-owned function analysis assumptions",
 	"afB", " 16", "set current function as thumb (change asm.bits)",
 	"afb", "[?] [addr]", "List basic blocks of given function",
 	"afc", "[?] type @[addr]", "set calling convention for function",
@@ -4524,7 +4526,10 @@ static void cmd_anal_fcn_sig(RCore *core, const char *input) {
 		}
 		pj_free (j);
 	} else {
-		char *sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		char *sig = r_anal_function_get_signature_string (fcn);
+		if (!sig) {
+			sig = r_anal_function_format_sig (core->anal, fcn, fcn_name, NULL, NULL, NULL);
+		}
 		if (sig) {
 			r_cons_printf (core->cons, "%s\n", sig);
 			free (sig);
@@ -6028,9 +6033,50 @@ static void cmd_afla(RCore *core, const char *input) {
 	ht_up_free (ht);
 }
 
+static void cmd_af_assumptions(RCore *core, const char *input) {
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+	if (!fcn) {
+		R_LOG_ERROR ("No function at current address");
+		return;
+	}
+	if (input[2] == '?') {
+		r_core_cmd_help_match (core, help_msg_af, "afA");
+		return;
+	}
+	if (input[2] == '-') {
+		if (!r_anal_function_clear_assumptions (core->anal, fcn)) {
+			R_LOG_ERROR ("Failed to clear function assumptions");
+		}
+		return;
+	}
+	if (input[2] != 'j') {
+		r_core_cmd_help_match (core, help_msg_af, "afA");
+		return;
+	}
+	const char *arg = r_str_trim_head_ro (input + 3);
+	if (R_STR_ISEMPTY (arg)) {
+		char *assumptions = r_anal_function_get_assumptions_json (core->anal, fcn);
+		r_cons_println (core->cons, assumptions? assumptions: "[]");
+		free (assumptions);
+		return;
+	}
+	char *json = strdup (arg);
+	if (!json) {
+		R_LOG_ERROR ("Failed to allocate assumptions payload");
+		return;
+	}
+	if (!r_anal_function_set_assumptions_json (core->anal, fcn, json)) {
+		R_LOG_ERROR ("Invalid function assumptions; expected a JSON array");
+	}
+	free (json);
+}
+
 static int cmd_af(RCore *core, const char *input) {
 	r_cons_break_timeout (core->cons, r_config_get_i (core->config, "anal.timeout"));
 	switch (input[1]) {
+	case 'A': // "afA"
+		cmd_af_assumptions (core, input);
+		break;
 	case '-': // "af-"
 		if (!input[2]) { // "af-"
 			cmd_af (core, "f-$$");
