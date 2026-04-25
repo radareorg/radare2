@@ -465,7 +465,7 @@ static JSValue r2fload(JSContext *ctx, JSValueConst this_val, int argc, JSValueC
 	if (!s) {
 		return JS_ThrowPlainError (ctx, "Failed to load file %s", n);
 	}
-	JSValue v = JS_NewString (ctx, r_str_get (s));
+	JSValue v = JS_NewString (ctx, s);
 	free (s);
 	return v;
 }
