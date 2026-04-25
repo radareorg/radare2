@@ -8,7 +8,14 @@
 
 static RFSFile* FSP(_open)(RFSRoot *root, const char *path, bool create) {
 	RFSFile *file = r_fs_file_new (root, path);
+	if (!file) {
+		return NULL;
+	}
 	GrubFS *gfs = grubfs_new (&FSIPTR, &root->iob);
+	if (!gfs) {
+		r_fs_file_free (file);
+		return NULL;
+	}
 	file->ptr = gfs;
 	file->p = root->p;
 	grubfs_bind_io (NULL, file->root->delta);
@@ -40,6 +47,9 @@ static R_TH_LOCAL RList *list = NULL;
 
 static int dirhook(const char *filename, const struct grub_dirhook_info *info, void *closure) {
 	RFSFile *fsf = r_fs_file_new (NULL, filename);
+	if (!fsf) {
+		return 0;
+	}
 	fsf->type = info->dir? 'd':'f';
 	fsf->time = info->mtime;
 	r_list_append (list, fsf);
