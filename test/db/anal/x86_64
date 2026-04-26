@@ -121,7 +121,7 @@ EOF
 EXPECT=<<EOF
 |           ;-- syscall.socket:
 |           0x00001140      0f05           syscall
-41 = socket (0x00000001, 0x00000002, 0x00000003)
+41 = socket (1, 0x00000002, 0x00000003)
 EOF
 RUN
 

@@ -941,10 +941,10 @@ static void rprj_info_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		return;
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-		r_strbuf_appendf (cur->out, "    ProjectInfo {\n");
+		r_strbuf_append (cur->out, "    ProjectInfo {\n");
 		r_strbuf_appendf (cur->out, "      Name: %s\n", name);
 		r_strbuf_appendf (cur->out, "      User: %s\n", user);
-		r_strbuf_appendf (cur->out, "    }\n");
+		r_strbuf_append (cur->out, "    }\n");
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_DIFF) {
 		const char *cur_name = r_config_get (core->config, "prj.name");
@@ -1169,7 +1169,7 @@ static void rprj_cmds_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-		r_strbuf_appendf (cur->out, "    [\n");
+		r_strbuf_append (cur->out, "    [\n");
 	}
 	while (r_buf_at (b) < next_entry) {
 		char *script;
@@ -1186,7 +1186,7 @@ static void rprj_cmds_load(RPrjCursor *cur, int mode, ut64 next_entry) {
 		free (script);
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-		r_strbuf_appendf (cur->out, "    ]\n");
+		r_strbuf_append (cur->out, "    ]\n");
 	}
 }
 
@@ -1258,11 +1258,11 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 		.out = out,
 	};
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-		r_strbuf_appendf (out, "Project {\n");
-		r_strbuf_appendf (out, "  Header {\n");
+		r_strbuf_append (out, "Project {\n");
+		r_strbuf_append (out, "  Header {\n");
 		r_strbuf_appendf (out, "    magic = 0x%08x OK\n", hdr.magic);
 		r_strbuf_appendf (out, "    version = %d\n", hdr.version);
-		r_strbuf_appendf (out, "  }\n");
+		r_strbuf_append (out, "  }\n");
 	}
 	RVecPrjMod_init (&cur.mods);
 	ut8 *modsbuf = NULL;
@@ -1338,14 +1338,14 @@ static char *r_core_newprj_load(RCore *core, const char *file, int mode) {
 			break;
 		}
 		if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-			r_strbuf_appendf (out, "  }\n");
+			r_strbuf_append (out, "  }\n");
 		}
 		// skip to the next entry
 		r_buf_seek (b, next_entry, SEEK_SET);
 		n++;
 	}
 	if (mode & R_CORE_NEWPRJ_MODE_LOG) {
-		r_strbuf_appendf (out, "}\n");
+		r_strbuf_append (out, "}\n");
 	}
 done:
 	free (modsbuf);
