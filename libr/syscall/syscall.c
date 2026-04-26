@@ -167,14 +167,16 @@ R_API RSyscallItem *r_syscall_item_new_from_string(const char *name, const char 
 	} else {
 		si->args = 0;
 	}
-	si->sargs = calloc (si->args + 1, sizeof (char));
+	const char *sargs = (cols > 3)? r_str_word_get0 (o, 3): "";
+	size_t sargs_len = R_MAX ((size_t)si->args, strlen (sargs));
+	si->sargs = calloc (sargs_len + 1, sizeof (char));
 	if (!si->sargs) {
 		free (si);
 		free (o);
 		return NULL;
 	}
 	if (cols > 3) {
-		strncpy (si->sargs, r_str_word_get0 (o, 3), si->args);
+		memcpy (si->sargs, sargs, strlen (sargs));
 	}
 	free (o);
 	return si;

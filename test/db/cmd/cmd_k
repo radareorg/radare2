@@ -22,7 +22,7 @@ e asm.os=linux
 k syscall/stat
 EOF
 EXPECT=<<EOF
-0x80,4,2,
+0x80,4,2,zp filename statbuf
 EOF
 RUN
 
