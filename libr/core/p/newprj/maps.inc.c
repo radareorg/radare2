@@ -215,7 +215,9 @@ static void rprj_json_map_offset(const RJson *item, ut64 *pmin) {
 	}
 	const RJson *file_obj = r_json_get (item, "file");
 	if (file_obj && file_obj->type == R_JSON_OBJECT) {
-		rprj_json_get_ut64 (file_obj, "offset", pmin);
+		if (rprj_json_get_ut64 (file_obj, "offset", pmin)) {
+			return;
+		}
 	}
 }
 
@@ -410,7 +412,11 @@ static void rprj_maps_restore(RPrjCursor *cur) {
 	RCore *core = cur->core;
 	RBuffer *b = cur->b;
 	const ut64 end = r_buf_size (b);
-	while (r_buf_at (b) + RPRJ_MAP_SIZE <= end) {
+	for (;;) {
+		const ut64 at = r_buf_at (b);
+		if (at > end || end - at < RPRJ_MAP_SIZE) {
+			break;
+		}
 		R2ProjectMap map;
 		if (!rprj_map_read (b, &map) || map.vmax < map.vmin || map.pmax < map.pmin) {
 			break;
