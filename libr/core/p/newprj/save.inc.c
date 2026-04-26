@@ -313,6 +313,81 @@ static void rprj_hints_write(RPrjCursor *cur) {
 	r_anal_addr_hints_foreach (cur->core->anal, rprj_hints_collect_cb, &ctx);
 }
 
+static ut32 rprj_st_append_opt(R2ProjectStringTable *st, const char *s) {
+	return R_STR_ISNOTEMPTY (s)? rprj_st_append (st, s): UT32_MAX;
+}
+
+static void rprj_breakpoint_write_one(RPrjCursor *cur, RBreakpointItem *bp) {
+	if (!bp || bp->internal) {
+		return;
+	}
+	ut32 flags = 0;
+	if (bp->trace) {
+		flags |= RPRJ_BREAKPOINT_TRACE;
+	}
+	if (bp->enabled) {
+		flags |= RPRJ_BREAKPOINT_ENABLED;
+	}
+	if (bp->swstep) {
+		flags |= RPRJ_BREAKPOINT_SWSTEP;
+	}
+	if (bp->perm & (R_BP_PROT_READ | R_BP_PROT_WRITE | R_BP_PROT_ACCESS)) {
+		flags |= RPRJ_BREAKPOINT_WATCH;
+	}
+	R2ProjectBreakpoint pbp = {
+		.addr = rprj_mod_addr (cur, bp->addr),
+		.name = rprj_st_append_opt (cur->st, bp->name),
+		.data = rprj_st_append_opt (cur->st, bp->data),
+		.cond = rprj_st_append_opt (cur->st, bp->cond),
+		.expr = rprj_st_append_opt (cur->st, bp->expr),
+		.size = (ut32)R_MAX (bp->size, 0),
+		.perm = (ut32)bp->perm,
+		.hw = (ut32)bp->hw,
+		.flags = flags,
+		.togglehits = (ut32)R_MAX (bp->togglehits, 0),
+		.hits = (ut32)R_MAX (bp->hits, 0),
+	};
+	rprj_breakpoint_write_record (cur->b, &pbp);
+}
+
+static void rprj_breakpoint_write(RPrjCursor *cur) {
+	if (!cur->core->dbg || !cur->core->dbg->bp) {
+		return;
+	}
+	RBreakpointItem *bp;
+	RListIter *iter;
+	r_list_foreach (cur->core->dbg->bp->bps, iter, bp) {
+		rprj_breakpoint_write_one (cur, bp);
+	}
+}
+
+static bool rprj_signal_write_cb(void *user, const char *k, const char *v) {
+	RPrjCursor *cur = (RPrjCursor *)user;
+	if (!r_str_startswith (k, "cfg.")) {
+		return true;
+	}
+	const int signum = atoi (k + 4);
+	if (signum < 1) {
+		return true;
+	}
+	const int option = atoi (v);
+	if (!option) {
+		return true;
+	}
+	R2ProjectSignal sig = {
+		.signum = (ut32)signum,
+		.option = (ut32)option,
+	};
+	rprj_signal_write_record (cur->b, &sig);
+	return true;
+}
+
+static void rprj_signal_write(RPrjCursor *cur) {
+	if (cur->core->dbg && cur->core->dbg->sgnls) {
+		sdb_foreach (cur->core->dbg->sgnls, rprj_signal_write_cb, cur);
+	}
+}
+
 static bool evalkey_is_saveable(RConfigNode *node) {
 	if (r_config_node_is_ro (node)) {
 		return false;
@@ -419,6 +494,8 @@ static bool r_core_newprj_save(RCore *core, const char *file) {
 	rprj_write_entry (&cur, RPRJ_HINT, rprj_hints_write);
 	rprj_write_entry (&cur, RPRJ_FUNC, rprj_function_write);
 	rprj_write_entry (&cur, RPRJ_XREF, rprj_xref_write);
+	rprj_write_entry (&cur, RPRJ_BRKP, rprj_breakpoint_write);
+	rprj_write_entry (&cur, RPRJ_SIGS, rprj_signal_write);
 	rprj_write_entry (&cur, RPRJ_STRS, rprj_strs_write_entry);
 	RVecPrjMap_free (cur.maps);
 	ut64 size;

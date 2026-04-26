@@ -671,6 +671,46 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=newprj breakpoints watchpoints and signals round-trip
+FILE=malloc://0x100
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-bps.prj
+db 0x10
+s 0x10
+dbn saved.bp
+dbc 0x10 ?e hit
+dbC 0x10 dr PC
+dbte 0x10
+dbd 0x10
+dbx saved.expr
+dbH 0x20
+dbw 0x30 w
+dko 11 skip
+dko 2 cont
+prj save .tmp/newprj-bps.prj > /dev/null
+db-*
+dko 11
+dko 2
+prj load .tmp/newprj-bps.prj > /dev/null
+db~saved.bp
+db~0x00000020
+db~0x00000030
+dbx~saved.expr
+dko~SIGSEGV
+dko~SIGINT
+rm .tmp/newprj-bps.prj
+EOF
+EXPECT=<<EOF
+0x00000010 - 0x00000011 1 --x sw trace disabled valid cmd="?e hit" cond="dr PC" name="saved.bp" module="malloc://0x100"
+0x00000020 - 0x00000021 1 --x hw break enabled valid cmd="" cond="" name="0x20" module="malloc://0x100"
+0x00000030 - 0x00000031 1 -w- hw break enabled valid cmd="" cond="" name="0x30" module="malloc://0x100"
+0x00000010 saved.expr
+11 SIGSEGV skip
+2 SIGINT cont
+EOF
+RUN
+
 NAME=newprj open restores file maps
 FILE=malloc://0x10
 CMDS=<<EOF
@@ -691,5 +731,31 @@ EOF
 EXPECT=<<EOF
 open.flag
 41
+EOF
+RUN
+
+NAME=newprj rebased breakpoints keep modules
+FILE=malloc://0x10
+CMDS=<<EOF
+mkdir .tmp
+rm -f .tmp/newprj-bpmods.prj
+!printf AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA > .tmp/newprj-bpmod.bin
+o--
+o .tmp/newprj-bpmod.bin 0x1000
+db 0x1010
+dbw 0x1018 w
+prj save .tmp/newprj-bpmods.prj > /dev/null
+db-*
+o--
+o .tmp/newprj-bpmod.bin 0x8000
+prj load .tmp/newprj-bpmods.prj > /dev/null
+db~0x00008010
+db~0x00008018
+rm .tmp/newprj-bpmods.prj
+rm .tmp/newprj-bpmod.bin
+EOF
+EXPECT=<<EOF
+0x00008010 - 0x00008011 1 --x sw break enabled valid cmd="" cond="" name="0x1010" module=".tmp/newprj-bpmod.bin"
+0x00008018 - 0x00008019 1 -w- hw break enabled valid cmd="" cond="" name="0x1018" module=".tmp/newprj-bpmod.bin"
 EOF
 RUN
