@@ -5680,7 +5680,7 @@ static void ds_pre_emulation(RDisasmState *ds) {
 			if (do_esil) {
 				// underlying assumption of esil expressions is pc register is set prior to emulation
 				r_reg_setv (ds->core->anal->reg, "PC", addr + op->size);
-				r_esil_set_pc (esil, addr);
+				esil->addr = addr;
 				r_esil_parse (esil, R_STRBUF_SAFEGET (&op->esil));
 				if (op->size > 0) {
 					i += op->size - 1;
@@ -6085,7 +6085,7 @@ static void ds_print_esil_anal(RDisasmState *ds) {
 	const char *esilstr = R_STRBUF_SAFEGET (&ds->analop.esil);
 	if (R_STR_ISNOTEMPTY (esilstr)) {
 		mipsTweak (ds);
-		r_esil_set_pc (esil, at);
+		esil->addr = at;
 		if (ds->pj) {
 			pj_ko (ds->pj, "esil");
 			pj_ks (ds->pj, "expr", esilstr);

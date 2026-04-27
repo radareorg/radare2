@@ -2424,7 +2424,14 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 		return 0;
 	}
 	int ec = 0;
+	if (!r_reg_arena_push (core->anal->reg)) {
+		return ec;
+	}
 	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	if (!e) {
+		r_reg_arena_pop (core->anal->reg);
+		return ec;
+	}
 	e->anal = core->anal;	//XXX
 	//preserve regs? enforce ro mem access?
 	r_esil_add_voyeur (e, &ec, mr, R_ESIL_VOYEUR_MEM_READ);
@@ -2435,6 +2442,7 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 #endif
 	r_esil_parse (e, expr);
 	r_esil_free (e);
+	r_reg_arena_pop (core->anal->reg);
 	return ec;
 }
 
@@ -7264,6 +7272,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				goto out;
 			}
 			r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
+			addr = r_reg_getv (core->anal->reg, "PC");
 			r_anal_op_fini (&op);
 			if (single_step) {
 				break;
@@ -7279,11 +7288,23 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		addr = r_reg_getv (core->anal->reg, "PC");
 		if (until_expr) {
+			const int trap = core->esil.esil.trap;
+			const ut32 trap_code = core->esil.esil.trap_code;
 			if (r_esil_condition (&core->esil.esil, until_expr)) {
-				core->esil.esil.trap = false;
+				if (trap) {
+					core->esil.esil.trap = trap;
+					core->esil.esil.trap_code = trap_code;
+				} else {
+					core->esil.esil.trap = R_ANAL_TRAP_NONE;
+				}
 				break;
 			}
-			core->esil.esil.trap = false;
+			if (trap) {
+				core->esil.esil.trap = trap;
+				core->esil.esil.trap_code = trap_code;
+			} else {
+				core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			}
 		}
 		if (single_step) {
 			break;

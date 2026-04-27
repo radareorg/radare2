@@ -40,7 +40,7 @@ static bool core_esil_cmd(RCore *core, const char *cmd, ut64 a1, ut64 a2) {
 }
 
 static bool core_esil_mem_is_valid(RCore *core, ut64 addr, bool write) {
-	const bool valid = r_io_is_valid_offset (core->io, addr, false);
+	const bool valid = r_io_is_valid_offset (core->io, addr, write ? R_PERM_W : R_PERM_R);
 	if (!valid && R_STR_ISNOTEMPTY (core->esil.cmd_ioer)) {
 		core_esil_cmd (core, core->esil.cmd_ioer, core->esil.old_pc, write);
 	}
@@ -450,6 +450,7 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	if (core_esil_parse_ok (&core->esil.esil, r_esil_parse (&core->esil.esil, expr))) {
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 			core_esil_record_stepback (core);
+			core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		}
 		return true;
 	}
@@ -599,6 +600,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 skip:
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 			core_esil_record_stepback (core);
+			core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		}
 		r_unref (as);
 		if (R_STR_ISNOTEMPTY (core->esil.cmd_step_out)) {
