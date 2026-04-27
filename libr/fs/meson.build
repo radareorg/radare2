@@ -9,6 +9,7 @@ r_fs_sources = [
   'p/fs_ubifs.c',
   'p/fs_bfs.c',
   'p/fs_fatmacho.c',
+  'p/fs_sep64.c',
 ]
 
 if get_option('use_zip')

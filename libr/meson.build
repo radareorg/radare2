@@ -12,9 +12,9 @@ anal_plugins = [ 'null', 'autoname', 'a2f', 'tcc', 'blaze', 'tp', 'sbpf', 'path'
 arch_plugins = [ 'null' ]
 bin_plugins = [ 'any' ]
 bin_ldr_plugins = [ 'ldr_linux' ]
-bin_xtr_plugins = [ 'xtr_sep64' ]
+bin_xtr_plugins = []
 io_plugins = [ 'malloc', 'cyclic', 'xattr', 'fd', 'tap', 'default', 'null', 'rbuf', 'r2pipe' ]
-fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho' ]
+fs_plugins = [ 'r2', 'posix', 'io', 'ubifs', 'bfs', 'fatmacho', 'sep64' ]
 
 if get_option('use_zip')
   io_plugins += [ 'zip' ]
@@ -52,7 +52,6 @@ if user_plugins.contains('apple') or user_plugins.contains('macos') or user_plug
   bin_xtr_plugins += [
     'xtr_dyldcache',
     'xtr_xalz',
-    'xtr_sep64'
   ]
 endif
 if user_plugins.contains('python')
@@ -292,7 +291,6 @@ if get_option('plugins') == ''
   bin_xtr_plugins += [
     'xtr_dyldcache',
     'xtr_xalz',
-    'xtr_sep64',
   ]
 
   bp_plugins += [
