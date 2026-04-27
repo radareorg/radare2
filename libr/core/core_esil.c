@@ -97,14 +97,6 @@ static bool core_esil_reg_alias (void *core, const char *name, const char *alias
 	return reg? r_reg_alias_setname (reg, alias_type, name): false;
 }
 
-static REsilRegInterface core_esil_reg_if = {
-	.is_reg = core_esil_is_reg,
-	.reg_read = core_esil_reg_read,
-	.reg_write = core_esil_reg_write,
-	.reg_size = core_esil_reg_size,
-	.reg_alias = core_esil_reg_alias
-};
-
 static bool core_esil_mem_switch (void *core, ut32 idx) {
 	return r_io_bank_use (((RCore *)core)->io, idx);
 }
@@ -165,20 +157,10 @@ static bool core_esil_mem_write (void *core, ut64 addr, const ut8 *buf, int len)
 	return ret && valid;
 }
 
-static REsilMemInterface core_esil_mem_if = {
-	.mem_switch = core_esil_mem_switch,
-	.mem_read = core_esil_mem_read,
-	.mem_write = core_esil_mem_write
-};
-
 static bool core_esil_set_bits(void *core, int bits) {
 	r_config_set_i (((RCore *)core)->config, "asm.bits", bits);
 	return true;
 }
-
-static REsilUtilInterface core_esil_util_if = {
-	.set_bits = core_esil_set_bits
-};
 
 static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
 	ut64 old, ut64 val) {
@@ -388,11 +370,25 @@ R_API bool r_core_esil_init(RCore *core) {
 	if (!core->esil.reg) {
 		return false;
 	}
-	core_esil_reg_if.reg = core;
-	core_esil_mem_if.mem = core;
-	core_esil_util_if.user = core;
 	if (!r_esil_init (&core->esil.esil, 4096, false, 64,
-		&core_esil_reg_if, &core_esil_mem_if, &core_esil_util_if)) {
+		&(REsilRegInterface){
+			.reg = core,
+			.is_reg = core_esil_is_reg,
+			.reg_read = core_esil_reg_read,
+			.reg_write = core_esil_reg_write,
+			.reg_size = core_esil_reg_size,
+			.reg_alias = core_esil_reg_alias,
+		},
+		&(REsilMemInterface){
+			.mem = core,
+			.mem_switch = core_esil_mem_switch,
+			.mem_read = core_esil_mem_read,
+			.mem_write = core_esil_mem_write,
+		},
+		&(REsilUtilInterface){
+			.user = core,
+			.set_bits = core_esil_set_bits,
+		})) {
 		goto init_fail;
 	}
 	core->esil.esil.anal = core->anal;

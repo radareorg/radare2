@@ -1895,11 +1895,6 @@ static bool search_esil_mem_write_ro (void *mem, ut64 addr, const ut8 *buf, int 
 		NULL, addr + len - r_itv_end (region.itv));	//no need to pass buf, because this is RO mode
 }
 
-static REsilMemInterface search_esil_mem_if = {
-	.mem_read = search_esil_mem_read,
-	.mem_write = search_esil_mem_write_ro,
-};
-
 static bool search_esil_is_reg (void *reg, const char *name) {
 	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
 	if (!ri) {
@@ -1941,14 +1936,6 @@ static bool search_esil_reg_write (void *reg, const char *name, ut64 val) {
 	return r_reg_setv ((RReg *)reg, name, val);
 }
 
-static REsilRegInterface search_esil_reg_if = {
-	.is_reg = search_esil_is_reg,
-	.reg_read = search_esil_reg_read,
-	.reg_write = search_esil_reg_write,
-	.reg_size = search_esil_reg_size,
-	.reg_alias = search_esil_reg_alias,
-};
-
 static bool esil_addrinfo(REsil *esil) {
 	RCore *core = esil->user;
 	ut64 num = 0;
@@ -1987,11 +1974,21 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const ut32 addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	const int stacksize = R_MAX (r_config_get_i (core->config, "esil.stack.size"), 16);
-	search_esil_reg_if.user = core->anal->reg;
-	search_esil_mem_if.user = core;
 	REsil stack_located_esil = {0};
 	if (!r_esil_init (&stack_located_esil, stacksize, iotrap, addrsize,
-		&search_esil_reg_if, &search_esil_mem_if, NULL)) {
+		&(REsilRegInterface){
+			.user = core->anal->reg,
+			.is_reg = search_esil_is_reg,
+			.reg_read = search_esil_reg_read,
+			.reg_write = search_esil_reg_write,
+			.reg_size = search_esil_reg_size,
+			.reg_alias = search_esil_reg_alias,
+		},
+		&(REsilMemInterface){
+			.user = core,
+			.mem_read = search_esil_mem_read,
+			.mem_write = search_esil_mem_write_ro,
+		}, NULL)) {
 		R_LOG_ERROR ("Cannot initialize search esil instance");
 		return;
 	}

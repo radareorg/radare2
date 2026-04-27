@@ -155,12 +155,6 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 	return anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 
-static REsilMemInterface anal_esil_mem_if = {
-	.mem_switch = anal_esil_mem_switch,
-	.mem_read = anal_esil_mem_read,
-	.mem_write = anal_esil_mem_write
-};
-
 static bool anal_esil_is_reg (void *user, const char *name) {
 	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
 	if (!ri) {
@@ -202,21 +196,9 @@ static bool anal_esil_reg_alias (void *user, const char *name, const char *alias
 	return r_reg_alias_setname (((RAnal *)user)->reg, alias_type, name);
 }
 
-static REsilRegInterface anal_esil_reg_if = {
-	.is_reg = anal_esil_is_reg,
-	.reg_read = anal_esil_reg_read,
-	.reg_write = anal_esil_reg_write,
-	.reg_size = anal_esil_reg_size,
-	.reg_alias = anal_esil_reg_alias
-};
-
 static bool anal_esil_set_bits (void *user, int bits) {
 	return r_anal_set_triplet ((RAnal *)user, NULL, NULL, bits);
 }
-
-static REsilUtilInterface anal_esil_util_if = {
-	.set_bits = anal_esil_set_bits
-};
 
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
@@ -265,10 +247,25 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
-	anal_esil_reg_if.reg = anal;
-	anal_esil_mem_if.mem = anal;
-	anal_esil_util_if.user = anal;
-	anal->esil = r_esil_new_ex (4096, 0, 1, &anal_esil_reg_if, &anal_esil_mem_if, &anal_esil_util_if);
+	anal->esil = r_esil_new_ex (4096, 0, 1,
+		&(REsilRegInterface){
+			.reg = anal,
+			.is_reg = anal_esil_is_reg,
+			.reg_read = anal_esil_reg_read,
+			.reg_write = anal_esil_reg_write,
+			.reg_size = anal_esil_reg_size,
+			.reg_alias = anal_esil_reg_alias,
+		},
+		&(REsilMemInterface){
+			.mem = anal,
+			.mem_switch = anal_esil_mem_switch,
+			.mem_read = anal_esil_mem_read,
+			.mem_write = anal_esil_mem_write,
+		},
+		&(REsilUtilInterface){
+			.user = anal,
+			.set_bits = anal_esil_set_bits,
+		});
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
