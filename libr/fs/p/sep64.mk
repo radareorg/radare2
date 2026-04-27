@@ -1,0 +1,9 @@
+OBJ_SEP64=fs_sep64.o
+
+STATIC_OBJ+=${OBJ_SEP64}
+TARGET_SEP64=fs_sep64.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_SEP64}
+
+${TARGET_SEP64}: ${OBJ_SEP64}
+	${CC} $(call libname,fs_sep64) ${LDFLAGS} ${CFLAGS} -o ${TARGET_SEP64} ${OBJ_SEP64}

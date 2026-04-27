@@ -1,0 +1,108 @@
+NAME=sep64 fs plugin is registered
+FILE=--
+CMDS=mL~sep64
+EXPECT=<<EOF
+     sep64  Apple Secure Enclave 64-bit firmware container
+EOF
+RUN
+
+NAME=sep64 listed by rafs2 -L
+FILE=--
+CMDS=!!rafs2 -L~sep64
+EXPECT=<<EOF
+  sep64        Apple Secure Enclave 64-bit firmware container
+EOF
+RUN
+
+NAME=sep64 auto-mounts /bin
+FILE=bins/sep64/sep64.bin
+CMDS=md /
+EXPECT=<<EOF
+m /bin
+EOF
+RUN
+
+NAME=sep64 lists slices in order
+FILE=bins/sep64/sep64.bin
+CMDS=md /bin
+EXPECT=<<EOF
+r boot
+r kernel
+r init
+r demo
+EOF
+RUN
+
+NAME=sep64 slice sizes and offsets
+FILE=bins/sep64/sep64.bin
+CMDS=<<EOF
+mi /bin/boot
+mi /bin/kernel
+mi /bin/init
+mi /bin/demo
+EOF
+EXPECT=<<EOF
+'f file 8192 0x00000000
+'f file 384 0x00002000
+'f file 384 0x00002200
+'f file 384 0x00003000
+EOF
+RUN
+
+NAME=sep64 kernel slice loads as mach-o (zero-copy)
+FILE=bins/sep64/sep64.bin
+CMDS=<<EOF
+e log.quiet=true
+mo /bin/kernel
+i~format
+EOF
+EXPECT=<<EOF
+format   mach064
+EOF
+RUN
+
+NAME=sep64 app slice with discontiguous __DATA stitches correctly
+FILE=bins/sep64/sep64.bin
+CMDS=<<EOF
+e log.quiet=true
+mo /bin/demo
+iSS~__DATA
+EOF
+EXPECT=<<EOF
+1   0x00000100   0x80 0x00000100   0x80 -rw- 0x0   MAP  __DATA
+EOF
+RUN
+
+NAME=sep64 mount + umount + remount stays clean
+FILE=bins/sep64/sep64.bin
+CMDS=<<EOF
+m-/bin
+m sep64 /sep 0
+md /sep~?
+m-/sep
+md /
+EOF
+EXPECT=<<EOF
+4
+EOF
+RUN
+
+NAME=sep64 explicit mount fails on non-sep input
+FILE=bins/fuzzed/sep.bin
+CMDS=m sep64 /sep 0
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+WARN: fs_sep64: init mach-o parse failed at 0x0
+ERROR: Cannot mount sep64
+EOF
+RUN
+
+NAME=sep64 rafs2 -t sep64 -l fails on fuzzed input
+FILE=--
+CMDS=!!sh -c "rafs2 -t sep64 -l / bins/fuzzed/sep.bin 2>&1"
+EXPECT=<<EOF
+WARN: fs_sep64: init mach-o parse failed at 0x0
+ERROR: Cannot mount sep64 filesystem at offset 0x0
+EOF
+RUN

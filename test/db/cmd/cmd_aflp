@@ -1,0 +1,75 @@
+NAME=aflp pin set list unset
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aa
+s sym.imp.__error
+aflp 📍
+s sym.imp.__assert_rtn
+aflp 🔥
+?e === afl pinned appear inline ===
+afl~📍
+afl~🔥
+?e === aflp lists only pinned ===
+aflp~📍
+aflp~🔥
+?e === aflp star ===
+aflp*
+?e === aflp- removes current ===
+s sym.imp.__error
+aflp-
+aflp~?
+?e === aflp-* removes all ===
+aflp-*
+aflp
+?e done
+EOF
+EXPECT=<<EOF
+=== afl pinned appear inline ===
+0x100004510    1      6 📍 sym.imp.__error
+0x10000450a    1      6 🔥 sym.imp.__assert_rtn
+=== aflp lists only pinned ===
+0x100004510    1      6 📍 sym.imp.__error
+0x10000450a    1      6 🔥 sym.imp.__assert_rtn
+=== aflp star ===
+aflp 🔥 @ 0x10000450a
+aflp 📍 @ 0x100004510
+=== aflp- removes current ===
+1
+=== aflp-* removes all ===
+done
+EOF
+RUN
+
+NAME=aflp pin shown in aflj json
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aa
+s sym.imp.__error
+aflp 📍
+?e === pin from aflj ===
+aflj~{[1].pin}
+?e === pin from aflpj ===
+aflpj~{[0].pin}
+aflpj~{[0].name}
+EOF
+EXPECT=<<EOF
+=== pin from aflj ===
+📍
+=== pin from aflpj ===
+📍
+sym.imp.__error
+EOF
+RUN
+
+NAME=aflp shown in pdf disasm header
+FILE=bins/mach0/ls-osx-x86_64
+CMDS=<<EOF
+aa
+s sym.imp.__error
+aflp 📍
+pdf~📍
+EOF
+EXPECT=<<EOF
+/ 6: 📍 void sym.imp.__error (int status, int errname, char *format);
+EOF
+RUN
