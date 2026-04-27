@@ -346,7 +346,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
-R_API bool r_esil_reg_alias(REsil *esil, const char *name, const char *alias);
+R_API bool r_esil_reg_alias(REsil *esil, RStrs name, RStrs alias);
 R_API bool r_esil_set_bits(REsil *esil, int bits);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, RStrs s);

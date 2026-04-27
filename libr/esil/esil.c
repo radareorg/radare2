@@ -867,20 +867,30 @@ R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32
 	return true;
 }
 
-R_API bool r_esil_reg_alias(REsil *esil, const char *name, const char *alias) {
-	R_RETURN_VAL_IF_FAIL (esil && name && alias, false);
+R_API bool r_esil_reg_alias(REsil *esil, RStrs name, RStrs alias) {
+	R_RETURN_VAL_IF_FAIL (esil && !r_strs_empty (name) && !r_strs_empty (alias), false);
 	if (!esil->reg_if.reg_alias) {
 		R_LOG_WARN ("Cannot set reg alias; .reg_alias was not setup for this Esil");
+		return false;
+	}
+	char *name_str = r_strs_tostring (name);
+	char *alias_str = r_strs_tostring (alias);
+	if (!name_str || !alias_str) {
+		free (name_str);
+		free (alias_str);
 		return false;
 	}
 	ut32 i;
 	if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i)) {
 		do {
 			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], i);
-			voy->reg_alias (voy->user, name, alias);
+			voy->reg_alias (voy->user, name_str, alias_str);
 		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i));
 	}
-	return esil->reg_if.reg_alias (esil->reg_if.reg, name, alias);
+	bool ret = esil->reg_if.reg_alias (esil->reg_if.reg, name_str, alias_str);
+	free (name_str);
+	free (alias_str);
+	return ret;
 }
 
 R_API bool r_esil_set_bits(REsil *esil, int bits) {

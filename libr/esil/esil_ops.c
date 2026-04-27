@@ -567,14 +567,12 @@ static bool esil_cmp(REsil *esil) {
 #if USE_NEW_ESIL
 static bool esil_regalias(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	char *dst = r_esil_pop (esil);
-	char *src = r_esil_pop (esil);
+	const RStrs dst = r_esil_pop (esil);
+	const RStrs src = r_esil_pop (esil);
 	bool ret = false;
-	if (src && dst) {
+	if (!r_strs_empty (src) && !r_strs_empty (dst)) {
 		ret = r_esil_reg_alias (esil, src, dst);
 	}
-	free (dst);
-	free (src);
 	return ret;
 }
 #else

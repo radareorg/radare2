@@ -2,7 +2,9 @@
 
 #include <r_esil.h>
 
+#if !USE_NEW_ESIL
 static void esil_stats_old(REsil *esil, bool enable);
+#endif
 
 #if USE_NEW_ESIL
 static void stats_voyeur_reg_read (void *user, const char *name, ut64 val) {
@@ -65,6 +67,7 @@ R_API void r_esil_stats(REsil *esil, REsilStats *stats, bool enable) {
 #endif
 }
 
+#if !USE_NEW_ESIL
 static bool hook_command(REsil *esil, const char *op) {
 	sdb_array_add (esil->stats, "ops.list", op, 0);
 	return false;
@@ -90,6 +93,7 @@ static bool hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	sdb_array_add (esil->stats, "reg.write", name, 0);
 	return false;
 }
+#endif
 
 static bool hook_NOP_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	eprintf ("NOP WRITE AT 0x%08"PFMT64x"\n", addr);
@@ -104,6 +108,7 @@ R_API void r_esil_mem_ro(REsil *esil, bool mem_readonly) {
 	}
 }
 
+#if !USE_NEW_ESIL
 static void esil_stats_old(REsil *esil, bool enable) {
 	if (enable) {
 		if (esil->stats) {
@@ -124,3 +129,4 @@ static void esil_stats_old(REsil *esil, bool enable) {
 		esil->stats = NULL;
 	}
 }
+#endif
