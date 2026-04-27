@@ -92,7 +92,7 @@ typedef struct type_trace_t {
 	RReg *reg;
 	HtUP *registers;
 	VecMemRange memory;
-	ut32 voy[4];
+	ut32 voy[R_ESIL_VOYEUR_LAST];
 	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
 	bool enable_rollback;
 	// TODO: Add REsil instance here

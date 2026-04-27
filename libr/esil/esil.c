@@ -347,6 +347,10 @@ R_API void r_esil_free(REsil *esil) {
 	if (as && esil == esil->anal->arch->esil) {
 		esil->anal->arch->esil = NULL;
 	}
+	int i;
+	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
+		r_id_storage_fini (&esil->voyeur[i]);
+	}
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
