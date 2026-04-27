@@ -2407,12 +2407,31 @@ R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	return false;
 }
 
+static void core_esil_set_cmd(char **dst, const char *cmd) {
+	free (*dst);
+	*dst = R_STR_ISNOTEMPTY (cmd)? strdup (cmd): NULL;
+}
+
+static void legacy_esil_set_cmd(REsil *esil, char **dst, const char *cmd) {
+	if (esil) {
+		esil->cmd = r_core_esil_cmd;
+		core_esil_set_cmd (dst, cmd);
+	}
+}
+
+static REsil *core_legacy_esil(RCore *core) {
+	return R_UNWRAP3 (core, anal, esil);
+}
+
 static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		free (core->esil.cmd_ioer);
-		core->esil.cmd_ioer = strdup (node->value);
+		core_esil_set_cmd (&core->esil.cmd_ioer, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_ioer, node->value);
+		}
 	}
 	return true;
 }
@@ -2420,10 +2439,12 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 static bool cb_cmd_esil_todo(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_todo);
-		core->anal->esil->cmd_todo = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmd_todo, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_todo, node->value);
+		}
 	}
 	return true;
 }
@@ -2431,10 +2452,12 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 static bool cb_cmd_esil_intr(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_intr);
-		core->anal->esil->cmd_intr = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmd_intr, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_intr, node->value);
+		}
 	}
 	return true;
 }
@@ -2443,8 +2466,11 @@ static bool cb_mdevrange(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		free (core->esil.mdev_range);
-		core->esil.mdev_range = strdup (node->value);
+		core_esil_set_cmd (&core->esil.mdev_range, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			core_esil_set_cmd (&esil->mdev_range, node->value);
+		}
 	}
 	return true;
 }
@@ -2463,8 +2489,11 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		free (core->esil.cmd_step);
-		core->esil.cmd_step = strdup (node->value);
+		core_esil_set_cmd (&core->esil.cmd_step, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_step, node->value);
+		}
 	}
 	return true;
 }
@@ -2473,8 +2502,11 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		free (core->esil.cmd_step_out);
-		core->esil.cmd_step_out = strdup (node->value);
+		core_esil_set_cmd (&core->esil.cmd_step_out, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_step_out, node->value);
+		}
 	}
 	return true;
 }
@@ -2483,8 +2515,11 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		free (core->esil.cmd_mdev);
-		core->esil.cmd_mdev = strdup (node->value);
+		core_esil_set_cmd (&core->esil.cmd_mdev, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_mdev, node->value);
+		}
 	}
 	return true;
 }
@@ -2492,9 +2527,13 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 static bool cb_cmd_esil_trap(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_trap = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmd_trap, node->value);
+		legacy_esil_set_cmd (&core->esil.esil, &core->esil.esil.cmd_trap, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_trap, node->value);
+		}
 	}
 	return true;
 }

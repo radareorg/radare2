@@ -386,6 +386,9 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		esil->trap_code = addr;
 		return false;
 	}
+	if (esil->cb.hook_mem_read && esil->cb.hook_mem_read (esil, addr, buf, len)) {
+		return true;
+	}
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
 		return false;
 	}
@@ -435,7 +438,7 @@ static bool internal_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int 
 			esil->trap_code = addr;
 		}
 		if (esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
-			esil->cmd (esil, esil->cmd_ioer, esil->addr, 0);
+			esil->cmd (esil, esil->cmd_ioer, esil->addr, 1);
 		}
 	}
 	return ret;
@@ -470,6 +473,9 @@ static bool internal_esil_mem_write_no_null(REsil *esil, ut64 addr, const ut8 *b
 R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (esil && buf && esil->mem_if.mem_write, false);
 	addr &= esil->addrmask;
+	if (esil->cb.hook_mem_write && esil->cb.hook_mem_write (esil, addr, buf, len)) {
+		return true;
+	}
 	union {
 		ut8 buf[16];
 		ut8 *ptr;
@@ -585,6 +591,58 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	return false;
 }
 
+static bool setup_esil_is_reg(void *user, const char *name) {
+	REsil *esil = user;
+	RReg *reg = R_UNWRAP3 (esil, anal, reg);
+	RRegItem *ri = reg? r_reg_get (reg, name, -1): NULL;
+	if (!ri) {
+		return false;
+	}
+	r_unref (ri);
+	return true;
+}
+
+static bool setup_esil_reg_read(void *user, const char *name, ut64 *val) {
+	return internal_esil_reg_read (user, name, val, NULL);
+}
+
+static bool setup_esil_reg_write(void *user, const char *name, ut64 val) {
+	REsil *esil = user;
+	return esil && esil->cb.reg_write? esil->cb.reg_write (esil, name, val): false;
+}
+
+static ut32 setup_esil_reg_size(void *user, const char *name) {
+	REsil *esil = user;
+	RReg *reg = R_UNWRAP3 (esil, anal, reg);
+	RRegItem *ri = reg? r_reg_get (reg, name, -1): NULL;
+	if (!ri) {
+		return 0;
+	}
+	ut32 size = ri->size;
+	r_unref (ri);
+	return size;
+}
+
+static bool setup_esil_reg_alias(void *user, const char *name, const char *alias) {
+	REsil *esil = user;
+	RReg *reg = R_UNWRAP3 (esil, anal, reg);
+	int kind = r_reg_alias_fromstring (alias);
+	if (kind < 0 || !reg) {
+		return false;
+	}
+	return r_reg_alias_setname (reg, kind, name);
+}
+
+static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
+	REsil *esil = user;
+	return esil && esil->cb.mem_read? esil->cb.mem_read (esil, addr, buf, len): false;
+}
+
+static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len) {
+	REsil *esil = user;
+	return esil && esil->cb.mem_write? esil->cb.mem_write (esil, addr, buf, len): false;
+}
+
 // Push a slice. Arena-backed slices are stored by reference; external ones
 // are copied into the arena (fixed-size, never reallocs).
 R_API bool r_esil_push(REsil *esil, RStrs s) {
@@ -632,11 +690,15 @@ R_API RStrs r_esil_pop(REsil *esil) {
 }
 
 static int not_a_number(REsil *esil, const char *str) {
-	R_RETURN_VAL_IF_FAIL (esil && str && esil->reg_if.is_reg, R_ESIL_PARM_INVALID);
-	if (esil->reg_if.is_reg (esil->reg_if.reg, str)) {
+	if (esil && str && esil->reg_if.is_reg && esil->reg_if.is_reg (esil->reg_if.reg, str)) {
 		return R_ESIL_PARM_REG;
 	}
 	return R_ESIL_PARM_INVALID;
+}
+
+static int esil_config_bits(REsil *esil) {
+	RArchConfig *cfg = R_UNWRAP3 (esil, anal, config);
+	return cfg && cfg->bits? cfg->bits: 64;
 }
 
 // Slice-native parm classify. Hot path — open-coded on s.a[0]/s.a[1].
@@ -678,7 +740,7 @@ R_API bool r_esil_get_parm_size(REsil *esil, RStrs s, ut64 *num, int *size) {
 	if (c0 == '0' && n >= 2 && s.a[1] == 'x') {
 		*num = r_strs_tonum (s, 0, NULL);
 		if (size) {
-			*size = esil->anal->config->bits;
+			*size = esil_config_bits (esil);
 		}
 		return true;
 	}
@@ -692,7 +754,7 @@ R_API bool r_esil_get_parm_size(REsil *esil, RStrs s, ut64 *num, int *size) {
 		}
 		*num = r_strs_tonum (s, 0, NULL);
 		if (size) {
-			*size = esil->anal->config->bits;
+			*size = esil_config_bits (esil);
 		}
 		return true;
 	}
@@ -700,7 +762,7 @@ R_API bool r_esil_get_parm_size(REsil *esil, RStrs s, ut64 *num, int *size) {
 	if (c0 == '-' && n > 1) {
 		*num = r_num_get (NULL, s.a);
 		if (size) {
-			*size = esil->anal->config->bits;
+			*size = esil_config_bits (esil);
 		}
 		return true;
 	}
@@ -719,6 +781,9 @@ R_API bool r_esil_get_parm(REsil *esil, RStrs s, ut64 *num) {
 
 R_API bool r_esil_reg_write(REsil *esil, const char *dst, ut64 val) {
 	R_RETURN_VAL_IF_FAIL (esil && dst, false);
+	if (esil->cb.hook_reg_write && esil->cb.hook_reg_write (esil, dst, &val)) {
+		return true;
+	}
 	ut64 old;
 	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, dst, &old, NULL))) {
 		return r_esil_reg_write_silent (esil, dst, val);
@@ -751,7 +816,18 @@ R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *nu
 }
 
 R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *size) {
-	R_RETURN_VAL_IF_FAIL (esil && regname && val, false);
+	R_RETURN_VAL_IF_FAIL (esil && regname, false);
+	ut64 localnum = 0;
+	if (!val) {
+		val = &localnum;
+	}
+	*val = 0;
+	if (size) {
+		*size = esil_config_bits (esil);
+	}
+	if (esil->cb.hook_reg_read && esil->cb.hook_reg_read (esil, regname, val, (st32 *)size)) {
+		return true;
+	}
 	if (R_UNLIKELY (!r_esil_reg_read_silent (esil, regname, val, size))) {
 		return false;
 	}
@@ -1147,7 +1223,7 @@ static bool internal_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 
 /* register callbacks using this anal module. */
 R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool nonull) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
+	R_RETURN_VAL_IF_FAIL (esil && anal, false);
 	esil->anal = anal;
 	esil->parse_goto_count = anal->esil_goto_limit;
 	esil->trap = 0;
@@ -1164,6 +1240,32 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 		esil->cb.reg_write = internal_esil_reg_write;
 		esil->cb.mem_read = internal_esil_mem_read;
 		esil->cb.mem_write = internal_esil_mem_write;
+	}
+	esil->reg_if = (REsilRegInterface) {
+		.user = esil,
+		.is_reg = setup_esil_is_reg,
+		.reg_read = setup_esil_reg_read,
+		.reg_write = setup_esil_reg_write,
+		.reg_size = setup_esil_reg_size,
+		.reg_alias = setup_esil_reg_alias,
+	};
+	esil->mem_if = (REsilMemInterface) {
+		.user = esil,
+		.mem_read = setup_esil_mem_read,
+		.mem_write = setup_esil_mem_write,
+	};
+	if (!esil->voyeur[0].pool) {
+		int i;
+		for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
+			if (!r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
+				R_LOG_ERROR ("voyeur init failed");
+				do {
+					r_id_storage_fini (&esil->voyeur[i]);
+					i--;
+				} while (i >= 0);
+				return false;
+			}
+		}
 	}
 	r_esil_mem_ro (esil, romem);
 	r_esil_setup_ops (esil);

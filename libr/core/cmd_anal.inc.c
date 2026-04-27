@@ -7231,9 +7231,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 	if (esiltimeout > 0) {
 		startTime = r_time_now_mono ();
 	}
-	ut64 addr = r_reg_getv (core->esil.reg, "PC");
+	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	const bool single_step = until_addr == UT64_MAX && !until_expr;
 	r_cons_break_push (core->cons, NULL, NULL);
-	while (addr != until_addr) {
+	while (single_step || addr != until_addr) {
 		if (esiltimeout > 0) {
 			ut64 elapsedTime = r_time_now_mono () - startTime;
 			elapsedTime >>= 20;
@@ -7244,22 +7245,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		RAnalOp op;
-		if (until_expr || stepOver) {
+		if (stepOver) {
 			r_anal_op_init (&op);
 			ut8 buf[64];
 			r_io_read_at (core->io, addr, buf, 64);
 			r_anal_op_set_bytes (&op, addr, buf, 64);
 			r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
-		}
-		if (until_expr) {
-			RAnalHint *hint = r_anal_hint_get (core->anal, addr);
-			if (hint && hint->esil) {
-				r_strbuf_set (&op.esil, hint->esil);
-			}
-			if (!strcmp (r_strbuf_get (&op.esil), until_expr)) {
-				r_anal_op_fini (&op);
-				break;
-			}
 		}
 		if (prev_addr) {
 			prev_addr[0] = addr;
@@ -7272,18 +7263,31 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_anal_op_fini (&op);
 				goto out;
 			}
-			r_reg_setv (core->esil.reg, "PC", op.addr + op.size);
+			r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
 			r_anal_op_fini (&op);
+			if (single_step) {
+				break;
+			}
 			continue;
 		}
-		if (until_expr || stepOver) {
+		if (stepOver) {
 			r_anal_op_fini (&op);
 		}
 		if (!r_core_esil_single_step (core)) {
 			ret = false;
 			break;
 		}
-		addr = r_reg_getv (core->esil.reg, "PC");
+		addr = r_reg_getv (core->anal->reg, "PC");
+		if (until_expr) {
+			if (r_esil_condition (&core->esil.esil, until_expr)) {
+				core->esil.esil.trap = false;
+				break;
+			}
+			core->esil.esil.trap = false;
+		}
+		if (single_step) {
+			break;
+		}
 	}
 out:
 	r_cons_break_pop (core->cons);
@@ -7291,7 +7295,7 @@ out:
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->io && core->esil.reg &&
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg &&
 		r_list_length (&core->esil.stepback), false);
 	r_core_esil_stepback (core);
 	return true;
