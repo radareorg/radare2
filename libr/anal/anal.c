@@ -128,7 +128,6 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
-#if USE_NEW_ESIL
 static bool anal_esil_mem_switch (void *mem, ut32 idx) {
 	RAnal *anal = mem;
 	if (!anal || !anal->iob.init) {
@@ -218,7 +217,6 @@ static bool anal_esil_set_bits (void *user, int bits) {
 static REsilUtilInterface anal_esil_util_if = {
 	.set_bits = anal_esil_set_bits
 };
-#endif
 
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
@@ -267,14 +265,10 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
-#if USE_NEW_ESIL
 	anal_esil_reg_if.reg = anal;
 	anal_esil_mem_if.mem = anal;
 	anal_esil_util_if.user = anal;
 	anal->esil = r_esil_new_ex (4096, 0, 1, &anal_esil_reg_if, &anal_esil_mem_if, &anal_esil_util_if);
-#else
-	anal->esil = r_esil_new (4096, 0, 1);
-#endif
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);

@@ -10,13 +10,9 @@ bool test_filter_regs(void) {
 	r_anal_use (anal, "x86");
 	r_anal_set_bits (anal, 32);
 	r_anal_set_reg_profile (anal, NULL);
-#if USE_NEW_ESIL
 	RIO *io = r_io_new ();
 	r_io_bind (io, &anal->iob);
 	REsil *esil = r_esil_new_simple (1, anal->reg, &anal->iob);
-#else
-	REsil *esil = r_esil_new (4096, 0, 1);
-#endif
 	esil->anal = anal;
 
 	// create expected results
@@ -51,9 +47,7 @@ bool test_filter_regs(void) {
 	r_anal_esil_dfg_free (dfg);
 	r_esil_free (esil);
 	r_anal_free (anal);
-#if USE_NEW_ESIL
 	r_io_free (io);
-#endif
 
 	mu_assert ("filtering for ax failed", ax == filtered_ax);
 	mu_assert ("filtering for ah failed", ah == filtered_ah);
@@ -67,10 +61,8 @@ bool test_lemon_const_folder(void) {
 	r_anal_set_bits (anal, 32);
 	r_anal_set_reg_profile (anal, NULL);
 
-#if USE_NEW_ESIL
 	RIO *io = r_io_new ();
 	r_io_bind (io, &anal->iob);
-#endif
 
 	RAnalEsilDFG *dfg = r_anal_esil_dfg_expr (anal, NULL, "4,!,3,ebx,:=,!,1,+,eax,:=", false, false);
 	r_anal_esil_dfg_fold_const (anal, dfg);
@@ -79,9 +71,7 @@ bool test_lemon_const_folder(void) {
 	r_strbuf_free (filtered);
 	r_anal_esil_dfg_free (dfg);
 	r_anal_free (anal);
-#if USE_NEW_ESIL
 	r_io_free (io);
-#endif
 
 	mu_assert_true (cmp_result, "esil dfg const folding is broken");
 	mu_end;

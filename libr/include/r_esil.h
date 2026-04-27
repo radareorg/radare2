@@ -14,8 +14,6 @@
 extern "C" {
 #endif
 
-#define	USE_NEW_ESIL	1
-
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 // only flags that affect control flow
 enum {

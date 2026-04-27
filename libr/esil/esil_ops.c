@@ -286,11 +286,7 @@ static bool esil_eq(REsil *esil) {
 			ret = r_esil_reg_write (esil, dst.a, n0);
 		}
 		free (newreg);
-#if USE_NEW_ESIL
 	} else if (r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
-#else
-	} else if (r_esil_reg_read_nocallback (esil, dst.a, &num, NULL)) {
-#endif
 		if (r_esil_get_parm (esil, src, &num2)) {
 			ret = r_esil_reg_write (esil, dst.a, num2);
 			esil->cur = num2;
@@ -564,7 +560,6 @@ static bool esil_cmp(REsil *esil) {
 
 #if 1
 // needed for COSMAC
-#if USE_NEW_ESIL
 static bool esil_regalias(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	const RStrs dst = r_esil_pop (esil);
@@ -575,23 +570,6 @@ static bool esil_regalias(REsil *esil) {
 	}
 	return ret;
 }
-#else
-static bool esil_regalias(REsil *esil) {
-	R_RETURN_VAL_IF_FAIL (esil, false);
-	ut64 num;
-	bool ret = false;
-	const RStrs dst = r_esil_pop (esil);
-	const RStrs src = r_esil_pop (esil);
-	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num)) {
-		ret = true;
-		int kind = r_reg_alias_fromstring (dst.a);
-		if (kind != -1) {
-			r_reg_alias_setname (esil->anal->reg, kind, src.a);
-		}
-	}
-	return ret;
-}
-#endif
 #endif
 
 #if 0

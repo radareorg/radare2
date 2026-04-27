@@ -1867,7 +1867,6 @@ bad:
 	return result;
 }
 
-#if USE_NEW_ESIL
 static bool search_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	RCore *core = mem;
 	if (!addr && r_config_get_b (core->config, "esil.nonull")) {
@@ -1945,7 +1944,6 @@ REsilRegInterface search_esil_reg_if = {
 	.reg_size = search_esil_reg_size,
 	.reg_alias = search_esil_reg_alias,
 };
-#endif
 
 static bool esil_addrinfo(REsil *esil) {
 	RCore *core = esil->user;
@@ -1985,7 +1983,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	const ut32 addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
 	const int stacksize = R_MAX (r_config_get_i (core->config, "esil.stack.size"), 16);
-#if USE_NEW_ESIL
 	search_esil_reg_if.user = core->anal->reg;
 	search_esil_mem_if.user = core;
 	REsil stack_located_esil = {0};
@@ -2000,18 +1997,6 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		return;
 	}
 	REsil *esil = &stack_located_esil;
-#else
-	const int nonull = r_config_get_i (core->config, "esil.nonull");
-//	const int romem = r_config_get_i (core->config, "esil.romem");
-//	const int stats = r_config_get_i (core->config, "esil.stats");
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
-	if (!esil) {
-		R_LOG_ERROR ("Cannot create an esil instance");
-		return;
-	}
-//	r_esil_setup (esil, core->anal, romem, stats, nonull);
-	r_esil_setup (esil, core->anal, true, false, nonull);
-#endif
 	esil->user = core;	//this is fine, because no arch plugin custom ops are registered
 	r_esil_set_op (esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
 	/* hook addrinfo */
@@ -2051,12 +2036,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
-#if USE_NEW_ESIL
 			const char *pc_name = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
 			r_reg_setv (core->anal->reg, pc_name, core->addr);
-#else
-			r_esil_set_pc (esil, addr);
-#endif
 			if (!r_esil_parse (esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
@@ -2110,12 +2091,8 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
-#if USE_NEW_ESIL
 	r_esil_fini (&stack_located_esil);
 	r_reg_arena_pop (core->anal->reg);
-#else
-	r_esil_free (esil);
-#endif
 }
 
 #define MAXINSTR 8
