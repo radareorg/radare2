@@ -7317,10 +7317,22 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (stepOver) {
 			r_anal_op_fini (&op);
 		}
+		const ut64 prev_pc = addr;
 		if (!r_core_esil_single_step (core)) {
 			core_esil_sync_legacy_trap (core);
 			ret = false;
-			break;
+			if (single_step) {
+				break;
+			}
+			// honor until_addr/until_expr: ignore traps and keep going,
+			// but bail if PC did not advance to avoid an infinite loop.
+			addr = r_reg_getv (core->anal->reg, "PC");
+			if (addr == prev_pc) {
+				break;
+			}
+			core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			core->esil.esil.trap_code = 0;
+			continue;
 		}
 		core_esil_sync_legacy_trap (core);
 		addr = r_reg_getv (core->anal->reg, "PC");
