@@ -7231,6 +7231,14 @@ static bool is_steporeable(int type) {
 	return false;
 }
 
+static void core_esil_sync_legacy_trap(RCore *core) {
+	REsil *esil = R_UNWRAP3 (core, anal, esil);
+	if (esil) {
+		esil->trap = core->esil.esil.trap;
+		esil->trap_code = core->esil.esil.trap_code;
+	}
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	int ret = true;
@@ -7263,6 +7271,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		if (prev_addr) {
 			prev_addr[0] = addr;
 		}
+		if (core->dbg && core->dbg->trace && core->dbg->trace->enabled) {
+			r_debug_trace_pc (core->dbg, addr);
+		}
 		if (stepOver && is_steporeable (op.type)) {
 			if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
 				if (core->esil.cmd_trap) {
@@ -7273,6 +7284,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 			r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
 			addr = r_reg_getv (core->anal->reg, "PC");
+			core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			core->esil.esil.trap_code = 0;
+			core_esil_sync_legacy_trap (core);
 			r_anal_op_fini (&op);
 			if (single_step) {
 				break;
@@ -7283,9 +7297,11 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			r_anal_op_fini (&op);
 		}
 		if (!r_core_esil_single_step (core)) {
+			core_esil_sync_legacy_trap (core);
 			ret = false;
 			break;
 		}
+		core_esil_sync_legacy_trap (core);
 		addr = r_reg_getv (core->anal->reg, "PC");
 		if (until_expr) {
 			const int trap = core->esil.esil.trap;
@@ -9042,10 +9058,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				// ignore return value is not an error, should 0, 1, -1 imho
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_reg_getv (core->anal->reg, "PC");
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 				if (!op) {
 					R_LOG_ERROR ("invalid instruction at 0x%08" PFMT64x, addr);
@@ -9076,9 +9094,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
 				if (!op) {
 					break;

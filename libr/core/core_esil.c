@@ -350,6 +350,30 @@ static void core_esil_align_pc(RCore *core, const char *pc_name) {
 	}
 }
 
+static bool core_esil_run_pin(RCore *core, ut64 pc, const char *pc_name, int size) {
+	const char *pin = r_anal_pin_at (core->anal, pc);
+	if (R_STR_ISEMPTY (pin) || r_str_startswith (pin, "soft.")) {
+		return false;
+	}
+	const char *cmd = r_anal_pin_get (core->anal, pin);
+	if (R_STR_ISNOTEMPTY (cmd)) {
+		r_core_cmd0 (core, cmd);
+	} else if (R_STR_ISNOTEMPTY (core->anal->pincmd)) {
+		r_core_cmdf (core, "%s %s", core->anal->pincmd, pin);
+		r_core_cmd0 (core, pin);
+	} else {
+		r_core_cmd0 (core, pin);
+	}
+	ut64 pin_pc = 0;
+	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pin_pc, NULL)) {
+		return false;
+	}
+	if (pin_pc == pc) {
+		r_esil_reg_write_silent (&core->esil.esil, pc_name, pc + size);
+	}
+	return true;
+}
+
 R_API bool r_core_esil_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	core->esil = (const RCoreEsil){0};
@@ -485,6 +509,8 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return false;
 	}
+	core->esil.esil.trap = R_ANAL_TRAP_NONE;
+	core->esil.esil.trap_code = 0;
 	ut32 trap_code = R_ANAL_TRAP_UNALIGNED;
 	const int align = R_MAX (1, r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	if (pc % align) {
@@ -500,15 +526,6 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		goto trap;
 	}
 	trap_code = R_ANAL_TRAP_NONE;
-	const char *pincmd = r_anal_pin_call (core->anal, pc);
-	if (pincmd) {
-		r_core_cmd0 (core, pincmd);
-		ut64 pin_pc = 0;
-		if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pin_pc, NULL) || pin_pc != pc) {
-			trap_code = R_ANAL_TRAP_INVALID;
-			goto trap;
-		}
-	}
 	int max_opsize = R_MIN (64,
 		r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
 	if (R_UNLIKELY (max_opsize < 1)) {
@@ -573,6 +590,10 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	pc += op.size;
 	const ut64 ds_addr = pc;
 	const bool has_delay = op.delay > 0;
+	if (core_esil_run_pin (core, core->esil.old_pc, pc_name, op.size)) {
+		r_anal_op_fini (&op);
+		goto skip;
+	}
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	r_anal_op_fini (&op);
@@ -608,28 +629,39 @@ skip:
 		}
 		return true;
 	}
+	const int trap_type = core->esil.esil.trap? core->esil.esil.trap: R_ANAL_TRAP_INVALID;
 	trap_code = core->esil.esil.trap_code;
 	if (!trap_code) {
-		trap_code = R_ANAL_TRAP_INVALID;
+		trap_code = trap_type;
 	}
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+		const bool trap_revert_config = core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG;
 		//disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
 		//revert all changes
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
+		if (!trap_revert_config) {
+			r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
+		}
+		core->esil.esil.trap = trap_type;
+		core->esil.esil.trap_code = trap_code;
 		r_unref (as);
 		goto trap;
 	}
-	//restore pc
-	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
 	r_unref (as);
 	goto trap;
 op_trap:
 	r_unref (as);
 	r_anal_op_fini (&op);
 trap:
+	if (!core->esil.esil.trap) {
+		core->esil.esil.trap = trap_code;
+	}
+	if (!core->esil.esil.trap_code) {
+		core->esil.esil.trap_code = trap_code;
+	}
 	if (R_STR_ISNOTEMPTY (core->esil.cmd_trap)) {
 		core_esil_cmd (core, core->esil.cmd_trap, core->esil.old_pc, trap_code);
 	}
