@@ -7332,9 +7332,19 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		RAnalOp op;
 		if (stepOver) {
 			r_anal_op_init (&op);
+			int max_opsize = R_MIN (64,
+				r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
+			if (R_UNLIKELY (max_opsize < 1)) {
+				max_opsize = 32;
+			}
 			ut8 buf[64];
-			r_io_read_at (core->io, addr, buf, 64);
-			r_anal_op_set_bytes (&op, addr, buf, 64);
+			if (R_UNLIKELY (!r_io_read_at (core->io, addr, buf, max_opsize))) {
+				R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, addr);
+				r_anal_op_fini (&op);
+				ret = false;
+				goto out;
+			}
+			r_anal_op_set_bytes (&op, addr, buf, max_opsize);
 			r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
 		}
 		if (prev_addr) {
@@ -7355,7 +7365,12 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			r_reg_setv (core->anal->reg, "PC", addr);
 			char *expr = r_str_newf ("0x%"PFMT64x",PC,:=", op.addr + op.size);
 			if (!expr || !r_core_esil_run_expr_at (core, expr, addr)) {
-				r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
+				R_LOG_ERROR ("Failed to advance PC for step-over at 0x%"PFMT64x, op.addr);
+				free (expr);
+				core_esil_sync_legacy_trap (core);
+				r_anal_op_fini (&op);
+				ret = false;
+				goto out;
 			}
 			free (expr);
 			addr = r_reg_getv (core->anal->reg, "PC");

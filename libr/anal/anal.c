@@ -155,7 +155,7 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 	return anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 
-REsilMemInterface anal_esil_mem_if = {
+static REsilMemInterface anal_esil_mem_if = {
 	.mem_switch = anal_esil_mem_switch,
 	.mem_read = anal_esil_mem_read,
 	.mem_write = anal_esil_mem_write

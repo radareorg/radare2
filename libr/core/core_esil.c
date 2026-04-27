@@ -612,6 +612,12 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	if (R_STR_ISNOTEMPTY (core->esil.cmd_step)) {
 		if (core_esil_cmd (core, core->esil.cmd_step, core->esil.old_pc, 0)) {
 			free (expr);
+			// cmd_step ran instead of the ESIL expression; its side effects
+			// can't be reverted by a PC-only stepback, so don't record one
+			if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
+				r_strbuf_fini (&core->esil.trap_revert);
+				core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
+			}
 			goto skip;
 		}
 	}

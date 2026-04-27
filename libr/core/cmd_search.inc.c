@@ -1895,7 +1895,7 @@ static bool search_esil_mem_write_ro (void *mem, ut64 addr, const ut8 *buf, int 
 		NULL, addr + len - r_itv_end (region.itv));	//no need to pass buf, because this is RO mode
 }
 
-REsilMemInterface search_esil_mem_if = {
+static REsilMemInterface search_esil_mem_if = {
 	.mem_read = search_esil_mem_read,
 	.mem_write = search_esil_mem_write_ro,
 };
@@ -1941,7 +1941,7 @@ static bool search_esil_reg_write (void *reg, const char *name, ut64 val) {
 	return r_reg_setv ((RReg *)reg, name, val);
 }
 
-REsilRegInterface search_esil_reg_if = {
+static REsilRegInterface search_esil_reg_if = {
 	.is_reg = search_esil_is_reg,
 	.reg_read = search_esil_reg_read,
 	.reg_write = search_esil_reg_write,
