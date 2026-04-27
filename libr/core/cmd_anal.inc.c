@@ -2399,23 +2399,66 @@ R_API char *cmd_syscall_dostr(RCore *core, st64 n, ut64 addr) {
 	return r_str_append (res, ")");
 }
 
-static bool mw(int *ec, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
-	*ec += (len * 2);
+typedef struct {
+	int cost;
+	int bits;
+} EsilCost;
+
+static bool ec_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	EsilCost *ec = esil->cb.user;
+	ec->cost += (len * 2);
 	return true;
 }
 
-#if 0
-static bool rw(void *null, const char *regname, ut64 old, ut64 num) {
+static bool ec_hook_reg_write(REsil *esil, const char *regname, ut64 *num) {
 	return true;
 }
 
-static bool rr(void *null, const char *regname, ut64 num) {
+static bool ec_hook_reg_read(REsil *esil, const char *regname, ut64 *num, int *size) {
+	if (num) {
+		*num = 0;
+	}
+	if (size) {
+		EsilCost *ec = esil->cb.user;
+		*size = ec->bits;
+	}
 	return true;
 }
-#endif
 
-static bool mr(int *ec, ut64 addr, const ut8 *buf, int len) {
-	*ec += len;
+static bool ec_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
+	EsilCost *ec = user;
+	ec->cost += len;
+	memset (buf, 0, len);
+	return true;
+}
+
+static bool ec_mem_write_silent(void *user, ut64 addr, const ut8 *buf, int len) {
+	EsilCost *ec = user;
+	ec->cost += (len * 2);
+	return true;
+}
+
+static bool ec_reg_is(void *user, const char *name) {
+	return true;
+}
+
+static bool ec_reg_read(void *user, const char *name, ut64 *val) {
+	if (val) {
+		*val = 0;
+	}
+	return true;
+}
+
+static bool ec_reg_write(void *user, const char *name, ut64 val) {
+	return true;
+}
+
+static ut32 ec_reg_size(void *user, const char *name) {
+	EsilCost *ec = user;
+	return ec->bits;
+}
+
+static bool ec_reg_alias(void *user, const char *name, const char *alias) {
 	return true;
 }
 
@@ -2423,27 +2466,38 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	if (R_STR_ISEMPTY (expr)) {
 		return 0;
 	}
-	int ec = 0;
-	if (!r_reg_arena_push (core->anal->reg)) {
-		return ec;
-	}
-	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	const int bits = (core->anal->config && core->anal->config->bits)? core->anal->config->bits: 64;
+	EsilCost ec = {
+		.bits = bits,
+	};
+	REsilRegInterface reg_if = {
+		.user = &ec,
+		.is_reg = ec_reg_is,
+		.reg_read = ec_reg_read,
+		.reg_write = ec_reg_write,
+		.reg_size = ec_reg_size,
+		.reg_alias = ec_reg_alias,
+	};
+	REsilMemInterface mem_if = {
+		.user = &ec,
+		.mem_read = ec_mem_read,
+		.mem_write = ec_mem_write_silent,
+	};
+	REsil *e = r_esil_new_ex (256, false, 0, &reg_if, &mem_if, NULL);
 	if (!e) {
-		r_reg_arena_pop (core->anal->reg);
-		return ec;
+		return ec.cost;
 	}
-	e->anal = core->anal;	//XXX
-	//preserve regs? enforce ro mem access?
-	r_esil_add_voyeur (e, &ec, mr, R_ESIL_VOYEUR_MEM_READ);
-	r_esil_add_voyeur (e, &ec, mw, R_ESIL_VOYEUR_MEM_WRITE);
-#if 0
-	r_esil_add_voyeur (e, NULL, rr, R_ESIL_VOYEUR_REG_READ);
-	r_esil_add_voyeur (e, NULL, rw, R_ESIL_VOYEUR_REG_WRITE);
-#endif
+	e->anal = core->anal;
+	e->addr = addr;
+	e->cb.user = &ec;
+	e->cb.hook_mem_read = NULL;
+	e->cb.hook_mem_write = ec_mem_write;
+	e->cb.hook_reg_read = ec_hook_reg_read;
+	e->cb.hook_reg_write = ec_hook_reg_write;
+	e->parse_goto_count = core->anal->esil_goto_limit;
 	r_esil_parse (e, expr);
 	r_esil_free (e);
-	r_reg_arena_pop (core->anal->reg);
-	return ec;
+	return ec.cost;
 }
 
 static void cmd_syscall_do(RCore *core, st64 n, ut64 addr) {
