@@ -7239,6 +7239,21 @@ static void core_esil_sync_legacy_trap(RCore *core) {
 	}
 }
 
+static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
+	REsil *esil = R_UNWRAP3 (core, anal, esil);
+	if (esil && esil->trace) {
+		r_esil_trace_op (esil, op);
+	}
+}
+
+static void core_esil_drop_stepback(RCore *core) {
+	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.stepback);
+	if (cesb) {
+		free (cesb->expr);
+		free (cesb);
+	}
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
 	int ret = true;
@@ -7282,7 +7297,13 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				r_anal_op_fini (&op);
 				goto out;
 			}
-			r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
+			core_esil_trace_legacy_op (core, &op);
+			r_reg_setv (core->anal->reg, "PC", addr);
+			char *expr = r_str_newf ("0x%"PFMT64x",PC,:=", op.addr + op.size);
+			if (!expr || !r_core_esil_run_expr_at (core, expr, addr)) {
+				r_reg_setv (core->anal->reg, "PC", op.addr + op.size);
+			}
+			free (expr);
 			addr = r_reg_getv (core->anal->reg, "PC");
 			core->esil.esil.trap = R_ANAL_TRAP_NONE;
 			core->esil.esil.trap_code = 0;
@@ -7332,8 +7353,16 @@ out:
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg &&
-		r_list_length (&core->esil.stepback), false);
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg, false);
+	REsil *esil = core->anal->esil;
+	if (esil && esil->trace && esil->trace->idx > 0) {
+		core_esil_drop_stepback (core);
+		r_esil_trace_restore (esil, esil->trace->idx - 1);
+		return true;
+	}
+	if (!r_list_length (&core->esil.stepback)) {
+		return false;
+	}
 	r_core_esil_stepback (core);
 	return true;
 }
@@ -8822,10 +8851,22 @@ static void cmd_aes(RCore *core, const char *input) {
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 				r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC)),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				until_addr = op->addr + op->size;
+			bool step_over = true;
+			if (op) {
+				switch (op->type) {
+				case R_ANAL_OP_TYPE_CALL:
+					until_addr = op->addr + op->size;
+					step_over = false;
+					break;
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_RCALL:
+					step_over = false;
+					break;
+				default:
+					break;
+				}
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			r_core_esil_step (core, until_addr, until_expr, NULL, step_over);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {

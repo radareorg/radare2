@@ -374,6 +374,13 @@ static bool core_esil_run_pin(RCore *core, ut64 pc, const char *pc_name, int siz
 	return true;
 }
 
+static void core_esil_trace_op(RCore *core, RAnalOp *op) {
+	REsil *esil = R_UNWRAP4 (core, dbg, anal, esil);
+	if (esil && esil->trace) {
+		r_esil_trace_op (esil, op);
+	}
+}
+
 R_API bool r_core_esil_init(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->io, false);
 	core->esil = (const RCoreEsil){0};
@@ -594,6 +601,7 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		r_anal_op_fini (&op);
 		goto skip;
 	}
+	core_esil_trace_op (core, &op);
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	r_anal_op_fini (&op);

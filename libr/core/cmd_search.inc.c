@@ -2036,8 +2036,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
-			const char *pc_name = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC);
-			r_reg_setv (core->anal->reg, pc_name, core->addr);
+			r_esil_set_pc (esil, addr);
 			if (!r_esil_parse (esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
