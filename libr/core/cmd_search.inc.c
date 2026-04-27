@@ -1937,10 +1937,14 @@ static bool search_esil_reg_alias (void *reg, const char *name, const char *alia
 	return r_reg_alias_setname (reg, alias_type, name);
 }
 
+static bool search_esil_reg_write (void *reg, const char *name, ut64 val) {
+	return r_reg_setv ((RReg *)reg, name, val);
+}
+
 REsilRegInterface search_esil_reg_if = {
 	.is_reg = search_esil_is_reg,
 	.reg_read = search_esil_reg_read,
-	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_write = search_esil_reg_write,
 	.reg_size = search_esil_reg_size,
 	.reg_alias = search_esil_reg_alias,
 };
