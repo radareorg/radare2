@@ -8452,7 +8452,9 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	return type;
 }
 
-static void regwrite_voy(void *user, const char *name, ut64 val) {
+static void regwrite_voy(void *user, const char *name, ut64 old, ut64 val) {
+	(void)name;
+	(void)old;
 	RCore *core = user;
 	const int type = core_type_by_addr (core, val);
 	if (type == -1) {
