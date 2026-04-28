@@ -4572,6 +4572,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		case ARM64_OP_REG:
 			break;
 		case ARM64_OP_MEM:
+			val->memref = 1;
 			val->delta = arm64op.mem.disp;
 			break;
 		case ARM64_OP_IMM:
@@ -4585,6 +4586,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		case ARM_OP_REG:
 			break;
 		case ARM_OP_MEM:
+			val->memref = 1;
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
 			break;

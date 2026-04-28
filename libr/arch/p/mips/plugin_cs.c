@@ -765,9 +765,14 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
+		if (OPERAND (0).type == MIPS_OP_REG) {
+			dst = RVecRArchValue_emplace_back (&op->dsts);
+			dst->reg = parse_reg_name (*handle, insn, 0);
+		}
 		if (OPERAND (1).type == MIPS_OP_MEM) {
 			src0 = RVecRArchValue_emplace_back (&op->srcs);
 			src0->reg = parse_reg_name (*handle, insn, 1);
+			src0->memref = op->refptr? op->refptr: 1;
 			src0->delta = OPERAND (1).mem.disp;
 		}
 		break;
@@ -775,6 +780,7 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 		if (OPERAND (1).type == MIPS_OP_MEM) {
 			dst = RVecRArchValue_emplace_back (&op->dsts);
 			dst->reg = parse_reg_name (*handle, insn, 1);
+			dst->memref = op->refptr? op->refptr: 1;
 			dst->delta = OPERAND (1).mem.disp;
 		}
 		break;

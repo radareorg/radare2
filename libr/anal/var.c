@@ -1070,87 +1070,125 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 	return NULL;
 }
 
+static bool stack_immop_arch(RAnal *anal) {
+	const char *arch = anal->config->arch;
+	return arch && (r_str_startswith (arch, "arm") || r_str_startswith (arch, "mips"));
+}
+
+static bool extract_arg_from_value(RAnal *anal, RAnalOp *op, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr) {
+	if (!val || !val->reg || strcmp (reg, val->reg)) {
+		return false;
+	}
+	st64 delta = val->delta;
+	const bool is_zero_memref = val->memref && stack_immop_arch (anal);
+	if (((delta > 0 || (delta == 0 && is_zero_memref)) && *sign == '+') || (delta < 0 && *sign == '-')) {
+		*ptr = R_ABS (delta);
+		return true;
+	}
+	return false;
+}
+
+static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
+	RAnalValue *val = RVecRArchValue_at (&op->dsts, 0);
+	if (!val || !val->reg) {
+		return false;
+	}
+	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+	const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	return (bp && !strcmp (bp, val->reg)) || (sp && !strcmp (sp, val->reg));
+}
+
+static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
+	if (!stack_immop_arch (anal)) {
+		return false;
+	}
+	switch (op->type & R_ANAL_OP_TYPE_MASK) {
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_SUB:
+	case R_ANAL_OP_TYPE_LEA:
+		break;
+	default:
+		return false;
+	}
+	if (op_dst_is_stack_reg (anal, op)) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < 3; i++) {
+		RAnalValue *base = RVecRArchValue_at (&op->srcs, i);
+		if (!base || !base->reg || strcmp (reg, base->reg)) {
+			continue;
+		}
+		int j;
+		for (j = 0; j < 3; j++) {
+			RAnalValue *imm = RVecRArchValue_at (&op->srcs, j);
+			if (i == j || !imm || imm->reg || !imm->imm) {
+				continue;
+			}
+			st64 delta = imm->imm;
+			if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SUB) {
+				delta = -delta;
+			}
+			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+				*ptr = R_ABS (delta);
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	const st64 maxstackframe = 1024 * 8;
 	RAnalValue *val;
+	bool have_ptr = false;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
 	R_VEC_FOREACH (&op->srcs, val) {
-		if (val && val->reg && !strcmp (reg, val->reg)) {
-			st64 delta = val->delta;
-			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
-				ptr = R_ABS (val->delta);
+		if (extract_arg_from_value (anal, op, val, reg, sign, &ptr)) {
+			have_ptr = true;
+			break;
+		}
+	}
+	if (!have_ptr) {
+		R_VEC_FOREACH (&op->dsts, val) {
+			if (extract_arg_from_value (anal, op, val, reg, sign, &ptr)) {
+				have_ptr = true;
 				break;
 			}
 		}
 	}
 
-	if (!ptr) {
-		const char *op_esil = r_strbuf_get (&op->esil);
-		if (!op_esil) {
-			return;
+	if (!have_ptr) {
+		if (extract_arg_from_immop (anal, op, reg, sign, &ptr)) {
+			have_ptr = true;
 		}
-		char *esil_buf = strdup (op_esil);
-		if (!esil_buf) {
-			return;
-		}
-		r_strf_var (esilexpr, 64, ",%s,%s,", reg, sign);
-		char *ptr_end = strstr (esil_buf, esilexpr);
-		if (!ptr_end) {
-			free (esil_buf);
-			return;
-		}
-		*ptr_end = 0;
-		char *addr = ptr_end;
-		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
-			addr--;
-		}
-		if (r_str_startswith (addr, "0x")) {
-			ptr = (st64)r_num_get (NULL, addr);
-		} else {
-			//XXX: This is a workaround for inconsistent esil
-			val = RVecRArchValue_at (&op->dsts, 0);
-			if (!op->stackop && val) {
-				const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-				const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-				const char *rn = val? val->reg: NULL;
-				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
-					if (anal->verbose) {
-						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
-					}
-					free (esil_buf);
-					goto beach;
-				}
-			}
-			if (*addr == ',') {
-				addr++;
-			}
-			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
-				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
-				ptr = (st64)r_num_get (NULL, addr);
-				val = RVecRArchValue_at (&op->srcs, 0);
-				if (ptr && val && ptr == val->imm) {
-					free (esil_buf);
-					goto beach;
-				}
-			} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
-				if (op->ptr % 4) {
-					free (esil_buf);
-					goto beach;
-				}
-				ptr = R_ABS (op->ptr);
-			} else {
-				free (esil_buf);
+	}
+
+	if (!have_ptr) {
+		val = RVecRArchValue_at (&op->dsts, 0);
+		if (!op->stackop && val) {
+			if (op_dst_is_stack_reg (anal, op)) {
+				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
 				goto beach;
 			}
 		}
-		free (esil_buf);
+		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
+				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
+			if (op->ptr % 4) {
+				goto beach;
+			}
+			ptr = R_ABS (op->ptr);
+			have_ptr = true;
+		} else {
+			goto beach;
+		}
 	}
 
-	if (anal->verbose && (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0))) {
-		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
+	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
+		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
 
 	const int maxarg = 32; // TODO: use maxarg ?
