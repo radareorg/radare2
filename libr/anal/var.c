@@ -1070,17 +1070,12 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 	return NULL;
 }
 
-static bool stack_immop_arch(RAnal *anal) {
-	const char *arch = anal->config->arch;
-	return arch && (r_str_startswith (arch, "arm") || r_str_startswith (arch, "mips"));
-}
-
-static bool extract_arg_from_value(RAnal *anal, RAnalOp *op, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr) {
+static bool extract_arg_from_value(RAnalValue *val, const char *reg, const char *sign, char type, R_OUT st64 *ptr) {
 	if (!val || !val->reg || strcmp (reg, val->reg)) {
 		return false;
 	}
 	st64 delta = val->delta;
-	const bool is_zero_memref = val->memref && stack_immop_arch (anal);
+	const bool is_zero_memref = val->memref && type == R_ANAL_VAR_KIND_SPV;
 	if (((delta > 0 || (delta == 0 && is_zero_memref)) && *sign == '+') || (delta < 0 && *sign == '-')) {
 		*ptr = R_ABS (delta);
 		return true;
@@ -1099,9 +1094,6 @@ static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
 }
 
 static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
-	if (!stack_immop_arch (anal)) {
-		return false;
-	}
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_ADD:
 	case R_ANAL_OP_TYPE_SUB:
@@ -1113,27 +1105,18 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 	if (op_dst_is_stack_reg (anal, op)) {
 		return false;
 	}
-	int i;
-	for (i = 0; i < 3; i++) {
-		RAnalValue *base = RVecRArchValue_at (&op->srcs, i);
-		if (!base || !base->reg || strcmp (reg, base->reg)) {
-			continue;
-		}
-		int j;
-		for (j = 0; j < 3; j++) {
-			RAnalValue *imm = RVecRArchValue_at (&op->srcs, j);
-			if (i == j || !imm || imm->reg || !imm->imm) {
-				continue;
-			}
-			st64 delta = imm->imm;
-			if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SUB) {
-				delta = -delta;
-			}
-			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
-				*ptr = R_ABS (delta);
-				return true;
-			}
-		}
+	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
+	if (!base || !imm || !base->reg || strcmp (reg, base->reg) || imm->reg) {
+		return false;
+	}
+	st64 delta = imm->imm;
+	if ((op->type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SUB) {
+		delta = -delta;
+	}
+	if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+		*ptr = R_ABS (delta);
+		return true;
 	}
 	return false;
 }
@@ -1147,14 +1130,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
 	R_VEC_FOREACH (&op->srcs, val) {
-		if (extract_arg_from_value (anal, op, val, reg, sign, &ptr)) {
+		if (extract_arg_from_value (val, reg, sign, type, &ptr)) {
 			have_ptr = true;
 			break;
 		}
 	}
 	if (!have_ptr) {
 		R_VEC_FOREACH (&op->dsts, val) {
-			if (extract_arg_from_value (anal, op, val, reg, sign, &ptr)) {
+			if (extract_arg_from_value (val, reg, sign, type, &ptr)) {
 				have_ptr = true;
 				break;
 			}
