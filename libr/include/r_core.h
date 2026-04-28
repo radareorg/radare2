@@ -329,25 +329,33 @@ typedef struct r_core_esil_stepback_t {
 	ut64 addr;
 } RCoreEsilStepBack;
 
+typedef struct r_esil_cmds_t {
+	char *intr;
+	char *trap;
+	char *mdev;
+	char *todo;
+	char *step;
+	char *step_out;
+	char *ioer;
+	char *mdev_range;
+} REsilCmds;
+
+typedef struct r_esil_stepback_t {
+	RList list;
+	RStrBuf revert;
+	ut64 old_pc;
+	ut32 max;
+	ut32 v_reg;
+	ut32 v_mem;
+	ut32 v_bits;
+	ut32 v_alias;
+} REsilStepback;
+
 typedef struct r_core_esil_t {
 	REsil esil;
-	RList stepback;
-	RStrBuf trap_revert;
-	ut64 old_pc;
-	ut32 tr_reg;
-	ut32 tr_mem;
-	ut32 tr_bits;
-	ut32 tr_reg_alias;
 	RReg *reg;
-	char *cmd_step;		// command to run before a step is performed
-	char *cmd_step_out;	// command to run after a step is performed
-	char *cmd_intr;		// command to run when an interrupt occurs
-	char *cmd_trap;		// command to run when a trap occurs
-	char *cmd_mdev;		// command to run when an memory mapped device address is used
-	char *cmd_todo;		// command to run when esil expr contains TODO
-	char *cmd_ioer;		// command to run when esil fails to IO
-	char *mdev_range;	// string containing the r_str_range to match for read/write accesses
-	ut32 max_stepback;
+	REsilCmds cmds;
+	REsilStepback sb;
 	ut8 cfg;
 } RCoreEsil;
 

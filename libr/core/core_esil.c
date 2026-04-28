@@ -8,8 +8,8 @@
 
 static bool core_esil_op_todo(REsil *esil) {
 	RCore *core = esil->user;
-	if (R_STR_ISNOTEMPTY (core->esil.cmd_todo)) {
-		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_todo, esil->addr);
+	if (R_STR_ISNOTEMPTY (core->esil.cmds.todo)) {
+		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmds.todo, esil->addr);
 	}
 	return true;
 }
@@ -21,8 +21,8 @@ static bool core_esil_op_interrupt(REsil *esil) {
 		return false;
 	}
 	RCore *core = esil->user;
-	if (R_STR_ISNOTEMPTY (core->esil.cmd_intr)) {
-		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmd_intr, interrupt);
+	if (R_STR_ISNOTEMPTY (core->esil.cmds.intr)) {
+		r_core_cmdf (core, "%s %"PFMT64d" 0", core->esil.cmds.intr, interrupt);
 	}
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
@@ -41,8 +41,8 @@ static bool core_esil_cmd(RCore *core, const char *cmd, ut64 a1, ut64 a2) {
 
 static bool core_esil_mem_is_valid(RCore *core, ut64 addr, bool write) {
 	const bool valid = r_io_is_valid_offset (core->io, addr, write ? R_PERM_W : R_PERM_R);
-	if (!valid && R_STR_ISNOTEMPTY (core->esil.cmd_ioer)) {
-		core_esil_cmd (core, core->esil.cmd_ioer, core->esil.old_pc, write);
+	if (!valid && R_STR_ISNOTEMPTY (core->esil.cmds.ioer)) {
+		core_esil_cmd (core, core->esil.cmds.ioer, core->esil.sb.old_pc, write);
 	}
 	return valid;
 }
@@ -114,8 +114,10 @@ static bool core_esil_mem_read (void *core, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 
-	if (R_STR_ISNOTEMPTY (c->esil.cmd_mdev) && c->esil.mdev_range && r_str_range_in (c->esil.mdev_range, addr)) {
-		return core_esil_cmd (c, c->esil.cmd_mdev, c->esil.old_pc, 0);
+	const REsilCmds *cmds = &c->esil.cmds;
+	if (R_STR_ISNOTEMPTY (cmds->mdev) && cmds->mdev_range &&
+		r_str_range_in (cmds->mdev_range, addr)) {
+		return core_esil_cmd (c, cmds->mdev, c->esil.sb.old_pc, 0);
 	}
 	const bool ret = r_io_read_at (c->io, addr, buf, len);
 	const bool valid = core_esil_mem_is_valid (c, addr, false);
@@ -134,8 +136,10 @@ static bool core_esil_mem_write (void *core, ut64 addr, const ut8 *buf, int len)
 	if (!addr && c->esil.cfg & R_CORE_ESIL_NONULL) {
 		return false;
 	}
-	if (R_STR_ISNOTEMPTY (c->esil.cmd_mdev) && c->esil.mdev_range && r_str_range_in (c->esil.mdev_range, addr)) {
-		return core_esil_cmd (c, c->esil.cmd_mdev, c->esil.old_pc, 1);
+	const REsilCmds *cmds = &c->esil.cmds;
+	if (R_STR_ISNOTEMPTY (cmds->mdev) && cmds->mdev_range &&
+		r_str_range_in (cmds->mdev_range, addr)) {
+		return core_esil_cmd (c, cmds->mdev, c->esil.sb.old_pc, 1);
 	}
 	if (c->esil.cfg & R_CORE_ESIL_RO) {
 		RIORegion region;
@@ -168,7 +172,7 @@ static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name
 	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
-	r_strbuf_prependf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=,", old, name);
+	r_strbuf_prependf (&cesil->sb.revert, "0x%"PFMT64x",%s,:=,", old, name);
 }
 
 static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
@@ -183,7 +187,7 @@ static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
 	int i;
 	for (i = 0; i < len; i++) {
 		//TODO: optimize this after breaking
-		r_strbuf_prependf (&cesil->trap_revert,
+		r_strbuf_prependf (&cesil->sb.revert,
 			"0x%02x,0x%"PFMT64x",=[1],", old[i], addr + i);
 	}
 }
@@ -195,7 +199,7 @@ static void core_esil_voyeur_trap_revert_set_bits (void *user, int bits) {
 		return;
 	}
 	ut32 old_bits = r_config_get_i (core->config, "asm.bits");
-	r_strbuf_prependf (&cesil->trap_revert, "%d,BITS,", old_bits);
+	r_strbuf_prependf (&cesil->sb.revert, "%d,BITS,", old_bits);
 }
 
 static void core_esil_voyeur_trap_revert_reg_alias (void *user, const char *name, const char *alias) {
@@ -213,7 +217,7 @@ static void core_esil_voyeur_trap_revert_reg_alias (void *user, const char *name
 	if (!old_name) {
 		return;
 	}
-	r_strbuf_prependf (&cesil->trap_revert, "%s,%s,r=,", old_name, alias);
+	r_strbuf_prependf (&cesil->sb.revert, "%s,%s,r=,", old_name, alias);
 }
 
 static void core_esil_stepback_free (void *data) {
@@ -224,45 +228,66 @@ static void core_esil_stepback_free (void *data) {
 	}
 }
 
+static void core_esil_cmds_fini(REsilCmds *cmds) {
+	R_FREE (cmds->step);
+	R_FREE (cmds->step_out);
+	R_FREE (cmds->intr);
+	R_FREE (cmds->trap);
+	R_FREE (cmds->mdev);
+	R_FREE (cmds->todo);
+	R_FREE (cmds->ioer);
+	R_FREE (cmds->mdev_range);
+}
+
+static void core_esil_stepback_fini(REsil *esil, REsilStepback *sb) {
+	r_esil_del_voyeur (esil, sb->v_reg);
+	r_esil_del_voyeur (esil, sb->v_mem);
+	r_esil_del_voyeur (esil, sb->v_bits);
+	r_esil_del_voyeur (esil, sb->v_alias);
+	r_strbuf_fini (&sb->revert);
+	r_list_purge (&sb->list);
+}
+
 static void core_esil_record_stepback(RCore *core) {
 	RCoreEsil *cesil = &core->esil;
-	if (!cesil->max_stepback) {
-		r_strbuf_fini (&cesil->trap_revert);
+	REsilStepback *sb = &cesil->sb;
+	if (!sb->max) {
+		r_strbuf_fini (&sb->revert);
 		return;
 	}
 	RCoreEsilStepBack *cesb = NULL;
-	if (cesil->max_stepback > r_list_length (&cesil->stepback)) {
+	if (sb->max > r_list_length (&sb->list)) {
 		cesb = R_NEW (RCoreEsilStepBack);
 		if (!cesb) {
 			R_LOG_WARN ("RCoreEsilStepBack allocation failed");
-			r_strbuf_fini (&cesil->trap_revert);
+			r_strbuf_fini (&sb->revert);
 			return;
 		}
-		if (!r_list_push (&cesil->stepback, cesb)) {
+		if (!r_list_push (&sb->list, cesb)) {
 			R_LOG_WARN ("Pushing RCoreEsilStepBack failed");
 			free (cesb);
-			r_strbuf_fini (&cesil->trap_revert);
+			r_strbuf_fini (&sb->revert);
 			return;
 		}
 	} else {
-		RListIter *iter = cesil->stepback.head;
+		RListIter *iter = sb->list.head;
 		if (!iter) {
-			r_strbuf_fini (&cesil->trap_revert);
+			r_strbuf_fini (&sb->revert);
 			return;
 		}
-		if (iter != cesil->stepback.tail) {
-			cesil->stepback.head = iter->n;
-			cesil->stepback.head->p = NULL;
+		if (iter != sb->list.tail) {
+			sb->list.head = iter->n;
+			sb->list.head->p = NULL;
 			iter->n = NULL;
-			iter->p = cesil->stepback.tail;
-			cesil->stepback.tail->n = iter;
-			cesil->stepback.tail = iter;
+			iter->p = sb->list.tail;
+			sb->list.tail->n = iter;
+			sb->list.tail = iter;
 		}
 		cesb = iter->data;
 		free (cesb->expr);
 	}
-	cesb->expr = r_strbuf_drain_nofree (&cesil->trap_revert);
-	cesb->addr = cesil->old_pc;
+	cesb->expr = r_strbuf_drain_nofree (&sb->revert);
+	cesb->addr = sb->old_pc;
 }
 
 static bool core_esil_step_delay_slot(RCore *core, RArchSession *as, const char *pc_name, ut64 ds_addr, int max_opsize) {
@@ -397,17 +422,17 @@ R_API bool r_core_esil_init(RCore *core) {
 		"$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
 		goto op_fail;
 	}
-	r_strbuf_init (&core->esil.trap_revert);
+	r_strbuf_init (&core->esil.sb.revert);
 	core->esil.esil.user = core;
-	core->esil.tr_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+	core->esil.sb.v_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil,
 		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
+	core->esil.sb.v_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
 		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
-	core->esil.tr_bits = r_esil_add_voyeur (&core->esil.esil, core,
+	core->esil.sb.v_bits = r_esil_add_voyeur (&core->esil.esil, core,
 		core_esil_voyeur_trap_revert_set_bits, R_ESIL_VOYEUR_SET_BITS);
-	core->esil.tr_reg_alias = r_esil_add_voyeur (&core->esil.esil, core,
+	core->esil.sb.v_alias = r_esil_add_voyeur (&core->esil.esil, core,
 		core_esil_voyeur_trap_revert_reg_alias, R_ESIL_VOYEUR_REG_ALIAS);
-	core->esil.stepback.free = core_esil_stepback_free;
+	core->esil.sb.list.free = core_esil_stepback_free;
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -465,14 +490,14 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return false;
 	}
-	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.max_stepback) {
+	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.sb.max) {
 		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
-		r_strbuf_initf (&core->esil.trap_revert,
+		r_strbuf_initf (&core->esil.sb.revert,
 			"0x%"PFMT64x",%s,:=", pc, pc_name);
 	} else {
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 	}
-	core->esil.old_pc = pc;
+	core->esil.sb.old_pc = pc;
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, addr);
 	if (core_esil_parse_ok (&core->esil.esil, r_esil_parse (&core->esil.esil, expr))) {
 		if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
@@ -484,19 +509,19 @@ R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
 		//disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
-		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+		char *expr = r_strbuf_drain_nofree (&core->esil.sb.revert);
 		//revert all changes
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
 	} else {
-		r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
+		r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.sb.old_pc);
 	}
-		if (R_STR_ISNOTEMPTY (core->esil.cmd_trap)) {
-			core_esil_cmd (core, core->esil.cmd_trap, core->esil.old_pc,
-				core->esil.esil.trap_code);
-		}
-		return false;
+	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
+		core_esil_cmd (core, core->esil.cmds.trap, core->esil.sb.old_pc,
+			core->esil.esil.trap_code);
 	}
+	return false;
+}
 
 R_API bool r_core_esil_single_step(RCore *core) {
 	R_RETURN_VAL_IF_FAIL (core && core->anal && core->anal->arch && core->io && core->anal->reg, false);
@@ -582,18 +607,18 @@ R_API bool r_core_esil_single_step(RCore *core) {
 		trap_code = R_ANAL_TRAP_INVALID;
 		goto op_trap;
 	}
-	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.max_stepback) {
+	if ((core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) || core->esil.sb.max) {
 		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
-		r_strbuf_initf (&core->esil.trap_revert,
+		r_strbuf_initf (&core->esil.sb.revert,
 			"0x%"PFMT64x",%s,:=", pc, pc_name);
 	} else {
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 	}
-	core->esil.old_pc = pc;
+	core->esil.sb.old_pc = pc;
 	pc += op.size;
 	const ut64 ds_addr = pc;
 	const bool has_delay = op.delay > 0;
-	if (core_esil_run_pin (core, core->esil.old_pc, pc_name, op.size)) {
+	if (core_esil_run_pin (core, core->esil.sb.old_pc, pc_name, op.size)) {
 		r_anal_op_fini (&op);
 		goto skip;
 	}
@@ -601,17 +626,17 @@ R_API bool r_core_esil_single_step(RCore *core) {
 	char *expr = r_strbuf_drain_nofree (&op.esil);
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, pc);
 	r_anal_op_fini (&op);
-	if (invalid_op && R_STR_ISNOTEMPTY (core->esil.cmd_trap)) {
-		core_esil_cmd (core, core->esil.cmd_trap, core->esil.old_pc,
+	if (invalid_op && R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
+		core_esil_cmd (core, core->esil.cmds.trap, core->esil.sb.old_pc,
 			R_ANAL_TRAP_INVALID);
 	}
-	if (R_STR_ISNOTEMPTY (core->esil.cmd_step)) {
-		if (core_esil_cmd (core, core->esil.cmd_step, core->esil.old_pc, 0)) {
+	if (R_STR_ISNOTEMPTY (core->esil.cmds.step)) {
+		if (core_esil_cmd (core, core->esil.cmds.step, core->esil.sb.old_pc, 0)) {
 			free (expr);
 			// cmd_step ran instead of the ESIL expression; its side effects
 			// can't be reverted by a PC-only stepback, so don't record one
 			if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
-				r_strbuf_fini (&core->esil.trap_revert);
+				r_strbuf_fini (&core->esil.sb.revert);
 				core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 			}
 			goto skip;
@@ -634,8 +659,8 @@ skip:
 			core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		}
 		r_unref (as);
-		if (R_STR_ISNOTEMPTY (core->esil.cmd_step_out)) {
-			core_esil_cmd (core, core->esil.cmd_step_out, core->esil.old_pc, 0);
+		if (R_STR_ISNOTEMPTY (core->esil.cmds.step_out)) {
+			core_esil_cmd (core, core->esil.cmds.step_out, core->esil.sb.old_pc, 0);
 		}
 		return true;
 	}
@@ -648,7 +673,7 @@ skip:
 		const bool trap_revert_config = core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG;
 		//disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
-		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
+		char *expr = r_strbuf_drain_nofree (&core->esil.sb.revert);
 		//revert all changes
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
@@ -672,52 +697,40 @@ trap:
 	if (!core->esil.esil.trap_code) {
 		core->esil.esil.trap_code = trap_code;
 	}
-	if (R_STR_ISNOTEMPTY (core->esil.cmd_trap)) {
-		core_esil_cmd (core, core->esil.cmd_trap, core->esil.old_pc, trap_code);
+	if (R_STR_ISNOTEMPTY (core->esil.cmds.trap)) {
+		core_esil_cmd (core, core->esil.cmds.trap, core->esil.sb.old_pc, trap_code);
 	}
 	return false;
 }
 
 R_API void r_core_esil_stepback(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->io && core->anal && core->anal->reg);
-	if (!r_list_length (&core->esil.stepback)) {
+	if (!r_list_length (&core->esil.sb.list)) {
 		//not an error
 		return;
 	}
-	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.stepback);
+	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
 	core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 	r_esil_parse (&core->esil.esil, cesb->expr);
 	core_esil_stepback_free (cesb);
 }
 
 R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback) {
-	R_RETURN_IF_FAIL (core && core->esil.stepback.free);
-	core->esil.max_stepback = max_stepback;
-	while (r_list_length (&core->esil.stepback) > max_stepback) {
-		core_esil_stepback_free (r_list_pop_head (&core->esil.stepback));
+	R_RETURN_IF_FAIL (core && core->esil.sb.list.free);
+	core->esil.sb.max = max_stepback;
+	while (r_list_length (&core->esil.sb.list) > max_stepback) {
+		core_esil_stepback_free (r_list_pop_head (&core->esil.sb.list));
 	}
 }
 
 R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_RETURN_IF_FAIL (cesil);
-	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg);
-	r_esil_del_voyeur (&cesil->esil, cesil->tr_mem);
-	r_esil_del_voyeur (&cesil->esil, cesil->tr_bits);
-	r_esil_del_voyeur (&cesil->esil, cesil->tr_reg_alias);
+	core_esil_stepback_fini (&cesil->esil, &cesil->sb);
 	r_esil_fini (&cesil->esil);
-	r_strbuf_fini (&cesil->trap_revert);
 	if (cesil->reg) {
 		r_reg_free (cesil->reg);
 		cesil->reg = NULL;
 	}
-	R_FREE (cesil->cmd_step);
-	R_FREE (cesil->cmd_step_out);
-	R_FREE (cesil->cmd_intr);
-	R_FREE (cesil->cmd_trap);
-	R_FREE (cesil->cmd_mdev);
-	R_FREE (cesil->cmd_todo);
-	R_FREE (cesil->cmd_ioer);
-	R_FREE (cesil->mdev_range);
-	r_list_purge (&cesil->stepback);
+	core_esil_cmds_fini (&cesil->cmds);
 	cesil->esil = (const REsil){0};
 }

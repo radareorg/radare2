@@ -2427,7 +2427,7 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_ioer, node->value);
+		core_esil_set_cmd (&core->esil.cmds.ioer, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_ioer, node->value);
@@ -2440,7 +2440,7 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_todo, node->value);
+		core_esil_set_cmd (&core->esil.cmds.todo, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_todo, node->value);
@@ -2453,7 +2453,7 @@ static bool cb_cmd_esil_intr(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_intr, node->value);
+		core_esil_set_cmd (&core->esil.cmds.intr, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_intr, node->value);
@@ -2466,7 +2466,7 @@ static bool cb_mdevrange(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.mdev_range, node->value);
+		core_esil_set_cmd (&core->esil.cmds.mdev_range, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			core_esil_set_cmd (&esil->mdev_range, node->value);
@@ -2489,7 +2489,7 @@ static bool cb_cmd_esil_step(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_step, node->value);
+		core_esil_set_cmd (&core->esil.cmds.step, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_step, node->value);
@@ -2502,7 +2502,7 @@ static bool cb_cmd_esil_step_out(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_step_out, node->value);
+		core_esil_set_cmd (&core->esil.cmds.step_out, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_step_out, node->value);
@@ -2515,7 +2515,7 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_mdev, node->value);
+		core_esil_set_cmd (&core->esil.cmds.mdev, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
 			legacy_esil_set_cmd (esil, &esil->cmd_mdev, node->value);
@@ -2528,7 +2528,7 @@ static bool cb_cmd_esil_trap(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
 	if (core) {
-		core_esil_set_cmd (&core->esil.cmd_trap, node->value);
+		core_esil_set_cmd (&core->esil.cmds.trap, node->value);
 		legacy_esil_set_cmd (&core->esil.esil, &core->esil.esil.cmd_trap, node->value);
 		REsil *esil = core_legacy_esil (core);
 		if (esil) {
