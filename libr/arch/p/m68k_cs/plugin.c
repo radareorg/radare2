@@ -261,20 +261,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	int n, opsize = -1;
-	cs_insn* insn = NULL;
+	int opsize = -1;
+	RArchCSInsn csi;
+	cs_insn *insn = &csi.insn;
 	cs_m68k *m68k;
 	cs_detail *detail;
 
 	op->size = 4;
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	int on = n;
-	if (!insn || !strncmp (insn->mnemonic, "dc.w", 4)) {
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	if (!ok || !strncmp (insn->mnemonic, "dc.w", 4)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
-			n = 2;
-		} else {
-			n = -1;
 		}
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
@@ -292,7 +289,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 		}
 	}
-	if (n < 1 || insn->size < 1) {
+	if (!ok || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
@@ -791,7 +788,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		op_fillval (pd, op, handle, insn);
 	}
 beach:
-	cs_free (insn, on);
 	return opsize > 0;
 }
 

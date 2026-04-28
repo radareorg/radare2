@@ -348,9 +348,10 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
-	cs_insn *insn = NULL;
-	int n = cs_disasm (cpd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
-	if (n < 1) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (cpd->cs_handle, buf, len, op->addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -502,7 +503,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		op->size = insn->size;
 		op->id = insn->id;
-		cs_free (insn, n);
 	}
 	return op->size;
 }

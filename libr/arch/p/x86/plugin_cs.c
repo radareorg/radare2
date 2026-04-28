@@ -30,8 +30,6 @@ call = 4
 #define HAVE_CSGRP_PRIVILEGE 0
 #endif
 
-#define USE_ITER_API 1
-
 #if CS_API_MAJOR < 2
 #error Old Capstone not supported
 #endif
@@ -4179,8 +4177,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	const int mode = ((PluginData *)as->data)->cs_mode;
 
-	cs_insn *insn = NULL;
-	int n;
 #if GHOSTOPS
 	if (op->size >= 2 && op->bytes[0] == 0x0f) {
 		ut8 b1 = op->bytes[1];
@@ -4194,29 +4190,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 #endif
 
 	op->cycles = 1; // aprox
-	// capstone-next
-#if USE_ITER_API
-	cs_detail insnack_detail = {{0}};
-	cs_insn insnack = {0};
-	insnack.detail = &insnack_detail;
+	RArchCSInsn csi;
 	const ut64 addr = op->addr;
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	ut64 naddr = addr;
 	size_t size = len;
-	insn = &insnack;
-	n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&naddr, insn);
-#else
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-#endif
+	bool ok = r_arch_cs_disasm (handle, (const uint8_t **)&buf, &size, (uint64_t *)&naddr, &csi);
+	cs_insn *insn = &csi.insn;
 	//XXX: capstone lcall seg:off workaround, remove when capstone will be fixed
-	if (n >= 1 && mode == CS_MODE_16 && r_str_startswith (insn->mnemonic, "lcall")) {
+	if (ok && mode == CS_MODE_16 && r_str_startswith (insn->mnemonic, "lcall")) {
 		char *opstr = strdup (insn->op_str);
 		opstr = r_str_replace (opstr, ", ", ":", 0);
 		r_str_ncpy (insn->op_str, opstr, sizeof (insn->op_str));
 		free (opstr);
 	}
-	if (n < 1) {
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -4272,17 +4261,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op_fillval (as, op, handle, insn, mode);
 		}
 	}
-//#if X86_GRP_PRIVILEGE>0
-	if (insn) {
 #if HAVE_CSGRP_PRIVILEGE
-		if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE)) {
-			op->family = R_ANAL_OP_FAMILY_PRIV;
-		}
-#endif
-#if !USE_ITER_API
-		cs_free (insn, n);
-#endif
+	if (cs_insn_group (handle, insn, X86_GRP_PRIVILEGE)) {
+		op->family = R_ANAL_OP_FAMILY_PRIV;
 	}
+#endif
 	return op->size > 0;
 }
 

@@ -1,6 +1,29 @@
-#ifndef CSINC
-#error Undefined CSINC
+#ifndef R_ARCH_CAPSTONE_HELPER_INC_C
+#define R_ARCH_CAPSTONE_HELPER_INC_C
+
+typedef struct {
+	cs_detail detail;
+	cs_insn insn;
+} RArchCSInsn;
+
+static inline bool r_arch_cs_disasm(csh handle, const uint8_t **code, size_t *size, uint64_t *addr, RArchCSInsn *ci) {
+	ci->insn.detail = &ci->detail;
+	return cs_disasm_iter (handle, code, size, addr, &ci->insn);
+}
+
+static inline bool r_arch_cs_disasm_iter(csh handle, const ut8 *buf, int len, ut64 addr, RArchCSInsn *ci) {
+	if (len < 1) {
+		return false;
+	}
+	const uint8_t *code = (const uint8_t *)buf;
+	size_t size = len;
+	uint64_t iter_addr = addr;
+	return r_arch_cs_disasm (handle, &code, &size, &iter_addr, ci);
+}
+
 #endif
+
+#ifdef CSINC
 
 #ifndef CSINC_MODE
 #define CSINC_MODE 0
@@ -144,3 +167,5 @@ static char *r_arch_cs_mnemonics(RArchSession *s, csh cs_handle, int id, bool js
 	}
 	return pj? pj_drain (pj): r_strbuf_drain (buf);
 }
+
+#endif

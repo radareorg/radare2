@@ -108,10 +108,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 		return false;
 	}
 	op->size = 2;
-	cs_insn *insn;
+	RArchCSInsn csi;
+	cs_insn *insn = &csi.insn;
 	const bool esil = mask & R_ARCH_OP_MASK_ESIL;
-	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (n < 1) {
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -334,7 +335,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RAnalOpMask mask) {
 			op->type = R_ANAL_OP_TYPE_ILL;
 			break;
 		}
-		cs_free (insn, n);
 		r_str_replace_char (op->mnemonic, '#', 0);
 	}
 	return op->size > 0;

@@ -188,10 +188,11 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 	if (ret != CS_ERR_OK) {
 		return -1;
 	}
-	cs_insn *insn = NULL;
+	RArchCSInsn csi;
+	cs_insn *insn = &csi.insn;
 	cs_option (handle, CS_OPT_DETAIL, CS_OPT_ON);
-	int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-	if (n < 1) {
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
@@ -204,6 +205,9 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 			// this is a bug in capstone, disassembling needs to use detail=off to avoid appending the instruction suffix
 			cs_insn *deinsn = NULL;
 			cs_option (handle, CS_OPT_DETAIL, CS_OPT_OFF);
+			// Keep this on cs_disasm(): cs_malloc/cs_disasm leave detail NULL when
+			// detail is off, while the stack iterator helper wires a detail buffer.
+			// Recheck Capstone's TMS320 printer/detail interaction before changing it.
 			int n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &deinsn);
 			if (n > 0) {
 				char *str = r_str_newf ("%s%s%s", deinsn->mnemonic, deinsn->op_str[0]? " ": "", deinsn->op_str);
@@ -308,7 +312,6 @@ static int tms320c64x_analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8
 			op->type = R_ANAL_OP_TYPE_ADD;
 			break;
 		}
-		cs_free (insn, n);
 	}
 	return op->size;
 }

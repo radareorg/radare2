@@ -10,14 +10,20 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 // https://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
-#define OPERAND(x) insn->detail->mips.operands[x]
-#define REGID(x) insn->detail->mips.operands[x].reg
-#define REG(x) cs_reg_name (*handle, insn->detail->mips.operands[x].reg)
-#define IMM(x) insn->detail->mips.operands[x].imm
-#define MEMBASE(x) cs_reg_name(*handle, insn->detail->mips.operands[x].mem.base)
-#define MEMINDEX(x) insn->detail->mips.operands[x].mem.index
-#define MEMDISP(x) insn->detail->mips.operands[x].mem.disp
 #define OPCOUNT() insn->detail->mips.op_count
+
+static const char *mips_reg_name(csh handle, unsigned int reg) {
+	const char *name = cs_reg_name (handle, reg);
+	return name? name: "";
+}
+
+#define OPERAND(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x]: (insn->detail->mips.operands[0]))
+#define REGID(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].reg: MIPS_REG_INVALID)
+#define REG(x) mips_reg_name (*handle, REGID (x))
+#define IMM(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].imm: 0)
+#define MEMBASE(x) (((x) >= 0 && (x) < OPCOUNT ())? mips_reg_name (*handle, insn->detail->mips.operands[x].mem.base): "")
+#define MEMINDEX(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].mem.index: MIPS_REG_INVALID)
+#define MEMDISP(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].mem.disp: 0)
 // TODO scale and disp
 
 #define SET_VAL(op,i) \
@@ -204,13 +210,15 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 
 static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int n) {
 	*buf = 0;
+	if (n < 0 || n >= insn->detail->mips.op_count) {
+		return buf;
+	}
 	switch (insn->detail->mips.operands[n].type) {
 	case MIPS_OP_INVALID:
 		break;
 	case MIPS_OP_REG:
 		snprintf (buf, buf_sz, "%s",
-			cs_reg_name (*handle,
-				insn->detail->mips.operands[n].reg));
+			mips_reg_name (*handle, insn->detail->mips.operands[n].reg));
 		break;
 	case MIPS_OP_IMM:
 		{
@@ -224,11 +232,11 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 			if (disp < 0) {
 				snprintf (buf, buf_sz, "%"PFMT64d",%s,-",
 					(ut64)(-insn->detail->mips.operands[n].mem.disp),
-					cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+					mips_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
 			} else {
 				snprintf (buf, buf_sz, "0x%"PFMT64x",%s,+",
 					(ut64)insn->detail->mips.operands[n].mem.disp,
-					cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+					mips_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
 			}
 		}
 		break;
@@ -936,7 +944,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	const int len = op->size;
 	csh handle = cs_handle_for_session (as);
 	PluginData *pd;
-	cs_insn *insn = NULL;
 	if (plugin_changed (as)) {
 		fini (as);
 		init (as);
@@ -954,7 +961,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (!pd || handle == 0) {
 		return false;
 	}
-	int n, opsize = -1;
+	int opsize = -1;
 
 // XXX no arch->cpu ?!?! CS_MODE_MICRO, N64
 	op->addr = addr;
@@ -962,8 +969,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (op->mnemonic) {
 		*op->mnemonic = 0;
 	}
-	n = cs_disasm (handle, buf, len, addr, 1, &insn);
-	if (n < 1 || insn->size < 1) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (!ok || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -1313,7 +1322,6 @@ beach:
 	if (mask & R_ARCH_OP_MASK_VAL) {
 		op_fillval (as, op, &handle, insn);
 	}
-	cs_free (insn, n);
 	return opsize;
 }
 

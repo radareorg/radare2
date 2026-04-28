@@ -93,7 +93,6 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	EvmPluginData *epd = (EvmPluginData *)s->data;
 
 	int opsize = -1;
-	cs_insn *insn;
 	char *str;
 
 	op->addr = addr;
@@ -102,9 +101,11 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	}
 	op->size = 1;
 	op->type = R_ANAL_OP_TYPE_UNK;
-	int n = cs_disasm (epd->cs_handle, (ut8 *)buf, len, addr, 1, &insn);
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (epd->cs_handle, buf, len, addr, &csi);
+	cs_insn *insn = &csi.insn;
 	opsize = 1;
-	if (n < 1 || insn->size < 1) {
+	if (!ok || insn->size < 1) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
@@ -348,7 +349,6 @@ beach:
 		op_fillval (arch, op, &hndl, insn);
 	}
 #endif
-	cs_free (insn, n);
 	op->size = opsize;
 	return true;
 }

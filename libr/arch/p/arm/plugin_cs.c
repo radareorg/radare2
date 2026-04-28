@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2013-2025 - pancake */
+/* radare2 - LGPL - Copyright 2013-2026 - pancake */
 
 #include <r_arch.h>
 #include <sdb/ht_uu.h>
@@ -8,6 +8,7 @@
 #include <capstone/capstone.h>
 #include <capstone/arm.h>
 #include <r_util/r_assert.h>
+#include "../capstone.inc.c"
 #include "arm_hacks.inc.c"
 #include "asm_arm_hacks.inc.c"
 #include "arm_regprofile.inc.c"
@@ -4693,24 +4694,25 @@ static inline bool is_valid_mnemonic(const char *m) {
 
 static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len, RAnalOpMask mask) {
 	csh *cs_handle = cs_handle_for_session (as);
-	cs_insn *insn = NULL;
 	op->size = (as->config->bits == 16)? 2: 4;
 	op->addr = addr;
 	if (!buf) {
 		buf = op->bytes;
 		len = op->size;
 	}
-	int n = cs_disasm (*cs_handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n > 0 && is_valid_mnemonic (insn->mnemonic)) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (*cs_handle, buf, len, addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (ok && is_valid_mnemonic (insn->mnemonic)) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			free (op->mnemonic);
 			op->mnemonic = r_str_newf ("%s%s%s",
-				insn->mnemonic,
-				insn->op_str[0]? " ": "",
-				insn->op_str);
+					insn->mnemonic,
+					insn->op_str[0]? " ": "",
+					insn->op_str);
 			r_str_replace_char (op->mnemonic, '#', '\x00');
 		}
-		//bool thumb = cs_insn_group (cs_handle, insn, ARM_GRP_THUMB);
+		// bool thumb = cs_insn_group (cs_handle, insn, ARM_GRP_THUMB);
 		bool thumb = as->config->bits == 16;
 		op->size = insn->size;
 		op->id = insn->id;
@@ -4735,9 +4737,7 @@ static int analop(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int 
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (as, op, *cs_handle, insn, as->config->bits);
 		}
-		cs_free (insn, n);
 	} else {
-		cs_free (insn, n);
 		op->size = 4;
 		op->type = R_ANAL_OP_TYPE_ILL;
 		if (!buf || len < 4) {
@@ -4786,11 +4786,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	PluginData *pd = as->data;
 	if (pd && as->config->syntax != pd->last_syntax) {
 		pd->last_syntax = as->config->syntax;
-		if (as->config->syntax == R_ARCH_SYNTAX_REGNUM) {
-			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_NOREGNAME);
-		} else {
-			cs_option (*handle, CS_OPT_SYNTAX, CS_OPT_SYNTAX_DEFAULT);
-		}
+		int mode = (as->config->syntax == R_ARCH_SYNTAX_REGNUM)
+				? CS_OPT_SYNTAX_NOREGNAME: CS_OPT_SYNTAX_DEFAULT;
+		cs_option (*handle, CS_OPT_SYNTAX, mode);
 	}
 	return analop (as, op, op->addr, op->bytes, op->size, mask) >= 1;
 }

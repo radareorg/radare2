@@ -133,7 +133,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	if (handle == 0) {
 		return false;
 	}
-	cs_insn *insn = NULL;
 #if 0
 SPARC-V9 supports both little- and big-endian byte orders for data accesses only; instruction accesses
 are always performed using big-endian byte order. In SPARC-V8, all data and instruction accesses are
@@ -149,8 +148,10 @@ performed in big-endian byte order.
 #endif
 
 	// capstone-next
-	int n = cs_disasm (handle, (const ut8*)&lbuf, sizeof (lbuf), addr, 1, &insn);
-	if (n < 1) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (handle, (const ut8 *)&lbuf, sizeof (lbuf), addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 4;
 		if (mask & R_ARCH_OP_MASK_DISASM) {
@@ -376,7 +377,6 @@ performed in big-endian byte order.
 		if (mask & R_ARCH_OP_MASK_VAL) {
 			op_fillval (as->data, op, handle, insn);
 		}
-		cs_free (insn, n);
 	}
 	return op->size > 0;
 }

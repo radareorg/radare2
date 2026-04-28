@@ -783,7 +783,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	}
 
 	int ret, ridx;
-	cs_insn *insn;
 	char *op1;
 
 	PluginData *pd = as->data;
@@ -795,7 +794,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		swap4 (csbuf);
 	}
 	// capstone-next
-	int n = cs_disasm (handle, (const ut8*)csbuf, len, addr, 1, &insn);
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (handle, csbuf, len, addr, &csi);
+	cs_insn *insn = &csi.insn;
 	if (mask & R_ARCH_OP_MASK_DISASM) {
 		ret = -1;
 		if (cpu && !strcmp (cpu, "vle")) {
@@ -812,7 +813,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ret = decompile_ps (as, op, addr, buf, len);
 		}
 		if (ret < 1) {
-			if (n > 0) {
+			if (ok) {
 				op->mnemonic = r_str_newf ("%s%s%s",
 					insn->mnemonic,
 					insn->op_str[0]? " ": "",
@@ -835,7 +836,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	op->size = 4;
 
-	if (n < 1) {
+	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 	} else {
 		if (mask & R_ARCH_OP_MASK_OPEX) {
@@ -1677,7 +1678,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		if (!(mask & R_ARCH_OP_MASK_ESIL)) {
 			r_strbuf_fini (&op->esil);
 		}
-		cs_free (insn, n);
 	}
 	return op->size > 0;
 }

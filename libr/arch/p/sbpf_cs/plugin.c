@@ -237,9 +237,10 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	st16 offset = r_read_le16 (buf + 2);
 	st32 imm = r_read_le32 (buf + 4);
 
-	cs_insn *insn = NULL;
-	int n = cs_disasm (spd->cs_handle, (ut8*)buf, len, op->addr, 1, &insn);
-	if (n < 1) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (spd->cs_handle, buf, len, op->addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (!ok) {
 		// Check for instructions that Capstone doesn't decode correctly
 		if (len < 8) {
 			op->type = R_ANAL_OP_TYPE_ILL;
@@ -1165,7 +1166,6 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 		}
 		op->size = insn->size;
 		op->id = insn->id;
-		cs_free (insn, n);
 	}
 	return true;
 }

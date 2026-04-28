@@ -91,12 +91,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	int n, opsize = -1;
-	cs_insn* insn;
+	int opsize = -1;
+	RArchCSInsn csi;
+	cs_insn *insn = &csi.insn;
 
 	op->size = 4;
-	n = cs_disasm (handle, (ut8*)buf, len, addr, 1, &insn);
-	if (n < 1 || insn->size < 1) {
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	if (!ok || insn->size < 1) {
 		op->type = R_ANAL_OP_TYPE_ILL;
 		op->size = 2;
 		opsize = -1;
@@ -604,7 +605,6 @@ beach:
 			}
 		}
 	}
-	cs_free (insn, n);
 	return opsize > 0;
 }
 

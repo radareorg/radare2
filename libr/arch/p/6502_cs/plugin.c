@@ -17,10 +17,6 @@
 
 typedef struct plugin_data_t {
 	CapstonePluginData cpd;
-#if USE_ITER_API
-	cs_insn *insn;
-	int n;
-#endif
 } PluginData;
 
 static inline csh cs_handle_for_session(RArchSession *as) {
@@ -38,23 +34,11 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return false;
 	}
 
-	int n;
 	op->cycles = 1; // aprox
-	// capstone-next
-#if USE_ITER_API
-	PluginData *pd = as->data;
-	{
-		ut64 naddr = addr;
-		size_t size = len;
-		n = cs_disasm_iter (handle, (const uint8_t**)&buf, &size, (uint64_t*)&naddr, pd->insn);
-		pd->n = n;
-	}
-	cs_insn *insn = pd->insn;
-#else
-	cs_insn *insn = NULL;
-	n = cs_disasm (handle, (const ut8*)buf, len, addr, 1, &insn);
-#endif
-	if (n < 1) {
+	RArchCSInsn csi;
+	bool ok = r_arch_cs_disasm_iter (handle, buf, len, addr, &csi);
+	cs_insn *insn = &csi.insn;
+	if (!ok) {
 		if (mask & R_ARCH_OP_MASK_DISASM) {
 			op->mnemonic = strdup ("invalid");
 		}
@@ -180,9 +164,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		}
 	}
-#if !USE_ITER_API
-	cs_free (insn, n);
-#endif
 	return op->size > 0;
 }
 
@@ -229,24 +210,12 @@ static bool init(RArchSession *s) {
 		R_FREE (s->data);
 		return false;
 	}
-#if USE_ITER_API
-	pd->insn = cs_malloc (pd->cpd.cs_handle);
-	if (!pd->insn) {
-		R_LOG_ERROR ("Failed to allocate memory for 6502_cs plugin");
-		cs_close (&pd->cpd.cs_handle);
-		R_FREE (s->data);
-		return false;
-	}
-#endif
 	return true;
 }
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	PluginData *pd = s->data;
-#if USE_ITER_API
-	cs_free (pd->insn, pd->n);
-#endif
 	cs_close (&pd->cpd.cs_handle);
 	R_FREE (s->data);
 	return true;
