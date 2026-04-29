@@ -3627,6 +3627,14 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_ACMP; // compare via and
 		inscmp (op, addr, insn, regsz);
 		break;
+	case X86_INS_LES:
+	case X86_INS_LDS:
+		// 16-bit far-pointer load: treat like a MOV reg, [mem] for the var
+		// detection path so the memref source gets propagated.
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
+		break;
 	case X86_INS_LEA:
 		op->type = R_ANAL_OP_TYPE_LEA;
 		switch (INSOP(1).type) {
@@ -3642,6 +3650,19 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 			case X86_REG_EBP:
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
+				break;
+			case X86_REG_RSP:
+			case X86_REG_ESP:
+				// lea esp, [esp + N] / [esp + reg] adjusts the stack
+				// pointer. When the displacement is a plain immediate
+				// the size of the adjustment is op->disp; track it so
+				// fcn->stack stays in sync.
+				if (INSOP (0).type == X86_OP_REG
+						&& (INSOP (0).reg == X86_REG_RSP || INSOP (0).reg == X86_REG_ESP)
+						&& INSOP (1).mem.index == X86_REG_INVALID) {
+					op->stackop = R_ANAL_STACK_INC;
+					op->stackptr = -(st64)INSOP (1).mem.disp;
+				}
 				break;
 			default:
 				/* unhandled */

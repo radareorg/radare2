@@ -1116,7 +1116,7 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 		return false;
 	}
 	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
-	if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+	if (((delta >= 0 && *sign == '+') || (delta < 0 && *sign == '-'))) {
 		*ptr = R_ABS (delta);
 		return true;
 	}
