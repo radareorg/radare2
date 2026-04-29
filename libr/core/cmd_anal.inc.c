@@ -581,7 +581,6 @@ static RCoreHelpMessage help_msg_af = {
 	"afe", "", "analyze where the function entrypoints are",
 	"afF", "[1|0|]", "fold/unfold/toggle",
 	"afi", "[?] [addr|fcn.name]", "show function(s) information (verbose afl)",
-	"afj", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afl", "[?] [ls*] [fcn name]", "list functions (addr, size, bbs, name) (see afll)",
 	"afm", " name", "merge two functions",
 	"afM", " name", "print functions map",
@@ -617,6 +616,7 @@ static RCoreHelpMessage help_msg_afb = {
 	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [jump] [fail] ([diff])", "add basic block by hand",
 	"afba", "[!]", "list basic blocks of current offset in analysis order (EXPERIMENTAL, see afla)",
+	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
@@ -5633,27 +5633,6 @@ static int cmd_af(RCore *core, const char *input) {
 			r_core_anal_undefine (core, addr);
 		}
 		break;
-	case 'j': // "afj"
-		{
-			RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
-			RAnalBlock *block = r_list_first (blocks);
-			if (block && !r_list_empty (block->fcns)) {
-				char *args = strdup (input + 2);
-				RList *argv = r_str_split_list (args, " ", 0);
-				ut64 table = r_num_math (core->num, r_list_get_n (argv, 1));
-				ut64 sz = r_num_math (core->num, r_list_get_n (argv, 2));
-				ut64 elements = r_num_math (core->num, r_list_get_n (argv, 3));
-				ut64 seg = r_num_math (core->num, r_list_get_n (argv, 4));
-				int depth = 50;
-				r_anal_jmptbl_walk (core->anal, r_list_first (block->fcns), block,
-					depth, core->addr, 0, table, seg, sz, elements, 0, false);
-				free (args);
-			} else {
-				R_LOG_ERROR ("No function defined here");
-			}
-			r_list_free (blocks);
-		}
-		break;
 	case 'a': // "afa"
 		if (input[2] == 'l') { // "afal" : list function call arguments
 			int show_args = r_config_get_i (core->config, "dbg.funcarg");
@@ -6520,6 +6499,27 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case '+': // "afb+"
 			cmd_afbplus (core, input + 3);
+			break;
+		case 't': // "afbt"
+			{
+				RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
+				RAnalBlock *block = r_list_first (blocks);
+				if (block && !r_list_empty (block->fcns)) {
+					char *args = strdup (input + 3);
+					RList *argv = r_str_split_list (args, " ", 0);
+					ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
+					ut64 sz = r_num_math (core->num, r_list_get_n (argv, 1));
+					ut64 elements = r_num_math (core->num, r_list_get_n (argv, 2));
+					ut64 seg = r_num_math (core->num, r_list_get_n (argv, 3));
+					int depth = 50;
+					r_anal_jmptbl_walk (core->anal, r_list_first (block->fcns), block,
+						depth, core->addr, 0, table, seg, sz, elements, 0, false);
+					free (args);
+				} else {
+					R_LOG_ERROR ("No function defined here");
+				}
+				r_list_free (blocks);
+			}
 			break;
 		case 'c': // "afbc"
 			cmd_afbc (core, r_str_trim_head_ro (input + 3));
@@ -12949,7 +12949,7 @@ static inline bool mermaid_add_node_asm(RAnal *a, RAnalBlock *bb, RStrBuf *nodes
 	return ret;
 }
 
-static inline bool fcn_siwtch_mermaid(RAnalBlock *b, RStrBuf *buf, bool add_asm) {
+static inline bool fcn_switch_mermaid(RAnalBlock *b, RStrBuf *buf, bool add_asm) {
 	if (b->switch_op) {
 		R_RETURN_VAL_IF_FAIL (b->switch_op->cases, false);
 		RListIter *itt;
@@ -13015,7 +13015,7 @@ static bool cmd_graph_mermaid(RCore *core, bool add_asm) {
 			r_strbuf_appendf (edges, "  _0x%" PFMT64x " --> _0x%" PFMT64x "\n", b->addr, b->fail);
 			r_strbuf_appendf (edges, "  linkStyle %d stroke:#3030a3,fill:none\n", edgecount++);
 		}
-		fcn_siwtch_mermaid (b, edges, add_asm);
+		fcn_switch_mermaid (b, edges, add_asm);
 	}
 	if (add_asm) {
 		r_list_sort (fcn->bbs, bb_cmp);
@@ -13584,6 +13584,7 @@ static void r_core_anal_info(RCore *core, const char *input) {
 			pj_free (pj);
 		}
 	} else {
+// AITODO: use rstrbuf and a single r_cons_print call
 		r_cons_printf (core->cons, "fcns    %d\n", fcns);
 		r_cons_printf (core->cons, "xrefs   %d\n", xrfs);
 		r_cons_printf (core->cons, "calls   %d\n", call);
