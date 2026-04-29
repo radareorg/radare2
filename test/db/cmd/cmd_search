@@ -730,7 +730,7 @@ e asm.bits=32
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":0,"size":3,"opcode":"add esp, 8","type":"add"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":1,"size":2,"opcode":"les ecx, [eax]","type":"null"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+[{"opcodes":[{"addr":0,"size":3,"opcode":"add esp, 8","type":"add"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":1,"size":2,"opcode":"les ecx, [eax]","type":"mov"},{"addr":3,"size":1,"opcode":"pop ebx","type":"pop"},{"addr":4,"size":1,"opcode":"pop ebp","type":"pop"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":2,"size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":5,"size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
 EOF
 RUN
 
@@ -746,7 +746,7 @@ e cfg.json.num=hex
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":"0x1","size":2,"opcode":"les ecx, [eax]","type":"null"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
+[{"opcodes":[{"addr":"0x0","size":3,"opcode":"add esp, 8","type":"add"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":6},{"opcodes":[{"addr":"0x1","size":2,"opcode":"les ecx, [eax]","type":"mov"},{"addr":"0x3","size":1,"opcode":"pop ebx","type":"pop"},{"addr":"0x4","size":1,"opcode":"pop ebp","type":"pop"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":5},{"opcodes":[{"addr":"0x2","size":3,"opcode":"or byte [ebx + 0x5d], bl","type":"or"},{"addr":"0x5","size":1,"opcode":"ret","type":"ret"}],"retaddr":5,"size":4}]
 EOF
 RUN
 
