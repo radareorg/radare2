@@ -4146,12 +4146,8 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 	}
 }
 
-static int cs_len_prefix_opcode(uint8_t *item) {
-	int i, len = 0;
-	for (i = 0; i < 4; i++) {
-		len += (item[i] != 0) ? 1 : 0;
-	}
-	return len;
+static inline int cs_pfxlen(uint8_t *item) {
+	return (item[0] != 0) + (item[1] != 0) + (item[2] != 0) + (item[3] != 0);
 }
 
 static bool plugin_changed(RArchSession *as) {
@@ -4230,8 +4226,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 		}
-		op->nopcode = cs_len_prefix_opcode (insn->detail->x86.prefix)
-			+ cs_len_prefix_opcode (insn->detail->x86.opcode);
+		op->nopcode = cs_pfxlen (insn->detail->x86.prefix)
+			+ cs_pfxlen (insn->detail->x86.opcode);
 		op->size = insn->size;
 		op->id = insn->id;
 		op->family = R_ANAL_OP_FAMILY_CPU; // almost everything is CPU
