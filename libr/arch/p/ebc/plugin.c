@@ -151,6 +151,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 0;
+	}
 	return (q == R_ARCH_INFO_MAXOP_SIZE)? 18: 1;
 }
 

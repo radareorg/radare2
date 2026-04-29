@@ -216,6 +216,9 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 1;
+	}
 	return 4; /* :D */
 }
 

@@ -63,7 +63,7 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *a, ut32 q) {
-	return 1;
+	return q == R_ARCH_INFO_WODST? 0: 1;
 }
 
 const RArchPlugin r_arch_plugin_sm5xx = {

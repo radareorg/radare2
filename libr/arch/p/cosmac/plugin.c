@@ -682,7 +682,7 @@ static char *getregs(RArchSession *as) {
 }
 
 static int info(RArchSession *as, ut32 q) {
-	return 1;
+	return q == R_ARCH_INFO_WODST? 0: 1;
 }
 
 const RArchPlugin r_arch_plugin_cosmac = {

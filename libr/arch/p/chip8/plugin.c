@@ -216,6 +216,8 @@ static bool chip8_anop(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 0;
 	case R_ARCH_INFO_MAXOP_SIZE:
 		return 2;
 	case R_ARCH_INFO_MINOP_SIZE:

@@ -4795,6 +4795,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 1;
 	case R_ARCH_INFO_DATA_ALIGN:
 	case R_ARCH_INFO_INVOP_SIZE:
 	case R_ARCH_INFO_MAXOP_SIZE:

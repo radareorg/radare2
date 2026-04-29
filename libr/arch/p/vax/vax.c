@@ -238,6 +238,9 @@ static char *get_reg_profile(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 0;
+	}
 	if (q == R_ARCH_INFO_DATA_ALIGN) {
 		return 1;
 	}

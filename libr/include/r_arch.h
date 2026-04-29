@@ -27,6 +27,7 @@ typedef enum {
 #define R_ARCH_INFO_DATA8_ALIGN 128
 #define R_ARCH_INFO_JMPMID 256
 #define R_ARCH_INFO_ISVM 512
+#define R_ARCH_INFO_WODST 1024 // arithmetic ops do not implicitly read dst
 
 // base + reg + regdelta * mul + delta
 typedef struct r_arch_value_t {

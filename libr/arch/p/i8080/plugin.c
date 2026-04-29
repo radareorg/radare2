@@ -52,6 +52,8 @@ static char *get_reg_profile (RArchSession *as) {
 
 static int archinfo (RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 0;
 	case R_ARCH_INFO_MAXOP_SIZE:
 		return 3;
 	}

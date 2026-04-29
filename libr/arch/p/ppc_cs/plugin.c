@@ -1683,6 +1683,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 1;
+	}
 	const char *cpu = as->config->cpu;
 	if (cpu && !strncmp (cpu, "vle", 3)) {
 		return 2;

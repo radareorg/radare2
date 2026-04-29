@@ -1964,6 +1964,9 @@ static char *regs(RArchSession *as) {
 }
 
 static int archinfo(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 1;
+	}
 	switch (q) {
 	case R_ARCH_INFO_CODE_ALIGN:
 	case R_ARCH_INFO_MINOP_SIZE:

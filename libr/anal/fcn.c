@@ -650,13 +650,6 @@ static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const ch
 	return op_dst && op_src && !strcmp (bp_reg, op_dst) && !strcmp (sp_reg, op_src);
 }
 
-static inline bool does_arch_destroys_dst(const char *arch) {
-	return arch && (r_str_startswith (arch, "arm") ||
-			r_str_startswith (arch, "mips") ||
-			r_str_startswith (arch, "riscv") ||
-			r_str_startswith (arch, "ppc"));
-}
-
 static inline bool has_vars(RAnal *anal, ut64 addr) {
 	RAnalFunction *fcn = r_anal_get_fcn_in (anal, addr, 0);
 	return fcn && r_anal_var_count_all (fcn) > 0;
@@ -721,7 +714,9 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RCore *core = anal->coreb.core;
 	RCons *cons = core->cons;
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
-	bool arch_destroys_dst = does_arch_destroys_dst (arch);
+	RArchSession *as = anal->arch? anal->arch->session: NULL;
+	const bool op_dst_writeonly = r_arch_session_info (as, R_ARCH_INFO_WODST) == 1;
+	const int codealign = R_MAX (1, r_arch_session_info (as, R_ARCH_INFO_CODE_ALIGN));
 	const bool flagends = anal->opt.flagends;
 	const bool is_arm = r_str_startswith (arch, "arm");
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
@@ -843,7 +838,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool has_variadic_reg = !!variadic_reg;
 	bool nopskip = anal->opt.nopskip;
 	if (nopskip) {
-		const bool isvm = r_arch_info (anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+		const bool isvm = r_arch_session_info (as, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (isvm) {
 			nopskip = false;
 		}
@@ -906,7 +901,6 @@ repeat:
 
 		skip_fail = false;
 		if (nopskip && fcn->addr == at) {
-			const int codealign = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
 			if (codealign > 1) {
 				if (at % codealign) {
 					goto noskip;
@@ -1867,7 +1861,7 @@ analopfinish:
 			}
 			break;
 		}
-		if (has_stack_regs && arch_destroys_dst) {
+		if (has_stack_regs && op_dst_writeonly) {
 			if (op_is_set_bp (op_dst, op_src, bp_reg, sp_reg) && src1) {
 				switch (op->type & R_ANAL_OP_TYPE_MASK) {
 				case R_ANAL_OP_TYPE_ADD:
@@ -3188,7 +3182,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 	}
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
-	const int align = r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN);
+	const int align = R_MAX (1, r_arch_session_info (anal->arch? anal->arch->session: NULL, R_ARCH_INFO_CODE_ALIGN));
 	const ut64 end_write = addr + size;
 
 	r_list_foreach (blocks, it, bb) {

@@ -2579,6 +2579,9 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 }
 
 static int archinfo(RArchSession *anal, ut32 q) {
+	if (q == R_ARCH_INFO_WODST) {
+		return 1;
+	}
 	if (q == R_ARCH_INFO_DATA_ALIGN) {
 		return 4;
 	}

@@ -283,6 +283,8 @@ R_API int r_arch_info(RArch *a, int query) {
 	RArchPluginInfoCallback info = R_UNWRAP4 (a, session, plugin, info);
 	int ret = info? info (session, query): -1;
 	switch (query) {
+	case R_ARCH_INFO_WODST:
+		return ret == 1;
 	case R_ARCH_INFO_MINOP_SIZE:
 	case R_ARCH_INFO_MAXOP_SIZE:
 	case R_ARCH_INFO_INVOP_SIZE:

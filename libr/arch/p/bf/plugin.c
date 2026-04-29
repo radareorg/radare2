@@ -306,6 +306,8 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 0;
 	case R_ARCH_INFO_ISVM:
 		return R_ARCH_INFO_ISVM;
 	case R_ARCH_INFO_MAXOP_SIZE:

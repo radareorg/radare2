@@ -338,6 +338,8 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
+	case R_ARCH_INFO_WODST:
+		return 0;
 	case R_ARCH_INFO_CODE_ALIGN:
 		return 1;
 	case R_ARCH_INFO_MAXOP_SIZE:

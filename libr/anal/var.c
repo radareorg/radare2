@@ -1307,12 +1307,7 @@ static inline bool op_affect_dst(RAnalOp* op) {
 	}
 }
 
-static inline bool arch_destroys_dst(const char *arch) {
-	R_RETURN_VAL_IF_FAIL (arch, false);
-	return (!strcmp (arch, "arm") || !strcmp (arch, "mips") || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
-}
-
-static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
+static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal, bool op_dst_writeonly) {
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	switch (op->type) {
@@ -1343,7 +1338,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		}
 		//fallthrough
 	default:
-		if (op_affect_dst (op) && arch_destroys_dst (anal->config->arch)) {
+		if (op_affect_dst (op) && op_dst_writeonly) {
 			if (is_reg_in_src (regname, anal, op)) {
 				return true;
 			}
@@ -1366,6 +1361,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
+	const bool op_dst_writeonly = r_arch_session_info (anal->arch? anal->arch->session: NULL, R_ARCH_INFO_WODST) == 1;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
@@ -1480,7 +1476,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			int delta = 0;
 			RRegItem *ri = NULL;
 			RAnalVar *var = NULL;
-			const bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal);
+			const bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
 			if (is_arg && reg_set[i] != 2) {
 				ri = r_reg_get (anal->reg, regname, -1);
 				if (ri) {
@@ -1527,7 +1523,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 
 	const char *selfreg = r_anal_cc_self (anal, fcn->callconv);
 	if (selfreg) {
-		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal);
+		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
 			int delta = 0;
 			char *vname = strdup ("self");
