@@ -1248,7 +1248,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
 			const st64 local_frame_off = ptr - fcn->maxstack;
-			var = get_stack_var (fcn, local_frame_off);
+			var = get_stack_var (fcn, local_frame_off, access_size, var_size, fuzzy);
 			if (var && !var->isarg) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 				goto beach;
