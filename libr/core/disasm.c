@@ -977,9 +977,9 @@ static RDisasmState *ds_init(RCore *core) {
 	// Prevent palette reload during disassembly to avoid UAF of cached color pointers
 	ds->pal_batch_save = core->cons->context->pal_batch;
 	core->cons->context->pal_batch = true;
-	// compute decode mask once based on display settings to avoid unnecessary work
+	// Compute the decode mask once based on display settings to avoid unnecessary work.
 	ds->decode_mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_DISASM;
-	if (ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb) {
+	if (ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
 		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
 	}
 	return ds;
@@ -7680,6 +7680,8 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	// j = number of instructions
 	// k = delta from addr
 	ds = ds_init (core);
+	// pdj/pij always emit the "esil" JSON field.
+	ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
 	bool result = false;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
