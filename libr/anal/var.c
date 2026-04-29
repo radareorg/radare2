@@ -1082,7 +1082,7 @@ static bool ra_in_reg(RAnal *anal) {
 		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
 }
 
-static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr) {
+static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr, R_OUT int *access_size) {
 	if (!val || !val->reg || strcmp (reg, val->reg)) {
 		return false;
 	}
@@ -1090,6 +1090,7 @@ static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg
 	const bool zero_ok = val->memref && ra_in_reg (anal);
 	if (((delta > 0 || (delta == 0 && zero_ok)) && *sign == '+') || (delta < 0 && *sign == '-')) {
 		*ptr = R_ABS (delta);
+		*access_size = val->memref > 0 ? val->memref : 0;
 		return true;
 	}
 	return false;
@@ -1157,19 +1158,20 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	st64 ptr = 0;
 	const st64 maxstackframe = 1024 * 8;
 	RAnalValue *val;
+	int access_size = 0;
 	bool have_ptr = false;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
 	R_VEC_FOREACH (&op->srcs, val) {
-		if (extract_arg_from_value (anal, val, reg, sign, &ptr)) {
+		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
 			have_ptr = true;
 			break;
 		}
 	}
 	if (!have_ptr) {
 		R_VEC_FOREACH (&op->dsts, val) {
-			if (extract_arg_from_value (anal, val, reg, sign, &ptr)) {
+			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
 				have_ptr = true;
 				break;
 			}
@@ -1201,6 +1203,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 				goto beach;
 			}
 			ptr = R_ABS (op->ptr);
+			access_size = op->refptr > 0 ? op->refptr : 0;
 			have_ptr = true;
 		} else {
 			goto beach;
@@ -1228,16 +1231,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
-		}
-		int access_size = 0;
-		RAnalValue *access_val = RVecRArchValue_at (&op->srcs, 0);
-		if (access_val && access_val->memref > 0) {
-			access_size = access_val->memref;
-		} else {
-			access_val = RVecRArchValue_at (&op->dsts, 0);
-			if (access_val && access_val->memref > 0) {
-				access_size = access_val->memref;
-			}
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
@@ -1308,16 +1301,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		st64 frame_off = -(ptr + fcn->bp_off);
 		if (maxstackframe > 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
-		}
-		int access_size = 0;
-		RAnalValue *access_val = RVecRArchValue_at (&op->srcs, 0);
-		if (access_val && access_val->memref > 0) {
-			access_size = access_val->memref;
-		} else {
-			access_val = RVecRArchValue_at (&op->dsts, 0);
-			if (access_val && access_val->memref > 0) {
-				access_size = access_val->memref;
-			}
 		}
 		const int var_size = anal->config->bits / 8;
 		const bool fuzzy = !strcmp (anal->config->arch, "arm");
