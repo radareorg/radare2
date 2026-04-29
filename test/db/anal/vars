@@ -606,6 +606,7 @@ EXPECT=<<EOF
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; arg int64_t envp @ sp+0x20
+|           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int64_t var_ch @ sp+0xc
 |           0x100003f64      ff4300d1       sub sp, sp, 0x10           ; [00] -r-x section size 68 named 0.__TEXT.__text
@@ -634,6 +635,7 @@ EXPECT=<<EOF
 |           ; arg int argc @ x0
 |           ; arg char **argv @ x1
 |           ; arg int64_t envp @ sp+0x20
+|           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_8h @ sp+0x8
 |           ; var int64_t var_ch @ sp+0xc
 |           0x100003f64      ff4300d1       sub sp, sp, 0x10           ; [00] -r-x section size 68 named 0.__TEXT.__text

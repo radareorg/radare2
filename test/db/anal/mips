@@ -654,8 +654,7 @@ EXPECT=<<EOF
 0x8060b56c      0800e003   jr ra
 0x8060b570      000080a0   sb zero, 0(a0)
 0x8060b574      00000000   nop
-20: fcn.8060b578 (int32_t arg_20h);
-`- args(sp[0x20..0x20]) vars(1:sp[0x20..0x20])
+20: fcn.8060b578 ();
 0x8060b578      e0ffbd27   addiu sp, sp, -32
 0x8060b57c      542d180c   jal fcn.8060b550
 0x8060b580      00000000   nop

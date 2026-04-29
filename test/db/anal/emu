@@ -80,7 +80,7 @@ ret paths
          .-------------------------------------.
          |  0x100007ed8                        |
          | 92: sym._retbool (int64_t arg_20h); |
-         | ; arg int64_t arg_20h @ sp+0x40     |
+         | ; arg int64_t arg_20h @ sp+0x20     |
          | ; var int64_t var_10h @ sp+0x10     |
          | sub sp, sp, 0x20                    |
          | stp x29, x30, [var_10h]             |
@@ -193,8 +193,9 @@ EXPECT=<<EOF
 32: int main (int argc);
 ; arg int argc @ x0
 ; var int64_t var_8h @ sp+0x8
+; var int64_t var_ch @ sp+0xc
 0x100003f88 01:0001      sub sp, sp, 0x10
-0x100003f8c 01:0002      str wzr, [sp, 0xc]
+0x100003f8c 01:0002      str wzr, [var_ch]
 0x100003f90 01:0003      str wzr, [var_8h]
 0x100003f94 01:0004      b 0x100003f98
 0x100003f98 07:001d      ldr w8, [var_8h]
