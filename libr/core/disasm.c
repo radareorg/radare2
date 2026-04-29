@@ -94,7 +94,8 @@ typedef struct r_disasm_state_t {
 	int atabs;
 	bool atabsonce;
 	int atabsoff;
-	int decode;
+	bool decode;
+	ut32 decode_mask; // computed once based on display settings
 	bool pseudo;
 	bool sparse;
 	bool subnames;
@@ -143,7 +144,6 @@ typedef struct r_disasm_state_t {
 	bool show_emu_write;
 	bool show_optype;
 	bool show_emu_ssa;
-	ut32 decode_mask; // computed once based on display settings
 	bool show_section;
 	int show_section_col;
 	bool show_section_perm;
@@ -346,7 +346,7 @@ static void ds_begin_cont(RDisasmState *ds);
 static void ds_print_esil_anal(RDisasmState *ds);
 static void ds_reflines_init(RDisasmState *ds);
 static void ds_align_comment(RDisasmState *ds);
-static RDisasmState * ds_init(RCore *core);
+static RDisasmState * ds_init(RCore *core, bool for_json);
 static void ds_build_op_str(RDisasmState *ds, bool print_color);
 static void ds_print_bytes(RDisasmState *ds);
 static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char **prefix);
@@ -664,7 +664,7 @@ static void ds_print_esil_anal_fini(RDisasmState *ds) {
 	}
 }
 
-static RDisasmState *ds_init(RCore *core) {
+static RDisasmState *ds_init(RCore *core, bool for_json) {
 	RDisasmState *ds = R_NEW0 (RDisasmState);
 	ds->ssa = sdb_new0 ();
 	ds->core = core;
@@ -736,7 +736,7 @@ static RDisasmState *ds_init(RCore *core) {
 	ds->asm_flags_right = r_config_get_i (core->config, "asm.flags.right");
 	ds->midbb = r_config_get_i (core->config, "asm.bbmiddle");
 	ds->midcursor = r_config_get_i (core->config, "asm.midcursor");
-	ds->decode = r_config_get_i (core->config, "asm.decode");
+	ds->decode = r_config_get_b (core->config, "asm.decode");
 	core->rasm->parse->pseudo = ds->pseudo = r_config_get_b (core->config, "asm.pseudo");
 	if (ds->pseudo) {
 		ds->atabs = 0;
@@ -979,7 +979,7 @@ static RDisasmState *ds_init(RCore *core) {
 	core->cons->context->pal_batch = true;
 	// Compute the decode mask once based on display settings to avoid unnecessary work.
 	ds->decode_mask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_DISASM;
-	if (ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
+	if (for_json || ds->use_esil || ds->show_emu || ds->show_cmt_esil || ds->show_emu_bb || (ds->asm_hints && ds->asm_hint_cdiv)) {
 		ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
 	}
 	return ds;
@@ -6623,7 +6623,7 @@ R_API int r_core_print_disasm(RCore *core, ut64 addr, ut8 *buf, int len, int cou
 	const char *pdu_condition_opcode = NULL;
 
 	// TODO: All those ds must be print flags
-	RDisasmState *ds = ds_init (core);
+	RDisasmState *ds = ds_init (core, false);
 	ds->count_bytes = count_bytes;
 	ds->print = p;
 	ds->count = count? count: core->blocksize;
@@ -7355,7 +7355,7 @@ R_API int r_core_print_disasm_instructions_with_buf(RCore *core, ut64 address, u
 
 	r_reg_arena_push (core->anal->reg);
 
-	ds = ds_init (core);
+	ds = ds_init (core, false);
 	if (!ds) {
 		return 0;
 	}
@@ -7679,9 +7679,7 @@ R_IPI int r_core_print_disasm_json_ipi(RCore *core, ut64 addr, ut8 *buf, int nb_
 	// i = number of bytes
 	// j = number of instructions
 	// k = delta from addr
-	ds = ds_init (core);
-	// pdj/pij always emit the "esil" JSON field.
-	ds->decode_mask |= R_ARCH_OP_MASK_ESIL;
+	ds = ds_init (core, true);
 	bool result = false;
 	const bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (core->rasm->config);
 
@@ -7958,7 +7956,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 	if (l < 1) {
 		l = len;
 	}
-	RDisasmState *ds = ds_init (core);
+	RDisasmState *ds = ds_init (core, false);
 	if (l > core->blocksize || addr != core->addr) {
 		buf = malloc (l + 1);
 		if (!buf) {
@@ -8028,6 +8026,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 					if (scr_color) {
 						RAnalOp aop;
 						RAnalFunction *f = fcnIn (ds, ds->vat, R_ANAL_FCN_TYPE_NULL);
+						r_anal_op_init (&aop);
 						r_anal_op (core->anal, &aop, addr, buf + i, l - i, R_ARCH_OP_MASK_BASIC);
 						char *buf_asm = r_print_colorize_opcode (core->print, res? res: asmop.mnemonic,
 								core->cons->context->pal.reg, core->cons->context->pal.num, false, f ? f->addr : 0);
@@ -8035,6 +8034,7 @@ R_API int r_core_print_disasm_all(RCore *core, ut64 addr, int l, int len, int mo
 							r_cons_printf (core->cons, "%s%s\n", r_print_color_op_type (core->print, aop.type), buf_asm);
 							free (buf_asm);
 						}
+						r_anal_op_fini (&aop);
 					} else {
 						r_cons_println (core->cons, asmop.mnemonic);
 					}
