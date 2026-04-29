@@ -1361,7 +1361,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	const char *opsreg = src ? get_regname (anal, src) : NULL;
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
-	const bool op_dst_writeonly = r_arch_session_info (anal->arch? anal->arch->session: NULL, R_ARCH_INFO_WODST) == 1;
+	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
 	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);

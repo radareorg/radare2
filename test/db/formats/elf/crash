@@ -25,3 +25,15 @@ nth vaddr bind type lib name
 []
 EOF
 RUN
+
+NAME=ELF: unknown machine analysis
+FILE=bins/fuzzed/id_000001.sig_11.src_000000.op_havoc.rep_16
+CMDS=<<EOF
+%R2_DEBUG_ASSERT=1
+aaa
+?e done
+EOF
+EXPECT=<<EOF
+done
+EOF
+RUN

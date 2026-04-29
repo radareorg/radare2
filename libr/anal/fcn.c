@@ -714,9 +714,8 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RCore *core = anal->coreb.core;
 	RCons *cons = core->cons;
 	const char *arch = anal->config? anal->config->arch: R_SYS_ARCH;
-	RArchSession *as = anal->arch? anal->arch->session: NULL;
-	const bool op_dst_writeonly = r_arch_session_info (as, R_ARCH_INFO_WODST) == 1;
-	const int codealign = R_MAX (1, r_arch_session_info (as, R_ARCH_INFO_CODE_ALIGN));
+	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
+	const int codealign = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	const bool flagends = anal->opt.flagends;
 	const bool is_arm = r_str_startswith (arch, "arm");
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
@@ -838,7 +837,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool has_variadic_reg = !!variadic_reg;
 	bool nopskip = anal->opt.nopskip;
 	if (nopskip) {
-		const bool isvm = r_arch_session_info (as, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+		const bool isvm = r_arch_info (anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
 		if (isvm) {
 			nopskip = false;
 		}
@@ -3182,7 +3181,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 	}
 	RList *fcns = r_list_new ();
 	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
-	const int align = R_MAX (1, r_arch_session_info (anal->arch? anal->arch->session: NULL, R_ARCH_INFO_CODE_ALIGN));
+	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	const ut64 end_write = addr + size;
 
 	r_list_foreach (blocks, it, bb) {
