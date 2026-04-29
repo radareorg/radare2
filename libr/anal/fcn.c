@@ -652,6 +652,7 @@ static inline bool op_is_set_bp(const char *op_dst, const char *op_src, const ch
 
 static inline bool does_arch_destroys_dst(const char *arch) {
 	return arch && (r_str_startswith (arch, "arm") ||
+			r_str_startswith (arch, "mips") ||
 			r_str_startswith (arch, "riscv") ||
 			r_str_startswith (arch, "ppc"));
 }

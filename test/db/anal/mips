@@ -76,6 +76,24 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mips dlmalloc parameter detection
+FILE=bins/elf/ld-uClibc-0.9.33.2.so
+CMDS=<<EOF
+s sym._dl_malloc
+af
+afva
+afcf
+s sym._dl_calloc
+af
+afva
+afcf
+EOF
+EXPECT=<<EOF
+sym._dl_malloc (int32_t arg1);
+sym._dl_calloc (int32_t arg1, int32_t arg2);
+EOF
+RUN
+
 NAME=gp-based ref
 FILE=bins/elf/analysis/mips-hello
 CMDS=<<EOF

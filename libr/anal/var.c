@@ -1172,6 +1172,14 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			goto beach;
 		}
+		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
+			const st64 local_frame_off = ptr - fcn->maxstack;
+			var = get_stack_var (fcn, local_frame_off);
+			if (var && !var->isarg) {
+				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
+				goto beach;
+			}
+		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
 			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
@@ -1301,7 +1309,7 @@ static inline bool op_affect_dst(RAnalOp* op) {
 
 static inline bool arch_destroys_dst(const char *arch) {
 	R_RETURN_VAL_IF_FAIL (arch, false);
-	return (!strcmp (arch, "arm") || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
+	return (!strcmp (arch, "arm") || !strcmp (arch, "mips") || !strcmp (arch, "riscv") || !strcmp (arch, "ppc"));
 }
 
 static bool is_used_like_arg(const char *regname, const char *opsreg, const char *opdreg, RAnalOp *op, RAnal *anal) {
@@ -1345,6 +1353,12 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	}
 }
 
+static bool op_is_call(RAnalOp *op) {
+	// Keep the full base opcode. A low-nibble check aliases MUL (0x14) with UCALL.
+	const int type = op->type & 0xffff;
+	return type == R_ANAL_OP_TYPE_CALL || type == R_ANAL_OP_TYPE_UCALL;
+}
+
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
 	int i, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
@@ -1368,7 +1382,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		argc = r_type_func_args_count (TDB, fname);
 	}
 
-	bool is_call = (op->type & 0xf) == R_ANAL_OP_TYPE_CALL || (op->type & 0xf) == R_ANAL_OP_TYPE_UCALL;
+	bool is_call = op_is_call (op);
 	if (is_call && *count < max_count) {
 		RList *callee_rargs_l = NULL;
 		int callee_rargs = 0;

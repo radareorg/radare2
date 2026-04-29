@@ -10,25 +10,19 @@ R_IPI int mips_assemble(const char *str, ut64 pc, ut8 *out);
 
 // https://www.mrc.uidaho.edu/mrc/people/jff/digital/MIPSir.html
 
-#define OPCOUNT() insn->detail->mips.op_count
-
-static const char *mips_reg_name(csh handle, unsigned int reg) {
-	const char *name = cs_reg_name (handle, reg);
-	return name? name: "";
-}
-
-#define OPERAND(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x]: (insn->detail->mips.operands[0]))
-#define REGID(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].reg: MIPS_REG_INVALID)
-#define REG(x) mips_reg_name (*handle, REGID (x))
-#define IMM(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].imm: 0)
-#define MEMBASE(x) (((x) >= 0 && (x) < OPCOUNT ())? mips_reg_name (*handle, insn->detail->mips.operands[x].mem.base): "")
-#define MEMINDEX(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].mem.index: MIPS_REG_INVALID)
-#define MEMDISP(x) (((x) >= 0 && (x) < OPCOUNT ())? insn->detail->mips.operands[x].mem.disp: 0)
+#define OPCOUNT()  insn->detail->mips.op_count
+#define OPERAND(x) insn->detail->mips.operands[x]
+#define REGID(x)   OPERAND (x).reg
+#define IMM(x)     OPERAND (x).imm
+#define REG(x)     r_str_get (cs_reg_name (*handle, REGID (x)))
+#define MEMBASE(x) r_str_get (cs_reg_name (*handle, OPERAND (x).mem.base))
+#define MEMINDEX(x) OPERAND (x).mem.index
+#define MEMDISP(x)  OPERAND (x).mem.disp
 // TODO scale and disp
 
 #define SET_VAL(op,i) \
-	if ((i)<OPCOUNT() && OPERAND(i).type == MIPS_OP_IMM) {\
-		(op)->val = OPERAND(i).imm;\
+	if ((i) < OPCOUNT () && OPERAND (i).type == MIPS_OP_IMM) {\
+		(op)->val = OPERAND (i).imm;\
 	}
 
 #define CREATE_SRC_DST_3(op) \
@@ -57,10 +51,23 @@ static const char *mips_reg_name(csh handle, unsigned int reg) {
 	dst->reg = REG (0);\
 	src0->reg = REG (1);
 
+#define SET_SRC_DST_2_REG_OR_IMM(op) \
+	if (OPERAND (0).type == MIPS_OP_REG) {\
+		dst = RVecRArchValue_emplace_back (&(op)->dsts);\
+		dst->reg = REG (0);\
+		if (OPERAND (1).type == MIPS_OP_REG) {\
+			src0 = RVecRArchValue_emplace_back (&(op)->srcs);\
+			src0->reg = REG (1);\
+		} else if (OPERAND (1).type == MIPS_OP_IMM) {\
+			src0 = RVecRArchValue_emplace_back (&(op)->srcs);\
+			src0->imm = IMM (1);\
+		}\
+	}
+
 #define SET_SRC_DST_3_REG_OR_IMM(op) \
-	if (OPERAND(2).type == MIPS_OP_IMM) {\
+	if (OPERAND (2).type == MIPS_OP_IMM) {\
 		SET_SRC_DST_3_IMM (op);\
-	} else if (OPERAND(2).type == MIPS_OP_REG) {\
+	} else if (OPERAND (2).type == MIPS_OP_REG) {\
 		SET_SRC_DST_3_REGS (op);\
 	}
 
@@ -218,7 +225,7 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 		break;
 	case MIPS_OP_REG:
 		snprintf (buf, buf_sz, "%s",
-			mips_reg_name (*handle, insn->detail->mips.operands[n].reg));
+			r_str_get (cs_reg_name (*handle, insn->detail->mips.operands[n].reg)));
 		break;
 	case MIPS_OP_IMM:
 		{
@@ -232,11 +239,11 @@ static const char *arg(csh *handle, cs_insn *insn, char *buf, size_t buf_sz, int
 			if (disp < 0) {
 				snprintf (buf, buf_sz, "%"PFMT64d",%s,-",
 					(ut64)(-insn->detail->mips.operands[n].mem.disp),
-					mips_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+					r_str_get (cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base)));
 			} else {
 				snprintf (buf, buf_sz, "0x%"PFMT64x",%s,+",
 					(ut64)insn->detail->mips.operands[n].mem.disp,
-					mips_reg_name (*handle, insn->detail->mips.operands[n].mem.base));
+					r_str_get (cs_reg_name (*handle, insn->detail->mips.operands[n].mem.base)));
 			}
 		}
 		break;
@@ -758,17 +765,17 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 	RAnalValue *dst, *src0, *src1;
 	switch (op->type & R_ANAL_OP_TYPE_MASK) {
 	case R_ANAL_OP_TYPE_LOAD:
-		if (OPERAND(1).type == MIPS_OP_MEM) {
+		if (OPERAND (1).type == MIPS_OP_MEM) {
 			src0 = RVecRArchValue_emplace_back (&op->srcs);
 			src0->reg = parse_reg_name (*handle, insn, 1);
-			src0->delta = OPERAND(1).mem.disp;
+			src0->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
-		if (OPERAND(1).type == MIPS_OP_MEM) {
+		if (OPERAND (1).type == MIPS_OP_MEM) {
 			dst = RVecRArchValue_emplace_back (&op->dsts);
 			dst->reg = parse_reg_name (*handle, insn, 1);
-			dst->delta = OPERAND(1).mem.disp;
+			dst->delta = OPERAND (1).mem.disp;
 		}
 		break;
 	case R_ANAL_OP_TYPE_SHL:
@@ -778,11 +785,12 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh *handle, cs_insn *insn
 	case R_ANAL_OP_TYPE_SUB:
 	case R_ANAL_OP_TYPE_AND:
 	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_MUL:
 	case R_ANAL_OP_TYPE_OR:
 		SET_SRC_DST_3_REG_OR_IMM (op);
 		break;
 	case R_ANAL_OP_TYPE_MOV:
-		SET_SRC_DST_3_REG_OR_IMM (op);
+		SET_SRC_DST_2_REG_OR_IMM (op);
 		break;
 	case R_ANAL_OP_TYPE_DIV: // UDIV
 #if 0
@@ -812,9 +820,9 @@ capstone bug
 	      ]
 	    },
 #endif
-		if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG && OPERAND(2).type == MIPS_OP_REG) {
+		if (OPERAND (0).type == MIPS_OP_REG && OPERAND (1).type == MIPS_OP_REG && OPERAND (2).type == MIPS_OP_REG) {
 			SET_SRC_DST_3_REGS (op);
-		} else if (OPERAND(0).type == MIPS_OP_REG && OPERAND(1).type == MIPS_OP_REG) {
+		} else if (OPERAND (0).type == MIPS_OP_REG && OPERAND (1).type == MIPS_OP_REG) {
 			SET_SRC_DST_2_REGS (op);
 		} else {
 			R_LOG_ERROR ("Unknown div at 0x%08"PFMT64x, op->addr);
@@ -1024,10 +1032,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			if (!op->refptr) {
 				op->refptr = 8;
 			}
-			switch (OPERAND(1).type) {
+			switch (OPERAND (1).type) {
 			case MIPS_OP_MEM:
-				if (OPERAND(1).mem.base == MIPS_REG_GP) {
-					op->ptr = as->config->gp + OPERAND(1).mem.disp;
+				if (OPERAND (1).mem.base == MIPS_REG_GP) {
+					op->ptr = as->config->gp + OPERAND (1).mem.disp;
 					if (REGID (0) == MIPS_REG_T9) {
 						pd->t9_pre = op->ptr;
 						RBin *bin = as->arch->binb.bin;
@@ -1041,7 +1049,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 				break;
 		case MIPS_OP_IMM:
-			op->ptr = OPERAND(1).imm;
+			op->ptr = OPERAND (1).imm;
 			break;
 		case MIPS_OP_REG:
 			// wtf?
@@ -1239,12 +1247,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_CJMP;
 		}
 
-		if (OPERAND(0).type == MIPS_OP_IMM) {
-			op->jump = IMM(0);
-		} else if (OPERAND(1).type == MIPS_OP_IMM) {
-			op->jump = IMM(1);
-		} else if (OPERAND(2).type == MIPS_OP_IMM) {
-			op->jump = IMM(2);
+		if (OPERAND (0).type == MIPS_OP_IMM) {
+			op->jump = IMM (0);
+		} else if (OPERAND (1).type == MIPS_OP_IMM) {
+			op->jump = IMM (1);
+		} else if (OPERAND (2).type == MIPS_OP_IMM) {
+			op->jump = IMM (2);
 		}
 
 		switch (insn->id) {
