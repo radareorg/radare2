@@ -1108,14 +1108,18 @@ static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
 
 static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
 	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
-	if (!ra_in_reg (anal) || op_dst_is_stack_reg (anal, op)) {
+	if (!ra_in_reg (anal)) {
 		return false;
 	}
 	if (ot != R_ANAL_OP_TYPE_ADD && ot != R_ANAL_OP_TYPE_SUB && ot != R_ANAL_OP_TYPE_LEA) {
 		return false;
 	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
 	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
 	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
+	if (op_dst_is_stack_reg (anal, op) && dst && dst->reg && !strcmp (dst->reg, reg)) {
+		return false;
+	}
 	if (!base || !imm || !base->reg || strcmp (reg, base->reg) || imm->reg) {
 		return false;
 	}
@@ -1125,6 +1129,16 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 		return true;
 	}
 	return false;
+}
+
+static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
+	if (!op_dst_is_stack_reg (anal, op)) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
+	return dst && dst->reg && strcmp (dst->reg, reg)
+		&& base && base->reg && !strcmp (base->reg, reg);
 }
 
 static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, char type, R_OUT st64 *ptr) {
@@ -1158,6 +1172,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	RAnalValue *val;
 	int access_size = 0;
 	bool have_ptr = false;
+	bool stack_restore_arg = false;
+	bool stack_frame_setup = false;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
@@ -1179,21 +1195,23 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	if (!have_ptr) {
 		if (extract_arg_from_immop (anal, op, reg, sign, &ptr)) {
 			have_ptr = true;
+			stack_frame_setup = op_is_stack_frame_setup (anal, op, reg);
 		}
 	}
 	if (!have_ptr && *sign == '+') {
 		if (extract_arm_stack_restore_arg (anal, fcn, op, reg, type, &ptr)) {
 			have_ptr = true;
+			stack_restore_arg = true;
 		}
 	}
 
 	if (!have_ptr) {
 		val = RVecRArchValue_at (&op->dsts, 0);
-		if (!op->stackop && val) {
-			if (op_dst_is_stack_reg (anal, op)) {
+		if (op_dst_is_stack_reg (anal, op)) {
+			if (!op->stackop && val) {
 				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
-				goto beach;
 			}
+			goto beach;
 		}
 		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
 				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
@@ -1211,6 +1229,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
 		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
 	}
+	if (op->stackop == R_ANAL_STACK_INC && !stack_restore_arg && !strcmp (anal->config->arch, "arm")) {
+		goto beach;
+	}
 
 	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
@@ -1223,7 +1244,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
 		if (type == R_ANAL_VAR_KIND_SPV) {
-			frame_off = ptr - fcn_stack;
+			frame_off = (isarg && !stack_frame_setup) ? ptr : ptr - fcn_stack;
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}
@@ -1231,7 +1252,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		const bool fuzzy = false;
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
@@ -1247,6 +1268,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
+			const st64 arg_frame_off = type == R_ANAL_VAR_KIND_SPV ? ptr - fcn_stack : frame_off;
 			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
 			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
@@ -1267,7 +1289,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 					if (!tp) {
 						break;
 					}
-					if (sum_sz == frame_off) {
+					if (sum_sz == arg_frame_off) {
 						vartype = tp;
 						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, i));
 						break;
@@ -1301,7 +1323,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		const bool fuzzy = false;
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);

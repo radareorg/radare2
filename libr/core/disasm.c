@@ -1986,6 +1986,8 @@ static void ds_show_functions_argvar(RDisasmState *ds, RAnalFunction *fcn, RAnal
 	free (constr);
 }
 
+static bool disasm_var_has_read_access(RAnalVar *var);
+
 static void print_var_summary(RDisasmState *ds, RList *list) {
 	const char *numColor = ds->core->cons->context->pal.num;
 	RAnalVar *var;
@@ -2341,6 +2343,9 @@ static void ds_show_functions(RDisasmState *ds) {
 			r_list_join (all_vars, vars_cache.bvars);
 			r_list_join (all_vars, vars_cache.svars);
 			r_list_foreach (all_vars, iter, var) {
+				if (!var->isarg && var->kind == R_ANAL_VAR_KIND_SPV && !disasm_var_has_read_access (var)) {
+					continue;
+				}
 				if (skipped > 0) {
 					skipped--;
 					continue;
@@ -2438,6 +2443,16 @@ static void ds_show_functions(RDisasmState *ds) {
 static void ds_setup_print_pre(RDisasmState *ds, bool tail, bool middle) {
 	ds_setup_pre (ds, tail, middle);
 	ds_print_pre (ds, true);
+}
+
+static bool disasm_var_has_read_access(RAnalVar *var) {
+	RAnalVarAccess *acc;
+	R_VEC_FOREACH (&var->accesses, acc) {
+		if (acc->type & R_PERM_R) {
+			return true;
+		}
+	}
+	return false;
 }
 
 static void ds_setup_pre(RDisasmState *ds, bool tail, bool middle) {
