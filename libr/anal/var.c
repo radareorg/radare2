@@ -1120,7 +1120,7 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 		return false;
 	}
 	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
-	if (((delta >= 0 && *sign == '+') || (delta < 0 && *sign == '-'))) {
+	if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
 		*ptr = R_ABS (delta);
 		return true;
 	}
@@ -1148,9 +1148,7 @@ static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnal
 	if (imm <= 0 || imm != fcn->maxstack || imm > 0x200) {
 		return false;
 	}
-	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
-	*ptr = (fname && imm <= 0x40) ? imm * 2 : imm;
-	free (fname);
+	*ptr = imm;
 	return true;
 }
 

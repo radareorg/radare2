@@ -1773,38 +1773,38 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				insn.id = MIPS_INS_LB;
 			}
 			/* fallthrough */
-			case 35: // lw
-				if (!op->refptr) {
-					op->refptr = 4;
-					insn.id = MIPS_INS_LW;
+		case 35: // lw
+			if (!op->refptr) {
+				op->refptr = 4;
+				insn.id = MIPS_INS_LW;
+			}
+			/* fallthrough */
+		case 55: // ld
+			if (!op->refptr) {
+				op->refptr = 8;
+				insn.id = MIPS_INS_LD;
+			}
+			if (rs == 28) {
+				op->ptr = as->config->gp + imm;
+			} else {
+				op->ptr = imm;
+			}
+			if (rt == 25) {
+				pd->t9_pre = op->ptr;
+				const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
+				if (ptrv != UT64_MAX) {
+					pd->t9_pre = ptrv;
 				}
-				/* fallthrough */
-			case 55: // ld
-				if (!op->refptr) {
-					op->refptr = 8;
-					insn.id = MIPS_INS_LD;
-				}
-				if (rs == 28) {
-					op->ptr = as->config->gp + imm;
+			}
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				if (mips_reg_is_stack_base (rs)) {
+					mips_fill_load_values (op, rt, rs, imm);
 				} else {
-					op->ptr = imm;
+					mips_fill_load_dst_value (op, rt);
 				}
-				if (rt == 25) {
-					pd->t9_pre = op->ptr;
-					const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
-					if (ptrv != UT64_MAX) {
-						pd->t9_pre = ptrv;
-					}
-				}
-				if (mask & R_ARCH_OP_MASK_VAL) {
-					if (mips_reg_is_stack_base (rs)) {
-						mips_fill_load_values (op, rt, rs, imm);
-					} else {
-						mips_fill_load_dst_value (op, rt);
-					}
-				}
-				op->type = R_ANAL_OP_TYPE_LOAD;
-				break;
+			}
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case 36: // lbu
 			insn.id = MIPS_INS_LBU;
 			op->refptr = 1;
