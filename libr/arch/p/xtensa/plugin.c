@@ -717,6 +717,159 @@ static void xtensa_check_stack_op(xtensa_isa isa, xtensa_opcode opcode, xtensa_f
 	}
 }
 
+static const char *xtensa_regname(xtensa_isa isa, xtensa_regfile rf, ut32 reg) {
+	const char *pfx = xtensa_regfile_shortname (isa, rf);
+	static const char * const aregs[] = {
+		"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+		"a8", "a9", "a10", "a11", "a12", "a13", "a14", "a15"
+	};
+	if (pfx && !strcmp (pfx, "a") && reg < R_ARRAY_SIZE (aregs)) {
+		return aregs[reg];
+	}
+	return NULL;
+}
+
+static int xtensa_load_size(xtensa_opcode opcode, R_OUT ut32 *offset) {
+	switch (opcode) {
+	case 84: // l32i
+	case 31: // l32i.n
+		*offset <<= 2;
+		return 4;
+	case 83: // l16si
+	case 82: // l16ui
+		*offset <<= 1;
+		return 2;
+	default:
+		return 1;
+	}
+}
+
+static int xtensa_store_size(xtensa_opcode opcode, R_OUT ut32 *offset) {
+	switch (opcode) {
+	case 100: // s32i
+	case 453: // s32cli
+	case 36: // s32i.n
+		*offset <<= 2;
+		return 4;
+	case 99: // s16i
+		*offset <<= 1;
+		return 2;
+	default:
+		return 1;
+	}
+}
+
+static void xtensa_fillval_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	ut32 offset;
+	ut32 reg_d;
+	ut32 reg_a;
+
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg_d);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &reg_a);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, &offset);
+
+	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
+	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
+	const int size = xtensa_load_size (opcode, &offset);
+
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	if (dst) {
+		dst->reg = xtensa_regname (isa, dst_rf, reg_d);
+	}
+	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+	if (src) {
+		src->reg = xtensa_regname (isa, src_rf, reg_a);
+		src->delta = offset;
+		src->memref = size;
+	}
+	op->direction = R_ANAL_OP_DIR_READ;
+	op->ptrsize = size;
+}
+
+static void xtensa_fillval_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	ut32 offset;
+	ut32 reg_d;
+	ut32 reg_a;
+
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &reg_d);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &reg_a);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, &offset);
+
+	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
+	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
+	const int size = xtensa_store_size (opcode, &offset);
+
+	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+	if (src) {
+		src->reg = xtensa_regname (isa, dst_rf, reg_d);
+	}
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	if (dst) {
+		dst->reg = xtensa_regname (isa, src_rf, reg_a);
+		dst->delta = offset;
+		dst->memref = size;
+	}
+	op->direction = R_ANAL_OP_DIR_WRITE;
+	op->ptrsize = size;
+}
+
+static void xtensa_fillval_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	st32 imm;
+	ut32 dst;
+	ut32 src;
+
+	xtensa_operand_get_field (isa, opcode, 0, format, i, slot_buffer, &dst);
+	xtensa_operand_get_field (isa, opcode, 1, format, i, slot_buffer, &src);
+	xtensa_operand_get_field (isa, opcode, 2, format, i, slot_buffer, (ut32 *) &imm);
+
+	if (opcode == 39) {
+		sign_extend (&imm, 7);
+	}
+
+	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
+	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
+	RAnalValue *dval = RVecRArchValue_emplace_back (&op->dsts);
+	if (dval) {
+		dval->reg = xtensa_regname (isa, dst_rf, dst);
+	}
+	RAnalValue *sval = RVecRArchValue_emplace_back (&op->srcs);
+	if (sval) {
+		sval->reg = xtensa_regname (isa, src_rf, src);
+	}
+	sval = RVecRArchValue_emplace_back (&op->srcs);
+	if (sval) {
+		sval->imm = imm;
+	}
+	xtensa_check_stack_op (isa, opcode, format, i, slot_buffer, op);
+}
+
+static void analop_val(xtensa_isa isa, xtensa_opcode opcode, xtensa_format format,
+		size_t i, xtensa_insnbuf slot_buffer, RAnalOp *op) {
+	switch (opcode) {
+	case 453: /* s32c1i */
+	case 36:  /* s32i.n */
+	case 100: /* s32i */
+	case 99:  /* s16i */
+	case 101: /* s8i */
+		xtensa_fillval_store_imm (isa, opcode, format, i, slot_buffer, op);
+		break;
+	case 27: /* addi.n */
+	case 39: /* addi */
+		xtensa_fillval_add_imm (isa, opcode, format, i, slot_buffer, op);
+		break;
+	case 82: /* l16ui */
+	case 83: /* l16si */
+	case 84: /* l32i */
+	case 31: /* l32i.n */
+	case 86: /* l8ui */
+		xtensa_fillval_load_imm (isa, opcode, format, i, slot_buffer, op);
+		break;
+	}
+}
+
 static void esil_push_signed_imm(RStrBuf *esil, st32 imm) {
 	if (imm >= 0) {
 		r_strbuf_appendf (esil, "0x%x" CM, imm);
@@ -2035,6 +2188,9 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 			xtensa_check_stack_op (isa, opcode, format, i, pd->slot_buffer, op);
 		}
 
+		if (mask & R_ARCH_OP_MASK_VAL) {
+			analop_val (isa, opcode, format, i, pd->slot_buffer, op);
+		}
 		if (mask & R_ARCH_OP_MASK_ESIL) {
 			analop_esil (isa, opcode, format, i, pd->slot_buffer, op);
 		}
