@@ -6,6 +6,7 @@ static char *regs(RArchSession *as) {
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	x29\n"
+		"=LR	x30\n"
 		"=R0	x0\n"
 		"=R1	x1\n"
 		"=R2	x2\n"

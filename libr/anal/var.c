@@ -1178,12 +1178,16 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
+	// fcn->stack already incorporates this op's stackptr; for stack-adjusting
+	// ops the access happens before the adjustment, so undo it locally.
+	const st64 fcn_stack = (op->stackop == R_ANAL_STACK_INC)
+		? fcn->stack - op->stackptr : fcn->stack;
 	if (*sign == '+') {
-		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
+		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn_stack : ptr >= fcn->bp_off;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
 		if (type == R_ANAL_VAR_KIND_SPV) {
-			frame_off = ptr - fcn->stack;
+			frame_off = ptr - fcn_stack;
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}

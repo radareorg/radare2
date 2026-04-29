@@ -3778,6 +3778,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		switch (insn->id) {
+		case ARM64_INS_LDRB:
+		case ARM64_INS_LDURB:
+		case ARM64_INS_LDRSB:
+			op->ptrsize = 1;
+			break;
+		case ARM64_INS_LDRH:
+		case ARM64_INS_LDURH:
+		case ARM64_INS_LDRSH:
+			op->ptrsize = 2;
+			break;
+		case ARM64_INS_LDRSW:
+		case ARM64_INS_LDURSW:
+		case ARM64_INS_LDPSW:
+			op->ptrsize = 4;
+			break;
+		default:
+			op->ptrsize = REGSIZE64 (0);
+			break;
+		}
 		if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (2);
