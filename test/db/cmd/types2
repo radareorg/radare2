@@ -182,8 +182,10 @@ EXPECT=<<EOF
              ; XREF[w] 0x004011fb main
              ; XREF[r] 0x00401204 main
              ; XREF[r] 0x00401208 main
+             ; XREF[w] 0x0040117f main
              ; XREF[r] 0x00401189 main
              ; XREF[r] 0x004011ab main
+             ; XREF[w] 0x004011dd main
              ; XREF[r] 0x004011e7 main
 0x00000000 type void *; // size=8
 0x00000008

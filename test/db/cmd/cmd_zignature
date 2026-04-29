@@ -1168,8 +1168,8 @@ za fcn.100e2b0c b 38c000014800000c38c00000480000049421ffd07c0802a63d401013bf2100
 za fcn.100e2b0c g cc=6 nbbs=17 edges=23 ebbs=0 bbsum=344
 za fcn.100e2b0c o 0x100e2b0c
 za fcn.100e2b0c R ZmNuLjEwMGUyYjBj
-za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_0h, int32_t arg_1h)
-za fcn.100e2b0c v tb0:arg_0h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
+za fcn.100e2b0c t void fcn.100e2b0c (int32_t arg1, int32_t arg2, int32_t arg3, int32_t arg_1h, int32_t arg_34h)
+za fcn.100e2b0c v ts4:arg_34h:int32_t, tb1:arg_1h:int32_t, tr6:arg2:int32_t, tr7:arg3:int32_t, tr5:arg1:int32_t
 za fcn.100e2b0c h d965748ce310bc40814dc20fd6e233a7131706af48e2f21ac93f7c0c5ab5bbd1
 EOF
 RUN
