@@ -3,35 +3,6 @@
 
 #if R_INCLUDE_BEGIN
 
-static RList* parse_list(const char *str) {
-	RList *list;
-	char *line, *data, *p, *str_n;
-	char *save_ptr = NULL;
-
-	if (!str) {
-		return NULL;
-	}
-
-	str_n = strdup (str);
-	list = r_list_newf (free);
-	if (!list) {
-		free (str_n);
-		return NULL;
-	}
-	line = r_str_tok_r (str_n, "\n", &save_ptr);
-	data = strchr (line, '=');
-	// TODO: use r_str_split()
-	p = r_str_tok_r (data + 1, ",", &save_ptr);
-
-	while (p) {
-		r_list_append (list, (void*)strdup (p));
-		p = r_str_tok_r (NULL, ",", &save_ptr);
-	}
-
-	free (str_n);
-	return list;
-}
-
 static RList* get_constants(const char *str) {
 	RList *list;
 	char *p, *data;
@@ -201,46 +172,127 @@ static void esil_split_flg(char *esil_str, char **esil_main, char **esil_flg) {
 	}
 }
 
+typedef struct {
+	RList *ops;
+	RList *reg_read;
+	RList *reg_write;
+	bool mem_read;
+	bool mem_write;
+} RopStats;
+
+static void rop_stats_fini(RopStats *stats) {
+	r_list_free (stats->ops);
+	r_list_free (stats->reg_read);
+	r_list_free (stats->reg_write);
+	memset (stats, 0, sizeof (*stats));
+}
+
+static bool rop_stats_init(RopStats *stats) {
+	stats->ops = r_list_newf (free);
+	stats->reg_read = r_list_newf (free);
+	stats->reg_write = r_list_newf (free);
+	if (stats->ops && stats->reg_read && stats->reg_write) {
+		return true;
+	}
+	rop_stats_fini (stats);
+	return false;
+}
+
+static void rop_stats_add(RList *list, const char *item) {
+	if (R_STR_ISNOTEMPTY (item) && !r_list_find (list, item, (RListComparator)strcmp)) {
+		char *copy = strdup (item);
+		if (copy) {
+			r_list_append (list, copy);
+		}
+	}
+}
+
+static void rop_stats_reg_read(void *user, const char *name, ut64 val) {
+	(void)val;
+	RopStats *stats = user;
+	rop_stats_add (stats->reg_read, name);
+}
+
+static void rop_stats_reg_write(void *user, const char *name, ut64 old, ut64 val) {
+	(void)old;
+	(void)val;
+	RopStats *stats = user;
+	rop_stats_add (stats->reg_write, name);
+}
+
+static void rop_stats_mem_read(void *user, ut64 addr, const ut8 *buf, int len) {
+	(void)addr;
+	(void)buf;
+	(void)len;
+	RopStats *stats = user;
+	stats->mem_read = true;
+}
+
+static bool rop_stats_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	(void)addr;
+	(void)buf;
+	(void)len;
+	RopStats *stats = esil->user;
+	if (stats) {
+		stats->mem_write = true;
+	}
+	return true;
+}
+
+static void rop_stats_op(void *user, const char *op) {
+	RopStats *stats = user;
+	rop_stats_add (stats->ops, op);
+}
+
+static bool rop_stats_empty(RopStats *stats) {
+	return r_list_empty (stats->ops)
+		&& r_list_empty (stats->reg_read)
+		&& r_list_empty (stats->reg_write)
+		&& !stats->mem_read
+		&& !stats->mem_write;
+}
+
+static bool rop_collect_stats(RCore *core, const char *expr, RopStats *stats) {
+	rop_stats_fini (stats);
+	if (!rop_stats_init (stats)) {
+		return false;
+	}
+	REsil *esil = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	if (!esil) {
+		rop_stats_fini (stats);
+		return false;
+	}
+	esil->anal = core->anal;
+	esil->user = stats;
+	esil->cb.hook_mem_write = rop_stats_mem_write;
+	r_esil_add_voyeur (esil, stats, rop_stats_reg_read, R_ESIL_VOYEUR_REG_READ);
+	r_esil_add_voyeur (esil, stats, rop_stats_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	r_esil_add_voyeur (esil, stats, rop_stats_mem_read, R_ESIL_VOYEUR_MEM_READ);
+	r_esil_add_voyeur (esil, stats, rop_stats_op, R_ESIL_VOYEUR_OP);
+	bool ret = r_esil_parse (esil, expr);
+	r_esil_free (esil);
+	return ret;
+}
+
 #define FREE_ROP  { \
-	R_FREE (out); \
 	R_FREE (esil_flg);       \
 	R_FREE (esil_main);      \
-	r_list_free (ops_list);  \
-	ops_list = NULL; \
-	r_list_free (flg_read);  \
-	flg_read = NULL; \
-	r_list_free (flg_write); \
-	flg_write = NULL; \
-	r_list_free (reg_read);  \
-	reg_read = NULL; \
-	r_list_free (reg_write); \
-	reg_write = NULL; \
-	r_list_free (mem_read);  \
-	mem_read = NULL; \
-	r_list_free (mem_write); \
-	mem_write = NULL; \
+	rop_stats_fini (&stats); \
 }
 
 static char* rop_classify_constant(RCore *core, RList *ropList) {
 	char *esil_str, *constant;
-	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
+	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_r, *iter_dst, *iter_const;
 	RRegItem *item_dst;
 	RList *head, *constants;
-	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
-	      *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
-	      *mem_write = NULL;
-	const bool romem = r_config_get_i (core->config, "esil.romem");
-	const bool stats = r_config_get_i (core->config, "esil.stats");
-
-	if (!romem || !stats) {
-		return NULL;
-	}
+	RopStats stats = {0};
 
 	r_list_foreach (ropList, iter_r, esil_str) {
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
 		if (r_list_empty (constants)) {
+			r_list_free (constants);
 			continue;
 		}
 		// init regs with known values
@@ -251,19 +303,10 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 			goto continue_error;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		cmd_anal_esil (core, esil_main? esil_main: esil_str, false);
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		if (!out) {
+		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
 			goto continue_error;
 		}
-		ops_list  = parse_list (strstr (out, "ops.list"));
-		flg_read  = parse_list (strstr (out, "flg.read"));
-		flg_write = parse_list (strstr (out, "flg.write"));
-		reg_read  = parse_list (strstr (out, "reg.read"));
-		reg_write = parse_list (strstr (out, "reg.write"));
-		mem_read  = parse_list (strstr (out, "mem.read"));
-		mem_write = parse_list (strstr (out, "mem.write"));
-		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
+		if (!r_list_find (stats.ops, "=", (RListComparator)strcmp)) {
 			goto continue_error;
 		}
 		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
@@ -272,7 +315,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 		}
 		r_list_foreach (head, iter_dst, item_dst) {
 			ut64 diff_dst, value_dst;
-			if (!r_list_find (reg_write, item_dst->name,
+			if (!r_list_find (stats.reg_write, item_dst->name,
 					  (RListComparator)strcmp)) {
 				continue;
 			}
@@ -307,19 +350,11 @@ out_error:
 
 static char* rop_classify_mov(RCore *core, RList *ropList) {
 	char *esil_str;
-	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL, *out = NULL;
+	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_src, *iter_r, *iter_dst;
 	RRegItem *item_src, *item_dst;
 	RList *head;
-	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
-	      *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
-	      *mem_write = NULL;
-	const bool romem = r_config_get_i (core->config, "esil.romem");
-	const bool stats = r_config_get_i (core->config, "esil.stats");
-
-	if (!romem || !stats) {
-		return NULL;
-	}
+	RopStats stats = {0};
 
 	r_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
@@ -329,21 +364,11 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 			goto out_error;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		cmd_anal_esil (core, esil_main? esil_main: esil_str, false);
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		if (out) {
-			ops_list  = parse_list (strstr (out, "ops.list"));
-			flg_read  = parse_list (strstr (out, "flg.read"));
-			flg_write = parse_list (strstr (out, "flg.write"));
-			reg_read  = parse_list (strstr (out, "reg.read"));
-			reg_write = parse_list (strstr (out, "reg.write"));
-			mem_read  = parse_list (strstr (out, "mem.read"));
-			mem_write = parse_list (strstr (out, "mem.write"));
-		} else {
+		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
 			goto continue_error;
 		}
 
-		if (!r_list_find (ops_list, "=", (RListComparator)strcmp)) {
+		if (!r_list_find (stats.ops, "=", (RListComparator)strcmp)) {
 			goto continue_error;
 		}
 
@@ -353,7 +378,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 		}
 		r_list_foreach (head, iter_dst, item_dst) {
 			ut64 diff_dst, value_dst;
-			if (!r_list_find (reg_write, item_dst->name,
+			if (!r_list_find (stats.reg_write, item_dst->name,
 					  (RListComparator)strcmp)) {
 				continue;
 			}
@@ -369,7 +394,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 			r_reg_arena_swap (core->dbg->reg, false);
 			r_list_foreach (head, iter_src, item_src) {
 				ut64 diff_src, value_src;
-				if (!r_list_find (reg_read, item_src->name,
+				if (!r_list_find (stats.reg_read, item_src->name,
 						  (RListComparator)strcmp)) {
 					continue;
 				}
@@ -400,24 +425,13 @@ out_error:
 
 static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 	char *esil_str, *op;
-	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL,
-	     *out = NULL;
+	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
 	RRegItem *item_src1, *item_src2, *item_dst;
 	RList *head;
-	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL,
-	      *reg_read = NULL, *reg_write = NULL, *mem_read = NULL,
-	      *mem_write  = NULL;
-	const bool romem = r_config_get_i (core->config, "esil.romem");
-	const bool stats = r_config_get_i (core->config, "esil.stats");
+	RopStats stats = {0};
 	ut64 *op_result = R_NEW0 (ut64);
 	ut64 *op_result_r = R_NEW0 (ut64);
-
-	if (!romem || !stats) {
-		free (op_result);
-		free (op_result_r);
-		return NULL;
-	}
 
 	r_list_foreach (ropList, iter_r, esil_str) {
 		// init regs with known values
@@ -427,25 +441,11 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 			goto out_error;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (esil_main) {
-			cmd_anal_esil (core, esil_main, false);
-		} else {
-			cmd_anal_esil (core, esil_str, false);
-		}
-		out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_cons_println (core->cons, out);
-		if (!out) {
+		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
 			goto continue_error;
 		}
-		ops_list  = parse_list (strstr (out, "ops.list"));
-		flg_read  = parse_list (strstr (out, "flg.read"));
-		flg_write = parse_list (strstr (out, "flg.write"));
-		reg_read  = parse_list (strstr (out, "reg.read"));
-		reg_write = parse_list (strstr (out, "reg.write"));
-		mem_read  = parse_list (strstr (out, "mem.read"));
-		mem_write = parse_list (strstr (out, "mem.write"));
 
-		r_list_foreach (ops_list, iter_ops, op) {
+		r_list_foreach (stats.ops, iter_ops, op) {
 			r_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
 
@@ -453,7 +453,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 				r_reg_arena_swap (core->dbg->reg, false);
 				diff_src1 = r_reg_get_value (core->dbg->reg, item_src1);
 				r_reg_arena_swap (core->dbg->reg, false);
-				if (!r_list_find (reg_read, item_src1->name,
+				if (!r_list_find (stats.reg_read, item_src1->name,
 						  (RListComparator)strcmp)) {
 					continue;
 				}
@@ -464,7 +464,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 					r_reg_arena_swap (core->dbg->reg, false);
 					diff_src2 = r_reg_get_value (core->dbg->reg, item_src2);
 
-					if (!r_list_find (reg_read, item_src2->name,
+					if (!r_list_find (stats.reg_read, item_src2->name,
 						    (RListComparator)strcmp)) {
 						continue;
 					}
@@ -479,7 +479,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 
 						value_dst = r_reg_get_value (core->dbg->reg, item_dst);
 						r_reg_arena_swap (core->dbg->reg, false);
-						if (!r_list_find (reg_write, item_dst->name,
+						if (!r_list_find (stats.reg_write, item_dst->name,
 							    	(RListComparator)strcmp)) {
 							continue;
 						}
@@ -532,23 +532,15 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 	RListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
 	RRegItem *item_src1, *item_dst;
 	RList *head, *constants;
-	RList *ops_list = NULL, *flg_read = NULL, *flg_write = NULL, *reg_read = NULL,
-		*reg_write = NULL, *mem_read = NULL, *mem_write = NULL;
-	const bool romem = r_config_get_i (core->config, "esil.romem");
-	const bool stats = r_config_get_i (core->config, "esil.stats");
+	RopStats stats = {0};
 	ut64 *op_result = R_NEW0 (ut64);
 	ut64 *op_result_r = R_NEW0 (ut64);
-
-	if (!romem || !stats) {
-		R_FREE (op_result);
-		R_FREE (op_result_r);
-		return NULL;
-	}
 
 	r_list_foreach (ropList, iter_r, esil_str) {
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
 		if (r_list_empty (constants)) {
+			r_list_free (constants);
 			continue;
 		}
 		// init regs with known values
@@ -556,31 +548,15 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
 		if (!head) {
 			arithmetic = NULL;
+			r_list_free (constants);
 			continue;
 		}
 		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (esil_main) {
-			cmd_anal_esil (core, esil_main, false);
-		} else {
-			cmd_anal_esil (core, esil_str, false);
-		}
-		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_cons_println (core->cons, out);
-		if (out) {
-			ops_list  = parse_list (strstr (out, "ops.list"));
-			flg_read  = parse_list (strstr (out, "flg.read"));
-			flg_write = parse_list (strstr (out, "flg.write"));
-			reg_read  = parse_list (strstr (out, "reg.read"));
-			reg_write = parse_list (strstr (out, "reg.write"));
-			mem_read  = parse_list (strstr (out, "mem.read"));
-			mem_write = parse_list (strstr (out, "mem.write"));
-		} else {
-			R_FREE (op_result);
-			R_FREE (op_result_r);
+		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
 			goto continue_error;
 		}
 
-		r_list_foreach (ops_list, iter_ops, op) {
+		r_list_foreach (stats.ops, iter_ops, op) {
 			r_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
 				value_src1 = r_reg_get_value (core->dbg->reg, item_src1);
@@ -588,7 +564,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 				diff_src1 = r_reg_get_value (core->dbg->reg, item_src1);
 				r_reg_arena_swap (core->dbg->reg, false);
 
-				if (!r_list_find (reg_read, item_src1->name,
+				if (!r_list_find (stats.reg_read, item_src1->name,
 						  (RListComparator)strcmp)) {
 					continue;
 				}
@@ -599,7 +575,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 					r_reg_arena_swap (core->dbg->reg, false);
 					diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
 					r_reg_arena_swap (core->dbg->reg, false);
-					if (!r_list_find (reg_write, item_dst->name,
+					if (!r_list_find (stats.reg_write, item_dst->name,
 						    (RListComparator)strcmp)) {
 						continue;
 					}
@@ -652,33 +628,26 @@ static int rop_classify_nops(RCore *core, RList *ropList) {
 	char *esil_str;
 	int changes = 1;
 	RListIter *iter_r;
-	const bool romem = r_config_get_i (core->config, "esil.romem");
-	const bool stats = r_config_get_i (core->config, "esil.stats");
-
-	if (!romem || !stats) {
-		return -2;
-	}
+	RopStats stats = {0};
 
 	r_list_foreach (ropList, iter_r, esil_str) {
 		fillRegisterValues (core);
-
-		// r_cons_printf ("Emulating nop:%s\n", esil_str);
-		cmd_anal_esil (core, esil_str, false);
-		char *out = sdb_querys (core->anal->esil->stats, NULL, 0, "*");
-		// r_cons_println (core->cons, out);
-		if (out) {
-			free (out);
+		if (!rop_collect_stats (core, esil_str, &stats)) {
+			rop_stats_fini (&stats);
+			continue;
+		}
+		if (!rop_stats_empty (&stats)) {
+			rop_stats_fini (&stats);
 			return 0;
 		}
-		// directly say NOP
-		continue;
+		rop_stats_fini (&stats);
 	}
 
 	return changes;
 }
 
 static void rop_classify(RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
-	int nop = 0;  rop_classify_nops (core, ropList);
+	int nop = 0;
 	char *mov, *ct, *arithm, *arithm_ct, *str;
 	Sdb *db_nop = sdb_ns (db, "nop", true);
 	Sdb *db_mov = sdb_ns (db, "mov", true);
