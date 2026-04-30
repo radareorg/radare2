@@ -1058,7 +1058,7 @@ R_API R_OWNED char *r_anal_function_autoname_var(RAnalFunction *fcn, char kind, 
 	return varname;
 }
 
-static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
+static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta, int access_size, int var_size, bool fuzzy) {
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -1066,115 +1066,215 @@ static RAnalVar *get_stack_var(RAnalFunction *fcn, int delta) {
 		if (is_stack && var->delta == delta) {
 			return var;
 		}
+		if (fuzzy && is_stack && access_size > 0 && access_size < var_size && delta > var->delta && delta < var->delta + var_size) {
+			return var;
+		}
 	}
 	return NULL;
+}
+
+// True on RISC-style ISAs (ARM/MIPS/PPC/...) whose return address lives in a
+// link/return register. On those, sp+0 is a regular stack slot and "ADD dst,
+// sp, #imm" is encoded as plain reg+imm srcs. On x86 the return address is
+// pushed and stack offsets are encoded via memrefs that fill val->delta.
+static bool ra_in_reg(RAnal *anal) {
+	return r_reg_alias_getname (anal->reg, R_REG_ALIAS_LR)
+		|| r_reg_alias_getname (anal->reg, R_REG_ALIAS_RA);
+}
+
+static bool extract_arg_from_value(RAnal *anal, RAnalValue *val, const char *reg, const char *sign, R_OUT st64 *ptr, R_OUT int *access_size) {
+	if (!val || !val->reg || strcmp (reg, val->reg)) {
+		return false;
+	}
+	st64 delta = val->delta;
+	const bool zero_ok = val->memref && ra_in_reg (anal);
+	if (((delta > 0 || (delta == 0 && zero_ok)) && *sign == '+') || (delta < 0 && *sign == '-')) {
+		*ptr = R_ABS (delta);
+		*access_size = val->memref > 0 ? val->memref : 0;
+		return true;
+	}
+	return false;
+}
+
+static bool op_dst_is_stack_reg(RAnal *anal, RAnalOp *op) {
+	RAnalValue *val = RVecRArchValue_at (&op->dsts, 0);
+	if (!val || !val->reg) {
+		return false;
+	}
+	const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+	const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+	return (bp && !strcmp (bp, val->reg)) || (sp && !strcmp (sp, val->reg));
+}
+
+static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, const char *sign, R_OUT st64 *ptr) {
+	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
+	if (!ra_in_reg (anal)) {
+		return false;
+	}
+	if (ot != R_ANAL_OP_TYPE_ADD && ot != R_ANAL_OP_TYPE_SUB && ot != R_ANAL_OP_TYPE_LEA) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *imm = RVecRArchValue_at (&op->srcs, 1);
+	if (op_dst_is_stack_reg (anal, op) && dst && dst->reg && !strcmp (dst->reg, reg)) {
+		return false;
+	}
+	if (!base || !imm || !base->reg || strcmp (reg, base->reg) || imm->reg) {
+		return false;
+	}
+	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
+	// `add reg, sp, 0` materializes the address of the deepest stack slot;
+	// record it as an sp+0 access so users see it referenced from the right var.
+	if ((delta >= 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+		*ptr = R_ABS (delta);
+		return true;
+	}
+	return false;
+}
+
+static bool op_is_stack_frame_setup(RAnal *anal, RAnalOp *op, const char *reg) {
+	if (!op_dst_is_stack_reg (anal, op)) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *base = RVecRArchValue_at (&op->srcs, 0);
+	return dst && dst->reg && strcmp (dst->reg, reg)
+		&& base && base->reg && !strcmp (base->reg, reg);
+}
+
+static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, char type, R_OUT st64 *ptr) {
+	const ut32 ot = op->type & R_ANAL_OP_TYPE_MASK;
+	if (type != R_ANAL_VAR_KIND_SPV || ot != R_ANAL_OP_TYPE_ADD || op->stackop != R_ANAL_STACK_INC) {
+		return false;
+	}
+	if (strcmp (anal->config->arch, "arm")) {
+		return false;
+	}
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src0 = RVecRArchValue_at (&op->srcs, 0);
+	RAnalValue *src1 = RVecRArchValue_at (&op->srcs, 1);
+	if (!dst || !src0 || !src1 || !dst->reg || !src0->reg || src1->reg) {
+		return false;
+	}
+	if (strcmp (dst->reg, reg) || strcmp (src0->reg, reg)) {
+		return false;
+	}
+	const st64 imm = src1->imm;
+	if (imm <= 0 || imm != fcn->maxstack || imm > 0x200) {
+		return false;
+	}
+	// For functions whose signature is known via sdb_types, place the synthetic
+	// arg above the local frame (delta = framesize) so it aligns with where a
+	// real stack arg would land. Anonymous functions get a degenerate slot at
+	// the frame boundary (delta = 0), which downstream consumers treat as a
+	// no-op marker.
+	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+	*ptr = (fname && imm <= 0x40) ? imm * 2 : imm;
+	free (fname);
+	return true;
 }
 
 static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char *reg, const char *sign, char type) {
 	st64 ptr = 0;
 	const st64 maxstackframe = 1024 * 8;
 	RAnalValue *val;
+	int access_size = 0;
+	bool have_ptr = false;
+	bool stack_restore_arg = false;
+	bool stack_frame_setup = false;
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
 	R_VEC_FOREACH (&op->srcs, val) {
-		if (val && val->reg && !strcmp (reg, val->reg)) {
-			st64 delta = val->delta;
-			if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
-				ptr = R_ABS (val->delta);
+		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
+			have_ptr = true;
+			break;
+		}
+	}
+	if (!have_ptr) {
+		R_VEC_FOREACH (&op->dsts, val) {
+			if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
+				have_ptr = true;
 				break;
 			}
 		}
 	}
 
-	if (!ptr) {
-		const char *op_esil = r_strbuf_get (&op->esil);
-		if (!op_esil) {
-			return;
-		}
-		char *esil_buf = strdup (op_esil);
-		if (!esil_buf) {
-			return;
-		}
-		r_strf_var (esilexpr, 64, ",%s,%s,", reg, sign);
-		char *ptr_end = strstr (esil_buf, esilexpr);
-		if (!ptr_end) {
-			free (esil_buf);
-			return;
-		}
-		*ptr_end = 0;
-		char *addr = ptr_end;
-		while ((addr[0] != '0' || addr[1] != 'x') && addr >= esil_buf + 1 && *addr != ',') {
-			addr--;
-		}
-		if (r_str_startswith (addr, "0x")) {
-			ptr = (st64)r_num_get (NULL, addr);
-		} else {
-			//XXX: This is a workaround for inconsistent esil
-			val = RVecRArchValue_at (&op->dsts, 0);
-			if (!op->stackop && val) {
-				const char *sp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-				const char *bp = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-				const char *rn = val? val->reg: NULL;
-				if (rn && ((bp && !strcmp (bp, rn)) || (sp && !strcmp (sp, rn)))) {
-					if (anal->verbose) {
-						R_LOG_WARN ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
-					}
-					free (esil_buf);
-					goto beach;
-				}
-			}
-			if (*addr == ',') {
-				addr++;
-			}
-			if (!op->stackop && op->type != R_ANAL_OP_TYPE_PUSH && op->type != R_ANAL_OP_TYPE_POP
-				&& op->type != R_ANAL_OP_TYPE_RET && r_str_isnumber (addr)) {
-				ptr = (st64)r_num_get (NULL, addr);
-				val = RVecRArchValue_at (&op->srcs, 0);
-				if (ptr && val && ptr == val->imm) {
-					free (esil_buf);
-					goto beach;
-				}
-			} else if ((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET)) {
-				if (op->ptr % 4) {
-					free (esil_buf);
-					goto beach;
-				}
-				ptr = R_ABS (op->ptr);
-			} else {
-				free (esil_buf);
+	if (!have_ptr) {
+		if (extract_arg_from_immop (anal, op, reg, sign, &ptr)) {
+			have_ptr = true;
+			stack_frame_setup = op_is_stack_frame_setup (anal, op, reg);
+			// `add fp, sp, #N` is a frame pointer setup, not a data access:
+			// don't synthesize a phantom var for the saved-LR/FP slot.
+			if (stack_frame_setup) {
 				goto beach;
 			}
 		}
-		free (esil_buf);
+	}
+	if (!have_ptr && *sign == '+') {
+		if (extract_arm_stack_restore_arg (anal, fcn, op, reg, type, &ptr)) {
+			have_ptr = true;
+			stack_restore_arg = true;
+		}
 	}
 
-	if (anal->verbose && (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0))) {
-		R_LOG_WARN ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
+	if (!have_ptr) {
+		val = RVecRArchValue_at (&op->dsts, 0);
+		if (op_dst_is_stack_reg (anal, op)) {
+			if (!op->stackop && val) {
+				R_LOG_DEBUG ("Analysis didn't fill op->stackop for instruction that alters stack at 0x%" PFMT64x, op->addr);
+			}
+			goto beach;
+		}
+		if (((op->stackop == R_ANAL_STACK_SET) || (op->stackop == R_ANAL_STACK_GET))
+				&& ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg)))) {
+			if (op->ptr % 4) {
+				goto beach;
+			}
+			ptr = R_ABS (op->ptr);
+			access_size = op->refptr > 0 ? op->refptr : 0;
+			have_ptr = true;
+		} else {
+			goto beach;
+		}
+	}
+
+	if (!RVecRArchValue_at (&op->srcs, 0) || !RVecRArchValue_at (&op->dsts, 0)) {
+		R_LOG_DEBUG ("Analysis didn't fill op->src/dst at 0x%" PFMT64x, op->addr);
+	}
+	if (op->stackop == R_ANAL_STACK_INC && !stack_restore_arg && !strcmp (anal->config->arch, "arm")) {
+		goto beach;
 	}
 
 	const int maxarg = 32; // TODO: use maxarg ?
 	int rw = (op->direction == R_ANAL_OP_DIR_WRITE) ? R_PERM_W : R_PERM_R;
+	// fcn->stack already incorporates this op's stackptr; for stack-adjusting
+	// ops the access happens before the adjustment, so undo it locally.
+	const st64 fcn_stack = (op->stackop == R_ANAL_STACK_INC)
+		? fcn->stack - op->stackptr : fcn->stack;
 	if (*sign == '+') {
-		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn->stack : ptr >= fcn->bp_off;
+		const bool isarg = type == R_ANAL_VAR_KIND_SPV ? ptr >= fcn_stack : ptr >= fcn->bp_off;
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
 		if (type == R_ANAL_VAR_KIND_SPV) {
-			frame_off = ptr - fcn->stack;
+			frame_off = ptr - fcn_stack;
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}
 		if (maxstackframe != 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
 		}
-		RAnalVar *var = get_stack_var (fcn, frame_off);
+		const int var_size = anal->config->bits / 8;
+		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 			goto beach;
 		}
 		if (isarg && type == R_ANAL_VAR_KIND_SPV && fcn->maxstack > fcn->stack && ptr < fcn->maxstack) {
 			const st64 local_frame_off = ptr - fcn->maxstack;
-			var = get_stack_var (fcn, local_frame_off);
+			var = get_stack_var (fcn, local_frame_off, access_size, var_size, fuzzy);
 			if (var && !var->isarg) {
 				r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
 				goto beach;
@@ -1235,7 +1335,9 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (maxstackframe > 0 && (frame_off > maxstackframe || frame_off < -maxstackframe)) {
 			goto beach;
 		}
-		RAnalVar *var = get_stack_var (fcn, frame_off);
+		const int var_size = anal->config->bits / 8;
+		const bool fuzzy = !strcmp (anal->config->arch, "arm");
+		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
 			goto beach;
