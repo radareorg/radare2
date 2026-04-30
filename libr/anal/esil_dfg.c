@@ -1620,7 +1620,7 @@ R_API RAnalEsilDFG *r_anal_esil_dfg_expr(RAnal *anal, RAnalEsilDFG *R_NULLABLE d
 	if (!esil) {
 		return NULL;
 	}
-	esil->anal = anal;
+	r_esil_setup (esil, anal, 0, 0, 0);
 
 	RAnalEsilDFG *edf = dfg? dfg: r_anal_esil_dfg_new (anal, use_map_info, use_maps);
 	if (!edf) {
