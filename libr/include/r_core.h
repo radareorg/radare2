@@ -324,23 +324,38 @@ typedef struct {
 	int y;
 } VisualMark;
 
+typedef struct r_core_esil_stepback_t {
+	char *expr;
+	ut64 addr;
+} RCoreEsilStepBack;
+
+typedef struct r_esil_cmds_t {
+	char *intr;
+	char *trap;
+	char *mdev;
+	char *todo;
+	char *step;
+	char *step_out;
+	char *ioer;
+	char *mdev_range;
+} REsilCmds;
+
+typedef struct r_esil_stepback_t {
+	RList list;
+	RStrBuf revert;
+	ut64 old_pc;
+	ut32 max;
+	ut32 v_reg;
+	ut32 v_mem;
+	ut32 v_bits;
+	ut32 v_alias;
+} REsilStepback;
+
 typedef struct r_core_esil_t {
 	REsil esil;
-	union {
-		RStrBuf trap_revert;
-		ut64 old_pc;
-	};
-	ut32 tr_reg;
-	ut32 tr_mem;
 	RReg *reg;
-	char *cmd_step;	// command to run before a step is performed
-	char *cmd_step_out; // command to run after a step is performed
-	char *cmd_intr; // command to run when an interrupt occurs
-	char *cmd_trap; // command to run when a trap occurs
-	char *cmd_mdev; // command to run when an memory mapped device address is used
-	char *cmd_todo; // command to run when esil expr contains TODO
-	char *cmd_ioer; // command to run when esil fails to IO
-	char *mdev_range; // string containing the r_str_range to match for read/write accesses
+	REsilCmds cmds;
+	REsilStepback sb;
 	ut8 cfg;
 } RCoreEsil;
 
@@ -808,7 +823,10 @@ R_API bool r_core_esil_init(RCore *core);
 R_API void r_core_esil_fini(RCoreEsil *cesil);
 R_API void r_core_esil_load_arch(RCore *core);
 R_API void r_core_esil_unload_arch(RCore *core);
-R_API void r_core_esil_single_step(RCore *core);
+R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr);
+R_API bool r_core_esil_single_step(RCore *core);
+R_API void r_core_esil_stepback(RCore *core);	//replacement for r_core_esil_step_back; rename later
+R_API void r_core_esil_set_max_stepback(RCore *core, ut32 max_stepback);
 
 // both do the same, we should get rid of one of them
 R_API bool r_core_bin_raise(RCore *core, ut32 bfid);
