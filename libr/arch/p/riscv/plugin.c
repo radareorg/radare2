@@ -272,6 +272,111 @@ static const char *arg_n(riscv_args_t *args, int n) {
 	return args->arg[n];
 }
 
+static const char *riscv_reg_name(const char *name) {
+	size_t i;
+	if (R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
+	for (i = 0; i < NGPR; i++) {
+		if (!strcmp (name, riscv_gpr_names[i])) {
+			return riscv_gpr_names[i];
+		}
+	}
+	for (i = 0; i < NFPR; i++) {
+		if (!strcmp (name, riscv_fpr_names[i])) {
+			return riscv_fpr_names[i];
+		}
+	}
+	return NULL;
+}
+
+static bool riscv_arg_is_imm(const char *arg) {
+	return arg && (*arg == '-' || *arg == '+' || r_num_is_valid_input (NULL, arg));
+}
+
+static void riscv_set_val_reg(RVecRArchValue *vals, const char *name) {
+	const char *reg = riscv_reg_name (name);
+	if (reg) {
+		RAnalValue *val = RVecRArchValue_emplace_back (vals);
+		if (val) {
+			val->reg = reg;
+		}
+	}
+}
+
+static void riscv_set_val_imm(RVecRArchValue *vals, const char *arg) {
+	if (riscv_arg_is_imm (arg)) {
+		RAnalValue *val = RVecRArchValue_emplace_back (vals);
+		if (val) {
+			val->imm = (st64)r_num_math (NULL, arg);
+		}
+	}
+}
+
+static void riscv_set_val_reg_or_imm(RVecRArchValue *vals, const char *arg) {
+	const char *reg = riscv_reg_name (arg);
+	if (reg) {
+		riscv_set_val_reg (vals, reg);
+	} else {
+		riscv_set_val_imm (vals, arg);
+	}
+}
+
+static bool riscv_is_stack_reg_name(const char *name) {
+	return name && (!strcmp (name, riscv_gpr_names[X_SP]) || !strcmp (name, "s0"));
+}
+
+static void riscv_fillval(RAnalOp *op, riscv_args_t *args) {
+	if (!op || !args || !args->num) {
+		return;
+	}
+	const int type = op->type & R_ANAL_OP_TYPE_MASK;
+	switch (type) {
+	case R_ANAL_OP_TYPE_STORE:
+		break;
+	case R_ANAL_OP_TYPE_LOAD:
+		break;
+	default:
+		if (args->num < 2 || !riscv_is_stack_reg_name (arg_n (args, 1))) {
+			break;
+		}
+		riscv_set_val_reg (&op->dsts, arg_n (args, 0));
+		{
+			int i;
+			for (i = 1; i < args->num; i++) {
+				riscv_set_val_reg_or_imm (&op->srcs, arg_n (args, i));
+			}
+		}
+		break;
+	}
+}
+
+static void riscv_set_stackop(RAnalOp *op, riscv_args_t *args, const char *name) {
+	if (!op || !args || !args->num) {
+		return;
+	}
+	if (r_str_startswith (name, "addi16sp")) {
+		if (!strcmp (arg_n (args, 0), riscv_gpr_names[X_SP])) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = r_num_math (NULL, arg_n (args, 1));
+		}
+		return;
+	}
+	if (r_str_startswith (name, "addi") || r_str_startswith (name, "addiw")) {
+		if (args->num >= 3 && !strcmp (arg_n (args, 0), riscv_gpr_names[X_SP]) && !strcmp (arg_n (args, 1), riscv_gpr_names[X_SP])) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = -(st64)r_num_math (NULL, arg_n (args, 2));
+		}
+		return;
+	}
+	if (r_str_startswith (name, "sub")) {
+		if (args->num >= 3 && !strcmp (arg_n (args, 0), riscv_gpr_names[X_SP]) && !strcmp (arg_n (args, 1), riscv_gpr_names[X_SP])) {
+			op->stackop = R_ANAL_STACK_INC;
+			op->stackptr = r_num_math (NULL, arg_n (args, 2));
+		}
+	}
+}
+
 static struct riscv_opcode *riscv_get_opcode(PluginData *pd, insn_t word) {
 	struct riscv_opcode *op = NULL;
 
@@ -417,11 +522,14 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	} else {
 		op->size = 4;
 	}
+	if (mask & (R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL)) {
+		get_riscv_args (&args, o->args, word, addr);
+	}
+	riscv_set_stackop (op, &args, name);
 	if (mask & R_ARCH_OP_MASK_ESIL) {
 		// Test for compressed instruction
 #undef ARG
 #define ARG(x) (arg_n (&args, (x)))
-		get_riscv_args (&args, o->args, word, addr);
 		if (is_any ("nop")) {
 			esilprintf (op, ",");
 		}
@@ -731,40 +839,7 @@ static bool riscv_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 		op->type = R_ANAL_OP_TYPE_LOAD;
 	}
 	if (mask & R_ARCH_OP_MASK_VAL && args.num) {
-		int i = 1;
-		RAnalValue *dst, *src;
-		dst = RVecRArchValue_emplace_back (&op->dsts);
-		char *argf = strdup (o->args);
-		r_str_split (argf, ',');
-		char *comma = argf;
-		if (comma && strchr (comma, '(')) {
-			dst->delta = (st64)r_num_get (NULL, args.arg[0]);
-			// dst->reg = args.arg[1];
-			// dst->reg = r_reg_get (anal->reg, args.arg[1], -1);
-			i = 2;
-		} else if (isdigit ((ut8)args.arg[i][0])) {
-			dst->imm = r_num_get (NULL, args.arg[0]);
-		} else {
-			// dst->reg = args.arg[1];
-			// dst->reg = r_reg_get (anal->reg, args.arg[0], -1);
-		}
-		comma = r_str_tok_next (comma);
-		for (; i < args.num; i++) {
-			src = RVecRArchValue_emplace_back (&op->srcs);
-			if (comma && strchr (comma, '(')) {
-				src->delta = (st64)r_num_get (NULL, args.arg[i]);
-				// src->reg = args.arg[1];
-				// src->reg = r_reg_get (anal->reg, args.arg[j + 1], -1);
-				i++;
-			} else if (isalpha ((ut8)args.arg[i][0])) {
-				// src->reg = args.arg[1];
-				// src->reg = r_reg_get (anal->reg, args.arg[j], -1);
-			} else {
-				src->imm = r_num_get (NULL, args.arg[i]);
-			}
-			comma = r_str_tok_next (comma);
-		}
-		free (argf);
+		riscv_fillval (op, &args);
 	}
 	if (r_str_startswith (name, "ill")) {
 		op->type = R_ANAL_OP_TYPE_ILL;
