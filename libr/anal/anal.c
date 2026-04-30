@@ -143,13 +143,20 @@ static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 		R_LOG_WARN ("anal->iob is not setup");
 		return false;
 	}
-	return anal->iob.read_at (anal->iob.io, addr, buf, len);
+	if (!anal->iob.io || addr == UT64_MAX) {
+		return false;
+	}
+	(void)anal->iob.read_at (anal->iob.io, addr, buf, len);
+	return true;
 }
 
 static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
 	RAnal *anal = mem;
 	if (!anal || !anal->iob.init) {
 		R_LOG_WARN ("anal->iob is not setup");
+		return false;
+	}
+	if (!anal->iob.io || addr == UT64_MAX) {
 		return false;
 	}
 	return anal->iob.write_at (anal->iob.io, addr, buf, len);
@@ -197,7 +204,12 @@ static bool anal_esil_reg_alias (void *user, const char *name, const char *alias
 }
 
 static bool anal_esil_set_bits (void *user, int bits) {
-	return r_anal_set_triplet ((RAnal *)user, NULL, NULL, bits);
+	RAnal *anal = user;
+	if (anal->coreb.core && anal->coreb.setArchBits) {
+		anal->coreb.setArchBits (anal->coreb.core, NULL, bits);
+		return true;
+	}
+	return r_anal_set_triplet (anal, NULL, NULL, bits);
 }
 
 // Take nullable RArchConfig as argument?
