@@ -1393,6 +1393,16 @@ R_API const char *r_anal_cond_type_tostring(int cc);
 R_API const char *r_anal_cond_typeexpr_tostring(int cc);
 
 /* jmptbl */
+// Unified entry point for switch/jump-table analysis. Builds an
+// RAnalSwitchOp on `block` and recursively analyses every case.
+// All other r_anal_jmptbl* functions are thin shims around this one.
+R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec);
+
+// User-pinned switch overrides, keyed on the dispatching insn address.
+R_API bool r_anal_switch_set(RAnal *anal, ut64 startea, const RAnalSwitchSpec *spec);
+R_API bool r_anal_switch_get(RAnal *anal, ut64 startea, RAnalSwitchSpec *out);
+R_API void r_anal_switch_unset(RAnal *anal, ut64 startea);
+
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr);
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz);
 

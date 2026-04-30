@@ -7,6 +7,7 @@
 
 #define JMPTBL_MAXSZ 512
 #define JMPTBL_DISPATCH_LOOKBACK 16
+#define SWITCH_SDB_NS "switches"
 
 R_VEC_TYPE (RVecUT64, ut64);
 
@@ -237,11 +238,97 @@ static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_c
 	}
 }
 
-static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr) {
+// Mirror the spec into the persisted RAnalSwitchOp on `block`.
+// Called by apply_switch() once the case list is finalised.
+static void switch_op_apply_spec(RAnalBlock *block, const RAnalSwitchSpec *spec) {
+	if (!block || !block->switch_op || !spec) {
+		return;
+	}
+	RAnalSwitchOp *sop = block->switch_op;
+	sop->daddr     = spec->jtbl_addr;
+	sop->dsize     = spec->esize;
+	sop->vtbl_addr = spec->vtbl_addr;
+	sop->vsize     = spec->vsize;
+	sop->shift     = spec->shift;
+	sop->lowcase   = spec->lowcase;
+	sop->flags     = spec->flags;
+	if (spec->flags & R_ANAL_SWITCH_F_BASE) {
+		sop->baddr = spec->base;
+	}
+	if (spec->reg) {
+		free (sop->reg);
+		sop->reg = strdup (spec->reg);
+	}
+}
+
+// Read one little-endian entry from `raw`. `signed_entry` controls
+// sign-extension when esize < 8.
+static ut64 switch_read_entry(const ut8 *raw, ut8 esize, bool signed_entry) {
+	ut64 v;
+	switch (esize) {
+	case 1:
+		v = signed_entry ? (ut64)(st64)(st8)raw[0] : (ut64)raw[0];
+		break;
+	case 2:
+		v = signed_entry ? (ut64)(st64)(st16)r_read_le16 (raw) : (ut64)r_read_le16 (raw);
+		break;
+	case 4:
+		v = signed_entry ? (ut64)(st64)(st32)r_read_le32 (raw) : (ut64)r_read_le32 (raw);
+		break;
+	case 8:
+		v = r_read_le64 (raw);
+		break;
+	default:
+		v = r_read_le32 (raw);
+		break;
+	}
+	return v;
+}
+
+// Compute the target address for a single jump-table entry given the
+// flags. Mirrors IDA's `target = elbase ± (entry << shift)` formula
+// plus SELFREL (target = entry_addr + entry).
+// Returns false to indicate "stop walking" (entry is invalid).
+static bool switch_compute_target(const RAnalSwitchSpec *spec,
+		ut64 entry_addr, ut64 raw_entry, ut64 *out) {
+	if (raw_entry == 0 && !(spec->flags & R_ANAL_SWITCH_F_SELFREL)) {
+		return false;
+	}
+	ut64 shifted = raw_entry;
+	if (spec->shift) {
+		shifted = (spec->flags & R_ANAL_SWITCH_F_SIGNED)
+			? (ut64)((st64)raw_entry << spec->shift)
+			: (raw_entry << spec->shift);
+	}
+	if (spec->flags & R_ANAL_SWITCH_F_SELFREL) {
+		*out = entry_addr + (st64) shifted;
+		return true;
+	}
+	const ut64 base = (spec->flags & R_ANAL_SWITCH_F_BASE)
+		? spec->base
+		: spec->jtbl_addr;
+	if (spec->flags & R_ANAL_SWITCH_F_SUBTRACT) {
+		*out = base - shifted;
+	} else {
+		*out = base + shifted;
+	}
+	return true;
+}
+
+static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 switch_addr, ut64 jmptbl_addr, ut64 cases_count, ut64 default_case_addr, int esize) {
 	char tmp[64];
 	snprintf (tmp, sizeof (tmp), "switch table (%"PFMT64u" cases) at 0x%"PFMT64x, cases_count, jmptbl_addr);
 	r_meta_set_string (anal, R_META_TYPE_COMMENT, switch_addr, tmp);
 	update_switch_op (block, switch_addr, default_case_addr, cases_count);
+	// Always populate the table address and element size so afbt-style
+	// introspection sees real values even when the switch was discovered
+	// by the legacy walkers.
+	if (block && block->switch_op) {
+		block->switch_op->daddr = jmptbl_addr;
+		if (esize > 0) {
+			block->switch_op->dsize = esize;
+		}
+	}
 	if (anal->flb.set) {
 		snprintf (tmp, sizeof (tmp), "switch.0x%08"PFMT64x, switch_addr);
 		anal->flb.set (anal->flb.f, tmp, switch_addr, 1);
@@ -257,6 +344,291 @@ static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 R_API bool r_anal_jmptbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 jmpaddr, ut64 table, ut64 tablesize, ut64 default_addr) {
 	const int depth = 50;
 	return r_anal_jmptbl_walk (anal, fcn, block, depth, jmpaddr, 0, table, table, tablesize, tablesize, default_addr, false);
+}
+
+// Forward declaration: defined later in this file.
+static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn,
+		RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth);
+
+// --- Persistence ---------------------------------------------------------
+// User-pinned switch overrides live in a flat sdb namespace under
+// anal->sdb, keyed by the dispatching insn address. Format:
+//   "j=<jtbl>,e=<esize>,n=<ncases>,s=<shift>,b=<base>,d=<def>,
+//    v=<vtbl>,V=<vsize>,L=<lowcase>,F=<flags>[,r=<reg>]"
+// Missing keys keep their default. Order is irrelevant; unknown keys
+// are silently skipped.
+
+static Sdb *switch_sdb(RAnal *anal, bool create) {
+	if (!anal || !anal->sdb) {
+		return NULL;
+	}
+	return sdb_ns (anal->sdb, "switches", create ? 1 : 0);
+}
+
+static void switch_spec_serialize(const RAnalSwitchSpec *spec, char *out, size_t outsz) {
+	int n = snprintf (out, outsz,
+		"j=0x%"PFMT64x",e=%u,n=%u,s=%u,b=0x%"PFMT64x",d=0x%"PFMT64x
+		",v=0x%"PFMT64x",V=%u,L=%"PFMT64d",F=0x%x",
+		spec->jtbl_addr, (unsigned)spec->esize, (unsigned)spec->ncases,
+		(unsigned)spec->shift, spec->base, spec->defjump,
+		spec->vtbl_addr, (unsigned)spec->vsize, spec->lowcase,
+		(unsigned)spec->flags);
+	if (spec->reg && n > 0 && (size_t)n < outsz) {
+		snprintf (out + n, outsz - n, ",r=%s", spec->reg);
+	}
+}
+
+static void switch_spec_deserialize(RAnal *anal, const char *s, RAnalSwitchSpec *out) {
+	r_anal_switch_spec_init (out);
+	if (!s || !*s) {
+		return;
+	}
+	char *dup = strdup (s);
+	if (!dup) {
+		return;
+	}
+	char *save = NULL;
+	char *tok;
+	for (tok = r_str_tok_r (dup, ",", &save); tok; tok = r_str_tok_r (NULL, ",", &save)) {
+		if (tok[0] == '\0' || tok[1] != '=') {
+			continue;
+		}
+		const char *v = tok + 2;
+		switch (tok[0]) {
+		case 'j': out->jtbl_addr = r_num_get (NULL, v); break;
+		case 'e': out->esize     = (ut8) r_num_get (NULL, v); break;
+		case 'n': out->ncases    = (ut32) r_num_get (NULL, v); break;
+		case 's': out->shift     = (ut8) r_num_get (NULL, v); break;
+		case 'b': out->base      = r_num_get (NULL, v); break;
+		case 'd': out->defjump   = r_num_get (NULL, v); break;
+		case 'v': out->vtbl_addr = r_num_get (NULL, v); break;
+		case 'V': out->vsize     = (ut8) r_num_get (NULL, v); break;
+		case 'L': out->lowcase   = (st64) r_num_get (NULL, v); break;
+		case 'F': out->flags     = (ut32) r_num_get (NULL, v); break;
+		case 'r':
+			if (anal) {
+				out->reg = r_str_constpool_get (&anal->constpool, v);
+			}
+			break;
+		default: break;
+		}
+	}
+	free (dup);
+}
+
+R_API bool r_anal_switch_set(RAnal *anal, ut64 startea, const RAnalSwitchSpec *spec) {
+	R_RETURN_VAL_IF_FAIL (anal && spec, false);
+	Sdb *db = switch_sdb (anal, true);
+	if (!db) {
+		return false;
+	}
+	char key[32];
+	snprintf (key, sizeof (key), "0x%"PFMT64x, startea);
+	char buf[256];
+	switch_spec_serialize (spec, buf, sizeof (buf));
+	return sdb_set (db, key, buf, 0) != 0;
+}
+
+R_API bool r_anal_switch_get(RAnal *anal, ut64 startea, RAnalSwitchSpec *out) {
+	R_RETURN_VAL_IF_FAIL (anal && out, false);
+	Sdb *db = switch_sdb (anal, false);
+	if (!db) {
+		return false;
+	}
+	char key[32];
+	snprintf (key, sizeof (key), "0x%"PFMT64x, startea);
+	const char *v = sdb_const_get (db, key, NULL);
+	if (!v) {
+		return false;
+	}
+	switch_spec_deserialize (anal, v, out);
+	out->startea = startea;
+	return true;
+}
+
+R_API void r_anal_switch_unset(RAnal *anal, ut64 startea) {
+	R_RETURN_IF_FAIL (anal);
+	Sdb *db = switch_sdb (anal, false);
+	if (!db) {
+		return;
+	}
+	char key[32];
+	snprintf (key, sizeof (key), "0x%"PFMT64x, startea);
+	sdb_unset (db, key, 0);
+}
+
+// Flag-driven walker: handles the cases the legacy walker can't express
+// (SELFREL, SUBTRACT, explicit BASE, signed entries, INSN-as-element,
+// INDIRECT with vsize > 1, SPARSE).
+static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block,
+		int depth, const RAnalSwitchSpec *spec) {
+	JmptblTargetCtx target_ctx = {0};
+	const ut32 ncases = spec->ncases ? spec->ncases : JMPTBL_MAXSZ;
+	if (spec->jtbl_addr == UT64_MAX) {
+		R_LOG_DEBUG ("Invalid JumpTable location");
+		return false;
+	}
+	if (ncases < 1 || ncases > ST32_MAX) {
+		R_LOG_DEBUG ("Invalid JumpTable size at 0x%08"PFMT64x, spec->startea);
+		return false;
+	}
+	const ut8 esize = spec->esize ? spec->esize : 4;
+	const ut64 jtblsz = (ut64)ncases * esize;
+	if (jtblsz < 1 || jtblsz > ST32_MAX) {
+		R_LOG_DEBUG ("Invalid jump table size at 0x%08"PFMT64x, spec->jtbl_addr);
+		return false;
+	}
+	ut8 *jmptbl = calloc (ncases, esize);
+	if (!jmptbl) {
+		return false;
+	}
+	if (!anal->iob.read_at (anal->iob.io, spec->jtbl_addr, jmptbl, jtblsz)) {
+		free (jmptbl);
+		return false;
+	}
+	const bool indirect = (spec->flags & R_ANAL_SWITCH_F_INDIRECT) != 0;
+	const ut8 vsize = indirect ? (spec->vsize ? spec->vsize : 1) : 0;
+	ut8 *vtbl = NULL;
+	if (indirect) {
+		if (spec->vtbl_addr == UT64_MAX) {
+			R_LOG_DEBUG ("INDIRECT switch with no vtbl_addr at 0x%08"PFMT64x, spec->startea);
+			free (jmptbl);
+			return false;
+		}
+		vtbl = calloc (ncases, vsize);
+		if (!vtbl || !anal->iob.read_at (anal->iob.io, spec->vtbl_addr, vtbl, (ut64)ncases * vsize)) {
+			free (jmptbl);
+			free (vtbl);
+			return false;
+		}
+	}
+	jmptbl_target_ctx_init (&target_ctx, anal, spec->startea);
+	const bool signed_entry = (spec->flags & R_ANAL_SWITCH_F_SIGNED) != 0;
+	const bool insn_entry   = (spec->flags & R_ANAL_SWITCH_F_INSN) != 0;
+	const bool inverse      = (spec->flags & R_ANAL_SWITCH_F_INVERSE) != 0;
+	ut32 i;
+	ut32 last_applied = 0;
+	for (i = 0; i < ncases; i++) {
+		const ut32 idx = inverse ? (ncases - 1 - i) : i;
+		ut32 jtbl_idx = idx;
+		if (indirect) {
+			ut64 v_raw = switch_read_entry (vtbl + (ut64)idx * vsize, vsize, false);
+			if (v_raw >= ncases) {
+				R_LOG_DEBUG ("INDIRECT entry out of range at idx %u", idx);
+				break;
+			}
+			jtbl_idx = (ut32) v_raw;
+			const ut64 vloc = spec->vtbl_addr + (ut64)idx * vsize;
+			r_meta_set_data_at (anal, vloc, vsize);
+			r_anal_hint_set_immbase (anal, vloc, 10);
+		}
+		const ut64 entry_addr = spec->jtbl_addr + (ut64)jtbl_idx * esize;
+		ut64 raw = switch_read_entry (jmptbl + (ut64)jtbl_idx * esize, esize, signed_entry);
+		ut64 jmpptr;
+		if (insn_entry) {
+			// The entry IS an inline branch instruction: its address is
+			// what the dispatcher branches to.
+			jmpptr = entry_addr;
+		} else if (!switch_compute_target (spec, entry_addr, raw, &jmpptr)) {
+			break;
+		}
+		if (anal->limit && (jmpptr < anal->limit->from || jmpptr > anal->limit->to)) {
+			break;
+		}
+		if (!insn_entry) {
+			r_meta_set_data_at (anal, entry_addr, esize);
+			r_anal_hint_set_immbase (anal, entry_addr, 10);
+		}
+		if (!is_valid_jmptbl_case_target (anal, &target_ctx, jmpptr)) {
+			continue;
+		}
+		const st64 casenum = (st64)i + spec->lowcase;
+		apply_case (anal, fcn, block, spec->startea, esize, jmpptr,
+				(ut64)casenum, entry_addr, insn_entry);
+		analyze_new_case (anal, fcn, block, spec->startea, jmpptr, depth);
+		last_applied = i + 1;
+	}
+	if (last_applied > 0) {
+		ut64 def = spec->defjump;
+		if (def == 0) {
+			def = UT64_MAX;
+		}
+		apply_switch (anal, fcn, block, spec->startea, spec->jtbl_addr, last_applied, def, esize);
+		switch_op_apply_spec (block, spec);
+	}
+	free (jmptbl);
+	free (vtbl);
+	jmptbl_target_ctx_fini (&target_ctx);
+	return last_applied > 0;
+}
+
+// Predicate: returns true when the spec carries fields the legacy
+// r_anal_jmptbl_walk cannot express. In that case we go through the
+// flag-driven walker; otherwise we forward to the legacy walker so the
+// well-tested per-arch heuristics (Thumb-2 TBB/TBH, MIPS gp-relative,
+// x86 sz==2 sign-extension) keep working unchanged.
+static bool spec_needs_flag_walker(const RAnalSwitchSpec *spec) {
+	const ut32 mask = R_ANAL_SWITCH_F_SIGNED
+		| R_ANAL_SWITCH_F_SUBTRACT
+		| R_ANAL_SWITCH_F_INSN
+		| R_ANAL_SWITCH_F_SELFREL
+		| R_ANAL_SWITCH_F_SPARSE
+		| R_ANAL_SWITCH_F_INVERSE
+		| R_ANAL_SWITCH_F_DEFINTBL;
+	if (spec->flags & mask) {
+		return true;
+	}
+	// INDIRECT with vsize > 1 cannot be expressed by try_walkthrough_casetbl
+	if ((spec->flags & R_ANAL_SWITCH_F_INDIRECT) && spec->vsize > 1) {
+		return true;
+	}
+	// Explicit base different from the table address requires the new path.
+	if ((spec->flags & R_ANAL_SWITCH_F_BASE) && spec->base != spec->jtbl_addr) {
+		return true;
+	}
+	return false;
+}
+
+R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block,
+		int depth, const RAnalSwitchSpec *spec) {
+	R_RETURN_VAL_IF_FAIL (anal && spec, false);
+	if (spec->jtbl_addr == UT64_MAX) {
+		return false;
+	}
+	if (spec_needs_flag_walker (spec)) {
+		// INDIRECT goes through the flag walker too (handles vsize > 1).
+		return switch_apply_flagged (anal, fcn, block, depth, spec);
+	}
+	if (spec->flags & R_ANAL_SWITCH_F_INDIRECT) {
+		// vsize == 1: the legacy 2-stage walker handles this.
+		const ut64 default_case = (spec->defjump == UT64_MAX) ? 0 : spec->defjump;
+		const bool ret = try_walkthrough_casetbl (anal, fcn, block, depth,
+				spec->startea, spec->lowcase,
+				spec->jtbl_addr, spec->vtbl_addr,
+				spec->jtbl_addr,
+				spec->esize ? spec->esize : 4,
+				spec->ncases, default_case, false);
+		if (ret) {
+			switch_op_apply_spec (block, spec);
+		}
+		return ret;
+	}
+	// Default path: legacy single-table walker preserves all per-arch
+	// heuristics. Forward through r_anal_jmptbl_walk and then patch the
+	// switch_op with whatever extras the spec carries (lowcase, reg, etc).
+	const ut64 jmptbl_off = (spec->flags & R_ANAL_SWITCH_F_BASE)
+		? spec->base
+		: spec->jtbl_addr;
+	const ut64 default_case = (spec->defjump == UT64_MAX) ? 0 : spec->defjump;
+	const bool ret = r_anal_jmptbl_walk (anal, fcn, block, depth,
+			spec->startea, spec->lowcase,
+			spec->jtbl_addr, jmptbl_off,
+			spec->esize ? spec->esize : 4,
+			spec->ncases, default_case, false);
+	if (ret) {
+		switch_op_apply_spec (block, spec);
+	}
+	return ret;
 }
 
 static inline void analyze_new_case(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut64 ip, ut64 jmpptr, int depth) {
@@ -420,7 +792,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 		if (default_case == 0) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, fcn, block, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc == jmptbl_off ? casetbl_loc : jmptbl_loc, case_idx, default_case, jmptbl_loc == jmptbl_off ? 1 : sz);
 	}
 
 	free (jmptbl);
@@ -560,7 +932,7 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 		if (default_target == 0) {
 			default_target = UT64_MAX;
 		}
-		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_target);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_target, sz);
 	}
 
 	free (jmptbl);
@@ -741,7 +1113,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 		if (default_case == 0 || default_case == UT32_MAX) {
 			default_case = UT64_MAX;
 		}
-		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_case);
+		apply_switch (anal, fcn, block, ip, jmptbl_loc, offs / sz, default_case, sz);
 	}
 	jmptbl_target_ctx_fini (&target_ctx);
 	return ret;
@@ -908,7 +1280,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	// 	eprintf ("%d %llx -> 0x%llx\n", i, saddr, kase->jump);
 		analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 	}
-	apply_switch (anal, fcn, bb, saddr, jaddr, r_list_length (cases), UT64_MAX);
+	apply_switch (anal, fcn, bb, saddr, jaddr, r_list_length (cases), UT64_MAX, loadsz);
 	set_u_free (s);
 }
 

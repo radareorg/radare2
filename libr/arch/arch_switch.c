@@ -83,6 +83,7 @@ R_API RAnalCaseOp * R_NONNULL r_anal_case_op_new(ut64 addr, ut64 val, ut64 jump)
 R_API void r_anal_switch_op_free(RAnalSwitchOp *swop) {
 	if (R_LIKELY (swop)) {
 		r_list_free (swop->cases);
+		free (swop->reg);
 		free (swop);
 	}
 }
@@ -92,4 +93,35 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut6
 	RAnalCaseOp *caseop = r_anal_case_op_new (addr, value, jump);
 	r_list_append (swop->cases, caseop);
 	return caseop;
+}
+
+R_API void r_anal_switch_spec_init(RAnalSwitchSpec *spec) {
+	R_RETURN_IF_FAIL (spec);
+	memset (spec, 0, sizeof (*spec));
+	spec->startea   = UT64_MAX;
+	spec->jtbl_addr = UT64_MAX;
+	spec->vtbl_addr = UT64_MAX;
+	spec->base      = 0;
+	spec->defjump   = UT64_MAX;
+	spec->ncases    = 0;
+	spec->esize     = 4;
+	spec->vsize     = 0;
+	spec->shift     = 0;
+	spec->lowcase   = 0;
+	spec->reg       = NULL;
+	spec->flags     = 0;
+}
+
+R_API void r_anal_switch_spec_legacy(RAnalSwitchSpec *spec, ut64 startea,
+		ut64 tbladdr, ut64 esize, ut64 ncases, ut64 base) {
+	R_RETURN_IF_FAIL (spec);
+	r_anal_switch_spec_init (spec);
+	spec->startea   = startea;
+	spec->jtbl_addr = tbladdr;
+	spec->esize     = esize ? (ut8)esize : 4;
+	spec->ncases    = (ut32)ncases;
+	if (base) {
+		spec->base = base;
+		spec->flags |= R_ANAL_SWITCH_F_BASE;
+	}
 }

@@ -201,16 +201,56 @@ typedef struct r_anal_case_op_t {
 	ut64 value;
 } RAnalCaseOp; // TODO: rename to RAnalSwitchCase
 
+// Flags describing how a jump table should be decoded.
+// Mirrors IDA's SWI_* family. See SW.md for the matching IDA constants.
+typedef enum {
+	R_ANAL_SWITCH_F_SIGNED   = 1 << 0,  // sign-extend table entries
+	R_ANAL_SWITCH_F_SUBTRACT = 1 << 1,  // target = base - elem (vs base + elem)
+	R_ANAL_SWITCH_F_INSN     = 1 << 2,  // entry IS the branch instruction
+	R_ANAL_SWITCH_F_SELFREL  = 1 << 3,  // target = entry_addr + (signed) elem
+	R_ANAL_SWITCH_F_INDIRECT = 1 << 4,  // 2-stage: idx = vtbl[input]; target = jtbl[idx]
+	R_ANAL_SWITCH_F_SPARSE   = 1 << 5,  // value table holds case keys (parallel arrays)
+	R_ANAL_SWITCH_F_INVERSE  = 1 << 6,  // table walked in reverse
+	R_ANAL_SWITCH_F_DEFINTBL = 1 << 7,  // first/last entry is the default case
+	R_ANAL_SWITCH_F_USER     = 1 << 8,  // pinned by the user, do not auto-overwrite
+	R_ANAL_SWITCH_F_BASE     = 1 << 9,  // base is explicit (else defaults to jtbl_addr)
+} RAnalSwitchFlags;
+
+// Declarative description of a switch/jump-table to analyse or render.
+// Used as the input of r_anal_switch_apply().
+typedef struct r_anal_switch_spec_t {
+	ut64 startea;     // address of the dispatching insn
+	ut64 jtbl_addr;   // jump table base address
+	ut64 vtbl_addr;   // value/index table base (INDIRECT or SPARSE)
+	ut64 base;        // element base (added/subtracted from each entry)
+	ut64 defjump;     // default target, UT64_MAX = unknown
+	ut32 ncases;      // 0 = autodetect from cmpval
+	ut8  esize;       // jtbl entry size 1/2/4/8
+	ut8  vsize;       // vtbl entry size 1/2/4
+	ut8  shift;       // 0..3
+	st64 lowcase;     // first input value (replaces start_casenum_shift)
+	const char *reg;  // input register name, NULL if unknown
+	ut32 flags;       // RAnalSwitchFlags bitfield
+} RAnalSwitchSpec;
+
 typedef struct r_anal_switch_op_t {
-	ut64 addr; // address of the RJMP
-	ut64 baddr; // address of the base address
-	ut64 daddr; // address of the delta array
-	int dsize; // delta word size
-	int amount; // max cases
+	ut64 addr;        // address of the dispatching jump
+	ut64 baddr;       // element base value (when R_ANAL_SWITCH_F_BASE is set)
+	ut64 daddr;       // jump table base address (alias jtbl_addr)
+	int  dsize;       // jump-table element size 1/2/4/8 (alias esize)
+	int  amount;      // number of cases
 	ut64 min_val;
 	ut64 def_val;
 	ut64 max_val;
 	RList/*<RAnalCaseOp>*/ *cases;
+	// Extended fields (since ABI 92). Add at the end to preserve layout
+	// for code that only reads addr/cases/min_val/max_val/def_val.
+	ut64 vtbl_addr;   // value/index table address (INDIRECT or SPARSE)
+	st64 lowcase;     // first input value, propagates from RAnalSwitchSpec
+	ut32 flags;       // RAnalSwitchFlags
+	ut8  vsize;       // value-table element size
+	ut8  shift;       // shift amount
+	char *reg;        // input register name (owned, may be NULL)
 } RAnalSwitchOp; // TODO: Rename to RAnalSwitch
 
 typedef enum r_anal_data_type_t {
@@ -291,6 +331,11 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+// Initialise a RAnalSwitchSpec to its conservative defaults.
+R_API void r_anal_switch_spec_init(RAnalSwitchSpec *spec);
+// Build a positional spec from the legacy "afbt addr esz n seg" arguments.
+R_API void r_anal_switch_spec_legacy(RAnalSwitchSpec *spec, ut64 startea,
+		ut64 tbladdr, ut64 esize, ut64 ncases, ut64 base);
 
 // value.c
 R_API RArchValue *r_anal_value_new(void);

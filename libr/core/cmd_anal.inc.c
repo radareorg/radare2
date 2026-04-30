@@ -616,7 +616,7 @@ static RCoreHelpMessage help_msg_afb = {
 	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [J] [F] ([D])", "add basic block by hand (jump, fail, diff)",
 	"afba", "[!]", "list basic blocks of current offset in analysis order, see afla (EXPERIMENTAL)",
-	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
+	"afbt", "[?*-j] [tbl esz n seg | k=v ...]", "analyze switch/jumptable (see afbt?)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
@@ -626,6 +626,37 @@ static RCoreHelpMessage help_msg_afb = {
 	"afbr", "[?]", "show addresses of instructions which leave the function",
 	"afbo", "", "list addresses of each instruction for every basic block in function (see abo)",
 	"afB", " [bits]", "define asm.bits for the given function",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_afbt = {
+	"Usage:", "afbt[?*-j] [tbl esz n seg | k=v ...]", "analyze switch/jumptable at $$",
+	"afbt", "", "show switch info at current op (or empty if none)",
+	"afbtj", "", "show switch info in JSON",
+	"afbt*", "", "print r2 commands to recreate the switch",
+	"afbt-", "", "remove user-pinned override at current op",
+	"afbt", " tbl esz n seg", "legacy positional form (compat with old afbt/afj)",
+	"afbt", " k=v [k=v ...]", "keyword form, see fields below",
+	"Fields:", "", "",
+	"tbl=ADDR", "", "jump table base (required)",
+	"esz=N", "", "jump-table element size (1/2/4/8)",
+	"n=N", "", "number of cases (0 = autodetect)",
+	"shift=N", "", "left shift applied to each entry (0..3)",
+	"base=ADDR", "", "element base, target = base ± (entry << shift)",
+	"def=ADDR", "", "default-jump address (UT64_MAX = unknown)",
+	"reg=NAME", "", "input register name",
+	"low=N", "", "first input value (case-number shift)",
+	"vtbl=ADDR", "", "value/index table address (with indirect/sparse)",
+	"vsz=N", "", "value-table element size (1/2/4)",
+	"signed=1", "", "sign-extend table entries",
+	"sub=1", "", "target = base - entry (instead of +)",
+	"insn=1", "", "table entries are inline branch instructions",
+	"rel=1", "", "self-relative entries (target = entry_addr + entry)",
+	"indir=1", "", "two-stage: idx = vtbl[input]; target = jtbl[idx]",
+	"sparse=1", "", "value table holds case keys (parallel arrays)",
+	"inv=1", "", "table walked in reverse",
+	"dtbl=1", "", "first/last entry is the default case",
+	"user=1", "", "pin override; survives auto-analysis",
 	NULL
 };
 
@@ -3685,6 +3716,264 @@ static int cmd_afbplus(RCore *core, const char *input) {
 	return true;
 }
 
+// --- afbt ----------------------------------------------------------------
+
+static const struct {
+	const char *key;
+	ut32 flag;
+} afbt_flag_keys[] = {
+	{ "signed", R_ANAL_SWITCH_F_SIGNED },
+	{ "sub",    R_ANAL_SWITCH_F_SUBTRACT },
+	{ "insn",   R_ANAL_SWITCH_F_INSN },
+	{ "rel",    R_ANAL_SWITCH_F_SELFREL },
+	{ "indir",  R_ANAL_SWITCH_F_INDIRECT },
+	{ "sparse", R_ANAL_SWITCH_F_SPARSE },
+	{ "inv",    R_ANAL_SWITCH_F_INVERSE },
+	{ "dtbl",   R_ANAL_SWITCH_F_DEFINTBL },
+	{ "user",   R_ANAL_SWITCH_F_USER },
+};
+
+static bool afbt_parse_kv(RCore *core, const char *args, RAnalSwitchSpec *spec) {
+	r_anal_switch_spec_init (spec);
+	spec->startea = core->addr;
+	if (!args || !*args) {
+		return true;
+	}
+	char *dup = strdup (args);
+	if (!dup) {
+		return false;
+	}
+	bool ok = true;
+	RList *argv = r_str_split_list (dup, " ", 0);
+	RListIter *it;
+	const char *tok;
+	r_list_foreach (argv, it, tok) {
+		const char *eq = strchr (tok, '=');
+		if (!eq || eq == tok) {
+			R_LOG_WARN ("afbt: malformed token '%s', expected key=value", tok);
+			ok = false;
+			break;
+		}
+		const size_t klen = eq - tok;
+		const char *v = eq + 1;
+		bool matched = false;
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (afbt_flag_keys); i++) {
+			if (strlen (afbt_flag_keys[i].key) == klen
+					&& !strncmp (tok, afbt_flag_keys[i].key, klen)) {
+				if (r_num_math (core->num, v)) {
+					spec->flags |= afbt_flag_keys[i].flag;
+				} else {
+					spec->flags &= ~afbt_flag_keys[i].flag;
+				}
+				matched = true;
+				break;
+			}
+		}
+		if (matched) {
+			continue;
+		}
+#define MATCH(s)  (klen == strlen (s) && !strncmp (tok, s, klen))
+		if (MATCH ("tbl")) {
+			spec->jtbl_addr = r_num_math (core->num, v);
+		} else if (MATCH ("esz")) {
+			spec->esize = (ut8) r_num_math (core->num, v);
+		} else if (MATCH ("n")) {
+			spec->ncases = (ut32) r_num_math (core->num, v);
+		} else if (MATCH ("shift")) {
+			spec->shift = (ut8) r_num_math (core->num, v);
+		} else if (MATCH ("base")) {
+			spec->base = r_num_math (core->num, v);
+			spec->flags |= R_ANAL_SWITCH_F_BASE;
+		} else if (MATCH ("def")) {
+			spec->defjump = r_num_math (core->num, v);
+		} else if (MATCH ("reg")) {
+			spec->reg = r_str_constpool_get (&core->anal->constpool, v);
+		} else if (MATCH ("low")) {
+			spec->lowcase = (st64) r_num_math (core->num, v);
+		} else if (MATCH ("vtbl")) {
+			spec->vtbl_addr = r_num_math (core->num, v);
+		} else if (MATCH ("vsz")) {
+			spec->vsize = (ut8) r_num_math (core->num, v);
+		} else if (MATCH ("start")) {
+			spec->startea = r_num_math (core->num, v);
+		} else {
+			R_LOG_WARN ("afbt: unknown key '%.*s'", (int)klen, tok);
+			ok = false;
+			break;
+		}
+#undef MATCH
+	}
+	r_list_free (argv);
+	free (dup);
+	return ok;
+}
+
+static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
+	if (!block || !block->switch_op) {
+		if (mode == 'j') {
+			r_cons_println (core->cons, "{}");
+		} else {
+			r_cons_println (core->cons, "no switch at this address");
+		}
+		return;
+	}
+	RAnalSwitchOp *sop = block->switch_op;
+	if (mode == 'j') {
+		PJ *pj = r_core_pj_new (core);
+		if (!pj) {
+			return;
+		}
+		pj_o (pj);
+		pj_kn (pj, "addr", sop->addr);
+		pj_kn (pj, "jtbl_addr", sop->daddr);
+		pj_kn (pj, "vtbl_addr", sop->vtbl_addr);
+		pj_kn (pj, "base", sop->baddr);
+		pj_kn (pj, "ncases", sop->amount);
+		pj_kn (pj, "esize", sop->dsize);
+		pj_kn (pj, "vsize", sop->vsize);
+		pj_kn (pj, "shift", sop->shift);
+		pj_kN (pj, "lowcase", sop->lowcase);
+		pj_kn (pj, "min", sop->min_val);
+		pj_kn (pj, "max", sop->max_val);
+		pj_kn (pj, "def", sop->def_val);
+		pj_kn (pj, "flags", sop->flags);
+		if (sop->reg) {
+			pj_ks (pj, "reg", sop->reg);
+		}
+		pj_end (pj);
+		r_cons_println (core->cons, pj_string (pj));
+		pj_free (pj);
+		return;
+	}
+	if (mode == '*') {
+		r_cons_printf (core->cons,
+			"afbt @ 0x%"PFMT64x" tbl=0x%"PFMT64x" esz=%d n=%d",
+			sop->addr, sop->daddr, sop->dsize, sop->amount);
+		if (sop->shift) {
+			r_cons_printf (core->cons, " shift=%u", sop->shift);
+		}
+		if (sop->flags & R_ANAL_SWITCH_F_BASE) {
+			r_cons_printf (core->cons, " base=0x%"PFMT64x, sop->baddr);
+		}
+		if (sop->vtbl_addr && sop->vtbl_addr != UT64_MAX) {
+			r_cons_printf (core->cons, " vtbl=0x%"PFMT64x" vsz=%u",
+				sop->vtbl_addr, sop->vsize);
+		}
+		if (sop->def_val != UT64_MAX) {
+			r_cons_printf (core->cons, " def=0x%"PFMT64x, sop->def_val);
+		}
+		if (sop->lowcase) {
+			r_cons_printf (core->cons, " low=%"PFMT64d, sop->lowcase);
+		}
+		if (sop->reg) {
+			r_cons_printf (core->cons, " reg=%s", sop->reg);
+		}
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (afbt_flag_keys); i++) {
+			if (sop->flags & afbt_flag_keys[i].flag) {
+				r_cons_printf (core->cons, " %s=1", afbt_flag_keys[i].key);
+			}
+		}
+		r_cons_newline (core->cons);
+		return;
+	}
+	r_cons_printf (core->cons, "switch at  0x%"PFMT64x"\n", sop->addr);
+	r_cons_printf (core->cons, "  jtbl     0x%"PFMT64x"\n", sop->daddr);
+	r_cons_printf (core->cons, "  esize    %d\n", sop->dsize);
+	r_cons_printf (core->cons, "  ncases   %d\n", sop->amount);
+	r_cons_printf (core->cons, "  shift    %u\n", sop->shift);
+	if (sop->flags & R_ANAL_SWITCH_F_BASE) {
+		r_cons_printf (core->cons, "  base     0x%"PFMT64x"\n", sop->baddr);
+	}
+	if (sop->vtbl_addr && sop->vtbl_addr != UT64_MAX) {
+		r_cons_printf (core->cons, "  vtbl     0x%"PFMT64x"\n", sop->vtbl_addr);
+		r_cons_printf (core->cons, "  vsize    %u\n", sop->vsize);
+	}
+	r_cons_printf (core->cons, "  default  0x%"PFMT64x"\n", sop->def_val);
+	r_cons_printf (core->cons, "  lowcase  %"PFMT64d"\n", sop->lowcase);
+	if (sop->reg) {
+		r_cons_printf (core->cons, "  reg      %s\n", sop->reg);
+	}
+	if (sop->flags) {
+		r_cons_printf (core->cons, "  flags   ");
+		size_t i;
+		for (i = 0; i < R_ARRAY_SIZE (afbt_flag_keys); i++) {
+			if (sop->flags & afbt_flag_keys[i].flag) {
+				r_cons_printf (core->cons, " %s", afbt_flag_keys[i].key);
+			}
+		}
+		r_cons_newline (core->cons);
+	}
+}
+
+static void cmd_afbt(RCore *core, const char *input) {
+	const char first = input[0];
+	if (first == '?') {
+		r_core_cmd_help (core, help_msg_afbt);
+		return;
+	}
+	if (first == '-') {
+		r_anal_switch_unset (core->anal, core->addr);
+		return;
+	}
+	RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
+	RAnalBlock *block = r_list_first (blocks);
+	const char *args = (first == ' ' || first == '*' || first == 'j' || first == '\0')
+		? r_str_trim_head_ro (input + (first ? 1 : 0))
+		: r_str_trim_head_ro (input);
+	if (first == 'j' || first == '*' || (first == '\0' && (!args || !*args))) {
+		afbt_show_swop (core, block, first == '\0' ? ' ' : first);
+		r_list_free (blocks);
+		return;
+	}
+	if (!block || r_list_empty (block->fcns)) {
+		R_LOG_ERROR ("No function defined here");
+		r_list_free (blocks);
+		return;
+	}
+	RAnalFunction *fcn = r_list_first (block->fcns);
+	RAnalSwitchSpec spec;
+	bool ok = false;
+	if (args && strchr (args, '=')) {
+		ok = afbt_parse_kv (core, args, &spec);
+	} else {
+		// Legacy positional form: "tbl esz n seg".
+		char *dup = strdup (args ? args : "");
+		if (!dup) {
+			r_list_free (blocks);
+			return;
+		}
+		RList *argv = r_str_split_list (dup, " ", 0);
+		const ut64 tbl  = r_num_math (core->num, r_list_get_n (argv, 0));
+		const ut64 esz  = r_num_math (core->num, r_list_get_n (argv, 1));
+		const ut64 n    = r_num_math (core->num, r_list_get_n (argv, 2));
+		const ut64 seg  = r_num_math (core->num, r_list_get_n (argv, 3));
+		r_anal_switch_spec_legacy (&spec, core->addr, tbl, esz, n, seg);
+		r_list_free (argv);
+		free (dup);
+		ok = true;
+	}
+	if (!ok) {
+		r_list_free (blocks);
+		return;
+	}
+	if (spec.startea == UT64_MAX) {
+		spec.startea = core->addr;
+	}
+	if (spec.jtbl_addr == UT64_MAX) {
+		R_LOG_ERROR ("afbt: missing 'tbl=' (jump table base)");
+		r_list_free (blocks);
+		return;
+	}
+	const int depth = 50;
+	const bool applied = r_anal_switch_apply (core->anal, fcn, block, depth, &spec);
+	if (applied && (spec.flags & R_ANAL_SWITCH_F_USER)) {
+		r_anal_switch_set (core->anal, spec.startea, &spec);
+	}
+	r_list_free (blocks);
+}
+
 static void r_core_anal_nofunclist(RCore *core, const char *input) {
 	int minlen = (int)(input[0] == ' ') ? r_num_math (core->num, input + 1): 16;
 	ut64 code_size = r_num_get (core->num, "$SS");
@@ -6501,34 +6790,7 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afbplus (core, input + 3);
 			break;
 		case 't': // "afbt"
-			{
-				if (input[3] == '?') {
-					r_core_cmd_help_contains (core, help_msg_afb, "afbt");
-					break;
-				}
-				if (input[3] && input[3] != ' ') {
-					r_core_return_invalid_command (core, "afbt", input[3]);
-					break;
-				}
-				RList *blocks = r_anal_get_blocks_in (core->anal, core->addr);
-				RAnalBlock *block = r_list_first (blocks);
-				if (block && !r_list_empty (block->fcns)) {
-					char *args = strdup (input + 3);
-					RList *argv = r_str_split_list (args, " ", 0);
-					ut64 table = r_num_math (core->num, r_list_get_n (argv, 0));
-					ut64 sz = r_num_math (core->num, r_list_get_n (argv, 1));
-					ut64 elements = r_num_math (core->num, r_list_get_n (argv, 2));
-					ut64 seg = r_num_math (core->num, r_list_get_n (argv, 3));
-					int depth = 50;
-					r_anal_jmptbl_walk (core->anal, r_list_first (block->fcns), block,
-						depth, core->addr, 0, table, seg, sz, elements, 0, false);
-					r_list_free (argv);
-					free (args);
-				} else {
-					R_LOG_ERROR ("No function defined here");
-				}
-				r_list_free (blocks);
-			}
+			cmd_afbt (core, input + 3);
 			break;
 		case 'c': // "afbc"
 			cmd_afbc (core, r_str_trim_head_ro (input + 3));
