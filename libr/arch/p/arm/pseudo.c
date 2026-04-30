@@ -371,7 +371,14 @@ static char *subs_var_string(RParse *p, RAnalVarField *var, char *tstr, const ch
 static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 	const char *tmplt;
 	char *oldstr;
-	if (delta > -10 && delta < 10) {
+	if (delta == 0) {
+		// Returning `"sp, 0"` would prefix-collide with `[sp, 0x10]` and
+		// produce mangled names like `var_0hx10`. The disassembler emits
+		// `[sp]` (no offset) for a zero-delta access, which already reads
+		// fine; signal "no match" by returning a sentinel that won't appear
+		// in any real disasm string.
+		oldstr = strdup ("\x01");
+	} else if (delta > -10 && delta < 10) {
 		if (p->pseudo) {
 			char sign = '+';
 			if (delta < 0) {
@@ -702,9 +709,19 @@ static char *subvar(RAsmPluginSession *s, RAnalFunction *f, ut64 addr, int oplen
 			r_list_foreach (spargs, iter, var) {
 				st64 delta;
 				if (is64) {
-					const int maxstack = f->maxstack;
-					// st64 delta = -var->delta + 8;
-					delta = maxstack - R_ABS (var->delta);
+					// Prefer the per-instruction access offset so substitution
+					// matches the literal `[sp, 0x..]` text emitted at this
+					// addr; the maxstack-relative delta only describes where
+					// the var sits in the deepest frame, which doesn't match
+					// references taken before the second sub on multi-stage
+					// prologues.
+					delta = p->get_ptr_at
+						? p->get_ptr_at (f, var->delta, addr)
+						: ST64_MAX;
+					if (delta == ST64_MAX) {
+						const int maxstack = f->maxstack;
+						delta = maxstack - R_ABS (var->delta);
+					}
 				} else {
 					delta = var->delta;
 					if (!newstack) {

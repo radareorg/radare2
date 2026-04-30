@@ -10,7 +10,7 @@ EXPECT=<<EOF
   ;-- section.0.__TEXT.__text:
   ; DATA XREF from sym.func.100004000 @ 0x100004040(r)
 276: sym.func.100004000 (int64_t arg1, int64_t arg2, int64_t arg3, int64_t arg4, int64_t arg5, int64_t arg6, int64_t arg_80h);
-`- args(x0, x1, x3, x4, x5, x6, sp[0x80..0x80]) vars(6:sp[0x10..0x60])
+`- args(x0, x1, x3, x4, x5, x6) vars(8:sp[0x10..0x80])
 0x100004000      sub sp, sp, 0x80                                      ; [00] -r-x section size 13240 named 0.__TEXT.__text
 0x100004004      str x28, [var_20h]
 0x100004008      stp x27, x26, [var_30h]
@@ -73,7 +73,7 @@ EXPECT=<<EOF
 | // true: 0x1000040b0
 0x1000040b0      str x28, [x26]
 0x1000040b4      add x8, x28, 0x20
-0x1000040b8      stp x27, x24, [sp, 8]
+0x1000040b8      stp x27, x24, [var_8h]
 0x1000040bc      str x8, [sp]
 0x1000040c0      mov w0, 0
 0x1000040c4      mov w1, 2
@@ -383,7 +383,7 @@ pdr
 EOF
 EXPECT=<<EOF
 904: sym.func.100004124 (int64_t arg1, int64_t arg2, int64_t arg_140h);
-`- args(x0, x1, sp[0x140..0x140]) vars(25:sp[0x10..0x140])
+`- args(x0, x1) vars(25:sp[0x10..0x140])
 0x100004124      sub sp, sp, 0x140
 0x100004128      str x28, [var_e0h]
 0x10000412c      stp x27, x26, [var_f0h]
@@ -438,21 +438,21 @@ EXPECT=<<EOF
 0x1000041b8      stur x24, [x29, -0x68]
 0x1000041bc      cmp x26, 0
 0x1000041c0      csel x1, x26, xzr, gt
-0x1000041c4      str x0, [arg_140hx88]                                 ; arg1
+0x1000041c4      str x0, [var_88h]                                     ; arg1
 0x1000041c8      sub x20, x29, 0x68
 0x1000041cc      mov w0, 0
 0x1000041d0      mov w2, 0
 0x1000041d4      bl sym.func.1000044bc
-0x1000041d8      ldr x22, [arg_140hx88]
+0x1000041d8      ldr x22, [var_88h]
 0x1000041dc      sxtw x8, w22
-0x1000041e0      str x8, [arg_140hx78]
+0x1000041e0      str x8, [var_78h]
 0x1000041e4      str x19, [sp]
 0x1000041e8      cbz w25, 0x1000041fc
 | // true: 0x1000041fc  false: 0x1000041ec
 0x1000041ec      cmp w25, 1
 0x1000041f0      b.ne 0x100004204
 | // true: 0x100004204  false: 0x1000041f4
-0x1000041f4      ldr x23, [arg_140hx78]
+0x1000041f4      ldr x23, [var_78h]
 0x1000041f8      b 0x100004208
 | // true: 0x100004208
 0x1000041fc      mov w23, w25
@@ -468,27 +468,27 @@ EXPECT=<<EOF
 0x100004214      ldr x9, [var_80h]
 0x100004218      and x20, x9, 0x3fffffffffffffff
 0x10000421c      ubfx x8, x9, 0x30, 8
-0x100004220      stp x10, x8, [arg_140hx68]
+0x100004220      stp x10, x8, [var_68h]
 0x100004224      lsr x10, x22, 8
 0x100004228      lsr x8, x22, 0x10
-0x10000422c      stp x8, x10, [arg_140hx58]
+0x10000422c      stp x8, x10, [var_58h]
 0x100004230      lsr x10, x22, 0x18
 0x100004234      lsr x8, x22, 0x20
-0x100004238      stp x8, x10, [arg_140hx48]
+0x100004238      stp x8, x10, [var_48h]
 0x10000423c      lsr x10, x22, 0x28
 0x100004240      lsr x8, x22, 0x30
-0x100004244      stp x8, x10, [arg_140hx38]
+0x100004244      stp x8, x10, [var_38h]
 0x100004248      lsr x10, x22, 0x38
 0x10000424c      lsr x8, x9, 8
-0x100004250      stp x8, x10, [arg_140hx28]
+0x100004250      stp x8, x10, [var_28h]
 0x100004254      lsr x8, x9, 0x10
-0x100004258      str x8, [arg_140hx20]
+0x100004258      str x8, [var_20h]
 0x10000425c      adrp x8, 0x100007000
 0x100004260      ldr q0, [x8, 0x800]
-0x100004264      str q0, [arg_140hx90]
+0x100004264      str q0, [var_90h]
 0x100004268      lsr x10, x9, 0x18
 0x10000426c      lsr x8, x9, 0x20
-0x100004270      stp x8, x10, [arg_140hx10]
+0x100004270      stp x8, x10, [var_10h]
 0x100004274      lsr x8, x9, 0x28
 0x100004278      str x8, [var_8h]
 0x10000427c      stp x25, x20, [x29, -0x88]
@@ -500,11 +500,11 @@ EXPECT=<<EOF
 0x100004288      cmp w25, 1
 0x10000428c      b.ne 0x100004348
 | // true: 0x100004348  false: 0x100004290
-0x100004290      ldr x8, [arg_140hx78]
+0x100004290      ldr x8, [var_78h]
 0x100004294      cmp x23, x8
 0x100004298      b.lt 0x10000447c
 | // true: 0x10000447c  false: 0x10000429c
-0x10000429c      ldr x8, [arg_140hx68]
+0x10000429c      ldr x8, [var_68h]
 0x1000042a0      cmp x23, x8
 0x1000042a4      b.ge 0x10000447c
 | // true: 0x10000447c  false: 0x1000042a8
@@ -518,34 +518,34 @@ EXPECT=<<EOF
 | // true: 0x100004378  false: 0x1000042c0
 0x1000042c0      b 0x100004488
 | // true: 0x100004488
-0x1000042c4      ldr x8, [arg_140hx70]
+0x1000042c4      ldr x8, [var_70h]
 0x1000042c8      cmp x23, x8
 0x1000042cc      b.ge 0x100004480
 | // true: 0x100004480  false: 0x1000042d0
 0x1000042d0      sturb w22, [x29, -0x78]
-0x1000042d4      ldr x8, [arg_140hx60]
+0x1000042d4      ldr x8, [var_60h]
 0x1000042d8      sturb w8, [x29, -0x77]
-0x1000042dc      ldr x8, [arg_140hx58]
+0x1000042dc      ldr x8, [var_58h]
 0x1000042e0      sturb w8, [x29, -0x76]
-0x1000042e4      ldr x8, [arg_140hx50]
+0x1000042e4      ldr x8, [var_50h]
 0x1000042e8      sturb w8, [x29, -0x75]
-0x1000042ec      ldr x8, [arg_140hx48]
+0x1000042ec      ldr x8, [var_48h]
 0x1000042f0      sturb w8, [x29, -0x74]
-0x1000042f4      ldr x8, [arg_140hx40]
+0x1000042f4      ldr x8, [var_40h]
 0x1000042f8      sturb w8, [x29, -0x73]
-0x1000042fc      ldr x8, [arg_140hx38]
+0x1000042fc      ldr x8, [var_38h]
 0x100004300      sturb w8, [x29, -0x72]
-0x100004304      ldr x8, [arg_140hx30]
+0x100004304      ldr x8, [var_30h]
 0x100004308      sturb w8, [x29, -0x71]
 0x10000430c      ldr x8, [var_80h]
 0x100004310      sturb w8, [x29, -0x70]
-0x100004314      ldr x8, [arg_140hx28]
+0x100004314      ldr x8, [var_28h]
 0x100004318      sturb w8, [x29, -0x6f]
-0x10000431c      ldr x8, [arg_140hx20]
+0x10000431c      ldr x8, [var_20h]
 0x100004320      sturb w8, [x29, -0x6e]
-0x100004324      ldr x8, [arg_140hx18]
+0x100004324      ldr x8, [var_18h]
 0x100004328      sturb w8, [x29, -0x6d]
-0x10000432c      ldr x8, [arg_140hx10]
+0x10000432c      ldr x8, [var_10h]
 0x100004330      sturb w8, [x29, -0x6c]
 0x100004334      ldr x8, [var_8h]
 0x100004338      sturb w8, [x29, -0x6b]
@@ -570,7 +570,7 @@ EXPECT=<<EOF
 0x100004374      b.vs 0x100004490
 | // true: 0x100004490  false: 0x100004378
 0x100004378      ldrb w19, [x19, x8]
-0x10000437c      ldr x22, [arg_140hx88]
+0x10000437c      ldr x22, [var_88h]
 | // true: 0x100004380
 ; CODE XREF from sym.func.100004124 @ 0x100004344(x)
 0x100004380      adrp x0, segment.__DATA                               ; 0x100010000
@@ -580,7 +580,7 @@ EXPECT=<<EOF
 0x100004390      mov w2, 7
 0x100004394      bl sym.imp.swift_allocObject
 0x100004398      mov x2, x0
-0x10000439c      ldr q0, [arg_140hx90]
+0x10000439c      ldr q0, [var_90h]
 0x1000043a0      str q0, [x0, 0x10]
 0x1000043a4      adrp x8, reloc.Foundation.__DataStorage.bytes.allocator_...itcfc_ ; 0x10000c000
 0x1000043a8      ldr x8, [x8, 0x360]
@@ -619,7 +619,7 @@ EXPECT=<<EOF
 0x10000441c      mov x1, x19
 0x100004420      mov w2, 1
 0x100004424      bl sym.func.1000044bc
-0x100004428      ldr x22, [arg_140hx88]
+0x100004428      ldr x22, [var_88h]
 0x10000442c      ldur x24, [x29, -0x68]
 0x100004430      b 0x1000043f0
 | // true: 0x1000043f0
