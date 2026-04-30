@@ -270,7 +270,8 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 }
 
 R_API const char *r_socket_http_header(RSocketHTTPRequest *rs, const char *name) {
-	if (!rs || !rs->headers || !name) {
+	R_RETURN_VAL_IF_FAIL (rs && name, NULL);
+	if (!rs->headers) {
 		return NULL;
 	}
 	const size_t nlen = strlen (name);
