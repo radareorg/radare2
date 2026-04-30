@@ -3778,6 +3778,26 @@ static void anop64(csh handle, RAnalOp *op, cs_insn *insn) {
 	case ARM64_INS_LDRH:
 	case ARM64_INS_LDRB:
 		op->type = R_ANAL_OP_TYPE_LOAD;
+		switch (insn->id) {
+		case ARM64_INS_LDRB:
+		case ARM64_INS_LDURB:
+		case ARM64_INS_LDRSB:
+			op->ptrsize = 1;
+			break;
+		case ARM64_INS_LDRH:
+		case ARM64_INS_LDURH:
+		case ARM64_INS_LDRSH:
+			op->ptrsize = 2;
+			break;
+		case ARM64_INS_LDRSW:
+		case ARM64_INS_LDURSW:
+		case ARM64_INS_LDPSW:
+			op->ptrsize = 4;
+			break;
+		default:
+			op->ptrsize = REGSIZE64 (0);
+			break;
+		}
 		if (ISPREINDEX64 () && (arm64_reg) REGBASE64 (2) == ARM64_REG_SP) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)MEMDISP64 (2);
@@ -4556,7 +4576,84 @@ static void set_opdir(RAnalOp *op) {
 
 #if 1
 // TODO arch plugins should NOT set register values
-static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
+static int arm_memref_size(RAnalOp *op, cs_insn *insn, int x, int bits) {
+	if (op && op->ptrsize > 0) {
+		return op->ptrsize;
+	}
+	if (bits == 64) {
+		switch (insn->id) {
+		case ARM64_INS_LDARB:
+		case ARM64_INS_LDAXRB:
+		case ARM64_INS_LDTRB:
+		case ARM64_INS_LDTRSB:
+		case ARM64_INS_LDURB:
+		case ARM64_INS_LDURSB:
+		case ARM64_INS_LDXRB:
+		case ARM64_INS_LDRB:
+		case ARM64_INS_LDRSB:
+		case ARM64_INS_STLXRB:
+		case ARM64_INS_STTRB:
+		case ARM64_INS_STURB:
+		case ARM64_INS_STXRB:
+		case ARM64_INS_STRB:
+			return 1;
+		case ARM64_INS_LDARH:
+		case ARM64_INS_LDAXRH:
+		case ARM64_INS_LDTRH:
+		case ARM64_INS_LDTRSH:
+		case ARM64_INS_LDURH:
+		case ARM64_INS_LDURSH:
+		case ARM64_INS_LDXRH:
+		case ARM64_INS_LDRH:
+		case ARM64_INS_LDRSH:
+		case ARM64_INS_STLXRH:
+		case ARM64_INS_STTRH:
+		case ARM64_INS_STURH:
+		case ARM64_INS_STXRH:
+		case ARM64_INS_STRH:
+			return 2;
+		case ARM64_INS_LDTRSW:
+		case ARM64_INS_LDURSW:
+		case ARM64_INS_LDRSW:
+		case ARM64_INS_LDPSW:
+			return 4;
+		case ARM64_INS_STXR:
+		case ARM64_INS_STLXR:
+			return REGSIZE64 (1);
+		default:
+			return REGSIZE64 (x > 0 ? x - 1 : x);
+		}
+	}
+	switch (insn->id) {
+	case ARM_INS_LDRB:
+	case ARM_INS_LDRBT:
+	case ARM_INS_LDRSB:
+	case ARM_INS_LDRSBT:
+	case ARM_INS_LDREXB:
+	case ARM_INS_STRB:
+	case ARM_INS_STRBT:
+	case ARM_INS_STREXB:
+		return 1;
+	case ARM_INS_LDRH:
+	case ARM_INS_LDRHT:
+	case ARM_INS_LDRSH:
+	case ARM_INS_LDRSHT:
+	case ARM_INS_LDREXH:
+	case ARM_INS_STRH:
+	case ARM_INS_STRHT:
+	case ARM_INS_STREXH:
+		return 2;
+	case ARM_INS_LDRD:
+	case ARM_INS_LDREXD:
+	case ARM_INS_STRD:
+	case ARM_INS_STREXD:
+		return 8;
+	default:
+		return 4;
+	}
+}
+
+static void set_src_dst(RAnalOp *op, RAnalValue *val, csh *handle, cs_insn *insn, int x, int bits) {
 	if (!val) {
 		return;
 	}
@@ -4572,6 +4669,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		case ARM64_OP_REG:
 			break;
 		case ARM64_OP_MEM:
+			val->memref = arm_memref_size (op, insn, x, bits);
 			val->delta = arm64op.mem.disp;
 			break;
 		case ARM64_OP_IMM:
@@ -4585,6 +4683,7 @@ static void set_src_dst(RAnalValue *val, csh *handle, cs_insn *insn, int x, int 
 		case ARM_OP_REG:
 			break;
 		case ARM_OP_MEM:
+			val->memref = arm_memref_size (op, insn, x, bits);
 			val->mul = armop.mem.scale;
 			val->delta = armop.mem.disp;
 			break;
@@ -4649,9 +4748,9 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		{
 			int j;
 			for (j = 0; j < 3; j++, i++) {
-				set_src_dst (RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
+				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, i, bits);
 			}
-			set_src_dst (RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
+			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, 0, bits);
 		}
 		break;
 	case R_ANAL_OP_TYPE_STORE:
@@ -4670,10 +4769,10 @@ static void op_fillval(RArchSession *as, RAnalOp *op, csh handle, cs_insn *insn,
 		}
 		// TODO arch plugins should NOT set register values
 		{
-			set_src_dst (RVecRArchValue_at (&op->dsts, 0), &handle, insn, --count, bits);
+			set_src_dst (op, RVecRArchValue_at (&op->dsts, 0), &handle, insn, --count, bits);
 			int j;
 			for (j = 0; j < 3 && j < count; j++) {
-				set_src_dst (RVecRArchValue_at (&op->srcs, j), &handle, insn, j, bits);
+				set_src_dst (op, RVecRArchValue_at (&op->srcs, j), &handle, insn, j, bits);
 			}
 		}
 		break;

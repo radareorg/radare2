@@ -16,18 +16,25 @@ EXPECT=<<EOF
 |           ; arg int64_t arg3 @ x2
 |           ; arg int64_t arg4 @ x3
 |           ; arg int64_t arg5 @ x4
-|           ; arg int64_t arg_120h @ sp+0x240
+|           ; arg int64_t arg_120h @ sp+0x120
+|           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int64_t var_18h @ sp+0x18
-|           ; var int64_t var_1ch @ sp+0x1c
 |           ; var int64_t var_20h @ sp+0x20
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_40h @ sp+0x40
 |           ; var int64_t var_4fh @ sp+0x4f
 |           ; var int64_t var_50h @ sp+0x50
 |           ; var int64_t var_5ch @ sp+0x5c
+|           ; var int64_t var_60h @ sp+0x60
+|           ; var int64_t var_68h @ sp+0x68
+|           ; var int64_t var_70h @ sp+0x70
+|           ; var int64_t var_78h @ sp+0x78
+|           ; var int64_t var_80h @ sp+0x80
+|           ; var int64_t var_88h @ sp+0x88
 |           ; var int64_t var_90h @ sp+0x90
+|           ; var int64_t var_98h @ sp+0x98
 |           ; var int64_t var_100h @ sp+0x100
 |           ; var int64_t var_110h @ sp+0x110
 |           0x08000800      ff8304d1       sub sp, sp, 0x120
@@ -51,8 +58,7 @@ EXPECT=<<EOF
 |           0x08000848      280900f9       str x8, [x9, 0x10]
 |           0x0800084c      5f0000b9       str wzr, [x2]               ; arg3
 EOF
-EXPECT_ERR=<<EOF
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=random39855 relocs bin
@@ -72,18 +78,25 @@ EXPECT=<<EOF
 |           ; arg int64_t arg3 @ x2
 |           ; arg int64_t arg4 @ x3
 |           ; arg int64_t arg5 @ x4
-|           ; arg int64_t arg_120h @ sp+0x240
+|           ; arg int64_t arg_120h @ sp+0x120
+|           ; var int64_t var_0h @ sp+0x0
 |           ; var int64_t var_ch @ sp+0xc
 |           ; var int64_t var_10h @ sp+0x10
 |           ; var int64_t var_18h @ sp+0x18
-|           ; var int64_t var_1ch @ sp+0x1c
 |           ; var int64_t var_20h @ sp+0x20
 |           ; var int64_t var_28h @ sp+0x28
 |           ; var int64_t var_40h @ sp+0x40
 |           ; var int64_t var_4fh @ sp+0x4f
 |           ; var int64_t var_50h @ sp+0x50
 |           ; var int64_t var_5ch @ sp+0x5c
+|           ; var int64_t var_60h @ sp+0x60
+|           ; var int64_t var_68h @ sp+0x68
+|           ; var int64_t var_70h @ sp+0x70
+|           ; var int64_t var_78h @ sp+0x78
+|           ; var int64_t var_80h @ sp+0x80
+|           ; var int64_t var_88h @ sp+0x88
 |           ; var int64_t var_90h @ sp+0x90
+|           ; var int64_t var_98h @ sp+0x98
 |           ; var int64_t var_100h @ sp+0x100
 |           ; var int64_t var_110h @ sp+0x110
 |           0x00000f94      ff8304d1       sub sp, sp, 0x120

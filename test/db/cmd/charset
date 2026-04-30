@@ -249,7 +249,7 @@ EXPECT=<<EOF
 0x000017f4      add x0, sp, 0x28                  ; int64_t arg1
 0x000017f8      mov x1, x0                        ; char *arg2
 0x000017fc      ldr w0, [var_8ch]
-0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
+0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028)
 0x00001804      str x0, [var_80h]
 0x00001808      ldr x1, [var_80h]
 0x0000180c      mov x0, 0x9c80
@@ -297,7 +297,7 @@ EXPECT=<<EOF
 0x000017f4      add x0, sp, 0x28                  ; int64_t arg1
 0x000017f8      mov x1, x0                        ; char *arg2
 0x000017fc      ldr w0, [var_8ch]
-0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028, 0x0)
+0x00001800      bl sym.getXa_int__char_const_     ; getXa(int, char const*) ; sym.getXa_int__char_const_(0x0, 0x178028)
 0x00001804      str x0, [var_80h]
 0x00001808      ldr x1, [var_80h]
 0x0000180c      mov x0, 0x9c80

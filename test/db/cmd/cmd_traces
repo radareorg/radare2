@@ -18,8 +18,9 @@ EXPECT=<<EOF
 / 36: int main (int argc);
 |           ; arg int argc @ x0
 |           ; var int64_t var_8h @ sp+0x8
+|           ; var int64_t var_ch @ sp+0xc
 |           0x100003f84 01:0001      sub sp, sp, 0x10
-|           0x100003f88 01:0002      str wzr, [sp, 0xc]
+|           0x100003f88 01:0002      str wzr, [var_ch]
 |           0x100003f8c 01:0003      mov w8, 3
 |           0x100003f90 01:0004      str w8, [var_8h]
 |       ,=< 0x100003f94 01:0005      b 0x100003f98
