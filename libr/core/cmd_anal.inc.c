@@ -3837,7 +3837,13 @@ static bool afbt_parse_kv(RCore *core, const char *args, RAnalSwitchSpec *spec) 
 		} else if (MATCH ("esz")) {
 			spec->esize = (ut8) r_num_math (core->num, v);
 		} else if (MATCH ("n")) {
-			spec->ncases = (ut32) r_num_math (core->num, v);
+			const ut64 ncases = r_num_math (core->num, v);
+			if (ncases > R_ANAL_SWITCH_MAXCASES) {
+				R_LOG_WARN ("afbt: limiting ncases to %u", (unsigned)R_ANAL_SWITCH_MAXCASES);
+				spec->ncases = R_ANAL_SWITCH_MAXCASES;
+			} else {
+				spec->ncases = (ut32)ncases;
+			}
 		} else if (MATCH ("shift")) {
 			spec->shift = (ut8) r_num_math (core->num, v);
 		} else if (MATCH ("base")) {

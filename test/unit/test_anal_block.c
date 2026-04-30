@@ -584,6 +584,13 @@ bool test_r_anal_block_successors(void) {
 	mu_end;
 }
 
+bool test_r_anal_switch_spec_limits_ncases(void) {
+	RAnalSwitchSpec spec;
+	r_anal_switch_spec_legacy (&spec, 0x10, 0x20, 4, R_ANAL_SWITCH_MAXCASES + 1, 0);
+	mu_assert_eq (spec.ncases, R_ANAL_SWITCH_MAXCASES, "legacy switch ncases limit");
+	mu_end;
+}
+
 bool test_r_anal_block_automerge(void) {
 	size_t i;
 	for (i = 0; i < SAMPLES; i++) {
@@ -701,6 +708,7 @@ int all_tests(void) {
 	mu_run_test (test_r_anal_block_relocate);
 	mu_run_test (test_r_anal_block_query);
 	mu_run_test (test_r_anal_block_successors);
+	mu_run_test (test_r_anal_switch_spec_limits_ncases);
 	mu_run_test (test_r_anal_block_automerge);
 	return tests_passed != tests_run;
 }

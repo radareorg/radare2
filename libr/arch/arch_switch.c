@@ -83,7 +83,6 @@ R_API RAnalCaseOp * R_NONNULL r_anal_case_op_new(ut64 addr, ut64 val, ut64 jump)
 R_API void r_anal_switch_op_free(RAnalSwitchOp *swop) {
 	if (R_LIKELY (swop)) {
 		r_list_free (swop->cases);
-		free (swop->reg);
 		free (swop);
 	}
 }
@@ -119,7 +118,9 @@ R_API void r_anal_switch_spec_legacy(RAnalSwitchSpec *spec, ut64 startea,
 	spec->startea   = startea;
 	spec->jtbl_addr = tbladdr;
 	spec->esize     = esize ? (ut8)esize : 4;
-	spec->ncases    = (ut32)ncases;
+	spec->ncases    = ncases > R_ANAL_SWITCH_MAXCASES
+		? R_ANAL_SWITCH_MAXCASES
+		: (ut32)ncases;
 	if (base) {
 		spec->base = base;
 		spec->flags |= R_ANAL_SWITCH_F_BASE;

@@ -216,6 +216,8 @@ typedef enum {
 	R_ANAL_SWITCH_F_BASE     = 1 << 9,  // base is explicit (else defaults to jtbl_addr)
 } RAnalSwitchFlags;
 
+#define R_ANAL_SWITCH_MAXCASES 512
+
 // Declarative description of a switch/jump-table to analyse or render.
 // Used as the input of r_anal_switch_apply().
 typedef struct r_anal_switch_spec_t {
@@ -229,7 +231,7 @@ typedef struct r_anal_switch_spec_t {
 	ut8  vsize;       // vtbl entry size 1/2/4
 	ut8  shift;       // 0..3
 	st64 lowcase;     // first input value (replaces start_casenum_shift)
-	const char *reg;  // input register name, NULL if unknown
+	const char *reg;  // borrowed input register name, NULL if unknown
 	ut32 flags;       // RAnalSwitchFlags bitfield
 } RAnalSwitchSpec;
 
@@ -250,7 +252,7 @@ typedef struct r_anal_switch_op_t {
 	ut32 flags;       // RAnalSwitchFlags
 	ut8  vsize;       // value-table element size
 	ut8  shift;       // shift amount
-	char *reg;        // input register name (owned, may be NULL)
+	const char *reg;  // borrowed input register name (may be NULL)
 } RAnalSwitchOp; // TODO: Rename to RAnalSwitch
 
 typedef enum r_anal_data_type_t {

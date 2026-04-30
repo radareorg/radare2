@@ -5,7 +5,6 @@
 
 #include <r_vec.h>
 
-#define JMPTBL_MAXSZ 512
 #define JMPTBL_DISPATCH_LOOKBACK 16
 #define SWITCH_SDB_NS "switches"
 
@@ -247,10 +246,7 @@ static void switch_op_apply_spec(RAnalBlock *block, const RAnalSwitchSpec *spec)
 	if (spec->flags & R_ANAL_SWITCH_F_BASE) {
 		sop->baddr = spec->base;
 	}
-	if (spec->reg) {
-		free (sop->reg);
-		sop->reg = strdup (spec->reg);
-	}
+	sop->reg = spec->reg;
 }
 
 // Read one little-endian entry from `raw`. `signed_entry` controls
@@ -399,6 +395,10 @@ static Sdb *switch_sdb(RAnal *anal, bool create) {
 	return sdb_ns (anal->sdb, SWITCH_SDB_NS, create);
 }
 
+static ut32 switch_spec_ncases(const RAnalSwitchSpec *spec) {
+	return spec->ncases? R_MIN (spec->ncases, (ut32)R_ANAL_SWITCH_MAXCASES): R_ANAL_SWITCH_MAXCASES;
+}
+
 static char *switch_spec_serialize(const RAnalSwitchSpec *spec) {
 	RStrBuf *sb = r_strbuf_new (NULL);
 	// clang-format off
@@ -477,7 +477,7 @@ R_API void r_anal_switch_unset(RAnal *anal, ut64 startea) {
 // INDIRECT with vsize > 1, SPARSE).
 static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec) {
 	JmptblTargetCtx target_ctx = { 0 };
-	const ut32 ncases = spec->ncases? spec->ncases: JMPTBL_MAXSZ;
+	const ut32 ncases = switch_spec_ncases (spec);
 	if (spec->jtbl_addr == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location");
 		return false;
@@ -643,6 +643,14 @@ static bool spec_needs_flag_walker(const RAnalSwitchSpec *spec) {
 
 R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec) {
 	R_RETURN_VAL_IF_FAIL (anal && spec, false);
+	RAnalSwitchSpec limited_spec;
+	if (spec->ncases > R_ANAL_SWITCH_MAXCASES) {
+		limited_spec = *spec;
+		limited_spec.ncases = R_ANAL_SWITCH_MAXCASES;
+		spec = &limited_spec;
+		R_LOG_DEBUG ("Limiting JumpTable size at 0x%08" PFMT64x " to %u cases",
+			spec->startea, (unsigned)R_ANAL_SWITCH_MAXCASES);
+	}
 	if (spec->jtbl_addr == UT64_MAX) {
 		return false;
 	}
@@ -731,7 +739,7 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	bool ret = ret0;
 	JmptblTargetCtx target_ctx = { 0 };
 	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
+		jmptbl_size = R_ANAL_SWITCH_MAXCASES;
 	}
 	if (jmptbl_loc == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
@@ -826,7 +834,7 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 	JmptblTargetCtx target_ctx = { 0 };
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
+		jmptbl_size = R_ANAL_SWITCH_MAXCASES;
 	}
 	if (jmptbl_loc == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
@@ -1071,7 +1079,7 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	jmptbl_target_ctx_init (&target_ctx, anal, ip);
 
 	if (jmptbl_size == 0) {
-		jmptbl_size = JMPTBL_MAXSZ;
+		jmptbl_size = R_ANAL_SWITCH_MAXCASES;
 	}
 
 	for (offs = 0; offs + sz - 1 < jmptbl_size * sz; offs += sz) {
