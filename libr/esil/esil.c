@@ -38,6 +38,30 @@ static int esil_ops_cmp(const void *a, const void *b) {
 	return memcmp (sa->a, ((const RStrs *)b)->a, r_strs_len (*sa));
 }
 
+static bool esil_voyeurs_init(REsil *esil) {
+	int i;
+	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
+		if (r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
+			continue;
+		}
+		R_LOG_ERROR ("voyeur init failed");
+		while (--i >= 0) {
+			r_id_storage_fini (&esil->voyeur[i]);
+			memset (&esil->voyeur[i], 0, sizeof (esil->voyeur[i]));
+		}
+		return false;
+	}
+	return true;
+}
+
+static void esil_voyeurs_fini(REsil *esil) {
+	int i;
+	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
+		r_id_storage_fini (&esil->voyeur[i]);
+		memset (&esil->voyeur[i], 0, sizeof (esil->voyeur[i]));
+	}
+}
+
 // key is embedded in value (REsilOp.name); freeing value reclaims both
 static void esil_ops_kv_free(HtPPKv *kv) {
 	if (R_LIKELY (kv)) {
@@ -92,6 +116,15 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 	esil->iotrap = iotrap;
 	r_esil_handlers_init (esil);
 	r_esil_plugins_init (esil);
+	if (R_UNLIKELY (!esil_voyeurs_init (esil))) {
+		r_esil_plugins_fini (esil);
+		r_esil_handlers_fini (esil);
+		ht_pp_free (esil->ops);
+		free (esil->stack);
+		free (esil->stack_buf);
+		free (esil);
+		return NULL;
+	}
 	esil->addrmask = r_num_genmask (addrsize - 1);
 	esil->trace = r_esil_trace_new (esil);
 	r_esil_setup_ops (esil);
@@ -114,16 +147,7 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap, ut32 addrsize,
 	if (R_UNLIKELY (!r_esil_plugins_init (esil))) {
 		goto plugins_fail;
 	}
-	int i;
-	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
-		if (r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
-			continue;
-		}
-		R_LOG_ERROR ("voyeur init failed");
-		do {
-			r_id_storage_fini (&esil->voyeur[i]);
-			i--;
-		} while (i >= 0);
+	if (R_UNLIKELY (!esil_voyeurs_init (esil))) {
 		goto voyeur_fail;
 	}
 	//not initializing stats here, it needs get reworked and should live in anal
@@ -324,10 +348,7 @@ R_API void r_esil_fini(REsil *esil) {
 	if (!esil) {
 		return;
 	}
-	int i;
-	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
-		r_id_storage_fini (&esil->voyeur[i]);
-	}
+	esil_voyeurs_fini (esil);
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
@@ -358,10 +379,7 @@ R_API void r_esil_free(REsil *esil) {
 	if (as && esil == esil->anal->arch->esil) {
 		esil->anal->arch->esil = NULL;
 	}
-	int i;
-	for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
-		r_id_storage_fini (&esil->voyeur[i]);
-	}
+	esil_voyeurs_fini (esil);
 	r_esil_plugins_fini (esil);
 	r_esil_handlers_fini (esil);
 	ht_pp_free (esil->ops);
@@ -507,6 +525,9 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 		if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
 			return false;
 		}
+		if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
+			return true;
+		}
 		do {
 			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], i);
 			voy->mem_write (voy->user, addr, o.buf, buf, len);
@@ -579,17 +600,8 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 	const char *pc = r_reg_alias_getname (reg, R_REG_ALIAS_PC);
 	const char *sp = r_reg_alias_getname (reg, R_REG_ALIAS_SP);
 	const char *bp = r_reg_alias_getname (reg, R_REG_ALIAS_BP);
-
-	if (!pc) {
-		R_LOG_WARN ("RReg profile does not contain PC register");
-		return false;
-	}
-	if (!sp) {
-		R_LOG_WARN ("RReg profile does not contain SP register");
-		return false;
-	}
-	if (!bp) {
-		R_LOG_WARN ("RReg profile does not contain BP register");
+	if (!pc || !sp || !bp) {
+		R_LOG_WARN ("RReg profile does not contain PC,SP or BP register");
 		return false;
 	}
 	RRegItem *ri = r_reg_get (reg, regname, -1);
@@ -607,12 +619,14 @@ static bool internal_esil_reg_write_no_null(REsil *esil, const char *regname, ut
 static bool setup_esil_is_reg(void *user, const char *name) {
 	REsil *esil = user;
 	RReg *reg = R_UNWRAP3 (esil, anal, reg);
-	RRegItem *ri = reg? r_reg_get (reg, name, -1): NULL;
-	if (!ri) {
-		return false;
+	if (reg) {
+		RRegItem *ri = r_reg_get (reg, name, -1);
+		if (ri) {
+			r_unref (ri);
+			return true;
+		}
 	}
-	r_unref (ri);
-	return true;
+	return false;
 }
 
 static bool setup_esil_reg_read(void *user, const char *name, ut64 *val) {
@@ -1298,19 +1312,6 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 			.user = esil,
 			.set_bits = setup_esil_set_bits,
 		};
-	}
-	if (!esil->voyeur[0].pool) {
-		int i;
-		for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
-			if (!r_id_storage_init (&esil->voyeur[i], 0, MAX_VOYEURS)) {
-				R_LOG_ERROR ("voyeur init failed");
-				do {
-					r_id_storage_fini (&esil->voyeur[i]);
-					i--;
-				} while (i >= 0);
-				return false;
-			}
-		}
 	}
 	r_esil_mem_ro (esil, romem);
 	r_esil_setup_ops (esil);

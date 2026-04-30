@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2024 - condret */
+/* radare - LGPL - Copyright 2024-2026 - condret */
 
 #define R_LOG_ORIGIN "core.esil"
 #include <r_core.h>
@@ -27,7 +27,7 @@ static bool core_esil_op_interrupt(REsil *esil) {
 	return r_esil_fire_interrupt (esil, (ut32)interrupt);
 }
 
-static bool core_esil_is_reg (void *core, const char *name) {
+static bool core_esil_is_reg(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
 	if (!ri) {
 		return false;
@@ -36,7 +36,7 @@ static bool core_esil_is_reg (void *core, const char *name) {
 	return true;
 }
 
-static bool core_esil_reg_read (void *core, const char *name, ut64 *val) {
+static bool core_esil_reg_read(void *core, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
 	if (!ri) {
 		return false;
@@ -46,11 +46,11 @@ static bool core_esil_reg_read (void *core, const char *name, ut64 *val) {
 	return true;
 }
 
-static bool core_esil_reg_write (void *core, const char *name, ut64 val) {
+static bool core_esil_reg_write(void *core, const char *name, ut64 val) {
 	return r_reg_setv (((RCore *)core)->esil.reg, name, val);
 }
 
-static ut32 core_esil_reg_size (void *core, const char *name) {
+static ut32 core_esil_reg_size(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
 	if (!ri) {
 		return 0;
@@ -60,11 +60,13 @@ static ut32 core_esil_reg_size (void *core, const char *name) {
 	return size;
 }
 
-static ut32 core_esil_reg_packed_size (void *core, const char *name) {
+static ut32 core_esil_reg_packed_size(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
 	if (!ri) {
 		return 0;
 	}
+	// Packed size is separate from the register width: it marks vector
+	// registers that need packed assignment handling in ESIL.
 	const ut32 psize = ri->packed_size > 0 ? (ut32)ri->packed_size : 0;
 	r_unref (ri);
 	return psize;
@@ -78,14 +80,13 @@ static REsilRegInterface core_esil_reg_if = {
 	.reg_packed_size = core_esil_reg_packed_size,
 };
 
-static bool core_esil_mem_switch (void *core, ut32 idx) {
+static bool core_esil_mem_switch(void *core, ut32 idx) {
 	return r_io_bank_use (((RCore *)core)->io, idx);
 }
 
-static bool core_esil_mem_read (void *core, ut64 addr, ut8 *buf, int len) {
+static bool core_esil_mem_read(void *core, ut64 addr, ut8 *buf, int len) {
 	if ((UT64_MAX - len + 1) < addr) {
-		if (!core_esil_mem_read (core, 0ULL, buf + (UT64_MAX - addr + 1),
-			len - (UT64_MAX - addr + 1))) {
+		if (!core_esil_mem_read (core, 0ULL, buf + (UT64_MAX - addr + 1), len - (UT64_MAX - addr + 1))) {
 			return false;
 		}
 		len = UT64_MAX - addr + 1;
@@ -97,10 +98,9 @@ static bool core_esil_mem_read (void *core, ut64 addr, ut8 *buf, int len) {
 	return r_io_read_at (c->io, addr, buf, len);
 }
 
-static bool core_esil_mem_write (void *core, ut64 addr, const ut8 *buf, int len) {
+static bool core_esil_mem_write(void *core, ut64 addr, const ut8 *buf, int len) {
 	if ((UT64_MAX - len + 1) < addr) {
-		if (!core_esil_mem_write (core, 0ULL, buf + (UT64_MAX - addr + 1),
-			len - (UT64_MAX - addr + 1))) {
+		if (!core_esil_mem_write (core, 0ULL, buf + (UT64_MAX - addr + 1), len - (UT64_MAX - addr + 1))) {
 			return false;
 		}
 		len = UT64_MAX - addr + 1;
@@ -112,17 +112,16 @@ static bool core_esil_mem_write (void *core, ut64 addr, const ut8 *buf, int len)
 	if (c->esil.cfg & R_CORE_ESIL_RO) {
 		RIORegion region;
 		if (!r_io_get_region_at (c->io, &region, addr)) {
-			//maybe check voidwrites config here
+			// maybe check voidwrites config here
 			return true;
 		}
-		if (!(region.perm & R_PERM_W)) {
+		if (! (region.perm & R_PERM_W)) {
 			return false;
 		}
 		if (r_itv_contain (region.itv, addr + len - 1)) {
 			return true;
 		}
-		return core_esil_mem_write (core, r_itv_end (region.itv),
-			NULL, addr + len - r_itv_end (region.itv));	//no need to pass buf, because this is RO mode
+		return core_esil_mem_write (core, r_itv_end (region.itv), NULL, addr + len - r_itv_end (region.itv)); // no need to pass buf, because this is RO mode
 	}
 	return r_io_write_at (c->io, addr, buf, len);
 }
@@ -133,26 +132,26 @@ static REsilMemInterface core_esil_mem_if = {
 	.mem_write = core_esil_mem_write
 };
 
-static void core_esil_voyeur_trap_revert_reg_write (void *user, const char *name,
-	ut64 old, ut64 val) {
+static void core_esil_voyeur_trap_revert_reg_write(void *user, const char *name, ut64 old, ut64 val) {
 	RCoreEsil *cesil = user;
-	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
+	if (! (cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
-	r_strbuf_prependf (&cesil->trap_revert, "0x%"PFMT64x",%s,:=,", old, name);
+	r_strbuf_prependf (&cesil->trap_revert, "0x%" PFMT64x ",%s,:=,", old, name);
 }
 
-static void core_esil_voyeur_trap_revert_mem_write (void *user, ut64 addr,
-	const ut8 *old, const ut8 *buf, int len) {
+static void core_esil_voyeur_trap_revert_mem_write(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	RCoreEsil *cesil = user;
-	if (!(cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
+	if (! (cesil->cfg & R_CORE_ESIL_TRAP_REVERT)) {
 		return;
 	}
 	int i;
 	for (i = 0; i < len; i++) {
-		//TODO: optimize this after breaking
+		// TODO: optimize this after breaking
 		r_strbuf_prependf (&cesil->trap_revert,
-			"0x%02x,0x%"PFMT64x",=[1],", old[i], addr + i);
+			"0x%02x,0x%" PFMT64x ",=[1],",
+			old[i],
+			addr + i);
 	}
 }
 
@@ -164,21 +163,16 @@ R_API bool r_core_esil_init(RCore *core) {
 	}
 	core_esil_reg_if.reg = core;
 	core_esil_mem_if.mem = core;
-	if (!r_esil_init (&core->esil.esil, 4096, false, 64,
-		&core_esil_reg_if, &core_esil_mem_if, NULL)) {
+	if (!r_esil_init (&core->esil.esil, 4096, false, 64, &core_esil_reg_if, &core_esil_mem_if, NULL)) {
 		goto init_fail;
 	}
-	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0,
-		R_ESIL_OP_TYPE_UNKNOWN, NULL) || !r_esil_set_op (&core->esil.esil,
-		"$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
+	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0, R_ESIL_OP_TYPE_UNKNOWN, NULL) || !r_esil_set_op (&core->esil.esil, "$", core_esil_op_interrupt, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL)) {
 		goto op_fail;
 	}
 	r_strbuf_init (&core->esil.trap_revert);
 	core->esil.esil.user = core;
-	core->esil.tr_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil,
-		core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil,
-		core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
+	core->esil.tr_reg = r_esil_add_voyeur (&core->esil.esil, &core->esil, core_esil_voyeur_trap_revert_reg_write, R_ESIL_VOYEUR_REG_WRITE);
+	core->esil.tr_mem = r_esil_add_voyeur (&core->esil.esil, &core->esil, core_esil_voyeur_trap_revert_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
 	return true;
 op_fail:
 	r_esil_fini (&core->esil.esil);
@@ -192,10 +186,10 @@ R_API void r_core_esil_load_arch(RCore *core) {
 	if (!core->anal->arch->session || !core->anal->arch->session->plugin ||
 		!core->anal->arch->session->plugin->esilcb ||
 		!core->anal->arch->session->plugin->regs) {
-		//This doesn't count as fail
+		// This doesn't count as fail
 		return;
 	}
-	//This is awful. TODO: massage r_arch api
+	// This is awful. TODO: massage r_arch api
 	REsil *arch_esil = core->anal->arch->esil;
 	core->anal->arch->esil = &core->esil.esil;
 	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
@@ -233,15 +227,15 @@ R_API void r_core_esil_single_step(RCore *core) {
 		R_LOG_ERROR ("Couldn't read from PC register");
 		return;
 	}
-	//check if pc is in mapped rx area,
-	//or in case io is pa
-	//check if pc is within desc and desc is at least readable
+	// check if pc is in mapped rx area,
+	// or in case io is pa
+	// check if pc is within desc and desc is at least readable
 	RIORegion region;
 	if (!r_io_get_region_at (core->io, &region, pc)) {
 		goto trap;
 	}
 	if ((region.perm & (R_PERM_R | R_PERM_X)) != (R_PERM_R | R_PERM_X) ||
-		(!core->io->va && !(region.perm & R_PERM_R))) {
+		(!core->io->va && ! (region.perm & R_PERM_R))) {
 		goto trap;
 	}
 	int max_opsize = R_MIN (64,
@@ -252,7 +246,7 @@ R_API void r_core_esil_single_step(RCore *core) {
 	}
 	ut8 buf[64];
 	if (R_UNLIKELY (!r_io_read_at (core->io, pc, buf, max_opsize))) {
-		R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, pc);
+		R_LOG_ERROR ("Couldn't read data to decode from 0x%" PFMT64x, pc);
 		return;
 	}
 	// intentionally not using r_anal_op here, because this function is a fucking fever dream
@@ -263,9 +257,8 @@ R_API void r_core_esil_single_step(RCore *core) {
 	RAnalOp op;
 	r_anal_op_init (&op);
 	r_anal_op_set_bytes (&op, pc, buf, max_opsize);
-	if (!r_arch_session_decode (as, &op,
-		R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
-		R_LOG_ERROR ("COuldn't decode instruction at 0x%"PFMT64x, pc);
+	if (!r_arch_session_decode (as, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL)) {
+		R_LOG_ERROR ("COuldn't decode instruction at 0x%" PFMT64x, pc);
 		r_anal_op_fini (&op);
 		r_unref (as);
 		return;
@@ -281,9 +274,9 @@ R_API void r_core_esil_single_step(RCore *core) {
 		if (hint->esil) {
 			r_strbuf_set (&op.esil, hint->esil);
 		}
-		//maybe do something about arch, bits and endian shit here
-		//difficult, because that could mean a different reg profile,
-		//which would invalidate some previous steps
+		// maybe do something about arch, bits and endian shit here
+		// difficult, because that could mean a different reg profile,
+		// which would invalidate some previous steps
 		r_anal_hint_free (hint);
 		hint = NULL;
 	}
@@ -297,7 +290,9 @@ R_API void r_core_esil_single_step(RCore *core) {
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT_CONFIG) {
 		core->esil.cfg |= R_CORE_ESIL_TRAP_REVERT;
 		r_strbuf_initf (&core->esil.trap_revert,
-			"0x%"PFMT64x",%s,:=", pc, pc_name);
+			"0x%" PFMT64x ",%s,:=",
+			pc,
+			pc_name);
 	} else {
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		core->esil.old_pc = pc;
@@ -316,18 +311,18 @@ R_API void r_core_esil_single_step(RCore *core) {
 		return;
 	}
 	if (core->esil.cfg & R_CORE_ESIL_TRAP_REVERT) {
-		//disable trap_revert voyeurs
+		// disable trap_revert voyeurs
 		core->esil.cfg &= ~R_CORE_ESIL_TRAP_REVERT;
 		char *expr = r_strbuf_drain_nofree (&core->esil.trap_revert);
-		//TODO: check trap codes here
-		//revert all changes
+		// TODO: check trap codes here
+		// revert all changes
 		r_esil_parse (&core->esil.esil, expr);
 		free (expr);
 		goto trap;
 	}
-	//restore pc
+	// restore pc
 	r_esil_reg_write_silent (&core->esil.esil, pc_name, core->esil.old_pc);
-	//TODO: check trap codes here
+	// TODO: check trap codes here
 	goto trap;
 op_trap:
 	r_unref (as);
@@ -357,5 +352,5 @@ R_API void r_core_esil_fini(RCoreEsil *cesil) {
 	R_FREE (cesil->cmd_todo);
 	R_FREE (cesil->cmd_ioer);
 	R_FREE (cesil->mdev_range);
-	cesil->esil = (const REsil){0};
+	cesil->esil = (const REsil){ 0 };
 }

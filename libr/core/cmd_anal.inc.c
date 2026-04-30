@@ -13861,16 +13861,19 @@ static void r_core_anal_info(RCore *core, const char *input) {
 			pj_free (pj);
 		}
 	} else {
-// AITODO: use rstrbuf and a single r_cons_print call
-		r_cons_printf (core->cons, "fcns    %d\n", fcns);
-		r_cons_printf (core->cons, "xrefs   %d\n", xrfs);
-		r_cons_printf (core->cons, "calls   %d\n", call);
-		r_cons_printf (core->cons, "strings %d\n", strs);
-		r_cons_printf (core->cons, "symbols %d\n", syms);
-		r_cons_printf (core->cons, "imports %d\n", imps);
-		r_cons_printf (core->cons, "covrage %d\n", covr);
-		r_cons_printf (core->cons, "codesz  %d\n", code);
-		r_cons_printf (core->cons, "percent %d%%\n", cvpc);
+		RStrBuf sb;
+		r_strbuf_init (&sb);
+		r_strbuf_appendf (&sb, "fcns    %d\n", fcns);
+		r_strbuf_appendf (&sb, "xrefs   %d\n", xrfs);
+		r_strbuf_appendf (&sb, "calls   %d\n", call);
+		r_strbuf_appendf (&sb, "strings %d\n", strs);
+		r_strbuf_appendf (&sb, "symbols %d\n", syms);
+		r_strbuf_appendf (&sb, "imports %d\n", imps);
+		r_strbuf_appendf (&sb, "covrage %d\n", covr);
+		r_strbuf_appendf (&sb, "codesz  %d\n", code);
+		r_strbuf_appendf (&sb, "percent %d%%\n", cvpc);
+		r_cons_print (core->cons, r_strbuf_get (&sb));
+		r_strbuf_fini (&sb);
 	}
 }
 
