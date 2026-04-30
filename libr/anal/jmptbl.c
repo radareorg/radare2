@@ -362,7 +362,7 @@ static Sdb *switch_sdb(RAnal *anal, bool create) {
 	if (!anal || !anal->sdb) {
 		return NULL;
 	}
-	return sdb_ns (anal->sdb, "switches", create ? 1 : 0);
+	return sdb_ns (anal->sdb, SWITCH_SDB_NS, create ? 1 : 0);
 }
 
 static void switch_spec_serialize(const RAnalSwitchSpec *spec, char *out, size_t outsz) {

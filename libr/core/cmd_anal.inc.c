@@ -616,7 +616,7 @@ static RCoreHelpMessage help_msg_afb = {
 	//"afb+", " fcnA bbA sz [j] [f] ([t]( [d]))", "add bb to function @ fcnaddr",
 	"afb+", " fcn_at bbat bbsz [J] [F] ([D])", "add basic block by hand (jump, fail, diff)",
 	"afba", "[!]", "list basic blocks of current offset in analysis order, see afla (EXPERIMENTAL)",
-	"afbt", "[?*-j] [tbl esz n seg | k=v ...]", "analyze switch/jumptable (see afbt?)",
+	"afbt", " [tableaddr] [elem_sz] [count] [seg]", "analyze function jumptable (adding seg to each elem)",
 	"afbc", "[-] [color] ([addr])", "colorize basic block (same as 'abc', afbc- to unset)",
 	"afbd", "", "list function basic block dependency list in order and set abe values",
 	"afbe", " bbfrom bbto", "add basic-block edge for switch-cases",
@@ -6790,6 +6790,14 @@ static int cmd_af(RCore *core, const char *input) {
 			cmd_afbplus (core, input + 3);
 			break;
 		case 't': // "afbt"
+			if (input[3] == '?') {
+				r_core_cmd_help_contains (core, help_msg_afb, "afbt");
+				break;
+			}
+			if (input[3] && input[3] != ' ' && input[3] != '*' && input[3] != 'j' && input[3] != '-') {
+				r_core_return_invalid_command (core, "afbt", input[3]);
+				break;
+			}
 			cmd_afbt (core, input + 3);
 			break;
 		case 'c': // "afbc"
