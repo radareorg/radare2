@@ -2587,22 +2587,21 @@ static void val_tojson(PJ *pj, RAnalValue *val) {
 	pj_end (pj);
 }
 
-
-static bool mw2(REsil *esil, ut64 addr, const ut8 *buf, int len) {
+static bool mw2(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_LOG_INFO ("WRITE 0x%08"PFMT64x" %d", addr, len);
 	return true;
 }
 
-static bool mr2(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static bool mr2(void *null, ut64 addr, const ut8 *buf, int len) {
 	R_LOG_INFO ("READ 0x%08"PFMT64x" %d", addr, len);
 	return true;
 }
 
 static void esilmemrefs(RCore *core, const char *expr) {
-	REsil *e = r_esil_new (256, 0, 0);
-	r_esil_setup (e, core->anal, false, false, false);
-	e->cb.mem_read = mr2;
-	e->cb.mem_write = mw2;
+	REsil *e = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
+	r_esil_add_voyeur (e, NULL, mw2, R_ESIL_VOYEUR_MEM_WRITE);
+	r_esil_add_voyeur (e, NULL, mr2, R_ESIL_VOYEUR_MEM_READ);
+	e->anal = core->anal;	//XXX
 	r_esil_parse (e, expr);
 	r_esil_free (e);
 }
@@ -2620,7 +2619,6 @@ static void core_anal_bytes(RCore *core, const ut8 *buf, int len, int nops, int 
 	ut64 addr;
 	PJ *pj = NULL;
 	int totalsize = 0;
-	// Variables required for setting up ESIL to REIL conversion
 	if (use_color) {
 		color = core->cons->context->pal.label;
 	}
@@ -7557,338 +7555,167 @@ static bool is_steporeable(int type) {
 	return false;
 }
 
+static void core_esil_sync_legacy_trap(RCore *core) {
+	REsil *esil = R_UNWRAP3 (core, anal, esil);
+	if (esil) {
+		esil->trap = core->esil.esil.trap;
+		esil->trap_code = core->esil.esil.trap_code;
+	}
+}
+
+static void core_esil_trace_legacy_op(RCore *core, RAnalOp *op) {
+	REsil *esil = R_UNWRAP3 (core, anal, esil);
+	if (esil && esil->trace) {
+		r_esil_trace_op (esil, op);
+	}
+}
+
+static void core_esil_drop_stepback(RCore *core) {
+	RCoreEsilStepBack *cesb = r_list_pop (&core->esil.sb.list);
+	if (cesb) {
+		free (cesb->expr);
+		free (cesb);
+	}
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
-#define SET_PC_BOTH(core, val) do { \
-	r_reg_setv ((core)->anal->reg, "PC", (val)); \
-	if ((core)->anal->reg != (core)->dbg->reg) { \
-		r_reg_setv ((core)->dbg->reg, "PC", (val)); \
-	} \
-} while (0)
-#define return_tail(x) { tail_return_value = x; goto tail_return; }
-	int tail_return_value = 0;
-	int ret;
-	ut8 code[64];
-	int maxopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
-	RAnalOp op = {0};
-	REsil *esil = core->anal->esil;
-	const char *arch = r_config_get (core->config, "asm.arch");
-	const bool is_x86 = r_str_startswith (arch, "x86");
-	const bool is_mips_arch = r_str_startswith (arch, "mips");
-	const bool is_sh_arch = r_str_startswith (arch, "sh");
-	const bool r2wars = is_x86 && r_config_get_b (core->config, "cfg.r2wars");
-	const bool breakoninvalid = r_config_get_b (core->config, "esil.breakoninvalid");
 	const int esiltimeout = r_config_get_i (core->config, "esil.timeout");
+	int ret = true;
 	ut64 startTime = 0;
 
 	if (esiltimeout > 0) {
 		startTime = r_time_now_mono ();
 	}
+	ut64 addr = r_reg_getv (core->anal->reg, "PC");
+	const bool single_step = until_addr == UT64_MAX && !until_expr;
 	r_cons_break_push (core->cons, NULL, NULL);
-	ut64 addr = -1;
-	ut64 oaddr = -1;
-	int minopsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
-	// int dataAlign = r_arch_info (esil->anal->arch, R_ARCH_INFO_DATA_ALIGN);
-	int codeAlign = r_arch_info (esil->anal->arch, R_ARCH_INFO_CODE_ALIGN);
-	ut64 naddr = addr + minopsz;
-	bool notfirst = false;
-	if (maxopsz > sizeof (code)) {
-		R_LOG_WARN ("Max instruction size is larger than %d, Dimming down", maxopsz); // sizeof (code));
-		maxopsz = sizeof (code);
-	}
-	bool wanteval = r_config_get_b (core->config, "dbg.trace.eval");
-	for (; true; r_anal_op_fini (&op)) {
-		esil->trap = 0;
-		oaddr = addr;
-		addr = r_reg_getv (core->anal->reg, "PC");
-		if (notfirst && addr == oaddr) {
-			r_reg_setv (core->anal->reg, "PC", naddr);
-			addr = naddr;
-		} else {
-			notfirst = true;
-		}
-		R_LOG_DEBUG ("esil step at 0x%08"PFMT64x, addr);
-		if (until_addr != UT64_MAX && addr == until_addr) {
-			return_tail (0);
-		}
-		if (r_cons_is_breaked (core->cons)) {
-			R_LOG_INFO ("[+] ESIL emulation interrupted at 0x%08" PFMT64x, addr);
-			return_tail (0);
-		}
-		// Break if we have exceeded esil.timeout
+	while (single_step || addr != until_addr) {
 		if (esiltimeout > 0) {
 			ut64 elapsedTime = r_time_now_mono () - startTime;
 			elapsedTime >>= 20;
 			if (elapsedTime >= esiltimeout) {
 				R_LOG_INFO ("[ESIL] Timeout exceeded");
-				return_tail (0);
+				ret = false;
+				break;
 			}
+		}
+		RAnalOp op;
+		if (stepOver) {
+			r_anal_op_init (&op);
+			int max_opsize = R_MIN (64,
+				r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE));
+			if (R_UNLIKELY (max_opsize < 1)) {
+				max_opsize = 32;
+			}
+			ut8 buf[64];
+			if (R_UNLIKELY (!r_io_read_at (core->io, addr, buf, max_opsize))) {
+				R_LOG_ERROR ("Couldn't read data to decode from 0x%"PFMT64x, addr);
+				r_anal_op_fini (&op);
+				ret = false;
+				goto out;
+			}
+			r_anal_op_set_bytes (&op, addr, buf, max_opsize);
+			r_arch_decode (core->anal->arch, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
 		}
 		if (prev_addr) {
-			*prev_addr = addr;
+			prev_addr[0] = addr;
 		}
-		const int perm = esil->exectrap ? R_PERM_X: 0;
-		if (!r_io_is_valid_offset (core->io, addr, perm)) {
-			esil->trap = R_ANAL_TRAP_EXEC_ERR;
-			esil->trap_code = addr == UT64_MAX? UT32_MAX: (ut32)addr;
-			R_LOG_INFO ("[ESIL] Trap, trying to execute on non-executable memory");
-			if (esil->cmd_trap) {
-				esil->cmd (esil, esil->cmd_trap, esil->addr, R_ANAL_TRAP_INVALID);
-			}
-			return_tail (1);
+		if (core->dbg && core->dbg->trace && core->dbg->trace->enabled) {
+			r_debug_trace_pc (core->dbg, addr);
 		}
-		// eprintf ("addr %"PFMT64x"\n", addr);
-		r_asm_set_pc (core->rasm, addr);
-		// run esil pin command here
-		const char *pincmd = r_anal_pin_call (core->anal, addr);
-		if (pincmd) {
-			r_core_cmd0 (core, pincmd);
-			ut64 pc = r_reg_getv (core->anal->reg, "PC");
-			if (addr != pc) {
-				R_LOG_ERROR ("pincmd fail");
-				return_tail (1);
-			}
-		}
-#if 0
-		if (dataAlign > 1) {
-			if (addr % dataAlign) {
-				if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
-					esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
-				}
-				if (breakoninvalid) {
-					R_LOG_INFO ("Execution stopped on unaligned %d instruction (see e?esil.breakoninvalid)", dataAlign);
-					return_tail (0);
-				}
-			}
-		}
-#else
-		if (codeAlign > 1 && addr % codeAlign) {
-			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
-				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_UNALIGNED);
-			}
-			if (breakoninvalid) {
-				R_LOG_INFO ("Execution stopped on unaligned %d instruction (see e?esil.breakoninvalid)", codeAlign);
-				return_tail (0);
-			}
-		}
-#endif
-		int re = r_io_read_at (core->io, addr, code, maxopsz);
-		if (re < 1) {
-			ret = 0;
-		} else {
-			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
-				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
-		}
-		if (core->dbg->anal->esil->trace) {
-			r_esil_trace_op (core->dbg->anal->esil, &op);
-		}
-		// if type is JMP then we execute the next N instructions
-		// update the esil pointer because RAnal.op() can change it
-		esil = core->anal->esil;
-		if (op.size < 1 || ret < 1) {
-			// eprintf ("esil trap\n");
-			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
-				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
-			}
-			if (breakoninvalid) {
-				R_LOG_INFO ("Stopped execution in an invalid instruction (see e??esil.breakoninvalid)");
-				return_tail (0);
-			}
-			if (op.size < 1) {
-				op.size = 1; // avoid inverted stepping
-			}
-		}
-		naddr = addr + op.size;
 		if (stepOver && is_steporeable (op.type)) {
-			if (addr == until_addr) {
-				return_tail (0);
-			}
-			SET_PC_BOTH (core, op.addr + op.size);
-			ret = 0;
-		}
-		if (r2wars) {
-			// this is x86 and r2wars specific, shouldnt hurt outside x86
-			ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
-			if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {
-				//char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
-				char *tmp = strstr (op.esil.ptr, ",0,GOTO");
-				if (tmp) {
-					tmp[0] = 0;
-					op.esil.len -= 7; //16;
-				} else {
-					r_reg_setv (core->anal->reg, "PC", addr + op.size);
+			if (addr % R_MAX (r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN), 1)) {
+				if (core->esil.cmds.trap) {
+					r_core_cmd0 (core, core->esil.cmds.trap);
 				}
+				r_anal_op_fini (&op);
+				goto out;
+			}
+			core_esil_trace_legacy_op (core, &op);
+			r_reg_setv (core->anal->reg, "PC", addr);
+			char *expr = r_str_newf ("0x%"PFMT64x",PC,:=", op.addr + op.size);
+			if (!expr || !r_core_esil_run_expr_at (core, expr, addr)) {
+				R_LOG_ERROR ("Failed to advance PC for step-over at 0x%"PFMT64x, op.addr);
+				free (expr);
+				core_esil_sync_legacy_trap (core);
+				r_anal_op_fini (&op);
+				ret = false;
+				goto out;
+			}
+			free (expr);
+			addr = r_reg_getv (core->anal->reg, "PC");
+			core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			core->esil.esil.trap_code = 0;
+			core_esil_sync_legacy_trap (core);
+			r_anal_op_fini (&op);
+			if (single_step) {
+				break;
+			}
+			continue;
+		}
+		if (stepOver) {
+			r_anal_op_fini (&op);
+		}
+		const ut64 prev_pc = addr;
+		if (!r_core_esil_single_step (core)) {
+			core_esil_sync_legacy_trap (core);
+			ret = false;
+			if (single_step) {
+				break;
+			}
+			// honor until_addr/until_expr: ignore traps and keep going,
+			// but bail if PC did not advance to avoid an infinite loop.
+			addr = r_reg_getv (core->anal->reg, "PC");
+			if (addr == prev_pc) {
+				break;
+			}
+			core->esil.esil.trap = R_ANAL_TRAP_NONE;
+			core->esil.esil.trap_code = 0;
+			continue;
+		}
+		core_esil_sync_legacy_trap (core);
+		addr = r_reg_getv (core->anal->reg, "PC");
+		if (until_expr) {
+			const int trap = core->esil.esil.trap;
+			const ut32 trap_code = core->esil.esil.trap_code;
+			if (r_esil_condition (&core->esil.esil, until_expr)) {
+				if (trap) {
+					core->esil.esil.trap = trap;
+					core->esil.esil.trap_code = trap_code;
+				} else {
+					core->esil.esil.trap = R_ANAL_TRAP_NONE;
+				}
+				break;
+			}
+			if (trap) {
+				core->esil.esil.trap = trap;
+				core->esil.esil.trap_code = trap_code;
 			} else {
-				r_reg_setv (core->anal->reg, "PC", addr + op.size);
+				core->esil.esil.trap = R_ANAL_TRAP_NONE;
 			}
-		} else {
-			ut64 pcdst = addr + op.size;
-			SET_PC_BOTH (core, pcdst);
 		}
-		if (ret) {
-			esil->addr = addr;
-			const char *e = R_STRBUF_SAFEGET (&op.esil);
-			if (core->dbg->trace->enabled) {
-				RReg *reg = core->dbg->reg;
-				core->dbg->reg = core->anal->reg;
-				r_debug_trace_op (core->dbg, &op);
-				core->dbg->reg = reg;
-			} else if (core->anal->esil->trace) {
-				// required for type propagation analysis
-			//	r_esil_trace_op (core->anal->esil, &op);
-			}
-			if (wanteval && R_STR_ISNOTEMPTY (e)) {
-				R_LOG_DEBUG ("esil_parse: %s", e);
-				r_esil_parse (esil, e);
-				if (esil->trap) {
-					R_LOG_WARN ("ESIL TRAP %d/%d ON %s at 0x%08"PFMT64x,
-							esil->trap, esil->trap_code, e, addr);
-					if (r_config_get_b (core->config, "esil.exectrap")) {
-						R_LOG_INFO ("ESIL TRAP ignored");
-						esil->trap = false;
-					}
-				}
-#if 0
-				// XXX thats not related to arch plugins, and wonder if its useful at all or we want it as part of the anal or esil plugs
-				if (core->anal->cur && core->anal->cur->esil_post_loop) {
-					core->anal->cur->esil_post_loop (esil, &op);
-				}
-#endif
-				// warn if esil stack is not empty
-				r_esil_stack_free (esil);
-			}
-			// only support 1 delay slot for now (execute in a separate step)
-			if (op.delay && esil->delay) {
-				const ut64 ds_addr = naddr;
-				const ut64 pc_after_op = r_reg_getv (core->anal->reg, "PC");
-				const ut64 skipped_ds_pc = ds_addr + op.size;
-				const bool skip_delay_slot = (is_mips_arch && pc_after_op == skipped_ds_pc)
-					|| (is_sh_arch && pc_after_op == ds_addr);
-				ut64 saved_pc = UT64_MAX;
-
-				// MIPS likely branches annul the delay slot by jumping over it.
-				// If PC advanced past the delay slot, do not execute it.
-				if (skip_delay_slot) {
-					esil->delay = 0;
-				} else {
-					// Immediate jumps (e.g., SH) already set PC; preserve it so we can restore it after executing the delay slot.
-					if (!esil->jump_target_set && pc_after_op != ds_addr) {
-						saved_pc = pc_after_op;
-					}
-					ut8 code2[32];
-					RAnalOp op2 = {0};
-
-					SET_PC_BOTH (core, ds_addr);
-					(void)r_io_read_at (core->io, ds_addr, code2, sizeof (code2));
-					ret = r_anal_op (core->anal, &op2, ds_addr, code2, sizeof (code2), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
-					if (ret > 0) {
-						const char *e2 = R_STRBUF_SAFEGET (&op2.esil);
-						if (R_STR_ISNOTEMPTY (e2)) {
-							esil->addr = ds_addr;
-							r_esil_parse (esil, e2);
-							esil->trap = false; // ignore traps on delayed instructions for now
-						}
-						ut64 pc_ds = r_reg_getv (core->anal->reg, "PC");
-						if (pc_ds == ds_addr) {
-							pc_ds = ds_addr + op2.size;
-							SET_PC_BOTH (core, pc_ds);
-						}
-						// Restore immediate jump targets after running the delay slot.
-						if (saved_pc != UT64_MAX && !esil->jump_target_set) {
-							if (pc_ds == ds_addr || pc_ds == ds_addr + op2.size) {
-								r_esil_set_pc (esil, saved_pc);
-								if (core->anal->reg != core->dbg->reg) {
-									r_reg_setv (core->dbg->reg, "PC", saved_pc);
-								}
-							}
-						}
-					} else {
-						R_LOG_ERROR ("Invalid instruction at 0x%08"PFMT64x, ds_addr);
-						if (esil->jump_target_set && esil->delay) {
-							r_esil_set_pc (esil, esil->jump_target);
-							esil->jump_target_set = 0;
-							esil->delay = 0;
-						} else if (saved_pc != UT64_MAX) {
-							r_esil_set_pc (esil, saved_pc);
-							if (core->anal->reg != core->dbg->reg) {
-								r_reg_setv (core->dbg->reg, "PC", saved_pc);
-							}
-							esil->delay = 0;
-						}
-					}
-					r_anal_op_fini (&op2);
-				}
-			}
-			tail_return_value = 1;
-		}
-		// esil->verbose ?
-		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
-		ut64 pc = r_reg_getv (core->anal->reg, "PC");
-		// If the ESIL expression did not change PC, advance to the next instruction.
-		if (pc == addr) {
-			pc = naddr;
-			SET_PC_BOTH (core, pc);
-		}
-		if (pc == UT64_MAX || pc == UT32_MAX) {
-			R_LOG_ERROR ("Invalid program counter PC=-1 coming from 0x%08"PFMT64x, addr);
+		if (single_step) {
 			break;
 		}
-		if (core->anal->config->codealign > 0) {
-			pc -= (pc % core->anal->config->codealign);
-			SET_PC_BOTH (core, pc);
-		}
-		st64 follow = (st64)r_config_get_i (core->config, "dbg.follow");
-		if (follow > 0) {
-			if ((pc < core->addr) || (pc > (core->addr + follow))) {
-				r_core_seek (core, pc, true);
-			}
-		}
-		// check breakpoints
-		if (r_bp_get_at (core->dbg->bp, pc)) {
-			R_LOG_INFO ("esil breakpoint hit at 0x%"PFMT64x, pc);
-			return_tail (0);
-		}
-		// check addr
-		if (until_addr != UT64_MAX) {
-			if (pc == until_addr) {
-				return_tail (0);
-			}
-			continue;
-		}
-		if (esil->trap) {
-			R_LOG_DEBUG ("TRAP");
-			return_tail (0);
-		}
-		if (until_expr) {
-			// eprintf ("CHK %s\n", until_expr);
-			if (r_esil_condition (esil, until_expr)) {
-				R_LOG_INFO ("ESIL BREAK!");
-				return_tail (0);
-			}
-			esil->trap = false;
-			continue;
-		}
-		break;
 	}
-tail_return:
-	r_anal_op_fini (&op);
+out:
 	r_cons_break_pop (core->cons);
-	return tail_return_value;
+	return ret;
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
-#if 0
-	if (!core->anal->esil || !core->anal->esil->trace) {
-		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
-		return false;
-	}
-#endif
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg, false);
 	REsil *esil = core->anal->esil;
 	if (esil && esil->trace && esil->trace->idx > 0) {
+		core_esil_drop_stepback (core);
 		r_esil_trace_restore (esil, esil->trace->idx - 1);
 		return true;
 	}
-	return false;
+	if (!r_list_length (&core->esil.sb.list)) {
+		return false;
+	}
+	r_core_esil_stepback (core);
+	return true;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
@@ -8858,6 +8685,7 @@ static void cmd_debug_stack_init(RCore *core, int argc, char **argv, char **envp
 }
 
 R_IPI void cmd_aei(RCore *core) {
+//TODO use core_esil here
 	REsil *esil = esil_new_setup (core);
 	if (esil) {
 		r_esil_free (core->anal->esil);
@@ -8909,13 +8737,15 @@ R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
 	return type;
 }
 
-static bool regwrite_hook(REsil *esil, const char *name, ut64 *val) {
-	RCore *core = esil->user;
-	int type = core_type_by_addr (core, *val);
-	if (type != -1) {
-		r_anal_xrefs_set (core->anal, esil->addr, *val, type);
+static void regwrite_voy(void *user, const char *name, ut64 old, ut64 val) {
+	(void)name;
+	(void)old;
+	RCore *core = user;
+	const int type = core_type_by_addr (core, val);
+	if (type == -1) {
+		return;
 	}
-	return false;
+	r_anal_xrefs_set (core->anal, core->anal->esil->addr, val, type);
 }
 
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
@@ -8929,10 +8759,7 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	if (!sdb_const_get (core->sdb, "aeim.fd", 0)) {
 		r_core_call (core, "aeim"); // should be set by default imho
 	}
-	void *u = core->anal->esil->user;
-	core->anal->esil->user = core;
-	void *p = core->anal->esil->cb.hook_reg_write;
-	core->anal->esil->cb.hook_reg_write = regwrite_hook;
+	const ut32 vid = r_esil_add_voyeur (core->anal->esil, core, regwrite_voy, R_ESIL_VOYEUR_REG_WRITE);
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal,
 			addr, R_ANAL_FCN_TYPE_FCN | R_ANAL_FCN_TYPE_SYM);
 	const ut64 old_pc = r_reg_getv (core->anal->reg, "PC");
@@ -8997,8 +8824,7 @@ R_API void r_core_anal_esil_function(RCore *core, ut64 addr) {
 	} else {
 		R_LOG_ERROR ("Cannot find function at 0x%08" PFMT64x, addr);
 	}
-	core->anal->esil->cb.hook_reg_write = p;
-	core->anal->esil->user = u;
+	r_esil_del_voyeur (core->anal->esil, vid);
 	r_reg_setv (core->anal->reg, "PC", old_pc);
 }
 
@@ -9378,10 +9204,22 @@ static void cmd_aes(RCore *core, const char *input) {
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 				r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC)),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				until_addr = op->addr + op->size;
+			bool step_over = true;
+			if (op) {
+				switch (op->type) {
+				case R_ANAL_OP_TYPE_CALL:
+					until_addr = op->addr + op->size;
+					step_over = false;
+					break;
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_RCALL:
+					step_over = false;
+					break;
+				default:
+					break;
+				}
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			r_core_esil_step (core, until_addr, until_expr, NULL, step_over);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {
@@ -9614,10 +9452,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				// ignore return value is not an error, should 0, 1, -1 imho
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_reg_getv (core->anal->reg, "PC");
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 				if (!op) {
 					R_LOG_ERROR ("invalid instruction at 0x%08" PFMT64x, addr);
@@ -9648,9 +9488,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
 				if (!op) {
 					break;
