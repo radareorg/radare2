@@ -151,6 +151,7 @@ typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
+typedef ut32 (*REsilRegPackedSize)(void *reg, const char *name);
 typedef bool (*REsilRegAlias)(void *reg, const char *name, const char *alias);
 
 typedef struct r_esil_register_interface_t {
@@ -162,6 +163,7 @@ typedef struct r_esil_register_interface_t {
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
 	REsilRegSize reg_size;
+	REsilRegPackedSize reg_packed_size; /// 0 == not packed; lane size in bytes otherwise
 	REsilRegAlias reg_alias;
 } REsilRegInterface;
 

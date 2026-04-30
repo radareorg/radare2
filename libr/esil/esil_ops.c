@@ -76,6 +76,13 @@ static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
 	return (ut8)reg_size;
 }
 
+static ut32 esil_internal_packed_size_reg(REsil *esil, const char *r) {
+	if (!esil || !r || !esil->reg_if.reg_packed_size) {
+		return 0;
+	}
+	return esil->reg_if.reg_packed_size (esil->reg_if.reg, r);
+}
+
 static bool r_esil_signext(REsil *esil, bool assign) {
 	bool ret = false;
 	ut64 src, dst;
@@ -263,20 +270,8 @@ static bool esil_eq(REsil *esil) {
 		R_LOG_DEBUG ("esil_eq cant pop two values from stack at 0x%08"PFMT64x, esil->addr);
 		return false;
 	}
-	bool is128reg = false;
-	bool ispacked = false;
-	if (esil->anal && esil->anal->reg) {
-		RRegItem *ri = r_reg_get (esil->anal->reg, dst.a, -1);
-		if (ri) {
-			is128reg = ri->size == 128;
-			ispacked = ri->packed_size > 0;
-			r_unref (ri);
-		} else {
-			R_LOG_DEBUG ("esil_eq: %s is not a register", dst.a);
-		}
-	} else {
-		is128reg = esil_internal_sizeof_reg (esil, dst.a) == 128;
-	}
+	const bool is128reg = esil_internal_sizeof_reg (esil, dst.a) == 128;
+	const bool ispacked = esil_internal_packed_size_reg (esil, dst.a) > 0;
 	if (is128reg && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop (esil);
 		const ut64 n0 = r_strs_tonum (src, 0, NULL);

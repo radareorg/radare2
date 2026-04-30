@@ -1145,6 +1145,16 @@ static ut32 tt_reg_size(void *reg, const char *name) {
 	return size;
 }
 
+static ut32 tt_reg_packed_size(void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	const ut32 psize = ri->packed_size > 0 ? (ut32)ri->packed_size : 0;
+	r_unref (ri);
+	return psize;
+}
+
 static bool tt_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	TPState *tps = (TPState *)mem;
 	if (tps->anal->iob.read_at) {
@@ -1292,6 +1302,7 @@ static TPState *tps_init(RAnal *anal) {
 	tps->reg_if.reg_read = tt_reg_read;
 	tps->reg_if.reg_write = (REsilRegWrite)r_reg_setv;
 	tps->reg_if.reg_size = tt_reg_size;
+	tps->reg_if.reg_packed_size = tt_reg_packed_size;
 	tps->mem_if.mem = tps;
 	tps->mem_if.mem_read = tt_mem_read;
 	tps->mem_if.mem_write = tt_mem_write;

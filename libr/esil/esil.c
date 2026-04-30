@@ -190,6 +190,16 @@ static ut32 default_reg_size(void *reg, const char *name) {
 	return rsize;
 }
 
+static ut32 default_reg_packed_size(void *reg, const char *name) {
+	RRegItem *ri = r_reg_get ((RReg *)reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	const ut32 psize = ri->packed_size > 0 ? (ut32)ri->packed_size : 0;
+	r_unref (ri);
+	return psize;
+}
+
 static bool default_reg_alias(void *reg, const char *name, const char *alias) {
 	const int kind = r_reg_alias_fromstring (alias);
 	if (kind < 0) {
@@ -203,6 +213,7 @@ static REsilRegInterface simple_reg_if = {
 	.reg_read = default_reg_read,
 	.reg_write = (REsilRegWrite)r_reg_setv,
 	.reg_size = default_reg_size,
+	.reg_packed_size = default_reg_packed_size,
 	.reg_alias = default_reg_alias,
 };
 
@@ -623,6 +634,18 @@ static ut32 setup_esil_reg_size(void *user, const char *name) {
 	ut32 size = ri->size;
 	r_unref (ri);
 	return size;
+}
+
+static ut32 setup_esil_reg_packed_size(void *user, const char *name) {
+	REsil *esil = user;
+	RReg *reg = R_UNWRAP3 (esil, anal, reg);
+	RRegItem *ri = reg? r_reg_get (reg, name, -1): NULL;
+	if (!ri) {
+		return 0;
+	}
+	const ut32 psize = ri->packed_size > 0 ? (ut32)ri->packed_size : 0;
+	r_unref (ri);
+	return psize;
 }
 
 static bool setup_esil_reg_alias(void *user, const char *name, const char *alias) {
@@ -1259,6 +1282,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 			.reg_read = setup_esil_reg_read,
 			.reg_write = setup_esil_reg_write,
 			.reg_size = setup_esil_reg_size,
+			.reg_packed_size = setup_esil_reg_packed_size,
 			.reg_alias = setup_esil_reg_alias,
 		};
 	}

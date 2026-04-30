@@ -60,11 +60,22 @@ static ut32 core_esil_reg_size (void *core, const char *name) {
 	return size;
 }
 
+static ut32 core_esil_reg_packed_size (void *core, const char *name) {
+	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
+	if (!ri) {
+		return 0;
+	}
+	const ut32 psize = ri->packed_size > 0 ? (ut32)ri->packed_size : 0;
+	r_unref (ri);
+	return psize;
+}
+
 static REsilRegInterface core_esil_reg_if = {
 	.is_reg = core_esil_is_reg,
 	.reg_read = core_esil_reg_read,
 	.reg_write = core_esil_reg_write,
-	.reg_size = core_esil_reg_size
+	.reg_size = core_esil_reg_size,
+	.reg_packed_size = core_esil_reg_packed_size,
 };
 
 static bool core_esil_mem_switch (void *core, ut32 idx) {
