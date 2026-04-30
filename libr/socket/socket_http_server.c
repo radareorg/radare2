@@ -27,6 +27,7 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 		r_socket_block_time (hr->s, true, so->timeout, 0);
 	}
 	hr->auth = !so->httpauth;
+	hr->headers = r_list_newf (free);
 	for (;;) {
 #if R2__WINDOWS__
 		if (breaked && *breaked) {
@@ -64,6 +65,15 @@ R_API RSocketHTTPRequest *r_socket_http_accept(RSocket *s, RSocketHTTPOptions *s
 				hr->path = r_str_trim_dup (p + 1);
 			}
 		} else {
+			if (buf[0] && buf[0] != '\r' && buf[0] != '\n') {
+				char *line = strdup (buf);
+				r_str_trim (line);
+				if (R_STR_ISNOTEMPTY (line)) {
+					r_list_append (hr->headers, line);
+				} else {
+					free (line);
+				}
+			}
 			if (!hr->referer && r_str_startswith (buf, "Referer: ")) {
 				hr->referer = strdup (buf + 9);
 			} else if (!hr->agent && r_str_startswith (buf, "User-Agent: ")) {
@@ -254,8 +264,28 @@ R_API void r_socket_http_free(RSocketHTTPRequest *rs) {
 		free (rs->method);
 		free (rs->referer);
 		free (rs->data);
+		r_list_free (rs->headers);
 		free (rs);
 	}
+}
+
+R_API const char *r_socket_http_header(RSocketHTTPRequest *rs, const char *name) {
+	if (!rs || !rs->headers || !name) {
+		return NULL;
+	}
+	const size_t nlen = strlen (name);
+	RListIter *it;
+	const char *line;
+	r_list_foreach (rs->headers, it, line) {
+		if (!r_str_ncasecmp (line, name, nlen) && line[nlen] == ':') {
+			const char *v = line + nlen + 1;
+			while (*v == ' ' || *v == '\t') {
+				v++;
+			}
+			return v;
+		}
+	}
+	return NULL;
 }
 
 #if MAIN
