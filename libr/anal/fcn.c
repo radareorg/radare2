@@ -849,7 +849,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	RAnalOp op_storage;
 	r_anal_op_init (&op_storage);
 	op = &op_storage;
-	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
+	const ut32 opflags = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT;
 	while (addrbytes * idx < maxlen) {
 		if (!last_is_reg_mov_lea) {
 			last_reg_mov_lea_name = NULL;
@@ -1108,8 +1108,7 @@ noskip:
 		case R_ANAL_OP_TYPE_MOV:
 			last_is_reg_mov_lea = false;
 			if (is_arm) { // mov lr, pc
-				const char *esil = r_strbuf_get (&op->esil);
-				if (!strcmp (esil, "pc,lr,=")) {
+				if (op_dst && op_src && !strcmp (op_dst, "lr") && !strcmp (op_src, "pc")) {
 					last_is_mov_lr_pc = true;
 				}
 			}
@@ -1260,8 +1259,7 @@ noskip:
 				if (da != UT32_MAX && da != UT64_MAX && anal->iob.is_valid_offset (anal->iob.io, da, 0)) {
 					/// TODO: this must be CODE | READ , not CODE|DATA, but raises 10 fails
 					if (is_mips && anal->opt.jmptbl) {
-						const char *esil = r_strbuf_get (&op->esil);
-						if (strstr (esil, "v1,=")) {
+						if (op_dst && !strcmp (op_dst, "v1")) {
 							// eprintf("iftarget is v1 (%s) %llx %llx\n", esil, op->ptr, da);
 							v1 = da;
 						}
