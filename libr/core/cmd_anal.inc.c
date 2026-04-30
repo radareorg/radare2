@@ -9703,8 +9703,6 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 					r_cons_println (core->cons, out);
 					free (out);
 				}
-			} else {
-				R_LOG_INFO ("esil.stats is empty. Run 'aei'");
 			}
 			break;
 		case '-':

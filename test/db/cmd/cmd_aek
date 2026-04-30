@@ -15,7 +15,7 @@ aek-
 aek *~?
 EOF
 EXPECT=<<EOF
-1
+0
 0
 EOF
 RUN

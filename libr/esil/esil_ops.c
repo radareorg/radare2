@@ -25,56 +25,6 @@
 
 R_IPI bool alignCheck(REsil *esil, ut64 addr);
 
-/// XXX R2_600 - must be internal imho
-R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
-#if USE_NEW_ESIL
-	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
-	addr &= esil->addrmask;
-#else
-	R_RETURN_VAL_IF_FAIL (buf && esil, false);
-	addr &= esil->addrmask;
-	bool ret = false;
-	if (esil->cb.hook_mem_read) {
-		ret = esil->cb.hook_mem_read (esil, addr, buf, len);
-	}
-#endif
-	if (!alignCheck (esil, addr)) {
-		esil->trap = R_ANAL_TRAP_READ_ERR;
-		esil->trap_code = addr;
-		return false;
-	}
-#if USE_NEW_ESIL
-	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
-		return false;
-	}
-	ut32 i;
-	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i)) {
-		return true;
-	}
-	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], i);
-		voy->mem_read (voy->user, addr, buf, len);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i));
-	return true;
-#else
-	if (!ret && esil->cb.mem_read) {
-		if (ret = esil->cb.mem_read (esil, addr, buf, len), (!ret && esil->iotrap)) {
-			esil->trap = R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
-		}
-	}
-	IFDBG {
-		size_t i;
-		eprintf ("0x%08" PFMT64x " R> ", addr);
-		for (i = 0; i < len; i++) {
-			eprintf ("%02x", buf[i]);
-		}
-		eprintf ("\n");
-	}
-	return ret;
-#endif
-}
-
 static bool r_esil_fire_trap(REsil *esil, int trap_type, int trap_code) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
 	if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
@@ -110,15 +60,20 @@ static bool popRN(REsil *esil, ut64 *n) {
 	return isregornum (esil, s, n);
 }
 
+static bool esil_is_big_endian(REsil *esil) {
+	RArchConfig *cfg = R_UNWRAP3 (esil, anal, config);
+	return cfg && R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
+}
+
 static ut8 esil_internal_sizeof_reg(REsil *esil, const char *r) {
-	R_RETURN_VAL_IF_FAIL (esil && esil->anal && esil->anal->reg && r, 0);
-	RRegItem *ri = r_reg_get (esil->anal->reg, r, -1);
-	if (ri) {
-		ut8 reg_size = ri->size; // why a reg size cant be > 256 bits?
-		r_unref (ri);
-		return reg_size;
+	if (!esil || !esil->reg_if.reg_size || !r) {
+		return 0;
 	}
-	return 0;
+	ut32 reg_size = esil->reg_if.reg_size (esil->reg_if.reg, r);
+	if (reg_size > 255) {
+		return 0;
+	}
+	return (ut8)reg_size;
 }
 
 static bool r_esil_signext(REsil *esil, bool assign) {
@@ -310,13 +265,17 @@ static bool esil_eq(REsil *esil) {
 	}
 	bool is128reg = false;
 	bool ispacked = false;
-	RRegItem *ri = r_reg_get (esil->anal->reg, dst.a, -1);
-	if (ri) {
-		is128reg = ri->size == 128;
-		ispacked = ri->packed_size > 0;
-		r_unref (ri);
+	if (esil->anal && esil->anal->reg) {
+		RRegItem *ri = r_reg_get (esil->anal->reg, dst.a, -1);
+		if (ri) {
+			is128reg = ri->size == 128;
+			ispacked = ri->packed_size > 0;
+			r_unref (ri);
+		} else {
+			R_LOG_DEBUG ("esil_eq: %s is not a register", dst.a);
+		}
 	} else {
-		R_LOG_DEBUG ("esil_eq: %s is not a register", dst.a);
+		is128reg = esil_internal_sizeof_reg (esil, dst.a) == 128;
 	}
 	if (is128reg && esil->stackptr > 0) {
 		const RStrs src2 = r_esil_pop (esil);
@@ -336,11 +295,7 @@ static bool esil_eq(REsil *esil) {
 			ret = r_esil_reg_write (esil, dst.a, n0);
 		}
 		free (newreg);
-#if USE_NEW_ESIL
 	} else if (r_esil_reg_read_silent (esil, dst.a, &num, NULL)) {
-#else
-	} else if (r_esil_reg_read_nocallback (esil, dst.a, &num, NULL)) {
-#endif
 		if (r_esil_get_parm (esil, src, &num2)) {
 			ret = r_esil_reg_write (esil, dst.a, num2);
 			esil->cur = num2;
@@ -524,10 +479,7 @@ static bool esil_trap(REsil *esil) {
 static bool esil_bits(REsil *esil) {
 	ut64 s;
 	if (popRN (esil, &s)) {
-		if (esil->anal && esil->anal->coreb.setArchBits) {
-			esil->anal->coreb.setArchBits (esil->anal->coreb.core, NULL, s);
-		}
-		return true;
+		return r_esil_set_bits (esil, (int)s);
 	}
 	R_LOG_DEBUG ("esil_bits: missing parameters in stack");
 	return false;
@@ -583,16 +535,12 @@ static void pushnums(REsil *esil, const char *src, ut64 num2, const char *dst, u
 	R_RETURN_IF_FAIL (esil);
 	esil->old = num;
 	esil->cur = num - num2;
-	RReg *reg = esil->anal->reg;
-	RRegItem *ri = r_reg_get (reg, dst, -1);
-	if (ri) {
+	if (esil_internal_sizeof_reg (esil, dst)) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, dst);
-		r_unref (ri);
 		return;
 	}
-	if (ri = r_reg_get (reg, src, -1), ri) {
+	if (esil_internal_sizeof_reg (esil, src)) {
 		esil->lastsz = esil_internal_sizeof_reg (esil, src);
-		r_unref (ri);
 		return;
 	}
 	// default size is set to 64 as internally operands are ut64
@@ -619,16 +567,11 @@ static bool esil_cmp(REsil *esil) {
 // needed for COSMAC
 static bool esil_regalias(REsil *esil) {
 	R_RETURN_VAL_IF_FAIL (esil, false);
-	ut64 num;
-	bool ret = false;
 	const RStrs dst = r_esil_pop (esil);
 	const RStrs src = r_esil_pop (esil);
-	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num)) {
-		ret = true;
-		int kind = r_reg_alias_fromstring (dst.a);
-		if (kind != -1) {
-			r_reg_alias_setname (esil->anal->reg, kind, src.a);
-		}
+	bool ret = false;
+	if (!r_strs_empty (src) && !r_strs_empty (dst)) {
+		ret = r_esil_reg_alias (esil, src, dst);
 	}
 	return ret;
 }
@@ -1296,9 +1239,11 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				size_t last = strlen (reg);
 				reg[last + 1] = 0;
 				reg[last] = 'l';
-				ut64 loow = r_reg_getv (esil->anal->reg, reg);
+				ut64 loow = 0;
+				(void)r_esil_reg_read_silent (esil, reg, &loow, NULL);
 				reg[last] = 'h';
-				ut64 high = r_reg_getv (esil->anal->reg, reg);
+				ut64 high = 0;
+				(void)r_esil_reg_read_silent (esil, reg, &high, NULL);
 				ret = r_esil_mem_write (esil, addr, (const ut8*)&loow, 8);
 				ret = r_esil_mem_write (esil, addr + 8, (const ut8*)&high, 8);
 			} else {
@@ -1308,12 +1253,13 @@ static bool esil_poke_n(REsil *esil, int bits) {
 				esil->cb.hook_mem_read = NULL;
 				r_esil_mem_read (esil, addr, b, bytes);
 				esil->cb.hook_mem_read = oldhook;
-				n = r_read_ble64 (b, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
+				const bool be = esil_is_big_endian (esil);
+				n = r_read_ble64 (b, be);
 				esil->old = n;
 				esil->cur = num;
 				esil->lastsz = bits;
 				num = num & bitmask;
-				r_write_ble (b, num, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), bits);
+				r_write_ble (b, num, be, bits);
 				ret = r_esil_mem_write (esil, addr, b, bytes);
 			}
 		}
@@ -1368,7 +1314,7 @@ static bool esil_poke_some(REsil *esil) {
 					}
 					r_esil_get_parm_size (esil, foo, &tmp, &regsize);
 					isregornum (esil, foo, &num64);
-					r_write_ble (b, num64, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config), regsize);
+					r_write_ble (b, num64, esil_is_big_endian (esil), regsize);
 					const int size_bytes = regsize / 8;
 					const ut32 written = r_esil_mem_write (esil, ptr, b, size_bytes);
 					if (written != size_bytes) {
@@ -1390,7 +1336,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 	if (bits & 7) {
 		return false;
 	}
-	bool be = R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config);
+	bool be = esil_is_big_endian (esil);
 	bool ret = false;
 	ut64 addr;
 	ut32 bytes = bits / 8;
@@ -1414,7 +1360,7 @@ static bool esil_peek_n(REsil *esil, int bits) {
 		ut8 a[sizeof (ut64)] = {0};
 		ret = !!r_esil_mem_read (esil, addr, a, bytes);
 #if 0
-		ut64 b = r_read_ble64 (a, esil->anal->config->big_endian);
+		ut64 b = r_read_ble64 (a, esil_is_big_endian (esil));
 #else
 		ut64 b = r_read_ble64 (a, 0);
 		if (be) {
@@ -1478,7 +1424,7 @@ static bool esil_peek_some(REsil *esil) {
 						}
 						return false;
 					}
-					ut32 num32 = r_read_ble32 (a, R_ARCH_CONFIG_IS_BIG_ENDIAN (esil->anal->config));
+					ut32 num32 = r_read_ble32 (a, esil_is_big_endian (esil));
 					r_esil_reg_write (esil, foo.a, num32);
 					ptr += 4;
 				}

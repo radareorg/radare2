@@ -154,7 +154,7 @@ R_API bool r_core_esil_init(RCore *core) {
 	core_esil_reg_if.reg = core;
 	core_esil_mem_if.mem = core;
 	if (!r_esil_init (&core->esil.esil, 4096, false, 64,
-		&core_esil_reg_if, &core_esil_mem_if)) {
+		&core_esil_reg_if, &core_esil_mem_if, NULL)) {
 		goto init_fail;
 	}
 	if (!r_esil_set_op (&core->esil.esil, "TODO", core_esil_op_todo, 0, 0,

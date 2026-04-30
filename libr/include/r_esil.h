@@ -14,8 +14,6 @@
 extern "C" {
 #endif
 
-#define	USE_NEW_ESIL	0
-
 #define esilprintf(op, fmt, ...) r_strbuf_setf (&op->esil, fmt, ##__VA_ARGS__)
 // only flags that affect control flow
 enum {
@@ -153,7 +151,7 @@ typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
-// typedef bool (*REsilRegAlias)(void *reg, int kind, const char *name);
+typedef bool (*REsilRegAlias)(void *reg, const char *name, const char *alias);
 
 typedef struct r_esil_register_interface_t {
 	union {
@@ -164,13 +162,22 @@ typedef struct r_esil_register_interface_t {
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
 	REsilRegSize reg_size;
-	// REsilRegAlias reg_alias;
+	REsilRegAlias reg_alias;
 } REsilRegInterface;
+
+typedef bool (*REsilSetBits)(void *user, int bits);
+
+typedef struct r_esil_util_interface_t {
+	void *user;
+	REsilSetBits set_bits;
+} REsilUtilInterface;
 
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
+typedef void (*REsilVoyeurRegAlias)(void *user, const char *name, const char *alias);
 typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
+typedef	void (*REsilVoyeurSetBits)(void *user, int bits);
 typedef void (*REsilVoyeurOp)(void *user, const char *op);
 
 typedef struct r_esil_voyeur_t {
@@ -178,8 +185,10 @@ typedef struct r_esil_voyeur_t {
 	union {
 		REsilVoyeurRegRead reg_read;
 		REsilVoyeurRegWrite reg_write;
+		REsilVoyeurRegAlias reg_alias;
 		REsilVoyeurMemRead mem_read;
 		REsilVoyeurMemWrite mem_write;
+		REsilVoyeurSetBits set_bits;
 		REsilVoyeurOp op;
 		void *vfn;
 	};
@@ -188,15 +197,17 @@ typedef struct r_esil_voyeur_t {
 typedef enum {
 	R_ESIL_VOYEUR_REG_READ = 0,
 	R_ESIL_VOYEUR_REG_WRITE,
+	R_ESIL_VOYEUR_REG_ALIAS,
 	R_ESIL_VOYEUR_MEM_READ,
 	R_ESIL_VOYEUR_MEM_WRITE,
+	R_ESIL_VOYEUR_SET_BITS,
 	R_ESIL_VOYEUR_OP,
 	R_ESIL_VOYEUR_LAST,
-	R_ESIL_VOYEUR_HIGH_MASK = 0x7,
+	R_ESIL_VOYEUR_HIGH_MASK = 0xf,
 	R_ESIL_VOYEUR_ERR = UT32_MAX,
 } REsilVoyeurType;
 
-#define	VOYEUR_TYPE_BITS	3
+#define	VOYEUR_TYPE_BITS	4
 #define	VOYEUR_SHIFT_LEFT	((sizeof (ut32) << 3) - VOYEUR_TYPE_BITS)
 #define	VOYEUR_TYPE_MASK	((ut32)R_ESIL_VOYEUR_HIGH_MASK << VOYEUR_SHIFT_LEFT)
 #define	MAX_VOYEURS	(UT32_MAX ^ VOYEUR_TYPE_MASK)
@@ -256,6 +267,7 @@ typedef struct r_esil_t {
 	REsilTrace *trace;
 	REsilRegInterface reg_if;
 	REsilMemInterface mem_if;
+	REsilUtilInterface util_if;
 	RIDStorage voyeur[R_ESIL_VOYEUR_LAST];
 	REsilCallbacks cb;
 	REsilCallbacks ocb;
@@ -306,9 +318,9 @@ typedef struct r_esil_active_plugin_t {
 
 R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize);
 R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap,
-	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if);
+	ut32 addrsize, REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *util_if);
 R_API REsil *r_esil_new_ex(int stacksize, bool iotrap, ut32 addrsize,
-	REsilRegInterface *reg_if, REsilMemInterface *mem_if);
+	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if);
 //this should replace existing r_esil_new
 R_API REsil *r_esil_new_simple(ut32 addrsize, void *reg, void *iob);
 //R_API REsil *r_esil_new_simple(ut32 addrsize, struct r_reg_t *reg, struct r_io_bind_t *iob);
@@ -332,6 +344,8 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
+R_API bool r_esil_reg_alias(REsil *esil, RStrs name, RStrs alias);
+R_API bool r_esil_set_bits(REsil *esil, int bits);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, RStrs s);
 R_API RStrs r_esil_pop(REsil *esil);
