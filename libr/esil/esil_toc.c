@@ -148,14 +148,12 @@ static bool esil2c_goto(REsil *esil) {
 	return true;
 }
 
-static bool esil2c_mw(void *null, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
+static void esil2c_mw(void *user R_UNUSED, ut64 addr, const ut8 *old R_UNUSED, const ut8 *buf, int len) {
 	R_LOG_TODO ("poke%d 0x%08"PFMT64x" %d", len, addr, *buf);
-	return true;
 }
 
-static bool esil2c_mr(REsil *esil, ut64 addr, ut8 *buf, int len) {
+static void esil2c_mr(void *user R_UNUSED, ut64 addr, const ut8 *buf R_UNUSED, int len) {
 	R_LOG_TODO ("peek%d 0x%08"PFMT64x, len, addr);
-	return true;
 }
 
 static void esil2c_setup(REsil *esil) {

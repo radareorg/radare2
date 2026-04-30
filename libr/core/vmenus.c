@@ -193,6 +193,15 @@ static void showreg(RCore *core, const char *rn, const char *desc) {
 	free (res);
 }
 
+static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
+	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+	if (esil) {
+		esil->anal = core->anal;
+		r_esil_set_pc (esil, core->addr);
+	}
+	return esil;
+}
+
 R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	const int nbits = sizeof (ut64) * 8;
 	int analopType;
@@ -223,8 +232,7 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	}
 	RCons *cons = core->cons;
 	r_reg_arena_push (core->anal->reg);
-	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
-	r_esil_set_pc (esil, core->addr);
+	REsil *esil = visual_esil_new (core, addrsize);
 	char *expr = NULL;
 	bool refresh = false;
 	for (;;) {
@@ -329,18 +337,14 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			x = 0;
 			r_esil_free (esil);
 			r_core_cmd0 (core, "so+1");
-			esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
-			r_esil_set_pc (esil, core->addr);
-			esil->anal = core->anal;
+			esil = visual_esil_new (core, addrsize);
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
 			r_esil_free (esil);
 			r_core_cmd0 (core, "so-1");
-			esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
-			r_esil_set_pc (esil, core->addr);
-			esil->anal = core->anal;
+			esil = visual_esil_new (core, addrsize);
 			break;
 		case '=':
 		{ // TODO: edit
