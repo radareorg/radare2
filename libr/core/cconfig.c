@@ -4879,7 +4879,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.progressbar", "false", "display a progress bar when running scripts.");
 	n = NODECB ("scr.clippy", "clippy", &cb_scrclippy);
 	SETDESC (n, "default clippy avatar for ?E command");
-	SETOPTIONS (n, "clippy", "orangg", "croco", "cybercat", NULL);
+	SETOPTIONS (n, "clippy", "orangg", "croco", "cybercat", "mini", NULL);
 
 	/* str */
 	SETCB ("str.escbslash", "false", &cb_str_escbslash, "escape the backslash"); // XXX this is the only var starting with 'str.'

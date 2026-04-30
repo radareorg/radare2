@@ -254,13 +254,14 @@ static RCoreHelpMessage help_msg_question_i = {
 };
 
 static RCoreHelpMessage help_msg_clippy = {
-	"Usage: ?E[0-9KOC] msg", "print a message with clippy avatar", "",
+	"Usage: ?E[0-9KOCM] msg", "print a message with clippy avatar", "",
 	"?E", " msg", "print message with default avatar (see scr.clippy)",
 	"?E0", " msg", "print message with first frame of avatar",
 	"?E1", " msg", "print message with second frame of avatar",
 	"?EK", " msg", "print message with cybercat avatar",
 	"?EO", " msg", "print message with orangg avatar",
 	"?EC", " msg", "print message with croco avatar",
+	"?EM", " msg", "print message with mini-clippy avatar",
 	NULL
 };
 

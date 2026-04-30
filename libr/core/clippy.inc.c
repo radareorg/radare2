@@ -124,11 +124,23 @@ static Avatar avatar_clippy = {
 		" `---'  " }
 };
 
+static Avatar avatar_mini_clippy = {
+	.name = "mini",
+	.w = 5,
+	.h = 3,
+	.count = 1,
+	.lines = {
+		" _,  ",
+		"|oo _",
+		"|_|  " }
+};
+
 enum {
 	R_AVATAR_ORANGG,
 	R_AVATAR_CYBCAT,
 	R_AVATAR_CROCO,
 	R_AVATAR_CLIPPY,
+	R_AVATAR_MINI,
 };
 
 R_API void r_core_clippy(RCore *core, const char *msg) {
@@ -141,6 +153,8 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		type = R_AVATAR_CROCO;
 	} else if (!strcmp (clippy_type, "cybercat")) {
 		type = R_AVATAR_CYBCAT;
+	} else if (!strcmp (clippy_type, "mini")) {
+		type = R_AVATAR_MINI;
 	}
 
 	int frame = -1; // -1 means random
@@ -158,6 +172,9 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 				break;
 			case 'K':
 				type = R_AVATAR_CYBCAT;
+				break;
+			case 'M':
+				type = R_AVATAR_MINI;
 				break;
 			default:
 				type = R_AVATAR_CLIPPY;
@@ -188,6 +205,9 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 	case R_AVATAR_CYBCAT:
 		avatar = &avatar_cybcat;
 		break;
+	case R_AVATAR_MINI:
+		avatar = &avatar_mini_clippy;
+		break;
 	default:
 		avatar = utf8? &avatar_clippy_utf8: &avatar_clippy;
 		break;
@@ -212,14 +232,19 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		bubble_w = (w < margin_right)? 10: w - margin_right;
 	}
 	RStrBuf *buf = r_strbuf_new ("");
-	int rows = R_MAX (lines_length + 4, avatar->h);
+	const bool mini = type == R_AVATAR_MINI;
+	const int avatar_gap = mini? 0: 1;
+	int rows = mini? R_MAX (lines_length + 2, avatar->h): R_MAX (lines_length + 4, avatar->h);
 	for (i = 0; i < rows; i++) {
-		const bool bubble_active = (i <= lines_length + 3);
+		const bool bubble_active = mini? (i <= lines_length + 1): (i <= lines_length + 3);
 		// draw clippy
 		if (i < avatar->h) {
 			const char *avatar_line = avatar->lines[baseline + i];
 			if (bubble_active) {
-				r_strbuf_appendf (buf, "%s ", avatar_line);
+				r_strbuf_append (buf, avatar_line);
+				if (avatar_gap > 0) {
+					r_strbuf_append (buf, " ");
+				}
 			} else {
 				size_t avatar_len = strlen (avatar_line);
 				while (avatar_len && avatar_line[avatar_len - 1] == ' ') {
@@ -234,7 +259,7 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 			}
 		} else {
 			if (bubble_active) {
-				r_strbuf_pad (buf, ' ', avatar->w + 1);
+				r_strbuf_pad (buf, ' ', avatar->w + avatar_gap);
 			} else {
 				r_strbuf_append (buf, "\n");
 				continue;
@@ -243,7 +268,18 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		// draw bubble
 		const char *bubble_begin = "";
 		const char *bubble_end = "";
-		if (i == 0) {
+		if (mini) {
+			if (i == 0) {
+				bubble_begin = ".-";
+				bubble_end = "-.";
+			} else if (i == lines_length + 1) {
+				bubble_begin = "|";
+				bubble_end = "|";
+			} else if (i <= lines_length) {
+				bubble_begin = "| ";
+				bubble_end = " |";
+			}
+		} else if (i == 0) {
 			if (utf8) {
 				bubble_begin = " ╭─";
 				bubble_end = "─╮";
@@ -277,17 +313,19 @@ R_API void r_core_clippy(RCore *core, const char *msg) {
 		}
 		r_strbuf_append (buf, bubble_begin);
 		// print text
-		if (i > 1 && i < lines_length + 2) {
-			RListIter *line = r_list_get_nth (lines, i - 2);
+		if ((mini && i > 0 && i <= lines_length) || (!mini && i > 1 && i < lines_length + 2)) {
+			RListIter *line = r_list_get_nth (lines, mini? i - 1: i - 2);
 			if (line) {
 				r_strbuf_append (buf, line->data);
 				const int tw = r_str_display_width (line->data);
 				r_strbuf_pad (buf, ' ', bubble_w - tw);
 			}
 		} else {
-			if (i == 0 || i == lines_length + 3) {
+			if (mini && i == lines_length + 1) {
+				r_strbuf_pad (buf, '_', bubble_w + 2);
+			} else if (i == 0 || (!mini && i == lines_length + 3)) {
 				// pad with lines
-				if (utf8) {
+				if (!mini && utf8) {
 					int j;
 					for (j = 0; j < bubble_w; j++) {
 						r_strbuf_append (buf, "─");

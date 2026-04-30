@@ -16,6 +16,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=mini clippy
+FILE=-
+CMDS=<<EOF
+-e scr.utf8=0
+-e scr.utf8.curvy=0
+?EM Hello World
+EOF
+EXPECT=<<EOF
+ _,  .-------------.
+|oo _| Hello World |
+|_|  |_____________|
+EOF
+RUN
+
 NAME=clippy utf8
 FILE=-
 CMDS=<<EOF
@@ -72,4 +87,3 @@ EXPECT=<<EOF
  `---'
 EOF
 RUN
-
