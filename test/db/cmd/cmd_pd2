@@ -168,9 +168,9 @@ afb+ 0x00560e67 0x00560eb1 297
 pdf
 EOF
 EXPECT=<<EOF
-/ 318: fcn.00560e67 (int32_t arg_0h);
-|       :   ; arg int32_t arg_0h @ esp+0x20
-|       :   ; var int32_t var_1ch @ esp+0x4
+/ 318: fcn.00560e67 (int32_t arg_4h);
+|       :   ; arg int32_t arg_4h @ esp+0x24
+|       :   ; var int32_t var_18h @ esp+0x8
 |       :   ; var int32_t var_ch @ esp+0x14
 |       :   ; var int32_t var_8h @ esp+0x18
 |       :   ; var int32_t var_4h @ esp+0x1c
@@ -229,7 +229,7 @@ EXPECT=<<EOF
 |       :   0x00560f3c      xor ecx, dword [esp]
 |       :   0x00560f3f      pop esp
 |       :   0x00560f40      mov dword [esp], ebx
-|       :   0x00560f43      push dword [arg_0h]
+|       :   0x00560f43      push dword [arg_4h]
 |       :   0x00560f47      mov eax, dword [esp]
 |       :   0x00560f4a      push esi
 |       :   0x00560f4b      mov esi, esp
@@ -243,7 +243,7 @@ EXPECT=<<EOF
 |       :   0x00560f67      add esi, 4
 |       :   0x00560f6d      xchg dword [esp], esi
 |       :   0x00560f70      pop esp
-|       :   0x00560f71      push dword [var_ch]
+|       :   0x00560f71      push dword [var_8h]
 |       :   0x00560f75      push dword [esp]
 |       :   0x00560f78      mov ebx, dword [esp]
 |       :   0x00560f7b      push ebx
@@ -262,7 +262,7 @@ EXPECT=<<EOF
 |       :   0x00560fa0      add ebx, 4
 |       :   0x00560fa6      add ebx, 4
 |       :   0x00560fa9      push ebx
-|       :   0x00560faa      push dword [var_1ch]
+|       :   0x00560faa      push dword [var_18h]
 |       :   0x00560fae      pop ebx
 |       :   0x00560faf      pop dword [esp]
 |       :   0x00560fb2      mov esp, dword [esp]

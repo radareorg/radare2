@@ -2961,7 +2961,16 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 		set_src_dst (a, src2, handle, insn, 3);
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
-		if ((op->type & R_ANAL_OP_TYPE_REG)) {
+	case R_ANAL_OP_TYPE_DIV:
+	case R_ANAL_OP_TYPE_MUL:
+		// Single-operand ops where INSOP(0) is the source. Only fill srcs
+		// when the memref is stack-relative — otherwise we'd manufacture
+		// spurious var accesses for arbitrary addresses.
+		if (INSOP (0).type == X86_OP_MEM
+				&& (INSOP (0).mem.base == X86_REG_RSP
+					|| INSOP (0).mem.base == X86_REG_ESP
+					|| INSOP (0).mem.base == X86_REG_RBP
+					|| INSOP (0).mem.base == X86_REG_EBP)) {
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 0);
 		}
@@ -3536,6 +3545,12 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_MOV;
 		op0_memimmhandle (op, insn, addr, regsz);
 		op1_memimmhandle (op, insn, addr, regsz);
+		const int src_idx = norm_op (1, a->config->syntax, INSOPS);
+		if (INSOP (src_idx).type == X86_OP_MEM) {
+			op->ireg = cs_reg_name (*handle, INSOP (src_idx).mem.index);
+			op->disp = INSOP (src_idx).mem.disp;
+			op->scale = INSOP (src_idx).mem.scale;
+		}
 		}
 		break;
 	// comiss
@@ -3612,6 +3627,14 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 		op->type = R_ANAL_OP_TYPE_ACMP; // compare via and
 		inscmp (op, addr, insn, regsz);
 		break;
+	case X86_INS_LES:
+	case X86_INS_LDS:
+		// 16-bit far-pointer load: treat like a MOV reg, [mem] for the var
+		// detection path so the memref source gets propagated.
+		op->type = R_ANAL_OP_TYPE_MOV;
+		op0_memimmhandle (op, insn, addr, regsz);
+		op1_memimmhandle (op, insn, addr, regsz);
+		break;
 	case X86_INS_LEA:
 		op->type = R_ANAL_OP_TYPE_LEA;
 		switch (INSOP(1).type) {
@@ -3627,6 +3650,19 @@ static void anop(RArchSession *a, RAnalOp *op, ut64 addr, const ut8 *buf, int le
 			case X86_REG_EBP:
 				op->stackop = R_ANAL_STACK_GET;
 				op->stackptr = regsz;
+				break;
+			case X86_REG_RSP:
+			case X86_REG_ESP:
+				// lea esp, [esp + N] / [esp + reg] adjusts the stack
+				// pointer. When the displacement is a plain immediate
+				// the size of the adjustment is op->disp; track it so
+				// fcn->stack stays in sync.
+				if (INSOP (0).type == X86_OP_REG
+						&& (INSOP (0).reg == X86_REG_RSP || INSOP (0).reg == X86_REG_ESP)
+						&& INSOP (1).mem.index == X86_REG_INVALID) {
+					op->stackop = R_ANAL_STACK_INC;
+					op->stackptr = -(st64)INSOP (1).mem.disp;
+				}
 				break;
 			default:
 				/* unhandled */
