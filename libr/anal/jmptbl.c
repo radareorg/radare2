@@ -487,11 +487,14 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		return false;
 	}
 	const bool indirect = (spec->flags & R_ANAL_SWITCH_F_INDIRECT) != 0;
-	const ut8 vsize = indirect ? (spec->vsize ? spec->vsize : 1) : 0;
+	const bool sparse   = (spec->flags & R_ANAL_SWITCH_F_SPARSE) != 0;
+	const bool defintbl = (spec->flags & R_ANAL_SWITCH_F_DEFINTBL) != 0;
+	const bool need_vtbl = indirect || sparse;
+	const ut8 vsize = need_vtbl ? (spec->vsize ? spec->vsize : 1) : 0;
 	ut8 *vtbl = NULL;
-	if (indirect) {
+	if (need_vtbl) {
 		if (spec->vtbl_addr == UT64_MAX) {
-			R_LOG_DEBUG ("INDIRECT switch with no vtbl_addr at 0x%08"PFMT64x, spec->startea);
+			R_LOG_DEBUG ("Switch with no vtbl_addr at 0x%08"PFMT64x, spec->startea);
 			free (jmptbl);
 			return false;
 		}
@@ -506,12 +509,49 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 	const bool signed_entry = (spec->flags & R_ANAL_SWITCH_F_SIGNED) != 0;
 	const bool insn_entry   = (spec->flags & R_ANAL_SWITCH_F_INSN) != 0;
 	const bool inverse      = (spec->flags & R_ANAL_SWITCH_F_INVERSE) != 0;
+	// DEFINTBL: one entry of jtbl is the default jump, not a real case.
+	// With INVERSE the default sits at index 0; otherwise at the tail.
+	const ut32 default_slot = defintbl
+		? (inverse ? 0 : ncases - 1)
+		: UT32_MAX;
+	ut64 def_jump = spec->defjump;
+	if (defintbl) {
+		const ut64 entry_addr = spec->jtbl_addr + (ut64)default_slot * esize;
+		ut64 raw = switch_read_entry (jmptbl + (ut64)default_slot * esize, esize, signed_entry);
+		ut64 jmpptr = UT64_MAX;
+		if (insn_entry) {
+			jmpptr = entry_addr;
+		} else if (!switch_compute_target (spec, entry_addr, raw, &jmpptr)) {
+			jmpptr = UT64_MAX;
+		}
+		if (jmpptr != UT64_MAX) {
+			if (def_jump == UT64_MAX || def_jump == 0) {
+				def_jump = jmpptr;
+			}
+			if (!insn_entry) {
+				r_meta_set_data_at (anal, entry_addr, esize);
+				r_anal_hint_set_immbase (anal, entry_addr, 10);
+			}
+		}
+	}
 	ut32 i;
 	ut32 last_applied = 0;
 	for (i = 0; i < ncases; i++) {
 		const ut32 idx = inverse ? (ncases - 1 - i) : i;
+		if (idx == default_slot) {
+			continue;
+		}
 		ut32 jtbl_idx = idx;
-		if (indirect) {
+		st64 casenum = (st64)i + spec->lowcase;
+		if (sparse) {
+			// Parallel arrays: vtbl[idx] holds the case key, jtbl[idx]
+			// the target. Element size is vsize; keys are signed iff
+			// the spec asked for signed entries.
+			casenum = (st64) switch_read_entry (vtbl + (ut64)idx * vsize, vsize, signed_entry);
+			const ut64 vloc = spec->vtbl_addr + (ut64)idx * vsize;
+			r_meta_set_data_at (anal, vloc, vsize);
+			r_anal_hint_set_immbase (anal, vloc, 10);
+		} else if (indirect) {
 			ut64 v_raw = switch_read_entry (vtbl + (ut64)idx * vsize, vsize, false);
 			if (v_raw >= ncases) {
 				R_LOG_DEBUG ("INDIRECT entry out of range at idx %u", idx);
@@ -542,14 +582,13 @@ static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bl
 		if (!is_valid_jmptbl_case_target (anal, &target_ctx, jmpptr)) {
 			continue;
 		}
-		const st64 casenum = (st64)i + spec->lowcase;
 		apply_case (anal, fcn, block, spec->startea, esize, jmpptr,
 				(ut64)casenum, entry_addr, insn_entry);
 		analyze_new_case (anal, fcn, block, spec->startea, jmpptr, depth);
 		last_applied = i + 1;
 	}
 	if (last_applied > 0) {
-		ut64 def = spec->defjump;
+		ut64 def = def_jump;
 		if (def == 0) {
 			def = UT64_MAX;
 		}
