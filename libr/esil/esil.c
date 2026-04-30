@@ -1243,19 +1243,23 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 		esil->cb.mem_read = internal_esil_mem_read;
 		esil->cb.mem_write = internal_esil_mem_write;
 	}
-	esil->reg_if = (REsilRegInterface) {
-		.user = esil,
-		.is_reg = setup_esil_is_reg,
-		.reg_read = setup_esil_reg_read,
-		.reg_write = setup_esil_reg_write,
-		.reg_size = setup_esil_reg_size,
-		.reg_alias = setup_esil_reg_alias,
-	};
-	esil->mem_if = (REsilMemInterface) {
-		.user = esil,
-		.mem_read = setup_esil_mem_read,
-		.mem_write = setup_esil_mem_write,
-	};
+	if (!esil->reg_if.reg_read) {
+		esil->reg_if = (REsilRegInterface) {
+			.user = esil,
+			.is_reg = setup_esil_is_reg,
+			.reg_read = setup_esil_reg_read,
+			.reg_write = setup_esil_reg_write,
+			.reg_size = setup_esil_reg_size,
+			.reg_alias = setup_esil_reg_alias,
+		};
+	}
+	if (!esil->mem_if.mem_read) {
+		esil->mem_if = (REsilMemInterface) {
+			.user = esil,
+			.mem_read = setup_esil_mem_read,
+			.mem_write = setup_esil_mem_write,
+		};
+	}
 	if (!esil->voyeur[0].pool) {
 		int i;
 		for (i = 0; i < R_ESIL_VOYEUR_LAST; i++) {
