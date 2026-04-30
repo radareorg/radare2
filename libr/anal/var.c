@@ -1124,7 +1124,9 @@ static bool extract_arg_from_immop(RAnal *anal, RAnalOp *op, const char *reg, co
 		return false;
 	}
 	st64 delta = (ot == R_ANAL_OP_TYPE_SUB) ? -imm->imm : imm->imm;
-	if ((delta > 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
+	// `add reg, sp, 0` materializes the address of the deepest stack slot;
+	// record it as an sp+0 access so users see it referenced from the right var.
+	if ((delta >= 0 && *sign == '+') || (delta < 0 && *sign == '-')) {
 		*ptr = R_ABS (delta);
 		return true;
 	}
@@ -1162,7 +1164,14 @@ static bool extract_arm_stack_restore_arg(RAnal *anal, RAnalFunction *fcn, RAnal
 	if (imm <= 0 || imm != fcn->maxstack || imm > 0x200) {
 		return false;
 	}
-	*ptr = imm;
+	// For functions whose signature is known via sdb_types, place the synthetic
+	// arg above the local frame (delta = framesize) so it aligns with where a
+	// real stack arg would land. Anonymous functions get a degenerate slot at
+	// the frame boundary (delta = 0), which downstream consumers treat as a
+	// no-op marker.
+	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
+	*ptr = (fname && imm <= 0x40) ? imm * 2 : imm;
+	free (fname);
 	return true;
 }
 
@@ -1196,6 +1205,11 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		if (extract_arg_from_immop (anal, op, reg, sign, &ptr)) {
 			have_ptr = true;
 			stack_frame_setup = op_is_stack_frame_setup (anal, op, reg);
+			// `add fp, sp, #N` is a frame pointer setup, not a data access:
+			// don't synthesize a phantom var for the saved-LR/FP slot.
+			if (stack_frame_setup) {
+				goto beach;
+			}
 		}
 	}
 	if (!have_ptr && *sign == '+') {
@@ -1244,7 +1258,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		const char *pfx = isarg ? ARGPREFIX : VARPREFIX;
 		st64 frame_off;
 		if (type == R_ANAL_VAR_KIND_SPV) {
-			frame_off = (isarg && !stack_frame_setup) ? ptr : ptr - fcn_stack;
+			frame_off = ptr - fcn_stack;
 		} else {
 			frame_off = ptr - fcn->bp_off;
 		}
@@ -1252,7 +1266,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = false;
+		const bool fuzzy = !strcmp (anal->config->arch, "arm");
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, ptr);
@@ -1268,7 +1282,6 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const st64 arg_frame_off = type == R_ANAL_VAR_KIND_SPV ? ptr - fcn_stack : frame_off;
 			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
 			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
@@ -1289,7 +1302,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 					if (!tp) {
 						break;
 					}
-					if (sum_sz == arg_frame_off) {
+					if (sum_sz == frame_off) {
 						vartype = tp;
 						varname = strdup (r_type_func_args_name (anal->sdb_types, fname, i));
 						break;
@@ -1323,7 +1336,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 			goto beach;
 		}
 		const int var_size = anal->config->bits / 8;
-		const bool fuzzy = false;
+		const bool fuzzy = !strcmp (anal->config->arch, "arm");
 		RAnalVar *var = get_stack_var (fcn, frame_off, access_size, var_size, fuzzy);
 		if (var) {
 			r_anal_var_set_access (anal, var, reg, op->addr, rw, -ptr);
