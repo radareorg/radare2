@@ -645,6 +645,15 @@ static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len)
 	return esil && esil->cb.mem_write? esil->cb.mem_write (esil, addr, buf, len): false;
 }
 
+static bool setup_esil_set_bits(void *user, int bits) {
+	REsil *esil = user;
+	if (!esil || !esil->anal || !esil->anal->coreb.core || !esil->anal->coreb.setArchBits) {
+		return false;
+	}
+	esil->anal->coreb.setArchBits (esil->anal->coreb.core, NULL, bits);
+	return true;
+}
+
 // Push a slice. Arena-backed slices are stored by reference; external ones
 // are copied into the arena (fixed-size, never reallocs).
 R_API bool r_esil_push(REsil *esil, RStrs s) {
@@ -1258,6 +1267,12 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 			.user = esil,
 			.mem_read = setup_esil_mem_read,
 			.mem_write = setup_esil_mem_write,
+		};
+	}
+	if (!esil->util_if.set_bits && anal->coreb.core && anal->coreb.setArchBits) {
+		esil->util_if = (REsilUtilInterface) {
+			.user = esil,
+			.set_bits = setup_esil_set_bits,
 		};
 	}
 	if (!esil->voyeur[0].pool) {

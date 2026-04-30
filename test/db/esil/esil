@@ -61,6 +61,21 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bits
+FILE=-
+ARGS=-a arm -b 32
+CMDS=<<EOF
+ae 16,BITS
+e asm.bits
+ae 32,BITS
+e asm.bits
+EOF
+EXPECT=<<EOF
+16
+32
+EOF
+RUN
+
 NAME=shift-left
 FILE=-
 CMDS=<<EOF
