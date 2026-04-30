@@ -2960,13 +2960,25 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 		set_src_dst (a, src1, handle, insn, 2);
 		set_src_dst (a, src2, handle, insn, 3);
 		break;
-	case R_ANAL_OP_TYPE_UPUSH:
 	case R_ANAL_OP_TYPE_DIV:
 	case R_ANAL_OP_TYPE_MUL:
 		// Single-operand ops where INSOP(0) is the source. Only fill srcs
 		// when the memref is stack-relative — otherwise we'd manufacture
 		// spurious var accesses for arbitrary addresses.
 		if (INSOP (0).type == X86_OP_MEM
+				&& (INSOP (0).mem.base == X86_REG_RSP
+					|| INSOP (0).mem.base == X86_REG_ESP
+					|| INSOP (0).mem.base == X86_REG_RBP
+					|| INSOP (0).mem.base == X86_REG_EBP)) {
+			CREATE_SRC_DST (op);
+			set_src_dst (a, src0, handle, insn, 0);
+		}
+		break;
+	case R_ANAL_OP_TYPE_UPUSH:
+		if (op->type & R_ANAL_OP_TYPE_REG) {
+			CREATE_SRC_DST (op);
+			set_src_dst (a, src0, handle, insn, 0);
+		} else if (INSOP (0).type == X86_OP_MEM
 				&& (INSOP (0).mem.base == X86_REG_RSP
 					|| INSOP (0).mem.base == X86_REG_ESP
 					|| INSOP (0).mem.base == X86_REG_RBP

@@ -326,6 +326,11 @@ static bool riscv_is_stack_reg_name(const char *name) {
 	return name && (!strcmp (name, riscv_gpr_names[X_SP]) || !strcmp (name, "s0"));
 }
 
+static bool riscv_mnemonic_is(const char *name, const char *mnemonic) {
+	size_t len = strlen (mnemonic);
+	return r_str_startswith (name, mnemonic) && (!name[len] || name[len] == ' ' || name[len] == '\t');
+}
+
 static void riscv_fillval(RAnalOp *op, riscv_args_t *args) {
 	if (!op || !args || !args->num) {
 		return;
@@ -355,25 +360,20 @@ static void riscv_set_stackop(RAnalOp *op, riscv_args_t *args, const char *name)
 	if (!op || !args || !args->num) {
 		return;
 	}
-	if (r_str_startswith (name, "addi16sp")) {
+	if (riscv_mnemonic_is (name, "addi16sp") || riscv_mnemonic_is (name, "c.addi16sp")) {
 		if (!strcmp (arg_n (args, 0), riscv_gpr_names[X_SP])) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = r_num_math (NULL, arg_n (args, 1));
 		}
 		return;
 	}
-	if (r_str_startswith (name, "addi") || r_str_startswith (name, "addiw")) {
+	if (riscv_mnemonic_is (name, "addi") || riscv_mnemonic_is (name, "addiw")
+			|| riscv_mnemonic_is (name, "c.addi") || riscv_mnemonic_is (name, "c.addiw")) {
 		if (args->num >= 3 && !strcmp (arg_n (args, 0), riscv_gpr_names[X_SP]) && !strcmp (arg_n (args, 1), riscv_gpr_names[X_SP])) {
 			op->stackop = R_ANAL_STACK_INC;
 			op->stackptr = -(st64)r_num_math (NULL, arg_n (args, 2));
 		}
 		return;
-	}
-	if (r_str_startswith (name, "sub")) {
-		if (args->num >= 3 && !strcmp (arg_n (args, 0), riscv_gpr_names[X_SP]) && !strcmp (arg_n (args, 1), riscv_gpr_names[X_SP])) {
-			op->stackop = R_ANAL_STACK_INC;
-			op->stackptr = r_num_math (NULL, arg_n (args, 2));
-		}
 	}
 }
 

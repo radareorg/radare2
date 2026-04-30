@@ -1694,22 +1694,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->type = R_ANAL_OP_TYPE_LOAD;
-				insn.id = MIPS_INS_LUI;
-				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
-				if (mask & R_ARCH_OP_MASK_VAL) {
-					dst = RVecRArchValue_emplace_back (&op->dsts);
-					dst->reg = NULL;
-				}
-				op->val = imm;
-				break;
-			case 9: // addiu
-				insn.id = MIPS_INS_ADDIU;
-				op->type = R_ANAL_OP_TYPE_ADD;
-				if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
-					mips_fill_add_values (op, rt, rs, imm);
-				}
-				mips_set_stackop_add (op, rt, imm);
-				op->val = imm; // Beware: this one is signed... use `?vi $v`
+			insn.id = MIPS_INS_LUI;
+			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				dst = RVecRArchValue_emplace_back (&op->dsts);
+				dst->reg = NULL;
+			}
+			op->val = imm;
+			break;
+		case 9: // addiu
+			insn.id = MIPS_INS_ADDIU;
+			op->type = R_ANAL_OP_TYPE_ADD;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_add_values (op, rt, rs, imm);
+			}
+			mips_set_stackop_add (op, rt, imm);
+			op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
