@@ -5,6 +5,14 @@
 #define LOOP_MAX 10
 #define TYPE_MATCH_MAX_BACKTRACE 512
 
+enum {
+	TP_VOYEUR_REG_READ = 0,
+	TP_VOYEUR_REG_WRITE,
+	TP_VOYEUR_MEM_READ,
+	TP_VOYEUR_MEM_WRITE,
+	TP_VOYEUR_NMAX
+};
+
 typedef struct type_trace_change_reg_t {
 	int idx;
 	ut32 cc;
@@ -92,7 +100,7 @@ typedef struct type_trace_t {
 	RReg *reg;
 	HtUP *registers;
 	VecMemRange memory;
-	ut32 voy[R_ESIL_VOYEUR_LAST];
+	ut32 voy[TP_VOYEUR_NMAX];
 	RStrBuf rollback;  // ESIL string to rollback state (inspired by PR #24428)
 	bool enable_rollback;
 	// TODO: Add REsil instance here
@@ -287,34 +295,34 @@ static bool type_trace_init(TypeTrace *trace, REsil *esil, RReg *reg) {
 	if (!trace->registers) {
 		goto fail_registers_ht;
 	}
-	trace->voy[R_ESIL_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
+	trace->voy[TP_VOYEUR_REG_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_reg_read, R_ESIL_VOYEUR_REG_READ);
-	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
+	if (R_UNLIKELY (trace->voy[TP_VOYEUR_REG_READ] == R_ESIL_VOYEUR_ERR)) {
 		goto fail_regr_voy;
 	}
-	trace->voy[R_ESIL_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
+	trace->voy[TP_VOYEUR_REG_WRITE] = r_esil_add_voyeur (esil, trace,
 		type_trace_voyeur_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
+	if (R_UNLIKELY (trace->voy[TP_VOYEUR_REG_WRITE] == R_ESIL_VOYEUR_ERR)) {
 		goto fail_regw_voy;
 	}
-	trace->voy[R_ESIL_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
+	trace->voy[TP_VOYEUR_MEM_READ] = r_esil_add_voyeur (esil, &trace->db,
 		type_trace_voyeur_mem_read, R_ESIL_VOYEUR_MEM_READ);
-	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
+	if (R_UNLIKELY (trace->voy[TP_VOYEUR_MEM_READ] == R_ESIL_VOYEUR_ERR)) {
 		goto fail_memr_voy;
 	}
-	trace->voy[R_ESIL_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
+	trace->voy[TP_VOYEUR_MEM_WRITE] = r_esil_add_voyeur (esil, trace,
 		type_trace_voyeur_mem_write, R_ESIL_VOYEUR_MEM_WRITE);
-	if (R_UNLIKELY (trace->voy[R_ESIL_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
+	if (R_UNLIKELY (trace->voy[TP_VOYEUR_MEM_WRITE] == R_ESIL_VOYEUR_ERR)) {
 		goto fail_memw_voy;
 	}
 	trace->reg = reg;
 	return true;
 fail_memw_voy:
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_MEM_READ]);
 fail_memr_voy:
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_REG_WRITE]);
 fail_regw_voy:
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_REG_READ]);
 fail_regr_voy:
 	ht_up_free (trace->registers);
 	trace->registers = NULL;
@@ -368,10 +376,10 @@ static void type_trace_fini(TypeTrace *trace, REsil *esil) {
 	ht_up_free (trace->registers);
 	trace->registers = NULL;
 	VecMemRange_fini (&trace->memory);
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_WRITE]);
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_MEM_READ]);
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_WRITE]);
-	r_esil_del_voyeur (esil, trace->voy[R_ESIL_VOYEUR_REG_READ]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_MEM_WRITE]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_MEM_READ]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_REG_WRITE]);
+	r_esil_del_voyeur (esil, trace->voy[TP_VOYEUR_REG_READ]);
 	r_reg_free (trace->reg);
 	trace->reg = NULL;
 	*trace = (const TypeTrace){ 0 };
