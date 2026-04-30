@@ -768,6 +768,49 @@ static const char *mips_reg_decode(ut32 reg_num) {
 	return NULL;
 }
 
+static void mips_fill_add_values(RAnalOp *op, int rt, int rs, int imm) {
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	dst->reg = mips_reg_decode (rt);
+	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+	src->reg = mips_reg_decode (rs);
+	RAnalValue *src1 = RVecRArchValue_emplace_back (&op->srcs);
+	src1->imm = imm;
+}
+
+static void mips_fill_load_values(RAnalOp *op, int rt, int rs, int imm) {
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	dst->reg = mips_reg_decode (rt);
+	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+	src->reg = mips_reg_decode (rs);
+	src->delta = imm;
+	src->memref = op->refptr;
+}
+
+static void mips_fill_load_dst_value(RAnalOp *op, int rt) {
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	dst->reg = mips_reg_decode (rt);
+}
+
+static void mips_fill_store_values(RAnalOp *op, int rt, int rs, int imm) {
+	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
+	dst->reg = mips_reg_decode (rs);
+	dst->delta = imm;
+	dst->memref = op->refptr;
+	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
+	src->reg = mips_reg_decode (rt);
+}
+
+static bool mips_reg_is_stack_base(int reg) {
+	return reg == 29 || reg == 30;
+}
+
+static void mips_set_stackop_add(RAnalOp *op, int rt, int imm) {
+	if (rt == 29) {
+		op->stackop = R_ANAL_STACK_INC;
+		op->stackptr = -imm;
+	}
+}
+
 static int analop_esil(RArchSession *as, RAnalOp *op, ut64 addr, gnu_insn *insn) {
 	switch (insn->id) {
 	case MIPS_INS_NOP:
@@ -1575,7 +1618,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "%" PFMT32d, imm);
 
 		// eprintf ("OPTYPE %d\n", optype);
-		RAnalValue *src, *dst;
+		RAnalValue *dst;
 		switch (optype) {
 		case 1:
 			switch (rt) {
@@ -1651,34 +1694,22 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		// flags directly, as suggested here: https://github.com/radareorg/radare2/issues/949#issuecomment-43654922
 		case 15: // lui
 			op->type = R_ANAL_OP_TYPE_LOAD;
-			insn.id = MIPS_INS_LUI;
-			snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
-			dst = RVecRArchValue_emplace_back (&op->dsts);
-#if 0
-			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
-#else
-			dst->reg = NULL;
-#endif
-			// TODO: currently there is no way for the macro to get access to this register
-			op->val = imm;
-			break;
-		case 9: // addiu
-			insn.id = MIPS_INS_ADDIU;
-			op->type = R_ANAL_OP_TYPE_ADD;
-			dst = RVecRArchValue_emplace_back (&op->dsts);
-#if 0
-			dst->reg = r_reg_get (as->reg, mips_reg_decode (rt), R_REG_TYPE_GPR);
-#else
-			dst->reg = NULL;
-#endif
-			// TODO: currently there is no way for the macro to get access to this register
-			src = RVecRArchValue_emplace_back (&op->srcs);
-#if 0
-			src->reg = r_reg_get (as->reg, mips_reg_decode (rs), R_REG_TYPE_GPR);
-#else
-			src->reg = NULL;
-#endif
-			op->val = imm; // Beware: this one is signed... use `?vi $v`
+				insn.id = MIPS_INS_LUI;
+				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
+				if (mask & R_ARCH_OP_MASK_VAL) {
+					dst = RVecRArchValue_emplace_back (&op->dsts);
+					dst->reg = NULL;
+				}
+				op->val = imm;
+				break;
+			case 9: // addiu
+				insn.id = MIPS_INS_ADDIU;
+				op->type = R_ANAL_OP_TYPE_ADD;
+				if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+					mips_fill_add_values (op, rt, rs, imm);
+				}
+				mips_set_stackop_add (op, rt, imm);
+				op->val = imm; // Beware: this one is signed... use `?vi $v`
 			if (rs == 0) {
 				insn.id = MIPS_INS_LI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
@@ -1687,6 +1718,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 8: // addi
 			insn.id = MIPS_INS_ADDI;
 			op->type = R_ANAL_OP_TYPE_ADD;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_add_values (op, rt, rs, imm);
+			}
+			mips_set_stackop_add (op, rt, imm);
 			break;
 		case 10: // slti
 			insn.id = MIPS_INS_SLTI;
@@ -1711,10 +1746,18 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case 24: // daddi
 			insn.id = MIPS_INS_DADDI;
 			op->type = R_ANAL_OP_TYPE_ADD;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_add_values (op, rt, rs, imm);
+			}
+			mips_set_stackop_add (op, rt, imm);
 			break;
 		case 25: // daddiu
 			insn.id = MIPS_INS_DADDIU;
 			op->type = R_ANAL_OP_TYPE_ADD;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_add_values (op, rt, rs, imm);
+			}
+			mips_set_stackop_add (op, rt, imm);
 			if (rs == 0) {
 				insn.id = MIPS_INS_LDI;
 				snprintf ((char *)insn.i_reg.imm, REG_BUF_MAX, "0x%" PFMT32x, imm);
@@ -1736,48 +1779,86 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				insn.id = MIPS_INS_LW;
 			}
 			/* fallthrough */
-			case 55: // ld
-				if (!op->refptr) {
-					op->refptr = 8;
-					insn.id = MIPS_INS_LD;
-				}
-
-		if (rs == 28) {
-			op->ptr = as->config->gp + imm;
-		} else {
-			op->ptr = imm;
-		}
-		if (rt == 25) {
-			pd->t9_pre = op->ptr;
-			const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
-			if (ptrv != UT64_MAX) {
-				pd->t9_pre = ptrv;
+		case 55: // ld
+			if (!op->refptr) {
+				op->refptr = 8;
+				insn.id = MIPS_INS_LD;
 			}
-		}
-				op->type = R_ANAL_OP_TYPE_LOAD;
-				break;
+			if (rs == 28) {
+				op->ptr = as->config->gp + imm;
+			} else {
+				op->ptr = imm;
+			}
+			if (rt == 25) {
+				pd->t9_pre = op->ptr;
+				const ut64 ptrv = mips_read_ptr_at (as->arch->binb.bin, op->ptr, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config), as->config->bits);
+				if (ptrv != UT64_MAX) {
+					pd->t9_pre = ptrv;
+				}
+			}
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				if (mips_reg_is_stack_base (rs)) {
+					mips_fill_load_values (op, rt, rs, imm);
+				} else {
+					mips_fill_load_dst_value (op, rt);
+				}
+			}
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			break;
 		case 36: // lbu
 			insn.id = MIPS_INS_LBU;
+			op->refptr = 1;
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				if (mips_reg_is_stack_base (rs)) {
+					mips_fill_load_values (op, rt, rs, imm);
+				} else {
+					mips_fill_load_dst_value (op, rt);
+				}
+			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 37: // lhu
 			insn.id = MIPS_INS_LHU;
+			op->refptr = 2;
+			if (mask & R_ARCH_OP_MASK_VAL) {
+				if (mips_reg_is_stack_base (rs)) {
+					mips_fill_load_values (op, rt, rs, imm);
+				} else {
+					mips_fill_load_dst_value (op, rt);
+				}
+			}
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			break;
 		case 40: // sb
 			insn.id = MIPS_INS_SB;
+			op->refptr = 1;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_store_values (op, rt, rs, imm);
+			}
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 41: // sh
 			insn.id = MIPS_INS_SH;
+			op->refptr = 2;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_store_values (op, rt, rs, imm);
+			}
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 43: // sw
 			insn.id = MIPS_INS_SW;
+			op->refptr = 4;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_store_values (op, rt, rs, imm);
+			}
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 63: // sd
 			insn.id = MIPS_INS_SD;
+			op->refptr = 8;
+			if ((mask & R_ARCH_OP_MASK_VAL) && mips_reg_is_stack_base (rs)) {
+				mips_fill_store_values (op, rt, rs, imm);
+			}
 			op->type = R_ANAL_OP_TYPE_STORE;
 			break;
 		case 49: // lwc1
