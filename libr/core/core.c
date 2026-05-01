@@ -75,7 +75,7 @@ static void r_core_debug_breakpoint_hit(RCore *core, RBreakpointItem *bpi) {
 }
 
 static void r_core_debug_syscall_hit(RCore *core) {
-	const char *cmdhit = r_config_get (core->config, "cmd.onsyscall");
+	const char *cmdhit = r_config_get (core->config, "cmd.syscall.enter");
 	if (R_STR_ISNOTEMPTY (cmdhit)) {
 		r_core_cmd0 (core, cmdhit);
 		r_cons_flush (core->cons);

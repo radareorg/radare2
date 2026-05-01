@@ -87,6 +87,84 @@ static void linux_dbg_wait_break_main(RDebug *dbg);
 static void linux_dbg_wait_break(RDebug *dbg);
 static RDebugReasonType linux_handle_new_task(RDebug *dbg, int tid);
 
+static bool is_syscall_stop(int status) {
+	return WIFSTOPPED (status) && WSTOPSIG (status) == (SIGTRAP | 0x80);
+}
+
+static void syscall_state_key(char *buf, size_t buf_size, int pid, int tid, const char *name) {
+	snprintf (buf, buf_size, "dbg.syscall.%d.%d.%s", pid, tid, name);
+}
+
+static bool syscall_resume(RDebug *dbg, int tid, bool trace_syscalls) {
+	const int request = trace_syscalls? PTRACE_SYSCALL: PTRACE_CONT;
+	if (r_debug_ptrace (dbg, request, tid, 0, 0) == -1) {
+		r_sys_perror (trace_syscalls? "PTRACE_SYSCALL": "PTRACE_CONT");
+		return false;
+	}
+	return true;
+}
+
+static const char *syscall_hook_cmd(RDebug *dbg, const char *key) {
+	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
+		return NULL;
+	}
+	return dbg->coreb.cfgGet (dbg->coreb.core, key);
+}
+
+static bool syscall_hooks_suppressed(RDebug *dbg) {
+	RCore *core = dbg? (RCore *)dbg->coreb.core: NULL;
+	return core && core->sdb && sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
+}
+
+static bool syscall_hooks_enabled(RDebug *dbg) {
+	const char *cmd_enter = syscall_hook_cmd (dbg, "cmd.syscall.enter");
+	const char *cmd_leave = syscall_hook_cmd (dbg, "cmd.syscall.leave");
+	return R_STR_ISNOTEMPTY (cmd_enter) || R_STR_ISNOTEMPTY (cmd_leave);
+}
+
+static bool syscall_run_cmd(RDebug *dbg, const char *key) {
+	const char *cmd = syscall_hook_cmd (dbg, key);
+	if (R_STR_ISEMPTY (cmd) || !dbg->coreb.cmd) {
+		return true;
+	}
+	dbg->coreb.cmd (dbg->coreb.core, cmd);
+	if (dbg->coreb.core) {
+		RCore *core = (RCore *)dbg->coreb.core;
+		r_cons_flush (core->cons);
+	}
+	return true;
+}
+
+static bool syscall_handle_stop(RDebug *dbg, int tid) {
+	if (syscall_hooks_suppressed (dbg)) {
+		return false;
+	}
+	RCore *core = (RCore *)dbg->coreb.core;
+	if (!core || !core->sdb) {
+		return false;
+	}
+	char key[64];
+	syscall_state_key (key, sizeof (key), dbg->pid, tid, "in");
+	const bool in_syscall = sdb_bool_get (core->sdb, key, NULL);
+	if (!in_syscall && !syscall_hooks_enabled (dbg)) {
+		return false;
+	}
+	if (!r_debug_select (dbg, dbg->pid, tid)) {
+		if (in_syscall) {
+			sdb_bool_set (core->sdb, key, false, 0);
+		}
+		return false;
+	}
+	if (!in_syscall) {
+		sdb_bool_set (core->sdb, key, true, 0);
+		syscall_run_cmd (dbg, "cmd.syscall.enter");
+	} else {
+		sdb_bool_set (core->sdb, key, false, 0);
+		syscall_run_cmd (dbg, "cmd.syscall.leave");
+	}
+	return syscall_resume (dbg, tid, !in_syscall || syscall_hooks_enabled (dbg));
+}
+
 int linux_handle_signals(RDebug *dbg, int tid) {
 	RCore *core = dbg->coreb.core;
 	siginfo_t siginfo = {0};
@@ -526,6 +604,23 @@ RDebugReasonType linux_dbg_wait(RDebug *dbg, int pid) {
 			flags &= ~WNOHANG;
 		} else {
 			tid = ret;
+
+			if (is_syscall_stop (status)) {
+				if (syscall_handle_stop (dbg, tid)) {
+					continue;
+				}
+				if (syscall_hooks_suppressed (dbg)) {
+					dbg->reason.type = R_DEBUG_REASON_STEP;
+					dbg->reason.signum = SIGTRAP;
+					reason = dbg->reason.type;
+					break;
+				}
+				if (syscall_resume (dbg, tid, false)) {
+					continue;
+				}
+				reason = R_DEBUG_REASON_ERROR;
+				break;
+			}
 
 			// Handle SIGTRAP with PTRACE_EVENT_*
 			reason = linux_ptrace_event (dbg, tid, status, true);

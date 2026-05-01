@@ -1599,28 +1599,44 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
+static bool debug_syscall_hook_suppress(RDebug *dbg, bool enable) {
+	RCore *core = (RCore *)dbg->coreb.core;
+	if (!core || !core->sdb) {
+		return false;
+	}
+	const bool previous = sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
+	sdb_bool_set (core->sdb, "dbg.syscall.suppress", enable, 0);
+	return previous;
+}
+
 // continue execution until a syscall is found, then return its syscall number or -1 on error
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	R_RETURN_VAL_IF_FAIL (dbg, false);
 	int i, reg;
+	const bool prev_syscall_suppress = debug_syscall_hook_suppress (dbg, true);
 	if (!dbg->current || r_debug_is_dead (dbg)) {
+		debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 		return -1;
 	}
 	RDebugPlugin *plugin = R_UNWRAP3 (dbg, current, plugin);
 	if (plugin && !plugin->contsc) {
 		/* user-level syscall tracing */
 		r_debug_continue_until_optype (dbg, R_ANAL_OP_TYPE_SWI, 0);
-		return show_syscall (dbg, "A0");
+		reg = show_syscall (dbg, "A0");
+		debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
+		return reg;
 	}
 
 	if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 		R_LOG_ERROR ("--> cannot read registers");
+		debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 		return -1;
 	}
 	bool err;
 	reg = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
 	if (err) {
 		R_LOG_ERROR ("Cannot find 'sn' register for current arch-os");
+		debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 		return -1;
 	}
 	for (;;) {
@@ -1651,6 +1667,7 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 #endif
 		if (!r_debug_reg_sync (dbg, R_REG_TYPE_GPR, false)) {
 			R_LOG_ERROR ("cannot sync regs, process is probably dead");
+			debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 			return -1;
 		}
 		reg = show_syscall (dbg, "SN");
@@ -1663,15 +1680,18 @@ R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 			continue;
 		}
 		if (n_sc == 0) {
+			debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 			break;
 		}
 		for (i = 0; i < n_sc; i++) {
 			if (sc[i] == reg) {
+				debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 				return reg;
 			}
 		}
 		// TODO: must use r_core_cmd(as)..import code from rcore
 	}
+	debug_syscall_hook_suppress (dbg, prev_syscall_suppress);
 	return -1;
 }
 

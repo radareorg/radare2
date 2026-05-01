@@ -20,6 +20,19 @@ scr.color.regs    false
 
 EOF
 RUN
+
+NAME=deprecated cmd.onsyscall aliases cmd.syscall.enter
+FILE=-
+ARGS=-e log.level=0
+CMDS=<<EOF
+e cmd.onsyscall=echo deprecated
+e cmd.syscall.enter
+EOF
+EXPECT=<<EOF
+echo deprecated
+EOF
+RUN
+
 NAME=et
 FILE=-
 CMDS=<<EOF

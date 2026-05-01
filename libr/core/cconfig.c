@@ -24,6 +24,16 @@ static bool boolify_var_cb(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cmd_onsyscall(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	if (core && core->config && R_STR_ISNOTEMPTY (node->value)) {
+		R_LOG_WARN ("cmd.onsyscall is deprecated, use cmd.syscall.enter instead");
+		r_config_set (core->config, "cmd.syscall.enter", node->value);
+	}
+	return true;
+}
+
 static void set_options(RConfigNode *node, ...) {
 	va_list argp;
 	char *option = NULL;
@@ -4455,7 +4465,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("cmd.depth", 10, &cb_cmddepth, "maximum command depth");
 	SETS ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
 	SETS ("cmd.bp", "", "run when a breakpoint is hit");
-	SETS ("cmd.onsyscall", "", "run when a syscall is hit");
+	SETCB ("cmd.onsyscall", "", &cb_cmd_onsyscall, "deprecated alias for cmd.syscall.enter");
+	SETS ("cmd.syscall.enter", "", "run before a syscall is executed");
+	SETS ("cmd.syscall.leave", "", "run after a syscall returns");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "show info when a tracepoint/breakpoint is hit");
 	SETS ("cmd.stack", "", "command to display the stack in visual debug mode");
 	SETS ("cmd.cprompt", "", "column visual prompt commands");
