@@ -104,6 +104,11 @@ static bool syscall_resume(RDebug *dbg, int tid, bool trace_syscalls) {
 	return true;
 }
 
+static bool syscall_fasttime_enabled(RDebug *dbg) {
+	return dbg && dbg->coreb.core && dbg->coreb.cfgGetB
+		&& dbg->coreb.cfgGetB (dbg->coreb.core, "dbg.fasttime");
+}
+
 static const char *syscall_hook_cmd(RDebug *dbg, const char *key) {
 	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
 		return NULL;
@@ -119,7 +124,17 @@ static bool syscall_hooks_suppressed(RDebug *dbg) {
 static bool syscall_hooks_enabled(RDebug *dbg) {
 	const char *cmd_enter = syscall_hook_cmd (dbg, "cmd.syscall.enter");
 	const char *cmd_leave = syscall_hook_cmd (dbg, "cmd.syscall.leave");
-	return R_STR_ISNOTEMPTY (cmd_enter) || R_STR_ISNOTEMPTY (cmd_leave);
+	return syscall_fasttime_enabled (dbg) || R_STR_ISNOTEMPTY (cmd_enter)
+		|| R_STR_ISNOTEMPTY (cmd_leave);
+}
+
+static bool syscall_is_timer(RDebug *dbg, int syscall_num) {
+	if (!dbg || !dbg->anal || !dbg->anal->syscall || syscall_num < 0) {
+		return false;
+	}
+	const int nanosleep_num = r_syscall_get_num (dbg->anal->syscall, "nanosleep");
+	const int clock_nanosleep_num = r_syscall_get_num (dbg->anal->syscall, "clock_nanosleep");
+	return syscall_num == nanosleep_num || syscall_num == clock_nanosleep_num;
 }
 
 static bool syscall_run_cmd(RDebug *dbg, const char *key) {
@@ -133,6 +148,40 @@ static bool syscall_run_cmd(RDebug *dbg, const char *key) {
 		r_cons_flush (core->cons);
 	}
 	return true;
+}
+
+static void syscall_fasttime_enter(RDebug *dbg, Sdb *sdb, int tid, int syscall_num) {
+	if (!syscall_fasttime_enabled (dbg) || !syscall_is_timer (dbg, syscall_num)) {
+		return;
+	}
+	const char *sn = dbg->reg? r_reg_alias_getname (dbg->reg, R_REG_ALIAS_SN): NULL;
+	if (R_STR_ISNOTEMPTY (sn) && r_debug_reg_set (dbg, sn, UT64_MAX)) {
+		char key[64];
+		syscall_state_key (key, sizeof (key), dbg->pid, tid, "fasttime");
+		sdb_bool_set (sdb, key, true, 0);
+	}
+}
+
+static void syscall_fasttime_unset(RDebug *dbg, Sdb *sdb, int tid) {
+	char key[64];
+	syscall_state_key (key, sizeof (key), dbg->pid, tid, "fasttime");
+	sdb_unset (sdb, key, 0);
+}
+
+static void syscall_fasttime_leave(RDebug *dbg, Sdb *sdb, int tid) {
+	char key[64];
+	syscall_state_key (key, sizeof (key), dbg->pid, tid, "fasttime");
+	if (!sdb_bool_get (sdb, key, NULL)) {
+		return;
+	}
+	const char *r0 = dbg->reg? r_reg_alias_getname (dbg->reg, R_REG_ALIAS_R0): NULL;
+	if (R_STR_ISEMPTY (r0)) {
+		r0 = dbg->reg? r_reg_alias_getname (dbg->reg, R_REG_ALIAS_A0): NULL;
+	}
+	if (R_STR_ISNOTEMPTY (r0)) {
+		(void)r_debug_reg_set (dbg, r0, 0);
+	}
+	syscall_fasttime_unset (dbg, sdb, tid);
 }
 
 static bool syscall_handle_stop(RDebug *dbg, int tid) {
@@ -152,14 +201,23 @@ static bool syscall_handle_stop(RDebug *dbg, int tid) {
 	if (!r_debug_select (dbg, dbg->pid, tid)) {
 		if (in_syscall) {
 			sdb_bool_set (core->sdb, key, false, 0);
+			syscall_fasttime_unset (dbg, core->sdb, tid);
 		}
 		return false;
 	}
 	if (!in_syscall) {
 		sdb_bool_set (core->sdb, key, true, 0);
 		syscall_run_cmd (dbg, "cmd.syscall.enter");
+		if (syscall_fasttime_enabled (dbg)) {
+			bool err = false;
+			int syscall_num = (int)r_debug_reg_get_err (dbg, "SN", &err, NULL);
+			if (!err) {
+				syscall_fasttime_enter (dbg, core->sdb, tid, syscall_num);
+			}
+		}
 	} else {
 		sdb_bool_set (core->sdb, key, false, 0);
+		syscall_fasttime_leave (dbg, core->sdb, tid);
 		syscall_run_cmd (dbg, "cmd.syscall.leave");
 	}
 	return syscall_resume (dbg, tid, !in_syscall || syscall_hooks_enabled (dbg));
