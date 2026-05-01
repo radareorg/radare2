@@ -52,7 +52,6 @@ typedef struct {
 } TypeTraceRegAccess;
 
 typedef struct {
-	char *data;
 	ut64 addr;
 	// TODO: size
 } TypeTraceMemoryAccess;
@@ -75,8 +74,6 @@ typedef struct {
 static inline void tt_fini_access(TypeTraceAccess *access) {
 	if (access->is_reg) {
 		free (access->reg.name);
-	} else {
-		free (access->mem.data);
 	}
 }
 
@@ -186,20 +183,13 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 
 static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
-	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
-	if (!hexbuf) {
-		R_LOG_ERROR ("r_hex_bin2strdup fail");
-		return;
-	}
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
 	if (!access) {
-		free (hexbuf);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
 		return;
 	}
 	access->is_reg = false;
-	access->mem.data = hexbuf;
 	access->mem.addr = addr;
 	access->is_write = false;
 	update_trace_db_op (db);
@@ -207,20 +197,13 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 
 static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len) {
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
-	char *hexbuf = r_hex_bin2strdup (buf, len); // why?
-	if (!hexbuf) {
-		R_LOG_ERROR ("r_hex_bin2strdup fail");
-		return;
-	}
 	TypeTrace *trace = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
 	if (!access) {
-		free (hexbuf);
 		R_LOG_ERROR ("Failed to allocate memory for storing access");
 		return;
 	}
 	access->is_reg = false;
-	access->mem.data = hexbuf;
 	access->mem.addr = addr;
 	access->is_write = true;
 
@@ -491,6 +474,21 @@ static bool etrace_is_regread(const TypeTraceAccess *access, void *user) {
 	return access->is_reg && !access->is_write && !strcmp (rname, access->reg.name);
 }
 
+static bool etrace_is_regwrite(const TypeTraceAccess *access, void *user) {
+	(void)user;
+	return access->is_reg && access->is_write;
+}
+
+static bool etrace_is_regwrite_name(const TypeTraceAccess *access, void *user) {
+	const char *rname = (const char *)user;
+	return access->is_reg && access->is_write && !strcmp (rname, access->reg.name);
+}
+
+static bool etrace_is_memread_addr(const TypeTraceAccess *access, void *user) {
+	const ut64 *addr = (const ut64 *)user;
+	return !access->is_reg && !access->is_write && access->mem.addr == *addr;
+}
+
 static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
 	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
 	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memwrite, NULL);
@@ -516,19 +514,9 @@ static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname)
 
 static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 	R_LOG_DEBUG ("regwrite %d %d", etrace->idx, idx);
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return NULL;
-		}
-		while (start <= end) {
-			if (start->is_reg && start->is_write) {
-				return start->reg.name;
-			}
-			start++;
-		}
+	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_regwrite, NULL);
+	if (access) {
+		return access->reg.name;
 	}
 	return NULL;
 }
@@ -537,24 +525,10 @@ static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 
 static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rname) {
 	R_LOG_DEBUG ("regwrite contains %d %s", idx, rname);
-	R_RETURN_VAL_IF_FAIL (etrace && rname, false);
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx); // AAA + 1);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return false;
-		}
-		while (start <= end) {
-			if (start->is_reg && start->is_write) {
-				if (!strcmp (rname, start->reg.name)) {
-					return true;
-				}
-			}
-			start++;
-		}
+	if (!etrace || !rname) {
+		return false;
 	}
-	return false;
+	return etrace_find_access (etrace, idx, etrace_is_regwrite_name, (void *)rname) != NULL;
 }
 
 static bool type_pos_hit(TPState *tps, bool in_stack, int idx, int size, const char *place) {
@@ -717,6 +691,25 @@ static ut64 get_addr(TypeTrace *et, const char *regname, int idx) {
 	return etrace_regread_value (et, idx, regname);
 }
 
+static bool is_reg_token_char(char ch) {
+	return ch == '_' || isalnum ((ut8)ch);
+}
+
+static bool reg_token_contains(const char *regs, const char *reg) {
+	if (R_STR_ISEMPTY (regs) || R_STR_ISEMPTY (reg)) {
+		return false;
+	}
+	const size_t reg_len = strlen (reg);
+	const char *ptr = regs;
+	while ((ptr = strstr (ptr, reg))) {
+		if ((ptr == regs || !is_reg_token_char (ptr[-1])) && !is_reg_token_char (ptr[reg_len])) {
+			return true;
+		}
+		ptr += reg_len;
+	}
+	return false;
+}
+
 static RAnalCondType cond_invert(RAnal *anal, RAnalCondType cond) {
 	switch (cond) {
 	case R_ANAL_CONDTYPE_LE:
@@ -815,43 +808,18 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 }
 
 static bool etrace_memread_contains_addr(TypeTrace *etrace, ut32 idx, ut64 addr) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (op && op->start != op->end) {
-		TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-		TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-		if (!start || !end || start > end) {
-			return false;
-		}
-		while (start <= end) {
-			if (!start->is_reg && !start->is_write && start->mem.addr == addr) {
-				return true;
-			}
-			start++;
-		}
-	}
-	return false;
+	return etrace_find_access (etrace, idx, etrace_is_memread_addr, &addr) != NULL;
 }
 
 static bool etrace_memread_first_addr(TypeTrace *etrace, ut32 idx, ut64 *addr) {
-	TypeTraceOp *op = VecTraceOp_at (&etrace->db.ops, idx);
-	if (!op || op->start == op->end) {
+	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memread, NULL);
+	if (!access) {
 		return false;
 	}
-	TypeTraceAccess *start = VecAccess_at (&etrace->db.accesses, op->start);
-	TypeTraceAccess *end = VecAccess_at (&etrace->db.accesses, op->end - 1);
-	if (!start || !end || start > end) {
-		return false;
+	if (addr) {
+		*addr = access->mem.addr;
 	}
-	while (start <= end) {
-		if (!start->is_reg && !start->is_write) {
-			if (addr) {
-				*addr = start->mem.addr;
-			}
-			return true;
-		}
-		start++;
-	}
-	return false;
+	return true;
 }
 
 #define DEFAULT_MAX 3
@@ -1508,18 +1476,6 @@ repeat:
 				}
 			}
 		skip_trace:
-#if 1
-			// XXX this code looks wrong and slow maybe is not needed
-			// maybe the basic block is gone after the step
-			if (i < bblist_size) {
-				bb = r_anal_get_block_at (anal, bb_addr);
-				if (!bb) {
-					R_LOG_WARN ("basic block at 0x%08" PFMT64x " was removed during analysis", *RVecUT64_at (&bblist, i));
-					retries--;
-					goto repeat;
-				}
-			}
-#endif
 			tp_state.userfnc = false;
 			cur_idx = etrace_index (etrace) - 1;
 			if (cur_idx < 0) {
@@ -1630,7 +1586,7 @@ repeat:
 				cur_idx = etrace->cur_idx - 1;
 				const char *cur_dest = etrace_regwrite (etrace, cur_idx);
 				get_src_regname (anal, aop.addr, src, sizeof (src));
-				if (tp_state.ret_reg && *src && strstr (tp_state.ret_reg, src)) {
+				if (reg_token_contains (tp_state.ret_reg, src)) {
 					if (var && aop.direction == R_ANAL_OP_DIR_WRITE) {
 						var_retype (anal, var, NULL, tp_state.ret_type, false, false);
 						tp_state.resolved = true;
@@ -1646,7 +1602,7 @@ repeat:
 					if (tmp) {
 						*tmp++ = '\0';
 					}
-					if (tp_state.ret_reg && (strstr (tp_state.ret_reg, foo) || (tmp && strstr (tp_state.ret_reg, tmp)))) {
+					if (reg_token_contains (tp_state.ret_reg, foo) || reg_token_contains (tp_state.ret_reg, tmp)) {
 						tp_state.resolved = true;
 					} else if (type == R_ANAL_OP_TYPE_MOV && (next_op && next_op->type == R_ANAL_OP_TYPE_MOV)) {
 						// Progate return type passed using pointer
@@ -1654,7 +1610,7 @@ repeat:
 						// TODO: memref check , dest and next src match
 						char nsrc[REGNAME_SIZE] = { 0 };
 						get_src_regname (anal, next_op->addr, nsrc, sizeof (nsrc));
-						if (tp_state.ret_reg && *nsrc && strstr (tp_state.ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
+						if (reg_token_contains (tp_state.ret_reg, nsrc) && var && aop.direction == R_ANAL_OP_DIR_READ) {
 							var_retype (anal, var, NULL, tp_state.ret_type, true, false);
 						}
 					}
@@ -1681,7 +1637,7 @@ repeat:
 				if (tp_state.prev_dest && (type == R_ANAL_OP_TYPE_MOV || type == R_ANAL_OP_TYPE_STORE)) {
 					char reg[REGNAME_SIZE] = { 0 };
 					get_src_regname (anal, addr, reg, sizeof (reg));
-					bool match = strstr (tp_state.prev_dest, reg);
+					bool match = reg_token_contains (tp_state.prev_dest, reg);
 					if (tp_state.str_flag && match) {
 						var_retype (anal, var, NULL, "const char *", false, false);
 					}
@@ -1704,17 +1660,15 @@ repeat:
 					}
 
 					// Check exit status of jmp branch
-					for (i = 0; i < MAX_INSTR; i++) {
+					int k;
+					for (k = 0; k < MAX_INSTR; k++) {
 						jmp_op = tp_anal_op (anal, jmp_addr, R_ARCH_OP_MASK_BASIC);
 						if (!jmp_op) {
-							r_anal_op_free (jmp_op);
-							r_anal_op_fini (&aop);
 							break;
 						}
 						if ((jmp_op->type == R_ANAL_OP_TYPE_RET && r_anal_block_contains (&jbb, jmp_addr)) || jmp_op->type == R_ANAL_OP_TYPE_CJMP) {
 							jmp = true;
 							r_anal_op_free (jmp_op);
-							r_anal_op_fini (&aop);
 							break;
 						}
 						jmp_addr += jmp_op->size;
@@ -1774,10 +1728,12 @@ repeat:
 	}
 
 	// Type propagation for register based args
-	RVecAnalVarPtr *rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
-	RAnalVar **vit;
-	R_VEC_FOREACH (rvars, vit) {
-		RAnalVar *rvar = *vit;
+	RAnalVar **rvarp;
+	R_VEC_FOREACH (&fcn->vars, rvarp) {
+		RAnalVar *rvar = *rvarp;
+		if (rvar->kind != R_ANAL_VAR_KIND_REG) {
+			continue;
+		}
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
 		if (i && lvar) {
@@ -1787,7 +1743,6 @@ repeat:
 			var_retype (anal, lvar, NULL, rvar->type, false, false);
 		}
 	}
-	RVecAnalVarPtr_free (rvars);
 out_function:
 	R_FREE (next_op);
 	tp_state_fini (&tp_state);
