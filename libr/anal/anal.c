@@ -137,6 +137,24 @@ static bool anal_esil_mem_switch (void *mem, ut32 idx) {
 	return anal->iob.bank_use (anal->iob.io, idx);
 }
 
+static bool anal_esil_mem_is_valid(RAnal *anal, ut64 addr, bool write) {
+	const int perm = write? R_PERM_W: R_PERM_R;
+	if (!anal->iob.is_valid_offset || anal->iob.is_valid_offset (anal->iob.io, addr, perm)) {
+		return true;
+	}
+	REsil *esil = anal->esil;
+	if (esil) {
+		if (esil->iotrap) {
+			esil->trap = write? R_ANAL_TRAP_WRITE_ERR: R_ANAL_TRAP_READ_ERR;
+			esil->trap_code = addr;
+		}
+		if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_ioer)) {
+			esil->cmd (esil, esil->cmd_ioer, esil->addr, write);
+		}
+	}
+	return false;
+}
+
 static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	RAnal *anal = mem;
 	if (!anal || !anal->iob.init) {
@@ -147,6 +165,7 @@ static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 		return false;
 	}
 	(void)anal->iob.read_at (anal->iob.io, addr, buf, len);
+	(void)anal_esil_mem_is_valid (anal, addr, false);
 	return true;
 }
 
@@ -159,7 +178,9 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 	if (!anal->iob.io || addr == UT64_MAX) {
 		return false;
 	}
-	return anal->iob.write_at (anal->iob.io, addr, buf, len);
+	bool ret = anal->iob.write_at (anal->iob.io, addr, buf, len);
+	(void)anal_esil_mem_is_valid (anal, addr, true);
+	return ret;
 }
 
 static bool anal_esil_is_reg (void *user, const char *name) {
