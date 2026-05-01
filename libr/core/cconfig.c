@@ -34,6 +34,22 @@ static bool cb_cmd_onsyscall(void *user, void *data) {
 	return true;
 }
 
+static bool cb_cmd_syscall_enter(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	free (core->dbg->cmd_syscall_enter);
+	core->dbg->cmd_syscall_enter = strdup (node->value);
+	return true;
+}
+
+static bool cb_cmd_syscall_leave(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	free (core->dbg->cmd_syscall_leave);
+	core->dbg->cmd_syscall_leave = strdup (node->value);
+	return true;
+}
+
 static void set_options(RConfigNode *node, ...) {
 	va_list argp;
 	char *option = NULL;
@@ -2068,6 +2084,13 @@ static bool cb_dbg_aftersc(void *user, void *data) {
 	if (r_config_get_b (core->config, "cfg.debug")) {
 		r_debug_attach (core->dbg, core->dbg->pid);
 	}
+	return true;
+}
+
+static bool cb_dbg_fasttime(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->dbg->fasttime = node->i_value;
 	return true;
 }
 
@@ -4466,8 +4489,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("cmd.undo", "true", "stack `uc` undo commands when running some commands like w, af, CC, ..");
 	SETS ("cmd.bp", "", "run when a breakpoint is hit");
 	SETCB ("cmd.onsyscall", "", &cb_cmd_onsyscall, "deprecated alias for cmd.syscall.enter");
-	SETS ("cmd.syscall.enter", "", "run before a syscall is executed");
-	SETS ("cmd.syscall.leave", "", "run after a syscall returns");
+	SETCB ("cmd.syscall.enter", "", &cb_cmd_syscall_enter, "run before a syscall is executed");
+	SETCB ("cmd.syscall.leave", "", &cb_cmd_syscall_leave, "run after a syscall returns");
 	SETICB ("cmd.hitinfo", 1, &cb_debug_hitinfo, "show info when a tracepoint/breakpoint is hit");
 	SETS ("cmd.stack", "", "command to display the stack in visual debug mode");
 	SETS ("cmd.cprompt", "", "column visual prompt commands");
@@ -4525,7 +4548,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("dbg.threads", "false", &cb_stopthreads, "stop all threads when debugger breaks (see dbg.forks)");
 	SETCB ("dbg.clone", "false", &cb_dbg_clone, "stop execution if new thread is created");
 	SETCB ("dbg.aftersyscall", "true", &cb_dbg_aftersc, "stop execution before the syscall is executed (see dcs)");
-	SETB ("dbg.fasttime", "false", "skip nanosleep and clock_nanosleep while continuing (linux)");
+	SETCB ("dbg.fasttime", "false", &cb_dbg_fasttime, "skip nanosleep and clock_nanosleep while continuing (linux)");
 	SETCB ("dbg.profile", "", &cb_runprofile, "path to RRunProfile file (or base64:string)");
 	SETCB ("dbg.args", "", &cb_dbg_args, "set the args of the program to debug");
 	SETCB ("dbg.follow.child", "false", &cb_dbg_follow_child, "continue tracing the child process on fork. By default the parent process is traced");

@@ -441,6 +441,8 @@ R_API void r_debug_free(RDebug *dbg) {
 		// we dont own the egg now
 		// r_egg_free (dbg->egg);
 		free (dbg->arch);
+		free (dbg->cmd_syscall_enter);
+		free (dbg->cmd_syscall_leave);
 		free (dbg->glob_libs);
 		free (dbg->glob_unlibs);
 		free (dbg);
@@ -1600,12 +1602,8 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 }
 
 static bool debug_syscall_hook_suppress(RDebug *dbg, bool enable) {
-	RCore *core = (RCore *)dbg->coreb.core;
-	if (!core || !core->sdb) {
-		return false;
-	}
-	const bool previous = sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
-	sdb_bool_set (core->sdb, "dbg.syscall.suppress", enable, 0);
+	const bool previous = dbg->syscall_hook_suppress;
+	dbg->syscall_hook_suppress = enable;
 	return previous;
 }
 

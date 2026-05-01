@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
-#include <r_core.h>
 
 #if DEBUGGER
 #include <signal.h>
@@ -30,27 +29,28 @@
 
 #if __KFBSD__ && defined(PT_SYSCALL) && defined(PT_LWPINFO) && defined(PL_FLAG_SCE) && defined(PL_FLAG_SCX)
 static bool bsd_syscall_hooks_suppressed(RDebug *dbg) {
-	RCore *core = dbg? (RCore *)dbg->coreb.core: NULL;
-	return core && core->sdb && sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
+	return dbg && dbg->syscall_hook_suppress;
 }
 
 static const char *bsd_syscall_hook_cmd(RDebug *dbg, const char *key) {
-	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
-		return NULL;
+	if (!strcmp (key, "cmd.syscall.enter")) {
+		return dbg? dbg->cmd_syscall_enter: NULL;
 	}
-	return dbg->coreb.cfgGet (dbg->coreb.core, key);
+	if (!strcmp (key, "cmd.syscall.leave")) {
+		return dbg? dbg->cmd_syscall_leave: NULL;
+	}
+	return NULL;
 }
 
 static bool bsd_syscall_run_cmd(RDebug *dbg, const char *key) {
+	if (!dbg || !dbg->coreb.cmd) {
+		return true;
+	}
 	const char *cmd = bsd_syscall_hook_cmd (dbg, key);
-	if (R_STR_ISEMPTY (cmd) || !dbg->coreb.cmd) {
+	if (R_STR_ISEMPTY (cmd)) {
 		return true;
 	}
 	dbg->coreb.cmd (dbg->coreb.core, cmd);
-	if (dbg->coreb.core) {
-		RCore *core = (RCore *)dbg->coreb.core;
-		r_cons_flush (core->cons);
-	}
 	return true;
 }
 

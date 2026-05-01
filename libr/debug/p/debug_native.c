@@ -214,14 +214,11 @@ static bool r_debug_native_stop(RDebug *dbg) {
 
 #if !__APPLE__ && !R2__WINDOWS__ && !R2__BSD__
 static bool r_debug_native_syscall_hooks_enabled(RDebug *dbg) {
-	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
+	if (!dbg) {
 		return false;
 	}
-	const char *cmd_enter = dbg->coreb.cfgGet (dbg->coreb.core, "cmd.syscall.enter");
-	const char *cmd_leave = dbg->coreb.cfgGet (dbg->coreb.core, "cmd.syscall.leave");
-	const bool fasttime = dbg->coreb.cfgGetB && dbg->coreb.cfgGetB (dbg->coreb.core, "dbg.fasttime");
-	return fasttime || R_STR_ISNOTEMPTY (cmd_enter)
-		|| R_STR_ISNOTEMPTY (cmd_leave);
+	return dbg->fasttime || R_STR_ISNOTEMPTY (dbg->cmd_syscall_enter)
+		|| R_STR_ISNOTEMPTY (dbg->cmd_syscall_leave);
 }
 #endif
 

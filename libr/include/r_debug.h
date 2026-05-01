@@ -400,7 +400,11 @@ typedef struct r_debug_t {
 	int trace_execs; /* stop on new execs */
 	int trace_aftersyscall; /* stop after the syscall (before if disabled) */
 	int trace_clone; /* stop on new threads */
+	bool fasttime; /* skip timer syscalls while continuing */
+	bool syscall_hook_suppress; /* suppress command hooks while dcs owns syscall stops */
 	int follow_child; /* On fork, trace the child */
+	char *cmd_syscall_enter; /* command to run before syscall execution */
+	char *cmd_syscall_leave; /* command to run after syscall execution */
 	char *glob_libs; /* stop on lib load */
 	char *glob_unlibs; /* stop on lib unload */
 	bool consbreak; /* SIGINT handle for attached processes */

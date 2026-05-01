@@ -105,27 +105,26 @@ static bool syscall_resume(RDebug *dbg, int tid, bool trace_syscalls) {
 }
 
 static bool syscall_fasttime_enabled(RDebug *dbg) {
-	return dbg && dbg->coreb.core && dbg->coreb.cfgGetB
-		&& dbg->coreb.cfgGetB (dbg->coreb.core, "dbg.fasttime");
+	return dbg && dbg->fasttime;
 }
 
 static const char *syscall_hook_cmd(RDebug *dbg, const char *key) {
-	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
-		return NULL;
+	if (!strcmp (key, "cmd.syscall.enter")) {
+		return dbg? dbg->cmd_syscall_enter: NULL;
 	}
-	return dbg->coreb.cfgGet (dbg->coreb.core, key);
+	if (!strcmp (key, "cmd.syscall.leave")) {
+		return dbg? dbg->cmd_syscall_leave: NULL;
+	}
+	return NULL;
 }
 
 static bool syscall_hooks_suppressed(RDebug *dbg) {
-	RCore *core = dbg? (RCore *)dbg->coreb.core: NULL;
-	return core && core->sdb && sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
+	return dbg && dbg->syscall_hook_suppress;
 }
 
 static bool syscall_hooks_enabled(RDebug *dbg) {
-	const char *cmd_enter = syscall_hook_cmd (dbg, "cmd.syscall.enter");
-	const char *cmd_leave = syscall_hook_cmd (dbg, "cmd.syscall.leave");
-	return syscall_fasttime_enabled (dbg) || R_STR_ISNOTEMPTY (cmd_enter)
-		|| R_STR_ISNOTEMPTY (cmd_leave);
+	return syscall_fasttime_enabled (dbg) || R_STR_ISNOTEMPTY (dbg->cmd_syscall_enter)
+		|| R_STR_ISNOTEMPTY (dbg->cmd_syscall_leave);
 }
 
 static bool syscall_is_timer(RDebug *dbg, int syscall_num) {
