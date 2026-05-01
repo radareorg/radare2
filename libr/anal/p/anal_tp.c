@@ -370,7 +370,6 @@ static bool etrace_is_regwrite_name(const TypeTraceAccess *access, void *user) {
 }
 
 static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
-	R_LOG_DEBUG ("memwrite %d %d", etrace->idx, idx);
 	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_memwrite, NULL);
 	if (access) {
 		return access->mem.addr;
@@ -379,12 +378,10 @@ static ut64 etrace_memwrite_addr(TypeTrace *etrace, ut32 idx) {
 }
 
 static bool etrace_have_memread(TypeTrace *etrace, ut32 idx) {
-	R_LOG_DEBUG ("memread %d %d", etrace->idx, idx);
 	return etrace_find_access (etrace, idx, etrace_is_memread, NULL) != NULL;
 }
 
 static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname) {
-	R_LOG_DEBUG ("regread %d %d", etrace->idx, idx);
 	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_regread, (void *)rname);
 	if (access) {
 		return access->reg.value;
@@ -393,7 +390,6 @@ static ut64 etrace_regread_value(TypeTrace *etrace, ut32 idx, const char *rname)
 }
 
 static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
-	R_LOG_DEBUG ("regwrite %d %d", etrace->idx, idx);
 	const TypeTraceAccess *access = etrace_find_access (etrace, idx, etrace_is_regwrite, NULL);
 	if (access) {
 		return access->reg.name;
@@ -404,7 +400,6 @@ static const char *etrace_regwrite(TypeTrace *etrace, ut32 idx) {
 /// END ///////////////////// esil trace helpers ///////////////////////
 
 static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rname) {
-	R_LOG_DEBUG ("regwrite contains %d %s", idx, rname);
 	if (!etrace || !rname) {
 		return false;
 	}
@@ -412,7 +407,6 @@ static bool etrace_regwrite_contains(TypeTrace *etrace, ut32 idx, const char *rn
 }
 
 static bool type_pos_hit(TypeTrace *tt, bool in_stack, ut64 sp, int idx, int size, const char *place) {
-	R_LOG_DEBUG ("Type pos hit %d %d %d %s", in_stack, idx, size, place);
 	if (in_stack) {
 		const ut64 write_addr = etrace_memwrite_addr (tt, idx); // AAA -1
 		return (write_addr == sp + size);
@@ -473,57 +467,58 @@ static void var_retype(RAnal *anal, RAnalVar *var, const char *vname, const char
 		R_LOG_DEBUG ("not default NOT DOING A SHIT HERE");
 		return;
 	}
-	RStrBuf *sb = r_strbuf_new ("");
+	RStrBuf sb;
+	r_strbuf_init (&sb);
 	if (pfx) {
 		if (is_default && !r_str_startswith (var->type, "signed")) {
-			r_strbuf_setf (sb, "%s %s", type, tmp);
+			r_strbuf_setf (&sb, "%s %s", type, tmp);
 		} else {
-			r_strbuf_free (sb);
+			r_strbuf_fini (&sb);
 			R_LOG_DEBUG ("THIS IS RETURN NOT DOING A SHIT HERE");
 			return;
 		}
 	} else {
-		r_strbuf_set (sb, type);
+		r_strbuf_set (&sb, type);
 	}
-	if (r_str_startswith (r_strbuf_get (sb), "const ")) {
+	if (r_str_startswith (r_strbuf_get (&sb), "const ")) {
 		// Dropping const from type
 		// TODO: Inferring const type
-		r_strbuf_setf (sb, "%s", type + 6);
+		r_strbuf_setf (&sb, "%s", type + 6);
 	}
 	if (is_ptr) {
 		// type *ptr => type *
-		r_strbuf_append (sb, " *");
+		r_strbuf_append (&sb, " *");
 	}
 	while (ref > 0) {
-		if (r_str_endswith (r_strbuf_get (sb), "*")) { // type * => type **
-			r_strbuf_append (sb, "*");
+		if (r_str_endswith (r_strbuf_get (&sb), "*")) { // type * => type **
+			r_strbuf_append (&sb, "*");
 		} else { //  type => type *
-			r_strbuf_append (sb, " *");
+			r_strbuf_append (&sb, " *");
 		}
 		ref--;
 	}
 	while (ref < 0) {
-		char *s = r_strbuf_get (sb);
+		char *s = r_strbuf_get (&sb);
 		if (!s) {
 			break;
 		}
 		r_str_trim (s);
 		if (r_str_endswith (s, "*")) {
-			r_strbuf_slice (sb, 0, r_strbuf_length (sb) - 1);
+			r_strbuf_slice (&sb, 0, r_strbuf_length (&sb) - 1);
 		}
 		ref++;
 	}
 
-	char *tmp1 = r_strbuf_get (sb);
+	char *tmp1 = r_strbuf_get (&sb);
 	if (r_str_startswith (tmp1, "unsigned long long")) {
-		r_strbuf_set (sb, "uint64_t");
+		r_strbuf_set (&sb, "uint64_t");
 	} else if (r_str_startswith (tmp1, "unsigned")) {
-		r_strbuf_set (sb, "uint32_t");
+		r_strbuf_set (&sb, "uint32_t");
 	} else if (r_str_startswith (tmp1, "int")) {
-		r_strbuf_set (sb, "int32_t");
+		r_strbuf_set (&sb, "int32_t");
 	}
-	r_anal_var_set_type (anal, var, r_strbuf_get (sb));
-	r_strbuf_free (sb);
+	r_anal_var_set_type (anal, var, r_strbuf_get (&sb));
+	r_strbuf_fini (&sb);
 }
 
 static RAnalOp *tp_anal_op(RAnal *anal, ut64 addr, int mask);
@@ -663,6 +658,9 @@ static bool parse_format(TPState *tps, const char *fmt, RVecString *vec) {
 
 static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stack, const char *place, int size, const char *type) {
 	R_LOG_DEBUG (">>> CALLE ARG");
+	if (!type) {
+		return;
+	}
 	RAnalFunction *fcn = r_anal_get_function_byname (anal, callee_name);
 	if (!fcn) {
 		return;
@@ -674,6 +672,9 @@ static void retype_callee_arg(RAnal *anal, const char *callee_name, bool in_stac
 		}
 		var_retype (anal, var, NULL, type, false, false);
 	} else {
+		if (R_STR_ISEMPTY (place)) {
+			return;
+		}
 		RRegItem *item = r_reg_get (anal->reg, place, -1);
 		if (!item) {
 			return;
@@ -772,7 +773,8 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	const ut32 opmask = R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_ESIL;
 	for (i = 0; i < max; i++) {
 		int arg_num = stack_rev? (max - 1 - i): i;
-		char *type = NULL;
+		char *owned_type = NULL;
+		const char *type = NULL;
 		const char *name = NULL;
 		R_LOG_DEBUG ("ARG NUM %d %d %d", i, arg_num, format);
 		if (format) {
@@ -780,10 +782,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 				break;
 			}
 			const String *type_ = RVecString_at (&types, pos++);
-			type = type_? strdup (*type_): NULL;
+			type = type_? *type_: NULL;
 			R_LOG_DEBUG ("TYPE (%s)", type);
 		} else {
-			type = r_type_func_args_type (TDB, fcn_name, arg_num);
+			owned_type = r_type_func_args_type (TDB, fcn_name, arg_num);
+			type = owned_type;
 			name = r_type_func_args_name (TDB, fcn_name, arg_num);
 		}
 		if (!type && !userfnc) {
@@ -923,7 +926,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			r_anal_op_free (next_op);
 		}
 		size += bytes;
-		free (type);
+		free (owned_type);
 	}
 	RVecString_fini (&types);
 	r_cons_break_pop (r_cons_singleton ());
@@ -1077,12 +1080,15 @@ static bool tt_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	if (!tps || !tps->mem_if.mem_read || !tps->mem_if.mem_write) {
 		return false;
 	}
-	ut8 *old = malloc (len);
-	if (!old) {
-		return false;
-	}
-	if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, old, len)) {
-		memset (old, 0xff, len);
+	ut8 *old = NULL;
+	if (tps->tt.enable_rollback) {
+		old = malloc (len);
+		if (!old) {
+			return false;
+		}
+		if (!tps->mem_if.mem_read (tps->mem_if.mem, addr, old, len)) {
+			memset (old, 0xff, len);
+		}
 	}
 	bool ret = tps->mem_if.mem_write (tps->mem_if.mem, addr, buf, len);
 	if (ret) {

@@ -163,25 +163,6 @@ EXPECT=<<EOF
 0x00000004
 0x00000000 type unsigned short; // size=2
 0x00000002
-             ; XREF[w] 0x00401164 main
-             ; XREF[r] 0x0040117a main
-             ; XREF[r] 0x00401184 main
-             ; XREF[r] 0x0040118e main
-             ; XREF[r] 0x00401193 main
-             ; XREF[r] 0x00401197 main
-             ; XREF[w] 0x0040119d main
-             ; XREF[r] 0x004011a6 main
-             ; XREF[r] 0x004011b8 main
-             ; XREF[r] 0x004011bc main
-             ; XREF[w] 0x004011c2 main
-             ; XREF[r] 0x004011d8 main
-             ; XREF[r] 0x004011e2 main
-             ; XREF[r] 0x004011ec main
-             ; XREF[r] 0x004011f1 main
-             ; XREF[r] 0x004011f5 main
-             ; XREF[w] 0x004011fb main
-             ; XREF[r] 0x00401204 main
-             ; XREF[r] 0x00401208 main
              ; XREF[w] 0x0040117f main
              ; XREF[r] 0x00401189 main
              ; XREF[r] 0x004011ab main

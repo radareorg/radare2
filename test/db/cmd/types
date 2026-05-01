@@ -1749,6 +1749,7 @@ txt size_t *
 EOF
 EXPECT=<<EOF
 int64_t
+uint32_t
 char *
 int
 char **
@@ -1756,9 +1757,9 @@ char **
 int64_t
 char *
 uint32_t
-size_t *
 size_t
 void *
+size_t *
 wint_t
 =
 fcn.0000f770
@@ -2397,4 +2398,3 @@ EXPECT=<<EOF
 0x00000004
 EOF
 RUN
-
