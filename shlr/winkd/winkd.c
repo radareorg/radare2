@@ -963,7 +963,7 @@ int winkd_step(WindCtx *ctx) {
 }
 
 bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	kd_req_t req = {
 		0
 	};
@@ -998,14 +998,12 @@ bool winkd_write_reg(WindCtx *ctx, const uint8_t *buf, int size) {
 	winkd_lock_leave (ctx);
 
 	kd_req_t *rr = PKT_REQ (pkt);
-	if (rr && rr->ret) {
+	bool result = !(rr && rr->ret);
+	if (!result) {
 		WIND_DBG eprintf ("%s: req returned %08x\n", __FUNCTION__, rr->ret);
-		free (pkt);
-		return false;
 	}
-
 	free (pkt);
-	return true;
+	return result;
 	// return size;
 error:
 	winkd_lock_leave (ctx);
@@ -1061,6 +1059,10 @@ int winkd_read_reg(WindCtx *ctx, uint8_t *buf, int size) {
 
 	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
 	int n = R_MIN (size, avail);
+	if (n <= 0) {
+		free (pkt);
+		return 0;
+	}
 	memcpy (buf, rr->data, n);
 	free (pkt);
 	return n;
@@ -1260,7 +1262,7 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 		0
 	},
 		*rr;
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	int ret;
 
 	if (!ctx || !ctx->desc || !ctx->syncd) {
@@ -1296,15 +1298,11 @@ int winkd_read_at_phys(WindCtx *ctx, uint8_t *buf, const ut64 offset, const int 
 	winkd_lock_leave (ctx);
 
 	rr = PKT_REQ (pkt);
-
-	if (rr->ret) {
-		free (pkt);
-		return 0;
+	int avail = (int)pkt->length >= (int)sizeof (kd_req_t) ? (int)pkt->length - (int)sizeof (kd_req_t) : 0;
+	ret = !rr->ret ? R_MIN (count, R_MIN ((int)rr->r_mem.read, avail)) : 0;
+	if (ret > 0) {
+		memcpy (buf, rr->data, ret);
 	}
-
-	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
-	ret = R_MIN (count, R_MIN ((int)rr->r_mem.read, avail));
-	memcpy (buf, rr->data, ret);
 	free (pkt);
 	return ret;
 error:
@@ -1314,7 +1312,7 @@ error:
 
 static int read_at_virt_once(WindCtx *ctx, uint8_t *buf, ut64 offset, int count) {
 	kd_req_t *rr, req = { 0 };
-	kd_packet_t *pkt;
+	kd_packet_t *pkt = NULL;
 	int ret;
 
 	req.req = DbgKdReadVirtualMemoryApi;
@@ -1346,15 +1344,11 @@ static int read_at_virt_once(WindCtx *ctx, uint8_t *buf, ut64 offset, int count)
 	winkd_lock_leave (ctx);
 
 	rr = PKT_REQ (pkt);
-
-	if (rr->ret) {
-		free (pkt);
-		return 0;
+	int avail = (int)pkt->length >= (int)sizeof (kd_req_t) ? (int)pkt->length - (int)sizeof (kd_req_t) : 0;
+	ret = !rr->ret ? R_MIN (count, R_MIN ((int)rr->r_mem.read, avail)) : 0;
+	if (ret > 0) {
+		memcpy (buf, rr->data, ret);
 	}
-
-	int avail = pkt->length >= sizeof (kd_req_t) ? (int)(pkt->length - sizeof (kd_req_t)) : 0;
-	ret = R_MIN (count, R_MIN ((int)rr->r_mem.read, avail));
-	memcpy (buf, rr->data, ret);
 	free (pkt);
 	return ret;
 error:
