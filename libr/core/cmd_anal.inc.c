@@ -7629,6 +7629,23 @@ static bool is_steporeable(int type) {
 	return false;
 }
 
+static bool core_esil_run_pin(RCore *core, ut64 addr) {
+	const char *pin = r_anal_pin_at (core->anal, addr);
+	if (R_STR_ISEMPTY (pin) || r_str_startswith (pin, "soft.")) {
+		return false;
+	}
+	const char *cmd = r_anal_pin_get (core->anal, pin);
+	if (R_STR_ISNOTEMPTY (cmd)) {
+		r_core_cmd0 (core, cmd);
+	} else {
+		if (R_STR_ISNOTEMPTY (core->anal->pincmd)) {
+			r_core_cmdf (core, "%s %s", core->anal->pincmd, pin);
+		}
+		r_core_cmd0 (core, pin);
+	}
+	return true;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define SET_PC_BOTH(core, val) do { \
 	r_reg_setv ((core)->anal->reg, "PC", (val)); \
@@ -7710,15 +7727,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		// eprintf ("addr %"PFMT64x"\n", addr);
 		r_asm_set_pc (core->rasm, addr);
-		// run esil pin command here
-		const char *pincmd = r_anal_pin_call (core->anal, addr);
-		if (pincmd) {
-			r_core_cmd0 (core, pincmd);
-			ut64 pc = r_reg_getv (core->anal->reg, "PC");
-			if (addr != pc) {
-				R_LOG_ERROR ("pincmd fail");
-				return_tail (1);
-			}
+		const bool pin_skipped = core_esil_run_pin (core, addr);
+		ut64 pin_pc = UT64_MAX;
+		if (pin_skipped) {
+			pin_pc = r_reg_getv (core->anal->reg, "PC");
 		}
 #if 0
 		if (dataAlign > 1) {
@@ -7750,7 +7762,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
 		}
-		if (core->dbg->anal->esil->trace) {
+		if (!pin_skipped && core->dbg->anal->esil->trace) {
 			r_esil_trace_op (core->dbg->anal->esil, &op);
 		}
 		// if type is JMP then we execute the next N instructions
@@ -7770,6 +7782,10 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		naddr = addr + op.size;
+		if (pin_skipped) {
+			ret = 0;
+			tail_return_value = 1;
+		}
 		if (stepOver && is_steporeable (op.type)) {
 			if (addr == until_addr) {
 				return_tail (0);
@@ -7891,6 +7907,9 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 				}
 			}
 			tail_return_value = 1;
+		}
+		if (pin_skipped && pin_pc != addr) {
+			SET_PC_BOTH (core, pin_pc);
 		}
 		// esil->verbose ?
 		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
