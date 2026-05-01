@@ -187,9 +187,7 @@ static bool r_debug_native_continue_syscall(RDebug *dbg, int pid, int num) {
 	linux_set_options (dbg, pid);
 	return r_debug_ptrace (dbg, PTRACE_SYSCALL, pid, 0, 0);
 #elif R2__BSD__
-	ut64 pc = r_debug_reg_get (dbg, "PC");
-	errno = 0;
-	return ptrace (PTRACE_SYSCALL, pid, (void*)(size_t)pc, 0) == 0;
+	return bsd_continue_syscall (dbg, pid, 0);
 #else
 	R_LOG_TODO ("continue syscall not implemented yet");
 	return false;
@@ -233,9 +231,7 @@ static bool r_debug_native_continue(RDebug *dbg, int pid, int tid, int sig) {
 #elif R2__WINDOWS__
 	return w32_continue (dbg, pid, tid, sig);
 #elif R2__BSD__
-	void *data = (void*)(size_t)((sig != -1) ? sig : dbg->reason.signum);
-	ut64 pc = r_debug_reg_get (dbg, "PC");
-	return ptrace (PTRACE_CONT, pid, (void*)(size_t)pc, (int)(size_t)data) == 0;
+	return bsd_continue (dbg, pid, (sig != -1) ? sig : dbg->reason.signum, bsd_syscall_hooks_enabled (dbg));
 #else
 	int ret = -1;
 	const int ptrace_cmd = r_debug_native_syscall_hooks_enabled (dbg)? PTRACE_SYSCALL: PTRACE_CONT;
@@ -499,11 +495,13 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 	r_cons_break_pop (core->cons);
 #else
 	int status = -1;
+	int ret = -1;
+wait_again:
 	// XXX: this is blocking, ^C will be ignored
 #ifdef WAIT_ON_ALL_CHILDREN
-	int ret = waitpid (-1, &status, WAITPID_FLAGS);
+	ret = waitpid (-1, &status, WAITPID_FLAGS);
 #else
-	int ret = waitpid (-1, &status, 0);
+	ret = waitpid (-1, &status, 0);
 	if (ret != -1) {
 		reason = R_DEBUG_REASON_TRAP;
 	}
@@ -553,7 +551,13 @@ static RDebugReasonType r_debug_native_wait(RDebug *dbg, int pid) {
 			 * this might modify dbg->reason.signum
 			 */
 #if R2__BSD__
-			reason = R_DEBUG_REASON_BREAKPOINT;
+			const int syscall_stop = bsd_handle_syscall_stop (dbg, ret);
+			if (syscall_stop == R_DEBUG_BSD_SYSCALL_STOP_CONT) {
+				goto wait_again;
+			}
+			reason = syscall_stop == R_DEBUG_BSD_SYSCALL_STOP_HIT
+				? R_DEBUG_REASON_STEP
+				: R_DEBUG_REASON_BREAKPOINT;
 #else
 			if (r_debug_handle_signals (dbg) != 0) {
 				return R_DEBUG_REASON_ERROR;

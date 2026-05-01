@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2009-2024 - pancake */
 
 #include <r_userconf.h>
+#include <r_core.h>
 
 #if DEBUGGER
 #include <signal.h>
@@ -26,6 +27,132 @@
 #elif __OpenBSD__ || __NetBSD__
 #include <sys/proc.h>
 #endif
+
+#if __KFBSD__ && defined(PT_SYSCALL) && defined(PT_LWPINFO) && defined(PL_FLAG_SCE) && defined(PL_FLAG_SCX)
+static bool bsd_syscall_hooks_suppressed(RDebug *dbg) {
+	RCore *core = dbg? (RCore *)dbg->coreb.core: NULL;
+	return core && core->sdb && sdb_bool_get (core->sdb, "dbg.syscall.suppress", NULL);
+}
+
+static const char *bsd_syscall_hook_cmd(RDebug *dbg, const char *key) {
+	if (!dbg || !dbg->coreb.core || !dbg->coreb.cfgGet) {
+		return NULL;
+	}
+	return dbg->coreb.cfgGet (dbg->coreb.core, key);
+}
+
+static bool bsd_syscall_run_cmd(RDebug *dbg, const char *key) {
+	const char *cmd = bsd_syscall_hook_cmd (dbg, key);
+	if (R_STR_ISEMPTY (cmd) || !dbg->coreb.cmd) {
+		return true;
+	}
+	dbg->coreb.cmd (dbg->coreb.core, cmd);
+	if (dbg->coreb.core) {
+		RCore *core = (RCore *)dbg->coreb.core;
+		r_cons_flush (core->cons);
+	}
+	return true;
+}
+
+static int bsd_syscall_stop_type(int pid) {
+	struct ptrace_lwpinfo linfo = {0};
+	if (ptrace (PT_LWPINFO, pid, (caddr_t)&linfo, sizeof (linfo)) == -1) {
+		return 0;
+	}
+	if (linfo.pl_flags & PL_FLAG_SCE) {
+		return PL_FLAG_SCE;
+	}
+	if (linfo.pl_flags & PL_FLAG_SCX) {
+		return PL_FLAG_SCX;
+	}
+	return 0;
+}
+
+static void bsd_syscall_trace_set(R_UNUSED int pid, R_UNUSED bool enable) {
+#if defined(PT_GET_EVENT_MASK) && defined(PT_SET_EVENT_MASK) && defined(PTRACE_SCE) && defined(PTRACE_SCX)
+	ptrace_event_t pe = {0};
+	if (ptrace (PT_GET_EVENT_MASK, pid, (caddr_t)&pe, sizeof (pe)) == -1) {
+		return;
+	}
+	const int old = pe.pe_set_event;
+	if (enable) {
+		pe.pe_set_event |= PTRACE_SCE | PTRACE_SCX;
+	} else {
+		pe.pe_set_event &= ~(PTRACE_SCE | PTRACE_SCX);
+	}
+	if (pe.pe_set_event != old) {
+		(void)ptrace (PT_SET_EVENT_MASK, pid, (caddr_t)&pe, sizeof (pe));
+	}
+#endif
+}
+#endif
+
+bool bsd_continue(RDebug *dbg, int pid, int sig, bool trace_syscalls) {
+#if defined(PT_SYSCALL)
+	const int request = trace_syscalls? PT_SYSCALL: PT_CONTINUE;
+#else
+	const int request = PT_CONTINUE;
+	trace_syscalls = false;
+#endif
+#if __KFBSD__ && defined(PT_SYSCALL) && defined(PT_LWPINFO) && defined(PL_FLAG_SCE) && defined(PL_FLAG_SCX)
+	if (!trace_syscalls) {
+		bsd_syscall_trace_set (pid, false);
+	}
+#endif
+	ut64 pc = r_debug_reg_get (dbg, "PC");
+	if (ptrace (request, pid, (caddr_t)(size_t)pc, sig) == -1) {
+		r_sys_perror (trace_syscalls? "PT_SYSCALL": "PT_CONTINUE");
+		return false;
+	}
+	return true;
+}
+
+bool bsd_continue_syscall(RDebug * R_UNUSED dbg, R_UNUSED int pid, R_UNUSED int sig) {
+#if defined(PT_SYSCALL)
+	return bsd_continue (dbg, pid, sig, true);
+#else
+	R_LOG_TODO ("continue syscall not implemented yet");
+	return false;
+#endif
+}
+
+bool bsd_syscall_hooks_enabled(RDebug * R_UNUSED dbg) {
+#if __KFBSD__ && defined(PT_SYSCALL) && defined(PT_LWPINFO) && defined(PL_FLAG_SCE) && defined(PL_FLAG_SCX)
+	const char *cmd_enter = bsd_syscall_hook_cmd (dbg, "cmd.syscall.enter");
+	const char *cmd_leave = bsd_syscall_hook_cmd (dbg, "cmd.syscall.leave");
+	return R_STR_ISNOTEMPTY (cmd_enter) || R_STR_ISNOTEMPTY (cmd_leave);
+#else
+	return false;
+#endif
+}
+
+int bsd_handle_syscall_stop(RDebug * R_UNUSED dbg, R_UNUSED int pid) {
+#if __KFBSD__ && defined(PT_SYSCALL) && defined(PT_LWPINFO) && defined(PL_FLAG_SCE) && defined(PL_FLAG_SCX)
+	const int stop_type = bsd_syscall_stop_type (pid);
+	if (!stop_type) {
+		return R_DEBUG_BSD_SYSCALL_STOP_NONE;
+	}
+	if (bsd_syscall_hooks_suppressed (dbg)) {
+		bsd_syscall_trace_set (pid, false);
+		return R_DEBUG_BSD_SYSCALL_STOP_HIT;
+	}
+	if (!bsd_syscall_hooks_enabled (dbg)) {
+		return bsd_continue (dbg, pid, 0, false)
+			? R_DEBUG_BSD_SYSCALL_STOP_CONT
+			: R_DEBUG_BSD_SYSCALL_STOP_HIT;
+	}
+	if (stop_type == PL_FLAG_SCE) {
+		bsd_syscall_run_cmd (dbg, "cmd.syscall.enter");
+	} else {
+		bsd_syscall_run_cmd (dbg, "cmd.syscall.leave");
+	}
+	return bsd_continue (dbg, pid, 0, true)
+		? R_DEBUG_BSD_SYSCALL_STOP_CONT
+		: R_DEBUG_BSD_SYSCALL_STOP_HIT;
+#else
+	return 0;
+#endif
+}
 
 #if __KFBSD__
 static void addr_tostring(struct sockaddr_storage *ss, char *buffer, int buflen) {
