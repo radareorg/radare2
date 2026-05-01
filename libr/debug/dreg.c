@@ -391,4 +391,3 @@ R_API ut64 r_debug_reg_get_err(RDebug *dbg, const char *name, bool *err, utX *va
 R_API ut64 r_debug_reg_get(RDebug *dbg, const char *name) {
 	return r_debug_reg_get_err (dbg, name, NULL, NULL);
 }
-
