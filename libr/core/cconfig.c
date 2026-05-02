@@ -3555,6 +3555,13 @@ static bool cb_anal_jmptbl(void *user, void *data) {
 	return true;
 }
 
+static bool cb_anal_jmptbl_maxcases(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->anal->opt.jmptbl_maxcases = node->i_value;
+	return true;
+}
+
 static bool cb_anal_jmptbl_split(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4042,6 +4049,7 @@ R_API int r_core_config_init(RCore *core) {
 	// SETCB ("arch.autoselect", "false", &cb_archautoselect, "automagically select matching decoder on arch related config changes (has no effect atm)");
 
 	SETCB ("anal.jmptbl", "true", &cb_anal_jmptbl, "analyze jump tables in switch statements");
+	SETICB ("anal.jmptbl.maxcases", R_ANAL_SWITCH_MAXCASES, &cb_anal_jmptbl_maxcases, "maximum number of jump table cases to analyze");
 	SETCB ("anal.jmptbl.split", "false", &cb_anal_jmptbl_split, "enable splitting blocks in jump table analysis");
 
 	SETCB ("anal.jmp.cref", "false", &cb_anal_cjmpref, "create references for conditional jumps");

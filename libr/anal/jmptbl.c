@@ -4,6 +4,8 @@
 #include <r_anal_priv.h>
 
 #define JMPTBL_DISPATCH_LOOKBACK 16
+#define JMPTBL_TARGET_MAX_OPS 6
+#define JMPTBL_TARGET_PROBE_CAP 128
 #define SWITCH_SDB_NS "switches"
 
 typedef struct {
@@ -160,15 +162,20 @@ static bool check_jmptbl_case_target(RAnal *anal, JmptblTargetCtx *ctx, ut64 cas
 			return false;
 		}
 	}
-	ut8 probe[96];
-	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, sizeof (probe))) {
+	ut8 probe[JMPTBL_TARGET_PROBE_CAP];
+	int maxop = r_arch_info (anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	if (maxop < 1) {
+		maxop = 16;
+	}
+	const size_t probe_sz = R_MIN (sizeof (probe), (size_t)maxop * JMPTBL_TARGET_MAX_OPS);
+	if (!anal->iob.read_at (anal->iob.io, case_addr, probe, probe_sz)) {
 		return false;
 	}
 	RAnalOp op = { 0 };
 	ut64 off = 0;
 	int nops = 0;
-	while (off < sizeof (probe) && nops++ < 6) {
-		int len = r_anal_op (anal, &op, case_addr + off, probe + off, sizeof (probe) - off, R_ARCH_OP_MASK_BASIC);
+	while (off < probe_sz && nops++ < JMPTBL_TARGET_MAX_OPS) {
+		int len = r_anal_op (anal, &op, case_addr + off, probe + off, probe_sz - off, R_ARCH_OP_MASK_BASIC);
 		if (len < 1 || (op.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_ILL) {
 			r_anal_op_fini (&op);
 			return false;
@@ -422,7 +429,7 @@ static RAnalBlock *analyze_new_case_once(RAnal *anal, RAnalFunction *fcn, RAnalB
 }
 
 static bool function_has_ret_between(RAnal *anal, RAnalFunction *fcn, ut64 from, ut64 to) {
-	if (!anal || !fcn || !fcn->bbs || to <= from) {
+	if (!fcn || !fcn->bbs || to <= from) {
 		return false;
 	}
 	RListIter *iter;
@@ -462,8 +469,24 @@ static Sdb *switch_sdb(RAnal *anal, bool create) {
 	return sdb_ns (anal->sdb, SWITCH_SDB_NS, create);
 }
 
-static ut32 switch_spec_ncases(const RAnalSwitchSpec *spec) {
-	return spec->ncases? R_MIN (spec->ncases, (ut32)R_ANAL_SWITCH_MAXCASES): R_ANAL_SWITCH_MAXCASES;
+static ut32 jmptbl_maxcases(RAnal *anal) {
+	const int maxcases = anal->opt.jmptbl_maxcases;
+	return maxcases > 0? (ut32)maxcases: R_ANAL_SWITCH_MAXCASES;
+}
+
+static ut64 jmptbl_limit_cases(RAnal *anal, ut64 ncases, ut64 at) {
+	const ut32 maxcases = jmptbl_maxcases (anal);
+	if (ncases > maxcases) {
+		R_LOG_WARN ("Limiting jump table at 0x%08" PFMT64x " to %u cases",
+			at, (unsigned)maxcases);
+		return maxcases;
+	}
+	return ncases;
+}
+
+static ut32 switch_spec_ncases(RAnal *anal, const RAnalSwitchSpec *spec) {
+	const ut32 maxcases = jmptbl_maxcases (anal);
+	return spec->ncases? R_MIN (spec->ncases, maxcases): maxcases;
 }
 
 static char *switch_spec_serialize(const RAnalSwitchSpec *spec) {
@@ -544,7 +567,7 @@ R_API void r_anal_switch_unset(RAnal *anal, ut64 startea) {
 // INDIRECT with vsize > 1, SPARSE).
 static bool switch_apply_flagged(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec) {
 	JmptblTargetCtx target_ctx = { 0 };
-	const ut32 ncases = switch_spec_ncases (spec);
+	const ut32 ncases = switch_spec_ncases (anal, spec);
 	if (spec->jtbl_addr == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location");
 		return false;
@@ -698,13 +721,11 @@ static bool spec_needs_flag_walker(const RAnalSwitchSpec *spec) {
 R_API bool r_anal_switch_apply(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, int depth, const RAnalSwitchSpec *spec) {
 	R_RETURN_VAL_IF_FAIL (anal && spec, false);
 	RAnalSwitchSpec limited_spec;
-	if (spec->ncases > R_ANAL_SWITCH_MAXCASES) {
+	const ut64 ncases = jmptbl_limit_cases (anal, spec->ncases, spec->startea);
+	if (spec->ncases > ncases) {
 		limited_spec = *spec;
-		limited_spec.ncases = R_ANAL_SWITCH_MAXCASES;
+		limited_spec.ncases = ncases;
 		spec = &limited_spec;
-		R_LOG_DEBUG ("Limiting JumpTable size at 0x%08" PFMT64x " to %u cases",
-			spec->startea,
-			(unsigned)R_ANAL_SWITCH_MAXCASES);
 	}
 	if (spec->jtbl_addr == UT64_MAX) {
 		return false;
@@ -870,7 +891,9 @@ R_API bool try_walkthrough_casetbl(RAnal *anal, RAnalFunction *fcn, RAnalBlock *
 	bool ret = ret0;
 	JmptblTargetCtx target_ctx = { 0 };
 	if (jmptbl_size == 0) {
-		jmptbl_size = R_ANAL_SWITCH_MAXCASES;
+		jmptbl_size = jmptbl_maxcases (anal);
+	} else {
+		jmptbl_size = jmptbl_limit_cases (anal, jmptbl_size, ip);
 	}
 	if (jmptbl_loc == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
@@ -937,9 +960,11 @@ R_API bool r_anal_jmptbl_walk(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block
 	// jmptbl_size can not always be determined
 	if (jmptbl_size == 0) {
 		jmptbl_size = jmptbl_size_from_next_ref (anal, &a, jmptbl_loc, sz);
-		if (!jmptbl_size) {
-			jmptbl_size = R_ANAL_SWITCH_MAXCASES;
-		}
+		jmptbl_size = jmptbl_size
+			? jmptbl_limit_cases (anal, jmptbl_size, ip)
+			: jmptbl_maxcases (anal);
+	} else {
+		jmptbl_size = jmptbl_limit_cases (anal, jmptbl_size, ip);
 	}
 	if (jmptbl_loc == UT64_MAX) {
 		R_LOG_DEBUG ("Invalid JumpTable location 0x%08" PFMT64x, jmptbl_loc);
@@ -1196,7 +1221,9 @@ R_API int walkthrough_arm_jmptbl_style(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	jmptbl_target_ctx_init (&target_ctx, anal, ip);
 
 	if (jmptbl_size == 0) {
-		jmptbl_size = R_ANAL_SWITCH_MAXCASES;
+		jmptbl_size = jmptbl_maxcases (anal);
+	} else {
+		jmptbl_size = jmptbl_limit_cases (anal, jmptbl_size, ip);
 	}
 
 	ut64 jmptblsz;
@@ -1368,7 +1395,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 }
 
 R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, int depth, RAnalOp *op, int loadsize) {
-	if (!anal || !op || !op->reg || !anal->leaddrs) {
+	if (!op || !op->reg || !anal->leaddrs) {
 		return false;
 	}
 	if (loadsize != 1 && loadsize != 2 && loadsize != 4) {

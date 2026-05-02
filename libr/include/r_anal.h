@@ -460,6 +460,7 @@ typedef struct r_anal_options_t {
 	bool nopskip; // skip nops at the beginning of functions
 	int hpskip; // skip `mov reg,reg` and `lea reg,[reg]`
 	int jmptbl; // analyze jump tables
+	int jmptbl_maxcases; // maximum number of jump table cases to analyze
 	bool jmptbl_split; // enable splitting blocks in jump table analysis
 	int nonull;
 	bool pushret; // analyze push+ret as jmp
