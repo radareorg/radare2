@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2015-2025 - pancake */
+/* radare - LGPL - Copyright 2015-2026 - pancake */
 
 #include <r_core.h>
 
@@ -511,6 +511,9 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			// drop tail goto into a structured loop header (the while/do owns that edge)
 			const char *t = r_str_trim_head_ro (line);
 			if (r_str_startswith (t, "goto ") || r_str_startswith (t, "jmp ")) {
+				if (strstr (t, "switch table")) {
+					continue;
+				}
 				const char *num = strstr (t, "0x");
 				if (num) {
 					ut64 dst = r_num_get (NULL, num);

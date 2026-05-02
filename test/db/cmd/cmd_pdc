@@ -206,6 +206,24 @@ void sym.func.100003a54 (int64_t arg1, int64_t arg2) {
 EOF
 RUN
 
+NAME=pdc suppress switch table goto
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1eb1890eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffd3fffffff0ffffff
+s 0
+afr
+pdc~goto loc_rcx
+?e --
+pdc~switch (switch_var)
+EOF
+EXPECT=<<EOF
+--
+    switch (switch_var) { // jump table of 4 cases at 0x00000000
+EOF
+RUN
+
 NAME=movk pseudo
 FILE=-
 CMDS=<<EOF
