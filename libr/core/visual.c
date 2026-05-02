@@ -4675,9 +4675,9 @@ static int varcount(RCore *core, RAnalFunction *f) {
 		}
 	}
 	r_anal_function_vars_cache_init (core->anal, &vars_cache, f);
-	int len = r_list_length (vars_cache.rvars);
-	len += r_list_length (vars_cache.bvars);
-	len += r_list_length (vars_cache.svars);
+	int len = (int)RVecAnalVarPtr_length (vars_cache.rvars);
+	len += (int)RVecAnalVarPtr_length (vars_cache.bvars);
+	len += (int)RVecAnalVarPtr_length (vars_cache.svars);
 	r_anal_function_vars_cache_fini (&vars_cache);
 	return len;
 }

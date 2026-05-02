@@ -243,11 +243,14 @@ static ut64 typecmp_val(const void *a) {
 }
 
 R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn) {
-	RListIter *iter;
-	RAnalVar *var;
-	RList *list = r_anal_var_all_list (anal, fcn);
+	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	RList *type_used = r_list_new ();
-	r_list_foreach (list, iter, var) {
+	if (!type_used) {
+		return NULL;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RAnalVar *var = *it;
 		r_list_append (type_used, var->type);
 	}
 	r_list_uniq_inplace (type_used, typecmp_val);

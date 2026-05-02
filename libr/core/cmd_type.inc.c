@@ -825,12 +825,12 @@ static RList *collect_type_xrefs(RCore *core, const char *type_name) {
 	if (!xrefs) {
 		return NULL;
 	}
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		RList *vars = r_anal_var_all_list (core->anal, fcn);
-		RAnalVar *var;
-		r_list_foreach (vars, iter2, var) {
+		RAnalVar **it;
+		R_VEC_FOREACH (&fcn->vars, it) {
+			RAnalVar *var = *it;
 			if (!var->type) {
 				continue;
 			}
@@ -866,7 +866,6 @@ static RList *collect_type_xrefs(RCore *core, const char *type_name) {
 			}
 			free (var_type);
 		}
-		r_list_free (vars);
 	}
 	return xrefs;
 }
@@ -876,12 +875,12 @@ static RList *collect_field_xrefs(RCore *core, const char *type_name, const char
 	if (!xrefs) {
 		return NULL;
 	}
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RAnalFunction *fcn;
 	r_list_foreach (core->anal->fcns, iter, fcn) {
-		RList *vars = r_anal_var_all_list (core->anal, fcn);
-		RAnalVar *var;
-		r_list_foreach (vars, iter2, var) {
+		RAnalVar **it;
+		R_VEC_FOREACH (&fcn->vars, it) {
+			RAnalVar *var = *it;
 			if (!var->type) {
 				continue;
 			}
@@ -919,7 +918,6 @@ static RList *collect_field_xrefs(RCore *core, const char *type_name, const char
 			}
 			free (var_type);
 		}
-		r_list_free (vars);
 	}
 	return xrefs;
 }

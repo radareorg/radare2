@@ -2548,18 +2548,22 @@ static int function_arg_var_cmp(const RAnalVar *a, const RAnalVar *b) {
 	return 0;
 }
 
+static int arg_var_ptr_cmp(RAnalVar * const *a, RAnalVar * const *b) {
+	return function_arg_var_cmp (a? *a: NULL, b? *b: NULL);
+}
+
 static bool function_signature_fallback_to_vars(RAnal *anal, RAnalFunction *fcn, RAnalFunctionSignature *signature) {
-	RListIter *iter;
-	RAnalVar *var;
 	bool ok = true;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn && signature && signature->params, false);
-	RList *vars = r_anal_var_all_list (anal, fcn);
+	RVecAnalVarPtr *vars = r_anal_function_vars (anal, fcn);
 	if (!vars) {
 		return false;
 	}
-	r_list_sort (vars, (RListComparator)function_arg_var_cmp);
-	r_list_foreach (vars, iter, var) {
+	RVecAnalVarPtr_sort (vars, arg_var_ptr_cmp);
+	RAnalVar **it;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *var = *it;
 		RAnalFunctionParam *param;
 		if (!var->isarg || R_STR_ISEMPTY (var->type)) {
 			continue;
@@ -2573,7 +2577,7 @@ static bool function_signature_fallback_to_vars(RAnal *anal, RAnalFunction *fcn,
 			break;
 		}
 	}
-	r_list_free (vars);
+	RVecAnalVarPtr_free (vars);
 	return ok;
 }
 

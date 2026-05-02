@@ -979,16 +979,14 @@ static void autocomplete_vars(RCore *core, RLineCompletion *completion, const ch
 	if (!fcn) {
 		return;
 	}
-	RListIter *iter;
-	RAnalVar *var;
 	size_t len = strlen (str);
-	RList *vars = r_anal_var_all_list (core->anal, fcn);
-	r_list_foreach (vars, iter, var) {
+	RAnalVar **it;
+	R_VEC_FOREACH (&fcn->vars, it) {
+		RAnalVar *var = *it;
 		if (!strncmp (var->name, str, len)) {
 			r_line_completion_push (completion, var->name);
 		}
 	}
-	r_list_free (vars);
 }
 
 static void autocomplete_macro(RCore *core, RLineCompletion *completion, const char *str) {

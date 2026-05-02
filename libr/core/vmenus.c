@@ -3225,13 +3225,19 @@ static void function_rename(RCore *core, ut64 addr, const char *name) {
 
 static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
+	if (!fcn) {
+		return;
+	}
 	ut64 a_tmp = core->addr;
 	int i = 0;
-	RListIter *iter;
-	RList *list = r_anal_var_all_list (core->anal, fcn);
-	RAnalVar* var;
 
-	r_list_foreach (list, iter, var) {
+	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
+	if (!vars) {
+		return;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *var = *it;
 		if (i == vindex) {
 			r_core_seek (core, addr, false);
 			char *safe_name = r_str_sanitize_r2 (var->name);
@@ -3242,23 +3248,29 @@ static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name
 		}
 		i++;
 	}
-	r_list_free (list);
+	RVecAnalVarPtr_free (vars);
 }
 
 static void variable_set_type(RCore *core, ut64 addr, int vindex, const char *type) {
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	RList *list = r_anal_var_all_list (core->anal, fcn);
-	RListIter *iter;
-	RAnalVar* var;
+	if (!fcn) {
+		return;
+	}
 
-	r_list_foreach (list, iter, var) {
+	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
+	if (!vars) {
+		return;
+	}
+	RAnalVar **it;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *var = *it;
 		if (vindex == 0) {
 			r_anal_var_set_type (core->anal, var, type);
 			break;
 		}
 		vindex--;
 	}
-	r_list_free (list);
+	RVecAnalVarPtr_free (vars);
 }
 
 // In visual mode, display function list
@@ -3331,12 +3343,9 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	int window, wdelta = (idx > 5) ? idx - 5 : 0;
 	const ut64 addr = var_functions_show (core, idx, 0, cols);
 	RAnalFunction* fcn = r_anal_get_fcn_in (core->anal, addr, R_ANAL_FCN_TYPE_NULL);
-	RListIter *iter;
 	if (!fcn) {
 		return UT64_MAX;
 	}
-	RList *list = r_anal_var_all_list (core->anal, fcn);
-	RAnalVar* var;
 	// Adjust the window size automatically.
 	(void)r_cons_get_size (core->cons, &window);
 	window -= 8;  // Size of printed things.
@@ -3344,12 +3353,18 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	// A new line so this looks reasonable.
 	r_cons_newline (core->cons);
 
-	int llen = r_list_length (list);
+	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
+	if (!vars) {
+		return UT64_MAX;
+	}
+	int llen = (int)RVecAnalVarPtr_length (vars);
 	if (*vindex >= llen) {
 		*vindex = llen - 1;
 	}
 
-	r_list_foreach (list, iter, var) {
+	RAnalVar **it;
+	R_VEC_FOREACH (vars, it) {
+		RAnalVar *var = *it;
 		if (i > window + wdelta) {
 			r_cons_printf (core->cons, "...\n");
 			break;
@@ -3391,7 +3406,7 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 		}
 		i++;
 	}
-	r_list_free (list);
+	RVecAnalVarPtr_free (vars);
 	return addr;
 }
 

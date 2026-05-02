@@ -460,14 +460,13 @@ static st64 fcn_context_stack_offset(const RAnalFunction *fcn, const RAnalVar *v
 	}
 }
 
-static RAnalVar *fcn_context_find_register_home_source(RList *rvars, RAnalVar *slot) {
-	RListIter *iter;
-	RAnalVar *var;
-
+static RAnalVar *fcn_context_find_register_home_source(RVecAnalVarPtr *rvars, RAnalVar *slot) {
 	if (!rvars) {
 		return NULL;
 	}
-	r_list_foreach (rvars, iter, var) {
+	RAnalVar **it;
+	R_VEC_FOREACH (rvars, it) {
+		RAnalVar *var = *it;
 		if (var && var->isarg && var->kind == R_ANAL_VAR_KIND_REG) {
 			RAnalVar *dst = r_anal_var_get_dst_var (var);
 			if (dst == slot) {
@@ -612,8 +611,6 @@ R_API void r_anal_function_context_free(RAnalFcnContext *ctx) {
 R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunction *fcn) {
 	RAnalFcnContext *ctx;
 	RAnalFcnVarsCache cache = {0};
-	RListIter *iter;
-	RAnalVar *var;
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	r_anal_types_ensure_loaded (anal);
@@ -628,7 +625,9 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	}
 
 	r_anal_function_vars_cache_init (anal, &cache, fcn);
-	r_list_foreach (cache.rvars, iter, var) {
+	RAnalVar **it;
+	R_VEC_FOREACH (cache.rvars, it) {
+		RAnalVar *var = *it;
 		if (!var || !var->isarg || var->kind != R_ANAL_VAR_KIND_REG) {
 			continue;
 		}
@@ -641,7 +640,8 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 		r_list_append (ctx->reg_args, arg);
 	}
 
-	r_list_foreach (cache.bvars, iter, var) {
+	R_VEC_FOREACH (cache.bvars, it) {
+		RAnalVar *var = *it;
 		if (!var) {
 			continue;
 		}
@@ -654,7 +654,8 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 		}
 		r_list_append (ctx->fcn_slots, slot);
 	}
-	r_list_foreach (cache.svars, iter, var) {
+	R_VEC_FOREACH (cache.svars, it) {
+		RAnalVar *var = *it;
 		if (!var) {
 			continue;
 		}
