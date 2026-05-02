@@ -217,7 +217,7 @@ afl
 ?vi $BF
 EOF
 EXPECT=<<EOF
-0x00011e90  285   7152 main
+0x00011e90  286   7152 main
 9320
 7152
 9320

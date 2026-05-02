@@ -1681,8 +1681,8 @@ noskip:
 						}
 					}
 					if (!try_get_jmptbl_info (anal, fcn, op->addr, bb, &table_size, &default_case, &case_shift)) {
-						table_size = anal->cmpval + 1;
-						default_case = -1;
+						table_size = 0;
+						default_case = UT64_MAX;
 					}
 					ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
 					anal->cmpval = UT64_MAX;

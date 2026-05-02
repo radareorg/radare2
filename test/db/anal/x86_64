@@ -61,6 +61,30 @@ CODE 0x0000002c 0x00000036 case.0x2c.1
 EOF
 RUN
 
+NAME=x86_64 nested jmptbl keeps switch metadata after split
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 83fa00773b488d056400000048630c904801c1ffe1488d055c00000048630c904801c1ffe1c3c300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a5ffffff00000000a8ffffffadffffff
+s 0
+afr
+afbt @ 0x23
+axff~0x00000023
+EOF
+EXPECT=<<EOF
+switch at  0x23
+  jtbl     0x78
+  esize    4
+  ncases   2
+  shift    0
+  default  0xffffffffffffffff
+  lowcase  0
+CODE 0x00000023 0x00000020 case.0x23.0
+CODE 0x00000023 0x00000025 case.0x23.1
+EOF
+RUN
+
 NAME=x86_64 getenv this maybe & jmp noret fix
 FILE=bins/elf/ls.odd
 CMDS=<<EOF
