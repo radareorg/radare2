@@ -196,10 +196,19 @@ static void showreg(RCore *core, const char *rn, const char *desc) {
 static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
 	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
 	if (esil) {
-		esil->anal = core->anal;
-		r_esil_set_pc (esil, core->addr);
+		if (r_esil_setup (esil, core->anal, false, false, false)) {
+			r_esil_set_pc (esil, core->addr);
+			return esil;
+		}
+		r_esil_free (esil);
 	}
-	return esil;
+	return NULL;
+}
+
+static REsil *visual_esil_seek(RCore *core, REsil *esil, unsigned int addrsize, const char *cmd) {
+	r_esil_free (esil);
+	r_core_cmd0 (core, cmd);
+	return visual_esil_new (core, addrsize);
 }
 
 R_API bool r_core_visual_esil(RCore *core, const char *input) {
@@ -235,6 +244,11 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	REsil *esil = visual_esil_new (core, addrsize);
 	char *expr = NULL;
 	bool refresh = false;
+	bool ret = true;
+	if (!esil) {
+		ret = false;
+		goto beach;
+	}
 	for (;;) {
 		R_FREE (expr);
 		r_cons_clear00 (cons);
@@ -243,13 +257,8 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			refresh = false;
 		}
 		if (r_io_read_at (core->io, core->addr, buf, sizeof (ut64)) < 1) {
-			free (expr);
-			free (ginput);
-			free (word);
-			r_reg_arena_pop (core->anal->reg);
-			r_esil_free (esil);
-			free (buf);
-			return false;
+			ret = false;
+			goto beach;
 		}
 		if (input) {
 			expr = strdup (input);
@@ -335,16 +344,20 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'n':
 		case 'P':
 			x = 0;
-			r_esil_free (esil);
-			r_core_cmd0 (core, "so+1");
-			esil = visual_esil_new (core, addrsize);
+			esil = visual_esil_seek (core, esil, addrsize, "so+1");
+			if (!esil) {
+				ret = false;
+				goto beach;
+			}
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
-			r_esil_free (esil);
-			r_core_cmd0 (core, "so-1");
-			esil = visual_esil_new (core, addrsize);
+			esil = visual_esil_seek (core, esil, addrsize, "so-1");
+			if (!esil) {
+				ret = false;
+				goto beach;
+			}
 			break;
 		case '=':
 		{ // TODO: edit
@@ -466,7 +479,7 @@ beach:
 	free (word);
 	free (ginput);
 	free (buf);
-	return true;
+	return ret;
 }
 
 R_API bool r_core_visual_bit_editor(RCore *core) {
