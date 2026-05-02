@@ -2000,40 +2000,32 @@ static void print_var_summary(RDisasmState *ds, RAnalFcnVarsCache *cache) {
 	const char *bp_args_color = COLOR_RESET (ds);
 	const char *sp_args_color = COLOR_RESET (ds);
 	const char *rg_args_color = COLOR_RESET (ds);
-	RVecAnalVarPtr *vecs[] = {
-		cache->bvars,
-		cache->svars,
-		cache->rvars
-	};
-	int vi;
-	for (vi = 0; vi < R_ARRAY_SIZE (vecs); vi++) {
-		RAnalVar **it;
-		R_VEC_FOREACH (vecs[vi], it) {
-			RAnalVar *var = *it;
-			if (var->isarg) {
-				switch (var->kind) {
-				case 'b':
-					bp_args++;
-					break;
-				case 's':
-					sp_args++;
-					break;
-				case 'r':
-					rg_args++;
-					break;
-				}
-			} else {
-				switch (var->kind) {
-				case 'b':
-					bp_vars++;
-					break;
-				case 's':
-					sp_vars++;
-					break;
-				case 'r':
-					rg_vars++;
-					break;
-				}
+	RAnalVar **it;
+	R_VEC_FOREACH_VARS_CACHE (cache, it) {
+		RAnalVar *var = *it;
+		if (var->isarg) {
+			switch (var->kind) {
+			case 'b':
+				bp_args++;
+				break;
+			case 's':
+				sp_args++;
+				break;
+			case 'r':
+				rg_args++;
+				break;
+			}
+		} else {
+			switch (var->kind) {
+			case 'b':
+				bp_vars++;
+				break;
+			case 's':
+				sp_vars++;
+				break;
+			case 'r':
+				rg_vars++;
+				break;
 			}
 		}
 	}
@@ -2056,22 +2048,19 @@ static void print_var_summary(RDisasmState *ds, RAnalFcnVarsCache *cache) {
 			const char *comma = "";
 			int minsprange = ST32_MAX;
 			int maxsprange = 0;
-			for (vi = 0; vi < R_ARRAY_SIZE (vecs); vi++) {
-				RAnalVar **it;
-				R_VEC_FOREACH (vecs[vi], it) {
-					RAnalVar *var = *it;
-					if (var->isarg) {
-						if (var->kind == 'r') {
-							r_cons_printf (cons, "%s%s", comma, var->regname);
-							comma = ", ";
-						} else {
-							ut64 v = R_ABS (var->delta);
-							if (v > maxsprange) {
-								maxsprange = v;
-							}
-							if (v < minsprange) {
-								minsprange = v;
-							}
+			R_VEC_FOREACH_VARS_CACHE (cache, it) {
+				RAnalVar *var = *it;
+				if (var->isarg) {
+					if (var->kind == 'r') {
+						r_cons_printf (cons, "%s%s", comma, var->regname);
+						comma = ", ";
+					} else {
+						ut64 v = R_ABS (var->delta);
+						if (v > maxsprange) {
+							maxsprange = v;
+						}
+						if (v < minsprange) {
+							minsprange = v;
 						}
 					}
 				}
@@ -2093,22 +2082,19 @@ static void print_var_summary(RDisasmState *ds, RAnalFcnVarsCache *cache) {
 			r_cons_printf (cons, "vars(");
 			int minsprange = ST32_MAX;
 			int maxsprange = 0;
-			for (vi = 0; vi < R_ARRAY_SIZE (vecs); vi++) {
-				RAnalVar **it;
-				R_VEC_FOREACH (vecs[vi], it) {
-					RAnalVar *var = *it;
-					if (!var->isarg) {
-						if (var->kind == 'r') {
-							r_cons_printf (cons, "%s%s", comma, var->regname);
-							comma = ", ";
-						} else {
-							ut64 v = R_ABS (var->delta);
-							if (v > maxsprange) {
-								maxsprange = v;
-							}
-							if (v < minsprange) {
-								minsprange = v;
-							}
+			R_VEC_FOREACH_VARS_CACHE (cache, it) {
+				RAnalVar *var = *it;
+				if (!var->isarg) {
+					if (var->kind == 'r') {
+						r_cons_printf (cons, "%s%s", comma, var->regname);
+						comma = ", ";
+					} else {
+						ut64 v = R_ABS (var->delta);
+						if (v > maxsprange) {
+							maxsprange = v;
+						}
+						if (v < minsprange) {
+							minsprange = v;
 						}
 					}
 				}
@@ -2350,83 +2336,75 @@ static void ds_show_functions(RDisasmState *ds) {
 			if (f->addr == core->addr) {
 				skipped = core->skiplines;
 			}
-			RVecAnalVarPtr *vecs[] = {
-				vars_cache.rvars,
-				vars_cache.bvars,
-				vars_cache.svars
-			};
-			int vi;
-			for (vi = 0; vi < R_ARRAY_SIZE (vecs); vi++) {
-				RAnalVar **it;
-				R_VEC_FOREACH (vecs[vi], it) {
-					RAnalVar *var = *it;
-					if (skipped > 0) {
-						skipped--;
-						continue;
-					}
-					ds_begin_line (ds);
-					int idx;
-					RAnal *anal = ds->core->anal;
-					memset (spaces, ' ', sizeof (spaces));
-					idx = 12 - strlen (var->name);
-					if (idx < 0) {
-						idx = 0;
-					}
-					spaces[idx] = 0;
-					ds_pre_xrefs (ds, false);
-
-					if (ds->show_flgoff) {
-						ds_print_offset (ds);
-					}
-					r_cons_printf (cons, "%s; ", COLOR_ARG (ds, color_var));
-					switch (var->kind) {
-					case R_ANAL_VAR_KIND_BPV:
-						{
-							const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
-							char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
-							bool is_var = !var->isarg;
-							ds_show_functions_argvar (ds, f, var, bpreg? bpreg: "BP", is_var, sign);
-						}
-						break;
-					case R_ANAL_VAR_KIND_REG: {
-						RRegItem *i = r_reg_index_get (anal->reg, var->delta);
-						if (!i) {
-							R_LOG_ERROR ("Register not found");
-							break;
-						}
-						r_cons_printf (cons, "%sarg %s%s%s%s%s %s@ %s", COLOR_ARG (ds, color_var),
-							COLOR_ARG (ds, color_var_type),
-							var->type, r_str_endswith (var->type, "*") ? "" : " ",
-							COLOR_ARG (ds, color_var_name), var->name,
-							COLOR_ARG (ds, color_var_addr), i->name);
-						if (ds->show_varsum == -1) {
-							char *val = core_varvalue (ds->core, var->name);
-							if (val) {
-								r_str_replace_char (val, '\n', '\0');
-								r_cons_printf (cons, "%s", val);
-								free (val);
-							}
-						}
-						}
-						break;
-					case R_ANAL_VAR_KIND_SPV:
-						{
-							bool is_var = !var->isarg;
-							int saved_delta = var->delta;
-							const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
-							var->delta = f->maxstack + var->delta;
-							char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
-							ds_show_functions_argvar (ds, f, var, spreg? spreg: "SP", is_var, sign);
-							var->delta = saved_delta;
-						}
-						break;
-					}
-					if (var->comment) {
-						r_cons_printf (cons, "    %s%s %s", COLOR (ds, color_comment), ds->cmtoken, var->comment);
-					}
-					r_cons_print (cons, COLOR_RESET (ds));
-					ds_newline (ds);
+			RAnalVar **it;
+			R_VEC_FOREACH_VARS_CACHE (&vars_cache, it) {
+				RAnalVar *var = *it;
+				if (skipped > 0) {
+					skipped--;
+					continue;
 				}
+				ds_begin_line (ds);
+				int idx;
+				RAnal *anal = ds->core->anal;
+				memset (spaces, ' ', sizeof (spaces));
+				idx = 12 - strlen (var->name);
+				if (idx < 0) {
+					idx = 0;
+				}
+				spaces[idx] = 0;
+				ds_pre_xrefs (ds, false);
+
+				if (ds->show_flgoff) {
+					ds_print_offset (ds);
+				}
+				r_cons_printf (cons, "%s; ", COLOR_ARG (ds, color_var));
+				switch (var->kind) {
+				case R_ANAL_VAR_KIND_BPV:
+					{
+						const char *bpreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_BP);
+						char sign = var->isarg || (-var->delta <= f->bp_off) ? '+' : '-';
+						bool is_var = !var->isarg;
+						ds_show_functions_argvar (ds, f, var, bpreg? bpreg: "BP", is_var, sign);
+					}
+					break;
+				case R_ANAL_VAR_KIND_REG: {
+					RRegItem *i = r_reg_index_get (anal->reg, var->delta);
+					if (!i) {
+						R_LOG_ERROR ("Register not found");
+						break;
+					}
+					r_cons_printf (cons, "%sarg %s%s%s%s%s %s@ %s", COLOR_ARG (ds, color_var),
+						COLOR_ARG (ds, color_var_type),
+						var->type, r_str_endswith (var->type, "*") ? "" : " ",
+						COLOR_ARG (ds, color_var_name), var->name,
+						COLOR_ARG (ds, color_var_addr), i->name);
+					if (ds->show_varsum == -1) {
+						char *val = core_varvalue (ds->core, var->name);
+						if (val) {
+							r_str_replace_char (val, '\n', '\0');
+							r_cons_printf (cons, "%s", val);
+							free (val);
+						}
+					}
+					}
+					break;
+				case R_ANAL_VAR_KIND_SPV:
+					{
+						bool is_var = !var->isarg;
+						int saved_delta = var->delta;
+						const char *spreg = r_reg_alias_getname (anal->reg, R_REG_ALIAS_SP);
+						var->delta = f->maxstack + var->delta;
+						char sign = var->isarg || (-var->delta <= f->maxstack) ? '+' : '-';
+						ds_show_functions_argvar (ds, f, var, spreg? spreg: "SP", is_var, sign);
+						var->delta = saved_delta;
+					}
+					break;
+				}
+				if (var->comment) {
+					r_cons_printf (cons, "    %s%s %s", COLOR (ds, color_comment), ds->cmtoken, var->comment);
+				}
+				r_cons_print (cons, COLOR_RESET (ds));
+				ds_newline (ds);
 			}
 		}
 	}

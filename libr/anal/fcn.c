@@ -2557,9 +2557,6 @@ static bool function_signature_fallback_to_vars(RAnal *anal, RAnalFunction *fcn,
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn && signature && signature->params, false);
 	RVecAnalVarPtr *vars = r_anal_function_vars (anal, fcn);
-	if (!vars) {
-		return false;
-	}
 	RVecAnalVarPtr_sort (vars, arg_var_ptr_cmp);
 	RAnalVar **it;
 	R_VEC_FOREACH (vars, it) {

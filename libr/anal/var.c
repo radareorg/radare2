@@ -1691,7 +1691,7 @@ R_API void r_anal_extract_vars(RAnal *anal, RAnalFunction *fcn, RAnalOp *op) {
 	}
 }
 
-static bool anal_var_ptr_append_kind(RVecAnalVarPtr *dst, RAnalFunction *fcn, int kind) {
+static void anal_var_ptr_append_kind(RVecAnalVarPtr *dst, RAnalFunction *fcn, int kind) {
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;
@@ -1699,60 +1699,27 @@ static bool anal_var_ptr_append_kind(RVecAnalVarPtr *dst, RAnalFunction *fcn, in
 			RVecAnalVarPtr_push_back (dst, &var);
 		}
 	}
-	return true;
-}
-
-static RVecAnalVarPtr *var_generate_vec(RAnal *a, RAnalFunction *fcn, int kind) {
-	R_RETURN_VAL_IF_FAIL (a && fcn, NULL);
-	RVecAnalVarPtr *vec = RVecAnalVarPtr_new ();
-	if (!vec) {
-		return NULL;
-	}
-	if (kind < 1) {
-		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
-	}
-	if (!RVecAnalVarPtr_reserve (vec, RVecAnalVarPtr_length (&fcn->vars))) {
-		RVecAnalVarPtr_free (vec);
-		return NULL;
-	}
-	anal_var_ptr_append_kind (vec, fcn, kind);
-	return vec;
 }
 
 R_API RVecAnalVarPtr *r_anal_function_vars(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, NULL);
 	RVecAnalVarPtr *vec = RVecAnalVarPtr_new ();
-	if (!vec) {
-		return NULL;
-	}
-	if (!RVecAnalVarPtr_reserve (vec, RVecAnalVarPtr_length (&fcn->vars))) {
-		RVecAnalVarPtr_free (vec);
-		return NULL;
-	}
+	RVecAnalVarPtr_reserve (vec, RVecAnalVarPtr_length (&fcn->vars));
 	anal_var_ptr_append_kind (vec, fcn, R_ANAL_VAR_KIND_REG);
 	anal_var_ptr_append_kind (vec, fcn, R_ANAL_VAR_KIND_BPV);
 	anal_var_ptr_append_kind (vec, fcn, R_ANAL_VAR_KIND_SPV);
 	return vec;
 }
 
-R_API R_DEPRECATE RList *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn) {
-	RVecAnalVarPtr *vec = r_anal_function_vars (anal, fcn);
-	if (!vec) {
-		return NULL;
-	}
-	RList *list = r_list_new ();
-	if (list) {
-		RAnalVar **it;
-		R_VEC_FOREACH (vec, it) {
-			r_list_push (list, *it);
-		}
-	}
-	RVecAnalVarPtr_free (vec);
-	return list;
-}
-
 R_API RVecAnalVarPtr *r_anal_var_vec(RAnal *a, RAnalFunction *fcn, int kind) {
-	return var_generate_vec (a, fcn, kind);
+	R_RETURN_VAL_IF_FAIL (a && fcn, NULL);
+	if (kind < 1) {
+		kind = R_ANAL_VAR_KIND_BPV; // by default show vars
+	}
+	RVecAnalVarPtr *vec = RVecAnalVarPtr_new ();
+	RVecAnalVarPtr_reserve (vec, RVecAnalVarPtr_length (&fcn->vars));
+	anal_var_ptr_append_kind (vec, fcn, kind);
+	return vec;
 }
 
 static void var_field_free(RAnalVarField *field) {

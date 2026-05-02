@@ -1332,61 +1332,52 @@ static ut64 faddr(RCore *core, ut64 addr, bool *nr) {
 static void __add_vars_sdb(RCore *core, RAnalFunction *fcn) {
 	RAnalFcnVarsCache cache;
 	r_anal_function_vars_cache_init (core->anal, &cache, fcn);
-	RVecAnalVarPtr *vars[] = {
-		cache.rvars,
-		cache.bvars,
-		cache.svars
-	};
 	size_t arg_count = 0;
-
-	int vi;
-	for (vi = 0; vi < R_ARRAY_SIZE (vars); vi++) {
-		RAnalVar **it;
-		R_VEC_FOREACH (vars[vi], it) {
-			RAnalVar *var = *it;
-			if (!var->isarg) {
-				continue;
+	RAnalVar **it;
+	R_VEC_FOREACH_VARS_CACHE (&cache, it) {
+		RAnalVar *var = *it;
+		if (!var->isarg) {
+			continue;
+		}
+		char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
+		const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
+		char *comma = o? strchr (o, ','): NULL;
+		char *db_type = comma? r_str_ndup (o, comma - o): NULL;
+		char *db_name = comma? strdup (comma + 1): NULL;
+		if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
+			char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
+			char *v = r_str_newf ("%s,%s", type, var->name);
+			sdb_set (core->anal->sdb_types, k, v, 0);
+			free (v);
+		} else {
+			char *name = db_name? db_name: var->name;
+			char *type = strdup (db_type? db_type: var->type);
+			// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
+			if (var->name && !strstr (var->name, "arg_")) {
+				o = NULL;
 			}
-			char *k = r_str_newf ("func.%s.arg.%d", fcn->name, (int)arg_count);
-			const char *o = sdb_const_get (core->anal->sdb_types, k, 0);
-			char *comma = o? strchr (o, ','): NULL;
-			char *db_type = comma? r_str_ndup (o, comma - o): NULL;
-			char *db_name = comma? strdup (comma + 1): NULL;
-			if (!strstr (var->name, "arg_") || (o && strstr (o, ",arg_"))) {
-				char *type = db_type && strstr (var->type, "arg_")? db_type: var->type;
-				char *v = r_str_newf ("%s,%s", type, var->name);
-				sdb_set (core->anal->sdb_types, k, v, 0);
-				free (v);
-			} else {
-				char *name = db_name? db_name: var->name;
-				char *type = strdup (db_type? db_type: var->type);
-				// eprintf ("VARTYPE1 %s %s %c", var->type,db_type, 10);
-				if (var->name && !strstr (var->name, "arg_")) {
-					o = NULL;
-				}
-				char *v = comma? strdup (o): r_str_newf ("%s,%s", type, name);
-				/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
-				char *s = strdup (name);
-				if (o) {
-					if (!strstr (var->name, ",arg_")) {
-						free (var->name);
-						var->name = s;
-					} else {
-						free (s);
-					}
-				} else {
+			char *v = comma? strdup (o): r_str_newf ("%s,%s", type, name);
+			/// eprintf("arg (%s) %s -- %s%c", k, v, var->name, 10);
+			char *s = strdup (name);
+			if (o) {
+				if (!strstr (var->name, ",arg_")) {
 					free (var->name);
 					var->name = s;
-					sdb_set (core->anal->sdb_types, k, v, 0);
+				} else {
+					free (s);
 				}
-				free (v);
-				free (type);
+			} else {
+				free (var->name);
+				var->name = s;
+				sdb_set (core->anal->sdb_types, k, v, 0);
 			}
-			free (db_name);
-			free (db_type);
-			free (k);
-			arg_count++;
+			free (v);
+			free (type);
 		}
+		free (db_name);
+		free (db_type);
+		free (k);
+		arg_count++;
 	}
 	//	sdb_num_set (core->anal->sdb_types, args, (int)arg_count, 0);
 	if (arg_count > 0) {
@@ -1609,9 +1600,6 @@ static void var_accesses_list(RCore *core, RAnalFunction *fcn, RAnalVar *var, PJ
 static void list_vars(RCore *core, RAnalFunction *fcn, PJ *pj, int type, const char *name) {
 	RAnalVar *var = NULL;
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-	if (!vars) {
-		return;
-	}
 	RAnalVar **it;
 	if (type == '=') {
 		ut64 oaddr = core->addr;
@@ -1900,10 +1888,10 @@ static int delta_ptr_cmp2(RAnalVar * const *a, RAnalVar * const *b) {
 static void __cmd_afvf(RCore *core, const char *input) {
 	char padstr[12];
 	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, -1);
-	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-	if (!vars) {
+	if (!fcn) {
 		return;
 	}
+	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
 	RVecAnalVarPtr_sort (vars, delta_ptr_cmp2);
 	RAnalVar **it;
 	R_VEC_FOREACH (vars, it) {
@@ -2113,10 +2101,6 @@ static int cmd_afv(RCore *core, const char *str) {
 			free (ostr);
 		} else {
 			RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-			if (!vars) {
-				free (ostr);
-				return false;
-			}
 			RAnalVar **it;
 			R_VEC_FOREACH (vars, it) {
 				RAnalVar *v = *it;
@@ -2146,10 +2130,6 @@ static int cmd_afv(RCore *core, const char *str) {
 			r_anal_var_display (core->anal, v1);
 		} else {
 			RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-			if (!vars) {
-				free (ostr);
-				return false;
-			}
 			RAnalVar **it;
 			R_VEC_FOREACH (vars, it) {
 				RAnalVar *p = *it;

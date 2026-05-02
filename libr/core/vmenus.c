@@ -3232,9 +3232,6 @@ static void variable_rename(RCore *core, ut64 addr, int vindex, const char *name
 	int i = 0;
 
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-	if (!vars) {
-		return;
-	}
 	RAnalVar **it;
 	R_VEC_FOREACH (vars, it) {
 		RAnalVar *var = *it;
@@ -3258,9 +3255,6 @@ static void variable_set_type(RCore *core, ut64 addr, int vindex, const char *ty
 	}
 
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-	if (!vars) {
-		return;
-	}
 	RAnalVar **it;
 	R_VEC_FOREACH (vars, it) {
 		RAnalVar *var = *it;
@@ -3354,9 +3348,6 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 	r_cons_newline (core->cons);
 
 	RVecAnalVarPtr *vars = r_anal_function_vars (core->anal, fcn);
-	if (!vars) {
-		return UT64_MAX;
-	}
 	int llen = (int)RVecAnalVarPtr_length (vars);
 	if (*vindex >= llen) {
 		*vindex = llen - 1;

@@ -667,7 +667,6 @@ R_DEPRECATE typedef struct r_anal_var_field_t {
 // Use r_anal_get_functions_in¿() instead
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in(RAnal *anal, ut64 addr, int type);
 R_DEPRECATE R_API RAnalFunction *r_anal_get_fcn_in_bounds(RAnal *anal, ut64 addr, int type);
-R_API R_DEPRECATE RList/*<RAnalVar *>*/ *r_anal_var_all_list(RAnal *anal, RAnalFunction *fcn);
 R_API R_OWNED RVecAnalVarPtr/*<RAnalVar *>*/ *r_anal_function_vars(RAnal *anal, RAnalFunction *fcn);
 R_API R_DEPRECATE RList/*<RAnalVarField *>*/ *r_anal_function_get_var_fields(RAnalFunction *fcn, int kind);
 // There could be multiple vars used in multiple functions. Use r_anal_get_functions_in()+r_anal_function_get_vars_used_at() instead.
@@ -1363,6 +1362,13 @@ typedef struct r_anal_function_vars_cache {
 	RVecAnalVarPtr *rvars;
 	RVecAnalVarPtr *svars;
 } RAnalFcnVarsCache;
+
+// Iterates rvars, then bvars, then svars in a vars cache. Caller declares
+// `it` as `RAnalVar **`. `break` only exits the current vec; use a flag to
+// terminate early across all kinds.
+#define R_VEC_FOREACH_VARS_CACHE(cache, it) \
+	for (RVecAnalVarPtr *const *_vc_p = (RVecAnalVarPtr *const[]){(cache)->rvars, (cache)->bvars, (cache)->svars}, *const *_vc_e = _vc_p + 3; _vc_p < _vc_e; _vc_p++) \
+		R_VEC_FOREACH (*_vc_p, it)
 
 R_API void r_anal_function_vars_cache_init(RAnal *anal, RAnalFcnVarsCache *cache, RAnalFunction *fcn);
 R_API void r_anal_function_vars_cache_fini(RAnalFcnVarsCache *cache);
