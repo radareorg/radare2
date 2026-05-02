@@ -41,6 +41,26 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x86_64 rust niche jmptbl autosize stops before adjacent table
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b00000048630c884801c1ffe1eb1890eb1590eb1290eb0f909090909090909090909090909090c390909090909090c3909090909090909090909090909090ceffffffd6ffffffd0ffffffd3fffffff0ffffff
+s 0
+afr
+CC. @ 0x2c
+axff~0x0000002c
+EOF
+EXPECT=<<EOF
+switch table (4 cases) at 0x60
+CODE 0x0000002c 0x0000002e case.0x2c.0
+CODE 0x0000002c 0x00000030 case.0x2c.2
+CODE 0x0000002c 0x00000033 case.0x2c.3
+CODE 0x0000002c 0x00000036 case.0x2c.1
+EOF
+RUN
+
 NAME=x86_64 getenv this maybe & jmp noret fix
 FILE=bins/elf/ls.odd
 CMDS=<<EOF
