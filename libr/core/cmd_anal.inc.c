@@ -7755,12 +7755,17 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 #endif
-		int re = r_io_read_at (core->io, addr, code, maxopsz);
-		if (re < 1) {
+		if (pin_skipped) {
+			op.size = R_MAX (1, minopsz);
 			ret = 0;
 		} else {
-			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
-				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			int re = r_io_read_at (core->io, addr, code, maxopsz);
+			if (re < 1) {
+				ret = 0;
+			} else {
+				ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
+					R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			}
 		}
 		if (!pin_skipped && core->dbg->anal->esil->trace) {
 			r_esil_trace_op (core->dbg->anal->esil, &op);
@@ -7768,7 +7773,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
-		if (op.size < 1 || ret < 1) {
+		if (!pin_skipped && (op.size < 1 || ret < 1)) {
 			// eprintf ("esil trap\n");
 			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
