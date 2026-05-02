@@ -99,14 +99,14 @@ EXPECT=<<EOF
 0x00000000 };
 0x00000000 type FILE; // size=1
 0x00000001
-             ; XREF[r] 0x00401151 main
              ; XREF[w] 0x00401151 main
+             ; XREF[r] 0x00401151 main
 0x00000000 type char; // size=1
 0x00000001
 0x00000000 type char *; // size=8
 0x00000008
-             ; XREF[r] 0x00401151 main
              ; XREF[w] 0x00401151 main
+             ; XREF[r] 0x00401151 main
 0x00000000 type char **; // size=0
 0x00000000
 0x00000000 type double; // size=8

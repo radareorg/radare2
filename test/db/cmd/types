@@ -1748,14 +1748,14 @@ txt size_t
 txt size_t *
 EOF
 EXPECT=<<EOF
+int64_t
+char *
 int
 char **
-int64_t
-char *
 =
-uint32_t
 int64_t
 char *
+uint32_t
 size_t *
 size_t
 void *
