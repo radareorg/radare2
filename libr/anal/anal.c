@@ -137,36 +137,25 @@ static bool anal_esil_mem_switch (void *mem, ut32 idx) {
 	return anal->iob.bank_use (anal->iob.io, idx);
 }
 
-static bool anal_esil_mem_validate(RAnal *anal, ut64 addr, bool write) {
-	const int perm = write? R_PERM_W: R_PERM_R;
-	if (!anal->iob.is_valid_offset || anal->iob.is_valid_offset (anal->iob.io, addr, perm)) {
-		return true;
-	}
-	REsil *esil = anal->esil;
-	if (esil) {
-		if (esil->iotrap) {
-			esil->trap = write? R_ANAL_TRAP_WRITE_ERR: R_ANAL_TRAP_READ_ERR;
-			esil->trap_code = addr;
-		}
-		if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_ioer)) {
-			esil->cmd (esil, esil->cmd_ioer, esil->addr, write);
-		}
-	}
-	return false;
-}
-
 static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	RAnal *anal = mem;
 	if (!anal || !anal->iob.init) {
 		R_LOG_WARN ("anal->iob is not setup");
 		return false;
 	}
-	if (!anal->iob.io || addr == UT64_MAX) {
+	RIORegion region;
+	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
 	}
-	bool ret = anal->iob.read_at (anal->iob.io, addr, buf, len);
-	(void)anal_esil_mem_validate (anal, addr, false);
-	return ret;
+	if (!(region.perm & R_PERM_R)) {
+		return false;
+	}
+	if (!r_itv_contain (region.itv, addr + len - 1)) {
+		return false;
+	}
+	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
+	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	return anal->iob.read_at (anal->iob.io, addr, buf, len);
 }
 
 static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
@@ -175,12 +164,19 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 		R_LOG_WARN ("anal->iob is not setup");
 		return false;
 	}
-	if (!anal->iob.io || addr == UT64_MAX) {
+	RIORegion region;
+	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
 	}
-	bool ret = anal->iob.write_at (anal->iob.io, addr, buf, len);
-	(void)anal_esil_mem_validate (anal, addr, true);
-	return ret;
+	if (!(region.perm & R_PERM_W)) {
+		return false;
+	}
+	if (!r_itv_contain (region.itv, addr + len - 1)) {
+		return false;
+	}
+	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
+	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	return anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 
 static bool anal_esil_set_bits (void *user, int bits) {

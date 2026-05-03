@@ -343,6 +343,7 @@ typedef RIOMap *(*RIOMapGet)(RIO *io, ut32 id);
 typedef RIOMap *(*RIOMapGetAt)(RIO *io, ut64 addr);
 typedef RIOMap *(*RIOMapGetPaddr)(RIO *io, ut64 paddr);
 typedef bool (*RIOAddrIsMapped)(RIO *io, ut64 addr);
+typedef	bool (*RIOGetRegionAt)(RIO *io, RIORegion *region, ut64 addr);
 typedef RIOMap *(*RIOMapAdd)(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 typedef bool (*RIOMapLocate)(RIO *io, ut64 *addr, const ut64 size, ut64 load_align);
 #if HAVE_PTRACE
@@ -378,6 +379,7 @@ typedef struct r_io_bind_t {
 	RIOFdRemap fd_remap;
 	RIOIsValidOff is_valid_offset;
 	RIOAddrIsMapped addr_is_mapped;
+	RIOGetRegionAt get_region_at;
 	RIOBankGet bank_get;
 	RIOBankUse bank_use;
 	RIOMapGet map_get;
