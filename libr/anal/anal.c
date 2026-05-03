@@ -137,7 +137,7 @@ static bool anal_esil_mem_switch (void *mem, ut32 idx) {
 	return anal->iob.bank_use (anal->iob.io, idx);
 }
 
-static bool anal_esil_mem_is_valid(RAnal *anal, ut64 addr, bool write) {
+static bool anal_esil_mem_validate(RAnal *anal, ut64 addr, bool write) {
 	const int perm = write? R_PERM_W: R_PERM_R;
 	if (!anal->iob.is_valid_offset || anal->iob.is_valid_offset (anal->iob.io, addr, perm)) {
 		return true;
@@ -164,9 +164,9 @@ static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	if (!anal->iob.io || addr == UT64_MAX) {
 		return false;
 	}
-	(void)anal->iob.read_at (anal->iob.io, addr, buf, len);
-	(void)anal_esil_mem_is_valid (anal, addr, false);
-	return true;
+	bool ret = anal->iob.read_at (anal->iob.io, addr, buf, len);
+	(void)anal_esil_mem_validate (anal, addr, false);
+	return ret;
 }
 
 static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
@@ -179,49 +179,8 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 		return false;
 	}
 	bool ret = anal->iob.write_at (anal->iob.io, addr, buf, len);
-	(void)anal_esil_mem_is_valid (anal, addr, true);
+	(void)anal_esil_mem_validate (anal, addr, true);
 	return ret;
-}
-
-static bool anal_esil_is_reg (void *user, const char *name) {
-	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
-	if (!ri) {
-		return false;
-	}
-	r_unref (ri);
-	return true;
-}
-
-static bool anal_esil_reg_read (void *user, const char *name, ut64 *val) {
-	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
-	if (!ri) {
-		return false;
-	}
-	*val = r_reg_get_value (((RAnal *)user)->reg, ri);
-	r_unref (ri);
-	return true;
-}
-
-static bool anal_esil_reg_write (void *user, const char *name, ut64 val) {
-	return r_reg_setv (((RAnal *)user)->reg, name, val);
-}
-
-static ut32 anal_esil_reg_size (void *user, const char *name) {
-	RRegItem *ri = r_reg_get (((RAnal *)user)->reg, name, -1);
-	if (!ri) {
-		return 0;
-	}
-	const ut32 size = ri->size;
-	r_unref (ri);
-	return size;
-}
-
-static bool anal_esil_reg_alias (void *user, const char *name, const char *alias) {
-	int alias_type = r_reg_alias_fromstring (alias);
-	if (alias_type < 0) {
-		return false;
-	}
-	return r_reg_alias_setname (((RAnal *)user)->reg, alias_type, name);
 }
 
 static bool anal_esil_set_bits (void *user, int bits) {
@@ -280,25 +239,18 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
-	anal->esil = r_esil_new_ex (4096, 0, 1,
-		&(REsilRegInterface){
-			.reg = anal,
-			.is_reg = anal_esil_is_reg,
-			.reg_read = anal_esil_reg_read,
-			.reg_write = anal_esil_reg_write,
-			.reg_size = anal_esil_reg_size,
-			.reg_alias = anal_esil_reg_alias,
-		},
-		&(REsilMemInterface){
-			.mem = anal,
-			.mem_switch = anal_esil_mem_switch,
-			.mem_read = anal_esil_mem_read,
-			.mem_write = anal_esil_mem_write,
-		},
-		&(REsilUtilInterface){
-			.user = anal,
-			.set_bits = anal_esil_set_bits,
-		});
+	anal->reg = r_reg_new ();
+	anal->esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+	anal->esil->mem_if = (REsilMemInterface) {
+		.mem = anal,
+		.mem_switch = anal_esil_mem_switch,
+		.mem_read = anal_esil_mem_read,
+		.mem_write = anal_esil_mem_write,
+	};
+	anal->esil->util_if = (REsilUtilInterface) {
+		.user = anal,
+		.set_bits = anal_esil_set_bits,
+	};
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
@@ -306,7 +258,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->syscall = r_syscall_new ();
 	r_flag_bind_init (anal->flb);
-	anal->reg = r_reg_new ();
 	anal->last_disasm_reg = NULL;
 	anal->stackptr = 0;
 	anal->lineswidth = 0;

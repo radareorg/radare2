@@ -205,10 +205,12 @@ static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
 	return NULL;
 }
 
-static REsil *visual_esil_seek(RCore *core, REsil *esil, unsigned int addrsize, const char *cmd) {
-	r_esil_free (esil);
+static void visual_esil_seek(RCore *core, REsil *esil, const char *cmd) {
 	r_core_cmd0 (core, cmd);
-	return visual_esil_new (core, addrsize);
+	esil->trap = 0;
+	esil->trap_code = 0;
+	r_esil_stack_free (esil);
+	r_esil_set_pc (esil, core->addr);
 }
 
 R_API bool r_core_visual_esil(RCore *core, const char *input) {
@@ -344,20 +346,12 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'n':
 		case 'P':
 			x = 0;
-			esil = visual_esil_seek (core, esil, addrsize, "so+1");
-			if (!esil) {
-				ret = false;
-				goto beach;
-			}
+			visual_esil_seek (core, esil, "so+1");
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
-			esil = visual_esil_seek (core, esil, addrsize, "so-1");
-			if (!esil) {
-				ret = false;
-				goto beach;
-			}
+			visual_esil_seek (core, esil, "so-1");
 			break;
 		case '=':
 		{ // TODO: edit
