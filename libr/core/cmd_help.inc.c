@@ -285,11 +285,21 @@ static RCoreHelpMessage help_msg_question_e = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_question_cond = {
+	"Usage: ?(expr){cmd}[{else}]", "", "",
+	"?(", "3-3){echo hello}", "run command when expr matches",
+	"?(", "3<10){echo hello}{echo world}", "run command when comparison is true",
+	"?(", "3-4){echo hello}{echo world}", "run else command when expr does not match",
+	"?(?", "", "show this help",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_question = {
 	"Usage: ?[?[?]] expression", "", "",
 	"?_", " hudfile", "load hud menu with given file",
 	"??", "", "show help for ? commands",
 	"?'", "", "show help for the single quote (do not evaluate special characters in command)",
+	"?(", "expr){cmd}[{else}]", "run command if condition matches, otherwise run optional else command",
 	"?", " eip-0x804800", "show all representation result for this math expr",
 	"?=", " eip-0x804800", "update $? return code with result of operation",
 	"?==", " x86 `e asm.arch`", "strcmp two strings",
@@ -639,7 +649,7 @@ static const char *nestch(const char *s) {
 
 static bool eval_cond(RCore *core, const char *expr, bool *err) {
 	const char *errmsg = NULL;
-	ut64 res = r_num_math_err (core->num, expr, &errmsg);
+	r_num_math_err (core->num, expr, &errmsg);
 	if (errmsg) {
 		R_LOG_ERROR ("%s", errmsg);
 		*err = true;
@@ -647,7 +657,7 @@ static bool eval_cond(RCore *core, const char *expr, bool *err) {
 		*err = false;
 	}
 	*err = errmsg? true: false;
-	return res == 0;
+	return r_num_conditional (core->num, expr);
 }
 
 static int cmd_help_cond(RCore *core, const char *input) {
@@ -656,8 +666,8 @@ static int cmd_help_cond(RCore *core, const char *input) {
 		return 1;
 	}
 	if (*input == '?') {
-		R_LOG_TODO ("Show help");
-		return 1;
+		r_core_cmd_help (core, help_msg_question_cond);
+		return 0;
 	}
 	const char *par = nestch (input);
 	if (!par) {

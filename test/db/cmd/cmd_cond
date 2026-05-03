@@ -69,3 +69,50 @@ CMDS=?= 0;?? ?e win
 EXPECT=<<EOF
 EOF
 RUN
+
+NAME=conditional command syntax true branch
+FILE=-
+CMDS=?(3-3){echo hello}
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=conditional command syntax true branch with else
+FILE=-
+CMDS=?(3-3){echo hello}{echo world}
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=conditional command syntax false branch with else
+FILE=-
+CMDS=?(3-4){echo hello}{echo world}
+EXPECT=<<EOF
+world
+EOF
+RUN
+
+NAME=conditional command syntax less-than true branch
+FILE=-
+CMDS='?(3<10){echo hello}
+EXPECT=<<EOF
+hello
+EOF
+RUN
+
+NAME=conditional command syntax greater-than false branch
+FILE=-
+CMDS='?(3>10){echo hello}
+EXPECT=<<EOF
+EOF
+RUN
+
+NAME=conditional command syntax greater-than false branch with else
+FILE=-
+CMDS='?(3>10){echo hello}{echo world}
+EXPECT=<<EOF
+world
+EOF
+RUN
