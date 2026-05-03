@@ -72,7 +72,6 @@ static const char* r_vline_uc[] = {
 #define DS_PRE_FCN_HEAD     2
 #define DS_PRE_FCN_MIDDLE   3
 #define DS_PRE_FCN_TAIL     4
-#define DS_MARK_COLUMNS     5
 
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
