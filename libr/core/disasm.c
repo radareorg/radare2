@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - nibble, pancake, dso, lazula */
+/* radare - LGPL - Copyright 2009-2026 - nibble, pancake, dso, lazula */
 
 #define R_LOG_ORIGIN "disasm"
 
@@ -72,6 +72,7 @@ static const char* r_vline_uc[] = {
 #define DS_PRE_FCN_HEAD     2
 #define DS_PRE_FCN_MIDDLE   3
 #define DS_PRE_FCN_TAIL     4
+#define DS_MARK_COLUMNS     5
 
 // TODO: what about using bit shifting and enum for keys? see libr/util/bitmap.c
 // the problem of this is that the fields will be more opaque to bindings, but we will earn some bits
@@ -1929,25 +1930,33 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	r_strbuf_append (&sb, has_bp ? bp : " ");
 	r_strbuf_append (&sb, has_mid ? "~" : " ");
 
-	int cols = 2;
+	int cols = 1;
 	if (has_cursor) {
 		int diff = cursor_addr - ds->at;
 		r_cons_mark (cons, UT64_MAX, "cursor");
-		if (diff > 0) {
-			int oldlen = r_strbuf_length (&sb);
-			r_strbuf_appendf (&sb, "%d", diff);
-			cols += r_strbuf_length (&sb) - oldlen;
-		} else if (!use_utf) {
-			r_strbuf_append (&sb, "*");
-			cols++;
-		}
 		if (use_utf) {
-			r_strbuf_pad (&sb, ' ', 4 - cols);
-			r_strbuf_append (&sb, "▶");
-			cols = 5;
+			if (diff) {
+				if (diff < 10) {
+					r_strbuf_appendf (&sb, "%d", diff);
+				} else {
+					r_strbuf_append (&sb, "?");
+				}
+			} else {
+				r_strbuf_append (&sb, " ");
+			}
+			r_strbuf_append (&sb, "▶ ");
+			cols = 8;
+		} else {
+			if (diff == 0) {
+				r_strbuf_append (&sb, "*");
+			} else if (diff < 10) {
+				r_strbuf_appendf (&sb, "%d", diff);
+			} else {
+				r_strbuf_append (&sb, "?");
+			}
 		}
 	}
-	r_strbuf_pad (&sb, ' ', 5 - cols);
+	r_strbuf_pad (&sb, ' ', 4 - cols);
 	r_cons_print (cons, r_strbuf_get (&sb));
 	r_strbuf_fini (&sb);
 }
