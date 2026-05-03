@@ -60,6 +60,8 @@ static RAnalSwitchOp * R_NONNULL __switch_op_new(void) {
 	swop->cases = r_list_new ();
 	swop->cases->free = (void *)free;
 	swop->min_val = swop->def_val = swop->max_val = 0;
+	swop->vtbl_addr = UT64_MAX;
+	swop->jump_addr = UT64_MAX;
 	return swop;
 }
 
@@ -92,6 +94,29 @@ R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut6
 	RAnalCaseOp *caseop = r_anal_case_op_new (addr, value, jump);
 	r_list_append (swop->cases, caseop);
 	return caseop;
+}
+
+R_API bool r_anal_switch_op_add_dep(RAnalSwitchOp *swop, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (swop && addr != UT64_MAX, false);
+	if (r_anal_switch_op_has_dep (swop, addr)) {
+		return true;
+	}
+	if (swop->deps_count >= R_ANAL_SWITCH_OP_DEPS) {
+		return false;
+	}
+	swop->deps[swop->deps_count++] = addr;
+	return true;
+}
+
+R_API bool r_anal_switch_op_has_dep(const RAnalSwitchOp *swop, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (swop && addr != UT64_MAX, false);
+	int i;
+	for (i = 0; i < swop->deps_count; i++) {
+		if (swop->deps[i] == addr) {
+			return true;
+		}
+	}
+	return false;
 }
 
 R_API void r_anal_switch_spec_init(RAnalSwitchSpec *spec) {

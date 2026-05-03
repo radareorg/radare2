@@ -33,7 +33,6 @@ r_anal_sources = [
   'rtti_msvc.c',
   'rtti_itanium.c',
   'sign.c',
-  'switch.c',
   'type.c',
   'type_pdb.c',
   'dwarf_process.c',

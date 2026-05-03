@@ -215,12 +215,16 @@ wx 49bf00000000000000804c8b24244c89e04c31f84d85e46a0159480f48c8488d053b000000486
 s 0
 afr
 pdc~goto loc_rcx
+pdc~rax = rip
+pdc~rcx += rax
+afbtj @ 0x2c~deps
 ?e --
 pdc~switch (switch_var)
 EOF
 EXPECT=<<EOF
+{"addr":44,"jtbl_addr":96,"base":0,"ncases":4,"esize":4,"vsize":0,"shift":0,"lowcase":0,"min":0,"max":3,"def":18446744073709551615,"flags":0,"deps":[30,37,41]}
 --
-    switch (switch_var) { // jump table of 4 cases at 0x00000000
+    switch (switch_var) { // jump table of 4 cases at 0x00000060
 EOF
 RUN
 

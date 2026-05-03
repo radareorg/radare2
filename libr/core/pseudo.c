@@ -493,6 +493,19 @@ static bool is_known_loop_header(PDCState *state, ut64 addr) {
 	return sdb_num_get (state->db, r_strf ("loop_header.%" PFMT64x, addr), 0) != 0;
 }
 
+static bool part_of_a_switch(PDCState *state, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	r_list_foreach (state->fcn->bbs, iter, bb) {
+		if (bb->switch_op && (bb->switch_op->addr == addr
+				|| bb->switch_op->jump_addr == addr
+				|| r_anal_switch_op_has_dep (bb->switch_op, addr))) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent, bool emit_pj) {
 	RList *lines = r_str_split_list (code, "\n", 0);
 	RListIter *iter;
@@ -506,6 +519,9 @@ static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int in
 			}
 			const char *s = strchr (line, ' ');
 			line = s? r_str_trim_head_ro (s + 1): "";
+		}
+		if (part_of_a_switch (state, addr)) {
+			continue;
 		}
 		if (R_STR_ISNOTEMPTY (line)) {
 			// drop tail goto into a structured loop header (the while/do owns that edge)
@@ -719,9 +735,10 @@ static void render_switch(PDCState *state, RAnalBlock *sw_bb, RList *visited, in
 		i = w;
 	}
 	char *expr = find_switch_expr (state->core, state->fcn, sw_bb);
+	ut64 table_addr = sop->daddr != UT64_MAX? sop->daddr: sw_bb->addr;
 	print_newline (state, sw_bb->addr, indent);
 	print_str (state, "switch (%s) { // jump table of %d cases at 0x%08" PFMT64x,
-		expr, i, sw_bb->addr);
+		expr, i, table_addr);
 	free (expr);
 
 	int c = 0;
@@ -880,6 +897,9 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 			rendered = s? r_str_trim_head_ro (s + 1): "";
 		}
 		if (R_STR_ISEMPTY (rendered)) {
+			continue;
+		}
+		if (part_of_a_switch (state, addr)) {
 			continue;
 		}
 		if (line_is_branch_to (rendered, back_hex)

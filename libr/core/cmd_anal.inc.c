@@ -3422,9 +3422,20 @@ static void print_bb(RCore *core, PJ *pj, const RAnalBlock *b, const RAnalFuncti
 			pj_k (pj, "switch_op");
 			pj_o (pj);
 			pj_kn (pj, "addr", b->switch_op->addr);
+			if (b->switch_op->jump_addr && b->switch_op->jump_addr != UT64_MAX && b->switch_op->jump_addr != b->switch_op->addr) {
+				pj_kn (pj, "jump_addr", b->switch_op->jump_addr);
+			}
 			pj_kn (pj, "min_val", b->switch_op->min_val);
 			pj_kn (pj, "def_val", b->switch_op->def_val);
 			pj_kn (pj, "max_val", b->switch_op->max_val);
+			if (b->switch_op->deps_count > 0) {
+				pj_ka (pj, "deps");
+				int i;
+				for (i = 0; i < b->switch_op->deps_count; i++) {
+					pj_n (pj, b->switch_op->deps[i]);
+				}
+				pj_end (pj);
+			}
 			pj_k (pj, "cases");
 			pj_a (pj);
 			{
@@ -3906,8 +3917,13 @@ static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
 		}
 		pj_o (pj);
 		pj_kn (pj, "addr", sop->addr);
+		if (sop->jump_addr && sop->jump_addr != UT64_MAX && sop->jump_addr != sop->addr) {
+			pj_kn (pj, "jump_addr", sop->jump_addr);
+		}
 		pj_kn (pj, "jtbl_addr", sop->daddr);
-		pj_kn (pj, "vtbl_addr", sop->vtbl_addr);
+		if (sop->vtbl_addr && sop->vtbl_addr != UT64_MAX) {
+			pj_kn (pj, "vtbl_addr", sop->vtbl_addr);
+		}
 		pj_kn (pj, "base", sop->baddr);
 		pj_kn (pj, "ncases", sop->amount);
 		pj_kn (pj, "esize", sop->dsize);
@@ -3920,6 +3936,14 @@ static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
 		pj_kn (pj, "flags", sop->flags);
 		if (sop->reg) {
 			pj_ks (pj, "reg", sop->reg);
+		}
+		if (sop->deps_count > 0) {
+			pj_ka (pj, "deps");
+			int i;
+			for (i = 0; i < sop->deps_count; i++) {
+				pj_n (pj, sop->deps[i]);
+			}
+			pj_end (pj);
 		}
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));

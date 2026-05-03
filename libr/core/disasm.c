@@ -225,6 +225,7 @@ typedef struct r_disasm_state_t {
 	bool midcursor;
 	bool show_noisy_comments;
 	ut64 asm_highlight;
+	RAnalSwitchOp *cursor_switch_op;
 	const char *pal_hint;
 	const char *pal_comment; // dupe with color_comment??
 	const char *color_comment;
@@ -6604,7 +6605,40 @@ static char *ds_sub_jumps(RDisasmState *ds, const char *str) {
 }
 
 static bool line_highlighted(RDisasmState *ds) {
-	return ds->asm_highlight != UT64_MAX && ds->vat == ds->asm_highlight;
+	if (ds->asm_highlight != UT64_MAX && ds->vat == ds->asm_highlight) {
+		return true;
+	}
+	return ds->cursor_switch_op && r_anal_switch_op_has_dep (ds->cursor_switch_op, ds->vat);
+}
+
+static bool is_indirect_switch_jump(RAnalOp *op) {
+	const int optype = op->type & R_ANAL_OP_TYPE_MASK;
+	return optype == R_ANAL_OP_TYPE_RJMP || optype == R_ANAL_OP_TYPE_MJMP || optype == R_ANAL_OP_TYPE_IRJMP;
+}
+
+static RAnalSwitchOp *switch_op_for_cursor(RCore *core, ut64 cursor_addr, RAnalOp *op) {
+	RAnalBlock *bb = r_anal_bb_from_offset (core->anal, cursor_addr);
+	if (bb && bb->switch_op) {
+		RAnalSwitchOp *sop = bb->switch_op;
+		if (sop->addr == cursor_addr || sop->jump_addr == cursor_addr || r_anal_switch_op_has_dep (sop, cursor_addr)) {
+			return sop;
+		}
+	}
+	if (!is_indirect_switch_jump (op)) {
+		return NULL;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, cursor_addr, R_ANAL_FCN_TYPE_NULL);
+	if (!fcn) {
+		return NULL;
+	}
+	RListIter *iter;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		RAnalSwitchOp *sop = bb->switch_op;
+		if (sop && sop->jump_addr == cursor_addr) {
+			return sop;
+		}
+	}
+	return NULL;
 }
 
 static void ds_start_line_highlight(RDisasmState *ds) {
@@ -6716,11 +6750,13 @@ toro:
 
 	if (core->print->cur_enabled) {
 		// TODO: support in-the-middle-of-instruction too
+		ut64 cursor_addr = core->addr + core->print->cur;
 		r_anal_op_fini (&ds->analop);
-		if (r_anal_op (core->anal, &ds->analop, core->addr + core->print->cur,
+		if (r_anal_op (core->anal, &ds->analop, cursor_addr,
 			buf + core->print->cur, (int)(len - core->print->cur), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT)) {
 			// TODO: check for ds->analop.type and ret
 			ds->dest = ds->analop.jump;
+			ds->cursor_switch_op = switch_op_for_cursor (core, cursor_addr, &ds->analop);
 		}
 		r_anal_op_fini (&ds->analop);
 	} else {

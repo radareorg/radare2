@@ -217,6 +217,7 @@ typedef enum {
 } RAnalSwitchFlags;
 
 #define R_ANAL_SWITCH_MAXCASES 512
+#define R_ANAL_SWITCH_OP_DEPS 8
 
 // Declarative description of a switch/jump-table to analyse or render.
 // Used as the input of r_anal_switch_apply().
@@ -253,6 +254,9 @@ typedef struct r_anal_switch_op_t {
 	ut8  vsize;       // value-table element size
 	ut8  shift;       // shift amount
 	const char *reg;  // borrowed input register name (may be NULL)
+	ut8 deps_count;   // number of producer instruction addresses in deps[]
+	ut64 deps[R_ANAL_SWITCH_OP_DEPS]; // jump-table producer instruction addresses
+	ut64 jump_addr;   // indirect branch instruction address
 } RAnalSwitchOp; // TODO: Rename to RAnalSwitch
 
 typedef enum r_anal_data_type_t {
@@ -333,6 +337,8 @@ R_API int r_anal_op_hint(RAnalOp *op, RAnalHint *hint);
 R_API RAnalSwitchOp *r_anal_switch_op_new(ut64 addr, ut64 min_val, ut64 max_val, ut64 def_val);
 R_API void r_anal_switch_op_free(RAnalSwitchOp *swop);
 R_API RAnalCaseOp* r_anal_switch_op_add_case(RAnalSwitchOp *swop, ut64 addr, ut64 value, ut64 jump);
+R_API bool r_anal_switch_op_add_dep(RAnalSwitchOp *swop, ut64 addr);
+R_API bool r_anal_switch_op_has_dep(const RAnalSwitchOp *swop, ut64 addr);
 // Initialise a RAnalSwitchSpec to its conservative defaults.
 R_API void r_anal_switch_spec_init(RAnalSwitchSpec *spec);
 // Build a positional spec from the legacy "afbt addr esz n seg" arguments.
