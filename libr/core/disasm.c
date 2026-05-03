@@ -1905,6 +1905,8 @@ R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
 }
 
 static void ds_print_show_cursor(RDisasmState *ds) {
+	RCons *cons = ds->core->cons;
+	const bool use_utf = cons->use_utf8;
 	RCore *core = ds->core;
 	char res[] = "     ";
 	if (!ds->show_marks) {
@@ -1920,25 +1922,53 @@ static void ds_print_show_cursor(RDisasmState *ds) {
 	if (ds->midbb) {
 		(void)handleMidBB (core, ds);
 	}
+	const char *bstr = " ";
 	if (p) {
-		res[0] = 'b';
+		if (use_utf) {
+			r_cons_print (cons, Color_RED"●"Color_RESET);
+			bstr = "";
+			res[4] = 0;
+		} else {
+			res[0] = 'b';
+		}
 	}
 	if (ds->hasMidflag || ds->hasMidbb) {
 		res[1] = '~';
 	}
+	bool utf = false;
+	int pos = 0;
 	if (q) {
-		r_cons_mark (ds->core->cons, UT64_MAX, "cursor");
-		if (cursor_addr == ds->at) {
-			res[2] = '*';
-		} else {
-			int i = 2, diff = cursor_addr - ds->at;
-			if (diff > 9) {
-				res[i++] = '0' + (diff / 10);
+		utf = use_utf;
+		r_cons_mark (cons, UT64_MAX, "cursor");
+		if (utf) {
+			res[0] = 0;
+			if (cursor_addr != ds->at) {
+				pos = cursor_addr - ds->at;
 			}
-			res[i] = '0' + (diff % 10);
+		} else {
+			if (cursor_addr == ds->at) {
+				res[2] = 0;
+				utf = false;
+				res[2] = '*';
+			} else {
+				utf = false;
+				int i = 2, diff = cursor_addr - ds->at;
+				if (diff > 9) {
+					res[i++] = '0' + (diff / 10);
+				}
+				res[i] = '0' + (diff % 10);
+			}
 		}
 	}
-	r_cons_print (ds->core->cons, res);
+	if (utf) {
+		if (pos) {
+			r_cons_printf (cons, "%s %d ▶", bstr, pos);
+		} else {
+			r_cons_printf (cons, "%s   ▶", bstr);
+		}
+	} else {
+		r_cons_print (cons, res);
+	}
 }
 
 static void ds_pre_xrefs(RDisasmState *ds, bool no_fcnlines) {
