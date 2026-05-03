@@ -37,8 +37,8 @@ static RLeaddrPair *leaddrs_find_before(RList *leaddrs, const char *reg, ut64 be
 	return NULL;
 }
 
-static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, const char *target_reg, ut64 *opaddr, ut64 *basptr, ut64 *tblptr) {
-	R_RETURN_VAL_IF_FAIL (anal && leaddrs && target_reg && opaddr && basptr && tblptr, false);
+static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, const char *target_reg, ut64 *opaddr, ut64 *depaddr, ut64 *basptr, ut64 *tblptr) {
+	R_RETURN_VAL_IF_FAIL (anal && leaddrs && target_reg && opaddr && depaddr && basptr && tblptr, false);
 	const ut64 lookback_bytes = JMPTBL_DISPATCH_LOOKBACK * 4;
 	if (br_addr < lookback_bytes) {
 		return false;
@@ -113,6 +113,7 @@ static bool arm64_resolve_dispatch(RAnal *anal, RList *leaddrs, ut64 br_addr, co
 		return false;
 	}
 	*opaddr = bp->op_addr;
+	*depaddr = R_MIN (bp->op_addr, tp->op_addr);
 	*basptr = bp->leaddr;
 	*tblptr = tp->leaddr;
 	return true;
@@ -370,7 +371,6 @@ static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 		block->switch_op->daddr = jmptbl_addr;
 		block->switch_op->vtbl_addr = vtbl_addr;
 		block->switch_op->jump_addr = jump_addr;
-		block->switch_op->deps_count = 0;
 		if (esize > 0) {
 			block->switch_op->dsize = esize;
 		}
@@ -1409,8 +1409,8 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	if (loadsize != 1 && loadsize != 2 && loadsize != 4) {
 		return false;
 	}
-	ut64 opaddr = UT64_MAX, basptr = UT64_MAX, tblptr = UT64_MAX;
-	if (!arm64_resolve_dispatch (anal, anal->leaddrs, op->addr, op->reg, &opaddr, &basptr, &tblptr)) {
+	ut64 opaddr = UT64_MAX, depaddr = UT64_MAX, basptr = UT64_MAX, tblptr = UT64_MAX;
+	if (!arm64_resolve_dispatch (anal, anal->leaddrs, op->addr, op->reg, &opaddr, &depaddr, &basptr, &tblptr)) {
 		return false;
 	}
 	// anal->cmpval can be stale (clobbered by another branch of the
@@ -1450,7 +1450,7 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	}
 	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
 		valid_cases, UT64_MAX, loadsize);
-	r_anal_switch_op_add_deps (anal, op->addr, opaddr, op->addr);
+	r_anal_switch_op_add_deps (anal, op->addr, depaddr, op->addr);
 	set_u_free (s);
 	free (table);
 	return true;
