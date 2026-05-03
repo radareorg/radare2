@@ -599,13 +599,15 @@ static char *filterFlags(RCore *core, const char *msg) {
 #include "clippy.inc.c"
 #include "visual_riu.inc.c"
 
+// clang-format off
 const char iuhelp[] =
-"Usage: ?iu fieldname(type,command,value)\n"
-"  Types: string, button, title, run\n"
-"Examples:\n"
-"'?iu name(string,?i;yp,test) addr(string,f~...) ok(button) cancel(button)\n"
-"'?iu addr(string,f~...) hexdump(run,x 32@k:riu.addr) ok(button)\n"
-"Values for every field are saved in the global SdbKv database (see `k` command)\n";
+	"Usage: ?iu fieldname(type,command,value)\n"
+	"  Types: string, button, title, run\n"
+	"Examples:\n"
+	"'?iu name(string,?i;yp,test) addr(string,f~...) ok(button) cancel(button)\n"
+	"'?iu addr(string,f~...) hexdump(run,x 32@k:riu.addr) ok(button)\n"
+	"Values for every field are saved in the global SdbKv database (see `k` command)\n";
+// clang-format on
 
 static int cmd_qiu(RCore *core, const char *input) {
 	if (!*input || *input == '?') {
@@ -618,6 +620,92 @@ static int cmd_qiu(RCore *core, const char *input) {
 	} while (riu_input (riu));
 	riu_free (riu);
 	return 0;
+}
+
+static const char *nestch(const char *s) {
+	int pos = 1;
+	for (;*s; s++) {
+		if (*s == ')') {
+			pos--;
+		} else if (*s == '(') {
+			pos++;
+		}
+		if (pos == 0) {
+			return s;
+		}
+	}
+	return NULL;
+}
+
+static bool eval_cond(RCore *core, const char *expr, bool *err) {
+	const char *errmsg = NULL;
+	ut64 res = r_num_math_err (core->num, expr, &errmsg);
+	if (errmsg) {
+		R_LOG_ERROR ("%s", errmsg);
+		*err = true;
+	} else {
+		*err = false;
+	}
+	*err = errmsg? true: false;
+	return res == 0;
+}
+
+static int cmd_help_cond(RCore *core, const char *input) {
+	if (*input == 0) {
+		R_LOG_ERROR ("Missing expression: use `?(?` for help");
+		return 1;
+	}
+	if (*input == '?') {
+		R_LOG_TODO ("Show help");
+		return 1;
+	}
+	const char *par = nestch (input);
+	if (!par) {
+		return 1;
+	}
+	par++;
+	if (*par != '{') {
+		R_LOG_ERROR ("Expected '{' after ')'");
+		return 1;
+	}
+	char *cond = r_str_ndup (input, par - input - 1);
+	input = par + 1;
+	par = strstr (input, "}{");
+	if (!par) {
+		par = strstr (input, "}");
+	}
+	if (!par) {
+		R_LOG_ERROR ("Missing }{ or }");
+		free (cond);
+		return 1;
+	}
+	char *body = r_str_ndup (input, par - input);
+	char *bels = NULL;
+	if (par[1]) {
+		size_t len = strlen (par);
+		if (par[len - 1] != '}') {
+			R_LOG_ERROR ("Missing ending }");
+			free (cond);
+			free (body);
+			return 1;
+		}
+		bels = r_str_ndup (par + 2, len - 3);
+	}
+	bool err = false;
+	bool success = eval_cond (core, cond, &err);
+	if (!err) {
+		if (success) {
+			r_core_cmd0 (core, body);
+		} else {
+			if (bels) {
+				r_core_cmd0 (core, bels);
+			}
+		}
+	}
+	free (body);
+	free (bels);
+	free (cond);
+	return err? 1: 0;
 }
 
 static int cmd_help(void *data, const char *input) {
@@ -633,6 +721,10 @@ static int cmd_help(void *data, const char *input) {
 	RList *tmp;
 
 	switch (input[0]) {
+	case '(':
+		// condition like ?(rax<3){echo hello}{echo not welcome}
+		cmd_help_cond (core, input + 1);
+		break;
 	case ':':
 		// show help for ':' command
 		r_core_cmd_help_match (core, help_msg_at, ":");
