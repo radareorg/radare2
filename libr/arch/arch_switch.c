@@ -68,7 +68,7 @@ R_API bool r_anal_switch_op_has_dep(const RAnalSwitchOp *swop, ut64 addr) {
 
 R_API void r_anal_switch_spec_init(RAnalSwitchSpec *spec) {
 	R_RETURN_IF_FAIL (spec);
-	*spec = *(RAnalSwitchSpec*){0};
+	*spec = (RAnalSwitchSpec){0};
 	spec->startea = UT64_MAX;
 	spec->jtbl_addr = UT64_MAX;
 	spec->vtbl_addr = UT64_MAX;
