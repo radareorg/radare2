@@ -128,21 +128,13 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
-static bool anal_esil_mem_switch (void *mem, ut32 idx) {
+static bool anal_esil_mem_switch(void *mem, ut32 idx) {
 	RAnal *anal = mem;
-	if (!anal || !anal->iob.init) {
-		R_LOG_WARN ("anal->iob is not setup");
-		return false;
-	}
 	return anal->iob.bank_use (anal->iob.io, idx);
 }
 
-static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
+static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	RAnal *anal = mem;
-	if (!anal || !anal->iob.init) {
-		R_LOG_WARN ("anal->iob is not setup");
-		return false;
-	}
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
@@ -158,12 +150,8 @@ static bool anal_esil_mem_read (void *mem, ut64 addr, ut8 *buf, int len) {
 	return anal->iob.read_at (anal->iob.io, addr, buf, len);
 }
 
-static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) {
+static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	RAnal *anal = mem;
-	if (!anal || !anal->iob.init) {
-		R_LOG_WARN ("anal->iob is not setup");
-		return false;
-	}
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
@@ -179,7 +167,7 @@ static bool anal_esil_mem_write (void *mem, ut64 addr, const ut8 *buf, int len) 
 	return anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 
-static bool anal_esil_set_bits (void *user, int bits) {
+static bool anal_esil_set_bits(void *user, int bits) {
 	RAnal *anal = user;
 	if (anal->coreb.core && anal->coreb.setArchBits) {
 		anal->coreb.setArchBits (anal->coreb.core, NULL, bits);

@@ -559,9 +559,7 @@ static bool esil_cmp(REsil *esil) {
 }
 
 static bool esil_regalias(REsil *esil) {
-	if (!esil || !esil->anal || !esil->anal->reg) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (esil, false);
 	const RStrs alias = r_esil_pop (esil);
 	const RStrs name = r_esil_pop (esil);
 	if (r_strs_empty (name) || r_strs_empty (alias)) {
@@ -569,13 +567,11 @@ static bool esil_regalias(REsil *esil) {
 	}
 	char *name_str = r_strs_tostring (name);
 	char *alias_str = r_strs_tostring (alias);
-	if (!name_str || !alias_str) {
-		free (name_str);
-		free (alias_str);
-		return false;
+	bool ret = false;
+	if (name_str && alias_str) {
+		const int kind = r_reg_alias_fromstring (alias_str);
+		ret = kind >= 0 && r_esil_reg_alias (esil, kind, name_str);
 	}
-	const int kind = r_reg_alias_fromstring (alias_str);
-	bool ret = kind >= 0 && r_esil_reg_alias (esil, kind, name_str);
 	free (name_str);
 	free (alias_str);
 	return ret;

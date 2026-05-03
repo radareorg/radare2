@@ -224,10 +224,15 @@ static ut32 default_reg_packed_size(void *reg, const char *name) {
 	return psize;
 }
 
+static bool default_reg_alias(void *reg, int alias, const char *name) {
+	return r_reg_alias_setname (reg, alias, name);
+}
+
 static REsilRegInterface simple_reg_if = {
 	.is_reg = default_is_reg,
 	.reg_read = default_reg_read,
 	.reg_write = (REsilRegWrite)r_reg_setv,
+	.reg_alias = default_reg_alias,
 	.reg_size = default_reg_size,
 	.reg_packed_size = default_reg_packed_size,
 };
@@ -265,11 +270,11 @@ R_API ut32 r_esil_add_voyeur(REsil *esil, void *user, void *vfn, REsilVoyeurType
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_REG_ALIAS:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
-	case R_ESIL_VOYEUR_REG_ALIAS:
 		break;
 	default:
 		R_WARN_IF_REACHED ();
@@ -295,11 +300,11 @@ R_API void r_esil_del_voyeur(REsil *esil, ut32 vid) {
 	switch (vt) {
 	case R_ESIL_VOYEUR_REG_READ:
 	case R_ESIL_VOYEUR_REG_WRITE:
+	case R_ESIL_VOYEUR_REG_ALIAS:
 	case R_ESIL_VOYEUR_MEM_READ:
 	case R_ESIL_VOYEUR_MEM_WRITE:
 	case R_ESIL_VOYEUR_SET_BITS:
 	case R_ESIL_VOYEUR_OP:
-	case R_ESIL_VOYEUR_REG_ALIAS:
 		break;
 	default:
 		R_WARN_IF_REACHED ();
@@ -674,6 +679,12 @@ static ut32 setup_esil_reg_packed_size(void *user, const char *name) {
 	return psize;
 }
 
+static bool setup_esil_reg_alias(void *user, int alias, const char *name) {
+	REsil *esil = user;
+	RReg *reg = R_UNWRAP3 (esil, anal, reg);
+	return reg? r_reg_alias_setname (reg, alias, name): false;
+}
+
 static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len) {
 	REsil *esil = user;
 	return esil && esil->cb.mem_read? esil->cb.mem_read (esil, addr, buf, len): false;
@@ -858,8 +869,12 @@ R_API bool r_esil_reg_write_silent(REsil *esil, const char *name, ut64 num) {
 }
 
 R_API bool r_esil_reg_alias(REsil *esil, int alias, const char *name) {
-	R_RETURN_VAL_IF_FAIL (esil && name && esil->anal && esil->anal->reg, false);
-	if (!r_reg_alias_setname (esil->anal->reg, alias, name)) {
+	R_RETURN_VAL_IF_FAIL (esil && name, false);
+	if (!esil->reg_if.reg_alias) {
+		R_LOG_WARN ("Cannot set reg alias; .reg_alias was not setup for this Esil");
+		return false;
+	}
+	if (!esil->reg_if.reg_alias (esil->reg_if.reg, alias, name)) {
 		return false;
 	}
 	ut32 i;
@@ -1287,6 +1302,7 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 			.is_reg = setup_esil_is_reg,
 			.reg_read = setup_esil_reg_read,
 			.reg_write = setup_esil_reg_write,
+			.reg_alias = setup_esil_reg_alias,
 			.reg_size = setup_esil_reg_size,
 			.reg_packed_size = setup_esil_reg_packed_size,
 		};

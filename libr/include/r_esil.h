@@ -150,6 +150,7 @@ typedef struct r_esil_memory_interface_t {
 typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
+typedef bool (*REsilRegAlias)(void *reg, int alias, const char *name);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
 typedef ut32 (*REsilRegPackedSize)(void *reg, const char *name);
 
@@ -161,6 +162,7 @@ typedef struct r_esil_register_interface_t {
 	REsilIsReg is_reg; /// IsReg breaks the REsilReg prefix naming
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
+	REsilRegAlias reg_alias;
 	REsilRegSize reg_size;
 	REsilRegPackedSize reg_packed_size; /// 0 == not packed; lane size in bytes otherwise
 } REsilRegInterface;
@@ -197,11 +199,11 @@ typedef struct r_esil_voyeur_t {
 typedef enum {
 	R_ESIL_VOYEUR_REG_READ = 0,
 	R_ESIL_VOYEUR_REG_WRITE,
+	R_ESIL_VOYEUR_REG_ALIAS,
 	R_ESIL_VOYEUR_MEM_READ,
 	R_ESIL_VOYEUR_MEM_WRITE,
 	R_ESIL_VOYEUR_SET_BITS,
 	R_ESIL_VOYEUR_OP,
-	R_ESIL_VOYEUR_REG_ALIAS,
 	R_ESIL_VOYEUR_LAST,
 	R_ESIL_VOYEUR_HIGH_MASK = 0xf,
 	R_ESIL_VOYEUR_ERR = UT32_MAX,

@@ -18,6 +18,10 @@ static bool test_reg_write(void *reg, const char *name, ut64 val) {
 	return test_is_reg (reg, name) && val == 0x1234;
 }
 
+static bool test_reg_alias(void *reg, int alias, const char *name) {
+	return test_is_reg (reg, name) && alias == R_REG_ALIAS_PC;
+}
+
 static ut32 test_reg_size(void *reg, const char *name) {
 	return test_is_reg (reg, name)? 32: 0;
 }
@@ -53,6 +57,7 @@ bool test_setup_keeps_custom_interfaces(void) {
 		.is_reg = test_is_reg,
 		.reg_read = test_reg_read,
 		.reg_write = test_reg_write,
+		.reg_alias = test_reg_alias,
 		.reg_size = test_reg_size,
 	};
 	REsilMemInterface mem_if = {
@@ -71,6 +76,7 @@ bool test_setup_keeps_custom_interfaces(void) {
 	mu_assert ("is_reg was replaced", esil->reg_if.is_reg == test_is_reg);
 	mu_assert ("reg_read was replaced", esil->reg_if.reg_read == test_reg_read);
 	mu_assert ("reg_write was replaced", esil->reg_if.reg_write == test_reg_write);
+	mu_assert ("reg_alias was replaced", esil->reg_if.reg_alias == test_reg_alias);
 	mu_assert ("reg_size was replaced", esil->reg_if.reg_size == test_reg_size);
 	mu_assert_ptreq (esil->mem_if.user, &mem_user, "mem user was replaced");
 	mu_assert ("mem_read was replaced", esil->mem_if.mem_read == test_mem_read);
@@ -93,6 +99,7 @@ bool test_setup_installs_default_interfaces(void) {
 	mu_assert_notnull (esil->reg_if.is_reg, "default is_reg was not installed");
 	mu_assert_notnull (esil->reg_if.reg_read, "default reg_read was not installed");
 	mu_assert_notnull (esil->reg_if.reg_write, "default reg_write was not installed");
+	mu_assert_notnull (esil->reg_if.reg_alias, "default reg_alias was not installed");
 	mu_assert_notnull (esil->reg_if.reg_size, "default reg_size was not installed");
 	mu_assert_ptreq (esil->mem_if.user, esil, "default mem user was not installed");
 	mu_assert_notnull (esil->mem_if.mem_read, "default mem_read was not installed");
