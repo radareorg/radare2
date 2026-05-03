@@ -248,30 +248,6 @@ static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_c
 	}
 }
 
-R_IPI void r_anal_jmptbl_add_bb_deps(RAnal *anal, ut64 switch_addr, ut64 from, ut64 to) {
-	if (!anal || from == UT64_MAX || to == UT64_MAX || from >= to) {
-		return;
-	}
-	RAnalBlock *block = r_anal_bb_from_offset (anal, switch_addr);
-	if (!block || !block->switch_op) {
-		return;
-	}
-	RAnalSwitchOp *sop = block->switch_op;
-	if (sop->addr != switch_addr && sop->jump_addr != switch_addr) {
-		return;
-	}
-	int i;
-	for (i = 0; i < block->ninstr; i++) {
-		ut64 at = r_anal_bb_opaddr_i (block, i);
-		if (at == UT64_MAX) {
-			break;
-		}
-		if (at >= from && at < to) {
-			r_anal_switch_op_add_dep (sop, at);
-		}
-	}
-}
-
 // Mirror the spec into the persisted RAnalSwitchOp on `block`.
 // Called by apply_switch () once the case list is finalised.
 static void switch_op_apply_spec(RAnalBlock *block, const RAnalSwitchSpec *spec) {
@@ -1474,7 +1450,9 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	}
 	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
 		valid_cases, UT64_MAX, loadsize);
-	r_anal_jmptbl_add_bb_deps (anal, op->addr, opaddr, op->addr);
+	if (bb && bb->switch_op) {
+		r_anal_switch_op_add_deps (bb->switch_op, bb, opaddr, op->addr);
+	}
 	set_u_free (s);
 	free (table);
 	return true;

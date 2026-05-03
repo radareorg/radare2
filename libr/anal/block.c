@@ -655,6 +655,28 @@ R_API void r_anal_block_add_switch_case(RAnalBlock *block, ut64 switch_addr, ut6
 	r_anal_switch_op_add_case (block->switch_op, case_addr, case_value, case_addr);
 }
 
+R_API void r_anal_switch_op_add_deps(RAnal *anal, ut64 switch_addr, ut64 from, ut64 to) {
+	R_RETURN_IF_FAIL (anal && switch_addr != UT64_MAX && from != UT64_MAX && to != UT64_MAX && from < to);
+	RAnalBlock *block = r_anal_bb_from_offset (anal, switch_addr);
+	if (!block || !block->switch_op) {
+		return;
+	}
+	RAnalSwitchOp *sop = block->switch_op;
+	if (sop->addr != switch_addr && sop->jump_addr != switch_addr) {
+		return;
+	}
+	int i;
+	for (i = 0; i < block->ninstr; i++) {
+		ut64 at = r_anal_bb_opaddr_i (block, i);
+		if (at == UT64_MAX) {
+			break;
+		}
+		if (at >= from && at < to) {
+			r_anal_switch_op_add_dep (sop, at);
+		}
+	}
+}
+
 R_API bool r_anal_block_op_starts_at(RAnalBlock *bb, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (bb, false);
 	if (!r_anal_block_contains (bb, addr)) {
