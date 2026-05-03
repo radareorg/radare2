@@ -13,6 +13,7 @@ typedef struct {
 	bool show_addr;
 	Sdb *goto_cache;
 	Sdb *db;
+	SetU *switch_addrs;
 	RAnalFunction *fcn;
 	const char *r0;
 	char indentstr[1024];
@@ -494,16 +495,32 @@ static bool is_known_loop_header(PDCState *state, ut64 addr) {
 }
 
 static bool part_of_a_switch(PDCState *state, ut64 addr) {
+	return state->switch_addrs && set_u_contains (state->switch_addrs, addr);
+}
+
+static void collect_switch_addrs(PDCState *state) {
+	state->switch_addrs = set_u_new ();
+	if (!state->switch_addrs || !state->fcn || !state->fcn->bbs) {
+		return;
+	}
 	RListIter *iter;
 	RAnalBlock *bb;
 	r_list_foreach (state->fcn->bbs, iter, bb) {
-		if (bb->switch_op && (bb->switch_op->addr == addr
-				|| bb->switch_op->jump_addr == addr
-				|| r_anal_switch_op_has_dep (bb->switch_op, addr))) {
-			return true;
+		RAnalSwitchOp *sop = bb->switch_op;
+		if (!sop) {
+			continue;
+		}
+		if (sop->addr != UT64_MAX) {
+			set_u_add (state->switch_addrs, sop->addr);
+		}
+		if (sop->jump_addr != UT64_MAX) {
+			set_u_add (state->switch_addrs, sop->jump_addr);
+		}
+		int i;
+		for (i = 0; i < sop->deps_count; i++) {
+			set_u_add (state->switch_addrs, sop->deps[i]);
 		}
 	}
-	return false;
 }
 
 static ut64 emit_code_lines(PDCState *state, char *code, ut64 start_addr, int indent, bool emit_pj) {
@@ -1084,10 +1101,14 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_config_hold_free (hc);
 		sdb_free (state.db);
 		sdb_free (state.goto_cache);
+		if (state.switch_addrs) {
+			set_u_free (state.switch_addrs);
+		}
 		r_strbuf_free (state.out);
 		r_strbuf_free (state.codestr);
 		return false;
 	}
+	collect_switch_addrs (&state);
 	r_config_hold (hc, "asm.pseudo", "asm.decode", "asm.lines", "asm.bytes", "asm.stackptr", NULL);
 	r_config_hold (hc, "asm.addr", "asm.flags", "asm.lines.fcn", "asm.comments", NULL);
 	r_config_hold (hc, "asm.functions", "asm.section", "asm.cmt.col", "asm.sub.names", NULL);
@@ -1576,5 +1597,8 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
+	if (state.switch_addrs) {
+		set_u_free (state.switch_addrs);
+	}
 	return true;
 }
