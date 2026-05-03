@@ -1450,9 +1450,7 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	}
 	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
 		valid_cases, UT64_MAX, loadsize);
-	if (bb && bb->switch_op) {
-		r_anal_switch_op_add_deps (bb->switch_op, bb, opaddr, op->addr);
-	}
+	r_anal_switch_op_add_deps (anal, op->addr, opaddr, op->addr);
 	set_u_free (s);
 	free (table);
 	return true;
