@@ -802,6 +802,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	bool varset = has_vars (anal, addr); // Checks if var is already analyzed at given addr
 
 	ut64 movdisp = UT64_MAX; // used by jmptbl when coded as "mov Reg,[Reg*Scale+Disp]"
+	ut64 movdisp_addr = UT64_MAX;
 	ut64 movscale = 0;
 	int maxlen = len * addrbytes;
 	if (is_dalvik) {
@@ -1124,6 +1125,7 @@ noskip:
 			// skip mov reg, reg
 			if (anal->opt.jmptbl && op->scale && op->ireg) {
 				movdisp = op->disp;
+				movdisp_addr = op->addr;
 				movscale = op->refptr? op->refptr: op->ptrsize? op->ptrsize: op->scale;
 				movbasereg = src0? src0->reg: NULL;
 			}
@@ -1666,6 +1668,7 @@ noskip:
 					ut64 table_size, default_case;
 					ut64 jmptbl_base = 0; //UT64_MAX;
 					ut64 lea_op_off = UT64_MAX;
+					ut64 dep_from = movdisp_addr;
 					RListIter *iter;
 					RLeaddrPair *pair;
 					if (movbasereg) {
@@ -1676,6 +1679,7 @@ noskip:
 							}
 							if ((lea_op_off == UT64_MAX || lea_op_off > op->addr - pair->op_addr) && pair->reg && !strcmp (movbasereg, pair->reg)) {
 								lea_op_off = op->addr - pair->op_addr;
+								dep_from = pair->op_addr;
 								jmptbl_base = pair->leaddr;
 							}
 						}
@@ -1685,6 +1689,7 @@ noskip:
 						default_case = UT64_MAX;
 					}
 					ret = r_anal_jmptbl_walk (anal, fcn, bb, depth - 1, op->addr, case_shift, jmptbl_base + movdisp, jmptbl_base, movscale, table_size, default_case, ret);
+					r_anal_jmptbl_add_bb_deps (anal, op->addr, dep_from, op->addr);
 					anal->cmpval = UT64_MAX;
 #if 0
 				} else if (movdisp != UT64_MAX) {

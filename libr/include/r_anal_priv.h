@@ -34,6 +34,7 @@ R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *f
 // `delta`. Used on arm64 to finalise `adrp Rd, page; add Rd, Rd, #imm`
 // sequences where multiple adrp's can interleave before their matching adds.
 R_IPI void r_anal_jmptbl_leaddrs_bump(RList *leaddrs, const char *reg, ut64 delta);
+R_IPI void r_anal_jmptbl_add_bb_deps(RAnal *anal, ut64 switch_addr, ut64 from, ut64 to);
 
 // Detect and walk an arm64 jmptbl dispatcher at the indirect branch `op`.
 // Scans the preceding add/load pair, resolves the base/table lea pairs

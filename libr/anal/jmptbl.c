@@ -248,109 +248,27 @@ static void update_switch_op(RAnalBlock *block, ut64 switch_addr, ut64 default_c
 	}
 }
 
-static void switch_op_regcpy(char *dst, size_t dstsz, const char *src) {
-	if (R_STR_ISEMPTY (src) || dstsz < 1) {
+R_IPI void r_anal_jmptbl_add_bb_deps(RAnal *anal, ut64 switch_addr, ut64 from, ut64 to) {
+	if (!anal || from == UT64_MAX || to == UT64_MAX || from >= to) {
 		return;
 	}
-	strncpy (dst, src, dstsz - 1);
-	dst[dstsz - 1] = 0;
-}
-
-static const char *switch_op_dst_reg(RAnalOp *op) {
-	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
-	return dst? dst->reg: NULL;
-}
-
-static bool switch_op_value_uses_reg(const RAnalValue *v, const char *reg) {
-	return reg && v && ((v->reg && !strcmp (v->reg, reg))
-		|| (v->regdelta && !strcmp (v->regdelta, reg)));
-}
-
-static bool switch_op_uses_reg(RAnalOp *op, const char *reg) {
-	if (R_STR_ISEMPTY (reg)) {
-		return false;
-	}
-	if ((op->reg && !strcmp (op->reg, reg)) || (op->ireg && !strcmp (op->ireg, reg))) {
-		return true;
-	}
-	RAnalValue *v;
-	R_VEC_FOREACH (&op->srcs, v) {
-		if (switch_op_value_uses_reg (v, reg)) {
-			return true;
-		}
-	}
-	R_VEC_FOREACH (&op->dsts, v) {
-		if (switch_op_value_uses_reg (v, reg)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool switch_op_refs_addr(RAnalOp *op, ut64 addr) {
-	return addr != UT64_MAX && (op->ptr == addr || op->val == addr
-		|| (op->disp > 0 && (ut64)op->disp == addr));
-}
-
-static bool switch_op_refs_addr_page(RAnalOp *op, ut64 addr) {
-	return addr != UT64_MAX && addr > 0xfff && op->ptr != UT64_MAX && op->ptr > 0xfff
-		&& (op->ptr & ~0xfffULL) == (addr & ~0xfffULL);
-}
-
-static void switch_op_collect_deps(RAnal *anal, RAnalBlock *block, ut64 jtbl_addr, ut64 vtbl_addr) {
-	if (!anal || !block || !block->switch_op || block->switch_op->deps_count > 0) {
+	RAnalBlock *block = r_anal_bb_from_offset (anal, switch_addr);
+	if (!block || !block->switch_op) {
 		return;
 	}
-	char table_reg[32] = {0};
-	char base_reg[32] = {0};
-	char target_reg[32] = {0};
-	ut8 buf[32];
+	RAnalSwitchOp *sop = block->switch_op;
+	if (sop->addr != switch_addr && sop->jump_addr != switch_addr) {
+		return;
+	}
 	int i;
 	for (i = 0; i < block->ninstr; i++) {
 		ut64 at = r_anal_bb_opaddr_i (block, i);
 		if (at == UT64_MAX) {
 			break;
 		}
-		if (!anal->iob.read_at (anal->iob.io, at, buf, sizeof (buf))) {
-			continue;
+		if (at >= from && at < to) {
+			r_anal_switch_op_add_dep (sop, at);
 		}
-		RAnalOp op;
-		r_anal_op_init (&op);
-		if (r_anal_op (anal, &op, at, buf, sizeof (buf), R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_VAL) < 1) {
-			r_anal_op_fini (&op);
-			continue;
-		}
-		const bool refs_table = switch_op_refs_addr (&op, jtbl_addr)
-			|| switch_op_refs_addr (&op, vtbl_addr)
-			|| switch_op_refs_addr_page (&op, jtbl_addr)
-			|| switch_op_refs_addr_page (&op, vtbl_addr);
-		const bool uses_table_reg = *table_reg && switch_op_uses_reg (&op, table_reg);
-		const bool uses_base_reg = *base_reg && switch_op_uses_reg (&op, base_reg);
-		const bool writes_target = *target_reg && switch_op_dst_reg (&op)
-			&& !strcmp (switch_op_dst_reg (&op), target_reg);
-		const int optype = op.type & R_ANAL_OP_TYPE_MASK;
-		if (refs_table) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-			switch_op_regcpy (table_reg, sizeof (table_reg), switch_op_dst_reg (&op));
-		} else if (uses_table_reg && switch_op_dst_reg (&op) && !strcmp (switch_op_dst_reg (&op), table_reg)) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-		} else if (uses_table_reg && (optype == R_ANAL_OP_TYPE_MOV || optype == R_ANAL_OP_TYPE_LOAD)) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-			switch_op_regcpy (target_reg, sizeof (target_reg), switch_op_dst_reg (&op));
-		} else if (*target_reg && optype == R_ANAL_OP_TYPE_LEA && switch_op_dst_reg (&op)) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-			switch_op_regcpy (base_reg, sizeof (base_reg), switch_op_dst_reg (&op));
-		} else if (writes_target && (uses_table_reg || switch_op_uses_reg (&op, target_reg))) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-			switch_op_regcpy (target_reg, sizeof (target_reg), switch_op_dst_reg (&op));
-		} else if (writes_target && uses_base_reg) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-		} else if ((optype == R_ANAL_OP_TYPE_RJMP || optype == R_ANAL_OP_TYPE_MJMP || optype == R_ANAL_OP_TYPE_IRJMP) && switch_op_uses_reg (&op, target_reg)) {
-			r_anal_switch_op_add_dep (block->switch_op, at);
-			r_anal_op_fini (&op);
-			break;
-		}
-		r_anal_op_fini (&op);
 	}
 }
 
@@ -480,7 +398,6 @@ static void apply_switch(RAnal *anal, RAnalFunction *fcn, RAnalBlock *block, ut6
 		if (esize > 0) {
 			block->switch_op->dsize = esize;
 		}
-		switch_op_collect_deps (anal, block, jmptbl_addr, vtbl_addr);
 	}
 	if (anal->flb.set) {
 		snprintf (tmp, sizeof (tmp), "switch.0x%08" PFMT64x, switch_addr);
@@ -1557,6 +1474,7 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	}
 	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
 		valid_cases, UT64_MAX, loadsize);
+	r_anal_jmptbl_add_bb_deps (anal, op->addr, opaddr, op->addr);
 	set_u_free (s);
 	free (table);
 	return true;
