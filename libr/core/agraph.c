@@ -128,12 +128,6 @@ struct len_pos_t {
 	int pos;
 };
 
-struct dist_t {
-	const RGraphNode *from;
-	const RGraphNode *to;
-	int dist;
-};
-
 struct g_cb {
 	RAGraph *graph;
 	RANodeCallback node_cb;
@@ -231,9 +225,9 @@ static int mode2opts(const RAGraph *g) {
 
 // duplicated from visual.c
 static void rotateAsmemu(RCore *core) {
-	const bool isEmuStr = r_config_get_b (core->config, "emu.str");
 	const bool isEmu = r_config_get_b (core->config, "asm.emu");
 	if (isEmu) {
+		const bool isEmuStr = r_config_get_b (core->config, "emu.str");
 		if (isEmuStr) {
 			r_config_set_b (core->config, "emu.str", false);
 		} else {
@@ -908,27 +902,54 @@ static void minimize_crossings(const RAGraph *g) {
 	} while (cross_changed && max_changes);
 }
 
-static int find_dist(const struct dist_t *a, const struct dist_t *b) {
-	return a->from == b->from && a->to == b->to? 0: 1;
+static int cmp_graph_node_ptr(const RGraphNode *a, const RGraphNode *b) {
+	const size_t aa = (size_t)a;
+	const size_t bb = (size_t)b;
+	return (aa > bb)? 1: (aa < bb)? -1: 0;
+}
+
+static int cmp_agraph_dist(const RAGraphDist *a, const RAGraphDist *b) {
+	int cmp = cmp_graph_node_ptr (a->from, b->from);
+	return cmp? cmp: cmp_graph_node_ptr (a->to, b->to);
+}
+
+static int find_dist(const RAGraphDist *a, const void *b) {
+	return cmp_agraph_dist (a, (const RAGraphDist *)b);
+}
+
+static RAGraphDist *dist_find(const RAGraph *g, const RGraphNode *from, const RGraphNode *to) {
+	if (!g->dists) {
+		return NULL;
+	}
+	RAGraphDist d = {
+		.from = from,
+		.to = to
+	};
+	return RVecAGraphDist_find_sorted (g->dists, &d, find_dist);
+}
+
+static RAGraphDist *dist_insert_sorted(RVecAGraphDist *dists, const RAGraphDist *dist) {
+	size_t index = RVecAGraphDist_lower_bound (dists, (RAGraphDist *)dist, cmp_agraph_dist);
+	RAGraphDist *slot = RVecAGraphDist_emplace_back (dists);
+	if (!slot) {
+		return NULL;
+	}
+	RAGraphDist *dst = R_VEC_START_ITER (dists) + index;
+	memmove (dst + 1, dst, (slot - dst) * sizeof (RAGraphDist));
+	*dst = *dist;
+	return dst;
 }
 
 /* returns the distance between two nodes */
 /* if the distance between two nodes were explicitly set, returns that;
  * otherwise calculate the distance of two nodes on the same layer */
 static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b) {
-	struct dist_t d;
 	const RANode *aa, *ab;
-	RListIter *it;
 	int res = 0;
 
-	if (g->dists) {
-		d.from = a;
-		d.to = b;
-		it = r_list_find (g->dists, &d, (RListComparator)find_dist);
-		if (it) {
-			struct dist_t *old = (struct dist_t *)r_list_iter_get_data (it);
-			return old->dist;
-		}
+	RAGraphDist *old = dist_find (g, a, b);
+	if (old) {
+		return old->dist;
 	}
 
 	aa = get_anode (a);
@@ -944,15 +965,10 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 			const RANode *acur = get_anode (cur);
 			bool found = false;
 
-			if (g->dists) {
-				d.from = cur;
-				d.to = next;
-				it = r_list_find (g->dists, &d, (RListComparator)find_dist);
-				if (it) {
-					struct dist_t *old = (struct dist_t *)r_list_iter_get_data (it);
-					res += old->dist;
-					found = true;
-				}
+			old = dist_find (g, cur, next);
+			if (old) {
+				res += old->dist;
+				found = true;
 			}
 
 			if (acur && anext && !found) {
@@ -976,10 +992,8 @@ static int dist_nodes(const RAGraph *g, const RGraphNode *a, const RGraphNode *b
 
 /* explicitly set the distance between two nodes on the same layer */
 static void set_dist_nodes(const RAGraph *g, int l, int cur, int next) {
-	struct dist_t *d, find_el;
 	const RGraphNode *vi, *vip;
 	const RANode *avi, *avip;
-	RListIter *it;
 
 	if (!g->dists) {
 		return;
@@ -989,16 +1003,17 @@ static void set_dist_nodes(const RAGraph *g, int l, int cur, int next) {
 	avi = get_anode (vi);
 	avip = get_anode (vip);
 
-	find_el.from = vi;
-	find_el.to = vip;
-	it = r_list_find (g->dists, &find_el, (RListComparator)find_dist);
-	d = it? (struct dist_t *)r_list_iter_get_data (it): R_NEW0 (struct dist_t);
-
-	d->from = vi;
-	d->to = vip;
-	d->dist = (avip && avi)? avip->x - avi->x: 0;
-	if (!it) {
-		r_list_push (g->dists, d);
+	RAGraphDist *d = dist_find (g, vi, vip);
+	RAGraphDist new_dist = {
+		.from = vi,
+		.to = vip,
+		.dist = (avip && avi)? avip->x - avi->x: 0
+	};
+	if (!d) {
+		d = dist_insert_sorted (g->dists, &new_dist);
+	}
+	if (d) {
+		d->dist = new_dist.dist;
 	}
 }
 
@@ -1673,12 +1688,10 @@ static void place_original(RAGraph *g) {
 		sdb_free (D);
 		return;
 	}
-	g->dists = r_list_newf ((RListFree)free);
-	if (!g->dists) {
-		sdb_free (D);
-		sdb_free (P);
-		return;
-	}
+	RVecAGraphDist dists;
+	RVecAGraphDist_init (&dists);
+	RVecAGraphDist_reserve (&dists, g->graph->n_nodes);
+	g->dists = &dists;
 
 	graph_foreach_anode (nodes, itn, gn, an) {
 		if (!an->is_dummy) {
@@ -1696,7 +1709,7 @@ static void place_original(RAGraph *g) {
 	original_traverse_l (g, D, P, true);
 	original_traverse_l (g, D, P, false);
 
-	r_list_free (g->dists);
+	RVecAGraphDist_fini (&dists);
 	g->dists = NULL;
 	sdb_free (P);
 	sdb_free (D);

@@ -17,6 +17,14 @@ typedef struct r_agraph_location {
 
 R_VEC_TYPE (RVecAGraphLocation, RAGraphLocation);
 
+typedef struct r_agraph_dist {
+	const RGraphNode *from;
+	const RGraphNode *to;
+	int dist;
+} RAGraphDist;
+
+R_VEC_TYPE (RVecAGraphDist, RAGraphDist);
+
 typedef struct r_ascii_node_t {
 	RGraphNode *gnode;
 	char *title;
@@ -102,7 +110,7 @@ typedef struct r_ascii_graph_t {
 	RList *long_edges;
 	struct layer_t *layers;
 	unsigned int n_layers;
-	RList *dists; /* RList<struct dist_t> */
+	RVecAGraphDist *dists;
 	RList *edges; /* RList<AEdge> */
 	RAGraphHits ghits;
 } RAGraph;
