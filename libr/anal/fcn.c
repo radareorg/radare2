@@ -18,7 +18,6 @@
 #define MAX_SCAN_SIZE 0x7ffffff
 
 #define FIX_JMP_FWD 0
-#define D if (a->verbose)
 
 // 64KB max size
 // 256KB max function size

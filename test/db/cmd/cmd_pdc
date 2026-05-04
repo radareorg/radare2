@@ -222,7 +222,7 @@ afbtj @ 0x2c~deps
 pdc~switch (switch_var)
 EOF
 EXPECT=<<EOF
-{"addr":44,"jtbl_addr":96,"base":0,"ncases":4,"esize":4,"vsize":0,"shift":0,"lowcase":0,"min":0,"max":3,"def":18446744073709551615,"flags":0,"deps":[30,37,41]}
+{"addr":44,"jtbl_addr":96,"base":0,"ncases":4,"esize":4,"vsize":0,"shift":0,"lowcase":0,"min":0,"max":3,"def":18446744073709551615,"flags":0,"deps":[30,37,41],"cases":[{"addr":46,"value":0,"jump":46},{"addr":54,"value":1,"jump":54},{"addr":48,"value":2,"jump":48},{"addr":51,"value":3,"jump":51}]}
 --
     switch (switch_var) { // jump table of 4 cases at 0x00000060
 EOF

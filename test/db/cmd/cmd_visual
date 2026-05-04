@@ -51,6 +51,37 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=visual arm64 op scroll up aligns
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+s 7
+Vpkq
+s
+EOF
+EXPECT=<<EOF
+0x0
+EOF
+RUN
+
+NAME=visual cmd.visual disasm scroll aligns
+FILE=-
+ARGS=-a arm -b 64
+CMDS=<<EOF
+e scr.interactive=true
+e arch.codealign=4
+e cmd.visual=pd 8
+s 1
+Vjq
+s
+EOF
+EXPECT=<<EOF
+0x4
+EOF
+RUN
+
 NAME=visual hex pP scroll
 FILE=-
 CMDS=<<EOF

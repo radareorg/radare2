@@ -1178,6 +1178,20 @@ static void setprintmode(RCore *core, int n) {
 	}
 }
 
+static ut64 visual_align_code(RCore *core, ut64 addr) {
+	if (addr == UT64_MAX) {
+		return addr;
+	}
+	const int codealign = core->anal->config->codealign;
+	if (codealign > 1) {
+		const int mod = addr % codealign;
+		if (mod) {
+			addr -= mod;
+		}
+	}
+	return addr;
+}
+
 #define OPDELTA 32
 static ut64 prevop_addr(RCore *core, ut64 addr) {
 	ut8 buf[OPDELTA * 2];
@@ -1196,6 +1210,10 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 
 	const int minop = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int maxop = r_arch_info (core->anal->arch, R_ARCH_INFO_MAXOP_SIZE);
+	ut64 aligned = visual_align_code (core, addr);
+	if (aligned != addr) {
+		return aligned;
+	}
 	if (minop == maxop) {
 		if (minop == -1) {
 			return addr - 4;
@@ -2014,6 +2032,14 @@ beach:
 
 static bool isDisasmPrint(int mode) {
 	return (mode == R_CORE_VISUAL_MODE_PD || mode == R_CORE_VISUAL_MODE_DB);
+}
+
+static bool visual_is_disasm(RCore *core) {
+	if (isDisasmPrint (core->visual.printidx)) {
+		return true;
+	}
+	const char *vcmd = r_config_get (core->config, "cmd.visual");
+	return R_STR_ISNOTEMPTY (vcmd) && strstr (vcmd, "pd");
 }
 
 static void cursor_ocur(RCore *core, bool use_ocur) {
@@ -3539,7 +3565,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 						while (times--) {
 							RAnalOp op;
-							if (isDisasmPrint (v->printidx)) {
+							if (visual_is_disasm (core)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 								r_anal_op_fini (&op);
 							} else if (!strcmp (vprintcmd (core), "prc")) {
@@ -3632,7 +3658,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						times = distance;
 					}
 					while (times--) {
-						if (isDisasmPrint (v->printidx)) {
+						if (visual_is_disasm (core)) {
 							r_core_visual_disasm_up (core, &cols);
 						} else if (!strcmp (vprintcmd (core), "prc")) {
 							cols = r_config_get_i (core->config, "hex.cols");
@@ -4506,6 +4532,12 @@ R_IPI void visual_refresh(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	RCons *cons = core->cons;
 	char *cmd_str = NULL;
+	if (visual_is_disasm (core)) {
+		ut64 addr = visual_align_code (core, core->addr);
+		if (addr != core->addr) {
+			r_core_seek (core, addr, true);
+		}
+	}
 	r_print_set_cursor (core->print, core->print->cur_enabled, core->print->ocur, core->print->cur);
 	cons->blankline = true;
 	int notch = r_config_get_i (core->config, "scr.notch");
@@ -4661,6 +4693,10 @@ static int varcount(RCore *core, RAnalFunction *f) {
 }
 
 R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
+	ut64 aligned = visual_align_code (core, core->addr);
+	if (aligned != core->addr) {
+		r_core_seek (core, aligned, true);
+	}
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
 	if (f && f->folded) {
 		*cols = core->addr - f->addr;
@@ -4692,6 +4728,10 @@ R_API void r_core_visual_disasm_up(RCore *core, int *cols) {
 R_API void r_core_visual_disasm_down(RCore *core, RAnalOp *op, int *cols) {
 	int midflags = r_config_get_i (core->config, "asm.flags.middle");
 	const bool midbb = r_config_get_i (core->config, "asm.bbmiddle");
+	ut64 aligned = visual_align_code (core, core->addr);
+	if (aligned != core->addr) {
+		r_core_seek (core, aligned, true);
+	}
 	RAnalFunction *f = r_anal_get_fcn_in (core->anal, core->addr, 0);
 	ut64 orig = core->addr;
 	op->size = 1;
