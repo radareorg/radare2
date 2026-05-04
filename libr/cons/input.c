@@ -46,17 +46,6 @@ static int r_cons_mouse_event(RCons *cons) {
 		}
 		ypos[i] = 0;
 		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
-		(void) r_cons_readchar (cons);
-		// ignored
-		int ch = r_cons_readchar (cons);
-		if (ch == 27) {
-			ch = r_cons_readchar (cons); // '['
-		}
-		if (ch == '[') {
-			do {
-				ch = r_cons_readchar (cons); // '3'
-			} while (ch != 'M');
-		}
 	}
 	return 0;
 }

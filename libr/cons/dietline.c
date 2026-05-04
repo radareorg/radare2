@@ -68,6 +68,56 @@ static bool drain_csi_sequence(RCons *cons) {
 	return true;
 }
 
+static bool read_sgr_mouse_param(RCons *cons, char *buf, size_t buf_len, int *end) {
+	size_t i = 0;
+	for (;;) {
+		int ch = r_cons_readchar (cons);
+		if (ch < 20) {
+			return false;
+		}
+		if (ch == ';' || ch == 'M' || ch == 'm') {
+			buf[i] = 0;
+			*end = ch;
+			return true;
+		}
+		if (i + 1 < buf_len) {
+			buf[i++] = ch;
+		}
+	}
+}
+
+static int read_sgr_mouse_event(RCons *cons) {
+	char button[8];
+	char xpos[16];
+	char ypos[16];
+	int end = 0;
+	if (!read_sgr_mouse_param (cons, button, sizeof (button), &end) || end != ';') {
+		return -1;
+	}
+	if (!read_sgr_mouse_param (cons, xpos, sizeof (xpos), &end) || end != ';') {
+		return -1;
+	}
+	if (!read_sgr_mouse_param (cons, ypos, sizeof (ypos), &end)) {
+		return -1;
+	}
+	if (end != 'M' && end != 'm') {
+		return -1;
+	}
+	int b = atoi (button);
+	cons->mouse_event = true;
+	switch (b) {
+	case 64: // wheel up
+		return 'k';
+	case 65: // wheel down
+		return 'j';
+	case 66: // wheel left
+		return 'h';
+	case 67: // wheel right
+		return 'l';
+	}
+	return 0;
+}
+
 static inline void swap_case(RLine *line, int index) {
 	if (isupper (line->buffer.data[index])) {
 		line->buffer.data[index] += 32;
@@ -2081,6 +2131,22 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 				} else if (buf[0] == '[') { // [
 					int fkey = 0;
 					switch (buf[1]) {
+					case '<':
+						key = read_sgr_mouse_event (cons);
+						if (key == -1) {
+							r_cons_break_pop (cons);
+							return NULL;
+						}
+						if (key == 'k') {
+							if (line->hud && line->hud->top_entry_n + 1 < line->hud->current_entry_n) {
+								line->hud->top_entry_n--;
+							}
+						} else if (key == 'j') {
+							if (line->hud && line->hud->top_entry_n >= 0) {
+								line->hud->top_entry_n++;
+							}
+						}
+						break;
 					case '2': // termfix
 						while (true) {
 							ch = r_cons_readchar (cons);
