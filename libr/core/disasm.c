@@ -6608,7 +6608,7 @@ static bool line_highlighted(RDisasmState *ds) {
 	if (ds->asm_highlight != UT64_MAX && ds->vat == ds->asm_highlight) {
 		return true;
 	}
-	return ds->cursor_switch_op && r_anal_switch_op_has_dep (ds->cursor_switch_op, ds->vat);
+	return ds->cursor != -1 && ds->cursor_switch_op && r_anal_switch_op_has_dep (ds->cursor_switch_op, ds->vat);
 }
 
 static bool is_indirect_switch_jump(RAnalOp *op) {

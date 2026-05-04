@@ -2798,6 +2798,42 @@ R_API int r_anal_function_count(RAnal *anal, ut64 from, ut64 to) {
 	return n;
 }
 
+static RAnalBlock *r_anal_function_bbget_in_linear(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
+	RListIter *iter;
+	RAnalBlock *bb;
+	const bool aligned = r_anal_is_aligned (anal, addr);
+	r_list_foreach (fcn->bbs, iter, bb) {
+		if (r_anal_block_contains (bb, addr)) {
+			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
+				return bb;
+			}
+		}
+	}
+	return NULL;
+}
+
+typedef struct {
+	RAnal *anal;
+	RAnalFunction *fcn;
+	RAnalBlock *bb;
+	ut64 addr;
+	bool aligned;
+	int matches;
+} RAnalFunctionBBGetInCtx;
+
+static bool r_anal_function_bbget_in_cb(RAnalBlock *bb, void *user) {
+	RAnalFunctionBBGetInCtx *ctx = user;
+	if (!r_list_contains (bb->fcns, ctx->fcn)) {
+		return true;
+	}
+	if (ctx->anal->opt.jmpmid && ctx->aligned && !r_anal_block_op_starts_at (bb, ctx->addr)) {
+		return true;
+	}
+	ctx->bb = bb;
+	ctx->matches++;
+	return ctx->matches < 2;
+}
+
 /* return the basic block in fcn found at the given address.
  * NULL is returned if such basic block doesn't exist. */
 R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
@@ -2805,19 +2841,20 @@ R_API RAnalBlock *r_anal_function_bbget_in(RAnal *anal, RAnalFunction *fcn, ut64
 	if (addr == UT64_MAX) {
 		return NULL;
 	}
-	RListIter *iter;
-	RAnalBlock *bb;
-	const bool aligned = r_anal_is_aligned (anal, addr);
-	r_list_foreach (fcn->bbs, iter, bb) {
-		if (r_anal_block_contains (bb, addr)) {
-			if ((!anal->opt.jmpmid || !aligned || r_anal_block_op_starts_at (bb, addr))) {
-			// if (r_anal_block_op_starts_at (bb, addr)) {
-				return bb;
-			}
-			// return bb;
-		}
+	if (fcn->anal != anal || !anal->bb_tree) {
+		return r_anal_function_bbget_in_linear (anal, fcn, addr);
 	}
-	return NULL;
+	RAnalFunctionBBGetInCtx ctx = {
+		.anal = anal,
+		.fcn = fcn,
+		.addr = addr,
+		.aligned = r_anal_is_aligned (anal, addr),
+	};
+	r_anal_blocks_foreach_in (anal, addr, r_anal_function_bbget_in_cb, &ctx);
+	if (ctx.matches > 1) {
+		return r_anal_function_bbget_in_linear (anal, fcn, addr);
+	}
+	return ctx.bb;
 }
 
 R_API RAnalBlock *r_anal_function_bbget_at(RAnal *anal, RAnalFunction *fcn, ut64 addr) {
