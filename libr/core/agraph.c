@@ -4439,7 +4439,7 @@ static void graph_continue(RCore *core) {
 	r_core_cmd (core, "dc", 0);
 }
 
-static void applyDisMode(RCore *core) {
+R_IPI void applyDisMode(RCore *core) {
 	switch (core->visual.disMode) {
 	case 0:
 		r_config_set_b (core->config, "asm.pseudo", false);

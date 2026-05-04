@@ -2811,18 +2811,7 @@ static int process_get_click(RCore *core, int ch) {
 }
 
 static void handle_space_key(RCore *core, bool force) {
-	if (force) {
-		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
-		if (fun && !r_list_empty (fun->bbs)) {
-			const int ocolor = r_config_get_i (core->config, "scr.color");
-			reset_print_cur (core->print);
-			eprintf ("\rRendering graph...");
-			r_core_visual_graph (core, NULL, NULL, true);
-			r_config_set_i (core->config, "scr.color", ocolor);
-		} else {
-			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
-		}
-	} else {
+	if (!force) {
 		switch (core->visual.printidx) {
 		case R_CORE_VISUAL_MODE_PX: // hex
 			if (core->visual.hexMode % 2) {
@@ -2834,11 +2823,25 @@ static void handle_space_key(RCore *core, bool force) {
 			break;
 		case R_CORE_VISUAL_MODE_PD:
 		case R_CORE_VISUAL_MODE_DB:
-			force = 'V';
+			force = true;
 			break;
 		case R_CORE_VISUAL_MODE_OV: // hex
 		case R_CORE_VISUAL_MODE_CD: // hex
 			break;
+		}
+	}
+	if (force) {
+		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+		if (!fun) {
+			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
+		} else if (r_list_empty (fun->bbs)) {
+			r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
+		} else {
+			const int ocolor = r_config_get_i (core->config, "scr.color");
+			reset_print_cur (core->print);
+			eprintf ("\rRendering graph...");
+			r_core_visual_graph (core, NULL, NULL, true);
+			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 	}
 }

@@ -8,28 +8,219 @@
 #define in_refline(a, r) (mid_refline (a, r) || (a) == (r)->from || (a) == (r)->to)
 
 typedef struct refline_end {
-	int val;
+	ut64 val;
+	size_t order;
 	bool is_from;
 	RAnalRefline *r;
 } ReflineEnd;
 
+typedef struct refline_event_t {
+	ut64 addr;
+	RAnalRefline *r;
+} ReflineEvent;
+
+R_VEC_TYPE (RVecReflineEnd, ReflineEnd);
+R_VEC_TYPE (RVecReflineEvent, ReflineEvent);
+R_VEC_TYPE (RVecAnalReflinePtr, RAnalRefline *);
+
+typedef struct refline_cache_t {
+	RVecReflineEvent starts;
+	RVecReflineEvent ends;
+	RVecAnalReflinePtr active;
+	size_t next_start;
+	size_t next_end;
+	ut64 last_addr;
+	int refs;
+	bool active_valid;
+} ReflineCache;
+
+typedef struct refline_item_t {
+	RAnalRefline ref;
+	ReflineCache *cache;
+} ReflineItem;
+
 static int cmp_asc(const struct refline_end *a, const struct refline_end *b) {
-	return (a->val > b->val) - (a->val < b->val);
+	int cmp = (a->val > b->val) - (a->val < b->val);
+	if (cmp) {
+		return cmp;
+	}
+	return (a->order < b->order) - (a->order > b->order);
 }
 
 static int cmp_by_ref_lvl(const RAnalRefline *a, const RAnalRefline *b) {
 	return (a->level < b->level) - (a->level > b->level);
 }
 
-static ReflineEnd *R_NONNULL refline_end_new(ut64 val, bool is_from, RAnalRefline *ref) {
-	ReflineEnd *re = R_NEW0 (struct refline_end);
-	re->val = val;
-	re->is_from = is_from;
-	re->r = ref;
-	return re;
+static int cmp_refline_event(const ReflineEvent *a, const ReflineEvent *b) {
+	int cmp = (a->addr > b->addr) - (a->addr < b->addr);
+	if (cmp) {
+		return cmp;
+	}
+	return (a->r->index > b->r->index) - (a->r->index < b->r->index);
 }
 
-static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, int type, int splitmode) {
+static int cmp_refline_event_addr(const ReflineEvent *a, const ReflineEvent *b) {
+	return (a->addr > b->addr) - (a->addr < b->addr);
+}
+
+static int cmp_ref_ptr_level(RAnalRefline * const *a, RAnalRefline * const *b) {
+	int cmp = cmp_by_ref_lvl (*a, *b);
+	if (cmp) {
+		return cmp;
+	}
+	return ((*a)->index > (*b)->index) - ((*a)->index < (*b)->index);
+}
+
+static int cmp_ref_ptr_find_level(RAnalRefline * const *a, const void *b) {
+	RAnalRefline *ref = (RAnalRefline *)b;
+	int cmp = cmp_by_ref_lvl (*a, ref);
+	if (cmp) {
+		return cmp;
+	}
+	return ((*a)->index > ref->index) - ((*a)->index < ref->index);
+}
+
+static inline ut64 refline_start(const RAnalRefline *ref) {
+	return R_MIN (ref->from, ref->to);
+}
+
+static inline ut64 refline_end(const RAnalRefline *ref) {
+	return R_MAX (ref->from, ref->to);
+}
+
+static ReflineCache *refline_cache_new(void) {
+	ReflineCache *cache = R_NEW0 (ReflineCache);
+	RVecReflineEvent_init (&cache->starts);
+	RVecReflineEvent_init (&cache->ends);
+	RVecAnalReflinePtr_init (&cache->active);
+	cache->last_addr = UT64_MAX;
+	return cache;
+}
+
+static void refline_cache_free(ReflineCache *cache) {
+	if (cache) {
+		RVecReflineEvent_fini (&cache->starts);
+		RVecReflineEvent_fini (&cache->ends);
+		RVecAnalReflinePtr_fini (&cache->active);
+		free (cache);
+	}
+}
+
+static void refline_item_free(void *p) {
+	ReflineItem *item = p;
+	if (item && item->cache && --item->cache->refs < 1) {
+		refline_cache_free (item->cache);
+	}
+	free (item);
+}
+
+static bool refline_vec_insert_sorted(RVecAnalReflinePtr *vec, RAnalRefline *ref) {
+	RAnalRefline *refp = ref;
+	size_t index = RVecAnalReflinePtr_lower_bound (vec, &refp, cmp_ref_ptr_level);
+	RAnalRefline **slot = RVecAnalReflinePtr_emplace_back (vec);
+	if (!slot) {
+		return false;
+	}
+	RAnalRefline **dst = R_VEC_START_ITER (vec) + index;
+	memmove (dst + 1, dst, (slot - dst) * sizeof (RAnalRefline *));
+	*dst = ref;
+	return true;
+}
+
+static bool refline_active_insert(ReflineCache *cache, RAnalRefline *ref) {
+	return refline_vec_insert_sorted (&cache->active, ref);
+}
+
+static void refline_active_remove(ReflineCache *cache, RAnalRefline *ref) {
+	size_t index = RVecAnalReflinePtr_find_sorted_index (&cache->active, ref, cmp_ref_ptr_find_level);
+	if (index != SZT_MAX) {
+		RVecAnalReflinePtr_remove (&cache->active, index);
+	}
+}
+
+static bool refline_cache_build(ReflineCache *cache, RList *list) {
+	RAnalRefline *ref;
+	RListIter *iter;
+
+	if (!RVecReflineEvent_reserve (&cache->starts, r_list_length (list)) ||
+		!RVecReflineEvent_reserve (&cache->ends, r_list_length (list))) {
+		return false;
+	}
+	r_list_foreach (list, iter, ref) {
+		ReflineEvent *start = RVecReflineEvent_emplace_back (&cache->starts);
+		ReflineEvent *end = RVecReflineEvent_emplace_back (&cache->ends);
+		if (!start || !end) {
+			return false;
+		}
+		start->addr = refline_start (ref);
+		start->r = ref;
+		end->addr = refline_end (ref);
+		end->r = ref;
+	}
+	RVecReflineEvent_sort (&cache->starts, cmp_refline_event);
+	RVecReflineEvent_sort (&cache->ends, cmp_refline_event);
+	return true;
+}
+
+static ReflineCache *refline_cache_from_list(RList *list) {
+	if (r_list_empty (list)) {
+		return NULL;
+	}
+	ReflineItem *item = list->head->data;
+	return item? item->cache: NULL;
+}
+
+static void refline_list_set_cache(RList *list, ReflineCache *cache) {
+	ReflineItem *item;
+	RListIter *iter;
+
+	r_list_foreach (list, iter, item) {
+		item->cache = cache;
+	}
+}
+
+static RVecAnalReflinePtr *refline_cache_refs_at(ReflineCache *cache, ut64 addr) {
+	ReflineEvent event = {
+		.addr = addr
+	};
+	size_t i;
+
+	if (!cache->active_valid || addr < cache->last_addr) {
+		RVecAnalReflinePtr_clear (&cache->active);
+		cache->next_start = RVecReflineEvent_upper_bound (&cache->starts, &event, cmp_refline_event_addr);
+		cache->next_end = RVecReflineEvent_lower_bound (&cache->ends, &event, cmp_refline_event_addr);
+		for (i = 0; i < cache->next_start; i++) {
+			ReflineEvent *start = RVecReflineEvent_at (&cache->starts, i);
+			if (refline_end (start->r) >= addr && !refline_active_insert (cache, start->r)) {
+				return NULL;
+			}
+		}
+		cache->active_valid = true;
+	} else if (addr > cache->last_addr) {
+		while (cache->next_end < RVecReflineEvent_length (&cache->ends)) {
+			ReflineEvent *end = RVecReflineEvent_at (&cache->ends, cache->next_end);
+			if (end->addr >= addr) {
+				break;
+			}
+			refline_active_remove (cache, end->r);
+			cache->next_end++;
+		}
+		while (cache->next_start < RVecReflineEvent_length (&cache->starts)) {
+			ReflineEvent *start = RVecReflineEvent_at (&cache->starts, cache->next_start);
+			if (start->addr > addr) {
+				break;
+			}
+			if (refline_end (start->r) >= addr && !refline_active_insert (cache, start->r)) {
+				return NULL;
+			}
+			cache->next_start++;
+		}
+	}
+	cache->last_addr = addr;
+	return &cache->active;
+}
+
+static bool add_refline(RList *list, RVecReflineEnd *sten, ReflineCache *cache, ut64 addr, ut64 to, int *idx, int type, int splitmode) {
 	if (splitmode) {
 		if (splitmode > 0) {
 			if (addr > to) {
@@ -41,21 +232,40 @@ static bool add_refline(RList *list, RList *sten, ut64 addr, ut64 to, int *idx, 
 			}
 		}
 	}
-	RAnalRefline *item = R_NEW0 (RAnalRefline);
-	item->from = addr;
-	item->to = to;
-	item->index = *idx;
-	item->level = -1;
-	item->type = type;
-	item->direction = (to > addr)? 1: -1;
+	ReflineItem *item = R_NEW0 (ReflineItem);
+	RAnalRefline *ref = &item->ref;
+	ref->from = addr;
+	ref->to = to;
+	ref->index = *idx;
+	ref->level = -1;
+	ref->type = type;
+	ref->direction = (to > addr)? 1: -1;
+	item->cache = cache;
+
+	ReflineEnd *re1 = RVecReflineEnd_emplace_back (sten);
+	if (!re1) {
+		free (item);
+		return false;
+	}
+	re1->val = ref->from;
+	re1->order = RVecReflineEnd_length (sten) - 1;
+	re1->is_from = true;
+	re1->r = ref;
+
+	ReflineEnd *re2 = RVecReflineEnd_emplace_back (sten);
+	if (!re2) {
+		RVecReflineEnd_pop_back (sten);
+		free (item);
+		return false;
+	}
+	re2->val = ref->to;
+	re2->order = RVecReflineEnd_length (sten) - 1;
+	re2->is_from = false;
+	re2->r = ref;
+
 	*idx += 1;
 	r_list_append (list, item);
-
-	ReflineEnd *re1 = refline_end_new (item->from, true, item);
-	r_list_add_sorted (sten, re1, (RListComparator)cmp_asc);
-
-	ReflineEnd *re2 = refline_end_new (item->to, false, item);
-	r_list_add_sorted (sten, re2, (RListComparator)cmp_asc);
+	cache->refs++;
 	return true;
 }
 
@@ -73,7 +283,6 @@ R_API void r_anal_reflines_free(RAnalRefline *rl) {
  * linescall - true if you want to display call lines
  * splitmode - 0, -1, 1 */
 R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 len, int nlines, int linesout, int linescall, int splitmode) {
-	RListIter *iter;
 	RAnalOp op = { 0 };
 	struct refline_end *el;
 	const ut8 *ptr = buf;
@@ -95,11 +304,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	 *        refline, we free that level.
 	 */
 
-	RList *list = r_list_newf (free);
+	RList *list = r_list_newf (refline_item_free);
 	if (!list) {
 		return NULL;
 	}
-	RList *sten = r_list_newf ((RListFree)free);
+	ReflineCache *cache = refline_cache_new ();
+	RVecReflineEnd sten;
+	RVecReflineEnd_init (&sten);
 	r_cons_break_push (cons, NULL, NULL);
 	/* analyze code block */
 	while (ptr < end && !r_cons_is_breaked (cons)) {
@@ -148,7 +359,10 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			}
 		}
 		if (bind_addr != 0 && bind_addr != UT64_MAX) {
-			add_refline (list, sten, addr, bind_addr, &count, 'b', splitmode);
+			if (!add_refline (list, &sten, cache, addr, bind_addr, &count, 'b', splitmode)) {
+				r_anal_op_fini (&op);
+				goto sten_err;
+			}
 			bind_addr = UT64_MAX;
 		}
 		if (!anal->iob.is_valid_offset (anal->iob.io, addr, 1)) {
@@ -185,13 +399,13 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 			if ((!linesout && (op.jump > opc + len || op.jump < opc)) || !op.jump) {
 				break;
 			}
-			if (!add_refline (list, sten, addr, op.jump, &count, 'j', splitmode)) {
+			if (!add_refline (list, &sten, cache, addr, op.jump, &count, 'j', splitmode)) {
 				r_anal_op_fini (&op);
 				goto sten_err;
 			}
 			// add false branch in case its set and its not a call, useful for bf, maybe others
 			if (!op.delay && op.fail != UT64_MAX && op.fail != addr + op.size) {
-				if (!add_refline (list, sten, addr, op.fail, &count, 'f', splitmode)) {
+				if (!add_refline (list, &sten, cache, addr, op.fail, &count, 'f', splitmode)) {
 					r_anal_op_fini (&op);
 					goto sten_err;
 				}
@@ -210,7 +424,7 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 				if (!linesout && (op.jump > opc + len || op.jump < opc)) {
 						goto __next;
 					}
-					if (!add_refline (list, sten, op.switch_op->addr, caseop->jump, &count, 'j', splitmode)) {
+					if (!add_refline (list, &sten, cache, op.switch_op->addr, caseop->jump, &count, 'j', splitmode)) {
 						r_anal_op_fini (&op);
 						goto sten_err;
 					}
@@ -227,7 +441,8 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 	free_levels = R_NEWS0 (ut8, r_list_length (list) + 1);
 	int min = 0;
 
-	r_list_foreach (sten, iter, el) {
+	RVecReflineEnd_sort (&sten, cmp_asc);
+	R_VEC_FOREACH (&sten, el) {
 		if ((el->is_from && el->r->level == -1) || (!el->is_from && el->r->level == -1)) {
 			el->r->level = min + 1;
 			free_levels[min] = 1;
@@ -245,23 +460,23 @@ R_API RList *r_anal_reflines_get(RAnal *anal, ut64 addr, const ut8 *buf, ut64 le
 		}
 	}
 
-	/* XXX: the algorithm can be improved. We can calculate the set of
-	 * reflines used in each interval of addresses and store them.
-	 * Considering r_anal_reflines_str is always called with increasing
-	 * addresses, we can just traverse linearly the list of intervals to
-	 * know which reflines need to be drawn for each address. In this way,
-	 * we don't need to traverse again and again the reflines for each call
-	 * to r_anal_reflines_str, but we can reuse the data already
-	 * calculated. Those data will be quickly available because the
-	 * intervals will be sorted and the addresses to consider are always
-	 * increasing. */
+	if (r_list_empty (list)) {
+		refline_cache_free (cache);
+	} else if (!refline_cache_build (cache, list)) {
+		refline_list_set_cache (list, NULL);
+		refline_cache_free (cache);
+	}
 	free (free_levels);
-	r_list_free (sten);
+	RVecReflineEnd_fini (&sten);
 	return list;
 
 sten_err:
 	r_anal_op_fini (&op);
-	r_list_free (sten);
+	r_cons_break_pop (cons);
+	RVecReflineEnd_fini (&sten);
+	if (cache->refs < 1) {
+		refline_cache_free (cache);
+	}
 	r_list_free (list);
 	return NULL;
 }
@@ -354,8 +569,6 @@ static const char *arrowbydir(int dir) {
 					: "   ";
 }
 
-// TODO: move into another file
-// TODO: this is TOO SLOW. do not iterate over all reflines or gtfo
 R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RCore *core = _core;
 	R_RETURN_VAL_IF_FAIL (core && core->anal, NULL);
@@ -363,6 +576,7 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	RAnal *anal = core->anal;
 	RListIter *iter;
 	RAnalRefline *ref;
+	RAnalRefline **refp;
 	int l;
 	bool wide = opts & R_ANAL_REFLINE_TYPE_WIDE;
 	int dir = 0, pos = -1, max_level = -1;
@@ -377,30 +591,49 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	}
 #endif
 	RList *reflines = split_mode? anal->reflines2: anal->reflines;
+	RVecAnalReflinePtr tmp_lvls;
+	RVecAnalReflinePtr *lvls = NULL;
+	bool free_lvls = false;
+	ReflineCache *cache = refline_cache_from_list (reflines);
 
-	RList *lvls = r_list_new ();
-	if (!lvls) {
-		return NULL;
-	}
-	r_list_foreach (reflines, iter, ref) {
-		if (ctx->breaked) {
-			r_list_free (lvls);
+	if (cache) {
+		lvls = refline_cache_refs_at (cache, addr);
+		if (!lvls) {
 			return NULL;
 		}
-		if (in_refline (addr, ref) && refline_kept (ref, middle_after, addr)) {
-			r_list_add_sorted (lvls, (void *)ref, (RListComparator)cmp_by_ref_lvl);
+	} else {
+		RVecAnalReflinePtr_init (&tmp_lvls);
+		free_lvls = true;
+		r_list_foreach (reflines, iter, ref) {
+			if (ctx->breaked) {
+				RVecAnalReflinePtr_fini (&tmp_lvls);
+				return NULL;
+			}
+			if (in_refline (addr, ref)) {
+				if (!refline_vec_insert_sorted (&tmp_lvls, ref)) {
+					RVecAnalReflinePtr_fini (&tmp_lvls);
+					return NULL;
+				}
+			}
 		}
+		lvls = &tmp_lvls;
 	}
 	RBuffer *b = r_buf_new ();
 	RBuffer *c = r_buf_new ();
 	r_buf_append_string (c, " ");
 	r_buf_append_string (b, " ");
-	r_list_foreach (lvls, iter, ref) {
+	R_VEC_FOREACH (lvls, refp) {
+		ref = *refp;
 		if (ctx->breaked) {
-			r_list_free (lvls);
+			if (free_lvls) {
+				RVecAnalReflinePtr_fini (&tmp_lvls);
+			}
 			r_unref (b);
 			r_unref (c);
 			return NULL;
+		}
+		if (!refline_kept (ref, middle_after, addr)) {
+			continue;
 		}
 		if ((ref->from == addr || ref->to == addr) && !middle_after) {
 			const char *corner = get_corner_char (ref, addr, middle_before);
@@ -458,7 +691,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	b = NULL;
 	c = NULL;
 	if (!str || !col_str) {
-		r_list_free (lvls);
+		if (free_lvls) {
+			RVecAnalReflinePtr_fini (&tmp_lvls);
+		}
 		// r_unref_tostring already free b and if that is the case
 		// b will be NULL and r_unref will return but if there was
 		// an error we free b here so in other words is safe
@@ -491,7 +726,9 @@ R_API RAnalRefStr *r_anal_reflines_str(void *_core, ut64 addr, int opts) {
 	str = r_str_append (str, arrowbydir (dir));
 	col_str = r_str_append (col_str, arr_col);
 
-	r_list_free (lvls);
+	if (free_lvls) {
+		RVecAnalReflinePtr_fini (&tmp_lvls);
+	}
 	RAnalRefStr *out = R_NEW0 (RAnalRefStr);
 	out->str = str;
 	out->cols = col_str;
