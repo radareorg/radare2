@@ -36,8 +36,6 @@ static int copyuntilch(char *dst, char *src, int ch) {
 	return i;
 }
 
-
-
 R_IPI void visual_add_comment(RCore *core, ut64 at) {
 	r_cons_enable_mouse (core->cons, false);
 	r_cons_gotoxy (core->cons, 0, 0);
@@ -4086,10 +4084,6 @@ static void define_data_ntimes(RCore *core, ut64 off, int times, int type, int t
 	}
 }
 
-static bool isDisasmPrint(int mode) {
-	return (mode == 1 || mode == 2);
-}
-
 static void handleHints(RCore *core) {
 	// TODO extend for more anal hints
 	const char *lines[] = { "[dh]- Define anal hint:"
@@ -4113,7 +4107,6 @@ static void handleHints(RCore *core) {
 }
 
 R_API void r_core_visual_define(RCore *core, const char *args, int distance) {
-	RCoreVisual *v = &core->visual;
 	int plen = core->blocksize;
 	ut64 off = core->addr;
 	int i, h = 0, n, ch, ntotal = 0;
@@ -4319,7 +4312,7 @@ onemoretime:
 		RAnalOp op;
 		char *q = NULL;
 		ut64 tgt_addr = UT64_MAX;
-		if (!isDisasmPrint (v->printidx)) {
+		if (!isVisualDisasm (core)) {
 			break;
 		}
 		// TODO: get the aligned instruction even if the cursor is in the middle of it.

@@ -2030,16 +2030,13 @@ beach:
 	r_cons_enable_mouse (core->cons, mouse_state && r_config_get_i (core->config, "scr.wheel"));
 }
 
-static bool isDisasmPrint(int mode) {
-	return (mode == R_CORE_VISUAL_MODE_PD || mode == R_CORE_VISUAL_MODE_DB);
-}
-
-static bool visual_is_disasm(RCore *core) {
-	if (isDisasmPrint (core->visual.printidx)) {
+R_IPI bool isVisualDisasm(RCore *core) {
+	const int pidx = core->visual.printidx;
+	if (pidx == R_CORE_VISUAL_MODE_PD || pidx == R_CORE_VISUAL_MODE_DB) {
 		return true;
 	}
 	const char *vcmd = r_config_get (core->config, "cmd.visual");
-	return R_STR_ISNOTEMPTY (vcmd) && strstr (vcmd, "pd");
+	return R_STR_ISNOTEMPTY (vcmd) && (r_str_startswith (vcmd, "pd") || strstr (vcmd, ";pd"));
 }
 
 static void cursor_ocur(RCore *core, bool use_ocur) {
@@ -2347,7 +2344,7 @@ static bool fix_cursor(RCore *core) {
 
 	if (p->cur < 0) {
 		int sz = p->cols;
-		if (isDisasmPrint (core->visual.printidx)) {
+		if (isVisualDisasm (core)) {
 			sz = r_core_visual_prevopsz (core, core->addr + p->cur);
 			if (sz < 1) {
 				sz = 1;
@@ -2409,9 +2406,7 @@ static void visual_windows(RCore *core) {
 			core->visual.currentFormat = b;
 			break;
 		case R_CORE_VISUAL_MODE_CD:
-			// core->visual.hexMode = b;
 			core->visual.current5format = b;
-		//	core->visual.currentFormat = b;
 			core->visual.currentFormat = R_ABS (core->visual.current5format) % PRINT_5_FORMATS;
 			printfmtSingle[4] = print5Formats[core->visual.currentFormat];
 			break;
@@ -2851,8 +2846,8 @@ static void handle_space_key(RCore *core, bool force) {
 		case R_CORE_VISUAL_MODE_DB:
 			force = true;
 			break;
-		case R_CORE_VISUAL_MODE_OV: // hex
-		case R_CORE_VISUAL_MODE_CD: // hex
+		case R_CORE_VISUAL_MODE_OV:
+		case R_CORE_VISUAL_MODE_CD:
 			break;
 		}
 	}
@@ -2924,7 +2919,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 	// unless the cursor is set, then, the 0 is captured here
 	if (isNumber (core, ch)) {
 		// only in disasm and debug prints..
-		if (isDisasmPrint (v->printidx)) {
+		if (isVisualDisasm (core)) {
 			if (r_config_get_i (core->config, "asm.hints") && (r_config_get_i (core->config, "asm.hint.jmp")
 			|| r_config_get_i (core->config, "asm.hint.lea") || r_config_get_i (core->config, "asm.hint.emu")
 			|| r_config_get_i (core->config, "asm.hint.imm")
@@ -3565,7 +3560,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						}
 						while (times--) {
 							RAnalOp op;
-							if (visual_is_disasm (core)) {
+							if (isVisualDisasm (core)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 								r_anal_op_fini (&op);
 							} else if (!strcmp (vprintcmd (core), "prc")) {
@@ -3604,7 +3599,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (core->print->screen_bounds > 1 && core->print->screen_bounds >= core->addr) {
 					RAnalOp op;
 					ut64 addr = UT64_MAX;
-					if (isDisasmPrint (v->printidx)) {
+					if (isVisualDisasm (core)) {
 						if (core->print->screen_bounds == core->addr) {
 							r_asm_disassemble (core->rasm, &op, core->block, 32);
 							r_anal_op_fini (&op);
@@ -3658,7 +3653,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						times = distance;
 					}
 					while (times--) {
-						if (visual_is_disasm (core)) {
+						if (isVisualDisasm (core)) {
 							r_core_visual_disasm_up (core, &cols);
 						} else if (!strcmp (vprintcmd (core), "prc")) {
 							cols = r_config_get_i (core->config, "hex.cols");
@@ -4532,7 +4527,7 @@ R_IPI void visual_refresh(RCore *core) {
 	R_RETURN_IF_FAIL (core);
 	RCons *cons = core->cons;
 	char *cmd_str = NULL;
-	if (visual_is_disasm (core)) {
+	if (isVisualDisasm (core)) {
 		ut64 addr = visual_align_code (core, core->addr);
 		if (addr != core->addr) {
 			r_core_seek (core, addr, true);

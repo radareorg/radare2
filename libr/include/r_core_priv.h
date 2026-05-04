@@ -30,6 +30,8 @@ typedef struct r_core_priv_t {
 	char *section;
 } RCorePriv;
 
+R_IPI bool isVisualDisasm(RCore *core);
+
 #ifdef __cplusplus
 }
 #endif
