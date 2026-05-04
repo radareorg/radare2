@@ -2,19 +2,23 @@
 #define R_GRAPH_H
 
 #include <r_list.h>
+#include <r_vec.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef struct r_graph_node_t {
+typedef struct r_graph_node_t RGraphNode;
+R_VEC_TYPE(RVecGraphNodePtr, RGraphNode *);
+
+struct r_graph_node_t {
 	ut32 idx;
 	void *data;
-	RList *out_nodes;
-	RList *in_nodes;
-	RList *all_neighbours;
+	RVecGraphNodePtr out_nodes;
+	RVecGraphNodePtr in_nodes;
+	RVecGraphNodePtr all_neighbours;
 	RListFree free;
-} RGraphNode;
+};
 
 typedef struct r_graph_edge_t {
 	RGraphNode *from;
@@ -61,10 +65,10 @@ R_API void r_graph_add_edge(RGraph *g, RGraphNode *from, RGraphNode *to);
 R_API void r_graph_add_edge_at(RGraph *g, RGraphNode *from, RGraphNode *to, int nth);
 R_API RGraphNode *r_graph_node_split_forward(RGraph *g, RGraphNode *split_me, void *data);
 R_API void r_graph_del_edge(RGraph *g, RGraphNode *from, RGraphNode *to);
-R_API const RList *r_graph_get_neighbours(const RGraph *g, const RGraphNode *n);
+R_API const RVecGraphNodePtr *r_graph_get_neighbours(const RGraph *g, const RGraphNode *n);
 R_API RGraphNode *r_graph_nth_neighbour(const RGraph *g, const RGraphNode *n, int nth);
-R_API const RList *r_graph_innodes(const RGraph *g, const RGraphNode *n);
-R_API const RList *r_graph_all_neighbours(const RGraph *g, const RGraphNode *n);
+R_API const RVecGraphNodePtr *r_graph_innodes(const RGraph *g, const RGraphNode *n);
+R_API const RVecGraphNodePtr *r_graph_all_neighbours(const RGraph *g, const RGraphNode *n);
 R_API const RList *r_graph_get_nodes(const RGraph *g);
 R_API bool r_graph_adjacent(const RGraph *g, const RGraphNode *from, const RGraphNode *to);
 R_API void r_graph_dfs_node(RGraph *g, RGraphNode *n, RGraphVisitor *vis);

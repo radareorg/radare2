@@ -21,6 +21,22 @@ static void topo_sorting(RGraphNode *n, RGraphVisitor *vis) {
 	mu_assert_false (ita || ite || diff, "(one list shorter or different)"); \
 } while (0)
 
+static bool check_vec(const RVecGraphNodePtr *act, const RVecGraphNodePtr *exp, const char *descr) {
+	size_t alen = RVecGraphNodePtr_length (act);
+	size_t elen = RVecGraphNodePtr_length (exp);
+	bool diff = alen != elen;
+	size_t i;
+	for (i = 0; i < R_MIN (alen, elen); i++) {
+		RGraphNode *a = *RVecGraphNodePtr_at (act, i);
+		RGraphNode *e = *RVecGraphNodePtr_at (exp, i);
+		if (a != e) {
+			eprintf ("[-][%s] test failed (actual: %p; expected: %p)\n", descr, (void *)a, (void *)e);
+			diff = true;
+		}
+	}
+	return !diff;
+}
+
 static bool test_legacy_graph(void) {
 	RGraph *g = r_graph_new ();
 
@@ -36,15 +52,16 @@ static bool test_legacy_graph(void) {
 	mu_assert_ptreq (r_graph_get_node (g, gn2->idx), gn2, "get_node.2");
 	r_graph_add_edge (g, gn, gn2);
 	mu_assert_true (r_graph_adjacent (g, gn, gn2), "is_adjacent.1");
-	RList *exp_gn_neigh = r_list_new ();
-	r_list_append (exp_gn_neigh, gn2);
-	check_list (r_graph_get_neighbours (g, gn), exp_gn_neigh, "get_neighbours.1");
+	RVecGraphNodePtr exp_gn_neigh;
+	RVecGraphNodePtr_init (&exp_gn_neigh);
+	RVecGraphNodePtr_push_back (&exp_gn_neigh, &gn2);
+	mu_assert_true (check_vec (r_graph_get_neighbours (g, gn), &exp_gn_neigh, "get_neighbours.1"), "(one vector shorter or different)");
 
 	RGraphNode *gn3 = r_graph_add_node (g, (void *)3);
 	r_graph_add_edge (g, gn, gn3);
-	r_list_append (exp_gn_neigh, gn3);
-	check_list (r_graph_get_neighbours (g, gn), exp_gn_neigh, "get_neighbours.2");
-	r_list_free (exp_gn_neigh);
+	RVecGraphNodePtr_push_back (&exp_gn_neigh, &gn3);
+	mu_assert_true (check_vec (r_graph_get_neighbours (g, gn), &exp_gn_neigh, "get_neighbours.2"), "(one vector shorter or different)");
+	RVecGraphNodePtr_fini (&exp_gn_neigh);
 
 	RGraphNode *gn4 = r_graph_add_node (g, (void *)4);
 	RGraphNode *gn5 = r_graph_add_node (g, (void *)5);
@@ -116,17 +133,19 @@ static bool test_legacy_graph(void) {
 	r_list_free (exp_order);
 	r_list_free ((RList *)vis.data);
 
-	RList *exp_innodes = r_list_new ();
-	r_list_append (exp_innodes, gn);
-	r_list_append (exp_innodes, gn2);
-	check_list (r_graph_innodes (g, gn3), exp_innodes, "in_nodes");
-	r_list_free (exp_innodes);
-	RList *exp_allnodes = r_list_new ();
-	r_list_append (exp_allnodes, gn);
-	r_list_append (exp_allnodes, gn2);
-	r_list_append (exp_allnodes, gn5);
-	check_list (r_graph_all_neighbours (g, gn3), exp_allnodes, "in/out_nodes");
-	r_list_free (exp_allnodes);
+	RVecGraphNodePtr exp_innodes;
+	RVecGraphNodePtr_init (&exp_innodes);
+	RVecGraphNodePtr_push_back (&exp_innodes, &gn);
+	RVecGraphNodePtr_push_back (&exp_innodes, &gn2);
+	mu_assert_true (check_vec (r_graph_innodes (g, gn3), &exp_innodes, "in_nodes"), "(one vector shorter or different)");
+	RVecGraphNodePtr_fini (&exp_innodes);
+	RVecGraphNodePtr exp_allnodes;
+	RVecGraphNodePtr_init (&exp_allnodes);
+	RVecGraphNodePtr_push_back (&exp_allnodes, &gn);
+	RVecGraphNodePtr_push_back (&exp_allnodes, &gn2);
+	RVecGraphNodePtr_push_back (&exp_allnodes, &gn5);
+	mu_assert_true (check_vec (r_graph_all_neighbours (g, gn3), &exp_allnodes, "in/out_nodes"), "(one vector shorter or different)");
+	RVecGraphNodePtr_fini (&exp_allnodes);
 
 	r_graph_del_node (g, gn);
 	r_graph_del_node (g, gn2);

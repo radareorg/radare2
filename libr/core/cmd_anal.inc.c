@@ -12749,10 +12749,9 @@ static void mermaid_graph(RCore *core, RGraph *graph, node_content_cb get_body) 
 		free (free_body);
 
 		// edgdes
-		RGraphNode *nxt;
-		RListIter *itt;
-		r_list_foreach (node->out_nodes, itt, nxt) {
-			r_strbuf_appendf (edges, "  node_%u --> node_%u\n", node->idx, nxt->idx);
+		RGraphNode **itt;
+		R_VEC_FOREACH (&node->out_nodes, itt) {
+			r_strbuf_appendf (edges, "  node_%u --> node_%u\n", node->idx, (*itt)->idx);
 		}
 	}
 	char *n = r_strbuf_drain (nodes);
@@ -13044,7 +13043,7 @@ R_API void r_core_agraph_print(RCore *core, int use_utf, const char *input) {
 static void print_graph_agg(RCore *core, RGraph /*RGraphNodeInfo*/ *graph) {
 	RGraphNodeInfo *print_node;
 	RGraphNode *node, *target;
-	RListIter *it, *edge_it;
+	RListIter *it;
 	RCons *cons = core->cons;
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
@@ -13063,7 +13062,9 @@ static void print_graph_agg(RCore *core, RGraph /*RGraphNodeInfo*/ *graph) {
 	}
 	r_list_foreach (graph->nodes, it, node) {
 		print_node = node->data;
-		r_list_foreach (node->out_nodes, edge_it, target) {
+		RGraphNode **edge_it;
+		R_VEC_FOREACH (&node->out_nodes, edge_it) {
+			target = *edge_it;
 			RGraphNodeInfo *to = target->data;
 			r_cons_printf (cons, "'age \"%s\" \"%s\"\n", print_node->title, to->title);
 		}
@@ -13091,7 +13092,6 @@ static char *_graph_node_info_get_body(void *data, void *user) {
 static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, int use_utf, bool use_offset, const char *input) {
 	RAGraph *agraph = NULL;
 	RListIter *it;
-	RListIter *edge_it;
 	RGraphNode *graphNode, *target;
 	RGraphNodeInfo *print_node;
 	if (use_utf != -1) {
@@ -13199,7 +13199,9 @@ static void r_core_graph_print(RCore *core, RGraph /*<RGraphNodeInfo>*/ *graph, 
 		}
 		r_list_foreach (graph->nodes, it, graphNode) {
 			print_node = graphNode->data;
-			r_list_foreach (graphNode->out_nodes, edge_it, target) {
+			RGraphNode **edge_it;
+			R_VEC_FOREACH (&graphNode->out_nodes, edge_it) {
+				target = *edge_it;
 				r_cons_printf (core->cons, "  edge [\n"
 					       "    source  %d\n"
 					       "    target  %d\n"

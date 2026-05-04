@@ -32,7 +32,7 @@ R_API RGraphNode *r_graph_add_node_info(RGraph *graph, const char *title, const 
 
 R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char *node_properties, const char *edge_properties) {
 	RList *nodes = graph->nodes;
-	RListIter *it, *itt;
+	RListIter *it;
 	RGraphNode *node = NULL, *target = NULL;
 	RStrBuf buf;
 	r_strbuf_init (&buf);
@@ -54,7 +54,9 @@ R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char
 			r_strbuf_appendf (&buf, "%d [URL=\"%s\", color=\"lightgray\", label=\"%s\\n%s\"]\n",
 				node->idx, print_node->title, print_node->title, body);
 		}
-		r_list_foreach (node->out_nodes, itt, target) {
+		RGraphNode **itt;
+		R_VEC_FOREACH (&node->out_nodes, itt) {
+			target = *itt;
 			r_strbuf_appendf (&buf, "%d -> %d\n", node->idx, target->idx);
 		}
 	}
@@ -63,9 +65,9 @@ R_API char *r_graph_drawable_to_dot(RGraph /*RGraphNodeInfo*/ *graph, const char
 }
 
 R_API void r_graph_drawable_to_json(RGraph /*RGraphNodeInfo*/ *graph, PJ *pj, bool use_offset) {
-	RList *nodes = graph->nodes, *neighbours = NULL;
-	RListIter *it, *itt;
-	RGraphNode *node = NULL, *neighbour = NULL;
+	RList *nodes = graph->nodes;
+	RListIter *it;
+	RGraphNode *node = NULL;
 	if (!pj) {
 		return;
 	}
@@ -88,9 +90,9 @@ R_API void r_graph_drawable_to_json(RGraph /*RGraphNodeInfo*/ *graph, PJ *pj, bo
 		}
 		pj_k (pj, "out_nodes");
 		pj_a (pj);
-		neighbours = node->out_nodes;
-		r_list_foreach (neighbours, itt, neighbour) {
-			pj_i (pj, neighbour->idx);
+		RGraphNode **itt;
+		R_VEC_FOREACH (&node->out_nodes, itt) {
+			pj_i (pj, (*itt)->idx);
 		}
 		pj_end (pj);
 		pj_end (pj);

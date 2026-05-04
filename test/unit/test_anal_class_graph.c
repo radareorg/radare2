@@ -25,12 +25,13 @@ bool test_inherit_graph_creation(void) {
 		switch (i++) {
 		case 0:
 			mu_assert_streq (info->title, "A", "Wrong node name");
-			mu_assert_eq (node->out_nodes->length, 2, "Wrong node out-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->out_nodes), 2, "Wrong node out-nodes");
 			{
-				RListIter *iter;
+				RGraphNode **iter;
 				RGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				R_VEC_FOREACH (&node->out_nodes, iter) {
+					out_node = *iter;
 					RGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -45,13 +46,14 @@ bool test_inherit_graph_creation(void) {
 			break;
 		case 1:
 			mu_assert_streq (info->title, "B", "Wrong node name");
-			mu_assert_eq (node->out_nodes->length, 1, "Wrong node out-nodes");
-			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->out_nodes), 1, "Wrong node out-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->in_nodes), 1, "Wrong node in-nodes");
 			{
-				RListIter *iter;
+				RGraphNode **iter;
 				RGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				R_VEC_FOREACH (&node->out_nodes, iter) {
+					out_node = *iter;
 					RGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -63,13 +65,14 @@ bool test_inherit_graph_creation(void) {
 			break;
 		case 2:
 			mu_assert_streq (info->title, "C", "Wrong node name");
-			mu_assert_eq (node->out_nodes->length, 1, "Wrong node out-nodes");
-			mu_assert_eq (node->in_nodes->length, 1, "Wrong node in-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->out_nodes), 1, "Wrong node out-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->in_nodes), 1, "Wrong node in-nodes");
 			{
-				RListIter *iter;
+				RGraphNode **iter;
 				RGraphNode *out_node;
 				int i = 0;
-				ls_foreach (node->out_nodes, iter, out_node) {
+				R_VEC_FOREACH (&node->out_nodes, iter) {
+					out_node = *iter;
 					RGraphNodeInfo *info = out_node->data;
 					switch (i++) {
 					case 0:
@@ -81,7 +84,7 @@ bool test_inherit_graph_creation(void) {
 			break;
 		case 3:
 			mu_assert_streq (info->title, "D", "Wrong node name");
-			mu_assert_eq (node->in_nodes->length, 2, "Wrong node in-nodes");
+			mu_assert_eq (RVecGraphNodePtr_length (&node->in_nodes), 2, "Wrong node in-nodes");
 			break;
 		default:
 			break;

@@ -90,30 +90,20 @@ static bool r_cmd_agD_call(RCorePluginSession *cps, const char *input) {
 			r_cons_printf (core->cons, "digraph code {\n");
 			RListIter *it;
 			RGraphNode *node;
-			int idx = 0;
-			HtPPOptions pointer_options = {0};
-			HtPP *map = ht_pp_new_opt (&pointer_options);
 			r_list_foreach (fcn_dtgraph->nodes, it, node) {
 				char *title = _get_title (node->data, NULL);
 				char *body = _get_body (node->data, core);
 				r_cons_printf (core->cons, "  \"n%d\" [label=\"%s\\n%s\"];\n",
-						idx, title? title: "", body? body: "");
+						node->idx, title? title: "", body? body: "");
 				if (title) { free (title); }
 				if (body) { free (body); }
-				ht_pp_insert (map, node, (void *)(size_t)idx);
-				idx++;
 			}
 			r_list_foreach (fcn_dtgraph->nodes, it, node) {
-				RListIter *it2;
-				RGraphNode *n2;
-				r_list_foreach (node->out_nodes, it2, n2) {
-					bool found;
-					int i1 = (int)(size_t) ht_pp_find (map, node, &found);
-					int i2 = (int)(size_t) ht_pp_find (map, n2, &found);
-					r_cons_printf (core->cons, "  \"n%d\" -> \"n%d\";\n", i1, i2);
+				RGraphNode **it2;
+				R_VEC_FOREACH (&node->out_nodes, it2) {
+					r_cons_printf (core->cons, "  \"n%d\" -> \"n%d\";\n", node->idx, (*it2)->idx);
 				}
 			}
-			ht_pp_free (map);
 			r_cons_printf (core->cons, "}\n");
 			break;
 		}

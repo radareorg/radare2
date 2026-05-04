@@ -1243,16 +1243,16 @@ static void dot_trace_traverse(RCore *core, RTree *t, int fmt) {
 	}
 	r_list_foreach (nodes, iter, n) {
 		struct trace_node *tn = (struct trace_node *)n->data;
-		const RList *neighbours = r_graph_get_neighbours (aux_data.graph, n);
-		RListIter *it_n;
-		RGraphNode *w;
+		const RVecGraphNodePtr *neighbours = r_graph_get_neighbours (aux_data.graph, n);
+		RGraphNode **it_n;
 
 		if (!fmt && tn) {
 			r_cons_printf (core->cons, "\"0x%08"PFMT64x"\" [URL=\"0x%08"PFMT64x
 					"\" color=\"lightgray\" label=\"0x%08"PFMT64x
 					" (%d)\"]\n", tn->addr, tn->addr, tn->addr, tn->refs);
 		}
-		r_list_foreach (neighbours, it_n, w) {
+		R_VEC_FOREACH (neighbours, it_n) {
+			RGraphNode *w = *it_n;
 			struct trace_node *tv = (struct trace_node *)w->data;
 
 			if (tv && tn) {

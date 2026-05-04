@@ -278,10 +278,9 @@ static RGraphNode *_common_break_goto(EsilCfgGen *gen, ut32 id) {
 		r_crbtree_insert (gen->blocks, next_gnode, _graphnode_esilbb_insert_cmp,
 			NULL);
 	} else {
-		RListIter *iter, *ator;
-		RGraphNode *node;
 		// TODO: improve perf here
-		r_list_foreach_safe (gnode->out_nodes, iter, ator, node) {
+		while (!RVecGraphNodePtr_empty (&gnode->out_nodes)) {
+			RGraphNode *node = *RVecGraphNodePtr_last (&gnode->out_nodes);
 			r_graph_del_edge (gen->cfg->g, gnode, node);
 		}
 	}
@@ -630,9 +629,9 @@ static void merge_2_blocks(RAnalEsilCFG *cfg, RGraphNode *node,
 		// do not merge the post-dominator
 		return;
 	}
-	RListIter *iter;
-	RGraphNode *n;
-	r_list_foreach (block->in_nodes, iter, n) {
+	RGraphNode **iter;
+	R_VEC_FOREACH (&block->in_nodes, iter) {
+		RGraphNode *n = *iter;
 		r_graph_add_edge (cfg->g, n, node);
 	}
 	RAnalEsilBB *block_bb, *node_bb = (RAnalEsilBB *)node->data;
@@ -662,14 +661,15 @@ R_API void r_anal_esil_cfg_merge_blocks(RAnalEsilCFG *cfg) {
 	RListIter *iter, *ator;
 	RGraphNode *node;
 	r_list_foreach_safe (cfg->g->nodes, iter, ator, node) {
-		if (r_list_length (node->in_nodes) == 1) {
+		if (RVecGraphNodePtr_length (&node->in_nodes) == 1) {
 			RAnalEsilBB *bb = (RAnalEsilBB *)node->data;
-			RGraphNode *top = (RGraphNode *)r_list_last (node->out_nodes);
+			RGraphNode **top_ptr = RVecGraphNodePtr_last (&node->out_nodes);
+			RGraphNode *top = top_ptr? *top_ptr: NULL;
 			// segfaults here?
 			if (! (top && bb->enter == R_ANAL_ESIL_BLOCK_ENTER_GLUE &&
-				(r_list_length (top->in_nodes) > 1))) {
-				RGraphNode *block = (RGraphNode *)r_list_last (node->in_nodes);
-				if (r_list_length (block->out_nodes) == 1) {
+				(RVecGraphNodePtr_length (&top->in_nodes) > 1))) {
+				RGraphNode *block = *RVecGraphNodePtr_last (&node->in_nodes);
+				if (RVecGraphNodePtr_length (&block->out_nodes) == 1) {
 					merge_2_blocks (cfg, node, block);
 				}
 			}
