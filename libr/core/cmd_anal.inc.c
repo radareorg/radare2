@@ -4037,7 +4037,7 @@ static void cmd_afbt(RCore *core, const char *input) {
 		return;
 	}
 	if (first == '\0' && (!args || !*args)) {
-		afbt_show_swop (core, block, first == '\0' ? ' ' : first);
+		afbt_show_swop (core, block, ' ');
 		r_list_free (blocks);
 		return;
 	}
