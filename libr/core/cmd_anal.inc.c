@@ -3945,6 +3945,19 @@ static void afbt_show_swop(RCore *core, RAnalBlock *block, int mode) {
 			}
 			pj_end (pj);
 		}
+		pj_ka (pj, "cases");
+		if (sop->cases) {
+			RListIter *cit;
+			RAnalCaseOp *cop;
+			r_list_foreach (sop->cases, cit, cop) {
+				pj_o (pj);
+				pj_kn (pj, "addr", cop->addr);
+				pj_kn (pj, "value", cop->value);
+				pj_kn (pj, "jump", cop->jump);
+				pj_end (pj);
+			}
+		}
+		pj_end (pj);
 		pj_end (pj);
 		r_cons_println (core->cons, pj_string (pj));
 		pj_free (pj);
