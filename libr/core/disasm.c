@@ -4221,9 +4221,25 @@ static int bb_cmp(const void *a, const void *b) {
 	return ba->addr - bb->addr;
 }
 
-static int cmp_ut64(const ut64 *a, const void *_b) {
-	ut64 *b = (ut64*)_b;
-	return *a-*b;
+static int cmp_ut64(const ut64 *a, const ut64 *b) {
+	return (*a > *b)? 1: (*a < *b)? -1: 0;
+}
+
+static int cmp_ut64_find(const ut64 *a, const void *_b) {
+	const ut64 *b = (const ut64 *)_b;
+	return cmp_ut64 (a, b);
+}
+
+static bool vec_ut64_insert_sorted(RVecUT64 *vec, ut64 addr) {
+	size_t index = RVecUT64_lower_bound (vec, &addr, cmp_ut64);
+	ut64 *slot = RVecUT64_emplace_back (vec);
+	if (!slot) {
+		return false;
+	}
+	ut64 *dst = R_VEC_START_ITER (vec) + index;
+	memmove (dst + 1, dst, (slot - dst) * sizeof (ut64));
+	*dst = addr;
+	return true;
 }
 
 static int inbounds(RList *bbs, ut64 addr) {
@@ -4236,12 +4252,12 @@ static int inbounds(RList *bbs, ut64 addr) {
 		if (bb->jump == UT64_MAX) {
 			continue;
 		}
-		ut64 *found = RVecUT64_find (&vec, &bb->jump, cmp_ut64);
+		ut64 *found = RVecUT64_find_sorted (&vec, &bb->jump, cmp_ut64_find);
 		if (found) {
 			// ignore duplicated destinations
 			continue;
 		}
-		RVecUT64_push_back (&vec, &bb->jump);
+		vec_ut64_insert_sorted (&vec, bb->jump);
 		if (bb->jump < bb->addr) {
 			if (addr >= bb->jump && addr < bb->addr) {
 				count++;

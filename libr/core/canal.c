@@ -85,9 +85,25 @@ static int cmpaddr(const void *_a, const void *_b) {
 	return (a->addr > b->addr)? 1: (a->addr < b->addr)? -1: 0;
 }
 
-static int cmp_ut64(const ut64 *a, const void *_b) {
-	const ut64 *b = (const ut64 *)_b;
+static int cmp_ut64(const ut64 *a, const ut64 *b) {
 	return (*a > *b)? 1: (*a < *b)? -1: 0;
+}
+
+static int cmp_ut64_find(const ut64 *a, const void *_b) {
+	const ut64 *b = (const ut64 *)_b;
+	return cmp_ut64 (a, b);
+}
+
+static bool vec_ut64_insert_sorted(RVecUT64 *vec, ut64 addr) {
+	size_t index = RVecUT64_lower_bound (vec, &addr, cmp_ut64);
+	ut64 *slot = RVecUT64_emplace_back (vec);
+	if (!slot) {
+		return false;
+	}
+	ut64 *dst = R_VEC_START_ITER (vec) + index;
+	memmove (dst + 1, dst, (slot - dst) * sizeof (ut64));
+	*dst = addr;
+	return true;
 }
 
 static void init_addr2klass(RCore *core, RBinObject *bo) {
@@ -730,7 +746,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				RIOMap *map = r_io_map_get_at (core->io, addr);
 				// only get next if found on an executable section
 				if (!map || (map && map->perm & R_PERM_X)) {
-					if (!RVecUT64_find (&next, &addr, cmp_ut64)) {
+					if (!RVecUT64_find_sorted (&next, &addr, cmp_ut64_find)) {
 						ut64 at = r_anal_function_max_addr (fcn);
 						while (true) {
 							ut64 size;
@@ -745,7 +761,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 						if (verbose) {
 							loganal (fcn->addr, at, 10000 - depth);
 						}
-						RVecUT64_push_back (&next, &at);
+						vec_ut64_insert_sorted (&next, at);
 					}
 				}
 			}
@@ -804,7 +820,7 @@ error:
 			ut64 newaddr = r_anal_function_max_addr (fcn);
 			RIOMap *map = r_io_map_get_at (core->io, newaddr);
 			if (!map || (map && (map->perm & R_PERM_X))) {
-				RVecUT64_push_back (&next, &newaddr);
+				vec_ut64_insert_sorted (&next, newaddr);
 				ut64 *iter;
 				R_VEC_FOREACH (&next, iter) {
 					ut64 addr = *iter;
