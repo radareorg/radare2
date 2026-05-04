@@ -51,12 +51,20 @@ extern "C" {
  * - type *R_VEC_FUNC(vec_type, find)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the first value in the vector that is equal (compare returns 0) to the value passed in.
  *   Otherwise returns NULL.
+ * - type *R_VEC_FUNC(vec_type, find_sorted)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
+ *   Searches for the first value in a sorted vector that is equal (compare returns 0) to the value passed in.
+ *   The compare function must return < 0 while the vector element is smaller than the value.
+ *   Otherwise returns NULL.
  * - type *R_VEC_FUNC(vec_type, find_if_not)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the first value in the vector that is NOT equal (compare returns != 0) to the value
  *   passed in. Otherwise returns NULL.
  * - size_t R_VEC_FUNC(vec_type, find_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
  *   Searches for the index of the first value in the vector that is equal (compare returns 0) to the
  *   value passed in. Otherwise returns SZT_MAX.
+ * - size_t R_VEC_FUNC(vec_type, find_sorted_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn):
+ *   Searches for the index of the first value in a sorted vector that is equal (compare returns 0) to the
+ *   value passed in. The compare function must return < 0 while the vector element is smaller than the value.
+ *   Otherwise returns SZT_MAX.
  * - vec_type *R_VEC_FUNC(vec_type, clone)(const vec_type *vec): Creates a shallow clone of a vector.
  * - bool R_VEC_FUNC(vec_type, reserve)(vec_type *vec, size_t new_capacity): Ensures the vector has
  *   atleast a capacity of "new_capacity". Returns true on success, otherwise false.
@@ -278,6 +286,33 @@ static inline size_t r_vec_grow(size_t capacity) {
 			} \
 		} \
 		return NULL; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE size_t R_VEC_FUNC(vec_type, find_sorted_index)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
+		R_RETURN_VAL_IF_FAIL (vec && cmp_fn, SZT_MAX); \
+		const size_t len = R_VEC_FUNC(vec_type, length) (vec); \
+		if (len == 0) { \
+			return SZT_MAX; \
+		} \
+		size_t step = 1; \
+		while (step <= (len >> 1)) { \
+			step <<= 1; \
+		} \
+		size_t base = 0; \
+		while (step > 0) { \
+			if (step <= len - base && cmp_fn (vec->_start + base + step - 1, value) < 0) { \
+				size_t next = base + step; \
+				base = next; \
+			} \
+			step >>= 1; \
+		} \
+		if (base < len && !cmp_fn (vec->_start + base, value)) { \
+			return base; \
+		} \
+		return SZT_MAX; \
+	} \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, find_sorted)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
+		size_t index = R_VEC_FUNC(vec_type, find_sorted_index) (vec, value, cmp_fn); \
+		return index != SZT_MAX ? vec->_start + index : NULL; \
 	} \
 	static inline R_MAYBE_UNUSED R_MUSTUSE type *R_VEC_FUNC(vec_type, find_if_not)(const vec_type *vec, void *value, R_VEC_FIND_CMP(vec_type) cmp_fn) { \
 		R_RETURN_VAL_IF_FAIL (vec && value, NULL); \

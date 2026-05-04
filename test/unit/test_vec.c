@@ -25,6 +25,13 @@ static inline int find_compare_st32(const st32 *a, const void *b) {
 	return compare_st32 (a, (st32*) b);
 }
 
+static size_t find_compare_st32_count;
+
+static inline int find_compare_st32_counted(const st32 *a, const void *b) {
+	find_compare_st32_count++;
+	return find_compare_st32 (a, b);
+}
+
 R_VEC_TYPE (RVecUT32, ut32);
 R_VEC_TYPE (RVecST32, st32);
 R_VEC_TYPE_WITH_FINI (RVecS, S, fini_S);
@@ -771,6 +778,53 @@ static bool test_vec_find_index(void) {
 	mu_end;
 }
 
+static bool test_vec_find_sorted(void) {
+	RVecST32 v;
+	RVecST32_init (&v);
+
+	st32 x = 0;
+	mu_assert_null (RVecST32_find_sorted (&v, &x, find_compare_st32), "find_sorted1");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), SZT_MAX, "find_sorted_index1");
+
+	st32 values[] = { -3, -1, 0, 1, 1, 1, 4, 9 };
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (values); i++) {
+		RVecST32_push_back (&v, &values[i]);
+	}
+
+	x = -4;
+	mu_assert_null (RVecST32_find_sorted (&v, &x, find_compare_st32), "find_sorted2");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), SZT_MAX, "find_sorted_index2");
+	x = -3;
+	mu_assert_ptreq (RVecST32_find_sorted (&v, &x, find_compare_st32), RVecST32_at (&v, 0), "find_sorted3");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), 0, "find_sorted_index3");
+	x = 1;
+	mu_assert_ptreq (RVecST32_find_sorted (&v, &x, find_compare_st32), RVecST32_at (&v, 3), "find_sorted4");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), 3, "find_sorted_index4");
+	x = 2;
+	mu_assert_null (RVecST32_find_sorted (&v, &x, find_compare_st32), "find_sorted5");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), SZT_MAX, "find_sorted_index5");
+	x = 9;
+	mu_assert_ptreq (RVecST32_find_sorted (&v, &x, find_compare_st32), RVecST32_at (&v, RVecST32_length (&v) - 1), "find_sorted6");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), RVecST32_length (&v) - 1, "find_sorted_index6");
+	x = 10;
+	mu_assert_null (RVecST32_find_sorted (&v, &x, find_compare_st32), "find_sorted7");
+	mu_assert_eq (RVecST32_find_sorted_index (&v, &x, find_compare_st32), SZT_MAX, "find_sorted_index7");
+
+	RVecST32_clear (&v);
+	for (i = 0; i < 1024; i++) {
+		x = (st32)i * 2;
+		RVecST32_push_back (&v, &x);
+	}
+	x = 2046;
+	find_compare_st32_count = 0;
+	mu_assert_notnull (RVecST32_find_sorted (&v, &x, find_compare_st32_counted), "find_sorted8");
+	mu_assert ("find_sorted comparison count", find_compare_st32_count < 32);
+
+	RVecST32_fini (&v);
+	mu_end;
+}
+
 static bool test_vec_reserve(void) {
 	RVecUT32 v;
 	RVecUT32_init (&v);
@@ -1218,6 +1272,7 @@ static int all_tests(void) {
 	mu_run_test (test_vec_find);
 	mu_run_test (test_vec_find_if_not);
 	mu_run_test (test_vec_find_index);
+	mu_run_test (test_vec_find_sorted);
 	mu_run_test (test_vec_reserve);
 	mu_run_test (test_vec_shrink_to_fit);
 	mu_run_test (test_vec_foreach);
