@@ -316,23 +316,17 @@ static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int ed
 	}
 }
 
-static void append_shortcut(const RAGraph *g, char *title, char *nodetitle, int left) {
-	char *k = r_str_newf ("agraph.nodes.%s.shortcut", nodetitle);
-	const char *shortcut = sdb_const_get (g->db, k, 0);
-	if (shortcut) {
-		size_t n = strlen (title);
-		if (g->can->color) {
-			// XXX: do not hardcode color here
-			free (k);
-			k = r_str_newf (Color_YELLOW "[o%s]" Color_RESET, shortcut);
-			snprintf (title + n, left, "%s", k);
-		} else {
-			free (k);
-			k = r_str_newf ("[o%s]", shortcut);
-			snprintf (title + n, left, "%s", k);
-		}
+static void append_shortcut(const RAGraph *g, char *title, const RANode *n, int left) {
+	if (!n->shortcut || left < 1) {
+		return;
 	}
-	free (k);
+	size_t len = strlen (title);
+	if (g->can->color) {
+		// XXX: do not hardcode color here
+		snprintf (title + len, left, Color_YELLOW "[o%s]" Color_RESET, n->shortcut);
+	} else {
+		snprintf (title + len, left, "[o%s]", n->shortcut);
+	}
 }
 
 static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool details) {
@@ -381,7 +375,7 @@ static void mini_RANode_print(const RAGraph *g, const RANode *n, int cur, bool d
 			} else {
 				snprintf (title, sizeof (title) - 1, "__%s__", str);
 			}
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
+			append_shortcut (g, title, n, sizeof (title) - strlen (title));
 			char *res = r_str_ansi_crop (title, delta_x, 0, 20, 1);
 			W (res);
 			free (res);
@@ -468,7 +462,7 @@ static void normal_RANode_print(const RAGraph *g, const RANode *n, int cur) {
 		} else {
 			char *color = g->can->color? Color_RESET: "";
 			snprintf (title, sizeof (title) - 1, " %s%s ", color, n->title);
-			append_shortcut (g, title, n->title, sizeof (title) - strlen (title));
+			append_shortcut (g, title, n, sizeof (title) - strlen (title));
 		}
 		if (g->bb_maxwidth > 0 && r_str_len_utf8_ansi (title) > g->bb_maxwidth) {
 			char *pos = (char *)r_str_ansi_chrn (title, g->bb_maxwidth);
@@ -1762,8 +1756,15 @@ static void ranode_free(RANode *n) {
 	if (n) {
 		free (n->title);
 		free (n->body);
+		free (n->color);
+		free (n->shortcut);
 		free (n);
 	}
+}
+
+static void ranode_set_shortcut(RANode *n, char *shortcut) {
+	free (n->shortcut);
+	n->shortcut = shortcut;
 }
 
 static void set_layer_gap(RAGraph *g) {
@@ -2393,27 +2394,21 @@ static int bbcmp(RAnalBlock *a, RAnalBlock *b) {
 static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RListIter *iter;
-	const bool emu = r_config_get_b (core->config, "asm.emu");
 	ut64 saved_gp = core->anal->gp;
 	ut8 *saved_arena = NULL;
 	int saved_arena_size = 0;
 	int saved_stackptr = core->anal->stackptr;
-	char *shortcut = 0;
-	int shortcuts = 0;
 	core->keep_asmqjmps = false;
 
+	const bool emu = r_config_get_b (core->config, "asm.emu");
 	if (emu) {
 		saved_arena = r_reg_arena_peek (core->anal->reg, &saved_arena_size);
-	}
-	if (!fcn) {
-		R_FREE (saved_arena);
-		return;
 	}
 	if (fcn->bbs) {
 		r_list_sort (fcn->bbs, (RListComparator)bbcmp);
 	}
 
-	shortcuts = r_config_get_b (core->config, "graph.nodejmps");
+	int shortcuts = r_config_get_b (core->config, "graph.nodejmps");
 	r_list_foreach (fcn->bbs, iter, bb) {
 		if (bb->addr == UT64_MAX) {
 			continue;
@@ -2422,17 +2417,11 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		char *title = get_title (bb->addr);
 
 		// r_cons_canvas_bgfill (g->can, n->x, n->y, n->w, n->h, get_node_bgcolor (color, cur));
-		if (shortcuts) {
-			shortcut = r_core_add_asmqjmp (core, bb->addr);
-			if (shortcut) {
-				char *k = r_str_newf ("agraph.nodes.%s.shortcut", title);
-				sdb_set (g->db, k, shortcut, 0);
-				free (k);
-				free (shortcut);
-			}
-		}
+		char *shortcut = shortcuts? r_core_add_asmqjmp (core, bb->addr): NULL;
 		RANode *node = r_agraph_get_node (g, title);
 		if (node) {
+			ranode_set_shortcut (node, shortcut);
+			shortcut = NULL;
 			free (node->body);
 			node->body = body;
 			R_FREE (node->color);
@@ -2442,6 +2431,7 @@ static void get_bbupdate(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 		} else {
 			free (body);
 		}
+		free (shortcut);
 		free (title);
 		core->keep_asmqjmps = true;
 	}
@@ -2527,6 +2517,7 @@ static bool isbbfew(RAnalBlock *curbb, RAnalBlock *bb) {
 	return cur_points_to_bb (curbb, bb) || cur_points_to_bb (bb, curbb);
 }
 
+// TODO: this is very slow and this is because using sdb for the agraph. keys is totally not efficient for memory and abuses format strings in a totally unnecessary way, think hard to redesign this using optimal data structures like RVec.findSorted or SetU, etc. but agn/age/agk uses sdb to build custom graphs..
 static void add_child(RCore *core, RAGraph *g, RANode *u, ut64 jump) {
 	if (jump == UT64_MAX) {
 		return;
@@ -2553,7 +2544,6 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 	}
 	RAnalBlock *bb;
 	RListIter *iter;
-	char *shortcut = NULL;
 	int shortcuts = 0;
 	int ret = false;
 	ut64 saved_gp = core->anal->gp;
@@ -2605,21 +2595,14 @@ static int get_bbnodes(RAGraph *g, RCore *core, RAnalFunction *fcn) {
 
 		RANode *node = r_agraph_add_node (g, title, body, color);
 		free (color);
-		shortcuts = g->is_interactive? r_config_get_b (core->config, "graph.nodejmps"): false;
-
-		if (shortcuts) {
-			shortcut = r_core_add_asmqjmp (core, bb->addr);
-			if (shortcut) {
-				char *k = r_str_newf ("agraph.nodes.%s.shortcut", title);
-				sdb_set (g->db, k, shortcut, 0);
-				free (k);
-				free (shortcut);
-			}
-		}
 		free (body);
 		free (title);
 		if (!node) {
 			goto cleanup;
+		}
+		shortcuts = g->is_interactive? r_config_get_b (core->config, "graph.nodejmps"): false;
+		if (shortcuts) {
+			ranode_set_shortcut (node, r_core_add_asmqjmp (core, bb->addr));
 		}
 		core->keep_asmqjmps = true;
 	}
@@ -3871,7 +3854,7 @@ static void agraph_init(RAGraph *g) {
 	g->show_node_body = true;
 	g->force_update_seek = true;
 	g->graph = r_graph_new ();
-	g->nodes = sdb_new0 ();
+	g->nodes = ht_pp_new0 ();
 	g->edgemode = 2;
 	g->zoom = ZOOM_DEFAULT;
 	g->hints = 1;
@@ -3919,7 +3902,7 @@ static void agraph_free_nodes(RAGraph *g) {
 		ranode_free (a);
 	}
 
-	sdb_free (g->nodes);
+	ht_pp_free (g->nodes);
 }
 
 static void sdb_set_enc(Sdb *db, const char *key, const char *v, ut32 cas) {
@@ -4002,7 +3985,11 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	res->color = color? strdup (color): NULL;
 	res->difftype = -1;
 	res->gnode = r_graph_add_node (g->graph, res);
-	sdb_num_set (g->nodes, res->title, (ut64) (size_t)res, 0);
+	if (!ht_pp_insert (g->nodes, res->title, res)) {
+		r_graph_del_node (g->graph, res->gnode);
+		ranode_free (res);
+		return NULL;
+	}
 	if (res->title) {
 		char *s, *estr, *b;
 		size_t len;
@@ -4034,7 +4021,7 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	if (!res) {
 		return false;
 	}
-	sdb_set (g->nodes, res->title, NULL, 0);
+	ht_pp_delete (g->nodes, res->title);
 	sdb_array_remove (g->db, "agraph.nodes", res->title, 0);
 	sdb_set (g->db, r_strf ("agraph.nodes.%s", res->title), NULL, 0);
 	sdb_set (g->db, r_strf ("agraph.nodes.%s.body", res->title), 0, 0);
@@ -4058,23 +4045,26 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	return true;
 }
 
-static int user_node_cb(struct g_cb *user, const char *k UNUSED, const char *v) {
-	RANodeCallback cb = user->node_cb;
-	void *user_data = user->data;
-	RANode *n = (RANode *) (size_t)sdb_atoi (v);
+static bool user_node_cb(void *user, const void *k UNUSED, const void *v) {
+	struct g_cb *u = user;
+	RANode *n = (RANode *)v;
+	RANodeCallback cb = u->node_cb;
+	void *user_data = u->data;
 	if (n) {
 		cb (n, user_data);
 	}
-	return 1;
+	return true;
 }
 
-static int user_edge_cb(struct g_cb *user, const char *k UNUSED, const char *v) {
-	RAEdgeCallback cb = user->edge_cb;
-	RAGraph *g = user->graph;
-	void *user_data = user->data;
-	RANode *an, *n = (RANode *) (size_t)sdb_atoi (v);
+static bool user_edge_cb(void *user, const void *k UNUSED, const void *v) {
+	struct g_cb *u = user;
+	RAEdgeCallback cb = u->edge_cb;
+	RAGraph *g = u->graph;
+	void *user_data = u->data;
+	RANode *n = (RANode *)v;
+	RANode *an;
 	if (!n) {
-		return 0;
+		return false;
 	}
 	const RVecGraphNodePtr *neigh = r_graph_get_neighbours (g->graph, n->gnode);
 	RGraphNode **it;
@@ -4083,7 +4073,7 @@ static int user_edge_cb(struct g_cb *user, const char *k UNUSED, const char *v) 
 	graph_foreach_anode_vec (neigh, it, gn, an) {
 		cb (n, an, user_data);
 	}
-	return 1;
+	return true;
 }
 
 R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user) {
@@ -4091,7 +4081,7 @@ R_API void r_agraph_foreach(RAGraph *g, RANodeCallback cb, void *user) {
 		.node_cb = cb,
 		.data = user
 	};
-	sdb_foreach (g->nodes, (SdbForeachCallback)user_node_cb, &u);
+	ht_pp_foreach (g->nodes, user_node_cb, &u);
 }
 
 R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user) {
@@ -4100,7 +4090,7 @@ R_API void r_agraph_foreach_edge(RAGraph *g, RAEdgeCallback cb, void *user) {
 		.edge_cb = cb,
 		.data = user
 	};
-	sdb_foreach (g->nodes, (SdbForeachCallback)user_edge_cb, &u);
+	ht_pp_foreach (g->nodes, user_edge_cb, &u);
 }
 
 R_API RANode *r_agraph_get_first_node(const RAGraph *g) {
@@ -4111,7 +4101,7 @@ R_API RANode *r_agraph_get_first_node(const RAGraph *g) {
 
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title) {
 	char *title_trunc = title? r_str_trunc_ellipsis (title, 255): NULL;
-	RANode *node = (RANode *) (size_t)sdb_num_get (g->nodes, title_trunc, NULL);
+	RANode *node = ht_pp_find (g->nodes, title_trunc, NULL);
 	free (title_trunc);
 	return node;
 }
@@ -4161,7 +4151,7 @@ R_API void r_agraph_reset(RAGraph *g) {
 	if (g->edges) {
 		r_list_purge (g->edges);
 	}
-	g->nodes = sdb_new0 ();
+	g->nodes = ht_pp_new0 ();
 	g->update_seek_on = NULL;
 	g->need_reload_nodes = false;
 	g->need_set_layout = true;

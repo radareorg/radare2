@@ -30,6 +30,7 @@ typedef struct r_ascii_node_t {
 	char *title;
 	char *body;
 	char *color;
+	char *shortcut;
 
 	int x;
 	int y;
@@ -71,7 +72,7 @@ typedef struct r_ascii_graph_t {
 	const RGraphNode *curnode;
 	char *title;
 	Sdb *db;
-	Sdb *nodes; // Sdb with title(key)=RANode*(value)
+	HtPP *nodes; // title -> RANode *
 
 	int layout;
 	int is_instep;
