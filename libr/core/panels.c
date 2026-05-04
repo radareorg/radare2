@@ -2,9 +2,6 @@
 
 #include <r_core.h>
 
-R_IPI void applyDisMode(RCore *core);
-R_IPI void applyHexMode(RCore *core);
-
 #define MENU_Y 1
 #define PANEL_NUM_LIMIT 16
 #define PANEL_HL_COLOR core->cons->context->pal.graph_box2
