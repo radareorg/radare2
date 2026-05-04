@@ -118,6 +118,27 @@ static int read_sgr_mouse_event(RCons *cons) {
 	return 0;
 }
 
+static int read_urxvt_mouse_event(RCons *cons, int button) {
+	int ch = r_cons_readchar (cons);
+	if (ch != ';') {
+		return -1;
+	}
+	do {
+		ch = r_cons_readchar (cons);
+		if (ch < 20) {
+			return -1;
+		}
+	} while (ch != 'M' && ch != 'm');
+	cons->mouse_event = true;
+	switch (button) {
+	case 80: // control+wheel up
+		return 'h';
+	case 81: // control+wheel down
+		return 'l';
+	}
+	return 0;
+}
+
 static inline void swap_case(RLine *line, int index) {
 	if (isupper (line->buffer.data[index])) {
 		line->buffer.data[index] += 32;
@@ -2372,9 +2393,25 @@ R_API const char *r_line_readline_cb(RCons *cons, RLineReadCallback cb, void *us
 						line->buffer.index = 0;
 						break;
 					case '4': // END
-					case '8': // END xrvt-unicode
 						r_cons_readchar (cons);
 					case 0x46: // END
+						if (line->sel_widget) {
+							selection_widget_down (line, line->sel_widget->options_len - 1);
+							selection_widget_draw (cons);
+							break;
+						}
+						line->buffer.index = line->buffer.length;
+						break;
+					case '8': // END xrvt-unicode or urxvt mouse
+						ch = r_cons_readchar (cons);
+						if (ch == '0' || ch == '1') {
+							key = read_urxvt_mouse_event (cons, ch == '0'? 80: 81);
+							if (key == -1) {
+								r_cons_break_pop (cons);
+								return NULL;
+							}
+							break;
+						}
 						if (line->sel_widget) {
 							selection_widget_down (line, line->sel_widget->options_len - 1);
 							selection_widget_draw (cons);

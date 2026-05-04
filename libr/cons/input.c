@@ -50,6 +50,130 @@ static int r_cons_mouse_event(RCons *cons) {
 	return 0;
 }
 
+static bool readpush_front(RCons *cons, int ch) {
+	if (ch < 0) {
+		return true;
+	}
+	InputState *is = &cons->input_state;
+	char *res = realloc (is->readbuffer, is->readbuffer_length + 1);
+	if (!res) {
+		return false;
+	}
+	is->readbuffer = res;
+	memmove (is->readbuffer + 1, is->readbuffer, is->readbuffer_length);
+	is->readbuffer[0] = ch;
+	is->readbuffer_length++;
+	return true;
+}
+
+static int r_cons_urxvt_mouse_event(RCons *cons, int first) {
+	char button[8];
+	size_t i = 0;
+	int ch = first;
+	for (;;) {
+		if (ch == ';') {
+			break;
+		}
+		if (!isdigit (ch)) {
+			readpush_front (cons, ch);
+			return first;
+		}
+		if (i + 1 < sizeof (button)) {
+			button[i++] = ch;
+		}
+		ch = r_cons_readchar (cons);
+		if (ch < 20) {
+			return 0;
+		}
+	}
+	button[i] = 0;
+	do {
+		ch = r_cons_readchar (cons);
+		if (ch < 20) {
+			return 0;
+		}
+	} while (ch != 'M' && ch != 'm');
+	cons->mouse_event = true;
+	switch (atoi (button)) {
+	case 64: // wheel up
+		return 'k';
+	case 65: // wheel down
+		return 'j';
+	case 66: // wheel left
+		return 'h';
+	case 67: // wheel right
+		return 'l';
+	case 80: // control+wheel up
+		return 'h';
+	case 81: // control+wheel down
+		return 'l';
+	}
+	return 0;
+}
+
+static int r_cons_sgr_mouse_event(RCons *cons) {
+	char button[8];
+	char xpos[16];
+	char ypos[16];
+	size_t i;
+	int ch;
+	for (i = 0; i + 1 < sizeof (button); i++) {
+		ch = r_cons_readchar (cons);
+		if (ch == ';') {
+			break;
+		}
+		if (ch < 20 || !isdigit (ch)) {
+			return 0;
+		}
+		button[i] = ch;
+	}
+	button[i] = 0;
+	for (i = 0; i + 1 < sizeof (xpos); i++) {
+		ch = r_cons_readchar (cons);
+		if (ch == ';') {
+			break;
+		}
+		if (ch < 20 || !isdigit (ch)) {
+			return 0;
+		}
+		xpos[i] = ch;
+	}
+	xpos[i] = 0;
+	for (i = 0; i + 1 < sizeof (ypos); i++) {
+		ch = r_cons_readchar (cons);
+		if (ch == 'M' || ch == 'm') {
+			break;
+		}
+		if (ch < 20 || !isdigit (ch)) {
+			return 0;
+		}
+		ypos[i] = ch;
+	}
+	ypos[i] = 0;
+	cons->mouse_event = true;
+	int b = atoi (button);
+	switch (b) {
+	case 2: // right click
+		return ch == 'M'? INT8_MAX: -INT8_MAX;
+	case 64: // wheel up
+		return 'k';
+	case 65: // wheel down
+		return 'j';
+	case 66: // wheel left
+		return 'h';
+	case 67: // wheel right
+		return 'l';
+	case 80: // control+wheel up
+		return 'h';
+	case 81: // control+wheel down
+		return 'l';
+	}
+	if (ch == 'm') {
+		r_cons_set_click (cons, atoi (xpos), atoi (ypos));
+	}
+	return 0;
+}
+
 #if __APPLE__
 static void skipchars(RCons *cons, char ech, int nch) {
 	while (nch-- > 0) {
@@ -98,12 +222,15 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 	case 0x06: ch = 'l'; break; // emacs right (ctrl + f)
 	case 0x02: ch = 'h'; break; // emacs left (ctrl + b)
 	}
-	if (ch != 0x1b) {
+	if ((ut8)ch == 0x9b) {
+		ch = '[';
+	} else if (ch != 0x1b) {
 		return ch;
-	}
-	ch = r_cons_readchar (cons);
-	if (!ch) {
-		return 0;
+	} else {
+		ch = r_cons_readchar (cons);
+		if (!ch) {
+			return 0;
+		}
 	}
 	switch (ch) {
 	case 0x1b:
@@ -136,63 +263,8 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 #endif
 		switch (ch) {
 		case '<':
-			{
-				char pos[8] = {0};
-				int p = 0;
-				int x = 0;
-				int y = 0;
-				int sc = 0;
-
-				char vel[8] = {0};
-				int vn = 0;
-				do {
-					ch = r_cons_readchar (cons);
-					// just for debugging
-					if (sc > 0) {
-						if (ch >= '0' && ch <= '9') {
-							pos[p++] = ch;
-						}
-					}
-					if (sc < 1) {
-						vel[vn++] = ch;
-					}
-					if (ch == ';') {
-						if (sc == 1) {
-							pos[p++] = 0;
-							x = atoi (pos);
-						}
-						sc++;
-						p = 0;
-					}
-				} while (ch != 'M' && ch != 'm');
-				cons->mouse_event = true;
-				int nvel = atoi (vel);
-				switch (nvel) {
-				case 2: // right click
-					if (ch == 'M') {
-						return INT8_MAX;
-					}
-					return -INT8_MAX;
-				case 64: // wheel up
-					return 'k';
-				case 65: // wheel down
-					return 'j';
-				case 66: // wheel left
-					return 'h';
-				case 67: // wheel right
-					return 'l';
-				case 80: // control+wheel up // VTE only
-					return 'h';
-				case 81: // control+wheel down // VTE only
-					return 'l';
-				}
-				pos[p++] = 0;
-				y = atoi (pos);
-				if (ch == 'm') { // mouse up only
-					r_cons_set_click (cons, x, y);
-				}
-			}
-			return 0;
+			ch = r_cons_sgr_mouse_event (cons);
+			break;
 		case '[':
 			ch = r_cons_readchar (cons);
 			switch (ch) {
@@ -222,6 +294,9 @@ R_API int r_cons_arrow_to_hjkl(RCons *cons, int ch) {
 				ch2 = r_cons_readchar (cons);
 			} while (ch2 != 'M');
 			cons->mouse_event = true;
+			break;
+		case '8':
+			ch = r_cons_urxvt_mouse_event (cons, ch);
 			break;
 		case '3':
 			// handle mouse down /up events (35 vs 32)
