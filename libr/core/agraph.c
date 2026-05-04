@@ -3968,8 +3968,13 @@ R_API void r_agraph_set_title(RAGraph *g, const char *title) {
 	sdb_set (g->db, "agraph.title", g->title, 0);
 }
 
+static bool agraph_node_is_indexed(const RAGraph *g, const RANode *n) {
+	return g && n && n->title && ht_pp_find (g->nodes, n->title, NULL) == n;
+}
+
 R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char *body, const char *color) {
-	RANode *res = r_agraph_get_node (g, title);
+	R_RETURN_VAL_IF_FAIL (g, NULL);
+	RANode *res = title? r_agraph_get_node (g, title): NULL;
 	if (res) {
 		return res;
 	}
@@ -3985,12 +3990,12 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 	res->color = color? strdup (color): NULL;
 	res->difftype = -1;
 	res->gnode = r_graph_add_node (g->graph, res);
-	if (!ht_pp_insert (g->nodes, res->title, res)) {
+	if (title && !ht_pp_insert (g->nodes, res->title, res)) {
 		r_graph_del_node (g->graph, res->gnode);
 		ranode_free (res);
 		return NULL;
 	}
-	if (res->title) {
+	if (title) {
 		char *s, *estr, *b;
 		size_t len;
 		sdb_array_add (g->db, "agraph.nodes", res->title, 0);
@@ -4012,6 +4017,7 @@ R_API RANode *r_agraph_add_node(const RAGraph *g, const char *title, const char 
 }
 
 R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
+	R_RETURN_VAL_IF_FAIL (g && title, false);
 	r_strf_buffer (128);
 	char *title_trunc = r_str_trunc_ellipsis (title, 255);
 	RANode *an, *res = r_agraph_get_node (g, title_trunc);
@@ -4034,8 +4040,10 @@ R_API bool r_agraph_del_node(const RAGraph *g, const char *title) {
 	const RVecGraphNodePtr *innodes = r_graph_innodes (g->graph, res->gnode);
 	RGraphNode **vit;
 	graph_foreach_anode_vec (innodes, vit, gn, an) {
-		const char *key = r_strf ("agraph.nodes.%s.neighbours", an->title);
-		sdb_array_remove (g->db, key, res->title, 0);
+		if (agraph_node_is_indexed (g, an)) {
+			const char *key = r_strf ("agraph.nodes.%s.neighbours", an->title);
+			sdb_array_remove (g->db, key, res->title, 0);
+		}
 	}
 
 	r_graph_del_node (g->graph, res->gnode);
@@ -4100,7 +4108,11 @@ R_API RANode *r_agraph_get_first_node(const RAGraph *g) {
 }
 
 R_API RANode *r_agraph_get_node(const RAGraph *g, const char *title) {
-	char *title_trunc = title? r_str_trunc_ellipsis (title, 255): NULL;
+	R_RETURN_VAL_IF_FAIL (g, NULL);
+	if (!title) {
+		return NULL;
+	}
+	char *title_trunc = r_str_trunc_ellipsis (title, 255);
 	RANode *node = ht_pp_find (g->nodes, title_trunc, NULL);
 	free (title_trunc);
 	return node;
@@ -4115,7 +4127,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 		r_strf_var (k, 64, "agraph.edge.0x%" PFMT64x "_0x%" PFMT64x ".highlight", aa, bb);
 		sdb_set (g->db, k, "true", 0);
 	}
-	if (a->title && b->title) {
+	if (agraph_node_is_indexed (g, a) && agraph_node_is_indexed (g, b)) {
 		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_add (g->db, k, b->title, 0);
 		free (k);
@@ -4124,7 +4136,7 @@ R_API void r_agraph_add_edge(const RAGraph *g, RANode *a, RANode *b, bool highli
 
 R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth) {
 	R_RETURN_IF_FAIL (g && a && b);
-	if (a->title && b->title) {
+	if (agraph_node_is_indexed (g, a) && agraph_node_is_indexed (g, b)) {
 		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_insert (g->db, k, nth, b->title, 0);
 		free (k);
@@ -4134,7 +4146,7 @@ R_API void r_agraph_add_edge_at(const RAGraph *g, RANode *a, RANode *b, int nth)
 
 R_API void r_agraph_del_edge(const RAGraph *g, RANode *a, RANode *b) {
 	R_RETURN_IF_FAIL (g && a && b);
-	if (a->title && b->title) {
+	if (agraph_node_is_indexed (g, a) && agraph_node_is_indexed (g, b)) {
 		char *k = r_str_newf ("agraph.nodes.%s.neighbours", a->title);
 		sdb_array_remove (g->db, k, b->title, 0);
 		free (k);
