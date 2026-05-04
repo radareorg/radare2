@@ -149,31 +149,24 @@ static const char *print5Formats[PRINT_5_FORMATS] = {
 R_IPI void applyHexMode(RCore *core) {
 	int hexMode = core->visual.hexMode;
 	core->visual.currentFormat = R_ABS (hexMode) % PRINT_HEX_FORMATS;
+	bool compact = false;
+	bool comments = false;
 	switch (core->visual.currentFormat) {
 	case 0: /* px */
+	case 1: /* pxa */
 	case 3: /* prx */
 	case 6: /* pxw */
 	case 10: /* pxr */
-		r_config_set_b (core->config, "hex.compact", false);
-		r_config_set_b (core->config, "hex.comments", true);
-		break;
-	case 1: /* pxa */
-		r_config_set_b (core->config, "hex.compact", false);
-		r_config_set_b (core->config, "hex.comments", true);
+		comments = true;
 		break;
 	case 4: /* pxb */
 	case 7: /* pxq */
-		r_config_set_b (core->config, "hex.compact", true);
-		r_config_set_b (core->config, "hex.comments", true);
-		break;
-	case 2: /* pxr */
-	case 5: /* pxh */
-	case 8: /* pxu */
-	case 9: /* pxd */
-		r_config_set_b (core->config, "hex.compact", false);
-		r_config_set_b (core->config, "hex.comments", false);
+		compact = true;
+		comments = true;
 		break;
 	}
+	r_config_set_b (core->config, "hex.compact", compact);
+	r_config_set_b (core->config, "hex.comments", comments);
 }
 
 R_API void r_core_visual_toggle_decompiler_disasm(RCore *core, bool for_graph, bool reset) {
@@ -222,46 +215,42 @@ static void setcursor(RCore *core, bool cur) {
 	core->print->col = core->print->cur_enabled? 1: 0;
 }
 
-R_IPI void applyDisMode(RCore *core) {
+R_IPI void dismode(RCore *core) {
 	const int disMode = core->visual.disMode;
 	core->visual.currentFormat = R_ABS (disMode) % 5;
+	bool asm_pseudo = false;
+	bool asm_bytes = false;
+	bool asm_esil = false;
+	bool asm_emu = false;
+	bool emu_str = false;
 	switch (core->visual.currentFormat) {
 	case 0:
-		r_config_set_b (core->config, "asm.pseudo", false);
-		r_config_set_b (core->config, "asm.bytes", true);
-		r_config_set_b (core->config, "asm.esil", false);
-		r_config_set_b (core->config, "emu.str", false);
-		r_config_set_b (core->config, "asm.emu", false);
+		asm_bytes = true;
 		break;
 	case 1:
-		r_config_set_b (core->config, "asm.pseudo", false);
-		r_config_set_b (core->config, "asm.bytes", true);
-		r_config_set_b (core->config, "asm.esil", false);
-		r_config_set_b (core->config, "asm.emu", false);
-		r_config_set_b (core->config, "emu.str", true);
+		asm_bytes = true;
+		emu_str = true;
 		break;
 	case 2:
-		r_config_set_b (core->config, "asm.pseudo", true);
-		r_config_set_b (core->config, "asm.bytes", true);
-		r_config_set_b (core->config, "asm.esil", true);
-		r_config_set_b (core->config, "emu.str", true);
-		r_config_set_b (core->config, "asm.emu", true);
+		asm_pseudo = true;
+		asm_bytes = true;
+		asm_esil = true;
+		asm_emu = true;
+		emu_str = true;
 		break;
 	case 3:
-		r_config_set_b (core->config, "asm.pseudo", false);
-		r_config_set_b (core->config, "asm.bytes", false);
-		r_config_set_b (core->config, "asm.esil", false);
-		r_config_set_b (core->config, "asm.emu", false);
-		r_config_set_b (core->config, "emu.str", true);
+		emu_str = true;
 		break;
 	case 4:
-		r_config_set_b (core->config, "asm.pseudo", true);
-		r_config_set_b (core->config, "asm.bytes", false);
-		r_config_set_b (core->config, "asm.esil", false);
-		r_config_set_b (core->config, "asm.emu", false);
-		r_config_set_b (core->config, "emu.str", true);
+		asm_pseudo = true;
+		emu_str = true;
 		break;
 	}
+	r_config_set_b (core->config, "asm.pseudo", asm_pseudo);
+	r_config_set_b (core->config, "asm.bytes", asm_bytes);
+	r_config_set_b (core->config, "asm.esil", asm_esil);
+	r_config_set_b (core->config, "asm.emu", asm_emu);
+	r_config_set_b (core->config, "emu.str", emu_str);
 }
 
 static void nextPrintCommand(RCore *core) {
@@ -295,7 +284,7 @@ static const char *stackPrintCommand(RCore *core) {
 	return printHexFormats[core->visual.current0format % PRINT_HEX_FORMATS];
 }
 
-static const char *__core_visual_print_command(RCore *core) {
+static const char *vprintcmd(RCore *core) {
 	if (core->visual.tabs) {
 		RCoreVisualTab *tab = r_list_get_n (core->visual.tabs, core->visual.tab);
 		if (tab && tab->name[0] == ':') {
@@ -313,7 +302,7 @@ static const char *__core_visual_print_command(RCore *core) {
 	return printfmtSingle[PIDX];
 }
 
-static bool __core_visual_gogo(RCore *core, int ch) {
+static bool vgogo(RCore *core, int ch) {
 	RIOMap *map;
 	int ret = -1;
 	switch (ch) {
@@ -458,12 +447,12 @@ static void printFormat(RCore *core, int next) {
 		break;
 	case R_CORE_VISUAL_MODE_PD: // pd
 		core->visual.disMode += next;
-		applyDisMode (core);
+		dismode (core);
 		printfmtSingle[1] = rotateAsmemu (core);
 		break;
 	case R_CORE_VISUAL_MODE_DB: // debugger
 		core->visual.disMode += next;
-		applyDisMode (core);
+		dismode (core);
 		printfmtSingle[1] = rotateAsmemu (core);
 		core->visual.current3format += next;
 		core->visual.currentFormat = R_ABS (core->visual.current3format) % PRINT_3_FORMATS;
@@ -724,7 +713,7 @@ static void reset_print_cur(RPrint *p) {
 	p->ocur = -1;
 }
 
-static bool __holdMouseState(RCore *core) {
+static bool holdMouseState(RCore *core) {
 	bool m = core->cons->mouse;
 	r_cons_enable_mouse (core->cons, false);
 	return m;
@@ -774,7 +763,7 @@ R_API void r_core_visual_prompt_input(RCore *core) {
 	ut64 addr, bsze, newaddr = 0LL;
 	int ret, h;
 	(void) r_cons_get_size (core->cons, &h);
-	bool mouse_state = __holdMouseState(core);
+	bool mouse_state = holdMouseState(core);
 	r_cons_gotoxy (core->cons, 0, h);
 	r_cons_reset_colors (core->cons);
 	r_cons_show_cursor (core->cons, true);
@@ -845,7 +834,7 @@ static void visual_single_step_in(RCore *core) {
 	}
 }
 
-static void __core_visual_step_over(RCore *core) {
+static void step_over(RCore *core) {
 	bool io_cache = r_config_get_i (core->config, "io.cache");
 	r_config_set_b (core->config, "io.cache", false);
 	if (r_config_get_b (core->config, "cfg.debug")) {
@@ -942,7 +931,7 @@ static int visual_nkey(RCore *core, int ch) {
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			ch = r_core_cmd0 (core, cmd);
 		} else {
-			__core_visual_step_over (core);
+			step_over (core);
 			oseek = UT64_MAX;
 		}
 		break;
@@ -1197,7 +1186,6 @@ static ut64 prevop_addr(RCore *core, ut64 addr) {
 	int len, ret, i;
 	RIntervalNode *in = r_meta_get_in (core->anal, addr, R_META_TYPE_DATA);
 	if (in) {
-		// RAnalMetaItem *ami = (RAnalMetaItem *)in->data;
 		const int hexcols = r_config_get_i (core->config, "hex.cols");
 		int amisize = r_meta_item_size (in->start, in->end);
 		if (amisize > hexcols) {
@@ -1345,7 +1333,7 @@ R_API void r_core_visual_offset(RCore *core) {
 	strncpy (buf, "s ", sizeof (buf));
 	if (r_cons_fgets (core->cons, buf + 2, sizeof (buf) - 2, 0, NULL) > 0) {
 		if (!strcmp (buf + 2, "g") || !strcmp (buf + 2, "G")) {
-			__core_visual_gogo (core, buf[2]);
+			vgogo (core, buf[2]);
 		} else {
 			if (buf[2] == '.') {
 				buf[1] = '.';
@@ -1390,37 +1378,31 @@ static void add_ref(RCore *core) {
 }
 
 static bool delete_ref(RCore *core, RVecAnalRef *xrefs, int choice, int xref) {
-	if (!xrefs) {
-		return false;
-	}
-
-	RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
-	if (refi) {
-		if (core->print->cur_enabled) {
-			core->print->cur = 0;
+	if (xrefs) {
+		RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
+		if (refi) {
+			if (core->print->cur_enabled) {
+				core->print->cur = 0;
+			}
+			return r_anal_xref_del (core->anal, refi->addr, refi->at);
 		}
-		return r_anal_xref_del (core->anal, refi->addr, refi->at);
 	}
-
 	return false;
 }
 
 static int follow_ref(RCore *core, RVecAnalRef *xrefs, int choice, int xref) {
-	if (!xrefs) {
-		return 0;
-	}
-
-	RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
-	if (refi) {
-		if (core->print->cur_enabled) {
-			core->print->cur = 0;
+	if (xrefs) {
+		RAnalRef *refi = RVecAnalRef_at (xrefs, choice);
+		if (refi) {
+			if (core->print->cur_enabled) {
+				core->print->cur = 0;
+			}
+			ut64 addr = refi->addr;
+			r_io_sundo_push (core->io, core->addr, -1);
+			r_core_seek (core, addr, true);
+			return 1;
 		}
-		ut64 addr = refi->addr;
-		r_io_sundo_push (core->io, core->addr, -1);
-		r_core_seek (core, addr, true);
-		return 1;
 	}
-
 	return 0;
 }
 
@@ -1719,7 +1701,7 @@ repeat:
 		skip = (skip < 10) ? 0: skip - 10;
 		goto repeat;
 	default:
-		if (ch == ' ' || ch == '\n' || ch == '\r' || ch == 'l') {
+		if (isspace (ch) || ch == 'l') {
 			ret = follow_ref (core, xrefs, skip, xref);
 		} else if (isdigit (ch)) {
 			ret = follow_ref (core, xrefs, ch - 0x30, xref);
@@ -1985,7 +1967,7 @@ static void visual_textlogs(RCore *core) {
 }
 
 static void visual_comma(RCore *core) {
-	bool mouse_state = __holdMouseState (core);
+	bool mouse_state = holdMouseState (core);
 	ut64 addr = core->addr + (core->print->cur_enabled? core->print->cur: 0);
 	const char *prev_cmt = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 	char *comment = prev_cmt ? strdup (prev_cmt) : NULL;
@@ -2387,7 +2369,7 @@ static void visual_windows(RCore *core) {
 		case R_CORE_VISUAL_MODE_PD:
 		case R_CORE_VISUAL_MODE_DB:
 			core->visual.disMode = b;
-			applyDisMode (core);
+			dismode (core);
 			break;
 		case R_CORE_VISUAL_MODE_PX:
 			core->visual.hexMode = b;
@@ -2828,8 +2810,19 @@ static int process_get_click(RCore *core, int ch) {
 	return ch;
 }
 
-static void handle_space_key(RCore *core, int force) {
-	if (force == 0) {
+static void handle_space_key(RCore *core, bool force) {
+	if (force) {
+		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
+		if (fun && !r_list_empty (fun->bbs)) {
+			const int ocolor = r_config_get_i (core->config, "scr.color");
+			reset_print_cur (core->print);
+			eprintf ("\rRendering graph...");
+			r_core_visual_graph (core, NULL, NULL, true);
+			r_config_set_i (core->config, "scr.color", ocolor);
+		} else {
+			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
+		}
+	} else {
 		switch (core->visual.printidx) {
 		case R_CORE_VISUAL_MODE_PX: // hex
 			if (core->visual.hexMode % 2) {
@@ -2846,20 +2839,6 @@ static void handle_space_key(RCore *core, int force) {
 		case R_CORE_VISUAL_MODE_OV: // hex
 		case R_CORE_VISUAL_MODE_CD: // hex
 			break;
-		}
-	}
-	if (force == 'V') {
-		RAnalFunction *fun = r_anal_get_fcn_in (core->anal, core->addr, R_ANAL_FCN_TYPE_NULL);
-		if (!fun) {
-			r_cons_message (core->cons, "Not in a function. Type 'df' to define it here");
-		} else if (r_list_empty (fun->bbs)) {
-			r_cons_message (core->cons, "No basic blocks in this function. You may want to use 'afb+'.");
-		} else {
-			const int ocolor = r_config_get_i (core->config, "scr.color");
-			reset_print_cur (core->print);
-			eprintf ("\rRendering graph...");
-			r_core_visual_graph (core, NULL, NULL, true);
-			r_config_set_i (core->config, "scr.color", ocolor);
 		}
 	}
 }
@@ -3114,7 +3093,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_core_visual_showcursor (core, false);
 			break;
 		case 'G':
-			__core_visual_gogo (core, 'G');
+			vgogo (core, 'G');
 			break;
 		case 'A':
 			if (0) {
@@ -3167,7 +3146,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			r_config_set_i (core->config, "scr.color", core->visual.color);
 			break;
 		case 'd': {
-			bool mouse_state = __holdMouseState (core);
+			bool mouse_state = holdMouseState (core);
 			r_core_visual_showcursor (core, true);
 			int distance = numbuf_pull (core);
 			r_core_visual_define (core, arg + 1, distance - 1);
@@ -3180,7 +3159,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			break;
 		case 'f':
 		{
-			bool mouse_state = __holdMouseState (core);
+			bool mouse_state = holdMouseState (core);
 			int range, min, max;
 			char name[256], *n;
 			r_line_set_prompt (core->cons->line, "flag name: ");
@@ -3392,7 +3371,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 				if (fcn) {
 					r_core_seek (core, fcn->addr, false);
 				} else {
-					__core_visual_gogo (core, 'g');
+					vgogo (core, 'g');
 				}
 			}
 			break;
@@ -3428,10 +3407,10 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			visual_refresh (core);
 			break;
 		case ' ':
-			handle_space_key (core, 0);
+			handle_space_key (core, false);
 			break;
 		case 'V':
-			handle_space_key (core, 'V');
+			handle_space_key (core, true);
 			break;
 		case 'v':
 			r_core_visual_anal (core, NULL);
@@ -3540,8 +3519,6 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 						ami = in->data;
 						amisize = r_meta_item_size (in->start, in->end);
 					}
-
-					// RAnalMetaItem *ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_DATA, &amisize);
 					if (!ami) {
 						ami = r_meta_get_at (core->anal, core->addr, R_META_TYPE_STRING, &amisize);
 					}
@@ -3562,8 +3539,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 							if (isDisasmPrint (v->printidx)) {
 								r_core_visual_disasm_down (core, &op, &cols);
 								r_anal_op_fini (&op);
-							} else if (!strcmp (__core_visual_print_command (core),
-									"prc")) {
+							} else if (!strcmp (vprintcmd (core), "prc")) {
 								cols = r_config_get_i (core->config, "hex.cols");
 							}
 							r_core_seek (core, core->addr + cols, true);
@@ -3655,7 +3631,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 					while (times--) {
 						if (isDisasmPrint (v->printidx)) {
 							r_core_visual_disasm_up (core, &cols);
-						} else if (!strcmp (__core_visual_print_command (core), "prc")) {
+						} else if (!strcmp (vprintcmd (core), "prc")) {
 							cols = r_config_get_i (core->config, "hex.cols");
 						}
 						if (cols != 0) {
@@ -3736,8 +3712,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			if (R_STR_ISNOTEMPTY (key_s)) {
 				r_core_cmd0 (core, key_s);
 			} else {
-				// r_core_cmd0 (core, "dsb");
-				__core_visual_step_over (core);
+				step_over (core);
 			}
 			break;
 		case '"':
@@ -3887,7 +3862,7 @@ R_API int r_core_visual_cmd(RCore *core, const char *arg) {
 			}
 			break;
 		case '/': {
-			bool mouse_state = __holdMouseState (core);
+			bool mouse_state = holdMouseState (core);
 			if (core->print->cur_enabled) {
 				if (core->seltab < 2 && v->printidx == R_CORE_VISUAL_MODE_DB) {
 					if (core->seltab) {
@@ -4230,7 +4205,7 @@ static void visual_title(RCore *core, int color) {
 		bar[11] = '.'; // chop cmdfmt
 		bar[12] = 0; // chop cmdfmt
 	} else {
-		const char *cmd = __core_visual_print_command (core);
+		const char *cmd = vprintcmd (core);
 		if (R_STR_ISNOTEMPTY (cmd)) {
 			r_str_ncpy (bar, cmd, sizeof (bar) - 1);
 			bar[10] = '.'; // chop cmdfmt
@@ -4612,7 +4587,7 @@ R_IPI void visual_refresh(RCore *core) {
 					pxw, size, core->addr);
 		} else {
 			core->print->screen_bounds = 1LL;
-			cmd_str = strdup ((core->visual.zoom ? "pz" : __core_visual_print_command (core)));
+			cmd_str = strdup ((core->visual.zoom ? "pz" : vprintcmd (core)));
 		}
 	}
 	if (R_STR_ISNOTEMPTY (cmd_str)) {
