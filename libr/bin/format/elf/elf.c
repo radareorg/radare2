@@ -3165,9 +3165,14 @@ char* Elf_(get_elf_class)(ELFOBJ *eo) {
 }
 
 int Elf_(get_bits)(ELFOBJ *eo) {
+	if (eo->bits_cache) {
+		return eo->bits_cache;
+	}
+
 	// Hack for ARCompact
 	if (eo->ehdr.e_machine == EM_ARC_A5) {
-		return 16;
+		eo->bits_cache = 16;
+		return eo->bits_cache;
 	}
 
 	// Hack for Ps2
@@ -3185,7 +3190,8 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 
 			if (!have_interp && mips_type == EF_MIPS_ARCH_3) {
 				// Playstation2 Hack
-				return 64;
+				eo->bits_cache = 64;
+				return eo->bits_cache;
 			}
 		}
 		// TODO: show this specific asm.cpu somewhere in bininfo (mips1, mips2, mips3, mips32r2, ...)
@@ -3196,22 +3202,28 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 		case EF_MIPS_ARCH_4:
 		case EF_MIPS_ARCH_5:
 		case EF_MIPS_ARCH_32:
-			return 32;
+			eo->bits_cache = 32;
+			return eo->bits_cache;
 		case EF_MIPS_ARCH_64:
-			return 64;
+			eo->bits_cache = 64;
+			return eo->bits_cache;
 		case EF_MIPS_ARCH_32R2:
-			return 32;
+			eo->bits_cache = 32;
+			return eo->bits_cache;
 		case EF_MIPS_ARCH_64R2:
-			return 64;
+			eo->bits_cache = 64;
+			return eo->bits_cache;
 		}
-		return 32;
+		eo->bits_cache = 32;
+		return eo->bits_cache;
 	}
 
 	// Hack for Thumb
 	if (eo->ehdr.e_machine == EM_ARM) {
 		ut64 entry = Elf_(get_entry_offset) (eo);
 		if (entry & 1) {
-			return 16;
+			eo->bits_cache = 16;
+			return eo->bits_cache;
 		}
 		if (eo->ehdr.e_type != ET_EXEC) {
 			RVecRBinElfSymbol *symbols = NULL;
@@ -3247,21 +3259,25 @@ int Elf_(get_bits)(ELFOBJ *eo) {
 				// prefer mapping symbols as they are authoritative
 				if (map_thumb + map_arm > 0) {
 					if (map_thumb > 0) {
-						return 16;
+						eo->bits_cache = 16;
+						return eo->bits_cache;
 					}
 				} else if (thumb_count > 0) {
 					// any thumb function means the binary uses thumb
-					return 16;
+					eo->bits_cache = 16;
+					return eo->bits_cache;
 				}
 			}
 		}
 	}
 
 	if (eo->ehdr.e_ident[EI_CLASS] == ELFCLASS64) {
-		return 64;
+		eo->bits_cache = 64;
+		return eo->bits_cache;
 	}
 
-	return 32;
+	eo->bits_cache = 32;
+	return eo->bits_cache;
 }
 
 static inline int noodle(ELFOBJ *eo, const char *s) {
