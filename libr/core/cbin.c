@@ -1114,7 +1114,28 @@ static void file_lines_free_kv(HtPPKv *kv) {
 	file_lines_free (kv->value);
 }
 
-static bool bin_addrline(RCore *core, PJ *pj, int mode) {
+#define BIN_DWARF_STARTUP_LINE_LIMIT (16 * 1024 * 1024)
+
+static bool bin_addrline_is_large_dwarf(RBinFile *bf) {
+	RBinObject *o = bf? bf->bo: NULL;
+	if (!o || !o->sections) {
+		return false;
+	}
+	RListIter *iter;
+	RBinSection *section;
+	r_list_foreach (o->sections, iter, section) {
+		const char *name = section->name;
+		if (!name || strstr (name, "debug_line_str")) {
+			continue;
+		}
+		if (strstr (name, "debug_line") || strstr (name, "dwline")) {
+			return section->size > BIN_DWARF_STARTUP_LINE_LIMIT;
+		}
+	}
+	return false;
+}
+
+static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
 	RBinAddrline *row;
 	RListIter *iter;
 	if (IS_MODE_JSON (mode)) {
@@ -1140,43 +1161,38 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 		// list is not cloned to improve speed. avoid use after free
 		list = plugin->lines (bf);
 	} else if (core->bin) {
-		// TODO: complete and speed-up support for dwarf
+		if (!allow_large && mode == R_MODE_SET && bin_addrline_is_large_dwarf (bf)) {
+			return true;
+		}
 		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
-		if (!da) {
-			if (IS_MODE_JSON (mode)) {
-				pj_end (pj);
-			}
-			return false;
-		}
-		RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
-		HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
-		// I suppose there is no reason the parse it for a printing purposes
-		if (info && mode != R_MODE_PRINT) {
-			/* Should we do this by default? */
-			RAnalDwarfContext ctx = {
-				.info = info,
-				.loc = loc_table
-			};
-			r_anal_dwarf_process_info (core->anal, &ctx);
-		}
-		if (loc_table) {
+		if (da) {
 			if (mode == R_MODE_PRINT) {
-				char *s = r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8);
-				r_cons_print (core->cons, s);
-				free (s);
+				RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
+				HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
+				if (loc_table) {
+					char *s = r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8);
+					r_cons_print (core->cons, s);
+					free (s);
+					r_bin_dwarf_free_loc (loc_table);
+				}
+				r_bin_dwarf_free_debug_info (info);
+				r_bin_dwarf_parse_aranges (bf, mode);
+			} else {
+				r_bin_dwarf_parse_comp_dirs (bf, da);
 			}
-			r_bin_dwarf_free_loc (loc_table);
+			r_bin_dwarf_free_debug_abbrev (da);
 		}
-		r_bin_dwarf_free_debug_info (info);
-		r_bin_dwarf_parse_aranges (bf, mode);
 		list = ownlist = r_bin_dwarf_parse_line (bf, mode);
-		r_bin_dwarf_free_debug_abbrev (da);
 	}
 	if (!list) {
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
 		}
 		return false;
+	}
+	if (mode == R_MODE_SET) {
+		r_list_free (ownlist);
+		return true;
 	}
 
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -1288,6 +1304,10 @@ static bool bin_addrline(RCore *core, PJ *pj, int mode) {
 	return true;
 }
 
+static bool bin_addrline(RCore *core, PJ *pj, int mode) {
+	return bin_addrline_maybe (core, pj, mode, false);
+}
+
 R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	R_RETURN_VAL_IF_FAIL (core && file, false);
 
@@ -1358,6 +1378,9 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 static bool bin_source(RCore *core, PJ *pj, int mode) {
 	RList *final_list = r_list_new ();
 	RBinFile *binfile = core->bin->cur;
+	if (mode != R_MODE_SET && binfile && !binfile->addrline.used && r_config_get_b (core->config, "bin.dbginfo")) {
+		(void)bin_addrline_maybe (core, NULL, R_MODE_SET, true);
+	}
 
 	switch (mode) {
 	case R_MODE_JSON:
