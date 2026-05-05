@@ -1116,7 +1116,7 @@ static void file_lines_free_kv(HtPPKv *kv) {
 
 #define BIN_DWARF_STARTUP_LINE_LIMIT (16 * 1024 * 1024)
 
-static bool bin_addrline_is_large_dwarf(RBinFile *bf) {
+static bool bin_addrline_is_large_dwarf(RBinFile *bf, const char **section_name, ut64 *section_size) {
 	RBinObject *o = bf? bf->bo: NULL;
 	if (!o || !o->sections) {
 		return false;
@@ -1129,10 +1129,35 @@ static bool bin_addrline_is_large_dwarf(RBinFile *bf) {
 			continue;
 		}
 		if (strstr (name, "debug_line") || strstr (name, "dwline")) {
+			if (section_name) {
+				*section_name = name;
+			}
+			if (section_size) {
+				*section_size = section->size;
+			}
 			return section->size > BIN_DWARF_STARTUP_LINE_LIMIT;
 		}
 	}
 	return false;
+}
+
+static void bin_addrline_warn_large_dwarf(RBinFile *bf, bool skipped) {
+	const char *section_name = NULL;
+	ut64 section_size = 0;
+	if (!bin_addrline_is_large_dwarf (bf, &section_name, &section_size)) {
+		return;
+	}
+	const char *name = r_str_get (section_name);
+	ut64 mb = section_size / (1024 * 1024);
+	if (skipped) {
+		R_LOG_WARN ("Skipping automatic DWARF addrline load for large %s section (%" PFMT64u "MB). "
+			"Use `id` or `idx` to load debug info explicitly, or `e bin.dbginfo=false` to disable it; "
+			"`id` can parse huge DWARF DIE trees and consume many GB of memory", name, mb);
+	} else {
+		R_LOG_WARN ("Loading large DWARF %s section (%" PFMT64u "MB). "
+			"The `id` command can parse huge DWARF DIE trees and consume many GB of memory; "
+			"consider `e bin.dbginfo=false` when debug info is not needed", name, mb);
+	}
 }
 
 static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
@@ -1161,8 +1186,12 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 		// list is not cloned to improve speed. avoid use after free
 		list = plugin->lines (bf);
 	} else if (core->bin) {
-		if (!allow_large && mode == R_MODE_SET && bin_addrline_is_large_dwarf (bf)) {
+		if (!allow_large && mode == R_MODE_SET && bin_addrline_is_large_dwarf (bf, NULL, NULL)) {
+			bin_addrline_warn_large_dwarf (bf, true);
 			return true;
+		}
+		if (allow_large || mode == R_MODE_PRINT) {
+			bin_addrline_warn_large_dwarf (bf, false);
 		}
 		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (da) {
