@@ -1597,11 +1597,15 @@ repeat:
 		}
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
-		if (i && lvar) {
-			// Propagate local var type = to => register-based var
-			var_retype (anal, rvar, NULL, lvar->type, false, false);
-			// Propagate local var type <= from = register-based var
-			var_retype (anal, lvar, NULL, rvar->type, false, false);
+		if (i && lvar && rvar->type) {
+			char *rvar_type = strdup (rvar->type);
+			if (rvar_type) {
+				// Propagate local var type = to => register-based var
+				var_retype (anal, rvar, NULL, lvar->type, false, false);
+				// Propagate local var type <= from = register-based var
+				var_retype (anal, lvar, NULL, rvar_type, false, false);
+				free (rvar_type);
+			}
 		}
 	}
 out_function:

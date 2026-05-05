@@ -6185,7 +6185,10 @@ static void ds_print_calls_hints(RDisasmState *ds) {
 	char *full_name = NULL;
 	if (ds->analop.type == R_ANAL_OP_TYPE_CALL) {
 		// RAnalFunction *fcn = r_anal_get_fcn_in (anal, ds->analop.jump, -1);
-		RAnalFunction *fcn = fcnIn (ds, ds->analop.jump, -1);
+		RAnalFunction *fcn = r_anal_get_function_at (anal, ds->analop.jump);
+		if (!fcn) {
+			fcn = fcnIn (ds, ds->analop.jump, -1);
+		}
 		if (fcn) {
 			full_name = fcn->name;
 		}

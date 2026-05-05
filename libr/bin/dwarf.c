@@ -3255,9 +3255,6 @@ R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode) {
 		list = r_list_newf (row_free);
 		/* parse the line number program */
 		parse_line_raw (bf->rbin, buf, section->bytes.len, mode);
-		if (mode == R_MODE_SET) {
-			return list;
-		}
 		if (bf->addrline.used) {
 			RBinAddrLineStore *als = &bf->addrline;
 			als->al_foreach (als, cb, list);
