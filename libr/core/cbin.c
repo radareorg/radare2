@@ -1151,13 +1151,51 @@ static void bin_addrline_warn_large_dwarf(RBinFile *bf, bool skipped) {
 	ut64 mb = section_size / (1024 * 1024);
 	if (skipped) {
 		R_LOG_WARN ("Skipping automatic DWARF addrline load for large %s section (%" PFMT64u "MB). "
-			"Use `id` or `idx` to load debug info explicitly, or `e bin.dbginfo=false` to disable it; "
-			"`id` can parse huge DWARF DIE trees and consume many GB of memory", name, mb);
+			"Use `idx` to list source files or `id` to dump debug info explicitly, or "
+			"`e bin.dbginfo=false` to disable it; `id` can produce several GB of output", name, mb);
 	} else {
 		R_LOG_WARN ("Loading large DWARF %s section (%" PFMT64u "MB). "
-			"The `id` command can parse huge DWARF DIE trees and consume many GB of memory; "
-			"consider `e bin.dbginfo=false` when debug info is not needed", name, mb);
+			"The `id` command can produce several GB of output; consider `idx` for source files "
+			"or `e bin.dbginfo=false` when debug info is not needed", name, mb);
 	}
+}
+
+typedef struct {
+	bool enabled;
+	bool flush;
+	bool last;
+	bool pageable;
+	int maxpage;
+} BinConsStreamState;
+
+static void bin_cons_stream_begin(RCore *core, BinConsStreamState *state) {
+	if (!core || !core->cons || !core->cons->context || !state) {
+		return;
+	}
+	RConsContext *ctx = core->cons->context;
+	state->enabled = true;
+	state->flush = ctx->flush;
+	state->last = ctx->lastEnabled;
+	state->pageable = ctx->pageable;
+	state->maxpage = core->cons->maxpage;
+	r_cons_flush (core->cons);
+	ctx->flush = true;
+	ctx->lastEnabled = false;
+	ctx->pageable = false;
+	core->cons->maxpage = 0;
+}
+
+static void bin_cons_stream_end(RCore *core, BinConsStreamState *state) {
+	if (!state || !state->enabled || !core || !core->cons || !core->cons->context) {
+		return;
+	}
+	r_cons_flush (core->cons);
+	RConsContext *ctx = core->cons->context;
+	ctx->flush = state->flush;
+	ctx->lastEnabled = state->last;
+	ctx->pageable = state->pageable;
+	core->cons->maxpage = state->maxpage;
+	state->enabled = false;
 }
 
 static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
@@ -1182,29 +1220,28 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 	}
 	RList *list = NULL;
 	RList *ownlist = NULL;
+	BinConsStreamState stream_state = { 0 };
 	if (plugin && plugin->lines) {
 		// list is not cloned to improve speed. avoid use after free
 		list = plugin->lines (bf);
 	} else if (core->bin) {
-		if (!allow_large && mode == R_MODE_SET && bin_addrline_is_large_dwarf (bf, NULL, NULL)) {
+		bool large_dwarf = bin_addrline_is_large_dwarf (bf, NULL, NULL);
+		if (!allow_large && mode == R_MODE_SET && large_dwarf) {
 			bin_addrline_warn_large_dwarf (bf, true);
 			return true;
 		}
 		if (allow_large || mode == R_MODE_PRINT) {
 			bin_addrline_warn_large_dwarf (bf, false);
 		}
+		if (mode == R_MODE_PRINT && large_dwarf) {
+			R_LOG_WARN ("Streaming large DWARF debug dump directly to the console to avoid buffering several GB of output");
+			bin_cons_stream_begin (core, &stream_state);
+		}
 		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (da) {
 			if (mode == R_MODE_PRINT) {
-				RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, mode);
-				HtUP /*<offset, List *<LocListEntry>*/ *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
-				if (loc_table) {
-					char *s = r_bin_dwarf_print_loc (loc_table, core->anal->config->bits / 8);
-					r_cons_print (core->cons, s);
-					free (s);
-					r_bin_dwarf_free_loc (loc_table);
-				}
-				r_bin_dwarf_free_debug_info (info);
+				r_bin_dwarf_print_info (bf, da);
+				r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8);
 				r_bin_dwarf_parse_aranges (bf, mode);
 			} else {
 				r_bin_dwarf_parse_comp_dirs (bf, da);
@@ -1212,8 +1249,10 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 			r_bin_dwarf_free_debug_abbrev (da);
 		}
 		list = ownlist = r_bin_dwarf_parse_line (bf, mode);
+		bin_cons_stream_end (core, &stream_state);
 	}
 	if (!list) {
+		bin_cons_stream_end (core, &stream_state);
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
 		}
@@ -1404,26 +1443,47 @@ R_API bool r_core_pdb_info(RCore *core, const char *file, PJ *pj, int mode) {
 	return true;
 }
 
-static bool bin_source(RCore *core, PJ *pj, int mode) {
-	RList *final_list = r_list_new ();
+static RList *bin_source_files(RCore *core) {
 	RBinFile *binfile = core->bin->cur;
-	if (mode != R_MODE_SET && binfile && !binfile->addrline.used && r_config_get_b (core->config, "bin.dbginfo")) {
-		(void)bin_addrline_maybe (core, NULL, R_MODE_SET, true);
+	if (!binfile) {
+		return NULL;
 	}
+	if (binfile->addrline.used) {
+		return r_bin_addrline_files (core->bin);
+	}
+	RBinPlugin *plugin = r_bin_file_cur_plugin (binfile);
+	if (plugin && plugin->lines) {
+		(void)bin_addrline_maybe (core, NULL, R_MODE_SET, true);
+		return r_bin_addrline_files (core->bin);
+	}
+	if (!r_config_get_b (core->config, "bin.dbginfo")) {
+		return NULL;
+	}
+	RList *files = NULL;
+	RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (binfile, R_MODE_SET);
+	if (da) {
+		files = r_bin_dwarf_parse_comp_unit_files (binfile, da);
+		r_bin_dwarf_free_debug_abbrev (da);
+	}
+	if (files && !r_list_empty (files)) {
+		return files;
+	}
+	r_list_free (files);
+	return r_bin_dwarf_parse_line_files (binfile);
+}
 
+static bool bin_source(RCore *core, PJ *pj, int mode) {
 	switch (mode) {
 	case R_MODE_JSON:
 		pj_a (pj);
-		if (binfile) {
+		{
 			const char *file;
 			RListIter *iter;
-			RList *files = r_bin_addrline_files (core->bin);
-			if (files) {
-				r_list_foreach (files, iter, file) {
-					pj_s (pj, file);
-				}
-			//	r_list_free (files);
+			RList *files = bin_source_files (core);
+			r_list_foreach (files, iter, file) {
+				pj_s (pj, file);
 			}
+			r_list_free (files);
 		}
 		pj_end (pj);
 		break;
@@ -1431,20 +1491,19 @@ static bool bin_source(RCore *core, PJ *pj, int mode) {
 	case 1:
 	case R_MODE_SET:
 		// do nothing here
-		r_list_free (final_list);
 		return true;
 	default:
 		{
-			RList *files = r_bin_addrline_files (core->bin);
+			RList *files = bin_source_files (core);
 			if (files) {
 				char *s = r_str_list_join (files, "\n");
 				r_cons_println (core->cons, s);
 				free (s);
+				r_list_free (files);
 			}
 		}
 		break;
 	}
-	r_list_free (final_list);
 	return true;
 }
 
