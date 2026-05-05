@@ -34,10 +34,6 @@ call = 4
 #error Old Capstone not supported
 #endif
 
-#ifndef R2_X86_ZYDIS_ENABLED
-#define R2_X86_ZYDIS_ENABLED 0
-#endif
-
 #define CSINC X86
 #define CSINC_MODE \
 	R_SYS_BITS_CHECK (as->config->bits, 64)? CS_MODE_64: \
@@ -4860,7 +4856,7 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 
 const RArchPlugin r_arch_plugin_x86_cs = {
 	.meta = {
-		.name = R2_X86_ZYDIS_ENABLED? "x86.cs": "x86",
+		.name = "x86",
 		.desc = "Capstone X86 analysis",
 		.license = "Apache-2.0",
 	},

@@ -1,7 +1,7 @@
 NAME=x86 zydis decode readiness
 FILE=malloc://16
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=x86.zydis
 e asm.arch
 e asm.bits=16
 wx b83412
@@ -24,7 +24,7 @@ pi 1
 ao 1~^type,size
 EOF
 EXPECT=<<EOF
-x86
+x86.zydis
 mov ax, 0x1234
 mov eax, 0x12345678
 mov rax, rbx
@@ -35,17 +35,17 @@ type: ill
 EOF
 RUN
 
-NAME=x86 capstone fallback selector
+NAME=x86 capstone default selector
 FILE=malloc://16
 CMDS=<<EOF
-e asm.arch=x86.cs
+e asm.arch=x86
 e asm.arch
 e asm.bits=64
 wx 4889d8
 pi 1
 EOF
 EXPECT=<<EOF
-x86.cs
+x86
 mov rax, rbx
 EOF
 RUN
@@ -53,7 +53,7 @@ RUN
 NAME=x86 zydis opex memory metadata
 FILE=malloc://32
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=x86.zydis
 e asm.bits=64
 wx 488b548b10488b0578563412c70578563412efbeadde
 aoj 1~{opex}
@@ -72,7 +72,7 @@ RUN
 NAME=x86 zydis branch and stack metadata
 FILE=malloc://32
 CMDS=<<EOF
-e asm.arch=x86
+e asm.arch=x86.zydis
 e asm.bits=64
 wx 50e8020000007501c3
 pi 4
@@ -104,8 +104,8 @@ RUN
 NAME=x86 zydis esil execution smoke
 FILE=malloc://16
 CMDS=<<EOF
-e asm.arch=x86
-e anal.arch=x86
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
 e asm.bits=64
 wx 4883c0054889c3
 pi 2
@@ -126,12 +126,35 @@ mov rbx, rax
 EOF
 RUN
 
+NAME=x86 zydis movsx zero-extends to rax
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=64
+aei
+aeim
+aeim 0x10000000 10 source
+wx ff @ 0x10000000
+aer rbx=0x10000000
+aer rax=0
+wx 0fbe03
+s 0
+aes
+aer rax
+EOF
+EXPECT=<<EOF
+0xffffffff
+EOF
+RUN
+
 NAME=x86 zydis rep movsb esil execution
 FILE=-
 CMDS=<<EOF
 e io.va=true
-e asm.arch=x86
-e anal.arch=x86
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
 e asm.bits=32
 aei
 aeim
@@ -152,6 +175,46 @@ EXPECT=<<EOF
 0x20000005
 0x10000005
 0x78563412
+0x00000000
+EOF
+RUN
+
+NAME=x86 zydis zero-count rep cmpsb/scasb
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=32
+aei
+aeim
+aeim 0x10000000 10 source
+wx 12 @ 0x10000000
+aeim 0x20000000 10 destination
+wx 34 @ 0x20000000
+wx f3a6
+s 0
+aer esi=0x10000000
+aer edi=0x20000000
+aer ecx=0
+aes
+aer esi
+aer edi
+aer ecx
+s 0
+wx f2ae
+aer eax=0x12
+aer edi=0x20000000
+aer ecx=0
+aes
+aer edi
+aer ecx
+EOF
+EXPECT=<<EOF
+0x10000000
+0x20000000
+0x00000000
+0x20000000
 0x00000000
 EOF
 RUN

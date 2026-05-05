@@ -2463,7 +2463,7 @@ static bool esilcb(RArchSession *as, RArchEsilAction action) {
 
 const RArchPlugin r_arch_plugin_x86_zydis = {
 	.meta = {
-		.name = "x86",
+		.name = "x86.zydis",
 		.desc = "Zydis X86 analysis",
 		.license = "MIT",
 	},

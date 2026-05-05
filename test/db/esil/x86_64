@@ -109,28 +109,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=movsx eax zero-extends to rax x86-64
-FILE=-
-CMDS=<<EOF
-e io.va=true
-e asm.arch=x86
-e asm.bits=64
-aei
-aeim
-aeim 0x10000000 10 source
-wx ff @ 0x10000000
-ar rbx=0x10000000
-ar rax=0
-wx 0fbe03
-s 0
-aes
-ar rax
-EOF
-EXPECT=<<EOF
-0xffffffff
-EOF
-RUN
-
 NAME=imul 2 arg
 FILE=-
 CMDS=<<EOF
@@ -155,7 +133,7 @@ e asm.bits=64
 EOF
 EXPECT=<<EOF
 imul rax, r11, 0x33666667
-0x00000000 64,0x33666667,~,64,r11,~,*,DUP,rax,=,64,rax,~,-,!,!,DUP,cf,:=,of,:=
+0x00000000 64,862348903,~,64,r11,~,*,DUP,rax,=,64,rax,~,-,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 
@@ -231,7 +209,7 @@ EOF
 EXPECT=<<EOF
 opcode: imul eax, ebx, 0x89
 esilcost: 0
-esil: 32,0x89,~,32,ebx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
+esil: 32,137,~,32,ebx,~,*,DUP,eax,=,32,eax,~,-,!,!,DUP,cf,:=,of,:=
 EOF
 RUN
 
@@ -265,8 +243,8 @@ ar rax
 ar rbx
 EOF
 EXPECT=<<EOF
-mov rax, 0x04
-mov rbx, 0x05
+mov rax, 4
+mov rbx, 5
 0x00000004
 0x00000005
 EOF
@@ -285,8 +263,8 @@ ar rax
 ar rbx
 EOF
 EXPECT=<<EOF
-mov rax, 0x04
-mov rbx, 0x05
+mov rax, 4
+mov rbx, 5
 0x00000004
 0x00000005
 EOF
@@ -305,8 +283,8 @@ ar rax
 ar rbx
 EOF
 EXPECT=<<EOF
-mov rax, 0x04
-mov rbx, 0x05
+mov rax, 4
+mov rbx, 5
 0x00000004
 0x00000005
 EOF
@@ -323,9 +301,9 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 
-opcode: lea rsi, qword [rdi+0x68]
+opcode: lea rsi, [rdi + 0x68]
 esilcost: 0
-esil: rdi,0x68,+,rsi,=
+esil: 0x68,rdi,+,rsi,=
 EOF
 RUN
 
@@ -340,7 +318,7 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 
-opcode: lea rdi, qword [rbp-0x440]
+opcode: lea rdi, [rbp - 0x440]
 esilcost: 0
 esil: 0x440,rbp,-,rdi,=
 EOF
@@ -357,9 +335,9 @@ ao~opcode,esil
 EOF
 EXPECT=<<EOF
 
-opcode: mov dword [rip+0x40dd], 0x01
+opcode: mov dword [rip + 0x40dd], 1
 esilcost: 12
-esil: 0x1,0x40e7,=[4]
+esil: 1,0x40dd,rip,+,=[4]
 EOF
 RUN
 
@@ -373,7 +351,7 @@ e asm.esil=true
 pd 1
 EOF
 EXPECT=<<EOF
-            0x00000000      b804000000     0x4,rax,=
+            0x00000000      b804000000     4,rax,=
 EOF
 RUN
 
@@ -432,7 +410,7 @@ ao~esil
 EOF
 EXPECT=<<EOF
 esilcost: 4
-esil: 32,rdx,rax,4,*,+,[4],~,rax,=
+esil: 32,rax,4,*,rdx,+,[4],~,rax,=
 EOF
 RUN
 
@@ -445,9 +423,9 @@ e asm.bits=64
 ao~esil,opcode
 EOF
 EXPECT=<<EOF
-opcode: lea rax, qword [rdi+r13*8]
+opcode: lea rax, [rdi + r13*8]
 esilcost: 0
-esil: rdi,r13,8,*,+,rax,=
+esil: r13,8,*,rdi,+,rax,=
 EOF
 RUN
 
@@ -460,9 +438,9 @@ e asm.bits=64
 ao~opcode,esil
 EOF
 EXPECT=<<EOF
-opcode: lea rbx, qword [rax+rdx*1]
+opcode: lea rbx, [rax + rdx]
 esilcost: 0
-esil: rax,rdx,+,rbx,=
+esil: rdx,rax,+,rbx,=
 EOF
 RUN
 

@@ -218,10 +218,6 @@ deps =  [
     capstone_dep,
   ]
 
-r_arch_cflags = library_cflags + [
-  arch_plugins.contains('x86_zydis') ? '-DR2_X86_ZYDIS_ENABLED=1' : '-DR2_X86_ZYDIS_ENABLED=0'
-]
-
 if arch_plugins.contains('x86_zydis')
   deps += zydis_dep
 endif
@@ -241,7 +237,7 @@ endif
 
 r_arch = library('r_arch', r_arch_sources,
   include_directories: [incs],
-  c_args: r_arch_cflags,
+  c_args: library_cflags,
   dependencies: deps,
   link_with: links,
   install: true,
@@ -262,7 +258,7 @@ if arch_plugins.contains('x86_zydis')
 endif
 r_arch_static = static_library('r_arch_static', r_arch_sources,
   include_directories: [incs],
-  c_args: r_arch_cflags,
+  c_args: library_cflags,
   dependencies: static_deps,
   install: true,
   implicit_include_directories: false,
