@@ -48,7 +48,8 @@ static bool __fcn_exists(RAnal *anal, const char *name, ut64 addr) {
 	found = false;
 	f = ht_up_find (anal->ht_addr_fun, addr, &found);
 	if (f && found) {
-		R_LOG_WARN ("Function already defined in 0x%08"PFMT64x, addr);
+		R_LOG_DEBUG ("Function already defined in 0x%08"PFMT64x" as '%s'; ignoring duplicate '%s'",
+			addr, f->name? f->name: "", name);
 		return true;
 	}
 	return false;
@@ -899,6 +900,7 @@ R_API ut64 r_anal_function_context_hash(RAnal *anal, RAnalFunction *fcn) {
 	hash = function_context_hash_string (hash, fcn->name);
 	hash = function_context_hash_string (hash, fcn->callconv);
 	hash = function_context_hash_string (hash, fcn->assumptions_json);
+	hash = function_context_hash_mix (hash, r_anal_types_context_hash (anal));
 	RAnalVar **it;
 	R_VEC_FOREACH (&fcn->vars, it) {
 		RAnalVar *var = *it;

@@ -338,6 +338,49 @@ static bool test_anal_get_base_type_not_found(void) {
 	mu_end;
 }
 
+static bool test_anal_types_snapshot_epoch_and_context_hash(void) {
+	RAnal *anal = r_anal_new ();
+	mu_assert_notnull (anal, "Couldn't create new RAnal");
+
+	ut64 epoch0 = r_anal_types_dirty_epoch (anal);
+	ut64 hash0 = r_anal_types_context_hash (anal);
+	mu_assert_neq (hash0, 0, "initial type context hash");
+
+	RList *snapshot0 = r_anal_types_snapshot (anal);
+	mu_assert_notnull (snapshot0, "initial type snapshot");
+	r_anal_types_snapshot_free (snapshot0);
+
+	RAnalBaseType *base = r_anal_base_type_new (R_ANAL_BASE_TYPE_KIND_ATOMIC);
+	base->name = strdup ("codex_u8");
+	base->type = strdup ("u");
+	base->size = 8;
+	r_anal_save_base_type (anal, base);
+	r_anal_base_type_free (base);
+
+	ut64 epoch1 = r_anal_types_dirty_epoch (anal);
+	ut64 hash1 = r_anal_types_context_hash (anal);
+	mu_assert_neq (epoch1, epoch0, "saving a base type bumps the dirty epoch");
+	mu_assert_neq (hash1, hash0, "saving a base type changes the type context hash");
+	mu_assert_eq (r_anal_types_context_hash (anal), hash1, "type context hash is cached until the next epoch");
+
+	bool found = false;
+	RList *snapshot1 = r_anal_types_snapshot (anal);
+	mu_assert_notnull (snapshot1, "updated type snapshot");
+	RAnalBaseType *type;
+	RListIter *iter;
+	r_list_foreach (snapshot1, iter, type) {
+		if (type && type->name && !strcmp (type->name, "codex_u8")) {
+			found = true;
+			break;
+		}
+	}
+	r_anal_types_snapshot_free (snapshot1);
+	mu_assert_true (found, "updated type snapshot contains saved base type");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_struct);
 	mu_run_test (test_anal_save_base_type_struct);
@@ -350,6 +393,7 @@ int all_tests(void) {
 	mu_run_test (test_anal_get_base_type_atomic);
 	mu_run_test (test_anal_save_base_type_atomic);
 	mu_run_test (test_anal_get_base_type_not_found);
+	mu_run_test (test_anal_types_snapshot_epoch_and_context_hash);
 	return tests_passed != tests_run;
 }
 

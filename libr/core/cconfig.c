@@ -1749,6 +1749,7 @@ static bool cb_cmdpdc(void *user, void *data) {
 			RAnalPlugin *ap;
 			r_list_foreach (core->anal->libstore->plugins, it, ap) {
 				if (!strcmp (ap->meta.name, "sla")) {
+					r_cons_println (core->cons, "pdd");
 					r_cons_println (core->cons, "a:sla.dec");
 					break;
 				}
@@ -4014,6 +4015,19 @@ R_API int r_core_config_init(RCore *core) {
 	SETICB ("anal.nonull", 0, &cb_anal_nonull, "do not analyze regions of N null bytes");
 	SETB ("anal.esil", "false", "use the new ESIL code analysis");
 	SETB ("anal.strings", "false", "flag strings when performing analysis (see af,aar, e bin.strings)");
+	SETS ("anal.sla.mode", "full", "r2sleigh analysis profile: full|balanced|fast");
+	SETS ("anal.sla.type.writeback", "balanced", "r2sleigh type write-back policy: off|balanced|aggressive");
+	SETI ("anal.sla.type.min_conf", 85, "minimum confidence for r2sleigh type apply");
+	SETI ("anal.sla.type.rename_min_conf", 93, "minimum confidence for r2sleigh variable rename apply");
+	SETI ("anal.sla.type.struct_min_conf", 85, "minimum confidence for r2sleigh struct declaration import");
+	SETI ("anal.sla.type.interproc.max_iters", 12, "maximum r2sleigh interprocedural propagation iterations");
+	SETI ("anal.sla.type.max_blocks", 500, "maximum basic blocks for r2sleigh type write-back inference");
+	SETI ("anal.sla.type.global.max_links", 128, "maximum r2sleigh global type links applied per function payload");
+	SETI ("anal.sla.type.max_decls", 64, "maximum r2sleigh struct/type declarations emitted per function payload");
+	SETI ("anal.sla.type.max_mutations", 512, "maximum r2sleigh non-signature type mutations emitted per function payload");
+	SETB ("anal.sla.type.cache", "false", "enable legacy r2sleigh C-side type payload cache for debugging");
+	SETB ("anal.sla.profile", "false", "record opt-in r2sleigh per-function stage timings");
+	SETI ("anal.sla.profile.max", 20, "maximum profile entries shown by a:sla.debug.profilej");
 	SETS ("types.spec", "gcc", "set profile for specifying format chars used in type analysis");
 	SETB ("types.verbose", "false", "verbose output from type analysis");
 	SETB ("types.constraint", "false", "enable constraint types analysis for variables");

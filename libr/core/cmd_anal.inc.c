@@ -1423,7 +1423,7 @@ static bool cmd_anal_aaft(RCore *core) {
 		}
 		r_reg_arena_poke (core->anal->reg, saved_arena, saved_arena_size);
 		r_esil_set_pc (core->anal->esil, fcn->addr);
-		r_core_cmd0 (core, "a:tp");
+		r_anal_type_match (core->anal, fcn);
 		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
@@ -14887,6 +14887,20 @@ static bool is_swift(RCore *core) {
 	return false;
 }
 
+static void recover_function_vars_for_analysis(RCore *core, RAnalFunction *fcn) {
+	if (!core || !core->anal || !fcn) {
+		return;
+	}
+	char *type = r_str_newf ("func.%s.ret", fcn->name);
+	if (type && sdb_exists (core->anal->sdb_types, type)) {
+		free (type);
+		return;
+	}
+	free (type);
+	r_anal_function_delete_all_vars (fcn);
+	r_core_recover_vars (core, fcn, false);
+}
+
 static void cmd_aaa(RCore *core, const char *input) {
 	if (strchr (input, '?')) {
 		r_core_cmd_help (core, help_msg_aaa);
@@ -14943,8 +14957,15 @@ static void cmd_aaa(RCore *core, const char *input) {
 	// Run afvn in all fcns
 	if (r_config_get_b (core->config, "anal.vars")) {
 		logline (core, 15, "Analyze all functions arguments/locals (afva@@F)");
-		// r_core_cmd0 (core, "afva@@f");
-		r_core_cmd0 (core, "afva@@F");
+		RAnalFunction *fcni;
+		RListIter *iter;
+		r_list_foreach (core->anal->fcns, iter, fcni) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			recover_function_vars_for_analysis (core, fcni);
+			r_core_task_yield (&core->tasks);
+		}
 	}
 #endif
 	// Run pending analysis immediately after analysis
@@ -15149,6 +15170,8 @@ static void cmd_aaa(RCore *core, const char *input) {
 				r_core_cmd0 (core, ".afna@@c:afla");
 			}
 		} else {
+			logline (core, 97, "Running plugin post-analysis hooks");
+			r_anal_plugin_action (core->anal, R_ANAL_PLUGIN_ACTION_POST_ANALYSIS, NULL);
 			R_LOG_INFO ("Use -AA or aaaa to perform additional experimental analysis");
 		}
 		if (!r_str_startswith (asm_arch, "x86") && !r_str_startswith (asm_arch, "hex")) {

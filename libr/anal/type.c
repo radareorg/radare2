@@ -510,6 +510,12 @@ R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name) {
 	return base_type;
 }
 
+static int base_type_name_cmp(const void *a, const void *b) {
+	const RAnalBaseType *ta = (const RAnalBaseType *)a;
+	const RAnalBaseType *tb = (const RAnalBaseType *)b;
+	return strcmp (ta && ta->name? ta->name: "", tb && tb->name? tb->name: "");
+}
+
 R_API RList *r_anal_types_baselist(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, NULL);
 	RList *types = r_list_newf ((RListFree)r_anal_base_type_free);
@@ -544,7 +550,101 @@ R_API RList *r_anal_types_baselist(RAnal *anal) {
 		}
 	}
 	ls_free (keys);
+	r_list_sort (types, base_type_name_cmp);
 	return types;
+}
+
+R_API RList *r_anal_types_snapshot(RAnal *anal) {
+	return r_anal_types_baselist (anal);
+}
+
+R_API void r_anal_types_snapshot_free(RList *snapshot) {
+	r_list_free (snapshot);
+}
+
+R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	return anal->type_dirty_epoch;
+}
+
+R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	anal->type_dirty_epoch++;
+	if (!anal->type_dirty_epoch) {
+		anal->type_dirty_epoch++;
+	}
+	anal->type_context_hash_cache = 0;
+	anal->type_context_hash_epoch = 0;
+	return anal->type_dirty_epoch;
+}
+
+static ut64 type_context_hash_mix(ut64 hash, ut64 value) {
+	hash ^= value + 0x9e3779b97f4a7c15ULL + (hash << 6) + (hash >> 2);
+	return hash;
+}
+
+static ut64 type_context_hash_string(ut64 hash, const char *value) {
+	return type_context_hash_mix (hash, R_STR_ISNOTEMPTY (value)? r_str_hash64 (value): 0);
+}
+
+R_API ut64 r_anal_types_context_hash(RAnal *anal) {
+	R_RETURN_VAL_IF_FAIL (anal, 0);
+	if (anal->type_context_hash_cache && anal->type_context_hash_epoch == anal->type_dirty_epoch) {
+		return anal->type_context_hash_cache;
+	}
+	ut64 hash = 0xcbf29ce484222325ULL;
+	hash = type_context_hash_mix (hash, r_anal_types_dirty_epoch (anal));
+	RList *types = r_anal_types_snapshot (anal);
+	RListIter *iter;
+	RAnalBaseType *type;
+	r_list_foreach (types, iter, type) {
+		if (!type) {
+			continue;
+		}
+		hash = type_context_hash_string (hash, type->name);
+		hash = type_context_hash_string (hash, type->type);
+		hash = type_context_hash_mix (hash, (ut64)type->size);
+		hash = type_context_hash_mix (hash, (ut64)type->kind);
+		switch (type->kind) {
+		case R_ANAL_BASE_TYPE_KIND_STRUCT: {
+			RAnalStructMember *member;
+			R_VEC_FOREACH (&type->struct_data.members, member) {
+				hash = type_context_hash_string (hash, member->name);
+				hash = type_context_hash_string (hash, member->type);
+				hash = type_context_hash_mix (hash, (ut64)member->offset);
+				hash = type_context_hash_mix (hash, (ut64)member->size);
+			}
+			break;
+		}
+		case R_ANAL_BASE_TYPE_KIND_UNION: {
+			RAnalUnionMember *member;
+			R_VEC_FOREACH (&type->union_data.members, member) {
+				hash = type_context_hash_string (hash, member->name);
+				hash = type_context_hash_string (hash, member->type);
+				hash = type_context_hash_mix (hash, (ut64)member->offset);
+				hash = type_context_hash_mix (hash, (ut64)member->size);
+			}
+			break;
+		}
+		case R_ANAL_BASE_TYPE_KIND_ENUM: {
+			RAnalEnumCase *cas;
+			R_VEC_FOREACH (&type->enum_data.cases, cas) {
+				hash = type_context_hash_string (hash, cas->name);
+				hash = type_context_hash_mix (hash, (ut64)(st64)cas->val);
+			}
+			break;
+		}
+		default:
+			break;
+		}
+	}
+	r_anal_types_snapshot_free (types);
+	if (!hash) {
+		hash = 1;
+	}
+	anal->type_context_hash_cache = hash;
+	anal->type_context_hash_epoch = anal->type_dirty_epoch;
+	return hash;
 }
 
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {
@@ -788,4 +888,5 @@ R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type) {
 	default:
 		break;
 	}
+	r_anal_types_bump_dirty_epoch ((RAnal *)anal);
 }

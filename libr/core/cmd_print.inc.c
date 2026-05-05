@@ -6431,6 +6431,34 @@ static void core_print_decompile(RCore *core, const char *input) {
 	r_esil_toc_free (ec);
 }
 
+static bool core_has_sleigh_decompiler(RCore *core) {
+	if (!core || !core->anal || !core->anal->libstore || !core->anal->libstore->plugins) {
+		return false;
+	}
+	RListIter *it;
+	RAnalPlugin *ap;
+	r_list_foreach (core->anal->libstore->plugins, it, ap) {
+		if (ap && !strcmp (ap->meta.name, "sla")) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool core_print_sleigh_decompile(RCore *core, const char *input) {
+	if (!core_has_sleigh_decompiler (core)) {
+		return false;
+	}
+	const char *arg = input? r_str_trim_head_ro (input): "";
+	if (arg && *arg && *arg != 'D') {
+		r_core_cmdf (core, "a:sla.dec %s", arg);
+	} else {
+		r_core_cmd0 (core, "a:sla.dec");
+	}
+	r_core_return_code (core, 0);
+	return true;
+}
+
 static void cmd_print_pcA(RCore *core, ut64 addr, const ut8 *data, int len) {
 	RStrBuf *sb = r_strbuf_new ("");
 	if (!sb) {
@@ -7148,6 +7176,10 @@ static int cmd_pd(RCore *core, const char *input, int len, int l, ut8 *block) {
 	case 'z': // "pdz" // retdec
 	case 'g': // "pdg" // r2ghidra
 	{
+		if (input[1] == 'd' && input[2] != '?' && core_print_sleigh_decompile (core, input + 2)) {
+			processed_cmd = true;
+			break;
+		}
 		// Check for fallback command in SDB (fallbackcmd.* namespace)
 		char cmd_name[4] = { 'p', 'd', input[1], '\0' };
 		char *fallback_key = r_str_newf ("fallbackcmd.%s", cmd_name);

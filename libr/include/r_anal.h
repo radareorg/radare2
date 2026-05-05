@@ -573,6 +573,9 @@ typedef struct r_anal_t {
 	Sdb *sdb_cc; // calling conventions
 	Sdb *sdb_classes;
 	Sdb *sdb_classes_attrs;
+	ut64 type_dirty_epoch; // incremented when global typed metadata changes
+	ut64 type_context_hash_cache;
+	ut64 type_context_hash_epoch;
 	RAnalCallbacks cb;
 	RAnalOptions opt;
 	RList *reflines;
@@ -1851,6 +1854,11 @@ R_API RList *r_anal_types_from_fcn(RAnal *anal, RAnalFunction *fcn);
 
 R_API RAnalBaseType *r_anal_get_base_type(RAnal *anal, const char *name);
 R_API RList *r_anal_types_baselist(RAnal *anal);
+R_API RList *r_anal_types_snapshot(RAnal *anal);
+R_API void r_anal_types_snapshot_free(RList *snapshot);
+R_API ut64 r_anal_types_dirty_epoch(const RAnal *anal);
+R_API ut64 r_anal_types_bump_dirty_epoch(RAnal *anal);
+R_API ut64 r_anal_types_context_hash(RAnal *anal);
 R_API void r_parse_pdb_types(const RAnal *anal, const RBinPdb *pdb);
 R_API void r_anal_save_base_type(const RAnal *anal, const RAnalBaseType *type);
 R_API void r_anal_base_type_free(RAnalBaseType *type);
