@@ -741,16 +741,38 @@ typedef struct {
 	ut64 addr;
 	ut8 *buf;
 	int bufsz;
+	bool first;
 } StringSearchOptions;
+
+static bool read_section_or_io(RCore *core, RBinSection *section, ut64 addr, ut8 *buf, int len) {
+	if (section && addr >= section->vaddr) {
+		const ut64 delta = addr - section->vaddr;
+		ut64 paddr;
+		if (delta < section->size && len <= section->size - delta &&
+			!r_add_overflow_ut64 (section->paddr, delta, &paddr)) {
+			return r_io_pread_at (core->io, paddr, buf, len) == len;
+		}
+	}
+	return r_io_read_at (core->io, addr, buf, len);
+}
 
 static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	StringSearchOptions *sso = (StringSearchOptions*)user;
-	if (where - sso->addr >= sso->bufsz) {
-		r_core_call_at (sso->core, where, "Csz");
-	} else {
-		const char *name = (const char *)(sso->buf + (where - sso->addr));
-		const size_t maxlen = sso->bufsz - (where - sso->addr);
-		char *hname = r_str_ndup (name, maxlen);
+	if (where < sso->addr || where - sso->addr >= sso->bufsz) {
+		return true;
+	}
+	if (sso->first) {
+		sso->first = false;
+		if (where > sso->addr) {
+			r_meta_set_with_subtype (sso->core->anal, R_META_TYPE_STRING, 0,
+				sso->addr, where - sso->addr, "");
+		}
+	}
+	const ut64 delta = where - sso->addr;
+	const char *name = (const char *)(sso->buf + delta);
+	const size_t maxlen = sso->bufsz - delta;
+	char *hname = r_str_ndup (name, maxlen);
+	if (hname) {
 		const size_t n = strlen (hname) + 1;
 		r_meta_set (sso->core->anal, R_META_TYPE_STRING, where, n, hname);
 		free (hname);
@@ -997,14 +1019,15 @@ static int cmd_meta_others(RCore *core, const char *input) {
 	case 's': // "Css"
 		{
 			ut64 range = UT64_MAX;
+			RBinSection *section = NULL;
 			if (input[0] && input[1] && input[2]) {
 				range = r_num_math (core->num, input + 3);
 			}
 			if (range == UT64_MAX || range == 0) {
 				// get cursection size
-				RBinSection *s = r_bin_get_section_at (r_bin_cur_object (core->bin), core->addr, true);
-				if (s) {
-					range = s->vaddr + s->vsize - core->addr;
+				section = r_bin_get_section_at (r_bin_cur_object (core->bin), core->addr, true);
+				if (section) {
+					range = section->vaddr + section->vsize - core->addr;
 				}
 				// TODO use debug maps if cfg.debug=true?
 			}
@@ -1019,24 +1042,27 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					const ut64 addr = core->addr;
 					const int minstr = r_config_get_i (core->config, "bin.str.min");
 					const int maxstr = r_config_get_i (core->config, "bin.str.max");
-					// maps are not yet set
-					free (r_core_cmd_str (core, "o;om")); // wtf?
-					if (!r_io_read_at (core->io, addr, buf, range)) {
-						R_LOG_ERROR ("Cannot read %d", range);
+					if (!section) {
+						section = r_bin_get_section_at (r_bin_cur_object (core->bin), addr, true);
 					}
-					RSearch *ss = r_search_new (R_SEARCH_STRING);
-					r_search_set_string_limits (ss, minstr, maxstr);
-					StringSearchOptions sso = {
-						.addr = addr,
-						.core = core,
-						.buf = buf,
-						.bufsz = range
-					};
-					// r_print_hexdump (core->print, addr, buf, range, 8,1,1);
-					r_search_set_callback (ss, cb_strhit, &sso);
-					r_search_begin (ss);
-					r_search_update (ss, addr, buf, range);
-					r_search_free (ss);
+					if (read_section_or_io (core, section, addr, buf, (int)range)) {
+						RSearch *ss = r_search_new (R_SEARCH_STRING);
+						r_search_set_string_limits (ss, minstr, maxstr);
+						StringSearchOptions sso = {
+							.addr = addr,
+							.core = core,
+							.buf = buf,
+							.bufsz = (int)range,
+							.first = true
+						};
+						// r_print_hexdump (core->print, addr, buf, range, 8,1,1);
+						r_search_set_callback (ss, cb_strhit, &sso);
+						r_search_begin (ss);
+						r_search_update (ss, addr, buf, range);
+						r_search_free (ss);
+					} else {
+						R_LOG_ERROR ("Cannot read %"PFMT64u, range);
+					}
 					free (buf);
 				} else {
 					R_LOG_ERROR ("Cannot allocate");
