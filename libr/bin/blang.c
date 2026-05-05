@@ -278,14 +278,6 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 // if its ipi no need to be prefixed with r_
 R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def, const char * R_NULLABLE sym) {
 	int type = R_BIN_LANG_NONE;
-	if (sym) {
-		if (r_str_startswith (sym, "__")) {
-			type = R_BIN_LANG_CXX;
-		}
-		if (r_str_startswith (sym, "_Z")) {
-			return R_BIN_LANG_RUST;
-		}
-	}
 	if (R_STR_ISNOTEMPTY (def)) {
 		type = r_bin_demangle_type (def);
 		if (type != R_BIN_LANG_NONE) {
@@ -302,6 +294,17 @@ R_IPI int r_bin_lang_type(RBinFile * R_NULLABLE bf, const char * R_NULLABLE def,
 	}
 	if (def && type == R_BIN_LANG_NONE) {
 		type = r_bin_demangle_type (def);
+	}
+	if (type != R_BIN_LANG_NONE) {
+		return type;
+	}
+	if (sym) {
+		if (r_str_startswith (sym, "__")) {
+			return R_BIN_LANG_CXX;
+		}
+		if (r_str_startswith (sym, "_Z")) {
+			return R_BIN_LANG_RUST;
+		}
 	}
 	return type;
 }
