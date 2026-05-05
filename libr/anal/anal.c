@@ -156,7 +156,7 @@ static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
 	}
-	if (!(region.perm & R_PERM_W)) {
+	if (!(region.perm & (R_PERM_W | R_PERM_REQ_W))) {
 		return false;
 	}
 	if (!r_itv_contain (region.itv, addr + len - 1)) {

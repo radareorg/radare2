@@ -136,7 +136,8 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		perm &= (desc->perm | R_PERM_X);
+		//requested permissions are stored in higher bits, anal esil needs this
+		perm = (perm & (desc->perm | R_PERM_X)) | ((perm & R_PERM_RWX) << 7);
 		RIOMap *map[2] = {NULL, NULL};
 		if (R_UNLIKELY ((UT64_MAX - size + 1) < addr)) {
 			const ut64 new_size = UT64_MAX - addr + 1;
@@ -183,7 +184,8 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		perm &= desc->perm | R_PERM_X;
+		//requested permissions are stored in higher bits, anal esil needs this
+		perm = (perm & (desc->perm | R_PERM_X)) | ((perm & R_PERM_RWX) << 7);
 		RIOMap *map[2] = {NULL, NULL};
 		if (R_UNLIKELY ((UT64_MAX - size + 1) < addr)) {
 			const ut64 new_size = UT64_MAX - addr + 1;
