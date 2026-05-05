@@ -137,14 +137,13 @@ static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	RAnal *anal = mem;
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
-		return anal->iob.read_at (anal->iob.io, addr, buf, len);
+		return false;
 	}
 	if (!(region.perm & R_PERM_R)) {
-		(void)anal->iob.read_at (anal->iob.io, addr, buf, len);
 		return false;
 	}
 	if (!r_itv_contain (region.itv, addr + len - 1)) {
-		return anal->iob.read_at (anal->iob.io, addr, buf, len);
+		return false;
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
 	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
@@ -155,19 +154,18 @@ static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	RAnal *anal = mem;
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
-		return r_io_cache_writable (anal->iob.io)
-			&& anal->iob.write_at (anal->iob.io, addr, buf, len);
+		return false;
 	}
 	if (!(region.perm & R_PERM_W)) {
 		return false;
 	}
 	if (!r_itv_contain (region.itv, addr + len - 1)) {
-		return r_io_cache_writable (anal->iob.io)
-			&& anal->iob.write_at (anal->iob.io, addr, buf, len);
+		return false;
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
 	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
-	return anal->iob.write_at (anal->iob.io, addr, buf, len);
+	return r_io_cache_writable (anal->iob.io)
+		&& anal->iob.write_at (anal->iob.io, addr, buf, len);
 }
 
 static bool anal_esil_set_bits(void *user, int bits) {
