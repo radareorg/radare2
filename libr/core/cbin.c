@@ -3626,12 +3626,14 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		pj_end (pj);
 	}
 	// run the formats now
-	r_list_foreach (sections, iter, section) {
-		if (R_STR_ISNOTEMPTY (section->format)) {
-			// This is damn slow if section vsize is HUGE
-			if (section->vsize < 1024 * 1024 * 2) {
-				R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
-				r_core_call_at (core, section->vaddr, section->format);
+	if (!print_segments) {
+		r_list_foreach (sections, iter, section) {
+			if (R_STR_ISNOTEMPTY (section->format)) {
+				// This is damn slow if section vsize is HUGE
+				if (section->vsize < 1024 * 1024 * 2) {
+					R_LOG_DEBUG ("(section %s) %s @ 0x%" PFMT64x, section->name, section->format, section->vaddr);
+					r_core_call_at (core, section->vaddr, section->format);
+				}
 			}
 		}
 	}
