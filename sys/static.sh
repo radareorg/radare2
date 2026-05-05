@@ -93,6 +93,14 @@ elif grep -q '^USE_CS4=1' config-user.mk 2> /dev/null; then
 	CAPSTONE_LIB=subprojects/capstone-v4/libcapstone.a
 fi
 STATIC_LIBS="shlr/gdb/lib/libgdbr.a subprojects/otezip/libotezip.a ${CAPSTONE_LIB}"
+if grep -q '^WANT_ZYDIS=1' config-user.mk 2> /dev/null && grep -q 'p/x86_zydis.mk' libr/config.mk 2> /dev/null; then
+	if grep -q '^USE_ZYDIS=1' config-user.mk 2> /dev/null; then
+		ZYDIS_LIB=`sed -n 's/^CONFIG_ZYDIS_LDFLAGS=//p' config-user.mk | tail -n 1`
+	else
+		ZYDIS_LIB=subprojects/zydis/libzydis.a
+	fi
+	STATIC_LIBS="${STATIC_LIBS} ${ZYDIS_LIB}"
+fi
 STATIC_TEST_CFLAGS="${CFLAGS_STATIC} ${CFLAGS}"
 
 show_link_errors() {

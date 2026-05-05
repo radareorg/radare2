@@ -17,7 +17,7 @@ ifneq ($(USE_ZYDIS),1)
 ZYDIS_DEPS=$(ZYDIS_LIB)
 
 ${ZYDIS_LIB}:
-	$(MAKE) -C $(LIBR)/../subprojects zydis
+	$(MAKE) -C $(LIBR)/../subprojects zydis CC="$(CC)" AR="$(AR)" CFLAGS="$(CFLAGS)"
 
 ${ZYDIS_HDR}: ${ZYDIS_LIB}
 
