@@ -891,6 +891,7 @@ typedef struct r_bin_dwarf_loc_list_t {
 R_API void r_bin_dwarf_parse_aranges(RBinFile *bf, int mode);
 R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode);
 R_API RVecDwarfAbbrevDecl *r_bin_dwarf_parse_abbrev(RBinFile *bf, int mode);
+R_API bool r_bin_dwarf_parse_comp_dirs(RBinFile *bf, RVecDwarfAbbrevDecl *da);
 R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDecl *da, int mode);
 R_API HtUP/*<offset, RBinDwarfLocList*>*/  *r_bin_dwarf_parse_loc(RBinFile *bf, int addr_size);
 R_API char *r_bin_dwarf_print_loc(HtUP /*<offset, RBinDwarfLocList*>*/  *loc_table, int addr_size);
