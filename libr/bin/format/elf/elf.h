@@ -162,6 +162,7 @@ struct Elf_(obj_t) {
 	bool verbose;
 	bool has_nobtcfi;
 	bool has_nx;
+	int bits_cache;
 	const char* file;
 	RBuffer *b;
 	Sdb *kv;
