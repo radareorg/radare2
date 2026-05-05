@@ -1735,13 +1735,18 @@ static bool init_debug_info(RBinDwarfDebugInfo *inf) {
 	return true;
 }
 
-static bool init_die(RArena *arena, RBinDwarfDie *die, ut64 abbr_code, ut64 attr_count) {
+static bool init_die(RArena *arena, RBinDwarfDie *die, ut64 abbr_code, size_t attr_count) {
 	if (!die) {
 		return false;
 	}
 	if (attr_count) {
 		die->attr_values = RVecDwarfAttrValue_new ();
 		if (!die->attr_values) {
+			return false;
+		}
+		if (!RVecDwarfAttrValue_reserve (die->attr_values, attr_count)) {
+			RVecDwarfAttrValue_free (die->attr_values);
+			die->attr_values = NULL;
 			return false;
 		}
 	} else {
@@ -1802,6 +1807,17 @@ R_API void r_bin_dwarf_free_debug_abbrev(RVecDwarfAbbrevDecl *da) {
 	RVecDwarfAbbrevDecl_free (da);
 }
 
+static void attr_value_fini(RBinDwarfAttrValue *value) {
+	if (!value) {
+		return;
+	}
+	// Only DW_FORM_block2 allocates block.data with r_mem_dup.
+	// Other block forms point into the section buffer.
+	if (value->attr_form == DW_FORM_block2) {
+		free ((void *)value->block.data);
+	}
+}
+
 R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 	if (!inf) {
 		return;
@@ -1814,11 +1830,7 @@ R_API void r_bin_dwarf_free_debug_info(RBinDwarfDebugInfo *inf) {
 			if (die->attr_values) {
 				RBinDwarfAttrValue *value;
 				R_VEC_FOREACH (die->attr_values, value) {
-					// Only DW_FORM_block2 allocates block.data with r_mem_dup
-					// Other block forms point into the section buffer
-					if (value->attr_form == DW_FORM_block2) {
-						free ((void *)value->block.data);
-					}
+					attr_value_fini (value);
 				}
 				RVecDwarfAttrValue_free (die->attr_values);
 			}
@@ -2343,14 +2355,20 @@ static const ut8 *parse_die(RBinFile *bf, const ut8 *buf, const ut8 *buf_end, RB
 		if (value.attr_name == DW_AT_comp_dir && is_valid_string_form) {
 			comp_dir = value.string.content;
 		}
-		RVecDwarfAttrValue_push_back (die->attr_values, &value);
+		if (die->attr_values) {
+			RVecDwarfAttrValue_push_back (die->attr_values, &value);
+		} else {
+			attr_value_fini (&value);
+		}
 	}
 
-	comp_dir_key = get_compilation_directory_key (bf->arena, debug_line_offset);
-	if (!comp_dir_key) {
-		sdb_set (sdb, "DW_AT_comp_dir", comp_dir, 0);
-	} else {
-		sdb_set (sdb, comp_dir_key, comp_dir, 0);
+	if (comp_dir) {
+		comp_dir_key = get_compilation_directory_key (bf->arena, debug_line_offset);
+		if (!comp_dir_key) {
+			sdb_set (sdb, "DW_AT_comp_dir", comp_dir, 0);
+		} else {
+			sdb_set (sdb, comp_dir_key, comp_dir, 0);
+		}
 	}
 
 	return buf;
@@ -2408,7 +2426,14 @@ static const ut8 *parse_comp_unit(RBinFile *bf, RBinDwarfDebugInfo *info, Sdb *s
 
 		RBinDwarfAbbrevDecl *abbrev = RVecDwarfAbbrevDecl_at (abbrevs, abbr_idx - 1);
 
-		if (!init_die (bf->arena, &die, abbr_code, abbrevs_count)) {
+		size_t attr_count = RVecDwarfAttrDef_length (abbrev->defs);
+		if (attr_count > 0) {
+			RBinDwarfAttrDef *last = RVecDwarfAttrDef_at (abbrev->defs, attr_count - 1);
+			if (last && !last->attr_name && !last->attr_form) {
+				attr_count--;
+			}
+		}
+		if (!init_die (bf->arena, &die, abbr_code, attr_count)) {
 			return NULL; // error
 		}
 		die.tag = abbrev->tag;
@@ -2459,6 +2484,111 @@ static const ut8 *info_comp_unit_read_hdr(RBin *bin, const ut8 *buf, const ut8 *
 	}
 	hdr->header_size = buf - tmp; // header size excluding length field
 	return buf;
+}
+
+static void dwarf_metadata_set_comp_dir(RBinFile *bf, ut64 debug_line_offset, bool has_debug_line_offset, const char *comp_dir) {
+	if (!bf || !comp_dir) {
+		return;
+	}
+	char *dir = strdup (comp_dir);
+	if (!dir) {
+		return;
+	}
+	if (has_debug_line_offset) {
+		if (!bf->dwarf_metadata.comp_dirs) {
+			bf->dwarf_metadata.comp_dirs = ht_up_new (NULL, free_comp_dir_entry, NULL);
+			if (!bf->dwarf_metadata.comp_dirs) {
+				free (dir);
+				return;
+			}
+		}
+		if (!ht_up_update (bf->dwarf_metadata.comp_dirs, debug_line_offset, dir)) {
+			free (dir);
+		}
+		return;
+	}
+	free (bf->dwarf_metadata.comp_dir);
+	bf->dwarf_metadata.comp_dir = dir;
+}
+
+R_API bool r_bin_dwarf_parse_comp_dirs(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && decls, false);
+	RBinSection *section = get_section (bf, DWARF_SN_INFO);
+	if (!section) {
+		return false;
+	}
+	const ut8 *obuf = get_section_bytes (bf, section);
+	if (!obuf || section->bytes.len < 1) {
+		return false;
+	}
+	RBin *bin = bf->rbin;
+	const ut8 *buf = obuf;
+	const ut8 *buf_end = obuf + section->bytes.len;
+	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
+	while (buf && buf + 4 < buf_end) {
+		RBinDwarfCompUnitHdr hdr = { 0 };
+		const ut8 *unit_start = buf;
+		hdr.unit_offset = unit_start - obuf;
+		buf = info_comp_unit_read_hdr (bin, buf, buf_end, &hdr);
+		if (!buf || buf > buf_end) {
+			return false;
+		}
+		size_t len_size = hdr.is_64bit? 12: 4;
+		size_t remaining = buf_end - unit_start;
+		if (remaining < len_size || hdr.length < hdr.header_size || hdr.length > remaining - len_size) {
+			return false;
+		}
+		const ut8 *unit_end = unit_start + len_size + hdr.length;
+		RBinDwarfAbbrevDecl key = { .offset = hdr.abbrev_offset };
+		RBinDwarfAbbrevDecl *abbrev_start = bsearch (&key, decls->_start, abbrevs_count, sizeof (key), abbrev_cmp);
+		if (!abbrev_start) {
+			buf = unit_end;
+			continue;
+		}
+		size_t first_abbr_idx = abbrev_start - decls->_start;
+		ut64 abbr_code = 0;
+		buf = r_uleb128 (buf, unit_end - buf, &abbr_code, NULL);
+		if (!buf || !abbr_code) {
+			buf = unit_end;
+			continue;
+		}
+		ut64 abbr_idx = first_abbr_idx + abbr_code;
+		if (abbr_idx == 0 || abbr_idx > abbrevs_count) {
+			buf = unit_end;
+			continue;
+		}
+		RBinDwarfAbbrevDecl *abbrev = RVecDwarfAbbrevDecl_at (decls, abbr_idx - 1);
+		ut64 debug_line_offset = 0;
+		bool has_debug_line_offset = false;
+		const char *comp_dir = NULL;
+		RBinDwarfAttrDef *def;
+		R_VEC_FOREACH (abbrev->defs, def) {
+			if (!def->attr_name && !def->attr_form) {
+				break;
+			}
+			RBinDwarfAttrValue value = { 0 };
+			const ut8 *nbuf = parse_attr_value (bf, buf, unit_end - buf, def, &value, &hdr);
+			if (!nbuf) {
+				break;
+			}
+			buf = nbuf;
+			bool is_string = (value.attr_form == DW_FORM_strp || value.attr_form == DW_FORM_string ||
+				value.attr_form == DW_FORM_line_strp);
+			if (value.attr_name == DW_AT_stmt_list) {
+				debug_line_offset = value.reference;
+				has_debug_line_offset = true;
+			} else if (value.attr_name == DW_AT_comp_dir && is_string && value.string.content) {
+				comp_dir = value.string.content;
+			}
+			attr_value_fini (&value);
+			if (has_debug_line_offset && comp_dir) {
+				break;
+			}
+		}
+		dwarf_metadata_set_comp_dir (bf, debug_line_offset, has_debug_line_offset, comp_dir);
+		buf = unit_end;
+	}
+	return true;
 }
 
 #if 0
@@ -2767,6 +2897,9 @@ R_API RList *r_bin_dwarf_parse_line(RBinFile *bf, int mode) {
 		list = r_list_newf (row_free);
 		/* parse the line number program */
 		parse_line_raw (bf->rbin, buf, section->bytes.len, mode);
+		if (mode == R_MODE_SET) {
+			return list;
+		}
 		if (bf->addrline.used) {
 			RBinAddrLineStore *als = &bf->addrline;
 			als->al_foreach (als, cb, list);
