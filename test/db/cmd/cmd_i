@@ -551,14 +551,14 @@ pthread_mutex_unlock
 0x00006060 10 _JNIEnv::FindClass(char const*)
 0x00007c7a 10 __aeabi_unwind_cpp_pr1
 0x0000606a 10 _JNIEnv::DeleteLocalRef(_jobject*)
-0x00006074 26 _JNIEnv::NewObject(_jclass*, _jmethodID*, ::)
+0x00006074 26 _JNIEnv::NewObject(_jclass*, _jmethodID*, ...)
 0x0000608e 10 _JNIEnv::GetObjectClass(_jobject*)
 0x00006098 12 _JNIEnv::GetMethodID(_jclass*, char const*, char const*)
 0x00007c70 10 __aeabi_unwind_cpp_pr0
-0x000060a4 28 _JNIEnv::CallObjectMethod(_jobject*, _jmethodID*, ::)
-0x000060c0 28 _JNIEnv::CallVoidMethod(_jobject*, _jmethodID*, ::)
+0x000060a4 28 _JNIEnv::CallObjectMethod(_jobject*, _jmethodID*, ...)
+0x000060c0 28 _JNIEnv::CallVoidMethod(_jobject*, _jmethodID*, ...)
 0x000060dc 14 _JNIEnv::GetStaticMethodID(_jclass*, char const*, char const*)
-0x000060ea 30 _JNIEnv::CallStaticObjectMethod(_jclass*, _jmethodID*, ::)
+0x000060ea 30 _JNIEnv::CallStaticObjectMethod(_jclass*, _jmethodID*, ...)
 0x00006108 48 getPackageName(_JNIEnv*, _jobject*)
 0x00006138 164 JstringToString(_JNIEnv*, _jstring*)
 0x000061dc 136 CharTojstring(_JNIEnv*, char const*)
@@ -579,8 +579,8 @@ pthread_mutex_unlock
 0x00006918 28 register_ndk_load(_JNIEnv*)
 0x00006934 40 JNI_OnLoad
 0x0000695c 2 decodeFile()
-0x0000695e 30 _JNIEnv::CallStaticIntMethod(_jclass*, _jmethodID*, ::)
-0x0000697c 30 _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ::)
+0x0000695e 30 _JNIEnv::CallStaticIntMethod(_jclass*, _jmethodID*, ...)
+0x0000697c 30 _JNIEnv::CallStaticVoidMethod(_jclass*, _jmethodID*, ...)
 0x0000699c 144 SystemClassLoaderInjector::findBaseDexClassloader(_JNIEnv*, _jobject*)
 0x00006a2c 144 SystemClassLoaderInjector::getField(_JNIEnv*, _jobject*, _jobject*, _jstring*)
 0x00006abc 56 SystemClassLoaderInjector::getPathList(_JNIEnv*, _jobject*)
@@ -3348,15 +3348,6 @@ EXPECT=<<EOF
             0x0021bfb0      .qword 0x0000000000005ce0 ; entry.fini0    ; RELOC 64  ; [19] -rw- section size 8 named .fini_array
 EOF
 EXPECT_ERR=<<EOF
-DEBUG: (section .dynsym) Cd 8[399] @ 0x2f8
-DEBUG: (section .dynstr) Css 1477 @ 0xf70
-DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0
-DEBUG: (section .rela.plt) Cd 8[324] @ 0x29b8
-DEBUG: (section .init_array) Cd 8[1] @ 0x21bfa8
-DEBUG: (section .fini_array) Cd 8[1] @ 0x21bfb0
-DEBUG: (section .data.rel.ro) Cd 8[329] @ 0x21bfc0
-DEBUG: (section .dynamic) Cd 8[64] @ 0x21ca08
-DEBUG: (section .got) Cd 8[124] @ 0x21cc08
 DEBUG: (section .dynsym) Cd 8[399] @ 0x2f8
 DEBUG: (section .dynstr) Css 1477 @ 0xf70
 DEBUG: (section .rela.dyn) Cd 8[609] @ 0x16b0

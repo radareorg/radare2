@@ -1019,7 +1019,6 @@ static int cmd_meta_others(RCore *core, const char *input) {
 					const ut64 addr = core->addr;
 					const int minstr = r_config_get_i (core->config, "bin.str.min");
 					const int maxstr = r_config_get_i (core->config, "bin.str.max");
-					r_core_cmdf (core, "Csz@0x%08"PFMT64x, addr);
 					// maps are not yet set
 					free (r_core_cmd_str (core, "o;om")); // wtf?
 					if (!r_io_read_at (core->io, addr, buf, range)) {
