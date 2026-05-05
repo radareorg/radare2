@@ -223,6 +223,19 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 	r_list_free (secs);
 }
 
+static bool is_library_without_entrypoint(ELFOBJ *eo) {
+	if (!eo || eo->ehdr.e_type != ET_DYN || eo->ehdr.e_entry || !eo->phdr) {
+		return false;
+	}
+	size_t i;
+	for (i = 0; i < eo->ehdr.e_phnum; i++) {
+		if (eo->phdr[i].p_type == PT_INTERP) {
+			return false;
+		}
+	}
+	return true;
+}
+
 static RList* entries(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -244,7 +257,8 @@ static RList* entries(RBinFile *bf) {
 		ptr->hpaddr = 0x18;  // e_entry offset in ELF header
 		ptr->hvaddr = UT64_MAX; // 0x18 + baddr (bf);
 
-		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo)) {
+		if (ptr->vaddr != (ut64)eo->ehdr.e_entry && Elf_(is_executable) (eo) &&
+				!is_library_without_entrypoint (eo)) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
