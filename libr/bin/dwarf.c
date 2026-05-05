@@ -769,11 +769,19 @@ static const char *get_section_string(RBinFile *bf, RBinSection *section, size_t
 		return NULL;
 	}
 	const ut8 *data = get_section_bytes (bf, section);
-	if (!data || offset >= section->size) {
+	size_t len = section->bytes.len;
+	if (!data || offset >= len) {
+		return NULL;
+	}
+	if (!memchr (data + offset, 0, len - offset)) {
 		return NULL;
 	}
 
 	return (const char *) (data + offset);
+}
+
+static bool dwarf_is_breaked(RBin *bin) {
+	return bin && bin->consb.is_breaked && bin->consb.is_breaked (bin->consb.cons);
 }
 
 typedef struct entry_descriptor {
@@ -895,12 +903,17 @@ static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 
 		if (buf == NULL || buf >= buf_end) {
 			return NULL;
 		}
-		const int len = R_MIN (maxlen, (buf_end - buf));
-		if (len < 0) {
+		size_t available = buf_end - buf;
+		size_t len = R_MIN (maxlen, available);
+		if (len > ST32_MAX) {
+			return NULL;
+		}
+		size_t slen = r_str_nlen ((const char *)buf, (int)len);
+		if (slen >= len) {
 			return NULL;
 		}
 		*ret_name = (const char *)buf;
-		buf += strnlen (*ret_name, len) + 1;
+		buf += slen + 1;
 		return buf;
 	default:
 		R_LOG_DEBUG ("Expected form type string but got: %#x", desc.form);
@@ -1565,7 +1578,7 @@ static size_t parse_opcodes(RBin *bin, const ut8 *obuf, size_t len, const RBinDw
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + len;
 
-	while (buf && buf + 1 < buf_end) {
+	while (buf && buf + 1 < buf_end && !dwarf_is_breaked (bin)) {
 		opcode = *buf++;
 		len--;
 		if (!opcode) {
@@ -1607,7 +1620,7 @@ static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode) {
 	ut64 buf_size;
 
 	// each iteration we read one header AKA comp. unit
-	while (buf && buf + 4 < buf_end) {
+	while (buf && buf + 4 < buf_end && !dwarf_is_breaked (a)) {
 		// How much did we read from the compilation unit
 		size_t bytes_read = 0;
 		// calculate how much we've read by parsing header
@@ -1657,9 +1670,13 @@ static bool parse_line_raw(RBin *a, const ut8 *obuf, ut64 len, int mode) {
 		do {
 			// reads one whole sequence
 			tmp_read = parse_opcodes (a, buf, buf_end - buf, &hdr, &regs, mode);
+			if (dwarf_is_breaked (a)) {
+				line_header_fini (&hdr);
+				return true;
+			}
 			bytes_read += tmp_read;
 			buf += tmp_read; // Move in the buffer forward
-		} while (bytes_read < buf_size && tmp_read != 0); // if nothing is read -> error, exit
+		} while (bytes_read < buf_size && tmp_read != 0 && !dwarf_is_breaked (a)); // if nothing is read -> error, exit
 
 		if (!tmp_read) {
 			line_header_fini (&hdr);
@@ -1994,7 +2011,7 @@ static void print_attr_value(const RBinDwarfAttrValue *val, PrintfCallback print
 	case DW_FORM_strp:
 		print ("(indirect string, offset: 0x%" PFMT64x "): %s",
 			val->string.offset,
-			val->string.content);
+			r_str_get_fail (val->string.content, "(null)"));
 		break;
 	case DW_FORM_addr:
 	case DW_FORM_addrx:
@@ -2163,15 +2180,21 @@ static const ut8 *parse_attr_value(RBinFile *bf, const ut8 *obuf, int obuf_len, 
 		break;
 	case DW_FORM_string:
 		value->kind = DW_AT_KIND_STRING;
-		if (*buf) {
+		size_t available = buf_end - buf;
+		if (available < 1 || available > ST32_MAX) {
+			return NULL;
+		}
+		size_t slen = r_str_nlen ((const char *)buf, (int)available);
+		if (slen >= available) {
+			return NULL;
+		}
+		if (slen > 0) {
 			// go programs contain multibyte chars in the symbol names and strings we dont want to strip them here
 			value->string.content = (const char *)buf;
 		} else {
 			value->string.content = NULL;
 		}
-		if (value->string.content) {
-			buf += strlen (value->string.content) + 1;
-		}
+		buf += slen + 1;
 		break;
 	case DW_FORM_block1:
 		value->kind = DW_AT_KIND_BLOCK;
@@ -2789,10 +2812,14 @@ R_API RList *r_bin_dwarf_parse_comp_unit_files(RBinFile *bf, RVecDwarfAbbrevDecl
 
 static bool print_die_stream(RBinFile *bf, const ut8 **pbuf, const ut8 *buf_start, const ut8 *buf_end, RBinDwarfCompUnitHdr *hdr, RVecDwarfAbbrevDecl *decls, size_t first_abbr_idx, PrintfCallback print) {
 	const ut8 *buf = *pbuf;
+	RBin *bin = bf? bf->rbin: NULL;
 	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
 	size_t len_size = hdr->is_64bit? 12: 4;
 	ut64 die_offset = buf - buf_start + hdr->header_size + hdr->unit_offset + len_size;
 	ut64 abbr_code = 0;
+	if (dwarf_is_breaked (bin)) {
+		return false;
+	}
 	buf = r_uleb128 (buf, buf_end - buf, &abbr_code, NULL);
 	if (!buf) {
 		return false;
@@ -2827,6 +2854,9 @@ static bool print_die_stream(RBinFile *bf, const ut8 **pbuf, const ut8 *buf_star
 	const char *comp_dir = NULL;
 	RBinDwarfAttrDef *def;
 	R_VEC_FOREACH (abbrev->defs, def) {
+		if (dwarf_is_breaked (bin)) {
+			return false;
+		}
 		if (!def->attr_name && !def->attr_form) {
 			break;
 		}
@@ -2876,7 +2906,7 @@ R_API bool r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 	const ut8 *buf = obuf;
 	const ut8 *buf_end = obuf + section->bytes.len;
 	size_t abbrevs_count = RVecDwarfAbbrevDecl_length (decls);
-	while (buf && buf + 4 < buf_end) {
+	while (buf && buf + 4 < buf_end && !dwarf_is_breaked (bin)) {
 		RBinDwarfCompUnitHdr hdr = { 0 };
 		const ut8 *unit_start = buf;
 		hdr.unit_offset = unit_start - obuf;
@@ -2909,7 +2939,7 @@ R_API bool r_bin_dwarf_print_info(RBinFile *bf, RVecDwarfAbbrevDecl *decls) {
 		print ("\n");
 
 		const ut8 *unit_data = buf;
-		while (buf && buf < unit_end) {
+		while (buf && buf < unit_end && !dwarf_is_breaked (bin)) {
 			if (!print_die_stream (bf, &buf, unit_data, unit_end, &hdr, decls, first_abbr_idx, print)) {
 				return false;
 			}
@@ -3461,7 +3491,7 @@ R_API bool r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size) {
 	bool have_list = false;
 
 	print ("\nContents of the .debug_loc section:\n");
-	while (buf && buf < buf_end) {
+	while (buf && buf < buf_end && !dwarf_is_breaked (bin)) {
 		if (buf + 2 * addr_size > buf_end) {
 			break;
 		}
@@ -3495,6 +3525,10 @@ R_API bool r_bin_dwarf_print_loc_stream(RBinFile *bf, int addr_size) {
 		print ("0x%" PFMT64x " 0x%" PFMT64x " 0x%" PFMT64x "\n",
 			base_offset, start_addr + address_base, end_addr + address_base);
 		base_offset += addr_size * 2 + 2 + block_len;
+	}
+	if (dwarf_is_breaked (bin)) {
+		print ("\n");
+		return false;
 	}
 	if (have_list) {
 		print ("0x%" PFMT64x " <End of list>\n", base_offset);

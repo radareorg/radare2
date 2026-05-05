@@ -1160,6 +1160,10 @@ static void bin_addrline_warn_large_dwarf(RBinFile *bf, bool skipped) {
 	}
 }
 
+static bool bin_addrline_is_script_mode(int mode) {
+	return mode == '*' || (mode & R_MODE_RADARE);
+}
+
 typedef struct {
 	bool enabled;
 	bool flush;
@@ -1198,6 +1202,22 @@ static void bin_cons_stream_end(RCore *core, BinConsStreamState *state) {
 	state->enabled = false;
 }
 
+static void bin_addrline_break_begin(RCore *core, bool *state) {
+	if (!state || *state || !core || !core->cons) {
+		return;
+	}
+	r_cons_break_push (core->cons, NULL, NULL);
+	*state = true;
+}
+
+static void bin_addrline_break_end(RCore *core, bool *state) {
+	if (!state || !*state || !core || !core->cons) {
+		return;
+	}
+	r_cons_break_pop (core->cons);
+	*state = false;
+}
+
 static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
 	RBinAddrline *row;
 	RListIter *iter;
@@ -1221,6 +1241,7 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 	RList *list = NULL;
 	RList *ownlist = NULL;
 	BinConsStreamState stream_state = { 0 };
+	bool parser_break_pushed = false;
 	if (plugin && plugin->lines) {
 		// list is not cloned to improve speed. avoid use after free
 		list = plugin->lines (bf);
@@ -1230,28 +1251,52 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 			bin_addrline_warn_large_dwarf (bf, true);
 			return true;
 		}
+		if (large_dwarf && bin_addrline_is_script_mode (mode)) {
+			const char *section_name = NULL;
+			ut64 section_size = 0;
+			bin_addrline_is_large_dwarf (bf, &section_name, &section_size);
+			R_LOG_WARN ("Skipping DWARF addrline script for large %s section (%" PFMT64u "MB). "
+				"`id*` would emit a very large command stream; use `idx` for source files "
+				"or `id` when a full debug dump is really needed",
+				r_str_get (section_name), section_size / (1024 * 1024));
+			if (IS_MODE_JSON (mode)) {
+				pj_end (pj);
+			}
+			return true;
+		}
 		if (allow_large || mode == R_MODE_PRINT) {
 			bin_addrline_warn_large_dwarf (bf, false);
 		}
 		if (mode == R_MODE_PRINT && large_dwarf) {
 			R_LOG_WARN ("Streaming large DWARF debug dump directly to the console to avoid buffering several GB of output");
 			bin_cons_stream_begin (core, &stream_state);
+			bin_addrline_break_begin (core, &parser_break_pushed);
 		}
 		RVecDwarfAbbrevDecl *da = r_bin_dwarf_parse_abbrev (bf, mode);
 		if (da) {
 			if (mode == R_MODE_PRINT) {
-				r_bin_dwarf_print_info (bf, da);
-				r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8);
-				r_bin_dwarf_parse_aranges (bf, mode);
+				if (!r_cons_is_breaked (core->cons)) {
+					r_bin_dwarf_print_info (bf, da);
+				}
+				if (!r_cons_is_breaked (core->cons)) {
+					r_bin_dwarf_print_loc_stream (bf, core->anal->config->bits / 8);
+				}
+				if (!r_cons_is_breaked (core->cons)) {
+					r_bin_dwarf_parse_aranges (bf, mode);
+				}
 			} else {
 				r_bin_dwarf_parse_comp_dirs (bf, da);
 			}
 			r_bin_dwarf_free_debug_abbrev (da);
 		}
-		list = ownlist = r_bin_dwarf_parse_line (bf, mode);
+		if (!r_cons_is_breaked (core->cons)) {
+			list = ownlist = r_bin_dwarf_parse_line (bf, mode);
+		}
+		bin_addrline_break_end (core, &parser_break_pushed);
 		bin_cons_stream_end (core, &stream_state);
 	}
 	if (!list) {
+		bin_addrline_break_end (core, &parser_break_pushed);
 		bin_cons_stream_end (core, &stream_state);
 		if (IS_MODE_JSON (mode)) {
 			pj_end (pj);
