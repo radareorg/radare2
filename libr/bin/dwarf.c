@@ -3136,7 +3136,7 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 	// Migrate compilation directory information to new metadata storage
 	const char *comp_dir = sdb_const_get (tmp_sdb, "DW_AT_comp_dir", 0);
 	if (comp_dir) {
-		bf->dwarf_metadata.comp_dir = strdup (comp_dir);
+		dwarf_metadata_set_comp_dir (bf, 0, false, comp_dir);
 	}
 	SdbList *ls = sdb_foreach_list (tmp_sdb, true);
 	SdbListIter *iter;
@@ -3145,11 +3145,8 @@ R_API RBinDwarfDebugInfo *r_bin_dwarf_parse_info(RBinFile *bf, RVecDwarfAbbrevDe
 		const char *k = sdbkv_key (kv);
 		const char *v = sdbkv_value (kv);
 		if (r_str_startswith (k, "DW_AT_comp_dir") && IS_DIGIT (k[14])) {
-			if (!bf->dwarf_metadata.comp_dirs) {
-				bf->dwarf_metadata.comp_dirs = ht_up_new (NULL, free_comp_dir_entry, NULL);
-			}
 			ut64 offset = r_num_get (NULL, k + 14);
-			ht_up_insert (bf->dwarf_metadata.comp_dirs, offset, strdup (v));
+			dwarf_metadata_set_comp_dir (bf, offset, true, v);
 		}
 	}
 	ls_free (ls);
