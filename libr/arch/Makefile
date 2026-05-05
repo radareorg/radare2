@@ -8,6 +8,7 @@ R2DEPS+=r_util r_reg r_esil r_muta
 CFLAGS+=-DR2_PLUGIN_INCORE
 CFLAGS:=-I.. -I$(LTOP)/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CFLAGS)
 LDFLAGS+=$(CS_LDFLAGS)
+LDFLAGS+=$(ZYDIS_LDFLAGS)
 
 .PHONY: pre
 pre: p

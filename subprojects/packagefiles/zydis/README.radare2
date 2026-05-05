@@ -1,0 +1,8 @@
+Zydis bundled source metadata
+============================
+
+The files under amalgamated-dist are from the Zydis 4.1.0 amalgamated release:
+
+https://github.com/zyantific/zydis/releases/download/v4.1.0/zydis-amalgamated.tar.gz
+
+The upstream project is distributed under the MIT license. See LICENSE.MIT.

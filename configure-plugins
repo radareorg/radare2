@@ -62,6 +62,14 @@ help () {
 
 cfg=./plugins.cfg
 
+want_zydis() {
+  if [ -f ./config-user.mk ]; then
+    v=$(sed -n 's/^WANT_ZYDIS=//p' ./config-user.mk | tail -n 1)
+    [ -n "$v" ] && echo "$v" && return
+  fi
+  echo 1
+}
+
 if [ ! -f "$cfg" ]; then
   echo "configure-plugins: Copying dist/plugins-cfg/plugins.def.cfg"
   cp -f dist/plugins-cfg/plugins.def.cfg plugins.cfg
@@ -301,6 +309,10 @@ while : ; do
 done
 
 load ${DEFCFG}
+if [ "$(want_zydis)" = 0 ]; then
+  STATIC=$(sub "$STATIC" arch.x86_zydis)
+  SHARED=$(sub "$SHARED" arch.x86_zydis)
+fi
 sort_vars
 
 if [ - != "${RMSTATIC}" ]; then

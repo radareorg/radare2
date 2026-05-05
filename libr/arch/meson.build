@@ -193,6 +193,12 @@ if arch_plugins.contains('x86_nz')
   ]
 endif
 
+if arch_plugins.contains('x86_zydis')
+  r_arch_sources += [
+    'p/x86/plugin_zydis.c'
+  ]
+endif
+
 if arch_plugins.contains('xtensa')
 r_arch_sources += [
   'p/xtensa/plugin.c',
@@ -212,6 +218,14 @@ deps =  [
     capstone_dep,
   ]
 
+r_arch_cflags = library_cflags + [
+  arch_plugins.contains('x86_zydis') ? '-DR2_X86_ZYDIS_ENABLED=1' : '-DR2_X86_ZYDIS_ENABLED=0'
+]
+
+if arch_plugins.contains('x86_zydis')
+  deps += zydis_dep
+endif
+
 links = []
 incs = [platform_inc, '../xps']
 if get_option('use_v35')
@@ -227,7 +241,7 @@ endif
 
 r_arch = library('r_arch', r_arch_sources,
   include_directories: [incs],
-  c_args: library_cflags,
+  c_args: r_arch_cflags,
   dependencies: deps,
   link_with: links,
   install: true,
@@ -239,13 +253,17 @@ r_arch = library('r_arch', r_arch_sources,
 r_arch_dep = declare_dependency(link_with: r_arch, include_directories: [incs])
 
 if get_option('blob')
+static_deps = [
+  r_util_static_dep,
+  capstone_dep,
+]
+if arch_plugins.contains('x86_zydis')
+  static_deps += zydis_dep
+endif
 r_arch_static = static_library('r_arch_static', r_arch_sources,
   include_directories: [incs],
-  c_args: library_cflags,
-  dependencies: [
-    r_util_static_dep,
-    capstone_dep,
-  ],
+  c_args: r_arch_cflags,
+  dependencies: static_deps,
   install: true,
   implicit_include_directories: false,
 )
