@@ -63,6 +63,10 @@ help () {
 cfg=./plugins.cfg
 
 want_zydis() {
+  if [ -n "${WANT_ZYDIS:-}" ]; then
+    echo "$WANT_ZYDIS"
+    return
+  fi
   if [ -f ./config-user.mk ]; then
     v=$(sed -n 's/^WANT_ZYDIS=//p' ./config-user.mk | tail -n 1)
     [ -n "$v" ] && echo "$v" && return
@@ -297,6 +301,8 @@ while : ; do
 		TARGET_OSTYPE="${1#*=}"
 		update_ext
 		;;
+	"--without-zydis") WANT_ZYDIS=0 ;;
+	"--with-syszydis") WANT_ZYDIS=1 ;;
 	"--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
 	"--disable-loadlibs") LOADLIBS=0 ;;
 	"--rm-static") RMSTATIC="$2" ; ;;

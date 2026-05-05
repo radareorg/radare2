@@ -7,6 +7,6 @@ case "$1" in
 	;;
 *)
 	[ dist/plugins-cfg/plugins.def.cfg -nt ./plugins.cfg ] && rm -f plugins.cfg
-	./configure-plugins $*
+	WANT_ZYDIS="${WANT_ZYDIS:-1}" ./configure-plugins $*
 	;;
 esac
