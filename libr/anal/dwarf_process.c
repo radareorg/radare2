@@ -70,6 +70,9 @@ static void variable_free(Variable *var) {
 /* return -1 if attr isn't found */
 static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 	R_RETURN_VAL_IF_FAIL (die, -1);
+	if (!die->attr_values) {
+		return -1;
+	}
 
 	R_VEC_FOREACH_I (die->attr_values, i) {
 		RBinDwarfAttrValue *value = RVecDwarfAttrValue_at(die->attr_values, i);
@@ -83,6 +86,9 @@ static inline st32 find_attr_idx(const RBinDwarfDie *die, st32 attr_name) {
 /* return NULL if attr isn't found */
 static RBinDwarfAttrValue *find_attr(const RBinDwarfDie *die, st32 attr_name) {
 	R_RETURN_VAL_IF_FAIL (die, NULL);
+	if (!die->attr_values) {
+		return NULL;
+	}
 
 	RBinDwarfAttrValue *value;
 	R_VEC_FOREACH (die->attr_values, value) {
@@ -232,7 +238,7 @@ static void parse_array_type(Context *ctx, int idx, RStrBuf *strbuf) {
 			const RBinDwarfDie *child_die = &ctx->all_dies[j];
 			// right now we skip non direct descendats of the structure
 			// can be also DW_TAG_suprogram for class methods or tag for templates
-			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type) {
+			if (child_depth == 1 && child_die->tag == DW_TAG_subrange_type && child_die->attr_values) {
 				RBinDwarfAttrValue *value;
 				R_VEC_FOREACH(child_die->attr_values, value) {
 					switch (value->attr_name) {
@@ -410,6 +416,9 @@ static st32 parse_type(Context *ctx, const ut64 offset, RStrBuf *strbuf, ut64 *s
 static RAnalStructMember *parse_struct_member(Context *ctx, ut64 idx, RAnalStructMember *result) {
 	R_RETURN_VAL_IF_FAIL (result, NULL);
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return NULL;
+	}
 
 	const char *name = NULL;
 	char *type = NULL;
@@ -495,6 +504,9 @@ cleanup:
  */
 static RAnalEnumCase *parse_enumerator(Context *ctx, ut64 idx, RAnalEnumCase *result) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return NULL;
+	}
 
 	const char *name = NULL;
 	int val = 0;
@@ -691,6 +703,9 @@ cleanup:
  */
 static void parse_typedef(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return;
+	}
 
 	const char *name = NULL;
 	const char *type = NULL;
@@ -739,6 +754,9 @@ cleanup:
 
 static void parse_atomic_type(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return;
+	}
 
 	const char *name = NULL;
 	ut64 size = 0;
@@ -813,7 +831,7 @@ static bool prefer_linkage_name(const char *lang) {
 
 static void parse_abstract_origin(Context *ctx, ut64 offset, RStrBuf *type, const char **name) {
 	RBinDwarfDie *die = ht_up_find (ctx->die_map, offset, NULL);
-	if (!die) {
+	if (!die || !die->attr_values) {
 		return;
 	}
 	ut64 size = 0;
@@ -1452,6 +1470,9 @@ static st32 parse_function_args_and_vars(Context *ctx, ut64 idx, RStrBuf *args, 
 			RStrBuf type;
 			r_strbuf_init (&type);
 			if (child_die->tag == DW_TAG_formal_parameter || child_die->tag == DW_TAG_variable) {
+				if (!child_die->attr_values) {
+					continue;
+				}
 				Variable *var = R_NEW0 (Variable);
 				name = NULL;
 				const RBinDwarfAttrValue *val;
@@ -1781,6 +1802,9 @@ static void sdb_save_dwarf_function(Context *ctx, Function *dwarf_fcn, const cha
  */
 static void parse_function(Context *ctx, ut64 idx) {
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return;
+	}
 
 	Function fcn = {0};
 	bool has_linkage_name = false;
@@ -1959,6 +1983,9 @@ static void parse_type_entry(Context *ctx, ut64 idx) {
 	R_RETURN_IF_FAIL (ctx);
 
 	const RBinDwarfDie *die = &ctx->all_dies[idx];
+	if (!die->attr_values) {
+		return;
+	}
 	switch (die->tag) {
 	case DW_TAG_structure_type:
 	case DW_TAG_union_type:

@@ -1218,6 +1218,21 @@ static void bin_addrline_break_end(RCore *core, bool *state) {
 	*state = false;
 }
 
+static void bin_dwarf_process_info(RCore *core, RBinFile *bf, RVecDwarfAbbrevDecl *da) {
+	RBinDwarfDebugInfo *info = r_bin_dwarf_parse_info (bf, da, R_MODE_SET);
+	if (!info) {
+		return;
+	}
+	HtUP *loc_table = r_bin_dwarf_parse_loc (bf, core->anal->config->bits / 8);
+	RAnalDwarfContext ctx = {
+		.info = info,
+		.loc = loc_table
+	};
+	r_anal_dwarf_process_info (core->anal, &ctx);
+	r_bin_dwarf_free_loc (loc_table);
+	r_bin_dwarf_free_debug_info (info);
+}
+
 static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) {
 	RBinAddrline *row;
 	RListIter *iter;
@@ -1286,6 +1301,9 @@ static bool bin_addrline_maybe(RCore *core, PJ *pj, int mode, bool allow_large) 
 				}
 			} else {
 				r_bin_dwarf_parse_comp_dirs (bf, da);
+				if (mode == R_MODE_SET) {
+					bin_dwarf_process_info (core, bf, da);
+				}
 			}
 			r_bin_dwarf_free_debug_abbrev (da);
 		}
