@@ -416,6 +416,28 @@ R_API void r_esil_free(REsil *esil) {
 	free (esil);
 }
 
+static bool setup_esil_mem_read(void *user, ut64 addr, ut8 *buf, int len);
+static bool setup_esil_mem_write(void *user, ut64 addr, const ut8 *buf, int len);
+
+static bool esil_legacy_mem_cb(REsil *esil, bool write) {
+	if (write) {
+		return esil->mem_if.mem == esil && esil->mem_if.mem_write == setup_esil_mem_write;
+	}
+	return esil->mem_if.mem == esil && esil->mem_if.mem_read == setup_esil_mem_read;
+}
+
+static bool esil_invalid_mem_access(REsil *esil, ut64 addr) {
+	RIOBind *iob = esil && esil->anal? &esil->anal->iob: NULL;
+	return iob && iob->io && iob->is_valid_offset
+		&& !iob->is_valid_offset (iob->io, addr, false);
+}
+
+static void esil_cmd_ioer(REsil *esil, bool write) {
+	if (!esil_legacy_mem_cb (esil, write) && esil->cmd && esil->cmd_ioer && *esil->cmd_ioer) {
+		esil->cmd (esil, esil->cmd_ioer, esil->addr, write? 1: 0);
+	}
+}
+
 R_API bool r_esil_mem_read_silent(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	R_RETURN_VAL_IF_FAIL (buf && esil && esil->mem_if.mem_read, false);
 	if (R_LIKELY (esil->mem_if.mem_read (esil->mem_if.mem, addr & esil->addrmask, buf, len))) {
@@ -438,7 +460,13 @@ R_API bool r_esil_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 		return true;
 	}
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, buf, len))) {
+		esil_cmd_ioer (esil, false);
 		return false;
+	}
+	if (!esil_legacy_mem_cb (esil, false) && esil_invalid_mem_access (esil, addr)) {
+		esil->trap = R_ANAL_TRAP_READ_ERR;
+		esil->trap_code = addr;
+		esil_cmd_ioer (esil, false);
 	}
 	ut32 i;
 	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_READ], &i)) {
@@ -526,7 +554,11 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	}
 	ut32 i;
 	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
-		return r_esil_mem_write_silent (esil, addr, buf, len);
+		bool ret = r_esil_mem_write_silent (esil, addr, buf, len);
+		if (R_UNLIKELY (!ret)) {
+			esil_cmd_ioer (esil, true);
+		}
+		return ret;
 	}
 	union {
 		ut8 buf[16];
@@ -535,9 +567,11 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	if (R_LIKELY (len < 17)) {
 		memset (o.buf, 0xff, len);
 		if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.buf, len))) {
+			esil_cmd_ioer (esil, false);
 			esil->trap = R_ANAL_TRAP_NONE;
 		}
 		if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
+			esil_cmd_ioer (esil, true);
 			return false;
 		}
 		if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_MEM_WRITE], &i)) {
@@ -551,13 +585,19 @@ R_API bool r_esil_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
 	}
 	o.ptr = R_NEWS (ut8, len);
 	if (R_UNLIKELY (!o.ptr)) {
-		return r_esil_mem_write_silent (esil, addr, buf, len);
+		bool ret = r_esil_mem_write_silent (esil, addr, buf, len);
+		if (R_UNLIKELY (!ret)) {
+			esil_cmd_ioer (esil, true);
+		}
+		return ret;
 	}
 	memset (o.ptr, 0xff, len);
 	if (R_UNLIKELY (!r_esil_mem_read_silent (esil, addr, o.ptr, len))) {
+		esil_cmd_ioer (esil, false);
 		esil->trap = R_ANAL_TRAP_NONE;
 	}
 	if (R_UNLIKELY (!r_esil_mem_write_silent (esil, addr, buf, len))) {
+		esil_cmd_ioer (esil, true);
 		free (o.ptr);
 		return false;
 	}

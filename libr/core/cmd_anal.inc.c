@@ -7644,11 +7644,10 @@ static bool core_esil_run_pin(RCore *core, ut64 addr) {
 		free (pin_cmd);
 		return true;
 	}
-	if (!R_STR_ISNOTEMPTY (core->anal->pincmd)) {
-		free (pin);
-		return false;
+	if (R_STR_ISNOTEMPTY (core->anal->pincmd)) {
+		r_core_cmdf (core, "%s %s", core->anal->pincmd, pin);
 	}
-	r_core_cmdf (core, "%s %s", core->anal->pincmd, pin);
+	r_core_cmd0 (core, pin);
 	free (pin);
 	return true;
 }
