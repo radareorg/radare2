@@ -137,14 +137,14 @@ static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
 	RAnal *anal = mem;
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
-		return r_io_cache_at (anal->iob.io, addr)
-			&& r_io_cache_read_at (anal->iob.io, addr, buf, len);
+		return anal->iob.read_at (anal->iob.io, addr, buf, len);
 	}
 	if (!(region.perm & R_PERM_R)) {
+		(void)anal->iob.read_at (anal->iob.io, addr, buf, len);
 		return false;
 	}
 	if (!r_itv_contain (region.itv, addr + len - 1)) {
-		return false;
+		return anal->iob.read_at (anal->iob.io, addr, buf, len);
 	}
 	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
 	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
