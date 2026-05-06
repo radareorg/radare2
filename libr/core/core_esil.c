@@ -50,6 +50,10 @@ static bool core_esil_reg_write(void *core, const char *name, ut64 val) {
 	return r_reg_setv (((RCore *)core)->esil.reg, name, val);
 }
 
+static bool core_esil_reg_alias(void *core, int alias, const char *name) {
+	return r_reg_alias_setname (((RCore *)core)->esil.reg, alias, name);
+}
+
 static ut32 core_esil_reg_size(void *core, const char *name) {
 	RRegItem *ri = r_reg_get (((RCore *)core)->esil.reg, name, -1);
 	if (!ri) {
@@ -76,6 +80,7 @@ static REsilRegInterface core_esil_reg_if = {
 	.is_reg = core_esil_is_reg,
 	.reg_read = core_esil_reg_read,
 	.reg_write = core_esil_reg_write,
+	.reg_alias = core_esil_reg_alias,
 	.reg_size = core_esil_reg_size,
 	.reg_packed_size = core_esil_reg_packed_size,
 };

@@ -14,8 +14,26 @@ EXPECT=<<EOF
 0x00401263      sub esp, 8
 0x00401266      mov dword [esp], 1
 0x0040126d      call dword [sym.imp.msvcrt.dll___set_app_type]
-;-- reloc.msvcrt.dll___set_app_type:
-0x00006244      invalid
+0x00401273      call sym.___mingw_CRTStartup
+0x00401278      nop
+0x00401279      lea esi, [esi]
+;-- _WinMainCRTStartup:
+0x00401280      push ebp
+0x00401281      mov ebp, esp
+0x00401283      sub esp, 8
+0x00401286      mov dword [esp], 2
+0x0040128d      call dword [sym.imp.msvcrt.dll___set_app_type]
+0x00401293      call sym.___mingw_CRTStartup
+0x00401298      nop
+0x00401299      lea esi, [esi]
+;-- _atexit:
+0x004012a0      push ebp
+0x004012a1      mov ecx, dword [sym.imp.msvcrt.dll_atexit]
+0x004012a7      mov ebp, esp
+0x004012a9      pop ebp
+0x004012aa      jmp ecx
+;-- reloc.msvcrt.dll_atexit:
+0x00006298      invalid
 EOF
 RUN
 

@@ -642,7 +642,7 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			pj_kn (pj, "delta", map->delta);
 			pj_kn (pj, "from", r_io_map_begin (map));
 			pj_kn (pj, "to", r_io_map_to (map));
-			pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+			pj_ks (pj, "perm", r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
 			pj_ks (pj, "name", r_str_get (map->name));
 			pj_end (pj);
 			break;
@@ -660,7 +660,7 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			// Need FIFO order here
 			char *om_cmd = r_str_newf ("omu %d 0x%08"PFMT64x" 0x%08"PFMT64x
 					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
-					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm),
+					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)),
 					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
@@ -670,7 +670,7 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 		}
 		default: {
 			char perm_str[64];
-			r_cons_permstr (core->cons, map->perm,
+			r_cons_permstr (core->cons, map->perm & (R_PERM_RWX | R_PERM_S),
 				r_config_get_i (core->config, "scr.color") > 0, perm_str, sizeof (perm_str));
 			r_print_printf (p, "%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s%s%s\n",
@@ -1268,7 +1268,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj_kn (pj, "delta", map->delta);
 				pj_kn (pj, "from", r_io_map_begin (map));
 				pj_kn (pj, "to", r_io_map_to (map));
-				pj_ks (pj, "perm", r_str_rwx_i (map->perm));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
 				pj_ks (pj, "name", r_str_get (map->name));
 				pj_end (pj);
 
@@ -1279,7 +1279,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 				r_cons_printf (core->cons, "%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
 					map->delta, r_io_map_begin (map), r_io_map_to (map),
-					r_str_rwx_i (map->perm), r_str_get (map->name));
+					r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)), r_str_get (map->name));
 			}
 		} else if (input[2] == 'j') {
 			r_cons_println (core->cons, "{}");
@@ -1411,7 +1411,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
-					const char *sperm = r_str_rwx_i (map->perm);
+					const char *sperm = r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S));
 					r_cons_println (core->cons, sperm);
 				}
 			}
@@ -1592,7 +1592,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
-					r_cons_println (core->cons, r_str_rwx_i (map->perm));
+					r_cons_println (core->cons, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
 				}
 			}
 			break;
@@ -1640,7 +1640,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 			RIOMap *map = r_io_map_get (core->io, mapref->id);
 			char temp[32];
 			snprintf (temp, sizeof (temp), "%d", map->fd);
-			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv, map->perm, temp);
+			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv,
+				map->perm & (R_PERM_RWX | R_PERM_S), temp);
 			if (!info) {
 				break;
 			}
@@ -2071,7 +2072,8 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			ut64 vsize = map->itv.size;
 			if (vsize > 0) {
 				r_print_printf (p, "om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-						vaddr, vsize, paddr, r_str_rwx_i (map->perm), r_str_get (map->name));
+						vaddr, vsize, paddr, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)),
+						r_str_get (map->name));
 			}
 		}
 	}
