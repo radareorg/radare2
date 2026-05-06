@@ -780,31 +780,6 @@ static int cb_strhit(RSearchKeyword * R_NULLABLE kw, void *user, ut64 where) {
 	return true;
 }
 
-static int csread(RCore *core, ut64 addr, ut8 *buf, int len) {
-	R_RETURN_VAL_IF_FAIL (core && core->io && buf && len >= 0, -1);
-	if (len < 1) {
-		return 0;
-	}
-	int ret = r_io_nread_at (core->io, addr, buf, len);
-	if (!ret && core->bin) {
-		RBinFile *bf = r_bin_cur (core->bin);
-		RBinObject *bo = r_bin_cur_object (core->bin);
-		RBinSection *section = bo? r_bin_get_section_at (bo, addr, true): NULL;
-		if (bf && bf->buf && section && section->paddr != UT64_MAX && addr >= section->vaddr) {
-			ut64 delta = addr - section->vaddr;
-			if (delta < section->size && delta <= UT64_MAX - section->paddr) {
-				int read_len = (int)R_MIN ((ut64)len, section->size - delta);
-				st64 n = r_buf_read_at (bf->buf, section->paddr + delta, buf, read_len);
-				ret = (int)n;
-			}
-		}
-	}
-	if (ret >= 0 && ret < len) {
-		buf[ret] = 0;
-	}
-	return ret;
-}
-
 static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT int *n, R_OUT char *name, size_t name_size) {
 	int name_len = 0;
 
@@ -815,9 +790,7 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 	if (input[1] == 'w' || input[1] == 'g') { // "Csw" "Csg"
 		int i, j;
 		char tmp[256] = {0};
-		if (csread (core, *addr, (ut8*)tmp, sizeof (tmp) - 3) < 1) {
-			return false;
-		}
+		(void)r_io_read_at (core->io, *addr, (ut8*)tmp, sizeof (tmp) - 3);
 		name_len = r_str_nlen_w (tmp, sizeof (tmp) - 3);
 		// handle wide strings
 		for (i = 0, j = 0; i + 1 < name_size; i++, j++) {
@@ -836,9 +809,7 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 	} else if (input[1] == 'p') { // "Csp" // pascal string
 		// TODO: add support for wide pascal strings
 		ut8 fourbuf[4];
-		if (csread (core, *addr, (ut8*)fourbuf, sizeof (fourbuf)) != (int)sizeof (fourbuf)) {
-			return false;
-		}
+		(void)r_io_read_at (core->io, *addr, (ut8*)fourbuf, sizeof (fourbuf));
 		if (*n == 0 || *n > 4) {
 			// autoguess
 			if (!fourbuf[0] && !fourbuf[1]) {
@@ -875,9 +846,7 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 		if (name_len >= 0 && (size_t)name_len < name_size) {
 			char tmp[256] = {0};
 			const size_t delta = R_ABS (*n);
-			if (csread (core, *addr + delta, (ut8*)tmp, sizeof (tmp) - 3) < name_len) {
-				return false;
-			}
+			(void)r_io_read_at (core->io, *addr + delta, (ut8*)tmp, sizeof (tmp) - 3);
 			r_str_ncpy (name, tmp, name_len + 1);
 			// TODO: use api instead: r_meta_set (core->anal, 'd', *addr, delta, name);
 			r_core_cmdf (core, "Cd%d@0x%08"PFMT64x, (int)delta, *addr);
@@ -894,23 +863,17 @@ static bool cmd_Cs(RCore *core, const char *input, R_INOUT ut64 *addr, R_INOUT i
 		}
 	} else if (input[1] == 'a' || input[1] == '8' || input[1] == 'z') {
 		// "Cs8" "Csa" "Csz" // utf8, ascii and zero-terminated strings handling
-		if (csread (core, *addr, (ut8*)name, name_size - 1) < 1) {
-			return false;
-		}
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
 		name[name_size - 1] = '\0';
 		name_len = strlen (name);
 	} else if (input[1] == 0 || input[1] == ' ') {
 		// same as Cs8 or Csa
-		if (csread (core, *addr, (ut8*)name, name_size - 1) < 1) {
-			return false;
-		}
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
 		name[name_size - 1] = '\0';
 		name_len = strlen (name);
 	} else {
 		R_LOG_WARN ("Unknown Cs subcommand %c", input[1]);
-		if (csread (core, *addr, (ut8*)name, name_size - 1) < 1) {
-			return false;
-		}
+		(void)r_io_read_at (core->io, *addr, (ut8*)name, name_size - 1);
 		name[name_size - 1] = '\0';
 		name_len = strlen (name);
 	}
