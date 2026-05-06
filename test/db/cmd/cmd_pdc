@@ -275,7 +275,7 @@ EXPECT=<<EOF
  0x100003a88 |         x0 = x8
  0x100003a8c |         goto sym.imp.strcoll // int strcoll("", "")
  0x100003a6c | loc_0x100003a6c: // orphan
- 0x100003a6c      w0 = 1
+ 0x100003a6c |      w0 = 1
 
  0x100003a8c | }
 
