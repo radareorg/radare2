@@ -193,6 +193,26 @@ static void showreg(RCore *core, const char *rn, const char *desc) {
 	free (res);
 }
 
+static REsil *visual_esil_new(RCore *core, unsigned int addrsize) {
+	REsil *esil = r_esil_new_simple (addrsize, core->anal->reg, &core->anal->iob);
+	if (esil) {
+		if (r_esil_setup (esil, core->anal, false, false, false)) {
+			r_esil_set_pc (esil, core->addr);
+			return esil;
+		}
+		r_esil_free (esil);
+	}
+	return NULL;
+}
+
+static void visual_esil_seek(RCore *core, REsil *esil, const char *cmd) {
+	r_core_cmd0 (core, cmd);
+	esil->trap = 0;
+	esil->trap_code = 0;
+	r_esil_stack_free (esil);
+	r_esil_set_pc (esil, core->addr);
+}
+
 R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	const int nbits = sizeof (ut64) * 8;
 	int analopType;
@@ -223,12 +243,14 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 	}
 	RCons *cons = core->cons;
 	r_reg_arena_push (core->anal->reg);
-	REsil *esil = r_esil_new (20, 0, addrsize);
-	r_esil_setup (esil, core->anal, false, false, false);
-	// esil->anal = core->anal;
-	r_esil_set_pc (esil, core->addr);
+	REsil *esil = visual_esil_new (core, addrsize);
 	char *expr = NULL;
 	bool refresh = false;
+	bool ret = true;
+	if (!esil) {
+		ret = false;
+		goto beach;
+	}
 	for (;;) {
 		R_FREE (expr);
 		r_cons_clear00 (cons);
@@ -237,13 +259,8 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 			refresh = false;
 		}
 		if (r_io_read_at (core->io, core->addr, buf, sizeof (ut64)) < 1) {
-			free (expr);
-			free (ginput);
-			free (word);
-			r_reg_arena_pop (core->anal->reg);
-			r_esil_free (esil);
-			free (buf);
-			return false;
+			ret = false;
+			goto beach;
 		}
 		if (input) {
 			expr = strdup (input);
@@ -329,20 +346,12 @@ R_API bool r_core_visual_esil(RCore *core, const char *input) {
 		case 'n':
 		case 'P':
 			x = 0;
-			r_esil_free (esil);
-			esil = r_esil_new (20, 0, addrsize);
-			esil->anal = core->anal;
-			r_core_cmd0 (core, "so+1");
-			r_esil_set_pc (esil, core->addr);
+			visual_esil_seek (core, esil, "so+1");
 			break;
 		case 'N':
 		case 'p':
 			x = 0;
-			r_esil_free (esil);
-			esil = r_esil_new (20, 0, addrsize);
-			esil->anal = core->anal;
-			r_core_cmd0 (core, "so-1");
-			r_esil_set_pc (esil, core->addr);
+			visual_esil_seek (core, esil, "so-1");
 			break;
 		case '=':
 		{ // TODO: edit
@@ -464,7 +473,7 @@ beach:
 	free (word);
 	free (ginput);
 	free (buf);
-	return true;
+	return ret;
 }
 
 R_API bool r_core_visual_bit_editor(RCore *core) {
