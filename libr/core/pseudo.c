@@ -581,6 +581,36 @@ static void emit_close_braces(PDCState *state, ut64 addr, int from, int to) {
 	}
 }
 
+static char *pdc_prefix_lines(const char *s, const char *prefix, bool addr_pipe) {
+	if (R_STR_ISEMPTY (s)) {
+		return strdup (prefix);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	while (*s) {
+		const char *end = s + strcspn (s, "\n");
+		r_strbuf_append (sb, prefix);
+		if (addr_pipe && end - s > 2 && r_str_startswith (s, "0x")) {
+			const char *p = s + 2;
+			while (p < end && IS_HEXCHAR (*p)) {
+				p++;
+			}
+			if (p > s + 2) {
+				r_strbuf_append_n (sb, s, p - s);
+				r_strbuf_append (sb, " |");
+				s = p;
+			}
+		}
+		r_strbuf_append_n (sb, s, end - s);
+		if (*end == '\n') {
+			r_strbuf_append (sb, "\n");
+			s = end + 1;
+		} else {
+			break;
+		}
+	}
+	return r_strbuf_drain (sb);
+}
+
 static void mark_bb_visited(PDCState *state, RList *visited, RAnalBlock *cbb) {
 	if (!cbb) {
 		return;
@@ -1503,13 +1533,13 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			r_list_free (rows);
 			s = r_strbuf_drain (sb);
 		} else if (state.show_addr) {
-			char *os = r_str_prefix_all (s, " ");
+			char *os = pdc_prefix_lines (s, " ", true);
 			free (s);
 			s = os;
 		} else {
 			memset (state.indentstr, ' ', sizeof (state.indentstr));
 			state.indentstr[indent * 2] = 0;
-			char *os = r_str_prefix_all (s, state.indentstr);
+			char *os = pdc_prefix_lines (s, state.indentstr, false);
 			free (s);
 			s = os;
 		}
