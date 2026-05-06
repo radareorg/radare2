@@ -134,13 +134,14 @@ static bool anal_esil_mem_switch(void *mem, ut32 idx) {
 }
 
 static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
+	memset (buf, 0xff, len);
 	if (((addr + len) != 0ULL) && ((addr + len) < addr)) {
 		return false;
 	}
 	RAnal *anal = mem;
 	RIORegion region;
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
-		return false;
+		return true;	//XXX: should be false
 	}
 	if (!(region.perm & R_PERM_R)) {
 		return false;
