@@ -7670,6 +7670,34 @@ static bool is_steporeable(int type) {
 	return false;
 }
 
+static bool core_esil_run_pin(RCore *core, ut64 addr) {
+	const char *pin_at = r_anal_pin_at (core->anal, addr);
+	if (R_STR_ISEMPTY (pin_at) || r_str_startswith (pin_at, "soft.")) {
+		return false;
+	}
+	char *pin = strdup (pin_at);
+	if (!pin) {
+		return false;
+	}
+	const char *cmd = r_anal_pin_get (core->anal, pin);
+	if (R_STR_ISNOTEMPTY (cmd)) {
+		char *pin_cmd = strdup (cmd);
+		free (pin);
+		if (!pin_cmd) {
+			return false;
+		}
+		r_core_cmd0 (core, pin_cmd);
+		free (pin_cmd);
+		return true;
+	}
+	if (R_STR_ISNOTEMPTY (core->anal->pincmd)) {
+		r_core_cmdf (core, "%s %s", core->anal->pincmd, pin);
+	}
+	r_core_cmd0 (core, pin);
+	free (pin);
+	return true;
+}
+
 R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr, ut64 *prev_addr, bool stepOver) {
 #define SET_PC_BOTH(core, val) do { \
 	r_reg_setv ((core)->anal->reg, "PC", (val)); \
@@ -7751,16 +7779,7 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 		}
 		// eprintf ("addr %"PFMT64x"\n", addr);
 		r_asm_set_pc (core->rasm, addr);
-		// run esil pin command here
-		const char *pincmd = r_anal_pin_call (core->anal, addr);
-		if (pincmd) {
-			r_core_cmd0 (core, pincmd);
-			ut64 pc = r_reg_getv (core->anal->reg, "PC");
-			if (addr != pc) {
-				R_LOG_ERROR ("pincmd fail");
-				return_tail (1);
-			}
-		}
+		const bool pin_executed = core_esil_run_pin (core, addr);
 #if 0
 		if (dataAlign > 1) {
 			if (addr % dataAlign) {
@@ -7784,20 +7803,25 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 #endif
-		int re = r_io_read_at (core->io, addr, code, maxopsz);
-		if (re < 1) {
+		if (pin_executed) {
+			op.size = R_MAX (1, minopsz);
 			ret = 0;
 		} else {
-			ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
-				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			int re = r_io_read_at (core->io, addr, code, maxopsz);
+			if (re < 1) {
+				ret = 0;
+			} else {
+				ret = r_anal_op (core->anal, &op, addr, code, sizeof (code),
+					R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+			}
 		}
-		if (core->dbg->anal->esil->trace) {
+		if (!pin_executed && core->dbg->anal->esil->trace) {
 			r_esil_trace_op (core->dbg->anal->esil, &op);
 		}
 		// if type is JMP then we execute the next N instructions
 		// update the esil pointer because RAnal.op() can change it
 		esil = core->anal->esil;
-		if (op.size < 1 || ret < 1) {
+		if (!pin_executed && (op.size < 1 || ret < 1)) {
 			// eprintf ("esil trap\n");
 			if (esil->cmd && R_STR_ISNOTEMPTY (esil->cmd_trap)) {
 				esil->cmd (esil, esil->cmd_trap, addr, R_ANAL_TRAP_INVALID);
@@ -7811,127 +7835,132 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 			}
 		}
 		naddr = addr + op.size;
-		if (stepOver && is_steporeable (op.type)) {
-			if (addr == until_addr) {
-				return_tail (0);
-			}
-			SET_PC_BOTH (core, op.addr + op.size);
+		if (pin_executed) {
 			ret = 0;
-		}
-		if (r2wars) {
-			// this is x86 and r2wars specific, shouldnt hurt outside x86
-			ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
-			if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {
-				//char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
-				char *tmp = strstr (op.esil.ptr, ",0,GOTO");
-				if (tmp) {
-					tmp[0] = 0;
-					op.esil.len -= 7; //16;
+			tail_return_value = 1;
+		} else {
+			if (stepOver && is_steporeable (op.type)) {
+				if (addr == until_addr) {
+					return_tail (0);
+				}
+				SET_PC_BOTH (core, op.addr + op.size);
+				ret = 0;
+			}
+			if (r2wars) {
+				// this is x86 and r2wars specific, shouldnt hurt outside x86
+				ut64 vECX = r_reg_getv (core->anal->reg, "ecx");
+				if (op.prefix  & R_ANAL_OP_PREFIX_REP && vECX > 1) {
+					//char *tmp = strstr (op.esil.ptr, ",ecx,?{,5,GOTO,}");
+					char *tmp = strstr (op.esil.ptr, ",0,GOTO");
+					if (tmp) {
+						tmp[0] = 0;
+						op.esil.len -= 7; //16;
+					} else {
+						r_reg_setv (core->anal->reg, "PC", addr + op.size);
+					}
 				} else {
 					r_reg_setv (core->anal->reg, "PC", addr + op.size);
 				}
 			} else {
-				r_reg_setv (core->anal->reg, "PC", addr + op.size);
+				ut64 pcdst = addr + op.size;
+				SET_PC_BOTH (core, pcdst);
 			}
-		} else {
-			ut64 pcdst = addr + op.size;
-			SET_PC_BOTH (core, pcdst);
-		}
-		if (ret) {
-			esil->addr = addr;
-			const char *e = R_STRBUF_SAFEGET (&op.esil);
-			if (core->dbg->trace->enabled) {
-				RReg *reg = core->dbg->reg;
-				core->dbg->reg = core->anal->reg;
-				r_debug_trace_op (core->dbg, &op);
-				core->dbg->reg = reg;
-			} else if (core->anal->esil->trace) {
-				// required for type propagation analysis
-			//	r_esil_trace_op (core->anal->esil, &op);
-			}
-			if (wanteval && R_STR_ISNOTEMPTY (e)) {
-				R_LOG_DEBUG ("esil_parse: %s", e);
-				r_esil_parse (esil, e);
-				if (esil->trap) {
-					R_LOG_WARN ("ESIL TRAP %d/%d ON %s at 0x%08"PFMT64x,
-							esil->trap, esil->trap_code, e, addr);
-					if (r_config_get_b (core->config, "esil.exectrap")) {
-						R_LOG_INFO ("ESIL TRAP ignored");
-						esil->trap = false;
-					}
+			if (ret) {
+				esil->addr = addr;
+				const char *e = R_STRBUF_SAFEGET (&op.esil);
+				if (core->dbg->trace->enabled) {
+					RReg *reg = core->dbg->reg;
+					core->dbg->reg = core->anal->reg;
+					r_debug_trace_op (core->dbg, &op);
+					core->dbg->reg = reg;
+				} else if (core->anal->esil->trace) {
+					// required for type propagation analysis
+				//	r_esil_trace_op (core->anal->esil, &op);
 				}
+				if (wanteval && R_STR_ISNOTEMPTY (e)) {
+					R_LOG_DEBUG ("esil_parse: %s", e);
+					r_esil_parse (esil, e);
+					if (esil->trap) {
+						R_LOG_WARN ("ESIL TRAP %d/%d ON %s at 0x%08"PFMT64x,
+								esil->trap, esil->trap_code, e, addr);
+						if (r_config_get_b (core->config, "esil.exectrap")) {
+							R_LOG_INFO ("ESIL TRAP ignored");
+							esil->trap = false;
+						}
+					}
 #if 0
-				// XXX thats not related to arch plugins, and wonder if its useful at all or we want it as part of the anal or esil plugs
-				if (core->anal->cur && core->anal->cur->esil_post_loop) {
-					core->anal->cur->esil_post_loop (esil, &op);
-				}
-#endif
-				// warn if esil stack is not empty
-				r_esil_stack_free (esil);
-			}
-			// only support 1 delay slot for now (execute in a separate step)
-			if (op.delay && esil->delay) {
-				const ut64 ds_addr = naddr;
-				const ut64 pc_after_op = r_reg_getv (core->anal->reg, "PC");
-				const ut64 skipped_ds_pc = ds_addr + op.size;
-				const bool skip_delay_slot = (is_mips_arch && pc_after_op == skipped_ds_pc)
-					|| (is_sh_arch && pc_after_op == ds_addr);
-				ut64 saved_pc = UT64_MAX;
-
-				// MIPS likely branches annul the delay slot by jumping over it.
-				// If PC advanced past the delay slot, do not execute it.
-				if (skip_delay_slot) {
-					esil->delay = 0;
-				} else {
-					// Immediate jumps (e.g., SH) already set PC; preserve it so we can restore it after executing the delay slot.
-					if (!esil->jump_target_set && pc_after_op != ds_addr) {
-						saved_pc = pc_after_op;
+					// XXX thats not related to arch plugins, and wonder if its useful at all or we want it as part of the anal or esil plugs
+					if (core->anal->cur && core->anal->cur->esil_post_loop) {
+						core->anal->cur->esil_post_loop (esil, &op);
 					}
-					ut8 code2[32];
-					RAnalOp op2 = {0};
+#endif
+					// warn if esil stack is not empty
+					r_esil_stack_free (esil);
+				}
+				// only support 1 delay slot for now (execute in a separate step)
+				if (op.delay && esil->delay) {
+					const ut64 ds_addr = naddr;
+					const ut64 pc_after_op = r_reg_getv (core->anal->reg, "PC");
+					const ut64 skipped_ds_pc = ds_addr + op.size;
+					const bool skip_delay_slot = (is_mips_arch && pc_after_op == skipped_ds_pc)
+						|| (is_sh_arch && pc_after_op == ds_addr);
+					ut64 saved_pc = UT64_MAX;
 
-					SET_PC_BOTH (core, ds_addr);
-					(void)r_io_read_at (core->io, ds_addr, code2, sizeof (code2));
-					ret = r_anal_op (core->anal, &op2, ds_addr, code2, sizeof (code2), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
-					if (ret > 0) {
-						const char *e2 = R_STRBUF_SAFEGET (&op2.esil);
-						if (R_STR_ISNOTEMPTY (e2)) {
-							esil->addr = ds_addr;
-							r_esil_parse (esil, e2);
-							esil->trap = false; // ignore traps on delayed instructions for now
+					// MIPS likely branches annul the delay slot by jumping over it.
+					// If PC advanced past the delay slot, do not execute it.
+					if (skip_delay_slot) {
+						esil->delay = 0;
+					} else {
+						// Immediate jumps (e.g., SH) already set PC; preserve it so we can restore it after executing the delay slot.
+						if (!esil->jump_target_set && pc_after_op != ds_addr) {
+							saved_pc = pc_after_op;
 						}
-						ut64 pc_ds = r_reg_getv (core->anal->reg, "PC");
-						if (pc_ds == ds_addr) {
-							pc_ds = ds_addr + op2.size;
-							SET_PC_BOTH (core, pc_ds);
-						}
-						// Restore immediate jump targets after running the delay slot.
-						if (saved_pc != UT64_MAX && !esil->jump_target_set) {
-							if (pc_ds == ds_addr || pc_ds == ds_addr + op2.size) {
+						ut8 code2[32];
+						RAnalOp op2 = {0};
+
+						SET_PC_BOTH (core, ds_addr);
+						(void)r_io_read_at (core->io, ds_addr, code2, sizeof (code2));
+						ret = r_anal_op (core->anal, &op2, ds_addr, code2, sizeof (code2), R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT);
+						if (ret > 0) {
+							const char *e2 = R_STRBUF_SAFEGET (&op2.esil);
+							if (R_STR_ISNOTEMPTY (e2)) {
+								esil->addr = ds_addr;
+								r_esil_parse (esil, e2);
+								esil->trap = false; // ignore traps on delayed instructions for now
+							}
+							ut64 pc_ds = r_reg_getv (core->anal->reg, "PC");
+							if (pc_ds == ds_addr) {
+								pc_ds = ds_addr + op2.size;
+								SET_PC_BOTH (core, pc_ds);
+							}
+							// Restore immediate jump targets after running the delay slot.
+							if (saved_pc != UT64_MAX && !esil->jump_target_set) {
+								if (pc_ds == ds_addr || pc_ds == ds_addr + op2.size) {
+									r_esil_set_pc (esil, saved_pc);
+									if (core->anal->reg != core->dbg->reg) {
+										r_reg_setv (core->dbg->reg, "PC", saved_pc);
+									}
+								}
+							}
+						} else {
+							R_LOG_ERROR ("Invalid instruction at 0x%08"PFMT64x, ds_addr);
+							if (esil->jump_target_set && esil->delay) {
+								r_esil_set_pc (esil, esil->jump_target);
+								esil->jump_target_set = 0;
+								esil->delay = 0;
+							} else if (saved_pc != UT64_MAX) {
 								r_esil_set_pc (esil, saved_pc);
 								if (core->anal->reg != core->dbg->reg) {
 									r_reg_setv (core->dbg->reg, "PC", saved_pc);
 								}
+								esil->delay = 0;
 							}
 						}
-					} else {
-						R_LOG_ERROR ("Invalid instruction at 0x%08"PFMT64x, ds_addr);
-						if (esil->jump_target_set && esil->delay) {
-							r_esil_set_pc (esil, esil->jump_target);
-							esil->jump_target_set = 0;
-							esil->delay = 0;
-						} else if (saved_pc != UT64_MAX) {
-							r_esil_set_pc (esil, saved_pc);
-							if (core->anal->reg != core->dbg->reg) {
-								r_reg_setv (core->dbg->reg, "PC", saved_pc);
-							}
-							esil->delay = 0;
-						}
+						r_anal_op_fini (&op2);
 					}
-					r_anal_op_fini (&op2);
 				}
+				tail_return_value = 1;
 			}
-			tail_return_value = 1;
 		}
 		// esil->verbose ?
 		// eprintf ("REPE 0x%"PFMT64x" %s => 0x%"PFMT64x"\n", addr, R_STRBUF_SAFEGET (&op.esil), r_reg_getv (core->anal->reg, "PC"));
