@@ -150,9 +150,9 @@ typedef struct r_esil_memory_interface_t {
 typedef bool (*REsilIsReg)(void *reg, const char *name);
 typedef bool (*REsilRegRead)(void *reg, const char *name, ut64 *val);
 typedef bool (*REsilRegWrite)(void *reg, const char *name, ut64 val);
+typedef bool (*REsilRegAlias)(void *reg, int alias, const char *name);
 typedef ut32 (*REsilRegSize)(void *reg, const char *name);
 typedef ut32 (*REsilRegPackedSize)(void *reg, const char *name);
-typedef bool (*REsilRegAlias)(void *reg, const char *name, const char *alias);
 
 typedef struct r_esil_register_interface_t {
 	union {
@@ -162,9 +162,9 @@ typedef struct r_esil_register_interface_t {
 	REsilIsReg is_reg; /// IsReg breaks the REsilReg prefix naming
 	REsilRegRead reg_read;
 	REsilRegWrite reg_write;
+	REsilRegAlias reg_alias;
 	REsilRegSize reg_size;
 	REsilRegPackedSize reg_packed_size; /// 0 == not packed; lane size in bytes otherwise
-	REsilRegAlias reg_alias;
 } REsilRegInterface;
 
 typedef bool (*REsilSetBits)(void *user, int bits);
@@ -176,7 +176,7 @@ typedef struct r_esil_util_interface_t {
 
 typedef void (*REsilVoyeurRegRead)(void *user, const char *name, ut64 val);
 typedef void (*REsilVoyeurRegWrite)(void *user, const char *name, ut64 old, ut64 val);
-typedef void (*REsilVoyeurRegAlias)(void *user, const char *name, const char *alias);
+typedef void (*REsilVoyeurRegAlias)(void *user, int alias, const char *name);
 typedef void (*REsilVoyeurMemRead)(void *user, ut64 addr, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurMemWrite)(void *user, ut64 addr, const ut8 *old, const ut8 *buf, int len);
 typedef	void (*REsilVoyeurSetBits)(void *user, int bits);
@@ -346,7 +346,7 @@ R_API bool r_esil_reg_read(REsil *esil, const char *regname, ut64 *val, ut32 *si
 R_API bool r_esil_reg_read_silent(REsil *esil, const char *name, ut64 *val, ut32 *size);
 R_API bool r_esil_reg_write(REsil *esil, const char *name, ut64 val);
 R_API bool r_esil_reg_write_silent(REsil *esil, const char *dst, ut64 val);
-R_API bool r_esil_reg_alias(REsil *esil, RStrs name, RStrs alias);
+R_API bool r_esil_reg_alias(REsil *esil, int alias, const char *name);
 R_API bool r_esil_set_bits(REsil *esil, int bits);
 R_API bool r_esil_pushnum(REsil *esil, ut64 num);
 R_API bool r_esil_push(REsil *esil, RStrs s);

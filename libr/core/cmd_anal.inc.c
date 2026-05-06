@@ -2505,10 +2505,6 @@ static ut32 ec_reg_size(void *user, const char *name) {
 	return ec->bits;
 }
 
-static bool ec_reg_alias(void *user, const char *name, const char *alias) {
-	return true;
-}
-
 static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 	if (R_STR_ISEMPTY (expr)) {
 		return 0;
@@ -2523,7 +2519,6 @@ static int esil_cost(RCore *core, ut64 addr, const char *expr) {
 		.reg_read = ec_reg_read,
 		.reg_write = ec_reg_write,
 		.reg_size = ec_reg_size,
-		.reg_alias = ec_reg_alias,
 	};
 	REsilMemInterface mem_if = {
 		.user = &ec,

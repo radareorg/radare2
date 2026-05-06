@@ -323,9 +323,13 @@ R_API bool r_io_desc_exchange(RIO* io, int fd, int fdx) {
 		do {
 			RIOMap *map = r_id_storage_get (&io->maps, map_id);
 			if (map->fd == fdx) {
-				map->perm &= (desc->perm | R_PERM_X);
+				int req_perm = (map->perm >> 7) & R_PERM_RWX;
+				int new_perm = (desc->perm | R_PERM_X) & R_PERM_RWX;
+				map->perm = new_perm | (req_perm << 7);
 			} else if (map->fd == fd) {
-				map->perm &= (descx->perm | R_PERM_X);
+				int req_perm = (map->perm >> 7) & R_PERM_RWX;
+				int new_perm = (descx->perm | R_PERM_X) & R_PERM_RWX;
+				map->perm = new_perm | (req_perm << 7);
 			}
 		} while (r_id_storage_get_next (&io->maps, &map_id));
 	}
