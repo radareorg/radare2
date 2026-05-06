@@ -538,7 +538,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 					}
 					*reloc = *tmp;
 					if (reloc->import)
-						reloc->import = r_bin_import_clone(reloc->import);
+						reloc->import = r_bin_import_clone (reloc->import);
 					reloc->paddr = seg->paddr + offset;
 				} while (offset != 0xFFFF);
 				free (reloc);
