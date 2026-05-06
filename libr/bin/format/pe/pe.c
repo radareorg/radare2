@@ -1410,7 +1410,7 @@ static bool bin_pe_init_metadata_hdr(RBinPEObj *pe) {
 	// read metadata streams
 	int stream_addr = metadata_directory + 20 + metadata->VersionStringLength;
 	PE_(image_metadata_stream) * stream;
-	streams = calloc (sizeof (PE_(image_metadata_stream) *), metadata->NumberOfStreams);
+	streams = calloc (sizeof (PE_(image_metadata_stream) *), metadata->NumberOfStreams + 1);
 	if (!streams && metadata->NumberOfStreams > 0) {
 		goto fail;
 	}
