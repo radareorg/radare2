@@ -128,6 +128,67 @@ static void r_meta_item_free(void *_item) {
 	}
 }
 
+static bool anal_esil_mem_switch(void *mem, ut32 idx) {
+	RAnal *anal = mem;
+	return anal->iob.bank_use (anal->iob.io, idx);
+}
+
+static bool anal_esil_mem_read(void *mem, ut64 addr, ut8 *buf, int len) {
+	memset (buf, 0xff, len);
+	if (((addr + len) != 0ULL) && ((addr + len) < addr)) {
+		return false;
+	}
+	RAnal *anal = mem;
+	RIORegion region;
+	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
+		return true;	//XXX: should be false
+	}
+	if (!(region.perm & R_PERM_R)) {
+		return false;
+	}
+	if (!r_itv_contain (region.itv, addr + len - 1)) {
+		const int _len = r_itv_end (region.itv) - addr;
+		return anal_esil_mem_read (mem, r_itv_end (region.itv), &buf[_len], len - _len)
+			&& anal->iob.read_at (anal->iob.io, addr, buf, _len);
+	}
+	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
+	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	return anal->iob.read_at (anal->iob.io, addr, buf, len);
+}
+
+static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
+	if (((addr + len) != 0ULL) && ((addr + len) < addr)) {
+		//UT64_MAX is a valid addr to write to
+		return false;
+	}
+	RAnal *anal = mem;
+	RIORegion region;
+	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
+		return false;
+	}
+	if (!((region.perm & R_PERM_W)
+		|| ((region.perm & R_PERM_REQ_W) && r_io_cache_writable (anal->iob.io)))) {
+		return false;
+	}
+	if (!r_itv_contain (region.itv, addr + len - 1)) {
+		const int _len = r_itv_end (region.itv) - addr;
+		return anal_esil_mem_write (mem, r_itv_end (region.itv), &buf[_len], len - _len)
+			&& anal->iob.write_at (anal->iob.io, addr, buf, _len);
+	}
+	// do not set esil->trap or esil->trap_code here. esil handles that on it's own
+	// do not invoke esil->cmd_ioer, this is about to get removed from esil. core_esil is supposed to handle this
+	return anal->iob.write_at (anal->iob.io, addr, buf, len);
+}
+
+static bool anal_esil_set_bits(void *user, int bits) {
+	RAnal *anal = user;
+	if (anal->coreb.core && anal->coreb.setArchBits) {
+		anal->coreb.setArchBits (anal->coreb.core, NULL, bits);
+		return true;
+	}
+	return r_anal_set_triplet (anal, NULL, NULL, bits);
+}
+
 // Take nullable RArchConfig as argument?
 R_API RAnal *r_anal_new(void) {
 	RAnal *anal = R_NEW0 (RAnal);
@@ -175,7 +236,18 @@ R_API RAnal *r_anal_new(void) {
 	anal->sdb_classes_attrs = sdb_ns (anal->sdb_classes, "attrs", 1);
 	anal->zign_path = strdup ("");
 	anal->cb_printf = (PrintfCallback) printf;
-	anal->esil = r_esil_new (4096, 0, 1);
+	anal->reg = r_reg_new ();
+	anal->esil = r_esil_new_simple (1, anal->reg, &anal->iob);
+	anal->esil->mem_if = (REsilMemInterface) {
+		.mem = anal,
+		.mem_switch = anal_esil_mem_switch,
+		.mem_read = anal_esil_mem_read,
+		.mem_write = anal_esil_mem_write,
+	};
+	anal->esil->util_if = (REsilUtilInterface) {
+		.user = anal,
+		.set_bits = anal_esil_set_bits,
+	};
 	anal->esil->anal = anal;
 	(void)r_anal_pin_init (anal);
 	(void)r_anal_xrefs_init (anal);
@@ -183,7 +255,6 @@ R_API RAnal *r_anal_new(void) {
 	anal->diff_thfcn = R_ANAL_THRESHOLDFCN;
 	anal->syscall = r_syscall_new ();
 	r_flag_bind_init (anal->flb);
-	anal->reg = r_reg_new ();
 	anal->last_disasm_reg = NULL;
 	anal->stackptr = 0;
 	anal->lineswidth = 0;

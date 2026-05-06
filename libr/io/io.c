@@ -494,6 +494,7 @@ R_API void r_io_bind(RIO *io, RIOBind *bnd) {
 	bnd->map_get_at = r_io_map_get_at;
 	bnd->map_get_paddr = r_io_map_get_paddr;
 	bnd->addr_is_mapped = r_io_addr_is_mapped;
+	bnd->get_region_at = r_io_get_region_at;
 	bnd->map_add = r_io_map_add;
 	bnd->map_locate = r_io_map_locate;
 #if HAVE_PTRACE

@@ -1,0 +1,15 @@
+NAME=op: sep r1 updates PC alias
+FILE=malloc://0x10
+ARGS=-w -a cosmac -b 8
+CMDS=<<EOF
+aei
+wx d1
+drn PC
+aes
+drn PC
+EOF
+EXPECT=<<EOF
+r0
+r1
+EOF
+RUN
