@@ -519,9 +519,11 @@ static bool cb_arch_platform(void *user, void *data) {
 
 static bool cb_archbits(void *user, void *data) {
 	R_RETURN_VAL_IF_FAIL (user && data, false);
-	RCore *core = (RCore *)user;
+	RCore *core = user;
+	r_core_esil_unload_arch (core);
 	RConfigNode *node = (RConfigNode *)data;
 	r_arch_set_bits (core->anal->arch, node->i_value);
+	r_core_esil_load_arch (core);
 	return true;
 }
 
@@ -534,10 +536,11 @@ static bool cb_archbits_getter(RCore *core, RConfigNode *node) {
 }
 
 static bool cb_archendian(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
+	RCore *core = user;
+	RConfigNode *node = data;
 	R_RETURN_VAL_IF_FAIL (node && core && core->anal && core->anal->arch, false);
 	if (!strcmp (node->value, "big") || !strcmp (node->value, "bigswap")) {
+		r_core_esil_unload_arch (core);
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_BIG);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -545,9 +548,11 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("true");
 			be->i_value = 1;
 		}
+		r_core_esil_load_arch (core);
 		return true;
 	}
 	if (!strcmp (node->value, "little") || !strcmp (node->value, "littleswap")) {
+		r_core_esil_unload_arch (core);
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_LITTLE);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -555,9 +560,11 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("false");
 			be->i_value = 0;
 		}
+		r_core_esil_load_arch (core);
 		return true;
 	}
 	if (!strcmp (node->value, "middle")) {
+		r_core_esil_unload_arch (core);
 		r_arch_set_endian (core->anal->arch, R_SYS_ENDIAN_MIDDLE);
 		RConfigNode *be = r_config_node_get (core->config, "cfg.bigendian");
 		if (be) {
@@ -565,6 +572,7 @@ static bool cb_archendian(void *user, void *data) {
 			be->value = strdup ("false");
 			be->i_value = 0;
 		}
+		r_core_esil_load_arch (core);
 		return true;
 	}
 	return false;
@@ -797,7 +805,9 @@ static bool cb_asmcpu(void *user, void *data) {
 #endif
 		return 0;
 	}
+	r_core_esil_unload_arch (core);
 	r_arch_config_set_cpu (core->rasm->config, node->value);
+	r_core_esil_load_arch (core);
 	const int v = r_arch_info (core->anal->arch, R_ARCH_INFO_CODE_ALIGN);
 	if (v >= 0) {
 		core->anal->config->codealign = v;
@@ -1459,12 +1469,14 @@ static bool cb_bigendian(void *user, void *data) {
 		core->dbg->bp->endian = isbig;
 	}
 	core->rasm->config->endian = endianType;
+	r_core_esil_unload_arch (core);
 	r_arch_set_endian (core->anal->arch, endianType);
 	RConfigNode *ae = r_config_node_get (core->config, "arch.endian");
 	if (ae) {
 		free (ae->value);
 		ae->value = strdup (node->i_value? "big": "little");
 	}
+	r_core_esil_load_arch (core);
 	return true;
 }
 
@@ -2223,6 +2235,15 @@ static bool cb_gotolimit(void *user, void *data) {
 	return true;
 }
 
+static bool cb_esilmaxbacksteps(void *user, void *data) {
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core->esil.reg) {	//hack
+		r_core_esil_set_max_stepback (core, node->i_value);
+	}
+	return true;
+}
+
 static bool cb_esilverbose(void *user, void *data) {
 	RCore *core = user;
 	RConfigNode *node = data;
@@ -2476,13 +2497,31 @@ R_API bool r_core_esil_cmd(REsil *esil, const char *cmd, ut64 a1, ut64 a2) {
 	return false;
 }
 
+static void core_esil_set_cmd(char **dst, const char *cmd) {
+	free (*dst);
+	*dst = R_STR_ISNOTEMPTY (cmd)? strdup (cmd): NULL;
+}
+
+static void legacy_esil_set_cmd(REsil *esil, char **dst, const char *cmd) {
+	if (esil) {
+		esil->cmd = r_core_esil_cmd;
+		core_esil_set_cmd (dst, cmd);
+	}
+}
+
+static REsil *core_legacy_esil(RCore *core) {
+	return R_UNWRAP3 (core, anal, esil);
+}
+
 static bool cb_cmd_esil_ioer(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_ioer);
-		core->anal->esil->cmd_ioer = strdup (node->value);
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.ioer, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_ioer, node->value);
+		}
 	}
 	return true;
 }
@@ -2490,10 +2529,12 @@ static bool cb_cmd_esil_ioer(void *user, void *data) {
 static bool cb_cmd_esil_todo(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_todo);
-		core->anal->esil->cmd_todo = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.todo, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_todo, node->value);
+		}
 	}
 	return true;
 }
@@ -2501,21 +2542,25 @@ static bool cb_cmd_esil_todo(void *user, void *data) {
 static bool cb_cmd_esil_intr(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_intr);
-		core->anal->esil->cmd_intr = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.intr, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_intr, node->value);
+		}
 	}
 	return true;
 }
 
 static bool cb_mdevrange(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->mdev_range);
-		core->anal->esil->mdev_range = strdup (node->value);
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.mdev_range, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			core_esil_set_cmd (&esil->mdev_range, node->value);
+		}
 	}
 	return true;
 }
@@ -2531,34 +2576,40 @@ static bool cb_cmd_esil_pin(void *user, void *data) {
 }
 
 static bool cb_cmd_esil_step(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_step);
-		core->anal->esil->cmd_step = strdup (node->value);
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.step, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_step, node->value);
+		}
 	}
 	return true;
 }
 
 static bool cb_cmd_esil_step_out(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_step_out);
-		core->anal->esil->cmd_step_out = strdup (node->value);
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.step_out, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_step_out, node->value);
+		}
 	}
 	return true;
 }
 
 static bool cb_cmd_esil_mdev(void *user, void *data) {
-	RCore *core = (RCore *)user;
-	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		free (core->anal->esil->cmd_mdev);
-		core->anal->esil->cmd_mdev = strdup (node->value);
+	RCore *core = user;
+	RConfigNode *node = data;
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.mdev, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_mdev, node->value);
+		}
 	}
 	return true;
 }
@@ -2566,9 +2617,13 @@ static bool cb_cmd_esil_mdev(void *user, void *data) {
 static bool cb_cmd_esil_trap(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	if (core && core->anal && core->anal->esil) {
-		core->anal->esil->cmd = r_core_esil_cmd;
-		core->anal->esil->cmd_trap = strdup (node->value);
+	if (core) {
+		core_esil_set_cmd (&core->esil.cmds.trap, node->value);
+		legacy_esil_set_cmd (&core->esil.esil, &core->esil.esil.cmd_trap, node->value);
+		REsil *esil = core_legacy_esil (core);
+		if (esil) {
+			legacy_esil_set_cmd (esil, &esil->cmd_trap, node->value);
+		}
 	}
 	return true;
 }
@@ -4165,6 +4220,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("dbg.glibc.demangle", "false", "demangle linked-lists pointers introduced in glibc 2.32");
 	SETB ("esil.prestep", "true", "step before esil evaluation in `de` commands");
 	SETI ("esil.maxsteps", 0, "If !=0 defines the maximum amount of steps to perform on aesu/aec/..");
+	SETICB ("esil.maxbacksteps", 256, &cb_esilmaxbacksteps, "esil back step capacity");
 	SETS ("esil.fillstack", "", "initialize ESIL stack with (random, debruijn, sequence, zeros, ...)");
 	SETICB ("esil.verbose", 0, &cb_esilverbose, "show ESIL verbose level (0, 1, 2)");
 	SETICB ("esil.gotolimit", core->anal->esil_goto_limit, &cb_gotolimit, "maximum number of gotos per ESIL expression");

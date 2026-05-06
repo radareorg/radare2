@@ -2689,6 +2689,7 @@ R_API bool r_core_init(RCore *core) {
 	core->dbg->ev = core->ev;
 	core->autocomplete = R_NEW0 (RCoreAutocomplete);
 	r_core_plugins_init (core->rcmd);
+	r_core_esil_init (core);
 	r_core_config_init (core);
 	r_core_plugins_load (core->rcmd);
 	core->print->reg = core->anal->reg;
@@ -2789,6 +2790,10 @@ R_API void r_core_fini(RCore *c) {
 	c->libstore = NULL;
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
+	/*
+	r_unref (c->anal->config);
+	*/
+	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
 	}
