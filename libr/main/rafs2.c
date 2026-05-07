@@ -11,6 +11,7 @@ typedef struct {
 	const char *fstype;
 	const char *file;
 	const char *mountpoint;
+	const char *mount_options;
 	ut64 offset;
 	bool interactive;
 	bool json;
@@ -76,6 +77,7 @@ static void show_usage(void) {
 	"Options:\n"
 	"  -t <type>    Filesystem type (ext2, fat, ntfs, iso9660, hfs, ubifs, etc.)\n"
 	"  -o <offset>  Offset to mount filesystem (default: 0)\n"
+	"  -O <opts>    Mount options (key=value,key=value)\n"
 	"  -m <path>    Mount point path (default: /)\n"
 	"  -i           Interactive mode (shell)\n"
 	"  -l <path>    List directory contents\n"
@@ -92,6 +94,7 @@ static void show_usage(void) {
 	"  rafs2 -t ext2 -l / image.img\n"
 	"  rafs2 -t fat -o 0x1000 -c /boot/config.txt disk.img\n"
 	"  rafs2 -t ntfs -n filesystem.img\n"
+	"  rafs2 -t 9fs -O transport=tcp,host=127.0.0.1,port=9999 -l / /dev/null\n"
 	"  rafs2 -t iso9660 -i cdrom.iso\n"
 	"  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
 }
@@ -326,7 +329,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 	opt->mountpoint = "/";
 
 	RGetopt go;
-	r_getopt_init (&go, argc, argv, "t:o:m:il:c:x:nLhjv");
+	r_getopt_init (&go, argc, argv, "t:o:O:m:il:c:x:nLhjv");
 	while ((c = r_getopt_next (&go)) != -1) {
 		switch (c) {
 		case 't':
@@ -334,6 +337,9 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 			break;
 		case 'o':
 			opt->offset = r_num_math (NULL, go.arg);
+			break;
+		case 'O':
+			opt->mount_options = go.arg;
 			break;
 		case 'm':
 			opt->mountpoint = go.arg;
@@ -412,7 +418,7 @@ R_API int r_main_rafs2(int argc, const char **argv) {
 	r_io_bind (io, &(fs->iob));
 	r_cons_bind (s->cons, &(fs->csb));
 
-	RFSRoot *root = r_fs_mount (fs, opt->fstype, opt->mountpoint, opt->offset);
+	RFSRoot *root = r_fs_mount_with_options (fs, opt->fstype, opt->mountpoint, opt->offset, opt->mount_options);
 	if (!root) {
 		R_LOG_ERROR ("Cannot mount %s filesystem at offset 0x%" PFMT64x, opt->fstype, opt->offset);
 		rafs2_free (s);

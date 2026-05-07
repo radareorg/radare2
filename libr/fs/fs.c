@@ -127,7 +127,7 @@ R_API void r_fs_del(RFS *fs, RFSPlugin *p) {
 }
 
 /* mountpoint */
-R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *path, ut64 delta) {
+R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, const char *path, ut64 delta, const char *R_NULLABLE options) {
 	R_RETURN_VAL_IF_FAIL (fs && path, NULL);
 	RFSRoot *root;
 	RListIter *iter;
@@ -198,6 +198,20 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *pa
 	}
 	// TODO: we should just construct the root with the rfs instance
 	root = r_fs_root_new (str, delta);
+	if (!root) {
+		free (str);
+		free (heapFsType);
+		return NULL;
+	}
+	if (R_STR_ISNOTEMPTY (options)) {
+		root->options = strdup (options);
+		if (!root->options) {
+			free (str);
+			free (heapFsType);
+			r_fs_root_free (root);
+			return NULL;
+		}
+	}
 	root->p = p;
 	root->iob = fs->iob;
 	root->cob = fs->cob;
@@ -212,6 +226,10 @@ R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *pa
 	free (str);
 	free (heapFsType);
 	return root;
+}
+
+R_API RFSRoot *r_fs_mount(RFS *fs, const char *R_NULLABLE fstype, const char *path, ut64 delta) {
+	return r_fs_mount_with_options (fs, fstype, path, delta, NULL);
 }
 
 static inline bool r_fs_match(const char *root, const char *path, int len) {

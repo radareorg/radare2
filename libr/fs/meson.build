@@ -3,6 +3,7 @@ r_fs_sources = [
   'fs_file.c',
   'fs_shell.c',
   'p/fs_io.c',
+  'p/fs_p9.c',
   'p/fs_posix.c',
   'p/fs_r2.c',
   'p/fs_tmp.c',
@@ -16,10 +17,10 @@ if get_option('use_zip')
   r_fs_sources += [ 'p/fs_zip.c' ]
 endif
 
-r_fs_deps = [ r_util_dep ]
+r_fs_deps = [ r_util_dep, r_socket_dep ]
 r_fs_cflags = [ library_cflags ]
 if get_option('blob')
-  r_fs_static_deps = [ r_util_static_dep ]
+  r_fs_static_deps = [ r_util_static_dep, r_socket_static_dep ]
 endif
 
 grub_inc = []
@@ -147,7 +148,8 @@ pkgconfig_mod.generate(r_fs,
   filebase: 'r_fs',
   libraries: pkgcfg_sanitize_libs,
   requires: [
-    'r_util'
+    'r_util',
+    'r_socket'
   ],
   description: 'radare foundation libraries'
 )

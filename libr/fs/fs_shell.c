@@ -30,6 +30,23 @@ static bool handlePipes(RFS *fs, char *msg, const ut8 *data, const char *cwd) {
 	return true;
 }
 
+static bool shell_mount_arg_is_offset(const char *s) {
+	s = r_str_trim_head_ro (s);
+	int argc = 0;
+	char **argv = r_str_argv (s, &argc);
+	if (!argv || argc < 1 || R_STR_ISEMPTY (argv[0]) || strchr (argv[0], '=')) {
+		r_str_argv_free (argv);
+		return false;
+	}
+	const char *arg = argv[0];
+	if (*arg == '-' || *arg == '+') {
+		arg++;
+	}
+	bool ret = IS_DIGIT (*arg) || *arg == '$';
+	r_str_argv_free (argv);
+	return ret;
+}
+
 static char *fs_abspath(RFSShell *shell, const char *input) {
 	char *path = strdup (shell->cwd);
 	if (path == NULL) {
@@ -157,19 +174,29 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 			*path++ = 0;
 			path = (char *)r_str_trim_head_ro (path);
 			char *off = strchr (path, ' ');
+			char *opts = NULL;
 			ut64 n = 0;
 			if (off) {
 				*off++ = 0;
 				off = (char *)r_str_trim_head_ro (off);
-				n = r_num_math (NULL, off);
+				if (shell_mount_arg_is_offset (off)) {
+					opts = strchr (off, ' ');
+					if (opts) {
+						*opts++ = 0;
+						opts = (char *)r_str_trim_head_ro (opts);
+					}
+					n = r_num_math (NULL, off);
+				} else {
+					opts = off;
+				}
 			}
-			bool res = r_fs_mount (fs, arg, path, n);
+			bool res = r_fs_mount_with_options (fs, arg, path, n, opts);
 			if (!res) {
 				R_LOG_ERROR ("cannot mount");
 			}
 		} else {
 			RFSPlugin *plug;
-			eprintf ("Usage: mount [fstype] [path]\nfstypes:");
+			eprintf ("Usage: mount [fstype] [path] [offset] [options]\nfstypes:");
 			r_list_foreach (fs->libstore->plugins, iter, plug) {
 				eprintf (" %s", plug->meta.name);
 			}
@@ -179,7 +206,8 @@ static bool r_fs_shell_command(RFSShell *shell, RFS *fs, const char *buf) {
 	} else if (r_str_startswith (buf, "mount")) {
 		RFSRoot* r;
 		r_list_foreach (fs->roots, iter, r) {
-			cb_printf (cons, "%s %s\n", r->path, r->p->meta.name);
+			cb_printf (cons, "%s %s%s%s\n", r->path, r->p->meta.name,
+				r->options? " ": "", r->options? r->options: "");
 		}
 	} else if (r_str_startswith (buf, "cat ")) {
 		const char *input = r_str_trim_head_ro (buf + 3);

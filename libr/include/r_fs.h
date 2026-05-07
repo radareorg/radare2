@@ -60,6 +60,7 @@ typedef struct r_fs_file_t {
 typedef struct r_fs_root_t {
 	char *path;
 	ut64 delta;
+	char *options;
 	struct r_fs_plugin_t *p;
 	void *ptr;
 	// Backing IO fd for container filesystems (fatmacho, etc). -1 when not
@@ -176,6 +177,7 @@ R_API bool r_fs_plugin_remove(RFS *fs, RFSPlugin *p);
 R_API void r_fs_del(RFS *fs, RFSPlugin *p);
 
 R_API RFSRoot *r_fs_mount(RFS* fs, const char *fstype, const char *path, ut64 delta);
+R_API RFSRoot *r_fs_mount_with_options(RFS* fs, const char *fstype, const char *path, ut64 delta, const char *options);
 R_API bool r_fs_umount(RFS* fs, const char *path);
 R_API RFSRoot *r_fs_root_by_fd(RFS *fs, int fd);
 
@@ -234,6 +236,7 @@ extern RFSPlugin r_fs_plugin_iso9660;
 extern RFSPlugin r_fs_plugin_jfs;
 extern RFSPlugin r_fs_plugin_minix;
 extern RFSPlugin r_fs_plugin_ntfs;
+extern RFSPlugin r_fs_plugin_p9;
 extern RFSPlugin r_fs_plugin_posix;
 extern RFSPlugin r_fs_plugin_r2;
 extern RFSPlugin r_fs_plugin_tmp;
