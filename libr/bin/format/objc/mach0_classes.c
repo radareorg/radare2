@@ -1210,6 +1210,13 @@ static char *get_class_name(RBinFile *bf, mach0_ut p) {
 	return NULL;
 }
 
+static bool has_class_name(RBinFile *bf, mach0_ut p) {
+	char *name = get_class_name (bf, p);
+	bool has_name = R_STR_ISNOTEMPTY (name);
+	free (name);
+	return has_name;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
 	struct MACH0_(obj_t) *bin;
@@ -1862,10 +1869,6 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			R_LOG_ERROR ("Chopped classlist data");
 			break;
 		}
-		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
-		R_FREE (klass->name); // allow NULL name in rbinclass?
-		klass->lang = R_BIN_LANG_OBJC;
-		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		size = sizeof (mach0_ut);
 		if (ms.clslist.addr > bf->size || ms.clslist.addr + size > bf->size) {
 			goto get_classes_error;
@@ -1878,6 +1881,13 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			goto get_classes_error;
 		}
 		p = r_read_ble (&pp[0], bigendian, 8 * sizeof (mach0_ut));
+		if (named_only && !has_class_name (bf, p)) {
+			continue;
+		}
+		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
+		R_FREE (klass->name); // allow NULL name in rbinclass?
+		klass->lang = R_BIN_LANG_OBJC;
+		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		MACH0_(get_class_t) (bf, klass, p, false, relocs, oi);
 		if (klass->name) {
 			const char *klass_name = r_bin_name_tostring (klass->name);
