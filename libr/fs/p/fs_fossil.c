@@ -350,7 +350,7 @@ static bool fossil_meta_unpack(FossilMetaBlock *mb, ut8 *buf, int n) {
 	mb->nindex = r_read_be16 (buf + 10);
 	mb->buf = buf;
 	int min = FOSSIL_META_HEADER_SIZE + mb->maxindex * FOSSIL_META_INDEX_SIZE;
-	if (mb->size > n || min > n) {
+	if (mb->nindex > mb->maxindex || mb->size > n || min > n) {
 		return false;
 	}
 	int i;
