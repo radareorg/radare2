@@ -229,6 +229,7 @@ extern RFSPlugin r_fs_plugin_cpio;
 extern RFSPlugin r_fs_plugin_ext2;
 extern RFSPlugin r_fs_plugin_fat;
 extern RFSPlugin r_fs_plugin_fb;
+extern RFSPlugin r_fs_plugin_fossil;
 extern RFSPlugin r_fs_plugin_hfs;
 extern RFSPlugin r_fs_plugin_hfsplus;
 extern RFSPlugin r_fs_plugin_io;

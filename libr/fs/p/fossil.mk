@@ -1,0 +1,9 @@
+OBJ_FOSSIL=fs_fossil.o
+
+STATIC_OBJ+=${OBJ_FOSSIL}
+TARGET_FOSSIL=fs_fossil.${EXT_SO}
+
+ALL_TARGETS+=${TARGET_FOSSIL}
+
+${TARGET_FOSSIL}: ${OBJ_FOSSIL}
+	${CC} $(call libname,fs_fossil) ${LDFLAGS} ${CFLAGS} -o ${TARGET_FOSSIL} ${OBJ_FOSSIL}

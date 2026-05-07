@@ -11,7 +11,7 @@ all:
 
 #FILESYSTEMS=hfs.mk iso9660.mk jfs.mk
 #FILESYSTEMS=hfsplus.mk
-FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk ubifs.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk tmp.mk apfs.mk fatmacho.mk sep64.mk p9.mk
+FILESYSTEMS=ext2.mk fat.mk ntfs.mk reiserfs.mk tar.mk ubifs.mk udf.mk ufs2.mk ufs.mk xfs.mk hfs.mk tmp.mk apfs.mk fatmacho.mk fossil.mk sep64.mk p9.mk
 FILESYSTEMS+=squashfs.mk
 include $(FILESYSTEMS)
 
