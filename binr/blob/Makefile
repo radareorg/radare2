@@ -51,6 +51,9 @@ include ../../shlr/bochs/deps.mk
 include ../../shlr/qnx/deps.mk
 include ../../shlr/sdb.mk
 LINK+=$(CS_LDFLAGS)
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+LINK+=$(ZYDIS_LDFLAGS)
+endif
 
 .PHONY: all symlinks build install blobclean
 all:: symlinks
