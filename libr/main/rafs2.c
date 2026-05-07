@@ -94,7 +94,7 @@ static void show_usage(void) {
 	"  rafs2 -t ext2 -l / image.img\n"
 	"  rafs2 -t fat -o 0x1000 -c /boot/config.txt disk.img\n"
 	"  rafs2 -t ntfs -n filesystem.img\n"
-	"  rafs2 -t 9fs -O transport=tcp,host=127.0.0.1,port=9999 -l / /dev/null\n"
+	"  rafs2 -t 9fs -O tcp:127.0.0.1:9999 -l / /dev/null\n"
 	"  rafs2 -t iso9660 -i cdrom.iso\n"
 	"  rafs2 -t ext2 -x /etc/passwd:passwd.txt image.img\n");
 }

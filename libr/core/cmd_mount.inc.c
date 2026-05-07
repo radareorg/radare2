@@ -7,7 +7,7 @@
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
-	"m", " /mnt 9fs 0 transport=tcp,host=127.0.0.1,port=9999", "mount fs with plugin options",
+	"m", " /mnt 9fs tcp:127.0.0.1:9999", "mount fs with plugin options",
 	"m", " /mnt", "mount fs at /mnt with autodetect fs and current offset",
 	"m", "", "list all mountpoints in human readable format",
 	"m*", "", "same as above, but in r2 commands",

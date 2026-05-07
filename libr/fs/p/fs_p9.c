@@ -754,20 +754,16 @@ static bool p9_client_apply_addr(P9Client *c, const char *addr) {
 	const char *host = addr;
 	const char *port = NULL;
 	char *tmp = NULL;
-	if (r_str_startswith (addr, "tcp!") || r_str_startswith (addr, "udp!")) {
+	if (r_str_startswith (addr, "tcp:") || r_str_startswith (addr, "udp:")) {
 		c->transport = *addr == 'u'? P9_TRANSPORT_UDP: P9_TRANSPORT_TCP;
 		host = addr + 4;
-		port = strrchr (host, '!');
+		port = strrchr (host, ':');
 		if (!port || port == host) {
 			return false;
 		}
 		tmp = r_str_ndup (host, port - host);
 		host = tmp;
 		port++;
-	} else if (r_str_startswith (addr, "unix!")) {
-		c->transport = P9_TRANSPORT_UNIX;
-		p9_set_string (&c->path, addr + 5);
-		return true;
 	} else if (r_str_startswith (addr, "unix:")) {
 		c->transport = P9_TRANSPORT_UNIX;
 		p9_set_string (&c->path, addr + 5);
@@ -1254,20 +1250,16 @@ static bool p9_set_addr(const char *addr) {
 	const char *host = addr;
 	const char *port = NULL;
 	char *tmp = NULL;
-	if (r_str_startswith (addr, "tcp!") || r_str_startswith (addr, "udp!")) {
+	if (r_str_startswith (addr, "tcp:") || r_str_startswith (addr, "udp:")) {
 		p9_set_string (&p9_cfg_transport, *addr == 'u'? "udp": "tcp");
 		host = addr + 4;
-		port = strrchr (host, '!');
+		port = strrchr (host, ':');
 		if (!port || port == host) {
 			return false;
 		}
 		tmp = r_str_ndup (host, port - host);
 		host = tmp;
 		port++;
-	} else if (r_str_startswith (addr, "unix!")) {
-		p9_set_string (&p9_cfg_transport, "unix");
-		p9_set_string (&p9_cfg_path, addr + 5);
-		return true;
 	} else if (r_str_startswith (addr, "unix:")) {
 		p9_set_string (&p9_cfg_transport, "unix");
 		p9_set_string (&p9_cfg_path, addr + 5);
@@ -1338,7 +1330,7 @@ static bool fs_p9_cmd(RFS *fs, const char *cmd) {
 	if (*arg == '?') {
 		R_LOG_INFO ("Usage: m:9fs [host] [port] [user] [aname]");
 		R_LOG_INFO ("       m:9fs transport=tcp,host=127.0.0.1,port=9999");
-		R_LOG_INFO ("       m:9fs tcp!host!port | udp!host!port | unix!/path");
+		R_LOG_INFO ("       m:9fs tcp:host:port | udp:host:port | unix:/path");
 		return true;
 	}
 	if (!*arg) {
