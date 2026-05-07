@@ -197,6 +197,7 @@ typedef struct r_debug_checkpoint_t {
 	ut64 resume_bp_addr;
 	RRegArena *arena[R_REG_TYPE_LAST];
 	RList *snaps; // <RDebugSnap>
+	HtUP *replay; // fd -> RBuffer replay bytes
 } RDebugCheckpoint;
 
 static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
@@ -212,6 +213,8 @@ static inline void r_debug_checkpoint_fini_vec(RDebugCheckpoint *chkpt) {
 	}
 	r_list_free (chkpt->snaps);
 	chkpt->snaps = NULL;
+	ht_up_free (chkpt->replay);
+	chkpt->replay = NULL;
 }
 
 R_VEC_TYPE_WITH_FINI (RVecDebugCheckpoint, RDebugCheckpoint, r_debug_checkpoint_fini_vec);
@@ -231,6 +234,41 @@ typedef struct r_debug_session_t {
 	int reasontype /*RDebugReasonType*/;
 	RBreakpointItem *bp;
 } RDebugSession;
+
+typedef struct r_debug_state_reg_spec_t {
+	char *name;
+} RDebugStateRegSpec;
+
+typedef struct r_debug_state_mem_spec_t {
+	ut64 addr;
+	ut32 size;
+	char *label;
+} RDebugStateMemSpec;
+
+typedef struct r_debug_state_request_t {
+	RList *registers; // RList<RDebugStateRegSpec *>
+	RList *memory; // RList<RDebugStateMemSpec *>
+} RDebugStateRequest;
+
+typedef struct r_debug_state_reg_value_t {
+	char *name;
+	ut64 value;
+	bool found;
+} RDebugStateRegValue;
+
+typedef struct r_debug_state_mem_value_t {
+	ut64 addr;
+	ut32 size;
+	char *label;
+	ut8 *bytes;
+	bool ok;
+} RDebugStateMemValue;
+
+typedef struct r_debug_state_snapshot_t {
+	ut64 pc;
+	RList *registers; // RList<RDebugStateRegValue *>
+	RList *memory; // RList<RDebugStateMemValue *>
+} RDebugStateSnapshot;
 
 /* Session file format */
 typedef struct r_session_header {
@@ -650,14 +688,18 @@ R_API void r_debug_esil_prestep(RDebug *d, int p);
 // R_API ut8 r_debug_get_byte(RDebug *dbg, ut32 cnum, ut64 addr);
 R_API bool r_debug_add_checkpoint(RDebug *dbg);
 R_API ut64 r_debug_add_checkpoint_branch(RDebug *dbg, ut64 parent_id, const char *label);
+R_API ut64 r_debug_checkpoint_create(RDebug *dbg, ut64 parent_id, const char *label);
 R_API RDebugCheckpoint *r_debug_session_checkpoint_get(RDebugSession *session, ut64 checkpoint_id);
 R_API bool r_debug_session_delete(RDebug *dbg, ut64 checkpoint_id);
 R_API bool r_debug_session_restore(RDebug *dbg, ut64 checkpoint_id);
+R_API bool r_debug_session_restore_checkpoint(RDebug *dbg, ut64 checkpoint_id);
 R_API void r_debug_session_list(RDebug *dbg, int mode);
 R_API bool r_debug_session_add_reg_change(RDebugSession *session, int arena, ut64 offset, ut64 data);
 R_API bool r_debug_session_add_mem_change(RDebugSession *session, ut64 addr, ut8 data);
 R_API void r_debug_session_restore_reg_mem(RDebug *dbg, ut32 cnum);
 R_API void r_debug_session_list_memory(RDebug *dbg);
+R_API bool r_debug_session_checkpoint_replay_append(RDebugSession *session, ut64 checkpoint_id, int fd, const ut8 *buf, ut64 len, char ** R_NULLABLE err);
+R_API bool r_debug_session_checkpoint_replay_apply(RDebug *dbg, ut64 checkpoint_id, int fd);
 R_API void r_debug_session_serialize(RDebugSession *session, Sdb *db);
 R_API void r_debug_session_deserialize(RDebugSession *session, Sdb *db);
 R_API bool r_debug_session_save(RDebugSession *session, const char *file);
@@ -667,6 +709,14 @@ R_API bool r_debug_trace_ins_after(RDebug *dbg);
 
 R_API RDebugSession *r_debug_session_new(void);
 R_API void r_debug_session_free(RDebugSession *session);
+R_API void r_debug_state_reg_spec_free(RDebugStateRegSpec *spec);
+R_API void r_debug_state_mem_spec_free(RDebugStateMemSpec *spec);
+R_API void r_debug_state_request_free(RDebugStateRequest *request);
+R_API void r_debug_state_reg_value_free(RDebugStateRegValue *value);
+R_API void r_debug_state_mem_value_free(RDebugStateMemValue *value);
+R_API void r_debug_state_snapshot_free(RDebugStateSnapshot *snapshot);
+R_API RDebugStateSnapshot *r_debug_state_snapshot_collect(RDebug *dbg, const RDebugStateRequest *request);
+R_API char *r_debug_state_snapshot_to_json(const RDebugStateSnapshot *snapshot);
 
 R_API RDebugSnap *r_debug_snap_map(RDebug *dbg, RDebugMap *map);
 R_API bool r_debug_snap_contains(RDebugSnap *snap, ut64 addr);
