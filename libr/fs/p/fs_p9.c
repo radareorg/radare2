@@ -16,6 +16,7 @@
 #define P9_NOFID ((ut32)0xffffffffU)
 #define P9_QID_SIZE 13
 #define P9_STAT_HEADER_SIZE 6
+#define P9_MAXWELEM 16
 #define P9_DMDIR 0x80000000U
 #define P9_OREAD 0
 #define P9_OWRITE 1
@@ -90,13 +91,6 @@ typedef struct p9_file_t {
 	P9Client *client;
 	ut32 fid;
 } P9File;
-
-static char *p9_cfg_host = NULL;
-static char *p9_cfg_port = NULL;
-static char *p9_cfg_transport = NULL;
-static char *p9_cfg_path = NULL;
-static char *p9_cfg_uname = NULL;
-static char *p9_cfg_aname = NULL;
 
 static bool p9_put_str(RBuffer *b, const char *s) {
 	size_t n = s? strlen (s): 0;
@@ -427,31 +421,26 @@ static RList *p9_split_path(const char *path) {
 	return names;
 }
 
-static bool p9_walk(P9Client *c, ut32 fromfid, ut32 newfid, const char *path, char **err) {
-	RList *names = p9_split_path (path);
-	int nname = names? r_list_length (names): 0;
-	if (nname > UT16_MAX) {
-		r_list_free (names);
-		*err = strdup ("path too deep");
-		return false;
-	}
+static void p9_clunk_drop(P9Client *c, ut32 fid);
+
+static bool p9_walk_once(P9Client *c, ut32 fromfid, ut32 newfid, RListIter **iter, int nname, char **err) {
 	ut8 req[sizeof (ut32) * 2 + sizeof (ut16)];
 	r_write_le32 (req, fromfid);
 	r_write_le32 (req + 4, newfid);
 	r_write_le16 (req + 8, (ut16)nname);
 	RBuffer *b = p9_msg_begin (P9_TWALK, p9_next_tag (c));
 	bool built = b && r_buf_append_bytes (b, req, sizeof (req));
-	RListIter *it;
-	char *name;
 	if (built) {
-		r_list_foreach (names, it, name) {
+		int i;
+		for (i = 0; i < nname; i++) {
+			char *name = (*iter)->data;
 			if (!p9_put_str (b, name)) {
 				built = false;
 				break;
 			}
+			*iter = (*iter)->n;
 		}
 	}
-	r_list_free (names);
 	if (!built) {
 		return p9_msg_build_failed (b, err);
 	}
@@ -474,6 +463,40 @@ static bool p9_walk(P9Client *c, ut32 fromfid, ut32 newfid, const char *path, ch
 		*err = strdup ("walk failed");
 		return false;
 	}
+	return true;
+}
+
+static bool p9_walk(P9Client *c, ut32 fromfid, ut32 newfid, const char *path, char **err) {
+	RList *names = p9_split_path (path);
+	int nname = names? r_list_length (names): 0;
+	if (!nname) {
+		bool ok = p9_walk_once (c, fromfid, newfid, NULL, 0, err);
+		r_list_free (names);
+		return ok;
+	}
+	ut32 current_fid = fromfid;
+	bool current_is_temp = false;
+	RListIter *iter = names->head;
+	int remaining = nname;
+	while (remaining > 0) {
+		int chunk = R_MIN (remaining, P9_MAXWELEM);
+		bool last = chunk == remaining;
+		ut32 nextfid = last? newfid: p9_next_fid (c);
+		if (!p9_walk_once (c, current_fid, nextfid, &iter, chunk, err)) {
+			if (current_is_temp) {
+				p9_clunk_drop (c, current_fid);
+			}
+			r_list_free (names);
+			return false;
+		}
+		if (current_is_temp) {
+			p9_clunk_drop (c, current_fid);
+		}
+		current_fid = nextfid;
+		current_is_temp = !last;
+		remaining -= chunk;
+	}
+	r_list_free (names);
 	return true;
 }
 
@@ -714,26 +737,32 @@ static const char *p9_transport_name(P9Transport transport) {
 }
 
 typedef struct p9_config_t {
-	P9Transport *transport;
-	char **transport_name;
-	char **host;
-	char **port;
-	char **path;
-	char **uname;
-	char **aname;
+	P9Transport transport;
+	char *host;
+	char *port;
+	char *path;
+	char *uname;
+	char *aname;
 } P9Config;
 
-static void p9_addr_set_string(char **dst, const char *src) {
-	if (dst) {
-		p9_set_string (dst, src);
-	}
+static void p9_config_init(P9Config *cfg) {
+	memset (cfg, 0, sizeof (*cfg));
+	cfg->transport = P9_TRANSPORT_TCP;
+	p9_set_string (&cfg->host, P9_DEFAULT_HOST);
+	p9_set_string (&cfg->port, P9_DEFAULT_PORT);
+	p9_set_string (&cfg->path, "");
+	p9_set_string (&cfg->uname, "none");
+	p9_set_string (&cfg->aname, "");
 }
 
-static void p9_addr_set_transport(P9Config *cfg, P9Transport transport) {
-	if (cfg->transport) {
-		*cfg->transport = transport;
+static void p9_config_fini(P9Config *cfg) {
+	if (cfg) {
+		free (cfg->host);
+		free (cfg->port);
+		free (cfg->path);
+		free (cfg->uname);
+		free (cfg->aname);
 	}
-	p9_addr_set_string (cfg->transport_name, p9_transport_name (transport));
 }
 
 static bool p9_apply_addr(P9Config *cfg, const char *addr) {
@@ -741,15 +770,15 @@ static bool p9_apply_addr(P9Config *cfg, const char *addr) {
 		return false;
 	}
 	if (*addr == '/') {
-		p9_addr_set_transport (cfg, P9_TRANSPORT_UNIX);
-		p9_addr_set_string (cfg->path, addr);
+		cfg->transport = P9_TRANSPORT_UNIX;
+		p9_set_string (&cfg->path, addr);
 		return true;
 	}
 	const char *host = addr;
 	const char *port = NULL;
 	char *tmp = NULL;
 	if (r_str_startswith (addr, "tcp:") || r_str_startswith (addr, "udp:")) {
-		p9_addr_set_transport (cfg, *addr == 'u'? P9_TRANSPORT_UDP: P9_TRANSPORT_TCP);
+		cfg->transport = *addr == 'u'? P9_TRANSPORT_UDP: P9_TRANSPORT_TCP;
 		host = addr + 4;
 		port = strrchr (host, ':');
 		if (!port || port == host) {
@@ -759,8 +788,8 @@ static bool p9_apply_addr(P9Config *cfg, const char *addr) {
 		host = tmp;
 		port++;
 	} else if (r_str_startswith (addr, "unix:")) {
-		p9_addr_set_transport (cfg, P9_TRANSPORT_UNIX);
-		p9_addr_set_string (cfg->path, addr + 5);
+		cfg->transport = P9_TRANSPORT_UNIX;
+		p9_set_string (&cfg->path, addr + 5);
 		return true;
 	} else {
 		port = strrchr (addr, ':');
@@ -771,10 +800,10 @@ static bool p9_apply_addr(P9Config *cfg, const char *addr) {
 		}
 	}
 	if (R_STR_ISNOTEMPTY (host)) {
-		p9_addr_set_string (cfg->host, host);
+		p9_set_string (&cfg->host, host);
 	}
 	if (R_STR_ISNOTEMPTY (port)) {
-		p9_addr_set_string (cfg->port, port);
+		p9_set_string (&cfg->port, port);
 	}
 	free (tmp);
 	return true;
@@ -792,61 +821,27 @@ static P9Transport p9_transport_from_string(const char *s) {
 
 static void p9_apply_option(P9Config *cfg, const char *key, const char *value) {
 	if (!r_str_casecmp (key, "transport") || !r_str_casecmp (key, "proto")) {
-		if (cfg->transport) {
-			*cfg->transport = p9_transport_from_string (value);
-		}
-		p9_addr_set_string (cfg->transport_name, value);
+		cfg->transport = p9_transport_from_string (value);
 	} else if (!r_str_casecmp (key, "host") || !r_str_casecmp (key, "server")) {
-		p9_addr_set_string (cfg->host, value);
+		p9_set_string (&cfg->host, value);
 	} else if (!r_str_casecmp (key, "port") || !r_str_casecmp (key, "service")) {
-		p9_addr_set_string (cfg->port, value);
+		p9_set_string (&cfg->port, value);
 	} else if (!r_str_casecmp (key, "socket")) {
-		p9_addr_set_transport (cfg, P9_TRANSPORT_UNIX);
-		p9_addr_set_string (cfg->path, value);
+		cfg->transport = P9_TRANSPORT_UNIX;
+		p9_set_string (&cfg->path, value);
 	} else if (!r_str_casecmp (key, "path")) {
-		p9_addr_set_string (cfg->path, value);
+		p9_set_string (&cfg->path, value);
 	} else if (!r_str_casecmp (key, "user") || !r_str_casecmp (key, "uname")) {
-		p9_addr_set_string (cfg->uname, value);
+		p9_set_string (&cfg->uname, value);
 	} else if (!r_str_casecmp (key, "aname") || !r_str_casecmp (key, "attach")) {
-		p9_addr_set_string (cfg->aname, value);
+		p9_set_string (&cfg->aname, value);
 	} else if (!r_str_casecmp (key, "addr") || !r_str_casecmp (key, "remote")) {
 		p9_apply_addr (cfg, value);
 	}
 }
 
-static char *p9_cfg_dup(const char *env, const char *configured, const char *fallback) {
-	char *s = r_sys_getenv (env);
-	if (R_STR_ISNOTEMPTY (s)) {
-		return s;
-	}
-	free (s);
-	return strdup (R_STR_ISNOTEMPTY (configured)? configured: fallback);
-}
-
-static char *p9_cfg_user(void) {
-	char *s = p9_cfg_dup ("R2_FS_9FS_USER", p9_cfg_uname, "");
-	if (R_STR_ISNOTEMPTY (s)) {
-		return s;
-	}
-	free (s);
-	s = r_sys_getenv ("USER");
-	if (R_STR_ISNOTEMPTY (s)) {
-		return s;
-	}
-	free (s);
-	return strdup ("none");
-}
-
-static void p9_client_apply_option(P9Client *c, const char *key, const char *value) {
-	P9Config cfg = { &c->transport, NULL, &c->host, &c->port, &c->path, &c->uname, &c->aname };
-	p9_apply_option (&cfg, key, value);
-}
-
-typedef void (*P9ApplyAddrCb)(void *user, const char *addr);
-typedef void (*P9ApplyOptionCb)(void *user, const char *key, const char *value);
-
-static void p9_apply_options(const char *options, void *user, P9ApplyAddrCb apply_addr, P9ApplyOptionCb apply_option) {
-	if (R_STR_ISEMPTY (options)) {
+static void p9_apply_options(const char *options, P9Config *cfg) {
+	if (!cfg || R_STR_ISEMPTY (options)) {
 		return;
 	}
 	char *opts = strdup (options);
@@ -864,7 +859,7 @@ static void p9_apply_options(const char *options, void *user, P9ApplyAddrCb appl
 		}
 		char *eq = strchr (tok, '=');
 		if (!eq) {
-			apply_addr (user, tok);
+			p9_apply_addr (cfg, tok);
 			continue;
 		}
 		*eq++ = 0;
@@ -872,24 +867,10 @@ static void p9_apply_options(const char *options, void *user, P9ApplyAddrCb appl
 		eq = (char *)r_str_trim_head_ro (eq);
 		r_str_trim_tail (eq);
 		if (*tok) {
-			apply_option (user, tok, eq);
+			p9_apply_option (cfg, tok, eq);
 		}
 	}
 	free (opts);
-}
-
-static void p9_client_apply_addr_cb(void *user, const char *addr) {
-	P9Client *c = (P9Client *)user;
-	P9Config cfg = { &c->transport, NULL, &c->host, &c->port, &c->path, NULL, NULL };
-	p9_apply_addr (&cfg, addr);
-}
-
-static void p9_client_apply_option_cb(void *user, const char *key, const char *value) {
-	p9_client_apply_option ((P9Client *)user, key, value);
-}
-
-static void p9_client_apply_options(P9Client *c, const char *options) {
-	p9_apply_options (options, c, p9_client_apply_addr_cb, p9_client_apply_option_cb);
 }
 
 static void p9_client_free(P9Client *c) {
@@ -906,15 +887,16 @@ static void p9_client_free(P9Client *c) {
 
 static P9Client *p9_client_new(const char *options) {
 	P9Client *c = R_NEW0 (P9Client);
-	char *transport = p9_cfg_dup ("R2_FS_9FS_TRANSPORT", p9_cfg_transport, "tcp");
-	c->transport = p9_transport_from_string (transport);
-	free (transport);
-	c->host = p9_cfg_dup ("R2_FS_9FS_HOST", p9_cfg_host, P9_DEFAULT_HOST);
-	c->port = p9_cfg_dup ("R2_FS_9FS_PORT", p9_cfg_port, P9_DEFAULT_PORT);
-	c->path = p9_cfg_dup ("R2_FS_9FS_PATH", p9_cfg_path, "");
-	c->uname = p9_cfg_user ();
-	c->aname = p9_cfg_dup ("R2_FS_9FS_ANAME", p9_cfg_aname, "");
-	p9_client_apply_options (c, options);
+	P9Config cfg;
+	p9_config_init (&cfg);
+	p9_apply_options (options, &cfg);
+	c->transport = cfg.transport;
+	c->host = cfg.host;
+	c->port = cfg.port;
+	c->path = cfg.path;
+	c->uname = cfg.uname;
+	c->aname = cfg.aname;
+	memset (&cfg, 0, sizeof (cfg));
 	if (c->transport == P9_TRANSPORT_UNIX && R_STR_ISEMPTY (c->path) && R_STR_ISNOTEMPTY (c->host) && *c->host == '/') {
 		p9_set_string (&c->path, c->host);
 	}
@@ -989,10 +971,12 @@ static bool p9_create_file(P9Client *c, const char *path, RFSFile *file, char **
 		return false;
 	}
 	ut32 fid = p9_next_fid (c);
-	bool ok = p9_walk (c, c->rootfid, fid, parent, err);
-	if (ok) {
-		ok = p9_create (c, fid, name, 0666, P9_OWRITE | P9_OTRUNC, err);
+	if (!p9_walk (c, c->rootfid, fid, parent, err)) {
+		free (parent);
+		free (name);
+		return false;
 	}
+	bool ok = p9_create (c, fid, name, 0666, P9_OWRITE | P9_OTRUNC, err);
 	free (parent);
 	free (name);
 	if (!ok) {
@@ -1159,7 +1143,7 @@ static RList *fs_p9_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		ut32 dlen = 0;
 		if (!p9_read_once (c, fid, off, maxread, &data, &dlen, &err)) {
 			R_LOG_DEBUG ("%s", err? err: "directory read failed");
-			free (err);
+			R_FREE (err);
 			r_list_free (list);
 			list = NULL;
 			break;
@@ -1269,28 +1253,36 @@ static void p9_set_string(char **dst, const char *src) {
 	*dst = strdup (src? src: "");
 }
 
-static bool p9_set_addr(const char *addr) {
-	P9Config cfg = { NULL, &p9_cfg_transport, &p9_cfg_host, &p9_cfg_port, &p9_cfg_path, NULL, NULL };
-	return p9_apply_addr (&cfg, addr);
+static void p9_config_log(P9Config *cfg) {
+	if (cfg->transport == P9_TRANSPORT_UNIX) {
+		R_LOG_INFO ("9fs transport=unix,path=%s,user=%s,aname=%s",
+			cfg->path? cfg->path: "", cfg->uname? cfg->uname: "", cfg->aname? cfg->aname: "");
+	} else {
+		R_LOG_INFO ("9fs transport=%s,host=%s,port=%s,user=%s,aname=%s",
+			p9_transport_name (cfg->transport), cfg->host? cfg->host: "", cfg->port? cfg->port: "",
+			cfg->uname? cfg->uname: "", cfg->aname? cfg->aname: "");
+	}
 }
 
-static void p9_apply_global_option(const char *key, const char *value) {
-	P9Config cfg = { NULL, &p9_cfg_transport, &p9_cfg_host, &p9_cfg_port, &p9_cfg_path, &p9_cfg_uname, &p9_cfg_aname };
-	p9_apply_option (&cfg, key, value);
-}
-
-static void p9_apply_global_addr_cb(void *user, const char *addr) {
-	(void)user;
-	p9_set_addr (addr);
-}
-
-static void p9_apply_global_option_cb(void *user, const char *key, const char *value) {
-	(void)user;
-	p9_apply_global_option (key, value);
-}
-
-static void p9_apply_global_options(const char *options) {
-	p9_apply_options (options, NULL, p9_apply_global_addr_cb, p9_apply_global_option_cb);
+static void p9_config_apply_argv(P9Config *cfg, const char *arg) {
+	int argc = 0;
+	char **argv = r_str_argv (arg, &argc);
+	if (!argv) {
+		return;
+	}
+	if (argc == 1) {
+		p9_apply_addr (cfg, argv[0]);
+	} else if (argc > 1) {
+		p9_set_string (&cfg->host, argv[0]);
+		p9_set_string (&cfg->port, argv[1]);
+	}
+	if (argc > 2) {
+		p9_set_string (&cfg->uname, argv[2]);
+	}
+	if (argc > 3) {
+		p9_set_string (&cfg->aname, argv[3]);
+	}
+	r_str_argv_free (argv);
 }
 
 static bool fs_p9_cmd(RFS *fs, const char *cmd) {
@@ -1312,37 +1304,21 @@ static bool fs_p9_cmd(RFS *fs, const char *cmd) {
 		return true;
 	}
 	if (!*arg) {
-		R_LOG_INFO ("9fs transport=%s,host=%s,port=%s,path=%s",
-			p9_cfg_transport? p9_cfg_transport: "tcp",
-			p9_cfg_host? p9_cfg_host: P9_DEFAULT_HOST,
-			p9_cfg_port? p9_cfg_port: P9_DEFAULT_PORT,
-			p9_cfg_path? p9_cfg_path: "");
+		P9Config cfg;
+		p9_config_init (&cfg);
+		p9_config_log (&cfg);
+		p9_config_fini (&cfg);
 		return true;
 	}
+	P9Config cfg;
+	p9_config_init (&cfg);
 	if (strchr (arg, '=')) {
-		p9_apply_global_options (arg);
-		return true;
-	}
-	int argc = 0;
-	char **argv = r_str_argv (arg, &argc);
-	if (!argv) {
-		return true;
-	}
-	if (argc == 1) {
-		p9_set_addr (argv[0]);
+		p9_apply_options (arg, &cfg);
 	} else {
-		p9_set_string (&p9_cfg_host, argv[0]);
-		if (argc > 1) {
-			p9_set_string (&p9_cfg_port, argv[1]);
-		}
+		p9_config_apply_argv (&cfg, arg);
 	}
-	if (argc > 2) {
-		p9_set_string (&p9_cfg_uname, argv[2]);
-	}
-	if (argc > 3) {
-		p9_set_string (&p9_cfg_aname, argv[3]);
-	}
-	r_str_argv_free (argv);
+	p9_config_log (&cfg);
+	p9_config_fini (&cfg);
 	return true;
 }
 
