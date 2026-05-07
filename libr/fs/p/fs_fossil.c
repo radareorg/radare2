@@ -583,8 +583,14 @@ static bool fossil_resolve(FossilFS *fs, const char *path, FossilNode *node) {
 	if (R_STR_ISEMPTY (path) || !strcmp (path, "/")) {
 		return true;
 	}
-	RList *parts = r_str_split_list ((char *)path, "/", 0);
+	char *path_copy = strdup (path);
+	if (!path_copy) {
+		fossil_node_fini (node);
+		return false;
+	}
+	RList *parts = r_str_split_list (path_copy, "/", 0);
 	if (!parts) {
+		free (path_copy);
 		fossil_node_fini (node);
 		return false;
 	}
@@ -597,6 +603,7 @@ static bool fossil_resolve(FossilFS *fs, const char *path, FossilNode *node) {
 		FossilNode child;
 		if (!(node->dir.mode & FOSSIL_MODE_DIR) || !fossil_dir_lookup (fs, node, part, &child)) {
 			r_list_free (parts);
+			free (path_copy);
 			fossil_node_fini (node);
 			return false;
 		}
@@ -604,6 +611,7 @@ static bool fossil_resolve(FossilFS *fs, const char *path, FossilNode *node) {
 		*node = child;
 	}
 	r_list_free (parts);
+	free (path_copy);
 	return true;
 }
 
