@@ -32,7 +32,7 @@ endif
 endif
 endif
 
-.PHONY: capstone-sync capstone-build all clean mrproper libgdbr libwinkd bochs sdbs
+.PHONY: capstone-sync capstone-build zydis-build all clean mrproper libgdbr libwinkd bochs sdbs
 
 ifeq ($(shell gcc -v > /dev/null 2>&1 && echo works),works)
 HOST_CC?=gcc
@@ -55,7 +55,7 @@ all:
 	exit 1
 endif
 
-preall: libwinkd bochs capstone-build sdbs
+preall: libwinkd bochs capstone-build zydis-build sdbs
 	@for MOD in ${MODS} ; do \
 		echo $(MAKE) -C $$MOD ; \
 		$(MAKE) -C $$MOD HAVE_VALA= ROOT="${PWD}/../" CC="${CC}" ; \
@@ -217,6 +217,23 @@ endif
 endif
 endif
 
+ZYDIS_SHLR_LIB=
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+ifeq ($(WANT_ZYDIS),1)
+ifeq ($(USE_ZYDIS),0)
+ZYDIS_SHLR_LIB=$(ZYDIS_ROOT)/libzydis.a
+endif
+endif
+endif
+
+.PHONY: zydis-build
+ifneq ($(ZYDIS_SHLR_LIB),)
+zydis-build:
+	$(MAKE) -C ../subprojects zydis CC="$(CC)" AR="$(AR)" CFLAGS="$(CFLAGS)"
+else
+zydis-build:
+endif
+
 ../../radare2-webui:
 	cd ../.. ; git clone --depth 1 https://github.com/radareorg/radare2-webui
 
@@ -262,6 +279,7 @@ spp: spp-sync
 SHLRS+=ar/libr_ar.a
 SHLRS+=bochs/lib/libbochs.a
 SHLRS+=$(CS_ROOT)/libcapstone.a
+SHLRS+=$(ZYDIS_SHLR_LIB)
 SHLRS+=gdb/lib/libgdbr.a
 SHLRS+=java/libr_java.a
 SHLRS+=qnx/lib/libqnxr.a

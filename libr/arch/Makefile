@@ -9,6 +9,10 @@ CFLAGS+=-DR2_PLUGIN_INCORE
 CFLAGS:=-I.. -I$(LTOP)/arch/include -DR2_PLUGIN_INCORE -Iarch -I$(TOP)/shlr $(CFLAGS)
 LDFLAGS+=$(CS_LDFLAGS)
 
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+LDFLAGS+=$(ZYDIS_LDFLAGS)
+endif
+
 .PHONY: pre
 pre: p
 	$(MAKE) libr_arch.$(EXT_SO)

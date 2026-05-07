@@ -78,6 +78,9 @@ if user_plugins.contains('x86')
   bp_plugins += [ 'x86' ]
   asm_plugins += [ 'x86' ]
 endif
+if user_plugins.contains('x86_zydis') and get_option('want_zydis')
+  arch_plugins += [ 'x86_zydis' ]
+endif
 if user_plugins.contains('web')
   io_plugins += [ 'http' ]
   io_plugins += [ 'r2web' ]
@@ -196,6 +199,10 @@ if get_option('plugins') == ''
     'xap',
     'xcore_cs',
   ]
+
+  if get_option('want_zydis')
+    arch_plugins += [ 'x86_zydis' ]
+  endif
 
   if use_gpl
     arch_plugins += [

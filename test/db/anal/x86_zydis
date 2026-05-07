@@ -1,0 +1,220 @@
+NAME=x86 zydis decode readiness
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.arch
+e asm.bits=16
+wx b83412
+pi 1
+e asm.bits=32
+s 0
+wx b878563412
+pi 1
+e asm.bits=64
+s 0
+wx 4889d8
+pi 1
+e asm.syntax=att
+s 0
+pi 1
+e asm.syntax=intel
+s 0
+wx c4
+pi 1
+ao 1~^type,size
+EOF
+EXPECT=<<EOF
+x86.zydis
+mov ax, 0x1234
+mov eax, 0x12345678
+mov rax, rbx
+mov %rbx, %rax
+invalid
+size: 1
+type: ill
+EOF
+RUN
+
+NAME=x86 capstone default selector
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e asm.arch
+e asm.bits=64
+wx 4889d8
+pi 1
+EOF
+EXPECT=<<EOF
+x86
+mov rax, rbx
+EOF
+RUN
+
+NAME=x86 zydis opex memory metadata
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.bits=64
+wx 488b548b10488b0578563412c70578563412efbeadde
+aoj 1~{opex}
+s 5
+aoj 1~{opex}
+s 12
+aoj 1~{opex}
+EOF
+EXPECT=<<EOF
+{"opcode":"mov rdx, qword [rbx+rcx*4+0x10]","disasm":"mov rdx, qword [rbx+rcx*4+0x10]","pseudo":"rdx = qword [rbx+rcx*4+0x10]","description":"moves data from src to dst","mnemonic":"mov","mask":"ffffffffff","esil":"rbx,rcx,4,*,+,0x10,+,[8],rdx,=","sign":false,"id":436,"opex":{"operands":[{"size":8,"rw":2,"type":"reg","value":"rdx"},{"size":8,"rw":1,"type":"mem","segment":"ds","base":"rbx","index":"rcx","scale":4,"disp":16}],"rex":true,"modrm":true,"sib":true,"disp":16},"addr":0,"bytes":"488b548b10","disp":16,"size":5,"type":"load","esilcost":8,"reg":"rbx","ireg":"rcx","scale":4,"refptr":8,"cycles":1,"failcycles":0,"delay":0,"ptrsize":8,"stackptr":0,"direction":"read","family":"cpu"}
+{"opcode":"mov rax, qword [rip+0x12345678]","disasm":"mov rax, qword [0x12345684]","pseudo":"rax = qword [0x12345684]","description":"moves data from src to dst","mnemonic":"mov","mask":"ffff0000000000","esil":"0x12345684,[8],rax,=","sign":false,"id":436,"opex":{"operands":[{"size":8,"rw":2,"type":"reg","value":"rax"},{"size":8,"rw":1,"type":"mem","segment":"ds","base":"rip","scale":0,"disp":305419896}],"rex":true,"modrm":true,"disp":305419896},"addr":5,"bytes":"488b0578563412","ptr":305419908,"size":7,"type":"load","esilcost":8,"reg":"rip","refptr":8,"cycles":1,"failcycles":0,"delay":0,"ptrsize":8,"stackptr":0,"direction":"read","family":"cpu"}
+{"opcode":"mov dword [rip+0x12345678], 0xdeadbeef","disasm":"mov dword [0x1234568e], 0xdeadbeef","pseudo":"dword [0x1234568e] = 0xdeadbeef","description":"moves data from src to dst","mnemonic":"mov","mask":"ff000000000000000000","esil":"0xffffffffdeadbeef,0x1234568e,=[4]","sign":false,"id":436,"opex":{"operands":[{"size":4,"rw":2,"type":"mem","segment":"ds","base":"rip","scale":0,"disp":305419896},{"size":4,"rw":1,"type":"imm","value":-559038737}],"modrm":true,"disp":305419896},"addr":12,"bytes":"c70578563412efbeadde","val":18446744073150512879,"ptr":305419918,"size":10,"type":"store","esilcost":12,"reg":"rip","refptr":4,"cycles":1,"failcycles":0,"delay":0,"ptrsize":4,"stackptr":0,"direction":"write","family":"cpu"}
+EOF
+RUN
+
+NAME=x86 zydis branch and stack metadata
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e asm.bits=64
+wx 50e8020000007501c3
+pi 4
+ao 4~^type,jump,fail,cond,stackop,stackptr
+EOF
+EXPECT=<<EOF
+push rax
+call 0x8
+jnz 0x9
+ret
+type: rpush
+stackop: inc
+stackptr: 8
+type: call
+jump: 0x00000008
+fail: 0x00000006
+stackop: inc
+stackptr: 8
+type: cjmp
+jump: 0x00000009
+fail: 0x00000008
+cond: ne
+type: ret
+stackop: inc
+stackptr: 18446744073709551608
+EOF
+RUN
+
+NAME=x86 zydis esil execution smoke
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=64
+wx 4883c0054889c3
+pi 2
+aei
+aer rax=7
+aer rbx=0
+s 0
+aes
+aes
+aer rax
+aer rbx
+EOF
+EXPECT=<<EOF
+add rax, 0x05
+mov rbx, rax
+0x0000000c
+0x0000000c
+EOF
+RUN
+
+NAME=x86 zydis movsx zero-extends to rax
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=64
+aei
+aeim
+aeim 0x10000000 10 source
+wx ff @ 0x10000000
+aer rbx=0x10000000
+aer rax=0
+wx 0fbe03
+s 0
+aes
+aer rax
+EOF
+EXPECT=<<EOF
+0xffffffff
+EOF
+RUN
+
+NAME=x86 zydis rep movsb esil execution
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=32
+aei
+aeim
+aeim 0x10000000 10 source
+wx 1234567890 @ 0x10000000
+aeim 0x20000000 10 destination
+aer edi=0x20000000
+aer esi=0x10000000
+aer ecx=5
+wx f3a4
+aes
+aer?edi
+aer?esi
+pv @0x20000000
+aer?ecx
+EOF
+EXPECT=<<EOF
+0x20000005
+0x10000005
+0x78563412
+0x00000000
+EOF
+RUN
+
+NAME=x86 zydis zero-count rep cmpsb/scasb
+FILE=-
+CMDS=<<EOF
+e io.va=true
+e asm.arch=x86.zydis
+e anal.arch=x86.zydis
+e asm.bits=32
+aei
+aeim
+aeim 0x10000000 10 source
+wx 12 @ 0x10000000
+aeim 0x20000000 10 destination
+wx 34 @ 0x20000000
+wx f3a6
+s 0
+aer esi=0x10000000
+aer edi=0x20000000
+aer ecx=0
+aes
+aer esi
+aer edi
+aer ecx
+s 0
+wx f2ae
+aer eax=0x12
+aer edi=0x20000000
+aer ecx=0
+aes
+aer edi
+aer ecx
+EOF
+EXPECT=<<EOF
+0x10000000
+0x20000000
+0x00000000
+0x20000000
+0x00000000
+EOF
+RUN
