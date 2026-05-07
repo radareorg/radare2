@@ -33,6 +33,36 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=pdr ignores asm.bbmiddle while walking blocks
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.lines=false
+e asm.bytes=false
+e asm.comments=false
+e asm.addr=false
+e asm.flags=false
+e asm.functions=false
+e anal.nopskip=false
+e anal.jmp.mid=true
+e io.cache=true
+wx 0f1f440000b8210000c1ebfdbb2c000000ebf0
+af
+e asm.bbmiddle=true
+pdr
+EOF
+EXPECT=<<EOF
+     nop dword [rax + rax]
+     add byte [rax], al
+     mov eax, 0xc1000021
+     jmp 9
+     shr ebx, 0xfd
+     mov ebx, 0x2c
+     jmp 3
+EOF
+RUN
+
 NAME=pdR recursive until ret
 FILE=malloc://1024
 CMDS=<<EOF
