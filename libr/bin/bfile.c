@@ -786,21 +786,23 @@ R_API bool r_bin_file_object_new_from_xtr_data(RBin *bin, RBinFile *bf, ut64 bas
 		o->info = R_NEW0 (RBinInfo);
 	}
 	R_FREE (o->info->file);
-	R_FREE (o->info->arch);
-	R_FREE (o->info->machine);
-	R_FREE (o->info->type);
 	o->info->file = strdup (bf->file);
 	if (data->metadata) {
 		if (data->metadata->arch) {
+			R_FREE (o->info->arch);
 			o->info->arch = strdup (data->metadata->arch);
 		}
 		if (data->metadata->machine) {
+			R_FREE (o->info->machine);
 			o->info->machine = strdup (data->metadata->machine);
 		}
 		if (data->metadata->type) {
+			R_FREE (o->info->type);
 			o->info->type = strdup (data->metadata->type);
 		}
-		o->info->bits = data->metadata->bits;
+		if (data->metadata->bits > 0) {
+			o->info->bits = data->metadata->bits;
+		}
 	}
 	o->info->has_crypto = bf->bo->info->has_crypto;
 	data->loaded = true;
