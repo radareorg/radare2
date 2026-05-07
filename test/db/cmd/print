@@ -147,7 +147,7 @@ EXPECT=<<EOF
 0x10000116e call sym.func.100004401
 0x100001179 str.1_ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx
 0x100001186 call sym.imp.getopt
-0x100001186 "1@ABCFGHLOPRSTUWabcdefghik"
+0x100001186 "1@ABCFGHLOPRSTUWabcdefghiklmnopqrstuvwx"
 ;-- switch:
 0x1000011b5 switch table (72 cases) at 0x10000192c
 0x100001233 str.CLICOLOR
