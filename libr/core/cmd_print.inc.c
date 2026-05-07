@@ -5552,7 +5552,6 @@ static void cmd_pp(RCore *core, const char *_input) {
 
 static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64 saved_gp, ut8 *saved_arena, int saved_arena_size, char p_type, bool fromHere) {
 	bool show_flags = r_config_get_b (core->config, "asm.flags");
-	const char *orig_bb_middle = r_config_get (core->config, "asm.bbmiddle");
 	core->anal->gp = saved_gp;
 	if (fromHere) {
 		if (b->addr < core->addr) {
@@ -5577,28 +5576,29 @@ static void pr_bb(RCore *core, RAnalFunction *fcn, RAnalBlock *b, bool emu, ut64
 	if (b->parent_stackptr != INT_MAX) {
 		core->anal->stackptr = b->parent_stackptr;
 	}
-	r_config_set_i (core->config, "asm.bbmiddle", false);
-	// r_cons_printf (core->cons, "| loc_0x%08"PFMT64x":", b->addr);
-	ut8 *buf = malloc (b->size);
+	if (b->size > INT_MAX) {
+		R_LOG_ERROR ("Block size too big at 0x%" PFMT64x, b->addr);
+		return;
+	}
+	const int len = (int)b->size;
+	ut8 *buf = malloc (len);
 	if (!buf) {
-		r_cons_printf (core->cons, "Failed to allocate %" PFMT64u " bytes", b->size);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", len);
 		return;
 	}
 
-	if (r_io_nread_at (core->io, b->addr, buf, b->size) < 0) {
-		r_cons_printf (core->cons, "Failed to read %" PFMT64u " bytes at 0x%" PFMT64x "\n", b->size, b->addr);
+	if (r_io_nread_at (core->io, b->addr, buf, len) < 0) {
+		R_LOG_ERROR ("Cannot read %d byte(s) at 0x%" PFMT64x, len, b->addr);
 		free (buf);
 		return;
 	}
 
 	if (p_type == 'D') {
-		r_core_cmdf (core, "pD %" PFMT64u " @0x%" PFMT64x, b->size, b->addr);
+		r_core_print_disasm (core, b->addr, buf, len, len, 0, NULL, true, false, NULL, NULL);
 	} else {
-		r_core_cmdf (core, "pI %" PFMT64u " @0x%" PFMT64x, b->size, b->addr);
+		r_core_print_disasm_instructions_with_buf (core, b->addr, buf, len, 0);
 	}
 	free (buf);
-
-	r_config_set (core->config, "asm.bbmiddle", orig_bb_middle);
 
 	if (b->jump != UT64_MAX) {
 		if (b->jump > b->addr) {
