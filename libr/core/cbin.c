@@ -313,7 +313,11 @@ R_API bool r_core_bin_set_env(RCore *core, RBinFile *binfile) {
 		}
 		// set cur before running info so r_bin_patch_relocs has a valid bf
 		r_bin_file_set_cur_binfile (core->bin, binfile);
-		r_core_bin_info (core, R_CORE_BIN_ACC_ALL, NULL, R_MODE_SET, va, NULL, NULL);
+		ut64 action = R_CORE_BIN_ACC_ALL;
+		if (!core->bin->options.setflags) {
+			action &= ~(R_CORE_BIN_ACC_IMPORTS | R_CORE_BIN_ACC_SYMBOLS | R_CORE_BIN_ACC_EXPORTS | R_CORE_BIN_ACC_CLASSES);
+		}
+		r_core_bin_info (core, action, NULL, R_MODE_SET, va, NULL, NULL);
 		return true;
 	}
 	return false;

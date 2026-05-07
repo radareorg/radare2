@@ -527,6 +527,7 @@ typedef struct r_bin_options_t {
 	bool use_ldr; // use loader plugins when loading a file?
 	bool debase64;
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
+	bool setflags; // set symbol/import/class flags at load time
 	int minstrlen;
 	int maxstrlen;
 	int maxsymlen;

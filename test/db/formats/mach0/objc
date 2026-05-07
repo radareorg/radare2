@@ -49,6 +49,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=objc skip symbol import and class flags on load
+ARGS=-e bin.relocs.apply=true -e bin.flags=false
+FILE=bins/mach0/hello-objc
+CMDS=<<EOF
+f~sym.__Person_sayHello_~?
+f~sym.imp~?
+f~class.Person~?
+f~method.Person~?
+ii~objc_msgSend~?
+ic~Person~?
+is~Person~?
+EOF
+EXPECT=<<EOF
+0
+0
+0
+0
+1
+1
+6
+EOF
+RUN
+
 NAME=objc categories (mangled)
 FILE=bins/mach0/Alamofire-stripped
 CMDS=ic Alamofire.SessionDelegate(Alamofire)~?

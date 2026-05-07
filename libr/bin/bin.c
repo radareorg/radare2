@@ -1007,6 +1007,7 @@ R_API RBin *r_bin_new(void) {
 	}
 	bin->cb_printf = (PrintfCallback)printf;
 	bin->options.minstrlen = 0;
+	bin->options.setflags = true;
 	bin->strpurge = NULL;
 	bin->strenc = NULL;
 	bin->want_dbginfo = true;
