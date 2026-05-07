@@ -7,6 +7,7 @@
 static RCoreHelpMessage help_msg_m = {
 	"Usage:", "m[-?*dgy] [...] ", "Mountpoints management",
 	"m", " /mnt ext2 0", "mount ext2 fs at /mnt with delta 0 on IO",
+	"m", " /mnt 9fs tcp:127.0.0.1:9999", "mount fs with plugin options",
 	"m", " /mnt", "mount fs at /mnt with autodetect fs and current offset",
 	"m", "", "list all mountpoints in human readable format",
 	"m*", "", "same as above, but in r2 commands",
@@ -39,6 +40,23 @@ static RCoreHelpMessage help_msg_m = {
 	//"TODO: support multiple mountpoints and RFile IO's (need io+core refactorn",
 	NULL
 };
+
+static bool mount_arg_is_offset(const char *s) {
+	s = r_str_trim_head_ro (s);
+	int argc = 0;
+	char **argv = r_str_argv (s, &argc);
+	if (!argv || argc < 1 || R_STR_ISEMPTY (argv[0]) || strchr (argv[0], '=')) {
+		r_str_argv_free (argv);
+		return false;
+	}
+	const char *arg = argv[0];
+	if (*arg == '-' || *arg == '+') {
+		arg++;
+	}
+	bool ret = IS_DIGIT (*arg) || *arg == '$';
+	r_str_argv_free (argv);
+	return ret;
+}
 
 static RCoreHelpMessage help_msg_mcolon = {
 	"Usage:", "m:", "[plugin-command]",
@@ -527,40 +545,58 @@ static int cmd_mount(void *data, const char *_input) {
 
 	switch (*input) {
 	case ' ': // "m "
-		input = (char *)r_str_trim_head_ro (input + 1);
-		ptr = strchr (input, ' ');
-		if (ptr) {
-			*ptr = 0;
-			ptr = (char *)r_str_trim_head_ro (ptr + 1);
-			ptr2 = strchr (ptr, ' ');
-			if (ptr2) {
-				*ptr2 = 0;
-				off = r_num_math (core->num, ptr2 + 1);
+		{
+			char *args = r_str_trim_dup (input + 1);
+			if (!args) {
+				break;
 			}
-			input = (char *)r_str_trim_head_ro (input);
-			ptr = (char *)r_str_trim_head_ro (ptr);
-
-			const char *mountp = input;
-			const char *fstype = ptr;
-			if (*mountp != '/') {
-				if (*fstype != '/') {
-					R_LOG_ERROR ("Invalid mountpoint");
-					return 0;
+			char *arg0 = args;
+			ptr = arg0? strchr (arg0, ' '): NULL;
+			if (ptr) {
+				*ptr++ = 0;
+				ptr = (char *)r_str_trim_head_ro (ptr);
+				ptr2 = strchr (ptr, ' ');
+				char *opts = NULL;
+				if (ptr2) {
+					*ptr2++ = 0;
+					ptr2 = (char *)r_str_trim_head_ro (ptr2);
+					if (mount_arg_is_offset (ptr2)) {
+						char *next = strchr (ptr2, ' ');
+						if (next) {
+							*next++ = 0;
+							opts = (char *)r_str_trim_head_ro (next);
+						}
+						off = r_num_math (core->num, ptr2);
+					} else {
+						opts = ptr2;
+					}
 				}
-				mountp = ptr;
-				fstype = input;
-			}
-			if (fstype && !r_fs_mount (core->fs, fstype, mountp, off)) {
-				R_LOG_ERROR ("Cannot mount %s", input);
-			}
-		} else {
-			if (!(ptr = r_fs_name (core->fs, core->addr))) {
+				arg0 = (char *)r_str_trim_head_ro (arg0);
+				ptr = (char *)r_str_trim_head_ro (ptr);
+
+				const char *mountp = arg0;
+				const char *fstype = ptr;
+				if (*mountp != '/') {
+					if (*fstype != '/') {
+						R_LOG_ERROR ("Invalid mountpoint");
+						free (args);
+						return 0;
+					}
+					mountp = ptr;
+					fstype = arg0;
+				}
+				if (fstype && !r_fs_mount_with_options (core->fs, fstype, mountp, off, opts)) {
+					R_LOG_ERROR ("Cannot mount %s", arg0);
+				}
+			} else if (!(ptr = r_fs_name (core->fs, core->addr))) {
 				R_LOG_ERROR ("Unknown filesystem type");
+			} else {
+				if (!r_fs_mount (core->fs, ptr, arg0, core->addr)) {
+					R_LOG_ERROR ("Cannot mount %s", arg0);
+				}
+				free (ptr);
 			}
-			if (ptr && !r_fs_mount (core->fs, ptr, input, core->addr)) {
-				R_LOG_ERROR ("Cannot mount %s", input);
-			}
-			free (ptr);
+			free (args);
 		}
 		break;
 	case '-':
@@ -587,6 +623,9 @@ static int cmd_mount(void *data, const char *_input) {
 				pj_ks (pj, "path", root->path);
 				pj_ks (pj, "plugin", root->p->meta.name);
 				pj_kn (pj, "offset", root->delta);
+				if (root->options) {
+					pj_ks (pj, "options", root->options);
+				}
 				pj_end (pj);
 			}
 			pj_end (pj);
@@ -648,14 +687,16 @@ static int cmd_mount(void *data, const char *_input) {
 		break;
 	case '*': // "m*"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf (core->cons, "m %s %s 0x%" PFMT64x "\n",
-				root->path, root->p->meta.name, root->delta);
+			r_cons_printf (core->cons, "m %s %s 0x%" PFMT64x "%s%s\n",
+				root->path, root->p->meta.name, root->delta,
+				root->options? " ": "", root->options? root->options: "");
 		}
 		break;
 	case '\0': // "m"
 		r_list_foreach (core->fs->roots, iter, root) {
-			r_cons_printf (core->cons, "%s\t0x%" PFMT64x "\t%s\n",
-				root->p->meta.name, root->delta, root->path);
+			r_cons_printf (core->cons, "%s\t0x%" PFMT64x "\t%s%s%s\n",
+				root->p->meta.name, root->delta, root->path,
+				root->options? "\t": "", root->options? root->options: "");
 		}
 		break;
 	case 'L': // "mL" list of plugins

@@ -73,6 +73,7 @@ R_API void r_fs_root_free(RFSRoot* root) {
 		if (root->p && root->p->umount) {
 			root->p->umount (root);
 		}
+		free (root->options);
 		free (root->path);
 		free (root);
 	}
