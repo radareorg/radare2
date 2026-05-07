@@ -2045,10 +2045,11 @@ typedef struct {
 	int size;
 } SyscallRegSlot;
 
+R_VEC_TYPE (RVecSyscallRegSlot, SyscallRegSlot);
+
 typedef struct {
 	RReg *reg;
-	SyscallRegSlot *slots;
-	int slots_count;
+	RVecSyscallRegSlot slots;
 } SyscallRegMap;
 
 typedef struct {
@@ -2102,10 +2103,17 @@ static bool syscall_reg_overlap(int off_a, int size_a, int off_b, int size_b) {
 	return off_a < off_b + size_b && off_b < off_a + size_a;
 }
 
+static void syscall_regmap_fini(SyscallRegMap *map) {
+	RVecSyscallRegSlot_fini (&map->slots);
+	memset (map, 0, sizeof (*map));
+}
+
 static int syscall_regmap_find_offset(SyscallRegMap *map, int offset) {
 	int i;
-	for (i = 0; i < map->slots_count; i++) {
-		if (map->slots[i].offset == offset) {
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && slot->offset == offset) {
 			return i;
 		}
 	}
@@ -2113,23 +2121,14 @@ static int syscall_regmap_find_offset(SyscallRegMap *map, int offset) {
 }
 
 static bool syscall_regmap_init(SyscallRegMap *map, RReg *reg) {
-	RList *regs;
 	RListIter *iter;
 	RRegItem *item;
-	int capacity;
 
 	memset (map, 0, sizeof (*map));
 	map->reg = reg;
-	regs = r_reg_get_list (reg, R_REG_TYPE_GPR);
+	RVecSyscallRegSlot_init (&map->slots);
+	RList *regs = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	if (!regs) {
-		return false;
-	}
-	capacity = r_list_length (regs);
-	if (capacity < 1) {
-		return false;
-	}
-	map->slots = calloc (capacity, sizeof (*map->slots));
-	if (!map->slots) {
 		return false;
 	}
 	r_list_foreach (regs, iter, item) {
@@ -2137,29 +2136,27 @@ static bool syscall_regmap_init(SyscallRegMap *map, RReg *reg) {
 			continue;
 		}
 		int idx = syscall_regmap_find_offset (map, item->offset);
+		SyscallRegSlot *slot = NULL;
 		if (idx < 0) {
-			if (map->slots_count >= capacity) {
-				break;
+			slot = RVecSyscallRegSlot_emplace_back (&map->slots);
+			if (!slot) {
+				syscall_regmap_fini (map);
+				return false;
 			}
-			idx = map->slots_count++;
-			map->slots[idx].offset = item->offset;
+			slot->offset = item->offset;
+		} else {
+			slot = RVecSyscallRegSlot_at (&map->slots, idx);
 		}
-		if (item->size > map->slots[idx].size) {
-			map->slots[idx].name = item->name;
-			map->slots[idx].size = item->size;
+		if (slot && item->size > slot->size) {
+			slot->name = item->name;
+			slot->size = item->size;
 		}
 	}
-	if (map->slots_count < 1) {
-		free (map->slots);
-		memset (map, 0, sizeof (*map));
+	if (RVecSyscallRegSlot_empty (&map->slots)) {
+		syscall_regmap_fini (map);
 		return false;
 	}
 	return true;
-}
-
-static void syscall_regmap_fini(SyscallRegMap *map) {
-	free (map->slots);
-	memset (map, 0, sizeof (*map));
 }
 
 static RRegItem *syscall_reg_item(SyscallRegMap *map, const char *name) {
@@ -2174,8 +2171,10 @@ static int syscall_regmap_slot_for_item(SyscallRegMap *map, RRegItem *item) {
 	if (!item) {
 		return -1;
 	}
-	for (i = 0; i < map->slots_count; i++) {
-		if (map->slots[i].offset == item->offset) {
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && slot->offset == item->offset) {
 			return i;
 		}
 	}
@@ -2183,11 +2182,11 @@ static int syscall_regmap_slot_for_item(SyscallRegMap *map, RRegItem *item) {
 }
 
 static bool syscall_state_init(SyscallRegState *state, SyscallRegMap *map, bool reachable) {
-	state->regs = calloc (map->slots_count, sizeof (*state->regs));
+	state->regs_count = RVecSyscallRegSlot_length (&map->slots);
+	state->regs = calloc (state->regs_count, sizeof (*state->regs));
 	if (!state->regs) {
 		return false;
 	}
-	state->regs_count = map->slots_count;
 	state->reachable = reachable;
 	return true;
 }
@@ -2240,9 +2239,10 @@ static void syscall_state_kill_overlapping(SyscallRegMap *map, SyscallRegState *
 	if (!item) {
 		return;
 	}
-	for (i = 0; i < map->slots_count; i++) {
-		SyscallRegSlot *slot = &map->slots[i];
-		if (syscall_reg_overlap (item->offset, item->size, slot->offset, slot->size)) {
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && syscall_reg_overlap (item->offset, item->size, slot->offset, slot->size)) {
 			state->regs[i] = syscall_reg_unknown ();
 		}
 	}
@@ -2651,7 +2651,6 @@ static void syscall_function_cache_free(SyscallFunctionCache *cache) {
 }
 
 static SyscallFunctionCache *syscall_function_cache_new(RCore *core, SyscallRegMap *regmap, RAnalFunction *fcn, const char *screg) {
-	SyscallFunctionCache *cache;
 	SyscallFunctionAnalysis analysis = {0};
 	RListIter *iter;
 	RAnalBlock *bb;
@@ -2661,7 +2660,7 @@ static SyscallFunctionCache *syscall_function_cache_new(RCore *core, SyscallRegM
 	if (!fcn || !fcn->bbs || r_list_empty (fcn->bbs)) {
 		return NULL;
 	}
-	cache = R_NEW0 (SyscallFunctionCache);
+	SyscallFunctionCache *cache = R_NEW0 (SyscallFunctionCache);
 	cache->fcn = fcn;
 	cache->hits = r_list_newf (free);
 	if (!cache->hits) {
