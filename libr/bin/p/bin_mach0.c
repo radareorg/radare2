@@ -232,6 +232,14 @@ static RList *entries(RBinFile *bf) {
 static bool symbols_vec(RBinFile *bf) {
 	struct MACH0_(obj_t) *mo = R_UNWRAP3 (bf, bo, bin_obj);
 	if (R_LIKELY (mo)) {
+		const ut64 rules = bf->rbin? bf->rbin->filter_rules: R_BIN_REQ_ALL;
+		if (r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY")) {
+			return false;
+		}
+		if (r_sys_getenv_asbool ("RABIN2_MACHO_NOMETHODS")
+				&& (rules & R_BIN_REQ_CLASSES) && !(rules & R_BIN_REQ_SYMBOLS)) {
+			return false;
+		}
 		if (MACH0_(load_symbols) (mo)) {
 			return !RVecRBinSymbol_empty (&bf->bo->symbols_vec);
 		}
@@ -279,6 +287,14 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 
 static bool imports_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	const ut64 rules = bf->rbin? bf->rbin->filter_rules: R_BIN_REQ_ALL;
+	if (r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY")) {
+		return false;
+	}
+	if (r_sys_getenv_asbool ("RABIN2_MACHO_NOMETHODS")
+			&& (rules & R_BIN_REQ_CLASSES) && !(rules & R_BIN_REQ_IMPORTS)) {
+		return false;
+	}
 	RBinObject *bo = bf->bo;
 	if (!RVecRBinImport_empty (&bo->imports_vec)) {
 		return true;

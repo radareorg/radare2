@@ -177,8 +177,14 @@ Same as r2 -e bin.demangle.cmd - try to purge false positives
 Same as r2 -e bin.demangle.trylib=<bool> - load Swift libs to demangle (default: false)
 .It Ev RABIN2_LANG
 Same as r2 -e bin.lang - assume lang for demangling
+.It Ev RABIN2_MACHO_CLASSNAMES_ONLY
+Only parse Mach-O ObjC and Swift class names
+.It Ev RABIN2_MACHO_NAMED_CLASSES_ONLY
+Skip synthetic Mach-O UnnamedClass entries
 .It Ev RABIN2_MACHO_NOFUNCSTARTS
 If set it will ignore the FUNCSTART information
+.It Ev RABIN2_MACHO_NOMETHODS
+Avoid parsing Mach-O ObjC and Swift methods
 .It Ev RABIN2_MACHO_NOSWIFT
 Avoid parsing the swift metadata
 .It Ev RABIN2_MACHO_SKIPFIXUPS

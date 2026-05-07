@@ -163,6 +163,28 @@ static char *swiftField(const char *dn, const char *cn) {
 	return NULL;
 }
 
+static bool mach0_plugin(RBinPlugin *plugin) {
+	const char *name = plugin? plugin->meta.name: NULL;
+	return name && r_str_startswith (name, "mach0");
+}
+
+static bool mach0_no_symbol_classes(RBinPlugin *plugin) {
+	return mach0_plugin (plugin)
+		&& (r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY") || r_sys_getenv_asbool ("RABIN2_MACHO_NOMETHODS"));
+}
+
+static bool mach0_skip_object_filters(RBin *bin, RBinPlugin *plugin) {
+	if (!mach0_plugin (plugin)) {
+		return false;
+	}
+	if (r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY")) {
+		return true;
+	}
+	const ut64 rules = bin? bin->filter_rules: R_BIN_REQ_ALL;
+	return r_sys_getenv_asbool ("RABIN2_MACHO_NOMETHODS")
+		&& (rules & R_BIN_REQ_CLASSES) && !(rules & (R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS));
+}
+
 static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	const char *dname = r_bin_name_tostring2 (sym->name, 'd');
 	char *tridot = strstr (dname, "...");
@@ -472,7 +494,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
 		import_cache_cleanup (bo);
-		if (bin->filter) {
+		if (bin->filter && !mach0_skip_object_filters (bin, p)) {
 			RBinSymbol *sym;
 			HtPP *ht = ht_pp_new0 ();
 			if (ht) {
@@ -489,7 +511,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			bo->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
 			import_cache_cleanup (bo);
-			if (bin->filter) {
+			if (bin->filter && !mach0_skip_object_filters (bin, p)) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}
 			clamp_list (bo->symbols, limit);
@@ -514,7 +536,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			bo->sections->free = (RListFree)r_bin_section_free;
 		}
 		REBASE_PADDR (bo, bo->sections, RBinSection);
-		if (bin->filter) {
+		if (bin->filter && !mach0_skip_object_filters (bin, p)) {
 			r_bin_filter_sections (bf, bo->sections);
 		}
 	}
@@ -550,7 +572,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				r_bin_object_rebuild_classes_ht (bo);
 			}
 			isSwift = r_bin_lang_swift (bf);
-			if (isSwift) {
+			if (isSwift && !mach0_no_symbol_classes (p)) {
 				bo->classes = classes_from_symbols (bf);
 			}
 		} else {
@@ -559,7 +581,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				bo->classes = classes;
 			}
 		}
-		if (bin->filter) {
+		if (bin->filter && !mach0_skip_object_filters (bin, p)) {
 			filter_classes (bf, bo->classes);
 		}
 		// cache addr=class+method

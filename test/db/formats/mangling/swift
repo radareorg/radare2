@@ -184,6 +184,56 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=macho swift classes without methods
+FILE=-
+CMDS=<<EOF
+%RABIN2_MACHO_NOMETHODS=1
+!!rabin2 -c bins/mach0/swift/klass.orig
+EOF
+EXPECT=<<EOF
+0x00003cb0 [0x00003cb0 - 0x00003cb0]      0 swift class 1 SomeClass
+0x100003e8d swift property   0      meh
+0x100003e91 swift property   1      cow
+0x00003d44 [0x00003d44 - 0x00003d44]      0 swift class 2 SuperKlass
+0x100003e95 swift property   0      superfield
+0x100008260 [0x100008260 - 0x100008260]      0 objc class 3 klass.SomeClass :: klass.SuperKlass
+0x00000000 objc      var   0      isa
+0x100003c80 objc      var   1      meh
+0x100003c88 objc      var   2      cow
+0x100008288 [0x100008288 - 0x100008288]      0 objc class 4 klass.SuperKlass :: Swift._SwiftObject
+0x00000000 objc      var   0      isa
+0x100003d30 objc      var   1      superfield
+EOF
+RUN
+
+NAME=macho swift class names only
+FILE=-
+CMDS=<<EOF
+%RABIN2_MACHO_CLASSNAMES_ONLY=1
+!!rabin2 -c bins/mach0/swift/klass.orig
+EOF
+EXPECT=<<EOF
+0x00003cb0 [0x00003cb0 - 0x00003cb0]      0 swift class 1 SomeClass
+0x00003d44 [0x00003d44 - 0x00003d44]      0 swift class 2 SuperKlass
+0x100008260 [0x100008260 - 0x100008260]      0 objc class 3 klass.SomeClass
+0x100008288 [0x100008288 - 0x100008288]      0 objc class 4 klass.SuperKlass
+EOF
+RUN
+
+NAME=macho swift class names only without unnamed classes
+FILE=-
+CMDS=<<EOF
+%RABIN2_MACHO_CLASSNAMES_ONLY=1
+%RABIN2_MACHO_NAMED_CLASSES_ONLY=1
+!!rabin2 -c bins/mach0/MASTestApp
+EOF
+EXPECT=<<EOF
+0x0000828c [0x0000828c - 0x0000828c]      0 swift class 0 ContentView
+0x000082d0 [0x000082d0 - 0x000082d0]      0 swift class 1 MASTestAppApp
+0x0000831c [0x0000831c - 0x0000831c]      0 swift class 2 ResourceBundleClass
+EOF
+RUN
+
 NAME=swift5 bare type abbreviations
 FILE=--
 ARGS=-e bin.demangle.trylib=false

@@ -1939,7 +1939,8 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 }
 
 static int init_items(struct MACH0_(obj_t) * mo) {
-	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS");
+	bool skip_chained_fixups = r_sys_getenv_asbool ("RABIN2_MACHO_SKIPFIXUPS")
+		|| r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY");
 	struct load_command lc = { 0, 0 };
 	ut8 loadc[sizeof (struct load_command)] = { 0 };
 	bool is_first_thread = true;

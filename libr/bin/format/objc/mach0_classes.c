@@ -21,6 +21,18 @@
 
 #define RO_DATA_PTR(x) ((x) & FAST_DATA_MASK)
 
+static inline bool classnames_only(void) {
+	return r_sys_getenv_asbool ("RABIN2_MACHO_CLASSNAMES_ONLY");
+}
+
+static inline bool named_classes_only(void) {
+	return r_sys_getenv_asbool ("RABIN2_MACHO_NAMED_CLASSES_ONLY");
+}
+
+static inline bool skip_methods(void) {
+	return classnames_only () || r_sys_getenv_asbool ("RABIN2_MACHO_NOMETHODS");
+}
+
 typedef struct {
 	bool have;
 	ut64 addr;
@@ -702,6 +714,9 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 // TODO: remove class_name, because it's already in klass->name
 static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info && bf->bo->bin_obj && klass);
+	if (skip_methods ()) {
+		return;
+	}
 	ut32 offset, left, i;
 	char *name = NULL;
 	char *rtype = NULL;
@@ -899,6 +914,9 @@ error:
 
 static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && klass && bf->bo && bf->bo->info && bf->bo->bin_obj);
+	if (skip_methods ()) {
+		return;
+	}
 	struct MACH0_(SProtocolList) pl = {0};
 	struct MACH0_(SProtocol) pc;
 	ut32 offset, left, i;
@@ -1060,6 +1078,9 @@ static void on_method_list(mach0_ut p, void * _ctx) {
 }
 
 static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
+	if (skip_methods ()) {
+		return;
+	}
 	MethodListOfListsCtx ctx = {
 		.bf = bf,
 		.class_name = class_name,
@@ -1076,6 +1097,9 @@ static void on_protocol_list(mach0_ut p, void * _ctx) {
 }
 
 static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
+	if (skip_methods ()) {
+		return;
+	}
 	ProtocolListOfListsCtx ctx = {
 		.bf = bf,
 		.klass = klass,
@@ -1195,6 +1219,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 	int len;
 	bool bigendian;
 	ut8 scro[sizeof (struct MACH0_(SClassRoT))] = {0};
+	const bool names_only = classnames_only ();
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->bo->info) {
 		R_LOG_WARN ("Invalid RBinFile pointer");
@@ -1295,6 +1320,16 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 	sdb_set (bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
 
+	if (is_meta_class) {
+		*is_meta_class = (cro.flags & RO_META) != 0;
+	}
+	if (names_only) {
+		return;
+	}
+	if (named_classes_only () && !klass->name) {
+		return;
+	}
+
 	if (cro.baseMethods > 0) {
 		const char *klass_name = r_bin_name_tostring2 (klass->name, 'd');
 		if (cro.baseMethods & 1) {
@@ -1320,9 +1355,6 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			get_objc_property_list (bf, klass, cro.baseProperties);
 		}
 	}
-	if (is_meta_class) {
-		*is_meta_class = (cro.flags & RO_META) != 0;
-	}
 }
 
 static mach0_ut get_isa_value(void) {
@@ -1340,6 +1372,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 	ut32 offset = 0, left = 0;
 	bool is_meta_class = false;
 	ut8 sc[sizeof (struct MACH0_(SClass))] = {0};
+	const bool names_only = classnames_only ();
 
 	const bool bigendian = bf->bo->info->big_endian;
 	mach0_ut r = va2pa (bf, p, &offset, &left);
@@ -1371,7 +1404,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 	c.data = r_read_ble (scp, bigendian, sz);
 
 	klass->addr = c.isa;
-	if (c.superclass) {
+	if (!names_only && c.superclass) {
 		char *klass_name = get_class_name (bf, c.superclass);
 		if (klass_name) {
 #if 0
@@ -1403,7 +1436,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 			r_list_append (klass->super, (void *)bn);
 			free (klass_name);
 		}
-	} else if (relocs) {
+	} else if (!names_only && relocs) {
 		struct reloc_t reloc_at_class_addr = {
 			.addr = p + sizeof (mach0_ut)
 		};
@@ -1438,7 +1471,10 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 		R_LOG_DEBUG ("This is a Swift class");
 	}
 #endif
-	if (!is_meta_class && !dupe) {
+	if (named_classes_only () && !klass->name) {
+		return;
+	}
+	if (!names_only && !is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value ();
 		ut64 tmp = klass->addr;
 		MACH0_(get_class_t) (bf, klass, c.isa + isa_n_value, true, relocs, oi);
@@ -1539,7 +1575,7 @@ static inline HtUP *_load_symbol_by_vaddr_hashtable(RBinFile *bf) {
 	return ht;
 }
 
-static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht) {
+static void parse_type(RBinFile *bf, RList *list, SwiftType st, bool want_methods, HtUP *symbols_ht) {
 	char *otypename = readstr (bf, st.name_addr, NULL, NULL);
 	if (R_STR_ISEMPTY (otypename)) {
 		R_LOG_DEBUG ("swift-type-parse missing name");
@@ -1548,25 +1584,28 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	RBin *bin = bf->rbin;
 	bool trylib = bin? bin->options.demangle_trylib: false;
 	bool usecmd = bin? bin->options.demangle_usecmd: false;
+	const bool names_only = classnames_only ();
 	char *typename = r_name_filter_dup (otypename);
 	RBinClass *klass = r_bin_class_new (typename, NULL, false);
 	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
-	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
-	if (super_name) {
-		if (*super_name > 5) {
-			klass->super = r_list_newf ((void *)r_bin_name_free);
-			RBinName *bn = r_bin_name_new (super_name);
-			char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
-			if (R_STR_ISNOTEMPTY (sname)) {
-				r_bin_name_demangled (bn, sname);
+	if (!names_only) {
+		char *super_name = readstr (bf, st.super_addr, NULL, NULL);
+		if (super_name) {
+			if (*super_name > 5) {
+				klass->super = r_list_newf ((void *)r_bin_name_free);
+				RBinName *bn = r_bin_name_new (super_name);
+				char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
+				if (R_STR_ISNOTEMPTY (sname)) {
+					r_bin_name_demangled (bn, sname);
+				}
+				r_list_append (klass->super, bn);
 			}
-			r_list_append (klass->super, bn);
+			free (super_name);
 		}
-		free (super_name);
 	}
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
-	if (st.members != UT64_MAX) {
+	if (want_methods && st.members != UT64_MAX) {
 		ut8 buf[MAX_SWIFT_MEMBERS * 16];
 		int i = 0;
 		R_LOG_DEBUG ("parse_type.st.members 0x%08"PFMT64x, st.members);
@@ -1639,7 +1678,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
 	r_list_append (list, klass);
 
-	if (st.fields != UT64_MAX) {
+	if (!names_only && st.fields != UT64_MAX) {
 		int i;
 		size_t dmax = st.fieldmd.size / 4;
 		for (i = 0; i < 128; i += 3) {
@@ -1741,13 +1780,15 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		return NULL;
 	}
 	const bool bigendian = bf->bo->info->big_endian;
-	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
+	const bool names_only = classnames_only ();
+	const bool named_only = named_classes_only ();
+	const RSkipList *relocs = names_only? NULL: MACH0_(load_relocs) (bf->bo->bin_obj);
 
 	/* check if it's Swift */
 	MetaSections ms = metadata_sections_init (bf);
 	// R_DUMP (&ms);
 
-	RList /*<RBinClass>*/ *ret = MACH0_(parse_categories) (bf, &ms, relocs, oi);
+	RList /*<RBinClass>*/ *ret = names_only? NULL: MACH0_(parse_categories) (bf, &ms, relocs, oi);
 	if (!ret) {
 		ret = r_list_newf ((RListFree)r_bin_class_free);
 		if (!ret) {
@@ -1760,6 +1801,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 	}
 
 	const bool want_swift = !r_sys_getenv_asbool ("RABIN2_MACHO_NOSWIFT");
+	const bool want_methods = !skip_methods ();
 	// 2s / 16s
 	if (want_swift && ms.types.have && ms.fieldmd.have) {
 		ut64 asize = ms.fieldmd.size;
@@ -1780,7 +1822,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					R_LOG_WARN ("swift class limit reached");
 					aligned_types_count = remaining;
 				}
-				HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
+				HtUP *symbols_ht = want_methods? _load_symbol_by_vaddr_hashtable (bf): NULL;
 				ut32 i;
 				for (i = 0; i < aligned_types_count; i++) {
 					st32 word = r_read_le32 (&types[i]);
@@ -1792,7 +1834,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					st.fieldmd.size = aligned_fieldmd_size;
 					R_LOG_DEBUG ("Name address 0x%"PFMT64x" for 0x%"PFMT64x, st.name_addr, ms.fieldmd.addr);
 					if (st.fields != UT64_MAX) {
-						parse_type (bf, ret, st, symbols_ht);
+						parse_type (bf, ret, st, want_methods, symbols_ht);
 					}
 				}
 				ht_up_free (symbols_ht);
@@ -1844,6 +1886,10 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 				break;
 			}
 		} else {
+			if (named_only) {
+				r_bin_class_free (klass);
+				continue;
+			}
 			char *klass_name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			klass->name = r_bin_name_new (klass_name);
 			free (klass_name);
@@ -2048,6 +2094,9 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 	const char *klass_name = r_bin_name_tostring (klass->name);
 	if (R_STR_ISEMPTY (klass_name)) {
 		R_LOG_ERROR ("Invalid class name");
+		return;
+	}
+	if (classnames_only ()) {
 		return;
 	}
 	if (c.instanceMethods > 0) {

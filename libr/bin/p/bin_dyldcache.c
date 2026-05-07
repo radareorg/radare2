@@ -1430,6 +1430,7 @@ static RList *classes(RBinFile *bf) {
 	RBuffer *orig_buf = bf->buf;
 	ut32 num_of_unnamed_class = 0;
 	ut32 i = 0;
+	const bool named_classes_only = r_sys_getenv_asbool ("RABIN2_MACHO_NAMED_CLASSES_ONLY");
 	RCons *cons = bf->rbin->consb.cons;
 	RConsIsBreaked is_breaked = (bf->rbin && bf->rbin->consb.is_breaked)? bf->rbin->consb.is_breaked: NULL;
 	r_list_foreach (cache->bins, iter, bin) {
@@ -1497,6 +1498,10 @@ static RList *classes(RBinFile *bf) {
 					if (bf->rbin->options.verbose) {
 						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x" [pa 0x%"PFMT64x" va 0x%"PFMT64x"], is_classlist %d",
 								pointer_to_class, cursor - pointers + offset, cursor - pointers + section->vaddr,  is_classlist);
+					}
+					if (named_classes_only) {
+						r_bin_class_free (klass);
+						continue;
 					}
 					char *kname = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					klass->name = r_bin_name_new (kname);

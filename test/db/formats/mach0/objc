@@ -12,6 +12,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=objc hello-objc without methods
+FILE=-
+CMDS=<<EOF
+%RABIN2_MACHO_NOMETHODS=1
+!!rabin2 -c bins/mach0/hello-objc
+EOF
+EXPECT=<<EOF
+0x100001180 [0x100001180 - 0x100001180]      0 objc class 0 Person :: NSObject
+0x00000000 objc      var   0      isa
+0x100001178 objc      var   1      name
+0x00000000 objc property   2      name
+EOF
+RUN
+
+NAME=objc hello-objc class names only
+FILE=-
+CMDS=<<EOF
+%RABIN2_MACHO_CLASSNAMES_ONLY=1
+!!rabin2 -c bins/mach0/hello-objc
+EOF
+EXPECT=<<EOF
+0x100001180 [0x100001180 - 0x100001180]      0 objc class 0 Person
+EOF
+RUN
+
 NAME=objc generics-objc
 FILE=bins/mach0/generics-objc
 CMDS=ic
