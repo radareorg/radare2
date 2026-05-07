@@ -155,26 +155,21 @@ static bool fossil_label_unpack(FossilLabel *l, const ut8 *p) {
 	l->epoch = r_read_be32 (p + 2);
 	l->epoch_close = r_read_be32 (p + 6);
 	l->tag = r_read_be32 (p + 10);
-	if (l->type > FOSSIL_BT_MAX) {
+	if (l->type >= FOSSIL_BT_MAX) {
 		return false;
 	}
-	if (l->state != FOSSIL_BS_FREE && l->state != FOSSIL_BS_BAD) {
-		if (!(l->state & FOSSIL_BS_ALLOC) || (l->state & ~FOSSIL_BS_MASK)) {
-			return false;
-		}
-		if ((l->state & FOSSIL_BS_CLOSED) != 0) {
-			return l->epoch_close != UT32_MAX;
-		}
-		return l->epoch_close == UT32_MAX;
+	if (l->state == FOSSIL_BS_FREE || l->state == FOSSIL_BS_BAD) {
+		return true;
 	}
-	return true;
+	if (!(l->state & FOSSIL_BS_ALLOC) || (l->state & ~FOSSIL_BS_MASK)) {
+		return false;
+	}
+	bool closed = (l->state & FOSSIL_BS_CLOSED) != 0;
+	return closed == (l->epoch_close != UT32_MAX);
 }
 
 static bool fossil_read_label(FossilFS *fs, ut32 addr, FossilLabel *label) {
 	int lpb = fs->block_size / FOSSIL_LABEL_SIZE;
-	if (lpb < 1) {
-		return false;
-	}
 	ut8 *buf = malloc (fs->block_size);
 	if (!buf) {
 		return false;
@@ -207,14 +202,11 @@ static bool fossil_read_local_block(FossilFS *fs, ut32 addr, int type, ut32 tag,
 }
 
 static bool fossil_load_score(FossilFS *fs, const ut8 *score, int type, ut32 tag, ut8 *buf) {
-	ut32 addr = fossil_score_to_local (score);
-	if (addr != FOSSIL_NIL_BLOCK && tag) {
-		return fossil_read_local_block (fs, addr, type, tag, buf);
-	}
-	if (fossil_is_zero_score (score)) {
+	if (!tag && fossil_is_zero_score (score)) {
 		memset (buf, 0, fs->block_size);
 		return true;
 	}
+	ut32 addr = fossil_score_to_local (score);
 	if (addr == FOSSIL_NIL_BLOCK) {
 		R_LOG_ERROR ("Venti-backed Fossil blocks are not supported");
 		return false;
@@ -250,7 +242,11 @@ static bool fossil_entry_is_valid(FossilFS *fs, FossilEntry *e) {
 	if (!(e->flags & FOSSIL_ENTRY_ACTIVE) || e->psize < 256 || e->dsize < 256) {
 		return false;
 	}
-	return e->psize <= fs->block_size && e->dsize <= fs->block_size;
+	if (e->psize > fs->block_size || e->dsize > fs->block_size) {
+		return false;
+	}
+	ut64 max_size = (ut64)(fs->end - fs->data) * e->dsize;
+	return e->size <= max_size;
 }
 
 static bool fossil_read_source_block(FossilFS *fs, FossilEntry *e, ut32 bn, ut8 *out) {
@@ -262,9 +258,6 @@ static bool fossil_read_source_block(FossilFS *fs, FossilEntry *e, ut32 bn, ut8 
 		return fossil_load_score (fs, e->score, base_type, e->tag, out);
 	}
 	int ppb = e->psize / FOSSIL_VT_SCORE_SIZE;
-	if (ppb < 1) {
-		return false;
-	}
 	int index[FOSSIL_BT_LEVEL_MASK] = { 0 };
 	ut32 n = bn;
 	int i;
@@ -286,10 +279,6 @@ static bool fossil_read_source_block(FossilFS *fs, FossilEntry *e, ut32 bn, ut8 
 			free (buf);
 			return false;
 		}
-		if (index[i - 1] * FOSSIL_VT_SCORE_SIZE + FOSSIL_VT_SCORE_SIZE > e->psize) {
-			free (buf);
-			return false;
-		}
 		memcpy (score, buf + index[i - 1] * FOSSIL_VT_SCORE_SIZE, FOSSIL_VT_SCORE_SIZE);
 	}
 	bool ok = fossil_load_score (fs, score, base_type, e->tag, out);
@@ -298,11 +287,12 @@ static bool fossil_read_source_block(FossilFS *fs, FossilEntry *e, ut32 bn, ut8 
 }
 
 static int fossil_source_read(FossilFS *fs, FossilEntry *e, ut64 off, ut8 *out, int len) {
-	if (off >= e->size) {
+	if (len <= 0 || off >= e->size) {
 		return 0;
 	}
-	if ((ut64)len > e->size - off) {
-		len = (int)(e->size - off);
+	ut64 avail = e->size - off;
+	if ((ut64)len > avail) {
+		len = (avail > INT_MAX)? INT_MAX: (int)avail;
 	}
 	ut8 *buf = malloc (fs->block_size);
 	if (!buf) {
@@ -327,9 +317,6 @@ static int fossil_source_read(FossilFS *fs, FossilEntry *e, ut64 off, ut8 *out, 
 
 static bool fossil_source_open(FossilFS *fs, FossilEntry *parent, ut32 offset, FossilEntry *child) {
 	int epb = parent->dsize / FOSSIL_VT_ENTRY_SIZE;
-	if (epb < 1) {
-		return false;
-	}
 	ut8 *buf = malloc (fs->block_size);
 	if (!buf) {
 		return false;
@@ -342,6 +329,9 @@ static bool fossil_source_open(FossilFS *fs, FossilEntry *parent, ut32 offset, F
 }
 
 static bool fossil_meta_unpack(FossilMetaBlock *mb, ut8 *buf, int n) {
+	if (n < FOSSIL_META_HEADER_SIZE) {
+		return false;
+	}
 	ut32 magic = r_read_be32 (buf);
 	if (magic != FOSSIL_META_MAGIC && magic != FOSSIL_META_MAGIC - 1) {
 		return false;
@@ -497,19 +487,12 @@ static bool fossil_root_source(FossilFS *fs, FossilEntry *root) {
 
 static bool fossil_root_node(FossilFS *fs, FossilNode *node) {
 	memset (node, 0, sizeof (*node));
-	FossilEntry root;
-	if (!fossil_root_source (fs, &root)) {
-		R_LOG_ERROR ("cannot read Fossil active root");
-		return false;
-	}
-	if (!fossil_source_open (fs, &root, 0, &node->source)
-		|| !fossil_source_open (fs, &root, 1, &node->msource)) {
-		R_LOG_ERROR ("cannot open Fossil root sources");
-		return false;
-	}
-	FossilEntry rootmeta;
-	if (!fossil_source_open (fs, &root, 2, &rootmeta)) {
-		R_LOG_ERROR ("cannot open Fossil root metadata source");
+	FossilEntry root, rootmeta;
+	if (!fossil_root_source (fs, &root)
+		|| !fossil_source_open (fs, &root, 0, &node->source)
+		|| !fossil_source_open (fs, &root, 1, &node->msource)
+		|| !fossil_source_open (fs, &root, 2, &rootmeta)) {
+		R_LOG_ERROR ("cannot read Fossil root sources");
 		return false;
 	}
 	ut8 *buf = malloc (fs->block_size);
@@ -517,29 +500,21 @@ static bool fossil_root_node(FossilFS *fs, FossilNode *node) {
 		return false;
 	}
 	FossilMetaBlock mb;
-	bool ok = fossil_read_source_block (fs, &rootmeta, 0, buf);
-	if (ok) {
-		ok = fossil_meta_unpack (&mb, buf, rootmeta.dsize);
-		if (!ok) {
-			R_LOG_ERROR ("cannot unpack Fossil root metadata block");
-		}
-	}
-	if (ok) {
-		ok = fossil_meta_entry (&mb, 0, &node->dir);
-		if (!ok) {
-			R_LOG_ERROR ("cannot unpack Fossil root directory entry");
-		}
-	}
+	bool ok = fossil_read_source_block (fs, &rootmeta, 0, buf)
+		&& fossil_meta_unpack (&mb, buf, rootmeta.dsize)
+		&& fossil_meta_entry (&mb, 0, &node->dir);
 	free (buf);
-	if (ok) {
-		node->dir.mode |= FOSSIL_MODE_DIR;
+	if (!ok) {
+		R_LOG_ERROR ("cannot read Fossil root directory entry");
+		return false;
 	}
-	return ok;
+	node->dir.mode |= FOSSIL_MODE_DIR;
+	return true;
 }
 
 static bool fossil_dir_lookup(FossilFS *fs, FossilNode *dir, const char *name, FossilNode *child) {
 	memset (child, 0, sizeof (*child));
-	ut32 nb = (dir->msource.size + dir->msource.dsize - 1) / dir->msource.dsize;
+	ut32 nb = (ut32)((dir->msource.size + dir->msource.dsize - 1) / dir->msource.dsize);
 	ut8 *buf = malloc (fs->block_size);
 	if (!buf) {
 		return false;
@@ -548,7 +523,7 @@ static bool fossil_dir_lookup(FossilFS *fs, FossilNode *dir, const char *name, F
 	for (bo = 0; bo < nb; bo++) {
 		FossilMetaBlock mb;
 		if (!fossil_read_source_block (fs, &dir->msource, bo, buf) || !fossil_meta_unpack (&mb, buf, dir->msource.dsize)) {
-			break;
+			continue;
 		}
 		int i;
 		for (i = 0; i < mb.nindex; i++) {
@@ -585,16 +560,8 @@ static bool fossil_resolve(FossilFS *fs, const char *path, FossilNode *node) {
 		return true;
 	}
 	char *path_copy = strdup (path);
-	if (!path_copy) {
-		fossil_node_fini (node);
-		return false;
-	}
-	RList *parts = r_str_split_list (path_copy, "/", 0);
-	if (!parts) {
-		free (path_copy);
-		fossil_node_fini (node);
-		return false;
-	}
+	RList *parts = path_copy? r_str_split_list (path_copy, "/", 0): NULL;
+	bool ok = parts != NULL;
 	RListIter *iter;
 	const char *part;
 	r_list_foreach (parts, iter, part) {
@@ -603,17 +570,18 @@ static bool fossil_resolve(FossilFS *fs, const char *path, FossilNode *node) {
 		}
 		FossilNode child;
 		if (!(node->dir.mode & FOSSIL_MODE_DIR) || !fossil_dir_lookup (fs, node, part, &child)) {
-			r_list_free (parts);
-			free (path_copy);
-			fossil_node_fini (node);
-			return false;
+			ok = false;
+			break;
 		}
 		fossil_node_fini (node);
 		*node = child;
 	}
 	r_list_free (parts);
 	free (path_copy);
-	return true;
+	if (!ok) {
+		fossil_node_fini (node);
+	}
+	return ok;
 }
 
 static RFSFile *fossil_file_from_node(RFSRoot *root, const char *path, FossilNode *node) {
@@ -714,22 +682,18 @@ static RList *fs_fossil_dir(RFSRoot *root, const char *path, R_UNUSED int view) 
 		fossil_node_fini (&node);
 		return NULL;
 	}
-	RList *list = r_list_newf ((RListFree)r_fs_file_free);
-	if (!list) {
-		fossil_node_fini (&node);
-		return NULL;
-	}
-	ut32 nb = (node.msource.size + node.msource.dsize - 1) / node.msource.dsize;
+	ut32 nb = (ut32)((node.msource.size + node.msource.dsize - 1) / node.msource.dsize);
 	ut8 *buf = malloc (fs->block_size);
 	if (!buf) {
 		fossil_node_fini (&node);
-		return list;
+		return NULL;
 	}
+	RList *list = r_list_newf ((RListFree)r_fs_file_free);
 	ut32 bo;
 	for (bo = 0; bo < nb; bo++) {
 		FossilMetaBlock mb;
 		if (!fossil_read_source_block (fs, &node.msource, bo, buf) || !fossil_meta_unpack (&mb, buf, node.msource.dsize)) {
-			break;
+			continue;
 		}
 		int i;
 		for (i = 0; i < mb.nindex; i++) {
@@ -761,6 +725,7 @@ static RList *fs_fossil_dir(RFSRoot *root, const char *path, R_UNUSED int view) 
 static RFSFile *fs_fossil_open(RFSRoot *root, const char *path, bool create) {
 	R_RETURN_VAL_IF_FAIL (root && path, NULL);
 	if (create) {
+		R_LOG_ERROR ("Open+create not implemented");
 		return NULL;
 	}
 	FossilNode node;
@@ -779,20 +744,25 @@ static RFSFile *fs_fossil_open(RFSRoot *root, const char *path, bool create) {
 
 static int fs_fossil_read(RFSFile *file, ut64 addr, int len) {
 	R_RETURN_VAL_IF_FAIL (file && file->root && file->ptr, -1);
+	if (len < 0) {
+		return -1;
+	}
 	FossilFS *fs = file->root->ptr;
 	FossilOpenFile *of = file->ptr;
 	if (addr >= of->source.size) {
 		return 0;
 	}
-	if ((ut64)len > of->source.size - addr) {
-		len = (int)(of->source.size - addr);
+	ut64 avail = of->source.size - addr;
+	size_t want = (size_t)len;
+	if ((ut64)want > avail) {
+		want = (avail > INT_MAX)? INT_MAX: (size_t)avail;
 	}
-	ut8 *data = realloc (file->data, len + 1);
+	ut8 *data = realloc (file->data, want + 1);
 	if (!data) {
 		return -1;
 	}
 	file->data = data;
-	int r = fossil_source_read (fs, &of->source, addr, file->data, len);
+	int r = fossil_source_read (fs, &of->source, addr, file->data, (int)want);
 	if (r >= 0) {
 		file->data[r] = 0;
 	}
