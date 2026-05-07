@@ -12,6 +12,7 @@
 #define P9_DEFAULT_PORT "9999"
 #define P9_DEFAULT_MSIZE 8192U
 #define P9_MAX_MSG (1024U * 1024U)
+#define P9_MAX_STR (32U * 1024U)
 #define P9_NOTAG ((ut16)0xffffU)
 #define P9_NOFID ((ut32)0xffffffffU)
 #define P9_QID_SIZE 13
@@ -174,16 +175,21 @@ static bool p9_get8(P9In *in, ut64 *v) {
 
 static char *p9_get_str(P9In *in) {
 	ut16 n = 0;
-	if (!p9_get2 (in, &n) || in->off + n > in->n) {
+	if (!p9_get2 (in, &n) || in->off > in->n) {
 		in->fail = true;
 		return NULL;
 	}
-	char *s = n? r_str_newlen ((const char *)in->p + in->off, n): r_str_new ("");
+	size_t len = n;
+	if (len > in->n - in->off || len > P9_MAX_STR) {
+		in->fail = true;
+		return NULL;
+	}
+	char *s = len? r_str_newlen ((const char *)in->p + in->off, (int)len): r_str_new ("");
 	if (!s) {
 		in->fail = true;
 		return NULL;
 	}
-	in->off += n;
+	in->off += len;
 	return s;
 }
 
@@ -202,7 +208,11 @@ static int p9_sock_readn(RSocket *s, ut8 *buf, size_t len) {
 	size_t off = 0;
 	while (off < len) {
 		size_t want = len - off;
-		int got = r_socket_read (s, buf + off, want > INT_MAX? INT_MAX: (int)want);
+		int chunk = want > (size_t)INT_MAX? INT_MAX: (int)want;
+		if (chunk <= 0) {
+			return -1;
+		}
+		int got = r_socket_read (s, buf + off, chunk);
 		if (got <= 0) {
 			return -1;
 		}
@@ -215,7 +225,11 @@ static int p9_sock_writen(RSocket *s, const ut8 *buf, size_t len) {
 	size_t off = 0;
 	while (off < len) {
 		size_t want = len - off;
-		int wrote = r_socket_write (s, buf + off, want > INT_MAX? INT_MAX: (int)want);
+		int chunk = want > (size_t)INT_MAX? INT_MAX: (int)want;
+		if (chunk <= 0) {
+			return -1;
+		}
+		int wrote = r_socket_write (s, buf + off, chunk);
 		if (wrote <= 0) {
 			return -1;
 		}
@@ -294,8 +308,9 @@ static char *p9_parse_rerror(const ut8 *pkt, size_t len) {
 }
 
 static ut16 p9_next_tag(P9Client *c) {
-	c->tag++;
-	if (c->tag == P9_NOTAG) {
+	if (c->tag == P9_NOTAG || c->tag == P9_NOTAG - 1) {
+		c->tag = 0;
+	} else {
 		c->tag++;
 	}
 	return c->tag;
@@ -1057,6 +1072,10 @@ static int fs_p9_read(RFSFile *file, ut64 addr, int len) {
 			free (data);
 			break;
 		}
+		if (dlen > (ut32)(len - done)) {
+			free (data);
+			break;
+		}
 		memcpy (file->data + done, data, dlen);
 		done += (int)dlen;
 		free (data);
@@ -1150,6 +1169,12 @@ static RList *fs_p9_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 		}
 		if (!dlen) {
 			free (data);
+			break;
+		}
+		if (dlen > maxread || dlen > P9_MAX_MSG) {
+			free (data);
+			r_list_free (list);
+			list = NULL;
 			break;
 		}
 		if (!p9_append_dir_entries (list, data, dlen)) {

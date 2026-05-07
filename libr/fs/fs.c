@@ -161,6 +161,7 @@ R_API RFSRoot *r_fs_mount_with_options(RFS *fs, const char *R_NULLABLE fstype, c
 	r_str_trim_path (str);
 	if (*str && strchr (str + 1, '/')) {
 		R_LOG_ERROR ("mountpoint must have no subdirectories");
+		free (str);
 		free (heapFsType);
 		return NULL;
 	}

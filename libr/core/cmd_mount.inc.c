@@ -551,7 +551,7 @@ static int cmd_mount(void *data, const char *_input) {
 				break;
 			}
 			char *arg0 = args;
-			ptr = arg0? strchr (arg0, ' '): NULL;
+			ptr = strchr (arg0, ' ');
 			if (ptr) {
 				*ptr++ = 0;
 				ptr = (char *)r_str_trim_head_ro (ptr);

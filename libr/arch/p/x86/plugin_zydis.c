@@ -2243,7 +2243,11 @@ static void opex(RStrBuf *buf, const ZydisDecodedInstruction *insn, const ZydisD
 			break;
 		case ZYDIS_OPERAND_TYPE_IMMEDIATE:
 			pj_ks (pj, "type", "imm");
-			pj_kN (pj, "value", zydis_imm_value (insn, op, addr));
+			if (!op->imm.is_relative && op->imm.is_signed) {
+				pj_kN (pj, "value", op->imm.value.s);
+			} else {
+				pj_kn (pj, "value", zydis_imm_value (insn, op, addr));
+			}
 			break;
 		case ZYDIS_OPERAND_TYPE_MEMORY:
 			pj_ks (pj, "type", "mem");
