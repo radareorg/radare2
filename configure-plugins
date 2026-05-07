@@ -62,6 +62,18 @@ help () {
 
 cfg=./plugins.cfg
 
+want_zydis() {
+  if [ -n "${WANT_ZYDIS:-}" ]; then
+    echo "$WANT_ZYDIS"
+    return
+  fi
+  if [ -f ./config-user.mk ]; then
+    v=$(sed -n 's/^WANT_ZYDIS=//p' ./config-user.mk | tail -n 1)
+    [ -n "$v" ] && echo "$v" && return
+  fi
+  echo 1
+}
+
 if [ ! -f "$cfg" ]; then
   echo "configure-plugins: Copying dist/plugins-cfg/plugins.def.cfg"
   cp -f dist/plugins-cfg/plugins.def.cfg plugins.cfg
@@ -289,6 +301,8 @@ while : ; do
 		TARGET_OSTYPE="${1#*=}"
 		update_ext
 		;;
+	"--without-zydis") WANT_ZYDIS=0 ;;
+	"--with-syszydis") WANT_ZYDIS=1 ;;
 	"--without-gpl") DEFCFG=./plugins.nogpl.cfg ;;
 	"--disable-loadlibs") LOADLIBS=0 ;;
 	"--rm-static") RMSTATIC="$2" ; ;;
@@ -301,6 +315,10 @@ while : ; do
 done
 
 load ${DEFCFG}
+if [ "$(want_zydis)" = 0 ]; then
+  STATIC=$(sub "$STATIC" arch.x86_zydis)
+  SHARED=$(sub "$SHARED" arch.x86_zydis)
+fi
 sort_vars
 
 if [ - != "${RMSTATIC}" ]; then

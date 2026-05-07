@@ -22,6 +22,13 @@ else
 CS_ROOT:=$(LIBR)/../subprojects/capstone-v5
 endif
 
+ZYDIS_ROOT:=$(LIBR)/../subprojects/zydis
+WANT_ZYDIS?=1
+USE_ZYDIS?=0
+USE_SYS_ZYDIS?=0
+ZYDIS_CFLAGS?=
+ZYDIS_LDFLAGS?=
+
 SHLR:=$(LIBR)/../shlr
 
 include $(LIBR)/../global.mk
@@ -38,6 +45,19 @@ endif
 else
 CS_CFLAGS=
 CS_LDFLAGS=
+endif
+
+ifeq ($(WANT_ZYDIS),1)
+ifeq ($(USE_ZYDIS),1)
+ZYDIS_CFLAGS+=$(CONFIG_ZYDIS_CFLAGS) -DUSE_SYS_ZYDIS=1
+ZYDIS_LDFLAGS+=$(CONFIG_ZYDIS_LDFLAGS)
+else
+ZYDIS_CFLAGS+=-I$(ZYDIS_ROOT)/amalgamated-dist -DUSE_SYS_ZYDIS=0 -DZYDIS_STATIC_BUILD
+ZYDIS_LDFLAGS+=$(ZYDIS_ROOT)/libzydis.a
+endif
+else
+ZYDIS_CFLAGS=
+ZYDIS_LDFLAGS=
 endif
 
 CFLAGS+=${CPPFLAGS}

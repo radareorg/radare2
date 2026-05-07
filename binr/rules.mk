@@ -44,6 +44,9 @@ LINK+=$(SHLR)/../subprojects/otezip/libotezip.a
 endif
 LINK+=$(SHLR)/gdb/lib/libgdbr.a
 LINK+=$(CS_LDFLAGS)
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+LINK+=$(ZYDIS_LDFLAGS)
+endif
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
 
 # instead of libr.a
@@ -72,11 +75,17 @@ else ifeq (${COMPILER},wasm)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
 LINK+=$(CS_LDFLAGS)
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+LINK+=$(ZYDIS_LDFLAGS)
+endif
 EXT_EXE=.wasm
 else ifeq (${COMPILER},emscripten)
 LINK+=$(SHLR)/libr_shlr.a
 LINK+=$(SHLR)/../subprojects/sdb/src/libsdb.a
 LINK+=$(CS_LDFLAGS)
+ifneq ($(filter p/x86_zydis.mk,$(STATIC_ARCH_PLUGINS)),)
+LINK+=$(ZYDIS_LDFLAGS)
+endif
 CFLAGS+= -s SIDE_MODULE=1
 #CFLAGS+=-s ERROR_ON_UNDEFINED_SYMBOLS=0
 #EXT_EXE=.js

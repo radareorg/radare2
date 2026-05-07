@@ -305,6 +305,32 @@ else
   message('Using bundled xxhash library')
 endif
 
+# handle Zydis library
+zydis_dep = disabler()
+use_sys_zydis = false
+want_zydis = get_option('want_zydis') and (
+  get_option('plugins') == '' or get_option('plugins').split(',').contains('x86_zydis')
+)
+if want_zydis
+  if get_option('use_sys_zydis')
+    zydis_dep = dependency('zydis', required: false)
+    if not zydis_dep.found()
+      zydis_dep = cc.find_library('zydis', required: true)
+    endif
+    cc.has_header('Zydis/Zydis.h', dependencies: zydis_dep, required: true)
+    zydis_dep = declare_dependency(
+      dependencies: zydis_dep,
+      compile_args: ['-DUSE_SYS_ZYDIS=1']
+    )
+    use_sys_zydis = true
+    message('Using system zydis library')
+  else
+    zydis_proj = subproject('zydis', default_options: ['default_library=static'])
+    zydis_dep = zydis_proj.get_variable('zydis_dep')
+    message('Using bundled zydis')
+  endif
+endif
+
 # handle zlib library
 sys_zlib = dependency('zlib', required: false)
 use_sys_zlib = false
@@ -445,6 +471,8 @@ userconf.set10('HAVE_FORK', use_fork)
 userconf.set10('HAVE_GPERF', get_option('sdb_cgen'))
 userconf.set10('WANT_DYLINK', use_dylink)
 userconf.set10('WANT_QJS', get_option('want_qjs'))
+userconf.set10('WANT_ZYDIS', want_zydis)
+userconf.set10('USE_SYS_ZYDIS', use_sys_zydis)
 userconf.set('R2_WASM_BROWSER', 0)
 userconf.set10('WANT_V35', get_option('use_v35'))
 userconf.set10('WANT_THREADS', get_option('want_threads'))

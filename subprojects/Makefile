@@ -4,6 +4,8 @@
 
 # automatically set to 1 on dist tarball creation
 PREDOWNLOADED=0
+WANT_ZYDIS?=1
+USE_ZYDIS?=0
 
 DEPS=sdb
 
@@ -29,6 +31,12 @@ else
   WANT_BUNDLED_CAPSTONE=1
 endif
 
+ifeq ($(WANT_ZYDIS),1)
+  ifneq ($(USE_ZYDIS),1)
+    DEPS += zydis
+  endif
+endif
+
 ifeq ($(WANT_BUNDLED_CAPSTONE),1)
   ifeq ($(USE_CS4),1)
     DEPS += capstone-v4
@@ -39,7 +47,7 @@ ifeq ($(WANT_BUNDLED_CAPSTONE),1)
   endif
 endif
 
-DISTDEPS=binaryninja capstone-v5 otezip qjs sdb
+DISTDEPS=binaryninja capstone-v5 otezip qjs sdb zydis
 EXTRADEPS=capstone-next capstone-v4
 ALLDEPS=$(DISTDEPS) $(EXTRADEPS)
 

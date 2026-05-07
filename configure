@@ -30,6 +30,7 @@ HAVE_FORK=1
 WANT_PTRACE_WRAP=1
 WANT_GPERF=1
 WANT_CAPSTONE=1
+WANT_ZYDIS=1
 WITH_LIBR=0
 WITH_STATIC_THEMES=0
 USE_CSNEXT=0
@@ -37,6 +38,8 @@ USE_CS5=0
 USE_CS4=0
 WITH_CAPSTONE=0
 WITHOUT_SYSCAPSTONE=1
+WITH_ZYDIS=0
+WITHOUT_SYSZYDIS=1
 WITH_SQSH=1
 WITH_SYSLZ4=0
 WANT_ZIP=1
@@ -225,6 +228,7 @@ Optional Features:
   --without-ptrace-wrap  build ptrace-wrap support needed for the iaito debugger on Linux
   --without-gperf        do not statically link the sdb databases even if gperf is found
   --without-capstone     dont build the capstone dependency
+  --without-zydis        dont build the zydis dependency
   --with-libr            build libr.a and libr.dylib
   --with-static-themes   default themes are compiled and fallback if not available on disk
   --with-capstone-next   build next branch of the capstone disassembler
@@ -232,6 +236,8 @@ Optional Features:
   --with-capstone4       build v4 branch of capstone
   --with-syscapstone     force to use system-wide capstone
   --without-syscapstone  avoid the system-wide capstone
+  --with-syszydis        force to use system-wide zydis
+  --without-syszydis     avoid the system-wide zydis
   --without-sqsh         ensure squashfs support is not included, even if library is found
   --with-syslz4          force to use system's liblz4
   --without-zip          build without the ZIP/ZLIB support
@@ -326,8 +332,8 @@ echo "DESCRIPTION: The UNIX-like reverse engineering toolkit"
 echo "LANGS:       c"
 echo "REQUIRED:    libdl"
 echo "OPTIONAL:    libatomic libmagic libz libzip libxxhash libssl liblibuv>=1.0.0"
-echo "PKGCONFIG:   capstone libsqsh liblz4 openssl libuv"
-echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-qjs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --with-libr --with-static-themes --with-capstone-next --with-capstone5 --with-capstone4 --with-syscapstone --without-syscapstone --without-sqsh --with-syslz4 --without-zip --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-libuv --with-v35 --with-wasm-browser --with-rpath --with-bundle-prefix --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2 --disable-debug-stuff"
+echo "PKGCONFIG:   capstone zydis libsqsh liblz4 openssl libuv"
+echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable-threads --disable-loadlibs --enable-threadsafety --without-qjs --without-dylink --without-fork --without-ptrace-wrap --without-gperf --without-capstone --without-zydis --with-libr --with-static-themes --with-capstone-next --with-capstone5 --with-capstone4 --with-syscapstone --without-syscapstone --with-syszydis --without-syszydis --without-sqsh --with-syslz4 --without-zip --with-syszip --with-sysxxhash --without-gpl --with-ssl --with-ssl-crypto --with-libuv --with-v35 --with-wasm-browser --with-rpath --with-bundle-prefix --with-compiler=gcc --with-ostype=auto --with-libversion=xxx --without-jemalloc --with-checks-level=2 --disable-debug-stuff"
 	exit 0
 	;;
 --cache-file)
@@ -391,6 +397,7 @@ echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable
 "--without-ptrace-wrap") WANT_PTRACE_WRAP="0"; ;;
 "--without-gperf") WANT_GPERF="0"; ;;
 "--without-capstone") WANT_CAPSTONE="0"; ;;
+"--without-zydis") WANT_ZYDIS="0"; ;;
 "--with-libr") WITH_LIBR="1"; ;;
 "--with-static-themes") WITH_STATIC_THEMES="1"; ;;
 "--with-capstone-next") USE_CSNEXT="1"; ;;
@@ -398,6 +405,8 @@ echo "FLAGS:       --disable-debugger --with-libatomic --with-sysmagic --disable
 "--with-capstone4") USE_CS4="1"; ;;
 "--with-syscapstone") WITH_CAPSTONE="1"; ;;
 "--without-syscapstone") WITHOUT_SYSCAPSTONE="0"; ;;
+"--with-syszydis") WITH_ZYDIS="1"; ;;
+"--without-syszydis") WITHOUT_SYSZYDIS="0"; ;;
 "--without-sqsh") WITH_SQSH="0"; ;;
 "--with-syslz4") WITH_SYSLZ4="1"; ;;
 "--without-zip") WANT_ZIP="0"; ;;
@@ -434,7 +443,7 @@ parse_options "$1"
 shift
 done
 
-ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG R2_BUILDSYSTEM HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_ATOMIC HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_LIB_ATOMIC LIBATOMIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_QJS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WITH_LIBR WITH_STATIC_THEMES USE_CSNEXT USE_CS5 USE_CS4 WITH_CAPSTONE WITHOUT_SYSCAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE SQSH_CFLAGS SQSH_LDFLAGS HAVE_PKGCFG_LIBSQSH WITH_SQSH USE_SQSH LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 WANT_ZIP HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP PKGCFG_ZLIBS PKGCFG_LIBZIPLIBS PKGCFG_R_ARCH_LIBS_PRIVATE PKGCFG_R_ASM_LIBS_PRIVATE PKGCFG_R_BIN_LIBS_PRIVATE PKGCFG_R_DEBUG_LIBS_PRIVATE PKGCFG_R_FS_LIBS_PRIVATE PKGCFG_R_IO_LIBS_PRIVATE PKGCFG_R_LANG_LIBS_PRIVATE PKGCFG_R_UTIL_LIBS_PRIVATE HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE___ATOMIC_FETCH_ADD_8 HAVE_SIGACTION HAVE_CLOCK_GETTIME FORCE_LIB_ATOMIC CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP WANT_SSL WANT_SSL_CRYPTO HAVE_OPENSSL SSL_CFLAGS SSL_LDFLAGS HAVE_LIB_SSL HAVE_PKGCFG_OPENSSL WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_V35 R2_WASM_BROWSER USE_RPATH USE_BUNDLE_PREFIX USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL WANT_DEBUGSTUFF"
+ENVWORDS="MANDIR DESCRIPTION INFODIR LIBDIR INCLUDEDIR LOCALSTATEDIR ETCDIR SYSCONFDIR DATADIR DOCDIR LIBEXECDIR SBINDIR BINDIR EPREFIX PREFIX SPREFIX TARGET HOST BUILD INSTALL INSTALL_LIB INSTALL_MAN INSTALL_PROGRAM INSTALL_PROGRAM_STRIP INSTALL_DIR INSTALL_SCRIPT INSTALL_DATA HOST_OS HOST_CPU BUILD_OS BUILD_CPU TARGET_OS TARGET_CPU VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH VERSION_NUMBER PKGCFG_LIBDIR PKGCFG_INCDIR PKGNAME VPATH CONTACT CONTACT_NAME CONTACT_MAIL CC CFLAGS CPPFLAGS LDFLAGS HAVE_LANG_C DEBUGGER HAVE_LIB_DL DL_LIBS PKGCONFIG R2_BUILDSYSTEM HAVE_PATCH PATCH HAVE_AR AR HAVE_GIT GIT HAVE_GPERF GPERF HAVE_LIB_ATOMIC HAVE_LIB_MAGIC HAVE_LINUX_CAN_H USE_LIB_ATOMIC LIBATOMIC USE_MAGIC USE_LIB_MAGIC LIBMAGIC WANT_THREADS LOADLIBS R_CRITICAL_ENABLED WANT_QJS WANT_DYLINK HAVE_FORK WANT_PTRACE_WRAP WANT_GPERF WANT_CAPSTONE WANT_ZYDIS WITH_LIBR WITH_STATIC_THEMES USE_CSNEXT USE_CS5 USE_CS4 WITH_CAPSTONE WITHOUT_SYSCAPSTONE CAPSTONE_CFLAGS CAPSTONE_LDFLAGS HAVE_PKGCFG_CAPSTONE USE_CAPSTONE WITH_ZYDIS WITHOUT_SYSZYDIS ZYDIS_CFLAGS ZYDIS_LDFLAGS HAVE_PKGCFG_ZYDIS USE_ZYDIS USE_SYS_ZYDIS SQSH_CFLAGS SQSH_LDFLAGS HAVE_PKGCFG_LIBSQSH WITH_SQSH USE_SQSH LZ4_CFLAGS LZ4_LDFLAGS HAVE_PKGCFG_LIBLZ4 WITH_SYSLZ4 USE_SYSLZ4 WANT_ZIP HAVE_LIB_Z HAVE_LIB_ZIP USE_ZIP USE_LIB_ZIP LIBZIP PKGCFG_ZLIBS PKGCFG_LIBZIPLIBS PKGCFG_R_ARCH_LIBS_PRIVATE PKGCFG_R_ASM_LIBS_PRIVATE PKGCFG_R_BIN_LIBS_PRIVATE PKGCFG_R_DEBUG_LIBS_PRIVATE PKGCFG_R_FS_LIBS_PRIVATE PKGCFG_R_IO_LIBS_PRIVATE PKGCFG_R_LANG_LIBS_PRIVATE PKGCFG_R_UTIL_LIBS_PRIVATE HAVE_LIB_XXHASH USE_XXHASH USE_LIB_XXHASH LIBXXHASH WITH_GPL HAVE_DECL_ADDR_NO_RANDOMIZE HAVE_DECL___GLIBC__ HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_CLOCK_NANOSLEEP HAVE___ATOMIC_FETCH_ADD_8 HAVE_SIGACTION HAVE_CLOCK_GETTIME FORCE_LIB_ATOMIC CLOCK_LDFLAGS SUPPORT_GNU99 HAVE_LIB_GMP WANT_SSL WANT_SSL_CRYPTO HAVE_OPENSSL SSL_CFLAGS SSL_LDFLAGS HAVE_LIB_SSL HAVE_PKGCFG_OPENSSL WANT_LIBUV HAVE_LIBUV_VERSION_1_0_0 LIBUV_CFLAGS LIBUV_LDFLAGS HAVE_PKGCFG_LIBUV HAVE_LIBUV WANT_V35 R2_WASM_BROWSER USE_RPATH USE_BUNDLE_PREFIX USERCC USEROSTYPE LIBVERSION HAVE_JEMALLOC HAVE_PTRACE USE_PTRACE_WRAP R_CHECKS_LEVEL WANT_DEBUGSTUFF"
 
 create_environ
 
@@ -707,6 +716,37 @@ USE_CAPSTONE="0"
 HAVE_PKGCFG_CAPSTONE="0"
 CAPSTONE_CFLAGS=""
 CAPSTONE_LDFLAGS=""; fi
+if [ "$WITH_ZYDIS" = "1" ]; then
+if [ -z "${PKGCONFIG}" ]; then pkg-config --version >/dev/null 2>&1 ; if [ 0 = 0 ]; then PKGCONFIG=pkg-config ; else PKGCONFIG=pkgconf ; fi; fi
+printf 'checking pkg-config flags for zydis... '
+tmp=`${PKGCONFIG} --cflags zydis 2>/dev/null`
+if [ $? != 0 ]; then echo no ; HAVE_PKGCFG_ZYDIS=0;
+ZYDIS_CFLAGS='';ZYDIS_LDFLAGS='';
+else
+ZYDIS_CFLAGS=$tmp;
+tmp=`${PKGCONFIG} --libs zydis 2>/dev/null`
+if [ $? = 0 ]; then
+echo yes; HAVE_PKGCFG_ZYDIS=1;
+ZYDIS_LDFLAGS=$tmp; fi; fi; fi
+if [ 11 = "$WITH_ZYDIS$HAVE_PKGCFG_ZYDIS" ]; then
+
+USE_ZYDIS="1"
+USE_SYS_ZYDIS="1"
+else
+USE_ZYDIS="0"
+USE_SYS_ZYDIS="0"; fi
+if [ "$WITHOUT_SYSZYDIS" = "0" ]; then
+USE_ZYDIS="0"
+USE_SYS_ZYDIS="0"
+HAVE_PKGCFG_ZYDIS="0"
+ZYDIS_CFLAGS=""
+ZYDIS_LDFLAGS=""; fi
+if [ "$WANT_ZYDIS" = "0" ]; then
+USE_ZYDIS="0"
+USE_SYS_ZYDIS="0"
+HAVE_PKGCFG_ZYDIS="0"
+ZYDIS_CFLAGS=""
+ZYDIS_LDFLAGS=""; fi
 if [ -z "${PKGCONFIG}" ]; then pkg-config --version >/dev/null 2>&1 ; if [ 0 = 0 ]; then PKGCONFIG=pkg-config ; else PKGCONFIG=pkgconf ; fi; fi
 printf 'checking pkg-config flags for libsqsh... '
 tmp=`${PKGCONFIG} --cflags libsqsh 2>/dev/null`
@@ -1122,7 +1162,7 @@ do_remove
 if [ "$QUIET" = 0 ]; then
 echo
 echo "Final report:"
-for A in  BUILD CC CFLAGS DEBUGGER HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_FORK HAVE_GPERF HAVE_LIBUV HAVE_LIB_GMP WANT_DEBUGSTUFF HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC USE_SQSH USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK USE_LIB_ATOMIC HAVE___ATOMIC_FETCH_ADD_8 FORCE_LIB_ATOMIC WANT_QJS ; do
+for A in  BUILD CC CFLAGS DEBUGGER HAVE_ARC4RANDOM_UNIFORM HAVE_EXPLICIT_BZERO HAVE_EXPLICIT_MEMSET HAVE_FORK HAVE_GPERF HAVE_LIBUV HAVE_LIB_GMP WANT_DEBUGSTUFF HAVE_OPENSSL WANT_SSL_CRYPTO HAVE_PTRACE HOST LDFLAGS LIBVERSION PKGCONFIG PREFIX R_CHECKS_LEVEL TARGET USERCC USEROSTYPE USE_CAPSTONE USE_LIB_MAGIC USE_SQSH USE_LIB_XXHASH USE_LIB_ZIP USE_PTRACE_WRAP USE_SYSLZ4 VERSION WANT_DYLINK USE_LIB_ATOMIC HAVE___ATOMIC_FETCH_ADD_8 FORCE_LIB_ATOMIC WANT_QJS WANT_ZYDIS USE_ZYDIS USE_SYS_ZYDIS ; do
 eval VAL="\$${A}"
 [ -z "${VAL}" ] && VAL="\"\""
 echo " - ${A} = ${VAL}"

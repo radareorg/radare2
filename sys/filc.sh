@@ -41,5 +41,6 @@ cd "$ROOT"
 . ./sys/make-jobs.inc.sh
 ${MAKE} mrproper || true
 [ -z "${KEEP_PLUGINS_CFG:-}" ] && rm -f plugins.cfg
-./configure --with-rpath "$@" || exit 1
+# filcc currently crashes on the generated Zydis amalgamation.
+./configure --without-zydis --with-rpath "$@" || exit 1
 ${MAKE} -j || exit 1
