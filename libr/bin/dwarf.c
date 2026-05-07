@@ -49,6 +49,8 @@
 	idx += sizeof (ut16); \
 	buf += sizeof (ut16)
 
+#define DWARF_STRING_MAX ((size_t)0xfff)
+
 static const char *dwarf_tag_name_encodings[] = {
 	[DW_TAG_null_entry] = "DW_TAG_null_entry",
 	[DW_TAG_array_type] = "DW_TAG_array_type",
@@ -627,11 +629,11 @@ static const ut8 *parse_line_header_source(RBin *bin, RBinFile *bf, const ut8 *b
 	if (mode == R_MODE_PRINT) {
 		print (" The Directory Table:\n");
 	}
-	while (buf <= buf_end) {
-		size_t maxlen = R_MIN ((size_t) (buf_end - buf) - 1, 0xfff);
+	while (buf < buf_end) {
+		int maxlen = (int)R_MIN ((size_t) (buf_end - buf) - 1, DWARF_STRING_MAX);
 		size_t len = r_str_nlen ((const char *)buf, maxlen);
-		char *str = r_str_ndup ((const char *)buf, len);
-		if (len < 1 || len >= 0xfff || !str) {
+		char *str = r_str_ndup ((const char *)buf, (int)len);
+		if (len < 1 || len >= DWARF_STRING_MAX || !str) {
 			buf += 1;
 			free (str);
 			break;
@@ -655,7 +657,7 @@ static const ut8 *parse_line_header_source(RBin *bin, RBinFile *bf, const ut8 *b
 
 	for (i = 0; i < 2; i++) {
 		while (buf + 1 < buf_end) {
-			size_t maxlen = R_MIN ((size_t) (buf_end - buf - 1), 0xfff);
+			int maxlen = (int)R_MIN ((size_t) (buf_end - buf - 1), DWARF_STRING_MAX);
 			ut64 id_idx, mod_time, file_len;
 			free (fn);
 			fn = r_str_ndup ((const char *)buf, maxlen);
@@ -825,7 +827,7 @@ static const ut8 *parse_line_entryv5(const ut8 *buf, const ut8 *buf_end, entry_f
 		ent->ndesc++;
 	}
 	return buf;
-};
+}
 
 static const ut8 *ut64_form_value(RBin *bin, entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut64 *val) {
 	const bool be = r_bin_is_big_endian (bin);
@@ -875,7 +877,6 @@ static const ut8 *ut64_form_value(RBin *bin, entry_descriptor desc, const ut8 *b
 }
 
 static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, bool is_64bit, const char **ret_name) {
-	const size_t maxlen = 0xfff;
 	RBin *bin = bf? bf->rbin: NULL;
 	ut64 section_offset = 0;
 	RBinSection *section = NULL;
@@ -904,10 +905,7 @@ static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 
 			return NULL;
 		}
 		size_t available = buf_end - buf;
-		size_t len = R_MIN (maxlen, available);
-		if (len > ST32_MAX) {
-			return NULL;
-		}
+		size_t len = R_MIN (DWARF_STRING_MAX, available);
 		size_t slen = r_str_nlen ((const char *)buf, (int)len);
 		if (slen >= len) {
 			return NULL;
@@ -919,7 +917,7 @@ static const ut8 *str_form_value(RBinFile *bf, entry_descriptor desc, const ut8 
 		R_LOG_DEBUG ("Expected form type string but got: %#x", desc.form);
 		return NULL;
 	}
-};
+}
 
 static const ut8 *data16_form_value(entry_descriptor desc, const ut8 *buf, const ut8 *buf_end, ut8 val[16]) {
 	if (desc.form != DW_FORM_data16 || buf + 16 >= buf_end) {
