@@ -1,0 +1,1019 @@
+// Private helpers for /as syscall search. Included by cmd_search.inc.c.
+
+static const char *get_syscall_register(RCore *core) {
+	const char *sn = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	if (!strcmp (cfg->arch, "arm") && cfg->bits == 64) {
+		const char *os = cfg->os;
+		if (!os) {
+			os = r_config_get (core->config, "asm.os");
+		}
+		if (!strcmp (os, "linux") || !strcmp (os, "android")) {
+			sn = "x8";
+		} else if (!strcmp (os, "macos")) {
+			sn= "x16";
+		}
+	}
+	return sn;
+}
+
+typedef enum {
+	SYSREG_VAL_UNKNOWN,
+	SYSREG_VAL_CONST,
+} SyscallRegValueKind;
+
+typedef struct {
+	SyscallRegValueKind kind;
+	ut64 value;
+} SyscallRegValue;
+
+typedef struct {
+	const char *name;
+	int offset;
+	int size;
+} SyscallRegSlot;
+
+R_VEC_TYPE (RVecSyscallRegSlot, SyscallRegSlot);
+
+typedef struct {
+	RReg *reg;
+	RVecSyscallRegSlot slots;
+} SyscallRegMap;
+
+typedef struct {
+	bool reachable;
+	SyscallRegValue *regs;
+	int regs_count;
+} SyscallRegState;
+
+typedef struct {
+	ut64 addr;
+	bool known;
+	ut64 value;
+} SyscallNumberHit;
+
+typedef enum {
+	SYSNUM_AT_NONE,
+	SYSNUM_AT_UNKNOWN,
+	SYSNUM_AT_KNOWN
+} SyscallNumberAt;
+
+typedef struct {
+	RAnalFunction *fcn;
+	RList *hits;
+} SyscallFunctionCache;
+
+typedef struct {
+	RCore *core;
+	RAnalFunction *fcn;
+	SyscallRegMap *regmap;
+	RAnalBlock **blocks;
+	SyscallRegState *states;
+	int blocks_count;
+	RList *hits;
+	int *queue;
+	bool *queued;
+	int queue_len;
+} SyscallFunctionAnalysis;
+
+static SyscallRegValue syscall_reg_unknown(void) {
+	SyscallRegValue ret = { SYSREG_VAL_UNKNOWN, 0 };
+	return ret;
+}
+
+static SyscallRegValue syscall_reg_const(ut64 value) {
+	SyscallRegValue ret = { SYSREG_VAL_CONST, value };
+	return ret;
+}
+
+static ut64 syscall_reg_mask_value(ut64 value, int bits) {
+	if (bits > 0 && bits < 64) {
+		return value & (((ut64)1 << bits) - 1);
+	}
+	return value;
+}
+
+static bool syscall_reg_overlap(int off_a, int size_a, int off_b, int size_b) {
+	return off_a < off_b + size_b && off_b < off_a + size_a;
+}
+
+static void syscall_regmap_fini(SyscallRegMap *map) {
+	RVecSyscallRegSlot_fini (&map->slots);
+	memset (map, 0, sizeof (*map));
+}
+
+static int syscall_regmap_find_offset(SyscallRegMap *map, int offset) {
+	int i;
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && slot->offset == offset) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static bool syscall_regmap_init(SyscallRegMap *map, RReg *reg) {
+	RListIter *iter;
+	RRegItem *item;
+
+	memset (map, 0, sizeof (*map));
+	map->reg = reg;
+	RVecSyscallRegSlot_init (&map->slots);
+	RList *regs = r_reg_get_list (reg, R_REG_TYPE_GPR);
+	if (!regs) {
+		return false;
+	}
+	r_list_foreach (regs, iter, item) {
+		if (!item || !item->name || item->size < 1) {
+			continue;
+		}
+		int idx = syscall_regmap_find_offset (map, item->offset);
+		SyscallRegSlot *slot = NULL;
+		if (idx < 0) {
+			slot = RVecSyscallRegSlot_emplace_back (&map->slots);
+			if (!slot) {
+				syscall_regmap_fini (map);
+				return false;
+			}
+			slot->offset = item->offset;
+		} else {
+			slot = RVecSyscallRegSlot_at (&map->slots, idx);
+		}
+		if (slot && item->size > slot->size) {
+			slot->name = item->name;
+			slot->size = item->size;
+		}
+	}
+	if (RVecSyscallRegSlot_empty (&map->slots)) {
+		syscall_regmap_fini (map);
+		return false;
+	}
+	return true;
+}
+
+static RRegItem *syscall_reg_item(SyscallRegMap *map, const char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		return NULL;
+	}
+	return r_reg_get (map->reg, name, R_REG_TYPE_GPR);
+}
+
+static int syscall_regmap_slot_for_item(SyscallRegMap *map, RRegItem *item) {
+	int i;
+	if (!item) {
+		return -1;
+	}
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && slot->offset == item->offset) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int syscall_regmap_slot_containing_item(SyscallRegMap *map, RRegItem *item) {
+	int i;
+	if (!item) {
+		return -1;
+	}
+	const int item_end = item->offset + item->size;
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && item->offset >= slot->offset && item_end <= slot->offset + slot->size) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static bool syscall_state_init(SyscallRegState *state, SyscallRegMap *map, bool reachable) {
+	state->regs_count = RVecSyscallRegSlot_length (&map->slots);
+	state->regs = calloc (state->regs_count, sizeof (*state->regs));
+	if (!state->regs) {
+		return false;
+	}
+	state->reachable = reachable;
+	return true;
+}
+
+static void syscall_state_fini(SyscallRegState *state) {
+	free (state->regs);
+	memset (state, 0, sizeof (*state));
+}
+
+static void syscall_state_set_unknown(SyscallRegState *state, bool reachable) {
+	int i;
+	state->reachable = reachable;
+	for (i = 0; i < state->regs_count; i++) {
+		state->regs[i] = syscall_reg_unknown ();
+	}
+}
+
+static void syscall_state_copy(SyscallRegState *dst, const SyscallRegState *src) {
+	dst->reachable = src->reachable;
+	memcpy (dst->regs, src->regs, sizeof (*dst->regs) * dst->regs_count);
+}
+
+static bool syscall_state_join(SyscallRegState *dst, const SyscallRegState *src) {
+	bool changed = false;
+	int i;
+
+	if (!src->reachable) {
+		return false;
+	}
+	if (!dst->reachable) {
+		syscall_state_copy (dst, src);
+		return true;
+	}
+	for (i = 0; i < dst->regs_count; i++) {
+		SyscallRegValue *d = &dst->regs[i];
+		const SyscallRegValue *s = &src->regs[i];
+		if (d->kind == SYSREG_VAL_UNKNOWN) {
+			continue;
+		}
+		if (s->kind == SYSREG_VAL_UNKNOWN || d->value != s->value) {
+			*d = syscall_reg_unknown ();
+			changed = true;
+		}
+	}
+	return changed;
+}
+
+static void syscall_state_kill_overlapping(SyscallRegMap *map, SyscallRegState *state, RRegItem *item) {
+	int i;
+	if (!item) {
+		return;
+	}
+	const int count = RVecSyscallRegSlot_length (&map->slots);
+	for (i = 0; i < count; i++) {
+		SyscallRegSlot *slot = RVecSyscallRegSlot_at (&map->slots, i);
+		if (slot && syscall_reg_overlap (item->offset, item->size, slot->offset, slot->size)) {
+			state->regs[i] = syscall_reg_unknown ();
+		}
+	}
+}
+
+static void syscall_state_write(SyscallRegMap *map, SyscallRegState *state, const char *reg, SyscallRegValue value) {
+	RRegItem *item = syscall_reg_item (map, reg);
+	int idx = syscall_regmap_slot_for_item (map, item);
+	if (!item) {
+		return;
+	}
+	if (idx < 0) {
+		idx = syscall_regmap_slot_containing_item (map, item);
+	}
+	SyscallRegSlot *slot = idx >= 0? RVecSyscallRegSlot_at (&map->slots, idx): NULL;
+	SyscallRegValue prev = slot? state->regs[idx]: syscall_reg_unknown ();
+	syscall_state_kill_overlapping (map, state, item);
+	if (!slot) {
+		return;
+	}
+	if (item->size < 32) {
+		// Narrow writes are constant only when the containing register was already known.
+		if (value.kind != SYSREG_VAL_CONST || prev.kind != SYSREG_VAL_CONST) {
+			return;
+		}
+		const int shift = item->offset - slot->offset;
+		if (shift < 0 || shift >= 64 || item->size + shift > 64) {
+			return;
+		}
+		ut64 mask = (((ut64)1 << item->size) - 1) << shift;
+		value.value = (prev.value & ~mask) | ((value.value << shift) & mask);
+		value.value = syscall_reg_mask_value (value.value, slot->size);
+		state->regs[idx] = value;
+		return;
+	}
+	if (value.kind == SYSREG_VAL_CONST) {
+		value.value = syscall_reg_mask_value (value.value, item->size);
+	}
+	state->regs[idx] = value;
+}
+
+static SyscallRegValue syscall_state_read(SyscallRegMap *map, SyscallRegState *state, const char *reg) {
+	RRegItem *item = syscall_reg_item (map, reg);
+	int idx = syscall_regmap_slot_for_item (map, item);
+	if (!item) {
+		return syscall_reg_unknown ();
+	}
+	if (idx < 0) {
+		idx = syscall_regmap_slot_containing_item (map, item);
+	}
+	SyscallRegSlot *slot = idx >= 0? RVecSyscallRegSlot_at (&map->slots, idx): NULL;
+	if (!slot) {
+		return syscall_reg_unknown ();
+	}
+	SyscallRegValue value = state->regs[idx];
+	if (value.kind == SYSREG_VAL_CONST) {
+		const int shift = item->offset - slot->offset;
+		if (shift < 0 || shift >= 64) {
+			return syscall_reg_unknown ();
+		}
+		value.value >>= shift;
+		value.value = syscall_reg_mask_value (value.value, item->size);
+		return value;
+	}
+	if (item->size < slot->size) {
+		return syscall_reg_unknown ();
+	}
+	return value;
+}
+
+static bool syscall_arch_value_is_mem(RAnalValue *value) {
+	return value && value->memref;
+}
+
+static bool syscall_arch_value_is_reg(RAnalValue *value) {
+	return value && value->reg && !value->memref;
+}
+
+static bool syscall_op_imm(RAnalOp *op, RAnalValue *src, ut64 *value) {
+	if (op->val != UT64_MAX) {
+		*value = op->val;
+		return true;
+	}
+	if (src && !src->reg && !src->regdelta && !src->memref && src->imm) {
+		*value = src->imm;
+		return true;
+	}
+	return false;
+}
+
+static bool syscall_same_reg(SyscallRegMap *map, const char *a, const char *b) {
+	RRegItem *ai = syscall_reg_item (map, a);
+	RRegItem *bi = syscall_reg_item (map, b);
+	return ai && bi && ai->offset == bi->offset && ai->size == bi->size;
+}
+
+static bool syscall_value_from_src(SyscallRegMap *map, SyscallRegState *state, RAnalOp *op, RAnalValue *src, SyscallRegValue *value) {
+	ut64 imm = 0;
+	if (!src) {
+		return false;
+	}
+	if (syscall_arch_value_is_mem (src)) {
+		return false;
+	}
+	if (syscall_arch_value_is_reg (src)) {
+		*value = syscall_state_read (map, state, src->reg);
+		return value->kind == SYSREG_VAL_CONST;
+	}
+	if (syscall_op_imm (op, src, &imm)) {
+		*value = syscall_reg_const (imm);
+		return true;
+	}
+	return false;
+}
+
+static bool syscall_value_from_lea(SyscallRegMap *map, SyscallRegState *state, RAnalValue *src, SyscallRegValue *value) {
+	ut64 acc = 0;
+	SyscallRegValue part;
+
+	if (!src) {
+		return false;
+	}
+	if (src->reg) {
+		part = syscall_state_read (map, state, src->reg);
+		if (part.kind != SYSREG_VAL_CONST) {
+			return false;
+		}
+		acc += part.value;
+	}
+	if (src->regdelta) {
+		part = syscall_state_read (map, state, src->regdelta);
+		if (part.kind != SYSREG_VAL_CONST) {
+			return false;
+		}
+		acc += part.value * (src->mul? src->mul: 1);
+	}
+	acc += src->delta;
+	*value = syscall_reg_const (acc);
+	return true;
+}
+
+static void syscall_state_kill_all(SyscallRegState *state) {
+	int i;
+	for (i = 0; i < state->regs_count; i++) {
+		state->regs[i] = syscall_reg_unknown ();
+	}
+}
+
+static void syscall_state_kill_reg(SyscallRegMap *map, SyscallRegState *state, const char *reg) {
+	syscall_state_write (map, state, reg, syscall_reg_unknown ());
+}
+
+static void syscall_state_kill_regs(SyscallRegMap *map, SyscallRegState *state, const char * const *regs) {
+	int i;
+	for (i = 0; regs[i]; i++) {
+		syscall_state_kill_reg (map, state, regs[i]);
+	}
+}
+
+static void syscall_state_kill_call(RCore *core, SyscallRegMap *map, SyscallRegState *state) {
+	const char *arch = r_config_get (core->config, "asm.arch");
+	int bits = core->anal->config->bits;
+	if (r_str_startswith (arch, "x86")) {
+		if (bits == 64) {
+			static const char * const regs[] = {
+				"rax", "rcx", "rdx", "rsi", "rdi", "r8", "r9", "r10", "r11", NULL
+			};
+			syscall_state_kill_regs (map, state, regs);
+		} else {
+			static const char * const regs[] = { "eax", "ecx", "edx", NULL };
+			syscall_state_kill_regs (map, state, regs);
+		}
+		return;
+	}
+	if (r_str_startswith (arch, "arm") || r_str_startswith (arch, "aarch64")) {
+		if (bits == 64) {
+			static const char * const regs[] = {
+				"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7", "x8", "x9",
+				"x10", "x11", "x12", "x13", "x14", "x15", "x16", "x17", "x18",
+				"x30", "lr", NULL
+			};
+			syscall_state_kill_regs (map, state, regs);
+		} else {
+			static const char * const regs[] = { "r0", "r1", "r2", "r3", "r12", "lr", NULL };
+			syscall_state_kill_regs (map, state, regs);
+		}
+		return;
+	}
+	if (r_str_startswith (arch, "mips")) {
+		static const char * const regs[] = {
+			"v0", "v1", "a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7",
+			"t0", "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8", "t9", "ra", NULL
+		};
+		syscall_state_kill_regs (map, state, regs);
+		return;
+	}
+	if (r_str_startswith (arch, "riscv")) {
+		static const char * const regs[] = {
+			"ra", "t0", "t1", "t2", "t3", "t4", "t5", "t6",
+			"a0", "a1", "a2", "a3", "a4", "a5", "a6", "a7", NULL
+		};
+		syscall_state_kill_regs (map, state, regs);
+		return;
+	}
+	syscall_state_kill_all (state);
+}
+
+static void syscall_transfer_binary(SyscallRegMap *map, SyscallRegState *state, RAnalOp *op, int type) {
+	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
+	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
+	SyscallRegValue lhs;
+	SyscallRegValue rhs;
+	ut64 imm = 0;
+
+	if (!dst || !dst->reg || dst->memref) {
+		return;
+	}
+	lhs = syscall_state_read (map, state, dst->reg);
+	if (src && syscall_arch_value_is_reg (src)) {
+		rhs = syscall_state_read (map, state, src->reg);
+	} else if (syscall_op_imm (op, src, &imm)) {
+		rhs = syscall_reg_const (imm);
+	} else {
+		syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		return;
+	}
+	if (lhs.kind != SYSREG_VAL_CONST || rhs.kind != SYSREG_VAL_CONST) {
+		syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		return;
+	}
+	switch (type) {
+	case R_ANAL_OP_TYPE_ADD:
+		lhs.value += rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_SUB:
+		lhs.value -= rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_AND:
+		lhs.value &= rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_OR:
+		lhs.value |= rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_XOR:
+		lhs.value ^= rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SAL:
+		if (rhs.value >= 64) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+			return;
+		}
+		lhs.value <<= rhs.value;
+		break;
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAR:
+		if (rhs.value >= 64) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+			return;
+		}
+		lhs.value >>= rhs.value;
+		break;
+	default:
+		syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		return;
+	}
+	syscall_state_write (map, state, dst->reg, lhs);
+}
+
+static void syscall_transfer_op(RCore *core, SyscallRegMap *map, SyscallRegState *state, RAnalOp *op, const char *screg) {
+	RAnalValue *dst, *src;
+	SyscallRegValue value;
+	int type;
+
+	if (!state->reachable) {
+		return;
+	}
+	type = op->type & R_ANAL_OP_TYPE_MASK;
+	dst = RVecRArchValue_at (&op->dsts, 0);
+	src = RVecRArchValue_at (&op->srcs, 0);
+	switch (type) {
+	case R_ANAL_OP_TYPE_MOV:
+		if (dst && dst->reg && !dst->memref) {
+			value = syscall_reg_unknown ();
+			if (syscall_value_from_src (map, state, op, src, &value)) {
+				syscall_state_write (map, state, dst->reg, value);
+			} else {
+				syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+			}
+		}
+		break;
+	case R_ANAL_OP_TYPE_CMOV:
+		if (dst && dst->reg && !dst->memref) {
+			SyscallRegValue cur = syscall_state_read (map, state, dst->reg);
+			if (!syscall_value_from_src (map, state, op, src, &value)
+					|| cur.kind != SYSREG_VAL_CONST || value.value != cur.value) {
+				value = syscall_reg_unknown ();
+			}
+			syscall_state_write (map, state, dst->reg, value);
+		}
+		break;
+	case R_ANAL_OP_TYPE_LEA:
+		if (dst && dst->reg && !dst->memref) {
+			if (syscall_value_from_lea (map, state, src, &value)) {
+				syscall_state_write (map, state, dst->reg, value);
+			} else {
+				syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+			}
+		}
+		break;
+	case R_ANAL_OP_TYPE_XOR:
+	case R_ANAL_OP_TYPE_SUB:
+		if (dst && src && dst->reg && src->reg && !dst->memref && !src->memref
+				&& syscall_same_reg (map, dst->reg, src->reg)) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_const (0));
+		} else {
+			syscall_transfer_binary (map, state, op, type);
+		}
+		break;
+	case R_ANAL_OP_TYPE_ADD:
+	case R_ANAL_OP_TYPE_AND:
+	case R_ANAL_OP_TYPE_OR:
+	case R_ANAL_OP_TYPE_SHL:
+	case R_ANAL_OP_TYPE_SHR:
+	case R_ANAL_OP_TYPE_SAL:
+	case R_ANAL_OP_TYPE_SAR:
+		syscall_transfer_binary (map, state, op, type);
+		break;
+	case R_ANAL_OP_TYPE_SWI:
+		syscall_state_write (map, state, screg, syscall_reg_unknown ());
+		if (dst && dst->reg && !dst->memref) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		}
+		break;
+	case R_ANAL_OP_TYPE_CALL:
+	case R_ANAL_OP_TYPE_UCALL:
+		syscall_state_kill_call (core, map, state);
+		break;
+	case R_ANAL_OP_TYPE_POP:
+	case R_ANAL_OP_TYPE_LOAD:
+	case R_ANAL_OP_TYPE_XCHG:
+		if (dst && dst->reg && !dst->memref) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		}
+		if (src && src->reg && !src->memref) {
+			syscall_state_write (map, state, src->reg, syscall_reg_unknown ());
+		}
+		break;
+	default:
+		if (dst && dst->reg && !dst->memref && type != R_ANAL_OP_TYPE_CMP && type != R_ANAL_OP_TYPE_ACMP) {
+			syscall_state_write (map, state, dst->reg, syscall_reg_unknown ());
+		}
+		break;
+	}
+}
+
+static void syscall_record_hit(RList *hits, ut64 addr, SyscallRegValue value) {
+	SyscallNumberHit *hit;
+	RListIter *iter;
+	r_list_foreach (hits, iter, hit) {
+		if (hit->addr == addr) {
+			if (!hit->known || value.kind != SYSREG_VAL_CONST || hit->value != value.value) {
+				hit->known = false;
+			}
+			return;
+		}
+	}
+	hit = R_NEW0 (SyscallNumberHit);
+	hit->addr = addr;
+	if (value.kind == SYSREG_VAL_CONST) {
+		hit->known = true;
+		hit->value = value.value;
+	}
+	r_list_append (hits, hit);
+}
+
+static int syscall_block_index(SyscallFunctionAnalysis *analysis, RAnalBlock *bb) {
+	int i;
+	for (i = 0; i < analysis->blocks_count; i++) {
+		if (analysis->blocks[i] == bb) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static int syscall_block_index_at(SyscallFunctionAnalysis *analysis, ut64 addr) {
+	RAnalBlock *bb = r_anal_function_bbget_at (analysis->core->anal, analysis->fcn, addr);
+	if (!bb) {
+		bb = r_anal_function_bbget_in (analysis->core->anal, analysis->fcn, addr);
+	}
+	return syscall_block_index (analysis, bb);
+}
+
+static void syscall_queue_block(SyscallFunctionAnalysis *analysis, int idx) {
+	if (idx < 0 || idx >= analysis->blocks_count || analysis->queued[idx]) {
+		return;
+	}
+	analysis->queue[analysis->queue_len++] = idx;
+	analysis->queued[idx] = true;
+}
+
+typedef struct {
+	SyscallFunctionAnalysis *analysis;
+	SyscallRegState *state;
+} SyscallSuccessorCtx;
+
+static bool syscall_successor_cb(ut64 addr, void *user) {
+	SyscallSuccessorCtx *ctx = (SyscallSuccessorCtx *)user;
+	int idx = syscall_block_index_at (ctx->analysis, addr);
+	if (idx >= 0 && syscall_state_join (&ctx->analysis->states[idx], ctx->state)) {
+		syscall_queue_block (ctx->analysis, idx);
+	}
+	return true;
+}
+
+static bool syscall_analyze_block(SyscallFunctionAnalysis *analysis, int idx, const char *screg) {
+	RAnalBlock *bb = analysis->blocks[idx];
+	SyscallRegState out;
+	ut8 *buf;
+	RAnalOp op = {0};
+	int i;
+
+	if (!syscall_state_init (&out, analysis->regmap, false)) {
+		return false;
+	}
+	syscall_state_copy (&out, &analysis->states[idx]);
+	if (bb->size < 1 || bb->size > ST32_MAX) {
+		syscall_state_fini (&out);
+		return true;
+	}
+	buf = malloc (bb->size);
+	if (!buf) {
+		syscall_state_fini (&out);
+		return false;
+	}
+	r_io_read_at (analysis->core->io, bb->addr, buf, bb->size);
+	for (i = 0; i < bb->ninstr; i++) {
+		ut16 pos = r_anal_bb_offset_inst (bb, i);
+		ut64 op_addr = r_anal_bb_opaddr_i (bb, i);
+		int ret;
+		if (pos == UT16_MAX || op_addr == UT64_MAX || pos >= bb->size) {
+			break;
+		}
+		ret = r_anal_op (analysis->core->anal, &op, op_addr, buf + pos, bb->size - pos,
+			R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+		if (ret > 0) {
+			int type = op.type & R_ANAL_OP_TYPE_MASK;
+			if (type == R_ANAL_OP_TYPE_SWI) {
+				syscall_record_hit (analysis->hits, op_addr,
+					syscall_state_read (analysis->regmap, &out, screg));
+			}
+			syscall_transfer_op (analysis->core, analysis->regmap, &out, &op, screg);
+		}
+		r_anal_op_fini (&op);
+	}
+	SyscallSuccessorCtx sctx = { analysis, &out };
+	r_anal_block_successor_addrs_foreach (bb, syscall_successor_cb, &sctx);
+	free (buf);
+	syscall_state_fini (&out);
+	return true;
+}
+
+static void syscall_function_cache_free(SyscallFunctionCache *cache) {
+	if (cache) {
+		r_list_free (cache->hits);
+		free (cache);
+	}
+}
+
+static SyscallFunctionCache *syscall_function_cache_new(RCore *core, SyscallRegMap *regmap, RAnalFunction *fcn, const char *screg) {
+	SyscallFunctionAnalysis analysis = {0};
+	RListIter *iter;
+	RAnalBlock *bb;
+	int entry_idx = -1;
+	int i;
+
+	if (!fcn || !fcn->bbs || r_list_empty (fcn->bbs)) {
+		return NULL;
+	}
+	SyscallFunctionCache *cache = R_NEW0 (SyscallFunctionCache);
+	cache->fcn = fcn;
+	cache->hits = r_list_newf (free);
+	if (!cache->hits) {
+		free (cache);
+		return NULL;
+	}
+	analysis.core = core;
+	analysis.fcn = fcn;
+	analysis.regmap = regmap;
+	analysis.blocks_count = r_list_length (fcn->bbs);
+	analysis.hits = cache->hits;
+	analysis.blocks = calloc (analysis.blocks_count, sizeof (*analysis.blocks));
+	analysis.states = calloc (analysis.blocks_count, sizeof (*analysis.states));
+	analysis.queue = calloc (analysis.blocks_count, sizeof (*analysis.queue));
+	analysis.queued = calloc (analysis.blocks_count, sizeof (*analysis.queued));
+	if (!analysis.blocks || !analysis.states || !analysis.queue || !analysis.queued) {
+		goto fail;
+	}
+	i = 0;
+	r_list_foreach (fcn->bbs, iter, bb) {
+		analysis.blocks[i] = bb;
+		if (!syscall_state_init (&analysis.states[i], regmap, false)) {
+			goto fail;
+		}
+		if (r_anal_block_contains (bb, fcn->addr)) {
+			entry_idx = i;
+		}
+		i++;
+	}
+	if (entry_idx < 0) {
+		entry_idx = syscall_block_index_at (&analysis, fcn->addr);
+	}
+	if (entry_idx < 0) {
+		entry_idx = 0;
+	}
+	syscall_state_set_unknown (&analysis.states[entry_idx], true);
+	syscall_queue_block (&analysis, entry_idx);
+	while (analysis.queue_len > 0) {
+		int idx = analysis.queue[--analysis.queue_len];
+		analysis.queued[idx] = false;
+		if (!syscall_analyze_block (&analysis, idx, screg)) {
+			goto fail;
+		}
+	}
+	for (i = 0; i < analysis.blocks_count; i++) {
+		syscall_state_fini (&analysis.states[i]);
+	}
+	free (analysis.blocks);
+	free (analysis.states);
+	free (analysis.queue);
+	free (analysis.queued);
+	return cache;
+fail:
+	if (analysis.states) {
+		for (i = 0; i < analysis.blocks_count; i++) {
+			syscall_state_fini (&analysis.states[i]);
+		}
+	}
+	free (analysis.blocks);
+	free (analysis.states);
+	free (analysis.queue);
+	free (analysis.queued);
+	syscall_function_cache_free (cache);
+	return NULL;
+}
+
+static SyscallFunctionCache *syscall_function_cache_find(RList *caches, RAnalFunction *fcn) {
+	SyscallFunctionCache *cache;
+	RListIter *iter;
+	r_list_foreach (caches, iter, cache) {
+		if (cache->fcn == fcn) {
+			return cache;
+		}
+	}
+	return NULL;
+}
+
+static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *regmap, RList *caches, RAnalFunction *fcn, const char *screg, ut64 at, int *num) {
+	SyscallFunctionCache *cache = syscall_function_cache_find (caches, fcn);
+	SyscallNumberHit *hit;
+	RListIter *iter;
+	if (!cache) {
+		cache = syscall_function_cache_new (core, regmap, fcn, screg);
+		if (!cache) {
+			return SYSNUM_AT_NONE;
+		}
+		r_list_append (caches, cache);
+	}
+	r_list_foreach (cache->hits, iter, hit) {
+		if (hit->addr == at) {
+			if (hit->known && hit->value <= 0xFFFFF) {
+				*num = (int)hit->value;
+				return SYSNUM_AT_KNOWN;
+			}
+			return SYSNUM_AT_UNKNOWN;
+		}
+	}
+	return SYSNUM_AT_NONE;
+}
+
+static void do_syscall_search(RCore *core, struct search_parameters *param) {
+	RSearch *search = core->search;
+	ut64 at;
+	int count = 0;
+	RAnalOp aop = {0};
+	int i, ret, bsize = R_MAX (64, core->blocksize);
+	int kwidx = core->search->n_kws;
+	RIOMap* map;
+	RListIter *iter;
+	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
+	const int minopcode = R_MAX (1, mininstrsz);
+	int align = core->search->align;
+	const bool isx86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+	SyscallRegMap regmap;
+	SyscallRegState local_state;
+	RList *fcn_cache = NULL;
+	const char *screg = get_syscall_register (core);
+
+	if (!syscall_regmap_init (&regmap, core->anal->reg)) {
+		return;
+	}
+	if (!syscall_state_init (&local_state, &regmap, true)) {
+		syscall_regmap_fini (&regmap);
+		return;
+	}
+	fcn_cache = r_list_newf ((RListFree)syscall_function_cache_free);
+	if (!fcn_cache) {
+		syscall_state_fini (&local_state);
+		syscall_regmap_fini (&regmap);
+		return;
+	}
+	ut8 *buf = malloc (bsize);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
+		r_list_free (fcn_cache);
+		syscall_state_fini (&local_state);
+		syscall_regmap_fini (&regmap);
+		return;
+	}
+
+	ut64 oldoff = core->addr;
+	r_cons_break_push (core->cons, NULL, NULL);
+	if (param->pj) {
+		pj_o (param->pj);
+		pj_ks (param->pj, "cmd", "/asj");
+		pj_ka (param->pj, "results");
+	}
+	r_list_foreach (param->boundaries, iter, map) {
+		ut64 from = r_io_map_begin (map);
+		ut64 to = r_io_map_end (map);
+		if (from >= to) {
+			R_LOG_ERROR ("from must be lower than to");
+			goto beach;
+		}
+		if (to == UT64_MAX) {
+			R_LOG_ERROR ("Invalid destination boundary");
+			goto beach;
+		}
+		syscall_state_set_unknown (&local_state, true);
+		for (i = 0, at = from; at < to; at++, i++) {
+			if (r_cons_is_breaked (core->cons)) {
+				break;
+			}
+			if (i >= (bsize - 32)) {
+				i = 0;
+			}
+			if (align && (at % align)) {
+				continue;
+			}
+			if (!i) {
+				r_io_read_at (core->io, at, buf, bsize);
+			}
+			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i,
+				R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+			if (((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) && ret > 0) { // && (aop.val > 10)) {
+				int scVector = aop.val; // int 0x80, svc 0x70, ...
+				int scNumber = -1; // r0/eax/...
+				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, at, 0);
+				SyscallRegValue fallback = syscall_state_read (&regmap, &local_state, screg);
+				SyscallNumberAt fcn_num = SYSNUM_AT_NONE;
+				if (fcn) {
+					fcn_num = syscall_function_number_at (core, &regmap, fcn_cache, fcn, screg, at, &scNumber);
+				}
+				if (fcn_num == SYSNUM_AT_NONE) {
+					scNumber = (fallback.kind == SYSREG_VAL_CONST && fallback.value <= 0xFFFFF)
+						? (int)fallback.value: -1;
+				}
+				if (isx86 && aop.val == 0 && (aop.bytes[0] == 0xcd || aop.bytes[0] == 0x64)) {
+					goto theverynext;
+				}
+#if 1
+				// scNumber = aop.val;
+				if (scNumber < 0 || scNumber > 0xFFFFF) {
+					if (isx86 && fcn_num == SYSNUM_AT_UNKNOWN) {
+						goto theverynext;
+					}
+					scNumber = aop.val;
+					if (scNumber < 0 || scNumber > 0xFFFFF) {
+						R_LOG_DEBUG ("Invalid syscall number %d at 0x%08"PFMT64x, scNumber, aop.addr);
+						// r_core_cmd0 (core, "dr0");
+						goto theverynext;
+					}
+				}
+#endif
+				scVector = (aop.val > 0)? aop.val: -1; // int 0x80 (aop.val = 0x80)
+				RSyscallItem *item = r_syscall_get (core->anal->syscall, scNumber, scVector);
+				if (!item && !isx86 && scVector > 10 && scVector < 200) {
+					item = r_syscall_get (core->anal->syscall, scVector, -1);
+				}
+				if (item) {
+					if (param->pj) {
+						pj_o (param->pj);
+						pj_kn (param->pj, "addr", at);
+						pj_ks (param->pj, "name", item->name);
+						pj_kn (param->pj, "sysnum", item->num);
+						if (aop.val && aop.val != UT64_MAX) {
+							pj_kn (param->pj, "num", aop.val);
+						}
+						pj_end (param->pj);
+					} else {
+						r_cons_printf (core->cons, "0x%08"PFMT64x" %s\n", at, item->name);
+					}
+#if 0
+				} else {
+					if (param->pj) {
+						pj_o (param->pj);
+						pj_kn (param->pj, "addr", at);
+						pj_kn (param->pj, "sysnum", scNumber);
+						pj_kn (param->pj, "num", scVector);
+						pj_end (param->pj);
+					} else {
+						r_cons_printf (core->cons, "0x%08"PFMT64x" %d\n", at, scNumber);
+					}
+#endif
+				} else {
+					R_LOG_DEBUG ("Cant find an syscall for %d %d", scNumber, scVector);
+				}
+				if (param->searchflags) {
+					char *flag = r_str_newf ("%s%d_%d.%s", param->searchprefix, kwidx, count, item? item->name: "syscall");
+					r_flag_set (core->flags, flag, at, ret);
+					free (flag);
+				}
+				r_syscall_item_free (item);
+				if (*param->cmd_hit) {
+					ut64 here = core->addr;
+					r_core_seek (core, at, true);
+					r_core_cmd (core, param->cmd_hit, 0);
+					r_core_seek (core, here, true);
+				}
+				count++;
+				// r_core_cmd0 (core, "dr0");
+				if (search->maxhits > 0 && count >= search->maxhits) {
+					r_anal_op_fini (&aop);
+					break;
+				}
+			}
+theverynext:
+			{
+				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				if (inc < 0) {
+					inc = minopcode;
+				}
+				if (ret > 0) {
+					syscall_transfer_op (core, &regmap, &local_state, &aop, screg);
+				}
+				i += inc;
+				at += inc;
+				r_anal_op_fini (&aop);
+			}
+		}
+	}
+beach:
+	if (param->pj) {
+		pj_end (param->pj);
+		pj_end (param->pj);
+	}
+	r_core_seek (core, oldoff, true);
+	r_cons_break_pop (core->cons);
+	free (buf);
+	r_list_free (fcn_cache);
+	syscall_state_fini (&local_state);
+	syscall_regmap_fini (&regmap);
+}

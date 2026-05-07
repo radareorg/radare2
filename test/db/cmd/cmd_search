@@ -933,6 +933,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/as x86_64 syscall narrow register write
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 31c0b03c0f05
+/as
+EOF
+EXPECT=<<EOF
+0x00000004 exit
+EOF
+RUN
+
+NAME=/as x86_64 function unknown skips linear fallback
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 83ff007407b8ca000000eb05b80e0000000f05
+af @ 0
+/as
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=search.from/to for /s
 FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
