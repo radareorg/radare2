@@ -587,6 +587,10 @@ static ut64 type_context_hash_string(ut64 hash, const char *value) {
 	return type_context_hash_mix (hash, R_STR_ISNOTEMPTY (value)? r_str_hash64 (value): 0);
 }
 
+static bool type_context_hash_should_include_sdb_key(const char *key) {
+	return r_str_startswith (key, "link.") || r_str_startswith (key, "offset.");
+}
+
 R_API ut64 r_anal_types_context_hash(RAnal *anal) {
 	R_RETURN_VAL_IF_FAIL (anal, 0);
 	if (anal->type_context_hash_cache && anal->type_context_hash_epoch == anal->type_dirty_epoch) {
@@ -639,12 +643,44 @@ R_API ut64 r_anal_types_context_hash(RAnal *anal) {
 		}
 	}
 	r_anal_types_snapshot_free (types);
+	SdbList *keys = sdb_foreach_list (anal->sdb_types, true);
+	if (keys) {
+		SdbKv *kv;
+		SdbListIter *iter;
+		ls_foreach (keys, iter, kv) {
+			const char *key = sdbkv_key (kv);
+			if (!type_context_hash_should_include_sdb_key (key)) {
+				continue;
+			}
+			hash = type_context_hash_string (hash, key);
+			hash = type_context_hash_string (hash, sdbkv_value (kv));
+		}
+		ls_free (keys);
+	}
 	if (!hash) {
 		hash = 1;
 	}
 	anal->type_context_hash_cache = hash;
 	anal->type_context_hash_epoch = anal->type_dirty_epoch;
 	return hash;
+}
+
+R_API bool r_anal_types_set_link(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_set_link (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
+}
+
+R_API bool r_anal_types_set_link_offset(RAnal *anal, const char *type, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (anal && anal->sdb_types && R_STR_ISNOTEMPTY (type), false);
+	if (r_type_link_offset (anal->sdb_types, type, addr) <= 0) {
+		return false;
+	}
+	r_anal_types_bump_dirty_epoch (anal);
+	return true;
 }
 
 static void save_struct(const RAnal *anal, const RAnalBaseType *type) {

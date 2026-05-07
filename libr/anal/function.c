@@ -1173,8 +1173,8 @@ static bool r_anal_apply_one_mutation(RAnal *anal, const RAnalMutation *mutation
 		if (!anal->sdb_types || R_STR_ISEMPTY (mutation->type) || !mutation->addr) {
 			return false;
 		}
-		return r_type_set_link (anal->sdb_types, mutation->type, mutation->addr) > 0
-			|| r_type_link_offset (anal->sdb_types, mutation->type, mutation->addr) > 0;
+		return r_anal_types_set_link (anal, mutation->type, mutation->addr)
+			|| r_anal_types_set_link_offset (anal, mutation->type, mutation->addr);
 	default:
 		return false;
 	}
