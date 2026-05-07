@@ -10,6 +10,7 @@
 #define FOSSIL_HEADER_VERSION 1
 #define FOSSIL_HEADER_OFFSET (128 * 1024)
 #define FOSSIL_HEADER_SIZE 512
+#define FOSSIL_MAX_BLOCK_SIZE (64 * 1024)
 #define FOSSIL_SUPER_MAGIC 0x2340a3b1
 #define FOSSIL_SUPER_VERSION 1
 #define FOSSIL_SUPER_SIZE 512
@@ -638,6 +639,14 @@ static bool fs_fossil_mount(RFSRoot *root) {
 	FossilFS *fs = R_NEW0 (FossilFS);
 	fs->iob = &root->iob;
 	fs->delta = root->delta;
+	ut64 io_size = 0;
+	if (fs->iob->io && fs->iob->io->desc && fs->iob->desc_size) {
+		io_size = fs->iob->desc_size (fs->iob->io->desc);
+	}
+	if (io_size <= fs->delta || io_size - fs->delta < FOSSIL_HEADER_OFFSET + FOSSIL_HEADER_SIZE) {
+		goto fail;
+	}
+	ut64 part_size = io_size - fs->delta;
 	ut8 buf[FOSSIL_HEADER_SIZE];
 	if (!fossil_read_at (fs, FOSSIL_HEADER_OFFSET, buf, sizeof (buf))) {
 		goto fail;
@@ -650,8 +659,19 @@ static bool fs_fossil_mount(RFSRoot *root) {
 	fs->label = r_read_be32 (buf + 12);
 	fs->data = r_read_be32 (buf + 16);
 	fs->end = r_read_be32 (buf + 20);
-	if (fs->block_size < 512 || (fs->block_size & (fs->block_size - 1))
+	if (fs->block_size < 512
+		|| (ut64)fs->block_size > FOSSIL_MAX_BLOCK_SIZE
+		|| (fs->block_size & (fs->block_size - 1))
 		|| fs->super >= fs->label || fs->label >= fs->data || fs->data >= fs->end) {
+		goto fail;
+	}
+	ut64 end_size = 0;
+	int lpb = fs->block_size / FOSSIL_LABEL_SIZE;
+	ut64 label_blocks = ((ut64)(fs->end - fs->data) + lpb - 1) / lpb;
+	if (label_blocks > fs->data - fs->label
+		|| r_mul_overflow ((ut64)fs->end, (ut64)fs->block_size, &end_size)
+		|| end_size < FOSSIL_HEADER_OFFSET + FOSSIL_HEADER_SIZE
+		|| end_size > part_size) {
 		goto fail;
 	}
 	ut8 sbuf[FOSSIL_SUPER_SIZE];
