@@ -575,6 +575,7 @@ static RBinReloc *reloc_convert(ELFOBJ* eo, RBinElfReloc *rel, ut64 got_addr) {
 		case R_AARCH64_NONE: break;
 		case R_AARCH64_GLOB_DAT: SET (64); break;
 		case R_AARCH64_JUMP_SLOT: SET (64); break;
+		case R_AARCH64_COPY: ADD (64, 0); break; // copy symbol at runtime
 		case R_AARCH64_RELATIVE: ADD (64, B); break;
 		// data references
 		case R_AARCH64_PREL16: ADD (16, B); break;
