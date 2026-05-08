@@ -1853,12 +1853,12 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 	}
 	if (value != 0 && value != UT64_MAX) {
 		if (pj) {
-			RListIter *iter;
+			RFlagItem **iter;
 			RFlagItem *f;
-			const RList *flags = r_flag_get_list (core->flags, value);
-			if (flags && !r_list_empty (flags)) {
+			const RVecFlagItemPtr *flags = r_flag_get_vec (core->flags, value);
+			if (flags && !RVecFlagItemPtr_empty (flags)) {
 				pj_ka (pj, "flags");
-				r_list_foreach (flags, iter, f) {
+				r_flag_item_vec_foreach (flags, iter, f) {
 					pj_s (pj, f->name);
 				}
 				pj_end (pj);

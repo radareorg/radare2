@@ -2921,15 +2921,15 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					r_cons_printf (core->cons, "/fcn.%s\n", fcn->name);
 				}
 			}
-			const RList *list = r_flag_get_list (core->flags, addr + j);
-			RListIter *iter;
+			const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, addr + j);
+			RFlagItem **iter;
 			RFlagItem *fi;
 			ut64 flagsize = 0;
 			ut64 flagaddr = 0;
 			bool found = false;
 			char *flagname = NULL;
 			ut64 at = addr + j;
-			if (r_list_empty (list)) {
+			if (!list || RVecFlagItemPtr_empty (list)) {
 				// get flag fnear and check for size
 				RFlagItem *fnear = r_flag_get_at (core->flags, at, true);
 				if (fnear) {
@@ -2951,7 +2951,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 					}
 				}
 			} else {
-				r_list_foreach (list, iter, fi) {
+				r_flag_item_vec_foreach (list, iter, fi) {
 					flagsize = R_MAX (flagsize, fi->size);
 					const char *fi_color = r_flag_item_set_color (core->flags, fi, NULL);
 					if (fi_color) {

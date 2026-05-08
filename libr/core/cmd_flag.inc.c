@@ -616,9 +616,8 @@ static void cmd_fz(RCore *core, const char *input) {
 		{
 			PJ *pj = r_core_pj_new (core);
 			pj_a (pj);
-			RListIter *iter;
 			RFlagZoneItem *zone;
-			r_list_foreach (core->flags->zones, iter, zone) {
+			R_VEC_FOREACH (&core->flags->zones, zone) {
 				pj_o (pj);
 				pj_kn (pj, "from", zone->from);
 				pj_kn (pj, "to", zone->to);
@@ -895,9 +894,15 @@ static void flag_ordinals(RCore *core, const char *str) {
 	free (pfx);
 }
 
-static int cmpflag(const void *_a, const void *_b) {
-	const RFlagItem *flag1 = _a , *flag2 = _b;
-	return (flag1->addr - flag2->addr);
+static int cmpflag(RFlagItem * const *a, RFlagItem * const *b) {
+	const RFlagItem *flag1 = *a, *flag2 = *b;
+	if (flag1->addr < flag2->addr) {
+		return -1;
+	}
+	if (flag1->addr > flag2->addr) {
+		return 1;
+	}
+	return 0;
 }
 
 static bool adjust_offset(RFlagItem *flag, void *user) {
@@ -991,21 +996,39 @@ static bool print_function_labels_cb(void *user, const ut64 addr, const void *v)
 	return true;
 }
 
+static void print_flag_color(RCore *core, RFlagItem *fi, bool rad) {
+	RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
+	if (!fim || !fim->color) {
+		return;
+	}
+	if (rad) {
+		char *fname = r_name_filter_dup (fi->name);
+		if (fname) {
+			r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
+			free (fname);
+		}
+		return;
+	}
+	char padstr[16];
+	r_str_pad (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
+	r_cons_printf (core->cons, "0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, padstr, fim->color);
+}
+
 static void cmd_fd_dot(RCore *core, const char *input) {
 	RFlagItem *flag;
-	RListIter *iter;
+	RFlagItem **iter;
 	const char *arg = strchr (input, ' ');
 	ut64 addr = core->addr;
 	if (arg) {
 		addr = r_num_math (core->num, arg + 1);
 	}
-	const RList *flaglist = r_flag_get_list (core->flags, addr);
+	const RVecFlagItemPtr *flaglist = r_flag_get_vec (core->flags, addr);
 	bool isJson = strchr (input, 'j') != NULL;
 	PJ *pj = isJson? r_core_pj_new (core): NULL;
 	if (pj) {
 		pj_a (pj);
 	}
-	r_list_foreach (flaglist, iter, flag) {
+	r_flag_item_vec_foreach (flaglist, iter, flag) {
 		if (isJson) {
 			pj_o (pj);
 			pj_ks (pj, "name", flag->name);
@@ -1103,15 +1126,15 @@ static void cmd_fd(RCore *core, const char *input) {
 				  return;
 			  }
 
-			  RList *temp = r_flag_all_list (core->flags, true);
+			  RVecFlagItemPtr *temp = r_flag_all_list (core->flags, true);
 			  ut64 loff = 0;
 			  ut64 uoff = 0;
 			  ut64 curseek = core->addr;
 			  char *lmatch = NULL , *umatch = NULL;
 			  RFlagItem *flag;
-			  RListIter *iter;
-			  r_list_sort (temp, &cmpflag);
-			  r_list_foreach (temp, iter, flag) {
+			  RFlagItem **iter;
+			  RVecFlagItemPtr_sort (temp, &cmpflag);
+			  r_flag_item_vec_foreach (temp, iter, flag) {
 				  if (strstr (flag->name , arg)) {
 					  if (flag->addr < core->addr) {
 						  loff = flag->addr;
@@ -1129,7 +1152,7 @@ static void cmd_fd(RCore *core, const char *input) {
 					  r_cons_println (core->cons, match);
 				  }
 			  }
-			  r_list_free (temp);
+			  RVecFlagItemPtr_free (temp);
 			  return;
 		  }
 		  break;
@@ -1841,28 +1864,26 @@ static int cmd_flag(void *data, const char *input) {
 			if (glob) {
 				glob++;
 			}
-			// collect all flags sorted by addr (skip list order), then single O(n) pass
-			RList *all_flags = r_list_newf (NULL);
-			r_flag_foreach (core->flags, listFlag, all_flags);
-			RListIter *iter;
-			RFlagItem *fi;
-			r_list_foreach (all_flags, iter, fi) {
+			RVecFlagItemPtr *all_flags = r_flag_all_list (core->flags, false);
+			size_t i;
+			for (i = 0; i < r_flag_item_vec_length (all_flags); i++) {
+				RFlagItem *fi = *RVecFlagItemPtr_at (all_flags, i);
 				if (fi->size != 0) {
 					continue;
 				}
 				if (glob && !r_str_glob (fi->name, glob)) {
 					continue;
 				}
-				RListIter *ni;
-				for (ni = iter->n; ni; ni = ni->n) {
-					RFlagItem *nf = ni->data;
+				size_t n;
+				for (n = i + 1; n < r_flag_item_vec_length (all_flags); n++) {
+					RFlagItem *nf = *RVecFlagItemPtr_at (all_flags, n);
 					if (nf->addr > fi->addr) {
 						fi->size = nf->addr - fi->addr;
 						break;
 					}
 				}
 			}
-			r_list_free (all_flags);
+			RVecFlagItemPtr_free (all_flags);
 		} else if (input[1] == ' ') { // "fl ..."
 			char *p, *arg = strdup (input + 2);
 			r_str_trim (arg);
@@ -1961,43 +1982,43 @@ static int cmd_flag(void *data, const char *input) {
 		break;
 	case 'c': // "fc"
 		if (input[1] == 0 || input[1] == '.') {
-			RList *list_to_free = input[1]? NULL: r_flag_all_list (core->flags, false);
-			const RList *list = input[1]? r_flag_get_list (core->flags, core->addr): list_to_free;
-			RListIter *iter;
 			RFlagItem *fi;
-			r_list_foreach (list, iter, fi) {
-				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
-				if (fim && fim->color) {
-					if (input[1] && input[2] == '*') {
-						char *fname = r_name_filter_dup (fi->name);
-						if (fname) {
-							r_cons_printf (core->cons, "'fc %s=%s\n", fname, fim->color);
-							free (fname);
-						}
-					} else {
-						char padstr[16];
-						r_str_pad (padstr, sizeof (padstr), ' ', 10 - strlen (fi->name));
-						r_cons_printf (core->cons, "0x%08"PFMT64x"  %s%s%s\n", fi->addr, fi->name, padstr, fim->color);
-					}
+			RVecFlagItemPtr *list_to_free = input[1]? NULL: r_flag_all_list (core->flags, false);
+			bool rad = input[1] && input[2] == '*';
+			RFlagItem **viter;
+			if (input[1]) {
+				const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, core->addr);
+				r_flag_item_vec_foreach (list, viter, fi) {
+					print_flag_color (core, fi, rad);
+				}
+			} else {
+				r_flag_item_vec_foreach (list_to_free, viter, fi) {
+					print_flag_color (core, fi, rad);
 				}
 			}
-			r_list_free (list_to_free);
+			RVecFlagItemPtr_free (list_to_free);
 		} else if (input[1] == '-') {
-			RListIter *iter;
 			RFlagItem *fi;
 			ut64 addr = (input[1] && input[2] != '*' && input[2]) ? r_num_math (core->num, input + 2): core->addr;
-			RList *list_to_free = (input[1] && input[2] == '*')? r_flag_all_list (core->flags, false): NULL;
-			const RList *list = (input[1] && input[2] == '*')?
-				list_to_free: r_flag_get_list (core->flags, addr);
-			r_list_foreach (list, iter, fi) {
-				r_flag_item_set_color (core->flags, fi, "");
+			if (input[1] && input[2] == '*') {
+				RFlagItem **iter;
+				RVecFlagItemPtr *list = r_flag_all_list (core->flags, false);
+				r_flag_item_vec_foreach (list, iter, fi) {
+					r_flag_item_set_color (core->flags, fi, "");
+				}
+				RVecFlagItemPtr_free (list);
+			} else {
+				RFlagItem **iter;
+				const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, addr);
+				r_flag_item_vec_foreach (list, iter, fi) {
+					r_flag_item_set_color (core->flags, fi, "");
+				}
 			}
-			r_list_free (list_to_free);
 		} else if (input[1] == '*') {
-			RListIter *iter;
+			RFlagItem **iter;
 			RFlagItem *fi;
-			RList *list = r_flag_all_list (core->flags, false);
-			r_list_foreach (list, iter, fi) {
+			RVecFlagItemPtr *list = r_flag_all_list (core->flags, false);
+			r_flag_item_vec_foreach (list, iter, fi) {
 				RFlagItemMeta *fim = r_flag_get_meta (core->flags, fi->id);
 				if (fim && fim->color) {
 					char *fname = r_name_filter_dup (fi->name);
@@ -2007,7 +2028,7 @@ static int cmd_flag(void *data, const char *input) {
 					}
 				}
 			}
-			r_list_free (list);
+			RVecFlagItemPtr_free (list);
 		} else if (input[1] == ' ') {
 			const char *ret;
 			char *arg = r_str_trim_dup (input + 2);
@@ -2028,11 +2049,11 @@ static int cmd_flag(void *data, const char *input) {
 					R_LOG_ERROR ("Unknown flag '%s'", arg);
 				}
 			} else {
-				const RList *list = r_flag_get_list (core->flags, core->addr);
+				const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, core->addr);
 				char *color = r_str_trim_dup (input + 2);
-				RListIter *iter;
+				RFlagItem **iter;
 				RFlagItem *fi;
-				r_list_foreach (list, iter, fi) {
+				r_flag_item_vec_foreach (list, iter, fi) {
 					r_flag_item_set_color (core->flags, fi, color);
 				}
 				free (color);
@@ -2185,15 +2206,15 @@ static int cmd_flag(void *data, const char *input) {
 		}
 		if (input[0] && input[1] == '.') {
 			const int mode = input[2];
-			const RList *list = r_flag_get_list (core->flags, core->addr);
+			const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, core->addr);
 			PJ *pj = NULL;
 			if (mode == 'j') {
 				pj = r_core_pj_new (core);
 				pj_a (pj);
 			}
-			RListIter *iter;
+			RFlagItem **iter;
 			RFlagItem *item;
-			r_list_foreach (list, iter, item) {
+			r_flag_item_vec_foreach (list, iter, item) {
 				switch (mode) {
 				case '*':
 					{
