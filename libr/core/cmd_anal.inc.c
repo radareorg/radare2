@@ -5889,7 +5889,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			nextele = r_list_iter_get_next (iter);
 			if (pj) {
 				pj_o (pj);
-				pj_kn (pj, "num", arg->src);
+pj_kn (pj, "num", arg->src);
 				RFlagItem *item = r_flag_get_in (core->flags, arg->src);
 				if (item) {
 					pj_ks (pj, "name", item->name);
@@ -5958,7 +5958,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 				// TODO: show value (string, flag if any in that address)
 				pj_o (pj);
 				pj_kn (pj, "num", v);
-				RFlagItem *item = r_flag_get_in (core->flags, v);
+RFlagItem *item = r_flag_get_in (core->flags, v);
 				if (item) {
 					pj_ks (pj, "name", item->name);
 				}
@@ -9233,12 +9233,12 @@ R_IPI void cmd_aei(RCore *core) {
 }
 
 R_IPI int core_type_by_addr(RCore *core, ut64 addr) {
-	RListIter *iter;
+	RFlagItem **iter;
 	RFlagItem *item;
 	bool has_flag = false;
 	int type = R_ANAL_REF_TYPE_DATA;
-	const RList *list = r_flag_get_list (core->flags, addr);
-	r_list_foreach (list, iter, item) {
+	const RVecFlagItemPtr *list = r_flag_get_vec (core->flags, addr);
+	r_flag_item_vec_foreach (list, iter, item) {
 		if (strchr (item->name, '.')) {
 			has_flag = true;
 			if (r_str_startswith (item->name, "str")) {
