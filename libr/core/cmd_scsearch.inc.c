@@ -3,15 +3,19 @@
 static const char *get_syscall_register(RCore *core) {
 	const char *sn = r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_SN);
 	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
-	if (!strcmp (cfg->arch, "arm") && cfg->bits == 64) {
+	const char *arch = cfg? cfg->arch: NULL;
+	if (arch && !strcmp (arch, "arm") && cfg->bits == 64) {
 		const char *os = cfg->os;
-		if (!os) {
+		if (R_STR_ISEMPTY (os)) {
 			os = r_config_get (core->config, "asm.os");
+		}
+		if (R_STR_ISEMPTY (os)) {
+			return sn;
 		}
 		if (!strcmp (os, "linux") || !strcmp (os, "android")) {
 			sn = "x8";
 		} else if (!strcmp (os, "macos")) {
-			sn= "x16";
+			sn = "x16";
 		}
 	}
 	return sn;
@@ -52,6 +56,8 @@ typedef struct {
 	ut64 value;
 } SyscallNumberHit;
 
+R_VEC_TYPE (RVecSyscallNumberHit, SyscallNumberHit);
+
 typedef enum {
 	SYSNUM_AT_NONE,
 	SYSNUM_AT_UNKNOWN,
@@ -60,8 +66,12 @@ typedef enum {
 
 typedef struct {
 	RAnalFunction *fcn;
-	RList *hits;
+	RVecSyscallNumberHit hits;
 } SyscallFunctionCache;
+
+static void syscall_function_cache_fini(SyscallFunctionCache *cache);
+
+R_VEC_TYPE_WITH_FINI (RVecSyscallFunctionCache, SyscallFunctionCache, syscall_function_cache_fini);
 
 typedef struct {
 	RCore *core;
@@ -70,7 +80,7 @@ typedef struct {
 	RAnalBlock **blocks;
 	SyscallRegState *states;
 	int blocks_count;
-	RList *hits;
+	RVecSyscallNumberHit *hits;
 	int *queue;
 	bool *queued;
 	int queue_len;
@@ -413,8 +423,9 @@ static void syscall_state_kill_regs(SyscallRegMap *map, SyscallRegState *state, 
 }
 
 static void syscall_state_kill_call(RCore *core, SyscallRegMap *map, SyscallRegState *state) {
-	const char *arch = r_config_get (core->config, "asm.arch");
-	int bits = core->anal->config->bits;
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const char *arch = cfg? cfg->arch: NULL;
+	int bits = cfg? cfg->bits: 0;
 	if (r_str_startswith (arch, "x86")) {
 		if (bits == 64) {
 			static const char * const regs[] = {
@@ -609,24 +620,26 @@ static void syscall_transfer_op(RCore *core, SyscallRegMap *map, SyscallRegState
 	}
 }
 
-static void syscall_record_hit(RList *hits, ut64 addr, SyscallRegValue value) {
+static bool syscall_record_hit(RVecSyscallNumberHit *hits, ut64 addr, SyscallRegValue value) {
 	SyscallNumberHit *hit;
-	RListIter *iter;
-	r_list_foreach (hits, iter, hit) {
+	R_VEC_FOREACH (hits, hit) {
 		if (hit->addr == addr) {
 			if (!hit->known || value.kind != SYSREG_VAL_CONST || hit->value != value.value) {
 				hit->known = false;
 			}
-			return;
+			return true;
 		}
 	}
-	hit = R_NEW0 (SyscallNumberHit);
+	hit = RVecSyscallNumberHit_emplace_back (hits);
+	if (!hit) {
+		return false;
+	}
 	hit->addr = addr;
 	if (value.kind == SYSREG_VAL_CONST) {
 		hit->known = true;
 		hit->value = value.value;
 	}
-	r_list_append (hits, hit);
+	return true;
 }
 
 static int syscall_block_index(SyscallFunctionAnalysis *analysis, RAnalBlock *bb) {
@@ -698,12 +711,17 @@ static bool syscall_analyze_block(SyscallFunctionAnalysis *analysis, int idx, co
 			break;
 		}
 		ret = r_anal_op (analysis->core->anal, &op, op_addr, buf + pos, bb->size - pos,
-			R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+			R_ARCH_OP_MASK_VAL);
 		if (ret > 0) {
 			int type = op.type & R_ANAL_OP_TYPE_MASK;
 			if (type == R_ANAL_OP_TYPE_SWI) {
-				syscall_record_hit (analysis->hits, op_addr,
-					syscall_state_read (analysis->regmap, &out, screg));
+				if (!syscall_record_hit (analysis->hits, op_addr,
+						syscall_state_read (analysis->regmap, &out, screg))) {
+					r_anal_op_fini (&op);
+					free (buf);
+					syscall_state_fini (&out);
+					return false;
+				}
 			}
 			syscall_transfer_op (analysis->core, analysis->regmap, &out, &op, screg);
 		}
@@ -716,35 +734,32 @@ static bool syscall_analyze_block(SyscallFunctionAnalysis *analysis, int idx, co
 	return true;
 }
 
-static void syscall_function_cache_free(SyscallFunctionCache *cache) {
+static void syscall_function_cache_fini(SyscallFunctionCache *cache) {
 	if (cache) {
-		r_list_free (cache->hits);
-		free (cache);
+		RVecSyscallNumberHit_fini (&cache->hits);
+		memset (cache, 0, sizeof (*cache));
 	}
 }
 
-static SyscallFunctionCache *syscall_function_cache_new(RCore *core, SyscallRegMap *regmap, RAnalFunction *fcn, const char *screg) {
+static bool syscall_function_cache_init(SyscallFunctionCache *cache, RCore *core, SyscallRegMap *regmap, RAnalFunction *fcn, const char *screg) {
 	SyscallFunctionAnalysis analysis = {0};
 	RListIter *iter;
 	RAnalBlock *bb;
 	int entry_idx = -1;
 	int i;
 
-	if (!fcn || !fcn->bbs || r_list_empty (fcn->bbs)) {
-		return NULL;
+	R_RETURN_VAL_IF_FAIL (cache && core && regmap && fcn && fcn->bbs, false);
+	if (r_list_empty (fcn->bbs)) {
+		return false;
 	}
-	SyscallFunctionCache *cache = R_NEW0 (SyscallFunctionCache);
+	memset (cache, 0, sizeof (*cache));
 	cache->fcn = fcn;
-	cache->hits = r_list_newf (free);
-	if (!cache->hits) {
-		free (cache);
-		return NULL;
-	}
+	RVecSyscallNumberHit_init (&cache->hits);
 	analysis.core = core;
 	analysis.fcn = fcn;
 	analysis.regmap = regmap;
 	analysis.blocks_count = r_list_length (fcn->bbs);
-	analysis.hits = cache->hits;
+	analysis.hits = &cache->hits;
 	analysis.blocks = calloc (analysis.blocks_count, sizeof (*analysis.blocks));
 	analysis.states = calloc (analysis.blocks_count, sizeof (*analysis.states));
 	analysis.queue = calloc (analysis.blocks_count, sizeof (*analysis.queue));
@@ -785,7 +800,7 @@ static SyscallFunctionCache *syscall_function_cache_new(RCore *core, SyscallRegM
 	free (analysis.states);
 	free (analysis.queue);
 	free (analysis.queued);
-	return cache;
+	return true;
 fail:
 	if (analysis.states) {
 		for (i = 0; i < analysis.blocks_count; i++) {
@@ -796,14 +811,13 @@ fail:
 	free (analysis.states);
 	free (analysis.queue);
 	free (analysis.queued);
-	syscall_function_cache_free (cache);
-	return NULL;
+	syscall_function_cache_fini (cache);
+	return false;
 }
 
-static SyscallFunctionCache *syscall_function_cache_find(RList *caches, RAnalFunction *fcn) {
+static SyscallFunctionCache *syscall_function_cache_find(RVecSyscallFunctionCache *caches, RAnalFunction *fcn) {
 	SyscallFunctionCache *cache;
-	RListIter *iter;
-	r_list_foreach (caches, iter, cache) {
+	R_VEC_FOREACH (caches, cache) {
 		if (cache->fcn == fcn) {
 			return cache;
 		}
@@ -811,18 +825,22 @@ static SyscallFunctionCache *syscall_function_cache_find(RList *caches, RAnalFun
 	return NULL;
 }
 
-static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *regmap, RList *caches, RAnalFunction *fcn, const char *screg, ut64 at, int *num) {
+static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *regmap, RVecSyscallFunctionCache *caches, RAnalFunction *fcn, const char *screg, ut64 at, int *num) {
 	SyscallFunctionCache *cache = syscall_function_cache_find (caches, fcn);
 	SyscallNumberHit *hit;
-	RListIter *iter;
 	if (!cache) {
-		cache = syscall_function_cache_new (core, regmap, fcn, screg);
-		if (!cache) {
+		SyscallFunctionCache tmp;
+		if (!syscall_function_cache_init (&tmp, core, regmap, fcn, screg)) {
 			return SYSNUM_AT_NONE;
 		}
-		r_list_append (caches, cache);
+		cache = RVecSyscallFunctionCache_emplace_back (caches);
+		if (!cache) {
+			syscall_function_cache_fini (&tmp);
+			return SYSNUM_AT_NONE;
+		}
+		*cache = tmp;
 	}
-	r_list_foreach (cache->hits, iter, hit) {
+	R_VEC_FOREACH (&cache->hits, hit) {
 		if (hit->addr == at) {
 			if (hit->known && hit->value <= 0xFFFFF) {
 				*num = (int)hit->value;
@@ -841,40 +859,36 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 	RAnalOp aop = {0};
 	int i, ret, bsize = R_MAX (64, core->blocksize);
 	int kwidx = core->search->n_kws;
-	RIOMap* map;
+	RIOMap *map;
 	RListIter *iter;
 	const int mininstrsz = r_arch_info (core->anal->arch, R_ARCH_INFO_MINOP_SIZE);
 	const int minopcode = R_MAX (1, mininstrsz);
-	int align = core->search->align;
-	const bool isx86 = r_str_startswith (r_config_get (core->config, "asm.arch"), "x86");
+	const int cfg_align = core->search->align;
+	const bool use_align = cfg_align > 0;
+	const int align = use_align? cfg_align: 1;
+	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const bool isx86 = r_str_startswith (cfg? cfg->arch: NULL, "x86");
 	SyscallRegMap regmap;
 	SyscallRegState local_state;
-	RList *fcn_cache = NULL;
+	RVecSyscallFunctionCache fcn_cache;
 	const char *screg = get_syscall_register (core);
+	ut8 *buf = malloc (bsize);
 
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
+		return;
+	}
 	if (!syscall_regmap_init (&regmap, core->anal->reg)) {
+		free (buf);
 		return;
 	}
 	if (!syscall_state_init (&local_state, &regmap, true)) {
+		free (buf);
 		syscall_regmap_fini (&regmap);
 		return;
 	}
-	fcn_cache = r_list_newf ((RListFree)syscall_function_cache_free);
-	if (!fcn_cache) {
-		syscall_state_fini (&local_state);
-		syscall_regmap_fini (&regmap);
-		return;
-	}
-	ut8 *buf = malloc (bsize);
-	if (!buf) {
-		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
-		r_list_free (fcn_cache);
-		syscall_state_fini (&local_state);
-		syscall_regmap_fini (&regmap);
-		return;
-	}
+	RVecSyscallFunctionCache_init (&fcn_cache);
 
-	ut64 oldoff = core->addr;
 	r_cons_break_push (core->cons, NULL, NULL);
 	if (param->pj) {
 		pj_o (param->pj);
@@ -900,14 +914,14 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			if (i >= (bsize - 32)) {
 				i = 0;
 			}
-			if (align && (at % align)) {
+			if (use_align && align > 1 && (at % align)) {
 				continue;
 			}
 			if (!i) {
 				r_io_read_at (core->io, at, buf, bsize);
 			}
 			ret = r_anal_op (core->anal, &aop, at, buf + i, bsize - i,
-				R_ARCH_OP_MASK_VAL | R_ARCH_OP_MASK_HINT);
+				R_ARCH_OP_MASK_VAL);
 			if (((aop.type & R_ANAL_OP_TYPE_MASK) == R_ANAL_OP_TYPE_SWI) && ret > 0) { // && (aop.val > 10)) {
 				int scVector = aop.val; // int 0x80, svc 0x70, ...
 				int scNumber = -1; // r0/eax/...
@@ -915,7 +929,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 				SyscallRegValue fallback = syscall_state_read (&regmap, &local_state, screg);
 				SyscallNumberAt fcn_num = SYSNUM_AT_NONE;
 				if (fcn) {
-					fcn_num = syscall_function_number_at (core, &regmap, fcn_cache, fcn, screg, at, &scNumber);
+					fcn_num = syscall_function_number_at (core, &regmap, &fcn_cache, fcn, screg, at, &scNumber);
 				}
 				if (fcn_num == SYSNUM_AT_NONE) {
 					scNumber = (fallback.kind == SYSREG_VAL_CONST && fallback.value <= 0xFFFFF)
@@ -992,7 +1006,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			}
 theverynext:
 			{
-				int inc = (core->search->align > 0)? core->search->align - 1: ret - 1;
+				int inc = use_align? align - 1: ret - 1;
 				if (inc < 0) {
 					inc = minopcode;
 				}
@@ -1003,17 +1017,16 @@ theverynext:
 				at += inc;
 				r_anal_op_fini (&aop);
 			}
+			}
 		}
-	}
 beach:
-	if (param->pj) {
-		pj_end (param->pj);
-		pj_end (param->pj);
+		if (param->pj) {
+			pj_end (param->pj);
+			pj_end (param->pj);
+		}
+		r_cons_break_pop (core->cons);
+		free (buf);
+		RVecSyscallFunctionCache_fini (&fcn_cache);
+		syscall_state_fini (&local_state);
+		syscall_regmap_fini (&regmap);
 	}
-	r_core_seek (core, oldoff, true);
-	r_cons_break_pop (core->cons);
-	free (buf);
-	r_list_free (fcn_cache);
-	syscall_state_fini (&local_state);
-	syscall_regmap_fini (&regmap);
-}

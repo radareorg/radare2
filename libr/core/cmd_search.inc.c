@@ -2012,7 +2012,7 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	r_esil_free (esil);
 }
 
-#include "cmd_search_syscall.inc.c"
+#include "cmd_scsearch.inc.c"
 
 static void cb_ref_hit(RCore *core, const RAnalRef *ref, ut64 from, ut64 to, struct search_parameters *param) {
 	ut8 buf[32];
