@@ -413,11 +413,11 @@ static int cmd_seek_opcode_forward(RCore *core, int numinstr) {
 
 static RFlagItem *find_adjacent_function_flag(RCore *core, bool next) {
 	RFlagItem *target = NULL;
-	RList *flags = r_flag_all_list (core->flags, false);
+	RVecFlagItemPtr *flags = r_flag_all_list (core->flags, false);
 	if (flags) {
-		RListIter *iter;
+		RFlagItem **iter;
 		RFlagItem *flag;
-		r_list_foreach (flags, iter, flag) {
+		r_flag_item_vec_foreach (flags, iter, flag) {
 			if (r_str_startswith (flag->name, "fcn.")) {
 				if (next) {
 					if (flag->addr > core->addr && (!target || flag->addr < target->addr)) {
@@ -430,7 +430,7 @@ static RFlagItem *find_adjacent_function_flag(RCore *core, bool next) {
 				}
 			}
 		}
-		r_list_free (flags);
+		RVecFlagItemPtr_free (flags);
 	}
 	return target;
 }
