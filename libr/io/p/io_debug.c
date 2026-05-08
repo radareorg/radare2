@@ -23,7 +23,11 @@
 #if __APPLE__
 #if !__POWERPC__
 #include <spawn.h>
+#include <libproc.h>
+#include <sys/proc_info.h>
 #endif
+#include <sys/proc.h>
+#include <sys/sysctl.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <mach/exception_types.h>
@@ -359,6 +363,122 @@ static int platform_fork_and_ptraceme(RIO *io, int bits, const char *cmd) {
 }
 #endif // __APPLE__ && !__POWERPC__
 
+#if __APPLE__ && !__POWERPC__
+static bool io_debug_is_translated_x86(int pid) {
+#if defined(P_TRANSLATED) && defined(PROC_PIDARCHINFO) && defined(PROC_PIDARCHINFO_SIZE) && \
+	defined(CPU_TYPE_X86) && defined(CPU_TYPE_X86_64) && \
+	(__arm64 || __aarch64 || __arm64__ || __aarch64__ || __arm64e__)
+	struct kinfo_proc kp;
+	size_t len = sizeof (kp);
+	int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_PID, pid };
+	if (sysctl (mib, 4, &kp, &len, NULL, 0) || !len || !(kp.kp_proc.p_flag & P_TRANSLATED)) {
+		return false;
+	}
+	struct proc_archinfo pai;
+	int ret = proc_pidinfo (pid, PROC_PIDARCHINFO, 0, &pai, PROC_PIDARCHINFO_SIZE);
+	return ret == PROC_PIDARCHINFO_SIZE && (pai.p_cputype == CPU_TYPE_X86 || pai.p_cputype == CPU_TYPE_X86_64);
+#else
+	return false;
+#endif
+}
+
+static char *io_debug_debugserver_path(RIO *io, bool translated_x86) {
+	(void)io;
+	char *configured = r_sys_getenv ("R2_DEBUGSERVER");
+	if (R_STR_ISNOTEMPTY (configured) && r_file_exists (configured)) {
+		return configured;
+	}
+	free (configured);
+	if (translated_x86) {
+		const char *oah_debugserver = "/Library/Apple/usr/libexec/oah/debugserver";
+		if (r_file_exists (oah_debugserver)) {
+			return strdup (oah_debugserver);
+		}
+	}
+	char *path = r_file_path ("debugserver");
+	if (R_STR_ISNOTEMPTY (path) && r_file_exists (path)) {
+		return path;
+	}
+	free (path);
+	const char *clt_debugserver = "/Library/Developer/CommandLineTools/Library/PrivateFrameworks/LLDB.framework/Versions/A/Resources/debugserver";
+	if (r_file_exists (clt_debugserver)) {
+		return strdup (clt_debugserver);
+	}
+	return NULL;
+}
+
+static bool io_debug_is_oah_debugserver(const char *path) {
+	return path && strstr (path, "/oah/debugserver");
+}
+
+static int io_debug_spawn_debugserver(const char *path, int port, bool translated_x86) {
+	if (R_STR_ISEMPTY (path)) {
+		return -1;
+	}
+	pid_t pid = -1;
+	char endpoint[64];
+	snprintf (endpoint, sizeof (endpoint), "127.0.0.1:%d", port);
+	char *argv[] = {
+		(char *)path,
+		endpoint,
+		NULL
+	};
+	posix_spawn_file_actions_t file_actions;
+	posix_spawn_file_actions_init (&file_actions);
+	posix_spawn_file_actions_addopen (&file_actions, STDOUT_FILENO, R_SYS_DEVNULL, O_WRONLY, 0);
+	posix_spawn_file_actions_addopen (&file_actions, STDERR_FILENO, R_SYS_DEVNULL, O_WRONLY, 0);
+	posix_spawnattr_t attr = {0};
+	posix_spawnattr_init (&attr);
+	if (translated_x86 && !io_debug_is_oah_debugserver (path)) {
+		size_t copied = 1;
+		cpu_type_t cpu = CPU_TYPE_X86_64;
+		posix_spawnattr_setbinpref_np (&attr, 1, &cpu, &copied);
+	}
+	extern char **environ;
+	int ret = posix_spawn (&pid, path, &file_actions, &attr, argv, environ);
+	posix_spawnattr_destroy (&attr);
+	posix_spawn_file_actions_destroy (&file_actions);
+	if (ret) {
+		return -1;
+	}
+	return pid;
+}
+
+static RIODesc *io_debug_open_rosetta(RIO *io, int target_pid, int rw, int mode) {
+	char *debugserver = io_debug_debugserver_path (io, true);
+	if (!debugserver) {
+		R_LOG_WARN ("Rosetta x86 debugging needs debugserver; falling back to native XNU");
+		return NULL;
+	}
+	RIODesc *ret = NULL;
+	int i;
+	for (i = 0; i < 8 && !ret; i++) {
+		int port = 31350 + (r_num_rand (2000) % 2000);
+		int debugserver_pid = io_debug_spawn_debugserver (debugserver, port, true);
+		if (debugserver_pid < 0) {
+			continue;
+		}
+		r_sys_usleep (200000);
+		char uri[128];
+		snprintf (uri, sizeof (uri), "gdb://127.0.0.1:%d/%d", port, target_pid);
+		RIOPlugin *plugin = r_io_plugin_resolve (io, uri, false);
+		if (plugin && plugin->open) {
+			ret = plugin->open (io, uri, rw, mode);
+		}
+		if (!ret) {
+			kill (debugserver_pid, SIGTERM);
+		}
+	}
+	free (debugserver);
+	if (ret) {
+		R_LOG_INFO ("Using debugserver for Rosetta x86 process %d", target_pid);
+	} else {
+		R_LOG_WARN ("Cannot start debugserver for Rosetta x86 process %d; falling back to native XNU", target_pid);
+	}
+	return ret;
+}
+#endif
+
 #if (!(__APPLE__ && !__POWERPC__))
 typedef struct fork_child_data_t {
 	RIO *io;
@@ -515,6 +635,12 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 				c->dbg->user = wrap;
 			}
 #elif __APPLE__
+			if (io_debug_is_translated_x86 (pid)) {
+				ret = io_debug_open_rosetta (io, pid, rw, mode);
+				if (ret) {
+					return ret;
+				}
+			}
 			snprintf (uri, sizeof (uri), "smach://%d", pid); //s is for spawn
 			_plugin = r_io_plugin_resolve (io, (const char *)uri + 1, false);
 			if (!_plugin || !_plugin->open || !_plugin->close) {
@@ -531,6 +657,14 @@ static RIODesc *__open(RIO *io, const char *file, int rw, int mode) {
 			ret = _plugin->open (io, uri, rw, mode);
 #endif
 		} else {
+#if __APPLE__
+			if (io_debug_is_translated_x86 (pid)) {
+				ret = io_debug_open_rosetta (io, pid, rw, mode);
+				if (ret) {
+					return ret;
+				}
+			}
+#endif
 			snprintf (uri, sizeof (uri), "attach://%d", pid);
 			_plugin = r_io_plugin_resolve (io, (const char *)uri, false);
 			if (!_plugin || !_plugin->open) {
