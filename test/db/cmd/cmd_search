@@ -889,6 +889,78 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=/as x86_64 syscall number before local window
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 41bdca0000009090909090909090904489e80f05b80e0000000f054489e80f05
+/as
+EOF
+EXPECT=<<EOF
+0x00000012 futex
+0x00000019 rt_sigprocmask
+0x0000001e futex
+EOF
+RUN
+
+NAME=/as x86_64 syscall search repeatability
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 41bdca0000009090909090909090904489e80f05b80e0000000f054489e80f05
+/as
+?e --
+/as
+?e --
+/as
+EOF
+EXPECT=<<EOF
+0x00000012 futex
+0x00000019 rt_sigprocmask
+0x0000001e futex
+--
+0x00000012 futex
+0x00000019 rt_sigprocmask
+0x0000001e futex
+--
+0x00000012 futex
+0x00000019 rt_sigprocmask
+0x0000001e futex
+EOF
+RUN
+
+NAME=/as x86_64 syscall narrow register write
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 31c0b03c0f05
+/as
+EOF
+EXPECT=<<EOF
+0x00000004 exit
+EOF
+RUN
+
+NAME=/as x86_64 function unknown skips linear fallback
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=64
+e asm.os=linux
+wx 83ff007407b8ca000000eb05b80e0000000f05
+af @ 0
+/as
+EOF
+EXPECT=<<EOF
+EOF
+RUN
+
 NAME=search.from/to for /s
 FILE=bins/elf/analysis/x86-simple
 CMDS=<<EOF
@@ -1566,6 +1638,7 @@ EXPECT=<<EOF
 0x00056129 rt_sigqueueinfo
 0x00059005 getrandom
 0x0005903d getrandom
+0x000590c0 getrandom
 0x00061f39 kill
 0x00070b89 rename
 0x00070bbc renameat
@@ -1579,23 +1652,32 @@ EXPECT=<<EOF
 0x0009cb46 futex
 0x0009cb65 futex
 0x0009cff8 futex
+0x0009d09a futex
 0x0009d0e8 futex
 0x0009d1c4 futex
 0x0009d208 futex
 0x0009d35a tgkill
 0x0009d3c2 tgkill
+0x0009d415 futex
+0x0009df7b futex
+0x0009e06b futex
 0x0009e0d2 futex
+0x0009e108 futex
 0x0009e19a futex
+0x0009e59e futex
 0x0009e616 futex
 0x0009e63e futex
-0x0009e6bb read
+0x0009e6bb futex
+0x0009e84c futex
+0x0009e8c3 futex
 0x0009e9e3 futex
 0x0009ea6c futex
-0x0009eaeb read
-0x0009ec3c read
+0x0009eaeb futex
+0x0009ec3c futex
 0x0009ec91 futex
 0x0009ece4 futex
 0x0009ed46 futex
+0x0009ee5d futex
 0x0009eefd futex
 0x0009f098 futex
 0x0009f391 futex
@@ -1608,6 +1690,7 @@ EXPECT=<<EOF
 0x0009fcc8 rt_sigprocmask
 0x0009fd7c exit
 0x0009fddd futex
+0x0009fe7e futex
 0x000a0421 rt_sigprocmask
 0x000a04e1 rt_sigprocmask
 0x000a0586 rt_sigprocmask
@@ -1622,15 +1705,14 @@ EXPECT=<<EOF
 0x000a1ac5 gettid
 0x000a1ada tgkill
 0x000a1d2f futex
-0x000a1e63 read
-0x000a2031 read
+0x000a1e63 futex
+0x000a2031 futex
 0x000a2191 futex
 0x000a28a5 futex
 0x000a2aac futex
-0x000a2be3 read
-0x000a2dad rt_sigtimedwait
+0x000a2be3 futex
 0x000a2f29 futex
-0x000a3459 read
+0x000a3459 futex
 0x000a34d3 futex
 0x000a37d9 futex
 0x000a3e98 futex
@@ -1639,11 +1721,14 @@ EXPECT=<<EOF
 0x000a4771 futex
 0x000a4ad4 futex
 0x000a4b04 futex
+0x000a4f56 futex
 0x000a4fee futex
 0x000a503c futex
+0x000a522c futex
 0x000a55a7 futex
 0x000a55ce futex
 0x000a565e futex
+0x000a5844 futex
 0x000a5a38 futex
 0x000a5de5 futex
 0x000a5e0c futex
@@ -1664,7 +1749,6 @@ EXPECT=<<EOF
 0x000a9b1d rt_sigprocmask
 0x000a9b4d rt_sigprocmask
 0x000a9d26 rt_sigprocmask
-0x000a9f42 rt_sigtimedwait
 0x000aa000 rt_sigqueueinfo
 0x000aabe9 close
 0x000aaf29 mq_notify
@@ -1779,6 +1863,8 @@ EXPECT=<<EOF
 0x00143586 read
 0x001435bc pread64
 0x001435f9 write
+0x001437ed ioctl
+0x00143816 ioctl
 0x001438e8 ioctl
 0x00143a2f ioctl
 0x00143a63 ioctl
@@ -1887,9 +1973,9 @@ EXPECT=<<EOF
 0x001501bf shmctl
 0x00150437 writev
 0x00150477 writev
-0x00150531 read
-0x0015059a read
-0x001505b9 read
+0x00150531 writev
+0x0015059a writev
+0x001505b9 writev
 0x001506b1 writev
 0x0015c14b read
 0x001676bb close
@@ -1897,8 +1983,8 @@ EXPECT=<<EOF
 0x0016794d close
 0x0016dd66 writev
 0x00176910 rt_sigqueueinfo
+0x0017726a futex
 0x00196a7f futex
-0x00013959 write
 EOF
 RUN
 
