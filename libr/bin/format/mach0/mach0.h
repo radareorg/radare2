@@ -124,6 +124,13 @@ struct reloc_t {
 
 R_VEC_TYPE (RVecMach0Reloc, struct reloc_t);
 
+typedef struct {
+	ut64 paddr;
+	ut64 vaddr;
+} RMach0RelocFixup;
+
+R_VEC_TYPE (RVecMach0RelocFixup, RMach0RelocFixup);
+
 struct addr_t {
 	ut64 offset;
 	ut64 addr;
@@ -259,7 +266,7 @@ struct MACH0_(obj_t) {
 	RVecRBinImport imports_cache;
 	bool relocs_loaded;
 	RVecMach0Reloc relocs_cache;
-	RList *reloc_fixups;
+	RVecMach0RelocFixup reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	int limit; // user defined

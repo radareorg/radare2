@@ -1954,6 +1954,7 @@ static int init_items(struct MACH0_(obj_t) * mo) {
 	mo->has_crypto = false;
 	mo->segments_vec = NULL;
 	RVecMach0Lib_init (&mo->libs_cache);
+	RVecMach0RelocFixup_init (&mo->reloc_fixups);
 
 	if (mo->hdr.sizeofcmds > 0 && fits_in (mo->size, cmds_begin, mo->hdr.sizeofcmds)) {
 		cmds_end = cmds_begin + mo->hdr.sizeofcmds;
@@ -2487,6 +2488,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	if (mo->relocs_loaded) {
 		RVecMach0Reloc_fini (&mo->relocs_cache);
 	}
+	RVecMach0RelocFixup_fini (&mo->reloc_fixups);
 	free_chained_starts (mo);
 	sdb_free (mo->kv);
 	r_unref (mo->b);

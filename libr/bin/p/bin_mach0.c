@@ -343,14 +343,11 @@ static RList *relocs(RBinFile *bf) {
 		ptr->paddr = reloc->offset;
 		r_list_append (ret, ptr);
 	}
-	if (mo->reloc_fixups) {
-		RBinReloc *r;
-		RListIter *iter;
-
-		r_list_foreach (mo->reloc_fixups, iter, r) {
+	if (!RVecMach0RelocFixup_empty (&mo->reloc_fixups)) {
+		RMach0RelocFixup *r;
+		R_VEC_FOREACH (&mo->reloc_fixups, r) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			ptr->type = R_BIN_RELOC_64;
-			ptr->ntype = r->ntype;
 			ut64 paddr = r->paddr + mo->baddr;
 			ptr->vaddr = paddr;
 			ptr->paddr = r->vaddr;
@@ -517,25 +514,23 @@ static RList* patch_relocs(RBinFile *bf) {
 #if 1
 	// XXX for some reason we are patching this twice as relocs and fixups
 	// may be good to find out why and comment back this code with an if0
-	int relocs_count = 0;
+	ut64 relocs_count = 0;
 	// fixups are now considered part of the relocs listing
-	if (mo->reloc_fixups != NULL) {
-		relocs_count = r_list_length (mo->reloc_fixups);
+	if (!RVecMach0RelocFixup_empty (&mo->reloc_fixups)) {
+		relocs_count = RVecMach0RelocFixup_length (&mo->reloc_fixups);
 	}
-	if (mo->reloc_fixups && relocs_count > 0) {
+	if (relocs_count > 0) {
 		ut8 buf[8], obuf[8];
-		RBinReloc *r;
-		RListIter *iter2;
-
-		int count = relocs_count;
+		RMach0RelocFixup *r;
+		ut64 count = relocs_count;
 		if (mo->limit > 0) {
-			if (relocs_count > mo->limit) {
+			if (relocs_count > (ut64)mo->limit) {
 				R_LOG_WARN ("mo.limit for relocs");
 			}
 			count = mo->limit;
 		}
-		r_list_foreach (mo->reloc_fixups, iter2, r) {
-			if (count-- < 0) {
+		R_VEC_FOREACH (&mo->reloc_fixups, r) {
+			if (!count--) {
 				break;
 			}
 			ut64 paddr = r->paddr + mo->baddr;
@@ -650,17 +645,20 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 	ctx.off = off;
 	MACH0_(iterate_chained_fixups) (obj, off, off + count,
 		R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
+	RVecMach0RelocFixup_shrink_to_fit (&obj->reloc_fixups);
 	obj->b = ob;
 //	bf->buf = nb; // ???
 	return nb;
 }
 
-static void add_fixup(RList *list, ut64 addr, ut64 value) {
-	RBinReloc *r = R_NEW0 (RBinReloc);
-	r->type = R_BIN_RELOC_64;
-	r->vaddr = value;
-	r->paddr = addr;
-	r_list_append (list, r);
+static bool add_fixup(RVecMach0RelocFixup *fixups, ut64 addr, ut64 value) {
+	RMach0RelocFixup *r = RVecMach0RelocFixup_emplace_back (fixups);
+	if (r) {
+		r->paddr = addr;
+		r->vaddr = value;
+		return true;
+	}
+	return false;
 }
 
 static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
@@ -673,11 +671,6 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 		R_LOG_WARN ("rebase_buffer_callback2: invalid ptr_size %u, skipping", psz);
 		return false;
 	}
-	RList *rflist = obj->reloc_fixups;
-	if (!rflist) {
-		rflist = r_list_newf (free);
-		obj->reloc_fixups = rflist;
-	}
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
@@ -685,7 +678,9 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			ut8 data[8] = {0};
 			r_buf_write_at (buf, in_buf, (const ut8*)"\x00\x00\x00\x00\x00\x00\x00", psz);
 			r_buf_read_at (buf, in_buf, data, psz);
-			add_fixup (rflist, in_buf, 0);
+			if (!add_fixup (&obj->reloc_fixups, in_buf, 0)) {
+				return false;
+			}
 			if (data[0]) {
 				R_LOG_ERROR ("DATA0 write has failed");
 			}
@@ -696,7 +691,9 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 		{
 			ut8 data[8] = {0};
 			ut64 v = event_details->ptr_value;
-			add_fixup (rflist, in_buf, v);
+			if (!add_fixup (&obj->reloc_fixups, in_buf, v)) {
+				return false;
+			}
 			memcpy (&data, &v, psz);
 			r_buf_write_at (buf, in_buf, data, psz);
 		}
