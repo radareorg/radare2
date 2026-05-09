@@ -4350,6 +4350,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
 	SETB ("bin.relocs", "true", "load relocs information at startup if available");
 	SETB ("bin.relocs.apply", "false", "apply reloc information");
+	SETB ("bin.relocs.xrefs", "true", "register xrefs from reloc information");
 	SETICB ("bin.maxsymlen", 0, &cb_binmaxsymlen, "maximum length for symbol names");
 	SETICB ("bin.str.min", 0, &cb_binminstr, "minimum string length for r_bin");
 	SETICB ("bin.str.max", 0, &cb_binmaxstr, "maximum string length for r_bin");

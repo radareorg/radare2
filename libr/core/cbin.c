@@ -1862,6 +1862,7 @@ typedef struct {
 	bool keep_lib;
 	const char *lang;
 	bool is_sandbox;
+	bool reloc_xrefs;
 	bool is_pe;
 	bool is32;
 } RelocInfo;
@@ -1870,6 +1871,7 @@ static void ri_init(RCore *core, RelocInfo *ri) {
 	ri->core = core;
 	ri->bin_demangle = r_config_get_b (core->config, "bin.demangle");
 	ri->keep_lib = r_config_get_b (core->config, "bin.demangle.pfxlib");
+	ri->reloc_xrefs = r_config_get_b (core->config, "bin.relocs.xrefs");
 	ri->lang = r_config_get (core->config, "bin.lang");
 	const RBinInfo *info = r_bin_get_info (core->bin);
 	const char *rclass = info->rclass;
@@ -1944,8 +1946,9 @@ static void set_bin_relocs(RelocInfo *ri, RBinReloc *reloc, ut64 addr, Sdb **db,
 			R_LOG_DEBUG ("Naming fixup reloc with string %s", name);
 			free (reloc_name);
 			reloc_name = r_str_newf ("fixup.%s", name);
-			// add xref from fixup to string
-			r_anal_xrefs_set (core->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
+			if (ri->reloc_xrefs) {
+				r_anal_xrefs_set (core->anal, reloc->vaddr, reloc->addend, R_ANAL_REF_TYPE_DATA);
+			}
 		} else {
 			free (reloc_name);
 			return;
