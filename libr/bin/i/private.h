@@ -28,6 +28,8 @@ R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
 R_IPI RRBTree *r_bin_object_patch_relocs(RBinFile *binfile, RBinObject *o);
 
+R_IPI bool r_bin_name_is_unnamed(const char *name);
+
 R_IPI const char *r_bin_lang_tostring(int lang);
 R_IPI int r_bin_lang_type(RBinFile *binfile, const char *def, const char *sym);
 R_IPI bool r_bin_lang_swift(RBinFile *binfile);

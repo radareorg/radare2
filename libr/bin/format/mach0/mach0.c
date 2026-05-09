@@ -3481,9 +3481,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 					continue;
 				}
 			} else {
-				if (!load_unnamed) {
-					continue;
-				}
 				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}
 			if (is_stripped && !apple_symbol (sym_name)) {

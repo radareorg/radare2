@@ -25,6 +25,17 @@ nth paddr      vaddr      bind   type size lib name       demangled
 EOF
 RUN
 
+NAME=NE preserve unnamed entry symbols
+ARGS=-e bin.unnamed=false
+FILE=bins/fuzzed/nepocaligns-17
+CMDS=<<EOF
+is~entry~?
+EOF
+EXPECT=<<EOF
+40
+EOF
+RUN
+
 NAME=NE Segments
 FILE=bins/ne/anim8.exe
 CMDS=iSS
