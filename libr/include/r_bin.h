@@ -732,6 +732,8 @@ typedef struct r_bin_reloc_t {
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 visibility;
+	// When true, import is a borrowed pointer owned outside the reloc.
+	bool import_borrowed;
 	/* is_ifunc: indirect function, `addend` points to a resolver function
 	 * that returns the actual relocation value, e.g. chooses
 	 * an optimized version depending on the CPU.
@@ -840,7 +842,9 @@ R_API void r_bin_string_free(void *_str);
 
 static inline void r_bin_reloc_free(RBinReloc *reloc) {
 	if (reloc) {
-		r_bin_import_free (reloc->import);
+		if (!reloc->import_borrowed) {
+			r_bin_import_free (reloc->import);
+		}
 		free (reloc);
 	}
 }

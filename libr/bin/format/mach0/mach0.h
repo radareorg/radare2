@@ -117,9 +117,12 @@ struct reloc_t {
 	int ord;
 	char name[256];
 	bool external;
+	bool ord_is_import;
 	bool pc_relative;
 	ut8 size;
 };
+
+R_VEC_TYPE (RVecMach0Reloc, struct reloc_t);
 
 struct addr_t {
 	ut64 offset;
@@ -255,7 +258,7 @@ struct MACH0_(obj_t) {
 	bool imports_loaded;
 	RVecRBinImport imports_cache;
 	bool relocs_loaded;
-	RSkipList *relocs_cache;
+	RVecMach0Reloc relocs_cache;
 	RList *reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
@@ -293,7 +296,8 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) *mo);
 const bool MACH0_(load_symbols)(struct MACH0_(obj_t) *mo);
 void MACH0_(pull_symbols)(struct MACH0_(obj_t) *mo, RBinSymbolCallback cb, void *user);
 RVecRBinImport *MACH0_(load_imports)(RBinFile* bf, struct MACH0_(obj_t) *bin);
-const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
+const RVecMach0Reloc *MACH0_(load_relocs)(struct MACH0_(obj_t) *bin);
+const struct reloc_t *MACH0_(find_reloc)(const RVecMach0Reloc *relocs, ut64 addr);
 struct addr_t *MACH0_(get_entrypoint)(struct MACH0_(obj_t) *bin);
 const RVecMach0Lib *MACH0_(load_libs)(struct MACH0_(obj_t) *bin);
 ut64 MACH0_(get_baddr)(struct MACH0_(obj_t) *bin);

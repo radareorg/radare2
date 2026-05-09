@@ -209,7 +209,7 @@ static void get_objc_property_list_of_lists(RBinFile *bf, RBinClass *klass, mach
 static void get_method_list_of_lists(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p);
 static void get_protocol_list_of_lists(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
 static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p);
-static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi);
+static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RVecMach0Reloc *relocs, objc_cache_opt_info *oi);
 static bool read_ptr_pa(RBinFile *bf, ut64 paddr, mach0_ut *out);
 static bool read_ptr_va(RBinFile *bf, ut64 vaddr, mach0_ut *out);
 static char *readstr(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left);
@@ -1351,7 +1351,7 @@ static mach0_ut get_isa_value(void) {
 	return 0;
 }
 
-void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, const RSkipList *relocs, objc_cache_opt_info *oi) {
+void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, const RVecMach0Reloc *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
 	RBin *bin = bf->rbin;
 	bool trylib = bin? bin->options.demangle_trylib: false;
@@ -1425,14 +1425,11 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 			free (klass_name);
 		}
 	} else if (relocs) {
-		struct reloc_t reloc_at_class_addr = {
-			.addr = p + sizeof (mach0_ut)
-		};
-		RSkipListNode *found = r_skiplist_find (relocs, &reloc_at_class_addr);
+		const struct reloc_t *found = MACH0_(find_reloc) (relocs, p + sizeof (mach0_ut));
 		if (found) {
 			const char _objc_class[] = "_OBJC_CLASS_$_";
 			const size_t _objc_class_len = strlen (_objc_class);
-			const char *target_class_name = (char*) ((struct reloc_t*) found->data)->name;
+			const char *target_class_name = found->name;
 			if (r_str_startswith (target_class_name, _objc_class)) {
 				RBinName *sup = r_bin_name_new (target_class_name);
 				target_class_name += _objc_class_len;
@@ -1765,7 +1762,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		return NULL;
 	}
 	const bool bigendian = bf->bo->info->big_endian;
-	const RSkipList *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
+	const RVecMach0Reloc *relocs = MACH0_(load_relocs) (bf->bo->bin_obj);
 
 	/* check if it's Swift */
 	MetaSections ms = metadata_sections_init (bf);
@@ -1895,7 +1892,7 @@ get_classes_error:
 	return NULL;
 }
 
-static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSkipList *relocs, objc_cache_opt_info *oi) {
+static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RVecMach0Reloc *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj && bf->bo->info, NULL);
 	R_LOG_DEBUG ("parse objc categories");
 	const size_t ptr_size = sizeof (mach0_ut);
@@ -1963,7 +1960,7 @@ error:
 	return NULL;
 }
 
-void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RSkipList *relocs, objc_cache_opt_info *oi) {
+void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RVecMach0Reloc *relocs, objc_cache_opt_info *oi) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info);
 
 	struct MACH0_(SCategory) c = {0};
@@ -2022,9 +2019,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 			R_FREE (category_name);
 			return;
 		}
-		struct reloc_t reloc_at_class_addr;
-		reloc_at_class_addr.addr = p + ptr_size;
-		RSkipListNode *found = r_skiplist_find (relocs, &reloc_at_class_addr);
+		const struct reloc_t *found = MACH0_(find_reloc) (relocs, p + ptr_size);
 		if (!found) {
 			R_FREE (category_name);
 			return;
@@ -2032,7 +2027,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 
 		const char _objc_class[] = "_OBJC_CLASS_$_";
 		const int _objc_class_len = strlen (_objc_class);
-		target_class_name = (char*) ((struct reloc_t*) found->data)->name;
+		target_class_name = (char*)found->name;
 		if (!r_str_startswith (target_class_name, _objc_class)) {
 			R_FREE (category_name);
 			return;

@@ -6,8 +6,6 @@
 #include "objc/mach0_classes.h"
 #include <sdb/ht_uu.h>
 
-R_VEC_TYPE (RVecExtReloc, struct reloc_t *);
-
 typedef struct {
 	ut8 *buf;
 	int count;
@@ -277,6 +275,21 @@ static RBinImport *import_from_name(RBin *rbin, const char *orig_name, HtPP *imp
 	return ptr;
 }
 
+static RBinImport *reloc_import(RBin *rbin, struct MACH0_(obj_t) *mo, RVecRBinImport *imports, const struct reloc_t *reloc, bool *borrowed) {
+	*borrowed = false;
+	if (reloc->ord_is_import && reloc->ord >= 0) {
+		RBinImport *imp = RVecRBinImport_at (imports, reloc->ord);
+		if (imp) {
+			*borrowed = true;
+			return imp;
+		}
+	}
+	if (reloc->name[0]) {
+		return import_from_name (rbin, reloc->name, mo->imports_by_name);
+	}
+	return NULL;
+}
+
 static bool imports_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinObject *bo = bf->bo;
@@ -298,18 +311,20 @@ static bool imports_vec(RBinFile *bf) {
 static RList *relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
-	const RSkipList *relocs = MACH0_(load_relocs) (mo);
+	const RVecMach0Reloc *relocs = MACH0_(load_relocs) (mo);
 	if (!relocs) {
 		return NULL;
 	}
 	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
+	if (!ret) {
+		return NULL;
+	}
 
 	RVecRBinImport *imports = mo->imports_loaded
 		? &mo->imports_cache
 		: &bf->bo->imports_vec;
-	RSkipListNode *it;
 	struct reloc_t *reloc;
-	r_skiplist_foreach (relocs, it, reloc) {
+	R_VEC_FOREACH (relocs, reloc) {
 		if (reloc->external) {
 			continue;
 		}
@@ -317,14 +332,11 @@ static RList *relocs(RBinFile *bf) {
 		ptr->type = reloc->type;
 		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
-		RBinImport *imp = NULL;
-		if (reloc->name[0]) {
-			imp = import_from_name (bf->rbin, (char*) reloc->name, mo->imports_by_name);
-		} else if (reloc->ord >= 0) {
-			imp = RVecRBinImport_at (imports, reloc->ord);
-		}
+		bool borrowed = false;
+		RBinImport *imp = reloc_import (bf->rbin, mo, imports, reloc, &borrowed);
 		if (imp) {
-			ptr->import = r_bin_import_clone (imp);
+			ptr->import = borrowed? imp: r_bin_import_clone (imp);
+			ptr->import_borrowed = borrowed;
 		}
 		ptr->addend = reloc->addend;
 		ptr->vaddr = reloc->addr;
@@ -491,19 +503,16 @@ static RList* patch_relocs(RBinFile *bf) {
 	}
 	struct MACH0_(obj_t) *mo = obj->bin_obj;
 
-	const RSkipList *all_relocs = MACH0_(load_relocs)(mo);
+	const RVecMach0Reloc *all_relocs = MACH0_(load_relocs)(mo);
 	if (!all_relocs) {
 		return NULL;
 	}
-	RVecExtReloc ext_relocs;
-	RVecExtReloc_init (&ext_relocs);
-	RSkipListNode *it;
+	ut64 num_ext_relocs = 0;
 	struct reloc_t *reloc;
-	r_skiplist_foreach (all_relocs, it, reloc) {
-		if (!reloc->external) {
-			continue;
+	R_VEC_FOREACH (all_relocs, reloc) {
+		if (reloc->external) {
+			num_ext_relocs++;
 		}
-		RVecExtReloc_push_back (&ext_relocs, &reloc);
 	}
 #if 1
 	// XXX for some reason we are patching this twice as relocs and fixups
@@ -540,7 +549,6 @@ static RList* patch_relocs(RBinFile *bf) {
 		}
 	}
 #endif
-	ut64 num_ext_relocs = RVecExtReloc_length (&ext_relocs);
 	if (!num_ext_relocs) {
 		goto beach;
 	}
@@ -585,9 +593,11 @@ static RList* patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 	ut64 vaddr = n_vaddr;
-	struct reloc_t **ext_reloc_iter;
-	R_VEC_FOREACH (&ext_relocs, ext_reloc_iter) {
-		reloc = *ext_reloc_iter;
+	RVecRBinImport *imports = &obj->imports_vec;
+	R_VEC_FOREACH (all_relocs, reloc) {
+		if (!reloc->external) {
+			continue;
+		}
 		bool found = false;
 		ut64 sym_addr = ht_uu_find (relocs_by_sym, reloc->ord, &found);
 		if (!found || !sym_addr) {
@@ -602,10 +612,12 @@ static RList* patch_relocs(RBinFile *bf) {
 		ptr->type = reloc->type;
 		ptr->ntype = reloc->ntype;
 		ptr->additive = 0;
-		RBinImport *imp = import_from_name (b, (char*) reloc->name, mo->imports_by_name);
+		bool borrowed = false;
+		RBinImport *imp = reloc_import (b, mo, imports, reloc, &borrowed);
 		if (R_LIKELY (imp)) {
 			ptr->vaddr = sym_addr;
-			ptr->import = r_bin_import_clone (imp);
+			ptr->import = borrowed? imp: r_bin_import_clone (imp);
+			ptr->import_borrowed = borrowed;
 			r_list_append (ret, ptr);
 		} else {
 			free (ptr);
@@ -615,12 +627,10 @@ static RList* patch_relocs(RBinFile *bf) {
 		goto beach;
 	}
 	ht_uu_free (relocs_by_sym);
-	RVecExtReloc_fini (&ext_relocs);
 	// XXX r_io_desc_free (gotr2desc);
 	return ret;
 
 beach:
-	RVecExtReloc_fini (&ext_relocs);
 	r_io_desc_free (gotr2desc);
 	r_list_free (ret);
 	ht_uu_free (relocs_by_sym);

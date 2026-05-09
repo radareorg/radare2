@@ -32,7 +32,7 @@ typedef struct {
 
 typedef struct {
 	ut8 *imports;
-	RSkipList *relocs;
+	RVecMach0Reloc *relocs;
 } RWalkBindChainsContext;
 
 struct symbol_t {
@@ -2485,7 +2485,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	RVecSegment_free (mo->segments_vec);
 	mo->segments_vec = NULL;
 	if (mo->relocs_loaded) {
-		r_skiplist_free (mo->relocs_cache);
+		RVecMach0Reloc_fini (&mo->relocs_cache);
 	}
 	free_chained_starts (mo);
 	sdb_free (mo->kv);
@@ -3665,11 +3665,11 @@ static inline ut8 relfrom_wordsize(size_t ws) {
 	return 0;
 }
 
-static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
+static bool parse_import_ptr(struct MACH0_(obj_t) * mo, int jota, struct reloc_t *reloc) {
 	int idx = mo->dysymtab.iundefsym + jota;
 	int i, j, sym;
 	if (idx < 0 || idx >= mo->nsymtab) {
-		return NULL;
+		return false;
 	}
 	const size_t wordsize = get_word_size (mo);
 	const ut32 stype = ((mo->symtab[idx].n_desc & REFERENCE_TYPE) == REFERENCE_FLAG_UNDEFINED_LAZY)
@@ -3678,9 +3678,8 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 
 	int type = relfrom_wordsize (wordsize);
 	if (!type) {
-		return NULL;
+		return false;
 	}
-	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
 	reloc->addr = 0;
 	reloc->type = type;
 	reloc->offset = 0;
@@ -3701,11 +3700,10 @@ static struct reloc_t *parse_import_ptr(struct MACH0_(obj_t) * mo, int jota) {
 			}
 			reloc->offset = sym == -1? 0: sect->offset + sym * wordsize;
 			reloc->addr = sym == -1? 0: sect->addr + sym * wordsize;
-			return reloc;
+			return true;
 		}
 	}
-	free (reloc);
-	return NULL;
+	return false;
 }
 
 static void fill_import(RBin *rbin, const char *orig_name, RBinImport *imp) {
@@ -3807,7 +3805,7 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) * bin) {
 	return &bin->imports_cache;
 }
 
-static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
+static int reloc_comparator(const struct reloc_t *a, const struct reloc_t *b) {
 	if (a->addr < b->addr) {
 		return -1;
 	}
@@ -3817,7 +3815,31 @@ static int reloc_comparator(struct reloc_t *a, struct reloc_t *b) {
 	return 0;
 }
 
-static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, ut32 offset, ut32 num) {
+static int reloc_addr_comparator(const struct reloc_t *reloc, const void *addr) {
+	const ut64 *target = addr;
+	if (reloc->addr < *target) {
+		return -1;
+	}
+	if (reloc->addr > *target) {
+		return 1;
+	}
+	return 0;
+}
+
+const struct reloc_t *MACH0_(find_reloc)(const RVecMach0Reloc *relocs, ut64 addr) {
+	if (!relocs) {
+		return NULL;
+	}
+	return RVecMach0Reloc_find_sorted (relocs, &addr, reloc_addr_comparator);
+}
+
+static void mach0_reloc_push(RVecMach0Reloc *relocs, const struct reloc_t *reloc) {
+	if (reloc) {
+		RVecMach0Reloc_push_back (relocs, reloc);
+	}
+}
+
+static void parse_relocation_info(struct MACH0_(obj_t) * mo, RVecMach0Reloc *relocs, ut32 offset, ut32 num) {
 	if (!num || !offset || (st32)num < 0) {
 		return;
 	}
@@ -3859,16 +3881,16 @@ static void parse_relocation_info(struct MACH0_(obj_t) * mo, RSkipList *relocs, 
 			continue;
 		}
 
-		struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-		reloc->addr = offset_to_vaddr (mo, a_info.r_address);
-		reloc->offset = a_info.r_address;
-		reloc->ord = sym_num;
-		reloc->type = a_info.r_type; // enum RelocationInfoType
-		reloc->external = a_info.r_extern;
-		reloc->pc_relative = a_info.r_pcrel;
-		reloc->size = a_info.r_length;
-		r_str_ncpy (reloc->name, sym_name, sizeof (reloc->name) - 1);
-		r_skiplist_insert (relocs, reloc);
+		struct reloc_t reloc = {0};
+		reloc.addr = offset_to_vaddr (mo, a_info.r_address);
+		reloc.offset = a_info.r_address;
+		reloc.ord = sym_num;
+		reloc.type = a_info.r_type; // enum RelocationInfoType
+		reloc.external = a_info.r_extern;
+		reloc.pc_relative = a_info.r_pcrel;
+		reloc.size = a_info.r_length;
+		r_str_ncpy (reloc.name, sym_name, sizeof (reloc.name) - 1);
+		mach0_reloc_push (relocs, &reloc);
 		free (sym_name);
 	}
 	free (info);
@@ -3925,15 +3947,16 @@ static bool walk_bind_chains_callback(void *context, RFixupEventDetails *ed) {
 		if (symbols_offset + name_offset + 1 < fixups_offset + fixups_size) {
 			char *name = r_buf_get_string (mo->b, symbols_offset + name_offset);
 			if (name) {
-				struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-				reloc->addr = offset_to_vaddr (mo, ed->offset);
-				reloc->offset = ed->offset;
-				reloc->ord = import_index;
-				reloc->type = R_BIN_RELOC_64;
-				reloc->size = 8;
-				reloc->addend = addend;
-				r_str_ncpy (reloc->name, name, sizeof (reloc->name) - 1);
-				r_skiplist_insert_autofree (ctx->relocs, reloc);
+				struct reloc_t reloc = {0};
+				reloc.addr = offset_to_vaddr (mo, ed->offset);
+				reloc.offset = ed->offset;
+				reloc.ord = import_index;
+				reloc.type = R_BIN_RELOC_64;
+				reloc.size = 8;
+				reloc.addend = addend;
+				reloc.ord_is_import = true;
+				r_str_ncpy (reloc.name, name, sizeof (reloc.name) - 1);
+				mach0_reloc_push (ctx->relocs, &reloc);
 				free (name);
 			} else if (mo->verbose) {
 				R_LOG_WARN ("Malformed chained bind: failed to read name");
@@ -3948,7 +3971,7 @@ static bool walk_bind_chains_callback(void *context, RFixupEventDetails *ed) {
 	return true;
 }
 
-static void walk_bind_chains(struct MACH0_(obj_t) * mo, RSkipList *relocs) {
+static void walk_bind_chains(struct MACH0_(obj_t) * mo, RVecMach0Reloc *relocs) {
 	R_RETURN_IF_FAIL (mo && mo->fixups_offset);
 
 	ut8 *imports = NULL;
@@ -4019,11 +4042,12 @@ static bool is_valid_ordinal_table_size(ut64 size) {
 	return size > 0 && size <= UT16_MAX;
 }
 
-static void mach0_reloc_ref_fini(struct reloc_t **reloc) {
-	free (*reloc);
-}
+typedef struct {
+	struct reloc_t reloc;
+	bool valid;
+} RRelocRef;
 
-R_VEC_TYPE_WITH_FINI(RVecRelocRef, struct reloc_t *, mach0_reloc_ref_fini);
+R_VEC_TYPE(RVecRelocRef, RRelocRef);
 
 static RVecRelocRef *reloc_ref_vec_new_with_len(ut64 length) {
 	RVecRelocRef *vec = RVecRelocRef_new ();
@@ -4034,9 +4058,12 @@ static RVecRelocRef *reloc_ref_vec_new_with_len(ut64 length) {
 		RVecRelocRef_free (vec);
 		return NULL;
 	}
-	struct reloc_t *empty = NULL;
-	while (RVecRelocRef_length (vec) < length) {
-		RVecRelocRef_push_back (vec, &empty);
+	ut64 i;
+	for (i = 0; i < length; i++) {
+		if (!RVecRelocRef_emplace_back (vec)) {
+			RVecRelocRef_free (vec);
+			return NULL;
+		}
 	}
 	return vec;
 }
@@ -4100,35 +4127,34 @@ static void insert_bind_reloc(struct MACH0_(obj_t) * mo, RVecRelocRef *threaded_
 			return;
 		}
 	}
-	struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-	reloc->addr = state->addr;
+	struct reloc_t reloc = {0};
+	reloc.addr = state->addr;
 	if (state->seg_idx >= 0) {
 		struct MACH0_(segment_command) *seg = &mo->segs[state->seg_idx];
-		reloc->offset = state->addr - seg->vmaddr + seg->fileoff;
-		reloc->addend = state->addend;
+		reloc.offset = state->addr - seg->vmaddr + seg->fileoff;
+		reloc.addend = state->addend;
 		if (state->type == BIND_TYPE_TEXT_PCREL32) {
-			reloc->addend -= (mo->baddr + state->addr);
+			reloc.addend -= (mo->baddr + state->addr);
 		}
 	} else {
-		reloc->addend = state->addend;
+		reloc.addend = state->addend;
 	}
 	/* library ordinal??? */
-	reloc->ntype = op;
-	reloc->ord = state->sym_ord;
-	reloc->type = rel_type;
+	reloc.ntype = op;
+	reloc.ord = state->sym_ord;
+	reloc.type = rel_type;
+	reloc.ord_is_import = !threaded_binds && state->sym_ord >= 0;
 	if (state->sym_name) {
-		r_str_ncpy (reloc->name, state->sym_name, sizeof (reloc->name));
+		r_str_ncpy (reloc.name, state->sym_name, sizeof (reloc.name));
 	}
 	if (threaded_binds) {
-		struct reloc_t **slot = RVecRelocRef_at (threaded_binds, state->sym_ord);
+		RRelocRef *slot = RVecRelocRef_at (threaded_binds, state->sym_ord);
 		if (slot) {
-			free (*slot);
-			*slot = reloc;
-		} else {
-			free (reloc);
+			slot->reloc = reloc;
+			slot->valid = true;
 		}
 	} else {
-		r_skiplist_insert_autofree (mo->relocs_cache, reloc);
+		mach0_reloc_push (&mo->relocs_cache, &reloc);
 	}
 }
 
@@ -4182,21 +4208,19 @@ static void apply_threaded_bind(struct MACH0_(obj_t) * mo, RVecRelocRef *threade
 				R_LOG_DEBUG ("Malformed bind chain");
 				break;
 			}
-			struct reloc_t **ref_slot = RVecRelocRef_at (threaded_binds, ordinal);
-			struct reloc_t *ref = ref_slot? *ref_slot: NULL;
-			if (!ref) {
+			RRelocRef *ref = RVecRelocRef_at (threaded_binds, ordinal);
+			if (!ref || !ref->valid) {
 				R_LOG_DEBUG ("Inconsistent bind opcodes");
 				break;
 			}
-			struct reloc_t *reloc = R_NEW0 (struct reloc_t);
-			*reloc = *ref;
-			reloc->addr = state->addr;
-			reloc->ntype = op;
-			reloc->offset = paddr;
+			struct reloc_t reloc = ref->reloc;
+			reloc.addr = state->addr;
+			reloc.ntype = op;
+			reloc.offset = paddr;
 			if (ptr_addend != -1) {
-				reloc->addend = ptr_addend;
+				reloc.addend = ptr_addend;
 			}
-			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
+			mach0_reloc_push (&mo->relocs_cache, &reloc);
 		}
 		state->addr += delta * wordsize;
 		if (!delta) {
@@ -4448,40 +4472,39 @@ static bool _load_relocations(struct MACH0_(obj_t) * mo) {
 	if (mo->symtab && mo->symstr && mo->sects && mo->indirectsyms) {
 		int j, amount = clamp_count (ds->nundefsym, mo->limit);
 		for (j = 0; j < amount; j++) {
-			struct reloc_t *reloc = parse_import_ptr (mo, j);
-			if (!reloc) {
+			struct reloc_t reloc = {0};
+			if (!parse_import_ptr (mo, j, &reloc)) {
 				break;
 			}
-			reloc->ord = j;
-			r_skiplist_insert_autofree (mo->relocs_cache, reloc);
+			reloc.ord = j;
+			reloc.ord_is_import = true;
+			mach0_reloc_push (&mo->relocs_cache, &reloc);
 		}
 	}
 
 	if (mo->symtab && ds->extreloff && ds->nextrel) {
-		parse_relocation_info (mo, mo->relocs_cache, ds->extreloff, ds->nextrel);
+		parse_relocation_info (mo, &mo->relocs_cache, ds->extreloff, ds->nextrel);
 	}
 
 	if (!mo->dyld_info && mo->chained_starts && mo->nsegs && mo->fixups_offset) {
-		walk_bind_chains (mo, mo->relocs_cache);
+		walk_bind_chains (mo, &mo->relocs_cache);
 	}
 	R_FREE (opcodes);
 	RVecRelocRef_free (threaded_binds);
 	return true;
 }
 
-const RSkipList *MACH0_(load_relocs)(struct MACH0_(obj_t) * mo) {
+const RVecMach0Reloc *MACH0_(load_relocs)(struct MACH0_(obj_t) * mo) {
 	R_RETURN_VAL_IF_FAIL (mo, NULL);
 
 	if (mo->relocs_loaded) {
-		return mo->relocs_cache;
+		return &mo->relocs_cache;
 	}
 	mo->relocs_loaded = true;
-	mo->relocs_cache = r_skiplist_new ((RListFree)free, (RListComparator)reloc_comparator);
-	if (!mo->relocs_cache) {
-		return NULL;
-	}
+	RVecMach0Reloc_init (&mo->relocs_cache);
 	if (_load_relocations (mo)) {
-		return mo->relocs_cache;
+		RVecMach0Reloc_sort (&mo->relocs_cache, reloc_comparator);
+		return &mo->relocs_cache;
 	}
 	return NULL;
 }
