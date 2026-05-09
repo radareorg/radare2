@@ -48,7 +48,7 @@ static RList *symbols(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
 	}
-	return r_bin_som_get_symbols (bf->bo->bin_obj);
+	return r_bin_som_get_symbols (bf->bo->bin_obj, bf->rbin->options.load_unnamed);
 }
 
 static RList *imports(RBinFile *bf) {

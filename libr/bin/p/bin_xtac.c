@@ -633,6 +633,9 @@ static RList *symbols(RBinFile *bf) {
 	RBinXtacHeader *hdr = bin->header;
 	ut64 x86_baddr = baddr (bf), arm_baddr = 0x0;
 	RList *ret = r_list_newf (free);
+	if (!bf->rbin->options.load_unnamed) {
+		return ret;
+	}
 	const ut32 num_pairs = hdr->num_of_addr_pairs;
 	int i;
 	for (i = 0; i < num_pairs; i++) {

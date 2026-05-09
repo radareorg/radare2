@@ -104,7 +104,9 @@ R_IPI bool r_bin_name_is_unnamed(const char *name) {
 	if (r_str_isnumber (name)) {
 		return true;
 	}
-	if (has_number_suffix (name, "sym_") || has_number_suffix (name, "UnnamedClass")) {
+	if (has_number_suffix (name, "sym_") || has_number_suffix (name, "UnnamedClass")
+			|| has_number_suffix (name, "fcn.") || has_number_suffix (name, "global.")
+			|| has_number_suffix (name, "unk_local")) {
 		return true;
 	}
 	if (has_hex_suffix (name, "func.") || has_hex_suffix (name, "fcn.")

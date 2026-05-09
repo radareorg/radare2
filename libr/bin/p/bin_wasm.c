@@ -7,6 +7,7 @@
 #include <r_lib.h>
 #include <r_bin.h>
 
+#include "../i/private.h"
 #include "wasm/wasm.h"
 #include "../format/wasm/wasm.h"
 
@@ -187,7 +188,7 @@ static const char *import_typename(ut32 kind) {
 	}
 }
 
-static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *list) {
+static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *list, bool load_unnamed) {
 	void **p;
 	ut32 ordinal = 0;
 	const char *type = import_typename (kind);
@@ -195,11 +196,15 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 	if (imports && type) {
 		R_VEC_FOREACH (imports, p) {
 			RBinWasmImportEntry *imp = *p;
+			const ut32 sym_ordinal = ordinal++;
+			if (!load_unnamed && r_bin_name_is_unnamed (imp->field_str)) {
+				continue;
+			}
 			RBinSymbol *sym = R_NEW0 (RBinSymbol);
 			if (!sym) {
 				return false;
 			}
-			sym->ordinal = ordinal++;
+			sym->ordinal = sym_ordinal;
 			sym->type = type;
 			sym->name = r_bin_name_new (imp->field_str);
 			sym->libname = strdup (imp->module_str);
@@ -221,29 +226,38 @@ static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
 	return exp? strdup (exp->field_str): NULL;
 }
 
-static inline void set_sym_name(RBinWasmObj *bin, int type, RBinSymbol *sym) {
-	char *s = name_from_export (bin, type, sym->ordinal);
+static inline char *symbol_name(RBinWasmObj *bin, int type, int ord, bool load_unnamed, bool *is_exported) {
+	*is_exported = false;
+	char *s = name_from_export (bin, type, ord);
 	if (s) {
-		sym->name = r_bin_name_new_from (s);
+		*is_exported = true;
+		return s;
+	}
+	const char *typestr = NULL;
+	const char *name = NULL;
+	switch (type) {
+	case R_BIN_WASM_EXTERNALKIND_Function:
+		name = r_bin_wasm_get_function_name (bin, ord);
+		typestr = "fcn";
+		break;
+	case R_BIN_WASM_EXTERNALKIND_Global:
+		typestr = "global";
+		break;
+	}
+	if (R_STR_ISNOTEMPTY (name)) {
+		return strdup (name);
+	}
+	return load_unnamed && typestr? r_str_newf ("%s.%d", typestr, ord): NULL;
+}
+
+static inline void set_sym_name(RBinSymbol *sym, char *s, bool is_exported) {
+	sym->name = r_bin_name_new_from (s);
+	if (is_exported) {
 		sym->bind = R_BIN_BIND_GLOBAL_STR;
-	} else {
-		const char *typestr = NULL;
-		const char *name = NULL;
-		switch (type) {
-		case R_BIN_WASM_EXTERNALKIND_Function:
-			name = r_bin_wasm_get_function_name (bin, sym->ordinal);
-			typestr = "fcn";
-			break;
-		case R_BIN_WASM_EXTERNALKIND_Global:
-			typestr = "global";
-			break;
-		}
-		char *s = name? strdup (name): r_str_newf ("%s.%d", typestr, sym->ordinal);
-		sym->name = r_bin_name_new_from (s);
 	}
 }
 
-static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
+static inline bool symbols_add_code(RBinWasmObj *bin, RList *list, bool load_unnamed) {
 	RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 	if (!codes) {
 		return false;
@@ -252,8 +266,15 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
 	void **p;
 	R_VEC_FOREACH (codes, p) {
 		RBinWasmCodeEntry *func = *p;
+		const ut32 sym_ordinal = ordinal++;
+		bool is_exported = false;
+		char *name = symbol_name (bin, R_BIN_WASM_EXTERNALKIND_Function, sym_ordinal, load_unnamed, &is_exported);
+		if (!name) {
+			continue;
+		}
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
+			free (name);
 			return false;
 		}
 		sym->forwarder = "NONE";
@@ -261,9 +282,9 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RList *list) {
 		sym->size = func->len;
 		sym->vaddr = (ut64)func->code;
 		sym->paddr = (ut64)func->code;
-		sym->ordinal = ordinal++;
+		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
-		set_sym_name (bin, R_BIN_WASM_EXTERNALKIND_Function, sym);
+		set_sym_name (sym, name, is_exported);
 		r_list_append (list, sym);
 	}
 	return true;
@@ -308,7 +329,7 @@ static void sym_set_content_type(RBinSymbol *sym, int t) {
 	}
 }
 
-static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
+static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list, bool load_unnamed) {
 	RVecWasmPtr *globals = r_bin_wasm_get_globals (bin);
 	if (!globals) {
 		return true;
@@ -318,16 +339,23 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
 	R_VEC_FOREACH (globals, p) {
 		// not real confident in any of this
 		RBinWasmGlobalEntry *gl = *p;
+		const ut32 sym_ordinal = ordinal++;
+		bool is_exported = false;
+		char *name = symbol_name (bin, R_BIN_WASM_EXTERNALKIND_Global, sym_ordinal, load_unnamed, &is_exported);
+		if (!name) {
+			continue;
+		}
 		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		if (!sym) {
+			free (name);
 			return false;
 		}
 		sym->forwarder = "NONE";
 		sym->paddr = gl->file_offset;
 		sym->vaddr = UT64_MAX;
-		sym->ordinal = ordinal++;
+		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
-		set_sym_name (bin, R_BIN_WASM_EXTERNALKIND_Global, sym);
+		set_sym_name (sym, name, is_exported);
 		sym_set_content_type (sym, gl->content_type); // size and type
 		r_list_append (list, sym);
 	}
@@ -337,6 +365,7 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list) {
 static RList *symbols(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
+	const bool load_unnamed = bf->rbin->options.load_unnamed;
 	RList *ret = r_list_newf ((RListFree)free);
 	if (!ret) {
 		goto bad_alloc;
@@ -345,16 +374,16 @@ static RList *symbols(RBinFile *bf) {
 	// add all import kinds to symbols
 	int i;
 	for (i = 0; i <= R_BIN_WASM_EXTERNALKIND_Global; i++) {
-		if (!symbols_add_import_kind (bin, i, ret)) {
+		if (!symbols_add_import_kind (bin, i, ret, load_unnamed)) {
 			goto bad_alloc;
 		}
 	}
 
-	if (!symbols_add_code (bin, ret)) {
+	if (!symbols_add_code (bin, ret, load_unnamed)) {
 		goto bad_alloc;
 	}
 
-	if (!symbols_add_globals (bin, ret)) {
+	if (!symbols_add_globals (bin, ret, load_unnamed)) {
 		goto bad_alloc;
 	}
 
@@ -368,6 +397,7 @@ bad_alloc:
 static RList *get_imports(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RBinWasmObj *bin = bf->bo->bin_obj;
+	const bool load_unnamed = bf->rbin->options.load_unnamed;
 	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
 	if (!ret) {
 		goto bad_alloc;
@@ -384,6 +414,10 @@ static RList *get_imports(RBinFile *bf) {
 		void **p;
 		R_VEC_FOREACH (imports, p) {
 			RBinWasmImportEntry *import = *p;
+			const int ordinal = i++;
+			if (!load_unnamed && r_bin_name_is_unnamed (import->field_str)) {
+				continue;
+			}
 			RBinImport *ptr = R_NEW0 (RBinImport);
 			if (!ptr) {
 				goto bad_alloc;
@@ -392,7 +426,7 @@ static RList *get_imports(RBinFile *bf) {
 			ptr->classname = strdup (import->module_str);
 			ptr->type = type;
 			ptr->bind = "NONE";
-			ptr->ordinal = i++;
+			ptr->ordinal = ordinal;
 			r_list_append (ret, ptr);
 		}
 	}

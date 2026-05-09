@@ -4,6 +4,7 @@
 #define SOM_STRING_TABLE_LIMIT (1U << 24)
 
 #include "som.h"
+#include "../../i/private.h"
 #include <string.h>
 
 // XXX this is a hack because we should be able to find out the interpreter from the dynamicloaderheader instead of this crap
@@ -406,7 +407,7 @@ R_IPI RList *r_bin_som_get_sections(void *o) {
 	return list;
 }
 
-R_IPI RList *r_bin_som_get_symbols(void *o) {
+R_IPI RList *r_bin_som_get_symbols(void *o, bool load_unnamed) {
 	RSomFile *obj = (RSomFile *)o;
 	if (!obj || !obj->symbols) {
 		return NULL;
@@ -415,14 +416,23 @@ R_IPI RList *r_bin_som_get_symbols(void *o) {
 	RListIter *iter;
 	RSomSymbol *sym;
 	r_list_foreach (obj->symbols, iter, sym) {
-		RBinSymbol *bs = R_NEW0 (RBinSymbol);
+		char *name = NULL;
 		if (obj->symbol_strings && sym->name < obj->hdr.symbol_strings_size) {
 			const char *name_str = obj->symbol_strings + sym->name;
 			size_t len = strnlen (name_str, obj->hdr.symbol_strings_size - sym->name);
-			bs->name = r_bin_name_new_from (r_str_ndup (name_str, len));
+			name = r_str_ndup (name_str, len);
 		} else {
-			bs->name = r_bin_name_new_from (r_str_newf ("sym_%d", sym->name));
+			if (!load_unnamed) {
+				continue;
+			}
+			name = r_str_newf ("sym_%d", sym->name);
 		}
+		if (!load_unnamed && r_bin_name_is_unnamed (name)) {
+			free (name);
+			continue;
+		}
+		RBinSymbol *bs = R_NEW0 (RBinSymbol);
+		bs->name = r_bin_name_new_from (name);
 		bs->paddr = sym->symbol_value;
 		bs->vaddr = sym->symbol_value + obj->baddr;
 		bs->size = 0;
