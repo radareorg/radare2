@@ -69,6 +69,21 @@ class swift {
 EOF
 RUN
 
+NAME=mach0 swift skip unnamed methods
+ARGS=-e bin.unnamed=false
+FILE=bins/mach0/swift/klass.orig
+CMDS=<<EOF
+icc~func 0()~?
+icc~func 1()~?
+icc~class SomeClass~?
+EOF
+EXPECT=<<EOF
+0
+0
+2
+EOF
+RUN
+
 NAME=swift-x86-64 calling convention json
 ARGS=-e bin.demangle=false
 FILE=bins/mach0/swift5.1-throwError

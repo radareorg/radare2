@@ -310,6 +310,21 @@ nth paddr      vaddr      bind   type size lib name                             
 EOF
 RUN
 
+NAME=mach0 symbols skip unnamed
+ARGS=-e bin.unnamed=false
+FILE=bins/mach0/longIdentifiers.dylib
+CMDS=<<EOF
+is~func.00007fa8~?
+is~func.00007fb0~?
+is~_abcdefghijklmnopqrstuvwxyz~?
+EOF
+EXPECT=<<EOF
+0
+0
+7
+EOF
+RUN
+
 NAME=mach0 aot
 FILE=bins/mach0/libswiftCoreImage.dylib.aot
 CMDS=iH

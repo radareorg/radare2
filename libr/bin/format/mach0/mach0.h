@@ -152,6 +152,7 @@ struct MACH0_(opts_t) {
 	ut64 symbols_off;
 	int maxsymlen;
 	bool parse_start_symbols;
+	bool load_unnamed;
 	RBinFile *bf;
 };
 
