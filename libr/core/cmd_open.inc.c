@@ -643,6 +643,7 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			pj_kn (pj, "from", r_io_map_begin (map));
 			pj_kn (pj, "to", r_io_map_to (map));
 			pj_ks (pj, "perm", r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
+			pj_ks (pj, "rperm", r_str_rwx_i ((map->perm & R_PERM_REQ_RWX) >> 7));
 			pj_ks (pj, "name", r_str_get (map->name));
 			pj_end (pj);
 			break;
@@ -672,12 +673,15 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			char perm_str[64];
 			r_cons_permstr (core->cons, map->perm & (R_PERM_RWX | R_PERM_S),
 				r_config_get_i (core->config, "scr.color") > 0, perm_str, sizeof (perm_str));
+			char rperm_str[64];
+			r_cons_permstr (core->cons, (map->perm & R_PERM_REQ_RWX) >> 7,
+				r_config_get_i (core->config, "scr.color") > 0, rperm_str, sizeof (rperm_str));
 			r_print_printf (p, "%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s%s%s\n",
+					" - 0x%08"PFMT64x" %s %s%s%s\n",
 					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-					r_io_map_to (map), perm_str,
-					R_STR_ISEMPTY (map->name)? "": " ",r_str_get (map->name));
+					r_io_map_to (map), perm_str, rperm_str,
+					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
 			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
 		}
@@ -807,7 +811,7 @@ static void cmd_omcomma(RCore *core, const char *arg) {
 	if (!t) {
 		return;
 	}
-	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "meta", "name", NULL);
+	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "rperm", "meta", "name", NULL);
 	ut32 mapid = 0;
 	r_id_storage_get_lowest (&core->io->maps, &mapid);
 	do {
@@ -823,9 +827,10 @@ static void cmd_omcomma(RCore *core, const char *arg) {
 		ut64 pa_end = pa + pa_size - 1;
 		const char *name = r_str_get (m->name);
 		char *meta = r_io_map_getattr (m);
-		r_table_add_rowf (t, "ddxxxxxsss",
+		r_table_add_rowf (t, "ddxxxxxssss",
 			m->id, m->fd, pa, pa_end, pa_size,
-			va, va_end, r_str_rwx_i (m->perm), meta, name);
+			va, va_end, r_str_rwx_i (m->perm & (R_PERM_RWX | R_PERM_S)),
+			r_str_rwx_i ((m->perm & R_PERM_REQ_RWX) >> 7), meta, name);
 		free (meta);
 	} while (r_id_storage_get_next (&core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
