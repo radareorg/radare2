@@ -65,6 +65,63 @@ static char *hashify(const char *s, ut64 vaddr, ut64 suffix, bool keep_printable
 	return suffix? r_str_newf ("%s_%" PFMT64u, os, suffix): strdup (os);
 }
 
+static bool is_hex_number(const char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		return false;
+	}
+	if (r_str_startswith (name, "0x")) {
+		name += 2;
+	}
+	size_t len = strlen (name);
+	if (len < 4 || len > 16) {
+		return false;
+	}
+	while (*name) {
+		if (!isxdigit (*name)) {
+			return false;
+		}
+		name++;
+	}
+	return true;
+}
+
+static bool has_hex_suffix(const char *name, const char *prefix) {
+	return r_str_startswith (name, prefix) && is_hex_number (name + strlen (prefix));
+}
+
+static bool has_number_suffix(const char *name, const char *prefix) {
+	return r_str_startswith (name, prefix) && r_str_isnumber (name + strlen (prefix));
+}
+
+R_IPI bool r_bin_name_is_unnamed(const char *name) {
+	if (R_STR_ISEMPTY (name)) {
+		return true;
+	}
+	if (!strcmp (name, "???") || !strcmp (name, "unknown")
+			|| !strcmp (name, "<unknown>") || !strcmp (name, "<null>")) {
+		return true;
+	}
+	if (r_str_isnumber (name)) {
+		return true;
+	}
+	if (has_number_suffix (name, "sym_") || has_number_suffix (name, "UnnamedClass")) {
+		return true;
+	}
+	if (has_hex_suffix (name, "func.") || has_hex_suffix (name, "fcn.")
+			|| has_hex_suffix (name, "sub.") || has_hex_suffix (name, "loc.")
+			|| has_hex_suffix (name, "x86.")) {
+		return true;
+	}
+	if (r_str_startswith (name, "UnknownModule")) {
+		const char *p = name + strlen ("UnknownModule");
+		while (isdigit (*p)) {
+			p++;
+		}
+		return *p == '_' && is_hex_number (p + 1);
+	}
+	return false;
+}
+
 static char *filter_section_name(HtPP *db, ut64 vaddr, const char *name) {
 	R_RETURN_VAL_IF_FAIL (db && name, NULL);
 	RBinSectionNameState *state = ht_pp_find (db, name, NULL);

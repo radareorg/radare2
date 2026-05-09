@@ -1329,6 +1329,9 @@ R_API void r_bin_class_free(RBinClass *k) {
 
 R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char *super, ut64 attr) {
 	R_RETURN_VAL_IF_FAIL (name && bf && bf->bo, NULL);
+	if (bf->rbin && !bf->rbin->options.load_unnamed && r_bin_name_is_unnamed (name)) {
+		return NULL;
+	}
 	RBinClass *c = __getClass (bf, name);
 	if (c) {
 		if (R_STR_ISNOTEMPTY (super)) {
@@ -1349,7 +1352,11 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 }
 
 R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const char *klass, const char *method, int nargs) {
-	R_RETURN_VAL_IF_FAIL (bf, NULL);
+	R_RETURN_VAL_IF_FAIL (bf && klass && method, NULL);
+	if (bf->rbin && !bf->rbin->options.load_unnamed
+			&& (r_bin_name_is_unnamed (klass) || r_bin_name_is_unnamed (method))) {
+		return NULL;
+	}
 
 	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
 	if (!c) {

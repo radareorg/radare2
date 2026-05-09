@@ -79,6 +79,77 @@ static void clamp_imports_vec(RVecRBinImport *imports, int limit) {
 	}
 }
 
+static bool bin_name_has_value(RBinName *name) {
+	return name && ((R_STR_ISNOTEMPTY (name->name) && !r_bin_name_is_unnamed (name->name))
+		|| (R_STR_ISNOTEMPTY (name->oname) && !r_bin_name_is_unnamed (name->oname))
+		|| (R_STR_ISNOTEMPTY (name->fname) && !r_bin_name_is_unnamed (name->fname)));
+}
+
+static bool symbol_has_value(RBinSymbol *sym) {
+	return sym && !(sym->attr & R_BIN_ATTR_SYNTHETIC) && bin_name_has_value (sym->name);
+}
+
+static void filter_unnamed_symbols_vec(RVecRBinSymbol *symbols) {
+	size_t i = 0;
+	while (i < RVecRBinSymbol_length (symbols)) {
+		RBinSymbol *sym = RVecRBinSymbol_at (symbols, i);
+		if (symbol_has_value (sym)) {
+			i++;
+		} else {
+			RVecRBinSymbol_remove (symbols, i);
+		}
+	}
+}
+
+static void filter_unnamed_imports_vec(RVecRBinImport *imports) {
+	size_t i = 0;
+	while (i < RVecRBinImport_length (imports)) {
+		RBinImport *imp = RVecRBinImport_at (imports, i);
+		if (imp && bin_name_has_value (imp->name)) {
+			i++;
+		} else {
+			RVecRBinImport_remove (imports, i);
+		}
+	}
+}
+
+static void filter_unnamed_symbols(RList *symbols) {
+	RListIter *iter, *tmp;
+	RBinSymbol *sym;
+	r_list_foreach_safe (symbols, iter, tmp, sym) {
+		if (!symbol_has_value (sym)) {
+			r_list_delete (symbols, iter);
+		}
+	}
+}
+
+static void filter_unnamed_imports(RList *imports) {
+	RListIter *iter, *tmp;
+	RBinImport *imp;
+	r_list_foreach_safe (imports, iter, tmp, imp) {
+		if (!imp || !bin_name_has_value (imp->name)) {
+			r_list_delete (imports, iter);
+		}
+	}
+}
+
+static void filter_unnamed_classes(RList *classes) {
+	RListIter *iter, *tmp, *iter2, *tmp2;
+	RBinClass *klass;
+	RBinSymbol *method;
+	r_list_foreach_safe (classes, iter, tmp, klass) {
+		if (!klass || (klass->attr & R_BIN_ATTR_SYNTHETIC) || !bin_name_has_value (klass->name)) {
+			r_list_delete (classes, iter);
+			continue;
+		}
+		r_list_foreach_safe (klass->methods, iter2, tmp2, method) {
+			if (!symbol_has_value (method)) {
+				r_list_delete (klass->methods, iter2);
+			}
+		}
+	}
+}
+
 static void object_delete_items(RBinObject *o) {
 	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
@@ -458,6 +529,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	}
 	if (p->imports_vec) {
 		p->imports_vec (bf);
+		if (!bin->options.load_unnamed) {
+			filter_unnamed_imports_vec (&bo->imports_vec);
+		}
 		clamp_imports_vec (&bo->imports_vec, limit);
 		import_cache_cleanup (bo);
 	} else if (p->imports) {
@@ -466,12 +540,18 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bo->imports) {
 			bo->imports->free = (RListFree)r_bin_import_free;
 		}
+		if (!bin->options.load_unnamed) {
+			filter_unnamed_imports (bo->imports);
+		}
 		clamp_list (bo->imports, limit);
 		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
 		import_cache_cleanup (bo);
+		if (!bin->options.load_unnamed) {
+			filter_unnamed_symbols_vec (&bo->symbols_vec);
+		}
 		if (bin->filter && bin->options.load_unnamed) {
 			RBinSymbol *sym;
 			HtPP *ht = ht_pp_new0 ();
@@ -489,6 +569,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			bo->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
 			import_cache_cleanup (bo);
+			if (!bin->options.load_unnamed) {
+				filter_unnamed_symbols (bo->symbols);
+			}
 			if (bin->filter && bin->options.load_unnamed) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}
@@ -559,7 +642,11 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				bo->classes = classes;
 			}
 		}
-		if (bin->filter) {
+		if (!bin->options.load_unnamed) {
+			filter_unnamed_classes (bo->classes);
+			r_bin_object_rebuild_classes_ht (bo);
+		}
+		if (bin->filter && bin->options.load_unnamed) {
 			filter_classes (bf, bo->classes);
 		}
 		// cache addr=class+method
