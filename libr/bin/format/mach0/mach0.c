@@ -2503,6 +2503,7 @@ void MACH0_(opts_set_default)(struct MACH0_(opts_t) * options, RBinFile *bf) {
 	options->show_codesign = bf->rbin->options.show_codesign;
 	options->maxsymlen = bf->rbin->options.maxsymlen;
 	options->parse_start_symbols = false;
+	options->load_unnamed = bf->rbin->options.load_unnamed;
 }
 
 struct MACH0_(obj_t) * MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_(opts_t) * options) {
@@ -2517,7 +2518,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_
 	mo->symbols_vec = &(options->bf->bo->symbols_vec);
 	mo->options = *options;
 	mo->limit = options->bf->rbin->options.limit;
-	// mo->nofuncstarts = options->nofuncstarts;
+	mo->nofuncstarts = !options->load_unnamed;
 	// r_sys_getenv_asbool ("RABIN2_MACHO_NOFUNCSTARTS");
 	ut64 sz = r_buf_size (buf);
 	mo->verbose = options->verbose;
@@ -2902,6 +2903,9 @@ static bool parse_import_stub(struct MACH0_(obj_t) * bin, struct symbol_t *symbo
 }
 
 static int hash_find_or_insert(HtPP *hash, const char *name, ut64 addr) {
+	if (!hash) {
+		return false;
+	}
 	bool found = false;
 	char *key = r_str_newf ("%" PFMT64x ".%s", addr, name);
 	ht_pp_find (hash, key, &found);
@@ -2912,6 +2916,10 @@ static int hash_find_or_insert(HtPP *hash, const char *name, ut64 addr) {
 	ht_pp_insert (hash, key, "1");
 	free (key);
 	return false;
+}
+
+static bool is_unnamed_symbol_name(const char *name) {
+	return R_STR_ISEMPTY (name) || !strcmp (name, "???");
 }
 
 static char *get_name(struct MACH0_(obj_t) * mo, ut32 stridx, bool filter) {
@@ -3180,7 +3188,9 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 	}
 
 	r_strf_var (k, 32, "sym0x%" PFMT64x, sym->vaddr);
-	ht_pp_insert (symcache, k, "found");
+	if (symcache) {
+		ht_pp_insert (symcache, k, "found");
+	}
 }
 
 typedef struct fill_context_t {
@@ -3235,6 +3245,9 @@ static bool has_nonruntime_public_symbols(struct MACH0_(obj_t) *mo) {
 
 static void _fill_exports(struct MACH0_(obj_t) * mo, const char *name, ut64 flags, ut64 offset, void *ctx) {
 	FillCtx *context = ctx;
+	if (!mo->options.load_unnamed && is_unnamed_symbol_name (name)) {
+		return;
+	}
 	ut64 vaddr = offset_to_vaddr (mo, offset);
 	if (hash_find_or_insert (context->hash, name, vaddr)) {
 		return;
@@ -3322,7 +3335,8 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 		return;
 	}
 
-	HtPP *hash = ht_pp_new0 ();
+	const bool load_unnamed = mo->options.load_unnamed;
+	HtPP *hash = load_unnamed? ht_pp_new0 (): NULL;
 
 	FillCtx fill_context = {
 		.bf = bf,
@@ -3420,6 +3434,10 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				free (symbol.name);
 				continue;
 			}
+			if (!load_unnamed && is_unnamed_symbol_name (symbol.name)) {
+				free (symbol.name);
+				continue;
+			}
 			j++;
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
 			memset (sym, 0, sizeof (RBinSymbol));
@@ -3463,6 +3481,9 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 					continue;
 				}
 			} else {
+				if (!load_unnamed) {
+					continue;
+				}
 				sym_name = r_str_newf ("entry%u", (ut32)i);
 			}
 			if (is_stripped && !apple_symbol (sym_name)) {
@@ -3507,6 +3528,9 @@ static bool parse_function_start_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo
 		return false;
 	}
 	if (mo->nofuncstarts) {
+		return mo->dbg_info & R_BIN_DBG_STRIPPED;
+	}
+	if (!mo->options.load_unnamed) {
 		return mo->dbg_info & R_BIN_DBG_STRIPPED;
 	}
 
@@ -3613,10 +3637,10 @@ const bool MACH0_(load_symbols)(struct MACH0_(obj_t) * mo) {
 	}
 
 	mo->symbols_loaded = true;
-	HtPP *symcache = ht_pp_new0 ();
-	if (R_LIKELY (symcache)) {
-		parse_symbols (bf, mo, symcache);
-		if (mo->parse_start_symbols) {
+	HtPP *symcache = mo->options.load_unnamed && mo->parse_start_symbols? ht_pp_new0 (): NULL;
+	parse_symbols (bf, mo, symcache);
+	if (symcache) {
+		if (mo->parse_start_symbols && mo->options.load_unnamed) {
 			bool is_stripped = parse_function_start_symbols (bf, mo, symcache);
 			if (is_stripped) {
 				mo->dbg_info |= R_BIN_DBG_STRIPPED;

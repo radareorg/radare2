@@ -63,6 +63,10 @@ typedef struct {
 
 typedef void (* OnList)(mach0_ut p, void * ctx);
 
+static bool load_unnamed(RBinFile *bf) {
+	return !bf || !bf->rbin || bf->rbin->options.load_unnamed;
+}
+
 static bool adjust_bounds(RBinFile *bf, MetaSection *ms, const char *sname) {
 	if (ms->addr >= bf->size || ms->size >= bf->size) {
 		R_LOG_DEBUG ("Dropping swift5.%s section because oob", sname);
@@ -711,6 +715,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 	ut8 sm[sizeof (struct MACH0_(SMethod))] = {0};
 
 	const bool bigendian = bf->bo->info->big_endian;
+	const bool want_unnamed = load_unnamed (bf);
 	mach0_ut r = va2pa (bf, p, &offset, &left);
 	if (r == 0 || r == (mach0_ut)-1) {
 		return;
@@ -830,6 +835,11 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 					goto error;
 				}
 			}
+			if (!want_unnamed && R_STR_ISEMPTY (name)) {
+				R_FREE (name);
+				R_FREE (method);
+				goto next;
+			}
 			if (class_name) { // XXX to save memory we can just ref the RBinName instance from the class
 				method->classname = strdup (class_name);
 			} else {
@@ -838,6 +848,10 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			}
 			method->name = r_bin_name_new (name);
 			R_FREE (name);
+		}
+		if (!method->name && !want_unnamed) {
+			R_FREE (method);
+			goto next;
 		}
 
 		r = va2pa (bf, m.types, NULL, &left);
@@ -1201,6 +1215,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 		return;
 	}
 	bigendian = bf->bo->info->big_endian;
+	const bool want_unnamed = load_unnamed (bf);
 	bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
 	if (!(r = va2pa (bf, p, &offset, &left))) {
 		// eprintf ("No pointer\n");
@@ -1276,6 +1291,9 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 				rc = 0;
 			}
 			name[rc] = 0;
+			if (!want_unnamed && !name[0]) {
+				return;
+			}
 			klass->name = r_bin_name_new (name);
 			char *dn = demangle_classname (bf->rbin, name);
 			if (dn) {
@@ -1288,6 +1306,9 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 		char *k = r_str_newf ("objc_class_%s.offset", klass_name);
 		sdb_num_set (bin->kv, k, s, 0);
 		free (k);
+	}
+	if (!klass->name && !want_unnamed) {
+		return;
 	}
 #ifdef R_BIN_MACH064
 	sdb_set (bin->kv, "objc_class.format", "lllll isa super cache vtable data", 0);
@@ -1602,6 +1623,9 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 					method_name = dname;
 				}
 			} else {
+				if (!load_unnamed (bf)) {
+					continue;
+				}
 				method_name = r_str_newf ("%d", i);
 			}
 			// skip namespace
@@ -1839,11 +1863,19 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 		MACH0_(get_class_t) (bf, klass, p, false, relocs, oi);
 		if (klass->name) {
 			const char *klass_name = r_bin_name_tostring (klass->name);
+			if (!load_unnamed (bf) && R_STR_ISEMPTY (klass_name)) {
+				r_bin_class_free (klass);
+				continue;
+			}
 			if (strlen (klass_name) > 512) {
 				R_LOG_INFO ("Invalid class name, probably corrupted binary");
 				break;
 			}
 		} else {
+			if (!load_unnamed (bf)) {
+				r_bin_class_free (klass);
+				continue;
+			}
 			char *klass_name = r_str_newf ("UnnamedClass%" PFMT64d, num_of_unnamed_class);
 			klass->name = r_bin_name_new (klass_name);
 			free (klass_name);

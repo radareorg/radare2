@@ -472,7 +472,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->symbols_vec) {
 		p->symbols_vec (bf);
 		import_cache_cleanup (bo);
-		if (bin->filter) {
+		if (bin->filter && bin->options.load_unnamed) {
 			RBinSymbol *sym;
 			HtPP *ht = ht_pp_new0 ();
 			if (ht) {
@@ -489,7 +489,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			bo->symbols->free = r_bin_symbol_free;
 			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
 			import_cache_cleanup (bo);
-			if (bin->filter) {
+			if (bin->filter && bin->options.load_unnamed) {
 				r_bin_filter_symbols (bf, bo->symbols); // 5s
 			}
 			clamp_list (bo->symbols, limit);

@@ -1288,6 +1288,13 @@ static bool cb_binflags(void *user, void *data) {
 	return true;
 }
 
+static bool cb_binunnamed(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->bin->options.load_unnamed = node->i_value;
+	return true;
+}
+
 static bool cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4321,6 +4328,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETS ("bin.types", "true", "parse and load filetype and language file header structs");
 	SETICB ("bin.limit", 0, &cb_binlimit, "stop parsing/listing after finding N entries/imports/symbols/libs/relocs/strings");
 	SETCB ("bin.flags", "true", &cb_binflags, "load symbols/imports/classes into flag storage at startup");
+	SETCB ("bin.unnamed", "true", &cb_binunnamed, "load unnamed/synthetic symbols/classes/methods");
 	SETCB ("bin.str.purge", "", &cb_strpurge, "purge strings (e bin.str.purge=? provides more detail)");
 	SETS ("bin.str.real", "false", "set the realname in rbin.strings for better disasm (EXPERIMENTAL)");
 	SETCB ("bin.str.nofp", "false", &cb_nofp, "set to true to reduce the false positive strings (EXPERIMENTAL)");
