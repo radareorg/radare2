@@ -3,6 +3,7 @@
 #include <r_core.h>
 #include <sdb/ht_su.h>
 // #include "../format/mach0/mach0_defines.h"
+#include "../i/private.h"
 #define R_BIN_MACH064 1
 #include "../format/mach0/mach0.h"
 #include "objc/mach0_classes.h"
@@ -226,22 +227,26 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 		if (nlist->n_strx >= locsym->strings_size) {
 			continue;
 		}
+		char *symstr = r_buf_get_string (cache->buf, str_base + nlist->n_strx);
+		if (!symstr) {
+			if (!bf->rbin->options.load_unnamed) {
+				continue;
+			}
+			symstr = r_str_newf ("unk_local%d", cache->unk_local_counter++);
+		} else if (!bf->rbin->options.load_unnamed && r_bin_name_is_unnamed (symstr)) {
+			free (symstr);
+			continue;
+		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
 		if (!sym) {
+			free (symstr);
 			break;
 		}
 		memset (sym, 0, sizeof (RBinSymbol));
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->vaddr = nlist->n_value;
 		sym->paddr = va2pa (nlist->n_value, cache->n_maps, cache->maps, cache->buf, slide, NULL, NULL);
-		char *symstr = r_buf_get_string (cache->buf, str_base + nlist->n_strx);
-		if (symstr) {
-			sym->name = r_bin_name_new (symstr);
-		} else {
-			char *s = r_str_newf ("unk_local%d", cache->unk_local_counter++);
-			sym->name = r_bin_name_new (s);
-			free (s);
-		}
+		sym->name = r_bin_name_new_from (symstr);
 	}
 	free (nlists);
 }
@@ -1497,6 +1502,10 @@ static RList *classes(RBinFile *bf) {
 					if (bf->rbin->options.verbose) {
 						R_LOG_ERROR ("KLASS failed at 0x%"PFMT64x" [pa 0x%"PFMT64x" va 0x%"PFMT64x"], is_classlist %d",
 								pointer_to_class, cursor - pointers + offset, cursor - pointers + section->vaddr,  is_classlist);
+					}
+					if (!bf->rbin->options.load_unnamed) {
+						r_bin_class_free (klass);
+						continue;
 					}
 					char *kname = r_str_newf ("UnnamedClass%u", num_of_unnamed_class);
 					klass->name = r_bin_name_new (kname);

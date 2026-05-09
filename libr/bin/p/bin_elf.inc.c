@@ -44,6 +44,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (res) {
 	//	sdb_ns_set (sdb, "info", res->kv);
 		res->limit = bf->rbin->options.limit;
+		res->load_unnamed = bf->rbin->options.load_unnamed;
 		bf->bo->bin_obj = res;
 		return true;
 	}

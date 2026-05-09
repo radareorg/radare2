@@ -6,6 +6,7 @@
 #include <r_types.h>
 #include <r_util.h>
 #include "elf.h"
+#include "../../i/private.h"
 
 /// XXX this should be a runtime option
 #define PERMIT_UNNAMED_SYMBOLS 0
@@ -5424,6 +5425,9 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	const int limit = eo->limit;
 	int count = 0;
 	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
+		if (!eo->load_unnamed && r_bin_name_is_unnamed (symbol->name)) {
+			continue;
+		}
 		RBinSymbol *isym = R_NEW0 (RBinSymbol);
 		bool keep_symbol = true;
 		fill_symbol (eo, symbol, isym);
@@ -5620,14 +5624,7 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 
 		const size_t st_name = sym.st_name;
 		ut64 maxsize = strtab_section->sh_size;
-		RBinElfSymbol *es = RVecRBinElfSymbol_emplace_back (ret);
-		if (!es) {
-			free (strtab);
-			return false;
-		}
-		memset (es, 0, sizeof (RBinElfSymbol));
-		es->offset = offset;
-		es->size = tsize;
+		char name[ELF_STRING_LENGTH] = {0};
 		if (is_section_local_sym (eo, &sym)) {
 			const size_t sym_section = sym.st_shndx;
 			if (eo->shstrtab) {
@@ -5636,23 +5633,37 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 				if (name_off > 0 && name_off < ss) {
 					const char *shname = eo->shstrtab + name_off;
 					size_t left = R_MIN (ELF_STRING_LENGTH - 1, ss - name_off);
-					r_str_ncpy (es->name, shname, left);
-				} else {
-					es->name[0] = 0;
+					r_str_ncpy (name, shname, left);
 				}
 			} else {
 				const ut64 at = strtab_section->sh_offset + eo->shdr[sym_section].sh_name;
-				r_buf_read_at (eo->b, at, (ut8*)es->name, sizeof (es->name));
+				r_buf_read_at (eo->b, at, (ut8*)name, sizeof (name));
 			}
 		} else if (!st_name || st_name >= maxsize) {
-			es->name[0] = 0;
+			name[0] = 0;
 		} else {
-			r_str_ncpy (es->name, &strtab[st_name], ELF_STRING_LENGTH - 1);
+			r_str_ncpy (name, &strtab[st_name], ELF_STRING_LENGTH - 1);
+		}
+
+		name[ELF_STRING_LENGTH - 1] = '\0';
+		if (!eo->load_unnamed && r_bin_name_is_unnamed (name)) {
+			continue;
+		}
+
+		RBinElfSymbol *es = RVecRBinElfSymbol_emplace_back (ret);
+		if (!es) {
+			free (strtab);
+			return false;
+		}
+		memset (es, 0, sizeof (RBinElfSymbol));
+		es->offset = offset;
+		es->size = tsize;
+		r_str_ncpy (es->name, name, ELF_STRING_LENGTH);
+		if (!is_section_local_sym (eo, &sym) && st_name && st_name < maxsize) {
 			es->type = type2str (eo, es, &sym);
 		}
 
 		es->ordinal = k;
-		es->name[ELF_STRING_LENGTH - 1] = '\0';
 		fill_symbol_bind_and_type (eo, es, &sym);
 		es->is_sht_null = is_sht_null;
 		es->is_vaddr = is_vaddr;
@@ -5781,6 +5792,9 @@ RVecRBinSymbol *Elf_(load_symbols_vec)(ELFOBJ *eo) {
 		if (symbol->is_sht_null) {
 			continue;
 		}
+		if (!eo->load_unnamed && r_bin_name_is_unnamed (symbol->name)) {
+			continue;
+		}
 		RBinSymbol sym;
 		fill_symbol (eo, symbol, &sym);
 		RVecRBinSymbol_push_back (&eo->symbols_cache, &sym);
@@ -5804,6 +5818,9 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 	}
 	RBinElfSymbol *is;
 	R_VEC_FOREACH (elf_imports, is) {
+		if (!eo->load_unnamed && r_bin_name_is_unnamed (is->name)) {
+			continue;
+		}
 		RBinImport *imp = RVecRBinImport_emplace_back (&eo->imports_cache);
 		if (!imp) {
 			break;
@@ -5836,6 +5853,9 @@ RVecRBinSymbol *Elf_(load_plt_symbols_vec)(ELFOBJ *eo) {
 	RBinElfSymbol *is;
 	R_VEC_FOREACH (elf_imports, is) {
 		if (!is->size || is->is_sht_null) {
+			continue;
+		}
+		if (!eo->load_unnamed && r_bin_name_is_unnamed (is->name)) {
 			continue;
 		}
 		RBinSymbol sym;

@@ -65,6 +65,19 @@ paddr=0x0000002d vaddr=0x0000002d haddr=-1 type=program
 EOF
 RUN
 
+NAME=WASM: skip unnamed symbols but preserve entrypoint
+ARGS=-e bin.unnamed=false
+FILE=bins/wasm/start.wasm
+CMDS=<<EOF
+is~fcn.~?
+ie~program~?
+EOF
+EXPECT=<<EOF
+0
+1
+EOF
+RUN
+
 NAME=WASM: Wasm - sections
 FILE=bins/wasm/binary.wasm
 CMDS=iS

@@ -72,6 +72,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=SOM: skip unnamed symbols
+ARGS=-e bin.unnamed=false
+FILE=bins/som/libgdbm.sl
+CMDS=is~sym_~?
+EXPECT=<<EOF
+0
+EOF
+RUN
+
 NAME=SOM: libdb symbols
 FILE=bins/som/find
 CMDS=il;i;ih;ii

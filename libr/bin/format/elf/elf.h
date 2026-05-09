@@ -160,6 +160,7 @@ struct Elf_(obj_t) {
 	ut64 boffset;
 	int endian;
 	bool verbose;
+	bool load_unnamed;
 	bool has_nobtcfi;
 	bool has_nx;
 	int bits_cache;
