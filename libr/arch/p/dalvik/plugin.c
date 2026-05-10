@@ -1125,9 +1125,56 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 		}
 		break;
-	case 0x2b:
-	case 0x2c:
+	case 0x2b: // packed-switch
+	case 0x2c: // sparse-switch
 		op->type = R_ANAL_OP_TYPE_SWITCH;
+		op->eob = true;
+		op->fail = addr + sz;
+		if (len > 5) {
+			const st32 voff = (st32)(data[2] | (data[3] << 8) | (data[4] << 16) | ((ut32)data[5] << 24));
+			const ut64 payload_addr = addr + ((st64)voff * 2);
+			RBin *bin = R_UNWRAP2 (a, binb.bin);
+			if (bin && bin->iob.read_at) {
+				ut8 hdr[8];
+				if (bin->iob.read_at (bin->iob.io, payload_addr, hdr, sizeof (hdr))) {
+					const ut16 ident = hdr[0] | (hdr[1] << 8);
+					const ut16 array_size = hdr[2] | (hdr[3] << 8);
+					if (data[0] == 0x2b && ident == 0x0100 && array_size > 0) {
+						const st32 first_key = (st32)(hdr[4] | (hdr[5] << 8) | (hdr[6] << 16) | ((ut32)hdr[7] << 24));
+						const ut32 tbytes = (ut32)array_size * 4;
+						ut8 *targets = malloc (tbytes);
+						if (targets && bin->iob.read_at (bin->iob.io, payload_addr + 8, targets, tbytes)) {
+							op->switch_op = r_anal_switch_op_new (addr, first_key, first_key + array_size - 1, addr + sz);
+							ut32 i;
+							for (i = 0; i < array_size; i++) {
+								const st32 off = (st32)r_read_le32 (targets + i * 4);
+								const ut64 cas = addr + ((st64)off * 2);
+								r_anal_switch_op_add_case (op->switch_op, cas, first_key + i, cas);
+							}
+						}
+						free (targets);
+					} else if (data[0] == 0x2c && ident == 0x0200 && array_size > 0) {
+						const ut32 kbytes = (ut32)array_size * 4;
+						ut8 *keys = malloc (kbytes);
+						ut8 *targets = malloc (kbytes);
+						if (keys && targets
+								&& bin->iob.read_at (bin->iob.io, payload_addr + 4, keys, kbytes)
+								&& bin->iob.read_at (bin->iob.io, payload_addr + 4 + kbytes, targets, kbytes)) {
+							op->switch_op = r_anal_switch_op_new (addr, 0, 0, addr + sz);
+							ut32 i;
+							for (i = 0; i < array_size; i++) {
+								const st32 key = (st32)r_read_le32 (keys + i * 4);
+								const st32 off = (st32)r_read_le32 (targets + i * 4);
+								const ut64 cas = addr + ((st64)off * 2);
+								r_anal_switch_op_add_case (op->switch_op, cas, key, cas);
+							}
+						}
+						free (keys);
+						free (targets);
+					}
+				}
+			}
+		}
 		break;
 	case 0x2d: // cmpl-float
 	case 0x2e: // cmpg-float

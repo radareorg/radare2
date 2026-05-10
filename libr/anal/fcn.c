@@ -1537,6 +1537,43 @@ noskip:
 			// Delayed branches in MIPS needs to continue
 			goto beach;
 			break;
+		case R_ANAL_OP_TYPE_SWITCH:
+			if (op->switch_op && op->switch_op->cases && r_list_length (op->switch_op->cases) > 0) {
+				if (!overlapped) {
+					if (bb->switch_op) {
+						r_anal_switch_op_free (bb->switch_op);
+					}
+					bb->switch_op = op->switch_op;
+					op->switch_op = NULL;
+					bb->fail = op->fail;
+				}
+				int saved_stack = fcn->stack;
+				RListIter *cit;
+				RAnalCaseOp *cop;
+				RAnalSwitchOp *swop = bb->switch_op? bb->switch_op: op->switch_op;
+				r_list_foreach (swop->cases, cit, cop) {
+					if (cop->jump != UT64_MAX) {
+						(void) r_anal_xrefs_setf (anal, fcn, op->addr, cop->jump, R_ANAL_REF_TYPE_CODE | R_ANAL_REF_TYPE_EXEC);
+						if (anal->flb.set) {
+							const int iid = R_ABS ((int)cop->value);
+							r_strf_var (flagname, 64, "case.0x%"PFMT64x".%d", op->addr, iid);
+							anal->flb.set (anal->flb.f, flagname, cop->jump, 1);
+						}
+						r_anal_function_bb (anal, fcn, cop->jump, depth);
+						fcn->stack = saved_stack;
+					}
+				}
+				if (op->fail != UT64_MAX) {
+					if (anal->flb.set) {
+						r_strf_var (flagname, 64, "case.default.0x%"PFMT64x, op->addr);
+						anal->flb.set (anal->flb.f, flagname, op->fail, 1);
+					}
+					ret = r_anal_function_bb (anal, fcn, op->fail, depth);
+					fcn->stack = saved_stack;
+				}
+				goto beach;
+			}
+			break;
 		case R_ANAL_OP_TYPE_UCALL:
 		case R_ANAL_OP_TYPE_RCALL:
 		case R_ANAL_OP_TYPE_ICALL:

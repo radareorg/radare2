@@ -278,9 +278,55 @@ static bool decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	// add ESIL info
 	switch (instr.op) {
 	case DALVIK_OP_PACKED_SWITCH:
-	case DALVIK_OP_SPARSE_SWITCH:
+	case DALVIK_OP_SPARSE_SWITCH: {
 		op->type = R_ANAL_OP_TYPE_SWITCH;
+		op->eob = true;
+		op->fail = op->addr + op->size;
+		const st32 voff = (st32)instr.f31i.b;
+		const ut64 payload_addr = op->addr + ((st64)voff * 2);
+		RBin *bin = R_UNWRAP2 (arch, binb.bin);
+		if (bin && bin->iob.read_at) {
+			ut8 hdr[8];
+			if (bin->iob.read_at (bin->iob.io, payload_addr, hdr, sizeof (hdr))) {
+				const ut16 ident = hdr[0] | (hdr[1] << 8);
+				const ut16 array_size = hdr[2] | (hdr[3] << 8);
+				if (instr.op == DALVIK_OP_PACKED_SWITCH && ident == 0x0100 && array_size > 0) {
+					const st32 first_key = (st32)(hdr[4] | (hdr[5] << 8) | (hdr[6] << 16) | ((ut32)hdr[7] << 24));
+					const ut32 tbytes = (ut32)array_size * 4;
+					ut8 *targets = malloc (tbytes);
+					if (targets && bin->iob.read_at (bin->iob.io, payload_addr + 8, targets, tbytes)) {
+						op->switch_op = r_anal_switch_op_new (op->addr, first_key, first_key + array_size - 1, op->addr + op->size);
+						ut32 i;
+						for (i = 0; i < array_size; i++) {
+							const st32 off = (st32)r_read_le32 (targets + i * 4);
+							const ut64 cas = op->addr + ((st64)off * 2);
+							r_anal_switch_op_add_case (op->switch_op, cas, first_key + i, cas);
+						}
+					}
+					free (targets);
+				} else if (instr.op == DALVIK_OP_SPARSE_SWITCH && ident == 0x0200 && array_size > 0) {
+					const ut32 kbytes = (ut32)array_size * 4;
+					ut8 *keys = malloc (kbytes);
+					ut8 *targets = malloc (kbytes);
+					if (keys && targets
+							&& bin->iob.read_at (bin->iob.io, payload_addr + 4, keys, kbytes)
+							&& bin->iob.read_at (bin->iob.io, payload_addr + 4 + kbytes, targets, kbytes)) {
+						op->switch_op = r_anal_switch_op_new (op->addr, 0, 0, op->addr + op->size);
+						ut32 i;
+						for (i = 0; i < array_size; i++) {
+							const st32 key = (st32)r_read_le32 (keys + i * 4);
+							const st32 off = (st32)r_read_le32 (targets + i * 4);
+							const ut64 cas = op->addr + ((st64)off * 2);
+							r_anal_switch_op_add_case (op->switch_op, cas, key, cas);
+						}
+					}
+					free (keys);
+					free (targets);
+				}
+			}
+		}
 		break;
+	}
 	case DALVIK_OP_NOP:
 		op->type = R_ANAL_OP_TYPE_NOP;
 		break;
