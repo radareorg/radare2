@@ -661,6 +661,11 @@ static bool eval_config_string(RConfig *cfg, char *name, RStrBuf *sb) {
 	} else {
 		if (r_str_endswith (name, ".") && !r_str_endswith (name, "..")) {
 			char *res = r_config_list (cfg, name, 0);
+			if (R_STR_ISEMPTY (res)) {
+				R_LOG_ERROR ("Invalid config key %s", name);
+				free (res);
+				return false;
+			}
 			r_strbuf_appendf (sb, "%s\n", res);
 			free (res);
 		} else {

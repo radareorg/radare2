@@ -715,10 +715,12 @@ static void cmd_eplus(RCore *core, const char *input) {
 	free (s);
 }
 
-static void core_config_list(RCore *core, const char *str, int rad) {
+static bool core_config_list(RCore *core, const char *str, int rad) {
 	char *res = r_config_list (core->config, str, rad);
+	bool found = R_STR_ISNOTEMPTY (res);
 	r_cons_print (core->cons, res);
 	free (res);
+	return found;
 }
 
 static void core_config_eval(RCore *core, const char *input, bool uhm) {
@@ -974,7 +976,10 @@ static int cmd_eval(void *data, const char *input) {
 			core_config_eval (core, r_str_trim_head_ro (input + 1), false);
 		} else {
 			if (r_str_endswith (input, ".") && !r_str_endswith (input, "..")) {
-				core_config_list (core, input + 1, 0);
+				const char *key = r_str_trim_head_ro (input + 1);
+				if (!core_config_list (core, key, 0)) {
+					R_LOG_ERROR ("Invalid config key %s", key);
+				}
 			} else if (r_str_endswith (input, ".?")) {
 				char *w = r_str_ndup (input, strlen (input) - 1);
 				core_config_list (core, w, 2);

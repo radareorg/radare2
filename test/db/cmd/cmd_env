@@ -44,6 +44,15 @@ false
 EOF
 RUN
 
+NAME=invalid eval prefix
+FILE=-
+CMDS=e fuck.
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid config key fuck.
+EOF
+RUN
+
 NAME=env with spaces
 FILE=-
 CMDS=<<EOF
