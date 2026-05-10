@@ -13,7 +13,7 @@ typedef struct {
 	bool show_addr;
 	Sdb *goto_cache;
 	Sdb *db;
-	SetU *switch_addrs;
+	RBitset *switch_addrs;
 	RAnalFunction *fcn;
 	const char *r0;
 	char indentstr[1024];
@@ -495,12 +495,12 @@ static bool is_known_loop_header(PDCState *state, ut64 addr) {
 }
 
 static bool part_of_a_switch(PDCState *state, ut64 addr) {
-	return state->switch_addrs && set_u_contains (state->switch_addrs, addr);
+	return state->switch_addrs && r_bitset_test (state->switch_addrs, addr);
 }
 
 static void collect_switch_addrs(PDCState *state) {
-	state->switch_addrs = set_u_new ();
-	if (!state->switch_addrs || !state->fcn || !state->fcn->bbs) {
+	state->switch_addrs = r_bitset_new ();
+	if (!state->fcn || !state->fcn->bbs) {
 		return;
 	}
 	RListIter *iter;
@@ -511,14 +511,14 @@ static void collect_switch_addrs(PDCState *state) {
 			continue;
 		}
 		if (sop->addr != UT64_MAX) {
-			set_u_add (state->switch_addrs, sop->addr);
+			r_bitset_set (state->switch_addrs, sop->addr);
 		}
 		if (sop->jump_addr != UT64_MAX) {
-			set_u_add (state->switch_addrs, sop->jump_addr);
+			r_bitset_set (state->switch_addrs, sop->jump_addr);
 		}
 		int i;
 		for (i = 0; i < sop->deps_count; i++) {
-			set_u_add (state->switch_addrs, sop->deps[i]);
+			r_bitset_set (state->switch_addrs, sop->deps[i]);
 		}
 	}
 }
@@ -1132,7 +1132,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		sdb_free (state.db);
 		sdb_free (state.goto_cache);
 		if (state.switch_addrs) {
-			set_u_free (state.switch_addrs);
+			r_bitset_free (state.switch_addrs);
 		}
 		r_strbuf_free (state.out);
 		r_strbuf_free (state.codestr);
@@ -1628,7 +1628,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
 	if (state.switch_addrs) {
-		set_u_free (state.switch_addrs);
+		r_bitset_free (state.switch_addrs);
 	}
 	return true;
 }

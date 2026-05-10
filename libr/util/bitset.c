@@ -3,8 +3,6 @@
 #include <r_util.h>
 #include <r_util/r_bitset.h>
 
-#define WORD_BITS 64
-
 static inline ut64 chunk_idx(ut64 bit) {
 	return bit >> R_BITSET_CHUNK_SHIFT;
 }
@@ -18,17 +16,8 @@ static inline ut64 word_mask(ut64 bit) {
 }
 
 #if defined(__GNUC__) || defined(__clang__)
-#define POPCNT64(x) __builtin_popcountll (x)
-#define CTZ64(x)    __builtin_ctzll (x)
+#define CTZ64(x) __builtin_ctzll (x)
 #else
-static inline int POPCNT64(ut64 x) {
-	int c = 0;
-	while (x) {
-		x &= x - 1;
-		c++;
-	}
-	return c;
-}
 static inline int CTZ64(ut64 x) {
 	int c = 0;
 	while (!(x & 1)) {
@@ -43,8 +32,6 @@ static void chunk_kvfree(HtUPKv *kv) {
 	free (kv->value);
 }
 
-/* binary search: returns index of `needle` in b->idxs, or insertion point
- * (negated to fit a single signed return). Use a found-flag instead. */
 static size_t idxs_lower_bound(const RBitset *b, ut64 needle, bool *found) {
 	size_t lo = 0;
 	size_t hi = b->idxs_count;
@@ -93,30 +80,19 @@ static void idxs_remove(RBitset *b, size_t pos) {
 
 R_API RBitset *r_bitset_new(void) {
 	RBitset *b = R_NEW0 (RBitset);
-	if (!b) {
-		return NULL;
-	}
 	b->chunks = ht_up_new (NULL, chunk_kvfree, NULL);
-	if (!b->chunks) {
-		free (b);
-		return NULL;
-	}
 	return b;
 }
 
 R_API void r_bitset_free(RBitset *b) {
-	if (!b) {
-		return;
-	}
+	R_RETURN_IF_FAIL (b);
 	ht_up_free (b->chunks);
 	free (b->idxs);
 	free (b);
 }
 
 R_API void r_bitset_reset(RBitset *b) {
-	if (!b) {
-		return;
-	}
+	R_RETURN_IF_FAIL (b);
 	ht_up_free (b->chunks);
 	b->chunks = ht_up_new (NULL, chunk_kvfree, NULL);
 	b->idxs_count = 0;
@@ -124,9 +100,7 @@ R_API void r_bitset_reset(RBitset *b) {
 }
 
 R_API bool r_bitset_set(RBitset *b, ut64 bit) {
-	if (!b) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 ci = chunk_idx (bit);
 	bool found = false;
 	ut64 *chunk = ht_up_find (b->chunks, ci, &found);
@@ -135,10 +109,7 @@ R_API bool r_bitset_set(RBitset *b, ut64 bit) {
 		if (!chunk) {
 			return false;
 		}
-		if (!ht_up_insert (b->chunks, ci, chunk)) {
-			free (chunk);
-			return false;
-		}
+		ht_up_insert (b->chunks, ci, chunk);
 		bool present = false;
 		size_t pos = idxs_lower_bound (b, ci, &present);
 		if (!idxs_insert (b, ci, pos)) {
@@ -157,9 +128,7 @@ R_API bool r_bitset_set(RBitset *b, ut64 bit) {
 }
 
 R_API bool r_bitset_unset(RBitset *b, ut64 bit) {
-	if (!b) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 ci = chunk_idx (bit);
 	bool found = false;
 	ut64 *chunk = ht_up_find (b->chunks, ci, &found);
@@ -173,7 +142,6 @@ R_API bool r_bitset_unset(RBitset *b, ut64 bit) {
 	}
 	chunk[wi] &= ~mask;
 	b->popcount--;
-	// drop the chunk if now empty, to keep the allocation sparse
 	bool empty = true;
 	ut32 i;
 	for (i = 0; i < R_BITSET_CHUNK_WORDS; i++) {
@@ -194,9 +162,7 @@ R_API bool r_bitset_unset(RBitset *b, ut64 bit) {
 }
 
 R_API bool r_bitset_test(const RBitset *b, ut64 bit) {
-	if (!b) {
-		return false;
-	}
+	R_RETURN_VAL_IF_FAIL (b, false);
 	ut64 ci = chunk_idx (bit);
 	bool found = false;
 	ut64 *chunk = ht_up_find (b->chunks, ci, &found);
@@ -207,11 +173,13 @@ R_API bool r_bitset_test(const RBitset *b, ut64 bit) {
 }
 
 R_API ut64 r_bitset_count(const RBitset *b) {
-	return b? b->popcount: 0;
+	R_RETURN_VAL_IF_FAIL (b, 0);
+	return b->popcount;
 }
 
 R_API ut64 r_bitset_find_next(const RBitset *b, ut64 from) {
-	if (!b || b->idxs_count == 0) {
+	R_RETURN_VAL_IF_FAIL (b, UT64_MAX);
+	if (b->idxs_count == 0) {
 		return UT64_MAX;
 	}
 	ut64 ci = chunk_idx (from);
@@ -237,16 +205,13 @@ R_API ut64 r_bitset_find_next(const RBitset *b, ut64 from) {
 				return base + CTZ64 (word);
 			}
 		}
-		// after the first chunk we don't constrain the starting word
 		ci = UT64_MAX;
 	}
 	return UT64_MAX;
 }
 
 R_API void r_bitset_foreach(const RBitset *b, RBitsetForeachCb cb, void *user) {
-	if (!b || !cb) {
-		return;
-	}
+	R_RETURN_IF_FAIL (b && cb);
 	size_t i;
 	for (i = 0; i < b->idxs_count; i++) {
 		ut64 ci = b->idxs[i];
