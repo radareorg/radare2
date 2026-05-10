@@ -1804,6 +1804,9 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 		if (err) {
 			break;
 		}
+		if (MI > UT64_MAX - omi) {
+			break;
+		}
 		MI += omi;
 		omi = MI;
 		ut64 MA = peek_uleb (b, &err, &skip);
@@ -1817,10 +1820,10 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 		if (MI >= dex->header.method_size) {
 			continue;
 		}
-		if (MC <= 0 || MC + 16 >= dex->size || MC + 16 < MC) {
+		if (MC == 0 || MC > UT64_MAX - 16 || MC + 16 >= dex->size) {
 			continue;
 		}
-		if (bufsz < MC || bufsz < MC + 16) {
+		if (bufsz < MC || bufsz - MC < 16) {
 			continue;
 		}
 		ut16 regsz = r_buf_read_le16_at (b, MC);
@@ -1835,9 +1838,12 @@ static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 
 			continue;
 		}
 		ut64 addr = r_buf_tell (b);
+		if (addr > ST64_MAX) {
+			continue;
+		}
 		dex_parse_debug_item (bf, c, MI, MA, MC + 16, ins_size,
 			insns_size, class_name, regsz, debug_info_off, true);
-		r_buf_seek (b, addr, R_BUF_SET);
+		r_buf_seek (b, (st64)addr, R_BUF_SET);
 	}
 }
 
