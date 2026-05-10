@@ -397,7 +397,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 	SbpfStringRef *ref, *next_ref;
 	int strings_created = 0;
 
-	SetU *created_addrs = set_u_new ();
+	RBitset *created_addrs = r_bitset_new ();
 
 	r_list_foreach (refs, iter, ref) {
 		if (ref->addr < data_start || ref->addr >= data_end) {
@@ -406,7 +406,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 		}
 
 		// Check if we've already created a string at this address
-		bool already_created = set_u_contains (created_addrs, ref->addr);
+		bool already_created = r_bitset_test (created_addrs, ref->addr);
 
 		// Skip substring entries (they have no direct xref)
 		if (ref->xref_addr == UT64_MAX) {
@@ -490,7 +490,7 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 			}
 			free (flagname);
 			free (comment_str);
-			set_u_add (created_addrs, ref->addr);
+			r_bitset_set (created_addrs, ref->addr);
 			strings_created++;
 			continue;
 		}
@@ -530,11 +530,11 @@ static bool sbpf_analyze_strings(RAnal *anal) {
 
 		// Only create strings for non-pointer entries
 		sbpf_create_string (anal, ref->addr, string_size, ref->xref_addr, false);
-		set_u_add (created_addrs, ref->addr);
+		r_bitset_set (created_addrs, ref->addr);
 		strings_created++;
 	}
 
-	set_u_free (created_addrs);
+	r_bitset_free (created_addrs);
 
 	R_LOG_INFO ("Created %d strings", strings_created);
 

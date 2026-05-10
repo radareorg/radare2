@@ -571,7 +571,7 @@ typedef struct r_anal_t {
 	RFlagGetAtAddr flag_get;
 	REvent *ev;
 	RList/*<char *>*/ *imports; // global imports
-	SetU *visited;
+	RBitset *visited;
 	RStrConstPool constpool;
 	RList *leaddrs;
 	char *pincmd;

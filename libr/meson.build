@@ -543,6 +543,7 @@ r_util_files = [
   'include/r_util/r_base91.h',
   'include/r_util/r_big.h',
   'include/r_util/r_bitmap.h',
+  'include/r_util/r_bitset.h',
   'include/r_util/r_buf.h',
   'include/r_util/r_type.h',
   'include/r_util/r_debruijn.h',

@@ -393,7 +393,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 	}
 
 	HtUP *ht = ht_up_new0 ();
-	SetU *ht2 = set_u_new ();
+	RBitset *seen = r_bitset_new ();
 
 	r_list_sort (block_list, (RListComparator)bbCMP);
 
@@ -424,7 +424,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 				if (!cur) {
 					continue;
 				}
-				set_u_add (ht2, cur->start);
+				r_bitset_set (seen, cur->start);
 				if (cur->score < 0) {
 					fcnFree (current_function);
 					current_function = NULL;
@@ -437,7 +437,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 
 				fcnAddBB (current_function, cur);
 
-				if (cur->jump < UT64_MAX && !set_u_contains (ht2, cur->jump)) {
+				if (cur->jump < UT64_MAX && !r_bitset_test (seen, cur->jump)) {
 					jump = ht_up_find (ht, cur->jump, NULL);
 					if (!jump) {
 						R_LOG_ERROR ("Failed to get jump block at 0x%" PFMT64x, cur->jump);
@@ -447,7 +447,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 						R_LOG_ERROR ("Failed to push jump block to stack");
 					}
 				}
-				if (cur->fail < UT64_MAX && !set_u_contains (ht2, cur->fail)) {
+				if (cur->fail < UT64_MAX && !r_bitset_test (seen, cur->fail)) {
 					fail = ht_up_find (ht, cur->fail, NULL);
 					if (!fail) {
 						R_LOG_ERROR ("Failed to get fail block at 0x%" PFMT64x, cur->fail);
@@ -472,7 +472,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 	}
 
 	ht_up_free (ht);
-	set_u_free (ht2);
+	r_bitset_free (seen);
 	r_list_free (result);
 	r_list_free (block_list);
 	return true;
@@ -480,7 +480,7 @@ static bool anal_bbs(RCore *core, const char *input, bool nopskip) {
 
 static bool anal_bbs_range(RCore *core, const char *input) {
 	HtUP *ht = NULL;
-	SetU *ht2 = NULL;
+	RBitset *seen = NULL;
 	ut64 cur = 0;
 	ut64 start = core->addr;
 	const char *input_size = *input? input: "$SS"; // defaults to section size
@@ -614,7 +614,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 	}
 
 	ht = ht_up_new0 ();
-	ht2 = set_u_new ();
+	seen = r_bitset_new ();
 
 	r_list_sort (block_list, (RListComparator)bbCMP);
 
@@ -645,7 +645,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 				if (!cur) {
 					continue;
 				}
-				set_u_add (ht2, cur->start);
+				r_bitset_set (seen, cur->start);
 				if (cur->score < 0) {
 					fcnFree (current_function);
 					current_function = NULL;
@@ -658,7 +658,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 
 				fcnAddBB (current_function, cur);
 
-				if (cur->jump < UT64_MAX && !set_u_contains (ht2, cur->jump)) {
+				if (cur->jump < UT64_MAX && !r_bitset_test (seen, cur->jump)) {
 					jump = ht_up_find (ht, cur->jump, NULL);
 					if (!jump) {
 						R_LOG_ERROR ("Failed to get jump block at 0x%" PFMT64x, cur->jump);
@@ -669,7 +669,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 					}
 				}
 
-				if (cur->fail < UT64_MAX && !set_u_contains (ht2, cur->fail)) {
+				if (cur->fail < UT64_MAX && !r_bitset_test (seen, cur->fail)) {
 					fail = ht_up_find (ht, cur->fail, NULL);
 					if (!fail) {
 						R_LOG_ERROR ("Failed to get fail block at 0x%" PFMT64x, cur->fail);
@@ -702,7 +702,7 @@ static bool anal_bbs_range(RCore *core, const char *input) {
 
 	ht_up_free (ht);
 	ht_up_free (ht_lookup);
-	set_u_free (ht2);
+	r_bitset_free (seen);
 	r_list_free (result);
 	r_list_free (block_list);
 	return true;

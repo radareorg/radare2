@@ -823,7 +823,7 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 	RList /*<class_type_info>*/ *rtti_list = r_list_new ();
 	rtti_list->free = rtti_itanium_type_info_free;
 	// to escape multiple same infos from multiple inheritance
-	SetU *unique_rttis = set_u_new ();
+	RBitset *unique_rttis = r_bitset_new ();
 
 	RListIter *iter;
 	RVTableInfo *vtable;
@@ -838,10 +838,9 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 		recovery_apply_vtable (context, cti->name, vtable);
 
 		// we only need one of a kind
-		if (set_u_contains (unique_rttis, cti->typeinfo_addr)) {
+		if (!r_bitset_set (unique_rttis, cti->typeinfo_addr)) {
 			rtti_itanium_type_info_free (cti);
 		} else {
-			set_u_add (unique_rttis, cti->typeinfo_addr);
 			r_list_append (rtti_list, cti);
 		}
 	}
@@ -851,6 +850,6 @@ R_API void r_anal_rtti_itanium_recover_all(RVTableContext *context, RList *vtabl
 		add_class_bases (context, cti);
 	}
 
-	set_u_free (unique_rttis);
+	r_bitset_free (unique_rttis);
 	r_list_free (rtti_list);
 }

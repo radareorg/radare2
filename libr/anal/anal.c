@@ -294,7 +294,9 @@ R_API void r_anal_free(RAnal *a) {
 	r_list_free (a->fcns);
 	ht_up_free (a->ht_addr_fun);
 	ht_pp_free (a->ht_name_fun);
-	set_u_free (a->visited);
+	if (a->visited) {
+		r_bitset_free (a->visited);
+	}
 	r_anal_hint_storage_fini (a);
 	r_th_lock_free (a->lock);
 	r_interval_tree_fini (&a->meta);

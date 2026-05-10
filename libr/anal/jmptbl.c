@@ -1381,17 +1381,16 @@ R_API bool try_get_jmptbl_info(RAnal *anal, RAnalFunction *fcn, ut64 addr, RAnal
 	return isValid;
 }
 
-static void jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, SetU *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase) {
-	if (set_u_contains (s, kase->jump)) {
+static void jmptbl_apply_caseop(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, RBitset *s, ut64 saddr, int loadsz, const RAnalCaseOp *kase) {
+	if (!r_bitset_set (s, kase->jump)) {
 		return;
 	}
 	apply_case (anal, fcn, bb, saddr, loadsz, kase->jump, kase->value, kase->jump, true);
-	set_u_add (s, kase->jump);
 	analyze_new_case (anal, fcn, bb, saddr, kase->jump, 999);
 }
 
 R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, ut64 saddr, ut64 jaddr, RList *cases, int loadsz) {
-	SetU *s = set_u_new ();
+	RBitset *s = r_bitset_new ();
 	RAnalCaseOp *kase;
 	RListIter *iter;
 	r_list_foreach (cases, iter, kase) {
@@ -1399,7 +1398,7 @@ R_API void r_anal_jmptbl_list(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, u
 	}
 	apply_switch (anal, fcn, bb, saddr, saddr, jaddr, UT64_MAX,
 		r_list_length (cases), UT64_MAX, loadsz);
-	set_u_free (s);
+	r_bitset_free (s);
 }
 
 R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlock *bb, int depth, RAnalOp *op, int loadsize) {
@@ -1432,7 +1431,7 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	}
 	const ut8 esize = (ut8)loadsize;
 	const st64 delta_scale = loadsize == 1? 4: loadsize == 2? 2: 1;
-	SetU *s = set_u_new ();
+	RBitset *s = r_bitset_new ();
 	size_t valid_cases = 0;
 	size_t i;
 	for (i = 0; i < max; i++) {
@@ -1451,7 +1450,7 @@ R_IPI bool r_anal_jmptbl_arm64_from_br(RAnal *anal, RAnalFunction *fcn, RAnalBlo
 	apply_switch (anal, fcn, bb, opaddr, op->addr, tblptr, UT64_MAX,
 		valid_cases, UT64_MAX, loadsize);
 	r_anal_switch_op_add_deps (anal, op->addr, depaddr, op->addr);
-	set_u_free (s);
+	r_bitset_free (s);
 	free (table);
 	return true;
 }

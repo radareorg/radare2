@@ -2100,18 +2100,15 @@ R_API int r_anal_function(RAnal *anal, RAnalFunction *fcn, ut64 addr, int reftyp
 	}
 	if (anal->opt.norevisit) {
 		if (!anal->visited) {
-			anal->visited = set_u_new ();
+			anal->visited = r_bitset_new ();
 		}
-		if (set_u_contains (anal->visited, addr)) {
+		if (!r_bitset_set (anal->visited, addr)) {
 			R_LOG_ERROR ("visit at 0x%08"PFMT64x" %c", addr, reftype);
 			return R_ANAL_RET_END;
 		}
-		set_u_add (anal->visited, addr);
-	} else {
-		if (anal->visited) {
-			set_u_free (anal->visited);
-			anal->visited = NULL;
-		}
+	} else if (anal->visited) {
+		r_bitset_free (anal->visited);
+		anal->visited = NULL;
 	}
 	/* defines fcn. or loc. prefix */
 	fcn->type = (R_ANAL_REF_TYPE_MASK (reftype) == R_ANAL_REF_TYPE_CODE) ? R_ANAL_FCN_TYPE_LOC : R_ANAL_FCN_TYPE_FCN;
