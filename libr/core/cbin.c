@@ -2011,7 +2011,7 @@ static void add_metadata(RCore *core, RBinReloc *reloc, ut64 addr, int mode) {
 		return;
 	}
 	RIOMap *map = r_io_map_get_at (core->io, addr);
-	if (!map || map->perm & R_PERM_X) {
+	if (!map || map->perms[R_IO_SPERM] & R_PERM_X) {
 		return;
 	}
 	if (IS_MODE_SET (mode)) {

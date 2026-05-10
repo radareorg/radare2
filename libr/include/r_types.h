@@ -88,13 +88,6 @@
 #define R_PERM_PRIV	16
 #define R_PERM_ACCESS	32
 #define R_PERM_CREAT	64
-#define R_PERM_REQ_R	128
-#define R_PERM_REQ_W	256
-#define R_PERM_REQ_X	512
-#define R_PERM_REQ_RW	(R_PERM_REQ_R|R_PERM_REQ_W)
-#define R_PERM_REQ_RX	(R_PERM_REQ_R|R_PERM_REQ_X)
-#define R_PERM_REQ_RWX	(R_PERM_REQ_R|R_PERM_REQ_W|R_PERM_REQ_X)
-#define R_PERM_REQ_WX	(R_PERM_REQ_W|R_PERM_REQ_X)
 // R2_600 typedef int RPerm;
 
 

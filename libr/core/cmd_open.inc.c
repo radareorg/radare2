@@ -642,8 +642,8 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			pj_kn (pj, "delta", map->delta);
 			pj_kn (pj, "from", r_io_map_begin (map));
 			pj_kn (pj, "to", r_io_map_to (map));
-			pj_ks (pj, "perm", r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
-			pj_ks (pj, "rperm", r_str_rwx_i ((map->perm & R_PERM_REQ_RWX) >> 7));
+			pj_ks (pj, "perm", r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX));
+			pj_ks (pj, "sperm", r_str_rwx_i (map->perms[R_IO_SPERM]));
 			pj_ks (pj, "name", r_str_get (map->name));
 			pj_end (pj);
 			break;
@@ -661,7 +661,7 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 			// Need FIFO order here
 			char *om_cmd = r_str_newf ("omu %d 0x%08"PFMT64x" 0x%08"PFMT64x
 					" 0x%08"PFMT64x" %s%s%s\n", map->fd, r_io_map_begin (map),
-					r_io_map_size (map), map->delta, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)),
+					r_io_map_size (map), map->delta, r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX),
 					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
 			if (om_cmd) {
 				om_cmds = r_str_prepend (om_cmds, om_cmd);
@@ -671,16 +671,16 @@ static void map_list(RCore *core, int mode, RPrint *p, int fd) {
 		}
 		default: {
 			char perm_str[64];
-			r_cons_permstr (core->cons, map->perm & (R_PERM_RWX | R_PERM_S),
+			r_cons_permstr (core->cons, map->perms[R_IO_EPERM] & R_PERM_RWX,
 				r_config_get_i (core->config, "scr.color") > 0, perm_str, sizeof (perm_str));
-			char rperm_str[64];
-			r_cons_permstr (core->cons, (map->perm & R_PERM_REQ_RWX) >> 7,
-				r_config_get_i (core->config, "scr.color") > 0, rperm_str, sizeof (rperm_str));
+			char sperm_str[64];
+			r_cons_permstr (core->cons, map->perms[R_IO_SPERM],
+				r_config_get_i (core->config, "scr.color") > 0, sperm_str, sizeof (sperm_str));
 			r_print_printf (p, "%c%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
 					" - 0x%08"PFMT64x" %s %s%s%s\n",
 					(check_for_current_map && r_io_map_contain (map, off)) ?
 					'*' : '-', map->id, map->fd, map->delta, r_io_map_begin (map),
-					r_io_map_to (map), perm_str, rperm_str,
+					r_io_map_to (map), perm_str, sperm_str,
 					R_STR_ISEMPTY (map->name)? "": " ", r_str_get (map->name));
 			check_for_current_map &= !r_io_map_contain (map, off);
 			break;
@@ -713,7 +713,7 @@ static void cmd_ompg(RCore *core, const char *input) {
 		ut32 fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
 		if (desc) {
-			r_core_cmd0 (core, "omm");
+			r_core_cmd0 (core, "omm");	//XXX: don't use r_core_cmd, no need to parse commands
 		}
 		return;
 	}
@@ -721,19 +721,20 @@ static void cmd_ompg(RCore *core, const char *input) {
 	case '+':
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
-			map->perm |= perm;
+			const int _perm = map->perms[R_IO_SPERM] | perm;
+			r_io_map_set_perm (core->io, mapid, _perm);
 		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	case '-':
 		do {
 			RIOMap *map = r_io_map_get (core->io, mapid);
-			map->perm &= ~perm;
+			const int _perm = map->perms[R_IO_SPERM] & ~perm;
+			r_io_map_set_perm (core->io, mapid, _perm);
 		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	default:
 		do {
-			RIOMap *map = r_io_map_get (core->io, mapid);
-			map->perm = perm;
+			r_io_map_set_perm (core->io, mapid, perm);
 		} while (r_id_storage_get_next (&core->io->maps, &mapid));
 		break;
 	}
@@ -751,7 +752,7 @@ static void cmd_omp(RCore *core, int argc, char *argv[]) {
 				if (nperm < 0) {
 					R_LOG_ERROR ("Invalid permission string (%s)", argv[0]);
 				} else {
-					map->perm = nperm;
+					r_io_map_set_perm (core->io, map->id, nperm);
 				}
 			}
 		}
@@ -773,7 +774,7 @@ static void cmd_omp(RCore *core, int argc, char *argv[]) {
 				if (nperm < 0) {
 					R_LOG_ERROR ("Invalid permission string (%s)", argv[1]);
 				} else {
-					map->perm = nperm;
+					r_io_map_set_perm (core->io, id, nperm);
 				}
 			}
 		}
@@ -811,7 +812,7 @@ static void cmd_omcomma(RCore *core, const char *arg) {
 	if (!t) {
 		return;
 	}
-	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "rperm", "meta", "name", NULL);
+	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "sperm", "meta", "name", NULL);
 	ut32 mapid = 0;
 	r_id_storage_get_lowest (&core->io->maps, &mapid);
 	do {
@@ -829,8 +830,8 @@ static void cmd_omcomma(RCore *core, const char *arg) {
 		char *meta = r_io_map_getattr (m);
 		r_table_add_rowf (t, "ddxxxxxssss",
 			m->id, m->fd, pa, pa_end, pa_size,
-			va, va_end, r_str_rwx_i (m->perm & (R_PERM_RWX | R_PERM_S)),
-			r_str_rwx_i ((m->perm & R_PERM_REQ_RWX) >> 7), meta, name);
+			va, va_end, r_str_rwx_i (m->perms[R_IO_EPERM] & R_PERM_RWX),
+			r_str_rwx_i (m->perms[R_IO_SPERM]), meta, name);
 		free (meta);
 	} while (r_id_storage_get_next (&core->io->maps, &mapid));
 	if (r_table_query (t, arg)) {
@@ -1273,7 +1274,8 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj_kn (pj, "delta", map->delta);
 				pj_kn (pj, "from", r_io_map_begin (map));
 				pj_kn (pj, "to", r_io_map_to (map));
-				pj_ks (pj, "perm", r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
+				pj_ks (pj, "perm", r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX));
+				pj_ks (pj, "sperm", r_str_rwx_i (map->perms[R_IO_SPERM]));
 				pj_ks (pj, "name", r_str_get (map->name));
 				pj_end (pj);
 
@@ -1282,9 +1284,10 @@ static void cmd_open_map(RCore *core, const char *input) {
 				pj_free (pj);
 			} else {
 				r_cons_printf (core->cons, "%2d fd: %i +0x%08"PFMT64x" 0x%08"PFMT64x
-					" - 0x%08"PFMT64x" %s %s\n", map->id, map->fd,
+					" - 0x%08"PFMT64x" %s %s %s\n", map->id, map->fd,
 					map->delta, r_io_map_begin (map), r_io_map_to (map),
-					r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)), r_str_get (map->name));
+					r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX), r_str_rwx_i (map->perms[R_IO_SPERM]),
+					r_str_get (map->name));
 			}
 		} else if (input[2] == 'j') {
 			r_cons_println (core->cons, "{}");
@@ -1416,7 +1419,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
-					const char *sperm = r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S));
+					const char *sperm = r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX);
 					r_cons_println (core->cons, sperm);
 				}
 			}
@@ -1597,7 +1600,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			{
 				RIOMap *map = r_io_map_get_at (core->io, core->addr);
 				if (map) {
-					r_cons_println (core->cons, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)));
+					r_cons_println (core->cons, r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX));
 				}
 			}
 			break;
@@ -1646,7 +1649,7 @@ static void cmd_open_map(RCore *core, const char *input) {
 			char temp[32];
 			snprintf (temp, sizeof (temp), "%d", map->fd);
 			RListInfo *info = r_listinfo_new (map->name, map->itv, map->itv,
-				map->perm & (R_PERM_RWX | R_PERM_S), temp);
+				map->perms[R_IO_EPERM] & R_PERM_RWX, temp);
 			if (!info) {
 				break;
 			}
@@ -2077,7 +2080,7 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 			ut64 vsize = map->itv.size;
 			if (vsize > 0) {
 				r_print_printf (p, "om $d 0x%08"PFMT64x" 0x%08"PFMT64x" 0x%08"PFMT64x" %s %s\n",
-						vaddr, vsize, paddr, r_str_rwx_i (map->perm & (R_PERM_RWX | R_PERM_S)),
+						vaddr, vsize, paddr, r_str_rwx_i (map->perms[R_IO_EPERM] & R_PERM_RWX),
 						r_str_get (map->name));
 			}
 		}

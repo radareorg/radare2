@@ -91,12 +91,12 @@ EXPECT=<<EOF
             0x100003c19      4881ec3806..   sub rsp, 0x638
             0x100003c20      4989f7         mov r15, rsi
             0x100003c23      4189fe         mov r14d, edi
- 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
+ 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x r-x fmap.__TEXT
 554889e54157415641554154534881ec
  3 * r-x 0x0002daa0 bins/mach0/ls-m1
-* 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x fmap.__TEXT
-- 2 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- fmap.__DATA
-- 1 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- fmap.__LINKEDIT
+* 3 fd: 3 +0x00004000 0x100000000 - 0x100007fff r-x r-x fmap.__TEXT
+- 2 fd: 3 +0x0000c000 0x100008000 - 0x10000bfff r-- rw- fmap.__DATA
+- 1 fd: 3 +0x00010000 0x10000c000 - 0x100013fff r-- r-- fmap.__LINKEDIT
 EOF
 RUN
 
@@ -476,9 +476,9 @@ EOF
 EXPECT=<<EOF
  3 * r-x 0x000021da bins/elf/analysis/main
  4 - rw- 0x00000008 null://8
-* 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x fmap.LOAD0
-- 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- fmap.LOAD1
-- 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- mmap.LOAD1
+* 3 fd: 3 +0x00000000 0x00001337 - 0x00001a12 r-x r-x fmap.LOAD0
+- 2 fd: 3 +0x000006e0 0x00201a17 - 0x00201c46 r-- rw- fmap.LOAD1
+- 1 fd: 4 +0x00000000 0x00201c47 - 0x00201c4e rw- rw- mmap.LOAD1
 omu 4 0x00201c47 0x00000008 0x00000000 rw- mmap.LOAD1
 omu 3 0x00201a17 0x00000230 0x000006e0 r-- fmap.LOAD1
 omu 3 0x00001337 0x000006dc 0x00000000 r-x fmap.LOAD0
@@ -516,7 +516,7 @@ om*~[2]
 EOF
 EXPECT=<<EOF
  3 * rwx 0x00000200 malloc://512
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000001ff rwx rwx
 omu 3 0x00000000 0x00000200 0x00000000 rwx
 --
 
@@ -562,15 +562,15 @@ EXPECT=<<EOF
  5 - rw- 0x00002200 null://8704
  6 - r-- 0x00000400 null://1024
  7 - r-x 0x00000200 null://512
-* 9 fd: 3 +0x00000400 0x140001000 - 0x14001adff r-x fmap..text
-- 8 fd: 7 +0x00000000 0x14001ae00 - 0x14001afff r-x mmap..text
-- 7 fd: 3 +0x0001a200 0x14001b000 - 0x14001dbff r-- fmap..rdata
-- 6 fd: 6 +0x00000000 0x14001dc00 - 0x14001dfff r-- mmap..rdata
-- 5 fd: 3 +0x0001ce00 0x14001e000 - 0x14001fdff r-- fmap..data
-- 4 fd: 5 +0x00000000 0x14001fe00 - 0x140021fff rw- mmap..data
-- 3 fd: 3 +0x0001ec00 0x140022000 - 0x140022fff r-- fmap..pdata
-- 2 fd: 3 +0x0001fc00 0x140023000 - 0x1400231ff r-- fmap..reloc
-- 1 fd: 4 +0x00000000 0x140023200 - 0x140023fff r-- mmap..reloc
+* 9 fd: 3 +0x00000400 0x140001000 - 0x14001adff r-x r-x fmap..text
+- 8 fd: 7 +0x00000000 0x14001ae00 - 0x14001afff r-x r-x mmap..text
+- 7 fd: 3 +0x0001a200 0x14001b000 - 0x14001dbff r-- r-- fmap..rdata
+- 6 fd: 6 +0x00000000 0x14001dc00 - 0x14001dfff r-- r-- mmap..rdata
+- 5 fd: 3 +0x0001ce00 0x14001e000 - 0x14001fdff r-- rw- fmap..data
+- 4 fd: 5 +0x00000000 0x14001fe00 - 0x140021fff rw- rw- mmap..data
+- 3 fd: 3 +0x0001ec00 0x140022000 - 0x140022fff r-- r-- fmap..pdata
+- 2 fd: 3 +0x0001fc00 0x140023000 - 0x1400231ff r-- r-- fmap..reloc
+- 1 fd: 4 +0x00000000 0x140023200 - 0x140023fff r-- r-- mmap..reloc
 omu 4 0x140023200 0x00000e00 0x00000000 r-- mmap..reloc
 omu 3 0x140023000 0x00000200 0x0001fc00 r-- fmap..reloc
 omu 3 0x140022000 0x00001000 0x0001ec00 r-- fmap..pdata

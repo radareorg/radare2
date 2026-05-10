@@ -223,6 +223,7 @@ typedef struct r_io_plugin_t {
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
 
+#define	R_IO_MAP_SUPER_PERM_SH	16		//needed for r_io_is_valid_offset
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
 #define	R_IO_MAP_TIE_FLG_FORTH	(1 << 1)	//ties a map so that the desc resizes when the map resizes
 
@@ -263,9 +264,22 @@ typedef enum {
 	R_IO_MAP_META_FLAG_LIBRARY, // maybe the same of system?
 } RIOMapMetaFlags;
 
+enum {
+#ifdef	__BIG_ENDIAN__
+	R_IO_SPERM = 0,
+	R_IO_EPERM,
+#else
+	R_IO_EPERM = 0,
+	R_IO_SPERM,
+#endif
+};
+
 typedef struct r_io_map_t {
 	int fd;
-	int perm;
+	union {
+		int perm;
+		ut16 perms[2];
+	};
 	ut32 id;
 	ut64 ts;
 	RInterval itv;
@@ -298,7 +312,10 @@ typedef struct r_io_bank_t {
 
 typedef struct r_io_region_t {
 	RInterval itv;
-	ut32 perm;
+	union {
+		ut32 perm;
+		ut16 perms[2];
+	};
 } RIORegion;
 
 R_VEC_TYPE (RVecRIORegion, RIORegion);
@@ -406,6 +423,9 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
+R_API int r_io_map_get_perm(RIO *io, ut32 id);
+R_API int r_io_map_get_sperm(RIO *io, ut32 id);
+R_API bool r_io_map_set_perm(RIO *io, ut32 id, int perm);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);
