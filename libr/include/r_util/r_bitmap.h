@@ -25,16 +25,20 @@ extern "C" {
 #endif
 
 typedef struct r_bitmap_t {
-	int length;
+	size_t length;
 	RBitword *bitmap;
 } RBitmap;
 
 R_API RBitmap *r_bitmap_new(size_t len);
-R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, int len);
+/* len is the number of bytes available in buf */
+R_API void r_bitmap_set_bytes(RBitmap *b, const ut8 *buf, size_t len);
 R_API void r_bitmap_free(RBitmap *b);
 R_API void r_bitmap_set(RBitmap *b, size_t bit);
 R_API void r_bitmap_unset(RBitmap *b, size_t bit);
-R_API int r_bitmap_test(RBitmap *b, size_t bit);
+R_API bool r_bitmap_test(const RBitmap *b, size_t bit);
+R_API size_t r_bitmap_count(const RBitmap *b);
+/* returns the next set bit at or after from, or SZT_MAX if none */
+R_API size_t r_bitmap_find_next_set(const RBitmap *b, size_t from);
 
 #ifdef __cplusplus
 }
