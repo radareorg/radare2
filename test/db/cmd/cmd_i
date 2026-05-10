@@ -4005,7 +4005,7 @@ paddr      vaddr      phaddr     vhaddr     type
 nth paddr        size vaddr       vsize perm flags type name
 ------------------------------------------------------------
 0   0x00000000   0x70 0x00000000   0x70 -r-- 0x0   ---- header
-1   0x00000070  0x1b8 0x00000070  0x1b8 -r-- 0x0   ---- constpool
-2   0x00000228  0x134 0x00000228  0x134 -r-x 0x0   ---- code
+1   0x00000070  0x1c8 0x00000070  0x1c8 -r-- 0x0   ---- constpool
+2   0x00000238  0x124 0x00000238  0x124 -r-x 0x0   ---- code
 EOF
 RUN

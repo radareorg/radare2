@@ -2372,6 +2372,9 @@ static bool is_entrypoint_symbol(const char *name) {
 		"application:handleWatchKitExtensionRequest:reply",
 		"JNI_OnLoad",
 		"JNI_OnUnload",
+		// android dalvik lifecycle entrypoints
+		"onCreate",
+		"onReceive",
 		// clang-format on
 	};
 	size_t i, size = sizeof (words) / sizeof (words[0]);
@@ -2379,6 +2382,20 @@ static bool is_entrypoint_symbol(const char *name) {
 	for (i = 0; i < size; i++) {
 		if (!strcmp (name, words[i])) {
 			return true;
+		}
+	}
+	// dex/java symbols are stored as "Lcls/path.method.<name>(<sig>)<ret>"
+	const char *p = strstr (name, ".method.");
+	if (p) {
+		p += strlen (".method.");
+		const char *q = strchr (p, '(');
+		if (q && q > p) {
+			const size_t len = q - p;
+			for (i = 0; i < size; i++) {
+				if (strlen (words[i]) == len && !memcmp (p, words[i], len)) {
+					return true;
+				}
+			}
 		}
 	}
 	return false;
