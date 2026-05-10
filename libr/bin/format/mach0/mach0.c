@@ -3176,6 +3176,7 @@ static void _enrich_symbol(RBinFile *bf, struct MACH0_(obj_t) * bin, HtPP *symca
 						}
 					}
 				}
+				free (demangled);
 			}
 		}
 	}

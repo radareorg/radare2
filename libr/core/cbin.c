@@ -201,6 +201,8 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 			char *offset_key = r_str_newf ("%s.offset", flagname);
 			const char *off = sdb_const_get (db, offset_key, 0);
 			if (fmtsize < 1) {
+				free (offset_key);
+				free (dup);
 				continue;
 			}
 			fmtsize += 4; // increase buffer to fix a bug in compuatation for pf.elf_header size doesnt harms other cases but should be fixed

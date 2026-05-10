@@ -1340,6 +1340,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			bool first = true;
 			if (r_list_empty (objs) && mode == 'j') {
 				r_cons_print (core->cons, "[]");
+				r_list_free (objs);
 				return;
 			}
 			r_list_foreach (objs, objs_iter, bf) {
@@ -1444,6 +1445,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						mode |= R_MODE_RADARE;
 					} else if (mode == 'k') { // "icck"
 						classdump_keys (core, bo);
+						r_list_free (objs);
 						return;
 					}
 					const char *lang = strchr (input, ' ');
@@ -1483,6 +1485,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				}
 				core->bin->cur = cur;
 			}
+			r_list_free (objs);
 		}
 		break;
 	default:

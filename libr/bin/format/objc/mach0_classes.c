@@ -219,6 +219,15 @@ static inline bool is_thumb(RBinFile *bf) {
 	return (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9);
 }
 
+static void objc_method_free(void *p) {
+	RBinSymbol *sym = (RBinSymbol *)p;
+	if (sym) {
+		free ((char *)sym->rtype);
+		sym->rtype = NULL;
+		r_bin_symbol_free (sym);
+	}
+}
+
 static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, 0);
 
@@ -720,6 +729,9 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 	if (r == 0 || r == (mach0_ut)-1) {
 		return;
 	}
+	if (klass->methods) {
+		klass->methods->free = objc_method_free;
+	}
 
 	if (r + left < r || r + sizeof (struct MACH0_(SMethodList)) < r) {
 		return;
@@ -837,7 +849,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			}
 			if (!want_unnamed && R_STR_ISEMPTY (name)) {
 				R_FREE (name);
-				R_FREE (method);
+				objc_method_free (method);
 				goto next;
 			}
 			if (class_name) { // XXX to save memory we can just ref the RBinName instance from the class
@@ -850,7 +862,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			R_FREE (name);
 		}
 		if (!method->name && !want_unnamed) {
-			R_FREE (method);
+			objc_method_free (method);
 			goto next;
 		}
 
@@ -873,18 +885,18 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 					goto error;
 				}
 				if (r_buf_read_at (bf->buf, r, (ut8 *)rtype, left) != left) {
-					free (rtype);
+					R_FREE (rtype);
 					goto error;
 				}
 				rtype[left] = 0;
 			}
-			method->rtype = strdup (rtype);
-			R_FREE (rtype);
+			method->rtype = rtype;
+			rtype = NULL;
 		}
 		method->lang = R_BIN_LANG_OBJC;
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
-			R_FREE (method);
+			objc_method_free (method);
 			goto next;
 		}
 		method->type = is_static? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_METH_STR;
@@ -906,8 +918,9 @@ next:
 	}
 	return;
 error:
-	R_FREE (method);
+	objc_method_free (method);
 	R_FREE (name);
+	R_FREE (rtype);
 	return;
 }
 
@@ -1294,6 +1307,7 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 			if (!want_unnamed && !name[0]) {
 				return;
 			}
+			r_bin_name_free (klass->name);
 			klass->name = r_bin_name_new (name);
 			char *dn = demangle_classname (bf->rbin, name);
 			if (dn) {
@@ -1564,6 +1578,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	char *otypename = readstr (bf, st.name_addr, NULL, NULL);
 	if (R_STR_ISEMPTY (otypename)) {
 		R_LOG_DEBUG ("swift-type-parse missing name");
+		free (otypename);
 		return;
 	}
 	RBin *bin = bf->rbin;
@@ -1581,6 +1596,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			if (R_STR_ISNOTEMPTY (sname)) {
 				r_bin_name_demangled (bn, sname);
 			}
+			free (sname);
 			r_list_append (klass->super, bn);
 		}
 		free (super_name);
@@ -1645,6 +1661,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			} else {
 				sym = r_bin_symbol_new (method_name, method_addr, method_addr);
 			}
+			free (rawname);
 #if 0
 			if (oname) {
 				r_bin_name_free (sym->name);
@@ -1685,6 +1702,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
 			if (R_STR_ISEMPTY (field_name)) {
+				free (field_name);
 				free (field);
 				break;
 			}
@@ -1845,7 +1863,8 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 			break;
 		}
 		RBinClass *klass = r_bin_class_new ("", "", R_BIN_ATTR_PUBLIC);
-		R_FREE (klass->name); // allow NULL name in rbinclass?
+		r_bin_name_free (klass->name); // allow NULL name in rbinclass?
+		klass->name = NULL;
 		klass->lang = R_BIN_LANG_OBJC;
 		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		size = sizeof (mach0_ut);
@@ -1921,7 +1940,8 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 			break;
 		}
 		RBinClass *klass = r_bin_class_new ("", NULL, 0);
-		R_FREE (klass->name);
+		r_bin_name_free (klass->name);
+		klass->name = NULL;
 		klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 		if (!read_ptr_pa (bf, ms->catlist.addr + i, &p)) {
 			r_bin_class_free (klass);
@@ -1949,6 +1969,7 @@ static RList *MACH0_(parse_categories)(RBinFile *bf, MetaSections *ms, const RSk
 			RBinName *bn = r_bin_name_new (super);
 			// TODO: demangle name!!
 			r_list_append (klass->super, bn);
+			free (super);
 		//	char *name = strdup (super + idx);
 		//	free (klass->name);
 		//	klass->name = name;
@@ -2071,6 +2092,7 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 			}
 			free (kname);
 		}
+		free (target_class_name);
 	}
 
 	klass->addr = p;

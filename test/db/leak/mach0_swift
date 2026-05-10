@@ -1,0 +1,14 @@
+NAME=leak macho swift objc classes
+FILE=bins/mach0/TestSwiftObjc
+ARGS=-e bin.relocs.apply=true -e bin.unnamed=false -e bin.flags=false -e bin.relocs.xrefs=false
+CMDS=<<EOF
+ic~swift~?
+ic~objc~?
+?e hello
+EOF
+EXPECT=<<EOF
+1
+4
+hello
+EOF
+RUN

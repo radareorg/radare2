@@ -634,7 +634,8 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 			isSwift = r_bin_lang_swift (bf);
 			if (isSwift) {
-				bo->classes = classes_from_symbols (bf);
+				classes_from_symbols (bf);
+				r_bin_object_rebuild_classes_ht (bo);
 			}
 		} else {
 			RList *classes = classes_from_symbols (bf);
