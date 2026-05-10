@@ -91,8 +91,15 @@ static int r_bin_dmp64_init_header(struct r_bin_dmp64_obj_t *obj) {
 }
 
 static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
-	int i;
 	if (!obj->bmp_header) {
+		return false;
+	}
+	ut64 pages = obj->bmp_header->Pages;
+	if (!pages || pages > SZT_MAX) {
+		return false;
+	}
+	size_t num_pages = (size_t)pages;
+	if (num_pages > SIZE_MAX - 7) {
 		return false;
 	}
 	obj->pages = r_list_newf (free);
@@ -100,29 +107,29 @@ static int r_bin_dmp64_init_bmp_pages(struct r_bin_dmp64_obj_t *obj) {
 		return false;
 	}
 	ut64 paddr_base = obj->bmp_header->FirstPage;
-	int num_pages = obj->bmp_header->Pages;
-	if (num_pages < 1) {
+	RBitmap *bitmap = r_bitmap_new (num_pages);
+	if (!bitmap) {
 		return false;
 	}
-	RBitmap *bitmap = r_bitmap_new (num_pages);
-	r_bitmap_set_bytes (bitmap, obj->bitmap, num_pages / 8);
+	r_bitmap_set_bytes (bitmap, obj->bitmap, (num_pages + 7) / 8);
 
 	ut64 num_bitset = 0;
-	for (i = 0; i < num_pages; i++) {
-		if (!r_bitmap_test(bitmap, i)) {
-			continue;
-		}
+	size_t i = 0;
+	while ((i = r_bitmap_find_next_set (bitmap, i)) != SZT_MAX) {
 		dmp_page_desc *page = R_NEW0 (dmp_page_desc);
 		if (R_UNLIKELY (!page)) {
+			r_bitmap_free (bitmap);
 			return false;
 		}
-		page->start = i * DMP_PAGE_SIZE;
+		page->start = (ut64)i * DMP_PAGE_SIZE;
 		page->file_offset = paddr_base + num_bitset * DMP_PAGE_SIZE;
 		r_list_append (obj->pages, page);
 		num_bitset++;
+		i++;
 	}
 	if (obj->bmp_header->TotalPresentPages != num_bitset) {
 		R_LOG_WARN ("TotalPresentPages not matched");
+		r_bitmap_free (bitmap);
 		return false;
 	}
 
@@ -147,12 +154,19 @@ static int r_bin_dmp64_init_bmp_header(struct r_bin_dmp64_obj_t *obj) {
 		R_LOG_WARN ("Invalid Bitmap Magic");
 		return false;
 	}
-	ut64 bitmapsize = obj->bmp_header->Pages / 8;
+	if (obj->bmp_header->Pages > UT64_MAX - 7) {
+		R_LOG_WARN ("Invalid Bitmap Size");
+		return false;
+	}
+	ut64 bitmapsize = (obj->bmp_header->Pages + 7) / 8;
 	if (bitmapsize < 1 || bitmapsize > ST32_MAX) {
 		R_LOG_WARN ("Invalid Bitmap Size");
 		return false;
 	}
 	obj->bitmap = calloc (1, bitmapsize);
+	if (!obj->bitmap) {
+		return false;
+	}
 	if (r_buf_read_at (obj->b, sizeof (dmp64_header) + offsetof (dmp_bmp_header, Bitmap), obj->bitmap, bitmapsize) < 0) {
 		R_LOG_WARN ("read bitmap");
 		return false;
@@ -169,8 +183,9 @@ static int r_bin_dmp64_init(struct r_bin_dmp64_obj_t *obj) {
 	switch (obj->header->DumpType) {
 	case DMP_DUMPTYPE_BITMAPFULL:
 	case DMP_DUMPTYPE_BITMAPKERNEL:
-		r_bin_dmp64_init_bmp_header (obj);
-		r_bin_dmp64_init_bmp_pages (obj);
+		if (!r_bin_dmp64_init_bmp_header (obj) || !r_bin_dmp64_init_bmp_pages (obj)) {
+			return false;
+		}
 		break;
 	case DMP_DUMPTYPE_FULL:
 		r_bin_dmp64_init_memory_runs (obj);
