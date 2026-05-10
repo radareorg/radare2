@@ -1827,6 +1827,11 @@ static RList *entries(RBinFile *bf) {
 		if (limit_reached (ret, limit)) {
 			break;
 		}
+		// skip abstract/interface methods: their paddr points to the
+		// encoded_method record, not to actual bytecode
+		if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
 		const char *oname = r_bin_name_tostring2 (m->name, 'o');
 		if (strlen (oname) > 30 && m->bind \
 				&& (!strcmp (m->bind, R_BIN_BIND_LOCAL_STR) || !strcmp (m->bind, R_BIN_BIND_GLOBAL_STR)) \
@@ -1844,6 +1849,9 @@ static RList *entries(RBinFile *bf) {
 		R_VEC_FOREACH (&bin->symbols_vec, m) {
 			if (limit_reached (ret, limit)) {
 				break;
+			}
+			if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+				continue;
 			}
 			const char *oname = r_bin_name_tostring2 (m->name, 'o');
 			if (strlen (oname) > 26 && !strcmp (oname + strlen (oname) - 27, ".main([Ljava/lang/String;)V")) {
