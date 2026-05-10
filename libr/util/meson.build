@@ -11,6 +11,7 @@ r_util_sources = [
   'base91.c',
   'bdiff.c',
   'bitmap.c',
+  'bitset.c',
   'bloom.c',
   'bplist.c',
   'bscanf.c',

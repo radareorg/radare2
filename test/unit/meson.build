@@ -18,6 +18,7 @@ if get_option('enable_tests')
     'big',
     'bin',
     'bitmap',
+    'bitset',
     'buf',
     'cmd_str',
     'cons',

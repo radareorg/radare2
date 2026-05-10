@@ -43,6 +43,7 @@ int gettimeofday(struct timeval *p, void *tz);
 #include "r_util/r_base91.h"
 #include "r_util/r_buf.h"
 #include "r_util/r_bitmap.h"
+#include "r_util/r_bitset.h"
 #include "r_util/r_time.h"
 #include "r_util/r_debruijn.h"
 #include "r_util/r_type.h"
