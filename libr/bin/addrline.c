@@ -9,35 +9,55 @@
 
 // no longer needed since RBinAddrline items are owned by the store
 
+static RBinAddrLineStore *addrline_store(RBin *bin) {
+	RBinFile *bf = bin->cur;
+	if (!bf) {
+		return NULL;
+	}
+	RBinAddrLineStore *als = &bf->addrline;
+	if (als->used) {
+		return als;
+	}
+	if (!bin->want_dbginfo || !bf->bo || !bf->bo->plugin || !bf->bo->plugin->cmd) {
+		return NULL;
+	}
+	return bf->bo->plugin->cmd (bf, "addrline") && als->used ? als : NULL;
+}
+
 // must be tied to the rbinfile
 R_API void r_bin_addrline_reset(RBin *bin) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		if (als && als->al_reset) {
+	R_RETURN_IF_FAIL (bin);
+	RBinFile *bf = bin->cur;
+	if (bf && bf->addrline.used) {
+		RBinAddrLineStore *als = &bf->addrline;
+		if (als->al_reset) {
 			als->al_reset (als);
 		}
 	}
 }
 
 R_API void r_bin_addrline_reset_at(RBin *bin, ut64 addr) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		als->al_del (als, addr);
+	R_RETURN_IF_FAIL (bin);
+	RBinFile *bf = bin->cur;
+	if (bf && bf->addrline.used) {
+		RBinAddrLineStore *als = &bf->addrline;
+		if (als->al_del) {
+			als->al_del (als, addr);
+		}
 		return;
 	}
 }
 
 R_API RList *r_bin_addrline_files(RBin *bin) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		return als->al_files (als);
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinAddrLineStore *als = addrline_store (bin);
+	return als && als->al_files ? als->al_files (als) : NULL;
 }
 
 R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback cb, void *user) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
+	R_RETURN_VAL_IF_FAIL (bin, false);
+	RBinAddrLineStore *als = addrline_store (bin);
+	if (als && als->al_foreach) {
 		als->al_foreach (als, cb, user);
 		return true;
 	}
@@ -46,27 +66,21 @@ R_API bool r_bin_addrline_foreach(RBin *bin, RBinDbgInfoCallback cb, void *user)
 }
 
 R_API const RBinAddrline *r_bin_dbgitem_at(RBin *bin, ut64 addr) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		if (als) {
-			return als->al_get (als, addr);
-		}
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinAddrLineStore *als = addrline_store (bin);
+	return als && als->al_get ? als->al_get (als, addr) : NULL;
 }
 
 R_API const RBinAddrline *r_bin_addrline_get(RBin *bin, ut64 addr) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		return als->al_get (als, addr);
-	}
-	return NULL;
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinAddrLineStore *als = addrline_store (bin);
+	return als && als->al_get ? als->al_get (als, addr) : NULL;
 }
 
 R_API ut64 r_bin_addrline_find(RBin *bin, const char *file, int line) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->cur && !R_STR_ISEMPTY (file) && line > 0, UT64_MAX);
-	RBinAddrLineStore *als = &bin->cur->addrline;
-	if (als->used && als->al_find) {
+	RBinAddrLineStore *als = addrline_store (bin);
+	if (als && als->al_find) {
 		ut64 addr = als->al_find (als, file, (ut32)line);
 		if (addr != UT64_MAX) {
 			return addr;
@@ -76,11 +90,14 @@ R_API ut64 r_bin_addrline_find(RBin *bin, const char *file, int line) {
 }
 
 R_API const char *r_bin_addrline_str(RBin *bin, ut32 idx) {
-	if (bin->cur && bin->cur->addrline.used) {
-		RBinAddrLineStore *als = &bin->cur->addrline;
-		if (als->al_str) {
-			return als->al_str (als, idx);
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinFile *bf = bin->cur;
+	if (bf && bf->addrline.used) {
+		RBinAddrLineStore *als = &bf->addrline;
+		if (!als->al_str) {
+			return NULL;
 		}
+		return als->al_str (als, idx);
 	}
 	return NULL;
 }

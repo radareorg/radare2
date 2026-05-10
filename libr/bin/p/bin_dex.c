@@ -404,7 +404,7 @@ out_error:
 }
 
 // https://github.com/pxb1988/dex2jar/blob/2.x/dex-reader/src/main/java/com/googlecode/d2j/reader/DexFileReader.java#L1023
-static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off) {
+static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, int paddr, int ins_size, int insns_size, const char *class_name, int regsz, int debug_info_off, bool add_addrline) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	RBuffer *b = bf->buf;
 	RStrBuf *sb = dex->sb;
@@ -661,7 +661,9 @@ static void dex_parse_debug_item(RBinFile *bf, RBinDexClass *c, int MI, int MA, 
 					position->line = line;
 					r_list_append (debug_positions, position);
 				}
-				bf->addrline.al_add (&bf->addrline, address + paddr, getstr (dex, source_file_idx), NULL, line, 0);
+				if (add_addrline) {
+					bf->addrline.al_add (&bf->addrline, address + paddr, getstr (dex, source_file_idx), NULL, line, 0);
+				}
 			} else {
 				R_LOG_ERROR ("unknown dex debug opcode: 0x%02x", opcode);
 			}
@@ -1137,6 +1139,7 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 	RBuffer *b = bf->buf;
 	RStrBuf *sb = dex->sb;
 	const bool bin_dbginfo = bf->rbin->want_dbginfo;
+	const bool dump_dbginfo = bin_dbginfo && sb;
 	ut64 omi = 0;
 	bool catchAll;
 	ut16 regsz = 0, ins_size = 0, outs_size = 0, tries_size = 0;
@@ -1424,10 +1427,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {
-				if (bin_dbginfo) {
+				if (dump_dbginfo) {
 					ut64 addr = r_buf_tell (b);
 					dex_parse_debug_item (bf, c, MI, MA, sym->paddr, ins_size,
-							insns_size, cls_name, regsz, debug_info_off);
+							insns_size, cls_name, regsz, debug_info_off, false);
 					r_buf_seek (b, addr, R_BUF_SET);
 				}
 			} else if (MC > 0 && sb) {
@@ -1768,6 +1771,132 @@ static bool symbols_vec(RBinFile *bf) {
 		return true;
 	}
 	return false;
+}
+
+static void dex_skip_class_fields(RBuffer *b, ut64 fields_count, bool *err) {
+	ut64 i;
+	for (i = 0; i < fields_count; i++) {
+		size_t skip = 0;
+		peek_uleb (b, err, &skip);
+		peek_uleb (b, err, &skip);
+		if (err && *err) {
+			return;
+		}
+	}
+}
+
+static void dex_parse_class_method_addrline(RBinFile *bf, RBinDexClass *c, ut64 methods_count, const char *class_name) {
+	RBinDexObj *dex = bf->bo->bin_obj;
+	RBuffer *b = bf->buf;
+	const ut64 bufsz = r_buf_size (b);
+	ut64 omi = 0;
+	ut64 i;
+	for (i = 0; i < methods_count; i++) {
+		bool err = false;
+		size_t skip = 0;
+		ut64 MI = peek_uleb (b, &err, &skip);
+		if (err) {
+			break;
+		}
+		MI += omi;
+		omi = MI;
+		ut64 MA = peek_uleb (b, &err, &skip);
+		if (err) {
+			break;
+		}
+		ut64 MC = peek_uleb (b, &err, &skip);
+		if (err) {
+			break;
+		}
+		if (MI >= dex->header.method_size) {
+			continue;
+		}
+		if (MC <= 0 || MC + 16 >= dex->size || MC + 16 < MC) {
+			continue;
+		}
+		if (bufsz < MC || bufsz < MC + 16) {
+			continue;
+		}
+		ut16 regsz = r_buf_read_le16_at (b, MC);
+		ut16 ins_size = r_buf_read_le16_at (b, MC + 2);
+		ut32 debug_info_off = r_buf_read_le32_at (b, MC + 8);
+		ut32 insns_size = r_buf_read_le32_at (b, MC + 12);
+		if (regsz == UT16_MAX || ins_size == UT16_MAX || !debug_info_off) {
+			continue;
+		}
+		if (dex->header.data_offset >= debug_info_off ||
+			debug_info_off >= dex->header.data_offset + dex->header.data_size) {
+			continue;
+		}
+		ut64 addr = r_buf_tell (b);
+		dex_parse_debug_item (bf, c, MI, MA, MC + 16, ins_size,
+			insns_size, class_name, regsz, debug_info_off, true);
+		r_buf_seek (b, addr, R_BUF_SET);
+	}
+}
+
+static void dex_parse_class_addrline(RBinFile *bf, RBinDexClass *c) {
+	RBinDexObj *dex = bf->bo->bin_obj;
+	RBuffer *b = bf->buf;
+	const DexHeader *hdr = &dex->header;
+	if (!c->class_data_offset) {
+		return;
+	}
+	if (hdr->class_offset > c->class_data_offset ||
+	    c->class_data_offset < hdr->class_offset + hdr->class_size * DEX_CLASS_SIZE) {
+		return;
+	}
+	if (r_buf_seek (b, c->class_data_offset, R_BUF_SET) < 0) {
+		return;
+	}
+	bool err = false;
+	size_t skip = 0;
+	ut64 static_fields_size = peek_uleb (b, &err, &skip);
+	ut64 instance_fields_size = peek_uleb (b, &err, &skip);
+	ut64 direct_methods_size = peek_uleb (b, &err, &skip);
+	ut64 virtual_methods_size = peek_uleb (b, &err, &skip);
+	if (err) {
+		return;
+	}
+	dex_skip_class_fields (b, static_fields_size, &err);
+	dex_skip_class_fields (b, instance_fields_size, &err);
+	if (err) {
+		return;
+	}
+	char *class_name = dex_class_name (dex, c);
+	if (!class_name) {
+		return;
+	}
+	r_str_replace_char (class_name, ';', 0);
+	dex_parse_class_method_addrline (bf, c, direct_methods_size, class_name);
+	dex_parse_class_method_addrline (bf, c, virtual_methods_size, class_name);
+	free (class_name);
+}
+
+static void dex_load_addrline(RBinFile *bf) {
+	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->bin_obj);
+	RBinDexObj *dex = bf->bo->bin_obj;
+	if (dex->addrline_loaded || !bf->rbin->want_dbginfo) {
+		return;
+	}
+	dex->addrline_loaded = true;
+	bf->addrline.used = true;
+	if (!dex->classes) {
+		return;
+	}
+	ut32 i;
+	for (i = 0; i < dex->header.class_size; i++) {
+		dex_parse_class_addrline (bf, &dex->classes[i]);
+	}
+}
+
+static bool dex_cmd(RBinFile *bf, const char *command) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
+	if (!command || strcmp (command, "addrline")) {
+		return false;
+	}
+	dex_load_addrline (bf);
+	return bf->addrline.used;
 }
 
 static RList *classes(RBinFile *bf) {
@@ -2134,13 +2263,6 @@ static ut64 size(RBinFile *bf) {
 	return off + r_read_le32 (u32s);
 }
 
-#if 0
-static R_UNOWNED RList *lines(RBinFile *bf) {
-	struct r_bin_dex_obj_t *dex = bf->bo->bin_obj;
-	return dex->lines_list;
-}
-#endif
-
 // iH*
 static RList *dex_fields(RBinFile *bf) {
 	RList *ret = r_list_new ();
@@ -2262,8 +2384,8 @@ RBinPlugin r_bin_plugin_dex = {
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname,
+	.cmd = &dex_cmd,
 //	.dbginfo = &r_bin_dbginfo_dex,
-	// .lines = &lines,
 };
 
 #ifndef R2_PLUGIN_INCORE
