@@ -254,6 +254,7 @@ static RList* classes(RBinFile *bf) {
 	}
 
 	ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+	const bool names_only = bf->rbin->options.classes_names_only;
 	RList *dotnet_symbols = get_dotnet_symbols (bf);
 	if (!dotnet_symbols || r_list_empty (dotnet_symbols)) {
 		return NULL;
@@ -303,7 +304,7 @@ static RList* classes(RBinFile *bf) {
 			r_list_append (ret, cls);
 		}
 		RBinClass *target_cls = existing ? existing : cls;
-		if (target_cls && dsym->fields) {
+		if (!names_only && target_cls && dsym->fields) {
 			RListIter *iter_field;
 			DotNetField *dfield;
 			r_list_foreach (dsym->fields, iter_field, dfield) {
@@ -318,6 +319,9 @@ static RList* classes(RBinFile *bf) {
 			}
 		}
 		free (class_name_full);
+	}
+	if (names_only) {
+		return ret;
 	}
 	// Second pass: add methods to their corresponding classes
 	r_list_foreach (dotnet_symbols, iter_sym, dsym) {

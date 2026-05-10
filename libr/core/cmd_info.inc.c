@@ -211,6 +211,9 @@ static void pair(RCore *core, const char *a, const char *b) {
 }
 
 static void classdump_keys(RCore *core, RBinObject *bo) {
+	if (r_config_get_b (core->config, "bin.classes.namesonly")) {
+		return;
+	}
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	const bool iova = r_config_get_b (core->config, "io.va");
 	RBinClass *k;
@@ -877,6 +880,9 @@ static bool isKnownAndroidPackage(const char *cn) {
 static void cmd_ic_comma(RCore *core, const char *input) {
 	R_RETURN_IF_FAIL (core && input[0] == ',');
 	const char *q = input + 1;
+	if (r_config_get_b (core->config, "bin.classes.namesonly")) {
+		return;
+	}
 	RList *bfiles = r_core_bin_files (core);
 	RListIter *objs_iter;
 	RBinFile *bf;
@@ -1165,6 +1171,7 @@ static bool isjvm(RCore *core) {
 static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_array, bool va, int idx, const char *cls_name, int *count, bool is_doublerad) {
 	const bool iova = va; // r_config_get_b (core->config, "io.va");
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
+	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
 	RListIter *iter, *iter2;
 	RBinSymbol *sym;
 	RBinClass *cls;
@@ -1179,9 +1186,11 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		}
 		if (is_doublerad) {
 			r_cons_printf (core->cons, "'ac %s\n", kname);
-			r_list_foreach (cls->methods, iter2, sym) {
-				const char *name = r_bin_name_tostring2 (sym->name, pref);
-				r_cons_printf (core->cons, "'ac %s %s 0x%08" PFMT64x "\n", kname, name, iova? sym->vaddr: sym->paddr);
+			if (!names_only) {
+				r_list_foreach (cls->methods, iter2, sym) {
+					const char *name = r_bin_name_tostring2 (sym->name, pref);
+					r_cons_printf (core->cons, "'ac %s %s 0x%08" PFMT64x "\n", kname, name, iova? sym->vaddr: sym->paddr);
+				}
 			}
 			continue;
 		}
@@ -1196,9 +1205,11 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			}
 			break;
 		case 'l': // "icl"
-			r_list_foreach (cls->methods, iter2, sym) {
-				const char *comma = iter2->p? " ": "";
-				r_cons_printf (core->cons, "%s0x%" PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+			if (!names_only) {
+				r_list_foreach (cls->methods, iter2, sym) {
+					const char *comma = iter2->p? " ": "";
+					r_cons_printf (core->cons, "%s0x%" PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+				}
 			}
 			r_cons_newline (core->cons);
 			break;
@@ -1218,11 +1229,13 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 				listed_classes = true;
 			} else {
 				r_cons_printf (core->cons, "class %s\n", kname);
-				r_list_foreach (cls->methods, iter2, sym) {
-					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
-					const char *name = r_bin_name_tostring (sym->name);
-					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
-					free (flags);
+				if (!names_only) {
+					r_list_foreach (cls->methods, iter2, sym) {
+						char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
+						const char *name = r_bin_name_tostring (sym->name);
+						r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
+						free (flags);
+					}
 				}
 			}
 			break;
@@ -1236,11 +1249,13 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			break;
 		default:
 			r_cons_printf (core->cons, "class %s\n", kname);
-			r_list_foreach (cls->methods, iter2, sym) {
-				char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
-				const char *name = r_bin_name_tostring (sym->name);
-				r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
-				free (flags);
+			if (!names_only) {
+				r_list_foreach (cls->methods, iter2, sym) {
+					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
+					const char *name = r_bin_name_tostring (sym->name);
+					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
+					free (flags);
+				}
 			}
 			break;
 		}
@@ -1252,6 +1267,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 
 static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool va) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
+	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
 	int cmd = input[0];
 	int mode = 0;
 	const char *arg = input + 2;
@@ -1376,15 +1392,17 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					cmd_icg (core, bo, arg);
 					break;
 				case 's': // "ics"
-					r_list_foreach (bo->classes, iter, cls) {
-						const char *kname = r_bin_name_tostring (cls->name);
-						r_list_foreach (cls->methods, iter2, sym) {
-							ut64 addr = iova? sym->vaddr: sym->paddr;
-							if (addr == 0 || addr == UT64_MAX) {
-								continue;
+					if (!names_only) {
+						r_list_foreach (bo->classes, iter, cls) {
+							const char *kname = r_bin_name_tostring (cls->name);
+							r_list_foreach (cls->methods, iter2, sym) {
+								ut64 addr = iova? sym->vaddr: sym->paddr;
+								if (addr == 0 || addr == UT64_MAX) {
+									continue;
+								}
+								const char *sname = r_bin_name_tostring2 (sym->name, pref);
+								r_cons_printf (core->cons, "0x%" PFMT64x " [%s] %s\n", addr, kname, sname);
 							}
-							const char *sname = r_bin_name_tostring2 (sym->name, pref);
-							r_cons_printf (core->cons, "0x%" PFMT64x " [%s] %s\n", addr, kname, sname);
 						}
 					}
 					break;
@@ -1394,7 +1412,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				case 'l': // "icl"
 					if (r_str_startswith (input, "lc")) {
 						cmd_ic0 (core, bo, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
-					} else {
+					} else if (!names_only) {
 						r_list_foreach (bo->classes, iter, cls) {
 							r_list_foreach (cls->methods, iter2, sym) {
 								const char *comma = iter2->p? " ": "";
@@ -1412,6 +1430,9 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						ut64 min = UT64_MAX;
 						const char *method = NULL;
 						ut64 max = 0LL;
+						if (names_only) {
+							break;
+						}
 						r_list_foreach (bo->classes, iter, cls) {
 							method = NULL;
 							r_list_foreach (cls->methods, iter2, sym) {
@@ -2368,6 +2389,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 	if (!bfiles) {
 		return;
 	}
+	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
 	RBinFile *bf;
 	RListIter *objs_iter;
 	r_list_foreach (bfiles, objs_iter, bf) {
@@ -2393,20 +2415,22 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 				}
 			}
 		}
-		r_list_foreach (obj->classes, iter, klass) {
-			r_list_foreach (klass->methods, iter2, method) {
-				const char *name = r_bin_name_tostring2 (method->name, 'o');
-				if (is_entrypoint_symbol (name)) {
-					const char *kname = r_bin_name_tostring2 (klass->name, 'o');
-					if (pj) {
-						pj_o (pj);
-						pj_kn (pj, "addr", method->vaddr);
-						char *fname = r_str_newf ("%s.%s", kname, name);
-						pj_ks (pj, "name", fname);
-						free (fname);
-						pj_end (pj);
-					} else {
-						r_cons_printf (core->cons, "0x%08" PFMT64x "  %s.%s\n", method->vaddr, kname, name);
+		if (!names_only) {
+			r_list_foreach (obj->classes, iter, klass) {
+				r_list_foreach (klass->methods, iter2, method) {
+					const char *name = r_bin_name_tostring2 (method->name, 'o');
+					if (is_entrypoint_symbol (name)) {
+						const char *kname = r_bin_name_tostring2 (klass->name, 'o');
+						if (pj) {
+							pj_o (pj);
+							pj_kn (pj, "addr", method->vaddr);
+							char *fname = r_str_newf ("%s.%s", kname, name);
+							pj_ks (pj, "name", fname);
+							free (fname);
+							pj_end (pj);
+						} else {
+							r_cons_printf (core->cons, "0x%08" PFMT64x "  %s.%s\n", method->vaddr, kname, name);
+						}
 					}
 				}
 			}

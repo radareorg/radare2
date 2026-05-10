@@ -150,6 +150,25 @@ static void filter_unnamed_classes(RList *classes) {
 	}
 }
 
+static bool classes_names_only(RBinFile *bf) {
+	return bf && bf->rbin && bf->rbin->options.classes_names_only;
+}
+
+static void class_drop_details(RBinClass *klass) {
+	if (klass) {
+		r_list_purge (klass->methods);
+		r_list_purge (klass->fields);
+	}
+}
+
+static void classes_drop_details(RList *classes) {
+	RBinClass *klass;
+	RListIter *iter;
+	r_list_foreach (classes, iter, klass) {
+		class_drop_details (klass);
+	}
+}
+
 static void object_delete_items(RBinObject *o) {
 	R_RETURN_IF_FAIL (o);
 	ut32 i = 0;
@@ -267,8 +286,12 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 					c->addr = sym->vaddr;
 				}
 				c->origin = R_BIN_CLASS_ORIGIN_NAME;
-				r_bin_name_demangled (bs->name, method);
-				r_list_append (c->methods, bs);
+				if (classes_names_only (bf)) {
+					r_bin_symbol_free (bs);
+				} else {
+					r_bin_name_demangled (bs->name, method);
+					r_list_append (c->methods, bs);
+				}
 			}
 			free (klass);
 			return;
@@ -287,10 +310,10 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	char *dn = r_bin_name_tostring2 (sym->name, 'd');
 	char *fn = swiftField (dn, cn);
 	if (fn) {
-		RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
-		if (f) {
-			RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
-			if (c) {
+		RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
+		if (c && !classes_names_only (bf)) {
+			RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
+			if (f) {
 				r_list_append (c->fields, f);
 			}
 		}
@@ -301,7 +324,7 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 			mn = strstr (dn, cn);
 			if (mn && mn[strlen (cn)] == '.') {
 				RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
-				if (c) {
+				if (c && !classes_names_only (bf)) {
 					r_list_append (c->methods, r_bin_symbol_clone (sym));
 				}
 			}
@@ -412,6 +435,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 	RListIter *iter, *iter2;
 	RBinClass *cls;
 	RBinSymbol *sym;
+	const bool names_only = classes_names_only (bf);
 	r_list_foreach (list, iter, cls) {
 		const char *kname = r_bin_name_tostring (cls->name);
 		char *fname = r_bin_filter_name (bf, db, cls->index, kname);
@@ -423,6 +447,9 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 		}
 		r_bin_name_update (cls->name, fname);
 		free (fname);
+		if (names_only) {
+			continue;
+		}
 		r_list_foreach (cls->methods, iter2, sym) {
 			if (R_LIKELY (sym->name)) {
 				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
@@ -643,12 +670,18 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				bo->classes = classes;
 			}
 		}
+		if (bin->options.classes_names_only) {
+			classes_drop_details (bo->classes);
+		}
 		if (!bin->options.load_unnamed) {
 			filter_unnamed_classes (bo->classes);
 			r_bin_object_rebuild_classes_ht (bo);
 		}
 		if (bin->filter && bin->options.load_unnamed) {
 			filter_classes (bf, bo->classes);
+		}
+		if (bin->options.classes_names_only) {
+			r_bin_object_rebuild_classes_ht (bo);
 		}
 		// cache addr=class+method
 #if 0

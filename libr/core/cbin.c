@@ -4161,6 +4161,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	RList *cs = r_bin_get_classes (core->bin);
 	RBinInfo *info = r_bin_get_info (core->bin);
 	const int va = (info && info->has_va)? VA_TRUE: VA_FALSE;
+	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -4194,14 +4195,16 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		ut64 at_min = UT64_MAX;
 		ut64 at_max = 0LL;
 
-		r_list_foreach (c->methods, iter2, sym) {
-			ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
-			if (maddr) {
-				if (maddr < at_min) {
-					at_min = maddr;
-				}
-				if (maddr + sym->size > at_max) {
-					at_max = maddr + sym->size;
+		if (!names_only) {
+			r_list_foreach (c->methods, iter2, sym) {
+				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+				if (maddr) {
+					if (maddr < at_min) {
+						at_min = maddr;
+					}
+					if (maddr + sym->size > at_max) {
+						at_max = maddr + sym->size;
+					}
 				}
 			}
 		}
@@ -4213,43 +4216,45 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		if (IS_MODE_SET (mode)) {
 			char *classname = r_str_newf ("class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
-			r_list_foreach (c->methods, iter2, sym) {
-				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
-				RFlagItem *fi = r_flag_get_at (core->flags, maddr, false);
-				if (fi) {
-					// eprintf ("%s .. %s\n", sym->name, fi->name);
-				} else {
-					const char *sym_name = r_bin_name_tostring (sym->name);
-					// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
-					char *mflags = r_bin_attr_tostring (sym->attr, false);
-					r_str_replace_char (mflags, ' ', '.');
-					// XXX probably access flags should not be part of the flag name
-					char *method = r_str_newf ("method%s%s.%s.%s",
-						R_STR_ISEMPTY (mflags)? "": ".", mflags, cname, sym_name);
-					R_FREE (mflags);
-					r_name_filter (method, -1);
-					RFlagItem *fi = r_flag_set (core->flags, method, maddr, 1);
+			if (!names_only) {
+				r_list_foreach (c->methods, iter2, sym) {
+					ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
+					RFlagItem *fi = r_flag_get_at (core->flags, maddr, false);
 					if (fi) {
-						const char *rawname = r_bin_name_tostring2 (sym->name, 'o');
-						if (rawname) {
-							RFlagItem *fi2 = r_flag_get (core->flags, method);
-							if (fi2) {
-								free (fi2->rawname);
-								fi2->rawname = strdup (rawname);
+						// eprintf ("%s .. %s\n", sym->name, fi->name);
+					} else {
+						const char *sym_name = r_bin_name_tostring (sym->name);
+						// char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
+						char *mflags = r_bin_attr_tostring (sym->attr, false);
+						r_str_replace_char (mflags, ' ', '.');
+						// XXX probably access flags should not be part of the flag name
+						char *method = r_str_newf ("method%s%s.%s.%s",
+							R_STR_ISEMPTY (mflags)? "": ".", mflags, cname, sym_name);
+						R_FREE (mflags);
+						r_name_filter (method, -1);
+						RFlagItem *fi = r_flag_set (core->flags, method, maddr, 1);
+						if (fi) {
+							const char *rawname = r_bin_name_tostring2 (sym->name, 'o');
+							if (rawname) {
+								RFlagItem *fi2 = r_flag_get (core->flags, method);
+								if (fi2) {
+									free (fi2->rawname);
+									fi2->rawname = strdup (rawname);
+								}
 							}
 						}
+						free (method);
 					}
-					free (method);
 				}
-			}
-			r_list_foreach (c->fields, iter2, f) {
-				const char *fname = r_bin_name_tostring2 (f->name, pref);
-				const char *kind = r_bin_field_kindstr (f);
-				// XXX remove 'field' and just use kind?
-				char *fn = r_str_newf ("field.%s.%s.%s", classname, kind, fname);
-				ut64 at = compute_addr (core->bin, f->paddr, f->vaddr, va);
-				r_flag_set (core->flags, fn, at, 1);
-				free (fn);
+				r_list_foreach (c->fields, iter2, f) {
+					const char *fname = r_bin_name_tostring2 (f->name, pref);
+					const char *kind = r_bin_field_kindstr (f);
+					// XXX remove 'field' and just use kind?
+					char *fn = r_str_newf ("field.%s.%s.%s", classname, kind, fname);
+					ut64 at = compute_addr (core->bin, f->paddr, f->vaddr, va);
+					r_flag_set (core->flags, fn, at, 1);
+					free (fn);
+				}
 			}
 			free (classname);
 		} else if (IS_MODE_SIMPLEST (mode)) {
@@ -4261,38 +4266,42 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			free (supers);
 		} else if (IS_MODE_CLASSDUMP (mode)) {
 			if (c) {
-				const char *vlang = r_config_get (core->config, "bin.lang");
-				r_str_var (lang, 16, vlang);
-				if (*lang) {
-					if (!strcmp (lang, "java") || !strcmp (lang, "kotlin")) {
-						classdump_java (core, c);
-					} else if (!strcmp (lang, "swift")) {
-						classdump_swift (core, c);
-					} else if (!strcmp (lang, "cxx") || !strcmp (lang, "c++")) {
-						classdump_cxx (core, c);
-					} else if (!strcmp (lang, "c")) {
-						classdump_c (core, c);
-					} else if (r_str_startswith (lang, "objc")) {
-						classdump_objc (core, c);
-					} else {
-						classdump_c (core, c);
-					}
+				if (names_only) {
+					r_cons_printf (core->cons, "class %s\n", cname);
 				} else {
-					RBinFile *bf = r_bin_cur (core->bin);
-					if (bf && bf->bo) {
-						if (IS_MODE_RAD (mode)) {
-							classdump_c (core, c);
-						} else if (mode == 'O') {
-							classdump_objc (core, c);
-						} else if (is_javaish (bf) || mode == 'J') {
+					const char *vlang = r_config_get (core->config, "bin.lang");
+					r_str_var (lang, 16, vlang);
+					if (*lang) {
+						if (!strcmp (lang, "java") || !strcmp (lang, "kotlin")) {
 							classdump_java (core, c);
-						} else if (is_swift (bf) || mode == 'S') {
+						} else if (!strcmp (lang, "swift")) {
 							classdump_swift (core, c);
-						} else {
+						} else if (!strcmp (lang, "cxx") || !strcmp (lang, "c++")) {
+							classdump_cxx (core, c);
+						} else if (!strcmp (lang, "c")) {
+							classdump_c (core, c);
+						} else if (r_str_startswith (lang, "objc")) {
 							classdump_objc (core, c);
+						} else {
+							classdump_c (core, c);
 						}
 					} else {
-						classdump_c (core, c);
+						RBinFile *bf = r_bin_cur (core->bin);
+						if (bf && bf->bo) {
+							if (IS_MODE_RAD (mode)) {
+								classdump_c (core, c);
+							} else if (mode == 'O') {
+								classdump_objc (core, c);
+							} else if (is_javaish (bf) || mode == 'J') {
+								classdump_java (core, c);
+							} else if (is_swift (bf) || mode == 'S') {
+								classdump_swift (core, c);
+							} else {
+								classdump_objc (core, c);
+							}
+						} else {
+							classdump_c (core, c);
+						}
 					}
 				}
 			}
@@ -4310,7 +4319,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					free (fsk);
 				}
 			}
-			r_list_foreach (c->methods, iter2, sym) {
+			if (!names_only) {
+				r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				const char *n = cname; //  r_name_filter_shell (cname);
@@ -4335,8 +4345,10 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					free (cmd);
 				}
 				R_FREE (mflags);
+				}
 			}
-			r_list_foreach (c->fields, iter2, f) {
+			if (!names_only) {
+				r_list_foreach (c->fields, iter2, f) {
 				const char *kind = r_bin_field_kindstr (f);
 				const char *fname = r_bin_name_tostring2 (f->name, pref);
 				char *fn = r_str_newf ("field.%s.%s.%s", cname, kind, fname);
@@ -4344,30 +4356,33 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				ut64 at = compute_addr (core->bin, f->paddr, f->vaddr, va); //  sym->vaddr + (f->vaddr &  0xffff);
 				r_cons_printf (core->cons, "'f %s = 0x%08" PFMT64x "\n", fn, at);
 				free (fn);
+				}
 			}
 
 			// C struct
-			r_cons_printf (core->cons, "'td struct %s {", cname);
-			if (r_list_empty (c->fields)) {
-				// XXX workaround because we cant register empty structs yet
-				// XXX https://github.com/radareorg/radare2/issues/16342
-				r_cons_printf (core->cons, " char empty[0];");
-			} else {
-				r_list_foreach (c->fields, iter2, f) {
-					const char *fn = r_bin_name_tostring (f->name);
-					const char *tn = f->type? r_bin_name_tostring (f->type): NULL;
-					char *n = objc_name_toc (fn);
-					char *t = objc_type_toc (tn);
-					if (R_STR_ISEMPTY (t)) {
+			if (!names_only) {
+				r_cons_printf (core->cons, "'td struct %s {", cname);
+				if (r_list_empty (c->fields)) {
+					// XXX workaround because we cant register empty structs yet
+					// XXX https://github.com/radareorg/radare2/issues/16342
+					r_cons_printf (core->cons, " char empty[0];");
+				} else {
+					r_list_foreach (c->fields, iter2, f) {
+						const char *fn = r_bin_name_tostring (f->name);
+						const char *tn = f->type? r_bin_name_tostring (f->type): NULL;
+						char *n = objc_name_toc (fn);
+						char *t = objc_type_toc (tn);
+						if (R_STR_ISEMPTY (t)) {
+							free (t);
+							t = strdup ("void* ");
+						}
+						r_cons_printf (core->cons, " %s %s;", t, n);
 						free (t);
-						t = strdup ("void* ");
+						free (n);
 					}
-					r_cons_printf (core->cons, " %s %s;", t, n);
-					free (t);
-					free (n);
 				}
+				r_cons_printf (core->cons, "};\n");
 			}
-			r_cons_printf (core->cons, "};\n");
 			free (n);
 		} else if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
@@ -4414,7 +4429,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			if (!r_list_empty (c->methods)) {
+			if (!names_only && !r_list_empty (c->methods)) {
 				pj_ka (pj, "methods");
 				r_list_foreach (c->methods, iter2, sym) {
 					pj_o (pj);
@@ -4458,7 +4473,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			if (!r_list_empty (c->fields)) {
+			if (!names_only && !r_list_empty (c->fields)) {
 				pj_ka (pj, "fields");
 				r_list_foreach (c->fields, iter3, f) {
 					pj_o (pj);
@@ -4500,7 +4515,8 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 				free (csv);
 			}
-			r_list_foreach (c->methods, iter2, sym) {
+			if (!names_only) {
+				r_list_foreach (c->methods, iter2, sym) {
 				char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				const char *sname = r_bin_name_tostring2 (sym->name, pref);
@@ -4509,10 +4525,12 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					maddr, ls? ls: "?", "method", m, mflags, sname);
 				R_FREE (mflags);
 				m++;
+				}
 			}
 			m = 0;
 			const char *ls = r_bin_lang_tostring (c->lang);
-			r_list_foreach (c->fields, iter3, f) {
+			if (!names_only) {
+				r_list_foreach (c->fields, iter3, f) {
 				char *mflags = r_core_bin_attr_tostring (core, f->attr, mode);
 				const char *ks = r_bin_field_kindstr (f);
 				ut64 faddr = compute_addr (core->bin, f->paddr, f->vaddr, va);
@@ -4520,6 +4538,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 					faddr, ls, ks, m, mflags, r_bin_name_tostring2 (f->name, pref));
 				m++;
 				free (mflags);
+				}
 			}
 		}
 		free (name);

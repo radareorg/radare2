@@ -1295,6 +1295,13 @@ static bool cb_binunnamed(void *user, void *data) {
 	return true;
 }
 
+static bool cb_bin_classes_namesonly(void *user, void *data) {
+	RCore *core = (RCore *)user;
+	RConfigNode *node = (RConfigNode *)data;
+	core->bin->options.classes_names_only = node->i_value;
+	return true;
+}
+
 static bool cb_strpurge(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4364,6 +4371,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("bin.strings", "true", &cb_binstrings, "load strings from rbin on startup");
 	SETCB ("bin.str.debase64", "false", &cb_debase64, "try to debase64 all strings");
 	SETCB ("bin.classes", "true", &cb_bin_classes, "load classes from rbin on startup");
+	SETCB ("bin.classes.namesonly", "false", &cb_bin_classes_namesonly, "load class names without methods or fields");
 	SETCB ("bin.verbose", "false", &cb_binverbose, "show RBin warnings when loading binaries");
 
 	/* prj */

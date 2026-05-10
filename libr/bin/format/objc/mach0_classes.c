@@ -67,6 +67,10 @@ static bool load_unnamed(RBinFile *bf) {
 	return !bf || !bf->rbin || bf->rbin->options.load_unnamed;
 }
 
+static bool class_names_only(RBinFile *bf) {
+	return bf && bf->rbin && bf->rbin->options.classes_names_only;
+}
+
 static bool adjust_bounds(RBinFile *bf, MetaSection *ms, const char *sname) {
 	if (ms->addr >= bf->size || ms->size >= bf->size) {
 		R_LOG_DEBUG ("Dropping swift5.%s section because oob", sname);
@@ -295,6 +299,9 @@ static int sort_by_offset(const void *_a , const void *_b) {
 
 static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && klass);
+	if (class_names_only (bf)) {
+		return;
+	}
 	struct MACH0_(SIVarList) il = {0};
 	struct MACH0_(SIVar) i;
 	ut32 offset, left, j;
@@ -488,6 +495,9 @@ error:
 
 static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info && klass);
+	if (class_names_only (bf)) {
+		return;
+	}
 	struct MACH0_(SObjcPropertyList) opl;
 	struct MACH0_(SObjcProperty) op;
 	mach0_ut r;
@@ -715,6 +725,9 @@ static void iterate_list_of_lists(RBinFile *bf, OnList cb, void * ctx, mach0_ut 
 // TODO: remove class_name, because it's already in klass->name
 static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_name, bool is_static, objc_cache_opt_info *oi, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && bf->bo && bf->bo->info && bf->bo->bin_obj && klass);
+	if (class_names_only (bf)) {
+		return;
+	}
 	ut32 offset, left, i;
 	char *name = NULL;
 	char *rtype = NULL;
@@ -926,6 +939,9 @@ error:
 
 static void get_protocol_list(RBinFile *bf, RBinClass *klass, objc_cache_opt_info *oi, mach0_ut p) {
 	R_RETURN_IF_FAIL (bf && klass && bf->bo && bf->bo->info && bf->bo->bin_obj);
+	if (class_names_only (bf)) {
+		return;
+	}
 	struct MACH0_(SProtocolList) pl = {0};
 	struct MACH0_(SProtocol) pc;
 	ut32 offset, left, i;
@@ -1330,6 +1346,13 @@ static void get_class_ro_t(RBinFile *bf, bool *is_meta_class, RBinClass *klass, 
 	sdb_set (bin->kv, "objc_class.format", "xxxxx isa super cache vtable data", 0);
 #endif
 
+	if (is_meta_class) {
+		*is_meta_class = (cro.flags & RO_META) != 0;
+	}
+	if (class_names_only (bf)) {
+		return;
+	}
+
 	if (cro.baseMethods > 0) {
 		const char *klass_name = r_bin_name_tostring2 (klass->name, 'd');
 		if (cro.baseMethods & 1) {
@@ -1473,7 +1496,7 @@ void MACH0_(get_class_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, bool dupe, 
 		R_LOG_DEBUG ("This is a Swift class");
 	}
 #endif
-	if (!is_meta_class && !dupe) {
+	if (!class_names_only (bf) && !is_meta_class && !dupe) {
 		mach0_ut isa_n_value = get_isa_value ();
 		ut64 tmp = klass->addr;
 		MACH0_(get_class_t) (bf, klass, c.isa + isa_n_value, true, relocs, oi);
@@ -1603,6 +1626,13 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	}
 	klass->addr = st.addr;
 	klass->lang = R_BIN_LANG_SWIFT;
+	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
+	r_list_append (list, klass);
+	if (class_names_only (bf)) {
+		free (typename);
+		free (otypename);
+		return;
+	}
 	if (st.members != UT64_MAX) {
 		ut8 buf[MAX_SWIFT_MEMBERS * 16];
 		int i = 0;
@@ -1677,8 +1707,6 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			free (method_name);
 		}
 	}
-	klass->index = r_list_length (bf->bo->classes) + r_list_length (list);
-	r_list_append (list, klass);
 
 	if (st.fields != UT64_MAX) {
 		int i;
@@ -1822,7 +1850,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 					R_LOG_WARN ("swift class limit reached");
 					aligned_types_count = remaining;
 				}
-				HtUP *symbols_ht = _load_symbol_by_vaddr_hashtable (bf);
+				HtUP *symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf);
 				ut32 i;
 				for (i = 0; i < aligned_types_count; i++) {
 					st32 word = r_read_le32 (&types[i]);
@@ -2102,6 +2130,9 @@ void MACH0_(get_category_t)(RBinFile *bf, RBinClass *klass, mach0_ut p, const RS
 	const char *klass_name = r_bin_name_tostring (klass->name);
 	if (R_STR_ISEMPTY (klass_name)) {
 		R_LOG_ERROR ("Invalid class name");
+		return;
+	}
+	if (class_names_only (bf)) {
 		return;
 	}
 	if (c.instanceMethods > 0) {

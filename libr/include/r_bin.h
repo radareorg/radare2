@@ -529,6 +529,7 @@ typedef struct r_bin_options_t {
 	bool skip_symbols; // skip symbol loading (e.g., for companion debug files)
 	bool setflags; // set symbol/import/class flags at load time
 	bool load_unnamed; // load unnamed/synthetic symbols/classes/methods
+	bool classes_names_only; // load class names without methods/fields
 	int minstrlen;
 	int maxstrlen;
 	int maxsymlen;

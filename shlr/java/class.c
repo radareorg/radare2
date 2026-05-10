@@ -143,7 +143,7 @@ static char *r_bin_java_resolve(RBinJavaObj *BIN_OBJ, int idx, ut8 spacy);
 static void r_bin_java_set_imports(RBinJavaObj *bin);
 static char *r_bin_java_unmangle(const char *flags, const char *name, const char *descriptor);
 
-static int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len);
+R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len);
 static int extract_type_value(const char *arg_str, char **output);
 static ut8 *r_bin_java_cp_get_4bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
 static ut8 *r_bin_java_cp_get_8bytes(ut8 tag, ut32 *out_sz, const ut8 *buf, const ut64 len);
@@ -2084,7 +2084,11 @@ static ut64 r_bin_java_parse_fields(RBinJavaObj *bin, const ut64 offset, const u
 		field = r_bin_java_read_next_field (bin, offset + adv, buf, len);
 		if (field) {
 			adv += field->size;
-			r_list_append (bin->fields_list, field);
+			if (bin->classes_names_only) {
+				r_bin_java_fmtype_free (field);
+			} else {
+				r_list_append (bin->fields_list, field);
+			}
 			// r_bin_java_print_field_summary (field);
 			if (adv + offset > len) {
 				R_LOG_ERROR ("r_bin_java: Error unable to parse remainder of classfile after Field: %d", i);
@@ -2162,6 +2166,14 @@ static ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const 
 			break;
 		}
 		adv += method->size;
+		if (bin->classes_names_only) {
+			r_bin_java_fmtype_free (method);
+			if (adv + offset > len) {
+				R_LOG_ERROR ("Unable to parse remainder of classfile after Method: %d", i);
+				break;
+			}
+			continue;
+		}
 		r_list_append (bin->methods_list, method);
 		// Update Main, Init, or Class Init
 		if (!strcmp ((const char *)method->name, "main")) {
@@ -2186,7 +2198,8 @@ static ut64 r_bin_java_parse_methods(RBinJavaObj *bin, const ut64 offset, const 
 	return adv;
 }
 
-static int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len) {
+R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len) {
+	R_RETURN_VAL_IF_FAIL (bin, false);
 	if (!r_str_constpool_init (&bin->constpool)) {
 		return false;
 	}
@@ -2666,6 +2679,7 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	RBinJavaCPTypeObj *cp_obj = NULL;
 	RBinJavaCPTypeObj *this_class_cp_obj = r_bin_java_get_item_from_bin_cp_list (bin, bin->cf2.this_class);
 	ut32 idx = 0;
+	const bool names_only = bin->classes_names_only;
 	RBinClass *k = R_NEW0 (RBinClass);
 	k->attr = bin->cf2.access_flags;
 	k->origin = R_BIN_CLASS_ORIGIN_BIN;
@@ -2674,8 +2688,8 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 		k->visibility_str = strdup (bin->cf2.flags_str);
 	}
 #endif
-	k->methods = r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
-	k->fields = r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
+	k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
+	k->fields = names_only? r_list_newf (bfield_free): r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
 	char *kname = r_bin_java_get_this_class_name (bin);
 	k->name = bn_new (kname);
 	free (kname);
@@ -2691,8 +2705,8 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS && (this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj))) {
 			RBinClass *k = R_NEW0 (RBinClass);
-			k->methods = r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
-			k->fields = r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
+			k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
+			k->fields = names_only? r_list_newf (bfield_free): r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
 			k->index = idx;
 			k->origin = R_BIN_CLASS_ORIGIN_BIN;
 			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);
@@ -7999,4 +8013,3 @@ R_API ut64 r_bin_java_calc_class_size(ut8 *bytes, ut64 size) {
 	}
 	return bin_size;
 }
-

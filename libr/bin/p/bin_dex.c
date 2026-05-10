@@ -28,6 +28,10 @@
 
 extern struct r_bin_dbginfo_t r_bin_dbginfo_dex;
 
+static bool class_names_only(RBinFile *bf) {
+	return bf && bf->rbin && bf->rbin->options.classes_names_only;
+}
+
 static void free_class_tail(RVecRBinClass *classes, int kept) {
 	size_t i, len = RVecRBinClass_length (classes);
 	for (i = kept; i < len; i++) {
@@ -1444,6 +1448,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	RBuffer *b = bf->buf;
 	const DexHeader *hdr = &dex->header;
 	RStrBuf *sb = dex->sb;
+	const bool names_only = class_names_only (bf);
 	int z;
 	RBinClass clz = {0};
 	RBinClass *cls = &clz;
@@ -1488,6 +1493,9 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 			ps ("'\n");
 		}
 		ps ("  Interfaces        -\n");
+	}
+	if (names_only) {
+		goto beach;
 	}
 
 	const ut32 ifoff = c->interfaces_offset;
@@ -1597,6 +1605,7 @@ static bool dex_loadcode(RBinFile *bf) {
 	size_t methods_size = 0;
 	int sym_count = 0;
 	const int limit = bf->rbin->options.limit;
+	const bool names_only = class_names_only (bf);
 	// doublecheck??
 	if (!RVecRBinSymbol_empty (&dex->symbols_vec)) {
 		return false;
@@ -1633,12 +1642,14 @@ static bool dex_loadcode(RBinFile *bf) {
 	dex->dexSubsystem = NULL;
 
 	if (dex->classes) {
-		ut64 amount = sizeof (int) * dex->header.method_size;
-		if (amount > UT32_MAX || amount < dex->header.method_size) {
-			return false;
+		if (!names_only) {
+			ut64 amount = sizeof (int) * dex->header.method_size;
+			if (amount > UT32_MAX || amount < dex->header.method_size) {
+				return false;
+			}
+			methods_size = amount + 1;
+			methods = calloc (1, methods_size);
 		}
-		methods_size = amount + 1;
-		methods = calloc (1, methods_size);
 		for (i = 0; i < dex->header.class_size; i++) {
 			struct dex_class_t *c = &dex->classes[i];
 			if (sb) {

@@ -32,17 +32,22 @@ static Sdb *get_sdb(RBinFile *bf) {
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *tbuf = r_ref (buf);
-	struct r_bin_java_obj_t *tbo = r_bin_java_new_buf (tbuf, loadaddr, bf->sdb);
-	if (tbo) {
-		bf->bo->bin_obj = tbo;
-		add_bin_obj_to_sdb (tbo);
-		if (bf && bf->file) {
-			tbo->file = strdup (bf->file);
-		}
+	struct r_bin_java_obj_t *tbo = R_NEW0 (struct r_bin_java_obj_t);
+	tbo->classes_names_only = bf->rbin->options.classes_names_only;
+	ut64 tmpsz = 0;
+	const ut8 *tmp = r_buf_data (tbuf, &tmpsz);
+	if (!tmp || !r_bin_java_new_bin (tbo, loadaddr, bf->sdb, tmp, tmpsz)) {
+		r_bin_java_free (tbo);
 		r_unref (tbuf);
-		return true;
+		return false;
 	}
-	return false;
+	bf->bo->bin_obj = tbo;
+	add_bin_obj_to_sdb (tbo);
+	if (bf && bf->file) {
+		tbo->file = strdup (bf->file);
+	}
+	r_unref (tbuf);
+	return true;
 }
 
 static void destroy(RBinFile *bf) {

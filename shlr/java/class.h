@@ -785,6 +785,7 @@ typedef struct r_bin_java_obj_t {
 	RList* interfaces_list;
 	RList* attrs_list;
 	RList* imports_list;
+	bool classes_names_only;
 
 	RList* functions;
 	RList* disassembly;
@@ -809,6 +810,7 @@ R_API RList* r_bin_java_get_strings(RBinJavaObj* bin);
 R_API void* r_bin_java_free(RBinJavaObj* bin);
 R_API RBinJavaObj* r_bin_java_new(const char* file, ut64 baddr, Sdb * kv);
 R_API RBinJavaObj* r_bin_java_new_buf(RBuffer* buf, ut64 baddr, Sdb * kv);
+R_API int r_bin_java_new_bin(RBinJavaObj *bin, ut64 loadaddr, Sdb *kv, const ut8 *buf, ut64 len);
 
 // Stuff used to manage Java Class File Constant Information
 typedef struct r_bin_java_object_allocs_t {
