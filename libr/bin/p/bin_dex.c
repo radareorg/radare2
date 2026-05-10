@@ -1349,7 +1349,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			}
 			sym->vaddr = sym->paddr;
 			// sym->vaddr += bf->bo->baddr;
-			dex->code_from = R_MIN (dex->code_from, sym->paddr);
 			sym->lang = R_BIN_LANG_JAVA;
 			sym->bind = ((MA & 1) == 1) ? R_BIN_BIND_GLOBAL_STR : R_BIN_BIND_LOCAL_STR;
 			sym->attr = get_method_attr (MA);
@@ -1385,8 +1384,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
 				}
-				if (dex->code_to < sym->paddr) {
-					dex->code_to = sym->paddr + sym->size;
+				ut64 code_end = sym->paddr + sym->size;
+				if (code_end > sym->paddr && dex->code_to < code_end) {
+					dex->code_to = code_end;
 				}
 
 				if (!dex->mdb) {
@@ -1990,6 +1990,9 @@ static void fast_code_size(RBinFile *bf) {
 	}
 	RBinSymbol *m;
 	R_VEC_FOREACH (&bin->symbols_vec, m) {
+		if (m->size < 1 || !m->type || strcmp (m->type, R_BIN_TYPE_FUNC_STR)) {
+			continue;
+		}
 		if (!fsym || m->paddr < fsym) {
 			fsym = m->paddr;
 		}
