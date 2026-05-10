@@ -18,7 +18,6 @@
 #define DBG_SET_EPILOGUE_BEGIN    0x08
 #define DBG_SET_FILE              0x09
 #define DBG_FIRST_SPECIAL         0x0A
-#define MAX_DEX_PARAMS 32
 
 #define DBG_LINE_BASE             -4
 #define DBG_LINE_RANGE            15
@@ -261,7 +260,7 @@ static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
 }
 
 static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
-	if (proto_id >= bin->header.prototypes_size) {
+	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
 		return NULL;
 	}
 	const DexProto *p = &bin->protos[proto_id];
@@ -281,40 +280,41 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		return r_str_newf ("()%s", return_type);
 	}
 	ut8 params_buf[sizeof (ut32)];
-	if (!r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf))) {
+	if (params_off + sizeof (params_buf) > bin->size || params_off + sizeof (params_buf) < params_off) {
+		return NULL;
+	}
+	if (r_buf_read_at (bin->b, params_off, params_buf, sizeof (params_buf)) != sizeof (params_buf)) {
 		return NULL;
 	}
 	// size of the list, in 16 bit entries
 	ut32 list_size = r_read_le32 (params_buf);
-	if (list_size >= MAX_DEX_PARAMS) {
-		R_LOG_WARN ("too many parameters (%d) for prototype (%d)", list_size, proto_id);
-		list_size = (MAX_DEX_PARAMS / 2);
-	}
-	size_t typeidx_bufsize = (list_size * sizeof (ut16));
-	if (params_off + typeidx_bufsize > bin->size) {
-		R_LOG_DEBUG ("truncated typeidx buffer from %d to %d",
-			(int)(params_off + typeidx_bufsize), (int)(bin->size - params_off));
+	ut64 params_data = params_off + sizeof (params_buf);
+	ut64 typeidx_bufsize = (ut64)list_size * sizeof (ut16);
+	if (typeidx_bufsize > bin->size - params_data) {
+		R_LOG_DEBUG ("truncated typeidx buffer from %"PFMT64u" to %"PFMT64u,
+			params_data + typeidx_bufsize, bin->size);
 		return NULL;
 	}
 	RStrBuf *sig = r_strbuf_new ("(");
-	if (typeidx_bufsize > 0) {
-		ut8 *typeidx_buf = malloc (typeidx_bufsize);
-		if (!typeidx_buf || !r_buf_read_at (bin->b, params_off + 4, typeidx_buf, typeidx_bufsize)) {
+	if (!sig) {
+		return NULL;
+	}
+	ut32 i;
+	for (i = 0; i < list_size; i++) {
+		ut8 typeidx_buf[sizeof (ut16)];
+		ut64 off = params_data + (i * sizeof (ut16));
+		if (r_buf_read_at (bin->b, off, typeidx_buf, sizeof (typeidx_buf)) != sizeof (typeidx_buf)) {
 			r_strbuf_free (sig);
 			return NULL;
 		}
-		size_t off;
-		for (off = 0; off + 1 < typeidx_bufsize; off += 2) {
-			ut16 type_idx = r_read_le16 (typeidx_buf + off);
-			ut16 type_desc_id = type_desc (bin, type_idx);
-			if (type_desc_id == UT16_MAX) {
-				r_strbuf_append (sig, "?;");
-			} else {
-				const char *buff = getstr (bin, type_desc_id);
-				r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
-			}
+		ut16 type_idx = r_read_le16 (typeidx_buf);
+		ut16 type_desc_id = type_desc (bin, type_idx);
+		if (type_desc_id == UT16_MAX) {
+			r_strbuf_append (sig, "?;");
+		} else {
+			const char *buff = getstr (bin, type_desc_id);
+			r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 		}
-		free (typeidx_buf);
 	}
 	r_strbuf_appendf (sig, ")%s", return_type);
 	return r_strbuf_drain (sig);
