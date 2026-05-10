@@ -4355,6 +4355,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("bin.baddr", -1, "base address of the binary");
 	SETI ("bin.laddr", 0, "base address for loading library ('*.so')");
 	SETCB ("bin.dbginfo", "true", &cb_bindbginfo, "load debug information at startup if available");
+	SETB ("bin.meta", "true", "auto-emit metadata commands attached to sections by bin plugins (Cd/Css for ELF .got/.dynstr, DEX constpool, Mach-O cstrings, etc)");
 	SETB ("bin.relocs", "true", "load relocs information at startup if available");
 	SETB ("bin.relocs.apply", "false", "apply reloc information");
 	SETB ("bin.relocs.xrefs", "true", "register xrefs from reloc information");

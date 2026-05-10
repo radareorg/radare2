@@ -3809,7 +3809,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		pj_end (pj);
 	}
 	// run the formats now
-	if (!print_segments) {
+	if (!print_segments && r_config_get_b (core->config, "bin.meta")) {
 		r_list_foreach (sections, iter, section) {
 			if (R_STR_ISNOTEMPTY (section->format)) {
 				// This is damn slow if section vsize is HUGE
