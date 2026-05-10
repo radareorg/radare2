@@ -18,6 +18,7 @@
 #define DBG_SET_EPILOGUE_BEGIN    0x08
 #define DBG_SET_FILE              0x09
 #define DBG_FIRST_SPECIAL         0x0A
+#define DEX_PROTO_STACK_PARAMS    64
 
 #define DBG_LINE_BASE             -4
 #define DBG_LINE_RANGE            15
@@ -295,19 +296,28 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			params_data + typeidx_bufsize, bin->size);
 		return NULL;
 	}
+	ut8 stack_typeidx_buf[DEX_PROTO_STACK_PARAMS * sizeof (ut16)];
+	ut8 *heap_typeidx_buf = NULL;
+	ut8 *typeidx_buf = stack_typeidx_buf;
+	if (typeidx_bufsize > sizeof (stack_typeidx_buf)) {
+		heap_typeidx_buf = malloc (typeidx_bufsize);
+		if (!heap_typeidx_buf) {
+			return NULL;
+		}
+		typeidx_buf = heap_typeidx_buf;
+	}
+	if (typeidx_bufsize > 0 && r_buf_read_at (bin->b, params_data, typeidx_buf, typeidx_bufsize) != typeidx_bufsize) {
+		free (heap_typeidx_buf);
+		return NULL;
+	}
 	RStrBuf *sig = r_strbuf_new ("(");
 	if (!sig) {
+		free (heap_typeidx_buf);
 		return NULL;
 	}
 	ut32 i;
 	for (i = 0; i < list_size; i++) {
-		ut8 typeidx_buf[sizeof (ut16)];
-		ut64 off = params_data + (i * sizeof (ut16));
-		if (r_buf_read_at (bin->b, off, typeidx_buf, sizeof (typeidx_buf)) != sizeof (typeidx_buf)) {
-			r_strbuf_free (sig);
-			return NULL;
-		}
-		ut16 type_idx = r_read_le16 (typeidx_buf);
+		ut16 type_idx = r_read_le16 (typeidx_buf + (i * sizeof (ut16)));
 		ut16 type_desc_id = type_desc (bin, type_idx);
 		if (type_desc_id == UT16_MAX) {
 			r_strbuf_append (sig, "?;");
@@ -316,6 +326,7 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 			r_strbuf_append (sig, r_str_get_fail (buff, "?;"));
 		}
 	}
+	free (heap_typeidx_buf);
 	r_strbuf_appendf (sig, ")%s", return_type);
 	return r_strbuf_drain (sig);
 }
