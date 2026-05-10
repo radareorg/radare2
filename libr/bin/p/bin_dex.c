@@ -1659,19 +1659,16 @@ static bool dex_loadcode(RBinFile *bf) {
 		int sym_count = RVecRBinSymbol_length (&dex->symbols_vec);
 		const ut32 method_size = dex->header.method_size;
 		const ut32 types_size = dex->header.types_size;
-		RBitmap *has_code = NULL;
-		if (types_size > 0) {
-			has_code = r_bitmap_new (types_size);
-			if (!has_code) {
-				free (methods);
-				return false;
-			}
-			if (dex->classes) {
-				const ut32 class_size = dex->header.class_size;
-				ut32 j;
-				for (j = 0; j < class_size; j++) {
-					r_bitmap_set (has_code, dex->classes[j].class_id);
-				}
+		RBitset *has_code = r_bitset_new ();
+		if (!has_code) {
+			free (methods);
+			return false;
+		}
+		if (dex->classes) {
+			const ut32 class_size = dex->header.class_size;
+			ut32 j;
+			for (j = 0; j < class_size; j++) {
+				r_bitset_set (has_code, dex->classes[j].class_id);
 			}
 		}
 		for (i = 0; i < method_size; i++) {
@@ -1689,7 +1686,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			if (cid >= types_size) {
 				continue;
 			}
-			if (r_bitmap_test (has_code, cid) > 0) {
+			if (r_bitset_test (has_code, cid)) {
 				continue;
 			}
 			const char *className = getstr (dex, dex->types[cid].descriptor_id);
@@ -1733,7 +1730,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			}
 			free (class_name);
 		}
-		r_bitmap_free (has_code);
+		r_bitset_free (has_code);
 		free (methods);
 	}
 	return true;
