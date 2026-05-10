@@ -264,9 +264,24 @@ static ut16 type_desc(RBinDexObj *bin, ut16 type_idx) {
 	return bin->types[type_idx].descriptor_id;
 }
 
-static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
+static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	if (proto_id < 0 || proto_id >= bin->header.prototypes_size) {
 		return NULL;
+	}
+	const ut32 protos_size = bin->header.prototypes_size;
+	char **cp = bin->cal_protos;
+	if (cp) {
+		const char *p = cp[proto_id];
+		if (p) {
+			return p;
+		}
+	} else {
+		cp = R_NEWS0 (char *, protos_size);
+		if (!cp) {
+			return NULL;
+		}
+		bin->cal_protos = cp;
+		bin->cal_protos_size = protos_size;
 	}
 	const DexProto *p = &bin->protos[proto_id];
 	ut32 params_off = p->parameters_off;
@@ -282,7 +297,8 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 		return NULL;
 	}
 	if (!params_off) {
-		return r_str_newf ("()%s", return_type);
+		cp[proto_id] = r_str_newf ("()%s", return_type);
+		return cp[proto_id];
 	}
 	ut8 params_buf[sizeof (ut32)];
 	if (params_off + sizeof (params_buf) > bin->size || params_off + sizeof (params_buf) < params_off) {
@@ -332,10 +348,11 @@ static char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	}
 	free (heap_typeidx_buf);
 	r_strbuf_appendf (sig, ")%s", return_type);
-	return r_strbuf_drain (sig);
+	cp[proto_id] = r_strbuf_drain (sig);
+	return cp[proto_id];
 }
 
-static char *dex_method_signature(RBinDexObj *bin, int method_idx) {
+static const char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
 	}
@@ -1006,10 +1023,9 @@ static char *dex_method_fullname(RBinDexObj *dex, int method_idx) {
 		class_name = strdup ("???");
 	}
 	r_str_replace_char (class_name, ';', 0);
-	char *signature = dex_get_proto (dex, method->proto_id);
+	const char *signature = dex_get_proto (dex, method->proto_id);
 	if (signature) {
 		flagname = r_str_newf ("%s.%s%s", class_name, name, signature);
-		free (signature);
 	} else {
 		flagname = r_str_newf ("%s.%s%s", class_name, name, "???");
 	}
@@ -1189,11 +1205,10 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			// method_name = strdup ("unknown");
 			continue;
 		}
-		char *signature = dex_method_signature (dex, MI);
+		const char *signature = dex_method_signature (dex, MI);
 		char *flag_name = r_str_newf ("%s.method.%s%s", cls_name, method_name, signature);
 		if (!flag_name || !*flag_name) {
 			R_FREE (flag_name);
-			R_FREE (signature);
 			continue;
 		}
 		// TODO: check size
@@ -1203,31 +1218,26 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		if (MC > 0) {
 			if (MC + 16 >= dex->size || MC + 16 < MC) {
 				R_FREE (flag_name);
-				R_FREE (signature);
 				continue;
 			}
 			if (bufsz < MC || bufsz < MC + 16) {
 				R_FREE (flag_name);
-				R_FREE (signature);
 				continue;
 			}
 			regsz = r_buf_read_le16_at (b, MC);
 			if (regsz == UT16_MAX) {
 				R_FREE (flag_name);
-				R_FREE (signature);
 				break;
 			}
 			ins_size = r_buf_read_le16_at (b, MC + 2);
 			if (ins_size == UT16_MAX) {
 				R_FREE (flag_name);
-				R_FREE (signature);
 				break;
 			}
 			outs_size = r_buf_read_le16_at (b, MC + 4);
 			tries_size = r_buf_read_le16_at (b, MC + 6);
 			if (tries_size == UT16_MAX) {
 				R_FREE (flag_name);
-				R_FREE (signature);
 				break;
 			}
 			debug_info_off = r_buf_read_le32_at (b, MC + 8);
@@ -1266,11 +1276,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				for (j = 0; j < tries_size; j++) {
 					ut64 offset = MC + t + j * 8;
 					if (offset >= dex->size || offset < MC) {
-						R_FREE (signature);
 						break;
 					}
 					if (bufsz < offset || bufsz < offset + 8) {
-						R_FREE (signature);
 						break;
 					}
 					start_addr = r_buf_read_le32_at (b, offset);
@@ -1288,7 +1296,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 
 					int off = MC + t + tries_size * 8 + handler_off;
 					if (off >= dex->size || off < tries_size) {
-						R_FREE (signature);
 						break;
 					}
 					st64 size;
@@ -1363,7 +1370,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0) {
 				if (bufsz < MC || bufsz < MC + 16) {
 					r_bin_symbol_fini (sym);
-					R_FREE (signature);
 					continue;
 				}
 				ut16 tries_size = r_buf_read_le16_at (b, MC + 6);
@@ -1440,7 +1446,6 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		} else {
 			R_FREE (flag_name);
 		}
-		R_FREE (signature);
 	}
 }
 
@@ -1702,7 +1707,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			}
 			r_str_replace_char (class_name, ';', 0);
 			const char *method_name = dex_method_name (dex, i);
-			char *signature = dex_method_signature (dex, i);
+			const char *signature = dex_method_signature (dex, i);
 			if (!R_STR_ISEMPTY (method_name)) {
 				RBinImport imp = {0};
 				char *s = r_str_newf ("%s.method.%s%s", class_name, method_name, signature);
@@ -1726,7 +1731,6 @@ static bool dex_loadcode(RBinFile *bf) {
 				r_strf_var (mname, 64, "method.%"PFMT64u, (ut64)i);
 				sdb_num_set (dex->mdb, mname, sym.paddr, 0);
 			}
-			free ((void *)signature);
 			free (class_name);
 		}
 		r_bitmap_free (has_code);

@@ -219,6 +219,14 @@ R_IPI void r_bin_dex_free(RBinDexObj *dex) {
 		}
 	}
 	free (dex->cal_strings);
+	if (dex->cal_protos) {
+		const ut32 cal_protos_size = dex->cal_protos_size;
+		ut32 i;
+		for (i = 0; i < cal_protos_size; i++) {
+			free (dex->cal_protos[i]);
+		}
+	}
+	free (dex->cal_protos);
 	free (dex->strings);
 	free (dex->classes);
 	RVecDexMethod_fini (&dex->dex_methods);

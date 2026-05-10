@@ -155,6 +155,8 @@ typedef struct r_bin_dex_obj_t {
 	Sdb *kv;
 	char **cal_strings;
 	ut32 cal_strings_size;
+	char **cal_protos;
+	ut32 cal_protos_size;
 	bool verbose;
 	RStrBuf *sb; // used for dexdump output
 	bool addrline_loaded;
