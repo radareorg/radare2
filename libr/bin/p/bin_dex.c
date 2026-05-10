@@ -1586,18 +1586,6 @@ beach:
 	R_FREE (cls_name);
 }
 
-static bool is_class_idx_in_code_classes(RBinDexObj *dex, int class_idx) {
-	const ut32 n = dex->header.class_size;
-	const struct dex_class_t *classes = dex->classes;
-	ut32 i;
-	for (i = 0; i < n; i++) {
-		if (class_idx == classes[i].class_id) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static bool dex_loadcode(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinDexObj *dex = bf->bo->bin_obj;
@@ -1665,6 +1653,22 @@ static bool dex_loadcode(RBinFile *bf) {
 		int import_count = 0;
 		int sym_count = RVecRBinSymbol_length (&dex->symbols_vec);
 		const ut32 method_size = dex->header.method_size;
+		const ut32 types_size = dex->header.types_size;
+		RBitmap *has_code = NULL;
+		if (types_size > 0) {
+			has_code = r_bitmap_new (types_size);
+			if (!has_code) {
+				free (methods);
+				return false;
+			}
+			if (dex->classes) {
+				const ut32 class_size = dex->header.class_size;
+				ut32 j;
+				for (j = 0; j < class_size; j++) {
+					r_bitmap_set (has_code, dex->classes[j].class_id);
+				}
+			}
+		}
 		for (i = 0; i < method_size; i++) {
 			if (limit > 0 && import_count >= limit && sym_count >= limit) {
 				break;
@@ -1677,10 +1681,10 @@ static bool dex_loadcode(RBinFile *bf) {
 				continue;
 			}
 			const ut16 cid = method->class_id;
-			if (cid >= dex->header.types_size) {
+			if (cid >= types_size) {
 				continue;
 			}
-			if (is_class_idx_in_code_classes (dex, cid)) {
+			if (r_bitmap_test (has_code, cid) > 0) {
 				continue;
 			}
 			const char *className = getstr (dex, dex->types[cid].descriptor_id);
@@ -1725,6 +1729,7 @@ static bool dex_loadcode(RBinFile *bf) {
 			free ((void *)signature);
 			free (class_name);
 		}
+		r_bitmap_free (has_code);
 		free (methods);
 	}
 	return true;
