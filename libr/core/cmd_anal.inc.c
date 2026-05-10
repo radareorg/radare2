@@ -5318,16 +5318,15 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 		}
 	}
 	if (anal_calls) {
-		SetU *visited = set_u_new ();
+		RBitset *visited = r_bitset_new ();
 		fcn = r_anal_get_fcn_in (core->anal, addr, 0); /// XXX wrong in case of nopskip
 		if (fcn) {
 			RVecAnalRef *refs = r_anal_function_get_refs (fcn);
 			RAnalRef *ref;
 			R_VEC_FOREACH (refs, ref) {
-				if (set_u_contains (visited, ref->addr)) {
+				if (!r_bitset_set (visited, ref->addr)) {
 					continue;
 				}
-				set_u_add (visited, ref->addr);
 				if (ref->addr == UT64_MAX) {
 					R_LOG_DEBUG ("ignore 0x%08"PFMT64x" call 0x%08"PFMT64x, ref->at, ref->addr);
 					continue;
@@ -5349,10 +5348,9 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 					RAnalRef *ref;
 					R_VEC_FOREACH (refs1, ref) {
 						const ut64 raddr = ref->addr;
-						if (set_u_contains (visited, raddr)) {
+						if (!r_bitset_set (visited, raddr)) {
 							continue;
 						}
-						set_u_add (visited, raddr);
 						if (!r_io_is_valid_offset (core->io, raddr, !core->anal->opt.noncode)) {
 							continue;
 						}
@@ -5386,7 +5384,7 @@ R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls) 
 				r_core_recover_vars (core, fcn, true);
 			}
 		}
-		set_u_free (visited);
+		r_bitset_free (visited);
 	}
 	if (name) {
 		if (*name && !__setFunctionName (core, addr, name, true)) {
@@ -14645,7 +14643,7 @@ static bool funref(void *_core, ut64 from, ut64 addr) {
 }
 
 static void anal_aarr(RCore *core) {
-	SetU *visited = set_u_new ();
+	RBitset *visited = r_bitset_new ();
 	RAnalFunction *fcn;
 	RListIter *it;
 	r_list_foreach (core->anal->fcns, it, fcn) {
@@ -14657,15 +14655,14 @@ static void anal_aarr(RCore *core) {
 		RAnalRef *refi;
 		R_VEC_FOREACH (refs, refi) {
 			ut64 ra = refi->addr;
-			if (set_u_contains (visited, ra)) {
+			if (!r_bitset_set (visited, ra)) {
 				continue;
 			}
-			set_u_add (visited, ra);
 			funref (core, refi->at, ra);
 		}
 		RVecAnalRef_free (refs);
 	}
-	set_u_free (visited);
+	r_bitset_free (visited);
 }
 
 static void logline(RCore *core, int pc, const char *title) {
