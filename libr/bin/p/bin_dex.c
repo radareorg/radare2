@@ -231,7 +231,7 @@ static char *createAccessFlagStr(ut32 flags, AccessFor forWhat) {
 			"?", /* 0x20000 */
 		},
 	};
-	size_t i, count = r_num_bit_count (flags);
+	size_t i, count = r_bits_popcount32 (flags);
 	// produces a huge number????
 	if (count < 1) {
 		return NULL;

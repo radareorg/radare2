@@ -144,7 +144,7 @@ RUN
 
 NAME=radare2 empty -R
 FILE=-
-CMDS=!radare2 -R ""
+CMDS=!radare2 -NR ""
 EXPECT_ERR=<<EOF
 ERROR: Missing file to open
 EOF

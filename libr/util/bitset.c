@@ -15,19 +15,6 @@ static inline ut64 word_mask(ut64 bit) {
 	return (ut64)1 << (bit & 63);
 }
 
-#if defined(__GNUC__) || defined(__clang__)
-#define CTZ64(x) __builtin_ctzll (x)
-#else
-static inline int CTZ64(ut64 x) {
-	int c = 0;
-	while (!(x & 1)) {
-		x >>= 1;
-		c++;
-	}
-	return c;
-}
-#endif
-
 static void chunk_kvfree(HtUPKv *kv) {
 	free (kv->value);
 }
@@ -202,7 +189,7 @@ R_API ut64 r_bitset_find_next(const RBitset *b, ut64 from) {
 			}
 			if (word) {
 				ut64 base = (cur_ci << R_BITSET_CHUNK_SHIFT) + ((ut64)w << 6);
-				return base + CTZ64 (word);
+				return base + r_bits_ctz64 (word);
 			}
 		}
 		ci = UT64_MAX;
@@ -225,7 +212,7 @@ R_API void r_bitset_foreach(const RBitset *b, RBitsetForeachCb cb, void *user) {
 			ut64 word = chunk[w];
 			ut64 base = (ci << R_BITSET_CHUNK_SHIFT) + ((ut64)w << 6);
 			while (word) {
-				ut64 bit = base + CTZ64 (word);
+				ut64 bit = base + r_bits_ctz64 (word);
 				if (!cb (bit, user)) {
 					return;
 				}
