@@ -2349,6 +2349,17 @@ static ut64 r_bin_java_get_method_code_offset(RBinJavaField *fm_type) {
 	return 0LL;
 }
 
+static ut16 r_bin_java_get_method_max_locals(RBinJavaField *fm_type) {
+	RListIter *iter;
+	RBinJavaAttrInfo *attr;
+	r_list_foreach (fm_type->attributes, iter, attr) {
+		if (attr->type == R_BIN_JAVA_ATTR_TYPE_CODE_ATTR) {
+			return attr->info.code_attr.max_locals;
+		}
+	}
+	return 0;
+}
+
 static inline ut64 fieldattr_j2r(ut32 ja) {
 	RBinAttribute attr = 0;
 	if (ja & R_BIN_JAVA_FIELD_ACC_PUBLIC) {
@@ -2394,6 +2405,12 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 		sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
+		ut16 max_locals = r_bin_java_get_method_max_locals (fm_type);
+		if (max_locals > 0) {
+			sym->arg_first = 0;
+			sym->arg_count = max_locals;
+			sym->arg_prefix = "l";
+		}
 	} else {
 		sym->type = "FIELD";
 		sym->paddr = fm_type->file_offset; // r_bin_java_get_method_code_offset (fm_type);

@@ -925,6 +925,70 @@ static void dotnet_parse_tilde_typedef(
 	}
 }
 
+// ECMA-335 II.23.2 compressed-uint. Returns the value and advances *p past it.
+// Returns 0 on malformed input (and leaves *p untouched).
+static ut32 dotnet_read_compressed_uint(const ut8 **p, const ut8 *end) {
+	if (*p >= end) {
+		return 0;
+	}
+	ut8 b0 = **p;
+	if ((b0 & 0x80) == 0) {
+		(*p)++;
+		return b0 & 0x7f;
+	}
+	if ((b0 & 0xc0) == 0x80) {
+		if (*p + 1 >= end) {
+			return 0;
+		}
+		ut32 v = ((ut32)(b0 & 0x3f) << 8) | (*p)[1];
+		*p += 2;
+		return v;
+	}
+	if ((b0 & 0xe0) == 0xc0) {
+		if (*p + 3 >= end) {
+			return 0;
+		}
+		ut32 v = ((ut32)(b0 & 0x1f) << 24) | ((ut32)(*p)[1] << 16)
+				| ((ut32)(*p)[2] << 8) | (*p)[3];
+		*p += 4;
+		return v;
+	}
+	return 0;
+}
+
+// Decode the MethodDefSig blob at blob_index and return the total argument
+// slot count (paramCount + 1 if HASTHIS). 0 means "unknown / no info".
+// ECMA-335 II.23.2.1: header byte, optional GenParamCount, ParamCount, ret, params.
+static ut32 dotnet_method_param_count(PE *pe, PSTREAM_HEADER blob_hdr, ut64 metadata_root, ut32 blob_index) {
+	if (!blob_hdr || blob_index == 0) {
+		return 0;
+	}
+	ut64 blob_heap_off = metadata_root + blob_hdr->Offset;
+	if (blob_heap_off >= pe->data_size) {
+		return 0;
+	}
+	const ut8 *blob_heap = pe->data + blob_heap_off;
+	const ut8 *end = pe->data + pe->data_size;
+	if (blob_index >= (ut32)(end - blob_heap)) {
+		return 0;
+	}
+	const ut8 *p = blob_heap + blob_index;
+	// Skip the blob's own length prefix (compressed uint).
+	if (!dotnet_read_compressed_uint (&p, end)) {
+		return 0;
+	}
+	if (p >= end) {
+		return 0;
+	}
+	ut8 hdr = *p++;
+	ut32 implicit_this = (hdr & 0x20)? 1: 0; // HASTHIS
+	if (hdr & 0x10) { // GENERIC: skip GenParamCount
+		dotnet_read_compressed_uint (&p, end);
+	}
+	ut32 param_count = dotnet_read_compressed_uint (&p, end);
+	return implicit_this + param_count;
+}
+
 static void dotnet_parse_tilde_methoddef(
 	PE *pe,
 	PTILDE_HEADER tilde_header,
@@ -1000,11 +1064,18 @@ static void dotnet_parse_tilde_methoddef(
 				} else {
 					name = pe_get_dotnet_string (pe, string_offset, r_read_le16 (row_ptr + 8));
 				}
+				// Signature blob index: Offset 8 + string-index-size
+				ut32 sig_blob_off = 8 + index_sizes.string;
+				ut32 sig_idx = (index_sizes.blob == 4)
+					? r_read_le32 (row_ptr + sig_blob_off)
+					: r_read_le16 (row_ptr + sig_blob_off);
 				if (R_STR_ISNOTEMPTY (name)) {
 					DotNetSymbol *sym = R_NEW0 (DotNetSymbol);
 					// Methods are 1-based, the method index is relative to MethodDef table start
 					// So method 1 is the first row (i = 0), method 2 is the second row (i = 1), etc.
 					uint32_t method_idx = i + 1;
+					ut32 args = dotnet_method_param_count (pe, streams->blob, metadata_root, sig_idx);
+					sym->param_count = (args > 0xffff)? 0xffff: (ut16)args;
 					DotNetTypeDefInfo *parent_typedef = dotnet_find_typedef_for_method_index (typedef_info, method_idx);
 					if (parent_typedef) {
 						// Create fully qualified name: namespace.classname.methodname

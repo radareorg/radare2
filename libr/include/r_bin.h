@@ -338,6 +338,12 @@ typedef struct r_bin_symbol_t {
 	int bits;
 	RBinAttribute attr; // previously known as method_flags + visibility
 	int dup_count;
+	// Per-method arg-slot metadata for stack-VM archs (JVM, Dalvik, ...).
+	// Anal uses these to synthesize register-kind argument variables.
+	// arg_count == 0 means no metadata is available for this symbol.
+	ut16 arg_first;          // first arg register index in the bytecode reg space
+	ut16 arg_count;          // number of arg slots (0 = no metadata)
+	const char *arg_prefix;  // interned register name prefix, e.g. "v" or "l"
 } RBinSymbol;
 
 typedef struct r_bin_section_t {
@@ -422,6 +428,7 @@ typedef struct r_bin_object_t {
 	int lang;
 	Sdb *kv;
 	HtUP *addr2klassmethod;
+	HtUP *symbol_addr_ht; // vaddr/paddr -> RBinSymbol* (lazy, owned by object)
 	HtPP *import_name_ht;
 	HtUP *import_addr_ht;
 	RVecRBinSymbol *import_symbols;
@@ -813,6 +820,8 @@ typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
+typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
+typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
@@ -820,6 +829,8 @@ typedef struct r_bin_bind_t {
 	RBinGetName get_name;
 	RBinGetSections get_sections;
 	RBinGetSectionAt get_vsect_at;
+	RBinGetSymbolsVec get_symbols_vec;
+	RBinGetSymbolAt get_symbol_at;
 	RBinDemangle demangle;
 	RBinAddrLineAdd addrline_add;
 	RBinAddrLineGet addrline_get;
@@ -908,6 +919,9 @@ R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
+// O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
+// current RBinObject on first call; returns NULL if no symbol matches.
+R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr);
 R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);

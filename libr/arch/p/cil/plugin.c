@@ -229,22 +229,30 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 // 	return -1;
 // }
 
+// CIL methods address arguments by slot (ldarg.N) and locals by slot (ldloc.N).
+// Expose a0..a31 and l0..l31 as synthetic regs so per-method arg recovery,
+// driven by bin-symbol metadata, can name argument variables uniformly.
 static char *regs(RArchSession *as) {
-	const char p[] =
+	RStrBuf *sb = r_strbuf_new (
 		"=PC	pc\n"
 		"=SP	sp\n"
-		"=A0	r0\n"
-		"=A1	r1\n"
-		"=A2	r2\n"
-		"=A3	r3\n"
-
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=R0	r0\n"
 		"gpr	pc	.32	0	0\n"
 		"gpr	sp	.32	4	0\n"
 		"gpr	r0	.32	8	0\n"
-		"gpr	r1	.32	12	0\n"
-		"gpr	r2	.32	16	0\n"
-		"gpr	r3	.32	20	0\n";
-	return strdup (p);
+	);
+	int i, off = 12;
+	for (i = 0; i < 32; i++, off += 4) {
+		r_strbuf_appendf (sb, "gpr\ta%d\t.32\t%d\t0\n", i, off);
+	}
+	for (i = 0; i < 32; i++, off += 4) {
+		r_strbuf_appendf (sb, "gpr\tl%d\t.32\t%d\t0\n", i, off);
+	}
+	return r_strbuf_drain (sb);
 }
 
 const RArchPlugin r_arch_plugin_cil = {

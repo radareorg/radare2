@@ -174,6 +174,8 @@ static void object_delete_items(RBinObject *o) {
 	ut32 i = 0;
 	r_strpool_free (o->pool);
 	ht_up_free (o->addr2klassmethod);
+	ht_up_free (o->symbol_addr_ht);
+	o->symbol_addr_ht = NULL;
 	r_list_free (o->entries);
 	r_list_free (o->fields);
 	/* imports list elements may carry strdup'd names; ensure list has free cb or purge manually */

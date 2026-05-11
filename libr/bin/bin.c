@@ -945,6 +945,30 @@ R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
 	return bf? r_bin_file_get_symbols_vec (bf): NULL;
 }
 
+R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinObject *o = r_bin_cur_object (bin);
+	if (!o) {
+		return NULL;
+	}
+	if (!o->symbol_addr_ht) {
+		o->symbol_addr_ht = ht_up_new0 ();
+		if (!o->symbol_addr_ht) {
+			return NULL;
+		}
+		RBinSymbol *sym;
+		R_VEC_FOREACH (&o->symbols_vec, sym) {
+			if (sym->vaddr && sym->vaddr != UT64_MAX) {
+				ht_up_insert (o->symbol_addr_ht, sym->vaddr, sym);
+			}
+			if (sym->paddr && sym->paddr != sym->vaddr && sym->paddr != UT64_MAX) {
+				ht_up_insert (o->symbol_addr_ht, sym->paddr, sym);
+			}
+		}
+	}
+	return ht_up_find (o->symbol_addr_ht, addr, NULL);
+}
+
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = bin->cur;
@@ -1304,6 +1328,8 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_name = __getname;
 		b->get_sections = r_bin_get_sections;
 		b->get_vsect_at = __get_vsection_at;
+		b->get_symbols_vec = r_bin_get_symbols_vec;
+		b->get_symbol_at = r_bin_get_symbol_at;
 		b->demangle = r_bin_demangle;
 	}
 }

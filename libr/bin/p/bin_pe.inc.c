@@ -543,6 +543,14 @@ static RList* symbols(RBinFile *bf) {
 							ptr->lang = R_BIN_LANG_C;
 						} else {
 							ptr->lang = R_BIN_LANG_CIL;
+							// CIL methods expose their arg slots as a0..aN.
+							// Anal turns this into REG-kind argument vars via
+							// the generic stack-VM recovery path.
+							if (dsym->param_count > 0) {
+								ptr->arg_first = 0;
+								ptr->arg_count = dsym->param_count;
+								ptr->arg_prefix = "a";
+							}
 						}
 						if (dsym->vaddr > 0) {
 							ptr->vaddr = dsym->vaddr + image_base;

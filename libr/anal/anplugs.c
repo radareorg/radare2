@@ -352,10 +352,51 @@ R_API void *r_anal_plugin_action(RAnal *anal, RAnalPluginAction action, RAnalFun
 	return all_refs; // non-NULL only for GET_DATA_REFS
 }
 
+// For stack-VM archs (JVM, Dalvik, ...) bin parses each method's frame header
+// and attaches (arg_first, arg_count, arg_prefix) to its RBinSymbol. Anal turns
+// that into register-kind argument variables, named "<prefix><first + i>", with
+// delta = position of that register in the arch's reg profile.
+R_API bool r_anal_function_set_vm_args(RAnalFunction *fcn, const char *prefix, int first, int count) {
+	R_RETURN_VAL_IF_FAIL (fcn && fcn->anal, false);
+	if (count <= 0 || !prefix) {
+		return false;
+	}
+	int i;
+	bool any = false;
+	for (i = 0; i < count; i++) {
+		char name[32];
+		snprintf (name, sizeof (name), "%s%d", prefix, first + i);
+		RRegItem *ri = r_reg_get (fcn->anal->reg, name, -1);
+		if (!ri) {
+			continue;
+		}
+		int delta = ri->index;
+		r_unref (ri);
+		if (r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, "int", 0, true, name)) {
+			any = true;
+		}
+	}
+	return any;
+}
+
+static bool recover_vars_from_bin_meta(RAnal *anal, RAnalFunction *fcn) {
+	if (!anal->binb.bin || !anal->binb.get_symbol_at) {
+		return false;
+	}
+	RBinSymbol *sym = anal->binb.get_symbol_at (anal->binb.bin, fcn->addr);
+	if (!sym || sym->arg_count == 0 || !sym->arg_prefix) {
+		return false;
+	}
+	return r_anal_function_set_vm_args (fcn, sym->arg_prefix, sym->arg_first, sym->arg_count);
+}
+
 // Apply plugin-recovered variables to a function
 // Returns true if a plugin provided variables, false to fall back to default recovery
 R_API bool r_anal_function_recover_vars_plugin(RAnal *anal, RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (anal && fcn, false);
+	if (recover_vars_from_bin_meta (anal, fcn)) {
+		return true;
+	}
 	RList *plugin_vars = r_anal_plugin_action (anal, R_ANAL_PLUGIN_ACTION_RECOVER_VARS, fcn);
 	if (!plugin_vars) {
 		return false;

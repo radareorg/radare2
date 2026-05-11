@@ -1357,6 +1357,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0) {
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->paddr = MC;// + 0x10;
+				if (ins_size > 0 && ins_size <= regsz) {
+					sym->arg_first = regsz - ins_size;
+					sym->arg_count = ins_size;
+					sym->arg_prefix = "v";
+				}
 			} else {
 				sym->type = R_BIN_TYPE_METH_STR;
 				sym->paddr = encoded_method_addr;

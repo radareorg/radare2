@@ -360,6 +360,7 @@ typedef struct {
 	ut32 flags;       // access flags, etc.
 	ut32 token;       // Token value for symbolication
 	bool is_native;   // true if method is native code, false if IL
+	ut16 param_count; // For methoddef: argument slot count including implicit 'this'
 	RList *methods;   // List of DotNetMethod pointers
 	RList *fields;    // List of DotNetField pointers
 } DotNetSymbol;
