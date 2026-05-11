@@ -3170,7 +3170,7 @@ static bool is_dos_time(const ut32 certainPosixTimeStamp, const ut32 possiblePos
 	return true;
 }
 
-static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, HtUU *dirs, const char *resource_name) {
+static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory *dir, ut64 offDir, int type, int id, RBitset *dirs, const char *resource_name) {
 	char *resourceEntryName = NULL;
 	int index = 0;
 	ut32 totalRes = dir->NumberOfNamedEntries + dir->NumberOfIdEntries;
@@ -3182,10 +3182,9 @@ static void _parse_resource_directory(RBinPEObj *pe, Pe_image_resource_directory
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry entry;
 		off = rsrc_base + offDir + sizeof (*dir) + index * sizeof (entry);
-		if (ht_uu_find (dirs, off, NULL)) {
+		if (!r_bitset_set (dirs, off)) {
 			break;
 		}
-		ht_uu_insert (dirs, off, 1);
 		if (off > pe->size || off + sizeof (entry) > pe->size) {
 			break;
 		}
@@ -3336,12 +3335,9 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 	Pe_image_resource_directory *rs_directory = pe->resource_directory;
 	ut32 curRes = 0;
 	int totalRes = 0;
-	HtUU *dirs = ht_uu_new0 (); // to avoid infinite loops
-	if (!dirs) {
-		return;
-	}
+	RBitset *dirs = r_bitset_new (); // to avoid infinite loops
 	if (!rs_directory) {
-		ht_uu_free (dirs);
+		r_bitset_free (dirs);
 		return;
 	}
 	curRes = rs_directory->NumberOfNamedEntries;
@@ -3350,13 +3346,13 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 		if (pe->verbose) {
 			R_LOG_ERROR ("parsing resource directory");
 		}
-		ht_uu_free (dirs);
+		r_bitset_free (dirs);
 		return;
 	}
 	for (index = 0; index < totalRes; index++) {
 		Pe_image_resource_directory_entry typeEntry;
 		off = rsrc_base + sizeof (*rs_directory) + index * sizeof (typeEntry);
-		ht_uu_insert (dirs, off, 1);
+		r_bitset_set (dirs, off);
 		if (off > pe->size || off + sizeof (typeEntry) > pe->size) {
 			break;
 		}
@@ -3375,7 +3371,7 @@ R_API void PE_(bin_pe_parse_resource)(RBinPEObj *pe) {
 			(void)_parse_resource_directory (pe, &identEntry, OffsetToDirectory, typeEntry.u1.Name & 0xffff, 0, dirs, NULL);
 		}
 	}
-	ht_uu_free (dirs);
+	r_bitset_free (dirs);
 	_store_resource_sdb (pe);
 }
 

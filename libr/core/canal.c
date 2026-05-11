@@ -6541,18 +6541,14 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		return;
 	}
 
-	HtUU *done = ht_uu_new0 ();
-	if (!done) {
-		r_list_free (todo);
-		return;
-	}
+	RBitset *done = r_bitset_new ();
 
 	RAnalFunction *request_fcn = NULL;
 	if (addr != UT64_MAX) {
 		request_fcn = r_anal_get_function_at (core->anal, addr);
 		if (!request_fcn) {
 			r_list_free (todo);
-			ht_uu_free (done);
+			r_bitset_free (done);
 			return;
 		}
 	}
@@ -6626,14 +6622,13 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 
 				RListIter *fit;
 				r_list_foreach (block_fcns, fit, f) {
-					bool found = ht_uu_find (done, f->addr, NULL) != 0;
-					if (f->addr && !found && analyze_noreturn_function (core, f)) {
+					if (f->addr && !r_bitset_test (done, f->addr) && analyze_noreturn_function (core, f)) {
 						f->is_noreturn = true;
 						r_anal_noreturn_add (core->anal, NULL, f->addr);
 						ut64 *n = malloc (sizeof (ut64));
 						*n = f->addr;
 						r_list_append (todo, n);
-						ht_uu_insert (done, *n, 1);
+						r_bitset_set (done, *n);
 					}
 				}
 
@@ -6644,7 +6639,7 @@ R_API void r_core_anal_propagate_noreturn(RCore *core, ut64 addr) {
 		RVecAnalRef_free (xrefs);
 	}
 	r_list_free (todo);
-	ht_uu_free (done);
+	r_bitset_free (done);
 }
 
 R_API char *r_core_anal_get_comments(RCore *core, ut64 addr) {

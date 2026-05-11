@@ -2,14 +2,13 @@
 
 #include <r_bin.h>
 #include <sdb/ht_su.h>
-#include <sdb/ht_uu.h>
 
 #include "i/private.h"
 
 typedef struct {
 	ut64 count;
 	ut64 first_vaddr;
-	HtUU *seen_vaddrs;
+	RBitset *seen_vaddrs;
 } RBinSectionNameState;
 
 static void section_name_state_free(HtPPKv *kv) {
@@ -17,7 +16,9 @@ static void section_name_state_free(HtPPKv *kv) {
 		RBinSectionNameState *state = kv->value;
 		free (kv->key);
 		if (state) {
-			ht_uu_free (state->seen_vaddrs);
+			if (state->seen_vaddrs) {
+				r_bitset_free (state->seen_vaddrs);
+			}
 			free (state);
 		}
 	}
@@ -28,19 +29,13 @@ static bool section_name_exists(RBinSectionNameState *state, ut64 vaddr) {
 		if (state->first_vaddr == vaddr) {
 			return true;
 		}
-		state->seen_vaddrs = ht_uu_new0 ();
-		if (state->seen_vaddrs) {
-			ht_uu_insert (state->seen_vaddrs, state->first_vaddr, 1);
-			ht_uu_insert (state->seen_vaddrs, vaddr, 1);
-		}
+		state->seen_vaddrs = r_bitset_new ();
+		r_bitset_set (state->seen_vaddrs, state->first_vaddr);
+		r_bitset_set (state->seen_vaddrs, vaddr);
 		return false;
 	}
-	bool found = false;
-	(void)ht_uu_find (state->seen_vaddrs, vaddr, &found);
-	if (!found) {
-		ht_uu_insert (state->seen_vaddrs, vaddr, 1);
-	}
-	return found;
+	// r_bitset_set returns true if newly set; we want the inverse for "found"
+	return !r_bitset_set (state->seen_vaddrs, vaddr);
 }
 
 static char *hashify(const char *s, ut64 vaddr, ut64 suffix, bool keep_printable) {

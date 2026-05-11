@@ -346,32 +346,25 @@ static RList *symbols(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
-	HtUU *hash = ht_uu_new0 ();
-	if (!hash) {
-		return NULL;
-	}
+	RBitset *seen = r_bitset_new ();
 	RList *res = r_list_newf ((RListFree)r_bin_symbol_free);
 	if (element->lined_symbols) {
 		for (i = 0; i < element->hdr->n_lined_symbols; i++) {
 			RCoreSymCacheElementSymbol *sym = (RCoreSymCacheElementSymbol *)&element->lined_symbols[i];
-			bool found = false;
-			ht_uu_find (hash, sym->paddr, &found);
-			if (found) {
+			if (r_bitset_test (seen, sym->paddr)) {
 				continue;
 			}
 			RBinSymbol *s = bin_symbol_from_symbol (element, sym);
 			if (s) {
 				r_list_append (res, s);
-				ht_uu_insert (hash, sym->paddr, 1);
+				r_bitset_set (seen, sym->paddr);
 			}
 		}
 	}
 	if (element->symbols) {
 		for (i = 0; i < element->hdr->n_symbols; i++) {
 			RCoreSymCacheElementSymbol *sym = &element->symbols[i];
-			bool found = false;
-			ht_uu_find (hash, sym->paddr, &found);
-			if (found) {
+			if (r_bitset_test (seen, sym->paddr)) {
 				continue;
 			}
 			RBinSymbol *s = bin_symbol_from_symbol (element, sym);
@@ -380,7 +373,7 @@ static RList *symbols(RBinFile *bf) {
 			}
 		}
 	}
-	ht_uu_free (hash);
+	r_bitset_free (seen);
 	return res;
 }
 
