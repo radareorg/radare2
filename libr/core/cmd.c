@@ -4006,7 +4006,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	RCons *cons = core->cons;
-	ut64 rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
+	ut64 rep = 0;
 	int ret = 0, orep;
 	char *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
@@ -4055,6 +4055,7 @@ static int r_core_cmd_subst(RCore *core, char *cmd) {
 	}
 	cmd = (char *)r_str_trim_head_ro (icmd);
 	r_str_trim_tail (cmd);
+	rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
 	R_CRITICAL_LEAVE (core);
 	// lines starting with # are ignored (never reach cmd_hash()), except #! and #?
 	if (R_STR_ISEMPTY (cmd)) {
