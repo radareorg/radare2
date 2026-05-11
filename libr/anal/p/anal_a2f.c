@@ -9,7 +9,6 @@
 #define MAXFCNSIZE 4096
 
 #define Fbb(x) r_strf("bb.%"PFMT64x,x)
-#define Fhandled(x) r_strf("handled.%"PFMT64x,x)
 #define FbbTo(x) r_strf("bb.%"PFMT64x".to",x)
 
 static ut64 getCrossingBlock(Sdb *db, const char *key, ut64 start, ut64 end) {
@@ -101,9 +100,8 @@ static int bbAdd(Sdb *db, ut64 from, ut64 to, ut64 jump, ut64 fail) {
 	return 0;
 }
 
-static void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
-	r_strf_buffer (64);
-	if (sdb_num_get (db, Fhandled (addr), NULL)) {
+static void addTarget(RCore *core, RStack *stack, RBitset *handled, ut64 addr) {
+	if (!r_bitset_set (handled, addr)) {
 		// already set
 		return;
 	}
@@ -116,12 +114,10 @@ static void addTarget(RCore *core, RStack *stack, Sdb *db, ut64 addr) {
 	if (!r_stack_push (stack, (void*)value)) {
 		R_LOG_DEBUG ("Failed to push address on stack");
 		free (value);
-		return;
 	}
-	sdb_num_set (db, Fhandled (addr), 1, 0);
 }
 
-static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_commands) {
+static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr, RList *delayed_commands) {
 #define addCall(x) sdb_array_add_num (db, "calls", x, 0);
 #define addUcall(x) sdb_array_add_num (db, "ucalls", x, 0);
 #define addUjmp(x) sdb_array_add_num (db, "ujmps", x, 0);
@@ -135,7 +131,7 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 	int cur = 0;
 	bool block_end = false;
 	RStack *stack = r_stack_newf (10, free);
-	addTarget (core, stack, db, addr);
+	addTarget (core, stack, handled, addr);
 	const ut64 maxfcnsize = 1024 * 32;
 
 	while (!r_stack_is_empty (stack)) {
@@ -245,15 +241,15 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, ut64 addr, RList *delayed_co
 			case R_ANAL_OP_TYPE_CJMP:
 				addCjmp (addr+cur);
 				bbAdd (db, addr, addr + cur + op->size, op->jump, addr + cur + op->size);
-				addTarget (core, stack, db, op->jump);
-				addTarget (core, stack, db, addr + cur + op->size);
+				addTarget (core, stack, handled, op->jump);
+				addTarget (core, stack, handled, addr + cur + op->size);
 				block_end = true;
 				r_list_append (delayed_commands, r_str_newf ("axc %"PFMT64d" %"PFMT64d, op->jump, addr + cur));
 				break;
 			case R_ANAL_OP_TYPE_JMP:
 				addUjmp (addr+cur);
 				bbAdd (db, addr, addr + cur + op->size, op->jump, UT64_MAX);
-				addTarget (core, stack, db, op->jump);
+				addTarget (core, stack, handled, op->jump);
 				block_end = true;
 				r_list_append (delayed_commands, r_str_newf ("axc %"PFMT64d" %"PFMT64d, op->jump, addr + cur));
 				break;
@@ -336,7 +332,9 @@ static bool analyzeFunction(RCore *core, ut64 addr) {
 		return false;
 	}
 
-	ut64 a = analyzeStackBased (core, db, addr, delayed_commands);
+	RBitset *handled = r_bitset_new ();
+	ut64 a = analyzeStackBased (core, db, handled, addr, delayed_commands);
+	r_bitset_free (handled);
 	if (addr == UT64_MAX) {
 		R_LOG_ERROR ("Initial analysis failed");
 		return false;
