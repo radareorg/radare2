@@ -177,7 +177,51 @@ static int md_render_table(char *b, RStrBuf *out, void *cons) {
 	return p - b;
 }
 
-R_API char *r_str_md2txt(const char *page, bool usecolor, void *cons) {
+static int md_emphasis(const char *b, RStrBuf *sb, bool *bold, bool *italic) {
+	char m = *b;
+	if (m != '*' && m != '_') {
+		return 0;
+	}
+	const bool dbl = (b[1] == m);
+	if (dbl) {
+		if (*bold) {
+			r_strbuf_append (sb, Color_BOLD_RESET);
+			*bold = false;
+			return 2;
+		}
+		const char *p = b + 2;
+		while (*p && *p != '\n') {
+			if (p[0] == m && p[1] == m) {
+				r_strbuf_append (sb, Color_BOLD);
+				*bold = true;
+				return 2;
+			}
+			p++;
+		}
+		return 0;
+	}
+	if (*italic) {
+		r_strbuf_append (sb, Color_ITALIC_RESET);
+		*italic = false;
+		return 1;
+	}
+	const char *p = b + 1;
+	while (*p && *p != '\n') {
+		if (p[0] == m && p[1] == m) {
+			p += 2;
+			continue;
+		}
+		if (p[0] == m) {
+			r_strbuf_append (sb, Color_ITALIC);
+			*italic = true;
+			return 1;
+		}
+		p++;
+	}
+	return 0;
+}
+
+R_API char *r_str_md2txt(const char *page, bool usecolor, bool useutf8, void *cons) {
 	char *orig = r_file_slurp (page, NULL);
 	if (!orig) {
 		return NULL;
@@ -189,6 +233,8 @@ R_API char *r_str_md2txt(const char *page, bool usecolor, void *cons) {
 	bool codeblock = false;
 	bool title = false;
 	bool codeblockline = false;
+	bool bold = false;
+	bool italic = false;
 	while (*b) {
 		int ch = *b;
 	repeat:
@@ -217,6 +263,8 @@ R_API char *r_str_md2txt(const char *page, bool usecolor, void *cons) {
 				codeblock = false;
 				codeblockline = false;
 			}
+			bold = false;
+			italic = false;
 			break;
 		case '\t':
 			if (col == 0) {
@@ -341,6 +389,14 @@ R_API char *r_str_md2txt(const char *page, bool usecolor, void *cons) {
 					} else {
 						r_strbuf_append (sb, "  ");
 					}
+				}
+			}
+			if (useutf8 && !codeblock && !title && (ch == '*' || ch == '_')) {
+				int n = md_emphasis (b, sb, &bold, &italic);
+				if (n > 0) {
+					b += n - 1;
+					col++;
+					break;
 				}
 			}
 			col++;
