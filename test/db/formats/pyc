@@ -237,7 +237,5 @@ EXPECT=<<EOF
 |           0x00000033      640200         load_const None
 \           0x00000036      53             return_value
 EOF
-EXPECT_ERR=<<EOF
-WARN: select the calling convention with `e anal.cc=?`
-EOF
+EXPECT_ERR=
 RUN

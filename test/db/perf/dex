@@ -10,7 +10,8 @@ EXPECT=<<EOF
             ;-- method.public.Lcom_stericson_RootTools_SanityCheckRootTools.Lcom_stericson_RootTools_SanityCheckRootTools.method.onCreate_Landroid_os_Bundle__V:
             ;-- Lcom/stericson/RootTools/SanityCheckRootTools.method.onCreate(Landroid/os/Bundle;)V:
             ;-- ip:
-/ 256: entry0 ();
+/ 256: entry0 (int v8, int v9);
+| `- args(v8, v9)
 |           0x000155b8      1207           const/4 v7, 0
 |           0x000155ba      6f2003009800   invoke-super {v8, v9}, Landroid/app/Activity.onCreate(Landroid/os/Bundle;)V ; 0x3
 |           0x000155c0      1214           const/4 v4, 0x1

@@ -1274,7 +1274,5 @@ EOF
 EXPECT=<<EOF
 0
 EOF
-EXPECT_ERR=<<EOF
-WARN: select the calling convention with `e anal.cc=?`
-EOF
+EXPECT_ERR=
 RUN
