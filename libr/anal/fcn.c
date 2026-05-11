@@ -3093,12 +3093,12 @@ R_API void r_anal_function_check_bp_use(RAnalFunction *fcn) {
 
 typedef struct {
 	RAnalFunction *fcn;
-	HtUP *visited;
+	RBitset *visited;
 } BlockRecurseCtx;
 
 static bool mark_as_visited(RAnalBlock *bb, void *user) {
 	BlockRecurseCtx *ctx = user;
-	ht_up_insert (ctx->visited, bb->addr, NULL);
+	r_bitset_set (ctx->visited, bb->addr);
 	return true;
 }
 
@@ -3113,7 +3113,7 @@ static bool analize_addr_cb(ut64 addr, void *user) {
 			r_anal_block_recurse (r_anal_get_block_at (anal, addr), mark_as_visited, user);
 		}
 	}
-	ht_up_insert (ctx->visited, addr, NULL);
+	r_bitset_set (ctx->visited, addr);
 	return true;
 }
 
@@ -3122,8 +3122,8 @@ static bool analize_descendents(RAnalBlock *bb, void *user) {
 	return true;
 }
 
-static void free_ht_up(HtUPKv *kv) {
-	ht_up_free ((HtUP *)kv->value);
+static void free_bitset_value(HtUPKv *kv) {
+	r_bitset_free ((RBitset *)kv->value);
 }
 
 static void update_var_analysis(RAnalFunction *fcn, int align, ut64 from, ut64 to) {
@@ -3208,18 +3208,18 @@ static void update_analysis(RAnal *anal, RList *fcns, HtUP *reachable) {
 				continue;
 			}
 		}
-		HtUP *ht = ht_up_new0 ();
-		ht_up_insert (ht, bb->addr, NULL);
-		BlockRecurseCtx ctx = { fcn, ht };
+		RBitset *bs = r_bitset_new ();
+		r_bitset_set (bs, bb->addr);
+		BlockRecurseCtx ctx = { fcn, bs };
 		r_anal_block_recurse (bb, analize_descendents, &ctx);
 
 		// Remove non-reachable blocks
 		r_list_foreach_safe (fcn->bbs, it2, tmp, bb) {
-			if (ht_up_find_kv (ht, bb->addr, NULL)) {
+			if (r_bitset_test (bs, bb->addr)) {
 				continue;
 			}
-			HtUP *o_visited = ht_up_find (reachable, fcn->addr, NULL);
-			if (!ht_up_find_kv (o_visited, bb->addr, NULL)) {
+			RBitset *o_visited = ht_up_find (reachable, fcn->addr, NULL);
+			if (!o_visited || !r_bitset_test (o_visited, bb->addr)) {
 				// Avoid removing blocks that were already not reachable
 				continue;
 			}
@@ -3241,10 +3241,10 @@ static void calc_reachable_and_remove_block(RList *fcns, RAnalFunction *fcn, RAn
 		r_list_append (fcns, fcn);
 
 		// Calculate reachable blocks from the start of function
-		HtUP *ht = ht_up_new0 ();
-		BlockRecurseCtx ctx = { fcn, ht };
+		RBitset *bs = r_bitset_new ();
+		BlockRecurseCtx ctx = { fcn, bs };
 		r_anal_block_recurse (r_anal_get_block_at (fcn->anal, fcn->addr), mark_as_visited, &ctx);
-		ht_up_insert (reachable, fcn->addr, ht);
+		ht_up_insert (reachable, fcn->addr, bs);
 	}
 	fcn->ninstr -= bb->ninstr;
 	r_anal_function_remove_block (fcn, bb);
@@ -3261,7 +3261,7 @@ R_API void r_anal_update_analysis_range(RAnal *anal, ut64 addr, int size) {
 		return;
 	}
 	RList *fcns = r_list_new ();
-	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
+	HtUP *reachable = ht_up_new (NULL, free_bitset_value, NULL);
 	const int align = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	const ut64 end_write = addr + size;
 
@@ -3296,7 +3296,7 @@ R_API void r_anal_function_update_analysis(RAnalFunction *fcn) {
 	RAnalBlock *bb;
 	RAnalFunction *f;
 	RList *fcns = r_list_new ();
-	HtUP *reachable = ht_up_new (NULL, free_ht_up, NULL);
+	HtUP *reachable = ht_up_new (NULL, free_bitset_value, NULL);
 	r_list_foreach_safe (fcn->bbs, it, tmp, bb) {
 		if (r_anal_block_was_modified (bb)) {
 			r_list_foreach_safe (bb->fcns, it2, tmp2, f) {

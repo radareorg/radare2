@@ -1277,14 +1277,13 @@ static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
 	return false;
 }
 
-static bool insert_into(void *user, const ut64 k, const ut64 v) {
-	HtUU *ht = (HtUU *)user;
-	ht_uu_insert (ht, k, v);
+static bool insert_into(ut64 bit, void *user) {
+	r_bitset_set ((RBitset *)user, bit);
 	return true;
 }
 
 // TODO: follow unconditional jumps
-static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, HtUU *badstart) {
+static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, RBitset *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAnalOp aop = {0};
@@ -1298,7 +1297,7 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	int grep_find;
 	int search_hit;
 	char *rx = NULL;
-	HtUU *localbadstart = ht_uu_new0 ();
+	RBitset *localbadstart = r_bitset_new ();
 	int count = 0;
 
 	if (grep) {
@@ -1317,14 +1316,12 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 		}
 	}
 
-	bool found;
-	ht_uu_find (badstart, idx, &found);
-	if (found) {
+	if (r_bitset_test (badstart, idx)) {
 		valid = false;
 		goto ret;
 	}
 	while (nb_instr < max_instr) {
-		ht_uu_insert (localbadstart, idx, 1);
+		r_bitset_set (localbadstart, idx);
 		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ARCH_OP_MASK_DISASM);
 		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP))) {
 			valid = false;
@@ -1399,16 +1396,16 @@ ret:
 	free (grep_str);
 	if (regex && rx) {
 		r_list_free (hitlist);
-		ht_uu_free (localbadstart);
+		r_bitset_free (localbadstart);
 		return NULL;
 	}
 	if (!valid || (grep && end)) {
 		r_list_free (hitlist);
-		ht_uu_free (localbadstart);
+		r_bitset_free (localbadstart);
 		return NULL;
 	}
-	ht_uu_foreach (localbadstart, insert_into, badstart);
-	ht_uu_free (localbadstart);
+	r_bitset_foreach (localbadstart, insert_into, badstart);
+	r_bitset_free (localbadstart);
 	// If our arch has bds then we better be including them
 	if (branch_delay && r_list_length (hitlist) < (1 + branch_delay)) {
 		r_list_free (hitlist);
@@ -1672,7 +1669,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 	r_cons_break_push (core->cons, NULL, NULL);
 
 	r_list_foreach (param->boundaries, itermap, map) {
-		HtUU *badstart = ht_uu_new0 ();
+		RBitset *badstart = r_bitset_new ();
 		if (!r_itv_overlap (search_itv, map->itv)) {
 			continue;
 		}
@@ -1847,7 +1844,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 			}
 		}
 		free (buf);
-		ht_uu_free (badstart);
+		r_bitset_free (badstart);
 	}
 	if (r_cons_is_breaked (core->cons)) {
 		eprintf ("\n");

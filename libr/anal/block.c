@@ -481,16 +481,15 @@ R_API bool r_anal_block_successor_addrs_foreach(RAnalBlock *block, RAnalAddrCb c
 typedef struct r_anal_block_recurse_context_t {
 	RAnal *anal;
 	RVecAnalBlockPtr /*<RAnalBlock>*/ to_visit;
-	HtUP *visited;
+	RBitset *visited;
 } RAnalBlockRecurseContext;
 
 static bool block_recurse_successor_cb(ut64 addr, void *user) {
 	RAnalBlockRecurseContext *ctx = user;
-	if (ht_up_find_kv (ctx->visited, addr, NULL)) {
+	if (!r_bitset_set (ctx->visited, addr)) {
 		// already visited
 		return true;
 	}
-	ht_up_insert (ctx->visited, addr, NULL);
 	RAnalBlock *block = r_anal_get_block_at (ctx->anal, addr);
 	if (!block) {
 		return true;
@@ -504,12 +503,9 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
 	RVecAnalBlockPtr_init (&ctx.to_visit);
-	ctx.visited = ht_up_new0 ();
-	if (!ctx.visited) {
-		goto beach;
-	}
+	ctx.visited = r_bitset_new ();
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_bitset_set (ctx.visited, block->addr);
 	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
 
 	while (!RVecAnalBlockPtr_empty (&ctx.to_visit)) {
@@ -525,8 +521,7 @@ R_API bool r_anal_block_recurse(RAnalBlock *block, RAnalBlockCb cb, void *user) 
 		}
 	}
 
-beach:
-	ht_up_free (ctx.visited);
+	r_bitset_free (ctx.visited);
 	RVecAnalBlockPtr_fini (&ctx.to_visit);
 	return !breaked;
 }
@@ -536,12 +531,9 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 	RAnalBlockRecurseContext ctx;
 	ctx.anal = block->anal;
 	RVecAnalBlockPtr_init (&ctx.to_visit);
-	ctx.visited = ht_up_new0 ();
-	if (!ctx.visited) {
-		goto beach;
-	}
+	ctx.visited = r_bitset_new ();
 
-	ht_up_insert (ctx.visited, block->addr, NULL);
+	r_bitset_set (ctx.visited, block->addr);
 	RVecAnalBlockPtr_push_back (&ctx.to_visit, &block);
 
 	RCore *core = ctx.anal->coreb.core;
@@ -557,8 +549,7 @@ R_API bool r_anal_block_recurse_followthrough(RAnalBlock *block, RAnalBlockCb cb
 		}
 	}
 
-beach:
-	ht_up_free (ctx.visited);
+	r_bitset_free (ctx.visited);
 	RVecAnalBlockPtr_fini (&ctx.to_visit);
 	return !breaked;
 }
@@ -569,15 +560,12 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 	}
 	RVecRecurseDepthFirstCtx path;
 	RVecRecurseDepthFirstCtx_init (&path);
-	HtUP *visited = ht_up_new0 ();
-	if (!visited) {
-		goto beach;
-	}
+	RBitset *visited = r_bitset_new ();
 	RAnal *anal = block->anal;
 	RAnalBlock *cur_bb = block;
 	RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 	RVecRecurseDepthFirstCtx_push_back (&path, &ctx);
-	ht_up_insert (visited, cur_bb->addr, NULL);
+	r_bitset_set (visited, cur_bb->addr);
 	if (!cb (cur_bb, user)) {
 		goto beach;
 	}
@@ -587,9 +575,9 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 		}
 		RecurseDepthFirstCtx *cur_ctx = RVecRecurseDepthFirstCtx_at (&path, RVecRecurseDepthFirstCtx_length (&path) - 1);
 		cur_bb = cur_ctx->bb;
-		if (cur_bb->jump != UT64_MAX && !ht_up_find_kv (visited, cur_bb->jump, NULL)) {
+		if (cur_bb->jump != UT64_MAX && !r_bitset_test (visited, cur_bb->jump)) {
 			cur_bb = r_anal_get_block_at (anal, cur_bb->jump);
-		} else if (cur_bb->fail != UT64_MAX && !ht_up_find_kv (visited, cur_bb->fail, NULL)) {
+		} else if (cur_bb->fail != UT64_MAX && !r_bitset_test (visited, cur_bb->fail)) {
 			cur_bb = r_anal_get_block_at (anal, cur_bb->fail);
 		} else {
 			RAnalCaseOp *cop = NULL;
@@ -599,7 +587,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 			} else if (cur_ctx->switch_it) {
 				while ((cur_ctx->switch_it = r_list_iter_get_next (cur_ctx->switch_it))) {
 					cop = r_list_iter_get_data (cur_ctx->switch_it);
-					if (!ht_up_find_kv (visited, cop->jump, NULL)) {
+					if (!r_bitset_test (visited, cop->jump)) {
 						break;
 					}
 					cop = NULL;
@@ -608,16 +596,13 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 			cur_bb = cop? r_anal_get_block_at (anal, cop->jump): NULL;
 		}
 		if (cur_bb) {
-			if (!ht_up_find_kv (visited, cur_bb->addr, NULL)) {
+			if (r_bitset_set (visited, cur_bb->addr)) {
 				RecurseDepthFirstCtx ctx = { cur_bb, NULL };
 				RVecRecurseDepthFirstCtx_push_back (&path, &ctx);
-				ht_up_insert (visited, cur_bb->addr, NULL);
 				bool breaked = !cb (cur_bb, user);
 				if (breaked) {
 					break;
 				}
-			} else {
-				// eprintf ("repanocha\n");
 			}
 		} else {
 			if (on_exit) {
@@ -628,7 +613,7 @@ R_API bool r_anal_block_recurse_depth_first(RAnalBlock *block, RAnalBlockCb cb, 
 	} while (!RVecRecurseDepthFirstCtx_empty (&path));
 
 beach:
-	ht_up_free (visited);
+	r_bitset_free (visited);
 	RVecRecurseDepthFirstCtx_fini (&path);
 	return true; // false!breaked;
 }
