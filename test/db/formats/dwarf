@@ -1140,6 +1140,29 @@ Raw dump of debug contents of section .debug_line:
 EOF
 RUN
 
+NAME=test dwarf basic block code listing
+FILE=bins/elf/dwarf5_line_cl
+CMDS=<<EOF
+e dir.source=./bins/src
+s main
+af
+s 0x11d9
+CLLb
+?e --
+s 0x11ed
+CLLb
+EOF
+EXPECT=<<EOF
+0x000011d6  	while (a-- > 0) {
+0x000011e1  	while (a-- > 0) {
+0x000011e4  	while (a-- > 0) {
+--
+0x000011ea  		printf ("Hello %d\n", a);
+0x000011ed  		printf ("Hello %d\n", a);
+0x000011fb  	while (a-- > 0) {
+EOF
+RUN
+
 NAME=test dwarf4 code listing
 FILE=bins/elf/dwarf/hello-dwarf4
 CMDS=<<EOF

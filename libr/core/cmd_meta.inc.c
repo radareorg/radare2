@@ -73,7 +73,8 @@ static RCoreHelpMessage help_msg_CL = {
 	"CL*", "", "same as above but in r2 commands format",
 	"CL.", "", "show list all code line information (virtual address <-> source file:line)",
 	"CL-", "*", "remove all the cached codeline information",
-	"CLL", "[f]", "show source code line associated to current offset",
+	"CLL", "[bf]", "show source code line associated to current offset",
+	"CLLb", "", "show source lines covered by the current basic block",
 	"CLLf", "", "show source lines covered by the current function (see CLL@@i or list)",
 	"CL+", "file:line @ addr", "register new file:line source details, r2 will slurp the line",
 	"CL", " addr file:line", "register new file:line source details, r2 will slurp the line",
@@ -292,6 +293,16 @@ static int cmd_meta_add_fileline(RBinFile *bf, const char *fileline, ut64 offset
 	return 0;
 }
 
+static bool cmd_meta_lineinfo_print_source(RCore *core, ut64 at) {
+	char *text = r_bin_addrline_tostring (core->bin, at, 0);
+	bool found = R_STR_ISNOTEMPTY (text);
+	if (found) {
+		r_cons_printf (core->cons, "0x%08"PFMT64x"  %s\n", at, text);
+	}
+	free (text);
+	return found;
+}
+
 static int cmd_meta_lineinfo(RCore *core, const char *input) {
 	int ret;
 	ut64 offset = UT64_MAX; // use this as error value
@@ -313,15 +324,21 @@ static int cmd_meta_lineinfo(RCore *core, const char *input) {
 			// same as CLL@@i = r_core_cmd0 (core, "list");
 			return 0;
 		}
+		if (p[1] == 'b') { // "CLLb"
+			RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->addr);
+			if (bb) {
+				int i;
+				for (i = 0; i < bb->ninstr; i++) {
+					cmd_meta_lineinfo_print_source (core, r_anal_block_ninstr (bb, i));
+				}
+			}
+			return 0;
+		}
 		ut64 at = core->addr;
 		if (p[1] == ' ') {
 			at = r_num_get (core->num, p + 2);
 		}
-		char *text = r_bin_addrline_tostring (core->bin, at, 0);
-		if (R_STR_ISNOTEMPTY (text)) {
-			r_cons_printf (core->cons, "0x%08"PFMT64x"  %s\n", at, text);
-		}
-		free (text);
+		cmd_meta_lineinfo_print_source (core, at);
 		return 0;
 	}
 	if (*p == 'f') { // "CLf"
