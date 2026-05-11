@@ -1543,6 +1543,7 @@ R_API void r_meta_print(RAnal *a, RAnalMetaItem *d, ut64 start, ut64 size, int r
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq, RTable *t);
 R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RTable *t);
 R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t);
+R_API void r_meta_print_list_in_range(RAnal *a, int type, int rad, ut64 addr, ut64 size, const char *tq, RTable *t);
 
 /* hints */
 

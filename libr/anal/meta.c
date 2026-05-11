@@ -501,7 +501,7 @@ R_API void r_meta_print_list_at(RAnal *a, ut64 addr, int rad, const char *tq, RT
 	}
 }
 
-static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t) {
+static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, ut64 to, const char *tq, RTable *t) {
 	RCore *core = a->coreb.core;
 	RCons *cons = core->cons;
 	PJ *pj = NULL;
@@ -541,6 +541,9 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, const char *
 		if (fcn && !r_anal_function_contains (fcn, node->start)) {
 			continue;
 		}
+		if (from != UT64_MAX && (node->start < from || (to != UT64_MAX && node->start >= to))) {
+			continue;
+		}
 		if (t) {
 			const char *type = r_meta_type_tostring (item->type);
 			const char *name = item->str;
@@ -575,11 +578,19 @@ beach:
 
 // TODO: return char*
 R_API void r_meta_print_list_all(RAnal *a, int type, int rad, const char *tq, RTable *t) {
-	print_meta_list (a, type, rad, UT64_MAX, tq, t);
+	print_meta_list (a, type, rad, UT64_MAX, UT64_MAX, UT64_MAX, tq, t);
 }
 
 R_API void r_meta_print_list_in_function(RAnal *a, int type, int rad, ut64 addr, const char *tq, RTable *t) {
-	print_meta_list (a, type, rad, addr, tq, t);
+	print_meta_list (a, type, rad, addr, UT64_MAX, UT64_MAX, tq, t);
+}
+
+R_API void r_meta_print_list_in_range(RAnal *a, int type, int rad, ut64 addr, ut64 size, const char *tq, RTable *t) {
+	ut64 to = addr + size;
+	if (to < addr) {
+		to = UT64_MAX;
+	}
+	print_meta_list (a, type, rad, UT64_MAX, addr, to, tq, t);
 }
 
 R_API void r_meta_rebase(RAnal *anal, ut64 diff) {

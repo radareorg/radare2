@@ -98,6 +98,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=CCb
+FILE=malloc://64
+CMDS=<<EOF
+af+ 0 fcn
+afb+ 0 0 4
+afb+ 0 8 4
+CC first @ 0
+CC mid @ 2
+CC next @ 8
+s 1
+CCb
+?e --
+s 9
+CCb
+EOF
+EXPECT=<<EOF
+0x00000000 CCu "first"
+0x00000002 CCu "mid"
+--
+0x00000008 CCu "next"
+EOF
+RUN
+
 NAME=Cs @ $$
 FILE=malloc://1024
 CMDS=<<EOF

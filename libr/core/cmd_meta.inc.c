@@ -57,6 +57,8 @@ static RCoreHelpMessage help_msg_CC = {
 	"CCF", " [file]", "show or set comment file",
 	"CC-", " @ cmt_addr", "remove comment at given address",
 	"CC.", "", "show comment at current offset",
+	"CCb", "", "list comments in basic block",
+	"CCb-", "", "delete all comments in current basic block",
 	"CCf", "", "list comments in function",
 	"CCf-", "", "delete all comments in current function",
 	"CCu", " base64:AA== @ addr", "add comment in base64",
@@ -480,6 +482,64 @@ retry:
 	return 0;
 }
 
+static void cmd_meta_comment_del_in_block(RCore *core, RAnalBlock *bb) {
+	ut64 i;
+	for (i = 0; i < bb->size; i++) {
+		r_meta_del (core->anal, R_META_TYPE_COMMENT, bb->addr + i, 1);
+	}
+}
+
+static void cmd_meta_comment_del_in_scope(RCore *core, bool basic_block) {
+	if (basic_block) {
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->addr);
+		if (bb) {
+			cmd_meta_comment_del_in_block (core, bb);
+		}
+		return;
+	}
+	RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+	if (fcn) {
+		RListIter *iter;
+		RAnalBlock *bb;
+		r_list_foreach (fcn->bbs, iter, bb) {
+			cmd_meta_comment_del_in_block (core, bb);
+		}
+	}
+}
+
+static void cmd_meta_comment_print_in_scope(RCore *core, bool basic_block, int rad, const char *tq, RTable *t) {
+	if (basic_block) {
+		RAnalBlock *bb = r_anal_bb_from_offset (core->anal, core->addr);
+		if (bb) {
+			r_meta_print_list_in_range (core->anal, R_META_TYPE_COMMENT, rad, bb->addr, bb->size, tq, t);
+		}
+		return;
+	}
+	r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, rad, core->addr, tq, t);
+}
+
+static void cmd_meta_comment_scope(RCore *core, const char *input, bool basic_block) {
+	switch (input[2]) {
+	case '-': // "CCb-" "CCf-"
+		cmd_meta_comment_del_in_scope (core, basic_block);
+		break;
+	case ',': { // "CCb," "CCf,"
+		RTable *t = r_core_table_new (core, "comments");
+		cmd_meta_comment_print_in_scope (core, basic_block, ',', input + 3, t);
+		break;
+	}
+	case 'j': // "CCbj" "CCfj"
+		cmd_meta_comment_print_in_scope (core, basic_block, 'j', NULL, NULL);
+		break;
+	case '*': // "CCb*" "CCf*"
+		cmd_meta_comment_print_in_scope (core, basic_block, 1, NULL, NULL);
+		break;
+	default:
+		cmd_meta_comment_print_in_scope (core, basic_block, 0, NULL, NULL);
+		break;
+	}
+}
+
 static int cmd_meta_comment(RCore *core, const char *input) {
 	ut64 addr = core->addr;
 	switch (input[1]) {
@@ -534,44 +594,11 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 	case 0: // "CC"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 0, NULL, NULL);
 		break;
+	case 'b': // "CCb"
+		cmd_meta_comment_scope (core, input, true);
+		break;
 	case 'f': // "CCf"
-		switch (input[2]) {
-		case '-': // "CCf-"
-			{
-				ut64 arg = r_num_math (core->num, input + 2);
-				if (!arg) {
-					arg = core->addr;
-				}
-				RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, arg, 0);
-				if (fcn) {
-					RAnalBlock *bb;
-					RListIter *iter;
-					r_list_foreach (fcn->bbs, iter, bb) {
-						int i;
-						for (i = 0; i < bb->size; i++) {
-							ut64 addr = bb->addr + i;
-							r_meta_del (core->anal, R_META_TYPE_COMMENT, addr, 1);
-						}
-					}
-				}
-			}
-			break;
-		case ',': // "CCf,"
-			{
-				RTable *t = r_core_table_new (core, "comments");
-				r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, ',', core->addr, input + 3, t);
-			}
-			break;
-		case 'j': // "CCfj"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 'j', core->addr, NULL, NULL);
-			break;
-		case '*': // "CCf*"
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 1, core->addr, NULL, NULL);
-			break;
-		default:
-			r_meta_print_list_in_function (core->anal, R_META_TYPE_COMMENT, 0, core->addr, NULL, NULL);
-			break;
-		}
+		cmd_meta_comment_scope (core, input, false);
 		break;
 	case 'j': // "CCj"
 		r_meta_print_list_all (core->anal, R_META_TYPE_COMMENT, 'j', input + 2, NULL);
