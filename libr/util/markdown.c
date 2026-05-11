@@ -16,7 +16,11 @@ static void fill_line(RStrBuf *sb, int maxcol) {
 }
 
 R_API char *r_str_md2txt(const char *page, bool usecolor) {
-	char *b = r_file_slurp (page, NULL);
+	char *orig = r_file_slurp (page, NULL);
+	if (!orig) {
+		return NULL;
+	}
+	char *b = orig;
 	RStrBuf *sb = r_strbuf_new ("");
 	int col = 0;
 	const int maxcol = 75;
@@ -176,5 +180,6 @@ R_API char *r_str_md2txt(const char *page, bool usecolor) {
 		}
 		b++;
 	}
+	free (orig);
 	return r_strbuf_drain (sb);
 }

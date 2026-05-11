@@ -50,6 +50,7 @@ static RCoreHelpMessage help_msg_c = {
 	"c4", "[*] [value]", "compare doubleword at offset with given value",
 	"c8", "[*] [value]", "compare quadword at offset with given value",
 	"cat", " [file]", "show contents of file (see pwd, ls)",
+	"cat", " -m [file.md]", "render markdown file as text",
 	"cc", " [at]", "compares in two hexdump columns of block size",
 	"ccc", " [at]", "same as above, but only showing different lines",
 	"ccd", " [at]", "compares in two disasm columns of block size",
@@ -1299,7 +1300,22 @@ static int cmd_cmp(void *data, const char *input) {
 	switch (*input) {
 	case 'a': // "ca"
 		if (input[1] == 't') { // "cat"
-			const char *path = r_str_trim_head_ro (input + 2);
+			if (input[2] == '?') { // "cat?"
+				r_core_cmd_help_match (core, help_msg_c, "cat");
+				break;
+			}
+			const char *args = r_str_trim_head_ro (input + 2);
+			bool render_md = false;
+			if (*args == '-') {
+				if (args[1] == 'm') {
+					render_md = true;
+					args = r_str_trim_head_ro (args + 2);
+				} else {
+					r_core_cmd_help_match (core, help_msg_c, "cat");
+					break;
+				}
+			}
+			const char *path = args;
 			if (*path == '$') {
 				char *v_str = r_core_slurp (core, path, NULL);
 				if (v_str) {
@@ -1307,7 +1323,16 @@ static int cmd_cmp(void *data, const char *input) {
 					free (v_str);
 				}
 			} else if (*path) {
-				if (r_fs_check (core->fs, path)) {
+				if (render_md) {
+					const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
+					char *res = r_str_md2txt (path, use_color);
+					if (res) {
+						r_cons_print (core->cons, res);
+						free (res);
+					} else {
+						R_LOG_ERROR ("Cannot open file: %s", path);
+					}
+				} else if (r_fs_check (core->fs, path)) {
 					r_core_cmdf (core, "mg %s", path);
 				} else {
 					char *res = r_syscmd_cat (path);
