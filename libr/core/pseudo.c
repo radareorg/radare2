@@ -13,6 +13,7 @@ typedef struct {
 	bool show_addr;
 	Sdb *goto_cache;
 	Sdb *db;
+	RBitset *marked;
 	RBitset *switch_addrs;
 	RAnalFunction *fcn;
 	const char *r0;
@@ -284,8 +285,6 @@ static char *disat(RCore *core, ut64 addr, int *pad) {
 	return s;
 }
 
-#define K_MARK(x) r_strf("mark.%" PFMT64x, x)
-#define K_ELSE(x) r_strf("else.%" PFMT64x, x)
 #define K_INDENT(x) r_strf("loc.%" PFMT64x, x)
 
 static inline RStrBuf *state_sb(PDCState *state) {
@@ -615,8 +614,7 @@ static void mark_bb_visited(PDCState *state, RList *visited, RAnalBlock *cbb) {
 	if (!cbb) {
 		return;
 	}
-	r_strf_buffer (64);
-	sdb_num_set (state->db, r_strf ("mark.%" PFMT64x, cbb->addr), 1, 0);
+	r_bitset_set (state->marked, cbb->addr);
 	if (!r_list_contains (visited, cbb)) {
 		r_list_append (visited, cbb);
 	}
@@ -972,7 +970,6 @@ static void emit_bb_body_no_back_jump(PDCState *state, RAnalBlock *bb, ut64 back
 
 // Renders body+tail-test as while, single-bb self-loop as do/while; returns post-loop exit bb or NULL.
 static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList *visited, int indent) {
-	r_strf_buffer (64);
 	if (!test_bb || test_bb->jump == UT64_MAX || test_bb->fail == UT64_MAX) {
 		return NULL;
 	}
@@ -1037,7 +1034,7 @@ static RAnalBlock *render_loop_while(PDCState *state, RAnalBlock *test_bb, RList
 			}
 		}
 		r_list_foreach (sorted, iter, b) {
-			if (sdb_const_get (state->db, K_MARK (b->addr), 0)) {
+			if (r_bitset_test (state->marked, b->addr)) {
 				continue;
 			}
 			bool is_nested_test = false;
@@ -1116,6 +1113,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	state.codestr = r_strbuf_new ("");
 	state.goto_cache = sdb_new0 ();
 	state.db = sdb_new0 ();
+	state.marked = r_bitset_new ();
 	state.pj = (*input == 'j')? r_core_pj_new (core): NULL;
 	state.show_asm = (*input == 'a');
 	state.show_addr = state.show_asm || (*input == 'o');
@@ -1131,6 +1129,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_config_hold_free (hc);
 		sdb_free (state.db);
 		sdb_free (state.goto_cache);
+		r_bitset_free (state.marked);
 		if (state.switch_addrs) {
 			r_bitset_free (state.switch_addrs);
 		}
@@ -1249,7 +1248,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		r_list_append (visited, bb);
 		indent = 2;
 		// drain indent stack after a structural renderer to avoid spurious trailing returns
-		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)
+		if (r_bitset_test (state.marked, bb->addr)
 				&& sdb_num_get (state.db,
 					r_strf ("structured.%" PFMT64x, bb->addr), 0)) {
 			RAnalBlock *next = NULL;
@@ -1258,7 +1257,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 				if (pop_addr == UT64_MAX) {
 					break;
 				}
-				if (sdb_num_get (state.db, K_MARK (pop_addr), 0)) {
+				if (r_bitset_test (state.marked, pop_addr)) {
 					continue;
 				}
 				next = r_anal_bb_from_offset (core->anal, pop_addr);
@@ -1273,7 +1272,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			continue;
 		}
 		// body+tail-test loop pattern: bb's back-edge points into an earlier body bb
-		if (!sdb_const_get (state.db, K_MARK (bb->addr), 0)
+		if (!r_bitset_test (state.marked, bb->addr)
 				&& bb->fail != UT64_MAX
 				&& bb->jump != UT64_MAX
 				&& bb->jump <= bb->addr
@@ -1284,12 +1283,12 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			if (exit_bb) {
 				sdb_set (state.goto_cache,
 					r_strf ("%" PFMT64x ".addr", test_addr), "1", 0);
-				sdb_num_set (state.db, K_MARK (test_addr), 1, 0);
+				r_bitset_set (state.marked, test_addr);
 				sdb_num_set (state.db,
 					r_strf ("structured.%" PFMT64x, test_addr), 1, 0);
 				sdb_num_set (state.db,
 					r_strf ("structured.%" PFMT64x, exit_bb->addr), 1, 0);
-				if (sdb_const_get (state.db, K_MARK (exit_bb->addr), 0)) {
+				if (r_bitset_test (state.marked, exit_bb->addr)) {
 					break;
 				}
 				bb = exit_bb;
@@ -1301,7 +1300,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			R_LOG_ERROR ("Empty code here");
 			break;
 		}
-		if (!sdb_const_get (state.db, K_MARK (bb->addr), 0)) {
+		if (!r_bitset_test (state.marked, bb->addr)) {
 			bool mustprint = !queuegoto || queuegoto != bb->addr || bb->jump == bb->addr;
 			if (mustprint) {
 				if (queuegoto && queuegoto != UT64_MAX) {
@@ -1312,7 +1311,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 					PRINTF ("loc_0x%08" PFMT64x ":", bb->addr);
 				}
 				addr = emit_code_lines (&state, code, bb->addr, indent, true);
-				sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
+				r_bitset_set (state.marked, bb->addr);
 			}
 		}
 		free (code);
@@ -1328,7 +1327,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 			}
 			if (sw_bb) {
 				render_switch (&state, sw_bb, visited, indent - 1);
-				sdb_num_set (state.db, K_MARK (sw_bb->addr), 1, 0);
+				r_bitset_set (state.marked, sw_bb->addr);
 				sdb_num_set (state.db,
 					r_strf ("structured.%" PFMT64x, sw_bb->addr), 1, 0);
 				if (!r_list_contains (visited, sw_bb)) {
@@ -1437,12 +1436,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 						} else {
 							sdb_array_push_num (state.db, "indent", fail, 0);
 							sdb_num_set (state.db, K_INDENT (fail), indent, 0);
-							sdb_num_set (state.db, K_ELSE (fail), 1, 0);
 						}
 					} else {
 						sdb_array_push_num (state.db, "indent", jump, 0);
 						sdb_num_set (state.db, K_INDENT (jump), indent, 0);
-						sdb_num_set (state.db, K_ELSE (jump), 1, 0);
 						blocktype = (jump <= bb->addr)? "while": "else";
 						NEWLINE (bb->addr, indent);
 						indent += 2;
@@ -1477,18 +1474,18 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
-		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+		if (r_bitset_test (state.marked, bb->addr)) {
 			continue;
 		}
 		render_switch (&state, bb, visited, 2);
 		r_list_append (visited, bb);
-		sdb_num_set (state.db, K_MARK (bb->addr), 1, 0);
+		r_bitset_set (state.marked, bb->addr);
 	}
 	r_list_foreach (state.fcn->bbs, iter, bb) {
 		if (r_list_contains (visited, bb)) {
 			continue;
 		}
-		if (sdb_num_get (state.db, K_MARK (bb->addr), 0)) {
+		if (r_bitset_test (state.marked, bb->addr)) {
 			continue;
 		}
 		ut64 nextbbaddr = UT64_MAX;
@@ -1627,6 +1624,7 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 	}
 	sdb_free (state.db);
 	sdb_free (state.goto_cache);
+	r_bitset_free (state.marked);
 	if (state.switch_addrs) {
 		r_bitset_free (state.switch_addrs);
 	}
