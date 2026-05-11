@@ -449,6 +449,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=relative plus alias
+FILE=-
+CMDS=<<EOF
++3
+s
++1
+s
+EOF
+EXPECT=<<EOF
+0x3
+0x4
+EOF
+RUN
+
 NAME=seek to bb start (sb)
 FILE=bins/elf/vim
 CMDS=<<EOF

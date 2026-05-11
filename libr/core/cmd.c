@@ -4006,8 +4006,7 @@ static int handle_command_call(RCore *core, const char *cmd) {
 
 static int r_core_cmd_subst(RCore *core, char *cmd) {
 	RCons *cons = core->cons;
-	// PANCAKE eprintf ("subst(%s) (%s)\n", cmd, core->cons->context->grep.strings);
-	ut64 rep = strtoull (cmd, NULL, 10);
+	ut64 rep = isdigit ((ut8)*cmd)? strtoull (cmd, NULL, 10): 0;
 	int ret = 0, orep;
 	char *colon = NULL, *icmd = NULL;
 	bool tmpseek = false;
