@@ -37,6 +37,7 @@ r_util_sources = [
   'libstore.c',
   'list.c',
   'log.c',
+  'markdown.c',
   'math.c',
   'mmap.c',
   'mem.c',
