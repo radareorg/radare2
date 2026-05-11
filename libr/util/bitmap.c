@@ -54,23 +54,14 @@ static RBitword bitmap_tail_mask(size_t bits) {
 }
 
 R_API RBitmap *r_bitmap_new(size_t len) {
-	RBitmap *b = R_NEW0 (RBitmap);
-	if (!b) {
-		return NULL;
-	}
 	size_t word_count = 0;
 	if (!bitmap_word_count (len, &word_count)) {
-		free (b);
 		return NULL;
 	}
+	RBitmap *b = R_NEW0 (RBitmap);
 	b->length = len;
 	if (!word_count) {
 		return b;
-	}
-	size_t alloc_size = 0;
-	if (r_mul_overflow_size_t (word_count, sizeof (RBitword), &alloc_size)) {
-		free (b);
-		return NULL;
 	}
 	b->bitmap = calloc (word_count, sizeof (RBitword));
 	if (!b->bitmap) {
@@ -107,26 +98,23 @@ R_API void r_bitmap_free(RBitmap *b) {
 R_API void r_bitmap_set(RBitmap *b, size_t bit) {
 	R_RETURN_IF_FAIL (b);
 	if (bit < b->length) {
-		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] |=
-			((RBitword)1 << (bit & BITWORD_BITS_MASK));
+		b->bitmap[bit >> BITWORD_BITS_SHIFT] |= (RBitword)1 << (bit & BITWORD_BITS_MASK);
 	}
 }
 
 R_API void r_bitmap_unset(RBitmap *b, size_t bit) {
 	R_RETURN_IF_FAIL (b);
 	if (bit < b->length) {
-		b->bitmap[(bit >> BITWORD_BITS_SHIFT)] &=
-			~((RBitword)1 << (bit & BITWORD_BITS_MASK));
+		b->bitmap[bit >> BITWORD_BITS_SHIFT] &= ~((RBitword)1 << (bit & BITWORD_BITS_MASK));
 	}
 }
 
 R_API bool r_bitmap_test(const RBitmap *b, size_t bit) {
 	R_RETURN_VAL_IF_FAIL (b, false);
-	if (bit < b->length) {
-		RBitword bword = b->bitmap[bit >> BITWORD_BITS_SHIFT];
-		return BITWORD_TEST (bword, (bit & BITWORD_BITS_MASK));
+	if (bit >= b->length) {
+		return false;
 	}
-	return false;
+	return BITWORD_TEST (b->bitmap[bit >> BITWORD_BITS_SHIFT], bit & BITWORD_BITS_MASK);
 }
 
 R_API size_t r_bitmap_count(const RBitmap *b) {
@@ -136,15 +124,13 @@ R_API size_t r_bitmap_count(const RBitmap *b) {
 		return 0;
 	}
 	R_RETURN_VAL_IF_FAIL (b->bitmap, 0);
+	const size_t last = word_count - 1;
 	size_t count = 0;
 	size_t i;
-	for (i = 0; i < word_count; i++) {
-		RBitword word = b->bitmap[i];
-		if (i == word_count - 1) {
-			word &= bitmap_tail_mask (b->length);
-		}
-		count += BITWORD_POPCOUNT (word);
+	for (i = 0; i < last; i++) {
+		count += BITWORD_POPCOUNT (b->bitmap[i]);
 	}
+	count += BITWORD_POPCOUNT (b->bitmap[last] & bitmap_tail_mask (b->length));
 	return count;
 }
 
@@ -158,23 +144,22 @@ R_API size_t r_bitmap_find_next_set(const RBitmap *b, size_t from) {
 		return SZT_MAX;
 	}
 	R_RETURN_VAL_IF_FAIL (b->bitmap, SZT_MAX);
-	size_t word_index = from >> BITWORD_BITS_SHIFT;
+	const size_t last = word_count - 1;
+	size_t idx = from >> BITWORD_BITS_SHIFT;
 	const size_t start_bit = from & BITWORD_BITS_MASK;
-	RBitword word = b->bitmap[word_index];
+	RBitword word = b->bitmap[idx];
 	if (start_bit) {
 		word &= ~(((RBitword)1 << start_bit) - 1);
 	}
-	while (word_index < word_count) {
-		if (word_index == word_count - 1) {
-			word &= bitmap_tail_mask (b->length);
-		}
+	while (idx < last) {
 		if (word) {
-			return (word_index << BITWORD_BITS_SHIFT) + BITWORD_CTZ (word);
+			return (idx << BITWORD_BITS_SHIFT) + BITWORD_CTZ (word);
 		}
-		word_index++;
-		if (word_index < word_count) {
-			word = b->bitmap[word_index];
-		}
+		word = b->bitmap[++idx];
+	}
+	word &= bitmap_tail_mask (b->length);
+	if (word) {
+		return (last << BITWORD_BITS_SHIFT) + BITWORD_CTZ (word);
 	}
 	return SZT_MAX;
 }
