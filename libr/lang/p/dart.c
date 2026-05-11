@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2024 pancake */
+/* radare2 - LGPL - Copyright 2024-2026 pancake */
 
 #include <r_lang.h>
 
@@ -76,7 +76,7 @@ static bool lang_dart_init(RLangSession *s) {
 	char *dart = r_file_path ("dart");
 	bool found = (dart && *dart != 'd');
 	if (!found) {
-		R_LOG_DEBUG ("Cannot find dart in PATH");
+		R_LOG_DEBUG ("RLangDart needs the dart executable in PATH to work");
 	}
 	free (dart);
 	return found;
