@@ -336,6 +336,29 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 }
 #endif
 
+// JVM is stack-based, but expose synthetic regs so the generic CC-from-reg-profile
+// fallback (libr/core/cbin.c) can derive a default calling convention for it.
+static char *regs(RArchSession *as) {
+	return strdup (
+		"=PC	pc\n"
+		"=SP	sp\n"
+		"=BP	bp\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=R0	r0\n"
+		"gpr	pc	.32	0	0\n"
+		"gpr	sp	.32	4	0\n"
+		"gpr	bp	.32	8	0\n"
+		"gpr	r0	.32	12	0\n"
+		"gpr	a0	.32	16	0\n"
+		"gpr	a1	.32	20	0\n"
+		"gpr	a2	.32	24	0\n"
+		"gpr	a3	.32	28	0\n"
+	);
+}
+
 static int archinfo(RArchSession *as, ut32 q) {
 	switch (q) {
 	case R_ARCH_INFO_WODST:
@@ -363,6 +386,7 @@ const RArchPlugin r_arch_plugin_java = {
 	},
 	.arch = "java",
 	.info = archinfo,
+	.regs = regs,
 	.bits = R_SYS_BITS_PACK1 (32),
 	.decode = decode,
 	.encode = encode,

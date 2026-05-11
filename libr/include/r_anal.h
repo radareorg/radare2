@@ -1821,6 +1821,7 @@ extern RAnalPlugin r_anal_plugin_callargs;
 extern RAnalPlugin r_anal_plugin_null;
 extern RAnalPlugin r_anal_plugin_a2f;
 extern RAnalPlugin r_anal_plugin_drcov;
+extern RAnalPlugin r_anal_plugin_dalvik;
 extern RAnalPlugin r_anal_plugin_path;
 extern RAnalPlugin r_anal_plugin_sbpf;
 extern RAnalPlugin r_anal_plugin_tcc;

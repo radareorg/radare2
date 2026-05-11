@@ -50,6 +50,7 @@ r_anal_sources = [
   'p/anal_gopclntab.c',
   'p/anal_path.c',
   'p/anal_drcov.c',
+  'p/anal_dalvik.c',
   'p/anal_six.c',
   'p/anal_thumb.c',
   'p/anal_callargs.c',
