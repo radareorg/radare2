@@ -469,6 +469,7 @@ struct r2r_subprocess_t {
 	int stderr_fd;
 	int killpipe[2];
 	int ret;
+	bool status_set;
 	RStrBuf out;
 	RStrBuf err;
 	RThreadLock *lock;
@@ -485,17 +486,6 @@ static void handle_sigchld(int sig) {
 	if (write (sigchld_pipe[1], &b, 1) != 1) {
 		return;
 	}
-}
-
-static R2RSubprocess *pid_to_proc(int pid) {
-	R2RSubprocess **it;
-	R_VEC_FOREACH (&subprocs, it) {
-		R2RSubprocess *p = *it;
-		if (p->pid == pid) {
-			return p;
-		}
-	}
-	return NULL;
 }
 
 static void subprocs_remove(R2RSubprocess *proc) {
@@ -532,7 +522,16 @@ static void subprocess_set_status(R2RSubprocess *proc, int wstat) {
 #endif
 	r_th_lock_enter (proc->lock);
 	proc->ret = exit_status;
+	proc->status_set = true;
 	r_th_lock_leave (proc->lock);
+}
+
+static bool subprocess_status_set(R2RSubprocess *proc) {
+	bool ret = false;
+	r_th_lock_enter (proc->lock);
+	ret = proc->status_set;
+	r_th_lock_leave (proc->lock);
+	return ret;
 }
 
 static bool subprocess_try_wait(R2RSubprocess *proc) {
@@ -546,12 +545,35 @@ static bool subprocess_try_wait(R2RSubprocess *proc) {
 			return false;
 		}
 		if (errno == ECHILD) {
-			return true;
+			return subprocess_status_set (proc);
 		}
 		r_sys_perror ("sp-wait waitpid");
 		return false;
 	}
 	subprocess_set_status (proc, wstat);
+	return true;
+}
+
+static bool subprocess_notify_wait(R2RSubprocess *proc) {
+	if (subprocess_status_set (proc)) {
+		return false;
+	}
+	int wstat;
+	pid_t pid = waitpid (proc->pid, &wstat, WNOHANG);
+	if (pid == 0) {
+		return false;
+	}
+	if (pid < 0) {
+		if (errno != EINTR && errno != ECHILD) {
+			r_sys_perror ("sigchld waitpid");
+		}
+		return false;
+	}
+	subprocess_set_status (proc, wstat);
+	int ret = write (proc->killpipe[1], "", 1);
+	if (ret != 1) {
+		r_sys_perror ("write killpipe-");
+	}
 	return true;
 }
 
@@ -572,30 +594,18 @@ static RThreadFunctionRet sigchld_th(RThread *th) {
 			break;
 		}
 		while (true) {
-			int wstat;
-			// Use WNOHANG to avoid blocking: reap all
-			// currently-dead children without stalling the
-			// sigchld thread (which would starve killpipe
-			// notifications for other subprocesses).
-			pid_t pid = waitpid (-1, &wstat, WNOHANG);
-			if (pid <= 0) {
-				break;
-			}
 			r_th_lock_enter (subprocs_mutex);
-			R2RSubprocess *proc = pid_to_proc (pid);
-			if (!proc) {
-				r_th_lock_leave (subprocs_mutex);
-				continue;
-			}
-			subprocess_set_status (proc, wstat);
-			// Signal process completion through killpipe
-			int ret = write (proc->killpipe[1], "", 1);
-			if (ret != 1) {
-				r_sys_perror ("write killpipe-");
-				r_th_lock_leave (subprocs_mutex);
-				break;
+			bool found = false;
+			R2RSubprocess **it;
+			R_VEC_FOREACH (&subprocs, it) {
+				if (subprocess_notify_wait (*it)) {
+					found = true;
+				}
 			}
 			r_th_lock_leave (subprocs_mutex);
+			if (!found) {
+				break;
+			}
 		}
 	}
 	r_log_fini ();
