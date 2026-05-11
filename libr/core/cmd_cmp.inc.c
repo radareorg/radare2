@@ -1325,7 +1325,7 @@ static int cmd_cmp(void *data, const char *input) {
 			} else if (*path) {
 				if (render_md) {
 					const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-					char *res = r_str_md2txt (path, use_color);
+					char *res = r_str_md2txt (path, use_color, core->cons);
 					if (res) {
 						r_cons_print (core->cons, res);
 						free (res);

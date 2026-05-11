@@ -1,6 +1,7 @@
 /* radare - LGPL - Copyright 2007-2026 - pancake */
 
 #include <r_bin.h>
+#include <r_util/r_table.h>
 
 static void fill_line(RStrBuf *sb, int maxcol) {
 	int i;
@@ -15,7 +16,168 @@ static void fill_line(RStrBuf *sb, int maxcol) {
 	r_strbuf_append (sb, "\n");
 }
 
-R_API char *r_str_md2txt(const char *page, bool usecolor) {
+static bool md_table_is_sep(const char *line, size_t len) {
+	bool has_dash = false;
+	size_t i;
+	for (i = 0; i < len; i++) {
+		char c = line[i];
+		if (c == '-') {
+			has_dash = true;
+		} else if (c != '|' && c != ':' && c != ' ' && c != '\t') {
+			return false;
+		}
+	}
+	return has_dash;
+}
+
+static RList *md_table_split_row(const char *line, size_t len) {
+	RList *cells = r_list_newf (free);
+	const char *p = line;
+	const char *end = line + len;
+	while (p < end && (*p == ' ' || *p == '\t')) {
+		p++;
+	}
+	const bool had_leading_pipe = (p < end && *p == '|');
+	if (had_leading_pipe) {
+		p++;
+	}
+	while (p <= end) {
+		const char *start = p;
+		while (p < end && *p != '|') {
+			if (*p == '\\' && p + 1 < end && p[1] == '|') {
+				p++;
+			}
+			p++;
+		}
+		const char *s = start;
+		const char *e = p;
+		while (s < e && (*s == ' ' || *s == '\t')) {
+			s++;
+		}
+		while (e > s && (e[-1] == ' ' || e[-1] == '\t')) {
+			e--;
+		}
+		r_list_append (cells, r_str_ndup (s, e - s));
+		if (p >= end) {
+			break;
+		}
+		p++; // skip '|'
+	}
+	if (had_leading_pipe && !r_list_empty (cells)) {
+		char *last = r_list_last (cells);
+		if (R_STR_ISEMPTY (last)) {
+			free (r_list_pop (cells));
+		}
+	}
+	return cells;
+}
+
+static int md_table_col_align(const char *cell, size_t len) {
+	const char *s = cell;
+	const char *e = cell + len;
+	while (s < e && (*s == ' ' || *s == '\t')) {
+		s++;
+	}
+	while (e > s && (e[-1] == ' ' || e[-1] == '\t')) {
+		e--;
+	}
+	bool left = (s < e && *s == ':');
+	bool right = (e > s && e[-1] == ':');
+	if (left && right) {
+		return R_TABLE_ALIGN_CENTER;
+	}
+	if (right) {
+		return R_TABLE_ALIGN_RIGHT;
+	}
+	return R_TABLE_ALIGN_LEFT;
+}
+
+static int md_render_table(char *b, RStrBuf *out, void *cons) {
+	char *header_end = strchr (b, '\n');
+	if (!header_end) {
+		return 0;
+	}
+	size_t header_len = header_end - b;
+	if (!memchr (b, '|', header_len)) {
+		return 0;
+	}
+	const char *sep_start = header_end + 1;
+	const char *sep_end = strchr (sep_start, '\n');
+	size_t sep_len = sep_end? (size_t)(sep_end - sep_start): strlen (sep_start);
+	if (!md_table_is_sep (sep_start, sep_len)) {
+		return 0;
+	}
+
+	RList *headers = md_table_split_row (b, header_len);
+	if (r_list_empty (headers)) {
+		r_list_free (headers);
+		return 0;
+	}
+	RList *seps = md_table_split_row (sep_start, sep_len);
+
+	RTable *t = r_table_new ("md");
+	t->cons = cons;
+	RListIter *iter;
+	const char *h;
+	int idx = 0;
+	r_list_foreach (headers, iter, h) {
+		r_table_add_column (t, r_table_type ("string"), h, 0);
+		const char *sep_cell = r_list_get_n (seps, idx);
+		if (sep_cell) {
+			r_table_align (t, idx, md_table_col_align (sep_cell, strlen (sep_cell)));
+		}
+		idx++;
+	}
+	r_list_free (headers);
+	r_list_free (seps);
+
+	int ncols = r_list_length (t->cols);
+	const char *p = sep_end? sep_end + 1: sep_start + sep_len;
+	while (*p) {
+		const char *eol = strchr (p, '\n');
+		size_t len = eol? (size_t)(eol - p): strlen (p);
+		size_t i;
+		bool has_pipe = false;
+		bool only_ws = true;
+		for (i = 0; i < len; i++) {
+			if (p[i] == '|') {
+				has_pipe = true;
+			}
+			if (p[i] != ' ' && p[i] != '\t') {
+				only_ws = false;
+			}
+		}
+		if (only_ws || !has_pipe) {
+			break;
+		}
+		RList *cells = md_table_split_row (p, len);
+		int nc = r_list_length (cells);
+		while (nc < ncols) {
+			r_list_append (cells, strdup (""));
+			nc++;
+		}
+		while (nc > ncols) {
+			free (r_list_pop (cells));
+			nc--;
+		}
+		r_table_add_row_list (t, cells);
+		if (!eol) {
+			p += len;
+			break;
+		}
+		p = eol + 1;
+	}
+
+	char *rendered = r_table_tofancystring (t);
+	r_table_free (t);
+	if (R_STR_ISNOTEMPTY (rendered)) {
+		r_strbuf_append (out, rendered);
+	}
+	free (rendered);
+	return p - b;
+}
+
+R_API char *r_str_md2txt(const char *page, bool usecolor, void *cons) {
 	char *orig = r_file_slurp (page, NULL);
 	if (!orig) {
 		return NULL;
@@ -93,6 +255,13 @@ R_API char *r_str_md2txt(const char *page, bool usecolor) {
 						r_strbuf_append (sb, Color_RESET_BG);
 					}
 					continue;
+				}
+				if (!codeblock) {
+					int tlen = md_render_table (b, sb, cons);
+					if (tlen > 0) {
+						b += tlen;
+						continue;
+					}
 				}
 				if (!codeblock && r_str_startswith (b, "###")) {
 					if (usecolor) {

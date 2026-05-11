@@ -109,7 +109,7 @@ static char *readman(RCore *core, const char *page) {
 		}
 		if (r_str_endswith (page, ".md")) {
 			const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-			char *data = r_str_md2txt (n, use_color);
+			char *data = r_str_md2txt (n, use_color, core->cons);
 			free (n);
 			return data;
 		}
