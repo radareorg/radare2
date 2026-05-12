@@ -2,7 +2,7 @@ NAME=rop search with maxhits
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e search.maxhits=1
-/Gq pop r15
+/agq pop r15
 EOF
 EXPECT=<<EOF
 0x0040052c: pop r12; pop r13; pop r14; pop r15; ret;
@@ -11,7 +11,7 @@ RUN
 
 NAME=rop search without maxhits
 FILE=bins/elf/varsub
-CMDS=/Gq pop r15~?
+CMDS=/agq pop r15~?
 EXPECT=<<EOF
 4
 EOF
@@ -21,7 +21,7 @@ NAME=rop search without maxhits
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e search.maxhits=2
-/Gq pop r15~?
+/agq pop r15~?
 EOF
 EXPECT=<<EOF
 2
@@ -35,7 +35,7 @@ CMDS=<<EOF
 e asm.nbytes=8
 e asm.arch=x86
 e asm.bits=32
-/G
+/ag
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
@@ -70,7 +70,7 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-/G/ mov e[abcd]x
+/ag/ mov e[abcd]x
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
@@ -94,7 +94,7 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-/Gq
+/agq
 EOF
 EXPECT=<<EOF
 0x000000b4: int 0x80; mov eax, 1; mov ecx, 0; int 0x80; ret;
@@ -110,7 +110,7 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-/G ecx
+/ag ecx
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
@@ -139,10 +139,10 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-/Gj ecx
+/agj ecx
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":180,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"addr":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15},{"opcodes":[{"addr":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"addr":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"addr":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12},{"opcodes":[{"addr":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"addr":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11}]
+[{"opcodes":[{"addr":180,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":182,"size":5,"opcode":"mov eax, 1","type":"mov"},{"addr":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":15,"classes":["ret","syscall","mov","ldconst"]},{"opcodes":[{"addr":183,"size":2,"opcode":"add dword [eax], eax","type":"add"},{"addr":185,"size":2,"opcode":"add byte [eax], al","type":"add"},{"addr":187,"size":5,"opcode":"mov ecx, 0","type":"mov"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":12,"classes":["ret","syscall","memwrite","mov","ldconst","arithm"]},{"opcodes":[{"addr":184,"size":2,"opcode":"add byte [eax], al","type":"add"},{"addr":186,"size":6,"opcode":"add byte [ecx], bh","type":"add"},{"addr":192,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":194,"size":1,"opcode":"ret","type":"ret"}],"retaddr":194,"size":11,"classes":["ret","syscall","memwrite","arithm"]}]
 EOF
 RUN
 
@@ -152,7 +152,7 @@ ARGS=-n
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
-"/G/ (ecx|eax)"
+"/ag/ (ecx|eax)"
 EOF
 EXPECT=<<EOF
   0x000000b4               cd80  int 0x80
@@ -188,7 +188,7 @@ e asm.bits=32
 e gadget.len=15
 e search.from=0x08048340
 e search.to=0x08048400
-"/G push esp"
+"/ag push esp"
 EOF
 EXPECT=<<EOF
   0x08048350               fff4  push esp
@@ -207,7 +207,7 @@ RUN
 
 NAME=search rop with sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
-CMDS="/G push esi;push ebx"
+CMDS="/ag push esi;push ebx"
 EXPECT=<<EOF
   0x08048421                 57  push edi
   0x08048422               31ff  xor edi, edi
@@ -222,7 +222,7 @@ NAME=search rop with regex sequence.
 FILE=bins/elf/analysis/x86-helloworld-gcc
 CMDS=<<EOF
 e asm.bits=32
-"/G/ push esi;push ebx"
+"/ag/ push esi;push ebx"
 EOF
 EXPECT=<<EOF
   0x08048421                 57  push edi
@@ -240,7 +240,7 @@ CMDS=<<EOF
 e asm.arch=avr
 e scr.color=false
 wx 11241fbecfefd8e0debfcdbf12e0a0e0b1e0e6e3f4e302c005900d92a431b107d9f722e0a4e1b2e001c01d92ae3cb207e1f710e0c2e6d0e004c02197fe010e94041ac136d107c9f70e944f090c9456160c940000ef92ff920f931f93cf93df93cdb7deb7c054d1090fb6f894debf0fbecdbf6ce071e08fe192e00e946b04ce0101967c018e010f5c1f4ffc011192e017f107e1f720e330e0a7016ae08fe192e00e94d8080297f8f0c801d701fd01ee19ff092d91222321f0fc012193cf01f6cfe00ff11f108260e071e0c8010e949816892b49f46de171e08fe192e00e946b0481e090e008c066e471e08fe192e00e946b0480e090e0c05cdf4f0fb6f894debf0fbecdbfdf91cf911f910f91ff90ef9008956de671e08fe192e00e946b0485b1805885b908956fe771e08fe192e00e946b048bb180588bb908956de671e08fe192e00e946b0485b1805885b985b1805885b985b1805885b908956fe771e08fe192e00e946b048bb180588bb98bb180588bb98bb180588bb908950f931f93cf93df93cdb7deb727970fb6f894debf0fbecdbf9c018e010f5f1f4fd801ad01401b510bf90191919f01992311f09d93f6cffa01e00ff11f10826fe871e0c8010e949816892b81f40e948c00892bf9f027960fb6f894debf0fbecdbfdf91cf911f910f910c940f0163e971e0c8010e949816892b61f427960fb6f894debf0fbecdbf
-/G ldi
+/ag ldi
 q
 EOF
 EXPECT=<<EOF
@@ -337,7 +337,7 @@ FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
-/Gq~?
+/agq~?
 EOF
 EXPECT=<<EOF
 2
@@ -349,7 +349,7 @@ FILE=bins/elf/analysis/hello-arm32
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=32
-/G bl
+/ag bl
 EOF
 EXPECT=<<EOF
   0x000101c0           80402de9  push {r7, lr}
@@ -370,7 +370,7 @@ FILE=bins/elf/jni/jniO0-arm64
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
-/Gq~?
+/agq~?
 EOF
 EXPECT=<<EOF
 19
@@ -383,7 +383,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 e search.maxhits=3
-/Gq adrp
+/agq adrp
 EOF
 EXPECT=<<EOF
 0x000004d0: stp x16, x30, [sp, -0x10]!; adrp x16, 0x10000; ldr x17, [x16, 0xfc8]; add x16, x16, 0xfc8; br x17;
@@ -397,7 +397,7 @@ FILE=bins/elf/jni/jniO0-arm64
 CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
-/G stp
+/ag stp
 EOF
 EXPECT=<<EOF
   0x000004d0           f07bbfa9  stp x16, x30, [sp, -0x10]!
@@ -419,7 +419,7 @@ FILE=bins/elf/analysis/calls_x64
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
-/Gq~?
+/agq~?
 EOF
 EXPECT=<<EOF
 116
@@ -432,7 +432,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=2
-/G call
+/ag call
 EOF
 EXPECT=<<EOF
   0x0040024f               dcc7  fadd st(7), st(0)
@@ -456,7 +456,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=2
-"/G/ mov r(ax|cx|di)"
+"/ag/ mov r(ax|cx|di)"
 EOF
 EXPECT=<<EOF
   0x004003a8           4883ec08  sub rsp, 8
@@ -481,7 +481,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=32
 e gadget.len=2
-/Gq
+/agq
 EOF
 EXPECT=<<EOF
 0x000000c0: int 0x80; ret;
@@ -494,7 +494,7 @@ CMDS=<<EOF
 e asm.arch=arm
 e asm.bits=64
 e search.maxhits=1
-/Gq br
+/agq br
 EOF
 EXPECT=<<EOF
 0x000004d0: stp x16, x30, [sp, -0x10]!; adrp x16, 0x10000; ldr x17, [x16, 0xfc8]; add x16, x16, 0xfc8; br x17;
@@ -507,7 +507,7 @@ CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=1
-/G je
+/ag je
 EOF
 EXPECT=<<EOF
   0x004003a8           4883ec08  sub rsp, 8
@@ -519,41 +519,41 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search call gadgets with /G
+NAME=search call gadgets with /ag
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e scr.color=false
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=1
-/GCq call rax
+/agCq call rax
 EOF
 EXPECT=<<EOF
 0x00400390: sub rsp, 8; mov rax, qword [rip + 0x200c5d]; test rax, rax; je 0x4003a2; call rax;
 EOF
 RUN
 
-NAME=search jump gadgets with /G
+NAME=search jump gadgets with /ag
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e scr.color=false
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=1
-/GJq jmp rax
+/agJq jmp rax
 EOF
 EXPECT=<<EOF
 0x004003fa: test rax, rax; je 0x400410; pop rbp; mov edi, 0x601028; jmp rax;
 EOF
 RUN
 
-NAME=search call gadgets as flags with /G
+NAME=search call gadgets as flags with /ag
 FILE=bins/elf/varsub
 CMDS=<<EOF
 e asm.arch=x86
 e asm.bits=64
 e search.maxhits=1
-/GC* call rax
+/agC* call rax
 EOF
 EXPECT=<<EOF
 'f gadget.0x00400390 18 0x00400390
@@ -568,7 +568,7 @@ e anal.arch=x86
 e asm.bits=64
 e search.maxhits=1
 "wa xor eax,eax; je 0x9"
-/Gq je~?
+/agq je~?
 q
 EOF
 EXPECT=<<EOF
@@ -585,11 +585,11 @@ e asm.bits=64
 e search.maxhits=1
 e gadget.esil=true
 "wa xor eax,eax; je 0x9"
-/Gj je
+/agj je
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":0,"size":2,"opcode":"xor eax, eax","type":"xor"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"always","target":9}]
+[{"opcodes":[{"addr":0,"size":2,"opcode":"xor eax, eax","type":"xor"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"always","target":9,"target_source":"branch","target_kind":"direct","classes":["jop","cond.always","logic"]}]
 EOF
 RUN
 
@@ -602,11 +602,11 @@ e asm.bits=64
 e search.maxhits=1
 e gadget.esil=true
 "wa test eax,eax; je 0x9"
-/Gj je
+/agj je
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":0,"size":2,"opcode":"test eax, eax","type":"acmp"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"controlled","target":9}]
+[{"opcodes":[{"addr":0,"size":2,"opcode":"test eax, eax","type":"acmp"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"controlled","target":9,"target_source":"branch","target_kind":"direct","classes":["jop","cond.controlled","cmp"]}]
 EOF
 RUN
 
@@ -619,10 +619,182 @@ e asm.bits=64
 e search.maxhits=1
 e gadget.esil=true
 "wa cmp byte [rax], 0; je 0x9"
-/Gq je~?
+/agq je~?
 q
 EOF
 EXPECT=<<EOF
 0
+EOF
+RUN
+
+NAME=search ESIL-computed branch target gadget
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa mov rax, 0x1234; jmp rax"
+/agJj jmp
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":7,"opcode":"mov rax, 0x1234","type":"mov"},{"addr":7,"size":2,"opcode":"jmp rax","type":"rjmp"}],"retaddr":7,"size":9,"target":4660,"target_source":"rax","target_kind":"computed","classes":["jop","mov","ldconst"]}]
+EOF
+RUN
+
+NAME=search ESIL-memory branch target gadget
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa mov rax, [0x100]; jmp rax"
+wx 2000000000000000 @ 0x100
+/agJj jmp
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":10,"opcode":"movabs rax, qword [0x100]","type":"mov"},{"addr":10,"size":2,"opcode":"jmp rax","type":"rjmp"}],"retaddr":10,"size":12,"target":32,"target_source":"rax","target_kind":"memory","classes":["jop","memread","mov"]}]
+EOF
+RUN
+
+NAME=search ARM64 ESIL-computed branch target gadget
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=arm
+e anal.arch=arm
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa adrp x0, 0x1000; add x0, x0, 0x20; br x0"
+/agJj br
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":4,"opcode":"adrp x0, 0x1000","type":"lea"},{"addr":4,"size":4,"opcode":"add x0, x0, 0x20","type":"add"},{"addr":8,"size":4,"opcode":"br x0","type":"rjmp"}],"retaddr":8,"size":12,"target":4128,"target_source":"x0","target_kind":"computed","classes":["jop","mov","ldconst","arithm"]}]
+EOF
+RUN
+
+NAME=search gadget klasses with /agk
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+e scr.color=false
+"wa mov rax, 0x1234; jmp rax"
+/agJq jmp
+/agk jop
+/agk ldconst
+q
+EOF
+EXPECT=<<EOF
+0x00000000: mov rax, 0x1234; jmp rax;
+0x00000000=0x9 jop target=0x00001234 target_source=rax target_kind=computed
+0x00000000=0x9 ldconst target=0x00001234 target_source=rax target_kind=computed
+EOF
+RUN
+
+NAME=search syscall gadget klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+e search.maxhits=1
+"wa int 0x80; ret"
+/agj int
+/agk syscall
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":2,"opcode":"int 0x80","type":"swi"},{"addr":2,"size":1,"opcode":"ret","type":"ret"}],"retaddr":2,"size":3,"classes":["ret","syscall"]}]
+0x00000000=0x3 syscall
+EOF
+RUN
+
+NAME=search signal call gadget klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+f sym.imp.abort=0x20
+"wa mov eax, 1; call 0x20"
+/agCj call
+/agk signal
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":5,"opcode":"mov eax, 1","type":"mov"},{"addr":5,"size":5,"opcode":"call 0x20","type":"call"}],"retaddr":5,"size":10,"target":32,"target_source":"branch","target_kind":"direct","classes":["cop","signal","mov","ldconst"]}]
+0x00000000=0xa signal target=0x00000020 target_source=branch target_kind=direct
+EOF
+RUN
+
+NAME=search memory read primitive klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e scr.color=false
+"wa mov rax, qword [rbx]; ret"
+/agq mov
+/agk memread
+/agk rww
+q
+EOF
+EXPECT=<<EOF
+0x00000000: mov rax, qword [rbx]; ret;
+0x00000000=0x4 memread
+0x00000000=0x4 rww
+EOF
+RUN
+
+NAME=search memory write primitive klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e scr.color=false
+"wa mov qword [rax], rbx; ret"
+/agq mov
+/agk memwrite
+/agk www
+q
+EOF
+EXPECT=<<EOF
+0x00000000: mov qword [rax], rbx; ret;
+0x00000000=0x4 memwrite
+0x00000000=0x4 www
+EOF
+RUN
+
+NAME=search stack pivot primitive klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e scr.color=false
+"wa mov rsp, rax; ret"
+/agq mov
+/agk pivot
+q
+EOF
+EXPECT=<<EOF
+0x00000000: mov rsp, rax; ret;
+0x00000000=0x4 pivot
 EOF
 RUN
