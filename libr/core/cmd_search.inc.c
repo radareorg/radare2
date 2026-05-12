@@ -105,6 +105,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/E", " esil-expr", "address matching given esil expressions $$ = here",
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
+	"/G", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
 	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
@@ -117,7 +118,6 @@ static RCoreHelpMessage help_msg_slash = {
 	"/P", " patternsize", "search similar blocks",
 	"/s", "[*] [threshold]", "find sections by grouping blocks with similar entropy",
 	"/r", "[?][aercwx] [addr ..]", "search for code references",
-	"/R", "[?] [grepopcode]", "search for matching ROP gadgets, semicolon-separated",
 	// moved into /as "/s", "", "search for all syscalls in a region (EXPERIMENTAL)",
 	"/v", "[1248] value", "look for an `cfg.bigendian` 32bit value",
 	"/V", "[1248] min max", "look for an `cfg.bigendian` 32bit value in range",
@@ -182,6 +182,16 @@ static RCoreHelpMessage help_msg_slash_c = {
 	NULL
 };
 
+static RCoreHelpMessage help_msg_slash_G = {
+	"Usage: /G", "", "search for gadgets",
+	"/G[/jq*]", " [string]", "show gadgets",
+	"/Gk", " [klass]", "query stored gadget klass",
+	"/GR[/jq*]", " [string]", "show return gadgets",
+	"/GC[/jq*]", " [string]", "show call gadgets",
+	"/GJ[/jq*]", " [string]", "show jump gadgets",
+	NULL
+};
+
 static RCoreHelpMessage help_msg_slash_cc = {
 	"Usage: /cc[aAldpb]", "[algo] [digest]", "find collisions",
 	"/cca", " [algo] [digest]", "lowercase alphabet chars only",
@@ -213,23 +223,11 @@ static RCoreHelpMessage help_msg_slash_r = {
 	NULL
 };
 
-static RCoreHelpMessage help_msg_slash_R = {
-	"Usage: /R", "", "search for ROP gadgets (see \"? for escaping chars in the shell)",
-	"/R", " [string]", "show gadgets",
-	"/R/", " [regexp]", "show gadgets [regular expression]",
-	"/R/j", " [regexp]", "json output [regular expression]",
-	"/R/q", " [regexp]", "show gadgets in a quiet manner [regular expression]",
-	"/Rj", " [string]", "json output",
-	"/Rk", " [ropklass]", "query stored ROP gadgets klass",
-	"/Rq", " [string]", "show gadgets in a quiet manner",
-	NULL
-};
-
-static RCoreHelpMessage help_msg_slash_Rk = {
-	"Usage: /Rk", "", "query stored ROP gadgets",
-	"/Rk", " [nop|mov|const|arithm|arithm_ct]", "show gadgets",
-	"/Rkj", "", "json output",
-	"/Rkq", "", "list Gadgets offsets",
+static RCoreHelpMessage help_msg_slash_Gk = {
+	"Usage: /Gk", "", "query stored gadgets",
+	"/Gk", " [nop|mov|const|arithm|arithm_ct]", "show gadgets",
+	"/Gkj", "", "json output",
+	"/Gkq", "", "list Gadgets offsets",
 	NULL
 };
 
@@ -1245,36 +1243,72 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 	return list;
 }
 
-static bool is_end_gadget(const RAnalOp *aop, const ut8 crop) {
-	if (aop->family == R_ANAL_OP_FAMILY_SECURITY) {
-		return false;
-	}
+static bool is_call_gadget(const RAnalOp *aop, const ut8 crop) {
 	switch (aop->type) {
-	case R_ANAL_OP_TYPE_TRAP:
-	case R_ANAL_OP_TYPE_RET:
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_RCALL:
 	case R_ANAL_OP_TYPE_ICALL:
 	case R_ANAL_OP_TYPE_IRCALL:
-	case R_ANAL_OP_TYPE_UJMP:
-	case R_ANAL_OP_TYPE_RJMP:
-	case R_ANAL_OP_TYPE_IJMP:
-	case R_ANAL_OP_TYPE_IRJMP:
-	case R_ANAL_OP_TYPE_JMP:
-	case R_ANAL_OP_TYPE_CALL:
 		return true;
 	}
-	if (crop) { // if conditional jumps, calls and returns should be used for the gadget-search too
+	if (crop) {
 		switch (aop->type) {
-		case R_ANAL_OP_TYPE_CJMP:
-		case R_ANAL_OP_TYPE_UCJMP:
-		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_UCCALL:
-		case R_ANAL_OP_TYPE_CRET:   // i'm a condret
 			return true;
 		}
 	}
 	return false;
+}
+
+static bool is_jump_gadget(const RAnalOp *aop, const ut8 crop) {
+	switch (aop->type) {
+	case R_ANAL_OP_TYPE_UJMP:
+	case R_ANAL_OP_TYPE_RJMP:
+	case R_ANAL_OP_TYPE_IJMP:
+	case R_ANAL_OP_TYPE_IRJMP:
+		return true;
+	}
+	if (crop) {
+		switch (aop->type) {
+		case R_ANAL_OP_TYPE_UCJMP:
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool is_ret_gadget(const RAnalOp *aop, const ut8 crop) {
+	switch (aop->type) {
+	case R_ANAL_OP_TYPE_TRAP:
+	case R_ANAL_OP_TYPE_RET:
+		return true;
+	}
+	return crop && aop->type == R_ANAL_OP_TYPE_CRET;
+}
+
+static bool is_end_gadget(const RAnalOp *aop, int gadget_type, const ut8 crop) {
+	if (aop->family == R_ANAL_OP_FAMILY_SECURITY) {
+		return false;
+	}
+	switch (gadget_type) {
+	case 'R':
+		return is_ret_gadget (aop, crop);
+	case 'C':
+		return is_call_gadget (aop, crop);
+	case 'J':
+		return is_jump_gadget (aop, crop);
+	default:
+		switch (aop->type) {
+		case R_ANAL_OP_TYPE_CALL:
+		case R_ANAL_OP_TYPE_JMP:
+			return true;
+		case R_ANAL_OP_TYPE_CCALL:
+		case R_ANAL_OP_TYPE_CJMP:
+			return crop;
+		default:
+			return is_ret_gadget (aop, crop) || is_call_gadget (aop, crop) || is_jump_gadget (aop, crop);
+		}
+	}
 }
 
 static bool insert_into(ut64 bit, void *user) {
@@ -1283,7 +1317,7 @@ static bool insert_into(ut64 bit, void *user) {
 }
 
 // TODO: follow unconditional jumps
-static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, RBitset *badstart) {
+static RList *construct_rop_gadget(RCore *core, int gadget_type, ut64 addr, ut8 *buf, int buflen, int idx, const char *grep, int regex, RList *rx_list, struct endlist_pair *end_gadget, RBitset *badstart) {
 	int endaddr = end_gadget->instr_offset;
 	int branch_delay = end_gadget->delay_size;
 	RAnalOp aop = {0};
@@ -1323,9 +1357,16 @@ static RList *construct_rop_gadget(RCore *core, ut64 addr, ut8 *buf, int buflen,
 	while (nb_instr < max_instr) {
 		r_bitset_set (localbadstart, idx);
 		int error = r_anal_op (core->anal, &aop, addr, buf + idx, buflen - idx, R_ARCH_OP_MASK_DISASM);
-		if (error < 0 || (nb_instr == 0 && (is_end_gadget (&aop, 0) || aop.type == R_ANAL_OP_TYPE_NOP))) {
+		if (error < 0) {
 			valid = false;
 			goto ret;
+		}
+		if (nb_instr == 0) {
+			const bool at_end = idx == endaddr;
+			if (aop.type == R_ANAL_OP_TYPE_NOP || (is_end_gadget (&aop, 0, 0) && (!gadget_type || !at_end))) {
+				valid = false;
+				goto ret;
+			}
 		}
 		const int opsz = aop.size;
 		// opsz = r_strbuf_length (asmop.buf);
@@ -1439,6 +1480,15 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	}
 
 	switch (mode) {
+	case '*':
+		r_list_foreach (hitlist, iter, hit) {
+			size += hit->len;
+		}
+		if (hitlist->head) {
+			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
+			r_cons_printf (core->cons, "'f gadget.0x%08"PFMT64x" %u 0x%08"PFMT64x, addr, size, addr);
+		}
+		break;
 	case 'j':
 		pj_o (pj);
 		pj_ka (pj, "opcodes");
@@ -1581,7 +1631,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	r_list_free (ropList);
 }
 
-static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const char *grep, int regexp, struct search_parameters *param) {
+static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
 	const ut8 crop = r_config_get_i (core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
@@ -1695,7 +1745,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
-			if (is_end_gadget (&end_gadget, crop)) {
+			if (is_end_gadget (&end_gadget, gadget_type, crop)) {
 #if 0
 				if (search->maxhits && r_list_length (end_list) >= search->maxhits) {
 					// limit number of high level rop gadget results
@@ -1781,7 +1831,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int opt, const c
 				ret = r_asm_disassemble (core->rasm, &asmop, buf + i, delta - i);
 				if (ret) {
 					r_asm_set_pc (core->rasm, from + i);
-					RList *hitlist = construct_rop_gadget (core,
+					RList *hitlist = construct_rop_gadget (core, gadget_type,
 						from + i, buf, delta, i, grep, regexp,
 						rx_list, end_gadget, badstart);
 					if (!hitlist) {
@@ -3262,7 +3312,7 @@ static void rop_kuery(void *data, const char *input, PJ *pj) {
 		pj_end (pj);
 		break;
 	case '?':
-		r_core_cmd_help (core, help_msg_slash_R);
+		r_core_cmd_help (core, help_msg_slash_Gk);
 		break;
 	case ' ':
 		if (!strcmp (input + 1, "nop")) {
@@ -4276,22 +4326,26 @@ reread:
 		}
 		break;
 	}
-	case 'R': // "/R"
+	case 'G': // "/G"
 		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_R);
-		} else if (input[1] == '/') {
-			r_core_search_rop (core, search_itv, 0, input + 1, 1, &param);
+			r_core_cmd_help (core, help_msg_slash_G);
 		} else if (input[1] == 'k') {
 			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_slash_Rk);
+				r_core_cmd_help (core, help_msg_slash_Gk);
 			} else {
 				rop_kuery (core, input + 2, param.pj);
+			}
+		} else if (input[1] == 'R' || input[1] == 'C' || input[1] == 'J') {
+			if (input[2] == '?') {
+				r_core_cmd_help (core, help_msg_slash_G);
+			} else {
+				r_core_search_rop (core, search_itv, input[1], 0, input + 2, input[2] == '/', &param);
 			}
 		} else {
 			Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
 
 			if (!gadgetSdb) {
-				r_core_search_rop (core, search_itv, 0, input + 1, 0, &param);
+				r_core_search_rop (core, search_itv, 0, 0, input + 1, input[1] == '/', &param);
 			} else {
 				SdbKv *kv;
 				SdbListIter *sdb_iter;
