@@ -53,26 +53,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-#if 0
-static void addsym(RList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (R_LIKELY (ptr)) {
-		ptr->name = r_bin_name_new (r_str_get (name));
-		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = 0;
-		ptr->ordinal = 0;
-		r_list_append (ret, ptr);
-	}
-}
-#endif
-
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	free (iocmd (bf, "is"));
-	RList *ret = r_list_newf (free);
-#if 0
-	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
-#endif
-	return ret;
+	return true;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -144,7 +127,7 @@ RBinPlugin r_bin_plugin_io = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.minstrlen = 10,
 	.strfilter = 'U'

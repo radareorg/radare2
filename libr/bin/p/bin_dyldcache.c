@@ -238,10 +238,6 @@ static void symbols_from_locsym(RDyldCache *cache, RDyldBinImage *bin, RBinFile 
 			continue;
 		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bf->bo->symbols_vec);
-		if (!sym) {
-			free (symstr);
-			break;
-		}
 		memset (sym, 0, sizeof (RBinSymbol));
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->vaddr = nlist->n_value;

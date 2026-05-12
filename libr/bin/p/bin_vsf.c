@@ -202,7 +202,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 
 	static const struct {
 		const ut16 address;
@@ -339,21 +339,20 @@ static RList* symbols(RBinFile *bf) {
 	static const int SYMBOLS_MAX = sizeof (_symbols) / sizeof (_symbols[0]);
 	struct r_bin_vsf_obj *vsf_obj = (struct r_bin_vsf_obj *) bf->bo->bin_obj;
 	if (!vsf_obj) {
-		return NULL;
+		return false;
 	}
 	int offset = _machines[vsf_obj->machine_idx].offset_mem;
-	RList *ret = r_list_newf (free);
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++) {
-		RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 		ptr->name = r_bin_name_new_from (r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS));
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;
 		ptr->paddr = vsf_obj->mem + offset + _symbols[i].address;
 		ptr->ordinal = i;
-		r_list_append (ret, ptr);
 	}
-	return ret;
+	return true;
 }
 
 static void destroy(RBinFile *bf) {
@@ -388,7 +387,7 @@ RBinPlugin r_bin_plugin_vsf = {
 	.check = &check,
 	.entries = &entries,
 	.sections = sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.destroy = &destroy,
 	.mem = &mem,

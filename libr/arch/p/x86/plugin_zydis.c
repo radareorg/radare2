@@ -864,10 +864,8 @@ static void add_reg_src_dst(RAnalOp *op, const char *reg, bool dst) {
 		return;
 	}
 	RAnalValue *val = RVecRArchValue_emplace_back (dst? &op->dsts: &op->srcs);
-	if (val) {
-		val->type = R_ANAL_VAL_REG;
-		val->reg = reg;
-	}
+	val->type = R_ANAL_VAL_REG;
+	val->reg = reg;
 }
 
 static void set_access_info(RArchSession *as, RAnalOp *op, const ZydisDecodedInstruction *insn, const ZydisDecodedOperand *ops) {

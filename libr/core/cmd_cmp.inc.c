@@ -900,13 +900,9 @@ static int cmp_bits(RCore *core, ut64 addr) {
 	return a != b;
 }
 
-static const RList *symbols_of(RCore *core, int id0) {
+static RVecRBinSymbol *symbols_of(RCore *core, int id0) {
 	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
-	RBinFile *old_bf = core->bin->cur;
-	r_bin_file_set_cur_binfile (core->bin, bf);
-	const RList *list = bf? r_bin_get_symbols (core->bin): NULL;
-	r_bin_file_set_cur_binfile (core->bin, old_bf);
-	return list;
+	return bf? r_bin_file_get_symbols_vec (bf): NULL;
 }
 
 static bool its_an_export(RBinSymbol *s) {
@@ -918,19 +914,14 @@ static bool its_an_export(RBinSymbol *s) {
 }
 
 static RList *exports_of(RCore *core, int id0) {
-	RBinFile *bf = r_bin_file_find_by_id (core->bin, id0);
-	RBinFile *old_bf = core->bin->cur;
-	r_bin_file_set_cur_binfile (core->bin, bf);
-	const RList *list = bf? r_bin_get_symbols (core->bin): NULL;
+	RVecRBinSymbol *vec = symbols_of (core, id0);
 	RList *nlist = r_list_newf (NULL);
-	RListIter *iter;
 	RBinSymbol *sym;
-	r_list_foreach (list, iter, sym) {
+	R_VEC_FOREACH (vec, sym) {
 		if (its_an_export (sym)) {
 			r_list_append (nlist, sym);
 		}
 	}
-	r_bin_file_set_cur_binfile (core->bin, old_bf);
 	return nlist;
 }
 
@@ -1026,7 +1017,7 @@ static void _core_cmp_info_exports(RCore *core, int id0, int id1) {
 		return;
 	}
 	RListIter *iter, *iter2;
-	RBinImport *s, *s2;
+	RBinSymbol *s, *s2;
 	if (id0 == id1) {
 		eprintf ("%d == %d\n", id0, id1);
 		return;
@@ -1035,9 +1026,9 @@ static void _core_cmp_info_exports(RCore *core, int id0, int id1) {
 		const char *s_name = r_bin_name_tostring (s->name);
 		bool found = false;
 		r_list_foreach (s1, iter2, s2) {
-			const char *s2_name = r_bin_name_tostring (s2->name);
-			if (!strcmp (s_name, s2_name)) {
+			if (!strcmp (s_name, r_bin_name_tostring (s2->name))) {
 				found = true;
+				break;
 			}
 		}
 		r_cons_printf (core->cons, "%s%s\n", found? " ": "-", s_name);
@@ -1046,9 +1037,9 @@ static void _core_cmp_info_exports(RCore *core, int id0, int id1) {
 		const char *s_name = r_bin_name_tostring (s->name);
 		bool found = false;
 		r_list_foreach (s0, iter2, s2) {
-			const char *s2_name = r_bin_name_tostring (s2->name);
-			if (!strcmp (s_name, s2_name)) {
+			if (!strcmp (s_name, r_bin_name_tostring (s2->name))) {
 				found = true;
+				break;
 			}
 		}
 		if (!found) {
@@ -1060,36 +1051,35 @@ static void _core_cmp_info_exports(RCore *core, int id0, int id1) {
 }
 
 static void _core_cmp_info_symbols(RCore *core, int id0, int id1) {
-	const RList *s0 = symbols_of (core, id0);
-	const RList *s1 = symbols_of (core, id1);
+	RVecRBinSymbol *s0 = symbols_of (core, id0);
+	RVecRBinSymbol *s1 = symbols_of (core, id1);
 	if (!s0 || !s1) {
 		R_LOG_ERROR ("Missing bin object");
 		return;
 	}
-	RListIter *iter, *iter2;
-	RBinSymbol *s, *s2;
 	if (id0 == id1) {
 		eprintf ("%d == %d\n", id0, id1);
 		return;
 	}
-	r_list_foreach (s0, iter, s) {
+	RBinSymbol *s, *s2;
+	R_VEC_FOREACH (s0, s) {
 		const char *sname = r_bin_name_tostring (s->name);
 		bool found = false;
-		r_list_foreach (s1, iter2, s2) {
-			const char *s2name = r_bin_name_tostring (s2->name);
-			if (!strcmp (sname, s2name)) {
+		R_VEC_FOREACH (s1, s2) {
+			if (!strcmp (sname, r_bin_name_tostring (s2->name))) {
 				found = true;
+				break;
 			}
 		}
 		r_cons_printf (core->cons, "%s%s\n", found? " ": "-", sname);
 	}
-	r_list_foreach (s1, iter, s) {
-		bool found = false;
+	R_VEC_FOREACH (s1, s) {
 		const char *sname = r_bin_name_tostring (s->name);
-		r_list_foreach (s0, iter2, s2) {
-			const char *s2name = r_bin_name_tostring (s2->name);
-			if (!strcmp (sname, s2name)) {
+		bool found = false;
+		R_VEC_FOREACH (s0, s2) {
+			if (!strcmp (sname, r_bin_name_tostring (s2->name))) {
 				found = true;
+				break;
 			}
 		}
 		if (!found) {

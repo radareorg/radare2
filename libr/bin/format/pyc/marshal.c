@@ -1132,7 +1132,7 @@ static pyc_object *get_object(PycUnmarshalCtx *ctx, RBuffer *buffer, int wanted_
 	return ret;
 }
 
-static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RList *sections, RList *symbols, RList *cobjs, char *prefix) {
+static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RList *sections, RVecRBinSymbol *symbols, RList *cobjs, char *prefix) {
 	RListIter *i = NULL;
 
 	// each code object is a section
@@ -1144,18 +1144,16 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	if_true_return (cobj->name->type != TYPE_ASCII && cobj->name->type != TYPE_STRING && cobj->name->type != TYPE_INTERNED, false);
 	if_true_return (!cobj->name->data, false);
 	if_true_return (!cobj->consts, false);
-	RBinSymbol *symbol = NULL;
 	RBinSection *section = NULL;
 
 	// add the cobj to objs list
 	if (!r_list_append (cobjs, cobj)) {
-		goto fail;
+		return false;
 	}
 	section = R_NEW0 (RBinSection);
-	symbol = R_NEW0 (RBinSymbol);
 	prefix = r_str_newf ("%s%s%s", r_str_get (prefix),
 		prefix? ".": "", (const char *)cobj->name->data);
-	if (!prefix || !section || !symbol) {
+	if (!prefix || !section) {
 		goto fail;
 	}
 	section->name = strdup (prefix);
@@ -1169,20 +1167,17 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	if (!r_list_append (sections, section)) {
 		goto fail;
 	}
-	// start building symbol
+	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
+		free (prefix);
+		return false;
+	}
+	RBinSymbol *symbol = RVecRBinSymbol_emplace_back (symbols);
 	symbol->name = r_bin_name_new (prefix);
-	// symbol->bind;
 	symbol->type = R_BIN_TYPE_FUNC_STR;
 	symbol->size = cobj->end_offset - cobj->start_offset;
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = ctx->scount++;
-	if (cobj->consts->type != TYPE_TUPLE && cobj->consts->type != TYPE_SMALL_TUPLE) {
-		goto fail2;
-	}
-	if (!r_list_append (symbols, symbol)) {
-		goto fail2;
-	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj) {
 		extract_sections_symbols (ctx, obj, sections, symbols, cobjs, prefix);
 	}
@@ -1190,12 +1185,7 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	return true;
 fail:
 	free (section);
-fail2:
 	free (prefix);
-	if (symbol) {
-		free (symbol->name);
-		free (symbol);
-	}
 	return false;
 }
 
@@ -1203,7 +1193,7 @@ void pyc_object_free(pyc_object *obj) {
 	free_object (obj);
 }
 
-bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RList *symbols, RList *cobjs, pyc_object **out_pobj) {
+bool get_sections_symbols_from_code_objects(PycUnmarshalCtx *ctx, RBuffer *buffer, RList *sections, RVecRBinSymbol *symbols, RList *cobjs, pyc_object **out_pobj) {
 	if (!ctx) {
 		return false;
 	}

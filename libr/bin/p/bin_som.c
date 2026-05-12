@@ -44,11 +44,11 @@ static RList *entries(RBinFile *bf) {
 	return r_bin_som_get_entries (bf->bo->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
-	return r_bin_som_get_symbols (bf->bo->bin_obj, bf->rbin->options.load_unnamed);
+	return r_bin_som_get_symbols_vec (bf->bo->bin_obj, &bf->bo->symbols_vec, bf->rbin->options.load_unnamed);
 }
 
 static RList *imports(RBinFile *bf) {
@@ -137,7 +137,7 @@ RBinPlugin r_bin_plugin_som = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.minstrlen = 4,
 	.imports = &imports,
 	.info = &info,

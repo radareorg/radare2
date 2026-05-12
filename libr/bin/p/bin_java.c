@@ -62,8 +62,9 @@ static RList *classes(RBinFile *bf) {
 	return r_bin_java_get_classes ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
-	return r_bin_java_get_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
+static bool symbols_vec(RBinFile *bf) {
+	r_bin_java_load_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj, &bf->bo->symbols_vec);
+	return true;
 }
 
 static RList *strings(RBinFile *bf) {
@@ -162,7 +163,7 @@ RBinPlugin r_bin_plugin_java = {
 	.binsym = binsym,
 	.entries = &entries,
 	.sections = sections,
-	.symbols = symbols,
+	.symbols_vec = symbols_vec,
 	.imports = &imports,
 	.strings = &strings,
 	.info = &info,

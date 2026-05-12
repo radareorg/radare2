@@ -62,22 +62,21 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static void addsym(RList *ret, char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void addsym(RVecRBinSymbol *ret, char *name, ut64 addr, ut32 size) {
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 	ptr->name = r_bin_name_new_from (name);
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->size = size;
-	r_list_append (ret, ptr);
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_new ();
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	WadObj *wo = bf->bo->bin_obj;
 	ut64 bsize = r_buf_size (bf->buf);
 	ut32 numlumps = wo->hdr.numlumps;
 	ut32 diroff = wo->hdr.diroffset;
 	if (diroff >= bsize || numlumps > (bsize - diroff) / sizeof (WAD_DIR_Entry)) {
-		return ret;
+		return true;
 	}
 	size_t i;
 	for (i = 0; i < numlumps; i++) {
@@ -88,7 +87,7 @@ static RList *symbols(RBinFile *bf) {
 		r_buf_read_at (bf->buf, off + 8, (ut8 *)name, 8);
 		addsym (ret, r_str_ndup (name, 8), filepos, sz);
 	}
-	return ret;
+	return true;
 }
 
 static char *wad_header_fields(RBinFile *bf, int mode) {
@@ -135,7 +134,7 @@ RBinPlugin r_bin_plugin_wad = {
 		.author = "murphy",
 	},
 	.get_sdb = &get_sdb,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.check = &check,
 	.load = &load,
 	.baddr = &baddr,

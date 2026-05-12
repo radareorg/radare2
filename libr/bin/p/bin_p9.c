@@ -360,18 +360,14 @@ static int apply_history(RBinFile *bf, ut64 pc, ut64 line, Sym *base, Sym **ret)
 	return 0;
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = NULL;
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	SymVec *history = NULL; // <Sym>
 	HtUP *histories = NULL; // <ut64, SymVec *>
 	StrVec *names = NULL; // <char *>
 	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	ut64 i;
 	Sym sym = {0};
-
-	if (!(ret = r_list_newf (free))) {
-		goto error;
-	}
 
 	if (!(histories = ht_up_new0 ())) {
 		goto error;
@@ -497,7 +493,7 @@ static RList *symbols(RBinFile *bf) {
 			continue;
 		}
 
-		RBinSymbol *bin_sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *bin_sym = RVecRBinSymbol_emplace_back (ret);
 		bin_sym->name = r_bin_name_new (sym.name);
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped
@@ -505,9 +501,6 @@ static RList *symbols(RBinFile *bf) {
 			bin_sym->paddr += o->header_size;
 		}
 		bin_sym->vaddr = sym.value;
-		bin_sym->size = 0;
-		bin_sym->ordinal = 0;
-		r_list_append (ret, bin_sym);
 
 		if (history) {
 			ht_up_insert (histories, bin_sym->vaddr, history);
@@ -563,13 +556,12 @@ static RList *symbols(RBinFile *bf) {
 
 	ht_up_free (histories);
 	StrVec_free (names);
-	return ret;
+	return true;
 error:
 	sym_fini_vec (&sym);
-	r_list_free (ret);
 	StrVec_free (names);
 	ht_up_free (histories);
-	return NULL;
+	return false;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -690,7 +682,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,

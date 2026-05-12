@@ -125,13 +125,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr) {
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 	ptr->name = r_bin_name_new (r_str_get (name));
 	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = 0;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
 }
 
 static void showstr(const char *str, const ut8 *s, size_t len) {
@@ -151,15 +148,12 @@ static const char *smd_vector_names[64] = {
 	"Reserv38", "Reserv39", "Reserv3A", "Reserv3B", "Reserv3C", "Reserv3D", "Reserv3E", "Reserv3F",
 };
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	SMD_Header hdr = {{0}};
 	int left = r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
-	if (left < sizeof (SMD_Header)) {
-		return NULL;
+	if (left < (int)sizeof (SMD_Header)) {
+		return false;
 	}
 	addsym (ret, "rom_start", r_read_be32 (&hdr.RomStart));
 	addsym (ret, "rom_end", r_read_be32 (&hdr.RomEnd));
@@ -182,7 +176,7 @@ static RList *symbols(RBinFile *bf) {
 			addsym (ret, smd_vector_names[i], r_read_be32 (&vtable[i]));
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -251,7 +245,7 @@ RBinPlugin r_bin_plugin_smd = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.minstrlen = 10,
 	.strfilter = 'U'

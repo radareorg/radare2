@@ -29,15 +29,14 @@ typedef struct {
 	RList *entries;
 	RList *resources;
 	RList *imports;
-	RList *symbols;
 	char *os;
 } r_bin_ne_obj_t;
 
 void r_bin_ne_free(r_bin_ne_obj_t *bin);
 r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose);
-RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin);
+RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols);
 RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin);
-RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin);
+void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols);
 RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin);
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin);
 

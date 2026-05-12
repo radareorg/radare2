@@ -201,9 +201,6 @@ R_API RVTableInfo *r_anal_vtable_parse_at(RVTableContext *context, ut64 addr) {
 	while (vtable_is_value_in_text_section (context, addr, &meth.addr)) {
 		meth.vtable_offset = addr - vtable->saddr;
 		RVTableMethodInfo *slot = RVecRVTableMethodInfo_emplace_back (&vtable->methods);
-		if (!slot) {
-			break;
-		}
 		*slot = meth;
 
 		addr += context->word_size;

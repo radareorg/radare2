@@ -88,6 +88,7 @@ static RBinSymbol *__get_symbol(RBinLEObj *bin, ut64 *offset) {
 		return NULL;
 	}
 	sym->name = r_bin_name_new (name);
+	free (name);
 	ut16 entry_idx = r_buf_read_le16_at (bin->buf, *offset);
 	*offset += 2;
 	sym->ordinal = entry_idx;
@@ -167,7 +168,7 @@ static RList *__get_entries(RBinLEObj *bin) {
 	return l;
 }
 
-static void __get_symbols_at(RBinLEObj *bin, RList *syml, RList *entl, ut64 offset, ut64 end) {
+static void __get_symbols_at(RBinLEObj *bin, RVecRBinSymbol *vec, RList *entl, ut64 offset, ut64 end) {
 	while (offset < end) {
 		RBinSymbol *sym = __get_symbol (bin, &offset);
 		if (!sym) {
@@ -179,7 +180,8 @@ static void __get_symbols_at(RBinLEObj *bin, RList *syml, RList *entl, ut64 offs
 				sym->vaddr = r_num_get (NULL, n);
 				sym->bind = R_BIN_BIND_GLOBAL_STR;
 				sym->type = R_BIN_TYPE_FUNC_STR;
-				r_list_append (syml, sym);
+				RVecRBinSymbol_push_back (vec, sym);
+				free (sym); /* vec now owns inner fields */
 				continue;
 			}
 		}
@@ -187,18 +189,16 @@ static void __get_symbols_at(RBinLEObj *bin, RList *syml, RList *entl, ut64 offs
 	}
 }
 
-R_IPI RList *r_bin_le_get_symbols(RBinLEObj *bin) {
-	RList *l = r_list_newf ((RListFree)r_bin_symbol_free);
+R_IPI void r_bin_le_load_symbols(RBinLEObj *bin, RVecRBinSymbol *vec) {
 	RList *entries = __get_entries (bin);
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->restab + bin->headerOff;
 	ut32 end = h->enttab + bin->headerOff;
-	__get_symbols_at (bin, l, entries, offset, end);
+	__get_symbols_at (bin, vec, entries, offset, end);
 	offset = h->nrestab;
 	end = h->nrestab + h->cbnrestab;
-	__get_symbols_at (bin, l, entries, offset, end);
+	__get_symbols_at (bin, vec, entries, offset, end);
 	r_list_free (entries);
-	return l;
 }
 
 R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {

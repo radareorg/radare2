@@ -298,18 +298,14 @@ static void riscv_set_val_reg(RVecRArchValue *vals, const char *name) {
 	const char *reg = riscv_reg_name (name);
 	if (reg) {
 		RAnalValue *val = RVecRArchValue_emplace_back (vals);
-		if (val) {
-			val->reg = reg;
-		}
+		val->reg = reg;
 	}
 }
 
 static void riscv_set_val_imm(RVecRArchValue *vals, const char *arg) {
 	if (riscv_arg_is_imm (arg)) {
 		RAnalValue *val = RVecRArchValue_emplace_back (vals);
-		if (val) {
-			val->imm = (st64)r_num_math (NULL, arg);
-		}
+		val->imm = (st64)r_num_math (NULL, arg);
 	}
 }
 

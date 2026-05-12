@@ -118,9 +118,6 @@ static bool refline_vec_insert_sorted(RVecAnalReflinePtr *vec, RAnalRefline *ref
 	RAnalRefline *refp = ref;
 	size_t index = RVecAnalReflinePtr_lower_bound (vec, &refp, cmp_ref_ptr_level);
 	RAnalRefline **slot = RVecAnalReflinePtr_emplace_back (vec);
-	if (!slot) {
-		return false;
-	}
 	RAnalRefline **dst = R_VEC_START_ITER (vec) + index;
 	memmove (dst + 1, dst, (slot - dst) * sizeof (RAnalRefline *));
 	*dst = ref;
@@ -149,9 +146,6 @@ static bool refline_cache_build(ReflineCache *cache, RList *list) {
 	r_list_foreach (list, iter, ref) {
 		ReflineEvent *start = RVecReflineEvent_emplace_back (&cache->starts);
 		ReflineEvent *end = RVecReflineEvent_emplace_back (&cache->ends);
-		if (!start || !end) {
-			return false;
-		}
 		start->addr = refline_start (ref);
 		start->r = ref;
 		end->addr = refline_end (ref);
@@ -243,21 +237,12 @@ static bool add_refline(RList *list, RVecReflineEnd *sten, ReflineCache *cache, 
 	item->cache = cache;
 
 	ReflineEnd *re1 = RVecReflineEnd_emplace_back (sten);
-	if (!re1) {
-		free (item);
-		return false;
-	}
 	re1->val = ref->from;
 	re1->order = RVecReflineEnd_length (sten) - 1;
 	re1->is_from = true;
 	re1->r = ref;
 
 	ReflineEnd *re2 = RVecReflineEnd_emplace_back (sten);
-	if (!re2) {
-		RVecReflineEnd_pop_back (sten);
-		free (item);
-		return false;
-	}
 	re2->val = ref->to;
 	re2->order = RVecReflineEnd_length (sten) - 1;
 	re2->is_from = false;

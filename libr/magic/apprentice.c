@@ -1846,13 +1846,6 @@ static int apprentice_1(RMagic *ms, const char *fn, int action, RVecMagicMList *
 	}
 
 	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
-	if (!ml) {
-		free (min_bytes);
-		__magic_file_delmagic (magic, rv);
-		__magic_file_oomem (ms, sizeof (*ml));
-		return -1;
-	}
-
 	ml->magic = magic;
 	ml->min_bytes = min_bytes;
 	ml->nmagic = nmagic;
@@ -1950,12 +1943,6 @@ bool __magic_file_apprentice_buffer(RMagic *ms, const ut8 *buf, size_t buf_size,
 		return false;
 	}
 	struct mlist *const ml = RVecMagicMList_emplace_back (mlist);
-	if (!ml) {
-		free (min_bytes);
-		__magic_file_delmagic (magic, mapped);
-		__magic_file_oomem (ms, sizeof (*ml));
-		return false;
-	}
 	ml->magic = magic;
 	ml->min_bytes = min_bytes;
 	ml->nmagic = nmagic;

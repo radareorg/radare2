@@ -459,62 +459,53 @@ static char* types(RBinFile *bf) {
 }
 #endif
 
-static RList* symbols(RBinFile *bf) {
-	RList *ret = NULL;
+static bool symbols_vec(RBinFile *bf) {
 	RBinSymbol *ptr = NULL;
 	struct r_bin_pe_export_t *symbols = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
 	int i;
 	const int limit = bf->rbin->options.limit;
 
-	if (!(ret = r_list_newf (r_bin_symbol_free))) {
-		return NULL;
-	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinPEObj *pe = PE_(get) (bf);
 	if ((symbols = PE_(r_bin_pe_get_exports)(pe))) {
 		for (i = 0; !symbols[i].last; i++) {
-			if (limit_reached (ret, limit)) {
+			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
-			ptr = R_NEW0 (RBinSymbol);
+			ptr = RVecRBinSymbol_emplace_back (ret);
 			ptr->name = r_bin_name_new ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
-			//strncpy (ptr->bind, "NONE", R_BIN_SIZEOF_STRINGS);
 			ptr->bind = R_BIN_BIND_GLOBAL_STR;
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->size = 0;
 			ptr->vaddr = symbols[i].vaddr;
 			ptr->paddr = symbols[i].paddr;
 			ptr->ordinal = symbols[i].ordinal;
-			r_list_append (ret, ptr);
 		}
 		free (symbols);
 	}
 
 	if ((imports = PE_(r_bin_pe_get_imports)(pe))) {
 		for (i = 0; !imports[i].last; i++) {
-			if (limit_reached (ret, limit)) {
+			if (limit_reached_vec (ret, limit)) {
 				break;
 			}
-			ptr = R_NEW0 (RBinSymbol);
+			ptr = RVecRBinSymbol_emplace_back (ret);
 			ptr->name = r_bin_name_new ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
-			//strncpy (ptr->forwarder, (char*)imports[i].forwarder, R_BIN_SIZEOF_STRINGS);
 			ptr->bind = "NONE";
 			ptr->type = R_BIN_TYPE_FUNC_STR;
-			ptr->size = 0;
 			ptr->vaddr = imports[i].vaddr;
 			ptr->paddr = imports[i].paddr;
 			ptr->ordinal = imports[i].ordinal;
-			r_list_append (ret, ptr);
 		}
 		free (imports);
 	}
-	if (limit_reached (ret, limit)) {
+	if (limit_reached_vec (ret, limit)) {
 		find_pe_overlay (bf);
-		return ret;
+		return true;
 	}
 
 	// Add .NET symbols if this is a .NET assembly
@@ -526,12 +517,12 @@ static RList* symbols(RBinFile *bf) {
 				RListIter *iter;
 				DotNetSymbol *dsym;
 				r_list_foreach (dotnet_symbols, iter, dsym) {
-					if (limit_reached (ret, limit)) {
+					if (limit_reached_vec (ret, limit)) {
 						break;
 					}
 					if (!strcmp (dsym->type, "methoddef")) {
 						// Add methoddef at its RVA
-						ptr = R_NEW0 (RBinSymbol);
+						ptr = RVecRBinSymbol_emplace_back (ret);
 						if (dsym->namespace && dsym->namespace[0]) {
 							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
 						} else {
@@ -557,36 +548,14 @@ static RList* symbols(RBinFile *bf) {
 							ptr->paddr = dsym->vaddr;
 						}
 						ptr->size = dsym->size;
-						r_list_append (ret, ptr);
 					}
-#if 0
-					// duplicated symbols for ref data. not necessasry
-					if (dsym->token && (!strcmp (dsym->type, "methoddef") || !strcmp (dsym->type, "memberref"))) {
-						// Add symbol at token address for disassembly resolution
-						ptr = R_NEW0 (RBinSymbol);
-						if (dsym->namespace && dsym->namespace[0]) {
-							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
-						} else {
-							ptr->name = r_bin_name_new (dsym->name);
-						}
-						ptr->type = R_BIN_TYPE_FUNC_STR;
-						ptr->bind = R_BIN_BIND_GLOBAL_STR;
-						if (!strcmp (dsym->type, "methoddef") && !dsym->is_native) {
-							ptr->lang = R_BIN_LANG_CIL;
-						}
-						ptr->vaddr = dsym->token;
-						ptr->paddr = 0;
-						ptr->size = 0;
-						r_list_append (ret, ptr);
-					}
-#endif
 				}
 			}
 		}
 	}
 
 	find_pe_overlay (bf);
-	return ret;
+	return true;
 }
 
 static void filter_import(ut8 *n) {

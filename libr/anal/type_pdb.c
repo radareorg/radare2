@@ -138,9 +138,6 @@ static void parse_enum(const RAnal *anal, STpiStream *ss, SType *type, RList *ty
 			continue; // skip it, move forward
 		}
 		RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
-		if (!slot) {
-			goto cleanup;
-		}
 		*slot = *enum_case;
 		free (enum_case);
 	}
@@ -150,13 +147,11 @@ static void parse_enum(const RAnal *anal, STpiStream *ss, SType *type, RList *ty
 		base_type->type = strdup (type_name); // we assume it's sanitized
 		r_anal_save_base_type (anal, base_type);
 	}
-cleanup:
 	if (to_free_name) {
 		R_FREE (name);
 	}
 	tpi_free_simple_type (utype);
 	r_anal_base_type_free (base_type);
-	return;
 }
 
 /**
@@ -202,9 +197,6 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 			continue; // skip the failure
 		}
 		RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-		if (!slot) {
-			goto cleanup;
-		}
 		*slot = *struct_member;
 		free (struct_member);
 	}
@@ -217,12 +209,10 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 	base_type->name = sname;
 	base_type->size = size;
 	r_anal_save_base_type (anal, base_type);
-cleanup:
 	if (to_free_name) {
 		R_FREE (name);
 	}
 	r_anal_base_type_free (base_type);
-	return;
 }
 
 /**

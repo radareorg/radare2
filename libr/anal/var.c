@@ -798,9 +798,6 @@ R_API bool r_anal_var_set_access(RAnal *anal, RAnalVar *var, const char *reg, ut
 	}
 	if (!acc || acc->offset != offset) {
 		RAnalVarAccess *new_slot = RVecAnalVarAccess_emplace_back (&var->accesses);
-		if (!new_slot) {
-			return false;
-		}
 		if (index < acc_len) {
 			RAnalVarAccess *dst = RVecAnalVarAccess_at (&var->accesses, index);
 			if (!dst) {

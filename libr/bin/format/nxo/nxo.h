@@ -3,6 +3,8 @@
 #ifndef _NXO_H
 #define _NXO_H
 
+#include <r_bin.h>
+
 typedef struct {
 	ut32 unused;
 	ut32 mod_memoffset;
@@ -58,7 +60,7 @@ typedef struct {
 
 typedef struct {
 	ut32 *strings;
-	RList *methods_list;
+	RVecRBinSymbol methods_list;
 	RList *imports_list;
 	RList *classes_list;
 } RBinNXOObj;

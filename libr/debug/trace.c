@@ -277,10 +277,6 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 	R_VEC_FOREACH (dbg->trace->traces, trace) {
 		if (!trace->tag || (tag & trace->tag)) {
 			RListInfo *info = RVecListInfo_emplace_back (&info_vec);
-			if (!info) {
-				RVecListInfo_fini (&info_vec);
-				return;
-			}
 			info->pitv = (RInterval) {trace->addr, trace->size};
 			info->vitv = info->pitv;
 			info->perm = -1;
@@ -380,22 +376,20 @@ R_API RDebugTracepointItem *r_debug_trace_add(RDebug *dbg, ut64 addr, int size) 
 	int pos = RVecDebugTracepoint_length (dbg->trace->traces) + 1;
 	// emplacedback pointers are not constant, so we may rely on the index instead of ptr
 	RDebugTracepointItem *tp = RVecDebugTracepoint_emplace_back (dbg->trace->traces);
-	if (R_LIKELY (tp)) {
-		tp->stamp = r_time_now ();
-		tp->addr = addr;
-		tp->tags = tag;
-		tp->size = size;
-		tp->count = ++dbg->trace->count;
-		tp->times = last_times;
-		r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
-		void *ip = (void*)(size_t)(pos);
-		ht_pp_update (dbg->trace->ht, key, ip);
-		// for some reason pu mode doesnt work but storing integers as pointers works
-		// ht_pu_update (dbg->trace->ht, key, pos);
-		// ht_pp_delete (dbg->trace->ht, key);
-		// ht_pu_insert (dbg->trace->ht, key, pos);
-		// eprintf ("UP %s %llx\n", key, addr);
-	}
+	tp->stamp = r_time_now ();
+	tp->addr = addr;
+	tp->tags = tag;
+	tp->size = size;
+	tp->count = ++dbg->trace->count;
+	tp->times = last_times;
+	r_strf_var (key, 64, "%d.%"PFMT64x, tag, addr);
+	void *ip = (void*)(size_t)(pos);
+	ht_pp_update (dbg->trace->ht, key, ip);
+	// for some reason pu mode doesnt work but storing integers as pointers works
+	// ht_pu_update (dbg->trace->ht, key, pos);
+	// ht_pp_delete (dbg->trace->ht, key);
+	// ht_pu_insert (dbg->trace->ht, key, pos);
+	// eprintf ("UP %s %llx\n", key, addr);
 	return tp;
 }
 

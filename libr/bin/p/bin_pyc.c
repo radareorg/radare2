@@ -81,11 +81,11 @@ static RList *entries(RBinFile *bf) {
 	return entries;
 }
 
-static RList *symbols(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	RBinPycObj *obj = R_UNWRAP3 (bf, bo, bin_obj);
 	if (!obj) {
-		return NULL;
+		return false;
 	}
 	if (!obj->cobjs) {
 		obj->cobjs = r_list_newf (NULL); // borrowed pointers into pobj
@@ -94,16 +94,15 @@ static RList *symbols(RBinFile *bf) {
 		obj->interned_table = r_list_newf ((RListFree)free);
 	}
 	RList *sections = r_list_newf (NULL); // keep old behavior; free on destroy if needed
-	RList *symbols = r_list_newf ((RListFree)free);
 	RBuffer *buffer = bf->buf;
 	if (!obj->code_start_offset) {
 		// ensure code_start_offset is initialized
 		(void) get_entrypoint (buffer, obj->version.magic, &obj->code_start_offset);
 	}
 	r_buf_seek (buffer, obj->code_start_offset, R_BUF_SET);
-	pyc_get_sections_symbols (sections, symbols, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
+	pyc_get_sections_symbols (sections, &bf->bo->symbols_vec, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
 	obj->sections_cache = sections;
-	return symbols;
+	return true;
 }
 
 static void destroy(RBinFile *bf) {
@@ -133,7 +132,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.destroy = &destroy,
 };
 

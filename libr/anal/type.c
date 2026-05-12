@@ -311,9 +311,6 @@ static RAnalBaseType *get_enum_type(RAnal *anal, const char *sname) {
 		RAnalEnumCase cas = { .name = strdup (cur), .val = strtol (value, NULL, 16) };
 
 		RAnalEnumCase *element = RVecAnalEnumCase_emplace_back (cases);
-		if (!element) {
-			goto error;
-		}
 		*element = cas;
 
 		sdb_aforeach_next (cur);
@@ -374,9 +371,6 @@ static RAnalBaseType *get_struct_type(RAnal *anal, const char *sname) {
 		free (values);
 
 		RAnalStructMember *element = RVecAnalStructMember_emplace_back (members);
-		if (!element) {
-			goto error;
-		}
 		*element = cas;
 
 		sdb_aforeach_next (cur);
@@ -426,9 +420,6 @@ static RAnalBaseType *get_union_type(RAnal *anal, const char *sname) {
 		free (values);
 
 		RAnalUnionMember *element = RVecAnalUnionMember_emplace_back (members);
-		if (!element) {
-			goto error;
-		}
 		*element = cas;
 
 		sdb_aforeach_next (cur);

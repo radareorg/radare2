@@ -503,29 +503,21 @@ static RList* imports(RBinFile *bf) {
 	return ret;
 }
 
-static RList* symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RList *ret, *list;
 	RListIter *it;
 
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
-		return NULL;
-	}
-
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
-		list = Pe32_r_bin_mdmp_pe_get_symbols (bf->rbin, pe32_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		Pe32_r_bin_mdmp_pe_load_symbols (bf->rbin, pe32_bin, ret);
 	}
 	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
-		list = Pe64_r_bin_mdmp_pe_get_symbols (bf->rbin, pe64_bin);
-		r_list_join (ret, list);
-		r_list_free (list);
+		Pe64_r_bin_mdmp_pe_load_symbols (bf->rbin, pe64_bin, ret);
 	}
-	return ret;
+	return true;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -554,7 +546,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 };
 
 #ifndef R2_PLUGIN_INCORE

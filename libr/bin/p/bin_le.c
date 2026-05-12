@@ -111,8 +111,9 @@ static RList *entries(RBinFile *bf) {
 	return r_bin_le_get_entrypoints (bf->bo->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
-	return r_bin_le_get_symbols (bf->bo->bin_obj);
+static bool symbols_vec(RBinFile *bf) {
+	r_bin_le_load_symbols (bf->bo->bin_obj, &bf->bo->symbols_vec);
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -237,7 +238,7 @@ RBinPlugin r_bin_plugin_le = {
 	.header = &header,
 	.sections = &sections,
 	.entries = &entries,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.libs = &libs,
 	.relocs = &relocs,

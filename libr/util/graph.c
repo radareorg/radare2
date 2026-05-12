@@ -42,9 +42,6 @@ static int node_cmp(unsigned int idx, RGraphNode *b) {
 
 static bool graph_edge_push(RVecGraphEdge *stack, RGraphNode *from, RGraphNode *to, st32 nth) {
 	RGraphEdge *edge = RVecGraphEdge_emplace_back (stack);
-	if (!edge) {
-		return false;
-	}
 	edge->from = from;
 	edge->to = to;
 	edge->nth = nth;
@@ -63,9 +60,6 @@ static int graph_node_ptr_find_cmp(RGraphNode *const *a, const void *b) {
 static void graph_node_vec_insert_sorted(RVecGraphNodePtr *vec, RGraphNode *node) {
 	size_t index = RVecGraphNodePtr_lower_bound (vec, &node, graph_node_ptr_cmp);
 	RGraphNode **slot = RVecGraphNodePtr_emplace_back (vec);
-	if (!slot) {
-		return;
-	}
 	RGraphNode **dst = R_VEC_START_ITER (vec) + index;
 	memmove (dst + 1, dst, (slot - dst) * sizeof (RGraphNode *));
 	*dst = node;
@@ -97,9 +91,6 @@ static void graph_node_vec_insert(RVecGraphNodePtr *vec, RGraphNode *node, int n
 		return;
 	}
 	RGraphNode **slot = RVecGraphNodePtr_emplace_back (vec);
-	if (!slot) {
-		return;
-	}
 	RGraphNode **dst = R_VEC_START_ITER (vec) + nth;
 	memmove (dst + 1, dst, (slot - dst) * sizeof (RGraphNode *));
 	*dst = node;
@@ -390,10 +381,6 @@ static void _dfs_ins_node(RGraphNode *n, RGraphVisitor *vi) {
 	ht_up_insert (di->reverse, (ut64)(size_t)n, node);
 	if (RVecGraphNodePtr_length (&n->in_nodes) > 1 && di->idx) {
 		RGraphNode **slot = RVecGraphNodePtr_emplace_back (&di->mi);
-		if (!slot) {
-			di->fail = true;
-			return;
-		}
 		*slot = node;
 	}
 	dn->idx = di->idx++;

@@ -42,29 +42,24 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return bf->bo->bin_obj != NULL;
 }
 
-static RList *symbols(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 
-	RBinSymbol *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
 	ut64 size = r_buf_size (obj->b);
 	if (size == 0 || size == UT64_MAX) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 
 	// File header
-	ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 	ptr->name = r_bin_name_new_from (
 		r_str_newf ("tcpdump capture file - version %d.%d (%s, capture length %"PFMT32u ")", obj->header->version_major,
 			obj->header->version_minor, pcap_network_string (obj->header->network),
 			obj->header->max_pkt_len)
 		);
 	ptr->paddr = ptr->vaddr = 0;
-	r_list_append (ret, ptr);
 
 	// Go through each record packet
 	RListIter *iter;
@@ -78,7 +73,7 @@ static RList *symbols(RBinFile *bf) {
 	default:
 		break;
 	}
-	return ret;
+	return true;
 }
 
 #if CUSTOM_STRINGS
@@ -140,7 +135,7 @@ RBinPlugin r_bin_plugin_pcap = {
 #if CUSTOM_STRINGS
 	.strings = strings,
 #endif
-	.symbols = symbols,
+	.symbols_vec = symbols_vec,
 	.load= load,
 	.check = check,
 };

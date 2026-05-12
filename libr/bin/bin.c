@@ -931,14 +931,6 @@ R_API RList *r_bin_get_strings(RBin *bin) {
 	return o? o->strings: NULL;
 }
 
-// TODO: Deprecate because we must use the internal representation
-R_API RList *r_bin_get_symbols(RBin *bin) {
-	R_LOG_WARN ("Dont use RBin.getSymbols() use getSymbolsVec() instead");
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	RBinFile *bf = bin->cur;
-	return bf? r_bin_file_get_symbols (bf): NULL;
-}
-
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinFile *bf = bin->cur;

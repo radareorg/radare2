@@ -208,24 +208,16 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 	return ret;
 }
 
-RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
+void PE_(r_bin_mdmp_pe_load_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RVecRBinSymbol *vec) {
 	int i;
 	ut64 offset;
 	struct r_bin_pe_export_t *symbols = NULL;
 	struct r_bin_pe_import_t *imports = NULL;
-	RBinSymbol *ptr = NULL;
-	RList *ret;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
 
 	/* TODO: Load symbol table from pdb file */
 	if ((symbols = PE_(r_bin_pe_get_exports) (pe_bin->bin))) {
 		for (i = 0; !symbols[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
+			RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
 			offset = symbols[i].vaddr;
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
@@ -239,17 +231,13 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = symbols[i].paddr + pe_bin->paddr;
 			ptr->ordinal = symbols[i].ordinal;
-
-			r_list_append (ret, ptr);
 		}
 		free (symbols);
 	}
 	/* Calling imports is unstable at the moment, I think this is an issue in pe.c */
 	if ((imports = PE_(r_bin_pe_get_imports) (pe_bin->bin))) {
 		for (i = 0; !imports[i].last; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
+			RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
 			offset = imports[i].vaddr;
 			if (offset > pe_bin->vaddr) {
 				offset -= pe_bin->vaddr;
@@ -263,11 +251,7 @@ RList *PE_(r_bin_mdmp_pe_get_symbols) (RBin *rbin, struct PE_(r_bin_mdmp_pe_bin)
 			ptr->vaddr = offset + pe_bin->vaddr;
 			ptr->paddr = imports[i].paddr + pe_bin->paddr;
 			ptr->ordinal = imports[i].ordinal;
-
-			r_list_append (ret, ptr);
 		}
 		free (imports);
 	}
-
-	return ret;
 }

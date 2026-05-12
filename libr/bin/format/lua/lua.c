@@ -5,7 +5,7 @@
 void lua_header_free(RLuaHeader *lhead) {
 	if (lhead) {
 		r_list_free (lhead->functionList);
-		r_list_free (lhead->symbols);
+		RVecRBinSymbol_fini (&lhead->symbols);
 		free (lhead);
 	}
 }
@@ -17,7 +17,7 @@ static void lua_func_free(void *f) {
 static inline RLuaHeader *lua_header_new(void) {
 	RLuaHeader *lh = R_NEW0 (RLuaHeader);
 	lh->functionList = r_list_newf ((RListFree)lua_func_free);
-	lh->symbols = r_list_newf ((RListFree)r_bin_symbol_free);
+	RVecRBinSymbol_init (&lh->symbols);
 	return lh;
 }
 
@@ -274,19 +274,19 @@ static inline double buf_parse_num(RLuaHeader *lh, RBuffer *buf) {
 }
 
 static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, const char *type) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
 	ut64 end = r_buf_tell (buf); // end of field that was just parsed from bf
 	if (end > start) {
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&lh->symbols);
+		memset (sym, 0, sizeof (*sym));
 		sym->name = r_bin_name_new (name);
-		sym->vaddr = sym->paddr = start;
-		sym->size = end - start;
-		sym->ordinal = 0;
-		sym->type = type;
-		if (sym->name && r_list_append (lh->symbols, sym)) {
+		if (sym->name) {
+			sym->vaddr = sym->paddr = start;
+			sym->size = end - start;
+			sym->type = type;
 			return end;
 		}
+		RVecRBinSymbol_pop_back (&lh->symbols);
 	}
-	r_bin_symbol_free (sym);
 	// Caller shouldn't stop parsing lua just for a missing symbol. But we return location to save a r_buf_tell
 	return end;
 }

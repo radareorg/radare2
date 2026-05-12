@@ -93,8 +93,9 @@ static RList *entries(RBinFile *bf) {
 	return r_bin_ne_get_entrypoints (bf->bo->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
-	return r_bin_ne_get_symbols (bf->bo->bin_obj);
+static bool symbols_vec(RBinFile *bf) {
+	r_bin_ne_load_symbols (bf->bo->bin_obj, &bf->bo->symbols_vec);
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -106,7 +107,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	return r_bin_ne_get_relocs (bf->bo->bin_obj);
+	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec);
 }
 
 RBinPlugin r_bin_plugin_ne = {
@@ -123,7 +124,7 @@ RBinPlugin r_bin_plugin_ne = {
 	.info = &info,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.relocs = &relocs,
 	.minstrlen = 4

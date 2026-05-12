@@ -868,16 +868,13 @@ static ut8 *get_methods(RCore *c, int *len) {
 }
 
 static ut8 *get_symbols(RCore *c, int *len) {
-	RListIter *iter;
-
 	if (!c || !len) {
 		return NULL;
 	}
-
 	RBinSymbol *sym;
-	const RList *list = r_bin_get_symbols (c->bin);
+	RVecRBinSymbol *vec = r_bin_get_symbols_vec (c->bin);
 	RList *reslist = r_list_newf (free);
-	r_list_foreach (list, iter, sym) {
+	R_VEC_FOREACH (vec, sym) {
 		const char *name = r_bin_name_tostring (sym->name);
 		r_list_append (reslist, strdup (name));
 	}

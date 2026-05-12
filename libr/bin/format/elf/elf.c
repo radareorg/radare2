@@ -3912,9 +3912,6 @@ static size_t populate_relocs_record_from_dynamic(ELFOBJ *eo, size_t pos, size_t
 	// parse pltrel
 	for (offset = 0; offset < offset_end && pos < num_relocs; offset += size, pos++) {
 		RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
-		if (!reloc) {
-			break;
-		}
 		if (!read_reloc (eo, reloc, di->dt_pltrel, di->dt_jmprel + offset)) {
 			RVecRBinElfReloc_pop_back (&eo->g_relocs);
 			break;
@@ -4597,9 +4594,6 @@ static void _store_bin_sections(ELFOBJ *eo, const RVecRBinElfSection *elf_bin_se
 	RBinElfSection *section;
 	R_VEC_FOREACH (elf_bin_sections, section) {
 		RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
-		if (!ptr) {
-			break;
-		}
 		ptr->name = strdup ((char*)section->name);
 		ptr->is_data = is_data_section (ptr->name);
 		if (is_wordable_section (ptr->name)) {
@@ -4657,9 +4651,6 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 
 	for (i = 0; i < num; i++) {
 		RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
-		if (!ptr) {
-			return false;
-		}
 		ptr->add = false;
 		ptr->size = phdr[i].p_filesz;
 		ptr->vsize = phdr[i].p_memsz;
@@ -4749,9 +4740,6 @@ static bool _add_sections_from_phdr(RBinFile *bf, ELFOBJ *eo, bool *found_load) 
 static void _add_ehdr_section(RBinFile *bf, ELFOBJ *eo) {
 	// add entry for ehdr
 	RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
-	if (!ptr) {
-		return;
-	}
 
 	ut64 ehdr_size = sizeof (eo->ehdr);
 	if (bf->size < ehdr_size) {
@@ -4788,9 +4776,6 @@ static void _cache_bin_sections(RBinFile *bf, ELFOBJ *eo, const RVecRBinElfSecti
 		}
 		if (!found_load) {
 			RBinSection *ptr = RVecRBinSection_emplace_back (&eo->cached_sections);
-			if (!ptr) {
-				return;
-			}
 			ptr->name = strdup ("uphdr");
 			ptr->size = bf->size;
 			ptr->vsize = bf->size;
@@ -5000,9 +4985,6 @@ static bool _read_symbols_from_phdr(ELFOBJ *eo, ReadPhdrSymbolState *state) {
 		}
 
 		RBinElfSymbol *psym = RVecRBinElfSymbol_emplace_back (ret);
-		if (!psym) {
-			return false;
-		}
 
 		memset (psym, 0, sizeof (RBinElfSymbol));
 		psym->offset = tmp_offset;
@@ -5651,10 +5633,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 		}
 
 		RBinElfSymbol *es = RVecRBinElfSymbol_emplace_back (ret);
-		if (!es) {
-			free (strtab);
-			return false;
-		}
 		memset (es, 0, sizeof (RBinElfSymbol));
 		es->offset = offset;
 		es->size = tsize;
@@ -5822,9 +5800,6 @@ RVecRBinImport *Elf_(load_imports_vec)(ELFOBJ *eo) {
 			continue;
 		}
 		RBinImport *imp = RVecRBinImport_emplace_back (&eo->imports_cache);
-		if (!imp) {
-			break;
-		}
 		memset (imp, 0, sizeof (RBinImport));
 		imp->name = r_bin_name_new (is->name);
 		imp->bind = is->bind;

@@ -185,10 +185,6 @@ static bool trace_hook_reg_read(REsil *esil, const char *name, ut64 *res, int *s
 	}
 	if (true) {
 		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
-		if (!access) {
-			R_LOG_ERROR ("Failed to allocate memory for storing access");
-			return false;
-		}
 		access->is_reg = true;
 		// eprintf ("[ESIL] REG READ %s 0x%08"PFMT64x"\n", name, val);
 		access->reg.name = strdup (name); // XXX leaks. and regnames should be constant not heap allocated
@@ -210,10 +206,6 @@ static bool trace_hook_reg_write(REsil *esil, const char *name, ut64 *val) {
 	RRegItem *ri = r_reg_get (esil->anal->reg, name, -1);
 	if (ri) {
 		REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
-		if (!access) {
-			R_LOG_ERROR ("Failed to allocate memory for storing access");
-			return false;
-		}
 		access->is_reg = true;
 		access->reg.name = strdup (name); // TODO: LEAK reg.name instead of .reg!
 		access->reg.value = *val;
@@ -249,10 +241,6 @@ static bool trace_hook_mem_read(REsil *esil, ut64 addr, ut8 *buf, int len) {
 	// eprintf ("[ESIL] MEM READ 0x%08"PFMT64x" %s\n", addr, hexbuf);
 
 	REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
-	if (!access) {
-		free (hexbuf);
-		return false;
-	}
 
 	access->is_reg = false;
 	access->mem.data = hexbuf;
@@ -280,10 +268,6 @@ static bool trace_hook_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len
 
 	// eprintf ("[ESIL] MEM WRITE 0x%08"PFMT64x" %s\n", addr, hexbuf);
 	REsilTraceAccess *access = RVecAccess_emplace_back (&esil->trace->db.accesses);
-	if (!access) {
-		free (hexbuf);
-		return false;
-	}
 	access->is_reg = false;
 	access->mem.data = hexbuf;
 	access->mem.addr = addr;
@@ -334,12 +318,10 @@ R_API void r_esil_trace_op(REsil *esil, struct r_anal_op_t *op) {
 	esil->ocb_set = true;
 
 	REsilTraceOp *to = RVecTraceOp_emplace_back (&esil->trace->db.ops);
-	if (to) {
-		ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
-		to->start = vec_idx;
-		to->end = vec_idx;
-		to->addr = op->addr;
-	}
+	ut32 vec_idx = RVecAccess_length (&esil->trace->db.accesses);
+	to->start = vec_idx;
+	to->end = vec_idx;
+	to->addr = op->addr;
 
 	// Tag every change recorded for this op with a fresh step number, so
 	// later restore lookups can locate the post-state of any prior step.

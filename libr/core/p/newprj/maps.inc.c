@@ -80,9 +80,6 @@ static void rprj_map_add(RPrjCursor *cur, RVecPrjMap *maps, const char *name, co
 	}
 	const int order = (int)RVecPrjMap_length (maps);
 	RPrjMap *map = RVecPrjMap_emplace_back (maps);
-	if (!map) {
-		return;
-	}
 	map->name = R_STR_ISNOTEMPTY (name)? strdup (name): NULL;
 	map->file = R_STR_ISNOTEMPTY (file)? strdup (file): NULL;
 	map->pmin = pmin;
@@ -481,9 +478,7 @@ static void rprj_mods_write(RPrjCursor *cur) {
 		};
 		rprj_mods_write_one (cur->b, &mod);
 		R2ProjectMod *slot = RVecPrjMod_emplace_back (&cur->mods);
-		if (slot) {
-			*slot = mod;
-		}
+		*slot = mod;
 	}
 }
 

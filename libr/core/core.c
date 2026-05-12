@@ -3705,9 +3705,6 @@ R_API RCoreAutocomplete *r_core_autocomplete_add(RCoreAutocomplete *parent, cons
 		return NULL;
 	}
 	RCoreAutocomplete *autocmpl = RVecCoreAutocomplete_emplace_back (&parent->subcmds);
-	if (!autocmpl) {
-		return NULL;
-	}
 	autocmpl->cmd = strdup (cmd);
 	autocmpl->locked = lock;
 	autocmpl->type = (ut8)type;

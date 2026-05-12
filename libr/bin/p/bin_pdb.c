@@ -76,14 +76,11 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinPDBObj *obj = bf->bo->bin_obj;
 	if (!obj || !obj->pdb.pdb_streams2) {
-		return ret;
+		return true;
 	}
 
 	// Extract symbols from PDB global symbol stream
@@ -117,7 +114,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 
 	if (!gsym) {
-		return ret;
+		return true;
 	}
 
 	gsym_data_stream = (SGDATAStream *)gsym->stream;
@@ -128,7 +125,7 @@ static RList *symbols(RBinFile *bf) {
 	}
 
 	if (!pe_stream || !gsym_data_stream || !gsym_data_stream->globals_list) {
-		return ret;
+		return true;
 	}
 
 	it = r_list_iterator (gsym_data_stream->globals_list);
@@ -140,28 +137,22 @@ static RList *symbols(RBinFile *bf) {
 
 		sctn_header = r_list_get_n (pe_stream->sections_hdrs, (gdata->segment - 1));
 		if (sctn_header) {
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			if (!sym) {
-				continue;
-			}
-
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
 			char *demangled_name = r_bin_demangle_msvc (gdata->name.name);
 			const char *name = demangled_name? demangled_name: gdata->name.name;
 
 			sym->name = r_bin_name_new (name);
 			sym->vaddr = bf->bo->baddr + omap_remap ((omap)? (omap->stream): NULL, gdata->offset + sctn_header->virtual_address);
 			sym->paddr = gdata->offset;
-			sym->size = 0; // PDB doesn't provide symbol sizes
 			sym->type = (gdata->symtype == 2)? "FUNC": "OBJ";
 			sym->bind = "GLOBAL";
 			sym->attr = R_BIN_ATTR_GLOBAL;
 
-			r_list_append (ret, sym);
 			free (demangled_name);
 		}
 	}
 
-	return ret;
+	return true;
 }
 
 static R_UNOWNED RList *lines(RBinFile *bf) {
@@ -338,7 +329,7 @@ RBinPlugin r_bin_plugin_pdb = {
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.lines = &lines,
 	.types = &types,
 	.info = &info,

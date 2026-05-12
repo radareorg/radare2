@@ -774,15 +774,11 @@ static void xtensa_fillval_load_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa
 	const int size = xtensa_load_size (opcode, &offset);
 
 	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
-	if (dst) {
-		dst->reg = xtensa_regname (isa, dst_rf, reg_d);
-	}
+	dst->reg = xtensa_regname (isa, dst_rf, reg_d);
 	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
-	if (src) {
-		src->reg = xtensa_regname (isa, src_rf, reg_a);
-		src->delta = offset;
-		src->memref = size;
-	}
+	src->reg = xtensa_regname (isa, src_rf, reg_a);
+	src->delta = offset;
+	src->memref = size;
 	op->direction = R_ANAL_OP_DIR_READ;
 	op->ptrsize = size;
 }
@@ -802,15 +798,11 @@ static void xtensa_fillval_store_imm(xtensa_isa isa, xtensa_opcode opcode, xtens
 	const int size = xtensa_store_size (opcode, &offset);
 
 	RAnalValue *src = RVecRArchValue_emplace_back (&op->srcs);
-	if (src) {
-		src->reg = xtensa_regname (isa, dst_rf, reg_d);
-	}
+	src->reg = xtensa_regname (isa, dst_rf, reg_d);
 	RAnalValue *dst = RVecRArchValue_emplace_back (&op->dsts);
-	if (dst) {
-		dst->reg = xtensa_regname (isa, src_rf, reg_a);
-		dst->delta = offset;
-		dst->memref = size;
-	}
+	dst->reg = xtensa_regname (isa, src_rf, reg_a);
+	dst->delta = offset;
+	dst->memref = size;
 	op->direction = R_ANAL_OP_DIR_WRITE;
 	op->ptrsize = size;
 }
@@ -832,17 +824,11 @@ static void xtensa_fillval_add_imm(xtensa_isa isa, xtensa_opcode opcode, xtensa_
 	xtensa_regfile dst_rf = xtensa_operand_regfile (isa, opcode, 0);
 	xtensa_regfile src_rf = xtensa_operand_regfile (isa, opcode, 1);
 	RAnalValue *dval = RVecRArchValue_emplace_back (&op->dsts);
-	if (dval) {
-		dval->reg = xtensa_regname (isa, dst_rf, dst);
-	}
+	dval->reg = xtensa_regname (isa, dst_rf, dst);
 	RAnalValue *sval = RVecRArchValue_emplace_back (&op->srcs);
-	if (sval) {
-		sval->reg = xtensa_regname (isa, src_rf, src);
-	}
+	sval->reg = xtensa_regname (isa, src_rf, src);
 	sval = RVecRArchValue_emplace_back (&op->srcs);
-	if (sval) {
-		sval->imm = imm;
-	}
+	sval->imm = imm;
 	xtensa_check_stack_op (isa, opcode, format, i, slot_buffer, op);
 }
 

@@ -107,20 +107,16 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
-static void gb_addsym(RList *ret, const char *name, ut64 addr, int ordinal) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+static void gb_addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, int ordinal) {
+	RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
 	sym->name = r_bin_name_new (name);
 	sym->paddr = sym->vaddr = addr;
 	sym->size = 1;
 	sym->ordinal = ordinal;
-	r_list_append (ret, sym);
 }
 
-static RList* symbols(RBinFile *bf) {
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	int i;
 	for (i = 0; i < 8; i++) {
 		char name[16];
@@ -132,7 +128,7 @@ static RList* symbols(RBinFile *bf) {
 	gb_addsym (ret, "Interrupt_Timer-Overflow", 80, 10);
 	gb_addsym (ret, "Interrupt_Serial-Transfere", 88, 11);
 	gb_addsym (ret, "Interrupt_Joypad", 96, 12);
-	return ret;
+	return true;
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -219,7 +215,7 @@ RBinPlugin r_bin_plugin_ningb = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.mem = &mem,
 };

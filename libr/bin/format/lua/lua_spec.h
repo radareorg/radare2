@@ -4,6 +4,7 @@
 #define LUASPEC 1
 
 #include <r_util.h>
+#include <r_bin.h>
 
 typedef struct lua_data_struct {
 	ut8 ver;
@@ -17,7 +18,7 @@ typedef struct lua_data_struct {
 	int upValues;
 	ut64 headerSize;
 	RList *functionList;
-	RList *symbols;
+	RVecRBinSymbol symbols;
 } RLuaHeader;
 
 #endif

@@ -158,10 +158,6 @@ static RVecAnalRef *_collect_all_refs(RefManager *rm, const AdjacencyList *adj_l
 		const Edges_Entry *edge_entry;
 		R_EDGES_FOREACH (entry->val, edge_entry) {
 			RAnalRef *ref = RVecAnalRef_emplace_back (result);
-			if (R_UNLIKELY (!ref)) {
-				RVecAnalRef_free (result);
-				return false;
-			}
 			ref->at = entry->key;
 			ref->addr = edge_entry->key;
 			ref->type = edge_entry->val;
@@ -197,11 +193,6 @@ static RVecAnalRef *_collect_refs_from(const AdjacencyList *adj_list, ut64 from)
 	const Edges_Entry *entry;
 	R_EDGES_FOREACH(edges, entry) {
 		RAnalRef *ref = RVecAnalRef_emplace_back (result);
-		if (R_UNLIKELY (!ref)) {
-			RVecAnalRef_free (result);
-			return NULL;
-		}
-
 		ref->at = from;
 		ref->addr = entry->key;
 		ref->type = entry->val;

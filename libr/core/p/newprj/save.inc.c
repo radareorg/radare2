@@ -136,9 +136,6 @@ static ut32 rprj_color_index(RVecPrjColor *colors, RColor *color) {
 		idx++;
 	}
 	RColor *copy = RVecPrjColor_emplace_back (colors);
-	if (!copy) {
-		return UT32_MAX;
-	}
 	*copy = *color;
 	return idx;
 }
@@ -162,9 +159,6 @@ static ut32 rprj_fcn_attr_intern(RPrjCursor *cur, RVecPrjFunctionAttr *attrs, RA
 		idx++;
 	}
 	R2ProjectFunctionAttr *slot = RVecPrjFunctionAttr_emplace_back (attrs);
-	if (!slot) {
-		return UT32_MAX;
-	}
 	slot->cc = cc? rprj_st_append (cur->st, cc): UT32_MAX;
 	slot->type = type;
 	slot->bits = bits;

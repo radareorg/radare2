@@ -2823,31 +2823,24 @@ R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
 	return ret;
 }
 
-R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
+static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
+	if (sym) {
+		RVecRBinSymbol_push_back (vec, sym);
+		free (sym); /* vec owns inner fields now */
+	}
+}
+
+R_API void r_bin_java_load_symbols(RBinJavaObj *bin, RVecRBinSymbol *symbols) {
 	RListIter *iter = NULL, *iter_tmp = NULL;
-	RList *imports, *symbols = r_list_newf (bsymbol_free);
-	RBinSymbol *sym = NULL;
 	RBinImport *imp;
 	RBinJavaField *fm_type;
 	r_list_foreach_safe (bin->methods_list, iter, iter_tmp, fm_type) {
-		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
-		if (sym) {
-			r_list_append (symbols, (void *)sym);
-		}
-		sym = r_bin_java_create_new_symbol_from_fm_type_meta (fm_type, bin->loadaddr);
-		if (sym) {
-			r_list_append (symbols, (void *)sym);
-		}
+		java_push_sym (symbols, r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr));
+		java_push_sym (symbols, r_bin_java_create_new_symbol_from_fm_type_meta (fm_type, bin->loadaddr));
 	}
 	r_list_foreach_safe (bin->fields_list, iter, iter_tmp, fm_type) {
-		sym = r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr);
-		if (sym) {
-			r_list_append (symbols, (void *)sym);
-		}
-		sym = r_bin_java_create_new_symbol_from_fm_type_meta (fm_type, bin->loadaddr);
-		if (sym) {
-			r_list_append (symbols, (void *)sym);
-		}
+		java_push_sym (symbols, r_bin_java_create_new_symbol_from_field (fm_type, bin->loadaddr));
+		java_push_sym (symbols, r_bin_java_create_new_symbol_from_fm_type_meta (fm_type, bin->loadaddr));
 	}
 	r_str_ncpy (bin->lang, "java", sizeof (bin->lang));
 	if (bin->cf.major[1] >= 46) {
@@ -2865,25 +2858,23 @@ R_API RList *r_bin_java_get_symbols(RBinJavaObj *bin) {
 			break;
 		}
 	}
-	imports = r_bin_java_get_imports (bin);
+	RList *imports = r_bin_java_get_imports (bin);
 	r_list_foreach (imports, iter, imp) {
-		sym = R_NEW0 (RBinSymbol);
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			r_str_ncpy (bin->lang, "kotlin", sizeof (bin->lang));
 		}
-		sym->name = bn_clone (imp->name);
-		sym->is_imported = true;
-		if (!sym->name) {
-			free (sym);
+		RBinName *cloned_name = bn_clone (imp->name);
+		if (!cloned_name) {
 			break;
 		}
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
+		sym->name = cloned_name;
+		sym->is_imported = true;
 		sym->type = "import";
 		sym->vaddr = sym->paddr = imp->ordinal;
 		sym->ordinal = imp->ordinal;
-		r_list_append (symbols, (void *)sym);
 	}
 	r_list_free (imports);
-	return symbols;
 }
 
 R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {

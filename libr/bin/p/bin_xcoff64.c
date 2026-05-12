@@ -157,30 +157,23 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	int i;
-	RBinSymbol *ptr = NULL;
 	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	if (obj->symbols) {
+		RVecRBinSymbol_reserve (ret, obj->hdr.f_nsyms);
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
-			if (!(ptr = R_NEW0 (RBinSymbol))) {
-				break;
-			}
-			if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
-				r_list_append (ret, ptr);
-				ht_up_insert (obj->sym_ht, (ut64)i, ptr);
-			} else {
-				free (ptr);
+			RBinSymbol tmp = {0};
+			RBinSymbol *p = &tmp;
+			if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
+				RVecRBinSymbol_push_back (ret, &tmp);
+				ht_up_insert (obj->sym_ht, (ut64)i, RVecRBinSymbol_last (ret));
 			}
 			i += obj->symbols[i].sym.n_numaux;
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -242,7 +235,7 @@ RBinPlugin r_bin_plugin_xcoff64 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.fields = &fields,
 	.size = &size

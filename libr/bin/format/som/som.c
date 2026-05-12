@@ -407,12 +407,11 @@ R_IPI RList *r_bin_som_get_sections(void *o) {
 	return list;
 }
 
-R_IPI RList *r_bin_som_get_symbols(void *o, bool load_unnamed) {
+R_IPI bool r_bin_som_get_symbols_vec(void *o, RVecRBinSymbol *vec, bool load_unnamed) {
 	RSomFile *obj = (RSomFile *)o;
 	if (!obj || !obj->symbols) {
-		return NULL;
+		return false;
 	}
-	RList *list = r_list_newf ((RListFree)r_bin_symbol_free);
 	RListIter *iter;
 	RSomSymbol *sym;
 	r_list_foreach (obj->symbols, iter, sym) {
@@ -431,12 +430,10 @@ R_IPI RList *r_bin_som_get_symbols(void *o, bool load_unnamed) {
 			free (name);
 			continue;
 		}
-		RBinSymbol *bs = R_NEW0 (RBinSymbol);
+		RBinSymbol *bs = RVecRBinSymbol_emplace_back (vec);
 		bs->name = r_bin_name_new_from (name);
 		bs->paddr = sym->symbol_value;
 		bs->vaddr = sym->symbol_value + obj->baddr;
-		bs->size = 0;
-		bs->ordinal = 0;
 		bs->bind = (sym->symbol_scope == 1)? "LOCAL": "GLOBAL";
 		ut32 sym_type = sym->symbol_type;
 		switch (sym_type) {
@@ -454,9 +451,8 @@ R_IPI RList *r_bin_som_get_symbols(void *o, bool load_unnamed) {
 			bs->type = "NOTYPE";
 			break;
 		}
-		r_list_append (list, bs);
 	}
-	return list;
+	return true;
 }
 
 static char *somtype(uint32_t magic) {
