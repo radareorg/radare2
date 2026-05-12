@@ -4326,6 +4326,9 @@ reread:
 		}
 		break;
 	}
+	case 'R': // "/R"
+		R_LOG_ERROR ("/R is now known as /G");
+		break;
 	case 'G': // "/G"
 		if (input[1] == '?') {
 			r_core_cmd_help (core, help_msg_slash_G);
