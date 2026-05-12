@@ -246,18 +246,9 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 		}
 	}
 	int type = -1;
-	if (bo->symbols) {
-		// deprecate
-		r_list_foreach (bo->symbols, iter, sym) {
-			if (!check_symbol_lang (bf, &lc, sym, &type)) {
-				break;
-			}
-		}
-	} else {
-		R_VEC_FOREACH (&bo->symbols_vec, sym) {
-			if (!check_symbol_lang (bf, &lc, sym, &type)) {
-				break;
-			}
+	R_VEC_FOREACH (&bo->symbols_vec, sym) {
+		if (!check_symbol_lang (bf, &lc, sym, &type)) {
+			break;
 		}
 	}
 	if (type != -1) {

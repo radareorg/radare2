@@ -1763,13 +1763,13 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 		return;
 	}
 	RBinObject *bo = bf->bo;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinSection *sec;
 	RBinSymbol *sym;
 	bool countmode = (input[2] == 'c');
 
 	PJ *pj = *_pj;
-	RList *symbols = r_bin_file_get_symbols (bf);
+	RVecRBinSymbol *symbols = r_bin_file_get_symbols_vec (bf);
 	r_list_foreach (bo->sections, iter, sec) {
 		int vsize = sec->vsize;
 		if (vsize < 1) {
@@ -1779,7 +1779,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 			pj_o (pj);
 			pj_ks (pj, "section", sec->name);
 			pj_ka (pj, "symbols");
-			r_list_foreach (symbols, iter2, sym) {
+			R_VEC_FOREACH (symbols, sym) {
 				if (inrange (sec, sym)) {
 					pj_o (pj);
 					pj_ks (pj, "name", r_bin_name_tostring (sym->name));
@@ -1798,7 +1798,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 			free (hsz);
 			if (countmode) {
 				int count = 0;
-				r_list_foreach (symbols, iter2, sym) {
+				R_VEC_FOREACH (symbols, sym) {
 					if (inrange (sec, sym)) {
 						count++;
 					}
@@ -1806,7 +1806,7 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 				r_cons_printf (core->cons, " = %d symbols\n", count);
 			} else {
 				r_cons_newline (core->cons);
-				r_list_foreach (symbols, iter2, sym) {
+				R_VEC_FOREACH (symbols, sym) {
 					if (inrange (sec, sym)) {
 						r_cons_printf (core->cons, "    - %8d %s\n", sym->size, r_bin_name_tostring (sym->name));
 					}
@@ -2231,15 +2231,8 @@ static void cmd_is(RCore *core, const char *input, PJ *pj, bool is_array, int mo
 			continue;
 		}
 		core->bin->cur = bf;
-		// Cache input[1] to avoid repeated memory reads
 		char cmd_char = input[1];
-		// Get symbol count from either symbols (old list-based) or symbols_vec (new vector-based)
-		size_t symcount = 0;
-		if (obj->symbols) {
-			symcount = r_list_length (obj->symbols);
-		} else {
-			symcount = RVecRBinSymbol_length (&obj->symbols_vec);
-		}
+		size_t symcount = RVecRBinSymbol_length (&obj->symbols_vec);
 		// Use switch for cleaner code (simplified from multiple if-else chains)
 		switch (cmd_char) {
 		case 'j':
@@ -2799,7 +2792,7 @@ static int cmd_info(void *data, const char *input) {
 			R_FREE (core->table_query);
 			core->table_query = strdup (input + 2);
 			RBinObject *obj = r_bin_cur_object (core->bin);
-			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, (obj && obj->symbols)? r_list_length (obj->symbols): 0);
+			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, obj? RVecRBinSymbol_length (&obj->symbols_vec): 0);
 			// table query here
 		} else {
 			RBININFO ("exports", R_CORE_BIN_ACC_EXPORTS, input + 1, 0);

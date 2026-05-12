@@ -113,16 +113,6 @@ static void filter_unnamed_imports_vec(RVecRBinImport *imports) {
 	}
 }
 
-static void filter_unnamed_symbols(RList *symbols) {
-	RListIter *iter, *tmp;
-	RBinSymbol *sym;
-	r_list_foreach_safe (symbols, iter, tmp, sym) {
-		if (!symbol_has_value (sym)) {
-			r_list_delete (symbols, iter);
-		}
-	}
-}
-
 static void filter_unnamed_imports(RList *imports) {
 	RListIter *iter, *tmp;
 	RBinImport *imp;
@@ -187,14 +177,7 @@ static void object_delete_items(RBinObject *o) {
 	ht_up_free (o->strings_db);
 
 	RVecRBinImport_fini (&o->imports_vec);
-	if (!RVecRBinSymbol_empty (&o->symbols_vec)) {
-		/* explicit deep cleanup for symbols via fini which calls r_bin_symbol_fini */
-		RVecRBinSymbol_fini (&o->symbols_vec);
-		if (o->symbols) {
-			o->symbols->free = free; /* internal data freed by vec fini, just free structs */
-		}
-	}
-	r_list_free (o->symbols);
+	RVecRBinSymbol_fini (&o->symbols_vec);
 
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
@@ -336,16 +319,8 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 
 static RList *classes_from_symbols(RBinFile *bf) {
 	RBinSymbol *sym;
-	RListIter *iter;
-	// TODO: Use rvec here
-	if (bf->bo->symbols) {
-		r_list_foreach (bf->bo->symbols, iter, sym) {
-			classes_from_symbols2 (bf, sym);
-		}
-	} else {
-		R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
-			classes_from_symbols2 (bf, sym);
-		}
+	R_VEC_FOREACH (&bf->bo->symbols_vec, sym) {
+		classes_from_symbols2 (bf, sym);
 	}
 	return bf->bo->classes;
 }
@@ -410,13 +385,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 
 fail:
 	r_strpool_free (bo->pool);
-	if (!RVecRBinSymbol_empty (&bo->symbols_vec)) {
-		RVecRBinSymbol_fini (&bo->symbols_vec);
-		if (bo->symbols) {
-			bo->symbols->free = free;
-		}
-	}
-	r_list_free (bo->symbols);
+	RVecRBinSymbol_fini (&bo->symbols_vec);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
@@ -592,20 +561,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			}
 		}
 		clamp_symbols_vec (&bo->symbols_vec, limit);
-	} else if (p->symbols) {
-		bo->symbols = p->symbols (bf); // 5s
-		if (bo->symbols) {
-			bo->symbols->free = r_bin_symbol_free;
-			REBASE_PADDR (bo, bo->symbols, RBinSymbol);
-			import_cache_cleanup (bo);
-			if (!bin->options.load_unnamed) {
-				filter_unnamed_symbols (bo->symbols);
-			}
-			if (bin->filter && bin->options.load_unnamed) {
-				r_bin_filter_symbols (bf, bo->symbols); // 5s
-			}
-			clamp_list (bo->symbols, limit);
-		}
 	}
 	if (p->info) {
 		r_bin_info_free (bo->info);

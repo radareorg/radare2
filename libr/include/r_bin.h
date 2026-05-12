@@ -404,7 +404,6 @@ typedef struct r_bin_object_t {
 	RStrpool *pool;
 	RList/*<RBinSection>*/ *sections; // DEPRECATE
 	RList/*<RBinImport>*/ *imports; // DEPRECATE
-	// RList/*<RBinSymbol>*/ *symbols; // DEPRECATE
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
@@ -659,7 +658,6 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	// R2_600 - deprecate in r2-6.0.0
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
-	RList/*<RBinSymbol>*/* (*symbols)(RBinFile *bf); // R2_590: return VecBinSymbol* for better memory usage and perf
 	RList/*<RBinImport>*/* (*imports)(RBinFile *bf); // R2_590: return VecBinImport*
 	// R2_590 - implement them in all the plugins
 	bool (*sections_vec)(RBinFile *bf); // R2_590
@@ -917,7 +915,6 @@ R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);
 R_API RList *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
-R_API RList *r_bin_get_symbols(RBin *bin);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.
@@ -955,7 +952,6 @@ R_API void r_bin_file_free(void /*RBinFile*/ *bf_);
 // RBinFile.get
 R_API RBinFile *r_bin_file_at(RBin *bin, ut64 addr);
 R_API RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
-R_API RList *r_bin_file_get_symbols(RBinFile *bf);
 R_API RVecRBinSymbol *r_bin_file_get_symbols_vec(RBinFile *bf);
 R_API RVecRBinImport *r_bin_file_get_imports_vec(RBinFile *bf);
 //
@@ -1047,7 +1043,6 @@ R_API ut64 r_bin_attr_fromstring(const char *s, bool compact);
 typedef struct HtSU_t HtSU;
 
 R_API void r_bin_load_filter(RBin *bin, ut64 rules);
-R_API void r_bin_filter_symbols(RBinFile *bf, RList *list);
 R_API void r_bin_filter_sections(RBinFile *bf, RList *list);
 R_API char *r_bin_filter_name(RBinFile *bf, HtSU *db, ut64 addr, const char *name);
 R_API bool r_bin_strpurge(RBin *bin, const char *str, ut64 refaddr);

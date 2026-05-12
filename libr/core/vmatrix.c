@@ -266,9 +266,8 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 		}
 	} else if (!strcmp (cat, "symbols")) {
 		RBinSymbol *sym;
-		RListIter *iter;
-		const RList *symbols = r_bin_get_symbols (rvm->core->bin);
-		r_list_foreach (symbols, iter, sym) {
+		RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm->core->bin);
+		R_VEC_FOREACH (symbols, sym) {
 			if (item_count >= max_items) {
 				break;
 			}
@@ -854,10 +853,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 						}
 					} else if (!strcmp (cat, "symbols")) {
 						RBinSymbol *sym;
-						RListIter *iter;
-						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+						RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm.core->bin);
 						int count = 0;
-						r_list_foreach (symbols, iter, sym) {
+						R_VEC_FOREACH (symbols, sym) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = sym->vaddr;
 								break;
@@ -947,10 +945,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 						}
 					} else if (!strcmp (cat, "symbols")) {
 						RBinSymbol *sym;
-						RListIter *iter;
-						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+						RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm.core->bin);
 						int count = 0;
-						r_list_foreach (symbols, iter, sym) {
+						R_VEC_FOREACH (symbols, sym) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = sym->vaddr;
 								break;
@@ -1010,8 +1007,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 					const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 					max_items = r_list_length (flags);
 				} else if (!strcmp (cat, "symbols")) {
-					const RList *symbols = r_bin_get_symbols (rvm.core->bin);
-					max_items = r_list_length (symbols);
+					RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm.core->bin);
+					max_items = symbols ? RVecRBinSymbol_length (symbols) : 0;
 				} else if (!strcmp (cat, "imports")) {
 					RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
 					max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
@@ -1081,8 +1078,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 						const RList *flags = r_flag_get_list (rvm.core->flags, 0);
 						max_items = r_list_length (flags);
 					} else if (!strcmp (cat, "symbols")) {
-						const RList *symbols = r_bin_get_symbols (rvm.core->bin);
-						max_items = r_list_length (symbols);
+						RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm.core->bin);
+						max_items = symbols ? RVecRBinSymbol_length (symbols) : 0;
 					} else if (!strcmp (cat, "imports")) {
 						RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
 						max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
@@ -1265,10 +1262,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 										}
 									} else if (!strcmp (cat, "symbols")) {
 										RBinSymbol *sym;
-										RListIter *iter;
-										const RList *symbols = r_bin_get_symbols (rvm.core->bin);
+										RVecRBinSymbol *symbols = r_bin_get_symbols_vec (rvm.core->bin);
 										int count = 0;
-										r_list_foreach (symbols, iter, sym) {
+										R_VEC_FOREACH (symbols, sym) {
 											if (count == rvm.selected_item) {
 												rvm.selected_addr = sym->vaddr;
 												break;
