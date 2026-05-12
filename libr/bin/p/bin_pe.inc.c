@@ -809,14 +809,12 @@ static bool has_canary(RBinFile *bf) {
 	if (check_inlined_canary (bf)) {
 		return true;
 	}
-	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
-	// TODO: use O(1) when imports sdbized
-	RListIter *iter;
 	RBinPEObj *pe = PE_(get) (bf);
 	if (pe) {
-		const RList* relocs_list = pe->relocs;
-		RBinReloc *rel;
+		const RList *relocs_list = pe->relocs;
 		if (relocs_list) {
+			RListIter *iter;
+			RBinReloc *rel;
 			r_list_foreach (relocs_list, iter, rel) {
 				if (rel->import) {
 					const char *name = r_bin_name_tostring2 (rel->import->name, 'o');
@@ -827,14 +825,12 @@ static bool has_canary(RBinFile *bf) {
 			}
 		}
 	} else {  // rabin2 needs this as it will not initialise bin
-		const RList* imports_list = imports (bf);
+		imports_vec (bf);
 		RBinImport *imp;
-		if (imports_list) {
-			r_list_foreach (imports_list, iter, imp) {
-				const char *name = r_bin_name_tostring2 (imp->name, 'o');
-				if (!strcmp (name, "__security_init_cookie")) {
-					return true;
-				}
+		R_VEC_FOREACH (&bf->bo->imports_vec, imp) {
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
+			if (!strcmp (name, "__security_init_cookie")) {
+				return true;
 			}
 		}
 	}
