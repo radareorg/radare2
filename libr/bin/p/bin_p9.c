@@ -365,6 +365,7 @@ static bool symbols_vec(RBinFile *bf) {
 	SymVec *history = NULL; // <Sym>
 	HtUP *histories = NULL; // <ut64, SymVec *>
 	StrVec *names = NULL; // <char *>
+	RList *all_histories = NULL; // owns every allocated SymVec*
 	const RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 	ut64 i;
 	Sym sym = {0};
@@ -377,7 +378,16 @@ static bool symbols_vec(RBinFile *bf) {
 		goto error;
 	}
 
+	if (!(all_histories = r_list_newf ((RListFree)SymVec_free))) {
+		goto error;
+	}
+
 	const ut64 syms = o->header_size + o->header.text + o->header.data;
+	const ut64 bsize = r_buf_size (bf->buf);
+	// clamp tainted header fields against the actual buffer size
+	if (syms > bsize || o->header.syms > bsize - syms) {
+		goto error;
+	}
 
 	ut64 offset = 0;
 	while (offset < o->header.syms) {
@@ -389,7 +399,7 @@ static bool symbols_vec(RBinFile *bf) {
 
 		// source file name components
 		if (sym.type == 'f') {
-			if (sym.value * 4 > r_buf_size (bf->buf)) {
+			if (sym.value > bsize / 4) {
 				R_LOG_ERROR ("Prevented huge memory allocation");
 				break;
 			}
@@ -453,6 +463,11 @@ static bool symbols_vec(RBinFile *bf) {
 
 			if (!history) {
 				history = SymVec_new ();
+				if (!history) {
+					free (name);
+					goto error;
+				}
+				r_list_append (all_histories, history);
 			}
 
 			Sym history_sym = {sym.value, 'z', name};
@@ -510,6 +525,10 @@ static bool symbols_vec(RBinFile *bf) {
 	history = NULL;
 
 	const ut64 pcs = syms + o->header.syms + o->header.spsz;
+	// clamp tainted header fields against the actual buffer size
+	if (pcs > bsize || o->header.pcsz > bsize - pcs) {
+		goto error;
+	}
 
 	ut64 line = 0;
 	// base address (for kernels the header is NOT mapped)
@@ -556,11 +575,13 @@ static bool symbols_vec(RBinFile *bf) {
 
 	ht_up_free (histories);
 	StrVec_free (names);
+	r_list_free (all_histories);
 	return true;
 error:
 	sym_fini_vec (&sym);
 	StrVec_free (names);
 	ht_up_free (histories);
+	r_list_free (all_histories);
 	return false;
 }
 

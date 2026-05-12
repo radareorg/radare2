@@ -366,6 +366,7 @@ R_API char *r_str_md2txt(const char *page, bool usecolor, bool useutf8, void *co
 						} else {
 							r_strbuf_append (sb, "   \n");
 						}
+						free (line);
 						p = nextlist + 1;
 						nextlist = strstr (p, "\n");
 					}

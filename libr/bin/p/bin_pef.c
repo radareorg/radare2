@@ -903,10 +903,17 @@ static bool symbols_vec(RBinFile *bf) {
 	if (exportHashTablePower >= 30) {
 		return true;
 	}
+	// guard against a hostile exportedSymbolCount that would overflow
+	// the ut32 arithmetic below (stringLenTable + 4 * exportedSymbolCount)
+	// and against using it as a loop boundary
+	if (exportedSymbolCount > 0x10000000) {
+		return true;
+	}
 	ut64 hashTableSize = 4ULL << exportHashTablePower;
 	if (hashTableSize > 0xffffffffULL) {
 		return true;
 	}
+	const ut64 bsize = r_buf_size (bf->buf);
 	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (ut32)hashTableSize;
 	ut32 exportTable = stringLenTable + 4 * exportedSymbolCount;
 	int i;
@@ -922,8 +929,12 @@ static bool symbols_vec(RBinFile *bf) {
 		if (index < 0 || index >= pef->nsec) {
 			continue; // re-exported func or absolute mem address, not supported
 		}
+		// guard against tainted nameLen/nameOfs that would read past the buffer
+		if (nameOfs > bsize || (ut64)nameLen > bsize - nameOfs) {
+			continue;
+		}
 
-		char *name = calloc (1, nameLen + 1); // +1 for the null terminator, which is not on disk
+		char *name = calloc (1, (size_t)nameLen + 1); // +1 for the null terminator, which is not on disk
 		if (!name) {
 			continue;
 		}

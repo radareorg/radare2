@@ -525,7 +525,9 @@ static bool symbols_vec(RBinFile *bf) {
 						// Add methoddef at its RVA
 						ptr = RVecRBinSymbol_emplace_back (ret);
 						if (dsym->namespace && dsym->namespace[0]) {
-							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
+							char *full_name = r_str_newf ("%s.%s", dsym->namespace, dsym->name);
+							ptr->name = r_bin_name_new (full_name);
+							free (full_name);
 						} else {
 							ptr->name = r_bin_name_new (dsym->name);
 						}
