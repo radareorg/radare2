@@ -1189,8 +1189,13 @@ static int cmd_seek(void *data, const char *input) {
 		r_core_cmd_help (core, help_msg_s);
 		break;
 	default:
-		if (input[0] && input[1]) {
-			ut64 n = r_num_math (core->num, input);
+		if (input[0] && isdigit (input[1])) {
+			const char *err = NULL;
+			ut64 n = r_num_math_err (core->num, input, &err);
+			if (err) {
+				R_LOG_ERROR ("Expected a valid number");
+				return 1;
+			}
 			if (n) {
 				if (!silent) {
 					r_io_sundo_push (core->io, core->addr, r_print_get_cursor (core->print));
@@ -1199,7 +1204,7 @@ static int cmd_seek(void *data, const char *input) {
 				r_core_block_read (core);
 			}
 		} else {
-			R_LOG_ERROR ("Invalid s subcommand");
+			r_core_return_invalid_command (core, "s", input[1]);
 		}
 		break;
 	}

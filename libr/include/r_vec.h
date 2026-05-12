@@ -404,7 +404,7 @@ static inline size_t r_vec_grow(size_t capacity) {
 		*vec->_end = *value; \
 		vec->_end++; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE type * R_NONNULL R_VEC_FUNC(vec_type, emplace_back)(vec_type *vec) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type * R_VEC_FUNC(vec_type, emplace_back)(vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
@@ -433,7 +433,7 @@ static inline size_t r_vec_grow(size_t capacity) {
 		*vec->_start = *value; \
 		vec->_end++; \
 	} \
-	static inline R_MAYBE_UNUSED R_MUSTUSE type * R_NONNULL R_VEC_FUNC(vec_type, emplace_front)(vec_type *vec) { \
+	static inline R_MAYBE_UNUSED R_MUSTUSE type * R_VEC_FUNC(vec_type, emplace_front)(vec_type *vec) { \
 		R_RETURN_VAL_IF_FAIL (vec, NULL); \
 		const size_t num_elems = R_VEC_FUNC(vec_type, length) (vec); \
 		const size_t capacity = R_VEC_CAPACITY (vec); \
