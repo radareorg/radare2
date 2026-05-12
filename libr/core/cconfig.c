@@ -4981,6 +4981,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("gadget.db", "true", "categorize gadgets in sdb");
 	SETB ("gadget.subchains", "false", "display every length gadget from gadget.len=X to 2 in /Gl");
 	SETB ("gadget.cond", "false", "include conditional jump, calls and returns in gadget search");
+	SETB ("gadget.esil", "false", "use ESIL to resolve and classify conditional gadgets");
 	SETB ("gadget.comments", "false", "display comments in gadget search output");
 
 	/* io */

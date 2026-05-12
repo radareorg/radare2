@@ -559,3 +559,70 @@ EXPECT=<<EOF
 'f gadget.0x00400390 18 0x00400390
 EOF
 RUN
+
+NAME=search conditional gadget keeps default disabled
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+"wa xor eax,eax; je 0x9"
+/Gq je~?
+q
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+NAME=search ESIL-resolved conditional gadget
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa xor eax,eax; je 0x9"
+/Gj je
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":2,"opcode":"xor eax, eax","type":"xor"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"always","target":9}]
+EOF
+RUN
+
+NAME=search ESIL-controlled conditional gadget
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa test eax,eax; je 0x9"
+/Gj je
+q
+EOF
+EXPECT=<<EOF
+[{"opcodes":[{"addr":0,"size":2,"opcode":"test eax, eax","type":"acmp"},{"addr":2,"size":2,"opcode":"je 9","type":"cjmp"}],"retaddr":2,"size":4,"condition":"controlled","target":9}]
+EOF
+RUN
+
+NAME=search ESIL-memory conditional stays unknown
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e gadget.esil=true
+"wa cmp byte [rax], 0; je 0x9"
+/Gq je~?
+q
+EOF
+EXPECT=<<EOF
+0
+EOF
+RUN

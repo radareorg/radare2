@@ -1253,6 +1253,7 @@ static bool is_call_gadget(const RAnalOp *aop, const ut8 crop) {
 	}
 	if (crop) {
 		switch (aop->type) {
+		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_UCCALL:
 			return true;
 		}
@@ -1270,7 +1271,10 @@ static bool is_jump_gadget(const RAnalOp *aop, const ut8 crop) {
 	}
 	if (crop) {
 		switch (aop->type) {
+		case R_ANAL_OP_TYPE_CJMP:
 		case R_ANAL_OP_TYPE_UCJMP:
+		case R_ANAL_OP_TYPE_RCJMP:
+		case R_ANAL_OP_TYPE_MCJMP:
 			return true;
 		}
 	}
@@ -1309,6 +1313,237 @@ static bool is_end_gadget(const RAnalOp *aop, int gadget_type, const ut8 crop) {
 			return is_ret_gadget (aop, crop) || is_call_gadget (aop, crop) || is_jump_gadget (aop, crop);
 		}
 	}
+}
+
+typedef enum {
+	R_CORE_GADGET_ESIL_COND_NONE,
+	R_CORE_GADGET_ESIL_COND_ALWAYS,
+	R_CORE_GADGET_ESIL_COND_NEVER,
+	R_CORE_GADGET_ESIL_COND_CONTROLLED,
+	R_CORE_GADGET_ESIL_COND_UNKNOWN,
+} RCoreGadgetEsilCond;
+
+typedef struct {
+	bool conditional;
+	RCoreGadgetEsilCond condition;
+	bool target_set;
+	ut64 target;
+} RCoreGadgetEsilInfo;
+
+typedef struct {
+	bool ok;
+	bool taken;
+	bool target_set;
+	bool trapped;
+	ut64 target;
+} RCoreGadgetEsilRun;
+
+static const char *gadget_esil_cond_tostring(RCoreGadgetEsilCond cond) {
+	switch (cond) {
+	case R_CORE_GADGET_ESIL_COND_ALWAYS:
+		return "always";
+	case R_CORE_GADGET_ESIL_COND_NEVER:
+		return "never";
+	case R_CORE_GADGET_ESIL_COND_CONTROLLED:
+		return "controlled";
+	case R_CORE_GADGET_ESIL_COND_UNKNOWN:
+		return "unknown";
+	default:
+		return "none";
+	}
+}
+
+static bool is_conditional_end_gadget(const RAnalOp *aop, int gadget_type) {
+	return (aop->type & R_ANAL_OP_TYPE_COND)
+		&& is_end_gadget (aop, gadget_type, true)
+		&& !is_end_gadget (aop, gadget_type, false);
+}
+
+static bool gadget_anal_op_for_hit(RCore *core, RCoreAsmHit *hit, RAnalOp *op, int mask) {
+	if (!hit || hit->len < 1) {
+		return false;
+	}
+	ut8 *buf = malloc (hit->len);
+	if (!buf) {
+		return false;
+	}
+	r_io_read_at (core->io, hit->addr, buf, hit->len);
+	int ret = r_anal_op (core->anal, op, hit->addr, buf, hit->len, mask);
+	free (buf);
+	return ret > 0;
+}
+
+static bool gadget_esil_find_cond_end(RCore *core, RList *hitlist, int gadget_type, ut64 *addr) {
+	RListIter *iter;
+	RCoreAsmHit *hit;
+	bool found = false;
+
+	r_list_foreach (hitlist, iter, hit) {
+		RAnalOp op = {0};
+		if (gadget_anal_op_for_hit (core, hit, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT)) {
+			if (is_conditional_end_gadget (&op, gadget_type)) {
+				*addr = hit->addr;
+				found = true;
+			}
+		}
+		r_anal_op_fini (&op);
+	}
+	return found;
+}
+
+static REsil *gadget_esil_new(RCore *core) {
+	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
+	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
+	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
+	if (esil) {
+		esil->anal = core->anal;
+		r_io_bind (core->io, &core->anal->iob);
+		bool nonull = r_config_get_b (core->config, "esil.nonull");
+		r_esil_setup (esil, core->anal, true, false, nonull);
+		esil->verbose = 0;
+		esil->nowrite = true;
+	}
+	return esil;
+}
+
+static void gadget_esil_seed_registers(RCore *core, ut64 seed) {
+	RListIter *iter;
+	RRegItem *reg_item;
+	RList *regs = r_reg_get_list (core->anal->reg, R_REG_TYPE_GPR);
+	int nr = 1;
+
+	r_list_foreach (regs, iter, reg_item) {
+		ut64 value = seed? seed + (nr * 0x11111111ULL): 0;
+		r_reg_set_value (core->anal->reg, reg_item, value);
+		nr++;
+	}
+}
+
+static bool gadget_esil_eval_run(RCore *core, RList *hitlist, ut64 cond_addr, ut64 seed, RCoreGadgetEsilRun *run) {
+	RListIter *iter;
+	RCoreAsmHit *hit;
+	bool found = false;
+	bool ok = true;
+	REsil *saved_esil = core->anal->esil;
+	RIOBind saved_iob = core->anal->iob;
+	REsil *esil = gadget_esil_new (core);
+
+	memset (run, 0, sizeof (*run));
+	if (!esil) {
+		core->anal->esil = saved_esil;
+		core->anal->iob = saved_iob;
+		return false;
+	}
+	if (!r_reg_arena_push (core->anal->reg)) {
+		r_esil_free (esil);
+		core->anal->esil = saved_esil;
+		core->anal->iob = saved_iob;
+		return false;
+	}
+	gadget_esil_seed_registers (core, seed);
+	r_list_foreach (hitlist, iter, hit) {
+		RAnalOp op = {0};
+		if (!gadget_anal_op_for_hit (core, hit, &op,
+				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT)) {
+			ok = false;
+			r_anal_op_fini (&op);
+			break;
+		}
+		const char *expr = R_STRBUF_SAFEGET (&op.esil);
+		const ut64 next = op.addr + op.size;
+		r_reg_setv (core->anal->reg, "PC", next);
+		esil->addr = op.addr;
+		esil->jump_target = UT64_MAX;
+		esil->jump_target_set = 0;
+		esil->trap = 0;
+		if (R_STR_ISNOTEMPTY (expr)) {
+			ok = r_esil_parse (esil, expr);
+			r_esil_stack_free (esil);
+			if (esil->trap) {
+				run->trapped = true;
+				ok = false;
+			}
+			if (!ok) {
+				r_anal_op_fini (&op);
+				break;
+			}
+		}
+		if (hit->addr == cond_addr) {
+			ut64 pc = r_reg_getv (core->anal->reg, "PC");
+			if (pc == op.addr) {
+				pc = next;
+			}
+			const ut64 fail = op.fail != UT64_MAX? op.fail: next;
+			run->target = pc;
+			run->target_set = pc != UT64_MAX;
+			run->taken = pc != fail;
+			found = true;
+			r_anal_op_fini (&op);
+			break;
+		}
+		r_anal_op_fini (&op);
+	}
+	r_reg_arena_pop (core->anal->reg);
+	r_esil_free (esil);
+	core->anal->esil = saved_esil;
+	core->anal->iob = saved_iob;
+	run->ok = ok && found && !run->trapped;
+	return run->ok;
+}
+
+static bool gadget_esil_classify_condition(RCore *core, RList *hitlist, int gadget_type, bool crop, RCoreGadgetEsilInfo *info) {
+	static const ut64 seeds[] = {
+		0,
+		1,
+		5,
+		UT64_MAX
+	};
+	RCoreGadgetEsilRun first = {0};
+	bool have = false;
+	bool unknown = false;
+	bool controlled = false;
+	ut64 cond_addr = UT64_MAX;
+	size_t i;
+
+	memset (info, 0, sizeof (*info));
+	info->condition = R_CORE_GADGET_ESIL_COND_NONE;
+	if (!gadget_esil_find_cond_end (core, hitlist, gadget_type, &cond_addr)) {
+		return true;
+	}
+	info->conditional = true;
+	info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
+	for (i = 0; i < R_ARRAY_SIZE (seeds); i++) {
+		RCoreGadgetEsilRun run = {0};
+		if (!gadget_esil_eval_run (core, hitlist, cond_addr, seeds[i], &run)) {
+			unknown = true;
+			continue;
+		}
+		if (!have) {
+			first = run;
+			have = true;
+			continue;
+		}
+		if (run.taken != first.taken || run.target != first.target || run.target_set != first.target_set) {
+			controlled = true;
+		}
+	}
+	if (!have) {
+		info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
+	} else if (unknown) {
+		info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
+	} else if (controlled) {
+		info->condition = R_CORE_GADGET_ESIL_COND_CONTROLLED;
+		info->target = first.target;
+		info->target_set = first.target_set;
+	} else {
+		info->condition = first.taken
+			? R_CORE_GADGET_ESIL_COND_ALWAYS
+			: R_CORE_GADGET_ESIL_COND_NEVER;
+		info->target = first.target;
+		info->target_set = first.target_set;
+	}
+	return crop || info->condition != R_CORE_GADGET_ESIL_COND_UNKNOWN;
 }
 
 static bool insert_into(ut64 bit, void *user) {
@@ -1455,7 +1690,7 @@ ret:
 	return hitlist;
 }
 
-static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
+static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCoreGadgetEsilInfo *esil_info) {
 	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
@@ -1527,6 +1762,12 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 		if (hit) {
 			pj_kN (pj, "retaddr", hit->addr);
 			pj_ki (pj, "size", size);
+		}
+		if (esil_info && esil_info->conditional) {
+			pj_ks (pj, "condition", gadget_esil_cond_tostring (esil_info->condition));
+			if (esil_info->target_set) {
+				pj_kN (pj, "target", esil_info->target);
+			}
 		}
 		pj_end (pj);
 		break;
@@ -1633,6 +1874,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
 	const ut8 crop = r_config_get_i (core->config, "gadget.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const bool gadget_esil = r_config_get_b (core->config, "gadget.esil");
 	const ut8 subchain = r_config_get_i (core->config, "gadget.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "gadget.len");
 	const char *arch = r_config_get (core->config, "asm.arch");
@@ -1745,7 +1987,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 				r_anal_op_fini (&end_gadget);
 				continue;
 			}
-			if (is_end_gadget (&end_gadget, gadget_type, crop)) {
+			if (is_end_gadget (&end_gadget, gadget_type, crop || gadget_esil)) {
 #if 0
 				if (search->maxhits && r_list_length (end_list) >= search->maxhits) {
 					// limit number of high level rop gadget results
@@ -1842,6 +2084,13 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 						r_anal_op_fini (&asmop);
 						continue;
 					}
+					RCoreGadgetEsilInfo esil_info = {0};
+					if (gadget_esil && !gadget_esil_classify_condition (core, hitlist,
+							gadget_type, crop, &esil_info)) {
+						r_list_free (hitlist);
+						r_anal_op_fini (&asmop);
+						continue;
+					}
 					if (gadgetSdb) {
 						RListIter *iter;
 
@@ -1872,11 +2121,11 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 					}
 					if ((mode == 'q') && subchain) {
 						do {
-							print_rop (core, hitlist, NULL, mode);
+							print_rop (core, hitlist, NULL, mode, &esil_info);
 							hitlist->head = hitlist->head->n;
 						} while (hitlist->head->n);
 					} else {
-						print_rop (core, hitlist, param->pj, mode);
+						print_rop (core, hitlist, param->pj, mode, &esil_info);
 					}
 					r_list_free (hitlist);
 					if (max_count > 0) {
@@ -4382,7 +4631,7 @@ reread:
 						r_list_append (hitlist, hit);
 					} while (*(s = strchr (s, ')') + 1) != '\0');
 
-					print_rop (core, hitlist, param.pj, mode);
+					print_rop (core, hitlist, param.pj, mode, NULL);
 					r_list_free (hitlist);
 				}
 			}
