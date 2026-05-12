@@ -194,15 +194,8 @@ static bool symbols_vec(RBinFile *bf) {
 	}
 
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	RBinSymbol *s;
-	RListIter *iter;
-	r_list_foreach (lh->symbols, iter, s) {
-		RBinSymbol *clone = r_bin_symbol_clone (s);
-		if (clone) {
-			RVecRBinSymbol_push_back (ret, clone);
-			free (clone);
-		}
-	}
+	/* transfer header-parsed symbols into the bin object's vec */
+	RVecRBinSymbol_swap (ret, &lh->symbols);
 
 	ParseStruct parseStruct = {0};
 	parseStruct.onFunction = handleFuncSymbol;
