@@ -1498,14 +1498,20 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 	return ptr;
 }
 
-// use void* to honor the RListFree signature
-R_API void r_bin_field_free(void *_field) {
-	RBinField *field = (RBinField *)_field;
+R_API void r_bin_field_fini(RBinField *field) {
 	if (field) {
 		r_bin_name_free (field->name);
 		r_bin_name_free (field->type);
 		free (field->comment);
 		free (field->format);
+	}
+}
+
+// use void* to honor the RListFree signature
+R_API void r_bin_field_free(void *_field) {
+	RBinField *field = (RBinField *)_field;
+	if (field) {
+		r_bin_field_fini (field);
 		free (field);
 	}
 }

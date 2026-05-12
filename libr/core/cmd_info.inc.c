@@ -222,7 +222,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	RListIter *iter, *iter2;
 	r_list_foreach (bo->classes, iter, k) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
-		r_list_foreach (k->fields, iter2, f) {
+		R_VEC_FOREACH (&k->fields, f) {
 			const char *kind = r_bin_field_kindstr (f);
 			const char *fname = r_bin_name_tostring2 (f->name, 'f');
 			const ut64 addr = iova? f->vaddr: f->paddr;
@@ -911,7 +911,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 				free (addr);
 			}
 			RBinField *field;
-			r_list_foreach (klass->fields, iter2, field) {
+			R_VEC_FOREACH (&klass->fields, field) {
 				char *addr = r_str_newf ("0x%08" PFMT64x, iova? field->vaddr: field->paddr);
 				const char *origin_str = r_bin_class_origin_tostring (klass->origin);
 				r_table_add_row (t, addr, "field", kname, field->name, origin_str, NULL);

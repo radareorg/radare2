@@ -57,14 +57,6 @@ static void bsymbol_free(void *p) {
 	}
 }
 
-static void bfield_free(void *p) {
-	RBinField *f = p;
-	if (f) {
-		bn_free (f->name);
-		free (f);
-	}
-}
-
 static void bimport_free(void *p) {
 	RBinImport *i = p;
 	if (i) {
@@ -87,7 +79,7 @@ static char *r_bin_java_unmangle_method(const char *flags, const char *name, con
 static int r_bin_java_is_fm_type_private(RBinJavaField *fm_type);
 static int r_bin_java_is_fm_type_protected(RBinJavaField *fm_type);
 static RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr);
-static RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx);
+static void r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx, RVecRBinField *out);
 static RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
 static int r_bin_java_extract_reference_name(const char *input_str, char **ref_str, ut8 array_cnt);
 static RList *r_bin_java_extract_type_values(const char *arg_str);
@@ -2384,13 +2376,11 @@ static inline ut64 fieldattr_j2r(ut32 ja) {
 	return attr;
 }
 
-static RBinField *r_bin_java_create_new_rbinfield_from_field(RBinJavaField *fm_type, ut64 baddr) {
-	RBinField *field = R_NEW0 (RBinField);
+static void r_bin_java_fill_rbinfield_from_field(RBinField *field, RBinJavaField *fm_type, ut64 baddr) {
 	field->name = R_NEW0 (RBinName);
 	field->name->name = strdup (fm_type->name);
 	field->paddr = fm_type->file_offset + baddr;
 	field->attr = fieldattr_j2r (fm_type->flags);
-	return field;
 }
 
 static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_type, ut64 baddr) {
@@ -2612,22 +2602,17 @@ static RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 	return methods;
 }
 
-static RList *r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx) {
-	RList *fields = r_list_newf (bfield_free);
+static void r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx, RVecRBinField *out) {
 	RListIter *iter;
 	RBinJavaField *fm_type;
-	RBinField *field = NULL;
 	r_list_foreach (bin->fields_list, iter, fm_type) {
-		if (fm_type) {
-			if (fm_type && fm_type->field_ref_cp_obj && fm_type->field_ref_cp_obj->metas->ord == class_idx) {
-				field = r_bin_java_create_new_rbinfield_from_field (fm_type, bin->loadaddr);
-				if (field) {
-					r_list_append (fields, field);
-				}
+		if (fm_type && fm_type->field_ref_cp_obj && fm_type->field_ref_cp_obj->metas->ord == class_idx) {
+			RBinField *slot = RVecRBinField_emplace_back (out);
+			if (slot) {
+				r_bin_java_fill_rbinfield_from_field (slot, fm_type, bin->loadaddr);
 			}
 		}
 	}
-	return fields;
 }
 
 static bool is_class_interface(RBinJavaObj *bin, RBinJavaCPTypeObj *cp_obj) {
@@ -2683,7 +2668,7 @@ static void bclass_free(void *p) {
 	RBinClass *k = p;
 	if (k) {
 		r_list_free (k->methods);
-		r_list_free (k->fields);
+		RVecRBinField_fini (&k->fields);
 		bn_free (k->name);
 		r_list_free (k->super);
 		free (k);
@@ -2706,7 +2691,9 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	}
 #endif
 	k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
-	k->fields = names_only? r_list_newf (bfield_free): r_bin_java_enum_class_fields (bin, bin->cf2.this_class);
+	if (!names_only) {
+		r_bin_java_enum_class_fields (bin, bin->cf2.this_class, &k->fields);
+	}
 	char *kname = r_bin_java_get_this_class_name (bin);
 	k->name = bn_new (kname);
 	free (kname);
@@ -2723,7 +2710,9 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS && (this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj))) {
 			RBinClass *k = R_NEW0 (RBinClass);
 			k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
-			k->fields = names_only? r_list_newf (bfield_free): r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx);
+			if (!names_only) {
+				r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx, &k->fields);
+			}
 			k->index = idx;
 			k->origin = R_BIN_CLASS_ORIGIN_BIN;
 			char *name = r_bin_java_get_item_name_from_bin_cp_list (bin, cp_obj);

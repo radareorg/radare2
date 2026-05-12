@@ -695,6 +695,30 @@ typedef struct r_bin_plugin_t {
 
 typedef void (*RBinSymbollCallback)(RBinObject *obj, void *symbol);
 
+typedef enum {
+	R_BIN_FIELD_KIND_VARIABLE,
+	R_BIN_FIELD_KIND_FIELD,
+	R_BIN_FIELD_KIND_PROPERTY,
+} RBinFieldKind;
+
+typedef struct r_bin_field_t {
+	ut64 vaddr;
+	ut64 paddr;
+	ut64 value;
+	int size;
+	int offset;
+	RBinName *name;
+	RBinName *type;
+	RBinFieldKind kind;
+	char *comment;
+	char *format;
+	bool format_named; // whether format is the name of a format or a raw pf format string
+	RBinAttribute attr;
+} RBinField;
+
+R_API void r_bin_field_fini(RBinField *f);
+R_VEC_TYPE_WITH_FINI (RVecRBinField, RBinField, r_bin_field_fini);
+
 typedef struct r_bin_class_t {
 	RBinName *name;
 	RList *super; // list of RBinName
@@ -705,7 +729,7 @@ typedef struct r_bin_class_t {
 	char *ns; // namespace // maybe RBinName?
 	// R2_600 - Use RVec here
 	RList *methods; // <RBinSymbol>
-	RList *fields; // <RBinField>
+	RVecRBinField fields;
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
 	ut64 lang;
@@ -753,27 +777,6 @@ typedef struct r_bin_string_t {
 	ut32 length; // length of string in chars
 	char type; // Ascii Wide cp850 utf8 base64 ...
 } RBinString;
-
-typedef enum {
-	R_BIN_FIELD_KIND_VARIABLE,
-	R_BIN_FIELD_KIND_FIELD,
-	R_BIN_FIELD_KIND_PROPERTY,
-} RBinFieldKind;
-
-typedef struct r_bin_field_t {
-	ut64 vaddr;
-	ut64 paddr;
-	ut64 value;
-	int size;
-	int offset;
-	RBinName *name;
-	RBinName *type;
-	RBinFieldKind kind;
-	char *comment;
-	char *format;
-	bool format_named; // whether format is the name of a format or a raw pf format string
-	RBinAttribute attr;
-} RBinField;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, const char *comment, const char *format, bool format_named);

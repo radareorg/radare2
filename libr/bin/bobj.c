@@ -137,7 +137,7 @@ static bool classes_names_only(RBinFile *bf) {
 static void class_drop_details(RBinClass *klass) {
 	if (klass) {
 		r_list_purge (klass->methods);
-		r_list_purge (klass->fields);
+		RVecRBinField_clear (&klass->fields);
 	}
 }
 
@@ -285,9 +285,13 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 	if (fn) {
 		RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
 		if (c && !classes_names_only (bf)) {
-			RBinField *f = r_bin_field_new (sym->paddr, sym->vaddr, -1, sym->size, fn, NULL, NULL, false);
+			RBinField *f = RVecRBinField_emplace_back (&c->fields);
 			if (f) {
-				r_list_append (c->fields, f);
+				f->name = r_bin_name_new (fn);
+				f->paddr = sym->paddr;
+				f->vaddr = sym->vaddr;
+				f->value = -1;
+				f->size = sym->size;
 			}
 		}
 		free (fn);

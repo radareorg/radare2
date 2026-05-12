@@ -308,14 +308,16 @@ static RList* classes(RBinFile *bf) {
 			RListIter *iter_field;
 			DotNetField *dfield;
 			r_list_foreach (dsym->fields, iter_field, dfield) {
-				RBinField *field = R_NEW0 (RBinField);
+				RBinField *field = RVecRBinField_emplace_back (&target_cls->fields);
+				if (!field) {
+					break;
+				}
 				field->name = r_bin_name_new (dfield->name);
 				field->kind = R_BIN_FIELD_KIND_FIELD;
 				field->vaddr = 0;
 				field->paddr = 0;
 				field->size = 0;
 				field->offset = dfield->offset;
-				r_list_append (target_cls->fields, field);
 			}
 		}
 		free (class_name_full);

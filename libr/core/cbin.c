@@ -3980,10 +3980,9 @@ static bool bin_trycatch(RCore *core, PJ *pj, int mode) {
 static void classdump_c(RCore *core, RBinClass *c) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	r_cons_printf (core->cons, "typedef struct {\n");
-	RListIter *iter2;
 	RBinField *f;
 	bool is_objc = false;
-	r_list_foreach (c->fields, iter2, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->name) {
 			const char *fn = r_bin_name_tostring2 (f->name, pref);
 			const char *ft = f->type? r_bin_name_tostring2 (f->type, pref): NULL;
@@ -4019,10 +4018,9 @@ static void classdump_cxx(RCore *core, RBinClass *c) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	const char *klass_name = r_bin_name_tostring2 (c->name, pref);
 	r_cons_printf (core->cons, "class %s {\n", klass_name);
-	RListIter *iter2;
 	RBinField *f;
 	bool is_objc = false;
-	r_list_foreach (c->fields, iter2, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->name) {
 			const char *fn = r_bin_name_tostring2 (f->name, pref);
 			const char *ft = r_bin_name_tostring2 (f->type, pref);
@@ -4078,7 +4076,7 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 	}
 	r_cons_printf (core->cons, "{\n");
 	free (pn);
-	r_list_foreach (c->fields, iter, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (!f->name) {
 			continue;
 		}
@@ -4126,7 +4124,7 @@ static void classdump_java(RCore *core, RBinClass *c) {
 	r_cons_printf (core->cons, "package %s;\n\n", pn);
 	r_cons_printf (core->cons, "public class %s {\n", cn);
 	free (pn);
-	r_list_foreach (c->fields, iter, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->name && f->kind == R_BIN_FIELD_KIND_VARIABLE) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			const char *tp = r_bin_name_tostring2 (f->type, pref);
@@ -4160,7 +4158,7 @@ static bool is_javaish(RBinFile *bf) {
 
 static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
-	RListIter *iter, *iter2, *iter3;
+	RListIter *iter, *iter2;
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
@@ -4252,7 +4250,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 						free (method);
 					}
 				}
-				r_list_foreach (c->fields, iter2, f) {
+				R_VEC_FOREACH (&c->fields, f) {
 					const char *fname = r_bin_name_tostring2 (f->name, pref);
 					const char *kind = r_bin_field_kindstr (f);
 					// XXX remove 'field' and just use kind?
@@ -4354,7 +4352,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 			}
 			if (!names_only) {
-				r_list_foreach (c->fields, iter2, f) {
+				R_VEC_FOREACH (&c->fields, f) {
 				const char *kind = r_bin_field_kindstr (f);
 				const char *fname = r_bin_name_tostring2 (f->name, pref);
 				char *fn = r_str_newf ("field.%s.%s.%s", cname, kind, fname);
@@ -4368,12 +4366,12 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			// C struct
 			if (!names_only) {
 				r_cons_printf (core->cons, "'td struct %s {", cname);
-				if (r_list_empty (c->fields)) {
+				if (RVecRBinField_empty (&c->fields)) {
 					// XXX workaround because we cant register empty structs yet
 					// XXX https://github.com/radareorg/radare2/issues/16342
 					r_cons_printf (core->cons, " char empty[0];");
 				} else {
-					r_list_foreach (c->fields, iter2, f) {
+					R_VEC_FOREACH (&c->fields, f) {
 						const char *fn = r_bin_name_tostring (f->name);
 						const char *tn = f->type? r_bin_name_tostring (f->type): NULL;
 						char *n = objc_name_toc (fn);
@@ -4479,9 +4477,9 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			if (!names_only && !r_list_empty (c->fields)) {
+			if (!names_only && !RVecRBinField_empty (&c->fields)) {
 				pj_ka (pj, "fields");
-				r_list_foreach (c->fields, iter3, f) {
+				R_VEC_FOREACH (&c->fields, f) {
 					pj_o (pj);
 					pj_ks (pj, "name", r_bin_name_tostring2 (f->name, pref));
 					pj_ks (pj, "kind", r_bin_field_kindstr (f));
@@ -4536,7 +4534,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			m = 0;
 			const char *ls = r_bin_lang_tostring (c->lang);
 			if (!names_only) {
-				r_list_foreach (c->fields, iter3, f) {
+				R_VEC_FOREACH (&c->fields, f) {
 				char *mflags = r_core_bin_attr_tostring (core, f->attr, mode);
 				const char *ks = r_bin_field_kindstr (f);
 				ut64 faddr = compute_addr (core->bin, f->paddr, f->vaddr, va);

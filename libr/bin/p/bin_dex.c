@@ -1140,11 +1140,10 @@ static void parse_dex_class_fields(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 		}
 		RVecRBinSymbol_push_back (&dex->symbols_vec, &sym);
 
-		RBinField *field = R_NEW0 (RBinField);
+		RBinField *field = RVecRBinField_emplace_back (&cls->fields);
 		field->vaddr = field->paddr = sym.paddr;
 		field->name = r_bin_name_clone (sym.name);
 		field->attr = get_method_attr (accessFlags);
-		r_list_append (cls->fields, field);
 		lastIndex = fieldIndex;
 	}
 }
@@ -1485,11 +1484,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	if (!cls->methods) {
 		goto beach;
 	}
-	cls->fields = r_list_new ();
-	if (!cls->fields) {
-		r_list_free (cls->methods);
-		goto beach;
-	}
+	RVecRBinField_init (&cls->fields);
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
 	RVecRBinClass_push_back (&dex->classes_vec, cls);
 	cls = RVecRBinClass_last (&dex->classes_vec);

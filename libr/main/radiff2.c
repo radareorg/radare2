@@ -826,11 +826,11 @@ static ut8 *get_fields(RCore *c, int *len) {
 	RBinClass *klass;
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	r_list_foreach (list, iter, klass) {
 		const char *kname = r_bin_name_tostring (klass->name);
 		RBinField *field;
-		r_list_foreach (klass->fields, iter2, field) {
+		R_VEC_FOREACH (&klass->fields, field) {
 			const char *fname = r_bin_name_tostring2 (field->name, pref);
 			r_list_append (reslist, r_str_newf ("%s.%s", kname, fname));
 		}

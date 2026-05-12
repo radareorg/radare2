@@ -198,9 +198,8 @@ static char *objc_decl_type(const char *field_type, bool *is_object) {
 }
 
 static bool objc_has_property(RBinClass *c, const char *pname, int pref) {
-	RListIter *iter;
 	RBinField *f;
-	r_list_foreach (c->fields, iter, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
@@ -213,9 +212,8 @@ static bool objc_has_property(RBinClass *c, const char *pname, int pref) {
 }
 
 static char *objc_guess_property_type(RBinClass *c, const char *pname, int pref, bool *is_object) {
-	RListIter *iter;
 	RBinField *f;
-	r_list_foreach (c->fields, iter, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
@@ -317,11 +315,11 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	} else {
 		r_cons_printf (core->cons, "@interface %s\n", cname);
 	}
-	RListIter *iter2, *iter3;
+	RListIter *iter3;
 	RBinField *f;
 	RBinSymbol *sym;
 	bool has_ivars = false;
-	r_list_foreach (c->fields, iter2, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->kind == R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}
@@ -342,7 +340,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	if (has_ivars) {
 		r_cons_println (core->cons, "}");
 	}
-	r_list_foreach (c->fields, iter2, f) {
+	R_VEC_FOREACH (&c->fields, f) {
 		if (f->kind != R_BIN_FIELD_KIND_PROPERTY || !f->name) {
 			continue;
 		}

@@ -285,9 +285,7 @@ static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	return r;
 }
 
-static int sort_by_offset(const void *_a , const void *_b) {
-	const RBinField *a = (const RBinField*)_a;
-	const RBinField *b = (const RBinField*)_b;
+static int sort_by_offset(const RBinField *a, const RBinField *b) {
 	if (a->offset > b->offset) {
 		return 1;
 	}
@@ -349,7 +347,10 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		if (!r) {
 			return;
 		}
-		field = R_NEW0 (RBinField);
+		field = RVecRBinField_emplace_back (&klass->fields);
+		if (!field) {
+			return;
+		}
 		memset (&i, '\0', sizeof (struct MACH0_(SIVar)));
 		if (r + left < r || r + sizeof (struct MACH0_(SIVar)) < r) {
 			goto error;
@@ -425,72 +426,61 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 				}
 				name[name_len] = 0;
 			}
-			// XXX the field name shouldnt contain the class name
-			// field->realname = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
-			// field->name = r_str_newf ("%s::%s%s", klass->name, "(ivar)", name);
 			field->name = r_bin_name_new (name);
-			// r_bin_name_demangled (field->name, simplifiedNameGoesHere);
 			free (name);
 		} else {
 			R_LOG_WARN ("not parsing ivars, wrong va2pa");
 		}
 
 		r = va2pa (bf, i.type, NULL, &left);
-		if (r) {
-			if (r + left < r) {
-				goto error;
-			}
-			if (r > bf->size || r + left > bf->size) {
-				goto error;
-			}
-			char *type = NULL;
-			if (mo->has_crypto) {
-				type = strdup ("some_encrypted_data");
-			// 	left = strlen (name) + 1;
-			} else {
-				int type_len = R_MIN (MAX_CLASS_NAME_LEN, left);
-				type = calloc (1, type_len + 1);
-				if (type) {
-					r_buf_read_at (bf->buf, r, (ut8 *)type, type_len);
-					type[type_len] = 0;
-				}
-			}
-			if (type) {
-				field->type = r_bin_name_new (type);
-				R_FREE (type);
-			} else {
-				r_bin_name_free (field->type);
-				field->type = NULL;
-			}
-			if (field->name) {
-				field->kind = R_BIN_FIELD_KIND_VARIABLE;
-				r_list_append (klass->fields, field);
-				field = NULL;
-			} else {
-				R_LOG_WARN ("field name is empty");
-				r_bin_field_free (field);
-				field = NULL;
-			}
-		} else {
+		if (!r) {
 			R_LOG_DEBUG ("va2pa error");
 			goto error;
+		}
+		if (r + left < r || r > bf->size || r + left > bf->size) {
+			goto error;
+		}
+		char *type = NULL;
+		if (mo->has_crypto) {
+			type = strdup ("some_encrypted_data");
+		} else {
+			int type_len = R_MIN (MAX_CLASS_NAME_LEN, left);
+			type = calloc (1, type_len + 1);
+			if (type) {
+				r_buf_read_at (bf->buf, r, (ut8 *)type, type_len);
+				type[type_len] = 0;
+			}
+		}
+		if (type) {
+			field->type = r_bin_name_new (type);
+			R_FREE (type);
+		}
+		if (!field->name) {
+			R_LOG_WARN ("field name is empty");
+			RVecRBinField_pop_back (&klass->fields);
+			field = NULL;
+		} else {
+			field->kind = R_BIN_FIELD_KIND_VARIABLE;
+			field = NULL;
 		}
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
 	}
-	r_list_sort (klass->fields, sort_by_offset);
-	RBinField *isa = R_NEW0 (RBinField);
-	isa->name = r_bin_name_new ("isa");
-	isa->size = sizeof (mach0_ut);
-	isa->type = r_bin_name_new ("struct objc_class *");
-	// TODO r_bin_name_demangled (isa->type, "ObjC.Class*");
-	isa->kind = R_BIN_FIELD_KIND_VARIABLE;
-	isa->vaddr = 0;
-	isa->offset = 0;
-	r_list_prepend (klass->fields, isa);
+	RVecRBinField_sort (&klass->fields, sort_by_offset);
+	RBinField *isa = RVecRBinField_emplace_front (&klass->fields);
+	if (isa) {
+		isa->name = r_bin_name_new ("isa");
+		isa->size = sizeof (mach0_ut);
+		isa->type = r_bin_name_new ("struct objc_class *");
+		isa->kind = R_BIN_FIELD_KIND_VARIABLE;
+		isa->vaddr = 0;
+		isa->offset = 0;
+	}
 	return;
 error:
-	r_bin_field_free (field);
+	if (field) {
+		RVecRBinField_pop_back (&klass->fields);
+	}
 }
 
 static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
@@ -502,7 +492,6 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 	struct MACH0_(SObjcProperty) op;
 	mach0_ut r;
 	ut32 offset, left, j;
-	char *name = NULL;
 	int len;
 	RBinField *property = NULL;
 	ut8 sopl[sizeof (struct MACH0_(SObjcPropertyList))] = {0};
@@ -548,9 +537,10 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		if (!r) {
 			return;
 		}
-
-		property = R_NEW0 (RBinField);
-
+		property = RVecRBinField_emplace_back (&klass->fields);
+		if (!property) {
+			return;
+		}
 		memset (&op, '\0', sizeof (struct MACH0_(SObjcProperty)));
 
 		if (r + left < r || r + sizeof (struct MACH0_(SObjcProperty)) < r) {
@@ -578,17 +568,12 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		r = va2pa (bf, op.name, NULL, &left);
 		if (r) {
 			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *)bf->bo->bin_obj;
-			if (r > bf->size || r + left > bf->size) {
-				goto error;
-			}
-			if (r + left < r) {
+			if (r > bf->size || r + left > bf->size || r + left < r) {
 				goto error;
 			}
 			if (bin->has_crypto) {
-				// TODO: better + shorter name
 				const char k[] = "some_encrypted_data";
 				property->name = r_bin_name_new (k);
-				left = strlen (k) + 1;
 			} else {
 				char lname[MAX_CLASS_NAME_LEN] = {0};
 				size_t name_len = R_MIN (MAX_CLASS_NAME_LEN - 1, left);
@@ -599,47 +584,22 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 					property->name = r_bin_name_new (lname);
 				}
 			}
-			// property->name = r_str_newf ("%s::%s%s", klass->name, "(property)", name);
-			name = NULL;
 			property->kind = R_BIN_FIELD_KIND_PROPERTY;
 			property->offset = j;
 			property->paddr = r;
 		}
-#if 0
-		r = va2pa (bf, op.attributes, NULL, &left);
-		if (r != 0) {
-			struct MACH0_(obj_t) *bin = (struct MACH0_(obj_t) *) bf->bo->bin_obj;
-			int is_crypted = bin->has_crypto;
-
-			if (r > bf->size || r + left > bf->size) goto error;
-			if (r + left < r) goto error;
-
-			if (is_crypted == 1) {
-				name = strdup ("some_encrypted_data");
-				left = strlen (name) + 1;
-			} else {
-				name = malloc (left);
-				len = r_buf_read_at (bf->buf, r, (ut8 *)name, left);
-				if (len == 0 || len == -1) goto error;
-			}
-
-			R_FREE (name);
+		if (!property->name) {
+			RVecRBinField_pop_back (&klass->fields);
 		}
-#endif
-		if (property->name) {
-			r_list_append (klass->fields, property);
-		} else {
-			free (property);
-		}
-
+		property = NULL;
 		p += sizeof (struct MACH0_(SObjcProperty));
 		offset += sizeof (struct MACH0_(SObjcProperty));
 	}
 	return;
 error:
-	R_FREE (property);
-	R_FREE (name);
-	return;
+	if (property) {
+		RVecRBinField_pop_back (&klass->fields);
+	}
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -1717,24 +1677,20 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			if (d >= dmax) {
 				break;
 			}
-			RBinField *field = R_NEW0 (RBinField);
 			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
 			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d - 1] - 4;
 			ut64 field_method_addr = field_name_addr;
-#if 0
-			if (field_method_addr & 1) {
-				// unaligned aka invalid
-				break;
-			}
-#endif
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
 			if (R_STR_ISEMPTY (field_name)) {
 				free (field_name);
-				free (field);
 				break;
 			}
-
+			RBinField *field = RVecRBinField_emplace_back (&klass->fields);
+			if (!field) {
+				free (field_name);
+				break;
+			}
 			char *field_type = readstr (bf, field_type_addr, NULL, NULL);
 			if (field_type) {
 				const char *ftype = field_type;
@@ -1742,14 +1698,11 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 					// basic type
 					ftype += r_str_nlen (ftype, 6);
 				}
-				const char *mangled_type = ftype;
-				if (!field->type) {
-					field->type = r_bin_name_new (mangled_type);
-					char *demangled_type = r_bin_demangle_swift (mangled_type, usecmd, trylib);
-					if (demangled_type) {
-						r_bin_name_demangled (field->type, demangled_type);
-						free (demangled_type);
-					}
+				field->type = r_bin_name_new (ftype);
+				char *demangled_type = r_bin_demangle_swift (ftype, usecmd, trylib);
+				if (demangled_type) {
+					r_bin_name_demangled (field->type, demangled_type);
+					free (demangled_type);
 				}
 				free (field_type);
 			}
@@ -1757,16 +1710,10 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			char *fname = r_name_filter_dup (field_name);
 			r_bin_name_filtered (field->name, fname);
 			free (fname);
-
+			free (field_name);
 			field->paddr = field_method_addr;
 			field->vaddr = vaddr;
-#if 0
-			r_cons_printf ("f sym.swift.%s.field.%s = 0x%08"PFMT64x"\n",
-				typename, field->name, bf->bo->baddr + field_method_addr);
-#endif
-			free (field_name);
 			field->kind = R_BIN_FIELD_KIND_PROPERTY;
-			r_list_append (klass->fields, field);
 		}
 	}
 	free (typename);

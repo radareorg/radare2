@@ -1286,7 +1286,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 		}
 		// TODO: use vectors!
 		c->methods = r_list_newf (r_bin_symbol_free);
-		c->fields = r_list_newf (r_bin_field_free);
+		RVecRBinField_init (&c->fields);
 		c->attr = attr;
 		c->origin = R_BIN_CLASS_ORIGIN_BIN;
 	}
@@ -1316,7 +1316,7 @@ R_API void r_bin_class_fini(RBinClass *k) {
 		r_list_free (k->super);
 		free (k->visibility_str);
 		r_list_free (k->methods);
-		r_list_free (k->fields);
+		RVecRBinField_fini (&k->fields);
 	}
 }
 

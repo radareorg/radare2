@@ -1481,7 +1481,7 @@ static RList *classes(RBinFile *bf) {
 
 				RBinClass *klass = R_NEW0 (RBinClass);
 				klass->methods = r_list_new ();
-				klass->fields = r_list_new ();
+				RVecRBinField_init (&klass->fields);
 				klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 
 				bf->bo->bin_obj = mach0;
