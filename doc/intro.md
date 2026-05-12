@@ -319,10 +319,10 @@ m<char>: Define a bookmark
 
 ## Gadgets
 ```
-/G opcodes: Search opcodes
-	/G pop,pop,ret
-/Gl opcodes: Search opcodes and print them in linear way
-	/Gl jmp eax,call ebx
+/ag opcodes: Search opcodes
+	/ag pop,pop,ret
+/agl opcodes: Search opcodes and print them in linear way
+	/agl jmp eax,call ebx
 /a: Search assembly
 	/a jmp eax
 pda: Returns a library of gadgets that can be use. These gadgets are obtained by disassembling byte per byte instead of obeying to opcode length

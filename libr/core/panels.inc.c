@@ -5883,7 +5883,7 @@ static int string_data_sec_cb(void *user) {
 
 static int rop_cb(void *user) {
 	RCore *core = (RCore *)user;
-	add_cmdf_panel (core, "gadget grep: ", "'/G %s");
+	add_cmdf_panel (core, "gadget grep: ", "'/ag %s");
 	return 0;
 }
 

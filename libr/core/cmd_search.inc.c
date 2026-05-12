@@ -3,7 +3,6 @@
 #if R_INCLUDE_BEGIN
 
 #include <sdb/ht_uu.h>
-#include "cmd_search_gadget.inc.c"
 
 static int cmd_search(void *data, const char *input);
 
@@ -96,7 +95,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/!x", " 00", "inverse hexa search (find first byte != 0x00)",
 	"/+", " /bin/sh", "construct the string with chunks",
 	"//", "", "repeat last search",
-	"/a", "[?][1aoditfmsltf] jmp eax", "find instructions by text or bytes (asm/disasm)",
+	"/a", "[?][1aoditfgmsltf] jmp eax", "find instructions by text or bytes (asm/disasm)",
 	"/b", "[?][p]", "search backwards, command modifier, followed by other command",
 	"/B", "", "search possible base address",
 	"/c", "[?][adr]", "search for crypto materials",
@@ -105,7 +104,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/E", " esil-expr", "address matching given esil expressions $$ = here",
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
-	"/G", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
+	"/ag", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
 	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
 	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
 	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
@@ -160,6 +159,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
+	"/ag", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
 	"/ai", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "same as aoml, list all opcodes",
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
@@ -183,12 +183,12 @@ static RCoreHelpMessage help_msg_slash_c = {
 };
 
 static RCoreHelpMessage help_msg_slash_G = {
-	"Usage: /G", "", "search for gadgets",
-	"/G[/jq*]", " [string]", "show gadgets",
-	"/Gk", " [klass]", "query stored gadget klass",
-	"/GR[/jq*]", " [string]", "show return gadgets",
-	"/GC[/jq*]", " [string]", "show call gadgets",
-	"/GJ[/jq*]", " [string]", "show jump gadgets",
+	"Usage: /ag", "", "search for gadgets",
+	"/ag[/jq*]", " [string]", "show gadgets",
+	"/agk", " [klass]", "query stored gadget klass",
+	"/agR[/jq*]", " [string]", "show return gadgets",
+	"/agC[/jq*]", " [string]", "show call gadgets",
+	"/agJ[/jq*]", " [string]", "show jump gadgets",
 	NULL
 };
 
@@ -224,10 +224,13 @@ static RCoreHelpMessage help_msg_slash_r = {
 };
 
 static RCoreHelpMessage help_msg_slash_Gk = {
-	"Usage: /Gk", "", "query stored gadgets",
-	"/Gk", " [nop|mov|const|arithm|arithm_ct]", "show gadgets",
-	"/Gkj", "", "json output",
-	"/Gkq", "", "list Gadgets offsets",
+	"Usage: /agk", "", "query stored gadgets",
+	"/agk", " [ret|jop|cop|syscall|pivot|memread|memwrite|www]", "show gadgets",
+	"/agk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp]", "show primitive classes",
+	"/agk", " [cond.always|cond.controlled]", "show ESIL-classified conditional gadgets",
+	"/agk", " [nop|mov|const|arithm|arithm_ct]", "show legacy rop classes",
+	"/agkj", "", "json output",
+	"/agkq", "", "list Gadgets offsets",
 	NULL
 };
 
@@ -1245,6 +1248,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 
 static bool is_call_gadget(const RAnalOp *aop, const ut8 crop) {
 	switch (aop->type) {
+	case R_ANAL_OP_TYPE_CALL:
 	case R_ANAL_OP_TYPE_UCALL:
 	case R_ANAL_OP_TYPE_RCALL:
 	case R_ANAL_OP_TYPE_ICALL:
@@ -1315,236 +1319,7 @@ static bool is_end_gadget(const RAnalOp *aop, int gadget_type, const ut8 crop) {
 	}
 }
 
-typedef enum {
-	R_CORE_GADGET_ESIL_COND_NONE,
-	R_CORE_GADGET_ESIL_COND_ALWAYS,
-	R_CORE_GADGET_ESIL_COND_NEVER,
-	R_CORE_GADGET_ESIL_COND_CONTROLLED,
-	R_CORE_GADGET_ESIL_COND_UNKNOWN,
-} RCoreGadgetEsilCond;
-
-typedef struct {
-	bool conditional;
-	RCoreGadgetEsilCond condition;
-	bool target_set;
-	ut64 target;
-} RCoreGadgetEsilInfo;
-
-typedef struct {
-	bool ok;
-	bool taken;
-	bool target_set;
-	bool trapped;
-	ut64 target;
-} RCoreGadgetEsilRun;
-
-static const char *gadget_esil_cond_tostring(RCoreGadgetEsilCond cond) {
-	switch (cond) {
-	case R_CORE_GADGET_ESIL_COND_ALWAYS:
-		return "always";
-	case R_CORE_GADGET_ESIL_COND_NEVER:
-		return "never";
-	case R_CORE_GADGET_ESIL_COND_CONTROLLED:
-		return "controlled";
-	case R_CORE_GADGET_ESIL_COND_UNKNOWN:
-		return "unknown";
-	default:
-		return "none";
-	}
-}
-
-static bool is_conditional_end_gadget(const RAnalOp *aop, int gadget_type) {
-	return (aop->type & R_ANAL_OP_TYPE_COND)
-		&& is_end_gadget (aop, gadget_type, true)
-		&& !is_end_gadget (aop, gadget_type, false);
-}
-
-static bool gadget_anal_op_for_hit(RCore *core, RCoreAsmHit *hit, RAnalOp *op, int mask) {
-	if (!hit || hit->len < 1) {
-		return false;
-	}
-	ut8 *buf = malloc (hit->len);
-	if (!buf) {
-		return false;
-	}
-	r_io_read_at (core->io, hit->addr, buf, hit->len);
-	int ret = r_anal_op (core->anal, op, hit->addr, buf, hit->len, mask);
-	free (buf);
-	return ret > 0;
-}
-
-static bool gadget_esil_find_cond_end(RCore *core, RList *hitlist, int gadget_type, ut64 *addr) {
-	RListIter *iter;
-	RCoreAsmHit *hit;
-	bool found = false;
-
-	r_list_foreach (hitlist, iter, hit) {
-		RAnalOp op = {0};
-		if (gadget_anal_op_for_hit (core, hit, &op, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT)) {
-			if (is_conditional_end_gadget (&op, gadget_type)) {
-				*addr = hit->addr;
-				found = true;
-			}
-		}
-		r_anal_op_fini (&op);
-	}
-	return found;
-}
-
-static REsil *gadget_esil_new(RCore *core) {
-	int stacksize = r_config_get_i (core->config, "esil.stack.depth");
-	bool iotrap = r_config_get_b (core->config, "esil.iotrap");
-	unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
-	if (esil) {
-		esil->anal = core->anal;
-		r_io_bind (core->io, &core->anal->iob);
-		bool nonull = r_config_get_b (core->config, "esil.nonull");
-		r_esil_setup (esil, core->anal, true, false, nonull);
-		esil->verbose = 0;
-		esil->nowrite = true;
-	}
-	return esil;
-}
-
-static void gadget_esil_seed_registers(RCore *core, ut64 seed) {
-	RListIter *iter;
-	RRegItem *reg_item;
-	RList *regs = r_reg_get_list (core->anal->reg, R_REG_TYPE_GPR);
-	int nr = 1;
-
-	r_list_foreach (regs, iter, reg_item) {
-		ut64 value = seed? seed + (nr * 0x11111111ULL): 0;
-		r_reg_set_value (core->anal->reg, reg_item, value);
-		nr++;
-	}
-}
-
-static bool gadget_esil_eval_run(RCore *core, RList *hitlist, ut64 cond_addr, ut64 seed, RCoreGadgetEsilRun *run) {
-	RListIter *iter;
-	RCoreAsmHit *hit;
-	bool found = false;
-	bool ok = true;
-	REsil *saved_esil = core->anal->esil;
-	RIOBind saved_iob = core->anal->iob;
-	REsil *esil = gadget_esil_new (core);
-
-	memset (run, 0, sizeof (*run));
-	if (!esil) {
-		core->anal->esil = saved_esil;
-		core->anal->iob = saved_iob;
-		return false;
-	}
-	if (!r_reg_arena_push (core->anal->reg)) {
-		r_esil_free (esil);
-		core->anal->esil = saved_esil;
-		core->anal->iob = saved_iob;
-		return false;
-	}
-	gadget_esil_seed_registers (core, seed);
-	r_list_foreach (hitlist, iter, hit) {
-		RAnalOp op = {0};
-		if (!gadget_anal_op_for_hit (core, hit, &op,
-				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL | R_ARCH_OP_MASK_HINT)) {
-			ok = false;
-			r_anal_op_fini (&op);
-			break;
-		}
-		const char *expr = R_STRBUF_SAFEGET (&op.esil);
-		const ut64 next = op.addr + op.size;
-		r_reg_setv (core->anal->reg, "PC", next);
-		esil->addr = op.addr;
-		esil->jump_target = UT64_MAX;
-		esil->jump_target_set = 0;
-		esil->trap = 0;
-		if (R_STR_ISNOTEMPTY (expr)) {
-			ok = r_esil_parse (esil, expr);
-			r_esil_stack_free (esil);
-			if (esil->trap) {
-				run->trapped = true;
-				ok = false;
-			}
-			if (!ok) {
-				r_anal_op_fini (&op);
-				break;
-			}
-		}
-		if (hit->addr == cond_addr) {
-			ut64 pc = r_reg_getv (core->anal->reg, "PC");
-			if (pc == op.addr) {
-				pc = next;
-			}
-			const ut64 fail = op.fail != UT64_MAX? op.fail: next;
-			run->target = pc;
-			run->target_set = pc != UT64_MAX;
-			run->taken = pc != fail;
-			found = true;
-			r_anal_op_fini (&op);
-			break;
-		}
-		r_anal_op_fini (&op);
-	}
-	r_reg_arena_pop (core->anal->reg);
-	r_esil_free (esil);
-	core->anal->esil = saved_esil;
-	core->anal->iob = saved_iob;
-	run->ok = ok && found && !run->trapped;
-	return run->ok;
-}
-
-static bool gadget_esil_classify_condition(RCore *core, RList *hitlist, int gadget_type, bool crop, RCoreGadgetEsilInfo *info) {
-	static const ut64 seeds[] = {
-		0,
-		1,
-		5,
-		UT64_MAX
-	};
-	RCoreGadgetEsilRun first = {0};
-	bool have = false;
-	bool unknown = false;
-	bool controlled = false;
-	ut64 cond_addr = UT64_MAX;
-	size_t i;
-
-	memset (info, 0, sizeof (*info));
-	info->condition = R_CORE_GADGET_ESIL_COND_NONE;
-	if (!gadget_esil_find_cond_end (core, hitlist, gadget_type, &cond_addr)) {
-		return true;
-	}
-	info->conditional = true;
-	info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
-	for (i = 0; i < R_ARRAY_SIZE (seeds); i++) {
-		RCoreGadgetEsilRun run = {0};
-		if (!gadget_esil_eval_run (core, hitlist, cond_addr, seeds[i], &run)) {
-			unknown = true;
-			continue;
-		}
-		if (!have) {
-			first = run;
-			have = true;
-			continue;
-		}
-		if (run.taken != first.taken || run.target != first.target || run.target_set != first.target_set) {
-			controlled = true;
-		}
-	}
-	if (!have) {
-		info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
-	} else if (unknown) {
-		info->condition = R_CORE_GADGET_ESIL_COND_UNKNOWN;
-	} else if (controlled) {
-		info->condition = R_CORE_GADGET_ESIL_COND_CONTROLLED;
-		info->target = first.target;
-		info->target_set = first.target_set;
-	} else {
-		info->condition = first.taken
-			? R_CORE_GADGET_ESIL_COND_ALWAYS
-			: R_CORE_GADGET_ESIL_COND_NEVER;
-		info->target = first.target;
-		info->target_set = first.target_set;
-	}
-	return crop || info->condition != R_CORE_GADGET_ESIL_COND_UNKNOWN;
-}
+#include "cmd_search_gadget.inc.c"
 
 static bool insert_into(ut64 bit, void *user) {
 	r_bitset_set ((RBitset *)user, bit);
@@ -1699,6 +1474,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 	unsigned int size = 0;
 	RAnalOp analop = {0};
 	Sdb *db = NULL;
+	Sdb *gadget_db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "gadget.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
@@ -1709,6 +1485,12 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 		db = sdb_ns (core->sdb, "rop", true);
 		if (!db) {
 			R_LOG_ERROR ("Could not create SDB 'rop' namespace");
+			r_list_free (ropList);
+			return;
+		}
+		gadget_db = sdb_ns (core->sdb, "gadget", true);
+		if (!gadget_db) {
+			R_LOG_ERROR ("Could not create SDB 'gadget' namespace");
 			r_list_free (ropList);
 			return;
 		}
@@ -1757,18 +1539,16 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			rop_classify (core, db, ropList, key, size);
+			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
+				rop_classify (core, db, ropList, key, size);
+			}
+			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 		if (hit) {
 			pj_kN (pj, "retaddr", hit->addr);
 			pj_ki (pj, "size", size);
 		}
-		if (esil_info && esil_info->conditional) {
-			pj_ks (pj, "condition", gadget_esil_cond_tostring (esil_info->condition));
-			if (esil_info->target_set) {
-				pj_kN (pj, "target", esil_info->target);
-			}
-		}
+		gadget_info_json (pj, esil_info);
 		pj_end (pj);
 		break;
 	case 'q':
@@ -1806,7 +1586,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			rop_classify (core, db, ropList, key, size);
+			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
+				rop_classify (core, db, ropList, key, size);
+			}
+			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 		break;
 	default:
@@ -1863,7 +1646,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
 			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			rop_classify (core, db, ropList, key, size);
+			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
+				rop_classify (core, db, ropList, key, size);
+			}
+			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 	}
 	if (mode != 'j') {
@@ -2085,8 +1871,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 						continue;
 					}
 					RCoreGadgetEsilInfo esil_info = {0};
-					if (gadget_esil && !gadget_esil_classify_condition (core, hitlist,
-							gadget_type, crop, &esil_info)) {
+					if (!gadget_analyze_info (core, hitlist, gadget_type, crop, gadget_esil, &esil_info)) {
 						r_list_free (hitlist);
 						r_anal_op_fini (&asmop);
 						continue;
@@ -3507,107 +3292,6 @@ static void do_string_search(RCore *core, RInterval search_itv, struct search_pa
 	}
 }
 
-static void rop_kuery(void *data, const char *input, PJ *pj) {
-	RCore *core = (RCore *) data;
-	SdbListIter *sdb_iter, *it;
-	SdbList *sdb_list;
-	SdbNs *ns;
-	SdbKv *kv;
-	char *out;
-
-	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
-	if (!db_rop) {
-		R_LOG_ERROR ("could not find SDB 'rop' namespace");
-		return;
-	}
-
-	switch (*input) {
-	case 'q':
-		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list (ns->sdb, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				r_cons_printf (core->cons, "%s ", sdbkv_key (kv));
-			}
-		}
-		break;
-	case 'j':
-		pj_o (pj);
-		pj_ka (pj, "gadgets");
-		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list (ns->sdb, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char *dup = strdup (sdbkv_value (kv));
-				bool flag = false; // to free tok when doing strdup
-				char *save_ptr = NULL;
-				char *size = r_str_tok_r (dup, " ", &save_ptr);
-				char *tok = r_str_tok_r (NULL, "{}", &save_ptr);
-				if (!tok) {
-					tok = strdup ("NOP");
-					flag = true;
-				}
-				pj_o (pj);
-				pj_ks (pj, "address", sdbkv_key (kv));
-				pj_ks (pj, "size", size);
-				pj_ks (pj, "type", ns->name);
-				pj_ks (pj, "effect", tok);
-				pj_end (pj);
-				free (dup);
-				if (flag) {
-					free (tok);
-				}
-			}
-		}
-		pj_end (pj);
-		pj_end (pj);
-		break;
-	case '?':
-		r_core_cmd_help (core, help_msg_slash_Gk);
-		break;
-	case ' ':
-		if (!strcmp (input + 1, "nop")) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/nop/*");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
-			}
-		} else if (!strcmp (input + 1, "mov")) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/mov/*");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
-			}
-		} else if (!strcmp (input + 1, "const")) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/const/*");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
-			}
-		} else if (!strcmp (input + 1, "arithm")) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm/*");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
-			}
-		} else if (!strcmp (input + 1, "arithm_ct")) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/arithm_ct/*");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
-			}
-		} else {
-			R_LOG_ERROR ("Invalid ROP class");
-		}
-		break;
-	default:
-		out = sdb_querys (core->sdb, NULL, 0, "rop/***");
-		if (out) {
-			r_cons_println (core->cons, out);
-			free (out);
-		}
-		break;
-	}
-}
-
 static int memcmpdiff(const ut8 *a, const ut8 *b, int len) {
 	int i, diff = 0;
 	for (i = 0; i < len; i++) {
@@ -4406,6 +4090,72 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 	r_list_free (bounds);
 }
 
+static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *input, struct search_parameters *param) {
+	if (*input == '?') {
+		r_core_cmd_help (core, help_msg_slash_G);
+		return true;
+	}
+	if (*input == 'k') {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_slash_Gk);
+		} else {
+			rop_kuery (core, input + 1, param->pj);
+		}
+		return true;
+	}
+	if (*input == 'R' || *input == 'C' || *input == 'J') {
+		if (input[1] == '?') {
+			r_core_cmd_help (core, help_msg_slash_G);
+		} else {
+			r_core_search_rop (core, search_itv, *input, 0, input + 1, input[1] == '/', param);
+		}
+		return true;
+	}
+
+	Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
+	if (!gadgetSdb) {
+		r_core_search_rop (core, search_itv, 0, 0, input, *input == '/', param);
+		return true;
+	}
+
+	SdbKv *kv;
+	SdbListIter *sdb_iter;
+	SdbList *sdb_list = sdb_foreach_list (gadgetSdb, true);
+	ls_foreach (sdb_list, sdb_iter, kv) {
+		RList *hitlist = r_core_asm_hit_list_new ();
+		if (!hitlist) {
+			return false;
+		}
+
+		char *s = sdbkv_value (kv);
+		ut64 addr;
+		int opsz;
+		int mode = *input;
+
+		do {
+			RCoreAsmHit *hit = r_core_asm_hit_new ();
+			if (!hit) {
+				r_list_free (hitlist);
+				return false;
+			}
+			sscanf (s, "%"PFMT64x"(%"PFMT32d")", &addr, &opsz);
+			hit->addr = addr;
+			hit->len = opsz;
+			r_list_append (hitlist, hit);
+			s = strchr (s, ')');
+			if (!s) {
+				r_list_free (hitlist);
+				return false;
+			}
+			s++;
+		} while (*s);
+
+		print_rop (core, hitlist, param->pj, mode, NULL);
+		r_list_free (hitlist);
+	}
+	return true;
+}
+
 static int cmd_search(void *data, const char *input) {
 	bool dosearch = false;
 	bool dosearch_read = false;
@@ -4576,67 +4326,8 @@ reread:
 		break;
 	}
 	case 'R': // "/R"
-		R_LOG_ERROR ("/R is now known as /G");
+		R_LOG_ERROR ("/R is now known as /ag");
 		break;
-	case 'G': // "/G"
-		if (input[1] == '?') {
-			r_core_cmd_help (core, help_msg_slash_G);
-		} else if (input[1] == 'k') {
-			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_slash_Gk);
-			} else {
-				rop_kuery (core, input + 2, param.pj);
-			}
-		} else if (input[1] == 'R' || input[1] == 'C' || input[1] == 'J') {
-			if (input[2] == '?') {
-				r_core_cmd_help (core, help_msg_slash_G);
-			} else {
-				r_core_search_rop (core, search_itv, input[1], 0, input + 2, input[2] == '/', &param);
-			}
-		} else {
-			Sdb *gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false);
-
-			if (!gadgetSdb) {
-				r_core_search_rop (core, search_itv, 0, 0, input + 1, input[1] == '/', &param);
-			} else {
-				SdbKv *kv;
-				SdbListIter *sdb_iter;
-				SdbList *sdb_list = sdb_foreach_list (gadgetSdb, true);
-
-				ls_foreach (sdb_list, sdb_iter, kv) {
-					RList *hitlist = r_core_asm_hit_list_new ();
-					if (!hitlist) {
-						goto beach;
-					}
-
-					char *s = sdbkv_value (kv);
-					ut64 addr;
-					int opsz;
-					int mode = 0;
-
-					// Options, like JSON, linear, ...
-					if (input[1]) {
-						mode = *(input + 1);
-					}
-
-					do {
-						RCoreAsmHit *hit = r_core_asm_hit_new ();
-						if (!hit) {
-							r_list_free (hitlist);
-							goto beach;
-						}
-						sscanf (s, "%"PFMT64x"(%"PFMT32d")", &addr, &opsz);
-						hit->addr = addr;
-						hit->len = opsz;
-						r_list_append (hitlist, hit);
-					} while (*(s = strchr (s, ')') + 1) != '\0');
-
-					print_rop (core, hitlist, param.pj, mode, NULL);
-					r_list_free (hitlist);
-				}
-			}
-		}
-		goto beach;
 	case 'r': // "/r" and "/re"
 		{
 		RVecSearchAddr targets;
@@ -4709,6 +4400,11 @@ reread:
 		case '?':
 			r_core_cmd_help (core, help_msg_slash_a);
 			break;
+		case 'g': // "/ag"
+			if (!cmd_search_gadget (core, search_itv, input + 2, &param)) {
+				goto beach;
+			}
+			goto beach;
 		case 'd': // "/ad"
 			dosearch = false;
 			if (input[2] == '?') {
