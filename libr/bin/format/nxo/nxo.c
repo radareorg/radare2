@@ -55,12 +55,11 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = r_buf_read_le64_at (buf, relplt + (import * 24));
-			RBinImport *imp = R_NEW0 (RBinImport);
+			RBinImport *imp = RVecRBinImport_emplace_back (&bin->imports_list);
 			imp->name = r_bin_name_new (symName);
 			imp->type = "FUNC";
 			imp->bind = "NONE";
-			imp->ordinal = bin->imports_list->length;
-			r_list_append (bin->imports_list, imp);
+			imp->ordinal = RVecRBinImport_length (&bin->imports_list) - 1;
 			sym->is_imported = true;
 			sym->name = r_bin_name_new_from (symName); /* owns symName */
 			sym->paddr = pltSym - 8;

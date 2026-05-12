@@ -65,7 +65,7 @@ static RBinNXOObj *nso_new(void) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
 		RVecRBinSymbol_init (&bin->methods_list);
-		bin->imports_list = r_list_newf ((RListFree)free);
+		RVecRBinImport_init (&bin->imports_list);
 		bin->classes_list = r_list_newf ((RListFree)free);
 	}
 	return bin;

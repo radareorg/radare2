@@ -476,31 +476,20 @@ static RList* relocs(RBinFile *bf) {
 	return ret;
 }
 
-static RList* imports(RBinFile *bf) {
+static bool imports_vec(RBinFile *bf) {
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RList *ret = NULL, *list;
 	RListIter *it;
 
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
-		return NULL;
-	}
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
-		list = Pe32_r_bin_mdmp_pe_get_imports (pe32_bin);
-		if (list) {
-			r_list_join (ret, list);
-			r_list_free (list);
-		}
+		Pe32_r_bin_mdmp_pe_load_imports (pe32_bin, ret);
 	}
 	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
-		list = Pe64_r_bin_mdmp_pe_get_imports (pe64_bin);
-		if (list) {
-			r_list_join (ret, list);
-			r_list_free (list);
-		}
+		Pe64_r_bin_mdmp_pe_load_imports (pe64_bin, ret);
 	}
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -538,7 +527,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.destroy = &destroy,
 	.entries = entries,
 	.get_sdb = &get_sdb,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.info = &info,
 	.libs = &libs,
 	.load = &load,

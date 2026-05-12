@@ -2674,7 +2674,7 @@ static int cmd_info(void *data, const char *input) {
 				r_list_foreach (objs, iter, bf) {
 					RBinObject *obj = bf->bo;
 					core->bin->cur = bf;
-					int amount = (obj && obj->imports)? r_list_length (obj->imports): 0;
+					int amount = obj? RVecRBinImport_length (&obj->imports_vec): 0;
 					RBININFO ("imports", R_CORE_BIN_ACC_IMPORTS, NULL, amount);
 				}
 			} else if (mode & R_MODE_JSON) {

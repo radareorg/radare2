@@ -568,50 +568,40 @@ static void filter_import(ut8 *n) {
 	}
 }
 
-static RList* imports(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinImport *ptr = NULL;
-	RBinReloc *rel = NULL;
+static bool imports_vec(RBinFile *bf) {
 	int i;
 	const int limit = bf->rbin->options.limit;
 
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe) {
-		return NULL;
+		return false;
 	}
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
-		return NULL;
-	}
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 	r_list_free (pe->relocs);
 	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
-		r_list_free (ret);
-		return NULL;
+		return false;
 	}
 	pe->relocs = relocs;
 
 	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports)(pe);
 	if (!imports) {
-		return ret;
+		return true;
 	}
 	for (i = 0; !imports[i].last; i++) {
-		if (limit_reached (ret, limit)) {
+		if (limit_reached_vec_imports (ret, limit)) {
 			break;
 		}
 		struct r_bin_pe_import_t *imp = &imports[i];
-		ptr = R_NEW0 (RBinImport);
 		filter_import (imp->name);
+		RBinImport *ptr = RVecRBinImport_emplace_back (ret);
 		ptr->name = r_bin_name_new ((char*)imp->name);
 		ptr->libname = strdup ((char*)imp->libname);
 		ptr->bind = "NONE";
 		ptr->type = "FUNC";
 		ptr->ordinal = imp->ordinal;
-		// NOTE(eddyb) a PE hint is just an optional possible DLL export table
-		// index for the import. There is no point in exposing it.
-		//ptr->hint = imp->hint;
-		r_list_append (ret, ptr);
 
-		rel = R_NEW0 (RBinReloc);
+		RBinReloc *rel = R_NEW0 (RBinReloc);
 #ifdef R_BIN_PE64
 		rel->type = R_BIN_RELOC_64;
 #else
@@ -631,7 +621,7 @@ static RList* imports(RBinFile *bf) {
 		r_list_append (relocs, rel);
 	}
 	free (imports);
-	return ret;
+	return true;
 }
 
 static RList* relocs(RBinFile *bf) {
@@ -819,14 +809,12 @@ static bool has_canary(RBinFile *bf) {
 	if (check_inlined_canary (bf)) {
 		return true;
 	}
-	// XXX: We only need imports here but this causes leaks, we need to wait for the below. This is a horrible solution!
-	// TODO: use O(1) when imports sdbized
-	RListIter *iter;
 	RBinPEObj *pe = PE_(get) (bf);
 	if (pe) {
-		const RList* relocs_list = pe->relocs;
-		RBinReloc *rel;
+		const RList *relocs_list = pe->relocs;
 		if (relocs_list) {
+			RListIter *iter;
+			RBinReloc *rel;
 			r_list_foreach (relocs_list, iter, rel) {
 				if (rel->import) {
 					const char *name = r_bin_name_tostring2 (rel->import->name, 'o');
@@ -837,14 +825,12 @@ static bool has_canary(RBinFile *bf) {
 			}
 		}
 	} else {  // rabin2 needs this as it will not initialise bin
-		const RList* imports_list = imports (bf);
+		imports_vec (bf);
 		RBinImport *imp;
-		if (imports_list) {
-			r_list_foreach (imports_list, iter, imp) {
-				const char *name = r_bin_name_tostring2 (imp->name, 'o');
-				if (!strcmp (name, "__security_init_cookie")) {
-					return true;
-				}
+		R_VEC_FOREACH (&bf->bo->imports_vec, imp) {
+			const char *name = r_bin_name_tostring2 (imp->name, 'o');
+			if (!strcmp (name, "__security_init_cookie")) {
+				return true;
 			}
 		}
 	}

@@ -201,34 +201,20 @@ R_IPI void r_bin_le_load_symbols(RBinLEObj *bin, RVecRBinSymbol *vec) {
 	r_list_free (entries);
 }
 
-R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin) {
-	RList *l = r_list_newf ((RListFree)r_bin_import_free);
-	if (!l) {
-		return NULL;
-	}
+R_IPI void r_bin_le_load_imports(RBinLEObj *bin, RVecRBinImport *vec) {
 	LE_image_header *h = bin->header;
 	ut64 offset = (ut64)h->impproc + bin->headerOff + 1; // First entry is a null string
 	ut64 end = (ut64)h->fixupsize + h->fpagetab + bin->headerOff;
 	while (offset < end) {
-		RBinImport *imp = R_NEW0 (RBinImport);
-		if (!imp) {
-			break;
-		}
 		char *name = __read_nonnull_str_at (bin->buf, &offset);
 		if (!name) {
-			r_bin_import_free (imp);
 			break;
 		}
+		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		imp->name = r_bin_name_new (name);
 		free (name);
-		if (!imp->name) {
-			r_bin_import_free (imp);
-			break;
-		}
 		imp->type = R_BIN_TYPE_FUNC_STR;
-		r_list_append (l, imp);
 	}
-	return l;
 }
 
 R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin) {

@@ -373,14 +373,11 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *get_imports(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool imports_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	const bool load_unnamed = bf->rbin->options.load_unnamed;
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
-	if (!ret) {
-		goto bad_alloc;
-	}
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 
 	ut32 kind;
 	for (kind = 0; kind <= R_BIN_WASM_EXTERNALKIND_Global; kind++) {
@@ -397,22 +394,15 @@ static RList *get_imports(RBinFile *bf) {
 			if (!load_unnamed && r_bin_name_is_unnamed (import->field_str)) {
 				continue;
 			}
-			RBinImport *ptr = R_NEW0 (RBinImport);
-			if (!ptr) {
-				goto bad_alloc;
-			}
+			RBinImport *ptr = RVecRBinImport_emplace_back (ret);
 			ptr->name = r_bin_name_new (import->field_str);
 			ptr->classname = strdup (import->module_str);
 			ptr->type = type;
 			ptr->bind = "NONE";
 			ptr->ordinal = ordinal;
-			r_list_append (ret, ptr);
 		}
 	}
-	return ret;
-bad_alloc:
-	r_list_free (ret);
-	return NULL;
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -539,7 +529,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols_vec = &symbols_vec,
-	.imports = &get_imports,
+	.imports_vec = &imports_vec,
 	.info = &info,
 	.libs = &libs,
 	.get_offset = &getoffset,

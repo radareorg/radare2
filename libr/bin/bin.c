@@ -843,12 +843,6 @@ R_API const RList *r_bin_get_entries(RBin *bin) {
 	return o? o->entries: NULL;
 }
 
-R_API const RList *r_bin_get_imports(RBin *bin) {
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->imports: NULL;
-}
-
 R_API RBinInfo *r_bin_get_info(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);

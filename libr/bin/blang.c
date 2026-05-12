@@ -211,7 +211,6 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 	RBinObject *bo = bf->bo;
 	RBinInfo *info = bo->info;
 	RBinSymbol *sym = NULL;
-	RListIter *iter;
 	LangCheck lc = {0};
 	const char *ft = r_str_get (info->rclass);
 	const bool unknownType = info->rclass == NULL;
@@ -223,26 +222,13 @@ R_API int r_bin_load_languages(RBinFile *bf) {
 		return R_BIN_LANG_NONE;
 	}
 	RBinImport *imp;
-	if (bo->imports) {
-		// R2_600 deprecate when all plugins use the imports vec
-		r_list_foreach (bo->imports, iter, imp) {
-			const char *name = r_bin_name_tostring2 (imp->name, 'o');
-			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
-				lc.isBlocks = true;
-			} else if (r_str_startswith (name, "objc_")) {
-				lc.isObjC = true;
-				lc.cantbe.objc = true;
-			}
-		}
-	} else {
-		R_VEC_FOREACH (&bo->imports_vec, imp) {
-			const char *name = r_bin_name_tostring2 (imp->name, 'o');
-			if (!strcmp (name, "_NSConcreteGlobalBlock")) {
-				lc.isBlocks = true;
-			} else if (r_str_startswith (name, "objc_")) {
-				lc.isObjC = true;
-				lc.cantbe.objc = true;
-			}
+	R_VEC_FOREACH (&bo->imports_vec, imp) {
+		const char *name = r_bin_name_tostring2 (imp->name, 'o');
+		if (!strcmp (name, "_NSConcreteGlobalBlock")) {
+			lc.isBlocks = true;
+		} else if (r_str_startswith (name, "objc_")) {
+			lc.isObjC = true;
+			lc.cantbe.objc = true;
 		}
 	}
 	int type = -1;

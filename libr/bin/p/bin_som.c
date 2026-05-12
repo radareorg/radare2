@@ -51,11 +51,12 @@ static bool symbols_vec(RBinFile *bf) {
 	return r_bin_som_get_symbols_vec (bf->bo->bin_obj, &bf->bo->symbols_vec, bf->rbin->options.load_unnamed);
 }
 
-static RList *imports(RBinFile *bf) {
+static bool imports_vec(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
-	return r_bin_som_get_imports (bf->bo->bin_obj);
+	r_bin_som_load_imports (bf->bo->bin_obj, &bf->bo->imports_vec);
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -139,7 +140,7 @@ RBinPlugin r_bin_plugin_som = {
 	.sections = &sections,
 	.symbols_vec = &symbols_vec,
 	.minstrlen = 4,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.info = &info,
 	.fields = &fields,
 	.header = &header,

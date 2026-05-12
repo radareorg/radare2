@@ -511,19 +511,18 @@ R_IPI ut64 r_bin_som_get_size(void *o) {
 	return obj? obj->hdr.som_length: 0;
 }
 
-R_IPI RList *r_bin_som_get_imports(void *o) {
+R_IPI void r_bin_som_load_imports(void *o, RVecRBinImport *vec) {
 	RSomFile *obj = (RSomFile *)o;
 	if (!obj || !obj->imports || !obj->dl_strings) {
-		return NULL;
+		return;
 	}
-	RList *list = r_list_newf ((RListFree)r_bin_import_free);
 	RListIter *iter;
 	RSomImportListEntry *import_entry;
 	r_list_foreach (obj->imports, iter, import_entry) {
 		if (import_entry->import_name == UT32_MAX) {
 			continue;
 		}
-		RBinImport *imp = R_NEW0 (RBinImport);
+		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		char *name;
 		if (obj->dl_strings && import_entry->import_name < obj->dl_hdr->string_table_size) {
 			const char *name_str = obj->dl_strings + import_entry->import_name;
@@ -546,9 +545,7 @@ R_IPI RList *r_bin_som_get_imports(void *o) {
 			break;
 		}
 		imp->ordinal = 0;
-		r_list_append (list, imp);
 	}
-	return list;
 }
 
 R_IPI RList *r_bin_som_get_libs(void *o) {

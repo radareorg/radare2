@@ -47,7 +47,6 @@ ERROR: Imports from other REL (00000004) not yet implemented
 ERROR: Imports from other REL (00000005) not yet implemented
 ERROR: Imports from other REL (00000006) not yet implemented
 ERROR: Imports from other REL (00000007) not yet implemented
-DEBUG: SLOW: cloning symbols list into a vec
 DEBUG: RCoreCmd: =!
 DEBUG: RCoreCmd: ieq
 EOF

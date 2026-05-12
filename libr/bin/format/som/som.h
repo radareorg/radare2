@@ -212,7 +212,7 @@ R_IPI void *r_bin_som_load_buffer(RBinFile *bf, RBuffer *b, ut64 laddr, Sdb *s);
 R_IPI void r_bin_som_free_buffer(void *bf_o);
 R_IPI RList *r_bin_som_get_sections(void *o);
 R_IPI bool r_bin_som_get_symbols_vec(void *o, RVecRBinSymbol *vec, bool load_unnamed);
-R_IPI RList *r_bin_som_get_imports(void *o);
+R_IPI void r_bin_som_load_imports(void *o, RVecRBinImport *vec);
 R_IPI RList *r_bin_som_get_libs(void *o);
 R_IPI RList *r_bin_som_get_relocs(void *o);
 R_IPI RList *r_bin_som_get_entries(void *o);

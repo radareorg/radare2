@@ -755,22 +755,22 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *imports(RBinFile *bf) {
+static bool imports_vec(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	ut32 importedLibraryCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 24);
 	ut32 totalImportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 28);
 	ut32 loaderStringsOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 40);
 	if (totalImportedSymbolCount < 1 || totalImportedSymbolCount > UT16_MAX) {
 		R_LOG_WARN ("invalid amount of imports");
-		return NULL;
+		return false;
 	}
 	if (importedLibraryCount > (UT32_MAX / 24)) {
 		R_LOG_WARN ("invalid amount of libraries");
-		return NULL;
+		return false;
 	}
-	RBinImport **ary = calloc (sizeof (RBinImport), totalImportedSymbolCount);
+	RBinImport **ary = calloc (sizeof (RBinImport *), totalImportedSymbolCount);
 	if (!ary) {
-		return NULL;
+		return false;
 	}
 	int i, j;
 
@@ -784,7 +784,6 @@ static RList *imports(RBinFile *bf) {
 		ut32 libSymCount = r_buf_read_be32_at (bf->buf, at + 12);
 		ut32 firstSym = r_buf_read_be32_at (bf->buf, at + 16);
 
-		// Check for invalid firstSym or libSymCount to prevent integer overflow
 		if (firstSym > totalImportedSymbolCount ||
 				libSymCount > totalImportedSymbolCount ||
 				firstSym > (UT32_MAX - libSymCount)) {
@@ -792,7 +791,6 @@ static RList *imports(RBinFile *bf) {
 		}
 
 		for (j = firstSym; j < firstSym + libSymCount && j < totalImportedSymbolCount; j++) {
-			// Recalculate 'at' safely using checked values
 			ut32 offset = 56 + 24 * importedLibraryCount;
 			at = pef->ldrsec + offset + 4 * j;
 
@@ -808,14 +806,17 @@ static RList *imports(RBinFile *bf) {
 		}
 	}
 
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 	for (i = 0; i < totalImportedSymbolCount; i++) {
-		if (ary[i]->name != NULL) {
-			r_list_append (ret, ary[i]);
+		if (ary[i]->name) {
+			RVecRBinImport_push_back (ret, ary[i]);
+			free (ary[i]); /* vec owns inner fields now */
+		} else {
+			r_bin_import_free (ary[i]);
 		}
 	}
 	free (ary);
-	return ret;
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -837,30 +838,15 @@ static RList *libs(RBinFile *bf) {
 	return ret;
 }
 
-static void **flatlist(RList *list) {
-	if (!list) {
-		return NULL;
-	}
-	size_t len = r_list_length (list);
-	if (len == 0) {
-		return NULL;
-	}
-	void **flat = R_NEWS (void *, len);
-	RListIter *iter;
-	void *ptr;
-	size_t i = 0;
-	r_list_foreach (list, iter, ptr) {
-		flat[i++] = ptr;
-	}
-	return flat;
-}
-
 static RList *relocs(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	RList *ret = r_list_newf ((RListFree)r_bin_reloc_free);
-	RList *importList = imports (bf); // Import linked-list
-	void **importArray = flatlist (importList); // Indexable import list
-	size_t importCount = importList ? (size_t)r_list_length (importList) : 0;
+	/* ensure imports vec is populated; safe even if already filled */
+	if (RVecRBinImport_empty (&bf->bo->imports_vec)) {
+		imports_vec (bf);
+	}
+	RVecRBinImport *importVec = &bf->bo->imports_vec;
+	size_t importCount = RVecRBinImport_length (importVec);
 	PEFReloc *r;
 	RListIter *iter;
 	int i;
@@ -872,11 +858,11 @@ static RList *relocs(RBinFile *bf) {
 			ptr->additive = 1;
 			ptr->vaddr = pef->sec[i].addr + r->offset;
 			if (r->isimport) {
-				if (!importArray || r->target >= importCount) {
+				if (r->target >= importCount) {
 					free (ptr);
 					continue;
 				}
-				ptr->import = r_bin_import_clone (importArray[r->target]);
+				ptr->import = r_bin_import_clone (RVecRBinImport_at (importVec, r->target));
 			} else {
 				if (r->target >= pef->nsec) {
 					free (ptr);
@@ -887,8 +873,6 @@ static RList *relocs(RBinFile *bf) {
 			r_list_append (ret, ptr);
 		}
 	}
-	R_FREE (importArray);
-	r_list_free (importList);
 	return ret;
 }
 
@@ -992,7 +976,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.size = &size,
 	.binsym = &binsym,
 	.sections = &sections,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,

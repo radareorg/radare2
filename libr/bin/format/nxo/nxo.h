@@ -61,7 +61,7 @@ typedef struct {
 typedef struct {
 	ut32 *strings;
 	RVecRBinSymbol methods_list;
-	RList *imports_list;
+	RVecRBinImport imports_list;
 	RList *classes_list;
 } RBinNXOObj;
 
