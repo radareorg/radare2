@@ -39,11 +39,9 @@ static RBinInfo *info(RBinFile *bf) {
 
 static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-	if (R_LIKELY (ptr)) {
-		ptr->name = r_bin_name_new (r_str_get (name));
-		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = size;
-	}
+	ptr->name = r_bin_name_new (r_str_get (name));
+	ptr->paddr = ptr->vaddr = addr;
+	ptr->size = size;
 }
 
 static bool symbols_vec(RBinFile *bf) {

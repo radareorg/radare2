@@ -346,9 +346,6 @@ static bool symbols_vec(RBinFile *bf) {
 	int i;
 	for (i = 0; i < SYMBOLS_MAX; i++) {
 		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-		if (!ptr) {
-			continue;
-		}
 		ptr->name = r_bin_name_new_from (r_str_ndup (_symbols[i].symbol_name, R_BIN_SIZEOF_STRINGS));
 		ptr->vaddr = _symbols[i].address;
 		ptr->size = 2;

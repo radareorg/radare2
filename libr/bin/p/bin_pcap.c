@@ -54,14 +54,12 @@ static bool symbols_vec(RBinFile *bf) {
 
 	// File header
 	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-	if (ptr) {
-		ptr->name = r_bin_name_new_from (
-			r_str_newf ("tcpdump capture file - version %d.%d (%s, capture length %"PFMT32u ")", obj->header->version_major,
-				obj->header->version_minor, pcap_network_string (obj->header->network),
-				obj->header->max_pkt_len)
-			);
-		ptr->paddr = ptr->vaddr = 0;
-	}
+	ptr->name = r_bin_name_new_from (
+		r_str_newf ("tcpdump capture file - version %d.%d (%s, capture length %"PFMT32u ")", obj->header->version_major,
+			obj->header->version_minor, pcap_network_string (obj->header->network),
+			obj->header->max_pkt_len)
+		);
+	ptr->paddr = ptr->vaddr = 0;
 
 	// Go through each record packet
 	RListIter *iter;

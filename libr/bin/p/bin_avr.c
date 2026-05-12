@@ -127,10 +127,8 @@ static RList* entries(RBinFile *bf) {
 static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr) {
 	R_RETURN_IF_FAIL (ret && name);
 	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-	if (R_LIKELY (ptr)) {
-		ptr->name = r_bin_name_new (name);
-		ptr->paddr = ptr->vaddr = addr;
-	}
+	ptr->name = r_bin_name_new (name);
+	ptr->paddr = ptr->vaddr = addr;
 }
 
 static void addptr(RVecRBinSymbol *ret, const char *name, ut64 addr, RBuffer *b) {

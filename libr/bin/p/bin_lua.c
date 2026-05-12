@@ -111,9 +111,6 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 
 static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, const char *type) {
 	RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
-	if (!sym) {
-		return;
-	}
 	sym->name = r_bin_name_new (name);
 	if (!sym->name) {
 		RVecRBinSymbol_pop_back (vec);

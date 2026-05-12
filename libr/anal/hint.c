@@ -190,10 +190,8 @@ static RAnalAddrHintRecord *ensure_addr_hint_record(RAnal *anal, RAnalAddrHintTy
 		}
 	}
 	RAnalAddrHintRecord *record = RVecAnalAddrHintRecord_emplace_back (records);
-	if (record) {
-		memset (record, 0, sizeof (*record));
-		record->type = type;
-	}
+	memset (record, 0, sizeof (*record));
+	record->type = type;
 	return record;
 }
 

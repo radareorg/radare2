@@ -94,22 +94,14 @@ static bool symbols_vec(RBinFile *bf) {
 		obj->interned_table = r_list_newf ((RListFree)free);
 	}
 	RList *sections = r_list_newf (NULL); // keep old behavior; free on destroy if needed
-	RList *symbols = r_list_newf ((RListFree)free);
 	RBuffer *buffer = bf->buf;
 	if (!obj->code_start_offset) {
 		// ensure code_start_offset is initialized
 		(void) get_entrypoint (buffer, obj->version.magic, &obj->code_start_offset);
 	}
 	r_buf_seek (buffer, obj->code_start_offset, R_BUF_SET);
-	pyc_get_sections_symbols (sections, symbols, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
+	pyc_get_sections_symbols (sections, &bf->bo->symbols_vec, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
 	obj->sections_cache = sections;
-	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	RBinSymbol *sym;
-	RListIter *iter;
-	r_list_foreach (symbols, iter, sym) {
-		RVecRBinSymbol_push_back (ret, sym);
-	}
-	r_list_free (symbols);
 	return true;
 }
 

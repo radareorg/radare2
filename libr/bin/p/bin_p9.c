@@ -494,10 +494,6 @@ static bool symbols_vec(RBinFile *bf) {
 		}
 
 		RBinSymbol *bin_sym = RVecRBinSymbol_emplace_back (ret);
-		if (!bin_sym) {
-			sym_fini_vec (&sym);
-			continue;
-		}
 		bin_sym->name = r_bin_name_new (sym.name);
 		bin_sym->paddr = sym.value - baddr (bf);
 		// for kernels the header is not mapped

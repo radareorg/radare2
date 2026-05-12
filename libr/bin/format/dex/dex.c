@@ -350,9 +350,6 @@ R_IPI RBinDexObj *r_bin_dex_new_buf(RBuffer *buf, bool verbose) {
 		}
 		r_buf_seek (dex->b, offset, R_BUF_SET);
 		RBinDexMethod *method = RVecDexMethod_emplace_back (&dex->dex_methods);
-		if (!method) {
-			goto fail;
-		}
 		method->class_id = r_buf_read_le16 (dex->b);
 		method->proto_id = r_buf_read_le16 (dex->b);
 		method->name_id = r_buf_read_le32 (dex->b);

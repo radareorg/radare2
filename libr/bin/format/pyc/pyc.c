@@ -3,7 +3,7 @@
 #include "pyc.h"
 #include "marshal.h"
 
-bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *cobjs, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj) {
+bool pyc_get_sections_symbols(RList *sections, RVecRBinSymbol *symbols, RList *cobjs, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj) {
 	PycUnmarshalCtx ctx = {0};
 	ctx.magic = magic;
 	ctx.scount = 0;

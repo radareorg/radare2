@@ -331,45 +331,38 @@ static bool symbols_vec(RBinFile *bf) {
 		return false;
 	}
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RVecRBinSymbol_reserve (ret, hdr->mcLibEntry ? 4 : 3);
 	RBinSymbol *s;
 	// _start
 	s = RVecRBinSymbol_emplace_back (ret);
-	if (s) {
-		s->name = r_bin_name_new ("_start");
-		s->vaddr = (hdr->entry & 1) ? (hdr->entry - 1) : hdr->entry;
-		s->paddr = (s->vaddr >= hdr->text_va) ? (s->vaddr - hdr->text_va) : 0;
-		s->type = "FUNC";
-	}
+	s->name = r_bin_name_new ("_start");
+	s->vaddr = (hdr->entry & 1) ? (hdr->entry - 1) : hdr->entry;
+	s->paddr = (s->vaddr >= hdr->text_va) ? (s->vaddr - hdr->text_va) : 0;
+	s->type = "FUNC";
 	// header and text descriptor anchors
 	s = RVecRBinSymbol_emplace_back (ret);
-	if (s) {
-		s->name = r_bin_name_new ("__mclf_header");
-		s->vaddr = hdr->text_va;
-		s->paddr = 0;
-		s->type = "OBJ";
-	}
+	s->name = r_bin_name_new ("__mclf_header");
+	s->vaddr = hdr->text_va;
+	s->paddr = 0;
+	s->type = "OBJ";
 	s = RVecRBinSymbol_emplace_back (ret);
-	if (s) {
-		s->name = r_bin_name_new ("__mclf_text_descriptor");
-		s->vaddr = hdr->text_va + 0x80;
-		s->paddr = 0x80;
-		s->type = "OBJ";
-	}
+	s->name = r_bin_name_new ("__mclf_text_descriptor");
+	s->vaddr = hdr->text_va + 0x80;
+	s->paddr = 0x80;
+	s->type = "OBJ";
 	// mcLibEntry (if present)
 	if (hdr->mcLibEntry) {
 		s = RVecRBinSymbol_emplace_back (ret);
-		if (s) {
-			s->name = r_bin_name_new ("mcLibEntry");
-			s->vaddr = hdr->mcLibEntry & (ut32)~1;
-			if (s->vaddr >= hdr->text_va && s->vaddr < hdr->text_va + hdr->text_len) {
-				s->paddr = s->vaddr - hdr->text_va;
-			} else if (s->vaddr >= hdr->data_va && s->vaddr < hdr->data_va + hdr->data_len) {
-				s->paddr = hdr->text_len + (s->vaddr - hdr->data_va);
-			} else {
-				s->paddr = UT64_MAX;
-			}
-			s->type = "FUNC";
+		s->name = r_bin_name_new ("mcLibEntry");
+		s->vaddr = hdr->mcLibEntry & (ut32)~1;
+		if (s->vaddr >= hdr->text_va && s->vaddr < hdr->text_va + hdr->text_len) {
+			s->paddr = s->vaddr - hdr->text_va;
+		} else if (s->vaddr >= hdr->data_va && s->vaddr < hdr->data_va + hdr->data_len) {
+			s->paddr = hdr->text_len + (s->vaddr - hdr->data_va);
+		} else {
+			s->paddr = UT64_MAX;
 		}
+		s->type = "FUNC";
 	}
 	return true;
 }

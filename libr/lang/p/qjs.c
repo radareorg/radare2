@@ -134,26 +134,22 @@ static bool plugin_manager_init(QjsPluginManager *pm, RCore *core, JSRuntime *rt
 static void plugin_manager_add_core_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, JSValue func, void *ap) {
 	R_RETURN_IF_FAIL (pm);
 	QjsCorePlugin *cp = RVecCorePlugin_emplace_back (&pm->core_plugins);
-	if (cp) {
-		cp->name = name? strdup (name): NULL;
-		cp->qctx.ctx = ctx;
-		cp->qctx.call_func = func;
-		cp->ap = ap;
-	}
+	cp->name = name? strdup (name): NULL;
+	cp->qctx.ctx = ctx;
+	cp->qctx.call_func = func;
+	cp->ap = ap;
 }
 
 static QjsIoPlugin *plugin_manager_add_io_plugin(QjsPluginManager *pm, const char *name, JSContext *ctx, RIOPlugin *iop, JSValue func) {
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	QjsIoPlugin *cp = RVecIoPlugin_emplace_back (&pm->io_plugins);
-	if (cp) {
-		cp->name = name? strdup (name): NULL;
-		cp->ctx = ctx;
-		cp->iop = iop;
-		cp->fn_check_js = func;
-		// cp->qctx.open_func = func;
-		// cp->qctx.read_func = func;
-	}
+	cp->name = name? strdup (name): NULL;
+	cp->ctx = ctx;
+	cp->iop = iop;
+	cp->fn_check_js = func;
+	// cp->qctx.open_func = func;
+	// cp->qctx.read_func = func;
 	return cp;
 }
 
@@ -161,12 +157,10 @@ static QjsAsmPlugin *plugin_manager_add_parse_plugin(QjsPluginManager *pm, const
 	R_RETURN_VAL_IF_FAIL (pm, NULL);
 
 	QjsAsmPlugin *cp = RVecAsmPlugin_emplace_back (&pm->asm_plugins);
-	if (cp) {
-		cp->name = name? strdup (name): NULL;
-		cp->ctx = ctx;
-		cp->iop = iop;
-		cp->fn_parse_js = func;
-	}
+	cp->name = name? strdup (name): NULL;
+	cp->ctx = ctx;
+	cp->iop = iop;
+	cp->fn_parse_js = func;
 	return cp;
 }
 
@@ -235,12 +229,10 @@ static void plugin_manager_add_arch_plugin(QjsPluginManager *pm, const char *nam
 	R_RETURN_IF_FAIL (pm);
 
 	QjsArchPlugin *ap = RVecArchPlugin_emplace_back (&pm->arch_plugins);
-	if (ap) {
-		ap->name = strdup (name);
-		ap->arch = strdup (arch);
-		ap->ctx = ctx;
-		ap->decode_func = decode_func;
-	}
+	ap->name = strdup (name);
+	ap->arch = strdup (arch);
+	ap->ctx = ctx;
+	ap->decode_func = decode_func;
 }
 
 static inline int compare_arch_plugin_arch(const QjsArchPlugin *ap, const void *data) {

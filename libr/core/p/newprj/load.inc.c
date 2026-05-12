@@ -1223,9 +1223,7 @@ static void rprj_load_mods(RPrjCursor *cur, ut8 **out_buf) {
 		}
 		R_LOG_DEBUG ("MOD: %s + 0x%08"PFMT64x, rprj_st_get (cur->st, mod.name), mod.vmin);
 		R2ProjectMod *slot = RVecPrjMod_emplace_back (&cur->mods);
-		if (slot) {
-			*slot = mod;
-		}
+		*slot = mod;
 		n += RPRJ_MOD_SIZE;
 	}
 	rprj_mods_rebase (cur);

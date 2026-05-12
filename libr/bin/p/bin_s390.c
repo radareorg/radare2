@@ -146,10 +146,8 @@ static bool symbols_vec(RBinFile *bf) {
 	r_list_foreach (su->symbols, iter, sym) {
 		char *name = r_str_trim_dup (r_bin_name_tostring (sym->name));
 		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-		if (ptr) {
-			ptr->name = r_bin_name_new (name);
-			ptr->paddr = ptr->vaddr = sym->vaddr + su->text0 + S390_BADDR;
-		}
+		ptr->name = r_bin_name_new (name);
+		ptr->paddr = ptr->vaddr = sym->vaddr + su->text0 + S390_BADDR;
 		free (name);
 	}
 	return true;

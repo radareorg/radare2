@@ -64,7 +64,7 @@ static bool check(RBinFile *bf, RBuffer *b) {
 static RBinNXOObj *nso_new(void) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	if (bin) {
-		bin->methods_list = r_list_newf ((RListFree)free);
+		RVecRBinSymbol_init (&bin->methods_list);
 		bin->imports_list = r_list_newf ((RListFree)free);
 		bin->classes_list = r_list_newf ((RListFree)free);
 	}

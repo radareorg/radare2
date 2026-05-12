@@ -1260,10 +1260,6 @@ static RVecRIORegion *io_bank_get_regions(RIO *io, RIOBank *bank, RVecRIORegion 
 			return NULL;
 		}
 		RIORegion *region = RVecRIORegion_emplace_back (list);
-		if (!region) {
-			// allocation failed
-			return NULL;
-		}
 		region->itv = sm->itv;
 		region->perm = map->perm;
 		node = r_rbnode_next (node);

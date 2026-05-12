@@ -3156,10 +3156,6 @@ static RVecAddr *get_xrefs(RAnalBlock *bb) {
 			RAnalRef *ref;
 			R_VEC_FOREACH (xrefs, ref) {
 				ut64 *addr = RVecAddr_emplace_back (result);
-				if (R_UNLIKELY (!addr)) {
-					RVecAddr_free (result);
-					return NULL;
-				}
 				*addr = ref->addr;
 			}
 		}

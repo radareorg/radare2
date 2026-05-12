@@ -2651,9 +2651,6 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 				}
 
 				RBinSection *s = RVecSegment_emplace_back (mo->segments_vec);
-				if (!s) {
-					break;
-				}
 				memset (s, 0, sizeof (RBinSection)); // XXX redundant?
 
 				s->vaddr = seg->vmaddr;
@@ -2679,9 +2676,6 @@ RVecSegment *MACH0_(get_segments_vec)(RBinFile *bf, struct MACH0_(obj_t) * mo) {
 			size_t i;
 			for (i = 0; i < last_section; i++) {
 				RBinSection *s = RVecSegment_emplace_back (mo->segments_vec);
-				if (!s) {
-					break;
-				}
 				memset (s, 0, sizeof (RBinSection)); // XXX redundant?
 
 				struct MACH0_(section) *sect = &mo->sects[i];
@@ -3498,10 +3492,6 @@ static void parse_symbols(RBinFile *bf, struct MACH0_(obj_t) * mo, HtPP *symcach
 				break;
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (mo->symbols_vec);
-			if (R_UNLIKELY (!sym)) {
-				free (sym_name);
-				break;
-			}
 			memset (sym, 0, sizeof (RBinSymbol));
 			sym->name = r_bin_name_new_from (sym_name);
 			sym->vaddr = vaddr;
@@ -3796,10 +3786,6 @@ RVecRBinImport *MACH0_(load_imports)(RBinFile *bf, struct MACH0_(obj_t) * bin) {
 		}
 
 		RBinImport *imp = RVecRBinImport_emplace_back (&bin->imports_cache);
-		if (!imp) {
-			free (imp_name);
-			break;
-		}
 		fill_import (bf->rbin, imp_name, imp);
 		imp->ordinal = i;
 		check_for_special_import_names (bin, imp);

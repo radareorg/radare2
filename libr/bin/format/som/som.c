@@ -431,10 +431,6 @@ R_IPI bool r_bin_som_get_symbols_vec(void *o, RVecRBinSymbol *vec, bool load_unn
 			continue;
 		}
 		RBinSymbol *bs = RVecRBinSymbol_emplace_back (vec);
-		if (!bs) {
-			free (name);
-			continue;
-		}
 		bs->name = r_bin_name_new_from (name);
 		bs->paddr = sym->symbol_value;
 		bs->vaddr = sym->symbol_value + obj->baddr;

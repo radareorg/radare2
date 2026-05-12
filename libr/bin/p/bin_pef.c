@@ -945,10 +945,6 @@ static bool symbols_vec(RBinFile *bf) {
 		}
 		r_buf_read_at (bf->buf, nameOfs, (ut8 *)name, nameLen);
 		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-		if (!ptr) {
-			free (name);
-			continue;
-		}
 		ptr->name = r_bin_name_new_from (name);
 		ptr->vaddr = pef->sec[index].addr + addr;
 		ptr->bind = R_BIN_BIND_GLOBAL_STR;

@@ -86,10 +86,6 @@ static void type_trace_voyeur_reg_read(void *user, const char *name, ut64 val) {
 	R_RETURN_IF_FAIL (user && name);
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
-	if (!access) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->reg.name = strdup (name);
 	access->reg.value = val;
 	access->is_reg = true;
@@ -101,10 +97,6 @@ static void type_trace_voyeur_reg_write(void *user, const char *name, ut64 old, 
 	R_RETURN_IF_FAIL (user && name);
 	TypeTrace *trace = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
-	if (!access) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->is_reg = true;
 	access->reg.name = strdup (name);
 	access->reg.value = val;
@@ -119,10 +111,6 @@ static void type_trace_voyeur_mem_read(void *user, ut64 addr, const ut8 *buf, in
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	TypeTraceDB *db = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&db->accesses);
-	if (!access) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->is_reg = false;
 	access->mem.addr = addr;
 	access->is_write = false;
@@ -133,10 +121,6 @@ static void type_trace_voyeur_mem_write(void *user, ut64 addr, const ut8 *old, c
 	R_RETURN_IF_FAIL (user && buf && (len > 0));
 	TypeTrace *trace = user;
 	TypeTraceAccess *access = VecAccess_emplace_back (&trace->db.accesses);
-	if (!access) {
-		R_LOG_ERROR ("Failed to allocate memory for storing access");
-		return;
-	}
 	access->is_reg = false;
 	access->mem.addr = addr;
 	access->is_write = true;
@@ -264,10 +248,6 @@ static bool type_trace_op(TypeTrace *trace, REsil *esil, RAnalOp *op) {
 	}
 
 	TypeTraceOp *to = VecTraceOp_emplace_back (&trace->db.ops);
-	if (R_UNLIKELY (!to)) {
-		R_LOG_ERROR ("Failed to allocate trace op at 0x%08" PFMT64x, op->addr);
-		return false;
-	}
 	ut32 vec_idx = VecAccess_length (&trace->db.accesses);
 	to->start = vec_idx;
 	to->end = vec_idx;

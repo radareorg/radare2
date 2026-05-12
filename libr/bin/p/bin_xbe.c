@@ -293,9 +293,6 @@ static bool symbols_vec(RBinFile *bf) {
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index > 0 && thunk_index <= XBE_MAX_THUNK) {
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
-			if (!sym) {
-				continue;
-			}
 			R_LOG_DEBUG ("thunk_index %d", thunk_index);
 			sym->name = r_bin_name_new_from (r_str_newf ("kt.%s", kt_name[thunk_index - 1]));
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);

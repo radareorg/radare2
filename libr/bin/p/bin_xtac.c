@@ -645,9 +645,6 @@ static bool symbols_vec(RBinFile *bf) {
 			continue;
 		}
 		RBinSymbol *s = RVecRBinSymbol_emplace_back (ret);
-		if (!s) {
-			continue;
-		}
 		s->name = r_bin_name_new_from (r_str_newf ("x86.%08x", x86_vaddr));
 		s->bind = "NONE";
 		s->type = R_BIN_TYPE_FUNC_STR;

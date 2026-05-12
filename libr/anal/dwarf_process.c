@@ -608,9 +608,6 @@ static void parse_structure_type(Context *ctx, ut64 idx) {
 					goto cleanup;
 				} else {
 					RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-					if (!slot) {
-						goto cleanup;
-					}
 					*slot = member;
 				}
 			}
@@ -671,10 +668,6 @@ static void parse_enum_type(Context *ctx, ut64 idx) {
 					goto cleanup;
 				}
 				RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
-				if (!slot) {
-					enum_type_case_free (result, NULL);
-					goto cleanup;
-				}
 				*slot = cas;
 				cas.name = NULL;
 			}

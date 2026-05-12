@@ -64,13 +64,9 @@ static ut64 baddr(RBinFile *bf) {
 
 static void addsym(RVecRBinSymbol *ret, char *name, ut64 addr, ut32 size) {
 	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
-	if (ptr) {
-		ptr->name = r_bin_name_new_from (name);
-		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = size;
-	} else {
-		free (name);
-	}
+	ptr->name = r_bin_name_new_from (name);
+	ptr->paddr = ptr->vaddr = addr;
+	ptr->size = size;
 }
 
 static bool symbols_vec(RBinFile *bf) {

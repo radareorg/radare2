@@ -382,9 +382,6 @@ static bool symbols_vec(RBinFile *bf) {
 		RBinSymbol *sym;
 		r_list_foreach (part->symbols, it, sym) {
 			RBinSymbol *clone = RVecRBinSymbol_emplace_back (ret);
-			if (!clone) {
-				continue;
-			}
 			clone->name = r_bin_name_clone (sym->name);
 			clone->vaddr = sym->vaddr;
 			clone->paddr = sym->paddr;

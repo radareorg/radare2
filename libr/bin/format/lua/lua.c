@@ -277,17 +277,15 @@ static ut64 add_symbol(RLuaHeader *lh, RBuffer *buf, char *name, ut64 start, con
 	ut64 end = r_buf_tell (buf); // end of field that was just parsed from bf
 	if (end > start) {
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&lh->symbols);
-		if (sym) {
-			memset (sym, 0, sizeof (*sym));
-			sym->name = r_bin_name_new (name);
-			if (sym->name) {
-				sym->vaddr = sym->paddr = start;
-				sym->size = end - start;
-				sym->type = type;
-				return end;
-			}
-			RVecRBinSymbol_pop_back (&lh->symbols);
+		memset (sym, 0, sizeof (*sym));
+		sym->name = r_bin_name_new (name);
+		if (sym->name) {
+			sym->vaddr = sym->paddr = start;
+			sym->size = end - start;
+			sym->type = type;
+			return end;
 		}
+		RVecRBinSymbol_pop_back (&lh->symbols);
 	}
 	// Caller shouldn't stop parsing lua just for a missing symbol. But we return location to save a r_buf_tell
 	return end;

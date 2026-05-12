@@ -474,9 +474,6 @@ static bool symbols_vec(RBinFile *bf) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			if (!ptr) {
-				break;
-			}
 			ptr->name = r_bin_name_new ((char *)symbols[i].name);
 			ptr->libname = *symbols[i].libname ? strdup ((char *)symbols[i].libname) : NULL;
 			ptr->forwarder = r_str_constpool_get (&bf->rbin->constpool, (char *)symbols[i].forwarder);
@@ -495,9 +492,6 @@ static bool symbols_vec(RBinFile *bf) {
 				break;
 			}
 			ptr = RVecRBinSymbol_emplace_back (ret);
-			if (!ptr) {
-				break;
-			}
 			ptr->name = r_bin_name_new ((const char *)imports[i].name);
 			ptr->libname = strdup ((const char *)imports[i].libname);
 			ptr->is_imported = true;
@@ -529,9 +523,6 @@ static bool symbols_vec(RBinFile *bf) {
 					if (!strcmp (dsym->type, "methoddef")) {
 						// Add methoddef at its RVA
 						ptr = RVecRBinSymbol_emplace_back (ret);
-						if (!ptr) {
-							break;
-						}
 						if (dsym->namespace && dsym->namespace[0]) {
 							ptr->name = r_bin_name_new (r_str_newf ("%s.%s", dsym->namespace, dsym->name));
 						} else {

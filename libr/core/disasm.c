@@ -4233,9 +4233,6 @@ static int cmp_ut64_find(const ut64 *a, const void *_b) {
 static bool vec_ut64_insert_sorted(RVecUT64 *vec, ut64 addr) {
 	size_t index = RVecUT64_lower_bound (vec, &addr, cmp_ut64);
 	ut64 *slot = RVecUT64_emplace_back (vec);
-	if (!slot) {
-		return false;
-	}
 	ut64 *dst = R_VEC_START_ITER (vec) + index;
 	memmove (dst + 1, dst, (slot - dst) * sizeof (ut64));
 	*dst = addr;

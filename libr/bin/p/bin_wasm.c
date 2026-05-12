@@ -201,9 +201,6 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RVecRBin
 				continue;
 			}
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
-			if (!sym) {
-				return false;
-			}
 			sym->ordinal = sym_ordinal;
 			sym->type = type;
 			sym->name = r_bin_name_new (imp->field_str);
@@ -271,10 +268,6 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 			continue;
 		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
-		if (!sym) {
-			free (name);
-			return false;
-		}
 		sym->forwarder = "NONE";
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->size = func->len;
@@ -343,10 +336,6 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RVecRBinSymbol *vec, bo
 			continue;
 		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
-		if (!sym) {
-			free (name);
-			return false;
-		}
 		sym->forwarder = "NONE";
 		sym->paddr = gl->file_offset;
 		sym->vaddr = UT64_MAX;

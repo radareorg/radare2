@@ -1046,10 +1046,6 @@ static void cmd_ii_add(RCore *core, const char *input) {
 	}
 	RVecRBinImport *vec = &bf->bo->imports_vec;
 	RBinImport *imp = RVecRBinImport_emplace_back (vec);
-	if (!imp) {
-		free (args);
-		return;
-	}
 	memset (imp, 0, sizeof (*imp));
 	imp->name = r_bin_name_new (name);
 	imp->is_imported = true;

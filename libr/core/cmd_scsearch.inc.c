@@ -143,10 +143,6 @@ static bool syscall_regmap_init(SyscallRegMap *map, RReg *reg) {
 		SyscallRegSlot *slot = NULL;
 		if (idx < 0) {
 			slot = RVecSyscallRegSlot_emplace_back (&map->slots);
-			if (!slot) {
-				syscall_regmap_fini (map);
-				return false;
-			}
 			slot->offset = item->offset;
 		} else {
 			slot = RVecSyscallRegSlot_at (&map->slots, idx);
@@ -631,9 +627,6 @@ static bool syscall_record_hit(RVecSyscallNumberHit *hits, ut64 addr, SyscallReg
 		}
 	}
 	hit = RVecSyscallNumberHit_emplace_back (hits);
-	if (!hit) {
-		return false;
-	}
 	hit->addr = addr;
 	if (value.kind == SYSREG_VAL_CONST) {
 		hit->known = true;
@@ -834,10 +827,6 @@ static SyscallNumberAt syscall_function_number_at(RCore *core, SyscallRegMap *re
 			return SYSNUM_AT_NONE;
 		}
 		cache = RVecSyscallFunctionCache_emplace_back (caches);
-		if (!cache) {
-			syscall_function_cache_fini (&tmp);
-			return SYSNUM_AT_NONE;
-		}
 		*cache = tmp;
 	}
 	R_VEC_FOREACH (&cache->hits, hit) {

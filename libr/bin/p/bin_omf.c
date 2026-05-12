@@ -107,9 +107,6 @@ static bool symbols_vec(RBinFile *bf) {
 
 	while (ct_sym < ((r_bin_omf_obj *) bf->bo->bin_obj)->nb_symbol) {
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
-		if (!sym) {
-			return true;
-		}
 		sym_omf = ((r_bin_omf_obj *) bf->bo->bin_obj)->symbols[ct_sym++];
 		sym->name = r_bin_name_new (sym_omf->name);
 		sym->forwarder = "NONE";

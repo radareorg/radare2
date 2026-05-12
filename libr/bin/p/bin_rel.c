@@ -388,9 +388,6 @@ static void register_header_symbol(RBinFile *bf, RVecRBinSymbol *syms, const cha
 		return;
 	}
 	RBinSymbol *ret = RVecRBinSymbol_emplace_back (syms);
-	if (!ret) {
-		return;
-	}
 	ret->type = R_BIN_TYPE_FUNC_STR;
 	ret->libname = strdup (rel->libname);
 	ret->name = r_bin_name_new (name);

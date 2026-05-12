@@ -109,12 +109,10 @@ static RList* sections(RBinFile *bf) {
 
 static void gb_addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, int ordinal) {
 	RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
-	if (R_LIKELY (sym)) {
-		sym->name = r_bin_name_new (name);
-		sym->paddr = sym->vaddr = addr;
-		sym->size = 1;
-		sym->ordinal = ordinal;
-	}
+	sym->name = r_bin_name_new (name);
+	sym->paddr = sym->vaddr = addr;
+	sym->size = 1;
+	sym->ordinal = ordinal;
 }
 
 static bool symbols_vec(RBinFile *bf) {

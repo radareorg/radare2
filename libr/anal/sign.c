@@ -2704,9 +2704,6 @@ static bool _sig_to_vec_cb(RSignItem *it, void *user) {
 		it->collisions = NULL;
 	}
 	RSignItem **slot = RVecRSignItemPtr_emplace_back ((RVecRSignItemPtr *)user);
-	if (!slot) {
-		return false;
-	}
 	*slot = it;
 	return true;
 }

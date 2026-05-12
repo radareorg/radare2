@@ -42,7 +42,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	// XX bf->buf vs b :D this load_b
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut64 ba = baddr (bf);
-	bin->methods_list = r_list_newf ((RListFree)free);
+	RVecRBinSymbol_init (&bin->methods_list);
 	bin->imports_list = r_list_newf ((RListFree)r_bin_import_free);
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
@@ -173,12 +173,7 @@ static bool symbols_vec(RBinFile *bf) {
 		return false;
 	}
 	RBinNXOObj *bin = (RBinNXOObj*) bf->bo->bin_obj;
-	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	RBinSymbol *sym;
-	RListIter *iter;
-	r_list_foreach (bin->methods_list, iter, sym) {
-		RVecRBinSymbol_push_back (ret, sym);
-	}
+	RVecRBinSymbol_swap (&bf->bo->symbols_vec, &bin->methods_list);
 	return true;
 }
 

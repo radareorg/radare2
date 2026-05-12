@@ -138,9 +138,6 @@ static void parse_enum(const RAnal *anal, STpiStream *ss, SType *type, RList *ty
 			continue; // skip it, move forward
 		}
 		RAnalEnumCase *slot = RVecAnalEnumCase_emplace_back (&base_type->enum_data.cases);
-		if (!slot) {
-			goto cleanup;
-		}
 		*slot = *enum_case;
 		free (enum_case);
 	}
@@ -202,9 +199,6 @@ static void parse_structure(const RAnal *anal, STpiStream *ss, SType *type, RLis
 			continue; // skip the failure
 		}
 		RAnalStructMember *slot = RVecAnalStructMember_emplace_back (&base_type->struct_data.members);
-		if (!slot) {
-			goto cleanup;
-		}
 		*slot = *struct_member;
 		free (struct_member);
 	}

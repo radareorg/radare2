@@ -21,7 +21,7 @@ typedef struct {
 	pyc_object *pobj;          // root object tree (owns cobjs data)
 } RBinPycObj;
 
-bool pyc_get_sections_symbols(RList *sections, RList *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj);
+bool pyc_get_sections_symbols(RList *sections, RVecRBinSymbol *symbols, RList *mem, RBuffer *buf, ut32 magic, RList *interned_table, pyc_object **out_pobj);
 bool pyc_is_code(ut8 b, ut32 magic);
 
 #endif

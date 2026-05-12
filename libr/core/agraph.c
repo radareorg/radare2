@@ -950,9 +950,6 @@ static RAGraphDist *dist_find(const RAGraph *g, const RGraphNode *from, const RG
 static RAGraphDist *dist_insert_sorted(RVecAGraphDist *dists, const RAGraphDist *dist) {
 	size_t index = RVecAGraphDist_lower_bound (dists, (RAGraphDist *)dist, cmp_agraph_dist);
 	RAGraphDist *slot = RVecAGraphDist_emplace_back (dists);
-	if (!slot) {
-		return NULL;
-	}
 	RAGraphDist *dst = R_VEC_START_ITER (dists) + index;
 	memmove (dst + 1, dst, (slot - dst) * sizeof (RAGraphDist));
 	*dst = *dist;
@@ -4527,10 +4524,8 @@ static void nextword(RCore *core, RAGraph *g, const char *word) {
 			break;
 		}
 		RAGraphLocation *pos = RVecAGraphLocation_emplace_back (&gh->word_list);
-		if (pos) {
-			pos->x = x + g->x;
-			pos->y = y + g->y;
-		}
+		pos->x = x + g->x;
+		pos->y = y + g->y;
 	}
 	free (gh->old_word);
 	gh->old_word = strdup (word);

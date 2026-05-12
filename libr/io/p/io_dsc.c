@@ -837,9 +837,6 @@ static bool dsc_dig_one_slice(RIODscObject * dsc, int fd, const char * file_name
 	}
 
 	RIODscSlice * slice = RIODscSlices_emplace_back (&dsc->slices);
-	if (!slice) {
-		return false;
-	}
 	memset (slice, 0, sizeof (RIODscSlice));
 
 	slice->fd = fd;
@@ -1511,9 +1508,6 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 
 			if (entry.slideInfoOffset && entry.slideInfoSize) {
 				RDyldRebaseInfosEntry * info = RIODscRebaseInfos_emplace_back (&slice->rebase_infos);
-				if (!info) {
-					break;
-				}
 				memset (info, 0, sizeof (RDyldRebaseInfosEntry));
 				info->start = entry.fileOffset;
 				info->end = info->start + entry.size;
@@ -1546,9 +1540,6 @@ static bool get_rebase_infos(RIODscSlice * slice, int fd, ut64 start, RDSCHeader
 			}
 
 			RDyldRebaseInfosEntry * info = RIODscRebaseInfos_emplace_back (&slice->rebase_infos);
-			if (!info) {
-				return false;
-			}
 			memset (info, 0, sizeof (RDyldRebaseInfosEntry));
 
 			info->start = w_map.fileOffset;

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2021 - rkx1209 */
+/* radare - LGPL - Copyright 2018-2026 - rkx1209 */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -37,8 +37,6 @@ const char *fileType(const ut8 *buf) {
 
 static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab, ut64 strtab_size, ut64 relplt, ut64 baddr) {
 	int i, import = 0;
-	RBinSymbol *sym;
-	RBinImport *imp;
 	for (i = 8; i < 99999; i++) {
 		ut64 addr = r_buf_read_le64_at (buf, symtab + i);
 		ut64 size = r_buf_read_le64_at (buf, symtab + i + 8);
@@ -49,11 +47,7 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 		if (!symName) {
 			break;
 		}
-		sym = R_NEW0 (RBinSymbol);
-		if (!sym) {
-			free (symName);
-			break;
-		}
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (&bin->methods_list);
 		sym->type = R_BIN_TYPE_FUNC_STR;
 		sym->bind = "NONE";
 		sym->size = size;
@@ -61,53 +55,25 @@ static void walkSymbols(RBuffer *buf, RBinNXOObj *bin, ut64 symtab, ut64 strtab,
 		if (addr == 0) {
 			import ++;
 			ut64 pltSym = r_buf_read_le64_at (buf, relplt + (import * 24));
-			imp = R_NEW0 (RBinImport);
-			if (!imp) {
-				R_FREE (sym);
-				free (symName);
-				break;
-			}
-			imp->name = r_bin_name_new_from (symName);
-			if (!imp->name) {
-				goto out_walk_symbol;
-			}
+			RBinImport *imp = R_NEW0 (RBinImport);
+			imp->name = r_bin_name_new (symName);
 			imp->type = "FUNC";
-			if (!imp->type) {
-				goto out_walk_symbol;
-			}
 			imp->bind = "NONE";
-			if (!imp->bind) {
-				goto out_walk_symbol;
-			}
 			imp->ordinal = bin->imports_list->length;
 			r_list_append (bin->imports_list, imp);
 			sym->is_imported = true;
-			sym->name = r_bin_name_new (symName);
-			if (!sym->name) {
-				goto out_walk_symbol;
-			}
+			sym->name = r_bin_name_new_from (symName); /* owns symName */
 			sym->paddr = pltSym - 8;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", symName, pltSym - 8);
+			// eprintf ("f sym.imp.%s = 0x%"PFMT64x"\n", r_bin_name_tostring (sym->name), pltSym - 8);
 		} else {
-			sym->name = r_bin_name_new_from (symName);
-			if (!sym->name) {
-				R_FREE (sym);
-				break;
-			}
+			sym->name = r_bin_name_new_from (symName); /* owns symName */
 			sym->paddr = addr;
 			sym->vaddr = sym->paddr + baddr;
-			eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", symName, size, addr);
+			// eprintf ("f sym.%s %"PFMT64u "0x%"PFMT64x"\n", r_bin_name_tostring (sym->name), size, addr);
 		}
-		r_list_append (bin->methods_list, sym);
 		i += 8 - 1;
 	}
-	return;
-
-out_walk_symbol:
-	R_FREE (sym);
-	R_FREE (imp);
-	return;
 }
 
 void parseMod(RBuffer *buf, RBinNXOObj *bin, ut32 mod0, ut64 baddr) {
