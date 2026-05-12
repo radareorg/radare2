@@ -165,8 +165,6 @@ static bool r_bin_xcoff64_init(RBinXCoff64Obj *obj, RBuffer *buf, bool verbose) 
 	obj->b = r_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
-	obj->sym_ht = ht_up_new0 ();
-	obj->imp_ht = ht_up_new0 ();
 	if (!r_bin_xcoff64_init_hdr (obj)) {
 		R_LOG_ERROR ("failed to init xcoff64 header");
 		return false;
@@ -189,8 +187,6 @@ static bool r_bin_xcoff64_init(RBinXCoff64Obj *obj, RBuffer *buf, bool verbose) 
 
 R_IPI void r_bin_xcoff64_free(RBinXCoff64Obj *obj) {
 	if (obj) {
-		ht_up_free (obj->sym_ht);
-		ht_up_free (obj->imp_ht);
 		free (obj->scn_va);
 		free (obj->scn_hdrs);
 		free (obj->symbols);

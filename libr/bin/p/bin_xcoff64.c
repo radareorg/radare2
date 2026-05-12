@@ -21,10 +21,10 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
-static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, int idx, RBinSymbol **sym) {
+static bool _fill_bin_symbol(RBin *rbin, struct r_bin_xcoff64_obj *bin, ut32 idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	struct xcoff64_symbol *s = NULL;
-	if (idx < 0 || idx > bin->hdr.f_nsyms) {
+	if (idx >= bin->hdr.f_nsyms) {
 		return false;
 	}
 	if (!bin->symbols) {
@@ -158,17 +158,16 @@ static RList *sections(RBinFile *bf) {
 }
 
 static bool symbols_vec(RBinFile *bf) {
-	int i;
 	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	if (obj->symbols) {
 		RVecRBinSymbol_reserve (ret, obj->hdr.f_nsyms);
+		ut32 i;
 		for (i = 0; i < obj->hdr.f_nsyms; i++) {
 			RBinSymbol tmp = {0};
 			RBinSymbol *p = &tmp;
 			if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
 				RVecRBinSymbol_push_back (ret, &tmp);
-				ht_up_insert (obj->sym_ht, (ut64)i, RVecRBinSymbol_last (ret));
 			}
 			i += obj->symbols[i].sym.n_numaux;
 		}

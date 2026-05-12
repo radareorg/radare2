@@ -591,8 +591,6 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 	obj->b = r_ref (buf);
 	obj->size = r_buf_size (buf);
 	obj->verbose = verbose;
-	obj->sym_ht = ht_up_new0 ();
-	obj->imp_ht = ht_up_new0 ();
 
 	// Assume we're dealing with regular coff
 	// The init functions will change the type if necessary.
@@ -637,8 +635,7 @@ static bool r_bin_coff_init(RBinCoffObj *obj, RBuffer *buf, bool verbose) {
 
 R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 	if (obj) {
-		ht_up_free (obj->sym_ht);
-		ht_up_free (obj->imp_ht);
+		free (obj->sym_idx);
 		free (obj->scn_va);
 		free (obj->scn_hdrs);
 		free (obj->x_ldsyms);

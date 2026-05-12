@@ -28,8 +28,6 @@ typedef struct r_bin_xcoff64_obj {
 	ut8 endian;
 	Sdb *kv;
 	bool verbose;
-	HtUP *sym_ht;
-	HtUP *imp_ht;
 	ut64 *scn_va;
 } RBinXCoff64Obj;
 

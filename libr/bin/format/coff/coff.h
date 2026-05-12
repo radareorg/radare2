@@ -34,8 +34,8 @@ typedef struct r_bin_coff_obj {
 	ut8 endian;
 	Sdb *kv;
 	bool verbose;
-	HtUP *sym_ht;
-	HtUP *imp_ht;
+	ut32 *sym_idx;
+	ut32 sym_idx_count;
 	ut64 *scn_va;
 } RBinCoffObj;
 

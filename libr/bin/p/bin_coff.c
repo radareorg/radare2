@@ -3,6 +3,7 @@
 #include <r_bin.h>
 #include <sdb/ht_uu.h>
 
+#include "../i/private.h"
 #include "coff/coff.h"
 
 static Sdb* get_sdb(RBinFile *bf) {
@@ -30,12 +31,64 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 
 #define DTYPE_IS_FUNCTION(type)	(COFF_SYM_GET_DTYPE (type) == COFF_SYM_DTYPE_FUNCTION)
 
-static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RBinSymbol **sym) {
+typedef struct coff_sym_table_t {
+	void *symbols;
+	ut32 count;
+	size_t size;
+	size_t numaux_offset;
+} CoffSymTable;
+
+static CoffSymTable coff_sym_table(struct r_bin_coff_obj *bin) {
+	CoffSymTable table = {0};
+	if (bin->type == COFF_TYPE_BIGOBJ) {
+		table.symbols = bin->bigobj_symbols;
+		table.count = bin->bigobj_hdr.f_nsyms;
+		table.size = sizeof (struct coff_bigobj_symbol);
+		table.numaux_offset = offsetof (struct coff_bigobj_symbol, n_numaux);
+	} else {
+		table.symbols = bin->symbols;
+		table.count = bin->hdr.f_nsyms;
+		table.size = sizeof (struct coff_symbol);
+		table.numaux_offset = offsetof (struct coff_symbol, n_numaux);
+	}
+	return table;
+}
+
+static ut8 coff_sym_numaux(const CoffSymTable *table, ut32 idx) {
+	return *((ut8 *)table->symbols + (size_t)idx * table->size + table->numaux_offset);
+}
+
+static bool coff_keep_name(RBinFile *bf, RBinName *name) {
+	return bf->rbin->options.load_unnamed || !r_bin_name_is_unnamed (r_bin_name_tostring (name));
+}
+
+static bool coff_import_to_vec(RBinFile *bf, RVecRBinImport *ret, RBinImport *imp, int *ord) {
+	if (!coff_keep_name (bf, imp->name)) {
+		return false;
+	}
+	RBinImport *slot = RVecRBinImport_emplace_back (ret);
+	if (!slot) {
+		return false;
+	}
+	*slot = *imp;
+	slot->ordinal = (*ord)++;
+	memset (imp, 0, sizeof (*imp));
+	return true;
+}
+
+static RBinSymbol *coff_symbol_at(RBinObject *bo, struct r_bin_coff_obj *bin, ut32 raw_idx) {
+	if (!bo || !bin->sym_idx || raw_idx >= bin->sym_idx_count) {
+		return NULL;
+	}
+	ut32 idx = bin->sym_idx[raw_idx];
+	return idx? RVecRBinSymbol_at (&bo->symbols_vec, idx - 1): NULL;
+}
+
+static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, ut32 idx, RBinSymbol **sym) {
 	RBinSymbol *ptr = *sym;
 	// struct coff_symbol *s = NULL;
 	void *s = NULL;
 	struct coff_scn_hdr *sc_hdr = NULL;
-	ut32 f_nsyms = 0;
 	ut32 f_nscns = 0;
 	ut32 n_scnum = 0;
 	ut32 n_value = 0;
@@ -43,12 +96,12 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	ut8 n_sclass = 0;
 	char *n_name;
 
-	if ((bin->type == COFF_TYPE_BIGOBJ && !bin->bigobj_symbols) || (bin->type != COFF_TYPE_BIGOBJ && !bin->symbols)) {
+	CoffSymTable table = coff_sym_table (bin);
+	if (!table.symbols || idx >= table.count) {
 		return false;
 	}
 
 	if (bin->type == COFF_TYPE_BIGOBJ) {
-		f_nsyms = bin->bigobj_hdr.f_nsyms;
 		f_nscns = bin->bigobj_hdr.f_nscns;
 		n_scnum = bin->bigobj_symbols[idx].n_scnum;
 		n_value = bin->bigobj_symbols[idx].n_value;
@@ -57,7 +110,6 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		n_name = bin->bigobj_symbols[idx].n_name;
 		s = &bin->bigobj_symbols[idx];
 	} else {
-		f_nsyms = bin->hdr.f_nsyms;
 		f_nscns = bin->hdr.f_nscns;
 		n_scnum = bin->symbols[idx].n_scnum;
 		n_value = bin->symbols[idx].n_value;
@@ -65,10 +117,6 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 		n_sclass = bin->symbols[idx].n_sclass;
 		n_name = bin->symbols[idx].n_name;
 		s = &bin->symbols[idx];
-	}
-
-	if (idx < 0 || idx > f_nsyms) {
-		return false;
 	}
 
 	char *coffname = r_coff_symbol_name (bin, s);
@@ -142,91 +190,80 @@ static bool _fill_bin_symbol(RBin *rbin, struct r_bin_coff_obj *bin, int idx, RB
 	return true;
 }
 
-static bool is_imported_symbol(struct r_bin_coff_obj *bin, int idx) {
+static bool is_imported_symbol(struct r_bin_coff_obj *bin, ut32 idx) {
 	if (!bin) {
 		return false;
 	}
+	CoffSymTable table = coff_sym_table (bin);
+	if (!table.symbols || idx >= table.count) {
+		return false;
+	}
 	if (bin->type == COFF_TYPE_BIGOBJ) {
-		if (!bin->bigobj_symbols) {
-			return false;
-		}
 		ut32 n_scnum = bin->bigobj_symbols[idx].n_scnum;
 		ut32 n_sclass = bin->bigobj_symbols[idx].n_sclass;
 		return n_scnum == COFF_SYM_SCNUM_UNDEF && n_sclass == COFF_SYM_CLASS_EXTERNAL;
 	} else {
-		if (!bin->symbols) {
-			return false;
-		}
 		ut32 n_scnum = bin->symbols[idx].n_scnum;
 		ut32 n_sclass = bin->symbols[idx].n_sclass;
 		return n_scnum == COFF_SYM_SCNUM_UNDEF && n_sclass == COFF_SYM_CLASS_EXTERNAL;
 	}
 }
 
-static RBinImport *_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
-	RBinImport *ptr = R_NEW0 (RBinImport);
+static bool _fill_bin_import(struct r_bin_coff_obj *bin, ut32 idx, RBinImport *ptr) {
 	void *s = NULL;
 	ut16 n_type = 0;
-	ut32 f_nsyms = bin->type == COFF_TYPE_BIGOBJ? bin->bigobj_hdr.f_nsyms: bin->hdr.f_nsyms;
-	if (idx < 0 || idx > f_nsyms) {
-		free (ptr);
-		return NULL;
+	if (!is_imported_symbol (bin, idx)) {
+		return false;
 	}
 	if (bin->type == COFF_TYPE_BIGOBJ) {
-		if (!bin->bigobj_symbols) {
-			free (ptr);
-			return NULL;
-		}
 		s = &bin->bigobj_symbols[idx];
 		n_type = bin->bigobj_symbols[idx].n_type;
 	} else {
-		if (!bin->symbols) {
-			free (ptr);
-			return NULL;
-		}
 		s = &bin->symbols[idx];
 		n_type = bin->symbols[idx].n_type;
 	}
-	if (!is_imported_symbol (bin, idx)) {
-		free (ptr);
-		return NULL;
-	}
 	char *coffname = r_coff_symbol_name (bin, s);
 	if (!coffname) {
-		free (ptr);
-		return NULL;
+		return false;
 	}
 	ptr->name = r_bin_name_new_from (coffname);
 	ptr->bind = "NONE";
 	ptr->type = DTYPE_IS_FUNCTION (n_type)
 		? R_BIN_TYPE_FUNC_STR
 		: R_BIN_TYPE_UNKNOWN_STR;
-	return ptr;
+	return true;
+}
+
+static RBinImport *coff_import_new(struct r_bin_coff_obj *bin, ut32 idx) {
+	RBinImport tmp = {0};
+	if (!_fill_bin_import (bin, idx, &tmp)) {
+		return NULL;
+	}
+	RBinImport *imp = R_NEW0 (RBinImport);
+	*imp = tmp;
+	return imp;
 }
 
 static bool xcoff_is_imported_symbol(struct xcoff32_ldsym *s) {
 	return XCOFF_LDSYM_FLAGS (s->l_smtype) == XCOFF_LDSYM_FLAG_IMPORT;
 }
 
-static RBinImport *_xcoff_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
-	RBinImport *ptr = R_NEW0 (RBinImport);
-	if (!ptr || idx < 0 || idx > bin->x_ldhdr.l_nsyms) {
-		free (ptr);
-		return NULL;
+static bool _xcoff_fill_bin_import(struct r_bin_coff_obj *bin, ut32 idx, RBinImport *ptr) {
+	if (idx >= bin->x_ldhdr.l_nsyms) {
+		return false;
 	}
 	struct xcoff32_ldsym *s = &bin->x_ldsyms[idx];
 	if (!xcoff_is_imported_symbol (s)) {
-		free (ptr);
-		return NULL;
+		return false;
 	}
 	char *sn = r_str_ndup (s->l_name, 8);
 	if (R_STR_ISNOTEMPTY (sn)) {
-		ptr->name = r_bin_name_new (sn);
+		ptr->name = r_bin_name_new_from (sn);
+		sn = NULL;
 	}
 	free (sn);
 	if (!ptr->name) {
-		free (ptr);
-		return NULL;
+		return false;
 	}
 	switch (s->l_smclas) {
 	case XCOFF_LDSYM_CLASS_FUNCTION:
@@ -236,7 +273,7 @@ static RBinImport *_xcoff_fill_bin_import(struct r_bin_coff_obj *bin, int idx) {
 		ptr->type = R_BIN_TYPE_UNKNOWN_STR;
 		break;
 	}
-	return ptr;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -408,96 +445,71 @@ static RList *sections(RBinFile *bf) {
 }
 
 static bool symbols_vec(RBinFile *bf) {
-	int i;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
-		ut32 f_nsyms = 0;
-		ut32 symbol_size = 0;
-		void *symbols = NULL;
-		size_t numaux_offset = 0;
-
-		if (obj->type == COFF_TYPE_BIGOBJ) {
-			f_nsyms = obj->bigobj_hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_bigobj_symbol);
-			symbols = obj->bigobj_symbols;
-			numaux_offset = offsetof (struct coff_bigobj_symbol, n_numaux);
-		} else {
-			f_nsyms = obj->hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_symbol);
-			symbols = obj->symbols;
-			numaux_offset = offsetof (struct coff_symbol, n_numaux);
+	CoffSymTable table = coff_sym_table (obj);
+	if (!table.symbols) {
+		return true;
+	}
+	R_FREE (obj->sym_idx);
+	obj->sym_idx_count = table.count;
+	if (table.count) {
+		obj->sym_idx = R_NEWS0 (ut32, table.count);
+		if (!obj->sym_idx) {
+			obj->sym_idx_count = 0;
+			return false;
 		}
-
-		if (symbols) {
-			// reserve capacity upfront so pointers stored in sym_ht remain stable
-			RVecRBinSymbol_reserve (ret, f_nsyms);
-			for (i = 0; i < f_nsyms; i++) {
-				RBinSymbol tmp = {0};
-				RBinSymbol *p = &tmp;
-				if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
-					RVecRBinSymbol_push_back (ret, &tmp);
-					ht_up_insert (obj->sym_ht, (ut64)i, RVecRBinSymbol_last (ret));
+	}
+	RVecRBinSymbol_reserve (ret, table.count);
+	ut32 i;
+	for (i = 0; i < table.count; i++) {
+		RBinSymbol tmp = {0};
+		RBinSymbol *p = &tmp;
+		if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
+			if (coff_keep_name (bf, tmp.name)) {
+				RBinSymbol *slot = RVecRBinSymbol_emplace_back (ret);
+				if (slot) {
+					*slot = tmp;
+					obj->sym_idx[i] = (ut32)RVecRBinSymbol_length (ret);
+				} else {
+					r_bin_symbol_fini (&tmp);
 				}
-
-				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-				i += n_numaux;
+			} else {
+				r_bin_symbol_fini (&tmp);
 			}
 		}
+		i += coff_sym_numaux (&table, i);
 	}
 	return true;
 }
 
 static bool imports_vec(RBinFile *bf) {
-	int i;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 	RVecRBinImport *ret = &bf->bo->imports_vec;
 	int ord = 0;
 	if (obj->x_ldsyms) {
-		/* reserve upper-bound capacity so imp_ht pointers stay stable */
 		RVecRBinImport_reserve (ret, obj->x_ldhdr.l_nsyms);
+		ut32 i;
 		for (i = 0; i < obj->x_ldhdr.l_nsyms; i++) {
-			RBinImport *src = _xcoff_fill_bin_import (obj, i);
-			if (src) {
-				RBinImport *slot = RVecRBinImport_emplace_back (ret);
-				*slot = *src;
-				free (src); /* slot owns inner fields now */
-				slot->ordinal = ord++;
-				ht_up_insert (obj->imp_ht, (ut64)i, slot);
+			RBinImport tmp = {0};
+			if (_xcoff_fill_bin_import (obj, i, &tmp)) {
+				coff_import_to_vec (bf, ret, &tmp, &ord);
+				r_bin_import_fini (&tmp);
 			}
 		}
-	} else if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
-		ut32 f_nsyms = 0;
-		ut32 symbol_size = 0;
-		void *symbols = NULL;
-		size_t numaux_offset = 0;
-
-		if (obj->type == COFF_TYPE_BIGOBJ) {
-			f_nsyms = obj->bigobj_hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_bigobj_symbol);
-			symbols = obj->bigobj_symbols;
-			numaux_offset = offsetof (struct coff_bigobj_symbol, n_numaux);
-		} else {
-			f_nsyms = obj->hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_symbol);
-			symbols = obj->symbols;
-			numaux_offset = offsetof (struct coff_symbol, n_numaux);
-		}
-		if (symbols) {
-			/* reserve upper-bound capacity so imp_ht pointers stay stable */
-			RVecRBinImport_reserve (ret, f_nsyms);
-			for (i = 0; i < f_nsyms; i++) {
-				RBinImport *src = _fill_bin_import (obj, i);
-				if (src) {
-					RBinImport *slot = RVecRBinImport_emplace_back (ret);
-					*slot = *src;
-					free (src); /* slot owns inner fields now */
-					slot->ordinal = ord++;
-					ht_up_insert (obj->imp_ht, (ut64)i, slot);
-				}
-				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-				i += n_numaux;
+		return true;
+	}
+	CoffSymTable table = coff_sym_table (obj);
+	if (table.symbols) {
+		RVecRBinImport_reserve (ret, table.count);
+		ut32 i;
+		for (i = 0; i < table.count; i++) {
+			RBinImport tmp = {0};
+			if (_fill_bin_import (obj, i, &tmp)) {
+				coff_import_to_vec (bf, ret, &tmp, &ord);
+				r_bin_import_fini (&tmp);
 			}
+			i += coff_sym_numaux (&table, i);
 		}
 	}
 	return true;
@@ -526,8 +538,7 @@ static ut16 _read_le16(RBin *rbin, ut64 addr) {
 #define BYTES_PER_IMP_RELOC 8
 
 static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut64 imp_map) {
-	R_RETURN_VAL_IF_FAIL (rbin && co, NULL);
-	if (!co->scn_hdrs) {
+	if (!rbin || !co || !co->scn_hdrs) {
 		return NULL;
 	}
 	int j, i = 0;
@@ -536,6 +547,11 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 	const bool patch_imports = patch && (imp_map != UT64_MAX);
 	HtUU *imp_vaddr_ht = patch_imports? ht_uu_new0 (): NULL;
 	if (patch_imports && !imp_vaddr_ht) {
+		return NULL;
+	}
+	RBinObject *bo = r_bin_cur_object (rbin);
+	if (!bo) {
+		ht_uu_free (imp_vaddr_ht);
 		return NULL;
 	}
 	RList *list_rel = r_list_newf ((RListFree)r_bin_reloc_free);
@@ -560,7 +576,7 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 			break;
 		}
 		for (j = 0; j < co->scn_hdrs[i].s_nreloc; j++) {
-			RBinSymbol *symbol = (RBinSymbol *)ht_up_find (co->sym_ht, (ut64)rel[j].r_symndx, NULL);
+			RBinSymbol *symbol = coff_symbol_at (bo, co, rel[j].r_symndx);
 			if (!symbol) {
 				continue;
 			}
@@ -574,9 +590,9 @@ static RList *_relocs_list(RBin *rbin, struct r_bin_coff_obj *co, bool patch, ut
 
 			ut64 sym_vaddr = symbol->vaddr;
 			if (symbol->is_imported) {
-				RBinImport *imp = (RBinImport *)ht_up_find (co->imp_ht, (ut64)rel[j].r_symndx, NULL);
+				RBinImport *imp = coff_import_new (co, rel[j].r_symndx);
 				if (imp) {
-					reloc->import = r_bin_import_clone (imp);
+					reloc->import = imp;
 					if (patch_imports) {
 						bool found;
 						sym_vaddr = ht_uu_find (imp_vaddr_ht, (ut64)rel[j].r_symndx, &found);
@@ -699,7 +715,6 @@ static RList *patch_relocs(RBinFile *bf) {
 	RBin *b = bf->rbin;
 	RBinObject *bo = r_bin_cur_object (b);
 	RIO *io = bf->rbin->iob.io;
-	void *symbols = NULL;
 	if (!bo || !bo->bin_obj) {
 		return NULL;
 	}
@@ -709,28 +724,14 @@ static RList *patch_relocs(RBinFile *bf) {
 	}
 
 	size_t nimports = 0;
-	int i;
-	ut32 f_nsyms = 0;
-	size_t symbol_size = 0;
-	size_t numaux_offset = 0;
-	if ((bin->type == COFF_TYPE_BIGOBJ && bin->bigobj_symbols) || bin->symbols) {
-		if (bin->type == COFF_TYPE_BIGOBJ) {
-			symbols = bin->bigobj_symbols;
-			f_nsyms = bin->bigobj_hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_bigobj_symbol);
-		} else {
-			symbols = bin->symbols;
-			f_nsyms = bin->hdr.f_nsyms;
-			symbol_size = sizeof (struct coff_symbol);
-		}
-		if (symbols) {
-			for (i = 0; i < f_nsyms; i++) {
-				if (is_imported_symbol (bin, i)) {
-					nimports++;
-				}
-				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
-				i += n_numaux;
+	CoffSymTable table = coff_sym_table (bin);
+	if (table.symbols) {
+		ut32 i;
+		for (i = 0; i < table.count; i++) {
+			if (is_imported_symbol (bin, i)) {
+				nimports++;
 			}
+			i += coff_sym_numaux (&table, i);
 		}
 	}
 	ut64 m_vaddr = UT64_MAX;
