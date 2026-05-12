@@ -90,7 +90,6 @@ int LLVMFuzzerTestOneInput(const ut8 *data, size_t len) {
 			(void)r_bin_get_info (bin);
 			(void)r_bin_get_size (bin);
 			(void)r_bin_get_entries (bin);
-			(void)r_bin_get_imports (bin);
 			(void)r_bin_get_imports_vec (bin);
 			(void)r_bin_get_libs (bin);
 			(void)r_bin_get_relocs (bin);

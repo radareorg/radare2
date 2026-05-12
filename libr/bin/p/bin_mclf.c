@@ -367,20 +367,20 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *imports(RBinFile *bf) {
-	RList *ret = r_list_newf ( (RListFree)r_bin_import_free);
+static bool imports_vec(RBinFile *bf) {
+	RVecRBinImport *vec = &bf->bo->imports_vec;
+	RVecRBinImport_reserve (vec, mc_api_list_count);
 	size_t i;
 	for (i = 0; i < mc_api_list_count; i++) {
 		const McApiEnt *e = &mc_api_list[i];
-		RBinImport *imp = R_NEW0 (RBinImport);
+		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		imp->name = r_bin_name_new (e->name);
 		imp->libname = strdup (mc_api_libname (e->ord));
 		imp->type = "FUNC";
 		imp->bind = "GLOBAL";
 		imp->ordinal = e->ord;
-		r_list_append (ret, imp);
 	}
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -427,7 +427,7 @@ RBinPlugin r_bin_plugin_mclf = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.sections = &sections,
 	.info = &info,
 };

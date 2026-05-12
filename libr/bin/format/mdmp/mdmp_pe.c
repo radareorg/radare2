@@ -85,39 +85,29 @@ static inline void filter_import(ut8 *n) {
 	}
 }
 
-RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
-	int i;
-	ut64 offset;
-	struct r_bin_pe_import_t *imports = NULL;
-	RBinImport *ptr = NULL;
-	RBinReloc *rel;
-	RList *ret, *relocs;
-
-	imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
-	ret = r_list_new ();
-	relocs = r_list_newf ((RListFree)r_bin_reloc_free);
-
-	if (!imports || !ret || !relocs) {
-		free (imports);
-		free (ret);
-		free (relocs);
-		return NULL;
+void PE_(r_bin_mdmp_pe_load_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin, RVecRBinImport *vec) {
+	struct r_bin_pe_import_t *imports = PE_(r_bin_pe_get_imports) (pe_bin->bin);
+	if (!imports) {
+		return;
 	}
-
+	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
+	if (!relocs) {
+		free (imports);
+		return;
+	}
 	pe_bin->bin->relocs = relocs;
+	int i;
 	for (i = 0; !imports[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinImport))) {
-			break;
-		}
 		filter_import (imports[i].name);
+		RBinImport *ptr = RVecRBinImport_emplace_back (vec);
 		ptr->name = r_bin_name_new ((const char *)imports[i].name);
 		ptr->libname = *imports[i].libname ? strdup ((const char *)imports[i].libname) : NULL;
 		ptr->bind = "NONE";
 		ptr->type = R_BIN_TYPE_FUNC_STR;
 		ptr->ordinal = imports[i].ordinal;
-		r_list_append (ret, ptr);
 
-		if (!(rel = R_NEW0 (RBinReloc))) {
+		RBinReloc *rel = R_NEW0 (RBinReloc);
+		if (!rel) {
 			break;
 		}
 #ifdef R_BIN_PE64
@@ -125,7 +115,7 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 #else
 		rel->type = R_BIN_RELOC_32;
 #endif
-		offset = imports[i].vaddr;
+		ut64 offset = imports[i].vaddr;
 		if (offset > pe_bin->vaddr) {
 			offset -= pe_bin->vaddr;
 		}
@@ -137,8 +127,6 @@ RList *PE_(r_bin_mdmp_pe_get_imports) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {
 		r_list_append (relocs, rel);
 	}
 	free (imports);
-
-	return ret;
 }
 
 RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) {

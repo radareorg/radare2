@@ -271,34 +271,30 @@ static bool __ne_get_resources(r_bin_ne_obj_t *bin) {
 	return true;
 }
 
-RList *r_bin_ne_get_imports(r_bin_ne_obj_t *bin) {
+void r_bin_ne_load_imports(r_bin_ne_obj_t *bin, RVecRBinImport *vec) {
 	if (!bin->ne_header) {
-		return NULL;
+		return;
 	}
-	RList *imports = r_list_newf ((RListFree)r_bin_import_free);
 	ut16 off = bin->ne_header->ImportNameTable + bin->header_offset + 1;
+	RVecRBinImport_reserve (vec, bin->ne_header->ModRefs);
 	int i;
 	for (i = 0; i < bin->ne_header->ModRefs; i++) {
-		RBinImport *imp = R_NEW0 (RBinImport);
 		ut8 sz = r_buf_read8_at (bin->buf, off);
 		if (!sz) {
-			r_bin_import_free (imp);
 			break;
 		}
 		off++;
 		char *name = malloc ((ut64)sz + 1);
 		if (!name) {
-			r_bin_import_free (imp); break;
+			break;
 		}
 		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
+		RBinImport *imp = RVecRBinImport_emplace_back (vec);
 		imp->name = r_bin_name_new_from (name);
 		imp->ordinal = i + 1;
-		r_list_append (imports, imp);
 		off += sz;
 	}
-	bin->imports = imports;
-	return imports;
 }
 
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
@@ -591,12 +587,10 @@ void __init(RBuffer *buf, r_bin_ne_obj_t *bin) {
 		return;
 	}
 	r_buf_read_at (buf, (ut64)bin->header_offset + bin->ne_header->EntryTableOffset, bin->entry_table, bin->ne_header->EntryTableLength);
-	bin->imports = r_bin_ne_get_imports (bin);
 	__ne_get_resources (bin);
 }
 
 void r_bin_ne_free(r_bin_ne_obj_t *bin) {
-	// r_list_free (bin->imports); // double free
 	r_list_free (bin->resources);
 	free (bin->entry_table);
 	free (bin->ne_header);

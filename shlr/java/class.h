@@ -941,7 +941,7 @@ R_API ut32 r_bin_java_cp_get_size(RBinJavaObj *bin, ut16 idx);
 
 R_API int r_bin_java_load_bin(RBinJavaObj *bin, const ut8 * buf, ut64 len);
 R_API void r_bin_add_import(RBinJavaObj * bin, RBinJavaCPTypeObj *cp_obj, const char * type);
-R_API RList* r_bin_java_get_imports(RBinJavaObj* bin);
+R_API void r_bin_java_load_imports(RBinJavaObj* bin, RVecRBinImport *vec);
 
 R_API ut64 r_bin_java_get_method_start(RBinJavaObj *bin, RBinJavaField *method);
 R_API ut64 r_bin_java_get_method_end(RBinJavaObj *bin, RBinJavaField *method);

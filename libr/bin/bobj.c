@@ -113,16 +113,6 @@ static void filter_unnamed_imports_vec(RVecRBinImport *imports) {
 	}
 }
 
-static void filter_unnamed_imports(RList *imports) {
-	RListIter *iter, *tmp;
-	RBinImport *imp;
-	r_list_foreach_safe (imports, iter, tmp, imp) {
-		if (!imp || !bin_name_has_value (imp->name)) {
-			r_list_delete (imports, iter);
-		}
-	}
-}
-
 static void filter_unnamed_classes(RList *classes) {
 	RListIter *iter, *tmp, *iter2, *tmp2;
 	RBinClass *klass;
@@ -168,8 +158,6 @@ static void object_delete_items(RBinObject *o) {
 	o->symbol_addr_ht = NULL;
 	r_list_free (o->entries);
 	r_list_free (o->fields);
-	/* imports list elements may carry strdup'd names; ensure list has free cb or purge manually */
-	r_list_free (o->imports);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
 	r_list_free (o->sections);
@@ -531,17 +519,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			filter_unnamed_imports_vec (&bo->imports_vec);
 		}
 		clamp_imports_vec (&bo->imports_vec, limit);
-		import_cache_cleanup (bo);
-	} else if (p->imports) {
-		r_list_free (bo->imports);
-		bo->imports = p->imports (bf);
-		if (bo->imports) {
-			bo->imports->free = (RListFree)r_bin_import_free;
-		}
-		if (!bin->options.load_unnamed) {
-			filter_unnamed_imports (bo->imports);
-		}
-		clamp_list (bo->imports, limit);
 		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {

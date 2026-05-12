@@ -564,11 +564,6 @@ error:
 	return false;
 }
 
-static RList *imports(RBinFile *bf) {
-	// all executables are statically linked
-	return NULL;
-}
-
 static RList *libs(RBinFile *bf) {
 	// all executables are statically linked
 	return NULL;
@@ -683,7 +678,6 @@ RBinPlugin r_bin_plugin_p9 = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
 	.info = &info,
 	.libs = &libs,
 	// .dbginfo = &r_bin_dbginfo_p9,

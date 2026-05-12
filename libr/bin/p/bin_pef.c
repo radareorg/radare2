@@ -755,22 +755,22 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *imports(RBinFile *bf) {
+static bool imports_vec(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
 	ut32 importedLibraryCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 24);
 	ut32 totalImportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 28);
 	ut32 loaderStringsOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 40);
 	if (totalImportedSymbolCount < 1 || totalImportedSymbolCount > UT16_MAX) {
 		R_LOG_WARN ("invalid amount of imports");
-		return NULL;
+		return false;
 	}
 	if (importedLibraryCount > (UT32_MAX / 24)) {
 		R_LOG_WARN ("invalid amount of libraries");
-		return NULL;
+		return false;
 	}
-	RBinImport **ary = calloc (sizeof (RBinImport), totalImportedSymbolCount);
+	RBinImport **ary = calloc (sizeof (RBinImport *), totalImportedSymbolCount);
 	if (!ary) {
-		return NULL;
+		return false;
 	}
 	int i, j;
 
@@ -784,7 +784,6 @@ static RList *imports(RBinFile *bf) {
 		ut32 libSymCount = r_buf_read_be32_at (bf->buf, at + 12);
 		ut32 firstSym = r_buf_read_be32_at (bf->buf, at + 16);
 
-		// Check for invalid firstSym or libSymCount to prevent integer overflow
 		if (firstSym > totalImportedSymbolCount ||
 				libSymCount > totalImportedSymbolCount ||
 				firstSym > (UT32_MAX - libSymCount)) {
@@ -792,7 +791,6 @@ static RList *imports(RBinFile *bf) {
 		}
 
 		for (j = firstSym; j < firstSym + libSymCount && j < totalImportedSymbolCount; j++) {
-			// Recalculate 'at' safely using checked values
 			ut32 offset = 56 + 24 * importedLibraryCount;
 			at = pef->ldrsec + offset + 4 * j;
 
@@ -808,14 +806,17 @@ static RList *imports(RBinFile *bf) {
 		}
 	}
 
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 	for (i = 0; i < totalImportedSymbolCount; i++) {
-		if (ary[i]->name != NULL) {
-			r_list_append (ret, ary[i]);
+		if (ary[i]->name) {
+			RVecRBinImport_push_back (ret, ary[i]);
+			free (ary[i]); /* vec owns inner fields now */
+		} else {
+			r_bin_import_free (ary[i]);
 		}
 	}
 	free (ary);
-	return ret;
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -992,7 +993,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.size = &size,
 	.binsym = &binsym,
 	.sections = &sections,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,

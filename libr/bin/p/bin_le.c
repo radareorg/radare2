@@ -116,8 +116,9 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *imports(RBinFile *bf) {
-	return r_bin_le_get_imports (bf->bo->bin_obj);
+static bool imports_vec(RBinFile *bf) {
+	r_bin_le_load_imports (bf->bo->bin_obj, &bf->bo->imports_vec);
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -239,7 +240,7 @@ RBinPlugin r_bin_plugin_le = {
 	.sections = &sections,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,

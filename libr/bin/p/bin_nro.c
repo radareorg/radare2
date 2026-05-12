@@ -43,7 +43,7 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	RBinNXOObj *bin = R_NEW0 (RBinNXOObj);
 	ut64 ba = baddr (bf);
 	RVecRBinSymbol_init (&bin->methods_list);
-	bin->imports_list = r_list_newf ((RListFree)r_bin_import_free);
+	RVecRBinImport_init (&bin->imports_list);
 	bin->classes_list = r_list_newf ((RListFree)free);
 	ut32 mod0 = r_buf_read_le32_at (b, NRO_OFFSET_MODMEMOFF);
 	parseMod (b, bin, mod0, ba);
@@ -177,13 +177,13 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *imports(RBinFile *bf) {
-	RBinNXOObj *bin;
+static bool imports_vec(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
-	bin = (RBinNXOObj*) bf->bo->bin_obj;
-	return bin->imports_list;
+	RBinNXOObj *bin = (RBinNXOObj*) bf->bo->bin_obj;
+	RVecRBinImport_swap (&bf->bo->imports_vec, &bin->imports_list);
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -233,7 +233,7 @@ RBinPlugin r_bin_plugin_nro = {
 	.sections = &sections,
 	.get_sdb = &get_sdb,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.info = &info,
 };
 

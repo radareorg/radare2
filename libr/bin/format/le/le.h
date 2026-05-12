@@ -24,7 +24,7 @@ R_IPI void r_bin_le_free(RBinLEObj *bin);
 R_IPI RList *r_bin_le_get_entrypoints(RBinLEObj *bin);
 R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin);
 R_IPI void r_bin_le_load_symbols(RBinLEObj *bin, RVecRBinSymbol *vec);
-R_IPI RList *r_bin_le_get_imports(RBinLEObj *bin);
+R_IPI void r_bin_le_load_imports(RBinLEObj *bin, RVecRBinImport *vec);
 R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin);
 R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin);
 #endif

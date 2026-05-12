@@ -448,21 +448,22 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *imports(RBinFile *bf) {
+static bool imports_vec(RBinFile *bf) {
 	int i;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_import_free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinImport *ret = &bf->bo->imports_vec;
 	int ord = 0;
 	if (obj->x_ldsyms) {
+		/* reserve upper-bound capacity so imp_ht pointers stay stable */
+		RVecRBinImport_reserve (ret, obj->x_ldhdr.l_nsyms);
 		for (i = 0; i < obj->x_ldhdr.l_nsyms; i++) {
-			RBinImport *ptr = _xcoff_fill_bin_import (obj, i);
-			if (ptr) {
-				ptr->ordinal = ord++;
-				r_list_append (ret, ptr);
-				ht_up_insert (obj->imp_ht, (ut64)i, ptr);
+			RBinImport *src = _xcoff_fill_bin_import (obj, i);
+			if (src) {
+				RBinImport *slot = RVecRBinImport_emplace_back (ret);
+				*slot = *src;
+				free (src); /* slot owns inner fields now */
+				slot->ordinal = ord++;
+				ht_up_insert (obj->imp_ht, (ut64)i, slot);
 			}
 		}
 	} else if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
@@ -483,19 +484,23 @@ static RList *imports(RBinFile *bf) {
 			numaux_offset = offsetof (struct coff_symbol, n_numaux);
 		}
 		if (symbols) {
+			/* reserve upper-bound capacity so imp_ht pointers stay stable */
+			RVecRBinImport_reserve (ret, f_nsyms);
 			for (i = 0; i < f_nsyms; i++) {
-				RBinImport *ptr = _fill_bin_import (obj, i);
-				if (ptr) {
-					ptr->ordinal = ord++;
-					r_list_append (ret, ptr);
-					ht_up_insert (obj->imp_ht, (ut64)i, ptr);
+				RBinImport *src = _fill_bin_import (obj, i);
+				if (src) {
+					RBinImport *slot = RVecRBinImport_emplace_back (ret);
+					*slot = *src;
+					free (src); /* slot owns inner fields now */
+					slot->ordinal = ord++;
+					ht_up_insert (obj->imp_ht, (ut64)i, slot);
 				}
 				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
 				i += n_numaux;
 			}
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -997,7 +1002,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.entries = &entries,
 	.sections = &sections,
 	.symbols_vec = &symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.info = &info,
 	.libs = &libs,
 	.relocs = &relocs,

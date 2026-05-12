@@ -2806,21 +2806,18 @@ static void r_bin_java_set_imports(RBinJavaObj *bin) {
 	}
 }
 
-R_API RList *r_bin_java_get_imports(RBinJavaObj *bin) {
-	RList *ret = r_list_newf (bimport_free);
+R_API void r_bin_java_load_imports(RBinJavaObj *bin, RVecRBinImport *vec) {
 	RBinImport *import = NULL;
 	RListIter *iter;
 	r_list_foreach (bin->imports_list, iter, import) {
-		RBinImport *n_import = R_NEW0 (RBinImport);
+		RBinImport *n_import = RVecRBinImport_emplace_back (vec);
 		n_import->name = bn_clone (import->name);
 		n_import->classname = import->classname ? strdup (import->classname) : NULL;
 		n_import->descriptor = import->descriptor ? strdup (import->descriptor) : NULL;
 		n_import->bind = import->bind;
 		n_import->type = import->type;
 		n_import->ordinal = import->ordinal;
-		r_list_append (ret, n_import);
 	}
-	return ret;
 }
 
 static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
@@ -2858,8 +2855,7 @@ R_API void r_bin_java_load_symbols(RBinJavaObj *bin, RVecRBinSymbol *symbols) {
 			break;
 		}
 	}
-	RList *imports = r_bin_java_get_imports (bin);
-	r_list_foreach (imports, iter, imp) {
+	r_list_foreach (bin->imports_list, iter, imp) {
 		if (imp->classname && !strncmp (imp->classname, "kotlin/jvm", 10)) {
 			r_str_ncpy (bin->lang, "kotlin", sizeof (bin->lang));
 		}
@@ -2874,7 +2870,6 @@ R_API void r_bin_java_load_symbols(RBinJavaObj *bin, RVecRBinSymbol *symbols) {
 		sym->vaddr = sym->paddr = imp->ordinal;
 		sym->ordinal = imp->ordinal;
 	}
-	r_list_free (imports);
 }
 
 R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {

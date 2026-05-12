@@ -403,7 +403,6 @@ typedef struct r_bin_object_t {
 	ut64 obj_size;
 	RStrpool *pool;
 	RList/*<RBinSection>*/ *sections; // DEPRECATE
-	RList/*<RBinImport>*/ *imports; // DEPRECATE
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
@@ -658,7 +657,6 @@ typedef struct r_bin_plugin_t {
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
 	// R2_600 - deprecate in r2-6.0.0
 	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
-	RList/*<RBinImport>*/* (*imports)(RBinFile *bf); // R2_590: return VecBinImport*
 	// R2_590 - implement them in all the plugins
 	bool (*sections_vec)(RBinFile *bf); // R2_590
 	bool (*symbols_vec)(RBinFile *bf);
@@ -906,7 +904,6 @@ R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
 
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);
-R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
 R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
 R_API RRBTree *r_bin_get_relocs(RBin *bin);
@@ -919,7 +916,6 @@ R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.
 R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr);
-R_API const RList *r_bin_get_imports(RBin *bin);
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
 R_API RList *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true

@@ -141,8 +141,9 @@ static RList *sections(RBinFile *bf) {
 	return r_bin_java_get_sections (bf->bo->bin_obj);
 }
 
-static RList *imports(RBinFile *bf) {
-	return r_bin_java_get_imports (bf->bo->bin_obj);
+static bool imports_vec(RBinFile *bf) {
+	r_bin_java_load_imports (bf->bo->bin_obj, &bf->bo->imports_vec);
+	return true;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -164,7 +165,7 @@ RBinPlugin r_bin_plugin_java = {
 	.entries = &entries,
 	.sections = sections,
 	.symbols_vec = symbols_vec,
-	.imports = &imports,
+	.imports_vec = &imports_vec,
 	.strings = &strings,
 	.info = &info,
 	.libs = libs,
