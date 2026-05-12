@@ -321,6 +321,9 @@ typedef struct r_anal_fcn_context_t {
 	RList *fcn_slots; // RList<RAnalFcnSlot *>
 	RList *assumptions; // RList<RAnalFunctionAssumption *>
 	char *assumptions_json;
+	ut64 function_dirty_epoch;
+	ut64 type_dirty_epoch;
+	ut64 context_hash;
 } RAnalFcnContext;
 
 typedef struct r_anal_diff_t {

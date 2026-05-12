@@ -1214,6 +1214,9 @@ R_API RAnalFcnContext *r_anal_function_context_collect(RAnal *anal, RAnalFunctio
 	ctx->fcn_slots = r_list_newf ((RListFree)fcn_context_slot_free);
 	ctx->assumptions = r_anal_function_list_assumptions (anal, fcn);
 	ctx->assumptions_json = strdup (R_STR_ISNOTEMPTY (fcn->assumptions_json)? fcn->assumptions_json: "[]");
+	ctx->function_dirty_epoch = r_anal_function_dirty_epoch (fcn);
+	ctx->type_dirty_epoch = r_anal_types_dirty_epoch (anal);
+	ctx->context_hash = r_anal_function_context_hash (anal, fcn);
 	if (!ctx->reg_args || !ctx->fcn_slots || !ctx->assumptions || !ctx->assumptions_json) {
 		r_anal_function_context_free (ctx);
 		return NULL;
