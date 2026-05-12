@@ -199,18 +199,19 @@ R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr) {
 	return sym;
 }
 
+R_API void r_bin_symbol_copy(RBinSymbol *dst, RBinSymbol *src) {
+	R_RETURN_IF_FAIL (dst && src);
+	*dst = *src;
+	dst->name = r_bin_name_clone (src->name);
+	dst->libname = src->libname? strdup (src->libname): NULL;
+	dst->classname = src->classname? strdup (src->classname): NULL;
+	dst->rtype = src->rtype? strdup (src->rtype): NULL;
+}
+
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs) {
 	R_RETURN_VAL_IF_FAIL (bs, NULL);
-	RBinSymbol *nbs = r_mem_dup (bs, sizeof (RBinSymbol));
-	if (nbs) {
-		nbs->name = r_bin_name_clone (bs->name);
-		if (bs->libname) {
-			nbs->libname = strdup (bs->libname);
-		}
-		if (bs->classname) {
-			nbs->classname = strdup (bs->classname);
-		}
-	}
+	RBinSymbol *nbs = R_NEW (RBinSymbol);
+	r_bin_symbol_copy (nbs, bs);
 	return nbs;
 }
 
@@ -238,6 +239,7 @@ R_API void r_bin_symbol_fini(RBinSymbol *sym) {
 		r_bin_name_free (sym->name);
 		free (sym->libname);
 		free (sym->classname);
+		free (sym->rtype);
 	}
 }
 
@@ -1498,14 +1500,20 @@ R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, c
 	return ptr;
 }
 
-// use void* to honor the RListFree signature
-R_API void r_bin_field_free(void *_field) {
-	RBinField *field = (RBinField *)_field;
+R_API void r_bin_field_fini(RBinField *field) {
 	if (field) {
 		r_bin_name_free (field->name);
 		r_bin_name_free (field->type);
 		free (field->comment);
 		free (field->format);
+	}
+}
+
+// use void* to honor the RListFree signature
+R_API void r_bin_field_free(void *_field) {
+	RBinField *field = (RBinField *)_field;
+	if (field) {
+		r_bin_field_fini (field);
 		free (field);
 	}
 }

@@ -1480,8 +1480,8 @@ static RList *classes(RBinFile *bf) {
 				ut64 pointer_to_class = r_read_le64 (cursor);
 
 				RBinClass *klass = R_NEW0 (RBinClass);
-				klass->methods = r_list_new ();
-				klass->fields = r_list_new ();
+				RVecRBinSymbol_init (&klass->methods);
+				RVecRBinField_init (&klass->fields);
 				klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 
 				bf->bo->bin_obj = mach0;

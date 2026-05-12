@@ -1311,13 +1311,12 @@ static void cmd_pCd(RCore *core, const char *input) {
 	free (o_ab);
 }
 
-static void findMethodBounds(RList *methods, ut64 *min, ut64 *max) {
+static void findMethodBounds(RVecRBinSymbol *methods, ut64 *min, ut64 *max) {
 	RBinSymbol *sym;
-	RListIter *iter;
 	ut64 at_min = UT64_MAX;
 	ut64 at_max = 0LL;
 
-	r_list_foreach (methods, iter, sym) {
+	R_VEC_FOREACH (methods, sym) {
 		if (sym->vaddr && sym->vaddr != UT64_MAX) {
 			if (sym->vaddr < at_min) {
 				at_min = sym->vaddr;
@@ -1336,7 +1335,7 @@ static ut64 findClassBounds(RCore *core, const char *input, int *len) {
 	RBinClass *c = r_list_first (cs);
 	if (c) {
 		ut64 min = 0, max = 0;
-		findMethodBounds (c->methods, &min, &max);
+		findMethodBounds (&c->methods, &min, &max);
 		if (len) {
 			*len = (max - min);
 		}

@@ -108,13 +108,13 @@ static void init_addr2klass(RCore *core, RBinObject *bo) {
 		return;
 	}
 	RList *klasses = bo->classes;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinClass *klass;
 	RBinSymbol *method;
 	// this is slow. must be optimized, but at least its cached
 	bo->addr2klassmethod = ht_up_new0 ();
 	r_list_foreach (klasses, iter, klass) {
-		r_list_foreach (klass->methods, iter2, method) {
+		R_VEC_FOREACH (&klass->methods, method) {
 			ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
 		}
 	}

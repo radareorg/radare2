@@ -1222,7 +1222,7 @@ R_API int r_core_visual_types(RCore *core) {
 }
 
 R_API bool r_core_visual_hudclasses(RCore *core) {
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinClass *c;
 	RBinField *f;
 	RBinSymbol *m;
@@ -1237,12 +1237,12 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	RList *classes = r_bin_get_classes (core->bin);
 	r_list_foreach (classes, iter, c) {
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
-		r_list_foreach (c->fields, iter2, f) {
+		R_VEC_FOREACH (&c->fields, f) {
 			const char *fname = r_bin_name_tostring2 (f->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				f->vaddr, cname, fname));
 		}
-		r_list_foreach (c->methods, iter2, m) {
+		R_VEC_FOREACH (&c->methods, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				m->vaddr, cname, name));
@@ -1394,7 +1394,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 		// show fields
 		r_cons_printf (cons, "[hjkl_/cFm]> fields of %s:\n\n", _cname);
 		if (_c)
-		r_list_foreach (_c->fields, iter, f) {
+		R_VEC_FOREACH (&_c->fields, f) {
 			const char *name = r_bin_name_tostring2 (f->name, 'f');
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
@@ -1448,7 +1448,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			return mur;
 		}
 		r_cons_printf (cons, "[hjkl_/cfM]> methods of %s\n\n", _cname);
-		r_list_foreach (_c->methods, iter, m) {
+		R_VEC_FOREACH (&_c->methods, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {

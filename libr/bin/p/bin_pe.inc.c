@@ -308,14 +308,16 @@ static RList* classes(RBinFile *bf) {
 			RListIter *iter_field;
 			DotNetField *dfield;
 			r_list_foreach (dsym->fields, iter_field, dfield) {
-				RBinField *field = R_NEW0 (RBinField);
+				RBinField *field = RVecRBinField_emplace_back (&target_cls->fields);
+				if (!field) {
+					break;
+				}
 				field->name = r_bin_name_new (dfield->name);
 				field->kind = R_BIN_FIELD_KIND_FIELD;
 				field->vaddr = 0;
 				field->paddr = 0;
 				field->size = 0;
 				field->offset = dfield->offset;
-				r_list_append (target_cls->fields, field);
 			}
 		}
 		free (class_name_full);
@@ -397,14 +399,13 @@ static RList* classes(RBinFile *bf) {
 		}
 		if (cls && method_name && *method_name) {
 			// Add this method to the class
-			RBinSymbol *method_sym = R_NEW0 (RBinSymbol);
+			RBinSymbol *method_sym = RVecRBinSymbol_emplace_back (&cls->methods);
 			method_sym->name = r_bin_name_new (method_name);
 			method_sym->vaddr = dsym->vaddr + image_base;
 			method_sym->paddr = dsym->vaddr;
 			method_sym->bind = R_BIN_BIND_GLOBAL_STR;
 			method_sym->type = R_BIN_TYPE_FUNC_STR;
 			method_sym->size = dsym->size;
-			r_list_append (cls->methods, method_sym);
 		}
 		free (tmp);
 	}
