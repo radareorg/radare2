@@ -53,7 +53,7 @@ EXPECT=<<EOF
     "realname": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
     "rawname": "__ZSt3minImERKT_S2_S2_",
     "demangled": "unsigned long const& std::min<unsigned long>(unsigned long const&, unsigned long const&)",
-    "types": "void sym.unsigned_long_const_std__min_unsigned_long__unsigned_long_const__unsigned_long_const_ (int32_t arg_8h, int32_t arg_ch)",
+    "types": "void method.unsigned_long_const_std.min_unsigned_long__unsigned_long_const__unsigned_long_const_ (int32_t arg_8h, int32_t arg_ch)",
     "refs": [
       
     ],

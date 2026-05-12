@@ -54,6 +54,8 @@ va       false
   ;-- sym.TestVariableSwitchUp.TestMultipleVariable:
   ;-- TestMultipleVariable:
 / (fcn) method.TestVariableSwitchUp.TestMultipleVariable 37
+// void method.TestVariableSwitchUp.TestMultipleVariable (int l0, int l1, int l2, int l3);
+| `- args(l0, l1, l2, l3)
 | 0x000002fd      1064           bipush 100
 | 0x000002ff      b8000f         invokestatic java/lang/Integer/valueOf(I)Ljava/lang/Integer;
 | 0x00000302      4b             astore_0

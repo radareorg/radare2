@@ -2356,8 +2356,13 @@ static const char *function_signature_lookup_name(RAnal *anal, RAnalFunction *fc
 
 	R_RETURN_VAL_IF_FAIL (anal && fcn && fcn->name, NULL);
 	if (anal->flb.f) {
+		// Only override with the flag name when it's actually an import
+		// stub. r_flag_get_by_spaces falls back to the first flag at addr
+		// when no IMPORTS flag exists, which would pick generic entry%i
+		// markers over real symbols.
 		RFlagItem *flag = r_flag_get_by_spaces (anal->flb.f, false, fcn->addr, R_FLAGS_FS_IMPORTS, NULL);
-		if (flag && R_STR_ISNOTEMPTY (flag->name)) {
+		if (flag && R_STR_ISNOTEMPTY (flag->name) && flag->space
+				&& !strcmp (flag->space->name, R_FLAGS_FS_IMPORTS)) {
 			name = flag->name;
 		}
 	}
