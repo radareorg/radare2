@@ -223,15 +223,6 @@ static inline bool is_thumb(RBinFile *bf) {
 	return (bin->hdr.cputype == 12 && bin->hdr.cpusubtype == 9);
 }
 
-static void objc_method_free(void *p) {
-	RBinSymbol *sym = (RBinSymbol *)p;
-	if (sym) {
-		free ((char *)sym->rtype);
-		sym->rtype = NULL;
-		r_bin_symbol_free (sym);
-	}
-}
-
 static mach0_ut va2pa(RBinFile *bf, mach0_ut p, ut32 *offset, ut32 *left) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, 0);
 
@@ -702,10 +693,6 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 	if (r == 0 || r == (mach0_ut)-1) {
 		return;
 	}
-	if (klass->methods) {
-		klass->methods->free = objc_method_free;
-	}
-
 	if (r + left < r || r + sizeof (struct MACH0_(SMethodList)) < r) {
 		return;
 	}
@@ -822,7 +809,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			}
 			if (!want_unnamed && R_STR_ISEMPTY (name)) {
 				R_FREE (name);
-				objc_method_free (method);
+				r_bin_symbol_free (method);
 				goto next;
 			}
 			if (class_name) { // XXX to save memory we can just ref the RBinName instance from the class
@@ -835,7 +822,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			R_FREE (name);
 		}
 		if (!method->name && !want_unnamed) {
-			objc_method_free (method);
+			r_bin_symbol_free (method);
 			goto next;
 		}
 
@@ -869,7 +856,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 		method->lang = R_BIN_LANG_OBJC;
 		method->vaddr = m.imp;
 		if (!method->vaddr) {
-			objc_method_free (method);
+			r_bin_symbol_free (method);
 			goto next;
 		}
 		method->type = is_static? R_BIN_TYPE_FUNC_STR: R_BIN_TYPE_METH_STR;
@@ -884,14 +871,15 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 				//eprintf ("0x%08llx METHOD %s\n", method->vaddr, method->name);
 			}
 		}
-		r_list_append (klass->methods, method);
+		RVecRBinSymbol_push_back (&klass->methods, method);
+		free (method);
 next:
 		p += read_size;
 		offset += read_size;
 	}
 	return;
 error:
-	objc_method_free (method);
+	r_bin_symbol_free (method);
 	R_FREE (name);
 	R_FREE (rtype);
 	return;
@@ -1659,7 +1647,8 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			}
 #endif
 			sym->lang = R_BIN_LANG_SWIFT;
-			r_list_append (klass->methods, sym);
+			RVecRBinSymbol_push_back (&klass->methods, sym);
+			free (sym);
 #if 0
 			// TODO. try to resolve the method name by symbol table or debug info
 			r_cons_printf ("f sym.swift.%s.method.%s = 0x%" PFMT64x"\n", typename, method_name, method_addr);

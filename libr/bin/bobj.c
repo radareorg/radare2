@@ -114,17 +114,20 @@ static void filter_unnamed_imports_vec(RVecRBinImport *imports) {
 }
 
 static void filter_unnamed_classes(RList *classes) {
-	RListIter *iter, *tmp, *iter2, *tmp2;
+	RListIter *iter, *tmp;
 	RBinClass *klass;
-	RBinSymbol *method;
 	r_list_foreach_safe (classes, iter, tmp, klass) {
 		if (!klass || (klass->attr & R_BIN_ATTR_SYNTHETIC) || !bin_name_has_value (klass->name)) {
 			r_list_delete (classes, iter);
 			continue;
 		}
-		r_list_foreach_safe (klass->methods, iter2, tmp2, method) {
+		size_t i = 0;
+		while (i < RVecRBinSymbol_length (&klass->methods)) {
+			RBinSymbol *method = RVecRBinSymbol_at (&klass->methods, i);
 			if (!symbol_has_value (method)) {
-				r_list_delete (klass->methods, iter2);
+				RVecRBinSymbol_remove (&klass->methods, i);
+			} else {
+				i++;
 			}
 		}
 	}
@@ -136,7 +139,7 @@ static bool classes_names_only(RBinFile *bf) {
 
 static void class_drop_details(RBinClass *klass) {
 	if (klass) {
-		r_list_purge (klass->methods);
+		RVecRBinSymbol_clear (&klass->methods);
 		RVecRBinField_clear (&klass->fields);
 	}
 }
@@ -169,7 +172,6 @@ static void object_delete_items(RBinObject *o) {
 
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
-	ht_pp_free (o->methods_ht);
 	r_list_free (o->lines);
 	sdb_free (o->kv);
 	r_list_free (o->mem);
@@ -254,16 +256,16 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 			// eprintf ("(%s) = (%s)\n", klass, method);
 			RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
 			if (c) {
-				RBinSymbol *bs = r_bin_symbol_clone (sym);
 				if (c->addr == 0) {
 					c->addr = sym->vaddr;
 				}
 				c->origin = R_BIN_CLASS_ORIGIN_NAME;
-				if (classes_names_only (bf)) {
-					r_bin_symbol_free (bs);
-				} else {
+				if (!classes_names_only (bf)) {
+					RBinSymbol *bs = r_bin_symbol_clone (sym);
 					r_bin_name_demangled (bs->name, method);
-					r_list_append (c->methods, bs);
+					RBinSymbol *dst = RVecRBinSymbol_emplace_back (&c->methods);
+					*dst = *bs;
+					free (bs);
 				}
 			}
 			free (klass);
@@ -302,7 +304,10 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 			if (mn && mn[strlen (cn)] == '.') {
 				RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
 				if (c && !classes_names_only (bf)) {
-					r_list_append (c->methods, r_bin_symbol_clone (sym));
+					RBinSymbol *bs = r_bin_symbol_clone (sym);
+					RBinSymbol *dst = RVecRBinSymbol_emplace_back (&c->methods);
+					*dst = *bs;
+					free (bs);
 				}
 			}
 		}
@@ -330,7 +335,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->baddr = baseaddr;
 	bo->classes = r_list_newf ((RListFree)r_bin_class_free);
 	bo->classes_ht = ht_pp_new0 ();
-	bo->methods_ht = ht_pp_new0 ();
 	bo->import_name_ht = NULL;
 	bo->import_addr_ht = NULL;
 	bo->import_symbols = NULL;
@@ -381,7 +385,6 @@ fail:
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
-	ht_pp_free (bo->methods_ht);
 	ht_pp_free (bo->classes_ht);
 	r_list_free (bo->classes);
 	sdb_free (bo->kv);
@@ -395,7 +398,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 	bool rc = true;
 	HtSU *db = ht_su_new0 ();
 	HtPP *ht = ht_pp_new0 ();
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinClass *cls;
 	RBinSymbol *sym;
 	const bool names_only = classes_names_only (bf);
@@ -413,7 +416,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 		if (names_only) {
 			continue;
 		}
-		r_list_foreach (cls->methods, iter2, sym) {
+		R_VEC_FOREACH (&cls->methods, sym) {
 			if (R_LIKELY (sym->name)) {
 				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 			} else {
@@ -443,22 +446,11 @@ static void r_bin_object_rebuild_classes_ht(RBinObject *bo) {
 	ht_pp_free (bo->classes_ht);
 	bo->classes_ht = ht_pp_new0 ();
 
-	ht_pp_free (bo->methods_ht);
-	bo->methods_ht = ht_pp_new0 ();
-
-	RListIter *it, *it2;
+	RListIter *it;
 	RBinClass *klass;
-	RBinSymbol *method;
 	r_list_foreach (bo->classes, it, klass) {
 		if (klass->name) {
 			ht_pp_insert (bo->classes_ht, klass->name, klass);
-			r_list_foreach (klass->methods, it2, method) {
-				const char *klass_name = r_bin_name_tostring (klass->name);
-				const char *method_name = r_bin_name_tostring (method->name);
-				char *name = r_str_newf ("%s::%s", klass_name, method_name);
-				ht_pp_insert (bo->methods_ht, name, method);
-				free (name);
-			}
 		}
 	}
 }

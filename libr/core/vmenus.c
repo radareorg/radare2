@@ -1242,7 +1242,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				f->vaddr, cname, fname));
 		}
-		r_list_foreach (c->methods, iter2, m) {
+		R_VEC_FOREACH (&c->methods, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				m->vaddr, cname, name));
@@ -1448,7 +1448,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			return mur;
 		}
 		r_cons_printf (cons, "[hjkl_/cfM]> methods of %s\n\n", _cname);
-		r_list_foreach (_c->methods, iter, m) {
+		R_VEC_FOREACH (&_c->methods, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {

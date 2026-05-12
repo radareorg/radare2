@@ -57,6 +57,18 @@ static void bsymbol_free(void *p) {
 	}
 }
 
+static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
+	if (sym) {
+		RBinSymbol *slot = RVecRBinSymbol_emplace_back (vec);
+		if (slot) {
+			*slot = *sym;
+			free (sym); /* vec owns inner fields now */
+		} else {
+			bsymbol_free (sym);
+		}
+	}
+}
+
 static void bimport_free(void *p) {
 	RBinImport *i = p;
 	if (i) {
@@ -80,7 +92,7 @@ static int r_bin_java_is_fm_type_private(RBinJavaField *fm_type);
 static int r_bin_java_is_fm_type_protected(RBinJavaField *fm_type);
 static RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJavaCPTypeObj *obj, ut64 baddr);
 static void r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx, RVecRBinField *out);
-static RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx);
+static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVecRBinSymbol *out);
 static int r_bin_java_extract_reference_name(const char *input_str, char **ref_str, ut8 array_cnt);
 static RList *r_bin_java_extract_type_values(const char *arg_str);
 static RBinJavaCPTypeObj *r_bin_java_find_cp_name_and_type_info(RBinJavaObj *bin, ut16 name_idx, ut16 descriptor_idx);
@@ -2574,8 +2586,7 @@ R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
 	return sections;
 }
 
-static RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
-	RList *methods = r_list_newf (bsymbol_free);
+static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVecRBinSymbol *out) {
 	RListIter *iter;
 	RBinJavaField *field;
 	r_list_foreach (bin->methods_list, iter, field) {
@@ -2584,22 +2595,19 @@ static RList *r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx) {
 				RBinSymbol *sym = r_bin_java_create_new_symbol_from_ref (
 					bin, field->field_ref_cp_obj, bin->loadaddr);
 				if (sym) {
-					r_list_append (methods, sym);
+					java_push_sym (out, sym);
 				}
 			}
 		} else {
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
-			sym->name = bn_new (field->name);
-			sym->lang = R_BIN_LANG_JAVA;
-			// func defintion
-			// sym->paddr = field->file_offset + bin->loadaddr;
-			// code implementation
-			sym->paddr = r_bin_java_get_method_code_offset (field);
-			sym->vaddr = sym->paddr; // + bin->loadaddr;
-			r_list_append (methods, sym);
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (out);
+			if (sym) {
+				sym->name = bn_new (field->name);
+				sym->lang = R_BIN_LANG_JAVA;
+				sym->paddr = r_bin_java_get_method_code_offset (field);
+				sym->vaddr = sym->paddr;
+			}
 		}
 	}
-	return methods;
 }
 
 static void r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx, RVecRBinField *out) {
@@ -2667,7 +2675,7 @@ R_API RList *r_bin_java_get_lib_names(RBinJavaObj *bin) {
 static void bclass_free(void *p) {
 	RBinClass *k = p;
 	if (k) {
-		r_list_free (k->methods);
+		RVecRBinSymbol_fini (&k->methods);
 		RVecRBinField_fini (&k->fields);
 		bn_free (k->name);
 		r_list_free (k->super);
@@ -2683,6 +2691,8 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	ut32 idx = 0;
 	const bool names_only = bin->classes_names_only;
 	RBinClass *k = R_NEW0 (RBinClass);
+	RVecRBinSymbol_init (&k->methods);
+	RVecRBinField_init (&k->fields);
 	k->attr = bin->cf2.access_flags;
 	k->origin = R_BIN_CLASS_ORIGIN_BIN;
 #if 0
@@ -2690,8 +2700,8 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 		k->visibility_str = strdup (bin->cf2.flags_str);
 	}
 #endif
-	k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, bin->cf2.this_class);
 	if (!names_only) {
+		r_bin_java_enum_class_methods (bin, bin->cf2.this_class, &k->methods);
 		r_bin_java_enum_class_fields (bin, bin->cf2.this_class, &k->fields);
 	}
 	char *kname = r_bin_java_get_this_class_name (bin);
@@ -2709,8 +2719,10 @@ R_API RList *r_bin_java_get_classes(RBinJavaObj *bin) {
 	r_list_foreach (bin->cp_list, iter, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_CLASS && (this_class_cp_obj != cp_obj && is_class_interface (bin, cp_obj))) {
 			RBinClass *k = R_NEW0 (RBinClass);
-			k->methods = names_only? r_list_newf (bsymbol_free): r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx);
+			RVecRBinSymbol_init (&k->methods);
+			RVecRBinField_init (&k->fields);
 			if (!names_only) {
+				r_bin_java_enum_class_methods (bin, cp_obj->info.cp_class.name_idx, &k->methods);
 				r_bin_java_enum_class_fields (bin, cp_obj->info.cp_class.name_idx, &k->fields);
 			}
 			k->index = idx;
@@ -2806,13 +2818,6 @@ R_API void r_bin_java_load_imports(RBinJavaObj *bin, RVecRBinImport *vec) {
 		n_import->bind = import->bind;
 		n_import->type = import->type;
 		n_import->ordinal = import->ordinal;
-	}
-}
-
-static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
-	if (sym) {
-		RVecRBinSymbol_push_back (vec, sym);
-		free (sym); /* vec owns inner fields now */
 	}
 }
 

@@ -1392,11 +1392,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
 				sym = RVecRBinSymbol_last (&dex->symbols_vec);
 				// XXX keep class method vaddr consistent with symbol
-				RBinSymbol *method = r_bin_symbol_clone (sym);
-				if (method) {
-					method->paddr = method->vaddr;
-					r_list_append (cls->methods, method);
-				}
+				RBinSymbol *method = RVecRBinSymbol_emplace_back (&cls->methods);
+				r_bin_symbol_copy (method, sym);
+				method->paddr = method->vaddr;
 
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
@@ -1429,11 +1427,9 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
 				sym = RVecRBinSymbol_last (&dex->symbols_vec);
 				sym->lang = R_BIN_LANG_JAVA;
-				RBinSymbol *method = r_bin_symbol_clone (sym);
-				if (method) {
-					method->paddr = method->vaddr;
-					r_list_append (cls->methods, method);
-				}
+				RBinSymbol *method = RVecRBinSymbol_emplace_back (&cls->methods);
+				r_bin_symbol_copy (method, sym);
+				method->paddr = method->vaddr;
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {
@@ -1475,15 +1471,12 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 	cls->name = r_bin_name_new (cls_name);
 	cls->index = class_index;
 	cls->addr = hdr->class_offset + (class_index * DEX_CLASS_SIZE);
-	cls->methods = r_list_newf ((RListFree)r_bin_symbol_free);
 	const char *super = dex_class_super_name (dex, c);
 	if (super) {
 		cls->super = r_list_newf ((void*)r_bin_name_free);
 		r_list_append (cls->super, r_bin_name_new (super));
 	}
-	if (!cls->methods) {
-		goto beach;
-	}
+	RVecRBinSymbol_init (&cls->methods);
 	RVecRBinField_init (&cls->fields);
 	cls->visibility_str = createAccessFlagStr (c->access_flags, kAccessForClass);
 	RVecRBinClass_push_back (&dex->classes_vec, cls);

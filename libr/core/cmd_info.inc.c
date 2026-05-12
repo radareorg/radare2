@@ -228,7 +228,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 			const ut64 addr = iova? f->vaddr: f->paddr;
 			r_cons_printf (core->cons, "klass.%s.field.%s.%s=0x%" PFMT64x "\n", kname, kind, fname, addr);
 		}
-		r_list_foreach (k->methods, iter2, m) {
+		R_VEC_FOREACH (&k->methods, m) {
 			char *attr = r_bin_attr_tostring (m->attr, true);
 			const char *mname = r_bin_name_tostring2 (m->name, 'f');
 			const ut64 addr = iova? m->vaddr: m->paddr;
@@ -904,7 +904,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 		r_list_foreach (obj->classes, iter, klass) {
 			const char *kname = r_bin_name_tostring (klass->name);
 			RBinSymbol *method;
-			r_list_foreach (klass->methods, iter2, method) {
+			R_VEC_FOREACH (&klass->methods, method) {
 				char *addr = r_str_newf ("0x%08" PFMT64x, iova? method->vaddr: method->paddr);
 				const char *origin_str = r_bin_class_origin_tostring (klass->origin);
 				r_table_add_row (t, addr, "method", kname, method->name, origin_str, NULL);
@@ -964,12 +964,14 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 		}
 	}
 	if (klass && method_name) {
-		r_list_foreach (klass->methods, iter, m) {
+		size_t i = 0;
+		R_VEC_FOREACH (&klass->methods, m) {
 			const char *mname = r_bin_name_tostring2 (m->name, 'o');
 			if (!strcmp (method_name, mname)) {
-				r_list_delete (klass->methods, iter);
+				RVecRBinSymbol_remove (&klass->methods, i);
 				return;
 			}
+			i++;
 		}
 	}
 	R_LOG_ERROR ("Cannot find given klass or method");
@@ -1007,7 +1009,7 @@ void cmd_ic_add(RCore *core, const char *input) {
 		ut64 va = core->addr;
 		RBinSymbol *m;
 		bool found = false;
-		r_list_foreach (klass->methods, iter, m) {
+		R_VEC_FOREACH (&klass->methods, m) {
 			const char *mname = r_bin_name_tostring2 (m->name, 'o');
 			if (!strcmp (mname, method_name)) {
 				found = true;
@@ -1015,11 +1017,15 @@ void cmd_ic_add(RCore *core, const char *input) {
 			}
 		}
 		if (!found) {
-			RBinSymbol *sym = r_bin_symbol_new (method_name, pa, va);
-			if (!klass->methods) {
-				klass->methods = r_list_new ();
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (&klass->methods);
+			sym->name = r_bin_name_new (method_name);
+			sym->paddr = pa;
+			sym->vaddr = va;
+			RBinFile *bf = r_bin_cur (core->bin);
+			if (bf && bf->bo && bf->bo->addr2klassmethod) {
+				ht_up_free (bf->bo->addr2klassmethod);
+				bf->bo->addr2klassmethod = NULL;
 			}
-			r_list_append (klass->methods, sym);
 		}
 	}
 }
@@ -1168,7 +1174,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 	const bool iova = va; // r_config_get_b (core->config, "io.va");
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	const bool names_only = r_config_get_b (core->config, "bin.classes.namesonly");
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinSymbol *sym;
 	RBinClass *cls;
 	if (mode == 'c') {
@@ -1183,7 +1189,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		if (is_doublerad) {
 			r_cons_printf (core->cons, "'ac %s\n", kname);
 			if (!names_only) {
-				r_list_foreach (cls->methods, iter2, sym) {
+				R_VEC_FOREACH (&cls->methods, sym) {
 					const char *name = r_bin_name_tostring2 (sym->name, pref);
 					r_cons_printf (core->cons, "'ac %s %s 0x%08" PFMT64x "\n", kname, name, iova? sym->vaddr: sym->paddr);
 				}
@@ -1202,9 +1208,10 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			break;
 		case 'l': // "icl"
 			if (!names_only) {
-				r_list_foreach (cls->methods, iter2, sym) {
-					const char *comma = iter2->p? " ": "";
-					r_cons_printf (core->cons, "%s0x%" PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+				bool first = true;
+				R_VEC_FOREACH (&cls->methods, sym) {
+					r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", iova? sym->vaddr: sym->paddr);
+					first = false;
 				}
 			}
 			r_cons_newline (core->cons);
@@ -1226,7 +1233,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 			} else {
 				r_cons_printf (core->cons, "class %s\n", kname);
 				if (!names_only) {
-					r_list_foreach (cls->methods, iter2, sym) {
+					R_VEC_FOREACH (&cls->methods, sym) {
 						char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 						const char *name = r_bin_name_tostring (sym->name);
 						r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
@@ -1246,7 +1253,7 @@ static void cmd_ic0(RCore *core, RBinObject *obj, int mode, PJ *pj, bool is_arra
 		default:
 			r_cons_printf (core->cons, "class %s\n", kname);
 			if (!names_only) {
-				r_list_foreach (cls->methods, iter2, sym) {
+				R_VEC_FOREACH (&cls->methods, sym) {
 					char *flags = r_core_bin_attr_tostring (core, sym->attr, true);
 					const char *name = r_bin_name_tostring (sym->name);
 					r_cons_printf (core->cons, "0x%08" PFMT64x " method %s %-4s %s\n", iova? sym->vaddr: sym->paddr, kname, flags, name);
@@ -1370,7 +1377,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 				first = false;
 				RBinClass *cls;
 				RBinSymbol *sym;
-				RListIter *iter, *iter2;
+				RListIter *iter;
 				core->bin->cur = bf;
 
 				if (is_superquiet && is_jvm) {
@@ -1391,7 +1398,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 					if (!names_only) {
 						r_list_foreach (bo->classes, iter, cls) {
 							const char *kname = r_bin_name_tostring (cls->name);
-							r_list_foreach (cls->methods, iter2, sym) {
+							R_VEC_FOREACH (&cls->methods, sym) {
 								ut64 addr = iova? sym->vaddr: sym->paddr;
 								if (addr == 0 || addr == UT64_MAX) {
 									continue;
@@ -1410,11 +1417,12 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						cmd_ic0 (core, bo, 'c', pj, is_array, va, idx, cls_name, &count, is_doublerad);
 					} else if (!names_only) {
 						r_list_foreach (bo->classes, iter, cls) {
-							r_list_foreach (cls->methods, iter2, sym) {
-								const char *comma = iter2->p? " ": "";
-								r_cons_printf (core->cons, "%s0x%" PFMT64x, comma, iova? sym->vaddr: sym->paddr);
+							bool first = true;
+							R_VEC_FOREACH (&cls->methods, sym) {
+								r_cons_printf (core->cons, "%s0x%" PFMT64x, first? "": " ", iova? sym->vaddr: sym->paddr);
+								first = false;
 							}
-							if (!r_list_empty (cls->methods)) {
+							if (!RVecRBinSymbol_empty (&cls->methods)) {
 								r_cons_newline (core->cons);
 							}
 						}
@@ -1431,7 +1439,7 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 						}
 						r_list_foreach (bo->classes, iter, cls) {
 							method = NULL;
-							r_list_foreach (cls->methods, iter2, sym) {
+							R_VEC_FOREACH (&cls->methods, sym) {
 								ut64 at = iova? sym->vaddr: sym->paddr;
 								if (at < min) {
 									min = at;
@@ -2423,7 +2431,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 		}
 		if (!names_only) {
 			r_list_foreach (obj->classes, iter, klass) {
-				r_list_foreach (klass->methods, iter2, method) {
+				R_VEC_FOREACH (&klass->methods, method) {
 					const char *name = r_bin_name_tostring2 (method->name, 'o');
 					if (is_entrypoint_symbol (name)) {
 						const char *kname = r_bin_name_tostring2 (klass->name, 'o');

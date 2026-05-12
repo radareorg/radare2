@@ -13,10 +13,16 @@ static RBinClass *__getClass(RBinFile *bf, const char *name) {
 	return ht_pp_find (bf->bo->classes_ht, name, NULL);
 }
 
-static RBinSymbol *__getMethod(RBinFile *bf, const char *klass, const char *method) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->methods_ht && klass && method, NULL);
-	r_strf_var (name, 128, "%s::%s", klass, method);
-	return ht_pp_find (bf->bo->methods_ht, name, NULL);
+static RBinSymbol *__getMethod(RBinClass *c, const char *method) {
+	R_RETURN_VAL_IF_FAIL (c && method, NULL);
+	RBinSymbol *sym;
+	R_VEC_FOREACH (&c->methods, sym) {
+		const char *n = r_bin_name_tostring (sym->name);
+		if (n && !strcmp (n, method)) {
+			return sym;
+		}
+	}
+	return NULL;
 }
 
 static RBinString *__stringAt(HtUP *strings_db, RList *ret, ut64 addr) {
@@ -1284,8 +1290,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 			c->super = r_list_newf (free);
 			r_list_append (c->super, r_bin_name_new (super));
 		}
-		// TODO: use vectors!
-		c->methods = r_list_newf (r_bin_symbol_free);
+		RVecRBinSymbol_init (&c->methods);
 		RVecRBinField_init (&c->fields);
 		c->attr = attr;
 		c->origin = R_BIN_CLASS_ORIGIN_BIN;
@@ -1315,7 +1320,7 @@ R_API void r_bin_class_fini(RBinClass *k) {
 		r_bin_name_free (k->name);
 		r_list_free (k->super);
 		free (k->visibility_str);
-		r_list_free (k->methods);
+		RVecRBinSymbol_fini (&k->methods);
 		RVecRBinField_fini (&k->fields);
 	}
 }
@@ -1368,19 +1373,14 @@ R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const
 	}
 	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
 	c->lang = lang;
-	RBinSymbol *sym = __getMethod (bf, klass, method);
+	RBinSymbol *sym = __getMethod (c, method);
 	if (!sym) {
-		sym = R_NEW0 (RBinSymbol);
+		sym = RVecRBinSymbol_emplace_back (&c->methods);
 		sym->name = r_bin_name_new (method);
 		sym->name->name = strdup (method);
 		sym->lang = lang;
-		char *name = r_str_newf ("%s::%s", klass, method);
-		ht_pp_insert (bf->bo->methods_ht, name, sym);
-		// RBinSymbol *dsym = r_bin_symbol_clone (sym);
-		r_list_append (c->methods, sym);
-		free (name);
 	}
-	if (sym && sym->name) {
+	if (sym->name) {
 		free (sym->name->oname);
 		sym->name->oname = rawname? strdup (rawname): NULL;
 	}

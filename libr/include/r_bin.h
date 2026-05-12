@@ -327,7 +327,7 @@ typedef struct r_bin_symbol_t {
 	const char *bind; // tied to attr already
 	// RBinName *type;
 	const char *type;
-  	const char *rtype;
+	char *rtype;
 	bool is_imported;
 	/* only used by java */
 	ut64 vaddr;
@@ -414,7 +414,6 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *strings;
 	RList/*<RBinClass>*/ *classes;
 	HtPP *classes_ht;
-	HtPP *methods_ht;
 	RList/*<RBinDwarfRow>*/ *lines;
 	HtUP *strings_db;
 	RList/*<??>*/ *mem; // RBinMem maybe?
@@ -727,8 +726,7 @@ typedef struct r_bin_class_t {
 	ut64 addr;
 	size_t instance_size;
 	char *ns; // namespace // maybe RBinName?
-	// R2_600 - Use RVec here
-	RList *methods; // <RBinSymbol>
+	RVecRBinSymbol methods;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;

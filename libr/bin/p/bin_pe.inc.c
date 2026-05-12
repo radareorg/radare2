@@ -399,14 +399,13 @@ static RList* classes(RBinFile *bf) {
 		}
 		if (cls && method_name && *method_name) {
 			// Add this method to the class
-			RBinSymbol *method_sym = R_NEW0 (RBinSymbol);
+			RBinSymbol *method_sym = RVecRBinSymbol_emplace_back (&cls->methods);
 			method_sym->name = r_bin_name_new (method_name);
 			method_sym->vaddr = dsym->vaddr + image_base;
 			method_sym->paddr = dsym->vaddr;
 			method_sym->bind = R_BIN_BIND_GLOBAL_STR;
 			method_sym->type = R_BIN_TYPE_FUNC_STR;
 			method_sym->size = dsym->size;
-			r_list_append (cls->methods, method_sym);
 		}
 		free (tmp);
 	}

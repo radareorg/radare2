@@ -315,7 +315,6 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 	} else {
 		r_cons_printf (core->cons, "@interface %s\n", cname);
 	}
-	RListIter *iter3;
 	RBinField *f;
 	RBinSymbol *sym;
 	bool has_ivars = false;
@@ -359,7 +358,7 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 		}
 		free (type);
 	}
-	r_list_foreach (c->methods, iter3, sym) {
+	R_VEC_FOREACH (&c->methods, sym) {
 		const char *sname = r_bin_name_tostring2 (sym->name, pref);
 		bool is_class_method = (sym->attr & R_BIN_ATTR_CLASS) != 0;
 		if (!is_class_method && sym->type) {

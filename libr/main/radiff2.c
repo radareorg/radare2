@@ -843,7 +843,7 @@ static ut8 *get_fields(RCore *c, int *len) {
 }
 
 static ut8 *get_methods(RCore *c, int *len) {
-	RListIter *iter, *iter2;
+	RListIter *iter;
 
 	if (!c || !len) {
 		return NULL;
@@ -855,7 +855,7 @@ static ut8 *get_methods(RCore *c, int *len) {
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
 		const char *kname = r_bin_name_tostring (klass->name);
-		r_list_foreach (klass->methods, iter2, sym) {
+		R_VEC_FOREACH (&klass->methods, sym) {
 			const char *name = r_bin_name_tostring (sym->name);
 			r_list_append (reslist, r_str_newf ("%s.%s", kname, name));
 		}
