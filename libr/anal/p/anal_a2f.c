@@ -181,6 +181,10 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 			case R_ANAL_OP_TYPE_NOP:
 				// skip nops
 				if (cur == 0) {
+					if (addr > UT64_MAX - op->size || oaddr > UT64_MAX - op->size) {
+						block_end = true;
+						break;
+					}
 					cur -= op->size;
 					addr += op->size;
 					oaddr += op->size;
@@ -224,6 +228,10 @@ static ut64 analyzeStackBased(RCore *core, Sdb *db, RBitset *handled, ut64 addr,
 				break;
 			case R_ANAL_OP_TYPE_TRAP:
 				if (cur == 0) {
+					if (addr > UT64_MAX - op->size || oaddr > UT64_MAX - op->size) {
+						block_end = true;
+						break;
+					}
 					// skip leading int3
 					cur -= op->size;
 					addr += op->size;
