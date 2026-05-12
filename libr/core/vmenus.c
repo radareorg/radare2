@@ -1222,7 +1222,7 @@ R_API int r_core_visual_types(RCore *core) {
 }
 
 R_API bool r_core_visual_hudclasses(RCore *core) {
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinClass *c;
 	RBinField *f;
 	RBinSymbol *m;

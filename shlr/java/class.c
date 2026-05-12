@@ -47,14 +47,48 @@ static void bstring_free(void *p) {
 	}
 }
 
-static void bsymbol_free(void *p) {
-	RBinSymbol *sym = p;
+static void bsymbol_fini(RBinSymbol *sym) {
 	if (sym) {
 		bn_free (sym->name);
 		free (sym->libname);
 		free (sym->classname);
+		free (sym->rtype);
+	}
+}
+
+static void bsymbol_free(void *p) {
+	RBinSymbol *sym = p;
+	if (sym) {
+		bsymbol_fini (sym);
 		free (sym);
 	}
+}
+
+static void bfield_fini(RBinField *field) {
+	if (field) {
+		bn_free (field->name);
+		bn_free (field->type);
+		free (field->comment);
+		free (field->format);
+	}
+}
+
+static void bclass_methods_fini(RVecRBinSymbol *methods) {
+	RBinSymbol *sym;
+	R_VEC_FOREACH (methods, sym) {
+		bsymbol_fini (sym);
+	}
+	free (R_VEC_START_ITER (methods));
+	RVecRBinSymbol_init (methods);
+}
+
+static void bclass_fields_fini(RVecRBinField *fields) {
+	RBinField *field;
+	R_VEC_FOREACH (fields, field) {
+		bfield_fini (field);
+	}
+	free (R_VEC_START_ITER (fields));
+	RVecRBinField_init (fields);
 }
 
 static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
@@ -2675,8 +2709,8 @@ R_API RList *r_bin_java_get_lib_names(RBinJavaObj *bin) {
 static void bclass_free(void *p) {
 	RBinClass *k = p;
 	if (k) {
-		RVecRBinSymbol_fini (&k->methods);
-		RVecRBinField_fini (&k->fields);
+		bclass_methods_fini (&k->methods);
+		bclass_fields_fini (&k->fields);
 		bn_free (k->name);
 		r_list_free (k->super);
 		free (k);
