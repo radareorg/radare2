@@ -699,7 +699,7 @@ e anal.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false
-/R
+/G
 q
 EOF
 EXPECT=<<EOF
@@ -726,7 +726,7 @@ e asm.arch=x86
 e anal.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
-/Rj
+/Gj
 q
 EOF
 EXPECT=<<EOF
@@ -742,7 +742,7 @@ e anal.arch=x86
 e asm.bits=32
 e cfg.json.num=hex
 "wa add esp,8;pop ebx; pop ebp; ret"
-/Rj
+/Gj
 q
 EOF
 EXPECT=<<EOF
@@ -758,7 +758,7 @@ e anal.arch=x86
 e asm.bits=32
 "wa add esp,8;pop ebx; pop ebp; ret"
 e scr.color=false
-/R/ or.*bl
+/G/ or.*bl
 q
 EOF
 EXPECT=<<EOF
@@ -776,7 +776,7 @@ e asm.bits=32
 e asm.arch=mips
 e scr.color=false
 wx 1b000000040000001a0000004c08410018000000040000000800000000000070
-/R
+/G
 q
 EOF
 EXPECT=<<EOF
