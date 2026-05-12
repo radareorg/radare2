@@ -2650,7 +2650,7 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			}
 			break;
 		case 'g': // "vbg"
-			r_core_visual_view_rop (core);
+			r_core_visual_view_gadgets (core);
 			break;
 		case 'G': // "vbG"
 			if (r_core_visual_view_graph (core)) {
