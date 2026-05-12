@@ -407,14 +407,10 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	int i;
-	RBinSymbol *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	if ((obj->type == COFF_TYPE_BIGOBJ && obj->bigobj_symbols) || obj->symbols) {
 		ut32 f_nsyms = 0;
 		ut32 symbol_size = 0;
@@ -434,13 +430,14 @@ static RList *symbols(RBinFile *bf) {
 		}
 
 		if (symbols) {
+			// reserve capacity upfront so pointers stored in sym_ht remain stable
+			RVecRBinSymbol_reserve (ret, f_nsyms);
 			for (i = 0; i < f_nsyms; i++) {
-				ptr = R_NEW0 (RBinSymbol);
-				if (_fill_bin_symbol (bf->rbin, obj, i, &ptr)) {
-					r_list_append (ret, ptr);
-					ht_up_insert (obj->sym_ht, (ut64)i, ptr);
-				} else {
-					free (ptr);
+				RBinSymbol tmp = {0};
+				RBinSymbol *p = &tmp;
+				if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
+					RVecRBinSymbol_push_back (ret, &tmp);
+					ht_up_insert (obj->sym_ht, (ut64)i, RVecRBinSymbol_last (ret));
 				}
 
 				ut8 n_numaux = *((ut8 *)symbols + i * symbol_size + numaux_offset);
@@ -448,7 +445,7 @@ static RList *symbols(RBinFile *bf) {
 			}
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -999,7 +996,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.info = &info,
 	.libs = &libs,

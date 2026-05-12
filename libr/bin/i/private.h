@@ -20,6 +20,10 @@ static inline bool limit_reached(const RList *list, int limit) {
 	return limit > 0 && r_list_length (list) >= limit;
 }
 
+static inline bool limit_reached_vec(const RVecRBinSymbol *vec, int limit) {
+	return limit > 0 && RVecRBinSymbol_length (vec) >= (size_t)limit;
+}
+
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);

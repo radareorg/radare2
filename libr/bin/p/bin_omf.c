@@ -97,19 +97,18 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
-	RBinSymbol *sym;
+static bool symbols_vec(RBinFile *bf) {
 	OMF_symbol *sym_omf;
 	int ct_sym = 0;
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_new ();
-	ret->free = free;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 
 	while (ct_sym < ((r_bin_omf_obj *) bf->bo->bin_obj)->nb_symbol) {
-		if (!(sym = R_NEW0 (RBinSymbol))) {
-			return ret;
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
+		if (!sym) {
+			return true;
 		}
 		sym_omf = ((r_bin_omf_obj *) bf->bo->bin_obj)->symbols[ct_sym++];
 		sym->name = r_bin_name_new (sym_omf->name);
@@ -117,10 +116,8 @@ static RList *symbols(RBinFile *bf) {
 		sym->paddr = r_bin_omf_get_paddr_sym (bf->bo->bin_obj, sym_omf);
 		sym->vaddr = r_bin_omf_get_vaddr_sym (bf->bo->bin_obj, sym_omf);
 		sym->ordinal = ct_sym;
-		sym->size = 0;
-		r_list_append (ret, sym);
 	}
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -160,7 +157,7 @@ RBinPlugin r_bin_plugin_omf = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.get_vaddr = &get_vaddr,
 };

@@ -239,10 +239,9 @@ out_error:
 	return NULL;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj;
 	xbe_header *h;
-	RList *ret;
 	int i, found = false;
 	ut32 thunk_addr[XBE_MAX_THUNK];
 	ut32 kt_addr;
@@ -250,69 +249,62 @@ static RList *symbols(RBinFile *bf) {
 	ut32 addr;
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
 
 	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	kt_addr = h->kernel_thunk_addr ^ obj->kt_key;
-	ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	int limit = h->sections;
 	if (h->sechdr_addr < h->base) {
-		goto out_error;
+		return false;
 	}
 	ut32 sechdr_off = h->sechdr_addr - h->base;
 	if (sechdr_off >= bf->size || limit * sizeof (xbe_section) > bf->size - sechdr_off) {
-		goto out_error;
+		return false;
 	}
 	for (i = 0; found == false && i < limit; i++) {
 		addr = h->sechdr_addr - h->base + (sizeof (xbe_section) * i);
 		if (addr > bf->size || addr + sizeof (sect) > bf->size) {
-			goto out_error;
+			return false;
 		}
 		st64 r = r_buf_read_at (bf->buf, addr, (ut8 *) &sect, sizeof (sect));
 		if (r != sizeof (sect)) {
-			goto out_error;
+			return false;
 		}
 		if (kt_addr >= sect.vaddr && kt_addr < sect.vaddr + sect.vsize) {
 			found = true;
 		}
 	}
 	if (!found) {
-		goto out_error;
+		return false;
 	}
 	addr = sect.offset + (kt_addr - sect.vaddr);
 	if (addr > bf->size || addr + sizeof (thunk_addr) > bf->size) {
-		goto out_error;
+		return false;
 	}
 	i = r_buf_read_at (bf->buf, addr, (ut8 *) &thunk_addr, sizeof (thunk_addr));
 	if (i != sizeof (thunk_addr)) {
-		goto out_error;
+		return false;
 	}
 	for (i = 0; i < XBE_MAX_THUNK && thunk_addr[i]; i++) {
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
 		const ut32 thunk_index = thunk_addr[i] ^ 0x80000000;
 		// Basic sanity checks
 		if (thunk_addr[i] & 0x80000000 && thunk_index > 0 && thunk_index <= XBE_MAX_THUNK) {
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (ret);
+			if (!sym) {
+				continue;
+			}
 			R_LOG_DEBUG ("thunk_index %d", thunk_index);
 			sym->name = r_bin_name_new_from (r_str_newf ("kt.%s", kt_name[thunk_index - 1]));
 			sym->vaddr = (h->kernel_thunk_addr ^ obj->kt_key) + (4 * i);
 			sym->paddr = sym->vaddr - h->base;
 			sym->size = 4;
 			sym->ordinal = i;
-			r_list_append (ret, sym);
-		} else {
-			free (sym);
 		}
 	}
-	return ret;
-out_error:
-	r_list_free (ret);
-	return NULL;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -356,7 +348,7 @@ RBinPlugin r_bin_plugin_xbe = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.libs = &libs,
 };

@@ -628,13 +628,13 @@ static bool check(RBinFile *file, RBuffer *b) {
 	return memcmp (&magic, XTAC_MAGIC, sizeof (XTAC_MAGIC) - 1) == 0;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	RBinXtacObj *bin = bf->bo->bin_obj;
 	RBinXtacHeader *hdr = bin->header;
 	ut64 x86_baddr = baddr (bf), arm_baddr = 0x0;
-	RList *ret = r_list_newf (free);
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	if (!bf->rbin->options.load_unnamed) {
-		return ret;
+		return true;
 	}
 	const ut32 num_pairs = hdr->num_of_addr_pairs;
 	int i;
@@ -644,18 +644,19 @@ static RList *symbols(RBinFile *bf) {
 		if (arm_vaddr == UT32_MAX || x86_vaddr == UT32_MAX) {
 			continue;
 		}
-		RBinSymbol *s = R_NEW0 (RBinSymbol);
+		RBinSymbol *s = RVecRBinSymbol_emplace_back (ret);
+		if (!s) {
+			continue;
+		}
 		s->name = r_bin_name_new_from (r_str_newf ("x86.%08x", x86_vaddr));
 		s->bind = "NONE";
 		s->type = R_BIN_TYPE_FUNC_STR;
-		s->size = 0;
 		s->paddr = arm_vaddr;
 		s->vaddr = arm_vaddr;
 		s->ordinal = i;
-		r_list_append (ret, s);
 	}
 
-	return ret;
+	return true;
 }
 
 RBinPlugin r_bin_plugin_xtac = {
@@ -673,6 +674,6 @@ RBinPlugin r_bin_plugin_xtac = {
 	.info = &info,
 	.fields = &fields,
 	.header = &header,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.sections = &sections,
 };

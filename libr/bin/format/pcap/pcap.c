@@ -271,23 +271,27 @@ pcap_obj_t *pcap_obj_new_buf(RBuffer *buf) {
 	return obj;
 }
 
-static void pcaprec_tcp_sym_add(RList *list, pcaprec_t* rec, ut64 paddr, int size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void pcaprec_tcp_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr, int size) {
 	pcaprec_tcp_t *tcp = rec->transport.tcp_hdr;
 	if (!tcp) {
-		free (ptr);
+		return;
+	}
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
+	if (!ptr) {
 		return;
 	}
 	int datasz = size - ((tcp->hdr_len & 0xF0) >> 2);
 	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Transmission Control Protocol, Src Port: %d, Dst"
 		" port: %d, Len: %d", paddr, tcp->src_port, tcp->dst_port, datasz));
 	ptr->paddr = ptr->vaddr = paddr;
-	r_list_append (list, ptr);
 }
 
-static void pcaprec_ipv4_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void pcaprec_ipv4_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr) {
 	pcaprec_ipv4_t *ipv4 = rec->net.ipv4_hdr;
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
+	if (!ptr) {
+		return;
+	}
 	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV%d, Src: %d.%d.%d.%d, Dst: %d.%d.%d.%d",
 		paddr, (ipv4->ver_len >> 4) & 0x0F,
 	(ipv4->src >> 24) & 0xFF, (ipv4->src >> 16) & 0xFF,
@@ -295,13 +299,12 @@ static void pcaprec_ipv4_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	(ipv4->dst >> 24) & 0xFF, (ipv4->dst >> 16) & 0xFF,
 	(ipv4->dst >> 8) & 0xFF, ipv4->dst & 0xFF));
 	ptr->paddr = ptr->vaddr = paddr;
-	r_list_append (list, ptr);
 
 	switch (ipv4->protocol) {
 	case TRANSPORT_TCP:
 		{
 			ut32 tcpoff = ((ipv4->ver_len & 0x0F) * 4);
-			pcaprec_tcp_sym_add (list, rec, paddr + tcpoff, ipv4->tot_len - tcpoff);
+			pcaprec_tcp_sym_add (vec, rec, paddr + tcpoff, ipv4->tot_len - tcpoff);
 		}
 		break;
 #if 0
@@ -361,20 +364,21 @@ static char *ipv6_addr_string(ut8 *addr) {
 		words[4], words[5], words[6], words[7]);
 }
 
-static void pcaprec_ipv6_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void pcaprec_ipv6_sym_add(RVecRBinSymbol *vec, pcaprec_t* rec, ut64 paddr) {
 	pcaprec_ipv6_t *ipv6 = rec->net.ipv6_hdr;
 	char *src = ipv6_addr_string (ipv6->src);
 	char *dst = ipv6_addr_string (ipv6->dst);
-	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV6, Src: %s, Dst: %s", paddr, src, dst));
-	ptr->paddr = ptr->vaddr = paddr;
-	r_list_append (list, ptr);
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
+	if (ptr) {
+		ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": IPV6, Src: %s, Dst: %s", paddr, src, dst));
+		ptr->paddr = ptr->vaddr = paddr;
+	}
 	free (src);
 	free (dst);
 
 	switch (ipv6->nxt) {
 	case TRANSPORT_TCP:
-		pcaprec_tcp_sym_add (list, rec, paddr + sizeof (pcaprec_ipv6_t), ipv6->plen);
+		pcaprec_tcp_sym_add (vec, rec, paddr + sizeof (pcaprec_ipv6_t), ipv6->plen);
 		break;
 #if 0
 	case TRANSPORT_UDP:
@@ -386,27 +390,27 @@ static void pcaprec_ipv6_sym_add(RList *list, pcaprec_t* rec, ut64 paddr) {
 	}
 }
 
-void pcaprec_ether_sym_add(RList *list, pcaprec_t *rec, ut64 paddr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+void pcaprec_ether_sym_add(RVecRBinSymbol *vec, pcaprec_t *rec, ut64 paddr) {
 	pcaprec_ether_t *ether = rec->link.ether_hdr;
 	if (!ether) {
-		free (ptr);
 		return;
 	}
-	ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Ethernet, Src: %02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x
-		":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ", Dst: %02"PFMT32x
-		":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x,
-		paddr, ether->src[0], ether->src[1], ether->src[2], ether->src[3], ether->src[4], ether->src[5],
-		ether->dst[0], ether->dst[1], ether->dst[2], ether->dst[3], ether->dst[4], ether->dst[5]));
-	ptr->paddr = ptr->vaddr = paddr;
-	r_list_append (list, ptr);
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (vec);
+	if (ptr) {
+		ptr->name = r_bin_name_new_from (r_str_newf ("0x%"PFMT64x": Ethernet, Src: %02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x
+			":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ", Dst: %02"PFMT32x
+			":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x ":%02"PFMT32x,
+			paddr, ether->src[0], ether->src[1], ether->src[2], ether->src[3], ether->src[4], ether->src[5],
+			ether->dst[0], ether->dst[1], ether->dst[2], ether->dst[3], ether->dst[4], ether->dst[5]));
+		ptr->paddr = ptr->vaddr = paddr;
+	}
 
 	switch (ether->type) {
 	case NET_IPV4:
-		pcaprec_ipv4_sym_add (list, rec, paddr + sizeof (pcaprec_ether_t));
+		pcaprec_ipv4_sym_add (vec, rec, paddr + sizeof (pcaprec_ether_t));
 		break;
 	case NET_IPV6:
-		pcaprec_ipv6_sym_add (list, rec, paddr + sizeof (pcaprec_ether_t));
+		pcaprec_ipv6_sym_add (vec, rec, paddr + sizeof (pcaprec_ether_t));
 		break;
 	default:
 		break;

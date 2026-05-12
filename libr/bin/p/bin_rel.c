@@ -382,28 +382,30 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static void register_header_symbol(RBinFile *bf, RList *syms, const char *name, ut8 section, ut32 offset) {
+static void register_header_symbol(RBinFile *bf, RVecRBinSymbol *syms, const char *name, ut8 section, ut32 offset) {
 	const LoadedRel *rel = bf->bo->bin_obj;
 	if (section == 0 || section >= rel->hdr.num_sections) {
 		return;
 	}
-	RBinSymbol *ret = R_NEW0 (RBinSymbol);
+	RBinSymbol *ret = RVecRBinSymbol_emplace_back (syms);
+	if (!ret) {
+		return;
+	}
 	ret->type = R_BIN_TYPE_FUNC_STR;
 	ret->libname = strdup (rel->libname);
 	ret->name = r_bin_name_new (name);
 	ret->paddr = rel_section_paddr (&rel->sections[section]) + offset;
 	ret->vaddr = bf->bo->baddr + ret->paddr;
-	r_list_append (syms, ret);
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *syms = r_list_new ();
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *syms = &bf->bo->symbols_vec;
 	const LoadedRel *rel = bf->bo->bin_obj;
 	register_header_symbol (bf, syms, "prolog", rel->hdr.prolog_section, rel->hdr.prolog_offset);
 	register_header_symbol (bf, syms, "epilog", rel->hdr.epilog_section, rel->hdr.epilog_offset);
 	register_header_symbol (bf, syms, "unresolved", rel->hdr.unresolved_section, rel->hdr.unresolved_offset);
 
-	return syms;
+	return true;
 }
 
 static ut32 get_section_vaddr(const LoadedRel *rel, ut8 section_idx) {
@@ -606,7 +608,7 @@ RBinPlugin r_bin_plugin_rel = {
 	.destroy = &destroy,
 	.baddr = &baddr,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.relocs = &relocs,
 	.info = &info,
 	.patch_relocs = &patch_relocs

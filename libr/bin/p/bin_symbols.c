@@ -342,12 +342,12 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return !memcmp (buf, "\x02\xff\x01\xff", 4);
 }
 
-static RList *symbols(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
 	size_t i;
 	RBitset *seen = r_bitset_new ();
-	RList *res = r_list_newf ((RListFree)r_bin_symbol_free);
+	RVecRBinSymbol *res = &bf->bo->symbols_vec;
 	if (element->lined_symbols) {
 		for (i = 0; i < element->hdr->n_lined_symbols; i++) {
 			RCoreSymCacheElementSymbol *sym = (RCoreSymCacheElementSymbol *)&element->lined_symbols[i];
@@ -356,7 +356,8 @@ static RList *symbols(RBinFile *bf) {
 			}
 			RBinSymbol *s = bin_symbol_from_symbol (element, sym);
 			if (s) {
-				r_list_append (res, s);
+				RVecRBinSymbol_push_back (res, s);
+				free (s);
 				r_bitset_set (seen, sym->paddr);
 			}
 		}
@@ -369,12 +370,13 @@ static RList *symbols(RBinFile *bf) {
 			}
 			RBinSymbol *s = bin_symbol_from_symbol (element, sym);
 			if (s) {
-				r_list_append (res, s);
+				RVecRBinSymbol_push_back (res, s);
+				free (s);
 			}
 		}
 	}
 	r_bitset_free (seen);
-	return res;
+	return true;
 }
 
 static ut64 size(RBinFile *bf) {
@@ -432,7 +434,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	},
 	.load = &load,
 	.check = &check,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.sections = &sections,
 	.size = &size,
 	.baddr = &baddr,

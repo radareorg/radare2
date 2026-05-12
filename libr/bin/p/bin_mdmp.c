@@ -503,29 +503,40 @@ static RList* imports(RBinFile *bf) {
 	return ret;
 }
 
-static RList* symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
-	RList *ret, *list;
+	RList *list;
 	RListIter *it;
 
-	if (!(ret = r_list_newf ((RListFree)r_bin_import_free))) {
-		return NULL;
-	}
-
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBinMdmpObj *mdmp = (RBinMdmpObj*)bf->bo->bin_obj;
 
 	r_list_foreach (mdmp->pe32_bins, it, pe32_bin) {
 		list = Pe32_r_bin_mdmp_pe_get_symbols (bf->rbin, pe32_bin);
-		r_list_join (ret, list);
+		RBinSymbol *sym;
+		RListIter *iter;
+		r_list_foreach (list, iter, sym) {
+			RVecRBinSymbol_push_back (ret, sym);
+		}
+		if (list) {
+			list->free = free; // values owned by vec; free shells only
+		}
 		r_list_free (list);
 	}
 	r_list_foreach (mdmp->pe64_bins, it, pe64_bin) {
 		list = Pe64_r_bin_mdmp_pe_get_symbols (bf->rbin, pe64_bin);
-		r_list_join (ret, list);
+		RBinSymbol *sym;
+		RListIter *iter;
+		r_list_foreach (list, iter, sym) {
+			RVecRBinSymbol_push_back (ret, sym);
+		}
+		if (list) {
+			list->free = free;
+		}
 		r_list_free (list);
 	}
-	return ret;
+	return true;
 }
 
 static bool check(RBinFile *bf, RBuffer *b) {
@@ -554,7 +565,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.mem = &mem,
 	.relocs = &relocs,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 };
 
 #ifndef R2_PLUGIN_INCORE

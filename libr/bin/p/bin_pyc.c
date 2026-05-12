@@ -81,11 +81,11 @@ static RList *entries(RBinFile *bf) {
 	return entries;
 }
 
-static RList *symbols(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	RBinPycObj *obj = R_UNWRAP3 (bf, bo, bin_obj);
 	if (!obj) {
-		return NULL;
+		return false;
 	}
 	if (!obj->cobjs) {
 		obj->cobjs = r_list_newf (NULL); // borrowed pointers into pobj
@@ -103,7 +103,14 @@ static RList *symbols(RBinFile *bf) {
 	r_buf_seek (buffer, obj->code_start_offset, R_BUF_SET);
 	pyc_get_sections_symbols (sections, symbols, obj->cobjs, buffer, obj->version.magic, obj->interned_table, &obj->pobj);
 	obj->sections_cache = sections;
-	return symbols;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RBinSymbol *sym;
+	RListIter *iter;
+	r_list_foreach (symbols, iter, sym) {
+		RVecRBinSymbol_push_back (ret, sym);
+	}
+	r_list_free (symbols);
+	return true;
 }
 
 static void destroy(RBinFile *bf) {
@@ -133,7 +140,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.check = &check,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.destroy = &destroy,
 };
 

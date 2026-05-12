@@ -367,13 +367,10 @@ static RList *entries(RBinFile *bf) {
 	return entries;
 }
 
-static RList *symbols(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
-	RList *symbols = r_list_newf ((RListFree)r_bin_symbol_free);
-	if (!symbols) {
-		return NULL;
-	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 
 	RListIter *iter;
 	RBinMdtPart *part;
@@ -384,8 +381,10 @@ static RList *symbols(RBinFile *bf) {
 		RListIter *it;
 		RBinSymbol *sym;
 		r_list_foreach (part->symbols, it, sym) {
-			// Clone symbol
-			RBinSymbol *clone = R_NEW0 (RBinSymbol);
+			RBinSymbol *clone = RVecRBinSymbol_emplace_back (ret);
+			if (!clone) {
+				continue;
+			}
 			clone->name = r_bin_name_clone (sym->name);
 			clone->vaddr = sym->vaddr;
 			clone->paddr = sym->paddr;
@@ -393,11 +392,10 @@ static RList *symbols(RBinFile *bf) {
 			clone->ordinal = sym->ordinal;
 			clone->bind = sym->bind;
 			clone->type = sym->type;
-			r_list_append (symbols, clone);
 		}
 	}
 
-	return symbols;
+	return true;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -523,7 +521,7 @@ RBinPlugin r_bin_plugin_mdt = {
 	.entries = &entries,
 	.maps = &maps,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.relocs = &relocs,
 	.info = &info,
 	.header = &headers,

@@ -404,7 +404,7 @@ typedef struct r_bin_object_t {
 	RStrpool *pool;
 	RList/*<RBinSection>*/ *sections; // DEPRECATE
 	RList/*<RBinImport>*/ *imports; // DEPRECATE
-	RList/*<RBinSymbol>*/ *symbols; // DEPRECATE
+	// RList/*<RBinSymbol>*/ *symbols; // DEPRECATE
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;

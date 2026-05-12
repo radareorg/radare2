@@ -325,49 +325,53 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	MclfHeader *hdr = mclf_from_bf (bf);
 	if (!hdr) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
-	RBinSymbol *s = NULL;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RBinSymbol *s;
 	// _start
-	s = R_NEW0 (RBinSymbol);
-	s->name = r_bin_name_new ("_start");
-	s->vaddr = (hdr->entry & 1) ? (hdr->entry - 1) : hdr->entry;
-	s->paddr = (s->vaddr >= hdr->text_va) ? (s->vaddr - hdr->text_va) : 0;
-	s->type = "FUNC";
-	r_list_append (ret, s);
+	s = RVecRBinSymbol_emplace_back (ret);
+	if (s) {
+		s->name = r_bin_name_new ("_start");
+		s->vaddr = (hdr->entry & 1) ? (hdr->entry - 1) : hdr->entry;
+		s->paddr = (s->vaddr >= hdr->text_va) ? (s->vaddr - hdr->text_va) : 0;
+		s->type = "FUNC";
+	}
 	// header and text descriptor anchors
-	s = R_NEW0 (RBinSymbol);
-	s->name = r_bin_name_new ("__mclf_header");
-	s->vaddr = hdr->text_va;
-	s->paddr = 0;
-	s->type = "OBJ";
-	r_list_append (ret, s);
-	s = R_NEW0 (RBinSymbol);
-	s->name = r_bin_name_new ("__mclf_text_descriptor");
-	s->vaddr = hdr->text_va + 0x80;
-	s->paddr = 0x80;
-	s->type = "OBJ";
-	r_list_append (ret, s);
+	s = RVecRBinSymbol_emplace_back (ret);
+	if (s) {
+		s->name = r_bin_name_new ("__mclf_header");
+		s->vaddr = hdr->text_va;
+		s->paddr = 0;
+		s->type = "OBJ";
+	}
+	s = RVecRBinSymbol_emplace_back (ret);
+	if (s) {
+		s->name = r_bin_name_new ("__mclf_text_descriptor");
+		s->vaddr = hdr->text_va + 0x80;
+		s->paddr = 0x80;
+		s->type = "OBJ";
+	}
 	// mcLibEntry (if present)
 	if (hdr->mcLibEntry) {
-		s = R_NEW0 (RBinSymbol);
-		s->name = r_bin_name_new ("mcLibEntry");
-		s->vaddr = hdr->mcLibEntry & (ut32)~1;
-		if (s->vaddr >= hdr->text_va && s->vaddr < hdr->text_va + hdr->text_len) {
-			s->paddr = s->vaddr - hdr->text_va;
-		} else if (s->vaddr >= hdr->data_va && s->vaddr < hdr->data_va + hdr->data_len) {
-			s->paddr = hdr->text_len + (s->vaddr - hdr->data_va);
-		} else {
-			s->paddr = UT64_MAX;
+		s = RVecRBinSymbol_emplace_back (ret);
+		if (s) {
+			s->name = r_bin_name_new ("mcLibEntry");
+			s->vaddr = hdr->mcLibEntry & (ut32)~1;
+			if (s->vaddr >= hdr->text_va && s->vaddr < hdr->text_va + hdr->text_len) {
+				s->paddr = s->vaddr - hdr->text_va;
+			} else if (s->vaddr >= hdr->data_va && s->vaddr < hdr->data_va + hdr->data_len) {
+				s->paddr = hdr->text_len + (s->vaddr - hdr->data_va);
+			} else {
+				s->paddr = UT64_MAX;
+			}
+			s->type = "FUNC";
 		}
-		s->type = "FUNC";
-		r_list_append (ret, s);
 	}
-	return ret;
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -429,7 +433,7 @@ RBinPlugin r_bin_plugin_mclf = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.sections = &sections,
 	.info = &info,

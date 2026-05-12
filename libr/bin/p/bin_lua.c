@@ -109,18 +109,19 @@ static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *par
 	r_list_append (parseStruct->data, binstring);
 }
 
-static void addSymbol(RList *list, char *name, ut64 addr, ut32 size, const char *type) {
-	RBinSymbol *sym = R_NEW0 (RBinSymbol);
+static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, const char *type) {
+	RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
+	if (!sym) {
+		return;
+	}
 	sym->name = r_bin_name_new (name);
 	if (!sym->name) {
-		free (sym);
+		RVecRBinSymbol_pop_back (vec);
 		return;
 	}
 	sym->vaddr = sym->paddr = addr;
 	sym->size = size;
-	sym->ordinal = 0;
 	sym->type = type;
-	r_list_append (list, sym);
 }
 
 static void handleFuncSymbol(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {
@@ -186,19 +187,26 @@ static RList *strings(RBinFile *bf) {
 	return parseStruct.data;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (!lh) {
-		return NULL;
+		return false;
+	}
+
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RBinSymbol *s;
+	RListIter *iter;
+	r_list_foreach (lh->symbols, iter, s) {
+		RBinSymbol *clone = r_bin_symbol_clone (s);
+		if (clone) {
+			RVecRBinSymbol_push_back (ret, clone);
+			free (clone);
+		}
 	}
 
 	ParseStruct parseStruct = {0};
 	parseStruct.onFunction = handleFuncSymbol;
-	parseStruct.data = NULL;
-	parseStruct.data = r_list_clone (lh->symbols, (RListClone)r_bin_symbol_clone);
-	if (!parseStruct.data) {
-		return NULL;
-	}
+	parseStruct.data = ret;
 
 	ut8 *bytes = malloc (bf->size);
 	if (bytes) {
@@ -209,7 +217,7 @@ static RList *symbols(RBinFile *bf) {
 		free (bytes);
 	}
 
-	return parseStruct.data;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -280,7 +288,7 @@ RBinPlugin r_bin_plugin_lua = {
 	.sections = &sections,
 	.load = &load,
 	.check = &check,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.strings = &strings,
 	.info = &info,
 	.entries = &entries,

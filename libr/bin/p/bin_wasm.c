@@ -188,7 +188,7 @@ static const char *import_typename(ut32 kind) {
 	}
 }
 
-static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *list, bool load_unnamed) {
+static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RVecRBinSymbol *vec, bool load_unnamed) {
 	void **p;
 	ut32 ordinal = 0;
 	const char *type = import_typename (kind);
@@ -200,7 +200,7 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 			if (!load_unnamed && r_bin_name_is_unnamed (imp->field_str)) {
 				continue;
 			}
-			RBinSymbol *sym = R_NEW0 (RBinSymbol);
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
 			if (!sym) {
 				return false;
 			}
@@ -211,10 +211,8 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RList *l
 			sym->is_imported = true;
 			sym->forwarder = "NONE";
 			sym->bind = "NONE";
-			sym->size = 0;
 			sym->vaddr = -1;
 			sym->paddr = -1;
-			r_list_append (list, sym);
 		}
 	}
 	return true;
@@ -257,7 +255,7 @@ static inline void set_sym_name(RBinSymbol *sym, char *s, bool is_exported) {
 	}
 }
 
-static inline bool symbols_add_code(RBinWasmObj *bin, RList *list, bool load_unnamed) {
+static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool load_unnamed) {
 	RVecWasmPtr *codes = r_bin_wasm_get_codes (bin);
 	if (!codes) {
 		return false;
@@ -272,7 +270,7 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RList *list, bool load_unn
 		if (!name) {
 			continue;
 		}
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
 		if (!sym) {
 			free (name);
 			return false;
@@ -285,7 +283,6 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RList *list, bool load_unn
 		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
 		set_sym_name (sym, name, is_exported);
-		r_list_append (list, sym);
 	}
 	return true;
 }
@@ -329,7 +326,7 @@ static void sym_set_content_type(RBinSymbol *sym, int t) {
 	}
 }
 
-static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list, bool load_unnamed) {
+static inline bool symbols_add_globals(RBinWasmObj *bin, RVecRBinSymbol *vec, bool load_unnamed) {
 	RVecWasmPtr *globals = r_bin_wasm_get_globals (bin);
 	if (!globals) {
 		return true;
@@ -345,7 +342,7 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list, bool load_
 		if (!name) {
 			continue;
 		}
-		RBinSymbol *sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
 		if (!sym) {
 			free (name);
 			return false;
@@ -357,41 +354,34 @@ static inline bool symbols_add_globals(RBinWasmObj *bin, RList *list, bool load_
 		sym->bind = "NONE";
 		set_sym_name (sym, name, is_exported);
 		sym_set_content_type (sym, gl->content_type); // size and type
-		r_list_append (list, sym);
 	}
 	return true;
 }
 
-static RList *symbols(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool symbols_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	RBinWasmObj *bin = bf->bo->bin_obj;
 	const bool load_unnamed = bf->rbin->options.load_unnamed;
-	RList *ret = r_list_newf ((RListFree)free);
-	if (!ret) {
-		goto bad_alloc;
-	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 
 	// add all import kinds to symbols
 	int i;
 	for (i = 0; i <= R_BIN_WASM_EXTERNALKIND_Global; i++) {
 		if (!symbols_add_import_kind (bin, i, ret, load_unnamed)) {
-			goto bad_alloc;
+			return false;
 		}
 	}
 
 	if (!symbols_add_code (bin, ret, load_unnamed)) {
-		goto bad_alloc;
+		return false;
 	}
 
 	if (!symbols_add_globals (bin, ret, load_unnamed)) {
-		goto bad_alloc;
+		return false;
 	}
 
 	// TODO: tables and memories
-	return ret;
-bad_alloc:
-	r_list_free (ret);
-	return NULL;
+	return true;
 }
 
 static RList *get_imports(RBinFile *bf) {
@@ -559,7 +549,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &get_imports,
 	.info = &info,
 	.libs = &libs,

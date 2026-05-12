@@ -137,20 +137,22 @@ static void add_symbol(RList *ret, const char *name, ut64 addr) {
 	free (msg);
 } */
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	s390user *su = bf->bo->bin_obj;
-	RList *ret = NULL;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RListIter *iter;
 	RBinSymbol *sym;
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
 	r_list_free (sections (bf));
 	r_list_foreach (su->symbols, iter, sym) {
 		char *name = r_str_trim_dup (r_bin_name_tostring (sym->name));
-		add_symbol (ret, name, sym->vaddr + su->text0 + S390_BADDR);
+		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
+		if (ptr) {
+			ptr->name = r_bin_name_new (name);
+			ptr->paddr = ptr->vaddr = sym->vaddr + su->text0 + S390_BADDR;
+		}
+		free (name);
 	}
-	return ret;
+	return true;
 }
 
 static void add_section(RList *ret, char *name, ut64 addr, ut64 len) {
@@ -373,7 +375,7 @@ RBinPlugin r_bin_plugin_s390 = {
 	.header = &headers,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.destroy = &destroy,
 	.minstrlen = 3

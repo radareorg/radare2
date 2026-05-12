@@ -909,19 +909,19 @@ static RList *patch_relocs(RBinFile *bf) {
 	return list;
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_symbol_free);
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	ut32 loaderStringsOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 40);
 	ut32 exportHashOffset = r_buf_read_be32_at (bf->buf, pef->ldrsec + 44);
 	ut32 exportHashTablePower = r_buf_read_be32_at (bf->buf, pef->ldrsec + 48);
 	ut32 exportedSymbolCount = r_buf_read_be32_at (bf->buf, pef->ldrsec + 52);
 	if (exportHashTablePower >= 30) {
-		return ret;
+		return true;
 	}
 	ut64 hashTableSize = 4ULL << exportHashTablePower;
 	if (hashTableSize > 0xffffffffULL) {
-		return ret;
+		return true;
 	}
 	ut32 stringLenTable = pef->ldrsec + exportHashOffset + (ut32)hashTableSize;
 	ut32 exportTable = stringLenTable + 4 * exportedSymbolCount;
@@ -939,19 +939,22 @@ static RList *symbols(RBinFile *bf) {
 			continue; // re-exported func or absolute mem address, not supported
 		}
 
-		RBinSymbol *ptr = R_NEW0 (RBinSymbol);
 		char *name = calloc (1, nameLen + 1); // +1 for the null terminator, which is not on disk
 		if (!name) {
 			continue;
 		}
 		r_buf_read_at (bf->buf, nameOfs, (ut8 *)name, nameLen);
+		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
+		if (!ptr) {
+			free (name);
+			continue;
+		}
 		ptr->name = r_bin_name_new_from (name);
 		ptr->vaddr = pef->sec[index].addr + addr;
 		ptr->bind = R_BIN_BIND_GLOBAL_STR;
 		ptr->type = class2string (kind);
-		r_list_append (ret, ptr);
 	}
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -997,7 +1000,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.libs = &libs,
 	.relocs = &relocs,
 	.patch_relocs = &patch_relocs,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.entries = &entries,
 };
 

@@ -168,13 +168,18 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
-static RList *symbols(RBinFile *bf) {
-	RBinNXOObj *bin;
+static bool symbols_vec(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
-	bin = (RBinNXOObj*) bf->bo->bin_obj;
-	return bin->methods_list;
+	RBinNXOObj *bin = (RBinNXOObj*) bf->bo->bin_obj;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RBinSymbol *sym;
+	RListIter *iter;
+	r_list_foreach (bin->methods_list, iter, sym) {
+		RVecRBinSymbol_push_back (ret, sym);
+	}
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -232,7 +237,7 @@ RBinPlugin r_bin_plugin_nro = {
 	.entries = &entries,
 	.sections = &sections,
 	.get_sdb = &get_sdb,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.info = &info,
 };

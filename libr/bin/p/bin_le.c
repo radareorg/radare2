@@ -111,8 +111,20 @@ static RList *entries(RBinFile *bf) {
 	return r_bin_le_get_entrypoints (bf->bo->bin_obj);
 }
 
-static RList *symbols(RBinFile *bf) {
-	return r_bin_le_get_symbols (bf->bo->bin_obj);
+static bool symbols_vec(RBinFile *bf) {
+	RList *list = r_bin_le_get_symbols (bf->bo->bin_obj);
+	if (!list) {
+		return false;
+	}
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
+	RBinSymbol *sym;
+	RListIter *iter;
+	r_list_foreach (list, iter, sym) {
+		RVecRBinSymbol_push_back (ret, sym);
+	}
+	list->free = free; // values now owned by vec; only free the struct shells
+	r_list_free (list);
+	return true;
 }
 
 static RList *imports(RBinFile *bf) {
@@ -237,7 +249,7 @@ RBinPlugin r_bin_plugin_le = {
 	.header = &header,
 	.sections = &sections,
 	.entries = &entries,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.imports = &imports,
 	.libs = &libs,
 	.relocs = &relocs,

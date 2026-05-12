@@ -37,22 +37,17 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, ut32 size) {
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 	if (R_LIKELY (ptr)) {
 		ptr->name = r_bin_name_new (r_str_get (name));
 		ptr->paddr = ptr->vaddr = addr;
 		ptr->size = size;
-		ptr->ordinal = 0;
-		r_list_append (ret, ptr);
 	}
 }
 
-static RList* symbols(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
-	if (R_UNLIKELY (!ret)) {
-		return NULL;
-	}
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	addsym (ret, "NMI_VECTOR_START_ADDRESS", NMI_VECTOR_START_ADDRESS,2);
 	addsym (ret, "RESET_VECTOR_START_ADDRESS", RESET_VECTOR_START_ADDRESS,2);
 	addsym (ret, "IRQ_VECTOR_START_ADDRESS", IRQ_VECTOR_START_ADDRESS,2);
@@ -75,7 +70,7 @@ static RList* symbols(RBinFile *bf) {
 	addsym (ret, "JOYPAD_PORT", JOYPAD_PORT,0x1);
 	addsym (ret, "JOYPAD_PORT1", JOYPAD_PORT1,0x1);
 	addsym (ret, "JOYPAD_PORT2", JOYPAD_PORT2,0x1);
-	return ret;
+	return true;
 }
 
 static RList* sections(RBinFile *bf) {
@@ -214,7 +209,7 @@ RBinPlugin r_bin_plugin_nes = {
 	.check = &check,
 	.entries = &entries,
 	.sections = sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.mem = &mem,
 };

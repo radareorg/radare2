@@ -124,19 +124,16 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RList *ret, const char *name, ut64 addr) {
+static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr) {
 	R_RETURN_IF_FAIL (ret && name);
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
 	if (R_LIKELY (ptr)) {
 		ptr->name = r_bin_name_new (name);
 		ptr->paddr = ptr->vaddr = addr;
-		ptr->size = 0;
-		ptr->ordinal = 0;
-		r_list_append (ret, ptr);
 	}
 }
 
-static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
+static void addptr(RVecRBinSymbol *ret, const char *name, ut64 addr, RBuffer *b) {
 	if (b && rjmp (b, 0)) {
 		char *k = r_str_newf ("vector.%s", name);
 		addsym (ret, k, addr);
@@ -148,14 +145,10 @@ static void addptr(RList *ret, const char *name, ut64 addr, RBuffer *b) {
 	}
 }
 
-static RList *symbols(RBinFile *bf) {
+static bool symbols_vec(RBinFile *bf) {
 	AvrPriv *ap = bf->bo->bin_obj;
-	RList *ret = NULL;
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RBuffer *b = ap->b;
-
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
 	/* atmega8 */
 	addptr (ret, "int0", 2, b);
 	addptr (ret, "int1", 4, b);
@@ -163,7 +156,7 @@ static RList *symbols(RBinFile *bf) {
 	addptr (ret, "timer2ovf", 8, b);
 	addptr (ret, "timer1capt", 10, b);
 	addptr (ret, "timer1cmpa", 12, b);
-	return ret;
+	return true;
 }
 
 static RList *strings(RBinFile *bf) {
@@ -182,7 +175,7 @@ RBinPlugin r_bin_plugin_avr = {
 	.destroy = destroy,
 	.entries = entries,
 	.strings = strings,
-	.symbols = symbols,
+	.symbols_vec = symbols_vec,
 	.check = check,
 	.info = info,
 };

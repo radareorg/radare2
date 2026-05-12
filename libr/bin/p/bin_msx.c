@@ -84,29 +84,20 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void addsym(RList *ret, const char *name, ut64 addr) {
-	RBinSymbol *ptr = R_NEW0 (RBinSymbol);
-	if (!ptr) {
-		return;
+static void addsym(RVecRBinSymbol *ret, const char *name, ut64 addr) {
+	RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
+	if (R_LIKELY (ptr)) {
+		ptr->name = r_bin_name_new (r_str_get (name));
+		ptr->paddr = ptr->vaddr = addr;
 	}
-	ptr->name = r_bin_name_new (r_str_get (name));
-	ptr->paddr = ptr->vaddr = addr;
-	ptr->size = 0;
-	ptr->ordinal = 0;
-	r_list_append (ret, ptr);
 }
 
-static RList *symbols(RBinFile *bf) {
-	RList *ret = NULL;
-
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
-
+static bool symbols_vec(RBinFile *bf) {
+	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	ut8 gbuf[16] = {0};
 	int left = r_buf_read_at (bf->buf, 0, gbuf, sizeof (gbuf));
-	if (left < sizeof (gbuf)) {
-		return NULL;
+	if (left < (int)sizeof (gbuf)) {
+		return false;
 	}
 	if (!memcmp (gbuf, "AB", 2)) {
 		MSX_Header_ROM *hdr = (MSX_Header_ROM*)gbuf;
@@ -131,7 +122,7 @@ static RList *symbols(RBinFile *bf) {
 		eprintf ("EndAddress: 0x%04x\n", (ut16) hdr->EndAddress);
 		eprintf ("InitAddress: 0x%04x\n", (ut16) hdr->InitAddress);
 	}
-	return ret;
+	return true;
 }
 
 static RList *sections(RBinFile *bf) {
@@ -215,7 +206,7 @@ RBinPlugin r_bin_plugin_msx = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.minstrlen = 3
 };

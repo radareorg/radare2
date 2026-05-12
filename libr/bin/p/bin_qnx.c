@@ -212,8 +212,8 @@ static char *header(RBinFile *bf, int mode) {
 /*
  * No mention of symbols in the doc
  */
-static RList* symbols(RBinFile *bf) {
-	return NULL;
+static bool symbols_vec(RBinFile *bf) {
+	return true;
 }
 
 // Returns the sections
@@ -296,7 +296,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.get_sdb = &get_sdb,
 	.entries = &entries,
 	.sections = &sections,
-	.symbols = &symbols,
+	.symbols_vec = &symbols_vec,
 	.signature = &signature,
 	.get_vaddr = &get_vaddr,
 	.info = &info
