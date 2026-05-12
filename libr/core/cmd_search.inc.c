@@ -1632,7 +1632,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 }
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
-	const ut8 crop = r_config_get_i (core->config, "rop.conditional"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 crop = r_config_get_i (core->config, "rop.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
 	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
 	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
 	const char *arch = r_config_get (core->config, "asm.arch");

@@ -1943,8 +1943,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	// maybe store in RCore, so we can save it in project and use it outside visual
 
 	RCons *cons = core->cons;
-	R_LOG_INFO ("Searching ROP gadgets");
-	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
+	R_LOG_INFO ("Searching gadgets");
+	char *ropstr = r_core_cmd_strf (core, "\"/Gl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -2037,7 +2037,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					" /  - highlight given word\n"
 					" y  - yank current rop chain into the clipboard (y?)\n"
 					" o  - seek to given offset\n"
-					" r  - run /R again\n"
+					" r  - run /G again\n"
 					" ?  - show this help message\n"
 					" q  - quit this view\n"
 				      );
@@ -2082,7 +2082,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 			break;
 		case 'r':
 			{
-				r_line_set_prompt (core->cons->line, "rop regexp: ");
+				r_line_set_prompt (core->cons->line, "gadget regexp: ");
 				const char *line = r_line_readline (core->cons);
 				if (line && *line) {
 					free (cursearch);
@@ -2091,7 +2091,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					cur = 0;
 					cursearch = strdup (line);
 					free (ropstr);
-					ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
+					ropstr = r_core_cmd_strf (core, "\"/Gl %s\" @e:scr.color=0", line);
 					r_list_free (rops);
 					rops = r_str_split_list (ropstr, "\n", 0);
 				}

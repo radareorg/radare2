@@ -2601,7 +2601,8 @@ static const char browsemsg[] = \
 	" E  esil debugger mode\n"
 	" f  flags\n"
 	" F  functions\n"
-	" g  graph\n"
+	" g  gadgets\n"
+	" G  graph\n"
 	" h  history\n"
 	" i  imports\n"
 	" l  same as VT\n"
@@ -2610,7 +2611,6 @@ static const char browsemsg[] = \
 	" M  mountpoints\n"
 	" p  pids/threads\n"
 	" q  quit\n"
-	" r  ROP gadgets\n"
 	" s  symbols\n"
 	" t  types\n"
 	" T  themes\n"
@@ -2650,12 +2650,12 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 			}
 			break;
 		case 'g': // "vbg"
+			r_core_visual_view_rop (core);
+			break;
+		case 'G': // "vbG"
 			if (r_core_visual_view_graph (core)) {
 				return;
 			}
-			break;
-		case 'r': // "vbr"
-			r_core_visual_view_rop (core);
 			break;
 		case 'f': // "vbf"
 			r_core_visual_trackflags (core);

@@ -5883,7 +5883,7 @@ static int string_data_sec_cb(void *user) {
 
 static int rop_cb(void *user) {
 	RCore *core = (RCore *)user;
-	add_cmdf_panel (core, "rop grep: ", "'/R %s");
+	add_cmdf_panel (core, "gadget grep: ", "'/G %s");
 	return 0;
 }
 
@@ -6290,7 +6290,7 @@ static const MenuItem tools_items[] = {
 static const MenuItem search_items[] = {
 	{ "String (Whole Bin)", "Search strings in the whole binary", string_whole_bin_cb },
 	{ "String (Data Sections)", "Search strings in data sections only", string_data_sec_cb },
-	{ "ROP", "Search for ROP gadgets", rop_cb },
+	{ "Gadgets", "Search for gadgets", rop_cb },
 	{ "Magic", "Run magic signatures", magic_cb },
 	{ "Code", "Search for code sequences", code_cb },
 	{ "Hexpairs", "Search for raw hexpairs", hexpairs_cb },

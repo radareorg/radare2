@@ -4976,12 +4976,12 @@ R_API int r_core_config_init(RCore *core) {
 	SETI ("search.to", -1, "search end address");
 
 	/* rop */
-	SETI ("rop.len", 5, "maximum ROP gadget length");
+	SETI ("rop.len", 5, "maximum gadget length");
 	SETB ("rop.sdb", "false", "cache results in sdb (experimental)");
-	SETB ("rop.db", "true", "categorize rop gadgets in sdb");
-	SETB ("rop.subchains", "false", "display every length gadget from rop.len=X to 2 in /Rl");
-	SETB ("rop.conditional", "false", "include conditional jump, calls and returns in ropsearch");
-	SETB ("rop.comments", "false", "display comments in rop search output");
+	SETB ("rop.db", "true", "categorize gadgets in sdb");
+	SETB ("rop.subchains", "false", "display every length gadget from rop.len=X to 2 in /Gl");
+	SETB ("rop.cond", "false", "include conditional jump, calls and returns in gadget search");
+	SETB ("rop.comments", "false", "display comments in gadget search output");
 
 	/* io */
 	SETCB ("io.cache", "false", &cb_io_cache, "change both of io.cache.{read,write}");

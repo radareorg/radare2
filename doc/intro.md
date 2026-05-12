@@ -309,12 +309,12 @@ m<char>: Define a bookmark
 '<char>: Go to previously defined bookmark
 ```
 
-## ROP
+## Gadgets
 ```
-/R opcodes: Search opcodes
-	/R pop,pop,ret
-/Rl opcodes: Search opcodes and print them in linear way
-	/Rl jmp eax,call ebx
+/G opcodes: Search opcodes
+	/G pop,pop,ret
+/Gl opcodes: Search opcodes and print them in linear way
+	/Gl jmp eax,call ebx
 /a: Search assembly
 	/a jmp eax
 pda: Returns a library of gadgets that can be use. These gadgets are obtained by disassembling byte per byte instead of obeying to opcode length
@@ -607,4 +607,3 @@ Examples:
 r2 -b 32 -d rarun2 program=pwn1 arg1=$(ragg2 -P 300 -r) : runs pwn1 with a De Bruijn Pattern as first argument, inside radare2's debugger, and force 32 bits
 r2 -d rarun2 program=/bin/ls stdin=$(python exploit.py) : runs /bin/ls with the output of exploit.py directed to stdin
 ```
-
