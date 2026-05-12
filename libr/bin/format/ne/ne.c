@@ -101,20 +101,21 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 	return segments;
 }
 
-static int __find_symbol_by_paddr(const void *paddr, const void *sym) {
-	return (int)!(*(ut64 *)paddr == ((RBinSymbol *)sym)->paddr);
+static bool ne_has_symbol_at(RVecRBinSymbol *vec, ut64 paddr) {
+	RBinSymbol *s;
+	R_VEC_FOREACH (vec, s) {
+		if (s->paddr == paddr) {
+			return true;
+		}
+	}
+	return false;
 }
 
-RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
-	RBinSymbol *sym;
+void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 	if (!bin->ne_header) {
-		return NULL;
+		return;
 	}
 	ut16 off = bin->ne_header->ResidNamTable + bin->header_offset;
-	RList *symbols = r_list_newf (free);
-	if (!symbols) {
-		return NULL;
-	}
 	RList *entries = r_bin_ne_get_entrypoints (bin);
 	bool resident = true, first = true;
 	while (entries) {
@@ -140,7 +141,7 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		r_buf_read_at (bin->buf, off, (ut8 *)name, sz);
 		name[sz] = '\0';
 		off += sz;
-		sym = R_NEW0 (RBinSymbol);
+		RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
 		sym->name = r_bin_name_new_from (name);
 		if (!first) {
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
@@ -148,31 +149,23 @@ RList *r_bin_ne_get_symbols(r_bin_ne_obj_t *bin) {
 		ut16 entry_off = r_buf_read_le16_at (bin->buf, off);
 		off += 2;
 		RBinAddr *entry = r_list_get_n (entries, entry_off);
-		if (entry) {
-			sym->paddr = entry->paddr;
-		} else {
-			sym->paddr = -1;
-		}
+		sym->paddr = entry? entry->paddr: -1;
 		sym->ordinal = entry_off;
-		r_list_append (symbols, sym);
 		first = false;
 	}
 	RListIter *it;
 	RBinAddr *en;
 	int i = 1;
 	r_list_foreach (entries, it, en) {
-		if (!r_list_find (symbols, &en->paddr, __find_symbol_by_paddr)) {
-			sym = R_NEW0 (RBinSymbol);
+		if (!ne_has_symbol_at (symbols, en->paddr)) {
+			RBinSymbol *sym = RVecRBinSymbol_emplace_back (symbols);
 			sym->name = r_bin_name_new_from (r_str_newf ("entry%d", i - 1));
 			sym->paddr = en->paddr;
 			sym->bind = R_BIN_BIND_GLOBAL_STR;
 			sym->ordinal = i;
-			r_list_append (symbols, sym);
 		}
 		i++;
 	}
-	bin->symbols = symbols;
-	return symbols;
 }
 
 static char *__resource_type_str(int type) {
@@ -391,7 +384,7 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 	return entries;
 }
 
-RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
+RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 	RList *segments = bin->segments;
 	if (!segments || !bin->ne_header) {
 		return NULL;
@@ -400,7 +393,6 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 	if (!entries) {
 		return NULL;
 	}
-	RList *symbols = bin->symbols;
 	if (!symbols) {
 		return NULL;
 	}
@@ -508,9 +500,8 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin) {
 					}
 				}
 				reloc->addend = offset;
-				RBinSymbol *sym = NULL;
-				RListIter *sit;
-				r_list_foreach (symbols, sit, sym) {
+				RBinSymbol *sym;
+				R_VEC_FOREACH (symbols, sym) {
 					if (sym->paddr == reloc->addend) {
 						reloc->symbol = sym;
 						break;

@@ -63,18 +63,7 @@ static RList *classes(RBinFile *bf) {
 }
 
 static bool symbols_vec(RBinFile *bf) {
-	RList *list = r_bin_java_get_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
-	if (!list) {
-		return false;
-	}
-	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	RBinSymbol *sym;
-	RListIter *iter;
-	r_list_foreach (list, iter, sym) {
-		RVecRBinSymbol_push_back (ret, sym);
-	}
-	list->free = free; // values owned by vec; only free struct shells
-	r_list_free (list);
+	r_bin_java_load_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj, &bf->bo->symbols_vec);
 	return true;
 }
 

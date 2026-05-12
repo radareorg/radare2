@@ -94,16 +94,7 @@ static RList *entries(RBinFile *bf) {
 }
 
 static bool symbols_vec(RBinFile *bf) {
-	RList *list = r_bin_ne_get_symbols (bf->bo->bin_obj);
-	if (!list) {
-		return false;
-	}
-	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
-	RBinSymbol *sym;
-	RListIter *iter;
-	r_list_foreach (list, iter, sym) {
-		RVecRBinSymbol_push_back (ret, sym);
-	}
+	r_bin_ne_load_symbols (bf->bo->bin_obj, &bf->bo->symbols_vec);
 	return true;
 }
 
@@ -116,7 +107,7 @@ static RList *sections(RBinFile *bf) {
 }
 
 static RList *relocs(RBinFile *bf) {
-	return r_bin_ne_get_relocs (bf->bo->bin_obj);
+	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec);
 }
 
 RBinPlugin r_bin_plugin_ne = {
