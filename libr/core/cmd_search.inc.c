@@ -3,7 +3,7 @@
 #if R_INCLUDE_BEGIN
 
 #include <sdb/ht_uu.h>
-#include "cmd_search_rop.inc.c"
+#include "cmd_search_gadget.inc.c"
 
 static int cmd_search(void *data, const char *input);
 
@@ -1326,7 +1326,7 @@ static RList *construct_rop_gadget(RCore *core, int gadget_type, ut64 addr, ut8 
 	RCoreAsmHit *hit = NULL;
 	RList *hitlist = r_core_asm_hit_list_new ();
 	ut8 nb_instr = 0;
-	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	const ut8 max_instr = r_config_get_i (core->config, "gadget.len");
 	bool valid = false;
 	int grep_find;
 	int search_hit;
@@ -1465,9 +1465,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 	RAnalOp analop = {0};
 	Sdb *db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
-	const bool rop_comments = r_config_get_i (core->config, "rop.comments");
+	const bool rop_comments = r_config_get_i (core->config, "gadget.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
-	const bool rop_db = r_config_get_i (core->config, "rop.db");
+	const bool rop_db = r_config_get_i (core->config, "gadget.db");
 
 	if (rop_db) {
 		ropList = r_list_newf (free);
@@ -1632,9 +1632,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode) {
 }
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
-	const ut8 crop = r_config_get_i (core->config, "rop.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
-	const ut8 subchain = r_config_get_i (core->config, "rop.subchains");
-	const ut8 max_instr = r_config_get_i (core->config, "rop.len");
+	const ut8 crop = r_config_get_i (core->config, "gadget.cond"); // decide if cjmp, cret, and ccall should be used too for the gadget-search
+	const ut8 subchain = r_config_get_i (core->config, "gadget.subchains");
+	const ut8 max_instr = r_config_get_i (core->config, "gadget.len");
 	const char *arch = r_config_get (core->config, "asm.arch");
 	int max_count = r_config_get_i (core->config, "search.maxhits");
 	int i = 0, end = 0, mode = 0, increment = 1, ret, result = true;
@@ -1651,7 +1651,7 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 	RIOMap *map;
 
 	Sdb *gadgetSdb = NULL;
-	if (r_config_get_i (core->config, "rop.sdb")) {
+	if (r_config_get_i (core->config, "gadget.sdb")) {
 		if (!(gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", false))) {
 			gadgetSdb = sdb_ns (core->sdb, "gadget_sdb", true);
 		}
@@ -1661,9 +1661,9 @@ static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type,
 	}
 	if (max_instr <= 1) {
 		r_list_free (end_list);
-		R_LOG_ERROR ("ROP length (rop.len) must be greater than 1");
+		R_LOG_ERROR ("Gadget length (gadget.len) must be greater than 1");
 		if (max_instr == 1) {
-			R_LOG_ERROR ("For rop.len = 1, use /c to search for single instructions. See /c? for help");
+			R_LOG_ERROR ("For gadget.len = 1, use /c to search for single instructions. See /c? for help");
 		}
 		return false;
 	}
