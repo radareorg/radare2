@@ -219,7 +219,7 @@ static void classdump_keys(RCore *core, RBinObject *bo) {
 	RBinClass *k;
 	RBinField *f;
 	RBinSymbol *m;
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	r_list_foreach (bo->classes, iter, k) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		R_VEC_FOREACH (&k->fields, f) {
@@ -899,7 +899,7 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_list_foreach (bfiles, objs_iter, bf) {
 		RBinObject *obj = bf->bo;
 		RBinClass *klass;
-		RListIter *iter, *iter2;
+		RListIter *iter;
 		core->bin->cur = bf;
 		r_list_foreach (obj->classes, iter, klass) {
 			const char *kname = r_bin_name_tostring (klass->name);
