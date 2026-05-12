@@ -666,6 +666,17 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
+	// trim doubling-growth slack from per-class and global symbol/import vecs
+	RVecRBinSymbol_shrink_to_fit (&bo->symbols_vec);
+	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
+	if (bo->classes) {
+		RListIter *it;
+		RBinClass *cls;
+		r_list_foreach (bo->classes, it, cls) {
+			RVecRBinSymbol_shrink_to_fit (&cls->methods);
+			RVecRBinField_shrink_to_fit (&cls->fields);
+		}
+	}
 	return true;
 }
 
