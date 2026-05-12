@@ -2409,7 +2409,7 @@ static void cmd_ies(RCore *core, const char *input, PJ *pj, int mode, int va) {
 	r_list_foreach (bfiles, objs_iter, bf) {
 		RBinObject *obj = bf->bo;
 		RBinClass *klass;
-		RListIter *iter, *iter2;
+		RListIter *iter;
 		core->bin->cur = bf;
 		RBinSymbol *method;
 		RVecRBinSymbol *symbols = r_bin_file_get_symbols_vec (bf);
