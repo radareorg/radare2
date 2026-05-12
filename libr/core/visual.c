@@ -2602,6 +2602,7 @@ static const char browsemsg[] = \
 	" f  flags\n"
 	" F  functions\n"
 	" g  graph\n"
+	" G  gadgets\n"
 	" h  history\n"
 	" i  imports\n"
 	" l  same as VT\n"
@@ -2610,7 +2611,6 @@ static const char browsemsg[] = \
 	" M  mountpoints\n"
 	" p  pids/threads\n"
 	" q  quit\n"
-	" r  ROP gadgets\n"
 	" s  symbols\n"
 	" t  types\n"
 	" T  themes\n"
@@ -2654,8 +2654,8 @@ R_API void r_core_visual_browse(RCore *core, const char *input) {
 				return;
 			}
 			break;
-		case 'r': // "vbr"
-			r_core_visual_view_rop (core);
+		case 'G': // "vbG"
+			r_core_visual_view_gadgets (core);
 			break;
 		case 'f': // "vbf"
 			r_core_visual_trackflags (core);

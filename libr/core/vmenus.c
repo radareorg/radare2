@@ -1927,12 +1927,12 @@ static char *print_rop(void *_core, void *_item, bool selected) {
 	return r_str_newf ("%c %s\n", selected?'>':' ', line);
 }
 
-R_API int r_core_visual_view_rop(RCore *core) {
+R_API int r_core_visual_view_gadgets(RCore *core) {
 	RListIter *iter;
 	const int rows = 7;
 	int cur = 0;
 
-	r_line_set_prompt (core->cons->line, "rop regexp: ");
+	r_line_set_prompt (core->cons->line, "gadget regexp: ");
 	const char *line = r_line_readline (core->cons);
 
 	int scr_h, scr_w = r_cons_get_size (core->cons, &scr_h);
@@ -1943,8 +1943,8 @@ R_API int r_core_visual_view_rop(RCore *core) {
 	// maybe store in RCore, so we can save it in project and use it outside visual
 
 	RCons *cons = core->cons;
-	R_LOG_INFO ("Searching ROP gadgets");
-	char *ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
+	R_LOG_INFO ("Searching gadgets");
+	char *ropstr = r_core_cmd_strf (core, "\"/Gl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -2037,7 +2037,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					" /  - highlight given word\n"
 					" y  - yank current rop chain into the clipboard (y?)\n"
 					" o  - seek to given offset\n"
-					" r  - run /R again\n"
+					" r  - run /G again\n"
 					" ?  - show this help message\n"
 					" q  - quit this view\n"
 				      );
@@ -2080,9 +2080,9 @@ R_API int r_core_visual_view_rop(RCore *core) {
 				}
 			}
 			break;
-		case 'r':
+		case 'g':
 			{
-				r_line_set_prompt (core->cons->line, "rop regexp: ");
+				r_line_set_prompt (core->cons->line, "gadget regexp: ");
 				const char *line = r_line_readline (core->cons);
 				if (line && *line) {
 					free (cursearch);
@@ -2091,7 +2091,7 @@ R_API int r_core_visual_view_rop(RCore *core) {
 					cur = 0;
 					cursearch = strdup (line);
 					free (ropstr);
-					ropstr = r_core_cmd_strf (core, "\"/Rl %s\" @e:scr.color=0", line);
+					ropstr = r_core_cmd_strf (core, "\"/Gl %s\" @e:scr.color=0", line);
 					r_list_free (rops);
 					rops = r_str_split_list (ropstr, "\n", 0);
 				}
@@ -3371,14 +3371,13 @@ static ut64 var_variables_show(RCore* core, int idx, int *vindex, int show, int 
 			case 'r':
 				{
 					RRegItem *r = r_reg_index_get (core->anal->reg, var->delta);
-					if (!r) {
-						R_LOG_ERROR ("Register not found for %d var delta", var->delta);
-						break;
-					}
-					r_cons_printf (core->cons, "%sarg %s %s @ %s\n",
+					if (r) {
+						r_cons_printf (core->cons, "%sarg %s %s @ %s\n",
 							i == *vindex ? "* ":"  ",
-							var->type, var->name,
-							r->name);
+							var->type, var->name, r->name);
+					} else {
+						R_LOG_ERROR ("Register not found for %d var delta", var->delta);
+					}
 				}
 				break;
 			case 'b':

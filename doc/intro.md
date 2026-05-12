@@ -20,11 +20,11 @@ They can be used in evaluations:`? ${asm.tabs}`
 ```
 e: Returns configuration properties
 e <property>: Checks a specific property:
-	e asm.tabs => false
+e asm.tabs => false
 e <property>=<value>: Change property value
-	e asm.arch=ppc
+e asm.arch=ppc
 e? help about a configuration property
-	e? cmd.stack
+e? cmd.stack
 ```
 You will want to set your favourite options in `~/.radare2rc` since every line there will be interpreted at the beginning of each session. Mine for reference:
 
@@ -45,7 +45,9 @@ e scr.utf8 = true
 There is an easier interface accessible from the Visual mode, just typing `Ve`
 
 ## Basic Commands
+
 Command syntax: `[.][times][cmd][~grep][@[@iter]addr!size][|>pipe]`
+
 * `;` Command chaining: `x 3;s+3;pi 3;s+3;pxo 4;`
 * `|` Pipe with shell commands: `pd | less`
 * `!` Run shell commands: `!cat /etc/passwd`
@@ -56,28 +58,34 @@ Command syntax: `[.][times][cmd][~grep][@[@iter]addr!size][|>pipe]`
 * `~!` grep -v
 * `~[n]` grep by columns `afl~[0]`
 * `~:n` grep by rows `afl~:0`
+
 ```
-	pi~mov,eax  		  ; lines with mov or eax
-	pi~mov&eax  		  ; lines with mov and eax
-	pi~mov,eax:6  		  ; 6 first lines with mov or eax
-	pd 20~call[0]:0       ; grep first column of the first row matching 'call'
+pi~mov,eax  		  ; lines with mov or eax
+pi~mov&eax  		  ; lines with mov and eax
+pi~mov,eax:6  		  ; 6 first lines with mov or eax
+pd 20~call[0]:0       ; grep first column of the first row matching 'call'
 ```
+
 * `.cmd` Interprets command output
+
 ```
 is* prints symbols
 .is* interprets output and define the symbols in radare (normally they are already loaded if r2 was not invoked with -n)
 ```
+
 * `..` repeats last commands (same as enter \n)
 * `(` Used to define and run macros
 * `$` Used to define alias
 * `$$`: Resolves to current address
 * Offsets (`@`) are absolute, we can use $$ for relative ones `@ $$+4`
 * `?` Evaluate expression
+
 ```
 [0x00000000]> ? 33 +2
 35 0x23 043 0000:0023 35 00100011 35.0 0.000000
 
 Note: | and & need to be escaped
+
 ```
 * `?$?` Help for variables used in expressions
 * `$$`: Here
@@ -245,7 +253,7 @@ Flags are labels for offsets. They can be grouped in namespaces as `sym` for sym
 ```
 f: List flags
 f label @ offset: Define a flag `label` at offset
-	f str.pass_len @ 0x804999c
+f str.pass_len @ 0x804999c
 f-label: Removes flag
 fr: Rename flag
 fd: Returns position from nearest flag (looking backwards). Eg => entry+21
@@ -309,12 +317,12 @@ m<char>: Define a bookmark
 '<char>: Go to previously defined bookmark
 ```
 
-## ROP
+## Gadgets
 ```
-/R opcodes: Search opcodes
-	/R pop,pop,ret
-/Rl opcodes: Search opcodes and print them in linear way
-	/Rl jmp eax,call ebx
+/G opcodes: Search opcodes
+	/G pop,pop,ret
+/Gl opcodes: Search opcodes and print them in linear way
+	/Gl jmp eax,call ebx
 /a: Search assembly
 	/a jmp eax
 pda: Returns a library of gadgets that can be use. These gadgets are obtained by disassembling byte per byte instead of obeying to opcode length
@@ -607,4 +615,3 @@ Examples:
 r2 -b 32 -d rarun2 program=pwn1 arg1=$(ragg2 -P 300 -r) : runs pwn1 with a De Bruijn Pattern as first argument, inside radare2's debugger, and force 32 bits
 r2 -d rarun2 program=/bin/ls stdin=$(python exploit.py) : runs /bin/ls with the output of exploit.py directed to stdin
 ```
-

@@ -935,7 +935,7 @@ R_API void r_core_visual_define(RCore *core, const char *arg, int distance);
 R_API int r_core_visual_trackflags(RCore *core);
 R_API int r_core_visual_view_graph(RCore *core);
 R_API int r_core_visual_view_zigns(RCore *core);
-R_API int r_core_visual_view_rop(RCore *core);
+R_API int r_core_visual_view_gadgets(RCore *core);
 R_API int r_core_visual_comments(RCore *core);
 R_API int r_core_visual_prompt(RCore *core);
 R_API bool r_core_visual_esil(RCore *core, const char *input);
