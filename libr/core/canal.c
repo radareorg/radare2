@@ -959,6 +959,9 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 			case R_ANAL_ADDR_HINT_TYPE_VAL:
 				r_cons_printf (core->cons, " val=0x%08"PFMT64x, record->val);
 				break;
+			case R_ANAL_ADDR_HINT_TYPE_ENUM:
+				r_cons_printf (core->cons, " enum='%s'", record->enum_name);
+				break;
 			}
 		}
 		break;
