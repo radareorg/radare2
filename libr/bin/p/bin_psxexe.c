@@ -33,16 +33,13 @@ static RBinInfo* info(RBinFile* bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile* bf) {
+static bool sections_vec(RBinFile *bf) {
 	psxexe_header psxheader = {0};
 	if (r_buf_fread_at (bf->buf, 0, (ut8*)&psxheader, "8c17i", 1) != sizeof (psxexe_header)) {
 		R_LOG_ERROR ("Truncated Header");
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
 	RBinSection *sect = R_NEW0 (RBinSection);
 	sect->name = strdup ("TEXT");
@@ -54,8 +51,7 @@ static RList* sections(RBinFile* bf) {
 	sect->add = true;
 	sect->has_strings = true;
 
-	r_list_append (ret, sect);
-	return ret;
+	return r_bin_section_vec_append (bf, sect);
 }
 
 static RList* entries(RBinFile* bf) {
@@ -78,10 +74,6 @@ static RList* entries(RBinFile* bf) {
 static RList* strings(RBinFile* bf) {
 	// hardcode minstrlen = 20
 	return r_bin_file_get_strings (bf, 20, 0, 2);
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_psxexe = {

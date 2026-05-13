@@ -43,11 +43,8 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
 	RBinSection *s = R_NEW0 (RBinSection);
 	s->name = strdup ("ROM");
@@ -58,12 +55,7 @@ static RList *sections(RBinFile *bf) {
 	s->perm = R_PERM_RX;
 	s->add = true;
 
-	r_list_append (ret, s);
-	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return r_bin_section_vec_append (bf, s);
 }
 
 RBinPlugin r_bin_plugin_ningba = {

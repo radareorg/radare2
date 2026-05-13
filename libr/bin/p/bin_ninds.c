@@ -37,11 +37,11 @@ static ut64 baddr(RBinFile *bf) {
 	return (ut64)lh->arm9_ram_address;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
 	if (!lh) {
-		return ret;
+		return true;
 	}
 	RBinSection *ptr9 = R_NEW0 (RBinSection);
 
@@ -52,7 +52,9 @@ static RList *sections(RBinFile *bf) {
 	ptr9->vaddr = lh->arm9_ram_address;
 	ptr9->perm = r_str_rwx ("rwx");
 	ptr9->add = true;
-	r_list_append (ret, ptr9);
+	if (!r_bin_section_vec_append (bf, ptr9)) {
+		return false;
+	}
 
 	RBinSection *ptr7 = R_NEW0 (RBinSection);
 	ptr7->name = strdup ("arm7");
@@ -62,9 +64,11 @@ static RList *sections(RBinFile *bf) {
 	ptr7->vaddr = lh->arm7_ram_address;
 	ptr7->perm = r_str_rwx ("rwx");
 	ptr7->add = true;
-	r_list_append (ret, ptr7);
+	if (!r_bin_section_vec_append (bf, ptr7)) {
+		return false;
+	}
 
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -102,10 +106,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->has_va = true;
 	ret->bits = 32;
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_ninds = {

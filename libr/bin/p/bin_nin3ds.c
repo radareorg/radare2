@@ -18,57 +18,39 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	struct n3ds_firm_hdr *loaded_header = (void*)bf->bo->bin_obj;
-	RList *ret = NULL;
-	RBinSection *sections[4] = {
-		NULL, NULL, NULL, NULL
-	};
-	int i, corrupt = false;
-
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	/* FIRM has always 4 sections, normally the 4th section is not used */
+	int i;
 	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header->sections[i].size) {
-			sections[i] = R_NEW0 (RBinSection);
+			RBinSection *section = R_NEW0 (RBinSection);
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header->sections[i].type == 0x0) {
-				sections[i]->name = strdup ("arm9");
+				section->name = strdup ("arm9");
 			} else if (loaded_header->sections[i].type == 0x1) {
-				sections[i]->name = strdup ("arm11");
+				section->name = strdup ("arm11");
 			} else {
-				corrupt = true;
-				break;
+				r_bin_section_free (section);
+				RVecRBinSection_clear (&bf->bo->sections_vec);
+				return false;
 			}
-			sections[i]->size = loaded_header->sections[i].size;
-			sections[i]->vsize = loaded_header->sections[i].size;
-			sections[i]->paddr = loaded_header->sections[i].offset;
-			sections[i]->vaddr = loaded_header->sections[i].address;
-			sections[i]->perm = r_str_rwx ("rwx");
-			sections[i]->add = true;
-		}
-	}
-
-	/* Append sections or free them if file is corrupt to avoid memory leaks */
-	for (i = 0; i < 4; i++) {
-		if (sections[i]) {
-			if (corrupt) {
-				free (sections[i]);
-			} else {
-				r_list_append (ret, sections[i]);
+			section->size = loaded_header->sections[i].size;
+			section->vsize = loaded_header->sections[i].size;
+			section->paddr = loaded_header->sections[i].offset;
+			section->vaddr = loaded_header->sections[i].address;
+			section->perm = r_str_rwx ("rwx");
+			section->add = true;
+			if (!r_bin_section_vec_append (bf, section)) {
+				return false;
 			}
 		}
 	}
-	if (corrupt) {
-		r_list_free (ret);
-		return NULL;
-	}
 
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -98,10 +80,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->bits = 32;
 
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_nin3ds = {

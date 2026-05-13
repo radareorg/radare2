@@ -37,8 +37,8 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("HUNK_HEADER");
 	ptr->paddr = 0;
@@ -47,8 +47,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 static RList* entries(RBinFile *bf) {
@@ -73,10 +72,6 @@ static RList* entries(RBinFile *bf) {
 	}
 	R_LOG_ERROR ("Cannot determine entrypoint, cannot find HUNK_CODE");
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_hunk = {

@@ -141,16 +141,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	BootImageObj *bio = bf->bo->bin_obj;
 	if (!bio) {
-		return NULL;
+		return false;
 	}
 	BootImage *bi = &bio->bi;
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
@@ -158,7 +155,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = bi->page_size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("kernel");
@@ -168,7 +167,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
@@ -180,7 +181,9 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
 
 	if (bi->second_size > 0) {
@@ -193,14 +196,12 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
 
-	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return true;
 }
 
 RBinPlugin r_bin_plugin_bootimg = {

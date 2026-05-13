@@ -58,9 +58,9 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	free (iocmd (bf, "iS"));
-	RList *ret = r_list_new ();
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 #if 0
 	RBinSection *ptr;
 	if (!(ptr = R_NEW0 (RBinSection))) {
@@ -99,7 +99,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	r_list_append (ret, ptr);
 #endif
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -113,10 +113,6 @@ static RList *entries(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_io = {
@@ -144,4 +140,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

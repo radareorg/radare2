@@ -70,9 +70,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBuffer *obj = bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree) r_bin_section_free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// program headers is another section
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
@@ -81,7 +81,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
 		ptr = R_NEW0 (RBinSection);
@@ -91,9 +93,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = 0xe0000;
 		ptr->perm = R_PERM_RWX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -107,10 +111,6 @@ static RList *entries(RBinFile *bf) {
 	ptr->vaddr = 0xffff0;
 	r_list_append (ret, ptr);
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_bios = {
