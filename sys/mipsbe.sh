@@ -7,6 +7,23 @@ TARGET="${TARGET:-mips-linux-gnu}"
 CROSS="${CROSS:-${TARGET}-}"
 R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/asm/mips_v2_64}"
 R2R_TIMEOUT="${R2R_TIMEOUT:-120}"
+MODE="${1:-all}"
+
+usage() {
+	echo "Usage: sys/mipsbe.sh [build|smoke|all]"
+	exit 1
+}
+
+case "$MODE" in
+build|smoke|all)
+	;;
+-h|--help)
+	usage
+	;;
+*)
+	usage
+	;;
+esac
 
 find_tool() {
 	if command -v "$1" >/dev/null 2>&1; then
@@ -57,17 +74,19 @@ run_r2r() {
 
 cd "$ROOT" || exit 1
 
-CC="${CC:-$(find_tool "${CROSS}gcc" || true)}"
-if [ -z "$CC" ]; then
-	echo "Missing required tool: ${CROSS}gcc"
-	exit 1
-fi
-export CC CROSS
-export BUILD_R2R="${BUILD_R2R:-1}"
-export CONFIGURE_PLUGINS_ARGS="${CONFIGURE_PLUGINS_ARGS:---without-zydis}"
-export CFGARGS="${CFGARGS:---without-zydis}"
+if [ "$MODE" != smoke ]; then
+	CC="${CC:-$(find_tool "${CROSS}gcc" || true)}"
+	if [ -z "$CC" ]; then
+		echo "Missing required tool: ${CROSS}gcc"
+		exit 1
+	fi
+	export CC CROSS
+	export BUILD_R2R="${BUILD_R2R:-1}"
+	export CONFIGURE_PLUGINS_ARGS="${CONFIGURE_PLUGINS_ARGS:---without-zydis}"
+	export CFGARGS="${CFGARGS:---without-zydis}"
 
-sys/cross.sh "$TARGET"
+	sys/cross.sh "$TARGET"
+fi
 
 R2R_BIN="${ROOT}/binr/r2r/r2r"
 RADARE2_BIN="${ROOT}/binr/blob/radare2"
@@ -86,6 +105,9 @@ if [ -n "$READELF" ]; then
 		echo "binr/blob/r2blob is not a MIPS ELF"
 		exit 1
 	}
+fi
+if [ "$MODE" = build ]; then
+	exit 0
 fi
 
 QEMU_R2R=
