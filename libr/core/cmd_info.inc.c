@@ -964,11 +964,19 @@ static void cmd_ic_sub(RCore *core, const char *input) {
 		}
 	}
 	if (klass && method_name) {
+		RBinFile *bf = r_bin_cur (core->bin);
 		size_t i = 0;
 		R_VEC_FOREACH (&klass->methods, m) {
 			const char *mname = r_bin_name_tostring2 (m->name, 'o');
 			if (!strcmp (method_name, mname)) {
 				RVecRBinSymbol_remove (&klass->methods, i);
+				// addr2klassmethod cached vec-slot pointers that the
+				// remove above either freed or shifted onto a different
+				// method, so drop the cache.
+				if (bf && bf->bo && bf->bo->addr2klassmethod) {
+					ht_up_free (bf->bo->addr2klassmethod);
+					bf->bo->addr2klassmethod = NULL;
+				}
 				return;
 			}
 			i++;
