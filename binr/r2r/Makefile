@@ -8,6 +8,8 @@ include ../../libr/util/deps.mk
 
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=$(CLOCK_LDFLAGS)
+ifeq (,$(filter wasi wasm emscripten,$(COMPILER)))
 LDFLAGS+=$(LIBATOMIC)
+endif
 
 include ../shlr.mk
