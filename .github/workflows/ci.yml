@@ -155,7 +155,7 @@ jobs:
       uses: actions/checkout@v6
     - name: Install mipsbe toolchain
       run: |
-        sudo apt-get update --assume-yes
+#        sudo apt-get update --assume-yes
         sudo apt-get install --assume-yes gcc make gperf file gcc-mips-linux-gnu qemu-user
     - name: Build static mipsbe r2 and unit tests
       run: sys/mipsbe.sh build
