@@ -23,6 +23,7 @@ const RAnalHint empty_hint = {
 	.high = 0,
 	.nword = 0,
 	.stackframe = UT64_MAX,
+	.enum_name = NULL,
 };
 
 bool hint_equals(const RAnalHint *a, const RAnalHint *b) {
@@ -47,6 +48,7 @@ bool hint_equals(const RAnalHint *a, const RAnalHint *b) {
 	CHECK_STREQ (syntax);
 	CHECK_STREQ (esil);
 	CHECK_STREQ (offset);
+	CHECK_STREQ (enum_name);
 #undef CHECK_STREQ
 	return true;
 }
@@ -104,6 +106,10 @@ bool test_r_anal_addr_hints(void) {
 
 	r_anal_hint_set_immbase (anal, 0x1337, 7);
 	cur.immbase = 7;
+	CHECK
+
+	r_anal_hint_set_enum (anal, 0x1337, "MyEnum");
+	cur.enum_name = "MyEnum";
 	CHECK
 
 	r_anal_hint_set_size (anal, 0x1337, 0x123);
@@ -170,6 +176,10 @@ bool test_r_anal_addr_hints(void) {
 
 	r_anal_hint_unset_immbase (anal, 0x1337);
 	cur.immbase = 0;
+	CHECK
+
+	r_anal_hint_unset_enum (anal, 0x1337);
+	cur.enum_name = NULL;
 	CHECK
 
 	r_anal_hint_unset_size (anal, 0x1337);

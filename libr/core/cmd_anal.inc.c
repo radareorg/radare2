@@ -980,6 +980,7 @@ static RCoreHelpMessage help_msg_ah = {
 	"ahF", " 0x10", "set stackframe size at current offset",
 	"ahh", " 0x804840", "highlight this address offset in disasm",
 	"ahi", "[?] 10", "define numeric base for immediates (2, 8, 10, 10u, 16, i, p, S, s)",
+	"ahie", " <enum> [nword]", "set enum type for the hinted immediate",
 	"ahj", "", "list hints in JSON",
 	"aho", " call", "change opcode type (see aho?)",
 	"ahp", " addr", "set pointer hint",
@@ -1037,6 +1038,8 @@ static RCoreHelpMessage help_msg_ahi = {
 	"ahi", " p", "set base to htons(port) (3)",
 	"ahi", " S", "set base to syscall (80)",
 	"ahi", " s", "set base to string (1)",
+	"ahie", " <enum> [nword]", "set enum type for the immediate",
+	"ahie-", "", "unset enum type for the immediate",
 	"ahi1", " 10", "set base of argument 1 to base 10 (same as ahi1 d)",
 	NULL
 };
@@ -12052,6 +12055,34 @@ static void cmd_anal_hint(RCore *core, const char *input) {
 		if (isdigit (input[1] & 0xff)) {
 			r_anal_hint_set_nword (a, core->addr, input[1] - '0');
 			input++;
+		}
+		if (input[1] == 'e') { // "ahie"
+			if (input[2] == '-') {
+				r_anal_hint_unset_enum (a, core->addr);
+			} else if (input[2] == ' ') {
+				char *ptr = r_str_trim_dup (input + 2);
+				if (ptr) {
+					int argc = r_str_word_set0 (ptr);
+					const char *enum_name = r_str_word_get0 (ptr, 0);
+					if (enum_name) {
+						r_anal_hint_set_enum (a, core->addr, enum_name);
+						if (argc > 1) {
+							int nword = r_num_math (core->num, r_str_word_get0 (ptr, 1));
+							r_anal_hint_set_nword (a, core->addr, nword);
+						}
+					}
+					free (ptr);
+				}
+			} else if (!input[2]) {
+				RAnalHint *hint = r_anal_hint_get (a, core->addr);
+				if (hint && hint->enum_name) {
+					r_cons_println (core->cons, hint->enum_name);
+				}
+				r_anal_hint_free (hint);
+			} else {
+				r_core_cmd_help (core, help_msg_ahi);
+			}
+			break;
 		}
 		if (input[1] == ' ') {
 			// You can either specify immbase with letters, or numbers

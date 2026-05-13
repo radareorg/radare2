@@ -423,3 +423,43 @@ EXPECT=<<EOF
             0x00000000      fd430191       add x29, sp, 0x28
 EOF
 RUN
+
+NAME=ahie enum immediate
+ARGS=-a x86 -b 64
+FILE=-
+CMDS=<<EOF
+e asm.bytes=false
+'td enum E { SEVEN=7, EIGHT=8, WORD=0xffc643 };
+wx 4180fc07
+pi 1
+ahie E
+pi 1
+ahie
+ah.
+ahj.
+ahie-
+pi 1
+wx 4883f803
+ahie E
+pi 1
+s 0x10
+wx c7458843c6ff00
+ahie E 1
+pd 1
+ah*
+ahj
+EOF
+EXPECT=<<EOF
+cmp r12b, 7
+cmp r12b, E.SEVEN
+E
+ 0x00000000 => enum='E'
+[{"addr":0,"enum":"E"}]
+cmp r12b, 7
+cmp rax, 3
+            0x00000010      mov dword [rbp - 0x78], E.WORD             ; 0xffc643
+'@0x0'ahie E
+'@0x10'ahie E
+[{"addr":0,"enum":"E"},{"addr":16,"enum":"E","nword":1}]
+EOF
+RUN

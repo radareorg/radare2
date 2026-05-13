@@ -48,6 +48,9 @@ static void addr_hint_record_fini(void *element, void *user) {
 	case R_ANAL_ADDR_HINT_TYPE_ESIL:
 		free (record->esil);
 		break;
+	case R_ANAL_ADDR_HINT_TYPE_ENUM:
+		free (record->enum_name);
+		break;
 	default:
 		break;
 	}
@@ -251,6 +254,17 @@ R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base) {
 	}
 }
 
+R_API void r_anal_hint_set_enum(RAnal *a, ut64 addr, const char *enum_name) {
+	if (R_STR_ISEMPTY (enum_name)) {
+		unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_ENUM, addr);
+		return;
+	}
+	SET_HINT (R_ANAL_ADDR_HINT_TYPE_ENUM,
+		free (r->enum_name);
+		r->enum_name = strdup (enum_name);
+	);
+}
+
 R_API void r_anal_hint_set_pointer(RAnal *a, ut64 addr, ut64 ptr) {
 	SET_HINT (R_ANAL_ADDR_HINT_TYPE_PTR, r->ptr = ptr;);
 }
@@ -335,6 +349,10 @@ R_API void r_anal_hint_unset_immbase(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_IMMBASE, addr);
 }
 
+R_API void r_anal_hint_unset_enum(RAnal *a, ut64 addr) {
+	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_ENUM, addr);
+}
+
 R_API void r_anal_hint_unset_nword(RAnal *a, ut64 addr) {
 	unset_addr_hint_record (a, R_ANAL_ADDR_HINT_TYPE_NWORD, addr);
 }
@@ -416,6 +434,7 @@ R_API void r_anal_hint_free(RAnalHint *h) {
 		free (h->opcode);
 		free (h->syntax);
 		free (h->offset);
+		free (h->enum_name);
 		free (h);
 	}
 }
@@ -540,6 +559,9 @@ static void hint_merge(RAnalHint *hint, RAnalAddrHintRecord *record) {
 		break;
 	case R_ANAL_ADDR_HINT_TYPE_VAL:
 		hint->val = record->val;
+		break;
+	case R_ANAL_ADDR_HINT_TYPE_ENUM:
+		hint->enum_name = record->enum_name ? strdup (record->enum_name) : NULL;
 		break;
 	}
 }
