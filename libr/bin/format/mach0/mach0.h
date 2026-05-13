@@ -256,7 +256,7 @@ struct MACH0_(obj_t) {
 	RVecRBinImport imports_cache;
 	bool relocs_loaded;
 	RSkipList *relocs_cache;
-	RList *reloc_fixups;
+	RVecRBinReloc reloc_fixups;
 	ut8 *internal_buffer;
 	int internal_buffer_size;
 	int limit; // user defined
