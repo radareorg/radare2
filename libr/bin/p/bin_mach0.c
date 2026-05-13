@@ -336,11 +336,11 @@ static RList *relocs(RBinFile *bf) {
 		ptr->paddr = reloc->offset;
 		r_list_append (ret, ptr);
 	}
-	if (mo->reloc_fixups) {
+	RVecRBinReloc *fixups = &mo->reloc_fixups;
+	if (!RVecRBinReloc_empty (fixups)) {
 		RBinReloc *r;
-		RListIter *iter;
 
-		r_list_foreach (mo->reloc_fixups, iter, r) {
+		R_VEC_FOREACH (fixups, r) {
 			RBinReloc *ptr = R_NEW0 (RBinReloc);
 			ptr->type = R_BIN_RELOC_64;
 			ptr->ntype = r->ntype;
@@ -513,25 +513,22 @@ static RList* patch_relocs(RBinFile *bf) {
 #if 1
 	// XXX for some reason we are patching this twice as relocs and fixups
 	// may be good to find out why and comment back this code with an if0
-	int relocs_count = 0;
 	// fixups are now considered part of the relocs listing
-	if (mo->reloc_fixups != NULL) {
-		relocs_count = r_list_length (mo->reloc_fixups);
-	}
-	if (mo->reloc_fixups && relocs_count > 0) {
+	RVecRBinReloc *fixups = &mo->reloc_fixups;
+	size_t relocs_count = RVecRBinReloc_length (fixups);
+	if (relocs_count > 0) {
 		ut8 buf[8], obuf[8];
 		RBinReloc *r;
-		RListIter *iter2;
 
-		int count = relocs_count;
+		size_t count = relocs_count;
 		if (mo->limit > 0) {
-			if (relocs_count > mo->limit) {
+			if (relocs_count > (size_t)mo->limit) {
 				R_LOG_WARN ("mo.limit for relocs");
 			}
 			count = mo->limit;
 		}
-		r_list_foreach (mo->reloc_fixups, iter2, r) {
-			if (count-- < 0) {
+		R_VEC_FOREACH (fixups, r) {
+			if (count-- == 0) {
 				break;
 			}
 			ut64 paddr = r->paddr + mo->baddr;
@@ -727,15 +724,17 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 	return nb;
 }
 
-static void add_fixup(RList *list, ut64 addr, ut64 value) {
-	if (!list) {
+static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value) {
+	if (!fixups) {
 		return;
 	}
-	RBinReloc *r = R_NEW0 (RBinReloc);
+	RBinReloc *r = RVecRBinReloc_emplace_back (fixups);
+	if (!r) {
+		return;
+	}
 	r->type = R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;
-	r_list_append (list, r);
 }
 
 static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
@@ -747,13 +746,9 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 		R_LOG_WARN ("rebase_buffer_callback2: invalid ptr_size %u, skipping", psz);
 		return false;
 	}
-	RList *rflist = NULL;
+	RVecRBinReloc *rflist = NULL;
 	if (obj->options.load_unnamed) {
-		rflist = obj->reloc_fixups;
-	}
-	if (!rflist && obj->options.load_unnamed) {
-		rflist = r_list_newf (free);
-		obj->reloc_fixups = rflist;
+		rflist = &obj->reloc_fixups;
 	}
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:

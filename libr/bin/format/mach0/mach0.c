@@ -2487,7 +2487,7 @@ void *MACH0_(mach0_free)(struct MACH0_(obj_t) * mo) {
 	if (mo->relocs_loaded) {
 		r_skiplist_free (mo->relocs_cache);
 	}
-	r_list_free (mo->reloc_fixups);
+	RVecRBinReloc_fini (&mo->reloc_fixups);
 	free_chained_starts (mo);
 	sdb_free (mo->kv);
 	r_unref (mo->b);
@@ -2512,6 +2512,7 @@ struct MACH0_(obj_t) * MACH0_(new_buf)(RBinFile *bf, RBuffer *buf, struct MACH0_
 	struct MACH0_(obj_t) *mo = R_NEW0 (struct MACH0_(obj_t));
 	mo->b = r_ref (buf);
 	mo->main_addr = UT64_MAX;
+	RVecRBinReloc_init (&mo->reloc_fixups);
 	mo->kv = sdb_new (NULL, "bin.mach0", 0);
 	mo->imports_by_name = ht_pp_new0 ();
 	// probably unnecessary indirection if we pass bf or bo to the apis instead of mo

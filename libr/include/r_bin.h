@@ -766,6 +766,8 @@ typedef struct r_bin_reloc_t {
 	bool is_ifunc;
 } RBinReloc;
 
+R_VEC_TYPE (RVecRBinReloc, RBinReloc);
+
 typedef struct r_bin_string_t {
 	char *string; // TODO: rename to text or so
 	ut64 vaddr;
