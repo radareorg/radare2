@@ -246,171 +246,93 @@ static void find_pe_overlay(RBinFile *bf) {
 }
 
 static RList* classes(RBinFile *bf) {
-	RList *ret = NULL;
-	const int limit = bf->rbin->options.limit;
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->dos_header || !pe->nt_headers) {
 		return NULL;
 	}
-
-	ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
-	const bool names_only = bf->rbin->options.classes_names_only;
 	RList *dotnet_symbols = get_dotnet_symbols (bf);
 	if (!dotnet_symbols || r_list_empty (dotnet_symbols)) {
 		return NULL;
 	}
-	ret = r_list_newf ((RListFree)r_bin_class_free);
-	if (!ret) {
-		return NULL;
-	}
+	const ut64 image_base = PE_(r_bin_pe_get_image_base) (pe);
+	const bool names_only = bf->rbin->options.classes_names_only;
+	const int limit = bf->rbin->options.limit;
 
-	// Process symbols - first create classes from typedefs, then add methods
 	RListIter *iter_sym;
 	DotNetSymbol *dsym;
-	// First pass: create class entries from typedef symbols
+	// Pass 1: create class entries from typedef symbols (and their fields)
 	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
 		if (!dsym->name || !dsym->type || strcmp (dsym->type, "typedef")) {
 			continue;
 		}
-		// Create full class name with namespace
-		char *class_name_full;
 		const char *ns = dsym->namespace;
-		if (R_STR_ISNOTEMPTY (ns)) {
-			class_name_full = r_str_newf ("%s.%s", ns, dsym->name);
-		} else {
-			class_name_full = strdup (dsym->name);
+		char *fullname = R_STR_ISNOTEMPTY (ns)
+			? r_str_newf ("%s.%s", ns, dsym->name)
+			: strdup (dsym->name);
+		if (limit > 0 && r_list_length (bf->bo->classes) >= limit) {
+			free (fullname);
+			break;
 		}
-		// Check if class already exists
-		RBinClass *existing = NULL;
-		RListIter *iter_cls;
-		RBinClass *cls_iter;
-		r_list_foreach (ret, iter_cls, cls_iter) {
-			const char *cls_name = r_bin_name_tostring (cls_iter->name);
-			if (cls_name && !strcmp (cls_name, class_name_full)) {
-				existing = cls_iter;
-				break;
-			}
-		}
-		// Create new class if it doesn't exist
-		RBinClass *cls = NULL;
-		if (!existing) {
-			if (limit_reached (ret, limit)) {
-				free (class_name_full);
-				break;
-			}
-			cls = r_bin_class_new (class_name_full, NULL, 0);
+		RBinClass *cls = r_bin_file_add_class (bf, fullname, NULL, 0);
+		if (cls) {
 			cls->lang = R_BIN_LANG_MSVC;
-			cls->origin = R_BIN_CLASS_ORIGIN_BIN;
-			r_list_append (ret, cls);
-		}
-		RBinClass *target_cls = existing ? existing : cls;
-		if (!names_only && target_cls && dsym->fields) {
-			RListIter *iter_field;
-			DotNetField *dfield;
-			r_list_foreach (dsym->fields, iter_field, dfield) {
-				RBinField *field = RVecRBinField_emplace_back (&target_cls->fields);
-				if (!field) {
-					break;
+			if (!names_only && dsym->fields) {
+				RListIter *iter_field;
+				DotNetField *dfield;
+				r_list_foreach (dsym->fields, iter_field, dfield) {
+					RBinField *field = RVecRBinField_emplace_back (&cls->fields);
+					field->name = r_bin_name_new (dfield->name);
+					field->kind = R_BIN_FIELD_KIND_FIELD;
+					field->offset = dfield->offset;
 				}
-				field->name = r_bin_name_new (dfield->name);
-				field->kind = R_BIN_FIELD_KIND_FIELD;
-				field->vaddr = 0;
-				field->paddr = 0;
-				field->size = 0;
-				field->offset = dfield->offset;
 			}
 		}
-		free (class_name_full);
+		free (fullname);
 	}
 	if (names_only) {
-		return ret;
+		return NULL;
 	}
-	// Second pass: add methods to their corresponding classes
+	// Pass 2: split methoddef symbol names into class.method and append
 	r_list_foreach (dotnet_symbols, iter_sym, dsym) {
 		if (!dsym->name || !dsym->type || strcmp (dsym->type, "methoddef")) {
 			continue;
 		}
-
-		// Method names in .NET are formatted as: Namespace.ClassName.MethodName
-		// or Namespace.ClassName+InnerClass.MethodName
-		// Try to find the dot that separates the class from the method by looking for the
-		// last dot where what follows it is a plausible method name (contains no further dots, + or `)
-		char *tmp = r_str_newf ("%s", dsym->name);
-		char *split_point = NULL;
-
-		// Start with the last dot and work backwards
-		char *current_search_start = tmp;
-		while ((split_point = strrchr (current_search_start, '.'))) {
-			*split_point = '\0'; // Temporarily null terminate to isolate method name
-			char *potential_method = split_point + 1;
-
-			// Check if this looks like a method name (no dots after this point)
-			if (strchr (potential_method, '.') == NULL) {
-				// This looks good, use this split point
-				*split_point = '\0'; // Keep it null terminated
+		// Method names are "Namespace.ClassName.MethodName"; the method has
+		// no embedded dots so walk back-to-front and split at the last dot
+		// whose tail is dot-free.
+		char *tmp = strdup (dsym->name);
+		char *split = NULL;
+		char *cur = tmp;
+		while ((split = strrchr (cur, '.'))) {
+			if (!strchr (split + 1, '.')) {
 				break;
 			}
-
-			// Restore the dot and try the previous one
-			*split_point = '.';
-			current_search_start = split_point - 1;
-			if (current_search_start <= tmp) {
-				split_point = NULL;
+			cur = split - 1;
+			if (cur <= tmp) {
+				split = NULL;
 				break;
 			}
 		}
-
-		if (!split_point) {
-			// Fallback: use first dot if available
-			split_point = strchr (tmp, '.');
+		if (!split) {
+			split = strchr (tmp, '.');
 		}
-
-		if (!split_point || split_point == tmp) {
+		if (!split || split == tmp) {
 			free (tmp);
 			continue;
 		}
-
-		*split_point = '\0';
-		char *class_name_full = tmp;
-		char *method_name = split_point + 1;
-		// Look for existing class in result list or create new one
-		RBinClass *cls = NULL;
-		RListIter *iter_cls;
-		RBinClass *existing_cls;
-		r_list_foreach (ret, iter_cls, existing_cls) {
-			const char *cls_name = r_bin_name_tostring (existing_cls->name);
-			if (cls_name && !strcmp (cls_name, class_name_full)) {
-				cls = existing_cls;
-				break;
-			}
-		}
-		if (!cls) {
-			// Create new class if it doesn't exist
-			if (limit_reached (ret, limit)) {
-				free (tmp);
-				continue;
-			}
-			cls = r_bin_class_new (class_name_full, NULL, 0);
-			if (cls) {
-				cls->lang = R_BIN_LANG_MSVC;
-				cls->origin = R_BIN_CLASS_ORIGIN_BIN;
-				r_list_append (ret, cls);
-			}
-		}
-		if (cls && method_name && *method_name) {
-			// Add this method to the class
-			RBinSymbol *method_sym = RVecRBinSymbol_emplace_back (&cls->methods);
-			method_sym->name = r_bin_name_new (method_name);
-			method_sym->vaddr = dsym->vaddr + image_base;
-			method_sym->paddr = dsym->vaddr;
-			method_sym->bind = R_BIN_BIND_GLOBAL_STR;
-			method_sym->type = R_BIN_TYPE_FUNC_STR;
-			method_sym->size = dsym->size;
+		*split = '\0';
+		const char *method_name = split + 1;
+		RBinSymbol *m = r_bin_class_add_method (bf, tmp, method_name, 0);
+		if (m) {
+			m->vaddr = dsym->vaddr + image_base;
+			m->paddr = dsym->vaddr;
+			m->bind = R_BIN_BIND_GLOBAL_STR;
+			m->type = R_BIN_TYPE_FUNC_STR;
+			m->size = dsym->size;
 		}
 		free (tmp);
 	}
-
-	return ret;
+	return NULL;
 }
 
 #ifndef R_BIN_PE64

@@ -1356,27 +1356,40 @@ R_API RBinClass *r_bin_file_add_class(RBinFile *bf, const char *name, const char
 	return c;
 }
 
-R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const char *klass, const char *method, int nargs) {
-	R_RETURN_VAL_IF_FAIL (bf && klass && method, NULL);
+R_IPI RBinSymbol *r_bin_class_add_method(RBinFile *bf, const char *classname, const char *name, int nargs) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && classname && name, NULL);
 	if (bf->rbin && !bf->rbin->options.load_unnamed
-			&& (r_bin_name_is_unnamed (klass) || r_bin_name_is_unnamed (method))) {
+			&& (r_bin_name_is_unnamed (classname) || r_bin_name_is_unnamed (name))) {
 		return NULL;
 	}
-
-	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
+	RBinClass *c = r_bin_file_add_class (bf, classname, NULL, 0);
 	if (!c) {
-		R_LOG_ERROR ("Cannot allocate class %s", klass);
 		return NULL;
 	}
 	if (bf->rbin && bf->rbin->options.classes_names_only) {
 		return NULL;
 	}
-	int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
+	RBinSymbol *sym = RVecRBinSymbol_emplace_back (&c->methods);
+	sym->name = r_bin_name_new (name);
+	sym->classname = strdup (classname);
+	return sym;
+}
+
+R_API RBinSymbol *r_bin_file_add_method(RBinFile *bf, const char *rawname, const char *klass, const char *method, int nargs) {
+	R_RETURN_VAL_IF_FAIL (bf && klass && method, NULL);
+	RBinClass *c = r_bin_file_add_class (bf, klass, NULL, 0);
+	if (!c) {
+		R_LOG_ERROR ("Cannot allocate class %s", klass);
+		return NULL;
+	}
+	const int lang = (strstr (method, "JNI") || strstr (klass, "JNI"))? R_BIN_LANG_JNI: R_BIN_LANG_CXX;
 	c->lang = lang;
 	RBinSymbol *sym = __getMethod (c, method);
 	if (!sym) {
-		sym = RVecRBinSymbol_emplace_back (&c->methods);
-		sym->name = r_bin_name_new (method);
+		sym = r_bin_class_add_method (bf, klass, method, nargs);
+		if (!sym) {
+			return NULL;
+		}
 		sym->name->name = strdup (method);
 		sym->lang = lang;
 	}

@@ -113,6 +113,44 @@ static void filter_unnamed_imports_vec(RVecRBinImport *imports) {
 	}
 }
 
+// Promote class methods built by plugins (objc/pe/java/demangler/...) into
+// bo->symbols_vec so they show up in `iS` and other symbol consumers. Methods
+// whose vaddr is already in symbols_vec (dex/clone-from-symbols paths) are
+// skipped to avoid double-listing. Runs before reloc creation so subsequent
+// realloc-stability assumptions hold.
+static void sync_class_methods_to_symbols_vec(RBinObject *bo) {
+	if (!bo || !bo->classes) {
+		return;
+	}
+	HtUP *seen = ht_up_new0 ();
+	if (!seen) {
+		return;
+	}
+	RBinSymbol *sym;
+	R_VEC_FOREACH (&bo->symbols_vec, sym) {
+		if (sym->vaddr && sym->vaddr != UT64_MAX) {
+			ht_up_insert (seen, sym->vaddr, sym);
+		}
+	}
+	RBinClass *cls;
+	RListIter *it;
+	r_list_foreach (bo->classes, it, cls) {
+		RBinSymbol *m;
+		R_VEC_FOREACH (&cls->methods, m) {
+			if (!m->vaddr || m->vaddr == UT64_MAX) {
+				continue;
+			}
+			if (ht_up_find (seen, m->vaddr, NULL)) {
+				continue;
+			}
+			RBinSymbol *dst = RVecRBinSymbol_emplace_back (&bo->symbols_vec);
+			r_bin_symbol_copy (dst, m);
+			ht_up_insert (seen, m->vaddr, dst);
+		}
+	}
+	ht_up_free (seen);
+}
+
 static void filter_unnamed_classes(RList *classes) {
 	RListIter *iter, *tmp;
 	RBinClass *klass;
@@ -558,32 +596,10 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			r_bin_filter_sections (bf, bo->sections);
 		}
 	}
-	// Some reloc plugins keep pointers into these vectors, so compact them
-	// before reloc creation and do not move them afterwards.
-	RVecRBinSymbol_shrink_to_fit (&bo->symbols_vec);
-	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
-	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
-		if (p->relocs) {
-			RList *l = (RList *)p->relocs (bf);
-			if (l) {
-				clamp_list (l, limit);
-				REBASE_PADDR (bo, l, RBinReloc);
-				bo->relocs = list2rbtree ((RList*)l);
-				l->free = NULL; // owned by tree now, via clone with proper cleanup
-				r_list_free (l);
-			}
-		}
-	}
-	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		bo->strings = p->strings
-			? p->strings (bf)
-			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
-		if (bin->options.debase64) {
-			r_bin_object_filter_strings (bo);
-		}
-		clamp_list (bo->strings, limit);
-		REBASE_PADDR (bo, bo->strings, RBinString);
-	}
+	// Load classes before reloc creation. Class-method-creating plugins
+	// (objc/pe/java/demangler/...) push into bo->symbols_vec via
+	// sync_class_methods_to_symbols_vec, which must happen before reloc
+	// plugins capture their symbol pointers (see Stabilize commit).
 	if (bin->filter_rules & R_BIN_REQ_CLASSES) {
 		if (p->classes) {
 			RList *classes = p->classes (bf);
@@ -617,26 +633,33 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (bin->options.classes_names_only) {
 			r_bin_object_rebuild_classes_ht (bo);
 		}
-		// cache addr=class+method
-#if 0
-		// moved into libr/core/canal.c
-		// XXX SLOW on large binaries. only used when needed by getFunctionName from canal.c
-		if (bo->classes) {
-			RList *klasses = bo->classes;
-			RListIter *iter, *iter2;
-			RBinClass *klass;
-			RBinSymbol *method;
-			if (!bo->addr2klassmethod) {
-				// this is slow. must be optimized, but at least its cached
-				bo->addr2klassmethod = ht_up_new0 ();
-				r_list_foreach (klasses, iter, klass) {
-					r_list_foreach (klass->methods, iter2, method) {
-						ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
-					}
-				}
+		sync_class_methods_to_symbols_vec (bo);
+	}
+	// Some reloc plugins keep pointers into these vectors, so compact them
+	// before reloc creation and do not move them afterwards.
+	RVecRBinSymbol_shrink_to_fit (&bo->symbols_vec);
+	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
+	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
+		if (p->relocs) {
+			RList *l = (RList *)p->relocs (bf);
+			if (l) {
+				clamp_list (l, limit);
+				REBASE_PADDR (bo, l, RBinReloc);
+				bo->relocs = list2rbtree ((RList*)l);
+				l->free = NULL; // owned by tree now, via clone with proper cleanup
+				r_list_free (l);
 			}
 		}
-#endif
+	}
+	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
+		bo->strings = p->strings
+			? p->strings (bf)
+			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
+		if (bin->options.debase64) {
+			r_bin_object_filter_strings (bo);
+		}
+		clamp_list (bo->strings, limit);
+		REBASE_PADDR (bo, bo->strings, RBinString);
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
