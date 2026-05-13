@@ -39,7 +39,7 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RListIter *iter;
 	const char *pkgname;
 	r_list_foreach (mismatches, iter, pkgname) {
-		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated r2pm plugin package '%s'? (Y/n) ", pkgname)) {
+		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated '%s' plugin? (Y/n) ", pkgname)) {
 			continue;
 		}
 		char *epkgname = r_str_escape_sh (pkgname);
