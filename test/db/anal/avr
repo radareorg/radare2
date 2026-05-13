@@ -432,7 +432,7 @@ ARGS=-a avr
 CMDS=<<EOF
 aeim
 e search.align=2
-/ag in r24
+/g in r24
 EOF
 EXPECT=<<EOF
   0x00000280               7304  cpc r7, r3
@@ -470,7 +470,7 @@ ARGS=-a avr
 CMDS=<<EOF
 aeim
 e search.align=2
-/ag in r24
+/g in r24
 EOF
 EXPECT=<<EOF
   0x00000280               7304  cpc r7, r3

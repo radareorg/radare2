@@ -304,7 +304,7 @@ static RCoreHelpMessage help_msg_abl = {
 static RCoreHelpMessage help_msg_abp = {
 	"Usage:", "abp", "[addr] [num] # find num paths from current offset to addr",
 	"abp", " [addr] [num]", "find num paths from current offset to addr",
-	"abpf", " [addr]", "same as /gg find the path between two addresses across functions and basic blocks",
+	"abpf", " [addr]", "same as /agg find the path between two addresses across functions and basic blocks",
 	"abpe", " [addr]", "emulate from function start to the given address",
 	"abpe*", " [addr]", "show commands to emulate from function start to the given address",
 	"abpj", " [addr] [num]", "display paths in JSON",
@@ -14295,7 +14295,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_abp);
 		break;
 	case 'f': // "abpf"
-		r_core_cmdf (core, "/gg %s", input + 1);
+		r_core_cmdf (core, "/agg %s", input + 1);
 		break;
 	case 'e': // "abpe"
 		{
