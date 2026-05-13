@@ -175,30 +175,6 @@ void free_kv(HtPPKv *kv) {
 	free (kv->key);
 }
 
-static void plugin_mismatch_free(void *ptr) {
-	RLibPluginMismatch *mismatch = (RLibPluginMismatch *)ptr;
-	free (mismatch->file);
-	free (mismatch->pkgname);
-	free (mismatch);
-}
-
-static void plugin_mismatch_add(RLib *lib, const char *file, const char *pkgname) {
-	if (R_STR_ISEMPTY (pkgname)) {
-		return;
-	}
-	RListIter *iter;
-	RLibPluginMismatch *mismatch;
-	r_list_foreach (lib->plugin_mismatches, iter, mismatch) {
-		if (!strcmp (mismatch->file, file) && !strcmp (mismatch->pkgname, pkgname)) {
-			return;
-		}
-	}
-	mismatch = R_NEW0 (RLibPluginMismatch);
-	mismatch->file = strdup (file);
-	mismatch->pkgname = strdup (pkgname);
-	r_list_append (lib->plugin_mismatches, mismatch);
-}
-
 R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	RLib *lib = R_NEW (RLib);
 	if (r_sys_getenv_asbool ("R2_DEBUG")) {
@@ -210,7 +186,7 @@ R_API RLib *r_lib_new(const char *symname, const char *symnamefunc) {
 	lib->abiversion = R2_ABIVERSION;
 	lib->handlers = r_list_newf (free);
 	lib->plugins = r_list_newf (free);
-	lib->plugin_mismatches = r_list_newf (plugin_mismatch_free);
+	lib->plugin_mismatches = r_list_newf (free);
 	int i;
 	for (i = 0; i < R_LIB_TYPE_LAST; i++) {
 		lib->handlers_bytype[i] = NULL;
@@ -439,10 +415,10 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 	// Check ABI compatibility
 	if (stru->abiversion && !lib->ignore_abiversion) {
 		if (stru->abiversion != lib->abiversion) {
-			if (stru->pkgname) {
+			if (R_STR_ISNOTEMPTY (stru->pkgname)) {
 				R_LOG_WARN ("ABI mismatch: Expect %d vs %d from '%s' (run: r2pm -ci %s)",
 						lib->abiversion, stru->abiversion, file, stru->pkgname);
-				plugin_mismatch_add (lib, file, stru->pkgname);
+				r_list_append (lib->plugin_mismatches, strdup (stru->pkgname));
 			} else {
 				R_LOG_WARN ("ABI mismatch: Expect %d vs %d from '%s'",
 						lib->abiversion, stru->abiversion, file);
@@ -461,10 +437,10 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 			int major = atoi (stru->version);
 			int minor = dot ? atoi (dot + 1) : 0;
 			// The pkgname member was introduced in 4.2.0
-			if (stru->pkgname && (major > 4 || (major == 4 && minor >= 2))) {
+			if (R_STR_ISNOTEMPTY (stru->pkgname) && (major > 4 || (major == 4 && minor >= 2))) {
 				R_LOG_WARN ("Module version mismatch %s (%s) vs (%s) (run: r2pm -ci %s)",
 						file, stru->version, R2_VERSION, stru->pkgname);
-				plugin_mismatch_add (lib, file, stru->pkgname);
+				r_list_append (lib->plugin_mismatches, strdup (stru->pkgname));
 			} else {
 				R_LOG_WARN ("Module version mismatch %s (%s) vs (%s)", file, stru->version, R2_VERSION);
 			}

@@ -29,41 +29,6 @@ static char *get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
-static bool pkgname_seen(RList *pkglist, const char *pkgname) {
-	RListIter *iter;
-	const char *item;
-	r_list_foreach (pkglist, iter, item) {
-		if (!strcmp (item, pkgname)) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static RList *outdated_plugin_pkgnames(RLib *lib) {
-	RList *pkglist = r_list_newf (free);
-	RList *mismatches = lib->plugin_mismatches;
-	RListIter *iter;
-	RLibPluginMismatch *mismatch;
-	r_list_foreach (mismatches, iter, mismatch) {
-		if (!pkgname_seen (pkglist, mismatch->pkgname)) {
-			r_list_append (pkglist, strdup (mismatch->pkgname));
-		}
-	}
-	return pkglist;
-}
-
-static void reload_outdated_plugin_files(RCore *core, const char *pkgname) {
-	RList *mismatches = core->lib->plugin_mismatches;
-	RListIter *iter;
-	RLibPluginMismatch *mismatch;
-	r_list_foreach (mismatches, iter, mismatch) {
-		if (!strcmp (mismatch->pkgname, pkgname)) {
-			r_lib_open (core->lib, mismatch->file);
-		}
-	}
-}
-
 static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RList *mismatches = core->lib->plugin_mismatches;
 	if (!r_config_get_b (core->config, "scr.prompt")
@@ -71,10 +36,9 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 			|| r_list_empty (mismatches)) {
 		return;
 	}
-	RList *pkglist = outdated_plugin_pkgnames (core->lib);
 	RListIter *iter;
 	const char *pkgname;
-	r_list_foreach (pkglist, iter, pkgname) {
+	r_list_foreach (mismatches, iter, pkgname) {
 		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated r2pm plugin package '%s'? (Y/n) ", pkgname)) {
 			continue;
 		}
@@ -84,13 +48,12 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 			continue;
 		}
 		if (!r_sys_cmdf ("r2pm -ci \"%s\"", epkgname)) {
-			reload_outdated_plugin_files (core, pkgname);
+			R_LOG_INFO ("Rebuilt outdated r2pm plugin package '%s'", pkgname);
 		} else {
 			R_LOG_WARN ("Failed to run 'r2pm -ci %s'", pkgname);
 		}
 		free (epkgname);
 	}
-	r_list_free (pkglist);
 	r_list_purge (core->lib->plugin_mismatches);
 }
 

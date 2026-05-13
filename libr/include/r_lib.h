@@ -71,11 +71,6 @@ typedef struct r_lib_plugin_t {
 	char *name; // From the RPluginMeta's name // type + name imho
 } RLibPlugin;
 
-typedef struct r_lib_plugin_mismatch_t {
-	char *file;
-	char *pkgname;
-} RLibPluginMismatch;
-
 typedef bool (*RLibCallback)(RLibPlugin *, void *user, void *data);
 
 /* store list of initialized plugin handlers */
@@ -134,7 +129,7 @@ typedef struct r_lib_t {
 	char *symname;
 	char *symnamefunc;
 	RList /*RLibPlugin*/ *plugins;
-	RList /*RLibPluginMismatch*/ *plugin_mismatches;
+	RList /*char*/ *plugin_mismatches;
 	RList /*RLibHandler*/ *handlers;
 	RLibHandler *handlers_bytype[R_LIB_TYPE_LAST];
 	bool ignore_version;
