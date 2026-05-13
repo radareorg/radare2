@@ -31,7 +31,7 @@ static char *get_file_in_cur_dir(const char *filepath) {
 
 static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RList *mismatches = core->lib->plugin_mismatches;
-	if (!r_config_get_b (core->config, "scr.prompt")
+	if (!r_config_get_b (core->config, "scr.prompt.r2pm")
 			|| !r_cons_is_interactive (core->cons)
 			|| r_list_empty (mismatches)) {
 		return;

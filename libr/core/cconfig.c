@@ -4911,6 +4911,7 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.prompt.prj", "false", "show currently used project in prompt");
 	SETB ("scr.prompt.flag", "false", "show flag name in the prompt");
 	SETB ("scr.prompt.sect", "false", "show section name in the prompt");
+	SETB ("scr.prompt.r2pm", "true", "prompt to rebuild outdated r2pm plugins");
 	SETCB ("scr.prompt.format", "", &cb_cfg_prompt_format, "format string for r2 prompt (supports $(...) command substitution and ${COLOR} placeholders)");
 	SETCB ("scr.vprompt.format", "", &cb_cfg_prompt_format, "format string for visual prompt (supports $(...) command substitution and ${COLOR} placeholders)");
 	SETB ("scr.tts", "false", "use tts if available by a command (see ic)");

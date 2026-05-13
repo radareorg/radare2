@@ -416,7 +416,7 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 	if (stru->abiversion && !lib->ignore_abiversion) {
 		if (stru->abiversion != lib->abiversion) {
 			if (R_STR_ISNOTEMPTY (stru->pkgname)) {
-				R_LOG_WARN ("ABI mismatch: Expect %d vs %d from '%s' (run: r2pm -ci %s)",
+				R_LOG_WARN ("ABI mismatch: Expect %d vs %d from '%s' (run: r2pm -ci %s, or set scr.prompt.r2pm=true)",
 						lib->abiversion, stru->abiversion, file, stru->pkgname);
 				r_list_append (lib->plugin_mismatches, strdup (stru->pkgname));
 			} else {
@@ -438,7 +438,7 @@ R_API bool r_lib_validate_plugin(RLib *lib, const char *file, RLibStruct *stru) 
 			int minor = dot ? atoi (dot + 1) : 0;
 			// The pkgname member was introduced in 4.2.0
 			if (R_STR_ISNOTEMPTY (stru->pkgname) && (major > 4 || (major == 4 && minor >= 2))) {
-				R_LOG_WARN ("Module version mismatch %s (%s) vs (%s) (run: r2pm -ci %s)",
+				R_LOG_WARN ("Module version mismatch %s (%s) vs (%s) (run: r2pm -ci %s, or set scr.prompt.r2pm=true)",
 						file, stru->version, R2_VERSION, stru->pkgname);
 				r_list_append (lib->plugin_mismatches, strdup (stru->pkgname));
 			} else {
