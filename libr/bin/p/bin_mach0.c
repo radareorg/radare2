@@ -9,10 +9,14 @@
 R_VEC_TYPE (RVecExtReloc, struct reloc_t *);
 
 typedef struct {
-	ut8 *buf;
-	int count;
+	ut8 *chunk;
 	ut64 off;
-	RIO *io;
+	ut64 size;
+	ut64 chunk_addr;
+	ut64 chunk_size;
+	bool chunk_dirty;
+	bool chunk_valid;
+	bool failed;
 	struct MACH0_(obj_t) *obj;
 } RFixupRebaseContext;
 
@@ -627,25 +631,80 @@ beach:
 	return NULL;
 }
 
+#define MACH0_SWIZZLE_CHUNK_SIZE 0x1000
+
+static bool flush_rebase_buffer_chunk(RFixupRebaseContext *ctx) {
+	if (ctx->chunk_valid && ctx->chunk_dirty) {
+		if (r_buf_write_at (ctx->obj->b, ctx->chunk_addr, ctx->chunk, ctx->chunk_size) < 1) {
+			ctx->failed = true;
+			return false;
+		}
+		ctx->chunk_dirty = false;
+	}
+	return true;
+}
+
+static ut8 *rebase_buffer_chunk_ptr(RFixupRebaseContext *ctx, ut64 in_buf, ut32 len) {
+	if (len < 1 || in_buf >= ctx->size || len > ctx->size - in_buf) {
+		ctx->failed = true;
+		return NULL;
+	}
+	ut64 chunk_addr = in_buf & ~(ut64)(MACH0_SWIZZLE_CHUNK_SIZE - 1);
+	if (!ctx->chunk_valid || ctx->chunk_addr != chunk_addr) {
+		if (!flush_rebase_buffer_chunk (ctx)) {
+			return NULL;
+		}
+		if (!ctx->chunk) {
+			ctx->chunk = malloc (MACH0_SWIZZLE_CHUNK_SIZE);
+			if (!ctx->chunk) {
+				ctx->failed = true;
+				return NULL;
+			}
+		}
+		ctx->chunk_addr = chunk_addr;
+		ctx->chunk_size = R_MIN ((ut64)MACH0_SWIZZLE_CHUNK_SIZE, ctx->size - chunk_addr);
+		if (r_buf_read_at (ctx->obj->b, chunk_addr, ctx->chunk, ctx->chunk_size) != ctx->chunk_size) {
+			ctx->failed = true;
+			return NULL;
+		}
+		ctx->chunk_valid = true;
+	}
+	return ctx->chunk + (in_buf - ctx->chunk_addr);
+}
+
 static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
+	(void)bf;
 	R_RETURN_VAL_IF_FAIL (io && io->desc && io->desc->plugin, NULL);
 	RFixupRebaseContext ctx = {0};
 	RBuffer *nb = r_buf_new_with_cache (obj->b, false);
+	if (!nb) {
+		return obj->b;
+	}
 	RBuffer *ob = obj->b;
 	obj->b = nb;
 	ut64 count = r_buf_size (obj->b);
-	ctx.io = io;
-	ctx.obj = obj;
 	ut64 off = 0;
+	ctx.obj = obj;
 	ctx.off = off;
+	ctx.size = count;
 	MACH0_(iterate_chained_fixups) (obj, off, off + count,
 		R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
+	flush_rebase_buffer_chunk (&ctx);
+	free (ctx.chunk);
+	if (ctx.failed) {
+		obj->b = ob;
+		r_unref (nb);
+		return ob;
+	}
 	obj->b = ob;
 //	bf->buf = nb; // ???
 	return nb;
 }
 
 static void add_fixup(RList *list, ut64 addr, ut64 value) {
+	if (!list) {
+		return;
+	}
 	RBinReloc *r = R_NEW0 (RBinReloc);
 	r->type = R_BIN_RELOC_64;
 	r->vaddr = value;
@@ -656,15 +715,17 @@ static void add_fixup(RList *list, ut64 addr, ut64 value) {
 static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_details) {
 	RFixupRebaseContext *ctx = context;
 	struct MACH0_(obj_t) *obj = ctx->obj;
-	RBuffer *buf = obj->b;
 	const ut32 psz = event_details->ptr_size;
 	ut64 in_buf = event_details->offset - ctx->off;
 	if (psz != 4 && psz != 8) {
 		R_LOG_WARN ("rebase_buffer_callback2: invalid ptr_size %u, skipping", psz);
 		return false;
 	}
-	RList *rflist = obj->reloc_fixups;
-	if (!rflist) {
+	RList *rflist = NULL;
+	if (obj->options.load_unnamed) {
+		rflist = obj->reloc_fixups;
+	}
+	if (!rflist && obj->options.load_unnamed) {
 		rflist = r_list_newf (free);
 		obj->reloc_fixups = rflist;
 	}
@@ -672,9 +733,12 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
 		{
-			ut8 data[8] = {0};
-			r_buf_write_at (buf, in_buf, (const ut8*)"\x00\x00\x00\x00\x00\x00\x00", psz);
-			r_buf_read_at (buf, in_buf, data, psz);
+			ut8 *data = rebase_buffer_chunk_ptr (ctx, in_buf, psz);
+			if (!data) {
+				return false;
+			}
+			memset (data, 0, psz);
+			ctx->chunk_dirty = true;
 			add_fixup (rflist, in_buf, 0);
 			if (data[0]) {
 				R_LOG_ERROR ("DATA0 write has failed");
@@ -684,11 +748,14 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 	case R_FIXUP_EVENT_REBASE:
 	case R_FIXUP_EVENT_REBASE_AUTH:
 		{
-			ut8 data[8] = {0};
+			ut8 *data = rebase_buffer_chunk_ptr (ctx, in_buf, psz);
+			if (!data) {
+				return false;
+			}
 			ut64 v = event_details->ptr_value;
 			add_fixup (rflist, in_buf, v);
-			memcpy (&data, &v, psz);
-			r_buf_write_at (buf, in_buf, data, psz);
+			memcpy (data, &v, psz);
+			ctx->chunk_dirty = true;
 		}
 		break;
 	default:
