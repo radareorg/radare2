@@ -104,9 +104,7 @@ static RCoreHelpMessage help_msg_slash = {
 	"/E", " esil-expr", "address matching given esil expressions $$ = here",
 	"/f", "", "search forwards, (command modifier)",
 	"/F", " file [off] [sz]", "search contents of file with offset and size",
-	"/ag", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
-	// TODO: add subcommands to find paths between functions and filter only function names instead of offsets, etc
-	"/g", "[g] [from]", "find all graph paths A to B (/gg follow jumps, see search.count and anal.depth)",
+	"/g", "[?RCJ] [op;op]", "search for ROP/COP/JOP gadgets matching given opstr",
 	"/h", "[?*] [algo] [digest] [size]", "find block of size bytes having this digest (see ph)",
 	"/i", " foo", "search for string 'foo' ignoring case",
 	"/k", " foo", "search for string 'foo' using Rabin Karp alg",
@@ -159,7 +157,7 @@ static RCoreHelpMessage help_msg_slash_a = {
 	"/ae", " esil", "search for esil expressions matching substring",
 	"/af", "[l] family", "search for instruction of specific family (afl=list)",
 	"/aF", "[d] opstr", "find instructions matching given opstr only in analyzed code",
-	"/ag", "[?RCJ] [grepopcode]", "search for matching gadgets, semicolon-separated",
+	"/ag", "[g] [from]", "find all graph paths A to B (/agg follow jumps, see search.count and anal.depth)",
 	"/ai", "[j] 0x300 [0x500]", "find all the instructions using that immediate (in range)",
 	"/al", "", "same as aoml, list all opcodes",
 	"/am", " opcode", "search for specific instructions of specific mnemonic",
@@ -183,12 +181,12 @@ static RCoreHelpMessage help_msg_slash_c = {
 };
 
 static RCoreHelpMessage help_msg_slash_G = {
-	"Usage: /ag", "", "search for gadgets",
-	"/ag[/jq*]", " [string]", "show gadgets",
-	"/agk", " [klass]", "query stored gadget klass",
-	"/agR[/jq*]", " [string]", "show return gadgets",
-	"/agC[/jq*]", " [string]", "show call gadgets",
-	"/agJ[/jq*]", " [string]", "show jump gadgets",
+	"Usage: /g", "", "search for gadgets",
+	"/g[/jq*]", " [string]", "show gadgets",
+	"/gk", " [klass]", "query stored gadget klass",
+	"/gR[/jq*]", " [string]", "show return gadgets",
+	"/gC[/jq*]", " [string]", "show call gadgets",
+	"/gJ[/jq*]", " [string]", "show jump gadgets",
 	NULL
 };
 
@@ -224,13 +222,13 @@ static RCoreHelpMessage help_msg_slash_r = {
 };
 
 static RCoreHelpMessage help_msg_slash_Gk = {
-	"Usage: /agk", "", "query stored gadgets",
-	"/agk", " [ret|jop|cop|syscall|pivot|memread|memwrite|www]", "show gadgets",
-	"/agk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp]", "show primitive classes",
-	"/agk", " [cond.always|cond.controlled]", "show ESIL-classified conditional gadgets",
-	"/agk", " [nop|mov|const|arithm|arithm_ct]", "show legacy rop classes",
-	"/agkj", "", "json output",
-	"/agkq", "", "list Gadgets offsets",
+	"Usage: /gk", "", "query stored gadgets",
+	"/gk", " [ret|jop|cop|syscall|pivot|memread|memwrite|www]", "show gadgets",
+	"/gk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp]", "show primitive classes",
+	"/gk", " [cond.always|cond.controlled]", "show ESIL-classified conditional gadgets",
+	"/gk", " [nop|mov|const|arithm|arithm_ct]", "show legacy rop classes",
+	"/gkj", "", "json output",
+	"/gkq", "", "list Gadgets offsets",
 	NULL
 };
 
@@ -427,6 +425,29 @@ static int __backward_prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) 
 		return 0;
 	}
 	return 1;
+}
+
+static void cmd_search_ag(RCore *core, const char *input) {
+	if (input[1] == '?') {
+		r_core_cmd_help_match (core, help_msg_slash_a, "/ag");
+	} else {
+		ut64 addr = UT64_MAX;
+		if (input[1]) {
+			addr = r_num_math (core->num, input + 2);
+		} else {
+			RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
+			if (fcn) {
+				addr = fcn->addr;
+			} else {
+				addr = core->addr;
+			}
+		}
+		const int depth = r_config_get_i (core->config, "anal.depth");
+		// Validate input length
+		if (input[1] != '\0') {
+			r_core_anal_paths (core, addr, core->addr, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
+		}
+	}
 }
 
 static int __prelude_cb_hit(RSearchKeyword *kw, void *user, ut64 addr) {
@@ -4326,7 +4347,7 @@ reread:
 		break;
 	}
 	case 'R': // "/R"
-		R_LOG_ERROR ("/R is now known as /ag");
+		R_LOG_ERROR ("/R is now known as /g");
 		break;
 	case 'r': // "/r" and "/re"
 		{
@@ -4400,10 +4421,8 @@ reread:
 		case '?':
 			r_core_cmd_help (core, help_msg_slash_a);
 			break;
-		case 'g': // "/ag"
-			if (!cmd_search_gadget (core, search_itv, input + 2, &param)) {
-				goto beach;
-			}
+		case 'g': // "/ag" - search in graph paths
+			cmd_search_ag (core, input + 1);
 			goto beach;
 		case 'd': // "/ad"
 			dosearch = false;
@@ -5229,26 +5248,9 @@ reread:
 			}
 		}
 		break;
-	case 'g': // "/g" graph search
-		if (input[1] == '?') {
-			r_core_cmd_help_match (core, help_msg_slash, "/g");
-		} else {
-			ut64 addr = UT64_MAX;
-			if (input[1]) {
-				addr = r_num_math (core->num, input + 2);
-			} else {
-				RAnalFunction *fcn = r_anal_get_function_at (core->anal, addr);
-				if (fcn) {
-					addr = fcn->addr;
-				} else {
-					addr = core->addr;
-				}
-			}
-			const int depth = r_config_get_i (core->config, "anal.depth");
-			// Va;ifate input length
-			if (input[1] != '\0') {
-				r_core_anal_paths (core, addr, core->addr, input[1] == 'g', depth, (input[1] == 'j' || input[2] == 'j'));
-			}
+	case 'g': // "/g" ROP/COP/JOP/.. gadget search
+		if (!cmd_search_gadget (core, search_itv, input + 1, &param)) {
+			goto beach;
 		}
 		break;
 	case 'F': // "/F" search file /F [file] ([offset] ([sz]))

@@ -1944,7 +1944,7 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 
 	RCons *cons = core->cons;
 	R_LOG_INFO ("Searching gadgets");
-	char *ropstr = r_core_cmd_strf (core, "\"/agl %s\" @e:scr.color=0", line);
+	char *ropstr = r_core_cmd_strf (core, "\"/gl %s\" @e:scr.color=0", line);
 	RList *rops = r_str_split_list (ropstr, "\n", 0);
 	int delta = 0;
 	bool show_color = core->print->flags & R_PRINT_FLAGS_COLOR;
@@ -2037,7 +2037,7 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 					" /  - highlight given word\n"
 					" y  - yank current rop chain into the clipboard (y?)\n"
 					" o  - seek to given offset\n"
-					" r  - run /ag again\n"
+					" r  - run /g again\n"
 					" ?  - show this help message\n"
 					" q  - quit this view\n"
 				      );
@@ -2091,7 +2091,7 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 					cur = 0;
 					cursearch = strdup (line);
 					free (ropstr);
-					ropstr = r_core_cmd_strf (core, "\"/agl %s\" @e:scr.color=0", line);
+					ropstr = r_core_cmd_strf (core, "\"/gl %s\" @e:scr.color=0", line);
 					r_list_free (rops);
 					rops = r_str_split_list (ropstr, "\n", 0);
 				}
