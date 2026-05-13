@@ -5,7 +5,7 @@
 #define END_OF_MAP_IDS UT32_MAX
 R_IPI bool io_bank_has_map(RIO *io, const ut32 bankid, const ut32 mapid);
 
-static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64 size) {
+static RIOMap *io_map_new(RIO* io, int fd, int perm, int sperm, ut64 delta, ut64 addr, ut64 size) {
 	R_RETURN_VAL_IF_FAIL (io, NULL);
 	const ut64 fd_size = r_io_fd_size (io, fd);
 	if ((!size) || (fd_size <= delta)) {
@@ -23,6 +23,7 @@ static RIOMap *io_map_new(RIO* io, int fd, int perm, ut64 delta, ut64 addr, ut64
 	// r_io_map_from (map) -> r_io_map_to (map)
 	map->itv = (RInterval){ addr, R_MIN (size, fd_size - delta) };
 	map->perm = perm;
+	map->sperm = sperm;
 	return map;
 }
 
@@ -46,7 +47,7 @@ R_API bool r_io_map_remap(RIO *io, ut32 id, ut64 addr) {
 		st64 saddr = (st64)addr;
 		const ut64 osize = r_io_map_size (map);
 		r_io_map_set_size (map, -saddr);
-		RIOMap *newmap = r_io_map_add (io, map->fd, map->perm, map->delta - addr, 0, size + addr);
+		RIOMap *newmap = r_io_map_add (io, map->fd, map->sperm, map->delta - addr, 0, size + addr);
 		if (newmap) {
 			if (!io_bank_has_map (io, io->bank, id)) {
 				r_io_bank_del_map (io, io->bank, newmap->id);
@@ -131,7 +132,7 @@ R_API int r_io_map_get_perm(RIO *io, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (io, UT32_MAX ^ R_PERM_RWX);
 	RIOMap *map = r_io_map_get (io, id);
 	if (map) {
-		return map->perms.eperm;
+		return map->perm;
 	}
 	R_LOG_WARN ("invalid map id");
 	return UT32_MAX ^ R_PERM_RWX;
@@ -141,7 +142,7 @@ R_API int r_io_map_get_sperm(RIO *io, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (io, UT32_MAX ^ R_PERM_RWX);
 	RIOMap *map = r_io_map_get (io, id);
 	if (map) {
-		return map->perms.sperm;
+		return map->sperm;
 	}
 	R_LOG_WARN ("invalid map id");
 	return UT32_MAX ^ R_PERM_RWX;
@@ -159,8 +160,8 @@ R_API bool r_io_map_set_perm(RIO *io, ut32 id, int perm) {
 		R_LOG_WARN ("invalid map->fd");
 		return false;
 	}
-	map->perms.eperm = perm & desc->perm & R_PERM_RWX;
-	map->perms.sperm = perm & R_PERM_RWX;
+	map->perm = perm & desc->perm & R_PERM_RWX;
+	map->sperm = perm & R_PERM_RWX;
 	return true;
 }
 
@@ -173,11 +174,10 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		//requested permissions are stored in higher bits, anal esil needs this
 		RIOMap *map[2] = {NULL, NULL};
 		if (R_UNLIKELY ((UT64_MAX - size + 1) < addr)) {
 			const ut64 new_size = UT64_MAX - addr + 1;
-			map[0] = io_map_new (io, fd, desc->perm & perm, delta + new_size, 0LL, size - new_size);
+			map[0] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta + new_size, 0LL, size - new_size);
 			if (!map[0]) {
 				return NULL;
 			}
@@ -186,10 +186,9 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 				free (map[0]);
 				return NULL;
 			}
-			map[0]->perms.sperm = perm;
 			size = new_size;
 		}
-		map[1] = io_map_new (io, fd, desc->perm & perm, delta, addr, size);
+		map[1] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta, addr, size);
 		if (!map[1]) {
 			if (map[0]) {
 				r_id_storage_delete (&io->maps, map[0]->id);
@@ -207,7 +206,6 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 			free (map[1]);
 			return NULL;
 		}
-		map[1]->perms.sperm = perm;
 		return map[1];
 	}
 	return NULL;
@@ -222,11 +220,10 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 	RIODesc* desc = r_io_desc_get (io, fd);
 	if (desc) {
 		//a map cannot have higher permissions than the desc belonging to it
-		//requested permissions are stored in higher bits, anal esil needs this
 		RIOMap *map[2] = {NULL, NULL};
 		if (R_UNLIKELY ((UT64_MAX - size + 1) < addr)) {
 			const ut64 new_size = UT64_MAX - addr + 1;
-			map[0] = io_map_new (io, fd, desc->perm & perm, delta + new_size, 0LL, size - new_size);
+			map[0] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta + new_size, 0LL, size - new_size);
 			if (!map[0]) {
 				return NULL;
 			}
@@ -235,10 +232,9 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 				free (map[0]);
 				return NULL;
 			}
-			map[0]->perms.sperm = perm;
 			size = new_size;
 		}
-		map[1] = io_map_new (io, fd, desc->perm & perm, delta, addr, size);
+		map[1] = io_map_new (io, fd, desc->perm & perm, perm & R_PERM_RWX, delta, addr, size);
 		if (!map[1]) {
 			if (map[0]) {
 				r_id_storage_delete (&io->maps, map[0]->id);
@@ -256,7 +252,6 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 			free (map[1]);
 			return NULL;
 		}
-		map[1]->perms.sperm = perm;
 		return map[1];
 	}
 	return NULL;
@@ -440,7 +435,7 @@ R_IPI bool io_map_resize(RIO *io, ut32 id, ut64 newsize) {
 		st64 saddr = (st64)addr;
 		const ut64 osize = r_io_map_size (map);
 		r_io_map_set_size (map, -saddr);
-		RIOMap *newmap = r_io_map_add (io, map->fd, map->perm, map->delta - addr, 0, newsize + addr);
+		RIOMap *newmap = r_io_map_add (io, map->fd, map->sperm, map->delta - addr, 0, newsize + addr);
 		if (newmap) {
 			if (!io_bank_has_map (io, io->bank, id)) {
 				r_io_bank_del_map (io, io->bank, newmap->id);

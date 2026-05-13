@@ -77,16 +77,6 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_io);
 
-R_PACKED (typedef struct r_io_perms_t {
-#ifdef	__BIG_ENDIAN__
-	ut16 sperm;
-	ut16 eperm;
-#else
-	ut16 eperm;
-	ut16 sperm;
-#endif
-}) RIOPerms;
-
 typedef struct r_io_undos_t {
 	ut64 off;
 	int cursor;
@@ -233,7 +223,6 @@ typedef struct r_io_plugin_t {
 	bool (*check)(RIO *io, const char *, bool many);
 } RIOPlugin;
 
-#define	R_IO_MAP_SUPER_PERM_SH	16		//needed for r_io_is_valid_offset
 #define	R_IO_MAP_TIE_FLG_BACK	1		//ties a map so that it resizes when the desc resizes
 #define	R_IO_MAP_TIE_FLG_FORTH	(1 << 1)	//ties a map so that the desc resizes when the map resizes
 
@@ -276,10 +265,8 @@ typedef enum {
 
 typedef struct r_io_map_t {
 	int fd;
-	union {
-		int perm;
-		RIOPerms perms;
-	};
+	int perm;
+	int sperm;
 	ut32 id;
 	ut64 ts;
 	RInterval itv;
@@ -312,10 +299,8 @@ typedef struct r_io_bank_t {
 
 typedef struct r_io_region_t {
 	RInterval itv;
-	union {
-		ut32 perm;
-		RIOPerms perms;
-	};
+	int perm;
+	int sperm;
 } RIORegion;
 
 R_VEC_TYPE (RVecRIORegion, RIORegion);

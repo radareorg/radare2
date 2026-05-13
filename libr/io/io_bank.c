@@ -1235,6 +1235,7 @@ R_API bool r_io_bank_get_region_at(RIO *io, const ut32 bankid, RIORegion *region
 	RIOSubMap *sm = (RIOSubMap *)node->data;
 	RIOMap *map = r_io_map_get_by_ref (io, &sm->mapref);
 	region->perm = map->perm;
+	region->sperm = map->sperm;
 	region->itv = sm->itv;
 	return true;
 }
@@ -1262,6 +1263,7 @@ static RVecRIORegion *io_bank_get_regions(RIO *io, RIOBank *bank, RVecRIORegion 
 		RIORegion *region = RVecRIORegion_emplace_back (list);
 		region->itv = sm->itv;
 		region->perm = map->perm;
+		region->sperm = map->sperm;
 		node = r_rbnode_next (node);
 		if (!node) {
 			break;
