@@ -166,8 +166,8 @@ static bool anal_esil_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 	if (!anal->iob.get_region_at (anal->iob.io, &region, addr)) {
 		return false;
 	}
-	if (!((region.perms[R_IO_EPERM] & R_PERM_W)
-		|| ((region.perms[R_IO_SPERM] & R_PERM_W) && r_io_cache_writable (anal->iob.io)))) {
+	if (!((region.perms.eperm & R_PERM_W)
+		|| ((region.perms.sperm & R_PERM_W) && r_io_cache_writable (anal->iob.io)))) {
 		return false;
 	}
 	if (!r_itv_contain (region.itv, addr + len - 1)) {

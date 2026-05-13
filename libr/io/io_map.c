@@ -131,7 +131,7 @@ R_API int r_io_map_get_perm(RIO *io, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (io, UT32_MAX ^ R_PERM_RWX);
 	RIOMap *map = r_io_map_get (io, id);
 	if (map) {
-		return map->perms[R_IO_EPERM];
+		return map->perms.eperm;
 	}
 	R_LOG_WARN ("invalid map id");
 	return UT32_MAX ^ R_PERM_RWX;
@@ -141,7 +141,7 @@ R_API int r_io_map_get_sperm(RIO *io, ut32 id) {
 	R_RETURN_VAL_IF_FAIL (io, UT32_MAX ^ R_PERM_RWX);
 	RIOMap *map = r_io_map_get (io, id);
 	if (map) {
-		return map->perms[R_IO_SPERM];
+		return map->perms.sperm;
 	}
 	R_LOG_WARN ("invalid map id");
 	return UT32_MAX ^ R_PERM_RWX;
@@ -159,8 +159,8 @@ R_API bool r_io_map_set_perm(RIO *io, ut32 id, int perm) {
 		R_LOG_WARN ("invalid map->fd");
 		return false;
 	}
-	map->perms[R_IO_EPERM] = perm & desc->perm & R_PERM_RWX;
-	map->perms[R_IO_SPERM] = perm & R_PERM_RWX;
+	map->perms.eperm = perm & desc->perm & R_PERM_RWX;
+	map->perms.sperm = perm & R_PERM_RWX;
 	return true;
 }
 
@@ -186,7 +186,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 				free (map[0]);
 				return NULL;
 			}
-			map[0]->perms[R_IO_SPERM] = perm;
+			map[0]->perms.sperm = perm;
 			size = new_size;
 		}
 		map[1] = io_map_new (io, fd, desc->perm & perm, delta, addr, size);
@@ -207,7 +207,7 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int perm, ut64 delta, ut64 addr, ut6
 			free (map[1]);
 			return NULL;
 		}
-		map[1]->perms[R_IO_SPERM] = perm;
+		map[1]->perms.sperm = perm;
 		return map[1];
 	}
 	return NULL;
@@ -235,7 +235,7 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 				free (map[0]);
 				return NULL;
 			}
-			map[0]->perms[R_IO_SPERM] = perm;
+			map[0]->perms.sperm = perm;
 			size = new_size;
 		}
 		map[1] = io_map_new (io, fd, desc->perm & perm, delta, addr, size);
@@ -256,7 +256,7 @@ R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int perm, ut64 delta, ut64 ad
 			free (map[1]);
 			return NULL;
 		}
-		map[1]->perms[R_IO_SPERM] = perm;
+		map[1]->perms.sperm = perm;
 		return map[1];
 	}
 	return NULL;

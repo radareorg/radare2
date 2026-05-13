@@ -77,6 +77,16 @@ extern "C" {
 
 R_LIB_VERSION_HEADER(r_io);
 
+R_PACKED (typedef struct r_io_perms_t {
+#ifdef	__BIG_ENDIAN__
+	ut16 sperm;
+	ut16 eperm;
+#else
+	ut16 eperm;
+	ut16 sperm;
+#endif
+}) RIOPerms;
+
 typedef struct r_io_undos_t {
 	ut64 off;
 	int cursor;
@@ -264,21 +274,11 @@ typedef enum {
 	R_IO_MAP_META_FLAG_LIBRARY, // maybe the same of system?
 } RIOMapMetaFlags;
 
-enum {
-#ifdef	__BIG_ENDIAN__
-	R_IO_SPERM = 0,
-	R_IO_EPERM,
-#else
-	R_IO_EPERM = 0,
-	R_IO_SPERM,
-#endif
-};
-
 typedef struct r_io_map_t {
 	int fd;
 	union {
 		int perm;
-		ut16 perms[2];
+		RIOPerms perms;
 	};
 	ut32 id;
 	ut64 ts;
@@ -314,7 +314,7 @@ typedef struct r_io_region_t {
 	RInterval itv;
 	union {
 		ut32 perm;
-		ut16 perms[2];
+		RIOPerms perms;
 	};
 } RIORegion;
 
