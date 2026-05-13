@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_asm.h>
+#include <r_util/r_type.h>
 
 #define FILTER_DWORD 0
 
