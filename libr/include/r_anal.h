@@ -1562,6 +1562,7 @@ R_API void r_anal_hint_set_newbits(RAnal *a, ut64 addr, int bits);
 R_API void r_anal_hint_set_nword(RAnal *a, ut64 addr, int nword);
 R_API void r_anal_hint_set_offset(RAnal *a, ut64 addr, const char *typeoff);
 R_API void r_anal_hint_set_immbase(RAnal *a, ut64 addr, int base);
+R_API void r_anal_hint_set_enum(RAnal *a, ut64 addr, const char *enum_name);
 R_API void r_anal_hint_set_size(RAnal *a, ut64 addr, ut64 size);
 R_API void r_anal_hint_set_opcode(RAnal *a, ut64 addr, const char *str);
 R_API void r_anal_hint_set_esil(RAnal *a, ut64 addr, const char *str);
@@ -1575,6 +1576,7 @@ R_API void r_anal_hint_set_bits(RAnal *a, ut64 addr, int bits); // bits == NULL 
 R_API void r_anal_hint_unset_val(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_high(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_immbase(RAnal *a, ut64 addr);
+R_API void r_anal_hint_unset_enum(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_nword(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_size(RAnal *a, ut64 addr);
 R_API void r_anal_hint_unset_type(RAnal *a, ut64 addr);

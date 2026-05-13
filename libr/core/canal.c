@@ -959,6 +959,9 @@ static void print_hint_h_format(RCore *core, HintNode *node) {
 			case R_ANAL_ADDR_HINT_TYPE_VAL:
 				r_cons_printf (core->cons, " val=0x%08"PFMT64x, record->val);
 				break;
+			case R_ANAL_ADDR_HINT_TYPE_ENUM:
+				r_cons_printf (core->cons, " enum='%s'", record->enum_name);
+				break;
 			}
 		}
 		break;
@@ -1041,6 +1044,9 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 				case R_ANAL_ADDR_HINT_TYPE_VAL:
 					// no command for this
 					break;
+				case R_ANAL_ADDR_HINT_TYPE_ENUM:
+					hint_addr_str (core, node->addr, "ahie", record->enum_name);
+					break;
 				}
 			}
 			break;
@@ -1110,6 +1116,9 @@ static void hint_node_print(RCore *core, HintNode *node, int mode, PJ *pj) {
 					break;
 				case R_ANAL_ADDR_HINT_TYPE_VAL:
 					pj_kn (pj, "val", record->val);
+					break;
+				case R_ANAL_ADDR_HINT_TYPE_ENUM:
+					pj_ks (pj, "enum", record->enum_name);
 					break;
 				}
 			}

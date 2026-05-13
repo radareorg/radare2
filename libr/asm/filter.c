@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2009-2025 - pancake */
 
 #include <r_asm.h>
+#include <r_util/r_type.h>
 
 #define FILTER_DWORD 0
 
@@ -40,6 +41,34 @@ static void insert(char *dst, const char *src) {
 	strcpy (dst, src);
 	strcpy (dst + strlen (src), endNum);
 	free (endNum);
+}
+
+static char *replace_number_token(char *data, char *num_start, char *num_end, const char *value) {
+	char old = *num_start;
+	*num_start = 0;
+	char *res = r_str_newf ("%s%s%s", data, value, (num_start != num_end)? num_end: "");
+	if (!res) {
+		*num_start = old;
+	}
+	return res;
+}
+
+static char *replace_enum_hint(RAsm *a, RAnalHint *hint, ut64 off, char *data, char *num_start, char *num_end) {
+	if (R_STR_ISEMPTY (hint->enum_name) || !a || !a->analb.anal || !a->analb.anal->sdb_types) {
+		return NULL;
+	}
+	char *member = r_type_enum_member (a->analb.anal->sdb_types, hint->enum_name, NULL, off);
+	if (!member) {
+		return NULL;
+	}
+	char *ename = r_str_newf ("%s.%s", hint->enum_name, member);
+	free (member);
+	if (!ename) {
+		return NULL;
+	}
+	char *res = replace_number_token (data, num_start, num_end, ename);
+	free (ename);
+	return res;
 }
 
 // TODO: move into r_util/r_str
@@ -445,6 +474,8 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			}
 		}
 		if (hint) {
+			char *num_start = ptr;
+			char *num_end = ptr2;
 			const int nw = hint->nword;
 			if (count != nw) {
 				ptr = ptr2;
@@ -455,12 +486,16 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 			bool is_hex = false;
 			int tmp_count;
 			if (hint->offset) {
-				*ptr = 0;
-				char *res = r_str_newf ("%s%s%s", hdata, hint->offset, (ptr != ptr2)? ptr2: "");
+				char *res = replace_number_token (hdata, num_start, num_end, hint->offset);
 				free (hdata);
 				return res;
 			}
-			r_str_ncpy (num, ptr, sizeof (num) - 1);
+			char *enum_res = replace_enum_hint (a, hint, off, hdata, num_start, num_end);
+			if (enum_res) {
+				free (hdata);
+				return enum_res;
+			}
+			r_str_ncpy (num, num_start, sizeof (num) - 1);
 			pnum = num;
 			if (r_str_startswith (pnum, "0x")) {
 				is_hex = true;
@@ -628,8 +663,7 @@ static char *filter(RAsmPluginSession *aps, ut64 addr, RFlag *f, RAnalHint *hint
 				snprintf (num, sizeof (num), "0x%" PFMT64x, (ut64)off);
 				break;
 			}
-			*ptr = 0;
-			char *res = r_str_newf ("%s%s%s", hdata, num, (ptr != ptr2)? ptr2: "");
+			char *res = replace_number_token (hdata, num_start, num_end, num);
 			free (hdata);
 			return res;
 		}
