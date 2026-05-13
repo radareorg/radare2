@@ -183,7 +183,7 @@ static void plugin_mismatch_free(void *ptr) {
 }
 
 static void plugin_mismatch_add(RLib *lib, const char *file, const char *pkgname) {
-	if (!pkgname) {
+	if (R_STR_ISEMPTY (pkgname)) {
 		return;
 	}
 	RListIter *iter;

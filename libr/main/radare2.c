@@ -29,24 +29,6 @@ static char *get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
-static bool valid_r2pm_pkgname(const char *pkgname) {
-	if (R_STR_ISEMPTY (pkgname)) {
-		return false;
-	}
-	while (*pkgname) {
-		if (!isalnum ((ut8)*pkgname) && *pkgname != '-') {
-			return false;
-		}
-		pkgname++;
-	}
-	return true;
-}
-
-static bool is_interactive_shell(RCore *core) {
-	return r_config_get_b (core->config, "scr.prompt")
-		&& r_cons_is_interactive (core->cons);
-}
-
 static bool pkgname_seen(RList *pkglist, const char *pkgname) {
 	RListIter *iter;
 	const char *item;
@@ -64,7 +46,7 @@ static RList *outdated_plugin_pkgnames(RLib *lib) {
 	RListIter *iter;
 	RLibPluginMismatch *mismatch;
 	r_list_foreach (mismatches, iter, mismatch) {
-		if (R_STR_ISNOTEMPTY (mismatch->pkgname) && !pkgname_seen (pkglist, mismatch->pkgname)) {
+		if (!pkgname_seen (pkglist, mismatch->pkgname)) {
 			r_list_append (pkglist, strdup (mismatch->pkgname));
 		}
 	}
@@ -82,74 +64,18 @@ static void reload_outdated_plugin_files(RCore *core, const char *pkgname) {
 	}
 }
 
-static void delete_outdated_plugin_files(RCore *core, const char *pkgname) {
-	RList *mismatches = core->lib->plugin_mismatches;
-	RListIter *iter;
-	RLibPluginMismatch *mismatch;
-	r_list_foreach (mismatches, iter, mismatch) {
-		if (!strcmp (mismatch->pkgname, pkgname) && !r_file_rm (mismatch->file)) {
-			R_LOG_WARN ("Cannot remove outdated plugin file '%s'", mismatch->file);
-		}
-	}
-}
-
-static void delete_outdated_plugin_package(RCore *core, const char *pkgname) {
-	if (valid_r2pm_pkgname (pkgname)) {
-		char *epkgname = r_str_escape_sh (pkgname);
-		if (epkgname) {
-			if (!r_sys_cmdf ("r2pm -u \"%s\"", epkgname)) {
-				free (epkgname);
-				return;
-			}
-			free (epkgname);
-		}
-		R_LOG_WARN ("Failed to run 'r2pm -u %s', removing plugin file(s)", pkgname);
-	}
-	delete_outdated_plugin_files (core, pkgname);
-}
-
-static void prompt_delete_outdated_plugin_files(RCore *core) {
-	RList *mismatches = core->lib->plugin_mismatches;
-	RListIter *iter;
-	RLibPluginMismatch *mismatch;
-	r_list_foreach (mismatches, iter, mismatch) {
-		if (R_STR_ISEMPTY (mismatch->pkgname)) {
-			if (r_cons_yesno (core->cons, 'y', "Outdated plugin file '%s' has no r2pm package name. Delete it? (Y/n) ", mismatch->file)
-					&& !r_file_rm (mismatch->file)) {
-				R_LOG_WARN ("Cannot remove outdated plugin file '%s'", mismatch->file);
-			}
-		}
-	}
-}
-
 static void prompt_rebuild_outdated_plugins(RCore *core) {
-	if (!is_interactive_shell (core)) {
-		return;
-	}
 	RList *mismatches = core->lib->plugin_mismatches;
-	if (!mismatches || r_list_empty (mismatches)) {
+	if (!r_config_get_b (core->config, "scr.prompt")
+			|| !r_cons_is_interactive (core->cons)
+			|| r_list_empty (mismatches)) {
 		return;
 	}
-	prompt_delete_outdated_plugin_files (core);
 	RList *pkglist = outdated_plugin_pkgnames (core->lib);
-	if (r_list_empty (pkglist)) {
-		r_list_free (pkglist);
-		r_list_purge (core->lib->plugin_mismatches);
-		return;
-	}
 	RListIter *iter;
 	const char *pkgname;
 	r_list_foreach (pkglist, iter, pkgname) {
-		if (!valid_r2pm_pkgname (pkgname)) {
-			if (r_cons_yesno (core->cons, 'y', "Invalid r2pm plugin package name '%s'. Delete plugin file(s)? (Y/n) ", pkgname)) {
-				delete_outdated_plugin_files (core, pkgname);
-			}
-			continue;
-		}
 		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated r2pm plugin package '%s'? (Y/n) ", pkgname)) {
-			if (r_cons_yesno (core->cons, 'y', "Delete outdated r2pm plugin package '%s'? (Y/n) ", pkgname)) {
-				delete_outdated_plugin_package (core, pkgname);
-			}
 			continue;
 		}
 		char *epkgname = r_str_escape_sh (pkgname);
@@ -157,8 +83,7 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 			R_LOG_WARN ("Cannot escape r2pm plugin package name '%s'", pkgname);
 			continue;
 		}
-		const int ret = r_sys_cmdf ("r2pm -ci \"%s\"", epkgname);
-		if (ret == 0) {
+		if (!r_sys_cmdf ("r2pm -ci \"%s\"", epkgname)) {
 			reload_outdated_plugin_files (core, pkgname);
 		} else {
 			R_LOG_WARN ("Failed to run 'r2pm -ci %s'", pkgname);
