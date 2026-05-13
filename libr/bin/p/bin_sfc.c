@@ -75,7 +75,7 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static void addrom(RList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
+static bool addrom(RBinFile *bf, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
@@ -83,7 +83,7 @@ static void addrom(RList *ret, const char *name, int i, ut64 paddr, ut64 vaddr, 
 	ptr->size = ptr->vsize = size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 #if 0
@@ -100,7 +100,7 @@ static void addsym(RList *ret, const char *name, ut64 addr, ut32 size) {
 }
 #endif
 
-static RList* sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	int hdroffset = 0;
 	bool is_hirom = false;
 	int i;
@@ -114,7 +114,7 @@ static RList* sections(RBinFile *bf) {
 	int reat = r_buf_read_at (bf->buf, 0x7FC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 	if (reat != SFC_HDR_SIZE) {
 		R_LOG_ERROR ("Unable to read SFC/SNES header");
-		return NULL;
+		return false;
 	}
 
 	if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 0) ) {
@@ -122,7 +122,7 @@ static RList* sections(RBinFile *bf) {
 		reat = r_buf_read_at (bf->buf, 0xFFC0 + hdroffset, (ut8*)&sfchdr, SFC_HDR_SIZE);
 		if (reat != SFC_HDR_SIZE) {
 			R_LOG_ERROR ("Unable to read SFC/SNES header");
-			return NULL;
+			return false;
 		}
 
 		if ((sfchdr.comp_check != (ut16)~(sfchdr.checksum)) || ((sfchdr.rom_setup & 0x1) != 1) ) {
@@ -131,25 +131,28 @@ static RList* sections(RBinFile *bf) {
 		is_hirom = true;
 	}
 
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	if (is_hirom) {
 		for (i = 0; i < ((bf->size - hdroffset) / 0x8000) ; i++) {
 			// XXX check integer overflow here
-			addrom (ret, "ROM",i,hdroffset + i * 0x8000, 0x400000 + (i * 0x8000), 0x8000);
+			if (!addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x400000 + (i * 0x8000), 0x8000)) {
+				return false;
+			}
 			if (i % 2) {
-				addrom (ret, "ROM_MIRROR", i, hdroffset + i * 0x8000,(i * 0x8000), 0x8000);
+				if (!addrom (bf, "ROM_MIRROR", i, hdroffset + i * 0x8000, i * 0x8000, 0x8000)) {
+					return false;
+				}
 			}
 		}
 
 	} else {
 		for (i = 0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
-			addrom (ret,"ROM",i,hdroffset + i*0x8000,0x8000 + (i*0x10000), 0x8000);
+			if (!addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x8000 + (i * 0x10000), 0x8000)) {
+				return false;
+			}
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *mem(RBinFile *bf) {
@@ -232,10 +235,6 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	r_list_append (ret, ptr);
 	*/
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_sfc = {
