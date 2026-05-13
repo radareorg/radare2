@@ -240,7 +240,19 @@ NAME=: 32bit - strings count
 FILE=bins/mdmp/hello.dmp
 CMDS=iz~?
 EXPECT=<<EOF
-10199
+10154
+EOF
+RUN
+
+NAME=: 32bit - strings from embedded executable
+FILE=bins/mdmp/hello.dmp
+CMDS=<<EOF
+izq~Hello World
+izq~Mingw-w64
+EOF
+EXPECT=<<EOF
+0x404024 13 12 Hello World!
+0x404174 28 27 Mingw-w64 runtime failure:\n
 EOF
 RUN
 

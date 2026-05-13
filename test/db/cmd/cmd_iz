@@ -104,6 +104,16 @@ Hello World
 EOF
 RUN
 
+NAME=izq rust non-null strings
+FILE=bins/mach0/rust/rust_nonnull_arm64
+CMDS=izq~R2RUST
+EXPECT=<<EOF
+0x100044010 19 19 R2RUST_NONNULL_BETA
+0x100044023 20 20 R2RUST_NONNULL_ALPHA
+0x100044037 20 20 R2RUST_NONNULL_GAMMA
+EOF
+RUN
+
 NAME=izzq (file x86_64)
 FILE=bins/elf/analysis/hello-linux-x86_64
 CMDS=izzq~puts
