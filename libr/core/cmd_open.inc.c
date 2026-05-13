@@ -2585,7 +2585,7 @@ static int cmd_open(void *data, const char *input) {
 						}
 						RIOMap *map;
 						r_list_foreach (maplist, iter, map) {
-							r_io_map_set_perm (core->io, map->id, map->sperm | R_PERM_WX);
+							map->perm = (map->sperm | R_PERM_WX) & desc->perm & R_PERM_RWX;
 						}
 						r_list_free (maplist);
 					} else {
