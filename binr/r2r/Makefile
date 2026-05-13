@@ -8,5 +8,6 @@ include ../../libr/util/deps.mk
 
 LDFLAGS+=${DL_LIBS}
 LDFLAGS+=$(CLOCK_LDFLAGS)
+LDFLAGS+=$(LIBATOMIC)
 
 include ../shlr.mk
