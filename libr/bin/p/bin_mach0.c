@@ -14,6 +14,7 @@ typedef struct {
 	ut64 size;
 	ut64 chunk_addr;
 	ut64 chunk_size;
+	ut64 chunk_capacity;
 	bool chunk_dirty;
 	bool chunk_valid;
 	bool failed;
@@ -631,7 +632,25 @@ beach:
 	return NULL;
 }
 
-#define MACH0_SWIZZLE_CHUNK_SIZE 0x1000
+#define MACH0_SWIZZLE_DEFAULT_PAGE_SIZE 0x1000
+
+static ut64 swizzle_max_fixup_page_size(struct MACH0_(obj_t) *obj) {
+	ut64 chunk_capacity = MACH0_SWIZZLE_DEFAULT_PAGE_SIZE;
+	if (!obj->chained_starts) {
+		return chunk_capacity;
+	}
+	int i;
+	int count = R_MIN (obj->nsegs, obj->segs_count);
+	for (i = 0; i < count; i++) {
+		struct r_dyld_chained_starts_in_segment *starts = obj->chained_starts[i];
+		if (!starts || !starts->page_start || !starts->page_count) {
+			continue;
+		}
+		ut64 page_size = starts->page_size? starts->page_size: MACH0_SWIZZLE_DEFAULT_PAGE_SIZE;
+		chunk_capacity = R_MAX (chunk_capacity, page_size);
+	}
+	return chunk_capacity;
+}
 
 static bool flush_rebase_buffer_chunk(RFixupRebaseContext *ctx) {
 	if (ctx->chunk_valid && ctx->chunk_dirty) {
@@ -649,27 +668,33 @@ static ut8 *rebase_buffer_chunk_ptr(RFixupRebaseContext *ctx, ut64 in_buf, ut32 
 		ctx->failed = true;
 		return NULL;
 	}
-	ut64 chunk_addr = in_buf & ~(ut64)(MACH0_SWIZZLE_CHUNK_SIZE - 1);
+	ut64 chunk_off = in_buf % ctx->chunk_capacity;
+	ut64 chunk_addr = in_buf - chunk_off;
+	if (len > ctx->chunk_capacity - chunk_off) {
+		R_LOG_WARN ("chained fixup at 0x%"PFMT64x" straddles swizzle chunk boundary", in_buf);
+		chunk_addr = in_buf;
+		chunk_off = 0;
+	}
 	if (!ctx->chunk_valid || ctx->chunk_addr != chunk_addr) {
 		if (!flush_rebase_buffer_chunk (ctx)) {
 			return NULL;
 		}
 		if (!ctx->chunk) {
-			ctx->chunk = malloc (MACH0_SWIZZLE_CHUNK_SIZE);
+			ctx->chunk = malloc (ctx->chunk_capacity);
 			if (!ctx->chunk) {
 				ctx->failed = true;
 				return NULL;
 			}
 		}
 		ctx->chunk_addr = chunk_addr;
-		ctx->chunk_size = R_MIN ((ut64)MACH0_SWIZZLE_CHUNK_SIZE, ctx->size - chunk_addr);
+		ctx->chunk_size = R_MIN (ctx->chunk_capacity, ctx->size - chunk_addr);
 		if (r_buf_read_at (ctx->obj->b, chunk_addr, ctx->chunk, ctx->chunk_size) != ctx->chunk_size) {
 			ctx->failed = true;
 			return NULL;
 		}
 		ctx->chunk_valid = true;
 	}
-	return ctx->chunk + (in_buf - ctx->chunk_addr);
+	return ctx->chunk + chunk_off;
 }
 
 static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io) {
@@ -687,6 +712,7 @@ static RBuffer *swizzle_io_read(RBinFile *bf, struct MACH0_(obj_t) *obj, RIO *io
 	ctx.obj = obj;
 	ctx.off = off;
 	ctx.size = count;
+	ctx.chunk_capacity = swizzle_max_fixup_page_size (obj);
 	MACH0_(iterate_chained_fixups) (obj, off, off + count,
 		R_FIXUP_EVENT_MASK_ALL, &rebase_buffer_callback2, &ctx);
 	flush_rebase_buffer_chunk (&ctx);
