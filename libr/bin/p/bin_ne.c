@@ -111,6 +111,10 @@ static RList *relocs(RBinFile *bf) {
 	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec);
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_ne = {
 	.meta = {
 		.name = "ne",
@@ -124,7 +128,7 @@ RBinPlugin r_bin_plugin_ne = {
 	.header = &header,
 	.info = &info,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.relocs = &relocs,

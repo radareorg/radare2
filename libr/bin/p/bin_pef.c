@@ -972,6 +972,10 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_pef = {
 	.meta = {
 		.name = "pef",
@@ -986,7 +990,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.fields = &fields,
 	.size = &size,
 	.binsym = &binsym,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.imports_vec = &imports_vec,
 	.libs = &libs,
 	.relocs = &relocs,

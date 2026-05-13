@@ -140,7 +140,6 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.sections_vec = &sections_vec,
-	.sections = &sections,
 	.symbols_vec = symbols_vec,
 	.imports_vec = &imports_vec,
 	.minstrlen = 4,

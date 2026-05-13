@@ -115,6 +115,10 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_io = {
 	.meta = {
 		.name = "io",
@@ -126,7 +130,7 @@ RBinPlugin r_bin_plugin_io = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.minstrlen = 10,

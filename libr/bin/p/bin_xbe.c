@@ -331,6 +331,10 @@ static ut64 baddr(RBinFile *bf) {
 	return obj->header.base;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_xbe = {
 	.meta = {
 		.name = "xbe",
@@ -344,7 +348,7 @@ RBinPlugin r_bin_plugin_xbe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.libs = &libs,

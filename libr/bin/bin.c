@@ -1567,6 +1567,59 @@ R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	return d;
 }
 
+R_API bool r_bin_sections_vec_from_list_clone(RBinFile *bf, RList *sections) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	RVecRBinSection *dst_sections = &bf->bo->sections_vec;
+	RVecRBinSection_clear (dst_sections);
+	if (!sections) {
+		return true;
+	}
+	if (!RVecRBinSection_reserve (dst_sections, r_list_length (sections))) {
+		return false;
+	}
+	RBinSection *section;
+	RListIter *iter;
+	r_list_foreach (sections, iter, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
+		if (!dst) {
+			return false;
+		}
+		*dst = *section;
+		dst->name = section->name? strdup (section->name): NULL;
+		dst->format = section->format? strdup (section->format): NULL;
+	}
+	return true;
+}
+
+R_API bool r_bin_sections_vec_from_list(RBinFile *bf, RList *sections) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
+	RVecRBinSection *dst_sections = &bf->bo->sections_vec;
+	RVecRBinSection_clear (dst_sections);
+	if (!sections) {
+		return true;
+	}
+	if (!RVecRBinSection_reserve (dst_sections, r_list_length (sections))) {
+		r_list_free (sections);
+		return false;
+	}
+	RBinSection *section;
+	RListIter *iter;
+	r_list_foreach (sections, iter, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
+		if (!dst) {
+			sections->free = (RListFree)r_bin_section_free;
+			r_list_free (sections);
+			return false;
+		}
+		*dst = *section;
+		section->name = NULL;
+		section->format = NULL;
+	}
+	sections->free = (RListFree)r_bin_section_free;
+	r_list_free (sections);
+	return true;
+}
+
 R_API void r_bin_section_free(RBinSection *bs) {
 	if (bs) {
 		r_bin_section_fini (bs);

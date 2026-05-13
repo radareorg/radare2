@@ -62,10 +62,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	RBinPycObj *obj = (RBinPycObj *)R_UNWRAP3 (bf, bo, bin_obj);
-	return obj ? obj->sections_cache : NULL;
+	return obj? r_bin_sections_vec_from_list_clone (bf, obj->sections_cache): false;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -131,7 +131,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.load = &load,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.destroy = &destroy,
 };

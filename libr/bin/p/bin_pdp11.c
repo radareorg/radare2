@@ -219,6 +219,10 @@ static ut64 size(RBinFile *bf) {
 	return UT16_MAX;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_pdp11 = {
 	.meta = {
 		.name = "pdp11",
@@ -231,7 +235,7 @@ RBinPlugin r_bin_plugin_pdp11 = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

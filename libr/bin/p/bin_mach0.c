@@ -1101,6 +1101,10 @@ static ut64 size(RBinFile *bf) {
 	return off + len;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_mach0 = {
 	.meta = {
 		.name = "mach0",
@@ -1116,7 +1120,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.size = &size,

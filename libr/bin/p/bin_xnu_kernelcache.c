@@ -3104,6 +3104,10 @@ static void rebase_buffer_fixup(RKernelCacheObj *kobj, ut64 off, RIODesc *fd, ut
 	kobj->rebasing_buffer = false;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.meta = {
 		.name = "kernelcache",
@@ -3116,7 +3120,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.classes = &classes,
 	.check = &check,
 	.info = &info

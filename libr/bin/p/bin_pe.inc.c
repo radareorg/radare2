@@ -235,6 +235,10 @@ static RList* sections(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 static void find_pe_overlay(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	ut64 pe_overlay_size;

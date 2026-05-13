@@ -1640,6 +1640,10 @@ beach:
 	return NULL;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_dyldcache = {
 	.meta = {
 		.name = "dyldcache",
@@ -1651,7 +1655,7 @@ RBinPlugin r_bin_plugin_dyldcache = {
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.minstrlen = 5,
 	.check = &check,
 	.destroy = &destroy,

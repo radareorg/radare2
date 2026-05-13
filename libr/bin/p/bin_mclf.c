@@ -412,6 +412,10 @@ static ut64 size(RBinFile *bf) {
 	return (ut64)hdr->text_len + (ut64)hdr->data_len;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_mclf = {
 	.meta = {
 		.name = "mclf",
@@ -428,7 +432,7 @@ RBinPlugin r_bin_plugin_mclf = {
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

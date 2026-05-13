@@ -183,6 +183,10 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_menuet = {
 	.meta = {
 		.name = "menuet",
@@ -195,7 +199,7 @@ RBinPlugin r_bin_plugin_menuet = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	.create = &create,
 };

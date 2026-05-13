@@ -100,6 +100,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_nin3ds = {
 	.meta = {
 		.name = "nin3ds",
@@ -110,7 +114,7 @@ RBinPlugin r_bin_plugin_nin3ds = {
 	.load = &load,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

@@ -425,6 +425,10 @@ static char *header(RBinFile *bf, int mode) {
 	return r_strbuf_drain (sb);
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_symbols = {
 	.meta = {
 		.name = "symbols",
@@ -435,7 +439,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	.load = &load,
 	.check = &check,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.size = &size,
 	.baddr = &baddr,
 	.info = &info,

@@ -268,6 +268,10 @@ static void destroy(RBinFile *bf) {
 	bf->bo->bin_obj = NULL;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_lua = {
 	.meta = {
 		.name = "lua",
@@ -275,7 +279,7 @@ RBinPlugin r_bin_plugin_lua = {
 		.license = "MIT",
 		.author = "pancake",
 	},
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.load = &load,
 	.check = &check,
 	.symbols_vec = &symbols_vec,

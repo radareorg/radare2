@@ -216,11 +216,10 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-// Returns the sections
-static RList* sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	QnxObj *qo = bf->bo->bin_obj;
-	return r_list_clone (qo->sections, NULL);
+	return qo? r_bin_sections_vec_from_list_clone (bf, qo->sections): false;
 }
 
 /*
@@ -295,7 +294,7 @@ RBinPlugin r_bin_plugin_qnx = {
 	.header = &header,
 	.get_sdb = &get_sdb,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.signature = &signature,
 	.get_vaddr = &get_vaddr,

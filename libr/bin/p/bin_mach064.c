@@ -285,6 +285,10 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_mach064 = {
 	.meta = {
 		.name = "mach064",
@@ -298,7 +302,7 @@ RBinPlugin r_bin_plugin_mach064 = {
 	.baddr = &baddr,
 	.binsym = binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.signature = &entitlements,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,

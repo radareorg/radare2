@@ -186,6 +186,10 @@ static ut64 size(RBinFile *bf) {
 	return 0;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_mbn = {
 	.meta = {
 		.name = "mbn",
@@ -199,7 +203,7 @@ RBinPlugin r_bin_plugin_mbn = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	.destroy = &sbl_destroy,
 };

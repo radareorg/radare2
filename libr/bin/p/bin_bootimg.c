@@ -199,6 +199,10 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_bootimg = {
 	.meta = {
 		.name = "bootimg",
@@ -211,7 +215,7 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = entries,
 	.info = &info,
 };

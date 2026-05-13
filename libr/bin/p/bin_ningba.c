@@ -62,6 +62,10 @@ static RList *sections(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_ningba = {
 	.meta = {
 		.name = "ningba",
@@ -73,7 +77,7 @@ RBinPlugin r_bin_plugin_ningba = {
 	.check = &check,
 	.entries = &entries,
 	.info = &info,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 };
 
 #ifndef R2_PLUGIN_INCORE

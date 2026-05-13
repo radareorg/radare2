@@ -683,6 +683,10 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 	return buf;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_p9 = {
 	.meta = {
 		.name = "p9",
@@ -697,7 +701,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.libs = &libs,

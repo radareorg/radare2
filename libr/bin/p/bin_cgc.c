@@ -107,7 +107,6 @@ RBinPlugin r_bin_plugin_cgc = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
 	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.minstrlen = 4,

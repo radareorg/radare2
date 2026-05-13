@@ -517,6 +517,10 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_mdmp = {
 	.meta = {
 		.name = "mdmp",
@@ -534,7 +538,7 @@ RBinPlugin r_bin_plugin_mdmp = {
 	.check = &check,
 	.mem = &mem,
 	.relocs = &relocs,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 };
 

@@ -220,6 +220,10 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return r >= 24 && r_xcoff64_supported_arch (tmp);
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_xcoff64 = {
 	.meta = {
 		.name = "xcoff64",
@@ -233,7 +237,7 @@ RBinPlugin r_bin_plugin_xcoff64 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.fields = &fields,

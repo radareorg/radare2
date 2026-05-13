@@ -80,6 +80,10 @@ static RList* strings(RBinFile* bf) {
 	return r_bin_file_get_strings (bf, 20, 0, 2);
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_psxexe = {
 	.meta = {
 		.name = "psxexe",
@@ -90,7 +94,7 @@ RBinPlugin r_bin_plugin_psxexe = {
 	.load = &load,
 	.check = &check,
 	.info = &info,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = &entries,
 	.strings = &strings,
 };

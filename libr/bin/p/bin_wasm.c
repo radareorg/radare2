@@ -513,6 +513,10 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	return NULL;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
@@ -527,7 +531,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.info = &info,

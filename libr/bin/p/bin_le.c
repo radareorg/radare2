@@ -224,6 +224,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_le = {
 	.meta = {
 		.name = "le",
@@ -237,7 +241,7 @@ RBinPlugin r_bin_plugin_le = {
 	.destroy = &destroy,
 	.info = &info,
 	.header = &header,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,

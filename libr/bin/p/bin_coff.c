@@ -987,6 +987,10 @@ static bool check(RBinFile *bf, RBuffer *buf) {
 	return check_coff (bf, buf) || check_coff_bigobj (bf, buf);
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_coff = {
 	.meta = {
 		.name = "coff",
@@ -1001,7 +1005,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.check = &check,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.info = &info,

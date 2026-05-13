@@ -234,6 +234,10 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_sfc = {
 	.meta = {
 		.name = "sfc",
@@ -245,7 +249,7 @@ RBinPlugin r_bin_plugin_sfc = {
 	.load = &load,
 	.check = &check,
 	.entries = &entries,
-	.sections = sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	.mem = &mem,
 };

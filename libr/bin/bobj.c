@@ -113,6 +113,7 @@ static bool sections_list_to_vec(RBinObject *bo, RList *sections) {
 		section->name = NULL;
 		section->format = NULL;
 	}
+	sections->free = (RListFree)r_bin_section_free;
 	return true;
 }
 
@@ -638,7 +639,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		RList *sections = bo->sections? bo->sections: p->sections (bf);
 		bo->sections = NULL;
 		if (sections) {
-			sections->free = (RListFree)r_bin_section_free;
 			REBASE_PADDR (bo, sections, RBinSection);
 			clamp_list (sections, limit);
 			if (bin->filter) {

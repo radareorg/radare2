@@ -154,6 +154,10 @@ static ut64 baddr(RBinFile *bf) {
 	return 0x80b00000; // XXX
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, sections (bf));
+}
+
 RBinPlugin r_bin_plugin_dol = {
 	.meta = {
 		.name = "dol",
@@ -166,7 +170,7 @@ RBinPlugin r_bin_plugin_dol = {
 	.baddr = &baddr,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

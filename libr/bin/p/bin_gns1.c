@@ -230,6 +230,10 @@ static RBinInfo *gns1_info(RBinFile *bf) {
 	return info;
 }
 
+static bool gns1_sections_vec(RBinFile *bf) {
+	return r_bin_sections_vec_from_list (bf, gns1_sections (bf));
+}
+
 RBinPlugin r_bin_plugin_gns1 = {
 	.meta = {
 		.name = "gns1",
@@ -242,7 +246,7 @@ RBinPlugin r_bin_plugin_gns1 = {
 	.destroy = &gns1_destroy,
 	.baddr = &gns1_baddr,
 	.entries = &gns1_entries,
-	.sections = &gns1_sections,
+	.sections_vec = &gns1_sections_vec,
 	.info = &gns1_info,
 	.minstrlen = 4,
 };
