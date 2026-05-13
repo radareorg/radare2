@@ -740,9 +740,6 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			memset (data, 0, psz);
 			ctx->chunk_dirty = true;
 			add_fixup (rflist, in_buf, 0);
-			if (data[0]) {
-				R_LOG_ERROR ("DATA0 write has failed");
-			}
 		}
 		break;
 	case R_FIXUP_EVENT_REBASE:
