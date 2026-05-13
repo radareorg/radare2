@@ -129,13 +129,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinWasmObj *bin = bf && bf->bo? bf->bo->bin_obj: NULL;
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
 	RList *secs = r_bin_wasm_get_sections (bin);
-	if (!ret || !secs) {
-		goto alloc_err;
+	if (!secs) {
+		return false;
 	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = NULL;
 	RBinWasmSection *sec;
@@ -143,9 +143,6 @@ static RList *sections(RBinFile *bf) {
 	RListIter *iter;
 	r_list_foreach (secs, iter, sec) {
 		ptr = R_NEW0 (RBinSection);
-		if (!ptr) {
-			goto alloc_err;
-		}
 		ptr->name = strdup ((char *)sec->name);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
@@ -157,14 +154,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
-	return ret;
-
-alloc_err:
-	r_list_free (secs);
-	r_list_free (ret);
-	return NULL;
+	return true;
 }
 
 static inline ut32 first_ord_not_import(RBinWasmObj *bin, ut32 kind) {
@@ -511,10 +505,6 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 		}
 	}
 	return NULL;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_wasm = {

@@ -163,26 +163,21 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ut64 ba = baddr (bf);
 	int i;
 	const int limit = bf->rbin->options.limit;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (!ret) {
-		return NULL;
-	}
-
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->sections) {
-		r_list_free (ret);
-		return NULL;
+		return false;
 	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	struct r_bin_pe_section_t *sections = pe->sections;
 
 	PE_(r_bin_pe_check_sections) (pe, &sections);
 	for (i = 0; !sections[i].last; i++) {
-		if (limit_reached (ret, limit)) {
+		if (limit > 0 && RVecRBinSection_length (&bf->bo->sections_vec) >= (size_t)limit) {
 			break;
 		}
 		RBinSection *sec = R_NEW0 (RBinSection);
@@ -230,13 +225,11 @@ static RList* sections(RBinFile *bf) {
 				sec->is_data = true;
 			}
 		}
-		r_list_append (ret, sec);
+		if (!r_bin_section_vec_append (bf, sec)) {
+			return false;
+		}
 	}
-	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return true;
 }
 
 static void find_pe_overlay(RBinFile *bf) {

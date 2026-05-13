@@ -869,29 +869,6 @@ R_API RRBTree *r_bin_get_relocs(RBin *bin) {
 	return o? o->relocs: NULL;
 }
 
-R_API RList *r_bin_get_sections(RBin *bin) {
-	R_RETURN_VAL_IF_FAIL (bin, NULL);
-	RBinObject *o = r_bin_cur_object (bin);
-	if (!o) {
-		return NULL;
-	}
-	if (!o->sections) {
-		o->sections = r_list_newf ((RListFree)r_bin_section_free);
-		if (!o->sections) {
-			return NULL;
-		}
-		RBinSection *section;
-		R_VEC_FOREACH (&o->sections_vec, section) {
-			if (!r_list_append (o->sections, r_bin_section_clone (section))) {
-				r_list_free (o->sections);
-				o->sections = NULL;
-				return NULL;
-			}
-		}
-	}
-	return o->sections;
-}
-
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
@@ -1341,7 +1318,6 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->bin = bin;
 		b->get_offset = __getoffset;
 		b->get_name = __getname;
-		b->get_sections = r_bin_get_sections;
 		b->get_sections_vec = r_bin_get_sections_vec;
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;
@@ -1565,6 +1541,18 @@ R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	d->name = s->name? strdup (s->name): NULL;
 	d->format = s->format? strdup (s->format): NULL;
 	return d;
+}
+
+R_API bool r_bin_section_vec_append(RBinFile *bf, RBinSection *section) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && section, false);
+	RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!dst) {
+		r_bin_section_free (section);
+		return false;
+	}
+	*dst = *section;
+	free (section);
+	return true;
 }
 
 R_API bool r_bin_sections_vec_from_list_clone(RBinFile *bf, RList *sections) {

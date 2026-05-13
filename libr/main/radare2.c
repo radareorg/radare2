@@ -1779,15 +1779,16 @@ R_API int r_main_radare2(int argc, const char **argv) {
 				if (fi) {
 					r_core_seek (r, fi->addr, true);
 				} else if (o) {
-					RList *sections = r_bin_get_sections (r->bin);
-					RListIter *iter;
+					RVecRBinSection *sections = r_bin_get_sections_vec (r->bin);
 					RBinSection *s;
-					r_list_foreach (sections, iter, s) {
-						if (s->perm & R_PERM_X) {
-							ut64 addr = s->vaddr? s->vaddr: s->paddr;
-							if (addr) {
-								r_core_seek (r, addr, true);
-								break;
+					if (sections) {
+						R_VEC_FOREACH (sections, s) {
+							if (s->perm & R_PERM_X) {
+								ut64 addr = s->vaddr? s->vaddr: s->paddr;
+								if (addr) {
+									r_core_seek (r, addr, true);
+									break;
+								}
 							}
 						}
 					}

@@ -95,28 +95,6 @@ static void rebase_sections_vec(RBinObject *bo) {
 	}
 }
 
-static bool sections_list_to_vec(RBinObject *bo, RList *sections) {
-	if (!sections) {
-		return true;
-	}
-	if (!RVecRBinSection_reserve (&bo->sections_vec, r_list_length (sections))) {
-		return false;
-	}
-	RBinSection *section;
-	RListIter *iter;
-	r_list_foreach (sections, iter, section) {
-		RBinSection *dst = RVecRBinSection_emplace_back (&bo->sections_vec);
-		if (!dst) {
-			return false;
-		}
-		*dst = *section;
-		section->name = NULL;
-		section->format = NULL;
-	}
-	sections->free = (RListFree)r_bin_section_free;
-	return true;
-}
-
 static bool bin_name_has_value(RBinName *name) {
 	return name && ((R_STR_ISNOTEMPTY (name->name) && !r_bin_name_is_unnamed (name->name))
 		|| (R_STR_ISNOTEMPTY (name->oname) && !r_bin_name_is_unnamed (name->oname))
@@ -239,7 +217,6 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
-	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
 
@@ -624,8 +601,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		clamp_list (bo->libs, limit);
 	}
 	if (p->sections_vec) {
-		r_list_free (bo->sections);
-		bo->sections = NULL;
 		RVecRBinSection_clear (&bo->sections_vec);
 		if (p->sections_vec (bf)) {
 			rebase_sections_vec (bo);
@@ -633,19 +608,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			if (bin->filter) {
 				r_bin_filter_sections_vec (bf, &bo->sections_vec);
 			}
-		}
-	} else if (p->sections) {
-		// XXX sections are populated by call to size
-		RList *sections = bo->sections? bo->sections: p->sections (bf);
-		bo->sections = NULL;
-		if (sections) {
-			REBASE_PADDR (bo, sections, RBinSection);
-			clamp_list (sections, limit);
-			if (bin->filter) {
-				r_bin_filter_sections (bf, sections);
-			}
-			sections_list_to_vec (bo, sections);
-			r_list_free (sections);
 		}
 	}
 	// Load classes before reloc creation. Class-method-creating plugins

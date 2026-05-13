@@ -403,7 +403,6 @@ typedef struct r_bin_object_t {
 	ut64 size;
 	ut64 obj_size;
 	RStrpool *pool;
-	RList/*<RBinSection>*/ *sections; // DEPRECATE
 	RVecRBinImport imports_vec;
 	RVecRBinSymbol symbols_vec;
 	RVecRBinSection sections_vec;
@@ -655,9 +654,6 @@ typedef struct r_bin_plugin_t {
 	ut64 (*baddr)(RBinFile *bf);
 	RBinAddr* (*binsym)(RBinFile *bf, int num);
 	RList/*<RBinAddr>*/* (*entries)(RBinFile *bf);
-	// R2_600 - deprecate in r2-6.0.0
-	RList/*<RBinSection>*/* (*sections)(RBinFile *bf);
-	// R2_590 - implement them in all the plugins
 	bool (*sections_vec)(RBinFile *bf); // R2_590
 	bool (*symbols_vec)(RBinFile *bf);
 	bool (*imports_vec)(RBinFile *bf);
@@ -816,7 +812,6 @@ typedef struct r_bin_write_t {
 
 typedef int (*RBinGetOffset)(RBin *bin, int type, int idx);
 typedef const char *(*RBinGetName)(RBin *bin, int type, int idx, bool sd);
-typedef RList *(*RBinGetSections)(RBin *bin);
 typedef RVecRBinSection *(*RBinGetSectionsVec)(RBin *bin);
 typedef RBinSection *(*RBinGetSectionAt)(RBin *bin, ut64 addr);
 typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut64 vaddr, bool libs);
@@ -828,7 +823,6 @@ typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
 	RBinGetName get_name;
-	RBinGetSections get_sections;
 	RBinGetSectionsVec get_sections_vec;
 	RBinGetSectionAt get_vsect_at;
 	RBinGetSymbolsVec get_symbols_vec;
@@ -841,6 +835,7 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
+R_API bool r_bin_section_vec_append(RBinFile *bf, RBinSection *section);
 R_API bool r_bin_sections_vec_from_list(RBinFile *bf, RList *sections);
 R_API bool r_bin_sections_vec_from_list_clone(RBinFile *bf, RList *sections);
 R_API void r_bin_info_free(RBinInfo *rb);
@@ -915,7 +910,6 @@ R_API const RList *r_bin_get_entries(RBin *bin);
 R_API RList *r_bin_get_libs(RBin *bin);
 R_API RRBTree *r_bin_patch_relocs(RBinFile *bin);
 R_API RRBTree *r_bin_get_relocs(RBin *bin);
-R_API RList *r_bin_get_sections(RBin *bin);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);

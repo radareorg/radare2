@@ -282,20 +282,20 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	struct minidump_memory_descriptor *memory;
 	struct minidump_memory_descriptor64 *memory64;
 	struct minidump_module *module;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin;
 	RList *pe_secs;
-	RListIter *it, *it0;
+	RListIter *it, *it0, *it1;
 	RBinSection *ptr;
 	ut64 index;
 
 	struct r_bin_mdmp_obj *obj = (struct r_bin_mdmp_obj *)bf->bo->bin_obj;
 
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	/* TODO: Can't remove the memories from this section until get_vaddr is
 	** implemented correctly, currently it is never called!?!? Is it a
@@ -312,7 +312,9 @@ static RList *sections(RBinFile *bf) {
 
 		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
 
 	index = obj->streams.memories64.base_rva;
@@ -328,7 +330,9 @@ static RList *sections(RBinFile *bf) {
 
 		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
 
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 
 		index += memory64->data_size;
 	}
@@ -362,27 +366,45 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		ptr->perm = 0;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
 			if (pe32_bin->vaddr == module->base_of_image && pe32_bin->bin) {
 				pe_secs = Pe32_r_bin_mdmp_pe_get_sections(pe32_bin);
-				r_list_join (ret, pe_secs);
-				r_list_free (pe_secs);
+				if (pe_secs) {
+					RBinSection *pe_sec;
+					r_list_foreach (pe_secs, it1, pe_sec) {
+						if (!r_bin_section_vec_append (bf, r_bin_section_clone (pe_sec))) {
+							r_list_free (pe_secs);
+							return false;
+						}
+					}
+					r_list_free (pe_secs);
+				}
 			}
 		}
 		r_list_foreach (obj->pe64_bins, it0, pe64_bin) {
 			if (pe64_bin->vaddr == module->base_of_image && pe64_bin->bin) {
 				pe_secs = Pe64_r_bin_mdmp_pe_get_sections(pe64_bin);
-				r_list_join (ret, pe_secs);
-				r_list_free (pe_secs);
+				if (pe_secs) {
+					RBinSection *pe_sec;
+					r_list_foreach (pe_secs, it1, pe_sec) {
+						if (!r_bin_section_vec_append (bf, r_bin_section_clone (pe_sec))) {
+							r_list_free (pe_secs);
+							return false;
+						}
+					}
+					r_list_free (pe_secs);
+				}
 			}
 		}
 	}
 	R_LOG_INFO ("Parsing data sections for large dumps can take time");
 	R_LOG_INFO ("Please be patient (but if strings ain't your thing try with -z)");
-	return ret;
+	return true;
 }
 
 static RList *mem(RBinFile *bf) {
@@ -515,10 +537,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 		return !memcmp (magic, MDMP_MAGIC, 6);
 	}
 	return false;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_mdmp = {

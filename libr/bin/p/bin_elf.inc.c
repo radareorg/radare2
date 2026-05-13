@@ -279,15 +279,13 @@ static RList* entries(RBinFile *bf) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
-		if (bf->bo->sections) {
-			// XXX store / cache sections by name in hashmap
-			const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
-			RBinSection *section;
-			R_VEC_FOREACH_PREV (sections, section) {
-				if (!strcmp (section->name, "ehdr")) {
-					ptr->hvaddr = section->vaddr + ptr->hpaddr;
-					break;
-				}
+		// XXX store / cache sections by name in hashmap
+		const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
+		RBinSection *section;
+		R_VEC_FOREACH_PREV (sections, section) {
+			if (!strcmp (section->name, "ehdr")) {
+				ptr->hvaddr = section->vaddr + ptr->hpaddr;
+				break;
 			}
 		}
 		if (ptr->hvaddr == UT64_MAX) {
@@ -1816,24 +1814,15 @@ static RList* fields(RBinFile *bf) {
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
-#if R2_590
-	if (!bf->bo->sections && sections_vec (bf)) {
+	if (sections_vec (bf)) {
 		RBinSection *section;
 		RVecRBinSection *sections = &(bf->bo->sections_vec);
 		R_VEC_FOREACH (sections, section) {
-#else
-	if (!bf->bo->sections) {
-		RBinSection *section;
-		RList *secs = sections (bf);
-		RListIter *iter;
-		r_list_foreach (secs, iter, section) {
-#endif
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
 			}
 		}
-		r_list_free (secs);
 	}
 	return off + len;
 }

@@ -63,10 +63,9 @@ static void write_segsect64(RBuffer *buf, ut64 off, const char *segname, const c
 	write_le32 (buf, sec_off + offsetof (struct section_64, reserved3), 0);
 }
 
-static bool has_kext_section(RList *sections) {
-	RListIter *it;
+static bool has_kext_section(RVecRBinSection *sections) {
 	RBinSection *section;
-	r_list_foreach (sections, it, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (section && section->name && strstr (section->name, "testkext.")) {
 			return true;
 		}
@@ -118,7 +117,7 @@ bool test_kernelcache_cmdsize(void) {
 	bool res = r_bin_open_buf (bin, buf, &opt);
 	mu_assert ("kernelcache buffer could not be opened", res);
 
-	RList *sections = r_bin_get_sections (bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
 	mu_assert ("kernelcache sections missing kext data", sections && has_kext_section (sections));
 
 	r_bin_free (bin);

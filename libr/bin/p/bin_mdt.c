@@ -395,13 +395,10 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool sections_vec(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
-	RList *sections = r_list_newf ((RListFree)r_bin_section_free);
-	if (!sections) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RListIter *iter;
 	RBinMdtPart *part;
@@ -416,12 +413,14 @@ static RList *sections(RBinFile *bf) {
 				}
 				*clone = *sec;
 				clone->name = strdup (sec->name);
-				r_list_append (sections, clone);
+				if (!r_bin_section_vec_append (bf, clone)) {
+					return false;
+				}
 			}
 		}
 	}
 
-	return sections;
+	return true;
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -504,10 +503,6 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
-}
 
 RBinPlugin r_bin_plugin_mdt = {
 	.meta = {

@@ -13,9 +13,9 @@ bool test_r_bin(void) {
 	bool res = r_bin_open (bin, "bins/elf/ioli/crackme0x00", &opt);
 	mu_assert ("crackme0x00 binary could not be opened", res);
 
-	RList *sections = r_bin_get_sections (bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
 	// XXX this is wrong, because its returning the sections and the segments, we need another api here
-	mu_assert_eq (r_list_length (sections), 39, "r_bin_get_sections");
+	mu_assert_eq (RVecRBinSection_length (sections), 39, "r_bin_get_sections_vec");
 
 	r_bin_free (bin);
 	r_io_free (io);

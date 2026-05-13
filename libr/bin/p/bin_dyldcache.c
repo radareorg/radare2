@@ -1215,20 +1215,21 @@ static bool __is_data_section(const char *name) {
 		|| strstr (name, "_objc_methtype");
 }
 
-static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
+static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
-		return;
+		return false;
 	}
 
 	struct MACH0_(obj_t) *mach0 = bin_to_mach0 (bf, bin);
 	if (!mach0) {
-		return;
+		return false;
 	}
 
 	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
-		return;
+		MACH0_(mach0_free) (mach0);
+		return false;
 	}
 
 	ut64 slide = rebase_infos_get_slide (cache);
@@ -1253,21 +1254,21 @@ static void sections_from_bin(RList *ret, RBinFile *bf, RDyldBinImage *bin) {
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = section->perm;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			MACH0_(mach0_free) (mach0);
+			return false;
+		}
 	}
 	MACH0_(mach0_free) (mach0);
+	return true;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RDyldCache *cache = (RDyldCache*) bf->bo->bin_obj;
 	if (!cache) {
-		return NULL;
+		return false;
 	}
-
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RListIter *iter;
 	RDyldBinImage *bin;
@@ -1280,7 +1281,9 @@ static RList *sections(RBinFile *bf) {
 			R_LOG_INFO ("Parsing sections stopped %d / %d", i, r_list_length (cache->bins));
 			break;
 		}
-		sections_from_bin (ret, bf, bin);
+		if (!sections_from_bin (bf, bin)) {
+			return false;
+		}
 	}
 
 	RBinSection *ptr = NULL;
@@ -1294,13 +1297,15 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->is_segment = true;
 		ptr->perm = prot2perm (cache->maps[i].initProt);
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
 
 	ut64 slide = rebase_infos_get_slide (cache);
 	if (slide) {
 		RBinSection *section;
-		r_list_foreach (ret, iter, section) {
+		R_VEC_FOREACH (&bf->bo->sections_vec, section) {
 			section->vaddr += slide;
 		}
 	}
@@ -1341,10 +1346,12 @@ static RList *sections(RBinFile *bf) {
 		ptr->add = true;
 		ptr->is_segment = false;
 		ptr->perm = prot2perm (first_map->initProt);
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
 
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -1638,10 +1645,6 @@ static char *header(RBinFile *bf, int mode) {
 beach:
 	pj_free (pj);
 	return NULL;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_dyldcache = {

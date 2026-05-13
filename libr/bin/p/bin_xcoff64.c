@@ -116,28 +116,20 @@ static inline const char *parse_section_flags(ut32 i, ut32 *perm, ut16 magic) {
 	}
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
 	struct r_bin_xcoff64_obj *obj = (struct r_bin_xcoff64_obj*)bf->bo->bin_obj;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	if (obj && obj->scn_hdrs) {
 		for (i = 0; i < obj->hdr.f_nscns; i++) {
 			tmp = r_str_ndup (obj->scn_hdrs[i].s_name, 8);
 			if (!tmp) {
-				r_list_free (ret);
-				return NULL;
+				return false;
 			}
 			ptr = R_NEW0 (RBinSection);
-			if (!ptr) {
-				free (tmp);
-				return ret;
-			}
 			ptr->name = tmp;
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;
@@ -151,10 +143,12 @@ static RList *sections(RBinFile *bf) {
 				ptr->vaddr = obj->scn_va[i];
 			}
 			ptr->add = true;
-			r_list_append (ret, ptr);
+			if (!r_bin_section_vec_append (bf, ptr)) {
+				return false;
+			}
 		}
 	}
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -218,10 +212,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 tmp[24];
 	int r = r_buf_read_at (b, 0, tmp, sizeof (tmp));
 	return r >= 24 && r_xcoff64_supported_arch (tmp);
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_xcoff64 = {
