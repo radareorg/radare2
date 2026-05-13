@@ -100,11 +100,8 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList /*<RBinSection>*/ *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	RBinSection *text = R_NEW0 (RBinSection);
 	text->name = strdup ("text");
 	text->size = r_buf_size (bf->buf) - N64_ROM_START;
@@ -113,8 +110,7 @@ static RList *sections(RBinFile *bf) {
 	text->vaddr = baddr (bf);
 	text->perm = R_PERM_RX;
 	text->add = true;
-	r_list_append (ret, text);
-	return ret;
+	return r_bin_section_vec_append (bf, text);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -133,10 +129,6 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if !R_BIN_Z64
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
-}
 
 RBinPlugin r_bin_plugin_z64 = {
 	.meta = {

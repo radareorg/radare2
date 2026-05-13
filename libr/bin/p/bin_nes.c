@@ -71,45 +71,42 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList* sections(RBinFile *bf) {
-	RList *ret = NULL;
-	RBinSection *ptr = NULL;
+static bool sections_vec(RBinFile *bf) {
 	ines_hdr ihdr;
 	memset (&ihdr, 0, INES_HDR_SIZE);
 	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&ihdr, INES_HDR_SIZE);
 	if (reat != INES_HDR_SIZE) {
 		R_LOG_ERROR ("Truncated Header");
-		return NULL;
+		return false;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	const ut64 rom_size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("ROM");
 	ptr->paddr = INES_HDR_SIZE;
-	ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+	ptr->size = rom_size;
 	ptr->vaddr = ROM_START_ADDRESS;
 	ptr->vsize = ROM_SIZE;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	if (ROM_START_ADDRESS + ptr->size <= ROM_MIRROR_ADDRESS) {
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
+	if (ROM_START_ADDRESS + rom_size <= ROM_MIRROR_ADDRESS) {
 		// not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			return ret;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ("ROM_MIRROR");
 		ptr->paddr = INES_HDR_SIZE;
-		ptr->size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
+		ptr->size = rom_size;
 		ptr->vaddr = ROM_MIRROR_ADDRESS;
 		ptr->vsize = ROM_MIRROR_SIZE;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *mem(RBinFile *bf) {
@@ -194,10 +191,6 @@ static RList* entries(RBinFile *bf) { //Should be 3 offsets pointed by NMI, RESE
 		r_list_append (ret, ptr);
 	}
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_nes = {

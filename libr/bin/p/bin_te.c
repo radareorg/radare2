@@ -59,24 +59,17 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	struct r_bin_te_section_t *sections = NULL;
 	int i;
 
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
 	if (!(sections = r_bin_te_get_sections (bf->bo->bin_obj))) {
-		free (ret);
-		return NULL;
+		return false;
 	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	for (i = 0; !sections[i].last; i++) {
-		if (!(ptr = R_NEW0 (RBinSection))) {
-			break;
-		}
+		ptr = R_NEW0 (RBinSection);
 		ptr->name = strdup ((char*)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
@@ -101,10 +94,13 @@ static RList *sections(RBinFile *bf) {
 		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
 			ptr->bits = R_SYS_BITS_PACK (16);
 		}
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			free (sections);
+			return false;
+		}
 	}
 	free (sections);
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -134,10 +130,6 @@ static bool check(RBinFile *bf, RBuffer *b) {
 		return !memcmp (buf, "\x56\x5a", 2);
 	}
 	return false;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_te = {

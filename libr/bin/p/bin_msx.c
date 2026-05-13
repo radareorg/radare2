@@ -123,17 +123,13 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+static bool sections_vec(RBinFile *bf) {
 	ut8 gbuf[32];
 	int left = r_buf_read_at (bf->buf, 0, (ut8*)&gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {
-		return NULL;
+		return false;
 	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
@@ -153,7 +149,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = hdrsize;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
@@ -162,8 +160,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize = r_buf_size (bf->buf) - hdrsize;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -190,10 +187,6 @@ static RList *entries(RBinFile *bf) {
 		r_list_append (ret, ptr);
 	}
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_msx = {

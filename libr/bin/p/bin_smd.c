@@ -179,11 +179,8 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("vtable");
@@ -191,7 +188,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize = 0x100;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
@@ -199,7 +198,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	SMD_Header hdr = {{0}};
 	r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
@@ -211,8 +212,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = ptr->vsize = r_buf_size (bf->buf) - ptr->paddr;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -231,10 +231,6 @@ static RList *entries(RBinFile *bf) {
 	}
 	r_list_append (ret, ptr);
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_smd = {
