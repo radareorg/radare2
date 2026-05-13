@@ -23,7 +23,7 @@ R_LIB_VERSION_HEADER (r_lib);
 // double-indirection required because cpp is crap
 #define STRINGIFY2(x) #x
 #define STRINGIFY(x) STRINGIFY2(x)
-#define R2_ABIVERSION 100
+#define R2_ABIVERSION 101
 #define R2_ABIVERSION_STRING STRINGIFY(R2_ABIVERSION)
 
 #define R_LIB_ENV "R2_LIBR_PLUGINS"
@@ -129,6 +129,7 @@ typedef struct r_lib_t {
 	char *symname;
 	char *symnamefunc;
 	RList /*RLibPlugin*/ *plugins;
+	RList /*char*/ *plugin_mismatches;
 	RList /*RLibHandler*/ *handlers;
 	RLibHandler *handlers_bytype[R_LIB_TYPE_LAST];
 	bool ignore_version;

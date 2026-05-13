@@ -29,6 +29,34 @@ static char *get_file_in_cur_dir(const char *filepath) {
 	return NULL;
 }
 
+static void prompt_rebuild_outdated_plugins(RCore *core) {
+	RList *mismatches = core->lib->plugin_mismatches;
+	if (!r_config_get_b (core->config, "scr.prompt")
+			|| !r_cons_is_interactive (core->cons)
+			|| r_list_empty (mismatches)) {
+		return;
+	}
+	RListIter *iter;
+	const char *pkgname;
+	r_list_foreach (mismatches, iter, pkgname) {
+		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated '%s' plugin? (Y/n) ", pkgname)) {
+			continue;
+		}
+		char *epkgname = r_str_escape_sh (pkgname);
+		if (!epkgname) {
+			R_LOG_WARN ("Cannot escape r2pm plugin package name '%s'", pkgname);
+			continue;
+		}
+		if (!r_sys_cmdf ("r2pm -ci \"%s\"", epkgname)) {
+			R_LOG_INFO ("Rebuilt outdated r2pm plugin package '%s'", pkgname);
+		} else {
+			R_LOG_WARN ("Failed to run 'r2pm -ci %s'", pkgname);
+		}
+		free (epkgname);
+	}
+	r_list_purge (core->lib->plugin_mismatches);
+}
+
 static void json_plugins(RCore *core, PJ *pj, const char *name, const char *cmd) {
 	char *res = r_core_cmd_str (core, cmd);
 	r_str_trim (res);
@@ -1303,6 +1331,7 @@ R_API int r_main_radare2(int argc, const char **argv) {
 	} else {
 		r_config_set_b (r->config, "scr.utf8", false);
 	}
+	prompt_rebuild_outdated_plugins (r);
 
 	char *history_file = r_xdg_cachedir ("history");
 	if (history_file) {
