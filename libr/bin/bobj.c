@@ -558,6 +558,10 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			r_bin_filter_sections (bf, bo->sections);
 		}
 	}
+	// Some reloc plugins keep pointers into these vectors, so compact them
+	// before reloc creation and do not move them afterwards.
+	RVecRBinSymbol_shrink_to_fit (&bo->symbols_vec);
+	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
 	if (bin->filter_rules & (R_BIN_REQ_RELOCS | R_BIN_REQ_IMPORTS)) {
 		if (p->relocs) {
 			RList *l = (RList *)p->relocs (bf);
@@ -666,9 +670,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (bo->info && bin->filter_rules & (R_BIN_REQ_INFO | R_BIN_REQ_SYMBOLS | R_BIN_REQ_IMPORTS)) {
 		bo->lang = isSwift? R_BIN_LANG_SWIFT: r_bin_load_languages (bf);
 	}
-	// trim doubling-growth slack from per-class and global symbol/import vecs
-	RVecRBinSymbol_shrink_to_fit (&bo->symbols_vec);
-	RVecRBinImport_shrink_to_fit (&bo->imports_vec);
+	// trim doubling-growth slack from per-class vecs
 	if (bo->classes) {
 		RListIter *it;
 		RBinClass *cls;
