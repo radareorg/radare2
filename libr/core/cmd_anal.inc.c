@@ -14430,7 +14430,7 @@ static void cmd_anal_abp(RCore *core, const char *input) {
 
 static bool is_unknown_file(RCore *core) {
 	if (core->bin->cur && core->bin->cur->bo) {
-		return r_list_empty (core->bin->cur->bo->sections);
+		return RVecRBinSection_empty (&core->bin->cur->bo->sections_vec);
 	}
 	return true;
 }
@@ -14472,13 +14472,12 @@ static bool is_valid_code(RCore *core, ut64 addr, int n) {
 
 static bool is_executable(RCore *core, ut64 addr) {
 	RBinObject *obj = r_bin_cur_object (core->bin);
-	RListIter *it;
 	RBinSection* sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
 		}
-		r_list_foreach (obj->sections, it, sec) {
+		R_VEC_FOREACH (&obj->sections_vec, sec) {
 			ut64 vaddr_end = sec->vaddr + sec->vsize;
 			if (addr >= sec->vaddr && addr < vaddr_end) {
 				if (sec->perm & R_PERM_X) {

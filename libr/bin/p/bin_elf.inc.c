@@ -93,13 +93,30 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
-#if R2_590
 static bool sections_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
-	ELFOBJ *eo = bf->bo->bin_obj
-	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
+	ELFOBJ *eo = bf->bo->bin_obj;
+	const RVecRBinSection *sections = eo? Elf_(load_sections) (bf, eo): NULL;
+	if (!sections) {
+		return false;
+	}
+	RVecRBinSection *dst_sections = &bf->bo->sections_vec;
+	RVecRBinSection_clear (dst_sections);
+	if (!RVecRBinSection_reserve (dst_sections, RVecRBinSection_length (sections))) {
+		return false;
+	}
+	RBinSection *section;
+	R_VEC_FOREACH (sections, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
+		if (!dst) {
+			return false;
+		}
+		*dst = *section;
+		dst->name = section->name? strdup (section->name): NULL;
+		dst->format = section->format? strdup (section->format): NULL;
+	}
+	return true;
 }
-#else
 
 // DEPRECATE: we must use sections_vec instead
 static RList* sections(RBinFile *bf) {
@@ -125,7 +142,6 @@ static RList* sections(RBinFile *bf) {
 
 	return ret;
 }
-#endif
 
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);

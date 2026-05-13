@@ -872,15 +872,42 @@ R_API RRBTree *r_bin_get_relocs(RBin *bin) {
 R_API RList *r_bin_get_sections(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->sections: NULL;
+	if (!o) {
+		return NULL;
+	}
+	if (!o->sections) {
+		o->sections = r_list_newf ((RListFree)r_bin_section_free);
+		if (!o->sections) {
+			return NULL;
+		}
+		RBinSection *section;
+		R_VEC_FOREACH (&o->sections_vec, section) {
+			if (!r_list_append (o->sections, r_bin_section_clone (section))) {
+				r_list_free (o->sections);
+				o->sections = NULL;
+				return NULL;
+			}
+		}
+	}
+	return o->sections;
+}
+
+R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin) {
+	R_RETURN_VAL_IF_FAIL (bin, NULL);
+	RBinObject *o = r_bin_cur_object (bin);
+	return o? &o->sections_vec: NULL;
+}
+
+R_API RVecRBinSection *r_bin_file_get_sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+	return &bf->bo->sections_vec;
 }
 
 R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	R_RETURN_VAL_IF_FAIL (o, NULL);
 	RBinSection *section;
-	RListIter *iter;
 	// TODO: must be O (1) .. use memoization or tree or so
-	r_list_foreach (o->sections, iter, section) {
+	R_VEC_FOREACH (&o->sections_vec, section) {
 		if (section->is_segment) {
 			continue;
 		}
@@ -1315,6 +1342,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->get_offset = __getoffset;
 		b->get_name = __getname;
 		b->get_sections = r_bin_get_sections;
+		b->get_sections_vec = r_bin_get_sections_vec;
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;
 		b->get_symbol_at = r_bin_get_symbol_at;
@@ -1524,6 +1552,13 @@ R_IPI RBinSection *r_bin_section_new(const char *name) {
 	return s;
 }
 
+R_API void r_bin_section_fini(RBinSection *bs) {
+	if (bs) {
+		free (bs->name);
+		free (bs->format);
+	}
+}
+
 R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	RBinSection *d = R_NEW0 (RBinSection);
 	memcpy (d, s, sizeof (RBinSection));
@@ -1532,22 +1567,21 @@ R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	return d;
 }
 
-R_IPI void r_bin_section_free(RBinSection *bs) {
+R_API void r_bin_section_free(RBinSection *bs) {
 	if (bs) {
-		free (bs->name);
-		free (bs->format);
+		r_bin_section_fini (bs);
 		free (bs);
 	}
 }
 
 R_API RBinFile *r_bin_file_at(RBin *bin, ut64 at) {
-	RListIter *it, *it2;
+	RListIter *it;
 	RBinFile *bf;
 	RBinSection *s;
 	r_list_foreach (bin->binfiles, it, bf) {
 		// chk for baddr + size of no section is covering anything
 		// we should honor maps not sections imho
-		r_list_foreach (bf->bo->sections, it2, s) {
+		R_VEC_FOREACH (&bf->bo->sections_vec, s) {
 			if (at >= s->vaddr && at < (s->vaddr + s->vsize)) {
 				return bf;
 			}

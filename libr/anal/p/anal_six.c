@@ -308,12 +308,12 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 	free (args);
 
 	if (len == 0) {
-		if (!anal->binb.get_sections) {
-			R_LOG_ERROR ("No get_sections callback available");
+		if (!anal->binb.get_sections_vec) {
+			R_LOG_ERROR ("No get_sections_vec callback available");
 			r_strbuf_free (sb);
 			return strdup ("");
 		}
-		RList *sections = anal->binb.get_sections (anal->binb.bin);
+		RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
 		if (!sections) {
 			R_LOG_ERROR ("No executable sections found");
 			r_strbuf_free (sb);
@@ -321,9 +321,8 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		}
 
 		RBinSection *s;
-		RListIter *iter;
 
-		r_list_foreach (sections, iter, s) {
+		R_VEC_FOREACH (sections, s) {
 			if (s->is_segment || ! (s->perm & R_PERM_X)) {
 				continue;
 			}

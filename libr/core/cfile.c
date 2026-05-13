@@ -812,7 +812,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 					r_config_set_i (r->config, "io.va", 0);
 				}
 				// workaround to map correctly malloc:// and raw binaries
-				if (r_io_desc_is_dbg (desc) || (!obj->sections || !va)) {
+				if (r_io_desc_is_dbg (desc) || (RVecRBinSection_empty (&obj->sections_vec) || !va)) {
 					r_io_map_add (r->io, desc->fd, desc->perm, 0, laddr, r_io_desc_size (desc));
 				}
 				RBinInfo *info = obj->info;

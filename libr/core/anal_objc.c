@@ -189,7 +189,7 @@ static bool objc_build_refs(RCoreObjc *objc) {
 }
 
 static RCoreObjc *core_objc_new(RCore *core) {
-	RList *sections = r_bin_get_sections (core->bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 	if (!sections) {
 		return false;
 	}
@@ -205,8 +205,7 @@ static RCoreObjc *core_objc_new(RCore *core) {
 	}
 
 	RBinSection *s;
-	RListIter *iter;
-	r_list_foreach (sections, iter, s) {
+	R_VEC_FOREACH (sections, s) {
 		const char *name = s->name;
 		if (strstr (name, "__objc_data")) {
 			o->_data = s;

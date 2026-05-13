@@ -1108,13 +1108,12 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinObject *bo = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
-	RListIter *iter;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
 
 	bf->string_count = 0;
-	if (!raw && bo && bo->sections && !r_list_empty (bo->sections)) {
-		r_list_foreach (bo->sections, iter, section) {
+	if (!raw && bo && !RVecRBinSection_empty (&bo->sections_vec)) {
+		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
 				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
@@ -1124,7 +1123,7 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
 		return ret;
 	}
-	r_list_foreach (bo->sections, iter, section) {
+	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (!section->name) {
 			continue;
 		}

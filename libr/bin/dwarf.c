@@ -425,10 +425,9 @@ static const char *dwarf_sn_xcoff64[DWARF_SN_MAX] = {
 
 static RBinSection *get_section(RBinFile *bf, int sn) {
 	R_RETURN_VAL_IF_FAIL (sn >= 0 && sn < DWARF_SN_MAX, NULL);
-	RListIter *iter;
 	RBinObject *o = bf->bo;
 	const char *rclass = (o && o->info)? o->info->rclass: NULL;
-	if (R_LIKELY (o && o->sections)) {
+	if (R_LIKELY (o)) {
 		/* XXX: xcoff64 specific hack */
 		const char *const *name_tab = rclass && !strcmp (o->info->rclass, "xcoff64")
 			? dwarf_sn_xcoff64
@@ -438,7 +437,7 @@ static RBinSection *get_section(RBinFile *bf, int sn) {
 			return NULL;
 		}
 		RBinSection *section;
-		r_list_foreach (o->sections, iter, section) {
+		R_VEC_FOREACH (&o->sections_vec, section) {
 			if (section->name && strstr (section->name, name_str)) {
 				/* accept matching section, including compressed or zdebug variants */
 				return section;

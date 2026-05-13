@@ -357,17 +357,17 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 		}
 	} else if (!strcmp (cat, "sections")) {
 		RBinSection *section;
-		RListIter *iter;
-		const RList *sections = r_bin_get_sections (rvm->core->bin);
-		r_list_foreach (sections, iter, section) {
-			if (item_count >= max_items) {
-				break;
-			}
-			if (rvm->filter && !strstr (section->name, rvm->filter)) {
-				continue;
-			}
-			bool is_selected = (item_count == rvm->selected_item);
-			draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
+		RVecRBinSection *sections = r_bin_get_sections_vec (rvm->core->bin);
+		if (sections) {
+			R_VEC_FOREACH (sections, section) {
+				if (item_count >= max_items) {
+					break;
+				}
+				if (rvm->filter && !strstr (section->name, rvm->filter)) {
+					continue;
+				}
+				bool is_selected = (item_count == rvm->selected_item);
+				draw_highlighted_box (can, xpos, ypos, boxwidth, rvm->box_h, is_selected);
 			char addr_str[256];
 			snprintf (addr_str, sizeof (addr_str), "0x%" PFMT64x, section->vaddr);
 			char *name = r_str_ndup (section->name, boxwidth - 4 - strlen (addr_str));
@@ -383,6 +383,7 @@ static void draw_level1_boxes(RVMatrix *rvm) {
 				col = 0;
 			}
 			item_count++;
+		}
 		}
 	} else {
 		r_cons_canvas_write_at (can, "Category not implemented yet", 2, ypos);
@@ -864,10 +865,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 						}
 					} else if (!strcmp (cat, "sections")) {
 						RBinSection *section;
-						RListIter *iter;
-						const RList *sections = r_bin_get_sections (rvm.core->bin);
+						RVecRBinSection *sections = r_bin_get_sections_vec (rvm.core->bin);
 						int count = 0;
-						r_list_foreach (sections, iter, section) {
+						R_VEC_FOREACH (sections, section) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = section->vaddr;
 								break;
@@ -956,10 +956,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 						}
 					} else if (!strcmp (cat, "sections")) {
 						RBinSection *section;
-						RListIter *iter;
-						const RList *sections = r_bin_get_sections (rvm.core->bin);
+						RVecRBinSection *sections = r_bin_get_sections_vec (rvm.core->bin);
 						int count = 0;
-						r_list_foreach (sections, iter, section) {
+						R_VEC_FOREACH (sections, section) {
 							if (count == rvm.selected_item) {
 								rvm.selected_addr = section->vaddr;
 								break;
@@ -1013,8 +1012,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 					RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
 					max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
 				} else if (!strcmp (cat, "sections")) {
-					const RList *sections = r_bin_get_sections (rvm.core->bin);
-					max_items = r_list_length (sections);
+					RVecRBinSection *sections = r_bin_get_sections_vec (rvm.core->bin);
+					max_items = sections? RVecRBinSection_length (sections): 0;
 				} else if (!strcmp (cat, "comments")) {
 					RIntervalTreeIter it;
 					RAnalMetaItem *item;
@@ -1084,8 +1083,8 @@ R_API void r_core_visual_matrix(RCore *core) {
 						RVecRBinImport *imports_vec = r_bin_get_imports_vec (rvm.core->bin);
 						max_items = imports_vec ? RVecRBinImport_length (imports_vec) : 0;
 					} else if (!strcmp (cat, "sections")) {
-						const RList *sections = r_bin_get_sections (rvm.core->bin);
-						max_items = r_list_length (sections);
+						RVecRBinSection *sections = r_bin_get_sections_vec (rvm.core->bin);
+						max_items = sections? RVecRBinSection_length (sections): 0;
 					} else if (!strcmp (cat, "comments")) {
 						RIntervalTreeIter it;
 						RAnalMetaItem *item;
@@ -1273,10 +1272,9 @@ R_API void r_core_visual_matrix(RCore *core) {
 										}
 									} else if (!strcmp (cat, "sections")) {
 										RBinSection *section;
-										RListIter *iter;
-										const RList *sections = r_bin_get_sections (rvm.core->bin);
+										RVecRBinSection *sections = r_bin_get_sections_vec (rvm.core->bin);
 										int count = 0;
-										r_list_foreach (sections, iter, section) {
+										R_VEC_FOREACH (sections, section) {
 											if (count == rvm.selected_item) {
 												rvm.selected_addr = section->vaddr;
 												break;
