@@ -1235,6 +1235,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 'd': 0;
 	list->free = free;
 	RList *classes = r_bin_get_classes (core->bin);
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
 	r_list_foreach (classes, iter, c) {
 		const char *cname = r_bin_name_tostring2 (c->name, pref);
 		R_VEC_FOREACH (&c->fields, f) {
@@ -1242,7 +1243,7 @@ R_API bool r_core_visual_hudclasses(RCore *core) {
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				f->vaddr, cname, fname));
 		}
-		R_VEC_FOREACH (&c->methods, m) {
+		R_BIN_CLASS_FOREACH_METHOD (bo, c, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			r_list_append (list, r_str_newf ("0x%08"PFMT64x"  %s %s",
 				m->vaddr, cname, name));
@@ -1448,7 +1449,9 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			return mur;
 		}
 		r_cons_printf (cons, "[hjkl_/cfM]> methods of %s\n\n", _cname);
-		R_VEC_FOREACH (&_c->methods, m) {
+		{
+		RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
+		R_BIN_CLASS_FOREACH_METHOD (bo, _c, m) {
 			const char *name = r_bin_name_tostring2 (m->name, pref);
 			if (grep) {
 				if (!r_str_casestr (name, grep)) {
@@ -1489,6 +1492,7 @@ static void *show_class(RCore *core, int mode, int *idx, RBinClass *_c, const ch
 			if (i++ == *idx) {
 				mur = m;
 			}
+		}
 		}
 		if (!mur) {
 			*idx = i - 1;

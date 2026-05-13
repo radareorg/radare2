@@ -1391,10 +1391,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				//eprintf("%s (0x%x-0x%x) size=%d\nregsz=%d\ninsns_size=%d\nouts_size=%d\ntries_size=%d\ninsns_size=%d\n", flag_name, sym->vaddr, sym->vaddr+sym->size, prolog_size, regsz, ins_size, outs_size, tries_size, insns_size);
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
 				sym = RVecRBinSymbol_last (&dex->symbols_vec);
-				// XXX keep class method vaddr consistent with symbol
-				RBinSymbol *method = RVecRBinSymbol_emplace_back (&cls->methods);
-				r_bin_symbol_copy (method, sym);
-				method->paddr = method->vaddr;
+				ut32 sidx = (ut32)(RVecRBinSymbol_length (&dex->symbols_vec) - 1);
+				RVecUT32_push_back (&cls->method_idx, &sidx);
 
 				if (dex->code_from == UT64_MAX || dex->code_from > sym->paddr) {
 					dex->code_from = sym->paddr;
@@ -1427,9 +1425,8 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 				RVecRBinSymbol_push_back (&dex->symbols_vec, sym);
 				sym = RVecRBinSymbol_last (&dex->symbols_vec);
 				sym->lang = R_BIN_LANG_JAVA;
-				RBinSymbol *method = RVecRBinSymbol_emplace_back (&cls->methods);
-				r_bin_symbol_copy (method, sym);
-				method->paddr = method->vaddr;
+				ut32 sidx = (ut32)(RVecRBinSymbol_length (&dex->symbols_vec) - 1);
+				RVecUT32_push_back (&cls->method_idx, &sidx);
 			}
 			if (MC > 0 && debug_info_off > 0 && dex->header.data_offset < debug_info_off &&
 				debug_info_off < dex->header.data_offset + dex->header.data_size) {

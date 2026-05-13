@@ -260,6 +260,26 @@ R_API void r_bin_symbol_free(void *_sym) {
 	}
 }
 
+R_API size_t r_bin_class_methods_count(const RBinClass *c) {
+	R_RETURN_VAL_IF_FAIL (c, 0);
+	return RVecRBinSymbol_length (&c->methods) + RVecUT32_length (&c->method_idx);
+}
+
+// Inline methods (class-owned structs) come first; indexed methods (into bo->symbols_vec)
+// follow, so the order matches construction.
+R_API RBinSymbol *r_bin_class_method_at(const RBinObject *bo, const RBinClass *c, size_t i) {
+	R_RETURN_VAL_IF_FAIL (c, NULL);
+	const size_t inlined = RVecRBinSymbol_length (&c->methods);
+	if (i < inlined) {
+		return RVecRBinSymbol_at (&c->methods, i);
+	}
+	if (!bo) {
+		return NULL;
+	}
+	const ut32 *idx = RVecUT32_at (&c->method_idx, i - inlined);
+	return idx? RVecRBinSymbol_at (&bo->symbols_vec, *idx): NULL;
+}
+
 R_API void r_bin_string_free(void *_str) {
 	RBinString *str = (RBinString *)_str;
 	if (str) {

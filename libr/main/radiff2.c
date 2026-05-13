@@ -851,11 +851,13 @@ static ut8 *get_methods(RCore *c, int *len) {
 
 	RBinClass *klass;
 	RBinSymbol *sym;
+	RBinFile *bf = r_bin_cur (c->bin);
+	RBinObject *bo = bf? bf->bo: NULL;
 	const RList *list = r_bin_get_classes (c->bin);
 	RList *reslist = r_list_newf (free);
 	r_list_foreach (list, iter, klass) {
 		const char *kname = r_bin_name_tostring (klass->name);
-		R_VEC_FOREACH (&klass->methods, sym) {
+		R_BIN_CLASS_FOREACH_METHOD (bo, klass, sym) {
 			const char *name = r_bin_name_tostring (sym->name);
 			r_list_append (reslist, r_str_newf ("%s.%s", kname, name));
 		}

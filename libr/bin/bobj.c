@@ -151,7 +151,7 @@ static void sync_class_methods_to_symbols_vec(RBinObject *bo) {
 	ht_up_free (seen);
 }
 
-static void filter_unnamed_classes(RList *classes) {
+static void filter_unnamed_classes(RBinObject *bo, RList *classes) {
 	RListIter *iter, *tmp;
 	RBinClass *klass;
 	r_list_foreach_safe (classes, iter, tmp, klass) {
@@ -168,6 +168,16 @@ static void filter_unnamed_classes(RList *classes) {
 				i++;
 			}
 		}
+		i = 0;
+		while (i < RVecUT32_length (&klass->method_idx)) {
+			const ut32 *idx = RVecUT32_at (&klass->method_idx, i);
+			RBinSymbol *method = idx? RVecRBinSymbol_at (&bo->symbols_vec, *idx): NULL;
+			if (!symbol_has_value (method)) {
+				RVecUT32_remove (&klass->method_idx, i);
+			} else {
+				i++;
+			}
+		}
 	}
 }
 
@@ -178,6 +188,7 @@ static bool classes_names_only(RBinFile *bf) {
 static void class_drop_details(RBinClass *klass) {
 	if (klass) {
 		RVecRBinSymbol_clear (&klass->methods);
+		RVecUT32_clear (&klass->method_idx);
 		RVecRBinField_clear (&klass->fields);
 	}
 }
@@ -454,7 +465,7 @@ static bool filter_classes(RBinFile *bf, RList *list) {
 		if (names_only) {
 			continue;
 		}
-		R_VEC_FOREACH (&cls->methods, sym) {
+		R_BIN_CLASS_FOREACH_METHOD (bf->bo, cls, sym) {
 			if (R_LIKELY (sym->name)) {
 				r_bin_filter_sym (bf, ht, sym->vaddr, sym);
 			} else {
@@ -624,7 +635,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			classes_drop_details (bo->classes);
 		}
 		if (!bin->options.load_unnamed) {
-			filter_unnamed_classes (bo->classes);
+			filter_unnamed_classes (bo, bo->classes);
 			r_bin_object_rebuild_classes_ht (bo);
 		}
 		if (bin->filter && bin->options.load_unnamed) {
