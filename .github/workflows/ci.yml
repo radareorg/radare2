@@ -157,10 +157,12 @@ jobs:
       run: |
         sudo apt-get update --assume-yes
         sudo apt-get install --assume-yes gcc make gperf file gcc-mips-linux-gnu qemu-user
-    - name: Build static mipsbe r2
+    - name: Build static mipsbe r2 and unit tests
       run: sys/mipsbe.sh build
     - name: Run mipsbe r2r smoke tests
       run: sys/mipsbe.sh smoke
+    - name: Run mipsbe unit tests
+      run: sys/mipsbe.sh unit
   linux-static-meson:
 #    if: contains(github.ref, 'master') || contains(github.ref, 'ci-')
     continue-on-error: true

@@ -5,17 +5,18 @@ set -e
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)" || exit 1
 TARGET="${TARGET:-mips-linux-gnu}"
 CROSS="${CROSS:-${TARGET}-}"
-R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/asm/mips_v2_64}"
+R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/cmd/cmd_alias test/db/cmd/cmd_yank test/db/cmd/cmd_help test/db/cmd/cmd_b test/db/asm/mips_v2_64}"
 R2R_TIMEOUT="${R2R_TIMEOUT:-120}"
+UNIT_TESTS="${UNIT_TESTS:-test_base64 test_bitmap test_bitset test_hex test_json test_list test_math test_str test_uleb128}"
 MODE="${1:-all}"
 
 usage() {
-	echo "Usage: sys/mipsbe.sh [build|smoke|all]"
+	echo "Usage: sys/mipsbe.sh [build|smoke|unit|all]"
 	exit 1
 }
 
 case "$MODE" in
-build|smoke|all)
+build|smoke|unit|all)
 	;;
 -h|--help)
 	usage
@@ -44,6 +45,27 @@ need_file() {
 	fi
 }
 
+unit_bins() {
+	for unit in $UNIT_TESTS ; do
+		printf ' bin/%s' "$unit"
+	done
+}
+
+build_unit_tests() {
+	unit_targets="$(unit_bins)"
+	if [ -z "$unit_targets" ]; then
+		return 0
+	fi
+	libatomic="$(sed -n 's/^LIBATOMIC=//p' config-user.mk | tail -n 1)"
+	unit_ldlibs="../../libr/libr.a -lm -ldl -pthread -lutil ${libatomic}"
+	# shellcheck disable=SC2086
+	make -B -C test/unit $unit_targets \
+		CC="$CC" \
+		LIBDIR="${ROOT}/libr" \
+		INCLUDEDIR="${ROOT}/libr/include" \
+		LDLIBS="$unit_ldlibs"
+}
+
 make_qemu_wrapper() {
 	out="$1"
 	target="$2"
@@ -64,6 +86,14 @@ run_qemu() {
 	fi
 }
 
+run_target() {
+	if [ -n "$QEMU_RUN" ]; then
+		run_qemu "$@"
+	else
+		"$@"
+	fi
+}
+
 run_r2r() {
 	if [ -n "$QEMU_R2R" ]; then
 		run_qemu "$R2R_BIN" "$@"
@@ -74,7 +104,7 @@ run_r2r() {
 
 cd "$ROOT" || exit 1
 
-if [ "$MODE" != smoke ]; then
+if [ "$MODE" = build ] || [ "$MODE" = all ]; then
 	CC="${CC:-$(find_tool "${CROSS}gcc" || true)}"
 	if [ -z "$CC" ]; then
 		echo "Missing required tool: ${CROSS}gcc"
@@ -86,6 +116,7 @@ if [ "$MODE" != smoke ]; then
 	export CFGARGS="${CFGARGS:---without-zydis}"
 
 	sys/cross.sh "$TARGET"
+	build_unit_tests
 fi
 
 R2R_BIN="${ROOT}/binr/r2r/r2r"
@@ -108,6 +139,11 @@ if [ -n "$READELF" ]; then
 fi
 if [ "$MODE" = build ]; then
 	exit 0
+fi
+if [ "$MODE" != smoke ]; then
+	for unit in $UNIT_TESTS ; do
+		need_file "${ROOT}/test/unit/bin/$unit"
+	done
 fi
 
 QEMU_R2R=
@@ -134,8 +170,7 @@ else
 		exit 1
 	}
 	QEMU_R2R="$QEMU_RUN"
-	WRAP_DIR="${TMPDIR:-/tmp}/r2-mipsbe.$$"
-	mkdir -p "$WRAP_DIR"
+	WRAP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/r2-mipsbe.XXXXXX")" || exit 1
 	trap 'rm -rf "$WRAP_DIR"' EXIT HUP INT TERM
 	for bin in r2 radare2 rabin2 rarun2 rasm2 ragg2 rahash2 rax2 ravc2 rafind2 radiff2 ; do
 		if [ -e "${ROOT}/binr/blob/$bin" ]; then
@@ -160,5 +195,20 @@ if [ -n "$R2R_OUTPUT" ]; then
 	R2R_OUTPUT_ARG="-o $R2R_OUTPUT"
 fi
 
-# shellcheck disable=SC2086
-run_r2r -u -L -1 -t "$R2R_TIMEOUT" $R2R_OUTPUT_ARG $R2R_TESTS
+if [ "$MODE" != unit ]; then
+	# shellcheck disable=SC2086
+	run_r2r -u -L -1 -t "$R2R_TIMEOUT" $R2R_OUTPUT_ARG $R2R_TESTS
+fi
+
+if [ "$MODE" != smoke ]; then
+	status=0
+	(
+		cd test || exit 1
+		export R2_DEBUG_ASSERT=1
+		for unit in $UNIT_TESTS ; do
+			echo "unit/bin/$unit"
+			run_target "${ROOT}/test/unit/bin/$unit" || status=1
+		done
+		exit $status
+	)
+fi
