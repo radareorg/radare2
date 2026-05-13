@@ -72,6 +72,15 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=mach0 chained fixup relocs ignore bin.unnamed
+ARGS=-e bin.relocs.apply=true -e bin.unnamed=false
+FILE=bins/mach0/hello-macos-arm64-chained
+CMDS=ir~0x100008158~?
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=mach0 headers big-endian
 FILE=bins/mach0/ppc-ls
 CMDS=iH
