@@ -415,8 +415,11 @@ static RAnalFunction *fcnIn(RDisasmState *ds, ut64 at, int type) {
 	return r_anal_get_fcn_in (ds->core->anal, at, type);
 }
 
-static RAnalBlock *ds_function_bbget_in(RCore *core, RDisasmState *ds, RAnalFunction *fcn, ut64 addr) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal && ds && fcn, NULL);
+static RAnalBlock *ds_bbat(RDisasmState *ds, RAnalFunction *fcn, ut64 addr) {
+	if (!fcn || addr == UT64_MAX) {
+		return NULL;
+	}
+	RCore *core = ds->core;
 	RAnalBlock *bb = ds->_bbget_bb;
 	if (bb && ds->_bbget_fcn == fcn && r_anal_block_contains (bb, addr)) {
 		const bool aligned = r_anal_is_aligned (core->anal, addr);
@@ -1182,7 +1185,7 @@ static void ds_build_op_str(RDisasmState *ds, bool print_color) {
 	if (ds->show_trace_color && ds->show_color) {
 		bool extraspace = true;
 		if (ds->fcn) {
-			RAnalBlock *bb = ds_function_bbget_in (ds->core, ds, ds->fcn, ds->at);
+			RAnalBlock *bb = ds_bbat (ds, ds->fcn, ds->at);
 			if (bb && (bb->color.r || bb->color.g || bb->color.b)) {
 				RColor bg = { .r2 = bb->color.r, .g2 = bb->color.g, .b2 = bb->color.b, };
 				bg.a = ALPHA_FGBG;
@@ -1892,7 +1895,7 @@ static int handleMidBB(RCore *core, RDisasmState *ds) {
 	for (i = 1; i < ds->oplen; i++) {
 		RAnalFunction *fcn = r_anal_get_fcn_in (core->anal, ds->at + i, 0);
 		if (fcn) {
-			RAnalBlock *bb = ds_function_bbget_in (core, ds, fcn, ds->at + i);
+			RAnalBlock *bb = ds_bbat (ds, fcn, ds->at + i);
 			if (bb && bb->addr > ds->at) {
 				ds->hasMidbb = true;
 				return bb->addr - ds->at;
@@ -4305,7 +4308,7 @@ static int instruction_depth(RCore *core, RAnalFunction *f, RAnalBlock *obb) {
 static void ds_print_indent(RDisasmState *ds) {
 	if (ds->show_indent) {
 		int num = 0;
-		RAnalBlock *bb = ds->fcn? ds_function_bbget_in (ds->core, ds, ds->fcn, ds->at): NULL;
+		RAnalBlock *bb = ds->fcn? ds_bbat (ds, ds->fcn, ds->at): NULL;
 		if (bb) {
 			if (bb->depth) {
 				num = bb->depth;
@@ -7060,10 +7063,10 @@ toro:
 			ds->at -= skip_bytes_flag;
 		}
 		if (ds->pdf) {
-			RAnalBlock *bb = ds_function_bbget_in (core, ds, ds->pdf, ds->at);
+			RAnalBlock *bb = ds_bbat (ds, ds->pdf, ds->at);
 			if (!bb) {
 				for (inc = 1; inc < ds->oplen; inc++) {
-					RAnalBlock *bb = ds_function_bbget_in (core, ds, ds->pdf, ds->at + inc);
+					RAnalBlock *bb = ds_bbat (ds, ds->pdf, ds->at + inc);
 					if (bb) {
 						break;
 					}
@@ -7149,11 +7152,11 @@ toro:
 		////
 		RAnalFunction *fcn = f;
 		if (fcn) {
-			RAnalBlock *bb = ds_function_bbget_in (core, ds, fcn, ds->at);
+			RAnalBlock *bb = ds_bbat (ds, fcn, ds->at);
 			if (!bb) {
 				fcn = r_anal_get_function_at (core->anal, ds->at);
 				if (fcn) {
-					bb = ds_function_bbget_in (core, ds, fcn, ds->at);
+					bb = ds_bbat (ds, fcn, ds->at);
 				}
 			}
 			if (bb) {

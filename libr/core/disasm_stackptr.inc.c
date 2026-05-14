@@ -98,7 +98,7 @@ static int ds_ostackptr_at(RDisasmState *ds, int *ostackptr) {
 	*ostackptr = ds->ostackptr;
 	RAnalFunction *fcn = r_anal_get_fcn_in (ds->core->anal, ds->at, R_ANAL_FCN_TYPE_NULL);
 	if (fcn) {
-		RAnalBlock *bb = ds_function_bbget_in (ds->core, ds, fcn, ds->at);
+		RAnalBlock *bb = ds_bbat (ds, fcn, ds->at);
 		if (!bb) {
 			R_WARN_IF_REACHED ();
 		}
