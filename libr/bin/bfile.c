@@ -33,67 +33,48 @@ static RBinString *__stringAt(HtUP *strings_db, RList *ret, ut64 addr) {
 	return NULL;
 }
 
-static bool is_section_readable(const RBinSection *s) {
-	return s && s->size > 0 && (s->perm & R_PERM_R) && !(s->perm & R_PERM_X);
-}
+// Section-name flags for bounded-string scanning.
+#define BSS_STORAGE    1 // may hold raw bytes pointed to by descriptors
+#define BSS_DESCRIPTOR 2 // may hold (ptr,len) descriptor pairs (reloc-driven)
+#define BSS_FALLBACK   4 // safe-to-scan descriptor section without relocs
 
-static bool section_name_contains(const RBinSection *s, const char *needle) {
-	return s && s->name && strstr (s->name, needle);
-}
-
-static bool is_bounded_string_storage_section(const RBinSection *s) {
-	if (!is_section_readable (s)) {
-		return false;
+static int bounded_section_flags(const RBinSection *s) {
+	if (!s || !s->name || !s->size || !(s->perm & R_PERM_R) || (s->perm & R_PERM_X)) {
+		return 0;
 	}
-	if (s->has_strings) {
-		return true;
+	static const struct { const char *needle; int flags; } table[] = {
+		{ ".rodata",      BSS_STORAGE | BSS_DESCRIPTOR },
+		{ ".rdata",       BSS_STORAGE | BSS_DESCRIPTOR },
+		{ "__const",      BSS_STORAGE | BSS_DESCRIPTOR | BSS_FALLBACK },
+		{ "__cstring",    BSS_STORAGE },
+		{ "_const",       BSS_STORAGE },
+		{ ".data",        BSS_DESCRIPTOR },
+		{ "__data",       BSS_DESCRIPTOR },
+		{ "data.rel.ro",  BSS_DESCRIPTOR | BSS_FALLBACK },
+		{ "relro",        BSS_DESCRIPTOR | BSS_FALLBACK },
+		{ "__DATA_CONST", BSS_FALLBACK },
+	};
+	int flags = s->has_strings ? BSS_STORAGE : 0;
+	size_t i;
+	for (i = 0; i < R_ARRAY_SIZE (table); i++) {
+		if (strstr (s->name, table[i].needle)) {
+			flags |= table[i].flags;
+		}
 	}
-	return section_name_contains (s, ".rodata")
-		|| section_name_contains (s, ".rdata")
-		|| section_name_contains (s, "__const")
-		|| section_name_contains (s, "_const")
-		|| section_name_contains (s, "__cstring");
+	return flags;
 }
 
-static bool is_bounded_string_descriptor_section(const RBinSection *s) {
-	if (!is_section_readable (s)) {
-		return false;
-	}
-	return section_name_contains (s, ".data")
-		|| section_name_contains (s, "data.rel.ro")
-		|| section_name_contains (s, "relro")
-		|| section_name_contains (s, ".rodata")
-		|| section_name_contains (s, ".rdata")
-		|| section_name_contains (s, "__const")
-		|| section_name_contains (s, "__data");
-}
-
-static RBinSection *section_at_vaddr(RBinObject *bo, ut64 vaddr, bool (*filter)(const RBinSection *s)) {
+static RBinSection *section_at(RBinObject *bo, ut64 addr, bool use_paddr, int need_flags) {
 	if (!bo || RVecRBinSection_empty (&bo->sections_vec)) {
 		return NULL;
 	}
 	RBinSection *s;
 	R_VEC_FOREACH (&bo->sections_vec, s) {
-		if (filter && !filter (s)) {
+		if ((bounded_section_flags (s) & need_flags) != need_flags) {
 			continue;
 		}
-		if (vaddr >= s->vaddr && vaddr < s->vaddr + s->size) {
-			return s;
-		}
-	}
-	return NULL;
-}
-
-static RBinSection *section_at_paddr(RBinObject *bo, ut64 paddr, bool (*filter)(const RBinSection *s)) {
-	if (!bo || RVecRBinSection_empty (&bo->sections_vec)) {
-		return NULL;
-	}
-	RBinSection *s;
-	R_VEC_FOREACH (&bo->sections_vec, s) {
-		if (filter && !filter (s)) {
-			continue;
-		}
-		if (paddr >= s->paddr && paddr < s->paddr + s->size) {
+		const ut64 base = use_paddr ? s->paddr : s->vaddr;
+		if (addr >= base && addr < base + s->size) {
 			return s;
 		}
 	}
@@ -122,147 +103,85 @@ static bool range_has_string(RList *list, ut64 paddr, ut64 size) {
 	return false;
 }
 
-static bool has_string_range(RList *list, ut64 paddr, ut64 size) {
-	if (!list) {
-		return false;
-	}
-	RListIter *iter;
-	RBinString *s;
-	r_list_foreach (list, iter, s) {
-		if (s && s->paddr == paddr && s->size == size) {
-			return true;
-		}
-	}
-	return false;
-}
-
 static int string_paddr_cmp(const void *a, const void *b) {
 	const RBinString *sa = a;
 	const RBinString *sb = b;
-	if (sa->paddr > sb->paddr) {
-		return 1;
+	if (sa->paddr != sb->paddr) {
+		return sa->paddr < sb->paddr ? -1 : 1;
 	}
-	if (sa->paddr < sb->paddr) {
-		return -1;
-	}
-	if (sa->size > sb->size) {
-		return 1;
-	}
-	if (sa->size < sb->size) {
-		return -1;
+	if (sa->size != sb->size) {
+		return sa->size < sb->size ? -1 : 1;
 	}
 	return 0;
 }
 
-static void string_list_renumber(RList *list) {
-	RListIter *iter;
-	RBinString *s;
-	ut32 ordinal = 0;
-	r_list_foreach (list, iter, s) {
-		if (s) {
-			s->ordinal = ordinal++;
-		}
-	}
-}
-
-static ut64 read_word(RBinFile *bf, ut64 paddr, int ptr_size, bool be, bool *ok) {
+static bool read_word(RBinFile *bf, ut64 paddr, int ptr_size, bool be, ut64 *out) {
 	ut8 buf[8] = {0};
-	if (ok) {
-		*ok = false;
-	}
 	if (!bf || (ptr_size != 4 && ptr_size != 8)) {
-		return UT64_MAX;
+		return false;
 	}
 	if (r_buf_read_at (bf->buf, paddr, buf, ptr_size) != ptr_size) {
-		return UT64_MAX;
+		return false;
 	}
-	if (ok) {
-		*ok = true;
-	}
-	return ptr_size == 8 ? r_read_ble64 (buf, be) : r_read_ble32 (buf, be);
+	*out = (ptr_size == 8) ? r_read_ble64 (buf, be) : r_read_ble32 (buf, be);
+	return true;
 }
 
-static char *bounded_string_from_bytes(const ut8 *buf, ut64 size, int *type, ut32 *runes) {
-	if (!buf || size < 1 || size > ST32_MAX) {
+static RBinString *add_bounded_string(RBinFile *bf, RList *list, int min, ut64 vaddr, ut64 len, RBinSection *section) {
+	if (!bf || !bf->bo || !list || !section || len < (ut64)R_MAX (min, 1) || len > R_STRING_BOUNDED_MAX_SIZE) {
+		return NULL;
+	}
+	if (vaddr < section->vaddr) {
+		return NULL;
+	}
+	const ut64 delta = vaddr - section->vaddr;
+	if (delta >= section->size || len > section->size - delta) {
+		return NULL;
+	}
+	HtUP *db = bf->bo->strings_db;
+	// O(1) dedup vs both bounded and regular strings via strings_db
+	if (db && ht_up_find (db, vaddr, NULL)) {
+		return NULL;
+	}
+	const int limit = bf->rbin ? bf->rbin->options.limit : 0;
+	if (limit > 0 && bf->string_count >= limit) {
+		return NULL;
+	}
+	const ut64 paddr = section->paddr + delta;
+	ut8 *buf = malloc (len);
+	if (!buf || r_buf_read_at (bf->buf, paddr, buf, len) != (st64)len) {
+		free (buf);
 		return NULL;
 	}
 	bool ascii = true;
 	ut64 off = 0;
-	ut32 count = 0;
-	while (off < size) {
+	ut32 runes = 0;
+	while (off < len) {
 		RRune r = 0;
-		int rc = r_utf8_decode (buf + off, size - off, &r);
-		if (rc < 1 || off + rc > size) {
-			return NULL;
-		}
-		if (!r || (r < 0x20 && r != '\n' && r != '\r' && r != '\t')) {
+		const int rc = r_utf8_decode (buf + off, len - off, &r);
+		if (rc < 1 || off + rc > len || !r
+				|| (r < 0x20 && r != '\n' && r != '\r' && r != '\t')) {
+			free (buf);
 			return NULL;
 		}
 		if (r > 0x7f) {
 			ascii = false;
 		}
 		off += rc;
-		count++;
-	}
-	if (type) {
-		*type = ascii? R_STRING_TYPE_ASCII: R_STRING_TYPE_UTF8;
-	}
-	if (runes) {
-		*runes = count;
-	}
-	return r_str_ndup ((const char *)buf, (int)size);
-}
-
-static RBinString *add_bounded_string(RBinFile *bf, RList *list, int min, ut64 vaddr, ut64 len, RBinSection *section) {
-	if (!bf || !bf->bo || !list || !section || len < 1 || len > R_STRING_BOUNDED_MAX_SIZE) {
-		return NULL;
-	}
-	if (min > 0 && len < (ut64)min) {
-		return NULL;
-	}
-	if (vaddr < section->vaddr) {
-		return NULL;
-	}
-	ut64 delta = vaddr - section->vaddr;
-	if (delta >= section->size || len > section->size - delta) {
-		return NULL;
-	}
-	ut64 paddr = section->paddr + delta;
-	if (has_string_range (list, paddr, len)) {
-		return NULL;
-	}
-	ut8 *buf = malloc (len);
-	if (!buf) {
-		return NULL;
-	}
-	if (r_buf_read_at (bf->buf, paddr, buf, len) != len) {
-		free (buf);
-		return NULL;
-	}
-	int type = R_STRING_TYPE_ASCII;
-	ut32 runes = 0;
-	char *str = bounded_string_from_bytes (buf, len, &type, &runes);
-	free (buf);
-	if (!str) {
-		return NULL;
+		runes++;
 	}
 	RBinString *bs = R_NEW0 (RBinString);
-	bs->type = type;
+	bs->type = ascii ? R_STRING_TYPE_ASCII : R_STRING_TYPE_UTF8;
 	bs->length = runes;
 	bs->size = len;
 	bs->ordinal = bf->string_count++;
-	const int limit = bf->rbin? bf->rbin->options.limit: 0;
-	if (limit > 0 && bf->string_count > limit) {
-		R_FREE (bs);
-		free (str);
-		return NULL;
-	}
 	bs->vaddr = vaddr;
 	bs->paddr = paddr;
-	bs->string = str;
+	bs->string = r_str_ndup ((const char *)buf, (int)len);
+	free (buf);
 	r_list_append (list, bs);
-	if (bf->bo->strings_db) {
-		ht_up_insert (bf->bo->strings_db, bs->vaddr, bs);
+	if (db) {
+		ht_up_insert (db, bs->vaddr, bs);
 	}
 	return bs;
 }
@@ -720,81 +639,58 @@ static bool is_data_section(RBinFile *a, RBinSection *s) {
 	return s->name && strstr (s->name, "_const");
 }
 
-static bool scan_bounded_string_reloc(RBinFile *bf, RList *list, int min, RBinReloc *reloc, int ptr_size, bool be) {
-	RBinObject *bo = bf? bf->bo: NULL;
-	if (!bo || !reloc || reloc->paddr == UT64_MAX || reloc->vaddr == UT64_MAX) {
-		return false;
-	}
-	if (reloc->type != R_BIN_RELOC_64 && reloc->type != R_BIN_RELOC_32) {
-		return false;
-	}
-	RBinSection *descriptor = section_at_paddr (bo, reloc->paddr, is_bounded_string_descriptor_section);
-	if (!descriptor) {
-		return false;
-	}
-	ut64 target = (ut64)reloc->addend;
-	RBinSection *storage = section_at_vaddr (bo, target, is_bounded_string_storage_section);
+// Add a bounded string given an already-known target vaddr and a paddr to read
+// the length word from. Used by both reloc-driven and fallback scans.
+static bool try_bounded_at(RBinFile *bf, RList *list, int min, ut64 target, ut64 len_paddr, int ptr_size, bool be) {
+	RBinSection *storage = section_at (bf->bo, target, false, BSS_STORAGE);
 	if (!storage) {
 		return false;
 	}
-	bool ok = false;
-	ut64 len = read_word (bf, reloc->paddr + ptr_size, ptr_size, be, &ok);
-	if (!ok || len < 1) {
+	ut64 len;
+	if (!read_word (bf, len_paddr, ptr_size, be, &len)) {
+		return false;
+	}
+	if (len < 1 || len > R_STRING_BOUNDED_MAX_SIZE) {
 		return false;
 	}
 	return add_bounded_string (bf, list, min, target, len, storage) != NULL;
 }
 
-static bool is_bounded_string_fallback_descriptor_section(const RBinSection *s) {
-	if (!is_section_readable (s)) {
+static bool scan_bounded_reloc(RBinFile *bf, RList *list, int min, RBinReloc *reloc, int ptr_size, bool be) {
+	if (!reloc || reloc->paddr == UT64_MAX || reloc->vaddr == UT64_MAX) {
 		return false;
 	}
-	return section_name_contains (s, "data.rel.ro")
-		|| section_name_contains (s, "relro")
-		|| section_name_contains (s, "__DATA_CONST")
-		|| section_name_contains (s, "__const");
+	if (reloc->type != R_BIN_RELOC_64 && reloc->type != R_BIN_RELOC_32) {
+		return false;
+	}
+	if (!section_at (bf->bo, reloc->paddr, true, BSS_DESCRIPTOR)) {
+		return false;
+	}
+	// On unapplied relocs the buffer value may be 0; use the reloc's addend
+	// as the resolved target vaddr.
+	return try_bounded_at (bf, list, min, (ut64)reloc->addend, reloc->paddr + ptr_size, ptr_size, be);
 }
 
-static bool scan_bounded_string_descriptor_section(RBinFile *bf, RList *list, int min, RBinSection *descriptor, int ptr_size, bool be) {
-	RBinObject *bo = bf? bf->bo: NULL;
-	if (!bo || !descriptor || descriptor->paddr == UT64_MAX || descriptor->size < (ut64)ptr_size * 2) {
-		return false;
-	}
-	ut64 end;
-	if (r_add_overflow (descriptor->paddr, descriptor->size, &end)) {
-		return false;
-	}
-	bool added = false;
-	ut64 paddr;
-	for (paddr = descriptor->paddr; paddr + ((ut64)ptr_size * 2) <= end; paddr += ptr_size) {
-		bool ok = false;
-		ut64 target = read_word (bf, paddr, ptr_size, be, &ok);
-		if (!ok) {
-			continue;
-		}
-		RBinSection *storage = section_at_vaddr (bo, target, is_bounded_string_storage_section);
-		if (!storage) {
-			continue;
-		}
-		ut64 len = read_word (bf, paddr + ptr_size, ptr_size, be, &ok);
-		if (!ok || len < 1 || len > R_STRING_BOUNDED_MAX_SIZE) {
-			continue;
-		}
-		added |= add_bounded_string (bf, list, min, target, len, storage) != NULL;
-	}
-	return added;
-}
-
-static bool scan_bounded_string_descriptor_sections(RBinFile *bf, RList *list, int min, int ptr_size, bool be) {
-	RBinObject *bo = bf? bf->bo: NULL;
-	if (!bo || RVecRBinSection_empty (&bo->sections_vec)) {
-		return false;
-	}
+static bool scan_bounded_fallback(RBinFile *bf, RList *list, int min, int ptr_size, bool be) {
 	bool added = false;
 	RBinSection *section;
-	R_VEC_FOREACH (&bo->sections_vec, section) {
-		if (is_bounded_string_fallback_descriptor_section (section)) {
-			added |= scan_bounded_string_descriptor_section (bf, list, min, section, ptr_size, be);
+	R_VEC_FOREACH (&bf->bo->sections_vec, section) {
+		if (!(bounded_section_flags (section) & BSS_FALLBACK)) {
+			continue;
+		}
+		if (section->paddr == UT64_MAX || section->size < (ut64)ptr_size * 2) {
+			continue;
+		}
+		ut64 end;
+		if (r_add_overflow (section->paddr, section->size, &end)) {
+			continue;
+		}
+		ut64 p;
+		for (p = section->paddr; p + ((ut64)ptr_size * 2) <= end; p += ptr_size) {
+			ut64 target;
+			if (read_word (bf, p, ptr_size, be, &target)) {
+				added |= try_bounded_at (bf, list, min, target, p + ptr_size, ptr_size, be);
+			}
 		}
 	}
 	return added;
@@ -805,35 +701,32 @@ static bool scan_bounded_string_refs(RBinFile *bf, RList *list, int min) {
 		return false;
 	}
 	RBinObject *bo = bf->bo;
-	const int bits = bo->info? bo->info->bits: 0;
+	const int bits = bo->info ? bo->info->bits : 0;
 	if (bits != 32 && bits != 64) {
 		return false;
 	}
 	const int ptr_size = bits / 8;
-	const bool be = bo->info? bo->info->big_endian: false;
+	const bool be = bo->info ? bo->info->big_endian : false;
 	bool added = false;
 	RBinReloc *reloc;
-	RRBNode *node;
 	if (bo->relocs) {
+		RRBNode *node;
 		r_crbtree_foreach (bo->relocs, node, RBinReloc, reloc) {
-			added |= scan_bounded_string_reloc (bf, list, min, reloc, ptr_size, be);
+			added |= scan_bounded_reloc (bf, list, min, reloc, ptr_size, be);
 		}
-		return added? true: scan_bounded_string_descriptor_sections (bf, list, min, ptr_size, be);
+	} else {
+		RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+		RList *relocs = (plugin && plugin->relocs) ? plugin->relocs (bf) : NULL;
+		if (relocs) {
+			RListIter *iter;
+			r_list_foreach (relocs, iter, reloc) {
+				added |= scan_bounded_reloc (bf, list, min, reloc, ptr_size, be);
+			}
+			r_list_free (relocs);
+		}
 	}
-	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
-	if (!plugin || !plugin->relocs) {
-		return scan_bounded_string_descriptor_sections (bf, list, min, ptr_size, be);
-	}
-	RList *relocs = plugin->relocs (bf);
-	if (!relocs) {
-		return scan_bounded_string_descriptor_sections (bf, list, min, ptr_size, be);
-	}
-	RListIter *iter;
-	r_list_foreach (relocs, iter, reloc) {
-		added |= scan_bounded_string_reloc (bf, list, min, reloc, ptr_size, be);
-	}
-	r_list_free (relocs);
-	return added? true: scan_bounded_string_descriptor_sections (bf, list, min, ptr_size, be);
+	// Fall back to scanning descriptor sections when relocs found nothing.
+	return added ? true : scan_bounded_fallback (bf, list, min, ptr_size, be);
 }
 
 static void get_strings_range(RBinFile *bf, RList *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
@@ -1465,22 +1358,16 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	const bool nofp = bf->rbin->strings_nofp;
 	RBinSection *section;
 	RList *ret = dump? NULL: r_list_newf (r_bin_string_free);
-	bool bounded_added = false;
-	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 	if (!min) {
-		min = plugin? plugin->minstrlen: 4;
-	}
-	if (min < 0) {
+		RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
+		min = (plugin && plugin->minstrlen > 0) ? plugin->minstrlen : 4;
+	} else if (min < 0) {
 		return ret;
-	}
-	if (!min) {
-		min = 4;
 	}
 
 	bf->string_count = 0;
-	if (ret && bo && !RVecRBinSection_empty (&bo->sections_vec)) {
-		bounded_added = scan_bounded_string_refs (bf, ret, min);
-	}
+	const bool bounded_added = (ret && bo && !RVecRBinSection_empty (&bo->sections_vec))
+		? scan_bounded_string_refs (bf, ret, min) : false;
 	if (!raw && bo && !RVecRBinSection_empty (&bo->sections_vec)) {
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
@@ -1541,9 +1428,14 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 		}
 	}
 beach:
-	if (bounded_added) {
+	if (bounded_added && ret) {
 		r_list_sort (ret, string_paddr_cmp);
-		string_list_renumber (ret);
+		RListIter *iter;
+		RBinString *s;
+		ut32 ordinal = 0;
+		r_list_foreach (ret, iter, s) {
+			s->ordinal = ordinal++;
+		}
 	}
 	return ret;
 }
