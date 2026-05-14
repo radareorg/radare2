@@ -246,18 +246,7 @@ static RList* entries(RBinFile *bf) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
-		// XXX store / cache sections by name in hashmap
-		const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
-		RBinSection *section;
-		R_VEC_FOREACH_PREV (sections, section) {
-			if (!strcmp (section->name, "ehdr")) {
-				ptr->hvaddr = section->vaddr + ptr->hpaddr;
-				break;
-			}
-		}
-		if (ptr->hvaddr == UT64_MAX) {
-			ptr->hvaddr = Elf_(p2v) (eo, ptr->hpaddr);
-		}
+		ptr->hvaddr = Elf_(p2v) (eo, ptr->hpaddr);
 
 		if (eo->ehdr.e_machine == EM_ARM) {
 			int bin_bits = Elf_(get_bits) (eo);
