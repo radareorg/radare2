@@ -599,7 +599,8 @@ R_API bool r_io_get_region_at(RIO *io, RIORegion *region, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (io && region, false);
 	if (!io->va) {
 		if (io->desc) {
-			region->perm = io->desc->perm;
+			region->perm = io->desc->perm & R_PERM_RWX;
+			region->sperm = region->perm;
 			region->itv.addr = 0ULL;
 			region->itv.size = r_io_desc_size (io->desc);
 			return addr < region->itv.size;

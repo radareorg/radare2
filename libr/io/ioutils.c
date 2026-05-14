@@ -39,7 +39,7 @@ R_API bool r_io_is_valid_offset(RIO* io, ut64 offset, int hasperm) {
 			return map? map->perm & R_PERM_R: false;
 		}
 		RIOMap* map = r_io_map_get_at (io, offset);
-		return map? (map->perm & hasperm) == hasperm: false;
+		return map? (map->sperm & hasperm) == hasperm: false;
 	}
 	if (!io->desc) {
 		return false;

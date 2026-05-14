@@ -266,6 +266,7 @@ typedef enum {
 typedef struct r_io_map_t {
 	int fd;
 	int perm;
+	int sperm;
 	ut32 id;
 	ut64 ts;
 	RInterval itv;
@@ -298,7 +299,8 @@ typedef struct r_io_bank_t {
 
 typedef struct r_io_region_t {
 	RInterval itv;
-	ut32 perm;
+	int perm;
+	int sperm;
 } RIORegion;
 
 R_VEC_TYPE (RVecRIORegion, RIORegion);
@@ -406,6 +408,9 @@ R_API RIOMap *r_io_map_add(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut
 R_API RIOMap *r_io_map_add_bottom(RIO *io, int fd, int flags, ut64 delta, ut64 addr, ut64 size);
 R_API RIOMap *r_io_map_get_at(RIO *io, ut64 vaddr); // returns the map at vaddr with the highest priority
 R_API RIOMap *r_io_map_get_by_ref(RIO *io, RIOMapRef *ref);
+R_API int r_io_map_get_perm(RIO *io, ut32 id);
+R_API int r_io_map_get_sperm(RIO *io, ut32 id);
+R_API bool r_io_map_set_perm(RIO *io, ut32 id, int perm);
 R_API bool r_io_map_is_mapped(RIO* io, ut64 addr);
 R_API RIOMap *r_io_map_get_paddr(RIO *io, ut64 paddr);		//returns the map at paddr with the highest priority
 R_API void r_io_map_reset(RIO* io);

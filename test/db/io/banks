@@ -12,9 +12,9 @@ omb-*
 omb -1
 EOF
 EXPECT=<<EOF
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
-* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
+* 1 fd: 3 +0x00000000 0x00000000 - 0x000003ff rwx rwx
 EOF
 EXPECT_ERR=<<EOF
 ERROR: Cannot find bank by id -1

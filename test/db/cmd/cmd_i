@@ -3763,12 +3763,12 @@ WARN: Relocs has not been applied. Please use `-e bin.relocs.apply=true` or `-e 
 INFO: File has been modified
 EOF
 EXPECT=<<EOF
-* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-x fmap.__TEXT
-- 2 fd: 3 +0x00002000 0x100001000 - 0x100001fff r-- fmap.__DATA
-- 1 fd: 3 +0x00003000 0x100002000 - 0x100003fff r-- fmap.__LINKEDIT
-* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff rwx fmap.__TEXT
-- 2 fd: 3 +0x00002000 0x100001000 - 0x100001fff rwx fmap.__DATA
-- 1 fd: 3 +0x00003000 0x100002000 - 0x100003fff rwx fmap.__LINKEDIT
+* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff r-- r-x fmap.__TEXT
+- 2 fd: 3 +0x00002000 0x100001000 - 0x100001fff r-- rw- fmap.__DATA
+- 1 fd: 3 +0x00003000 0x100002000 - 0x100003fff r-- r-- fmap.__LINKEDIT
+* 3 fd: 3 +0x00001000 0x100000000 - 0x100000fff rwx rwx fmap.__TEXT
+- 2 fd: 3 +0x00002000 0x100001000 - 0x100001fff rwx rwx fmap.__DATA
+- 1 fd: 3 +0x00003000 0x100002000 - 0x100003fff rwx rwx fmap.__LINKEDIT
 md5 84144530144b53a704c84d9c65ab5f92
 sha1 9016e215a321184c42c28ab03847554851932713
 sha256 95debaecaaaf89c7f5151218def15ef18c8be375aeccf0564a3b16416c361012

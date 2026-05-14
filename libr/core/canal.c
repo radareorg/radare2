@@ -271,13 +271,14 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 						types |= R_ANAL_ADDR_TYPE_LIBRARY;
 					}
 				}
-				if (map->perm & R_PERM_X) {
+				const int sperm = map->perm;
+				if (sperm & R_PERM_X) {
 					types |= R_ANAL_ADDR_TYPE_EXEC;
 				}
-				if (map->perm & R_PERM_R) {
+				if (sperm & R_PERM_R) {
 					types |= R_ANAL_ADDR_TYPE_READ;
 				}
-				if (map->perm & R_PERM_W) {
+				if (sperm & R_PERM_W) {
 					types |= R_ANAL_ADDR_TYPE_WRITE;
 				}
 				// find function
@@ -300,8 +301,9 @@ R_API ut64 r_core_anal_address(RCore *core, ut64 addr) {
 			r_list_foreach (bank->maprefs, iter, mapref) {
 				RIOMap *s = r_io_map_get (core->io, mapref->id);
 				if (addr >= s->itv.addr && addr < (s->itv.addr + s->itv.size)) {
+					const int sperm = s->sperm;
 					// sections overlap, so we want to get the one with lower perms
-					_perm = (_perm != -1) ? R_MIN (_perm, s->perm) : s->perm;
+					_perm = (_perm != -1) ? R_MIN (_perm, sperm) : sperm;
 					// TODO: we should identify which maps come from the program or other
 					//types |= R_ANAL_ADDR_TYPE_PROGRAM;
 					// find function those sections should be created by hand or esil init
@@ -434,7 +436,7 @@ static bool r_anal_try_get_fcn(RCore *core, RAnalRef *ref, int fcndepth, int ref
 		return false;
 	}
 
-	if (map->perm & R_PERM_X) {
+	if (map->sperm & R_PERM_X) {
 		ut8 buf[64];
 		r_io_read_at (core->io, ref->addr, buf, sizeof (buf));
 		bool looksLikeAFunction = r_anal_check_fcn (core->anal, buf, sizeof (buf), ref->addr, r_io_map_begin (map), r_io_map_end (map));
@@ -653,7 +655,8 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				goto error;
 			}
 		}
-		if (!core->anal->opt.noncode && (region.perm & R_PERM_RX) != R_PERM_RX) {
+		if (!core->anal->opt.noncode
+			&& (region.sperm & R_PERM_RX) != R_PERM_RX) {
 			goto error;
 		}
 		if (r_cons_is_breaked (core->cons)) {
@@ -742,7 +745,7 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 				ut64 addr = r_anal_function_max_addr (fcn);
 				RIOMap *map = r_io_map_get_at (core->io, addr);
 				// only get next if found on an executable section
-				if (!map || (map && map->perm & R_PERM_X)) {
+				if (!map || (map && map->sperm & R_PERM_X)) {
 					if (!RVecUT64_find_sorted (&next, &addr, cmp_ut64_find)) {
 						ut64 at = r_anal_function_max_addr (fcn);
 						while (true) {
@@ -816,7 +819,7 @@ error:
 		if (fcn && has_next) {
 			ut64 newaddr = r_anal_function_max_addr (fcn);
 			RIOMap *map = r_io_map_get_at (core->io, newaddr);
-			if (!map || (map && (map->perm & R_PERM_X))) {
+			if (!map || (map && (map->sperm & R_PERM_X))) {
 				vec_ut64_insert_sorted (&next, newaddr);
 				ut64 *iter;
 				R_VEC_FOREACH (&next, iter) {
@@ -4442,14 +4445,16 @@ R_API int r_core_anal_search_xrefs(RCore *core, ut64 from, ut64 to, PJ *pj, int 
 		return -1;
 	}
 	RIORegion region;
-	if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
+	if (!r_io_get_region_at (core->io, &region, at)
+		|| !(region.sperm & R_PERM_X)) {
 		goto beach;
 	}
 	bool uninit = true;
 	while (at < to && !r_cons_is_breaked (core->cons)) {
 		int i = 0, ret = bsz;
 		if (!r_itv_contain (region.itv, at)) {
-			if (!r_io_get_region_at (core->io, &region, at) || !(region.perm & R_PERM_X)) {
+			if (!r_io_get_region_at (core->io, &region, at)
+				|| !(region.sperm & R_PERM_X)) {
 				break;
 			}
 		}
