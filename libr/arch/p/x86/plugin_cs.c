@@ -2931,6 +2931,14 @@ static void set_src_dst(RArchSession *as, RAnalValue *val, csh handle, cs_insn *
 	}
 }
 
+static inline bool is_stackrel_memref(cs_insn* insn, int x) {
+	return INSOP (x).type == X86_OP_MEM
+		&& (INSOP (x).mem.base == X86_REG_RSP
+			|| INSOP (x).mem.base == X86_REG_ESP
+			|| INSOP (x).mem.base == X86_REG_RBP
+			|| INSOP (x).mem.base == X86_REG_EBP);
+}
+
 static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, int mode) {
 	RAnalValue *dst, *src0, *src1, *src2;
 	set_access_info (a, op, handle, insn, mode);
@@ -2962,27 +2970,16 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 		break;
 	case R_ANAL_OP_TYPE_DIV:
 	case R_ANAL_OP_TYPE_MUL:
-		// Single-operand ops where INSOP(0) is the source. Only fill srcs
+		// Single-operand ops where INSOP (0) is the source. Only fill srcs
 		// when the memref is stack-relative — otherwise we'd manufacture
 		// spurious var accesses for arbitrary addresses.
-		if (INSOP (0).type == X86_OP_MEM
-				&& (INSOP (0).mem.base == X86_REG_RSP
-					|| INSOP (0).mem.base == X86_REG_ESP
-					|| INSOP (0).mem.base == X86_REG_RBP
-					|| INSOP (0).mem.base == X86_REG_EBP)) {
+		if (is_stackrel_memref (insn, 0)) {
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 0);
 		}
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
-		if (op->type & R_ANAL_OP_TYPE_REG) {
-			CREATE_SRC_DST (op);
-			set_src_dst (a, src0, handle, insn, 0);
-		} else if (INSOP (0).type == X86_OP_MEM
-				&& (INSOP (0).mem.base == X86_REG_RSP
-					|| INSOP (0).mem.base == X86_REG_ESP
-					|| INSOP (0).mem.base == X86_REG_RBP
-					|| INSOP (0).mem.base == X86_REG_EBP)) {
+		if (op->type & R_ANAL_OP_TYPE_REG || is_stackrel_memref (insn, 0)) {
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 0);
 		}
