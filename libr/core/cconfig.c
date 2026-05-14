@@ -4477,7 +4477,11 @@ R_API int r_core_config_init(RCore *core) {
 	/* dir */
 	SETI ("dir.depth", 10, "maximum depth when searching recursively for files");
 	{
-		char *path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
+		char *path = r_sys_getenv ("R2_MAGICPATH");
+		if (R_STR_ISEMPTY (path)) {
+			free (path);
+			path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_SDB_MAGIC), r_config_get (core->config, "dir.prefix"));
+		}
 		SETS ("dir.magic", path, "path to r_magic files");
 		free (path);
 		path = r_str_newf (R_JOIN_2_PATHS ("%s", R2_PLUGINS), r_config_get (core->config, "dir.prefix"));

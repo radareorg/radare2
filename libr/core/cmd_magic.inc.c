@@ -77,7 +77,9 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 			free (mc->ofile);
 			mc->ofile = tmp;
 			if (!r_magic_load (core->magic, mc->ofile)) {
-				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", mc->ofile, r_magic_error (core->magic));
+				const char *err = r_str_get (r_magic_error (core->magic));
+				R_LOG_ERROR ("failed r_magic_load (\"%s\") %s", mc->ofile, err);
+				r_magic_free (core->magic);
 				core->magic = NULL;
 				ret = -1;
 				goto seek_exit;
@@ -85,8 +87,10 @@ static int magic_at(MagicContext *mc, RSearchKeyword *kw, const char *file, ut64
 		} else {
 			const char *magicpath = r_config_get (core->config, "dir.magic");
 			if (!r_magic_load (core->magic, magicpath)) {
+				const char *err = r_str_get (r_magic_error (core->magic));
+				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", err);
+				r_magic_free (core->magic);
 				core->magic = NULL;
-				R_LOG_ERROR ("failed r_magic_load (dir.magic) %s", r_magic_error (core->magic));
 				ret = -1;
 				goto seek_exit;
 			}
