@@ -1919,6 +1919,7 @@ R_API int r_core_flag_in_middle(RCore *core, ut64 at, int oplen, int *midflags) 
 
 R_API int r_core_bb_starts_in_middle(RCore *core, ut64 at, int oplen) {
 	RDisasmState ds = {
+		.core = core,
 		.at = at,
 		.oplen = oplen
 	};
@@ -8310,6 +8311,7 @@ toro:
 		ret = asmop.size;
 		if (midflags || midbb) {
 			RDisasmState ds = {
+				.core = core,
 				.oplen = ret,
 				.at = addr + i,
 				.midflags = midflags
