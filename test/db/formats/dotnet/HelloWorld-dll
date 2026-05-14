@@ -120,7 +120,7 @@ ic
 EOF
 EXPECT=<<EOF
 0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <Module>
-0x00000000 [0x10002073 - 0x100022f4]    641 msvc class 0 BinaryParserLibrary.BinaryParser
+0x00000000 [0x10002073 - 0x100022f4]    641 msvc class 1 BinaryParserLibrary.BinaryParser
 0x10002073 ?   method   0      LoadData
 0x10002084 ?   method   1      ValidateArgs
 0x100020bc ?   method   2      ParseHeader
@@ -131,9 +131,9 @@ EXPECT=<<EOF
 0x00000000 msvc    field   0      filePath
 0x00000000 msvc    field   1      data
 0x00000000 msvc    field   2      offset
-0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <PrivateImplementationDetails>
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 2 <PrivateImplementationDetails>
 0x00000000 msvc    field   0      2E383FDDF78D1ACC795830F56B4EC6464E408C418E67ADD6FA4C017AFA618963
-0x00000000 [0x10002050 - 0x10002050]      0 msvc class 0 BinaryParserLibrary.BinaryParser.
+0x00000000 [0x10002050 - 0x10002050]      0 msvc class 3 BinaryParserLibrary.BinaryParser.
 0x10002050 ?   method   0      ctor
 EOF
 RUN
