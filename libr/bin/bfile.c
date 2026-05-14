@@ -97,12 +97,15 @@ static bool is_bounded_string_descriptor_section(const RBinSection *s) {
 		|| strstr (name, "__data"));
 }
 
-static RBinSection *section_at(RBinObject *bo, ut64 addr, bool va) {
+static RBinSection *section_at(RBinObject *bo, ut64 addr, bool va, bool (*filter)(const RBinSection *s)) {
 	if (!bo || RVecRBinSection_empty (&bo->sections_vec)) {
 		return NULL;
 	}
 	RBinSection *s;
 	R_VEC_FOREACH (&bo->sections_vec, s) {
+		if (filter && !filter (s)) {
+			continue;
+		}
 		ut64 from = va? s->vaddr: s->paddr;
 		ut64 size = va && s->vsize? s->vsize: s->size;
 		ut64 to;
@@ -734,13 +737,13 @@ static bool scan_bounded_string_reloc(RBinFile *bf, RList *list, int min, RBinRe
 	if (reloc->type != R_BIN_RELOC_64 && reloc->type != R_BIN_RELOC_32) {
 		return false;
 	}
-	RBinSection *descriptor = section_at (bo, reloc->paddr, false);
-	if (!is_bounded_string_descriptor_section (descriptor)) {
+	RBinSection *descriptor = section_at (bo, reloc->paddr, false, is_bounded_string_descriptor_section);
+	if (!descriptor) {
 		return false;
 	}
 	ut64 target = (ut64)reloc->addend;
-	RBinSection *storage = section_at (bo, target, true);
-	if (!is_bounded_string_storage_section (storage)) {
+	RBinSection *storage = section_at (bo, target, true, is_bounded_string_storage_section);
+	if (!storage) {
 		return false;
 	}
 	ut64 len_paddr;
@@ -774,8 +777,8 @@ static bool scan_bounded_string_descriptor_section(RBinFile *bf, RList *list, in
 		if (target == UT64_MAX) {
 			continue;
 		}
-		RBinSection *storage = section_at (bo, target, true);
-		if (!is_bounded_string_storage_section (storage)) {
+		RBinSection *storage = section_at (bo, target, true, is_bounded_string_storage_section);
+		if (!storage) {
 			continue;
 		}
 		ut64 len_paddr;
