@@ -118,31 +118,6 @@ static bool sections_vec(RBinFile *bf) {
 	return true;
 }
 
-// DEPRECATE: we must use sections_vec instead
-static RList* sections(RBinFile *bf) {
-	ELFOBJ *eo = (bf && bf->bo)? bf->bo->bin_obj : NULL;
-	if (!eo) {
-		return NULL;
-	}
-
-	// there is no leak here with sections since they are cached by elf.c
-	// and freed within Elf_(free) R2_590. must return bool
-	const RVecRBinSection *sections = Elf_(load_sections) (bf, eo);
-	if (!sections) {
-		return NULL;
-	}
-
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (ret) {
-		RBinSection *section;
-		R_VEC_FOREACH (sections, section) {
-			r_list_append (ret, r_bin_section_clone (section));
-		}
-	}
-
-	return ret;
-}
-
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
@@ -166,19 +141,12 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 }
 
 static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	RBinSection *sec;
-	r_list_foreach (secs, iter, sec) {
-#endif
 		if (sec->size > ALLOC_SIZE_LIMIT) {
 			continue;
 		}
@@ -237,7 +205,6 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		}
 		free (buf);
 	}
-	r_list_free (secs);
 }
 
 static bool is_library_without_entrypoint(ELFOBJ *eo) {
@@ -1590,17 +1557,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *sections = &(bf->bo->sections_vec);
 	R_VEC_FOREACH (sections, section)
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	r_list_foreach (secs, iter, section)
-#endif
 	{
 		if (is_go && ret->has_retguard != -1) {
 			break;
@@ -1629,7 +1590,6 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			break;
 		}
 	}
-	r_list_free (secs);
 }
 
 static bool has_sanitizers(RBinFile *bf) {
