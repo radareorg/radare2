@@ -5519,7 +5519,6 @@ static char *ds_getstring(RDisasmState *ds, const char *str, int len, const char
 
 static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 	char str[64], *msg = NULL;
-	ut32 *n32 = (ut32*)str;
 	RDisasmState *ds = esil->user;
 	if (!ds) {
 		return false;
@@ -5554,13 +5553,15 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 		ds->emuptr = *val;
 		// support cstring here
 		{
-			ut64 *cstr = (ut64*) str;
-			ut64 addr = cstr[0];
+			ut64 cstr0 = r_read_ble64 (str, be);
+			ut64 cstr1 = r_read_ble64 (str + 8, be);
+			ut64 cstr2 = r_read_ble64 (str + 16, be);
+			ut64 addr = cstr0;
 			if (!(*val >> 32)) {
 				addr = addr & UT32_MAX;
 			}
-			if (cstr[0] == 0 && cstr[1] < 0x1000) {
-				ut64 addr = cstr[2];
+			if (cstr0 == 0 && cstr1 < 0x1000) {
+				ut64 addr = cstr2;
 				if (!(*val >> 32)) {
 					addr = addr & UT32_MAX;
 				}
@@ -5568,9 +5569,9 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 					(ut8*)str, sizeof (str)-1);
 			//	eprintf ("IS CSTRING 0x%llx %s\n", addr, str);
 				type = r_str_newf ("(cstr 0x%08"PFMT64x") ", addr);
-				ds->printed_str_addr = cstr[2];
+				ds->printed_str_addr = cstr2;
 			} else if (r_io_is_valid_offset (esil->anal->iob.io, addr, 0)) {
-				ds->printed_str_addr = cstr[0];
+				ds->printed_str_addr = cstr0;
 				type = r_str_newf ("(pstr 0x%08"PFMT64x") ", addr);
 				(void)r_io_read_at (esil->anal->iob.io, addr,
 					(ut8*)str, sizeof (str) - 1);
@@ -5635,14 +5636,14 @@ static bool myregwrite(REsil *esil, const char *name, ut64 *val) {
 				}
 			}
 		} else {
-			if (!*n32) {
+			ut32 n32 = r_read_ble32 (str, be);
+			if (!n32) {
 				// msg = strdup ("NULL");
-			} else if (*n32 == UT32_MAX) {
+			} else if (n32 == UT32_MAX) {
 				/* nothing */
 			} else {
 				if (!ds->show_emu_str) {
-					ut32 v = r_read_ble32 (n32, be);
-					msg = r_str_appendf (msg, "-> 0x%x", v);
+					msg = r_str_appendf (msg, "-> 0x%x", n32);
 				}
 			}
 		}
