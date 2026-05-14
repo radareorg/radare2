@@ -449,10 +449,8 @@ static void get_ivar_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		if (!field->name) {
 			R_LOG_WARN ("field name is empty");
 			RVecRBinField_pop_back (&klass->fields);
-			field = NULL;
 		} else {
 			field->kind = R_BIN_FIELD_KIND_VARIABLE;
-			field = NULL;
 		}
 		p += sizeof (struct MACH0_(SIVar));
 		offset += sizeof (struct MACH0_(SIVar));
@@ -582,7 +580,6 @@ static void get_objc_property_list(RBinFile *bf, RBinClass *klass, mach0_ut p) {
 		if (!property->name) {
 			RVecRBinField_pop_back (&klass->fields);
 		}
-		property = NULL;
 		p += sizeof (struct MACH0_(SObjcProperty));
 		offset += sizeof (struct MACH0_(SObjcProperty));
 	}
