@@ -2977,6 +2977,11 @@ static void op_fillval(RArchSession *a, RAnalOp *op, csh handle, cs_insn *insn, 
 			CREATE_SRC_DST (op);
 			set_src_dst (a, src0, handle, insn, 0);
 		}
+		// Two-operand version, now INSOP (1) is the source.
+		else if (is_stackrel_memref (insn, 1)) {
+			CREATE_SRC_DST (op);
+			set_src_dst (a, src0, handle, insn, 1);
+		}
 		break;
 	case R_ANAL_OP_TYPE_UPUSH:
 		if (op->type & R_ANAL_OP_TYPE_REG || is_stackrel_memref (insn, 0)) {
