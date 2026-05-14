@@ -1474,11 +1474,15 @@ typedef struct {
 	st32 *fieldmd_data;
 } SwiftType;
 
+static inline st32 swift_read_s32_le(const void *data, size_t idx) {
+	const ut8 *buf = (const ut8 *)data;
+	return (st32)r_read_le32 (buf + idx * sizeof (ut32));
+}
+
 static SwiftType parse_type_entry(RBinFile *bf, ut64 typeaddr) {
 	SwiftType st = {0};
-	ut32 words[16] = {0};
-	st32 *swords = (st32*)&words;
-	if (r_buf_read_at (bf->buf, typeaddr, (ut8*)&words, sizeof (words)) < 1) {
+	ut8 words[16 * sizeof (ut32)] = {0};
+	if (r_buf_read_at (bf->buf, typeaddr, words, sizeof (words)) < 1) {
 		R_LOG_DEBUG ("Invalid pointers");
 		return st;
 	}
@@ -1496,7 +1500,7 @@ ut32 members_count;
 ut32 fields_count;
 ut32 fields_offset;
 #endif
-#define NCD(x) (typeaddr + (x * 4) + swords[x])
+#define NCD(x) (typeaddr + ((x) * 4) + swift_read_s32_le (words, x))
 #if 0
 	eprintf ("0x%08"PFMT64x " swift_type_entry:\n", typeaddr);
 	eprintf ("  flags:   0x%08x\n", words[0]);
@@ -1663,8 +1667,8 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			if (d >= dmax) {
 				break;
 			}
-			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d];
-			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + st.fieldmd_data[d - 1] - 4;
+			ut64 field_name_addr = st.fieldmd.addr + (d * 4) + swift_read_s32_le (st.fieldmd_data, d);
+			ut64 field_type_addr = st.fieldmd.addr + (d * 4) + swift_read_s32_le (st.fieldmd_data, d - 1) - 4;
 			ut64 field_method_addr = field_name_addr;
 			ut64 vaddr = r_bin_file_get_baddr (bf) + field_method_addr;
 			char *field_name = readstr (bf, field_name_addr, NULL, NULL);
@@ -1786,7 +1790,7 @@ RList *MACH0_(parse_classes)(RBinFile *bf, objc_cache_opt_info *oi) {
 				HtUP *symbols_ht = class_names_only (bf)? NULL: _load_symbol_by_vaddr_hashtable (bf);
 				ut32 i;
 				for (i = 0; i < aligned_types_count; i++) {
-					st32 word = r_read_le32 (&types[i]);
+					st32 word = swift_read_s32_le (types, i);
 					ut64 type_address = ms.types.addr + (i * 4) + word;
 					SwiftType st = parse_type_entry (bf, type_address);
 					st.addr = type_address;

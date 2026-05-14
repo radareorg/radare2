@@ -781,7 +781,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 			}
 			ut64 v = event_details->ptr_value;
 			add_fixup (rflist, in_buf, v);
-			memcpy (data, &v, psz);
+			r_write_ble (data, v, false, psz * 8);
 			ctx->chunk_dirty = true;
 		}
 		break;
