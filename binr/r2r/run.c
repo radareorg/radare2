@@ -19,6 +19,8 @@
 
 #if R2__WINDOWS__
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 #if __wasi__
@@ -457,7 +459,15 @@ R_API void r2r_subprocess_free(R2RSubprocess *proc) {
 
 #include <errno.h>
 #ifndef __wasi__
+#include <spawn.h>
 #include <sys/wait.h>
+#if __APPLE__
+#include <crt_externs.h>
+#define r2r_environ (*_NSGetEnviron ())
+#else
+extern char **environ;
+#define r2r_environ environ
+#endif
 #else
 #define WNOHANG 0
 #endif
@@ -661,23 +671,81 @@ R_API void r2r_subprocess_fini(void) {
 	r_th_lock_free (subprocs_mutex);
 }
 
-static inline void dup_retry(int fds[2], int n, int b) {
-	while ((dup2 (fds[n], b) == -1) && (errno == EINTR)) {
-		;
-	}
-	close (fds[0]);
-	close (fds[1]);
-}
-
 R_API R2RSubprocess *r2r_subprocess_start(
 	const char *file, const char *args[], size_t args_size, const char *envvars[], const char *envvals[], size_t env_size) {
+	char **argv = calloc (args_size + 2, sizeof (char *));
+	size_t i;
 	int stdin_pipe[2] = { -1, -1 };
 	int stdout_pipe[2] = { -1, -1 };
 	int stderr_pipe[2] = { -1, -1 };
+	bool locked = false;
+	R2RSubprocess *proc = NULL;
+	R2RSubprocess *ret = NULL;
+	if (!argv) {
+		return NULL;
+	}
+	argv[0] = (char *)file;
+	if (args_size) {
+		memcpy (argv + 1, args, sizeof (char *) * args_size);
+	}
+#if __wasi__
+	(void)envvars;
+	(void)envvals;
+#else
+	char **envp = NULL;
+	char **spawn_envp = r2r_environ;
+	size_t envp_len = 0;
+	size_t envp_owned = 0;
+	if (env_size) {
+		char **parent_env = r2r_environ;
+		size_t parent_count = 0;
+		if (parent_env) {
+			while (parent_env[parent_count]) {
+				parent_count++;
+			}
+		}
+		envp = calloc (parent_count + env_size + 1, sizeof (char *));
+		if (!envp) {
+			goto beach;
+		}
+		for (i = 0; i < parent_count; i++) {
+			size_t j;
+			for (j = 0; j < env_size; j++) {
+				const char *key = envvars? envvars[j]: NULL;
+				if (R_STR_ISEMPTY (key)) {
+					continue;
+				}
+				size_t key_len = strlen (key);
+				if (!strncmp (parent_env[i], key, key_len) && parent_env[i][key_len] == '=') {
+					break;
+				}
+			}
+			if (j == env_size) {
+				envp[envp_len++] = parent_env[i];
+			}
+		}
+		envp_owned = envp_len;
+		for (i = 0; i < env_size; i++) {
+			const char *key = envvars? envvars[i]: NULL;
+			if (R_STR_ISEMPTY (key)) {
+				continue;
+			}
+			const char *value = envvals && envvals[i]? envvals[i]: "";
+			envp[envp_len] = r_str_newf ("%s=%s", key, value);
+			if (!envp[envp_len]) {
+				goto beach;
+			}
+			envp_len++;
+		}
+		spawn_envp = envp;
+	}
+#endif
 
 	r_th_lock_enter (subprocs_mutex);
-	R2RSubprocess *proc = R_NEW0 (R2RSubprocess);
+	locked = true;
+	proc = R_NEW0 (R2RSubprocess);
 	proc->killpipe[0] = proc->killpipe[1] = -1;
+	proc->stdin_fd = proc->stdout_fd = proc->stderr_fd = -1;
 	proc->ret = -1;
 	proc->lock = r_th_lock_new (false);
 	r_strbuf_init (&proc->out);
@@ -724,83 +792,92 @@ R_API R2RSubprocess *r2r_subprocess_start(
 	}
 	proc->stderr_fd = stderr_pipe[0];
 
+#if __wasi__
 	proc->pid = r_sys_fork ();
 	if (proc->pid == -1) {
-		// fail
-		r_th_lock_leave (subprocs_mutex);
 		r_sys_perror ("subproc-start fork");
-		free (proc);
-		return NULL;
+		goto error;
 	}
 	if (proc->pid == 0) {
-		/* Ensure child is leader of a new process group so the whole
-		 * subtree can be killed by signaling the group. */
 		(void)setpgid (0, 0);
-		dup_retry (stdin_pipe, 0, STDIN_FILENO);
-		dup_retry (stdout_pipe, 1, STDOUT_FILENO);
-		dup_retry (stderr_pipe, 1, STDERR_FILENO);
-		char **argv = calloc (args_size + 2, sizeof (char *));
-		if (!argv) {
-			free (proc);
-			return NULL;
-		}
-		argv[0] = (char *)file;
-		if (args_size) {
-			memcpy (argv + 1, args, sizeof (char *) * args_size);
-		}
-		size_t i;
-		for (i = 0; i < env_size; i++) {
-			setenv (envvars[i], envvals[i], 1);
-		}
+		(void)dup2 (stdin_pipe[0], STDIN_FILENO);
+		(void)dup2 (stdout_pipe[1], STDOUT_FILENO);
+		(void)dup2 (stderr_pipe[1], STDERR_FILENO);
 		execvp (file, argv);
-		free (argv);
-		r_sys_perror ("subproc-start exec");
-		r_sys_exit (-1, true);
+		_exit (127);
 	}
-
-	// parent
-	/* Best-effort: set the child's pgid from the parent side too. It may
-	 * fail if the child already changed pgid, so ignore errors. */
-	if (proc->pid > 0) {
-		(void)setpgid (proc->pid, proc->pid);
+#else
+	posix_spawn_file_actions_t actions;
+	posix_spawnattr_t attr = {0};
+	posix_spawn_file_actions_init (&actions);
+	posix_spawnattr_init (&attr);
+	int child_fds[3] = { stdin_pipe[0], stdout_pipe[1], stderr_pipe[1] };
+	int std_fds[3] = { STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO };
+	for (i = 0; i < R_ARRAY_SIZE (child_fds); i++) {
+		posix_spawn_file_actions_adddup2 (&actions, child_fds[i], std_fds[i]);
 	}
+	int close_fds[6] = {
+		stdin_pipe[0], stdin_pipe[1], stdout_pipe[0], stdout_pipe[1], stderr_pipe[0], stderr_pipe[1]
+	};
+	for (i = 0; i < R_ARRAY_SIZE (close_fds); i++) {
+		posix_spawn_file_actions_addclose (&actions, close_fds[i]);
+	}
+	posix_spawnattr_setpgroup (&attr, 0);
+	posix_spawnattr_setflags (&attr, POSIX_SPAWN_SETPGROUP);
+	int spawn_err = posix_spawnp (&proc->pid, file, &actions, &attr, argv, spawn_envp);
+	posix_spawnattr_destroy (&attr);
+	posix_spawn_file_actions_destroy (&actions);
+	if (spawn_err) {
+		errno = spawn_err;
+		r_sys_perror ("subproc-start posix_spawnp");
+		goto error;
+	}
+#endif
 	close (stdin_pipe[0]);
 	close (stdout_pipe[1]);
 	close (stderr_pipe[1]);
 
 	RVecR2RSubprocessPtr_push_back (&subprocs, &proc);
 
-	r_th_lock_leave (subprocs_mutex);
+	ret = proc;
+	proc = NULL;
+	goto beach;
 
-	return proc;
 error:
-	if (proc->killpipe[0] != -1) {
+	if (proc && proc->killpipe[0] != -1) {
 		close (proc->killpipe[0]);
 	}
-	if (proc->killpipe[1] != -1) {
+	if (proc && proc->killpipe[1] != -1) {
 		close (proc->killpipe[1]);
 	}
-	free (proc);
-	if (stderr_pipe[0] != -1) {
-		close (stderr_pipe[0]);
+	int *fds[6] = {
+		&stderr_pipe[0], &stderr_pipe[1], &stdout_pipe[0], &stdout_pipe[1], &stdin_pipe[0], &stdin_pipe[1]
+	};
+	for (i = 0; i < R_ARRAY_SIZE (fds); i++) {
+		if (*fds[i] != -1) {
+			close (*fds[i]);
+		}
 	}
-	if (stderr_pipe[1] != -1) {
-		close (stderr_pipe[1]);
+	if (proc) {
+		r_strbuf_fini (&proc->out);
+		r_strbuf_fini (&proc->err);
+		if (proc->lock) {
+			r_th_lock_free (proc->lock);
+		}
+		free (proc);
 	}
-	if (stdout_pipe[0] != -1) {
-		close (stdout_pipe[0]);
+beach:
+	if (locked) {
+		r_th_lock_leave (subprocs_mutex);
 	}
-	if (stdout_pipe[1] != -1) {
-		close (stdout_pipe[1]);
+#if !__wasi__
+	while (envp_len > envp_owned) {
+		free (envp[--envp_len]);
 	}
-	if (stdin_pipe[0] != -1) {
-		close (stdin_pipe[0]);
-	}
-	if (stdin_pipe[1] != -1) {
-		close (stdin_pipe[1]);
-	}
-	r_th_lock_leave (subprocs_mutex);
-	return NULL;
+	free (envp);
+#endif
+	free (argv);
+	return ret;
 }
 
 R_API bool r2r_subprocess_wait(R2RSubprocess *proc, ut64 timeout_ms) {
