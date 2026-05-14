@@ -110,13 +110,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			} else if (r_str_startswith (s, "--")) {
 				// directive, do not print
 			} else if (*s == '#') {
-				RMarkdownOptions options = {
-					.color = false,
-					.utf8 = r_config_get_b (core->config, "scr.utf8"),
-					.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
-					.slide_titles = true,
-				};
-				char *ss = r_str_md2txt (s, &options);
+				char *ss = r_core_md2txt (core, s, true);
 				r_strbuf_append (sb, ss);
 				free (ss);
 			} else {

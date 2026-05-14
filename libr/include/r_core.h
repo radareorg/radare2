@@ -988,6 +988,7 @@ typedef char *(*PrintItemCallback)(void *user, void *p, bool selected);
 R_API char *r_str_widget_list(void *user, RList *list, int rows, int cur, PrintItemCallback cb);
 R_API PJ *r_core_pj_new(RCore *core);
 R_API RTable *r_core_table_new(RCore *core, const char *title);
+R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles);
 
 /* help */
 R_API void r_core_cmd_help(const RCore *core, RCoreHelpMessage help);

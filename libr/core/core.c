@@ -3796,6 +3796,21 @@ R_API RTable *r_core_table_new(RCore *core, const char *title) {
 	return table;
 }
 
+/* Config helper function for Markdown */
+R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
+	if (!md) {
+		return NULL;
+	}
+	RMarkdownOptions options = {
+		.color = !slide_titles && r_config_get_i (core->config, "scr.color") > 0,
+		.utf8 = r_config_get_b (core->config, "scr.utf8"),
+		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+		.slide_titles = slide_titles,
+	};
+	return r_str_md2txt (md, &options);
+}
+
 /* Config helper function for PJ json encodings */
 R_API PJ *r_core_pj_new(RCore *core) {
 	const char *se = r_config_get (core->config, "cfg.json.str");
