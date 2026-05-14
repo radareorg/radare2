@@ -5919,11 +5919,6 @@ void Elf_(free)(ELFOBJ* eo) {
 		RVecRBinElfSection_fini (&eo->g_sections);
 	}
 	if (eo->sections_cached) {
-		RBinSection *iter;
-		R_VEC_FOREACH (&eo->cached_sections, iter) {
-			free (iter->name);
-			free (iter->format);
-		}
 		RVecRBinSection_fini (&eo->cached_sections);
 	}
 	if (eo->libs_loaded) {
