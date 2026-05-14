@@ -3756,15 +3756,20 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd
 	return false;
 }
 
+static RTableOptions r_core_table_options(RCore *core) {
+	RTableOptions options = {
+		.utf8 = r_config_get_b (core->config, "scr.utf8"),
+		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+	};
+	return options;
+}
+
 /* Config helper function for RTable */
 R_API RTable *r_core_table_new(RCore *core, const char *title) {
 	int maxcol = r_config_get_i (core->config, "cfg.table.maxcol");
 	bool wrap = r_config_get_b (core->config, "cfg.table.wrap");
 	const char *format = r_config_get (core->config, "cfg.table.format");
-	RTableOptions options = {
-		.utf8 = r_config_get_b (core->config, "scr.utf8"),
-		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
-	};
+	RTableOptions options = r_core_table_options (core);
 	RTable *table = r_table_new (title, &options);
 	// ut16 mode = SHOW_FANCY | SHOW_HEADER;
 	ut16 mode = SHOW_HEADER;
