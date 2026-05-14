@@ -37,7 +37,10 @@ static bool sections_vec(RBinFile *bf) {
 	if (sz < 2) {
 		return true;
 	}
-	RBinSection *section = R_NEW0 (RBinSection);
+	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!section) {
+		return false;
+	}
 	section->name = strdup ("prg");
 	section->paddr = 2;
 	section->size = sz - 2;
@@ -45,7 +48,7 @@ static bool sections_vec(RBinFile *bf) {
 	section->vsize = sz - 2;
 	section->perm = R_PERM_RWX;
 	section->add = true;
-	return r_bin_section_vec_append (bf, section);
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {

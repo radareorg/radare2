@@ -128,7 +128,10 @@ static RList *mem(RBinFile *bf) {
 }
 
 static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut64 vaddr, int perm) {
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!s) {
+		return false;
+	}
 	s->name = strdup (name);
 	s->paddr = paddr;
 	s->size = size;
@@ -136,7 +139,7 @@ static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut
 	s->vsize = size;
 	s->perm = perm;
 	s->add = true;
-	return r_bin_section_vec_append (bf, s);
+	return true;
 }
 
 static bool sections_vec(RBinFile *bf) {

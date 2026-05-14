@@ -43,7 +43,10 @@ static bool sections_vec(RBinFile *bf) {
 	if (!lh) {
 		return true;
 	}
-	RBinSection *ptr9 = R_NEW0 (RBinSection);
+	RBinSection *ptr9 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr9) {
+		return false;
+	}
 
 	ptr9->name = strdup ("arm9");
 	ptr9->size = lh->arm9_size;
@@ -52,11 +55,11 @@ static bool sections_vec(RBinFile *bf) {
 	ptr9->vaddr = lh->arm9_ram_address;
 	ptr9->perm = r_str_rwx ("rwx");
 	ptr9->add = true;
-	if (!r_bin_section_vec_append (bf, ptr9)) {
+
+	RBinSection *ptr7 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr7) {
 		return false;
 	}
-
-	RBinSection *ptr7 = R_NEW0 (RBinSection);
 	ptr7->name = strdup ("arm7");
 	ptr7->size = lh->arm7_size;
 	ptr7->vsize = lh->arm7_size;
@@ -64,9 +67,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr7->vaddr = lh->arm7_ram_address;
 	ptr7->perm = r_str_rwx ("rwx");
 	ptr7->add = true;
-	if (!r_bin_section_vec_append (bf, ptr7)) {
-		return false;
-	}
 
 	return true;
 }

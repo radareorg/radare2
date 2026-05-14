@@ -162,7 +162,10 @@ static bool gns1_sections_vec(RBinFile *bf) {
 	Gns1SegmentEntry *e;
 	ut32 idx = 0;
 	R_VEC_FOREACH (&obj->segments, e) {
-		RBinSection *sec = R_NEW0 (RBinSection);
+		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!sec) {
+			return false;
+		}
 		sec->paddr = e->offset;
 		sec->size = sec->vsize = e->size;
 		sec->vaddr = translate_vaddr (e->paddr);
@@ -171,9 +174,6 @@ static bool gns1_sections_vec(RBinFile *bf) {
 		const char *region = e->region == GNS1_REGION_A? "region_a": (e->region == GNS1_REGION_B? "region_b": NULL);
 		sec->name = region? r_str_newf ("%s_%s_%u", region, seg_type, idx)
 				: r_str_newf ("%s_%u", seg_type, idx);
-		if (!r_bin_section_vec_append (bf, sec)) {
-			return false;
-		}
 		idx++;
 	}
 	return true;

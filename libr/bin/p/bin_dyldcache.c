@@ -1235,7 +1235,11 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 	ut64 slide = rebase_infos_get_slide (cache);
 	struct section_t *section;
 	R_VEC_FOREACH (sections, section) {
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			MACH0_(mach0_free) (mach0);
+			return false;
+		}
 		if (bin->file) {
 			ptr->name = r_str_newf ("%s.%s", bin->file, (char*)section->name);
 		} else {
@@ -1254,10 +1258,6 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = section->perm;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			MACH0_(mach0_free) (mach0);
-			return false;
-		}
 	}
 	MACH0_(mach0_free) (mach0);
 	return true;
@@ -1288,7 +1288,10 @@ static bool sections_vec(RBinFile *bf) {
 
 	RBinSection *ptr = NULL;
 	for (i = 0; i < cache->n_maps; i++) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
@@ -1297,9 +1300,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->add = true;
 		ptr->is_segment = true;
 		ptr->perm = prot2perm (cache->maps[i].initProt);
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 
 	ut64 slide = rebase_infos_get_slide (cache);
@@ -1337,7 +1337,10 @@ static bool sections_vec(RBinFile *bf) {
 			}
 		}
 
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = r_str_newf ("STUBS_ISLAND.%d", j++);
 		ptr->size = first_map->size - 0x4000;
 		ptr->vsize = ptr->size;
@@ -1346,9 +1349,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->add = true;
 		ptr->is_segment = false;
 		ptr->perm = prot2perm (first_map->initProt);
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 
 	return true;

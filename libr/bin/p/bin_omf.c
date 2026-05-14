@@ -80,7 +80,10 @@ static bool append_omf_sections(RBinFile *bf, OMF_segment *section, r_bin_omf_ob
 	ut32 ct_name = 1;
 
 	while (data) {
-		RBinSection *new = R_NEW0 (RBinSection);
+		RBinSection *new = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!new) {
+			return false;
+		}
 		if (section->name_idx && section->name_idx - 1 < obj->nb_name) {
 			new->name = r_str_newf ("%s_%d", obj->names[section->name_idx - 1], ct_name++);
 		} else {
@@ -92,9 +95,6 @@ static bool append_omf_sections(RBinFile *bf, OMF_segment *section, r_bin_omf_ob
 		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
 		new->perm = R_PERM_RWX;
 		new->add = true;
-		if (!r_bin_section_vec_append (bf, new)) {
-			return false;
-		}
 		data = data->next;
 	}
 	return true;

@@ -90,7 +90,10 @@ static bool sections_vec(RBinFile *bf) {
 
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	r_list_foreach (obj->pages, it, page) {
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = page->file_offset;
 		ptr->size = DMP_PAGE_SIZE;
@@ -98,9 +101,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->vsize = DMP_PAGE_SIZE;
 		ptr->add = true;
 		ptr->perm = R_PERM_R;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 	return true;
 }

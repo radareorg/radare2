@@ -142,7 +142,10 @@ static bool sections_vec(RBinFile *bf) {
 
 	RListIter *iter;
 	r_list_foreach (secs, iter, sec) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ((char *)sec->name);
 		if (sec->id == R_BIN_WASM_SECTION_DATA || sec->id == R_BIN_WASM_SECTION_MEMORY) {
 			ptr->is_data = true;
@@ -154,9 +157,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->add = true;
 		// TODO permissions
 		ptr->perm = 0;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 	return true;
 }

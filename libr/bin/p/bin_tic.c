@@ -160,7 +160,10 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut64 vaddr) {
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup (name);
 	ptr->vsize = ptr->size = size;
 	ptr->paddr = paddr;
@@ -168,7 +171,7 @@ static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut
 	ptr->perm = R_PERM_RW;
 	ptr->add = true; // paddr != vaddr;
 	ptr->is_segment = paddr == vaddr;
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static bool sections_vec(RBinFile *bf) {

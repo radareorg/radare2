@@ -23,7 +23,10 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 }
 
 static bool addSection(RLuaHeader *lh, RBinFile *bf, const char *name, ut64 addr, ut32 size, bool isFunc) {
-	RBinSection *bs = R_NEW0 (RBinSection);
+	RBinSection *bs = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!bs) {
+		return false;
+	}
 	bs->name = strdup (name);
 	bs->vaddr = bs->paddr = addr;
 	bs->size = bs->vsize = size;
@@ -42,7 +45,7 @@ static bool addSection(RLuaHeader *lh, RBinFile *bf, const char *name, ut64 addr
 		bs->perm = R_PERM_R;
 	}
 	bs->is_segment = true;
-	return r_bin_section_vec_append (bf, bs);
+	return true;
 }
 
 static void addSections(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {

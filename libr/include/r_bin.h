@@ -835,7 +835,6 @@ typedef struct r_bin_bind_t {
 } RBinBind;
 
 R_API RBinSection *r_bin_section_clone(RBinSection *s);
-R_API bool r_bin_section_vec_append(RBinFile *bf, RBinSection *section);
 R_API void r_bin_info_free(RBinInfo *rb);
 R_API void r_bin_import_free(RBinImport *imp);
 R_API void r_bin_symbol_free(void *sym);

@@ -74,28 +74,28 @@ static bool sections_vec(RBinFile *bf) {
 	RBuffer *obj = bf->bo->bin_obj;
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// program headers is another section
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = r_buf_size (bf->buf) - ptr->size;
 	ptr->vaddr = 0xf0000;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = r_buf_size (obj) - 2 * ptr->size;
 		ptr->vaddr = 0xe0000;
 		ptr->perm = R_PERM_RWX;
 		ptr->add = true;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 	return true;
 }

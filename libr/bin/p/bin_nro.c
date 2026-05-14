@@ -82,7 +82,10 @@ static bool sections_vec(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("header");
 	ptr->size = 0x80;
 	ptr->vsize = 0x80;
@@ -90,15 +93,15 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = false;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	int bufsz = r_buf_size (bf->buf);
 
 	ut32 mod0 = r_buf_read_le32_at (bf->buf, NRO_OFFSET_MODMEMOFF);
 	if (mod0 && mod0 + 8 < bufsz) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ut32 mod0sz = r_buf_read_le32_at (bf->buf, mod0 + 4);
 		ptr->name = strdup ("mod0");
 		ptr->size = mod0sz;
@@ -107,16 +110,16 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = R_PERM_R; // rw-
 		ptr->add = false;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	} else {
 		R_LOG_ERROR ("Invalid MOD0 address");
 	}
 
 	ut32 sig0 = r_buf_read_le32_at (bf->buf, 0x18);
 	if (sig0 && sig0 + 8 < bufsz) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ut32 sig0sz = r_buf_read_le32_at (bf->buf, sig0 + 4);
 		ptr->name = strdup ("sig0");
 		ptr->size = sig0sz;
@@ -125,15 +128,15 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->vaddr = sig0 + ba;
 		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	} else {
 		R_LOG_ERROR ("Invalid SIG0 address");
 	}
 
 	// add text segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("text");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (text_size));
 	ptr->size = ptr->vsize;
@@ -141,12 +144,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add ro segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("ro");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (ro_size));
 	ptr->size = ptr->vsize;
@@ -154,12 +157,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_R; // r-x
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add data segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("data");
 	ptr->vsize = r_buf_read_le32_at (b, NRO_OFF (data_size));
 	ptr->size = ptr->vsize;
@@ -170,7 +173,7 @@ static bool sections_vec(RBinFile *bf) {
 	R_LOG_INFO ("Base Address 0x%08"PFMT64x, ba);
 	R_LOG_INFO ("BSS Size 0x%08"PFMT64x, (ut64)
 			r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {

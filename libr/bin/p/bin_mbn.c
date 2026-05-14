@@ -115,7 +115,10 @@ static bool sections_vec(RBinFile *bf) {
 	}
 
 	// add text segment
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup("text");
 	ptr->size = h->psize;
 	ptr->vsize = h->psize;
@@ -124,11 +127,11 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup("sign");
 	ptr->size = h->sign_sz;
 	ptr->vsize = h->sign_sz;
@@ -137,12 +140,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	if (h->cert_sz && h->cert_va > h->vaddr) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("cert");
 		ptr->size = h->cert_sz;
 		ptr->vsize = h->cert_sz;
@@ -151,9 +154,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->perm = R_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 	return true;
 }

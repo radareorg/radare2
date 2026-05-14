@@ -27,14 +27,16 @@ static bool sections_vec(RBinFile *bf) {
 	for (i = 0; i < 4; i++) {
 		/* Check if section is used */
 		if (loaded_header->sections[i].size) {
-			RBinSection *section = R_NEW0 (RBinSection);
+			RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			if (!section) {
+				return false;
+			}
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header->sections[i].type == 0x0) {
 				section->name = strdup ("arm9");
 			} else if (loaded_header->sections[i].type == 0x1) {
 				section->name = strdup ("arm11");
 			} else {
-				r_bin_section_free (section);
 				RVecRBinSection_clear (&bf->bo->sections_vec);
 				return false;
 			}
@@ -44,9 +46,6 @@ static bool sections_vec(RBinFile *bf) {
 			section->vaddr = loaded_header->sections[i].address;
 			section->perm = r_str_rwx ("rwx");
 			section->add = true;
-			if (!r_bin_section_vec_append (bf, section)) {
-				return false;
-			}
 		}
 	}
 

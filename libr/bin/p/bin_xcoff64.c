@@ -129,7 +129,11 @@ static bool sections_vec(RBinFile *bf) {
 			if (!tmp) {
 				return false;
 			}
-			ptr = R_NEW0 (RBinSection);
+			ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			if (!ptr) {
+				free (tmp);
+				return false;
+			}
 			ptr->name = tmp;
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;
@@ -143,9 +147,6 @@ static bool sections_vec(RBinFile *bf) {
 				ptr->vaddr = obj->scn_va[i];
 			}
 			ptr->add = true;
-			if (!r_bin_section_vec_append (bf, ptr)) {
-				return false;
-			}
 		}
 	}
 	return true;

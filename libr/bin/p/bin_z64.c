@@ -102,7 +102,10 @@ static RList *entries(RBinFile *bf) {
 
 static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
-	RBinSection *text = R_NEW0 (RBinSection);
+	RBinSection *text = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!text) {
+		return false;
+	}
 	text->name = strdup ("text");
 	text->size = r_buf_size (bf->buf) - N64_ROM_START;
 	text->vsize = text->size;
@@ -110,7 +113,7 @@ static bool sections_vec(RBinFile *bf) {
 	text->vaddr = baddr (bf);
 	text->perm = R_PERM_RX;
 	text->add = true;
-	return r_bin_section_vec_append (bf, text);
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {

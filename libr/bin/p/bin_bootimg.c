@@ -149,17 +149,20 @@ static bool sections_vec(RBinFile *bf) {
 	BootImage *bi = &bio->bi;
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
@@ -167,13 +170,13 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
@@ -181,14 +184,14 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
@@ -196,9 +199,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 
 	return true;

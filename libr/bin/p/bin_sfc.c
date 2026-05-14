@@ -76,14 +76,17 @@ static RBinInfo* info(RBinFile *bf) {
 }
 
 static bool addrom(RBinFile *bf, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 #if 0

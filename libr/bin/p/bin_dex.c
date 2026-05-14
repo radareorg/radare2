@@ -2068,7 +2068,11 @@ static RBinSection *add_section(RBinFile *bf, ut64 baddr, const char *name, Sect
 	R_RETURN_VAL_IF_FAIL (bf && name, NULL);
 	R_RETURN_VAL_IF_FAIL (s.addr < UT32_MAX, NULL);
 	R_RETURN_VAL_IF_FAIL (s.size > 0 && s.size < UT32_MAX, NULL);
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		free (format);
+		return NULL;
+	}
 	ptr->name = strdup (name);
 	ptr->size = ptr->vsize = s.size;
 	ptr->paddr = s.addr;
@@ -2076,10 +2080,6 @@ static RBinSection *add_section(RBinFile *bf, ut64 baddr, const char *name, Sect
 	ptr->perm = perm;
 	ptr->add = false;
 	ptr->format = format;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return NULL;
-	}
-	ptr = RVecRBinSection_last (&bf->bo->sections_vec);
 	return ptr;
 }
 

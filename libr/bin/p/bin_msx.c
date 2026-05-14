@@ -131,7 +131,10 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0;
 	ut64 baddr = 0;
@@ -149,18 +152,18 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->size = hdrsize;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->paddr = 0;
 	ptr->vaddr = baddr;
 	ptr->size = ptr->vsize = r_buf_size (bf->buf) - hdrsize;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {

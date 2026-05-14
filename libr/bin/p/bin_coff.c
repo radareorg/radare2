@@ -426,7 +426,11 @@ static bool sections_vec(RBinFile *bf) {
 			}
 			//IO does not like sections with the same name append idx
 			//since it will update it
-			ptr = R_NEW0 (RBinSection);
+			ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			if (!ptr) {
+				free (tmp);
+				return false;
+			}
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->type == COFF_TYPE_XCOFF) {
@@ -435,9 +439,6 @@ static bool sections_vec(RBinFile *bf) {
 				coff_section (ptr, obj, i);
 			}
 			truncate_section (ptr, obj);
-			if (!r_bin_section_vec_append (bf, ptr)) {
-				return false;
-			}
 		}
 	}
 	return true;

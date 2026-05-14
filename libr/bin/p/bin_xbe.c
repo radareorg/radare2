@@ -116,19 +116,21 @@ static bool sections_vec(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < h->sections; i++) {
-		RBinSection *item = R_NEW0 (RBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
 		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
-			free (item);
 			goto out_error;
 		}
 		r = r_buf_read_at (bf->buf, addr, (ut8 *) tmp, sizeof (tmp));
 		if (r < 1) {
-			free (item);
 			goto out_error;
 		}
 		tmp[sizeof (tmp) - 1] = 0;
+		RBinSection *item = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!item) {
+			free (sect);
+			return false;
+		}
 		item->name = r_str_newf ("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
@@ -142,10 +144,6 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		if (sect[i].flags & SECT_FLAG_W) {
 			item->perm |= R_PERM_W;
-		}
-		if (!r_bin_section_vec_append (bf, item)) {
-			free (sect);
-			return false;
 		}
 	}
 	free (sect);

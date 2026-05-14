@@ -46,7 +46,10 @@ static RBinInfo *info(RBinFile *bf) {
 static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!s) {
+		return false;
+	}
 	s->name = strdup ("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;
@@ -55,7 +58,7 @@ static bool sections_vec(RBinFile *bf) {
 	s->perm = R_PERM_RX;
 	s->add = true;
 
-	return r_bin_section_vec_append (bf, s);
+	return true;
 }
 
 RBinPlugin r_bin_plugin_ningba = {

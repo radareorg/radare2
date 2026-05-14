@@ -134,18 +134,21 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	ARTHeader art = ao->art;
 	RVecRBinSection_clear (&bf->bo->sections_vec);
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("load");
 	ptr->size = r_buf_size (bf->buf);
 	ptr->vsize = art.image_size;
 	ptr->vaddr = art.image_base;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
@@ -153,11 +156,11 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
@@ -165,11 +168,11 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
@@ -177,9 +180,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	return true;
 }

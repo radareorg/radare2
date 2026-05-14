@@ -407,15 +407,13 @@ static bool sections_vec(RBinFile *bf) {
 			RListIter *it;
 			RBinSection *sec;
 			r_list_foreach (part->sections, it, sec) {
-				RBinSection *clone = R_NEW0 (RBinSection);
-				if (!clone) {
-					continue;
-				}
-				*clone = *sec;
-				clone->name = strdup (sec->name);
-				if (!r_bin_section_vec_append (bf, clone)) {
+				RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+				if (!dst) {
 					return false;
 				}
+				*dst = *sec;
+				dst->name = sec->name? strdup (sec->name): NULL;
+				dst->format = sec->format? strdup (sec->format): NULL;
 			}
 		}
 	}

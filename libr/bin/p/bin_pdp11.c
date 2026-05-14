@@ -165,7 +165,10 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// header
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("text");
 	ptr->size = 16;
 	ptr->vsize = 16;
@@ -174,11 +177,11 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = BADDR;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+	// add text segment
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-	// add text segment
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->size = bs;
 	ptr->vsize = bs;
@@ -186,9 +189,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = BADDR + 16;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	return true;
 }

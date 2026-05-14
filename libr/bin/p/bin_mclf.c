@@ -283,7 +283,10 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	// .text
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!s) {
+		return false;
+	}
 	s->name = strdup (".text");
 	s->paddr = 0;
 	s->vaddr = hdr->text_va;
@@ -292,12 +295,12 @@ static bool sections_vec(RBinFile *bf) {
 	s->perm = R_PERM_RX;
 	s->add = true;
 	s->has_strings = true;
-	if (!r_bin_section_vec_append (bf, s)) {
-		return false;
-	}
 
 	// .data
-	s = R_NEW0 (RBinSection);
+	s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!s) {
+		return false;
+	}
 	s->name = strdup (".data");
 	s->paddr = hdr->text_len;
 	s->vaddr = hdr->data_va;
@@ -309,13 +312,13 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	s->add = true;
 	s->has_strings = true;
-	if (!r_bin_section_vec_append (bf, s)) {
-		return false;
-	}
 
 	// .bss (no bytes in file)
 	if (hdr->bss_len) {
-		s = R_NEW0 (RBinSection);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!s) {
+			return false;
+		}
 		s->name = strdup (".bss");
 		s->paddr = 0;
 		s->vaddr = (ut64)hdr->data_va + (ut64)hdr->data_len;
@@ -323,9 +326,6 @@ static bool sections_vec(RBinFile *bf) {
 		s->vsize = hdr->bss_len;
 		s->perm = R_PERM_RW;
 		s->add = true;
-		if (!r_bin_section_vec_append (bf, s)) {
-			return false;
-		}
 	}
 
 	return true;

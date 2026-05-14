@@ -1543,18 +1543,6 @@ R_API RBinSection *r_bin_section_clone(RBinSection *s) {
 	return d;
 }
 
-R_API bool r_bin_section_vec_append(RBinFile *bf, RBinSection *section) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && section, false);
-	RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!dst) {
-		r_bin_section_free (section);
-		return false;
-	}
-	*dst = *section;
-	free (section);
-	return true;
-}
-
 R_API void r_bin_section_free(RBinSection *bs) {
 	if (bs) {
 		r_bin_section_fini (bs);

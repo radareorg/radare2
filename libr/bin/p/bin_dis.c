@@ -196,55 +196,55 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 addr = o->header_size;
 
 	// add code section
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("code");
 	ptr->size = ptr->vsize = o->code_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	addr += ptr->size;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add types section
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("types");
 	ptr->size = ptr->vsize = o->type_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	addr += ptr->size;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add data section
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("data");
 	ptr->size = ptr->vsize = o->header.data_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RW; // rw-
 	ptr->add = true;
 	addr += ptr->size;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// skip module name
 	addr += o->module_name_size;
 
 	// add link section
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("link");
 	ptr->size = ptr->vsize = o->link_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
 	addr += ptr->size;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	return true;
 }

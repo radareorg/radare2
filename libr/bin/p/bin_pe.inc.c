@@ -180,7 +180,10 @@ static bool sections_vec(RBinFile *bf) {
 		if (limit > 0 && RVecRBinSection_length (&bf->bo->sections_vec) >= (size_t)limit) {
 			break;
 		}
-		RBinSection *sec = R_NEW0 (RBinSection);
+		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!sec) {
+			return false;
+		}
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
 			sec->name = strdup ((const char*)sections[i].name);
 		} else {
@@ -224,9 +227,6 @@ static bool sections_vec(RBinFile *bf) {
 			if (name && (!strcmp (name, ".rsrc") || !strcmp (name, ".data") || !strcmp (name, ".rdata"))) {
 				sec->is_data = true;
 			}
-		}
-		if (!r_bin_section_vec_append (bf, sec)) {
-			return false;
 		}
 	}
 	return true;

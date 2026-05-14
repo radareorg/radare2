@@ -1243,7 +1243,11 @@ static bool sections_vec(RBinFile *bf) {
 	int i;
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			r_unref (cache_buf);
+			return false;
+		}
 		seg = &kobj->mach0->segs[i];
 		r_str_ncpy (segname, seg->segname, 17);
 		r_str_filter (segname, -1);
@@ -1258,10 +1262,6 @@ static bool sections_vec(RBinFile *bf) {
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = prot2perm (seg->initprot);
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			r_unref (cache_buf);
-			return false;
-		}
 	}
 
 	r_unref (cache_buf);
@@ -1283,7 +1283,10 @@ static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 
 		}
 	}
 	R_VEC_FOREACH (sections, section) {
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		if (prefix) {
 			ptr->name = r_str_newf ("%s.%s", prefix, (char *)section->name);
 		} else {
@@ -1307,9 +1310,6 @@ static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 
 		ptr->perm = section->perm;
 		if (!ptr->perm && strstr (section->name, "__TEXT_EXEC.__text")) {
 			ptr->perm = 1 | 4;
-		}
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
 		}
 	}
 	return true;

@@ -69,7 +69,11 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	for (i = 0; !sections[i].last; i++) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			free (sections);
+			return false;
+		}
 		ptr->name = strdup ((char*)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
@@ -93,10 +97,6 @@ static bool sections_vec(RBinFile *bf) {
 		 * CPU start in this mode */
 		if (!strncmp (ptr->name, "_TEXT_RE", 8)) {
 			ptr->bits = R_SYS_BITS_PACK (16);
-		}
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			free (sections);
-			return false;
 		}
 	}
 	free (sections);

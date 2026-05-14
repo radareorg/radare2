@@ -346,20 +346,20 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		bool executable = rel_section_is_executable (&rel->sections[i]);
-		s = R_NEW0 (RBinSection);
-		if (!s) {
-			break;
+		ut64 paddr = rel_section_paddr (rel_s);
+		if (paddr == 0 && has_bss) {
+			R_LOG_ERROR ("Ignoring duplicate bss section (%d)", i);
+			continue;
 		}
-		s->paddr = rel_section_paddr (rel_s);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!s) {
+			return false;
+		}
+		s->paddr = paddr;
 		s->vaddr = bf->bo->baddr + s->paddr;
 		s->size = s->vsize = rel_s->size;
 		s->add = true;
 		if (s->paddr == 0) {
-			if (has_bss) {
-				R_LOG_ERROR ("Ignoring duplicate bss section (%d)", i);
-				free (s);
-				continue;
-			}
 			has_bss = true;
 			s->name = strdup ("bss");
 			// Place after end of REL file
@@ -376,9 +376,6 @@ static bool sections_vec(RBinFile *bf) {
 			s->perm = r_str_rwx ("rw-");
 		}
 		rel->section_vaddrs[i] = s->vaddr;
-		if (!r_bin_section_vec_append (bf, s)) {
-			return false;
-		}
 	}
 
 	return true;

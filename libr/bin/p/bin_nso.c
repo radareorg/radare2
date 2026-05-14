@@ -203,7 +203,10 @@ static bool sections_vec(RBinFile *bf) {
 
 	ut64 ba = baddr (bf);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("header");
 	ptr->size = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
@@ -211,12 +214,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = false;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add text segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("text");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_size));
 	ptr->size = ptr->vsize;
@@ -224,12 +227,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (text_loc)) + ba;
 	ptr->perm = R_PERM_RX;	// r-x
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add ro segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("ro");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (ro_size));
 	ptr->size = ptr->vsize;
@@ -237,12 +240,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (ro_loc)) + ba;
 	ptr->perm = R_PERM_R;	// r--
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add data segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("data");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (data_size));
 	ptr->size = ptr->vsize;
@@ -252,7 +255,7 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		r_buf_read_le32_at (bf->buf, NSO_OFF (bss_size)));
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {

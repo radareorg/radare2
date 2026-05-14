@@ -39,7 +39,10 @@ static RBinInfo *info(RBinFile *bf) {
 
 static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("HUNK_HEADER");
 	ptr->paddr = 0;
 	ptr->size = r_buf_size (bf->buf);
@@ -47,7 +50,7 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static RList* entries(RBinFile *bf) {

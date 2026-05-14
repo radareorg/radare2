@@ -301,7 +301,10 @@ static bool sections_vec(RBinFile *bf) {
 	** implemented correctly, currently it is never called!?!? Is it a
 	** relic? */
 	r_list_foreach (obj->streams.memories, it, memory) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
@@ -311,15 +314,14 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->has_strings = false;
 
 		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
-
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 	}
 
 	index = obj->streams.memories64.base_rva;
 	r_list_foreach (obj->streams.memories64.memories, it, memory64) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
@@ -329,10 +331,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->has_strings = false;
 
 		ptr->perm = r_bin_mdmp_get_perm (obj, ptr->vaddr);
-
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 
 		index += memory64->data_size;
 	}
@@ -350,15 +348,19 @@ static bool sections_vec(RBinFile *bf) {
 		if (str_length == 0 || str_length > (ut32)nread - sizeof (ut32)) {
 			continue;
 		}
-		ptr = R_NEW0 (RBinSection);
 		/* utf8 expansion is at most 3/2 of utf16 bytes; *2+1 fits with a nul */
-		ptr->name = calloc (1, str_length * 2 + 1);
-		if (!ptr->name) {
-			free (ptr);
+		char *name = calloc (1, str_length * 2 + 1);
+		if (!name) {
 			continue;
 		}
-		r_str_utf16_to_utf8 ((ut8 *)ptr->name, str_length * 2,
+		r_str_utf16_to_utf8 ((ut8 *)name, str_length * 2,
 				b + sizeof (ut32), str_length, obj->endian);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			free (name);
+			return false;
+		}
+		ptr->name = name;
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
 		ptr->paddr = r_bin_mdmp_get_paddr (obj, ptr->vaddr);
@@ -366,9 +368,6 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->add = false;
 		ptr->has_strings = false;
 		ptr->perm = 0;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 
 		/* Grab the pe sections */
 		r_list_foreach (obj->pe32_bins, it0, pe32_bin) {
@@ -377,10 +376,14 @@ static bool sections_vec(RBinFile *bf) {
 				if (pe_secs) {
 					RBinSection *pe_sec;
 					r_list_foreach (pe_secs, it1, pe_sec) {
-						if (!r_bin_section_vec_append (bf, r_bin_section_clone (pe_sec))) {
+						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+						if (!dst) {
 							r_list_free (pe_secs);
 							return false;
 						}
+						*dst = *pe_sec;
+						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
+						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;
 					}
 					r_list_free (pe_secs);
 				}
@@ -392,10 +395,14 @@ static bool sections_vec(RBinFile *bf) {
 				if (pe_secs) {
 					RBinSection *pe_sec;
 					r_list_foreach (pe_secs, it1, pe_sec) {
-						if (!r_bin_section_vec_append (bf, r_bin_section_clone (pe_sec))) {
+						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+						if (!dst) {
 							r_list_free (pe_secs);
 							return false;
 						}
+						*dst = *pe_sec;
+						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
+						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;
 					}
 					r_list_free (pe_secs);
 				}

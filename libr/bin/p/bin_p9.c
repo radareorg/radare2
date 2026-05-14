@@ -164,7 +164,10 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 vsize = 0;
 
 	// add text segment
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("text");
 	ptr->size = o->header.text;
 	// for regular applications: header is included in the text segment
@@ -178,15 +181,15 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	phys += ptr->size;
 	vsize += ptr->vsize;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// switch back to 4k page size
 	align = 0x1000;
 
 	// add data segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("data");
 	ptr->size = o->header.data;
 	ptr->vsize = P9_ALIGN (o->header.data, align);
@@ -196,12 +199,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	phys += ptr->size;
 	vsize += ptr->vsize;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add bss segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
 	ptr->vsize = P9_ALIGN (o->header.bss, align);
@@ -211,12 +214,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	phys += ptr->size;
 	vsize += ptr->vsize;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add syms segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("syms");
 	ptr->size = o->header.syms;
 	ptr->vsize = P9_ALIGN (o->header.syms, align);
@@ -226,12 +229,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	phys += ptr->size;
 	vsize += ptr->vsize;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add pc/sp offsets segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("pcsp");
 	ptr->size = o->header.spsz;
 	ptr->vsize = P9_ALIGN (o->header.spsz, align);
@@ -241,12 +244,12 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	phys += ptr->size;
 	vsize += ptr->vsize;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	// add pc/line numbers segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("pcline");
 	ptr->size = o->header.pcsz;
 	ptr->vsize = P9_ALIGN (o->header.pcsz, align);
@@ -254,9 +257,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	return true;
 }

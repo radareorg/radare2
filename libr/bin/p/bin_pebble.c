@@ -85,11 +85,14 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// TODO: load all relocs
-	ptr = R_NEW0 (RBinSection);
-	ptr->name = strdup ("relocs");
 	ut64 sz = pai.num_reloc_entries * sizeof (ut32);
 	ut64 ss = pai.reloc_list_start;
 	if (ss < r_buf_size (bf->buf)) {
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		if (!ptr) {
+			return false;
+		}
+		ptr->name = strdup ("relocs");
 		if (ss + sz >= r_buf_size (bf->buf)) {
 			ut64 left = r_buf_size (bf->buf) - ss;
 			sz = left;
@@ -99,48 +102,45 @@ static bool sections_vec(RBinFile *bf) {
 		ptr->perm = R_PERM_RWX;
 		ptr->add = true;
 		const ut64 vaddr = ptr->vaddr;
-		if (!r_bin_section_vec_append (bf, ptr)) {
-			return false;
-		}
 		if (vaddr < textsize) {
 			textsize = vaddr;
 		}
 	}
 
 	// imho this must be a symbol
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
 	const ut64 symtab_vaddr = ptr->vaddr;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 	if (symtab_vaddr < textsize) {
 		textsize = symtab_vaddr;
 	}
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		return false;
+	}
 	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
+
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
 		return false;
 	}
-
-	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	if (!r_bin_section_vec_append (bf, ptr)) {
-		return false;
-	}
 
 	return true;
 }

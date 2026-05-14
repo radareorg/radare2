@@ -154,7 +154,11 @@ static bool symbols_vec(RBinFile *bf) {
 }
 
 static bool add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	if (!ptr) {
+		free (name);
+		return false;
+	}
 	ptr->name = name;
 	ptr->paddr = addr;
 	ptr->vaddr = addr + S390_BADDR;
@@ -162,7 +166,7 @@ static bool add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
 	ptr->vsize = len;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return r_bin_section_vec_append (bf, ptr);
+	return true;
 }
 
 static bool sections_vec(RBinFile *bf) {
