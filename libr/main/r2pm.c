@@ -313,7 +313,9 @@ static char *r2pm_get(const char *file, const char *token, R2pmTokenType type) {
 				char *begin = nl + 1;
 				char *eoc = strstr (begin, "\n\"\n"); // windows have \r\n
 				if (eoc) {
-					return r_str_ndup (begin, eoc - begin);
+					res = r_str_ndup (begin, eoc - begin);
+					free (data);
+					return res;
 				}
 				R_LOG_ERROR ("Cannot find end of thing");
 				free (data);
@@ -955,21 +957,32 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		RList *files = r_sys_dir (pkgdir);
 		free (pkgdir);
 		if (!files) {
+			r_list_free (l);
+			free (conflict);
 			return -1;
 		}
 		const char *file, *dep;
+		bool has_conflict = false;
 		r_list_foreach (files, iter, file) {
 			if (*file != '.') {
 				r_list_foreach (l, iter2, dep) {
 					if (!strcmp (dep, file)) {
 						R_LOG_ERROR ("This package conflicts with %s", file);
-						return -1;
+						has_conflict = true;
+						break;
 					}
+				}
+				if (has_conflict) {
+					break;
 				}
 			}
 		}
 		r_list_free (files);
 		r_list_free (l);
+		free (conflict);
+		if (has_conflict) {
+			return -1;
+		}
 	}
 	char *deps = r2pm_get (pkg, "\nR2PM_DEPS ", TT_TEXTLINE);
 	if (deps) {
@@ -995,6 +1008,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 			}
 		}
 		free (pkgdir);
+		r_list_free (l);
+		free (deps);
 	}
 	char *srcdir = r2pm_gitdir ();
 	R_LOG_DEBUG ("Entering %s", srcdir);
@@ -1008,6 +1023,8 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		int child = fork ();
 		if (child == -1) {
 			R_LOG_ERROR ("Cannot find radare2 in PATH");
+			free (qjs_script);
+			free (srcdir);
 			return -1;
 		}
 		if (child) {
@@ -1030,6 +1047,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 	char *script = r2pm_get (pkg, "\nR2PM_INSTALL_WINDOWS() {\n", TT_CODEBLOCK);
 	if (!script) {
 		R_LOG_ERROR ("This package does not have R2PM_INSTALL_WINDOWS instructions");
+		free (srcdir);
 		return 1;
 	}
 	script = r_str_replace_all (script, "\r\n", " & ");
@@ -1043,6 +1061,7 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		: r_str_newf ("%s", script);
 	free (esrcdir);
 	free (etarget);
+	free (dirname);
 	int res = r_sandbox_system (s, 1);
 	free (s);
 #else
@@ -1061,9 +1080,12 @@ static int r2pm_install_pkg(const char *pkg, bool clean, bool global) {
 		free (pkgdir);
 		pkgdir = r_str_newf ("%s/%s/%s", srcdir, pkg, dirname);
 	}
+	free (dirname);
 	if (have_builddir && !r_file_is_directory (pkgdir)) {
 		R_LOG_ERROR ("Cannot find directory: %s", pkgdir);
 		free (pkgdir);
+		free (script);
+		free (srcdir);
 		return 1;
 	}
 	char *epkgdir = r_str_escape_sh (pkgdir);
@@ -1384,11 +1406,19 @@ static void r2pm_varprint(const char *name) {
 	free (v);
 }
 
+static int r2pm_main_return(RCons *cons, bool own_cons, int rc) {
+	if (own_cons) {
+		r_cons_flush (cons);
+		r_cons_free (cons);
+	}
+	return rc;
+}
+
 R_API int r_main_r2pm(int argc, const char **argv) {
-	bool havetoflush = false;
+	bool own_cons = false;
 	RCons *cons = r_cons_global (NULL);
 	if (!cons) {
-		havetoflush = true;
+		own_cons = true;
 		cons = r_cons_new2 ();
 	}
 #if R2__UNIX__
@@ -1396,7 +1426,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	while (!wd) {
 		if (chdir ("..") == -1) {
 			R_LOG_ERROR ("Cannot chdir one dir up");
-			return 1;
+			return r2pm_main_return (cons, own_cons, 1);
 		}
 		free (wd);
 		wd = getcwd (NULL, 0);
@@ -1424,7 +1454,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	if (argc == 2 && !strcmp (argv[1], "-H")) {
 		r2pm_setenv (&r2pm);
 		r2pm_envhelp ();
-		return 0;
+		return r2pm_main_return (cons, own_cons, 0);
 	}
 	while ((c = r_getopt_next (&opt)) != -1) {
 		switch (c) {
@@ -1517,18 +1547,18 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 	}
 	r2pm_setenv (&r2pm);
 	if (r2pm_check_arguments (&r2pm, argc, opt.ind, action)) {
-		return 1;
+		return r2pm_main_return (cons, own_cons, 1);
 	}
 	if (r2pm.plugdir) {
 		if (r2pm.clean) {
 			char *plugdir = r_xdg_datadir ("plugins");
 			if (R_STR_ISNOTEMPTY (plugdir)) {
 				r_file_rm_rf (plugdir);
-				free (plugdir);
 			}
+			free (plugdir);
 		} else {
 			R_LOG_ERROR ("-p requires -c");
-			return 1;
+			return r2pm_main_return (cons, own_cons, 1);
 		}
 	}
 	if (r2pm.init) {
@@ -1544,15 +1574,15 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		} else if (r2pm.quiet) {
 			mode = 'q';
 		}
-		return r_main_version_print ("r2pm", mode);
+		return r2pm_main_return (cons, own_cons, r_main_version_print ("r2pm", mode));
 	}
 	if (r2pm.envhelp) {
 		r2pm_varprint (opt.arg);
-		return r2pm.rc;
+		return r2pm_main_return (cons, own_cons, r2pm.rc);
 	}
 	if (r2pm.help || argc == 1) {
 		printf ("%s", helpmsg);
-		return r2pm.rc;
+		return r2pm_main_return (cons, own_cons, r2pm.rc);
 	}
 	{
 		char *dbdir = r2pm_dbdir ();
@@ -1580,7 +1610,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (res > 255) {
 			res = 1;
 		}
-		return res;
+		return r2pm_main_return (cons, own_cons, res);
 	}
 	if (r2pm.add) {
 		if (opt.ind == argc) {
@@ -1590,7 +1620,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 				r2pm_add (&r2pm, argv[i]);
 			}
 		}
-		return 0;
+		return r2pm_main_return (cons, own_cons, 0);
 	}
 	RList *targets = r_list_newf (free);
 	for (i = opt.ind; i < argc; i++) {
@@ -1605,7 +1635,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		if (s) {
 			if (*s) {
 				r_cons_print (cons, s);
-				if (havetoflush) {
+				if (own_cons) {
 					r_cons_flush (cons);
 				}
 				res = 0;
@@ -1632,7 +1662,7 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 		char *s = r2pm_list (r2pm.json? 'j': 0);
 		if (s) {
 			r_cons_print (cons, s);
-			if (havetoflush) {
+			if (own_cons) {
 				r_cons_flush (cons);
 			}
 			res = 0;
@@ -1652,16 +1682,16 @@ R_API int r_main_r2pm(int argc, const char **argv) {
 				free (s);
 			}
 		}
-		if (havetoflush) {
+		if (own_cons) {
 			r_cons_flush (cons);
 		}
 	}
 	r_list_free (targets);
 	if (res != -1) {
-		return res;
+		return r2pm_main_return (cons, own_cons, res);
 	}
 	if (r2pm.init || opt.ind == 1) {
-		return 0;
+		return r2pm_main_return (cons, own_cons, 0);
 	}
-	return 1;
+	return r2pm_main_return (cons, own_cons, 1);
 }
