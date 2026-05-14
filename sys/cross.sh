@@ -14,6 +14,7 @@ usage() {
 	echo "	JOBS=-j8                    # make parallelism"
 	echo "	CLEAN=0                     # do not clean before configuring"
 	echo "	BUILD_R2R=1                 # also build a target r2r binary"
+	echo "	BUILD_BINR=1                # also build the regular binr binaries"
 	echo "	R2R_LIBATOMIC=args          # target r2r libatomic flags"
 	echo "	NOSTRIP=1                   # do not strip binr/blob/r2blob"
 	exit 1
@@ -116,7 +117,11 @@ fi
 
 export CC AR RANLIB LD OBJCOPY STRIP PKGCONFIG HOST_CC
 export USE_PIE=0
-export CFLAGS="${CFLAGS} -O2"
+if [ -z "${CROSS_CFLAGS}" ]; then
+	export CFLAGS="${CFLAGS} -O2"
+else
+	export CFLAGS="${CROSS_CFLAGS}"
+fi
 
 run_make() {
 	${MAKE} ${JOBS} \
@@ -142,6 +147,13 @@ run_make_r2r() {
 		R2R_LIBATOMIC="$(sed -n 's/^LIBATOMIC=//p' config-user.mk | tail -n 1)"
 	fi
 	run_make -C binr/r2r LIBATOMIC="$R2R_LIBATOMIC"
+}
+
+run_make_binr() {
+	if [ -z "$R2R_LIBATOMIC" ]; then
+		R2R_LIBATOMIC="$(sed -n 's/^LIBATOMIC=//p' config-user.mk | tail -n 1)"
+	fi
+	run_make -C binr LIBATOMIC="$R2R_LIBATOMIC"
 }
 
 if [ "${CLEAN}" != 0 ]; then
@@ -171,6 +183,9 @@ run_make -C libr/socket || exit 1
 run_make -C shlr || exit 1
 run_make -C libr || exit 1
 run_make_blob || exit 1
+if [ "${BUILD_BINR}" = 1 ]; then
+	run_make_binr || exit 1
+fi
 if [ "${BUILD_R2R}" = 1 ]; then
 	run_make_r2r || exit 1
 fi

@@ -5,7 +5,11 @@ set -e
 ROOT="$(CDPATH= cd -- "$(dirname "$0")/.." && pwd)" || exit 1
 TARGET="${TARGET:-mips-linux-gnu}"
 CROSS="${CROSS:-${TARGET}-}"
-R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/cmd/cmd_alias test/db/cmd/cmd_yank test/db/cmd/cmd_help test/db/cmd/cmd_b test/db/asm/mips_v2_64}"
+export CROSS_CFLAGS="-O0"
+# We will slowly extend the supported tests as soon as we fix them
+# R2R_TESTS="${R2R_TESTS:-test/db/cmd}"
+R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/cmd/cmd_alias test/db/cmd/cmd_yank test/db/cmd/cmd_help test/db/cmd/cmd_b test/db/asm/mips_v2_64 test/db/json}"
+# test/db/formats}"
 R2R_TIMEOUT="${R2R_TIMEOUT:-120}"
 UNIT_TESTS="${UNIT_TESTS:-test_base64 test_bitmap test_bitset test_hex test_json test_list test_math test_str test_uleb128}"
 MODE="${1:-all}"
@@ -112,9 +116,10 @@ if [ "$MODE" = build ] || [ "$MODE" = all ]; then
 	fi
 	export CC CROSS
 	export BUILD_R2R="${BUILD_R2R:-1}"
+	export BUILD_BINR="${BUILD_BINR:-1}"
 	export CONFIGURE_PLUGINS_ARGS="${CONFIGURE_PLUGINS_ARGS:---without-zydis}"
 	export CFGARGS="${CFGARGS:---without-zydis}"
-
+	export PLUGINS_CFG="dist/plugins-cfg/plugins.def.cfg"
 	sys/cross.sh "$TARGET"
 	build_unit_tests
 fi
@@ -187,8 +192,9 @@ export PATH
 export R2_BIN="$R2_BIN_PATH"
 export R2R_RADARE2="$R2R_RADARE2_BIN"
 export R2R_RASM2="$R2R_RASM2_BIN"
-export R2R_OFFLINE=1
-export R2R_JOBS=1
+export R2R_JOBS=8
+export R2_MAGICPATH="${R2_MAGICPATH:-${ROOT}/libr/magic/d/default}"
+need_file "$R2_MAGICPATH"
 
 R2R_OUTPUT_ARG=
 if [ -n "$R2R_OUTPUT" ]; then
@@ -197,7 +203,7 @@ fi
 
 if [ "$MODE" != unit ]; then
 	# shellcheck disable=SC2086
-	run_r2r -u -L -1 -t "$R2R_TIMEOUT" $R2R_OUTPUT_ARG $R2R_TESTS
+	run_r2r -t "$R2R_TIMEOUT" $R2R_OUTPUT_ARG $R2R_TESTS
 fi
 
 if [ "$MODE" != smoke ]; then

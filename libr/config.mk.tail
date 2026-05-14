@@ -70,6 +70,7 @@ LINK+=$(subst r_,-L$(LIBR)/,$(BINDEPS))
 LINK+=$(subst r_,-lr_,$(BINDEPS))
 CFLAGS+=${PIC_CFLAGS}
 LINK+=${PIC_CFLAGS}
+LINK+=$(LIBATOMIC)
 else
 ifneq ($(R2DEPS),)
 LINK+=$(shell echo ${R2DEPS} | sed -e 's:r_\([^ ]\+\):$(LIBR)/\1/libr_\1.${EXT_AR}:g')
