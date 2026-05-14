@@ -758,10 +758,7 @@ static bool rebase_buffer_callback2(void *context, RFixupEventDetails * event_de
 		R_LOG_WARN ("rebase_buffer_callback2: invalid ptr_size %u, skipping", psz);
 		return false;
 	}
-	RVecRBinReloc *rflist = NULL;
-	if (obj->options.load_unnamed) {
-		rflist = &obj->reloc_fixups;
-	}
+	RVecRBinReloc *rflist = &obj->reloc_fixups;
 	switch (event_details->type) {
 	case R_FIXUP_EVENT_BIND:
 	case R_FIXUP_EVENT_BIND_AUTH:
