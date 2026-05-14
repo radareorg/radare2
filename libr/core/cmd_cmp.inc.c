@@ -1314,9 +1314,15 @@ static int cmd_cmp(void *data, const char *input) {
 				}
 			} else if (*path) {
 				if (render_md) {
-					const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-					const bool use_utf8 = r_config_get_b (core->config, "scr.utf8");
-					char *res = r_str_md2txt (path, use_color, use_utf8, core->cons);
+					RMarkdownOptions options = {
+						.color = r_config_get_i (core->config, "scr.color") > 0,
+						.utf8 = r_config_get_b (core->config, "scr.utf8"),
+						.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+						.slide_titles = false,
+					};
+					char *md = r_file_slurp (path, NULL);
+					char *res = md? r_str_md2txt (md, &options): NULL;
+					free (md);
 					if (res) {
 						r_cons_print (core->cons, res);
 						free (res);

@@ -1137,7 +1137,7 @@ err:
 }
 
 static RTable *__new_heapblock_tbl(void) {
-	RTable *tbl = r_table_new ("heap");
+	RTable *tbl = r_table_new ("heap", NULL);
 	r_table_add_column (tbl, r_table_type ("number"), "HeaderAddress", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "UserAddress", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Size", -1);
@@ -1162,7 +1162,7 @@ static void w32_list_heaps(RCore *core, const char format) {
 	PHeapInformation heapInfo = db->HeapInformation;
 	CHECK_INFO (heapInfo);
 	int i;
-	RTable *tbl = r_table_new ("heaps");
+	RTable *tbl = r_table_new ("heaps", NULL);
 	r_table_add_column (tbl, r_table_type ("number"), "Address", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Blocks", -1);
 	r_table_add_column (tbl, r_table_type ("number"), "Allocated", -1);

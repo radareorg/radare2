@@ -578,7 +578,7 @@ static char *sbpf_print_string_xrefs(RAnal *anal) {
 
 	RList *processed = r_list_new ();
 
-	RTable *table = r_table_new ("sbpf_strings");
+	RTable *table = r_table_new ("sbpf_strings", NULL);
 	if (!table) {
 		r_list_free (processed);
 		r_list_free (refs);

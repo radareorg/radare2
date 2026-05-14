@@ -108,9 +108,15 @@ static char *readman(RCore *core, const char *page) {
 			return NULL;
 		}
 		if (r_str_endswith (page, ".md")) {
-			const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-			const bool use_utf8 = r_config_get_b (core->config, "scr.utf8");
-			char *data = r_str_md2txt (n, use_color, use_utf8, core->cons);
+			RMarkdownOptions options = {
+				.color = r_config_get_i (core->config, "scr.color") > 0,
+				.utf8 = r_config_get_b (core->config, "scr.utf8"),
+				.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+				.slide_titles = false,
+			};
+			char *md = r_file_slurp (n, NULL);
+			char *data = md? r_str_md2txt (md, &options): NULL;
+			free (md);
 			free (n);
 			return data;
 		}

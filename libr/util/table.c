@@ -1,7 +1,6 @@
 /* radare - LGPL - Copyright 2019-2025 - pancake */
 
 #include <r_util/r_table.h>
-#include <r_core.h>
 #include <r_cons.h>
 
 #define READ_SHOW_FLAG(t, bitflag) (((t)->showMode & bitflag) != 0)
@@ -157,7 +156,7 @@ R_API RTableColumn *r_table_column_clone(RTableColumn *col) {
 	return c;
 }
 
-R_API RTable *r_table_new(const char *name) {
+R_API RTable *r_table_new(const char *name, const RTableOptions *options) {
 	RTable *t = R_NEW0 (RTable);
 	t->name = strdup (name);
 	t->cols = r_list_newf (r_table_column_free);
@@ -165,6 +164,9 @@ R_API RTable *r_table_new(const char *name) {
 	t->maxColumnWidth = 32;
 	t->wrapColumns = false;
 	t->widthsDirty = true;
+	if (options) {
+		t->options = *options;
+	}
 	SET_SHOW_HEADER (t, true);
 	SET_SHOW_SUM (t, false);
 	return t;
@@ -370,8 +372,9 @@ R_API void r_table_add_row(RTable *t, const char *name, ...) {
 // import / export
 
 static int __strbuf_append_col_aligned_fancy(RTable *t, RStrBuf *sb, RTableColumn *col, char *str) {
-	RCons *cons = (RCons *) t->cons;
-	const char *v_line = (cons && (cons->use_utf8 ||  cons->use_utf8_curvy)) ? RUNE_LINE_VERT : "|";
+	const bool use_utf8 = t->options.utf8;
+	const bool use_utf8_curvy = t->options.utf8_curvy;
+	const char *v_line = (use_utf8 || use_utf8_curvy) ? RUNE_LINE_VERT : "|";
 	int ll = r_strbuf_length (sb);
 	switch (col->align) {
 	case R_TABLE_ALIGN_LEFT:
@@ -419,10 +422,9 @@ R_API char *r_table_tofancystring(RTable *t) {
 	RStrBuf *sb = r_strbuf_new ("");
 	RTableRow *row;
 	RTableColumn *col;
-	RCons *cons = (RCons *)t->cons;
 	RListIter *iter, *iter2;
-	bool useUtf8 = (cons && cons->use_utf8);
-	bool useUtf8Curvy = (cons && cons->use_utf8_curvy);
+	bool useUtf8 = t->options.utf8;
+	bool useUtf8Curvy = t->options.utf8_curvy;
 	const char *v_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : "|";
 	const char *h_line = useUtf8 || useUtf8Curvy ? RUNE_LINE_HORIZ : "-";
 	const char *l_intersect = useUtf8 || useUtf8Curvy ? RUNE_LINE_VERT : ")";
@@ -557,8 +559,9 @@ R_API char *r_table_tosimplestring(RTable *t) {
 	RTableRow *row;
 	RTableColumn *col;
 	RListIter *iter, *iter2;
-	RCons *cons = (RCons *) t->cons;
-	const char *h_line = (cons && (cons->use_utf8 || cons->use_utf8_curvy)) ? RUNE_LONG_LINE_HORIZ : "-";
+	const bool use_utf8 = t->options.utf8;
+	const bool use_utf8_curvy = t->options.utf8_curvy;
+	const char *h_line = (use_utf8 || use_utf8_curvy) ? RUNE_LONG_LINE_HORIZ : "-";
 	__table_adjust (t);
 	int maxlen = 0;
 	if (SHOULD_SHOW_HEADER (t)) {
@@ -1396,14 +1399,13 @@ typedef struct r_table_visual_state_t {
 } TableVisualState;
 
 static void r_table_visual_row(RTable *table, const RListInfo *info, int i, TableVisualState *state) {
-	RCons *cons = (RCons *) table->cons;
 	const ut64 min = state->min;
 	const ut64 mul = state->mul;
 	const ut64 seek = state->seek;
 	const int width = state->width;
 	const bool va = state->va;
-	const char *block = cons->use_utf8 ? R_UTF8_BLOCK : "#";
-	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *block = table->options.utf8 ? R_UTF8_BLOCK : "#";
+	const char *h_line = table->options.utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	RStrBuf *buf = r_strbuf_new ("");
 	int j;
 	for (j = 0; j < width; j++) {
@@ -1442,8 +1444,7 @@ static void r_table_visual_current_seek(RTable *table, TableVisualState *state) 
 	const ut64 min = state->min;
 	const ut64 seek = state->seek;
 	const ut64 len = state->len;
-	RCons *cons = (RCons *) table->cons;
-	const char *h_line = cons->use_utf8 ? RUNE_LONG_LINE_HORIZ : "-";
+	const char *h_line = table->options.utf8 ? RUNE_LONG_LINE_HORIZ : "-";
 	RStrBuf *buf = r_strbuf_new ("");
 	int j;
 	for (j = 0; j < width; j++) {
@@ -1567,7 +1568,7 @@ R_API void r_table_visual_vec(RTable *table, RVecListInfo* vec, ut64 seek, ut64 
 }
 
 R_API RTable *r_table_clone(const RTable *t) {
-	RTable *o = r_table_new (t->name);
+	RTable *o = r_table_new (t->name, &t->options);
 	RTableColumn *col;
 	RTableRow *row;
 	RListIter *iter;
