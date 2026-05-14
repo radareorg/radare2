@@ -63,6 +63,13 @@ typedef struct r_charset_t {
 	size_t decode_maxkeylen;
 } RCharset;
 
+typedef struct r_markdown_options_t {
+	bool color;
+	bool utf8;
+	bool utf8_curvy;
+	bool slide_titles;
+} RMarkdownOptions;
+
 #define R_STR_ISEMPTY(x) (!(x) || !*(x))
 #define R_STR_ISNOTEMPTY(x) ((x) && *(x))
 #define r_str_array(x,y) ((y >= 0 && y < (sizeof (x) / sizeof (*(x))))?(x)[(y)]: "")
@@ -186,7 +193,7 @@ R_API char *r_str_word_get_first(const char *string);
 R_API void r_str_trim(char *str);
 R_API void r_str_trim_emptylines(char *str);
 R_API int r_str_ntrim(char *str, int n);
-R_API char *r_str_md2txt(const char *page, bool usecolor, bool useutf8, void *cons);
+R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options);
 R_API char *r_str_wrap(const char *str, int w);
 R_API char *r_str_trim_dup(const char *str);
 R_API char *r_str_trim_ndup(const char *str, size_t n);

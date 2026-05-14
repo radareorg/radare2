@@ -5997,7 +5997,7 @@ static void cmd_pxr(RCore *core, int len, int mode, int wordsize, const char *ar
 	PJ *pj = NULL;
 	RTable *t = NULL;
 	if (mode == ',') {
-		t = r_table_new ("pxr");
+		t = r_core_table_new (core, "pxr");
 		RTableColumnType *n = r_table_type ("number");
 		RTableColumnType *s = r_table_type ("string");
 		r_table_add_column (t, n, "addr", 0);

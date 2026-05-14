@@ -507,7 +507,7 @@ static void print_meta_list(RAnal *a, int type, int rad, ut64 addr, ut64 from, u
 	PJ *pj = NULL;
 	if (rad == ',') {
 		if (!t) {
-			t = r_table_new ("meta");
+			t = r_table_new ("meta", NULL);
 		}
 		RTableColumnType *s = r_table_type ("string");
 		RTableColumnType *n = r_table_type ("number");

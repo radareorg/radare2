@@ -3756,13 +3756,21 @@ R_API bool r_core_autocomplete_remove(RCoreAutocomplete *parent, const char *cmd
 	return false;
 }
 
+static RTableOptions r_core_table_options(RCore *core) {
+	RTableOptions options = {
+		.utf8 = r_config_get_b (core->config, "scr.utf8"),
+		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+	};
+	return options;
+}
+
 /* Config helper function for RTable */
 R_API RTable *r_core_table_new(RCore *core, const char *title) {
 	int maxcol = r_config_get_i (core->config, "cfg.table.maxcol");
 	bool wrap = r_config_get_b (core->config, "cfg.table.wrap");
 	const char *format = r_config_get (core->config, "cfg.table.format");
-	RTable *table = r_table_new (title);
-	table->cons = core->cons;
+	RTableOptions options = r_core_table_options (core);
+	RTable *table = r_table_new (title, &options);
 	// ut16 mode = SHOW_FANCY | SHOW_HEADER;
 	ut16 mode = SHOW_HEADER;
 	if (!strcmp (format, "fancy")) {
@@ -3786,6 +3794,21 @@ R_API RTable *r_core_table_new(RCore *core, const char *title) {
 	table->maxColumnWidth = maxcol;
 	table->wrapColumns = wrap;
 	return table;
+}
+
+/* Config helper function for Markdown */
+R_API char *r_core_md2txt(RCore *core, const char *md, bool slide_titles) {
+	R_RETURN_VAL_IF_FAIL (core, NULL);
+	if (!md) {
+		return NULL;
+	}
+	RMarkdownOptions options = {
+		.color = !slide_titles && r_config_get_i (core->config, "scr.color") > 0,
+		.utf8 = r_config_get_b (core->config, "scr.utf8"),
+		.utf8_curvy = r_config_get_b (core->config, "scr.utf8.curvy"),
+		.slide_titles = slide_titles,
+	};
+	return r_str_md2txt (md, &options);
 }
 
 /* Config helper function for PJ json encodings */

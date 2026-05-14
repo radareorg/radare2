@@ -110,7 +110,7 @@ static void render(SlidesState *state, RCore *core, RList *list, int mode, int p
 			} else if (r_str_startswith (s, "--")) {
 				// directive, do not print
 			} else if (*s == '#') {
-				char *ss = r_str_ss (s, 0, 0);
+				char *ss = r_core_md2txt (core, s, true);
 				r_strbuf_append (sb, ss);
 				free (ss);
 			} else {

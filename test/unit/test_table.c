@@ -5,7 +5,7 @@
 //TODO test r_str_chop_path
 
 bool test_r_table(void) {
-	RTable *t = r_table_new ("test1");
+	RTable *t = r_table_new ("test1", NULL);
 
 	// r_table_fromcsv (t, csv);
 	RTableColumnType *typeString = r_table_type ("string");
@@ -32,7 +32,7 @@ bool test_r_table(void) {
 }
 
 RTable *__table_test_data1(void) {
-	RTable *t = r_table_new ("test2");
+	RTable *t = r_table_new ("test2", NULL);
 
 	r_table_add_column (t, r_table_type ("string"), "ascii", 0);
 	r_table_add_column (t, r_table_type ("number"), "code", 0);
@@ -250,7 +250,7 @@ bool test_r_table_columns (void) {
 	RTable *t = NULL;
 #define CREATE_TABLE                                                   \
 	r_table_free (t);                                              \
-	t = r_table_new ("test");                                      \
+	t = r_table_new ("test", NULL);                                \
 	r_table_add_column (t, r_table_type ("number"), "name", 0);    \
 	r_table_add_column (t, r_table_type ("number"), "address", 0); \
 	r_table_add_row (t, "hello", "100", NULL);                     \
@@ -311,7 +311,7 @@ bool test_r_table_columns (void) {
 }
 
 bool test_r_table_tocsv_escape(void) {
-	RTable *t = r_table_new ("csv_escape");
+	RTable *t = r_table_new ("csv_escape", NULL);
 	RTableColumnType *typeString = r_table_type ("string");
 	r_table_add_column (t, typeString, "name", 0);
 	r_table_add_column (t, typeString, "value", 0);
@@ -328,7 +328,7 @@ bool test_r_table_tocsv_escape(void) {
 	r_table_free (t);
 
 	// field with embedded newline
-	t = r_table_new ("csv_newline");
+	t = r_table_new ("csv_newline", NULL);
 	r_table_add_column (t, typeString, "col1", 0);
 	r_table_add_column (t, typeString, "col2", 0);
 	r_table_add_row (t, "line1\nline2", "ok", NULL);
@@ -342,7 +342,7 @@ bool test_r_table_tocsv_escape(void) {
 	r_table_free (t);
 
 	// field with embedded tab
-	t = r_table_new ("csv_tab");
+	t = r_table_new ("csv_tab", NULL);
 	r_table_add_column (t, typeString, "col1", 0);
 	r_table_add_column (t, typeString, "col2", 0);
 	r_table_add_row (t, "a\tb", "ok", NULL);
@@ -356,7 +356,7 @@ bool test_r_table_tocsv_escape(void) {
 	r_table_free (t);
 
 	// field with embedded comma (separator) gets quoted
-	t = r_table_new ("csv_comma");
+	t = r_table_new ("csv_comma", NULL);
 	r_table_add_column (t, typeString, "col1", 0);
 	r_table_add_column (t, typeString, "col2", 0);
 	r_table_add_row (t, "a,b", "ok", NULL);
@@ -370,7 +370,7 @@ bool test_r_table_tocsv_escape(void) {
 	r_table_free (t);
 
 	// field with backslash
-	t = r_table_new ("csv_backslash");
+	t = r_table_new ("csv_backslash", NULL);
 	r_table_add_column (t, typeString, "col1", 0);
 	r_table_add_column (t, typeString, "col2", 0);
 	r_table_add_row (t, "c:\\path\\file", "ok", NULL);

@@ -55,8 +55,12 @@ typedef struct {
 #define SHOW_R2 128
 #define SHOW_SUM 256
 
+typedef struct r_table_options_t {
+	bool utf8;
+	bool utf8_curvy;
+} RTableOptions;
+
 typedef struct {
-	void *cons;
 	char *name;
 	RList *rows;
 	RList *cols;
@@ -66,6 +70,7 @@ typedef struct {
 	int maxColumnWidth;
 	bool wrapColumns;
 	bool widthsDirty;
+	RTableOptions options;
 } RTable;
 
 typedef void (*RTableSelector)(RTableRow *acc, RTableRow *new_row, int nth);
@@ -74,7 +79,7 @@ R_API void r_table_row_free(void *_row);
 R_API void r_table_column_free(void *_col);
 R_API RTableColumn *r_table_column_clone(RTableColumn *col);
 R_API RTableColumnType *r_table_type(const char *name);
-R_API RTable *r_table_new(const char *name);
+R_API RTable *r_table_new(const char *name, const RTableOptions *options);
 R_API RTable *r_table_clone(const RTable *t);
 R_API void r_table_free(RTable *t);
 R_API int r_table_column_nth(RTable *t, const char *name);

@@ -288,9 +288,8 @@ static void r_debug_trace_list_table(RDebug *dbg, ut64 offset, RTable *t) {
 
 	if (flag) {
 		RVecListInfo_sort (&info_vec, cmpaddr);
-		RTable *table = t? t: r_table_new ("traces");
 		RCore *core = (RCore *)dbg->coreb.core;
-		table->cons = core->cons;
+		RTable *table = t? t: r_table_new ("traces", NULL);
 		RIO *io = dbg->iob.io;
 		r_table_visual_vec (table, &info_vec, offset, 1, r_cons_get_size (core->cons, NULL), io->va);
 		char *s = r_table_tostring (table);
