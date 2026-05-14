@@ -2049,12 +2049,14 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 	r_list_foreach_prev (maps, iter, map) {
 		bool map_from_bin = false;
 		bool have_segments = false;
-		R_VEC_FOREACH (list, sec) {
-			if (sec->is_segment) {
-				have_segments = true;
-				if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
-					map_from_bin = true;
-					break;
+		if (list) {
+			R_VEC_FOREACH (list, sec) {
+				if (sec->is_segment) {
+					have_segments = true;
+					if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
+						map_from_bin = true;
+						break;
+					}
 				}
 			}
 		}
