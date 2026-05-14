@@ -1951,6 +1951,7 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 	bool forceaddr = false;
 	ut64 addr = UT64_MAX;
 	char *cursearch = strdup (line);
+	bool res = false;
 	while (true) {
 		r_cons_clear00 (core->cons);
 		r_cons_printf (core->cons, "[0x%08"PFMT64x"]-[visual-r2rop] %s (see pdp command)\n",
@@ -2013,9 +2014,8 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 		int ch = r_cons_readchar (cons);
 		if (ch == -1 || ch == 4) {
 			free (curline);
-			free (cursearch);
 			R_FREE (chainstr);
-			return false;
+			goto beach;
 		}
 #define NEWTYPE(x,y) r_mem_dup (&(y), sizeof (x));
 		ch = r_cons_arrow_to_hjkl (core->cons, ch); // get ESC+char, return 'hjkl' char
@@ -2175,15 +2175,18 @@ R_API int r_core_visual_view_gadgets(RCore *core) {
 			break;
 		case 'q':
 			free (curline);
-			free (cursearch);
 			R_FREE (chainstr);
-			return true;
+			res = true;
+			goto beach;
 		}
 		R_FREE (chainstr);
 		free (curline);
 	}
+beach:
+	r_list_free (rops);
+	free (ropstr);
 	free (cursearch);
-	return false;
+	return res;
 }
 
 R_API int r_core_visual_trackflags(RCore *core) { // "vbf"
