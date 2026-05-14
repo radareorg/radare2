@@ -5,6 +5,7 @@ EXT_SO=.bc
 EXT_AR=a
 CC=emcc -DR2_NO_LONG_DOUBLE=1
 AR=emar
+LIBATOMIC=
 LINK=
 RANLIB=emranlib
 ONELIB=0
@@ -20,6 +21,7 @@ CFLAGS_OPT1=-O1
 CFLAGS_OPT2=-O2
 CFLAGS_OPT3=-O3
 CFLAGS_DEBUG=-g
+WASM=1
 
 ifeq ($(OSTYPE),auto)
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')

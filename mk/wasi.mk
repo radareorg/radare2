@@ -7,6 +7,7 @@ EXT_AR=a
 CC=$(WASI_SDK)/bin/clang --sysroot=$(WASI_SYSROOT) -DHAVE_PTHREAD=0 -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -DHAVE_PTY=0 -DR2_NO_LONG_DOUBLE=1
 # -lc-printscan-long-double
 AR=$(WASI_SDK)/bin/ar
+LIBATOMIC=
 LINK=
 RANLIB=$(WASI_SDK)/bin/ranlib
 ONELIB=0
@@ -23,6 +24,7 @@ CFLAGS_OPT1=-Os
 CFLAGS_OPT2=-Os
 CFLAGS_OPT3=-Os
 CFLAGS_DEBUG=-g
+WASM=1
 
 ifeq ($(OSTYPE),auto)
 OSTYPE=$(shell uname | tr 'A-Z' 'a-z')
