@@ -46,47 +46,23 @@ static void import_cache_cleanup(RBinObject *o) {
 }
 
 static void clamp_list(RList *list, int limit) {
-	RListIter *it, *tmp;
-	void *item = NULL;
-	int idx = 0;
-
-	if (!list || limit < 1 || r_list_length (list) <= limit) {
+	if (!list || limit < 1) {
 		return;
 	}
-	r_list_foreach_safe (list, it, tmp, item) {
-		if (idx++ >= limit) {
-			r_list_delete (list, it);
-		}
-	}
-	(void)item;
-}
-
-static void clamp_symbols_vec(RVecRBinSymbol *symbols, int limit) {
-	if (limit < 1) {
-		return;
-	}
-	while (RVecRBinSymbol_length (symbols) > limit) {
-		RVecRBinSymbol_pop_back (symbols);
+	while (r_list_length (list) > (ut32)limit) {
+		r_list_delete (list, list->tail);
 	}
 }
 
-static void clamp_imports_vec(RVecRBinImport *imports, int limit) {
-	if (limit < 1) {
-		return;
-	}
-	while (RVecRBinImport_length (imports) > limit) {
-		RVecRBinImport_pop_back (imports);
-	}
-}
-
-static void clamp_sections_vec(RVecRBinSection *sections, int limit) {
-	if (limit < 1) {
-		return;
-	}
-	while (RVecRBinSection_length (sections) > limit) {
-		RVecRBinSection_pop_back (sections);
-	}
-}
+// Trim an RVec to at most `limit` elements (no-op when limit < 1). erase_back
+// invokes the vec's fini_fn for each dropped element, matching pop_back.
+#define CLAMP_VEC(T, vec, limit) do { \
+	T *_v = (vec); \
+	int _l = (limit); \
+	if (_l >= 1 && T##_length (_v) > (size_t)_l) { \
+		T##_erase_back (_v, T##_at (_v, (size_t)_l)); \
+	} \
+} while (0)
 
 static void rebase_sections_vec(RBinObject *bo) {
 	RBinSection *section;
@@ -567,7 +543,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		if (!bin->options.load_unnamed) {
 			filter_unnamed_imports_vec (&bo->imports_vec);
 		}
-		clamp_imports_vec (&bo->imports_vec, limit);
+		CLAMP_VEC (RVecRBinImport, &bo->imports_vec, limit);
 		import_cache_cleanup (bo);
 	}
 	if (p->symbols_vec) {
@@ -586,7 +562,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 				ht_pp_free (ht);
 			}
 		}
-		clamp_symbols_vec (&bo->symbols_vec, limit);
+		CLAMP_VEC (RVecRBinSymbol, &bo->symbols_vec, limit);
 	}
 	if (p->info) {
 		r_bin_info_free (bo->info);
@@ -602,7 +578,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		RVecRBinSection_clear (&bo->sections_vec);
 		if (p->sections_vec (bf)) {
 			rebase_sections_vec (bo);
-			clamp_sections_vec (&bo->sections_vec, limit);
+			CLAMP_VEC (RVecRBinSection, &bo->sections_vec, limit);
 			if (bin->filter) {
 				r_bin_filter_sections_vec (bf, &bo->sections_vec);
 			}
