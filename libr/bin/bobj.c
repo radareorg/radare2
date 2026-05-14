@@ -129,7 +129,7 @@ static void sync_class_methods_to_symbols_vec(RBinObject *bo) {
 	r_list_foreach (bo->classes, it, cls) {
 		RBinSymbol *m;
 		R_VEC_FOREACH (&cls->methods, m) {
-			if (!m->vaddr || m->vaddr == UT64_MAX) {
+			if (!m->name || !m->vaddr || m->vaddr == UT64_MAX) {
 				continue;
 			}
 			if (ht_up_find (seen, m->vaddr, NULL)) {

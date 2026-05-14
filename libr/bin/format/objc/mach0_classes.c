@@ -818,7 +818,7 @@ static void get_method_list(RBinFile *bf, RBinClass *klass, const char *class_na
 			method->name = r_bin_name_new (name);
 			R_FREE (name);
 		}
-		if (!method->name && !want_unnamed) {
+		if (!method->name) {
 			r_bin_symbol_free (method);
 			goto next;
 		}

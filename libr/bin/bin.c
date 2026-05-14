@@ -1616,6 +1616,9 @@ R_API void r_bin_name_update(RBinName *bn, const char *name) {
 }
 
 R_API RBinName *r_bin_name_clone(RBinName *bn) {
+	if (!bn) {
+		return NULL;
+	}
 	RBinName *nn = R_NEW0 (RBinName);
 	if (bn->name) {
 		nn->name = strdup (bn->name);
