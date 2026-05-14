@@ -127,16 +127,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ArtObj *ao = bf->bo->bin_obj;
 	if (!ao) {
-		return NULL;
+		return false;
 	}
 	ARTHeader art = ao->art;
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("load");
 	ptr->size = r_buf_size (bf->buf);
@@ -144,7 +141,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = art.image_base;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("bitmap");
@@ -154,7 +153,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("oat");
@@ -164,7 +165,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("oat_data");
@@ -174,13 +177,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
-	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return true;
 }
 
 RBinPlugin r_bin_plugin_art = {

@@ -83,28 +83,23 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	xbe_section *sect = NULL;
 	r_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
-	RList *ret = NULL;
 	char tmp[0x100];
 	int i, r;
 	ut32 addr;
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->buf) {
-		return NULL;
+		return false;
 	}
 	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	if (h->sections < 1) {
-		return NULL;
+		return false;
 	}
-	ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	if (h->sections < 1 || h->sections > 255) {
 		goto out_error;
 	}
@@ -148,14 +143,17 @@ static RList *sections(RBinFile *bf) {
 		if (sect[i].flags & SECT_FLAG_W) {
 			item->perm |= R_PERM_W;
 		}
-		r_list_append (ret, item);
+		if (!r_bin_section_vec_append (bf, item)) {
+			free (sect);
+			return false;
+		}
 	}
 	free (sect);
-	return ret;
+	return true;
 out_error:
-	r_list_free (ret);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	free (sect);
-	return NULL;
+	return false;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -329,10 +327,6 @@ static RBinInfo *info(RBinFile *bf) {
 static ut64 baddr(RBinFile *bf) {
 	r_bin_xbe_obj_t *obj = bf->bo->bin_obj;
 	return obj->header.base;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_xbe = {

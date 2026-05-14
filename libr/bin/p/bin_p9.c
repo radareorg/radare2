@@ -137,17 +137,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut32 align = 0x1000;
 	// on some platforms the text segment has a separate alignment
@@ -180,9 +176,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf);
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// switch back to 4k page size
 	align = 0x1000;
@@ -196,9 +194,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add bss segment
 	ptr = R_NEW0 (RBinSection);
@@ -209,9 +209,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add syms segment
 	ptr = R_NEW0 (RBinSection);
@@ -222,9 +224,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add pc/sp offsets segment
 	ptr = R_NEW0 (RBinSection);
@@ -235,9 +239,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add pc/line numbers segment
 	ptr = R_NEW0 (RBinSection);
@@ -248,9 +254,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
-	return ret;
+	return true;
 }
 
 typedef struct {
@@ -681,10 +689,6 @@ static RBuffer *create(RBin *bin, const ut8 *code, int codelen, const ut8 *data,
 		B (data, datalen);
 	}
 	return buf;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_p9 = {

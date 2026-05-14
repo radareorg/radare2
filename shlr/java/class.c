@@ -2540,84 +2540,106 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJ
 	return sym;
 }
 
+static RBinSection *java_section_new(RVecRBinSection *sections, const char *name) {
+	RBinSection *section = RVecRBinSection_emplace_back (sections);
+	if (section) {
+		section->name = strdup (name);
+	}
+	return section;
+}
+
+static RBinSection *java_section_newf(RVecRBinSection *sections, const char *fmt, const char *name) {
+	RBinSection *section = RVecRBinSection_emplace_back (sections);
+	if (section) {
+		section->name = r_str_newf (fmt, name);
+	}
+	return section;
+}
+
 // TODO: vaddr+vsize break things if set
-R_API RList *r_bin_java_get_sections(RBinJavaObj *bin) {
-	RBinSection *section = NULL;
-	RList *sections = r_list_newf (free);
+R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections) {
+	R_RETURN_VAL_IF_FAIL (bin && sections, false);
 	ut64 baddr = bin->loadaddr;
 	RBinJavaField *fm_type;
 	RListIter *iter = NULL;
 	if (bin->cp_count > 0) {
-		section = R_NEW0 (RBinSection);
-		section->name = strdup ("constant_pool");
+		RBinSection *section = java_section_new (sections, "constant_pool");
+		if (!section) {
+			return false;
+		}
 		section->paddr = bin->cp_offset + baddr;
 		section->size = bin->cp_size;
 		section->vaddr = baddr;
 		section->perm = R_PERM_R;
 		section->add = true;
-		r_list_append (sections, section);
 	}
 	if (bin->fields_count > 0) {
-		section = R_NEW0 (RBinSection);
-		section->name = strdup ("fields");
+		RBinSection *section = java_section_new (sections, "fields");
+		if (!section) {
+			return false;
+		}
 		section->size = bin->fields_size;
 		section->paddr = bin->fields_offset + baddr;
 		section->perm = R_PERM_R;
 		section->add = true;
-		r_list_append (sections, section);
 		r_list_foreach (bin->fields_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) {
 				continue;
 			}
-			section = R_NEW0 (RBinSection);
-			section->name = r_str_newf ("attrs.%s", fm_type->name);
+			section = java_section_newf (sections, "attrs.%s", fm_type->name);
+			if (!section) {
+				return false;
+			}
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 			section->paddr = fm_type->attr_offset + baddr;
 			section->perm = R_PERM_R;
 			section->add = true;
-			r_list_append (sections, section);
 		}
 	}
 	if (bin->methods_count > 0) {
-		section = R_NEW0 (RBinSection);
-		section->name = strdup ("methods");
+		RBinSection *section = java_section_new (sections, "methods");
+		if (!section) {
+			return false;
+		}
 		section->paddr = bin->methods_offset + baddr;
 		section->size = bin->methods_size;
 		section->perm = R_PERM_RX;
 		section->add = true;
-		r_list_append (sections, section);
 		r_list_foreach (bin->methods_list, iter, fm_type) {
 			if (fm_type->attr_offset == 0) {
 				continue;
 			}
-			section = R_NEW0 (RBinSection);
-			section->name = r_str_newf ("attrs.%s", fm_type->name);
+			section = java_section_newf (sections, "attrs.%s", fm_type->name);
+			if (!section) {
+				return false;
+			}
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 			section->paddr = fm_type->attr_offset + baddr;
 			section->perm = R_PERM_RX;
 			section->add = true;
-			r_list_append (sections, section);
 		}
 	}
 	if (bin->interfaces_count > 0) {
-		section = R_NEW0 (RBinSection);
-		section->name = strdup ("interfaces");
+		RBinSection *section = java_section_new (sections, "interfaces");
+		if (!section) {
+			return false;
+		}
 		section->paddr = bin->interfaces_offset + baddr;
 		section->size = bin->interfaces_size;
 		section->perm = R_PERM_R;
 		section->add = true;
-		r_list_append (sections, section);
 	}
 	if (bin->attrs_count > 0) {
-		section = R_NEW0 (RBinSection);
-		section->name = strdup ("attributes");
+		RBinSection *section = java_section_new (sections, "attributes");
+		if (!section) {
+			return false;
+		}
 		section->paddr = bin->attrs_offset + baddr;
 		section->size = bin->attrs_size;
 		section->perm = R_PERM_R;
 		section->add = true;
-		r_list_append (sections, section);
 	}
-	return sections;
+	return true;
 }
 
 static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVecRBinSymbol *out) {

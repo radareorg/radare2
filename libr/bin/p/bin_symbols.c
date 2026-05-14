@@ -292,17 +292,17 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf->bo && bf->bo->bin_obj, NULL);
-	RList *res = r_list_newf ((RListFree)r_bin_section_free);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf->bo && bf->bo->bin_obj, false);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	size_t i;
 	if (element->segments) {
 		for (i = 0; i < element->hdr->n_segments; i++) {
 			RCoreSymCacheElementSegment *seg = &element->segments[i];
 			RBinSection *s = bin_section_from_segment (seg);
-			if (s) {
-				r_list_append (res, s);
+			if (s && !r_bin_section_vec_append (bf, s)) {
+				return false;
 			}
 		}
 	}
@@ -310,12 +310,12 @@ static RList *sections(RBinFile *bf) {
 		for (i = 0; i < element->hdr->n_sections; i++) {
 			RCoreSymCacheElementSection *sect = &element->sections[i];
 			RBinSection *s = bin_section_from_section (sect);
-			if (s) {
-				r_list_append (res, s);
+			if (s && !r_bin_section_vec_append (bf, s)) {
+				return false;
 			}
 		}
 	}
-	return res;
+	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -423,10 +423,6 @@ static char *header(RBinFile *bf, int mode) {
 	pj_free (pj);
 #undef p
 	return r_strbuf_drain (sb);
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_symbols = {

@@ -6,7 +6,7 @@
 #define S390_BADDR 0xa5000
 // #define S390_BADDR 0
 
-static RList *sections(RBinFile *bf);
+static bool sections_vec(RBinFile *bf);
 // CESD Record
 typedef struct s390_hdr_cesd {
 	ut8 Identification;	// 0x20
@@ -142,7 +142,7 @@ static bool symbols_vec(RBinFile *bf) {
 	RVecRBinSymbol *ret = &bf->bo->symbols_vec;
 	RListIter *iter;
 	RBinSymbol *sym;
-	r_list_free (sections (bf));
+	sections_vec (bf);
 	r_list_foreach (su->symbols, iter, sym) {
 		char *name = r_str_trim_dup (r_bin_name_tostring (sym->name));
 		RBinSymbol *ptr = RVecRBinSymbol_emplace_back (ret);
@@ -153,7 +153,7 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static void add_section(RList *ret, char *name, ut64 addr, ut64 len) {
+static bool add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = name;
 	ptr->paddr = addr;
@@ -162,16 +162,12 @@ static void add_section(RList *ret, char *name, ut64 addr, ut64 len) {
 	ptr->vsize = len;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	return r_bin_section_vec_append (bf, ptr);
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	s390user *su = bf->bo->bin_obj;
-	RList *ret = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	r_strbuf_free (su->sb);
 	su->sb = r_strbuf_new ("");
@@ -195,7 +191,7 @@ static RList *sections(RBinFile *bf) {
 	ut8 gbuf[1] = {0};
 	left = r_buf_read_at (bf->buf, 0, gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {
-		return NULL;
+		return false;
 	}
 	eprintf ("Use the `iH` command to display the headers\n");
 
@@ -205,7 +201,7 @@ static RList *sections(RBinFile *bf) {
 		case 0x20:
 			left = r_buf_read_at (bf->buf, x, (ut8*)&hdr20, sizeof (S390_Header_CESD));
 			if (left < sizeof (S390_Header_CESD)) {
-				return NULL;
+				return false;
 			}
 			lon = r_read_be16 (&hdr20.Count);
 			rec++;
@@ -221,7 +217,7 @@ static RList *sections(RBinFile *bf) {
 
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdr20d, sizeof (S390_Header_CESD_DATA));
 				if (left < sizeof (S390_Header_CESD_DATA)) {
-					return NULL;
+					return false;
 				}
 				r_magic_from_ebcdic (hdr20d.Symbol, sizeof (hdr20d.Symbol), cad);
 				cad[8] = '\0';
@@ -235,21 +231,23 @@ static RList *sections(RBinFile *bf) {
 			}
 			left = r_buf_read_at (bf->buf, x, gbuf, sizeof (gbuf));
 			if (left < sizeof (gbuf)) {
-				return NULL;
+				return false;
 			}
 			break;
 		// CSECT IDR
 		case 0x80:
 			left = r_buf_read_at (bf->buf, x, (ut8*)&hdr80, sizeof (S390_Header_CSECT_IDR));
 			if (left < sizeof (S390_Header_CSECT_IDR)) {
-				return NULL;
+				return false;
 			}
 			lon = hdr80.Count - 2;	// Count include Count & SubType fields
 			rec++;
 			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x SubType 0x%02x - Count: 0x%04x (%03d) - 0x%02x\n",
 					rec, gbuf[0], hdr80.SubType, x, lon, lon);
 			x += sizeof (S390_Header_CSECT_IDR);
-			add_section (ret, r_str_newf ("record%d", rec), x, lon);
+			if (!add_section (bf, r_str_newf ("record%d", rec), x, lon)) {
+				return false;
+			}
 			eprintf ("SECTION AT 0x%08x OF LENGTH %d\n", x, lon);
 
 			// To Do something with IDR data
@@ -263,7 +261,7 @@ static RList *sections(RBinFile *bf) {
 
 			left = r_buf_read_at (bf->buf, x, gbuf, sizeof (gbuf));
 			if (left < sizeof (gbuf)) {
-				return NULL;
+				return false;
 			}
 			break;
 		// Control Record             0x0001
@@ -286,7 +284,7 @@ static RList *sections(RBinFile *bf) {
 		case 0x0f:
 			left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCR, sizeof (S390_Header_ControlRecord));
 			if (left < sizeof (S390_Header_ControlRecord)) {
-				return NULL;
+				return false;
 			}
 			lon = r_read_be16 (&hdrCR.Count);
 			rec++;
@@ -300,7 +298,7 @@ static RList *sections(RBinFile *bf) {
 			for (y = 0; y < lon / sizeof (S390_Header_ControlRecord_Data) ; y++) {
 				left = r_buf_read_at (bf->buf, x, (ut8*)&hdrCRd, sizeof (S390_Header_ControlRecord_Data));
 				if (left < sizeof (S390_Header_ControlRecord_Data)) {
-					return NULL;
+					return false;
 				}
 				r_strbuf_appendf (su->sb, "    CESD 0x%02x - 0x%04x\n",
 						r_read_be16 (&hdrCRd.EntryNumber), r_read_be16 (&hdrCRd.Length));
@@ -312,7 +310,9 @@ static RList *sections(RBinFile *bf) {
 			r_strbuf_appendf (su->sb, "Long: 0x%04x\n", lonCR);
 			r_strbuf_appendf (su->sb, "TEXT SECTION AT 0x%08x of %d\n", x, lonCR);
 			eprintf ("TEXT 0x%08x %d\n", x, lonCR);
-			add_section (ret, r_str_newf ("record%d", rec), x, lonCR);
+			if (!add_section (bf, r_str_newf ("record%d", rec), x, lonCR)) {
+				return false;
+			}
 			if (!su->entry0) {
 				su->text0 = x; // XXX this 0xc is hardcoded
 				su->entry0 = x + 0xc; // XXX this 0xc is hardcoded
@@ -321,7 +321,7 @@ static RList *sections(RBinFile *bf) {
 			x += lonCR;
 			left = r_buf_read_at (bf->buf, x, gbuf, sizeof (gbuf));
 			if (left < sizeof (gbuf)) {
-				return NULL;
+				return false;
 			}
 			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x\n", rec, gbuf[0]);
 			break;
@@ -331,14 +331,14 @@ static RList *sections(RBinFile *bf) {
 			break;
 		}
 	}
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
 	s390user *su = bf->bo->bin_obj;
 	RList *ret = r_list_new ();
 	RBinAddr *ptr = R_NEW0 (RBinAddr);
-	r_list_free (sections (bf));
+	sections_vec (bf);
 	ptr->vaddr = su->entry0 + S390_BADDR;
 	ptr->paddr = su->entry0;
 	r_list_append (ret, ptr);
@@ -357,10 +357,6 @@ static void destroy(RBinFile *bf) {
 		r_strbuf_free (su->sb);
 		free (su);
 	}
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_s390 = {

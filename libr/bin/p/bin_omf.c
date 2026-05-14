@@ -75,26 +75,46 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret;
+static bool append_omf_sections(RBinFile *bf, OMF_segment *section, r_bin_omf_obj *obj) {
+	OMF_data *data = section->data;
+	ut32 ct_name = 1;
+
+	while (data) {
+		RBinSection *new = R_NEW0 (RBinSection);
+		if (section->name_idx && section->name_idx - 1 < obj->nb_name) {
+			new->name = r_str_newf ("%s_%d", obj->names[section->name_idx - 1], ct_name++);
+		} else {
+			new->name = r_str_newf ("no_name_%d", ct_name++);
+		}
+		new->size = data->size;
+		new->vsize = data->size;
+		new->paddr = data->paddr;
+		new->vaddr = section->vaddr + data->offset + OMF_BASE_ADDR;
+		new->perm = R_PERM_RWX;
+		new->add = true;
+		if (!r_bin_section_vec_append (bf, new)) {
+			return false;
+		}
+		data = data->next;
+	}
+	return true;
+}
+
+static bool sections_vec(RBinFile *bf) {
 	ut32 ct_omf_sect = 0;
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
+		return false;
 	}
 	r_bin_omf_obj *obj = bf->bo->bin_obj;
 
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	while (ct_omf_sect < obj->nb_section) {
-		if (!r_bin_omf_send_sections (ret,\
-			    obj->sections[ct_omf_sect++], bf->bo->bin_obj)) {
-			return ret;
+		if (!append_omf_sections (bf, obj->sections[ct_omf_sect++], obj)) {
+			return false;
 		}
 	}
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -138,10 +158,6 @@ static RBinInfo *info(RBinFile *bf) {
 
 static ut64 get_vaddr(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr) {
 	return vaddr;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_omf = {

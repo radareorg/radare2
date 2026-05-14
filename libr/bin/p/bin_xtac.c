@@ -63,24 +63,26 @@ static bool validate_header(RBinXtacObj *bin) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinXtacObj *bin = bf->bo->bin_obj;
 	if (!bin || !bin->header) {
-		return NULL;
+		return false;
 	}
 	RBinXtacHeader *hdr = bin->header;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *s = R_NEW0 (RBinSection);
 	s->name = strdup ("header");
 	s->vsize = hdr->ptr_to_head_blck_stub;
 	s->paddr = s->vaddr = 0;
 	s->perm = R_PERM_R;
-	r_list_append (ret, s);
+	if (!r_bin_section_vec_append (bf, s)) {
+		return false;
+	}
 
 	if (!bin->blck_stubs) {
-		return ret; // No sections if no stubs
+		return true; // No sections if no stubs
 	}
 
 	ut32 blck_stub_code_size = hdr->size_of_blck_stub_code + 8; // NOTE: always 8 bytes data is padded.
@@ -100,7 +102,9 @@ static RList *sections(RBinFile *bf) {
 			free (s);
 			continue;
 		}
-		r_list_append (ret, s);
+		if (!r_bin_section_vec_append (bf, s)) {
+			return false;
+		}
 
 		if (blck_stub_header->offset_to_next_entry < blck_stub_code_size) {
 			continue; // Invalid offset, skip this section
@@ -118,14 +122,16 @@ static RList *sections(RBinFile *bf) {
 			free (s);
 			continue;
 		}
-		r_list_append (ret, s);
+		if (!r_bin_section_vec_append (bf, s)) {
+			return false;
+		}
 
 		if (r_add_overflow (ptr_addr, (ut32)(sizeof (RBinBlckStubHeader) - 4), &ptr_addr)) {
 			break;
 		}
 	}
 
-	return ret;
+	return true;
 }
 
 static RList *fields(RBinFile *bf) {
@@ -654,10 +660,6 @@ static bool symbols_vec(RBinFile *bf) {
 	}
 
 	return true;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_xtac = {

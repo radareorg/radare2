@@ -137,10 +137,6 @@ static R_UNOWNED RList *lines(RBinFile *bf) {
 #endif
 }
 
-static RList *sections(RBinFile *bf) {
-	return r_bin_java_get_sections (bf->bo->bin_obj);
-}
-
 static bool imports_vec(RBinFile *bf) {
 	r_bin_java_load_imports (bf->bo->bin_obj, &bf->bo->imports_vec);
 	return true;
@@ -151,7 +147,8 @@ static RList *libs(RBinFile *bf) {
 }
 
 static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	return r_bin_java_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
 RBinPlugin r_bin_plugin_java = {

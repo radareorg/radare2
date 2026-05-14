@@ -153,8 +153,7 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	ut8 buf[64] = {0};
 	ut64 bs = r_buf_size (bf->buf);
@@ -162,16 +161,11 @@ static RList* sections(RBinFile *bf) {
 
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-
-	if (!(ret = r_list_newf (free))) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// header
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->size = 16;
 	ptr->vsize = 16;
@@ -180,11 +174,11 @@ static RList* sections(RBinFile *bf) {
 	ptr->vaddr = BADDR;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
 	}
+	// add text segment
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->size = bs;
 	ptr->vsize = bs;
@@ -192,9 +186,11 @@ static RList* sections(RBinFile *bf) {
 	ptr->vaddr = BADDR + 16;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
-	return ret;
+	return true;
 }
 
 static RBinInfo* info(RBinFile *bf) {
@@ -217,10 +213,6 @@ static RBinInfo* info(RBinFile *bf) {
 static ut64 size(RBinFile *bf) {
 	// TODO improve
 	return UT16_MAX;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_pdp11 = {

@@ -43,7 +43,7 @@ static bool knownHeaderBuffer(RBuffer *b, ut16 offset) {
 }
 
 static bool checkEntrypointBuffer(RBuffer *b) {
-	st16 cs = r_buf_read_le16_at (b, 0x16);
+	ut16 cs = r_buf_read_le16_at (b, 0x16);
 	ut16 ip = r_buf_read_le16_at (b, 0x14);
 	ut16 v = r_buf_read_le16_at (b, 0x08);
 	if ((st16)v < 1) {
@@ -139,10 +139,6 @@ static RList *entries(RBinFile *bf) {
 		}
 	}
 	return res;
-}
-
-static RList *sections(RBinFile *bf) {
-	return r_bin_mz_get_segments (bf->bo->bin_obj, bf->size);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -253,7 +249,7 @@ static RList* fields(RBinFile *bf) {
 }
 
 static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return r_bin_mz_load_segments (bf->bo->bin_obj, bf->size, &bf->bo->sections_vec);
 }
 
 RBinPlugin r_bin_plugin_mz = {

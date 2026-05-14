@@ -101,15 +101,14 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	SblHeader *sbl = sbl_from_bf (bf);
 	SblHeader h_local = (SblHeader){0};
 	SblHeader *h = sbl;
 	if (!h) {
 		int rc = r_buf_fread_at (bf->buf, 0, (ut8 *)&h_local, "10i", 1);
 		if (!rc) {
-			r_list_free (ret);
 			return false;
 		}
 		h = &h_local;
@@ -125,7 +124,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup("sign");
@@ -136,7 +137,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	if (h->cert_sz && h->cert_va > h->vaddr) {
 		ptr = R_NEW0 (RBinSection);
@@ -148,9 +151,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->perm = R_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -184,10 +189,6 @@ static ut64 size(RBinFile *bf) {
 		return sizeof (SblHeader) + h.psize;
 	}
 	return 0;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_mbn = {

@@ -155,10 +155,10 @@ static ut64 gns1_baddr(RBinFile *bf) {
 	return GNS1_INTERNAL_BASE;
 }
 
-static RList *gns1_sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool gns1_sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	Gns1Obj *obj = bf->bo->bin_obj;
-	RList *secs = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	Gns1SegmentEntry *e;
 	ut32 idx = 0;
 	R_VEC_FOREACH (&obj->segments, e) {
@@ -171,10 +171,12 @@ static RList *gns1_sections(RBinFile *bf) {
 		const char *region = e->region == GNS1_REGION_A? "region_a": (e->region == GNS1_REGION_B? "region_b": NULL);
 		sec->name = region? r_str_newf ("%s_%s_%u", region, seg_type, idx)
 				: r_str_newf ("%s_%u", seg_type, idx);
-		r_list_append (secs, sec);
+		if (!r_bin_section_vec_append (bf, sec)) {
+			return false;
+		}
 		idx++;
 	}
-	return secs;
+	return true;
 }
 
 static RList *gns1_entries(RBinFile *bf) {
@@ -228,10 +230,6 @@ static RBinInfo *gns1_info(RBinFile *bf) {
 	info->bits = 16;
 	info->big_endian = false;
 	return info;
-}
-
-static bool gns1_sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, gns1_sections (bf));
 }
 
 RBinPlugin r_bin_plugin_gns1 = {

@@ -159,7 +159,7 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static void add_section(RList *list, const char *name, ut64 paddr, int size, ut64 vaddr) {
+static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut64 vaddr) {
 	RBinSection *ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup (name);
 	ptr->vsize = ptr->size = size;
@@ -168,16 +168,13 @@ static void add_section(RList *list, const char *name, ut64 paddr, int size, ut6
 	ptr->perm = R_PERM_RW;
 	ptr->add = true; // paddr != vaddr;
 	ptr->is_segment = paddr == vaddr;
-	r_list_append (list, ptr);
+	return r_bin_section_vec_append (bf, ptr);
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBuffer *buf = bf->bo->bin_obj;
 
-	if (!(ret = r_list_newf ((RListFree) r_bin_section_free))) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (buf);
 	// max rom size is 10MB
 	if (sz <= 0xff || sz > (10 * 1024 * 1024)) {
@@ -249,8 +246,11 @@ static RList *sections(RBinFile *bf) {
 		case CHUNK_SCREEN:
 			{
 				char *n = r_str_newf ("%s.%d", chunk_name (chunk_type), bank_number);
-				add_section (ret, n, off, chunk_length, vaddr);
+				bool ok = add_section (bf, n, off, chunk_length, vaddr);
 				free (n);
+				if (!ok) {
+					return false;
+				}
 			}
 			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
@@ -263,7 +263,7 @@ static RList *sections(RBinFile *bf) {
 		// data
 		off += chunk_length;
 	}
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -275,10 +275,6 @@ static RList *entries(RBinFile *bf) {
 	ptr->vaddr = 0xffff0;
 	r_list_append (ret, ptr);
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_tic = {

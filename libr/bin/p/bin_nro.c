@@ -73,16 +73,12 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBuffer *b = bf->buf;
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut64 ba = baddr (bf);
 
@@ -94,7 +90,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = false;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	int bufsz = r_buf_size (bf->buf);
 
@@ -109,7 +107,9 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = mod0 + ba;
 		ptr->perm = R_PERM_R; // rw-
 		ptr->add = false;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	} else {
 		R_LOG_ERROR ("Invalid MOD0 address");
 	}
@@ -125,7 +125,9 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = sig0 + ba;
 		ptr->perm = R_PERM_R; // r--
 		ptr->add = true;
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	} else {
 		R_LOG_ERROR ("Invalid SIG0 address");
 	}
@@ -139,7 +141,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add ro segment
 	ptr = R_NEW0 (RBinSection);
@@ -150,7 +154,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + ba;
 	ptr->perm = R_PERM_R; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add data segment
 	ptr = R_NEW0 (RBinSection);
@@ -164,8 +170,7 @@ static RList *sections(RBinFile *bf) {
 	R_LOG_INFO ("Base Address 0x%08"PFMT64x, ba);
 	R_LOG_INFO ("BSS Size 0x%08"PFMT64x, (ut64)
 			r_buf_read_le32_at (bf->buf, NRO_OFF (bss_size)));
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -218,10 +223,6 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if !R_BIN_NRO
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
-}
 
 RBinPlugin r_bin_plugin_nro = {
 	.meta = {

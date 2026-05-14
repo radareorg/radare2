@@ -275,12 +275,12 @@ static RList *entries(RBinFile *bf) {
 	return res;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	MclfHeader *hdr = mclf_from_bf (bf);
 	if (!hdr) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	// .text
 	RBinSection *s = R_NEW0 (RBinSection);
@@ -292,7 +292,9 @@ static RList *sections(RBinFile *bf) {
 	s->perm = R_PERM_RX;
 	s->add = true;
 	s->has_strings = true;
-	r_list_append (ret, s);
+	if (!r_bin_section_vec_append (bf, s)) {
+		return false;
+	}
 
 	// .data
 	s = R_NEW0 (RBinSection);
@@ -307,7 +309,9 @@ static RList *sections(RBinFile *bf) {
 	}
 	s->add = true;
 	s->has_strings = true;
-	r_list_append (ret, s);
+	if (!r_bin_section_vec_append (bf, s)) {
+		return false;
+	}
 
 	// .bss (no bytes in file)
 	if (hdr->bss_len) {
@@ -319,10 +323,12 @@ static RList *sections(RBinFile *bf) {
 		s->vsize = hdr->bss_len;
 		s->perm = R_PERM_RW;
 		s->add = true;
-		r_list_append (ret, s);
+		if (!r_bin_section_vec_append (bf, s)) {
+			return false;
+		}
 	}
 
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -410,10 +416,6 @@ static ut64 size(RBinFile *bf) {
 	}
 	// The file contains the full .text and .data
 	return (ut64)hdr->text_len + (ut64)hdr->data_len;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_mclf = {

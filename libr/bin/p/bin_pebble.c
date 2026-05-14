@@ -75,15 +75,15 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
 		R_LOG_ERROR ("Truncated Header");
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// TODO: load all relocs
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("relocs");
@@ -98,9 +98,12 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = ptr->size = sz;
 		ptr->perm = R_PERM_RWX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
-		if (ptr->vaddr < textsize) {
-			textsize = ptr->vaddr;
+		const ut64 vaddr = ptr->vaddr;
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
+		if (vaddr < textsize) {
+			textsize = vaddr;
 		}
 	}
 
@@ -111,9 +114,12 @@ static RList* sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	if (ptr->vaddr < textsize) {
-		textsize = ptr->vaddr;
+	const ut64 symtab_vaddr = ptr->vaddr;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
+	if (symtab_vaddr < textsize) {
+		textsize = symtab_vaddr;
 	}
 
 	ptr = R_NEW0 (RBinSection);
@@ -122,7 +128,9 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
@@ -130,9 +138,11 @@ static RList* sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
-	return ret;
+	return true;
 }
 
 #if 0
@@ -162,10 +172,6 @@ static RList* entries(RBinFile *bf) {
 	ptr->vaddr = pai.offset;
 	r_list_append (ret, ptr);
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_pebble = {

@@ -332,12 +332,12 @@ static ut64 baddr(RBinFile *bf) {
 	return bf->bo->baddr;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	int i;
 	const RelSection *rel_s;
 	RBinSection *s;
 	const LoadedRel *rel = bf->bo->bin_obj;
-	RList *ret = r_list_new ();
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	bool has_bss = false;
 	for (i = 0; i < rel->hdr.num_sections; i++) {
@@ -376,10 +376,12 @@ static RList *sections(RBinFile *bf) {
 			s->perm = r_str_rwx ("rw-");
 		}
 		rel->section_vaddrs[i] = s->vaddr;
-		r_list_append (ret, s);
+		if (!r_bin_section_vec_append (bf, s)) {
+			return false;
+		}
 	}
 
-	return ret;
+	return true;
 }
 
 static void register_header_symbol(RBinFile *bf, RVecRBinSymbol *syms, const char *name, ut8 section, ut32 offset) {
@@ -591,10 +593,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->cpu = strdup ("ps");
 	ret->file = bf->file? strdup (bf->file): NULL;
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_rel = {

@@ -219,7 +219,18 @@ static bool symbols_vec(RBinFile *bf) {
 static bool sections_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	QnxObj *qo = bf->bo->bin_obj;
-	return qo? r_bin_sections_vec_from_list_clone (bf, qo->sections): false;
+	if (!qo) {
+		return false;
+	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	RBinSection *section;
+	RListIter *iter;
+	r_list_foreach (qo->sections, iter, section) {
+		if (!r_bin_section_vec_append (bf, r_bin_section_clone (section))) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /*

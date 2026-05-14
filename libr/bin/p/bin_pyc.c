@@ -65,7 +65,18 @@ static RBinInfo *info(RBinFile *bf) {
 static bool sections_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	RBinPycObj *obj = (RBinPycObj *)R_UNWRAP3 (bf, bo, bin_obj);
-	return obj? r_bin_sections_vec_from_list_clone (bf, obj->sections_cache): false;
+	if (!obj) {
+		return false;
+	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	RBinSection *section;
+	RListIter *iter;
+	r_list_foreach (obj->sections_cache, iter, section) {
+		if (!r_bin_section_vec_append (bf, r_bin_section_clone (section))) {
+			return false;
+		}
+	}
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {

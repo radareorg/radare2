@@ -185,14 +185,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-
-	RList *ret = r_list_newf ((RListFree)free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut64 addr = o->header_size;
 
@@ -203,20 +202,22 @@ static RList *sections(RBinFile *bf) {
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add types section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("types");
 	ptr->size = ptr->vsize = o->type_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add data section
 	ptr = R_NEW0 (RBinSection);
@@ -225,8 +226,10 @@ static RList *sections(RBinFile *bf) {
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RW; // rw-
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// skip module name
 	addr += o->module_name_size;
@@ -238,10 +241,12 @@ static RList *sections(RBinFile *bf) {
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -258,10 +263,6 @@ static RBinInfo *info(RBinFile *bf) {
 	ret->big_endian = true;
 	ret->dbg_info = 0;
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_dis = {

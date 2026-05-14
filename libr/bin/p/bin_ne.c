@@ -103,16 +103,12 @@ static bool imports_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	return r_bin_ne_get_segments (bf->bo->bin_obj);
-}
-
 static RList *relocs(RBinFile *bf) {
-	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec);
+	return r_bin_ne_get_relocs (bf->bo->bin_obj, &bf->bo->symbols_vec, &bf->bo->sections_vec);
 }
 
 static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
+	return r_bin_ne_load_segments (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
 RBinPlugin r_bin_plugin_ne = {

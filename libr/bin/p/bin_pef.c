@@ -659,9 +659,9 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	size_t i;
 
 	for (i = 0; i < pef->nsec; i++) {
@@ -750,9 +750,11 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 
-		r_list_append (ret, ptr);
+		if (!r_bin_section_vec_append (bf, ptr)) {
+			return false;
+		}
 	}
-	return ret;
+	return true;
 }
 
 static bool imports_vec(RBinFile *bf) {
@@ -970,10 +972,6 @@ static RList *entries(RBinFile *bf) {
 		}
 	}
 	return ret;
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_pef = {

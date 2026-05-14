@@ -193,23 +193,17 @@ static Sdb *get_sdb(RBinFile *bf) {
 	return kv;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	RBuffer *b = bf->buf;
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut64 ba = baddr (bf);
 
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("header");
 	ptr->size = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
@@ -217,12 +211,12 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = false;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add text segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("text");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_size));
 	ptr->size = ptr->vsize;
@@ -230,12 +224,12 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (text_loc)) + ba;
 	ptr->perm = R_PERM_RX;	// r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add ro segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("ro");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (ro_size));
 	ptr->size = ptr->vsize;
@@ -243,12 +237,12 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = r_buf_read_le32_at (b, NSO_OFF (ro_loc)) + ba;
 	ptr->perm = R_PERM_R;	// r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
+	if (!r_bin_section_vec_append (bf, ptr)) {
+		return false;
+	}
 
 	// add data segment
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = R_NEW0 (RBinSection);
 	ptr->name = strdup ("data");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (data_size));
 	ptr->size = ptr->vsize;
@@ -258,8 +252,7 @@ static RList *sections(RBinFile *bf) {
 	ptr->add = true;
 	eprintf ("BSS Size 0x%08"PFMT64x "\n", (ut64)
 		r_buf_read_le32_at (bf->buf, NSO_OFF (bss_size)));
-	r_list_append (ret, ptr);
-	return ret;
+	return r_bin_section_vec_append (bf, ptr);
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -294,10 +287,6 @@ static RBinInfo *info(RBinFile *bf) {
 }
 
 #if !R_BIN_NSO
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
-}
 
 RBinPlugin r_bin_plugin_nso = {
 	.meta = {

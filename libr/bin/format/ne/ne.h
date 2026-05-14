@@ -25,18 +25,16 @@ typedef struct {
 	ut8 *entry_table;
 	ut8 *resident_name_table;
 	RBuffer *buf;
-	RList *segments;
-	RList *entries;
 	RList *resources;
 	char *os;
 } r_bin_ne_obj_t;
 
 void r_bin_ne_free(r_bin_ne_obj_t *bin);
 r_bin_ne_obj_t *r_bin_ne_new_buf(RBuffer *buf, bool verbose);
-RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols);
+RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections);
 void r_bin_ne_load_imports(r_bin_ne_obj_t *bin, RVecRBinImport *vec);
 void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols);
-RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin);
+bool r_bin_ne_load_segments(r_bin_ne_obj_t *bin, RVecRBinSection *segments);
 RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin);
 
 #endif

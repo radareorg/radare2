@@ -404,16 +404,13 @@ static void xcoff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, si
 	}
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut32 f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
 	if (f_nscns < 1) {
 		// return NULL;
@@ -438,10 +435,12 @@ static RList *sections(RBinFile *bf) {
 				coff_section (ptr, obj, i);
 			}
 			truncate_section (ptr, obj);
-			r_list_append (ret, ptr);
+			if (!r_bin_section_vec_append (bf, ptr)) {
+				return false;
+			}
 		}
 	}
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -985,10 +984,6 @@ ut16 CHARACTERISTICS
 
 static bool check(RBinFile *bf, RBuffer *buf) {
 	return check_coff (bf, buf) || check_coff_bigobj (bf, buf);
-}
-
-static bool sections_vec(RBinFile *bf) {
-	return r_bin_sections_vec_from_list (bf, sections (bf));
 }
 
 RBinPlugin r_bin_plugin_coff = {
