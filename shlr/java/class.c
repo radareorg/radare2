@@ -56,14 +56,6 @@ static void bsymbol_fini(RBinSymbol *sym) {
 	}
 }
 
-static void bsymbol_free(void *p) {
-	RBinSymbol *sym = p;
-	if (sym) {
-		bsymbol_fini (sym);
-		free (sym);
-	}
-}
-
 static void bfield_fini(RBinField *field) {
 	if (field) {
 		bn_free (field->name);
@@ -94,12 +86,8 @@ static void bclass_fields_fini(RVecRBinField *fields) {
 static inline void java_push_sym(RVecRBinSymbol *vec, RBinSymbol *sym) {
 	if (sym) {
 		RBinSymbol *slot = RVecRBinSymbol_emplace_back (vec);
-		if (slot) {
-			*slot = *sym;
-			free (sym); /* vec owns inner fields now */
-		} else {
-			bsymbol_free (sym);
-		}
+		*slot = *sym;
+		free (sym); /* vec owns inner fields now */
 	}
 }
 
@@ -2542,17 +2530,13 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_ref(RBinJavaObj *bin, RBinJ
 
 static RBinSection *java_section_new(RVecRBinSection *sections, const char *name) {
 	RBinSection *section = RVecRBinSection_emplace_back (sections);
-	if (section) {
-		section->name = strdup (name);
-	}
+	section->name = strdup (name);
 	return section;
 }
 
 static RBinSection *java_section_newf(RVecRBinSection *sections, const char *fmt, const char *name) {
 	RBinSection *section = RVecRBinSection_emplace_back (sections);
-	if (section) {
-		section->name = r_str_newf (fmt, name);
-	}
+	section->name = r_str_newf (fmt, name);
 	return section;
 }
 
@@ -2564,9 +2548,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 	RListIter *iter = NULL;
 	if (bin->cp_count > 0) {
 		RBinSection *section = java_section_new (sections, "constant_pool");
-		if (!section) {
-			return false;
-		}
 		section->paddr = bin->cp_offset + baddr;
 		section->size = bin->cp_size;
 		section->vaddr = baddr;
@@ -2575,9 +2556,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 	}
 	if (bin->fields_count > 0) {
 		RBinSection *section = java_section_new (sections, "fields");
-		if (!section) {
-			return false;
-		}
 		section->size = bin->fields_size;
 		section->paddr = bin->fields_offset + baddr;
 		section->perm = R_PERM_R;
@@ -2587,9 +2565,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 				continue;
 			}
 			section = java_section_newf (sections, "attrs.%s", fm_type->name);
-			if (!section) {
-				return false;
-			}
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 			section->paddr = fm_type->attr_offset + baddr;
 			section->perm = R_PERM_R;
@@ -2598,9 +2573,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 	}
 	if (bin->methods_count > 0) {
 		RBinSection *section = java_section_new (sections, "methods");
-		if (!section) {
-			return false;
-		}
 		section->paddr = bin->methods_offset + baddr;
 		section->size = bin->methods_size;
 		section->perm = R_PERM_RX;
@@ -2610,9 +2582,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 				continue;
 			}
 			section = java_section_newf (sections, "attrs.%s", fm_type->name);
-			if (!section) {
-				return false;
-			}
 			section->size = fm_type->size - (fm_type->file_offset - fm_type->attr_offset);
 			section->paddr = fm_type->attr_offset + baddr;
 			section->perm = R_PERM_RX;
@@ -2621,9 +2590,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 	}
 	if (bin->interfaces_count > 0) {
 		RBinSection *section = java_section_new (sections, "interfaces");
-		if (!section) {
-			return false;
-		}
 		section->paddr = bin->interfaces_offset + baddr;
 		section->size = bin->interfaces_size;
 		section->perm = R_PERM_R;
@@ -2631,9 +2597,6 @@ R_API bool r_bin_java_load_sections(RBinJavaObj *bin, RVecRBinSection *sections)
 	}
 	if (bin->attrs_count > 0) {
 		RBinSection *section = java_section_new (sections, "attributes");
-		if (!section) {
-			return false;
-		}
 		section->paddr = bin->attrs_offset + baddr;
 		section->size = bin->attrs_size;
 		section->perm = R_PERM_R;
@@ -2656,12 +2619,10 @@ static void r_bin_java_enum_class_methods(RBinJavaObj *bin, ut16 class_idx, RVec
 			}
 		} else {
 			RBinSymbol *sym = RVecRBinSymbol_emplace_back (out);
-			if (sym) {
-				sym->name = bn_new (field->name);
-				sym->lang = R_BIN_LANG_JAVA;
-				sym->paddr = r_bin_java_get_method_code_offset (field);
-				sym->vaddr = sym->paddr;
-			}
+			sym->name = bn_new (field->name);
+			sym->lang = R_BIN_LANG_JAVA;
+			sym->paddr = r_bin_java_get_method_code_offset (field);
+			sym->vaddr = sym->paddr;
 		}
 	}
 }
@@ -2672,9 +2633,7 @@ static void r_bin_java_enum_class_fields(RBinJavaObj *bin, ut16 class_idx, RVecR
 	r_list_foreach (bin->fields_list, iter, fm_type) {
 		if (fm_type && fm_type->field_ref_cp_obj && fm_type->field_ref_cp_obj->metas->ord == class_idx) {
 			RBinField *slot = RVecRBinField_emplace_back (out);
-			if (slot) {
-				r_bin_java_fill_rbinfield_from_field (slot, fm_type, bin->loadaddr);
-			}
+			r_bin_java_fill_rbinfield_from_field (slot, fm_type, bin->loadaddr);
 		}
 	}
 }

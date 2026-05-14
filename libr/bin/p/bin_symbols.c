@@ -288,9 +288,6 @@ static bool sections_vec(RBinFile *bf) {
 				continue;
 			}
 			RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (!s) {
-				return false;
-			}
 			bin_section_from_segment (s, seg);
 		}
 	}
@@ -301,9 +298,6 @@ static bool sections_vec(RBinFile *bf) {
 				continue;
 			}
 			RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (!s) {
-				return false;
-			}
 			bin_section_from_section (s, sect);
 		}
 	}

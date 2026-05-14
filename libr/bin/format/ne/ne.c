@@ -86,9 +86,6 @@ bool r_bin_ne_load_segments(r_bin_ne_obj_t *bin, RVecRBinSection *segments) {
 	RVecRBinSection_clear (segments);
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
 		RBinSection *bs = RVecRBinSection_emplace_back (segments);
-		if (!bs) {
-			return false;
-		}
 		NE_image_segment_entry *se = &bin->segment_entries[i];
 		bs->size = se->length;
 		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;

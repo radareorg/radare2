@@ -130,10 +130,6 @@ static bool sections_vec(RBinFile *bf) {
 				return false;
 			}
 			ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (!ptr) {
-				free (tmp);
-				return false;
-			}
 			ptr->name = tmp;
 			if (strstr (ptr->name, "data")) {
 				ptr->is_data = true;

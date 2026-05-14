@@ -382,9 +382,6 @@ R_IPI bool r_bin_som_load_sections(void *o, RVecRBinSection *sections) {
 	const ut64 baddr = obj->baddr;
 	r_list_foreach (obj->subspaces, iter, subspace) {
 		RBinSection *s = RVecRBinSection_emplace_back (sections);
-		if (!s) {
-			return false;
-		}
 		if (obj->space_strings && subspace->name < obj->hdr.space_strings_size) {
 			const char *name_str = obj->space_strings + subspace->name;
 			size_t len = strnlen (name_str, obj->hdr.space_strings_size - subspace->name);

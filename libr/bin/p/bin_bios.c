@@ -75,9 +75,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// program headers is another section
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("bootblk"); // Maps to 0xF000:0000 segment
 	ptr->vsize = ptr->size = 0x10000;
 	ptr->paddr = r_buf_size (bf->buf) - ptr->size;
@@ -87,9 +84,6 @@ static bool sections_vec(RBinFile *bf) {
 	// If image bigger than 128K - add one more section
 	if (bf->size >= 0x20000) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("_e000"); // Maps to 0xE000:0000 segment
 		ptr->vsize = ptr->size = 0x10000;
 		ptr->paddr = r_buf_size (obj) - 2 * ptr->size;

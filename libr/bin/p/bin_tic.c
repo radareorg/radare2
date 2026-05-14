@@ -159,11 +159,8 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut64 vaddr) {
+static void add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut64 vaddr) {
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup (name);
 	ptr->vsize = ptr->size = size;
 	ptr->paddr = paddr;
@@ -171,7 +168,6 @@ static bool add_section(RBinFile *bf, const char *name, ut64 paddr, int size, ut
 	ptr->perm = R_PERM_RW;
 	ptr->add = true; // paddr != vaddr;
 	ptr->is_segment = paddr == vaddr;
-	return true;
 }
 
 static bool sections_vec(RBinFile *bf) {
@@ -246,16 +242,13 @@ static bool sections_vec(RBinFile *bf) {
 		case CHUNK_PATTERNS:
 		case CHUNK_CODE_ZIP:
 		case CHUNK_DEFAULT:
-		case CHUNK_SCREEN:
-			{
-				char *n = r_str_newf ("%s.%d", chunk_name (chunk_type), bank_number);
-				bool ok = add_section (bf, n, off, chunk_length, vaddr);
-				free (n);
-				if (!ok) {
-					return false;
+			case CHUNK_SCREEN:
+				{
+					char *n = r_str_newf ("%s.%d", chunk_name (chunk_type), bank_number);
+					add_section (bf, n, off, chunk_length, vaddr);
+					free (n);
 				}
-			}
-			R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
+				R_LOG_DEBUG ("BANK %d CHUNK %2d (%s) LENGTH %d",
 				bank_number, chunk_type,
 				chunk_name (chunk_type), chunk_length);
 			break;

@@ -153,12 +153,8 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static bool add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
+static void add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		free (name);
-		return false;
-	}
 	ptr->name = name;
 	ptr->paddr = addr;
 	ptr->vaddr = addr + S390_BADDR;
@@ -166,7 +162,6 @@ static bool add_section(RBinFile *bf, char *name, ut64 addr, ut64 len) {
 	ptr->vsize = len;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return true;
 }
 
 static bool sections_vec(RBinFile *bf) {
@@ -249,9 +244,7 @@ static bool sections_vec(RBinFile *bf) {
 			r_strbuf_appendf (su->sb, "Record %02d Type 0x%02x SubType 0x%02x - Count: 0x%04x (%03d) - 0x%02x\n",
 					rec, gbuf[0], hdr80.SubType, x, lon, lon);
 			x += sizeof (S390_Header_CSECT_IDR);
-			if (!add_section (bf, r_str_newf ("record%d", rec), x, lon)) {
-				return false;
-			}
+				add_section (bf, r_str_newf ("record%d", rec), x, lon);
 			eprintf ("SECTION AT 0x%08x OF LENGTH %d\n", x, lon);
 
 			// To Do something with IDR data
@@ -314,9 +307,7 @@ static bool sections_vec(RBinFile *bf) {
 			r_strbuf_appendf (su->sb, "Long: 0x%04x\n", lonCR);
 			r_strbuf_appendf (su->sb, "TEXT SECTION AT 0x%08x of %d\n", x, lonCR);
 			eprintf ("TEXT 0x%08x %d\n", x, lonCR);
-			if (!add_section (bf, r_str_newf ("record%d", rec), x, lonCR)) {
-				return false;
-			}
+				add_section (bf, r_str_newf ("record%d", rec), x, lonCR);
 			if (!su->entry0) {
 				su->text0 = x; // XXX this 0xc is hardcoded
 				su->entry0 = x + 0xc; // XXX this 0xc is hardcoded

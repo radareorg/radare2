@@ -89,9 +89,6 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 ss = pai.reloc_list_start;
 	if (ss < r_buf_size (bf->buf)) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("relocs");
 		if (ss + sz >= r_buf_size (bf->buf)) {
 			ut64 left = r_buf_size (bf->buf) - ss;
@@ -109,9 +106,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// imho this must be a symbol
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
@@ -123,9 +117,6 @@ static bool sections_vec(RBinFile *bf) {
 	}
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
@@ -133,9 +124,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;

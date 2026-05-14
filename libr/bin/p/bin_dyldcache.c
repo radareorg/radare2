@@ -1236,10 +1236,6 @@ static bool sections_from_bin(RBinFile *bf, RDyldBinImage *bin) {
 	struct section_t *section;
 	R_VEC_FOREACH (sections, section) {
 		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			MACH0_(mach0_free) (mach0);
-			return false;
-		}
 		if (bin->file) {
 			ptr->name = r_str_newf ("%s.%s", bin->file, (char*)section->name);
 		} else {
@@ -1289,9 +1285,6 @@ static bool sections_vec(RBinFile *bf) {
 	RBinSection *ptr = NULL;
 	for (i = 0; i < cache->n_maps; i++) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = r_str_newf ("cache_map.%d", i);
 		ptr->size = cache->maps[i].size;
 		ptr->vsize = ptr->size;
@@ -1338,9 +1331,6 @@ static bool sections_vec(RBinFile *bf) {
 		}
 
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = r_str_newf ("STUBS_ISLAND.%d", j++);
 		ptr->size = first_map->size - 0x4000;
 		ptr->vsize = ptr->size;

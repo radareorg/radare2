@@ -73,9 +73,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!s) {
-		return false;
-	}
 	s->name = strdup ("header");
 	s->vsize = hdr->ptr_to_head_blck_stub;
 	s->paddr = s->vaddr = 0;
@@ -96,9 +93,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->name = r_str_newf ("blck_code_%d", i);
 		s->vsize = blck_stub_code_size;
 		s->paddr = ptr_addr;
@@ -115,9 +109,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->name = r_str_newf ("trans_code_%d", i);
 		s->vsize = size_of_trans_code;
 		s->paddr = ptr_addr;

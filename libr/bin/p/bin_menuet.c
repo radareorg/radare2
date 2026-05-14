@@ -109,9 +109,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->size = r_read_ble32 (buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
@@ -122,9 +119,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	if (MENUET_VERSION (buf)) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("idata");
 		const ut32 idata_start = r_read_ble32 (buf + 40, false);
 		const ut32 idata_end = r_read_ble32 (buf + 44, false);

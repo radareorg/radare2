@@ -75,18 +75,14 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static bool addrom(RBinFile *bf, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
+static void addrom(RBinFile *bf, const char *name, int i, ut64 paddr, ut64 vaddr, ut32 size) {
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = r_str_newf ("%s_%02x", name, i);
 	ptr->paddr = paddr;
 	ptr->vaddr = vaddr;
 	ptr->size = ptr->vsize = size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	return true;
 }
 
 #if 0
@@ -138,21 +134,15 @@ static bool sections_vec(RBinFile *bf) {
 	if (is_hirom) {
 		for (i = 0; i < ((bf->size - hdroffset) / 0x8000) ; i++) {
 			// XXX check integer overflow here
-			if (!addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x400000 + (i * 0x8000), 0x8000)) {
-				return false;
-			}
+			addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x400000 + (i * 0x8000), 0x8000);
 			if (i % 2) {
-				if (!addrom (bf, "ROM_MIRROR", i, hdroffset + i * 0x8000, i * 0x8000, 0x8000)) {
-					return false;
-				}
+				addrom (bf, "ROM_MIRROR", i, hdroffset + i * 0x8000, i * 0x8000, 0x8000);
 			}
 		}
 
 	} else {
 		for (i = 0; i < ((bf->size - hdroffset)/ 0x8000) ; i++) {
-			if (!addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x8000 + (i * 0x10000), 0x8000)) {
-				return false;
-			}
+			addrom (bf, "ROM", i, hdroffset + i * 0x8000, 0x8000 + (i * 0x10000), 0x8000);
 		}
 	}
 	return true;

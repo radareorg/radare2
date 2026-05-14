@@ -287,9 +287,6 @@ static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RB
 		tot_size = 0;
 		for (i = 0; i < iter_n; i++) {
 			RBinSection *s = RVecRBinSection_emplace_back (sections);
-			if (!s) {
-				return false;
-			}
 			s->name = r_str_newf ("%s.page.%d.iter.%d", sec->name, cur_page, iter_cnt);
 			s->bits = sec->bits;
 			s->perm = sec->perm;
@@ -326,14 +323,12 @@ static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RB
 	}
 	if (tot_size < h->pagesize) {
 		RBinSection *s = RVecRBinSection_emplace_back (sections);
-		if (s) {
-			s->name = r_str_newf ("%s.page.%d.iter.zerofill", sec->name, cur_page);
-			s->bits = sec->bits;
-			s->perm = sec->perm;
-			s->vsize = h->pagesize - tot_size;
-			s->vaddr = vaddr;
-			s->add = true;
-		}
+		s->name = r_str_newf ("%s.page.%d.iter.zerofill", sec->name, cur_page);
+		s->bits = sec->bits;
+		s->perm = sec->perm;
+		s->vsize = h->pagesize - tot_size;
+		s->vaddr = vaddr;
+		s->add = true;
 	}
 	return true;
 }
@@ -347,9 +342,6 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 	int i;
 	for (i = 0; i < h->objcnt; i++) {
 		RBinSection *sec = R_NEW0 (RBinSection);
-		if (!sec) {
-			return false;
-		}
 		LE_object_entry *entry = &bin->objtbl[i];
 		if  (!entry) {
 			free (sec);
@@ -376,10 +368,6 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 		sec->is_data = (entry->flags & O_RESOURCE) || !(sec->perm & R_PERM_X);
 		if (!entry->page_tbl_entries) {
 			RBinSection *dst = RVecRBinSection_emplace_back (sections);
-			if (!dst) {
-				r_bin_section_free (sec);
-				return false;
-			}
 			*dst = *sec;
 			free (sec);
 		}
@@ -404,10 +392,6 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 				return true;
 			}
 			RBinSection *s = R_NEW0 (RBinSection);
-			if (!s) {
-				r_bin_section_free (sec);
-				return false;
-			}
 			s->name = r_str_newf ("%s.page.%d", sec->name, j);
 			s->is_data = sec->is_data;
 			if (cur_idx < next_idx) { // If not true rest of pages will be zeroes
@@ -451,11 +435,6 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 			s->bits = sec->bits;
 			ut64 vsize = s->vsize;
 			RBinSection *dst = RVecRBinSection_emplace_back (sections);
-			if (!dst) {
-				r_bin_section_free (s);
-				r_bin_section_free (sec);
-				return false;
-			}
 			*dst = *s;
 			free (s);
 			page_size_sum += vsize;
@@ -463,10 +442,6 @@ R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
 		if (entry->page_tbl_entries) {
 			if (page_size_sum < sec->vsize) {
 				RBinSection *s = RVecRBinSection_emplace_back (sections);
-				if (!s) {
-					r_bin_section_free (sec);
-					return false;
-				}
 				ut64 remainder_size = sec->vsize - page_size_sum;
 				s->vsize = remainder_size;
 				s->vaddr = sec->vaddr + page_size_sum;

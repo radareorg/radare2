@@ -82,9 +82,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	const ut64 rom_size = ihdr.prg_page_count_16k * PRG_PAGE_SIZE;
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("ROM");
 	ptr->paddr = INES_HDR_SIZE;
 	ptr->size = rom_size;
@@ -95,9 +92,6 @@ static bool sections_vec(RBinFile *bf) {
 	if (ROM_START_ADDRESS + rom_size <= ROM_MIRROR_ADDRESS) {
 		// not a 256bit ROM, mapper 0 mirrors the complete ROM in this case
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("ROM_MIRROR");
 		ptr->paddr = INES_HDR_SIZE;
 		ptr->size = rom_size;

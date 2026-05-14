@@ -127,10 +127,6 @@ static bool sections_vec(RBinFile *bf) {
 		}
 		tmp[sizeof (tmp) - 1] = 0;
 		RBinSection *item = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!item) {
-			free (sect);
-			return false;
-		}
 		item->name = r_str_newf ("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;

@@ -163,9 +163,6 @@ static bool gns1_sections_vec(RBinFile *bf) {
 	ut32 idx = 0;
 	R_VEC_FOREACH (&obj->segments, e) {
 		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!sec) {
-			return false;
-		}
 		sec->paddr = e->offset;
 		sec->size = sec->vsize = e->size;
 		sec->vaddr = translate_vaddr (e->paddr);

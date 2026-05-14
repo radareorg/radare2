@@ -108,9 +108,6 @@ static bool sections_vec(RBinFile *bf) {
 	RBinSection *section;
 	R_VEC_FOREACH (sections, section) {
 		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
-		if (!dst) {
-			return false;
-		}
 		*dst = *section;
 		dst->name = section->name? strdup (section->name): NULL;
 		dst->format = section->format? strdup (section->format): NULL;

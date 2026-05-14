@@ -42,9 +42,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
 	RBinSection *sect = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!sect) {
-		return false;
-	}
 	sect->name = strdup ("TEXT");
 	sect->paddr = PSXEXE_TEXTSECTION_OFFSET;
 	sect->size = sz - PSXEXE_TEXTSECTION_OFFSET;

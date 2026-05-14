@@ -2069,10 +2069,6 @@ static RBinSection *add_section(RBinFile *bf, ut64 baddr, const char *name, Sect
 	R_RETURN_VAL_IF_FAIL (s.addr < UT32_MAX, NULL);
 	R_RETURN_VAL_IF_FAIL (s.size > 0 && s.size < UT32_MAX, NULL);
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		free (format);
-		return NULL;
-	}
 	ptr->name = strdup (name);
 	ptr->size = ptr->vsize = s.size;
 	ptr->paddr = s.addr;

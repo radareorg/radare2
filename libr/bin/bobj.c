@@ -342,13 +342,11 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 		RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
 		if (c && !classes_names_only (bf)) {
 			RBinField *f = RVecRBinField_emplace_back (&c->fields);
-			if (f) {
-				f->name = r_bin_name_new (fn);
-				f->paddr = sym->paddr;
-				f->vaddr = sym->vaddr;
-				f->value = -1;
-				f->size = sym->size;
-			}
+			f->name = r_bin_name_new (fn);
+			f->paddr = sym->paddr;
+			f->vaddr = sym->vaddr;
+			f->value = -1;
+			f->size = sym->size;
 		}
 		free (fn);
 	} else {

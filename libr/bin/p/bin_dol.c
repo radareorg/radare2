@@ -84,9 +84,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->name = r_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -101,9 +98,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->name = r_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -114,9 +108,6 @@ static bool sections_vec(RBinFile *bf) {
 	}
 	/* bss section */
 	s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!s) {
-		return false;
-	}
 	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;

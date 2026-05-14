@@ -35,9 +35,6 @@ static int cmp_sections(const RBinSection *s_a, const RBinSection *s_b) {
 
 static RBinSection *r_bin_mz_init_section(RVecRBinSection *segments, ut64 laddr) {
 	RBinSection *section = RVecRBinSection_emplace_back (segments);
-	if (!section) {
-		return NULL;
-	}
 	section->vaddr = laddr;
 	return section;
 }
@@ -67,9 +64,6 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 	 * even if there are no relocations or there isn't first segment in
 	 * the relocations. */
 	RBinSection *section = r_bin_mz_init_section (segments, 0);
-	if (!section) {
-		return false;
-	}
 
 	relocs = bin->relocation_entries;
 	num_relocs = bin->dos_header->num_relocs;
@@ -98,18 +92,12 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 		}
 
 		section = r_bin_mz_init_section (segments, section_laddr);
-		if (!section) {
-			return false;
-		}
 	}
 
 	/* Add address of stack segment if it's inside the load module. */
 	ss = bin->dos_header->ss;
 	if (r_bin_mz_va_to_la (ss, 0) < bin->load_module_size) {
 		section = r_bin_mz_init_section (segments, r_bin_mz_va_to_la (ss, 0));
-		if (!section) {
-			return false;
-		}
 	}
 
 	RVecRBinSection_sort (segments, cmp_sections);
@@ -132,10 +120,7 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 		section->is_segment = true;
 		section_number++;
 	}
-	section = n_segments > 0? RVecRBinSection_at (segments, n_segments - 1): NULL;
-	if (!section) {
-		return false;
-	}
+	section = RVecRBinSection_at (segments, n_segments - 1);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 
@@ -143,9 +128,6 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 
 	ut64 hdroff = dh->header_paragraphs * 16;
 	section = RVecRBinSection_emplace_back (segments);
-	if (!section) {
-		return false;
-	}
 	section->name = strdup (".mzhdr");
 	section->paddr = 0;
 	section->vsize = hdroff;
@@ -153,9 +135,6 @@ bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVe
 	section->perm = R_PERM_R;
 
 	section = RVecRBinSection_emplace_back (segments);
-	if (!section) {
-		return false;
-	}
 	section->name = strdup (".text");
 	section->paddr = hdroff;
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);

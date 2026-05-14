@@ -103,9 +103,6 @@ static RList *entries(RBinFile *bf) {
 static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	RBinSection *text = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!text) {
-		return false;
-	}
 	text->name = strdup ("text");
 	text->size = r_buf_size (bf->buf) - N64_ROM_START;
 	text->vsize = text->size;

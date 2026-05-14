@@ -132,9 +132,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0;
 	ut64 baddr = 0;
@@ -154,9 +151,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->paddr = 0;
 	ptr->vaddr = baddr;

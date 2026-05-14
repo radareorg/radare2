@@ -47,9 +47,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
 	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!s) {
-		return false;
-	}
 	s->name = strdup ("ROM");
 	s->paddr = 0;
 	s->vaddr = 0x8000000;

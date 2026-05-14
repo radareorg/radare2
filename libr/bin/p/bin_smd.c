@@ -183,9 +183,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("vtable");
 	ptr->paddr = ptr->vaddr = 0;
 	ptr->size = ptr->vsize = 0x100;
@@ -193,9 +190,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0x100;
 	ptr->size = ptr->vsize = sizeof (SMD_Header);
@@ -206,9 +200,6 @@ static bool sections_vec(RBinFile *bf) {
 	r_buf_read_at (bf->buf, 0x100, (ut8*)&hdr, sizeof (hdr));
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->paddr = 0x100 + sizeof (SMD_Header);
 	ptr->vaddr = ptr->paddr + r_read_be32 (&hdr.RomStart);

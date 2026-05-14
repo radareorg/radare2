@@ -181,9 +181,6 @@ static bool sections_vec(RBinFile *bf) {
 			break;
 		}
 		RBinSection *sec = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!sec) {
-			return false;
-		}
 		if (R_STR_ISNOTEMPTY (sections[i].name)) {
 			sec->name = strdup ((const char*)sections[i].name);
 		} else {

@@ -81,9 +81,6 @@ static bool append_omf_sections(RBinFile *bf, OMF_segment *section, r_bin_omf_ob
 
 	while (data) {
 		RBinSection *new = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!new) {
-			return false;
-		}
 		if (section->name_idx && section->name_idx - 1 < obj->nb_name) {
 			new->name = r_str_newf ("%s_%d", obj->names[section->name_idx - 1], ct_name++);
 		} else {

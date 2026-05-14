@@ -284,9 +284,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// .text
 	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!s) {
-		return false;
-	}
 	s->name = strdup (".text");
 	s->paddr = 0;
 	s->vaddr = hdr->text_va;
@@ -298,9 +295,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// .data
 	s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!s) {
-		return false;
-	}
 	s->name = strdup (".data");
 	s->paddr = hdr->text_len;
 	s->vaddr = hdr->data_va;
@@ -316,9 +310,6 @@ static bool sections_vec(RBinFile *bf) {
 	// .bss (no bytes in file)
 	if (hdr->bss_len) {
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->name = strdup (".bss");
 		s->paddr = 0;
 		s->vaddr = (ut64)hdr->data_va + (ut64)hdr->data_len;

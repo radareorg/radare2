@@ -130,9 +130,6 @@ static bool sections_vec(RBinFile *bf) {
 	RBinSection *section;
 	R_VEC_FOREACH (segments, section) {
 		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
-		if (!dst) {
-			return false;
-		}
 		*dst = *section;
 		dst->name = section->name? strdup (section->name): NULL;
 		dst->format = section->format? strdup (section->format): NULL;
@@ -747,9 +744,6 @@ static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value) {
 		return;
 	}
 	RBinReloc *r = RVecRBinReloc_emplace_back (fixups);
-	if (!r) {
-		return;
-	}
 	r->type = R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;

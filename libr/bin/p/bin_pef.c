@@ -710,9 +710,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->is_segment = false; // like XCOFF, we have no concept of ELF segments
 		ptr->add = true;
 		ptr->paddr = sec->offset;

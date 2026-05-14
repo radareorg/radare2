@@ -204,9 +204,6 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 ba = baddr (bf);
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("header");
 	ptr->size = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_memoffset));
@@ -217,9 +214,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add text segment
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (text_size));
 	ptr->size = ptr->vsize;
@@ -230,9 +224,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add ro segment
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("ro");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (ro_size));
 	ptr->size = ptr->vsize;
@@ -243,9 +234,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add data segment
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("data");
 	ptr->vsize = r_buf_read_le32_at (b, NSO_OFF (data_size));
 	ptr->size = ptr->vsize;

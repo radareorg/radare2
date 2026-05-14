@@ -61,9 +61,6 @@ static bool sections_vec(RBinFile *bf) {
 	bank = gb_get_rombanks (bank);
 
 	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!section) {
-		return false;
-	}
 	section->name = strdup ("rombank00");
 	section->paddr = 0;
 	section->size = 0x4000;
@@ -74,9 +71,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	for (i = 1; i < bank; i++) {
 		section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!section) {
-			return false;
-		}
 		section->name = r_str_newf ("rombank%02x", i);
 		section->paddr = i * 0x4000;
 		section->vaddr = i * 0x10000 - 0xc000;

@@ -28,9 +28,6 @@ static bool sections_vec(RBinFile *bf) {
 		/* Check if section is used */
 		if (loaded_header->sections[i].size) {
 			RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (!section) {
-				return false;
-			}
 			/* Firmware Type ('0'=ARM9/'1'=ARM11) */
 			if (loaded_header->sections[i].type == 0x0) {
 				section->name = strdup ("arm9");

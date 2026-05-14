@@ -44,9 +44,6 @@ static bool sections_vec(RBinFile *bf) {
 		return true;
 	}
 	RBinSection *ptr9 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr9) {
-		return false;
-	}
 
 	ptr9->name = strdup ("arm9");
 	ptr9->size = lh->arm9_size;
@@ -57,9 +54,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr9->add = true;
 
 	RBinSection *ptr7 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr7) {
-		return false;
-	}
 	ptr7->name = strdup ("arm7");
 	ptr7->size = lh->arm7_size;
 	ptr7->vsize = lh->arm7_size;

@@ -67,9 +67,6 @@ static bool coff_import_to_vec(RBinFile *bf, RVecRBinImport *ret, RBinImport *im
 		return false;
 	}
 	RBinImport *slot = RVecRBinImport_emplace_back (ret);
-	if (!slot) {
-		return false;
-	}
 	*slot = *imp;
 	slot->ordinal = (*ord)++;
 	memset (imp, 0, sizeof (*imp));
@@ -427,10 +424,6 @@ static bool sections_vec(RBinFile *bf) {
 			//IO does not like sections with the same name append idx
 			//since it will update it
 			ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-			if (!ptr) {
-				free (tmp);
-				return false;
-			}
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->type == COFF_TYPE_XCOFF) {
@@ -468,12 +461,8 @@ static bool symbols_vec(RBinFile *bf) {
 		if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
 			if (coff_keep_name (bf, tmp.name)) {
 				RBinSymbol *slot = RVecRBinSymbol_emplace_back (ret);
-				if (slot) {
-					*slot = tmp;
-					obj->sym_idx[i] = (ut32)RVecRBinSymbol_length (ret);
-				} else {
-					r_bin_symbol_fini (&tmp);
-				}
+				*slot = tmp;
+				obj->sym_idx[i] = (ut32)RVecRBinSymbol_length (ret);
 			} else {
 				r_bin_symbol_fini (&tmp);
 			}

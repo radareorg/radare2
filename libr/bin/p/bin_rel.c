@@ -352,9 +352,6 @@ static bool sections_vec(RBinFile *bf) {
 			continue;
 		}
 		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!s) {
-			return false;
-		}
 		s->paddr = paddr;
 		s->vaddr = bf->bo->baddr + s->paddr;
 		s->size = s->vsize = rel_s->size;

@@ -302,9 +302,6 @@ static bool sections_vec(RBinFile *bf) {
 	** relic? */
 	r_list_foreach (obj->streams.memories, it, memory) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = (memory->memory).rva;
 		ptr->size = (memory->memory).data_size;
@@ -319,9 +316,6 @@ static bool sections_vec(RBinFile *bf) {
 	index = obj->streams.memories64.base_rva;
 	r_list_foreach (obj->streams.memories64.memories, it, memory64) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("Memory_Section");
 		ptr->paddr = index;
 		ptr->size = memory64->data_size;
@@ -356,10 +350,6 @@ static bool sections_vec(RBinFile *bf) {
 		r_str_utf16_to_utf8 ((ut8 *)name, str_length * 2,
 				b + sizeof (ut32), str_length, obj->endian);
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			free (name);
-			return false;
-		}
 		ptr->name = name;
 		ptr->vaddr = module->base_of_image;
 		ptr->vsize = module->size_of_image;
@@ -377,10 +367,6 @@ static bool sections_vec(RBinFile *bf) {
 					RBinSection *pe_sec;
 					r_list_foreach (pe_secs, it1, pe_sec) {
 						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-						if (!dst) {
-							r_list_free (pe_secs);
-							return false;
-						}
 						*dst = *pe_sec;
 						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
 						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;
@@ -396,10 +382,6 @@ static bool sections_vec(RBinFile *bf) {
 					RBinSection *pe_sec;
 					r_list_foreach (pe_secs, it1, pe_sec) {
 						RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-						if (!dst) {
-							r_list_free (pe_secs);
-							return false;
-						}
 						*dst = *pe_sec;
 						dst->name = pe_sec->name? strdup (pe_sec->name): NULL;
 						dst->format = pe_sec->format? strdup (pe_sec->format): NULL;

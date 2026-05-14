@@ -116,9 +116,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add text segment
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup("text");
 	ptr->size = h->psize;
 	ptr->vsize = h->psize;
@@ -129,9 +126,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->has_strings = true;
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup("sign");
 	ptr->size = h->sign_sz;
 	ptr->vsize = h->sign_sz;
@@ -143,9 +137,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	if (h->cert_sz && h->cert_va > h->vaddr) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("cert");
 		ptr->size = h->cert_sz;
 		ptr->vsize = h->cert_sz;

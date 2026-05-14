@@ -38,9 +38,6 @@ static bool sections_vec(RBinFile *bf) {
 		return true;
 	}
 	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!section) {
-		return false;
-	}
 	section->name = strdup ("prg");
 	section->paddr = 2;
 	section->size = sz - 2;

@@ -150,9 +150,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
@@ -160,9 +157,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
@@ -174,9 +168,6 @@ static bool sections_vec(RBinFile *bf) {
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
@@ -189,9 +180,6 @@ static bool sections_vec(RBinFile *bf) {
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			return false;
-		}
 		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);

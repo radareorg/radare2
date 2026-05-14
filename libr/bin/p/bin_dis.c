@@ -197,9 +197,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add code section
 	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("code");
 	ptr->size = ptr->vsize = o->code_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -209,9 +206,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add types section
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("types");
 	ptr->size = ptr->vsize = o->type_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -221,9 +215,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add data section
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("data");
 	ptr->size = ptr->vsize = o->header.data_size;
 	ptr->paddr = ptr->vaddr = addr;
@@ -236,9 +227,6 @@ static bool sections_vec(RBinFile *bf) {
 
 	// add link section
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("link");
 	ptr->size = ptr->vsize = o->link_size;
 	ptr->paddr = ptr->vaddr = addr;

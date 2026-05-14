@@ -166,9 +166,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// header
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->size = 16;
 	ptr->vsize = 16;
@@ -179,9 +176,6 @@ static bool sections_vec(RBinFile *bf) {
 	ptr->add = true;
 	// add text segment
 	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-	if (!ptr) {
-		return false;
-	}
 	ptr->name = strdup ("text");
 	ptr->size = bs;
 	ptr->vsize = bs;

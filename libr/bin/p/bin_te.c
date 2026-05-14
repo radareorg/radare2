@@ -70,10 +70,6 @@ static bool sections_vec(RBinFile *bf) {
 	RVecRBinSection_clear (&bf->bo->sections_vec);
 	for (i = 0; !sections[i].last; i++) {
 		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
-		if (!ptr) {
-			free (sections);
-			return false;
-		}
 		ptr->name = strdup ((char*)sections[i].name);
 		ptr->size = sections[i].size;
 		ptr->vsize = sections[i].vsize;
