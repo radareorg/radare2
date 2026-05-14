@@ -1698,8 +1698,16 @@ static int cmd_flag(void *data, const char *input) {
 	case 'm': // "fm"
 		if (input[1] == '?') {
 			r_core_cmd_help_contains (core, help_msg_f, "fm");
+		} else if (input[1] == ' ') {
+			const char *errstr = NULL;
+			ut64 n = r_num_math_err (core->num, input + 1, &errstr);
+			if (errstr) {
+				R_LOG_ERROR ("Invalid number for fm");
+			} else {
+				r_flag_move (core->flags, core->addr, n);
+			}
 		} else {
-			r_flag_move (core->flags, core->addr, r_num_math (core->num, input+1));
+			r_core_return_invalid_command (core, "fm", input[1]);
 		}
 		break;
 	case 'R': // "fR"
@@ -2112,6 +2120,8 @@ static int cmd_flag(void *data, const char *input) {
 				R_LOG_ERROR ("Cannot find flag with given name");
 				// r_core_cmd_help_contains (core, help_msg_f, "fr");
 			}
+		} else {
+			r_core_return_invalid_command (core, "fr", input[1]);
 		}
 		break;
 	case 'N':
