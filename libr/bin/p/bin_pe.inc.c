@@ -322,6 +322,15 @@ static RList* classes(RBinFile *bf) {
 		}
 		*split = '\0';
 		const char *method_name = split + 1;
+		if (!bf->rbin->options.load_unnamed
+				&& (r_bin_name_is_unnamed (tmp) || r_bin_name_is_unnamed (method_name))) {
+			free (tmp);
+			continue;
+		}
+		RBinClass *cls = r_bin_file_add_class (bf, tmp, NULL, 0);
+		if (cls) {
+			cls->lang = R_BIN_LANG_MSVC;
+		}
 		RBinSymbol *m = r_bin_class_add_method (bf, tmp, method_name, 0);
 		if (m) {
 			m->vaddr = dsym->vaddr + image_base;

@@ -116,16 +116,16 @@ ic
 EOF
 EXPECT=<<EOF
 0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 <Module>
-0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 Microsoft.CodeAnalysis.EmbeddedAttribute
-0x00000000 [0x00000000 - 0x00000000]      0 msvc class 0 System.Runtime.CompilerServices.RefSafetyRulesAttribute
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 1 Microsoft.CodeAnalysis.EmbeddedAttribute
+0x00000000 [0x00000000 - 0x00000000]      0 msvc class 2 System.Runtime.CompilerServices.RefSafetyRulesAttribute
 0x00000000 msvc    field   0      Version
-0x00000000 [0x00402067 - 0x00402067]      0 msvc class 0 Program
+0x00000000 [0x00402067 - 0x00402067]      0 msvc class 3 Program
 0x00402067 ?   method   0      <Main>$
-0x00000000 [0x00402050 - 0x00402050]      0 msvc class 0 Microsoft.CodeAnalysis.EmbeddedAttribute.
+0x00000000 [0x00402050 - 0x00402050]      0 msvc class 4 Microsoft.CodeAnalysis.EmbeddedAttribute.
 0x00402050 ?   method   0      ctor
-0x00000000 [0x00402058 - 0x00402058]      0 msvc class 0 System.Runtime.CompilerServices.RefSafetyRulesAttribute.
+0x00000000 [0x00402058 - 0x00402058]      0 msvc class 5 System.Runtime.CompilerServices.RefSafetyRulesAttribute.
 0x00402058 ?   method   0      ctor
-0x00000000 [0x00402073 - 0x00402073]      0 msvc class 0 Program.
+0x00000000 [0x00402073 - 0x00402073]      0 msvc class 6 Program.
 0x00402073 ?   method   0      ctor
 EOF
 RUN
