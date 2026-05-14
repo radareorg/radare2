@@ -787,13 +787,12 @@ static bool scan_bounded_string_descriptor_section(RBinFile *bf, RList *list, in
 
 static bool scan_bounded_string_descriptor_sections(RBinFile *bf, RList *list, int min, int ptr_size, bool be) {
 	RBinObject *bo = bf? bf->bo: NULL;
-	if (!bo || !bo->sections) {
+	if (!bo || RVecRBinSection_empty (&bo->sections_vec)) {
 		return false;
 	}
 	bool added = false;
-	RListIter *iter;
 	RBinSection *section;
-	r_list_foreach (bo->sections, iter, section) {
+	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (is_bounded_string_fallback_descriptor_section (section)) {
 			added |= scan_bounded_string_descriptor_section (bf, list, min, section, ptr_size, be);
 		}
