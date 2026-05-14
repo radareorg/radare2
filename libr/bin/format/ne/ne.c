@@ -78,14 +78,14 @@ static char *__func_name_from_ord(const char *module, ut16 ordinal) {
 	return name;
 }
 
-RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
+bool r_bin_ne_load_segments(r_bin_ne_obj_t *bin, RVecRBinSection *segments) {
 	int i;
-	if (!bin || !bin->segment_entries || !bin->ne_header) {
-		return NULL;
+	if (!bin || !bin->segment_entries || !bin->ne_header || !segments) {
+		return false;
 	}
-	RList *segments = r_list_newf (free);
+	RVecRBinSection_clear (segments);
 	for (i = 0; i < bin->ne_header->SegCount; i++) {
-		RBinSection *bs = R_NEW0 (RBinSection);
+		RBinSection *bs = RVecRBinSection_emplace_back (segments);
 		NE_image_segment_entry *se = &bin->segment_entries[i];
 		bs->size = se->length;
 		bs->vsize = se->minAllocSz ? se->minAllocSz : 64000;
@@ -95,10 +95,8 @@ RList *r_bin_ne_get_segments(r_bin_ne_obj_t *bin) {
 		bs->paddr = (ut64)se->offset * bin->alignment;
 		bs->name = r_str_newf ("%s.%" PFMT64d, se->flags & IS_MOVEABLE ? "MOVEABLE" : "FIXED", bs->paddr);
 		bs->is_segment = true;
-		r_list_append (segments, bs);
 	}
-	bin->segments = segments;
-	return segments;
+	return true;
 }
 
 static bool ne_has_symbol_at(RVecRBinSymbol *vec, ut64 paddr) {
@@ -166,6 +164,7 @@ void r_bin_ne_load_symbols(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 		}
 		i++;
 	}
+	r_list_free (entries);
 }
 
 static char *__resource_type_str(int type) {
@@ -302,11 +301,6 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 		return NULL;
 	}
 	RList *entries = r_list_newf (free);
-	RList *segments = r_bin_ne_get_segments (bin);
-	if (!segments) {
-		r_list_free (entries);
-		return NULL;
-	}
 	if (bin->ne_header->csEntryPoint) {
 		RBinAddr *entry = R_NEW0 (RBinAddr);
 		if (!entry) {
@@ -315,8 +309,12 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 		}
 		entry->bits = 16;
 		ut32 entry_cs = bin->ne_header->csEntryPoint;
-		RBinSection *s = r_list_get_n (segments, entry_cs - 1);
-		entry->paddr = bin->ne_header->ipEntryPoint + (s? s->paddr: 0);
+		if (entry_cs > 0 && entry_cs <= bin->ne_header->SegCount) {
+			NE_image_segment_entry *se = &bin->segment_entries[entry_cs - 1];
+			entry->paddr = bin->ne_header->ipEntryPoint + (ut64)se->offset * bin->alignment;
+		} else {
+			entry->paddr = bin->ne_header->ipEntryPoint;
+		}
 
 		r_list_append (entries, entry);
 	}
@@ -375,26 +373,24 @@ RList *r_bin_ne_get_entrypoints(r_bin_ne_obj_t *bin) {
 			r_list_append (entries, entry);
 		}
 	}
-	r_list_free (segments);
-	bin->entries = entries;
 	return entries;
 }
 
-RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
-	RList *segments = bin->segments;
-	if (!segments || !bin->ne_header) {
-		return NULL;
-	}
-	RList *entries = bin->entries;
-	if (!entries) {
+RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols, RVecRBinSection *sections) {
+	if (!bin || !bin->ne_header || !sections || RVecRBinSection_empty (sections)) {
 		return NULL;
 	}
 	if (!symbols) {
 		return NULL;
 	}
+	RList *entries = r_bin_ne_get_entrypoints (bin);
+	if (!entries) {
+		return NULL;
+	}
 
 	ut16 *modref = calloc (bin->ne_header->ModRefs, sizeof (ut16));
 	if (!modref) {
+		r_list_free (entries);
 		return NULL;
 	}
 	r_buf_fread_at (bin->buf, (ut64)bin->ne_header->ModRefTable + bin->header_offset, (ut8 *)modref, "s", bin->ne_header->ModRefs);
@@ -402,14 +398,14 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 	RList *relocs = r_list_newf ((RListFree)r_bin_reloc_free);
 	if (!relocs) {
 		free (modref);
+		r_list_free (entries);
 		return NULL;
 	}
 
-	RListIter *it;
 	RBinSection *seg;
-	int index = -1;
-	r_list_foreach (segments, it, seg) {
-		index++;
+	size_t index;
+	for (index = 0; index < RVecRBinSection_length (sections) && index < bin->ne_header->SegCount; index++) {
+		seg = RVecRBinSection_at (sections, index);
 		if (!(bin->segment_entries[index].flags & RELOCINFO)) {
 			continue;
 		}
@@ -481,7 +477,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 				// TODO
 			} else {
 				if (strstr (seg->name, "FIXED")) {
-					RBinSection *s = r_list_get_n (segments, rel.segnum - 1);
+					RBinSection *s = RVecRBinSection_at (sections, rel.segnum - 1);
 					if (s) {
 						offset = s->paddr + rel.segoff;
 					} else {
@@ -535,6 +531,7 @@ RList *r_bin_ne_get_relocs(r_bin_ne_obj_t *bin, RVecRBinSymbol *symbols) {
 		}
 	}
 	free (modref);
+	r_list_free (entries);
 	return relocs;
 }
 

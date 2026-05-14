@@ -79,6 +79,22 @@ static void clamp_imports_vec(RVecRBinImport *imports, int limit) {
 	}
 }
 
+static void clamp_sections_vec(RVecRBinSection *sections, int limit) {
+	if (limit < 1) {
+		return;
+	}
+	while (RVecRBinSection_length (sections) > limit) {
+		RVecRBinSection_pop_back (sections);
+	}
+}
+
+static void rebase_sections_vec(RBinObject *bo) {
+	RBinSection *section;
+	R_VEC_FOREACH (&bo->sections_vec, section) {
+		section->paddr += bo->loadaddr;
+	}
+}
+
 static bool bin_name_has_value(RBinName *name) {
 	return name && ((R_STR_ISNOTEMPTY (name->name) && !r_bin_name_is_unnamed (name->name))
 		|| (R_STR_ISNOTEMPTY (name->oname) && !r_bin_name_is_unnamed (name->oname))
@@ -201,12 +217,12 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
-	r_list_free (o->sections);
 	r_list_free (o->strings);
 	ht_up_free (o->strings_db);
 
 	RVecRBinImport_fini (&o->imports_vec);
 	RVecRBinSymbol_fini (&o->symbols_vec);
+	RVecRBinSection_fini (&o->sections_vec);
 
 	r_list_free (o->classes);
 	ht_pp_free (o->classes_ht);
@@ -326,13 +342,11 @@ static void classes_from_symbols2(RBinFile *bf, RBinSymbol *sym) {
 		RBinClass *c = r_bin_file_add_class (bf, sym->classname, NULL, 0);
 		if (c && !classes_names_only (bf)) {
 			RBinField *f = RVecRBinField_emplace_back (&c->fields);
-			if (f) {
-				f->name = r_bin_name_new (fn);
-				f->paddr = sym->paddr;
-				f->vaddr = sym->vaddr;
-				f->value = -1;
-				f->size = sym->size;
-			}
+			f->name = r_bin_name_new (fn);
+			f->paddr = sym->paddr;
+			f->vaddr = sym->vaddr;
+			f->value = -1;
+			f->size = sym->size;
 		}
 		free (fn);
 	} else {
@@ -381,6 +395,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	bo->loadaddr = loadaddr != UT64_MAX ? loadaddr : 0;
 	RVecRBinSymbol_init (&bo->symbols_vec);
 	RVecRBinImport_init (&bo->imports_vec);
+	RVecRBinSection_init (&bo->sections_vec);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
@@ -583,17 +598,14 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		bo->libs = p->libs (bf);
 		clamp_list (bo->libs, limit);
 	}
-	if (p->sections) {
-		// XXX sections are populated by call to size
-		if (!bo->sections) {
-			bo->sections = p->sections (bf);
-		}
-		if (bo->sections) {
-			bo->sections->free = (RListFree)r_bin_section_free;
-		}
-		REBASE_PADDR (bo, bo->sections, RBinSection);
-		if (bin->filter) {
-			r_bin_filter_sections (bf, bo->sections);
+	if (p->sections_vec) {
+		RVecRBinSection_clear (&bo->sections_vec);
+		if (p->sections_vec (bf)) {
+			rebase_sections_vec (bo);
+			clamp_sections_vec (&bo->sections_vec, limit);
+			if (bin->filter) {
+				r_bin_filter_sections_vec (bf, &bo->sections_vec);
+			}
 		}
 	}
 	// Load classes before reloc creation. Class-method-creating plugins

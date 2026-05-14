@@ -62,10 +62,22 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
 	RBinPycObj *obj = (RBinPycObj *)R_UNWRAP3 (bf, bo, bin_obj);
-	return obj ? obj->sections_cache : NULL;
+	if (!obj) {
+		return false;
+	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	RBinSection *section;
+	RListIter *iter;
+	r_list_foreach (obj->sections_cache, iter, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		*dst = *section;
+		dst->name = section->name? strdup (section->name): NULL;
+		dst->format = section->format? strdup (section->format): NULL;
+	}
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -131,7 +143,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.load = &load,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.destroy = &destroy,
 };

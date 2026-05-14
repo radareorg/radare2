@@ -103,10 +103,6 @@ static char *header(RBinFile *bf, int mode) {
 	return r_strbuf_drain (sb);
 }
 
-static RList *sections(RBinFile *bf) {
-	return r_bin_le_get_sections (bf->bo->bin_obj);
-}
-
 static RList *entries(RBinFile *bf) {
 	return r_bin_le_get_entrypoints (bf->bo->bin_obj);
 }
@@ -224,6 +220,10 @@ static RBinInfo *info(RBinFile *bf) {
 	return info;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	return r_bin_le_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
+}
+
 RBinPlugin r_bin_plugin_le = {
 	.meta = {
 		.name = "le",
@@ -237,7 +237,7 @@ RBinPlugin r_bin_plugin_le = {
 	.destroy = &destroy,
 	.info = &info,
 	.header = &header,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,

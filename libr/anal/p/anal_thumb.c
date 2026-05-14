@@ -89,7 +89,7 @@ static void scan_chunk(ThumbScanCtx *ctx, const ut8 *buf, int toread, ut64 addr)
 // Scan executable sections for ARM/Thumb mode switches by looking at BL/BLX
 // immediate instructions. Creates ahb hints at mode-switch targets.
 static int thumb_scan(RAnal *anal) {
-	if (!anal->iob.read_at || !anal->binb.get_sections) {
+	if (!anal->iob.read_at || !anal->binb.get_sections_vec) {
 		return 0;
 	}
 	ThumbScanCtx ctx = {
@@ -100,10 +100,9 @@ static int thumb_scan(RAnal *anal) {
 	};
 	const int bsz = 4096;
 	ut8 *buf = R_NEWS (ut8, bsz);
-	RList *sections = anal->binb.get_sections (anal->binb.bin);
-	RListIter *iter;
+	RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
 	RBinSection *section;
-	r_list_foreach (sections, iter, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (!(section->perm & R_PERM_X)) {
 			continue;
 		}

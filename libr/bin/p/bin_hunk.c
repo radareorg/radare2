@@ -37,9 +37,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
-	RBinSection *ptr = R_NEW0 (RBinSection);
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("HUNK_HEADER");
 	ptr->paddr = 0;
 	ptr->size = r_buf_size (bf->buf);
@@ -47,8 +47,7 @@ static RList* sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	return ret;
+	return true;
 }
 
 static RList* entries(RBinFile *bf) {
@@ -86,7 +85,7 @@ RBinPlugin r_bin_plugin_hunk = {
 	.load = &load,
 	.check = &check,
 	.entries = &entries,
-	.sections = sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

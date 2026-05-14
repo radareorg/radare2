@@ -72,12 +72,9 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	DolHeader *dol = bf->bo->bin_obj;
-	RList *ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	int i;
 	RBinSection *s;
 
@@ -86,7 +83,7 @@ static RList *sections(RBinFile *bf) {
 		if (!dol->text_paddr[i] || !dol->text_vaddr[i]) {
 			continue;
 		}
-		s = R_NEW0 (RBinSection);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		s->name = r_str_newf ("text_%d", i);
 		s->paddr = dol->text_paddr[i];
 		s->vaddr = dol->text_vaddr[i];
@@ -94,14 +91,13 @@ static RList *sections(RBinFile *bf) {
 		s->vsize = s->size;
 		s->perm = r_str_rwx ("r-x");
 		s->add = true;
-		r_list_append (ret, s);
 	}
 	/* data sections */
 	for (i = 0; i < N_DATA; i++) {
 		if (!dol->data_paddr[i] || !dol->data_vaddr[i]) {
 			continue;
 		}
-		s = R_NEW0 (RBinSection);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		s->name = r_str_newf ("data_%d", i);
 		s->paddr = dol->data_paddr[i];
 		s->vaddr = dol->data_vaddr[i];
@@ -109,10 +105,9 @@ static RList *sections(RBinFile *bf) {
 		s->vsize = s->size;
 		s->perm = r_str_rwx ("r--");
 		s->add = true;
-		r_list_append (ret, s);
 	}
 	/* bss section */
-	s = R_NEW0 (RBinSection);
+	s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	s->name = strdup ("bss");
 	s->paddr = 0;
 	s->vaddr = dol->bss_addr;
@@ -120,9 +115,8 @@ static RList *sections(RBinFile *bf) {
 	s->vsize = s->size;
 	s->perm = r_str_rwx ("rw-");
 	s->add = true;
-	r_list_append (ret, s);
 
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -166,7 +160,7 @@ RBinPlugin r_bin_plugin_dol = {
 	.baddr = &baddr,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

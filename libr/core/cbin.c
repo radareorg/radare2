@@ -685,13 +685,12 @@ static const char *get_compile_time(Sdb *binFileSdb) {
 }
 
 static bool is_executable(RBinObject *bo) {
-	RListIter *it;
 	RBinSection *sec;
 	R_RETURN_VAL_IF_FAIL (bo, false);
 	if (bo->info && bo->info->arch) {
 		return true;
 	}
-	r_list_foreach (bo->sections, it, sec) {
+	R_VEC_FOREACH (&bo->sections_vec, sec) {
 		if (sec->perm & R_PERM_X) {
 			return true;
 		}
@@ -1130,12 +1129,11 @@ static void file_lines_free_kv(HtPPKv *kv) {
 
 static bool bin_addrline_is_large_dwarf(RBinFile *bf, const char **section_name, ut64 *section_size) {
 	RBinObject *o = bf? bf->bo: NULL;
-	if (!o || !o->sections) {
+	if (!o) {
 		return false;
 	}
-	RListIter *iter;
 	RBinSection *section;
-	r_list_foreach (o->sections, iter, section) {
+	R_VEC_FOREACH (&o->sections_vec, section) {
 		const char *name = section->name;
 		if (!name || strstr (name, "debug_line_str")) {
 			continue;
@@ -3476,16 +3474,18 @@ static bool bin_map_sections_to_segments(RCore *core, PJ *pj, int mode) {
 	RBinSection *section = NULL, *segment = NULL;
 	RList *sections = r_list_new ();
 	RList *segments = r_list_new ();
-	RList *tmp = r_bin_get_sections (bin);
+	RVecRBinSection *tmp = r_bin_get_sections_vec (bin);
 	RTable *table = r_core_table_new (core, "segments");
 	RTableColumnType *typeString = r_table_type ("string");
 
 	r_table_add_column (table, typeString, "Segment", 0);
 	r_table_add_column (table, typeString, "Section", 0);
 
-	r_list_foreach (tmp, iter, section) {
-		RList *list = section->is_segment? segments: sections;
-		r_list_append (list, section);
+	if (tmp) {
+		R_VEC_FOREACH (tmp, section) {
+			RList *list = section->is_segment? segments: sections;
+			r_list_append (list, section);
+		}
 	}
 
 	if (IS_MODE_JSON (mode)) {
@@ -3528,12 +3528,11 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	char *str = NULL;
 	RBinSection *section;
 	RBinInfo *info = NULL;
-	RListIter *iter;
 	RTable *table = r_core_table_new (core, "sections");
 	int i = 0;
 	int fd = -1;
 	bool printHere = false;
-	RList *sections = r_bin_get_sections (core->bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 #if LOAD_BSS_MALLOC
 	const bool inDebugger = r_config_get_b (core->config, "cfg.debug");
 #endif
@@ -3557,6 +3556,11 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		r_table_free (table);
 		return false;
 	}
+	if (!sections) {
+		ht_pp_free (dup_chk_ht);
+		r_table_free (table);
+		return false;
+	}
 
 	if (chksum && *chksum == '.') {
 		if (at == UT64_MAX) {
@@ -3576,7 +3580,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 			return false;
 		}
 		RBinSection *s;
-		r_list_foreach (sections, iter, s) {
+		R_VEC_FOREACH (sections, s) {
 			char humansz[8];
 			if (print_segments != s->is_segment) {
 				continue;
@@ -3629,7 +3633,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 		r_table_align (table, 4, R_TABLE_ALIGN_RIGHT);
 	}
 	if (IS_MODE_SET (mode)) {
-		r_list_foreach (sections, iter, section) {
+		R_VEC_FOREACH (sections, section) {
 			if (!section->is_segment) {
 				segments_only = false;
 				break;
@@ -3639,7 +3643,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	}
 	int plimit = filesize? R_MIN (filesize, bin_hashlimit): bin_hashlimit;
 	const bool use_color = r_config_get_i (core->config, "scr.color") > 0;
-	r_list_foreach (sections, iter, section) {
+	R_VEC_FOREACH (sections, section) {
 		const char *perms = r_str_srwx_i (section->perm);
 		int va_sect = va;
 
@@ -3816,7 +3820,7 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 	}
 	// run the formats now
 	if (!print_segments && r_config_get_b (core->config, "bin.meta")) {
-		r_list_foreach (sections, iter, section) {
+		R_VEC_FOREACH (sections, section) {
 			if (R_STR_ISNOTEMPTY (section->format)) {
 				// This is damn slow if section vsize is HUGE
 				if (section->vsize < 1024 * 1024 * 2) {

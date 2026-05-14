@@ -188,7 +188,7 @@ static RList *filter_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *carve_kexts(RKernelCacheObj *obj, RBinFile *bf);
 static RList *kexts_from_load_commands(RKernelCacheObj *obj, RBinFile *bf);
 
-static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
+static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj);
 static void handle_data_sections(RBinSection *sect);
 static RList *resolve_syscalls(RKernelCacheObj *obj, ut64 enosys_addr);
 static RList *resolve_mig_subsystem(RKernelCacheObj *obj);
@@ -1203,13 +1203,13 @@ static int prot2perm(int x) {
 	return r;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinObject *obj = bf? bf->bo: NULL;
 
-	if (!obj || !obj->bin_obj || ! (ret = r_list_newf ((RListFree)free))) {
-		return NULL;
+	if (!obj || !obj->bin_obj) {
+		return false;
 	}
+	RVecRBinSection_clear (&obj->sections_vec);
 
 	RKernelCacheObj *kobj = (RKernelCacheObj *)obj->bin_obj;
 	ensure_kexts_initialized (kobj, bf);
@@ -1222,7 +1222,10 @@ static RList *sections(RBinFile *bf) {
 		int magic = r_read_le32 (magicbytes);
 		switch (magic) {
 		case MH_MAGIC_64:
-			sections_from_mach0 (ret, kext->mach0, bf, kext->range.offset, kext->name, kobj);
+			if (!sections_from_mach0 (kext->mach0, bf, kext->range.offset, kext->name, kobj)) {
+				r_unref (cache_buf);
+				return false;
+			}
 			break;
 		default:
 			R_LOG_ERROR ("Unknown sub-bin");
@@ -1230,14 +1233,17 @@ static RList *sections(RBinFile *bf) {
 		}
 	}
 
-	sections_from_mach0 (ret, kobj->mach0, bf, 0, NULL, kobj);
+	if (!sections_from_mach0 (kobj->mach0, bf, 0, NULL, kobj)) {
+		r_unref (cache_buf);
+		return false;
+	}
 
 	struct MACH0_(segment_command) * seg;
 	int nsegs = R_MIN (kobj->mach0->nsegs, 128);
 	int i;
 	for (i = 0; i < nsegs; i++) {
 		char segname[17];
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		seg = &kobj->mach0->segs[i];
 		r_str_ncpy (segname, seg->segname, 17);
 		r_str_filter (segname, -1);
@@ -1252,17 +1258,16 @@ static RList *sections(RBinFile *bf) {
 			ptr->vaddr = ptr->paddr;
 		}
 		ptr->perm = prot2perm (seg->initprot);
-		r_list_append (ret, ptr);
 	}
 
 	r_unref (cache_buf);
-	return ret;
+	return true;
 }
 
-static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
+static bool sections_from_mach0(struct MACH0_(obj_t) *mach0, RBinFile *bf, ut64 paddr, char *prefix, RKernelCacheObj *obj) {
 	const RVecSection *sections = MACH0_(load_sections) (mach0);
 	if (!sections) {
-		return;
+		return false;
 	}
 
 	struct section_t *section;
@@ -1274,7 +1279,7 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFi
 		}
 	}
 	R_VEC_FOREACH (sections, section) {
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		if (prefix) {
 			ptr->name = r_str_newf ("%s.%s", prefix, (char *)section->name);
 		} else {
@@ -1299,8 +1304,8 @@ static void sections_from_mach0(RList *ret, struct MACH0_(obj_t) * mach0, RBinFi
 		if (!ptr->perm && strstr (section->name, "__TEXT_EXEC.__text")) {
 			ptr->perm = 1 | 4;
 		}
-		r_list_append (ret, ptr);
 	}
+	return true;
 }
 
 static void handle_data_sections(RBinSection *sect) {
@@ -3116,7 +3121,7 @@ RBinPlugin r_bin_plugin_xnu_kernelcache = {
 	.entries = &entries,
 	.baddr = &baddr,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.classes = &classes,
 	.check = &check,
 	.info = &info

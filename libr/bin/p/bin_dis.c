@@ -185,63 +185,56 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinDisObj *o = (RBinDisObj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-
-	RList *ret = r_list_newf ((RListFree)free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut64 addr = o->header_size;
 
 	// add code section
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("code");
 	ptr->size = ptr->vsize = o->code_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
 
 	// add types section
-	if (!(ptr = R_NEW0 (RBinSection))) {
-		return ret;
-	}
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("types");
 	ptr->size = ptr->vsize = o->type_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
 
 	// add data section
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("data");
 	ptr->size = ptr->vsize = o->header.data_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_RW; // rw-
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
 
 	// skip module name
 	addr += o->module_name_size;
 
 	// add link section
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("link");
 	ptr->size = ptr->vsize = o->link_size;
 	ptr->paddr = ptr->vaddr = addr;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	addr += ptr->size;
 
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -271,7 +264,7 @@ RBinPlugin r_bin_plugin_dis = {
 	.destroy = &destroy,
 	.check = &check,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

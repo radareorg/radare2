@@ -37,13 +37,13 @@ static ut64 baddr(RBinFile *bf) {
 	return (ut64)lh->arm9_ram_address;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_new ();
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	struct nds_hdr *lh = (void *)bf->bo->bin_obj;
 	if (!lh) {
-		return ret;
+		return true;
 	}
-	RBinSection *ptr9 = R_NEW0 (RBinSection);
+	RBinSection *ptr9 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 
 	ptr9->name = strdup ("arm9");
 	ptr9->size = lh->arm9_size;
@@ -52,9 +52,8 @@ static RList *sections(RBinFile *bf) {
 	ptr9->vaddr = lh->arm9_ram_address;
 	ptr9->perm = r_str_rwx ("rwx");
 	ptr9->add = true;
-	r_list_append (ret, ptr9);
 
-	RBinSection *ptr7 = R_NEW0 (RBinSection);
+	RBinSection *ptr7 = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr7->name = strdup ("arm7");
 	ptr7->size = lh->arm7_size;
 	ptr7->vsize = lh->arm7_size;
@@ -62,9 +61,8 @@ static RList *sections(RBinFile *bf) {
 	ptr7->vaddr = lh->arm7_ram_address;
 	ptr7->perm = r_str_rwx ("rwx");
 	ptr7->add = true;
-	r_list_append (ret, ptr7);
 
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -115,7 +113,7 @@ RBinPlugin r_bin_plugin_ninds = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

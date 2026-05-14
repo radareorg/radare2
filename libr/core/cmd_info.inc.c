@@ -743,13 +743,12 @@ static void r_core_file_info(RCore *core, PJ *pj, int mode) {
 }
 
 static int bin_is_executable(RBinObject *obj) {
-	RListIter *it;
 	RBinSection *sec;
 	if (obj) {
 		if (obj->info && obj->info->arch) {
 			return true;
 		}
-		r_list_foreach (obj->sections, it, sec) {
+		R_VEC_FOREACH (&obj->sections_vec, sec) {
 			if (sec->perm & R_PERM_X) {
 				return true;
 			}
@@ -1773,14 +1772,13 @@ static void cmd_iSm(RCore *core, const char *input, PJ **_pj, int mode, const bo
 		return;
 	}
 	RBinObject *bo = bf->bo;
-	RListIter *iter;
 	RBinSection *sec;
 	RBinSymbol *sym;
 	bool countmode = (input[2] == 'c');
 
 	PJ *pj = *_pj;
 	RVecRBinSymbol *symbols = r_bin_file_get_symbols_vec (bf);
-	r_list_foreach (bo->sections, iter, sec) {
+	R_VEC_FOREACH (&bo->sections_vec, sec) {
 		int vsize = sec->vsize;
 		if (vsize < 1) {
 			continue;
@@ -1890,7 +1888,7 @@ static void cmd_iS(RCore *core, const char *input, PJ **_pj, int mode, const boo
 		r_list_foreach (objs, iter, bf) {
 			RBinObject *obj = bf->bo;
 			core->bin->cur = bf;
-			int count = (obj && obj->sections)? r_list_length (obj->sections): 0;
+			int count = obj? RVecRBinSection_length (&obj->sections_vec): 0;
 			RBININFO (name, action, input + 1 + param_shift, count);
 		}
 		core->bin->cur = cur;

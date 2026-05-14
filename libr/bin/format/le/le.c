@@ -256,12 +256,12 @@ R_IPI RList *r_bin_le_get_libs(RBinLEObj *bin) {
 *	page->size is the total size of iter records that describe the page
 *	TODO: Don't do this
 */
-static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
-	R_RETURN_IF_FAIL (l && bin && sec && page);
+static bool __create_iter_sections(RVecRBinSection *sections, RBinLEObj *bin, RBinSection *sec, LE_object_page_entry *page, ut64 vaddr, int cur_page) {
+	R_RETURN_VAL_IF_FAIL (sections && bin && sec && page, false);
 	LE_image_header *h = bin->header;
 	if (h->pageshift > ST16_MAX || h->pageshift < 0) {
 		// early quit before using an invalid offset
-		return;
+		return true;
 	}
 	ut32 pageshift = R_MIN ((ut64)h->pageshift, 63);
 	ut32 offset = (h->itermap + ((ut64)page->offset << (bin->is_le ? 0 : pageshift)));
@@ -269,12 +269,12 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 	// Gets the first iter record
 	ut16 iter_n = r_buf_read_ble16_at (bin->buf, offset, h->worder);
 	if (iter_n == UT16_MAX) {
-		return;
+		return true;
 	}
 	offset += sizeof (ut16);
 	ut16 data_size = r_buf_read_ble16_at (bin->buf, offset, h->worder);
 	if (data_size == UT16_MAX) {
-		return;
+		return true;
 	}
 	offset += sizeof (ut16);
 
@@ -286,10 +286,7 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 		int i;
 		tot_size = 0;
 		for (i = 0; i < iter_n; i++) {
-			RBinSection *s = R_NEW0 (RBinSection);
-			if (!s) {
-				break;
-			}
+			RBinSection *s = RVecRBinSection_emplace_back (sections);
 			s->name = r_str_newf ("%s.page.%d.iter.%d", sec->name, cur_page, iter_cnt);
 			s->bits = sec->bits;
 			s->perm = sec->perm;
@@ -304,7 +301,6 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 				R_LOG_DEBUG ("section exceeds file size");
 		//		break;
 			}
-			r_list_append (l, s);
 			iter_cnt++;
 		}
 		ut64 consumed = sizeof (ut16) * 2 + data_size;
@@ -326,37 +322,30 @@ static void __create_iter_sections(RList *l, RBinLEObj *bin, RBinSection *sec, L
 		offset += sizeof (ut16);
 	}
 	if (tot_size < h->pagesize) {
-		RBinSection *s = R_NEW0 (RBinSection);
-		if (s) {
-			s->name = r_str_newf ("%s.page.%d.iter.zerofill", sec->name, cur_page);
-			s->bits = sec->bits;
-			s->perm = sec->perm;
-			s->vsize = h->pagesize - tot_size;
-			s->vaddr = vaddr;
-			s->add = true;
-			r_list_append (l, s);
-		}
+		RBinSection *s = RVecRBinSection_emplace_back (sections);
+		s->name = r_str_newf ("%s.page.%d.iter.zerofill", sec->name, cur_page);
+		s->bits = sec->bits;
+		s->perm = sec->perm;
+		s->vsize = h->pagesize - tot_size;
+		s->vaddr = vaddr;
+		s->add = true;
 	}
+	return true;
 }
 
 // TODO: Compressed page
-R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
-	RList *l = r_list_newf ((RListFree)r_bin_section_free);
-	if (!l) {
-		return NULL;
-	}
+R_IPI bool r_bin_le_load_sections(RBinLEObj *bin, RVecRBinSection *sections) {
+	R_RETURN_VAL_IF_FAIL (bin && sections, false);
+	RVecRBinSection_clear (sections);
 	LE_image_header *h = bin->header;
 	ut32 pages_start_off = h->datapage;
 	int i;
 	for (i = 0; i < h->objcnt; i++) {
 		RBinSection *sec = R_NEW0 (RBinSection);
-		if (!sec) {
-			return l;
-		}
 		LE_object_entry *entry = &bin->objtbl[i];
 		if  (!entry) {
 			free (sec);
-			return l;
+			return true;
 		}
 		sec->name = r_str_newf ("obj.%d", i + 1);
 		sec->vsize = entry->virtual_size;
@@ -378,7 +367,9 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 		}
 		sec->is_data = (entry->flags & O_RESOURCE) || !(sec->perm & R_PERM_X);
 		if (!entry->page_tbl_entries) {
-			r_list_append (l, sec);
+			RBinSection *dst = RVecRBinSection_emplace_back (sections);
+			*dst = *sec;
+			free (sec);
 		}
 		int j;
 		ut32 page_size_sum = 0;
@@ -398,7 +389,7 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 			if (r < (int)sizeof (page)) {
 				R_LOG_WARN ("Cannot read out of bounds page table entry");
 				r_bin_section_free (sec);
-				return l;
+				return true;
 			}
 			RBinSection *s = R_NEW0 (RBinSection);
 			s->name = r_str_newf ("%s.page.%d", sec->name, j);
@@ -416,7 +407,11 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 					}
 				} else if (page.flags == P_ITERATED) {
 					ut64 vaddr = sec->vaddr + page_size_sum;
-					__create_iter_sections (l, bin, sec, &page, vaddr, j);
+					if (!__create_iter_sections (sections, bin, sec, &page, vaddr, j)) {
+						r_bin_section_free (s);
+						r_bin_section_free (sec);
+						return false;
+					}
 					r_bin_section_free (s);
 					page_size_sum += h->pagesize;
 					continue;
@@ -425,6 +420,7 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 					R_LOG_WARN ("Compressed page not handled: %s", s->name);
 				} else if (page.flags != P_ZEROED) {
 					if (h->pageshift > 63) {
+						r_bin_section_free (s);
 						continue;
 					}
 					ut32 pageshift = R_MIN (h->pageshift, 63);
@@ -437,16 +433,15 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 			s->size = R_MIN (page.size, s->vsize);
 			s->add = true;
 			s->bits = sec->bits;
-			r_list_append (l, s);
-			page_size_sum += s->vsize;
+			ut64 vsize = s->vsize;
+			RBinSection *dst = RVecRBinSection_emplace_back (sections);
+			*dst = *s;
+			free (s);
+			page_size_sum += vsize;
 		}
 		if (entry->page_tbl_entries) {
 			if (page_size_sum < sec->vsize) {
-				RBinSection *s = R_NEW0 (RBinSection);
-				if (!s) {
-					r_bin_section_free (sec);
-					return l;
-				}
+				RBinSection *s = RVecRBinSection_emplace_back (sections);
 				ut64 remainder_size = sec->vsize - page_size_sum;
 				s->vsize = remainder_size;
 				s->vaddr = sec->vaddr + page_size_sum;
@@ -456,12 +451,11 @@ R_IPI RList *r_bin_le_get_sections(RBinLEObj *bin) {
 				s->bits = sec->bits;
 				s->name = r_str_newf ("%s.page.zerofill", sec->name);
 				s->is_data = sec->is_data;
-				r_list_append (l, s);
 			}
 			r_bin_section_free (sec);
 		}
 	}
-	return l;
+	return true;
 }
 
 static char *__get_modname_by_ord(RBinLEObj *bin, ut32 ordinal) {
@@ -481,21 +475,32 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		return NULL;
 	}
 	RList *entries = __get_entries (bin);
-	RList *sections = r_bin_le_get_sections (bin);
+	RVecRBinSection sections = {0};
+	if (!r_bin_le_load_sections (bin, &sections)) {
+		r_list_free (entries);
+		r_list_free (l);
+		return NULL;
+	}
 	LE_image_header *h = bin->header;
 	ut64 cur_page = 0;
 	const ut64 fix_rec_tbl_off = (ut64)h->frectab + bin->headerOff;
 	ut32 ofa = r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + cur_page * sizeof (ut32), h->worder);
 	if (ofa == UT32_MAX) {
+		r_list_free (entries);
+		RVecRBinSection_fini (&sections);
+		r_list_free (l);
 		return NULL;
 	}
 	ut64 offset = fix_rec_tbl_off + ofa;
 	ut32 ofb = r_buf_read_ble32_at (bin->buf, (ut64)h->fpagetab + bin->headerOff + (cur_page + 1) * sizeof (ut32), h->worder);
 	if (ofb == UT32_MAX) {
+		r_list_free (entries);
+		RVecRBinSection_fini (&sections);
+		r_list_free (l);
 		return NULL;
 	}
 	ut64 end = fix_rec_tbl_off + ofb;
-	const RBinSection *cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
+	const RBinSection *cur_section = RVecRBinSection_at (&sections, cur_page);
 	ut64 cur_page_offset = cur_section ? cur_section->vaddr : 0;
 	while (cur_page < h->mpages) {
 		bool rel_appended = false; // whether rel has been appended to l and must not be freed
@@ -693,7 +698,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 			offset = fix_rec_tbl_off + w0;
 			end = fix_rec_tbl_off + w1;
 			if (offset < end) {
-				cur_section = (RBinSection *)r_list_get_n (sections, cur_page);
+				cur_section = RVecRBinSection_at (&sections, cur_page);
 				cur_page_offset = cur_section ? cur_section->vaddr : 0;
 			}
 		}
@@ -702,7 +707,7 @@ R_IPI RList *r_bin_le_get_relocs(RBinLEObj *bin) {
 		}
 	}
 	r_list_free (entries);
-	r_list_free (sections);
+	RVecRBinSection_fini (&sections);
 	return l;
 }
 

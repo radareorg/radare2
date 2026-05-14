@@ -29,46 +29,45 @@ RBinAddr *r_bin_mz_get_entrypoint (const struct r_bin_mz_obj_t *bin) {
 	return ep;
 }
 
-static int cmp_sections(const void *a, const void *b) {
-	const RBinSection *s_a = a;
-	const RBinSection *s_b = b;
-	return s_a->vaddr - s_b->vaddr;
+static int cmp_sections(const RBinSection *s_a, const RBinSection *s_b) {
+	return s_a->vaddr > s_b->vaddr? 1: s_a->vaddr < s_b->vaddr? -1: 0;
 }
 
-static RBinSection *r_bin_mz_init_section(const struct r_bin_mz_obj_t *bin, ut64 laddr) {
-	RBinSection *section = R_NEW0 (RBinSection);
+static RBinSection *r_bin_mz_init_section(RVecRBinSection *segments, ut64 laddr) {
+	RBinSection *section = RVecRBinSection_emplace_back (segments);
 	section->vaddr = laddr;
 	return section;
 }
 
-RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
-	RListIter *iter;
+static bool r_bin_mz_has_segment(RVecRBinSection *segments, ut64 laddr) {
+	RBinSection *section;
+	R_VEC_FOREACH (segments, section) {
+		if (section->vaddr == laddr) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool r_bin_mz_load_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize, RVecRBinSection *segments) {
 	MZ_image_relocation_entry *relocs;
 	int i, num_relocs;
 	ut16 ss;
 
-	if (!bin || !bin->dos_header) {
-		return NULL;
+	if (!bin || !bin->dos_header || !segments) {
+		return false;
 	}
 
-	RList *res = r_list_newf (free);
-	if (!res) {
-		return NULL;
-	}
+	RVecRBinSection_clear (segments);
 
 	/* Add address of first segment to make sure that it is present
 	 * even if there are no relocations or there isn't first segment in
 	 * the relocations. */
-	RBinSection *section = r_bin_mz_init_section (bin, 0);
-	if (!section) {
-		goto err_out;
-	}
-	r_list_add_sorted (res, section, cmp_sections);
+	RBinSection *section = r_bin_mz_init_section (segments, 0);
 
 	relocs = bin->relocation_entries;
 	num_relocs = bin->dos_header->num_relocs;
 	for (i = 0; i < num_relocs; i++) {
-		RBinSection c;
 		ut64 laddr, paddr, section_laddr;
 		ut16 curr_seg;
 
@@ -88,34 +87,29 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
 			continue;
 		}
 
-		c.vaddr = section_laddr;
-		if (r_list_find (res, &c, cmp_sections)) {
+		if (r_bin_mz_has_segment (segments, section_laddr)) {
 			continue;
 		}
 
-		section = r_bin_mz_init_section (bin, section_laddr);
-		if (!section) {
-			goto err_out;
-		}
-		r_list_add_sorted (res, section, cmp_sections);
+		section = r_bin_mz_init_section (segments, section_laddr);
 	}
 
 	/* Add address of stack segment if it's inside the load module. */
 	ss = bin->dos_header->ss;
 	if (r_bin_mz_va_to_la (ss, 0) < bin->load_module_size) {
-		section = r_bin_mz_init_section (bin, r_bin_mz_va_to_la (ss, 0));
-		if (!section) {
-			goto err_out;
-		}
-		r_list_add_sorted (res, section, cmp_sections);
+		section = r_bin_mz_init_section (segments, r_bin_mz_va_to_la (ss, 0));
 	}
+
+	RVecRBinSection_sort (segments, cmp_sections);
 
 	/* Fixup sizes and addresses, set name, permissions and set add flag */
 	int section_number = 0;
-	r_list_foreach (res, iter, section) {
+	size_t n_segments = RVecRBinSection_length (segments);
+	for (i = 0; i < n_segments; i++) {
+		section = RVecRBinSection_at (segments, i);
 		section->name = r_str_newf ("seg_%03d", section_number);
 		if (section_number) {
-			RBinSection *p_section = iter->p->data;
+			RBinSection *p_section = RVecRBinSection_at (segments, i - 1);
 			p_section->size = section->vaddr - p_section->vaddr;
 			p_section->vsize = p_section->size;
 		}
@@ -126,37 +120,29 @@ RList *r_bin_mz_get_segments(const struct r_bin_mz_obj_t *bin, ut64 filesize) {
 		section->is_segment = true;
 		section_number++;
 	}
-	section = r_list_last (res);
+	section = RVecRBinSection_at (segments, n_segments - 1);
 	section->size = bin->load_module_size - section->vaddr;
 	section->vsize = section->size;
 
 	const MZ_image_dos_header *dh = bin->dos_header;
 
 	ut64 hdroff = dh->header_paragraphs * 16;
-	section = R_NEW0 (RBinSection);
+	section = RVecRBinSection_emplace_back (segments);
 	section->name = strdup (".mzhdr");
 	section->paddr = 0;
 	section->vsize = hdroff;
 	section->size = hdroff;
 	section->perm = R_PERM_R;
-	r_list_append (res, section);
 
-	section = R_NEW0 (RBinSection);
+	section = RVecRBinSection_emplace_back (segments);
 	section->name = strdup (".text");
 	section->paddr = hdroff;
 	section->vsize = (dh->blocks_in_file * 512) + (dh->bytes_in_last_block);
 	section->size = section->vsize;
 	section->size = R_MIN (filesize - hdroff, section->size); // enforce file size boundaries
 	section->perm = R_PERM_R;
-	r_list_append (res, section);
 
-	return res;
-
-err_out:
-	R_LOG_ERROR ("alloc (RBinSection)");
-	r_list_free (res);
-
-	return NULL;
+	return true;
 }
 
 struct r_bin_mz_reloc_t *r_bin_mz_get_relocs (const struct r_bin_mz_obj_t *bin) {

@@ -123,19 +123,15 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
-	if (!(ret = r_list_new ())) {
-		return NULL;
-	}
-
+static bool sections_vec(RBinFile *bf) {
 	ut8 gbuf[32];
 	int left = r_buf_read_at (bf->buf, 0, (ut8*)&gbuf, sizeof (gbuf));
 	if (left < sizeof (gbuf)) {
-		return NULL;
+		return false;
 	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("header");
 	ptr->paddr = ptr->vaddr = 0;
 	ut64 baddr = 0;
@@ -153,17 +149,15 @@ static RList *sections(RBinFile *bf) {
 	ptr->size = hdrsize;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("text");
 	ptr->paddr = 0;
 	ptr->vaddr = baddr;
 	ptr->size = ptr->vsize = r_buf_size (bf->buf) - hdrsize;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -203,7 +197,7 @@ RBinPlugin r_bin_plugin_msx = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.minstrlen = 3

@@ -83,28 +83,23 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	xbe_section *sect = NULL;
 	r_bin_xbe_obj_t *obj = NULL;
 	xbe_header *h = NULL;
-	RList *ret = NULL;
 	char tmp[0x100];
 	int i, r;
 	ut32 addr;
 
 	if (!bf || !bf->bo || !bf->bo->bin_obj || !bf->buf) {
-		return NULL;
+		return false;
 	}
 	obj = bf->bo->bin_obj;
 	h = &obj->header;
 	if (h->sections < 1) {
-		return NULL;
+		return false;
 	}
-	ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
-	ret->free = free;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	if (h->sections < 1 || h->sections > 255) {
 		goto out_error;
 	}
@@ -121,19 +116,17 @@ static RList *sections(RBinFile *bf) {
 		goto out_error;
 	}
 	for (i = 0; i < h->sections; i++) {
-		RBinSection *item = R_NEW0 (RBinSection);
 		addr = sect[i].name_addr - h->base;
 		tmp[0] = 0;
 		if (addr > bf->size || addr + sizeof (tmp) > bf->size) {
-			free (item);
 			goto out_error;
 		}
 		r = r_buf_read_at (bf->buf, addr, (ut8 *) tmp, sizeof (tmp));
 		if (r < 1) {
-			free (item);
 			goto out_error;
 		}
 		tmp[sizeof (tmp) - 1] = 0;
+		RBinSection *item = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		item->name = r_str_newf ("%s.%i", tmp, i);
 		item->paddr = sect[i].offset;
 		item->vaddr = sect[i].vaddr;
@@ -148,14 +141,13 @@ static RList *sections(RBinFile *bf) {
 		if (sect[i].flags & SECT_FLAG_W) {
 			item->perm |= R_PERM_W;
 		}
-		r_list_append (ret, item);
 	}
 	free (sect);
-	return ret;
+	return true;
 out_error:
-	r_list_free (ret);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	free (sect);
-	return NULL;
+	return false;
 }
 
 static RList *libs(RBinFile *bf) {
@@ -344,7 +336,7 @@ RBinPlugin r_bin_plugin_xbe = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.libs = &libs,

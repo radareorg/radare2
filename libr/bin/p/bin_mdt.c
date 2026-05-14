@@ -395,13 +395,10 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
-	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool sections_vec(RBinFile *bf) {
+	r_return_val_if_fail (bf && bf->bo && bf->bo->bin_obj, false);
 	const RBinMdtObj *mdt = bf->bo->bin_obj;
-	RList *sections = r_list_newf ((RListFree)r_bin_section_free);
-	if (!sections) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RListIter *iter;
 	RBinMdtPart *part;
@@ -410,18 +407,15 @@ static RList *sections(RBinFile *bf) {
 			RListIter *it;
 			RBinSection *sec;
 			r_list_foreach (part->sections, it, sec) {
-				RBinSection *clone = R_NEW0 (RBinSection);
-				if (!clone) {
-					continue;
-				}
-				*clone = *sec;
-				clone->name = strdup (sec->name);
-				r_list_append (sections, clone);
+				RBinSection *dst = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+				*dst = *sec;
+				dst->name = sec->name? strdup (sec->name): NULL;
+				dst->format = sec->format? strdup (sec->format): NULL;
 			}
 		}
 	}
 
-	return sections;
+	return true;
 }
 
 static RList *relocs(RBinFile *bf) {
@@ -517,7 +511,7 @@ RBinPlugin r_bin_plugin_mdt = {
 	.baddr = &baddr,
 	.entries = &entries,
 	.maps = &maps,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.relocs = &relocs,
 	.info = &info,

@@ -139,11 +139,7 @@ RBinPlugin r_bin_plugin_elf64 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-#if R2_590
 	.sections_vec = &sections_vec,
-#else
-	.sections = &sections,
-#endif
 	.symbols_vec = symbols_vec,
 	.imports_vec = &imports_vec,
 	.minstrlen = 4,

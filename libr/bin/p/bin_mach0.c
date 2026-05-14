@@ -115,11 +115,26 @@ static ut64 baddr(RBinFile *bf) {
 	return MACH0_(get_baddr)(mo);
 }
 
-// R2_600 return RVecSegment
-static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, false);
 	struct MACH0_(obj_t) *mo = bf->bo->bin_obj;
-	return MACH0_(get_segments) (bf, mo); // TODO split up sections and segments?
+	RVecSegment *segments = MACH0_(get_segments_vec) (bf, mo);
+	if (!segments) {
+		return false;
+	}
+	RVecRBinSection *dst_sections = &bf->bo->sections_vec;
+	RVecRBinSection_clear (dst_sections);
+	if (!RVecRBinSection_reserve (dst_sections, RVecSegment_length (segments))) {
+		return false;
+	}
+	RBinSection *section;
+	R_VEC_FOREACH (segments, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
+		*dst = *section;
+		dst->name = section->name? strdup (section->name): NULL;
+		dst->format = section->format? strdup (section->format): NULL;
+	}
+	return true;
 }
 
 static RBinAddr *newEntry(ut64 hpaddr, ut64 paddr, int type, int bits) {
@@ -729,9 +744,6 @@ static void add_fixup(RVecRBinReloc *fixups, ut64 addr, ut64 value) {
 		return;
 	}
 	RBinReloc *r = RVecRBinReloc_emplace_back (fixups);
-	if (!r) {
-		return;
-	}
 	r->type = R_BIN_RELOC_64;
 	r->vaddr = value;
 	r->paddr = addr;
@@ -1084,14 +1096,14 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf);
+
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
-	if (!bf->bo->sections) {
-		RListIter *iter;
+	if (sections_vec (bf)) {
 		RBinSection *section;
-		bf->bo->sections = sections (bf);
-		r_list_foreach (bf->bo->sections, iter, section) {
+		R_VEC_FOREACH (&bf->bo->sections_vec, section) {
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
@@ -1116,7 +1128,7 @@ RBinPlugin r_bin_plugin_mach0 = {
 	.binsym = &binsym,
 	.entries = &entries,
 	.signature = &entitlements,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.size = &size,

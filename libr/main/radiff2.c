@@ -116,7 +116,8 @@ static RCore *opencore(RadiffOptions *ro, const char *f) {
 		(void)r_core_bin_update_arch_bits (c);
 
 		// force PA mode when working with raw bins
-		if (r_list_empty (r_bin_get_sections (c->bin))) {
+		RVecRBinSection *sections = r_bin_get_sections_vec (c->bin);
+		if (!sections || RVecRBinSection_empty (sections)) {
 			r_config_set_i (c->config, "io.va", false);
 		}
 		if (ro->analysis_level) {
@@ -774,17 +775,17 @@ static int import_cmp(const RBinImport *a, const RBinImport *b) {
 }
 
 static ut8 *get_sections(RCore *c, int *len) {
-	RListIter *iter;
-
 	if (!c || !len) {
 		return NULL;
 	}
 
 	RBinSection *sec;
-	const RList *list = r_bin_get_sections (c->bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (c->bin);
 	RList *reslist = r_list_newf (free);
-	r_list_foreach (list, iter, sec) {
-		r_list_append (reslist, strdup (sec->name));
+	if (sections) {
+		R_VEC_FOREACH (sections, sec) {
+			r_list_append (reslist, strdup (sec->name));
+		}
 	}
 	r_list_sort (reslist, (RListComparator)strcmp);
 	char *buf = r_str_list_join (reslist, "\n");

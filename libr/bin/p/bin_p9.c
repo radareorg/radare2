@@ -137,17 +137,13 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = NULL;
+static bool sections_vec(RBinFile *bf) {
 	RBinPlan9Obj *o = (RBinPlan9Obj *)bf->bo->bin_obj;
 
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-
-	if (!(ret = r_list_newf ((RListFree)free))) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	ut32 align = 0x1000;
 	// on some platforms the text segment has a separate alignment
@@ -168,7 +164,7 @@ static RList *sections(RBinFile *bf) {
 	ut64 vsize = 0;
 
 	// add text segment
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("text");
 	ptr->size = o->header.text;
 	// for regular applications: header is included in the text segment
@@ -180,7 +176,6 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf);
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
@@ -188,7 +183,7 @@ static RList *sections(RBinFile *bf) {
 	align = 0x1000;
 
 	// add data segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("data");
 	ptr->size = o->header.data;
 	ptr->vsize = P9_ALIGN (o->header.data, align);
@@ -196,12 +191,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
 	// add bss segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("bss");
 	ptr->size = 0;
 	ptr->vsize = P9_ALIGN (o->header.bss, align);
@@ -209,12 +203,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_RW;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
 	// add syms segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("syms");
 	ptr->size = o->header.syms;
 	ptr->vsize = P9_ALIGN (o->header.syms, align);
@@ -222,12 +215,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
 	// add pc/sp offsets segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("pcsp");
 	ptr->size = o->header.spsz;
 	ptr->vsize = P9_ALIGN (o->header.spsz, align);
@@ -235,12 +227,11 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 	phys += ptr->size;
 	vsize += ptr->vsize;
 
 	// add pc/line numbers segment
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("pcline");
 	ptr->size = o->header.pcsz;
 	ptr->vsize = P9_ALIGN (o->header.pcsz, align);
@@ -248,9 +239,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = baddr (bf) + vsize;
 	ptr->perm = R_PERM_R; // r--
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	return ret;
+	return true;
 }
 
 typedef struct {
@@ -697,7 +687,7 @@ RBinPlugin r_bin_plugin_p9 = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.libs = &libs,

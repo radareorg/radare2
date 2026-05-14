@@ -256,16 +256,15 @@ static ut64 numvar_section(RCore *core, const char *str, bool *ok) {
 			s = r_bin_get_section_at (bo, at, true);
 		} else {
 			// resolve section by name
-			RListIter *it;
 			RBinSection *sec;
-			r_list_foreach (bo->sections, it, sec) {
+			R_VEC_FOREACH (&bo->sections_vec, sec) {
 				if (!strcmp (sec->name, name)) {
 					s = sec;
 					break;
 				}
 			}
 			if (!s) {
-				r_list_foreach (bo->sections, it, sec) {
+				R_VEC_FOREACH (&bo->sections_vec, sec) {
 					if (strstr (sec->name, name)) {
 						s = sec;
 						break;

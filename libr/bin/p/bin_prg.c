@@ -31,19 +31,13 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (!ret) {
-		return NULL;
-	}
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut64 sz = r_buf_size (bf->buf);
 	if (sz < 2) {
-		return ret;
+		return true;
 	}
-	RBinSection *section = R_NEW0 (RBinSection);
-	if (!section) {
-		return ret;
-	}
+	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	section->name = strdup ("prg");
 	section->paddr = 2;
 	section->size = sz - 2;
@@ -51,8 +45,7 @@ static RList *sections(RBinFile *bf) {
 	section->vsize = sz - 2;
 	section->perm = R_PERM_RWX;
 	section->add = true;
-	r_list_append (ret, section);
-	return ret;
+	return true;
 }
 
 static RList *entries(RBinFile *bf) {
@@ -81,7 +74,7 @@ RBinPlugin r_bin_plugin_prg = {
 	.baddr = baddr,
 	.check = check,
 	.entries = entries,
-	.sections = sections,
+	.sections_vec = &sections_vec,
 	.info = info,
 };
 

@@ -115,14 +115,7 @@ static SymbolsMetadata parseMetadata(RBuffer *buf, int off) {
 	return sm;
 }
 
-static RBinSection *bin_section_from_section(RCoreSymCacheElementSection *sect) {
-	if (!sect->name) {
-		return NULL;
-	}
-	RBinSection *s = R_NEW0 (RBinSection);
-	if (!s) {
-		return NULL;
-	}
+static void bin_section_from_section(RBinSection *s, RCoreSymCacheElementSection *sect) {
 	s->name = r_str_ndup (sect->name, 256);
 	s->size = sect->size;
 	s->vsize = s->size;
@@ -131,17 +124,9 @@ static RBinSection *bin_section_from_section(RCoreSymCacheElementSection *sect) 
 	s->add = true;
 	s->perm = strstr (s->name, "TEXT") ? 5 : 4;
 	s->is_segment = false;
-	return s;
 }
 
-static RBinSection *bin_section_from_segment(RCoreSymCacheElementSegment *seg) {
-	if (!seg->name) {
-		return NULL;
-	}
-	RBinSection *s = R_NEW0 (RBinSection);
-	if (!s) {
-		return NULL;
-	}
+static void bin_section_from_segment(RBinSection *s, RCoreSymCacheElementSegment *seg) {
 	s->name = r_str_ndup (seg->name, 16);
 	s->size = seg->size;
 	s->vsize = seg->vsize;
@@ -150,7 +135,6 @@ static RBinSection *bin_section_from_segment(RCoreSymCacheElementSegment *seg) {
 	s->add = true;
 	s->perm = strstr (s->name, "TEXT") ? 5 : 4;
 	s->is_segment = true;
-	return s;
 }
 
 static RBinSymbol *bin_symbol_from_symbol(RCoreSymCacheElement *element, RCoreSymCacheElementSymbol *s) {
@@ -292,30 +276,32 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	return false;
 }
 
-static RList *sections(RBinFile *bf) {
-	R_RETURN_VAL_IF_FAIL (bf->bo && bf->bo->bin_obj, NULL);
-	RList *res = r_list_newf ((RListFree)r_bin_section_free);
+static bool sections_vec(RBinFile *bf) {
+	R_RETURN_VAL_IF_FAIL (bf->bo && bf->bo->bin_obj, false);
 	RCoreSymCacheElement *element = bf->bo->bin_obj;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	size_t i;
 	if (element->segments) {
 		for (i = 0; i < element->hdr->n_segments; i++) {
 			RCoreSymCacheElementSegment *seg = &element->segments[i];
-			RBinSection *s = bin_section_from_segment (seg);
-			if (s) {
-				r_list_append (res, s);
+			if (!seg->name) {
+				continue;
 			}
+			RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			bin_section_from_segment (s, seg);
 		}
 	}
 	if (element->sections) {
 		for (i = 0; i < element->hdr->n_sections; i++) {
 			RCoreSymCacheElementSection *sect = &element->sections[i];
-			RBinSection *s = bin_section_from_section (sect);
-			if (s) {
-				r_list_append (res, s);
+			if (!sect->name) {
+				continue;
 			}
+			RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+			bin_section_from_section (s, sect);
 		}
 	}
-	return res;
+	return true;
 }
 
 static ut64 baddr(RBinFile *bf) {
@@ -435,7 +421,7 @@ RBinPlugin r_bin_plugin_symbols = {
 	.load = &load,
 	.check = &check,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.size = &size,
 	.baddr = &baddr,
 	.info = &info,

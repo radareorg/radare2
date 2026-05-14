@@ -99,19 +99,16 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ut8 buf[64] = {0};
 	const int buf_size = R_MIN (sizeof (buf), r_buf_size (bf->buf));
 	r_buf_read_at (bf->buf, 0, buf, buf_size);
 	if (!bf->bo->info) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("text");
 	ptr->size = r_read_ble32 (buf + 16, false);
 	ptr->vsize = ptr->size + (ptr->size % 4096);
@@ -119,10 +116,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = ptr->paddr + baddr (bf);
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
 	if (MENUET_VERSION (buf)) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->name = strdup ("idata");
 		const ut32 idata_start = r_read_ble32 (buf + 40, false);
 		const ut32 idata_end = r_read_ble32 (buf + 44, false);
@@ -132,10 +128,9 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = ptr->paddr + baddr (bf);
 		ptr->perm = R_PERM_R;
 		ptr->add = true;
-		r_list_append (ret, ptr);
 	}
 
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -195,7 +190,7 @@ RBinPlugin r_bin_plugin_menuet = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	.create = &create,
 };

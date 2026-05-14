@@ -2064,11 +2064,11 @@ typedef struct {
 	ut64 size;
 } Section;
 
-static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Section s, int perm, char *format) {
-	R_RETURN_VAL_IF_FAIL (ret && name, NULL);
+static RBinSection *add_section(RBinFile *bf, ut64 baddr, const char *name, Section s, int perm, char *format) {
+	R_RETURN_VAL_IF_FAIL (bf && name, NULL);
 	R_RETURN_VAL_IF_FAIL (s.addr < UT32_MAX, NULL);
 	R_RETURN_VAL_IF_FAIL (s.size > 0 && s.size < UT32_MAX, NULL);
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup (name);
 	ptr->size = ptr->vsize = s.size;
 	ptr->paddr = s.addr;
@@ -2076,29 +2076,28 @@ static RBinSection *add_section(RList *ret, ut64 baddr, const char *name, Sectio
 	ptr->perm = perm;
 	ptr->add = false;
 	ptr->format = format;
-	r_list_append (ret, ptr);
 	return ptr;
 }
 
-static RBinSection *add_limited_section(RList *ret, int limit, ut64 baddr, const char *name, Section s, int perm, char *format) {
-	if (limit_reached (ret, limit)) {
+static RBinSection *add_limited_section(RBinFile *bf, int limit, ut64 baddr, const char *name, Section s, int perm, char *format) {
+	if (limit > 0 && RVecRBinSection_length (&bf->bo->sections_vec) >= (size_t)limit) {
 		free (format);
 		return NULL;
 	}
-	return add_section (ret, baddr, name, s, perm, format);
+	return add_section (bf, baddr, name, s, perm, format);
 }
 
-static void add_segment(RList *ret, ut64 baddr, const char *name, Section s, int perm) {
-	RBinSection *bs = add_section (ret, baddr, name, s, perm, NULL);
+static void add_segment(RBinFile *bf, ut64 baddr, const char *name, Section s, int perm) {
+	RBinSection *bs = add_section (bf, baddr, name, s, perm, NULL);
 	if (bs) {
 		bs->is_segment = true;
 		bs->add = true;
 	}
 }
 
-static void add_limited_segment(RList *ret, int limit, ut64 baddr, const char *name, Section s, int perm) {
-	if (!limit_reached (ret, limit)) {
-		add_segment (ret, baddr, name, s, perm);
+static void add_limited_segment(RBinFile *bf, int limit, ut64 baddr, const char *name, Section s, int perm) {
+	if (limit < 1 || RVecRBinSection_length (&bf->bo->sections_vec) < (size_t)limit) {
+		add_segment (bf, baddr, name, s, perm);
 	}
 }
 
@@ -2161,9 +2160,8 @@ static void fast_code_size(RBinFile *bf) {
 	bin->code_to = fsymsz;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	struct r_bin_dex_obj_t *bin = bf->bo->bin_obj;
-	RList *ret = NULL;
 	const int limit = bf->rbin->options.limit;
 
 	/* find the last method */
@@ -2171,9 +2169,7 @@ static RList *sections(RBinFile *bf) {
 	if (!bin->code_from || !bin->code_to) {
 		fast_code_size (bf);
 	}
-	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	/* initial section boundary assumptions */
 	Section s_head = { 0, sizeof (struct dex_header_t) };
@@ -2185,26 +2181,26 @@ static RList *sections(RBinFile *bf) {
 	const ut64 baddr = bf->bo->baddr;
 	/* sanity bound checks and section registrations */
 	if (validate_section ("header", NULL, &s_head, NULL, &s_file)) {
-		add_limited_section (ret, limit, baddr, "header", s_head, R_PERM_R, NULL);
+		add_limited_section (bf, limit, baddr, "header", s_head, R_PERM_R, NULL);
 	}
 	if (validate_section ("constpool", &s_head, &s_pool, &s_code, &s_file)) {
 		char *s_pool_format = r_str_newf ("Cd %d[%"PFMT64d"]", 4, (ut64) s_pool.size / 4);
-		add_limited_section (ret, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
+		add_limited_section (bf, limit, baddr, "constpool", s_pool, R_PERM_R, s_pool_format);
 	}
 	if (validate_section ("code", &s_pool, &s_code, &s_data, &s_file)) {
-		add_limited_section (ret, limit, baddr, "code", s_code, R_PERM_RX, NULL);
+		add_limited_section (bf, limit, baddr, "code", s_code, R_PERM_RX, NULL);
 	}
 	if (validate_section ("data", &s_code, &s_data, NULL, &s_file)) {
-		add_limited_section (ret, limit, baddr, "data", s_data, R_PERM_RX, NULL);
+		add_limited_section (bf, limit, baddr, "data", s_data, R_PERM_RX, NULL);
 	}
-	add_limited_section (ret, limit, baddr, "file", s_file, R_PERM_R, NULL);
+	add_limited_section (bf, limit, baddr, "file", s_file, R_PERM_R, NULL);
 
 	/* add segments */
 	if (s_code.size > 0) {
-		add_limited_segment (ret, limit, baddr, "code", s_code, R_PERM_RX);
+		add_limited_segment (bf, limit, baddr, "code", s_code, R_PERM_RX);
 	}
-	add_limited_segment (ret, limit, baddr, "file", s_file, R_PERM_R);
-	return ret;
+	add_limited_segment (bf, limit, baddr, "file", s_file, R_PERM_R);
+	return true;
 }
 
 // iH
@@ -2376,7 +2372,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.check = check,
 	.entries = entries,
 	.classes = classes,
-	.sections = sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.baddr = baddr,

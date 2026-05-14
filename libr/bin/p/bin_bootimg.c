@@ -141,26 +141,22 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	BootImageObj *bio = bf->bo->bin_obj;
 	if (!bio) {
-		return NULL;
+		return false;
 	}
 	BootImage *bi = &bio->bi;
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("header");
 	ptr->size = sizeof (BootImage);
 	ptr->vsize = bi->page_size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("kernel");
 	ptr->size = bi->kernel_size;
 	ptr->vsize = ADD_REMAINDER (ptr->size, bi->page_size);
@@ -168,11 +164,10 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = bi->kernel_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
 	if (bi->ramdisk_size > 0) {
 		ut64 base = bi->kernel_size + 2 * bi->page_size - 1;
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->name = strdup ("ramdisk");
 		ptr->size = bi->ramdisk_size;
 		ptr->vsize = ADD_REMAINDER (bi->ramdisk_size, bi->page_size);
@@ -180,12 +175,11 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = bi->ramdisk_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
 	}
 
 	if (bi->second_size > 0) {
 		ut64 base = bi->kernel_size + bi->ramdisk_size + 2 * bi->page_size - 1;
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->name = strdup ("second");
 		ptr->size = bi->second_size;
 		ptr->vsize = ADD_REMAINDER (bi->second_size, bi->page_size);
@@ -193,10 +187,9 @@ static RList *sections(RBinFile *bf) {
 		ptr->vaddr = bi->second_addr;
 		ptr->perm = R_PERM_RX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
 	}
 
-	return ret;
+	return true;
 }
 
 RBinPlugin r_bin_plugin_bootimg = {
@@ -211,7 +204,7 @@ RBinPlugin r_bin_plugin_bootimg = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = entries,
 	.info = &info,
 };

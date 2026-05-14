@@ -1006,8 +1006,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
 			RBinSection *s;
-			RListIter *iter;
-			r_list_foreach (obj->sections, iter, s) {
+			R_VEC_FOREACH (&obj->sections_vec, s) {
 				if (!s->is_segment) {
 					continue;
 				}
@@ -1026,7 +1025,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 			ut64 to = 0;
 			RBinSection *s;
 			RListIter *iter;
-			r_list_foreach (obj->sections, iter, s) {
+			R_VEC_FOREACH (&obj->sections_vec, s) {
 				if (s->is_segment) {
 					continue;
 				}
@@ -1081,8 +1080,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
 			RBinSection *s;
-			RListIter *iter;
-			r_list_foreach (obj->sections, iter, s) {
+			R_VEC_FOREACH (&obj->sections_vec, s) {
 				if (s->is_segment) {
 					continue;
 				}
@@ -1099,8 +1097,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
 			RBinSection *s;
-			RListIter *iter;
-			r_list_foreach (obj->sections, iter, s) {
+			R_VEC_FOREACH (&obj->sections_vec, s) {
 				if (!s->is_segment) {
 					continue;
 				}
@@ -1115,8 +1112,7 @@ R_API RList *r_core_get_boundaries_prot(RCore *core, R_UNUSED int perm, const ch
 		RBinObject *obj = r_bin_cur_object (core->bin);
 		if (obj) {
 			RBinSection *s;
-			RListIter *iter;
-			r_list_foreach (obj->sections, iter, s) {
+			R_VEC_FOREACH (&obj->sections_vec, s) {
 				if (s->is_segment) {
 					continue;
 				}

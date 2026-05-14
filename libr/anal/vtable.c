@@ -228,7 +228,11 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 		return NULL;
 	}
 
-	RList *sections = anal->binb.get_sections (anal->binb.bin);
+	if (!anal->binb.get_sections_vec) {
+		r_list_free (vtables);
+		return NULL;
+	}
+	RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
 	if (!sections) {
 		r_list_free (vtables);
 		return NULL;
@@ -236,9 +240,8 @@ R_API RList *r_anal_vtable_search(RVTableContext *context) {
 
 	r_cons_break_push (cons, NULL, NULL);
 
-	RListIter *iter;
 	RBinSection *section;
-	r_list_foreach (sections, iter, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (r_cons_is_breaked (cons)) {
 			break;
 		}

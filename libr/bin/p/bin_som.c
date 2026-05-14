@@ -30,13 +30,6 @@ static ut64 baddr(RBinFile *bf) {
 	return 0;
 }
 
-static RList *sections(RBinFile *bf) {
-	if (!bf || !bf->bo || !bf->bo->bin_obj) {
-		return NULL;
-	}
-	return r_bin_som_get_sections (bf->bo->bin_obj);
-}
-
 static RList *entries(RBinFile *bf) {
 	if (!bf || !bf->bo || !bf->bo->bin_obj) {
 		return NULL;
@@ -125,6 +118,13 @@ static RList *fields(RBinFile *bf) {
 	return ret;
 }
 
+static bool sections_vec(RBinFile *bf) {
+	if (!bf || !bf->bo || !bf->bo->bin_obj) {
+		return false;
+	}
+	return r_bin_som_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
+}
+
 RBinPlugin r_bin_plugin_som = {
 	.meta = {
 		.name = "som",
@@ -137,7 +137,7 @@ RBinPlugin r_bin_plugin_som = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.minstrlen = 4,
 	.imports_vec = &imports_vec,

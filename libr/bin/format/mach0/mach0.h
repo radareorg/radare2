@@ -156,11 +156,6 @@ struct MACH0_(opts_t) {
 	RBinFile *bf;
 };
 
-static inline void r_bin_section_fini (RBinSection *bs) {
-	free (bs->name);
-	free (bs->format);
-}
-
 R_VEC_TYPE_WITH_FINI(RVecSegment, RBinSection, r_bin_section_fini);
 
 static inline void mach0_lib_fini (char **lib) {

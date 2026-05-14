@@ -63,24 +63,23 @@ static bool validate_header(RBinXtacObj *bin) {
 	return true;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinXtacObj *bin = bf->bo->bin_obj;
 	if (!bin || !bin->header) {
-		return NULL;
+		return false;
 	}
 	RBinXtacHeader *hdr = bin->header;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	s->name = strdup ("header");
 	s->vsize = hdr->ptr_to_head_blck_stub;
 	s->paddr = s->vaddr = 0;
 	s->perm = R_PERM_R;
-	r_list_append (ret, s);
 
 	if (!bin->blck_stubs) {
-		return ret; // No sections if no stubs
+		return true; // No sections if no stubs
 	}
 
 	ut32 blck_stub_code_size = hdr->size_of_blck_stub_code + 8; // NOTE: always 8 bytes data is padded.
@@ -89,43 +88,40 @@ static RList *sections(RBinFile *bf) {
 	for (i = 0; i < bin->blck_stubs->length; i++) {
 		RBinBlckStubHeader *blck_stub_header = (RBinBlckStubHeader *)r_list_get_n (bin->blck_stubs, i);
 
-		s = R_NEW0 (RBinSection);
+		ut32 next_addr;
+		if (r_add_overflow (ptr_addr, blck_stub_code_size, &next_addr)) {
+			continue;
+		}
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		s->name = r_str_newf ("blck_code_%d", i);
 		s->vsize = blck_stub_code_size;
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (r_add_overflow (ptr_addr, blck_stub_code_size, &ptr_addr)) {
-			free (s->name);
-			free (s);
-			continue;
-		}
-		r_list_append (ret, s);
+		ptr_addr = next_addr;
 
 		if (blck_stub_header->offset_to_next_entry < blck_stub_code_size) {
 			continue; // Invalid offset, skip this section
 		}
 		const ut32 size_of_trans_code = blck_stub_header->offset_to_next_entry - blck_stub_code_size;
 
-		s = R_NEW0 (RBinSection);
+		if (r_add_overflow (ptr_addr, size_of_trans_code, &next_addr)) {
+			continue;
+		}
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		s->name = r_str_newf ("trans_code_%d", i);
 		s->vsize = size_of_trans_code;
 		s->paddr = ptr_addr;
 		s->vaddr = ptr_addr;
 		s->perm = R_PERM_RX;
-		if (r_add_overflow (ptr_addr, size_of_trans_code, &ptr_addr)) {
-			free (s->name);
-			free (s);
-			continue;
-		}
-		r_list_append (ret, s);
+		ptr_addr = next_addr;
 
 		if (r_add_overflow (ptr_addr, (ut32)(sizeof (RBinBlckStubHeader) - 4), &ptr_addr)) {
 			break;
 		}
 	}
 
-	return ret;
+	return true;
 }
 
 static RList *fields(RBinFile *bf) {
@@ -672,5 +668,5 @@ RBinPlugin r_bin_plugin_xtac = {
 	.fields = &fields,
 	.header = &header,
 	.symbols_vec = &symbols_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 };

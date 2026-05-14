@@ -83,26 +83,23 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	dmp_page_desc *page;
 	RListIter *it;
 	struct r_bin_dmp64_obj_t *obj = (struct r_bin_dmp64_obj_t *)bf->bo->bin_obj;
 
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	r_list_foreach (obj->pages, it, page) {
-		RBinSection *ptr = R_NEW0 (RBinSection);
-		if (R_LIKELY (ptr)) {
-			ptr->name = strdup ("Memory_Section");
-			ptr->paddr = page->file_offset;
-			ptr->size = DMP_PAGE_SIZE;
-			ptr->vaddr = page->start;
-			ptr->vsize = DMP_PAGE_SIZE;
-			ptr->add = true;
-			ptr->perm = R_PERM_R;
-			r_list_append (ret, ptr);
-		}
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = strdup ("Memory_Section");
+		ptr->paddr = page->file_offset;
+		ptr->size = DMP_PAGE_SIZE;
+		ptr->vaddr = page->start;
+		ptr->vsize = DMP_PAGE_SIZE;
+		ptr->add = true;
+		ptr->perm = R_PERM_R;
 	}
-	return ret;
+	return true;
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
@@ -137,7 +134,7 @@ RBinPlugin r_bin_plugin_dmp64 = {
 	.info = &info,
 	.load = &load,
 	.check = &check,
-	.sections = &sections
+	.sections_vec = &sections_vec
 };
 
 #ifndef R2_PLUGIN_INCORE

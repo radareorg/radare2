@@ -371,17 +371,17 @@ static RBinAddr *get_entry(RSomFile *obj) {
 	return addr;
 }
 
-R_IPI RList *r_bin_som_get_sections(void *o) {
+R_IPI bool r_bin_som_load_sections(void *o, RVecRBinSection *sections) {
 	RSomFile *obj = (RSomFile *)o;
-	if (!obj || !obj->subspaces) {
-		return NULL;
+	if (!obj || !obj->subspaces || !sections) {
+		return false;
 	}
-	RList *list = r_list_newf ((RListFree)r_bin_section_free);
+	RVecRBinSection_clear (sections);
 	RListIter *iter;
 	RSomSubspace *subspace;
 	const ut64 baddr = obj->baddr;
 	r_list_foreach (obj->subspaces, iter, subspace) {
-		RBinSection *s = R_NEW0 (RBinSection);
+		RBinSection *s = RVecRBinSection_emplace_back (sections);
 		if (obj->space_strings && subspace->name < obj->hdr.space_strings_size) {
 			const char *name_str = obj->space_strings + subspace->name;
 			size_t len = strnlen (name_str, obj->hdr.space_strings_size - subspace->name);
@@ -402,9 +402,8 @@ R_IPI RList *r_bin_som_get_sections(void *o) {
 			s->is_segment = false;
 		}
 		// s->is_segment = (subspace->flags & SOM_SUBSPACE_IS_LOADABLE) != 0;
-		r_list_append (list, s);
 	}
-	return list;
+	return true;
 }
 
 R_IPI bool r_bin_som_get_symbols_vec(void *o, RVecRBinSymbol *vec, bool load_unnamed) {

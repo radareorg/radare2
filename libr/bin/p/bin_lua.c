@@ -22,8 +22,8 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	return get_lua_header (bf, b, loadaddr) != NULL;
 }
 
-static void addSection(RLuaHeader *lh, RList *list, const char *name, ut64 addr, ut32 size, bool isFunc) {
-	RBinSection *bs = R_NEW0 (RBinSection);
+static void addSection(RLuaHeader *lh, RBinFile *bf, const char *name, ut64 addr, ut32 size, bool isFunc) {
+	RBinSection *bs = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	bs->name = strdup (name);
 	bs->vaddr = bs->paddr = addr;
 	bs->size = bs->vsize = size;
@@ -34,7 +34,7 @@ static void addSection(RLuaHeader *lh, RList *list, const char *name, ut64 addr,
 		bs->bits = 32;
 	}
 	bs->has_strings = !isFunc;
-	bs->arch = strdup ("lua"); // maybe add bs->cpu or use : to separate arch:cpu
+	bs->arch = "lua"; // maybe add bs->cpu or use : to separate arch:cpu
 	// bs->cpu = strdup ("5.4"); // maybe add bs->cpu or use : to separate arch:cpu
 	if (isFunc) {
 		bs->perm = R_PERM_RX;
@@ -42,7 +42,6 @@ static void addSection(RLuaHeader *lh, RList *list, const char *name, ut64 addr,
 		bs->perm = R_PERM_R;
 	}
 	bs->is_segment = true;
-	r_list_append (list, bs);
 }
 
 static void addSections(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStruct) {
@@ -51,52 +50,49 @@ static void addSections(RLuaHeader *lh, LuaFunction *func, ParseStruct *parseStr
 
 	r_strf_buffer (R_BIN_SIZEOF_STRINGS);
 
-	RList *data = parseStruct->data;
-	addSection (lh, data, r_strf ("header.%s", string),
-		func->offset, func->code_offset - func->offset, false);
+	RBinFile *bf = parseStruct->data;
+	addSection (lh, bf, r_strf ("header.%s", string),
+			func->offset, func->code_offset - func->offset, false);
 	// code section also holds codesize
-	addSection (lh, data, r_strf ("code.%s", string),
-		func->code_offset, func->const_offset - func->code_offset, true);
-	addSection (lh, data, r_strf ("consts.%s", string),
-		func->const_offset, func->upvalue_offset - func->const_offset, false);
-	addSection (lh, data, r_strf ("upvalues.%s", string),
-		func->upvalue_offset, func->protos_offset - func->upvalue_offset, false);
-	addSection (lh, data, r_strf ("debuginfo.%s", string),
-		func->debug_offset, func->offset + func->size - func->debug_offset, false);
+	addSection (lh, bf, r_strf ("code.%s", string),
+			func->code_offset, func->const_offset - func->code_offset, true);
+	addSection (lh, bf, r_strf ("consts.%s", string),
+			func->const_offset, func->upvalue_offset - func->const_offset, false);
+	addSection (lh, bf, r_strf ("upvalues.%s", string),
+			func->upvalue_offset, func->protos_offset - func->upvalue_offset, false);
+	addSection (lh, bf, r_strf ("debuginfo.%s", string),
+			func->debug_offset, func->offset + func->size - func->debug_offset, false);
 
 	free (string);
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 
 	ParseStruct parseStruct = {0};
 	if (!bf) {
-		return NULL;
+		return false;
 	}
 #if 1
 	ut8 *bytes = malloc (bf->size);
 	if (!bytes) {
-		return NULL;
+		return false;
 	}
 	r_buf_read_at (bf->buf, 0, bytes, bf->size);
 	ut64 sz = bf? r_buf_size (bf->buf): 0;
 
 	memset (&parseStruct, 0, sizeof (parseStruct));
 	parseStruct.onFunction = addSections;
-
-	parseStruct.data = r_list_newf ((RListFree) free);
-	if (!parseStruct.data) {
-		return NULL;
-	}
+	parseStruct.data = bf;
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	RLuaHeader *lh = get_lua_header (bf, NULL, 0);
 	if (lh) {
-		addSection (lh, parseStruct.data, "lua-header", 0, lh->headerSize, false);
+		addSection (lh, bf, "lua-header", 0, lh->headerSize, false);
 		lua53parseFunction (lh, bytes, lh->headerSize, sz, 0, &parseStruct);
 	}
 	free (bytes);
 #endif
-	return parseStruct.data;
+	return true;
 }
 
 static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *parseStruct) {
@@ -275,7 +271,7 @@ RBinPlugin r_bin_plugin_lua = {
 		.license = "MIT",
 		.author = "pancake",
 	},
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.load = &load,
 	.check = &check,
 	.symbols_vec = &symbols_vec,

@@ -97,11 +97,10 @@ static GH(section_content) GH(get_section_content)(RCore *core, const char *path
 	}
 
 	RBinFile *libc_bf = r_bin_cur (bin);
-	RList *sections = r_bin_get_sections (bin);
+	RVecRBinSection *sections = r_bin_get_sections_vec (bin);
 	RBinSection *section;
-	RListIter *iter;
 
-	r_list_foreach (sections, iter, section) {
+	R_VEC_FOREACH (sections, section) {
 		if (!strcmp (section->name, section_name)) {
 			found_section = true;
 			paddr = section->paddr;
@@ -579,11 +578,10 @@ static GHT GH (get_main_arena_offset_with_relocs) (RCore *core, const char *libc
 	}
 
 	// Get .data section to limit search
-	RList *section_list = r_bin_get_sections (bin);
-	RListIter *iter;
+	RVecRBinSection *section_list = r_bin_get_sections_vec (bin);
 	RBinSection *section;
 	RBinSection *data_section = NULL;
-	r_list_foreach (section_list, iter, section) {
+	R_VEC_FOREACH (section_list, section) {
 		if (!strcmp (section->name, ".data")) {
 			data_section = section;
 			break;

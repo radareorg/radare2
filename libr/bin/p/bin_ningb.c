@@ -48,63 +48,37 @@ static RList* entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ut8 bank;
 	int i;
-	RList *ret;
 
-	if (!bf) {
-		return NULL;
+	if (!bf || !bf->buf) {
+		return false;
 	}
-
-	ret = r_list_new ();
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	r_buf_read_at (bf->buf, 0x148, &bank, 1);
-	bank = gb_get_rombanks(bank);
-#ifdef _MSC_VER
-	RBinSection **rombank = (RBinSection**) malloc (sizeof (RBinSection*) * bank);
-#else
-	RBinSection *rombank[bank];
-#endif
+	bank = gb_get_rombanks (bank);
 
-	if (!bf->buf) {
-		free (ret);
-#ifdef _MSC_VER
-		free (rombank);
-#endif
-		return NULL;
-	}
-
-	ret->free = free;
-
-	rombank[0] = R_NEW0 (RBinSection);
-	rombank[0]->name = strdup ("rombank00");
-	rombank[0]->paddr = 0;
-	rombank[0]->size = 0x4000;
-	rombank[0]->vsize = 0x4000;
-	rombank[0]->vaddr = 0;
-	rombank[0]->perm = r_str_rwx ("rx");
-	rombank[0]->add = true;
-
-	r_list_append (ret, rombank[0]);
+	RBinSection *section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+	section->name = strdup ("rombank00");
+	section->paddr = 0;
+	section->size = 0x4000;
+	section->vsize = 0x4000;
+	section->vaddr = 0;
+	section->perm = r_str_rwx ("rx");
+	section->add = true;
 
 	for (i = 1; i < bank; i++) {
-		rombank[i] = R_NEW0 (RBinSection);
-		rombank[i]->name = r_str_newf ("rombank%02x", i);
-		rombank[i]->paddr = i*0x4000;
-		rombank[i]->vaddr = i*0x10000-0xc000;			//spaaaaaaaaaaaaaaaace!!!
-		rombank[i]->size = rombank[i]->vsize = 0x4000;
-		rombank[i]->perm = r_str_rwx ("rx");
-		rombank[i]->add = true;
-		r_list_append (ret,rombank[i]);
+		section = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		section->name = r_str_newf ("rombank%02x", i);
+		section->paddr = i * 0x4000;
+		section->vaddr = i * 0x10000 - 0xc000;
+		section->size = section->vsize = 0x4000;
+		section->perm = r_str_rwx ("rx");
+		section->add = true;
 	}
-#ifdef _MSC_VER
-	free (rombank);
-#endif
-	return ret;
+	return true;
 }
 
 static void gb_addsym(RVecRBinSymbol *ret, const char *name, ut64 addr, int ordinal) {
@@ -214,7 +188,7 @@ RBinPlugin r_bin_plugin_ningb = {
 	.baddr = &baddr,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.info = &info,
 	.mem = &mem,

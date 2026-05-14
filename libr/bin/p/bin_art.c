@@ -127,26 +127,22 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ArtObj *ao = bf->bo->bin_obj;
 	if (!ao) {
-		return NULL;
+		return false;
 	}
 	ARTHeader art = ao->art;
-	RList *ret = r_list_newf (free);
-	if (!ret) {
-		return NULL;
-	}
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("load");
 	ptr->size = r_buf_size (bf->buf);
 	ptr->vsize = art.image_size;
 	ptr->vaddr = art.image_base;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("bitmap");
 	ptr->size = art.bitmap_size;
 	ptr->vsize = art.bitmap_size;
@@ -154,9 +150,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vaddr = art.image_base + art.bitmap_offset;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("oat");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_file_begin;
@@ -164,9 +159,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_RX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("oat_data");
 	ptr->paddr = art.bitmap_offset;
 	ptr->vaddr = art.oat_data_begin;
@@ -174,9 +168,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->vsize = ptr->size;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	return ret;
+	return true;
 }
 
 RBinPlugin r_bin_plugin_art = {
@@ -191,7 +184,7 @@ RBinPlugin r_bin_plugin_art = {
 	.destroy = &destroy,
 	.check = &check,
 	.baddr = &baddr,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.entries = entries,
 	.info = &info,
 };

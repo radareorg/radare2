@@ -275,15 +275,15 @@ static RList *entries(RBinFile *bf) {
 	return res;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	MclfHeader *hdr = mclf_from_bf (bf);
 	if (!hdr) {
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	// .text
-	RBinSection *s = R_NEW0 (RBinSection);
+	RBinSection *s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	s->name = strdup (".text");
 	s->paddr = 0;
 	s->vaddr = hdr->text_va;
@@ -292,10 +292,9 @@ static RList *sections(RBinFile *bf) {
 	s->perm = R_PERM_RX;
 	s->add = true;
 	s->has_strings = true;
-	r_list_append (ret, s);
 
 	// .data
-	s = R_NEW0 (RBinSection);
+	s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	s->name = strdup (".data");
 	s->paddr = hdr->text_len;
 	s->vaddr = hdr->data_va;
@@ -307,11 +306,10 @@ static RList *sections(RBinFile *bf) {
 	}
 	s->add = true;
 	s->has_strings = true;
-	r_list_append (ret, s);
 
 	// .bss (no bytes in file)
 	if (hdr->bss_len) {
-		s = R_NEW0 (RBinSection);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		s->name = strdup (".bss");
 		s->paddr = 0;
 		s->vaddr = (ut64)hdr->data_va + (ut64)hdr->data_len;
@@ -319,10 +317,9 @@ static RList *sections(RBinFile *bf) {
 		s->vsize = hdr->bss_len;
 		s->perm = R_PERM_RW;
 		s->add = true;
-		r_list_append (ret, s);
 	}
 
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -428,7 +425,7 @@ RBinPlugin r_bin_plugin_mclf = {
 	.entries = &entries,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 };
 

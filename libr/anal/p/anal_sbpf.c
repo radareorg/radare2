@@ -249,13 +249,12 @@ static bool sbpf_find_segment_bounds(RAnal *anal, int segment_index, ut64 *start
 	}
 
 	// Get sections from the binary, but filter for segments
-	if (anal->binb.get_sections) {
-		RList *sections = anal->binb.get_sections (anal->binb.bin);
+	if (anal->binb.get_sections_vec) {
+		RVecRBinSection *sections = anal->binb.get_sections_vec (anal->binb.bin);
 		if (sections) {
-			RListIter *iter;
 			RBinSection *section;
 			int idx = 0;
-			r_list_foreach (sections, iter, section) {
+			R_VEC_FOREACH (sections, section) {
 				if (section && section->is_segment) {
 					if (idx == segment_index) {
 						*start = section->vaddr + baddr;

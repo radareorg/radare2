@@ -659,69 +659,64 @@ static RBinAddr *binsym(RBinFile *bf, int sym) {
 	return NULL;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	RBinPEFObj *pef = bf->bo->bin_obj;
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	size_t i;
 
 	for (i = 0; i < pef->nsec; i++) {
 		PEFSection *sec = &pef->sec[i];
-		RBinSection *ptr = R_NEW0 (RBinSection);
+		const char *type = NULL;
+		bool is_data = false;
+		ut32 perm = R_PERM_NONE;
+		switch (sec->kind) {
+		case 0: // common
+			type = "code";
+			perm = R_PERM_RX;
+			break;
+		case 1: // fairly common
+			type = "data";
+			is_data = true;
+			perm = R_PERM_RW;
+			break;
+		case 2: // common: "pattern initialized" ~ compressed
+			type = "pidata";
+			is_data = true;
+			perm = R_PERM_RW;
+			break;
+		case 3: // never observed
+			type = "rodata";
+			is_data = true;
+			perm = R_PERM_R;
+			break;
+		case 4: // mandatory
+			type = "loader";
+			break;
+		case 5: // reserved
+			type = "debug";
+			break;
+		case 6: // never observed
+			type = "selfmodcode";
+			is_data = true;
+			perm = R_PERM_RWX;
+			break;
+		case 7: // reserved
+			type = "exception";
+			break;
+		case 8: // reserved
+			type = "traceback";
+			break;
+		default:
+			continue;
+		}
+		RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->is_segment = false; // like XCOFF, we have no concept of ELF segments
 		ptr->add = true;
 		ptr->paddr = sec->offset;
 		ptr->size = sec->lenDisk;
-
-		switch (sec->kind) {
-		case 0: // common
-			ptr->type = "code";
-			ptr->is_data = false;
-			ptr->perm = R_PERM_RX;
-			break;
-		case 1: // fairly common
-			ptr->type = "data";
-			ptr->is_data = true;
-			ptr->perm = R_PERM_RW;
-			break;
-		case 2: // common: "pattern initialized" ~ compressed
-			ptr->type = "pidata";
-			ptr->is_data = true;
-			ptr->perm = R_PERM_RW;
-			break;
-		case 3: // never observed
-			ptr->type = "rodata";
-			ptr->is_data = true;
-			ptr->perm = R_PERM_R;
-			break;
-		case 4: // mandatory
-			ptr->type = "loader";
-			ptr->is_data = false;
-			ptr->perm = R_PERM_NONE;
-			break;
-		case 5: // reserved
-			ptr->type = "debug";
-			ptr->is_data = false;
-			ptr->perm = R_PERM_NONE;
-			break;
-		case 6: // never observed
-			ptr->type = "selfmodcode";
-			ptr->is_data = true;
-			ptr->perm = R_PERM_RWX;
-			break;
-		case 7: // reserved
-			ptr->type = "exception";
-			ptr->is_data = false;
-			ptr->perm = R_PERM_NONE;
-			break;
-		case 8: // reserved
-			ptr->type = "traceback";
-			ptr->is_data = false;
-			ptr->perm = R_PERM_NONE;
-			break;
-		default:
-			r_bin_section_free (ptr);
-			continue;
-		}
+		ptr->type = type;
+		ptr->is_data = is_data;
+		ptr->perm = perm;
 		ptr->name = r_str_newf (".%s-%d", ptr->type, (int)i); // same naming convention as XCOFF
 
 		// Exists in memory
@@ -750,9 +745,8 @@ static RList *sections(RBinFile *bf) {
 			}
 		}
 
-		r_list_append (ret, ptr);
 	}
-	return ret;
+	return true;
 }
 
 static bool imports_vec(RBinFile *bf) {
@@ -986,7 +980,7 @@ RBinPlugin r_bin_plugin_pef = {
 	.fields = &fields,
 	.size = &size,
 	.binsym = &binsym,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.imports_vec = &imports_vec,
 	.libs = &libs,
 	.relocs = &relocs,

@@ -93,39 +93,27 @@ static RBinAddr* binsym(RBinFile *bf, int sym) {
 	return ret;
 }
 
-#if R2_590
 static bool sections_vec(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, false);
-	ELFOBJ *eo = bf->bo->bin_obj
-	return eo? Elf_(load_sections) (bf, eo) != NULL: false;
-}
-#else
-
-// DEPRECATE: we must use sections_vec instead
-static RList* sections(RBinFile *bf) {
-	ELFOBJ *eo = (bf && bf->bo)? bf->bo->bin_obj : NULL;
-	if (!eo) {
-		return NULL;
-	}
-
-	// there is no leak here with sections since they are cached by elf.c
-	// and freed within Elf_(free) R2_590. must return bool
-	const RVecRBinSection *sections = Elf_(load_sections) (bf, eo);
+	ELFOBJ *eo = bf->bo->bin_obj;
+	const RVecRBinSection *sections = eo? Elf_(load_sections) (bf, eo): NULL;
 	if (!sections) {
-		return NULL;
+		return false;
 	}
-
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (ret) {
-		RBinSection *section;
-		R_VEC_FOREACH (sections, section) {
-			r_list_append (ret, r_bin_section_clone (section));
-		}
+	RVecRBinSection *dst_sections = &bf->bo->sections_vec;
+	RVecRBinSection_clear (dst_sections);
+	if (!RVecRBinSection_reserve (dst_sections, RVecRBinSection_length (sections))) {
+		return false;
 	}
-
-	return ret;
+	RBinSection *section;
+	R_VEC_FOREACH (sections, section) {
+		RBinSection *dst = RVecRBinSection_emplace_back (dst_sections);
+		*dst = *section;
+		dst->name = section->name? strdup (section->name): NULL;
+		dst->format = section->format? strdup (section->format): NULL;
+	}
+	return true;
 }
-#endif
 
 static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, int type, int bits) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
@@ -150,19 +138,12 @@ static RBinAddr* newEntry(RBinFile *bf, ut64 hpaddr, ut64 hvaddr, ut64 vaddr, in
 }
 
 static void process_constructors(RBinFile *bf, RList *ret, int bits) {
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *secs = &(bf->bo->sections_vec);
 	RBinSection *sec;
 	R_VEC_FOREACH (secs, sec) {
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	RBinSection *sec;
-	r_list_foreach (secs, iter, sec) {
-#endif
 		if (sec->size > ALLOC_SIZE_LIMIT) {
 			continue;
 		}
@@ -221,7 +202,6 @@ static void process_constructors(RBinFile *bf, RList *ret, int bits) {
 		}
 		free (buf);
 	}
-	r_list_free (secs);
 }
 
 static bool is_library_without_entrypoint(ELFOBJ *eo) {
@@ -263,20 +243,7 @@ static RList* entries(RBinFile *bf) {
 			R_LOG_ERROR ("Cannot determine entrypoint, using 0x%08" PFMT64x, ptr->vaddr);
 		}
 
-		if (bf->bo->sections) {
-			// XXX store / cache sections by name in hashmap
-			const RVecRBinSection *sections = Elf_(load_sections) (bf, bf->bo->bin_obj);
-			RBinSection *section;
-			R_VEC_FOREACH_PREV (sections, section) {
-				if (!strcmp (section->name, "ehdr")) {
-					ptr->hvaddr = section->vaddr + ptr->hpaddr;
-					break;
-				}
-			}
-		}
-		if (ptr->hvaddr == UT64_MAX) {
-			ptr->hvaddr = Elf_(p2v) (eo, ptr->hpaddr);
-		}
+		ptr->hvaddr = Elf_(p2v) (eo, ptr->hpaddr);
 
 		if (eo->ehdr.e_machine == EM_ARM) {
 			int bin_bits = Elf_(get_bits) (eo);
@@ -1576,17 +1543,11 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 	RBinSection *section;
 	bool is_go = false;
 	ret->has_retguard = -1;
-#if R2_590
 	if (!sections_vec (bf)) {
 		return;
 	}
 	RVecRBinSection *sections = &(bf->bo->sections_vec);
 	R_VEC_FOREACH (sections, section)
-#else
-	RList *secs = sections (bf);
-	RListIter *iter;
-	r_list_foreach (secs, iter, section)
-#endif
 	{
 		if (is_go && ret->has_retguard != -1) {
 			break;
@@ -1615,7 +1576,6 @@ static void lookup_sections(RBinFile *bf, RBinInfo *ret) {
 			break;
 		}
 	}
-	r_list_free (secs);
 }
 
 static bool has_sanitizers(RBinFile *bf) {
@@ -1800,24 +1760,15 @@ static RList* fields(RBinFile *bf) {
 static ut64 size(RBinFile *bf) {
 	ut64 off = 0;
 	ut64 len = 0;
-#if R2_590
-	if (!bf->bo->sections && sections_vec (bf)) {
+	if (sections_vec (bf)) {
 		RBinSection *section;
 		RVecRBinSection *sections = &(bf->bo->sections_vec);
 		R_VEC_FOREACH (sections, section) {
-#else
-	if (!bf->bo->sections) {
-		RBinSection *section;
-		RList *secs = sections (bf);
-		RListIter *iter;
-		r_list_foreach (secs, iter, section) {
-#endif
 			if (section->paddr > off) {
 				off = section->paddr;
 				len = section->size;
 			}
 		}
-		r_list_free (secs);
 	}
 	return off + len;
 }

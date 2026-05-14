@@ -75,21 +75,21 @@ static RBinInfo* info(RBinFile *bf) {
 	return ret;
 }
 
-static RList* sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
 	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
 		R_LOG_ERROR ("Truncated Header");
-		return NULL;
+		return false;
 	}
-	RList *ret = r_list_newf (free);
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	// TODO: load all relocs
-	ptr = R_NEW0 (RBinSection);
-	ptr->name = strdup ("relocs");
 	ut64 sz = pai.num_reloc_entries * sizeof (ut32);
 	ut64 ss = pai.reloc_list_start;
 	if (ss < r_buf_size (bf->buf)) {
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		ptr->name = strdup ("relocs");
 		if (ss + sz >= r_buf_size (bf->buf)) {
 			ut64 left = r_buf_size (bf->buf) - ss;
 			sz = left;
@@ -98,41 +98,39 @@ static RList* sections(RBinFile *bf) {
 		ptr->vsize = ptr->size = sz;
 		ptr->perm = R_PERM_RWX;
 		ptr->add = true;
-		r_list_append (ret, ptr);
-		if (ptr->vaddr < textsize) {
-			textsize = ptr->vaddr;
+		const ut64 vaddr = ptr->vaddr;
+		if (vaddr < textsize) {
+			textsize = vaddr;
 		}
 	}
 
 	// imho this must be a symbol
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("symtab");
 	ptr->vsize = ptr->size = 0;
 	ptr->vaddr = ptr->paddr = pai.sym_table_addr;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
-	if (ptr->vaddr < textsize) {
-		textsize = ptr->vaddr;
+	const ut64 symtab_vaddr = ptr->vaddr;
+	if (symtab_vaddr < textsize) {
+		textsize = symtab_vaddr;
 	}
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("text");
 	ptr->vaddr = ptr->paddr = 0x80;
 	ptr->vsize = ptr->size = textsize - ptr->paddr;
 	ptr->perm = R_PERM_RWX;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup ("header");
 	ptr->vsize = ptr->size = sizeof (PebbleAppInfo);
 	ptr->vaddr = ptr->paddr = 0;
 	ptr->perm = R_PERM_R;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
-	return ret;
+	return true;
 }
 
 #if 0
@@ -175,7 +173,7 @@ RBinPlugin r_bin_plugin_pebble = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = entries,
-	.sections = sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	//.relocs = &relocs
 };

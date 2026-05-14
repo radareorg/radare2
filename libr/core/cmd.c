@@ -5844,10 +5844,10 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'S': // "@@@S"
 		{
-			RList *sections = r_bin_get_sections (core->bin);
+			RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 			if (sections) {
 				RBinSection *sec;
-				r_list_foreach (sections, iter, sec) {
+				R_VEC_FOREACH (sections, sec) {
 					if (sec->is_segment) {
 						continue;
 					}
@@ -5860,10 +5860,10 @@ static RList *foreach3list(RCore *core, char type, const char *glob) {
 		break;
 	case 'G': // "@@@G" // @@@SS - seGments
 		{
-			RList *sections = r_bin_get_sections (core->bin);
+			RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 			if (sections) {
 				RBinSection *sec;
-				r_list_foreach (sections, iter, sec) {
+				R_VEC_FOREACH (sections, sec) {
 					if (!sec->is_segment) {
 						continue;
 					}

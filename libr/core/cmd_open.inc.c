@@ -1718,8 +1718,7 @@ R_API void r_core_file_reopen_in_malloc(RCore *core) {
 }
 
 static RList *__save_old_sections(RCore *core) {
-	RList *sections = r_bin_get_sections (core->bin);
-	RListIter *it;
+	RVecRBinSection *sections = r_bin_get_sections_vec (core->bin);
 	RBinSection *sec;
 	RList *old_sections = r_list_new ();
 
@@ -1729,8 +1728,8 @@ static RList *__save_old_sections(RCore *core) {
 		return old_sections;
 	}
 
-	old_sections->free = sections->free;
-	r_list_foreach (sections, it, sec) {
+	old_sections->free = (RListFree)r_bin_section_free;
+	R_VEC_FOREACH (sections, sec) {
 		RBinSection *old_sec = R_NEW0 (RBinSection);
 		if (!old_sec) {
 			break;
@@ -2042,20 +2041,22 @@ static bool desc_list_cmds_cb(void *user, void *data, ut32 id) {
 		return true;
 	}
 
-	RList *list = r_bin_get_sections (core->bin);
+	RVecRBinSection *list = r_bin_get_sections_vec (core->bin);
 	RList *maps = r_io_map_get_by_fd (core->io, desc->fd);
-	RListIter *iter, *iter2;
+	RListIter *iter;
 	RBinSection *sec;
 	RIOMap *map;
 	r_list_foreach_prev (maps, iter, map) {
 		bool map_from_bin = false;
 		bool have_segments = false;
-		r_list_foreach (list, iter2, sec) {
-			if (sec->is_segment) {
-				have_segments = true;
-				if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
-					map_from_bin = true;
-					break;
+		if (list) {
+			R_VEC_FOREACH (list, sec) {
+				if (sec->is_segment) {
+					have_segments = true;
+					if (sec->vaddr == map->itv.addr && sec->vsize == map->itv.size) {
+						map_from_bin = true;
+						break;
+					}
 				}
 			}
 		}

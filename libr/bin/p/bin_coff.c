@@ -67,9 +67,6 @@ static bool coff_import_to_vec(RBinFile *bf, RVecRBinImport *ret, RBinImport *im
 		return false;
 	}
 	RBinImport *slot = RVecRBinImport_emplace_back (ret);
-	if (!slot) {
-		return false;
-	}
 	*slot = *imp;
 	slot->ordinal = (*ord)++;
 	memset (imp, 0, sizeof (*imp));
@@ -404,16 +401,13 @@ static void xcoff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, si
 	}
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	char *tmp = NULL;
 	size_t i;
 	RBinSection *ptr = NULL;
 	struct r_bin_coff_obj *obj = (struct r_bin_coff_obj*)bf->bo->bin_obj;
 
-	RList *ret = r_list_newf ((RListFree)r_bin_section_free);
-	if (!ret) {
-		return NULL;
-	}
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	ut32 f_nscns = obj->type == COFF_TYPE_BIGOBJ? obj->bigobj_hdr.f_nscns: obj->hdr.f_nscns;
 	if (f_nscns < 1) {
 		// return NULL;
@@ -429,7 +423,7 @@ static RList *sections(RBinFile *bf) {
 			}
 			//IO does not like sections with the same name append idx
 			//since it will update it
-			ptr = R_NEW0 (RBinSection);
+			ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 			ptr->name = r_str_newf ("%s-%u", tmp, (unsigned int)i);
 			free (tmp);
 			if (obj->type == COFF_TYPE_XCOFF) {
@@ -438,10 +432,9 @@ static RList *sections(RBinFile *bf) {
 				coff_section (ptr, obj, i);
 			}
 			truncate_section (ptr, obj);
-			r_list_append (ret, ptr);
 		}
 	}
-	return ret;
+	return true;
 }
 
 static bool symbols_vec(RBinFile *bf) {
@@ -468,12 +461,8 @@ static bool symbols_vec(RBinFile *bf) {
 		if (_fill_bin_symbol (bf->rbin, obj, i, &p)) {
 			if (coff_keep_name (bf, tmp.name)) {
 				RBinSymbol *slot = RVecRBinSymbol_emplace_back (ret);
-				if (slot) {
-					*slot = tmp;
-					obj->sym_idx[i] = (ut32)RVecRBinSymbol_length (ret);
-				} else {
-					r_bin_symbol_fini (&tmp);
-				}
+				*slot = tmp;
+				obj->sym_idx[i] = (ut32)RVecRBinSymbol_length (ret);
 			} else {
 				r_bin_symbol_fini (&tmp);
 			}
@@ -1001,7 +990,7 @@ RBinPlugin r_bin_plugin_coff = {
 	.check = &check,
 	.binsym = &binsym,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.imports_vec = &imports_vec,
 	.info = &info,

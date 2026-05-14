@@ -101,22 +101,21 @@ static RList *entries(RBinFile *bf) {
 	return ret;
 }
 
-static RList *sections(RBinFile *bf) {
-	RList *ret = r_list_newf (free);
+static bool sections_vec(RBinFile *bf) {
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 	SblHeader *sbl = sbl_from_bf (bf);
 	SblHeader h_local = (SblHeader){0};
 	SblHeader *h = sbl;
 	if (!h) {
 		int rc = r_buf_fread_at (bf->buf, 0, (ut8 *)&h_local, "10i", 1);
 		if (!rc) {
-			r_list_free (ret);
 			return false;
 		}
 		h = &h_local;
 	}
 
 	// add text segment
-	RBinSection *ptr = R_NEW0 (RBinSection);
+	RBinSection *ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup("text");
 	ptr->size = h->psize;
 	ptr->vsize = h->psize;
@@ -125,9 +124,8 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_RX; // r-x
 	ptr->add = true;
 	ptr->has_strings = true;
-	r_list_append (ret, ptr);
 
-	ptr = R_NEW0 (RBinSection);
+	ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 	ptr->name = strdup("sign");
 	ptr->size = h->sign_sz;
 	ptr->vsize = h->sign_sz;
@@ -136,10 +134,9 @@ static RList *sections(RBinFile *bf) {
 	ptr->perm = R_PERM_R; // r--
 	ptr->has_strings = true;
 	ptr->add = true;
-	r_list_append (ret, ptr);
 
 	if (h->cert_sz && h->cert_va > h->vaddr) {
-		ptr = R_NEW0 (RBinSection);
+		ptr = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
 		ptr->name = strdup ("cert");
 		ptr->size = h->cert_sz;
 		ptr->vsize = h->cert_sz;
@@ -148,9 +145,8 @@ static RList *sections(RBinFile *bf) {
 		ptr->perm = R_PERM_R; // r--
 		ptr->has_strings = true;
 		ptr->add = true;
-		r_list_append (ret, ptr);
 	}
-	return ret;
+	return true;
 }
 
 static RBinInfo *info(RBinFile *bf) {
@@ -199,7 +195,7 @@ RBinPlugin r_bin_plugin_mbn = {
 	.check = &check,
 	.baddr = &baddr,
 	.entries = &entries,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.info = &info,
 	.destroy = &sbl_destroy,
 };

@@ -332,12 +332,12 @@ static ut64 baddr(RBinFile *bf) {
 	return bf->bo->baddr;
 }
 
-static RList *sections(RBinFile *bf) {
+static bool sections_vec(RBinFile *bf) {
 	int i;
 	const RelSection *rel_s;
 	RBinSection *s;
 	const LoadedRel *rel = bf->bo->bin_obj;
-	RList *ret = r_list_new ();
+	RVecRBinSection_clear (&bf->bo->sections_vec);
 
 	bool has_bss = false;
 	for (i = 0; i < rel->hdr.num_sections; i++) {
@@ -346,20 +346,17 @@ static RList *sections(RBinFile *bf) {
 			continue;
 		}
 		bool executable = rel_section_is_executable (&rel->sections[i]);
-		s = R_NEW0 (RBinSection);
-		if (!s) {
-			break;
+		ut64 paddr = rel_section_paddr (rel_s);
+		if (paddr == 0 && has_bss) {
+			R_LOG_ERROR ("Ignoring duplicate bss section (%d)", i);
+			continue;
 		}
-		s->paddr = rel_section_paddr (rel_s);
+		s = RVecRBinSection_emplace_back (&bf->bo->sections_vec);
+		s->paddr = paddr;
 		s->vaddr = bf->bo->baddr + s->paddr;
 		s->size = s->vsize = rel_s->size;
 		s->add = true;
 		if (s->paddr == 0) {
-			if (has_bss) {
-				R_LOG_ERROR ("Ignoring duplicate bss section (%d)", i);
-				free (s);
-				continue;
-			}
 			has_bss = true;
 			s->name = strdup ("bss");
 			// Place after end of REL file
@@ -376,10 +373,9 @@ static RList *sections(RBinFile *bf) {
 			s->perm = r_str_rwx ("rw-");
 		}
 		rel->section_vaddrs[i] = s->vaddr;
-		r_list_append (ret, s);
 	}
 
-	return ret;
+	return true;
 }
 
 static void register_header_symbol(RBinFile *bf, RVecRBinSymbol *syms, const char *name, ut8 section, ut32 offset) {
@@ -604,7 +600,7 @@ RBinPlugin r_bin_plugin_rel = {
 	.load = &load,
 	.destroy = &destroy,
 	.baddr = &baddr,
-	.sections = &sections,
+	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
 	.relocs = &relocs,
 	.info = &info,
