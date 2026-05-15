@@ -32,12 +32,20 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
+AppDelegate: UIResponder
 B: A
 C: A
 D: B, C
+SceneDelegate: UIResponder
+UIResponder
+UIViewController
+ViewController: UIViewController
   virtual_0 @ 0xa235 (vtable + 0x0)
   virtual_4 @ 0xa24f (vtable + 0x4)
   virtual_8 @ 0xa269 (vtable + 0x8)
+  application:didFinishLaunchingWithOptions: @ 0xa0f8
+  application:configurationForConnectingSceneSession:options: @ 0xa134
+  application:didDiscardSceneSessions: @ 0xa1fc
   virtual_0 @ 0xa29d (vtable + 0x0)
   virtual_4 @ 0xa24f (vtable + 0x4)
   virtual_8 @ 0xa2cb (vtable + 0x8)
@@ -47,6 +55,16 @@ D: B, C
   virtual_0 @ 0xa29d (vtable + 0x0)
   virtual_4 @ 0xa2f9 (vtable + 0x4)
   virtual_8 @ 0xa363 (vtable + 0x8)
+  scene:willConnectToSession:options: @ 0xa3f0
+  sceneDidDisconnect: @ 0xa444
+  sceneDidBecomeActive: @ 0xa466
+  sceneWillResignActive: @ 0xa488
+  sceneWillEnterForeground: @ 0xa4aa
+  sceneDidEnterBackground: @ 0xa4cc
+  window @ 0xa4ee
+  setWindow: @ 0xa50a
+  _cxx_destruct @ 0xa536
+  viewDidLoad @ 0xa0bc
 Type Info at 0x0000c1c8:
   Type Info type: __vmi_class_type_info
 type: __class_type_info
@@ -71,14 +89,23 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
+AppDelegate: UIResponder
 B: A
 C: A
 D: B, C
+SceneDelegate: UIResponder
+UIResponder
+UIViewController
+ViewController: UIViewController
 A
   (vtable at 0x100008078)
   virtual_0 @ 0x100005f1c (vtable + 0x0)
   virtual_8 @ 0x100005f44 (vtable + 0x8)
   virtual_16 @ 0x100005f6c (vtable + 0x10)
+AppDelegate: UIResponder
+  application:didFinishLaunchingWithOptions: @ 0x100005d0c
+  application:configurationForConnectingSceneSession:options: @ 0x100005d94
+  application:didDiscardSceneSessions: @ 0x100005e9c
 B: A
   (vtable at 0x1000080b8)
   (vtable at 0x1000080f0)
@@ -102,6 +129,20 @@ D: B, C
   virtual_0 @ 0x100005fbc (vtable + 0x0)
   virtual_8 @ 0x100006054 (vtable + 0x8)
   virtual_16 @ 0x100006108 (vtable + 0x10)
+SceneDelegate: UIResponder
+  scene:willConnectToSession:options: @ 0x1000061d8
+  sceneDidDisconnect: @ 0x10000628c
+  sceneDidBecomeActive: @ 0x1000062d8
+  sceneWillResignActive: @ 0x100006324
+  sceneWillEnterForeground: @ 0x100006370
+  sceneDidEnterBackground: @ 0x1000063bc
+  window @ 0x100006408
+  setWindow: @ 0x100006434
+  _cxx_destruct @ 0x10000647c
+UIResponder
+UIViewController
+ViewController: UIViewController
+  viewDidLoad @ 0x100005cc0
 Type Info at 0x100008378:
   Type Info type: __vmi_class_type_info
 type: __class_type_info
@@ -127,12 +168,20 @@ avra~vmi:0
 EOF
 EXPECT=<<EOF
 A
+AppDelegate: UIResponder
 B: A
 C: A
 D: B, C
+SceneDelegate: UIResponder
+UIResponder
+UIViewController
+ViewController: UIViewController
   virtual_0 @ 0x100005f50 (vtable + 0x0)
   virtual_8 @ 0x100005f7c (vtable + 0x8)
   virtual_16 @ 0x100005fa8 (vtable + 0x10)
+  application:didFinishLaunchingWithOptions: @ 0x100005d30
+  application:configurationForConnectingSceneSession:options: @ 0x100005dbc
+  application:didDiscardSceneSessions: @ 0x100005ecc
   virtual_0 @ 0x100006000 (vtable + 0x0)
   virtual_8 @ 0x100005f7c (vtable + 0x8)
   virtual_16 @ 0x100006050 (vtable + 0x10)
@@ -142,6 +191,16 @@ D: B, C
   virtual_0 @ 0x100006000 (vtable + 0x0)
   virtual_8 @ 0x1000060a0 (vtable + 0x8)
   virtual_16 @ 0x10000615c (vtable + 0x10)
+  scene:willConnectToSession:options: @ 0x100006230
+  sceneDidDisconnect: @ 0x1000062e8
+  sceneDidBecomeActive: @ 0x100006338
+  sceneWillResignActive: @ 0x100006388
+  sceneWillEnterForeground: @ 0x1000063d8
+  sceneDidEnterBackground: @ 0x100006428
+  window @ 0x100006478
+  setWindow: @ 0x1000064a4
+  _cxx_destruct @ 0x1000064f0
+  viewDidLoad @ 0x100005ce0
 Type Info at 0x100008370:
   Type Info type: __vmi_class_type_info
 type: __class_type_info

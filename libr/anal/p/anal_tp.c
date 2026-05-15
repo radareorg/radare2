@@ -1401,7 +1401,7 @@ repeat:
 							tp_state.ret_type = strdup (rt);
 						}
 						R_FREE (tp_state.ret_reg);
-						const char *rr = r_anal_cc_ret (anal, Cc);
+						const char *rr = r_anal_cc_ret (anal, Cc, 0);
 						if (rr) {
 							tp_state.ret_reg = strdup (rr);
 						}

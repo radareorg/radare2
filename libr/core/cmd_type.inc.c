@@ -1282,7 +1282,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			r_list_free (func_xrefs);
 		}
 
-		const char *ret_reg = r_anal_cc_ret (core->anal, cc);
+		const char *ret_reg = r_anal_cc_ret (core->anal, cc, 0);
 		r_strbuf_appendf (sb, "%s0x%08x%s %s%s%s %s%s%s ( %s// cc:%s ret:%s%s\n",
 			color_addr, 0, color_reset,
 			color_type, ret, color_reset, color_name, name, color_reset,
@@ -1545,7 +1545,7 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 		cc = r_anal_cc_default (core->anal);
 	}
 	int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
-	const char *ret_reg = cc? r_anal_cc_ret (core->anal, cc): NULL;
+	const char *ret_reg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
 	const char *err_reg = cc ? r_anal_cc_error (core->anal, cc) : NULL;
 
 	pj_o (pj);
@@ -1829,7 +1829,7 @@ static void set_retval(RCore *core, ut64 at) {
 		goto beach;
 	}
 	const char *cc = r_anal_cc_func (core->anal, fcn->name);
-	const char *regname = r_anal_cc_ret (anal, cc);
+	const char *regname = r_anal_cc_ret (anal, cc, 0);
 	if (regname) {
 		RRegItem *reg = r_reg_get (anal->reg, regname, -1);
 		if (reg) {

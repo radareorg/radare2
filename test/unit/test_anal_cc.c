@@ -87,6 +87,32 @@ bool test_r_anal_cc_get_self_err(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_multiret(void) {
+	RAnal *anal = r_anal_new ();
+	// Legacy single-ret + ret2: ret reads as slot 0, ret2 reads as slot 1.
+	r_anal_cc_set (anal, "rax legacy(rdi)");
+	sdb_set (anal->sdb_cc, "cc.legacy.ret2", "rdx", 0);
+	mu_assert_streq (r_anal_cc_ret (anal, "legacy", 0), "rax", "legacy ret -> slot 0");
+	mu_assert_streq (r_anal_cc_ret (anal, "legacy", 1), "rdx", "legacy ret2 -> slot 1");
+	mu_assert_null (r_anal_cc_ret (anal, "legacy", 2), "past last slot is NULL");
+
+	// Multi-return via the unified r_anal_cc_set parser ("r0,r1,r2 foo(args)").
+	r_anal_cc_set (anal, "r0,r1,r2 multi(a0)");
+	mu_assert_streq (r_anal_cc_ret (anal, "multi", 0), "r0", "multi: slot 0");
+	mu_assert_streq (r_anal_cc_ret (anal, "multi", 1), "r1", "multi: slot 1");
+	mu_assert_streq (r_anal_cc_ret (anal, "multi", 2), "r2", "multi: slot 2");
+	mu_assert_null (r_anal_cc_ret (anal, "multi", 3), "past last multi slot is NULL");
+
+	// ret.N takes precedence over legacy when both present.
+	sdb_set (anal->sdb_cc, "mixed", "cc", 0);
+	sdb_set (anal->sdb_cc, "cc.mixed.ret", "rax", 0);
+	sdb_set (anal->sdb_cc, "cc.mixed.ret.0", "rcx", 0);
+	mu_assert_streq (r_anal_cc_ret (anal, "mixed", 0), "rcx", "ret.0 wins over ret");
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_cc_del(void) {
 	RAnal *anal = ref_anal ();
 	r_anal_cc_del (anal, "sectarian");
@@ -102,6 +128,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_set_self_err);
 	mu_run_test (test_r_anal_cc_get);
 	mu_run_test (test_r_anal_cc_get_self_err);
+	mu_run_test (test_r_anal_cc_multiret);
 	mu_run_test (test_r_anal_cc_del);
 	return tests_passed != tests_run;
 }

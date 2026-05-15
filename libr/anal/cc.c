@@ -11,9 +11,11 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	RStrBuf sb;
 	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret2", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.argn", name), 0);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%u", name, (unsigned int)i), 0);
+		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret.%u", name, (unsigned int)i), 0);
 	}
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);
@@ -51,7 +53,21 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	}
 	sdb_set (DB, ccname, "cc", 0);
 	r_strf_buffer (64);
-	sdb_set (DB, r_strf ("cc.%s.ret", ccname), e, 0);
+	// Multi-return: comma-separated rets ("rax,rdx") map to ret.0, ret.1, ...
+	// Single return stays as the legacy "ret" key for compat with existing sdb files.
+	if (strchr (e, ',')) {
+		RList *rets = r_str_split_list (e, ",", 0);
+		RListIter *rit;
+		const char *r;
+		int rn = 0;
+		r_list_foreach (rets, rit, r) {
+			sdb_set (DB, r_strf ("cc.%s.ret.%d", ccname, rn), r, 0);
+			rn++;
+		}
+		r_list_free (rets);
+	} else {
+		sdb_set (DB, r_strf ("cc.%s.ret", ccname), e, 0);
+	}
 
 	RList *ccArgs = r_str_split_list (args, ",", 0);
 	RListIter *iter;
@@ -92,15 +108,21 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	if (strcmp (sdb_const_get (DB, name, 0), "cc")) {
 		return;
 	}
-	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret", name), 0);
+	const char *ret = r_anal_cc_ret (anal, name, 0);
 	if (!ret) {
 		return;
 	}
 	pj_ks (pj, "ret", ret);
-	const char *ret2 = sdb_const_get (DB, r_strf ("cc.%s.ret2", name), 0);
-	if (ret2) {
-		pj_ks (pj, "ret2", ret2);
+	pj_ka (pj, "rets");
+	int rn;
+	for (rn = 0; ; rn++) {
+		const char *r = r_anal_cc_ret (anal, name, rn);
+		if (!r) {
+			break;
+		}
+		pj_s (pj, r);
 	}
+	pj_end (pj);
 	char *sig = r_anal_cc_get (anal, name);
 	pj_ks (pj, "signature", sig);
 	free (sig);
@@ -134,22 +156,25 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		R_LOG_ERROR ("Invalid calling convention name (%s)", name);
 		return NULL;
 	}
-	r_strf_var (ccret, 128, "cc.%s.ret", name);
-	const char *ret = sdb_const_get (db, ccret, 0);
+	const char *ret = r_anal_cc_ret (anal, name, 0);
 	if (!ret) {
 		R_LOG_ERROR ("Cannot find return type for %s", name);
 		return NULL;
 	}
-	r_strf_var (ccret2, 128, "cc.%s.ret2", name);
-	const char *ret2 = sdb_const_get (db, ccret2, 0);
 
 	RStrBuf *sb = r_strbuf_new (NULL);
 	const char *self = r_anal_cc_self (anal, name);
-	if (ret2) {
-		r_strbuf_appendf (sb, "%s:%s %s%s%s (", ret, ret2, r_str_get (self), self? ".": "", name);
-	} else {
-		r_strbuf_appendf (sb, "%s %s%s%s (", ret, r_str_get (self), self? ".": "", name);
+	// Multi-return: print "r0:r1:r2 ..."
+	r_strbuf_appendf (sb, "%s", ret);
+	int rn;
+	for (rn = 1; ; rn++) {
+		const char *rs = r_anal_cc_ret (anal, name, rn);
+		if (!rs) {
+			break;
+		}
+		r_strbuf_appendf (sb, ":%s", rs);
 	}
+	r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", name);
 	bool isFirst = true;
 	bool revarg = false;
 	{
@@ -274,10 +299,25 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	return i;
 }
 
-R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
-	r_strf_var (query, 64, "cc.%s.ret", convention);
-	return sdb_const_get (DB, query, 0);
+// Single unified accessor for return registers.
+// n=0 is the first/only return; n>=1 selects multi-return slots.
+// New keys: "cc.NAME.ret.N" (dot-separated, supports any N).
+// Legacy keys: "cc.NAME.ret" maps to slot 0; "cc.NAME.ret2" maps to slot 1.
+// Returns NULL past the last defined slot.
+R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
+	r_strf_buffer (64);
+	const char *v = sdb_const_get (DB, r_strf ("cc.%s.ret.%d", convention, n), 0);
+	if (v) {
+		return v;
+	}
+	if (n == 0) {
+		return sdb_const_get (DB, r_strf ("cc.%s.ret", convention), 0);
+	}
+	if (n == 1) {
+		return sdb_const_get (DB, r_strf ("cc.%s.ret2", convention), 0);
+	}
+	return NULL;
 }
 
 R_API const char *r_anal_cc_default(RAnal *anal) {
