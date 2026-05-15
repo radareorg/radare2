@@ -12,9 +12,7 @@ R_LIB_VERSION(r_asm);
 static RAsmPlugin *asm_static_plugins[] = { R_ASM_STATIC_PLUGINS };
 
 static const char *directives[] = {
-	".include", ".error", ".warning",
-	".echo", ".if", ".ifeq", ".endif",
-	".else", ".set", ".get", ".extern", NULL
+	".include", ".error", ".warning", ".echo", ".if", ".ifeq", ".endif", ".else", ".set", ".get", ".extern", NULL
 };
 
 R_API bool r_asm_plugin_add(RAsm *a, RAsmPlugin *foo) {
@@ -48,7 +46,15 @@ R_API bool r_asm_plugin_remove(RAsm *a, RAsmPlugin *plugin) {
 
 /* pseudo.c - private api */
 static int r_asm_pseudo_align(RAsmCode *acode, RAnalOp *op, const char *input) {
-	acode->code_align = r_num_math (NULL, input);
+	const char *err = NULL;
+	ut64 align_val = r_num_math_err (NULL, input, &err);
+
+	if (err) {
+		R_LOG_ERROR ("Invalid alignment: %s", err);
+		return -1;
+	}
+
+	acode->code_align = align_val;
 	return 0;
 }
 
@@ -74,7 +80,12 @@ static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_u
 	short s;
 	int i;
 	long int l;
-	ut64 s64 = r_num_math (NULL, input);
+	const char *err = NULL;
+	ut64 s64 = r_num_math_err (NULL, input, &err);
+	if (err) {
+		R_LOG_ERROR ("Invalid alignment: %s", err);
+		return -1;
+	}
 	if (is_unsigned) {
 		if (n != 8 && s64 >> (n * 8)) {
 			R_LOG_ERROR ("uint%d out of range", n * 8);
@@ -168,7 +179,15 @@ static int r_asm_pseudo_byte(RAnalOp *op, char *input) {
 	}
 	for (i = 0; i < len; i++) {
 		const char *word = r_str_word_get0 (input, i);
-		int num = (int)r_num_math (NULL, word);
+		const char *err = NULL;
+		int num = (int)r_num_math_err (NULL, word, &err);
+
+		if (err) {
+			R_LOG_ERROR ("Invalid number in .byte: %s", err);
+			free (buf);
+			return -1;
+		}
+
 		if (num < 0 || num > 255) {
 			R_LOG_ERROR ("byte value %d out of range (0-255)", num);
 			free (buf);
@@ -197,12 +216,30 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
 		}
 		char *q = p + strlen (p) + 1;
 		char *r = q + strlen (q) + 1;
-		repeat = (int)r_num_math (NULL, r_str_trim_head_ro (p));
-		size = (int)r_num_math (NULL, r_str_trim_head_ro (q));
-		value = (ut32)r_num_math (NULL, r_str_trim_head_ro (r));
+
+		const char *err = NULL;
+		repeat = (int)r_num_math_err (NULL, r_str_trim_head_ro (p), &err);
+		if (!err) {
+			size = (int)r_num_math_err (NULL, r_str_trim_head_ro (q), &err);
+		}
+		if (!err) {
+			value = (ut32)r_num_math_err (NULL, r_str_trim_head_ro (r), &err);
+		}
+
+		if (err) {
+			R_LOG_ERROR ("Invalid number in .fill: %s", err);
+			free (p);
+			return -1;
+		}
 		free (p);
 	} else {
-		size = (int)r_num_math (NULL, input);
+		const char *err = NULL;
+		size = (int)r_num_math_err (NULL, input, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid number in .fill: %s", err);
+			free (p);
+			return -1;
+		}
 	}
 	if (repeat < 1 || size < 1 || r_mul_overflow ((size_t)repeat, (size_t)size, &total) || total > INT_MAX) {
 		return 0;
@@ -211,7 +248,7 @@ static int r_asm_pseudo_fill(RAsm *a, RAnalOp *op, const char *input) {
 	if (!buf) {
 		return 0;
 	}
-	ut8 pattern[sizeof (value)] = {0};
+	ut8 pattern[sizeof (value)] = { 0 };
 	r_write_ble32 (pattern, value, R_ARCH_CONFIG_IS_BIG_ENDIAN (a->config));
 	if (size > sizeof (pattern)) {
 		memcpy (buf, pattern, sizeof (pattern));
@@ -230,8 +267,17 @@ static int r_asm_pseudo_incbin(RAnalOp *op, char *input) {
 	// int len = r_str_word_count (input);
 	r_str_word_set0 (input);
 	// const char *filename = r_str_word_get0 (input, 0);
-	size_t skip = (size_t)r_num_math (NULL, r_str_word_get0 (input, 1));
-	size_t count = (size_t)r_num_math (NULL, r_str_word_get0 (input, 2));
+	const char *err = NULL;
+	size_t skip = (size_t)r_num_math_err (NULL, r_str_word_get0 (input, 1), &err);
+	size_t count = 0;
+	if (!err) {
+		count = (size_t)r_num_math_err (NULL, r_str_word_get0 (input, 2), &err);
+	}
+
+	if (err) {
+		R_LOG_ERROR ("Invalid number in .incbin: %s", err);
+		return -1;
+	}
 	char *content = r_file_slurp (input, &bytes_read);
 	if (!content) {
 		R_LOG_ERROR ("Could not open '%s'", input);
@@ -453,7 +499,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 		// that shouldnt be permitted imho, keep for backward compat
 		return false;
 	}
-	char old_arch[sizeof (a->config->arch)] = {0};
+	char old_arch[sizeof (a->config->arch)] = { 0 };
 	r_str_ncpy (old_arch, a->config->arch, sizeof (old_arch));
 	r_arch_config_use (a->config, name);
 	r_asm_use_assembler (a, name);
@@ -463,7 +509,7 @@ R_API bool r_asm_use(RAsm *a, const char *name) {
 			load_asm_descriptions (a);
 			return true;
 		}
-	//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
+		//	R_LOG_ERROR ("Cannot find '%s' arch plugin. See rasm2 -L or -LL", name);
 	} else if (a->arch) {
 		// use RArch directly without RAnal bridge
 		if (r_arch_use (a->arch, a->config, name)) {
@@ -676,7 +722,7 @@ static int r_asm_assemble_single(RAsm *a, RAnalOp *op, const char *buf) {
 	r_str_case (b, false);
 	op->addr = a->pc;
 	r_anal_op_set_mnemonic (op, op->addr, b);
-	int ret = r_arch_session_encode (a->ecur, op, 0) ? op->size : 0;
+	int ret = r_arch_session_encode (a->ecur, op, 0)? op->size: 0;
 	free (b);
 	return ret;
 }
@@ -687,7 +733,7 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 	ut64 pc = a->pc;
 	ut64 idx;
 	int ret;
-	const size_t addrbytes = a->config->addrbytes > 0 ? a->config->addrbytes : 1;
+	const size_t addrbytes = a->config->addrbytes > 0? a->config->addrbytes: 1;
 	int mininstrsize = 1;
 	if (a->arch) {
 		mininstrsize = R_MAX (1, r_arch_info (a->arch, R_ARCH_INFO_MINOP_SIZE));
@@ -706,7 +752,7 @@ R_API RAsmCode *r_asm_mdisassemble(RAsm *a, const ut8 *buf, int len) {
 		r_asm_set_pc (a, pc + idx);
 		// we can change this to return RAnalOp* instead of passing it as arg here
 		ret = r_asm_disassemble_do (a, &op, buf + idx, len - idx);
-		ret = (op.size > 0) ? op.size : mininstrsize;
+		ret = (op.size > 0)? op.size: mininstrsize;
 		if (a->pseudo) {
 			char *newtext = r_asm_parse_pseudo (a, op.mnemonic);
 			if (newtext) {
@@ -840,7 +886,12 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("cannot use %s", ptr + 6);
 		}
 	} else if (r_str_startswith (ptr, ".bits ")) {
-		if (! (r_asm_set_bits (a, r_num_math (NULL, ptr + 6)))) {
+		const char *err = NULL;
+		int bits = r_num_math_err (NULL, ptr + 6, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid number for .bits: %s", err);
+			ret = -1;
+		} else if (! (r_asm_set_bits (a, bits))) {
 			R_LOG_ERROR ("Unsupported value for .bits");
 			ret = -1;
 		} else {
@@ -971,9 +1022,16 @@ static int parse_asm_directive(RAsm *a, RAnalOp *op, RAsmCode *acode, char *ptr_
 			R_LOG_ERROR ("Invalid syntax for '.equ': Use '.equ <word>=<word>'");
 		}
 	} else if (r_str_startswith (ptr, ".org ")) {
-		r_asm_set_pc (a, r_num_math (NULL, ptr + 5));
-		ret = 0;
-		*off = a->pc;
+		const char *err = NULL;
+		ut64 pc_val = r_num_math_err (NULL, ptr + 5, &err);
+		if (err) {
+			R_LOG_ERROR ("Invalid number for .org: %s", err);
+			ret = -1;
+		} else {
+			r_asm_set_pc (a, pc_val);
+			ret = 0;
+			*off = a->pc;
+		}
 	} else if (r_str_startswith (ptr, ".offset ")) {
 		R_LOG_ERROR ("Invalid use of the .offset directory. This directive is only supported in r2 -c 'waf'");
 	} else if (r_str_startswith (ptr, ".text")) {
