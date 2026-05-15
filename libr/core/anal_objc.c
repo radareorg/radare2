@@ -343,6 +343,84 @@ static bool objc_find_refs(RCore *core) {
 	return true;
 }
 
+static const char *objc_bin_name(RBinName *name) {
+	if (!name) {
+		return NULL;
+	}
+	const char *res = r_bin_name_tostring2 (name, 'd');
+	if (R_STR_ISEMPTY (res)) {
+		res = r_bin_name_tostring2 (name, 'o');
+	}
+	return res;
+}
+
+static void objc_recover_class(RAnal *anal, RBinClass *klass) {
+	const char *class_name = objc_bin_name (klass->name);
+	if (R_STR_ISEMPTY (class_name)) {
+		return;
+	}
+	r_anal_class_create (anal, class_name);
+
+	RListIter *iter;
+	RBinName *super;
+	if (klass->super) {
+		r_list_foreach (klass->super, iter, super) {
+			const char *super_name = objc_bin_name (super);
+			if (R_STR_ISEMPTY (super_name)) {
+				continue;
+			}
+			r_anal_class_create (anal, super_name);
+			RAnalBaseClass base = {
+				.class_name = (char *)super_name,
+				.offset = 0
+			};
+			r_anal_class_base_set (anal, class_name, &base);
+			free (base.id);
+		}
+	}
+
+	RBinSymbol *method;
+	R_VEC_FOREACH (&klass->methods, method) {
+		const char *method_name = objc_bin_name (method->name);
+		if (R_STR_ISEMPTY (method_name)) {
+			continue;
+		}
+		char *class_method_name = NULL;
+		if (method->attr & R_BIN_ATTR_CLASS) {
+			class_method_name = r_str_newf ("class.%s", method_name);
+			if (!class_method_name) {
+				continue;
+			}
+			method_name = class_method_name;
+		}
+		RAnalMethod meth = {
+			.name = (char *)method_name,
+			.addr = method->vaddr,
+			.vtable_offset = -1
+		};
+		r_anal_class_method_set (anal, class_name, &meth);
+		free (class_method_name);
+	}
+}
+
+R_API bool r_core_anal_objc_recover_classes(RCore *core) {
+	R_RETURN_VAL_IF_FAIL (core && core->anal && core->bin, false);
+	RList *classes = r_bin_get_classes (core->bin);
+	if (!classes) {
+		return false;
+	}
+	bool recovered = false;
+	RListIter *iter;
+	RBinClass *klass;
+	r_list_foreach (classes, iter, klass) {
+		if (klass && klass->lang == R_BIN_LANG_OBJC) {
+			objc_recover_class (core->anal, klass);
+			recovered = true;
+		}
+	}
+	return recovered;
+}
+
 R_API bool cmd_anal_objc(RCore *core, const char *input, bool auto_anal) {
 	R_RETURN_VAL_IF_FAIL (core && input, 0);
 	if (!auto_anal) {

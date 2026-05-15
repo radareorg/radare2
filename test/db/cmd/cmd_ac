@@ -264,6 +264,19 @@ Flatline:
 EOF
 RUN
 
+NAME=acb objc inheritance
+FILE=bins/mach0/objc-employee
+ARGS=-e bin.cache=true -e log.quiet=true
+CMDS=<<EOF
+aaa
+acb Employee
+EOF
+EXPECT=<<EOF
+Employee:
+     0 NSObject @ +0x0
+EOF
+RUN
+
 NAME=acb-
 FILE=-
 CMDS=<<EOF

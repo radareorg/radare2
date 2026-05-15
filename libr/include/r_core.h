@@ -634,6 +634,7 @@ R_API char *r_core_anal_hasrefs_to_depth(RCore *core, ut64 value, PJ *pj, int de
 R_API void r_core_link_stroff(RCore *core, RAnalFunction *fcn);
 R_API void r_core_anal_inflags(RCore *core, const char *glob);
 R_API bool cmd_anal_objc(RCore *core, const char *input, bool auto_anal);
+R_API bool r_core_anal_objc_recover_classes(RCore *core);
 R_API void r_core_anal_cc_init(RCore *core);
 R_API void r_core_anal_paths(RCore *core, ut64 from, ut64 to, bool followCalls, int followDepth, bool is_json);
 R_API void r_core_anal_esil_function(RCore *core, ut64 addr); /// TODO: better name and move to anal

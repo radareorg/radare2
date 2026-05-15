@@ -15599,6 +15599,7 @@ static void cmd_anal_rtti(RCore *core, const char *input) {
 		r_anal_rtti_print_all (core->anal, input[1]);
 		break;
 	case 'r': // "avrr"
+		r_core_anal_objc_recover_classes (core);
 		r_anal_rtti_recover_all (core->anal);
 		break;
 	case 'D': // "avrD"
