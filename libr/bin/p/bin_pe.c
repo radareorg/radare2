@@ -446,6 +446,7 @@ RBinPlugin r_bin_plugin_pe = {
 	},
 	.get_sdb = &get_sdb,
 	.get_name = &getname,
+	.get_cc = &get_cc,
 	.load = &load,
 	.destroy = &destroy,
 	.check = &check,

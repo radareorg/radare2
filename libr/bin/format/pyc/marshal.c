@@ -1178,6 +1178,14 @@ static bool extract_sections_symbols(PycUnmarshalCtx *ctx, pyc_object *obj, RLis
 	symbol->vaddr = cobj->start_offset;
 	symbol->paddr = cobj->start_offset;
 	symbol->ordinal = ctx->scount++;
+	const ut32 arg_count = cobj->argcount + cobj->kwonlyargcount;
+	const ut16 ret_count = 1;
+	if (arg_count > 0 || ret_count > 0) {
+		symbol->arg_first = 0;
+		symbol->arg_count = arg_count;
+		symbol->arg_prefix = "l";
+		symbol->ret_count = ret_count;
+	}
 	r_list_foreach (((RList *)(cobj->consts->data)), i, obj) {
 		extract_sections_symbols (ctx, obj, sections, symbols, cobjs, prefix);
 	}

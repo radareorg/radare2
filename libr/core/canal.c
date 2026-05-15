@@ -72,6 +72,56 @@ static int cmpname(const void *_a, const void *_b) {
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
+static const char *callconv_for_call(RCore *core, RAnalOp *op) {
+	RAnal *anal = core->anal;
+	ut64 offset = op->jump != UT64_MAX? op->jump: op->ptr;
+	RAnalFunction *f = r_anal_get_function_at (anal, offset);
+	if (f) {
+		const char *fcc = r_anal_function_cc (f);
+		if (fcc) {
+			return fcc;
+		}
+	}
+	RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
+	if (!flag) {
+		return NULL;
+	}
+	char *callee = r_type_func_guess (anal->sdb_types, flag->name);
+	if (!callee) {
+		return NULL;
+	}
+	const char *cc = r_anal_cc_func (anal, callee);
+	free (callee);
+	return cc;
+}
+
+static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int *reg_set) {
+	RAnal *anal = core->anal;
+	const char *fcncc = r_anal_function_cc (fcn);
+	int max_count = fcncc? r_anal_cc_max_arg_clamped (anal, fcncc): 0;
+	const char *cc = callconv_for_call (core, op);
+	const char *clobbers = cc? r_anal_cc_clobbers (anal, cc): NULL;
+	const char *preserves = cc? r_anal_cc_preserves (anal, cc): NULL;
+	int i;
+	for (i = 0; i < max_count; i++) {
+		const char *loc = r_anal_cc_arg (anal, fcncc, i, 0);
+		if (!loc) {
+			continue;
+		}
+		if (R_STR_ISNOTEMPTY (clobbers)) {
+			if (r_anal_cc_location_in_regset (anal, loc, clobbers, false) && !r_anal_cc_location_in_regset (anal, loc, preserves, true)) {
+				reg_set[i] = 2;
+			}
+		} else if (R_STR_ISNOTEMPTY (preserves)) {
+			if (!r_anal_cc_location_in_regset (anal, loc, preserves, true)) {
+				reg_set[i] = 2;
+			}
+		} else {
+			reg_set[i] = 2;
+		}
+	}
+}
+
 
 static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
@@ -626,8 +676,15 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 #endif
 	const char *cc = r_anal_cc_default (core->anal);
-	if (!cc) {
-		if (r_anal_cc_once (core->anal)) {
+	if (cc && !strcmp (cc, "dyncc")) {
+		// Keep the bare "dyncc" marker; r_anal_function_cc () resolves it
+		// lazily via RBinPlugin.get_cc the first time it is actually needed.
+		if (!core->anal->binb.get_cc) {
+			cc = "reg"; // no per-function cc provider available
+		}
+	} else if (!cc) {
+		const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+		if (!isvm && r_anal_cc_once (core->anal)) {
 			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
@@ -2845,8 +2902,11 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
-	if (fcn->callconv) {
-		pj_ks (pj, "calltype", fcn->callconv); // calling conventions
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			pj_ks (pj, "calltype", fcncc); // calling conventions
+		}
 	}
 	{
 		RFlagItem *fi = r_flag_get_in (core->flags, fcn->addr);
@@ -3159,8 +3219,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf (cons, "\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf (cons, "\nrealsz: %" PFMT64d, r_anal_function_realsize (fcn));
 	r_cons_printf (cons, "\nstackframe: %d", fcn->maxstack);
-	if (fcn->callconv) {
-		r_cons_printf (cons, "\ncallconv: %s", fcn->callconv);
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			r_cons_printf (cons, "\ncallconv: %s", fcncc);
+		}
 	}
 	char *fn = filename (core, fcn->addr);
 	if (fn) {
@@ -3749,16 +3812,13 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		int opsize = op.size;
 		int optype = op.type;
+		if (optype == R_ANAL_OP_TYPE_CALL) {
+			apply_call_regsets (core, fcn, &op, reg_set);
+		}
 		r_anal_op_fini (&op);
 		//r_anal_op_free (op);
 		if (opsize < 1) {
 			break;
-		}
-		if (optype == R_ANAL_OP_TYPE_CALL) {
-			int i, max_count = fcn->callconv ? r_anal_cc_max_arg (core->anal, fcn->callconv) : 0;
-			for (i = 0; i < max_count; i++) {
-				reg_set[i] = 2;
-			}
 		}
 		opaddr += opsize;
 	}

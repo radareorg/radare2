@@ -81,6 +81,7 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->addr = UT64_MAX;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
+	fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	fcn->bbs = r_list_new ();
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
@@ -578,7 +579,8 @@ static RAnalFcnSlot *fcn_context_collect_slot(RAnal *anal, const RAnalFcnContext
 static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn) {
 	R_RETURN_VAL_IF_FAIL (fcn, NULL);
 	RAnalFunctionSignature *signature = r_anal_function_get_signature (fcn);
-	if (signature || (!R_STR_ISNOTEMPTY (fcn->callconv) && !fcn->is_noreturn)) {
+	const char *fcncc = r_anal_function_cc (fcn);
+	if (signature || (!R_STR_ISNOTEMPTY (fcncc) && !fcn->is_noreturn)) {
 		return signature;
 	}
 	signature = R_NEW0 (RAnalFunctionSignature);
@@ -587,8 +589,8 @@ static RAnalFunctionSignature *fcn_context_collect_signature(RAnalFunction *fcn)
 		r_anal_function_signature_free (signature);
 		return NULL;
 	}
-	if (R_STR_ISNOTEMPTY (fcn->callconv)) {
-		signature->callconv = strdup (fcn->callconv);
+	if (R_STR_ISNOTEMPTY (fcncc)) {
+		signature->callconv = strdup (fcncc);
 		if (!signature->callconv) {
 			r_anal_function_signature_free (signature);
 			return NULL;

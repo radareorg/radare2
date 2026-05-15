@@ -3,6 +3,9 @@
 #include <r_arch.h>
 #include "pyc_dis.h"
 
+#define PYC_MIN_REG_LOCALS 16
+#define PYC_MAX_REG_LOCALS UT16_MAX
+
 static int pyversion_toi(const char *version) {
 	if (version) {
 		char vstr[32];
@@ -59,6 +62,43 @@ static inline pyc_code_object *get_func(ut64 pc, RBinPycObj *pyc) {
 	return NULL;
 }
 
+static int pyc_obj_list_length(pyc_object *obj) {
+	if (obj) {
+		switch (obj->type) {
+		case TYPE_DICT:
+		case TYPE_FROZENSET:
+		case TYPE_SET:
+		case TYPE_LIST:
+		case TYPE_TUPLE:
+		case TYPE_SMALL_TUPLE:
+			return obj->data? r_list_length (obj->data): 0;
+		default:
+			break;
+		}
+	}
+	return 0;
+}
+
+static ut32 pyc_reg_locals(RArchSession *as) {
+	ut32 locals = PYC_MIN_REG_LOCALS;
+	RBinPycObj *pyc = get_pyc_obj (as);
+	if (!pyc || !pyc->cobjs) {
+		return locals;
+	}
+	pyc_code_object *cobj;
+	RListIter *iter;
+	r_list_foreach (pyc->cobjs, iter, cobj) {
+		ut32 nlocals = cobj->nlocals;
+		int varnames = pyc_obj_list_length (cobj->varnames);
+		if (varnames > 0) {
+			nlocals = (ut32)varnames;
+		}
+		nlocals = R_MIN (nlocals, PYC_MAX_REG_LOCALS);
+		locals = R_MAX (locals, nlocals);
+	}
+	return locals;
+}
+
 static int archinfo(RArchSession *as, ut32 query) {
 	switch (query) {
 	case R_ARCH_INFO_INVOP_SIZE:
@@ -80,25 +120,31 @@ static int archinfo(RArchSession *as, ut32 query) {
 }
 
 static char *regs(RArchSession *as) {
-	return strdup (
-		"=PC    pc\n"
-		"=BP    bp\n"
-		"=SP    sp\n"
-		"=SN    a0\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
-		"=R0    r0\n"
-		"gpr    a0  .32  0   0\n"
-		"gpr    a1  .32  4   0\n"
-		"gpr    a2  .32  8   0\n"
-		"gpr    a3  .32 12   0\n"
-		"gpr    r0  .32 16   0\n"
-		"gpr    sp  .32 20   0\n" // stack pointer
-		"gpr    pc  .32 24   0\n" // program counter
-		"gpr    bp  .32 28   0\n" // base pointer // unused
+	RStrBuf *sb = r_strbuf_new (
+		"=PC	pc\n"
+		"=BP	bp\n"
+		"=SP	sp\n"
+		"=SN	a0\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=R0	r0\n"
+		"gpr	a0	.32	0	0\n"
+		"gpr	a1	.32	4	0\n"
+		"gpr	a2	.32	8	0\n"
+		"gpr	a3	.32	12	0\n"
+		"gpr	r0	.32	16	0\n"
+		"gpr	sp	.32	20	0\n"
+		"gpr	pc	.32	24	0\n"
+		"gpr	bp	.32	28	0\n"
 	);
+	ut32 locals = pyc_reg_locals (as);
+	ut32 i;
+	for (i = 0; i < locals; i++) {
+		r_strbuf_appendf (sb, "gpr\tl%u\t.32\t%u\t0\n", i, 32 + i * 4);
+	}
+	return r_strbuf_drain (sb);
 }
 
 static inline bool simple_parse_op(RAnalOp *op, size_t *oloc, py_simple_op *so) {

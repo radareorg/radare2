@@ -336,18 +336,11 @@ static int java_cmd_ext(RAnal *anal, const char* input) {
 }
 #endif
 
-// JVM is stack-based with separate local-variable slots. Expose l0..l15 as
-// synthetic regs so per-method arg recovery (anal_java) and the generic
-// CC-from-reg-profile fallback (libr/core/cbin.c) can both reference them.
 static char *regs(RArchSession *as) {
 	RStrBuf *sb = r_strbuf_new (
 		"=PC	pc\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
-		"=A0	l0\n"
-		"=A1	l1\n"
-		"=A2	l2\n"
-		"=A3	l3\n"
 		"=R0	r0\n"
 		"gpr	pc	.32	0	0\n"
 		"gpr	sp	.32	4	0\n"

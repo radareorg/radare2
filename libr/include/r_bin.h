@@ -342,7 +342,9 @@ typedef struct r_bin_symbol_t {
 	// Anal uses these to synthesize register-kind argument variables.
 	// arg_count == 0 means no metadata is available for this symbol.
 	ut16 arg_first;          // first arg register index in the bytecode reg space
-	ut16 arg_count;          // number of arg slots (0 = no metadata)
+	ut16 arg_count;          // VM locals/arg slots for variable recovery (0 = no metadata)
+	ut16 cc_arg_count;       // descriptor/callconv arg slots; can be zero for no-arg funcs
+	ut16 ret_count;          // number of return slots (0 = void)
 	const char *arg_prefix;  // interned register name prefix, e.g. "v" or "l"
 } RBinSymbol;
 
@@ -687,6 +689,8 @@ typedef struct r_bin_plugin_t {
 	struct r_bin_write_t *write;
 	ut64 (*get_offset) (RBinFile *bf, int type, int idx);
 	const char* (*get_name)(RBinFile *bf, int type, int idx, bool simplified);
+	// Optional per-function calling convention name for anal.cc=dyncc
+	const char *(*get_cc)(RBinFile *bf, ut64 vaddr);
 	ut64 (*get_vaddr)(RBinFile *bf, ut64 baddr, ut64 paddr, ut64 vaddr);
 	RBuffer* (*create)(RBin *bin, const ut8 *code, int codelen, const ut8 *data, int datalen, RBinArchOptions *opt);
 	char* (*demangle)(const char *str);
@@ -820,11 +824,13 @@ typedef char *(*RBinDemangle)(RBinFile *bf, const char *def, const char *str, ut
 typedef ut64 (*RBinBaddr)(RBinFile *bf, ut64 addr);
 typedef RVecRBinSymbol *(*RBinGetSymbolsVec)(RBin *bin);
 typedef RBinSymbol *(*RBinGetSymbolAt)(RBin *bin, ut64 addr);
+typedef const char *(*RBinGetCC)(RBin *bin, ut64 vaddr);
 
 typedef struct r_bin_bind_t {
 	RBin *bin;
 	RBinGetOffset get_offset;
 	RBinGetName get_name;
+	RBinGetCC get_cc;
 	RBinGetSectionsVec get_sections_vec;
 	RBinGetSectionAt get_vsect_at;
 	RBinGetSymbolsVec get_symbols_vec;

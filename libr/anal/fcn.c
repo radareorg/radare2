@@ -88,6 +88,80 @@ static bool cond_is_inverse(RAnalCondType a, RAnalCondType b) {
 		|| (a == R_ANAL_CONDTYPE_NE && b == R_ANAL_CONDTYPE_EQ);
 }
 
+static void fcn_stack_delta(RAnalFunction *fcn, RAnalBlock *bb, st64 delta) {
+	if (R_ABS (delta) < R_ANAL_MAX_INCSTACK) {
+		fcn->stack += delta;
+		if (fcn->stack > fcn->maxstack) {
+			fcn->maxstack = fcn->stack;
+		}
+	}
+	bb->stackptr += delta;
+}
+
+// Resolve a function's concrete calling convention. When fcn->callconv still
+// holds the bare "dyncc" marker, query the bin plugin (RBinPlugin.get_cc) once
+// and cache the resulting interned string back into fcn->callconv.
+R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	const char *cc = fcn->callconv;
+	if (!cc || strcmp (cc, "dyncc")) {
+		// already concrete (dyncc:... or a static cc), or unset
+		return cc;
+	}
+	RAnal *anal = fcn->anal;
+	if (!anal) {
+		return cc;
+	}
+	const char *resolved = NULL;
+	if (anal->binb.get_cc) {
+		resolved = anal->binb.get_cc (anal->binb.bin, fcn->addr);
+	}
+	if (!resolved) {
+		// no per-function metadata: pin to a stable fallback so we do not
+		// re-query the bin plugin on every access
+		resolved = "reg";
+	}
+	fcn->callconv = r_str_constpool_get (&anal->constpool, resolved);
+	return fcn->callconv;
+}
+
+static int fcn_call_stack_pop(RAnal *anal, RAnalOp *op) {
+	if (!anal || !op || op->jump == UT64_MAX) {
+		return 0;
+	}
+	RAnalFunction *callee = r_anal_get_function_at (anal, op->jump);
+	if (!callee) {
+		return 0;
+	}
+	const char *cc = r_anal_function_cc (callee);
+	if (!cc) {
+		return 0;
+	}
+	int pop = r_anal_cc_stack_pop (anal, cc);
+	return pop > 0? pop: R_MAX (0, callee->stack_pop);
+}
+
+static int fcn_ret_stack_pop(RAnalFunction *fcn, RAnalOp *op) {
+	if (op->stackop != R_ANAL_STACK_INC || op->stackptr >= 0) {
+		return R_ANAL_CC_STACK_POP_UNKNOWN;
+	}
+	const int bits = fcn->bits? fcn->bits: fcn->anal->config->bits;
+	const int word = R_MAX (1, bits / 8);
+	const st64 pop = -op->stackptr - word;
+	return pop >= 0 && pop <= ST32_MAX? (int)pop: R_ANAL_CC_STACK_POP_UNKNOWN;
+}
+
+static void fcn_set_stack_pop(RAnalFunction *fcn, int pop) {
+	if (pop < 0) {
+		return;
+	}
+	if (fcn->stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
+		fcn->stack_pop = pop;
+	} else if (fcn->stack_pop != pop) {
+		fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+	}
+}
+
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -1051,13 +1125,7 @@ noskip:
 		// compiler bug or junk or something it wont get treated as a delay
 		switch (op->stackop) {
 		case R_ANAL_STACK_INC:
-			if (R_ABS (op->stackptr) < R_ANAL_MAX_INCSTACK) {
-				fcn->stack += op->stackptr;
-				if (fcn->stack > fcn->maxstack) {
-					fcn->maxstack = fcn->stack;
-				}
-			}
-			bb->stackptr += op->stackptr;
+			fcn_stack_delta (fcn, bb, op->stackptr);
 			break;
 		case R_ANAL_STACK_RESET:
 			bb->stackptr = 0;
@@ -1602,6 +1670,16 @@ noskip:
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
+			{
+				int pop = fcn_call_stack_pop (anal, op);
+				if (pop > 0) {
+					st64 delta = -pop;
+					if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {
+						delta -= op->stackptr;
+					}
+					fcn_stack_delta (fcn, bb, delta);
+				}
+			}
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:
@@ -1877,6 +1955,7 @@ analopfinish:
 			}
 			break;
 		case R_ANAL_OP_TYPE_CRET:
+			fcn_set_stack_pop (fcn, fcn_ret_stack_pop (fcn, op));
 			// conditional return: end block, analyze fall-through path
 			bb->fail = op->addr + op->size;
 			{
@@ -1886,6 +1965,7 @@ analopfinish:
 			}
 			goto beach;
 		case R_ANAL_OP_TYPE_RET:
+			fcn_set_stack_pop (fcn, fcn_ret_stack_pop (fcn, op));
 			if (op->family == R_ANAL_OP_FAMILY_PRIV) {
 				fcn->type = R_ANAL_FCN_TYPE_INT;
 			}
@@ -2449,8 +2529,9 @@ static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, 
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
 	}
-	if (R_STR_ISNOTEMPTY (fcn->callconv) && r_anal_cc_exist (anal, fcn->callconv)) {
-		callconv = fcn->callconv;
+	const char *fcncc = r_anal_function_cc (fcn);
+	if (R_STR_ISNOTEMPTY (fcncc) && r_anal_cc_exist (anal, fcncc)) {
+		callconv = fcncc;
 	}
 	if (!callconv) {
 		callconv = r_anal_cc_default (anal);
