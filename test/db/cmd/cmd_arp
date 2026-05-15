@@ -296,9 +296,7 @@ EXPECT=<<EOF
    rax 0x00000000        
 0x00000000
 EOF
-EXPECT_ERR=<<EOF
-ERROR: [r_reg_set_profile_string] =A0 is not defined
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=bad regprofile
@@ -318,9 +316,7 @@ EXPECT=<<EOF
    rax 0x00000000        
 0x00000000
 EOF
-EXPECT_ERR=<<EOF
-ERROR: =A0 is not defined
-EOF
+EXPECT_ERR=
 RUN
 
 NAME=bad regprofile 2

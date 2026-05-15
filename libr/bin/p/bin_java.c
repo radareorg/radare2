@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake, nibble, dso */
+/* radare - LGPL - Copyright 2009-2026 - pancake, nibble, dso */
 
 #define R_LOG_ORIGIN "bin.java"
 
@@ -26,13 +26,13 @@ static void add_bin_obj_to_sdb(RBinJavaObj *bj) {
 }
 
 static Sdb *get_sdb(RBinFile *bf) {
-	struct r_bin_java_obj_t *bin = R_UNWRAP3 (bf, bo, bin_obj);
+	RBinJavaObj *bin = R_UNWRAP3 (bf, bo, bin_obj);
 	return bin? bin->kv: NULL;
 }
 
 static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	RBuffer *tbuf = r_ref (buf);
-	struct r_bin_java_obj_t *tbo = R_NEW0 (struct r_bin_java_obj_t);
+	RBinJavaObj *tbo = R_NEW0 (RBinJavaObj);
 	tbo->classes_names_only = bf->rbin->options.classes_names_only;
 	ut64 tmpsz = 0;
 	const ut8 *tmp = r_buf_data (tbuf, &tmpsz);
@@ -51,7 +51,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 }
 
 static void destroy(RBinFile *bf) {
-	r_bin_java_free ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
+	r_bin_java_free ((RBinJavaObj *) bf->bo->bin_obj);
 }
 
 static RList *entries(RBinFile *bf) {
@@ -59,24 +59,21 @@ static RList *entries(RBinFile *bf) {
 }
 
 static RList *classes(RBinFile *bf) {
-	return r_bin_java_get_classes ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
+	return r_bin_java_get_classes ((RBinJavaObj *) bf->bo->bin_obj);
 }
 
 static bool symbols_vec(RBinFile *bf) {
-	r_bin_java_load_symbols ((struct r_bin_java_obj_t *) bf->bo->bin_obj, &bf->bo->symbols_vec);
+	r_bin_java_load_symbols ((RBinJavaObj *) bf->bo->bin_obj, &bf->bo->symbols_vec);
 	return true;
 }
 
 static RVecRBinString *strings(RBinFile *bf) {
-	return r_bin_java_get_strings ((struct r_bin_java_obj_t *) bf->bo->bin_obj);
+	return r_bin_java_get_strings ((RBinJavaObj *) bf->bo->bin_obj);
 }
 
 static RBinInfo *info(RBinFile *bf) {
 	RBinJavaObj *jo = bf->bo->bin_obj;
 	RBinInfo *ret = R_NEW0 (RBinInfo);
-	if (!ret) {
-		return NULL;
-	}
 	ret->lang = jo ? jo->lang : "java";
 	ret->file = strdup (bf->file);
 	ret->type = strdup ("JAVA CLASS");
@@ -151,6 +148,17 @@ static bool sections_vec(RBinFile *bf) {
 	return r_bin_java_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix) {
+		return NULL;
+	}
+	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:%c:r0+%u", m->arg_prefix, m->arg_first, m->cc_arg_count, instance? 'i': 's', m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 RBinPlugin r_bin_plugin_java = {
 	.meta = {
 		.name = "java",
@@ -173,6 +181,7 @@ RBinPlugin r_bin_plugin_java = {
 	.lines = &lines,
 	.classes = classes,
 	.demangle_type = retdemangle,
+	.get_cc = &get_cc,
 	.minstrlen = 3,
 };
 

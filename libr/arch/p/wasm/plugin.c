@@ -9,6 +9,13 @@
 #include "wasm.h"
 #include "wasm.c"
 
+#define WASM_MIN_REGS 16
+#define WASM_MIN_REG_LOCALS 16
+#define WASM_MAX_REG_LOCALS UT16_MAX
+#define WASM_REG_OFFSET 12
+#define WASM_REG_SIZE 4
+#define WASM_LOCAL_REG_OFFSET (WASM_REG_OFFSET + WASM_MIN_REGS * WASM_REG_SIZE)
+
 typedef struct wasm_cf_scope {
 	ut64 addr, jump, fail;
 	WasmOpCodes opcode;
@@ -635,9 +642,55 @@ static int archinfo(RAnal *a, int q) {
 }
 #endif
 
+static int wasm_info(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_ISVM) {
+		return R_ARCH_INFO_ISVM;
+	}
+	return -1;
+}
+
+static RBinWasmObj *get_wasm_obj(RArchSession *as) {
+	RBin *b = R_UNWRAP3 (as, arch, binb.bin);
+	RBinPlugin *plugin = b && b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
+	bool is_wasm = plugin && !strcmp (plugin->meta.name, "wasm");
+	return is_wasm? (RBinWasmObj *)b->cur->bo->bin_obj: NULL;
+}
+
+static ut32 wasm_code_local_count(RBinWasmCodeEntry *code) {
+	if (!code || (code->local_count > 0 && !code->locals)) {
+		return 0;
+	}
+	ut32 i;
+	ut32 locals = 0;
+	for (i = 0; i < code->local_count; i++) {
+		ut32 next;
+		if (r_add_overflow (locals, code->locals[i].count, &next)) {
+			return WASM_MAX_REG_LOCALS;
+		}
+		locals = R_MIN (next, WASM_MAX_REG_LOCALS);
+		if (locals == WASM_MAX_REG_LOCALS) {
+			break;
+		}
+	}
+	return locals;
+}
+
+static ut32 wasm_reg_locals(RArchSession *as) {
+	ut32 locals = WASM_MIN_REG_LOCALS;
+	RBinWasmObj *bin = get_wasm_obj (as);
+	RVecWasmPtr *codes = bin? bin->g_codes: NULL;
+	if (!codes) {
+		return locals;
+	}
+	void **p;
+	R_VEC_FOREACH (codes, p) {
+		RBinWasmCodeEntry *code = *p;
+		locals = R_MAX (locals, wasm_code_local_count (code));
+	}
+	return locals;
+}
+
 static char *wasm_regs(RArchSession *ai) {
-	// r0..r15 and l0..l1023 are virtual register banks: materialized lazily by
-	// r_reg_get when referenced (e.g. by the calling convention via =A0..=A2)
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"
@@ -679,6 +732,7 @@ const RArchPlugin r_arch_plugin_wasm = {
 	},
 	.arch = "wasm",
 	.bits = R_SYS_BITS_PACK2 (32,64),
+	.info = wasm_info,
 	.regs = wasm_regs,
 	.decode = wasm_decode,
 	.encode = wasm_encode,

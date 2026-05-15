@@ -66,6 +66,17 @@ static const char *__getname(RBin *bin, int type, int idx, bool sd) {
 	return NULL;
 }
 
+static const char *__getcc(RBin *bin, ut64 vaddr) {
+	RBinFile *a = r_bin_cur (bin);
+	if (a) {
+		RBinPlugin *plugin = r_bin_file_cur_plugin (a);
+		if (plugin && plugin->get_cc) {
+			return plugin->get_cc (a, vaddr);
+		}
+	}
+	return NULL;
+}
+
 // TODO: move these two function do a different file
 R_API RBinXtrData *r_bin_xtrdata_new(RBuffer *buf, ut64 offset, ut64 size, ut32 file_count, RBinXtrMetadata *metadata) {
 	RBinXtrData *data = R_NEW0 (RBinXtrData);
@@ -1321,6 +1332,7 @@ R_API void r_bin_bind(RBin *bin, RBinBind *b) {
 		b->bin = bin;
 		b->get_offset = __getoffset;
 		b->get_name = __getname;
+		b->get_cc = __getcc;
 		b->get_sections_vec = r_bin_get_sections_vec;
 		b->get_vsect_at = __get_vsection_at;
 		b->get_symbols_vec = r_bin_get_symbols_vec;

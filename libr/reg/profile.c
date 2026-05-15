@@ -375,11 +375,7 @@ R_API bool r_reg_set_profile_string(RReg *reg, const char *str) {
 			}
 		}
 	} while (*p++);
-	if (!have_a0) {
-		R_LOG_ERROR ("=A0 is not defined");
-		// r_reg_free_internal (reg, false);
-		// return false;
-	}
+	(void)have_a0;
 	reg->size = 0;
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		RRegSet *rs = &reg->regset[i];

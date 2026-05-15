@@ -248,7 +248,10 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 	if (!codes) {
 		return false;
 	}
+	RVecWasmPtr *funcs = r_bin_wasm_get_functions (bin);
+	RVecWasmPtr *types = r_bin_wasm_get_types (bin);
 	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
+	ut32 code_idx = 0;
 	void **p;
 	R_VEC_FOREACH (codes, p) {
 		RBinWasmCodeEntry *func = *p;
@@ -256,6 +259,7 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 		bool is_exported = false;
 		char *name = symbol_name (bin, R_BIN_WASM_EXTERNALKIND_Function, sym_ordinal, load_unnamed, &is_exported);
 		if (!name) {
+			code_idx++;
 			continue;
 		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
@@ -266,7 +270,17 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 		sym->paddr = (ut64)func->code;
 		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
+		sym->attr = R_BIN_ATTR_STATIC;
+		RBinWasmFunctionEntry *fe = vector_at (funcs, code_idx);
+		RBinWasmTypeEntry *te = fe? vector_at (types, fe->typeindex): NULL;
+		if (te) {
+			sym->arg_first = 0;
+			sym->arg_count = te->args? te->args->count: 0;
+			sym->arg_prefix = "l";
+			sym->ret_count = te->rets? te->rets->count: 0;
+		}
 		set_sym_name (sym, name, is_exported);
+		code_idx++;
 	}
 	return true;
 }
@@ -504,6 +518,16 @@ static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	return NULL;
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix) {
+		return NULL;
+	}
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:s:r0+%u", m->arg_prefix, m->arg_first, m->arg_count, m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 RBinPlugin r_bin_plugin_wasm = {
 	.meta = {
 		.name = "wasm",
@@ -525,6 +549,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.libs = &libs,
 	.get_offset = &getoffset,
 	.get_name = &getname,
+	.get_cc = &get_cc,
 	.create = &create,
 };
 

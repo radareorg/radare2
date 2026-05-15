@@ -956,10 +956,36 @@ static ut32 dotnet_read_compressed_uint(const ut8 **p, const ut8 *end) {
 	return 0;
 }
 
+static bool dotnet_read_ret_count(const ut8 **p, const ut8 *end, ut16 *ret_count) {
+	if (ret_count) {
+		*ret_count = 1;
+	}
+	while (*p < end && (**p == ELEMENT_TYPE_CMOD_REQD || **p == ELEMENT_TYPE_CMOD_OPT)) {
+		(*p)++;
+		if (!dotnet_read_compressed_uint (p, end)) {
+			return false;
+		}
+	}
+	if (*p >= end) {
+		return false;
+	}
+	if (ret_count && **p == ELEMENT_TYPE_VOID) {
+		*ret_count = 0;
+	}
+	(*p)++;
+	return true;
+}
+
 // Decode the MethodDefSig blob at blob_index and return the total argument
 // slot count (paramCount + 1 if HASTHIS). 0 means "unknown / no info".
 // ECMA-335 II.23.2.1: header byte, optional GenParamCount, ParamCount, ret, params.
-static ut32 dotnet_method_param_count(PE *pe, PSTREAM_HEADER blob_hdr, ut64 metadata_root, ut32 blob_index) {
+static ut32 dotnet_method_param_count(PE *pe, PSTREAM_HEADER blob_hdr, ut64 metadata_root, ut32 blob_index, bool *has_this, ut16 *ret_count) {
+	if (has_this) {
+		*has_this = false;
+	}
+	if (ret_count) {
+		*ret_count = 1;
+	}
 	if (!blob_hdr || blob_index == 0) {
 		return 0;
 	}
@@ -973,19 +999,34 @@ static ut32 dotnet_method_param_count(PE *pe, PSTREAM_HEADER blob_hdr, ut64 meta
 		return 0;
 	}
 	const ut8 *p = blob_heap + blob_index;
-	// Skip the blob's own length prefix (compressed uint).
-	if (!dotnet_read_compressed_uint (&p, end)) {
+	ut32 sig_size = dotnet_read_compressed_uint (&p, end);
+	if (!sig_size || (ut64)(end - p) < sig_size) {
 		return 0;
 	}
-	if (p >= end) {
+	const ut8 *sig_end = p + sig_size;
+	if (p >= sig_end) {
 		return 0;
 	}
 	ut8 hdr = *p++;
 	ut32 implicit_this = (hdr & 0x20)? 1: 0; // HASTHIS
-	if (hdr & 0x10) { // GENERIC: skip GenParamCount
-		dotnet_read_compressed_uint (&p, end);
+	if (has_this) {
+		*has_this = implicit_this != 0;
 	}
-	ut32 param_count = dotnet_read_compressed_uint (&p, end);
+	if (hdr & 0x10) { // GENERIC: skip GenParamCount
+		const ut8 *gen_param = p;
+		dotnet_read_compressed_uint (&p, sig_end);
+		if (p == gen_param) {
+			return 0;
+		}
+	}
+	const ut8 *param = p;
+	ut32 param_count = dotnet_read_compressed_uint (&p, sig_end);
+	if (p == param) {
+		return 0;
+	}
+	if (!dotnet_read_ret_count (&p, sig_end, ret_count)) {
+		return 0;
+	}
 	return implicit_this + param_count;
 }
 
@@ -1074,8 +1115,12 @@ static void dotnet_parse_tilde_methoddef(
 					// Methods are 1-based, the method index is relative to MethodDef table start
 					// So method 1 is the first row (i = 0), method 2 is the second row (i = 1), etc.
 					uint32_t method_idx = i + 1;
-					ut32 args = dotnet_method_param_count (pe, streams->blob, metadata_root, sig_idx);
+					bool has_this = false;
+					ut16 ret_count = 1;
+					ut32 args = dotnet_method_param_count (pe, streams->blob, metadata_root, sig_idx, &has_this, &ret_count);
 					sym->param_count = (args > 0xffff)? 0xffff: (ut16)args;
+					sym->ret_count = ret_count;
+					sym->is_instance = has_this;
 					DotNetTypeDefInfo *parent_typedef = dotnet_find_typedef_for_method_index (typedef_info, method_idx);
 					if (parent_typedef) {
 						// Create fully qualified name: namespace.classname.methodname

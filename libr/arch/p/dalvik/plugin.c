@@ -1688,11 +1688,6 @@ static char *regs(RArchSession *as) {
 		"=PC	ip\n"
 		"=SP	sp\n"
 		"=BP	bp\n"
-		"=A0	v0\n"
-		"=A1	v1\n"
-		"=A2	v2\n"
-		"=A3	v3\n"
-		"=SN	v0\n"
 	);
 	int i;
 	for (i = 0; i < 256; i++) {
