@@ -15,7 +15,8 @@ static inline ut64 _anal_get_offset(RArch *a, int type, int idx) {
 
 static inline char *_anal_get_name(RArch *a, int type, int idx) {
 	if (a && a->binb.bin && a->binb.get_name) {
-		return (char *)a->binb.get_name (a->binb.bin, type, idx, false);
+		const char *name = a->binb.get_name (a->binb.bin, type, idx, false);
+		return name? strdup (name): NULL;
 				// (bool)a->coreb.cfggeti (a->coreb.core, "asm.pseudo"));
 	}
 	return NULL;
