@@ -2,39 +2,39 @@ default.cc=cdecl
 
 cdecl=cc
 cc.cdecl.argn=stack
-cc.cdecl.ret=eax
+cc.cdecl.ret0=eax
 
 cdecl-fastcall-ms=cc
 cc.cdecl-fastcall-ms.arg0=ecx
 cc.cdecl-fastcall-ms.argn=stack
-cc.cdecl-fastcall-ms.ret=eax
+cc.cdecl-fastcall-ms.ret0=eax
 
 optlink=cc
 cc.optlink.arg0=eax
 cc.optlink.arg1=edx
 cc.optlink.arg2=ecx
 cc.optlink.argn=stack
-cc.optlink.ret=eax
+cc.optlink.ret0=eax
 
 stdcall=cc
 cc.stdcall.argn=stack
-cc.stdcall.ret=eax
+cc.stdcall.ret0=eax
 
 fastcall=cc
 cc.fastcall.arg0=ecx
 cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
-cc.fastcall.ret=eax
+cc.fastcall.ret0=eax
 
 borland=cc
-cc.borland.ret=eax
+cc.borland.ret0=eax
 cc.borland.arg0=eax
 cc.borland.arg1=edx
 cc.borland.arg2=ecx
 cc.borland.argn=stack_rev
 
 watcom=cc
-cc.watcom.ret=eax
+cc.watcom.ret0=eax
 cc.watcom.arg0=eax
 cc.watcom.arg1=edx
 cc.watcom.arg2=ebx
@@ -42,13 +42,14 @@ cc.watcom.arg3=ecx
 cc.watcom.argn=stack
 
 pascal=cc
-cc.pascal.ret=eax
+cc.pascal.ret0=eax
 cc.pascal.argn=stack_rev
 
 # reverse argument calling convention. only for gcc and dmd, ldc2 uses normal cdecl CC
 dlang=cc
-cc.dlang.ret=eax
-cc.dlang.ret2=edx
+cc.dlang.ret0=eax
+cc.dlang.ret1=edx
+cc.dlang.retn=2
 cc.dlang.revarg=1
 cc.dlang.arg0=edi
 cc.dlang.arg1=esi

@@ -10,4 +10,4 @@ cc.n32.arg5=a5
 cc.n32.arg6=a6
 cc.n32.arg7=a7
 cc.n32.argn=stack
-cc.n32.ret=v0
+cc.n32.ret0=v0

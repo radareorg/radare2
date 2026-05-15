@@ -8,4 +8,4 @@ cc.call0.arg3=a5
 cc.call0.arg4=a6
 cc.call0.arg5=a7
 cc.call0.argn=stack
-cc.call0.ret=a2
+cc.call0.ret0=a2

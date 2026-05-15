@@ -6751,7 +6751,7 @@ static int cmd_af(RCore *core, const char *input) {
 				}
 				pj_o (pj);
 			}
-			char *cmd = r_str_newf ("cc.%s.ret", fcn->callconv);
+			char *cmd = r_str_newf ("cc.%s.ret0", fcn->callconv);
 			const char *regname = sdb_const_get (core->anal->sdb_cc, cmd, 0);
 			if (regname) {
 				if (json) {

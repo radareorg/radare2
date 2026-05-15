@@ -10,7 +10,7 @@ cc.arm64.arg5=x5
 cc.arm64.arg6=x6
 cc.arm64.arg7=x7
 cc.arm64.argn=stack
-cc.arm64.ret=x0
+cc.arm64.ret0=x0
 
 swift=cc
 cc.swift.arg0=x0
@@ -24,12 +24,12 @@ cc.swift.arg7=x7
 cc.swift.argn=stack
 cc.swift.self=x20
 cc.swift.error=x21
-cc.swift.ret=x0
+cc.swift.ret0=x0
 
 p9=cc
 cc.p9.arg0=x0
 cc.p9.argn=stack
-cc.p9.ret=x0
+cc.p9.ret0=x0
 
 dlang=cc
 cc.dlang.arg0=x0
@@ -43,4 +43,4 @@ cc.dlang.arg7=x7
 cc.dlang.argn=stack
 cc.dlang.self=x20
 cc.dlang.error=x21
-cc.dlang.ret=x0
+cc.dlang.ret0=x0

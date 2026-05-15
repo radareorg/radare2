@@ -10,5 +10,5 @@ cc.ppc-64.arg5=r8
 cc.ppc-64.arg6=r9
 cc.ppc-64.arg7=r10
 cc.ppc-64.argn=stack_rev
-cc.ppc-64.ret=r3
+cc.ppc-64.ret0=r3
 

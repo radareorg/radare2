@@ -8,4 +8,4 @@ cc.sparc.arg3=i3
 cc.sparc.arg4=i4
 cc.sparc.arg5=i5
 cc.sparc.argn=stack
-cc.sparc.ret=o0
+cc.sparc.ret0=o0

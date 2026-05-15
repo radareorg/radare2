@@ -9,4 +9,4 @@ cc.rvg.arg4=a4
 cc.rvg.arg5=a5
 cc.rvg.arg6=a6
 cc.rvg.arg7=a7
-cc.rvg.ret=a0
+cc.rvg.ret0=a0

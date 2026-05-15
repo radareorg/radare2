@@ -10,5 +10,5 @@ cc.ppc-32.arg5=r8
 cc.ppc-32.arg6=r9
 cc.ppc-32.arg7=r10
 cc.ppc-32.argn=stack_rev
-cc.ppc-32.ret=r3
+cc.ppc-32.ret0=r3
 

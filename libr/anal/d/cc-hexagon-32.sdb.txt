@@ -8,4 +8,4 @@ cc.hexagon.arg3=r3
 cc.hexagon.arg4=r4
 cc.hexagon.arg5=r5
 cc.hexagon.argn=stack_rev
-cc.hexagon.ret=r0
+cc.hexagon.ret0=r0

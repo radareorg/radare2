@@ -11,11 +11,11 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	RStrBuf sb;
 	sdb_unset (DB, r_strbuf_initf (&sb, "%s", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret", name), 0);
-	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret2", name), 0);
+	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.retn", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.argn", name), 0);
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.arg%u", name, (unsigned int)i), 0);
-		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret.%u", name, (unsigned int)i), 0);
+		sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.ret%u", name, (unsigned int)i), 0);
 	}
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.self", name), 0);
 	sdb_unset (DB, r_strbuf_setf (&sb, "cc.%s.error", name), 0);
@@ -53,20 +53,26 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	}
 	sdb_set (DB, ccname, "cc", 0);
 	r_strf_buffer (64);
-	// Multi-return: comma-separated rets ("rax,rdx") map to ret.0, ret.1, ...
-	// Single return stays as the legacy "ret" key for compat with existing sdb files.
+	sdb_unset (DB, r_strf ("cc.%s.ret", ccname), 0);
+	int i;
+	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
+		sdb_unset (DB, r_strf ("cc.%s.ret%d", ccname, i), 0);
+	}
 	if (strchr (e, ',')) {
-		RList *rets = r_str_split_list (e, ",", 0);
-		RListIter *rit;
-		const char *r;
-		int rn = 0;
-		r_list_foreach (rets, rit, r) {
-			sdb_set (DB, r_strf ("cc.%s.ret.%d", ccname, rn), r, 0);
-			rn++;
+		RList *ccRets = r_str_split_list (e, ",", 0);
+		RListIter *iter;
+		char *ret;
+		int n = 0;
+		r_list_foreach (ccRets, iter, ret) {
+			r_str_trim (ret);
+			sdb_set (DB, r_strf ("cc.%s.ret%d", ccname, n), ret, 0);
+			n++;
 		}
-		r_list_free (rets);
+		sdb_num_set (DB, r_strf ("cc.%s.retn", ccname), n, 0);
+		r_list_free (ccRets);
 	} else {
-		sdb_set (DB, r_strf ("cc.%s.ret", ccname), e, 0);
+		sdb_set (DB, r_strf ("cc.%s.ret0", ccname), e, 0);
+		sdb_unset (DB, r_strf ("cc.%s.retn", ccname), 0);
 	}
 
 	RList *ccArgs = r_str_split_list (args, ",", 0);
@@ -299,25 +305,23 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	return i;
 }
 
-// Single unified accessor for return registers.
-// n=0 is the first/only return; n>=1 selects multi-return slots.
-// New keys: "cc.NAME.ret.N" (dot-separated, supports any N).
-// Legacy keys: "cc.NAME.ret" maps to slot 0; "cc.NAME.ret2" maps to slot 1.
-// Returns NULL past the last defined slot.
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
 	r_strf_buffer (64);
-	const char *v = sdb_const_get (DB, r_strf ("cc.%s.ret.%d", convention, n), 0);
-	if (v) {
-		return v;
+	if (n > 0) {
+		int retn = sdb_num_get (DB, r_strf ("cc.%s.retn", convention), 0);
+		if (n >= retn) {
+			return NULL;
+		}
 	}
-	if (n == 0) {
-		return sdb_const_get (DB, r_strf ("cc.%s.ret", convention), 0);
+	const char *ret = sdb_const_get (DB, r_strf ("cc.%s.ret%d", convention, n), 0);
+	if (ret) {
+		return ret;
 	}
-	if (n == 1) {
-		return sdb_const_get (DB, r_strf ("cc.%s.ret2", convention), 0);
+	if (n > 0) {
+		return NULL;
 	}
-	return NULL;
+	return sdb_const_get (DB, r_strf ("cc.%s.ret", convention), 0);
 }
 
 R_API const char *r_anal_cc_default(RAnal *anal) {

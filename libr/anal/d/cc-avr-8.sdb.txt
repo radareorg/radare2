@@ -9,4 +9,4 @@ cc.avr.arg4=r22
 cc.avr.arg5=r21
 cc.avr.arg6=r18
 cc.avr.argn=stack
-cc.avr.ret=r24
+cc.avr.ret0=r24

@@ -6,7 +6,7 @@ cc.o32.arg1=a1
 cc.o32.arg2=a2
 cc.o32.arg3=a3
 cc.o32.argn=stack
-cc.o32.ret=v0
+cc.o32.ret0=v0
 
 n32=cc
 cc.n32.arg0=a0
@@ -18,5 +18,5 @@ cc.n32.arg5=a5
 cc.n32.arg6=a6
 cc.n32.arg7=a7
 cc.n32.argn=stack
-cc.n32.ret=v0
+cc.n32.ret0=v0
 

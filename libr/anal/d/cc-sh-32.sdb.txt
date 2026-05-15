@@ -5,4 +5,4 @@ cc.sh4.arg0=r4
 cc.sh4.arg1=r5
 cc.sh4.arg2=r6
 cc.sh4.arg3=r7
-cc.sh4.ret=r0
+cc.sh4.ret0=r0

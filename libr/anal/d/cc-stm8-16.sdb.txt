@@ -3,4 +3,4 @@ default.cc=stm8
 stm8=cc
 cc.stm8.arg0=x
 cc.stm8.arg1=y
-cc.stm8.ret=a
+cc.stm8.ret0=a
