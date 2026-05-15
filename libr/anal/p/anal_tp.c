@@ -1589,12 +1589,10 @@ repeat:
 	}
 
 	// Type propagation for register based args
+	RVecAnalVarPtr *rvars = r_anal_var_vec (anal, fcn, R_ANAL_VAR_KIND_REG);
 	RAnalVar **rvarp;
-	R_VEC_FOREACH (&fcn->vars, rvarp) {
+	R_VEC_FOREACH (rvars, rvarp) {
 		RAnalVar *rvar = *rvarp;
-		if (rvar->kind != R_ANAL_VAR_KIND_REG) {
-			continue;
-		}
 		RAnalVar *lvar = r_anal_var_get_dst_var (rvar);
 		RRegItem *i = r_reg_index_get (anal->reg, rvar->delta);
 		if (i && lvar) {
@@ -1604,6 +1602,7 @@ repeat:
 			var_retype (anal, lvar, NULL, rvar->type, false, false);
 		}
 	}
+	RVecAnalVarPtr_free (rvars);
 out_function:
 	r_anal_op_fini (&aop);
 out_function_no_aop:
