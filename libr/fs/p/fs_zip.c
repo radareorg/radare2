@@ -189,7 +189,6 @@ static RList *fs_zip_dir(RFSRoot *root, const char *path, R_UNUSED int view) {
 	}
 
 	zip_close (za);
-	zip_source_free (zs);
 	free (buf);
 	if (!hasdir || hasfailed) {
 		r_list_free (list);
