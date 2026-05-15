@@ -83,7 +83,7 @@ static int r_asm_pseudo_intN(RAsm *a, RAnalOp *op, char *input, int n, bool is_u
 	const char *err = NULL;
 	ut64 s64 = r_num_math_err (NULL, input, &err);
 	if (err) {
-		R_LOG_ERROR ("Invalid alignment: %s", err);
+		R_LOG_ERROR ("Invalid number in .intN: %s", err);
 		return -1;
 	}
 	if (is_unsigned) {
