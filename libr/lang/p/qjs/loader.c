@@ -80,6 +80,7 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		if (JS_IsException (val)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
+			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -96,6 +97,7 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		if (JS_IsException (val)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
+			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -120,6 +122,7 @@ static JSModuleDef *r2qjs_load_module(JSContext *ctx, const char *module_name, v
 		if (JS_IsException (val)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
+			JS_FreeValue (ctx, e);
 			return NULL;
 		}
 		JS_FreeValue (ctx, val);
@@ -205,7 +208,9 @@ static int r2qjs_loader(JSContext *ctx, const char *const buffer) {
 		if (JS_IsException (v)) {
 			JSValue e = JS_GetException (ctx);
 			r2qjs_dump_obj (ctx, e);
+			JS_FreeValue (ctx, e);
 		}
+		JS_FreeValue (ctx, v);
 #endif
 	}
 	free (entryfname);
