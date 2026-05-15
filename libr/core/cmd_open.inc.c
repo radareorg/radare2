@@ -812,7 +812,7 @@ static void cmd_omcomma(RCore *core, const char *arg) {
 	if (!t) {
 		return;
 	}
-	r_table_set_columnsf (t, "nnnnnnnsss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "sperm", "meta", "name", NULL);
+	r_table_set_columnsf (t, "nnnnnnnssss", "id", "fd", "pa", "pa_end", "size", "va", "va_end", "perm", "sperm", "meta", "name", NULL);
 	ut32 mapid = 0;
 	r_id_storage_get_lowest (&core->io->maps, &mapid);
 	do {

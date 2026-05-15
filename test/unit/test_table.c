@@ -304,6 +304,17 @@ bool test_r_table_columns (void) {
 		"20000,namings,namings,20000\n", "replicate");
 	free (s);
 
+	CREATE_TABLE
+	r_table_add_rowf (t, "sss", "extra", "300", "unused");
+	r_table_columns (t, newcols);
+	s = r_table_tocsv (t);
+	mu_assert_streq (s,
+		"address,name,name,address\n"
+		"100,hello,hello,100\n"
+		"20000,namings,namings,20000\n"
+		"300,extra,extra,300\n", "ignore extra row cells");
+	free (s);
+
 	r_list_free (newcols);
 	r_table_free (t);
 	mu_end;

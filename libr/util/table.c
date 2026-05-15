@@ -1128,7 +1128,7 @@ R_API void r_table_columns(RTable *t, RList *col_names) {
 		idx = 0;
 		RListIter *fit;
 		r_list_foreach (old_items, fit, item) {
-			if (!used_cols[idx]) {
+			if (idx >= old_col_count || !used_cols[idx]) {
 				free (item);
 			}
 			idx++;
