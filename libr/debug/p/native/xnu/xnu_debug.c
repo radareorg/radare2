@@ -50,6 +50,8 @@ static task_t task_dbg = 0;
 #include "xnu_excthreads.c"
 #endif
 
+static bool xnu_is_translated_x86(int pid);
+
 #if defined (__ppc__)
 
 static coredump_thread_state_flavor_t
@@ -298,6 +300,9 @@ bool xnu_attach(RDebug *dbg, int pid) {
 		return false;
 	}
 #else
+	if (xnu_is_translated_x86 (pid)) {
+		R_LOG_WARN ("native XNU debugging of Rosetta x86 processes is incomplete; breakpoints may not trap");
+	}
 	if (!xnu_create_exception_thread (dbg, pid)) {
 		R_LOG_ERROR ("setting up exception thread");
 		return false;
@@ -569,6 +574,22 @@ static int xnu_get_kinfo_proc(int pid, struct kinfo_proc *kp) {
 		return -1;
 	}
 	return 0;
+}
+
+static bool xnu_is_translated_x86(int pid) {
+#if defined(HAS_LIBPROC) && defined(P_TRANSLATED) && defined(PROC_PIDARCHINFO) && \
+	defined(PROC_PIDARCHINFO_SIZE) && defined(CPU_TYPE_X86) && defined(CPU_TYPE_X86_64) && \
+	(__arm64 || __aarch64 || __arm64__ || __aarch64__ || __arm64e__)
+	struct kinfo_proc kp;
+	if (xnu_get_kinfo_proc (pid, &kp) || !(kp.kp_proc.p_flag & P_TRANSLATED)) {
+		return false;
+	}
+	struct proc_archinfo pai;
+	int ret = proc_pidinfo (pid, PROC_PIDARCHINFO, 0, &pai, PROC_PIDARCHINFO_SIZE);
+	return ret == PROC_PIDARCHINFO_SIZE && (pai.p_cputype == CPU_TYPE_X86 || pai.p_cputype == CPU_TYPE_X86_64);
+#else
+	return false;
+#endif
 }
 
 RDebugInfo *xnu_info(RDebug *dbg, const char *arg) {

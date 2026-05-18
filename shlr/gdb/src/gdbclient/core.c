@@ -27,6 +27,11 @@
 #endif
 
 #define QSUPPORTED_MAX_RETRIES 5
+#define GDBR_CPU_ARCH_ABI64 0x01000000
+#define GDBR_CPU_TYPE_X86 7
+#define GDBR_CPU_TYPE_ARM 12
+#define GDBR_CPU_TYPE_X86_64 (GDBR_CPU_ARCH_ABI64 | GDBR_CPU_TYPE_X86)
+#define GDBR_CPU_TYPE_ARM64 (GDBR_CPU_ARCH_ABI64 | GDBR_CPU_TYPE_ARM)
 
 extern char hex2char (char *hex);
 
@@ -87,6 +92,77 @@ static void reg_cache_init(libgdbr_t *g) {
 	}
 }
 
+static bool reg_cache_reserve(ut64 len) {
+	if (!reg_cache.init || len <= reg_cache.maxlen) {
+		return reg_cache.init;
+	}
+	ut8 *buf = realloc (reg_cache.buf, len);
+	if (!buf) {
+		reg_cache.valid = false;
+		return false;
+	}
+	reg_cache.buf = buf;
+	reg_cache.maxlen = len;
+	return true;
+}
+
+static void reg_cache_save(libgdbr_t *g) {
+	if (!reg_cache.init || !g) {
+		return;
+	}
+	if (!reg_cache_reserve (g->data_len)) {
+		return;
+	}
+	reg_cache.buflen = g->data_len;
+	memcpy (reg_cache.buf, g->data, reg_cache.buflen);
+	reg_cache.valid = true;
+}
+
+static size_t gdbr_reg_byte_offset(const gdb_reg_t *reg) {
+	return reg->offset / 8;
+}
+
+static size_t gdbr_reg_byte_size(const gdb_reg_t *reg) {
+	return (reg->size + 7) / 8;
+}
+
+static size_t gdbr_reg_byte_end(const gdb_reg_t *reg) {
+	return (reg->offset + reg->size + 7) / 8;
+}
+
+static bool gdbr_ensure_data_capacity(libgdbr_t *g, ut64 len) {
+	if (!g) {
+		return false;
+	}
+	if (len < (ut64)g->data_max) {
+		return true;
+	}
+	ut64 newsize = g->data_max > 0? g->data_max: 4096;
+	while (newsize <= len) {
+		newsize *= 2;
+	}
+	char *data = realloc (g->data, newsize);
+	if (!data) {
+		return false;
+	}
+	g->data = data;
+	g->data_max = newsize;
+	return true;
+}
+
+static bool reg_cache_load(libgdbr_t *g) {
+	if (!g || !reg_cache.init || !reg_cache.valid) {
+		return false;
+	}
+	if (!gdbr_ensure_data_capacity (g, reg_cache.buflen + 1)) {
+		return false;
+	}
+	g->data_len = reg_cache.buflen;
+	memcpy (g->data, reg_cache.buf, reg_cache.buflen);
+	g->data[g->data_len] = '\0';
+	return true;
+}
+
 static void gdbr_break_process(void *arg) {
 	libgdbr_t *g = (libgdbr_t *)arg;
 	(void)g;
@@ -131,30 +207,160 @@ void gdbr_lock_leave(libgdbr_t *g) {
 	}
 }
 
+static bool gdbr_lldb_send_ok(libgdbr_t *g, const char *cmd) {
+	if (!g || !cmd) {
+		return false;
+	}
+	if (send_msg (g, cmd) < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		return false;
+	}
+	return !strcmp (g->data, "OK");
+}
+
 static int gdbr_connect_lldb(libgdbr_t *g) {
 	int ret = -1;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
 	reg_cache_init (g);
-	if (g->stub_features.qXfer_features_read) {
-		gdbr_read_target_xml (g);
-	}
-	// Check if 'g' packet is supported
-	if (send_msg (g, "g") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
-		ret = -1;
-		goto end;
-	}
-	if (g->data_len == 0 || (g->data_len == 3 && g->data[0] == 'E')) {
-		ret = -1;
-		goto end;
-	}
-	g->stub_features.lldb.g = true;
-
+	g->stub_features.lldb.QThreadSuffixSupported = gdbr_lldb_send_ok (g, "QThreadSuffixSupported");
+	g->stub_features.lldb.QListThreadsInStopReply = gdbr_lldb_send_ok (g, "QListThreadsInStopReply");
+	gdbr_lldb_send_ok (g, "QEnableErrorStrings");
+	gdbr_lldb_send_ok (g, "QSetDetachOnError:1");
+	g->stub_features.lldb.g = false;
 	ret = 0;
 end:
 	gdbr_lock_leave (g);
 	return ret;
+}
+
+static bool gdbr_set_target_architecture(libgdbr_t *g, int arch, int bits) {
+	if (!g || arch == R_SYS_ARCH_NONE || bits < 1) {
+		return false;
+	}
+	if (g->target.valid && g->target.arch == arch && g->target.bits == bits && g->registers) {
+		return true;
+	}
+	char *regprofile = gdbr_get_reg_profile (arch, bits);
+	if (!regprofile) {
+		return false;
+	}
+	if (gdbr_set_reg_profile (g, regprofile) < 0) {
+		free (regprofile);
+		return false;
+	}
+	free (regprofile);
+	g->target.arch = arch;
+	g->target.bits = bits;
+	g->target.valid = true;
+	return true;
+}
+
+static bool gdbr_read_process_info(libgdbr_t *g) {
+	if (!g) {
+		return false;
+	}
+	if (send_msg (g, "qProcessInfo") < 0 || read_packet (g, false) < 0 || send_ack (g) < 0) {
+		return false;
+	}
+	if (g->data_len < 1 || g->data[0] == 'E') {
+		return false;
+	}
+	g->data[g->data_len] = '\0';
+	char *data = strdup (g->data);
+	if (!data) {
+		return false;
+	}
+	ut64 cputype = UT64_MAX;
+	int ptrsize = 0;
+	char *save_ptr = NULL;
+	char *tok = r_str_tok_r (data, ";", &save_ptr);
+	while (tok) {
+		if (r_str_startswith (tok, "cputype:")) {
+			cputype = strtoull (tok + strlen ("cputype:"), NULL, 16);
+		} else if (r_str_startswith (tok, "ptrsize:")) {
+			ptrsize = (int)strtoul (tok + strlen ("ptrsize:"), NULL, 16);
+		}
+		tok = r_str_tok_r (NULL, ";", &save_ptr);
+	}
+	free (data);
+	int arch = R_SYS_ARCH_NONE;
+	int bits = ptrsize > 0? ptrsize * 8: 0;
+	switch (cputype) {
+	case GDBR_CPU_TYPE_X86:
+		arch = R_SYS_ARCH_X86;
+		if (!bits) {
+			bits = 32;
+		}
+		break;
+	case GDBR_CPU_TYPE_X86_64:
+		arch = R_SYS_ARCH_X86;
+		bits = 64;
+		break;
+	case GDBR_CPU_TYPE_ARM:
+		arch = R_SYS_ARCH_ARM;
+		if (!bits) {
+			bits = 32;
+		}
+		break;
+	case GDBR_CPU_TYPE_ARM64:
+		arch = R_SYS_ARCH_ARM;
+		bits = 64;
+		break;
+	default:
+		break;
+	}
+	return gdbr_set_target_architecture (g, arch, bits);
+}
+
+static bool gdbr_cache_lldb_stop_registers(libgdbr_t *g, const char *packet) {
+	if (!g || !packet || packet[0] != 'T' || g->remote_type != GDB_REMOTE_TYPE_LLDB || !g->registers) {
+		return false;
+	}
+	size_t i, buflen = 0;
+	for (i = 0; *g->registers[i].name; i++) {
+		const size_t end = gdbr_reg_byte_end (&g->registers[i]);
+		if (end > buflen) {
+			buflen = end;
+		}
+	}
+	if (!gdbr_ensure_data_capacity (g, buflen + 1)) {
+		return false;
+	}
+	ut8 *buf = calloc (buflen? buflen: 1, 1);
+	char *data = strdup (packet);
+	if (!buf || !data) {
+		free (buf);
+		free (data);
+		return false;
+	}
+	char *save_ptr = NULL;
+	char *ptr = r_str_tok_r (data, ";", &save_ptr);
+	while (ptr) {
+		if (isxdigit ((unsigned char)*ptr)) {
+			ut64 regnum = strtoull (ptr, NULL, 16);
+			char *value = strchr (ptr, ':');
+			if (regnum <= UT32_MAX && value && regnum < i) {
+				const size_t roff = gdbr_reg_byte_offset (&g->registers[regnum]);
+				const size_t rsz = gdbr_reg_byte_size (&g->registers[regnum]);
+				if (roff < buflen && rsz <= buflen - roff) {
+					size_t hexlen = strlen (value + 1);
+					if (hexlen / 2 > rsz) {
+						hexlen = rsz * 2;
+					}
+					unpack_hex (value + 1, hexlen, (char *)buf + roff);
+				}
+			}
+		}
+		ptr = r_str_tok_r (NULL, ";", &save_ptr);
+	}
+	memcpy (g->data, buf, buflen);
+	g->data_len = buflen;
+	g->data[buflen] = '\0';
+	free (buf);
+	free (data);
+	reg_cache_save (g);
+	return true;
 }
 
 int gdbr_connect(libgdbr_t *g, const char *host, int port) {
@@ -273,9 +479,10 @@ int gdbr_connect(libgdbr_t *g, const char *host, int port) {
 	if (strcmp (g->data, "OK")) {
 		// return -1;
 	}
-	if (g->stub_features.qXfer_features_read) {
+	if (g->stub_features.qXfer_features_read && (g->remote_type != GDB_REMOTE_TYPE_LLDB || g->pid > 0 || g->tid > 0)) {
 		gdbr_read_target_xml (g);
 	}
+	gdbr_read_process_info (g);
 	reg_cache_init (g);
 
 	ret = 0;
@@ -315,7 +522,10 @@ int gdbr_select(libgdbr_t *g, int pid, int tid) {
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
-	reg_cache.valid = false;
+	bool changed = g->pid != pid || g->tid != tid;
+	if (changed) {
+		reg_cache.valid = false;
+	}
 	g->pid = pid;
 	g->tid = tid;
 	strcpy (cmd, "Hg");
@@ -398,6 +608,7 @@ end:
 
 int gdbr_stop_reason(libgdbr_t *g) {
 	int ret = -1;
+	char *stop_packet = NULL;
 	if (!gdbr_lock_enter (g)) {
 		goto end;
 	}
@@ -405,8 +616,15 @@ int gdbr_stop_reason(libgdbr_t *g) {
 		ret = -1;
 		goto end;
 	}
+	if (g->data_len > 0 && g->data[0] == 'T' && g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		stop_packet = strdup (g->data);
+	}
 	ret = handle_stop_reason (g);
+	if (!ret && stop_packet) {
+		gdbr_cache_lldb_stop_registers (g, stop_packet);
+	}
 end:
+	free (stop_packet);
 	gdbr_lock_leave (g);
 	return ret;
 }
@@ -447,6 +665,7 @@ end:
 int gdbr_attach(libgdbr_t *g, int pid) {
 	int ret = -1;
 	char *cmd = NULL;
+	char *stop_packet = NULL;
 	size_t buffer_size;
 
 	if (!g || !g->sock) {
@@ -459,14 +678,15 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 	g->stop_reason.is_valid = false;
 	reg_cache.valid = false;
 
-	if (g->stub_features.extended_mode == -1) {
-		gdbr_check_extended_mode (g);
-	}
-
-	if (!g->stub_features.extended_mode) {
-		// vAttach needs extended mode to do anything.
-		ret = -2;
-		goto end;
+	if (g->remote_type != GDB_REMOTE_TYPE_LLDB) {
+		if (g->stub_features.extended_mode == -1) {
+			gdbr_check_extended_mode (g);
+		}
+		if (!g->stub_features.extended_mode) {
+			// vAttach needs extended mode to do anything.
+			ret = -2;
+			goto end;
+		}
 	}
 
 	buffer_size = strlen (CMD_ATTACH) + (sizeof (int) * 2) + 1;
@@ -481,6 +701,10 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
+	if (g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		gdbr_lldb_send_ok (g, "qVAttachOrWaitSupported");
+		gdbr_lldb_send_ok (g, "QSetDetachOnError:1");
+	}
 	ret = send_msg (g, cmd);
 	if (ret < 0) {
 		goto end;
@@ -491,8 +715,31 @@ int gdbr_attach(libgdbr_t *g, int pid) {
 		goto end;
 	}
 
-	ret = handle_attach (g);
+	if (g->data_len > 0 && g->data[0] == 'T' && g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		stop_packet = strdup (g->data);
+	}
+	if (g->data_len > 0 && g->data[0] == 'T') {
+		ret = handle_stop_reason (g);
+		if (!ret && g->stop_reason.thread.present) {
+			g->tid = g->stop_reason.thread.tid;
+		}
+	} else {
+		ret = handle_attach (g);
+	}
+	if (!ret) {
+		g->pid = pid;
+		gdbr_read_process_info (g);
+		if (g->stub_features.qXfer_features_read) {
+			gdbr_read_target_xml (g);
+		}
+		gdbr_read_process_info (g);
+		reg_cache.valid = false;
+		if (stop_packet) {
+			gdbr_cache_lldb_stop_registers (g, stop_packet);
+		}
+	}
 end:
+	free (stop_packet);
 	free (cmd);
 	gdbr_lock_leave (g);
 	return ret;
@@ -653,11 +900,9 @@ end:
 }
 
 static int gdbr_read_registers_lldb(libgdbr_t *g) {
-	// Send the stop reply query packet and get register info
-	// (this is what lldb does)
 	int ret = -1;
 
-	if (!g || !g->sock) {
+	if (!g || !g->sock || !g->registers) {
 		return -1;
 	}
 
@@ -665,18 +910,60 @@ static int gdbr_read_registers_lldb(libgdbr_t *g) {
 		goto end;
 	}
 
-	if (send_msg (g, "?") < 0 || read_packet (g, false) < 0) {
+	size_t i, buflen = 0;
+	for (i = 0; *g->registers[i].name; i++) {
+		const size_t end = gdbr_reg_byte_end (&g->registers[i]);
+		if (end > buflen) {
+			buflen = end;
+		}
+	}
+	if (!gdbr_ensure_data_capacity (g, buflen + 1)) {
 		ret = -1;
 		goto end;
 	}
-	if ((ret = handle_lldb_read_reg (g)) < 0) {
+	ut8 *buf = calloc (buflen? buflen: 1, 1);
+	if (!buf) {
+		ret = -1;
 		goto end;
 	}
-	if (reg_cache.init) {
-		reg_cache.buflen = g->data_len;
-		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
-		reg_cache.valid = true;
+	int tid = g->tid > 0? g->tid: g->stop_reason.thread.tid;
+	if (g->stop_reason.thread.present && (tid <= 0 || tid == g->pid)) {
+		tid = g->stop_reason.thread.tid;
 	}
+	char thread_id[64] = {0};
+	if (tid > 0) {
+		write_thread_id (thread_id, sizeof (thread_id) - 1, g->pid, tid, g->stub_features.multiprocess);
+	}
+	for (i = 0; *g->registers[i].name; i++) {
+		r_strf_var (cmd, 128, "p%"PFMT64x, (ut64)i);
+		if (g->stub_features.lldb.QThreadSuffixSupported && *thread_id) {
+			r_strf_var (thread_cmd, 128, "p%"PFMT64x";thread:%s;", (ut64)i, thread_id);
+			if (send_msg (g, thread_cmd) < 0) {
+				free (buf);
+				goto end;
+			}
+		} else if (send_msg (g, cmd) < 0) {
+			free (buf);
+			goto end;
+		}
+		if (read_packet (g, false) < 0 || send_ack (g) < 0 || g->data_len < 1 || g->data[0] == 'E') {
+			free (buf);
+			goto end;
+		}
+		size_t roff = gdbr_reg_byte_offset (&g->registers[i]);
+		size_t rsz = gdbr_reg_byte_size (&g->registers[i]);
+		if (roff < buflen && rsz <= buflen - roff) {
+			size_t hexlen = g->data_len;
+			if (hexlen / 2 > rsz) {
+				hexlen = rsz * 2;
+			}
+			unpack_hex (g->data, hexlen, (char *)buf + roff);
+		}
+	}
+	memcpy (g->data, buf, buflen);
+	g->data_len = buflen;
+	g->data[buflen] = '\0';
+	free (buf);
 
 	ret = 0;
 end:
@@ -690,9 +977,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 	if (!g || !g->data) {
 		return -1;
 	}
-	if (reg_cache.init && reg_cache.valid) {
-		g->data_len = reg_cache.buflen;
-		memcpy (g->data, reg_cache.buf, reg_cache.buflen);
+	if (reg_cache_load (g)) {
 		return 0;
 	}
 	// Don't wait on the lock in read_registers since it's frequently called, including
@@ -703,7 +988,15 @@ int gdbr_read_registers(libgdbr_t *g) {
 	}
 
 	if (g->remote_type == GDB_REMOTE_TYPE_LLDB && !g->stub_features.lldb.g) {
+		gdbr_stop_reason (g);
+		if (reg_cache_load (g)) {
+			ret = 0;
+			goto end;
+		}
 		ret = gdbr_read_registers_lldb (g);
+		if (!ret) {
+			reg_cache_save (g);
+		}
 		goto end;
 	}
 	if ((ret = send_msg (g, CMD_READREGS)) < 0) {
@@ -713,12 +1006,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 		ret = -1;
 		goto end;
 	}
-	if (reg_cache.init) {
-		reg_cache.buflen = g->data_len;
-		memset (reg_cache.buf, 0, reg_cache.buflen);
-		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
-		reg_cache.valid = true;
-	}
+	reg_cache_save (g);
 
 	ret = 0;
 end:
@@ -1270,7 +1558,15 @@ int send_vcont(libgdbr_t *g, const char *command, const char *thread_id) {
 		}
 	}
 
+	char *stop_packet = NULL;
+	if (g->data_len > 0 && g->data[0] == 'T' && g->remote_type == GDB_REMOTE_TYPE_LLDB) {
+		stop_packet = strdup (g->data);
+	}
 	ret = handle_cont (g);
+	if (!ret && stop_packet) {
+		gdbr_cache_lldb_stop_registers (g, stop_packet);
+	}
+	free (stop_packet);
 end:
 	r_cons_sleep_end (cons, bed);
 	gdbr_lock_leave (g);

@@ -21,6 +21,21 @@ typedef struct plugin_data_t {
 	int support_hw_bp;
 } PluginData;
 
+static void sync_gdb_target(RDebug *dbg, libgdbr_t *desc) {
+	if (dbg && desc && desc->target.valid) {
+		const char *target_arch = r_sys_arch_str (desc->target.arch);
+		r_debug_set_arch (dbg, target_arch, desc->target.bits);
+	}
+	if (dbg && desc && desc->pid > 0) {
+		dbg->pid = desc->pid;
+	}
+	if (dbg && desc && desc->stop_reason.thread.present) {
+		dbg->tid = desc->stop_reason.thread.tid;
+	} else if (dbg && desc && desc->tid > 0) {
+		dbg->tid = desc->tid;
+	}
+}
+
 static bool r_debug_gdb_attach(RDebug *dbg, int pid);
 
 static void check_connection(RDebug *dbg) {
@@ -446,9 +461,12 @@ static bool r_debug_gdb_attach(RDebug *dbg, int pid) {
 			pd->support_sw_bp = UNKNOWN;
 			pd->support_hw_bp = UNKNOWN;
 			pd->desc = &g->desc;
-			int arch = r_sys_arch_id (dbg->arch);
-			int bits = dbg->anal->config->bits;
-			gdbr_set_architecture (pd->desc, arch, bits);
+			if (!pd->desc->target.valid) {
+				int arch = r_sys_arch_id (dbg->arch);
+				int bits = dbg->anal->config->bits;
+				gdbr_set_architecture (pd->desc, arch, bits);
+			}
+			sync_gdb_target (dbg, pd->desc);
 		} else {
 			R_LOG_ERROR ("Underlying IO descriptor is not a GDB one");
 		}
@@ -491,6 +509,7 @@ static char *r_debug_gdb_reg_profile(RDebug *dbg) {
 	if (!pd->desc->target.valid) {
 		gdbr_set_architecture (pd->desc, arch, bits);
 	}
+	sync_gdb_target (dbg, pd->desc);
 	if (pd->desc->target.regprofile) {
 		return strdup (pd->desc->target.regprofile);
 	}
@@ -712,4 +731,3 @@ R_API RLibStruct radare_plugin = {
 	.version = R2_VERSION
 };
 #endif
-

@@ -857,6 +857,10 @@ static bool cb_asmarch(void *user, void *data) {
 			//	node->value, asmos, R2_LIBDIR"/radare2/"R2_VERSION"/syscall");
 		}
 	}
+	if (core->dbg && core->dbg->bp) {
+		r_bp_use (core->dbg->bp, node->value, bits);
+		r_config_set_i (core->config, "dbg.bpsize", r_bp_size (core->dbg->bp));
+	}
 	// if (!strcmp (node->value, "bf"))
 	//	r_config_set (core->config, "dbg.backend", "bf");
 	__setsegoff (core->config, node->value, core->rasm->config->bits);
