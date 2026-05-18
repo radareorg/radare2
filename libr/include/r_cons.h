@@ -622,6 +622,8 @@ See 'man 4 console_codes' for details:
 #define Color_BOLD_RESET   "\x1b[22m"
 #define Color_ITALIC       "\x1b[3m"
 #define Color_ITALIC_RESET "\x1b[23m"
+#define Color_STRIKE       "\x1b[9m"
+#define Color_STRIKE_RESET "\x1b[29m"
 #define Color_RESET_TERMINAL  "\x1b" "c\x1b(B\x1b[0m\x1b[J\x1b[?25h"
 #define Color_RESET      "\x1b[0m" /* reset all */
 #define Color_RESET_NOBG "\x1b[27;22;24;25;28;39m"  /* Reset everything except background (order is important) */
