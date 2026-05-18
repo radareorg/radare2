@@ -180,7 +180,7 @@ static int md_render_table(const char *b, RStrBuf *out, const RMarkdownOptions *
 	return p - b;
 }
 
-static int md_emphasis(const char *b, RStrBuf *sb, bool *bold, bool *italic) {
+static int md_emphasis(const char *b, RStrBuf *sb, bool *bold, bool *italic, bool *strike) {
 	char m = *b;
 	if (m != '*' && m != '_') {
 		return 0;
@@ -218,6 +218,27 @@ static int md_emphasis(const char *b, RStrBuf *sb, bool *bold, bool *italic) {
 			r_strbuf_append (sb, Color_ITALIC);
 			*italic = true;
 			return 1;
+		}
+		p++;
+	}
+	return 0;
+}
+
+static int md_strikethrough(const char *b, RStrBuf *sb, bool *strike) {
+	if (b[0] != '~' || b[1] != '~') {
+		return 0;
+	}
+	if (*strike) {
+		r_strbuf_append (sb, Color_STRIKE_RESET);
+		*strike = false;
+		return 2;
+	}
+	const char *p = b + 2;
+	while (*p && *p != '\n') {
+		if (p[0] == '~' && p[1] == '~') {
+			r_strbuf_append (sb, Color_STRIKE);
+			*strike = true;
+			return 2;
 		}
 		p++;
 	}
@@ -369,6 +390,7 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 	bool codeblockline = false;
 	bool bold = false;
 	bool italic = false;
+	bool strike = false;
 	while (*b) {
 		int ch = *b;
 	repeat:
@@ -393,6 +415,7 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 			}
 			bold = false;
 			italic = false;
+			strike = false;
 			break;
 		case '\t':
 			if (col == 0) {
@@ -456,7 +479,15 @@ R_API char *r_str_md2txt(const char *md, const RMarkdownOptions *options) {
 				}
 			}
 			if (useutf8 && !codeblock && (ch == '*' || ch == '_')) {
-				int n = md_emphasis (b, sb, &bold, &italic);
+				int n = md_emphasis (b, sb, &bold, &italic, &strike);
+				if (n > 0) {
+					b += n - 1;
+					col++;
+					break;
+				}
+			}
+			if (useutf8 && !codeblock && ch == '~') {
+				int n = md_strikethrough (b, sb, &strike);
 				if (n > 0) {
 					b += n - 1;
 					col++;
