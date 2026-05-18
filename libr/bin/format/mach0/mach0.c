@@ -1698,7 +1698,7 @@ static size_t get_word_size(struct MACH0_(obj_t) * mo) {
 static void free_chained_starts(struct MACH0_(obj_t) * mo) {
 	if (mo->chained_starts) {
 		size_t i;
-		size_t count = R_MIN (mo->nsegs, mo->segs_count);
+		size_t count = mo->segs_count > 0 ? mo->segs_count : 0;
 		for (i = 0; i < count; i++) {
 			if (mo->chained_starts[i]) {
 				free (mo->chained_starts[i]->page_start);
@@ -1715,6 +1715,10 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 	if (size < sizeof (header)) {
 		return false;
 	}
+	ut64 bsize = r_buf_size (mo->b);
+	if (!fits_in (bsize, offset, size)) {
+		return false;
+	}
 	if (r_buf_fread_at (mo->b, offset, (ut8 *)&header, "7i", 1) != sizeof (header)) {
 		return false;
 	}
@@ -1722,39 +1726,52 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 		R_LOG_WARN ("Unsupported fixups version: %u", header.fixups_version);
 		return false;
 	}
-	ut64 starts_at = offset + header.starts_offset;
-	if (header.starts_offset > size) {
+	ut64 starts_at;
+	if (!UT64_ADD (&starts_at, (ut64)offset, header.starts_offset)) {
 		return false;
 	}
+	if (header.starts_offset > size - sizeof (ut32)) {
+		return false;
+	}
+	ut64 starts_size = (ut64)size - header.starts_offset;
 	ut32 segs_count = r_buf_read_le32_at (mo->b, starts_at);
-	if (segs_count == UT32_MAX || segs_count == 0) {
+	if (segs_count > (ut32)ST32_MAX || segs_count == 0) {
+		return false;
+	}
+	ut64 offsets_size;
+	if (r_mul_overflow ((ut64)segs_count, (ut64)sizeof (ut32), &offsets_size)) {
+		return false;
+	}
+	if (offsets_size > starts_size - sizeof (ut32)) {
 		return false;
 	}
 	// free previous allocation in case of duplicate LC_DYLD_CHAINED_FIXUPS
 	free_chained_starts (mo);
-	mo->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_count);
-	if (!mo->chained_starts) {
-		return false;
-	}
-	mo->segs_count = segs_count;
 	mo->fixups_header = header;
 	mo->fixups_offset = offset;
 	mo->fixups_size = size;
-	ut32 segs_to_parse = segs_count;
 	if (mo->nsegs < 1) {
 		return true;
 	}
+	ut32 segs_to_parse = segs_count;
 	if ((ut32)mo->nsegs < segs_to_parse) {
 		segs_to_parse = (ut32)mo->nsegs;
 	}
+	mo->chained_starts = R_NEWS0 (struct r_dyld_chained_starts_in_segment *, segs_to_parse);
+	if (!mo->chained_starts) {
+		return false;
+	}
+	mo->segs_count = (int)segs_to_parse;
 	size_t i;
 	ut64 cursor = starts_at + sizeof (ut32);
-	ut64 bsize = r_buf_size (mo->b);
-	for (i = 0; i < segs_to_parse && cursor + 4 < bsize; i++) {
+	for (i = 0; i < segs_to_parse; i++) {
 		ut32 seg_off;
 		if ((seg_off = r_buf_read_le32_at (mo->b, cursor)) == UT32_MAX || !seg_off) {
 			cursor += sizeof (ut32);
 			continue;
+		}
+		if (seg_off > starts_size || starts_size - seg_off < 22) {
+			return false;
 		}
 		struct r_dyld_chained_starts_in_segment *cur_seg = R_NEW0 (struct r_dyld_chained_starts_in_segment);
 		mo->chained_starts[i] = cur_seg;
@@ -1762,6 +1779,10 @@ static bool parse_chained_fixups(struct MACH0_(obj_t) * mo, ut32 offset, ut32 si
 			return false;
 		}
 		if (cur_seg->page_count > 0) {
+			ut64 page_starts_size = (ut64)cur_seg->page_count * sizeof (ut16);
+			if (page_starts_size > starts_size - seg_off - 22) {
+				return false;
+			}
 			ut16 *page_start = malloc (sizeof (ut16) * cur_seg->page_count);
 			if (!page_start) {
 				return false;
@@ -1782,7 +1803,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	if (!mo->dyld_info) {
 		return false;
 	}
-	if (!mo->nsegs) {
+	if (mo->nsegs < 1) {
 		return false;
 	}
 	free_chained_starts (mo);
@@ -1790,6 +1811,7 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	if (!mo->chained_starts) {
 		return false;
 	}
+	mo->segs_count = mo->nsegs;
 	size_t wordsize = get_word_size (mo);
 	ut8 *p = NULL;
 	ut64 count, skip;
@@ -1949,7 +1971,6 @@ static bool reconstruct_chained_fixup(struct MACH0_(obj_t) * mo) {
 	}
 	R_FREE (opcodes);
 
-	mo->segs_count = mo->nsegs;
 	return true;
 }
 
