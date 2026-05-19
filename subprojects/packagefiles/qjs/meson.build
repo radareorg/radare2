@@ -3,6 +3,7 @@ project('qjs', 'c', meson_version : '>=0.60.0', version : '7e292050a21d3dd5076f7
 sources = [
   'libregexp.c',
   'libunicode.c',
+  'cutils.c',
   'quickjs.c',
   'dtoa.c'
 ]
