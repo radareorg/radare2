@@ -1427,6 +1427,67 @@ main 0x804831a [STRN:r--] mov dword [var_ch], str.john
 EOF
 RUN
 
+NAME=imul var sub capstone
+FILE=bins/elf/ioli/crackme0x02
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+aa
+s 0x8048444
+pi 1
+EOF
+EXPECT=<<EOF
+imul eax, dword [var_8h]
+EOF
+RUN
+
+# variable substitution doesnt yet work on zydis
+NAME=imul var sub zydis
+BROKEN=1
+FILE=bins/elf/ioli/crackme0x02
+CMDS=<<EOF
+e asm.arch = x86.zydis
+e anal.arch = x86.zydis
+aa
+s 0x8048444
+pi 1
+EOF
+EXPECT=<<EOF
+imul eax, dword [var_8h]
+EOF
+RUN
+
+# note: use afv[RW] [var]~?[addr] to check for a specific xref,
+# since many xrefs are still missing on both capstone and zydis
+
+NAME=imul var xref capstone
+FILE=bins/elf/ioli/crackme0x02
+CMDS=<<EOF
+e asm.arch = x86
+e anal.arch = x86
+aa
+s 0x8048444
+afvR var_8h~?0x8048444
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+NAME=imul var xref zydis
+FILE=bins/elf/ioli/crackme0x02
+CMDS=<<EOF
+e asm.arch = x86.zydis
+e anal.arch = x86.zydis
+aa
+s 0x8048444
+afvR var_8h~?0x8048444
+EOF
+EXPECT=<<EOF
+1
+EOF
+RUN
+
 NAME=resolve reloc symbols 1
 FILE=bins/elf/libc.so.6
 CMDS=<<EOF
