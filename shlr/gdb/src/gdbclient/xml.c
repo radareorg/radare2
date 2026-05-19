@@ -425,7 +425,9 @@ static int gdbr_parse_processes_xml(libgdbr_t *g, char *xml_data, ut64 len, int 
 		// correct pid and cmdline from the xml with everything else set to default
 		proc_filename = r_str_newf ("/proc/%d/status", ipid);
 		if (gdbr_open_file (g, proc_filename, O_RDONLY, 0) == 0) {
-			if (gdbr_read_file (g, (unsigned char *)status, sizeof (status)) != -1) {
+			int read_len = gdbr_read_file (g, (ut8 *)status, sizeof (status) - 1);
+			if (read_len >= 0) {
+				status[read_len] = '\0';
 				pid_info = _extract_pid_info (status, cmdline, ipid);
 			} else {
 				R_LOG_ERROR ("Failed to read from data from procfs file of pid (%d)", ipid);
