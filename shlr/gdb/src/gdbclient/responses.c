@@ -114,7 +114,7 @@ int handle_vFile_open(libgdbr_t *g) {
 	return send_ack (g);
 }
 
-int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
+int handle_vFile_pread(libgdbr_t *g, ut8 *buf, size_t max_len) {
 	send_ack (g);
 	char *ptr;
 	int len;
@@ -141,6 +141,7 @@ int handle_vFile_pread(libgdbr_t *g, ut8 *buf) {
 	}
 	ptr++;
 	if (len > 0) {
+		len = R_MIN (len, max_len);
 		memcpy (buf, ptr, len);
 	}
 	return len;
