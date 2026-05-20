@@ -2012,10 +2012,17 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 		sdb_free (reducer.filter.results);
 
 		// running filtered const-expression in esil
+		r_esil_stack_free (esil);
 		r_esil_parse (esil, r_strbuf_get (filtered));
 		const RStrs reduced_const_s = r_esil_pop (esil);
-		const char *reduced_const = r_strs_empty (reduced_const_s)? NULL: reduced_const_s.a;
+		char *reduced_const = r_strs_empty (reduced_const_s)? NULL: r_strs_tostring (reduced_const_s);
 		r_strbuf_free (filtered);
+		if (!reduced_const) {
+			while (!r_queue_is_empty (dfg->todo)) {
+				r_queue_dequeue (dfg->todo);
+			}
+			continue;
+		}
 
 		// this part needs some explanation:
 		// in _dfg_const_reducer_rev_dfs_cb all nodes that are traversed during
@@ -2053,6 +2060,7 @@ R_API void r_anal_esil_dfg_fold_const(RAnal *anal, RAnalEsilDFG *dfg) {
 			_dfg_node_free (enode);
 			r_graph_del_node (dfg->flow, gnode);
 		}
+		free (reduced_const);
 	}
 
 	r_esil_free (esil);
