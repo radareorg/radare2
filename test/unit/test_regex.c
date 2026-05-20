@@ -589,6 +589,11 @@ static int test_long_pattern(void) {
 	// pattern with many alternatives
 	mu_assert_true (r_regex_match ("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p)", "e", "p"), "many alternatives");
 	mu_assert_false (r_regex_match ("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p)", "e", "q"), "many alternatives no match");
+
+	RRegex *rx = r_regex_new ("(a|b|c|d|e|f|g|h|i|j|k|l|m|n|o|p)", "e");
+	mu_assert_notnull (rx, "compile many alternatives");
+	mu_assert_eq (r_regex_exec (rx, "p", 0, NULL, R_REGEX_LARGE), 0, "many alternatives large matcher");
+	r_regex_free (rx);
 	mu_end;
 }
 
