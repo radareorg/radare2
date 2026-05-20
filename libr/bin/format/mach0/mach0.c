@@ -819,10 +819,9 @@ static char *readString(ut8 *p, int off, int len) {
 	return r_str_ndup ((const char *)p + off, len - off);
 }
 
-static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasize) {
+static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datasize) {
 	ut64 off = offset;
-	int psize = datasize;
-	ut8 *p = calloc (1, psize);
+	ut8 *p = calloc (1, datasize);
 	if (!p) {
 		return;
 	}
@@ -851,9 +850,9 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasi
 	eprintf ("codeLimit: %d\n", cscd.codeLimit);
 	eprintf ("hashSize: %d\n", cscd.hashSize);
 	eprintf ("hashType: %d\n", cscd.hashType);
-	char *identity = readString (p, cscd.identOffset, psize);
+	char *identity = readString (p, cscd.identOffset, datasize);
 	eprintf ("Identity: %s\n", identity);
-	char *teamId = readString (p, cscd.teamIDOffset, psize);
+	char *teamId = readString (p, cscd.teamIDOffset, datasize);
 	eprintf ("TeamID: %s\n", teamId);
 	eprintf ("CodeSlots: %d\n", cscd.nCodeSlots);
 	free (identity);
@@ -895,17 +894,25 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasi
 			free (fofbuf);
 		}
 	}
+	/* At the moment the code in parse_signature guarantees that datasize > hashSize. Leaving this as a safeguard
+	   against future refactorings */
+	if (datasize < hashSize) {
+		R_LOG_WARN ("Code directory size is smaller than hashSize")
+	}
 	// show and check the rest of hashes
 	ut8 *hash = p + cscd.hashOffset;
 	int j;
 	eprintf ("Hashed region: 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
+		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + j * hashSize);
+		if ((ut64) hash > (ut64)p + datasize - hashSize) {
+			R_LOG_WARN ("Hash points outside of allocated memory. Exiting");
+			goto beach;
+		}
 		int fof = 4096 * j;
-		int idx = j * hashSize;
-		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + idx);
 		int k;
 		for (k = 0; k < hashSize; k++) {
-			eprintf ("%02x", hash[idx + k]);
+			eprintf ("%02x", hash[k]);
 		}
 		ut8 fofbuf[4096];
 		int fofsz = R_MIN (sizeof (fofbuf), cscd.codeLimit - fof);
@@ -913,7 +920,7 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasi
 		int outlen = 0;
 		ut8 *digest = mb->hash (mb, hashName, fofbuf, fofsz, &outlen);
 		if (digest) {
-			if (memcmp (hash + idx, digest, hashSize)) {
+			if (memcmp (hash, digest, hashSize)) {
 				eprintf ("  wx ");
 				int i;
 				for (i = 0; i < hashSize; i++) {
@@ -925,7 +932,9 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, int datasi
 			free (digest);
 		}
 		eprintf ("\n");
+		hash += hashSize;
 	}
+beach:
 	free (p);
 }
 
