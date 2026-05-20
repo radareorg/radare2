@@ -77,6 +77,22 @@ static struct {
 	bool valid, init;
 } reg_cache;
 
+static void reg_cache_update(libgdbr_t *g) {
+	reg_cache.valid = false;
+	if (!reg_cache.init || !g || g->data_len < 0) {
+		return;
+	}
+	const ut64 len = (ut64)g->data_len;
+	if (len > reg_cache.maxlen) {
+		R_LOG_WARN ("gdb: register response too large (%"PFMT64u" > %"PFMT64u" bytes), skipping cache",
+			len, reg_cache.maxlen);
+		return;
+	}
+	memcpy (reg_cache.buf, g->data, (size_t)len);
+	reg_cache.buflen = len;
+	reg_cache.valid = true;
+}
+
 static void reg_cache_init(libgdbr_t *g) {
 	reg_cache.maxlen = g->data_max;
 	reg_cache.buflen = 0;
@@ -672,11 +688,7 @@ static int gdbr_read_registers_lldb(libgdbr_t *g) {
 	if ((ret = handle_lldb_read_reg (g)) < 0) {
 		goto end;
 	}
-	if (reg_cache.init) {
-		reg_cache.buflen = g->data_len;
-		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
-		reg_cache.valid = true;
-	}
+	reg_cache_update (g);
 
 	ret = 0;
 end:
@@ -713,12 +725,7 @@ int gdbr_read_registers(libgdbr_t *g) {
 		ret = -1;
 		goto end;
 	}
-	if (reg_cache.init) {
-		reg_cache.buflen = g->data_len;
-		memset (reg_cache.buf, 0, reg_cache.buflen);
-		memcpy (reg_cache.buf, g->data, reg_cache.buflen);
-		reg_cache.valid = true;
-	}
+	reg_cache_update (g);
 
 	ret = 0;
 end:

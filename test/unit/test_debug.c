@@ -7,6 +7,7 @@
 #include "minunit.h"
 #if __linux__
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <string.h>
@@ -58,6 +59,158 @@ static int pick_free_port(void) {
 	int port = ntohs (addr.sin_port);
 	close (sockfd);
 	return port;
+}
+#endif
+
+#if __linux__
+static bool write_all(int fd, const char *buf, size_t len) {
+	while (len > 0) {
+		ssize_t ret = write (fd, buf, len);
+		if (ret < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return false;
+		}
+		if (ret == 0) {
+			return false;
+		}
+		buf += ret;
+		len -= ret;
+	}
+	return true;
+}
+
+static bool read_all(int fd, char *buf, size_t len) {
+	while (len > 0) {
+		ssize_t ret = read (fd, buf, len);
+		if (ret < 0) {
+			if (errno == EINTR) {
+				continue;
+			}
+			return false;
+		}
+		if (ret == 0) {
+			return false;
+		}
+		buf += ret;
+		len -= ret;
+	}
+	return true;
+}
+
+static bool send_gdb_packet(int fd, const char *payload) {
+	ut8 checksum = 0;
+	const char *p = payload;
+	while (*p) {
+		checksum += (ut8)*p++;
+	}
+	char tail[4];
+	snprintf (tail, sizeof (tail), "#%02x", checksum);
+	return write_all (fd, "+", 1)
+		&& write_all (fd, "$", 1)
+		&& write_all (fd, payload, strlen (payload))
+		&& write_all (fd, tail, 3);
+}
+
+static int recv_gdb_packet(int fd, char *buf, size_t buflen) {
+	char ch;
+	for (;;) {
+		ssize_t ret = read (fd, &ch, 1);
+		if (ret < 0 && errno == EINTR) {
+			continue;
+		}
+		if (ret <= 0) {
+			return -1;
+		}
+		if (ch == '$') {
+			break;
+		}
+	}
+	size_t len = 0;
+	for (;;) {
+		ssize_t ret = read (fd, &ch, 1);
+		if (ret < 0 && errno == EINTR) {
+			continue;
+		}
+		if (ret <= 0) {
+			return -1;
+		}
+		if (ch == '#') {
+			char checksum[2];
+			if (!read_all (fd, checksum, sizeof (checksum))) {
+				return -1;
+			}
+			if (buflen > 0) {
+				buf[len < buflen ? len : buflen - 1] = '\0';
+			}
+			return (int)len;
+		}
+		if (len + 1 < buflen) {
+			buf[len] = ch;
+		}
+		len++;
+	}
+}
+
+static void run_oversized_gdb_server(int port) {
+	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		r_sys_exit (1, true);
+	}
+	int one = 1;
+	setsockopt (sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	struct sockaddr_in addr;
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+	addr.sin_port = htons (port);
+	if (bind (sockfd, (struct sockaddr *)&addr, sizeof (addr)) < 0 || listen (sockfd, 1) < 0) {
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	int client = accept (sockfd, NULL, NULL);
+	if (client < 0) {
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	const int decoded_bytes = 5000;
+	char *reg_response = malloc ((decoded_bytes * 2) + 1);
+	if (!reg_response) {
+		close (client);
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	int i;
+	for (i = 0; i < decoded_bytes * 2; i++) {
+		reg_response[i] = 'a';
+	}
+	reg_response[i] = '\0';
+	char packet[256];
+	while (recv_gdb_packet (client, packet, sizeof (packet)) >= 0) {
+		if (r_str_startswith (packet, "qSupported")) {
+			send_gdb_packet (client, "PacketSize=ff00");
+		} else if (r_str_startswith (packet, "qC")) {
+			send_gdb_packet (client, "QCp1.1");
+		} else if (r_str_startswith (packet, "vCont?")) {
+			send_gdb_packet (client, "vCont;c;C;s;S");
+		} else if (r_str_startswith (packet, "H")) {
+			send_gdb_packet (client, "OK");
+		} else if (!strcmp (packet, "?")) {
+			send_gdb_packet (client, "S05");
+		} else if (!strcmp (packet, "g")) {
+			send_gdb_packet (client, reg_response);
+		} else if (!strcmp (packet, "D")) {
+			send_gdb_packet (client, "OK");
+			break;
+		} else {
+			send_gdb_packet (client, "");
+		}
+	}
+	free (reg_response);
+	close (client);
+	close (sockfd);
+	r_sys_exit (0, true);
 }
 #endif
 
@@ -119,6 +272,48 @@ bool test_r2_gdb_remote_open(void) {
 #endif
 }
 
+bool test_r2_gdb_oversized_reg_response(void) {
+#if __linux__
+	int port = pick_free_port ();
+	if (port <= 0) {
+		mu_ignore;
+	}
+	pid_t pid = r_sys_fork ();
+	if (pid < 0) {
+		mu_assert ("fork failed", false);
+	}
+	if (pid == 0) {
+		run_oversized_gdb_server (port);
+	}
+
+	r_sys_usleep (500000);
+	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
+	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "dr;q", uri, NULL };
+	int ret = r_main_radare2 (8, argv);
+	int status = 0;
+	int waited = 0;
+	int wpid = 0;
+	while (waited < 20) {
+		wpid = waitpid (pid, &status, WNOHANG);
+		if (wpid == pid) {
+			break;
+		}
+		r_sys_usleep (100000);
+		waited++;
+	}
+	if (wpid == 0) {
+		kill (pid, SIGKILL);
+		waitpid (pid, &status, 0);
+	}
+	free (uri);
+
+	mu_assert_eq (ret, 0, "oversized gdb register response failed");
+	mu_end;
+#else
+	mu_ignore;
+#endif
+}
+
 bool test_r_debug_reg_offset(void) {
 #if __linux__
 #ifdef __x86_64__
@@ -151,6 +346,7 @@ bool test_r_debug_reg_offset(void) {
 int all_tests(void) {
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_r2_gdb_remote_open);
+	mu_run_test (test_r2_gdb_oversized_reg_response);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;
 }
