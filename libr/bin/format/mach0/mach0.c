@@ -905,7 +905,7 @@ static void parseCodeDirectory(RMutaBind *mb, RBuffer *b, int offset, ut32 datas
 	eprintf ("Hashed region: 0x%08" PFMT64x " - 0x%08" PFMT64x "\n", (ut64)0, (ut64)cscd.codeLimit);
 	for (j = 0; j < cscd.nCodeSlots; j++) {
 		eprintf ("0x%08" PFMT64x "  ", off + cscd.hashOffset + j * hashSize);
-		if ((ut64) hash > (ut64)p + datasize - hashSize) {
+		if ((size_t) hash > (size_t)p + datasize - hashSize) {
 			R_LOG_WARN ("Hash points outside of allocated memory. Exiting");
 			goto beach;
 		}
