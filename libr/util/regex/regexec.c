@@ -159,8 +159,9 @@ R_API int r_regex_exec(const RRegex *preg, const char *string, size_t nmatch, RR
 	if (g->iflags & BAD) { /* backstop for no-debug case */
 		return R_REGEX_BADPAT;
 	}
+	bool large = eflags & R_REGEX_LARGE;
 	eflags &= (R_REGEX_NOTBOL | R_REGEX_NOTEOL | R_REGEX_STARTEND);
-	if (g->nstates <= CHAR_BIT * sizeof (states1) && ! (eflags & R_REGEX_LARGE)) {
+	if (g->nstates <= CHAR_BIT * sizeof (states1) && !large) {
 		return smatcher (g, (char *)string, nmatch, pmatch, eflags);
 	}
 	return lmatcher (g, (char *)string, nmatch, pmatch, eflags);

@@ -728,7 +728,7 @@ static char *fast(struct match *m, char *start, char *stop, sopno startst, sopno
 		/* next character */
 		lastc = c;
 		c = (p == m->endp)? OUT: *p;
-		if (st == fresh) {
+		if (EQ (st, fresh)) {
 			coldp = p;
 		}
 
