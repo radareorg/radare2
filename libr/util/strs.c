@@ -3,15 +3,12 @@
 #include <r_util.h>
 
 R_API const char *r_strs_find_strs(RStrs s, RStrs needle) {
-	const size_t sl = r_strs_len (s);
 	const size_t nl = r_strs_len (needle);
 	if (nl == 0) {
 		return s.a;
 	}
-	if (nl > sl) {
-		return NULL;
-	}
-	if (sl > INT_MAX || nl > INT_MAX) {
+	const size_t sl = r_strs_len (s);
+	if (nl > sl || sl > INT_MAX || nl > INT_MAX) {
 		return NULL;
 	}
 	return (const char *)r_mem_mem ((const ut8 *)s.a, (int)sl, (const ut8 *)needle.a, (int)nl);
@@ -23,13 +20,12 @@ R_API const char *r_strs_findc(RStrs s, char c) {
 }
 
 R_API const char *r_strs_find_any(RStrs s, const char *set) {
-	if (!set || !*set) {
-		return NULL;
-	}
-	const char *p;
-	for (p = s.a; p < s.b; p++) {
-		if (strchr (set, *p)) {
-			return p;
+	if (R_STR_ISNOTEMPTY (set)) {
+		const char *p;
+		for (p = s.a; p < s.b; p++) {
+			if (strchr (set, *p)) {
+				return p;
+			}
 		}
 	}
 	return NULL;
@@ -82,7 +78,13 @@ R_API bool r_strs_next_token(RStrs *s, const char *seps, RStrs *out) {
 }
 
 R_API char *r_strs_tostring(RStrs s) {
-	return r_str_ndup (s.a, (int)r_strs_len (s));
+	const size_t sl = r_strs_len (s);
+	char *res = malloc (sl + 1);
+	if (res) {
+		memcpy (res, s.a, sl);
+		res[sl] = 0;
+	}
+	return res;
 }
 
 R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
@@ -102,7 +104,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 	switch (base) {
 	case 16:
 		is_hex = true;
-		if (n >= 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+		if (n > 1 && p[0] == '0' && p[1] == 'x') {
 			p += 2;
 		}
 		break;
@@ -110,7 +112,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 		is_hex = false;
 		break;
 	case 0:
-		if (n >= 2 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
+		if (n > 1 && p[0] == '0' && p[1] == 'x') {
 			is_hex = true;
 			p += 2;
 		} else {
@@ -119,6 +121,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 		break;
 	default:
 		if (error) {
+			R_LOG_ERROR ("Unsupported numeric base");
 			*error = true;
 		}
 		return 0;
@@ -132,7 +135,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 	ut64 v = 0;
 	if (is_hex) {
 		while (p < e) {
-			const unsigned char c = (unsigned char)*p++;
+			const ut8 c = (ut8)*p++;
 			ut64 d;
 			if (c >= '0' && c <= '9') {
 				d = c - '0';
@@ -150,7 +153,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 		}
 	} else {
 		while (p < e) {
-			const unsigned char c = (unsigned char)*p++;
+			const ut8 c = (ut8)*p++;
 			if (c < '0' || c > '9') {
 				if (error) {
 					*error = true;
@@ -164,12 +167,10 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 }
 
 R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n) {
-	if (!buf || cap < 19) {
-		return (RStrs) { NULL, NULL };
-	}
+	R_RETURN_VAL_IF_FAIL (buf && cap > 18, ((RStrs) { 0 }));
 	if (n == 0) {
 		buf[0] = '0';
-		buf[1] = '\0';
+	//	buf[1] = '\0';
 		return r_strs_from_len (buf, 1);
 	}
 	static const char lookup[] = "0123456789abcdef";
@@ -186,7 +187,7 @@ R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n) {
 		buf[2 + j] = tmp[t - 1 - j];
 	}
 	const size_t len = (size_t)(t + 2);
-	buf[len] = '\0';
+	// buf[len] = '\0';
 	return r_strs_from_len (buf, len);
 }
 
