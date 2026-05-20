@@ -171,7 +171,7 @@ typedef struct {
 static void _write_flag_bits(char *buf, const gdbr_xml_flags_t *flags);
 static int _resolve_arch(libgdbr_t *g, char *xml_data);
 static RList *_extract_flags(char *flagstr);
-static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias);
+static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias, size_t pc_alias_len);
 static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid);
 
 static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
@@ -194,7 +194,7 @@ static int gdbr_parse_target_xml(libgdbr_t *g, char *xml_data, ut64 len) {
 	if (!(flags = _extract_flags (flagstr))) {
 		return -1;
 	}
-	if (!(regs = _extract_regs (regstr, flags, pc_alias))) {
+	if (!(regs = _extract_regs (regstr, flags, pc_alias, sizeof (pc_alias)))) {
 		r_list_free (flags);
 		return -1;
 	}
@@ -738,7 +738,7 @@ static RDebugPid *_extract_pid_info(const char *info, const char *path, int tid)
 	return pid_info;
 }
 
-static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
+static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias, size_t pc_alias_len) {
 	char *regstr_end, *regname, *tmp1, *tmpregstr, *feature_end;
 	const char *typegroup, *regtype;
 	ut32 flagnum, regname_len, regsize, regnum;
@@ -848,9 +848,17 @@ static RList *_extract_regs(char *regstr, RList *flags, char *pc_alias) {
 			    || r_str_startswith (tmp1, "ieee_double")) {
 				regtype = "fpu";
 			} else if (r_str_startswith (tmp1, "code_ptr")) {
-				strcpy (pc_alias, "=PC	");
-				strncpy (pc_alias + 4, regname, regname_len);
-				strcpy (pc_alias + 4 + regname_len, "\n");
+				const size_t pc_alias_prefix_len = sizeof ("=PC\t") - 1;
+				const size_t pc_alias_suffix_len = sizeof ("\n") - 1;
+				if (pc_alias_len > pc_alias_prefix_len + pc_alias_suffix_len) {
+					size_t alias_name_len = R_MIN ((size_t)regname_len,
+						pc_alias_len - pc_alias_prefix_len - pc_alias_suffix_len - 1);
+					if (alias_name_len < regname_len) {
+						R_LOG_WARN ("GDB XML: code_ptr register name too long (%u), truncating",
+							regname_len);
+					}
+					snprintf (pc_alias, pc_alias_len, "=PC\t%.*s\n", (int)alias_name_len, regname);
+				}
 			} else {
 				// Check all flags. If reg is a flag, write flag data
 				flagnum = 0;
