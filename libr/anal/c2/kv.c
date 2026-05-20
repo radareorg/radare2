@@ -50,6 +50,16 @@ static char *collapse_whitespace(RStrs s) {
 	return out;
 }
 
+static const char *find_char_between(const char *p, const char *end, char ch) {
+	while (p < end) {
+		if (*p == ch) {
+			return p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
 #include "pp.inc.c"
 
 static const char kvc_getch(KVCParser *kvc) {
@@ -973,7 +983,7 @@ static bool parse_typedef(KVCParser *kvc, const char *unused) {
 			apply_attributes (kvc, "enum", enum_tag);
 			r_strf_var (full_scope, 512, "%s.%s", enum_tag, mn);
 			if (member_value.a) {
-				st64 nv = r_num_get (NULL, member_value.a);
+				st64 nv = (st64)r_strs_tonum (member_value, 0, NULL);
 				r_strbuf_appendf (kvc->sb, "enum.%s=0x%" PFMT64x "\n", full_scope, nv);
 				r_strbuf_appendf (kvc->sb, "enum.%s.0x%" PFMT64x "=%s\n", enum_tag, nv, mn);
 				value = nv;
@@ -1249,7 +1259,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 		if (r_strs_find_strs (member_type, R_STRS_LIT (" (*"))) {
 			// member_type spans entire function pointer declaration including args
 			const char *start = member_type.a;
-			const char *starp = strstr (start, " (*");
+			const char *starp = r_strs_find_strs (member_type, R_STRS_LIT (" (*"));
 			if (starp) {
 				// return type
 				RStrs rtype_tok = { start, starp };
@@ -1257,7 +1267,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				char *rtype = r_strs_tostring (rtype_tok);
 				// member name
 				const char *name_start = starp + 3;
-				const char *name_end = strchr (name_start, ')');
+				const char *name_end = find_char_between (name_start, member_type.b, ')');
 				char *mname = NULL;
 				if (name_end && name_end > name_start) {
 					RStrs mname_tok = { name_start, name_end };
@@ -1267,7 +1277,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 				// argument types
 				const char *args_start = NULL;
 				if (name_end) {
-					args_start = strchr (name_end + 1, '(');
+					args_start = find_char_between (name_end + 1, member_type.b, '(');
 				}
 				char *args = NULL;
 				if (args_start && args_start < member_type.b) {
@@ -1406,7 +1416,7 @@ static bool parse_struct(KVCParser *kvc, const char *type) {
 			const int rest = av - (off % av);
 			off += rest;
 		}
-		if (md) {
+		if (R_STR_ISNOTEMPTY (md)) {
 			dimension = atoi (md);
 			r_strbuf_appendf (kvc->sb, "%s.%s=%s,%d,%s\n", type, full_scope, mt, off, md);
 		} else {
@@ -1491,7 +1501,7 @@ static bool parse_enum(KVCParser *kvc, const char *name) {
 		apply_attributes (kvc, "enum", en);
 		r_strf_var (full_scope, 512, "%s.%s", en, mn);
 		if (member_value.a) {
-			st64 nv = r_num_get (NULL, member_value.a);
+			st64 nv = (st64)r_strs_tonum (member_value, 0, NULL);
 			r_strbuf_appendf (kvc->sb, "enum.%s=0x%" PFMT64x "\n", full_scope, nv);
 			r_strbuf_appendf (kvc->sb, "enum.%s.0x%" PFMT64x "=%s\n", en, nv, mn);
 			value = nv;

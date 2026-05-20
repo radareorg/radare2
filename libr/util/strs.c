@@ -99,12 +99,15 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 		return 0;
 	}
 	const char *p = s.a;
-	const char *const e = s.b;
+	const char *e = s.b;
+	while (e > p && strchr ("uUlL", e[-1])) {
+		e--;
+	}
 	bool is_hex;
 	switch (base) {
 	case 16:
 		is_hex = true;
-		if (n > 1 && p[0] == '0' && p[1] == 'x') {
+		if (e - p > 1 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
 			p += 2;
 		}
 		break;
@@ -112,7 +115,7 @@ R_API ut64 r_strs_tonum(RStrs s, int base, bool *error) {
 		is_hex = false;
 		break;
 	case 0:
-		if (n > 1 && p[0] == '0' && p[1] == 'x') {
+		if (e - p > 1 && p[0] == '0' && (p[1] == 'x' || p[1] == 'X')) {
 			is_hex = true;
 			p += 2;
 		} else {
@@ -170,7 +173,7 @@ R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n) {
 	R_RETURN_VAL_IF_FAIL (buf && cap > 18, ((RStrs) { 0 }));
 	if (n == 0) {
 		buf[0] = '0';
-	//	buf[1] = '\0';
+		buf[1] = '\0';
 		return r_strs_from_len (buf, 1);
 	}
 	static const char lookup[] = "0123456789abcdef";
@@ -187,7 +190,7 @@ R_API RStrs r_strs_u64hex(char *buf, size_t cap, ut64 n) {
 		buf[2 + j] = tmp[t - 1 - j];
 	}
 	const size_t len = (size_t)(t + 2);
-	// buf[len] = '\0';
+	buf[len] = '\0';
 	return r_strs_from_len (buf, len);
 }
 

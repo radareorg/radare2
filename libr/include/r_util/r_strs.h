@@ -156,8 +156,9 @@ R_API char *r_strs_tostring(RStrs s);
 R_API st64 r_strs_tosnum(RStrs s, bool *ok);
 
 /* Parse a slice as an unsigned integer, respecting slice bounds (no strlen,
- * no malloc). Only recognises plain integer literals — for richer syntax
- * (signed, 0b, 0o, 0t, expressions, …) call r_num_get.
+ * no malloc). Recognises plain integer literals with optional C integer
+ * suffixes; for richer syntax (signed, 0b, 0o, 0t, expressions, …) call
+ * r_num_get.
  *
  *   base = 0   auto-detect: "0x" / "0X" prefix → hex, else decimal
  *   base = 10  decimal only (digits)
