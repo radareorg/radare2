@@ -212,6 +212,103 @@ static void run_oversized_gdb_server(int port) {
 	close (sockfd);
 	r_sys_exit (0, true);
 }
+
+static void run_long_xml_reg_name_gdb_server(int port) {
+	int sockfd = socket (AF_INET, SOCK_STREAM, 0);
+	if (sockfd < 0) {
+		r_sys_exit (1, true);
+	}
+	int one = 1;
+	setsockopt (sockfd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof (one));
+	struct sockaddr_in addr;
+	memset (&addr, 0, sizeof (addr));
+	addr.sin_family = AF_INET;
+	addr.sin_addr.s_addr = htonl (INADDR_LOOPBACK);
+	addr.sin_port = htons (port);
+	if (bind (sockfd, (struct sockaddr *)&addr, sizeof (addr)) < 0 || listen (sockfd, 1) < 0) {
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	int client = accept (sockfd, NULL, NULL);
+	if (client < 0) {
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	RStrBuf *xml = r_strbuf_new (
+		"<?xml version=\"1.0\"?>\n"
+		"<target version=\"1.0\">\n"
+		"<architecture>i386:x86-64</architecture>\n"
+		"<feature name=\"org.gnu.gdb.i386.core\">\n"
+		"<reg name=\"");
+	if (!xml) {
+		close (client);
+		close (sockfd);
+		r_sys_exit (1, true);
+	}
+	r_strbuf_pad (xml, 'A', 200);
+	r_strbuf_append (xml, "\" bitsize=\"64\" type=\"code_ptr\" regnum=\"16\"/>\n"
+		"</feature>\n"
+		"</target>");
+	const char *target_xml = r_strbuf_get (xml);
+	const size_t xml_len = strlen (target_xml);
+	char packet[256];
+	while (recv_gdb_packet (client, packet, sizeof (packet)) >= 0) {
+		if (r_str_startswith (packet, "qSupported")) {
+			send_gdb_packet (client, "PacketSize=1000;qXfer:features:read+");
+		} else if (r_str_startswith (packet, "qXfer:features:read:target.xml:")) {
+			char *range = strrchr (packet, ':');
+			if (!range) {
+				send_gdb_packet (client, "");
+				continue;
+			}
+			range++;
+			char *comma = strchr (range, ',');
+			if (!comma) {
+				send_gdb_packet (client, "");
+				continue;
+			}
+			*comma++ = '\0';
+			size_t offset = strtoul (range, NULL, 16);
+			size_t length = strtoul (comma, NULL, 16);
+			if (offset >= xml_len) {
+				send_gdb_packet (client, "l");
+				continue;
+			}
+			size_t chunk_len = R_MIN (length, xml_len - offset);
+			RStrBuf *response = r_strbuf_new (offset + chunk_len >= xml_len? "l": "m");
+			if (!response) {
+				r_strbuf_free (response);
+				break;
+			}
+			r_strbuf_append_n (response, target_xml + offset, chunk_len);
+			char *response_str = r_strbuf_drain (response);
+			if (!response_str) {
+				break;
+			}
+			send_gdb_packet (client, response_str);
+			free (response_str);
+		} else if (r_str_startswith (packet, "qC")) {
+			send_gdb_packet (client, "QCp1.1");
+		} else if (r_str_startswith (packet, "vCont?")) {
+			send_gdb_packet (client, "vCont;c;C;s;S");
+		} else if (r_str_startswith (packet, "H")) {
+			send_gdb_packet (client, "OK");
+		} else if (!strcmp (packet, "?")) {
+			send_gdb_packet (client, "S05");
+		} else if (!strcmp (packet, "g")) {
+			send_gdb_packet (client, "0000000000000000");
+		} else if (!strcmp (packet, "D")) {
+			send_gdb_packet (client, "OK");
+			break;
+		} else {
+			send_gdb_packet (client, "");
+		}
+	}
+	r_strbuf_free (xml);
+	close (client);
+	close (sockfd);
+	r_sys_exit (0, true);
+}
 #endif
 
 bool test_r2_gdb_remote_open(void) {
@@ -314,6 +411,48 @@ bool test_r2_gdb_oversized_reg_response(void) {
 #endif
 }
 
+bool test_r2_gdb_long_xml_reg_name(void) {
+#if __linux__
+	int port = pick_free_port ();
+	if (port <= 0) {
+		mu_ignore;
+	}
+	pid_t pid = r_sys_fork ();
+	if (pid < 0) {
+		mu_assert ("fork failed", false);
+	}
+	if (pid == 0) {
+		run_long_xml_reg_name_gdb_server (port);
+	}
+
+	r_sys_usleep (500000);
+	char *uri = r_str_newf ("gdb://127.0.0.1:%d", port);
+	const char *argv[] = { "radare2", "-q", "-d", "-D", "gdb", "-Qc", "q", uri, NULL };
+	int ret = r_main_radare2 (8, argv);
+	int status = 0;
+	int waited = 0;
+	int wpid = 0;
+	while (waited < 20) {
+		wpid = waitpid (pid, &status, WNOHANG);
+		if (wpid == pid) {
+			break;
+		}
+		r_sys_usleep (100000);
+		waited++;
+	}
+	if (wpid == 0) {
+		kill (pid, SIGKILL);
+		waitpid (pid, &status, 0);
+	}
+	free (uri);
+
+	mu_assert_eq (ret, 0, "long gdb xml register name failed");
+	mu_end;
+#else
+	mu_ignore;
+#endif
+}
+
 bool test_r_debug_reg_offset(void) {
 #if __linux__
 #ifdef __x86_64__
@@ -347,6 +486,7 @@ int all_tests(void) {
 	mu_run_test (test_r_debug_use);
 	mu_run_test (test_r2_gdb_remote_open);
 	mu_run_test (test_r2_gdb_oversized_reg_response);
+	mu_run_test (test_r2_gdb_long_xml_reg_name);
 	mu_run_test (test_r_debug_reg_offset);
 	return tests_passed != tests_run;
 }
