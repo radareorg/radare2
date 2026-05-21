@@ -32,6 +32,25 @@ static RBinString *__stringAt(HtUP *strings_db, RList *ret, ut64 addr) {
 	return NULL;
 }
 
+static void pj_ks_len(PJ *pj, const char *key, const char *s, ut32 len) {
+	pj_k (pj, key);
+	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
+		pj_raw (pj, "[");
+	} else {
+		pj_raw (pj, "\"");
+	}
+	char *e = r_str_encoded_json (s, len, pj->str_encoding);
+	if (e) {
+		pj_raw (pj, e);
+		free (e);
+	}
+	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
+		pj_raw (pj, "]");
+	} else {
+		pj_raw (pj, "\"");
+	}
+}
+
 static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	R_RETURN_IF_FAIL (bf && string);
 
@@ -52,8 +71,14 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	const char *type_string = r_bin_string_type (string->type);
 	ut64 vaddr = r_bin_get_vaddr (bin, string->paddr, string->vaddr);
 	ut64 addr = vaddr; // bf->bo? vaddr: string->vaddr;
-	const char *str = r_bin_string_get (string);
-	int str_len = strlen (str);
+	ut32 str_len = 0;
+	const char *str = r_bin_string_get (string, &str_len);
+	char *str_cstr = NULL;
+	if (!str) {
+		str_cstr = r_bin_string_get_cstr (string);
+		str = r_str_get (str_cstr);
+		str_len = strlen (str);
+	}
 
 	// If raw string dump mode, use printf to dump directly to stdout.
 	//  PrintfCallback temp = io->cb_printf;
@@ -68,7 +93,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", str);
+			pj_ks_len (pj, "string", str, str_len);
 			pj_end (pj);
 		}
 		break;
@@ -83,7 +108,10 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 		}
 		break;
 	case R_MODE_RADARE: {
-		char *f_name = strdup (str);
+		char *f_name = r_bin_string_get_cstr (string);
+		if (!f_name) {
+			break;
+		}
 		r_name_filter (f_name, -1);
 		if (bin->prefix) {
 			io->cb_printf ("'0x%08"PFMT64x"'f %s.str.%s %u\n"
@@ -107,6 +135,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			section_name, type_string, str_len, str);
 		break;
 	}
+	free (str_cstr);
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
@@ -1168,7 +1197,9 @@ R_IPI RList *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 					bs->ordinal = s->ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-					char *str = r_str_newf ("cstr.%s", r_bin_string_get (s));
+					char *cstr = r_bin_string_get_cstr (s);
+					char *str = r_str_newf ("cstr.%s", r_str_get (cstr));
+					free (cstr);
 					r_bin_string_set (bs, str, str? strlen (str): 0, R_STRING_TYPE_ASCII, R_BIN_STRING_F_OWNED);
 					r_list_append (ret, bs);
 					ht_up_insert (bo->strings_db, bs->vaddr, bs);

@@ -4079,11 +4079,12 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 		RBinString *s;
 		RListIter *iter;
 		r_list_foreach (obj->strings, iter, s) {
-			const char *str = r_bin_string_get (s);
-			if (strstr (str, "0x")) {
+			char *str = r_bin_string_get_cstr (s);
+			if (str && strstr (str, "0x")) {
 				ut64 n = r_num_math (NULL, str);
 				appendbaddr (res, n);
 			}
+			free (str);
 		}
 	}
 	// find strings with addresses

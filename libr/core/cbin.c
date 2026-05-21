@@ -346,6 +346,43 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
+static const char *string_slice_or_cstr(RBinString *string, ut32 *len, char **cstr) {
+	const char *s = r_bin_string_get (string, len);
+	if (s) {
+		return s;
+	}
+	*cstr = r_bin_string_get_cstr (string);
+	s = r_str_get (*cstr);
+	*len = strlen (s);
+	return s;
+}
+
+static const char *string_get_cstr(RBinString *string, char **cstr) {
+	if (!*cstr) {
+		*cstr = r_bin_string_get_cstr (string);
+	}
+	return r_str_get (*cstr);
+}
+
+static void pj_ks_len(PJ *pj, const char *key, const char *s, ut32 len) {
+	pj_k (pj, key);
+	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
+		pj_raw (pj, "[");
+	} else {
+		pj_raw (pj, "\"");
+	}
+	char *e = r_str_encoded_json (s, len, pj->str_encoding);
+	if (e) {
+		pj_raw (pj, e);
+		free (e);
+	}
+	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
+		pj_raw (pj, "]");
+	} else {
+		pj_raw (pj, "\"");
+	}
+}
+
 static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
@@ -380,27 +417,37 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
-		const char *string_cstr = r_bin_string_get (string);
-		if (!r_bin_string_filter (bin, string_cstr, vaddr)) {
-			continue;
+		ut32 string_len = 0;
+		char *string_cstr = NULL;
+		const char *string_slice = string_slice_or_cstr (string, &string_len, &string_cstr);
+		if (bin->strpurge || bin->strfilter) {
+			if (!r_bin_string_filter (bin, string_get_cstr (string, &string_cstr), vaddr)) {
+				free (string_cstr);
+				continue;
+			}
 		}
 		if (string->length < minstr) {
+			free (string_cstr);
 			continue;
 		}
 		if (maxstr && string->length > maxstr) {
+			free (string_cstr);
 			continue;
 		}
 #if FALSE_POSITIVES
 		{
-			int *block_list = r_utf_block_list ((const ut8 *)string_cstr, -1, NULL);
+			int *block_list = r_utf_block_list ((const ut8 *)string_get_cstr (string, &string_cstr), -1, NULL);
 			if (block_list) {
 				if (block_list[0] == 0 && block_list[1] == -1) {
 					/* Don't show block list if
 					just Basic Latin (0x00 - 0x7F) */
 					// nothing
 				} else {
+					free (block_list);
+					free (string_cstr);
 					continue;
 				}
+				free (block_list);
 			}
 		}
 #endif
@@ -408,45 +455,55 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 		section_name = section? section->name: "";
 		type_string = r_bin_string_type (string->type);
 		if (b64str) {
-			ut8 *s = r_base64_decode_dyn (string_cstr, -1, NULL);
+			ut8 *s = r_base64_decode_dyn (string_get_cstr (string, &string_cstr), -1, NULL);
 			if (R_STR_ISNOTEMPTY (s) && IS_PRINTABLE (*s)) {
 				// TODO: add more checks
 				free (b64.string);
 				memcpy (&b64, string, sizeof (b64));
 				b64.string = NULL;
 				r_bin_string_set (&b64, (const char *)s, strlen ((const char *)s), R_STRING_TYPE_BASE64, R_BIN_STRING_F_OWNED);
-				b64.size = strlen (r_bin_string_get (&b64));
+				ut32 b64_len = 0;
+				r_bin_string_get (&b64, &b64_len);
+				b64.size = b64_len;
 				string = &b64;
-				string_cstr = r_bin_string_get (string);
+				free (string_cstr);
+				string_cstr = NULL;
+				string_slice = string_slice_or_cstr (string, &string_len, &string_cstr);
+			} else {
+				free (s);
 			}
 		}
 		// Apply pagination for non-table output modes
 		if (!IS_MODE_SET (mode)) {
 			if (skip > 0) {
 				skip--;
+				free (string_cstr);
 				continue;
 			}
 			if (count > 0 && printed >= count) {
+				free (string_cstr);
 				break;
 			}
 			printed++;
 		}
 		if (IS_MODE_SET (mode)) {
 			if (r_cons_is_breaked (core->cons)) {
+				free (string_cstr);
 				break;
 			}
-			r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, string_cstr);
+			const char *cstr = string_get_cstr (string, &string_cstr);
+			r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, cstr);
 			char *str = (core->bin->prefix)
-				? r_str_newf ("%s.str.%s", core->bin->prefix, string_cstr)
-				: r_str_newf ("str.%s", string_cstr);
+				? r_str_newf ("%s.str.%s", core->bin->prefix, cstr)
+				: r_str_newf ("str.%s", cstr);
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (core->flags, str, vaddr, string->size);
 			if (fi) {
 				free (fi->rawname);
-				fi->rawname = strdup (string_cstr);
+				fi->rawname = strdup (cstr);
 				const bool realstr = r_config_get_b (core->config, "bin.str.real");
 				if (realstr) {
-					char *es = r_str_escape (string_cstr);
+					char *es = r_str_escape (cstr);
 					char *s = r_str_newf ("\"%s\"", es);
 					r_flag_item_set_realname (core->flags, fi, s);
 					free (s);
@@ -455,14 +512,14 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			}
 			free (str);
 		} else if (IS_MODE_SIMPLE (mode) && !IS_MODE_JSON (mode)) {
-			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr,
-				string->size, string->length, string_cstr);
+			r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %.*s\n", vaddr,
+				string->size, string->length, string_len, string_slice);
 		} else if (IS_MODE_SIMPLEST (mode)) {
-			r_cons_println (core->cons, string_cstr);
+			r_cons_printf (core->cons, "%.*s\n", string_len, string_slice);
 		} else if (IS_MODE_JSON (mode) && IS_MODE_SIMPLE (mode)) {
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
-			pj_ks (pj, "string", string_cstr);
+			pj_ks_len (pj, "string", string_slice, string_len);
 			pj_end (pj);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
@@ -474,13 +531,13 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks (pj, "string", string_cstr);
+			pj_ks_len (pj, "string", string_slice, string_len);
 
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8 *)string_cstr, -1, NULL);
+				block_list = r_utf_block_list ((const ut8 *)string_get_cstr (string, &string_cstr), -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't include block list if
@@ -501,9 +558,10 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			}
 			pj_end (pj);
 		} else if (IS_MODE_RAD (mode)) {
+			const char *cstr = string_get_cstr (string, &string_cstr);
 			char *str = (core->bin->prefix)
-				? r_str_newf ("%s.str.%s", core->bin->prefix, string_cstr)
-				: r_str_newf ("str.%s", string_cstr);
+				? r_str_newf ("%s.str.%s", core->bin->prefix, cstr)
+				: r_str_newf ("str.%s", cstr);
 			r_name_filter (str, -1);
 			r_cons_printf (core->cons, "'f %s %u 0x%08" PFMT64x "\n"
 						"'@0x%08" PFMT64x "'Cs %u\n",
@@ -512,7 +570,8 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			free (str);
 		} else {
 			int *block_list;
-			const char *str = string_cstr;
+			const char *cstr = string_get_cstr (string, &string_cstr);
+			const char *str = cstr;
 			char *no_dbl_bslash_str = NULL;
 			if (!core->print->esc_bslash) {
 				const char *ptr;
@@ -546,7 +605,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			case R_STRING_TYPE_UTF8:
 			case R_STRING_TYPE_WIDE:
 			case R_STRING_TYPE_WIDE32:
-				block_list = r_utf_block_list ((const ut8 *)string_cstr, -1, NULL);
+				block_list = r_utf_block_list ((const ut8 *)cstr, -1, NULL);
 				if (block_list) {
 					if (block_list[0] == 0 && block_list[1] == -1) {
 						/* Don't show block list if
@@ -579,6 +638,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			free (bufstr);
 			free (no_dbl_bslash_str);
 		}
+		free (string_cstr);
 	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {

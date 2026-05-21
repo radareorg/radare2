@@ -849,7 +849,10 @@ R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs);
 R_API void r_bin_symbol_copy(RBinSymbol *dst, RBinSymbol *src);
 R_API void r_bin_string_free(void *_str);
 R_API bool r_bin_string_set(RBinString *str, const char *s, ut32 len, int type, ut8 flags);
-R_API const char *r_bin_string_get(RBinString *str);
+/* r_bin_string_get returns a borrowed slice and writes its byte length. */
+R_API const char *r_bin_string_get(RBinString *str, ut32 *len);
+/* r_bin_string_get_cstr returns a caller-owned NUL-terminated string. */
+R_API char *r_bin_string_get_cstr(RBinString *str);
 
 #ifdef R_API
 
