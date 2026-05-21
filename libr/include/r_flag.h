@@ -43,6 +43,7 @@ typedef struct r_flag_item_t {
 	char *realname; /* real demangled, display name, without any escaping */
 	char *rawname; /* real name, without any escaping */
 	bool demangled; /* real name from demangling? */
+	bool name_pooled; /* true if name is owned by RFlag.names */
 	ut64 addr;      /* address of the flag */
 	ut64 size;      /* size of the flag item */
 	RSpace *space;  /* flag space this item belongs to */
@@ -63,7 +64,7 @@ typedef struct r_flag_t {
 	RThreadLock *lock;
 	ut32 lastid;
 	R_DIRTY_VAR;
-	// ??? RStrpool *pool; // stringpool can be tricky because removing flags wont free memory
+	RArena *names; /* bump pool for flag name strings */
 } RFlag;
 
 /* compile time dependency */

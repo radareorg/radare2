@@ -128,10 +128,34 @@ bool test_r_flag_get_at(void) {
 	mu_end;
 }
 
+bool test_r_flag_rename_unset_all(void) {
+	RFlag *flags = r_flag_new ();
+	mu_assert_notnull (flags, "r_flag_new () failed");
+
+	RFlagItem *fi = r_flag_set (flags, "foo", 1024, 4);
+	mu_assert_notnull (fi, "cannot set foo flag");
+	r_flag_item_set_realname (flags, fi, "real.foo");
+	mu_assert_streq (fi->realname, "real.foo", "realname set");
+	mu_assert_true (r_flag_rename (flags, fi, "bar"), "rename foo to bar");
+	mu_assert_null (r_flag_get (flags, "foo"), "old flag name must be gone");
+	mu_assert_ptreq (r_flag_get (flags, "bar"), fi, "new flag name must resolve");
+	mu_assert_streq (fi->realname, "bar", "rename resets realname");
+
+	r_flag_unset_all (flags);
+	mu_assert_eq (r_flag_count (flags, NULL), 0, "unset all clears flags");
+	fi = r_flag_set (flags, "baz", 2048, 8);
+	mu_assert_notnull (fi, "cannot set flag after unset all");
+	mu_assert_ptreq (r_flag_get (flags, "baz"), fi, "flag set after unset all resolves");
+
+	r_flag_free (flags);
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r_flag_get_set);
 	mu_run_test (test_r_flag_by_spaces);
 	mu_run_test (test_r_flag_get_at);
+	mu_run_test (test_r_flag_rename_unset_all);
 	return tests_passed != tests_run;
 }
 

@@ -855,7 +855,7 @@ static RList *strings(RBinFile *bf) {
 		R_FREE (bin->strings);
 		return NULL;
 	}
-	if (!(ret = r_list_newf (free))) {
+	if (!(ret = r_list_newf (r_bin_string_free))) {
 		return NULL;
 	}
 	for (i = 0; i < bin->header.strings_size; i++) {
@@ -896,7 +896,7 @@ static RList *strings(RBinFile *bf) {
 	return ret;
 out_error:
 	r_list_free (ret);
-	free (ptr);
+	r_bin_string_free (ptr);
 	return NULL;
 }
 
@@ -1547,6 +1547,7 @@ static void parse_class(RBinFile *bf, RBinDexClass *c, int class_index, int *met
 			free (dc);
 			goto beach;
 		}
+		free (c->class_data);
 		c->class_data = dc;
 
 		if (sb) {

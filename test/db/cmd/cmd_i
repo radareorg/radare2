@@ -1053,7 +1053,7 @@ pthread_mutex_unlock
 0x13f9c 30 29 terminate called recursively\n
 0x13fbc 49 48 terminate called after throwing an instance of '
 0x13ff4 46 45 terminate called without an active exception\n
-0x14024 12 11   what():
+0x14024 12 9   what():
 0x14030 9 8 _GLOBAL_
 0x1403c 22 21 (anonymous namespace)
 0x14054 15 14 string literal
@@ -1061,47 +1061,47 @@ pthread_mutex_unlock
 0x14088 6 5 [abi:
 0x14094 14 13 {default arg#
 0x140ac 7 6 JArray
-0x140b8 12 11 vtable for
-0x140c4 9 8 VTT for
-0x140d0 25 24 construction vtable for
+0x140b8 12 10 vtable for
+0x140c4 9 7 VTT for
+0x140d0 25 23 construction vtable for
 0x140ec 5 4 -in-
-0x140f4 14 13 typeinfo for
-0x14104 19 18 typeinfo name for
-0x14118 17 16 typeinfo fn for
-0x1412c 22 21 non-virtual thunk to
-0x14144 18 17 virtual thunk to
-0x14158 27 26 covariant return thunk to
-0x14174 16 15 java Class for
-0x14184 20 19 guard variable for
-0x14198 23 22 TLS init function for
-0x141b0 26 25 TLS wrapper function for
+0x140f4 14 12 typeinfo for
+0x14104 19 17 typeinfo name for
+0x14118 17 15 typeinfo fn for
+0x1412c 22 20 non-virtual thunk to
+0x14144 18 16 virtual thunk to
+0x14158 27 25 covariant return thunk to
+0x14174 16 14 java Class for
+0x14184 20 18 guard variable for
+0x14198 23 21 TLS init function for
+0x141b0 26 24 TLS wrapper function for
 0x141cc 22 21 reference temporary #
-0x141e4 6 5  for
-0x141ec 18 17 hidden alias for
-0x14200 23 22 transaction clone for
-0x14218 27 26 non-transaction clone for
-0x14234 6 5 _Sat
+0x141e4 6 4  for
+0x141ec 18 16 hidden alias for
+0x14200 23 21 transaction clone for
+0x14218 27 25 non-transaction clone for
+0x14234 6 4 _Sat
 0x1423c 7 6 _Accum
 0x14244 7 6 _Fract
 0x14250 9 8 operator
-0x1425c 10 9 operator
-0x14278 5 4 new
+0x1425c 10 8 operator
+0x14278 5 3 new
 0x1428c 6 5 false
 0x14294 5 4 true
-0x1429c 15 14 java resource
+0x1429c 15 13 java resource
 0x142ac 11 10 decltype (
 0x142bc 5 4 this
 0x142c4 7 6 {parm#
-0x142cc 30 29 global constructors keyed to
-0x142ec 29 28 global destructors keyed to
+0x142cc 30 28 global constructors keyed to
+0x142ec 29 27 global destructors keyed to
 0x1430c 9 8 {lambda(
 0x1431c 15 14 {unnamed type#
-0x1432c 9 8  [clone
+0x1432c 9 7  [clone
 0x1433c 10 9  restrict
 0x14348 10 9  volatile
 0x14354 7 6  const
-0x14360 9 8 complex
-0x1436c 11 10 imaginary
+0x14360 9 7 complex
+0x1436c 11 9 imaginary
 0x1437c 11 10  __vector(
 0x1438c 15 14 std::allocator
 0x1439c 10 9 allocator
@@ -1118,18 +1118,18 @@ pthread_mutex_unlock
 0x144c8 14 13 std::iostream
 0x144d8 51 50 std::basic_iostream<char, std::char_traits<char> >
 0x1450c 15 14 basic_iostream
-0x1453c 9 8 alignof
+0x1453c 9 7 alignof
 0x14550 11 10 const_cast
-0x1457c 10 9 delete[]
+0x1457c 10 8 delete[]
 0x1458c 13 12 dynamic_cast
-0x145a8 8 7 delete
-0x145fc 12 11 operator""
+0x145a8 8 6 delete
+0x145fc 12 10 operator""
 0x14640 6 5 new[]
 0x146bc 17 16 reinterpret_cast
 0x146e4 12 11 static_cast
-0x146f0 8 7 sizeof
+0x146f0 8 6 sizeof
 0x14700 6 5 throw
-0x1470c 7 6 throw
+0x1470c 7 5 throw
 0x14714 12 11 signed char
 0x14720 5 4 bool
 0x14728 8 7 boolean

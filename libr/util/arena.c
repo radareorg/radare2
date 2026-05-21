@@ -237,7 +237,9 @@ R_API char *r_arena_push_str(RArena *arena, const char *str) {
 	R_RETURN_VAL_IF_FAIL (arena && str, NULL);
 	size_t len = strlen (str);
 	char *copy = (char *)r_arena_alloc (arena, len + 1);
-	memcpy (copy, str, len + 1); // Include null terminator
+	if (copy) {
+		memcpy (copy, str, len + 1); // Include null terminator
+	}
 
 	return copy;
 }

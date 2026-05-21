@@ -9,8 +9,17 @@ R_LIB_VERSION (r_flag);
 #define IS_FI_NOTIN_SPACE(f, i) (r_flag_space_cur (f) && (i)->space != r_flag_space_cur (f))
 #define IS_FI_IN_SPACE(fi, sp) (!(sp) || (fi)->space == (sp))
 #define STRDUP_OR_NULL(s) (!R_STR_ISEMPTY (s)? strdup (s): NULL)
+#define FLAG_NAME_STACK_BUFSZ 1024
 
 static bool flag_count_foreach(RFlagItem *fi, void *user);
+
+typedef struct r_flag_filtered_name_t {
+	const char *original;
+	const char *name;
+	char *heap;
+	bool filtered;
+	char stack[FLAG_NAME_STACK_BUFSZ];
+} RFlagFilteredName;
 
 static const char *str_callback(RNum *user, ut64 addr, bool *ok) {
 	if (ok) {
@@ -77,12 +86,6 @@ static void free_item_realname(RFlagItem *item) {
 	}
 }
 
-static void free_item_name(RFlagItem *item) {
-	if (item->name != item->realname) {
-		R_FREE (item->name);
-	}
-}
-
 #if 0
 return the list of flag at the nearest position:
 dir == -1 -> result <= addr
@@ -130,25 +133,55 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 	return res;
 }
 
-static char *filter_item_name(const char * R_NONNULL name) {
-	R_RETURN_VAL_IF_FAIL (name, NULL);
+static bool filter_item_name(RFlagFilteredName *filtered, const char * R_NONNULL name) {
+	R_RETURN_VAL_IF_FAIL (filtered && name, false);
+	filtered->original = name;
+	filtered->name = NULL;
+	filtered->heap = NULL;
+	filtered->filtered = false;
 	if (r_name_check (name)) {
-		return strdup (name);
+		filtered->name = name;
+		return true;
 	}
-	char *res = strdup (name);
-	if (R_LIKELY (res)) {
-		r_str_trim (res);
-		r_name_filter (res, 0);
+	const size_t len = strlen (name);
+	char *res;
+	if (len < sizeof (filtered->stack)) {
+		res = filtered->stack;
+		memcpy (res, name, len + 1);
+	} else {
+		res = strdup (name);
+		if (!res) {
+			return false;
+		}
+		filtered->heap = res;
 	}
-	return res;
+	r_str_trim (res);
+	r_name_filter (res, 0);
+	filtered->name = res;
+	filtered->filtered = true;
+	return true;
 }
 
-static void set_name(RFlagItem *item, char *name) {
-	R_RETURN_IF_FAIL (item && name);
-	free_item_name (item);
-	item->name = name;
+static void filtered_item_name_fini(RFlagFilteredName *filtered) {
+	free (filtered->heap);
+}
+
+static char *push_filtered_item_name(RFlag *f, const RFlagFilteredName *filtered) {
+	R_RETURN_VAL_IF_FAIL (f && f->names && filtered && filtered->original, NULL);
+	char *pooled = r_arena_push_str (f->names, filtered->original);
+	if (pooled && filtered->filtered) {
+		r_str_trim (pooled);
+		r_name_filter (pooled, 0);
+	}
+	return pooled;
+}
+
+static void set_name(RFlagItem *item, char *pooled_name) {
+	R_RETURN_IF_FAIL (item && pooled_name);
 	free_item_realname (item);
-	item->realname = item->name;
+	item->name = pooled_name;
+	item->name_pooled = true;
+	item->realname = pooled_name;
 }
 
 static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is_new, bool force) {
@@ -167,21 +200,27 @@ static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is
 	return false;
 }
 
-static bool set_flag_item_name(RFlag *f, RFlagItem *item, char *fname, bool force) {
-	R_RETURN_VAL_IF_FAIL (f && item && fname, false);
-	if (!force && item->name && !strcmp (item->name, fname)) {
-		free (fname);
+static bool set_flag_item_name(RFlag *f, RFlagItem *item, const RFlagFilteredName *fname, bool force R_UNUSED) {
+	R_RETURN_VAL_IF_FAIL (f && f->names && item && fname && fname->name, false);
+	if (item->name && !strcmp (item->name, fname->name)) {
+		return false;
+	}
+	RFlagItem *existing = ht_pp_find (f->ht_name, fname->name, NULL);
+	if (existing && existing != item) {
+		return false;
+	}
+	char *pooled = push_filtered_item_name (f, fname);
+	if (!pooled) {
 		return false;
 	}
 	bool res = (item->name)
-		? ht_pp_update_key (f->ht_name, item->name, fname)
-		: ht_pp_insert (f->ht_name, fname, item);
+		? ht_pp_update_key (f->ht_name, item->name, pooled)
+		: ht_pp_insert (f->ht_name, pooled, item);
 	if (res) {
-		set_name (item, fname);
+		set_name (item, pooled);
 		R_DIRTY_SET (f);
 		return true;
 	}
-	free (fname);
 	return false;
 }
 
@@ -190,15 +229,37 @@ static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname
 	if (!force && item->name == newname) {
 		return false;
 	}
-	char *fname = filter_item_name (newname);
-	return fname? set_flag_item_name (f, item, fname, force): false;
+	RFlagFilteredName fname;
+	if (!filter_item_name (&fname, newname)) {
+		return false;
+	}
+	if (!r_name_check (fname.name)) {
+		filtered_item_name_fini (&fname);
+		return false;
+	}
+	bool res = set_flag_item_name (f, item, &fname, force);
+	filtered_item_name_fini (&fname);
+	return res;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
 	if (kv) {
-		free (kv->key);
 		r_flag_item_free (kv->value);
 	}
+}
+
+static HtPP *flag_ht_name_new(void) {
+	HtPPOptions opt = {
+		.cmp = (HtPPListComparator)strcmp,
+		.hashfn = (HtPPHashFunction)sdb_hash,
+		.dupkey = NULL,
+		.dupvalue = NULL,
+		.calcsizeK = (HtPPCalcSizeK)strlen,
+		.calcsizeV = NULL,
+		.freefn = ht_free_flag,
+		.elem_size = sizeof (HtPPKv),
+	};
+	return ht_pp_new_opt (&opt);
 }
 
 static void ht_free_meta(HtUPKv *kv) {
@@ -247,7 +308,13 @@ R_API RFlag *r_flag_new(void) {
 	f->base = 0;
 	f->zones = r_list_newf (r_flag_zone_item_free);
 	f->tags = sdb_new0 ();
-	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+	f->names = r_arena_new ();
+	if (!f->names) {
+		r_flag_free (f);
+		return NULL;
+	}
+	f->names->default_alignment = 1;
+	f->ht_name = flag_ht_name_new ();
 	f->ht_meta = ht_up_new (NULL, ht_free_meta, NULL);
 	f->by_addr = r_skiplist_new (flag_skiplist_free, flag_skiplist_cmp);
 	new_spaces (f);
@@ -272,9 +339,10 @@ R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 
 R_API void r_flag_item_free(RFlagItem *fi) {
 	if (R_LIKELY (fi)) {
-		/* release only one of the two pointers if they are the same */
-		free_item_name (fi);
-		free (fi->realname);
+		free_item_realname (fi);
+		if (!fi->name_pooled) {
+			free (fi->name);
+		}
 		free (fi->rawname);
 		free (fi);
 	}
@@ -291,6 +359,7 @@ R_API void r_flag_free(RFlag *f) {
 		r_spaces_fini (&f->spaces);
 		r_num_free (f->num);
 		r_list_free (f->zones);
+		r_arena_free (f->names);
 		free (f);
 	}
 }
@@ -842,21 +911,21 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 		addr &= f->mask;
 	}
 	bool is_new = false;
-	char *itemname = filter_item_name (name);
-	if (!itemname) {
+	RFlagFilteredName itemname;
+	if (!filter_item_name (&itemname, name)) {
 		return NULL;
 	}
 	// this should never happen because the name is filtered before..
-	if (!r_name_check (itemname)) {
+	if (!r_name_check (itemname.name)) {
 		R_LOG_ERROR ("Invalid flag name '%s'", name);
-		free (itemname);
+		filtered_item_name_fini (&itemname);
 		return NULL;
 	}
 
-	RFlagItem *item = r_flag_get (f, itemname);
+	RFlagItem *item = r_flag_get (f, itemname.name);
 	if (item && item->addr == addr) {
 		item->size = size;
-		free (itemname);
+		filtered_item_name_fini (&itemname);
 		return item;
 	}
 
@@ -899,7 +968,8 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	item->size = size;
 
 	update_flag_item_addr (f, item, addr + f->base, is_new, true);
-	set_flag_item_name (f, item, itemname, true);
+	set_flag_item_name (f, item, &itemname, true);
+	filtered_item_name_fini (&itemname);
 	return item;
 }
 
@@ -1096,7 +1166,8 @@ R_API bool r_flag_unset_name(RFlag *f, const char *name) {
 R_API void r_flag_unset_all(RFlag *f) {
 	R_RETURN_IF_FAIL (f);
 	ht_pp_free (f->ht_name);
-	f->ht_name = ht_pp_new (NULL, ht_free_flag, NULL);
+	f->ht_name = flag_ht_name_new ();
+	r_arena_reset (f->names);
 	r_skiplist_purge (f->by_addr);
 	r_spaces_fini (&f->spaces);
 	new_spaces (f);
