@@ -111,6 +111,7 @@ R_API void r_flag_del_meta(RFlag *f, ut32 id);
 R_API void r_flag_bind(RFlag *io, RFlagBind *bnd);
 R_API RFlag *r_flag_new(void);
 R_API void r_flag_free(RFlag *f);
+R_API void r_flag_reserve(RFlag *f, ut64 count);
 R_API char *r_flag_list(RFlag *f, int rad, const char *pfx);
 R_API bool r_flag_exist_at(RFlag *f, const char *flag_prefix, ut16 fp_size, ut64 addr);
 R_API RFlagItem *r_flag_get(RFlag *f, const char *name);

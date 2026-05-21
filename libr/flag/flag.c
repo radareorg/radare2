@@ -322,6 +322,37 @@ R_API RFlag *r_flag_new(void) {
 	return f;
 }
 
+static bool flag_ht_migrate(void *user, const void *k, const void *v) {
+	HtPPKv kv = {0};
+	kv.key = (void *)k;
+	kv.key_len = (ut32)strlen ((const char *)k);
+	kv.value = (void *)v;
+	ht_pp_insert_kv ((HtPP *)user, &kv, false);
+	return true;
+}
+
+R_API void r_flag_reserve(RFlag *f, ut64 count) {
+	R_RETURN_IF_FAIL (f && f->ht_name);
+	HtPP *old = f->ht_name;
+	if ((ut64)old->count >= count) {
+		return;
+	}
+	ut64 desired = (ut64)old->count + count;
+	desired += (desired >> 3) + 16;
+	if (desired <= (ut64)old->size || desired > UT32_MAX) {
+		return;
+	}
+	HtPP *nh = ht_pp_new_size ((ut32)desired, NULL, ht_free_flag, NULL);
+	if (!nh) {
+		return;
+	}
+	nh->opt.dupkey = NULL;
+	ht_pp_foreach (old, flag_ht_migrate, nh);
+	old->opt.freefn = NULL;
+	ht_pp_free (old);
+	f->ht_name = nh;
+}
+
 R_API RFlagItem *r_flag_item_clone(RFlagItem *item) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
 
