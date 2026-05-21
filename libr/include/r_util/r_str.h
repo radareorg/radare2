@@ -89,6 +89,7 @@ R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
 
 // str
 R_API char *r_str_repeat(const char *ch, int sz);
+R_API char *r_str_font(const char *s);
 R_API char *r_str_pad(char *pad, size_t padsz, const char ch, int sz);
 
 R_API const char *r_str_rstr(const char *base, const char *p);
