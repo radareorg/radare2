@@ -89,6 +89,7 @@ R_API RCharsetRune *search_from_char(RCharsetRune *rcsr, const ut8 *ch);
 
 // str
 R_API char *r_str_repeat(const char *ch, int sz);
+R_API char *r_str_font(const char *s, const char *family);
 R_API char *r_str_pad(char *pad, size_t padsz, const char ch, int sz);
 
 R_API const char *r_str_rstr(const char *base, const char *p);
@@ -335,6 +336,9 @@ R_API const char *r_str_rsep(const char *base, const char *p, const char *sep);
 R_API char *r_str_donut(int size);
 R_API char *r_str_version(const char *program);
 R_API char *r_str_ss(const char* msg, const char *nl, int cs);
+
+R_API char *r_font_render(const char *s, const char *family);
+R_API const char *r_font_name(int i);
 
 R_API char *r_str_after(char *s, char c);
 R_API int r_str_printf(char * R_NONNULL buffer, size_t buffer_size, const char * R_NONNULL format, ...);

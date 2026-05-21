@@ -870,12 +870,28 @@ static char *get_color(RCons *cons, ut8 ch) {
 	return res;
 }
 
+static char *core_font_render_cfg(RCore *core, const char *key, const char *s) {
+	const char *font = r_config_get (core->config, key);
+	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
+}
+
+static bool core_strbuf_append_font_cfg(RCore *core, RStrBuf *sb, const char *key, const char *s) {
+	char *rendered = core_font_render_cfg (core, key, s);
+	bool ok = r_strbuf_append (sb, rendered? rendered: s);
+	free (rendered);
+	return ok;
+}
+
 static void append_section_addr_prefix(RCore *core, ut64 at, bool show_section, bool show_offset, RStrBuf *sb) {
 	if (show_section) {
 		r_print_section_strbuf (core->print, sb, at);
 	}
 	if (show_offset) {
-		r_print_addr_strbuf (core->print, sb, at);
+		RStrBuf asb;
+		r_strbuf_init (&asb);
+		r_print_addr_strbuf (core->print, &asb, at);
+		core_strbuf_append_font_cfg (core, sb, "scr.font.addr", r_strbuf_get (&asb));
+		r_strbuf_fini (&asb);
 	}
 }
 
@@ -2716,7 +2732,8 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	}
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
-	char **note;
+	char **note = NULL;
+	ut8 *note_type = NULL;
 	bool html = r_config_get_b (core->config, "scr.html");
 	int nb_cons_cols;
 	bool compact = false;
@@ -2741,6 +2758,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 	note = calloc (nb_cols, sizeof (char *));
 	if (!note) {
+		goto cleanup;
+	}
+	note_type = calloc (nb_cols, sizeof (ut8));
+	if (!note_type) {
 		goto cleanup;
 	}
 
@@ -2793,7 +2814,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			const char *name = r_core_get_section_name (core, ea);
 			r_strbuf_appendf (sbytes, "%20s ", name);
 		}
-		r_strbuf_appendf (sbytes, "0x%08" PFMT64x, ea);
+		char addrbuf[64];
+		snprintf (addrbuf, sizeof (addrbuf), "0x%08" PFMT64x, ea);
+		char *rendered_addr = core_font_render_cfg (core, "scr.font.addr", addrbuf);
+		r_strbuf_append (sbytes, rendered_addr? rendered_addr: addrbuf);
+		free (rendered_addr);
 		if (usecolor) {
 			r_strbuf_append (sbytes, Color_RESET);
 		}
@@ -2802,6 +2827,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		for (j = 0; j < nb_cols; j++) {
 			setcolor = true;
 			R_FREE (note[j]);
+			note_type[j] = 0;
 
 			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
 			RIntervalNode *meta_node = r_meta_get_in (core->anal, ea + j, R_META_TYPE_FORMAT);
@@ -2819,6 +2845,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
 				note[j] = r_str_newf (";%s", comment);
+				note_type[j] = 1;
 				marks = true;
 			}
 			// collect functions
@@ -2899,9 +2926,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				if (name) {
 					free (note[j]);
 					note[j] = r_str_prepend (strdup (name), "/");
+					note_type[j] = 2;
 				} else {
 					free (note[j]);
 					note[j] = NULL;
+					note_type[j] = 0;
 				}
 				marks = true;
 				color_idx++;
@@ -3005,6 +3034,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			int hasline = 0;
 			int out_sz = nb_cons_cols + 20;
 			char *out = calloc (out_sz, sizeof (char));
+			ut8 *out_type = calloc (out_sz, sizeof (ut8));
+			if (!out || !out_type) {
+				free (out);
+				free (out_type);
+				goto print_row;
+			}
 			memset (out, ' ', nb_cons_cols - 1);
 			for (j = 0; j < nb_cols; j++) {
 				if (note[j]) {
@@ -3023,19 +3058,40 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						out[off + sz - 2] = '.';
 						out[off + sz - 1] = '.';
 					}
+					memset (out_type + off, note_type[j], sz);
 					hasline = (out[off] != ' ');
 					R_FREE (note[j]);
+					note_type[j] = 0;
 				}
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
 				r_cons_print (core->cons, addrpad);
-				r_cons_print (core->cons, out + 1);
+				char *s = out + 1;
+				size_t slen = strlen (s);
+				size_t k = 0;
+				while (k < slen) {
+					ut8 type = out_type[k + 1];
+					size_t next = k + 1;
+					while (next < slen && out_type[next + 1] == type) {
+						next++;
+					}
+					char tmp = s[next];
+					s[next] = 0;
+					const char *font = type == 2? "scr.font.flag": type == 1? "scr.font.cmt": NULL;
+					char *rendered = font? core_font_render_cfg (core, font, s + k): NULL;
+					r_cons_print (core->cons, rendered? rendered: s + k);
+					free (rendered);
+					s[next] = tmp;
+					k = next;
+				}
 				r_cons_newline (core->cons);
 			}
 			marks = false;
 			free (out);
+			free (out_type);
 		}
+print_row:
 		r_cons_print (core->cons, r_strbuf_get (sbytes));
 		r_cons_print (core->cons, r_strbuf_get (schars));
 
@@ -3043,7 +3099,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			for (j = 0; j < nb_cols; j++) {
 				char *comment = core->print->get_comments (core->print->user, addr + j);
 				if (comment) {
-					r_cons_printf (core->cons, " ; %s", comment);
+					char *rendered = core_font_render_cfg (core, "scr.font.cmt", comment);
+					r_cons_printf (core->cons, " ; %s", rendered? rendered: comment);
+					free (rendered);
 					free (comment);
 				}
 			}
@@ -3053,8 +3111,14 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		addr += nb_cols;
 	}
 
-	free (note);
 cleanup:
+	if (note) {
+		for (i = 0; i < nb_cols; i++) {
+			R_FREE (note[i]);
+		}
+		free (note);
+	}
+	free (note_type);
 	r_strbuf_free (sbytes);
 	r_strbuf_free (schars);
 	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {

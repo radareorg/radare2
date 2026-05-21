@@ -619,6 +619,35 @@ static bool cb_scr_prompt_mode(void *user, void *data) {
 	return true;
 }
 
+static void add_font_options(RConfigNode *node) {
+	int i;
+	const char *name;
+	for (i = 0; (name = r_font_name (i)); i++) {
+		r_config_node_add_option (node, name);
+	}
+}
+
+static bool cb_scr_font(void *user, void *data) {
+	RConfigNode *node = (RConfigNode *)data;
+	if (node->value && (!strcmp (node->value, "?") || !strcmp (node->value, "??"))) {
+		RCore *core = (RCore *)user;
+		int i;
+		const char *name;
+		const bool samples = node->value[1] == '?';
+		for (i = 0; (name = r_font_name (i)); i++) {
+			if (samples) {
+				char *sample = r_font_render ("The quick brown fox jumps 13 times over 42 lazy dogs", name);
+				r_cons_printf (core->cons, "%-22s %s\n", name, r_str_get (sample));
+				free (sample);
+			} else {
+				r_cons_println (core->cons, name);
+			}
+		}
+		return false;
+	}
+	return true;
+}
+
 static bool cb_scr_wideoff(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
@@ -4878,6 +4907,21 @@ R_API int r_core_config_init(RCore *core) {
 	SETB ("scr.cursor.limit", "true", "limit print cursor within screen boundaries");
 	SETS ("scr.layout", "", "name of the selected panels layout to load as default");
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "emulate console break (^C) when a word is printed (useful for pD)");
+	n = NODECB ("scr.font.asm", "", &cb_scr_font);
+	SETDESC (n, "font family for disassembly text (use ? to list)");
+	add_font_options (n);
+	n = NODECB ("scr.font.addr", "", &cb_scr_font);
+	SETDESC (n, "font family for addresses (use ? to list)");
+	add_font_options (n);
+	n = NODECB ("scr.font.cmt", "", &cb_scr_font);
+	SETDESC (n, "font family for comments (use ? to list)");
+	add_font_options (n);
+	n = NODECB ("scr.font.flag", "", &cb_scr_font);
+	SETDESC (n, "font family for flags (use ? to list)");
+	add_font_options (n);
+	n = NODECB ("scr.font.prompt", "", &cb_scr_font);
+	SETDESC (n, "font family for the prompt (use ? to list)");
+	add_font_options (n);
 	SETCB ("scr.breaklines", "false", &cb_breaklines, "break lines in Visual instead of truncating them");
 	SETCB ("scr.gadgets", "true", &cb_scr_gadgets, "run pg in prompt, visual and panels");
 	SETB ("scr.panelborder", "false", "specify panels border active area (0 by default)");

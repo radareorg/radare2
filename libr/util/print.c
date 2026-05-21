@@ -455,6 +455,17 @@ static int r_print_addr_tostring(RPrint *p, ut64 addr, char *buf, size_t buf_siz
 	return snprintf (buf, buf_size, "0x%08" PFMT64x "%c", addr, ch);
 }
 
+static char *r_print_font_render_cfg(RPrint *p, const char *key, const char *s) {
+	const char *font = (p && p->coreb.cfgGet)? p->coreb.cfgGet (p->coreb.core, key): NULL;
+	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
+}
+
+static void r_print_font_print_cfg(RPrint *p, const char *key, const char *s) {
+	char *rendered = r_print_font_render_cfg (p, key, s);
+	r_print_printf (p, "%s", rendered? rendered: s);
+	free (rendered);
+}
+
 R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
 	R_RETURN_VAL_IF_FAIL (sb, false);
 	char buf[64];
@@ -465,7 +476,7 @@ R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
 static void r_print_addr(RPrint *p, ut64 addr) {
 	char buf[64];
 	r_print_addr_tostring (p, addr, buf, sizeof (buf));
-	r_print_printf (p, "%s", buf);
+	r_print_font_print_cfg (p, "scr.font.addr", buf);
 }
 
 static int print_offset_len(ut64 off, bool with_delta) {
@@ -1200,7 +1211,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					r_print_printf (p, "%s", " ");
 				}
 				if (!hex_style) {
-					r_print_printf (p, "%s", " comment");
+					r_print_font_print_cfg (p, "scr.font.cmt", " comment");
 				}
 			}
 			r_print_printf (p, "%s", "\n");
@@ -1619,8 +1630,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						a = p->offname (p->user, addr + j);
 						if (p->colorfor && R_STR_ISNOTEMPTY (a)) {
 							const char *color = p->colorfor (p->user, addr + j, addr + j, true);
-							r_print_printf (p, "%s  ; %s%s", r_str_get (color), a,
-									color ? Color_RESET : "");
+							r_print_printf (p, "%s  ; ", r_str_get (color));
+							r_print_font_print_cfg (p, "scr.font.flag", a);
+							if (color) {
+								r_print_printf (p, "%s", Color_RESET);
+							}
 						}
 					}
 					char *comment = p->get_comments (p->user, addr + j);
@@ -1643,11 +1657,13 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 									*nl = 0;
 								}
 								if (first) {
-									r_print_printf (p, "%s 2; %s", a, q);
+									r_print_printf (p, "%s 2; ", a);
+									r_print_font_print_cfg (p, "scr.font.cmt", q);
 									first = false;
 								} else {
 									char *a = r_str_pad (NULL, 0, ' ', 8 + (p->cols * 4));
-									r_print_printf (p, "%s; %s", a, q);
+									r_print_printf (p, "%s; ", a);
+									r_print_font_print_cfg (p, "scr.font.cmt", q);
 									free (a);
 								}
 						// 		r_print_printf (p, "\n");
@@ -1659,7 +1675,8 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							}
 							free (s);
 						} else {
-							r_print_printf (p, "%s ; %s", a, comment);
+							r_print_printf (p, "%s ; ", a);
+							r_print_font_print_cfg (p, "scr.font.cmt", comment);
 							// r_print_printf (p, "\n");
 						}
 						free (comment);
