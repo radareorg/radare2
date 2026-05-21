@@ -744,8 +744,16 @@ bool test_r_str_font(void) {
 	mu_assert_streq (res, "\xF0\x9D\x90\x80", "default bold font");
 	free (res);
 
+	res = r_str_font ("A", "bold,ansiitalic,invert");
+	mu_assert_streq (res, "\x1b[3m\x1b[7m\xF0\x9D\x90\x80\x1b[27m\x1b[23m", "combined font attributes");
+	free (res);
+
 	res = r_str_font ("A <italic>A</italic>", "bold");
 	mu_assert_streq (res, "\xF0\x9D\x90\x80 \xF0\x9D\x90\x80", "default font ignores inline tags");
+	free (res);
+
+	res = r_str_font ("<ansistrike>A</ansistrike>", NULL);
+	mu_assert_streq (res, "\x1b[9mA\x1b[29m", "inline ansi attribute");
 	free (res);
 
 	res = r_str_font ("A", "unknown");

@@ -1,6 +1,7 @@
 /* radare2 - LGPL - Copyright 2026 - pancake */
 
 #include <r_util.h>
+#include <r_cons.h>
 
 enum {
 	BOLD,
@@ -22,20 +23,55 @@ enum {
 	SMALLCAPS
 };
 
-static const char *styles[] = {
+enum {
+	ANSI_BOLD = 1u << 0,
+	ANSI_DIM = 1u << 1,
+	ANSI_ITALIC = 1u << 2,
+	ANSI_UNDERLINE = 1u << 3,
+	ANSI_BLINK = 1u << 4,
+	ANSI_STRIKE = 1u << 5,
+	ANSI_INVERT = 1u << 6
+};
+
+typedef struct r_font_style_t {
+	int font;
+	ut32 ansi;
+} RFontStyle;
+
+static const char *font_styles[] = {
 	"bold", "italic", "script", "doublestruck", "underline", "strikethrough", "fraktur", "bolditalic", "sansserif", "sansserifitalic", "monospace", "boldscript", "boldfraktur", "sansserifbold", "sansserifbolditalic", "openface", "smallcaps"
 };
 
+static const struct {
+	const char *name;
+	ut32 attr;
+	const char *begin;
+	const char *end;
+} ansi_styles[] = {
+	{ "ansibold", ANSI_BOLD, Color_BOLD, Color_BOLD_RESET },
+	{ "ansidim", ANSI_DIM, "\x1b[2m", Color_BOLD_RESET },
+	{ "ansiitalic", ANSI_ITALIC, Color_ITALIC, Color_ITALIC_RESET },
+	{ "ansiunderline", ANSI_UNDERLINE, "\x1b[4m", "\x1b[24m" },
+	{ "ansiblink", ANSI_BLINK, Color_BLINK, "\x1b[25m" },
+	{ "ansistrike", ANSI_STRIKE, Color_STRIKE, Color_STRIKE_RESET },
+	{ "invert", ANSI_INVERT, Color_INVERT, Color_INVERT_RESET },
+	{ "ansiinvert", ANSI_INVERT, Color_INVERT, Color_INVERT_RESET }
+};
+
 R_API const char *r_font_name(int i) {
-	if (i >= 0 && i < (int)R_ARRAY_SIZE (styles)) {
-		return styles[i];
+	if (i >= 0 && i < (int)R_ARRAY_SIZE (font_styles)) {
+		return font_styles[i];
+	}
+	i -= R_ARRAY_SIZE (font_styles);
+	if (i >= 0 && i < (int)R_ARRAY_SIZE (ansi_styles)) {
+		return ansi_styles[i].name;
 	}
 	return NULL;
 }
 static int style_id(const char *s, size_t n) {
 	int i;
-	for (i = 0; i < (int)R_ARRAY_SIZE (styles); i++) {
-		if (strlen (styles[i]) == n && !memcmp (styles[i], s, n)) {
+	for (i = 0; i < (int)R_ARRAY_SIZE (font_styles); i++) {
+		if (strlen (font_styles[i]) == n && !memcmp (font_styles[i], s, n)) {
 			return i;
 		}
 	}
@@ -43,6 +79,72 @@ static int style_id(const char *s, size_t n) {
 		return SANSSERIFBOLD;
 	}
 	return -1;
+}
+
+static ut32 ansi_style_id(const char *s, size_t n) {
+	int i;
+	for (i = 0; i < (int)R_ARRAY_SIZE (ansi_styles); i++) {
+		if (strlen (ansi_styles[i].name) == n && !memcmp (ansi_styles[i].name, s, n)) {
+			return ansi_styles[i].attr;
+		}
+	}
+	return 0;
+}
+
+static void trim_style_token(const char **s, size_t *n) {
+	while (*n > 0 && isspace ((unsigned char)**s)) {
+		(*s)++;
+		(*n)--;
+	}
+	while (*n > 0 && isspace ((unsigned char)(*s)[*n - 1])) {
+		(*n)--;
+	}
+}
+
+static RFontStyle parse_style(const char *family) {
+	RFontStyle fs = { .font = -1, .ansi = 0 };
+	const char *p = family;
+	while (p && *p) {
+		const char *comma = strchr (p, ',');
+		const char *tok = p;
+		size_t n = comma? (size_t)(comma - p): strlen (p);
+		trim_style_token (&tok, &n);
+		if (n > 0) {
+			int font = style_id (tok, n);
+			if (font >= 0) {
+				fs.font = font;
+			} else {
+				fs.ansi |= ansi_style_id (tok, n);
+			}
+		}
+		p = comma? comma + 1: NULL;
+	}
+	return fs;
+}
+
+static bool append_ansi_begin(RStrBuf *sb, ut32 ansi) {
+	int i;
+	ut32 done = 0;
+	for (i = 0; i < (int)R_ARRAY_SIZE (ansi_styles); i++) {
+		ut32 attr = ansi_styles[i].attr;
+		if ((ansi & attr) && !(done & attr) && !r_strbuf_append (sb, ansi_styles[i].begin)) {
+			return false;
+		}
+		done |= attr;
+	}
+	return true;
+}
+
+static void append_ansi_end(RStrBuf *sb, ut32 ansi) {
+	int i;
+	ut32 done = 0;
+	for (i = (int)R_ARRAY_SIZE (ansi_styles) - 1; i >= 0; i--) {
+		ut32 attr = ansi_styles[i].attr;
+		if ((ansi & attr) && !(done & attr)) {
+			r_strbuf_append (sb, ansi_styles[i].end);
+		}
+		done |= attr;
+	}
 }
 
 static int eqci(const char *a, const char *b, size_t n) {
@@ -266,11 +368,16 @@ static const char *closing(const char *s, const char *tag, size_t n) {
 R_API char *r_font_render(const char *s, const char *family) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	RStrBuf *sb = r_strbuf_new (NULL);
-	int fst = family? style_id (family, strlen (family)): -1;
+	RFontStyle fs = family? parse_style (family): (RFontStyle) { .font = -1, .ansi = 0 };
+	int fst = fs.font;
 	if (family) {
+		if (!append_ansi_begin (sb, fs.ansi)) {
+			goto err;
+		}
 		if (!append_text_skipping_tags (sb, s, fst)) {
 			goto err;
 		}
+		append_ansi_end (sb, fs.ansi);
 		return r_strbuf_drain (sb);
 	}
 	while (*s) {
@@ -300,10 +407,15 @@ R_API char *r_font_render(const char *s, const char *family) {
 				const char *end = closing (body, s + 1, (size_t) (q - s - 1));
 				if (end) {
 					int st = style_id (s + 1, (size_t) (q - s - 1));
+					ut32 ansi = ansi_style_id (s + 1, (size_t) (q - s - 1));
 					if (st < 0) {
+						if (!append_ansi_begin (sb, ansi)) {
+							goto err;
+						}
 						if (!append_text (sb, body, (size_t) (end - body), fst)) {
 							goto err;
 						}
+						append_ansi_end (sb, ansi);
 					} else if (!convert (body, (size_t) (end - body), st, sb)) {
 						goto err;
 					}

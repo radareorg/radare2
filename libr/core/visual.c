@@ -4331,7 +4331,10 @@ static void visual_title(RCore *core, int color) {
 			r_cons_printf ("[tab:%d/%d]", core->visual.tab, tabsCount);
 #endif
 		}
-		r_cons_print (core->cons, title);
+		const char *font = r_config_get (core->config, "scr.font.prompt");
+		char *rendered = R_STR_ISNOTEMPTY (font)? r_font_render (title, font): NULL;
+		r_cons_print (core->cons, rendered? rendered: title);
+		free (rendered);
 		free (title);
 		free (address);
 	}
