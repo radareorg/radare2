@@ -170,6 +170,12 @@ static bool convert(const char *s, size_t n, int st, RStrBuf *sb) {
 	return true;
 }
 
+static bool append_text(RStrBuf *sb, const char *s, size_t n, int st) {
+	return st < 0
+		? r_strbuf_append_n (sb, s, n)
+		: convert (s, n, st, sb);
+}
+
 static const char *closing(const char *s, const char *tag, size_t n) {
 	for (; *s; s++) {
 		if (s[0] == '<' && s[1] == '/' && eqci (s + 2, tag, n) && s[n + 2] == '>') {
@@ -179,9 +185,10 @@ static const char *closing(const char *s, const char *tag, size_t n) {
 	return NULL;
 }
 
-R_API char *r_str_font(const char *s) {
+R_API char *r_str_font(const char *s, const char *family) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	RStrBuf *sb = r_strbuf_new (NULL);
+	int fst = family? style_id (family, strlen (family)): -1;
 	while (*s) {
 		if (*s == '<' && isalpha ((unsigned char)s[1])) {
 			const char *q = s + 1;
@@ -194,7 +201,7 @@ R_API char *r_str_font(const char *s) {
 				if (end) {
 					int st = style_id (s + 1, (size_t) (q - s - 1));
 					if (st < 0) {
-						if (!r_strbuf_append_n (sb, body, (size_t) (end - body))) {
+						if (!append_text (sb, body, (size_t) (end - body), fst)) {
 							goto err;
 						}
 					} else if (!convert (body, (size_t) (end - body), st, sb)) {
@@ -205,7 +212,7 @@ R_API char *r_str_font(const char *s) {
 				}
 			}
 		}
-		if (!r_strbuf_append_n (sb, s, 1)) {
+		if (!append_text (sb, s, 1, fst)) {
 			goto err;
 		}
 		s++;

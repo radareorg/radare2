@@ -731,6 +731,29 @@ bool test_r_str_word_get0set(void) {
 	mu_end;
 }
 
+bool test_r_str_font(void) {
+	char *res = r_str_font ("A", NULL);
+	mu_assert_streq (res, "A", "plain font");
+	free (res);
+
+	res = r_str_font ("<bold>A</bold>", NULL);
+	mu_assert_streq (res, "\xF0\x9D\x90\x80", "bold tag");
+	free (res);
+
+	res = r_str_font ("A", "bold");
+	mu_assert_streq (res, "\xF0\x9D\x90\x80", "default bold font");
+	free (res);
+
+	res = r_str_font ("A <italic>A</italic>", "bold");
+	mu_assert_streq (res, "\xF0\x9D\x90\x80 \xF0\x9D\x90\xB4", "inline font overrides default");
+	free (res);
+
+	res = r_str_font ("A", "unknown");
+	mu_assert_streq (res, "A", "unknown default font");
+	free (res);
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_file);
 	mu_run_test (test_r_str_wrap);
@@ -771,6 +794,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_mem_to_binstring);
 	mu_run_test (test_r_str_ndup_zero_len);
 	mu_run_test (test_r_str_word_get0set);
+	mu_run_test (test_r_str_font);
 	return tests_passed != tests_run;
 }
 
