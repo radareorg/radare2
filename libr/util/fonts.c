@@ -26,6 +26,12 @@ static const char *styles[] = {
 	"bold", "italic", "script", "doublestruck", "underline", "strikethrough", "fraktur", "bolditalic", "sansserif", "sansserifitalic", "monospace", "boldscript", "boldfraktur", "sansseribbold", "sansserifbolditalic", "openface", "smallcaps"
 };
 
+R_API const char *r_font_name(int i) {
+	if (i >= 0 && i < (int) (sizeof (styles) / sizeof (*styles))) {
+		return styles[i];
+	}
+	return NULL;
+}
 static int style_id(const char *s, size_t n) {
 	int i;
 	for (i = 0; i < (int) (sizeof (styles) / sizeof (*styles)); i++) {
@@ -185,7 +191,7 @@ static const char *closing(const char *s, const char *tag, size_t n) {
 	return NULL;
 }
 
-R_API char *r_str_font(const char *s, const char *family) {
+R_API char *r_font_render(const char *s, const char *family) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	RStrBuf *sb = r_strbuf_new (NULL);
 	int fst = family? style_id (family, strlen (family)): -1;
