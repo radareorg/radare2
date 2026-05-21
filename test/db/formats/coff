@@ -225,6 +225,7 @@ EOF
 RUN
 
 NAME=coff bigobj
+ARGS=-e bin.filter=false -e bin.flags=false -e bin.relocs=false
 FILE=bins/coff/coff_bigobj.obj
 CMDS=<<EOF
 s 0x00001180
@@ -264,4 +265,3 @@ nth paddr      vaddr      bind   type size lib name                             
 0   0x00000000 0x00075740 GLOBAL UNK  4        aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa30065
 EOF
 RUN
-

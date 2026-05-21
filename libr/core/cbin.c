@@ -432,7 +432,9 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			if (r_cons_is_breaked (core->cons)) {
 				break;
 			}
-			r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
+			if (string->size > 0) {
+				r_meta_set (core->anal, R_META_TYPE_STRING, vaddr, string->size, string->string);
+			}
 			char *str = (core->bin->prefix)
 				? r_str_newf ("%s.str.%s", core->bin->prefix, string->string)
 				: r_str_newf ("str.%s", string->string);

@@ -370,7 +370,7 @@ static void coff_section(RBinSection *ptr, const struct r_bin_coff_obj *obj, siz
 	if (obj->scn_va) {
 		ptr->vaddr = obj->scn_va[i];
 	}
-	ptr->add = true;
+	ptr->add = ptr->paddr || !(obj->scn_hdrs[i].s_flags & COFF_STYP_BSS);
 	ptr->perm = 0;
 	if (obj->scn_hdrs[i].s_flags & COFF_SCN_MEM_READ) {
 		ptr->perm |= R_PERM_R;

@@ -146,6 +146,10 @@ R_IPI char *r_coff_symbol_name(RBinCoffObj *obj, void *ptr) {
 		return NULL;
 	}
 #endif
+	if (obj->strtab && offset < obj->strtab_size) {
+		ut64 maxlen = R_MIN (obj->strtab_size - offset, sizeof (n) - 1);
+		return r_str_ndup ((const char *)obj->strtab + offset, (int)maxlen);
+	}
 	len = r_buf_read_at (obj->b, name_ptr, (ut8 *)n, sizeof (n));
 	if (len < 1) {
 		return NULL;
@@ -389,7 +393,7 @@ static bool r_bin_xcoff_init_opt_hdr(RBinCoffObj *obj) {
 #endif
 
 static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
-	int ret;
+	st64 ret;
 	size_t size;
 	ut32 f_nscns;
 
@@ -425,8 +429,12 @@ static bool r_bin_coff_init_scn_hdr(RBinCoffObj *obj) {
 	if (!obj->scn_hdrs) {
 		return false;
 	}
-	ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs,
-			obj->endian? "8c6I2S1I": "8c6i2s1i", f_nscns);
+	if (obj->endian == R_SYS_ENDIAN) {
+		ret = r_buf_read_at (obj->b, offset, (ut8 *)obj->scn_hdrs, size);
+	} else {
+		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->scn_hdrs,
+				obj->endian? "8c6I2S1I": "8c6i2s1i", f_nscns);
+	}
 	// 8 + (6*4) + (2*2) + (4) = 40
 	if (ret != size) {
 		R_FREE (obj->scn_hdrs);
@@ -487,8 +495,34 @@ static bool r_bin_xcoff_init_ldsyms(RBinCoffObj *obj) {
 	return true;
 }
 
+static bool r_bin_coff_init_strtab(RBinCoffObj *obj, ut32 f_symptr, ut32 f_nsyms, ut32 symbol_size) {
+	size_t symtab_size;
+	if (!f_symptr || !f_nsyms || r_mul_overflow ((size_t)symbol_size, (size_t)f_nsyms, &symtab_size)) {
+		return true;
+	}
+	ut64 offset = f_symptr + (ut64)symtab_size;
+	if (offset > obj->size || offset + sizeof (ut32) > obj->size) {
+		return true;
+	}
+	ut32 strtab_size = r_buf_read_ble32_at (obj->b, offset, obj->endian);
+	if (strtab_size < sizeof (ut32) || strtab_size > obj->size - offset) {
+		return true;
+	}
+	obj->strtab = malloc (strtab_size);
+	if (!obj->strtab) {
+		return false;
+	}
+	obj->strtab_size = strtab_size;
+	st64 len = r_buf_read_at (obj->b, offset, obj->strtab, strtab_size);
+	if (len != strtab_size) {
+		R_FREE (obj->strtab);
+		obj->strtab_size = 0;
+	}
+	return true;
+}
+
 static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
-	int ret;
+	st64 ret;
 	ut32 f_symptr, f_nsyms;
 	ut32 symbol_size;
 	if (obj->type == COFF_TYPE_BIGOBJ) {
@@ -535,16 +569,27 @@ static bool r_bin_coff_init_symtable(RBinCoffObj *obj) {
 	// XXX RBuf.readAt() is unsafe, so we need to trim down the f_nsyms
 	if (obj->type == COFF_TYPE_BIGOBJ) {
 		obj->bigobj_symbols = symbols;
-		const char *fmt = obj->endian? "8c2I1S2c": "8c2i1s2c";
-		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, fmt, f_nsyms);
+		if (obj->endian == R_SYS_ENDIAN) {
+			ret = r_buf_read_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, size);
+		} else {
+			const char *fmt = obj->endian? "8c2I1S2c": "8c2i1s2c";
+			ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->bigobj_symbols, fmt, f_nsyms);
+		}
 	} else {
 		obj->symbols = symbols;
-		const char *fmt = obj->endian? "8c1I2S2c": "8c1i2s2c";
-		ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, fmt, f_nsyms);
+		if (obj->endian == R_SYS_ENDIAN) {
+			ret = r_buf_read_at (obj->b, offset, (ut8 *)obj->symbols, size);
+		} else {
+			const char *fmt = obj->endian? "8c1I2S2c": "8c1i2s2c";
+			ret = r_buf_fread_at (obj->b, offset, (ut8 *)obj->symbols, fmt, f_nsyms);
+		}
 	}
 	if (ret != size) {
 		R_FREE (obj->bigobj_symbols);
 		R_FREE (obj->symbols);
+		return false;
+	}
+	if (!r_bin_coff_init_strtab (obj, f_symptr, f_nsyms, symbol_size)) {
 		return false;
 	}
 	return true;
@@ -637,6 +682,7 @@ R_IPI void r_bin_coff_free(RBinCoffObj *obj) {
 	if (obj) {
 		free (obj->sym_idx);
 		free (obj->scn_va);
+		free (obj->strtab);
 		free (obj->scn_hdrs);
 		free (obj->x_ldsyms);
 		if (obj->type == COFF_TYPE_BIGOBJ) {

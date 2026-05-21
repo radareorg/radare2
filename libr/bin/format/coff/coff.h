@@ -37,6 +37,8 @@ typedef struct r_bin_coff_obj {
 	ut32 *sym_idx;
 	ut32 sym_idx_count;
 	ut64 *scn_va;
+	ut8 *strtab;
+	ut64 strtab_size;
 } RBinCoffObj;
 
 R_IPI bool r_coff_supported_arch(const ut8 *buf); /* Reads two bytes from buf. */
