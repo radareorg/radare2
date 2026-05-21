@@ -268,6 +268,74 @@ R_API void r_bin_string_free(void *_str) {
 	}
 }
 
+R_API bool r_bin_string_set(RBinString *str, const char *s, ut32 len, int type, ut8 flags) {
+	R_RETURN_VAL_IF_FAIL (str, false);
+	if (!s) {
+		R_FREE (str->string);
+		str->text = r_strs_from_len (NULL, 0);
+		str->type = type;
+		str->flags = 0;
+		return true;
+	}
+	if (str->string && str->string != s) {
+		R_FREE (str->string);
+	}
+	if (flags & R_BIN_STRING_F_OWNED) {
+		flags |= R_BIN_STRING_F_NUL;
+	}
+	str->string = (flags & R_BIN_STRING_F_OWNED)? (char *)s: NULL;
+	str->text = r_strs_from_len (s, len);
+	str->type = type;
+	str->flags = flags;
+	return true;
+}
+
+R_API const char *r_bin_string_get(RBinString *str, ut32 *len) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	if (!str->text.a && str->string) {
+		str->text = r_strs_from (str->string);
+		str->flags |= R_BIN_STRING_F_NUL;
+	}
+	size_t slen = r_strs_len (str->text);
+	if (str->text.a && len && str->type != R_STRING_TYPE_WIDE && str->type != R_STRING_TYPE_WIDE32) {
+		*len = (ut32)R_MIN (slen, UT32_MAX);
+		return str->text.a;
+	}
+	if (str->text.a && (str->flags & R_BIN_STRING_F_NUL) && str->type != R_STRING_TYPE_WIDE && str->type != R_STRING_TYPE_WIDE32) {
+		if (len) {
+			*len = (ut32)R_MIN (slen, UT32_MAX);
+		}
+		return str->text.a;
+	}
+	if (len) {
+		*len = 0;
+	}
+	return NULL;
+}
+
+R_API char *r_bin_string_get_cstr(RBinString *str) {
+	R_RETURN_VAL_IF_FAIL (str, NULL);
+	if (!str->text.a && str->string) {
+		str->text = r_strs_from (str->string);
+		str->flags |= R_BIN_STRING_F_NUL;
+	}
+	if (!str->text.a) {
+		return strdup ("");
+	}
+	if (str->text.a && (str->flags & R_BIN_STRING_F_NUL) && str->type != R_STRING_TYPE_WIDE && str->type != R_STRING_TYPE_WIDE32) {
+		return strdup (str->text.a);
+	}
+	size_t slen = r_strs_len (str->text);
+	switch (str->type) {
+	case R_STRING_TYPE_WIDE:
+		return r_str_escape_utf16le (str->text.a, (int)slen, false, true);
+	case R_STRING_TYPE_WIDE32:
+		return r_str_escape_utf32le (str->text.a, (int)slen, false, true);
+	default:
+		return r_str_ndup (str->text.a, (int)R_MIN (slen, ST32_MAX));
+	}
+}
+
 R_API bool r_bin_open(RBin *bin, const char *file, RBinFileOptions *opt) {
 	R_RETURN_VAL_IF_FAIL (bin && bin->iob.io && opt, false);
 

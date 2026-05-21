@@ -209,6 +209,41 @@ R_API PJ *pj_ks(PJ *j, const char *k, const char *v) {
 	return j;
 }
 
+R_API PJ *pj_kss(PJ *j, const char *k, const char *v, size_t v_len) {
+	R_RETURN_VAL_IF_FAIL (j && k && v, j);
+	pj_k (j, k);
+	if (j->str_encoding != PJ_ENCODING_STR_DEFAULT) {
+		pj_comma (j);
+		if (j->str_encoding == PJ_ENCODING_STR_ARRAY) {
+			pj_raw (j, "[");
+		} else {
+			pj_raw (j, "\"");
+		}
+		char *en = r_str_encoded_json (v, (int)R_MIN (v_len, (size_t)ST32_MAX), j->str_encoding);
+		if (en) {
+			pj_raw (j, en);
+			free (en);
+		}
+		if (j->str_encoding == PJ_ENCODING_STR_ARRAY) {
+			pj_raw (j, "]");
+		} else {
+			pj_raw (j, "\"");
+		}
+	} else {
+		pj_comma (j);
+		pj_raw (j, "\"");
+		char *ev = r_str_escape_json (v, (int)R_MIN (v_len, (size_t)ST32_MAX));
+		if (ev) {
+			pj_raw (j, ev);
+			free (ev);
+		} else {
+			R_LOG_WARN ("cannot escape string");
+		}
+		pj_raw (j, "\"");
+	}
+	return j;
+}
+
 R_API PJ *pj_kb(PJ *j, const char *k, bool v) {
 	R_RETURN_VAL_IF_FAIL (j && k, j);
 	pj_k (j, k);

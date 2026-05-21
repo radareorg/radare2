@@ -755,9 +755,10 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 	RBinString *ptr;
 	RListIter *iter;
 	r_list_foreach (strings, iter, ptr) {
-		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
+		char *cstr = r_bin_string_get_cstr (ptr);
+		char *dec = cstr? (char *)r_base64_decode_dyn (cstr, -1, NULL): NULL;
 		if (dec) {
-			char *s = ptr->string;
+			const char *s = cstr;
 			for (;;) {
 				char *dec2 = (char *)r_base64_decode_dyn ((const char *)s, -1, NULL);
 				if (!dec2) {
@@ -771,12 +772,11 @@ R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
 				s = dec = dec2;
 			}
 			if (r_str_is_printable (dec) && strlen (dec) > 3) {
-				free (ptr->string);
-				ptr->string = dec;
-				ptr->type = R_STRING_TYPE_BASE64;
+				r_bin_string_set (ptr, dec, strlen (dec), R_STRING_TYPE_BASE64, R_BIN_STRING_F_OWNED);
 			} else {
 				free (dec);
 			}
 		}
+		free (cstr);
 	}
 }

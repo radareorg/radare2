@@ -922,8 +922,22 @@ static ut8 *get_imports(RCore *c, int *len) {
 }
 
 static int bs_cmp(const RBinString *a, const RBinString *b) {
-	int diff = a->length - b->length;
-	return diff == 0? strncmp (a->string, b->string, a->length): diff;
+	ut32 alen = 0;
+	ut32 blen = 0;
+	const char *as = r_bin_string_get ((RBinString *)a, &alen);
+	const char *bs = r_bin_string_get ((RBinString *)b, &blen);
+	if (!as || !bs) {
+		char *ac = r_bin_string_get_cstr ((RBinString *)a);
+		char *bc = r_bin_string_get_cstr ((RBinString *)b);
+		int ret = strcmp (r_str_get (ac), r_str_get (bc));
+		free (ac);
+		free (bc);
+		return ret;
+	}
+	if (alen != blen) {
+		return alen > blen? 1: -1;
+	}
+	return memcmp (as, bs, alen);
 }
 
 static ut8 *get_strings(RCore *c, int *len) {
@@ -938,7 +952,14 @@ static ut8 *get_strings(RCore *c, int *len) {
 
 	r_list_foreach (list, iter, str) {
 		if (!old || (old && bs_cmp (old, str) != 0)) {
-			*len += str->length + 1;
+			ut32 slen = 0;
+			if (r_bin_string_get (str, &slen)) {
+				*len += slen + 1;
+			} else {
+				char *s = r_bin_string_get_cstr (str);
+				*len += strlen (r_str_get (s)) + 1;
+				free (s);
+			}
 			old = str;
 		}
 	}
@@ -954,9 +975,18 @@ static ut8 *get_strings(RCore *c, int *len) {
 		if (old && bs_cmp (old, str) == 0) {
 			continue;
 		}
-		memcpy (ptr, str->string, str->length);
-		ptr += str->length;
+		ut32 slen = 0;
+		const char *s = r_bin_string_get (str, &slen);
+		char *cstr = NULL;
+		if (!s) {
+			cstr = r_bin_string_get_cstr (str);
+			s = r_str_get (cstr);
+			slen = strlen (s);
+		}
+		memcpy (ptr, s, slen);
+		ptr += slen;
 		*ptr++ = '\n';
+		free (cstr);
 		old = str;
 	}
 	*ptr = 0;

@@ -68,6 +68,8 @@ R_API PJ *pj_kn(PJ *j, const char *k, ut64 n);
 R_API PJ *pj_kN(PJ *j, const char *k, st64 n);
 /* literal key "name":"key" */
 R_API PJ *pj_ks(PJ *j, const char *k, const char *v);
+/* literal key "name":"key" with explicit value length */
+R_API PJ *pj_kss(PJ *j, const char *k, const char *v, size_t v_len);
 
 /* begin named array entry: "name": [...] */
 R_API PJ *pj_ka(PJ *j, const char *k);
@@ -111,4 +113,3 @@ R_API PJ *pj_b(PJ *j, bool v);
 #endif
 
 #endif
-

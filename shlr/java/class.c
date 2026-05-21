@@ -2894,9 +2894,11 @@ R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {
 			str->size = cp_obj->info.cp_utf8.length + 3;
 			str->length = cp_obj->info.cp_utf8.length;
 			if (str->size > 0) {
-				str->string = r_str_ndup ((const char *)
-								cp_obj->info.cp_utf8.bytes,
-					R_BIN_JAVA_MAXSTR);
+				char *s = r_str_ndup ((const char *)cp_obj->info.cp_utf8.bytes, R_BIN_JAVA_MAXSTR);
+				str->string = s;
+				str->text = r_strs_from (s);
+				str->type = R_STRING_TYPE_UTF8;
+				str->flags = R_BIN_STRING_F_OWNED | R_BIN_STRING_F_NUL;
 			}
 			r_list_append (strings, (void *)str);
 		}

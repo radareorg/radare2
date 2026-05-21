@@ -1688,6 +1688,7 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 			r_list_foreach (list, iter, string) {
 				ut64 vaddr = va? string->vaddr: string->paddr;
 				if (vaddr == addr || string->paddr == addr) {
+					char *str = r_bin_string_get_cstr (string);
 					if (mode & R_MODE_JSON) {
 						PJ *lpj = r_core_pj_new (core);
 						pj_o (lpj);
@@ -1697,15 +1698,16 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 						pj_ki (lpj, "size", string->size);
 						pj_ki (lpj, "length", string->length);
 						pj_ks (lpj, "type", r_bin_string_type (string->type));
-						pj_ks (lpj, "string", string->string);
+						pj_ks (lpj, "string", r_str_get (str));
 						pj_end (lpj);
 						r_cons_println (core->cons, pj_string (lpj));
 						pj_free (lpj);
 					} else if (mode & R_MODE_SIMPLE) {
-						r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr, string->size, string->length, string->string);
+						r_cons_printf (core->cons, "0x%" PFMT64x " %d %d %s\n", vaddr, string->size, string->length, r_str_get (str));
 					} else {
-						r_cons_println (core->cons, string->string);
+						r_cons_println (core->cons, r_str_get (str));
 					}
+					free (str);
 					if (local_pj) {
 						pj_free (pj);
 					}
