@@ -1,17 +1,14 @@
-Loading strings from binaries
-=============================
+# Loading strings from binaries
 
-TODO: explain bin.minstr
+## Config vars
 
-Config vars
------------
-```
+```console
 bin.strings  =  [true]  - load strings from file
 bin.rawstr   =  [false] - load strings from unknown rbin
 ```
 
-Program args
-------------
+## Program args
+
 ```
 rabin2 -z   # list strings
 rabin2 -zz  # list strings from raw binary (unknown rbin type)

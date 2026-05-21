@@ -392,7 +392,6 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 				break;
 			}
 			bs->type = str_type;
-			bs->length = runes;
 			bs->size = needle - str_start;
 			bs->ordinal = bf->string_count++;
 			if (limit > 0 && bf->string_count > limit) {
@@ -435,13 +434,16 @@ static int string_scan_range(RBinFile *bf, RList *list, int min, const ut64 from
 			ut64 maddr = bf->bo? 0: bf->loadaddr;
 			bs->vaddr = str_start - pdelta + vdelta + baddr + maddr;
 			bs->paddr = str_start + baddr;
-			bs->string = r_strbuf_drain (sb);
+			char *str = r_strbuf_drain (sb);
 			sb = r_strbuf_new ("");
+			size_t before = strlen (str);
 			if (strings_nofp) {
-				r_str_trim (bs->string); // trim spaces to ease readability
+				r_str_trim (str); // trim spaces to ease readability
 			} else {
-				r_str_trim_tail (bs->string);
+				r_str_trim_tail (str);
 			}
+			bs->string = str;
+			bs->length = runes - (before - strlen (str));
 			if (list) {
 				r_list_append (list, bs);
 				if (bf->bo) {
