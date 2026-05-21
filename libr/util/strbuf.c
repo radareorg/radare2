@@ -498,7 +498,9 @@ R_API char *r_strbuf_drain(RStrBuf *sb) {
 
 R_API char *r_strbuf_tostring(RStrBuf *sb) {
 	R_RETURN_VAL_IF_FAIL (sb, NULL);
-	return drain (sb);
+	void *tmp = drain (sb);
+	sb->ptr = tmp;
+	return tmp;
 }
 
 R_API char *r_strbuf_drain_nofree(RStrBuf *sb) {

@@ -4926,7 +4926,6 @@ dodo:
 		if (highlight_mode && highlight_sb) {
 			char *s = r_strbuf_tostring (highlight_sb);
 			r_config_set (core->config, "scr.highlight", s);
-			free (s);
 		}
 		core->print->vflush = !skip;
 		visual_refresh (core);
@@ -4935,7 +4934,6 @@ dodo:
 			char *s = r_strbuf_tostring (highlight_sb);
 			r_cons_printf (core->cons, "%s[Highlight] %s|", R_CONS_CLEAR_LINE, s);
 			r_cons_flush (core->cons);
-			free (s);
 		}
 		if (insert_mode_enabled (core)) {
 			goto dodo;
@@ -4983,7 +4981,6 @@ dodo:
 						r_strbuf_append_n (highlight_sb, (const char*)&ch, 1);
 						char *s = r_strbuf_tostring (highlight_sb);
 						r_config_set (core->config, "scr.highlight", s);
-						free (s);
 					}
 					break;
 				}
