@@ -1631,6 +1631,11 @@ static bool dex_loadcode(RBinFile *bf) {
 	}
 	dex->dexSubsystem = NULL;
 
+	ut64 want = R_MIN ((ut64)dex->header.method_size, (ut64)dex->size / 8);
+	if (want > 0) {
+		RVecRBinSymbol_reserve (&dex->symbols_vec, want);
+	}
+
 	if (dex->classes) {
 		if (!names_only) {
 			ut64 amount = sizeof (int) * dex->header.method_size;
