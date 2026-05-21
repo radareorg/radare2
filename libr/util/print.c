@@ -1630,8 +1630,11 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 						a = p->offname (p->user, addr + j);
 						if (p->colorfor && R_STR_ISNOTEMPTY (a)) {
 							const char *color = p->colorfor (p->user, addr + j, addr + j, true);
-							r_print_printf (p, "%s  ; %s%s", r_str_get (color), a,
-									color ? Color_RESET : "");
+							r_print_printf (p, "%s  ; ", r_str_get (color));
+							r_print_font_print_cfg (p, "scr.font.flag", a);
+							if (color) {
+								r_print_printf (p, "%s", Color_RESET);
+							}
 						}
 					}
 					char *comment = p->get_comments (p->user, addr + j);

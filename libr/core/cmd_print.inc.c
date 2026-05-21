@@ -2732,7 +2732,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	}
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
-	char **note;
+	char **note = NULL;
 	ut8 *note_type = NULL;
 	bool html = r_config_get_b (core->config, "scr.html");
 	int nb_cons_cols;
@@ -3111,9 +3111,14 @@ print_row:
 		addr += nb_cols;
 	}
 
-	free (note);
-	free (note_type);
 cleanup:
+	if (note) {
+		for (i = 0; i < nb_cols; i++) {
+			R_FREE (note[i]);
+		}
+		free (note);
+	}
+	free (note_type);
 	r_strbuf_free (sbytes);
 	r_strbuf_free (schars);
 	for (i = 0; i < R_ARRAY_SIZE (colors); i++) {

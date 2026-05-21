@@ -273,6 +273,11 @@ static char *get_title(ut64 addr) {
 	return r_str_newf ("0x%" PFMT64x, addr);
 }
 
+static char *agraph_font_render_cfg(RCore *core, const char *key, const char *s) {
+	const char *font = core? r_config_get (core->config, key): NULL;
+	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
+}
+
 static int agraph_refresh(struct agraph_refresh_data *grd);
 
 static void update_node_dimension(const RGraph *g, int is_mini, int zoom, int edgemode, bool callgraph, int layout) {
@@ -3687,23 +3692,28 @@ static int agraph_print(RCore *core, RAGraph *g, bool is_interactive, RAnalFunct
 	/* print the graph title */
 	(void)G (-g->can->sx, -g->can->sy);
 	if (g->title) {
+		char *rendered_title = NULL;
+		const char *title = g->title;
 		if (!g->is_tiny) {
+			rendered_title = agraph_font_render_cfg (core, "scr.font.prompt", g->title);
+			title = rendered_title? rendered_title: g->title;
 			int color = core? r_config_get_i (core->config, "scr.color"): 0;
 			if (color > 0) {
 				const char *kolor = cons->context->pal.prompt;
 				r_cons_gotoxy (cons, 0, 0);
 				r_cons_print (cons, kolor? kolor: Color_WHITE);
-				r_cons_print (cons, g->title);
+				r_cons_print (cons, title);
 				r_cons_print (cons, Color_RESET "\r");
 			} else {
-				W (g->title); // canvas write is always black/white
+				W (title); // canvas write is always black/white
 			}
 		}
 		if (is_interactive) {
-			const int title_len = strlen (g->title);
+			const int title_len = r_str_len_utf8_ansi (title);
 			r_cons_canvas_fill (g->can, -g->can->sx + title_len,
 				-g->can->sy, w - title_len, 1, ' ');
 		}
+		free (rendered_title);
 	}
 
 	g->can->flags = r_cons_canvas_flags (core->cons);
