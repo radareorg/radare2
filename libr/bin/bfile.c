@@ -32,25 +32,6 @@ static RBinString *__stringAt(HtUP *strings_db, RList *ret, ut64 addr) {
 	return NULL;
 }
 
-static void pj_ks_len(PJ *pj, const char *key, const char *s, ut32 len) {
-	pj_k (pj, key);
-	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
-		pj_raw (pj, "[");
-	} else {
-		pj_raw (pj, "\"");
-	}
-	char *e = r_str_encoded_json (s, len, pj->str_encoding);
-	if (e) {
-		pj_raw (pj, e);
-		free (e);
-	}
-	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
-		pj_raw (pj, "]");
-	} else {
-		pj_raw (pj, "\"");
-	}
-}
-
 static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	R_RETURN_IF_FAIL (bf && string);
 
@@ -93,7 +74,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks_len (pj, "string", str, str_len);
+			pj_kss (pj, "string", str, str_len);
 			pj_end (pj);
 		}
 		break;

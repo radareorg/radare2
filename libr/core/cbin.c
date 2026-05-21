@@ -364,25 +364,6 @@ static const char *string_get_cstr(RBinString *string, char **cstr) {
 	return r_str_get (*cstr);
 }
 
-static void pj_ks_len(PJ *pj, const char *key, const char *s, ut32 len) {
-	pj_k (pj, key);
-	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
-		pj_raw (pj, "[");
-	} else {
-		pj_raw (pj, "\"");
-	}
-	char *e = r_str_encoded_json (s, len, pj->str_encoding);
-	if (e) {
-		pj_raw (pj, e);
-		free (e);
-	}
-	if (pj->str_encoding == PJ_ENCODING_STR_ARRAY) {
-		pj_raw (pj, "]");
-	} else {
-		pj_raw (pj, "\"");
-	}
-}
-
 static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
@@ -519,7 +500,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 		} else if (IS_MODE_JSON (mode) && IS_MODE_SIMPLE (mode)) {
 			pj_o (pj);
 			pj_kn (pj, "vaddr", vaddr);
-			pj_ks_len (pj, "string", string_slice, string_len);
+			pj_kss (pj, "string", string_slice, string_len);
 			pj_end (pj);
 		} else if (IS_MODE_JSON (mode)) {
 			int *block_list;
@@ -531,7 +512,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			pj_kn (pj, "length", string->length);
 			pj_ks (pj, "section", section_name);
 			pj_ks (pj, "type", type_string);
-			pj_ks_len (pj, "string", string_slice, string_len);
+			pj_kss (pj, "string", string_slice, string_len);
 
 			switch (string->type) {
 			case R_STRING_TYPE_UTF8:
