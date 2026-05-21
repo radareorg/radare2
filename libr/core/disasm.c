@@ -267,6 +267,7 @@ typedef struct r_disasm_state_t {
 	const char *color_var_type;
 	const char *color_var_addr;
 	const char *cmtoken; // ";"
+	const char *font_addr;
 	const char *font_asm;
 	const char *font_cmt;
 	const char *font_flag;
@@ -592,6 +593,21 @@ static void ds_printf_font(RDisasmState *ds, const char *font, const char *forma
 	free (s);
 }
 
+static void print_offset_font(RCore *core, const char *font, ut64 off, int invert, int delta, const char *label) {
+	if (R_STR_ISEMPTY (font)) {
+		r_print_offset (core->print, off, invert, delta, label);
+		return;
+	}
+	RStrBuf sb;
+	r_strbuf_init (&sb);
+	if (r_print_offset_strbuf (core->print, &sb, off, invert, delta, label) && !r_strbuf_is_empty (&sb)) {
+		char *rendered = r_font_render (r_strbuf_get (&sb), font);
+		r_cons_print (core->cons, rendered? rendered: r_strbuf_get (&sb));
+		free (rendered);
+	}
+	r_strbuf_fini (&sb);
+}
+
 static void ds_comment_align(RDisasmState *ds) {
 	RCons *cons = ds->core->cons;
 	if (ds->show_cmt_right) {
@@ -719,6 +735,7 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->addrbytes = core->io->addrbytes;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->cmtoken = r_config_get (core->config, "asm.cmt.token");
+	ds->font_addr = r_config_get (core->config, "scr.font.addr");
 	ds->font_asm = r_config_get (core->config, "scr.font.asm");
 	ds->font_cmt = r_config_get (core->config, "scr.font.cmt");
 	ds->font_flag = r_config_get (core->config, "scr.font.flag");
@@ -3607,7 +3624,7 @@ static void ds_print_offset(RDisasmState *ds) {
 		if (hasCustomColor) {
 			int of = core->print->flags;
 			core->print->flags = 0;
-			r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+			print_offset_font (core, ds->font_addr, at, (at == ds->dest) || show_trace, delta, label);
 			core->print->flags = of;
 			r_cons_print (core->cons, Color_RESET);
 		} else {
@@ -3615,7 +3632,7 @@ static void ds_print_offset(RDisasmState *ds) {
 				ut64 bb = r_anal_get_bbaddr (core->anal, at);
 				bool incur = core->print->cur_enabled && (at == core->addr + ds->cursor);
 				if (incur || bb == at || bb == UT64_MAX || ds->analop.jump != UT64_MAX) {
-					r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+					print_offset_font (core, ds->font_addr, at, (at == ds->dest) || show_trace, delta, label);
 				} else {
 					char atstr[64];
 					snprintf (atstr, sizeof (atstr), " 0x%08"PFMT64x, at);
@@ -3623,7 +3640,7 @@ static void ds_print_offset(RDisasmState *ds) {
 					r_cons_print (core->cons, atstr);
 				}
 			} else {
-				r_print_offset (core->print, at, (at == ds->dest) || show_trace, delta, label);
+				print_offset_font (core, ds->font_addr, at, (at == ds->dest) || show_trace, delta, label);
 			}
 		}
 		free (label);
@@ -8280,16 +8297,16 @@ toro:
 		if (flags) {
 			if (fmt != 'e') { // pie
 				RFlagItem *item = r_flag_get_in (core->flags, at);
-				if (item) {
-					if (show_offset) {
-						r_print_offset (core->print, at, 0, 0, NULL);
+					if (item) {
+						if (show_offset) {
+							print_offset_font (core, r_config_get (core->config, "scr.font.addr"), at, 0, 0, NULL);
+						}
+						r_cons_printf (core->cons, "  %s:\n", item->name);
 					}
-					r_cons_printf (core->cons, "  %s:\n", item->name);
-				}
 			} // do not show flags in pie
 		}
 		if (show_offset) {
-			r_print_offset (core->print, at, 0, 0, NULL);
+			print_offset_font (core, r_config_get (core->config, "scr.font.addr"), at, 0, 0, NULL);
 		}
 		ut64 meta_start = at;
 		ut64 meta_size = 0;

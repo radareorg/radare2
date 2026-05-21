@@ -875,8 +875,24 @@ static void append_section_addr_prefix(RCore *core, ut64 at, bool show_section, 
 		r_print_section_strbuf (core->print, sb, at);
 	}
 	if (show_offset) {
-		r_print_addr_strbuf (core->print, sb, at);
+		const char *font = r_config_get (core->config, "scr.font.addr");
+		RStrBuf asb;
+		r_strbuf_init (&asb);
+		r_print_addr_strbuf (core->print, &asb, at);
+		if (R_STR_ISNOTEMPTY (font)) {
+			char *rendered = r_font_render (r_strbuf_get (&asb), font);
+			r_strbuf_append (sb, rendered? rendered: r_strbuf_get (&asb));
+			free (rendered);
+		} else {
+			r_strbuf_append (sb, r_strbuf_get (&asb));
+		}
+		r_strbuf_fini (&asb);
 	}
+}
+
+static char *core_font_render_cfg(RCore *core, const char *key, const char *s) {
+	const char *font = r_config_get (core->config, key);
+	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
 }
 
 static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {
@@ -2793,7 +2809,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			const char *name = r_core_get_section_name (core, ea);
 			r_strbuf_appendf (sbytes, "%20s ", name);
 		}
-		r_strbuf_appendf (sbytes, "0x%08" PFMT64x, ea);
+		char addrbuf[64];
+		snprintf (addrbuf, sizeof (addrbuf), "0x%08" PFMT64x, ea);
+		char *rendered_addr = core_font_render_cfg (core, "scr.font.addr", addrbuf);
+		r_strbuf_append (sbytes, rendered_addr? rendered_addr: addrbuf);
+		free (rendered_addr);
 		if (usecolor) {
 			r_strbuf_append (sbytes, Color_RESET);
 		}
@@ -3029,9 +3049,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
+				char *rendered = core_font_render_cfg (core, "scr.font.cmt", out + 1);
 				r_cons_print (core->cons, addrpad);
-				r_cons_print (core->cons, out + 1);
+				r_cons_print (core->cons, rendered? rendered: out + 1);
 				r_cons_newline (core->cons);
+				free (rendered);
 			}
 			marks = false;
 			free (out);
@@ -3043,7 +3065,9 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			for (j = 0; j < nb_cols; j++) {
 				char *comment = core->print->get_comments (core->print->user, addr + j);
 				if (comment) {
-					r_cons_printf (core->cons, " ; %s", comment);
+					char *rendered = core_font_render_cfg (core, "scr.font.cmt", comment);
+					r_cons_printf (core->cons, " ; %s", rendered? rendered: comment);
+					free (rendered);
 					free (comment);
 				}
 			}

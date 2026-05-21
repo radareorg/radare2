@@ -629,12 +629,19 @@ static void add_font_options(RConfigNode *node) {
 
 static bool cb_scr_font(void *user, void *data) {
 	RConfigNode *node = (RConfigNode *)data;
-	if (node->value && !strcmp (node->value, "?")) {
+	if (node->value && (!strcmp (node->value, "?") || !strcmp (node->value, "??"))) {
 		RCore *core = (RCore *)user;
 		int i;
 		const char *name;
+		const bool samples = node->value[1] == '?';
 		for (i = 0; (name = r_font_name (i)); i++) {
-			r_cons_println (core->cons, name);
+			if (samples) {
+				char *sample = r_font_render ("The quick brown fox jumps 13 times over 42 lazy dogs", name);
+				r_cons_printf (core->cons, "%-22s %s\n", name, r_str_get (sample));
+				free (sample);
+			} else {
+				r_cons_println (core->cons, name);
+			}
 		}
 		return false;
 	}
@@ -4902,6 +4909,9 @@ R_API int r_core_config_init(RCore *core) {
 	SETCB ("scr.breakword", "", &cb_scrbreakword, "emulate console break (^C) when a word is printed (useful for pD)");
 	n = NODECB ("scr.font.asm", "", &cb_scr_font);
 	SETDESC (n, "font family for disassembly text (use ? to list)");
+	add_font_options (n);
+	n = NODECB ("scr.font.addr", "", &cb_scr_font);
+	SETDESC (n, "font family for addresses (use ? to list)");
 	add_font_options (n);
 	n = NODECB ("scr.font.cmt", "", &cb_scr_font);
 	SETDESC (n, "font family for comments (use ? to list)");
