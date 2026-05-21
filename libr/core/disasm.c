@@ -8297,12 +8297,12 @@ toro:
 		if (flags) {
 			if (fmt != 'e') { // pie
 				RFlagItem *item = r_flag_get_in (core->flags, at);
-					if (item) {
-						if (show_offset) {
-							print_offset_font (core, r_config_get (core->config, "scr.font.addr"), at, 0, 0, NULL);
-						}
-						r_cons_printf (core->cons, "  %s:\n", item->name);
+				if (item) {
+					if (show_offset) {
+						print_offset_font (core, r_config_get (core->config, "scr.font.addr"), at, 0, 0, NULL);
 					}
+					r_cons_printf (core->cons, "  %s:\n", item->name);
+				}
 			} // do not show flags in pie
 		}
 		if (show_offset) {

@@ -870,29 +870,29 @@ static char *get_color(RCons *cons, ut8 ch) {
 	return res;
 }
 
+static char *core_font_render_cfg(RCore *core, const char *key, const char *s) {
+	const char *font = r_config_get (core->config, key);
+	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
+}
+
+static bool core_strbuf_append_font_cfg(RCore *core, RStrBuf *sb, const char *key, const char *s) {
+	char *rendered = core_font_render_cfg (core, key, s);
+	bool ok = r_strbuf_append (sb, rendered? rendered: s);
+	free (rendered);
+	return ok;
+}
+
 static void append_section_addr_prefix(RCore *core, ut64 at, bool show_section, bool show_offset, RStrBuf *sb) {
 	if (show_section) {
 		r_print_section_strbuf (core->print, sb, at);
 	}
 	if (show_offset) {
-		const char *font = r_config_get (core->config, "scr.font.addr");
 		RStrBuf asb;
 		r_strbuf_init (&asb);
 		r_print_addr_strbuf (core->print, &asb, at);
-		if (R_STR_ISNOTEMPTY (font)) {
-			char *rendered = r_font_render (r_strbuf_get (&asb), font);
-			r_strbuf_append (sb, rendered? rendered: r_strbuf_get (&asb));
-			free (rendered);
-		} else {
-			r_strbuf_append (sb, r_strbuf_get (&asb));
-		}
+		core_strbuf_append_font_cfg (core, sb, "scr.font.addr", r_strbuf_get (&asb));
 		r_strbuf_fini (&asb);
 	}
-}
-
-static char *core_font_render_cfg(RCore *core, const char *key, const char *s) {
-	const char *font = r_config_get (core->config, key);
-	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
 }
 
 static void cmd_prcn(RCore *core, const ut8 *block, int len, bool bitsmode) {

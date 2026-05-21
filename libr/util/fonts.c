@@ -16,31 +16,31 @@ enum {
 	MONOSPACE,
 	BOLDSCRIPT,
 	BOLDFRAKTUR,
-	SANSSERIBBOLD,
+	SANSSERIFBOLD,
 	SANSSERIFBOLDITALIC,
 	OPENFACE,
 	SMALLCAPS
 };
 
 static const char *styles[] = {
-	"bold", "italic", "script", "doublestruck", "underline", "strikethrough", "fraktur", "bolditalic", "sansserif", "sansserifitalic", "monospace", "boldscript", "boldfraktur", "sansseribbold", "sansserifbolditalic", "openface", "smallcaps"
+	"bold", "italic", "script", "doublestruck", "underline", "strikethrough", "fraktur", "bolditalic", "sansserif", "sansserifitalic", "monospace", "boldscript", "boldfraktur", "sansserifbold", "sansserifbolditalic", "openface", "smallcaps"
 };
 
 R_API const char *r_font_name(int i) {
-	if (i >= 0 && i < (int) (sizeof (styles) / sizeof (*styles))) {
+	if (i >= 0 && i < (int)R_ARRAY_SIZE (styles)) {
 		return styles[i];
 	}
 	return NULL;
 }
 static int style_id(const char *s, size_t n) {
 	int i;
-	for (i = 0; i < (int) (sizeof (styles) / sizeof (*styles)); i++) {
+	for (i = 0; i < (int)R_ARRAY_SIZE (styles); i++) {
 		if (strlen (styles[i]) == n && !memcmp (styles[i], s, n)) {
 			return i;
 		}
 	}
-	if (n == 13 && !memcmp (s, "sansserifbold", n)) {
-		return SANSSERIBBOLD;
+	if (n == 13 && !memcmp (s, "sansseribbold", n)) {
+		return SANSSERIFBOLD;
 	}
 	return -1;
 }
@@ -55,28 +55,9 @@ static int eqci(const char *a, const char *b, size_t n) {
 }
 
 static bool putu(RStrBuf *sb, unsigned cp) {
-	char buf[4];
-	int len;
-	if (cp < 0x80) {
-		buf[0] = cp;
-		len = 1;
-	} else if (cp < 0x800) {
-		buf[0] = 0xC0 | (cp >> 6);
-		buf[1] = 0x80 | (cp & 0x3F);
-		len = 2;
-	} else if (cp < 0x10000) {
-		buf[0] = 0xE0 | (cp >> 12);
-		buf[1] = 0x80 | ((cp >> 6) & 0x3F);
-		buf[2] = 0x80 | (cp & 0x3F);
-		len = 3;
-	} else {
-		buf[0] = 0xF0 | (cp >> 18);
-		buf[1] = 0x80 | ((cp >> 12) & 0x3F);
-		buf[2] = 0x80 | ((cp >> 6) & 0x3F);
-		buf[3] = 0x80 | (cp & 0x3F);
-		len = 4;
-	}
-	return r_strbuf_append_n (sb, buf, len);
+	ut8 buf[4];
+	const int len = r_utf8_encode (buf, cp);
+	return len > 0 && r_strbuf_append_n (sb, (const char *)buf, len);
 }
 
 static unsigned ex(unsigned base, int i, const int *idx, const unsigned *val, int n) {
@@ -152,7 +133,7 @@ static unsigned mapcp(char c, int st, unsigned *comb) {
 		case OPENFACE: return ex (0x1D538, i, de, dv, 7);
 		case FRAKTUR: return ex (0x1D504, i, fe, fv, 5);
 		case SANSSERIF: return 0x1D5A0 + i;
-		case SANSSERIBBOLD: return 0x1D5D4 + i;
+		case SANSSERIFBOLD: return 0x1D5D4 + i;
 		case SANSSERIFITALIC: return 0x1D608 + i;
 		case MONOSPACE: return 0x1D670 + i;
 		case BOLDSCRIPT: return 0x1D4D0 + i;
@@ -179,7 +160,7 @@ static unsigned mapcp(char c, int st, unsigned *comb) {
 		case OPENFACE: return 0x1D552 + i;
 		case FRAKTUR: return 0x1D51E + i;
 		case SANSSERIF: return 0x1D5BA + i;
-		case SANSSERIBBOLD: return 0x1D5EE + i;
+		case SANSSERIFBOLD: return 0x1D5EE + i;
 		case SANSSERIFITALIC: return 0x1D622 + i;
 		case MONOSPACE: return 0x1D68A + i;
 		case BOLDSCRIPT: return 0x1D4EA + i;
@@ -194,7 +175,7 @@ static unsigned mapcp(char c, int st, unsigned *comb) {
 		case BOLD: return 0x1D7CE + i;
 		case DOUBLESTRUCK: return 0x1D7D8 + i;
 		case SANSSERIF: return 0x1D7E2 + i;
-		case SANSSERIBBOLD: return 0x1D7EC + i;
+		case SANSSERIFBOLD: return 0x1D7EC + i;
 		case MONOSPACE: return 0x1D7F6 + i;
 		}
 	}

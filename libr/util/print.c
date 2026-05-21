@@ -460,17 +460,10 @@ static char *r_print_font_render_cfg(RPrint *p, const char *key, const char *s) 
 	return R_STR_ISNOTEMPTY (font)? r_font_render (s, font): NULL;
 }
 
-static void r_print_font_printf_cfg(RPrint *p, const char *key, const char *format, ...) {
-	va_list ap;
-	va_start (ap, format);
-	char *s = r_str_newvf (format, ap);
-	va_end (ap);
-	if (s) {
-		char *rendered = r_print_font_render_cfg (p, key, s);
-		r_print_printf (p, "%s", rendered? rendered: s);
-		free (rendered);
-		free (s);
-	}
+static void r_print_font_print_cfg(RPrint *p, const char *key, const char *s) {
+	char *rendered = r_print_font_render_cfg (p, key, s);
+	r_print_printf (p, "%s", rendered? rendered: s);
+	free (rendered);
 }
 
 R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
@@ -483,9 +476,7 @@ R_API bool r_print_addr_strbuf(RPrint *p, RStrBuf *sb, ut64 addr) {
 static void r_print_addr(RPrint *p, ut64 addr) {
 	char buf[64];
 	r_print_addr_tostring (p, addr, buf, sizeof (buf));
-	char *rendered = r_print_font_render_cfg (p, "scr.font.addr", buf);
-	r_print_printf (p, "%s", rendered? rendered: buf);
-	free (rendered);
+	r_print_font_print_cfg (p, "scr.font.addr", buf);
 }
 
 static int print_offset_len(ut64 off, bool with_delta) {
@@ -1220,7 +1211,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 					r_print_printf (p, "%s", " ");
 				}
 				if (!hex_style) {
-					r_print_font_printf_cfg (p, "scr.font.cmt", " comment");
+					r_print_font_print_cfg (p, "scr.font.cmt", " comment");
 				}
 			}
 			r_print_printf (p, "%s", "\n");
@@ -1664,12 +1655,12 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 								}
 								if (first) {
 									r_print_printf (p, "%s 2; ", a);
-									r_print_font_printf_cfg (p, "scr.font.cmt", "%s", q);
+									r_print_font_print_cfg (p, "scr.font.cmt", q);
 									first = false;
 								} else {
 									char *a = r_str_pad (NULL, 0, ' ', 8 + (p->cols * 4));
 									r_print_printf (p, "%s; ", a);
-									r_print_font_printf_cfg (p, "scr.font.cmt", "%s", q);
+									r_print_font_print_cfg (p, "scr.font.cmt", q);
 									free (a);
 								}
 						// 		r_print_printf (p, "\n");
@@ -1682,7 +1673,7 @@ R_API void r_print_hexdump(RPrint *p, ut64 addr, const ut8 *buf, int len, int ba
 							free (s);
 						} else {
 							r_print_printf (p, "%s ; ", a);
-							r_print_font_printf_cfg (p, "scr.font.cmt", "%s", comment);
+							r_print_font_print_cfg (p, "scr.font.cmt", comment);
 							// r_print_printf (p, "\n");
 						}
 						free (comment);
