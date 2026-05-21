@@ -845,7 +845,6 @@ static RList *strings(RBinFile *bf) {
 	RList *ret = NULL;
 	int i;
 	ut64 len;
-	ut8 buf[LEB_MAX_SIZE];
 	ut64 off;
 	struct r_bin_dex_obj_t *bin = (struct r_bin_dex_obj_t *)bf->bo->bin_obj;
 	if (!bin || !bin->strings) {
@@ -855,31 +854,40 @@ static RList *strings(RBinFile *bf) {
 		R_FREE (bin->strings);
 		return NULL;
 	}
-	if (!(ret = r_list_newf (free))) {
+	ut64 data_size = 0;
+	const ut8 *data = r_buf_data (bin->b, &data_size);
+	if (!data) {
+		return NULL;
+	}
+	if (!(ret = r_list_newf (r_bin_string_free))) {
 		return NULL;
 	}
 	for (i = 0; i < bin->header.strings_size; i++) {
 		ptr = R_NEW0 (RBinString);
-		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
+		if (bin->strings[i] > data_size || bin->strings[i] + 6 > data_size) {
 			goto out_error;
 		}
-		r_buf_read_at (bin->b, bin->strings[i], buf, sizeof (buf));
-		r_uleb128 (buf, sizeof (buf), &len, NULL);
+		const ut8 *s = data + bin->strings[i];
+		int max_uleb = (int)R_MIN ((ut64)LEB_MAX_SIZE, data_size - bin->strings[i]);
+		const ut8 *e = r_uleb128 (s, max_uleb, &len, NULL);
+		int uleblen = e - s;
+		if (!uleblen) {
+			free (ptr);
+			continue;
+		}
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
-			ptr->string = malloc (len + 1);
-			if (!ptr->string) {
+			off = bin->strings[i] + uleblen;
+			if (off >= data_size) {
 				goto out_error;
 			}
-			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
-			if (off + len >= bin->size || off + len < len) {
-				free (ptr->string);
+			const ut8 *start = data + off;
+			const ut8 *end = memchr (start, 0, data_size - off);
+			if (!end) {
 				goto out_error;
 			}
-			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);
-			ptr->string[len] = 0;
-			if ((ptr->string[0] == 'L' && strchr (ptr->string, '/')) || !strncmp (ptr->string, "[L", 2)) {
-				free (ptr->string);
+			ut32 str_len = end - start;
+			if ((*start == 'L' && memchr (start, '/', str_len)) || (str_len > 1 && !memcmp (start, "[L", 2))) {
 				free (ptr);
 				continue;
 			}
@@ -888,6 +896,7 @@ static RList *strings(RBinFile *bf) {
 			ptr->size = len;
 			ptr->length = len;
 			ptr->ordinal = i + 1;
+			r_bin_string_set (ptr, (const char *)start, str_len, R_STRING_TYPE_UTF8, R_BIN_STRING_F_NUL);
 			r_list_append (ret, ptr);
 		} else {
 			free (ptr);

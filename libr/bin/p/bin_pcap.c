@@ -82,24 +82,24 @@ static RList *strings(RBinFile *bf) {
 
 	RBinString *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
-	RList *ret = r_list_newf (free);
+	RList *ret = r_list_newf (r_bin_string_free);
 
 	RListIter *iter;
 	pcaprec_t *rec;
 	r_list_foreach (obj->recs, iter, rec) {
 		if (rec->data && *rec->data != 0) {
 			ptr = R_NEW0 (RBinString);
-			ptr->string = r_str_ndup ((const char *)rec->data, 32); // rec->datasz);
-			if (strlen (ptr->string) < 10) {
-				// eprintf ("(%s)\n", ptr->string);
-				free (ptr->string);
+			char *str = r_str_ndup ((const char *)rec->data, 32); // rec->datasz);
+			size_t len = str? strlen (str): 0;
+			if (len < 10) {
+				free (str);
 				free (ptr);
 				continue;
 			}
+			r_bin_string_set (ptr, str, len, R_STRING_TYPE_DETECT, R_BIN_STRING_F_OWNED);
 			ptr->paddr = ptr->vaddr = rec->paddr; //XXX;
-			ptr->length = strlen (ptr->string);
+			ptr->length = len;
 			ptr->size = ptr->length + 1;
-			ptr->type = R_STRING_TYPE_DETECT;
 			r_list_append (ret, ptr);
 		}
 	}

@@ -39,6 +39,9 @@ R_LIB_VERSION_HEADER (r_bin);
 #define R_BIN_SIZEOF_STRINGS 512
 #define R_BIN_MAX_ARCH 1024
 
+#define R_BIN_STRING_F_OWNED 1
+#define R_BIN_STRING_F_NUL   2
+
 #define R_BIN_REQ_ALL       UT64_MAX
 #define R_BIN_REQ_UNK       0x000000
 #define R_BIN_REQ_ENTRIES   0x000001
@@ -766,12 +769,14 @@ typedef struct r_bin_reloc_t {
 R_VEC_TYPE (RVecRBinReloc, RBinReloc);
 
 typedef struct r_bin_string_t {
-	char *string; // TODO: rename to text or so
+	RStrs text; // utf8/export view, may not be nul terminated
+	char *string; // optional owned/cache nul-terminated view
 	ut64 vaddr;
 	ut64 paddr;
 	ut32 ordinal;
 	ut32 size; // size of buffer containing the string in bytes
 	ut32 length; // length of string in chars
+	ut8 flags;
 	char type; // Ascii Wide cp850 utf8 base64 ...
 } RBinString;
 
@@ -843,6 +848,8 @@ R_API RBinSymbol *r_bin_symbol_new(const char *name, ut64 paddr, ut64 vaddr);
 R_API RBinSymbol *r_bin_symbol_clone(RBinSymbol *bs);
 R_API void r_bin_symbol_copy(RBinSymbol *dst, RBinSymbol *src);
 R_API void r_bin_string_free(void *_str);
+R_API bool r_bin_string_set(RBinString *str, const char *s, ut32 len, int type, ut8 flags);
+R_API const char *r_bin_string_get(RBinString *str);
 
 #ifdef R_API
 

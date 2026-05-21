@@ -4079,8 +4079,9 @@ static void cmd_search_baddr(RCore *core, const char *input) {
 		RBinString *s;
 		RListIter *iter;
 		r_list_foreach (obj->strings, iter, s) {
-			if (strstr (s->string, "0x")) {
-				ut64 n = r_num_math (NULL, s->string);
+			const char *str = r_bin_string_get (s);
+			if (strstr (str, "0x")) {
+				ut64 n = r_num_math (NULL, str);
 				appendbaddr (res, n);
 			}
 		}

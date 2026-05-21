@@ -612,6 +612,7 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	if (!bs->string) {
 		bs->string = strdup ("");
 	}
+	r_bin_string_set (bs, bs->string, strlen (bs->string), type, R_BIN_STRING_F_OWNED);
 	bs->paddr = paddr;
 	bs->vaddr = vaddr;
 	bs->size = actual_size;

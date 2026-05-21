@@ -97,7 +97,8 @@ static bool sections_vec(RBinFile *bf) {
 
 static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *parseStruct) {
 	RBinString *binstring = R_NEW0 (RBinString);
-	binstring->string = r_str_ndup ((char *) buf + offset, length);
+	char *str = r_str_ndup ((char *) buf + offset, length);
+	r_bin_string_set (binstring, str, str? strlen (str): 0, R_STRING_TYPE_ASCII, R_BIN_STRING_F_OWNED);
 	binstring->vaddr = binstring->paddr = offset;
 	binstring->ordinal = 0;
 	binstring->size = length;
@@ -166,7 +167,7 @@ static RList *strings(RBinFile *bf) {
 	memset (&parseStruct, 0, sizeof (parseStruct));
 	parseStruct.onString = addString;
 
-	parseStruct.data = r_list_new ();
+	parseStruct.data = r_list_newf (r_bin_string_free);
 	if (!parseStruct.data) {
 		free (bytes);
 		return NULL;
