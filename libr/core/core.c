@@ -2902,9 +2902,16 @@ static void chop_prompt(RCore *core, const char *filename, char *tmp, size_t max
 	}
 }
 
+static char *render_prompt_font(RCore *core, const char *prompt) {
+	const char *font = r_config_get (core->config, "scr.font.prompt");
+	return R_STR_ISNOTEMPTY (font)? r_font_render (prompt, font): NULL;
+}
+
 static void set_prompt(RCore *core) {
 	if (core->incomment) {
-		r_line_set_prompt (core->cons->line, " * ");
+		char *prompt = render_prompt_font (core, " * ");
+		r_line_set_prompt (core->cons->line, prompt? prompt: " * ");
+		free (prompt);
 		return;
 	}
 	const char *fmt = r_config_get (core->config, "scr.prompt.format");
@@ -2988,9 +2995,11 @@ static void set_prompt(RCore *core) {
 	} else {
 		prompt = r_str_newf ("%s%s[%s%s]> %s", filename, BEGIN, remote, tmp, END);
 	}
-	r_line_set_prompt (core->cons->line, r_str_get (prompt));
+	char *rendered = render_prompt_font (core, r_str_get (prompt));
+	r_line_set_prompt (core->cons->line, rendered? rendered: r_str_get (prompt));
 
 	R_FREE (filename);
+	R_FREE (rendered);
 	R_FREE (prompt);
 }
 

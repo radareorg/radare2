@@ -267,6 +267,9 @@ typedef struct r_disasm_state_t {
 	const char *color_var_type;
 	const char *color_var_addr;
 	const char *cmtoken; // ";"
+	const char *font_asm;
+	const char *font_cmt;
+	const char *font_flag;
 	bool pal_batch_save; // saved pal_batch to restore on ds_free
 
 	RFlagItem *lastflag;
@@ -565,6 +568,30 @@ static const char *get_section_name(RDisasmState *ds) {
 	return r_core_get_section_name (ds->core, ds->at);
 }
 
+static void ds_print_font(RDisasmState *ds, const char *s, const char *font) {
+	if (!s) {
+		return;
+	}
+	if (R_STR_ISNOTEMPTY (font)) {
+		char *rendered = r_font_render (s, font);
+		if (rendered) {
+			r_cons_print (ds->core->cons, rendered);
+			free (rendered);
+			return;
+		}
+	}
+	r_cons_print (ds->core->cons, s);
+}
+
+static void ds_printf_font(RDisasmState *ds, const char *font, const char *format, ...) {
+	va_list ap;
+	va_start (ap, format);
+	char *s = r_str_newvf (format, ap);
+	va_end (ap);
+	ds_print_font (ds, s, font);
+	free (s);
+}
+
 static void ds_comment_align(RDisasmState *ds) {
 	RCons *cons = ds->core->cons;
 	if (ds->show_cmt_right) {
@@ -614,7 +641,7 @@ static void ds_comment_(RDisasmState *ds, bool align, bool donl, const char *for
 				r_cons_printf (cons, "%s ", ds->cmtoken);
 			}
 		}
-		r_cons_print (cons, p);
+		ds_print_font (ds, p, ds->font_cmt);
 		if (!nl) {
 			break;
 		}
@@ -692,6 +719,9 @@ static RDisasmState *ds_init(RCore *core, bool for_json) {
 	ds->addrbytes = core->io->addrbytes;
 	ds->strip = r_config_get (core->config, "asm.strip");
 	ds->cmtoken = r_config_get (core->config, "asm.cmt.token");
+	ds->font_asm = r_config_get (core->config, "scr.font.asm");
+	ds->font_cmt = r_config_get (core->config, "scr.font.cmt");
+	ds->font_flag = r_config_get (core->config, "scr.font.flag");
 	ds->pal_hint = core->cons->context->pal.jmp;
 	ds->pal_comment = core->cons->context->pal.comment;
 	#define P(x) (core->cons && core->cons->context->pal.x)? core->cons->context->pal.x
@@ -2888,7 +2918,7 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 				if (ds->flags_prefix) {
 					r_cons_printf (cons, FLAG_PREFIX);
 				}
-				r_cons_printf (cons, "switch:");
+				ds_print_font (ds, "switch:", ds->font_flag);
 			} else if (r_str_startswith (flag->name, "case.")) {
 				if (nth > 0) {
 					__preline_flag (ds, flag);
@@ -2897,22 +2927,23 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 					r_cons_printf (cons, FLAG_PREFIX);
 				}
 				if (!strncmp (flag->name + 5, "default", 7)) {
-					r_cons_printf (cons, "default:"); // %s:", flag->name);
+					ds_print_font (ds, "default:", ds->font_flag); // %s:", flag->name);
 					r_str_ncpy (addr, flag->name + 5 + strlen ("default."), sizeof (addr));
 					nth = 0;
 				} else if (case_prev != case_start) {
-					r_cons_printf (cons, "case %d...%d:", case_start, case_prev);
+					ds_printf_font (ds, ds->font_flag, "case %d...%d:", case_start, case_prev);
 					if (iter != uniqlist->head && iter != uniqlist->tail) {
 						iter = iter->p;
 					}
 					case_start = case_current;
 				} else {
-					r_cons_printf (cons, "case %d:", case_prev);
+					ds_printf_font (ds, ds->font_flag, "case %d:", case_prev);
 					case_start = -1;
 				}
 				case_prev = case_current;
 				ds_align_comment (ds);
-				r_cons_printf (cons, "%s%s from %s", ds->show_color ? ds->pal_comment : "", ds->cmtoken, addr);
+				r_cons_printf (cons, "%s", ds->show_color ? ds->pal_comment : "");
+				ds_printf_font (ds, ds->font_cmt, "%s from %s", ds->cmtoken, addr);
 				outline = false;
 				docolon = false;
 			} else {
@@ -2937,18 +2968,18 @@ static bool ds_show_flags(RDisasmState *ds, bool overlapped) {
 						}
 					}
 					if (outline) {
-						r_cons_printf (cons, "%s:", name);
+						ds_printf_font (ds, ds->font_flag, "%s:", name);
 					} else {
-						r_cons_printf (cons, "%s%s", comma, flag->name);
+						ds_printf_font (ds, ds->font_flag, "%s%s", comma, flag->name);
 					}
 					R_FREE (name);
 				}
 			}
 		} else {
 			if (outline) {
-				r_cons_printf (cons, "%s", flag->name);
+				ds_print_font (ds, flag->name, ds->font_flag);
 			} else {
-				r_cons_printf (cons, "%s%s", comma, flag->name);
+				ds_printf_font (ds, ds->font_flag, "%s%s", comma, flag->name);
 			}
 		}
 		if (ds->show_color) {
@@ -4372,7 +4403,7 @@ static void ds_print_optype(RDisasmState *ds) {
 static void ds_print_opstr(RDisasmState *ds) {
 	ds_print_indent (ds);
 	if (ds->asm_instr) {
-		r_cons_print (ds->core->cons, ds->opstr);
+		ds_print_font (ds, ds->opstr, ds->font_asm);
 	}
 }
 
@@ -6290,7 +6321,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			}
 			r_cons_print (core->cons, ";-- ");
 			r_list_foreach (flaglist, iter, fi) {
-				r_cons_printf (core->cons, "%s%s", fi->name, iter->n? ", ": " ");
+				ds_printf_font (ds, ds->font_flag, "%s%s", fi->name, iter->n? ", ": " ");
 			}
 		}
 		return;
@@ -6311,7 +6342,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 			if (ds->show_color) {
 				r_cons_print (core->cons, ds->color_comment);
 			}
-			r_cons_printf (core->cons, "%s %s", ds->cmtoken, desc);
+			ds_printf_font (ds, ds->font_cmt, "%s %s", ds->cmtoken, desc);
 			ds_print_color_reset (ds);
 		}
 		if (ds->show_cmt_right && ds->comment) {
@@ -6338,9 +6369,9 @@ static void ds_print_comments_right(RDisasmState *ds) {
 									r_cons_print (core->cons, ds->color_usrcmt);
 								}
 								if (i == 0) {
-									r_cons_print (core->cons, c);
+									ds_print_font (ds, c, ds->font_cmt);
 								} else {
-									r_cons_printf (core->cons, "%s %s", ds->cmtoken, c);
+									ds_printf_font (ds, ds->font_cmt, "%s %s", ds->cmtoken, c);
 								}
 								if (i < lines_count - 1) {
 									ds_newline (ds);
@@ -6352,7 +6383,7 @@ static void ds_print_comments_right(RDisasmState *ds) {
 					}
 					free (comment);
 				} else {
-					r_cons_print (core->cons, comment);
+					ds_print_font (ds, comment, ds->font_cmt);
 				}
 			}
 			// r_cons_print_justify (core->cons, comment, strlen (ds->refline) + 5, ';');

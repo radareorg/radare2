@@ -405,5 +405,14 @@ R_API char *r_core_prompt_format(RCore *core, const char *fmt) {
 			p++;
 		}
 	}
-	return r_strbuf_drain (sb);
+	char *prompt = r_strbuf_drain (sb);
+	const char *font = (core && core->config)? r_config_get (core->config, "scr.font.prompt"): NULL;
+	if (R_STR_ISNOTEMPTY (font)) {
+		char *rendered = r_font_render (prompt, font);
+		if (rendered) {
+			free (prompt);
+			return rendered;
+		}
+	}
+	return prompt;
 }

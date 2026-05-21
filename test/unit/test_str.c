@@ -745,7 +745,7 @@ bool test_r_str_font(void) {
 	free (res);
 
 	res = r_str_font ("A <italic>A</italic>", "bold");
-	mu_assert_streq (res, "\xF0\x9D\x90\x80 \xF0\x9D\x90\xB4", "inline font overrides default");
+	mu_assert_streq (res, "\xF0\x9D\x90\x80 \xF0\x9D\x90\x80", "default font ignores inline tags");
 	free (res);
 
 	res = r_str_font ("A", "unknown");

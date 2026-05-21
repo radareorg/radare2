@@ -89,6 +89,44 @@ static unsigned ex(unsigned base, int i, const int *idx, const unsigned *val, in
 	return base + i;
 }
 
+static const char *ansi_end(const char *s, const char *end) {
+	if ((unsigned char)*s != 0x1b) {
+		return NULL;
+	}
+	const char *p = s + 1;
+	if (end && p >= end) {
+		return end;
+	}
+	if (*p == '[') {
+		p++;
+		while ((!end || p < end) && *p) {
+			unsigned char ch = (unsigned char)*p++;
+			if (ch >= 0x40 && ch <= 0x7e) {
+				return p;
+			}
+		}
+		return p;
+	}
+	if ((!end || p < end) && *p) {
+		p++;
+	}
+	return p;
+}
+
+static size_t utf8_len(const char *s, const char *end) {
+	const unsigned char c = (unsigned char)*s;
+	size_t len = 1;
+	if (c >= 0xf0) {
+		len = 4;
+	} else if (c >= 0xe0) {
+		len = 3;
+	} else if (c >= 0xc0) {
+		len = 2;
+	}
+	size_t left = end? (size_t)(end - s): strlen (s);
+	return R_MIN (len, left);
+}
+
 static unsigned mapcp(char c, int st, unsigned *comb) {
 	int i;
 	*comb = 0;
@@ -164,7 +202,24 @@ static unsigned mapcp(char c, int st, unsigned *comb) {
 }
 
 static bool convert(const char *s, size_t n, int st, RStrBuf *sb) {
-	while (n--) {
+	const char *end = s + n;
+	while (s < end) {
+		const char *ansi = ansi_end (s, end);
+		if (ansi) {
+			if (!r_strbuf_append_n (sb, s, ansi - s)) {
+				return false;
+			}
+			s = ansi;
+			continue;
+		}
+		if ((unsigned char)*s >= 0x80) {
+			size_t len = utf8_len (s, end);
+			if (!r_strbuf_append_n (sb, s, len)) {
+				return false;
+			}
+			s += len;
+			continue;
+		}
 		unsigned comb, cp = mapcp (*s++, st, &comb);
 		if (!putu (sb, cp)) {
 			return false;
@@ -182,6 +237,42 @@ static bool append_text(RStrBuf *sb, const char *s, size_t n, int st) {
 		: convert (s, n, st, sb);
 }
 
+static size_t tag_size(const char *s) {
+	const char *p = s;
+	if (*p++ != '<') {
+		return 0;
+	}
+	if (*p == '/') {
+		p++;
+	}
+	if (!isalpha ((unsigned char)*p)) {
+		return 0;
+	}
+	while (isalpha ((unsigned char)*p)) {
+		p++;
+	}
+	return *p == '>'? (size_t)(p - s + 1): 0;
+}
+
+static bool append_text_skipping_tags(RStrBuf *sb, const char *s, int st) {
+	while (*s) {
+		size_t n = tag_size (s);
+		if (n) {
+			s += n;
+			continue;
+		}
+		const char *p = s + 1;
+		while (*p && !tag_size (p)) {
+			p++;
+		}
+		if (!append_text (sb, s, (size_t)(p - s), st)) {
+			return false;
+		}
+		s = p;
+	}
+	return true;
+}
+
 static const char *closing(const char *s, const char *tag, size_t n) {
 	for (; *s; s++) {
 		if (s[0] == '<' && s[1] == '/' && eqci (s + 2, tag, n) && s[n + 2] == '>') {
@@ -195,7 +286,29 @@ R_API char *r_font_render(const char *s, const char *family) {
 	R_RETURN_VAL_IF_FAIL (s, NULL);
 	RStrBuf *sb = r_strbuf_new (NULL);
 	int fst = family? style_id (family, strlen (family)): -1;
+	if (family) {
+		if (!append_text_skipping_tags (sb, s, fst)) {
+			goto err;
+		}
+		return r_strbuf_drain (sb);
+	}
 	while (*s) {
+		const char *ansi = ansi_end (s, NULL);
+		if (ansi) {
+			if (!r_strbuf_append_n (sb, s, ansi - s)) {
+				goto err;
+			}
+			s = ansi;
+			continue;
+		}
+		if ((unsigned char)*s >= 0x80) {
+			size_t len = utf8_len (s, NULL);
+			if (!r_strbuf_append_n (sb, s, len)) {
+				goto err;
+			}
+			s += len;
+			continue;
+		}
 		if (*s == '<' && isalpha ((unsigned char)s[1])) {
 			const char *q = s + 1;
 			while (isalpha ((unsigned char)*q)) {
@@ -227,4 +340,8 @@ R_API char *r_font_render(const char *s, const char *family) {
 err:
 	r_strbuf_free (sb);
 	return NULL;
+}
+
+R_API char *r_str_font(const char *s, const char *family) {
+	return r_font_render (s, family);
 }
