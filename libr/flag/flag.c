@@ -132,6 +132,9 @@ static RFlagsAtOffset *flags_at_addr(RFlag *f, ut64 addr) {
 
 static char *filter_item_name(const char * R_NONNULL name) {
 	R_RETURN_VAL_IF_FAIL (name, NULL);
+	if (r_name_check (name)) {
+		return strdup (name);
+	}
 	char *res = strdup (name);
 	if (R_LIKELY (res)) {
 		r_str_trim (res);
@@ -164,24 +167,31 @@ static bool update_flag_item_addr(RFlag *f, RFlagItem *fi, ut64 newaddr, bool is
 	return false;
 }
 
+static bool set_flag_item_name(RFlag *f, RFlagItem *item, char *fname, bool force) {
+	R_RETURN_VAL_IF_FAIL (f && item && fname, false);
+	if (!force && item->name && !strcmp (item->name, fname)) {
+		free (fname);
+		return false;
+	}
+	bool res = (item->name)
+		? ht_pp_update_key (f->ht_name, item->name, fname)
+		: ht_pp_insert (f->ht_name, fname, item);
+	if (res) {
+		set_name (item, fname);
+		R_DIRTY_SET (f);
+		return true;
+	}
+	free (fname);
+	return false;
+}
+
 static bool update_flag_item_name(RFlag *f, RFlagItem *item, const char *newname, bool force) {
 	R_RETURN_VAL_IF_FAIL (f && item && newname, false);
-	if (!force && (item->name == newname || (item->name && !strcmp (item->name, newname)))) {
+	if (!force && item->name == newname) {
 		return false;
 	}
 	char *fname = filter_item_name (newname);
-	if (fname) {
-		bool res = (item->name)
-			? ht_pp_update_key (f->ht_name, item->name, fname)
-			: ht_pp_insert (f->ht_name, fname, item);
-		if (res) {
-			set_name (item, fname);
-			R_DIRTY_SET (f);
-			return true;
-		}
-		free (fname);
-	}
-	return false;
+	return fname? set_flag_item_name (f, item, fname, force): false;
 }
 
 static void ht_free_flag(HtPPKv *kv) {
@@ -844,9 +854,9 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	}
 
 	RFlagItem *item = r_flag_get (f, itemname);
-	free (itemname);
 	if (item && item->addr == addr) {
 		item->size = size;
+		free (itemname);
 		return item;
 	}
 
@@ -889,7 +899,7 @@ R_API RFlagItem *r_flag_set(RFlag *f, const char *name, ut64 addr, ut32 size) {
 	item->size = size;
 
 	update_flag_item_addr (f, item, addr + f->base, is_new, true);
-	update_flag_item_name (f, item, name, true);
+	set_flag_item_name (f, item, itemname, true);
 	return item;
 }
 
