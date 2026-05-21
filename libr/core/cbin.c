@@ -5229,21 +5229,26 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 	if (IS_MODE_SET (mode) && core->flags) {
 		ut64 expected = 0;
 		if (action & R_CORE_BIN_ACC_STRINGS) {
-			expected += r_list_length (r_bin_get_strings (core->bin));
+			RList *strings = r_bin_get_strings (core->bin);
+			expected += strings? r_list_length (strings): 0;
 		}
 		if (action & (R_CORE_BIN_ACC_SYMBOLS | R_CORE_BIN_ACC_EXPORTS)) {
-			expected += RVecRBinSymbol_length (r_bin_get_symbols_vec (core->bin));
+			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);
+			expected += symbols? RVecRBinSymbol_length (symbols): 0;
 		}
 		if (action & R_CORE_BIN_ACC_IMPORTS) {
-			expected += RVecRBinImport_length (r_bin_get_imports_vec (core->bin));
+			RVecRBinImport *imports = r_bin_get_imports_vec (core->bin);
+			expected += imports? RVecRBinImport_length (imports): 0;
 		}
 		if (action & R_CORE_BIN_ACC_CLASSES) {
 			RListIter *citer;
 			RBinClass *c;
 			RList *cs = r_bin_get_classes (core->bin);
-			r_list_foreach (cs, citer, c) {
-				expected += 1 + RVecRBinSymbol_length (&c->methods)
-					+ RVecRBinField_length (&c->fields);
+			if (cs) {
+				r_list_foreach (cs, citer, c) {
+					expected += 1 + RVecRBinSymbol_length (&c->methods)
+						+ RVecRBinField_length (&c->fields);
+				}
 			}
 		}
 		if (expected > 0) {
