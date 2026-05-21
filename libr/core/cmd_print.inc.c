@@ -2733,6 +2733,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	const int col = core->print->col;
 	RFlagItem *curflag = NULL;
 	char **note;
+	ut8 *note_type = NULL;
 	bool html = r_config_get_b (core->config, "scr.html");
 	int nb_cons_cols;
 	bool compact = false;
@@ -2757,6 +2758,10 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 
 	note = calloc (nb_cols, sizeof (char *));
 	if (!note) {
+		goto cleanup;
+	}
+	note_type = calloc (nb_cols, sizeof (ut8));
+	if (!note_type) {
 		goto cleanup;
 	}
 
@@ -2822,6 +2827,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 		for (j = 0; j < nb_cols; j++) {
 			setcolor = true;
 			R_FREE (note[j]);
+			note_type[j] = 0;
 
 			// TODO: in pava mode we should read addr or ea? // imho ea. but wat about hdrs and such
 			RIntervalNode *meta_node = r_meta_get_in (core->anal, ea + j, R_META_TYPE_FORMAT);
@@ -2839,6 +2845,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr + j);
 			if (comment) {
 				note[j] = r_str_newf (";%s", comment);
+				note_type[j] = 1;
 				marks = true;
 			}
 			// collect functions
@@ -2919,9 +2926,11 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 				if (name) {
 					free (note[j]);
 					note[j] = r_str_prepend (strdup (name), "/");
+					note_type[j] = 2;
 				} else {
 					free (note[j]);
 					note[j] = NULL;
+					note_type[j] = 0;
 				}
 				marks = true;
 				color_idx++;
@@ -3025,6 +3034,12 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 			int hasline = 0;
 			int out_sz = nb_cons_cols + 20;
 			char *out = calloc (out_sz, sizeof (char));
+			ut8 *out_type = calloc (out_sz, sizeof (ut8));
+			if (!out || !out_type) {
+				free (out);
+				free (out_type);
+				goto print_row;
+			}
 			memset (out, ' ', nb_cons_cols - 1);
 			for (j = 0; j < nb_cols; j++) {
 				if (note[j]) {
@@ -3043,21 +3058,40 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 						out[off + sz - 2] = '.';
 						out[off + sz - 1] = '.';
 					}
+					memset (out_type + off, note_type[j], sz);
 					hasline = (out[off] != ' ');
 					R_FREE (note[j]);
+					note_type[j] = 0;
 				}
 			}
 			out[out_sz - 1] = 0;
 			if (hasline) {
-				char *rendered = core_font_render_cfg (core, "scr.font.cmt", out + 1);
 				r_cons_print (core->cons, addrpad);
-				r_cons_print (core->cons, rendered? rendered: out + 1);
+				char *s = out + 1;
+				size_t slen = strlen (s);
+				size_t k = 0;
+				while (k < slen) {
+					ut8 type = out_type[k + 1];
+					size_t next = k + 1;
+					while (next < slen && out_type[next + 1] == type) {
+						next++;
+					}
+					char tmp = s[next];
+					s[next] = 0;
+					const char *font = type == 2? "scr.font.flag": type == 1? "scr.font.cmt": NULL;
+					char *rendered = font? core_font_render_cfg (core, font, s + k): NULL;
+					r_cons_print (core->cons, rendered? rendered: s + k);
+					free (rendered);
+					s[next] = tmp;
+					k = next;
+				}
 				r_cons_newline (core->cons);
-				free (rendered);
 			}
 			marks = false;
 			free (out);
+			free (out_type);
 		}
+print_row:
 		r_cons_print (core->cons, r_strbuf_get (sbytes));
 		r_cons_print (core->cons, r_strbuf_get (schars));
 
@@ -3078,6 +3112,7 @@ static void annotated_hexdump(RCore *core, const char *str, int len) {
 	}
 
 	free (note);
+	free (note_type);
 cleanup:
 	r_strbuf_free (sbytes);
 	r_strbuf_free (schars);
