@@ -1463,8 +1463,8 @@ static void cmd_fu(RCore *core, const char *input) {
 		}
 		if (rawb64 && *rawb64) {
 			char *rawdec = (char *)r_base64_decode_dyn (rawb64, -1, NULL);
-			free (item->rawname);
-			item->rawname = rawdec? rawdec: NULL;
+			r_flag_item_set_rawname (core->flags, item, rawdec);
+			free (rawdec);
 		}
 		if (realb64 && *realb64) {
 			char *realdec = (char *)r_base64_decode_dyn (realb64, -1, NULL);

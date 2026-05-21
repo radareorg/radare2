@@ -82,8 +82,12 @@ static ut64 num_callback(RNum *user, const char *name, bool *ok) {
 
 static void free_item_realname(RFlagItem *item) {
 	if (item->name != item->realname) {
-		R_FREE (item->realname);
+		if (!item->realname_pooled) {
+			free (item->realname);
+		}
+		item->realname = NULL;
 	}
+	item->realname_pooled = false;
 }
 
 #if 0
@@ -374,7 +378,9 @@ R_API void r_flag_item_free(RFlagItem *fi) {
 		if (!fi->name_pooled) {
 			free (fi->name);
 		}
-		free (fi->rawname);
+		if (!fi->rawname_pooled) {
+			free (fi->rawname);
+		}
 		free (fi);
 	}
 }
@@ -1060,16 +1066,42 @@ R_API const char *r_flag_item_set_comment(RFlag *f, RFlagItem *fi, const char *c
 /* add/replace/remove the realname of a flag item */
 R_API const char *r_flag_item_set_realname(RFlag *f, RFlagItem *item, const char *realname) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
+	if (item->realname && realname && !strcmp (item->realname, realname)) {
+		return item->realname;
+	}
 	free_item_realname (item);
-	item->realname = R_STR_ISEMPTY (realname)? NULL: strdup (realname);
+	if (R_STR_ISEMPTY (realname)) {
+		item->realname = NULL;
+	} else if (f && f->names) {
+		item->realname = r_arena_push_str (f->names, realname);
+		item->realname_pooled = item->realname != NULL;
+	} else {
+		item->realname = strdup (realname);
+	}
 	return item->realname;
 }
 
 /* add/replace/remove the rawname of a flag item */
 R_API const char *r_flag_item_set_rawname(RFlag *f, RFlagItem *item, const char * R_NULLABLE rawname) {
 	R_RETURN_VAL_IF_FAIL (item, NULL);
-	free (item->rawname);
-	return item->rawname = R_STR_ISNOTEMPTY (rawname)? strdup (rawname): NULL;
+	if (item->rawname && rawname && !strcmp (item->rawname, rawname)) {
+		return item->rawname;
+	}
+	if (!item->rawname_pooled) {
+		free (item->rawname);
+	}
+	item->rawname = NULL;
+	item->rawname_pooled = false;
+	if (R_STR_ISEMPTY (rawname)) {
+		return NULL;
+	}
+	if (f && f->names) {
+		item->rawname = r_arena_push_str (f->names, rawname);
+		item->rawname_pooled = item->rawname != NULL;
+	} else {
+		item->rawname = strdup (rawname);
+	}
+	return item->rawname;
 }
 
 /* add/replace/remove the color of a flag item */

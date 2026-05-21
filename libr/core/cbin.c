@@ -439,8 +439,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			r_name_filter (str, -1);
 			RFlagItem *fi = r_flag_set (core->flags, str, vaddr, string->size);
 			if (fi) {
-				free (fi->rawname);
-				fi->rawname = strdup (string->string);
+				r_flag_item_set_rawname (core->flags, fi, string->string);
 				const bool realstr = r_config_get_b (core->config, "bin.str.real");
 				if (realstr) {
 					char *es = r_str_escape (string->string);
@@ -2677,8 +2676,7 @@ static void set_symbol_flag(RCore *core, RBinSymbol *symbol, const SymName *sn, 
 	}
 	if (fi) {
 		r_flag_item_set_realname (core->flags, fi, display_name);
-		free (fi->rawname);
-		fi->rawname = sn->name? strdup (sn->name): NULL;
+		r_flag_item_set_rawname (core->flags, fi, sn->name);
 		if (sn->demname) {
 			fi->demangled = true;
 		}
@@ -3009,8 +3007,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 				if (fi) {
 					RFlagItem *fi2 = r_flag_get (core->flags, sn.methflag);
 					if (fi2) {
-						free (fi2->rawname);
-						fi2->rawname = sn.name? strdup (sn.name): NULL;
+						r_flag_item_set_rawname (core->flags, fi2, sn.name);
 					}
 				}
 			} else {
@@ -3048,8 +3045,7 @@ static bool bin_symbols(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64 
 						r_flag_item_set_realname (core->flags, fi, n);
 						RFlagItem *fi2 = r_flag_get (core->flags, fnp);
 						if (fi2) {
-							free (fi2->rawname);
-							fi2->rawname = sn.name? strdup (sn.name): NULL;
+							r_flag_item_set_rawname (core->flags, fi2, sn.name);
 						}
 						// if (fi->addr == 0x10e670) eprintf ("SWE RAW NAME OF 0x%"PFMT64x".. %s\n", fi->addr, fi->rawname);
 						const bool is_demangled = (bool) (size_t)sn.demname;
@@ -4245,8 +4241,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 							if (rawname) {
 								RFlagItem *fi2 = r_flag_get (core->flags, method);
 								if (fi2) {
-									free (fi2->rawname);
-									fi2->rawname = strdup (rawname);
+									r_flag_item_set_rawname (core->flags, fi2, rawname);
 								}
 							}
 						}
