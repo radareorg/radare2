@@ -394,6 +394,7 @@ R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSection, RBinSection, r_bin_section_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
+R_VEC_TYPE(RVecUT32, ut32);
 
 typedef struct r_bin_object_t {
 	ut64 baddr;
@@ -723,7 +724,12 @@ typedef struct r_bin_class_t {
 	ut64 addr;
 	size_t instance_size;
 	char *ns; // namespace // maybe RBinName?
+	// One of these holds methods, never both:
+	//   methods    — class-owned method structs (objc/pe/java/demangler)
+	//   method_idx — indices into RBinObject.symbols_vec (dex/clone-from-symbols paths,
+	//                avoids duplicating each symbol)
 	RVecRBinSymbol methods;
+	RVecUT32 method_idx;
 	RVecRBinField fields;
 	// RList *interfaces; // <char *>
 	RBinAttribute attr;
@@ -876,6 +882,12 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 R_API const char *r_bin_class_origin_tostring(RBinClassOrigin origin);
 R_API void r_bin_class_fini(RBinClass *);
 R_API void r_bin_class_free(RBinClass *);
+R_API RBinSymbol *r_bin_class_method_at(const RBinObject *bo, const RBinClass *c, size_t i);
+R_API size_t r_bin_class_methods_count(const RBinClass *c);
+// Iterate methods of `cls` regardless of whether they are stored inline (objc/pe/java/demangler)
+// or as indices into bo->symbols_vec (dex/clone-from-symbols paths).
+#define R_BIN_CLASS_FOREACH_METHOD(bo, cls, sym) \
+	for (size_t _bcm_i = 0; ((sym) = r_bin_class_method_at ((bo), (cls), _bcm_i)); _bcm_i++)
 // uhm should be tied used because we dont want bincur to change because of open
 R_API RBinFile *r_bin_file_open(RBin *bin, const char *file, RBinFileOptions *opt);
 

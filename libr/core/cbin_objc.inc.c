@@ -358,7 +358,8 @@ static void classdump_objc(RCore *core, RBinClass *c) {
 		}
 		free (type);
 	}
-	R_VEC_FOREACH (&c->methods, sym) {
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
+	R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 		const char *sname = r_bin_name_tostring2 (sym->name, pref);
 		bool is_class_method = (sym->attr & R_BIN_ATTR_CLASS) != 0;
 		if (!is_class_method && sym->type) {

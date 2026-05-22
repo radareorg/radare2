@@ -114,7 +114,7 @@ static void init_addr2klass(RCore *core, RBinObject *bo) {
 	// this is slow. must be optimized, but at least its cached
 	bo->addr2klassmethod = ht_up_new0 ();
 	r_list_foreach (klasses, iter, klass) {
-		R_VEC_FOREACH (&klass->methods, method) {
+		R_BIN_CLASS_FOREACH_METHOD (bo, klass, method) {
 			ht_up_insert (bo->addr2klassmethod, method->vaddr, method);
 		}
 	}

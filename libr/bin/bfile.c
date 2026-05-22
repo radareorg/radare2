@@ -1292,6 +1292,7 @@ R_API RBinClass *r_bin_class_new(const char *name, const char *super, ut64 attr)
 			r_list_append (c->super, r_bin_name_new (super));
 		}
 		RVecRBinSymbol_init (&c->methods);
+		RVecUT32_init (&c->method_idx);
 		RVecRBinField_init (&c->fields);
 		c->attr = attr;
 		c->origin = R_BIN_CLASS_ORIGIN_BIN;
@@ -1322,6 +1323,7 @@ R_API void r_bin_class_fini(RBinClass *k) {
 		r_list_free (k->super);
 		free (k->visibility_str);
 		RVecRBinSymbol_fini (&k->methods);
+		RVecUT32_fini (&k->method_idx);
 		RVecRBinField_fini (&k->fields);
 	}
 }

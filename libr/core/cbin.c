@@ -4091,7 +4091,8 @@ static void classdump_swift(RCore *core, RBinClass *c) {
 			r_cons_printf (core->cons, "  %s %s;\n", var, fname);
 		}
 	}
-	R_VEC_FOREACH (&c->methods, sym) {
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
+	R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 		const char *mn = r_bin_name_tostring2 (sym->name, pref);
 		const char *ms = strstr (mn, "method.");
 		if (ms) {
@@ -4132,7 +4133,8 @@ static void classdump_java(RCore *core, RBinClass *c) {
 			r_cons_printf (core->cons, "  public %s %s\n", R_STR_ISNOTEMPTY (tp)? tp: "Object", fname);
 		}
 	}
-	R_VEC_FOREACH (&c->methods, sym) {
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
+	R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 		const char *mn = r_bin_name_tostring2 (sym->name, pref);
 		const char *ms = strstr (mn, "method.");
 		if (ms) {
@@ -4163,6 +4165,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 	RBinSymbol *sym;
 	RBinClass *c;
 	RBinField *f;
+	RBinObject *bo = core->bin->cur? core->bin->cur->bo: NULL;
 	RList *cs = r_bin_get_classes (core->bin);
 	RBinInfo *info = r_bin_get_info (core->bin);
 	const int va = (info && info->has_va)? VA_TRUE: VA_FALSE;
@@ -4201,7 +4204,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 		ut64 at_max = 0LL;
 
 		if (!names_only) {
-			R_VEC_FOREACH (&c->methods, sym) {
+			R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 				ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
 				if (maddr) {
 					if (maddr < at_min) {
@@ -4222,7 +4225,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 			char *classname = r_str_newf ("class.%s", name);
 			r_flag_set (core->flags, classname, c->addr, 1);
 			if (!names_only) {
-				R_VEC_FOREACH (&c->methods, sym) {
+				R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 					ut64 maddr = compute_addr (core->bin, sym->paddr, sym->vaddr, va);
 					RFlagItem *fi = r_flag_get_at (core->flags, maddr, false);
 					if (fi) {
@@ -4324,7 +4327,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 			}
 			if (!names_only) {
-				R_VEC_FOREACH (&c->methods, sym) {
+				R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 				char *mflags = r_bin_attr_tostring (sym->attr, false);
 				r_str_replace_char (mflags, ' ', '.');
 				const char *n = cname; //  r_name_filter_shell (cname);
@@ -4433,9 +4436,9 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				}
 				pj_end (pj);
 			}
-			if (!names_only && !RVecRBinSymbol_empty (&c->methods)) {
+			if (!names_only && r_bin_class_methods_count (c) > 0) {
 				pj_ka (pj, "methods");
-				R_VEC_FOREACH (&c->methods, sym) {
+				R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 					pj_o (pj);
 					const char *rname = r_bin_name_tostring2 (sym->name, 'o');
 					const char *sname = r_bin_name_tostring2 (sym->name, 'd');
@@ -4520,7 +4523,7 @@ static bool bin_classes(RCore *core, PJ *pj, int mode) {
 				free (csv);
 			}
 			if (!names_only) {
-				R_VEC_FOREACH (&c->methods, sym) {
+				R_BIN_CLASS_FOREACH_METHOD (bo, c, sym) {
 				char *mflags = r_core_bin_attr_tostring (core, sym->attr, mode);
 				const char *ls = r_bin_lang_tostring (sym->lang);
 				const char *sname = r_bin_name_tostring2 (sym->name, pref);
