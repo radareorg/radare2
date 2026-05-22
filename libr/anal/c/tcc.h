@@ -409,7 +409,7 @@ struct TCCState {
 	bool unget_buffer_enabled;
 	TokenSym *hash_ident[TOK_HASH_SIZE];
 	char token_buf[STRING_MAX_SIZE + 1];
-	/* true if isid(c) || isnum(c) || isdot(c) */
+	/* true if isid(c) || isdigit(c) || isdot(c) */
 	unsigned char isidnum_table[256 - CH_EOF];
 };
 
@@ -678,22 +678,12 @@ static inline bool isid(int c) {
 	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_';
 }
 
-// TODO: deprecate. we have isdigit()
-static inline bool isnum(int c) {
-	return c >= '0' && c <= '9';
-}
-
 static inline bool isdot(int c) {
 	return c == '.';
 }
 
 static inline bool isoct(int c) {
 	return c >= '0' && c <= '7';
-}
-
-// TODO: deprecate, we have toupper()
-static inline int toup(int c) {
-	return (c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c;
 }
 
 static inline int tcc_nerr(TCCState *s1) {
