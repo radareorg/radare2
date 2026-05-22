@@ -107,12 +107,12 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 
 R_API RVecRBinString *r_bin_raw_strings(RBinFile *bf, int min) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 0, 2);
+	return r_bin_file_get_strings (bf, min, 0, 2, NULL);
 }
 
 R_API RVecRBinString *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
-	return r_bin_file_get_strings (bf, min, 1, raw);
+	return r_bin_file_get_strings (bf, min, 1, raw, NULL);
 }
 
 R_API void r_bin_file_options_init(RBinFileOptions *opt, int fd, ut64 baseaddr, ut64 loadaddr, int rawstr) {
@@ -912,19 +912,20 @@ R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 	RVecRBinString_clear (&bf->bo->strings);
 
 	ht_up_free (bf->bo->strings_db);
-	bf->bo->strings_db = ht_up_new0 ();
+	bf->bo->strings_db = NULL;
 
 	bf->rawstr = bin->options.rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
+	HtUP *strings_db = NULL;
 	RVecRBinString *strings = plugin && plugin->strings
 		? plugin->strings (bf)
-		: r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
+		: r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr, &strings_db);
 	r_bin_take_strings (&bf->bo->strings, strings);
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}
-	r_bin_object_rebuild_strings_db (bf->bo);
+	r_bin_object_set_strings_db (bf->bo, strings_db, true);
 	return &bf->bo->strings;
 }
 

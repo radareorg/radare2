@@ -528,8 +528,9 @@ R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char typ
 	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
 		return false;
 	}
+	ut64 deleted_vaddr = bs->vaddr;
 	RVecRBinString_remove (&bo->strings, index);
-	r_bin_object_rebuild_strings_db (bo);
+	r_bin_strings_index_update_after_remove (&bo->strings, bo->strings_db, deleted_vaddr, index);
 	return true;
 }
 
@@ -622,6 +623,6 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 		return NULL;
 	}
 	*dst = bs;
-	ht_up_insert (bo->strings_db, dst->vaddr, (void *)(size_t)RVecRBinString_length (&bo->strings));
+	r_bin_strings_index_insert (bo->strings_db, dst->vaddr, RVecRBinString_length (&bo->strings) - 1);
 	return dst;
 }

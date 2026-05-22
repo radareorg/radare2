@@ -101,7 +101,7 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 }
 
 // TODO: this code must be implemented in RSearch as options for the strings mode
-static int string_scan_range(RBinFile *bf, RVecRBinString *list, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
+static int string_scan_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
 	const bool strings_nofp = bin->strings_nofp;
 	ut8 tmp[64]; // temporal buffer to encode characters in utf8 form
@@ -434,9 +434,11 @@ static int string_scan_range(RBinFile *bf, RVecRBinString *list, int min, const 
 			bs.string = str;
 			bs.length = runes - (before - strlen (str));
 			if (list) {
+				size_t string_index = RVecRBinString_length (list);
 				RBinString *dst = RVecRBinString_emplace_back (list);
 				if (dst) {
 					*dst = bs;
+					r_bin_strings_index_insert (strings_index, dst->vaddr, string_index);
 				} else {
 					r_bin_string_fini (&bs);
 					break;
@@ -475,7 +477,7 @@ static bool is_data_section(RBinFile *a, RBinSection *s) {
 	return s->name && strstr (s->name, "_const");
 }
 
-static void get_strings_range(RBinFile *bf, RVecRBinString *list, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
+static void get_strings_range(RBinFile *bf, RVecRBinString *list, HtUP *strings_index, int min, int raw, bool nofp, ut64 from, ut64 to, RBinSection *section) {
 	R_RETURN_IF_FAIL (bf && bf->buf);
 
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -539,7 +541,7 @@ static void get_strings_range(RBinFile *bf, RVecRBinString *list, int min, int r
 		R_LOG_ERROR ("encoding %s not supported", enc);
 		return;
 	}
-	string_scan_range (bf, list, min, from, to, type, raw, section);
+	string_scan_range (bf, list, strings_index, min, from, to, type, raw, section);
 }
 
 /////////////////////////////
@@ -1098,26 +1100,39 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw, HtUP **strings_db) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinObject *bo = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
 	RBinSection *section;
 	RVecRBinString *ret = dump? NULL: RVecRBinString_new ();
+	if (strings_db) {
+		*strings_db = NULL;
+	}
+	const bool has_sections = !raw && bo && !RVecRBinSection_empty (&bo->sections_vec);
+	HtUP *strings_index = ret && (strings_db || has_sections)? ht_up_new0 (): NULL;
+	const int limit = bf->rbin->options.limit;
+	if (ret && limit > 0) {
+		RVecRBinString_reserve (ret, (size_t)limit);
+	}
 
 	bf->string_count = 0;
-	if (!raw && bo && !RVecRBinSection_empty (&bo->sections_vec)) {
+	if (has_sections) {
 		R_VEC_FOREACH (&bo->sections_vec, section) {
 			if (is_data_section (bf, section)) {
-				get_strings_range (bf, ret, min, raw, nofp, section->paddr,
+				get_strings_range (bf, ret, strings_index, min, raw, nofp, section->paddr,
 						section->paddr + section->size, section);
 			}
 		}
 	} else {
-		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
+		get_strings_range (bf, ret, strings_index, min, raw, nofp, 0, bf->size, NULL);
+		if (strings_db) {
+			*strings_db = strings_index;
+		} else {
+			ht_up_free (strings_index);
+		}
 		return ret;
 	}
-	HtUP *strings_index = r_bin_strings_build_index (ret);
 	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (!section->name) {
 			continue;
@@ -1135,6 +1150,16 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 			}
 			if (section->size < 1) {
 				continue;
+			}
+			if (ret) {
+				ut64 cfstr_bound64 = (section->size / cfstr_size) + 1;
+				if (cfstr_bound64 <= SZT_MAX) {
+					size_t need;
+					size_t cfstr_bound = (size_t)cfstr_bound64;
+					if (!r_add_overflow (RVecRBinString_length (ret), cfstr_bound, &need)) {
+						RVecRBinString_reserve (ret, need);
+					}
+				}
 			}
 			ut8 *sbuf = malloc (section->size);
 			if (!sbuf) {
@@ -1163,12 +1188,17 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
 					bs->string = r_str_newf ("cstr.%s", src.string);
+					r_bin_strings_index_insert (strings_index, bs->vaddr, RVecRBinString_length (ret) - 1);
 				}
 			}
 			free (sbuf);
 		}
 	}
-	ht_up_free (strings_index);
+	if (strings_db) {
+		*strings_db = strings_index;
+	} else {
+		ht_up_free (strings_index);
+	}
 	return ret;
 }
 
