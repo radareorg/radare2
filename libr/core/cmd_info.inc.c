@@ -1603,8 +1603,8 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		ut64 total = 0;
 		r_list_foreach (bfiles, iter, bf) {
 			RBinObject *bo = bf->bo;
-			if (bo && bo->strings) {
-				total += r_list_length (bo->strings);
+			if (bo) {
+				total += RVecRBinString_length (&bo->strings);
 			}
 		}
 		r_list_free (bfiles);
@@ -1630,9 +1630,9 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	if (*p == 'c') {
 		RBinFile *bf = r_bin_cur (core->bin);
 		if (bf) {
-			RList *l = r_bin_raw_strings (bf, 0);
-			r_cons_printf (core->cons, "%d\n", r_list_length (l));
-			r_list_free (l);
+			RVecRBinString *strings = r_bin_raw_strings (bf, 0);
+			r_cons_printf (core->cons, "%d\n", strings? (int)RVecRBinString_length (strings): 0);
+			RVecRBinString_free (strings);
 		}
 		return;
 	}
@@ -1680,12 +1680,11 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 	}
 	// Handle "iz.", "izj.", "izq." - show string at current address
 	if (dotmode) {
-		RList *list = r_bin_get_strings (core->bin);
+		RVecRBinString *list = r_bin_get_strings (core->bin);
 		if (list) {
 			ut64 addr = core->addr;
-			RListIter *iter;
 			RBinString *string;
-			r_list_foreach (list, iter, string) {
+			R_VEC_FOREACH (list, string) {
 				ut64 vaddr = va? string->vaddr: string->paddr;
 				if (vaddr == addr || string->paddr == addr) {
 					if (mode & R_MODE_JSON) {
@@ -1736,8 +1735,8 @@ static void cmd_iz(RCore *core, PJ *pj, int mode, int is_array, bool va, const c
 		int min = r_config_get_i (core->config, "bin.str.min");
 		if (bf) {
 			bf->strmode = mode;
-			RList *res = r_bin_dump_strings (bf, min, 2);
-			r_list_free (res);
+			RVecRBinString *res = r_bin_dump_strings (bf, min, 2);
+			RVecRBinString_free (res);
 		}
 	} else if (raw) {
 		bin_raw_strings (core, pj, mode, va, skip, count);

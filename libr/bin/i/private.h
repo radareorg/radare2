@@ -7,7 +7,7 @@
 
 R_IPI RBinFile *r_bin_file_new(RBin *bin, const char *file, ut64 file_sz, RBinFileOptions *opt, Sdb *sdb, bool steal_ptr);
 R_IPI RBinObject *r_bin_file_object_find_by_id(RBinFile *binfile, ut32 binobj_id);
-R_IPI RList *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *a, int min, int dump, int raw);
 R_IPI RBinFile *r_bin_file_find_by_object_id(RBin *bin, ut32 binobj_id);
 R_IPI RBinFile *r_bin_file_find_by_id(RBin *bin, ut32 binfile_id);
 R_IPI bool r_bin_file_set_obj(RBin *bin, RBinFile *bf, RBinObject *obj);
@@ -27,9 +27,15 @@ static inline bool limit_reached_vec_imports(const RVecRBinImport *vec, int limi
 	return limit > 0 && RVecRBinImport_length (vec) >= (size_t)limit;
 }
 
+static inline bool limit_reached_vec_strings(const RVecRBinString *vec, int limit) {
+	return limit > 0 && RVecRBinString_length (vec) >= (size_t)limit;
+}
+
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);
+R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo);
+R_IPI RBinString *r_bin_object_get_string_at(RBinObject *bo, ut64 addr);
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);

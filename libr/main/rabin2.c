@@ -1219,7 +1219,8 @@ R_API int r_main_rabin2(int argc, const char **argv) {
 		RBinFile *bf = r_bin_cur (core.bin);
 		if (bf) {
 			bf->strmode = rad;
-			r_bin_dump_strings (bf, bin->options.minstrlen, bf->rawstr);
+			RVecRBinString *strings = r_bin_dump_strings (bf, bin->options.minstrlen, bf->rawstr);
+			RVecRBinString_free (strings);
 		}
 	}
 	if (query) {

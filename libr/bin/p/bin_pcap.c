@@ -77,30 +77,30 @@ static bool symbols_vec(RBinFile *bf) {
 }
 
 #if CUSTOM_STRINGS
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && bf->bo->bin_obj, NULL);
 
-	RBinString *ptr;
 	pcap_obj_t *obj = bf->bo->bin_obj;
-	RList *ret = r_list_newf (free);
+	RVecRBinString *ret = RVecRBinString_new ();
 
 	RListIter *iter;
 	pcaprec_t *rec;
 	r_list_foreach (obj->recs, iter, rec) {
 		if (rec->data && *rec->data != 0) {
-			ptr = R_NEW0 (RBinString);
+			RBinString *ptr = RVecRBinString_emplace_back (ret);
+			if (!ptr) {
+				break;
+			}
 			ptr->string = r_str_ndup ((const char *)rec->data, 32); // rec->datasz);
 			if (strlen (ptr->string) < 10) {
 				// eprintf ("(%s)\n", ptr->string);
-				free (ptr->string);
-				free (ptr);
+				RVecRBinString_pop_back (ret);
 				continue;
 			}
 			ptr->paddr = ptr->vaddr = rec->paddr; //XXX;
 			ptr->length = strlen (ptr->string);
 			ptr->size = ptr->length + 1;
 			ptr->type = R_STRING_TYPE_DETECT;
-			r_list_append (ret, ptr);
 		}
 	}
 	return ret;

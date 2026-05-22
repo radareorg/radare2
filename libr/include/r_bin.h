@@ -383,15 +383,27 @@ typedef struct r_bin_import_t {
 	bool is_imported;
 } RBinImport;
 
+typedef struct r_bin_string_t {
+	char *string; // TODO: rename to text or so
+	ut64 vaddr;
+	ut64 paddr;
+	ut32 ordinal;
+	ut32 size; // size of buffer containing the string in bytes
+	ut32 length; // length of string in chars
+	char type; // Ascii Wide cp850 utf8 base64 ...
+} RBinString;
+
 #include <r_vec.h>
 
 // XXX only forward declare here for better compile times
 R_API void r_bin_section_fini(RBinSection *sec);
 R_API void r_bin_symbol_fini(RBinSymbol *sym);
 R_API void r_bin_import_fini(RBinImport *sym);
+R_API void r_bin_string_fini(RBinString *str);
 R_VEC_TYPE_WITH_FINI (RVecRBinImport, RBinImport, r_bin_import_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSymbol, RBinSymbol, r_bin_symbol_fini);
 R_VEC_TYPE_WITH_FINI (RVecRBinSection, RBinSection, r_bin_section_fini);
+R_VEC_TYPE_WITH_FINI (RVecRBinString, RBinString, r_bin_string_fini);
 R_VEC_TYPE(RVecRBinEntry, RBinSymbol);
 R_VEC_TYPE(RVecBinSymclassGlob, char *);
 
@@ -411,11 +423,11 @@ typedef struct r_bin_object_t {
 	RList/*<??>*/ *fields;
 	RList/*<??>*/ *libs;
 	RRBTree/*<RBinReloc>*/ *relocs;
-	RList/*<??>*/ *strings;
+	RVecRBinString strings;
 	RList/*<RBinClass>*/ *classes;
 	HtPP *classes_ht;
 	RList/*<RBinDwarfRow>*/ *lines;
-	HtUP *strings_db;
+	HtUP *strings_db; // vaddr -> strings index + 1
 	RList/*<??>*/ *mem; // RBinMem maybe?
 	RList/*<BinMap*/ *maps;
 	char *regstate;
@@ -658,7 +670,7 @@ typedef struct r_bin_plugin_t {
 	bool (*symbols_vec)(RBinFile *bf);
 	bool (*imports_vec)(RBinFile *bf);
 	R_UNOWNED RList/*<RBinDwarfRow>*/* (*lines)(RBinFile *bf);
-	RList/*<RBinString>*/* (*strings)(RBinFile *bf);
+	RVecRBinString *(*strings)(RBinFile *bf);
 	RBinInfo/*<RBinInfo>*/* (*info)(RBinFile *bf);
 	RList/*<RBinField>*/* (*fields)(RBinFile *bf);
 	RList/*<char *>*/* (*libs)(RBinFile *bf);
@@ -764,16 +776,6 @@ typedef struct r_bin_reloc_t {
 } RBinReloc;
 
 R_VEC_TYPE (RVecRBinReloc, RBinReloc);
-
-typedef struct r_bin_string_t {
-	char *string; // TODO: rename to text or so
-	ut64 vaddr;
-	ut64 paddr;
-	ut32 ordinal;
-	ut32 size; // size of buffer containing the string in bytes
-	ut32 length; // length of string in chars
-	char type; // Ascii Wide cp850 utf8 base64 ...
-} RBinString;
 
 R_API const char *r_bin_field_kindstr(RBinField *f);
 R_API RBinField *r_bin_field_new(ut64 paddr, ut64 vaddr, ut64 value, int size, const char *name, const char *comment, const char *format, bool format_named);
@@ -899,8 +901,8 @@ R_API void r_bin_set_baddr(RBin *bin, ut64 baddr);
 R_API ut64 r_bin_get_laddr(RBin *bin);
 R_API ut64 r_bin_get_size(RBin *bin);
 R_API RBinAddr *r_bin_get_sym(RBin *bin, int sym);
-R_API RList *r_bin_raw_strings(RBinFile *a, int min);
-R_API RList *r_bin_dump_strings(RBinFile *a, int min, int raw);
+R_API RVecRBinString *r_bin_raw_strings(RBinFile *a, int min);
+R_API RVecRBinString *r_bin_dump_strings(RBinFile *a, int min, int raw);
 
 // use RBinFile instead
 R_API const RList *r_bin_get_entries(RBin *bin);
@@ -910,14 +912,14 @@ R_API RRBTree *r_bin_get_relocs(RBin *bin);
 R_API RVecRBinSection *r_bin_get_sections_vec(RBin *bin);
 R_API RList *r_bin_get_classes(RBin *bin);
 R_API char* r_bin_get_types(RBin *bin);
-R_API RList *r_bin_get_strings(RBin *bin);
+R_API RVecRBinString *r_bin_get_strings(RBin *bin);
 R_API RList *r_bin_file_get_trycatch(RBinFile *bf);
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin);
 // O(1) lookup by address (vaddr first, then paddr). Builds a lazy index on the
 // current RBinObject on first call; returns NULL if no symbol matches.
 R_API RBinSymbol *r_bin_get_symbol_at(RBin *bin, ut64 addr);
 R_API RVecRBinImport *r_bin_get_imports_vec(RBin *bin);
-R_API RList *r_bin_reset_strings(RBin *bin);
+R_API RVecRBinString *r_bin_reset_strings(RBin *bin);
 R_API int r_bin_is_big_endian(RBin *bin); // R2_590: deprecate. also it returns -1, false and true
 R_API bool r_bin_is_static(RBin *bin); // R2_590: deprecate
 R_API ut64 r_bin_get_vaddr(RBin *bin, ut64 paddr, ut64 vaddr);

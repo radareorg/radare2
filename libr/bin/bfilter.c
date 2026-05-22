@@ -520,15 +520,20 @@ R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
 R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char type) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && vaddr != UT64_MAX, false);
 	RBinObject *bo = bf->bo;
-	RBinString *bs = ht_up_find (bo->strings_db, vaddr, NULL);
-	if (!bs) {
+	void *value = ht_up_find (bo->strings_db, vaddr, NULL);
+	if (!value) {
+		return false;
+	}
+	size_t index = (size_t)value - 1;
+	RBinString *bs = RVecRBinString_at (&bo->strings, index);
+	if (!bs || bs->vaddr != vaddr) {
 		return false;
 	}
 	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
 		return false;
 	}
-	ht_up_delete (bo->strings_db, vaddr);
-	r_list_delete_data (bo->strings, bs);
+	RVecRBinString_remove (&bo->strings, index);
+	r_bin_object_rebuild_strings_db (bo);
 	return true;
 }
 
@@ -569,9 +574,6 @@ static char *extract_wide_string(const ut8 *buf, st64 len, int charsize, ut32 *o
 R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut64 max_len, int type) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinObject *bo = bf->bo;
-	if (!bo->strings) {
-		bo->strings = r_list_newf ((RListFree)r_bin_string_free);
-	}
 	if (!bo->strings_db) {
 		bo->strings_db = ht_up_new0 ();
 	}
@@ -590,35 +592,40 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 	if (type == 0) {
 		type = detect_string_type (buf, len);
 	}
-	RBinString *bs = R_NEW0 (RBinString);
+	RBinString bs = { 0 };
 	ut32 actual_len = 0, actual_size = 0;
 	int i;
 	switch (type) {
 	case R_STRING_TYPE_WIDE:
-		bs->string = extract_wide_string (buf, len, 2, &actual_len, &actual_size);
+		bs.string = extract_wide_string (buf, len, 2, &actual_len, &actual_size);
 		break;
 	case R_STRING_TYPE_WIDE32:
-		bs->string = extract_wide_string (buf, len, 4, &actual_len, &actual_size);
+		bs.string = extract_wide_string (buf, len, 4, &actual_len, &actual_size);
 		break;
 	default:
 		for (i = 0; i < len && buf[i] && IS_PRINTABLE (buf[i]); i++) {
 			actual_len++;
 		}
 		actual_size = actual_len + 1;
-		bs->string = r_str_ndup ((char *)buf, actual_len);
+		bs.string = r_str_ndup ((char *)buf, actual_len);
 		break;
 	}
 	free (buf);
-	if (!bs->string) {
-		bs->string = strdup ("");
+	if (!bs.string) {
+		bs.string = strdup ("");
 	}
-	bs->paddr = paddr;
-	bs->vaddr = vaddr;
-	bs->size = actual_size;
-	bs->length = actual_len;
-	bs->type = type;
-	bs->ordinal = r_list_length (bo->strings);
-	r_list_append (bo->strings, bs);
-	ht_up_insert (bo->strings_db, bs->vaddr, bs);
-	return bs;
+	bs.paddr = paddr;
+	bs.vaddr = vaddr;
+	bs.size = actual_size;
+	bs.length = actual_len;
+	bs.type = type;
+	bs.ordinal = RVecRBinString_length (&bo->strings);
+	RBinString *dst = RVecRBinString_emplace_back (&bo->strings);
+	if (!dst) {
+		r_bin_string_fini (&bs);
+		return NULL;
+	}
+	*dst = bs;
+	ht_up_insert (bo->strings_db, dst->vaddr, (void *)(size_t)RVecRBinString_length (&bo->strings));
+	return dst;
 }

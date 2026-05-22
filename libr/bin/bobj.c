@@ -54,6 +54,40 @@ static void clamp_list(RList *list, int limit) {
 	}
 }
 
+static void rebase_strings_vec(RBinObject *bo) {
+	RBinString *string;
+	R_VEC_FOREACH (&bo->strings, string) {
+		string->paddr += bo->loadaddr;
+	}
+}
+
+R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo) {
+	R_RETURN_IF_FAIL (bo);
+	ht_up_free (bo->strings_db);
+	bo->strings_db = ht_up_new0 ();
+	RBinString *string;
+	size_t i = 0;
+	R_VEC_FOREACH (&bo->strings, string) {
+		ht_up_insert (bo->strings_db, string->vaddr, (void *)(size_t)(i + 1));
+		i++;
+	}
+}
+
+R_IPI RBinString *r_bin_object_get_string_at(RBinObject *bo, ut64 addr) {
+	if (!bo || addr == 0 || addr == UT64_MAX) {
+		return NULL;
+	}
+	void *value = ht_up_find (bo->strings_db, addr, NULL);
+	if (value) {
+		size_t index = (size_t)value - 1;
+		RBinString *string = RVecRBinString_at (&bo->strings, index);
+		if (string && string->vaddr == addr) {
+			return string;
+		}
+	}
+	return NULL;
+}
+
 // Trim an RVec to at most `limit` elements (no-op when limit < 1). erase_back
 // invokes the vec's fini_fn for each dropped element, matching pop_back.
 #define CLAMP_VEC(T, vec, limit) do { \
@@ -193,7 +227,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
-	r_list_free (o->strings);
+	RVecRBinString_fini (&o->strings);
 	ht_up_free (o->strings_db);
 
 	RVecRBinImport_fini (&o->imports_vec);
@@ -372,6 +406,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RVecRBinSymbol_init (&bo->symbols_vec);
 	RVecRBinImport_init (&bo->imports_vec);
 	RVecRBinSection_init (&bo->sections_vec);
+	RVecRBinString_init (&bo->strings);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
@@ -411,6 +446,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 fail:
 	r_strpool_free (bo->pool);
 	RVecRBinSymbol_fini (&bo->symbols_vec);
+	RVecRBinString_fini (&bo->strings);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
@@ -640,14 +676,19 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		bo->strings = p->strings
+		RVecRBinString *strings = p->strings
 			? p->strings (bf)
 			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
+		if (strings) {
+			RVecRBinString_swap (&bo->strings, strings);
+			RVecRBinString_free (strings);
+		}
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
-		clamp_list (bo->strings, limit);
-		REBASE_PADDR (bo, bo->strings, RBinString);
+		CLAMP_VEC (RVecRBinString, &bo->strings, limit);
+		rebase_strings_vec (bo);
+		r_bin_object_rebuild_strings_db (bo);
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
@@ -749,12 +790,10 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	R_RETURN_IF_FAIL (bo && bo->strings);
+	R_RETURN_IF_FAIL (bo);
 
-	RList *strings = bo->strings;
 	RBinString *ptr;
-	RListIter *iter;
-	r_list_foreach (strings, iter, ptr) {
+	R_VEC_FOREACH (&bo->strings, ptr) {
 		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
 		if (dec) {
 			char *s = ptr->string;
