@@ -1173,17 +1173,18 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 				ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
 				RBinString *s = string_vec_get_at (ret, strings_index, cstr_vaddr);
 				if (s) {
+					RBinString src = *s;
 					RBinString *bs = RVecRBinString_emplace_back (ret);
 					if (!bs) {
 						break;
 					}
-					bs->type = s->type;
-					bs->length = s->length;
-					bs->size = s->size;
-					bs->ordinal = s->ordinal;
+					bs->type = src.type;
+					bs->length = src.length;
+					bs->size = src.size;
+					bs->ordinal = src.ordinal;
 					bs->vaddr = cfstr_vaddr;
 					bs->paddr = cfstr_vaddr; // XXX should be paddr instead
-					bs->string = r_str_newf ("cstr.%s", s->string);
+					bs->string = r_str_newf ("cstr.%s", src.string);
 				}
 			}
 			free (sbuf);
