@@ -61,31 +61,47 @@ static void rebase_strings_vec(RBinObject *bo) {
 	}
 }
 
-R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo) {
-	R_RETURN_IF_FAIL (bo);
-	ht_up_free (bo->strings_db);
-	bo->strings_db = ht_up_new0 ();
+R_IPI HtUP *r_bin_strings_build_index(RVecRBinString *strings) {
+	if (!strings) {
+		return NULL;
+	}
+	HtUP *index = ht_up_new0 ();
+	if (!index) {
+		return NULL;
+	}
 	RBinString *string;
 	size_t i = 0;
-	R_VEC_FOREACH (&bo->strings, string) {
-		ht_up_insert (bo->strings_db, string->vaddr, (void *)(size_t)(i + 1));
+	R_VEC_FOREACH (strings, string) {
+		ht_up_insert (index, string->vaddr, (void *)(size_t)(i + 1));
 		i++;
+	}
+	return index;
+}
+
+R_IPI RBinString *r_bin_strings_index_get(RVecRBinString *strings, HtUP *index, ut64 addr) {
+	if (!strings || !index || addr == 0 || addr == UT64_MAX) {
+		return NULL;
+	}
+	void *value = ht_up_find (index, addr, NULL);
+	if (!value) {
+		return NULL;
+	}
+	RBinString *string = RVecRBinString_at (strings, (size_t)value - 1);
+	return string && string->vaddr == addr? string: NULL;
+}
+
+R_IPI void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src) {
+	R_RETURN_IF_FAIL (dst);
+	if (src) {
+		RVecRBinString_swap (dst, src);
+		RVecRBinString_free (src);
 	}
 }
 
-R_IPI RBinString *r_bin_object_get_string_at(RBinObject *bo, ut64 addr) {
-	if (!bo || addr == 0 || addr == UT64_MAX) {
-		return NULL;
-	}
-	void *value = ht_up_find (bo->strings_db, addr, NULL);
-	if (value) {
-		size_t index = (size_t)value - 1;
-		RBinString *string = RVecRBinString_at (&bo->strings, index);
-		if (string && string->vaddr == addr) {
-			return string;
-		}
-	}
-	return NULL;
+R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo) {
+	R_RETURN_IF_FAIL (bo);
+	ht_up_free (bo->strings_db);
+	bo->strings_db = r_bin_strings_build_index (&bo->strings);
 }
 
 // Trim an RVec to at most `limit` elements (no-op when limit < 1). erase_back
@@ -679,10 +695,7 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		RVecRBinString *strings = p->strings
 			? p->strings (bf)
 			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
-		if (strings) {
-			RVecRBinString_swap (&bo->strings, strings);
-			RVecRBinString_free (strings);
-		}
+		r_bin_take_strings (&bo->strings, strings);
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}

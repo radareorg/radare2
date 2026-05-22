@@ -920,10 +920,7 @@ R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 	RVecRBinString *strings = plugin && plugin->strings
 		? plugin->strings (bf)
 		: r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
-	if (strings) {
-		RVecRBinString_swap (&bf->bo->strings, strings);
-		RVecRBinString_free (strings);
-	}
+	r_bin_take_strings (&bf->bo->strings, strings);
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}

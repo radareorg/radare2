@@ -100,28 +100,6 @@ static void print_string(RBinFile *bf, RBinString *string, int raw, PJ *pj) {
 	}
 }
 
-static RBinString *string_vec_get_at(RVecRBinString *strings, HtUP *index, ut64 addr) {
-	if (!strings || !index || addr == 0 || addr == UT64_MAX) {
-		return NULL;
-	}
-	void *value = ht_up_find (index, addr, NULL);
-	return value? RVecRBinString_at (strings, (size_t)value - 1): NULL;
-}
-
-static HtUP *string_vec_build_index(RVecRBinString *strings) {
-	if (!strings) {
-		return NULL;
-	}
-	HtUP *index = ht_up_new0 ();
-	RBinString *string;
-	size_t i = 0;
-	R_VEC_FOREACH (strings, string) {
-		ht_up_insert (index, string->vaddr, (void *)(size_t)(i + 1));
-		i++;
-	}
-	return index;
-}
-
 // TODO: this code must be implemented in RSearch as options for the strings mode
 static int string_scan_range(RBinFile *bf, RVecRBinString *list, int min, const ut64 from, const ut64 to, int type, int raw, RBinSection *section) {
 	RBin *bin = bf->rbin;
@@ -1139,7 +1117,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 		get_strings_range (bf, ret, min, raw, nofp, 0, bf->size, NULL);
 		return ret;
 	}
-	HtUP *strings_index = string_vec_build_index (ret);
+	HtUP *strings_index = r_bin_strings_build_index (ret);
 	R_VEC_FOREACH (&bo->sections_vec, section) {
 		if (!section->name) {
 			continue;
@@ -1171,7 +1149,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 				}
 				ut64 cfstr_vaddr = section->vaddr + i;
 				ut64 cstr_vaddr = (bits == 64) ? r_read_le64 (p) : r_read_le32 (p);
-				RBinString *s = string_vec_get_at (ret, strings_index, cstr_vaddr);
+				RBinString *s = r_bin_strings_index_get (ret, strings_index, cstr_vaddr);
 				if (s) {
 					RBinString src = *s;
 					RBinString *bs = RVecRBinString_emplace_back (ret);

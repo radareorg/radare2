@@ -27,15 +27,13 @@ static inline bool limit_reached_vec_imports(const RVecRBinImport *vec, int limi
 	return limit > 0 && RVecRBinImport_length (vec) >= (size_t)limit;
 }
 
-static inline bool limit_reached_vec_strings(const RVecRBinString *vec, int limit) {
-	return limit > 0 && RVecRBinString_length (vec) >= (size_t)limit;
-}
-
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);
 R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo);
-R_IPI RBinString *r_bin_object_get_string_at(RBinObject *bo, ut64 addr);
+R_IPI HtUP *r_bin_strings_build_index(RVecRBinString *strings);
+R_IPI RBinString *r_bin_strings_index_get(RVecRBinString *strings, HtUP *index, ut64 addr);
+R_IPI void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src);
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);

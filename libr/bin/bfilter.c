@@ -520,15 +520,11 @@ R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
 R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char type) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && vaddr != UT64_MAX, false);
 	RBinObject *bo = bf->bo;
-	void *value = ht_up_find (bo->strings_db, vaddr, NULL);
-	if (!value) {
+	RBinString *bs = r_bin_strings_index_get (&bo->strings, bo->strings_db, vaddr);
+	if (!bs) {
 		return false;
 	}
-	size_t index = (size_t)value - 1;
-	RBinString *bs = RVecRBinString_at (&bo->strings, index);
-	if (!bs || bs->vaddr != vaddr) {
-		return false;
-	}
+	size_t index = bs - bo->strings._start;
 	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
 		return false;
 	}
