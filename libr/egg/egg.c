@@ -316,6 +316,14 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 }
 
 R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
+	// Nothing to translate: -P/-B/-w style invocations produce raw bytes
+	// without going through the egg compiler, so they shouldn't require a
+	// backend for the configured arch.
+	char *code = r_buf_tostring (egg->buf);
+	if (R_STR_ISEMPTY (code)) {
+		free (code);
+		return true;
+	}
 	char *asm_name = NULL;
 	if (asm_list) {
 		char **asm_ = asm_list;
@@ -343,27 +351,18 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 		r_asm_set_big_endian (egg->rasm, egg->endian);
 		// r_asm_set_syntax (egg->rasm, R_ARCH_SYNTAX_INTEL);
 		r_arch_config_set_syntax (egg->rasm->config, R_ARCH_SYNTAX_INTEL);
-		char *code = r_buf_tostring (egg->buf);
-		if (R_STR_ISEMPTY (code)) {
-			free (code);
-			if (r_buf_size (egg->bin) == 0) {
-				R_LOG_DEBUG ("The egg compiler generated no code to assemble");
-			}
+		RAsmCode *asmcode = r_asm_assemble (egg->rasm, code);
+		if (asmcode && asmcode->len > 0) {
 			ret = true;
+			r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
 		} else {
-			RAsmCode *asmcode = r_asm_assemble (egg->rasm, code);
-			if (asmcode && asmcode->len > 0) {
-				ret = true;
-				r_buf_append_bytes (egg->bin, asmcode->bytes, asmcode->len);
-			} else {
-				R_LOG_ERROR ("r_asm_assemble has failed %s", code);
-			}
-			r_asm_code_free (asmcode);
-			free (code);
+			R_LOG_ERROR ("r_asm_assemble has failed %s", code);
 		}
+		r_asm_code_free (asmcode);
 	} else {
 		R_LOG_ERROR ("Cannot find a valid assembler");
 	}
+	free (code);
 	return ret;
 }
 

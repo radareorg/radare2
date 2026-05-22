@@ -371,6 +371,14 @@ AA
 EOF
 RUN
 
+NAME=ragg2 debruijn sequence on arch without egg backend
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -r -P 2; ?e
+EXPECT=<<EOF
+AA
+EOF
+RUN
+
 NAME=ragg2 -H R2_NOPLUGINS
 FILE=-
 CMDS=!R2_NOPLUGINS=1;ragg2 -H R2_NOPLUGINS
