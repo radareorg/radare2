@@ -806,7 +806,7 @@ R_API char* r_bin_java_get_version(RBinJavaObj* bin);
 R_API RBinAddr * r_bin_java_get_entrypoint(RBinJavaObj* bin, int sym);
 R_API RList* r_bin_java_get_entrypoints(RBinJavaObj* bin);
 R_API void r_bin_java_load_symbols(RBinJavaObj* bin, RVecRBinSymbol *vec);
-R_API RList* r_bin_java_get_strings(RBinJavaObj* bin);
+R_API RVecRBinString *r_bin_java_get_strings(RBinJavaObj* bin);
 R_API void* r_bin_java_free(RBinJavaObj* bin);
 R_API RBinJavaObj* r_bin_java_new(const char* file, ut64 baddr, Sdb * kv);
 R_API RBinJavaObj* r_bin_java_new_buf(RBuffer* buf, ut64 baddr, Sdb * kv);

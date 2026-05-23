@@ -105,12 +105,12 @@ R_API void r_bin_xtrdata_free(void /*RBinXtrData*/ *data_) {
 	}
 }
 
-R_API RList *r_bin_raw_strings(RBinFile *bf, int min) {
+R_API RVecRBinString *r_bin_raw_strings(RBinFile *bf, int min) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 0, 2);
 }
 
-R_API RList *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
+R_API RVecRBinString *r_bin_dump_strings(RBinFile *bf, int min, int raw) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	return r_bin_file_get_strings (bf, min, 1, raw);
 }
@@ -260,10 +260,16 @@ R_API void r_bin_symbol_free(void *_sym) {
 	}
 }
 
+R_API void r_bin_string_fini(RBinString *str) {
+	if (str) {
+		free (str->string);
+	}
+}
+
 R_API void r_bin_string_free(void *_str) {
 	RBinString *str = (RBinString *)_str;
 	if (str) {
-		free (str->string);
+		r_bin_string_fini (str);
 		free (str);
 	}
 }
@@ -897,38 +903,35 @@ R_API RBinSection *r_bin_get_section_at(RBinObject *o, ut64 off, int va) {
 	return NULL;
 }
 
-R_API RList *r_bin_reset_strings(RBin *bin) {
+R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 	RBinFile *bf = r_bin_cur (bin);
 
 	if (!bf || !bf->bo) {
 		return NULL;
 	}
-	if (bf->bo->strings) {
-		r_list_free (bf->bo->strings);
-		bf->bo->strings = NULL;
-	}
+	RVecRBinString_clear (&bf->bo->strings);
 
-	ht_up_free (bf->bo->strings_db);
-	bf->bo->strings_db = ht_up_new0 ();
+	r_bin_object_drop_strings_db (bf->bo);
 
 	bf->rawstr = bin->options.rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
 
-	if (plugin && plugin->strings) {
-		bf->bo->strings = plugin->strings (bf);
-	} else {
-		bf->bo->strings = r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
-	}
+	RVecRBinString *strings = plugin && plugin->strings
+		? plugin->strings (bf)
+		: r_bin_file_get_strings (bf, bin->options.minstrlen, 0, bf->rawstr);
+	r_bin_take_strings (&bf->bo->strings, strings);
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}
-	return bf->bo->strings;
+	RVecRBinString_shrink_to_fit (&bf->bo->strings);
+	r_bin_object_drop_strings_db (bf->bo);
+	return &bf->bo->strings;
 }
 
-R_API RList *r_bin_get_strings(RBin *bin) {
+R_API RVecRBinString *r_bin_get_strings(RBin *bin) {
 	R_RETURN_VAL_IF_FAIL (bin, NULL);
 	RBinObject *o = r_bin_cur_object (bin);
-	return o? o->strings: NULL;
+	return o? &o->strings: NULL;
 }
 
 R_API RVecRBinSymbol *r_bin_get_symbols_vec(RBin *bin) {

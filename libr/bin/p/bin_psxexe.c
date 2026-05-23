@@ -71,9 +71,9 @@ static RList* entries(RBinFile* bf) {
 	return ret;
 }
 
-static RList* strings(RBinFile* bf) {
+static RVecRBinString *strings(RBinFile* bf) {
 	// hardcode minstrlen = 20
-	return r_bin_file_get_strings (bf, 20, 0, 2);
+	return r_bin_raw_strings (bf, 20);
 }
 
 RBinPlugin r_bin_plugin_psxexe = {

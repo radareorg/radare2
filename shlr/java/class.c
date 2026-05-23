@@ -39,14 +39,6 @@ static inline const char *bn_tostring(RBinName *bn) {
 	return bn->name? bn->name: bn->oname;
 }
 
-static void bstring_free(void *p) {
-	RBinString *s = p;
-	if (s) {
-		free (s->string);
-		free (s);
-	}
-}
-
 static void bsymbol_fini(RBinSymbol *sym) {
 	if (sym) {
 		bn_free (sym->name);
@@ -2881,14 +2873,16 @@ R_API void r_bin_java_load_symbols(RBinJavaObj *bin, RVecRBinSymbol *symbols) {
 	}
 }
 
-R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {
-	RList *strings = r_list_newf (bstring_free);
-	RBinString *str = NULL;
+R_API RVecRBinString *r_bin_java_get_strings(RBinJavaObj *bin) {
+	RVecRBinString *strings = RVecRBinString_new ();
 	RListIter *iter = NULL, *iter_tmp = NULL;
 	RBinJavaCPTypeObj *cp_obj = NULL;
 	r_list_foreach_safe (bin->cp_list, iter, iter_tmp, cp_obj) {
 		if (cp_obj && cp_obj->tag == R_BIN_JAVA_CP_UTF8) {
-			str = (RBinString *)R_NEW0 (RBinString);
+			RBinString *str = RVecRBinString_emplace_back (strings);
+			if (!str) {
+				break;
+			}
 			str->paddr = cp_obj->file_offset + bin->loadaddr;
 			str->ordinal = cp_obj->metas->ord;
 			str->size = cp_obj->info.cp_utf8.length + 3;
@@ -2898,7 +2892,6 @@ R_API RList *r_bin_java_get_strings(RBinJavaObj *bin) {
 								cp_obj->info.cp_utf8.bytes,
 					R_BIN_JAVA_MAXSTR);
 			}
-			r_list_append (strings, (void *)str);
 		}
 	}
 	return strings;

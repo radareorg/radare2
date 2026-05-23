@@ -96,13 +96,16 @@ static bool sections_vec(RBinFile *bf) {
 }
 
 static void addString(const ut8 *buf, ut64 offset, ut64 length, ParseStruct *parseStruct) {
-	RBinString *binstring = R_NEW0 (RBinString);
+	RVecRBinString *strings = parseStruct->data;
+	RBinString *binstring = RVecRBinString_emplace_back (strings);
+	if (!binstring) {
+		return;
+	}
 	binstring->string = r_str_ndup ((char *) buf + offset, length);
 	binstring->vaddr = binstring->paddr = offset;
 	binstring->ordinal = 0;
 	binstring->size = length;
 	binstring->length = length;
-	r_list_append (parseStruct->data, binstring);
 }
 
 static void addSymbol(RVecRBinSymbol *vec, char *name, ut64 addr, ut32 size, const char *type) {
@@ -156,7 +159,7 @@ static void handleFuncSymbol(RLuaHeader *lh, LuaFunction *func, ParseStruct *par
 	free (string);
 }
 
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	ut8 *bytes = malloc (bf->size);
 	if (bytes) {
 		r_buf_read_at (bf->buf, 0, bytes, bf->size);
@@ -166,7 +169,7 @@ static RList *strings(RBinFile *bf) {
 	memset (&parseStruct, 0, sizeof (parseStruct));
 	parseStruct.onString = addString;
 
-	parseStruct.data = r_list_new ();
+	parseStruct.data = RVecRBinString_new ();
 	if (!parseStruct.data) {
 		free (bytes);
 		return NULL;

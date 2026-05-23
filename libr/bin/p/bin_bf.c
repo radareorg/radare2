@@ -11,7 +11,7 @@ static void destroy(RBinFile *bf) {
 	r_unref (buf);
 }
 
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	// no strings here
 	return NULL;
 }

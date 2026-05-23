@@ -157,7 +157,7 @@ static bool symbols_vec(RBinFile *bf) {
 	return true;
 }
 
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	// we dont want to find strings in avr bins because there are lot of false positives
 	return NULL;
 }

@@ -346,7 +346,7 @@ R_API bool r_core_bin_set_cur(RCore *core, RBinFile *binfile) {
 	return true;
 }
 
-static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
+static void _print_strings(RCore *core, RVecRBinString *list, PJ *pj, int mode, int va, ut64 skip, ut64 count) {
 	RTable *table = r_core_table_new (core, "strings");
 	if (!table) {
 		return;
@@ -357,7 +357,6 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 	int maxstr = r_config_get_i (core->config, "bin.str.max");
 	RBin *bin = core->bin;
 	RBinObject *obj = r_bin_cur_object (bin);
-	RListIter *iter;
 	RBinString *string;
 	RBinSection *section;
 
@@ -376,7 +375,8 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 		r_table_set_columnsf (table, "nXXnnsss", "nth", "paddr", "vaddr", "len", "size", "section", "type", "string");
 	}
 	RBinString b64 = { 0 };
-	r_list_foreach (list, iter, string) {
+	if (list) {
+	R_VEC_FOREACH (list, string) {
 		const char *section_name, *type_string;
 		ut64 paddr = string->paddr;
 		ut64 vaddr = rva (core->bin, paddr, string->vaddr, va);
@@ -574,6 +574,7 @@ static void _print_strings(RCore *core, RList *list, PJ *pj, int mode, int va, u
 			free (no_dbl_bslash_str);
 		}
 	}
+	}
 	R_FREE (b64.string);
 	if (IS_MODE_JSON (mode)) {
 		pj_end (pj);
@@ -638,9 +639,9 @@ R_IPI bool bin_raw_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut6
 		new_bf = true;
 		va = false;
 	}
-	RList *l = r_bin_raw_strings (bf, 0);
-	_print_strings (core, l, pj, mode, va, skip, count);
-	r_list_free (l);
+	RVecRBinString *strings = r_bin_raw_strings (bf, 0);
+	_print_strings (core, strings, pj, mode, va, skip, count);
+	RVecRBinString_free (strings);
 	if (new_bf) {
 		r_unref (bf->buf);
 		bf->buf = NULL;
@@ -670,7 +671,7 @@ R_IPI bool bin_strings(RCore *core, PJ *pj, int mode, int va, ut64 skip, ut64 co
 			return false;
 		}
 	}
-	RList *list = r_bin_get_strings (core->bin);
+	RVecRBinString *list = r_bin_get_strings (core->bin);
 	if (list) {
 		_print_strings (core, list, pj, mode, va, skip, count);
 		return true;
@@ -5231,8 +5232,8 @@ R_API bool r_core_bin_info(RCore *core, ut64 action, PJ *pj, int mode, int va, R
 	if (IS_MODE_SET (mode) && core->flags) {
 		ut64 expected = 0;
 		if (action & R_CORE_BIN_ACC_STRINGS) {
-			RList *strings = r_bin_get_strings (core->bin);
-			expected += strings? r_list_length (strings): 0;
+			RVecRBinString *strings = r_bin_get_strings (core->bin);
+			expected += strings? RVecRBinString_length (strings): 0;
 		}
 		if (action & (R_CORE_BIN_ACC_SYMBOLS | R_CORE_BIN_ACC_EXPORTS)) {
 			RVecRBinSymbol *symbols = r_bin_get_symbols_vec (core->bin);

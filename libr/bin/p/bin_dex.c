@@ -839,10 +839,9 @@ static RBinInfo *info(RBinFile *bf) {
 	return ret;
 }
 
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
-	RBinString *ptr = NULL;
-	RList *ret = NULL;
+	RVecRBinString *ret = NULL;
 	int i;
 	ut64 len;
 	ut8 buf[LEB_MAX_SIZE];
@@ -855,11 +854,10 @@ static RList *strings(RBinFile *bf) {
 		R_FREE (bin->strings);
 		return NULL;
 	}
-	if (!(ret = r_list_newf (r_bin_string_free))) {
+	if (!(ret = RVecRBinString_new ())) {
 		return NULL;
 	}
 	for (i = 0; i < bin->header.strings_size; i++) {
-		ptr = R_NEW0 (RBinString);
 		if (bin->strings[i] > bin->size || bin->strings[i] + 6 > bin->size) {
 			goto out_error;
 		}
@@ -867,36 +865,38 @@ static RList *strings(RBinFile *bf) {
 		r_uleb128 (buf, sizeof (buf), &len, NULL);
 
 		if (len > 5 && len < R_BIN_SIZEOF_STRINGS) {
-			ptr->string = malloc (len + 1);
-			if (!ptr->string) {
+			RBinString bs = { 0 };
+			bs.string = malloc (len + 1);
+			if (!bs.string) {
 				goto out_error;
 			}
 			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
-				R_FREE (ptr->string);
+				free (bs.string);
 				goto out_error;
 			}
-			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);
-			ptr->string[len] = 0;
-			if ((ptr->string[0] == 'L' && strchr (ptr->string, '/')) || !strncmp (ptr->string, "[L", 2)) {
-				free (ptr->string);
-				free (ptr);
+			r_buf_read_at (bin->b, off, (ut8*)bs.string, len);
+			bs.string[len] = 0;
+			if ((bs.string[0] == 'L' && strchr (bs.string, '/')) || !strncmp (bs.string, "[L", 2)) {
+				free (bs.string);
 				continue;
 			}
-			ptr->paddr = bin->strings[i];
-			ptr->vaddr = ptr->paddr;
-			ptr->size = len;
-			ptr->length = len;
-			ptr->ordinal = i + 1;
-			r_list_append (ret, ptr);
-		} else {
-			free (ptr);
+			bs.paddr = bin->strings[i];
+			bs.vaddr = bs.paddr;
+			bs.size = len;
+			bs.length = len;
+			bs.ordinal = i + 1;
+			RBinString *dst = RVecRBinString_emplace_back (ret);
+			if (!dst) {
+				r_bin_string_fini (&bs);
+				goto out_error;
+			}
+			*dst = bs;
 		}
 	}
 	return ret;
 out_error:
-	r_list_free (ret);
-	r_bin_string_free (ptr);
+	RVecRBinString_free (ret);
 	return NULL;
 }
 

@@ -54,6 +54,20 @@ static void clamp_list(RList *list, int limit) {
 	}
 }
 
+static void rebase_strings_vec(RBinObject *bo) {
+	RBinString *string;
+	R_VEC_FOREACH (&bo->strings, string) {
+		string->paddr += bo->loadaddr;
+	}
+}
+
+static void clamp_strings_vec(RVecRBinString *vec, int limit) {
+	size_t len = RVecRBinString_length (vec);
+	if (limit >= 1 && len > (size_t)limit) {
+		RVecRBinString_erase_back (vec, RVecRBinString_at (vec, (size_t)limit));
+	}
+}
+
 // Trim an RVec to at most `limit` elements (no-op when limit < 1). erase_back
 // invokes the vec's fini_fn for each dropped element, matching pop_back.
 #define CLAMP_VEC(T, vec, limit) do { \
@@ -193,7 +207,7 @@ static void object_delete_items(RBinObject *o) {
 	r_list_free (o->fields);
 	r_list_free (o->libs);
 	r_crbtree_free (o->relocs);
-	r_list_free (o->strings);
+	RVecRBinString_fini (&o->strings);
 	ht_up_free (o->strings_db);
 
 	RVecRBinImport_fini (&o->imports_vec);
@@ -357,7 +371,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RBinObject *bo = R_NEW0 (RBinObject);
 	bo->obj_size = (bytes_sz >= sz + offset)? sz: 0;
 	bo->boffset = offset;
-	bo->strings_db = ht_up_new0 ();
 	bo->regstate = NULL;
 	bo->kv = sdb_new0 (); // XXX bf->sdb bf->bo->sdb wtf
 	bo->baddr = baseaddr;
@@ -372,6 +385,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RVecRBinSymbol_init (&bo->symbols_vec);
 	RVecRBinImport_init (&bo->imports_vec);
 	RVecRBinSection_init (&bo->sections_vec);
+	RVecRBinString_init (&bo->strings);
 	bo->pool = r_strpool_new ();
 	bf->bo = bo;
 
@@ -411,6 +425,7 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 fail:
 	r_strpool_free (bo->pool);
 	RVecRBinSymbol_fini (&bo->symbols_vec);
+	RVecRBinString_fini (&bo->strings);
 	if (bo->import_name_ht || bo->import_addr_ht) {
 		import_cache_cleanup (bo);
 	}
@@ -640,14 +655,17 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		bo->strings = p->strings
+		RVecRBinString *strings = p->strings
 			? p->strings (bf)
 			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
+		r_bin_take_strings (&bo->strings, strings);
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
-		clamp_list (bo->strings, limit);
-		REBASE_PADDR (bo, bo->strings, RBinString);
+		clamp_strings_vec (&bo->strings, limit);
+		RVecRBinString_shrink_to_fit (&bo->strings);
+		rebase_strings_vec (bo);
+		r_bin_object_drop_strings_db (bo);
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
@@ -749,12 +767,10 @@ R_API bool r_bin_object_delete(RBin *bin, ut32 bf_id) {
 }
 
 R_IPI void r_bin_object_filter_strings(RBinObject *bo) {
-	R_RETURN_IF_FAIL (bo && bo->strings);
+	R_RETURN_IF_FAIL (bo);
 
-	RList *strings = bo->strings;
 	RBinString *ptr;
-	RListIter *iter;
-	r_list_foreach (strings, iter, ptr) {
+	R_VEC_FOREACH (&bo->strings, ptr) {
 		char *dec = (char *)r_base64_decode_dyn ((const char *)ptr->string, -1, NULL);
 		if (dec) {
 			char *s = ptr->string;

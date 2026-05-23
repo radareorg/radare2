@@ -5,6 +5,8 @@
 #include <r_core.h>
 #include <r_main.h>
 
+R_VEC_TYPE (RVecRBinStringPtr, RBinString *);
+
 typedef enum {
 	ROF_HEXDUMP, // MODE_COLS
 	ROF_HEXII, // MODE_COLSII
@@ -926,17 +928,33 @@ static int bs_cmp(const RBinString *a, const RBinString *b) {
 	return diff == 0? strncmp (a->string, b->string, a->length): diff;
 }
 
+static int bs_ptr_cmp(RBinString *const *a, RBinString *const *b) {
+	return bs_cmp (*a, *b);
+}
+
 static ut8 *get_strings(RCore *c, int *len) {
-	RList *list = r_bin_get_strings (c->bin);
-	RListIter *iter;
-	RBinString *str, *old = NULL;
+	RVecRBinString *strings = r_bin_get_strings (c->bin);
+	RVecRBinStringPtr list;
+	RVecRBinStringPtr_init (&list);
+	if (strings && !RVecRBinStringPtr_reserve (&list, RVecRBinString_length (strings))) {
+		return NULL;
+	}
+	RBinString *str;
+	if (strings) {
+		R_VEC_FOREACH (strings, str) {
+			RVecRBinStringPtr_push_back (&list, &str);
+		}
+	}
+	RBinString *old = NULL;
 	ut8 *buf, *ptr;
 
-	r_list_sort (list, (RListComparator)bs_cmp);
+	RVecRBinStringPtr_sort (&list, bs_ptr_cmp);
 
 	*len = 0;
 
-	r_list_foreach (list, iter, str) {
+	RBinString **it;
+	R_VEC_FOREACH (&list, it) {
+		str = *it;
 		if (!old || (old && bs_cmp (old, str) != 0)) {
 			*len += str->length + 1;
 			old = str;
@@ -945,12 +963,14 @@ static ut8 *get_strings(RCore *c, int *len) {
 
 	ptr = buf = malloc (*len + 1);
 	if (!ptr) {
+		RVecRBinStringPtr_fini (&list);
 		return NULL;
 	}
 
 	old = NULL;
 
-	r_list_foreach (list, iter, str) {
+	R_VEC_FOREACH (&list, it) {
+		str = *it;
 		if (old && bs_cmp (old, str) == 0) {
 			continue;
 		}
@@ -962,6 +982,7 @@ static ut8 *get_strings(RCore *c, int *len) {
 	*ptr = 0;
 
 	*len = strlen ((const char *)buf);
+	RVecRBinStringPtr_fini (&list);
 	return buf;
 }
 

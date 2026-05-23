@@ -56,7 +56,7 @@ static void destroy(RBinFile *bf) {
 }
 
 /* accelerate binary load */
-static RList *strings(RBinFile *bf) {
+static RVecRBinString *strings(RBinFile *bf) {
 	return NULL;
 }
 
