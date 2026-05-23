@@ -1100,17 +1100,14 @@ R_API RBinPlugin *r_bin_file_cur_plugin(RBinFile *bf) {
 }
 
 // TODO: searchStrings() instead
-R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw, HtUP **strings_db) {
+R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, int raw) {
 	R_RETURN_VAL_IF_FAIL (bf, NULL);
 	RBinObject *bo = bf->bo;
 	const bool nofp = bf->rbin->strings_nofp;
 	RBinSection *section;
 	RVecRBinString *ret = dump? NULL: RVecRBinString_new ();
-	if (strings_db) {
-		*strings_db = NULL;
-	}
 	const bool has_sections = !raw && bo && !RVecRBinSection_empty (&bo->sections_vec);
-	HtUP *strings_index = ret && (strings_db || has_sections)? ht_up_new0 (): NULL;
+	HtUP *strings_index = ret && has_sections? ht_up_new0 (): NULL;
 	const int limit = bf->rbin->options.limit;
 	if (ret && limit > 0) {
 		RVecRBinString_reserve (ret, (size_t)limit);
@@ -1126,11 +1123,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 		}
 	} else {
 		get_strings_range (bf, ret, strings_index, min, raw, nofp, 0, bf->size, NULL);
-		if (strings_db) {
-			*strings_db = strings_index;
-		} else {
-			ht_up_free (strings_index);
-		}
+		ht_up_free (strings_index);
 		return ret;
 	}
 	R_VEC_FOREACH (&bo->sections_vec, section) {
@@ -1194,11 +1187,7 @@ R_IPI RVecRBinString *r_bin_file_get_strings(RBinFile *bf, int min, int dump, in
 			free (sbuf);
 		}
 	}
-	if (strings_db) {
-		*strings_db = strings_index;
-	} else {
-		ht_up_free (strings_index);
-	}
+	ht_up_free (strings_index);
 	return ret;
 }
 

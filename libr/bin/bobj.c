@@ -54,16 +54,11 @@ static void clamp_list(RList *list, int limit) {
 	}
 }
 
-static HtUP *rebase_strings_vec(RBinObject *bo, bool build_index) {
-	HtUP *index = build_index? ht_up_new0 (): NULL;
+static void rebase_strings_vec(RBinObject *bo) {
 	RBinString *string;
-	size_t i = 0;
 	R_VEC_FOREACH (&bo->strings, string) {
 		string->paddr += bo->loadaddr;
-		r_bin_strings_index_insert (index, string->vaddr, i);
-		i++;
 	}
-	return index;
 }
 
 R_IPI HtUP *r_bin_strings_build_index(RVecRBinString *strings) {
@@ -134,28 +129,17 @@ R_IPI void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src) {
 	}
 }
 
-R_IPI void r_bin_object_set_strings_db(RBinObject *bo, HtUP *strings_db, bool reuse) {
+R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo) {
 	R_RETURN_IF_FAIL (bo);
 	ht_up_free (bo->strings_db);
-	if (reuse && strings_db) {
-		bo->strings_db = strings_db;
-	} else {
-		ht_up_free (strings_db);
-		bo->strings_db = r_bin_strings_build_index (&bo->strings);
-	}
+	bo->strings_db = r_bin_strings_build_index (&bo->strings);
 }
 
-R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo) {
-	r_bin_object_set_strings_db (bo, NULL, false);
-}
-
-static bool clamp_strings_vec(RVecRBinString *vec, int limit) {
+static void clamp_strings_vec(RVecRBinString *vec, int limit) {
 	size_t len = RVecRBinString_length (vec);
 	if (limit >= 1 && len > (size_t)limit) {
 		RVecRBinString_erase_back (vec, RVecRBinString_at (vec, (size_t)limit));
-		return true;
 	}
-	return false;
 }
 
 // Trim an RVec to at most `limit` elements (no-op when limit < 1). erase_back
@@ -746,27 +730,16 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 		}
 	}
 	if (bin->filter_rules & R_BIN_REQ_STRINGS) {
-		HtUP *strings_db = NULL;
 		RVecRBinString *strings = p->strings
 			? p->strings (bf)
-			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr, &strings_db);
-		if (!strings) {
-			ht_up_free (strings_db);
-			strings_db = NULL;
-		}
+			: r_bin_file_get_strings (bf, minlen, 0, bf->rawstr);
 		r_bin_take_strings (&bo->strings, strings);
 		if (bin->options.debase64) {
 			r_bin_object_filter_strings (bo);
 		}
-		bool clamped = clamp_strings_vec (&bo->strings, limit);
-		const bool rebuild = clamped || !strings_db;
-		HtUP *rebased_db = rebase_strings_vec (bo, rebuild);
-		if (rebuild) {
-			ht_up_free (strings_db);
-			r_bin_object_set_strings_db (bo, rebased_db, true);
-		} else {
-			r_bin_object_set_strings_db (bo, strings_db, true);
-		}
+		clamp_strings_vec (&bo->strings, limit);
+		rebase_strings_vec (bo);
+		r_bin_object_rebuild_strings_db (bo);
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);
