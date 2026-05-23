@@ -316,9 +316,6 @@ R_API void r_egg_printf(REgg *egg, const char *fmt, ...) {
 }
 
 R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
-	// Nothing to translate: -P/-B/-w style invocations produce raw bytes
-	// without going through the egg compiler, so they shouldn't require a
-	// backend for the configured arch.
 	char *code = r_buf_tostring (egg->buf);
 	if (R_STR_ISEMPTY (code)) {
 		free (code);
