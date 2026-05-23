@@ -1620,7 +1620,7 @@ static void parse_escape_string(TCCState *s1, CString *outstr, const uint8_t *bu
 						c = c - 'a' + 10;
 					} else if (c >= 'A' && c <= 'F') {
 						c = c - 'A' + 10;
-					} else if (isnum (c)) {
+					} else if (isdigit (c)) {
 						c = c - '0';
 					} else {
 						break;
@@ -1720,7 +1720,7 @@ static void parse_number(TCCState *s1, const char *p) {
 			t = ch - 'a' + 10;
 		} else if (ch >= 'A' && ch <= 'F') {
 			t = ch - 'A' + 10;
-		} else if (isnum (ch)) {
+		} else if (isdigit (ch)) {
 			t = ch - '0';
 		} else {
 			break;
@@ -1812,7 +1812,7 @@ num_too_long:
 			/* XXX: should patch directly float number */
 			d = (double) bn; // bn[1] * 4294967296.0 + (double) bn[0];
 			d = ldexp (d, exp_val - frac_bits);
-			t = toup (ch);
+			t = toupper (ch);
 			if (t == 'F') {
 				ch = *p++;
 				s1->tok = TOK_CFLOAT;
@@ -1870,7 +1870,7 @@ float_frac_parse:
 				}
 			}
 			*q = '\0';
-			t = toup (ch);
+			t = toupper (ch);
 			errno = 0;
 			if (t == 'F') {
 				ch = *p++;
@@ -1938,7 +1938,7 @@ float_frac_parse:
 		lcount = 0;
 		ucount = 0;
 		for (;;) {
-			t = toup (ch);
+			t = toupper (ch);
 			if (t == 'L') {
 				if (lcount >= 2) {
 					tcc_error (s1, "three 'l's in integer constant");
@@ -2116,7 +2116,7 @@ parse_ident_fast:
 			// dot handling here too
 			if (isdot (c)) {
 				PEEKC (s1, c, p);
-				if (isnum (c)) {
+				if (isdigit (c)) {
 					cstr_reset (&s1->tokcstr);
 					cstr_ccat (&s1->tokcstr, '.');
 					goto parse_num;
@@ -2194,7 +2194,7 @@ parse_num:
 			t = c;
 			cstr_ccat (&s1->tokcstr, c);
 			PEEKC (s1, c, p);
-			if (!(isnum (c) || isid (c) || isdot (c)
+			if (!(isdigit (c) || isid (c) || isdot (c)
 			|| ((c == '+' || c == '-') && (t == 'e' || t == 'E' || t == 'p' || t == 'P')))) {
 				break;
 			}
@@ -2962,7 +2962,7 @@ ST_FUNC void preprocess_new(TCCState *s1) {
 	int i;
 
 	for (i = CH_EOF; i < 256; i++) { /* init isid table */
-		s1->isidnum_table[i - CH_EOF] = isid (i) || isnum (i) || isdot (i);
+		s1->isidnum_table[i - CH_EOF] = isid (i) || isdigit (i) || isdot (i);
 	}
 
 	// add all tokens
