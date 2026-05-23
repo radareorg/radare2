@@ -371,7 +371,6 @@ R_IPI RBinObject *r_bin_object_new(RBinFile *bf, RBinPlugin *plugin, ut64 basead
 	RBinObject *bo = R_NEW0 (RBinObject);
 	bo->obj_size = (bytes_sz >= sz + offset)? sz: 0;
 	bo->boffset = offset;
-	bo->strings_db = ht_up_new0 ();
 	bo->regstate = NULL;
 	bo->kv = sdb_new0 (); // XXX bf->sdb bf->bo->sdb wtf
 	bo->baddr = baseaddr;
@@ -664,8 +663,9 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 			r_bin_object_filter_strings (bo);
 		}
 		clamp_strings_vec (&bo->strings, limit);
+		RVecRBinString_shrink_to_fit (&bo->strings);
 		rebase_strings_vec (bo);
-		r_bin_object_rebuild_strings_db (bo);
+		r_bin_object_drop_strings_db (bo);
 	}
 	if (p->lines) {
 		bo->lines = p->lines (bf);

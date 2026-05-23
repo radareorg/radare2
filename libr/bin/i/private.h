@@ -54,6 +54,16 @@ static inline HtUP *r_bin_strings_build_index(RVecRBinString *strings) {
 	return index;
 }
 
+static inline HtUP *r_bin_object_ensure_strings_db(RBinObject *bo) {
+	if (!bo) {
+		return NULL;
+	}
+	if (!bo->strings_db) {
+		bo->strings_db = r_bin_strings_build_index (&bo->strings);
+	}
+	return bo->strings_db;
+}
+
 static inline RBinString *r_bin_strings_index_get(RVecRBinString *strings, HtUP *index, ut64 addr) {
 	if (!strings || !index || addr == 0 || addr == UT64_MAX) {
 		return NULL;
@@ -100,12 +110,11 @@ static inline void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src) 
 	}
 }
 
-static inline void r_bin_object_rebuild_strings_db(RBinObject *bo) {
-	if (!bo) {
-		return;
+static inline void r_bin_object_drop_strings_db(RBinObject *bo) {
+	if (bo) {
+		ht_up_free (bo->strings_db);
+		bo->strings_db = NULL;
 	}
-	ht_up_free (bo->strings_db);
-	bo->strings_db = r_bin_strings_build_index (&bo->strings);
 }
 
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);

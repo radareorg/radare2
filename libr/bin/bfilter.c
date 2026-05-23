@@ -520,17 +520,18 @@ R_API bool r_bin_string_filter(RBin *bin, const char *str, ut64 addr) {
 R_API bool r_bin_file_string_delete(RBinFile *bf, ut64 vaddr, ut64 len, char type) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo && vaddr != UT64_MAX, false);
 	RBinObject *bo = bf->bo;
-	RBinString *bs = r_bin_strings_index_get (&bo->strings, bo->strings_db, vaddr);
+	HtUP *strings_db = r_bin_object_ensure_strings_db (bo);
+	RBinString *bs = r_bin_strings_index_get (&bo->strings, strings_db, vaddr);
 	if (!bs) {
 		return false;
 	}
-	size_t index = bs - bo->strings._start;
+	size_t index = bs - R_VEC_START_ITER (&bo->strings);
 	if ((len > 0 && bs->length != len) || (type && bs->type != type)) {
 		return false;
 	}
 	ut64 deleted_vaddr = bs->vaddr;
 	RVecRBinString_remove (&bo->strings, index);
-	r_bin_strings_index_update_after_remove (&bo->strings, bo->strings_db, deleted_vaddr, index);
+	r_bin_strings_index_update_after_remove (&bo->strings, strings_db, deleted_vaddr, index);
 	return true;
 }
 
@@ -571,9 +572,7 @@ static char *extract_wide_string(const ut8 *buf, st64 len, int charsize, ut32 *o
 R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut64 max_len, int type) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->bo, NULL);
 	RBinObject *bo = bf->bo;
-	if (!bo->strings_db) {
-		bo->strings_db = ht_up_new0 ();
-	}
+	HtUP *strings_db = r_bin_object_ensure_strings_db (bo);
 	if (max_len < 1 || max_len > 512) {
 		max_len = 512;
 	}
@@ -623,6 +622,6 @@ R_API RBinString *r_bin_file_string_add(RBinFile *bf, ut64 paddr, ut64 vaddr, ut
 		return NULL;
 	}
 	*dst = bs;
-	r_bin_strings_index_insert (bo->strings_db, dst->vaddr, RVecRBinString_length (&bo->strings) - 1);
+	r_bin_strings_index_insert (strings_db, dst->vaddr, RVecRBinString_length (&bo->strings) - 1);
 	return dst;
 }

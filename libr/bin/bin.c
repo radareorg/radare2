@@ -911,8 +911,7 @@ R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 	}
 	RVecRBinString_clear (&bf->bo->strings);
 
-	ht_up_free (bf->bo->strings_db);
-	bf->bo->strings_db = NULL;
+	r_bin_object_drop_strings_db (bf->bo);
 
 	bf->rawstr = bin->options.rawstr;
 	RBinPlugin *plugin = r_bin_file_cur_plugin (bf);
@@ -924,7 +923,8 @@ R_API RVecRBinString *r_bin_reset_strings(RBin *bin) {
 	if (bin->options.debase64) {
 		r_bin_object_filter_strings (bf->bo);
 	}
-	r_bin_object_rebuild_strings_db (bf->bo);
+	RVecRBinString_shrink_to_fit (&bf->bo->strings);
+	r_bin_object_drop_strings_db (bf->bo);
 	return &bf->bo->strings;
 }
 
