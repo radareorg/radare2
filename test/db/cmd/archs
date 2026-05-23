@@ -76,7 +76,7 @@ pi 1
 EOF
 EXPECT=<<EOF
 bic w24, w1, w20, lsr 0
-strb w10, [x0], 7
+bic w24, w1, w20, lsr 0
 EOF
 RUN
 

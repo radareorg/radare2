@@ -125,7 +125,7 @@ NAME=ao mte big endian
 FILE=-
 ARGS=-a arm -b 64 -e cfg.bigendian=true
 CMDS=<<EOF
-wx 91a0090c918201099ac813e8
+wx 0c09a09109018291e813c89a
 ao@0
 ?e ---
 ao@4
@@ -142,7 +142,7 @@ mnemonic: addg
 description: add with tag
 mask: ffffffff
 id: 7
-bytes: 91a0090c
+bytes: 0c09a091
 val: 0x00000200
 size: 4
 sign: false
@@ -160,7 +160,7 @@ mnemonic: addg
 description: add with tag
 mask: ffffffff
 id: 7
-bytes: 91820109
+bytes: 09018291
 val: 0x00000020
 size: 4
 sign: false
@@ -178,7 +178,7 @@ mnemonic: irg
 description: insert random tag
 mask: ffffffff
 id: 429
-bytes: 9ac813e8
+bytes: e813c89a
 size: 4
 sign: false
 type: mov

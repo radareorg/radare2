@@ -1,0 +1,164 @@
+NAME=aarch64 LE: binary info reports arm/64/little/aarch64
+FILE=bins/elf/libarm64.so
+CMDS=<<EOF
+iI~^arch
+iI~^bits
+iI~^endian
+iI~^machine
+EOF
+EXPECT=<<EOF
+arch     arm
+bits     64
+endian   little
+machine  ARM aarch64
+EOF
+RUN
+
+NAME=aarch64 LE: entry point at expected vaddr
+FILE=bins/elf/libarm64.so
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x00000730
+EOF
+RUN
+
+NAME=aarch64 LE: FUNC symbol vaddr from symtab
+FILE=bins/elf/libarm64.so
+CMDS=is~Java_o__003dc_e$[2]
+EXPECT=<<EOF
+0x0000aa20
+EOF
+RUN
+
+NAME=aarch64 LE: disassemble at entry0
+FILE=bins/elf/libarm64.so
+CMDS=pi 4 @ entry0
+EXPECT=<<EOF
+adrp x0, 0x20000
+add x0, x0, 0
+b sym.imp.__cxa_finalize
+stp x29, x30, [sp, -0x10]!
+EOF
+RUN
+
+NAME=aarch64 LE: disassemble at named GLOBAL FUNC
+FILE=bins/elf/libarm64.so
+CMDS=pi 4 @ sym.Java_o__003dc_e
+EXPECT=<<EOF
+stp x28, x27, [sp, -0x60]!
+stp x26, x25, [sp, 0x10]
+stp x24, x23, [sp, 0x20]
+stp x22, x21, [sp, 0x30]
+EOF
+RUN
+
+NAME=aarch64 LE: pxw renders little-endian 32-bit words at entry0
+FILE=bins/elf/libarm64.so
+CMDS=pxw 16 @ entry0
+EXPECT=<<EOF
+0x00000730  0x90000100 0x91000000 0x17ffffe2 0xa9bf7bfd  .............{..
+EOF
+RUN
+
+NAME=aarch64 BE8: binary info reports arm/64/big/aarch64
+FILE=bins/elf/aarch64be_min
+CMDS=<<EOF
+iI~^arch
+iI~^bits
+iI~^endian
+iI~^machine
+EOF
+EXPECT=<<EOF
+arch     arm
+bits     64
+endian   big
+machine  ARM aarch64
+EOF
+RUN
+
+NAME=aarch64 BE8: entry point at expected vaddr
+FILE=bins/elf/aarch64be_min
+CMDS=ie~program[1]
+EXPECT=<<EOF
+0x004000f0
+EOF
+RUN
+
+NAME=aarch64 BE8: FUNC symbol vaddrs from BE symtab
+FILE=bins/elf/aarch64be_min
+CMDS=<<EOF
+is~mul.constprop.0$[2]
+is~add.constprop.0$[2]
+is~sub3.constprop.0$[2]
+is~ _start$[2]
+EOF
+EXPECT=<<EOF
+0x004000b0
+0x004000c0
+0x004000d0
+0x004000f0
+EOF
+RUN
+
+NAME=aarch64 BE8: disassemble mul.constprop.0 (instructions are LE in a BE binary)
+FILE=bins/elf/aarch64be_min
+CMDS=pi 2 @ sym.mul.constprop.0
+EXPECT=<<EOF
+lsl w0, w0, 1
+ret
+EOF
+RUN
+
+NAME=aarch64 BE8: disassemble add.constprop.0
+FILE=bins/elf/aarch64be_min
+CMDS=pi 2 @ sym.add.constprop.0
+EXPECT=<<EOF
+mov w0, 8
+ret
+EOF
+RUN
+
+NAME=aarch64 BE8: disassemble sub3.constprop.0
+FILE=bins/elf/aarch64be_min
+CMDS=pi 7 @ sym.sub3.constprop.0
+EXPECT=<<EOF
+stp x29, x30, [sp, -0x10]!
+mov w0, 8
+mov x29, sp
+bl sym.mul.constprop.0
+sub w0, w0, 3
+ldp x29, x30, [sp], 0x10
+ret
+EOF
+RUN
+
+NAME=aarch64 BE8: disassemble _start (entry0)
+FILE=bins/elf/aarch64be_min
+CMDS=pi 8 @ entry0
+EXPECT=<<EOF
+stp x29, x30, [sp, -0x10]!
+mov x8, 0x5d
+mov x29, sp
+bl sym.sub3.constprop.0
+sxtw x0, w0
+svc 0
+ldp x29, x30, [sp], 0x10
+ret
+EOF
+RUN
+
+NAME=aarch64 BE8: pxw reads .eh_frame as big-endian 32-bit words
+FILE=bins/elf/aarch64be_min
+CMDS=pxw 16 @ section..eh_frame
+EXPECT=<<EOF
+0x00400110  0x00000010 0x00000000 0x017a5200 0x04781e01  .........zR..x..
+EOF
+RUN
+
+NAME=aarch64 BE8: pxq reads .eh_frame as big-endian 64-bit word
+FILE=bins/elf/aarch64be_min
+CMDS=pxq 8 @ section..eh_frame
+EXPECT=<<EOF
+0x00400110  0x0000001000000000                       ........
+EOF
+RUN

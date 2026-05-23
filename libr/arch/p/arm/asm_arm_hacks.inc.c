@@ -17,11 +17,11 @@ static char *hack_asm_handle_dp_imm(ut32 insn) {
 			}
 		}
 		if (mnemonic) {
-			const ut8 uimm6 = ((insn >> 16) & 0x3f) << 4;
+			const ut16 uimm6 = ((insn >> 16) & 0x3f) << 4;
 			const ut8 uimm4 = (insn >> 10) & 0xf;
 			const ut8 Xn = (insn >> 5) & 0x1f;
 			const ut8 Xd = (insn >> 0) & 0x1f;
-			buf_asm = r_str_newf ("%s x%d, x%d, 0x%x, 0x%x",
+			buf_asm = r_str_newf ("%s x%d, x%d, 0x%x, %d",
 				mnemonic, Xd, Xn, uimm6, uimm4);
 			buf_asm = r_str_replace (buf_asm, "x31", "sp", 1);
 			return buf_asm;

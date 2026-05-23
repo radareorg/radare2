@@ -7,9 +7,12 @@
 static inline int cs_mode_for_session(RArchSession *as) {
 	int mode = CS_MODE_ARM;
 	if (as->config->bits == 64) {
-		mode = 0;
+		// AArch64 instruction words are little-endian on disk even on BE8
+		// targets; cfg.bigendian only describes the data byte order.
+		mode = CS_MODE_LITTLE_ENDIAN;
+	} else {
+		mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	}
-	mode |= R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	if (R_STR_ISNOTEMPTY (as->config->cpu)) {
 		if (strstr (as->config->cpu, "cortex")) {
 			mode |= CS_MODE_MCLASS;
