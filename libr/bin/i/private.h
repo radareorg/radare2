@@ -30,12 +30,84 @@ static inline bool limit_reached_vec_imports(const RVecRBinImport *vec, int limi
 R_IPI void r_bin_object_free(void /*RBinObject*/ *o_);
 R_IPI ut64 r_bin_object_get_baddr(RBinObject *o);
 R_IPI void r_bin_object_filter_strings(RBinObject *bo);
-R_IPI void r_bin_object_rebuild_strings_db(RBinObject *bo);
-R_IPI HtUP *r_bin_strings_build_index(RVecRBinString *strings);
-R_IPI RBinString *r_bin_strings_index_get(RVecRBinString *strings, HtUP *index, ut64 addr);
-R_IPI void r_bin_strings_index_insert(HtUP *index, ut64 vaddr, size_t string_index);
-R_IPI void r_bin_strings_index_update_after_remove(RVecRBinString *strings, HtUP *index, ut64 vaddr, size_t string_index);
-R_IPI void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src);
+
+static inline void r_bin_strings_index_insert(HtUP *index, ut64 vaddr, size_t string_index) {
+	if (index) {
+		ht_up_insert (index, vaddr, (void *)(size_t)(string_index + 1));
+	}
+}
+
+static inline HtUP *r_bin_strings_build_index(RVecRBinString *strings) {
+	if (!strings) {
+		return NULL;
+	}
+	HtUP *index = ht_up_new0 ();
+	if (!index) {
+		return NULL;
+	}
+	RBinString *string;
+	size_t i = 0;
+	R_VEC_FOREACH (strings, string) {
+		r_bin_strings_index_insert (index, string->vaddr, i);
+		i++;
+	}
+	return index;
+}
+
+static inline RBinString *r_bin_strings_index_get(RVecRBinString *strings, HtUP *index, ut64 addr) {
+	if (!strings || !index || addr == 0 || addr == UT64_MAX) {
+		return NULL;
+	}
+	void *value = ht_up_find (index, addr, NULL);
+	if (!value) {
+		return NULL;
+	}
+	RBinString *string = RVecRBinString_at (strings, (size_t)value - 1);
+	return string && string->vaddr == addr? string: NULL;
+}
+
+static inline void r_bin_strings_index_update_after_remove(RVecRBinString *strings, HtUP *index, ut64 vaddr, size_t string_index) {
+	if (!strings || !index) {
+		return;
+	}
+	ht_up_delete (index, vaddr);
+	bool found = false;
+	size_t i;
+	for (i = string_index; i < RVecRBinString_length (strings); i++) {
+		RBinString *string = RVecRBinString_at (strings, i);
+		if (string) {
+			if (string->vaddr == vaddr) {
+				found = true;
+			}
+			r_bin_strings_index_insert (index, string->vaddr, i);
+		}
+	}
+	if (!found) {
+		for (i = string_index; i > 0; i--) {
+			RBinString *string = RVecRBinString_at (strings, i - 1);
+			if (string && string->vaddr == vaddr) {
+				r_bin_strings_index_insert (index, string->vaddr, i - 1);
+				break;
+			}
+		}
+	}
+}
+
+static inline void r_bin_take_strings(RVecRBinString *dst, RVecRBinString *src) {
+	if (src) {
+		RVecRBinString_swap (dst, src);
+		RVecRBinString_free (src);
+	}
+}
+
+static inline void r_bin_object_rebuild_strings_db(RBinObject *bo) {
+	if (!bo) {
+		return;
+	}
+	ht_up_free (bo->strings_db);
+	bo->strings_db = r_bin_strings_build_index (&bo->strings);
+}
+
 R_IPI RBinObject *r_bin_object_new(RBinFile *binfile, RBinPlugin *plugin, ut64 baseaddr, ut64 loadaddr, ut64 offset, ut64 sz);
 R_IPI RBinObject *r_bin_object_get_cur(RBin *bin);
 R_IPI RBinObject *r_bin_object_find_by_arch_bits(RBinFile *binfile, const char *arch, int bits, const char *name);
