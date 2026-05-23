@@ -873,7 +873,7 @@ static RList *strings(RBinFile *bf) {
 			}
 			off = bin->strings[i] + r_uleb128_len (buf, sizeof (buf));
 			if (off + len >= bin->size || off + len < len) {
-				free (ptr->string);
+				R_FREE (ptr->string);
 				goto out_error;
 			}
 			r_buf_read_at (bin->b, off, (ut8*)ptr->string, len);
