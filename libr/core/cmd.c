@@ -6809,6 +6809,29 @@ R_API bool r_core_cmd_file(RCore *core, const char *file) {
 	return true;
 }
 
+R_API char *r_core_cmd_file_str(RCore *core, const char *file, bool *ok) {
+	R_RETURN_VAL_IF_FAIL (core && core->cons && file, NULL);
+	if (ok) {
+		*ok = false;
+	}
+	r_cons_push (core->cons);
+	core->cons->context->noflush = true;
+	core->cons->context->cmd_str_depth++;
+	const bool ret = r_core_cmd_file (core, file);
+	if (ok) {
+		*ok = ret;
+	}
+	if (--core->cons->context->cmd_str_depth == 0) {
+		core->cons->context->noflush = false;
+	}
+	r_cons_filter (core->cons);
+	const char *static_str = r_cons_get_buffer (core->cons, NULL);
+	char *retstr = strdup (r_str_get (static_str));
+	r_cons_pop (core->cons);
+	r_cons_echo (core->cons, NULL);
+	return retstr;
+}
+
 R_API bool r_core_cmd_command(RCore *core, const char *command) {
 	R_RETURN_VAL_IF_FAIL (core && command, -1);
 	char *cmd = r_core_sysenv_begin (core, command);

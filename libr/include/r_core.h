@@ -568,6 +568,7 @@ R_API R_MUSTUSE char *r_core_cmd_strf_at(RCore *core, ut64 addr, const char *fmt
 R_API R_MUSTUSE char *r_core_cmd_str_pipe(RCore *core, const char *cmd);
 R_API R_MUSTUSE RBuffer *r_core_cmd_tobuf(RCore *core, const char *cmd);
 R_API bool r_core_cmd_file(RCore *core, const char *file);
+R_API R_MUSTUSE char *r_core_cmd_file_str(RCore *core, const char *file, R_OUT bool * R_NULLABLE ok);
 R_API bool r_core_cmd_lines(RCore *core, const char *lines);
 R_API bool r_core_cmd_command(RCore *core, const char *command);
 R_API void r_core_af(RCore *core, ut64 addr, const char *name, bool anal_calls);
