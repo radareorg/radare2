@@ -187,6 +187,12 @@ if arch_plugins.contains('python') or arch_plugins.contains('pyc') or arch_plugi
   ]
 endif
 
+if arch_plugins.contains('ppc_nz')
+  r_arch_sources += [
+    'p/ppc_nz/plugin.c'
+  ]
+endif
+
 if arch_plugins.contains('x86_nz')
   r_arch_sources += [
     'p/x86_nz/plugin.c'

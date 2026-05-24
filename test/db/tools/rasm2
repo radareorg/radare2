@@ -675,6 +675,26 @@ mr r10, r4
 EOF
 RUN
 
+# Coverage: ppc.nz rejects unaligned DS-form displacements (low 2 bits must be 0).
+NAME=rasm2 ppc.nz rejects unaligned ld displacement
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -e 'ld r3, 1(r1)'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld r3, 1(r1)' at line 1
+EOF
+RUN
+
+# Coverage: 64-bit-only instructions reject when -b 32.
+NAME=rasm2 ppc.nz rejects ld when bits=32
+FILE=-
+CMDS=!rasm2 -a ppc -b 32 -e 'ld r3, 0(r1)'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'ld r3, 0(r1)' at line 1
+EOF
+RUN
+
 NAME=rasm2 -a arm.as -b 16 "wfe"
 FILE=-
 BROKEN=1
