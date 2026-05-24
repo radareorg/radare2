@@ -64,7 +64,7 @@ cd "$(dirname $0)"/..
 
 (git grep -i unkown libr ) && exit 1
 
-(git grep '=0' libr| grep c:|grep -v '"' |grep -v '=0x') && exit 1
+(git grep '=0' libr| grep c:|grep -v '"' |grep -v '//' | grep -v '=0x') && exit 1
 (git grep '=1' libr| grep c:|grep -v '"' |grep -v '//') && exit 1
 (git grep -n 'eprintf' libr | grep 'Error:') && exit 1
 (git grep -n 'x ""' libr) && exit 1
