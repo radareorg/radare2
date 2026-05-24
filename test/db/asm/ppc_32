@@ -1,0 +1,58 @@
+# PowerPC 32-bit assembler tests for ppc.nz (big-endian round-trip)
+
+# Fixed-encoding instructions
+adE "nop" 60000000
+adE "sc" 44000002
+adE "trap" 7fe00008
+
+# D-form: li / lis / addi / ori
+adE "li r3, 0" 38600000
+adE "lis r3, 0x1234" 3c601234
+adE "addi r1, r1, -0x10" 3821fff0
+adE "ori r3, r4, 0xff" 608300ff
+
+# X-form / XO-form
+adE "mr r3, r4" 7c832378
+adE "add r5, r3, r4" 7ca32214
+adE "mullw r3, r4, r5" 7c6429d6
+
+# 32-bit loads and stores
+adE "lwz r3, 8(r4)" 80640008
+adE "stw r3, 8(r4)" 90640008
+adE "stwu r1, -0x10(r1)" 9421fff0
+
+# Comparisons
+adE "cmpwi r3, 0" 2c030000
+
+# Branches
+adE "beq 0x10" 41820010
+adE "bl 0x100" 48000101
+adE "blr" 4e800020
+adE "bctrl" 4e800421
+
+# SPR moves
+adE "mtctr r12" 7d8903a6
+adE "mflr r0" 7c0802a6
+
+# Coverage: mnemonics implemented but previously untested
+adE "divw r3, r4, r5" 7c642bd6
+adE "bge 0x10" 40800010
+adE "ble 0x10" 40810010
+
+# Coverage: sub alias should encode as subf with swapped rA/rB
+# (assemble-only: ppc_cs canonicalises back to "subf r5, r4, r3").
+aE "sub r5, r3, r4" 7ca41850
+
+# Coverage: 'or rA, rS, rS' should encode the same as 'mr rA, rS'
+# (assemble-only: ppc_cs canonicalises to mr).
+aE "or r3, r4, r4" 7c832378
+
+# Coverage: 3-operand cmpwi with explicit CR field
+# (assemble-only: ppc_cs drops CR=0 in output).
+aE "cmpwi 0, r3, 0" 2c030000
+aE "cmpw 0, r3, r4" 7c032000
+
+# Coverage: sign-extension and immediate boundaries.
+adE "li r3, -1" 3860ffff
+adE "addi r1, r1, 0x7fff" 38217fff
+adE "addi r1, r1, -0x8000" 38218000

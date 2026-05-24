@@ -315,6 +315,7 @@ extern const RArchPlugin r_arch_plugin_pic;
 extern const RArchPlugin r_arch_plugin_pickle;
 extern const RArchPlugin r_arch_plugin_ppc_cs;
 extern const RArchPlugin r_arch_plugin_ppc_gnu;
+extern const RArchPlugin r_arch_plugin_ppc_nz;
 extern const RArchPlugin r_arch_plugin_propeller;
 extern const RArchPlugin r_arch_plugin_pyc;
 extern const RArchPlugin r_arch_plugin_riscv;
