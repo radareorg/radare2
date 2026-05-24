@@ -490,7 +490,7 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 	{
 		char *be_opt = r_egg_option_get (es->e, "bigendian");
 		if (be_opt) {
-			egg_endian = atoi (be_opt)? 1: 0;
+			egg_endian = r_str_is_true (be_opt)? 1: 0;
 			free (be_opt);
 		} else if (arch && !strcmp (arch, "ppc")) {
 			egg_endian = 1;
