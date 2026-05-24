@@ -10,6 +10,8 @@ extern REggEmit emit_x86;
 extern REggEmit emit_x64;
 extern REggEmit emit_arm;
 extern REggEmit emit_a64;
+extern REggEmit emit_ppc;
+extern REggEmit emit_ppc64;
 extern REggEmit emit_esil;
 extern REggEmit emit_trace;
 
@@ -166,6 +168,22 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 		case 64:
 			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
 			egg->remit = &emit_a64;
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		}
+	} else if (!strcmp (arch, "ppc")) {
+		egg->arch = R_SYS_ARCH_PPC;
+		switch (bits) {
+		case 32:
+			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
+			egg->remit = &emit_ppc;
+			egg->bits = bits;
+			egg->endian = endian;
+			break;
+		case 64:
+			r_syscall_setup (egg->syscall, arch, bits, asmcpu, os);
+			egg->remit = &emit_ppc64;
 			egg->bits = bits;
 			egg->endian = endian;
 			break;
@@ -336,6 +354,8 @@ R_API bool r_egg_assemble_asm(REgg *egg, char **asm_list) {
 			asm_name = "x86.nz";
 		} else if (egg->remit == &emit_a64 || egg->remit == &emit_arm) {
 			asm_name = "arm";
+		} else if (egg->remit == &emit_ppc || egg->remit == &emit_ppc64) {
+			asm_name = "ppc.nz";
 		}
 	}
 	bool ret = false;

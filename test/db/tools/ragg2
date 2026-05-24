@@ -371,11 +371,186 @@ AA
 EOF
 RUN
 
-NAME=ragg2 debruijn sequence on arch without egg backend
+NAME=ragg2 debruijn sequence ppc 64
 FILE=-
 CMDS=!ragg2 -a ppc -b 64 -r -P 2; ?e
 EXPECT=<<EOF
 AA
+EOF
+RUN
+
+NAME=ragg2 -a ppc -b 32 -k linux exit syscall
+FILE=-
+CMDS=!ragg2 -a ppc -b 32 -k linux -e 'exit@syscall(1); main@global() { exit(0); }'
+EXPECT=<<EOF
+7c0802a6900100049421ffd0386000009061001080610010380000014400000238210030800100047c0803a64e800020
+EOF
+RUN
+
+NAME=ragg2 -a ppc -b 64 -k linux exit syscall (BE default)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -e 'exit@syscall(1); main@global() { exit(0); }'
+EXPECT=<<EOF
+7c0802a6f8010010f821ffa138600000f8610020e8610020380000014400000238210060e80100107c0803a64e800020
+EOF
+RUN
+
+NAME=ragg2 -a ppc -b 64 -c bigendian=0 exit syscall (LE)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -c bigendian=0 -e 'exit@syscall(1); main@global() { exit(0); }'
+EXPECT=<<EOF
+a602087c100001f8a1ff21f800006038200061f8200061e8010000380200004460002138100001e8a603087c2000804e
+EOF
+RUN
+
+NAME=ragg2 -a ppc -b 64 -s shows source
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'exit@syscall(1); main@global() { exit(0); }'
+EXPECT=<<EOF
+
+.global main
+main:
+  mflr r0
+  std r0, 16(r1)
+  stdu r1, -96(r1)
+# rcc_fun 1 (exit)
+  li r3, 0
+  std r3, 32(r1)
+# set syscall args
+  ld r3, 32(r1)
+# syscall
+ li r0, 1
+ sc
+  addi r1, r1, 96
+  ld r0, 16(r1)
+  mtlr r0
+  blr
+
+
+EOF
+RUN
+
+# --- bug-detection tests below: each currently fails, demonstrating a
+# --- specific bug in the PPC backend. They turn green once the bug is fixed.
+
+# Finding #1: missing '\n' in emit_ppc.c indirect emit_jmp / emit_call.
+# The 'ld r0, ...' and 'mtctr r0' lines get concatenated when the call
+# goes through the indirect (atr=1) path triggered by '.var()' syntax.
+NAME=ragg2 ppc indirect call separates ld and mtctr (finding #1)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(8,0) { .var0(); }' | grep -c '^  ld r0, 0(r1)$'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# Finding #2: emit_frame with sz=0 allocates only R_MIN_FRAME bytes (32 for
+# ppc64), but emit_arg stores arg 1 at offset R_MIN_FRAME (=32), which is
+# the FIRST byte of the caller's frame. The frame must be large enough to
+# include a parameter save area (32 + 8*8 = 96 for ppc64 with R_NGP=8).
+NAME=ragg2 ppc 64 frame accommodates arg spill (finding #2)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'foo@global() { ; } main@global() { foo(42); }' | grep -E '^  stdu r1,' | tail -1
+EXPECT=<<EOF
+  stdu r1, -96(r1)
+EOF
+RUN
+
+# Finding #3: h_li / h_addi / h_cmpwi accept 0x8000..0xffff and silently
+# sign-extend. SIMM is signed-16 so the upper bound must be 0x7fff.
+NAME=rasm2 ppc.nz rejects li above signed-16 max (finding #3)
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -e 'li r3, 0x8000'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'li r3, 0x8000' at line 1
+EOF
+RUN
+
+# Finding #4: emit_ppc.c uses 32-bit cmpw/mullw/divw even in the 64-bit
+# emit_ppc64. Compares of 64-bit values silently truncate the high word.
+# This test currently emits 'cmpw'; post-fix must emit 'cmpd' on ppc64.
+NAME=ragg2 ppc 64 compare uses cmpd not cmpw (finding #4)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(8,0) { .var0 = 1; if (.var0 == 0) { break; } }' | grep -cE '^  cmpd '
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# Finding #5: emit_mathop emits PPC 3-register arithmetic with literal
+# operands. ppc.nz parses bare digits 0-31 as register names, so
+# 'add r4, r4, 1' silently encodes as 'add r4, r4, r1' (stack pointer).
+# Post-fix must emit 'addi' (D-form, immediate-aware) for literal operands.
+NAME=ragg2 ppc mathop with immediate uses addi (finding #5)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(8,0) { .var0 = .var0 + 1; }' | grep -cE '^  addi r[0-9]+, r[0-9]+, 1$'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# Finding #4b (pattern analogue): mullw / divw aren't switched to mulld /
+# divd in 64-bit emit_ppc. Same fix shape as finding #4 but a different
+# instruction site (emit_mathop, not emit_branch).
+NAME=ragg2 ppc 64 multiply uses mulld not mullw (finding #4b)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(8,0) { .var0 = .var0 * .var1; }' | grep -cE '^  mulld '
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# Finding #3b (pattern analogue): h_addi accepts 0x8000 with silent
+# sign-wrap, same bug as h_li (finding #3) but in a different handler.
+NAME=rasm2 ppc.nz rejects addi above signed-16 max (finding #3b)
+FILE=-
+CMDS=!rasm2 -a ppc -b 64 -e 'addi r1, r1, 0x8000'
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Cannot assemble 'addi r1, r1, 0x8000' at line 1
+EOF
+RUN
+
+# Finding #5b (pattern analogue): subtract-with-literal emits
+# 'subf r4, 1, r4' where '1' is parsed as r1 (stack pointer!). Post-fix
+# should emit either 'addi rT, rA, -imm' or materialise the literal into
+# R_TMP first.
+NAME=ragg2 ppc subtract with literal does not use subf (finding #5b)
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(8,0) { .var0 = .var0 - 1; }' | grep -cE '^  subf r[0-9]+, [0-9]+, r[0-9]+$'
+EXPECT=<<EOF
+0
+EOF
+RUN
+
+# --- coverage tests below: every callback in emit_ppc.c exercised at least
+# --- once. Currently pass.
+
+# emit_trap: 'break' statement
+NAME=ragg2 ppc emit_trap on break
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global() { break; }' | grep -c '^  trap$'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# emit_load: dereference of pointer variable
+NAME=ragg2 ppc emit_load on dereference
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'main@global(16,0) { .var0 = *.var1; }' | grep -cE '^  ld r[0-9]+, 0\(r[0-9]+\)$'
+EXPECT=<<EOF
+1
+EOF
+RUN
+
+# emit_call (direct): function-to-function bl. Asserts 'bl foo' appears.
+NAME=ragg2 ppc emit_call direct bl
+FILE=-
+CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'foo@global() { ; } main@global() { foo(); }' | grep -c '^  bl foo$'
+EXPECT=<<EOF
+1
 EOF
 RUN
 

@@ -76,7 +76,7 @@ static int usage(int v) {
 	"             [-S string] [-f fmt] [-nN dword] [-dDw off:hex] [-e expr] file|f.asm|-\n");
 	if (v) {
 		printf (
-			" -a [arch]       select architecture (x86, mips, arm)\n"
+			" -a [arch]       select architecture (x86, mips, arm, ppc)\n"
 			" -b [bits]       register size (32, 64, ..)\n"
 			" -B [hexpairs]   append some hexpair bytes\n"
 			" -c [k=v]        set configuration options\n"
@@ -482,8 +482,21 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		return 0;
 	}
 
-	// initialize egg
-	r_egg_setup (es->e, arch, bits, 0, os);
+	// initialize egg.
+	// Endian: read `-c bigendian=0/1`; for ppc default to BE since PPC32
+	// and ppc64 ELFv1 are big-endian by convention. ppc64le users opt in
+	// with `-c bigendian=0`.
+	int egg_endian = 0;
+	{
+		char *be_opt = r_egg_option_get (es->e, "bigendian");
+		if (be_opt) {
+			egg_endian = atoi (be_opt)? 1: 0;
+			free (be_opt);
+		} else if (arch && !strcmp (arch, "ppc")) {
+			egg_endian = 1;
+		}
+	}
+	r_egg_setup (es->e, arch, bits, egg_endian, os);
 	if (file) {
 		if (R_STR_ISEMPTY (file)) {
 			R_LOG_ERROR ("Cannot open empty path");
