@@ -1,16 +1,5 @@
 /* radare - LGPL - Copyright 2026 - radare2 contributors */
-
-/* PowerPC ragg2 emitter.
- *
- * Emits assembly text; r_asm assembles it via the ppc.nz plugin
- * (libr/arch/p/ppc_nz/). Endianness flows through egg->endian and is
- * applied by ppc.nz at encode time — same instruction encoding for BE
- * and LE, only on-disk byte order differs.
- *
- * Compiled twice: once normally (32-bit emit_ppc) and once with
- * ARCH_PPC_64 defined (64-bit emit_ppc64). The two compilations differ
- * only in load/store widths and LR-save offset.
- */
+/* PowerPC ragg2 emitter. Emits text for ppc.nz; compiled twice for 32 and 64-bit. */
 
 #include <r_egg.h>
 
@@ -93,8 +82,7 @@ static void load_deref(REgg *egg, const char *reg, const char *src, int sz) {
 }
 
 static void load_ptr(REgg *egg, const char *reg, const char *src) {
-	/* PPC variables come from get_var as "OFFSET(rA)". Split and emit
-	 * addi to materialise the address of the slot. */
+	/* PPC variables come from get_var as "OFFSET(rA)"; emit addi to materialise the address. */
 	const char *lp = strchr (src, '(');
 	if (!lp) {
 		load_value (egg, reg, src);
@@ -159,14 +147,7 @@ static char *emit_syscall(REgg *egg, int num) {
 	return r_str_newf (": li r0, `.arg`\n: sc\n");
 }
 
-/* Frame layout (post-stdu, offsets from new r1):
- *   0 .. R_MIN_FRAME-1        linkage area (back chain, CR, LR save, reserved)
- *   R_MIN_FRAME ..             parameter save area (R_NGP slots, each R_SZ wide)
- *   R_MIN_FRAME + R_NGP*R_SZ.. local variables (user-supplied sz, aligned)
- *
- * The egg compiler doesn't tell us in advance whether the function makes
- * any calls, so we always reserve the parameter save area. That keeps
- * arg-spill offsets (R_MIN_FRAME + N*R_SZ) inside the allocated frame. */
+/* Always reserve the parameter save area: egg can't tell us if the function makes calls. */
 static int ppc_frame_size(int sz) {
 	int locals = (sz > 0)? ((sz + 15) & ~15): 0;
 	return R_MIN_FRAME + R_NGP * R_SZ + locals;
@@ -207,19 +188,22 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 }
 
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
-	/* PPC has no PC-arithmetic instruction; full inline-string support
-	 * needs a labeled bl+mflr trampoline. Not implemented in the first
-	 * cut. Emit a comment so the rest of the program still assembles. */
+	/* No PC-relative load on PPC; full inline-string support deferred. */
 	char *s = r_str_escape (str);
 	r_egg_printf (egg, "  # set_string '%s' not implemented for ppc\n", s);
 	free (s);
 }
 
+/* Indirect branch via CTR. branch is "bctr" (jmp) or "bctrl" (call). */
+static void emit_indirect(REgg *egg, const char *str, const char *branch) {
+	r_egg_printf (egg, "  %s r0, %s\n", R_LOAD, str);
+	r_egg_printf (egg, "  mtctr r0\n");
+	r_egg_printf (egg, "  %s\n", branch);
+}
+
 static void emit_jmp(REgg *egg, const char *str, int atr) {
 	if (atr) {
-		r_egg_printf (egg, "  %s r0, %s\n", R_LOAD, str);
-		r_egg_printf (egg, "  mtctr r0\n");
-		r_egg_printf (egg, "  bctr\n");
+		emit_indirect (egg, str, "bctr");
 	} else {
 		r_egg_printf (egg, "  b %s\n", str);
 	}
@@ -228,9 +212,7 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 static void emit_call(REgg *egg, const char *str, int atr) {
 	load_arg_regs (egg, lastarg);
 	if (atr) {
-		r_egg_printf (egg, "  %s r0, %s\n", R_LOAD, str);
-		r_egg_printf (egg, "  mtctr r0\n");
-		r_egg_printf (egg, "  bctrl\n");
+		emit_indirect (egg, str, "bctrl");
 	} else {
 		r_egg_printf (egg, "  bl %s\n", str);
 	}
@@ -361,7 +343,6 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	case '+': op = "add"; break;
 	case '*': op = R_MUL; break;
 	case '/': op = R_DIV; break;
-	default: op = NULL; break;
 	}
 	if (!eq) {
 		eq = R_AX;

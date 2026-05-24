@@ -1,14 +1,5 @@
 /* radare - LGPL - Copyright 2026 - radare2 contributors */
-
-/* PowerPC handmade assembler.
- *
- * Covers the small set of mnemonics ragg2 emits, plus enough surrounding
- * instructions to be useful for hand-written PPC patches and shellcode.
- * All instructions are 32-bit words (Power ISA Book I).
- *
- * Endianness is read from RArchSession's config: BE binaries get BE word
- * bytes, LE binaries get LE word bytes. Same instruction word encoding
- * either way — only the on-disk byte order changes. */
+/* PowerPC handmade assembler. 32-bit instructions; endianness from RArchSession config. */
 
 #include <r_util.h>
 
@@ -20,31 +11,17 @@ static void skip_ws(const char **sp) {
 	}
 }
 
+static bool eat_char(const char **sp, char c) {
+	skip_ws (sp);
+	if (**sp != c) {
+		return false;
+	}
+	(*sp)++;
+	return true;
+}
+
 static bool eat_comma(const char **sp) {
-	skip_ws (sp);
-	if (**sp != ',') {
-		return false;
-	}
-	(*sp)++;
-	return true;
-}
-
-static bool eat_lparen(const char **sp) {
-	skip_ws (sp);
-	if (**sp != '(') {
-		return false;
-	}
-	(*sp)++;
-	return true;
-}
-
-static bool eat_rparen(const char **sp) {
-	skip_ws (sp);
-	if (**sp != ')') {
-		return false;
-	}
-	(*sp)++;
-	return true;
+	return eat_char (sp, ',');
 }
 
 /* Parse a GPR: "r0".."r31" or bare "0".."31". Returns register number or -1. */
@@ -89,17 +66,11 @@ static bool parse_imm(const char **sp, st64 *out) {
 /* Parse a D(rA) displacement form. Sets *disp_out and *ra_out. */
 static bool parse_disp(const char **sp, st64 *disp_out, int *ra_out) {
 	st64 d;
-	if (!parse_imm (sp, &d)) {
-		return false;
-	}
-	if (!eat_lparen (sp)) {
+	if (!parse_imm (sp, &d) || !eat_char (sp, '(')) {
 		return false;
 	}
 	int ra = parse_reg (sp);
-	if (ra < 0) {
-		return false;
-	}
-	if (!eat_rparen (sp)) {
+	if (ra < 0 || !eat_char (sp, ')')) {
 		return false;
 	}
 	*disp_out = d;
@@ -289,19 +260,10 @@ static int dsform_ls(RArchSession *s, RAnalOp *op, const char *args, int opcd, i
 	return emit_word (s, op, enc_ds (opcd, rt, ra, (int)d, xo));
 }
 
-/* nop -> ori 0,0,0 (preferred no-op per ISA) */
-static int h_nop(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, 0x60000000);
-}
-
-static int h_sc(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, 0x44000002);
-}
-
-/* trap is the encoding of `tw 31, 0, 0` (unconditional trap). */
-static int h_trap(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, 0x7fe00008);
-}
+/* Fixed-encoding instructions. */
+static int h_nop(RArchSession *s, RAnalOp *op, const char *args)  { return emit_word (s, op, 0x60000000); }
+static int h_sc(RArchSession *s, RAnalOp *op, const char *args)   { return emit_word (s, op, 0x44000002); }
+static int h_trap(RArchSession *s, RAnalOp *op, const char *args) { return emit_word (s, op, 0x7fe00008); }
 
 /* SIMM is signed-16; range -0x8000..0x7fff. */
 static int h_li(RArchSession *s, RAnalOp *op, const char *args) {
@@ -450,34 +412,19 @@ static int h_cmpd(RArchSession *s, RAnalOp *op, const char *args)  { return cmp_
 static int h_cmpwi(RArchSession *s, RAnalOp *op, const char *args) { return cmp_i (s, op, args, 0); }
 static int h_cmpdi(RArchSession *s, RAnalOp *op, const char *args) { return cmp_i (s, op, args, 1); }
 
-/* For PPC bitwise ops the destination is the first operand but lands in
- * the RA slot of X-form (not RT). Applies to and/or/xor below. */
-static int h_and(RArchSession *s, RAnalOp *op, const char *args) {
+/* PPC bitwise ops: destination is first operand but encodes into RA slot (not RT). */
+static int x_logical(RArchSession *s, RAnalOp *op, const char *args, int xo) {
 	const char *p = args;
 	int ra, rs, rb;
 	if (!parse_3reg (&p, &ra, &rs, &rb)) {
 		return -1;
 	}
-	return emit_word (s, op, enc_x (31, rs, ra, rb, 28, 0));
+	return emit_word (s, op, enc_x (31, rs, ra, rb, xo, 0));
 }
 
-static int h_or(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	int ra, rs, rb;
-	if (!parse_3reg (&p, &ra, &rs, &rb)) {
-		return -1;
-	}
-	return emit_word (s, op, enc_x (31, rs, ra, rb, 444, 0));
-}
-
-static int h_xor(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	int ra, rs, rb;
-	if (!parse_3reg (&p, &ra, &rs, &rb)) {
-		return -1;
-	}
-	return emit_word (s, op, enc_x (31, rs, ra, rb, 316, 0));
-}
+static int h_and(RArchSession *s, RAnalOp *op, const char *args) { return x_logical (s, op, args, 28); }
+static int h_or(RArchSession *s, RAnalOp *op, const char *args)  { return x_logical (s, op, args, 444); }
+static int h_xor(RArchSession *s, RAnalOp *op, const char *args) { return x_logical (s, op, args, 316); }
 
 /* `mr rA, rS` is the conventional alias for `or rA, rS, rS`. */
 static int h_mr(RArchSession *s, RAnalOp *op, const char *args) {
@@ -563,50 +510,32 @@ static int h_blt(RArchSession *s, RAnalOp *op, const char *args) { return do_cbr
 static int h_bge(RArchSession *s, RAnalOp *op, const char *args) { return do_cbranch (s, op, args, BO_FALSE, BI_LT); }
 static int h_ble(RArchSession *s, RAnalOp *op, const char *args) { return do_cbranch (s, op, args, BO_FALSE, BI_GT); }
 
-/* Unconditional branches. */
-static int h_b(RArchSession *s, RAnalOp *op, const char *args) {
+/* Unconditional branches. lk=0 → b, lk=1 → bl. */
+static int h_ubranch(RArchSession *s, RAnalOp *op, const char *args, int lk) {
 	const char *p = args;
 	REQ_IMM (tgt);
-	return do_i_form (s, op, tgt, 0);
+	return do_i_form (s, op, tgt, lk);
 }
-static int h_bl(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	REQ_IMM (tgt);
-	return do_i_form (s, op, tgt, 1);
-}
+
+static int h_b(RArchSession *s, RAnalOp *op, const char *args)  { return h_ubranch (s, op, args, 0); }
+static int h_bl(RArchSession *s, RAnalOp *op, const char *args) { return h_ubranch (s, op, args, 1); }
 
 /* XL-form (LR/CTR-relative) branches. */
-static int h_blr(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, enc_xl (19, 20, 0, 16, 0));
-}
-static int h_bctr(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, enc_xl (19, 20, 0, 528, 0));
-}
-static int h_bctrl(RArchSession *s, RAnalOp *op, const char *args) {
-	return emit_word (s, op, enc_xl (19, 20, 0, 528, 1));
+static int h_blr(RArchSession *s, RAnalOp *op, const char *args)   { return emit_word (s, op, enc_xl (19, 20, 0, 16, 0)); }
+static int h_bctr(RArchSession *s, RAnalOp *op, const char *args)  { return emit_word (s, op, enc_xl (19, 20, 0, 528, 0)); }
+static int h_bctrl(RArchSession *s, RAnalOp *op, const char *args) { return emit_word (s, op, enc_xl (19, 20, 0, 528, 1)); }
+
+/* SPR moves. spr=8 is LR, spr=9 is CTR. xo=467 → mtspr, xo=339 → mfspr. */
+static int spr_move(RArchSession *s, RAnalOp *op, const char *args, int spr, int xo) {
+	const char *p = args;
+	REQ_REG (r);
+	return emit_word (s, op, enc_xfx (31, r, spr, xo));
 }
 
-/* SPR moves. SPR=8 is LR, SPR=9 is CTR. */
-static int h_mtctr(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	REQ_REG (rs);
-	return emit_word (s, op, enc_xfx (31, rs, 9, 467));
-}
-static int h_mtlr(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	REQ_REG (rs);
-	return emit_word (s, op, enc_xfx (31, rs, 8, 467));
-}
-static int h_mfctr(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	REQ_REG (rt);
-	return emit_word (s, op, enc_xfx (31, rt, 9, 339));
-}
-static int h_mflr(RArchSession *s, RAnalOp *op, const char *args) {
-	const char *p = args;
-	REQ_REG (rt);
-	return emit_word (s, op, enc_xfx (31, rt, 8, 339));
-}
+static int h_mtctr(RArchSession *s, RAnalOp *op, const char *args) { return spr_move (s, op, args, 9, 467); }
+static int h_mtlr(RArchSession *s, RAnalOp *op, const char *args)  { return spr_move (s, op, args, 8, 467); }
+static int h_mfctr(RArchSession *s, RAnalOp *op, const char *args) { return spr_move (s, op, args, 9, 339); }
+static int h_mflr(RArchSession *s, RAnalOp *op, const char *args)  { return spr_move (s, op, args, 8, 339); }
 
 /* ---------- Mnemonic dispatch ---------- */
 
@@ -684,13 +613,9 @@ R_API int ppc_nz_assemble(RArchSession *s, RAnalOp *op, const char *str) {
 	char mnem[16];
 	memcpy (mnem, m_start, m_len);
 	mnem[m_len] = '\0';
-	/* Lowercase the mnemonic so users can type LI or li. */
-	for (size_t i = 0; i < m_len; i++) {
-		mnem[i] = tolower ((unsigned char)mnem[i]);
-	}
 	int i;
 	for (i = 0; mnemonic_table[i].name; i++) {
-		if (!strcmp (mnemonic_table[i].name, mnem)) {
+		if (!r_str_casecmp (mnemonic_table[i].name, mnem)) {
 			return mnemonic_table[i].fn (s, op, p);
 		}
 	}
