@@ -24,6 +24,7 @@ ood
 e cmd.syscall.enter=k syscall.enter=1
 dcs clock_nanosleep nanosleep
 dr SN
+dk 9
 q!
 EOF
 EXPECT=<<EOF
