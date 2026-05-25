@@ -403,6 +403,9 @@ static bool wasm_decode(RArchSession *s, RAnalOp *op, RArchDecodeMask mask) {
 	case WASM_TYPE_OP_SIMD:
 		op->id = 0xfd;
 		break;
+	case WASM_TYPE_OP_MISC:
+		op->id = (0xfc << 8) | wop.op.misc;
+		break;
 	}
 
 	switch (wop.type) {
