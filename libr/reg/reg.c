@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2025 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -536,7 +536,8 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 		i = (type == R_REG_TYPE_FLG)? R_REG_TYPE_GPR: type;
 		e = i + 1;
 	}
-	for (int j = i; j < e; j++) {
+	int j;
+	for (j = i; j < e; j++) {
 		HtPP *pp = reg->regset[j].ht_regs;
 		if (pp) {
 			bool found = false;
@@ -546,7 +547,7 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 			}
 		}
 	}
-	for (int j = i; j < e; j++) {
+	for (j = i; j < e; j++) {
 		int idx;
 		RRegVBank *vb = vbank_match (reg, j, name, &idx);
 		if (vb) {
