@@ -152,6 +152,11 @@ R_API void r_reg_fit_arena(RReg *reg) {
 			size = BITS2BYTES (r->offset + r->size);
 			newsize = R_MAX (size, newsize);
 		}
+		RRegVBank *vb;
+		r_list_foreach (reg->regset[i].vbanks, iter, vb) {
+			size = BITS2BYTES (vb->offset + vb->size * vb->count);
+			newsize = R_MAX (size, newsize);
+		}
 		if (newsize < 1) {
 			if (!arena->shared) {
 				R_FREE (arena->bytes);
