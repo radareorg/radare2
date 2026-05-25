@@ -55,6 +55,10 @@ static const SdbGperf *gperfs[] = {
 };
 
 R_API SdbGperf *r_syscall_get_gperf(const char *k) {
+	const char *base = strrchr (k, '/');
+	if (base) {
+		k = base + 1;
+	}
 	SdbGperf **gp = (SdbGperf**)gperfs;
 	while (*gp) {
 		SdbGperf *g = *gp;

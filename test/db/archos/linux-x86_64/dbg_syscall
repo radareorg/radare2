@@ -1,0 +1,32 @@
+NAME=syscall hooks fire during continue
+FILE=bins/elf/true
+ARGS=-d -e log.level=0
+CMDS=<<EOF
+ood
+e cmd.syscall.enter=k syscall.enter=1
+e cmd.syscall.leave=k syscall.leave=1
+dc
+?vi $k{syscall.enter}
+?vi $k{syscall.leave}
+q!
+EOF
+EXPECT=<<EOF
+1
+1
+EOF
+RUN
+
+NAME=syscall hook does not consume dcs
+FILE=bins/elf/analysis/fasttime-sleep
+ARGS=-d -e log.level=0
+CMDS=<<EOF
+ood
+e cmd.syscall.enter=k syscall.enter=1
+dcs clock_nanosleep nanosleep
+dr SN
+q!
+EOF
+EXPECT=<<EOF
+0x00000023
+EOF
+RUN

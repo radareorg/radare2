@@ -10946,10 +10946,15 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		if (input[1] == ' ') {
 			const char *sc_name = r_str_trim_head_ro (input + 2);
 			int sc_number = r_syscall_get_num (core->anal->syscall, sc_name);
-			if (sc_number != 0) {
+			if (sc_number != -1) {
 				r_cons_printf (core->cons, "%s\n", syscallNumber (snstr, sc_number));
 			} else {
-				sc_number = r_num_math (core->num, sc_name);
+				const char *err = NULL;
+				sc_number = (int)r_num_math_err (core->num, sc_name, &err);
+				if (err || r_num_failed (core->num)) {
+					R_LOG_ERROR ("Unknown syscall number");
+					break;
+				}
 				si = r_syscall_get (core->anal->syscall, sc_number, -1);
 				if (!si) {
 					si = r_syscall_get (core->anal->syscall, -1, sc_number);
@@ -10995,8 +11000,13 @@ static void cmd_anal_syscall(RCore *core, const char *input) {
 		{
 		const char *sn = r_str_trim_head_ro (input + 1);
 		st64 num = r_syscall_get_num (core->anal->syscall, sn);
-		if (num < 1) {
-			num = (int)r_num_get (core->num, sn);
+		if (num == -1) {
+			const char *err = NULL;
+			num = (st64)r_num_math_err (core->num, sn, &err);
+			if (err || r_num_failed (core->num)) {
+				R_LOG_ERROR ("Unknown syscall");
+				break;
+			}
 		}
 		cmd_syscall_do (core, num, -1);
 		}

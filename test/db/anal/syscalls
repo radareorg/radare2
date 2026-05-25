@@ -56,3 +56,39 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=syscall names resolve x86_64 numbers
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 64
+-e asm.os=linux
+asl read
+asl nanosleep
+asl clock_nanosleep
+EOF
+EXPECT=<<EOF
+0
+35
+230
+EOF
+EXPECT_ERR=
+RUN
+
+NAME=syscall names resolve x86_64 numbers
+FILE=-
+CMDS=<<EOF
+-a x86
+-b 64
+-e asm.os=linux
+asl read
+asl nanosleep
+asl clock_nanosleep
+EOF
+EXPECT=<<EOF
+0
+35
+230
+EOF
+EXPECT_ERR=
+RUN

@@ -229,11 +229,23 @@ R_API RSyscallItem *r_syscall_get(RSyscall *s, int num, int swi) {
 
 R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	R_RETURN_VAL_IF_FAIL (s && str && s->db, -1);
-	int sn = (int)sdb_array_get_num (s->db, str, 1, NULL);
-	if (sn == 0) {
-		return (int)sdb_array_get_num (s->db, str, 0, NULL);
+	const char *v = sdb_const_get (s->db, str, NULL);
+	if (R_STR_ISEMPTY (v)) {
+		return -1;
 	}
-	return sn;
+	const char *p = strchr (v, SDB_RS);
+	if (!p) {
+		p = strchr (v, '.');
+	}
+	p = p? p + 1: v;
+	char num[32];
+	size_t i = 0;
+	while (p[i] && p[i] != SDB_RS && p[i] != ' ' && i < sizeof (num) - 1) {
+		num[i] = p[i];
+		i++;
+	}
+	num[i] = 0;
+	return (int)r_num_get (NULL, num);
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
