@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - pancake, xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2026 - pancake, xvilka, deroad */
 
 #define R_LOG_ORIGIN "anal.wasm"
 
@@ -671,21 +671,6 @@ static ut32 wasm_code_local_count(RBinWasmCodeEntry *code) {
 		if (locals == WASM_MAX_REG_LOCALS) {
 			break;
 		}
-	}
-	return locals;
-}
-
-static ut32 wasm_reg_locals(RArchSession *as) {
-	ut32 locals = WASM_MIN_REG_LOCALS;
-	RBinWasmObj *bin = get_wasm_obj (as);
-	RVecWasmPtr *codes = bin? bin->g_codes: NULL;
-	if (!codes) {
-		return locals;
-	}
-	void **p;
-	R_VEC_FOREACH (codes, p) {
-		RBinWasmCodeEntry *code = *p;
-		locals = R_MAX (locals, wasm_code_local_count (code));
 	}
 	return locals;
 }
