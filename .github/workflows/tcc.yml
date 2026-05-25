@@ -53,7 +53,18 @@ jobs:
         r2r -v
         export R2R_SKIP_ASM=1
         export R2R_SKIP_ARCHOS=1
-        make -j -C test
+        status=0
+        make -j -C test RUNTEST="r2r -L -o /tmp/r2r.json" || status=$?
+        if [ -f /tmp/r2r.json ]; then
+          cat /tmp/r2r.json
+        fi
+        exit $status
+    - name: Upload r2r report
+      if: always()
+      uses: actions/upload-artifact@v7
+      with:
+        name: r2r.json
+        path: /tmp/r2r.json
   nodbg:
     name: ubuntu-tcc-nodbg
     runs-on: ubuntu-24.04
