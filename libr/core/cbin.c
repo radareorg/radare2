@@ -88,15 +88,10 @@ static void pair_str(RCore *core, PJ *pj, const char *key, const char *val) {
 }
 
 static ut64 rva(RBin *bin, ut64 paddr, ut64 vaddr, int va) {
-	if (va == VA_TRUE) {
-		if (paddr != UT64_MAX) {
-			return r_bin_get_vaddr (bin, paddr, vaddr);
-		}
+	if (va == VA_TRUE && paddr != UT64_MAX) {
+		return r_bin_get_vaddr (bin, paddr, vaddr);
 	}
-	if (va == VA_NOREBASE) {
-		return vaddr;
-	}
-	return paddr;
+	return (va == VA_NOREBASE)? vaddr: paddr;
 }
 
 R_API bool r_core_bin_set_by_fd(RCore *core, ut64 bin_fd) {
@@ -205,7 +200,7 @@ R_API void r_core_bin_export_info(RCore *core, int mode) {
 				free (dup);
 				continue;
 			}
-			fmtsize += 4; // increase buffer to fix a bug in compuatation for pf.elf_header size doesnt harms other cases but should be fixed
+			fmtsize += 4;
 			free (offset_key);
 			if (off) {
 				if (IS_MODE_RAD (mode)) {
@@ -254,12 +249,10 @@ R_API bool r_core_bin_load_structs(RCore *core, const char *file) {
 	if (!file) {
 		int fd = r_io_fd_get_current (core->io);
 		RIODesc *desc = r_io_desc_get (core->io, fd);
-		if (desc) {
-			file = desc->name;
-		}
-		if (!file) {
+		if (!desc || !desc->name) {
 			return false;
 		}
+		file = desc->name;
 	}
 	if (strchr (file, '\'') || strchr (file, '\"')) { // TODO: escape "?
 		R_LOG_ERROR ("Invalid char found in filename");
@@ -4578,17 +4571,19 @@ static bool bin_libs(RCore *core, PJ *pj, int mode) {
 	RList *libs = r_bin_get_libs (core->bin);
 	if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
-	} else {
-		if (!libs) {
-			return false;
-		}
+	} else if (!libs) {
+		return false;
 	}
 	r_list_foreach (libs, iter, lib) {
 		if (IS_MODE_SET (mode)) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			r_cons_printf (core->cons, "'CCa entry0 %s\n", lib);
+			char *safe_lib = r_str_sanitize_r2 (lib);
+			if (safe_lib) {
+				r_cons_printf (core->cons, "'CCa entry0 %s\n", safe_lib);
+				free (safe_lib);
+			}
 		} else if (IS_MODE_JSON (mode)) {
 			pj_s (pj, lib);
 		} else {
@@ -4603,14 +4598,14 @@ static bool bin_libs(RCore *core, PJ *pj, int mode) {
 }
 
 static void bin_mem_print(RCore *core, PJ *pj, RList *mems, int perms, int depth, int mode) {
-	RBinMem *mem;
-	RListIter *iter;
 	if (!mems) {
 		return;
 	}
 	if (IS_MODE_RAD (mode)) {
 		r_cons_printf (core->cons, "f oldfd=`oqq`\n");
 	}
+	RBinMem *mem;
+	RListIter *iter;
 	r_list_foreach (mems, iter, mem) {
 		if (IS_MODE_JSON (mode)) {
 			pj_o (pj);
