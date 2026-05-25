@@ -352,6 +352,29 @@ static const char *dex_get_proto(RBinDexObj *bin, int proto_id) {
 	return cp[proto_id];
 }
 
+static ut16 dex_method_ret_slots(RBinDexObj *bin, int method_idx) {
+	if (method_idx < 0 || method_idx >= (int)bin->header.method_size) {
+		return 1;
+	}
+	RBinDexMethod *method = RVecDexMethod_at (&bin->dex_methods, method_idx);
+	if (!method || method->proto_id >= bin->header.prototypes_size) {
+		return 1;
+	}
+	const DexProto *p = &bin->protos[method->proto_id];
+	if (p->return_type_id >= bin->header.types_size) {
+		return 1;
+	}
+	const char *rt = getstr (bin, bin->types[p->return_type_id].descriptor_id);
+	if (!rt) {
+		return 1;
+	}
+	switch (rt[0]) {
+	case 'V': return 0;
+	case 'J': case 'D': return 2;
+	default: return 1;
+	}
+}
+
 static const char *dex_method_signature(RBinDexObj *bin, int method_idx) {
 	if (method_idx < 0 || method_idx >= bin->header.method_size) {
 		return NULL;
@@ -1356,10 +1379,11 @@ static void parse_dex_class_method(RBinFile *bf, RBinDexClass *c, RBinClass *cls
 			if (MC > 0) {
 				sym->type = R_BIN_TYPE_FUNC_STR;
 				sym->paddr = MC;// + 0x10;
-				if (ins_size > 0 && ins_size <= regsz) {
+				if (ins_size <= regsz) {
 					sym->arg_first = regsz - ins_size;
 					sym->arg_count = ins_size;
 					sym->arg_prefix = "v";
+					sym->ret_count = dex_method_ret_slots (dex, MI);
 				}
 			} else {
 				sym->type = R_BIN_TYPE_METH_STR;
@@ -2049,6 +2073,18 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 	return (off == UT64_MAX)? UT64_MAX: r_bin_file_get_vaddr (bf, off, off);
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix) {
+		return NULL;
+	}
+	const char *pfx = m->arg_prefix;
+	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:%c:v0+%u", pfx, m->arg_first, m->arg_count, instance? 'i': 's', m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinDexObj *dex = bf->bo->bin_obj;
 	dex->simplifiedDemangling = sd;
@@ -2391,6 +2427,7 @@ RBinPlugin r_bin_plugin_dex = {
 	.size = &size,
 	.get_offset = &getoffset,
 	.get_name = &getname,
+	.get_cc = &get_cc,
 	.cmd = &dex_cmd,
 //	.dbginfo = &r_bin_dbginfo_dex,
 };

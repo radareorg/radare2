@@ -1,4 +1,4 @@
-/* radare2 - MIT - Copyright 2017-2021 - pancake, cgvwzq */
+/* radare2 - MIT - Copyright 2017-2026 - pancake, cgvwzq */
 
 // https://webassembly.org/docs/binary-encoding/#module-structure
 
@@ -67,9 +67,6 @@ static int _export_finder(const void *_exp, const void *_needle) {
 }
 
 static inline RBinWasmExportEntry *find_export(RVecWasmPtr *exports, ut8 kind, ut32 index) {
-	if (!exports) {
-		return NULL;
-	}
 	struct search_fields sf = { .kind = kind, .index = index };
 	int n = vec_bsearch (exports, (void *)&sf, _export_finder);
 	return n >= 0? vector_at (exports, n): NULL;
@@ -208,8 +205,13 @@ static inline bool symbols_add_import_kind(RBinWasmObj *bin, ut32 kind, RVecRBin
 
 static inline char *name_from_export(RBinWasmObj *bin, int type, int ord) {
 	RVecWasmPtr *exports = r_bin_wasm_get_exports (bin);
-	RBinWasmExportEntry *exp = find_export (exports, type, ord);
-	return exp? strdup (exp->field_str): NULL;
+	if (exports) {
+		RBinWasmExportEntry *exp = find_export (exports, type, ord);
+		if (exp) {
+			return strdup (exp->field_str);
+		}
+	}
+	return NULL;
 }
 
 static inline char *symbol_name(RBinWasmObj *bin, int type, int ord, bool load_unnamed, bool *is_exported) {
@@ -248,7 +250,10 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 	if (!codes) {
 		return false;
 	}
+	RVecWasmPtr *funcs = r_bin_wasm_get_functions (bin);
+	RVecWasmPtr *types = r_bin_wasm_get_types (bin);
 	ut32 ordinal = first_ord_not_import (bin, R_BIN_WASM_EXTERNALKIND_Function);
+	ut32 code_idx = 0;
 	void **p;
 	R_VEC_FOREACH (codes, p) {
 		RBinWasmCodeEntry *func = *p;
@@ -256,6 +261,7 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 		bool is_exported = false;
 		char *name = symbol_name (bin, R_BIN_WASM_EXTERNALKIND_Function, sym_ordinal, load_unnamed, &is_exported);
 		if (!name) {
+			code_idx++;
 			continue;
 		}
 		RBinSymbol *sym = RVecRBinSymbol_emplace_back (vec);
@@ -266,7 +272,17 @@ static inline bool symbols_add_code(RBinWasmObj *bin, RVecRBinSymbol *vec, bool 
 		sym->paddr = (ut64)func->code;
 		sym->ordinal = sym_ordinal;
 		sym->bind = "NONE";
+		sym->attr = R_BIN_ATTR_STATIC;
+		RBinWasmFunctionEntry *fe = vector_at (funcs, code_idx);
+		RBinWasmTypeEntry *te = fe? vector_at (types, fe->typeindex): NULL;
+		if (te) {
+			sym->arg_first = 0;
+			sym->arg_count = te->args? te->args->count: 0;
+			sym->arg_prefix = "l";
+			sym->ret_count = te->rets? te->rets->count: 0;
+		}
 		set_sym_name (sym, name, is_exported);
+		code_idx++;
 	}
 	return true;
 }
@@ -351,15 +367,12 @@ static bool symbols_vec(RBinFile *bf) {
 			return false;
 		}
 	}
-
 	if (!symbols_add_code (bin, ret, load_unnamed)) {
 		return false;
 	}
-
 	if (!symbols_add_globals (bin, ret, load_unnamed)) {
 		return false;
 	}
-
 	// TODO: tables and memories
 	return true;
 }
@@ -494,12 +507,19 @@ static ut64 getoffset(RBinFile *bf, int type, int idx) {
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
 	RBinWasmObj *bin = bf->bo->bin_obj;
-	switch (type) {
-	case 'f': // fcnidx
-		{
-			const char *r = r_bin_wasm_get_function_name (bin, idx);
-			return r? strdup (r): NULL;
-		}
+	if (type == 'f') { // fcnidx
+		const char *r = r_bin_wasm_get_function_name (bin, idx);
+		return r? strdup (r): NULL;
+	}
+	return NULL;
+}
+
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (m && m->arg_prefix) {
+		r_strf_var (buf, 64, "dyncc:%s%u+%u:s:r0+%u", m->arg_prefix, m->arg_first, m->arg_count, m->ret_count);
+		return r_str_constpool_get (&bf->rbin->constpool, buf);
 	}
 	return NULL;
 }
@@ -525,6 +545,7 @@ RBinPlugin r_bin_plugin_wasm = {
 	.libs = &libs,
 	.get_offset = &getoffset,
 	.get_name = &getname,
+	.get_cc = &get_cc,
 	.create = &create,
 };
 

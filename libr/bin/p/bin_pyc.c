@@ -132,6 +132,16 @@ static void destroy(RBinFile *bf) {
 	}
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix) {
+		return NULL;
+	}
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:s:r0+%u", m->arg_prefix, m->arg_first, m->arg_count, m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 RBinPlugin r_bin_plugin_pyc = {
 	.meta = {
 		.name = "pyc",
@@ -145,6 +155,7 @@ RBinPlugin r_bin_plugin_pyc = {
 	.entries = &entries,
 	.sections_vec = &sections_vec,
 	.symbols_vec = &symbols_vec,
+	.get_cc = &get_cc,
 	.destroy = &destroy,
 };
 
