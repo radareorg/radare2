@@ -532,7 +532,6 @@ R_API int r_bin_object_set_items(RBinFile *bf, RBinObject *bo) {
 	if (p->size) {
 		bo->size = p->size (bf);
 	}
-	// XXX this is expensive because is O(n^n)
 	if (p->binsym) {
 		for (i = 0; i < R_BIN_SYM_LAST; i++) {
 			bo->binsym[i] = p->binsym (bf, i);
