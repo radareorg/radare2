@@ -237,15 +237,7 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	if (!p) {
 		p = strchr (v, '.');
 	}
-	p = p? p + 1: v;
-	char num[32];
-	size_t i = 0;
-	while (p[i] && p[i] != SDB_RS && p[i] != ' ' && i < sizeof (num) - 1) {
-		num[i] = p[i];
-		i++;
-	}
-	num[i] = 0;
-	return (int)r_num_get (NULL, num);
+	return p? (int)sdb_atoi (p + 1): -1;
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
