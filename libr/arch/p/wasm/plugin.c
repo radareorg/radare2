@@ -1,4 +1,4 @@
-/* radare2 - LGPL - Copyright 2017-2022 - pancake, xvilka, deroad */
+/* radare2 - LGPL - Copyright 2017-2026 - pancake, xvilka, deroad */
 
 #define R_LOG_ORIGIN "anal.wasm"
 
@@ -8,6 +8,13 @@
 #include <r_bin.h>
 #include "wasm.h"
 #include "wasm.c"
+
+#define WASM_MIN_REGS 16
+#define WASM_MIN_REG_LOCALS 16
+#define WASM_MAX_REG_LOCALS UT16_MAX
+#define WASM_REG_OFFSET 12
+#define WASM_REG_SIZE 4
+#define WASM_LOCAL_REG_OFFSET (WASM_REG_OFFSET + WASM_MIN_REGS * WASM_REG_SIZE)
 
 typedef struct wasm_cf_scope {
 	ut64 addr, jump, fail;
@@ -635,9 +642,14 @@ static int archinfo(RAnal *a, int q) {
 }
 #endif
 
+static int wasm_info(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_ISVM) {
+		return R_ARCH_INFO_ISVM;
+	}
+	return -1;
+}
+
 static char *wasm_regs(RArchSession *ai) {
-	// r0..r15 and l0..l1023 are virtual register banks: materialized lazily by
-	// r_reg_get when referenced (e.g. by the calling convention via =A0..=A2)
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"
@@ -679,6 +691,7 @@ const RArchPlugin r_arch_plugin_wasm = {
 	},
 	.arch = "wasm",
 	.bits = R_SYS_BITS_PACK2 (32,64),
+	.info = wasm_info,
 	.regs = wasm_regs,
 	.decode = wasm_decode,
 	.encode = wasm_encode,

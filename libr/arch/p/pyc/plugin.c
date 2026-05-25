@@ -81,23 +81,24 @@ static int archinfo(RArchSession *as, ut32 query) {
 
 static char *regs(RArchSession *as) {
 	return strdup (
-		"=PC    pc\n"
-		"=BP    bp\n"
-		"=SP    sp\n"
-		"=SN    a0\n"
-		"=A0    a0\n"
-		"=A1    a1\n"
-		"=A2    a2\n"
-		"=A3    a3\n"
-		"=R0    r0\n"
-		"gpr    a0  .32  0   0\n"
-		"gpr    a1  .32  4   0\n"
-		"gpr    a2  .32  8   0\n"
-		"gpr    a3  .32 12   0\n"
-		"gpr    r0  .32 16   0\n"
-		"gpr    sp  .32 20   0\n" // stack pointer
-		"gpr    pc  .32 24   0\n" // program counter
-		"gpr    bp  .32 28   0\n" // base pointer // unused
+		"=PC	pc\n"
+		"=BP	bp\n"
+		"=SP	sp\n"
+		"=SN	a0\n"
+		"=A0	a0\n"
+		"=A1	a1\n"
+		"=A2	a2\n"
+		"=A3	a3\n"
+		"=R0	r0\n"
+		"gpr	a0	.32	0	0\n"
+		"gpr	a1	.32	4	0\n"
+		"gpr	a2	.32	8	0\n"
+		"gpr	a3	.32	12	0\n"
+		"gpr	r0	.32	16	0\n"
+		"gpr	sp	.32	20	0\n"
+		"gpr	pc	.32	24	0\n"
+		"gpr	bp	.32	28	0\n"
+		"gpr	l[65535]	.32	$	0\n"
 	);
 }
 
