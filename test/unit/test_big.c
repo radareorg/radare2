@@ -20,6 +20,9 @@ static bool test_r_big_from_to_hexstr(void) {
 	RNumBig *a = r_big_new ();
 	char *str;
 
+	str = r_big_to_hexstr (a);
+	mu_assert_streq_free (str, "0x0", "Failed r_big_to_hexstr");
+
 	r_big_from_hexstr (a, "0xffff");
 	mu_assert_eq (0xffff, r_big_to_int (a), "Failed r_big_from_hexstr");
 

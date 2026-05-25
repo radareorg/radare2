@@ -154,43 +154,26 @@ R_API char *r_big_to_hexstr(RNumBig *b) {
 	R_RETURN_VAL_IF_FAIL (b, NULL);
 
 	int j = R_BIG_ARRAY_SIZE - 1; /* index into array - reading "MSB" first -> big-endian */
-	size_t i = 0; /* index into string representation. */
-	size_t k = 0; /* Leading zero's amount */
-	size_t z, last_z = 2 * R_BIG_WORD_SIZE;
 
-	for (; b->array[j] == 0 && j >= 0; j--) {
+	while (j >= 0 && !b->array[j]) {
+		j--;
 	}
-	if (j == -1) {
-		return "0x0";
+	if (j < 0) {
+		return r_str_new ("0x0");
 	}
 
-	size_t size = 3 + 2 * R_BIG_WORD_SIZE * (j + 1) + ((b->sign > 0)? 0: 1);
-	char *ret_str = calloc (size, sizeof (char));
-	if (!ret_str) {
+	size_t size = 2 + 2 * R_BIG_WORD_SIZE * (j + 1) + (b->sign < 0);
+	RStrBuf *sb = r_strbuf_new (b->sign < 0? "-0x": "0x");
+	if (!r_strbuf_reserve (sb, size)) {
+		r_strbuf_free (sb);
 		return NULL;
 	}
 
-	if (b->sign < 0) {
-		ret_str[i++] = '-';
-	}
-	ret_str[i++] = '0';
-	ret_str[i++] = 'x';
-
-	r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j--]);
-	for (; ret_str[i + k] == '0' && k < 2 * R_BIG_WORD_SIZE; k++) {
-	}
-	for (z = k; ret_str[i + z] && z < last_z; z++) {
-		ret_str[i + z - k] = ret_str[i + z];
-	}
-	i += z - k;
-	ret_str[i] = '\x00'; // Truncate string for case(j < 0)
-
+	r_strbuf_appendf (sb, "%x", b->array[j--]);
 	for (; j >= 0; j--) {
-		r_snprintf (ret_str + i, R_BIG_FORMAT_STR_LEN, R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
-		i += 2 * R_BIG_WORD_SIZE;
+		r_strbuf_appendf (sb, R_BIG_SPRINTF_FORMAT_STR, b->array[j]);
 	}
-
-	return ret_str;
+	return r_strbuf_drain (sb);
 }
 
 R_API void r_big_assign(RNumBig *dst, RNumBig *src) {
