@@ -96,7 +96,7 @@ static RCoreHelpMessage help_msg_oba = {
 	"Usage: oba", "[addr] ([filename])", "Load bininfo and update flags",
 	"oba", " [addr]", "open bin info from the given address",
 	"oba", " [addr] [baddr]", "open file and load bin info at given address",
-	"oba", " [addr] [/abs/filename]", "open file and load bin info at given address",
+	"oba", " [addr] [/abs/filename|base64:filename]", "open file and load bin info at given address",
 	NULL
 };
 
@@ -114,7 +114,7 @@ static RCoreHelpMessage help_msg_ob = {
 	"oba", " [addr] [baddr]", "open file and load bin info at given address",
 	"oba", " [addr] [filename]", "open file and load bin info at given address",
 	"oba", " [addr]", "open bin info from the given address",
-	"obf", " ([file])", "load bininfo for current file (useful for r2 -n)",
+	"obf", " ([file|base64:file])", "load bininfo for current file (useful for r2 -n)",
 	"obi", "?[..]", "alias for 'i'",
 	"obio", "", "Load bin info from the io plugin forcing the use of bin.io",
 	"obj", "", "list opened binary files and objid (JSON format)",
@@ -264,11 +264,20 @@ static void cmd_oba(RCore *core, const char *input) {
 		char *arg = strdup (input + 3);
 		const bool rawstr = core->bin->options.rawstr;
 		char *filename = strchr (arg, ' ');
-		if (filename && isfile (filename + 1)) {
+		char *decoded_filename = NULL;
+		bool encoded_filename = false;
+		if (filename) {
+			*filename++ = 0;
+			if (r_str_startswith (filename, "base64:")) {
+				decoded_filename = (char *)sdb_decode (filename + 7, NULL);
+				filename = decoded_filename;
+				encoded_filename = true;
+			}
+		}
+		if (filename && isfile (filename)) {
 			int saved_fd = r_io_fd_get_current (core->io);
-			RIODesc *desc = r_io_open (core->io, filename + 1, R_PERM_RX, 0);
+			RIODesc *desc = r_io_open (core->io, filename, R_PERM_RX, 0);
 			if (desc) {
-				*filename = 0;
 				ut64 addr = r_num_math (core->num, arg);
 				RBinFileOptions opt;
 				r_bin_file_options_init (&opt, desc->fd, addr, 0, rawstr);
@@ -278,8 +287,12 @@ static void cmd_oba(RCore *core, const char *input) {
 				r_io_desc_close (desc);
 				r_io_use_fd (core->io, saved_fd);
 			} else {
-				R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename + 1));
+				R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename));
 			}
+		} else if (encoded_filename && filename) {
+			R_LOG_ERROR ("Cannot oba open '%s'", r_str_trim_head_ro (filename));
+		} else if (encoded_filename) {
+			R_LOG_ERROR ("Cannot oba open decoded filename");
 		} else if (R_STR_ISNOTEMPTY (filename)) {
 			ut64 baddr = r_num_math (core->num, filename);
 			ut64 addr = r_num_math (core->num, input + 2); // mapaddr
@@ -314,6 +327,7 @@ static void cmd_oba(RCore *core, const char *input) {
 				R_LOG_ERROR ("No file to load bin from?");
 			}
 		}
+		free (decoded_filename);
 		free (arg);
 	} else {
 		RList *ofiles = r_id_storage_list (&core->io->files);

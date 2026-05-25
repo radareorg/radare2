@@ -29,6 +29,16 @@ static void pair(RCore *core, const char *key, const char *val) {
 	}
 }
 
+static bool is_safe_r2_script_arg(const char *s) {
+	if (!R_STR_ISNOTEMPTY (s) || !r_str_is_printable (s)) {
+		return false;
+	}
+	char *safe = r_str_sanitize_r2 (s);
+	bool res = safe && !strcmp (safe, s);
+	free (safe);
+	return res;
+}
+
 static void pair_bool(RCore *core, PJ *pj, const char *key, bool val) {
 	if (pj) {
 		pj_kb (pj, key, val);
@@ -4579,10 +4589,14 @@ static bool bin_libs(RCore *core, PJ *pj, int mode) {
 			// Nothing to set.
 			// TODO: load libraries with iomaps?
 		} else if (IS_MODE_RAD (mode)) {
-			char *safe_lib = r_str_sanitize_r2 (lib);
-			if (safe_lib) {
-				r_cons_printf (core->cons, "'CCa entry0 %s\n", safe_lib);
-				free (safe_lib);
+			if (is_safe_r2_script_arg (lib)) {
+				r_cons_printf (core->cons, "'CCa entry0 %s\n", lib);
+			} else {
+				char *b64 = sdb_encode ((const ut8 *)lib, -1);
+				if (b64) {
+					r_cons_printf (core->cons, "'CCa entry0 base64:%s\n", b64);
+					free (b64);
+				}
 			}
 		} else if (IS_MODE_JSON (mode)) {
 			pj_s (pj, lib);

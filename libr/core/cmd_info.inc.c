@@ -2113,11 +2113,25 @@ static void cmd_idp(RCore *core, PJ *pj, const char *input, bool is_array, int m
 	}
 }
 
+static bool is_safe_r2_script_arg(const char *s) {
+	if (!R_STR_ISNOTEMPTY (s) || !r_str_is_printable (s)) {
+		return false;
+	}
+	char *safe = r_str_sanitize_r2 (s);
+	bool res = safe && !strcmp (safe, s);
+	free (safe);
+	return res;
+}
+
 static void print_obf(RCore *core, const char *file) {
-	char *safe = r_str_sanitize_r2 (file);
-	if (safe) {
-		r_cons_printf (core->cons, "'obf %s\n", safe);
-		free (safe);
+	if (is_safe_r2_script_arg (file)) {
+		r_cons_printf (core->cons, "'obf %s\n", file);
+	} else {
+		char *b64 = sdb_encode ((const ut8 *)file, -1);
+		if (b64) {
+			r_cons_printf (core->cons, "'obf base64:%s\n", b64);
+			free (b64);
+		}
 	}
 }
 

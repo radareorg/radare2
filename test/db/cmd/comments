@@ -48,6 +48,17 @@ CCu base64:aGVsbG8= @ 0x00000008
 EOF
 RUN
 
+NAME=add base64 comment at
+FILE=malloc://1024
+CMDS=<<EOF
+CCa 8 base64:YQpi
+CC*
+EOF
+EXPECT=<<EOF
+CCu base64:YQpi @ 0x00000008
+EOF
+RUN
+
 NAME=del comment
 FILE=malloc://1024
 CMDS=<<EOF
