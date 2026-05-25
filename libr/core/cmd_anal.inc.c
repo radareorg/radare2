@@ -5501,102 +5501,115 @@ static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
 	}
 }
 
-// "afch" - dyncc syntax help and per-function dyncc inspector
-static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
+static void afch_append_role(RStrBuf *sb, RAnal *anal, const char *cc, const char *role, const char *label) {
+	const char *loc = r_anal_cc_role (anal, cc, role);
+	if (loc) {
+		r_strbuf_appendf (sb, "%s: %s\n", label, loc);
+	}
+}
+
+static void afch_append_arg_homes(RStrBuf *sb, RAnal *anal, const char *cc, int arg) {
+	int home;
+	for (home = 0; ; home++) {
+		const char *loc = r_anal_cc_arg_home (anal, cc, arg, home, -1);
+		if (!loc) {
+			break;
+		}
+		if (home == 0) {
+			r_strbuf_appendf (sb, "arg[%d]: %s", arg, loc);
+		} else {
+			r_strbuf_appendf (sb, " | %s", loc);
+		}
+	}
+	if (home > 0) {
+		r_strbuf_append (sb, "\n");
+	}
+}
+
+static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 	RAnal *anal = core->anal;
 	const char *cc = fcn? r_anal_function_cc (fcn): NULL;
 	const bool is_dyncc = cc && r_str_startswith (cc, "dyncc:");
 	if (json) {
 		PJ *pj = r_core_pj_new (core);
 		if (!pj) {
-			return;
+			return NULL;
 		}
 		pj_o (pj);
 		if (is_dyncc) {
-			pj_ks (pj, "callconv", cc);
-			r_anal_cc_get_json (anal, pj, cc);
+			core_anal_cc_json (pj, anal, cc, true);
 		}
 		pj_end (pj);
-		r_cons_println (core->cons, pj_string (pj));
-		pj_free (pj);
-		return;
+		return pj_drain (pj);
 	}
-	r_core_cmd_help (core, help_msg_dyncc);
-	if (!fcn) {
-		return;
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
 	}
 	if (!is_dyncc) {
-		r_cons_printf (core->cons, "\n# current function uses '%s' (not a dyncc expression)\n", r_str_get (cc));
-		return;
+		r_strbuf_appendf (sb, "\n# current function uses '%s' (not a dyncc expression)\n", r_str_get (cc));
+		return r_strbuf_drain (sb);
 	}
 	char *sig = r_anal_cc_get (anal, cc);
-	r_cons_printf (core->cons, "\ncallconv: %s\n", cc);
+	r_strbuf_appendf (sb, "\ncallconv: %s\n", cc);
 	if (sig) {
-		r_cons_printf (core->cons, "signature: %s\n", sig);
+		r_strbuf_appendf (sb, "signature: %s\n", sig);
 		free (sig);
 	}
-	const char *self = r_anal_cc_self (anal, cc);
-	if (self) {
-		r_cons_printf (core->cons, "self: %s\n", self);
-	}
-	const char *sret = r_anal_cc_role (anal, cc, "sret");
-	if (sret) {
-		r_cons_printf (core->cons, "sret: %s\n", sret);
-	}
-	const char *vtt = r_anal_cc_role (anal, cc, "vtt");
-	if (vtt) {
-		r_cons_printf (core->cons, "vtt: %s\n", vtt);
-	}
-	const char *error = r_anal_cc_error (anal, cc);
-	if (error) {
-		r_cons_printf (core->cons, "error: %s\n", error);
-	}
-	const char *context = r_anal_cc_role (anal, cc, "context");
-	if (context) {
-		r_cons_printf (core->cons, "context: %s\n", context);
-	}
+	afch_append_role (sb, anal, cc, "self", "self");
+	afch_append_role (sb, anal, cc, "sret", "sret");
+	afch_append_role (sb, anal, cc, "vtt", "vtt");
+	afch_append_role (sb, anal, cc, "error", "error");
+	afch_append_role (sb, anal, cc, "context", "context");
 	const int max = r_anal_cc_max_arg (anal, cc);
 	int i;
 	for (i = 0; i < max; i++) {
-		int home;
-		for (home = 0; ; home++) {
-			const char *loc = r_anal_cc_arg_home (anal, cc, i, home, -1);
-			if (!loc) {
-				break;
-			}
-			if (home == 0) {
-				r_cons_printf (core->cons, "arg[%d]: %s", i, loc);
-			} else {
-				r_cons_printf (core->cons, " | %s", loc);
-			}
-		}
-		if (home > 0) {
-			r_cons_printf (core->cons, "\n");
-		}
+		afch_append_arg_homes (sb, anal, cc, i);
 	}
 	const char *argn = r_anal_cc_arg (anal, cc, max, -1);
 	if (argn) {
-		r_cons_printf (core->cons, "argn: %s\n", argn);
+		r_strbuf_appendf (sb, "argn: %s\n", argn);
 	}
 	for (i = 0; ; i++) {
 		const char *ret = r_anal_cc_ret (anal, cc, i);
 		if (!ret) {
 			break;
 		}
-		r_cons_printf (core->cons, "ret[%d]: %s\n", i, ret);
+		r_strbuf_appendf (sb, "ret[%d]: %s\n", i, ret);
 	}
 	const char *clob = r_anal_cc_clobbers (anal, cc);
 	if (clob) {
-		r_cons_printf (core->cons, "clobber: %s\n", clob);
+		r_strbuf_appendf (sb, "clobber: %s\n", clob);
 	}
 	const char *pres = r_anal_cc_preserves (anal, cc);
 	if (pres) {
-		r_cons_printf (core->cons, "preserve: %s\n", pres);
+		r_strbuf_appendf (sb, "preserve: %s\n", pres);
 	}
 	const int pop = r_anal_cc_stack_pop (anal, cc);
 	if (pop) {
-		r_cons_printf (core->cons, "stack-pop: %d\n", pop);
+		r_strbuf_appendf (sb, "stack-pop: %d\n", pop);
 	}
+	return r_strbuf_drain (sb);
+}
+
+// "afch" - dyncc syntax help and per-function dyncc inspector
+static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
+	if (!json) {
+		r_core_cmd_help (core, help_msg_dyncc);
+		if (!fcn) {
+			return;
+		}
+	}
+	char *s = afch_tostring (core, fcn, json);
+	if (!s) {
+		return;
+	}
+	if (json) {
+		r_cons_println (core->cons, s);
+	} else {
+		r_cons_print (core->cons, s);
+	}
+	free (s);
 }
 
 static void cmd_afix(RCore *core, const char *input) {

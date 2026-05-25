@@ -206,6 +206,137 @@ static bool cc_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+static bool core_anal_cc_role_is_builtin(const char *role) {
+	return !strcmp (role, "self")
+		|| !strcmp (role, "sret")
+		|| !strcmp (role, "vtt")
+		|| !strcmp (role, "error")
+		|| !strcmp (role, "context");
+}
+
+static void core_anal_cc_json_custom_roles(PJ *pj, RAnal *anal, const char *cc) {
+	const char *p = cc;
+	while ((p = strstr (p, "!role."))) {
+		p += strlen ("!role.");
+		const char *eq = strchr (p, '=');
+		if (!eq) {
+			break;
+		}
+		const char *bang = strchr (p, '!');
+		if (bang && bang < eq) {
+			p = bang;
+			continue;
+		}
+		if (eq == p) {
+			p = eq + 1;
+			continue;
+		}
+		char *role = r_str_ndup (p, eq - p);
+		if (role) {
+			const char *loc = core_anal_cc_role_is_builtin (role)? NULL: r_anal_cc_role (anal, cc, role);
+			if (loc) {
+				pj_ks (pj, role, loc);
+			}
+			free (role);
+		}
+		p = eq + 1;
+	}
+}
+
+static void core_anal_cc_json_roles(PJ *pj, RAnal *anal, const char *cc) {
+	const char *self = r_anal_cc_role (anal, cc, "self");
+	const char *sret = r_anal_cc_role (anal, cc, "sret");
+	const char *vtt = r_anal_cc_role (anal, cc, "vtt");
+	const char *error = r_anal_cc_role (anal, cc, "error");
+	const char *context = r_anal_cc_role (anal, cc, "context");
+	if (!self && !sret && !vtt && !error && !context && !strstr (cc, "!role.")) {
+		return;
+	}
+	pj_ko (pj, "roles");
+	if (self) {
+		pj_ks (pj, "self", self);
+	}
+	if (sret) {
+		pj_ks (pj, "sret", sret);
+	}
+	if (vtt) {
+		pj_ks (pj, "vtt", vtt);
+	}
+	if (error) {
+		pj_ks (pj, "error", error);
+	}
+	if (context) {
+		pj_ks (pj, "context", context);
+	}
+	core_anal_cc_json_custom_roles (pj, anal, cc);
+	pj_end (pj);
+}
+
+static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_callconv) {
+	if (!cc) {
+		return;
+	}
+	const bool is_dyncc = r_str_startswith (cc, "dyncc:");
+	if (include_callconv) {
+		pj_ks (pj, "callconv", cc);
+	}
+	const char *ret = r_anal_cc_ret (anal, cc, 0);
+	if (ret) {
+		pj_ks (pj, "ret", ret);
+	} else if (!is_dyncc) {
+		return;
+	}
+	pj_ka (pj, "rets");
+	int i;
+	for (i = 0; ; i++) {
+		const char *r = r_anal_cc_ret (anal, cc, i);
+		if (!r) {
+			break;
+		}
+		pj_s (pj, r);
+	}
+	pj_end (pj);
+	char *sig = r_anal_cc_get (anal, cc);
+	if (sig) {
+		pj_ks (pj, "signature", sig);
+		free (sig);
+	}
+	const int max = r_anal_cc_max_arg (anal, cc);
+	pj_ka (pj, "args");
+	for (i = 0; i < max; i++) {
+		pj_s (pj, r_anal_cc_arg (anal, cc, i, -1));
+	}
+	pj_end (pj);
+	if (is_dyncc) {
+		pj_ka (pj, "arg_homes");
+		for (i = 0; i < max; i++) {
+			pj_a (pj);
+			int home;
+			for (home = 0; ; home++) {
+				const char *arg = r_anal_cc_arg_home (anal, cc, i, home, -1);
+				if (!arg) {
+					break;
+				}
+				pj_s (pj, arg);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+	}
+	const char *argn = r_anal_cc_arg (anal, cc, max, -1);
+	if (argn) {
+		pj_ks (pj, "argn", argn);
+	}
+	if (is_dyncc) {
+		core_anal_cc_json_roles (pj, anal, cc);
+	} else {
+		const char *error = r_anal_cc_error (anal, cc);
+		if (error) {
+			pj_ks (pj, "error", error);
+		}
+	}
+}
+
 static void cmd_afcl(RCore *core, const char *input) {
 	int mode = 0;
 	PJ *pj = NULL;
@@ -224,7 +355,7 @@ static void cmd_afcl(RCore *core, const char *input) {
 	r_list_foreach (list, iter, cc) {
 		if (pj) {
 			pj_ko (pj, cc);
-			r_anal_cc_get_json (core->anal, pj, cc);
+			core_anal_cc_json (pj, core->anal, cc, false);
 			pj_end (pj);
 		} else if (mode == 'l') {
 			char *sig = r_anal_cc_get (core->anal, cc);
