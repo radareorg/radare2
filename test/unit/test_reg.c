@@ -611,26 +611,43 @@ bool test_r_reg_vbank(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
-	// 16 fixed-offset gprs + 256 lazy locals starting after them
+	// One fixed-offset gpr + lazy argument/local banks starting after it
 	bool success = r_reg_set_profile_string (reg,
 		"=A0 r0\n"
 		"gpr r0 .32 0 0\n"
+		"gpr a[4] .32 $ 0\n"
 		"gpr l[256] .32 $ 0\n");
 	mu_assert_eq (success, true, "vbank profile parses");
 
-	// Only 1 materialized item before lookup; vbank declared
+	// Only 1 materialized item before lookup; vbanks declared
 	mu_assert_eq (r_list_length (reg->regset[R_REG_TYPE_GPR].regs), 1,
 		"no vregs materialized up front");
 	RList *banks = r_reg_get_vbanks (reg, R_REG_TYPE_GPR);
 	mu_assert_notnull (banks, "vbanks list exists");
-	mu_assert_eq (r_list_length (banks), 1, "one vbank declared");
+	mu_assert_eq (r_list_length (banks), 2, "two vbanks declared");
 
 	// Lazy materialization on lookup
 	RRegItem *l5 = r_reg_get (reg, "l5", R_REG_TYPE_GPR);
 	mu_assert_notnull (l5, "l5 materialized");
 	mu_assert_streq (l5->name, "l5", "l5 name correct");
 	mu_assert_eq (l5->size, 32, "l5 size from vbank");
-	mu_assert_eq (l5->offset, 32 + 5 * 32, "l5 offset = $ + 5*32 bits");
+	mu_assert_eq (l5->offset, 32 + 4 * 32 + 5 * 32,
+		"l5 offset = $ + 5*32 bits");
+	mu_assert_eq (l5->index, 1 + 4 + 5, "l5 index reserves previous vbank");
+	RRegItem *l6 = r_reg_get (reg, "l6", R_REG_TYPE_GPR);
+	mu_assert_notnull (l6, "l6 materialized");
+	mu_assert ("vbank items get distinct register indices", l5->index != l6->index);
+	int l5_index = l5->index;
+	RRegItem *a0 = r_reg_get (reg, "a0", R_REG_TYPE_GPR);
+	mu_assert_notnull (a0, "a0 materialized");
+	RRegItem *l1 = r_reg_get (reg, "l1", R_REG_TYPE_GPR);
+	mu_assert_notnull (l1, "l1 materialized");
+	mu_assert_eq (l5->index, l5_index,
+		"materializing earlier vbank slots keeps l5 index stable");
+	mu_assert_ptreq (r_reg_index_get (reg, l5->index), l5,
+		"l5 index resolves back to l5");
+	mu_assert_ptreq (r_reg_index_get (reg, l6->index), l6,
+		"l6 index resolves back to l6");
 
 	// Round-trip value via arena
 	r_reg_fit_arena (reg);
@@ -656,7 +673,7 @@ bool test_r_reg_vbank(void) {
 	mu_assert_notnull (clone, "clone");
 	RRegItem *cl9 = r_reg_get (clone, "l9", R_REG_TYPE_GPR);
 	mu_assert_notnull (cl9, "vbank survived clone");
-	mu_assert_eq (cl9->offset, 32 + 9 * 32, "cloned vbank offset correct");
+	mu_assert_eq (cl9->offset, 32 + 4 * 32 + 9 * 32, "cloned vbank offset correct");
 
 	r_reg_free (clone);
 	r_reg_free (reg);

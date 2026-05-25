@@ -260,22 +260,63 @@ static int regcmp(RRegItem *a, RRegItem *b) {
 	return (offa > offb) - (offa < offb);
 }
 
+typedef struct {
+	RRegItem *item;
+	RRegVBank *vbank;
+	int key;
+} RRegIndexEntry;
+
+static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index);
+
+static int reg_index_entry_cmp(RRegIndexEntry *a, RRegIndexEntry *b) {
+	return (a->key > b->key) - (a->key < b->key);
+}
+
 R_IPI void r_reg_reindex(RReg *reg) {
 	R_RETURN_IF_FAIL (reg);
-	int i, index;
-	RListIter *iter;
+	int i, index = 0;
+	RListIter *iter, *iter2;
 	RRegItem *r;
+	RRegVBank *vb;
+	RRegIndexEntry *entry;
+	RList *entries = r_list_newf (free);
 	RList *all = r_list_newf (NULL);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			r_list_append (all, r);
+			if (vbank_item_slot (reg, r, NULL, NULL)) {
+				continue;
+			}
+			entry = R_NEW0 (RRegIndexEntry);
+			entry->item = r;
+			entry->key = (r->offset * 16) + r->size;
+			r_list_append (entries, entry);
+		}
+		r_list_foreach (reg->regset[i].vbanks, iter, vb) {
+			entry = R_NEW0 (RRegIndexEntry);
+			entry->vbank = vb;
+			entry->key = (vb->offset * 16) + vb->size;
+			r_list_append (entries, entry);
 		}
 	}
-	r_list_sort (all, (RListComparator)regcmp);
-	index = 0;
-	r_list_foreach (all, iter, r) {
-		r->index = index++;
+	r_list_sort (entries, (RListComparator)reg_index_entry_cmp);
+	r_list_foreach (entries, iter, entry) {
+		if (entry->item) {
+			entry->item->index = index++;
+			r_list_append (all, entry->item);
+			continue;
+		}
+		int vindex;
+		RRegVBank *item_vb;
+		r_list_foreach (reg->regset[entry->vbank->arena].regs, iter2, r) {
+			if (vbank_item_slot (reg, r, &item_vb, &vindex) && item_vb == entry->vbank) {
+				r->index = index + vindex;
+				r_list_append (all, r);
+			}
+		}
+		index += entry->vbank->count;
 	}
+	r_list_sort (all, (RListComparator)regcmp);
+	r_list_free (entries);
 	r_list_free (reg->allregs);
 	reg->allregs = all;
 }
@@ -502,6 +543,26 @@ static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index
 	return NULL;
 }
 
+static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index) {
+	R_RETURN_VAL_IF_FAIL (reg && item, false);
+	int n = 0;
+	RRegVBank *vb = vbank_match (reg, item->arena, item->name, &n);
+	if (!vb || item->type != vb->type || item->size != vb->size) {
+		return false;
+	}
+	int delta = item->offset - vb->offset;
+	if (delta < 0 || delta != n * vb->size) {
+		return false;
+	}
+	if (out_vb) {
+		*out_vb = vb;
+	}
+	if (out_index) {
+		*out_index = n;
+	}
+	return true;
+}
+
 static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, int index) {
 	RRegItem *item = R_NEW0 (RRegItem);
 	item->type = vb->type;
@@ -515,6 +576,7 @@ static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, i
 		reg->regset[vb->arena].ht_regs = ht_pp_new0 ();
 	}
 	ht_pp_insert (reg->regset[vb->arena].ht_regs, item->name, item);
+	r_reg_reindex (reg);
 	return item;
 }
 
