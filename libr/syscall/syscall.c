@@ -237,7 +237,12 @@ R_API int r_syscall_get_num(RSyscall *s, const char *str) {
 	if (!p) {
 		p = strchr (v, '.');
 	}
-	return p? (int)sdb_atoi (p + 1): -1;
+	if (!p) {
+		return -1;
+	}
+	const int swi = (int)sdb_atoi (v);
+	const int num = (int)sdb_atoi (p + 1);
+	return (num || swi == r_syscall_get_swi (s))? num: swi;
 }
 
 R_API const char *r_syscall_get_i(RSyscall *s, int num, int swi) {
