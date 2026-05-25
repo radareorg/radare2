@@ -778,7 +778,7 @@ typedef struct r_bin_java_obj_t {
 	RBinJavaField *entrypoint;
 	RBinJavaAttrInfo *entrypoint_code_attr;
 
-	//RList* classes_list; // TODO: Not sure if this is necessary.  it would be the inner classes info.
+	// RList* inner_classes; // TODO: Do we need this?
 	RList* fields_list;
 	RList* methods_list;
 	RList* cp_list;
