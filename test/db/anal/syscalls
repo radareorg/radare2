@@ -18,6 +18,23 @@ EOF
 EXPECT_ERR=
 RUN
 
+NAME=list ppc syscalls
+FILE=-
+CMDS=<<EOF
+-a ppc
+-b 32
+-e asm.os=linux
+asl~?
+-b 64
+asl~?
+EOF
+EXPECT=<<EOF
+35
+34
+EOF
+EXPECT_ERR=
+RUN
+
 NAME=as <num> honors user argument
 FILE=-
 CMDS=<<EOF
