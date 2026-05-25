@@ -173,14 +173,14 @@ typedef struct r_egg_emit_t {
 	void (*get_result)(REgg *egg, const char *ocn);
 	void (*restore_stack)(REgg *egg, int size);
 	void (*syscall_args)(REgg *egg, int nargs);
-	void (*get_var)(REgg *egg, int type, char *out, int idx);
-	void (*get_arg)(REgg *egg, char *out, int idx);
+	void (*get_var)(REgg *egg, int type, RStrBuf *out, int idx);
+	void (*get_arg)(REgg *egg, RStrBuf *out, int idx);
 	void (*while_end)(REgg *egg, const char *label);
 	void (*load)(REgg *egg, const char *str, int sz);
 	void (*load_ptr)(REgg *egg, const char *str);
 	void (*branch)(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst);
 	void (*mathop)(REgg *egg, int ch, int sz, int type, const char *eq, const char *p);
-	void (*get_while_end)(REgg *egg, char *out, const char *ctxpush, const char *label);
+	void (*get_while_end)(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label);
 	/* Emit a branch-target label. NULL means the default ".S" style
 	 * "name:\n" is used (kept for the native assembler backends). */
 	void (*label)(REgg *egg, const char *name);

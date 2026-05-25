@@ -15,7 +15,7 @@
 
 static char *regs[] = R_GP;
 static R_TH_LOCAL int lastarg = 0;
-static R_TH_LOCAL char lastargs[16][32];
+static R_TH_LOCAL RStrBuf lastargs[16];
 
 static inline bool is_memref(const char *str) {
 	return str && strchr (str, ',');
@@ -57,16 +57,15 @@ static void load_deref(REgg *egg, const char *reg, const char *src, int sz) {
 static void load_ptr(REgg *egg, const char *reg, const char *src) {
 	const char *off;
 	const char *comma = strchr (src, ',');
-	char base[16];
-	size_t len;
 
 	if (!comma) {
 		load_value (egg, reg, src);
 		return;
 	}
-	len = R_MIN ((size_t)(comma - src), sizeof (base) - 1);
-	memcpy (base, src, len);
-	base[len] = '\0';
+	char *base = r_str_ndup (src, (int)(comma - src));
+	if (!base) {
+		return;
+	}
 	r_str_trim (base);
 	off = r_str_trim_head_ro (comma + 1);
 	if (!strcmp (off, "0")) {
@@ -74,30 +73,33 @@ static void load_ptr(REgg *egg, const char *reg, const char *src) {
 	} else {
 		r_egg_printf (egg, "  add %s, %s, %s\n", reg, base, off);
 	}
+	free (base);
 }
 
 static void store_slot(REgg *egg, const char *src, const char *dst, int sz) {
 	r_egg_printf (egg, "  %s %s, [%s]\n", sz == 'b'? "strb": "str", src, dst);
 }
 
-static void set_arg_slot(char *out, size_t outlen, int num) {
-	snprintf (out, outlen, "sp, %d", 16 + (num * 8));
+static void set_arg_slot(RStrBuf *out, int num) {
+	r_strbuf_setf (out, "sp, %d", 16 + (num * 8));
 }
 
 static void save_arg(REgg *egg, int num, const char *reg) {
-	set_arg_slot (lastargs[num - 1], sizeof (lastargs[0]), num);
-	store_slot (egg, reg, lastargs[num - 1], 'l');
+	RStrBuf *slot = &lastargs[num - 1];
+	set_arg_slot (slot, num);
+	store_slot (egg, reg, R_STRBUF_SAFEGET (slot), 'l');
 }
 
 static void load_arg_regs(REgg *egg, int nargs) {
 	int i;
 	for (i = 0; i < nargs; i++) {
 		int regidx = nargs - 1 - i;
-		if (regidx < 0 || regidx >= R_NGP || !lastargs[i][0]) {
+		const char *arg = R_STRBUF_SAFEGET (&lastargs[i]);
+		if (regidx < 0 || regidx >= R_NGP || R_STR_ISEMPTY (arg)) {
 			continue;
 		}
-		r_egg_printf (egg, "  ldr %s, [%s]\n", regs[regidx], lastargs[i]);
-		lastargs[i][0] = '\0';
+		r_egg_printf (egg, "  ldr %s, [%s]\n", regs[regidx], arg);
+		r_strbuf_set (&lastargs[i], "");
 	}
 	lastarg = 0;
 }
@@ -144,11 +146,11 @@ static void emit_frame_end(REgg *egg, int sz, int ctx) {
 
 static void emit_comment(REgg *egg, const char *fmt, ...) {
 	va_list ap;
-	char buf[1024];
 	va_start (ap, fmt);
-	vsnprintf (buf, sizeof (buf), fmt, ap);
-	r_egg_printf (egg, "# %s\n", buf);
+	char *msg = r_str_newvf (fmt, ap);
 	va_end (ap);
+	r_egg_printf (egg, "# %s\n", r_str_get (msg));
+	free (msg);
 }
 
 static void emit_equ(REgg *egg, const char *key, const char *value) {
@@ -176,7 +178,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 		r_egg_printf (egg, ".fill %d, 1, 0\n", rest);
 	}
 	{
-		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
+		char *p = r_egg_mkvar (egg, NULL, dstvar, 0);
 		r_egg_printf (egg, "  str x0, [%s]\n", p);
 		free (p);
 	}
@@ -206,8 +208,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	switch (xs) {
 	case 0:
 		if (strchr (str, ',')) {
-			strncpy (lastargs[num - 1], str, sizeof (lastargs[0]) - 1);
-			lastargs[num - 1][sizeof (lastargs[0]) - 1] = '\0';
+			r_strbuf_set (&lastargs[num - 1], str);
 		} else {
 			load_value (egg, "x0", str);
 			save_arg (egg, num, "x0");
@@ -237,8 +238,8 @@ static void emit_restore_stack(REgg *egg, int size) {
 	// r_egg_printf (egg, "  add sp, %d\n", size);
 }
 
-static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	snprintf (str, 32, "  b %s\n", label);
+static void emit_get_while_end(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label) {
+	r_strbuf_setf (out, "  b %s\n", label);
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
@@ -249,17 +250,20 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 		labelback);
 }
 
-static void emit_get_var(REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, RStrBuf *out, int idx) {
 	switch (type) {
 	case 0:
-		snprintf (out, 32, "sp, %d", (idx > 0)? ((idx - 1 + 7) & ~7): 0);
+		r_strbuf_setf (out, "sp, %d", (idx > 0)? ((idx - 1 + 7) & ~7): 0);
 		break; /* variable */
 	case 1:
-		snprintf (out, 32, "x%d", ((idx - 4) / 8) & 7);
+		r_strbuf_setf (out, "x%d", ((idx - 4) / 8) & 7);
 		break; /* registers */
 	case 2:
-		snprintf (out, 32, "x%d", ((idx - 12) / 8) & 7);
+		r_strbuf_setf (out, "x%d", ((idx - 12) / 8) & 7);
 		break; /* registers */
+	default:
+		r_strbuf_set (out, "");
+		break;
 	}
 }
 
@@ -272,7 +276,6 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 }
 
 static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	char str[64];
 	char *arg = NULL;
 	const char *op = "beq";
 	if (b) {
@@ -297,16 +300,17 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	if (*arg == '=') {
 		arg++; /* for <=, >=, ... */
 	}
-	char *p = r_egg_mkvar (egg, str, arg, 0);
-	if (lastargs[0][0]) {
-		load_value (egg, R_AX, lastargs[0]);
+	char *p = r_egg_mkvar (egg, NULL, arg, 0);
+	const char *arg0 = R_STRBUF_SAFEGET (&lastargs[0]);
+	if (R_STR_ISNOTEMPTY (arg0)) {
+		load_value (egg, R_AX, arg0);
 	} else {
 		r_egg_printf (egg, "  mov " R_AX ", 0\n");
 	}
 	load_value (egg, R_TMP, p);
 	r_egg_printf (egg, "  cmp " R_AX ", " R_TMP "\n");
 	r_egg_printf (egg, "  %s %s\n", op, dst);
-	lastargs[0][0] = '\0';
+	r_strbuf_set (&lastargs[0], "");
 	lastarg = 0;
 	free (p);
 }
