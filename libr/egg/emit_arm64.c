@@ -15,7 +15,7 @@
 
 static char *regs[] = R_GP;
 static int lastarg = 0;
-static char lastargs[16][32];
+static RStrBuf lastargs[16];
 
 static void emit_init(REgg *egg) {
 	/* TODO */
@@ -61,11 +61,11 @@ static void emit_frame_end(REgg *egg, int sz, int ctx) {
 
 static void emit_comment(REgg *egg, const char *fmt, ...) {
 	va_list ap;
-	char buf[1024];
 	va_start (ap, fmt);
-	vsnprintf (buf, sizeof (buf), fmt, ap);
-	r_egg_printf (egg, "# %s\n", buf);
+	char *msg = r_str_newvf (fmt, ap);
 	va_end (ap);
+	r_egg_printf (egg, "# %s\n", r_str_get (msg));
+	free (msg);
 }
 
 static void emit_equ(REgg *egg, const char *key, const char *value) {
@@ -102,7 +102,7 @@ static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int 
 	}
 	r_egg_printf (egg, "  sub x0, pc, %d\n", off + 12);
 	{
-		char str[32], *p = r_egg_mkvar (egg, str, dstvar, 0);
+		char *p = r_egg_mkvar (egg, NULL, dstvar, 0);
 		// r_egg_printf (egg, "DSTVAR=%s --> %s\n", dstvar, p);
 		r_egg_printf (egg, "  str x0, [%s]\n", p);
 		free (p);
@@ -122,8 +122,8 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 	int i;
 	// r_egg_printf (egg, " ARGS=%d CALL(%s,%d)\n", lastarg, str, atr);
 	for (i = 0; i < lastarg; i++) {
-		r_egg_printf (egg, "  ldr x%d, [%s]\n", lastarg - 1 - i, lastargs[i]);
-		lastargs[i][0] = 0;
+		r_egg_printf (egg, "  ldr x%d, [%s]\n", lastarg - 1 - i, R_STRBUF_SAFEGET (&lastargs[i]));
+		r_strbuf_set (&lastargs[i], "");
 	}
 	if (atr) {
 		r_egg_printf (egg, "  ldr x0, %s", str);
@@ -143,14 +143,14 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	case 0:
 		if (strchr (str, ',')) {
 			// r_egg_printf (egg, ".  str r0, [%s]\n", str);
-			strncpy (lastargs[num - 1], str, sizeof (lastargs[0]) - 1);
+			r_strbuf_set (&lastargs[num - 1], str);
 		} else {
 			if (!atoi (str)) {
 				R_LOG_WARN ("probably a bug?");
 			}
 			r_egg_printf (egg, "  mov x0, %s\n", str);
-			snprintf (lastargs[num - 1], sizeof (lastargs[0]), "sp, %d", 8 + (num * 4));
-			r_egg_printf (egg, "  str x0, [%s]\n", lastargs[num - 1]);
+			r_strbuf_setf (&lastargs[num - 1], "sp, %d", 8 + (num * 4));
+			r_egg_printf (egg, "  str x0, [%s]\n", R_STRBUF_SAFEGET (&lastargs[num - 1]));
 		}
 		break;
 	case '*':
@@ -178,9 +178,9 @@ static void emit_restore_stack(REgg *egg, int size) {
 	// r_egg_printf (egg, "  add sp, %d\n", size);
 }
 
-static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	// XXXsnprintf (str, 32, "  push {%s}\n  b %s\n", ctxpush, label);
+static void emit_get_while_end(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label) {
 	// not implemented
+	r_strbuf_set (out, "");
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
@@ -191,13 +191,16 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 		labelback);
 }
 
-static void emit_get_var(REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, RStrBuf *out, int idx) {
 	switch (type) {
-	case 0: snprintf (out, 32, "sp, %d", idx - 1); break; /* variable */
+	case 0: r_strbuf_setf (out, "sp, %d", idx - 1); break; /* variable */
 	case 1:
-		snprintf (out, 32, "r%d", idx);
+		r_strbuf_setf (out, "r%d", idx);
 		break; /* registers */
 		// sp,$%d", idx); break; /* argument */ // XXX: MUST BE r0, r1, r2, ..
+	default:
+		r_strbuf_set (out, "");
+		break;
 	}
 }
 
@@ -210,7 +213,7 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 }
 
 static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
-	char *p, str[64];
+	char *p;
 	char *arg = NULL;
 	char *op = "beq";
 	/* NOTE that jb/ja are inverted to fit cmp opcode */
@@ -236,7 +239,7 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 	if (*arg == '=') {
 		arg++; /* for <=, >=, ... */
 	}
-	p = r_egg_mkvar (egg, str, arg, 0);
+	p = r_egg_mkvar (egg, NULL, arg, 0);
 	// r_egg_printf (egg, "  pop "R_AX "\n");	/* TODO: add support for more than one arg get arg0 */
 	r_egg_printf (egg, "  cmp %s, " R_AX "\n", p);
 	// if (context>0)
@@ -296,10 +299,12 @@ static const char *emit_regs(REgg *egg, int idx) {
 	return regs[idx % R_NGP];
 }
 
-static void emit_get_arg(REgg *egg, char *out, int idx) {
+static void emit_get_arg(REgg *egg, RStrBuf *out, int idx) {
 	const char *regs[] = {"x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7"};
 	if (idx >= 0 && idx < 8) {
-		strcpy(out, regs[idx]);
+		r_strbuf_set (out, regs[idx]);
+	} else {
+		r_strbuf_set (out, "");
 	}
 }
 

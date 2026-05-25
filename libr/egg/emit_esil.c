@@ -38,17 +38,22 @@ static char *regs[] = R_GP;
  * when the next op overwrites the same register with a plain assignment.
  * The r_egg library is not thread-safe, so a file-local static is fine. */
 static int g_pending_zero = 0;
-static char g_pending_zero_reg[16];
+static char *g_pending_zero_reg = NULL;
+
+static void clear_pending_zero(void) {
+	g_pending_zero = 0;
+	R_FREE (g_pending_zero_reg);
+}
 
 static void flush_pending_zero(REgg *egg) {
 	if (g_pending_zero) {
 		r_egg_printf (egg, "0,%s,:=,", g_pending_zero_reg);
-		g_pending_zero = 0;
+		clear_pending_zero ();
 	}
 }
 
 static void emit_init(REgg *egg) {
-	g_pending_zero = 0;
+	clear_pending_zero ();
 }
 
 static char *emit_syscall(REgg *egg, int num) {
@@ -132,19 +137,17 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	/* arguments are passed via a1..aN abstract registers.
 	 * xs is 0 (value), '*' (deref), or '&' (address-of). */
-	char target[16];
 	flush_pending_zero (egg);
-	snprintf (target, sizeof (target), "a%d", num);
 	switch (xs) {
 	case 0:
-		r_egg_printf (egg, "%s,%s,:=,", str, target);
+		r_egg_printf (egg, "%s,a%d,:=,", str, num);
 		break;
 	case '*':
-		r_egg_printf (egg, "%s,[%d],%s,:=,", str, R_SZ, target);
+		r_egg_printf (egg, "%s,[%d],a%d,:=,", str, R_SZ, num);
 		break;
 	case '&':
 		/* address-of: emit the name as-is */
-		r_egg_printf (egg, "%s,%s,:=,", str, target);
+		r_egg_printf (egg, "%s,a%d,:=,", str, num);
 		break;
 	}
 }
@@ -160,17 +163,17 @@ static void emit_restore_stack(REgg *egg, int size) {
 	/* no explicit stack in ESIL abstract output */
 }
 
-static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
+static void emit_get_while_end(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label) {
 	/* Inserted at the end of a while-loop body: re-push the loop
 	 * condition value (copy ctxpush into a1) and unconditionally
 	 * jump back to the begin label, where emit_branch will re-check
 	 * the comparison against the fresh value. */
 	if (ctxpush && label) {
-		snprintf (str, 64, "%s,a1,:=," ESIL_JUMP_MARK "%s,GOTO,", ctxpush, label);
+		r_strbuf_setf (out, "%s,a1,:=," ESIL_JUMP_MARK "%s,GOTO,", ctxpush, label);
 	} else if (label) {
-		snprintf (str, 64, ESIL_JUMP_MARK "%s,GOTO,", label);
+		r_strbuf_setf (out, ESIL_JUMP_MARK "%s,GOTO,", label);
 	} else {
-		*str = '\0';
+		r_strbuf_set (out, "");
 	}
 }
 
@@ -181,22 +184,22 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 	}
 }
 
-static void emit_get_var(REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, RStrBuf *out, int idx) {
 	switch (type) {
 	case 0:
 		/* local variable: map by frame offset */
-		snprintf (out, 32, "v%d", idx);
+		r_strbuf_setf (out, "v%d", idx);
 		break;
 	case 1:
 		/* function argument (naked function) */
-		snprintf (out, 32, "a%d", idx);
+		r_strbuf_setf (out, "a%d", idx);
 		break;
 	case 2:
 		/* framed function argument */
-		snprintf (out, 32, "v%d", idx);
+		r_strbuf_setf (out, "v%d", idx);
 		break;
 	default:
-		*out = '\0';
+		r_strbuf_set (out, "");
 		break;
 	}
 }
@@ -310,9 +313,12 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 		 * We drop it when a later plain assignment writes the same
 		 * register, and flush it when someone reads from it. */
 		if (type == '$' && !strcmp (eq, "0") && !g_pending_zero) {
+			g_pending_zero_reg = strdup (p);
+			if (!g_pending_zero_reg) {
+				r_egg_printf (egg, "0,%s,:=,", p);
+				return;
+			}
 			g_pending_zero = 1;
-			strncpy (g_pending_zero_reg, p, sizeof (g_pending_zero_reg) - 1);
-			g_pending_zero_reg[sizeof (g_pending_zero_reg) - 1] = '\0';
 			return;
 		}
 		if (g_pending_zero) {
@@ -321,7 +327,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 				flush_pending_zero (egg);
 			} else if (!strcmp (p, g_pending_zero_reg)) {
 				/* overwrites pending reg: drop the dead init */
-				g_pending_zero = 0;
+				clear_pending_zero ();
 			}
 		}
 		/* plain assignment: eq -> p (or *eq -> p if type == '*') */
@@ -348,8 +354,8 @@ static const char *emit_regs(REgg *egg, int idx) {
 	return regs[idx % R_NGP];
 }
 
-static void emit_get_arg(REgg *egg, char *out, int idx) {
-	snprintf (out, 32, "a%d", idx);
+static void emit_get_arg(REgg *egg, RStrBuf *out, int idx) {
+	r_strbuf_setf (out, "a%d", idx);
 }
 
 static bool is_header_line(const char *line) {
