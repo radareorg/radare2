@@ -17,17 +17,17 @@ EOF
 RUN
 
 NAME=syscall hook does not consume dcs
-FILE=bins/elf/analysis/fasttime-sleep
+FILE=bins/elf/true
 ARGS=-d -e log.level=0
 CMDS=<<EOF
 ood
 e cmd.syscall.enter=k syscall.enter=1
-dcs clock_nanosleep nanosleep
+dcs exit_group
 dr SN
-dk 9
+dc
 q!
 EOF
 EXPECT=<<EOF
-0x00000023
+0x000000e7
 EOF
 RUN
