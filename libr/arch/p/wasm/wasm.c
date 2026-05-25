@@ -178,7 +178,63 @@ static WasmOpDef opcodes[256] = {
 	[WASM_OP_I32REINTERPRETF32] = { "i32.reinterpret/f32", 1, 1 },
 	[WASM_OP_I64REINTERPRETF64] = { "i64.reinterpret/f64", 1, 1 },
 	[WASM_OP_F32REINTERPRETI32] = { "f32.reinterpret/i32", 1, 1 },
-	[WASM_OP_F64REINTERPRETI64] = { "f64.reinterpret/i64", 1, 1 }
+	[WASM_OP_F64REINTERPRETI64] = { "f64.reinterpret/i64", 1, 1 },
+
+	// Exception handling
+	[WASM_OP_TRY] = { "try", 2, 2 },
+	[WASM_OP_CATCH] = { "catch", 2, 2 },
+	[WASM_OP_THROW] = { "throw", 2, 2 },
+	[WASM_OP_RETHROW] = { "rethrow", 2, 2 },
+	[WASM_OP_THROWREF] = { "throw_ref", 1, 1 },
+	[WASM_OP_DELEGATE] = { "delegate", 2, 2 },
+	[WASM_OP_CATCHALL] = { "catch_all", 1, 1 },
+	[WASM_OP_TRYTABLE] = { "try_table", 3, 0 },
+
+	// Tail calls
+	[WASM_OP_RETURNCALL] = { "return_call", 2, 2 },
+	[WASM_OP_RETURNCALLINDIRECT] = { "return_call_indirect", 3, 3 },
+
+	// Parametric (typed select)
+	[WASM_OP_SELECTT] = { "select", 3, 0 },
+
+	// Reference types
+	[WASM_OP_TABLEGET] = { "table.get", 2, 2 },
+	[WASM_OP_TABLESET] = { "table.set", 2, 2 },
+	[WASM_OP_REFNULL] = { "ref.null", 2, 2 },
+	[WASM_OP_REFISNULL] = { "ref.is_null", 1, 1 },
+	[WASM_OP_REFFUNC] = { "ref.func", 2, 2 },
+	[WASM_OP_REFEQ] = { "ref.eq", 1, 1 },
+	[WASM_OP_REFASNONNULL] = { "ref.as_non_null", 1, 1 },
+	[WASM_OP_BRONNULL] = { "br_on_null", 2, 2 },
+	[WASM_OP_BRONNONNULL] = { "br_on_non_null", 2, 2 },
+
+	// Sign-extension
+	[WASM_OP_I32EXTEND8S] = { "i32.extend8_s", 1, 1 },
+	[WASM_OP_I32EXTEND16S] = { "i32.extend16_s", 1, 1 },
+	[WASM_OP_I64EXTEND8S] = { "i64.extend8_s", 1, 1 },
+	[WASM_OP_I64EXTEND16S] = { "i64.extend16_s", 1, 1 },
+	[WASM_OP_I64EXTEND32S] = { "i64.extend32_s", 1, 1 },
+};
+
+static WasmOpDef opcodes_misc[256] = {
+	[WASM_OP_I32TRUNCSATF32S] = { "i32.trunc_sat_f32_s", 2, 2 },
+	[WASM_OP_I32TRUNCSATF32U] = { "i32.trunc_sat_f32_u", 2, 2 },
+	[WASM_OP_I32TRUNCSATF64S] = { "i32.trunc_sat_f64_s", 2, 2 },
+	[WASM_OP_I32TRUNCSATF64U] = { "i32.trunc_sat_f64_u", 2, 2 },
+	[WASM_OP_I64TRUNCSATF32S] = { "i64.trunc_sat_f32_s", 2, 2 },
+	[WASM_OP_I64TRUNCSATF32U] = { "i64.trunc_sat_f32_u", 2, 2 },
+	[WASM_OP_I64TRUNCSATF64S] = { "i64.trunc_sat_f64_s", 2, 2 },
+	[WASM_OP_I64TRUNCSATF64U] = { "i64.trunc_sat_f64_u", 2, 2 },
+	[WASM_OP_MEMORYINIT] = { "memory.init", 4, 4 },
+	[WASM_OP_DATADROP] = { "data.drop", 3, 3 },
+	[WASM_OP_MEMORYCOPY] = { "memory.copy", 4, 4 },
+	[WASM_OP_MEMORYFILL] = { "memory.fill", 3, 3 },
+	[WASM_OP_TABLEINIT] = { "table.init", 4, 4 },
+	[WASM_OP_ELEMDROP] = { "elem.drop", 3, 3 },
+	[WASM_OP_TABLECOPY] = { "table.copy", 4, 4 },
+	[WASM_OP_TABLEGROW] = { "table.grow", 3, 3 },
+	[WASM_OP_TABLESIZE] = { "table.size", 3, 3 },
+	[WASM_OP_TABLEFILL] = { "table.fill", 3, 3 },
 };
 
 static WasmOpDef opcodes_threads[256] = {
@@ -472,7 +528,7 @@ R_IPI int wasm_asm(const char *str, ut8 *buf, int buf_len) {
 // disassemble an instruction from the given buffer.
 R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 	int id = buf[0];
-	if (id < 0xc0) {
+	if (id < 0xfc) {
 		op->type = WASM_TYPE_OP_CORE;
 		op->op.core = id;
 		op->len = 1;
@@ -482,8 +538,18 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 		case WASM_OP_NOP:
 		case WASM_OP_ELSE:
 		case WASM_OP_RETURN:
+		case WASM_OP_THROWREF:
+		case WASM_OP_CATCHALL:
 		case WASM_OP_DROP:
 		case WASM_OP_SELECT:
+		case WASM_OP_REFISNULL:
+		case WASM_OP_REFASNONNULL:
+		case WASM_OP_REFEQ:
+		case WASM_OP_I32EXTEND8S:
+		case WASM_OP_I32EXTEND16S:
+		case WASM_OP_I64EXTEND8S:
+		case WASM_OP_I64EXTEND16S:
+		case WASM_OP_I64EXTEND32S:
 		case WASM_OP_I32EQZ:
 		case WASM_OP_I32EQ:
 		case WASM_OP_I32NE:
@@ -615,6 +681,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 		case WASM_OP_BLOCK:
 		case WASM_OP_LOOP:
 		case WASM_OP_IF:
+		case WASM_OP_TRY:
 			{
 				st32 val = 0;
 				size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &val);
@@ -651,7 +718,17 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 			break;
 		case WASM_OP_BR:
 		case WASM_OP_BRIF:
+		case WASM_OP_BRONNULL:
+		case WASM_OP_BRONNONNULL:
 		case WASM_OP_CALL:
+		case WASM_OP_RETURNCALL:
+		case WASM_OP_THROW:
+		case WASM_OP_RETHROW:
+		case WASM_OP_CATCH:
+		case WASM_OP_DELEGATE:
+		case WASM_OP_REFFUNC:
+		case WASM_OP_TABLEGET:
+		case WASM_OP_TABLESET:
 			{
 				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &op->val);
 				if (n <= 0 || n >= buf_len) {
@@ -709,6 +786,7 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 			}
 			break;
 		case WASM_OP_CALLINDIRECT:
+		case WASM_OP_RETURNCALLINDIRECT:
 			{
 				ut32 val = 0, reserved = 0;
 				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &val);
@@ -717,14 +795,81 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				}
 				op->len += n;
 				n = read_u32_leb128 (buf + op->len, buf + buf_len, &reserved);
-				if (!(n == 1 && op->len + n <= buf_len)) {
+				if (!(n >= 1 && op->len + n <= buf_len)) {
 					goto err;
 				}
-				reserved &= 0x1;
 				if (txt && opdef->txt) {
 					op->txt = r_str_newf ("%s %d %d", opdef->txt, val, reserved);
 				}
 				op->len += n;
+			}
+			break;
+		case WASM_OP_REFNULL:
+			{
+				if (op->len + 1 > buf_len) {
+					goto err;
+				}
+				ut8 heaptype = buf[1];
+				if (txt && opdef->txt) {
+					const char *ht = (heaptype == 0x70)? "funcref": (heaptype == 0x6f)? "externref": "ref";
+					op->txt = r_str_newf ("%s %s", opdef->txt, ht);
+				}
+				op->len += 1;
+			}
+			break;
+		case WASM_OP_SELECTT:
+			{
+				ut32 count = 0;
+				size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &count);
+				if (!(n > 0 && op->len + n + count <= (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n + count; // count one-byte valtypes
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s (%u typed)", opdef->txt, count);
+				}
+			}
+			break;
+		case WASM_OP_TRYTABLE:
+			{
+				// blocktype (s33 leb, single-byte common case)
+				st32 bt = 0;
+				size_t n = read_i32_leb128 (buf + 1, buf + buf_len, &bt);
+				if (!(n > 0 && op->len + n < buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				ut32 count = 0;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &count);
+				if (!(n > 0 && op->len + n <= buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				ut32 i;
+				for (i = 0; i < count; i++) {
+					if (op->len + 1 > buf_len) {
+						goto err;
+					}
+					ut8 tag = buf[op->len];
+					op->len += 1;
+					ut32 a = 0;
+					n = read_u32_leb128 (buf + op->len, buf + buf_len, &a);
+					if (!(n > 0 && op->len + n <= buf_len)) {
+						goto err;
+					}
+					op->len += n;
+					if (tag == 0x00 || tag == 0x01) {
+						ut32 b = 0;
+						n = read_u32_leb128 (buf + op->len, buf + buf_len, &b);
+						if (!(n > 0 && op->len + n <= buf_len)) {
+							goto err;
+						}
+						op->len += n;
+					}
+				}
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s (%u handlers)", opdef->txt, count);
+				}
 			}
 			break;
 		case WASM_OP_GETLOCAL:
@@ -853,6 +998,120 @@ R_IPI int wasm_dis(WasmOp *op, const ut8 *buf, int buf_len, bool txt) {
 				op->len += 8;
 			} else {
 				goto err;
+			}
+			break;
+		default:
+			goto err;
+		}
+	} else if (id == 0xfc) {
+		// Misc prefix: non-trapping conversions + bulk memory/table ops
+		op->type = WASM_TYPE_OP_MISC;
+		if (buf_len < 2) {
+			goto err;
+		}
+		ut32 subop = 0;
+		size_t n = read_u32_leb128 (buf + 1, buf + buf_len, &subop);
+		if (!(n > 0 && 1 + n <= (size_t)buf_len)) {
+			goto err;
+		}
+		op->len = 1 + n;
+		op->op.misc = subop;
+		WasmOpDef *opdef = &opcodes_misc[subop & 0xff];
+		switch (subop) {
+		case WASM_OP_I32TRUNCSATF32S:
+		case WASM_OP_I32TRUNCSATF32U:
+		case WASM_OP_I32TRUNCSATF64S:
+		case WASM_OP_I32TRUNCSATF64U:
+		case WASM_OP_I64TRUNCSATF32S:
+		case WASM_OP_I64TRUNCSATF32U:
+		case WASM_OP_I64TRUNCSATF64S:
+		case WASM_OP_I64TRUNCSATF64U:
+			if (txt && opdef->txt) {
+				op->txt = strdup (opdef->txt);
+			}
+			break;
+		case WASM_OP_MEMORYINIT:
+			// memory.init <dataidx> 0x00
+			{
+				ut32 dataidx = 0;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &dataidx);
+				if (!(n > 0 && op->len + n + 1 <= (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n + 1; // +1 for reserved memidx byte
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s %u 0", opdef->txt, dataidx);
+				}
+			}
+			break;
+		case WASM_OP_DATADROP:
+		case WASM_OP_ELEMDROP:
+			{
+				ut32 idx = 0;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &idx);
+				if (!(n > 0 && op->len + n <= (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s %u", opdef->txt, idx);
+				}
+			}
+			break;
+		case WASM_OP_MEMORYCOPY:
+			// memory.copy 0x00 0x00
+			if (op->len + 2 > (size_t)buf_len) {
+				goto err;
+			}
+			op->len += 2;
+			if (txt && opdef->txt) {
+				op->txt = strdup (opdef->txt);
+			}
+			break;
+		case WASM_OP_MEMORYFILL:
+			// memory.fill 0x00
+			if (op->len + 1 > (size_t)buf_len) {
+				goto err;
+			}
+			op->len += 1;
+			if (txt && opdef->txt) {
+				op->txt = strdup (opdef->txt);
+			}
+			break;
+		case WASM_OP_TABLEINIT:
+			// table.init <elemidx> <tableidx>
+		case WASM_OP_TABLECOPY:
+			// table.copy <tableidx> <tableidx>
+			{
+				ut32 a = 0, b = 0;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &a);
+				if (!(n > 0 && op->len + n < (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &b);
+				if (!(n > 0 && op->len + n <= (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s %u %u", opdef->txt, a, b);
+				}
+			}
+			break;
+		case WASM_OP_TABLEGROW:
+		case WASM_OP_TABLESIZE:
+		case WASM_OP_TABLEFILL:
+			{
+				ut32 idx = 0;
+				n = read_u32_leb128 (buf + op->len, buf + buf_len, &idx);
+				if (!(n > 0 && op->len + n <= (size_t)buf_len)) {
+					goto err;
+				}
+				op->len += n;
+				if (txt && opdef->txt) {
+					op->txt = r_str_newf ("%s %u", opdef->txt, idx);
+				}
 			}
 			break;
 		default:

@@ -14,6 +14,14 @@ typedef enum {
 	WASM_OP_LOOP,
 	WASM_OP_IF,
 	WASM_OP_ELSE,
+
+	// Exception handling (legacy + final)
+	WASM_OP_TRY = 0x06,
+	WASM_OP_CATCH = 0x07,
+	WASM_OP_THROW = 0x08,
+	WASM_OP_RETHROW = 0x09,
+	WASM_OP_THROWREF = 0x0a,
+
 	WASM_OP_END = 0x0b,
 	WASM_OP_BR,
 	WASM_OP_BRIF,
@@ -23,10 +31,19 @@ typedef enum {
 	// Call operators
 	WASM_OP_CALL = 0x10,
 	WASM_OP_CALLINDIRECT,
+	WASM_OP_RETURNCALL = 0x12,
+	WASM_OP_RETURNCALLINDIRECT = 0x13,
+
+	// Exception handling (continued)
+	WASM_OP_DELEGATE = 0x18,
+	WASM_OP_CATCHALL = 0x19,
 
 	// Parametric operators
 	WASM_OP_DROP = 0x1a,
 	WASM_OP_SELECT,
+	WASM_OP_SELECTT = 0x1c,
+
+	WASM_OP_TRYTABLE = 0x1f,
 
 	// Variable access
 	WASM_OP_GETLOCAL = 0x20,
@@ -34,6 +51,8 @@ typedef enum {
 	WASM_OP_TEELOCAL,
 	WASM_OP_GETGLOBAL,
 	WASM_OP_SETGLOBAL,
+	WASM_OP_TABLEGET = 0x25,
+	WASM_OP_TABLESET = 0x26,
 
 	// Memory-related operators
 	WASM_OP_I32LOAD = 0x28,
@@ -199,7 +218,52 @@ typedef enum {
 	WASM_OP_F32REINTERPRETI32,
 	WASM_OP_F64REINTERPRETI64,
 
+	// Sign-extension operators (Wasm 2.0)
+	WASM_OP_I32EXTEND8S = 0xc0,
+	WASM_OP_I32EXTEND16S = 0xc1,
+	WASM_OP_I64EXTEND8S = 0xc2,
+	WASM_OP_I64EXTEND16S = 0xc3,
+	WASM_OP_I64EXTEND32S = 0xc4,
+
+	// Reference types (Wasm 2.0)
+	WASM_OP_REFNULL = 0xd0,
+	WASM_OP_REFISNULL = 0xd1,
+	WASM_OP_REFFUNC = 0xd2,
+
+	// Reference types (GC / Wasm 3.0)
+	WASM_OP_REFEQ = 0xd3,
+	WASM_OP_REFASNONNULL = 0xd4,
+	WASM_OP_BRONNULL = 0xd5,
+	WASM_OP_BRONNONNULL = 0xd6,
+
 } WasmOpCodes;
+
+/***
+ * Misc / bulk-memory / numeric saturating extension (0xfc ...)
+**/
+typedef enum {
+	// Non-trapping float-to-int conversions
+	WASM_OP_I32TRUNCSATF32S = 0x00,
+	WASM_OP_I32TRUNCSATF32U = 0x01,
+	WASM_OP_I32TRUNCSATF64S = 0x02,
+	WASM_OP_I32TRUNCSATF64U = 0x03,
+	WASM_OP_I64TRUNCSATF32S = 0x04,
+	WASM_OP_I64TRUNCSATF32U = 0x05,
+	WASM_OP_I64TRUNCSATF64S = 0x06,
+	WASM_OP_I64TRUNCSATF64U = 0x07,
+
+	// Bulk memory and table operations (Wasm 2.0)
+	WASM_OP_MEMORYINIT = 0x08,
+	WASM_OP_DATADROP = 0x09,
+	WASM_OP_MEMORYCOPY = 0x0a,
+	WASM_OP_MEMORYFILL = 0x0b,
+	WASM_OP_TABLEINIT = 0x0c,
+	WASM_OP_ELEMDROP = 0x0d,
+	WASM_OP_TABLECOPY = 0x0e,
+	WASM_OP_TABLEGROW = 0x0f,
+	WASM_OP_TABLESIZE = 0x10,
+	WASM_OP_TABLEFILL = 0x11,
+} WasmOpMiscCodes;
 
 /***
  * Thread extension (0xFE ...)
@@ -478,6 +542,7 @@ typedef enum {
 	WASM_TYPE_OP_CORE,
 	WASM_TYPE_OP_ATOMIC,
 	WASM_TYPE_OP_SIMD,
+	WASM_TYPE_OP_MISC,
 } WasmTypeOp;
 
 typedef struct {
@@ -485,6 +550,7 @@ typedef struct {
 		WasmOpCodes core;
 		WasmOpAtomicCodes atomic;
 		WasmOpSimdCodes simd;
+		WasmOpMiscCodes misc;
 	} op;
 	ut32 val; // not used for all opcodes yet, careful
 	WasmTypeOp type;

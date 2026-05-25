@@ -5,7 +5,7 @@ pd 10
 EOF
 EXPECT=<<EOF
             ;-- entry0:
-            ;-- fcn.0:
+            ;-- main:
             0x000000be      4185feff77     i32.const 251657989
             0x000000c3      fd0f           i8x16.splat
             0x000000c5      fda001         incorrect
@@ -17,8 +17,5 @@ EXPECT=<<EOF
             0x000000ce      ff             trap
             0x000000cf      ff             trap
 EOF
-EXPECT_ERR=<<EOF
-ERROR: unknown section id: 13
-ERROR: unknown section id: 109
-EOF
+EXPECT_ERR=
 RUN
