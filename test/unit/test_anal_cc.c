@@ -104,6 +104,32 @@ bool test_r_anal_cc_multiret(void) {
 	mu_end;
 }
 
+bool test_r_anal_cc_static_fixes(void) {
+	RAnal *anal = r_anal_new ();
+	r_anal_cc_set (anal, "rax rev(r0, r1, r2)");
+	sdb_set (anal->sdb_cc, "cc.rev.revarg", "1", 0);
+	mu_assert_streq (r_anal_cc_arg (anal, "rev", 0, 3), "r2", "revarg first");
+	mu_assert_streq (r_anal_cc_arg (anal, "rev", 1, 3), "r1", "revarg middle");
+	mu_assert_streq (r_anal_cc_arg (anal, "rev", 2, 3), "r0", "revarg last");
+	mu_assert_null (r_anal_cc_arg (anal, "rev", 3, 3), "revarg rejects out-of-range");
+
+	r_anal_cc_set (anal, "rax grow(r0)");
+	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 1, "initial max args");
+	sdb_set (anal->sdb_cc, "cc.grow.arg1", "r1", 0);
+	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 2, "max args after db update");
+
+	PJ *pj = pj_new ();
+	mu_assert_notnull (pj, "pj");
+	pj_o (pj);
+	r_anal_cc_get_json (anal, pj, "missing");
+	pj_end (pj);
+	mu_assert_streq (pj_string (pj), "{}", "missing cc json");
+	pj_free (pj);
+
+	r_anal_free (anal);
+	mu_end;
+}
+
 bool test_r_anal_cc_del(void) {
 	RAnal *anal = ref_anal ();
 	r_anal_cc_del (anal, "sectarian");
@@ -120,6 +146,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_anal_cc_get);
 	mu_run_test (test_r_anal_cc_get_self_err);
 	mu_run_test (test_r_anal_cc_multiret);
+	mu_run_test (test_r_anal_cc_static_fixes);
 	mu_run_test (test_r_anal_cc_del);
 	return tests_passed != tests_run;
 }

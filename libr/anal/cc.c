@@ -111,7 +111,8 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
-	if (strcmp (sdb_const_get (DB, name, 0), "cc")) {
+	const char *cc_type = sdb_const_get (DB, name, 0);
+	if (!cc_type || strcmp (cc_type, "cc")) {
 		return;
 	}
 	const char *ret = r_anal_cc_ret (anal, name, 0);
@@ -229,12 +230,13 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
 	}
 	Sdb *db = DB;
 	r_strf_buffer (64);
-	if (lastn >= 0) {
+	if (lastn > 0) {
 		char *revarg = r_strf ("cc.%s.revarg", cc);
-		if (r_str_is_true (revarg)) {
-			// check if revarg is set, this is used only for D
-			R_LOG_INFO ("EXPERIMENTAL: Reversing argument position");
-			n = lastn - n;
+		if (r_str_is_true (sdb_const_get (db, revarg, 0))) {
+			if (n >= lastn) {
+				return NULL;
+			}
+			n = lastn - n - 1;
 		}
 	}
 	char *query = r_strf ("cc.%s.arg%d", cc, n);
@@ -287,20 +289,12 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
 
-	r_strf_var (lastarg, 64, "cc.%s.lastarg", cc);
-	int count = sdb_num_get (DB, lastarg, 0);
-	if (count > 0) {
-		return count;
-	}
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
 		r_strf_var (query, 64, "cc.%s.arg%d", cc, i);
 		const char *res = sdb_const_get (DB, query, 0);
 		if (!res) {
 			break;
 		}
-	}
-	if (i > 0) {
-		sdb_num_set (DB, lastarg, i, 0);
 	}
 	return i;
 }
