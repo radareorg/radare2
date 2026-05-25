@@ -131,6 +131,7 @@ typedef struct r_reg_vbank_t {
 	int size;         // bits per entry
 	int packed_size;
 	int offset;       // bit offset of index 0 within the arena
+	int index;        // base register index of this bank
 } RRegVBank;
 
 typedef struct r_reg_set_t {
