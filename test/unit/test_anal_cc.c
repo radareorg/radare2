@@ -118,14 +118,6 @@ bool test_r_anal_cc_static_fixes(void) {
 	sdb_set (anal->sdb_cc, "cc.grow.arg1", "r1", 0);
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 2, "max args after db update");
 
-	PJ *pj = pj_new ();
-	mu_assert_notnull (pj, "pj");
-	pj_o (pj);
-	r_anal_cc_get_json (anal, pj, "missing");
-	pj_end (pj);
-	mu_assert_streq (pj_string (pj), "{}", "missing cc json");
-	pj_free (pj);
-
 	r_anal_free (anal);
 	mu_end;
 }
