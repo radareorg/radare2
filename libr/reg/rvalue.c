@@ -201,6 +201,9 @@ R_API bool r_reg_set_value(RReg *reg, RRegItem *item, ut64 value) {
 	if (!arena) {
 		return false;
 	}
+	if (!value && !r_reg_get_value (reg, item)) {
+		return true;
+	}
 	r_reg_arena_materialize (arena);
 	const bool be = (reg->endian & R_SYS_ENDIAN_BIG) == R_SYS_ENDIAN_BIG;
 	switch (item->size) {

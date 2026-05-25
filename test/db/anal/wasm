@@ -24,13 +24,16 @@ NAME=wasm fuzzed leb128 virtual register profile crash
 FILE=bins/fuzzed/r2_hbo_read_u32_leb128
 CMDS=<<EOF
 arp~l
-ar l15
-arpi~l15
+dr l15
+dr l15=0
+dr l15
+arpi~l15~?
 EOF
 EXPECT=<<EOF
 gpr	l[1024]	.32	$	0
 0x00000000
-   l15 gpr @ gpr (offset: 136  size: 4)
+0x00000000
+0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: beach sections
@@ -41,13 +44,16 @@ NAME=wasm fuzzed init expr virtual register profile crash
 FILE=bins/fuzzed/r2_hoobr_consume_init_expr
 CMDS=<<EOF
 arp~l
-ar l15
-arpi~l15
+dr l15
+dr l15=0
+dr l15
+arpi~l15~?
 EOF
 EXPECT=<<EOF
 gpr	l[1024]	.32	$	0
 0x00000000
-   l15 gpr @ gpr (offset: 136  size: 4)
+0x00000000
+0
 EOF
 EXPECT_ERR=<<EOF
 ERROR: unknown section id: 48
