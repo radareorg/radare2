@@ -126,7 +126,7 @@ R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
 }
 
 static int fcn_call_stack_pop(RAnal *anal, RAnalOp *op) {
-	if (!anal || !op || op->jump == UT64_MAX) {
+	if (op->jump == UT64_MAX) {
 		return 0;
 	}
 	RAnalFunction *callee = r_anal_get_function_at (anal, op->jump);
@@ -223,7 +223,9 @@ static bool is_symbol_flag(const char *name) {
 }
 
 static bool next_instruction_is_symbol(RAnal *anal, RAnalOp *op) {
-	R_RETURN_VAL_IF_FAIL (anal && op && anal->flb.get_at, false);
+	if (!anal->flb.get_at) {
+		return false;
+	}
 	RFlagItem *fi = anal->flb.get_at (anal->flb.f, op->addr + op->size, false);
 	return (fi && fi->name && is_symbol_flag (fi->name));
 }
@@ -338,12 +340,11 @@ static bool is_delta_pointer_table(ReadAhead *ra, RAnal *anal, RAnalFunction *fc
 	return true;
 }
 
-static ut64 try_get_cmpval_from_parents(RAnal *anal, RAnalFunction *fcn, RAnalBlock *my_bb, const char *cmp_reg) {
+static ut64 try_get_cmpval_from_parents(RAnalFunction *fcn, RAnalBlock *my_bb, const char *cmp_reg) {
 	if (!cmp_reg) {
 		R_LOG_DEBUG ("try_get_cmpval_from_parents: cmp_reg not defined");
 		return UT64_MAX;
 	}
-	R_RETURN_VAL_IF_FAIL (fcn && fcn->bbs, UT64_MAX);
 	RListIter *iter;
 	RAnalBlock *tmp_bb;
 	r_list_foreach (fcn->bbs, iter, tmp_bb) {
@@ -499,9 +500,6 @@ static RAnalBlock *bbget(RAnal *anal, ut64 addr, bool jumpmid) {
 }
 
 static bool block_belongs_to_function(const RAnalBlock *block, const RAnalFunction *fcn) {
-	if (!block || !fcn) {
-		return false;
-	}
 	return r_list_contains ((RList *)block->fcns, (void *)fcn);
 }
 
@@ -538,7 +536,6 @@ static bool add_switch_case_block(RAnal *anal, RAnalFunction *fcn, ut64 case_add
 }
 
 static bool reset_switch_case_stub(RAnal *anal, RAnalBlock *block) {
-	R_RETURN_VAL_IF_FAIL (anal && block, false);
 	RList *fcns = r_list_new ();
 	if (!fcns) {
 		return false;
@@ -1890,7 +1887,7 @@ noskip:
 						// skip inlined jumptable
 						// idx += table_size;
 					} else if (op->ptrsize == 1) { // TBB
-						ut64 pred_cmpval = try_get_cmpval_from_parents (anal, fcn, bb, op->ireg);
+						ut64 pred_cmpval = try_get_cmpval_from_parents (fcn, bb, op->ireg);
 						ut64 table_size = 0;
 						if (pred_cmpval != UT64_MAX) {
 							table_size += pred_cmpval;
@@ -1902,7 +1899,7 @@ noskip:
 						// skip inlined jumptable
 						idx += table_size;
 					} else if (op->ptrsize == 2) { // LDRH on thumb/arm
-						ut64 pred_cmpval = try_get_cmpval_from_parents(anal, fcn, bb, op->ireg);
+						ut64 pred_cmpval = try_get_cmpval_from_parents (fcn, bb, op->ireg);
 						int tablesize = 1;
 						if (pred_cmpval != UT64_MAX) {
 							tablesize += pred_cmpval;
