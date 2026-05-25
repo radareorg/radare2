@@ -633,6 +633,8 @@ static int archinfo(RAnal *a, int q) {
 #endif
 
 static char *wasm_regs(RArchSession *ai) {
+	// r0..r15 and l0..l1023 are virtual register banks: materialized lazily by
+	// r_reg_get when referenced (e.g. by the calling convention via =A0..=A2)
 	return strdup (
 		"=PC	pc\n"
 		"=BP	bp\n"
@@ -641,9 +643,11 @@ static char *wasm_regs(RArchSession *ai) {
 		"=A0	r0\n"
 		"=A1	r1\n"
 		"=A2	r2\n"
-		"gpr	sp	.32	0	0\n" // stack pointer
-		"gpr	pc	.32	4	0\n" // program counter
-		"gpr	bp	.32	8	0\n" // base pointer // unused
+		"gpr	sp	.32	0	0\n"  // stack pointer
+		"gpr	pc	.32	4	0\n"  // program counter
+		"gpr	bp	.32	8	0\n"  // base pointer // unused
+		"gpr	r[16]	.32	12	0\n" // argument/return register bank
+		"gpr	l[1024]	.32	$	0\n" // locals bank
 	);
 }
 

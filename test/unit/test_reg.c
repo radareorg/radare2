@@ -607,6 +607,62 @@ bool test_r_reg_x87_multi_offset(void) {
 	mu_end;
 }
 
+bool test_r_reg_vbank(void) {
+	RReg *reg = r_reg_new ();
+	mu_assert_notnull (reg, "r_reg_new () failed");
+
+	// 16 fixed-offset gprs + 256 lazy locals starting after them
+	bool success = r_reg_set_profile_string (reg,
+		"=A0 r0\n"
+		"gpr r0 .32 0 0\n"
+		"gpr l[256] .32 $ 0\n");
+	mu_assert_eq (success, true, "vbank profile parses");
+
+	// Only 1 materialized item before lookup; vbank declared
+	mu_assert_eq (r_list_length (reg->regset[R_REG_TYPE_GPR].regs), 1,
+		"no vregs materialized up front");
+	RList *banks = r_reg_get_vbanks (reg, R_REG_TYPE_GPR);
+	mu_assert_notnull (banks, "vbanks list exists");
+	mu_assert_eq (r_list_length (banks), 1, "one vbank declared");
+
+	// Lazy materialization on lookup
+	RRegItem *l5 = r_reg_get (reg, "l5", R_REG_TYPE_GPR);
+	mu_assert_notnull (l5, "l5 materialized");
+	mu_assert_streq (l5->name, "l5", "l5 name correct");
+	mu_assert_eq (l5->size, 32, "l5 size from vbank");
+	mu_assert_eq (l5->offset, 32 + 5 * 32, "l5 offset = $ + 5*32 bits");
+
+	// Round-trip value via arena
+	r_reg_fit_arena (reg);
+	mu_assert_eq (r_reg_setv (reg, "l5", 0xdeadbeef), true, "setv l5");
+	mu_assert_eq (r_reg_getv (reg, "l5"), 0xdeadbeef, "getv l5");
+
+	// Second lookup hits the hashtable
+	RRegItem *l5b = r_reg_get (reg, "l5", R_REG_TYPE_GPR);
+	mu_assert_eq (l5, l5b, "second lookup returns same item");
+
+	// Out-of-range index returns NULL
+	mu_assert_null (r_reg_get (reg, "l256", R_REG_TYPE_GPR),
+		"index >= count is rejected");
+	// Leading zero canonicalization
+	mu_assert_null (r_reg_get (reg, "l05", R_REG_TYPE_GPR),
+		"leading-zero name is rejected");
+	// Non-numeric suffix
+	mu_assert_null (r_reg_get (reg, "lx", R_REG_TYPE_GPR),
+		"non-numeric suffix is rejected");
+
+	// Clone preserves vbanks
+	RReg *clone = r_reg_clone (reg);
+	mu_assert_notnull (clone, "clone");
+	RRegItem *cl9 = r_reg_get (clone, "l9", R_REG_TYPE_GPR);
+	mu_assert_notnull (cl9, "vbank survived clone");
+	mu_assert_eq (cl9->offset, 32 + 9 * 32, "cloned vbank offset correct");
+
+	r_reg_free (clone);
+	r_reg_free (reg);
+	mu_end;
+}
+
 bool test_r_reg_clone(void) {
 	RReg *reg = r_reg_new ();
 	mu_assert_notnull (reg, "r_reg_new () failed");
@@ -631,6 +687,7 @@ bool test_r_reg_clone(void) {
 
 int all_tests(void) {
 	mu_run_test (test_r_reg_x87_multi_offset);
+	mu_run_test (test_r_reg_vbank);
 	mu_run_test (test_r_reg_clone);
 	mu_run_test (test_r_reg_set_name);
 	mu_run_test (test_r_reg_set_profile_string);
