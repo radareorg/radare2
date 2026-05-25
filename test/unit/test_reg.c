@@ -639,7 +639,7 @@ bool test_r_reg_vbank(void) {
 
 	// Second lookup hits the hashtable
 	RRegItem *l5b = r_reg_get (reg, "l5", R_REG_TYPE_GPR);
-	mu_assert_eq (l5, l5b, "second lookup returns same item");
+	mu_assert_ptreq (l5, l5b, "second lookup returns same item");
 
 	// Out-of-range index returns NULL
 	mu_assert_null (r_reg_get (reg, "l256", R_REG_TYPE_GPR),
