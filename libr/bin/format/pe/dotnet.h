@@ -147,7 +147,10 @@ typedef struct _TILDE_HEADER {
 // them. This only includes the ones we care about.
 // ECMA-335 Section II.23.1.16
 //
+#define ELEMENT_TYPE_VOID 0x01
 #define ELEMENT_TYPE_STRING 0x0E
+#define ELEMENT_TYPE_CMOD_REQD 0x1F
+#define ELEMENT_TYPE_CMOD_OPT 0x20
 
 
 // The string length of a typelib attribute is at most 0xFF.
@@ -360,7 +363,9 @@ typedef struct {
 	ut32 flags;       // access flags, etc.
 	ut32 token;       // Token value for symbolication
 	bool is_native;   // true if method is native code, false if IL
+	bool is_instance; // For methoddef: HASTHIS flag, first arg slot is `this`
 	ut16 param_count; // For methoddef: argument slot count including implicit 'this'
+	ut16 ret_count;   // For methoddef: return slot count (0 for void)
 	RList *methods;   // List of DotNetMethod pointers
 	RList *fields;    // List of DotNetField pointers
 } DotNetSymbol;

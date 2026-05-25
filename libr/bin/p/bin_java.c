@@ -148,6 +148,17 @@ static bool sections_vec(RBinFile *bf) {
 	return r_bin_java_load_sections (bf->bo->bin_obj, &bf->bo->sections_vec);
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix) {
+		return NULL;
+	}
+	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:%c:r0+%u", m->arg_prefix, m->arg_first, m->cc_arg_count, instance? 'i': 's', m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 RBinPlugin r_bin_plugin_java = {
 	.meta = {
 		.name = "java",
@@ -170,6 +181,7 @@ RBinPlugin r_bin_plugin_java = {
 	.lines = &lines,
 	.classes = classes,
 	.demangle_type = retdemangle,
+	.get_cc = &get_cc,
 	.minstrlen = 3,
 };
 

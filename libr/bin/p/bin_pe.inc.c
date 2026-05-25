@@ -11,6 +11,17 @@ static Sdb* get_sdb(RBinFile *bf) {
 	return pe? pe->kv: NULL;
 }
 
+static const char *get_cc(RBinFile *bf, ut64 vaddr) {
+	R_RETURN_VAL_IF_FAIL (bf && bf->rbin, NULL);
+	RBinSymbol *m = r_bin_get_symbol_at (bf->rbin, vaddr);
+	if (!m || !m->arg_prefix || m->lang != R_BIN_LANG_CIL) {
+		return NULL;
+	}
+	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
+	r_strf_var (buf, 256, "dyncc:%s%u+%u:%c:r0+%u", m->arg_prefix, m->arg_first, m->arg_count, instance? 'i': 's', m->ret_count);
+	return r_str_constpool_get (&bf->rbin->constpool, buf);
+}
+
 static RList *get_dotnet_symbols(RBinFile *bf) {
 	RBinPEObj *pe = PE_(get) (bf);
 	if (!pe || !pe->clr_hdr) {
@@ -462,13 +473,14 @@ static bool symbols_vec(RBinFile *bf) {
 							ptr->lang = R_BIN_LANG_C;
 						} else {
 							ptr->lang = R_BIN_LANG_CIL;
-							// CIL methods expose their arg slots as a0..aN.
-							// Anal turns this into REG-kind argument vars via
-							// the generic stack-VM recovery path.
-							if (dsym->param_count > 0) {
+							if (dsym->param_count > 0 || dsym->ret_count > 0) {
 								ptr->arg_first = 0;
 								ptr->arg_count = dsym->param_count;
 								ptr->arg_prefix = "a";
+								ptr->ret_count = dsym->ret_count;
+								if (!dsym->is_instance) {
+									ptr->attr |= R_BIN_ATTR_STATIC;
+								}
 							}
 						}
 						if (dsym->vaddr > 0) {
