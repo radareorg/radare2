@@ -8,8 +8,7 @@
 #ifndef _INCLUDE_WASM_H_
 #define _INCLUDE_WASM_H_
 
-// version 0x1 (WIP)
-// https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md
+// https://webassembly.github.io/spec/core/binary/modules.html
 
 #define R_BIN_WASM_MAGIC_BYTES "\x00" \
 			       "asm"
@@ -28,6 +27,8 @@
 #define R_BIN_WASM_SECTION_ELEMENT 0x9
 #define R_BIN_WASM_SECTION_CODE 0xa
 #define R_BIN_WASM_SECTION_DATA 0xb
+#define R_BIN_WASM_SECTION_DATACOUNT 0xc
+#define R_BIN_WASM_SECTION_TAG 0xd
 
 /*
  * Value types From:

@@ -1108,6 +1108,14 @@ RList *r_bin_wasm_get_sections(RBinWasmObj *bin) {
 			ptr->name = strdup ("data");
 			ptr->name_len = 4;
 			break;
+		case R_BIN_WASM_SECTION_DATACOUNT:
+			ptr->name = strdup ("datacount");
+			ptr->name_len = 9;
+			break;
+		case R_BIN_WASM_SECTION_TAG:
+			ptr->name = strdup ("tag");
+			ptr->name_len = 3;
+			break;
 		default:
 			R_LOG_ERROR ("unknown section id: %d", ptr->id);
 			r_buf_seek (b, ptr->size - 1, R_BUF_CUR);

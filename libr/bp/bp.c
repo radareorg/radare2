@@ -319,11 +319,17 @@ R_API char *r_bp_list(RBreakpoint *bp, int rad) {
 			pj_end (pj);
 		} else if (rad) {
 			if (b->module_name) {
-				r_strbuf_appendf (sb, "dbm %s %"PFMT64d"\n", b->module_name, b->module_delta);
+				char *mf = r_name_filter_dup (b->module_name);
+				r_strbuf_appendf (sb, "dbm %s %"PFMT64d"\n", mf? mf: "", b->module_delta);
+				free (mf);
 			} else {
 				r_strbuf_appendf (sb, "db 0x%08"PFMT64x"\n", b->addr);
 			}
 		} else {
+			char *dataf = r_name_filter_dup (b->data);
+			char *cond = r_name_filter_dup (b->cond);
+			char *namef = r_name_filter_dup (b->name);
+			char *modf = r_name_filter_dup (b->module_name);
 			r_strbuf_appendf (sb, "0x%08"PFMT64x" - 0x%08"PFMT64x \
 				" %d %c%c%c %s %s %s %s cmd=\"%s\" cond=\"%s\" " \
 				"name=\"%s\" module=\"%s\"\n",
@@ -335,10 +341,14 @@ R_API char *r_bp_list(RBreakpoint *bp, int rad) {
 				b->trace ? "trace" : "break",
 				b->enabled ? "enabled" : "disabled",
 				r_bp_is_valid (bp, b) ? "valid" : "invalid",
-				r_str_get (b->data),
-				r_str_get (b->cond),
-				r_str_get (b->name),
-				r_str_get (b->module_name));
+				r_str_get (dataf),
+				r_str_get (cond),
+				r_str_get (namef),
+				r_str_get (modf));
+			free (dataf);
+			free (cond);
+			free (namef);
+			free (modf);
 		}
 	}
 	if (pj) {
