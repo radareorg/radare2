@@ -1,0 +1,56 @@
+NAME=dlang multi-return loaded from sdb (legacy ret/ret2 keys)
+FILE=bins/elf/ls
+CMDS=<<EOF
+tccj~{dlang.rets}
+tccj~{dlang.signature}
+tccj~{amd64.rets}
+EOF
+EXPECT=<<EOF
+["rax","rdx"]
+rax:rdx dlang (rdi, rsi, rdx, rcx, r8d, r9d, stack);
+["rax"]
+EOF
+RUN
+
+NAME=tcc multi-return syntax (comma-separated rets)
+FILE=bins/elf/ls
+CMDS=<<EOF
+tcc r0,r1,r2 wasm3ret(a0)
+tccj~{wasm3ret.rets}
+tccj~{wasm3ret.signature}
+tcc-wasm3ret
+tcc~wasm3ret
+EOF
+EXPECT=<<EOF
+["r0","r1","r2"]
+r0:r1:r2 wasm3ret (a0);
+EOF
+RUN
+
+NAME=tcc single-return stays single via unified ret syntax
+FILE=bins/elf/ls
+CMDS=<<EOF
+tcc rax foo(rdi, rsi)
+tccj~{foo.rets}
+tccj~{foo.signature}
+tcc-foo
+tcc~foo
+EOF
+EXPECT=<<EOF
+["rax"]
+rax foo (rdi, rsi);
+EOF
+RUN
+
+NAME=tcc del removes all ret.N slots from arbitrary-arity multi-ret
+FILE=bins/elf/ls
+CMDS=<<EOF
+tcc r0,r1,r2,r3,r4 manyret(a0)
+tccj~{manyret.rets}
+tcc-manyret
+tcc~manyret
+EOF
+EXPECT=<<EOF
+["r0","r1","r2","r3","r4"]
+EOF
+RUN
