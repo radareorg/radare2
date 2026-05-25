@@ -11,6 +11,8 @@ sdb_files = [
   'linux-arm-32',
   'linux-arm-64',
   'linux-mips-32',
+  'linux-ppc-32',
+  'linux-ppc-64',
   'linux-sparc-32',
   'linux-x86-32',
   'linux-x86-64',
