@@ -649,32 +649,6 @@ static int wasm_info(RArchSession *as, ut32 q) {
 	return -1;
 }
 
-static RBinWasmObj *get_wasm_obj(RArchSession *as) {
-	RBin *b = R_UNWRAP3 (as, arch, binb.bin);
-	RBinPlugin *plugin = b && b->cur && b->cur->bo? b->cur->bo->plugin: NULL;
-	bool is_wasm = plugin && !strcmp (plugin->meta.name, "wasm");
-	return is_wasm? (RBinWasmObj *)b->cur->bo->bin_obj: NULL;
-}
-
-static ut32 wasm_code_local_count(RBinWasmCodeEntry *code) {
-	if (!code || (code->local_count > 0 && !code->locals)) {
-		return 0;
-	}
-	ut32 i;
-	ut32 locals = 0;
-	for (i = 0; i < code->local_count; i++) {
-		ut32 next;
-		if (r_add_overflow (locals, code->locals[i].count, &next)) {
-			return WASM_MAX_REG_LOCALS;
-		}
-		locals = R_MIN (next, WASM_MAX_REG_LOCALS);
-		if (locals == WASM_MAX_REG_LOCALS) {
-			break;
-		}
-	}
-	return locals;
-}
-
 static char *wasm_regs(RArchSession *ai) {
 	return strdup (
 		"=PC	pc\n"
