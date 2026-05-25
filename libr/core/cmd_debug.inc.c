@@ -1097,19 +1097,18 @@ static void cmd_debug_cont_syscall(RCore *core, const char *_str) {
 		syscalls = calloc (sizeof (int), count);
 		for (i = 0; i < count; i++) {
 			const char *sysnumstr = r_str_word_get0 (str, i);
-			int sig = (int)r_num_math (core->num, sysnumstr);
-			if (sig == -1) { // trace ALL syscalls
-				syscalls[i] = -1;
-			} else if (sig == 0) {
+			const char *err = NULL;
+			int sig = (int)r_num_math_err (core->num, sysnumstr, &err);
+			if (err || r_num_failed (core->num)) {
 				sig = r_syscall_get_num (core->anal->syscall, sysnumstr);
 				if (sig == -1) {
-					R_LOG_ERROR ("Unknown syscall number");
+					R_LOG_ERROR ("Unknown syscall");
 					free (str);
 					free (syscalls);
 					return;
 				}
-				syscalls[i] = sig;
 			}
+			syscalls[i] = sig;
 		}
 		eprintf ("Running child until syscalls:");
 		for (i = 0; i < count; i++) {
