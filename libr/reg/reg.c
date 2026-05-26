@@ -284,6 +284,38 @@ static RRegItem *vbank_item(RRegVBank *vb, int index) {
 #undef VREG_SLOTS
 }
 
+// match name against "<prefix><index>" for any vbank in regset[arena], returning
+// the index and the bank. names like "l007" with leading zeros are rejected to
+// keep one canonical name per slot.
+static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index) {
+	RList *banks = reg->regset[arena].vbanks;
+	if (!banks) {
+		return NULL;
+	}
+	RListIter *iter;
+	RRegVBank *vb;
+	r_list_foreach (banks, iter, vb) {
+		size_t pl = strlen (vb->prefix);
+		if (strncmp (name, vb->prefix, pl)) {
+			continue;
+		}
+		const char *s = name + pl;
+		if (!*s || !isdigit ((unsigned char)*s)) {
+			continue;
+		}
+		if (*s == '0' && s[1]) {
+			continue;
+		}
+		char *end = NULL;
+		long n = strtol (s, &end, 10);
+		if (end && !*end && n >= 0 && n < vb->count) {
+			*index = (int)n;
+			return vb;
+		}
+	}
+	return NULL;
+}
+
 static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index) {
 	R_RETURN_VAL_IF_FAIL (reg && item, false);
 	int n = 0;
@@ -560,38 +592,6 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 		r_unref (ri);
 	}
 	return res;
-}
-
-// match name against "<prefix><index>" for any vbank in regset[arena], returning
-// the index and the bank. names like "l007" with leading zeros are rejected to
-// keep one canonical name per slot.
-static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index) {
-	RList *banks = reg->regset[arena].vbanks;
-	if (!banks) {
-		return NULL;
-	}
-	RListIter *iter;
-	RRegVBank *vb;
-	r_list_foreach (banks, iter, vb) {
-		size_t pl = strlen (vb->prefix);
-		if (strncmp (name, vb->prefix, pl)) {
-			continue;
-		}
-		const char *s = name + pl;
-		if (!*s || !isdigit ((unsigned char)*s)) {
-			continue;
-		}
-		if (*s == '0' && s[1]) {
-			continue;
-		}
-		char *end = NULL;
-		long n = strtol (s, &end, 10);
-		if (end && !*end && n >= 0 && n < vb->count) {
-			*index = (int)n;
-			return vb;
-		}
-	}
-	return NULL;
 }
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
