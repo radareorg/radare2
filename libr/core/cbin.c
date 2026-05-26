@@ -712,6 +712,29 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	}
 }
 
+static void core_anal_cc_set_default(RCore *core) {
+	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+		RBinFile *bf = r_bin_cur (core->bin);
+		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
+		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
+			r_anal_set_cc_default (core->anal, "dyncc");
+		}
+	} else {
+		// same as "tcc `arcc`"
+		char *s = r_reg_profile_to_cc (core->anal->reg);
+		if (s) {
+			if (!r_anal_cc_set (core->anal, s)) {
+				R_LOG_WARN ("Invalid CC from reg profile");
+			} else if (!r_anal_cc_default (core->anal)) {
+				r_anal_set_cc_default (core->anal, "reg");
+			}
+			free (s);
+		} else {
+			R_LOG_WARN ("Cannot derive CC from reg profile");
+		}
+	}
+}
+
 R_API void r_core_anal_type_init(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal);
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
@@ -749,7 +772,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	free (priv->old_arch);
 	priv->old_arch = strdup (anal_arch);
 #if HAVE_GPERF
-// AITODO duplicated logic shared between the gperf and non-gperf preprocessor
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
 	free (k);
@@ -761,26 +783,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_close (gd);
 		sdb_free (gd);
 	}
-	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
-		RBinFile *bf = r_bin_cur (core->bin);
-		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
-		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
-			r_anal_set_cc_default (core->anal, "dyncc");
-		}
-	} else {
-		// same as "tcc `arcc`"
-		char *s = r_reg_profile_to_cc (core->anal->reg);
-		if (s) {
-			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile");
-			} else if (!r_anal_cc_default (core->anal)) {
-				r_anal_set_cc_default (core->anal, "reg");
-			}
-			free (s);
-		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	}
+	core_anal_cc_set_default (core);
 #else
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
@@ -797,27 +800,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		return;
 	}
 	sdb_reset (cc);
-// AITODO duplicated logic shared between the gperf and non-gperf preprocessor
-	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
-		RBinFile *bf = r_bin_cur (core->bin);
-		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
-		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
-			r_anal_set_cc_default (core->anal, "dyncc");
-		}
-	} else {
-		// same as "tcc `arcc`"
-		char *s = r_reg_profile_to_cc (core->anal->reg);
-		if (s) {
-			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile");
-			} else if (!r_anal_cc_default (core->anal)) {
-				r_anal_set_cc_default (core->anal, "reg");
-			}
-			free (s);
-		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	}
+	core_anal_cc_set_default (core);
 	R_FREE (cc->path);
 	if (r_file_exists (dbhomepath)) {
 		sdb_concat_by_path (cc, dbhomepath);
