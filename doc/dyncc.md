@@ -1,7 +1,11 @@
 # Dynamic Calling Conventions
 
-`dyncc:` describes a per-function calling convention without registering a
-static SDB profile.
+`dyncc:` expressions describe a per-function calling convention without
+registering a static SDB profile.
+
+The bare string `dyncc` is not an expression. It is a lazy analysis marker that
+`r_anal_function_cc()` resolves through the current bin plugin. A string such as
+`dyncc:` is a malformed expression, not the lazy marker.
 
 The grammar is intentionally flat:
 
@@ -11,6 +15,9 @@ dyncc:<args>:<rets>[!<attr>...]
 
 `dyncc:` is the fixed namespace prefix. Do not replace it with `@`; `@`
 conflicts with r2 command syntax.
+
+Field order is fixed: arguments first, returns second, and attributes last.
+Attributes cannot appear before the return field.
 
 ## Fields
 
@@ -36,6 +43,10 @@ Plain locations are register tokens. They may use letters, numbers, `_`, and
 `.`. The `-` character is reserved for reverse ranges, so plain register tokens
 cannot contain it.
 
+Static profile references use `&name`. Reference names may use letters,
+numbers, `_`, `.`, and `-`; the `-` restriction applies to plain locations, not
+to reference names.
+
 ```text
 rN        numbered return/value register class
 aN        numbered argument register class
@@ -43,8 +54,8 @@ vN        generic value register class
 lN        local/temp class
 rax       concrete register name
 x0        concrete register name
-^         call-frame argument tail
-^-        reverse call-frame argument tail
+^         call-frame argument tail in <args>
+^-        reverse call-frame argument tail in <args>
 ^N        fixed call-frame slot N
 ^-N       fixed reverse call-frame slot N
 &name     delegate the whole args or rets field to a static cc profile
@@ -62,6 +73,11 @@ v0+2      v0, v1
 ^-0+2     ^-0, ^-1
 ```
 
+Range counts must be greater than zero and cannot exceed
+`R_ANAL_CC_MAXARG` (16). Reverse ranges must have enough space below the base
+index; for example, `a3-4` is valid, but `a2-4` is rejected because it would
+underflow past `a0`.
+
 ## Multiple Homes
 
 Use a single quote to describe multiple homes for the same logical argument:
@@ -69,6 +85,9 @@ Use a single quote to describe multiple homes for the same logical argument:
 ```text
 dyncc:a0'^0,a1'^1,a2'^2,a3'^3,^:v0
 ```
+
+Multiple homes are accepted only in `<args>`. Return locations in `<rets>` must
+have exactly one home.
 
 The same ABI can be written more compactly with parallel ranges:
 
@@ -89,6 +108,10 @@ ret0       = v0
 
 This is useful for ABIs such as MIPS o32, where register arguments also have
 call-frame home slots.
+
+The open-ended tail markers `^` and `^-` are argument-list features. A tail must
+be the final `<args>` element, and it cannot have multiple homes. Use fixed
+locations such as `^0` or `^-0` when a specific call-frame slot is needed.
 
 ## Attributes
 
@@ -125,6 +148,13 @@ presence of the `T` role.
 Role names in dyncc syntax are one-character tags only. Old word names are not
 accepted.
 
+The lowercase role namespace excludes `p`: `!p...` is reserved for callee-pop
+metadata.
+
+Role values must identify exactly one location. A role can point to a logical
+argument (`!T0`) or to one concrete location (`!Tx20`), but ranges that expand
+to more than one location and multiple-home values are rejected.
+
 ## Register-Name Conflicts
 
 Control syntax uses non-register characters: `:`, `,`, `!`, `'`, `&`, `_`, `^`,
@@ -133,6 +163,21 @@ register named `T0` is still a location while `!T0` is a role attribute.
 
 The call-frame marker is `^` because previous spellings such as `s0` collide
 with real register names.
+
+## Implementation Limits
+
+The parser rejects expressions that exceed these fixed limits:
+
+```text
+R_ANAL_CC_MAXARG          16 logical args, rets, or range elements
+R_ANAL_DYNCC_NAME_SIZE    32 bytes, so names can be at most 31 bytes
+R_ANAL_DYNCC_GROUP_SIZE   256 bytes for a location/group token
+R_ANAL_DYNCC_REGSET_SIZE  256 bytes for !C(...) and !P(...)
+R_ANAL_DYNCC_MAX_HOMES    8 homes for one logical argument
+R_ANAL_DYNCC_MAX_ROLES    16 role attributes
+```
+
+These are implementation limits, not ABI semantics.
 
 ## Examples
 
@@ -213,6 +258,17 @@ arg1 = p1
 arg2 = p2
 ret0 = v0
 T    = arg0
+```
+
+If an instance method has no logical argument slot for the receiver, encode `T`
+as a concrete location instead:
+
+```text
+dyncc::!Tv2
+```
+
+```text
+T = v2
 ```
 
 ### Delegation
