@@ -2378,6 +2378,76 @@ static ut16 r_bin_java_get_method_max_locals(RBinJavaField *fm_type) {
 	return 0;
 }
 
+static ut16 r_bin_java_method_arg_slots(RBinJavaField *fm_type) {
+	if (!fm_type || !fm_type->descriptor) {
+		return 0;
+	}
+	const char *d = strchr (fm_type->descriptor, '(');
+	if (!d) {
+		return 0;
+	}
+	ut16 slots = (fm_type->flags & R_BIN_JAVA_METHOD_ACC_STATIC)? 0: 1;
+	d++;
+	while (*d && *d != ')') {
+		switch (*d) {
+		case '[':
+			d++;
+			continue;
+		case 'L':
+			while (*d && *d != ';') {
+				d++;
+			}
+			slots++;
+			break;
+		case 'J':
+		case 'D':
+			slots += 2;
+			break;
+		default:
+			slots++;
+			break;
+		}
+		if (*d) {
+			d++;
+		}
+	}
+	return slots;
+}
+
+// Return slot count from descriptor: V=0, J/D=2, anything else=1.
+static ut16 r_bin_java_method_ret_slots(RBinJavaField *fm_type) {
+	if (!fm_type || !fm_type->descriptor) {
+		return 0;
+	}
+	const char *r = strchr (fm_type->descriptor, ')');
+	if (!r || !r[1]) {
+		return 0;
+	}
+	switch (r[1]) {
+	case 'V': return 0;
+	case 'J': case 'D': return 2;
+	default: return 1;
+	}
+}
+
+static inline ut64 methodattr_j2r(ut32 ja) {
+	RBinAttribute attr = 0;
+	if (ja & R_BIN_JAVA_METHOD_ACC_PUBLIC) {
+		attr |= R_BIN_ATTR_PUBLIC;
+	} else if (ja & R_BIN_JAVA_METHOD_ACC_PRIVATE) {
+		attr |= R_BIN_ATTR_PRIVATE;
+	} else if (ja & R_BIN_JAVA_METHOD_ACC_PROTECTED) {
+		attr |= R_BIN_ATTR_PROTECTED;
+	}
+	if (ja & R_BIN_JAVA_METHOD_ACC_STATIC) {
+		attr |= R_BIN_ATTR_STATIC;
+	}
+	if (ja & R_BIN_JAVA_METHOD_ACC_FINAL) {
+		attr |= R_BIN_ATTR_FINAL;
+	}
+	return attr;
+}
+
 static inline ut64 fieldattr_j2r(ut32 ja) {
 	RBinAttribute attr = 0;
 	if (ja & R_BIN_JAVA_FIELD_ACC_PUBLIC) {
@@ -2421,12 +2491,11 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->paddr = r_bin_java_get_method_code_offset (fm_type);
 		sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
-		ut16 max_locals = r_bin_java_get_method_max_locals (fm_type);
-		if (max_locals > 0) {
-			sym->arg_first = 0;
-			sym->arg_count = max_locals;
-			sym->arg_prefix = "l";
-		}
+		sym->arg_first = 0;
+		sym->arg_count = r_bin_java_get_method_max_locals (fm_type);
+		sym->cc_arg_count = r_bin_java_method_arg_slots (fm_type);
+		sym->arg_prefix = "l";
+		sym->ret_count = r_bin_java_method_ret_slots (fm_type);
 	} else {
 		sym->type = "FIELD";
 		sym->paddr = fm_type->file_offset; // r_bin_java_get_method_code_offset (fm_type);
@@ -2447,7 +2516,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->classname = strdup ("UNKNOWN"); // dupped names?
 	}
 	sym->ordinal = fm_type->metas->ord;
-	sym->attr = fm_type->flags;
+	sym->attr = methodattr_j2r (fm_type->flags);
 	return sym;
 }
 
@@ -2481,7 +2550,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 	sym->vaddr = fm_type->file_offset + baddr;
 	sym->ordinal = fm_type->metas->ord;
 	sym->size = fm_type->size;
-	sym->attr = fm_type->flags;
+	sym->attr = methodattr_j2r (fm_type->flags);
 	return sym;
 }
 
