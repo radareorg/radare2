@@ -100,6 +100,9 @@ R_API char *r_egg_tostring(REgg *egg) {
 
 R_API void r_egg_free(REgg *egg) {
 	if (egg) {
+		if (egg->remit && egg->remit->priv_free && egg->priv) {
+			egg->remit->priv_free (egg->priv);
+		}
 		r_unref (egg->src);
 		r_unref (egg->buf);
 		r_unref (egg->bin);
@@ -132,6 +135,10 @@ R_API void r_egg_reset(REgg *egg) {
 R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const char *os) {
 	R_RETURN_VAL_IF_FAIL (egg && arch, false);
 	const char *asmcpu = NULL; // TODO
+	if (egg->remit && egg->remit->priv_free && egg->priv) {
+		egg->remit->priv_free (egg->priv);
+	}
+	egg->priv = NULL;
 	egg->remit = NULL;
 
 	egg->os = os? r_str_hash (os): R_EGG_OS_DEFAULT;
@@ -193,6 +200,9 @@ R_API bool r_egg_setup(REgg *egg, const char *arch, int bits, int endian, const 
 		egg->remit = &emit_trace;
 		egg->bits = bits;
 		egg->endian = endian;
+	}
+	if (egg->remit && egg->remit->priv_new) {
+		egg->priv = egg->remit->priv_new (egg);
 	}
 	return true;
 }

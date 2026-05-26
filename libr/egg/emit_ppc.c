@@ -36,8 +36,19 @@
 #define R_NGP 8
 
 static char *regs[] = R_GP;
-static int lastarg = 0;
-static char lastargs[16][32];
+
+typedef struct {
+	int lastarg;
+	char lastargs[16][32];
+} EmitPpcPriv;
+
+static void *emit_ppc_priv_new(REgg *egg) {
+	return R_NEW0 (EmitPpcPriv);
+}
+
+static void emit_ppc_priv_free(void *priv) {
+	free (priv);
+}
 
 /* PPC operands "D(rA)" contain a paren, register names start with 'r'. */
 static inline bool is_memref(const char *str) {
@@ -121,21 +132,23 @@ static void set_arg_slot(char *out, size_t outlen, int num) {
 }
 
 static void save_arg(REgg *egg, int num, const char *reg) {
-	set_arg_slot (lastargs[num - 1], sizeof (lastargs[0]), num);
-	store_slot (egg, reg, lastargs[num - 1], 'l');
+	EmitPpcPriv *priv = egg->priv;
+	set_arg_slot (priv->lastargs[num - 1], sizeof (priv->lastargs[0]), num);
+	store_slot (egg, reg, priv->lastargs[num - 1], 'l');
 }
 
 static void load_arg_regs(REgg *egg, int nargs) {
+	EmitPpcPriv *priv = egg->priv;
 	int i;
 	for (i = 0; i < nargs; i++) {
-		int regidx = nargs - 1 - i;
-		if (regidx < 0 || regidx >= R_NGP || !lastargs[i][0]) {
+		const int regidx = nargs - 1 - i;
+		if (regidx < 0 || regidx >= R_NGP || !priv->lastargs[i][0]) {
 			continue;
 		}
-		r_egg_printf (egg, "  %s %s, %s\n", R_LOAD, regs[regidx], lastargs[i]);
-		lastargs[i][0] = '\0';
+		r_egg_printf (egg, "  %s %s, %s\n", R_LOAD, regs[regidx], priv->lastargs[i]);
+		priv->lastargs[i][0] = '\0';
 	}
-	lastarg = 0;
+	priv->lastarg = 0;
 }
 
 static void emit_init(REgg *egg) {
@@ -210,7 +223,8 @@ static void emit_jmp(REgg *egg, const char *str, int atr) {
 }
 
 static void emit_call(REgg *egg, const char *str, int atr) {
-	load_arg_regs (egg, lastarg);
+	EmitPpcPriv *priv = egg->priv;
+	load_arg_regs (egg, priv->lastarg);
 	if (atr) {
 		emit_indirect (egg, str, "bctrl");
 	} else {
@@ -219,12 +233,13 @@ static void emit_call(REgg *egg, const char *str, int atr) {
 }
 
 static void emit_arg(REgg *egg, int xs, int num, const char *str) {
-	lastarg = num;
+	EmitPpcPriv *priv = egg->priv;
+	priv->lastarg = num;
 	switch (xs) {
 	case 0:
 		if (is_memref (str)) {
-			strncpy (lastargs[num - 1], str, sizeof (lastargs[0]) - 1);
-			lastargs[num - 1][sizeof (lastargs[0]) - 1] = '\0';
+			strncpy (priv->lastargs[num - 1], str, sizeof (priv->lastargs[0]) - 1);
+			priv->lastargs[num - 1][sizeof (priv->lastargs[0]) - 1] = '\0';
 		} else {
 			load_value (egg, R_AX, str);
 			save_arg (egg, num, R_AX);
@@ -294,6 +309,7 @@ static void emit_load_ptr(REgg *egg, const char *dst) {
 }
 
 static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, const char *dst) {
+	EmitPpcPriv *priv = egg->priv;
 	char *p, str[64];
 	char *arg = NULL;
 	const char *op = "beq";
@@ -319,16 +335,16 @@ static void emit_branch(REgg *egg, char *b, char *g, char *e, char *n, int sz, c
 		arg++;
 	}
 	p = r_egg_mkvar (egg, str, arg, 0);
-	if (lastargs[0][0]) {
-		load_value (egg, R_AX, lastargs[0]);
+	if (priv->lastargs[0][0]) {
+		load_value (egg, R_AX, priv->lastargs[0]);
 	} else {
 		r_egg_printf (egg, "  li " R_AX ", 0\n");
 	}
 	load_value (egg, R_TMP, p);
 	r_egg_printf (egg, "  " R_CMP " " R_AX ", " R_TMP "\n");
 	r_egg_printf (egg, "  %s %s\n", op, dst);
-	lastargs[0][0] = '\0';
-	lastarg = 0;
+	priv->lastargs[0][0] = '\0';
+	priv->lastarg = 0;
 	free (p);
 }
 
@@ -446,4 +462,6 @@ REggEmit EMIT_NAME = {
 	.load_ptr = emit_load_ptr,
 	.mathop = emit_mathop,
 	.syscall = emit_syscall,
+	.priv_new = emit_ppc_priv_new,
+	.priv_free = emit_ppc_priv_free,
 };
