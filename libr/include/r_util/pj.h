@@ -3,6 +3,7 @@
 #define R_PRINT_JSON_DEPTH_LIMIT 128
 
 #include <r_util/r_strbuf.h>
+#include <r_util/r_json.h>
 
 #ifdef __cplusplus
 extern "C" {
