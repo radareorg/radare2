@@ -686,7 +686,7 @@ NAME=obf?
 FILE=--
 CMDS=obf?
 EXPECT=<<EOF
-| obf ([file])  load bininfo for current file (useful for r2 -n)
+| obf ([file|base64:file])  load bininfo for current file (useful for r2 -n)
 EOF
 RUN
 
