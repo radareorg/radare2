@@ -330,14 +330,12 @@ static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *
 	if (!vb || item->type != vb->type || item->size != vb->size) {
 		return false;
 	}
-	int delta = item->offset - vb->offset;
+	const int delta = item->offset - vb->offset;
 	if (delta < 0 || delta != n * vb->size) {
 		return false;
 	}
-	if (out_vb) {
+	if (out_vb && out_index) {
 		*out_vb = vb;
-	}
-	if (out_index) {
 		*out_index = n;
 	}
 	return true;
