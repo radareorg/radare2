@@ -253,8 +253,8 @@ static void emit_restore_stack(REgg *egg, int size) {
 	/* frame_end handles stack restoration; nothing to do here. */
 }
 
-static void emit_get_while_end(REgg *egg, char *str, const char *ctxpush, const char *label) {
-	snprintf (str, 32, "  b %s\n", label);
+static void emit_get_while_end(REgg *egg, RStrBuf *out, const char *ctxpush, const char *label) {
+	r_strbuf_setf (out, "  b %s\n", label);
 }
 
 static void emit_while_end(REgg *egg, const char *labelback) {
@@ -268,16 +268,19 @@ static void emit_while_end(REgg *egg, const char *labelback) {
 		R_LOAD, R_SZ, labelback);
 }
 
-static void emit_get_var(REgg *egg, int type, char *out, int idx) {
+static void emit_get_var(REgg *egg, int type, RStrBuf *out, int idx) {
 	switch (type) {
 	case 0:
-		snprintf (out, 32, "%d(%s)", (idx - 1) & ~(R_SZ - 1), R_SP);
+		r_strbuf_setf (out, "%d(%s)", (idx - 1) & ~(R_SZ - 1), R_SP);
 		break;
 	case 1:
-		snprintf (out, 32, "r%d", 3 + (((idx - 4) / 4) & 7));
+		r_strbuf_setf (out, "r%d", 3 + (((idx - 4) / 4) & 7));
 		break;
 	case 2:
-		snprintf (out, 32, "r%d", 3 + (((idx - 12) / 4) & 7));
+		r_strbuf_setf (out, "r%d", 3 + (((idx - 12) / 4) & 7));
+		break;
+	default:
+		r_strbuf_set (out, "");
 		break;
 	}
 }
@@ -408,9 +411,11 @@ static const char *emit_regs(REgg *egg, int idx) {
 	return regs[idx % R_NGP];
 }
 
-static void emit_get_arg(REgg *egg, char *out, int idx) {
+static void emit_get_arg(REgg *egg, RStrBuf *out, int idx) {
 	if (idx >= 0 && idx < R_NGP) {
-		strcpy (out, regs[idx]);
+		r_strbuf_set (out, regs[idx]);
+	} else {
+		r_strbuf_set (out, "");
 	}
 }
 
