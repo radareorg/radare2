@@ -255,6 +255,13 @@ static char *regs(RArchSession *as) {
 	return r_strbuf_drain (sb);
 }
 
+static int cil_info(RArchSession *as, ut32 q) {
+	if (q == R_ARCH_INFO_ISVM) {
+		return R_ARCH_INFO_ISVM;
+	}
+	return -1;
+}
+
 const RArchPlugin r_arch_plugin_cil = {
 	.meta = {
 		.name = "cil",
@@ -267,7 +274,7 @@ const RArchPlugin r_arch_plugin_cil = {
 	.decode = &decode,
 	.encode = &encode,
 	.regs = regs,
-	.info = NULL,
+	.info = cil_info,
 };
 
 #ifndef R2_PLUGIN_INCORE

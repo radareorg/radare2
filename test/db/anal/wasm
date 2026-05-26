@@ -19,3 +19,48 @@ EXPECT=<<EOF
 EOF
 EXPECT_ERR=
 RUN
+
+NAME=wasm fuzzed leb128 virtual register profile crash
+FILE=bins/fuzzed/r2_hbo_read_u32_leb128
+CMDS=<<EOF
+arp~l
+dr l15
+dr l15=0
+dr l15
+arpi~l15~?
+EOF
+EXPECT=<<EOF
+gpr	l[1024]	.32	$	0
+0x00000000
+0x00000000
+1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: beach sections
+EOF
+RUN
+
+NAME=wasm fuzzed init expr virtual register profile crash
+FILE=bins/fuzzed/r2_hoobr_consume_init_expr
+CMDS=<<EOF
+arp~l
+dr l15
+dr l15=0
+dr l15
+arpi~l15~?
+EOF
+EXPECT=<<EOF
+gpr	l[1024]	.32	$	0
+0x00000000
+0x00000000
+1
+EOF
+EXPECT_ERR=<<EOF
+ERROR: unknown section id: 48
+ERROR: unknown section id: 48
+ERROR: unknown section id: 48
+ERROR: unknown section id: 48
+INFO: Artificially reducing size of section data by 0x2f bytes so it fits in the file
+ERROR: Failed to parse entry 0/48 of vec at 0xb0
+EOF
+RUN
