@@ -749,6 +749,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 	free (priv->old_arch);
 	priv->old_arch = strdup (anal_arch);
 #if HAVE_GPERF
+// AITODO duplicated logic shared between the gperf and non-gperf preprocessor
 	char *k = r_str_newf ("cc_%s_%d", anal_arch, bits);
 	SdbGperf *gp = r_anal_get_gperf_cc (k);
 	free (k);
@@ -760,7 +761,13 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_close (gd);
 		sdb_free (gd);
 	}
-	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM) {
+	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+		RBinFile *bf = r_bin_cur (core->bin);
+		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
+		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
+			r_anal_set_cc_default (core->anal, "dyncc");
+		}
+	} else {
 		// same as "tcc `arcc`"
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
@@ -772,12 +779,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 			free (s);
 		} else {
 			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	} else {
-		RBinFile *bf = r_bin_cur (core->bin);
-		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
-		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
-			r_anal_set_cc_default (core->anal, "dyncc");
 		}
 	}
 #else
@@ -796,7 +797,14 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		return;
 	}
 	sdb_reset (cc);
-	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) != R_ARCH_INFO_ISVM) {
+// AITODO duplicated logic shared between the gperf and non-gperf preprocessor
+	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+		RBinFile *bf = r_bin_cur (core->bin);
+		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
+		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
+			r_anal_set_cc_default (core->anal, "dyncc");
+		}
+	} else {
 		// same as "tcc `arcc`"
 		char *s = r_reg_profile_to_cc (core->anal->reg);
 		if (s) {
@@ -808,12 +816,6 @@ R_API void r_core_anal_cc_init(RCore *core) {
 			free (s);
 		} else {
 			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	} else {
-		RBinFile *bf = r_bin_cur (core->bin);
-		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
-		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
-			r_anal_set_cc_default (core->anal, "dyncc");
 		}
 	}
 	R_FREE (cc->path);
