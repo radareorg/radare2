@@ -33,7 +33,7 @@ EXPECT=<<EOF
 gpr	l[1024]	.32	$	0
 0x00000000
 0x00000000
-0
+1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: beach sections
@@ -53,7 +53,7 @@ EXPECT=<<EOF
 gpr	l[1024]	.32	$	0
 0x00000000
 0x00000000
-0
+1
 EOF
 EXPECT_ERR=<<EOF
 ERROR: unknown section id: 48
