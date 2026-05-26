@@ -15,6 +15,8 @@ extern "C" {
 
 R_LIB_VERSION_HEADER (r_reg);
 
+#define R_REG_VBANK_MAX_REGS 65536
+
 /*
  * various CPUs have registers within various types/classes
  * this enum aims to cover them all.

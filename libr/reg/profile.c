@@ -55,7 +55,9 @@ static int parse_def_tail(RReg *reg, int type) {
 	return last;
 }
 
-static bool parse_vbank_prefix(char ch) {
+// NOTE Restricted vbank declarations to one-byte prefixes l, r, or v,
+// which avoids misparsing existing fixed register names like m[0].
+static inline bool parse_vbank_prefix(char ch) {
 	return ch == 'l' || ch == 'r' || ch == 'v';
 }
 
@@ -65,22 +67,61 @@ static const char *parse_vbank_suffix(char *name, int *count) {
 		return NULL;
 	}
 	const char *p = name + 2;
-	if (*p < '1' || *p > '9') {
+	if (!isdigit ((ut8)*p) || *p == '0') {
 		return "Invalid vbank count";
 	}
 	int n = 0;
 	do {
 		n = n * 10 + (*p++ - '0');
-		if (n > 65536) {
+		if (n > R_REG_VBANK_MAX_REGS) {
 			return "Invalid vbank count";
 		}
-	} while (*p >= '0' && *p <= '9');
+	} while (isdigit ((ut8)*p));
 	if (*p != ']' || p[1]) {
 		return "Invalid vbank suffix";
 	}
 	name[1] = 0;
 	*count = n;
 	return NULL;
+}
+
+static bool vbank_item_match(const char *name, char prefix, int count) {
+	const char *p = name + 1;
+	if (name[0] != prefix || !isdigit ((ut8)*p)) {
+		return false;
+	}
+	if (*p == '0' && p[1]) {
+		return false;
+	}
+	int n = 0;
+	do {
+		n = n * 10 + (*p++ - '0');
+		if (n >= R_REG_VBANK_MAX_REGS) {
+			return false;
+		}
+	} while (isdigit ((ut8)*p));
+	return !*p && n < count;
+}
+
+static bool profile_has_duplicate(RReg *reg, const char *name, int count) {
+	const char prefix = name[0];
+	int i;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		RListIter *iter;
+		RRegItem *ri;
+		r_list_foreach (reg->regset[i].regs, iter, ri) {
+			if (count > 0? vbank_item_match (ri->name, prefix, count): !strcmp (ri->name, name)) {
+				return true;
+			}
+		}
+		RRegVBank *vb;
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+			if (count > 0? vb->prefix == prefix: vbank_item_match (name, vb->prefix, vb->count)) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 //TODO: implement bool r_reg_set_def_string()
@@ -114,6 +155,14 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	const char *vberr = parse_vbank_suffix (tok[1], &vcount);
 	if (vberr) {
 		return vberr;
+	}
+	if (profile_has_duplicate (reg, tok[1], vcount)) {
+		if (vcount > 0) {
+			R_LOG_WARN ("Duplicated register bank definition for '%c[%d]' has been ignored", tok[1][0], vcount);
+		} else {
+			R_LOG_WARN ("Duplicated register definition for '%s' has been ignored", tok[1]);
+		}
+		return NULL;
 	}
 	if (vcount > 0) {
 		// virtual register bank declaration: lazy, no per-item RRegItem yet
@@ -156,13 +205,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 		return NULL;
 	}
 
-	RRegItem *ri = r_reg_get (reg, tok[1], R_REG_TYPE_ALL);
-	if (ri) {
-		R_LOG_WARN ("Duplicated register definition for '%s' has been ignored", tok[1]);
-		return NULL;
-	}
-	r_unref (ri);
-
 	RRegItem *item = R_NEW0 (RRegItem);
 	if (!item) {
 		return "Unable to allocate memory";
@@ -173,7 +215,6 @@ static const char *parse_def(RReg *reg, char **tok, const int n) {
 	item->size = parse_size (tok[2], &end);
 	if (*end || !item->size) {
 		r_reg_item_free (item);
-		r_unref (ri);
 		return "Invalid size";
 	}
 	if (!strcmp (tok[3], "?")) {

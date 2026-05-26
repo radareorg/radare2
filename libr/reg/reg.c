@@ -273,7 +273,7 @@ static bool vbank_name_index(const char *name, int *index) {
 		return false;
 	}
 	const char *p = name + 1;
-	if (!vbank_prefix (name[0]) || *p < '0' || *p > '9') {
+	if (!vbank_prefix (name[0]) || !isdigit ((ut8)*p)) {
 		return false;
 	}
 	if (*p == '0' && p[1]) {
@@ -281,11 +281,11 @@ static bool vbank_name_index(const char *name, int *index) {
 	}
 	int n = 0;
 	do {
-		if (n > 65536) {
+		n = n * 10 + (*p++ - '0');
+		if (n >= R_REG_VBANK_MAX_REGS) {
 			return false;
 		}
-		n = n * 10 + (*p++ - '0');
-	} while (*p >= '0' && *p <= '9');
+	} while (isdigit ((ut8)*p));
 	if (*p) {
 		return false;
 	}
@@ -368,17 +368,11 @@ R_IPI void r_reg_reindex(RReg *reg) {
 				continue;
 			}
 			entry = RVecRegIndexEntry_emplace_back (&entries);
-			if (!entry) {
-				continue;
-			}
 			entry->item = r;
 			entry->key = (r->offset * 16) + r->size;
 		}
 		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
 			entry = RVecRegIndexEntry_emplace_back (&entries);
-			if (!entry) {
-				continue;
-			}
 			entry->vbank = vb;
 			entry->key = (vb->offset * 16) + vb->size;
 		}
