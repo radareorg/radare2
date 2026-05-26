@@ -106,6 +106,7 @@ typedef struct r_egg_t {
 	ut32 os;
 	int context;
 	RLibStore *libstore;
+	void *priv; /* backend-private per-session state, owned by remit->priv_new/free */
 } REgg;
 
 /* XXX: this may fail in different arches */
@@ -189,6 +190,11 @@ typedef struct r_egg_emit_t {
 	 * accumulated output - e.g. the ESIL backend resolves symbolic
 	 * label names into numeric GOTO word indices here. */
 	void (*finalize)(REgg *egg);
+	/* Optional per-session backend state. priv_new is called by
+	 * r_egg_setup after remit is assigned; priv_free is called by
+	 * r_egg_setup before switching emitters and by r_egg_free. */
+	void *(*priv_new)(REgg *egg);
+	void (*priv_free)(void *priv);
 } REggEmit;
 
 #ifdef R_API
