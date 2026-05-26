@@ -106,6 +106,8 @@ R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_f(PJ *j, float d);
 R_API PJ *pj_b(PJ *j, bool v);
 
+R_API void pj_rj(PJ *pj, RJson *j);
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2018-2025 - pancake */
+/* radare - LGPL - Copyright 2018-2026 - pancake */
 
 #include <r_util.h>
 #include <r_util/r_print.h>
@@ -349,4 +349,49 @@ R_API PJ *pj_i(PJ *j, int i) {
 		pj_raw (j, numstr);
 	}
 	return j;
+}
+
+// yay
+R_API void pj_rj(PJ *pj, RJson *j) {
+	R_RETURN_VAL_IF_FAIL (pj, NULL);
+	if (!j) {
+		pj_null (pj);
+		return;
+	}
+	switch (j->type) {
+	case R_JSON_NULL:
+		pj_null (pj);
+		break;
+	case R_JSON_BOOLEAN:
+		pj_b (pj, j->num.u_value);
+		break;
+	case R_JSON_INTEGER:
+		pj_n (pj, j->num.s_value);
+		break;
+	case R_JSON_DOUBLE:
+		pj_d (pj, j->num.dbl_value);
+		break;
+	case R_JSON_STRING:
+		pj_s (pj, j->str_value);
+		break;
+	case R_JSON_ARRAY:
+		pj_a (pj);
+		RJson *child = j->children.first;
+		while (child) {
+			pj_append_rjson (pj, child);
+			child = child->next;
+		}
+		pj_end (pj);
+		break;
+	case R_JSON_OBJECT:
+		pj_o (pj);
+		child = j->children.first;
+		while (child) {
+			pj_k (pj, child->key);
+			pj_append_rjson (pj, child);
+			child = child->next;
+		}
+		pj_end (pj);
+		break;
+	}
 }
