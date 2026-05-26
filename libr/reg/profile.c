@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2009-2024 - pancake */
+/* radare - LGPL - Copyright 2009-2026 - pancake */
 
 #include <r_reg.h>
 #include <r_util.h>
@@ -55,13 +55,9 @@ static int parse_def_tail(RReg *reg, int type) {
 	return last;
 }
 
-static bool parse_vbank_prefix(char ch) {
-	return ch == 'l' || ch == 'r' || ch == 'v';
-}
-
 static const char *parse_vbank_suffix(char *name, int *count) {
 	*count = 0;
-	if (!name[0] || name[1] != '[' || !parse_vbank_prefix (name[0])) {
+	if (!name[0] || name[1] != '[') {
 		return NULL;
 	}
 	const char *p = name + 2;
