@@ -395,14 +395,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=ragg2 -a ppc -b 64 -c bigendian=0 exit syscall (LE)
-FILE=-
-CMDS=!ragg2 -a ppc -b 64 -k linux -c bigendian=0 -e 'exit@syscall(1); main@global() { exit(0); }'
-EXPECT=<<EOF
-a602087c100001f8a1ff21f800006038200061f8200061e8010000380200004460002138100001e8a603087c2000804e
-EOF
-RUN
-
 NAME=ragg2 -a ppc -b 64 -s shows source
 FILE=-
 CMDS=!ragg2 -a ppc -b 64 -k linux -s -e 'exit@syscall(1); main@global() { exit(0); }'

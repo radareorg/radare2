@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2026 - radare2 contributors */
+/* radare - LGPL - Copyright 2026 - phix33 */
 
 #include <r_arch.h>
 #include "nzasm.c"
@@ -16,7 +16,7 @@ const RArchPlugin r_arch_plugin_ppc_nz = {
 	.meta = {
 		.name = "ppc.nz",
 		.desc = "PowerPC handmade assembler",
-		.author = "radare2 contributors",
+		.author = "phix33",
 		.license = "LGPL-3.0-only",
 	},
 	.arch = "ppc",

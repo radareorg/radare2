@@ -482,20 +482,9 @@ R_API int r_main_ragg2(int argc, const char **argv) {
 		return 0;
 	}
 
-	// initialize egg.
-	// Endian: read `-c bigendian=0/1`; for ppc default to BE since PPC32
-	// and ppc64 ELFv1 are big-endian by convention. ppc64le users opt in
-	// with `-c bigendian=0`.
-	int egg_endian = 0;
-	{
-		char *be_opt = r_egg_option_get (es->e, "bigendian");
-		if (be_opt) {
-			egg_endian = r_str_is_true (be_opt)? 1: 0;
-			free (be_opt);
-		} else if (arch && !strcmp (arch, "ppc")) {
-			egg_endian = 1;
-		}
-	}
+	// PPC32 and PPC64 ELFv1 are big-endian by convention. ppc64le will need
+	// explicit endian selection once RArchConfig integration lands (egg.c TODO).
+	const int egg_endian = (arch && !strcmp (arch, "ppc"))? 1: 0;
 	r_egg_setup (es->e, arch, bits, egg_endian, os);
 	if (file) {
 		if (R_STR_ISEMPTY (file)) {
