@@ -2092,8 +2092,12 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	if (m->ret_count > 0) {
 		r_strbuf_appendf (sb, "v0+%u", m->ret_count);
 	}
-	if (instance && m->arg_count > 0) {
-		r_strbuf_append (sb, "!T0");
+	if (instance) {
+		if (m->arg_count > 0) {
+			r_strbuf_append (sb, "!T0");
+		} else {
+			r_strbuf_appendf (sb, "!T%s%u", pfx, m->arg_first);
+		}
 	}
 	char *s = r_strbuf_drain (sb);
 	const char *ret = r_str_constpool_get (&bf->rbin->constpool, s);
