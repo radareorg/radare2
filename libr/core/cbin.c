@@ -712,6 +712,33 @@ static void sdb_concat_by_path(Sdb *s, const char *path) {
 	}
 }
 
+static void set_default_cc(RCore *core) {
+	// we can safely assume that ISVM archs have get_cc and the default for them must be dyncc
+	if (r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM) {
+		r_anal_set_cc_default (core->anal, "dyncc");
+#if 0
+		RBinFile *bf = r_bin_cur (core->bin);
+		RBinPlugin *bp = bf? r_bin_file_cur_plugin (bf): NULL;
+		if (bp && bp->get_cc && !r_anal_cc_default (core->anal)) {
+			r_anal_set_cc_default (core->anal, "dyncc");
+		}
+#endif
+	} else {
+		// same as "tcc `arcc`"
+		char *s = r_reg_profile_to_cc (core->anal->reg);
+		if (s) {
+			if (!r_anal_cc_set (core->anal, s)) {
+				R_LOG_WARN ("Invalid CC from reg profile");
+			} else if (!r_anal_cc_default (core->anal)) {
+				r_anal_set_cc_default (core->anal, "reg");
+			}
+			free (s);
+		} else {
+			R_LOG_WARN ("Cannot derive CC from reg profile");
+		}
+	}
+}
+
 R_API void r_core_anal_type_init(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal);
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
@@ -760,22 +787,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		sdb_close (gd);
 		sdb_free (gd);
 	}
-	{
-		// same as "tcc `arcc`"
-		char *s = r_reg_profile_to_cc (core->anal->reg);
-		if (s) {
-			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile");
-			} else if (!r_anal_cc_default (core->anal)) {
-				// VM/embedded archs lacking a cc-<arch>-<bits>.sdb file rely
-				// on the reg-profile-derived "reg" CC as their default.
-				r_anal_set_cc_default (core->anal, "reg");
-			}
-			free (s);
-		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	}
+	set_default_cc (core);
 #else
 	const char *dir_prefix = r_config_get (core->config, "dir.prefix");
 	char *dbpath = r_str_newf (R_JOIN_3_PATHS ("%s", R2_SDB_FCNSIGN, "cc-%s-%d.sdb"),
@@ -792,20 +804,7 @@ R_API void r_core_anal_cc_init(RCore *core) {
 		return;
 	}
 	sdb_reset (cc);
-	{
-		// same as "tcc `arcc`"
-		char *s = r_reg_profile_to_cc (core->anal->reg);
-		if (s) {
-			if (!r_anal_cc_set (core->anal, s)) {
-				R_LOG_WARN ("Invalid CC from reg profile");
-			} else if (!r_anal_cc_default (core->anal)) {
-				r_anal_set_cc_default (core->anal, "reg");
-			}
-			free (s);
-		} else {
-			R_LOG_WARN ("Cannot derive CC from reg profile");
-		}
-	}
+	set_default_cc (core);
 	R_FREE (cc->path);
 	if (r_file_exists (dbhomepath)) {
 		sdb_concat_by_path (cc, dbhomepath);
