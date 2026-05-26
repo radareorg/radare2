@@ -3,9 +3,6 @@
 #include <r_util.h>
 #include "asn1_oids.h"
 
-// XXX reuse hex.c
-static const char _hex[] = "0123456789abcdef";
-
 R_API RASN1String *r_asn1_string_new(const char *string, bool allocated, ut32 length) {
 	if (!string || !length) {
 		return NULL;
@@ -183,7 +180,6 @@ R_API RASN1String *r_asn1_stringify_boolean(const ut8 *buffer, ut32 length) {
 R_API RASN1String *r_asn1_stringify_integer(const ut8 *buffer, ut32 length) {
 	ut32 i, j;
 	ut64 size;
-	ut8 c;
 	char *str;
 	if (!buffer || !length) {
 		return NULL;
@@ -195,9 +191,7 @@ R_API RASN1String *r_asn1_stringify_integer(const ut8 *buffer, ut32 length) {
 	}
 	memset (str, 0, size);
 	for (i = 0, j = 0; i < length && j < size; i++, j += 3) {
-		c = buffer[i];
-		str[j + 0] = _hex[c >> 4];
-		str[j + 1] = _hex[c & 15];
+		r_hex_from_byte (&str[j], buffer[i]);
 		str[j + 2] = ':';
 	}
 	str[size - 1] = '\0';
@@ -226,8 +220,7 @@ R_API RASN1String* r_asn1_stringify_bytes(const ut8 *buffer, ut32 length) {
 
 	for (i = 0, j = 0, k = 48; i < length && j < size && k < size; i++, j += 3, k++) {
 		c = buffer[i];
-		str[j + 0] = _hex[c >> 4];
-		str[j + 1] = _hex[c & 15];
+		r_hex_from_byte (&str[j], c);
 		str[j + 2] = ' ';
 		str[k] = (c >= ' ' && c <= '~') ? c : '.';
 		if (i % 16 == 15) {
