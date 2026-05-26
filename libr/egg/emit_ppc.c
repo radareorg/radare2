@@ -56,10 +56,7 @@ static inline bool is_memref(const char *str) {
 }
 
 static inline bool is_reg(const char *str) {
-	if (!str || !*str) {
-		return false;
-	}
-	if (str[0] == 'r' || str[0] == 'R') {
+	if (str[0] == 'r') {
 		return isdigit ((unsigned char)str[1]);
 	}
 	return false;
@@ -99,19 +96,13 @@ static void load_ptr(REgg *egg, const char *reg, const char *src) {
 		load_value (egg, reg, src);
 		return;
 	}
-	char disp[32], base[16];
-	size_t dlen = R_MIN ((size_t)(lp - src), sizeof (disp) - 1);
-	memcpy (disp, src, dlen);
-	disp[dlen] = '\0';
-	r_str_trim (disp);
 	const char *bend = strchr (lp + 1, ')');
 	if (!bend) {
 		return;
 	}
-	size_t blen = R_MIN ((size_t)(bend - lp - 1), sizeof (base) - 1);
-	memcpy (base, lp + 1, blen);
-	base[blen] = '\0';
-	r_str_trim (base);
+	char disp[32], base[16];
+	r_str_ncpy (disp, src, R_MIN ((size_t)(lp - src) + 1, sizeof (disp)));
+	r_str_ncpy (base, lp + 1, R_MIN ((size_t)(bend - lp), sizeof (base)));
 	if (!strcmp (disp, "0")) {
 		r_egg_printf (egg, "  mr %s, %s\n", reg, base);
 	} else {
@@ -162,7 +153,7 @@ static char *emit_syscall(REgg *egg, int num) {
 
 /* Always reserve the parameter save area: egg can't tell us if the function makes calls. */
 static int ppc_frame_size(int sz) {
-	int locals = (sz > 0)? ((sz + 15) & ~15): 0;
+	const int locals = (sz > 0)? ((sz + 15) & ~15): 0;
 	return R_MIN_FRAME + R_NGP * R_SZ + locals;
 }
 
@@ -185,11 +176,11 @@ static void emit_frame_end(REgg *egg, int sz, int ctx) {
 
 static void emit_comment(REgg *egg, const char *fmt, ...) {
 	va_list ap;
-	char buf[1024];
 	va_start (ap, fmt);
-	vsnprintf (buf, sizeof (buf), fmt, ap);
-	r_egg_printf (egg, "# %s\n", buf);
+	char *msg = r_str_newvf (fmt, ap);
 	va_end (ap);
+	r_egg_printf (egg, "# %s\n", r_str_get (msg));
+	free (msg);
 }
 
 static void emit_equ(REgg *egg, const char *key, const char *value) {
@@ -203,7 +194,7 @@ static void emit_syscall_args(REgg *egg, int nargs) {
 static void emit_set_string(REgg *egg, const char *dstvar, const char *str, int j) {
 	/* No PC-relative load on PPC; full inline-string support deferred. */
 	char *s = r_str_escape (str);
-	r_egg_printf (egg, "  # set_string '%s' not implemented for ppc\n", s);
+	R_LOG_ERROR ("set_string '%s' not implemented for ppc", s);
 	free (s);
 }
 
@@ -238,8 +229,7 @@ static void emit_arg(REgg *egg, int xs, int num, const char *str) {
 	switch (xs) {
 	case 0:
 		if (is_memref (str)) {
-			strncpy (priv->lastargs[num - 1], str, sizeof (priv->lastargs[0]) - 1);
-			priv->lastargs[num - 1][sizeof (priv->lastargs[0]) - 1] = '\0';
+			r_str_ncpy (priv->lastargs[num - 1], str, sizeof (priv->lastargs[0]));
 		} else {
 			load_value (egg, R_AX, str);
 			save_arg (egg, num, R_AX);
@@ -352,17 +342,21 @@ static void emit_load(REgg *egg, const char *dst, int sz) {
 	load_deref (egg, R_AX, dst, sz);
 }
 
-static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
-	const char *op = NULL;
+static const char *opfrom(int ch) {
 	switch (ch) {
-	case '^': op = "xor"; break;
-	case '&': op = "and"; break;
-	case '|': op = "or"; break;
-	case '-': op = "subf"; break;
-	case '+': op = "add"; break;
-	case '*': op = R_MUL; break;
-	case '/': op = R_DIV; break;
+	case '^': return "xor";
+	case '&': return "and";
+	case '|': return "or";
+	case '-': return "subf";
+	case '+': return "add";
+	case '*': return R_MUL;
+	case '/': return R_DIV;
 	}
+	return NULL;
+}
+
+static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, const char *p) {
+	const char *op = opfrom (ch);
 	if (!eq) {
 		eq = R_AX;
 	}
@@ -397,7 +391,7 @@ static void emit_mathop(REgg *egg, int ch, int vs, int type, const char *eq, con
 	 * digits 0-31 as register names, so `add r4, r4, 1` silently encodes
 	 * as `add r4, r4, r1`. Use D-form addi for +/- with a literal, and
 	 * materialise the literal into R_TMP for the other ops. */
-	bool eq_is_literal = !is_reg (eq) && !is_memref (eq);
+	const bool eq_is_literal = !is_reg (eq) && !is_memref (eq);
 	if (ch == '+' && eq_is_literal) {
 		r_egg_printf (egg, "  addi %s, %s, %s\n", p, p, eq);
 	} else if (ch == '-' && eq_is_literal) {
