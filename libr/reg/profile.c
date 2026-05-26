@@ -55,9 +55,7 @@ static int parse_def_tail(RReg *reg, int type) {
 	return last;
 }
 
-// NOTE Restricted vbank declarations to one-byte prefixes l, r, or v,
-// which avoids misparsing existing fixed register names like m[0].
-static inline bool parse_vbank_prefix(char ch) {
+static bool parse_vbank_prefix(char ch) {
 	return ch == 'l' || ch == 'r' || ch == 'v';
 }
 
@@ -70,18 +68,16 @@ static const char *parse_vbank_suffix(char *name, int *count) {
 	if (!isdigit ((ut8)*p) || *p == '0') {
 		return "Invalid vbank count";
 	}
-	int n = 0;
-	do {
-		n = n * 10 + (*p++ - '0');
-		if (n > R_REG_VBANK_MAX_REGS) {
-			return "Invalid vbank count";
-		}
-	} while (isdigit ((ut8)*p));
-	if (*p != ']' || p[1]) {
+	char *end = NULL;
+	long n = strtol (p, &end, 10);
+	if (n > R_REG_VBANK_MAX_REGS) {
+		return "Invalid vbank count";
+	}
+	if (*end != ']' || end[1]) {
 		return "Invalid vbank suffix";
 	}
 	name[1] = 0;
-	*count = n;
+	*count = (int)n;
 	return NULL;
 }
 
@@ -93,14 +89,9 @@ static bool vbank_item_match(const char *name, char prefix, int count) {
 	if (*p == '0' && p[1]) {
 		return false;
 	}
-	int n = 0;
-	do {
-		n = n * 10 + (*p++ - '0');
-		if (n >= R_REG_VBANK_MAX_REGS) {
-			return false;
-		}
-	} while (isdigit ((ut8)*p));
-	return !*p && n < count;
+	char *end = NULL;
+	long n = strtol (p, &end, 10);
+	return !*end && n < count;
 }
 
 static bool profile_has_duplicate(RReg *reg, const char *name, int count) {

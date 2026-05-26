@@ -279,17 +279,12 @@ static bool vbank_name_index(const char *name, int *index) {
 	if (*p == '0' && p[1]) {
 		return false;
 	}
-	int n = 0;
-	do {
-		n = n * 10 + (*p++ - '0');
-		if (n >= R_REG_VBANK_MAX_REGS) {
-			return false;
-		}
-	} while (isdigit ((ut8)*p));
-	if (*p) {
+	char *end = NULL;
+	long n = strtol (p, &end, 10);
+	if (*end || n >= R_REG_VBANK_MAX_REGS) {
 		return false;
 	}
-	*index = n;
+	*index = (int)n;
 	return true;
 }
 

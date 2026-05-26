@@ -692,25 +692,17 @@ bool test_r_reg_vbank(void) {
 	success = r_reg_set_profile_string (dup,
 		"=A0 r0\n"
 		"gpr r[2] .32 0 0\n"
-		"gpr r[3] .32 $ 0\n");
+		"gpr r[3] .32 $ 0\n"
+		"gpr l0 .32 $ 0\n"
+		"gpr l[4] .32 $ 0\n");
 	mu_assert_eq (success, true, "duplicate vbank profile parses");
 	mu_assert_eq (RVecRegVBank_length (&dup->regset[R_REG_TYPE_GPR].vbanks),
-		1, "duplicate vbank prefix is ignored");
+		1, "duplicate and conflicting vbank definitions are ignored");
 	mu_assert_null (r_reg_get (dup, "r2", R_REG_TYPE_GPR),
 		"duplicate vbank does not extend the first range");
-
-	RReg *fixed = r_reg_new ();
-	mu_assert_notnull (fixed, "fixed conflict test reg");
-	success = r_reg_set_profile_string (fixed,
-		"gpr r0 .32 0 0\n"
-		"gpr r[4] .32 $ 0\n");
-	mu_assert_eq (success, true, "fixed conflict profile parses");
-	mu_assert_eq (RVecRegVBank_length (&fixed->regset[R_REG_TYPE_GPR].vbanks),
-		0, "vbank conflicting with fixed names is ignored");
-	mu_assert_null (r_reg_get (fixed, "r1", R_REG_TYPE_GPR),
+	mu_assert_null (r_reg_get (dup, "l1", R_REG_TYPE_GPR),
 		"ignored vbank does not materialize new registers");
 
-	r_reg_free (fixed);
 	r_reg_free (dup);
 	r_reg_free (clone);
 	r_reg_free (reg);
