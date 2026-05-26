@@ -25,7 +25,7 @@ static RCoreHelpMessage help_msg_C = {
 	"CC!", " [@addr]", "edit comment with $EDITOR",
 	"CC", "[?] [-] [comment-text] [@addr]", "add/remove comment",
 	"CC.", "[addr]", "show comment in current address",
-	"CCa", "[+-] [addr] [text]", "add/remove comment at given address",
+	"CCa", "[+-] [addr] [base64:..|text]", "add/remove comment at given address",
 	"CCu", " [comment-text] [@addr]", "add unique comment",
 	"CF", "[sz] [fcn-sign..] [@addr]", "function signature",
 	"CL", "[-][*] [file:line] [addr]", "show or add 'code line' information (bininfo)",
@@ -712,18 +712,26 @@ static int cmd_meta_comment(RCore *core, const char *input) {
 		addr = r_num_math (core->num, s);
 		// Comment at
 		if (p) {
+			char *newcomment = r_str_startswith (p, "base64:")
+				? (char *)sdb_decode (p + 7, NULL): strdup (p);
+			if (!newcomment) {
+				R_LOG_ERROR ("Invalid comment");
+				free (s);
+				return false;
+			}
 			if (input[2] == '+') {
 				const char *comment = r_meta_get_string (core->anal, R_META_TYPE_COMMENT, addr);
 				if (comment) {
-					char *text = r_str_newf ("%s\n%s", comment, p);
+					char *text = r_str_newf ("%s\n%s", comment, newcomment);
 					r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, text);
 					free (text);
 				} else {
-					r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
+					r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, newcomment);
 				}
 			} else {
-				r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, p);
+				r_meta_set (core->anal, R_META_TYPE_COMMENT, addr, 1, newcomment);
 			}
+			free (newcomment);
 		} else {
 			r_core_cmd_help_match (core, help_msg_CC, "CCa");
 		}
