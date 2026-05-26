@@ -3,6 +3,7 @@
 #define R_PRINT_JSON_DEPTH_LIMIT 128
 
 #include <r_util/r_strbuf.h>
+#include <r_util/r_json.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,6 +106,8 @@ R_API PJ *pj_i(PJ *j, int d);
 R_API PJ *pj_d(PJ *j, double d);
 R_API PJ *pj_f(PJ *j, float d);
 R_API PJ *pj_b(PJ *j, bool v);
+
+R_API void pj_rj(PJ *pj, RJson *j);
 
 #ifdef __cplusplus
 }
