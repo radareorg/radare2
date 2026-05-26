@@ -227,8 +227,7 @@ R_IPI void r_reg_free_internal(RReg *reg, bool init) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		ht_pp_free (reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
-		r_list_free (reg->regset[i].vbanks);
-		reg->regset[i].vbanks = NULL;
+		RVecRegVBank_fini (&reg->regset[i].vbanks);
 		if (!reg->regset[i].pool) {
 			continue;
 		}
@@ -247,10 +246,8 @@ R_IPI void r_reg_free_internal(RReg *reg, bool init) {
 			reg->regset[i].pool = NULL;
 		}
 	}
-	if (!init) {
-		r_list_free (reg->allregs);
-		reg->allregs = NULL;
-	}
+	r_list_free (reg->allregs);
+	reg->allregs = NULL;
 	reg->size = 0;
 }
 
@@ -260,22 +257,150 @@ static int regcmp(RRegItem *a, RRegItem *b) {
 	return (offa > offb) - (offa < offb);
 }
 
+typedef struct {
+	RRegItem *item;
+	RRegVBank *vbank;
+	int key;
+} RRegIndexEntry;
+R_VEC_TYPE (RVecRegIndexEntry, RRegIndexEntry);
+
+static bool vbank_name_index(const char *name, int *index) {
+	if (!name[0]) {
+		return false;
+	}
+	const char *p = name + 1;
+	if (!r_reg_vbank_prefix (name[0]) || !isdigit ((ut8)*p)) {
+		return false;
+	}
+	if (*p == '0' && p[1]) {
+		return false;
+	}
+	char *end = NULL;
+	long n = strtol (p, &end, 10);
+	if (*end || n >= R_REG_VBANK_MAX_REGS) {
+		return false;
+	}
+	*index = (int)n;
+	return true;
+}
+
+static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index) {
+	int idx = 0;
+	if (!vbank_name_index (name, &idx)) {
+		return NULL;
+	}
+	RVecRegVBank *banks = &reg->regset[arena].vbanks;
+	RRegVBank *vb;
+	R_VEC_FOREACH (banks, vb) {
+		if (vb->prefix == name[0] && idx < vb->count) {
+			*index = idx;
+			return vb;
+		}
+	}
+	return NULL;
+}
+
+static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, int index) {
+	RRegItem *item = R_NEW0 (RRegItem);
+	item->type = vb->type;
+	item->arena = vb->arena;
+	item->name = strdup (name);
+	item->size = vb->size;
+	item->packed_size = vb->packed_size;
+	item->offset = vb->offset + index * vb->size;
+	item->index = vb->index + index;
+	r_list_append (reg->regset[vb->arena].regs, r_ref (item));
+	if (!reg->regset[vb->arena].ht_regs) {
+		reg->regset[vb->arena].ht_regs = ht_pp_new0 ();
+	}
+	ht_pp_insert (reg->regset[vb->arena].ht_regs, item->name, item);
+	r_list_free (reg->allregs);
+	reg->allregs = NULL;
+	return item;
+}
+
+static RRegItem *vbank_materialize_index(RReg *reg, RRegVBank *vb, int index) {
+	char name[32];
+	snprintf (name, sizeof (name), "%c%d", vb->prefix, index);
+	HtPP *pp = reg->regset[vb->arena].ht_regs;
+	if (pp) {
+		bool found = false;
+		RRegItem *item = ht_pp_find (pp, name, &found);
+		if (found) {
+			item->index = vb->index + index;
+			return item;
+		}
+	}
+	return vbank_materialize (reg, vb, name, index);
+}
+
+static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index) {
+	R_RETURN_VAL_IF_FAIL (reg && item, false);
+	int n = 0;
+	RRegVBank *vb = vbank_match (reg, item->arena, item->name, &n);
+	if (!vb || item->type != vb->type || item->size != vb->size) {
+		return false;
+	}
+	const int delta = item->offset - vb->offset;
+	if (delta < 0 || delta != n * vb->size) {
+		return false;
+	}
+	if (out_vb && out_index) {
+		*out_vb = vb;
+		*out_index = n;
+	}
+	return true;
+}
+
+static int reg_index_entry_cmp(const RRegIndexEntry *a, const RRegIndexEntry *b) {
+	return (a->key > b->key) - (a->key < b->key);
+}
+
 R_IPI void r_reg_reindex(RReg *reg) {
 	R_RETURN_IF_FAIL (reg);
-	int i, index;
-	RListIter *iter;
+	int i, index = 0;
+	RListIter *iter, *iter2;
 	RRegItem *r;
+	RRegVBank *vb;
+	RRegIndexEntry *entry;
+	RVecRegIndexEntry entries;
+	RVecRegIndexEntry_init (&entries);
 	RList *all = r_list_newf (NULL);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
-			r_list_append (all, r);
+			if (vbank_item_slot (reg, r, NULL, NULL)) {
+				continue;
+			}
+			entry = RVecRegIndexEntry_emplace_back (&entries);
+			entry->item = r;
+			entry->key = (r->offset * 16) + r->size;
+		}
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+			entry = RVecRegIndexEntry_emplace_back (&entries);
+			entry->vbank = vb;
+			entry->key = (vb->offset * 16) + vb->size;
 		}
 	}
-	r_list_sort (all, (RListComparator)regcmp);
-	index = 0;
-	r_list_foreach (all, iter, r) {
-		r->index = index++;
+	RVecRegIndexEntry_sort (&entries, reg_index_entry_cmp);
+	R_VEC_FOREACH (&entries, entry) {
+		if (entry->item) {
+			entry->item->index = index++;
+			r_list_append (all, entry->item);
+			continue;
+		}
+		int vindex;
+		RRegVBank *item_vb;
+		entry->vbank->index = index;
+		r_list_foreach (reg->regset[entry->vbank->arena].regs, iter2, r) {
+			if (vbank_item_slot (reg, r, &item_vb, &vindex) && item_vb == entry->vbank) {
+				r->index = index + vindex;
+				r_list_append (all, r);
+			}
+		}
+		index += entry->vbank->count;
 	}
+	r_list_sort (all, (RListComparator)regcmp);
+	RVecRegIndexEntry_fini (&entries);
 	r_list_free (reg->allregs);
 	reg->allregs = all;
 }
@@ -293,6 +418,16 @@ R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
 	r_list_foreach (reg->allregs, iter, r) {
 		if (r->index == idx) {
 			return r;
+		}
+	}
+	int i;
+	RRegVBank *vb;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+			const int vindex = idx - vb->index;
+			if (vindex >= 0 && vindex < vb->count) {
+				return vbank_materialize_index (reg, vb, vindex);
+			}
 		}
 	}
 	return NULL;
@@ -342,6 +477,7 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	}
 	ri->name = strdup (r->name);
 	ri->size = r->size;
+	ri->type = r->type;
 	ri->offset = r->offset;
 	ri->packed_size = r->packed_size;
 	ri->is_float = r->is_float;
@@ -379,16 +515,7 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 		ht_pp_insert (pp, nr->name, nr);
 	}
 	d->ht_regs = pp;
-	if (s->vbanks) {
-		RRegVBank *vb;
-		d->vbanks = r_list_newf ((RListFree)r_reg_vbank_free);
-		r_list_foreach (s->vbanks, iter, vb) {
-			RRegVBank *nv = R_NEW0 (RRegVBank);
-			*nv = *vb;
-			nv->prefix = strdup (vb->prefix);
-			r_list_append (d->vbanks, nv);
-		}
-	}
+	RVecRegVBank_append (&d->vbanks, &s->vbanks, NULL);
 }
 
 static inline char *dups(const char *x) {
@@ -470,54 +597,6 @@ R_API ut64 r_reg_getv(RReg *reg, const char *name) {
 	return res;
 }
 
-// match name against "<prefix><index>" for any vbank in regset[arena], returning
-// the index and the bank. names like "l007" with leading zeros are rejected to
-// keep one canonical name per slot.
-static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index) {
-	RList *banks = reg->regset[arena].vbanks;
-	if (!banks) {
-		return NULL;
-	}
-	RListIter *iter;
-	RRegVBank *vb;
-	r_list_foreach (banks, iter, vb) {
-		size_t pl = strlen (vb->prefix);
-		if (strncmp (name, vb->prefix, pl)) {
-			continue;
-		}
-		const char *s = name + pl;
-		if (!*s || !isdigit ((unsigned char)*s)) {
-			continue;
-		}
-		if (*s == '0' && s[1]) {
-			continue;
-		}
-		char *end = NULL;
-		long n = strtol (s, &end, 10);
-		if (end && !*end && n >= 0 && n < vb->count) {
-			*index = (int)n;
-			return vb;
-		}
-	}
-	return NULL;
-}
-
-static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, int index) {
-	RRegItem *item = R_NEW0 (RRegItem);
-	item->type = vb->type;
-	item->arena = vb->arena;
-	item->name = strdup (name);
-	item->size = vb->size;
-	item->packed_size = vb->packed_size;
-	item->offset = vb->offset + index * vb->size;
-	r_list_append (reg->regset[vb->arena].regs, r_ref (item));
-	if (!reg->regset[vb->arena].ht_regs) {
-		reg->regset[vb->arena].ht_regs = ht_pp_new0 ();
-	}
-	ht_pp_insert (reg->regset[vb->arena].ht_regs, item->name, item);
-	return item;
-}
-
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	int i, e;
 	R_RETURN_VAL_IF_FAIL (reg && name, NULL);
@@ -558,18 +637,12 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 	return NULL;
 }
 
-R_API RList *r_reg_get_vbanks(RReg *reg, int type) {
-	R_RETURN_VAL_IF_FAIL (reg, NULL);
-	if (type < 0 || type >= R_REG_TYPE_LAST) {
-		return NULL;
-	}
-	return reg->regset[type].vbanks;
-}
-
 R_API RList *r_reg_get_list(RReg *reg, int type) {
 	R_RETURN_VAL_IF_FAIL (reg, NULL);
-	// TODO: uncomment this line R_RETURN_VAL_IF_FAIL (type >= 0 && type <= R_REG_TYPE_LAST, NULL);
 	if (type == R_REG_TYPE_ALL) {
+		if (!reg->allregs) {
+			r_reg_reindex (reg);
+		}
 		return reg->allregs;
 	}
 	RList *regs = reg->regset[type].regs;

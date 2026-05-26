@@ -2,6 +2,7 @@
 #define R2_REG_H
 
 #include <r_list.h>
+#include <r_vec.h>
 #include <r_types.h>
 #include <r_util/r_ref.h>
 #include <r_util/r_sys.h>
@@ -13,6 +14,12 @@ extern "C" {
 #endif
 
 R_LIB_VERSION_HEADER (r_reg);
+
+#define R_REG_VBANK_MAX_REGS 65536
+
+static inline bool r_reg_vbank_prefix(char ch) {
+	return ch == 'l' || ch == 'r' || ch == 'v';
+}
 
 /*
  * various CPUs have registers within various types/classes
@@ -124,21 +131,23 @@ typedef struct r_reg_arena_t {
 // a reg profile. Items are not materialized up-front; r_reg_get(name) parses the
 // numeric suffix, validates the range, and creates the RRegItem on demand.
 typedef struct r_reg_vbank_t {
-	char *prefix;     // e.g. "l" or "v"
+	char prefix;      // e.g. 'l', 'r' or 'v'
 	int type;         // RRegType the materialized items belong to
 	int arena;        // arena type (regset index)
 	int count;        // valid indices: 0..count-1
 	int size;         // bits per entry
 	int packed_size;
 	int offset;       // bit offset of index 0 within the arena
+	int index;        // base register index of this bank
 } RRegVBank;
+R_VEC_TYPE (RVecRegVBank, RRegVBank);
 
 typedef struct r_reg_set_t {
 	RRegArena *arena;
 	RList *pool;      /* RRegArena */
 	RList *regs;      /* RRegItem */
 	HtPP *ht_regs;    /* name:RRegItem */
-	RList *vbanks;    /* RRegVBank — lazy ranges materialized on lookup */
+	RVecRegVBank vbanks; /* RRegVBank - lazy ranges materialized on lookup */
 	RListIter *cur;   /* RRegArenaIter */
 	int maskregstype; /* which type of regs have this reg set (logic mask with RRegType  R_REG_TYPE_XXX) */
 } RRegSet; // Rename to RegGroup, because Set can be confusing with the 'set' keyword
@@ -179,7 +188,6 @@ typedef struct r_reg_flags_t {
 R_IPI void r_reg_free_internal(RReg *reg, bool init);
 R_IPI void r_reg_reindex(RReg *reg);
 R_IPI void r_reg_item_free(RRegItem *item);
-R_IPI void r_reg_vbank_free(RRegVBank *vb);
 
 // lifecicle
 R_API void r_reg_free(RReg *reg);
@@ -207,8 +215,9 @@ R_API const char *r_reg_32_to_64(RReg *reg, const char *rreg32);
 R_API const char *r_reg_64_to_32(RReg *reg, const char *rreg64);
 
 R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type);
+/* R_REG_TYPE_ALL returns fixed registers and materialized vbank items. Use
+ * r_reg_index_get() to resolve an unmaterialized vbank slot by its index. */
 R_API RList *r_reg_get_list(RReg *reg, int type);
-R_API RList *r_reg_get_vbanks(RReg *reg, int type);
 R_API RRegItem *r_reg_get_at(RReg *reg, int type, int regsize, int delta);
 R_API RRegItem *r_reg_next_diff(RReg *reg, int type, const ut8 *buf, int buflen, RRegItem *prev_ri, int regsize);
 
