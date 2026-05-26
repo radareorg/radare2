@@ -205,8 +205,7 @@ static bool dyncc_parse_loc(const char *s, const char *end, RAnalDynCCLoc *out) 
 		return false;
 	}
 	if (*s == '&') {
-		RAnalDynCCSlice name = {0};
-		return dyncc_parse_ref (s, end, &name);
+		return false;
 	}
 	if (!isalnum ((ut8)*s)) {
 		return false;

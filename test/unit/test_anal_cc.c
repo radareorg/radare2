@@ -321,6 +321,13 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_false (r_anal_cc_exist (anal, "dyncc:ecx:eax!M0"), "invalid dyncc unknown role");
 	mu_assert_false (r_anal_cc_exist (anal, "dyncc:&missing:rax"), "missing dyncc arg reference");
 	mu_assert_false (r_anal_cc_exist (anal, "dyncc:rdi:&missing"), "missing dyncc ret reference");
+	const char *bad_arg_ref = "dyncc:&missing,a0:rax";
+	mu_assert_false (r_anal_cc_exist (anal, bad_arg_ref), "invalid per-location dyncc arg reference");
+	mu_assert_null (r_anal_cc_arg (anal, bad_arg_ref, 0, -1), "per-location dyncc arg reference is not a register");
+	const char *bad_ret_ref = "dyncc:a0:&missing,rax";
+	mu_assert_false (r_anal_cc_exist (anal, bad_ret_ref), "invalid per-location dyncc ret reference");
+	mu_assert_null (r_anal_cc_ret (anal, bad_ret_ref, 0), "per-location dyncc ret reference is not a register");
+	mu_assert_false (r_anal_cc_exist (anal, "dyncc:a0:rax!T&missing"), "invalid per-role dyncc reference");
 
 	r_anal_free (anal);
 	mu_end;
