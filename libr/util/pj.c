@@ -353,7 +353,7 @@ R_API PJ *pj_i(PJ *j, int i) {
 
 // yay
 R_API void pj_rj(PJ *pj, RJson *j) {
-	R_RETURN_VAL_IF_FAIL (pj, NULL);
+	R_RETURN_IF_FAIL (pj);
 	if (!j) {
 		pj_null (pj);
 		return;
@@ -378,7 +378,7 @@ R_API void pj_rj(PJ *pj, RJson *j) {
 		pj_a (pj);
 		RJson *child = j->children.first;
 		while (child) {
-			pj_append_rjson (pj, child);
+			pj_rj (pj, child);
 			child = child->next;
 		}
 		pj_end (pj);
@@ -388,7 +388,7 @@ R_API void pj_rj(PJ *pj, RJson *j) {
 		child = j->children.first;
 		while (child) {
 			pj_k (pj, child->key);
-			pj_append_rjson (pj, child);
+			pj_rj (pj, child);
 			child = child->next;
 		}
 		pj_end (pj);

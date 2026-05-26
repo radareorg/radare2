@@ -198,9 +198,9 @@ static bool branch_disp(RAnalOp *op, st64 target, int bits, st64 *out) {
 	return true;
 }
 
-/* ---------- Per-mnemonic handlers ----------
- * Each handler receives a session, an op, and the argument-string suffix
- * (just past the mnemonic + whitespace). Returns 4 on success, <=0 on error. */
+// ---------- Per-mnemonic handlers ----------
+// Each handler receives a session, an op, and the argument-string suffix
+// (just past the mnemonic + whitespace). Returns 4 on success, <=0 on error.
 
 typedef int (*ppc_handler)(RArchSession *s, RAnalOp *op, const char *args);
 
@@ -346,9 +346,9 @@ static int h_std(RArchSession *s, RAnalOp *op, const char *args)  { return dsfor
 static int h_stdu(RArchSession *s, RAnalOp *op, const char *args) { return dsform_ls (s, op, args, 62, 1); }
 static int h_ldu(RArchSession *s, RAnalOp *op, const char *args)  { return dsform_ls (s, op, args, 58, 1); }
 
-/* cmpw / cmpd: register-register compare. L=0 → 32-bit (cmpw), L=1 → 64-bit
- * (cmpd). The L bit is the low bit of the 5-bit RT slot. Accepts the 3-op
- * `crf, rA, rB` form and the 2-op `rA, rB` form (implicit crf=0). */
+// cmpw / cmpd: register-register compare. L=0 → 32-bit (cmpw), L=1 → 64-bit
+// (cmpd). The L bit is the low bit of the 5-bit RT slot. Accepts the 3-op
+// `crf, rA, rB` form and the 2-op `rA, rB` form (implicit crf=0).
 static int cmp_x(RArchSession *s, RAnalOp *op, const char *args, int l) {
 	const char *p = args;
 	int first = parse_reg (&p);
@@ -510,7 +510,7 @@ static int h_blt(RArchSession *s, RAnalOp *op, const char *args) { return do_cbr
 static int h_bge(RArchSession *s, RAnalOp *op, const char *args) { return do_cbranch (s, op, args, BO_FALSE, BI_LT); }
 static int h_ble(RArchSession *s, RAnalOp *op, const char *args) { return do_cbranch (s, op, args, BO_FALSE, BI_GT); }
 
-/* Unconditional branches. lk=0 → b, lk=1 → bl. */
+// Unconditional branches. lk=0 → b, lk=1 → bl
 static int h_ubranch(RArchSession *s, RAnalOp *op, const char *args, int lk) {
 	const char *p = args;
 	REQ_IMM (tgt);
