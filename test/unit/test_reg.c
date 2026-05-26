@@ -642,6 +642,10 @@ bool test_r_reg_vbank(void) {
 	mu_assert_notnull (l6, "l6 materialized");
 	mu_assert_eq (l6->index, 2 + 4 + 6, "l6 index reserves previous vbank");
 	mu_assert ("vbank items get distinct register indices", l5->index != l6->index);
+	RRegItem *l1i = r_reg_index_get (reg, 2 + 4 + 1);
+	mu_assert_notnull (l1i, "l1 index materialized");
+	mu_assert_streq (l1i->name, "l1", "l1 index resolves back to l1");
+	mu_assert_eq (l1i->index, 2 + 4 + 1, "unmaterialized vbank index resolves");
 	RRegItem *r0 = r_reg_get (reg, "r0", R_REG_TYPE_GPR);
 	mu_assert_notnull (r0, "r0 materialized");
 	RRegItem *l1 = r_reg_get (reg, "l1", R_REG_TYPE_GPR);
@@ -714,7 +718,13 @@ bool test_r_reg_clone(void) {
 	mu_assert_notnull (reg, "r_reg_new () failed");
 
 	r_reg_set_profile_string (reg, "=PC eip\n"
-		"gpr eax .32 0 0\n");
+		"gpr eax .32 0 0\n"
+		"fpu v[4] .64 1024 0\n");
+
+	RRegItem *v1 = r_reg_get (reg, "v1", R_REG_TYPE_FPU);
+	mu_assert_notnull (v1, "v1 exists before clone");
+	mu_assert_eq (v1->type, R_REG_TYPE_FPU, "v1 type is R_REG_TYPE_FPU before clone");
+	int v1_index = v1->index;
 
 	RReg *clone = r_reg_clone (reg);
 	mu_assert_notnull (clone, "r_reg_clone () failed");
@@ -725,6 +735,14 @@ bool test_r_reg_clone(void) {
 	RRegItem *r = r_reg_get (clone, "eax", -1);
 	mu_assert_notnull (r, "eax exists in clone");
 	mu_assert_eq (r->size, 32, "eax size is 32 in clone");
+
+	RRegItem *cv1 = r_reg_get (clone, "v1", R_REG_TYPE_FPU);
+	mu_assert_notnull (cv1, "v1 exists in clone");
+	mu_assert_eq (cv1->type, R_REG_TYPE_FPU, "v1 type is R_REG_TYPE_FPU in clone");
+	mu_assert_eq (cv1->index, v1_index, "v1 keeps vbank index in clone");
+	RRegItem *cv1i = r_reg_index_get (clone, v1_index);
+	mu_assert_notnull (cv1i, "v1 index resolves in clone");
+	mu_assert_streq (cv1i->name, "v1", "v1 index resolves back to v1 in clone");
 
 	r_reg_free (reg);
 	r_reg_free (clone);

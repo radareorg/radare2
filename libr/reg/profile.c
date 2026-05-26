@@ -57,7 +57,7 @@ static int parse_def_tail(RReg *reg, int type) {
 
 static const char *parse_vbank_suffix(char *name, int *count) {
 	*count = 0;
-	if (!name[0] || name[1] != '[') {
+	if (!name[0] || name[1] != '[' || !r_reg_vbank_prefix (name[0])) {
 		return NULL;
 	}
 	const char *p = name + 2;

@@ -264,16 +264,12 @@ typedef struct {
 } RRegIndexEntry;
 R_VEC_TYPE (RVecRegIndexEntry, RRegIndexEntry);
 
-static bool vbank_prefix(char ch) {
-	return ch == 'l' || ch == 'r' || ch == 'v';
-}
-
 static bool vbank_name_index(const char *name, int *index) {
 	if (!name[0]) {
 		return false;
 	}
 	const char *p = name + 1;
-	if (!vbank_prefix (name[0]) || !isdigit ((ut8)*p)) {
+	if (!r_reg_vbank_prefix (name[0]) || !isdigit ((ut8)*p)) {
 		return false;
 	}
 	if (*p == '0' && p[1]) {
@@ -321,6 +317,21 @@ static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, i
 	r_list_free (reg->allregs);
 	reg->allregs = NULL;
 	return item;
+}
+
+static RRegItem *vbank_materialize_index(RReg *reg, RRegVBank *vb, int index) {
+	char name[32];
+	snprintf (name, sizeof (name), "%c%d", vb->prefix, index);
+	HtPP *pp = reg->regset[vb->arena].ht_regs;
+	if (pp) {
+		bool found = false;
+		RRegItem *item = ht_pp_find (pp, name, &found);
+		if (found) {
+			item->index = vb->index + index;
+			return item;
+		}
+	}
+	return vbank_materialize (reg, vb, name, index);
 }
 
 static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index) {
@@ -409,6 +420,16 @@ R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
 			return r;
 		}
 	}
+	int i;
+	RRegVBank *vb;
+	for (i = 0; i < R_REG_TYPE_LAST; i++) {
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+			const int vindex = idx - vb->index;
+			if (vindex >= 0 && vindex < vb->count) {
+				return vbank_materialize_index (reg, vb, vindex);
+			}
+		}
+	}
 	return NULL;
 }
 
@@ -456,6 +477,7 @@ R_API RRegItem *r_reg_item_clone(RRegItem *r) {
 	}
 	ri->name = strdup (r->name);
 	ri->size = r->size;
+	ri->type = r->type;
 	ri->offset = r->offset;
 	ri->packed_size = r->packed_size;
 	ri->is_float = r->is_float;
