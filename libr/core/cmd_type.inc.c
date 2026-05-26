@@ -206,70 +206,45 @@ static bool cc_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
-static bool core_anal_cc_role_is_builtin(const char *role) {
-	return !strcmp (role, "self")
-		|| !strcmp (role, "sret")
-		|| !strcmp (role, "vtt")
-		|| !strcmp (role, "error")
-		|| !strcmp (role, "context");
-}
-
-static void core_anal_cc_json_custom_roles(PJ *pj, RAnal *anal, const char *cc) {
-	const char *p = cc;
-	while ((p = strstr (p, "!role."))) {
-		p += strlen ("!role.");
-		const char *eq = strchr (p, '=');
-		if (!eq) {
-			break;
-		}
-		const char *bang = strchr (p, '!');
-		if (bang && bang < eq) {
-			p = bang;
-			continue;
-		}
-		if (eq == p) {
-			p = eq + 1;
-			continue;
-		}
-		char *role = r_str_ndup (p, eq - p);
-		if (role) {
-			const char *loc = core_anal_cc_role_is_builtin (role)? NULL: r_anal_cc_role (anal, cc, role);
-			if (loc) {
-				pj_ks (pj, role, loc);
-			}
-			free (role);
-		}
-		p = eq + 1;
-	}
-}
-
 static void core_anal_cc_json_roles(PJ *pj, RAnal *anal, const char *cc) {
-	const char *self = r_anal_cc_role (anal, cc, "self");
-	const char *sret = r_anal_cc_role (anal, cc, "sret");
-	const char *vtt = r_anal_cc_role (anal, cc, "vtt");
-	const char *error = r_anal_cc_role (anal, cc, "error");
-	const char *context = r_anal_cc_role (anal, cc, "context");
-	if (!self && !sret && !vtt && !error && !context && !strstr (cc, "!role.")) {
-		return;
+	const char tags[] = "TRVEX";
+	bool opened = false;
+	int i;
+	for (i = 0; tags[i]; i++) {
+		char role[2] = { tags[i], 0 };
+		const char *loc = r_anal_cc_role (anal, cc, role);
+		if (loc) {
+			if (!opened) {
+				pj_ko (pj, "roles");
+				opened = true;
+			}
+			pj_ks (pj, role, loc);
+		}
 	}
-	pj_ko (pj, "roles");
-	if (self) {
-		pj_ks (pj, "self", self);
+	bool seen[26] = {0};
+	const char *p = cc;
+	while ((p = strchr (p, '!'))) {
+		char tag = p[1];
+		if (islower ((ut8)tag) && tag != 'p') {
+			int idx = tag - 'a';
+			if (!seen[idx]) {
+				seen[idx] = true;
+				char role[2] = { tag, 0 };
+				const char *loc = r_anal_cc_role (anal, cc, role);
+				if (loc) {
+					if (!opened) {
+						pj_ko (pj, "roles");
+						opened = true;
+					}
+					pj_ks (pj, role, loc);
+				}
+			}
+		}
+		p++;
 	}
-	if (sret) {
-		pj_ks (pj, "sret", sret);
+	if (opened) {
+		pj_end (pj);
 	}
-	if (vtt) {
-		pj_ks (pj, "vtt", vtt);
-	}
-	if (error) {
-		pj_ks (pj, "error", error);
-	}
-	if (context) {
-		pj_ks (pj, "context", context);
-	}
-	core_anal_cc_json_custom_roles (pj, anal, cc);
-	pj_end (pj);
 }
 
 static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_callconv) {

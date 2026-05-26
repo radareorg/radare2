@@ -592,7 +592,6 @@ typedef struct r_anal_t {
 	int thread; // see apt command
 	RList *threads;
 	RColor tracetagcolors[64]; // each trace color for each bit
-	void *dyncc_cache; // RAnalDynCCCache, parsed dyncc expression cache (libr/anal/cc.c)
 	/* end private */
 	R_DIRTY_VAR;
 	RLibStore *libstore;

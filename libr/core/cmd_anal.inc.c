@@ -687,25 +687,24 @@ static RCoreHelpMessage help_msg_afch = {
 
 // dyncc syntax reference, distilled from doc/dyncc.md
 static RCoreHelpMessage help_msg_dyncc = {
-	"Usage:", "dyncc:<arg-map>:<i|s>:<ret-map>[!attr...]", "per-function virtual calling convention",
-	"i", "", "instance method, default self/this is logical argument 0",
-	"s", "", "static/free function, no implicit self",
-	"<pfx><base><+|-><count>", "", "linear location range, e.g. v6+1, v1-2, l0+3, m0+",
-	"m0+", "", "memory/stack slots (unbounded tail with no count)",
-	"m(reg)0+", "", "memory slots based on an explicit register",
-	"(r1,r2,..)", "", "explicit list of non-linear register locations",
-	"{edx:eax}", "", "one logical value grouped across several pieces",
-	"N+C=<loc>", "", "explicit logical argument range mapping (multiple homes)",
-	"&name", "", "delegate to a registered static cc profile",
-	"!pop=N", "", "callee pops N argument bytes (also !caller / !callee)",
-	"!clobber=(..)", "", "call-clobbered registers",
-	"!preserve=(..)", "", "call-preserved registers",
-	"!self=N", "", "ABI role at logical argument N; also !sret=N, !vtt=N",
-	"!error=reg", "", "sideband ABI role at a concrete location; also !context=reg",
-	"!role.name=N", "", "custom ABI role at logical argument N or a concrete location",
-	"Example:", "dyncc:v6+1:s:v0+1", "static, arg in v6, return in v0",
-	"Example:", "dyncc:(ecx,edx),m0+:s:(eax)!pop=8", "two reg args, stack tail, stdcall-like",
-	"Example:", "dyncc:0+4=&ms:i:&ms!sret=0!self=1", "C++ hidden sret before this",
+	"Usage:", "dyncc:<args>:<rets>[!attr...]", "per-function virtual calling convention",
+	"<args>", "", "comma-separated locations; empty is allowed",
+	"<rets>", "", "comma-separated return locations; empty means void",
+	"a0+4", "", "location range a0,a1,a2,a3; a3-4 reverses order",
+	"^", "", "call-frame argument tail; ^- is reverse tail",
+	"^N", "", "fixed call-frame slot N; ^N+K and ^N-K form ranges",
+	"loc'loc", "", "multiple homes for one logical argument, primary home first",
+	"_", "", "skip one logical argument slot",
+	"&name", "", "whole-field delegation to a registered static cc profile",
+	"!pN", "", "callee pops N argument bytes; !p0 caller cleanup; !p? unknown",
+	"!C(..)", "", "call-clobbered registers",
+	"!P(..)", "", "call-preserved registers",
+	"!TN", "", "T role at logical argument N; !Tloc for concrete location",
+	"!RN", "", "R role at logical argument N; !VN, !EN and !XN use the same form",
+	"!xN", "", "custom one-letter lowercase role at arg N or concrete location",
+	"Example:", "dyncc:v6:v0", "arg in v6, return in v0",
+	"Example:", "dyncc:a0+4'^0+4,^:v0", "MIPS o32-style arg homes",
+	"Example:", "dyncc:^0,^1,^2,^3:eax!p16", "Win32 stdcall MessageBoxA-style",
 	NULL
 };
 
@@ -5556,11 +5555,11 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 		r_strbuf_appendf (sb, "signature: %s\n", sig);
 		free (sig);
 	}
-	afch_append_role (sb, anal, cc, "self", "self");
-	afch_append_role (sb, anal, cc, "sret", "sret");
-	afch_append_role (sb, anal, cc, "vtt", "vtt");
-	afch_append_role (sb, anal, cc, "error", "error");
-	afch_append_role (sb, anal, cc, "context", "context");
+	afch_append_role (sb, anal, cc, "T", "T");
+	afch_append_role (sb, anal, cc, "R", "R");
+	afch_append_role (sb, anal, cc, "V", "V");
+	afch_append_role (sb, anal, cc, "E", "E");
+	afch_append_role (sb, anal, cc, "X", "X");
 	const int max = r_anal_cc_max_arg (anal, cc);
 	int i;
 	for (i = 0; i < max; i++) {
@@ -5828,7 +5827,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_ka (pj, "argv");
 		}
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
+			if (arg->cc_source && (*arg->cc_source == '^' || r_str_startswith (arg->cc_source, "stack"))) {
 				on_stack = true;
 			}
 			nextele = r_list_iter_get_next (iter);
