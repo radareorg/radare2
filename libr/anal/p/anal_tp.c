@@ -729,11 +729,11 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	const char *place = r_anal_cc_arg (anal, cc, lastarg, -1);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
-	if (place && !strcmp (place, "stack_rev")) {
+	if (place && (!strcmp (place, "^-") || !strcmp (place, "stack_rev"))) {
 		stack_rev = true;
 	}
 	place = r_anal_cc_arg (anal, cc, 0, -1);
-	if (place && r_str_startswith (place, "stack")) {
+	if (place && (*place == '^' || r_str_startswith (place, "stack"))) {
 		in_stack = true;
 	}
 	if (verbose && r_str_startswith (fcn_name, "sym.imp.")) {
@@ -778,7 +778,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			// before this change place could be null
 			R_LOG_DEBUG ("not in stack");
 			const char *p = r_anal_cc_arg (anal, cc, arg_num, -1);
-			if (p && r_str_startswith (p, "stack")) {
+			if (p && (*p == '^' || r_str_startswith (p, "stack"))) {
 				in_stack = true;
 				place = p;
 			}

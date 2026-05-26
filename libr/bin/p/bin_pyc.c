@@ -138,8 +138,21 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	if (!m || !m->arg_prefix) {
 		return NULL;
 	}
-	r_strf_var (buf, 256, "dyncc:%s%u+%u:s:r0+%u", m->arg_prefix, m->arg_first, m->arg_count, m->ret_count);
-	return r_str_constpool_get (&bf->rbin->constpool, buf);
+	RStrBuf *sb = r_strbuf_new ("dyncc:");
+	if (!sb) {
+		return NULL;
+	}
+	if (m->arg_count > 0) {
+		r_strbuf_appendf (sb, "%s%u+%u", m->arg_prefix, m->arg_first, m->arg_count);
+	}
+	r_strbuf_append (sb, ":");
+	if (m->ret_count > 0) {
+		r_strbuf_appendf (sb, "r0+%u", m->ret_count);
+	}
+	char *s = r_strbuf_drain (sb);
+	const char *ret = r_str_constpool_get (&bf->rbin->constpool, s);
+	free (s);
+	return ret;
 }
 
 RBinPlugin r_bin_plugin_pyc = {

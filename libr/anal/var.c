@@ -1285,7 +1285,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
 			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
-			bool stack_rev = place ? !strcmp (place, "stack_rev") : false;
+			bool stack_rev = place ? (!strcmp (place, "^-") || !strcmp (place, "stack_rev")) : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
 				ut64 sum_sz = 0;

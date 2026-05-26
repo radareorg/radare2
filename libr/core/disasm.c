@@ -6065,7 +6065,7 @@ static void ds_comment_call(RDisasmState *ds) {
 		// bool warning = false;
 		bool on_stack = false;
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
+			if (arg->cc_source && (*arg->cc_source == '^' || r_str_startswith (arg->cc_source, "stack"))) {
 				on_stack = true;
 			}
 			nextele = r_list_iter_get_next (iter);

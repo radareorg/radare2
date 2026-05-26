@@ -3,20 +3,13 @@
 #include <r_anal.h>
 #define DB anal->sdb_cc
 
-#define R_ANAL_DYNCC_MAX_MAPS 32
 #define R_ANAL_DYNCC_NAME_SIZE 32
 #define R_ANAL_DYNCC_GROUP_SIZE 256
 #define R_ANAL_DYNCC_REGSET_SIZE 256
-#define R_ANAL_DYNCC_MAX_ROLES 8
-#define R_ANAL_DYNCC_TAIL (-1)
-#define R_ANAL_DYNCC_CACHE_SIZE 8
-
-typedef enum r_anal_dyn_cc_map_kind_t {
-	R_ANAL_DYNCC_MAP_RANGE,
-	R_ANAL_DYNCC_MAP_LIST,
-	R_ANAL_DYNCC_MAP_GROUP,
-	R_ANAL_DYNCC_MAP_CC,
-} RAnalDynCCMapKind;
+#define R_ANAL_DYNCC_MAX_HOMES 8
+#define R_ANAL_DYNCC_MAX_ROLES 16
+#define R_ANAL_DYNCC_STACK_PREFIX '\1'
+#define R_ANAL_DYNCC_REVSTACK_PREFIX '\2'
 
 /* A slice references a span of the interned, immutable dyncc expression rather
  * than copying it. It stays valid for as long as that interned string lives,
@@ -25,49 +18,6 @@ typedef struct r_anal_dyn_cc_slice_t {
 	const char *p;
 	ut16 len;
 } RAnalDynCCSlice;
-
-typedef struct r_anal_dyn_cc_map_t {
-	bool has_args;
-	int arg_base;
-	int arg_count;
-	int arg_delta;
-	RAnalDynCCMapKind kind;
-	char prefix;
-	RAnalDynCCSlice base_reg; /* RANGE: explicit memory base register from m(reg) */
-	int loc_base;
-	int loc_count;
-	int loc_delta;
-	RAnalDynCCSlice text;     /* LIST: items inside (); GROUP: the whole {...}; CC: the &name */
-	int reg_count;            /* LIST: number of comma-separated items */
-} RAnalDynCCMap;
-
-typedef struct r_anal_dyn_cc_role_t {
-	RAnalDynCCSlice name;
-	int arg;
-	RAnalDynCCSlice loc;
-} RAnalDynCCRole;
-
-typedef struct r_anal_dyn_cc_t {
-	RAnalDynCCMap args[R_ANAL_DYNCC_MAX_MAPS];
-	int arg_map_count;
-	RAnalDynCCMap rets[R_ANAL_DYNCC_MAX_MAPS];
-	int ret_map_count;
-	bool instance;
-	int stack_pop;
-	RAnalDynCCSlice clobbers;
-	RAnalDynCCSlice preserves;
-	RAnalDynCCRole roles[R_ANAL_DYNCC_MAX_ROLES];
-	int role_count;
-} RAnalDynCC;
-
-/* Small round-robin cache of parsed dyncc expressions, keyed by interned
- * pointer identity. Avoids re-parsing the same expression on every accessor
- * call during analysis. Owned by RAnal, freed in r_anal_free / r_anal_cc_reset. */
-typedef struct r_anal_dyn_cc_cache_t {
-	const char *keys[R_ANAL_DYNCC_CACHE_SIZE];
-	RAnalDynCC entries[R_ANAL_DYNCC_CACHE_SIZE];
-	int next;
-} RAnalDynCCCache;
 
 static bool dyncc_parse_int(const char **sp, int *out) {
 	const char *s = *sp;
@@ -86,46 +36,6 @@ static bool dyncc_parse_int(const char **sp, int *out) {
 	return true;
 }
 
-static bool dyncc_parse_optional_count(const char **sp, int *out) {
-	if (!isdigit ((ut8)**sp)) {
-		*out = R_ANAL_DYNCC_TAIL;
-		return true;
-	}
-	return dyncc_parse_int (sp, out);
-}
-
-static bool dyncc_range_valid(int base, int count, int delta) {
-	if (count < 0) {
-		return true;
-	}
-	if (count == 0) {
-		return true;
-	}
-	return delta > 0? base <= ST32_MAX - (count - 1): base >= count - 1;
-}
-
-static bool dyncc_parse_index_range(const char **sp, int *base, int *count, int *delta) {
-	const char *s = *sp;
-	if (!dyncc_parse_int (&s, base)) {
-		return false;
-	}
-	if (*s != '+' && *s != '-') {
-		*count = 1;
-		*delta = 1;
-		*sp = s;
-		return true;
-	}
-	*delta = *s++ == '-'? -1: 1;
-	if (!dyncc_parse_optional_count (&s, count)) {
-		return false;
-	}
-	if (!dyncc_range_valid (*base, *count, *delta)) {
-		return false;
-	}
-	*sp = s;
-	return true;
-}
-
 static bool dyncc_parse_name(const char **sp, const char *end, RAnalDynCCSlice *out) {
 	const char *s = *sp;
 	const char *n = s;
@@ -139,204 +49,6 @@ static bool dyncc_parse_name(const char **sp, const char *end, RAnalDynCCSlice *
 	out->p = s;
 	out->len = (ut16)len;
 	*sp = n;
-	return true;
-}
-
-static bool dyncc_parse_list(const char **sp, const char *end, RAnalDynCCMap *map) {
-	const char *s = *sp;
-	if (*s++ != '(') {
-		return false;
-	}
-	map->kind = R_ANAL_DYNCC_MAP_LIST;
-	const char *content = s;
-	while (s < end && *s != ')') {
-		if (map->reg_count >= R_ANAL_CC_MAXARG) {
-			return false;
-		}
-		const char *n = s;
-		while (n < end && *n != ',' && *n != ')') {
-			n++;
-		}
-		size_t len = n - s;
-		if (!len || len >= R_ANAL_DYNCC_NAME_SIZE) {
-			return false;
-		}
-		map->reg_count++;
-		s = n;
-		if (*s == ',') {
-			s++;
-		}
-	}
-	if (s >= end || *s != ')' || !map->reg_count) {
-		return false;
-	}
-	map->text.p = content;
-	map->text.len = (ut16)(s - content);
-	*sp = s + 1;
-	return true;
-}
-
-static bool dyncc_parse_group(const char **sp, const char *end, RAnalDynCCMap *map) {
-	const char *s = *sp;
-	if (*s++ != '{') {
-		return false;
-	}
-	while (s < end && *s != '}') {
-		if (*s == '{') {
-			return false;
-		}
-		s++;
-	}
-	size_t len = s - *sp + 1;
-	if (s >= end || *s != '}' || len <= 2 || len >= R_ANAL_DYNCC_GROUP_SIZE) {
-		return false;
-	}
-	map->text.p = *sp;
-	map->text.len = (ut16)len;
-	map->kind = R_ANAL_DYNCC_MAP_GROUP;
-	map->loc_count = 1;
-	*sp = s + 1;
-	return true;
-}
-
-static bool dyncc_parse_loc(const char **sp, const char *end, RAnalDynCCMap *map) {
-	const char *s = *sp;
-	if (s >= end) {
-		return false;
-	}
-	if (*s == '&') {
-		s++;
-		map->kind = R_ANAL_DYNCC_MAP_CC;
-		if (!dyncc_parse_name (&s, end, &map->text)) {
-			return false;
-		}
-		*sp = s;
-		return true;
-	}
-	if (*s == '(') {
-		return dyncc_parse_list (sp, end, map);
-	}
-	if (*s == '{') {
-		return dyncc_parse_group (sp, end, map);
-	}
-	if (!isalpha ((ut8)*s)) {
-		return false;
-	}
-	map->kind = R_ANAL_DYNCC_MAP_RANGE;
-	map->prefix = *s++;
-	if (map->prefix == 'm' && s < end && *s == '(') {
-		s++;
-		const char *n = s;
-		while (n < end && *n != ')') {
-			n++;
-		}
-		size_t len = n - s;
-		if (n >= end || !len || len >= R_ANAL_DYNCC_NAME_SIZE) {
-			return false;
-		}
-		map->base_reg.p = s;
-		map->base_reg.len = (ut16)len;
-		s = n + 1;
-	}
-	if (!dyncc_parse_int (&s, &map->loc_base) || (*s != '+' && *s != '-')) {
-		return false;
-	}
-	map->loc_delta = *s++ == '-'? -1: 1;
-	if (!dyncc_parse_optional_count (&s, &map->loc_count)) {
-		return false;
-	}
-	if (!dyncc_range_valid (map->loc_base, map->loc_count, map->loc_delta)) {
-		return false;
-	}
-	*sp = s;
-	return true;
-}
-
-static int dyncc_loc_count(const RAnalDynCCMap *map) {
-	return map->kind == R_ANAL_DYNCC_MAP_LIST? map->reg_count: map->loc_count;
-}
-
-static const char *dyncc_scan_delim(const char *s, const char *end, char delim) {
-	int depth = 0;
-	for (; s < end; s++) {
-		if (*s == '(' || *s == '{') {
-			depth++;
-		} else if (*s == ')' || *s == '}') {
-			if (depth > 0) {
-				depth--;
-			}
-		} else if (!depth && *s == delim) {
-			return s;
-		}
-	}
-	return end;
-}
-
-static bool dyncc_parse_map(const char *s, const char *end, bool args, int *next_arg, RAnalDynCCMap *map) {
-	const char *eq = dyncc_scan_delim (s, end, '=');
-	if (eq < end) {
-		if (!args) {
-			return false;
-		}
-		const char *ap = s;
-		map->has_args = true;
-		if (!dyncc_parse_index_range (&ap, &map->arg_base, &map->arg_count, &map->arg_delta) || ap != eq) {
-			return false;
-		}
-		s = eq + 1;
-	}
-	const char *lp = s;
-	if (!dyncc_parse_loc (&lp, end, map) || lp != end) {
-		return false;
-	}
-	if (args && !map->has_args && map->kind != R_ANAL_DYNCC_MAP_CC) {
-		map->has_args = true;
-		map->arg_base = *next_arg;
-		map->arg_delta = 1;
-		map->arg_count = dyncc_loc_count (map);
-		if (map->arg_count >= 0) {
-			*next_arg += map->arg_count;
-		}
-	} else if (!args && !map->has_args && map->kind != R_ANAL_DYNCC_MAP_CC) {
-		map->has_args = true;
-		map->arg_base = *next_arg;
-		map->arg_delta = 1;
-		map->arg_count = dyncc_loc_count (map);
-		if (map->arg_count == R_ANAL_DYNCC_TAIL) {
-			return false;
-		}
-		*next_arg += map->arg_count;
-	}
-	if (map->has_args && map->arg_count == R_ANAL_DYNCC_TAIL && map->kind == R_ANAL_DYNCC_MAP_LIST) {
-		return false;
-	}
-	int loc_count = dyncc_loc_count (map);
-	if (map->kind != R_ANAL_DYNCC_MAP_CC && map->has_args && map->arg_count >= 0 && loc_count >= 0 && map->arg_count != loc_count) {
-		return false;
-	}
-	return true;
-}
-
-static bool dyncc_parse_maps(const char *s, const char *end, bool args, RAnalDynCCMap *maps, int *count) {
-	int next_arg = 0;
-	while (s < end) {
-		if (*count >= R_ANAL_DYNCC_MAX_MAPS) {
-			return false;
-		}
-		const char *item_end = dyncc_scan_delim (s, end, ',');
-		if (item_end == s) {
-			return false;
-		}
-		RAnalDynCCMap map = {0};
-		if (!dyncc_parse_map (s, item_end, args, &next_arg, &map)) {
-			return false;
-		}
-		maps[(*count)++] = map;
-		s = item_end;
-		if (s < end && *s == ',') {
-			s++;
-		}
-	}
 	return true;
 }
 
@@ -391,170 +103,9 @@ static bool dyncc_slice_eq(const RAnalDynCCSlice *slice, const char *s) {
 	return slice->len == len && !strncmp (slice->p, s, len);
 }
 
-static bool dyncc_is_builtin_role(const RAnalDynCCSlice *name) {
-	return dyncc_slice_eq (name, "self")
-		|| dyncc_slice_eq (name, "sret")
-		|| dyncc_slice_eq (name, "vtt")
-		|| dyncc_slice_eq (name, "error")
-		|| dyncc_slice_eq (name, "context");
-}
-
-static bool dyncc_parse_role_name(const char *s, const char *end, RAnalDynCCSlice *name) {
-	const char *role = dyncc_range_startswith (s, end, "role.");
-	if (role) {
-		s = role;
-	} else {
-		RAnalDynCCSlice tmp = {
-			.p = s,
-			.len = (ut16)(end - s)
-		};
-		if (!dyncc_is_builtin_role (&tmp)) {
-			return false;
-		}
-	}
-	const char *p = s;
-	if (!dyncc_parse_name (&p, end, name) || p != end) {
-		return false;
-	}
-	return true;
-}
-
-static int dyncc_find_role(const RAnalDynCC *d, const char *name, size_t name_len) {
-	int i;
-	for (i = 0; i < d->role_count; i++) {
-		const RAnalDynCCRole *role = &d->roles[i];
-		if (role->name.len == name_len && !strncmp (role->name.p, name, name_len)) {
-			return i;
-		}
-	}
-	return -1;
-}
-
-static bool dyncc_parse_role(const char *s, const char *end, RAnalDynCC *d) {
-	const char *eq = dyncc_scan_delim (s, end, '=');
-	if (eq == end || eq == s || eq + 1 == end) {
-		return false;
-	}
-	RAnalDynCCSlice name = {0};
-	if (!dyncc_parse_role_name (s, eq, &name)) {
-		return false;
-	}
-	int slot = dyncc_find_role (d, name.p, name.len);
-	if (slot < 0) {
-		if (d->role_count >= R_ANAL_DYNCC_MAX_ROLES) {
-			return false;
-		}
-		slot = d->role_count++;
-	}
-	RAnalDynCCRole *role = &d->roles[slot];
-	memset (role, 0, sizeof (*role));
-	role->name = name;
-	role->arg = -1;
-	const char *value = eq + 1;
-	const char *p = value;
-	int arg = -1;
-	if (dyncc_parse_int (&p, &arg) && p == end) {
-		role->arg = arg;
-		return true;
-	}
-	size_t len = end - value;
-	if (!len || len >= R_ANAL_DYNCC_GROUP_SIZE) {
-		return false;
-	}
-	role->loc.p = value;
-	role->loc.len = (ut16)len;
-	return true;
-}
-
-static bool dyncc_parse_suffixes(const char *s, const char *end, RAnalDynCC *d) {
-	while (s < end) {
-		if (*s++ != '!') {
-			return false;
-		}
-		const char *next = dyncc_scan_delim (s, end, '!');
-		int pop;
-		if (cc_parse_stack_pop_range (s, next, &pop)) {
-			d->stack_pop = pop;
-		} else {
-			const char *regs = dyncc_range_startswith (s, next, "clobber=");
-			if (regs) {
-				if (!dyncc_set_regset (regs, next, &d->clobbers)) {
-					return false;
-				}
-			} else if ((regs = dyncc_range_startswith (s, next, "preserve="))) {
-				if (!dyncc_set_regset (regs, next, &d->preserves)) {
-					return false;
-				}
-			} else if (!dyncc_parse_role (s, next, d)) {
-				return false;
-			}
-		}
-		s = next;
-	}
-	return true;
-}
-
-static bool dyncc_map_covers_arg0(const RAnalDynCCMap *map) {
-	if (map->kind == R_ANAL_DYNCC_MAP_CC) {
-		if (!map->has_args) {
-			return true;
-		}
-		/* Fall through to the explicit logical-argument range check. */
-	}
-	if (!map->has_args) {
-		return false;
-	}
-	if (map->arg_count == R_ANAL_DYNCC_TAIL) {
-		return map->arg_delta > 0? map->arg_base <= 0: map->arg_base >= 0;
-	}
-	int i;
-	for (i = 0; i < map->arg_count; i++) {
-		if (map->arg_base + (i * map->arg_delta) == 0) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool dyncc_has_arg0(const RAnalDynCC *d) {
-	int i;
-	for (i = 0; i < d->arg_map_count; i++) {
-		if (dyncc_map_covers_arg0 (&d->args[i])) {
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool dyncc_parse(const char *cc, RAnalDynCC *out) {
-	if (!cc || strncmp (cc, "dyncc:", 6)) {
-		return false;
-	}
-	RAnalDynCC d = {0};
-	const char *args = cc + 6;
-	const char *end = cc + strlen (cc);
-	const char *kind = dyncc_scan_delim (args, end, ':');
-	if (kind == end || (kind[1] != 'i' && kind[1] != 's') || kind[2] != ':') {
-		return false;
-	}
-	const char *rets = kind + 3;
-	const char *suffix = dyncc_scan_delim (rets, end, '!');
-	const char *ret_end = suffix < end? suffix: end;
-	d.instance = kind[1] == 'i';
-	if (!dyncc_parse_maps (args, kind, true, d.args, &d.arg_map_count)) {
-		return false;
-	}
-	if (!dyncc_parse_maps (rets, ret_end, false, d.rets, &d.ret_map_count)) {
-		return false;
-	}
-	if (suffix < end && !dyncc_parse_suffixes (suffix, end, &d)) {
-		return false;
-	}
-	if (d.instance && dyncc_find_role (&d, "self", 4) < 0 && !dyncc_has_arg0 (&d)) {
-		return false;
-	}
-	*out = d;
-	return true;
+static bool dyncc_slice_startswith(const RAnalDynCCSlice *slice, const char *s) {
+	size_t len = strlen (s);
+	return slice->len >= len && !strncmp (slice->p, s, len);
 }
 
 /* Intern a (ptr,len) span into anal->constpool and return the stable string. */
@@ -580,250 +131,551 @@ static const char *dyncc_intern(RAnal *anal, const char *p, size_t len) {
 	return ret;
 }
 
-/* Parse a dyncc expression at most once. The returned pointer is owned by the
- * per-RAnal cache and is valid until the next eviction of that slot; callers
- * must use it before triggering another dyncc_get. */
-static const RAnalDynCC *dyncc_get(RAnal *anal, const char *cc) {
-	if (!cc || strncmp (cc, "dyncc:", 6)) {
-		return NULL;
-	}
-	/* Intern first so parsed slices and cache keys reference immortal storage
-	 * and identical expressions compare equal by pointer. */
-	cc = r_str_constpool_get (&anal->constpool, cc);
-	if (!cc) {
-		return NULL;
-	}
-	RAnalDynCCCache *cache = anal->dyncc_cache;
-	if (!cache) {
-		cache = anal->dyncc_cache = R_NEW0 (RAnalDynCCCache);
-		if (!cache) {
-			return NULL;
-		}
-	}
-	int i;
-	for (i = 0; i < R_ANAL_DYNCC_CACHE_SIZE; i++) {
-		if (cache->keys[i] == cc) {
-			return &cache->entries[i];
-		}
-	}
-	RAnalDynCC parsed;
-	if (!dyncc_parse (cc, &parsed)) {
-		return NULL;
-	}
-	const int slot = cache->next;
-	cache->next = (cache->next + 1) % R_ANAL_DYNCC_CACHE_SIZE;
-	cache->entries[slot] = parsed;
-	cache->keys[slot] = cc;
-	return &cache->entries[slot];
+typedef struct r_anal_dyn_cc_loc_t {
+	RAnalDynCCSlice text;
+	bool indexed;
+	char prefix;
+	int index;
+} RAnalDynCCLoc;
+
+typedef struct r_anal_dyn_cc_seq_t {
+	RAnalDynCCLoc locs[R_ANAL_CC_MAXARG];
+	int count;
+} RAnalDynCCSeq;
+
+typedef struct r_anal_dyn_cc_homes_t {
+	RAnalDynCCLoc homes[R_ANAL_DYNCC_MAX_HOMES];
+	int home_count;
+} RAnalDynCCHomes;
+
+typedef struct r_anal_dyn_cc_role_t {
+	char tag;
+	int arg;
+	RAnalDynCCLoc loc;
+} RAnalDynCCRole;
+
+typedef struct r_anal_dyn_cc_t {
+	RAnalDynCCHomes args[R_ANAL_CC_MAXARG];
+	int arg_count;
+	bool arg_tail;
+	RAnalDynCCLoc arg_tail_loc;
+	RAnalDynCCSlice arg_ref;
+	RAnalDynCCHomes rets[R_ANAL_CC_MAXARG];
+	int ret_count;
+	RAnalDynCCSlice ret_ref;
+	int stack_pop;
+	RAnalDynCCSlice clobbers;
+	RAnalDynCCSlice preserves;
+	RAnalDynCCRole roles[R_ANAL_DYNCC_MAX_ROLES];
+	int role_count;
+} RAnalDynCC;
+
+static bool dyncc_slice_empty(const RAnalDynCCSlice *slice) {
+	return !slice || !slice->p || !slice->len;
 }
 
-static bool dyncc_map_match(const RAnalDynCCMap *map, int n, int *rel) {
-	if (!map->has_args || n < 0) {
+static bool dyncc_set_slice(const char *s, const char *end, RAnalDynCCSlice *out, size_t maxlen) {
+	size_t len = end - s;
+	if (!len || len >= maxlen) {
 		return false;
 	}
-	if (map->arg_count == R_ANAL_DYNCC_TAIL) {
-		if (map->arg_delta > 0) {
-			if (n < map->arg_base) {
-				return false;
-			}
-			*rel = n - map->arg_base;
-		} else {
-			if (n > map->arg_base) {
-				return false;
-			}
-			*rel = map->arg_base - n;
-		}
+	out->p = s;
+	out->len = (ut16)len;
+	return true;
+}
+
+static bool dyncc_parse_ref(const char *s, const char *end, RAnalDynCCSlice *out) {
+	if (s >= end || *s++ != '&') {
+		return false;
+	}
+	if (!dyncc_parse_name (&s, end, out)) {
+		return false;
+	}
+	return s == end;
+}
+
+static bool dyncc_parse_loc(const char *s, const char *end, RAnalDynCCLoc *out) {
+	if (!dyncc_set_slice (s, end, &out->text, R_ANAL_DYNCC_GROUP_SIZE)) {
+		return false;
+	}
+	if (dyncc_slice_eq (&out->text, "_")) {
 		return true;
 	}
-	int i;
-	for (i = 0; i < map->arg_count; i++) {
-		if (map->arg_base + (i * map->arg_delta) == n) {
-			*rel = i;
-			return true;
-		}
-	}
-	return false;
-}
-
-static bool dyncc_ref_arg_index(const RAnalDynCCMap *map, int n, int *refn, int *reflastn) {
-	if (!map || map->kind != R_ANAL_DYNCC_MAP_CC || n < 0) {
+	if (dyncc_slice_startswith (&out->text, "stack")) {
 		return false;
 	}
-	if (map->has_args) {
-		int rel;
-		if (!dyncc_map_match (map, n, &rel)) {
+	if (*s == '&') {
+		RAnalDynCCSlice name = {0};
+		return dyncc_parse_ref (s, end, &name);
+	}
+	if (!isalnum ((ut8)*s)) {
+		return false;
+	}
+	while (s < end) {
+		if (!isalnum ((ut8)*s) && *s != '_' && *s != '.') {
 			return false;
 		}
-		*refn = rel;
-		*reflastn = map->arg_count;
-	} else {
-		*refn = n;
-		*reflastn = -1;
+		s++;
 	}
 	return true;
 }
 
-/* Locate the rel-th comma-separated item inside a parsed LIST slice. */
-static bool dyncc_list_item(const RAnalDynCCMap *map, int rel, const char **out, size_t *out_len) {
-	const char *s = map->text.p;
-	const char *end = s + map->text.len;
-	int i;
-	for (i = 0; s <= end; i++) {
-		const char *tok = s;
-		while (s < end && *s != ',') {
+static bool dyncc_parse_loc_seq(const char *s, const char *end, RAnalDynCCSeq *seq) {
+	if (s >= end) {
+		return false;
+	}
+	if (*s == '^') {
+		s++;
+		const bool rev = s < end && *s == '-';
+		if (rev) {
 			s++;
 		}
-		if (i == rel) {
-			*out = tok;
-			*out_len = s - tok;
+		if (s == end) {
+			seq->locs[0] = (RAnalDynCCLoc) {
+				.text = {
+					.p = rev? "^-": "^",
+					.len = rev? 2: 1
+				}
+			};
+			seq->count = 1;
 			return true;
 		}
-		s++; /* skip the comma */
+		const char *p = s;
+		int base = 0;
+		if (dyncc_parse_int (&p, &base)) {
+			int count = 1;
+			int delta = 1;
+			if (p < end && (*p == '+' || *p == '-')) {
+				delta = *p++ == '-'? -1: 1;
+				if (!dyncc_parse_int (&p, &count) || count <= 0 || count > R_ANAL_CC_MAXARG) {
+					return false;
+				}
+			}
+			if (p != end || (delta < 0 && base < count - 1)) {
+				return false;
+			}
+			int i;
+			for (i = 0; i < count; i++) {
+				seq->locs[i] = (RAnalDynCCLoc) {
+					.indexed = true,
+					.prefix = rev? R_ANAL_DYNCC_REVSTACK_PREFIX: R_ANAL_DYNCC_STACK_PREFIX,
+					.index = base + (i * delta)
+				};
+			}
+			seq->count = count;
+			return true;
+		}
+		return false;
 	}
-	return false;
+	const char *token = s;
+	if (isalpha ((ut8)*s)) {
+		const char prefix = *s++;
+		const char *p = s;
+		int base = 0;
+		if (dyncc_parse_int (&p, &base)) {
+			if (p == end) {
+				seq->locs[0] = (RAnalDynCCLoc) {
+					.indexed = true,
+					.prefix = prefix,
+					.index = base
+				};
+				seq->count = 1;
+				return true;
+			}
+			if ((*p == '+' || *p == '-') && p + 1 < end) {
+				const int delta = *p++ == '-'? -1: 1;
+				int count = 0;
+				if (!dyncc_parse_int (&p, &count) || p != end || count <= 0 || count > R_ANAL_CC_MAXARG) {
+					return false;
+				}
+				if (delta < 0 && base < count - 1) {
+					return false;
+				}
+				int i;
+				for (i = 0; i < count; i++) {
+					seq->locs[i] = (RAnalDynCCLoc) {
+						.indexed = true,
+						.prefix = prefix,
+						.index = base + (i * delta)
+					};
+				}
+				seq->count = count;
+				return true;
+			}
+		}
+	}
+	if (!dyncc_parse_loc (token, end, &seq->locs[0])) {
+		return false;
+	}
+	seq->count = 1;
+	return true;
 }
 
-static const char *dyncc_map_loc(RAnal *anal, const RAnalDynCCMap *map, int rel) {
-	if (rel < 0) {
+static bool dyncc_tail_loc(const RAnalDynCCLoc *loc) {
+	return loc && !loc->indexed
+		&& (dyncc_slice_eq (&loc->text, "^") || dyncc_slice_eq (&loc->text, "^-"));
+}
+
+static bool dyncc_parse_homes(const char *s, const char *end, RAnalDynCCHomes *homes, int *count) {
+	RAnalDynCCSeq seqs[R_ANAL_DYNCC_MAX_HOMES] = {0};
+	int home_count = 0;
+	int loc_count = -1;
+	while (s < end) {
+		if (home_count >= R_ANAL_DYNCC_MAX_HOMES) {
+			return false;
+		}
+		const char *next = memchr (s, '\'', end - s);
+		if (!next) {
+			next = end;
+		}
+		if (next == s || !dyncc_parse_loc_seq (s, next, &seqs[home_count])) {
+			return false;
+		}
+		if (loc_count < 0) {
+			loc_count = seqs[home_count].count;
+		} else if (loc_count != seqs[home_count].count) {
+			return false;
+		}
+		home_count++;
+		s = next < end? next + 1: next;
+	}
+	if (home_count < 1 || loc_count < 1) {
+		return false;
+	}
+	int i;
+	for (i = 0; i < loc_count; i++) {
+		int h;
+		for (h = 0; h < home_count; h++) {
+			homes[i].homes[h] = seqs[h].locs[i];
+		}
+		homes[i].home_count = home_count;
+	}
+	*count = loc_count;
+	return true;
+}
+
+static bool dyncc_parse_args(const char *s, const char *end, RAnalDynCC *d) {
+	if (s == end) {
+		return true;
+	}
+	if (!memchr (s, ',', end - s) && !memchr (s, '\'', end - s)) {
+		RAnalDynCCSlice ref = {0};
+		if (dyncc_parse_ref (s, end, &ref)) {
+			d->arg_ref = ref;
+			return true;
+		}
+	}
+	while (s < end) {
+		const char *next = memchr (s, ',', end - s);
+		if (!next) {
+			next = end;
+		}
+		if (next == s || d->arg_tail) {
+			return false;
+		}
+		RAnalDynCCHomes homes[R_ANAL_CC_MAXARG] = {0};
+		int count = 0;
+		if (!dyncc_parse_homes (s, next, homes, &count)) {
+			return false;
+		}
+		if (count == 1 && homes[0].home_count == 1 && dyncc_tail_loc (&homes[0].homes[0])) {
+			if (next < end) {
+				return false;
+			}
+			d->arg_tail = true;
+			d->arg_tail_loc = homes[0].homes[0];
+		} else {
+			if (d->arg_count > R_ANAL_CC_MAXARG - count) {
+				return false;
+			}
+			int i;
+			for (i = 0; i < count; i++) {
+				d->args[d->arg_count++] = homes[i];
+			}
+		}
+		s = next < end? next + 1: next;
+	}
+	return true;
+}
+
+static bool dyncc_parse_rets(const char *s, const char *end, RAnalDynCC *d) {
+	if (s == end) {
+		return true;
+	}
+	if (!memchr (s, ',', end - s) && !memchr (s, '\'', end - s)) {
+		RAnalDynCCSlice ref = {0};
+		if (dyncc_parse_ref (s, end, &ref)) {
+			d->ret_ref = ref;
+			return true;
+		}
+	}
+	while (s < end) {
+		const char *next = memchr (s, ',', end - s);
+		if (!next) {
+			next = end;
+		}
+		if (next == s || d->ret_count >= R_ANAL_CC_MAXARG) {
+			return false;
+		}
+		RAnalDynCCHomes homes[R_ANAL_CC_MAXARG] = {0};
+		int count = 0;
+		if (!dyncc_parse_homes (s, next, homes, &count)) {
+			return false;
+		}
+		if (d->ret_count > R_ANAL_CC_MAXARG - count) {
+			return false;
+		}
+		int i;
+		for (i = 0; i < count; i++) {
+			if (homes[i].home_count != 1) {
+				return false;
+			}
+			d->rets[d->ret_count++] = homes[i];
+		}
+		s = next < end? next + 1: next;
+	}
+	return true;
+}
+
+static bool dyncc_role_tag(char tag) {
+	switch (tag) {
+	case 'T':
+	case 'R':
+	case 'V':
+	case 'E':
+	case 'X':
+		return true;
+	default:
+		return islower ((ut8)tag) && tag != 'p';
+	}
+}
+
+static int dyncc_find_role(const RAnalDynCC *d, char tag) {
+	int i;
+	for (i = 0; i < d->role_count; i++) {
+		if (d->roles[i].tag == tag) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+static bool dyncc_set_role(RAnalDynCC *d, char tag, const char *s, const char *end) {
+	if (!dyncc_role_tag (tag) || s >= end) {
+		return false;
+	}
+	int slot = dyncc_find_role (d, tag);
+	if (slot < 0) {
+		if (d->role_count >= R_ANAL_DYNCC_MAX_ROLES) {
+			return false;
+		}
+		slot = d->role_count++;
+	}
+	RAnalDynCCRole *role = &d->roles[slot];
+	memset (role, 0, sizeof (*role));
+	role->tag = tag;
+	role->arg = -1;
+	const char *p = s;
+	int arg = -1;
+	if (dyncc_parse_int (&p, &arg) && p == end) {
+		role->arg = arg;
+		return true;
+	}
+	RAnalDynCCSeq seq = {0};
+	if (!dyncc_parse_loc_seq (s, end, &seq) || seq.count != 1) {
+		return false;
+	}
+	role->loc = seq.locs[0];
+	return true;
+}
+
+static bool dyncc_parse_attrs(const char *s, const char *end, RAnalDynCC *d) {
+	while (s < end) {
+		if (*s++ != '!' || s >= end) {
+			return false;
+		}
+		const char tag = *s++;
+		const char *next = memchr (s, '!', end - s);
+		if (!next) {
+			next = end;
+		}
+		if (tag == 'p') {
+			if (s == next) {
+				return false;
+			}
+			if (next - s == 1 && *s == '?') {
+				d->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+			} else {
+				const char *p = s;
+				int pop = 0;
+				if (!dyncc_parse_int (&p, &pop) || p != next) {
+					return false;
+				}
+				d->stack_pop = pop;
+			}
+		} else if (tag == 'C' || tag == 'P') {
+			if (next - s < 2 || *s != '(' || next[-1] != ')') {
+				return false;
+			}
+			if (!dyncc_set_regset (s, next, tag == 'C'? &d->clobbers: &d->preserves)) {
+				return false;
+			}
+		} else if (!dyncc_set_role (d, tag, s, next)) {
+			return false;
+		}
+		s = next;
+	}
+	return true;
+}
+
+static bool dyncc_parse(const char *cc, RAnalDynCC *out) {
+	if (!cc || !r_str_startswith (cc, "dyncc:")) {
+		return false;
+	}
+	const char *args = cc + strlen ("dyncc:");
+	const char *end = cc + strlen (cc);
+	const char *rets = memchr (args, ':', end - args);
+	if (!rets) {
+		return false;
+	}
+	const char *attrs = memchr (rets + 1, '!', end - (rets + 1));
+	const char *ret_end = attrs? attrs: end;
+	RAnalDynCC d = {0};
+	if (!dyncc_parse_args (args, rets, &d)) {
+		return false;
+	}
+	if (!dyncc_parse_rets (rets + 1, ret_end, &d)) {
+		return false;
+	}
+	if (attrs && !dyncc_parse_attrs (attrs, end, &d)) {
+		return false;
+	}
+	*out = d;
+	return true;
+}
+
+static const char *dyncc_loc_name(RAnal *anal, const RAnalDynCCLoc *loc) {
+	if (!loc) {
 		return NULL;
 	}
-	switch (map->kind) {
-	case R_ANAL_DYNCC_MAP_LIST: {
-		if (rel >= map->reg_count) {
-			return NULL;
-		}
-		const char *tok = NULL;
-		size_t tok_len = 0;
-		if (!dyncc_list_item (map, rel, &tok, &tok_len)) {
-			return NULL;
-		}
-		return dyncc_intern (anal, tok, tok_len);
-	}
-	case R_ANAL_DYNCC_MAP_GROUP:
-		return rel == 0? dyncc_intern (anal, map->text.p, map->text.len): NULL;
-	case R_ANAL_DYNCC_MAP_RANGE:
-		if (map->loc_count >= 0 && rel >= map->loc_count) {
-			return NULL;
-		}
-		if (map->prefix == 'm') {
-			if (!map->base_reg.len) {
-				return r_str_constpool_get (&anal->constpool, map->loc_delta > 0? "stack": "stack_rev");
-			}
-			r_strf_var (name, 80, "m(%.*s)%d", (int)map->base_reg.len, map->base_reg.p,
-				map->loc_base + (rel * map->loc_delta));
+	if (loc->indexed) {
+		if (loc->prefix == R_ANAL_DYNCC_REVSTACK_PREFIX) {
+			r_strf_var (name, 64, "^-%d", loc->index);
 			return r_str_constpool_get (&anal->constpool, name);
 		}
-		r_strf_var (name, 64, "%c%d", map->prefix, map->loc_base + (rel * map->loc_delta));
+		if (loc->prefix == R_ANAL_DYNCC_STACK_PREFIX) {
+			r_strf_var (name, 64, "^%d", loc->index);
+			return r_str_constpool_get (&anal->constpool, name);
+		}
+		r_strf_var (name, 64, "%c%d", loc->prefix, loc->index);
 		return r_str_constpool_get (&anal->constpool, name);
-	default:
+	}
+	const RAnalDynCCSlice *text = &loc->text;
+	if (dyncc_slice_empty (text) || dyncc_slice_eq (text, "_")) {
 		return NULL;
 	}
+	if (dyncc_slice_eq (text, "^")) {
+		return r_str_constpool_get (&anal->constpool, "^");
+	}
+	if (dyncc_slice_eq (text, "^-")) {
+		return r_str_constpool_get (&anal->constpool, "^-");
+	}
+	return dyncc_intern (anal, text->p, text->len);
+}
+
+static const char *dyncc_ref_name(RAnal *anal, const RAnalDynCCSlice *ref) {
+	return dyncc_intern (anal, ref->p, ref->len);
+}
+
+static const char *dyncc_from_static_loc(RAnal *anal, const char *loc) {
+	if (!loc) {
+		return NULL;
+	}
+	if (!strcmp (loc, "stack")) {
+		return r_str_constpool_get (&anal->constpool, "^");
+	}
+	if (!strcmp (loc, "stack_rev")) {
+		return r_str_constpool_get (&anal->constpool, "^-");
+	}
+	const char *p = dyncc_range_startswith (loc, loc + strlen (loc), "stack_rev");
+	if (p && isdigit ((ut8)*p)) {
+		r_strf_var (name, 64, "^-%s", p);
+		return r_str_constpool_get (&anal->constpool, name);
+	}
+	p = dyncc_range_startswith (loc, loc + strlen (loc), "stack");
+	if (p && isdigit ((ut8)*p)) {
+		r_strf_var (name, 64, "^%s", p);
+		return r_str_constpool_get (&anal->constpool, name);
+	}
+	return loc;
 }
 
 static const char *dyncc_arg_home(RAnal *anal, const RAnalDynCC *d, int n, int home, int lastn) {
-	int seen = 0;
-	int i;
-	for (i = 0; i < d->arg_map_count; i++) {
-		const RAnalDynCCMap *map = &d->args[i];
-		const char *loc = NULL;
-		if (map->kind == R_ANAL_DYNCC_MAP_CC) {
-			int refn, reflastn;
-			if (dyncc_ref_arg_index (map, n, &refn, &reflastn)) {
-				r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)map->text.len, map->text.p);
-				loc = r_anal_cc_arg (anal, refcc, refn, reflastn >= 0? reflastn: lastn);
-			}
-		} else {
-			int rel;
-			if (dyncc_map_match (map, n, &rel)) {
-				loc = dyncc_map_loc (anal, map, rel);
-			}
-		}
-		if (loc) {
-			if (seen == home) {
-				return loc;
-			}
-			seen++;
-		}
+	if (n < 0 || home < 0) {
+		return NULL;
+	}
+	if (!dyncc_slice_empty (&d->arg_ref)) {
+		const char *refcc = dyncc_ref_name (anal, &d->arg_ref);
+		return refcc? dyncc_from_static_loc (anal, r_anal_cc_arg_home (anal, refcc, n, home, lastn)): NULL;
+	}
+	if (n < d->arg_count) {
+		const RAnalDynCCHomes *homes = &d->args[n];
+		return home < homes->home_count? dyncc_loc_name (anal, &homes->homes[home]): NULL;
+	}
+	if (d->arg_tail && home == 0) {
+		return dyncc_loc_name (anal, &d->arg_tail_loc);
 	}
 	return NULL;
 }
 
-static const RAnalDynCCRole *dyncc_role(const RAnalDynCC *d, const char *name) {
-	int slot = dyncc_find_role (d, name, strlen (name));
+static const RAnalDynCCRole *dyncc_role(const RAnalDynCC *d, char tag) {
+	int slot = dyncc_role_tag (tag)? dyncc_find_role (d, tag): -1;
 	return slot >= 0? &d->roles[slot]: NULL;
 }
 
-static const char *dyncc_role_loc(RAnal *anal, const RAnalDynCC *d, const char *name) {
-	const RAnalDynCCRole *role = dyncc_role (d, name);
-	if (role) {
-		return role->arg >= 0
-			? dyncc_arg_home (anal, d, role->arg, 0, -1)
-			: dyncc_intern (anal, role->loc.p, role->loc.len);
+static const char *dyncc_role_loc(RAnal *anal, const RAnalDynCC *d, char tag) {
+	const RAnalDynCCRole *role = dyncc_role (d, tag);
+	if (!role) {
+		return NULL;
 	}
-	if (!strcmp (name, "self") && d->instance) {
-		return dyncc_arg_home (anal, d, 0, 0, -1);
-	}
-	return NULL;
+	return role->arg >= 0
+		? dyncc_arg_home (anal, d, role->arg, 0, -1)
+		: dyncc_loc_name (anal, &role->loc);
 }
 
 static const char *dyncc_ret(RAnal *anal, const RAnalDynCC *d, int n) {
-	int i;
-	for (i = 0; i < d->ret_map_count; i++) {
-		const RAnalDynCCMap *map = &d->rets[i];
-		if (map->kind == R_ANAL_DYNCC_MAP_CC) {
-			r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)map->text.len, map->text.p);
-			const char *ret = r_anal_cc_ret (anal, refcc, n);
-			if (ret) {
-				return ret;
-			}
-			continue;
-		}
-		int rel;
-		if (dyncc_map_match (map, n, &rel)) {
-			return dyncc_map_loc (anal, map, rel);
-		}
+	if (n < 0) {
+		return NULL;
 	}
-	return NULL;
+	if (!dyncc_slice_empty (&d->ret_ref)) {
+		const char *refcc = dyncc_ref_name (anal, &d->ret_ref);
+		return refcc? dyncc_from_static_loc (anal, r_anal_cc_ret (anal, refcc, n)): NULL;
+	}
+	return n < d->ret_count? dyncc_loc_name (anal, &d->rets[n].homes[0]): NULL;
 }
 
 static int dyncc_max_arg(RAnal *anal, const RAnalDynCC *d) {
-	int max = 0;
-	int i;
-	for (i = 0; i < d->arg_map_count; i++) {
-		const RAnalDynCCMap *map = &d->args[i];
-		if (map->kind == R_ANAL_DYNCC_MAP_CC && !map->has_args) {
-			r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)map->text.len, map->text.p);
-			max = R_MAX (max, r_anal_cc_max_arg (anal, refcc));
-		} else if (map->has_args) {
-			if (map->arg_count == R_ANAL_DYNCC_TAIL) {
-				max = R_MAX (max, map->arg_base);
-			} else if (map->arg_count > 0) {
-				int end = map->arg_base + ((map->arg_count - 1) * map->arg_delta);
-				max = R_MAX (max, R_MAX (map->arg_base, end) + 1);
-			}
-		}
+	if (!dyncc_slice_empty (&d->arg_ref)) {
+		const char *refcc = dyncc_ref_name (anal, &d->arg_ref);
+		return refcc? r_anal_cc_max_arg (anal, refcc): 0;
 	}
-	return max;
+	return d->arg_count;
 }
 
-static bool dyncc_ref_exists(RAnal *anal, const RAnalDynCCSlice *name) {
-	r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)name->len, name->p);
+static bool dyncc_ref_exists(RAnal *anal, const RAnalDynCCSlice *ref) {
+	if (dyncc_slice_empty (ref)) {
+		return true;
+	}
+	r_strf_var (refcc, R_ANAL_DYNCC_NAME_SIZE, "%.*s", (int)ref->len, ref->p);
 	const char *x = sdb_const_get (DB, refcc, 0);
 	return x && !strcmp (x, "cc");
 }
 
 static bool dyncc_refs_exist(RAnal *anal, const RAnalDynCC *d) {
+	if (!dyncc_ref_exists (anal, &d->arg_ref) || !dyncc_ref_exists (anal, &d->ret_ref)) {
+		return false;
+	}
 	int i;
-	for (i = 0; i < d->arg_map_count; i++) {
-		if (d->args[i].kind == R_ANAL_DYNCC_MAP_CC && !dyncc_ref_exists (anal, &d->args[i].text)) {
-			return false;
-		}
-	}
-	for (i = 0; i < d->ret_map_count; i++) {
-		if (d->rets[i].kind == R_ANAL_DYNCC_MAP_CC && !dyncc_ref_exists (anal, &d->rets[i].text)) {
-			return false;
-		}
-	}
 	for (i = 0; i < d->role_count; i++) {
 		if (d->roles[i].arg >= 0 && !dyncc_arg_home (anal, d, d->roles[i].arg, 0, -1)) {
 			return false;
@@ -940,7 +792,6 @@ R_API bool r_anal_cc_once(RAnal *anal) {
 R_API void r_anal_cc_reset(RAnal *anal) {
 	R_CRITICAL_ENTER (anal);
 	sdb_reset (DB);
-	R_FREE (anal->dyncc_cache);
 	R_CRITICAL_LEAVE (anal);
 }
 
@@ -948,31 +799,31 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	Sdb *db = anal->sdb_cc;
 	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
 	int i;
-	const RAnalDynCC *d = dyncc_get (anal, name);
-	if (d) {
+	RAnalDynCC d;
+	if (dyncc_parse (name, &d)) {
 		RStrBuf *sb = r_strbuf_new (NULL);
-		const char *ret = dyncc_ret (anal, d, 0);
+		const char *ret = dyncc_ret (anal, &d, 0);
 		r_strbuf_append (sb, ret? ret: "void");
 		for (i = 1; ; i++) {
-			const char *rs = dyncc_ret (anal, d, i);
+			const char *rs = dyncc_ret (anal, &d, i);
 			if (!rs) {
 				break;
 			}
 			r_strbuf_appendf (sb, ":%s", rs);
 		}
-		const char *self = dyncc_role_loc (anal, d, "self");
+		const char *self = dyncc_role_loc (anal, &d, 'T');
 		r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", name);
-		int max = dyncc_max_arg (anal, d);
+		int max = dyncc_max_arg (anal, &d);
 		bool is_first = true;
 		for (i = 0; i < max; i++) {
-			const char *arg = dyncc_arg_home (anal, d, i, 0, -1);
+			const char *arg = dyncc_arg_home (anal, &d, i, 0, -1);
 			if (!arg) {
 				continue;
 			}
 			r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", arg);
 			is_first = false;
 		}
-		const char *argn = dyncc_arg_home (anal, d, max, 0, -1);
+		const char *argn = dyncc_arg_home (anal, &d, max, 0, -1);
 		if (argn) {
 			r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", argn);
 		}
@@ -1044,9 +895,9 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *cc) {
 	if (!strcmp (cc, "dyncc")) {
 		return true;
 	}
-	const RAnalDynCC *d = dyncc_get (anal, cc);
-	if (d) {
-		return dyncc_refs_exist (anal, d);
+	RAnalDynCC d;
+	if (dyncc_parse (cc, &d)) {
+		return dyncc_refs_exist (anal, &d);
 	}
 	const char *x = sdb_const_get (DB, cc, 0);
 	return (x != NULL) && !strcmp (x, "cc");
@@ -1057,9 +908,9 @@ R_API const char *r_anal_cc_arg_home(RAnal *anal, const char *cc, int n, int hom
 	if (!cc) {
 		return NULL;
 	}
-	const RAnalDynCC *d = dyncc_get (anal, cc);
-	if (d) {
-		return dyncc_arg_home (anal, d, n, home, lastn);
+	RAnalDynCC d;
+	if (dyncc_parse (cc, &d)) {
+		return dyncc_arg_home (anal, &d, n, home, lastn);
 	}
 	if (home > 0) {
 		return NULL;
@@ -1090,9 +941,9 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
 
 R_API const char *r_anal_cc_role(RAnal *anal, const char *convention, const char *role) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
-	const RAnalDynCC *d = dyncc_get (anal, convention);
-	if (d) {
-		return dyncc_role_loc (anal, d, role);
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		return role[0] && !role[1]? dyncc_role_loc (anal, &d, role[0]): NULL;
 	}
 	RStrBuf sb;
 	const char *key = r_strbuf_initf (&sb, "cc.%s.%s", convention, role);
@@ -1103,6 +954,10 @@ R_API const char *r_anal_cc_role(RAnal *anal, const char *convention, const char
 }
 
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		return dyncc_role_loc (anal, &d, 'T');
+	}
 	return r_anal_cc_role (anal, convention, "self");
 }
 
@@ -1121,6 +976,10 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 }
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		return dyncc_role_loc (anal, &d, 'E');
+	}
 	return r_anal_cc_role (anal, convention, "error");
 }
 
@@ -1142,9 +1001,9 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	int i = 0;
 	R_RETURN_VAL_IF_FAIL (anal && DB && cc, 0);
 
-	const RAnalDynCC *d = dyncc_get (anal, cc);
-	if (d) {
-		return dyncc_max_arg (anal, d);
+	RAnalDynCC d;
+	if (dyncc_parse (cc, &d)) {
+		return dyncc_max_arg (anal, &d);
 	}
 
 	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
@@ -1164,9 +1023,9 @@ R_API int r_anal_cc_max_arg_clamped(RAnal *anal, const char *cc) {
 
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
-	const RAnalDynCC *d = dyncc_get (anal, convention);
-	if (d) {
-		return dyncc_ret (anal, d, n);
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		return dyncc_ret (anal, &d, n);
 	}
 	r_strf_buffer (64);
 	if (n > 0) {
@@ -1187,9 +1046,9 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 
 R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	R_RETURN_VAL_IF_FAIL (anal && convention, 0);
-	const RAnalDynCC *d = dyncc_get (anal, convention);
-	if (d) {
-		return d->stack_pop;
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		return d.stack_pop;
 	}
 	r_strf_var (query, 64, "cc.%s.pop", convention);
 	const char *pop = sdb_const_get (DB, query, 0);
@@ -1198,9 +1057,9 @@ R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 }
 
 static const char *cc_regset(RAnal *anal, const char *convention, const char *field) {
-	const RAnalDynCC *d = dyncc_get (anal, convention);
-	if (d) {
-		const RAnalDynCCSlice *slice = !strcmp (field, "clobber")? &d->clobbers: &d->preserves;
+	RAnalDynCC d;
+	if (dyncc_parse (convention, &d)) {
+		const RAnalDynCCSlice *slice = !strcmp (field, "clobber")? &d.clobbers: &d.preserves;
 		return dyncc_intern (anal, slice->p, slice->len);
 	}
 	r_strf_var (query, 64, "cc.%s.%s", convention, field);

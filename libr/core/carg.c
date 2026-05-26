@@ -215,7 +215,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, "SP");
 	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	if (src && !strcmp (src, "stack_rev")) {
+	if (src && (!strcmp (src, "^-") || !strcmp (src, "stack_rev"))) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
