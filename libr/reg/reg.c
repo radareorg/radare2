@@ -227,8 +227,7 @@ R_IPI void r_reg_free_internal(RReg *reg, bool init) {
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		ht_pp_free (reg->regset[i].ht_regs);
 		reg->regset[i].ht_regs = NULL;
-		r_list_free (reg->regset[i].vbanks);
-		reg->regset[i].vbanks = NULL;
+		RVecRegVBank_fini (&reg->regset[i].vbanks);
 		if (!reg->regset[i].pool) {
 			continue;
 		}
@@ -263,57 +262,70 @@ typedef struct {
 	RRegVBank *vbank;
 	int key;
 } RRegIndexEntry;
+R_VEC_TYPE (RVecRegIndexEntry, RRegIndexEntry);
 
-static RRegItem *vbank_item(RRegVBank *vb, int index) {
-#define VREG_SLOTS 8
-	static R_TH_LOCAL RRegItem items[VREG_SLOTS];
-	static R_TH_LOCAL char names[VREG_SLOTS][64];
-	static R_TH_LOCAL int slot = 0;
-	int cur = slot++ % VREG_SLOTS;
-	RRegItem *item = &items[cur];
-	memset (item, 0, sizeof (*item));
-	snprintf (names[cur], sizeof (names[cur]), "%s%d", vb->prefix, index);
-	item->type = vb->type;
-	item->arena = vb->arena;
-	item->name = names[cur];
-	item->size = vb->size;
-	item->packed_size = vb->packed_size;
-	item->offset = vb->offset + index * vb->size;
-	item->index = vb->index + index;
-	return item;
-#undef VREG_SLOTS
+static bool vbank_prefix(char ch) {
+	return ch == 'l' || ch == 'r' || ch == 'v';
 }
 
-// match name against "<prefix><index>" for any vbank in regset[arena], returning
-// the index and the bank. names like "l007" with leading zeros are rejected to
-// keep one canonical name per slot.
+static bool vbank_name_index(const char *name, int *index) {
+	if (!name[0]) {
+		return false;
+	}
+	const char *p = name + 1;
+	if (!vbank_prefix (name[0]) || *p < '0' || *p > '9') {
+		return false;
+	}
+	if (*p == '0' && p[1]) {
+		return false;
+	}
+	int n = 0;
+	do {
+		if (n > 65536) {
+			return false;
+		}
+		n = n * 10 + (*p++ - '0');
+	} while (*p >= '0' && *p <= '9');
+	if (*p) {
+		return false;
+	}
+	*index = n;
+	return true;
+}
+
 static RRegVBank *vbank_match(RReg *reg, int arena, const char *name, int *index) {
-	RList *banks = reg->regset[arena].vbanks;
-	if (!banks) {
+	int idx = 0;
+	if (!vbank_name_index (name, &idx)) {
 		return NULL;
 	}
-	RListIter *iter;
+	RVecRegVBank *banks = &reg->regset[arena].vbanks;
 	RRegVBank *vb;
-	r_list_foreach (banks, iter, vb) {
-		size_t pl = strlen (vb->prefix);
-		if (strncmp (name, vb->prefix, pl)) {
-			continue;
-		}
-		const char *s = name + pl;
-		if (!*s || !isdigit ((unsigned char)*s)) {
-			continue;
-		}
-		if (*s == '0' && s[1]) {
-			continue;
-		}
-		char *end = NULL;
-		long n = strtol (s, &end, 10);
-		if (end && !*end && n >= 0 && n < vb->count) {
-			*index = (int)n;
+	R_VEC_FOREACH (banks, vb) {
+		if (vb->prefix == name[0] && idx < vb->count) {
+			*index = idx;
 			return vb;
 		}
 	}
 	return NULL;
+}
+
+static RRegItem *vbank_materialize(RReg *reg, RRegVBank *vb, const char *name, int index) {
+	RRegItem *item = R_NEW0 (RRegItem);
+	item->type = vb->type;
+	item->arena = vb->arena;
+	item->name = strdup (name);
+	item->size = vb->size;
+	item->packed_size = vb->packed_size;
+	item->offset = vb->offset + index * vb->size;
+	item->index = vb->index + index;
+	r_list_append (reg->regset[vb->arena].regs, r_ref (item));
+	if (!reg->regset[vb->arena].ht_regs) {
+		reg->regset[vb->arena].ht_regs = ht_pp_new0 ();
+	}
+	ht_pp_insert (reg->regset[vb->arena].ht_regs, item->name, item);
+	r_list_free (reg->allregs);
+	reg->allregs = NULL;
+	return item;
 }
 
 static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *out_index) {
@@ -336,21 +348,7 @@ static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *
 	return true;
 }
 
-static RRegItem *vbank_index_get(RReg *reg, int idx) {
-	int i;
-	for (i = 0; i < R_REG_TYPE_LAST; i++) {
-		RListIter *iter;
-		RRegVBank *vb;
-		r_list_foreach (reg->regset[i].vbanks, iter, vb) {
-			if (idx >= vb->index && idx < vb->index + vb->count) {
-				return vbank_item (vb, idx - vb->index);
-			}
-		}
-	}
-	return NULL;
-}
-
-static int reg_index_entry_cmp(RRegIndexEntry *a, RRegIndexEntry *b) {
+static int reg_index_entry_cmp(const RRegIndexEntry *a, const RRegIndexEntry *b) {
 	return (a->key > b->key) - (a->key < b->key);
 }
 
@@ -361,27 +359,32 @@ R_IPI void r_reg_reindex(RReg *reg) {
 	RRegItem *r;
 	RRegVBank *vb;
 	RRegIndexEntry *entry;
-	RList *entries = r_list_newf (free);
+	RVecRegIndexEntry entries;
+	RVecRegIndexEntry_init (&entries);
 	RList *all = r_list_newf (NULL);
 	for (i = 0; i < R_REG_TYPE_LAST; i++) {
 		r_list_foreach (reg->regset[i].regs, iter, r) {
 			if (vbank_item_slot (reg, r, NULL, NULL)) {
 				continue;
 			}
-			entry = R_NEW0 (RRegIndexEntry);
+			entry = RVecRegIndexEntry_emplace_back (&entries);
+			if (!entry) {
+				continue;
+			}
 			entry->item = r;
 			entry->key = (r->offset * 16) + r->size;
-			r_list_append (entries, entry);
 		}
-		r_list_foreach (reg->regset[i].vbanks, iter, vb) {
-			entry = R_NEW0 (RRegIndexEntry);
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
+			entry = RVecRegIndexEntry_emplace_back (&entries);
+			if (!entry) {
+				continue;
+			}
 			entry->vbank = vb;
 			entry->key = (vb->offset * 16) + vb->size;
-			r_list_append (entries, entry);
 		}
 	}
-	r_list_sort (entries, (RListComparator)reg_index_entry_cmp);
-	r_list_foreach (entries, iter, entry) {
+	RVecRegIndexEntry_sort (&entries, reg_index_entry_cmp);
+	R_VEC_FOREACH (&entries, entry) {
 		if (entry->item) {
 			entry->item->index = index++;
 			r_list_append (all, entry->item);
@@ -399,7 +402,7 @@ R_IPI void r_reg_reindex(RReg *reg) {
 		index += entry->vbank->count;
 	}
 	r_list_sort (all, (RListComparator)regcmp);
-	r_list_free (entries);
+	RVecRegIndexEntry_fini (&entries);
 	r_list_free (reg->allregs);
 	reg->allregs = all;
 }
@@ -419,7 +422,7 @@ R_API RRegItem *r_reg_index_get(RReg *reg, int idx) {
 			return r;
 		}
 	}
-	return vbank_index_get (reg, idx);
+	return NULL;
 }
 
 R_API void r_reg_free(RReg *reg) {
@@ -503,16 +506,7 @@ R_API void r_reg_set_copy(RRegSet *d, RRegSet *s) {
 		ht_pp_insert (pp, nr->name, nr);
 	}
 	d->ht_regs = pp;
-	if (s->vbanks) {
-		RRegVBank *vb;
-		d->vbanks = r_list_newf ((RListFree)r_reg_vbank_free);
-		r_list_foreach (s->vbanks, iter, vb) {
-			RRegVBank *nv = R_NEW0 (RRegVBank);
-			*nv = *vb;
-			nv->prefix = strdup (vb->prefix);
-			r_list_append (d->vbanks, nv);
-		}
-	}
+	RVecRegVBank_append (&d->vbanks, &s->vbanks, NULL);
 }
 
 static inline char *dups(const char *x) {
@@ -627,23 +621,15 @@ R_API RRegItem *r_reg_get(RReg *reg, const char *name, int type) {
 		int idx;
 		RRegVBank *vb = vbank_match (reg, j, name, &idx);
 		if (vb) {
-			return vbank_item (vb, idx);
+			RRegItem *item = vbank_materialize (reg, vb, name, idx);
+			return r_ref (item);
 		}
 	}
 	return NULL;
 }
 
-R_API RList *r_reg_get_vbanks(RReg *reg, int type) {
-	R_RETURN_VAL_IF_FAIL (reg, NULL);
-	if (type < 0 || type >= R_REG_TYPE_LAST) {
-		return NULL;
-	}
-	return reg->regset[type].vbanks;
-}
-
 R_API RList *r_reg_get_list(RReg *reg, int type) {
 	R_RETURN_VAL_IF_FAIL (reg, NULL);
-	// TODO: uncomment this line R_RETURN_VAL_IF_FAIL (type >= 0 && type <= R_REG_TYPE_LAST, NULL);
 	if (type == R_REG_TYPE_ALL) {
 		if (!reg->allregs) {
 			r_reg_reindex (reg);

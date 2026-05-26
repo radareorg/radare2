@@ -153,7 +153,7 @@ R_API void r_reg_fit_arena(RReg *reg) {
 			newsize = R_MAX (size, newsize);
 		}
 		RRegVBank *vb;
-		r_list_foreach (reg->regset[i].vbanks, iter, vb) {
+		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
 			size = BITS2BYTES (vb->offset + vb->size * vb->count);
 			newsize = R_MAX (size, newsize);
 		}
