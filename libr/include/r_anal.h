@@ -334,6 +334,8 @@ struct r_anal_attr_t {
 
 typedef struct r_anal_var_t RAnalVar;
 
+#define R_ANAL_CC_STACK_POP_UNKNOWN (-1)
+
 /* Stores useful function metadata */
 typedef struct r_anal_function_meta_t {
 	// _min and _max are calculated lazily when queried.
@@ -355,7 +357,7 @@ typedef struct r_anal_function_t {
 	char *pin; // user-defined pin string (emoji or any utf-8) to mark this function; NULL if not pinned
 	int bits; // ((> bits 0) (set-bits bits))
 	int type;
-	const char *callconv; // calling convention, should come from RAnal.constpool
+	const char *callconv; // calling convention (RAnal.constpool string). May hold the bare "dyncc" marker until r_anal_function_cc() resolves it
 	ut64 addr;
 	HtUP/*<ut64, char *>*/ *labels;
 	HtPP/*<char *, ut64 *>*/ *label_addrs;
@@ -364,6 +366,7 @@ typedef struct r_anal_function_t {
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
+	int stack_pop; // inferred callee-popped argument bytes, or R_ANAL_CC_STACK_POP_UNKNOWN
 	int maxstack;
 	int ninstr;
 	bool folded;
@@ -589,6 +592,7 @@ typedef struct r_anal_t {
 	int thread; // see apt command
 	RList *threads;
 	RColor tracetagcolors[64]; // each trace color for each bit
+	void *dyncc_cache; // RAnalDynCCCache, parsed dyncc expression cache (libr/anal/cc.c)
 	/* end private */
 	R_DIRTY_VAR;
 	RLibStore *libstore;
@@ -1443,15 +1447,32 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name);
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr);
 R_API char *r_anal_cc_get(RAnal *anal, const char *name);
 R_API bool r_anal_cc_once(RAnal *anal);
-R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name);
 R_API const char *r_anal_cc_arg(RAnal *anal, const char *convention, int n, int lastn);
+R_API const char *r_anal_cc_arg_home(RAnal *anal, const char *convention, int n, int home, int lastn);
+R_API const char *r_anal_cc_role(RAnal *anal, const char *convention, const char *role);
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention);
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self);
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention);
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error);
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
+R_API int r_anal_cc_max_arg_clamped(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
+R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
+R_API const char *r_anal_cc_clobbers(RAnal *anal, const char *convention);
+R_API const char *r_anal_cc_preserves(RAnal *anal, const char *convention);
+typedef struct r_anal_cc_piece_t {
+	int off;
+	int size;
+	const char *loc;
+} RAnalCCPiece;
+R_VEC_TYPE (RVecAnalCCPiece, RAnalCCPiece);
+R_API bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPiece *pieces);
+R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
+R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
+R_API bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all);
+R_API bool r_anal_cc_regset_contains(const char *regset, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
+R_API const char *r_anal_function_cc(RAnalFunction *fcn);
 R_API void r_anal_set_cc_default(RAnal *anal, const char *convention);
 R_API const char *r_anal_syscc_default(RAnal *anal);
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *convention);

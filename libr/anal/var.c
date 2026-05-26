@@ -699,7 +699,7 @@ static int cc_reg_index(RAnal *anal, const char *callconv, const char *regname) 
 	int i;
 	for (i = 0; i < arg_max; i++) {
 		const char *reg_arg = r_anal_cc_arg (anal, callconv, i, 0);
-		if (reg_arg && !strcmp (regname, reg_arg)) {
+		if (reg_arg && r_anal_cc_location_uses (anal, reg_arg, regname)) {
 			return i;
 		}
 	}
@@ -724,7 +724,8 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	}
 	char *ri_name = strdup (ri->name);
 	r_unref (ri);
-	char *callconv = var->fcn->callconv ? strdup (var->fcn->callconv): NULL;
+	const char *fcncc = r_anal_function_cc (var->fcn);
+	char *callconv = fcncc ? strdup (fcncc): NULL;
 	const int idx = cc_reg_index (anal, callconv, ri_name);
 	free (callconv);
 	free (ri_name);
@@ -1185,6 +1186,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
+	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
+
 	R_VEC_FOREACH (&op->srcs, val) {
 		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
 			have_ptr = true;
@@ -1376,7 +1379,7 @@ static bool is_reg_in_src(const char *regname, RAnal *anal, RAnalOp *op) {
 			return false;
 		}
 		const char *srcreg = get_regname (anal, src);
-		if (srcreg && !strcmp (regname, srcreg)) {
+		if (srcreg && r_anal_cc_location_uses (anal, regname, srcreg)) {
 			return true;
 		}
 	}
@@ -1415,9 +1418,9 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 	case R_ANAL_OP_TYPE_POP:
 		return false;
 	case R_ANAL_OP_TYPE_MOV:
-		return (is_reg_in_src (regname, anal, op)) || (STR_EQUAL (opdreg, regname) && dst->memref);
+		return (is_reg_in_src (regname, anal, op)) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg) && dst->memref);
 	case R_ANAL_OP_TYPE_CMOV:
-		if (STR_EQUAL (opdreg, regname)) {
+		if (opdreg && r_anal_cc_location_uses (anal, regname, opdreg)) {
 			return false;
 		}
 		if (is_reg_in_src (regname, anal, op)) {
@@ -1429,7 +1432,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 		if (is_reg_in_src (regname, anal, op)) {
 			return true;
 		}
-		if (STR_EQUAL (opdreg, regname)) {
+		if (opdreg && r_anal_cc_location_uses (anal, regname, opdreg)) {
 			return false;
 		}
 		return false;
@@ -1445,7 +1448,7 @@ static bool is_used_like_arg(const char *regname, const char *opsreg, const char
 			}
 			return false;
 		}
-		return ((STR_EQUAL (opdreg, regname)) || (is_reg_in_src (regname, anal, op)));
+		return (opdreg && r_anal_cc_location_uses (anal, regname, opdreg)) || is_reg_in_src (regname, anal, op);
 	}
 }
 
@@ -1464,13 +1467,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
+	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
 	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
-	int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
+	int max_count = r_anal_cc_max_arg_clamped (anal, fcn->callconv);
 	if (!max_count || (*count >= max_count)) {
 		free (fname);
 		return;
@@ -1520,7 +1524,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			int delta = 0;
 			const char *regname = r_anal_cc_arg (anal, fcn->callconv, i, total);
 			if (regname) {
-				RRegItem *ri = r_reg_get (anal->reg, regname, -1);
+				const char *first = r_anal_cc_location_first (anal, regname);
+				RRegItem *ri = first? r_reg_get (anal->reg, first, -1): NULL;
 				if (ri) {
 					delta = ri->index;
 					r_unref (ri);
@@ -1582,7 +1587,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RAnalVar *var = NULL;
 			const bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
 			if (is_arg && reg_set[i] != 2) {
-				ri = r_reg_get (anal->reg, regname, -1);
+				const char *first = r_anal_cc_location_first (anal, regname);
+				ri = first? r_reg_get (anal->reg, first, -1): NULL;
 				if (ri) {
 					delta = ri->index;
 					r_unref (ri);
@@ -1610,12 +1616,12 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 				free (type);
 				(*count)++;
 			} else {
-				if (is_reg_in_src (regname, anal, op) || STR_EQUAL (opdreg, regname)) {
+				if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
 					reg_set[i] = 2;
 				}
 				continue;
 			}
-			if (is_reg_in_src (regname, anal, op) || STR_EQUAL (regname, opdreg)) {
+			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
 				reg_set[i] = 1;
 			}
 			if (var) {

@@ -661,11 +661,12 @@ static RCoreHelpMessage help_msg_afbt = {
 };
 
 static RCoreHelpMessage help_msg_afc = {
-	"Usage:", "afc[agl?]", "# see also tcc command to manage all calling conventions",
+	"Usage:", "afc[afhijklor?]", "# see also tcc command to manage all calling conventions",
 	"afc", " ccname", "manually set calling convention for current function",
 	"afc", "", "show default function calling convention (same as tcc)",
 	"afcr", "[j]", "show register usage for the current function",
 	"afcf", "[j] [name]", "prints return type function(arg1, arg2...), see afij",
+	"afch", "[j]", "dyncc syntax help; resolve and inspect the current function's dyncc",
 	"afci", " [name]", "information about the current calling convention",
 	"afcj", "", "show current calling convention info in JSON",
 	"afck", "", "list SDB details of call loaded calling conventions",
@@ -673,6 +674,38 @@ static RCoreHelpMessage help_msg_afc = {
 	"afcll", "", "show all call conventions and its definition",
 	"afco", " path", "open Calling Convention sdb profile from given path",
 	"afcR", "", "register telescoping using the calling conventions order",
+	NULL
+};
+
+static RCoreHelpMessage help_msg_afch = {
+	"Usage:", "afch[j]", "# dynamic calling convention (dyncc) help and inspector",
+	"afch", "", "print the dyncc syntax reference; if the current function uses dyncc, also show its resolved expression and arg/ret homes",
+	"afchj", "", "JSON: resolved dyncc info (ret, rets, args, arg_homes, argn) for the current function",
+	"", "", "see doc/dyncc.md for the full specification",
+	NULL
+};
+
+// dyncc syntax reference, distilled from doc/dyncc.md
+static RCoreHelpMessage help_msg_dyncc = {
+	"Usage:", "dyncc:<arg-map>:<i|s>:<ret-map>[!attr...]", "per-function virtual calling convention",
+	"i", "", "instance method, default self/this is logical argument 0",
+	"s", "", "static/free function, no implicit self",
+	"<pfx><base><+|-><count>", "", "linear location range, e.g. v6+1, v1-2, l0+3, m0+",
+	"m0+", "", "memory/stack slots (unbounded tail with no count)",
+	"m(reg)0+", "", "memory slots based on an explicit register",
+	"(r1,r2,..)", "", "explicit list of non-linear register locations",
+	"{edx:eax}", "", "one logical value grouped across several pieces",
+	"N+C=<loc>", "", "explicit logical argument range mapping (multiple homes)",
+	"&name", "", "delegate to a registered static cc profile",
+	"!pop=N", "", "callee pops N argument bytes (also !caller / !callee)",
+	"!clobber=(..)", "", "call-clobbered registers",
+	"!preserve=(..)", "", "call-preserved registers",
+	"!self=N", "", "ABI role at logical argument N; also !sret=N, !vtt=N",
+	"!error=reg", "", "sideband ABI role at a concrete location; also !context=reg",
+	"!role.name=N", "", "custom ABI role at logical argument N or a concrete location",
+	"Example:", "dyncc:v6+1:s:v0+1", "static, arg in v6, return in v0",
+	"Example:", "dyncc:(ecx,edx),m0+:s:(eax)!pop=8", "two reg args, stack tail, stdcall-like",
+	"Example:", "dyncc:0+4=&ms:i:&ms!sret=0!self=1", "C++ hidden sret before this",
 	NULL
 };
 
@@ -5029,8 +5062,11 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	const bool no_return = r_anal_noreturn_at_addr (a, fcn->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	if (fcn->callconv) {
-		pj_ks (pj, "callconv", fcn->callconv);
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			pj_ks (pj, "callconv", fcncc);
+		}
 	}
 	pj_kn (pj, "argc", argc);
 	pj_k (pj, "args");
@@ -5456,12 +5492,124 @@ static void cmd_aflxj(RCore *core) {
 }
 
 static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
-	const char *cc = mycc? mycc: (fcn && fcn->callconv)? fcn->callconv: "reg";
+	const char *fcncc = fcn? r_anal_function_cc (fcn): NULL;
+	const char *cc = mycc? mycc: fcncc? fcncc: "reg";
 	char *safe = r_str_sanitize_r2 (cc);
 	if (safe) {
 		r_core_cmdf (core, "afcll~%s (", safe);
 		free (safe);
 	}
+}
+
+static void afch_append_role(RStrBuf *sb, RAnal *anal, const char *cc, const char *role, const char *label) {
+	const char *loc = r_anal_cc_role (anal, cc, role);
+	if (loc) {
+		r_strbuf_appendf (sb, "%s: %s\n", label, loc);
+	}
+}
+
+static void afch_append_arg_homes(RStrBuf *sb, RAnal *anal, const char *cc, int arg) {
+	int home;
+	for (home = 0; ; home++) {
+		const char *loc = r_anal_cc_arg_home (anal, cc, arg, home, -1);
+		if (!loc) {
+			break;
+		}
+		if (home == 0) {
+			r_strbuf_appendf (sb, "arg[%d]: %s", arg, loc);
+		} else {
+			r_strbuf_appendf (sb, " | %s", loc);
+		}
+	}
+	if (home > 0) {
+		r_strbuf_append (sb, "\n");
+	}
+}
+
+static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
+	RAnal *anal = core->anal;
+	const char *cc = fcn? r_anal_function_cc (fcn): NULL;
+	const bool is_dyncc = cc && r_str_startswith (cc, "dyncc:");
+	if (json) {
+		PJ *pj = r_core_pj_new (core);
+		if (!pj) {
+			return NULL;
+		}
+		pj_o (pj);
+		if (is_dyncc) {
+			core_anal_cc_json (pj, anal, cc, true);
+		}
+		pj_end (pj);
+		return pj_drain (pj);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	if (!sb) {
+		return NULL;
+	}
+	if (!is_dyncc) {
+		r_strbuf_appendf (sb, "\n# current function uses '%s' (not a dyncc expression)\n", r_str_get (cc));
+		return r_strbuf_drain (sb);
+	}
+	char *sig = r_anal_cc_get (anal, cc);
+	r_strbuf_appendf (sb, "\ncallconv: %s\n", cc);
+	if (sig) {
+		r_strbuf_appendf (sb, "signature: %s\n", sig);
+		free (sig);
+	}
+	afch_append_role (sb, anal, cc, "self", "self");
+	afch_append_role (sb, anal, cc, "sret", "sret");
+	afch_append_role (sb, anal, cc, "vtt", "vtt");
+	afch_append_role (sb, anal, cc, "error", "error");
+	afch_append_role (sb, anal, cc, "context", "context");
+	const int max = r_anal_cc_max_arg (anal, cc);
+	int i;
+	for (i = 0; i < max; i++) {
+		afch_append_arg_homes (sb, anal, cc, i);
+	}
+	const char *argn = r_anal_cc_arg (anal, cc, max, -1);
+	if (argn) {
+		r_strbuf_appendf (sb, "argn: %s\n", argn);
+	}
+	for (i = 0; ; i++) {
+		const char *ret = r_anal_cc_ret (anal, cc, i);
+		if (!ret) {
+			break;
+		}
+		r_strbuf_appendf (sb, "ret[%d]: %s\n", i, ret);
+	}
+	const char *clob = r_anal_cc_clobbers (anal, cc);
+	if (clob) {
+		r_strbuf_appendf (sb, "clobber: %s\n", clob);
+	}
+	const char *pres = r_anal_cc_preserves (anal, cc);
+	if (pres) {
+		r_strbuf_appendf (sb, "preserve: %s\n", pres);
+	}
+	const int pop = r_anal_cc_stack_pop (anal, cc);
+	if (pop) {
+		r_strbuf_appendf (sb, "stack-pop: %d\n", pop);
+	}
+	return r_strbuf_drain (sb);
+}
+
+// "afch" - dyncc syntax help and per-function dyncc inspector
+static void cmd_afch(RCore *core, RAnalFunction *fcn, bool json) {
+	if (!json) {
+		r_core_cmd_help (core, help_msg_dyncc);
+		if (!fcn) {
+			return;
+		}
+	}
+	char *s = afch_tostring (core, fcn, json);
+	if (!s) {
+		return;
+	}
+	if (json) {
+		r_cons_println (core->cons, s);
+	} else {
+		r_cons_print (core->cons, s);
+	}
+	free (s);
 }
 
 static void cmd_afix(RCore *core, const char *input) {
@@ -6681,7 +6829,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		switch (input[2]) {
 		case '\0': // "afc"
-			r_cons_println (core->cons, fcn->callconv);
+			r_cons_println (core->cons, r_anal_function_cc (fcn));
 			break;
 		case ' ': { // "afc "
 				  char *cc = r_str_trim_dup (input + 3);
@@ -6707,6 +6855,14 @@ static int cmd_af(RCore *core, const char *input) {
 			break;
 		case 'f': // "afcf" "afcfj"
 			cmd_anal_fcn_sig (core, input + 3);
+			break;
+		case 'h': // "afch" "afchj"
+			if (input[3] == '?') {
+				r_core_cmd_help (core, help_msg_afch);
+			} else {
+				RAnalFunction *hfcn = r_anal_get_fcn_in (core->anal, core->addr, 0);
+				cmd_afch (core, hfcn, input[3] == 'j');
+			}
 			break;
 		case 'k': // "afck"
 			if (input[3] == '?') {
@@ -6744,6 +6900,7 @@ static int cmd_af(RCore *core, const char *input) {
 			int i;
 			PJ *pj = NULL;
 			bool json = input[3] == 'j';
+			r_anal_function_cc (fcn); // resolve a lazy dyncc marker
 			if (json) {
 				pj = r_core_pj_new (core);
 				if (!pj) {
