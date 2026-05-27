@@ -72,6 +72,42 @@ static int cmpname(const void *_a, const void *_b) {
 	return (as > bs)? 1: (as < bs)? -1: 0;
 }
 
+static const char *callconv_for_call(RCore *core, RAnalOp *op) {
+	RAnal *anal = core->anal;
+	ut64 offset = op->jump != UT64_MAX? op->jump: op->ptr;
+	RAnalFunction *f = r_anal_get_function_at (anal, offset);
+	if (f) {
+		const char *fcc = r_anal_function_cc (f);
+		if (fcc) {
+			return fcc;
+		}
+	}
+	RFlagItem *flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
+	if (!flag) {
+		return NULL;
+	}
+	char *callee = r_type_func_guess (anal->sdb_types, flag->name);
+	if (!callee) {
+		return NULL;
+	}
+	const char *cc = r_anal_cc_func (anal, callee);
+	free (callee);
+	return cc;
+}
+
+static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int *reg_set) {
+	RAnal *anal = core->anal;
+	const char *fcncc = r_anal_function_cc (fcn);
+	const int max_count = fcncc? r_anal_cc_max_arg (anal, fcncc): 0;
+	const char *cc = callconv_for_call (core, op);
+	int i;
+	for (i = 0; i < max_count; i++) {
+		if (r_anal_cc_argclob (anal, fcncc, i, cc)) {
+			reg_set[i] = 2;
+		}
+	}
+}
+
 
 static int cmpnbbs(const void *_a, const void *_b) {
 	const RAnalFunction *a = _a, *b = _b;
@@ -3762,16 +3798,13 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 		}
 		int opsize = op.size;
 		int optype = op.type;
+		if (optype == R_ANAL_OP_TYPE_CALL) {
+			apply_call_regsets (core, fcn, &op, reg_set);
+		}
 		r_anal_op_fini (&op);
 		//r_anal_op_free (op);
 		if (opsize < 1) {
 			break;
-		}
-		if (optype == R_ANAL_OP_TYPE_CALL) {
-			int i, max_count = fcn->callconv ? r_anal_cc_max_arg (core->anal, fcn->callconv) : 0;
-			for (i = 0; i < max_count; i++) {
-				reg_set[i] = 2;
-			}
 		}
 		opaddr += opsize;
 	}
