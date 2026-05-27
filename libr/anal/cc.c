@@ -216,6 +216,26 @@ static bool dyncc_set_indexed_seq(RAnalDynCCSeq *seq, char prefix, int base, int
 	return true;
 }
 
+static int dyncc_parse_indexed_seq(RAnalDynCCSeq *seq, const char *s, const char *end, char prefix) {
+	const char *p = s;
+	int base = 0;
+	if (!dyncc_parse_int (&p, &base)) {
+		return 0;
+	}
+	int count = 1;
+	int delta = 1;
+	if (p < end) {
+		if (*p != '+' && *p != '-') {
+			return 0;
+		}
+		delta = *p++ == '-'? -1: 1;
+		if (!dyncc_parse_int (&p, &count) || p != end) {
+			return -1;
+		}
+	}
+	return p == end && dyncc_set_indexed_seq (seq, prefix, base, count, delta)? 1: -1;
+}
+
 static bool dyncc_parse_loc_seq(const char *s, const char *end, RAnalDynCCSeq *seq) {
 	if (s >= end) {
 		return false;
@@ -236,41 +256,18 @@ static bool dyncc_parse_loc_seq(const char *s, const char *end, RAnalDynCCSeq *s
 			seq->count = 1;
 			return true;
 		}
-		const char *p = s;
-		int base = 0;
-		if (dyncc_parse_int (&p, &base)) {
-			int count = 1;
-			int delta = 1;
-			if (p < end && (*p == '+' || *p == '-')) {
-				delta = *p++ == '-'? -1: 1;
-				if (!dyncc_parse_int (&p, &count)) {
-					return false;
-				}
-			}
-			if (p != end) {
-				return false;
-			}
-			return dyncc_set_indexed_seq (seq, rev? R_ANAL_DYNCC_REVSTACK_PREFIX: R_ANAL_DYNCC_STACK_PREFIX, base, count, delta);
-		}
-		return false;
+		const char prefix = rev? R_ANAL_DYNCC_REVSTACK_PREFIX: R_ANAL_DYNCC_STACK_PREFIX;
+		return dyncc_parse_indexed_seq (seq, s, end, prefix) == 1;
 	}
 	const char *token = s;
 	if (isalpha ((ut8)*s)) {
 		const char prefix = *s++;
-		const char *p = s;
-		int base = 0;
-		if (dyncc_parse_int (&p, &base)) {
-			if (p == end) {
-				return dyncc_set_indexed_seq (seq, prefix, base, 1, 1);
-			}
-			if ((*p == '+' || *p == '-') && p + 1 < end) {
-				const int delta = *p++ == '-'? -1: 1;
-				int count = 0;
-				if (!dyncc_parse_int (&p, &count) || p != end) {
-					return false;
-				}
-				return dyncc_set_indexed_seq (seq, prefix, base, count, delta);
-			}
+		int parsed = dyncc_parse_indexed_seq (seq, s, end, prefix);
+		if (parsed > 0) {
+			return true;
+		}
+		if (parsed < 0) {
+			return false;
 		}
 	}
 	if (!dyncc_parse_loc (token, end, &seq->locs[0])) {
@@ -323,19 +320,22 @@ static bool dyncc_parse_homes(const char *s, const char *end, RAnalDynCCHomes *h
 	return true;
 }
 
-static bool dyncc_parse_args(const char *s, const char *end, RAnalDynCC *d) {
+static bool dyncc_parse_homed_list(const char *s, const char *end, RAnalDynCC *d, bool args) {
 	if (s == end) {
 		return true;
 	}
-	if (dyncc_parse_ref_only (s, end, &d->arg_ref)) {
+	RAnalDynCCSlice *ref = args? &d->arg_ref: &d->ret_ref;
+	if (dyncc_parse_ref_only (s, end, ref)) {
 		return true;
 	}
+	RAnalDynCCHomes *dst = args? d->args: d->rets;
+	int *dst_count = args? &d->arg_count: &d->ret_count;
 	while (s < end) {
 		const char *next = memchr (s, ',', end - s);
 		if (!next) {
 			next = end;
 		}
-		if (next == s || d->arg_tail) {
+		if (next == s || (args && d->arg_tail)) {
 			return false;
 		}
 		RAnalDynCCHomes homes[R_ANAL_CC_MAXARG] = {0};
@@ -343,55 +343,23 @@ static bool dyncc_parse_args(const char *s, const char *end, RAnalDynCC *d) {
 		if (!dyncc_parse_homes (s, next, homes, &count)) {
 			return false;
 		}
-		if (count == 1 && homes[0].home_count == 1 && dyncc_tail_loc (&homes[0].homes[0])) {
+		if (args && count == 1 && homes[0].home_count == 1 && dyncc_tail_loc (&homes[0].homes[0])) {
 			if (next < end) {
 				return false;
 			}
 			d->arg_tail = true;
 			d->arg_tail_loc = homes[0].homes[0];
 		} else {
-			if (d->arg_count > R_ANAL_CC_MAXARG - count) {
+			if (*dst_count > R_ANAL_CC_MAXARG - count) {
 				return false;
 			}
 			int i;
 			for (i = 0; i < count; i++) {
-				d->args[d->arg_count++] = homes[i];
+				if (!args && homes[i].home_count != 1) {
+					return false;
+				}
+				dst[(*dst_count)++] = homes[i];
 			}
-		}
-		s = next < end? next + 1: next;
-	}
-	return true;
-}
-
-static bool dyncc_parse_rets(const char *s, const char *end, RAnalDynCC *d) {
-	if (s == end) {
-		return true;
-	}
-	if (dyncc_parse_ref_only (s, end, &d->ret_ref)) {
-		return true;
-	}
-	while (s < end) {
-		const char *next = memchr (s, ',', end - s);
-		if (!next) {
-			next = end;
-		}
-		if (next == s || d->ret_count >= R_ANAL_CC_MAXARG) {
-			return false;
-		}
-		RAnalDynCCHomes homes[R_ANAL_CC_MAXARG] = {0};
-		int count = 0;
-		if (!dyncc_parse_homes (s, next, homes, &count)) {
-			return false;
-		}
-		if (d->ret_count > R_ANAL_CC_MAXARG - count) {
-			return false;
-		}
-		int i;
-		for (i = 0; i < count; i++) {
-			if (homes[i].home_count != 1) {
-				return false;
-			}
-			d->rets[d->ret_count++] = homes[i];
 		}
 		s = next < end? next + 1: next;
 	}
@@ -502,10 +470,10 @@ static bool dyncc_parse(const char *cc, RAnalDynCC *out) {
 	const char *attrs = memchr (rets + 1, '!', end - (rets + 1));
 	const char *ret_end = attrs? attrs: end;
 	RAnalDynCC d = {0};
-	if (!dyncc_parse_args (args, rets, &d)) {
+	if (!dyncc_parse_homed_list (args, rets, &d, true)) {
 		return false;
 	}
-	if (!dyncc_parse_rets (rets + 1, ret_end, &d)) {
+	if (!dyncc_parse_homed_list (rets + 1, ret_end, &d, false)) {
 		return false;
 	}
 	if (attrs && !dyncc_parse_attrs (attrs, end, &d)) {
@@ -906,8 +874,7 @@ R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const c
 	return res;
 }
 
-R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
-	R_RETURN_IF_FAIL (anal && convention && self);
+static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role, const char *loc) {
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
 		return;
@@ -916,22 +883,18 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 		return;
 	}
 	RStrBuf sb;
-	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
+	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.%s", convention, role), loc, 0);
 	r_strbuf_fini (&sb);
+}
+
+R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
+	R_RETURN_IF_FAIL (anal && convention && self);
+	cc_set_roleloc (anal, convention, "self", self);
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
 	R_RETURN_IF_FAIL (anal && convention && error);
-	RAnalDynCC d;
-	if (dyncc_parse (convention, &d)) {
-		return;
-	}
-	if (!r_anal_cc_exist (anal, convention)) {
-		return;
-	}
-	RStrBuf sb;
-	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
-	r_strbuf_fini (&sb);
+	cc_set_roleloc (anal, convention, "error", error);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
@@ -1000,15 +963,13 @@ static const char *cc_regset(RAnal *anal, const char *convention, const char *fi
 }
 
 typedef struct r_anal_cc_piece_t {
-	int off;
-	int size;
 	const char *loc;
 } RAnalCCPiece;
 R_VEC_TYPE (RVecAnalCCPiece, RAnalCCPiece);
 
 static bool r_anal_cc_regset_contains(const char *regset, const char *reg);
 
-static bool cc_piece_push(RAnal *anal, RVecAnalCCPiece *pieces, int off, int size, const char *loc, size_t loc_len) {
+static bool cc_piece_push(RAnal *anal, RVecAnalCCPiece *pieces, const char *loc, size_t loc_len) {
 	if (!loc_len) {
 		return false;
 	}
@@ -1017,15 +978,13 @@ static bool cc_piece_push(RAnal *anal, RVecAnalCCPiece *pieces, int off, int siz
 		return false;
 	}
 	RAnalCCPiece piece = {
-		.off = off,
-		.size = size,
 		.loc = name
 	};
 	RVecAnalCCPiece_push_back (pieces, &piece);
 	return true;
 }
 
-static bool cc_piece_parse(RAnal *anal, RVecAnalCCPiece *pieces, const char *s, const char *end, int idx) {
+static bool cc_piece_parse(RAnal *anal, RVecAnalCCPiece *pieces, const char *s, const char *end) {
 	while (s < end && isspace ((ut8)*s)) {
 		s++;
 	}
@@ -1035,25 +994,25 @@ static bool cc_piece_parse(RAnal *anal, RVecAnalCCPiece *pieces, const char *s, 
 	if (s >= end) {
 		return false;
 	}
-	int off = idx;
 	if (isdigit ((ut8)*s)) {
 		const char *p = s;
-		if (dyncc_parse_int (&p, &off) && p < end && *p == ':') {
+		int n = 0;
+		if (dyncc_parse_int (&p, &n) && p < end && *p == ':') {
 			s = p + 1;
 		}
 	}
-	int size = 0;
 	const char *dot = end;
 	while (dot > s && isdigit ((ut8)dot[-1])) {
 		dot--;
 	}
 	if (dot > s && dot[-1] == '.') {
 		const char *p = dot;
-		if (dyncc_parse_int (&p, &size) && p == end) {
+		int n = 0;
+		if (dyncc_parse_int (&p, &n) && p == end) {
 			end = dot - 1;
 		}
 	}
-	return cc_piece_push (anal, pieces, off, size, s, end - s);
+	return cc_piece_push (anal, pieces, s, end - s);
 }
 
 static const char *cc_group_next(const char *s, const char *end) {
@@ -1080,14 +1039,13 @@ static bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPi
 	RVecAnalCCPiece_clear (pieces);
 	size_t len = strlen (loc);
 	if (len < 2 || loc[0] != '{' || loc[len - 1] != '}') {
-		return cc_piece_push (anal, pieces, 0, 0, loc, len);
+		return cc_piece_push (anal, pieces, loc, len);
 	}
 	const char *s = loc + 1;
 	const char *end = loc + len - 1;
-	int idx = 0;
 	while (s < end) {
 		const char *next = cc_group_next (s, end);
-		if (!cc_piece_parse (anal, pieces, s, next, idx++)) {
+		if (!cc_piece_parse (anal, pieces, s, next)) {
 			RVecAnalCCPiece_clear (pieces);
 			return false;
 		}
