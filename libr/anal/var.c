@@ -724,7 +724,8 @@ R_API int r_anal_var_get_argnum(RAnalVar *var) {
 	}
 	char *ri_name = strdup (ri->name);
 	r_unref (ri);
-	char *callconv = var->fcn->callconv ? strdup (var->fcn->callconv): NULL;
+	const char *fcncc = r_anal_function_cc (var->fcn);
+	char *callconv = fcncc ? strdup (fcncc): NULL;
 	const int idx = cc_reg_index (anal, callconv, ri_name);
 	free (callconv);
 	free (ri_name);
@@ -1185,6 +1186,8 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 
 	R_RETURN_IF_FAIL (anal && fcn && op && reg);
 
+	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
+
 	R_VEC_FOREACH (&op->srcs, val) {
 		if (extract_arg_from_value (anal, val, reg, sign, &ptr, &access_size)) {
 			have_ptr = true;
@@ -1464,13 +1467,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	const char *opdreg = dst ? get_regname (anal, dst) : NULL;
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const int size = (fcn->bits ? fcn->bits : anal->config->bits) / 8;
+	r_anal_function_cc (fcn); // resolve a lazy dyncc marker before reading fcn->callconv
 	if (!fcn->callconv) {
 		R_LOG_DEBUG ("No calling convention for function '%s' to extract register arguments", fcn->name);
 		return;
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
-	int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
+	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	if (!max_count || (*count >= max_count)) {
 		free (fname);
 		return;
@@ -1627,7 +1631,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 
-	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, "self");
+	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
+	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
 	if (selfreg) {
 		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
@@ -1653,7 +1658,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, "error");
+	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error");
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 			int delta = 0;

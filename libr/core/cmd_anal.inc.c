@@ -5029,8 +5029,11 @@ static void printfcnjson(RCore *core, RAnalFunction *fcn) {
 	const bool no_return = r_anal_noreturn_at_addr (a, fcn->addr);
 	pj_kb (pj, "noreturn", no_return);
 	pj_ks (pj, "ret", r_str_get_fail (ret_type, "void"));
-	if (fcn->callconv) {
-		pj_ks (pj, "callconv", fcn->callconv);
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			pj_ks (pj, "callconv", fcncc);
+		}
 	}
 	pj_kn (pj, "argc", argc);
 	pj_k (pj, "args");
@@ -5456,7 +5459,8 @@ static void cmd_aflxj(RCore *core) {
 }
 
 static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
-	const char *cc = mycc? mycc: (fcn && fcn->callconv)? fcn->callconv: "reg";
+	const char *fcncc = fcn? r_anal_function_cc (fcn): NULL;
+	const char *cc = mycc? mycc: fcncc? fcncc: "reg";
 	char *safe = r_str_sanitize_r2 (cc);
 	if (safe) {
 		r_core_cmdf (core, "afcll~%s (", safe);
@@ -6681,7 +6685,7 @@ static int cmd_af(RCore *core, const char *input) {
 		}
 		switch (input[2]) {
 		case '\0': // "afc"
-			r_cons_println (core->cons, fcn->callconv);
+			r_cons_println (core->cons, r_anal_function_cc (fcn));
 			break;
 		case ' ': { // "afc "
 				  char *cc = r_str_trim_dup (input + 3);
@@ -6744,6 +6748,7 @@ static int cmd_af(RCore *core, const char *input) {
 			int i;
 			PJ *pj = NULL;
 			bool json = input[3] == 'j';
+			r_anal_function_cc (fcn); // resolve a lazy dyncc marker
 			if (json) {
 				pj = r_core_pj_new (core);
 				if (!pj) {

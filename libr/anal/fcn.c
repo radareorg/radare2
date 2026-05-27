@@ -98,6 +98,33 @@ static void fcn_stack_delta(RAnalFunction *fcn, RAnalBlock *bb, st64 delta) {
 	bb->stackptr += delta;
 }
 
+// Resolve a function's concrete calling convention. When fcn->callconv still
+// holds the bare "dyncc" marker, query the bin plugin (RBinPlugin.get_cc) once
+// and cache the resulting interned string back into fcn->callconv.
+R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
+	R_RETURN_VAL_IF_FAIL (fcn, NULL);
+	const char *cc = fcn->callconv;
+	if (!cc || strcmp (cc, "dyncc")) {
+		// already concrete (dyncc:... or a static cc), or unset
+		return cc;
+	}
+	RAnal *anal = fcn->anal;
+	if (!anal) {
+		return cc;
+	}
+	const char *resolved = NULL;
+	if (anal->binb.get_cc) {
+		resolved = anal->binb.get_cc (anal->binb.bin, fcn->addr);
+	}
+	if (!resolved) {
+		// no per-function metadata: pin to a stable fallback so we do not
+		// re-query the bin plugin on every access
+		resolved = "reg";
+	}
+	fcn->callconv = r_str_constpool_get (&anal->constpool, resolved);
+	return fcn->callconv;
+}
+
 R_API int r_anal_function_resize(RAnalFunction *fcn, int newsize) {
 	RAnal *anal = fcn->anal;
 	RAnalBlock *bb;
@@ -2450,8 +2477,9 @@ static const char *function_signature_callconv(RAnal *anal, RAnalFunction *fcn, 
 	if (R_STR_ISNOTEMPTY (callconv) && r_anal_cc_exist (anal, callconv)) {
 		return callconv;
 	}
-	if (R_STR_ISNOTEMPTY (fcn->callconv) && r_anal_cc_exist (anal, fcn->callconv)) {
-		callconv = fcn->callconv;
+	const char *fcncc = r_anal_function_cc (fcn);
+	if (R_STR_ISNOTEMPTY (fcncc) && r_anal_cc_exist (anal, fcncc)) {
+		callconv = fcncc;
 	}
 	if (!callconv) {
 		callconv = r_anal_cc_default (anal);
