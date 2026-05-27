@@ -1015,11 +1015,6 @@ R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {
 	return i;
 }
 
-R_API int r_anal_cc_max_arg_clamped(RAnal *anal, const char *cc) {
-	R_RETURN_VAL_IF_FAIL (anal && cc, 0);
-	return R_MIN (r_anal_cc_max_arg (anal, cc), R_ANAL_CC_MAXARG);
-}
-
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && n >= 0, NULL);
 	RAnalDynCC d;

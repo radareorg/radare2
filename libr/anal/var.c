@@ -1474,7 +1474,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	}
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
-	int max_count = r_anal_cc_max_arg_clamped (anal, fcn->callconv);
+	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
 	if (!max_count || (*count >= max_count)) {
 		free (fname);
 		return;

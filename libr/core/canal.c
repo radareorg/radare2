@@ -98,7 +98,7 @@ static const char *callconv_for_call(RCore *core, RAnalOp *op) {
 static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int *reg_set) {
 	RAnal *anal = core->anal;
 	const char *fcncc = r_anal_function_cc (fcn);
-	int max_count = fcncc? r_anal_cc_max_arg_clamped (anal, fcncc): 0;
+	const int max_count = fcncc? r_anal_cc_max_arg (anal, fcncc): 0;
 	const char *cc = callconv_for_call (core, op);
 	const char *clobbers = cc? r_anal_cc_clobbers (anal, cc): NULL;
 	const char *preserves = cc? r_anal_cc_preserves (anal, cc): NULL;
