@@ -5680,7 +5680,7 @@ static void cmd_afsv(RCore *core, ut64 pcv, int mode) {
 			pj_ka (pj, "argv");
 		}
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && r_str_startswith (arg->cc_source, "stack")) {
+			if (arg->cc_source && *arg->cc_source == '^') {
 				on_stack = true;
 			}
 			nextele = r_list_iter_get_next (iter);

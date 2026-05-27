@@ -174,10 +174,10 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		}
 		const char *fmt = ctype ? sdb_const_get (a->sdb_types, r_strf ("type.%s", ctype), 0) : NULL;
 		int size = ctype ? (int)(sdb_num_get (a->sdb_types, r_strf ("type.%s.size", ctype), 0) / 8) : 0;
-		const char *src = r_anal_cc_arg (a, cc, i, -1);
+		const char *src = r_anal_cc_argloc (a, cc, i, 0, -1);
 		ut64 raw = SENT;
 		bool on_stack = false;
-		if (src && r_str_startswith (src, "stack")) {
+		if (src && *src == '^') {
 			on_stack = true;
 			raw = spv;
 			spv += size ? size : s_width;

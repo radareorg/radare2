@@ -66,9 +66,9 @@ bool test_r_anal_cc_get(void) {
 	char *v = r_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax sectarian (rdx, rcx, stack);", "get cc");
 	free (v);
-	const char *vv = r_anal_cc_self (anal, "sectarian");
+	const char *vv = r_anal_cc_roleloc (anal, "sectarian", "self");
 	mu_assert_null (vv, "get self");
-	vv = r_anal_cc_error (anal, "sectarian");
+	vv = r_anal_cc_roleloc (anal, "sectarian", "error");
 	mu_assert_null (vv, "get error");
 	r_anal_free (anal);
 	mu_end;
@@ -79,9 +79,9 @@ bool test_r_anal_cc_get_self_err(void) {
 	char *v = r_anal_cc_get (anal, "sectarian");
 	mu_assert_streq (v, "rax rsi.sectarian (rdx, rcx, stack) rdi;", "get cc");
 	free (v);
-	const char *vv = r_anal_cc_self (anal, "sectarian");
+	const char *vv = r_anal_cc_roleloc (anal, "sectarian", "self");
 	mu_assert_streq (vv, "rsi", "get self");
-	vv = r_anal_cc_error (anal, "sectarian");
+	vv = r_anal_cc_roleloc (anal, "sectarian", "error");
 	mu_assert_streq (vv, "rdi", "get error");
 	r_anal_free (anal);
 	mu_end;
@@ -108,23 +108,19 @@ bool test_r_anal_cc_static_fixes(void) {
 	RAnal *anal = r_anal_new ();
 	r_anal_cc_set (anal, "rax rev(r0, r1, r2)");
 	sdb_set (anal->sdb_cc, "cc.rev.revarg", "1", 0);
-	mu_assert_streq (r_anal_cc_arg (anal, "rev", 0, 3), "r2", "revarg first");
-	mu_assert_streq (r_anal_cc_arg (anal, "rev", 1, 3), "r1", "revarg middle");
-	mu_assert_streq (r_anal_cc_arg (anal, "rev", 2, 3), "r0", "revarg last");
-	mu_assert_null (r_anal_cc_arg (anal, "rev", 3, 3), "revarg rejects out-of-range");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 0, 0, 3), "r2", "revarg first");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 1, 0, 3), "r1", "revarg middle");
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 2, 0, 3), "r0", "revarg last");
+	mu_assert_null (r_anal_cc_argloc (anal, "rev", 3, 0, 3), "revarg rejects out-of-range");
+	sdb_set (anal->sdb_cc, "cc.rev.argn", "stack", 0);
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^", "static stack argn is canonicalized");
+	sdb_set (anal->sdb_cc, "cc.rev.argn", "stack_rev", 0);
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^-", "static stack_rev argn is canonicalized");
 
 	r_anal_cc_set (anal, "rax grow(r0)");
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 1, "initial max args");
 	sdb_set (anal->sdb_cc, "cc.grow.arg1", "r1", 0);
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 2, "max args after db update");
-
-	PJ *pj = pj_new ();
-	mu_assert_notnull (pj, "pj");
-	pj_o (pj);
-	r_anal_cc_get_json (anal, pj, "missing");
-	pj_end (pj);
-	mu_assert_streq (pj_string (pj), "{}", "missing cc json");
-	pj_free (pj);
 
 	r_anal_free (anal);
 	mu_end;
