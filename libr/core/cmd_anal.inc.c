@@ -5501,7 +5501,7 @@ static void cmd_afci(RCore *core, RAnalFunction *fcn, const char *mycc) {
 }
 
 static void afch_append_role(RStrBuf *sb, RAnal *anal, const char *cc, const char *role, const char *label) {
-	const char *loc = r_anal_cc_role (anal, cc, role);
+	const char *loc = r_anal_cc_roleloc (anal, cc, role);
 	if (loc) {
 		r_strbuf_appendf (sb, "%s: %s\n", label, loc);
 	}
@@ -5510,7 +5510,7 @@ static void afch_append_role(RStrBuf *sb, RAnal *anal, const char *cc, const cha
 static void afch_append_arg_homes(RStrBuf *sb, RAnal *anal, const char *cc, int arg) {
 	int home;
 	for (home = 0; ; home++) {
-		const char *loc = r_anal_cc_arg_home (anal, cc, arg, home, -1);
+		const char *loc = r_anal_cc_argloc (anal, cc, arg, home, -1);
 		if (!loc) {
 			break;
 		}
@@ -5565,7 +5565,7 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 	for (i = 0; i < max; i++) {
 		afch_append_arg_homes (sb, anal, cc, i);
 	}
-	const char *argn = r_anal_cc_arg (anal, cc, max, -1);
+	const char *argn = r_anal_cc_argloc (anal, cc, max, 0, -1);
 	if (argn) {
 		r_strbuf_appendf (sb, "argn: %s\n", argn);
 	}

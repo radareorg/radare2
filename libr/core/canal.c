@@ -104,7 +104,7 @@ static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int
 	const char *preserves = cc? r_anal_cc_preserves (anal, cc): NULL;
 	int i;
 	for (i = 0; i < max_count; i++) {
-		const char *loc = r_anal_cc_arg (anal, fcncc, i, 0);
+		const char *loc = r_anal_cc_argloc (anal, fcncc, i, 0, 0);
 		if (!loc) {
 			continue;
 		}

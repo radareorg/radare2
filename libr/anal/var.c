@@ -698,7 +698,7 @@ static int cc_reg_index(RAnal *anal, const char *callconv, const char *regname) 
 	const int arg_max = r_anal_cc_max_arg (anal, callconv);
 	int i;
 	for (i = 0; i < arg_max; i++) {
-		const char *reg_arg = r_anal_cc_arg (anal, callconv, i, 0);
+		const char *reg_arg = r_anal_cc_argloc (anal, callconv, i, 0, 0);
 		if (reg_arg && r_anal_cc_location_uses (anal, reg_arg, regname)) {
 			return i;
 		}
@@ -1284,7 +1284,7 @@ static void extract_arg(RAnal *anal, RAnalFunction *fcn, RAnalOp *op, const char
 		}
 		char *varname = NULL, *vartype = NULL;
 		if (isarg) {
-			const char *place = fcn->callconv ? r_anal_cc_arg (anal, fcn->callconv, maxarg, -1) : NULL;
+			const char *place = fcn->callconv ? r_anal_cc_argloc (anal, fcn->callconv, maxarg, 0, -1) : NULL;
 			bool stack_rev = place ? (!strcmp (place, "^-") || !strcmp (place, "stack_rev")) : false;
 			char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 			if (fname) {
@@ -1522,7 +1522,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			char *type = NULL;
 			char *name = NULL;
 			int delta = 0;
-			const char *regname = r_anal_cc_arg (anal, fcn->callconv, i, total);
+			const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
 			if (regname) {
 				const char *first = r_anal_cc_location_first (anal, regname);
 				RRegItem *ri = first? r_reg_get (anal->reg, first, -1): NULL;
@@ -1578,7 +1578,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 
 	const int total = 0; // TODO: pass argn
 	for (i = 0; i < max_count; i++) {
-		const char *regname = r_anal_cc_arg (anal, fcn->callconv, i, total);
+		const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
 		if (!regname) {
 		// WIP	break;
 		} else {
@@ -1631,7 +1631,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 
-	const char *selfreg = r_anal_cc_self (anal, fcn->callconv);
+	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, "self");
 	if (selfreg) {
 		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
@@ -1657,7 +1657,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_error (anal, fcn->callconv);
+	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, "error");
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 			int delta = 0;

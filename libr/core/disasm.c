@@ -5875,7 +5875,7 @@ static const char *getarg(RCore *core, const char *cc, int nth) {
 		}
 		return NULL;
 	}
-	return r_anal_cc_arg (core->anal, cc, nth, 0);
+	return r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
 }
 
 // print function arguments when emu.str=true
@@ -5937,7 +5937,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		free (res);
 	} else {
 		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = r_anal_cc_arg (core->anal, cc, nth, 0);
+		const char *reg = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
 		if (reg) {
 			ut64 rv = r_reg_getv (core->anal->reg, reg);
 			if (rv >> 63) {

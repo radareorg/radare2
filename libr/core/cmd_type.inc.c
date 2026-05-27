@@ -212,7 +212,7 @@ static void core_anal_cc_json_roles(PJ *pj, RAnal *anal, const char *cc) {
 	int i;
 	for (i = 0; tags[i]; i++) {
 		char role[2] = { tags[i], 0 };
-		const char *loc = r_anal_cc_role (anal, cc, role);
+		const char *loc = r_anal_cc_roleloc (anal, cc, role);
 		if (loc) {
 			if (!opened) {
 				pj_ko (pj, "roles");
@@ -230,7 +230,7 @@ static void core_anal_cc_json_roles(PJ *pj, RAnal *anal, const char *cc) {
 			if (!seen[idx]) {
 				seen[idx] = true;
 				char role[2] = { tag, 0 };
-				const char *loc = r_anal_cc_role (anal, cc, role);
+				const char *loc = r_anal_cc_roleloc (anal, cc, role);
 				if (loc) {
 					if (!opened) {
 						pj_ko (pj, "roles");
@@ -279,7 +279,7 @@ static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_
 	const int max = r_anal_cc_max_arg (anal, cc);
 	pj_ka (pj, "args");
 	for (i = 0; i < max; i++) {
-		pj_s (pj, r_anal_cc_arg (anal, cc, i, -1));
+		pj_s (pj, r_anal_cc_argloc (anal, cc, i, 0, -1));
 	}
 	pj_end (pj);
 	if (is_dyncc) {
@@ -288,7 +288,7 @@ static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_
 			pj_a (pj);
 			int home;
 			for (home = 0; ; home++) {
-				const char *arg = r_anal_cc_arg_home (anal, cc, i, home, -1);
+				const char *arg = r_anal_cc_argloc (anal, cc, i, home, -1);
 				if (!arg) {
 					break;
 				}
@@ -298,14 +298,14 @@ static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_
 		}
 		pj_end (pj);
 	}
-	const char *argn = r_anal_cc_arg (anal, cc, max, -1);
+	const char *argn = r_anal_cc_argloc (anal, cc, max, 0, -1);
 	if (argn) {
 		pj_ks (pj, "argn", argn);
 	}
 	if (is_dyncc) {
 		core_anal_cc_json_roles (pj, anal, cc);
 	} else {
-		const char *error = r_anal_cc_error (anal, cc);
+		const char *error = r_anal_cc_roleloc (anal, cc, "error");
 		if (error) {
 			pj_ks (pj, "error", error);
 		}
@@ -1409,7 +1409,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 
 			const char *arg_loc = NULL;
 			if (cc && i < max_cc_args) {
-				arg_loc = r_anal_cc_arg (core->anal, cc, i, args);
+				arg_loc = r_anal_cc_argloc (core->anal, cc, i, 0, args);
 			}
 			if (!arg_loc) {
 				arg_loc = "stack";
@@ -1442,7 +1442,7 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			free (type);
 		}
 
-		const char *err_reg = cc ? r_anal_cc_error (core->anal, cc) : NULL;
+		const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
 		if (err_reg) {
 			r_strbuf_appendf (sb, "%s0x%08x%s   %s// error: %s%s\n",
 				color_addr, current_offset, color_reset, color_comment, err_reg, color_reset);
@@ -1652,7 +1652,7 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	}
 	int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 	const char *ret_reg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
-	const char *err_reg = cc ? r_anal_cc_error (core->anal, cc) : NULL;
+	const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
 
 	pj_o (pj);
 	pj_ks (pj, "name", name);
@@ -1677,7 +1677,7 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 			}
 			const char *arg_loc = NULL;
 			if (cc && i < max_cc_args) {
-				arg_loc = r_anal_cc_arg (core->anal, cc, i, args);
+				arg_loc = r_anal_cc_argloc (core->anal, cc, i, 0, args);
 			}
 			if (!arg_loc) {
 				arg_loc = "stack";

@@ -609,13 +609,13 @@ static const char *dyncc_from_static_loc(RAnal *anal, const char *loc) {
 	return loc;
 }
 
-static const char *dyncc_arg_home(RAnal *anal, const RAnalDynCC *d, int n, int home, int lastn) {
+static const char *dyncc_arg_home(RAnal *anal, const RAnalDynCC *d, int n, int home, int argc) {
 	if (n < 0 || home < 0) {
 		return NULL;
 	}
 	if (!dyncc_slice_empty (&d->arg_ref)) {
 		const char *refcc = dyncc_ref_name (anal, &d->arg_ref);
-		return refcc? dyncc_from_static_loc (anal, r_anal_cc_arg_home (anal, refcc, n, home, lastn)): NULL;
+		return refcc? dyncc_from_static_loc (anal, r_anal_cc_argloc (anal, refcc, n, home, argc)): NULL;
 	}
 	if (n < d->arg_count) {
 		const RAnalDynCCHomes *homes = &d->args[n];
@@ -842,7 +842,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 
 	RStrBuf *sb = r_strbuf_new (NULL);
-	const char *self = r_anal_cc_self (anal, name);
+	const char *self = r_anal_cc_roleloc (anal, name, "self");
 	// Multi-return: print "r0:r1:r2 ..."
 	r_strbuf_appendf (sb, "%s", ret);
 	int rn;
@@ -877,7 +877,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 	r_strbuf_append (sb, ")");
 
-	const char *error = r_anal_cc_error (anal, name);
+	const char *error = r_anal_cc_roleloc (anal, name, "error");
 	if (error) {
 		r_strbuf_appendf (sb, " %s", error);
 	}
@@ -902,27 +902,27 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *cc) {
 	return (x != NULL) && !strcmp (x, "cc");
 }
 
-R_API const char *r_anal_cc_arg_home(RAnal *anal, const char *cc, int n, int home, int lastn) {
+R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
 	R_RETURN_VAL_IF_FAIL (anal && n >= 0 && home >= 0, NULL);
 	if (!cc) {
 		return NULL;
 	}
 	RAnalDynCC d;
 	if (dyncc_parse (cc, &d)) {
-		return dyncc_arg_home (anal, &d, n, home, lastn);
+		return dyncc_arg_home (anal, &d, n, home, argc);
 	}
 	if (home > 0) {
 		return NULL;
 	}
 	Sdb *db = DB;
 	r_strf_buffer (64);
-	if (lastn > 0) {
+	if (argc > 0) {
 		char *revarg = r_strf ("cc.%s.revarg", cc);
 		if (r_str_is_true (sdb_const_get (db, revarg, 0))) {
-			if (n >= lastn) {
+			if (n >= argc) {
 				return NULL;
 			}
-			n = lastn - n - 1;
+			n = argc - n - 1;
 		}
 	}
 	char *query = r_strf ("cc.%s.arg%d", cc, n);
@@ -934,15 +934,28 @@ R_API const char *r_anal_cc_arg_home(RAnal *anal, const char *cc, int n, int hom
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 }
 
-R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
-	return r_anal_cc_arg_home (anal, cc, n, 0, lastn);
+static char cc_dyncc_role_tag(const char *role) {
+	if (!role) {
+		return 0;
+	}
+	if (role[0] && !role[1]) {
+		return role[0];
+	}
+	if (!strcmp (role, "self")) {
+		return 'T';
+	}
+	if (!strcmp (role, "error")) {
+		return 'E';
+	}
+	return 0;
 }
 
-R_API const char *r_anal_cc_role(RAnal *anal, const char *convention, const char *role) {
+R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
-		return role[0] && !role[1]? dyncc_role_loc (anal, &d, role[0]): NULL;
+		const char tag = cc_dyncc_role_tag (role);
+		return tag? dyncc_role_loc (anal, &d, tag): NULL;
 	}
 	RStrBuf sb;
 	const char *key = r_strbuf_initf (&sb, "cc.%s.%s", convention, role);
@@ -950,14 +963,6 @@ R_API const char *r_anal_cc_role(RAnal *anal, const char *convention, const char
 	const char *res = value? r_str_constpool_get (&anal->constpool, value): NULL;
 	r_strbuf_fini (&sb);
 	return res;
-}
-
-R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
-	RAnalDynCC d;
-	if (dyncc_parse (convention, &d)) {
-		return dyncc_role_loc (anal, &d, 'T');
-	}
-	return r_anal_cc_role (anal, convention, "self");
 }
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
@@ -972,14 +977,6 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 	RStrBuf sb;
 	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
 	r_strbuf_fini (&sb);
-}
-
-R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
-	RAnalDynCC d;
-	if (dyncc_parse (convention, &d)) {
-		return dyncc_role_loc (anal, &d, 'E');
-	}
-	return r_anal_cc_role (anal, convention, "error");
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {

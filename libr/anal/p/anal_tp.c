@@ -726,13 +726,13 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 	}
 	int i, j, pos = 0, size = 0, max = r_type_func_args_count (TDB, fcn_name);
 	int lastarg = ST32_MAX;
-	const char *place = r_anal_cc_arg (anal, cc, lastarg, -1);
+	const char *place = r_anal_cc_argloc (anal, cc, lastarg, 0, -1);
 	r_cons_break_push (r_cons_singleton (), NULL, NULL);
 
 	if (place && (!strcmp (place, "^-") || !strcmp (place, "stack_rev"))) {
 		stack_rev = true;
 	}
-	place = r_anal_cc_arg (anal, cc, 0, -1);
+	place = r_anal_cc_argloc (anal, cc, 0, 0, -1);
 	if (place && (*place == '^' || r_str_startswith (place, "stack"))) {
 		in_stack = true;
 	}
@@ -777,7 +777,7 @@ static void type_match(TPState *tps, char *fcn_name, ut64 addr, ut64 baddr, cons
 			// XXX: param arg_num must be fixed to support floating point register
 			// before this change place could be null
 			R_LOG_DEBUG ("not in stack");
-			const char *p = r_anal_cc_arg (anal, cc, arg_num, -1);
+			const char *p = r_anal_cc_argloc (anal, cc, arg_num, 0, -1);
 			if (p && (*p == '^' || r_str_startswith (p, "stack"))) {
 				in_stack = true;
 				place = p;
