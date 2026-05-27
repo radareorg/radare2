@@ -262,6 +262,13 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_true (r_anal_cc_argclob (anal, "sectarian", 0, "sectarian"), "static cc clobbers arg0");
 	mu_assert_true (r_anal_cc_argclob (anal, "sectarian", 1, "sectarian"), "static cc clobbers arg1");
 	mu_assert_streq (r_anal_cc_roleloc (anal, "sectarian", "sret"), "rsi", "static cc role");
+	sdb_set (anal->sdb_cc, "pieces", "cc", 0);
+	sdb_set (anal->sdb_cc, "cc.pieces.ret0", "rax", 0);
+	sdb_set (anal->sdb_cc, "cc.pieces.arg0", "{0:rdx.4,4:rcx.4}", 0);
+	sdb_set (anal->sdb_cc, "cc.pieces.clobber", "(rcx)", 0);
+	mu_assert_true (r_anal_cc_argclob (anal, "pieces", 0, "pieces"), "static grouped arg clobbers any piece");
+	sdb_set (anal->sdb_cc, "cc.pieces.preserve", "(rdx,rcx)", 0);
+	mu_assert_false (r_anal_cc_argclob (anal, "pieces", 0, "pieces"), "static grouped arg preserves every piece");
 
 	const char *refcc = "dyncc:&sectarian:&sectarian";
 	mu_assert_true (r_anal_cc_exist (anal, refcc), "referenced dyncc exists");

@@ -632,38 +632,31 @@ R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 
 R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 	R_RETURN_VAL_IF_FAIL (anal && expr, false);
+	bool ret = false;
+	char *args = NULL;
 	char *e = strdup (expr);
 	char *p = strchr (e, '(');
 	if (!p) {
-		free (e);
-		return false;
+		goto beach;
 	}
 	*p++ = 0;
-	char *args = strdup (p);
-	r_str_trim (p);
+	args = strdup (p);
 	char *end = strchr (args, ')');
 	if (!end) {
-		free (args);
-		free (e);
-		return false;
+		goto beach;
 	}
-	*end++ = 0;
-	r_str_trim (p);
+	*end = 0;
 	r_str_trim (e);
 	char *ccname = strchr (e, ' ');
 	if (ccname) {
 		*ccname++ = 0;
 		r_str_trim (ccname);
 	} else {
-		free (args);
-		free (e);
-		return false;
+		goto beach;
 	}
 	RAnalDynCC d;
 	if (dyncc_parse (ccname, &d)) {
-		free (args);
-		free (e);
-		return false;
+		goto beach;
 	}
 	sdb_set (DB, ccname, "cc", 0);
 	r_strf_buffer (64);
@@ -702,9 +695,11 @@ R_API bool r_anal_cc_set(RAnal *anal, const char *expr) {
 		}
 	}
 	r_list_free (ccArgs);
+	ret = true;
+beach:
 	free (e);
 	free (args);
-	return true;
+	return ret;
 }
 
 R_API bool r_anal_cc_once(RAnal *anal) {
@@ -720,40 +715,83 @@ R_API void r_anal_cc_reset(RAnal *anal) {
 	R_CRITICAL_LEAVE (anal);
 }
 
-R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
-	Sdb *db = anal->sdb_cc;
-	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
+typedef struct r_anal_cc_sig_t {
+	RAnal *anal;
+	Sdb *db;
+	const char *name;
+	const RAnalDynCC *dyncc;
+} RAnalCCSig;
+
+static char *cc_sig_tostring(const RAnalCCSig *sig) {
+	RStrBuf *sb = r_strbuf_new (NULL);
+	const char *ret = sig->dyncc? dyncc_ret (sig->anal, sig->dyncc, 0): r_anal_cc_ret (sig->anal, sig->name, 0);
+	r_strbuf_append (sb, ret? ret: "void");
 	int i;
-	RAnalDynCC d;
-	if (dyncc_parse (name, &d)) {
-		RStrBuf *sb = r_strbuf_new (NULL);
-		const char *ret = dyncc_ret (anal, &d, 0);
-		r_strbuf_append (sb, ret? ret: "void");
-		for (i = 1; ; i++) {
-			const char *rs = dyncc_ret (anal, &d, i);
-			if (!rs) {
+	for (i = 1; ; i++) {
+		const char *rs = sig->dyncc? dyncc_ret (sig->anal, sig->dyncc, i): r_anal_cc_ret (sig->anal, sig->name, i);
+		if (!rs) {
+			break;
+		}
+		r_strbuf_appendf (sb, ":%s", rs);
+	}
+	const char *self = sig->dyncc
+		? dyncc_role_loc (sig->anal, sig->dyncc, 'T')
+		: r_anal_cc_roleloc (sig->anal, sig->name, "self");
+	r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", sig->name);
+	const int max = sig->dyncc? dyncc_max_arg (sig->anal, sig->dyncc): R_ANAL_CC_MAXARG;
+	bool is_first = true;
+	for (i = 0; i < max; i++) {
+		const char *arg;
+		if (sig->dyncc) {
+			arg = dyncc_arg_home (sig->anal, sig->dyncc, i, 0, -1);
+		} else {
+			r_strf_var (key, 128, "cc.%s.arg%d", sig->name, i);
+			arg = sdb_const_get (sig->db, key, 0);
+		}
+		if (!arg) {
+			if (!sig->dyncc) {
 				break;
 			}
-			r_strbuf_appendf (sb, ":%s", rs);
+			continue;
 		}
-		const char *self = dyncc_role_loc (anal, &d, 'T');
-		r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", name);
-		int max = dyncc_max_arg (anal, &d);
-		bool is_first = true;
-		for (i = 0; i < max; i++) {
-			const char *arg = dyncc_arg_home (anal, &d, i, 0, -1);
-			if (!arg) {
-				continue;
-			}
-			r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", arg);
-			is_first = false;
+		r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", arg);
+		is_first = false;
+	}
+	const char *argn;
+	if (sig->dyncc) {
+		argn = dyncc_arg_home (sig->anal, sig->dyncc, max, 0, -1);
+	} else {
+		r_strf_var (key, 128, "cc.%s.argn", sig->name);
+		argn = sdb_const_get (sig->db, key, 0);
+	}
+	if (argn) {
+		r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", argn);
+	}
+	r_strbuf_append (sb, ")");
+	if (!sig->dyncc) {
+		const char *error = r_anal_cc_roleloc (sig->anal, sig->name, "error");
+		if (error) {
+			r_strbuf_appendf (sb, " %s", error);
 		}
-		const char *argn = dyncc_arg_home (anal, &d, max, 0, -1);
-		if (argn) {
-			r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", argn);
+	}
+	r_strbuf_append (sb, ";");
+	if (!sig->dyncc) {
+		r_strf_var (key, 128, "cc.%s.revarg", sig->name);
+		if (!r_str_is_true (sdb_const_get (sig->db, key, 0))) {
+			return r_strbuf_drain (sb);
 		}
-		r_strbuf_append (sb, ");");
-		return r_strbuf_drain (sb);
+		r_strbuf_append (sb, " // revarg");
+	}
+	return r_strbuf_drain (sb);
+}
+
+R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
+	R_RETURN_VAL_IF_FAIL (anal && name, NULL);
+	Sdb *db = anal->sdb_cc;
+	RAnalDynCC d;
+	if (dyncc_parse (name, &d)) {
+		RAnalCCSig sig = { anal, db, name, &d };
+		return cc_sig_tostring (&sig);
 	}
 	// get cc by name and print the expr
 	const char *cc = sdb_const_get (db, name, 0);
@@ -766,53 +804,8 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 		R_LOG_ERROR ("Cannot find return type for %s", name);
 		return NULL;
 	}
-
-	RStrBuf *sb = r_strbuf_new (NULL);
-	const char *self = r_anal_cc_roleloc (anal, name, "self");
-	// Multi-return: print "r0:r1:r2 ..."
-	r_strbuf_appendf (sb, "%s", ret);
-	int rn;
-	for (rn = 1; ; rn++) {
-		const char *rs = r_anal_cc_ret (anal, name, rn);
-		if (!rs) {
-			break;
-		}
-		r_strbuf_appendf (sb, ":%s", rs);
-	}
-	r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", name);
-	bool isFirst = true;
-	bool revarg = false;
-	{
-		r_strf_var (k, 128, "cc.%s.revarg", name);
-		const char *s = sdb_const_get (db, k, 0);
-		revarg = r_str_is_true (s);
-	}
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		r_strf_var (k, 128, "cc.%s.arg%d", name, i);
-		const char *arg = sdb_const_get (db, k, 0);
-		if (!arg) {
-			break;
-		}
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", arg);
-		isFirst = false;
-	}
-	r_strf_var (rename, 128, "cc.%s.argn", name);
-	const char *argn = sdb_const_get (db, rename, 0);
-	if (argn) {
-		r_strbuf_appendf (sb, "%s%s", isFirst? "": ", ", argn);
-	}
-	r_strbuf_append (sb, ")");
-
-	const char *error = r_anal_cc_roleloc (anal, name, "error");
-	if (error) {
-		r_strbuf_appendf (sb, " %s", error);
-	}
-
-	r_strbuf_append (sb, ";");
-	if (revarg) {
-		r_strbuf_append (sb, " // revarg");
-	}
-	return r_strbuf_drain (sb);
+	RAnalCCSig sig = { anal, db, name, NULL };
+	return cc_sig_tostring (&sig);
 }
 
 R_API bool r_anal_cc_exist(RAnal *anal, const char *cc) {
@@ -962,57 +955,42 @@ static const char *cc_regset(RAnal *anal, const char *convention, const char *fi
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 }
 
-typedef struct r_anal_cc_piece_t {
-	const char *loc;
-} RAnalCCPiece;
-R_VEC_TYPE (RVecAnalCCPiece, RAnalCCPiece);
-
 static bool r_anal_cc_regset_contains(const char *regset, const char *reg);
+static const char *cc_group_next(const char *s, const char *end);
 
-static bool cc_piece_push(RAnal *anal, RVecAnalCCPiece *pieces, const char *loc, size_t loc_len) {
-	if (!loc_len) {
-		return false;
-	}
-	const char *name = dyncc_intern (anal, loc, loc_len);
-	if (!name) {
-		return false;
-	}
-	RAnalCCPiece piece = {
-		.loc = name
-	};
-	RVecAnalCCPiece_push_back (pieces, &piece);
-	return true;
-}
-
-static bool cc_piece_parse(RAnal *anal, RVecAnalCCPiece *pieces, const char *s, const char *end) {
+static const char *cc_location_next(RAnal *anal, const char **sp, const char *end) {
+	const char *s = *sp;
+	const char *next = cc_group_next (s, end);
+	const char *e = next;
 	while (s < end && isspace ((ut8)*s)) {
 		s++;
 	}
-	while (end > s && isspace ((ut8)end[-1])) {
-		end--;
+	while (e > s && isspace ((ut8)e[-1])) {
+		e--;
 	}
-	if (s >= end) {
-		return false;
+	if (s >= e) {
+		return NULL;
 	}
 	if (isdigit ((ut8)*s)) {
 		const char *p = s;
 		int n = 0;
-		if (dyncc_parse_int (&p, &n) && p < end && *p == ':') {
+		if (dyncc_parse_int (&p, &n) && p < e && *p == ':') {
 			s = p + 1;
 		}
 	}
-	const char *dot = end;
+	const char *dot = e;
 	while (dot > s && isdigit ((ut8)dot[-1])) {
 		dot--;
 	}
 	if (dot > s && dot[-1] == '.') {
 		const char *p = dot;
 		int n = 0;
-		if (dyncc_parse_int (&p, &n) && p == end) {
-			end = dot - 1;
+		if (dyncc_parse_int (&p, &n) && p == e) {
+			e = dot - 1;
 		}
 	}
-	return cc_piece_push (anal, pieces, s, end - s);
+	*sp = next + (next < end);
+	return dyncc_intern (anal, s, e - s);
 }
 
 static const char *cc_group_next(const char *s, const char *end) {
@@ -1034,24 +1012,14 @@ static const char *cc_group_next(const char *s, const char *end) {
 	return p;
 }
 
-static bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPiece *pieces) {
-	R_RETURN_VAL_IF_FAIL (anal && loc && pieces, false);
-	RVecAnalCCPiece_clear (pieces);
+static bool cc_location_range(const char *loc, const char **s, const char **end) {
 	size_t len = strlen (loc);
 	if (len < 2 || loc[0] != '{' || loc[len - 1] != '}') {
-		return cc_piece_push (anal, pieces, loc, len);
+		return false;
 	}
-	const char *s = loc + 1;
-	const char *end = loc + len - 1;
-	while (s < end) {
-		const char *next = cc_group_next (s, end);
-		if (!cc_piece_parse (anal, pieces, s, next)) {
-			RVecAnalCCPiece_clear (pieces);
-			return false;
-		}
-		s = next + (next < end);
-	}
-	return RVecAnalCCPiece_length (pieces) > 0;
+	*s = loc + 1;
+	*end = loc + len - 1;
+	return true;
 }
 
 R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
@@ -1059,20 +1027,20 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 	if (*loc && *loc != '{') {
 		return !strcmp (loc, reg);
 	}
-	RVecAnalCCPiece pieces;
-	RVecAnalCCPiece_init (&pieces);
-	bool ret = false;
-	if (r_anal_cc_location_pieces (anal, loc, &pieces)) {
-		RAnalCCPiece *piece;
-		R_VEC_FOREACH (&pieces, piece) {
-			if (!strcmp (piece->loc, reg)) {
-				ret = true;
-				break;
-			}
+	const char *s, *end;
+	if (!cc_location_range (loc, &s, &end)) {
+		return false;
+	}
+	while (s < end) {
+		const char *name = cc_location_next (anal, &s, end);
+		if (!name) {
+			return false;
+		}
+		if (!strcmp (name, reg)) {
+			return true;
 		}
 	}
-	RVecAnalCCPiece_fini (&pieces);
-	return ret;
+	return false;
 }
 
 R_IPI const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
@@ -1080,15 +1048,8 @@ R_IPI const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
 	if (*loc && *loc != '{') {
 		return loc;
 	}
-	RVecAnalCCPiece pieces;
-	RVecAnalCCPiece_init (&pieces);
-	const char *ret = NULL;
-	if (r_anal_cc_location_pieces (anal, loc, &pieces)) {
-		RAnalCCPiece *piece = RVecAnalCCPiece_at (&pieces, 0);
-		ret = piece? piece->loc: NULL;
-	}
-	RVecAnalCCPiece_fini (&pieces);
-	return ret;
+	const char *s, *end;
+	return cc_location_range (loc, &s, &end) && s < end? cc_location_next (anal, &s, end): NULL;
 }
 
 R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all) {
@@ -1099,23 +1060,21 @@ R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char
 	if (*loc && *loc != '{') {
 		return r_anal_cc_regset_contains (regset, loc);
 	}
-	RVecAnalCCPiece pieces;
-	RVecAnalCCPiece_init (&pieces);
-	bool ret = all;
-	if (r_anal_cc_location_pieces (anal, loc, &pieces)) {
-		RAnalCCPiece *piece;
-		R_VEC_FOREACH (&pieces, piece) {
-			bool contains = r_anal_cc_regset_contains (regset, piece->loc);
-			if (contains != all) {
-				ret = contains;
-				break;
-			}
-		}
-	} else {
-		ret = false;
+	const char *s, *end;
+	if (!cc_location_range (loc, &s, &end) || s >= end) {
+		return false;
 	}
-	RVecAnalCCPiece_fini (&pieces);
-	return ret;
+	while (s < end) {
+		const char *name = cc_location_next (anal, &s, end);
+		if (!name) {
+			return false;
+		}
+		bool contains = r_anal_cc_regset_contains (regset, name);
+		if (contains != all) {
+			return contains;
+		}
+	}
+	return all;
 }
 
 static bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
