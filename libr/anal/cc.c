@@ -722,34 +722,42 @@ typedef struct r_anal_cc_sig_t {
 	const RAnalDynCC *dyncc;
 } RAnalCCSig;
 
+static const char *cc_sig_ret(const RAnalCCSig *sig, int n) {
+	if (sig->dyncc) {
+		return dyncc_ret (sig->anal, sig->dyncc, n);
+	}
+	return r_anal_cc_ret (sig->anal, sig->name, n);
+}
+
 static char *cc_sig_tostring(const RAnalCCSig *sig) {
 	RStrBuf *sb = r_strbuf_new (NULL);
-	const char *ret = sig->dyncc? dyncc_ret (sig->anal, sig->dyncc, 0): r_anal_cc_ret (sig->anal, sig->name, 0);
+	bool is_dyn = sig->dyncc;
+	const char *ret = cc_sig_ret (sig, 0);
 	r_strbuf_append (sb, ret? ret: "void");
 	int i;
 	for (i = 1; ; i++) {
-		const char *rs = sig->dyncc? dyncc_ret (sig->anal, sig->dyncc, i): r_anal_cc_ret (sig->anal, sig->name, i);
+		const char *rs = cc_sig_ret (sig, i);
 		if (!rs) {
 			break;
 		}
 		r_strbuf_appendf (sb, ":%s", rs);
 	}
-	const char *self = sig->dyncc
+	const char *self = is_dyn
 		? dyncc_role_loc (sig->anal, sig->dyncc, 'T')
 		: r_anal_cc_roleloc (sig->anal, sig->name, "self");
 	r_strbuf_appendf (sb, " %s%s%s (", r_str_get (self), self? ".": "", sig->name);
-	const int max = sig->dyncc? dyncc_max_arg (sig->anal, sig->dyncc): R_ANAL_CC_MAXARG;
+	const int max = is_dyn? dyncc_max_arg (sig->anal, sig->dyncc): R_ANAL_CC_MAXARG;
 	bool is_first = true;
 	for (i = 0; i < max; i++) {
 		const char *arg;
-		if (sig->dyncc) {
+		if (is_dyn) {
 			arg = dyncc_arg_home (sig->anal, sig->dyncc, i, 0, -1);
 		} else {
 			r_strf_var (key, 128, "cc.%s.arg%d", sig->name, i);
 			arg = sdb_const_get (sig->db, key, 0);
 		}
 		if (!arg) {
-			if (!sig->dyncc) {
+			if (!is_dyn) {
 				break;
 			}
 			continue;
@@ -758,7 +766,7 @@ static char *cc_sig_tostring(const RAnalCCSig *sig) {
 		is_first = false;
 	}
 	const char *argn;
-	if (sig->dyncc) {
+	if (is_dyn) {
 		argn = dyncc_arg_home (sig->anal, sig->dyncc, max, 0, -1);
 	} else {
 		r_strf_var (key, 128, "cc.%s.argn", sig->name);
@@ -768,14 +776,14 @@ static char *cc_sig_tostring(const RAnalCCSig *sig) {
 		r_strbuf_appendf (sb, "%s%s", is_first? "": ", ", argn);
 	}
 	r_strbuf_append (sb, ")");
-	if (!sig->dyncc) {
+	if (!is_dyn) {
 		const char *error = r_anal_cc_roleloc (sig->anal, sig->name, "error");
 		if (error) {
 			r_strbuf_appendf (sb, " %s", error);
 		}
 	}
 	r_strbuf_append (sb, ";");
-	if (!sig->dyncc) {
+	if (!is_dyn) {
 		r_strf_var (key, 128, "cc.%s.revarg", sig->name);
 		if (!r_str_is_true (sdb_const_get (sig->db, key, 0))) {
 			return r_strbuf_drain (sb);
