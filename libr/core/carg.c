@@ -4,6 +4,20 @@
 
 #define MAXSTRLEN 50
 
+static const char *cc_source_first(RAnal *anal, const char *loc) {
+	return loc? r_anal_cc_location_first (anal, loc): NULL;
+}
+
+static bool cc_source_on_stack(RAnal *anal, const char *loc) {
+	const char *first = cc_source_first (anal, loc);
+	return first && *first == '^';
+}
+
+static const char *cc_source_reg(RAnal *anal, const char *loc) {
+	const char *first = cc_source_first (anal, loc);
+	return first && *first != '^'? first: NULL;
+}
+
 static void set_fcn_args_info(RAnalFuncArg *arg, RAnal *anal, const char *fcn_name, const char *cc, int arg_num) {
 	if (!fcn_name || !arg || !anal) {
 		return;
@@ -140,7 +154,6 @@ R_API void r_core_print_func_args(RCore *core) {
 	if (op->type == R_ANAL_OP_TYPE_CALL) {
 		RAnalFunction *fcn;
 		RAnalFuncArg *arg;
-		bool onstack = false;
 		const char *fcn_name = NULL;
 		ut64 pcv = op->jump;
 		if (pcv == UT64_MAX) {
@@ -161,9 +174,7 @@ R_API void r_core_print_func_args(RCore *core) {
 		if (!r_list_empty (list)) {
 			int argcnt = 0;
 			r_list_foreach (list, iter, arg) {
-				if (arg->cc_source && *arg->cc_source == '^') {
-					onstack = true;
-				}
+				bool onstack = cc_source_on_stack (core->anal, arg->cc_source);
 				print_arg_str (core, argcnt, arg->name, color);
 				print_format_values (core, arg->fmt, onstack, arg->src, color);
 				argcnt++;
@@ -201,16 +212,12 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		return NULL;
 	}
 	int nargs = r_type_func_args_count (TDB, key);
-	if (!r_anal_cc_func (core->anal, key)) {
-		return NULL;
-	}
-	char *cc = strdup (r_anal_cc_func (core->anal, key));
-	const char *src = r_anal_cc_argloc (core->anal, cc, 0, 0, -1); // src of first argument
+	const char *cc = r_anal_cc_func (core->anal, key);
 	if (!cc) {
-		// unsupported calling convention
 		free (key);
 		return NULL;
 	}
+	const char *src = r_anal_cc_argloc (core->anal, cc, 0, 0, -1); // src of first argument
 	RList *list = r_list_newf ((RListFree)r_anal_function_arg_free);
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, "SP");
@@ -227,25 +234,21 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		for (i = 0; i < nargs; i++) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
-			if (arg->cc_source && *arg->cc_source == '^') {
+			if (cc_source_on_stack (core->anal, arg->cc_source)) {
 				arg->src = spv;
 				if (!arg->size) {
 					arg->size = s_width;
 				}
 				spv += arg->size;
 			} else {
-				const char *cs = arg->cc_source;
-				if (!cs) {
-					cs = r_anal_cc_default (core->anal);
-				}
-				if (cs) {
-					arg->src = r_reg_getv (core->anal->reg, cs);
+				const char *reg = cc_source_reg (core->anal, arg->cc_source);
+				if (reg) {
+					arg->src = r_reg_getv (core->anal->reg, reg);
 				}
 			}
 			r_list_append (list, arg);
 		}
 	}
 	free (key);
-	free (cc);
 	return list;
 }

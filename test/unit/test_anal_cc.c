@@ -266,6 +266,7 @@ bool test_r_anal_cc_dyncc(void) {
 	sdb_set (anal->sdb_cc, "cc.pieces.ret0", "rax", 0);
 	sdb_set (anal->sdb_cc, "cc.pieces.arg0", "{0:rdx.4,4:rcx.4}", 0);
 	sdb_set (anal->sdb_cc, "cc.pieces.clobber", "(rcx)", 0);
+	mu_assert_streq (r_anal_cc_location_first (anal, "{0:rdx.4,4:rcx.4}"), "rdx", "grouped location first register");
 	mu_assert_true (r_anal_cc_argclob (anal, "pieces", 0, "pieces"), "static grouped arg clobbers any piece");
 	sdb_set (anal->sdb_cc, "cc.pieces.preserve", "(rdx,rcx)", 0);
 	mu_assert_false (r_anal_cc_argclob (anal, "pieces", 0, "pieces"), "static grouped arg preserves every piece");

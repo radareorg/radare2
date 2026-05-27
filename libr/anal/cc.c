@@ -1051,7 +1051,7 @@ R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 	return false;
 }
 
-R_IPI const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
+R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
 	R_RETURN_VAL_IF_FAIL (anal && loc, NULL);
 	if (*loc && *loc != '{') {
 		return loc;

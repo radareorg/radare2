@@ -5866,8 +5866,28 @@ static void ds_print_bbline(RDisasmState *ds) {
 	}
 }
 
+static const char *cc_arg_reg(RAnal *anal, const char *loc) {
+	const char *first = loc? r_anal_cc_location_first (anal, loc): NULL;
+	return first && *first != '^'? first: NULL;
+}
+
+static bool cc_arg_on_stack(RAnal *anal, const char *loc) {
+	const char *first = loc? r_anal_cc_location_first (anal, loc): NULL;
+	return first && *first == '^';
+}
+
+static const char *get_cc_arg_reg(RCore *core, const char *cc, int nth) {
+	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
+	return cc_arg_reg (core->anal, loc);
+}
+
 static const char *getarg(RCore *core, const char *cc, int nth) {
-	if (isarm (core) && core->rasm->config->bits == 32) {
+	const char *loc = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
+	const char *reg = cc_arg_reg (core->anal, loc);
+	if (reg) {
+		return reg;
+	}
+	if (!loc && isarm (core) && core->rasm->config->bits == 32) {
 		// workaround for arm32
 		static const char *ccargs[] = {"r0", "r1", "r2", "r3"};
 		if (nth >= 0 && nth < 4) {
@@ -5875,7 +5895,7 @@ static const char *getarg(RCore *core, const char *cc, int nth) {
 		}
 		return NULL;
 	}
-	return r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
+	return NULL;
 }
 
 // print function arguments when emu.str=true
@@ -5937,7 +5957,7 @@ static void print_fcn_arg(RCore *core, int nth, const char *type, const char *na
 		free (res);
 	} else {
 		const char *cc = r_config_get (core->config, "anal.cc"); // XXX
-		const char *reg = r_anal_cc_argloc (core->anal, cc, nth, 0, 0);
+		const char *reg = get_cc_arg_reg (core, cc, nth);
 		if (reg) {
 			ut64 rv = r_reg_getv (core->anal->reg, reg);
 			if (rv >> 63) {
@@ -6063,11 +6083,8 @@ static void ds_comment_call(RDisasmState *ds) {
 	if (!r_list_empty (list)) {
 		int nth = 0;
 		// bool warning = false;
-		bool on_stack = false;
 		r_list_foreach (list, iter, arg) {
-			if (arg->cc_source && *arg->cc_source == '^') {
-				on_stack = true;
-			}
+			bool on_stack = cc_arg_on_stack (core->anal, arg->cc_source);
 			nextele = r_list_iter_get_next (iter);
 #if 0
 			if (!arg->size) {

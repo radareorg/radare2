@@ -32,7 +32,6 @@ R_IPI bool r_anal_var_is_default_argname(const char *name);
 R_IPI bool r_anal_function_materialize_switch_case(RAnal *anal, RAnalFunction *fcn, ut64 case_addr, int depth);
 R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
-R_IPI const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
 R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all);
 
 // Bump the recorded leaddr of the most recent entry that matches `reg` by
