@@ -626,8 +626,15 @@ static bool __core_anal_fcn(RCore *core, ut64 at, ut64 from, int reftype, int de
 	}
 #endif
 	const char *cc = r_anal_cc_default (core->anal);
-	if (!cc) {
-		if (r_anal_cc_once (core->anal)) {
+	if (cc && !strcmp (cc, "dyncc")) {
+		// Keep the bare "dyncc" marker; r_anal_function_cc () resolves it
+		// lazily via RBinPlugin.get_cc the first time it is actually needed.
+		if (!core->anal->binb.get_cc) {
+			cc = "reg"; // no per-function cc provider available
+		}
+	} else if (!cc) {
+		const bool isvm = r_arch_info (core->anal->arch, R_ARCH_INFO_ISVM) == R_ARCH_INFO_ISVM;
+		if (!isvm && r_anal_cc_once (core->anal)) {
 			R_LOG_WARN ("select the calling convention with `e anal.cc=?`");
 		}
 		cc = "reg";
@@ -2845,8 +2852,11 @@ static int fcn_print_json(RCore *core, RAnalFunction *fcn, bool dorefs, PJ *pj) 
 	pj_kb (pj, "noreturn", fcn->is_noreturn);
 	pj_kb (pj, "recursive", is_recursive (core, fcn));
 	pj_ki (pj, "stackframe", fcn->maxstack);
-	if (fcn->callconv) {
-		pj_ks (pj, "calltype", fcn->callconv); // calling conventions
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			pj_ks (pj, "calltype", fcncc); // calling conventions
+		}
 	}
 	{
 		RFlagItem *fi = r_flag_get_in (core->flags, fcn->addr);
@@ -3159,8 +3169,11 @@ static int fcn_print_legacy(RCore *core, RAnalFunction *fcn, bool dorefs) {
 	r_cons_printf (cons, "\nis-pure: %s", r_str_bool (r_anal_function_purity (fcn)));
 	r_cons_printf (cons, "\nrealsz: %" PFMT64d, r_anal_function_realsize (fcn));
 	r_cons_printf (cons, "\nstackframe: %d", fcn->maxstack);
-	if (fcn->callconv) {
-		r_cons_printf (cons, "\ncallconv: %s", fcn->callconv);
+	{
+		const char *fcncc = r_anal_function_cc (fcn);
+		if (fcncc) {
+			r_cons_printf (cons, "\ncallconv: %s", fcncc);
+		}
 	}
 	char *fn = filename (core, fcn->addr);
 	if (fn) {

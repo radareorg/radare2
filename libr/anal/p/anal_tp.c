@@ -1381,8 +1381,8 @@ repeat:
 						tp_state.userfnc = true;
 					}
 					const char *Cc = NULL;
-					if (fcn_call && fcn_call->callconv) {
-						Cc = fcn_call->callconv;
+					if (fcn_call) {
+						Cc = r_anal_function_cc (fcn_call);
 					}
 					if (!Cc) {
 						Cc = r_anal_cc_func (anal, fcn_name);
