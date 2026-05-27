@@ -206,6 +206,112 @@ static bool cc_cb(void *p, const char *k, const char *v) {
 	return true;
 }
 
+static void core_anal_cc_json_roles(PJ *pj, RAnal *anal, const char *cc) {
+	const char tags[] = "TRVEX";
+	bool opened = false;
+	int i;
+	for (i = 0; tags[i]; i++) {
+		char role[2] = { tags[i], 0 };
+		const char *loc = r_anal_cc_roleloc (anal, cc, role);
+		if (loc) {
+			if (!opened) {
+				pj_ko (pj, "roles");
+				opened = true;
+			}
+			pj_ks (pj, role, loc);
+		}
+	}
+	bool seen[26] = {0};
+	const char *p = cc;
+	while ((p = strchr (p, '!'))) {
+		char tag = p[1];
+		if (islower ((ut8)tag) && tag != 'p') {
+			int idx = tag - 'a';
+			if (!seen[idx]) {
+				seen[idx] = true;
+				char role[2] = { tag, 0 };
+				const char *loc = r_anal_cc_roleloc (anal, cc, role);
+				if (loc) {
+					if (!opened) {
+						pj_ko (pj, "roles");
+						opened = true;
+					}
+					pj_ks (pj, role, loc);
+				}
+			}
+		}
+		p++;
+	}
+	if (opened) {
+		pj_end (pj);
+	}
+}
+
+static void core_anal_cc_json(PJ *pj, RAnal *anal, const char *cc, bool include_callconv) {
+	if (!cc) {
+		return;
+	}
+	const bool is_dyncc = r_str_startswith (cc, "dyncc:");
+	if (include_callconv) {
+		pj_ks (pj, "callconv", cc);
+	}
+	const char *ret = r_anal_cc_ret (anal, cc, 0);
+	if (ret) {
+		pj_ks (pj, "ret", ret);
+	} else if (!is_dyncc) {
+		return;
+	}
+	pj_ka (pj, "rets");
+	int i;
+	for (i = 0; ; i++) {
+		const char *r = r_anal_cc_ret (anal, cc, i);
+		if (!r) {
+			break;
+		}
+		pj_s (pj, r);
+	}
+	pj_end (pj);
+	char *sig = r_anal_cc_get (anal, cc);
+	if (sig) {
+		pj_ks (pj, "signature", sig);
+		free (sig);
+	}
+	const int max = r_anal_cc_max_arg (anal, cc);
+	pj_ka (pj, "args");
+	for (i = 0; i < max; i++) {
+		pj_s (pj, r_anal_cc_argloc (anal, cc, i, 0, -1));
+	}
+	pj_end (pj);
+	if (is_dyncc) {
+		pj_ka (pj, "arg_homes");
+		for (i = 0; i < max; i++) {
+			pj_a (pj);
+			int home;
+			for (home = 0; ; home++) {
+				const char *arg = r_anal_cc_argloc (anal, cc, i, home, -1);
+				if (!arg) {
+					break;
+				}
+				pj_s (pj, arg);
+			}
+			pj_end (pj);
+		}
+		pj_end (pj);
+	}
+	const char *argn = r_anal_cc_argloc (anal, cc, max, 0, -1);
+	if (argn) {
+		pj_ks (pj, "argn", argn);
+	}
+	if (is_dyncc) {
+		core_anal_cc_json_roles (pj, anal, cc);
+	} else {
+		const char *error = r_anal_cc_roleloc (anal, cc, "error");
+		if (error) {
+			pj_ks (pj, "error", error);
+		}
+	}
+}
+
 static void cmd_afcl(RCore *core, const char *input) {
 	int mode = 0;
 	PJ *pj = NULL;
@@ -224,7 +330,7 @@ static void cmd_afcl(RCore *core, const char *input) {
 	r_list_foreach (list, iter, cc) {
 		if (pj) {
 			pj_ko (pj, cc);
-			r_anal_cc_get_json (core->anal, pj, cc);
+			core_anal_cc_json (pj, core->anal, cc, false);
 			pj_end (pj);
 		} else if (mode == 'l') {
 			char *sig = r_anal_cc_get (core->anal, cc);
@@ -1336,7 +1442,8 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			free (type);
 		}
 
-		const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
+		const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc,
+			r_str_startswith (cc, "dyncc:")? "E": "error") : NULL;
 		if (err_reg) {
 			r_strbuf_appendf (sb, "%s0x%08x%s   %s// error: %s%s\n",
 				color_addr, current_offset, color_reset, color_comment, err_reg, color_reset);
@@ -1546,7 +1653,8 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	}
 	int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 	const char *ret_reg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
-	const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
+	const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc,
+		r_str_startswith (cc, "dyncc:")? "E": "error") : NULL;
 
 	pj_o (pj);
 	pj_ks (pj, "name", name);
