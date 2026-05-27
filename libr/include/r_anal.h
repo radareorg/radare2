@@ -334,8 +334,6 @@ struct r_anal_attr_t {
 
 typedef struct r_anal_var_t RAnalVar;
 
-#define R_ANAL_CC_STACK_POP_UNKNOWN (-1)
-
 /* Stores useful function metadata */
 typedef struct r_anal_function_meta_t {
 	// _min and _max are calculated lazily when queried.
@@ -346,6 +344,7 @@ typedef struct r_anal_function_meta_t {
 
 	int numrefs;        // number of cross references
 	int numcallrefs;    // number of calls
+	int stack_pop;      // PRIVATE, inferred callee-popped argument bytes
 } RAnalFcnMeta;
 
 R_VEC_TYPE (RVecAnalVarPtr, RAnalVar *);
@@ -366,7 +365,6 @@ typedef struct r_anal_function_t {
 	ut64 reg_save_area; // size of stack area pre-reserved for saving registers
 	st64 bp_off; // offset of bp inside owned stack frame
 	st64 stack;  // stack frame size
-	int stack_pop; // inferred callee-popped argument bytes, or R_ANAL_CC_STACK_POP_UNKNOWN
 	int maxstack;
 	int ninstr;
 	bool folded;
@@ -1452,9 +1450,6 @@ R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *s
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error);
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc);
 R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
-R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
-R_API const char *r_anal_cc_clobbers(RAnal *anal, const char *convention);
-R_API const char *r_anal_cc_preserves(RAnal *anal, const char *convention);
 R_API bool r_anal_cc_arg_clobbered(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);

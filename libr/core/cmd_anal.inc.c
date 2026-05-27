@@ -5576,18 +5576,6 @@ static char *afch_tostring(RCore *core, RAnalFunction *fcn, bool json) {
 		}
 		r_strbuf_appendf (sb, "ret[%d]: %s\n", i, ret);
 	}
-	const char *clob = r_anal_cc_clobbers (anal, cc);
-	if (clob) {
-		r_strbuf_appendf (sb, "clobber: %s\n", clob);
-	}
-	const char *pres = r_anal_cc_preserves (anal, cc);
-	if (pres) {
-		r_strbuf_appendf (sb, "preserve: %s\n", pres);
-	}
-	const int pop = r_anal_cc_stack_pop (anal, cc);
-	if (pop) {
-		r_strbuf_appendf (sb, "stack-pop: %d\n", pop);
-	}
 	return r_strbuf_drain (sb);
 }
 

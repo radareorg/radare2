@@ -138,7 +138,7 @@ static int fcn_call_stack_pop(RAnal *anal, RAnalOp *op) {
 		return 0;
 	}
 	int pop = r_anal_cc_stack_pop (anal, cc);
-	return pop > 0? pop: R_MAX (0, callee->stack_pop);
+	return pop > 0? pop: R_MAX (0, callee->meta.stack_pop);
 }
 
 static int fcn_ret_stack_pop(RAnalFunction *fcn, RAnalOp *op) {
@@ -155,10 +155,10 @@ static void fcn_set_stack_pop(RAnalFunction *fcn, int pop) {
 	if (pop < 0) {
 		return;
 	}
-	if (fcn->stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
-		fcn->stack_pop = pop;
-	} else if (fcn->stack_pop != pop) {
-		fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
+	if (fcn->meta.stack_pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
+		fcn->meta.stack_pop = pop;
+	} else if (fcn->meta.stack_pop != pop) {
+		fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	}
 }
 

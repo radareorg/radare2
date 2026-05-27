@@ -976,7 +976,7 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n) {
 	return NULL;
 }
 
-R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
+R_IPI int r_anal_cc_stack_pop(RAnal *anal, const char *convention) {
 	R_RETURN_VAL_IF_FAIL (anal && convention, 0);
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
@@ -997,16 +997,6 @@ static const char *cc_regset(RAnal *anal, const char *convention, const char *fi
 	r_strf_var (query, 64, "cc.%s.%s", convention, field);
 	const char *ret = sdb_const_get (DB, query, 0);
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
-}
-
-R_API const char *r_anal_cc_clobbers(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
-	return cc_regset (anal, convention, "clobber");
-}
-
-R_API const char *r_anal_cc_preserves(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
-	return cc_regset (anal, convention, "preserve");
 }
 
 typedef struct r_anal_cc_piece_t {
@@ -1205,8 +1195,8 @@ R_API bool r_anal_cc_arg_clobbered(RAnal *anal, const char *caller_cc, int n, co
 	if (!loc) {
 		return false;
 	}
-	const char *clobbers = callee_cc? r_anal_cc_clobbers (anal, callee_cc): NULL;
-	const char *preserves = callee_cc? r_anal_cc_preserves (anal, callee_cc): NULL;
+	const char *clobbers = callee_cc? cc_regset (anal, callee_cc, "clobber"): NULL;
+	const char *preserves = callee_cc? cc_regset (anal, callee_cc, "preserve"): NULL;
 	if (R_STR_ISNOTEMPTY (clobbers)) {
 		return r_anal_cc_location_in_regset (anal, loc, clobbers, false)
 			&& !r_anal_cc_location_in_regset (anal, loc, preserves, true);

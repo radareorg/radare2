@@ -81,13 +81,13 @@ R_API RAnalFunction *r_anal_function_new(RAnal *anal) {
 	fcn->addr = UT64_MAX;
 	fcn->callconv = r_str_constpool_get (&anal->constpool, r_anal_cc_default (anal));
 	fcn->bits = anal->config->bits;
-	fcn->stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	fcn->bbs = r_list_new ();
 	fcn->diff = r_anal_diff_new ();
 	fcn->has_changed = true;
 	fcn->bp_frame = true;
 	fcn->is_noreturn = false;
 	fcn->meta._min = UT64_MAX;
+	fcn->meta.stack_pop = R_ANAL_CC_STACK_POP_UNKNOWN;
 	fcn->meta.numrefs = -1;
 	fcn->meta.numcallrefs = -1;
 	RVecAnalVarPtr_init (&fcn->vars);
