@@ -889,7 +889,7 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 		query = r_strf ("cc.%s.argn", cc);
 		ret = sdb_const_get (db, query, 0);
 	}
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	return ret? dyncc_from_static_loc (anal, ret): NULL;
 }
 
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {

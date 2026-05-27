@@ -177,7 +177,7 @@ static int emit_signature(RAnal *a, const char *fcn_name, bool quiet, PJ *pj, RS
 		const char *src = r_anal_cc_argloc (a, cc, i, 0, -1);
 		ut64 raw = SENT;
 		bool on_stack = false;
-		if (src && (*src == '^' || r_str_startswith (src, "stack"))) {
+		if (src && *src == '^') {
 			on_stack = true;
 			raw = spv;
 			spv += size ? size : s_width;

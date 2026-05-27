@@ -112,6 +112,10 @@ bool test_r_anal_cc_static_fixes(void) {
 	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 1, 0, 3), "r1", "revarg middle");
 	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 2, 0, 3), "r0", "revarg last");
 	mu_assert_null (r_anal_cc_argloc (anal, "rev", 3, 0, 3), "revarg rejects out-of-range");
+	sdb_set (anal->sdb_cc, "cc.rev.argn", "stack", 0);
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^", "static stack argn is canonicalized");
+	sdb_set (anal->sdb_cc, "cc.rev.argn", "stack_rev", 0);
+	mu_assert_streq (r_anal_cc_argloc (anal, "rev", 3, 0, -1), "^-", "static stack_rev argn is canonicalized");
 
 	r_anal_cc_set (anal, "rax grow(r0)");
 	mu_assert_eq (r_anal_cc_max_arg (anal, "grow"), 1, "initial max args");

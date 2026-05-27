@@ -161,7 +161,7 @@ R_API void r_core_print_func_args(RCore *core) {
 		if (!r_list_empty (list)) {
 			int argcnt = 0;
 			r_list_foreach (list, iter, arg) {
-				if (arg->cc_source && !strncmp (arg->cc_source, "stack", 5)) {
+				if (arg->cc_source && *arg->cc_source == '^') {
 					onstack = true;
 				}
 				print_arg_str (core, argcnt, arg->name, color);
@@ -215,7 +215,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 	int i;
 	ut64 spv = r_reg_getv (core->anal->reg, "SP");
 	ut64 s_width = (core->anal->config->bits == 64)? 8: 4;
-	if (src && (!strcmp (src, "^-") || !strcmp (src, "stack_rev"))) {
+	if (src && !strcmp (src, "^-")) {
 		for (i = nargs - 1; i >= 0; i--) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
@@ -227,7 +227,7 @@ R_API RList *r_core_get_func_args(RCore *core, const char *fcn_name) {
 		for (i = 0; i < nargs; i++) {
 			RAnalFuncArg *arg = R_NEW0 (RAnalFuncArg);
 			set_fcn_args_info (arg, core->anal, key, cc, i);
-			if (src && !strncmp (src, "stack", 5)) {
+			if (arg->cc_source && *arg->cc_source == '^') {
 				arg->src = spv;
 				if (!arg->size) {
 					arg->size = s_width;
