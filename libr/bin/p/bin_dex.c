@@ -2081,8 +2081,28 @@ static const char *get_cc(RBinFile *bf, ut64 vaddr) {
 	}
 	const char *pfx = m->arg_prefix;
 	const bool instance = !(m->attr & R_BIN_ATTR_STATIC);
-	r_strf_var (buf, 256, "dyncc:%s%u+%u:%c:v0+%u", pfx, m->arg_first, m->arg_count, instance? 'i': 's', m->ret_count);
-	return r_str_constpool_get (&bf->rbin->constpool, buf);
+	RStrBuf *sb = r_strbuf_new ("dyncc:");
+	if (!sb) {
+		return NULL;
+	}
+	if (m->arg_count > 0) {
+		r_strbuf_appendf (sb, "%s%u+%u", pfx, m->arg_first, m->arg_count);
+	}
+	r_strbuf_append (sb, ":");
+	if (m->ret_count > 0) {
+		r_strbuf_appendf (sb, "v0+%u", m->ret_count);
+	}
+	if (instance) {
+		if (m->arg_count > 0) {
+			r_strbuf_append (sb, "!T0");
+		} else {
+			r_strbuf_appendf (sb, "!T%s%u", pfx, m->arg_first);
+		}
+	}
+	char *s = r_strbuf_drain (sb);
+	const char *ret = r_str_constpool_get (&bf->rbin->constpool, s);
+	free (s);
+	return ret;
 }
 
 static const char *getname(RBinFile *bf, int type, int idx, bool sd) {
