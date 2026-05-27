@@ -1631,7 +1631,8 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		}
 	}
 
-	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, "self");
+	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
+	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
 	if (selfreg) {
 		bool is_arg = is_used_like_arg (selfreg, opsreg, opdreg, op, anal, op_dst_writeonly);
 		if (is_arg && reg_set[i] != 2) {
@@ -1657,7 +1658,7 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		i++;
 	}
 
-	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, "error");
+	const char *errorreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "E": "error");
 	if (errorreg) {
 		if (reg_set[i] == 0 && STR_EQUAL (opdreg, errorreg)) {
 			int delta = 0;

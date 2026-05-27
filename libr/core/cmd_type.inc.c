@@ -1442,7 +1442,8 @@ static void print_func_with_offsets(RCore *core, Sdb *TDB, const char *arg) {
 			free (type);
 		}
 
-		const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
+		const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc,
+			r_str_startswith (cc, "dyncc:")? "E": "error") : NULL;
 		if (err_reg) {
 			r_strbuf_appendf (sb, "%s0x%08x%s   %s// error: %s%s\n",
 				color_addr, current_offset, color_reset, color_comment, err_reg, color_reset);
@@ -1652,7 +1653,8 @@ static void printFunctionTypeJson(TypePrintCtx *ctx, const char *input) {
 	}
 	int max_cc_args = cc ? r_anal_cc_max_arg (core->anal, cc) : 0;
 	const char *ret_reg = cc? r_anal_cc_ret (core->anal, cc, 0): NULL;
-	const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc, "error") : NULL;
+	const char *err_reg = cc ? r_anal_cc_roleloc (core->anal, cc,
+		r_str_startswith (cc, "dyncc:")? "E": "error") : NULL;
 
 	pj_o (pj);
 	pj_ks (pj, "name", name);
