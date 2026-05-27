@@ -245,18 +245,18 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_true (r_anal_cc_exist (anal, "dyncc:ecx:eax!p0"), "caller stack-pop dyncc exists");
 	const char *regsets = "dyncc:x0+2,^:x0!p8!C(x0,x1,x2)!P(x15,x21,x26,x27,x28)";
 	mu_assert_true (r_anal_cc_exist (anal, regsets), "regset dyncc exists");
-	mu_assert_true (r_anal_cc_arg_clobbered (anal, regsets, 0, regsets), "dyncc clobbers arg0");
-	mu_assert_true (r_anal_cc_arg_clobbered (anal, regsets, 1, regsets), "dyncc clobbers arg1");
+	mu_assert_true (r_anal_cc_argclob (anal, regsets, 0, regsets), "dyncc clobbers arg0");
+	mu_assert_true (r_anal_cc_argclob (anal, regsets, 1, regsets), "dyncc clobbers arg1");
 	const char *presonly = "dyncc:x15,x21,x22:x0!P(x15,x21)";
-	mu_assert_false (r_anal_cc_arg_clobbered (anal, presonly, 0, presonly), "dyncc preserves arg0");
-	mu_assert_false (r_anal_cc_arg_clobbered (anal, presonly, 1, presonly), "dyncc preserves arg1");
-	mu_assert_true (r_anal_cc_arg_clobbered (anal, presonly, 2, presonly), "dyncc clobbers unpreserved arg");
+	mu_assert_false (r_anal_cc_argclob (anal, presonly, 0, presonly), "dyncc preserves arg0");
+	mu_assert_false (r_anal_cc_argclob (anal, presonly, 1, presonly), "dyncc preserves arg1");
+	mu_assert_true (r_anal_cc_argclob (anal, presonly, 2, presonly), "dyncc clobbers unpreserved arg");
 	sdb_set (anal->sdb_cc, "cc.sectarian.pop", "12", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.clobber", "(rdx,rcx)", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.preserve", "(rsi,rdi)", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.sret", "rsi", 0);
-	mu_assert_true (r_anal_cc_arg_clobbered (anal, "sectarian", 0, "sectarian"), "static cc clobbers arg0");
-	mu_assert_true (r_anal_cc_arg_clobbered (anal, "sectarian", 1, "sectarian"), "static cc clobbers arg1");
+	mu_assert_true (r_anal_cc_argclob (anal, "sectarian", 0, "sectarian"), "static cc clobbers arg0");
+	mu_assert_true (r_anal_cc_argclob (anal, "sectarian", 1, "sectarian"), "static cc clobbers arg1");
 	mu_assert_streq (r_anal_cc_roleloc (anal, "sectarian", "sret"), "rsi", "static cc role");
 
 	const char *refcc = "dyncc:&sectarian:&sectarian";

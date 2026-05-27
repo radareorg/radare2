@@ -102,7 +102,7 @@ static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int
 	const char *cc = callconv_for_call (core, op);
 	int i;
 	for (i = 0; i < max_count; i++) {
-		if (r_anal_cc_arg_clobbered (anal, fcncc, i, cc)) {
+		if (r_anal_cc_argclob (anal, fcncc, i, cc)) {
 			reg_set[i] = 2;
 		}
 	}

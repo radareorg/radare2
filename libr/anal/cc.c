@@ -1189,7 +1189,7 @@ static bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
 	return false;
 }
 
-R_API bool r_anal_cc_arg_clobbered(RAnal *anal, const char *caller_cc, int n, const char *callee_cc) {
+R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc) {
 	R_RETURN_VAL_IF_FAIL (anal && caller_cc && n >= 0, false);
 	const char *loc = r_anal_cc_argloc (anal, caller_cc, n, 0, 0);
 	if (!loc) {
