@@ -135,7 +135,7 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_null (r_anal_cc_argloc (anal, stat, 1, 0, -1), "static dyncc has one arg");
 	mu_assert_streq (r_anal_cc_ret (anal, stat, 0), "v0", "static dyncc ret0");
 	mu_assert_null (r_anal_cc_ret (anal, stat, 1), "static dyncc has one ret");
-	mu_assert_null (r_anal_cc_roleloc (anal, stat, "self"), "static dyncc has no self");
+	mu_assert_null (r_anal_cc_roleloc (anal, stat, "T"), "static dyncc has no self");
 	char *sig = r_anal_cc_get (anal, stat);
 	mu_assert_streq (sig, "v0 dyncc:v6:v0 (v6);", "static dyncc signature");
 	free (sig);
@@ -149,7 +149,7 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_streq (r_anal_cc_ret (anal, inst, 0), "v0", "instance dyncc ret0");
 	mu_assert_streq (r_anal_cc_ret (anal, inst, 1), "v1", "instance dyncc ret1");
 	mu_assert_null (r_anal_cc_ret (anal, inst, 2), "instance dyncc has two rets");
-	mu_assert_streq (r_anal_cc_roleloc (anal, inst, "self"), "v4", "instance dyncc self");
+	mu_assert_streq (r_anal_cc_roleloc (anal, inst, "T"), "v4", "instance dyncc self");
 	sig = r_anal_cc_get (anal, inst);
 	mu_assert_streq (sig, "v0:v1 v4.dyncc:v4+3:v0+2!T0 (v4, v5, v6);", "instance dyncc signature");
 	free (sig);
@@ -157,9 +157,9 @@ bool test_r_anal_cc_dyncc(void) {
 	const char *shifted = "dyncc:rdi,rsi,rdx:rax!R0!T1!V2!Ex21!Xx20!m2";
 	mu_assert_true (r_anal_cc_exist (anal, shifted), "role dyncc exists");
 	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "R"), "rdi", "role dyncc sret");
-	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "self"), "rsi", "role dyncc shifted self");
+	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "T"), "rsi", "role dyncc shifted self");
 	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "V"), "rdx", "role dyncc vtt");
-	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "error"), "x21", "role dyncc error");
+	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "E"), "x21", "role dyncc error");
 	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "X"), "x20", "role dyncc context");
 	mu_assert_streq (r_anal_cc_roleloc (anal, shifted, "m"), "rdx", "role dyncc custom method");
 	mu_assert_null (r_anal_cc_roleloc (anal, shifted, "sret"), "dyncc rejects word role lookup");
@@ -170,13 +170,13 @@ bool test_r_anal_cc_dyncc(void) {
 	const char *shifted_no_arg0 = "dyncc:_,rsi,rdx:rax!T1";
 	mu_assert_true (r_anal_cc_exist (anal, shifted_no_arg0), "explicit self allows instance dyncc without arg0");
 	mu_assert_null (r_anal_cc_argloc (anal, shifted_no_arg0, 0, 0, -1), "shifted self dyncc skips arg0");
-	mu_assert_streq (r_anal_cc_roleloc (anal, shifted_no_arg0, "self"), "rsi", "shifted self dyncc self");
+	mu_assert_streq (r_anal_cc_roleloc (anal, shifted_no_arg0, "T"), "rsi", "shifted self dyncc self");
 
 	const char *sideband_self = "dyncc::rax!Tx20!Ex21";
 	mu_assert_true (r_anal_cc_exist (anal, sideband_self), "sideband self dyncc exists");
 	mu_assert_eq (r_anal_cc_max_arg (anal, sideband_self), 0, "sideband self dyncc has no ABI args");
-	mu_assert_streq (r_anal_cc_roleloc (anal, sideband_self, "self"), "x20", "sideband self dyncc self");
-	mu_assert_streq (r_anal_cc_roleloc (anal, sideband_self, "error"), "x21", "sideband self dyncc error");
+	mu_assert_streq (r_anal_cc_roleloc (anal, sideband_self, "T"), "x20", "sideband self dyncc self");
+	mu_assert_streq (r_anal_cc_roleloc (anal, sideband_self, "E"), "x21", "sideband self dyncc error");
 
 	const char *voidcc = "dyncc:l0:";
 	mu_assert_true (r_anal_cc_exist (anal, voidcc), "void dyncc exists");
@@ -239,23 +239,6 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_streq (r_anal_cc_argloc (anal, homes, 0, 1, -1), "^0", "multi-home arg0 memory");
 	mu_assert_streq (r_anal_cc_argloc (anal, homes, 4, 0, -1), "^", "multi-home tail");
 
-	mu_assert_true (r_anal_cc_location_uses (anal, "eax", "eax"), "plain location contains itself");
-	mu_assert_false (r_anal_cc_location_uses (anal, "eax", "edx"), "plain location excludes other registers");
-	mu_assert_streq (r_anal_cc_location_first (anal, "eax"), "eax", "plain first location");
-	mu_assert_true (r_anal_cc_location_uses (anal, "{edx:eax}", "eax"), "group contains eax");
-	mu_assert_true (r_anal_cc_location_in_regset (anal, "{edx:eax}", "(ecx,eax)", false), "group regset any match");
-	mu_assert_true (r_anal_cc_location_in_regset (anal, "{edx:eax}", "(edx,eax)", true), "group regset all match");
-	mu_assert_false (r_anal_cc_location_in_regset (anal, "{edx:eax}", "(eax)", true), "group regset all miss");
-	mu_assert_streq (r_anal_cc_location_first (anal, "{edx:eax}"), "edx", "group first piece");
-	const char *scattered = "{0:rdi,8:rsi.4}";
-	mu_assert_streq (r_anal_cc_location_first (anal, scattered), "rdi", "scattered first piece");
-	mu_assert_true (r_anal_cc_location_uses (anal, scattered, "rdi"), "scattered contains first register");
-	mu_assert_true (r_anal_cc_location_uses (anal, scattered, "rsi"), "scattered contains sized register");
-	mu_assert_false (r_anal_cc_location_uses (anal, scattered, "rax"), "scattered excludes absent register");
-	mu_assert_true (r_anal_cc_location_in_regset (anal, scattered, "(rsi)", false), "scattered regset any match");
-	mu_assert_true (r_anal_cc_location_in_regset (anal, scattered, "(rdi,rsi)", true), "scattered regset all match");
-	mu_assert_false (r_anal_cc_location_in_regset (anal, scattered, "(rdi)", true), "scattered regset all miss");
-
 	const char *popcc = "dyncc:ecx,^:eax!p8";
 	mu_assert_true (r_anal_cc_exist (anal, popcc), "stack-pop dyncc exists");
 	mu_assert_eq (r_anal_cc_stack_pop (anal, popcc), 8, "stack-pop dyncc purges eight bytes");
@@ -266,7 +249,6 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_eq (r_anal_cc_stack_pop (anal, regsets), 8, "regset dyncc stack-pop");
 	mu_assert_streq (r_anal_cc_clobbers (anal, regsets), "(x0,x1,x2)", "dyncc clobbers");
 	mu_assert_streq (r_anal_cc_preserves (anal, regsets), "(x15,x21,x26,x27,x28)", "dyncc preserves");
-	mu_assert_false (r_anal_cc_location_in_regset (anal, "x3", r_anal_cc_clobbers (anal, regsets), false), "regset negative match");
 	sdb_set (anal->sdb_cc, "cc.sectarian.pop", "12", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.clobber", "(rdx,rcx)", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.preserve", "(rsi,rdi)", 0);
@@ -304,7 +286,7 @@ bool test_r_anal_cc_dyncc(void) {
 
 	const char *refself = "dyncc:_,rdx,rcx:&sectarian!T1";
 	mu_assert_true (r_anal_cc_exist (anal, refself), "referenced range dyncc accepts explicit self");
-	mu_assert_streq (r_anal_cc_roleloc (anal, refself, "self"), "rdx", "referenced range dyncc explicit self");
+	mu_assert_streq (r_anal_cc_roleloc (anal, refself, "T"), "rdx", "referenced range dyncc explicit self");
 
 	mu_assert_true (r_anal_cc_exist (anal, "dyncc:v0+1:v0"), "one-item dyncc range");
 	mu_assert_false (r_anal_cc_exist (anal, "dyncc:v0+0:v0"), "invalid zero dyncc range");

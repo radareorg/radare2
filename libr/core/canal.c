@@ -100,23 +100,9 @@ static void apply_call_regsets(RCore *core, RAnalFunction *fcn, RAnalOp *op, int
 	const char *fcncc = r_anal_function_cc (fcn);
 	const int max_count = fcncc? r_anal_cc_max_arg (anal, fcncc): 0;
 	const char *cc = callconv_for_call (core, op);
-	const char *clobbers = cc? r_anal_cc_clobbers (anal, cc): NULL;
-	const char *preserves = cc? r_anal_cc_preserves (anal, cc): NULL;
 	int i;
 	for (i = 0; i < max_count; i++) {
-		const char *loc = r_anal_cc_argloc (anal, fcncc, i, 0, 0);
-		if (!loc) {
-			continue;
-		}
-		if (R_STR_ISNOTEMPTY (clobbers)) {
-			if (r_anal_cc_location_in_regset (anal, loc, clobbers, false) && !r_anal_cc_location_in_regset (anal, loc, preserves, true)) {
-				reg_set[i] = 2;
-			}
-		} else if (R_STR_ISNOTEMPTY (preserves)) {
-			if (!r_anal_cc_location_in_regset (anal, loc, preserves, true)) {
-				reg_set[i] = 2;
-			}
-		} else {
+		if (r_anal_cc_arg_clobbered (anal, fcncc, i, cc)) {
 			reg_set[i] = 2;
 		}
 	}

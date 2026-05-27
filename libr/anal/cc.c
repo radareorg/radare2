@@ -1,6 +1,6 @@
 /* radare - LGPL - Copyright 2011-2026 - pancake, Oddcoder */
 
-#include <r_anal.h>
+#include <r_anal_priv.h>
 #define DB anal->sdb_cc
 
 #define R_ANAL_DYNCC_NAME_SIZE 32
@@ -934,28 +934,11 @@ R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home,
 	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
 }
 
-static char cc_dyncc_role_tag(const char *role) {
-	if (!role) {
-		return 0;
-	}
-	if (role[0] && !role[1]) {
-		return role[0];
-	}
-	if (!strcmp (role, "self")) {
-		return 'T';
-	}
-	if (!strcmp (role, "error")) {
-		return 'E';
-	}
-	return 0;
-}
-
 R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {
 	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
 	RAnalDynCC d;
 	if (dyncc_parse (convention, &d)) {
-		const char tag = cc_dyncc_role_tag (role);
-		return tag? dyncc_role_loc (anal, &d, tag): NULL;
+		return role[0] && !role[1]? dyncc_role_loc (anal, &d, role[0]): NULL;
 	}
 	RStrBuf sb;
 	const char *key = r_strbuf_initf (&sb, "cc.%s.%s", convention, role);
@@ -1165,7 +1148,7 @@ static bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPi
 	return RVecAnalCCPiece_length (pieces) > 0;
 }
 
-R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
 	if (*loc && *loc != '{') {
 		return !strcmp (loc, reg);
@@ -1186,7 +1169,7 @@ R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg
 	return ret;
 }
 
-R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
+R_IPI const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
 	R_RETURN_VAL_IF_FAIL (anal && loc, NULL);
 	if (*loc && *loc != '{') {
 		return loc;
@@ -1202,7 +1185,7 @@ R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
 	return ret;
 }
 
-R_API bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all) {
+R_IPI bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all) {
 	R_RETURN_VAL_IF_FAIL (anal && loc, false);
 	if (R_STR_ISEMPTY (regset)) {
 		return false;
@@ -1256,6 +1239,24 @@ static bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
 		s = e;
 	}
 	return false;
+}
+
+R_API bool r_anal_cc_arg_clobbered(RAnal *anal, const char *caller_cc, int n, const char *callee_cc) {
+	R_RETURN_VAL_IF_FAIL (anal && caller_cc && n >= 0, false);
+	const char *loc = r_anal_cc_argloc (anal, caller_cc, n, 0, 0);
+	if (!loc) {
+		return false;
+	}
+	const char *clobbers = callee_cc? r_anal_cc_clobbers (anal, callee_cc): NULL;
+	const char *preserves = callee_cc? r_anal_cc_preserves (anal, callee_cc): NULL;
+	if (R_STR_ISNOTEMPTY (clobbers)) {
+		return r_anal_cc_location_in_regset (anal, loc, clobbers, false)
+			&& !r_anal_cc_location_in_regset (anal, loc, preserves, true);
+	}
+	if (R_STR_ISNOTEMPTY (preserves)) {
+		return !r_anal_cc_location_in_regset (anal, loc, preserves, true);
+	}
+	return true;
 }
 
 R_API const char *r_anal_cc_default(RAnal *anal) {
