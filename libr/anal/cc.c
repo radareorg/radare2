@@ -2,8 +2,144 @@
 
 /* Universal calling convention implementation based on sdb */
 
-#include <r_anal.h>
+#include <r_anal_priv.h>
 #define DB anal->sdb_cc
+
+static const char *cc_from_static_loc(RAnal *anal, const char *loc) {
+	if (!loc) {
+		return NULL;
+	}
+	if (!strcmp (loc, "stack")) {
+		return r_str_constpool_get (&anal->constpool, "^");
+	}
+	if (!strcmp (loc, "stack_rev")) {
+		return r_str_constpool_get (&anal->constpool, "^-");
+	}
+	if (r_str_startswith (loc, "stack_rev") && isdigit ((ut8)loc[9])) {
+		r_strf_var (name, 64, "^-%s", loc + 9);
+		return r_str_constpool_get (&anal->constpool, name);
+	}
+	if (r_str_startswith (loc, "stack") && isdigit ((ut8)loc[5])) {
+		r_strf_var (name, 64, "^%s", loc + 5);
+		return r_str_constpool_get (&anal->constpool, name);
+	}
+	return r_str_constpool_get (&anal->constpool, loc);
+}
+
+static bool cc_parse_int(const char **sp, int *out) {
+	const char *s = *sp;
+	ut64 n = 0;
+	if (!isdigit ((ut8)*s)) {
+		return false;
+	}
+	while (isdigit ((ut8)*s)) {
+		n = (n * 10) + (*s++ - '0');
+		if (n > ST32_MAX) {
+			return false;
+		}
+	}
+	*out = (int)n;
+	*sp = s;
+	return true;
+}
+
+static const char *cc_group_next(const char *s, const char *end) {
+	const char *p = s;
+	for (; p < end; p++) {
+		if (*p == ',') {
+			return p;
+		}
+		if (*p == ':') {
+			const char *n = s;
+			while (n < p && isdigit ((ut8)*n)) {
+				n++;
+			}
+			if (n != p) {
+				return p;
+			}
+		}
+	}
+	return p;
+}
+
+static bool cc_location_range(const char *loc, const char **s, const char **end) {
+	size_t len = strlen (loc);
+	if (len < 2 || loc[0] != '{' || loc[len - 1] != '}') {
+		return false;
+	}
+	*s = loc + 1;
+	*end = loc + len - 1;
+	return true;
+}
+
+static const char *cc_location_next(RAnal *anal, const char **sp, const char *end) {
+	const char *s = *sp;
+	const char *next = cc_group_next (s, end);
+	const char *e = next;
+	while (s < end && isspace ((ut8)*s)) {
+		s++;
+	}
+	while (e > s && isspace ((ut8)e[-1])) {
+		e--;
+	}
+	if (s >= e) {
+		return NULL;
+	}
+	if (isdigit ((ut8)*s)) {
+		const char *p = s;
+		int n = 0;
+		if (cc_parse_int (&p, &n) && p < e && *p == ':') {
+			s = p + 1;
+		}
+	}
+	const char *dot = e;
+	while (dot > s && isdigit ((ut8)dot[-1])) {
+		dot--;
+	}
+	if (dot > s && dot[-1] == '.') {
+		const char *p = dot;
+		int n = 0;
+		if (cc_parse_int (&p, &n) && p == e) {
+			e = dot - 1;
+		}
+	}
+	*sp = next + (next < end);
+	char *name = r_str_ndup (s, e - s);
+	const char *ret = cc_from_static_loc (anal, name);
+	free (name);
+	return ret;
+}
+
+R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc) {
+	R_RETURN_VAL_IF_FAIL (anal && loc, NULL);
+	if (*loc && *loc != '{') {
+		return cc_from_static_loc (anal, loc);
+	}
+	const char *s, *end;
+	return cc_location_range (loc, &s, &end) && s < end? cc_location_next (anal, &s, end): NULL;
+}
+
+R_IPI bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg) {
+	R_RETURN_VAL_IF_FAIL (anal && loc && reg, false);
+	if (*loc && *loc != '{') {
+		const char *first = r_anal_cc_location_first (anal, loc);
+		return first && !strcmp (first, reg);
+	}
+	const char *s, *end;
+	if (!cc_location_range (loc, &s, &end)) {
+		return false;
+	}
+	while (s < end) {
+		const char *name = cc_location_next (anal, &s, end);
+		if (!name) {
+			return false;
+		}
+		if (!strcmp (name, reg)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 R_API void r_anal_cc_del(RAnal *anal, const char *name) {
 	R_RETURN_IF_FAIL (anal && name);
@@ -108,7 +244,6 @@ R_API void r_anal_cc_reset(RAnal *anal) {
 
 R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	R_RETURN_IF_FAIL (anal && pj && name);
-	r_strf_buffer (64);
 	int i;
 	// get cc by name and print the expr
 	const char *cc_type = sdb_const_get (DB, name, 0);
@@ -134,20 +269,16 @@ R_API void r_anal_cc_get_json(RAnal *anal, PJ *pj, const char *name) {
 	pj_ks (pj, "signature", sig);
 	free (sig);
 	pj_ka (pj, "args");
-	for (i = 0; i < R_ANAL_CC_MAXARG; i++) {
-		const char *k = r_strf ("cc.%s.arg%d", name, i);
-		const char *arg = sdb_const_get (DB, k, 0);
-		if (!arg) {
-			break;
-		}
-		pj_s (pj, arg);
+	const int max = r_anal_cc_max_arg (anal, name);
+	for (i = 0; i < max; i++) {
+		pj_s (pj, r_anal_cc_argloc (anal, name, i, 0, -1));
 	}
 	pj_end (pj);
-	const char *argn = sdb_const_get (DB, r_strf ("cc.%s.argn", name), 0);
+	const char *argn = r_anal_cc_argloc (anal, name, max, 0, -1);
 	if (argn) {
 		pj_ks (pj, "argn", argn);
 	}
-	const char *error = r_anal_cc_error (anal, name);
+	const char *error = r_anal_cc_roleloc (anal, name, "error");
 	if (error) {
 		pj_ks (pj, "error", error);
 	}
@@ -170,7 +301,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 
 	RStrBuf *sb = r_strbuf_new (NULL);
-	const char *self = r_anal_cc_self (anal, name);
+	const char *self = r_anal_cc_roleloc (anal, name, "self");
 	// Multi-return: print "r0:r1:r2 ..."
 	r_strbuf_appendf (sb, "%s", ret);
 	int rn;
@@ -205,7 +336,7 @@ R_API char *r_anal_cc_get(RAnal *anal, const char *name) {
 	}
 	r_strbuf_append (sb, ")");
 
-	const char *error = r_anal_cc_error (anal, name);
+	const char *error = r_anal_cc_roleloc (anal, name, "error");
 	if (error) {
 		r_strbuf_appendf (sb, " %s", error);
 	}
@@ -223,20 +354,23 @@ R_API bool r_anal_cc_exist(RAnal *anal, const char *cc) {
 	return (x != NULL) && !strcmp (x, "cc");
 }
 
-R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
-	R_RETURN_VAL_IF_FAIL (anal && n >= 0, NULL);
+R_API const char *r_anal_cc_argloc(RAnal *anal, const char *cc, int n, int home, int argc) {
+	R_RETURN_VAL_IF_FAIL (anal && n >= 0 && home >= 0, NULL);
 	if (!cc) {
+		return NULL;
+	}
+	if (home > 0) {
 		return NULL;
 	}
 	Sdb *db = DB;
 	r_strf_buffer (64);
-	if (lastn > 0) {
+	if (argc > 0) {
 		char *revarg = r_strf ("cc.%s.revarg", cc);
 		if (r_str_is_true (sdb_const_get (db, revarg, 0))) {
-			if (n >= lastn) {
+			if (n >= argc) {
 				return NULL;
 			}
-			n = lastn - n - 1;
+			n = argc - n - 1;
 		}
 	}
 	char *query = r_strf ("cc.%s.arg%d", cc, n);
@@ -245,44 +379,48 @@ R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
 		query = r_strf ("cc.%s.argn", cc);
 		ret = sdb_const_get (db, query, 0);
 	}
-	return ret? r_str_constpool_get (&anal->constpool, ret): NULL;
+	return ret? cc_from_static_loc (anal, ret): NULL;
+}
+
+R_API const char *r_anal_cc_arg(RAnal *anal, const char *cc, int n, int lastn) {
+	return r_anal_cc_argloc (anal, cc, n, 0, lastn);
+}
+
+R_API const char *r_anal_cc_roleloc(RAnal *anal, const char *convention, const char *role) {
+	R_RETURN_VAL_IF_FAIL (anal && convention && role, NULL);
+	RStrBuf sb;
+	const char *key = r_strbuf_initf (&sb, "cc.%s.%s", convention, role);
+	const char *value = sdb_const_get (DB, key, 0);
+	const char *res = value? cc_from_static_loc (anal, value): NULL;
+	r_strbuf_fini (&sb);
+	return res;
 }
 
 R_API const char *r_anal_cc_self(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
-	r_strf_var (query, 64, "cc.%s.self", convention);
-	const char *self = sdb_const_get (DB, query, 0);
-	return self? r_str_constpool_get (&anal->constpool, self): NULL;
+	return r_anal_cc_roleloc (anal, convention, "self");
+}
+
+static void cc_set_roleloc(RAnal *anal, const char *convention, const char *role, const char *loc) {
+	if (!r_anal_cc_exist (anal, convention)) {
+		return;
+	}
+	RStrBuf sb;
+	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.%s", convention, role), loc, 0);
+	r_strbuf_fini (&sb);
 }
 
 R_API void r_anal_cc_set_self(RAnal *anal, const char *convention, const char *self) {
 	R_RETURN_IF_FAIL (anal && convention && self);
-	if (!r_anal_cc_exist (anal, convention)) {
-		return;
-	}
-	RStrBuf sb;
-	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.self", convention), self, 0);
-	r_strbuf_fini (&sb);
+	cc_set_roleloc (anal, convention, "self", self);
 }
 
 R_API const char *r_anal_cc_error(RAnal *anal, const char *convention) {
-	R_RETURN_VAL_IF_FAIL (anal && convention, NULL);
-	R_CRITICAL_ENTER (anal);
-	r_strf_var (query, 64, "cc.%s.error", convention);
-	const char *error = sdb_const_get (DB, query, 0);
-	const char *res = error? r_str_constpool_get (&anal->constpool, error): NULL;
-	R_CRITICAL_LEAVE (anal);
-	return res;
+	return r_anal_cc_roleloc (anal, convention, "error");
 }
 
 R_API void r_anal_cc_set_error(RAnal *anal, const char *convention, const char *error) {
 	R_RETURN_IF_FAIL (anal && convention && error);
-	if (!r_anal_cc_exist (anal, convention)) {
-		return;
-	}
-	RStrBuf sb;
-	sdb_set (DB, r_strbuf_initf (&sb, "cc.%s.error", convention), error, 0);
-	r_strbuf_fini (&sb);
+	cc_set_roleloc (anal, convention, "error", error);
 }
 
 R_API int r_anal_cc_max_arg(RAnal *anal, const char *cc) {

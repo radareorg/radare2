@@ -20,6 +20,17 @@ typedef struct {
 	char indentstr[1024];
 } PDCState;
 
+static const char *pseudo_arg_name(RAnal *anal, const char *arg) {
+	const char *first = arg? r_anal_cc_location_first (anal, arg): NULL;
+	if (first) {
+		arg = first;
+	}
+	if (arg && (!strcmp (arg, "^") || !strcmp (arg, "^-"))) {
+		return "stack";
+	}
+	return arg;
+}
+
 typedef enum {
 	TYPE_NONE = 0,
 	TYPE_STR = 1,
@@ -1176,10 +1187,10 @@ R_API int r_core_pseudo_code(RCore *core, const char *input) {
 		pj_ka (state.pj, "annotations");
 	}
 	const char *cc = state.fcn->callconv? state.fcn->callconv: "default";
-	const char *cc_a0 = r_anal_cc_arg (state.core->anal, cc, 0, -1);
-	const char *cc_a1 = r_anal_cc_arg (state.core->anal, cc, 1, -1);
-	const char *a0 = cc_a0? cc_a0: r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A0);
-	const char *a1 = cc_a1? cc_a1: r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A1);
+	const char *cc_a0 = r_anal_cc_argloc (state.core->anal, cc, 0, 0, -1);
+	const char *cc_a1 = r_anal_cc_argloc (state.core->anal, cc, 1, 0, -1);
+	const char *a0 = cc_a0? pseudo_arg_name (state.core->anal, cc_a0): r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A0);
+	const char *a1 = cc_a1? pseudo_arg_name (state.core->anal, cc_a1): r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_A1);
 	state.r0 = r_reg_alias_getname (state.core->anal->reg, R_REG_ALIAS_R0);
 	const char *r0 = state.r0;
 	if (show_c_headers) {
