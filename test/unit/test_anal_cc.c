@@ -247,15 +247,14 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_true (r_anal_cc_location_in_regset (anal, "{edx:eax}", "(edx,eax)", true), "group regset all match");
 	mu_assert_false (r_anal_cc_location_in_regset (anal, "{edx:eax}", "(eax)", true), "group regset all miss");
 	mu_assert_streq (r_anal_cc_location_first (anal, "{edx:eax}"), "edx", "group first piece");
-	RVecAnalCCPiece pieces;
-	RVecAnalCCPiece_init (&pieces);
-	mu_assert_true (r_anal_cc_location_pieces (anal, "{0:rdi,8:rsi.4}", &pieces), "scattered pieces parse");
-	mu_assert_eq (RVecAnalCCPiece_length (&pieces), 2, "scattered piece count");
-	RAnalCCPiece *piece = RVecAnalCCPiece_at (&pieces, 1);
-	mu_assert_eq (piece->off, 8, "scattered piece offset");
-	mu_assert_eq (piece->size, 4, "scattered piece size");
-	mu_assert_streq (piece->loc, "rsi", "scattered piece loc");
-	RVecAnalCCPiece_fini (&pieces);
+	const char *scattered = "{0:rdi,8:rsi.4}";
+	mu_assert_streq (r_anal_cc_location_first (anal, scattered), "rdi", "scattered first piece");
+	mu_assert_true (r_anal_cc_location_uses (anal, scattered, "rdi"), "scattered contains first register");
+	mu_assert_true (r_anal_cc_location_uses (anal, scattered, "rsi"), "scattered contains sized register");
+	mu_assert_false (r_anal_cc_location_uses (anal, scattered, "rax"), "scattered excludes absent register");
+	mu_assert_true (r_anal_cc_location_in_regset (anal, scattered, "(rsi)", false), "scattered regset any match");
+	mu_assert_true (r_anal_cc_location_in_regset (anal, scattered, "(rdi,rsi)", true), "scattered regset all match");
+	mu_assert_false (r_anal_cc_location_in_regset (anal, scattered, "(rdi)", true), "scattered regset all miss");
 
 	const char *popcc = "dyncc:ecx,^:eax!p8";
 	mu_assert_true (r_anal_cc_exist (anal, popcc), "stack-pop dyncc exists");
@@ -267,7 +266,7 @@ bool test_r_anal_cc_dyncc(void) {
 	mu_assert_eq (r_anal_cc_stack_pop (anal, regsets), 8, "regset dyncc stack-pop");
 	mu_assert_streq (r_anal_cc_clobbers (anal, regsets), "(x0,x1,x2)", "dyncc clobbers");
 	mu_assert_streq (r_anal_cc_preserves (anal, regsets), "(x15,x21,x26,x27,x28)", "dyncc preserves");
-	mu_assert_false (r_anal_cc_regset_contains ("(x0,x1,x2)", "x3"), "regset negative match");
+	mu_assert_false (r_anal_cc_location_in_regset (anal, "x3", r_anal_cc_clobbers (anal, regsets), false), "regset negative match");
 	sdb_set (anal->sdb_cc, "cc.sectarian.pop", "12", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.clobber", "(rdx,rcx)", 0);
 	sdb_set (anal->sdb_cc, "cc.sectarian.preserve", "(rsi,rdi)", 0);

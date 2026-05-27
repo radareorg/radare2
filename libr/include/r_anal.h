@@ -1459,17 +1459,9 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
 R_API int r_anal_cc_stack_pop(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_clobbers(RAnal *anal, const char *convention);
 R_API const char *r_anal_cc_preserves(RAnal *anal, const char *convention);
-typedef struct r_anal_cc_piece_t {
-	int off;
-	int size;
-	const char *loc;
-} RAnalCCPiece;
-R_VEC_TYPE (RVecAnalCCPiece, RAnalCCPiece);
-R_API bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPiece *pieces);
 R_API bool r_anal_cc_location_uses(RAnal *anal, const char *loc, const char *reg);
 R_API const char *r_anal_cc_location_first(RAnal *anal, const char *loc);
 R_API bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char *regset, bool all);
-R_API bool r_anal_cc_regset_contains(const char *regset, const char *reg);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);
 R_API void r_anal_set_cc_default(RAnal *anal, const char *convention);

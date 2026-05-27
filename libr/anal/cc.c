@@ -1076,6 +1076,15 @@ R_API const char *r_anal_cc_preserves(RAnal *anal, const char *convention) {
 	return cc_regset (anal, convention, "preserve");
 }
 
+typedef struct r_anal_cc_piece_t {
+	int off;
+	int size;
+	const char *loc;
+} RAnalCCPiece;
+R_VEC_TYPE (RVecAnalCCPiece, RAnalCCPiece);
+
+static bool r_anal_cc_regset_contains(const char *regset, const char *reg);
+
 static bool cc_piece_push(RAnal *anal, RVecAnalCCPiece *pieces, int off, int size, const char *loc, size_t loc_len) {
 	if (!loc_len) {
 		return false;
@@ -1143,7 +1152,7 @@ static const char *cc_group_next(const char *s, const char *end) {
 	return p;
 }
 
-R_API bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPiece *pieces) {
+static bool r_anal_cc_location_pieces(RAnal *anal, const char *loc, RVecAnalCCPiece *pieces) {
 	R_RETURN_VAL_IF_FAIL (anal && loc && pieces, false);
 	RVecAnalCCPiece_clear (pieces);
 	size_t len = strlen (loc);
@@ -1228,7 +1237,7 @@ R_API bool r_anal_cc_location_in_regset(RAnal *anal, const char *loc, const char
 	return ret;
 }
 
-R_API bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
+static bool r_anal_cc_regset_contains(const char *regset, const char *reg) {
 	R_RETURN_VAL_IF_FAIL (regset && reg, false);
 	const char *s = regset;
 	if (*s == '(') {
