@@ -2605,7 +2605,7 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 	uint8_t *leaf_data;
 	unsigned int read_bytes = 0;
 
-	stream_file_read (stream, 2, (char *)&type->length);
+	type->length = stream_file_read_le16 (stream);
 	if (type->length < 2) {
 		return 0;
 	}
@@ -2684,7 +2684,21 @@ static int parse_tpi_stypes(R_STREAM_FILE *stream, SType *type) {
 bool parse_tpi_stream(STpiStream *ss, R_STREAM_FILE *stream) {
 	ss->types = r_list_new ();
 	// Initialize context for parsing session
-	stream_file_read (stream, sizeof (STPIHeader), (char *)&ss->header);
+	ss->header.version = stream_file_read_le32 (stream);
+	ss->header.hdr_size = stream_file_read_le32 (stream);
+	ss->header.idx_begin = stream_file_read_le32 (stream);
+	ss->header.idx_end = stream_file_read_le32 (stream);
+	ss->header.follow_size = stream_file_read_le32 (stream);
+	ss->header.tpi.hash_stream_idx = stream_file_read_le16 (stream);
+	ss->header.tpi.hash_aux_stream_idx = stream_file_read_le16 (stream);
+	ss->header.tpi.hash_key_size = stream_file_read_sle32 (stream);
+	ss->header.tpi.buckets = stream_file_read_sle32 (stream);
+	ss->header.tpi.hash_val.offset = stream_file_read_sle32 (stream);
+	ss->header.tpi.hash_val.buff_len = stream_file_read_le32 (stream);
+	ss->header.tpi.idx_off.offset = stream_file_read_sle32 (stream);
+	ss->header.tpi.idx_off.buff_len = stream_file_read_le32 (stream);
+	ss->header.tpi.hash_adj.offset = stream_file_read_sle32 (stream);
+	ss->header.tpi.hash_adj.buff_len = stream_file_read_le32 (stream);
 	if (stream->error) {
 		return false;
 	}

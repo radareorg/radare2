@@ -645,7 +645,7 @@ R_PACKED(
 typedef struct {
 	st32 stream_size;
 	st32 num_pages;
-	ut8 *stream_pages;
+	int *stream_pages;
 }) SPage;
 
 typedef struct {

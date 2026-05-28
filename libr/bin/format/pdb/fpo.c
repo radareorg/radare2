@@ -22,7 +22,15 @@ static int parse_fpo_data_v2(const ut8 *data, ut32 data_size, ut32 pos, SFPO_DAT
 	if (!can_read (pos, size, data_size)) {
 		return 0;
 	}
-	memcpy (fpo_data, data, size);
+	fpo_data->ul_off_start = r_read_le32 (data);
+	fpo_data->cb_proc_size = r_read_le32 (data + 4);
+	fpo_data->cdw_locals = r_read_le32 (data + 8);
+	fpo_data->cdw_params = r_read_le32 (data + 12);
+	fpo_data->max_stack = r_read_le32 (data + 16);
+	fpo_data->programm_string_offset = r_read_le32 (data + 20);
+	fpo_data->cb_prolog = r_read_le16 (data + 24);
+	fpo_data->cb_save_regs = r_read_le16 (data + 26);
+	fpo_data->flags = r_read_le32 (data + 28);
 	return size;
 }
 

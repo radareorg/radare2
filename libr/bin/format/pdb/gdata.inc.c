@@ -35,7 +35,7 @@ static void parse_gdata_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stre
 	data_stream->globals_list = r_list_newf (free_global);
 	ut16 len = 0;
 	while (1) {
-		stream_file_read (stream_file, 2, (char *)&len);
+		len = stream_file_read_le16 (stream_file);
 		if (len == 0) {
 			break;
 		}

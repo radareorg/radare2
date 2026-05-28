@@ -9,7 +9,8 @@ static int parse_omap_entry(char *data, int data_size, int *read_bytes, SOmapEnt
 	if (data_size - *read_bytes < (int)sizeof (SOmapEntry)) {
 		return 0;
 	}
-	memcpy (omap_entry, data, sizeof (SOmapEntry));
+	omap_entry->from = r_read_le32 (data);
+	omap_entry->to = r_read_le32 (data + 4);
 	*read_bytes += sizeof (SOmapEntry);
 	return (*read_bytes - curr_read_bytes);
 }

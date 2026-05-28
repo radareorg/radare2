@@ -19,11 +19,20 @@ void parse_pe_stream(STpiStream *ss, void *stream, R_STREAM_FILE *stream_file) {
 	pe_stream->sections_hdrs = r_list_newf (free);
 	int read_bytes = 0;
 	while (read_bytes + sctn_header_size <= data_size) {
-		SIMAGE_SECTION_HEADER *sctn_header = malloc (sctn_header_size);
+		SIMAGE_SECTION_HEADER *sctn_header = R_NEW0 (SIMAGE_SECTION_HEADER);
 		if (!sctn_header) {
 			break;
 		}
-		memcpy (sctn_header, ptmp, sctn_header_size);
+		memcpy (sctn_header->name, ptmp, PDB_SIZEOF_SECTION_NAME);
+		sctn_header->misc.virtual_address = r_read_le32 (ptmp + 8);
+		sctn_header->virtual_address = r_read_le32 (ptmp + 12);
+		sctn_header->size_of_raw_data = r_read_le32 (ptmp + 16);
+		sctn_header->pointer_to_raw_data = r_read_le32 (ptmp + 20);
+		sctn_header->pointer_to_relocations = r_read_le32 (ptmp + 24);
+		sctn_header->pointer_to_line_numbers = r_read_le32 (ptmp + 28);
+		sctn_header->number_of_relocations = r_read_le16 (ptmp + 32);
+		sctn_header->number_of_line_numbers = r_read_le16 (ptmp + 34);
+		sctn_header->charactestics = r_read_le32 (ptmp + 36);
 		ptmp += sctn_header_size;
 		r_list_append (pe_stream->sections_hdrs, sctn_header);
 		read_bytes += sctn_header_size;

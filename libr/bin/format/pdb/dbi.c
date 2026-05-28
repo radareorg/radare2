@@ -19,26 +19,26 @@ static void free_dbi_stream(STpiStream *ss, void *stream) {
 }
 
 static void parse_dbi_header(SDBIHeader *dbi_header, R_STREAM_FILE *stream_file) {
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->magic);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->version);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->age);
-	stream_file_read (stream_file, sizeof (ut16), (char *)&dbi_header->gssymStream);
-	stream_file_read (stream_file, sizeof (ut16), (char *)&dbi_header->vers);
-	stream_file_read (stream_file, sizeof (st16), (char *)&dbi_header->pssymStream);
-	stream_file_read (stream_file, sizeof (ut16), (char *)&dbi_header->pdbver);
-	stream_file_read (stream_file, sizeof (st16), (char *)&dbi_header->symrecStream);
-	stream_file_read (stream_file, sizeof (ut16), (char *)&dbi_header->pdbver2);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->module_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->seccon_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->secmap_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->filinf_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->tsmap_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->mfc_index);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->dbghdr_size);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->ecinfo_size);
-	stream_file_read (stream_file, sizeof (ut16), (char *)&dbi_header->flags);
-	stream_file_read (stream_file, 2, (char *)&dbi_header->machine);
-	stream_file_read (stream_file, sizeof (ut32), (char *)&dbi_header->resvd);
+	dbi_header->magic = stream_file_read_le32 (stream_file);
+	dbi_header->version = stream_file_read_le32 (stream_file);
+	dbi_header->age = stream_file_read_le32 (stream_file);
+	dbi_header->gssymStream = stream_file_read_sle16 (stream_file);
+	dbi_header->vers = stream_file_read_le16 (stream_file);
+	dbi_header->pssymStream = stream_file_read_sle16 (stream_file);
+	dbi_header->pdbver = stream_file_read_le16 (stream_file);
+	dbi_header->symrecStream = stream_file_read_sle16 (stream_file);
+	dbi_header->pdbver2 = stream_file_read_le16 (stream_file);
+	dbi_header->module_size = stream_file_read_le32 (stream_file);
+	dbi_header->seccon_size = stream_file_read_le32 (stream_file);
+	dbi_header->secmap_size = stream_file_read_le32 (stream_file);
+	dbi_header->filinf_size = stream_file_read_le32 (stream_file);
+	dbi_header->tsmap_size = stream_file_read_le32 (stream_file);
+	dbi_header->mfc_index = stream_file_read_le32 (stream_file);
+	dbi_header->dbghdr_size = stream_file_read_le32 (stream_file);
+	dbi_header->ecinfo_size = stream_file_read_le32 (stream_file);
+	dbi_header->flags = stream_file_read_le16 (stream_file);
+	dbi_header->machine = stream_file_read_le16 (stream_file);
+	dbi_header->resvd = stream_file_read_le32 (stream_file);
 }
 
 static int parse_ssymbol_range(const ut8 *data, ut32 max_len, SSymbolRange *symbol_range) {
@@ -90,17 +90,17 @@ static int parse_dbi_ex_header(ut8 *data, ut32 max_len, SDBIExHeader *dbi_ex_hea
 }
 
 static void parse_dbg_header(SDbiDbgHeader *dbg_header, R_STREAM_FILE *stream_file) {
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_fpo);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_exception);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_fixup);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_omap_to_src);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_omap_from_src);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_section_hdr);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_token_rid_map);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_xdata);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_pdata);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_new_fpo);
-	stream_file_read (stream_file, sizeof (short), (char *)&dbg_header->sn_section_hdr_orig);
+	dbg_header->sn_fpo = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_exception = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_fixup = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_omap_to_src = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_omap_from_src = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_section_hdr = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_token_rid_map = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_xdata = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_pdata = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_new_fpo = stream_file_read_sle16 (stream_file);
+	dbg_header->sn_section_hdr_orig = stream_file_read_sle16 (stream_file);
 }
 
 void init_dbi_stream(SDbiStream *dbi_stream) {
