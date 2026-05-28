@@ -3201,6 +3201,9 @@ static RVecAddr *get_xrefs(RAnalBlock *bb) {
 }
 
 static char *fcnjoin(RList *list) {
+	if (!list) {
+		return strdup ("");
+	}
 	RAnalFunction *n;
 	RListIter *iter;
 	RStrBuf buf;
@@ -3214,6 +3217,9 @@ static char *fcnjoin(RList *list) {
 }
 
 static char *ut64join(RList *list) {
+	if (!list) {
+		return strdup ("");
+	}
 	ut64 *n;
 	RListIter *iter;
 	RStrBuf buf;
@@ -3341,7 +3347,7 @@ static void anal_bb_list(RCore *core, const char *input) {
 				char *call = ut64join (calls);
 				char *xref = ut64join (calls);
 				char *fcns = fcnjoin (block->fcns);
-				r_table_add_rowf (table, "xnddsssss",
+				r_table_add_rowf (table, "xnndsssss",
 					block->addr,
 					block->size,
 					block->traced,

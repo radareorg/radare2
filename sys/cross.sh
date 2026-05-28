@@ -122,6 +122,11 @@ if [ -z "${CROSS_CFLAGS}" ]; then
 else
 	export CFLAGS="${CROSS_CFLAGS}"
 fi
+if [ "${CROSS_WITH_GPL}" = 1 ]; then
+	GPL_CONFIGURE_ARG=
+else
+	GPL_CONFIGURE_ARG=--without-gpl
+fi
 
 run_make() {
 	${MAKE} ${JOBS} \
@@ -172,7 +177,7 @@ cp -f "$PLUGINS_CFG" plugins.cfg || exit 1
 	--with-compiler="$COMPILER" \
 	--with-libr \
 	--with-static-themes \
-	--without-gpl \
+	$GPL_CONFIGURE_ARG \
 	$CFGARGS || exit 1
 
 run_make libr/include/r_version.h || exit 1

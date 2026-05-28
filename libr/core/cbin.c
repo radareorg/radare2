@@ -2137,7 +2137,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 	if (IS_MODE_RAD (mode)) {
 		r_cons_println (core->cons, "fs relocs");
 	} else if (IS_MODE_NORMAL (mode)) {
-		r_table_set_columnsf (table, "XXsds", "vaddr", "paddr", "type", "ntype", "name");
+		r_table_set_columnsf (table, "XXsns", "vaddr", "paddr", "type", "ntype", "name");
 	} else if (IS_MODE_JSON (mode)) {
 		pj_a (pj);
 	} else if (IS_MODE_SET (mode)) {
@@ -2274,7 +2274,7 @@ static bool bin_relocs(RCore *core, PJ *pj, int mode, int va) {
 				r_strbuf_append (buf, " (ifunc)");
 			}
 			char *res = r_strbuf_drain (buf);
-			r_table_add_rowf (table, "XXsds", addr, reloc->paddr,
+			r_table_add_rowf (table, "XXsns", addr, reloc->paddr,
 				bin_reloc_type_name (reloc), reloc->ntype, res);
 			free (res);
 		}

@@ -1193,6 +1193,7 @@ RUN
 
 NAME=varsub for rip variable
 FILE=bins/elf/varsub_2
+REQUIRE=gpl
 CMDS=<<EOF
 aa; s main
 e asm.syntax=att
@@ -1207,6 +1208,29 @@ EXPECT=<<EOF
 | 0x0000061a      pushq %rbp
 | 0x0000061b      movq %rsp, %rbp
 | 0x0000061e      movl $1, obj.sa
+| 0x00000628      movl $0, %eax
+| 0x0000062d      popq %rbp
+\ 0x0000062e      retq
+EOF
+RUN
+
+NAME=varsub for rip variable, no demangle
+FILE=bins/elf/varsub_2
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+aa; s main
+e asm.syntax=att
+e asm.var=0
+e asm.lines.jmp=0
+e asm.bytes=0
+e asm.comments=false
+pdf
+EOF
+EXPECT=<<EOF
+/ 21: int main (int argc, char **argv, char **envp);
+| 0x0000061a      pushq %rbp
+| 0x0000061b      movq %rsp, %rbp
+| 0x0000061e      movl $1, obj._ZL2sa
 | 0x00000628      movl $0, %eax
 | 0x0000062d      popq %rbp
 \ 0x0000062e      retq

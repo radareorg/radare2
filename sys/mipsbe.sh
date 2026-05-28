@@ -8,7 +8,7 @@ CROSS="${CROSS:-${TARGET}-}"
 export CROSS_CFLAGS="-O0"
 # We will slowly extend the supported tests as soon as we fix them
 # R2R_TESTS="${R2R_TESTS:-test/db/cmd}"
-R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_print test/db/cmd/cmd_w test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/cmd/cmd_alias test/db/cmd/cmd_yank test/db/cmd/cmd_help test/db/cmd/cmd_b test/db/cmd/cmd_pseudo_arm64 test/db/cmd/cmd_search_crypto test/db/asm/mips_v2_64 test/db/json}"
+R2R_TESTS="${R2R_TESTS:-test/db/cmd/echo test/db/cmd/cmd_print_misc test/db/cmd/cmd_print test/db/cmd/cmd_pd test/db/cmd/cmd_pd2 test/db/cmd/cmd_pde test/db/cmd/cmd_pd_str test/db/cmd/cmd_ao test/db/cmd/cmd_ab test/db/cmd/cmd_aae test/db/cmd/cmd_af test/db/cmd/cmd_afl test/db/cmd/cmd_afb test/db/cmd/cmd_afn test/db/cmd/cmd_afv test/db/cmd/cmd_ax test/db/cmd/cmd_ag test/db/cmd/cmd_w test/db/cmd/cmd_hash test/db/cmd/cmd_question test/db/cmd/cmd_alias test/db/cmd/cmd_yank test/db/cmd/cmd_help test/db/cmd/cmd_b test/db/cmd/cmd_pseudo_arm64 test/db/cmd/cmd_search_crypto test/db/asm/mips_v2_64 test/db/json}"
 # test/db/formats}"
 R2R_TIMEOUT="${R2R_TIMEOUT:-120}"
 UNIT_TESTS="${UNIT_TESTS:-test_base64 test_bitmap test_bitset test_hex test_json test_list test_math test_str test_uleb128}"
@@ -117,6 +117,7 @@ if [ "$MODE" = build ] || [ "$MODE" = all ]; then
 	export CC CROSS
 	export BUILD_R2R="${BUILD_R2R:-1}"
 	export BUILD_BINR="${BUILD_BINR:-1}"
+	export CROSS_WITH_GPL=1
 	export CONFIGURE_PLUGINS_ARGS="${CONFIGURE_PLUGINS_ARGS:---without-zydis}"
 	export CFGARGS="${CFGARGS:---without-zydis}"
 	export PLUGINS_CFG="dist/plugins-cfg/plugins.def.cfg"

@@ -2454,7 +2454,7 @@ R_API char *r_core_anal_fcn_name(RCore *core, RAnalFunction *fcn) {
 	return name;
 }
 
-#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %5d %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5d %4d %6d %4d %5d %s%s%s%s\n"
+#define FCN_LIST_VERBOSE_ENTRY "%s0x%0*"PFMT64x" %5d %4"PFMT64d" %5d %5d %5d %4d 0x%0*"PFMT64x" %5"PFMT64d" 0x%0*"PFMT64x" %5"PFMT64u" %4d %6d %4"PFMT64u" %5d %s%s%s%s\n"
 
 static int fcn_print_verbose(RCore *core, RAnalFunction *fcn, bool use_color) {
 	char *name = r_core_anal_fcn_name (core, fcn);

@@ -3202,8 +3202,7 @@ static int ds_disassemble(RDisasmState *ds, ut8 *buf, int len) {
 						break;
 					case 32:
 						{
-							ut32 oval = ds->analop.val;
-							ut32 eval  = r_read_le32 (&oval);
+							ut32 eval = r_read_le32 (buf);
 							r_anal_op_set_mnemonic (&ds->asmop, 0, r_strf (".ipaddr 0x%08x%s", (ut32)eval, tail));
 						}
 						break;

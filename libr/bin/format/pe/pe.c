@@ -870,15 +870,6 @@ static int bin_pe_init_hdr(RBinPEObj *pe) {
 	return true;
 }
 
-typedef struct {
-	ut64 shortname;
-	ut32 value;
-	ut16 secnum;
-	ut16 symtype;
-	ut8 symclass;
-	ut8 numaux;
-} SymbolRecord;
-
 static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_pe_export_t *exports, int sz) {
 	ut64 sym_tbl_off, num = 0;
 	const int srsz = COFF_SYMBOL_SIZE; // symbol record size
@@ -887,7 +878,6 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 	struct r_bin_pe_export_t *new_exports = NULL;
 	const size_t export_t_sz = sizeof (struct r_bin_pe_export_t);
 	int bufsz, i, shsz;
-	SymbolRecord sr;
 	ut64 text_off = 0LL;
 	ut64 text_rva = 0LL;
 	int textn = 0;
@@ -953,15 +943,16 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 	symctr = 0;
 	if (r_buf_read_at (pe->b, sym_tbl_off, (ut8 *)buf, bufsz) > 0) {
 		for (i = 0; i < shsz; i += srsz) {
-			// sr = (SymbolRecord*) (buf + i);
-			if (i + sizeof (sr) >= bufsz) {
+			if (i + srsz > bufsz) {
 				break;
 			}
-			memcpy (&sr, buf + i, sizeof (sr));
-			if (sr.secnum == textn) {
-				if (sr.symtype == 32) {
+			ut32 value = r_read_le32 (buf + i + 8);
+			ut16 secnum = r_read_le16 (buf + i + 12);
+			ut16 symtype = r_read_le16 (buf + i + 14);
+			if (secnum == textn) {
+				if (symtype == 32) {
 					char shortname[9];
-					memcpy (shortname, &sr.shortname, 8);
+					memcpy (shortname, buf + i, 8);
 					shortname[8] = 0;
 					if (*shortname) {
 						strncpy ((char *)exp[symctr].name, shortname, PE_NAME_LENGTH - 1);
@@ -979,8 +970,8 @@ static struct r_bin_pe_export_t *parse_symbol_table(RBinPEObj *pe, struct r_bin_
 						}
 					}
 					exp[symctr].libname[0] = '\0';
-					exp[symctr].vaddr = bin_pe_rva_to_va (pe, text_rva + sr.value);
-					exp[symctr].paddr = text_off + sr.value;
+					exp[symctr].vaddr = bin_pe_rva_to_va (pe, text_rva + value);
+					exp[symctr].paddr = text_off + value;
 					exp[symctr].ordinal = symctr;
 					exp[symctr].forwarder[0] = 0;
 					exp[symctr].last = 0;

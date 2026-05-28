@@ -610,6 +610,7 @@ RUN
 
 NAME=flag-func_sig order
 FILE=bins/elf/abcde-qt32
+REQUIRE=gpl
 CMDS=<<EOF
 e asm.demangle=true
 e asm.bytes=false
@@ -848,6 +849,7 @@ RUN
 
 NAME=bin.str.enc no-guess with initial null
 FILE=bins/elf/utfbe&bom
+REQUIRE=gpl
 CMDS=<<EOF
 e asm.bytes=false
 e asm.addr=false
@@ -870,8 +872,34 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=bin.str.enc no-guess with initial null, no demangle
+FILE=bins/elf/utfbe&bom
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+e asm.bytes=false
+e asm.addr=false
+e asm.cmt.off=false
+aar
+(pdenc enc; e bin.str.enc=$0; pd 1)
+(pdstr bits; s `axt obj._ZL7utf$0be~[1]`; .(pdenc guess); .(pdenc utf$0le); .(pdenc utf$0be))
+.(pdstr 16)
+?e
+.(pdstr 32)
+EOF
+EXPECT=<<EOF
+                 mov esi, obj._ZL7utf16be
+                 mov esi, obj._ZL7utf16be                              ; u"\u5500\u5400\u4600\u3100\u3600\u4200\u4500"
+                 mov esi, obj._ZL7utf16be                              ; ub"UTF16BE"
+
+                 mov esi, obj._ZL7utf32be
+                 mov esi, obj._ZL7utf32be                              ; U"\U55000000\U54000000\U46000000\U33000000\U32000000\U42000000\U45000000"
+                 mov esi, obj._ZL7utf32be                              ; Ub"UTF32BE"
+EOF
+RUN
+
 NAME=bin.str.enc guess bom, asm.cmt.off=0/1
 FILE=bins/elf/utfbe&bom
+REQUIRE=gpl
 CMDS=<<EOF
 e asm.bytes=0
 e asm.addr=0
@@ -899,6 +927,39 @@ EXPECT=<<EOF
 
                  mov esi, obj.utf32be_bom                              ; 0x4041e0 ; Ub"\ufeffUTF32BE_BOM"
                  mov esi, obj.utf32be_bom                              ; Ub"\ufeffUTF32BE_BOM"
+EOF
+RUN
+
+NAME=bin.str.enc guess bom, asm.cmt.off=0/1, no demangle
+FILE=bins/elf/utfbe&bom
+ARGS=-e bin.demangle=false
+CMDS=<<EOF
+e asm.bytes=0
+e asm.addr=0
+e asm.cmt.off=0
+e bin.str.enc=guess
+aar
+(pdstr flag; s `axt obj.$0~[1]`; pd 1)
+.(pdstr _ZL8utf8_bom)
+.(pdstr _ZL11utf16le_bom)
+.(pdstr _ZL11utf16be_bom)
+.(pdstr _ZL11utf32le_bom)
+.(pdstr _ZL11utf32be_bom)
+?e
+e asm.cmt.off=1
+.(pdstr _ZL11utf32be_bom)
+e asm.cmt.off=off
+.(pdstr _ZL11utf32be_bom)
+EOF
+EXPECT=<<EOF
+                 mov esi, obj._ZL8utf8_bom                             ; "\ufeffUTF8_BOM"
+                 mov esi, obj._ZL11utf16le_bom                         ; "UTF16LE_BOM"
+                 mov esi, obj._ZL11utf16be_bom                         ; ub"\ufeffUTF16BE_BOM"
+                 mov esi, obj._ZL11utf32le_bom                         ; "UTF32LE_BOM"
+                 mov esi, obj._ZL11utf32be_bom                         ; Ub"\ufeffUTF32BE_BOM"
+
+                 mov esi, obj._ZL11utf32be_bom                         ; 0x4041e0 ; Ub"\ufeffUTF32BE_BOM"
+                 mov esi, obj._ZL11utf32be_bom                         ; Ub"\ufeffUTF32BE_BOM"
 EOF
 RUN
 
