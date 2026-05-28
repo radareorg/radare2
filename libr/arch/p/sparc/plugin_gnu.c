@@ -456,7 +456,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 
 	ut32 insn = r_read_ble32 (op->bytes, R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config));
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		disassemble (as, op, (ut8*)&insn, mask);
+		disassemble (as, op, op->bytes, mask);
 	}
 
 	if (X_OP (insn) == OP_0) {
