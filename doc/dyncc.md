@@ -7,6 +7,10 @@ The bare string `dyncc` is not an expression. It is a lazy analysis marker that
 `r_anal_function_cc()` resolves through the current bin plugin. A string such as
 `dyncc:` is a malformed expression, not the lazy marker.
 
+Most fixed ABIs should still use the static SDB calling-convention format.
+`dyncc:` is useful when the ABI is per-function, has compact register ranges,
+has multiple homes for one logical argument, or needs per-function attributes.
+
 The grammar is intentionally flat:
 
 ```text
@@ -178,6 +182,45 @@ R_ANAL_DYNCC_MAX_ROLES    16 role attributes
 ```
 
 These are implementation limits, not ABI semantics.
+
+## Static SDB Profiles
+
+Common conventions such as x86 `cdecl`, `stdcall`, `fastcall`, Pascal, Watcom,
+Borland register conventions, and most fixed register ABIs do not need a dynamic
+expression. They can be described with the traditional SDB keys:
+
+```text
+name=cc
+cc.name.arg0=reg
+cc.name.arg1=reg
+cc.name.argn=stack
+cc.name.ret0=reg
+```
+
+Stack locations in static profiles are canonicalized to the same call-frame
+locations used by dyncc:
+
+```text
+cc.name.argn=stack       -> ^
+cc.name.argn=stack_rev   -> ^-
+cc.name.arg0=stack0      -> ^0
+cc.name.arg0=stack_rev0  -> ^-0
+```
+
+Callee/caller cleanup and register sets are also static metadata:
+
+```text
+cc.name.pop=caller
+cc.name.pop=callee
+cc.name.pop=pop=16
+cc.name.clobber=(eax,ecx,edx)
+cc.name.preserve=(ebx,esi,edi,ebp)
+```
+
+For `cc.name.pop=callee`, analysis can use a known function prototype to compute
+the byte count for stack arguments. This keeps normal Win32 `stdcall` and
+`fastcall` imports in static SDB form instead of requiring one `dyncc:` string
+per function just to encode `!pN`.
 
 ## Examples
 

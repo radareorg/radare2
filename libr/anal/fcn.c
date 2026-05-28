@@ -125,20 +125,78 @@ R_API const char *r_anal_function_cc(RAnalFunction *fcn) {
 	return fcn->callconv;
 }
 
-static int fcn_call_stack_pop(RAnal *anal, RAnalOp *op) {
-	if (op->jump == UT64_MAX) {
-		return 0;
-	}
-	RAnalFunction *callee = r_anal_get_function_at (anal, op->jump);
+static int fcn_type_stack_pop(RAnal *anal, const char *cc, const char *callee, int bits) {
 	if (!callee) {
 		return 0;
 	}
-	const char *cc = r_anal_function_cc (callee);
+	const int argc = r_type_func_args_count (anal->sdb_types, callee);
+	if (argc < 1) {
+		return 0;
+	}
+	const int word = R_MAX (1, bits / 8);
+	int pop = 0;
+	int i;
+	for (i = 0; i < argc; i++) {
+		const char *loc = r_anal_cc_argloc (anal, cc, i, 0, argc);
+		if (!loc || *loc != '^') {
+			continue;
+		}
+		char *type = r_type_func_args_type (anal->sdb_types, callee, i);
+		ut64 bitsize = type? r_type_get_bitsize (anal->sdb_types, type): 0;
+		free (type);
+		ut64 slot = bitsize? R_ROUND (R_MAX (bitsize, 8), 8) / 8: word;
+		slot = R_ROUND (slot, word);
+		if (slot > ST32_MAX || pop > ST32_MAX - (int)slot) {
+			return 0;
+		}
+		pop += (int)slot;
+	}
+	return pop;
+}
+
+static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
+	ut64 offset = op->jump != UT64_MAX? op->jump: op->ptr;
+	if (offset == UT64_MAX) {
+		return NULL;
+	}
+	*callee = r_anal_get_function_at (anal, offset);
+	if (*callee) {
+		return r_type_func_guess (anal->sdb_types, (*callee)->name);
+	}
+	RFlagItem *flag = NULL;
+	RCore *core = anal->coreb.core;
+	if (core && core->flags) {
+		flag = r_flag_get_by_spaces (core->flags, false, offset, R_FLAGS_FS_IMPORTS, NULL);
+	}
+	if (!flag && anal->flb.f) {
+		flag = r_flag_get_by_spaces (anal->flb.f, false, offset, R_FLAGS_FS_IMPORTS, NULL);
+	}
+	return flag? r_type_func_guess (anal->sdb_types, flag->name): NULL;
+}
+
+R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
+	R_RETURN_VAL_IF_FAIL (anal && op, 0);
+	RAnalFunction *callee = NULL;
+	char *callee_type = fcn_call_type (anal, op, &callee);
+	const char *type_cc = callee_type? r_anal_cc_func (anal, callee_type): NULL;
+	const char *cc = callee? r_anal_function_cc (callee): type_cc;
+	if (callee && type_cc && (!cc || !strcmp (cc, r_anal_cc_default (anal)))) {
+		cc = type_cc;
+	}
 	if (!cc) {
+		free (callee_type);
 		return 0;
 	}
 	int pop = r_anal_cc_stack_pop (anal, cc);
-	return pop > 0? pop: R_MAX (0, callee->meta.stack_pop);
+	if (pop == R_ANAL_CC_STACK_POP_UNKNOWN) {
+		const int bits = callee && callee->bits? callee->bits: anal->config->bits;
+		pop = fcn_type_stack_pop (anal, cc, callee_type, bits);
+	}
+	if (pop <= 0 && callee) {
+		pop = R_MAX (0, callee->meta.stack_pop);
+	}
+	free (callee_type);
+	return pop;
 }
 
 static int fcn_ret_stack_pop(RAnalFunction *fcn, RAnalOp *op) {
@@ -1668,7 +1726,7 @@ noskip:
 				gotoBeach (R_ANAL_RET_END);
 			}
 			{
-				int pop = fcn_call_stack_pop (anal, op);
+				int pop = r_anal_call_stack_pop (anal, op);
 				if (pop > 0) {
 					st64 delta = -pop;
 					if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {

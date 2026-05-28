@@ -1454,6 +1454,7 @@ R_API const char *r_anal_cc_ret(RAnal *anal, const char *convention, int n);
 R_API bool r_anal_cc_argclob(RAnal *anal, const char *caller_cc, int n, const char *callee_cc);
 R_API const char *r_anal_cc_default(RAnal *anal);
 R_API const char *r_anal_function_cc(RAnalFunction *fcn);
+R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op);
 R_API void r_anal_set_cc_default(RAnal *anal, const char *convention);
 R_API const char *r_anal_syscc_default(RAnal *anal);
 R_API void r_anal_set_syscc_default(RAnal *anal, const char *convention);

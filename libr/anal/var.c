@@ -1459,7 +1459,7 @@ static bool op_is_call(RAnalOp *op) {
 }
 
 R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int *reg_set, int *count) {
-	int i, argc = 0;
+	int i = 0, argc = 0;
 	R_RETURN_IF_FAIL (anal && op && fcn);
 	RAnalValue *src = RVecRArchValue_at (&op->srcs, 0);
 	RAnalValue *dst = RVecRArchValue_at (&op->dsts, 0);
@@ -1475,16 +1475,13 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 	char *fname = r_type_func_guess (anal->sdb_types, fcn->name);
 	Sdb *TDB = anal->sdb_types;
 	const int max_count = r_anal_cc_max_arg (anal, fcn->callconv);
-	if (!max_count || (*count >= max_count)) {
-		free (fname);
-		return;
-	}
+	const bool scan_args = max_count > 0 && *count < max_count;
 	if (fname) {
 		argc = r_type_func_args_count (TDB, fname);
 	}
 
 	bool is_call = op_is_call (op);
-	if (is_call && *count < max_count) {
+	if (is_call && scan_args) {
 		RVecAnalVarPtr *callee_rargs_vec = NULL;
 		int callee_rargs = 0;
 		char *callee = NULL;
@@ -1576,61 +1573,64 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		return;
 	}
 
-	const int total = 0; // TODO: pass argn
-	for (i = 0; i < max_count; i++) {
-		const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
-		if (!regname) {
-		// WIP	break;
-		} else {
-			int delta = 0;
-			RRegItem *ri = NULL;
-			RAnalVar *var = NULL;
-			const bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
-			if (is_arg && reg_set[i] != 2) {
-				const char *first = r_anal_cc_location_first (anal, regname);
-				ri = first? r_reg_get (anal->reg, first, -1): NULL;
-				if (ri) {
-					delta = ri->index;
-					r_unref (ri);
-				}
-			}
-			if (is_arg && reg_set[i] == 1) {
-				var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
-			} else if (is_arg && reg_set[i] != 2) {
-				const char *vname = NULL;
-				char *type = NULL;
-				char *name = NULL;
-				if ((i < argc) && fname) {
-					type = r_type_func_args_type (TDB, fname, i);
-					vname = r_type_func_args_name (TDB, fname, i);
-				}
-				if (!vname) {
-					name = r_str_newf ("arg%d", i + 1);
-					vname = name;
-				}
-				var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
-				if (var && var->argnum < 0) {
-					var->argnum = *count;
-				}
-				free (name);
-				free (type);
-				(*count)++;
+	if (scan_args) {
+		const int total = 0; // TODO: pass argn
+		for (i = 0; i < max_count; i++) {
+			const char *regname = r_anal_cc_argloc (anal, fcn->callconv, i, 0, total);
+			if (!regname) {
+			// WIP	break;
 			} else {
-				if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-					reg_set[i] = 2;
+				int delta = 0;
+				RRegItem *ri = NULL;
+				RAnalVar *var = NULL;
+				const bool is_arg = is_used_like_arg (regname, opsreg, opdreg, op, anal, op_dst_writeonly);
+				if (is_arg && reg_set[i] != 2) {
+					const char *first = r_anal_cc_location_first (anal, regname);
+					ri = first? r_reg_get (anal->reg, first, -1): NULL;
+					if (ri) {
+						delta = ri->index;
+						r_unref (ri);
+					}
 				}
-				continue;
-			}
-			if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
-				reg_set[i] = 1;
-			}
-			if (var) {
-				r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
-				r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
+				if (is_arg && reg_set[i] == 1) {
+					var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+				} else if (is_arg && reg_set[i] != 2) {
+					const char *vname = NULL;
+					char *type = NULL;
+					char *name = NULL;
+					if ((i < argc) && fname) {
+						type = r_type_func_args_type (TDB, fname, i);
+						vname = r_type_func_args_name (TDB, fname, i);
+					}
+					if (!vname) {
+						name = r_str_newf ("arg%d", i + 1);
+						vname = name;
+					}
+					var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
+					if (var && var->argnum < 0) {
+						var->argnum = *count;
+					}
+					free (name);
+					free (type);
+					(*count)++;
+				} else {
+					if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
+						reg_set[i] = 2;
+					}
+					continue;
+				}
+				if (is_reg_in_src (regname, anal, op) || (opdreg && r_anal_cc_location_uses (anal, regname, opdreg))) {
+					reg_set[i] = 1;
+				}
+				if (var) {
+					r_anal_var_set_access (anal, var, var->regname, op->addr, R_PERM_R, 0);
+					r_meta_set_string (anal, R_META_TYPE_VARTYPE, op->addr, var->name);
+				}
 			}
 		}
 	}
 
+	i = max_count;
 	const bool is_dyncc = r_str_startswith (fcn->callconv, "dyncc:");
 	const char *selfreg = r_anal_cc_roleloc (anal, fcn->callconv, is_dyncc? "T": "self");
 	if (selfreg) {
