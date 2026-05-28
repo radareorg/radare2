@@ -2729,7 +2729,6 @@ R_API void r_str_argv_free(char **argv) {
 
 R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 	int idx, _b = 0;
-	ut8 *b = (ut8 *)&_b;
 	const char *isbut, *p;
 	const int bsz = sizeof (_b) * 8;
 	if (!but) {
@@ -2743,7 +2742,7 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int) (size_t) (isbut - but);
-			_b = R_BIT_TOGGLE (b, idx);
+			_b ^= 1 << idx;
 			continue;
 		}
 		if (*p == ch && !_b) {
@@ -2755,7 +2754,6 @@ R_API const char *r_str_firstbut(const char *s, char ch, const char *but) {
 
 R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but) {
 	int idx, _b = 0;
-	ut8 *b = (ut8 *)&_b;
 	const char *isbut, *p;
 	const int bsz = sizeof (_b) * 8;
 	if (!but) {
@@ -2780,9 +2778,10 @@ R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but)
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int) (size_t) (isbut - but);
-			_b = R_BIT_TOGGLE (b, idx);
-			if (_b && (_b &(_b - 1))) {
-				_b = R_BIT_TOGGLE (b, idx); // cancel a but char if a but is already toggle
+			const int mask = 1 << idx;
+			_b ^= mask;
+			if (_b && (_b & (_b - 1))) {
+				_b ^= mask; // cancel a but char if a but is already toggle
 			}
 			continue;
 		}
@@ -2795,7 +2794,6 @@ R_API const char *r_str_firstbut_escape(const char *s, char ch, const char *but)
 
 R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 	int idx, _b = 0;
-	ut8 *b = (ut8 *)&_b;
 	const char *isbut, *p, *lp = NULL;
 	const int bsz = sizeof (_b) * 8;
 	if (!but) {
@@ -2809,7 +2807,7 @@ R_API const char *r_str_lastbut(const char *s, char ch, const char *but) {
 		isbut = strchr (but, *p);
 		if (isbut) {
 			idx = (int) (size_t) (isbut - but);
-			_b = R_BIT_TOGGLE (b, idx);
+			_b ^= 1 << idx;
 			continue;
 		}
 		if (*p == ch && !_b) {

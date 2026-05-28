@@ -24,6 +24,7 @@ NAME=pvXj
 FILE=-
 CMDS=<<EOF
 woe 32 288 1
+e asm.bits=64
 pv* 3
 ?e --
 pvj 3~{}
@@ -123,6 +124,7 @@ pv4
 b 3
 pv4
 pv4 4
+e asm.bits=64
 pv 4
 ?e ---
 b 7
@@ -1158,4 +1160,3 @@ EXPECT=<<EOF
 1f0167d51c8f6e4eb1f0286f52cf9cf97d904baf9ddda8a4
 EOF
 RUN
-
