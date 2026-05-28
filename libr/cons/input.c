@@ -743,34 +743,47 @@ R_API int r_cons_readchar(RCons *cons) {
 #endif
 }
 
-R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
-	va_list ap;
-	ut8 key = (ut8)def;
-	va_start (ap, fmt);
+static int cons_yesnobut_normalize(int key, int def, int but) {
+	if (key == '\n' || key == '\r') {
+		key = def;
+	}
+	key = tolower ((ut8)key);
+	but = tolower ((ut8)but);
+	return (key == 'y' || key == but)? key: 'n';
+}
 
+static int cons_yesnobut(RCons *cons, int def, int but, const char *fmt, va_list ap) {
 	if (!r_cons_is_interactive (cons)) {
-		va_end (ap);
-		return def == 'y';
+		return cons_yesnobut_normalize (def, def, but);
 	}
 	vfprintf (stderr, fmt, ap);
-	va_end (ap);
 	fflush (stderr);
 	r_cons_set_raw (cons, true);
-	char buf[] = " ?\n";
-	if (read (0, buf + 1, 1) == 1) {
-		key = (ut8)buf[1];
-		if (write (2, buf, 3) == 3) {
-			if (key == 'Y') {
-				key = 'y';
-			}
-			r_cons_set_raw (cons, false);
-			if (key == '\n' || key == '\r') {
-				key = def;
-			}
-			return key == 'y';
-		}
+	int key = r_cons_readchar (cons);
+	if (key >= 0) {
+		char buf[] = " ?\n";
+		buf[1] = key;
+		(void)write (2, buf, 3);
 	}
-	return false;
+	r_cons_set_raw (cons, false);
+	return cons_yesnobut_normalize (key, def, but);
+}
+
+R_API bool r_cons_yesno(RCons *cons, int def, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	int key = cons_yesnobut (cons, def, 0, fmt, ap);
+	va_end (ap);
+	return key == 'y';
+}
+
+R_API int r_cons_yesnobut(RCons *cons, int def, int but, const char *fmt, ...) {
+	R_RETURN_VAL_IF_FAIL (cons && fmt, 'n');
+	va_list ap;
+	va_start (ap, fmt);
+	int key = cons_yesnobut (cons, def, but, fmt, ap);
+	va_end (ap);
+	return key;
 }
 
 R_API char *r_cons_password(RCons *cons, const char *msg) {

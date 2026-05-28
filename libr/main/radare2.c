@@ -39,7 +39,8 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 	RListIter *iter;
 	const char *pkgname;
 	r_list_foreach (mismatches, iter, pkgname) {
-		if (!r_cons_yesno (core->cons, 'y', "Rebuild outdated '%s' plugin? (Y/n) ", pkgname)) {
+		int choice = r_cons_yesnobut (core->cons, 'y', 'd', "Rebuild outdated '%s' plugin? (Y/n/d) ", pkgname);
+		if (choice == 'n') {
 			continue;
 		}
 		char *epkgname = r_str_escape_sh (pkgname);
@@ -47,10 +48,11 @@ static void prompt_rebuild_outdated_plugins(RCore *core) {
 			R_LOG_WARN ("Cannot escape r2pm plugin package name '%s'", pkgname);
 			continue;
 		}
-		if (!r_sys_cmdf ("r2pm -ci \"%s\"", epkgname)) {
-			R_LOG_INFO ("Rebuilt outdated r2pm plugin package '%s'", pkgname);
+		const char *flag = choice == 'd'? "-u": "-ci";
+		if (!r_sys_cmdf ("r2pm %s \"%s\"", flag, epkgname)) {
+			R_LOG_INFO ("%s outdated r2pm plugin package '%s'", choice == 'd'? "Deleted": "Rebuilt", pkgname);
 		} else {
-			R_LOG_WARN ("Failed to run 'r2pm -ci %s'", pkgname);
+			R_LOG_WARN ("Failed to run 'r2pm %s %s'", flag, pkgname);
 		}
 		free (epkgname);
 	}

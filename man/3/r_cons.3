@@ -97,6 +97,16 @@ Prompts for user input with a message.
 .Fn r_cons_yesno "RCons *cons" "int def" "const char *fmt" "..."
 .Pp
 Prompts for a yes/no answer with default value.
+.Pp
+.Ft int
+.Fn r_cons_yesnobut "RCons *cons" "int def" "int but" "const char *fmt" "..."
+.Pp
+Prompts for a yes/no answer with an extra single-key action. Returns
+.Sq y ,
+.Sq n ,
+or the lower-case
+.Fa but
+key.
 .Sh CONTROL
 .Pp
 Control routines manipulate the terminal state (cursor, screen, raw mode, mouse and similar settings). They are used to prepare the terminal for visual rendering or to temporarily change behaviour while a command runs.
