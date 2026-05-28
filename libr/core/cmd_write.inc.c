@@ -347,15 +347,16 @@ static void write_block_signature(RCore *core, const char *algo, const char *key
 }
 
 static void cmd_write_bits(RCore *core, int set, ut64 val) {
-	ut64 ret, orig;
+	ut8 buf[sizeof (ut64)] = { 0 };
 	// used to set/unset bit in current address
-	r_io_read_at (core->io, core->addr, (ut8*)&orig, sizeof (orig));
-	if (set) {
-		ret = orig | val;
-	} else {
-		ret = orig & (~(val));
+	if (!r_io_read_at (core->io, core->addr, buf, sizeof (buf))) {
+		cmd_write_fail (core);
+		return;
 	}
-	if (!r_core_write_at (core, core->addr, (const ut8*)&ret, sizeof (ret))) {
+	ut64 orig = r_read_le64 (buf);
+	ut64 ret = set? orig | val: orig & ~val;
+	r_write_le64 (buf, ret);
+	if (!r_core_write_at (core, core->addr, buf, sizeof (buf))) {
 		cmd_write_fail (core);
 	}
 }
@@ -533,27 +534,33 @@ static int cmd_wo(void *data, const char *input) {
 	return 0;
 }
 
-static void cmd_write_value_float(RCore *core, const char *input) {
+static void cmd_write_value_float(RCore *core, const char *input, bool be) {
 	float v = 0.0;
+	ut8 buf[sizeof (float)];
 	sscanf (input, "%f", &v);
-	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (float));
+	r_mem_swaporcopy (buf, (const ut8 *)&v, sizeof (float), be);
+	r_io_write_at (core->io, core->addr, buf, sizeof (buf));
 }
 
-static void cmd_write_value_long_double(RCore *core, const char *input) {
+static void cmd_write_value_long_double(RCore *core, const char *input, bool be) {
 	long double v = 0.0;
+	ut8 buf[sizeof (long double)];
 #if R2_NO_LONG_DOUBLE
 	double tmp = strtod (input, NULL);
 	v = (long double)tmp;
 #else
 	sscanf (input, "%Lf", &v);
 #endif
-	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (long double));
+	r_mem_swaporcopy (buf, (const ut8 *)&v, sizeof (long double), be);
+	r_io_write_at (core->io, core->addr, buf, sizeof (buf));
 }
 
-static void cmd_write_value_double(RCore *core, const char *input) {
+static void cmd_write_value_double(RCore *core, const char *input, bool be) {
 	double v = 0.0;
+	ut8 buf[sizeof (double)];
 	sscanf (input, "%lf", &v);
-	r_io_write_at (core->io, core->addr, (const ut8*)&v, sizeof (double));
+	r_mem_swaporcopy (buf, (const ut8 *)&v, sizeof (double), be);
+	r_io_write_at (core->io, core->addr, buf, sizeof (buf));
 }
 
 static const char *fpuhelp = \
@@ -581,16 +588,16 @@ static void cmd_write_value(RCore *core, const char *input) {
 		r_core_cmd_help (core, help_msg_wv);
 		return;
 	case 'f': // "wvf"
-		cmd_write_value_float (core, r_str_trim_head_ro (input + 1));
+		cmd_write_value_float (core, r_str_trim_head_ro (input + 1), be);
 		return;
 	case 'F': // "wvF"
-		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1), be);
 		return;
 	case 'G': // "wvG"
-		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1));
+		cmd_write_value_long_double (core, r_str_trim_head_ro (input + 1), be);
 		return;
 	case 'd': // "wvd"
-		cmd_write_value_double (core, r_str_trim_head_ro (input + 1));
+		cmd_write_value_double (core, r_str_trim_head_ro (input + 1), be);
 		return;
 	case 'g': // "wvg"
 		{
