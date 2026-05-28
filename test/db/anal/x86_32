@@ -44,6 +44,23 @@ callee
 EOF
 RUN
 
+NAME=x86-32 static calling convention preserve sets
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+k anal/cc/cc.cdecl.preserve
+k anal/cc/cc.stdcall.preserve
+k anal/cc/cc.fastcall.preserve
+EOF
+EXPECT=<<EOF
+ebx,esi,edi,ebp,esp
+ebx,esi,edi,ebp,esp
+ebx,esi,edi,ebp,esp
+EOF
+RUN
+
 NAME=hang-on-aa/-aac fix (#15004)
 FILE=bins/pe/15004.file
 CMDS=<<EOF

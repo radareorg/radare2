@@ -32,6 +32,21 @@ caller
 EOF
 RUN
 
+NAME=x86-64 static calling convention preserve sets
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+k anal/cc/cc.amd64.preserve
+k anal/cc/cc.ms.preserve
+EOF
+EXPECT=<<EOF
+rbx,rbp,rsp,r12,r13,r14,r15
+rbx,rbp,rdi,rsi,rsp,r12,r13,r14,r15,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15
+EOF
+RUN
+
 NAME=got switch cases 2
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
