@@ -1,0 +1,42 @@
+NAME=dex auto-enables dyncc and resolves per-method
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+e anal.cc
+aaa
+afi @ 0x23c~callconv
+afi @ 0x224~callconv
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:v6+1:
+callconv: dyncc:v0+1:!T0
+EOF
+RUN
+
+NAME=dex dyncc keeps static no-arg non-void methods
+FILE=bins/dex/org.radare.radare2installer.dex
+CMDS=<<EOF
+e anal.cc
+af @ 0x15bc8
+afi @ 0x15bc8~callconv,args
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc::v0+1
+args: 0
+EOF
+RUN
+
+NAME=dex dyncc resolves args and self via unified cc API
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+tcc dyncc:v6+1:v0+1
+tcc dyncc:v0+1:v0+1!T0
+tcc dyncc:v0+1:!T0
+EOF
+EXPECT=<<EOF
+v0 dyncc:v6+1:v0+1 (v6);
+v0 v0.dyncc:v0+1:v0+1!T0 (v0);
+void v0.dyncc:v0+1:!T0 (v0);
+EOF
+RUN

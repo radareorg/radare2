@@ -1,0 +1,353 @@
+NAME=DEX dyncc + per-fcn vars
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+aaa
+e anal.cc
+afi @ 0x23c~callconv,name
+afi @ 0x224~callconv,name
+afv @ 0x23c
+afv @ 0x224
+EOF
+EXPECT=<<EOF
+dyncc
+name: entry0
+callconv: dyncc:v6+1:
+name: method.public.constructor.LMain.LMain.method._init___V
+callconv: dyncc:v0+1:!T0
+arg int v6 @ v6
+arg int v0 @ v0
+EOF
+RUN
+
+NAME=Java dyncc resolves descriptor-driven slots
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+aaa
+afi @ main~callconv
+afv @ main
+afi @ method.Hello.say~callconv
+afv @ method.Hello.say
+EOF
+EXPECT=<<EOF
+callconv: dyncc:l0+1:
+arg int l0 @ l0
+callconv: dyncc:l0+1:!T0
+arg int l0 @ l0
+EOF
+RUN
+
+NAME=Java dyncc separates descriptor args from max_locals
+FILE=malloc://1024
+CMDS=<<EOF
+wx cafebabe00000032003a070002010014546573745661726961626c6553776974636855700700040100106a6176612f6c616e672f4f626a6563740100063c696e69743e010003282956010004436f64650a000300090c0005000601000f4c696e654e756d6265725461626c650100124c6f63616c5661726961626c655461626c65010004746869730100164c546573745661726961626c6553776974636855703b010014546573744d756c7469706c655661726961626c650a001000120700110100116a6176612f6c616e672f496e74656765720c0013001401000776616c75654f660100162849294c6a6176612f6c616e672f496e74656765723b0800160100067472796f6e65090018001a0700190100106a6176612f6c616e672f53797374656d0c001b001c0100036f75740100154c6a6176612f696f2f5072696e7453747265616d3b07001e0100176a6176612f6c616e672f537472696e674275696c646572080020010011417474656d7074696e67207072696e74200a001d00220c00050023010015284c6a6176612f6c616e672f537472696e673b29560a001d00250c00260027010006617070656e6401002d284c6a6176612f6c616e672f537472696e673b294c6a6176612f6c616e672f537472696e674275696c6465723b0a001d00290c002a002b010008746f537472696e6701001428294c6a6176612f6c616e672f537472696e673b0a002d002f07002e0100136a6176612f696f2f5072696e7453747265616d0c003000230100057072696e74010001690100134c6a6176612f6c616e672f496e74656765723b01000170010001490100016b0100124c6a6176612f6c616e672f537472696e673b0100016a01000a536f7572636546696c65010019546573745661726961626c6553776974636855702e6a617661002100010003000000000002000100050006000100070000002f00010001000000052ab70008b100000002000a00000006000100000002000b0000000c000100000005000c000d00000008000e0006000100070000008100040004000000251064b8000f4b10643c12154d033eb20017bb001d59121fb700212cb60024b60028b6002cb100000002000a0000001a0006000000040006000500090006000c0007000e000800240009000b0000002a00040006001f0031003200000009001c003300340001000c0019003500360002000e001700370034000300010038000000020039
+ooi
+af
+afi~callconv,args
+afv
+pdf~args
+EOF
+EXPECT=<<EOF
+callconv: dyncc::
+args: 4
+arg int l0 @ l0
+arg int l1 @ l1
+arg int l2 @ l2
+arg int l3 @ l3
+| `- args(l0, l1, l2, l3)
+EOF
+RUN
+
+NAME=DEX dyncc direct af uses ins slots
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+e anal.cc
+af @ 0x23c
+af @ 0x224
+afi @ 0x23c~callconv,args
+afv @ 0x23c
+afi @ 0x224~callconv,args
+afv @ 0x224
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:v6+1:
+args: 1
+arg int v6 @ v6
+callconv: dyncc:v0+1:!T0
+args: 1
+arg int v0 @ v0
+EOF
+RUN
+
+NAME=WASM dyncc direct af uses type params
+FILE=bins/wasm/multiret3.wasm
+CMDS=<<EOF
+e anal.cc
+af @ entry0
+afi @ entry0~callconv,args
+afv @ entry0
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:l0+3:r0+3
+args: 3
+arg int l0 @ l0
+arg int l1 @ l1
+arg int l2 @ l2
+EOF
+RUN
+
+NAME=WASM reg profile covers dyncc return slots
+FILE=bins/wasm/multiret3.wasm
+CMDS=<<EOF
+dr r3
+dr r12
+dr l0
+EOF
+EXPECT=<<EOF
+0x00000000
+0x00000000
+0x00000000
+EOF
+RUN
+
+NAME=Pyc dyncc direct af uses code args
+REQUIRE=x86
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+e anal.cc
+af @ sym._module_.Batman.__init__
+afi @ sym._module_.Batman.__init__~callconv,args
+afv @ sym._module_.Batman.__init__
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:l0+1:r0+1
+args: 1
+arg int l0 @ l0
+EOF
+RUN
+
+NAME=Pyc dyncc keeps zero-arg return metadata
+REQUIRE=x86
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+e anal.cc
+af @ sym._module_.varargs
+afi @ sym._module_.varargs~name,callconv,args
+EOF
+EXPECT=<<EOF
+dyncc
+name: sym._module_.varargs
+callconv: dyncc::r0+1
+args: 0
+EOF
+RUN
+
+NAME=Pyc dyncc includes keyword-only args
+FILE=malloc://152
+CMDS=<<EOF
+wx 550d0d0a0000000000000000000000006300000000000000000000000000000000010000004000000073040000006400530029016300000000000000000100000001000000010000004300000073040000007c0053002900290029017a0178290029007a056b772e70797a016601000000730000000029002900290029007a056b772e70797a083c6d6f64756c653e010000007300000000
+ooi
+e anal.cc
+af @ 0x52
+afi @ 0x52~name,callconv,args
+EOF
+EXPECT=<<EOF
+dyncc
+name: sym._module_.f
+callconv: dyncc:l0+1:r0+1
+args: 1
+EOF
+RUN
+
+NAME=CIL dyncc direct af uses metadata params
+REQUIRE=x86
+FILE=bins/cil/hello.exe
+CMDS=<<EOF
+e anal.cc
+af @ method.HelloWorld..ctor
+afi @ method.HelloWorld..ctor~callconv,args
+afv @ method.HelloWorld..ctor
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:a0+1:!T0
+args: 1
+arg int a0 @ a0
+EOF
+RUN
+
+NAME=CIL dyncc keeps zero-arg return metadata
+REQUIRE=x86
+FILE=bins/cil/AStyleWhore.exe
+CMDS=<<EOF
+e anal.cc
+af @ method.AStyleWhore.Properties.Settings.get_Default
+afi @ method.AStyleWhore.Properties.Settings.get_Default~name,callconv,args
+EOF
+EXPECT=<<EOF
+dyncc
+name: method.AStyleWhore.Properties.Settings.get_Default
+callconv: dyncc::r0+1
+args: 0
+EOF
+RUN
+
+NAME=WASM multi-return + var recovery
+FILE=bins/wasm/multiret3.wasm
+CMDS=<<EOF
+aaa
+afi @ entry0~callconv
+afv @ entry0
+EOF
+EXPECT=<<EOF
+callconv: dyncc:l0+3:r0+3
+arg int l0 @ l0
+arg int l1 @ l1
+arg int l2 @ l2
+EOF
+RUN
+
+NAME=WASM single-ret stays single
+FILE=bins/wasm/basic.wasm
+CMDS=<<EOF
+aaa
+afi @ entry0~callconv
+EOF
+EXPECT=<<EOF
+callconv: dyncc::r0+1
+EOF
+RUN
+
+NAME=Pyc per-method args
+REQUIRE=x86
+FILE=bins/pyc/py38.pyc
+CMDS=<<EOF
+aaa
+e anal.cc
+afi @ sym._module_.Batman.__init__~callconv
+afv @ sym._module_.Batman.__init__
+EOF
+EXPECT=<<EOF
+dyncc
+callconv: dyncc:l0+1:r0+1
+arg int l0 @ l0
+EOF
+RUN
+
+NAME=CIL HASTHIS produces instance flag
+REQUIRE=x86
+FILE=bins/cil/hello.exe
+CMDS=<<EOF
+aaa
+afi @ method.HelloWorld..ctor~callconv
+afv @ method.HelloWorld..ctor
+EOF
+EXPECT=<<EOF
+callconv: dyncc:a0+1:!T0
+arg int a0 @ a0
+EOF
+RUN
+
+NAME=x86-64 native cc unchanged (no dyncc regression)
+FILE=bins/elf/ls
+CMDS=<<EOF
+aaa
+e anal.cc
+afi @ main~callconv
+EOF
+EXPECT=<<EOF
+amd64
+callconv: amd64
+EOF
+RUN
+
+NAME=dyncc accepts well-formed names
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+tcc dyncc:v6+1:v0+1
+tcc dyncc:v0+1:v0+1!T0
+EOF
+EXPECT=<<EOF
+v0 dyncc:v6+1:v0+1 (v6);
+v0 v0.dyncc:v0+1:v0+1!T0 (v0);
+EOF
+RUN
+
+NAME=dyncc concrete names stay virtual
+FILE=bins/java/Main.dex
+CMDS=<<EOF
+tcc dyncc:v6+1:v0+1
+tcck~dyncc
+EOF
+EXPECT=<<EOF
+v0 dyncc:v6+1:v0+1 (v6);
+default.cc=dyncc
+EOF
+RUN
+
+NAME=dyncc zero-rets renders as void
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+tcc dyncc:l0+1:
+EOF
+EXPECT=<<EOF
+void dyncc:l0+1: (l0);
+EOF
+RUN
+
+NAME=dyncc multi-return signature
+FILE=bins/wasm/multiret3.wasm
+CMDS=<<EOF
+tcc dyncc:l0+2:r0+3
+EOF
+EXPECT=<<EOF
+r0:r1:r2 dyncc:l0+2:r0+3 (l0, l1);
+EOF
+RUN
+
+NAME=tcck shows static CCs not dyncc sentinels
+FILE=bins/elf/ls
+CMDS=<<EOF
+tcck~default.cc=
+EOF
+EXPECT=<<EOF
+default.cc=amd64
+EOF
+RUN
+
+NAME=afchj inspects resolved dyncc
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+aaa
+afchj @ main
+EOF
+EXPECT=<<EOF
+{"callconv":"dyncc:l0+1:","rets":[],"signature":"void dyncc:l0+1: (l0);","args":["l0"],"arg_homes":[["l0"]]}
+EOF
+RUN
+
+NAME=afch resolves dyncc and shows self
+FILE=bins/java/Hello.class
+CMDS=<<EOF
+aaa
+afch @ method.Hello.say~callconv:,self:
+EOF
+EXPECT=<<EOF
+callconv: dyncc:l0+1:!T0
+self: l0
+EOF
+RUN
+
+NAME=afch reports non-dyncc functions
+FILE=bins/elf/ls
+CMDS=<<EOF
+aa
+s entry0
+afch~not a dyncc
+EOF
+EXPECT=<<EOF
+# current function uses 'amd64' (not a dyncc expression)
+EOF
+RUN

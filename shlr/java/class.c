@@ -2378,6 +2378,72 @@ static ut16 r_bin_java_get_method_max_locals(RBinJavaField *fm_type) {
 	return 0;
 }
 
+static bool r_bin_java_descriptor_type_slots(const char **sp, ut16 *slots) {
+	const char *p = *sp;
+	while (*p == '[') {
+		p++;
+	}
+	switch (*p) {
+	case 'B':
+	case 'C':
+	case 'F':
+	case 'I':
+	case 'S':
+	case 'Z':
+		*slots = 1;
+		*sp = p + 1;
+		return true;
+	case 'D':
+	case 'J':
+		*slots = 2;
+		*sp = p + 1;
+		return true;
+	case 'L':
+		p = strchr (p, ';');
+		if (!p) {
+			return false;
+		}
+		*slots = 1;
+		*sp = p + 1;
+		return true;
+	}
+	return false;
+}
+
+static bool r_bin_java_method_descriptor_counts(const char *descriptor, bool instance, ut16 *args, ut16 *rets) {
+	if (!descriptor || *descriptor != '(') {
+		return false;
+	}
+	ut32 argc = instance? 1: 0;
+	const char *p = descriptor + 1;
+	while (*p && *p != ')') {
+		ut16 slots = 0;
+		if (!r_bin_java_descriptor_type_slots (&p, &slots)) {
+			return false;
+		}
+		argc += slots;
+		if (argc > UT16_MAX) {
+			return false;
+		}
+	}
+	if (*p != ')') {
+		return false;
+	}
+	p++;
+	ut16 retc = 0;
+	if (*p == 'V') {
+		p++;
+	} else if (!r_bin_java_descriptor_type_slots (&p, &retc)) {
+		return false;
+	}
+	if (*p) {
+		return false;
+	}
+	*args = argc;
+	*rets = retc;
+	return true;
+}
+
 static inline ut64 fieldattr_j2r(ut32 ja) {
 	RBinAttribute attr = 0;
 	if (ja & R_BIN_JAVA_FIELD_ACC_PUBLIC) {
@@ -2422,7 +2488,14 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->vaddr = r_bin_java_get_method_code_offset (fm_type) + baddr;
 		sym->size = r_bin_java_get_method_code_size (fm_type);
 		ut16 max_locals = r_bin_java_get_method_max_locals (fm_type);
-		if (max_locals > 0) {
+		ut16 cc_args = 0;
+		ut16 rets = 0;
+		bool instance = !(fieldattr_j2r (fm_type->flags) & R_BIN_ATTR_STATIC);
+		if (r_bin_java_method_descriptor_counts (fm_type->descriptor, instance, &cc_args, &rets)) {
+			sym->cc_arg_count = cc_args;
+			sym->ret_count = rets;
+		}
+		if (max_locals > 0 || sym->cc_arg_count > 0 || sym->ret_count > 0) {
 			sym->arg_first = 0;
 			sym->arg_count = max_locals;
 			sym->arg_prefix = "l";

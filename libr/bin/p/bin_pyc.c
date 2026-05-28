@@ -5,8 +5,7 @@
 
 static bool check(RBinFile *bf, RBuffer *b) {
 	if (r_buf_size (b) > 4) {
-		ut32 buf;
-		r_buf_read_at (b, 0, (ut8 *)&buf, sizeof (buf));
+		ut32 buf = r_buf_read_le32_at (b, 0);
 		struct pyc_version v = get_pyc_version (buf);
 		return v.magic != -1;
 	}
@@ -17,8 +16,7 @@ static bool load(RBinFile *bf, RBuffer *buf, ut64 loadaddr) {
 	if (!check (bf, buf)) {
 		return false;
 	}
-	ut32 m;
-	r_buf_read_at (buf, 0, (ut8 *)&m, sizeof (m));
+	ut32 m = r_buf_read_le32_at (buf, 0);
 	RBinPycObj *obj = R_NEW0 (RBinPycObj);
 	obj->version = get_pyc_version (m);
 	bf->bo->bin_obj = obj;
