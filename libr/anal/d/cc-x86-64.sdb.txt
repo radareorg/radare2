@@ -7,6 +7,7 @@ cc.ms.arg2=r8
 cc.ms.arg3=r9
 cc.ms.argn=stack
 cc.ms.pop=caller
+cc.ms.preserve=rbx,rbp,rdi,rsi,rsp,r12,r13,r14,r15,xmm6,xmm7,xmm8,xmm9,xmm10,xmm11,xmm12,xmm13,xmm14,xmm15
 cc.ms.ret0=rax
 
 amd64=cc
@@ -22,6 +23,7 @@ cc.amd64.arg8=xmm2
 cc.amd64.arg9=xmm3
 cc.amd64.arg10=xmm4
 cc.amd64.pop=caller
+cc.amd64.preserve=rbx,rbp,rsp,r12,r13,r14,r15
 cc.amd64.ret0=rax
 
 swift=cc
