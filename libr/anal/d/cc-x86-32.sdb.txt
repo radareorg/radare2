@@ -3,6 +3,7 @@ default.cc=cdecl
 cdecl=cc
 cc.cdecl.argn=stack
 cc.cdecl.pop=caller
+cc.cdecl.clobber=eax,ecx,edx
 cc.cdecl.preserve=ebx,esi,edi,ebp,esp
 cc.cdecl.ret0=eax
 
@@ -23,6 +24,7 @@ cc.optlink.ret0=eax
 stdcall=cc
 cc.stdcall.argn=stack
 cc.stdcall.pop=callee
+cc.stdcall.clobber=eax,ecx,edx
 cc.stdcall.preserve=ebx,esi,edi,ebp,esp
 cc.stdcall.ret0=eax
 
@@ -31,6 +33,7 @@ cc.fastcall.arg0=ecx
 cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
 cc.fastcall.pop=callee
+cc.fastcall.clobber=eax,ecx,edx
 cc.fastcall.preserve=ebx,esi,edi,ebp,esp
 cc.fastcall.ret0=eax
 
