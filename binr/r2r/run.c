@@ -1903,6 +1903,13 @@ static bool require_check(const char *require) {
 		res &= false;
 #endif
 	}
+	if (strstr (require, "gpl")) {
+#if WITH_GPL
+		res &= true;
+#else
+		res &= false;
+#endif
+	}
 	return res;
 }
 

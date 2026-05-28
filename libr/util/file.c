@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <r_lib.h>
 #if R2__UNIX__
+#include <unistd.h>
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <limits.h>
@@ -186,6 +187,17 @@ R_API bool r_file_is_directory(const char *str) {
 	}
 #endif
 	return S_IFDIR == (S_IFDIR & buf.st_mode);
+}
+
+static bool is_writable_directory(const char *path) {
+	if (R_STR_ISEMPTY (path) || !r_file_is_directory (path)) {
+		return false;
+	}
+#if R2__WINDOWS__
+	return true;
+#else
+	return !access (path, W_OK | X_OK);
+#endif
 }
 
 // TODO: rename to existf .. or maybe not
@@ -1144,10 +1156,10 @@ R_API char *r_file_tmpdir(void) {
 	}
 #else
 	char *path = r_sys_getenv ("XDG_RUNTIME_DIR");
-	if (R_STR_ISEMPTY (path) || !r_file_is_directory (path)) {
+	if (!is_writable_directory (path)) {
 		free (path);
 		path = r_sys_getenv ("TMPDIR");
-		if (path && !*path) {
+		if (!is_writable_directory (path)) {
 			R_FREE (path);
 		}
 	}
@@ -1163,7 +1175,7 @@ R_API char *r_file_tmpdir(void) {
 #endif
 	}
 #endif
-	if (!r_file_is_directory (path)) {
+	if (!is_writable_directory (path)) {
 		free (path);
 		// Always default to "/tmp"
 		path = strdup ("/tmp");
