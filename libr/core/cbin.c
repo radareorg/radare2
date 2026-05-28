@@ -3793,12 +3793,12 @@ static bool bin_sections(RCore *core, PJ *pj, int mode, ut64 laddr, int va, ut64
 				r_table_add_rowf (table, "dXxXxsxsss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					disp_perms, section->flags, r_str_get (hashstr), stype, section_name);
+					disp_perms, (ut64)section->flags, r_str_get (hashstr), stype, section_name);
 			} else {
 				r_table_add_rowf (table, "dXxXxsxss", i,
 					(ut64)section->paddr, (ut64)section->size,
 					(ut64)addr, (ut64)section->vsize,
-					disp_perms, section->flags, stype, section_name);
+					disp_perms, (ut64)section->flags, stype, section_name);
 			}
 			free (hashstr);
 		}
