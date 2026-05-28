@@ -11,6 +11,31 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x86-16 static calling convention stack pop
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=16
+k anal/cc/cc.cdecl.pop
+k anal/cc/cc.pascal.pop
+k anal/cc/cc.fastcall.pop
+k anal/cc/cc.watcom.pop
+k anal/cc/cc.turboc.pop
+k anal/cc/cc.ms.pop
+k anal/cc/cc.msm.pop
+EOF
+EXPECT=<<EOF
+caller
+callee
+callee
+callee
+callee
+callee
+callee
+EOF
+RUN
+
 NAME=lcall offset (#12284)
 FILE=-
 CMDS=<<EOF
