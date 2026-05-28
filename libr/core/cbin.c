@@ -5470,11 +5470,10 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 
 static const char *bin_file_arch_bits(RCore *core, RBinInfo *info, int *bits) {
 	const char *arch = info? info->arch: NULL;
+	*bits = (info && info->bits)? info->bits: r_config_get_i (core->config, "asm.bits");
 	if (R_STR_ISNOTEMPTY (arch)) {
-		*bits = info->bits? info->bits: r_config_get_i (core->config, "asm.bits");
 		return arch;
 	}
-	*bits = r_config_get_i (core->config, "asm.bits");
 	arch = r_config_get (core->config, "asm.arch");
 	return R_STR_ISNOTEMPTY (arch)? arch: "unknown";
 }
