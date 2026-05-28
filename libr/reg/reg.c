@@ -254,13 +254,15 @@ R_IPI void r_reg_free_internal(RReg *reg, bool init) {
 static int regcmp(RRegItem *a, RRegItem *b) {
 	int offa = (a->offset * 16) + a->size;
 	int offb = (b->offset * 16) + b->size;
-	return (offa > offb) - (offa < offb);
+	int cmp = (offa > offb) - (offa < offb);
+	return cmp? cmp: strcmp (a->name, b->name);
 }
 
 typedef struct {
 	RRegItem *item;
 	RRegVBank *vbank;
 	int key;
+	int seq;
 } RRegIndexEntry;
 R_VEC_TYPE (RVecRegIndexEntry, RRegIndexEntry);
 
@@ -353,12 +355,13 @@ static bool vbank_item_slot(RReg *reg, RRegItem *item, RRegVBank **out_vb, int *
 }
 
 static int reg_index_entry_cmp(const RRegIndexEntry *a, const RRegIndexEntry *b) {
-	return (a->key > b->key) - (a->key < b->key);
+	int cmp = (a->key > b->key) - (a->key < b->key);
+	return cmp? cmp: (a->seq > b->seq) - (a->seq < b->seq);
 }
 
 R_IPI void r_reg_reindex(RReg *reg) {
 	R_RETURN_IF_FAIL (reg);
-	int i, index = 0;
+	int i, index = 0, seq = 0;
 	RListIter *iter, *iter2;
 	RRegItem *r;
 	RRegVBank *vb;
@@ -374,11 +377,13 @@ R_IPI void r_reg_reindex(RReg *reg) {
 			entry = RVecRegIndexEntry_emplace_back (&entries);
 			entry->item = r;
 			entry->key = (r->offset * 16) + r->size;
+			entry->seq = seq++;
 		}
 		R_VEC_FOREACH (&reg->regset[i].vbanks, vb) {
 			entry = RVecRegIndexEntry_emplace_back (&entries);
 			entry->vbank = vb;
 			entry->key = (vb->offset * 16) + vb->size;
+			entry->seq = seq++;
 		}
 	}
 	RVecRegIndexEntry_sort (&entries, reg_index_entry_cmp);
