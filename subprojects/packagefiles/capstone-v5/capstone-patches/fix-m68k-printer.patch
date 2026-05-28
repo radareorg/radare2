@@ -13,7 +13,7 @@ index 937dcf425..2fd250841 100644
  		case M68K_AM_IMMEDIATE:
  			 if (inst->op_size.type == M68K_SIZE_TYPE_FPU) {
  #if defined(_KERNEL_MODE)
-@@ -172,7 +172,7 @@ static void printAddressingMode(SStream* O, unsigned int pc, const cs_m68k* inst
+@@ -172,8 +172,8 @@ static void printAddressingMode(SStream* O, unsigned int pc, const cs_m68k* inst
  					 SStream_concat(O, "#<unsupported>");
  				 break;
  #endif
@@ -23,12 +23,8 @@ index 937dcf425..2fd250841 100644
  			 break;
  		case M68K_AM_PCI_INDEX_8_BIT_DISP:
  			SStream_concat(O, "$%x(pc,%s%s.%c)", pc + 2 + op->mem.disp, s_spacing, getRegName(op->mem.index_reg), op->mem.index_size ? 'l' : 'w');
-@@ -287,7 +287,7 @@ void M68K_printInst(MCInst *MI, SStream *O, void *Info)
- 		MI->flat_insn->id = M68K_INS_INVALID;
- 		MI->flat_insn->detail->groups[0] = M68K_GRP_INVALID;
- 		if (detail_is_set(MI)) {
+@@ -289,3 +289,3 @@ void M68K_printInst(MCInst *MI, SStream *O, void *Info)
+ 		if (ext->op_count)
 -			SStream_concat(O, "dc.w $%x", ext->operands[0].imm);
 +			SStream_concat(O, "dc.w $%x", (unsigned int)ext->operands[0].imm);
- 		}
- 		return;
- 	}
+ 		else
