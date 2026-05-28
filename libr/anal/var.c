@@ -1512,9 +1512,6 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 		int i;
 		const int total = callee_rargs;
 		for (i = 0; i < callee_rargs; i++) {
-			if (reg_set[i]) {
-				continue;
-			}
 			const char *vname = NULL;
 			char *type = NULL;
 			char *name = NULL;
@@ -1527,6 +1524,14 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 					delta = ri->index;
 					r_unref (ri);
 				}
+			}
+			RAnalVar *old_var = r_anal_function_get_var (fcn, R_ANAL_VAR_KIND_REG, delta);
+			if (old_var && !r_anal_var_is_default_argname (old_var->name)) {
+				continue;
+			}
+			if (reg_set[i] && (!old_var || !r_anal_var_is_default_argname (old_var->name)
+					|| !RVecAnalVarAccess_empty (&old_var->accesses))) {
+				continue;
 			}
 			if (fname) {
 				type = r_type_func_args_type (TDB, fname, i);
@@ -1562,8 +1567,10 @@ R_API void r_anal_extract_rarg(RAnal *anal, RAnalOp *op, RAnalFunction *fcn, int
 			RAnalVar *var = r_anal_function_set_var (fcn, delta, R_ANAL_VAR_KIND_REG, type, size, true, vname);
 			if (var && var->argnum < 0) {
 				var->argnum = *count;
+				(*count)++;
+			} else if (!old_var) {
+				(*count)++;
 			}
-			(*count)++;
 			free (name);
 			free (type);
 		}

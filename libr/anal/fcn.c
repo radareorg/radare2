@@ -174,15 +174,31 @@ static char *fcn_call_type(RAnal *anal, RAnalOp *op, RAnalFunction **callee) {
 	return flag? r_type_func_guess (anal->sdb_types, flag->name): NULL;
 }
 
+static const char *fcn_call_convention(RAnal *anal, RAnalOp *op, RAnalFunction **callee, char **callee_type) {
+	*callee = NULL;
+	*callee_type = fcn_call_type (anal, op, callee);
+	const char *type_cc = *callee_type? r_anal_cc_func (anal, *callee_type): NULL;
+	const char *cc = *callee? r_anal_function_cc (*callee): type_cc;
+	if (*callee && type_cc && (!cc || !strcmp (cc, r_anal_cc_default (anal)))) {
+		cc = type_cc;
+	}
+	return cc;
+}
+
+R_API const char *r_anal_call_convention(RAnal *anal, RAnalOp *op) {
+	R_RETURN_VAL_IF_FAIL (anal && op, NULL);
+	RAnalFunction *callee = NULL;
+	char *callee_type = NULL;
+	const char *cc = fcn_call_convention (anal, op, &callee, &callee_type);
+	free (callee_type);
+	return cc;
+}
+
 R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
 	R_RETURN_VAL_IF_FAIL (anal && op, 0);
 	RAnalFunction *callee = NULL;
-	char *callee_type = fcn_call_type (anal, op, &callee);
-	const char *type_cc = callee_type? r_anal_cc_func (anal, callee_type): NULL;
-	const char *cc = callee? r_anal_function_cc (callee): type_cc;
-	if (callee && type_cc && (!cc || !strcmp (cc, r_anal_cc_default (anal)))) {
-		cc = type_cc;
-	}
+	char *callee_type = NULL;
+	const char *cc = fcn_call_convention (anal, op, &callee, &callee_type);
 	if (!cc) {
 		free (callee_type);
 		return 0;
@@ -197,6 +213,17 @@ R_API int r_anal_call_stack_pop(RAnal *anal, RAnalOp *op) {
 	}
 	free (callee_type);
 	return pop;
+}
+
+static void fcn_apply_call_stack_pop(RAnalFunction *fcn, RAnalBlock *bb, RAnalOp *op) {
+	int pop = r_anal_call_stack_pop (fcn->anal, op);
+	if (pop > 0) {
+		st64 delta = -pop;
+		if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {
+			delta -= op->stackptr;
+		}
+		fcn_stack_delta (fcn, bb, delta);
+	}
 }
 
 static int fcn_ret_stack_pop(RAnalFunction *fcn, RAnalOp *op) {
@@ -1701,6 +1728,7 @@ noskip:
 		case R_ANAL_OP_TYPE_RCALL:
 		case R_ANAL_OP_TYPE_ICALL:
 		case R_ANAL_OP_TYPE_IRCALL:
+		case R_ANAL_OP_TYPE_UCCALL:
 			/* call [dst] */
 			// XXX: this is TYPE_MCALL or indirect-call
 			(void) r_anal_xrefs_setf (anal, fcn, op->addr, op->ptr, R_ANAL_REF_TYPE_CALL);
@@ -1712,6 +1740,7 @@ noskip:
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
+			fcn_apply_call_stack_pop (fcn, bb, op);
 			break;
 		case R_ANAL_OP_TYPE_CCALL:
 		case R_ANAL_OP_TYPE_CALL:
@@ -1725,16 +1754,7 @@ noskip:
 				}
 				gotoBeach (R_ANAL_RET_END);
 			}
-			{
-				int pop = r_anal_call_stack_pop (anal, op);
-				if (pop > 0) {
-					st64 delta = -pop;
-					if (op->stackop == R_ANAL_STACK_INC && op->stackptr > 0) {
-						delta -= op->stackptr;
-					}
-					fcn_stack_delta (fcn, bb, delta);
-				}
-			}
+			fcn_apply_call_stack_pop (fcn, bb, op);
 			break;
 		case R_ANAL_OP_TYPE_UJMP:
 		case R_ANAL_OP_TYPE_RJMP:

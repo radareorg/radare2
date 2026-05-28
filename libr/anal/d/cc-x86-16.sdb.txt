@@ -1,11 +1,22 @@
 default.cc=fastcall
 
+cdecl=cc
+cc.cdecl.argn=stack
+cc.cdecl.pop=caller
+cc.cdecl.ret0=ax
+
+pascal=cc
+cc.pascal.argn=stack_rev
+cc.pascal.pop=callee
+cc.pascal.ret0=ax
+
 fastcall=cc
 cc.fastcall.arg0=ax
 cc.fastcall.arg1=dx
 cc.fastcall.arg2=bx
 cc.fastcall.arg3=cx
 cc.fastcall.argn=stack
+cc.fastcall.pop=callee
 cc.fastcall.ret0=ax
 
 watcom=cc
@@ -14,6 +25,7 @@ cc.watcom.arg1=dx
 cc.watcom.arg2=bx
 cc.watcom.arg3=cx
 cc.watcom.argn=stack
+cc.watcom.pop=callee
 cc.watcom.ret0=si
 
 turboc=cc
@@ -21,12 +33,14 @@ cc.turboc.arg0=ax
 cc.turboc.arg1=dx
 cc.turboc.arg2=bx
 cc.turboc.argn=stack
+cc.turboc.pop=callee
 cc.turboc.ret0=ax
 
 ms=cc
 cc.ms.arg0=ax
 cc.ms.arg1=dx
 cc.ms.argn=stack
+cc.ms.pop=callee
 cc.ms.ret0=ax
 
 msm=cc
@@ -34,4 +48,5 @@ cc.msm.arg0=ax
 cc.msm.arg1=dx
 cc.msm.arg2=bx
 cc.msm.argn=stack
+cc.msm.pop=callee
 cc.msm.ret0=bx

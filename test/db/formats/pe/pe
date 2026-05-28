@@ -258,6 +258,27 @@ nth vaddr      bind type lib          name
 EOF
 RUN
 
+NAME=pe32 stdcall import ucall stack pop vars
+FILE=bins/pe/imports_1210.exe
+CMDS=<<EOF
+e scr.color=0
+e bin.cache=true
+e io.cache=true
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+wx 6a046a036a026a01ff15e42141008b442404c3 @ 0x40f000
+af+ 0x40f000 pe_import_pop
+afb+ 0x40f000 0x40f000 0x13
+s 0x40f000
+afva
+afvs~arg_4h
+EOF
+EXPECT=<<EOF
+arg int32_t arg_4h @ esp+0x14
+EOF
+RUN
+
 NAME=pe32 imported relocations (ir)
 FILE=bins/pe/imports_1210.exe
 CMDS=ir
