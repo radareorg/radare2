@@ -3797,8 +3797,15 @@ static bool anal_block_cb(RAnalBlock *bb, BlockRecurseCtx *ctx) {
 			r_anal_extract_vars (core->anal, fcn, &op);
 		}
 		int opsize = op.size;
-		int optype = op.type;
-		if (optype == R_ANAL_OP_TYPE_CALL) {
+		int optype = op.type & R_ANAL_OP_TYPE_MASK;
+		if (optype == R_ANAL_OP_TYPE_CALL || optype == R_ANAL_OP_TYPE_CCALL) {
+			int pop = r_anal_call_stack_pop (core->anal, &op);
+			if (pop > 0) {
+				fcn->stack -= pop;
+				if (op.stackop == R_ANAL_STACK_INC && op.stackptr > 0) {
+					fcn->stack -= op.stackptr;
+				}
+			}
 			apply_call_regsets (core, fcn, &op, reg_set);
 		}
 		r_anal_op_fini (&op);

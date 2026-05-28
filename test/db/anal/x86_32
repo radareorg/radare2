@@ -3595,6 +3595,45 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=dyncc role-only self arg recovery
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e scr.color=0
+wx 89d8c3
+af
+afc dyncc::eax!Tebx
+afva
+afvr~self
+EOF
+EXPECT=<<EOF
+arg int32_t self @ ebx
+EOF
+RUN
+
+NAME=stdcall import prototype callee stack pop vars
+FILE=malloc://0x100
+CMDS=<<EOF
+e asm.arch=x86
+e asm.bits=32
+e scr.color=0
+wx 6a046a036a026a01e8430000008b442404c3 @ 0
+wx c3 @ 0x50
+fs imports
+f sym.imp.foobar 1 0x50
+fs *
+td int foobar(int a, int b, int c, int d);
+tk func.foobar.cc=stdcall
+af
+afva
+afvs~arg_4h
+EOF
+EXPECT=<<EOF
+arg int32_t arg_4h @ esp+0x14
+EOF
+RUN
+
 
 NAME=tiny1 aae
 FILE=bins/elf/analysis/tiny1

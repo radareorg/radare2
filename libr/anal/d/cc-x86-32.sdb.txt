@@ -2,6 +2,7 @@ default.cc=cdecl
 
 cdecl=cc
 cc.cdecl.argn=stack
+cc.cdecl.pop=caller
 cc.cdecl.ret0=eax
 
 cdecl-fastcall-ms=cc
@@ -18,12 +19,14 @@ cc.optlink.ret0=eax
 
 stdcall=cc
 cc.stdcall.argn=stack
+cc.stdcall.pop=callee
 cc.stdcall.ret0=eax
 
 fastcall=cc
 cc.fastcall.arg0=ecx
 cc.fastcall.arg1=edx
 cc.fastcall.argn=stack
+cc.fastcall.pop=callee
 cc.fastcall.ret0=eax
 
 borland=cc
@@ -44,6 +47,7 @@ cc.watcom.argn=stack
 pascal=cc
 cc.pascal.ret0=eax
 cc.pascal.argn=stack_rev
+cc.pascal.pop=callee
 
 # reverse argument calling convention. only for gcc and dmd, ldc2 uses normal cdecl CC
 dlang=cc
