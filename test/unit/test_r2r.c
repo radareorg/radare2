@@ -190,9 +190,21 @@ bool test_r2r_fix(void) {
 	mu_end;
 }
 
+bool test_r2r_require(void) {
+	mu_assert_true (require_check (NULL), "empty requirement");
+	mu_assert_true (require_check (""), "empty requirement");
+#if R_SYS_ENDIAN == 0
+	mu_assert_true (require_check ("little"), "little endian requirement");
+#else
+	mu_assert_false (require_check ("little"), "little endian requirement");
+#endif
+	mu_end;
+}
+
 int all_tests(void) {
 	mu_run_test (test_r2r_database_load_cmd);
 	mu_run_test (test_r2r_fix);
+	mu_run_test (test_r2r_require);
 	return tests_passed != tests_run;
 }
 

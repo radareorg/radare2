@@ -1,4 +1,4 @@
-/* radare - LGPL - Copyright 2020-2025 - pancake, thestr4ng3r */
+/* radare - LGPL - Copyright 2020-2026 - pancake, thestr4ng3r */
 
 #include "r2r.h"
 
@@ -1898,6 +1898,13 @@ static bool require_check(const char *require) {
 	}
 	if (strstr (require, "x86")) {
 #if __i386__ || __x86_64__
+		res &= true;
+#else
+		res &= false;
+#endif
+	}
+	if (strstr (require, "little")) {
+#if R_SYS_ENDIAN == 0
 		res &= true;
 #else
 		res &= false;

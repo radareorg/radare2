@@ -641,6 +641,7 @@ RUN
 
 NAME=newlined-comment-refline fix (#14627), wayward rip-relative flag fixes
 FILE=bins/elf/ls
+REQUIRE=little
 CMDS=<<EOF
 e asm.bytes=false
 e asm.sub.names=true
@@ -810,6 +811,7 @@ RUN
 
 NAME=pi no-color rip-relative addr fix
 FILE=bins/elf/ls
+REQUIRE=little
 CMDS=<<EOF
 e scr.color=0
 s 0x000041e0

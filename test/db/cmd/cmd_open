@@ -446,9 +446,8 @@ RUN
 
 NAME=o: obj
 FILE=-
+ARGS=-a x86 -b 64
 CMDS=<<EOF
-e asm.arch=x86
-e asm.bits=64
 obj~{}
 EOF
 EXPECT=<<EOF

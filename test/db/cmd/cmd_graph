@@ -414,8 +414,10 @@ agraph.edge.0x123_0x123.highlight=true
 EOF
 RUN
 
+# wont run on big endian because of a bug in capstone
 NAME=lowaddr lights
 FILE=bins/elf/elf_one_symbol_shdr
+REQUIRE=little
 ARGS=-n
 CMDS=<<EOF
 e asm.var.summary=0
