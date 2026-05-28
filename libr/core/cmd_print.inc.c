@@ -8480,10 +8480,11 @@ static int cmd_print(void *data, const char *input) {
 					break;
 				}
 				if (*block & 0x1) { // "long" string
+					const bool be = r_config_get_b (core->config, "cfg.bigendian");
 					if (bitness == 64) {
-						r_core_cmdf (core, "ps%c @ 0x%" PFMT64x, json? 'j': ' ', *((ut64 *)block + 2));
+						r_core_cmdf (core, "ps%c @ 0x%" PFMT64x, json? 'j': ' ', r_read_ble64 (block + 16, be));
 					} else {
-						r_core_cmdf (core, "ps%c @ 0x%" PFMT32x, json? 'j': ' ', *((ut32 *)block + 2));
+						r_core_cmdf (core, "ps%c @ 0x%" PFMT32x, json? 'j': ' ', r_read_ble32 (block + 8, be));
 					}
 				} else {
 					core_print_string_or_json (core, block + 1, len, NULL, R_PRINT_STRING_ZEROEND, json);
