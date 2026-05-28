@@ -98,6 +98,7 @@ RUN
 
 NAME=endian tests: sparc.gnu
 FILE=-
+REQUIRE=gpl
 CMDS=<<EOF
 e asm.arch=sparc.gnu
 e asm.bits=64
@@ -206,5 +207,4 @@ EXPECT=<<EOF
 0x000000fc             f3e10028  psq_st fr31 0x29(r1) 0x0
 EOF
 RUN
-
 

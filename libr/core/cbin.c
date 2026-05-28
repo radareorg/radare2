@@ -5468,6 +5468,17 @@ R_API bool r_core_bin_delete(RCore *core, ut32 bf_id) {
 	return true;
 }
 
+static const char *bin_file_arch_bits(RCore *core, RBinInfo *info, int *bits) {
+	const char *arch = info? info->arch: NULL;
+	if (R_STR_ISNOTEMPTY (arch)) {
+		*bits = info->bits? info->bits: r_config_get_i (core->config, "asm.bits");
+		return arch;
+	}
+	*bits = r_config_get_i (core->config, "asm.bits");
+	arch = r_config_get (core->config, "asm.arch");
+	return R_STR_ISNOTEMPTY (arch)? arch: "unknown";
+}
+
 static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	R_RETURN_VAL_IF_FAIL (core && bf, false);
 	if (!bf->bo) {
@@ -5500,13 +5511,8 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 			pj_ko (pj, "obj");
 			RBinObject *obj = bf->bo;
 			RBinInfo *info = obj->info;
-			ut8 bits = info? info->bits: 0;
-			const char *asmarch = r_config_get (core->config, "asm.arch");
-			const char *arch = info
-			? info->arch
-				? info->arch
-				: asmarch
-			: "unknown";
+			int bits = 0;
+			const char *arch = bin_file_arch_bits (core, info, &bits);
 			pj_ks (pj, "arch", arch);
 			pj_ki (pj, "bits", bits);
 			pj_kN (pj, "binoffset", obj->boffset);
@@ -5518,10 +5524,9 @@ static bool r_core_bin_file_print(RCore *core, RBinFile *bf, PJ *pj, int mode) {
 	default:
 		{
 			RBinInfo *info = bf->bo->info;
-			ut8 bits = info? info->bits: 0;
-			const char *asmarch = r_config_get (core->config, "asm.arch");
-			const char *arch = info? info->arch? info->arch: asmarch: "unknown";
-		const char *curstr = (core->allbins || bf == r_bin_cur (core->bin))? "*": "-";
+			int bits = 0;
+			const char *arch = bin_file_arch_bits (core, info, &bits);
+			const char *curstr = (core->allbins || bf == r_bin_cur (core->bin))? "*": "-";
 			r_cons_printf (core->cons, "%s %d %d %s-%d ba:0x%08" PFMT64x " sz:%" PFMT64d "%s%s\n",
 				curstr, bf->id, bf->fd, arch, bits, bf->bo->baddr, bf->bo->size,
 				R_STR_ISNOTEMPTY (name)? " ": "", R_STR_ISNOTEMPTY (name)? name: "");

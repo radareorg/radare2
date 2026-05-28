@@ -1,0 +1,28 @@
+diff --git a/arch/X86/X86DisassemblerDecoder.c b/arch/X86/X86DisassemblerDecoder.c
+index 86ef46c00..9be46b814 100644
+--- a/arch/X86/X86DisassemblerDecoder.c
++++ b/arch/X86/X86DisassemblerDecoder.c
+@@ -1348,7 +1348,7 @@ static int readSIB(struct InternalInstruction* insn)
+ 		insn->sibIndex = (SIBIndex)(insn->sibIndexBase + index);
+ 	}
+ 
+-	insn->sibScale = 1 << scaleFromSIB(insn->sib);
++	insn->sibScale = 1U << scaleFromSIB(insn->sib);
+ 
+ 	base = baseFromSIB(insn->sib) | (bFromREX(insn->rexPrefix) << 3);
+ 
+diff --git a/suite/cstest/issues.cs b/suite/cstest/issues.cs
+index 566dcd869..85142bda5 100644
+--- a/suite/cstest/issues.cs
++++ b/suite/cstest/issues.cs
+@@ -631,6 +631,10 @@
+ !# CS_ARCH_X86, CS_MODE_64, CS_OPT_DETAIL
+ 0x0: 0x0f,0x94,0x44,0x24,0x1f == sete byte ptr [rsp + 0x1f] ; Prefix:0x00 0x00 0x00 0x00  ; Opcode:0x0f 0x94 0x00 0x00  ; rex: 0x0 ; addr_size: 8 ; modrm: 0x44 ; disp: 0x1f ; sib: 0x24 ; sib_base: rsp ; sib_scale: 1 ; op_count: 1 ; operands[0].type: MEM ; operands[0].mem.base: REG = rsp ; operands[0].mem.disp: 0x1f ; operands[0].size: 1 ; operands[0].access: WRITE ; Registers read: rflags rsp ; EFLAGS: TEST_ZF
+ 
++!# x86 SIB scale is encoded as log2(scale)
++!# CS_ARCH_X86, CS_MODE_64, None
++0x0: 0x8b,0x34,0x82 == mov esi, dword ptr [rdx + rax*4]
++
+ !# issue 1263
+ !# CS_ARCH_X86, CS_MODE_64, None
+ 0x0: 0x67,0x48,0x89,0x18 == mov qword ptr [eax], rbx
