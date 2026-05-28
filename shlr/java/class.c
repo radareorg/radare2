@@ -2520,7 +2520,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_field(RBinJavaField *fm_typ
 		sym->classname = strdup ("UNKNOWN"); // dupped names?
 	}
 	sym->ordinal = fm_type->metas->ord;
-	sym->attr = fm_type->flags;
+	sym->attr = fieldattr_j2r (fm_type->flags);
 	return sym;
 }
 
@@ -2554,7 +2554,7 @@ static RBinSymbol *r_bin_java_create_new_symbol_from_fm_type_meta(RBinJavaField 
 	sym->vaddr = fm_type->file_offset + baddr;
 	sym->ordinal = fm_type->metas->ord;
 	sym->size = fm_type->size;
-	sym->attr = fm_type->flags;
+	sym->attr = fieldattr_j2r (fm_type->flags);
 	return sym;
 }
 

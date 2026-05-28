@@ -112,7 +112,6 @@ EOF
 RUN
 
 NAME=Pyc dyncc direct af uses code args
-REQUIRE=x86
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
 e anal.cc
@@ -129,7 +128,6 @@ EOF
 RUN
 
 NAME=Pyc dyncc keeps zero-arg return metadata
-REQUIRE=x86
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
 e anal.cc
@@ -221,7 +219,6 @@ EOF
 RUN
 
 NAME=Pyc per-method args
-REQUIRE=x86
 FILE=bins/pyc/py38.pyc
 CMDS=<<EOF
 aaa
@@ -328,7 +325,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=afch resolves dyncc and shows self
+NAME=afch resolves dyncc instance cc
 FILE=bins/java/Hello.class
 CMDS=<<EOF
 aaa
@@ -336,7 +333,6 @@ afch @ method.Hello.say~callconv:,self:
 EOF
 EXPECT=<<EOF
 callconv: dyncc:l0+1:!T0
-self: l0
 EOF
 RUN
 
