@@ -390,10 +390,10 @@ static char *mount_oldstr(RParse* p, const char *reg, st64 delta, bool ucase) {
 		}
 	} else if (delta > 0) {
 		tmplt = p->pseudo ? "%s + 0x%x" : (ucase ? "%s, 0x%X" : "%s, 0x%x");
-		oldstr = r_str_newf (tmplt, reg, delta);
+		oldstr = r_str_newf (tmplt, reg, (unsigned int)delta);
 	} else {
 		tmplt = p->pseudo ? "%s - 0x%x" : (ucase ? "%s, -0x%X" : "%s, -0x%x");
-		oldstr = r_str_newf (tmplt, reg, -delta);
+		oldstr = r_str_newf (tmplt, reg, (unsigned int)-delta);
 	}
 	if (ucase) {
 		char *comma = strchr (oldstr, ',');
