@@ -53,11 +53,37 @@ e asm.bits=32
 k anal/cc/cc.cdecl.preserve
 k anal/cc/cc.stdcall.preserve
 k anal/cc/cc.fastcall.preserve
+k anal/cc/cc.cdecl.clobber
+k anal/cc/cc.stdcall.clobber
+k anal/cc/cc.fastcall.clobber
 EOF
 EXPECT=<<EOF
 ebx,esi,edi,ebp,esp
 ebx,esi,edi,ebp,esp
 ebx,esi,edi,ebp,esp
+eax,ecx,edx
+eax,ecx,edx
+eax,ecx,edx
+EOF
+RUN
+
+NAME=x86-32 cdecl clobber kills optlink eax arg after call
+FILE=malloc://32
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=32
+e anal.cc=optlink
+wx 89c2e80900000089c1c3909090909090c3
+af @ 0
+afc optlink @ 0
+af @ 0x10
+afc cdecl @ 0x10
+afva @ 0
+afvR @ 0
+EOF
+EXPECT=<<EOF
+      arg1  0x0
 EOF
 RUN
 
