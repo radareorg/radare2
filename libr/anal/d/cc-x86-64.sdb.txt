@@ -6,6 +6,7 @@ cc.ms.arg1=rdx
 cc.ms.arg2=r8
 cc.ms.arg3=r9
 cc.ms.argn=stack
+cc.ms.pop=caller
 cc.ms.ret0=rax
 
 amd64=cc
@@ -20,6 +21,7 @@ cc.amd64.arg7=xmm1
 cc.amd64.arg8=xmm2
 cc.amd64.arg9=xmm3
 cc.amd64.arg10=xmm4
+cc.amd64.pop=caller
 cc.amd64.ret0=rax
 
 swift=cc
@@ -36,6 +38,7 @@ cc.swift.arg9=xmm3
 cc.swift.arg10=xmm4
 cc.swift.self=r13
 cc.swift.error=r12
+cc.swift.pop=caller
 cc.swift.ret0=rax
 
 amd64syscall=cc
@@ -45,11 +48,13 @@ cc.amd64syscall.arg2=rdx
 cc.amd64syscall.arg3=r10
 cc.amd64syscall.arg4=r8
 cc.amd64syscall.arg5=r9
+cc.amd64syscall.pop=caller
 cc.amd64syscall.ret0=rax
 
 p9=cc
 cc.p9.arg0=rbp
 cc.p9.argn=stack
+cc.p9.pop=caller
 cc.p9.ret0=rax
 
 dlang=cc
@@ -63,3 +68,4 @@ cc.dlang.arg3=rcx
 cc.dlang.arg4=r8d
 cc.dlang.arg5=r9d
 cc.dlang.argn=stack
+cc.dlang.pop=caller

@@ -8,6 +8,7 @@ cc.cdecl.ret0=eax
 cdecl-fastcall-ms=cc
 cc.cdecl-fastcall-ms.arg0=ecx
 cc.cdecl-fastcall-ms.argn=stack
+cc.cdecl-fastcall-ms.pop=callee
 cc.cdecl-fastcall-ms.ret0=eax
 
 optlink=cc
@@ -15,6 +16,7 @@ cc.optlink.arg0=eax
 cc.optlink.arg1=edx
 cc.optlink.arg2=ecx
 cc.optlink.argn=stack
+cc.optlink.pop=callee
 cc.optlink.ret0=eax
 
 stdcall=cc
@@ -35,6 +37,7 @@ cc.borland.arg0=eax
 cc.borland.arg1=edx
 cc.borland.arg2=ecx
 cc.borland.argn=stack_rev
+cc.borland.pop=callee
 
 watcom=cc
 cc.watcom.ret0=eax
@@ -43,6 +46,7 @@ cc.watcom.arg1=edx
 cc.watcom.arg2=ebx
 cc.watcom.arg3=ecx
 cc.watcom.argn=stack
+cc.watcom.pop=callee
 
 pascal=cc
 cc.pascal.ret0=eax
@@ -62,3 +66,4 @@ cc.dlang.arg3=ecx
 cc.dlang.arg4=r8d
 cc.dlang.arg5=r9d
 cc.dlang.argn=stack_rev
+cc.dlang.pop=callee

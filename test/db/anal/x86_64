@@ -9,6 +9,29 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=x86-64 static calling convention stack pop
+FILE=-
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+k anal/cc/cc.ms.pop
+k anal/cc/cc.amd64.pop
+k anal/cc/cc.swift.pop
+k anal/cc/cc.amd64syscall.pop
+k anal/cc/cc.p9.pop
+k anal/cc/cc.dlang.pop
+EOF
+EXPECT=<<EOF
+caller
+caller
+caller
+caller
+caller
+caller
+EOF
+RUN
+
 NAME=got switch cases 2
 FILE=bins/elf/game_of_thrones
 CMDS=<<EOF
