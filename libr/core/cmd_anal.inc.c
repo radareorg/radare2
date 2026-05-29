@@ -11699,7 +11699,7 @@ static bool cmd_anal_refs(RCore *core, const char *input) {
 							fcn_addr,
 							ref->addr,
 							addr,
-							size,
+							(ut64)size,
 							typestr,
 							permstr
 							);

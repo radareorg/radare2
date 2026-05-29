@@ -1265,7 +1265,7 @@ static void w32_list_heaps_blocks(RCore *core, const char format) {
 					pj_end (pj);
 					break;
 				default:
-					r_table_add_rowf (tbl, "xxnnns", address, (ut64)block->dwAddress, block->dwSize, granularity, unusedBytes, type);
+					r_table_add_rowf (tbl, "xxnnns", address, (ut64)block->dwAddress, (ut64)block->dwSize, granularity, unusedBytes, type);
 					break;
 				}
 			} while (GetNextHeapBlock (&heapInfo->heaps[i], block));
