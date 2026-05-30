@@ -560,7 +560,7 @@ static void cmd_fz(RCore *core, const char *input) {
 			const char *name = r_str_trim_head_ro (input + 1);
 			RFlagZoneItem *fz = r_flag_zone_get (core->flags, name);
 			if (fz) {
-				r_cons_printf (core->cons, "0x08"PFMT64x, fz->from);
+				r_cons_printf (core->cons, "0x%08"PFMT64x, fz->from);
 			} else {
 				R_LOG_ERROR ("There is no flag zone with this name");
 			}
@@ -1487,7 +1487,7 @@ static void cmd_fu(RCore *core, const char *input) {
 		if (item) {
 			char *rawname = item->rawname? r_base64_encode_dyn ((void*)item->rawname, strlen (item->rawname)): NULL;
 			char *realname = item->realname? r_base64_encode_dyn ((void*)item->realname, strlen (item->realname)): NULL;
-			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'fu %d %s %s %s\n",
+			r_cons_printf (core->cons, "'@0x%08"PFMT64x"'fu %"PFMT64u" %s %s %s\n",
 					item->addr, item->size, item->name, rawname, realname);
 			free (rawname);
 			free (realname);

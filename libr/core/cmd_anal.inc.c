@@ -10530,7 +10530,7 @@ static void cmd_aoc(RCore *core, const char *input) {
 		char *ins = r_core_disassemble_instr (core, hook->addr, 1);
 		if (ins) {
 			size_t count = ccl - hook->cycles;
-			r_cons_printf (core->cons, "after %i cycles: %s\n", count, ins);
+			r_cons_printf (core->cons, "after %"PFMT64u" cycles: %s\n", (ut64)count, ins);
 			free (ins);
 		}
 	}
