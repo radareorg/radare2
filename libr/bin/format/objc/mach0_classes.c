@@ -1561,7 +1561,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 	klass->origin = R_BIN_CLASS_ORIGIN_BIN;
 	char *super_name = readstr (bf, st.super_addr, NULL, NULL);
 	if (super_name) {
-		if (*super_name > 5) {
+		if ((st8)*super_name > 5) {
 			klass->super = r_list_newf ((void *)r_bin_name_free);
 			RBinName *bn = r_bin_name_new (super_name);
 			char *sname = r_bin_demangle_swift (super_name, usecmd, trylib);
@@ -1684,7 +1684,7 @@ static void parse_type(RBinFile *bf, RList *list, SwiftType st, HtUP *symbols_ht
 			char *field_type = readstr (bf, field_type_addr, NULL, NULL);
 			if (field_type) {
 				const char *ftype = field_type;
-				if (*ftype < 6) {
+				if ((st8)*ftype < 6) {
 					// basic type
 					ftype += r_str_nlen (ftype, 6);
 				}
