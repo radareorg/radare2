@@ -108,7 +108,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0x19:
 	case 0x1e:
 		op->type = R_ANAL_OP_TYPE_CJMP;
-		op->jump = op->addr + op->size + ((len > 1)? ((char)buf[1]): 0);
+		op->jump = op->addr + op->size + ((len > 1) ? ((st8)buf[1]) : 0);
 		op->fail = op->addr + op->size;
 		break;
 	case 0xd0: // mcoml
@@ -123,11 +123,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 	case 0xca: // bicl
 		op->type = R_ANAL_OP_TYPE_SUB;
 		break;
-	case 0x31:
-	case 0xe9:
+	case 0x31: // brw: signed 16-bit little-endian word displacement at buf[1]
 		op->type = R_ANAL_OP_TYPE_CJMP;
 		if (len > 2) {
-			op->jump = op->addr + op->size + ((buf[1] << 8) + buf[2]);
+			op->jump = op->addr + op->size + (st16)(buf[1] | (buf[2] << 8));
+			op->fail = op->addr + op->size;
+		}
+		break;
+	case 0xe9: // blbc: signed byte displacement in the last instruction byte
+		op->type = R_ANAL_OP_TYPE_CJMP;
+		if (op->size > 1 && op->size <= len) {
+			op->jump = op->addr + op->size + (st8)buf[op->size - 1];
 			op->fail = op->addr + op->size;
 		}
 		break;

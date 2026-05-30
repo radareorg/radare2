@@ -1097,7 +1097,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x28: // goto
 		if (len > 1) {
-			op->jump = addr + ((char)data[1])*2;
+			op->jump = addr + ((st8)data[1]) * 2;
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;
 			if (mask & R_ARCH_OP_MASK_ESIL) {
@@ -1117,7 +1117,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		break;
 	case 0x2a: // goto/32
 		if (len > 5) {
-			st64 dst = (st64)(data[2]|(data[3]<<8)|(data[4]<<16)|((ut32)data[5]<<24));
+			st64 dst = (st32)(data[2] | (data[3] << 8) | (data[4] << 16) | ((ut32)data[5] << 24));
 			op->jump = addr + (dst * 2);
 			op->type = R_ANAL_OP_TYPE_JMP;
 			op->eob = true;

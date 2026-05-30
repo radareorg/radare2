@@ -9,7 +9,7 @@ static int label_off(struct directive *d) {
 	int lame = off & 0x80;
 
 	if (!d->d_prefix) { // WTF
-		off = (char) (off & 0xff);
+		off = (st8)(off & 0xff);
 	} else if (d->d_prefix == 1) {
 		off = (short) (off & 0xffff);
 		if (lame) {

@@ -1,0 +1,30 @@
+NAME=vax brw signed little-endian word displacement (op->jump)
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=vax
+e asm.bits=32
+s 0x1000
+wx 31f0ff
+ao~jump:
+wx 310401
+ao~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000ff3
+jump: 0x00001107
+EOF
+RUN
+
+NAME=vax blbc signed byte displacement (op->jump)
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=vax
+e asm.bits=32
+s 0x1000
+wx e950f0
+ao~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000ff3
+EOF
+RUN

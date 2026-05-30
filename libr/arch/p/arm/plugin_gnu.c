@@ -140,7 +140,7 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 			high |= B4 (B1111, B1000, 0, 0) << 16;
 		}
 		int delta = high + ((nextins & B4 (0, B0111, B1111, B1111)) * 2);
-		op->jump = (int) (addr + 4 + (delta));
+		op->jump = addr + 4 + delta;
 		op->type = R_ANAL_OP_TYPE_CALL;
 		op->fail = addr + 4;
 	} else if ((ins & B4 (B1111, B1111, 0, 0)) == B4 (B1011, B1110, 0, 0)) {
