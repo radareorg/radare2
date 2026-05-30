@@ -13,7 +13,7 @@ NAME=PPC64 ELFv1 ET_REL: R_PPC64_REL24 maps to ADD_24
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 CMDS=ir~?ADD_24
 EXPECT=<<EOF
-10
+13
 EOF
 RUN
 
@@ -39,14 +39,17 @@ EXPECT=<<EOF
 .crc32_le
 ._mcount
 .crc32_le
+._mcount
+.crypto_register_shash
+.crypto_unregister_shash
 EOF
 RUN
 
-NAME=PPC64 ELFv1 ET_REL: R_PPC64_TOC maps to ADD_16 (TOC base reloc)
+NAME=PPC64 ELFv1 ET_REL: R_PPC64_TOC/TOC16 map to ADD_16 (incl. .rela.init.text TOC16_HA/LO_DS)
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 CMDS=ir~?ADD_16
 EXPECT=<<EOF
-5
+13
 EOF
 RUN
 
@@ -54,7 +57,15 @@ NAME=PPC64 ELFv1 ET_REL: R_PPC64_ADDR64 in .opd produces SET_64 entries
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 CMDS=ir~?SET_64
 EXPECT=<<EOF
-6
+22
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: all .rela.* sections loaded (per-section cap fix, was 23)
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+CMDS=ir~?
+EXPECT=<<EOF
+50
 EOF
 RUN
 
@@ -68,7 +79,32 @@ EXPECT=<<EOF
 0x08000130
 0x080001a0
 0x080001f0
+0x08000270
+0x080002f0
 0x08000358
+0x0800038c
+0x08000708
+0x08000720
+0x08000738
+0x08000738
+0x08000750
+0x08000768
+0x08000780
+0x08000798
+0x080007b0
+0x080007c8
+0x080007c8
+0x080007e0
+0x08000a00
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: .rela.init.text REL24 now applied (2nd section no longer capped)
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=pi 1 @ section..init.text+0x1c
+EXPECT=<<EOF
+bl .crypto_register_shash
 EOF
 RUN
 

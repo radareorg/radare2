@@ -4099,9 +4099,12 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 			}
 			ut64 dim_relocs = section->size / size;
 			dim_relocs = R_MIN (dim_relocs, num_relocs) + 2;
+			// ET_REL: cap per-section (scount), else cumulative pos (also dedups the dynamic pass)
+			const bool etrel = is_bin_etrel (eo);
+			ut64 scount = 0;
 			ut64 j;
 			for (j = get_next_not_analysed_offset (eo, section->rva, 0);
-				j < section->size && pos <= dim_relocs;
+				j < section->size && (etrel? scount: pos) <= dim_relocs;
 				j = get_next_not_analysed_offset (eo, section->rva, j + size)) {
 
 				RBinElfReloc *reloc = RVecRBinElfReloc_emplace_back (&eo->g_relocs);
@@ -4113,6 +4116,7 @@ static size_t populate_relocs_record_from_section(ELFOBJ *eo, size_t pos, size_t
 				int index = (int)RVecRBinElfReloc_length (&eo->g_relocs) - 1;
 				ht_uu_insert (eo->rel_cache, reloc->sym, index);
 				fix_rva_and_offset (eo, reloc, i);
+				scount++;
 				pos++;
 			}
 		}
