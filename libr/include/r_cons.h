@@ -1189,7 +1189,7 @@ R_API void r_cons_newline(RCons *cons);
 R_API bool r_cons_write(RCons *cons, const void *str, size_t len);
 R_API void r_cons_memset(RCons *cons, char ch, int len);
 R_API void r_cons_printf_list(RCons *cons, const char *format, va_list ap);
-R_API int r_cons_printf(RCons *cons, const char *format, ...);
+R_API int r_cons_printf(RCons *cons, const char *format, ...) R_PRINTF_CHECK(2, 3);
 R_API void r_cons_gotoxy(RCons * R_NONNULL cons, int x, int y);
 R_API void r_cons_set_interactive(RCons *cons, bool x);
 R_API void r_cons_set_last_interactive(RCons *cons);

@@ -602,7 +602,7 @@ static void cmd_write_value(RCore *core, const char *input) {
 	case 'g': // "wvg"
 		{
 			if (input[1] == '?') {
-				r_cons_printf (core->cons, fpuhelp);
+				r_cons_printf (core->cons, "%s", fpuhelp);
 			} else {
 				const RCFloatProfile *profile = &core->rasm->config->cfloat_profile;
 				double value = strtod (r_str_trim_head_ro (input + 1), NULL);

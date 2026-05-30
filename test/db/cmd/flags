@@ -65,3 +65,16 @@ EXPECT=<<EOF
 0x0
 EOF
 RUN
+
+NAME=fz prints zone start address
+FILE=malloc://64
+CMDS=<<EOF
+s 0x1234
+fz+ myzone
+fz myzone
+?e
+EOF
+EXPECT=<<EOF
+0x00001234
+EOF
+RUN

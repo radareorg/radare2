@@ -3344,7 +3344,7 @@ static void search_similar_pattern_in(RCore *core, int count, ut64 from, ut64 to
 			int equal = core->blocksize - diff;
 			if (equal >= count) {
 				int pc = (equal * 100) / core->blocksize;
-				r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%d %3d%%  ", addr, equal, bsz, pc);
+				r_cons_printf (core->cons, "0x%08"PFMT64x " %4d/%"PFMT64u" %3d%%  ", addr, equal, bsz, pc);
 				ut8 ptr[2] = {
 					(ut8)(pc * 2.5), 0
 				};
