@@ -74,3 +74,4 @@ d "goto 0x003b" a70037 0x00000004
 d "bipush 32" 1020
 d "nop" 00
 d "iadd" 60
+d "bipush -1" 10ff

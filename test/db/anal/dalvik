@@ -25,3 +25,19 @@ EXPECT=<<EOF
 entry0 0x26e [CALL:--x] invoke-direct {v0}, LHello.<init>()V ; 0x0
 EOF
 RUN
+
+NAME=dalvik goto and goto/32 signed backward branch (op->jump)
+FILE=malloc://0x2000
+CMDS=<<EOF
+e asm.arch=dalvik
+s 0x1000
+wx 28f8
+ao~jump:
+wx 2a00f0ffffff
+ao~jump:
+EOF
+EXPECT=<<EOF
+jump: 0x00000ff0
+jump: 0x00000fe0
+EOF
+RUN
