@@ -918,6 +918,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			op->type = R_ANAL_OP_TYPE_RMOV;
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
 			break;
+		case PPC_INS_ISEL:
+			op->type = R_ANAL_OP_TYPE_CMOV;
+			// no ESIL: BC selects an arbitrary CR bit but the CR model only tracks cr0
+			break;
 		case PPC_INS_LI:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "%s,%s,=", ARG (1), ARG (0));
@@ -1378,6 +1382,62 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_BNULA:
 		case PPC_INS_BNULR:
 		case PPC_INS_BNULRL:
+		case PPC_INS_BEQ:
+		case PPC_INS_BEQA:
+		case PPC_INS_BEQCTR:
+		case PPC_INS_BEQCTRL:
+		case PPC_INS_BEQL:
+		case PPC_INS_BEQLA:
+		case PPC_INS_BEQLR:
+		case PPC_INS_BEQLRL:
+		case PPC_INS_BGE:
+		case PPC_INS_BGEA:
+		case PPC_INS_BGECTR:
+		case PPC_INS_BGECTRL:
+		case PPC_INS_BGEL:
+		case PPC_INS_BGELA:
+		case PPC_INS_BGELR:
+		case PPC_INS_BGELRL:
+		case PPC_INS_BGT:
+		case PPC_INS_BGTA:
+		case PPC_INS_BGTCTR:
+		case PPC_INS_BGTCTRL:
+		case PPC_INS_BGTL:
+		case PPC_INS_BGTLA:
+		case PPC_INS_BGTLR:
+		case PPC_INS_BGTLRL:
+		case PPC_INS_BLE:
+		case PPC_INS_BLEA:
+		case PPC_INS_BLECTR:
+		case PPC_INS_BLECTRL:
+		case PPC_INS_BLEL:
+		case PPC_INS_BLELA:
+		case PPC_INS_BLELR:
+		case PPC_INS_BLELRL:
+		case PPC_INS_BLT:
+		case PPC_INS_BLTA:
+		case PPC_INS_BLTCTR:
+		case PPC_INS_BLTCTRL:
+		case PPC_INS_BLTL:
+		case PPC_INS_BLTLA:
+		case PPC_INS_BLTLR:
+		case PPC_INS_BLTLRL:
+		case PPC_INS_BSO:
+		case PPC_INS_BSOA:
+		case PPC_INS_BSOCTR:
+		case PPC_INS_BSOCTRL:
+		case PPC_INS_BSOL:
+		case PPC_INS_BSOLA:
+		case PPC_INS_BSOLR:
+		case PPC_INS_BSOLRL:
+		case PPC_INS_BUN:
+		case PPC_INS_BUNA:
+		case PPC_INS_BUNCTR:
+		case PPC_INS_BUNCTRL:
+		case PPC_INS_BUNL:
+		case PPC_INS_BUNLA:
+		case PPC_INS_BUNLR:
+		case PPC_INS_BUNLRL:
 #endif
 		case PPC_INS_B:
 		case PPC_INS_BC:
