@@ -132,3 +132,136 @@ addis r2, r12, -3
 0x00000000 16,0xfffffffffffffffd,<<,r12,+,r2,=
 EOF
 RUN
+
+NAME=load word byte-reverse indexed ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c00642c)
+EOF
+EXPECT=<<EOF
+lwbrx r0, 0, r12
+0x00000000 r12,[1],8,1,r12,+,[1],<<,|,16,2,r12,+,[1],<<,|,24,3,r12,+,[1],<<,|,r0,=
+EOF
+RUN
+
+NAME=load word byte-reverse indexed with base reg ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c642c2c)
+EOF
+EXPECT=<<EOF
+lwbrx r3, r4, r5
+0x00000000 r4,r5,+,[1],8,1,r4,r5,+,+,[1],<<,|,16,2,r4,r5,+,+,[1],<<,|,24,3,r4,r5,+,+,[1],<<,|,r3,=
+EOF
+RUN
+
+NAME=load halfword byte-reverse indexed ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c00662c)
+EOF
+EXPECT=<<EOF
+lhbrx r0, 0, r12
+0x00000000 r12,[1],8,1,r12,+,[1],<<,|,r0,=
+EOF
+RUN
+
+NAME=store word byte-reverse indexed ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c00652c)
+EOF
+EXPECT=<<EOF
+stwbrx r0, 0, r12
+0x00000000 0xff,r0,&,r12,=[1],8,r0,>>,0xff,&,1,r12,+,=[1],16,r0,>>,0xff,&,2,r12,+,=[1],24,r0,>>,0xff,&,3,r12,+,=[1]
+EOF
+RUN
+
+NAME=store halfword byte-reverse indexed ppc-32
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c00672c)
+EOF
+EXPECT=<<EOF
+sthbrx r0, 0, r12
+0x00000000 0xff,r0,&,r12,=[1],8,r0,>>,0xff,&,1,r12,+,=[1]
+EOF
+RUN
+
+NAME=lwbrx byte-reverse emulation ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx deadbeef @ 0x100
+wx 7c00642c @ 0
+aei
+aeim
+ar r12=0x100
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0xefbeadde
+EOF
+RUN
+
+NAME=lwbrx indexed rA+rB byte-reverse emulation ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx deadbeef @ 0x100
+wx 7c642c2c @ 0
+aei
+aeim
+ar r4=0x40
+ar r5=0xc0
+aes
+ar r3
+EOF
+EXPECT=<<EOF
+0xefbeadde
+EOF
+RUN
+
+NAME=stwbrx byte-reverse store emulation ppc-32
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=32
+e cfg.bigendian=true
+wx 7c00652c @ 0
+aei
+aeim
+ar r0=0xdeadbeef
+ar r12=0x100
+aes
+p8 4 @ 0x100
+EOF
+EXPECT=<<EOF
+efbeadde
+EOF
+RUN

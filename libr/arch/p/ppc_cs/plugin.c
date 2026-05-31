@@ -209,7 +209,10 @@ static void opex(RStrBuf *buf, csh handle, cs_insn *insn) {
 		switch (op->type) {
 		case PPC_OP_REG:
 			pj_ks (pj, "type", "reg");
-			pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			// rA==0 in indexed forms (e.g. lwbrx r0, 0, rB) is an invalid reg
+			if (op->reg != PPC_REG_INVALID) {
+				pj_ks (pj, "value", cs_reg_name (handle, op->reg));
+			}
 			break;
 		case PPC_OP_IMM:
 			pj_ks (pj, "type", "imm");
@@ -718,6 +721,36 @@ static char *getarg2(PluginData *pd, struct Getarg *gop, int n, const char *sets
 	return pd->words[n];
 }
 
+// Byte-reverse load/store ESIL for `nbytes` (2/4/8) at the indexed (rA|0)+rB
+// address, built per-byte so it is endianness-independent (ESIL has no bswap).
+static void ppc_esil_brx(RAnalOp *op, PluginData *pd, struct Getarg *gop, int nbytes, bool store) {
+	cs_insn *insn = gop->insn;
+	const char *reg = getarg2 (pd, gop, 0, "");
+	const char *rb = getarg2 (pd, gop, 2, "");
+	char ea[32];
+	// rA==0 in indexed forms (e.g. lwbrx r0, 0, rB) is an invalid reg
+	if (INSOP (1).type == PPC_OP_REG && INSOP (1).reg != PPC_REG_INVALID) {
+		snprintf (ea, sizeof (ea), "%s,%s,+", getarg2 (pd, gop, 1, ""), rb);
+	} else {
+		snprintf (ea, sizeof (ea), "%s", rb);
+	}
+	RStrBuf *sb = r_strbuf_new ("");
+	int i;
+	if (store) {
+		r_strbuf_appendf (sb, "0xff,%s,&,%s,=[1]", reg, ea);
+		for (i = 1; i < nbytes; i++) {
+			r_strbuf_appendf (sb, ",%d,%s,>>,0xff,&,%d,%s,+,=[1]", i * 8, reg, i, ea);
+		}
+	} else {
+		r_strbuf_appendf (sb, "%s,[1]", ea);
+		for (i = 1; i < nbytes; i++) {
+			r_strbuf_appendf (sb, ",%d,%d,%s,+,[1],<<,|", i * 8, i, ea);
+		}
+		r_strbuf_appendf (sb, ",%s,=", reg);
+	}
+	esilprintf (op, "%s", r_strbuf_get (sb));
+	r_strbuf_free (sb);
+}
 
 static int decompile_vle(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *buf, int len) {
 	vle_t* instr = 0;
@@ -976,8 +1009,17 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
+		case PPC_INS_STHBRX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_brx (op, pd, &gop, 2, true);
+			break;
 		case PPC_INS_STWBRX:
 			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_brx (op, pd, &gop, 4, true);
+			break;
+		case PPC_INS_STDBRX:
+			op->type = R_ANAL_OP_TYPE_STORE;
+			ppc_esil_brx (op, pd, &gop, 8, true);
 			break;
 		case PPC_INS_STB:
 			op->type = R_ANAL_OP_TYPE_STORE;
@@ -1115,6 +1157,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_LDBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_brx (op, pd, &gop, 8, false);
 			break;
 		case PPC_INS_LFD:
 		case PPC_INS_LFDU:
@@ -1158,6 +1201,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_LHBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_brx (op, pd, &gop, 2, false);
 			break;
 		case PPC_INS_LWA:
 		case PPC_INS_LWARX:
@@ -1196,6 +1240,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_LWBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
+			ppc_esil_brx (op, pd, &gop, 4, false);
 			break;
 		case PPC_INS_SLW:
 		case PPC_INS_SLWI:

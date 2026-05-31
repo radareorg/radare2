@@ -1,0 +1,48 @@
+NAME=load doubleword byte-reverse indexed ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c006428)
+EOF
+EXPECT=<<EOF
+ldbrx r0, 0, r12
+0x00000000 r12,[1],8,1,r12,+,[1],<<,|,16,2,r12,+,[1],<<,|,24,3,r12,+,[1],<<,|,32,4,r12,+,[1],<<,|,40,5,r12,+,[1],<<,|,48,6,r12,+,[1],<<,|,56,7,r12,+,[1],<<,|,r0,=
+EOF
+RUN
+
+NAME=store doubleword byte-reverse indexed ppc-64
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+(pi bytes;wx $0;pi 1;pie 1)
+.(pi 7c006528)
+EOF
+EXPECT=<<EOF
+stdbrx r0, 0, r12
+0x00000000 0xff,r0,&,r12,=[1],8,r0,>>,0xff,&,1,r12,+,=[1],16,r0,>>,0xff,&,2,r12,+,=[1],24,r0,>>,0xff,&,3,r12,+,=[1],32,r0,>>,0xff,&,4,r12,+,=[1],40,r0,>>,0xff,&,5,r12,+,=[1],48,r0,>>,0xff,&,6,r12,+,=[1],56,r0,>>,0xff,&,7,r12,+,=[1]
+EOF
+RUN
+
+NAME=ldbrx byte-reverse emulation ppc-64
+FILE=malloc://0x200
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 0123456789abcdef @ 0x100
+wx 7c006428 @ 0
+aei
+aeim
+ar r12=0x100
+aes
+ar r0
+EOF
+EXPECT=<<EOF
+0xefcdab8967452301
+EOF
+RUN
