@@ -1340,10 +1340,15 @@ static void cmd_ic(RCore *core, const char *input, PJ *pj, bool is_array, bool v
 			cmd_ic_comma (core, input);
 		} else {
 			if (show_help) {
-				r_core_cmd_help_contains (core, help_msg_i, "ic");
+				if (cmd == 'Q') {
+					r_core_cmd_help_contains (core, help_msg_ic, "icqq");
+				} else {
+					char kcmd[] = { 'i', 'c', cmd, 0};
+					r_core_cmd_help_contains (core, help_msg_ic, kcmd);
+				}
 				break;
 			}
-			bool is_jvm = isjvm (core);
+			const bool is_jvm = isjvm (core);
 			const bool iova = r_config_get_b (core->config, "io.va");
 			RListIter *objs_iter;
 			RBinFile *bf;
