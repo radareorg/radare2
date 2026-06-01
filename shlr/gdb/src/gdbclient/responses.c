@@ -174,7 +174,6 @@ static bool parse_thread_stop(const char *data, const char *prefix, int *pid, in
 static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	int value = 0, pid = g->pid;
 	bool multi = g->stub_features.multiprocess && g->data_len > 3;
-	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	if (multi) {
 		if (sscanf (g->data + 1, "%x;process:%x", &value, &pid) != 2) {
 			R_LOG_DEBUG ("Message from remote: %s", g->data);
@@ -188,6 +187,8 @@ static int stop_reason_death(libgdbr_t *g, bool is_signal) {
 	}
 	R_LOG_DEBUG ("Process %d %s %d", pid,
 		is_signal? "terminated with signal": "exited with status", value);
+	gdbr_stop_reason_reset (&g->stop_reason);
+	g->stop_reason.reason = R_DEBUG_REASON_DEAD;
 	g->stop_reason.thread.pid = pid;
 	g->stop_reason.thread.tid = pid;
 	if (is_signal) {
@@ -209,7 +210,7 @@ int handle_stop_reason(libgdbr_t *g) {
 		if (send_ack (g) < 0) {
 			return -1;
 		}
-		memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
+		gdbr_stop_reason_reset (&g->stop_reason);
 		g->stop_reason.signum = -1;
 		g->stop_reason.reason = R_DEBUG_REASON_NONE;
 		return 0;
@@ -224,8 +225,7 @@ int handle_stop_reason(libgdbr_t *g) {
 	char *ptr1, *ptr2;
 	char *save_ptr = NULL;
 	g->data[g->data_len] = '\0';
-	R_FREE (g->stop_reason.exec.path);
-	memset (&g->stop_reason, 0, sizeof (libgdbr_stop_reason_t));
+	gdbr_stop_reason_reset (&g->stop_reason);
 	g->stop_reason.core = -1;
 	if (sscanf (g->data + 1, "%02x", &g->stop_reason.signum) != 1) {
 		return -1;

@@ -332,6 +332,7 @@ int gdbr_disconnect(libgdbr_t *g) {
 		goto end;
 	}
 	reg_cache.valid = false;
+	gdbr_stop_reason_fini (&g->stop_reason);
 	g->stop_reason.is_valid = false;
 	reg_cache_fini ();
 	if (g->target.valid) {

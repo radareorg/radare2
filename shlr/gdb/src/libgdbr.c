@@ -143,10 +143,27 @@ int gdbr_set_reg_profile(libgdbr_t *g, const char *str) {
 	return 0;
 }
 
+void gdbr_stop_reason_fini(libgdbr_stop_reason_t *reason) {
+	if (!reason) {
+		return;
+	}
+	R_FREE (reason->exec.path);
+	reason->exec.present = false;
+}
+
+void gdbr_stop_reason_reset(libgdbr_stop_reason_t *reason) {
+	if (!reason) {
+		return;
+	}
+	gdbr_stop_reason_fini (reason);
+	memset (reason, 0, sizeof (*reason));
+}
+
 int gdbr_cleanup(libgdbr_t *g) {
 	if (!g) {
 		return -1;
 	}
+	gdbr_stop_reason_reset (&g->stop_reason);
 	R_FREE (g->data);
 	g->send_len = 0;
 	R_FREE (g->send_buff);

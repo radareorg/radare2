@@ -227,6 +227,9 @@ char *gdbr_get_reg_profile(int arch, int bits);
  */
 int gdbr_set_reg_profile(libgdbr_t *g, const char *str);
 
+void gdbr_stop_reason_fini(libgdbr_stop_reason_t *reason);
+void gdbr_stop_reason_reset(libgdbr_stop_reason_t *reason);
+
 /*!
  * \brief frees all buffers and cleans the libgdbr instance stuff
  * \returns a failure code (currently -1) or 0 if call successfully
