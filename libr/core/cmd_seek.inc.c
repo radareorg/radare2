@@ -182,26 +182,24 @@ R_API int r_core_lines_currline(RCore *core) {  // make priv8 again
 R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 	int i, bsz = core->blocksize;
 	ut64 off = start_addr;
-	if (start_addr == UT64_MAX || end_addr == UT64_MAX) {
+	__clean_lines_cache (core);
+	if (start_addr == UT64_MAX || end_addr == UT64_MAX || bsz < 1) {
 		return -1;
 	}
 
 	int cache_sz = bsz;
 	ut64 *lines_cache = R_NEWS0 (ut64, cache_sz);
 	if (!lines_cache) {
-		free (core->print->lines_cache);
-		core->print->lines_cache = NULL;
 		return -1;
 	}
-	free (core->print->lines_cache);
-	core->print->lines_cache = lines_cache;
 
 	ut64 baddr = r_config_get_i (core->config, "bin.baddr");
 
 	int line_count = start_addr? 0: 1;
-	core->print->lines_cache[0] = start_addr? 0: baddr;
+	lines_cache[0] = start_addr? 0: baddr;
 	char *buf = malloc (bsz);
 	if (!buf) {
+		free (lines_cache);
 		return -1;
 	}
 	r_cons_break_push (core->cons, NULL, NULL);
@@ -216,16 +214,15 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 			}
 			if (line_count + 1 >= cache_sz) {
 				cache_sz += bsz;
-				ut64 *tmp = realloc (core->print->lines_cache,
+				ut64 *tmp = realloc (lines_cache,
 					cache_sz * sizeof (ut64));
 				if (!tmp) {
-					R_FREE (core->print->lines_cache);
 					line_count = -1;
 					goto cleanup_and_return;
 				}
-				core->print->lines_cache = tmp;
+				lines_cache = tmp;
 			}
-			core->print->lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
+			lines_cache[line_count] = start_addr? off + i + 1: off + i + 1 + baddr;
 			line_count++;
 		}
 		off += bsz;
@@ -233,6 +230,12 @@ R_API int r_core_lines_initcache(RCore *core, ut64 start_addr, ut64 end_addr) {
 cleanup_and_return:
 	free (buf);
 	r_cons_break_pop (core->cons);
+	if (line_count == -1) {
+		free (lines_cache);
+	} else {
+		core->print->lines_cache = lines_cache;
+		core->print->lines_cache_sz = line_count;
+	}
 	return line_count;
 }
 
