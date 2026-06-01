@@ -5096,18 +5096,14 @@ static RVecRBinElfSymbol* load_symbols_from_phdr(ELFOBJ *eo, int type) {
 	// XXX refactor this code, also allocated in another place, but this is used in other situations..
 	size_t ret_size = RVecRBinElfSymbol_length (ret) + 1;  // + 1 because ordinals are 1-based
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS && !eo->imports_by_ord_size) {
-		if (ret_size > 0) {
-			eo->imports_by_ord = (RBinImport**) calloc (ret_size, sizeof (RBinImport*));
-			if (eo->imports_by_ord) {
-				eo->imports_by_ord_size = ret_size;
-			}
+		eo->imports_by_ord = (RBinImport**) calloc (ret_size, sizeof (RBinImport*));
+		if (eo->imports_by_ord) {
+			eo->imports_by_ord_size = ret_size;
 		}
 	} else if (type == R_BIN_ELF_ALL_SYMBOLS && !eo->symbols_by_ord_size) {
-		if (ret_size > 0) {
-			eo->symbols_by_ord = (RBinSymbol**) calloc (ret_size, sizeof (RBinSymbol*));
-			if (eo->symbols_by_ord) {
-				eo->symbols_by_ord_size = ret_size;
-			}
+		eo->symbols_by_ord = (RBinSymbol**) calloc (ret_size, sizeof (RBinSymbol*));
+		if (eo->symbols_by_ord) {
+			eo->symbols_by_ord_size = ret_size;
 		}
 	}
 
@@ -5355,54 +5351,38 @@ static int _find_max_symbol_ordinal(const RVecRBinElfSymbol *symbols) {
 	return max;
 }
 
-typedef struct elf_symbol_memory_t {
-	RVecRBinElfSymbol *symbols_vec;
-	Elf_(Sym) *sym;
-} ElfSymbolMemory;
-
-static void _symbol_memory_free(ElfSymbolMemory *em) {
-	// RVecRBinElfSymbol_fini (em->symbols_vec, NULL, NULL);
-	R_FREE (em->sym);
-}
-
 typedef struct import_info_t {
-	ElfSymbolMemory memory;
-	RVecRBinElfSymbol *ret; // very bad name
-	int ret_ctr;
-	int import_ret_ctr;
-	int nsym;
+	RVecRBinElfSymbol *symbols_vec;
+	size_t ret_ctr;
+	size_t import_ret_ctr;
 } ImportInfo;
 
 static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportInfo *ii) {
 	// Elf_(fix_symbols) may find additional symbols, some of which could be
 	// imported symbols. Let's reserve additional space for them.
-	int ret_ctr = ii->ret_ctr;
-	R_WARN_IF_FAIL (ii->nsym >= ret_ctr);
-
-	int nsym = _find_max_symbol_ordinal (ii->memory.symbols_vec);
-	if (nsym < 0) {
+	const size_t ret_ctr = ii->ret_ctr;
+	const int max_ord = _find_max_symbol_ordinal (ii->symbols_vec);
+	if (max_ord < 0) {
 		return NULL;
 	}
 
-	R_FREE (eo->imports_by_ord);
-	eo->imports_by_ord_size = nsym + 1;
-	eo->imports_by_ord = (RBinImport**)calloc (nsym + 1, sizeof (RBinImport*));
-
-	R_FREE (eo->symbols_by_ord);
-	eo->symbols_by_ord_size = nsym + 1;
-	eo->symbols_by_ord = (RBinSymbol**)calloc (nsym + 1, sizeof (RBinSymbol*));
-	if (ret_ctr > ii->import_ret_ctr + nsym) {
+	const size_t ord_size = (size_t)max_ord + 1;
+	RBinImport **imports_by_ord = (RBinImport **)calloc (ord_size, sizeof (RBinImport *));
+	RBinSymbol **symbols_by_ord = (RBinSymbol **)calloc (ord_size, sizeof (RBinSymbol *));
+	free (eo->imports_by_ord);
+	eo->imports_by_ord = imports_by_ord;
+	eo->imports_by_ord_size = imports_by_ord? ord_size: 0;
+	free (eo->symbols_by_ord);
+	eo->symbols_by_ord = symbols_by_ord;
+	eo->symbols_by_ord_size = symbols_by_ord? ord_size: 0;
+	if (ret_ctr > ii->import_ret_ctr + max_ord) {
 		return NULL;
 	}
 
-	RVecRBinElfSymbol *imports = NULL; // ii->ret;
-	if (!imports) {
-		imports = RVecRBinElfSymbol_new ();
-	}
-	const int import_ret_ctr = ii->import_ret_ctr + nsym - ret_ctr;
+	RVecRBinElfSymbol *imports = RVecRBinElfSymbol_new ();
+	const size_t import_ret_ctr = ii->import_ret_ctr + max_ord - ret_ctr;
 	if (!imports || !RVecRBinElfSymbol_reserve (imports, import_ret_ctr)) {
-		R_LOG_DEBUG ("Cannot allocate %d symbols", nsym);
-		_symbol_memory_free (&ii->memory);
+		R_LOG_DEBUG ("Cannot allocate %d symbols", max_ord);
 		RVecRBinElfSymbol_free (imports);
 		return NULL;
 	}
@@ -5410,14 +5390,14 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 	RBinElfSymbol *symbol;
 	const int limit = eo->limit;
 	int count = 0;
-	R_VEC_FOREACH (ii->memory.symbols_vec, symbol) {
+	R_VEC_FOREACH (ii->symbols_vec, symbol) {
 		if (!eo->load_unnamed && r_bin_name_is_unnamed (symbol->name)) {
 			continue;
 		}
 		RBinSymbol *isym = R_NEW0 (RBinSymbol);
 		bool keep_symbol = true;
 		fill_symbol (eo, symbol, isym);
-		const bool can_store = eo->symbols_by_ord && isym->ordinal < eo->symbols_by_ord_size;
+		const bool can_store = symbols_by_ord && isym->ordinal < ord_size;
 		if (symbol->is_imported) {
 			if (limit > 0 && count >= limit) {
 				keep_symbol = false;
@@ -5428,8 +5408,8 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 		}
 		if (can_store && keep_symbol) {
 			const ut32 ord = isym->ordinal;
-			r_bin_symbol_free (eo->symbols_by_ord[ord]);
-			eo->symbols_by_ord[ord] = isym;
+			r_bin_symbol_free (symbols_by_ord[ord]);
+			symbols_by_ord[ord] = isym;
 		} else {
 			r_bin_symbol_free (isym);
 		}
@@ -5438,13 +5418,11 @@ static RVecRBinElfSymbol *_load_additional_imported_symbols(ELFOBJ *eo, ImportIn
 		}
 	}
 
-	_symbol_memory_free (&ii->memory);
 	return imports;
 }
 
 typedef struct process_section_state_t {
 	int i;
-	ElfSymbolMemory *const memory;
 	RVecRBinElfSymbol **ret;
 	size_t *const ret_ctr;
 	size_t *const import_ret_ctr;
@@ -5452,7 +5430,6 @@ typedef struct process_section_state_t {
 
 static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, ProcessSectionState *state) {
 	int i = state->i;
-	ElfSymbolMemory *const memory = state->memory;
 	size_t *const ret_ctr = state->ret_ctr;
 	size_t *const import_ret_ctr = state->import_ret_ctr;
 
@@ -5524,7 +5501,6 @@ static bool _process_symbols_and_imports_in_section(ELFOBJ *eo, int type, Proces
 			return false;
 		}
 		*state->ret = ret;
-		memory->symbols_vec = ret;
 	}
 
 	RVecRBinElfSymbol *ret = *state->ret;
@@ -5685,7 +5661,6 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	size_t import_ret_ctr = 0;
 	size_t ret_ctr = 0; // amount of symbols stored in ret
 	RVecRBinElfSymbol *ret = parse_gnu_debugdata (eo, &ret_ctr);
-	ElfSymbolMemory memory = { .symbols_vec = ret, .sym = NULL };
 	int i;
 	size_t shnum = eo->ehdr.e_shnum;
 	for (i = 0; i < shnum; i++) {
@@ -5694,19 +5669,15 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 		}
 		ProcessSectionState state = {
 			.i = i,
-			.memory = &memory,
 			.ret = &ret,
 			.ret_ctr = &ret_ctr,
 			.import_ret_ctr = &import_ret_ctr,
 		};
 		if (!_process_symbols_and_imports_in_section (eo, type, &state)) {
 			R_LOG_ERROR ("failed parsing imports in section");
-			_symbol_memory_free (&memory);
 			RVecRBinElfSymbol_free (ret);
 			return NULL;
 		}
-
-		R_FREE (memory.sym);
 
 		if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 			break;
@@ -5720,17 +5691,14 @@ static RVecRBinElfSymbol *Elf_(load_symbols_from)(ELFOBJ *eo, int type) {
 	int nsym = Elf_(fix_symbols) (eo, ret_ctr, type, ret);
 	if (nsym == -1) {
 		RVecRBinElfSymbol_free (ret);
-		_symbol_memory_free (&memory);
 		return NULL;
 	}
 
 	if (type == R_BIN_ELF_IMPORT_SYMBOLS) {
 		ImportInfo ii = {
-			.memory = memory,
-			//.ret = ret,
+			.symbols_vec = ret,
 			.ret_ctr = ret_ctr,
 			.import_ret_ctr = import_ret_ctr,
-			.nsym = nsym,
 		};
 		RVecRBinElfSymbol *res = _load_additional_imported_symbols (eo, &ii);
 		RVecRBinElfSymbol_free (ret);
