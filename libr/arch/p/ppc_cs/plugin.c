@@ -1082,6 +1082,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			ppc_esil_brx (op, pd, &gop, 8, true);
 			break;
 		case PPC_INS_STB:
+		case PPC_INS_STBX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[1]"));
 			/* PPC64 ELFv1 TOC chain: stb rY, LO(rX) following addis rX, r2, HA */
@@ -1108,6 +1109,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_STH:
+		case PPC_INS_STHX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[2]"));
 			/* PPC64 ELFv1 TOC chain: sth rY, LO(rX) following addis rX, r2, HA */
@@ -1134,6 +1136,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			}
 			break;
 		case PPC_INS_STD:
+		case PPC_INS_STDX:
 			op->type = R_ANAL_OP_TYPE_STORE;
 			esilprintf (op, "%s,%s", ARG (0), ARG2 (1, "=[8]"));
 			/* PPC64 ELFv1 TOC chain: std rY, LO(rX) following addis rX, r2, HA */
@@ -1259,6 +1262,10 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 				}
 			}
 			break;
+		case PPC_INS_LHZX:
+			op->type = R_ANAL_OP_TYPE_LOAD;
+			esilprintf (op, "%s,%s,=", ARG2 (1, "[2]"), ARG (0));
+			break;
 		case PPC_INS_LHBRX:
 			op->type = R_ANAL_OP_TYPE_LOAD;
 			ppc_esil_brx (op, pd, &gop, 2, false);
@@ -1304,13 +1311,30 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			break;
 		case PPC_INS_SLW:
 		case PPC_INS_SLWI:
+		case PPC_INS_SLD:
+		case PPC_INS_SLDI:
 			op->type = R_ANAL_OP_TYPE_SHL;
 			esilprintf (op, "%s,%s,<<,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
 		case PPC_INS_SRW:
 		case PPC_INS_SRWI:
+		case PPC_INS_SRD:
+		case PPC_INS_SRDI:
 			op->type = R_ANAL_OP_TYPE_SHR;
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_SRAW:
+		case PPC_INS_SRAWI:
+		case PPC_INS_SRAD:
+		case PPC_INS_SRADI:
+			op->sign = true;
+			op->type = R_ANAL_OP_TYPE_SAR;
+			esilprintf (op, "%s,%s,ASR,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_CNTLZW:
+		case PPC_INS_CNTLZD:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			// type only: ESIL has no count-leading-zeros operator
 			break;
 		case PPC_INS_MULLI:
 			op->sign = true;
@@ -1318,6 +1342,14 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_MULLD:
 			op->type = R_ANAL_OP_TYPE_MUL;
 			esilprintf (op, "%s,%s,*,%s,=", ARG (2), ARG (1), ARG (0));
+			break;
+		case PPC_INS_MULHW:
+		case PPC_INS_MULHD:
+			op->sign = true;
+		case PPC_INS_MULHWU:
+		case PPC_INS_MULHDU:
+			op->type = R_ANAL_OP_TYPE_MUL;
+			// type only: ESIL has no high-half multiply operator
 			break;
 		case PPC_INS_SUB:
 		case PPC_INS_SUBC:
@@ -1388,6 +1420,13 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_MTSPR:
 			op->type = R_ANAL_OP_TYPE_MOV;
 			esilprintf (op, "%s,%s,=", ARG (1), PPCSPR (0));
+			break;
+		case PPC_INS_MFCR:
+		case PPC_INS_MFOCRF:
+		case PPC_INS_MTCRF:
+		case PPC_INS_MTOCRF:
+			op->type = R_ANAL_OP_TYPE_MOV;
+			// type only: the CR model tracks only cr0, not the full cr0-cr7 word
 			break;
 		case PPC_INS_BCTR: // switch table here
 			op->type = R_ANAL_OP_TYPE_UJMP;
@@ -1831,6 +1870,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_RLDICR:
 			op->type = R_ANAL_OP_TYPE_ROL;
 			esilprintf (op, "%s,%s,ROL,%s,&,%s,=", ARG (2), ARG (1), cmask64 (cmaskbuf, 0, ARG (3)), ARG (0));
+			break;
+		case PPC_INS_RLDIC:
+		case PPC_INS_RLDIMI:
+			op->type = R_ANAL_OP_TYPE_ROL;
+			// type only: rldic masks mb..63-sh and rldimi inserts into the
+			// destination; neither is expressible via cmask64(mb,me)
 			break;
 		}
 		if (mask & R_ARCH_OP_MASK_VAL) {

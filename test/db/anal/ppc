@@ -812,3 +812,161 @@ EXPECT=<<EOF
 (nofunc) 0x100004a0 [DATA:r--] addi r3, r9, str.Simple_PPC_program.
 EOF
 RUN
+
+# Only real (non-alias) instructions are asserted here. Extended mnemonics like
+# sldi/srdi are capstone aliases: cs4/cs5 emit a distinct PPC_INS_SLDI id, but
+# cs6 decodes them as the base rldicr/rldicl, so their op-type differs by
+# capstone version and is not safe to pin in a test.
+NAME=ppc64 op type/esil completeness
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7d295036
+ao~mnemonic:,type:,esil:
+?e --
+wx 7d29e436
+ao~mnemonic:,type:,esil:
+?e --
+wx 7c841e74
+ao~mnemonic:,type:,esil:
+?e --
+wx 7c630034
+ao~mnemonic:,type:,esil:
+?e --
+wx 7c630074
+ao~mnemonic:,type:,esil:
+?e --
+wx 7cfe51ae
+ao~mnemonic:,type:,esil:
+?e --
+wx 7d3e432e
+ao~mnemonic:,type:,esil:
+?e --
+wx 7fca492a
+ao~mnemonic:,type:,esil:
+?e --
+wx 7d48522e
+ao~mnemonic:,type:,esil:
+?e --
+wx 7d200026
+ao~mnemonic:,type:,esil:
+?e --
+wx 7d910120
+ao~mnemonic:,type:,esil:
+?e --
+wx 7fc34816
+ao~mnemonic:,type:,esil:
+?e --
+wx 7b5a1028
+ao~mnemonic:,type:,esil:
+?e --
+wx 7949382c
+ao~mnemonic:,type:,esil:
+EOF
+EXPECT=<<EOF
+mnemonic: sld
+type: shl
+esil: r10,r9,<<,r9,=
+--
+mnemonic: srd
+type: shr
+esil: r28,r9,>>,r9,=
+--
+mnemonic: sradi
+type: sar
+esil: 0x3,r4,ASR,r4,=
+--
+mnemonic: cntlzw
+type: mov
+--
+mnemonic: cntlzd
+type: mov
+--
+mnemonic: stbx
+type: store
+esil: r7,r30=[1]
+--
+mnemonic: sthx
+type: store
+esil: r9,r30=[2]
+--
+mnemonic: stdx
+type: store
+esil: r30,r10=[8]
+--
+mnemonic: lhzx
+type: load
+esil: r8[2],r10,=
+--
+mnemonic: mfcr
+type: mov
+--
+mnemonic: mtocrf
+type: mov
+--
+mnemonic: mulhwu
+type: mul
+--
+mnemonic: rldic
+type: rol
+--
+mnemonic: rldimi
+type: rol
+EOF
+RUN
+
+# Emulation: verify the ESIL actually computes the right value (not just the
+# string). Covers the dword shifts and the arithmetic-shift sign extension
+# (sradi via ASR). Only real, cs-version-stable instructions are used.
+NAME=ppc64 esil emulation: dword + arithmetic shifts
+FILE=-
+CMDS=<<EOF2
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+aei
+aeim
+ar r9=0xff
+ar r10=4
+s 0
+wx 7d295036
+ar PC=0
+aes
+?e sld
+ar r9
+ar r9=0xff00
+ar r28=4
+s 0
+wx 7d29e436
+ar PC=0
+aes
+?e srd
+ar r9
+ar r4=0xfffffffffffffff0
+s 0
+wx 7c841e74
+ar PC=0
+aes
+?e sradi_neg
+ar r4
+ar r4=0x100
+s 0
+wx 7c841e74
+ar PC=0
+aes
+?e sradi_pos
+ar r4
+EOF2
+EXPECT=<<EOF2
+sld
+0x00000ff0
+srd
+0x00000ff0
+sradi_neg
+0xfffffffffffffffe
+sradi_pos
+0x00000020
+EOF2
+RUN
