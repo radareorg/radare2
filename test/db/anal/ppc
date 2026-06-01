@@ -35,6 +35,23 @@ fcn.100016f0:
 
 fcn.100017a0:
     fcn.10001fd0
+    fcn.10001fd0
+    fcn.10003ba0
+    fcn.100048e0
+    sym.imp.error
+    sym.imp.error
+    fcn.10003f90
+    fcn.10003f90
+    sym.imp.error
+    sym.imp.error
+    sym.imp.error
+    fcn.100016f0
+    fcn.10002660
+    fcn.10001fd0
+    fcn.100016f0
+    sym.imp.error
+    fcn.10001fd0
+    fcn.10006480
 
 fcn.10001fd0:
     sym.imp.strlen
@@ -48,8 +65,30 @@ fcn.10001fd0:
     sym.imp.error
     sym.imp.free
     fcn.10003f90
+    fcn.10008d80
+    fcn.10002d10
+    sym.imp.strcmp
+    sym.imp.error
+    sym.imp.free
+    fcn.10003f90
     sym.imp.unlink
     sym.imp.close
+    fcn.10007450
+    sym.imp.error
+    sym.imp.error
+    sym.imp.__errno_location
+    sym.imp.error
+    sym.imp.error
+    sym.imp.free
+    sym.imp.unlink
+    sym.imp.close
+    fcn.10003f90
+    fcn.100017a0
+    sym.imp.error
+    sym.imp.close
+    sym.imp.execlp
+    sym.imp.execl
+    sym.imp._exit
 
 fcn.10002660:
     fcn.10006120
@@ -65,10 +104,20 @@ fcn.10002660:
     fcn.10006120
     sym.imp.abort
 
+fcn.10002d10:
+    sym.imp.elf_getdata
+
+fcn.10002e00:
+    sym.imp.elf_getdata
+    fcn.10003bc0
+    sym.imp.elf_getdata
+
 fcn.10002ff0:
     sym.imp.gelf_fsize
     fcn.10002e00
     fcn.10025f80
+    fcn.10025b30
+    sym.imp.gelf_getsym
 
 fcn.100030f0:
     fcn.10003bc0
@@ -113,6 +162,9 @@ fcn.100038d0:
     fcn.100030f0
     sym.imp.elf_flagscn
 
+fcn.10003ce0:
+    sym.imp.error
+
 fcn.10003e40:
     sym.imp.free
     sym.imp.elf_getdata
@@ -137,6 +189,15 @@ fcn.10003fe0:
     sym.imp.getfilecon
     sym.imp.setfilecon
     sym.imp.freecon
+    sym.imp.__errno_location
+    sym.imp.error
+    sym.imp.is_selinux_enabled
+    sym.imp.__errno_location
+    sym.imp.error
+    sym.imp.freecon
+
+fcn.10004120:
+    sym.imp.__assert_fail
 
 fcn.10004390:
     sym.imp.memset
@@ -148,6 +209,7 @@ fcn.10004390:
     sym.imp.gelf_update_sym
     sym.imp.gelf_getsym
     sym.imp.gelf_update_sym
+    sym.imp.__assert_fail
     sym.imp.__assert_fail
     sym.imp.__assert_fail
 
@@ -180,6 +242,15 @@ fcn.100048e0:
     sym.imp.unlink
     sym.imp.__errno_location
     sym.imp.error
+    sym.imp.__errno_location
+    sym.imp.error
+    fcn.10003f90
+    sym.imp.elf_errmsg
+    sym.imp.error
+    sym.imp.__errno_location
+    sym.imp.error
+    fcn.10003f90
+    fcn.10003e40
     sym.imp.unlink
 
 fcn.10005480:
@@ -192,6 +263,9 @@ fcn.10005a00:
     sym.imp.gelf_update_sym
     sym.imp.elf_getdata
     sym.imp.elf_flagscn
+    sym.imp.error
+    sym.imp.error
+    sym.imp.gelf_update_sym
 
 fcn.10005cb0:
     sym.imp.memset
@@ -207,15 +281,32 @@ fcn.10006120:
     sym.imp.gelf_update_dyn
     sym.imp.elf_flagscn
     sym.imp.__assert_fail
+    sym.imp.error
+    sym.imp.gelf_update_dyn
+    sym.imp.gelf_update_dyn
+    sym.imp.__assert_fail
     sym.imp.__assert_fail
 
 fcn.10006480:
     fcn.10025f80
     sym.imp.gelf_update_phdr
+    fcn.1000e110
+    sym.imp.elf_flagphdr
+    sym.imp.gelf_update_shdr
+    sym.imp.elf_flagshdr
+    fcn.1000e110
+    sym.imp.gelf_update_ehdr
+    sym.imp.elf_flagehdr
+    fcn.10004120
+    sym.imp.realloc
+    sym.imp.memmove
+    fcn.10005480
+    sym.imp.error
     sym.imp.error
 
 fcn.10007380:
     sym.imp.malloc
+    sym.imp.error
 
 fcn.10007450:
     sym.imp.strlen
@@ -228,6 +319,50 @@ fcn.10007450:
     sym.imp.unlink
     sym.imp.close
     sym.imp.free
+    sym.imp.elf64_newehdr
+    sym.imp.gelf_update_ehdr
+    sym.imp.gelf_newphdr
+    sym.imp.memcpy
+    sym.imp.elf_flagelf
+    sym.imp.gelf_update_phdr
+    sym.imp.elf_newscn
+    sym.imp.gelf_update_shdr
+    sym.imp.elf_getdata
+    sym.imp.elf_getdata
+    sym.imp.memcpy
+    sym.imp.elf_getdata
+    sym.imp.elf_newdata
+    sym.imp.__strdup
+    sym.imp.memcpy
+    sym.imp.elf_getscn
+    sym.imp.gelf_getshdr
+    sym.imp.free
+    sym.imp.gelf_update_ehdr
+    fcn.10005cb0
+    sym.imp.gelf_fsize
+    fcn.10005480
+    sym.imp.mkstemp
+    sym.imp.mkstemp
+    sym.imp.__errno_location
+    sym.imp.error
+    sym.imp.elf32_newehdr
+    sym.imp.elf_errmsg
+    sym.imp.error
+    fcn.10007380
+    fcn.10005a00
+    sym.imp.elf_newscn
+    sym.imp.elf_newdata
+    sym.imp.elf_getdata
+    sym.imp.elf_newdata
+    sym.imp.__assert_fail
+    sym.imp.calloc
+    sym.imp.error
+    fcn.10005a00
+    sym.imp.abort
+    sym.imp.free
+    sym.imp.error
+    sym.imp.error
+    sym.imp.error
     sym.imp.__assert_fail
 
 fcn.10008d80:
@@ -244,16 +379,44 @@ fcn.10008d80:
     sym.imp.qsort
     sym.imp.elf_getscn
     sym.imp.gelf_getshdr
+    fcn.10005cb0
+    sym.imp.__strdup
+    fcn.10002d10
+    sym.imp.strcmp
     sym.imp.error
+    sym.imp.error
+    sym.imp.free
+    sym.imp.free
+    sym.imp.free
+    sym.imp.free
     sym.imp.elf_end
+    sym.imp.error
     fcn.10007380
     sym.imp.memcpy
     sym.imp.memcpy
     sym.imp.close
+    sym.imp.error
+    fcn.100030f0
+    sym.imp.__strdup
+    sym.imp.error
+    sym.imp.gelf_getphdr
+    sym.imp.pread
+    sym.imp.memmem
+    sym.imp.error
+    sym.imp.elf_errmsg
+    sym.imp.error
+    sym.imp.error
+    sym.imp.elf_errmsg
+    sym.imp.error
     sym.imp.__assert_fail
     sym.imp.open
+    sym.imp.__errno_location
+    sym.imp.error
 
 fcn.10008f70:
+    sym.imp.error
+
+fcn.10009270:
     sym.imp.error
 
 fcn.10009f00:
@@ -263,23 +426,69 @@ fcn.10009f00:
     sym.imp.elf_getdata
     sym.imp.elf_getdata
     sym.imp.__assert_fail
+    sym.imp.error
     fcn.1000cbf0
     sym.imp.malloc
     fcn.1000cb20
     sym.imp.error
     fcn.1000c650
     sym.imp.error
+    sym.imp.realloc
+    sym.imp.error
+    fcn.1000c650
+    sym.imp.elf_flagscn
+    fcn.10003bc0
+    sym.imp.error
+    sym.imp.elf_flagscn
+    sym.imp.elf_flagscn
+    sym.imp.elf_flagscn
+    sym.imp.error
+    fcn.10003bc0
+    sym.imp.error
+    sym.imp.__assert_fail
     sym.imp.error
     sym.imp.error
     sym.imp.free
+    sym.imp.error
+    sym.imp.free
+    fcn.1000c650
+    fcn.1000c2f0
+    fcn.10009270
+    fcn.1000c650
+    sym.imp.error
+    fcn.1000c2f0
+    sym.imp.error
     fcn.1000c650
     sym.imp.error
     sym.imp.error
+    sym.imp.error
+    sym.imp.error
+    sym.imp.error
+    fcn.10003bc0
+    sym.imp.error
+    sym.imp.error
+    sym.imp.error
+    sym.imp.__assert_fail
+    sym.imp.error
     sym.imp.__assert_fail
     sym.imp.__assert_fail
+    sym.imp.__assert_fail
+    sym.imp.error
+    sym.imp.error
+
+fcn.1000b3e0:
+    sym.imp.calloc
+    sym.imp.error
 
 fcn.1000b540:
     fcn.1000c440
+    sym.imp.calloc
+
+fcn.1000b6c0:
+    sym.imp.malloc
+    fcn.1000cb20
+    sym.imp.error
+    sym.imp.calloc
 
 fcn.1000b8e0:
     sym.imp.calloc
@@ -294,29 +503,60 @@ fcn.1000b8e0:
     fcn.1000c650
     sym.imp.free
     sym.imp.__assert_fail
+    fcn.1000cb20
+    sym.imp.calloc
+    fcn.1000cb20
+    sym.imp.error
     sym.imp.calloc
     sym.imp.error
+    sym.imp.calloc
+    fcn.1000c490
+    sym.imp.qsort
+    sym.imp.calloc
+    fcn.1000cb20
+    fcn.1000c650
+    fcn.1000c650
+    sym.imp.__assert_fail
 
 fcn.1000c650:
     sym.imp.free
     sym.imp.free
+    sym.imp.free
+    sym.imp.free
+
+fcn.1000c730:
+    sym.imp.fprintf
+    sym.imp.abort
+
+fcn.1000cb20:
+    fcn.1000c730
+    sym.imp.free
+    sym.imp.calloc
+    sym.imp.abort
 
 fcn.1000cbf0:
     fcn.1000c730
     sym.imp.calloc
     sym.imp.calloc
+    sym.imp.free
 
 fcn.1000ce30:
+    sym.imp.memset
     sym.imp.memset
 
 fcn.1000d410:
     sym.imp.elf_getdata
     sym.imp.elf_getdata
     sym.imp.__assert_fail
+    sym.imp.error
+    sym.imp.error
+    sym.imp.__assert_fail
     sym.imp.__assert_fail
 
 fcn.1000d780:
     sym.imp.__assert_fail
+    fcn.1000d410
+    sym.imp.error
 
 fcn.1000e110:
     fcn.1000d410
@@ -324,12 +564,29 @@ fcn.1000e110:
 
 fcn.1000ef70:
     sym.imp.__assert_fail
+    sym.imp.elf_getdata
+    sym.imp.elf_getdata
+    sym.imp.__assert_fail
+    sym.imp.error
+    sym.imp.elf_flagscn
+    sym.imp.error
+    sym.imp.__assert_fail
+    sym.imp.__assert_fail
+
+fcn.1000f620:
+    sym.imp.__assert_fail
 
 fcn.100139b0:
     sym.imp.qsort
 
+fcn.1001ce70:
+    sym.imp.error
+    fcn.10003430
+    fcn.100033b0
+
 fcn.1001d690:
     fcn.100033b0
+    sym.imp.__assert_fail
 
 EOF
 RUN
@@ -498,6 +755,48 @@ EXPECT=<<EOF
     "family": "cpu"
   }
 ]
+EOF
+RUN
+
+NAME=ppc positive-condition branch is cjmp with edges
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 2c030000419e000838600001 4e800020
+af @ 0
+afb @ 0
+wx 419e0040 @ 0x100
+s 0x100
+ao~type
+EOF
+EXPECT=<<EOF
+0x00000000 0x00000008 00:0000 8 j 0x0000000c f 0x00000008
+0x00000008 0x0000000c 00:0000 4 j 0x0000000c
+0x0000000c 0x00000010 00:0000 4
+type: cjmp
+EOF
+RUN
+
+NAME=ppc isel classified as cmov
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 7c642c9e
+pd 1
+ao~type
+wx 7c604f9e
+pd 1
+ao~type
+EOF
+EXPECT=<<EOF
+            0x00000000      7c642c9e       isel r3, r4, r5, cr4eq
+type: cmov
+            0x00000000      7c604f9e       isel r3, 0, r9, cr7eq
+type: cmov
 EOF
 RUN
 
