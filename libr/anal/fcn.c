@@ -872,6 +872,7 @@ static int fcn_recurse(RAnal *anal, RAnalFunction *fcn, ut64 addr, ut64 len, int
 	const bool op_dst_writeonly = r_arch_info (anal->arch, R_ARCH_INFO_WODST) == 1;
 	const int codealign = R_MAX (1, r_arch_info (anal->arch, R_ARCH_INFO_CODE_ALIGN));
 	const bool flagends = anal->opt.flagends;
+	const bool flagstop = anal->opt.flagstop;
 	const bool is_arm = r_str_startswith (arch, "arm");
 	const bool is_mips = !is_arm && r_str_startswith (arch, "mips");
 	const bool is_v850 = is_arm ? false: (arch && (!strncmp (arch, "v850", 4) || !strncmp (anal->coreb.cfgGet (core, "asm.cpu"), "v850", 4)));
@@ -1108,7 +1109,7 @@ noskip:
 				R_LOG_DEBUG ("Overlapped at 0x%08"PFMT64x, at);
 			}
 		}
-		if (flagends && fcn->addr != at) {
+		if (flagends && !flagstop && fcn->addr != at) {
 			RFlagItem *flag = anal->flag_get (anal->flb.f, false, at);
 			if (flag) {
 				if (r_str_startswith (flag->name, "sym")) {
@@ -1130,6 +1131,9 @@ noskip:
 				R_LOG_DEBUG ("Stopping analysis on oversized block at 0x%08"PFMT64x" for variable analysis (%"PFMT64u" bytes)", bb->addr, bb->size);
 				gotoBeach (R_ANAL_RET_END);
 			}
+		}
+		if (flagstop && fcn->addr != at && anal->flb.get_at && anal->flb.get_at (anal->flb.f, at, false)) {
+			gotoBeach (R_ANAL_RET_END);
 		}
 		if (anal->opt.trycatch) {
 			const char *name = anal->coreb.getName (anal->coreb.core, at);
