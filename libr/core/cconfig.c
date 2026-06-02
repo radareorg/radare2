@@ -273,10 +273,10 @@ static bool cb_anal_flagends(void *user, void *data) {
 	return true;
 }
 
-static bool cb_anal_flagstop(void *user, void *data) {
+static bool cb_anal_flagbounds(void *user, void *data) {
 	RCore *core = (RCore *)user;
 	RConfigNode *node = (RConfigNode *)data;
-	core->anal->opt.flagstop = node->i_value;
+	core->anal->opt.flagbounds = node->i_value;
 	return true;
 }
 
@@ -4048,8 +4048,8 @@ R_API int r_core_config_init(RCore *core) {
 	SETDESC (n, "specify search boundaries for analysis");
 	SETOPTIONS (n, "range", "block", "bin.segment", "bin.segments", "bin.segments.x", "bin.segments.r", "bin.section", "bin.sections", "bin.sections.rwx", "bin.sections.r", "bin.sections.rw", "bin.sections.rx", "bin.sections.wx", "bin.sections.x", "bin.ormaps.x", "io.map", "io.maps", "io.maps.rwx", "io.maps.r", "io.maps.rw", "io.maps.rx", "io.maps.wx", "io.maps.x", "dbg.stack", "dbg.heap", "dbg.map", "dbg.maps", "dbg.maps.rwx", "dbg.maps.r", "dbg.maps.rw", "dbg.maps.rx", "dbg.maps.wx", "dbg.maps.x", "anal.fcn", "anal.bb", NULL);
 	SETI ("anal.timeout", 0, "stop analyzing after N seconds (0 = no timeout)");
-	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function when a flag is found");
-	SETCB ("anal.flagstop", "false", &cb_anal_flagstop, "end block after analyzing an instruction with a flag");
+	SETCB ("anal.flagends", "true", &cb_anal_flagends, "end function before a non-entry sym* flag when anal.flagbounds is false");
+	SETCB ("anal.flagbounds", "false", &cb_anal_flagbounds, "end current basic block before any flagged instruction, taking priority over anal.flagends");
 	SETCB ("anal.icods", "true", &cb_anal_icods, "analyze indirect code references");
 	SETCB ("anal.jmp.retpoline", "true", &cb_anal_jmpretpoline, "analyze retpolines, may be slower if not needed");
 	SETCB ("anal.jmp.tailcall", "true", &cb_anal_jmptailcall, "consume a branch as a call if delta is a function");

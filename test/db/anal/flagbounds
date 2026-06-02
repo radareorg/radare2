@@ -1,0 +1,108 @@
+NAME=anal.flagends defaults to stop before sym flags
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e anal.nopskip=false
+wx 909090c3
+f sym.boundary 1 @ 1
+s 0
+e anal.flagends
+e anal.flagbounds
+af
+afi~size
+EOF
+EXPECT=<<EOF
+true
+false
+size: 1
+EOF
+RUN
+
+NAME=anal.flagends ignores non-symbol flags
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e anal.nopskip=false
+wx 909090c3
+f boundary 1 @ 1
+s 0
+e anal.flagends
+e anal.flagbounds
+af
+afi~size
+EOF
+EXPECT=<<EOF
+true
+false
+size: 4
+EOF
+RUN
+
+NAME=anal.flagends=false analyzes across sym flags
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e anal.nopskip=false
+wx 909090c3
+f sym.boundary 1 @ 1
+s 0
+e anal.flagends=false
+e anal.flagends
+e anal.flagbounds
+af
+afi~size
+EOF
+EXPECT=<<EOF
+false
+false
+size: 4
+EOF
+RUN
+
+NAME=anal.flagbounds stops before any flagged instruction
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e anal.nopskip=false
+wx 909090c3
+f boundary 1 @ 1
+s 0
+e anal.flagbounds=true
+e anal.flagends
+e anal.flagbounds
+af
+afi~size
+EOF
+EXPECT=<<EOF
+true
+true
+size: 1
+EOF
+RUN
+
+NAME=anal.flagbounds keeps flagged entry instruction
+FILE=malloc://16
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e anal.nopskip=false
+wx c3
+f entry.flag 1 @ 0
+s 0
+e anal.flagbounds=true
+af
+afi~size
+EOF
+EXPECT=<<EOF
+size: 1
+EOF
+RUN

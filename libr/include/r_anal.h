@@ -474,7 +474,7 @@ typedef struct r_anal_options_t {
 	bool recursive_noreturn; // anal.rnr
 	bool slow;
 	bool flagends;
-	bool flagstop;
+	bool flagbounds;
 	bool zigndups;
 	bool icods; // R2_600 -- add anal.icods or anal.xrefs.indirect references. needed for stm8 at least
 	char *tparser;

@@ -9,31 +9,6 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=anal.flagstop stops after flagged instruction
-FILE=malloc://16
-CMDS=<<EOF
-e asm.arch=x86
-e anal.arch=x86
-e asm.bits=64
-e anal.nopskip=false
-wx 909090c3
-f sym.boundary 1 @ 1
-s 0
-e anal.flagstop
-af
-afi~size
-af-*
-e anal.flagstop=true
-af
-afi~size
-EOF
-EXPECT=<<EOF
-false
-size: 1
-size: 2
-EOF
-RUN
-
 NAME=x86-64 static calling convention stack pop
 FILE=-
 CMDS=<<EOF
