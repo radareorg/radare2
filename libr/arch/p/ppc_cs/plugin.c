@@ -1319,7 +1319,7 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		case PPC_INS_SRW:
 		case PPC_INS_SRWI:
 		case PPC_INS_SRD:
-		case PPC_INS_SRDI:
+		// case PPC_INS_SRDI: // not available in some capstone versions
 			op->type = R_ANAL_OP_TYPE_SHR;
 			esilprintf (op, "%s,%s,>>,%s,=", ARG (2), ARG (1), ARG (0));
 			break;
