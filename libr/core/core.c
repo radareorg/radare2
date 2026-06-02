@@ -2713,7 +2713,7 @@ R_API bool r_core_init(RCore *core) {
 	init_cmd_suggestions (core);
 	r_core_anal_type_init (core);
 	r_anal_bind (core->anal, &(core->rasm->analb));
-	return 0;
+	return true;
 }
 
 R_API void __cons_cb_fkey(RCore *core, int fkey) {
