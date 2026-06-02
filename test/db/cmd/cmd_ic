@@ -942,11 +942,11 @@ NAME=ic?~ (match all)
 FILE=malloc://512
 CMDS=ic?~List
 EXPECT=<<EOF
-| ic                 List classes, methods and fields (icj for json)
-| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
-| icg [str]          List classes hirearchy graph with agn/age (match str if provided)
-| icq                List classes, in quiet mode (just the classname)
-| icqq               List classes, in quieter mode (only show non-system classnames)
+| ic                        List classes, methods and fields (icj for json)
+| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+| icg [str]                 List classes hirearchy graph with agn/age (match str if provided)
+| icq                       List classes, in quiet mode (just the classname)
+| icqq                      List classes, in quieter mode (only show non-system classnames)
 EOF
 RUN
 
@@ -954,7 +954,7 @@ NAME=ic?~ (match one)
 FILE=malloc://512
 CMDS=ic?~Header
 EXPECT=<<EOF
-| icc [lang]         List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
+| icc [lang]                List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)
 EOF
 RUN
 
@@ -962,6 +962,68 @@ NAME=ic?~ (match none)
 FILE=malloc://512
 CMDS=ic?~Guess
 EXPECT=<<EOF
+EOF
+RUN
+
+NAME=ic+? inheritance help
+FILE=malloc://512
+CMDS=ic+?~inheritance
+EXPECT=<<EOF
+| ic+[klass:base]           add inheritance relation
+EOF
+RUN
+
+NAME=ic-? inheritance help
+FILE=malloc://512
+CMDS=ic-?~inheritance
+EXPECT=<<EOF
+| ic-[klass:base]    delete inheritance relation
+EOF
+RUN
+
+NAME=ic+ fields and inheritance
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+s 0x456
+ic+UserKlass
+ic+UserKlass:UserBase
+ic+UserKlass.doThing
+s 0x20
+ic+UserKlass..count int
+ic*~UserKlass
+icg User
+EOF
+EXPECT=<<EOF
+'f class.UserKlass = 0x456
+'f super.UserKlass.UserBase = 20
+'f method.UserKlass.doThing = 0x456
+'f field.UserKlass.field.count = 0x00000020
+'td struct UserKlass { int count;};
+'agn UserKlass
+'agn UserBase
+'age UserBase UserKlass
+EOF
+RUN
+
+NAME=ic- fields and inheritance
+FILE=bins/elf/libmagic.so
+CMDS=<<EOF
+s 0x456
+ic+UserKlass
+ic+UserKlass:UserBase
+ic+UserKlass.doThing
+s 0x20
+ic+UserKlass..count int
+ic-UserKlass..count
+ic-UserKlass:UserBase
+ic*~UserKlass
+icg User
+EOF
+EXPECT=<<EOF
+'f class.UserKlass = 0x456
+'f method.UserKlass.doThing = 0x456
+'td struct UserKlass { char empty[0];};
+'agn UserKlass
 EOF
 RUN
 

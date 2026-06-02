@@ -42,8 +42,14 @@ static RCoreHelpMessage help_msg_ic = {
 	"ic", "", "List classes, methods and fields (icj for json)",
 	"ic.", "", "show class and method name in current seek",
 	"ic,", "[table-query]", "query comma separated values",
-	"ic-", "[klass.method]", "delete given klass or klass.name",
-	"ic+", "[klass.method]", "add new symbol in current seek for a given klass and method name",
+	"ic-", "[klass]", "delete class",
+	"ic-", "[klass.method]", "delete method",
+	"ic-", "[klass..field]", "delete field",
+	"ic-", "[klass:base]", "delete inheritance relation",
+	"ic+", "[klass]", "add new class at current seek",
+	"ic+", "[klass.method]", "add new method at current seek",
+	"ic+", "[klass..field] [type]", "add new field at current seek",
+	"ic+", "[klass:base]", "add inheritance relation",
 	"icc", " [lang]", "List classes, methods and fields in Header Format (see bin.lang=swift,java,objc,cxx)",
 	"icg", " [str]", "List classes hirearchy graph with agn/age (match str if provided)",
 	"icq", "", "List classes, in quiet mode (just the classname)",
@@ -928,84 +934,268 @@ static void cmd_ic_comma(RCore *core, const char *input) {
 	r_table_free (t);
 }
 
+static void cmd_ic_invalidate_method_cache(RCore *core) {
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (bf && bf->bo && bf->bo->addr2klassmethod) {
+		ht_up_free (bf->bo->addr2klassmethod);
+		bf->bo->addr2klassmethod = NULL;
+	}
+}
+
+static RBinClass *cmd_ic_find_class(RList *klasses, const char *klass_name) {
+	RListIter *iter;
+	RBinClass *k;
+	r_list_foreach (klasses, iter, k) {
+		const char *kname = r_bin_name_tostring (k->name);
+		if (!strcmp (kname, klass_name)) {
+			return k;
+		}
+	}
+	return NULL;
+}
+
+static RBinClass *cmd_ic_get_or_add_class(RCore *core, RList *klasses, const char *klass_name) {
+	RBinClass *klass = cmd_ic_find_class (klasses, klass_name);
+	if (klass) {
+		return klass;
+	}
+	RBinFile *bf = r_bin_cur (core->bin);
+	if (!bf || !bf->bo) {
+		return NULL;
+	}
+	klass = r_bin_file_add_class (bf, klass_name, NULL, 0);
+	if (klass) {
+		klass->origin = R_BIN_CLASS_ORIGIN_USER;
+	}
+	return klass;
+}
+
+static char *cmd_ic_single_colon(char *s) {
+	char *p = s;
+	while ((p = strchr (p, ':'))) {
+		if ((p == s || p[-1] != ':') && p[1] != ':') {
+			return p;
+		}
+		p++;
+	}
+	return NULL;
+}
+
+static bool cmd_ic_class_has_super(RBinClass *klass, const char *super_name) {
+	if (!klass->super) {
+		return false;
+	}
+	RBinName *bn;
+	RListIter *iter;
+	r_list_foreach (klass->super, iter, bn) {
+		const char *name = r_bin_name_tostring (bn);
+		if (name && !strcmp (name, super_name)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool cmd_ic_class_add_super(RBinClass *klass, const char *super_name) {
+	if (cmd_ic_class_has_super (klass, super_name)) {
+		return true;
+	}
+	if (!klass->super) {
+		klass->super = r_list_newf ((RListFree)r_bin_name_free);
+	}
+	RBinName *name = r_bin_name_new (super_name);
+	return r_list_append (klass->super, name);
+}
+
+static bool cmd_ic_class_delete_super(RBinClass *klass, const char *super_name) {
+	if (!klass->super) {
+		return false;
+	}
+	RBinName *bn;
+	RListIter *iter;
+	r_list_foreach (klass->super, iter, bn) {
+		const char *name = r_bin_name_tostring (bn);
+		if (name && !strcmp (name, super_name)) {
+			r_list_delete (klass->super, iter);
+			return true;
+		}
+	}
+	return false;
+}
+
+static bool cmd_ic_class_delete_field(RBinClass *klass, const char *field_name) {
+	RBinField *f;
+	size_t i = 0;
+	R_VEC_FOREACH (&klass->fields, f) {
+		const char *fname = r_bin_name_tostring2 (f->name, 'o');
+		if (fname && !strcmp (fname, field_name)) {
+			RVecRBinField_remove (&klass->fields, i);
+			return true;
+		}
+		i++;
+	}
+	return false;
+}
+
 static void cmd_ic_sub(RCore *core, const char *input) {
 	const int pref = r_config_get_b (core->config, "asm.demangle")? 0: 'o';
 	RListIter *iter;
 	RBinClass *k;
 	RBinSymbol *m;
 
-	const char ch0 = *input;
+	const char *arg = input;
+	if (*arg == '-') {
+		arg++;
+	}
+	const char ch0 = *arg;
 	if (ch0 == '*') {
 		R_LOG_TODO ("Cannot reset binclass info");
 		// reset!
 		return;
 	}
 	if (ch0 == 0 || ch0 == '?') {
-		// delete klass or method
-		R_LOG_INFO ("Usage: ic-[klassname][.methodname]");
+		r_core_cmd_help_match (core, help_msg_ic, "ic-");
 		return;
 	}
-	char *klass_name = strdup (input);
-	char *method_name = r_str_after (klass_name, '.');
+	char *klass_name = strdup (arg);
+	char *tail = (char *)r_str_trim_head_wp (klass_name);
+	if (*tail) {
+		*tail = 0;
+	}
+	char *field_name = strstr (klass_name, "..");
+	if (field_name) {
+		*field_name = 0;
+		field_name += 2;
+	}
+	char *super_name = field_name? NULL: cmd_ic_single_colon (klass_name);
+	if (super_name) {
+		*super_name++ = 0;
+	}
+	char *method_name = (field_name || super_name)? NULL: r_str_after (klass_name, '.');
 	RBinClass *klass = NULL;
 	RList *klasses = r_bin_get_classes (core->bin);
 	r_list_foreach (klasses, iter, k) {
 		const char *kname = r_bin_name_tostring2 (k->name, pref);
 		if (!strcmp (kname, klass_name)) {
-			if (method_name) {
+			if (field_name || super_name || method_name) {
 				klass = k;
 			} else {
 				// delete class!
 				r_list_delete (klasses, iter);
+				free (klass_name);
 				return;
 			}
 			break;
 		}
 	}
+	if (klass && field_name) {
+		if (!cmd_ic_class_delete_field (klass, field_name)) {
+			R_LOG_ERROR ("Cannot find given klass field");
+		}
+		free (klass_name);
+		return;
+	}
+	if (klass && super_name) {
+		if (!cmd_ic_class_delete_super (klass, super_name)) {
+			R_LOG_ERROR ("Cannot find given klass inheritance");
+		}
+		free (klass_name);
+		return;
+	}
 	if (klass && method_name) {
-		RBinFile *bf = r_bin_cur (core->bin);
 		size_t i = 0;
 		R_VEC_FOREACH (&klass->methods, m) {
 			const char *mname = r_bin_name_tostring2 (m->name, 'o');
 			if (!strcmp (method_name, mname)) {
 				RVecRBinSymbol_remove (&klass->methods, i);
-				// invlidate the addr-method cache
-				if (bf && bf->bo && bf->bo->addr2klassmethod) {
-					ht_up_free (bf->bo->addr2klassmethod);
-					bf->bo->addr2klassmethod = NULL;
-				}
+				cmd_ic_invalidate_method_cache (core);
+				free (klass_name);
 				return;
 			}
 			i++;
 		}
 	}
 	R_LOG_ERROR ("Cannot find given klass or method");
+	free (klass_name);
 }
 
 void cmd_ic_add(RCore *core, const char *input) {
 	const char ch0 = *input;
 	if (ch0 == 0 || ch0 == '?') {
-		R_LOG_INFO ("Usage: ic+[klassname][.methodname]");
+		r_core_cmd_help_match (core, help_msg_ic, "ic+");
 		return;
 	}
 	RList *klasses = r_bin_get_classes (core->bin);
-	RListIter *iter;
-	RBinClass *k;
-	char *klass_name = strdup (input);
-	char *method_name = r_str_after (klass_name, '.');
-	RBinClass *klass = NULL;
-	r_list_foreach (klasses, iter, k) {
-		const char *kname = r_bin_name_tostring (k->name);
-		if (!strcmp (kname, klass_name)) {
-			klass = k;
-			break;
-		}
+	if (!klasses) {
+		R_LOG_ERROR ("No class list for current binary");
+		return;
 	}
+	char *klass_name = strdup (input);
+	char *tail = (char *)r_str_trim_head_wp (klass_name);
+	if (*tail) {
+		*tail++ = 0;
+		tail = (char *)r_str_trim_head_ro (tail);
+	}
+	char *field_name = strstr (klass_name, "..");
+	if (field_name) {
+		*field_name = 0;
+		field_name += 2;
+		if (R_STR_ISEMPTY (klass_name) || R_STR_ISEMPTY (field_name)) {
+			R_LOG_ERROR ("Usage: ic+[klassname]..[fieldname] [type]");
+			free (klass_name);
+			return;
+		}
+		RBinClass *klass = cmd_ic_get_or_add_class (core, klasses, klass_name);
+		if (!klass) {
+			R_LOG_ERROR ("Cannot add class %s", klass_name);
+			free (klass_name);
+			return;
+		}
+		RBinField *f;
+		R_VEC_FOREACH (&klass->fields, f) {
+			const char *fname = r_bin_name_tostring (f->name);
+			if (fname && !strcmp (fname, field_name)) {
+				free (klass_name);
+				return;
+			}
+		}
+		f = RVecRBinField_emplace_back (&klass->fields);
+		f->name = r_bin_name_new (field_name);
+		if (R_STR_ISNOTEMPTY (tail)) {
+			f->type = r_bin_name_new (tail);
+		}
+		f->paddr = core->addr;
+		f->vaddr = core->addr;
+		f->kind = R_BIN_FIELD_KIND_FIELD;
+		free (klass_name);
+		return;
+	}
+	char *super_name = cmd_ic_single_colon (klass_name);
+	if (super_name) {
+		*super_name++ = 0;
+		if (R_STR_ISEMPTY (klass_name) || R_STR_ISEMPTY (super_name)) {
+			R_LOG_ERROR ("Usage: ic+[klassname]:[supername]");
+			free (klass_name);
+			return;
+		}
+		RBinClass *klass = cmd_ic_get_or_add_class (core, klasses, klass_name);
+		if (!klass) {
+			R_LOG_ERROR ("Cannot add class %s", klass_name);
+			free (klass_name);
+			return;
+		}
+		if (!cmd_ic_class_add_super (klass, super_name)) {
+			R_LOG_ERROR ("Cannot add superclass %s", super_name);
+		}
+		free (klass_name);
+		return;
+	}
+	char *method_name = r_str_after (klass_name, '.');
+	RBinClass *klass = cmd_ic_get_or_add_class (core, klasses, klass_name);
 	if (!klass) {
-		klass = R_NEW0 (RBinClass);
-		klass->name = r_bin_name_new (klass_name);
-		klass->origin = R_BIN_CLASS_ORIGIN_USER;
-		r_list_append (klasses, klass);
+		R_LOG_ERROR ("Cannot add class %s", klass_name);
+		free (klass_name);
+		return;
 	}
 	if (method_name == NULL) {
 		klass->addr = core->addr;
@@ -1026,13 +1216,10 @@ void cmd_ic_add(RCore *core, const char *input) {
 			sym->name = r_bin_name_new (method_name);
 			sym->paddr = pa;
 			sym->vaddr = va;
-			RBinFile *bf = r_bin_cur (core->bin);
-			if (bf && bf->bo && bf->bo->addr2klassmethod) {
-				ht_up_free (bf->bo->addr2klassmethod);
-				bf->bo->addr2klassmethod = NULL;
-			}
+			cmd_ic_invalidate_method_cache (core);
 		}
 	}
+	free (klass_name);
 }
 
 static void cmd_ii_add(RCore *core, const char *input) {
