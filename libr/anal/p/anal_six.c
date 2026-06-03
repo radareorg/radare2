@@ -5,6 +5,10 @@
 #include <r_anal.h>
 #include <r_core.h>
 
+#define SIX_CMD "six"
+#define SIX_CHUNK_SIZE 0x10000
+#define SIX_LOOKAHEAD_SIZE 0x1000
+
 static void addref(RAnal *anal, ut64 from, ut64 to, RAnalRefType type) {
 	r_anal_xrefs_set (anal, from, to, type);
 }
@@ -85,11 +89,12 @@ static void append_signed_mem_instr(RStrBuf *sb, ut64 addr, bool is_adrp, ut32 r
 	}
 }
 
-static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut8 *mem, ut64 addr, int lenbytes) {
-	ut32 *p = (ut32 *) ((uint8_t *)mem);
-	ut32 *e = (ut32 *) (p + (lenbytes / 4));
+static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, const ut8 *mem, ut64 addr, int process_len, int mem_len) {
+	const ut32 *p = (const ut32 *)mem;
+	const ut32 *e = p + (mem_len / 4);
+	const ut32 *pe = p + (process_len / 4);
 
-	for (; p < e; p++, addr += 4) {
+	for (; p < pe; p++, addr += 4) {
 		ut32 v = *p;
 		if ((v & 0x1f000000) == 0x10000000) // adr and adrp
 		{
@@ -98,13 +103,13 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			int64_t base = is_adrp? (addr & 0xfffffffffffff000): addr;
 			int64_t off = (int64_t) ((uint64_t) ((((v >> 5) & 0x7ffff) << 2) | ((v >> 29) & 0x3)) << 43) >> (is_adrp? 31: 43);
 			ut64 target = base + off;
-			if (search == 0) {
+			if (register_refs) {
 				addref (anal, addr, target, R_ANAL_REF_TYPE_DATA);
 			} else if (target == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s x%u, %#" PFMT64x "\n", addr, is_adrp? "adrp": "adr", reg, target);
 			} else {
 				// More complicated cases - up to 3 instr
-				ut32 *q = p + 1;
+				const ut32 *q = p + 1;
 				while (q < e && *q == 0xd503201f) { // nop
 					q++;
 				}
@@ -181,7 +186,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			}
 		} else if ((v & 0xbf000000) == 0x18000000 || (v & 0xff000000) == 0x98000000) { // ldr and ldrsw literal
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (!search) {
+			if (register_refs) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_DATA);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
@@ -192,14 +197,14 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 		} else if ((v & 0x7c000000) == 0x14000000) { // b and bl
 			int64_t off = (int64_t) ((uint64_t) (v & 0x3ffffff) << 38) >> 36;
 			bool is_bl = (v & 0x80000000) != 0;
-			if (!search) {
+			if (register_refs) {
 				addref (anal, addr, addr + off, is_bl? R_ANAL_REF_TYPE_CODE: R_ANAL_REF_TYPE_CALL);
 			} else if (addr + off == search) {
 				r_strbuf_appendf (sb, "%#" PFMT64x ": %s %#" PFMT64x "\n", addr, is_bl? "bl": "b", search);
 			}
 		} else if ((v & 0xff000010) == 0x54000000) { // b.cond
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (!search) {
+			if (register_refs) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				static const char *cond_names[] = {
@@ -210,7 +215,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			}
 		} else if ((v & 0x7e000000) == 0x34000000) { // cbz and cbnz
 			int64_t off = (int64_t) ((uint64_t) ((v >> 5) & 0x7ffff) << 45) >> 43;
-			if (!search) {
+			if (register_refs) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
@@ -220,7 +225,7 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 			}
 		} else if ((v & 0x7e000000) == 0x36000000) { // tbz and tbnz
 			int64_t off = ((int64_t) ((v >> 5) & 0x3fff) << 50) >> 48;
-			if (!search) {
+			if (register_refs) {
 				addref (anal, addr, addr + off, R_ANAL_REF_TYPE_CODE);
 			} else if (addr + off == search) {
 				ut32 reg = v & 0x1f;
@@ -234,35 +239,33 @@ static void siguza_xrefs_chunked(RAnal *anal, RStrBuf *sb, ut64 search, const ut
 }
 
 /**
- * @param search Address to find xrefs to. If 0, all xrefs will be emitted.
+ * @param register_refs Register every discovered xref instead of listing matches.
+ * @param search Address to find xrefs to when register_refs is false.
  * @param start Address at which to start looking for xrefs.
  * @param lenbytes Reach of the search for xrefs, in bytes.
  */
-static void siguza_xrefs(RAnal *anal, RStrBuf *sb, ut64 search, ut64 start, int lenbytes) {
-	ut64 cursor = start;
-	int lenbytes_rem = lenbytes;
-	ut8 *big_buf = malloc (lenbytes);
-	if (!big_buf) {
+static void siguza_xrefs(RAnal *anal, RStrBuf *sb, bool register_refs, ut64 search, ut64 start, ut64 lenbytes) {
+	ut8 *buf = malloc (SIX_CHUNK_SIZE + SIX_LOOKAHEAD_SIZE);
+	if (!buf) {
 		R_LOG_ERROR ("Failed to allocate buffer");
 		return;
 	}
 
-	int total_read = 0;
-	while (lenbytes_rem > 0 && total_read < lenbytes) {
-		int to_read = R_MIN (lenbytes_rem, 0x1000);
-		int read_len = anal->iob.read_at (anal->iob.io, cursor, big_buf + total_read, to_read);
-		if (read_len <= 0) {
+	ut64 pos = 0;
+	while (pos < lenbytes) {
+		int process_len = (int)R_MIN (lenbytes - pos, SIX_CHUNK_SIZE);
+		ut64 lookahead_rem = lenbytes - pos - process_len;
+		int to_read = process_len + (int)R_MIN (lookahead_rem, SIX_LOOKAHEAD_SIZE);
+		if (anal->iob.read_at (anal->iob.io, start + pos, buf, to_read) < 1) {
 			break;
 		}
-		total_read += read_len;
-		lenbytes_rem -= read_len;
-		cursor += read_len;
+		if (process_len < 4) {
+			break;
+		}
+		siguza_xrefs_chunked (anal, sb, register_refs, search, buf, start + pos, process_len, to_read);
+		pos += process_len;
 	}
-
-	if (total_read > 0) {
-		siguza_xrefs_chunked (anal, sb, search, big_buf, start, total_read);
-	}
-	free (big_buf);
+	free (buf);
 }
 
 static bool is_arm64(RAnal *anal) {
@@ -271,17 +274,46 @@ static bool is_arm64(RAnal *anal) {
 	return strstr (arch, "arm") && bits == 64;
 }
 
+static char *six_help(void) {
+	return strdup (
+		"| a:six              find and register all xrefs in arm64 executable sections\n"
+		"| a:six <target>     list xrefs to target address in arm64 executable sections\n"
+		"| a:six <target> <len> list xrefs to target address from $$ in current executable section\n");
+}
+
+static bool parse_num(RAnal *anal, RCore *core, const char *arg, const char *name, ut64 *out) {
+	const char *err = NULL;
+	if (anal->coreb.numGet) {
+		if (core && core->num) {
+			core->num->nc.errors = 0;
+			core->num->nc.calc_err = NULL;
+		}
+		*out = anal->coreb.numGet (anal->coreb.core, arg);
+		if (core && core->num) {
+			err = core->num->nc.calc_err;
+		}
+	} else {
+		*out = r_num_math_err (core? core->num: NULL, arg, &err);
+	}
+	if (err) {
+		R_LOG_ERROR ("Invalid %s '%s': %s", name, arg, err);
+		return false;
+	}
+	return true;
+}
+
 static char *r_cmdsix_call(RAnal *anal, const char *input) {
-	if (!r_str_startswith (input, "six")) {
+	if (!r_str_startswith (input, SIX_CMD)) {
 		return NULL;
 	}
-	input = r_str_trim_head_ro (input + strlen ("six"));
-
-	if (*input == '?') {
-		const char *help = "Usage: a:six [addr] [len] - Find xrefs in arm64 executable sections\n"
-				"       a:six - find all xrefs\n"
-				"       a:six <addr> [len] - find xrefs to specific address\n";
-		return strdup (help);
+	char ch = input[strlen (SIX_CMD)];
+	if (ch && ch != '?' && ch != ' ') {
+		R_LOG_ERROR ("Invalid command 'a:%s'. See 'a:six?' for help", input);
+		return strdup ("");
+	}
+	input = input + strlen (SIX_CMD);
+	if (*input == '?' || *r_str_trim_head_ro (input) == '?') {
+		return six_help ();
 	}
 
 	if (!is_arm64 (anal)) {
@@ -289,25 +321,48 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		return strdup ("");
 	}
 
-	RStrBuf *sb = r_strbuf_new (NULL);
-	if (!sb) {
+	ut64 search = 0;
+	ut64 len = 0;
+	bool has_len = false;
+	RCore *core = (RCore *)anal->coreb.core;
+	input = r_str_trim_head_ro (input);
+	bool register_refs = R_STR_ISEMPTY (input);
+	if (!register_refs) {
+		int argc = 0;
+		char **argv = r_str_argv (input, &argc);
+		if (!argv) {
+			return strdup ("");
+		}
+		if (argc < 1 || argc > 2) {
+			R_LOG_ERROR ("Usage: a:six [target] [len]");
+			r_str_argv_free (argv);
+			return strdup ("");
+		}
+		if (!parse_num (anal, core, argv[0], "target", &search)) {
+			r_str_argv_free (argv);
+			return strdup ("");
+		}
+		if (argc == 2) {
+			if (!parse_num (anal, core, argv[1], "length", &len)) {
+				r_str_argv_free (argv);
+				return strdup ("");
+			}
+			if (!len) {
+				R_LOG_ERROR ("Length must be greater than zero");
+				r_str_argv_free (argv);
+				return strdup ("");
+			}
+			has_len = true;
+		}
+		r_str_argv_free (argv);
+	}
+
+	RStrBuf *sb = register_refs? NULL: r_strbuf_new (NULL);
+	if (!register_refs && !sb) {
 		return strdup ("");
 	}
 
-	ut64 search = 0;
-	int len = 0;
-	void *core = anal->coreb.core;
-
-	char *args = strdup (input);
-	char *space = strchr (args, ' ');
-	if (space) {
-		*space++ = 0;
-		len = anal->coreb.numGet (core, space);
-	}
-	search = anal->coreb.numGet (core, args);
-	free (args);
-
-	if (len == 0) {
+	if (!has_len) {
 		if (!anal->binb.get_sections_vec) {
 			R_LOG_ERROR ("No get_sections_vec callback available");
 			r_strbuf_free (sb);
@@ -326,13 +381,13 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 			if (s->is_segment || ! (s->perm & R_PERM_X)) {
 				continue;
 			}
-			siguza_xrefs (anal, sb, search, s->vaddr, s->vsize);
+			siguza_xrefs (anal, sb, register_refs, search, s->vaddr, s->vsize);
 		}
 	} else {
-		ut64 offset = anal->coreb.numGet (core, "$$");
+		ut64 offset = anal->coreb.numGet (anal->coreb.core, "$$");
 		if (offset & 3) {
 			offset -= offset % 4;
-			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%" PFMT64x " instaed", offset);
+			R_LOG_INFO ("Current offset is not 4-byte aligned, using 0x%" PFMT64x " instead", offset);
 		}
 
 		RBinSection *s = anal->binb.get_vsect_at? anal->binb.get_vsect_at (anal->binb.bin, offset): NULL;
@@ -343,14 +398,23 @@ static char *r_cmdsix_call(RAnal *anal, const char *input) {
 		}
 
 		ut64 sect_end = s->vaddr + s->vsize;
-		if (offset + len > sect_end || offset + len < s->vaddr) {
-			len = sect_end - offset;
-			R_LOG_WARN ("Length is not within range for this section, using %u instead", len);
+		if (sect_end < s->vaddr || offset >= sect_end) {
+			R_LOG_WARN ("Current section has invalid boundaries");
+			r_strbuf_free (sb);
+			return strdup ("");
+		}
+		ut64 max_len = sect_end - offset;
+		if (len > max_len) {
+			len = max_len;
+			R_LOG_WARN ("Length is not within range for this section, using 0x%" PFMT64x " instead", len);
 		}
 
-		siguza_xrefs (anal, sb, search, offset, len);
+		siguza_xrefs (anal, sb, register_refs, search, offset, len);
 	}
 
+	if (register_refs) {
+		return strdup ("");
+	}
 	char *result = r_strbuf_drain (sb);
 	if (!result) {
 		return strdup ("");

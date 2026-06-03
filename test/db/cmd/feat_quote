@@ -56,7 +56,7 @@ EXPECT=<<EOF
 Hello World
 "Hello World"
 'Hello World'
-'Hello World
+'Hello World'
 Hello;World
 Hello@World
 EOF
