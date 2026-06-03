@@ -59,6 +59,27 @@ hello # world
 EOF
 RUN
 
+NAME=w quote literal and empty
+FILE=malloc://4
+CMDS=<<EOF
+w "
+p8 4
+s 1
+w ""
+s 0
+p8 4
+s 2
+w "a"
+s 0
+p8 4
+EOF
+EXPECT=<<EOF
+22000000
+22000000
+22006100
+EOF
+RUN
+
 NAME=labels replacements (common prefix)
 FILE=malloc://1024
 BROKEN=1

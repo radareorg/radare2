@@ -151,6 +151,7 @@ R_API void r_str_trim_args(char *str) {
 	bool e = false;
 	char *s = str;
 	char *d = str;
+	char *quote = NULL;
 	while (*s) {
 		switch (*s) {
 		case '\'':
@@ -162,12 +163,14 @@ R_API void r_str_trim_args(char *str) {
 					// needs to be escaped
 					if (q == *s) {
 						q = 0;
+						quote = NULL;
 						e = false;
 						s++;
 						continue;
 					}
 				} else {
 					q = *s;
+					quote = d;
 					s++;
 					e = false;
 					continue;
@@ -194,6 +197,10 @@ R_API void r_str_trim_args(char *str) {
 		d++;
 	}
 	*d = 0;
+	if (quote) {
+		memmove (quote + 1, quote, d - quote + 1);
+		*quote = q;
+	}
 }
 
 // Remove whitespace chars from the tail of the string, replacing them with

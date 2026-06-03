@@ -1673,6 +1673,11 @@ static int cmd_w(RCore *core, const char *input) {
 	char *str = strdup (input);
 	/* write string */
 	int len = r_str_unescape (str);
+	if (len < 1) {
+		free (str);
+		r_core_return_value (core, 0);
+		return 0;
+	}
 	if (r_config_get_b (core->config, "cmd.undo")) {
 		ut8 *buf = malloc (len);
 		r_io_read_at (core->io, core->addr, buf, len);
