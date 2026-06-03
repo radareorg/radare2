@@ -236,6 +236,62 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME=siguzas arm64 six rejects command suffix
+FILE=-
+CMDS=<<EOF
+a:sixref
+EOF
+EXPECT=<<EOF
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Invalid command 'a:sixref'. See 'a:six?' for help
+EOF
+RUN
+
+NAME=siguzas arm64 six registers after purge
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e search.in=io.map
+s $S
+b $SS
+f target=0x1000ff5a0
+ax-*
+a:six
+axtq target
+EOF
+EXPECT=<<EOF
+0x100010f94
+0x1000a03f8
+0x1000addc4
+0x1000adfa8
+0x1000ae128
+0x1000c699c
+EOF
+RUN
+
+NAME=siguzas arm64 six target filters hits
+FILE=bins/mach0/BatteryLife.arm_64.1
+CMDS=<<EOF
+e search.in=io.map
+s $S
+b $SS
+f target=0x1000ff5a0
+ax-*
+a:six target
+?e ---
+axtq target
+EOF
+EXPECT=<<EOF
+0x100010f94: bl 0x1000ff5a0
+0x1000a03f8: bl 0x1000ff5a0
+0x1000addc4: bl 0x1000ff5a0
+0x1000adfa8: bl 0x1000ff5a0
+0x1000ae128: bl 0x1000ff5a0
+0x1000c699c: bl 0x1000ff5a0
+---
+EOF
+RUN
+
 NAME=siguzas arm64 multi /r
 FILE=bins/mach0/BatteryLife.arm_64.1
 CMDS=<<EOF
