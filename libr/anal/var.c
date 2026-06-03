@@ -1958,8 +1958,8 @@ R_API void r_anal_var_list_show(RAnal *anal, RAnalFunction *fcn, int kind, int m
 					R_LOG_ERROR ("Register not found");
 					break;
 				}
-				anal->cb_printf ("arg %s %s @ %s\n",
-					var->type, var->name, i->name);
+				anal->cb_printf ("%s %s %s @ %s\n",
+					var->isarg ? "arg" : "var", var->type, var->name, i->name);
 				}
 				break;
 			case R_ANAL_VAR_KIND_SPV:
