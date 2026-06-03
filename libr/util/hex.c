@@ -350,7 +350,7 @@ R_API int r_hex_pair2bin(const char *arg) {
 }
 
 R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
-	R_RETURN_VAL_IF_FAIL (in && len > 0, 0);
+	R_RETURN_VAL_IF_FAIL ((in || len == 0) && len >= 0 && out, 0);
 	int i, idx;
 	char tmp[8];
 	for (idx = i = 0; i < len; i++, idx += 2)  {
@@ -362,11 +362,13 @@ R_API int r_hex_bin2str(const ut8 *in, int len, char *out) {
 }
 
 R_API char *r_hex_bin2strdup(const ut8 *in, int len) {
-	R_RETURN_VAL_IF_FAIL (in && len > 0, NULL);
-	if ((len + 1) * 2 < len) {
+	R_RETURN_VAL_IF_FAIL ((in || len == 0) && len >= 0, NULL);
+	size_t outlen = 1;
+	if (r_mul_overflow ((size_t)len, (size_t)2, &outlen)
+			|| r_add_overflow (outlen, (size_t)1, &outlen)) {
 		return NULL;
 	}
-	char *out = malloc ((len + 1) * 2);
+	char *out = malloc (outlen);
 	if (out) {
 		r_hex_bin2str (in, len, out);
 	}
