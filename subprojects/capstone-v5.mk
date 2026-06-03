@@ -4,7 +4,7 @@ WRAP_wrap_git_url:=https://github.com/capstone-engine/capstone.git
 WRAP_wrap_git_revision:=fab595205fee206f5c21be6ed8ad2eaf9225f1c7
 WRAP_wrap_git_patch_directory:=capstone-v5
 WRAP_wrap_git_directory:=capstone-v5
-WRAP_wrap_git_diff_files:=capstone-v5/capstone-patches/fix-x86-16.patch capstone-v5/capstone-patches/fix-m68k-printer.patch capstone-v5/capstone-patches/fix-x86-sib-scale.patch
+WRAP_wrap_git_diff_files:=capstone-v5/capstone-patches/fix-x86-16.patch,capstone-v5/capstone-patches/fix-m68k-printer.patch,capstone-v5/capstone-patches/fix-x86-sib-scale.patch
 WRAP_wrap_git_depth:=1
 
 .PHONY: capstone-v5_clean capstone-v5_all
