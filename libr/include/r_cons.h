@@ -1202,6 +1202,7 @@ R_API void r_cons_print_clear(RCons *cons);
 R_API void r_cons_fill_line(RCons *cons);
 R_API void r_cons_clear_line(RCons *cons, bool std_err, bool flush);
 R_API void r_cons_reset_colors(RCons *cons);
+R_API bool r_cons_reset_terminal(RCons *cons);
 R_API void r_cons_clear(RCons *cons);
 R_API void r_cons_clear00(RCons *cons);
 R_API void r_cons_reset(RCons *cons);

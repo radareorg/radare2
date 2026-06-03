@@ -1516,6 +1516,24 @@ R_API void r_cons_reset_colors(RCons *cons) {
 	r_cons_print (cons, Color_RESET_BG Color_RESET);
 }
 
+R_API bool r_cons_reset_terminal(RCons *cons) {
+	R_RETURN_VAL_IF_FAIL (cons && cons->context, false);
+#if R2__WINDOWS__
+	if (!cons->vtmode) {
+		r_cons_win_clear (cons);
+		r_cons_show_cursor (cons, true);
+		return true;
+	}
+#endif
+	int fd = cons->fdout > 0? cons->fdout: 1;
+	size_t len = strlen (Color_RESET_TERMINAL);
+	if (write (fd, Color_RESET_TERMINAL, len) != (int)len) {
+		cons->context->breaked = true;
+		return false;
+	}
+	return true;
+}
+
 static void r_cons_context_free_internal(RConsContext *ctx) {
 	r_cons_context_pal_free (ctx);
 	r_stack_free (ctx->break_stack);

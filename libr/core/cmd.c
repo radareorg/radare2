@@ -3059,11 +3059,13 @@ static int cmd_resize(void *data, const char *input) {
 		}
 		break;
 	case 'e': // "re"
-		{
-			int rc = write (1, Color_RESET_TERMINAL, strlen (Color_RESET_TERMINAL));
-			if (rc == -1) {
+		if (!strcmp (input, "reset")) {
+			if (!r_cons_reset_terminal (core->cons)) {
 				return false;
 			}
+		} else {
+			r_core_return_invalid_command (core, "r", *input);
+			return false;
 		}
 		return true;
 	case '?': // "r?"
