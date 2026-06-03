@@ -531,6 +531,20 @@ EXPECT=<<EOF
 EOF
 RUN
 
+NAME="dwarf register local vs arg classification"
+FILE=bins/elf/ppc64_sudoku_dwarf
+CMDS=<<EOF
+e asm.dwarf=false
+aaa
+s 0x100014c8
+afv~ @ r3,@ r4
+EOF
+EXPECT=<<EOF
+arg int v @ r4
+var int w @ r3
+EOF
+RUN
+
 NAME="function info integration ada - wrap"
 FILE=bins/elf/ada_test_dwarf 
 CMDS=<<EOF
