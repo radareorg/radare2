@@ -1429,10 +1429,12 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 			// type only: the CR model tracks only cr0, not the full cr0-cr7 word
 			break;
 		case PPC_INS_BCTR: // switch table here
+		case PPC_INS_BCCTR:
 			op->type = R_ANAL_OP_TYPE_UJMP;
 			esilprintf (op, "ctr,pc,=");
 			break;
 		case PPC_INS_BCTRL: // switch table here
+		case PPC_INS_BCCTRL:
 			op->type = R_ANAL_OP_TYPE_CALL;
 			esilprintf (op, "pc,lr,=,ctr,pc,=");
 			break;

@@ -800,6 +800,27 @@ type: cmov
 EOF
 RUN
 
+NAME=ppc bctr/bctrl typed (cs6 BCCTR/BCCTRL alias coverage)
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 4e800420
+pd 1
+ao~type
+wx 4e800421
+pd 1
+ao~type
+EOF
+EXPECT=<<EOF
+            0x00000000      4e800420       bctr
+type: ujmp
+            0x00000000      4e800421       bctrl
+type: call
+EOF
+RUN
+
 NAME=ppc-hello-ref
 FILE=bins/elf/hello.ppc
 CMDS=<<EOF
