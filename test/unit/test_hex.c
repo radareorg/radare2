@@ -235,6 +235,25 @@ bool test_str2bin_dup(void) {
 	mu_end;
 }
 
+bool test_bin2str_empty(void) {
+	char out[1];
+	int len = r_hex_bin2str (NULL, 0, out);
+	mu_assert_eq (len, 0, "empty bin2str returns 0");
+	mu_assert_streq (out, "", "empty bin2str output");
+
+	char *s = r_hex_bin2strdup (NULL, 0);
+	mu_assert_notnull (s, "empty bin2strdup returns string");
+	mu_assert_streq (s, "", "empty bin2strdup output");
+	free (s);
+
+	const ut8 data[] = { 0x00, 0xab, 0xff };
+	s = r_hex_bin2strdup (data, sizeof (data));
+	mu_assert_streq (s, "00abff", "bin2strdup output");
+	free (s);
+
+	mu_end;
+}
+
 bool all_tests(void) {
 	mu_run_test (test_r_hex_from_c);
 	mu_run_test (test_r_hex_from_py);
@@ -242,6 +261,7 @@ bool all_tests(void) {
 	mu_run_test (test_r_hex_no_code);
 	mu_run_test (test_str2bin_alloc);
 	mu_run_test (test_str2bin_dup);
+	mu_run_test (test_bin2str_empty);
 	return tests_passed != tests_run;
 }
 

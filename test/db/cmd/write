@@ -60,23 +60,38 @@ EOF
 RUN
 
 NAME=w quote literal and empty
-FILE=malloc://4
+FILE=malloc://8
 CMDS=<<EOF
 w "
-p8 4
+p8 8
 s 1
 w ""
 s 0
-p8 4
+p8 8
 s 2
 w "a"
 s 0
-p8 4
+p8 8
+s 3
+w '"'
+s 0
+p8 8
+s 4
+w '
+s 0
+p8 8
+s 5
+w '\''
+s 0
+p8 8
 EOF
 EXPECT=<<EOF
-22000000
-22000000
-22006100
+2200000000000000
+2200000000000000
+2200610000000000
+2200612200000000
+2200612227000000
+2200612227270000
 EOF
 RUN
 
