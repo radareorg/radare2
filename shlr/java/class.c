@@ -1955,13 +1955,13 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr(RBinJavaObj *bin, const ut64 
 static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin, ut8 *buffer, st64 sz, st64 buf_offset) {
 	RBinJavaAttrInfo *attr = NULL;
 
-	if (!buffer || ((int)sz) < 4 || buf_offset < 0) {
+	if (!buffer || sz < 6 || buf_offset < 0) {
 		R_LOG_ERROR ("r_bin_Java_read_next_attr_from_buffer: invalid buffer size %d", (int)sz);
 		return NULL;
 	}
 	ut16 name_idx = R_BIN_JAVA_USHORT (buffer, 0);
 	ut64 offset = 2;
-	st64 nsz = R_BIN_JAVA_UINT (buffer, offset);
+	ut32 nsz = R_BIN_JAVA_UINT (buffer, offset);
 
 	char *name = r_bin_java_get_utf8_from_bin_cp_list (bin, name_idx);
 	if (!name) {
@@ -1972,7 +1972,7 @@ static RBinJavaAttrInfo *r_bin_java_read_next_attr_from_buffer(RBinJavaObj *bin,
 	if (type_info) {
 		R_LOG_DEBUG ("Typeinfo: %s, was %s", type_info->name, name);
 		// printf ("SZ %d %d %d\n", nsz, sz, buf_offset);
-		if (nsz > sz) {
+		if (nsz > sz - 6) {
 			free (name);
 			return NULL;
 		}
@@ -3347,18 +3347,23 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 	{
 		int len = attr->info.code_attr.code_length;
 		memset (attr->info.code_attr.code, 0, len);
-		if (offset + len >= sz) {
+		if (offset + len > sz) {
 			return attr;
 		}
 		memcpy (attr->info.code_attr.code, buffer + offset, len);
 		offset += len;
+	}
+	if (offset + 2 > sz) {
+		attr->size = offset;
+		return attr;
 	}
 	attr->info.code_attr.exception_table_length = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	attr->info.code_attr.exception_table = r_list_newf (free);
 	for (k = 0; k < attr->info.code_attr.exception_table_length; k++) {
 		curpos = buf_offset + offset;
-		if (curpos + 8 > sz) {
+		if (offset + 8 > sz) {
+			attr->size = offset;
 			return attr;
 		}
 		RBinJavaExceptionEntry *e = R_NEW0 (RBinJavaExceptionEntry);
@@ -3373,6 +3378,10 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 		offset += 2;
 		r_list_append (attr->info.code_attr.exception_table, e);
 		e->size = 8;
+	}
+	if (offset + 2 > sz) {
+		attr->size = offset;
+		return attr;
 	}
 	attr->info.code_attr.attributes_count = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
@@ -3416,12 +3425,13 @@ static RBinJavaAttrInfo *r_bin_java_code_attr_new(RBinJavaObj *bin, ut8 *buffer,
 
 static RBinJavaAttrInfo *r_bin_java_constant_value_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 6;
+	if (sz < 8) {
+		return NULL;
+	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_CONST_VALUE_ATTR;
-		if (offset + 4 < sz) {
-			attr->info.constant_value_attr.constantvalue_idx = R_BIN_JAVA_USHORT (buffer, offset);
-		}
+		attr->info.constant_value_attr.constantvalue_idx = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		attr->size = offset;
 	}
@@ -3944,15 +3954,9 @@ static RBinJavaAttrInfo *r_bin_java_local_variable_type_table_attr_new(RBinJavaO
 }
 
 static RBinJavaAttrInfo *r_bin_java_source_code_file_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
-	if (!sz || sz == UT64_MAX) {
+	if (sz < 8 || sz == UT64_MAX) {
 		return NULL;
 	}
-#if 0
-	/// XXX this breaks tests
-	if (sz < 8) {
-		return NULL;
-	}
-#endif
 	ut64 offset = 0;
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
@@ -4477,6 +4481,10 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 		idx = p_frame->number_of_locals - k;
 		 */
 		// 2.  read the uoffset value
+		if (offset + 2 > sz) {
+			r_bin_java_stack_frame_free (stack_frame);
+			return NULL;
+		}
 		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		// Maybe? 3. Copy the previous frames locals and set the locals count.
@@ -4492,6 +4500,10 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 	case R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED:
 		// eprintf ("r_bin_java_stack_map_frame_new: Parsing R_BIN_JAVA_STACK_FRAME_SAME_FRAME_EXTENDED.\n");
 		// 1. Read the uoffset
+		if (offset + 2 > sz) {
+			r_bin_java_stack_frame_free (stack_frame);
+			return NULL;
+		}
 		stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 		offset += 2;
 		// 2. Read the stack element type
@@ -4522,6 +4534,10 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 			ut16 k = stack_frame->tag - 251; // previous frames locals
 			ut32 i = 0;
 			// 2. Read the uoffset
+			if (offset + 2 > sz) {
+				r_bin_java_stack_frame_free (stack_frame);
+				return NULL;
+			}
 			stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
 			// Maybe? 3. Copy the previous frames locals to the current locals
@@ -4553,8 +4569,16 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 	case R_BIN_JAVA_STACK_FRAME_FULL_FRAME:
 		{
 			int i;
+			if (offset + 2 > sz) {
+				r_bin_java_stack_frame_free (stack_frame);
+				return NULL;
+			}
 			stack_frame->offset_delta = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
+			if (offset + 2 > sz) {
+				r_bin_java_stack_frame_free (stack_frame);
+				return NULL;
+			}
 			stack_frame->number_of_locals = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
 			for (i = 0; i < stack_frame->number_of_locals; i++) {
@@ -4570,6 +4594,10 @@ static RBinJavaStackMapFrame *r_bin_java_stack_map_frame_new(ut8 *buffer, ut64 s
 					return NULL;
 				}
 				r_list_append (stack_frame->local_items, (void *)se);
+			}
+			if (offset + 2 > sz) {
+				r_bin_java_stack_frame_free (stack_frame);
+				return NULL;
 			}
 			stack_frame->number_of_stack_items = R_BIN_JAVA_USHORT (buffer, offset);
 			offset += 2;
@@ -6648,6 +6676,9 @@ static void r_bin_java_print_bootstrap_method_summary(RBinJavaBootStrapMethod *b
 
 static RBinJavaBootStrapArgument *r_bin_java_bootstrap_method_argument_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut64 offset = 0;
+	if (sz < 2) {
+		return NULL;
+	}
 	RBinJavaBootStrapArgument *bsm_arg = R_NEW0 (RBinJavaBootStrapArgument);
 	if (!bsm_arg) {
 		return NULL;
@@ -6683,6 +6714,9 @@ static RBinJavaBootStrapMethod *r_bin_java_bootstrap_method_new(RBinJavaObj *bin
 	RBinJavaBootStrapArgument *bsm_arg = NULL;
 	ut32 i = 0;
 	ut64 offset = 0;
+	if (sz < 4) {
+		return NULL;
+	}
 	RBinJavaBootStrapMethod *bsm = R_NEW0 (RBinJavaBootStrapMethod);
 	bsm->file_offset = buf_offset;
 	bsm->bootstrap_method_ref = R_BIN_JAVA_USHORT (buffer, offset);
@@ -6805,7 +6839,7 @@ static RBinJavaAttrInfo *r_bin_java_bootstrap_methods_attr_new(RBinJavaObj *bin,
 	offset += 6;
 	if (attr) {
 		attr->type = R_BIN_JAVA_ATTR_TYPE_BOOTSTRAP_METHODS_ATTR;
-		if (offset + 8 > sz) {
+		if (offset + 2 > sz) {
 			free (attr);
 			return NULL;
 		}
@@ -6814,7 +6848,7 @@ static RBinJavaAttrInfo *r_bin_java_bootstrap_methods_attr_new(RBinJavaObj *bin,
 		attr->info.bootstrap_methods_attr.bootstrap_methods = r_list_newf (r_bin_java_bootstrap_method_free);
 		for (i = 0; i < attr->info.bootstrap_methods_attr.num_bootstrap_methods; i++) {
 			// bsm = r_bin_java_bootstrap_method_new (bin, bin->b->cur);
-			if (offset >= sz) {
+			if (offset + 4 > sz) {
 				break;
 			}
 			bsm = r_bin_java_bootstrap_method_new (bin, buffer + offset, sz - offset, buf_offset + offset);
@@ -6878,12 +6912,15 @@ static RBinJavaAnnotationsArray *r_bin_java_annotation_array_new(RBinJavaObj *bi
 	RBinJavaAnnotation *annotation;
 	ut32 i;
 	ut64 offset = 0;
+	if (!buffer || sz < 2) {
+		return NULL;
+	}
 	RBinJavaAnnotationsArray *annotation_array = R_NEW0 (RBinJavaAnnotationsArray);
 	annotation_array->num_annotations = R_BIN_JAVA_USHORT (buffer, offset);
 	offset += 2;
 	annotation_array->annotations = r_list_new ();
 	for (i = 0; i < annotation_array->num_annotations; i++) {
-		if (offset > sz) {
+		if (offset >= sz) {
 			break;
 		}
 		annotation = r_bin_java_annotation_new (bin, buffer + offset, sz - offset, buf_offset + offset);
@@ -7028,6 +7065,9 @@ static RBinJavaAttrInfo *r_bin_java_rtip_annotations_attr_new(RBinJavaObj *bin, 
 	ut32 i = 0;
 	RBinJavaAttrInfo *attr = NULL;
 	ut64 offset = 0;
+	if (sz < 7) {
+		return NULL;
+	}
 	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
 	if (attr) {
@@ -7057,6 +7097,9 @@ static RBinJavaAttrInfo *r_bin_java_rtvp_annotations_attr_new(RBinJavaObj *bin, 
 	ut32 i = 0;
 	RBinJavaAttrInfo *attr = NULL;
 	ut64 offset = 0;
+	if (sz < 7) {
+		return NULL;
+	}
 	attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
 	offset += 6;
 	RBinJavaAnnotationsArray *annotation_array;
