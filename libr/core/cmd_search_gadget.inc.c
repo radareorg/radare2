@@ -25,138 +25,168 @@ static RList* get_constants(const char *str) {
 	return list;
 }
 
+typedef struct {
+	int type;
+	char *esil;
+} RopInsn;
+
+typedef enum {
+	ROP_NOP_NO,
+	ROP_NOP_YES,
+	ROP_NOP_UNKNOWN,
+} RopNopClass;
+
+static RopInsn *rop_insn_new(int type, const char *esil) {
+	RopInsn *insn = R_NEW0 (RopInsn);
+	insn->type = type;
+	insn->esil = strdup (esil? esil: "");
+	return insn;
+}
+
+static void rop_insn_free(void *ptr) {
+	RopInsn *insn = ptr;
+	if (insn) {
+		free (insn->esil);
+		free (insn);
+	}
+}
+
 static bool isFlag(RRegItem *reg) {
 	const char *type = r_reg_type_tostring (reg->type);
 
-	if (!strcmp (type, "flg"))
-		return true;
-	return false;
+	return !strcmp (type, "flg");
 }
 
 // binary op
 static bool simulate_op(const char *op, ut64 src1, ut64 src2, ut64 old_src1, ut64 old_src2, ut64 *result, int size) {
-	ut64 limit;
-	if (size == 64) {
-		limit = UT64_MAX;
-	} else {
-		limit = 1ULL << size;
+	(void)old_src2;
+	if (size < 1 || size > 64) {
+		return false;
 	}
+	const ut64 mask = r_num_bitmask (size);
 
 	if (!strcmp (op, "^")) {
-		*result =  src1 ^ src2;
+		*result = (src1 ^ src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "+")) {
-		*result = src1 + src2;
+		*result = (src1 + src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "-")) {
-		if (src2 > src1) {
-			*result = limit + (src1 - src2);
-		} else {
-			*result = src1 - src2;
-		}
+		*result = (src1 - src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "*")) {
-		*result = src1 * src2;
+		*result = (src1 * src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "|")) {
-		*result = src1 | src2;
+		*result = (src1 | src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "/")) {
-		*result = src1 / src2;
+		if (!src2) {
+			return false;
+		}
+		*result = (src1 / src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "%")) {
-		*result = src1 % src2;
+		if (!src2) {
+			return false;
+		}
+		*result = (src1 % src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "<<")) {
-		*result = src1 << src2;
+		if (src2 >= 64) {
+			return false;
+		}
+		*result = (src1 << src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, ">>")) {
-		*result = src1 >> src2;
+		if (src2 >= 64) {
+			return false;
+		}
+		*result = (src1 >> src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "&")) {
-		*result = src1 & src2;
+		*result = (src1 & src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "+=")) {
-		*result = old_src1 + src2;
+		*result = (old_src1 + src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "-=")) {
-		if (src2 > old_src1) {
-			*result = limit + (old_src1 - src2);
-		} else {
-			*result = old_src1 - src2;
-		}
+		*result = (old_src1 - src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "*=")) {
-		*result = old_src1 * src2;
+		*result = (old_src1 * src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "/=")) {
-		*result = old_src1 / src2;
+		if (!src2) {
+			return false;
+		}
+		*result = (old_src1 / src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "%=")) {
-		*result = old_src1 % src2;
-		return true;
-	}
-	if (!strcmp (op, "<<")) {
-		*result = src1 << src2;
-		return true;
-	}
-	if (!strcmp (op, ">>")) {
-		*result = src1 >> src2;
+		if (!src2) {
+			return false;
+		}
+		*result = (old_src1 % src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "&=")) {
-		*result = src1 & src2;
+		*result = (old_src1 & src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "^=")) {
-		*result = src1 ^ src2;
+		*result = (old_src1 ^ src2) & mask;
 		return true;
 	}
 	if (!strcmp (op, "|=")) {
-		*result = src1 | src2;
+		*result = (old_src1 | src2) & mask;
 		return true;
 	}
 	return false;
 }
 
 // fill REGs with known values
-static void fillRegisterValues(RCore *core) {
+static void fillRegisterValues(RReg *reg) {
 	RListIter *iter_reg;
-	RList *regs;
-	RRegItem *reg_item;
-	int nr = 10;
-
-	regs = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+	RList *regs = r_reg_get_list (reg, R_REG_TYPE_GPR);
 	if (!regs) {
 		return;
 	}
+	r_reg_arena_pop (reg);
+	int nr = 10;
+	RRegItem *reg_item;
 	r_list_foreach (regs, iter_reg, reg_item) {
-		r_reg_arena_pop (core->dbg->reg);
-		r_reg_set_value (core->dbg->reg, reg_item, nr);
-		r_reg_arena_push (core->dbg->reg);
+		r_reg_set_value (reg, reg_item, nr);
 		nr += 3;
 	}
+	r_reg_arena_push (reg);
+}
+
+static void rop_reg_values(RReg *reg, RRegItem *item, ut64 *value, ut64 *initial) {
+	*value = r_reg_get_value (reg, item);
+	r_reg_arena_swap (reg, false);
+	*initial = r_reg_get_value (reg, item);
+	r_reg_arena_swap (reg, false);
 }
 
 // split esil string in flags part and main instruction
 // hacky, only tested for x86, TODO: portable version
 // NOTE: esil_main and esil_flg are heap allocated and must be freed by the caller
-static void esil_split_flg(char *esil_str, char **esil_main, char **esil_flg) {
-	char *split = strstr (esil_str, "f,=");
+static void esil_split_flg(const char *esil_str, char **esil_main, char **esil_flg) {
+	const char *split = strstr (esil_str, "f,=");
 	const int kCommaHits = 2;
 	int hits = 0;
 
@@ -281,14 +311,20 @@ static bool rop_collect_stats(RCore *core, const char *expr, RopStats *stats) {
 }
 
 static char* rop_classify_constant(RCore *core, RList *ropList) {
-	char *esil_str, *constant;
+	RopInsn *insn;
+	char *constant;
 	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_r, *iter_dst, *iter_const;
 	RRegItem *item_dst;
 	RList *head, *constants;
 	RopStats stats = {0};
+	RReg *reg = core->anal->reg;
 
-	r_list_foreach (ropList, iter_r, esil_str) {
+	r_list_foreach (ropList, iter_r, insn) {
+		const char *esil_str = insn->esil;
+		if (R_STR_ISEMPTY (esil_str)) {
+			continue;
+		}
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
 		if (r_list_empty (constants)) {
@@ -296,8 +332,8 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 			continue;
 		}
 		// init regs with known values
-		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		fillRegisterValues (reg);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			ct = NULL;
 			goto continue_error;
@@ -309,7 +345,7 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 		if (!r_list_find (stats.ops, "=", (RListComparator)strcmp)) {
 			goto continue_error;
 		}
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -320,12 +356,9 @@ static char* rop_classify_constant(RCore *core, RList *ropList) {
 				continue;
 			}
 
-			value_dst = r_reg_get_value (core->dbg->reg, item_dst);
-			r_reg_arena_swap (core->dbg->reg, false);
-			diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
-			r_reg_arena_swap (core->dbg->reg, false);
+			rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
 			//restore initial value
-			r_reg_set_value (core->dbg->reg, item_dst, diff_dst);
+			r_reg_set_value (reg, item_dst, diff_dst);
 
 			if (value_dst != diff_dst) {
 				r_list_foreach (constants, iter_const, constant) {
@@ -349,17 +382,22 @@ out_error:
 }
 
 static char* rop_classify_mov(RCore *core, RList *ropList) {
-	char *esil_str;
+	RopInsn *insn;
 	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL;
 	RListIter *iter_src, *iter_r, *iter_dst;
 	RRegItem *item_src, *item_dst;
 	RList *head;
 	RopStats stats = {0};
+	RReg *reg = core->anal->reg;
 
-	r_list_foreach (ropList, iter_r, esil_str) {
+	r_list_foreach (ropList, iter_r, insn) {
+		const char *esil_str = insn->esil;
+		if (R_STR_ISEMPTY (esil_str)) {
+			continue;
+		}
 		// init regs with known values
-		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		fillRegisterValues (reg);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -372,7 +410,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 			goto continue_error;
 		}
 
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -388,10 +426,7 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 				continue;
 			}
 
-			value_dst = r_reg_get_value (core->dbg->reg, item_dst);
-			r_reg_arena_swap (core->dbg->reg, false);
-			diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
-			r_reg_arena_swap (core->dbg->reg, false);
+			rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
 			r_list_foreach (head, iter_src, item_src) {
 				ut64 diff_src, value_src;
 				if (!r_list_find (stats.reg_read, item_src->name,
@@ -402,12 +437,9 @@ static char* rop_classify_mov(RCore *core, RList *ropList) {
 				if (item_src == item_dst || isFlag (item_src)) {
 					continue;
 				}
-				value_src = r_reg_get_value (core->dbg->reg, item_src);
-				r_reg_arena_swap (core->dbg->reg, false);
-				diff_src = r_reg_get_value (core->dbg->reg, item_src);
-				r_reg_arena_swap (core->dbg->reg, false);
+				rop_reg_values (reg, item_src, &value_src, &diff_src);
 				//restore initial value
-				r_reg_set_value (core->dbg->reg, item_src, diff_src);
+				r_reg_set_value (reg, item_src, diff_src);
 				if (value_dst == value_src && value_dst != diff_dst) {
 					mov = r_str_appendf (mov, "%s <-- %s;",
 						item_dst->name, item_src->name);
@@ -424,19 +456,23 @@ out_error:
 }
 
 static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
-	char *esil_str, *op;
+	RopInsn *insn;
+	char *op;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
 	RRegItem *item_src1, *item_src2, *item_dst;
 	RList *head;
 	RopStats stats = {0};
-	ut64 *op_result = R_NEW0 (ut64);
-	ut64 *op_result_r = R_NEW0 (ut64);
+	RReg *reg = core->anal->reg;
 
-	r_list_foreach (ropList, iter_r, esil_str) {
+	r_list_foreach (ropList, iter_r, insn) {
+		const char *esil_str = insn->esil;
+		if (R_STR_ISEMPTY (esil_str)) {
+			continue;
+		}
 		// init regs with known values
-		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		fillRegisterValues (reg);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			goto out_error;
 		}
@@ -449,10 +485,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 			r_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
 
-				value_src1 = r_reg_get_value (core->dbg->reg, item_src1);
-				r_reg_arena_swap (core->dbg->reg, false);
-				diff_src1 = r_reg_get_value (core->dbg->reg, item_src1);
-				r_reg_arena_swap (core->dbg->reg, false);
+				rop_reg_values (reg, item_src1, &value_src1, &diff_src1);
 				if (!r_list_find (stats.reg_read, item_src1->name,
 						  (RListComparator)strcmp)) {
 					continue;
@@ -460,9 +493,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 
 				r_list_foreach (head, iter_src2, item_src2) {
 					ut64 value_src2, diff_src2;
-					value_src2 = r_reg_get_value (core->dbg->reg, item_src2);
-					r_reg_arena_swap (core->dbg->reg, false);
-					diff_src2 = r_reg_get_value (core->dbg->reg, item_src2);
+					rop_reg_values (reg, item_src2, &value_src2, &diff_src2);
 
 					if (!r_list_find (stats.reg_read, item_src2->name,
 						    (RListComparator)strcmp)) {
@@ -474,11 +505,10 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 					}
 
 					r_list_foreach (head, iter_dst, item_dst) {
-						ut64 value_dst;
+						ut64 value_dst, diff_dst, op_result, op_result_r;
 						bool redundant = false, simulate, simulate_r;
 
-						value_dst = r_reg_get_value (core->dbg->reg, item_dst);
-						r_reg_arena_swap (core->dbg->reg, false);
+						rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
 						if (!r_list_find (stats.reg_write, item_dst->name,
 							    	(RListComparator)strcmp)) {
 							continue;
@@ -487,9 +517,9 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 						if (isFlag (item_dst)) {
 							continue;
 						}
-						simulate = simulate_op (op, value_src1, value_src2, diff_src1, diff_src2, op_result, item_dst->size);
-						simulate_r = simulate_op (op, value_src2, value_src1, diff_src2, diff_src1, op_result_r, item_dst->size);
-						if (/*value_src1 != 0 && value_src2 != 0 && */simulate && value_dst == *op_result) {
+						simulate = simulate_op (op, value_src1, value_src2, diff_src1, diff_src2, &op_result, item_dst->size);
+						simulate_r = simulate_op (op, value_src2, value_src1, diff_src2, diff_src1, &op_result_r, item_dst->size);
+						if (/*value_src1 != 0 && value_src2 != 0 && */simulate && value_dst == op_result) {
 							// r_cons_println (core->cons, "Debug: FOUND ONE !");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, item_src2->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
@@ -499,7 +529,7 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 							}
 							free (tmp);
 							redundant = true;
-						} else if (!redundant /*&& value_src1 != 0 && value_src2 != 0*/ && simulate_r && value_dst == *op_result_r) {
+						} else if (!redundant /*&& value_src1 != 0 && value_src2 != 0*/ && simulate_r && value_dst == op_result_r) {
 							// r_cons_println (core->cons, "Debug: FOUND ONE reversed!");
 							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src2->name, op, item_src1->name);
 							if (arithmetic && !strstr (arithmetic, tmp)) {
@@ -516,27 +546,27 @@ static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
 continue_error:
 		FREE_ROP;
 	}
-	free (op_result);
-	free (op_result_r);
 	return arithmetic;
 out_error:
 	FREE_ROP;
-	free (op_result);
-	free (op_result_r);
 	return NULL;
 }
 
 static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
-	char *esil_str, *op, *constant;
+	RopInsn *insn;
+	char *op, *constant;
 	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
 	RListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
 	RRegItem *item_src1, *item_dst;
 	RList *head, *constants;
 	RopStats stats = {0};
-	ut64 *op_result = R_NEW0 (ut64);
-	ut64 *op_result_r = R_NEW0 (ut64);
+	RReg *reg = core->anal->reg;
 
-	r_list_foreach (ropList, iter_r, esil_str) {
+	r_list_foreach (ropList, iter_r, insn) {
+		const char *esil_str = insn->esil;
+		if (R_STR_ISEMPTY (esil_str)) {
+			continue;
+		}
 		constants = get_constants (esil_str);
 		// if there are no constants in the instruction continue
 		if (r_list_empty (constants)) {
@@ -544,8 +574,8 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 			continue;
 		}
 		// init regs with known values
-		fillRegisterValues (core);
-		head = r_reg_get_list (core->dbg->reg, R_REG_TYPE_GPR);
+		fillRegisterValues (reg);
+		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
 		if (!head) {
 			arithmetic = NULL;
 			r_list_free (constants);
@@ -559,22 +589,16 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 		r_list_foreach (stats.ops, iter_ops, op) {
 			r_list_foreach (head, iter_src1, item_src1) {
 				ut64 value_src1, diff_src1;
-				value_src1 = r_reg_get_value (core->dbg->reg, item_src1);
-				r_reg_arena_swap (core->dbg->reg, false);
-				diff_src1 = r_reg_get_value (core->dbg->reg, item_src1);
-				r_reg_arena_swap (core->dbg->reg, false);
+				rop_reg_values (reg, item_src1, &value_src1, &diff_src1);
 
 				if (!r_list_find (stats.reg_read, item_src1->name,
 						  (RListComparator)strcmp)) {
 					continue;
 				}
 				r_list_foreach (head, iter_dst, item_dst) {
-					ut64 value_dst, diff_dst;
+					ut64 value_dst, diff_dst, op_result, op_result_r;
 					bool redundant = false, simulate, simulate_r;
-					value_dst = r_reg_get_value (core->dbg->reg, item_dst);
-					r_reg_arena_swap (core->dbg->reg, false);
-					diff_dst = r_reg_get_value (core->dbg->reg, item_dst);
-					r_reg_arena_swap (core->dbg->reg, false);
+					rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
 					if (!r_list_find (stats.reg_write, item_dst->name,
 						    (RListComparator)strcmp)) {
 						continue;
@@ -587,12 +611,12 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 						r_list_foreach (constants, iter_const, constant) {
 							ut64 value_ct = r_num_get (NULL, constant);
 							simulate = simulate_op (op, value_src1, value_ct,
-							  			diff_src1, value_ct, op_result,
-									 	item_dst->size);
+									diff_src1, value_ct, &op_result,
+									item_dst->size);
 							simulate_r = simulate_op (op, value_ct, value_src1,
-							  			value_ct, diff_src1, op_result_r,
-										item_dst->size);
-							if (simulate && op_result && value_dst == *op_result) {
+									value_ct, diff_src1, &op_result_r,
+									item_dst->size);
+							if (simulate && value_dst == op_result) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
 									arithmetic = r_str_append (arithmetic, tmp);
@@ -601,7 +625,7 @@ static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
 								}
 								free (tmp);
 								redundant = true;
-							} else if (!redundant && simulate_r && value_dst == *op_result_r) {
+							} else if (!redundant && simulate_r && value_dst == op_result_r) {
 								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, constant, op, item_src1->name);
 								if (arithmetic && !strstr (arithmetic, tmp)) {
 									arithmetic = r_str_append (arithmetic, tmp);
@@ -619,82 +643,92 @@ continue_error:
 		FREE_ROP;
 		r_list_free (constants);
 	}
-	free (op_result);
-	free (op_result_r);
 	return arithmetic;
 }
 
-static int rop_classify_nops(RCore *core, RList *ropList) {
-	char *esil_str;
-	int changes = 1;
+static RopNopClass rop_classify_nops(RCore *core, RList *ropList) {
+	RopInsn *insn;
 	RListIter *iter_r;
 	RopStats stats = {0};
+	RReg *reg = core->anal->reg;
+	bool seen = false;
 
-	r_list_foreach (ropList, iter_r, esil_str) {
-		fillRegisterValues (core);
+	r_list_foreach (ropList, iter_r, insn) {
+		seen = true;
+		const char *esil_str = insn->esil;
+		if (R_STR_ISEMPTY (esil_str)) {
+			if (insn->type == R_ANAL_OP_TYPE_NOP) {
+				continue;
+			}
+			return ROP_NOP_UNKNOWN;
+		}
+		fillRegisterValues (reg);
 		if (!rop_collect_stats (core, esil_str, &stats)) {
 			rop_stats_fini (&stats);
-			continue;
+			return ROP_NOP_UNKNOWN;
 		}
 		if (!rop_stats_empty (&stats)) {
 			rop_stats_fini (&stats);
-			return 0;
+			return ROP_NOP_NO;
 		}
 		rop_stats_fini (&stats);
 	}
 
-	return changes;
+	return seen? ROP_NOP_YES: ROP_NOP_NO;
+}
+
+static void rop_classify_set(Sdb *db, const char *ns_name, const char *key, const char *value) {
+	if (!value) {
+		return;
+	}
+	Sdb *ns = sdb_ns (db, ns_name, true);
+	if (!ns) {
+		R_LOG_ERROR ("Could not create SDB 'rop/%s' namespace", ns_name);
+		return;
+	}
+	sdb_set (ns, key, value, 0);
 }
 
 static void rop_classify(RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
-	int nop = 0;
-	char *mov, *ct, *arithm, *arithm_ct, *str;
-	Sdb *db_nop = sdb_ns (db, "nop", true);
-	Sdb *db_mov = sdb_ns (db, "mov", true);
-	Sdb *db_ct = sdb_ns (db, "const", true);
-	Sdb *db_aritm = sdb_ns (db, "arithm", true);
-	Sdb *db_aritm_ct = sdb_ns (db, "arithm_ct", true);
-
-	if (!db_nop || !db_mov || !db_ct || !db_aritm || !db_aritm_ct) {
-		R_LOG_ERROR ("Could not create SDB 'rop' sub-namespaces");
+	char *str = r_str_newf ("0x%x", size);
+	if (!str) {
 		return;
 	}
-	nop = rop_classify_nops (core, ropList);
-	mov = rop_classify_mov (core, ropList);
-	ct = rop_classify_constant (core, ropList);
-	arithm = rop_classify_arithmetic (core, ropList);
-	arithm_ct = rop_classify_arithmetic_const (core, ropList);
-	str = r_str_newf ("0x%u", size);
 
-	if (nop == 1) {
+	if (rop_classify_nops (core, ropList) == ROP_NOP_YES) {
 		char *str_nop = r_str_newf ("%s NOP", str);
-		sdb_set (db_nop, key, str_nop, 0);
+		rop_classify_set (db, "nop", key, str_nop);
 		free (str_nop);
-	} else {
-		if (mov) {
-			char *str_mov = r_str_newf ("%s MOV { %s }", str, mov);
-			sdb_set (db_mov, key, str_mov, 0);
-			free (str_mov);
-			free (mov);
-		}
-		if (ct) {
-			char *str_ct = r_str_newf ("%s LOAD_CONST { %s }", str, ct);
-			sdb_set (db_ct, key, str_ct, 0);
-			free (str_ct);
-			free (ct);
-		}
-		if (arithm) {
-			char *str_arithm = r_str_newf ("%s ARITHMETIC { %s }", str, arithm);
-			sdb_set (db_aritm, key, str_arithm, 0);
-			free (str_arithm);
-			free (arithm);
-		}
-		if (arithm_ct) {
-			char *str_arithm_ct = r_str_newf ("%s ARITHMETIC_CONST { %s }", str, arithm_ct);
-			sdb_set (db_aritm_ct, key, str_arithm_ct, 0);
-			free (str_arithm_ct);
-			free (arithm_ct);
-		}
+		free (str);
+		return;
+	}
+	char *mov = rop_classify_mov (core, ropList);
+	if (mov) {
+		char *str_mov = r_str_newf ("%s MOV { %s }", str, mov);
+		rop_classify_set (db, "mov", key, str_mov);
+		free (str_mov);
+		free (mov);
+	}
+	char *ct = rop_classify_constant (core, ropList);
+	if (ct) {
+		char *str_ct = r_str_newf ("%s LOAD_CONST { %s }", str, ct);
+		rop_classify_set (db, "const", key, str_ct);
+		free (str_ct);
+		free (ct);
+	}
+	char *arithm = rop_classify_arithmetic (core, ropList);
+	if (arithm) {
+		char *str_arithm = r_str_newf ("%s ARITHMETIC { %s }", str, arithm);
+		rop_classify_set (db, "arithm", key, str_arithm);
+		free (str_arithm);
+		free (arithm);
+	}
+	char *arithm_ct = rop_classify_arithmetic_const (core, ropList);
+	if (arithm_ct) {
+		char *str_arithm_ct = r_str_newf ("%s ARITHMETIC_CONST { %s }", str, arithm_ct);
+		rop_classify_set (db, "arithm_ct", key, str_arithm_ct);
+		free (str_arithm_ct);
+		free (arithm_ct);
 	}
 
 	free (str);
@@ -1596,7 +1630,7 @@ static bool gadget_kuery_print_root(RCore *core, const char *root, const char *k
 	char *out = sdb_querys (core->sdb, NULL, 0, query);
 	free (query);
 	if (R_STR_ISNOTEMPTY (out)) {
-		r_cons_println (core->cons, out);
+		r_cons_print (core->cons, out);
 		free (out);
 		return true;
 	}

@@ -1498,7 +1498,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 	const bool rop_db = r_config_get_i (core->config, "gadget.db");
 
 	if (rop_db) {
-		ropList = r_list_newf (free);
+		ropList = r_list_newf (rop_insn_free);
 		db = sdb_ns (core->sdb, "rop", true);
 		if (!db) {
 			R_LOG_ERROR ("Could not create SDB 'rop' namespace");
@@ -1530,16 +1530,16 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			RAnalOp asmop;
 			ut8 *buf = malloc (hit->len);
 			if (!buf) {
-				return;
+				hit = NULL;
+				break;
 			}
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
-				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
-				r_list_append (ropList, (void *) opstr_n);
+			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
+				r_list_append (ropList, rop_insn_new (analop.type, R_STRBUF_SAFEGET (&analop.esil)));
 			}
 			pj_o (pj);
 			pj_kn (pj, "addr", hit->addr);
@@ -1576,14 +1576,18 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 		r_list_foreach (hitlist, iter, hit) {
 			RAnalOp asmop;
 			ut8 *buf = malloc (hit->len);
+			if (!buf) {
+				hit = NULL;
+				break;
+			}
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
 			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
-				r_list_append (ropList, r_str_newf (" %s", opstr));
+			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
+				r_list_append (ropList, rop_insn_new (analop.type, opstr));
 			}
 			if (esil) {
 				r_cons_printf (core->cons, "%s\n", opstr);
@@ -1620,6 +1624,7 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			}
 			ut8 *buf = malloc (1 + hit->len);
 			if (!buf) {
+				hit = NULL;
 				break;
 			}
 			buf[hit->len] = 0;
@@ -1628,9 +1633,8 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
 			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
-			if (analop.type != R_ANAL_OP_TYPE_RET) {
-				char *opstr_n = r_str_newf (" %s", R_STRBUF_SAFEGET (&analop.esil));
-				r_list_append (ropList, (void *) opstr_n);
+			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
+				r_list_append (ropList, rop_insn_new (analop.type, R_STRBUF_SAFEGET (&analop.esil)));
 			}
 			char *asm_op_hex = r_hex_bin2strdup(asmop.bytes, asmop.size);
 			if (colorize) {
