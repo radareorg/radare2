@@ -969,7 +969,6 @@ R_API R_MUSTUSE char *r_str_replace(char *str, const char *key, const char *val,
 	}
 	R_RETURN_VAL_IF_FAIL (str && key && val, NULL);
 
-	size_t off, i;
 	char *newstr, *p = str;
 	size_t klen = strlen (key);
 	size_t vlen = strlen (val);
@@ -983,24 +982,19 @@ R_API R_MUSTUSE char *r_str_replace(char *str, const char *key, const char *val,
 	if (klen == vlen && !strcmp (key, val)) {
 		return str;
 	}
+	size_t slen = strlen (str);
 	char *q = str;
 	for (;;) {
 		p = strstr (q, key);
 		if (!p) {
 			break;
 		}
-		off = (size_t) (p - str);
+		size_t off = (size_t) (p - str);
 		if (vlen != klen) {
-			size_t tlen = strlen (p + klen);
+			size_t tlen = slen - (off + klen);
+			slen += vlen - klen;
 			if (vlen > klen) {
-				size_t nslen, nlen;
-				if (r_add_overflow (off, vlen, &nslen) ||
-						r_add_overflow (nslen, tlen, &nslen) ||
-						r_add_overflow (nslen, (size_t)1, &nlen)) {
-					R_FREE (str);
-					return NULL;
-				}
-				newstr = realloc (str, nlen);
+				newstr = realloc (str, slen + 1);
 				if (!newstr) {
 					R_FREE (str);
 					return NULL;
@@ -1011,8 +1005,7 @@ R_API R_MUSTUSE char *r_str_replace(char *str, const char *key, const char *val,
 			memmove (p + vlen, p + klen, tlen + 1);
 		}
 		memcpy (p, val, vlen);
-		i = off + vlen;
-		q = str + i;
+		q = str + off + vlen;
 		if (!g) {
 			break;
 		}
