@@ -377,7 +377,7 @@ static bool core_esil_run_pin(RCore *core, ut64 pc, const char *pc_name, int siz
 	}
 	ut64 pin_pc = 0;
 	if (!r_esil_reg_read_silent (&core->esil.esil, pc_name, &pin_pc, NULL)) {
-		return false;
+		return true;
 	}
 	if (pin_pc == pc) {
 		r_esil_reg_write_silent (&core->esil.esil, pc_name, pc + size);
