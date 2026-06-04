@@ -523,7 +523,7 @@ static char *subvar(RAsmPluginSession *aps, RAnalFunction *f, ut64 addr, int opl
 				? p->get_ptr_at (f, sparg->delta, addr)
 				: ST64_MAX;
 			if (delta == ST64_MAX && sparg->field) {
-				delta = sparg->delta;
+				delta = f->maxstack + sparg->delta;
 			} else if (delta == ST64_MAX) {
 				R_FREE (ireg);
 				continue;
