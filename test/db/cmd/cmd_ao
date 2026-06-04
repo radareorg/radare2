@@ -10,6 +10,17 @@ type: mov
 EOF
 RUN
 
+NAME=aos reject huge count
+FILE=-
+CMDS=<<EOF
+aos 268435456
+EOF
+EXPECT=
+EXPECT_ERR=<<EOF
+ERROR: Invalid opcode count
+EOF
+RUN
+
 NAME=anal.mask
 FILE=-
 ARGS=-a arm -b 64

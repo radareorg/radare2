@@ -10565,7 +10565,12 @@ static void cmd_anal_opcode(RCore *core, const char *input) {
 			}
 		}
 		if (input[1] && input[2]) {
-			l = (int)r_num_get (core->num, input + 1);
+			ut64 n = r_num_get (core->num, input + 1);
+			if (n > ST32_MAX / 8) {
+				R_LOG_ERROR ("Invalid opcode count");
+				return;
+			}
+			l = (int)n;
 			if (l > 0) {
 				count = l;
 			}
