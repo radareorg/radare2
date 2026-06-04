@@ -701,7 +701,7 @@ EXPECT=<<EOF
 EOF
 RUN
 
-NAME=search legacy rop const klass with /gk from q-mode
+NAME=search rop ldconst klass with /gk from q-mode
 FILE=malloc://1024
 CMDS=<<EOF
 e asm.arch=x86
@@ -711,12 +711,12 @@ e search.maxhits=1
 e scr.color=false
 "wa movabs rax, 0x123456789abcdef0; ret"
 /gq mov
-/gk const
+/gk ldconst
 q
 EOF
 EXPECT=<<EOF
 0x00000000: movabs rax, 0x123456789abcdef0; ret;
-0x00000000=0xb LOAD_CONST { rax <-- 0x123456789abcdef0; }
+0x00000000=0xb ldconst
 EOF
 RUN
 

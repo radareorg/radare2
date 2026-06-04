@@ -3,738 +3,6 @@
 
 #if R_INCLUDE_BEGIN
 
-static RList* get_constants(const char *str) {
-	RList *list;
-	char *p, *data;
-	char *save_ptr = NULL;
-
-	if (!str) {
-		return NULL;
-	}
-
-	data = strdup (str);
-	list = r_list_newf (free);
-	p = r_str_tok_r (data, ",", &save_ptr);
-	while (p) {
-		if (strtol (p, NULL, 0)) {
-			r_list_append (list, (void*)strdup (p));
-		}
-		p = r_str_tok_r (NULL, ",", &save_ptr);
-	}
-	free (data);
-	return list;
-}
-
-typedef struct {
-	int type;
-	char *esil;
-} RopInsn;
-
-typedef enum {
-	ROP_NOP_NO,
-	ROP_NOP_YES,
-	ROP_NOP_UNKNOWN,
-} RopNopClass;
-
-static RopInsn *rop_insn_new(int type, const char *esil) {
-	RopInsn *insn = R_NEW0 (RopInsn);
-	insn->type = type;
-	insn->esil = strdup (esil? esil: "");
-	return insn;
-}
-
-static void rop_insn_free(void *ptr) {
-	RopInsn *insn = ptr;
-	if (insn) {
-		free (insn->esil);
-		free (insn);
-	}
-}
-
-static bool isFlag(RRegItem *reg) {
-	const char *type = r_reg_type_tostring (reg->type);
-
-	return !strcmp (type, "flg");
-}
-
-// binary op
-static bool simulate_op(const char *op, ut64 src1, ut64 src2, ut64 old_src1, ut64 old_src2, ut64 *result, int size) {
-	(void)old_src2;
-	if (size < 1 || size > 64) {
-		return false;
-	}
-	const ut64 mask = r_num_bitmask (size);
-
-	if (!strcmp (op, "^")) {
-		*result = (src1 ^ src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "+")) {
-		*result = (src1 + src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "-")) {
-		*result = (src1 - src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "*")) {
-		*result = (src1 * src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "|")) {
-		*result = (src1 | src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "/")) {
-		if (!src2) {
-			return false;
-		}
-		*result = (src1 / src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "%")) {
-		if (!src2) {
-			return false;
-		}
-		*result = (src1 % src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "<<")) {
-		if (src2 >= 64) {
-			return false;
-		}
-		*result = (src1 << src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, ">>")) {
-		if (src2 >= 64) {
-			return false;
-		}
-		*result = (src1 >> src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "&")) {
-		*result = (src1 & src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "+=")) {
-		*result = (old_src1 + src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "-=")) {
-		*result = (old_src1 - src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "*=")) {
-		*result = (old_src1 * src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "/=")) {
-		if (!src2) {
-			return false;
-		}
-		*result = (old_src1 / src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "%=")) {
-		if (!src2) {
-			return false;
-		}
-		*result = (old_src1 % src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "&=")) {
-		*result = (old_src1 & src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "^=")) {
-		*result = (old_src1 ^ src2) & mask;
-		return true;
-	}
-	if (!strcmp (op, "|=")) {
-		*result = (old_src1 | src2) & mask;
-		return true;
-	}
-	return false;
-}
-
-// fill REGs with known values
-static void fillRegisterValues(RReg *reg) {
-	RListIter *iter_reg;
-	RList *regs = r_reg_get_list (reg, R_REG_TYPE_GPR);
-	if (!regs) {
-		return;
-	}
-	r_reg_arena_pop (reg);
-	int nr = 10;
-	RRegItem *reg_item;
-	r_list_foreach (regs, iter_reg, reg_item) {
-		r_reg_set_value (reg, reg_item, nr);
-		nr += 3;
-	}
-	r_reg_arena_push (reg);
-}
-
-static void rop_reg_values(RReg *reg, RRegItem *item, ut64 *value, ut64 *initial) {
-	*value = r_reg_get_value (reg, item);
-	r_reg_arena_swap (reg, false);
-	*initial = r_reg_get_value (reg, item);
-	r_reg_arena_swap (reg, false);
-}
-
-// split esil string in flags part and main instruction
-// hacky, only tested for x86, TODO: portable version
-// NOTE: esil_main and esil_flg are heap allocated and must be freed by the caller
-static void esil_split_flg(const char *esil_str, char **esil_main, char **esil_flg) {
-	const char *split = strstr (esil_str, "f,=");
-	const int kCommaHits = 2;
-	int hits = 0;
-
-	if (split) {
-		while (hits != kCommaHits) {
-			--split;
-			if (*split == ',') {
-				hits++;
-			}
-		}
-		*esil_flg = strdup (++split);
-		*esil_main = r_str_ndup (esil_str, strlen (esil_str) - strlen (*esil_flg) - 1);
-	}
-}
-
-typedef struct {
-	RList *ops;
-	RList *reg_read;
-	RList *reg_write;
-	bool mem_read;
-	bool mem_write;
-} RopStats;
-
-static void rop_stats_fini(RopStats *stats) {
-	r_list_free (stats->ops);
-	r_list_free (stats->reg_read);
-	r_list_free (stats->reg_write);
-	memset (stats, 0, sizeof (*stats));
-}
-
-static bool rop_stats_init(RopStats *stats) {
-	stats->ops = r_list_newf (free);
-	stats->reg_read = r_list_newf (free);
-	stats->reg_write = r_list_newf (free);
-	if (stats->ops && stats->reg_read && stats->reg_write) {
-		return true;
-	}
-	rop_stats_fini (stats);
-	return false;
-}
-
-static void rop_stats_add(RList *list, const char *item) {
-	if (R_STR_ISNOTEMPTY (item) && !r_list_find (list, item, (RListComparator)strcmp)) {
-		char *copy = strdup (item);
-		if (copy) {
-			r_list_append (list, copy);
-		}
-	}
-}
-
-static void rop_stats_reg_read(void *user, const char *name, ut64 val) {
-	(void)val;
-	RopStats *stats = user;
-	rop_stats_add (stats->reg_read, name);
-}
-
-static void rop_stats_reg_write(void *user, const char *name, ut64 old, ut64 val) {
-	(void)old;
-	(void)val;
-	RopStats *stats = user;
-	rop_stats_add (stats->reg_write, name);
-}
-
-static void rop_stats_mem_read(void *user, ut64 addr, const ut8 *buf, int len) {
-	(void)addr;
-	(void)buf;
-	(void)len;
-	RopStats *stats = user;
-	stats->mem_read = true;
-}
-
-static bool rop_stats_mem_write(REsil *esil, ut64 addr, const ut8 *buf, int len) {
-	(void)addr;
-	(void)buf;
-	(void)len;
-	RopStats *stats = esil->user;
-	if (stats) {
-		stats->mem_write = true;
-	}
-	return true;
-}
-
-static void rop_stats_op(void *user, const char *op) {
-	RopStats *stats = user;
-	rop_stats_add (stats->ops, op);
-}
-
-static bool rop_stats_empty(RopStats *stats) {
-	return r_list_empty (stats->ops)
-		&& r_list_empty (stats->reg_read)
-		&& r_list_empty (stats->reg_write)
-		&& !stats->mem_read
-		&& !stats->mem_write;
-}
-
-static bool rop_collect_stats(RCore *core, const char *expr, RopStats *stats) {
-	rop_stats_fini (stats);
-	if (!rop_stats_init (stats)) {
-		return false;
-	}
-	REsil *esil = r_esil_new_simple (0, core->anal->reg, &core->anal->iob);
-	if (!esil) {
-		rop_stats_fini (stats);
-		return false;
-	}
-	esil->anal = core->anal;
-	esil->user = stats;
-	esil->cb.hook_mem_write = rop_stats_mem_write;
-	r_esil_add_voyeur (esil, stats, rop_stats_reg_read, R_ESIL_VOYEUR_REG_READ);
-	r_esil_add_voyeur (esil, stats, rop_stats_reg_write, R_ESIL_VOYEUR_REG_WRITE);
-	r_esil_add_voyeur (esil, stats, rop_stats_mem_read, R_ESIL_VOYEUR_MEM_READ);
-	r_esil_add_voyeur (esil, stats, rop_stats_op, R_ESIL_VOYEUR_OP);
-	bool ret = r_esil_parse (esil, expr);
-	r_esil_free (esil);
-	return ret;
-}
-
-#define FREE_ROP  { \
-	R_FREE (esil_flg);       \
-	R_FREE (esil_main);      \
-	rop_stats_fini (&stats); \
-}
-
-static char* rop_classify_constant(RCore *core, RList *ropList) {
-	RopInsn *insn;
-	char *constant;
-	char *ct = NULL, *esil_main = NULL, *esil_flg = NULL;
-	RListIter *iter_r, *iter_dst, *iter_const;
-	RRegItem *item_dst;
-	RList *head, *constants;
-	RopStats stats = {0};
-	RReg *reg = core->anal->reg;
-
-	r_list_foreach (ropList, iter_r, insn) {
-		const char *esil_str = insn->esil;
-		if (R_STR_ISEMPTY (esil_str)) {
-			continue;
-		}
-		constants = get_constants (esil_str);
-		// if there are no constants in the instruction continue
-		if (r_list_empty (constants)) {
-			r_list_free (constants);
-			continue;
-		}
-		// init regs with known values
-		fillRegisterValues (reg);
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			ct = NULL;
-			goto continue_error;
-		}
-		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
-			goto continue_error;
-		}
-		if (!r_list_find (stats.ops, "=", (RListComparator)strcmp)) {
-			goto continue_error;
-		}
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			goto out_error;
-		}
-		r_list_foreach (head, iter_dst, item_dst) {
-			ut64 diff_dst, value_dst;
-			if (!r_list_find (stats.reg_write, item_dst->name,
-					  (RListComparator)strcmp)) {
-				continue;
-			}
-
-			rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
-			//restore initial value
-			r_reg_set_value (reg, item_dst, diff_dst);
-
-			if (value_dst != diff_dst) {
-				r_list_foreach (constants, iter_const, constant) {
-					if (value_dst == r_num_get (NULL, constant)) {
-						ct = r_str_appendf (ct, "%s <-- 0x%"PFMT64x";", item_dst->name, value_dst);
-					}
-				}
-			}
-		}
-continue_error:
-		// coverity may complain here but as long as the pointer is set back to
-		// NULL is safe that is why is used R_FREE
-		FREE_ROP;
-		r_list_free (constants);
-	}
-	return ct;
-out_error:
-	FREE_ROP;
-	r_list_free (constants);
-	return NULL;
-}
-
-static char* rop_classify_mov(RCore *core, RList *ropList) {
-	RopInsn *insn;
-	char *mov = NULL, *esil_main = NULL, *esil_flg = NULL;
-	RListIter *iter_src, *iter_r, *iter_dst;
-	RRegItem *item_src, *item_dst;
-	RList *head;
-	RopStats stats = {0};
-	RReg *reg = core->anal->reg;
-
-	r_list_foreach (ropList, iter_r, insn) {
-		const char *esil_str = insn->esil;
-		if (R_STR_ISEMPTY (esil_str)) {
-			continue;
-		}
-		// init regs with known values
-		fillRegisterValues (reg);
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			goto out_error;
-		}
-		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
-			goto continue_error;
-		}
-
-		if (!r_list_find (stats.ops, "=", (RListComparator)strcmp)) {
-			goto continue_error;
-		}
-
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			goto out_error;
-		}
-		r_list_foreach (head, iter_dst, item_dst) {
-			ut64 diff_dst, value_dst;
-			if (!r_list_find (stats.reg_write, item_dst->name,
-					  (RListComparator)strcmp)) {
-				continue;
-			}
-
-			// you never mov into flags
-			if (isFlag (item_dst)) {
-				continue;
-			}
-
-			rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
-			r_list_foreach (head, iter_src, item_src) {
-				ut64 diff_src, value_src;
-				if (!r_list_find (stats.reg_read, item_src->name,
-						  (RListComparator)strcmp)) {
-					continue;
-				}
-				// you never mov from flags
-				if (item_src == item_dst || isFlag (item_src)) {
-					continue;
-				}
-				rop_reg_values (reg, item_src, &value_src, &diff_src);
-				//restore initial value
-				r_reg_set_value (reg, item_src, diff_src);
-				if (value_dst == value_src && value_dst != diff_dst) {
-					mov = r_str_appendf (mov, "%s <-- %s;",
-						item_dst->name, item_src->name);
-				}
-			}
-		}
-continue_error:
-		FREE_ROP;
-	}
-	return mov;
-out_error:
-	FREE_ROP;
-	return NULL;
-}
-
-static char* rop_classify_arithmetic(RCore *core, RList *ropList) {
-	RopInsn *insn;
-	char *op;
-	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
-	RListIter *iter_src1, *iter_src2, *iter_r, *iter_dst, *iter_ops;
-	RRegItem *item_src1, *item_src2, *item_dst;
-	RList *head;
-	RopStats stats = {0};
-	RReg *reg = core->anal->reg;
-
-	r_list_foreach (ropList, iter_r, insn) {
-		const char *esil_str = insn->esil;
-		if (R_STR_ISEMPTY (esil_str)) {
-			continue;
-		}
-		// init regs with known values
-		fillRegisterValues (reg);
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			goto out_error;
-		}
-		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
-			goto continue_error;
-		}
-
-		r_list_foreach (stats.ops, iter_ops, op) {
-			r_list_foreach (head, iter_src1, item_src1) {
-				ut64 value_src1, diff_src1;
-
-				rop_reg_values (reg, item_src1, &value_src1, &diff_src1);
-				if (!r_list_find (stats.reg_read, item_src1->name,
-						  (RListComparator)strcmp)) {
-					continue;
-				}
-
-				r_list_foreach (head, iter_src2, item_src2) {
-					ut64 value_src2, diff_src2;
-					rop_reg_values (reg, item_src2, &value_src2, &diff_src2);
-
-					if (!r_list_find (stats.reg_read, item_src2->name,
-						    (RListComparator)strcmp)) {
-						continue;
-					}
-					// TODO check condition
-					if (iter_src1 == iter_src2) {
-						continue;
-					}
-
-					r_list_foreach (head, iter_dst, item_dst) {
-						ut64 value_dst, diff_dst, op_result, op_result_r;
-						bool redundant = false, simulate, simulate_r;
-
-						rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
-						if (!r_list_find (stats.reg_write, item_dst->name,
-							    	(RListComparator)strcmp)) {
-							continue;
-						}
-						// don't check flags for arithmetic
-						if (isFlag (item_dst)) {
-							continue;
-						}
-						simulate = simulate_op (op, value_src1, value_src2, diff_src1, diff_src2, &op_result, item_dst->size);
-						simulate_r = simulate_op (op, value_src2, value_src1, diff_src2, diff_src1, &op_result_r, item_dst->size);
-						if (/*value_src1 != 0 && value_src2 != 0 && */simulate && value_dst == op_result) {
-							// r_cons_println (core->cons, "Debug: FOUND ONE !");
-							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, item_src2->name);
-							if (arithmetic && !strstr (arithmetic, tmp)) {
-								arithmetic = r_str_append (arithmetic, tmp);
-							} else if (!arithmetic) {
-								arithmetic = r_str_append (arithmetic, tmp);
-							}
-							free (tmp);
-							redundant = true;
-						} else if (!redundant /*&& value_src1 != 0 && value_src2 != 0*/ && simulate_r && value_dst == op_result_r) {
-							// r_cons_println (core->cons, "Debug: FOUND ONE reversed!");
-							char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src2->name, op, item_src1->name);
-							if (arithmetic && !strstr (arithmetic, tmp)) {
-								arithmetic = r_str_append (arithmetic, tmp);
-							} else if (!arithmetic) {
-								arithmetic = r_str_append (arithmetic, tmp);
-							}
-							free (tmp);
-						}
-					}
-				}
-			}
-		}
-continue_error:
-		FREE_ROP;
-	}
-	return arithmetic;
-out_error:
-	FREE_ROP;
-	return NULL;
-}
-
-static char* rop_classify_arithmetic_const(RCore *core, RList *ropList) {
-	RopInsn *insn;
-	char *op, *constant;
-	char *arithmetic = NULL, *esil_flg = NULL, *esil_main = NULL;
-	RListIter *iter_src1, *iter_r, *iter_dst, *iter_ops, *iter_const;
-	RRegItem *item_src1, *item_dst;
-	RList *head, *constants;
-	RopStats stats = {0};
-	RReg *reg = core->anal->reg;
-
-	r_list_foreach (ropList, iter_r, insn) {
-		const char *esil_str = insn->esil;
-		if (R_STR_ISEMPTY (esil_str)) {
-			continue;
-		}
-		constants = get_constants (esil_str);
-		// if there are no constants in the instruction continue
-		if (r_list_empty (constants)) {
-			r_list_free (constants);
-			continue;
-		}
-		// init regs with known values
-		fillRegisterValues (reg);
-		head = r_reg_get_list (reg, R_REG_TYPE_GPR);
-		if (!head) {
-			arithmetic = NULL;
-			r_list_free (constants);
-			continue;
-		}
-		esil_split_flg (esil_str, &esil_main, &esil_flg);
-		if (!rop_collect_stats (core, esil_main? esil_main: esil_str, &stats)) {
-			goto continue_error;
-		}
-
-		r_list_foreach (stats.ops, iter_ops, op) {
-			r_list_foreach (head, iter_src1, item_src1) {
-				ut64 value_src1, diff_src1;
-				rop_reg_values (reg, item_src1, &value_src1, &diff_src1);
-
-				if (!r_list_find (stats.reg_read, item_src1->name,
-						  (RListComparator)strcmp)) {
-					continue;
-				}
-				r_list_foreach (head, iter_dst, item_dst) {
-					ut64 value_dst, diff_dst, op_result, op_result_r;
-					bool redundant = false, simulate, simulate_r;
-					rop_reg_values (reg, item_dst, &value_dst, &diff_dst);
-					if (!r_list_find (stats.reg_write, item_dst->name,
-						    (RListComparator)strcmp)) {
-						continue;
-					}
-					// don't check flags for arithmetic
-					if (isFlag (item_dst)) {
-						continue;
-					}
-					if (value_dst != diff_dst) {
-						r_list_foreach (constants, iter_const, constant) {
-							ut64 value_ct = r_num_get (NULL, constant);
-							simulate = simulate_op (op, value_src1, value_ct,
-									diff_src1, value_ct, &op_result,
-									item_dst->size);
-							simulate_r = simulate_op (op, value_ct, value_src1,
-									value_ct, diff_src1, &op_result_r,
-									item_dst->size);
-							if (simulate && value_dst == op_result) {
-								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, item_src1->name, op, constant);
-								if (arithmetic && !strstr (arithmetic, tmp)) {
-									arithmetic = r_str_append (arithmetic, tmp);
-								} else if (!arithmetic) {
-									arithmetic = r_str_append (arithmetic, tmp);
-								}
-								free (tmp);
-								redundant = true;
-							} else if (!redundant && simulate_r && value_dst == op_result_r) {
-								char *tmp = r_str_newf ("%s <-- %s %s %s;", item_dst->name, constant, op, item_src1->name);
-								if (arithmetic && !strstr (arithmetic, tmp)) {
-									arithmetic = r_str_append (arithmetic, tmp);
-								} else if (!arithmetic) {
-									arithmetic = r_str_append (arithmetic, tmp);
-								}
-								free (tmp);
-							}
-						}
-					}
-				}
-			}
-		}
-continue_error:
-		FREE_ROP;
-		r_list_free (constants);
-	}
-	return arithmetic;
-}
-
-static RopNopClass rop_classify_nops(RCore *core, RList *ropList) {
-	RopInsn *insn;
-	RListIter *iter_r;
-	RopStats stats = {0};
-	RReg *reg = core->anal->reg;
-	bool seen = false;
-
-	r_list_foreach (ropList, iter_r, insn) {
-		seen = true;
-		const char *esil_str = insn->esil;
-		if (R_STR_ISEMPTY (esil_str)) {
-			if (insn->type == R_ANAL_OP_TYPE_NOP) {
-				continue;
-			}
-			return ROP_NOP_UNKNOWN;
-		}
-		fillRegisterValues (reg);
-		if (!rop_collect_stats (core, esil_str, &stats)) {
-			rop_stats_fini (&stats);
-			return ROP_NOP_UNKNOWN;
-		}
-		if (!rop_stats_empty (&stats)) {
-			rop_stats_fini (&stats);
-			return ROP_NOP_NO;
-		}
-		rop_stats_fini (&stats);
-	}
-
-	return seen? ROP_NOP_YES: ROP_NOP_NO;
-}
-
-static void rop_classify_set(Sdb *db, const char *ns_name, const char *key, const char *value) {
-	if (!value) {
-		return;
-	}
-	Sdb *ns = sdb_ns (db, ns_name, true);
-	if (!ns) {
-		R_LOG_ERROR ("Could not create SDB 'rop/%s' namespace", ns_name);
-		return;
-	}
-	sdb_set (ns, key, value, 0);
-}
-
-static void rop_classify(RCore *core, Sdb *db, RList *ropList, const char *key, unsigned int size) {
-	char *str = r_str_newf ("0x%x", size);
-	if (!str) {
-		return;
-	}
-
-	if (rop_classify_nops (core, ropList) == ROP_NOP_YES) {
-		char *str_nop = r_str_newf ("%s NOP", str);
-		rop_classify_set (db, "nop", key, str_nop);
-		free (str_nop);
-		free (str);
-		return;
-	}
-	char *mov = rop_classify_mov (core, ropList);
-	if (mov) {
-		char *str_mov = r_str_newf ("%s MOV { %s }", str, mov);
-		rop_classify_set (db, "mov", key, str_mov);
-		free (str_mov);
-		free (mov);
-	}
-	char *ct = rop_classify_constant (core, ropList);
-	if (ct) {
-		char *str_ct = r_str_newf ("%s LOAD_CONST { %s }", str, ct);
-		rop_classify_set (db, "const", key, str_ct);
-		free (str_ct);
-		free (ct);
-	}
-	char *arithm = rop_classify_arithmetic (core, ropList);
-	if (arithm) {
-		char *str_arithm = r_str_newf ("%s ARITHMETIC { %s }", str, arithm);
-		rop_classify_set (db, "arithm", key, str_arithm);
-		free (str_arithm);
-		free (arithm);
-	}
-	char *arithm_ct = rop_classify_arithmetic_const (core, ropList);
-	if (arithm_ct) {
-		char *str_arithm_ct = r_str_newf ("%s ARITHMETIC_CONST { %s }", str, arithm_ct);
-		rop_classify_set (db, "arithm_ct", key, str_arithm_ct);
-		free (str_arithm_ct);
-		free (arithm_ct);
-	}
-
-	free (str);
-}
-
-
 typedef enum {
 	R_CORE_GADGET_ESIL_COND_NONE,
 	R_CORE_GADGET_ESIL_COND_ALWAYS,
@@ -769,6 +37,7 @@ typedef enum {
 	R_CORE_GADGET_CLASS_LOGIC = 1 << 15,
 	R_CORE_GADGET_CLASS_SHIFT = 1 << 16,
 	R_CORE_GADGET_CLASS_CMP = 1 << 17,
+	R_CORE_GADGET_CLASS_NOP = 1 << 18,
 } RCoreGadgetClass;
 
 typedef struct {
@@ -841,6 +110,7 @@ static const RCoreGadgetClassName gadget_class_names[] = {
 	{ R_CORE_GADGET_CLASS_LOGIC, "logic" },
 	{ R_CORE_GADGET_CLASS_SHIFT, "shift" },
 	{ R_CORE_GADGET_CLASS_CMP, "cmp" },
+	{ R_CORE_GADGET_CLASS_NOP, "nop" },
 };
 
 static void gadget_info_set_target(RCoreGadgetEsilInfo *info, ut64 target, RCoreGadgetTargetKind kind, const char *source) {
@@ -1266,6 +536,10 @@ static bool gadget_op_is_cmp(const RAnalOp *op) {
 	return op->type == R_ANAL_OP_TYPE_CMP || op->type == R_ANAL_OP_TYPE_ACMP;
 }
 
+static bool gadget_op_is_nop(const RAnalOp *op) {
+	return op->type == R_ANAL_OP_TYPE_NOP;
+}
+
 static bool gadget_flag_name_is_signal(const char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		return false;
@@ -1403,6 +677,9 @@ static void gadget_analyze_static(RCore *core, RList *hitlist, RCoreGadgetEsilIn
 		}
 		if (gadget_op_is_cmp (&op)) {
 			info->classes |= R_CORE_GADGET_CLASS_CMP;
+		}
+		if (gadget_op_is_nop (&op)) {
+			info->classes |= R_CORE_GADGET_CLASS_NOP;
 		}
 		if (gadget_op_has_explicit_mem_read (&op, expr)) {
 			info->classes |= R_CORE_GADGET_CLASS_MEMREAD;
@@ -1622,22 +899,6 @@ static void gadget_store_classes(Sdb *db, const RCoreGadgetEsilInfo *info, const
 	}
 }
 
-static bool gadget_kuery_print_root(RCore *core, const char *root, const char *klass) {
-	char *query = r_str_newf ("%s/%s/*", root, klass);
-	if (!query) {
-		return false;
-	}
-	char *out = sdb_querys (core->sdb, NULL, 0, query);
-	free (query);
-	if (R_STR_ISNOTEMPTY (out)) {
-		r_cons_print (core->cons, out);
-		free (out);
-		return true;
-	}
-	free (out);
-	return false;
-}
-
 static const char *gadget_kuery_flat_class(const char *key, char *klass, size_t klass_len) {
 	const char *sep = strstr (key, "_0x");
 	if (!sep || sep == key || klass_len < 1) {
@@ -1665,10 +926,9 @@ static bool gadget_kuery_print_class(RCore *core, Sdb *db, const char *klass) {
 	return found;
 }
 
-static void gadget_kuery_json(PJ *pj, Sdb *db_gadget, Sdb *db_rop) {
-	SdbListIter *sdb_iter, *it;
+static void gadget_kuery_json(PJ *pj, Sdb *db_gadget) {
+	SdbListIter *sdb_iter;
 	SdbList *sdb_list;
-	SdbNs *ns;
 	SdbKv *kv;
 
 	pj_o (pj);
@@ -1697,98 +957,52 @@ static void gadget_kuery_json(PJ *pj, Sdb *db_gadget, Sdb *db_rop) {
 			free (dup);
 		}
 	}
-	if (db_rop) {
-		ls_foreach (db_rop->ns, it, ns) {
-			sdb_list = sdb_foreach_list (ns->sdb, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char *dup = strdup (sdbkv_value (kv));
-				if (!dup) {
-					continue;
-				}
-				char *save_ptr = NULL;
-				char *size = r_str_tok_r (dup, " ", &save_ptr);
-				const char *effect = save_ptr? r_str_trim_head_ro (save_ptr): "";
-				pj_o (pj);
-				pj_ks (pj, "address", sdbkv_key (kv));
-				pj_ks (pj, "size", size);
-				pj_ks (pj, "type", ns->name);
-				pj_ks (pj, "effect", effect);
-				pj_end (pj);
-				free (dup);
-			}
-		}
-	}
 	pj_end (pj);
 	pj_end (pj);
 }
 
 static void rop_kuery(void *data, const char *input, PJ *pj) {
 	RCore *core = (RCore *) data;
-	SdbListIter *sdb_iter, *it;
+	SdbListIter *sdb_iter;
 	SdbList *sdb_list;
-	SdbNs *ns;
 	SdbKv *kv;
-	char *out;
 
 	Sdb *db_gadget = sdb_ns (core->sdb, "gadget", false);
-	Sdb *db_rop = sdb_ns (core->sdb, "rop", false);
-	if (!db_gadget && !db_rop) {
-		R_LOG_ERROR ("could not find SDB 'gadget' or 'rop' namespace");
+	if (!db_gadget) {
+		R_LOG_ERROR ("could not find SDB 'gadget' namespace");
 		return;
 	}
 
 	switch (*input) {
 	case 'q':
-		if (db_gadget) {
-			sdb_list = sdb_foreach_list (db_gadget, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char key_klass[64];
-				const char *addr = gadget_kuery_flat_class (sdbkv_key (kv), key_klass, sizeof (key_klass));
-				if (addr) {
-					r_cons_printf (core->cons, "%s ", addr);
-				}
-			}
-		}
-		if (db_rop) {
-			ls_foreach (db_rop->ns, it, ns) {
-				sdb_list = sdb_foreach_list (ns->sdb, false);
-				ls_foreach (sdb_list, sdb_iter, kv) {
-					r_cons_printf (core->cons, "%s ", sdbkv_key (kv));
-				}
+		sdb_list = sdb_foreach_list (db_gadget, false);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			char key_klass[64];
+			const char *addr = gadget_kuery_flat_class (sdbkv_key (kv), key_klass, sizeof (key_klass));
+			if (addr) {
+				r_cons_printf (core->cons, "%s ", addr);
 			}
 		}
 		break;
 	case 'j':
-		gadget_kuery_json (pj, db_gadget, db_rop);
+		gadget_kuery_json (pj, db_gadget);
 		break;
 	case '?':
 		r_core_cmd_help (core, help_msg_slash_Gk);
 		break;
 	case ' ':
-		if (db_gadget && gadget_kuery_print_class (core, db_gadget, input + 1)) {
-			break;
-		}
-		if (db_rop && gadget_kuery_print_root (core, "rop", input + 1)) {
+		if (gadget_kuery_print_class (core, db_gadget, input + 1)) {
 			break;
 		}
 		R_LOG_ERROR ("Invalid gadget class");
 		break;
 	default:
-		if (db_gadget) {
-			sdb_list = sdb_foreach_list (db_gadget, false);
-			ls_foreach (sdb_list, sdb_iter, kv) {
-				char key_klass[64];
-				const char *addr = gadget_kuery_flat_class (sdbkv_key (kv), key_klass, sizeof (key_klass));
-				if (addr) {
-					r_cons_printf (core->cons, "%s.%s=%s\n", key_klass, addr, sdbkv_value (kv));
-				}
-			}
-		}
-		if (db_rop) {
-			out = sdb_querys (core->sdb, NULL, 0, "rop/***");
-			if (out) {
-				r_cons_println (core->cons, out);
-				free (out);
+		sdb_list = sdb_foreach_list (db_gadget, false);
+		ls_foreach (sdb_list, sdb_iter, kv) {
+			char key_klass[64];
+			const char *addr = gadget_kuery_flat_class (sdbkv_key (kv), key_klass, sizeof (key_klass));
+			if (addr) {
+				r_cons_printf (core->cons, "%s.%s=%s\n", key_klass, addr, sdbkv_value (kv));
 			}
 		}
 		break;
