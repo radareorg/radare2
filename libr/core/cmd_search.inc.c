@@ -224,9 +224,8 @@ static RCoreHelpMessage help_msg_slash_r = {
 static RCoreHelpMessage help_msg_slash_Gk = {
 	"Usage: /gk", "", "query stored gadgets",
 	"/gk", " [ret|jop|cop|syscall|pivot|memread|memwrite|www]", "show gadgets",
-	"/gk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp]", "show primitive classes",
+	"/gk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp|nop]", "show primitive classes",
 	"/gk", " [cond.always|cond.controlled]", "show ESIL-classified conditional gadgets",
-	"/gk", " [nop|mov|const|arithm|arithm_ct]", "show legacy rop classes",
 	"/gkj", "", "json output",
 	"/gkq", "", "list Gadgets offsets",
 	NULL
@@ -1483,32 +1482,21 @@ ret:
 }
 
 static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCoreGadgetEsilInfo *esil_info) {
-	const char *otype;
 	RCoreAsmHit *hit = NULL;
 	RListIter *iter;
-	RList *ropList = NULL;
 	char *buf_asm = NULL;
 	unsigned int size = 0;
 	RAnalOp analop = {0};
-	Sdb *db = NULL;
 	Sdb *gadget_db = NULL;
 	const bool colorize = r_config_get_i (core->config, "scr.color");
 	const bool rop_comments = r_config_get_i (core->config, "gadget.comments");
 	const bool esil = r_config_get_i (core->config, "asm.esil");
-	const bool rop_db = r_config_get_i (core->config, "gadget.db");
+	const bool gadget_db_enabled = r_config_get_i (core->config, "gadget.db");
 
-	if (rop_db) {
-		ropList = r_list_newf (rop_insn_free);
-		db = sdb_ns (core->sdb, "rop", true);
-		if (!db) {
-			R_LOG_ERROR ("Could not create SDB 'rop' namespace");
-			r_list_free (ropList);
-			return;
-		}
+	if (gadget_db_enabled) {
 		gadget_db = sdb_ns (core->sdb, "gadget", true);
 		if (!gadget_db) {
 			R_LOG_ERROR ("Could not create SDB 'gadget' namespace");
-			r_list_free (ropList);
 			return;
 		}
 	}
@@ -1536,11 +1524,8 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
+			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC);
 			size += hit->len;
-			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
-				r_list_append (ropList, rop_insn_new (analop.type, R_STRBUF_SAFEGET (&analop.esil)));
-			}
 			pj_o (pj);
 			pj_kn (pj, "addr", hit->addr);
 			pj_ki (pj, "size", hit->len);
@@ -1552,13 +1537,9 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			r_anal_op_fini (&analop);
 		}
 		pj_end (pj);
-		if (db && hit) {
+		if (gadget_db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
-				rop_classify (core, db, ropList, key, size);
-			}
 			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 		if (hit) {
@@ -1583,13 +1564,10 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_ESIL);
 			size += hit->len;
-			const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
-			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
-				r_list_append (ropList, rop_insn_new (analop.type, opstr));
-			}
 			if (esil) {
+				r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
+				const char *opstr = R_STRBUF_SAFEGET (&analop.esil);
 				r_cons_printf (core->cons, "%s\n", opstr);
 			} else if (colorize) {
 				buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
@@ -1601,15 +1579,13 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			}
 			free (buf);
 			r_anal_op_fini (&asmop);
-			r_anal_op_fini (&analop);
-		}
-		if (db && hit) {
-			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
-			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
-				rop_classify (core, db, ropList, key, size);
+			if (esil) {
+				r_anal_op_fini (&analop);
 			}
+		}
+		if (gadget_db && hit) {
+			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
+			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
 			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 		break;
@@ -1631,16 +1607,15 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			r_io_read_at (core->io, hit->addr, buf, hit->len);
 			r_asm_set_pc (core->rasm, hit->addr);
 			r_asm_disassemble (core->rasm, &asmop, buf, hit->len);
-			r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_ESIL);
-			size += hit->len;
-			if (ropList && analop.type != R_ANAL_OP_TYPE_RET) {
-				r_list_append (ropList, rop_insn_new (analop.type, R_STRBUF_SAFEGET (&analop.esil)));
+			if (colorize) {
+				r_anal_op (core->anal, &analop, hit->addr, buf, hit->len, R_ARCH_OP_MASK_BASIC);
 			}
+			size += hit->len;
 			char *asm_op_hex = r_hex_bin2strdup(asmop.bytes, asmop.size);
 			if (colorize) {
 				char *buf_asm = r_print_colorize_opcode (core->print, asmop.mnemonic,
 					core->cons->context->pal.reg, core->cons->context->pal.num, false, 0);
-				otype = r_print_color_op_type (core->print, analop.type);
+				const char *otype = r_print_color_op_type (core->print, analop.type);
 				if (comment) {
 					r_cons_printf (core->cons, "  0x%08" PFMT64x " %18s%s  %s%s ; %s\n",
 						hit->addr, asm_op_hex, otype, buf_asm, Color_RESET, comment);
@@ -1660,23 +1635,20 @@ static void print_rop(RCore *core, RList *hitlist, PJ *pj, int mode, const RCore
 			}
 			free (asm_op_hex);
 			free (buf);
-			r_anal_op_fini (&analop);
+			if (colorize) {
+				r_anal_op_fini (&analop);
+			}
 			r_anal_op_fini (&asmop);
 		}
-		if (db && hit) {
+		if (gadget_db && hit) {
 			const ut64 addr = ((RCoreAsmHit *) hitlist->head->data)->addr;
-			// r_cons_printf (core->cons, "Gadget size: %d\n", (int)size);
 			r_strf_var (key, 32, "0x%08"PFMT64x, addr);
-			if (!esil_info || (esil_info->classes & R_CORE_GADGET_CLASS_RET)) {
-				rop_classify (core, db, ropList, key, size);
-			}
 			gadget_store_classes (gadget_db, esil_info, key, size);
 		}
 	}
 	if (mode != 'j') {
 		r_cons_newline (core->cons);
 	}
-	r_list_free (ropList);
 }
 
 static int r_core_search_rop(RCore *core, RInterval search_itv, int gadget_type, int opt, const char *grep, int regexp, struct search_parameters *param) {
