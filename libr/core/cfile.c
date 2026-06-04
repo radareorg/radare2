@@ -747,9 +747,9 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 	r->bin->options.minstrlen = r_config_get_i (r->config, "bin.str.min");
 	r->bin->options.maxstrbuf = r_config_get_i (r->config, "bin.str.maxbuf");
 	R_CRITICAL_LEAVE (r);
-	RIODesc *odesc = NULL;
-	RIODesc *mustclose = NULL;
-	odesc = r->io->desc;
+	RIODesc *odesc = r->io->desc;
+	bool mustclose = false;
+	const int odesc_fd = odesc? odesc->fd: -1;
 	if (desc && is_io_load) {
 		int desc_fd = desc->fd;
 		// TODO? necessary to restore the desc back?
@@ -760,7 +760,7 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 			if (mustreopen (r, desc, filenameuri)) {
 				r_core_file_open (r, filenameuri, 0, baddr);
 				if (odesc != r->io->desc) {
-					mustclose = r->io->desc;
+					mustclose = true;
 				}
 			}
 			r_core_file_load_for_io_plugin (r, baddr, 0LL);
@@ -789,8 +789,11 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 #endif
 	r_core_bin_export_info (r, R_MODE_SET);
 	const char *cmd_load = r_config_get (r->config, "cmd.load");
-	if (R_STR_ISNOTEMPTY (cmd_load)) {
+	const bool has_cmd_load = R_STR_ISNOTEMPTY (cmd_load);
+	char *filenameuri_safe = has_cmd_load && R_STR_ISNOTEMPTY (filenameuri)? strdup (filenameuri): NULL;
+	if (has_cmd_load) {
 		r_core_cmd (r, cmd_load, 0);
+		desc = r->io->desc;
 	}
 
 	if (desc && plugin && plugin->meta.name) {
@@ -955,25 +958,32 @@ R_API bool r_core_bin_load(RCore *r, const char *filenameuri, ut64 baddr) {
 		goto beach;
 	}
 beach:
-	if (r_config_get_b (r->config, "bin.dbginfo") && R_STR_ISNOTEMPTY (filenameuri)) {
-		// TODO only for macho
-		// load companion dwarf files
-		const char *basename = r_file_basename (filenameuri);
-		char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", filenameuri, basename);
-		if (r_file_exists (macdwarf)) {
-			// Skip symbols for dSYM since they duplicate main binary
-			bool old_skipsyms = r->bin->options.skip_symbols;
-			r->bin->options.skip_symbols = true;
-			r_core_callf (r, "o %s", macdwarf);
-			r->bin->options.skip_symbols = old_skipsyms;
-			r_core_call (r, "obm-");
+	{
+		const char *dbginfo_uri = filenameuri_safe? filenameuri_safe: filenameuri;
+		if (has_cmd_load && !filenameuri_safe) {
+			dbginfo_uri = NULL;
 		}
-		free (macdwarf);
+		if (r_config_get_b (r->config, "bin.dbginfo") && R_STR_ISNOTEMPTY (dbginfo_uri)) {
+			// TODO only for macho
+			// load companion dwarf files
+			const char *basename = r_file_basename (dbginfo_uri);
+			char *macdwarf = r_str_newf ("%s.dSYM/Contents/Resources/DWARF/%s", dbginfo_uri, basename);
+			if (r_file_exists (macdwarf)) {
+				// Skip symbols for dSYM since they duplicate main binary
+				bool old_skipsyms = r->bin->options.skip_symbols;
+				r->bin->options.skip_symbols = true;
+				r_core_callf (r, "o %s", macdwarf);
+				r->bin->options.skip_symbols = old_skipsyms;
+				r_core_call (r, "obm-");
+			}
+			free (macdwarf);
+		}
 	}
+	free (filenameuri_safe);
 	if (mustclose) {
 	//	r_io_desc_close (mustclose);
-		if (odesc) {
-			r_io_use_fd (r->io, odesc->fd);
+		if (odesc_fd >= 0 && r_io_desc_get (r->io, odesc_fd)) {
+			r_io_use_fd (r->io, odesc_fd);
 		}
 	}
 	r_flag_space_set (r->flags, "*");
