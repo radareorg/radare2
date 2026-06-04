@@ -2790,9 +2790,6 @@ R_API void r_core_fini(RCore *c) {
 	c->libstore = NULL;
 	r_lib_free (c->lib);
 	r_event_free (c->ev);
-	/*
-	r_unref (c->anal->config);
-	*/
 	r_core_esil_fini (&c->esil);
 	if (c->anal->esil) {
 		c->anal->esil->anal = NULL;
