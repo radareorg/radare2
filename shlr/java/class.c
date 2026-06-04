@@ -3676,7 +3676,7 @@ static ut64 r_bin_java_inner_classes_attr_calc_size(RBinJavaAttrInfo *attr) {
 static RBinJavaAttrInfo *r_bin_java_line_number_table_attr_new(RBinJavaObj *bin, ut8 *buffer, ut64 sz, ut64 buf_offset) {
 	ut32 i = 0;
 	ut64 curpos, offset = 0;
-	if (sz < 6) {
+	if (sz < 8) {
 		return NULL;
 	}
 	RBinJavaAttrInfo *attr = r_bin_java_default_attr_new (bin, buffer, sz, buf_offset);
