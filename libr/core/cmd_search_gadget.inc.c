@@ -583,6 +583,19 @@ static void gadget_info_append_detail(char *dst, size_t dst_len, const char *det
 	r_str_ncpy (dst + used, detail, dst_len - used);
 }
 
+static void gadget_info_append_detailf(char *dst, size_t dst_len, const char *fmt, ...) R_PRINTF_CHECK(3, 4);
+static void gadget_info_append_detailf(char *dst, size_t dst_len, const char *fmt, ...) {
+	va_list ap;
+	va_start (ap, fmt);
+	char *detail = r_str_newvf (fmt, ap);
+	va_end (ap);
+	if (!detail) {
+		return;
+	}
+	gadget_info_append_detail (dst, dst_len, detail);
+	free (detail);
+}
+
 static void gadget_info_collect_simple_detail(RCoreGadgetEsilInfo *info, const RAnalOp *op, const char *expr) {
 	char src[64], dst[64], esil_op[16];
 	const char *p = expr;
@@ -594,11 +607,9 @@ static void gadget_info_collect_simple_detail(RCoreGadgetEsilInfo *info, const R
 	if (!strcmp (esil_op, "=")) {
 		if (!gadget_esil_token_is_controlled (src) && gadget_esil_token_is_controlled (dst)) {
 			const ut64 value = r_num_get (NULL, src);
-			r_strf_var (detail, 128, "dst=%s value=0x%"PFMT64x, dst, value);
-			gadget_info_append_detail (info->ldconst_detail, sizeof (info->ldconst_detail), detail);
+			gadget_info_append_detailf (info->ldconst_detail, sizeof (info->ldconst_detail), "dst=%s value=0x%"PFMT64x, dst, value);
 		} else if (gadget_op_is_mov (op) && gadget_esil_token_is_controlled (src) && gadget_esil_token_is_controlled (dst)) {
-			r_strf_var (detail, 128, "dst=%s src=%s", dst, src);
-			gadget_info_append_detail (info->mov_detail, sizeof (info->mov_detail), detail);
+			gadget_info_append_detailf (info->mov_detail, sizeof (info->mov_detail), "dst=%s src=%s", dst, src);
 		}
 		return;
 	}
@@ -615,11 +626,9 @@ static void gadget_info_collect_simple_detail(RCoreGadgetEsilInfo *info, const R
 			r_strf_var (num, 64, "0x%"PFMT64x, r_num_get (NULL, src));
 			r_str_ncpy (src_detail, num, sizeof (src_detail));
 		}
-		r_strf_var (detail, 128, "dst=%s op=%s src=%s", dst, esil_op, src_detail);
-		gadget_info_append_detail (info->arithm_detail, sizeof (info->arithm_detail), detail);
+		gadget_info_append_detailf (info->arithm_detail, sizeof (info->arithm_detail), "dst=%s op=%s src=%s", dst, esil_op, src_detail);
 	} else if (gadget_op_is_logic (op)) {
-		r_strf_var (detail, 128, "dst=%s op=%s src=%s", dst, esil_op, src);
-		gadget_info_append_detail (info->logic_detail, sizeof (info->logic_detail), detail);
+		gadget_info_append_detailf (info->logic_detail, sizeof (info->logic_detail), "dst=%s op=%s src=%s", dst, esil_op, src);
 	}
 }
 
