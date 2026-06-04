@@ -969,10 +969,10 @@ R_API R_MUSTUSE char *r_str_replace(char *str, const char *key, const char *val,
 	}
 	R_RETURN_VAL_IF_FAIL (str && key && val, NULL);
 
-	int off, i, slen;
+	size_t off, i;
 	char *newstr, *p = str;
-	int klen = strlen (key);
-	int vlen = strlen (val);
+	size_t klen = strlen (key);
+	size_t vlen = strlen (val);
 	if (klen == 1 && vlen < 2) {
 		r_str_replace_char (str, *key, *val);
 		return str;
@@ -983,22 +983,27 @@ R_API R_MUSTUSE char *r_str_replace(char *str, const char *key, const char *val,
 	if (klen == vlen && !strcmp (key, val)) {
 		return str;
 	}
-	slen = strlen (str);
 	char *q = str;
 	for (;;) {
 		p = strstr (q, key);
 		if (!p) {
 			break;
 		}
-		off = (int) (size_t) (p - str);
+		off = (size_t) (p - str);
 		if (vlen != klen) {
-			int tlen = slen - (off + klen);
-			slen += vlen - klen;
+			size_t tlen = strlen (p + klen);
 			if (vlen > klen) {
-				newstr = realloc (str, slen + 1);
+				size_t nslen, nlen;
+				if (r_add_overflow (off, vlen, &nslen) ||
+						r_add_overflow (nslen, tlen, &nslen) ||
+						r_add_overflow (nslen, (size_t)1, &nlen)) {
+					R_FREE (str);
+					return NULL;
+				}
+				newstr = realloc (str, nlen);
 				if (!newstr) {
 					R_FREE (str);
-					break;
+					return NULL;
 				}
 				str = newstr;
 			}
@@ -1021,18 +1026,24 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 	size_t off, i;
 	size_t klen = strlen (key);
 	size_t vlen = strlen (val);
-	size_t slen = strlen (str);
-	for (i = 0; i < slen;) {
-		p = (char *)r_str_casestr (str + i, key);
+	char *q = str;
+	for (;;) {
+		p = (char *)r_str_casestr (q, key);
 		if (!p) {
 			break;
 		}
 		off = (size_t) (p - str);
 		if (vlen != klen) {
-			int tlen = slen - (off + klen);
-			slen += vlen - klen;
+			size_t tlen = strlen (p + klen);
 			if (vlen > klen) {
-				newstr = realloc (str, slen + 1);
+				size_t nslen, nlen;
+				if (r_add_overflow (off, vlen, &nslen) ||
+						r_add_overflow (nslen, tlen, &nslen) ||
+						r_add_overflow (nslen, (size_t)1, &nlen)) {
+					free (str);
+					return NULL;
+				}
+				newstr = realloc (str, nlen);
 				if (!newstr) {
 					free (str);
 					return NULL;
@@ -1066,6 +1077,7 @@ R_API R_MUSTUSE char *r_str_replace_icase(char *str, const char *key, const char
 		}
 
 		i = off + vlen;
+		q = str + i;
 		if (!g) {
 			break;
 		}
