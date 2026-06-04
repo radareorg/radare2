@@ -2674,7 +2674,7 @@ err_name:
 		if (!buf) {
 			goto err_buf;
 		}
-		memcpy (buf, core->block, core->blocksize);
+		r_io_read_at (core->io, core->addr, buf, size);
 
 		char *args = strdup (fmt);
 		if (!args) {
