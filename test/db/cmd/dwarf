@@ -293,16 +293,6 @@ EXPECT=<<EOF
 |           ; var int64_t var_70h @ rsp+0x70
 |           ; var int64_t var_78h @ rsp+0x78
 |           ; var i32[11] numbers @ rsp+0x80
-|           ; var int64_t var_84h @ rsp+0x84
-|           ; var int64_t var_88h @ rsp+0x88
-|           ; var int64_t var_8ch @ rsp+0x8c
-|           ; var int64_t var_90h @ rsp+0x90
-|           ; var int64_t var_94h @ rsp+0x94
-|           ; var int64_t var_98h @ rsp+0x98
-|           ; var int64_t var_9ch @ rsp+0x9c
-|           ; var int64_t var_a0h @ rsp+0xa0
-|           ; var int64_t var_a4h @ rsp+0xa4
-|           ; var int64_t var_a8h @ rsp+0xa8
 |           ; var int64_t var_d8h @ rsp+0xd8
 |           ; var int64_t var_e0h @ rsp+0xe0
 |           ; var int64_t var_e8h @ rsp+0xe8
@@ -334,15 +324,15 @@ EXPECT=<<EOF
 |           ; var &str[6] *arg0 @ rsp+0x230
 |           0x00005750      4881ec3802..   sub rsp, 0x238              ; void main();
 |           0x00005757      c784248000..   mov dword [numbers], 8
-|           0x00005762      c784248400..   mov dword [var_84h], 7
-|           0x0000576d      c784248800..   mov dword [var_88h], 1
-|           0x00005778      c784248c00..   mov dword [var_8ch], 2
-|           0x00005783      c784249000..   mov dword [var_90h], 9
-|           0x0000578e      c784249400..   mov dword [var_94h], 3
-|           0x00005799      c784249800..   mov dword [var_98h], 4
-|           0x000057a4      c784249c00..   mov dword [var_9ch], 5
-|           0x000057af      c78424a000..   mov dword [var_a0h], 0
-|           0x000057ba      c78424a400..   mov dword [var_a4h], 6
+|           0x00005762      c784248400..   mov dword [rsp + 0x84], 7
+|           0x0000576d      c784248800..   mov dword [rsp + 0x88], 1
+|           0x00005778      c784248c00..   mov dword [rsp + 0x8c], 2
+|           0x00005783      c784249000..   mov dword [rsp + 0x90], 9
+|           0x0000578e      c784249400..   mov dword [rsp + 0x94], 3
+|           0x00005799      c784249800..   mov dword [rsp + 0x98], 4
+|           0x000057a4      c784249c00..   mov dword [rsp + 0x9c], 5
+|           0x000057af      c78424a000..   mov dword [rsp + 0xa0], 0
+|           0x000057ba      c78424a400..   mov dword [rsp + 0xa4], 6
 |           0x000057c5      488b05842b..   mov rax, qword [0x00038350] ; [0x38350:8]=0x38330 reloc.fixup.Before:_After:_beachartcardeal
 |           0x000057cc      488d8c2480..   lea rcx, [numbers]
 |           0x000057d4      48898c24e8..   mov qword [var_e8h], rcx
@@ -359,7 +349,7 @@ EXPECT=<<EOF
 |           0x00005817      488b4c2468     mov rcx, qword [var_68h]
 |           0x0000581c      48898c24e0..   mov qword [var_e0h], rcx
 |           0x00005824      488d9424d8..   lea rdx, [var_d8h]
-|           0x0000582c      488dbc24a8..   lea rdi, [var_a8h]          ; int64_t arg1
+|           0x0000582c      488dbc24a8..   lea rdi, [rsp + 0xa8]       ; int64_t arg1
 |           0x00005834      488b742478     mov rsi, qword [var_78h]    ; int64_t arg2
 |           0x00005839      41b802000000   mov r8d, 2
 |           0x0000583f      4889542460     mov qword [var_60h], rdx
@@ -367,7 +357,7 @@ EXPECT=<<EOF
 |           0x00005847      488b4c2460     mov rcx, qword [var_60h]    ; int64_t arg4
 |           0x0000584c      41b801000000   mov r8d, 1                  ; int64_t arg5
 |           0x00005852      e8591b0000     call dbg.new_v1             ; core::fmt::Arguments::new_v1::h2673b5bf555c0288 ; Arguments new_v1(&[&str] pieces, &[core::fmt::ArgumentV1] args)
-|           0x00005857      488dbc24a8..   lea rdi, [var_a8h]
+|           0x00005857      488dbc24a8..   lea rdi, [rsp + 0xa8]
 |           0x0000585f      ff15b3430300   call qword [dbg._print]     ; [0x39c18:8]=0xa2d0 dbg._print
 |           0x00005865      488d842480..   lea rax, [numbers]
 |           0x0000586d      4889c7         mov rdi, rax                ; int64_t arg1
