@@ -1058,34 +1058,30 @@ static void cmd_oma(RCore *core, const char *input) {
 }
 
 static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
-	switch (argv[0][1]) {
+	const char cmd = argv[0][1];
+	// the argument can be glued to the command ("ombaN") or passed apart ("omba N")
+	const char *arg = (argc > 1)? argv[1]: (cmd? argv[0] + 2: "");
+	if (arg[0] == '?') {
+		r_core_cmd_help (core, help_msg_omb);
+		return;
+	}
+	switch (cmd) {
 	case '=': // "omb=[name]"
-		if (argc == 1) {
-			RIOBank *bank = r_io_bank_get_byname (core->io, argv[0] + 2);
+		{
+			RIOBank *bank = r_io_bank_get_byname (core->io, arg);
 			if (bank) {
 				r_io_bank_use (core->io, bank->id);
 			} else {
-				R_LOG_ERROR ("unknown bank name (%s)", argv[0] + 2);
-			}
-		} else {
-			RIOBank *bank = r_io_bank_get_byname (core->io, argv[1]);
-			if (bank) {
-				r_io_bank_use (core->io, bank->id);
-			} else {
-				R_LOG_ERROR ("unknown bank name (%s)", argv[1]);
+				R_LOG_ERROR ("unknown bank name (%s)", arg);
 			}
 		}
 		break;
 	case 'q': // "ombq"
-		if (argc != 1) {
-			R_LOG_ERROR ("ombq takes no arguments");
-		} else {
-			r_cons_printf (core->cons, "%d\n", core->io->bank);
-		}
+		r_cons_printf (core->cons, "%d\n", core->io->bank);
 		break;
 	case 'a': // "omba"
-		if (isdigit (argv[1][0])) {
-			int mapid = atoi (argv[1]);
+		if (isdigit (arg[0])) {
+			int mapid = atoi (arg);
 			if (r_io_map_get (core->io, mapid)) {
 				r_io_bank_map_add_top (core->io, core->io->bank, mapid);
 			} else {
@@ -1096,73 +1092,59 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		}
 		break;
 	case 'd': // "ombd"
-		{
-			int mapid = atoi (argv[1]);
-			RIOBank *bank = r_io_bank_get (core->io, core->io->bank);
-			if (bank) {
-				r_io_bank_del_map (core->io, core->io->bank, mapid);
+		if (isdigit (arg[0])) {
+			if (r_io_bank_get (core->io, core->io->bank)) {
+				r_io_bank_del_map (core->io, core->io->bank, atoi (arg));
 			} else {
 				R_LOG_ERROR ("Unknown bank id");
 			}
+		} else {
+			R_LOG_ERROR ("Expect a mapid number");
 		}
 		break;
 	case '-': // "omb-"
-		{
-			const char *arg = (argc == 1)? argv[0] + 2: argv[1];
-			if (R_STR_ISEMPTY (arg)) {
-				R_LOG_ERROR ("Missing argument for omb-");
-			} else if (!strcmp ("*", arg)) {
-				r_io_bank_drain (core->io, core->io->bank);
-				core->io->bank = r_io_bank_first (core->io);
+		if (R_STR_ISEMPTY (arg)) {
+			R_LOG_ERROR ("Missing argument for omb-");
+		} else if (!strcmp ("*", arg)) {
+			r_io_bank_drain (core->io, core->io->bank);
+			core->io->bank = r_io_bank_first (core->io);
+		} else {
+			int bank_id = r_num_math (core->num, arg);
+			if (core->num->nc.errors == 0) {
+				r_io_bank_del (core->io, bank_id);
 			} else {
-				int bank_id = r_num_math (core->num, arg);
-				if (core->num->nc.errors == 0) {
-					r_io_bank_del (core->io, bank_id);
-				} else {
-					R_LOG_ERROR ("Invalid number in %s", arg);
-				}
+				R_LOG_ERROR ("Invalid number in %s", arg);
 			}
 		}
 		break;
-	case 'g': // "ombg"
-		if (argc == 1) {
+	case 'g': // "ombg" -- associate all maps to the current bank
+		{
 			ut32 mapid;
-			r_id_storage_get_lowest (&core->io->maps, &mapid);
-			do {
-				RIOMap *map = r_id_storage_get (&core->io->maps, mapid);
-				r_io_bank_map_add_top (core->io, core->io->bank, map->id);
-			} while (r_id_storage_get_next (&core->io->maps, &mapid));
-		} else {
-			R_LOG_ERROR ("ombg takes no arguments");
+			if (r_id_storage_get_lowest (&core->io->maps, &mapid)) {
+				do {
+					RIOMap *map = r_id_storage_get (&core->io->maps, mapid);
+					if (map) {
+						r_io_bank_map_add_top (core->io, core->io->bank, map->id);
+					}
+				} while (r_id_storage_get_next (&core->io->maps, &mapid));
+			}
 		}
 		break;
 	case '+': // "omb+ [name]"
-		if (argc == 1) {
-			const char *name = argv[0] + 2;
-			if (isdigit (*name)) {
-				// add a map to the current bank
-				// we cant name a bank with a number :?
-				r_io_bank_map_add_top (core->io, core->io->bank, atoi (name));
-			} else {
-				// add a new bank
-				RIOBank *bank = r_io_bank_new (name);
-				if (bank) {
-					r_io_bank_add (core->io, bank);
-				} else {
-					R_LOG_ERROR ("Cannot create map from %s", name);
-				}
-			}
+		if (isdigit (arg[0])) {
+			// add a map to the current bank (we cant name a bank with a number)
+			r_io_bank_map_add_top (core->io, core->io->bank, atoi (arg));
 		} else {
-			RIOBank *bank = r_io_bank_new (argv[1]);
+			RIOBank *bank = r_io_bank_new (arg);
 			if (bank) {
 				r_io_bank_add (core->io, bank);
 			} else {
-				R_LOG_ERROR ("Cannot create map from %s", argv[1]);
+				R_LOG_ERROR ("Cannot create map from %s", arg);
 			}
 		}
 		break;
 	case 'j': // "ombj"
-		if (argc == 1) {
+		{
 			ut32 bank_id = 0;
 			if (!r_id_storage_get_lowest (&core->io->banks, &bank_id)) {
 				break;
@@ -1190,8 +1172,6 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 			char *s = pj_drain (pj);
 			r_cons_println (core->cons, s);
 			free (s);
-		} else {
-			R_LOG_ERROR ("ombj takes no arguments");
 		}
 		break;
 	case 0: // "omb [id]"
@@ -1227,7 +1207,7 @@ static void cmd_open_banks(RCore *core, int argc, char *argv[]) {
 		r_core_cmd_help (core, help_msg_omb);
 		break;
 	default:
-		r_core_return_invalid_command (core, "omb", argv[0][1]);
+		r_core_return_invalid_command (core, "omb", cmd);
 		break;
 	}
 }

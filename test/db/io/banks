@@ -51,3 +51,25 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=omb subcommands help and missing args dont crash #26035
+FILE=malloc://1024
+CMDS=<<EOF
+omba?~omba
+ombd?~ombd
+ombg?~ombg
+om-*
+ombg
+omba
+ombd
+EOF
+EXPECT=<<EOF
+| omba [id]    adds a map to the bank
+| ombd [id]    delete a map from the bank
+| ombg         associate all maps to the current bank
+EOF
+EXPECT_ERR=<<EOF
+ERROR: Expect a mapid number
+ERROR: Expect a mapid number
+EOF
+RUN

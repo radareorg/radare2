@@ -89,7 +89,6 @@ static bool find_bank(void *data, void *user, ut32 id) {
 R_API RIOBank *r_io_bank_get_byname(RIO *io, const char *bankname) {
 	R_RETURN_VAL_IF_FAIL (io && bankname, NULL);
 	Boring boo = { .io = io, .name = bankname, .bank = NULL };
-	eprintf ("ooME (%s)\n", boo.name);
 	r_id_storage_foreach (&io->banks, &find_bank, &boo);
 	return boo.bank;
 }
