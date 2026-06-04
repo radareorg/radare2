@@ -863,16 +863,17 @@ R_API char *r_str_ndup(const char *ptr, int len) {
 }
 
 R_API char *r_str_prepend(char *ptr, const char *string) {
-	int slen, plen;
 	if (!ptr) {
 		return strdup (string);
 	}
-	plen = strlen (ptr);
-	slen = strlen (string);
-	ptr = realloc (ptr, slen + plen + 1);
-	if (!ptr) {
+	size_t plen = strlen (ptr);
+	size_t slen = strlen (string);
+	char *newptr = realloc (ptr, slen + plen + 1);
+	if (!newptr) {
+		free (ptr);
 		return NULL;
 	}
+	ptr = newptr;
 	memmove (ptr + slen, ptr, plen + 1);
 	memmove (ptr, string, slen);
 	return ptr;
@@ -905,8 +906,8 @@ R_API char *r_str_append(char *ptr, const char *string) {
 	if (R_STR_ISEMPTY (string)) {
 		return ptr;
 	}
-	int plen = strlen (ptr);
-	int slen = strlen (string);
+	size_t plen = strlen (ptr);
+	size_t slen = strlen (string);
 	char *newptr = realloc (ptr, slen + plen + 1);
 	if (!newptr) {
 		free (ptr);
