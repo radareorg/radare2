@@ -10269,7 +10269,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		pj_kn (pj, "size", analop.size);
 		pj_ka (pj, "bytes");
 	}
-	int numbers[8] = {0};
+	ut64 numbers[8] = {0};
 	RStrBuf *sb = r_strbuf_new ("");
 	for (i = 0; i < last; i++) {
 		ut8 *byte = buf + i;
@@ -10295,7 +10295,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 			// r_cons_printf (core->cons, "%d %s\n%d %s\n\n", (i*8) + j, analop.mnemonic, (i*8)+j, op.mnemonic);
 			int word_change = compare_mnemonics (analop.mnemonic, op.mnemonic);
 			r_anal_op_fini (&op);
-			if (word_change < 0) {
+			if (word_change < 0 || word_change >= (int)R_ARRAY_SIZE (numbers)) {
 				r_strbuf_append (sb, "x");
 				if (pj) {
 					pj_i (pj, word_change);
@@ -10338,19 +10338,16 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 		}
 		pj_end (pj);
 		pj_ka (pj, "vals");
-		RList *res = r_list_new ();
+		int vals = 0;
 		for (j = 0; j < 8; j++) {
 			if (r_list_empty (args[j])) {
 				break;
 			}
-			r_list_prepend (res, (void*)(size_t)numbers[j]);
+			vals++;
 		}
-		size_t *num;
-		r_list_foreach (res, iter, num) {
-			int v = (int)(size_t)(num);
-			pj_n (pj, v);
+		for (j = vals - 1; j >= 0; j--) {
+			pj_n (pj, numbers[j]);
 		}
-		r_list_free (res);
 		pj_end (pj);
 		pj_end (pj);
 		s = pj_drain (pj);
@@ -10483,7 +10480,7 @@ static void cmd_anal_opcode_bits(RCore *core, const char *arg, int mode) {
 				}
 				const char guess = guess_arg (iref, word);
 				const char *indent = r_str_pad (padstr, sizeof (padstr), ' ', 12 - strlen (word));
-				r_cons_printf (core->cons, "%s__%s %d%c %s%s%s %s= 0%o\n ",
+				r_cons_printf (core->cons, "%s__%s %d%c %s%s%s %s= 0%"PFMT64o"\n ",
 					color, Color_RESET, iref, guess, color, word, Color_RESET, indent, numbers[i]);
 			}
 			r_list_free (args);
