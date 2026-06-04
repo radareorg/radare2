@@ -614,7 +614,6 @@ jobs:
         install: base-devel git
         pacboy: >-
           cc:p
-          libzip:p
           meson:p
           ninja:p
     - name: Configure Build
@@ -624,7 +623,7 @@ jobs:
           MINGW64) echo /mingw64 ;;
           UCRT64) echo /ucrt64 ;;
         esac)
-        meson setup build --prefix=$prefix -Duse_sys_zip=true
+        meson setup build --prefix=$prefix
     - name: Compile Project
       shell: msys2 {0}
       run: meson compile -C build

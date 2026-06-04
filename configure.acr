@@ -95,22 +95,22 @@ IFAND WITH_ZYDIS WANT_ZYDIS {
 }
 IF WITH_ZYDIS {
 	PKGCFG ZYDIS_CFLAGS ZYDIS_LDFLAGS zydis
-	CHECK HAVE_SYS_ZYDIS <<EOF
-	if [ -z "${ZYDIS_LDFLAGS}" ]; then ZYDIS_LDFLAGS="-lzydis"; fi \
-	echo '#include <Zydis/Zydis.h>' > .test.c \
-	echo 'int main(void) { return ZydisGetVersion() == 0; }' >> .test.c \
-	eval ${CC} ${CFLAGS} ${CPPFLAGS} ${ZYDIS_CFLAGS} .test.c ${LDFLAGS} ${ZYDIS_LDFLAGS} -o .test >/dev/null 2>&1 \
-	HAVE_SYS_ZYDIS=$? \
-	rm -f .test.c .test
-<<EOF
+	CHKINC Zydis/Zydis.h
+	CHKLIB zydis
 }
 IFAND WITH_ZYDIS HAVE_PKGCFG_ZYDIS {
 	USE_ZYDIS = 1 ;
 	USE_SYS_ZYDIS = 1 ;
 }{
-	IFAND WITH_ZYDIS HAVE_SYS_ZYDIS {
-		USE_ZYDIS = 1 ;
-		USE_SYS_ZYDIS = 1 ;
+	IFAND WITH_ZYDIS HAVE_ZYDIS_ZYDIS_H {
+		IF HAVE_LIB_ZYDIS {
+			USE_ZYDIS = 1 ;
+			USE_SYS_ZYDIS = 1 ;
+			ZYDIS_LDFLAGS = -lzydis ;
+		}{
+			USE_ZYDIS = 0 ;
+			USE_SYS_ZYDIS = 0 ;
+		}
 	}{
 		USE_ZYDIS = 0 ;
 		USE_SYS_ZYDIS = 0 ;
