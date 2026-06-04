@@ -163,33 +163,35 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 	return true;
 }
 
-// Total byte size of an array type like "char[4]"/"int[9][9]", or 0 if not a sized array
-static int array_type_extent(Sdb *TDB, const char *type) {
+// Element size (bytes) and count of an array type like "char[4]"/"int[9][9]".
+// False if it is not a sized array (unknown element type or missing [N]).
+static bool array_type_info(Sdb *TDB, const char *type, int *esize, int *count) {
 	const char *br = strchr (type, '[');
 	if (!br) {
-		return 0;
+		return false;
 	}
 	char *base = r_str_ndup (type, br - type);
 	if (!base) {
-		return 0;
+		return false;
 	}
 	r_str_trim (base);
 	const ut64 bits = r_type_get_bitsize (TDB, base);
 	free (base);
-	if (!bits) {
-		return 0;
+	if (bits < 8) {
+		return false;
 	}
-	ut64 count = 1;
+	ut64 n = 1;
 	const char *p;
 	for (p = br; p; p = strchr (p + 1, '[')) {
-		const int n = atoi (p + 1);
-		if (n <= 0) {
-			return 0;
+		const int dim = atoi (p + 1);
+		if (dim <= 0) {
+			return false;
 		}
-		count *= (ut64)n;
+		n *= (ut64)dim;
 	}
-	const ut64 total = count * bits / 8;
-	return (int)total;
+	*esize = bits / 8;
+	*count = (int)n;
+	return true;
 }
 
 // If the type of var is a struct,
@@ -197,8 +199,10 @@ static int array_type_extent(Sdb *TDB, const char *type) {
 static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
 	Sdb *TDB = var->fcn->anal->sdb_types;
 	// drop emulation slots synthesised inside an array var's extent (e.g. ucTemp[4] byte stores that became arg_81h..83h)
-	if ((var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV) && var->type) {
-		const int extent = array_type_extent (TDB, var->type);
+	int esize, count;
+	if ((var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV)
+			&& var->type && array_type_info (TDB, var->type, &esize, &count)) {
+		const int extent = esize * count;
 		int off;
 		for (off = 1; off < extent; off++) {
 			RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + off);
@@ -1044,6 +1048,18 @@ static bool var_add_structure_fields_to_list(RAnal *a, RAnalVar *av, RList *list
 			free (field_name);
 		}
 		free (type_key);
+		return true;
+	}
+	int esize, count;
+	if (av->type && array_type_info (TDB, av->type, &esize, &count) && count >= 2 && count <= 256) {
+		int i;
+		for (i = 0; i < count; i++) {
+			RAnalVarField *field = R_NEW0 (RAnalVarField);
+			field->name = i? r_str_newf ("%s[%d]", av->name, i): strdup (av->name);
+			field->delta = av->delta + i * esize;
+			field->field = true;
+			r_list_append (list, field);
+		}
 		return true;
 	}
 	return false;

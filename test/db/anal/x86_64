@@ -4290,3 +4290,20 @@ family: vec
             0x140021040     .string "\n*,2.)%#1%#)a~" ; len=15
 EOF
 RUN
+
+NAME=array stack var renders interior accesses as name[i]
+FILE=-
+CMDS=<<EOF2
+e asm.arch=x86
+e asm.bits=64
+wx c744242001000000c744242402000000c744242803000000c3
+af
+afvs 0x20 arr int[3]
+pdf~mov dword
+EOF2
+EXPECT=<<EOF2
+|           0x00000000      c744242001..   mov dword [arr], 1
+|           0x00000008      c744242402..   mov dword [arr[1]], 2
+|           0x00000010      c744242803..   mov dword [arr[2]], 3
+EOF2
+RUN
