@@ -224,7 +224,8 @@ static RCoreHelpMessage help_msg_slash_r = {
 static RCoreHelpMessage help_msg_slash_Gk = {
 	"Usage: /gk", "", "query stored gadgets",
 	"/gk", " [ret|jop|cop|syscall|pivot|memread|memwrite|www]", "show gadgets",
-	"/gk", " [rww|signal|mov|ldconst|arithm|logic|shift|cmp|nop]", "show primitive classes",
+	"/gk", " [rww|signal|mov|ldconst|arithm|arithm_ct|logic]", "show primitive classes",
+	"/gk", " [shift|cmp|nop]", "show primitive classes",
 	"/gk", " [cond.always|cond.controlled]", "show ESIL-classified conditional gadgets",
 	"/gkj", "", "json output",
 	"/gkq", "", "list Gadgets offsets",
@@ -4142,7 +4143,12 @@ static bool cmd_search_gadget(RCore *core, RInterval search_itv, const char *inp
 			s++;
 		} while (*s);
 
-		print_rop (core, hitlist, param->pj, mode, NULL);
+		RCoreGadgetEsilInfo esil_info = {0};
+		const bool crop = r_config_get_b (core->config, "gadget.cond");
+		const bool gadget_esil = r_config_get_b (core->config, "gadget.esil");
+		const RCoreGadgetEsilInfo *info = gadget_analyze_info (core, hitlist, 0, crop, gadget_esil, &esil_info)
+			? &esil_info: NULL;
+		print_rop (core, hitlist, param->pj, mode, info);
 		r_list_free (hitlist);
 	}
 	return true;

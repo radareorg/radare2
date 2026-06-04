@@ -675,7 +675,7 @@ e gadget.esil=true
 q
 EOF
 EXPECT=<<EOF
-[{"opcodes":[{"addr":0,"size":4,"opcode":"adrp x0, 0x1000","type":"lea"},{"addr":4,"size":4,"opcode":"add x0, x0, 0x20","type":"add"},{"addr":8,"size":4,"opcode":"br x0","type":"rjmp"}],"retaddr":8,"size":12,"target":4128,"target_source":"x0","target_kind":"computed","classes":["jop","mov","ldconst","arithm"]}]
+[{"opcodes":[{"addr":0,"size":4,"opcode":"adrp x0, 0x1000","type":"lea"},{"addr":4,"size":4,"opcode":"add x0, x0, 0x20","type":"add"},{"addr":8,"size":4,"opcode":"br x0","type":"rjmp"}],"retaddr":8,"size":12,"target":4128,"target_source":"x0","target_kind":"computed","classes":["jop","mov","ldconst","arithm","arithm_ct"]}]
 EOF
 RUN
 
@@ -697,7 +697,7 @@ EOF
 EXPECT=<<EOF
 0x00000000: mov rax, 0x1234; jmp rax;
 0x00000000=0x9 jop target=0x00001234 target_source=rax target_kind=computed
-0x00000000=0x9 ldconst target=0x00001234 target_source=rax target_kind=computed
+0x00000000=0x9 ldconst dst=rax value=0x1234 target=0x00001234 target_source=rax target_kind=computed
 EOF
 RUN
 
@@ -716,7 +716,50 @@ q
 EOF
 EXPECT=<<EOF
 0x00000000: movabs rax, 0x123456789abcdef0; ret;
-0x00000000=0xb ldconst
+0x00000000=0xb ldconst dst=rax value=0x123456789abcdef0
+EOF
+RUN
+
+NAME=search rop ldconst klass from gadget sdb cache
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e scr.color=false
+e gadget.sdb=true
+e gadget.db=false
+"wa movabs rax, 0x123456789abcdef0; ret"
+/gq mov
+e gadget.db=true
+/gq mov
+/gk ldconst
+q
+EOF
+EXPECT=<<EOF
+0x00000000: movabs rax, 0x123456789abcdef0; ret;
+0x00000000: movabs rax, 0x123456789abcdef0; ret;
+0x00000000=0xb ldconst dst=rax value=0x123456789abcdef0
+EOF
+RUN
+
+NAME=search rop arithmetic const klass
+FILE=malloc://1024
+CMDS=<<EOF
+e asm.arch=x86
+e anal.arch=x86
+e asm.bits=64
+e search.maxhits=1
+e scr.color=false
+"wa add rax, 0x10; ret"
+/gq add
+/gk arithm_ct
+q
+EOF
+EXPECT=<<EOF
+0x00000000: add rax, 0x10; ret;
+0x00000000=0x5 arithm_ct dst=rax op=+ src=0x10
 EOF
 RUN
 
