@@ -914,18 +914,16 @@ R_API bool r_esil_reg_alias(REsil *esil, int alias, const char *name) {
 		R_LOG_WARN ("Cannot set reg alias; .reg_alias was not setup for this Esil");
 		return false;
 	}
-	if (!esil->reg_if.reg_alias (esil->reg_if.reg, alias, name)) {
-		return false;
-	}
 	ut32 i;
-	if (!r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i)) {
-		return true;
+	if (r_id_storage_get_lowest (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i)) {
+		// The generic register interface has no alias getter, so alias
+		// voyeurs must see the previous mapping before it is overwritten.
+		do {
+			REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], i);
+			voy->reg_alias (voy->user, alias, name);
+		} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i));
 	}
-	do {
-		REsilVoyeur *voy = r_id_storage_get (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], i);
-		voy->reg_alias (voy->user, alias, name);
-	} while (r_id_storage_get_next (&esil->voyeur[R_ESIL_VOYEUR_REG_ALIAS], &i));
-	return true;
+	return esil->reg_if.reg_alias (esil->reg_if.reg, alias, name);
 }
 
 R_API bool r_esil_reg_read_nocallback(REsil *esil, const char *regname, ut64 *num, int *size) {

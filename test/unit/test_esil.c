@@ -39,14 +39,18 @@ static bool test_mem_write(void *mem, ut64 addr, const ut8 *buf, int len) {
 }
 
 typedef struct {
+	RReg *reg;
 	int alias;
 	char name[16];
+	char old_name[16];
 } TestRegAliasVoyeur;
 
 static void test_reg_alias_voyeur(void *user, int alias, const char *name) {
 	TestRegAliasVoyeur *test = user;
+	const char *old_name = r_reg_alias_getname (test->reg, alias);
 	test->alias = alias;
 	r_str_ncpy (test->name, name, sizeof (test->name));
+	r_str_ncpy (test->old_name, r_str_get (old_name), sizeof (test->old_name));
 }
 
 bool test_setup_keeps_custom_interfaces(void) {
@@ -121,6 +125,7 @@ bool test_reg_alias_op(void) {
 	mu_assert_true (profile, "failed to set reg profile");
 
 	TestRegAliasVoyeur voyeur = {
+		.reg = anal->reg,
 		.alias = -1,
 	};
 	ut32 vid = r_esil_add_voyeur (anal->esil, &voyeur,
@@ -131,6 +136,7 @@ bool test_reg_alias_op(void) {
 	mu_assert_true (parsed, "failed to parse reg alias op");
 	mu_assert_streq (r_reg_alias_getname (anal->reg, R_REG_ALIAS_PC), "r1", "PC alias was not updated");
 	mu_assert_eq (voyeur.alias, R_REG_ALIAS_PC, "PC alias voyeur was not called");
+	mu_assert_streq (voyeur.old_name, "r0", "PC alias voyeur did not see old register");
 	mu_assert_streq (voyeur.name, "r1", "PC alias voyeur had wrong register");
 
 	r_anal_free (anal);
