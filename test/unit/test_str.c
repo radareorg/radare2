@@ -53,6 +53,10 @@ bool test_r_str_replace(void) {
 	str = r_str_replace (strdup ("hello horld"), "h", "hello", 0);
 	mu_assert_streq (str, "helloello horld", "error, replace char multi failed");
 	free (str);
+
+	str = r_str_replace (strdup ("Hello horld"), "h", "hello", 'i');
+	mu_assert_streq (str, "Helloello helloorld", "error, replace char icase failed");
+	free (str);
 	mu_end;
 }
 
