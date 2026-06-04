@@ -8533,13 +8533,18 @@ static bool read_ahead(RIO *io, ut8 **buf, size_t *buf_sz, ut64 address, size_t 
 	return r_io_read_at (io, address, *buf + offset_into_buf, bytes_to_read);
 }
 
+static RRegItem *pde_refresh_pc(RCore *core, RReg **reg) {
+	*reg = core->anal->reg;
+	return r_reg_get (*reg, "PC", R_REG_TYPE_ALL);
+}
+
 R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	// R2R db/cmd/cmd_pde
 	if (nb_opcodes < 1) {
 		return 0;
 	}
-	RReg *reg = core->anal->reg;
-	RRegItem *pc = r_reg_get (reg, "PC", R_REG_TYPE_ALL);
+	RReg *reg;
+	RRegItem *pc = pde_refresh_pc (core, &reg);
 	if (!pc) {
 		return -1;
 	}
@@ -8563,17 +8568,18 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 	min_op_size = min_op_size > 0 ? min_op_size : 1;
 	const ut64 read_len = max_op_size > 0 ? max_op_size : 32;
 	size_t buf_sz = 0x100, block_sz = 0, block_instr = 0;
-	ut64 block_start = r_reg_get_value (reg, pc);
+	ut64 pcv = r_reg_get_value (reg, pc);
+	ut64 block_start = pcv;
 	size_t i = 0;
-	const ut64 op_addr = r_reg_get_value (reg, pc);
 	ut8 *buf = malloc (buf_sz);
-	if (op_addr == 0) {
+	if (pcv == 0) {
 		const RList *entries = r_bin_get_entries (core->bin);
 		if (entries && !r_list_empty (entries)) {
 			RBinAddr *entry = (RBinAddr *)r_list_get_n (entries, 0);
 			RBinInfo *info = r_bin_get_info (core->bin);
 			block_start = info->has_va? entry->vaddr: entry->paddr;
-			r_reg_set_value (reg, pc, block_start);
+			pcv = block_start;
+			r_reg_set_value (reg, pc, pcv);
 			r_core_cmd0 (core, ".dr*");
 		}
 	}
@@ -8582,7 +8588,7 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		goto leave;
 	}
 	for (i = 0; i < nb_opcodes; i++) {
-		const ut64 op_addr = r_reg_get_value (reg, pc);
+		const ut64 op_addr = pcv;
 		if (!read_ahead (core->io, &buf, &buf_sz, op_addr, block_sz, read_len)) {
 			break;
 		}
@@ -8632,17 +8638,34 @@ R_API int r_core_disasm_pde(RCore *core, int nb_opcodes, int mode) {
 		if (invalid_instr) {
 			break;
 		}
+		pc = pde_refresh_pc (core, &reg);
+		if (!pc) {
+			r_anal_op_fini (&op);
+			break;
+		}
 		r_esil_set_pc (core->anal->esil, op_addr);
-		r_reg_set_value (reg, pc, op_addr + op.size);
+		pcv = op_addr + op.size;
+		r_reg_set_value (reg, pc, pcv);
 		const char *e = r_strbuf_get (&op.esil);
 		if (R_STR_ISNOTEMPTY (e)) {
 			r_esil_parse (esil, e);
+			pc = pde_refresh_pc (core, &reg);
+			if (!pc) {
+				r_anal_op_fini (&op);
+				break;
+			}
+			pcv = r_reg_get_value (reg, pc);
 		}
 		r_anal_op_fini (&op);
 
 		if (end_of_block) {
-			block_start = r_reg_get_value (reg, pc);
+			block_start = pcv;
 			r_core_seek_arch_bits (core, block_start);
+			pc = pde_refresh_pc (core, &reg);
+			if (!pc) {
+				break;
+			}
+			r_reg_set_value (reg, pc, pcv);
 		}
 	}
 	if (mode == R_MODE_JSON) {

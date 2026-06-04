@@ -265,3 +265,26 @@ add byte [eax], al
 invalid
 EOF
 RUN
+
+NAME=pde refreshes PC after bitness hint
+ARGS=-a x86 -b 32
+FILE=malloc://256
+CMDS=<<EOF
+e asm.bytes=false
+e asm.comments=false
+e scr.color=false
+e cfg.debug=false
+aei
+aeim
+aeip
+wx eb0331c09031c0
+ahb 16 @ 0x5
+pdeqq 4
+EOF
+EXPECT=<<EOF
+jmp 5
+xor ax, ax
+nop
+xor ax, ax
+EOF
+RUN
