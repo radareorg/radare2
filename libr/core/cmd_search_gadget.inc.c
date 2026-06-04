@@ -38,6 +38,7 @@ typedef enum {
 	R_CORE_GADGET_CLASS_SHIFT = 1 << 16,
 	R_CORE_GADGET_CLASS_CMP = 1 << 17,
 	R_CORE_GADGET_CLASS_NOP = 1 << 18,
+	R_CORE_GADGET_CLASS_ARITHM_CONST = 1 << 19,
 } RCoreGadgetClass;
 
 typedef struct {
@@ -48,6 +49,10 @@ typedef struct {
 	ut64 target;
 	ut32 classes;
 	char target_source[64];
+	char mov_detail[128];
+	char ldconst_detail[128];
+	char arithm_detail[128];
+	char logic_detail[128];
 } RCoreGadgetEsilInfo;
 
 typedef struct {
@@ -111,6 +116,7 @@ static const RCoreGadgetClassName gadget_class_names[] = {
 	{ R_CORE_GADGET_CLASS_SHIFT, "shift" },
 	{ R_CORE_GADGET_CLASS_CMP, "cmp" },
 	{ R_CORE_GADGET_CLASS_NOP, "nop" },
+	{ R_CORE_GADGET_CLASS_ARITHM_CONST, "arithm_ct" },
 };
 
 static void gadget_info_set_target(RCoreGadgetEsilInfo *info, ut64 target, RCoreGadgetTargetKind kind, const char *source) {
@@ -214,6 +220,20 @@ static bool gadget_esil_token_is_controlled(const char *token) {
 	return true;
 }
 
+static bool gadget_esil_next_token(const char **expr, char *buf, size_t buf_len) {
+	if (!expr || R_STR_ISEMPTY (*expr) || buf_len < 1) {
+		return false;
+	}
+	const char *p = *expr;
+	const char *comma = strchr (p, ',');
+	size_t len = comma? (size_t)(comma - p): strlen (p);
+	len = R_MIN (len, buf_len - 1);
+	memcpy (buf, p, len);
+	buf[len] = 0;
+	*expr = comma? comma + 1: p + len;
+	return true;
+}
+
 static bool gadget_esil_is_write_what_where(const char *expr) {
 	const char *write = strstr (expr, "=[");
 	if (!write) {
@@ -274,6 +294,13 @@ static bool gadget_esil_is_const_assignment(const char *expr) {
 	memcpy (token, expr, len);
 	token[len] = 0;
 	return !gadget_esil_token_is_controlled (token) && strstr (comma, ",=");
+}
+
+static bool gadget_esil_starts_with_const(const char *expr) {
+	char token[64];
+	const char *p = expr;
+	return gadget_esil_next_token (&p, token, sizeof (token))
+		&& !gadget_esil_token_is_controlled (token);
 }
 
 static bool gadget_esil_find_cond_end(RCore *core, RList *hitlist, int gadget_type, ut64 *addr) {
@@ -540,6 +567,62 @@ static bool gadget_op_is_nop(const RAnalOp *op) {
 	return op->type == R_ANAL_OP_TYPE_NOP;
 }
 
+static void gadget_info_append_detail(char *dst, size_t dst_len, const char *detail) {
+	if (R_STR_ISEMPTY (detail) || strstr (dst, detail)) {
+		return;
+	}
+	size_t used = strlen (dst);
+	if (used + 3 >= dst_len) {
+		return;
+	}
+	if (used) {
+		dst[used++] = ';';
+		dst[used++] = ' ';
+		dst[used] = 0;
+	}
+	r_str_ncpy (dst + used, detail, dst_len - used);
+}
+
+static void gadget_info_collect_simple_detail(RCoreGadgetEsilInfo *info, const RAnalOp *op, const char *expr) {
+	char src[64], dst[64], esil_op[16];
+	const char *p = expr;
+	if (!gadget_esil_next_token (&p, src, sizeof (src))
+			|| !gadget_esil_next_token (&p, dst, sizeof (dst))
+			|| !gadget_esil_next_token (&p, esil_op, sizeof (esil_op))) {
+		return;
+	}
+	if (!strcmp (esil_op, "=")) {
+		if (!gadget_esil_token_is_controlled (src) && gadget_esil_token_is_controlled (dst)) {
+			const ut64 value = r_num_get (NULL, src);
+			r_strf_var (detail, 128, "dst=%s value=0x%"PFMT64x, dst, value);
+			gadget_info_append_detail (info->ldconst_detail, sizeof (info->ldconst_detail), detail);
+		} else if (gadget_op_is_mov (op) && gadget_esil_token_is_controlled (src) && gadget_esil_token_is_controlled (dst)) {
+			r_strf_var (detail, 128, "dst=%s src=%s", dst, src);
+			gadget_info_append_detail (info->mov_detail, sizeof (info->mov_detail), detail);
+		}
+		return;
+	}
+	const size_t len = strlen (esil_op);
+	if (len < 2 || esil_op[len - 1] != '=' || !gadget_esil_token_is_controlled (dst)) {
+		return;
+	}
+	esil_op[len - 1] = 0;
+	if (gadget_op_is_arithm (op)) {
+		char src_detail[64];
+		if (gadget_esil_token_is_controlled (src)) {
+			r_str_ncpy (src_detail, src, sizeof (src_detail));
+		} else {
+			r_strf_var (num, 64, "0x%"PFMT64x, r_num_get (NULL, src));
+			r_str_ncpy (src_detail, num, sizeof (src_detail));
+		}
+		r_strf_var (detail, 128, "dst=%s op=%s src=%s", dst, esil_op, src_detail);
+		gadget_info_append_detail (info->arithm_detail, sizeof (info->arithm_detail), detail);
+	} else if (gadget_op_is_logic (op)) {
+		r_strf_var (detail, 128, "dst=%s op=%s src=%s", dst, esil_op, src);
+		gadget_info_append_detail (info->logic_detail, sizeof (info->logic_detail), detail);
+	}
+}
+
 static bool gadget_flag_name_is_signal(const char *name) {
 	if (R_STR_ISEMPTY (name)) {
 		return false;
@@ -668,6 +751,9 @@ static void gadget_analyze_static(RCore *core, RList *hitlist, RCoreGadgetEsilIn
 		}
 		if (gadget_op_is_arithm (&op)) {
 			info->classes |= R_CORE_GADGET_CLASS_ARITHM;
+			if (gadget_esil_starts_with_const (expr)) {
+				info->classes |= R_CORE_GADGET_CLASS_ARITHM_CONST;
+			}
 		}
 		if (gadget_op_is_logic (&op)) {
 			info->classes |= R_CORE_GADGET_CLASS_LOGIC;
@@ -681,6 +767,7 @@ static void gadget_analyze_static(RCore *core, RList *hitlist, RCoreGadgetEsilIn
 		if (gadget_op_is_nop (&op)) {
 			info->classes |= R_CORE_GADGET_CLASS_NOP;
 		}
+		gadget_info_collect_simple_detail (info, &op, expr);
 		if (gadget_op_has_explicit_mem_read (&op, expr)) {
 			info->classes |= R_CORE_GADGET_CLASS_MEMREAD;
 			if ((op.type == R_ANAL_OP_TYPE_LOAD || gadget_op_is_mov (&op))
@@ -842,10 +929,42 @@ static void gadget_info_json(PJ *pj, const RCoreGadgetEsilInfo *info) {
 	}
 }
 
+static const char *gadget_info_class_detail(const RCoreGadgetEsilInfo *info, const char *klass) {
+	if (!info) {
+		return NULL;
+	}
+	if (!strcmp (klass, "mov")) {
+		return info->mov_detail;
+	}
+	if (!strcmp (klass, "ldconst")) {
+		return info->ldconst_detail;
+	}
+	if (!strcmp (klass, "arithm")) {
+		return info->arithm_detail;
+	}
+	if (!strcmp (klass, "arithm_ct")) {
+		return info->arithm_detail;
+	}
+	if (!strcmp (klass, "logic")) {
+		return info->logic_detail;
+	}
+	return NULL;
+}
+
 static char *gadget_sdb_value(const RCoreGadgetEsilInfo *info, unsigned int size, const char *klass) {
 	char *s = r_str_newf ("0x%x %s", size, klass);
 	if (!s) {
 		return NULL;
+	}
+	const char *detail = gadget_info_class_detail (info, klass);
+	if (R_STR_ISNOTEMPTY (detail)) {
+		char *n = r_str_newf ("%s %s", s, detail);
+		if (!n) {
+			free (s);
+			return NULL;
+		}
+		free (s);
+		s = n;
 	}
 	if (info && info->target_set) {
 		char *n = r_str_newf ("%s target=0x%08"PFMT64x, s, info->target);
