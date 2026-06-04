@@ -991,3 +991,53 @@ sradi_pos
 0x00000020
 EOF2
 RUN
+
+NAME=array stack var shadows interior phantom slots
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 986100809861008198610082986100834e800020
+af
+afvs 0x80 ucTemp char[4]
+afvs
+EOF
+EXPECT=<<EOF
+arg char[4] ucTemp @ r1+0x80
+EOF
+RUN
+
+NAME=multidim array stack var shadows interior slots
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 9861002090610040906100884e800020
+af
+afvs 0x20 grid int[9][9]
+afvs
+EOF
+EXPECT=<<EOF
+arg int[9][9] grid @ r1+0x20
+EOF
+RUN
+
+NAME=scalar stack var keeps neighbour slots
+FILE=-
+CMDS=<<EOF
+e asm.arch=ppc
+e asm.bits=64
+e cfg.bigendian=true
+wx 9061008090610088906100904e800020
+af
+afvs 0x80 x int64_t
+afvs
+EOF
+EXPECT=<<EOF
+arg int64_t x @ r1+0x80
+arg int64_t arg_88h @ r1+0x88
+arg int64_t arg_90h @ r1+0x90
+EOF
+RUN

@@ -163,10 +163,50 @@ R_API bool r_anal_function_rebase_vars(RAnal *a, RAnalFunction *fcn) {
 	return true;
 }
 
+// Total byte size of an array type like "char[4]"/"int[9][9]", or 0 if not a sized array
+static int array_type_extent(Sdb *TDB, const char *type) {
+	const char *br = strchr (type, '[');
+	if (!br) {
+		return 0;
+	}
+	char *base = r_str_ndup (type, br - type);
+	if (!base) {
+		return 0;
+	}
+	r_str_trim (base);
+	const ut64 bits = r_type_get_bitsize (TDB, base);
+	free (base);
+	if (!bits) {
+		return 0;
+	}
+	ut64 count = 1;
+	const char *p;
+	for (p = br; p; p = strchr (p + 1, '[')) {
+		const int n = atoi (p + 1);
+		if (n <= 0) {
+			return 0;
+		}
+		count *= (ut64)n;
+	}
+	const ut64 total = count * bits / 8;
+	return (int)total;
+}
+
 // If the type of var is a struct,
 // remove all other vars that are overlapped by var and are at the offset of one of its struct members
 static void shadow_var_struct_members(RAnal *anal, RAnalVar *var) {
 	Sdb *TDB = var->fcn->anal->sdb_types;
+	// drop emulation slots synthesised inside an array var's extent (e.g. ucTemp[4] byte stores that became arg_81h..83h)
+	if ((var->kind == R_ANAL_VAR_KIND_SPV || var->kind == R_ANAL_VAR_KIND_BPV) && var->type) {
+		const int extent = array_type_extent (TDB, var->type);
+		int off;
+		for (off = 1; off < extent; off++) {
+			RAnalVar *other = r_anal_function_get_var (var->fcn, var->kind, var->delta + off);
+			if (other && other != var) {
+				r_anal_var_delete (anal, other);
+			}
+		}
+	}
 	const char *type_kind = sdb_const_get (TDB, var->type, 0);
 	if (type_kind && r_str_startswith (type_kind, "struct")) {
 		char *field;
