@@ -1745,11 +1745,8 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		return 2; // R_MIN (len, 2);
 	}
 
-	// select cpu info
 	CPU_MODEL *cpu = get_cpu_model (as->data, as->config->cpu);
-
 #if 0
-	// set memory layout registers
 	if (as->arch->esil) {
 		ut64 offset = 0;
 		r_esil_reg_write (as->arch->esil, "_prog", offset);
@@ -1767,7 +1764,6 @@ static bool decode(RArchSession *as, RAnalOp *op, RArchDecodeMask mask) {
 		r_esil_reg_write (as->arch->esil, "_page", offset);
 	}
 #endif
-	// process opcode
 	avr_op_analyze (as, op, addr, buf, len, cpu);
 
 	op->size = size;
@@ -2339,8 +2335,7 @@ static ut8 *anal_mask_avr(RArchSession *as, int size, const ut8 *data, ut64 at) 
 }
 #endif
 
-static bool esil_cb(RArchSession *as, RArchEsilAction action) {
-	REsil *esil = as->arch->esil;
+static bool esil_cb(RArchSession *as, REsil *esil, RArchEsilAction action) {
 	if (!esil) {
 		return false;
 	}

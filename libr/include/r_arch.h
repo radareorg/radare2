@@ -151,7 +151,7 @@ typedef bool (*RArchPluginModifyCallback)(RArchSession *s, struct r_anal_op_t *o
 typedef RList *(*RArchPluginPreludesCallback)(RArchSession *s);
 typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
-typedef bool (*RArchPluginEsilCallback)(RArchSession *s, RArchEsilAction action);
+typedef bool (*RArchPluginEsilCallback)(RArchSession *s, REsil *esil, RArchEsilAction action);
 
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
@@ -190,7 +190,7 @@ R_API bool r_arch_unload_decoder(RArch *arch, const char *dname);
 R_API int r_arch_info(RArch *arch, int query);
 R_API bool r_arch_decode(RArch *a, RAnalOp *op, RArchDecodeMask mask);
 R_API bool r_arch_encode(RArch *a, RAnalOp *op, RArchEncodeMask mask);
-R_API bool r_arch_esilcb(RArch *a, RArchEsilAction action);
+R_API bool r_arch_esilcb(RArch *a, REsil *esil, RArchEsilAction action);
 //R_API bool r_arch_esil_init(RArch *arch, const char *dname, REsil *esil);
 //R_API void r_arch_esil_fini(RArch *arch, const char *dname, REsil *esil);
 
