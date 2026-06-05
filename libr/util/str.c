@@ -1427,9 +1427,11 @@ out:
 /* hex-escape unprintable characters in a raw buffer (null-safe) */
 R_API char *r_str_escape_raw(const ut8 *buf, int sz) {
 	R_RETURN_VAL_IF_FAIL (buf, NULL);
-
+	if (sz < 0) {
+		return NULL;
+	}
 	/* Worst case scenario, we convert every byte to a \xhh escape */
-	char *new_buf = malloc (1 + sz * 4);
+	char *new_buf = malloc (1 + (size_t) sz * 4);
 	if (!new_buf) {
 		return NULL;
 	}
