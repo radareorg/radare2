@@ -3403,8 +3403,22 @@ static int cmd_print_pxA(RCore *core, int len, const char *input) {
 	ut8 *data;
 	int datalen;
 	if (*input == 'v') {
-		datalen = cols * 8 * core->cons->rows;
+		const int rows = core->cons->rows;
+		if (cols < 1 || cols > 0xffff || rows < 1) {
+			R_LOG_ERROR ("Invalid length");
+			return 0;
+		}
+		st64 dl = (st64)cols * 8 * rows;
+		if (dl < 1 || dl > ST32_MAX) {
+			R_LOG_ERROR ("Invalid length");
+			return 0;
+		}
+		datalen = (int)dl;
 		data = malloc (datalen);
+		if (!data) {
+			R_LOG_ERROR ("Cannot allocate %d byte(s)", datalen);
+			return 0;
+		}
 		r_io_read_at (core->io, core->addr, data, datalen);
 		len = datalen;
 	} else {
