@@ -1642,7 +1642,7 @@ static char *escape_utf8(const char *buf, int buf_size, bool escape_non_printabl
 	len = buf_size < 0? strlen (buf): buf_size;
 	end = buf + len;
 	/* Worst case scenario, we convert every byte to \u00hh */
-	new_buf = malloc (1 + (len * 6));
+	new_buf = malloc (1 + (size_t) len * 6);
 	if (!new_buf) {
 		return NULL;
 	}
