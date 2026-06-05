@@ -459,6 +459,25 @@ c
 EOF
 RUN
 
+NAME=negative colgrep
+CMDS=<<EOF
+?e hello world~[-1]
+?e a\na b\na b c~[-1]
+?e a\na b\na b c~[-2]
+?e a b c\nd e~[1--1]
+EOF
+EXPECT=<<EOF
+world
+a
+b
+c
+a
+b
+b c
+e
+EOF
+RUN
+
 NAME=colgrep
 FILE=malloc://1024
 CMDS=<<EOF

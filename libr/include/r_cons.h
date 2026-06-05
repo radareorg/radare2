@@ -127,7 +127,7 @@ typedef struct r_cons_grep_t {
 	bool sort_invert;
 	int f_line; //first line
 	int l_line; //last line
-	int tokens[R_CONS_GREP_TOKENS];
+	int tokens[R_CONS_GREP_TOKENS]; // packed column ranges
 	int tokens_used;
 	int amp;
 	int zoom;
