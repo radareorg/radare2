@@ -5098,7 +5098,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		&& ds->analop.val <= UT8_MAX;
 
 	ds->chref = 0;
-	if ((ut8)v >= ' ') {
+	if ((char)v > 0 && (v >= '!' || (scalar_stack_imm && v == ' '))) {
 		ds->chref = (char)v;
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, be));
