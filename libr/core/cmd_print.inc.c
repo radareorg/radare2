@@ -7871,53 +7871,59 @@ static void cmd_pa(RCore *core, const char *input) {
 	}
 }
 
+static void cmd_print_bits(RCore *core, const ut8 *block, int len, int from, int to) {
+	if (len < 0 || len > ST32_MAX / 8) {
+		R_LOG_ERROR ("Invalid length");
+		return;
+	}
+	const int size = len * 8;
+	if (to < 0 && from >= 0) {
+		to = size;
+	}
+	char *buf = malloc (size + 1);
+	if (!buf) {
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
+		return;
+	}
+	r_str_bits (buf, block, size, NULL);
+	if (from >= 0 && to >= 0) {
+		const int buf_len = strlen (buf);
+		from = R_MIN (from, buf_len);
+		if (to < buf_len) {
+			buf[to] = 0;
+		}
+		r_cons_println (core->cons, buf + from);
+	}
+	free (buf);
+}
+
 static void cmd_pb(RCore *core, const char *input, const ut8 *block, int l, int len) {
 	if (input[1] == '?') {
 		r_core_cmd_help_match (core, help_msg_p, "pb");
-	} else if (l != 0) {
-		if (len < 0 || len > ST32_MAX / 8) {
+		return;
+	}
+	if (l == 0) {
+		return;
+	}
+	int from = 0;
+	int to = -1;
+	const char *spc = strchr (input, ' ');
+	if (spc) {
+		int bits = r_num_math (core->num, spc + 1);
+		if (bits < 1) {
+			bits = 1;
+		}
+		spc = strchr (spc + 1, ' ');
+		if (spc) {
+			from = r_num_math (core->num, spc + 1);
+		}
+		if (from > 0 && bits > INT_MAX - from) {
 			R_LOG_ERROR ("Invalid length");
 			return;
 		}
-		int from, to;
-		const int size = len * 8;
-		char *spc, *buf = malloc (size + 1);
-		spc = strchr (input, ' ');
-		if (spc) {
-			len = r_num_math (core->num, spc + 1);
-			if (len < 1) {
-				len = 1;
-			}
-			spc = strchr (spc + 1, ' ');
-			if (spc) {
-				from = r_num_math (core->num, spc + 1);
-			} else {
-				from = 0;
-			}
-			to = from + len;
-		} else {
-			from = 0;
-			to = size;
-		}
-		if (buf) {
-			int buf_len;
-			r_str_bits (buf, block, size, NULL);
-			buf_len = strlen (buf);
-			if (from >= 0 && to >= 0) {
-				if (from >= buf_len) {
-					from = buf_len;
-				}
-				if (to < buf_len) {
-					buf[to] = 0;
-					// buf[buf_len - 1] = 0;
-				}
-				r_cons_println (core->cons, buf + from);
-			}
-			free (buf);
-		} else {
-			R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
-		}
+		to = from + bits;
 	}
+	cmd_print_bits (core, block, len, from, to);
 }
 
 static void cmd_pxc(RCore *core, const char *input, int l, int len) {
@@ -8186,24 +8192,10 @@ static int cmd_print(void *data, const char *input) {
 			if (input[1] == '?') {
 				r_core_cmd_help_match (core, help_msg_p, "pB");
 			} else if (l != 0) {
-				int size;
-				char *buf;
 				if (!r_core_block_size (core, len)) {
 					len = core->blocksize;
 				}
-				if (len < 0 || len > ST32_MAX / 8) {
-					R_LOG_ERROR ("Invalid length");
-					break;
-				}
-				size = len * 8;
-				buf = malloc (size + 1);
-				if (buf) {
-					r_str_bits (buf, core->block, size, NULL);
-					r_cons_println (core->cons, buf);
-					free (buf);
-				} else {
-					R_LOG_ERROR ("Cannot allocate %d byte(s)", size);
-				}
+				cmd_print_bits (core, core->block, len, 0, -1);
 			}
 		}
 		break;
