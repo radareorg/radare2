@@ -9460,10 +9460,22 @@ static void cmd_aes(RCore *core, const char *input) {
 			op = r_core_anal_op (core, r_reg_getv (core->anal->reg,
 				r_reg_alias_getname (core->anal->reg, R_REG_ALIAS_PC)),
 				R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
-			if (op && op->type == R_ANAL_OP_TYPE_CALL) {
-				until_addr = op->addr + op->size;
+			bool step_over = true;
+			if (op) {
+				switch (op->type) {
+				case R_ANAL_OP_TYPE_CALL:
+					until_addr = op->addr + op->size;
+					step_over = false;
+					break;
+				case R_ANAL_OP_TYPE_UCALL:
+				case R_ANAL_OP_TYPE_RCALL:
+					step_over = false;
+					break;
+				default:
+					break;
+				}
 			}
-			r_core_esil_step (core, until_addr, until_expr, NULL, false);
+			r_core_esil_step (core, until_addr, until_expr, NULL, step_over);
 			r_anal_op_free (op);
 			r_core_cmd0 (core, ".ar*");
 		} else {
@@ -9696,10 +9708,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				// ignore return value is not an error, should 0, 1, -1 imho
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_reg_getv (core->anal->reg, "PC");
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC | R_ARCH_OP_MASK_HINT);
 				if (!op) {
 					R_LOG_ERROR ("invalid instruction at 0x%08" PFMT64x, addr);
@@ -9730,9 +9744,12 @@ static void cmd_anal_esil(RCore *core, const char *input, bool verbose) {
 			st64 maxsteps = r_config_get_i (core->config, "esil.maxsteps");
 			ut64 countsteps = 0;
 			for (; !maxsteps || countsteps < maxsteps; countsteps++) {
-				(void)r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
+				const bool step_ok = r_core_esil_step (core, UT64_MAX, NULL, NULL, false);
 				r_core_cmd0 (core, ".ar*");
 				addr = r_num_get (core->num, pc);
+				if (!step_ok) {
+					break;
+				}
 				op = r_core_anal_op (core, addr, R_ARCH_OP_MASK_BASIC);
 				if (!op) {
 					break;
