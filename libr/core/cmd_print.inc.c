@@ -4453,6 +4453,11 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	if (repeat < 1) {
 		repeat = 1;
 	}
+	if (repeat > ST32_MAX / 8) {
+		R_LOG_ERROR ("Invalid length");
+		free (orig_block);
+		return;
+	}
 	// variables can be
 	switch (input[0]) {
 	case 'z': // "pvz"
@@ -4669,6 +4674,9 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 		// ut64 delta = 0;
 		size_t bs = ((repeat + 8) * n);
 		heaped_block = calloc (repeat + 8, n);
+		if (!heaped_block) {
+			break;
+		}
 		r_io_read_at (core->io, core->addr, heaped_block, bs);
 		block = heaped_block;
 		bool breaks = repeat > 1024;
