@@ -271,20 +271,29 @@ ARGS=-a x86 -b 32
 FILE=malloc://256
 CMDS=<<EOF
 e asm.bytes=false
+e asm.flags=false
 e asm.comments=false
 e scr.color=false
 e cfg.debug=false
 aei
 aeim
 aeip
-wx eb0331c09031c0
+wx eb0331c09031c031c1c3
 ahb 16 @ 0x5
+pd 5
+?e --
 pdeqq 4
 EOF
 EXPECT=<<EOF
+        ,=< 0x00000000      jmp 5
+        |   0x00000002      xor ax, ax
+        |   0x00000004      nop
+        `-> 0x00000005      xor ax, ax
+            0x00000007      xor cx, ax
+--
 jmp 5
 xor ax, ax
-nop
-xor ax, ax
+xor cx, ax
+ret
 EOF
 RUN
