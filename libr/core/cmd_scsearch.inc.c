@@ -914,150 +914,209 @@ static bool syscall_x86_prefix_byte(ut8 b, int bits) {
 	return bits == 64 && b >= 0x40 && b <= 0x4f;
 }
 
-static int syscall_x86_prefix_len(const ut8 *buf, int len, int bits) {
-	int i = 0;
-	while (i < len && i < 14 && syscall_x86_prefix_byte (buf[i], bits)) {
-		i++;
+static const char syscall_cand_direct[] = "direct";
+static const char syscall_cand_x86_prefixable[] = "x86-prefixable";
+
+typedef struct {
+	RCore *core;
+	RVecSearchAddr *candidates;
+	ut64 from;
+	int search_align;
+	int natural_align;
+	int bits;
+	bool ok;
+} SyscallCandidateSearchCtx;
+
+static int syscall_gcd_int(int a, int b) {
+	while (b) {
+		const int t = a % b;
+		a = b;
+		b = t;
 	}
-	return i;
+	return a;
 }
 
-static int syscall_first_aligned_offset(ut64 base, int align) {
-	int rem = base % align;
-	return rem? align - rem: 0;
+static int syscall_effective_align(int natural_align, int search_align) {
+	if (natural_align <= 1) {
+		return search_align > 1? search_align: 0;
+	}
+	if (search_align <= 1) {
+		return natural_align;
+	}
+	const int gcd = syscall_gcd_int (natural_align, search_align);
+	const int div = natural_align / gcd;
+	if (div > ST32_MAX / search_align) {
+		return 0;
+	}
+	return div * search_align;
 }
 
-static bool syscall_collect_x86(RVecSearchAddr *candidates, ut64 base, const ut8 *buf, int scan_len, int read_len, int search_align, int bits) {
+static int syscall_natural_align(SyscallSearchKind kind) {
+	switch (kind) {
+	case SYSCALL_SEARCH_ARM64:
+	case SYSCALL_SEARCH_ARM32:
+		return 4;
+	case SYSCALL_SEARCH_THUMB:
+		return 2;
+	default:
+		return 1;
+	}
+}
+
+static bool syscall_candidate_search_add(SyscallCandidateSearchCtx *ctx, ut64 addr) {
+	if (!syscall_candidate_aligned (addr, ctx->natural_align, ctx->search_align)) {
+		return true;
+	}
+	ctx->ok = syscall_candidate_add (ctx->candidates, addr);
+	return ctx->ok;
+}
+
+static void syscall_collect_x86_prefix_candidates(SyscallCandidateSearchCtx *ctx, ut64 where) {
+	ut8 buf[14];
+	int n;
 	int i;
-	for (i = 0; i < scan_len; i++) {
-		ut64 addr = base + i;
-		if (!syscall_candidate_aligned (addr, 1, search_align)) {
-			continue;
+	if (where <= ctx->from) {
+		return;
+	}
+	n = (int)R_MIN ((ut64)sizeof (buf), where - ctx->from);
+	if (!r_io_read_at (ctx->core->io, where - n, buf, n)) {
+		return;
+	}
+	for (i = n - 1; i >= 0; i--) {
+		const ut8 b = buf[i];
+		if (!syscall_x86_prefix_byte (b, ctx->bits)) {
+			break;
 		}
-		if (i + 1 < read_len && buf[i] == 0x0f && (buf[i + 1] == 0x05 || buf[i + 1] == 0x34)) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
+		if (!syscall_candidate_search_add (ctx, where - (n - i))) {
+			break;
 		}
-		if (i + 1 < read_len && buf[i] == 0xcd) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
-		if (buf[i] == 0xf1 || buf[i] == 0xce) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
-		int prefix_len = syscall_x86_prefix_len (buf + i, read_len - i, bits);
-		if (prefix_len > 0 && i + prefix_len + 1 < read_len
-				&& buf[i + prefix_len] == 0x0f
-				&& (buf[i + prefix_len + 1] == 0x05 || buf[i + prefix_len + 1] == 0x34)) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
+	}
+}
+
+static int syscall_candidate_search_hit(RSearchKeyword *kw, void *user, ut64 where) {
+	SyscallCandidateSearchCtx *ctx = (SyscallCandidateSearchCtx *)user;
+	if (!syscall_candidate_search_add (ctx, where)) {
+		return 0;
+	}
+	if ((const void *)kw->data == (const void *)syscall_cand_x86_prefixable) {
+		syscall_collect_x86_prefix_candidates (ctx, where);
+	}
+	return ctx->ok? 1: 0;
+}
+
+static bool syscall_search_kw_add(RSearch *search, const ut8 *bytes, int len, const ut8 *mask, int mask_len, const char *data, int align) {
+	RSearchKeyword *kw = r_search_keyword_new (bytes, len, mask, mask_len, data);
+	if (!kw) {
+		return false;
+	}
+	kw->align = align;
+	if (!r_search_kw_add (search, kw)) {
+		r_search_keyword_free (kw);
+		return false;
 	}
 	return true;
 }
 
-static bool syscall_collect_arm64(RVecSearchAddr *candidates, ut64 base, const ut8 *buf, int scan_len, int read_len, int search_align, bool be) {
-	int i = syscall_first_aligned_offset (base, 4);
-	for (; i < scan_len && i + 4 <= read_len; i += 4) {
-		ut64 addr = base + i;
-		if (!syscall_candidate_aligned (addr, 4, search_align)) {
-			continue;
-		}
-		ut32 word = be? r_read_be32 (buf + i): r_read_le32 (buf + i);
-		if ((word & 0xffe0001f) == 0xd4000001) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
+static bool syscall_candidate_search_init(RSearch *search, SyscallSearchKind kind, bool be, int align) {
+	switch (kind) {
+	case SYSCALL_SEARCH_X86: {
+		static const ut8 syscall_bytes[] = { 0x0f, 0x05 };
+		static const ut8 sysenter_bytes[] = { 0x0f, 0x34 };
+		static const ut8 int_bytes[] = { 0xcd, 0x00 };
+		static const ut8 int_mask[] = { 0xff, 0x00 };
+		static const ut8 int1_bytes[] = { 0xf1 };
+		static const ut8 into_bytes[] = { 0xce };
+		return syscall_search_kw_add (search, syscall_bytes, sizeof (syscall_bytes), NULL, 0, syscall_cand_x86_prefixable, 0)
+			&& syscall_search_kw_add (search, sysenter_bytes, sizeof (sysenter_bytes), NULL, 0, syscall_cand_x86_prefixable, 0)
+			&& syscall_search_kw_add (search, int_bytes, sizeof (int_bytes), int_mask, sizeof (int_mask), syscall_cand_direct, align)
+			&& syscall_search_kw_add (search, int1_bytes, sizeof (int1_bytes), NULL, 0, syscall_cand_direct, align)
+			&& syscall_search_kw_add (search, into_bytes, sizeof (into_bytes), NULL, 0, syscall_cand_direct, align);
 	}
-	return true;
-}
-
-static bool syscall_collect_arm32(RVecSearchAddr *candidates, ut64 base, const ut8 *buf, int scan_len, int read_len, int search_align, bool be) {
-	int i = syscall_first_aligned_offset (base, 4);
-	for (; i < scan_len && i + 4 <= read_len; i += 4) {
-		ut64 addr = base + i;
-		if (!syscall_candidate_aligned (addr, 4, search_align)) {
-			continue;
-		}
-		ut32 word = be? r_read_be32 (buf + i): r_read_le32 (buf + i);
-		if ((word & 0x0f000000) == 0x0f000000) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
+	case SYSCALL_SEARCH_ARM64: {
+		static const ut8 arm64_le_bytes[] = { 0x01, 0x00, 0x00, 0xd4 };
+		static const ut8 arm64_le_mask[] = { 0x1f, 0x00, 0xe0, 0xff };
+		static const ut8 arm64_be_bytes[] = { 0xd4, 0x00, 0x00, 0x01 };
+		static const ut8 arm64_be_mask[] = { 0xff, 0xe0, 0x00, 0x1f };
+		const ut8 *bytes = be? arm64_be_bytes: arm64_le_bytes;
+		const ut8 *mask = be? arm64_be_mask: arm64_le_mask;
+		return syscall_search_kw_add (search, bytes, 4, mask, 4, syscall_cand_direct, align);
 	}
-	return true;
-}
-
-static bool syscall_collect_thumb(RVecSearchAddr *candidates, ut64 base, const ut8 *buf, int scan_len, int read_len, int search_align, bool be) {
-	int i = syscall_first_aligned_offset (base, 2);
-	for (; i < scan_len && i + 2 <= read_len; i += 2) {
-		ut64 addr = base + i;
-		if (!syscall_candidate_aligned (addr, 2, search_align)) {
-			continue;
-		}
-		ut16 word = be? r_read_be16 (buf + i): r_read_le16 (buf + i);
-		if ((word & 0xff00) == 0xdf00) {
-			if (!syscall_candidate_add (candidates, addr)) {
-				return false;
-			}
-		}
+	case SYSCALL_SEARCH_ARM32: {
+		static const ut8 arm32_le_bytes[] = { 0x00, 0x00, 0x00, 0x0f };
+		static const ut8 arm32_le_mask[] = { 0x00, 0x00, 0x00, 0x0f };
+		static const ut8 arm32_be_bytes[] = { 0x0f, 0x00, 0x00, 0x00 };
+		static const ut8 arm32_be_mask[] = { 0x0f, 0x00, 0x00, 0x00 };
+		const ut8 *bytes = be? arm32_be_bytes: arm32_le_bytes;
+		const ut8 *mask = be? arm32_be_mask: arm32_le_mask;
+		return syscall_search_kw_add (search, bytes, 4, mask, 4, syscall_cand_direct, align);
 	}
-	return true;
+	case SYSCALL_SEARCH_THUMB: {
+		static const ut8 thumb_le_bytes[] = { 0x00, 0xdf };
+		static const ut8 thumb_le_mask[] = { 0x00, 0xff };
+		static const ut8 thumb_be_bytes[] = { 0xdf, 0x00 };
+		static const ut8 thumb_be_mask[] = { 0xff, 0x00 };
+		const ut8 *bytes = be? thumb_be_bytes: thumb_le_bytes;
+		const ut8 *mask = be? thumb_be_mask: thumb_le_mask;
+		return syscall_search_kw_add (search, bytes, 2, mask, 2, syscall_cand_direct, align);
+	}
+	default:
+		return false;
+	}
 }
 
 static bool syscall_collect_candidates(RCore *core, RVecSearchAddr *candidates, SyscallSearchKind kind, ut64 from, ut64 to, int search_align) {
-	RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
+	const RArchConfig *cfg = R_UNWRAP3 (core, anal, config);
 	const bool be = cfg && R_ARCH_CONFIG_IS_BIG_ENDIAN (cfg);
 	const int bits = cfg? cfg->bits: 0;
+	const int natural_align = syscall_natural_align (kind);
+	const int effective_align = syscall_effective_align (natural_align, search_align);
 	const int bsize = R_MAX (4096, core->blocksize);
-	const int lookahead = kind == SYSCALL_SEARCH_X86? 16: 4;
-	ut8 *buf = malloc ((size_t)bsize + lookahead);
+	RSearch *search = r_search_new (R_SEARCH_KEYWORD);
+	SyscallCandidateSearchCtx ctx = { core, candidates, from, search_align, natural_align, bits, true };
+	ut8 *buf;
 	ut64 at = from;
 
+	if (!search) {
+		return false;
+	}
+	search->align = kind == SYSCALL_SEARCH_X86? 0: effective_align;
+	search->overlap = true;
+	search->contiguous = 1;
+	r_search_set_callback (search, syscall_candidate_search_hit, &ctx);
+	if (!syscall_candidate_search_init (search, kind, be, effective_align)) {
+		r_search_free (search);
+		return false;
+	}
+	r_search_begin (search);
+	buf = malloc (bsize);
 	if (!buf) {
-		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize + lookahead);
+		R_LOG_ERROR ("Cannot allocate %d byte(s)", bsize);
+		r_search_free (search);
 		return false;
 	}
 	while (at < to) {
-		ut64 left = to - at;
-		int scan_len = (int)R_MIN ((ut64)bsize, left);
-		int read_len = (int)R_MIN ((ut64)bsize + lookahead, left);
-		bool ok = false;
-		r_io_read_at (core->io, at, buf, read_len);
-		switch (kind) {
-		case SYSCALL_SEARCH_X86:
-			ok = syscall_collect_x86 (candidates, at, buf, scan_len, read_len, search_align, bits);
-			break;
-		case SYSCALL_SEARCH_ARM64:
-			ok = syscall_collect_arm64 (candidates, at, buf, scan_len, read_len, search_align, be);
-			break;
-		case SYSCALL_SEARCH_ARM32:
-			ok = syscall_collect_arm32 (candidates, at, buf, scan_len, read_len, search_align, be);
-			break;
-		case SYSCALL_SEARCH_THUMB:
-			ok = syscall_collect_thumb (candidates, at, buf, scan_len, read_len, search_align, be);
-			break;
-		default:
-			ok = false;
+		const ut64 left = to - at;
+		const int len = (int)R_MIN ((ut64)bsize, left);
+		if (r_cons_is_breaked (core->cons)) {
 			break;
 		}
-		if (!ok) {
-			free (buf);
-			return false;
+		if (!r_io_read_at (core->io, at, buf, len)) {
+			ctx.ok = false;
+			break;
 		}
-		at += scan_len;
+		if (r_search_update (search, at, buf, len) == -1 || !ctx.ok) {
+			ctx.ok = false;
+			break;
+		}
+		at += len;
 	}
 	free (buf);
-	RVecSearchAddr_sort (candidates, syscall_addr_cmp);
-	RVecSearchAddr_uniq (candidates, syscall_addr_cmp);
-	return true;
+	r_search_free (search);
+	if (ctx.ok) {
+		RVecSearchAddr_sort (candidates, syscall_addr_cmp);
+		RVecSearchAddr_uniq (candidates, syscall_addr_cmp);
+	}
+	return ctx.ok;
 }
 
 static int syscall_read_op(RCore *core, ut64 at, ut64 to, ut8 *buf, int buflen) {
@@ -1131,18 +1190,6 @@ static bool syscall_handle_hit(RCore *core, struct search_parameters *param, Sys
 	}
 	(*count)++;
 	return core->search->maxhits <= 0 || *count < core->search->maxhits;
-}
-
-static int syscall_natural_align(SyscallSearchKind kind) {
-	switch (kind) {
-	case SYSCALL_SEARCH_ARM64:
-	case SYSCALL_SEARCH_ARM32:
-		return 4;
-	case SYSCALL_SEARCH_THUMB:
-		return 2;
-	default:
-		return 1;
-	}
 }
 
 static bool syscall_process_function_block_candidates(RCore *core, struct search_parameters *param, SyscallRegMap *regmap, RVecSyscallFunctionCache *fcn_cache, const char *screg, RVecSearchAddr *candidates, size_t *candidate_idx, RAnalBlock *bb, int kwidx, int *count, bool isx86) {
@@ -1417,6 +1464,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 			break;
 		}
 		if (kind == SYSCALL_SEARCH_UNSUPPORTED) {
+			// Unsupported architectures keep the old decode-scan search path.
 			keep_going = syscall_search_decode_scan (core, param, map, &regmap, &fcn_cache,
 				screg, kwidx, &count, isx86);
 		} else {
