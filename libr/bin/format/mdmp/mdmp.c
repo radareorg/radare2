@@ -455,6 +455,9 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		R_LOG_ERROR ("Size Mismatch - Stream data is larger than file size!");
 		return false;
 	}
+	/* Descriptor loops must stay within the stream's declared size, not just
+	** the file size, otherwise bytes following a truncated stream get parsed */
+	ut64 stream_end = (ut64)entry->location.rva + entry->location.data_size;
 
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
@@ -497,7 +500,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (module_list);
 		ut32 max_modules = safe_loop_count (offset, module_list.number_of_modules,
-			sizeof (struct minidump_module), obj->size, "Module");
+			sizeof (struct minidump_module), stream_end, "Module");
 		for (i = 0; i < max_modules; i++) {
 			struct minidump_module *module = read_module (obj->b, offset);
 			if (!module) {
@@ -524,7 +527,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (memory_list);
 		ut32 max_memory_ranges = safe_loop_count (offset, memory_list.number_of_memory_ranges,
-			sizeof (struct minidump_memory_descriptor), obj->size, "Memory");
+			sizeof (struct minidump_memory_descriptor), stream_end, "Memory");
 		for (i = 0; i < max_memory_ranges; i++) {
 			struct minidump_memory_descriptor *desc = R_NEW (struct minidump_memory_descriptor);
 			if (!desc) {
@@ -608,7 +611,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (thread_ex_list);
 		ut32 max_threads = safe_loop_count (offset, thread_ex_list.number_of_threads,
-			sizeof (struct minidump_thread_ex), obj->size, "Thread");
+			sizeof (struct minidump_thread_ex), stream_end, "Thread");
 		for (i = 0; i < max_threads; i++) {
 			struct minidump_thread_ex *thread = R_NEW (struct minidump_thread_ex);
 			if (!thread) {
@@ -637,7 +640,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		obj->streams.memories64.base_rva = memory64_list.base_rva;
 		offset = entry->location.rva + sizeof (memory64_list);
 		ut32 max_memory64_ranges = safe_loop_count (offset, memory64_list.number_of_memory_ranges,
-			sizeof (struct minidump_memory_descriptor64), obj->size, "Memory64");
+			sizeof (struct minidump_memory_descriptor64), stream_end, "Memory64");
 		for (i = 0; i < max_memory64_ranges; i++) {
 			struct minidump_memory_descriptor64 *desc = R_NEW (struct minidump_memory_descriptor64);
 			if (!desc) {
@@ -740,7 +743,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (unloaded_module_list);
 		ut32 max_unloaded = safe_loop_count (offset, unloaded_module_list.number_of_entries,
-			sizeof (struct minidump_unloaded_module), obj->size, "UnloadedModule");
+			sizeof (struct minidump_unloaded_module), stream_end, "UnloadedModule");
 		for (i = 0; i < max_unloaded; i++) {
 			struct minidump_unloaded_module *module = R_NEW (struct minidump_unloaded_module);
 			if (!module) {
@@ -797,7 +800,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (memory_info_list);
 		ut32 max_mem_infos = safe_loop_count (offset, memory_info_list.number_of_entries,
-			sizeof (struct minidump_memory_info), obj->size, "MemoryInfo");
+			sizeof (struct minidump_memory_info), stream_end, "MemoryInfo");
 		for (i = 0; i < max_mem_infos; i++) {
 			struct minidump_memory_info *info = R_NEW (struct minidump_memory_info);
 			if (!info) {
@@ -829,7 +832,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (thread_info_list);
 		ut32 max_thread_infos = safe_loop_count (offset, thread_info_list.number_of_entries,
-			sizeof (struct minidump_thread_info), obj->size, "ThreadInfo");
+			sizeof (struct minidump_thread_info), stream_end, "ThreadInfo");
 		for (i = 0; i < max_thread_infos; i++) {
 			struct minidump_thread_info *info = R_NEW (struct minidump_thread_info);
 			if (!info) {
@@ -857,7 +860,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (handle_operation_list);
 		ut32 max_handle_ops = safe_loop_count (offset, handle_operation_list.number_of_entries,
-			sizeof (struct avrf_handle_operation), obj->size, "HandleOperation");
+			sizeof (struct avrf_handle_operation), stream_end, "HandleOperation");
 		for (i = 0; i < max_handle_ops; i++) {
 			struct avrf_handle_operation *op = R_NEW (struct avrf_handle_operation);
 			if (!op) {
@@ -889,7 +892,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		offset = entry->location.rva + sizeof (token_info_list);
 		ut32 max_tokens = safe_loop_count (offset, token_info_list.number_of_entries,
-			sizeof (struct minidump_token_info), obj->size, "TokenInfo");
+			sizeof (struct minidump_token_info), stream_end, "TokenInfo");
 		for (i = 0; i < max_tokens; i++) {
 			struct minidump_token_info *info = R_NEW (struct minidump_token_info);
 			if (!info) {

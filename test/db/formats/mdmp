@@ -614,3 +614,10 @@ EXPECT=<<EOF
 ok
 EOF
 RUN
+
+NAME=: truncated memory64 list (issue 26051)
+FILE=bins/mdmp/trunc_memory64.dmp
+CMDS=iS~Memory_Section
+EXPECT=<<EOF
+EOF
+RUN
