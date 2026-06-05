@@ -1159,8 +1159,7 @@ static bool encode(RArchSession *as, RAnalOp *op, RArchEncodeMask mask) {
 }
 
 #if 0
-static bool esil_cb(RArchSession *as, RArchEsilAction action) {
-	REsil *esil = as->arch->esil;
+static bool esil_cb(RArchSession *as, REsil *esil, RArchEsilAction action) {
 	if (!esil) {
 		return false;
 	}

@@ -1338,8 +1338,7 @@ static bool bpf_int_exit(REsil *esil, ut32 interrupt, void *user) {
 	return true;
 }
 
-static bool esilcb(RArchSession *as, RArchEsilAction action) {
-	REsil *esil = as->arch->esil;
+static bool esilcb(RArchSession *as, REsil *esil, RArchEsilAction action) {
 	if (!esil) {
 		return false;
 	}

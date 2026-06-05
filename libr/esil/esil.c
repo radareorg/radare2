@@ -379,20 +379,19 @@ R_API void r_esil_free(REsil *esil) {
 	}
 
 	// Try arch esil fini cb first, then anal as fallback
-	RArchSession *as = R_UNWRAP4 (esil, anal, arch, session);
-	if (as) {
-		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
-		if (esil_cb) {
-			if (!esil_cb (as, R_ARCH_ESIL_ACTION_FINI)) {
-				R_LOG_DEBUG ("Failed to properly cleanup esil for arch plugin");
-			}
+	RArch *arch = R_UNWRAP3 (esil, anal, arch);
+	RArchSession *as = R_UNWRAP2 (arch, session);
+	RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
+	if (esil_cb) {
+		if (!esil_cb (as, esil, R_ARCH_ESIL_ACTION_FINI)) {
+			R_LOG_DEBUG ("Failed to properly cleanup esil for arch plugin");
 		}
 	}
 	if (esil->anal && esil == esil->anal->esil) {
 		esil->anal->esil = NULL;
 	}
-	if (as && esil == esil->anal->arch->esil) {
-		esil->anal->arch->esil = NULL;
+	if (arch && esil == arch->esil) {
+		arch->esil = NULL;
 	}
 	esil_voyeurs_fini (esil);
 	r_esil_plugins_fini (esil);
@@ -1362,13 +1361,11 @@ R_API bool r_esil_setup(REsil *esil, RAnal *anal, bool romem, bool stats, bool n
 	r_esil_setup_ops (esil);
 
 	// Try arch esil init cb first, then anal as fallback
-	RArchSession *as = R_UNWRAP3 (anal, arch, session);
-	if (as) {
-		anal->arch->esil = esil;
-		RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
-		if (esil_cb) {
-			return esil_cb (as, R_ARCH_ESIL_ACTION_INIT);
-		}
+	RArch *arch = anal->arch;
+	RArchSession *as = R_UNWRAP2 (arch, session);
+	RArchPluginEsilCallback esil_cb = R_UNWRAP3 (as, plugin, esilcb);
+	if (esil_cb) {
+		return esil_cb (as, esil, R_ARCH_ESIL_ACTION_INIT);
 	}
 	return true;
 }

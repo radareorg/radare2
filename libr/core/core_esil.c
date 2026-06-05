@@ -433,18 +433,15 @@ init_fail:
 R_API void r_core_esil_load_arch(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch);
 	core->esil.esil.anal = core->anal;
-	if (!core->anal->arch->session || !core->anal->arch->session->plugin ||
-		!core->anal->arch->session->plugin->esilcb ||
-		!core->anal->arch->session->plugin->regs) {
+	RArch *arch = core->anal->arch;
+	RArchSession *session = arch->session;
+	RArchPlugin *plugin = R_UNWRAP2 (session, plugin);
+	if (!plugin || !plugin->esilcb || !plugin->regs) {
 		// This doesn't count as fail
 		return;
 	}
-	// This is awful. TODO: massage r_arch api
-	REsil *arch_esil = core->anal->arch->esil;
-	core->anal->arch->esil = &core->esil.esil;
-	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
-	core->anal->arch->esil = arch_esil;
-	char *rp = core->anal->arch->session->plugin->regs (core->anal->arch->session);
+	r_arch_esilcb (arch, &core->esil.esil, R_ARCH_ESIL_ACTION_INIT);
+	char *rp = plugin->regs (session);
 	if (!rp) {
 		R_LOG_WARN ("Couldn't set reg profile");
 		return;
@@ -455,14 +452,13 @@ R_API void r_core_esil_load_arch(RCore *core) {
 
 R_API void r_core_esil_unload_arch(RCore *core) {
 	R_RETURN_IF_FAIL (core && core->anal && core->anal->arch);
-	if (!core->anal->arch->session || !core->anal->arch->session->plugin ||
-		!core->anal->arch->session->plugin->esilcb) {
+	RArch *arch = core->anal->arch;
+	RArchSession *session = arch->session;
+	RArchPlugin *plugin = R_UNWRAP2 (session, plugin);
+	if (!plugin || !plugin->esilcb) {
 		return;
 	}
-	REsil *arch_esil = core->anal->arch->esil;
-	core->anal->arch->esil = &core->esil.esil;
-	r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_FINI);
-	core->anal->arch->esil = arch_esil;
+	r_arch_esilcb (arch, &core->esil.esil, R_ARCH_ESIL_ACTION_FINI);
 }
 
 R_API bool r_core_esil_run_expr_at(RCore *core, const char *expr, ut64 addr) {

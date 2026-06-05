@@ -2600,10 +2600,6 @@ static inline REsil *esil_new_setup(RCore *core) {
 		const char *et = r_config_get (core->config, "cmd.esil.trap");
 		esil->cmd_trap = R_STR_ISNOTEMPTY (et)? strdup (et): NULL;
 	}
-	// run the esilcb from arch
-	if (core->anal->arch) {
-		r_arch_esilcb (core->anal->arch, R_ARCH_ESIL_ACTION_INIT);
-	}
 	return esil;
 }
 

@@ -4832,27 +4832,26 @@ static bool tls_end(REsil *esil) {
 	return true;
 }
 
-static bool esilcb(RArchSession *as, RArchEsilAction action) {
+static bool esilcb(RArchSession *as R_UNUSED, REsil *esil, RArchEsilAction action) {
 	// R_LOG_DEBUG ("x86.cs.esil.action %d", action);
-	RBin *bin = as->arch->binb.bin;
-	if (!bin) {
-		return false;
-	}
-	RIO *io = bin->iob.io;
-	RCore *core = io->coreb.core;
-	RAnal *anal = core->anal;
-	REsil *esil = anal->esil;
-	// not implemented
 	if (!esil) {
 		R_LOG_ERROR ("Failed to find an esil instance");
 		return false;
 	}
-	r_esil_set_op (esil, "TLS_BEGIN", tls_begin, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
-	r_esil_set_op (esil, "TLS_END", tls_end, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
-	// XXX. this depends on kernel
-	// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
-	/* disable by default */
-//	r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
+	switch (action) {
+	case R_ARCH_ESIL_ACTION_INIT:
+		r_esil_set_op (esil, "TLS_BEGIN", tls_begin, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+		r_esil_set_op (esil, "TLS_END", tls_end, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+		// XXX. this depends on kernel
+		// r_esil_set_interrupt (esil, 0x80, x86_int_0x80);
+		/* disable by default */
+//		r_esil_set_interrupt (esil, 0x80, NULL);	// this is stupid, don't do this
+		break;
+	case R_ARCH_ESIL_ACTION_FINI:
+		break;
+	default:
+		return false;
+	}
 	return true;
 }
 

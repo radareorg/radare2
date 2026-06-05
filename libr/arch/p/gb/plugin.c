@@ -1533,8 +1533,7 @@ static int info(RArchSession *as, ut32 q) {
 	return -1;
 }
 
-static bool esil_cb(RArchSession *as, RArchEsilAction action) {
-	REsil *esil = as->arch->esil;
+static bool esil_cb(RArchSession *as R_UNUSED, REsil *esil, RArchEsilAction action) {
 	if (!esil) {
 		return false;
 	}

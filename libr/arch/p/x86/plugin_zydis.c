@@ -2445,21 +2445,21 @@ static bool tls_end(REsil *esil) {
 	return true;
 }
 
-static bool esilcb(RArchSession *as, RArchEsilAction action) {
-	RBin *bin = as->arch->binb.bin;
-	if (!bin) {
-		return false;
-	}
-	RIO *io = bin->iob.io;
-	RCore *core = io->coreb.core;
-	RAnal *anal = core->anal;
-	REsil *esil = anal->esil;
+static bool esilcb(RArchSession *as R_UNUSED, REsil *esil, RArchEsilAction action) {
 	if (!esil) {
 		R_LOG_ERROR ("Failed to find an esil instance");
 		return false;
 	}
-	r_esil_set_op (esil, "TLS_BEGIN", tls_begin, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
-	r_esil_set_op (esil, "TLS_END", tls_end, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+	switch (action) {
+	case R_ARCH_ESIL_ACTION_INIT:
+		r_esil_set_op (esil, "TLS_BEGIN", tls_begin, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+		r_esil_set_op (esil, "TLS_END", tls_end, 0, 0, R_ESIL_OP_TYPE_CUSTOM, NULL);
+		break;
+	case R_ARCH_ESIL_ACTION_FINI:
+		break;
+	default:
+		return false;
+	}
 	return true;
 }
 
