@@ -1543,7 +1543,7 @@ static char *r_str_escape_utf(const char *buf, int buf_size, RStrEnc enc, bool s
 		end = buf + len;
 	}
 	/* Worst case scenario, we convert every byte to \xhh */
-	new_buf = malloc (1 + (len * 4));
+	new_buf = malloc (1 + (size_t) len * 4);
 	if (!new_buf) {
 		return NULL;
 	}
