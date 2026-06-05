@@ -72,6 +72,7 @@ static RCoreHelpMessage help_detail_tilde = {
 	" $",        "", "words must be placed at the end of line",
 	"column:", "", "",
 	" [n]",      "", "show only column n",
+	" [-n]",     "", "show only column n from the end",
 	" [n-m]",    "", "show column n to m",
 	" [n-]",     "", "show all columns starting from column n",
 	" [i,j,k]",  "", "show the columns i, j and k",
@@ -91,6 +92,8 @@ static void grep_word_free(RConsGrepWord *gw) {
 		free (gw);
 	}
 }
+
+static bool grep_token_parse_columns(RCons *cons, RConsGrep *grep, char *str);
 
 R_API void r_cons_grep_help(RCons *cons) {
 	r_cons_cmd_help (cons, help_detail_tilde, true);
@@ -289,60 +292,16 @@ R_API void r_cons_grep_expression(RCons *cons, const char *str) {
 while_end:
 		ptr2 = strchr (ptr, '[');
 		ptr3 = strchr (ptr, ']');
-		int is_range = 0, num_is_parsed = 0;
-		bool fail = false;
-		ut64 range_begin = -1, range_end = -1;
 
-		if (ptr2 && ptr3) {
+		if (ptr2 && ptr3 && ptr2 < ptr3) {
 			end_ptr = ptr2;
-			char last = ptr3[1];
-			ptr3[1] = '\0';
-			ptr2++;
-			for (; ptr2 <= ptr3; ptr2++) {
-				if (fail) {
-					ZERO_FILL(grep->tokens);
-					grep->tokens_used = 0;
-					break;
-				}
-				switch (*ptr2) {
-				case '-':
-					is_range = 1;
-					num_is_parsed = 0;
-					range_end = -1;
-					break;
-				case ']': // fallthrough to handle ']' like ','
-				case ',':
-					for (; range_begin <= range_end; range_begin++) {
-						if (range_begin >= R_CONS_GREP_TOKENS) {
-							fail = true;
-							break;
-						}
-						grep->tokens[range_begin] = 1;
-						grep->tokens_used = 1;
-					}
-					if (*ptr2 == ']' && is_range && !num_is_parsed) {
-						num_is_parsed = true;
-						range_end = -1;
-					} else {
-						is_range = 0;
-						num_is_parsed = 0;
-					}
-					break;
-				default:
-					if (!num_is_parsed) {
-						if (is_range) {
-							range_end = r_num_get (cons->num, ptr2);
-							if (range_end == 0 && *ptr2 != '0') {
-								range_end = -1;
-							}
-						} else {
-							range_begin = range_end = r_num_get (cons->num, ptr2);
-						}
-						num_is_parsed = true;
-					}
-				}
+			ptrdiff_t cols_len = ptr3 - ptr2 - 1;
+			char *cols = cols_len > INT_MAX? NULL: r_str_ndup (ptr2 + 1, (int)cols_len);
+			if (!cols || !grep_token_parse_columns (cons, grep, cols)) {
+				ZERO_FILL (grep->tokens);
+				grep->tokens_used = 0;
 			}
-			ptr3[1] = last;
+			free (cols);
 		}
 
 		ptr2 = strchr_ns (ptr, ':'); // line number
@@ -590,6 +549,126 @@ static inline ut64 cmpstrings(const void *a) {
 
 #include <r_core.h>
 
+
+#define GREP_TOKEN_BIAS 128
+#define GREP_TOKEN_OPEN R_CONS_GREP_TOKENS
+
+static int grep_token_pack(int begin, int end) {
+	return ((begin + GREP_TOKEN_BIAS) << 16) | (end + GREP_TOKEN_BIAS);
+}
+
+static void grep_token_unpack(int token, int *begin, int *end) {
+	*begin = (token >> 16) - GREP_TOKEN_BIAS;
+	*end = (token & 0xffff) - GREP_TOKEN_BIAS;
+}
+
+static bool grep_token_in_bounds(int n) {
+	return n >= -R_CONS_GREP_TOKENS && n < R_CONS_GREP_TOKENS;
+}
+
+static bool grep_token_parse_number(RCons *cons, const char *str, int *n) {
+	if (R_STR_ISEMPTY (str)) {
+		return false;
+	}
+	if ((*str == '-' || *str == '+') && !str[1]) {
+		return false;
+	}
+	*n = (int)r_num_get (cons->num, str);
+	return grep_token_in_bounds (*n);
+}
+
+static bool grep_token_add(RConsGrep *grep, int begin, int end) {
+	if (grep->tokens_used >= R_CONS_GREP_TOKENS || !grep_token_in_bounds (begin)) {
+		return false;
+	}
+	if (end != GREP_TOKEN_OPEN && !grep_token_in_bounds (end)) {
+		return false;
+	}
+	grep->tokens[grep->tokens_used++] = grep_token_pack (begin, end);
+	return true;
+}
+
+static char *grep_token_range_sep(char *str) {
+	char *p = str;
+	if (*p == '-' || *p == '+') {
+		p++;
+	}
+	for (; *p; p++) {
+		if (*p == '-') {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+static bool grep_token_parse_columns(RCons *cons, RConsGrep *grep, char *str) {
+	char *next = str;
+	while (next) {
+		char *item = next;
+		char *comma = strchr (item, ',');
+		if (comma) {
+			*comma = '\0';
+			next = comma + 1;
+		} else {
+			next = NULL;
+		}
+		r_str_trim (item);
+		if (!*item) {
+			continue;
+		}
+		int begin = 0;
+		int end = 0;
+		char *sep = grep_token_range_sep (item);
+		if (sep) {
+			*sep = '\0';
+			r_str_trim (item);
+			if (!grep_token_parse_number (cons, item, &begin)) {
+				return false;
+			}
+			char *endstr = sep + 1;
+			r_str_trim (endstr);
+			if (*endstr) {
+				if (!grep_token_parse_number (cons, endstr, &end)) {
+					return false;
+				}
+			} else {
+				end = GREP_TOKEN_OPEN;
+			}
+		} else {
+			if (!grep_token_parse_number (cons, item, &begin)) {
+				return false;
+			}
+			end = begin;
+		}
+		if (!grep_token_add (grep, begin, end)) {
+			return false;
+		}
+	}
+	return true;
+}
+
+static bool grep_token_resolve(int token, int col, int cols) {
+	int begin = 0;
+	int end = 0;
+	grep_token_unpack (token, &begin, &end);
+	begin = begin < 0 ? cols + begin : begin;
+	if (end == GREP_TOKEN_OPEN) {
+		end = cols - 1;
+	} else {
+		end = end < 0 ? cols + end : end;
+	}
+	return R_BETWEEN (begin, col, end);
+}
+
+static bool grep_token_selected(RConsGrep *grep, int col, int cols) {
+	size_t i;
+	for (i = 0; i < grep->tokens_used; i++) {
+		if (grep_token_resolve (grep->tokens[i], col, cols)) {
+			return true;
+		}
+	}
+	return false;
+}
 
 static void colorcode(RCons *cons) {
 	char *res = r_str_ndup (cons->context->buffer, cons->context->buffer_len);
@@ -1074,28 +1153,33 @@ R_API int r_cons_grep_line(RCons *cons, char *buf, int len) {
 				free (in);
 				return 0;
 			}
-			for (i = 0; i < R_CONS_GREP_TOKENS; i++) {
-				tok = r_str_tok_r (i? NULL: in, delims, &save_ptr);
-				if (tok) {
-					if (grep->tokens[i]) {
-						const size_t toklen = strlen (tok);
-						memcpy (out + outlen, tok, toklen);
-						memcpy (out + outlen + toklen, " ", 2);
-						outlen += toklen + 1;
-						if (*out == 0) {
-							free (in);
-							free (out);
-							return -1;
-						}
-					}
-				} else {
-					if (*out) {
-						break;
-					}
-					free (in);
-					free (out);
-					return 0;
+			int cols_count = 0;
+			while (true) {
+				tok = r_str_tok_r (cols_count? NULL: in, delims, &save_ptr);
+				if (!tok) {
+					break;
 				}
+				cols_count++;
+			}
+			memcpy (in, buf, len);
+			save_ptr = NULL;
+			for (i = 0; i < cols_count; i++) {
+				tok = r_str_tok_r (i? NULL: in, delims, &save_ptr);
+				if (!tok) {
+					break;
+				}
+				if (!grep_token_selected (grep, i, cols_count)) {
+					continue;
+				}
+				const size_t toklen = strlen (tok);
+				memcpy (out + outlen, tok, toklen);
+				memcpy (out + outlen + toklen, " ", 2);
+				outlen += toklen + 1;
+			}
+			if (!outlen) {
+				free (in);
+				free (out);
+				return 0;
 			}
 			outlen = outlen > 0? outlen - 1: 0;
 			if (outlen > len) { // should never happen
