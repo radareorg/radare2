@@ -5093,9 +5093,12 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 		canHaveChar = true;
 		break;
 	}
+	const bool scalar_stack_imm = ds->analop.stackop == R_ANAL_STACK_SET
+		&& ds->analop.refptr <= 1 && ds->analop.val == ds->analop.ptr
+		&& ds->analop.val <= UT8_MAX;
 
 	ds->chref = 0;
-	if ((char)v > 0 && v >= '!') {
+	if ((ut8)v >= ' ') {
 		ds->chref = (char)v;
 		if (ds->immstr) {
 			char *str = r_str_from_ut64 (r_read_ble64 (&v, be));
@@ -5120,7 +5123,7 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 			free (str);
 		} else {
-			if (canHaveChar && (char)v > 0 && v >= (int)'!' && v <= (int)'~') {
+			if (canHaveChar && (char)v > 0 && v >= (int)' ' && v <= (int)'~') {
 				ds_begin_comment (ds);
 				aligned = true;
 				if (v != ds->analop.ptr) {
@@ -5129,23 +5132,29 @@ static void ds_print_ptr(RDisasmState *ds, int len, int idx) {
 			}
 		}
 	}
+	if (canHaveChar && scalar_stack_imm) {
+		refaddr = UT64_MAX;
+	}
 
-	RVecAnalRef *refs = r_anal_refs_get (core->anal, ds->at);
-	if (refs) {
-		RAnalRef *ref;
-		R_VEC_FOREACH (refs, ref) {
-			int rt = R_ANAL_REF_TYPE_MASK (ref->type);
-			if (rt == R_ANAL_REF_TYPE_STRN || rt == R_ANAL_REF_TYPE_DATA) {
-				if ((f = r_flag_get_in (core->flags, ref->addr))) {
-					refaddr = ref->addr;
-					break;
+	if (!scalar_stack_imm) {
+		RVecAnalRef *refs = r_anal_refs_get (core->anal, ds->at);
+		if (refs) {
+			RAnalRef *ref;
+			R_VEC_FOREACH (refs, ref) {
+				int rt = R_ANAL_REF_TYPE_MASK (ref->type);
+				if (rt == R_ANAL_REF_TYPE_STRN || rt == R_ANAL_REF_TYPE_DATA) {
+					if ((f = r_flag_get_in (core->flags, ref->addr))) {
+						refaddr = ref->addr;
+						break;
+					}
 				}
 			}
+			RVecAnalRef_free (refs);
 		}
 	}
-	RVecAnalRef_free (refs);
 
-	if (ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
+	if (!scalar_stack_imm
+	    && ds->analop.type == (R_ANAL_OP_TYPE_MOV | R_ANAL_OP_TYPE_REG)
 	    && ds->analop.stackop == R_ANAL_STACK_SET
 	    && ds->analop.val != UT64_MAX && ds->analop.val > 10) {
 		const char *arch = r_config_get (core->config, "asm.arch");

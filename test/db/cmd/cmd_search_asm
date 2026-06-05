@@ -227,6 +227,23 @@ EXPECT=<<EOF
 
 EOF
 RUN
+
+NAME=constructed string spaces keep display and flag domains separate
+FILE=hex://554889e5c645d041c645d172c645d237c645d368c645d455c645d572c645d620c645d763c645d82ec645d920c645da43c645db6cc645dc34c645dd72c645de6bc645df335dc3
+ARGS=-a x86 -b 64 -e scr.color=0
+CMDS=<<EOF
+af
+/az 5
+CC. @ 4
+f~asm.str
+EOF
+EXPECT=<<EOF
+0x00000004 Ar7hUr c. Cl4rk3
+
+string "Ar7hUr c. Cl4rk3"
+0x00000004 60 asm.str.0_Ar7hUr_c._Cl4rk3_1
+EOF
+RUN
 NAME=search constructed strings
 FILE=bins/mach0/iGoat-Swift.arm_64.1
 CMDS=<<EOF
@@ -478,4 +495,3 @@ EXPECT=<<EOF
 ]
 EOF
 RUN
-
