@@ -5041,6 +5041,23 @@ static inline void matchBar(ut8 *ptr, int i) {
 
 // Compute bar/zoom values for an array of blocks. Shared by p= and p== commands.
 static ut8 *compute_bar_blocks(RCore *core, int mode, ut64 from, int nblocks, ut64 blocksize, int skipblocks) {
+	if (nblocks < 1 || blocksize < 1 || skipblocks < 0) {
+		return NULL;
+	}
+	ut64 blocks = (ut64)nblocks + (ut64)skipblocks;
+	if (blocks < (ut64)nblocks || blocks > UT64_MAX / blocksize) {
+		R_LOG_ERROR ("Invalid range");
+		return NULL;
+	}
+	ut64 size = (ut64)nblocks * blocksize;
+	if (from > UT64_MAX - (blocks * blocksize)) {
+		R_LOG_ERROR ("Invalid range");
+		return NULL;
+	}
+	if (mode != 'A' && (blocksize > (ut64)(size_t)-1 || (core->blocksize_max && size > core->blocksize_max))) {
+		R_LOG_ERROR ("Block size too big");
+		return NULL;
+	}
 	ut8 *ptr = calloc (1, nblocks);
 	if (!ptr) {
 		return NULL;
@@ -5203,16 +5220,21 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	if (input[0]) {
 		char *spc = strchr (input, ' ');
 		if (spc) {
-			nblocks = r_num_math (core->num, spc + 1);
-			if (nblocks < 1) {
+			ut64 v = r_num_math (core->num, spc + 1);
+			if (v < 1 || v > (ut64)ST32_MAX) {
 				goto beach;
 			}
+			nblocks = (int)v;
 			spc = strchr (spc + 1, ' ');
 			if (spc) {
 				totalsize = r_num_math (core->num, spc + 1);
 				spc = strchr (spc + 1, ' ');
 				if (spc) {
-					skipblocks = r_num_math (core->num, spc + 1);
+					v = r_num_math (core->num, spc + 1);
+					if (v > (ut64)ST32_MAX) {
+						goto beach;
+					}
+					skipblocks = (int)v;
 				}
 			}
 		}
@@ -5252,9 +5274,11 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	if (!r_config_get_b (core->config, "cfg.debug")) {
 		RIOMap *map1 = r_list_first (list);
 		if (map1) {
-			from = map1->itv.addr;
+			from = r_io_map_begin (map1);
+			to = r_io_map_end (map1);
 			r_list_foreach (list, iter, map) {
-				to = r_io_map_end (map);
+				from = R_MIN (from, r_io_map_begin (map));
+				to = R_MAX (to, r_io_map_end (map));
 			}
 			totalsize = to - from;
 		} else {
@@ -5262,7 +5286,12 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 	}
 	if (nblocks < 1) {
-		nblocks = totalsize / blocksize;
+		ut64 blocks = totalsize / blocksize;
+		if (blocks < 1 || blocks > (ut64)ST32_MAX) {
+			R_LOG_ERROR ("Invalid block count: 0x%" PFMT64x, blocks);
+			goto beach;
+		}
+		nblocks = (int)blocks;
 	} else {
 		blocksize = totalsize / nblocks;
 		if (blocksize < 1) {
