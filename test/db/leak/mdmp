@@ -1,0 +1,31 @@
+NAME=leak mdmp memory64 + pe sections (issue 26051)
+FILE=bins/mdmp/hello.dmp
+CMDS=<<EOF
+iS~?
+ie~?
+il~?
+?e ok
+EOF
+EXPECT=<<EOF
+166
+11
+57
+ok
+EOF
+RUN
+
+NAME=leak mdmp 64bit memory64 + pe sections
+FILE=bins/mdmp/hello64.dmp
+CMDS=<<EOF
+iS~?
+ie~?
+il~?
+?e ok
+EOF
+EXPECT=<<EOF
+103
+7
+49
+ok
+EOF
+RUN

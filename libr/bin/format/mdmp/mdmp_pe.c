@@ -137,7 +137,7 @@ RList *PE_(r_bin_mdmp_pe_get_sections) (struct PE_(r_bin_mdmp_pe_bin) * pe_bin) 
 	RBinSection *ptr;
 	RList *ret;
 
-	if (!(ret = r_list_new ())) {
+	if (!(ret = r_list_newf ((RListFree)r_bin_section_free))) {
 		return NULL;
 	}
 	if (!pe_bin->bin || !(sections = pe_bin->bin->sections)) {

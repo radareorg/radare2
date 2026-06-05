@@ -1021,69 +1021,71 @@ static int check_pe64_buf(RBuffer *buf, ut64 length) {
 }
 
 static bool r_bin_mdmp_init_pe_bins(struct r_bin_mdmp_obj *obj) {
-	bool dup;
 	ut64 paddr;
 	struct minidump_module *module;
 	struct Pe32_r_bin_mdmp_pe_bin *pe32_bin, *pe32_dup;
 	struct Pe64_r_bin_mdmp_pe_bin *pe64_bin, *pe64_dup;
-	RBuffer *buf = NULL;
 	RListIter *it, *it_dup;
 
 	r_list_foreach (obj->streams.modules, it, module) {
-		/* Duplicate modules can appear in the MDMP module list,
-		** filtering them out seems to be the correct behaviour */
 		if (!(paddr = r_bin_mdmp_get_paddr (obj, module->base_of_image))) {
 			continue;
 		}
+		if (!module->size_of_image) {
+			continue;
+		}
 		ut8 *b = R_NEWS (ut8, module->size_of_image);
-		int r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
-		//r_unref (buf);
-		// r_unref (buf); - still uaf, it could be freed if pe parsing fails
-		buf = r_buf_new_with_bytes (b, r);
-		dup = false;
+		if (!b) {
+			continue;
+		}
+		st64 r = r_buf_read_at (obj->b, paddr, b, module->size_of_image);
+		RBuffer *buf = r_buf_new_with_bytes (b, r < 0? 0: r);
+		free (b);
+		if (!buf) {
+			continue;
+		}
+		bool dup = false;
 		if (check_pe32_buf (buf, module->size_of_image)) {
-			r_list_foreach(obj->pe32_bins, it_dup, pe32_dup) {
+			r_list_foreach (obj->pe32_bins, it_dup, pe32_dup) {
 				if (pe32_dup->vaddr == module->base_of_image) {
 					dup = true;
-					continue;
+					break;
 				}
 			}
-			if (dup) {
-				continue;
+			if (!dup) {
+				pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
+				r_bin_mdmp_patch_pe_headers (buf);
+				pe32_bin->vaddr = module->base_of_image;
+				pe32_bin->paddr = paddr;
+				pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
+				if (pe32_bin->bin) {
+					r_list_append (obj->pe32_bins, pe32_bin);
+				} else {
+					free (pe32_bin);
+				}
 			}
-			pe32_bin = R_NEW0 (struct Pe32_r_bin_mdmp_pe_bin);
-			r_bin_mdmp_patch_pe_headers (buf);
-			pe32_bin->vaddr = module->base_of_image;
-			pe32_bin->paddr = paddr;
-			pe32_bin->bin = Pe32_r_bin_pe_new_buf (buf, 0);
-			if (!pe32_bin->bin) {
-				free (pe32_bin);
-				continue;
-			}
-			r_list_append (obj->pe32_bins, pe32_bin);
 		} else if (check_pe64_buf (buf, module->size_of_image)) {
-			r_list_foreach(obj->pe64_bins, it_dup, pe64_dup) {
+			r_list_foreach (obj->pe64_bins, it_dup, pe64_dup) {
 				if (pe64_dup->vaddr == module->base_of_image) {
 					dup = true;
-					continue;
+					break;
 				}
 			}
-			if (dup) {
-				continue;
+			if (!dup) {
+				pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
+				r_bin_mdmp_patch_pe_headers (buf);
+				pe64_bin->vaddr = module->base_of_image;
+				pe64_bin->paddr = paddr;
+				pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
+				if (pe64_bin->bin) {
+					r_list_append (obj->pe64_bins, pe64_bin);
+				} else {
+					free (pe64_bin);
+				}
 			}
-			pe64_bin = R_NEW0 (struct Pe64_r_bin_mdmp_pe_bin);
-			r_bin_mdmp_patch_pe_headers (buf);
-			pe64_bin->vaddr = module->base_of_image;
-			pe64_bin->paddr = paddr;
-			pe64_bin->bin = Pe64_r_bin_pe_new_buf (buf, 0);
-			buf = NULL;
-
-			r_list_append (obj->pe64_bins, pe64_bin);
 		}
+		r_unref (buf);
 	}
-	//r_unref (buf);
-	// r_unref (buf); // r_unref (buf);
-	buf = NULL;
 	return true;
 }
 
@@ -1114,15 +1116,15 @@ struct r_bin_mdmp_obj *r_bin_mdmp_new_buf(RBuffer *buf) {
 	obj->kv = sdb_new0 ();
 	obj->size = (ut32) r_buf_size (buf);
 
-	fail |= (!(obj->streams.ex_threads = r_list_new ()));
+	fail |= (!(obj->streams.ex_threads = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.memories = r_list_newf ((RListFree)free)));
-	fail |= (!(obj->streams.memories64.memories = r_list_new ()));
+	fail |= (!(obj->streams.memories64.memories = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.memory_infos = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.modules = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.operations = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.thread_infos = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.token_infos = r_list_newf ((RListFree)free)));
-	fail |= (!(obj->streams.threads = r_list_new ()));
+	fail |= (!(obj->streams.threads = r_list_newf ((RListFree)free)));
 	fail |= (!(obj->streams.unloaded_modules = r_list_newf ((RListFree)free)));
 
 	fail |= (!(obj->pe32_bins = r_list_newf (r_bin_mdmp_free_pe32_bin)));
