@@ -2354,19 +2354,29 @@ static void search_hit_at(RCore *core, struct search_parameters *param, RCoreAsm
 	}
 	if (param->searchflags) {
 		if (R_STR_ISNOTEMPTY (str)) {
-			// TODO: use the api instead
-			char *s = r_str_newf ("string \"%s\"", str);
-			r_core_cmdf (core, "'0x%08"PFMT64x"'CC %s", hit->addr, s);
-			free (s);
+			char *escaped = r_str_escape (str);
+			if (escaped) {
+				char *comment = r_str_newf ("string \"%s\"", escaped);
+				if (comment) {
+					r_meta_set_string (core->anal, R_META_TYPE_COMMENT, hit->addr, comment);
+					free (comment);
+				}
+				free (escaped);
+			}
 		}
 		if (param->outmode != R_MODE_SIMPLE) {
-			char *flagname = (R_STR_ISNOTEMPTY (str)) // XXX i think hit->code is not used anywhere
-				? r_str_newf ("asm.str.%d_%s_%d", kwidx, str, param->count)
+			char *flagstr = NULL;
+			if (R_STR_ISNOTEMPTY (str)) {
+				flagstr = r_name_filter_dup (str);
+			}
+			char *flagname = R_STR_ISNOTEMPTY (flagstr) // XXX i think hit->code is not used anywhere
+				? r_str_newf ("asm.str.%d_%s_%d", kwidx, flagstr, param->count)
 				: r_str_newf ("%s%d_%d", param->searchprefix, kwidx, param->count);
 			if (flagname) {
 				r_flag_set (core->flags, flagname, hit->addr, hit->len);
 				free (flagname);
 			}
+			free (flagstr);
 		}
 	}
 }
@@ -2720,7 +2730,6 @@ static bool do_analstr_search(RCore *core, struct search_parameters *param, bool
 									pj_end (pj);
 								} else {
 									r_strbuf_appendf (rb, "0x%08"PFMT64x" %s\n", firstch, ss);
-									r_name_filter (ss, -1);
 									RCoreAsmHit cah = {
 										.addr = firstch,
 										.len = lastch - firstch,
