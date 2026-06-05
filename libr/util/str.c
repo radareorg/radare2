@@ -461,7 +461,6 @@ R_API int r_str_word_set0_stack(char *str) {
 R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *newstr, int *newlen) {
 	char *p = NULL;
 	char *out;
-	int alen, blen, nlen;
 	if (!stra && !newstr) {
 		return NULL;
 	}
@@ -481,12 +480,18 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 		}
 		return out;
 	}
-	alen = (size_t) (p - stra);
-	blen = stralen - ((alen + strlen (p)) + 1);
-	if (blen < 0) {
-		blen = 0;
+	if (stralen < 0) {
+		return NULL;
 	}
-	nlen = alen + blen + strlen (newstr);
+	size_t alen = (size_t) (p - stra);
+	size_t plen = strlen (p);
+	size_t slen = strlen (newstr);
+	size_t head = alen + plen + 1;
+	size_t blen = ((size_t) stralen > head)? (size_t) stralen - head : 0;
+	size_t nlen = alen + blen + slen;
+	if (nlen + 2 >= ST32_MAX) {
+		return NULL;
+	}
 	out = malloc (nlen + 2);
 	if (!out) {
 		return NULL;
@@ -494,9 +499,9 @@ R_API char *r_str_word_get0set(char *stra, int stralen, int idx, const char *new
 	if (alen > 0) {
 		memcpy (out, stra, alen);
 	}
-	memcpy (out + alen, newstr, strlen (newstr) + 1);
+	memcpy (out + alen, newstr, slen + 1);
 	if (blen > 0) {
-		memcpy (out + alen + strlen (newstr) + 1, p + strlen (p) + 1, blen);
+		memcpy (out + alen + slen + 1, p + plen + 1, blen);
 	}
 	out[nlen + 1] = 0;
 	if (newlen) {
