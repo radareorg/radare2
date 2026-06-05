@@ -7958,19 +7958,18 @@ R_API int r_core_esil_step(RCore *core, ut64 until_addr, const char *until_expr,
 }
 
 R_API bool r_core_esil_step_back(RCore *core) {
-	R_RETURN_VAL_IF_FAIL (core && core->anal, false);
-#if 0
-	if (!core->anal->esil || !core->anal->esil->trace) {
-		R_LOG_INFO ("Run `aeim` to initialize the esil VM and enable e dbg.trace=true");
-		return false;
-	}
-#endif
+	R_RETURN_VAL_IF_FAIL (core && core->io && core->anal && core->anal->reg, false);
 	REsil *esil = core->anal->esil;
 	if (esil && esil->trace && esil->trace->idx > 0) {
+		core_esil_drop_stepback (core);
 		r_esil_trace_restore (esil, esil->trace->idx - 1);
 		return true;
 	}
-	return false;
+	if (!r_list_length (&core->esil.sb.list)) {
+		return false;
+	}
+	r_core_esil_stepback (core);
+	return true;
 }
 
 static void cmd_address_info(RCore *core, const char *addrstr, int fmt) {
