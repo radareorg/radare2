@@ -1,7 +1,7 @@
 [wrap-git]
 url = https://github.com/capstone-engine/capstone.git
-revision = fab595205fee206f5c21be6ed8ad2eaf9225f1c7
+revision = c04e7f2a81b6f126263822398485878ca5f78bc3
 patch_directory = capstone-v5
 directory = capstone-v5
-diff_files = capstone-v5/capstone-patches/fix-x86-16.patch, capstone-v5/capstone-patches/fix-m68k-printer.patch, capstone-v5/capstone-patches/fix-x86-sib-scale.patch
+diff_files = capstone-v5/capstone-patches/fix-x86-16.patch
 depth = 1
