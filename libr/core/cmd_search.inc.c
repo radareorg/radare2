@@ -1940,8 +1940,14 @@ bad:
 	return result;
 }
 
+static bool search_esil_mem_write_ro (REsil *esil, ut64 addr, const ut8 *buf, int len) {
+	// readonly mode: silently ignore writes and report success, never trap.
+	// returning false here would set R_ANAL_TRAP_WRITE_ERR and change which addresses match.
+	return true;
+}
+
 static bool esil_addrinfo(REsil *esil) {
-	RCore *core = (RCore *) esil->cb.user;
+	RCore *core = esil->user;
 	ut64 num = 0;
 	const RStrs src = r_esil_pop (esil);
 	if (!r_strs_empty (src) && r_esil_get_parm (esil, src, &num)) {
@@ -1975,38 +1981,39 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 		r_core_cmd_help (core, help_msg_slash_esil);
 		return;
 	}
-	const unsigned int addrsize = r_config_get_i (core->config, "esil.addr.size");
+	const ut32 addrsize = r_config_get_i (core->config, "esil.addr.size");
 	const int iotrap = r_config_get_i (core->config, "esil.iotrap");
-	int stacksize = r_config_get_i (core->config, "esil.stack.size");
-	const int nonull = r_config_get_i (core->config, "esil.nonull");
-	const int romem = r_config_get_i (core->config, "esil.romem");
-	const int stats = r_config_get_i (core->config, "esil.stats");
-	if (stacksize < 16) {
-		stacksize = 16;
-	}
-	REsil *esil = r_esil_new (stacksize, iotrap, addrsize);
-	if (!esil) {
-		R_LOG_ERROR ("Cannot create an esil instance");
+	const bool nonull = r_config_get_b (core->config, "esil.nonull");
+	const int stacksize = R_MAX (r_config_get_i (core->config, "esil.stack.size"), 16);
+	REsil esil = {0};
+	if (!r_esil_init (&esil, stacksize, iotrap, addrsize, NULL, NULL, NULL)) {
+		R_LOG_ERROR ("Cannot initialize search esil instance");
 		return;
 	}
-	r_esil_set_op (esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
-	esil->cb.user = core;
-	// TODO:? cmd_aei (core);
+	if (!r_reg_arena_push (core->anal->reg)) {
+		r_esil_fini (&esil);
+		R_LOG_ERROR ("Cannot push reg arena instance");
+		return;
+	}
+	RArch *arch = core->anal->arch;
+	const bool arch_inited = r_esil_setup (&esil, core->anal, false,
+		r_config_get_b (core->config, "esil.stats"),
+		nonull);
+	esil.cb.hook_mem_write = search_esil_mem_write_ro;
+	esil.user = core;
+	r_esil_set_op (&esil, "$$", esil_address, 0, 1, R_ESIL_OP_TYPE_UNKNOWN, "current address");
+	/* hook addrinfo */
+	r_esil_set_op (&esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
 	RIOMap *map;
 	RListIter *iter;
-	r_esil_setup (esil, core->anal, romem, stats, nonull);
 	r_list_foreach (param->boundaries, iter, map) {
 		bool hit_happens = false;
 		size_t hit_combo = 0;
 		ut64 nres, addr;
 		ut64 from = r_io_map_begin (map);
 		ut64 to = r_io_map_end (map);
-		/* hook addrinfo */
-		r_esil_set_op (esil, "AddrInfo", esil_addrinfo, 1, 1, R_ESIL_OP_TYPE_UNKNOWN, NULL);
-		/* hook addrinfo */
-		r_esil_setup (esil, core->anal, 1, 0, nonull);
-		r_esil_stack_free (esil);
-		esil->verbose = 0;
+		r_esil_stack_free (&esil);
+		esil.verbose = 0;
 
 		r_cons_break_push (core->cons, NULL, NULL);
 		for (addr = from; addr < to; addr++) {
@@ -2030,15 +2037,15 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				R_LOG_INFO ("Breaked at 0x%08"PFMT64x, addr);
 				break;
 			}
-			r_esil_set_pc (esil, addr);
-			if (!r_esil_parse (esil, input + 2)) {
+			r_esil_set_pc (&esil, addr);
+			if (!r_esil_parse (&esil, input + 2)) {
 				// XXX: return value doesnt seems to be correct here
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
 				break;
 			}
 			hit_happens = false;
-			const RStrs res = r_esil_pop (esil);
-			if (r_esil_get_parm (esil, res, &nres)) {
+			const RStrs res = r_esil_pop (&esil);
+			if (r_esil_get_parm (&esil, res, &nres)) {
 				R_LOG_DEBUG ("RES 0x%08"PFMT64x" %"PFMT64d, addr, nres);
 				if (nres) {
 					eprintf ("hits: %d\r", kw.count);
@@ -2056,10 +2063,10 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 				}
 			} else {
 				R_LOG_ERROR ("Cannot parse esil (%s)", input + 2);
-				r_esil_stack_free (esil);
+				r_esil_stack_free (&esil);
 				break;
 			}
-			r_esil_stack_free (esil);
+			r_esil_stack_free (&esil);
 
 			if (hit_happens) {
 				if (param->outmode == R_MODE_JSON) {
@@ -2084,7 +2091,11 @@ static void do_esil_search(RCore *core, struct search_parameters *param, const c
 	if (param->outmode == R_MODE_JSON) {
 		pj_end (param->pj);
 	}
-	r_esil_free (esil);
+	if (arch_inited && arch) {
+		r_arch_esilcb (arch, &esil, R_ARCH_ESIL_ACTION_FINI);
+	}
+	r_esil_fini (&esil);
+	r_reg_arena_pop (core->anal->reg);
 }
 
 #include "cmd_scsearch.inc.c"
