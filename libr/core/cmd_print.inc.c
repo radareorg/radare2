@@ -7848,6 +7848,10 @@ static void cmd_pb(RCore *core, const char *input, const ut8 *block, int l, int 
 	if (input[1] == '?') {
 		r_core_cmd_help_match (core, help_msg_p, "pb");
 	} else if (l != 0) {
+		if (len < 0 || len > ST32_MAX / 8) {
+			R_LOG_ERROR ("Invalid length");
+			return;
+		}
 		int from, to;
 		const int size = len * 8;
 		char *spc, *buf = malloc (size + 1);
@@ -8159,6 +8163,10 @@ static int cmd_print(void *data, const char *input) {
 				char *buf;
 				if (!r_core_block_size (core, len)) {
 					len = core->blocksize;
+				}
+				if (len < 0 || len > ST32_MAX / 8) {
+					R_LOG_ERROR ("Invalid length");
+					break;
 				}
 				size = len * 8;
 				buf = malloc (size + 1);
