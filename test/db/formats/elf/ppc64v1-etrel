@@ -104,17 +104,19 @@ FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
 CMDS=pi 1 @ section..init.text+0x1c
 EXPECT=<<EOF
-bl .crypto_register_shash
+bl reloc..crypto_register_shash
 EOF
 RUN
 
-NAME=PPC64 ELFv1 ET_REL: REL24 call site patched big-endian (bl mnemonic preserved)
+NAME=PPC64 ELFv1 ET_REL: applied REL24 bl lands exactly on its reloc target flag
 FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
-CMDS=pi 1 @ 0x080000c4;pi 1 @ 0x08000234
+CMDS=pi 1 @ 0x080000c4;pi 1 @ 0x08000234;s 0x080000c4;fd `ao~jump[1]`;s 0x08000234;fd `ao~jump[1]`
 EXPECT=<<EOF
-bl ._mcount
-bl .crc32_le
+bl reloc.._mcount
+bl reloc..crc32_le
+reloc.._mcount
+reloc..crc32_le
 EOF
 RUN
 
@@ -123,7 +125,7 @@ FILE=bins/elf/ppc64v1-crc32_generic.ko
 ARGS=-e bin.relocs.apply=true
 CMDS=p8 4 @ 0x080000c4
 EXPECT=<<EOF
-48001b69
+48001b6d
 EOF
 RUN
 
@@ -177,5 +179,32 @@ EXPECT=<<EOF
 0x08005988
 0x08012677
 0x0801267f
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: applied REL24 branch target is 4-byte aligned
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=s 0x08000154;ao~jump
+EXPECT=<<EOF
+jump: 0x08001c30
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: reloc flag sits exactly on the aligned REL24 branch target
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=fd 0x08001c30
+EXPECT=<<EOF
+reloc.._mcount
+EOF
+RUN
+
+NAME=PPC64 ELFv1 ET_REL: applied REL24 calls produce CALL xrefs to the named target
+FILE=bins/elf/ppc64v1-crc32_generic.ko
+ARGS=-e bin.relocs.apply=true
+CMDS=aaa;axt @ 0x08001c30~?
+EXPECT=<<EOF
+8
 EOF
 RUN

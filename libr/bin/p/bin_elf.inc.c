@@ -1419,6 +1419,11 @@ static RList* patch_relocs(RBinFile *bf) {
 		return NULL;
 	}
 	ut64 n_vaddr = g->itv.addr + g->itv.size;
+	// Align ET_REL PPC REL24/REL14 relocs
+	if ((eo->ehdr.e_machine == EM_PPC64 || eo->ehdr.e_machine == EM_PPC)
+			&& eo->ehdr.e_type == ET_REL) {
+		n_vaddr = (n_vaddr + 3) & ~(ut64)3;
+	}
 	// reserve at least that space
 	size = eo->g_reloc_num * cdsz;
 	char *muri = r_str_newf ("malloc://%" PFMT64u, size);
