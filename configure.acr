@@ -89,15 +89,32 @@ IFNOT WITHOUT_SYSCAPSTONE {
 (( ZYDIS ))
 ARG_WITH WITH_ZYDIS syszydis force to use system-wide zydis ;
 ARG_WITHOUT WITHOUT_SYSZYDIS syszydis avoid the system-wide zydis ;
+WANT_SYS_ZYDIS = 0 ;
+IFAND WITH_ZYDIS WANT_ZYDIS {
+	WANT_SYS_ZYDIS = 1 ;
+}
 IF WITH_ZYDIS {
 	PKGCFG ZYDIS_CFLAGS ZYDIS_LDFLAGS zydis
+	CHKINC Zydis/Zydis.h
+	CHKLIB zydis
 }
 IFAND WITH_ZYDIS HAVE_PKGCFG_ZYDIS {
 	USE_ZYDIS = 1 ;
 	USE_SYS_ZYDIS = 1 ;
 }{
-	USE_ZYDIS = 0 ;
-	USE_SYS_ZYDIS = 0 ;
+	IFAND WITH_ZYDIS HAVE_ZYDIS_ZYDIS_H {
+		IF HAVE_LIB_ZYDIS {
+			USE_ZYDIS = 1 ;
+			USE_SYS_ZYDIS = 1 ;
+			ZYDIS_LDFLAGS = -lzydis ;
+		}{
+			USE_ZYDIS = 0 ;
+			USE_SYS_ZYDIS = 0 ;
+		}
+	}{
+		USE_ZYDIS = 0 ;
+		USE_SYS_ZYDIS = 0 ;
+	}
 }
 
 IFNOT WITHOUT_SYSZYDIS {
@@ -113,6 +130,9 @@ IFNOT WANT_ZYDIS {
 	HAVE_PKGCFG_ZYDIS = 0 ;
 	ZYDIS_CFLAGS = "" ;
 	ZYDIS_LDFLAGS = "" ;
+}
+IF WANT_SYS_ZYDIS {
+	DIENOT USE_SYS_ZYDIS system zydis was requested but not found ;
 }
 
 (( SQSH ))

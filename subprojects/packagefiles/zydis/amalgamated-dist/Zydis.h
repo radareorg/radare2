@@ -217,9 +217,11 @@
 #   define ZYAN_WASM
 #elif defined(__loongarch__)
 #   define ZYAN_LOONGARCH
-#elif defined(__powerpc64__)
+#elif defined(__powerpc64__) || defined(__ppc64__) || defined(__PPC64__) || defined(__POWERPC64__) || \
+    defined(_ARCH_PPC64)
 #   define ZYAN_PPC64
-#elif defined(__powerpc__)
+#elif defined(__powerpc__) || defined(__powerpc) || defined(__ppc__) || defined(__PPC__) || \
+    defined(__POWERPC__) || defined(_ARCH_PPC)
 #   define ZYAN_PPC
 #elif defined(__riscv) || defined(__riscv__)
 #   if __riscv_xlen == 64
