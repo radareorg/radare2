@@ -421,11 +421,13 @@ static bool cb_analarch(void *user, void *data) {
 		return false;
 	}
 	if (*node->value) {
+		r_core_esil_unload_arch (core);
 		if (r_anal_use (core->anal, node->value)) {
 			if (core->print) {
 				core->print->reg = core->anal->reg;
 				core->print->get_register = r_reg_get;
 			}
+			r_core_esil_load_arch (core);
 			return true;
 		}
 		char *p = strchr (node->value, '.');
@@ -439,6 +441,7 @@ static bool cb_analarch(void *user, void *data) {
 					core->print->reg = core->anal->reg;
 					core->print->get_register = r_reg_get;
 				}
+				r_core_esil_load_arch (core);
 				return true;
 			}
 		}
