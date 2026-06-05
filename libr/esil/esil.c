@@ -133,9 +133,10 @@ R_API REsil *r_esil_new(int stacksize, int iotrap, unsigned int addrsize) {
 
 R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap, ut32 addrsize,
 	REsilRegInterface *reg_if, REsilMemInterface *mem_if, REsilUtilInterface *R_NULLABLE util_if) {
-	R_RETURN_VAL_IF_FAIL (esil && reg_if && reg_if->is_reg && reg_if->reg_read &&
-		reg_if->reg_write && reg_if->reg_size && mem_if && mem_if->mem_read &&
-		mem_if->mem_write && (stacksize > 2), false);
+	R_RETURN_VAL_IF_FAIL (esil && (stacksize > 2), false);
+	R_RETURN_VAL_IF_FAIL (!reg_if || (reg_if->is_reg && reg_if->reg_read &&
+		reg_if->reg_write && reg_if->reg_size), false);
+	R_RETURN_VAL_IF_FAIL (!mem_if || (mem_if->mem_read && mem_if->mem_write), false);
 	//do not check for mem_switch, as that is optional
 	if (R_UNLIKELY (!esil_stack_alloc (esil, stacksize))) {
 		return false;
@@ -156,8 +157,12 @@ R_API bool r_esil_init(REsil *esil, int stacksize, bool iotrap, ut32 addrsize,
 	esil->parse_goto_count = R_ESIL_GOTO_LIMIT;
 	esil->iotrap = iotrap;
 	esil->addrmask = r_num_genmask (addrsize - 1);
-	esil->reg_if = *reg_if;
-	esil->mem_if = *mem_if;
+	if (reg_if) {
+		esil->reg_if = *reg_if;
+	}
+	if (mem_if) {
+		esil->mem_if = *mem_if;
+	}
 	if (util_if) {
 		esil->util_if = *util_if;
 	}
