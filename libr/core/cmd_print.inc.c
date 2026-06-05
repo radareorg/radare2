@@ -3138,6 +3138,9 @@ R_API void r_core_print_examine(RCore *core, const char *str) {
 	if (count < 1) {
 		count = 1;
 	}
+	if (count > ST32_MAX / 8) {
+		count = ST32_MAX / 8;
+	}
 	// skipspaces
 	while (*str >= '0' && *str <= '9') {
 		str++;
