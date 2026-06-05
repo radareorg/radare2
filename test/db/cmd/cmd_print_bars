@@ -249,3 +249,98 @@ EXPECT=<<EOF
 EOF
 RUN
 
+
+NAME=p-j analysis metadata json keeps offsets
+FILE=-
+CMDS=<<EOF
+o--
+e hex.cols=4
+e search.in=range
+e search.from=0
+e search.to=16
+af+ 0 16 fcn_test
+p-j 4
+EOF
+EXPECT=<<EOF
+{"from":0,"to":16,"blocksize":4,"ranges":[{"from":0,"to":16}],"blocks":[{"offset":0,"size":4,"flags":1,"functions":1,"in_functions":1,"perm":"r-x"},{"offset":4,"size":4,"in_functions":1,"perm":"r-x"},{"offset":8,"size":4,"in_functions":1,"perm":"r-x"},{"offset":12,"size":4,"in_functions":1,"perm":"r-x"}]}
+EOF
+RUN
+
+NAME=p= p- and p-j raw json ranges
+FILE=-
+CMDS=<<EOF
+wx 00112233445566778899aabbccddeeff
+e hex.cols=1
+e zoom.in=raw
+p=ej 1
+e search.in=raw
+p-ej 1
+af+ 0 16 fcn_test
+p-j 1
+EOF
+EXPECT=<<EOF
+{"blocksize":512,"address":0,"size":512,"entropy":[{"addr":0,"value":9}]}
+{"blocksize":512,"address":0,"size":512,"entropy":[{"addr":0,"value":9}]}
+{"from":0,"to":512,"blocksize":512,"ranges":[{"from":0,"to":512}],"blocks":[{"offset":0,"size":512,"flags":1,"functions":1,"in_functions":1,"perm":"rwx"}]}
+EOF
+RUN
+
+NAME=p-j io.maps json keeps sparse holes addressable
+FILE=malloc://0x100
+CMDS=<<EOF
+om-*
+om `oq` 0x1000 0x10 0 rwx map1
+om `oq` 0x2000 0x10 0 r-- map2
+e search.in=io.maps
+p-j 4
+EOF
+EXPECT=<<EOF
+{"from":4096,"to":8208,"blocksize":257,"ranges":[{"from":4096,"to":4112},{"from":8192,"to":8208}],"blocks":[{"offset":4096,"size":257,"perm":"rwx"},{"offset":4353,"size":257},{"offset":4610,"size":257},{"offset":4867,"size":257},{"offset":5124,"size":257},{"offset":5381,"size":257},{"offset":5638,"size":257},{"offset":5895,"size":257},{"offset":6152,"size":257},{"offset":6409,"size":257},{"offset":6666,"size":257},{"offset":6923,"size":257},{"offset":7180,"size":257},{"offset":7437,"size":257},{"offset":7694,"size":257},{"offset":7951,"size":257,"perm":"r--"}]}
+EOF
+RUN
+
+NAME=p=ej and p-ej io.maps ignore sparse holes
+FILE=malloc://0x100
+CMDS=<<EOF
+om-*
+om `oq` 0x1000 0x10 0 rwx map1
+om `oq` 0x800000000000 0x10 0 r-- map2
+e hex.cols=4
+e zoom.in=io.maps
+p=ej 4
+e search.in=io.maps
+p-ej 4
+EOF
+EXPECT=<<EOF
+{"blocksize":35184372087812,"address":4096,"size":140737488351248,"entropy":[{"addr":4096,"value":0},{"addr":35184372091908,"value":0},{"addr":70368744179720,"value":0},{"addr":105553116267532,"value":0}]}
+{"blocksize":35184372087812,"address":4096,"size":140737488351248,"entropy":[{"addr":4096,"value":0},{"addr":35184372091908,"value":0},{"addr":70368744179720,"value":0},{"addr":105553116267532,"value":0}]}
+EOF
+RUN
+
+NAME=p-j analysis metadata after aa
+FILE=bins/elf/analysis/hello-linux-x86_64
+CMDS=<<EOF
+aa
+s main
+e search.in=anal.fcn
+p-j 4
+EOF
+EXPECT=<<EOF
+{"from":4195580,"to":4195601,"blocksize":1,"ranges":[{"from":4195580,"to":4195601}],"blocks":[{"offset":4195580,"size":1,"flags":2,"functions":1,"blocks":1,"in_functions":1,"symbols":1,"perm":"r-x"},{"offset":4195581,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195582,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195583,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195584,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195585,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195586,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195587,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195588,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195589,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195590,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195591,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195592,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195593,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195594,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195595,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195596,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195597,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195598,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195599,"size":1,"in_functions":1,"perm":"r-x"},{"offset":4195600,"size":1,"in_functions":1,"perm":"r-x"}]}
+EOF
+RUN
+
+NAME=p-j analysis stats in_functions range relative
+FILE=malloc://0x1000
+CMDS=<<EOF
+e search.in=range
+e search.from=0x100
+e search.to=0x200
+e hex.cols=4
+af+ 0x110 0x10 fcn_test
+p-j 4
+EOF
+EXPECT=<<EOF
+{"from":256,"to":512,"blocksize":64,"ranges":[{"from":256,"to":512}],"blocks":[{"offset":256,"size":64,"flags":1,"functions":1,"in_functions":1,"perm":"rwx"},{"offset":320,"size":64,"perm":"rwx"},{"offset":384,"size":64,"perm":"rwx"},{"offset":448,"size":64,"perm":"rwx"}]}
+EOF
+RUN

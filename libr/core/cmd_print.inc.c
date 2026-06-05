@@ -308,6 +308,7 @@ static RCoreHelpMessage help_msg_p_minus = {
 	"Usage:", "p-[hej] [nblocks] ", "bar|json|histogram blocks",
 	"p-", " [nblocks]", "show ascii-art bar of metadata in file boundaries",
 	"p-e", " [nblocks]", "show ascii-art bar of entropy per block",
+	"p-ej", " [nblocks]", "show entropy blocks in json format",
 	"p-h", " [nblocks]", "show histogram analysis of metadata per block",
 	"p-j", " [nblocks]", "show json format",
 	NULL
@@ -1501,7 +1502,7 @@ static char get_string_type(const ut8 *buf, ut64 len) {
 	return str_type;
 }
 
-static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
+static int cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	int i;
 	int min = -1;
 	int max = 0;
@@ -1526,6 +1527,7 @@ static void cmd_print_eq_dict(RCore *core, const ut8 *block, int bsz) {
 	r_cons_printf (core->cons, "unique (count):   %d  0x%x\n", dict, dict);
 	r_cons_printf (core->cons, "range (max-min):  %d  0x%x\n", range, range);
 	r_cons_printf (core->cons, "size (of block):  %d  0x%x\n", bsz, bsz);
+	return dict;
 }
 
 R_API void r_core_set_asm_configs(RCore *core, char *arch, ut32 bits, int segoff) {
@@ -1723,24 +1725,100 @@ static void cmd_pdj(RCore *core, const char *arg, ut8 *block) {
 	}
 }
 
-static void cmd_p_minus_e(RCore *core, ut64 at, ut64 ate) {
-	ut8 *blockptr = malloc (ate - at);
-	if (!blockptr) {
-		return;
+static int cmd_p_minus_entropy_value(RCore *core, ut64 at, ut64 ate) {
+	if (ate <= at) {
+		return -1;
 	}
-	if (r_io_read_at (core->io, at, blockptr, (ate - at))) {
-		ut8 entropy = (ut8) (cmd_print_entropy (core, blockptr, (ate - at)) * 255);
-		entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
-		if (r_config_get_i (core->config, "scr.color")) {
-			const char *color =
-				(entropy > 6)? Color_BGRED: (entropy > 3)? Color_BGGREEN
-									: Color_BGBLUE;
-			r_cons_printf (core->cons, "%s%d" Color_RESET, color, entropy);
-		} else {
-			r_cons_printf (core->cons, "%d", entropy);
-		}
+	ut64 size = ate - at;
+	ut8 *blockptr = malloc (size);
+	if (!blockptr) {
+		return -1;
+	}
+	int entropy = -1;
+	if (r_io_read_at (core->io, at, blockptr, size)) {
+		entropy = (int)(cmd_print_entropy (core, blockptr, size) * 255);
 	}
 	free (blockptr);
+	return entropy;
+}
+
+static ut64 bar_max_read_size(RCore *core) {
+	ut64 maxsz = ST32_MAX;
+	if (core->blocksize_max > 0) {
+		maxsz = R_MIN (maxsz, (ut64)core->blocksize_max);
+	}
+	return maxsz;
+}
+
+static int cmd_p_minus_entropy_value_ranges(RCore *core, RList *ranges, ut64 at, ut64 ate) {
+	if (!ranges || r_list_empty (ranges)) {
+		return cmd_p_minus_entropy_value (core, at, ate);
+	}
+	if (ate <= at) {
+		return -1;
+	}
+	const ut64 maxsz = bar_max_read_size (core);
+	RListIter *iter;
+	RIOMap *map;
+	ut64 total = 0;
+	r_list_foreach (ranges, iter, map) {
+		ut64 from = R_MAX (at, r_io_map_begin (map));
+		ut64 to = R_MIN (ate, r_io_map_end (map));
+		if (to <= from) {
+			continue;
+		}
+		ut64 len = to - from;
+		if (len > maxsz || total > maxsz - len) {
+			continue;
+		}
+		total += len;
+	}
+	if (total == 0) {
+		return 0;
+	}
+	ut8 *blockptr = malloc (total);
+	if (!blockptr) {
+		return -1;
+	}
+	ut64 pos = 0;
+	r_list_foreach (ranges, iter, map) {
+		ut64 from = R_MAX (at, r_io_map_begin (map));
+		ut64 to = R_MIN (ate, r_io_map_end (map));
+		if (to <= from) {
+			continue;
+		}
+		ut64 len = to - from;
+		if (len > maxsz || pos > total - len) {
+			continue;
+		}
+		if (!r_io_read_at (core->io, from, blockptr + pos, (int)len)) {
+			free (blockptr);
+			return -1;
+		}
+		pos += len;
+	}
+	int entropy = 0;
+	if (pos > 0) {
+		entropy = (int)(cmd_print_entropy (core, blockptr, pos) * 255);
+	}
+	free (blockptr);
+	return entropy;
+}
+
+static void cmd_p_minus_e_ranges(RCore *core, RList *ranges, ut64 at, ut64 ate) {
+	int entropy = cmd_p_minus_entropy_value_ranges (core, ranges, at, ate);
+	if (entropy < 0) {
+		return;
+	}
+	entropy = 9 * entropy / 200; // normalize entropy from 0 to 9
+	if (r_config_get_i (core->config, "scr.color")) {
+		const char *color =
+			(entropy > 6)? Color_BGRED: (entropy > 3)? Color_BGGREEN
+								: Color_BGBLUE;
+		r_cons_printf (core->cons, "%s%d" Color_RESET, color, entropy);
+	} else {
+		r_cons_printf (core->cons, "%d", entropy);
+	}
 }
 
 static void print_format_help_help_help_help(RCore *core) {
@@ -4772,9 +4850,20 @@ static void cmd_print_pv(RCore *core, const char *input, bool useBytes) {
 	free (orig_block);
 }
 
+static const char *bar_json_key(int mode);
+
+static int cmp_iomap_begin(const void *a, const void *b) {
+	const RIOMap *ma = (const RIOMap *)a;
+	const RIOMap *mb = (const RIOMap *)b;
+	const ut64 ba = r_io_map_begin (ma);
+	const ut64 bb = r_io_map_begin (mb);
+	return (ba > bb) - (ba < bb);
+}
+
 static bool cmd_print_blocks(RCore *core, const char *input) {
 	bool result = false;
 	char mode = input[0];
+	char submode = 0;
 	RList *list = NULL;
 	RCoreAnalStats *as = NULL;
 	RTable *t = NULL;
@@ -4786,6 +4875,10 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 
 	if (mode && mode != ' ') {
 		input++;
+		if (input[0] && input[0] != ' ') {
+			submode = input[0];
+			input++;
+		}
 	}
 
 	int w = (input[0] == ' ')
@@ -4805,11 +4898,12 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 	list = r_core_get_boundaries_prot (core, -1, NULL, "search");
 	if (!list) {
 		result = true;
-		if (mode == 'j') {
+		if (mode == 'j' || (mode == 'e' && submode == 'j')) {
 			r_cons_println (core->cons, "{}");
 		}
 		goto cleanup;
 	}
+	r_list_sort (list, cmp_iomap_begin);
 	RListIter *iter;
 	RIOMap *map;
 	r_list_foreach (list, iter, map) {
@@ -4822,12 +4916,17 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			to = t;
 		}
 	}
-	r_list_free (list);
-	list = NULL;
+	if (from == UT64_MAX || to <= from) {
+		result = true;
+		if (mode == 'j' || (mode == 'e' && submode == 'j')) {
+			r_cons_println (core->cons, "{}");
+		}
+		goto cleanup;
+	}
 	ut64 piece = R_MAX ((to - from) / R_MAX (cols, w), 1);
 	as = r_core_anal_get_stats (core, from, to, piece);
 	if (!as) {
-		if (mode == 'j') {
+		if (mode == 'j' || (mode == 'e' && submode == 'j')) {
 			r_cons_println (core->cons, "{}");
 		}
 		goto cleanup;
@@ -4856,7 +4955,16 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		pj_o (pj);
 		pj_kn (pj, "from", from);
 		pj_kn (pj, "to", to);
-		pj_ki (pj, "blocksize", piece);
+		pj_kn (pj, "blocksize", piece);
+		pj_k (pj, "ranges");
+		pj_a (pj);
+		r_list_foreach (list, iter, map) {
+			pj_o (pj);
+			pj_kn (pj, "from", r_io_map_begin (map));
+			pj_kn (pj, "to", r_io_map_end (map));
+			pj_end (pj);
+		}
+		pj_end (pj);
 		pj_k (pj, "blocks");
 		pj_a (pj);
 		break;
@@ -4871,6 +4979,21 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			break;
 		}
 	case 'e':
+		if (submode == 'j') {
+			pj = r_core_pj_new (core);
+			if (!pj) {
+				goto cleanup;
+			}
+			pj_o (pj);
+			pj_kn (pj, "blocksize", piece);
+			pj_kn (pj, "address", from);
+			pj_kn (pj, "size", to - from);
+			pj_k (pj, bar_json_key (mode));
+			pj_a (pj);
+		} else {
+			r_cons_printf (core->cons, "0x%08" PFMT64x " [", from);
+		}
+		break;
 	default:
 		r_cons_printf (core->cons, "0x%08" PFMT64x " [", from);
 	}
@@ -4883,39 +5006,49 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 		ut64 p = (at - from) / piece;
 		switch (mode) {
 		case 'j':
-			pj_o (pj);
-			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].perm) || (as->block[p].strings) || (as->block[p].blocks)) {
+			{
+				int block_perm = as->block[p].perm;
+				if (!block_perm) {
+					RListIter *iter2;
+					RIOMap *map2;
+					r_list_foreach (list, iter2, map2) {
+						if (r_io_map_begin (map2) < ate && r_io_map_end (map2) > at) {
+							block_perm |= map2->perm;
+						}
+					}
+				}
+				pj_o (pj);
 				pj_kn (pj, "offset", at);
 				pj_kn (pj, "size", piece);
+				if (as->block[p].flags) {
+					pj_ki (pj, "flags", as->block[p].flags);
+				}
+				if (as->block[p].functions) {
+					pj_ki (pj, "functions", as->block[p].functions);
+				}
+				if (as->block[p].blocks) {
+					pj_ki (pj, "blocks", as->block[p].blocks);
+				}
+				if (as->block[p].in_functions) {
+					pj_ki (pj, "in_functions", as->block[p].in_functions);
+				}
+				if (as->block[p].comments) {
+					pj_ki (pj, "comments", as->block[p].comments);
+				}
+				if (as->block[p].symbols) {
+					pj_ki (pj, "symbols", as->block[p].symbols);
+				}
+				if (as->block[p].strings) {
+					pj_ki (pj, "strings", as->block[p].strings);
+				}
+				if (block_perm) {
+					pj_ks (pj, "perm", r_str_rwx_i (block_perm));
+				}
+				if (as->block[p].color) {
+					pj_ks (pj, "color", as->block[p].color);
+				}
+				pj_end (pj);
 			}
-			if (as->block[p].flags) {
-				pj_ki (pj, "flags", as->block[p].flags);
-			}
-			if (as->block[p].functions) {
-				pj_ki (pj, "functions", as->block[p].functions);
-			}
-			if (as->block[p].blocks) {
-				pj_ki (pj, "blocks", as->block[p].blocks);
-			}
-			if (as->block[p].in_functions) {
-				pj_ki (pj, "in_functions", as->block[p].in_functions);
-			}
-			if (as->block[p].comments) {
-				pj_ki (pj, "comments", as->block[p].comments);
-			}
-			if (as->block[p].symbols) {
-				pj_ki (pj, "symbols", as->block[p].symbols);
-			}
-			if (as->block[p].strings) {
-				pj_ki (pj, "strings", as->block[p].strings);
-			}
-			if (as->block[p].perm) {
-				pj_ks (pj, "perm", r_str_rwx_i (as->block[p].perm));
-			}
-			if (as->block[p].color) {
-				pj_ks (pj, "color", as->block[p].color);
-			}
-			pj_end (pj);
 			break;
 		case 'h':
 			if ((as->block[p].flags) || (as->block[p].functions) || (as->block[p].comments) || (as->block[p].symbols) || (as->block[p].strings)) {
@@ -4924,7 +5057,17 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			}
 			break;
 		case 'e': // p-e
-			cmd_p_minus_e (core, at, ate);
+			if (submode == 'j') {
+				int entropy = cmd_p_minus_entropy_value_ranges (core, list, at, ate);
+				if (entropy >= 0) {
+					pj_o (pj);
+					pj_kn (pj, "addr", at);
+					pj_ki (pj, "value", entropy);
+					pj_end (pj);
+				}
+			} else {
+				cmd_p_minus_e_ranges (core, list, at, ate);
+			}
 			break;
 		default: // p--
 			{
@@ -4981,6 +5124,17 @@ static bool cmd_print_blocks(RCore *core, const char *input) {
 			break;
 		}
 	case 'e':
+		if (submode == 'j') {
+			pj_end (pj);
+			pj_end (pj);
+			r_cons_println (core->cons, pj_string (pj));
+		} else {
+			if (use_color) {
+				r_cons_print (core->cons, Color_RESET);
+			}
+			r_cons_printf (core->cons, "] 0x%08" PFMT64x "\n", to);
+		}
+		break;
 	default:
 		if (use_color) {
 			r_cons_print (core->cons, Color_RESET);
@@ -5159,6 +5313,20 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, ut64 from, int nblocks, ut
 			}
 			ptr[i] = (blocksize > 0) ? 256 * k / blocksize : 0;
 			break;
+		case 'd':
+			{
+				bool histogram[256] = { 0 };
+				for (j = 0; j < blocksize; j++) {
+					histogram[buf[j]] = true;
+				}
+				for (j = 0; j < 256; j++) {
+					if (histogram[j]) {
+						k++;
+					}
+				}
+				ptr[i] = R_MIN (k, 255);
+			}
+			break;
 		case 'z':
 			for (j = 0; j < blocksize; j++) {
 				if (IS_PRINTABLE (buf[j])) {
@@ -5194,6 +5362,66 @@ static ut8 *compute_bar_blocks(RCore *core, int mode, ut64 from, int nblocks, ut
 	return ptr;
 }
 
+static ut8 *compute_bar_entropy_blocks(RCore *core, RList *ranges, ut64 from, int nblocks, ut64 blocksize, int skipblocks) {
+	if (nblocks < 1 || blocksize < 1 || skipblocks < 0) {
+		return NULL;
+	}
+	ut64 blocks = (ut64)nblocks + (ut64)skipblocks;
+	if (blocks < (ut64)nblocks || blocks > UT64_MAX / blocksize) {
+		R_LOG_ERROR ("Invalid range");
+		return NULL;
+	}
+	if (from > UT64_MAX - (blocks * blocksize)) {
+		R_LOG_ERROR ("Invalid range");
+		return NULL;
+	}
+	ut8 *ptr = calloc (1, nblocks);
+	if (!ptr) {
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < nblocks; i++) {
+		ut64 at = from + (ut64)(i + skipblocks) * blocksize;
+		ut64 ate = at + blocksize;
+		int entropy = cmd_p_minus_entropy_value_ranges (core, ranges, at, ate);
+		ptr[i] = entropy < 0 ? 0 : (ut8)entropy;
+	}
+	return ptr;
+}
+
+static bool bar_blocks_too_big(RCore *core, int nblocks, ut64 blocksize) {
+	if (nblocks < 1 || blocksize < 1) {
+		return true;
+	}
+	if (blocksize > (ut64)(size_t)-1) {
+		return true;
+	}
+	if (!core->blocksize_max) {
+		return false;
+	}
+	ut64 size = (ut64)nblocks * blocksize;
+	return size / blocksize != (ut64)nblocks || size > core->blocksize_max;
+}
+
+static const char *bar_json_key(int mode) {
+	switch (mode) {
+	case '0': return "zero";
+	case 'e': return "entropy";
+	case 'F': return "ff";
+	case 'p': return "printable";
+	case 'z': return "strings";
+	case 'm': return "marks";
+	case 'j': return "jumps";
+	case 'A': return "analysis";
+	case 'a': return "basicblocks";
+	case 'c': return "calls";
+	case 'd': return "unique";
+	case 'i': return "invalid";
+	case 's': return "syscalls";
+	default: return "data";
+	}
+}
+
 static void cmd_print_bars(RCore *core, const char *input) {
 	if (r_str_endswith (input, "?")) {
 		r_core_cmd_help (core, help_msg_p_equal);
@@ -5212,6 +5440,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	if (!list) {
 		goto beach;
 	}
+	const bool empty_zoom_boundaries = r_list_empty (list);
 
 	ut64 blocksize = 0;
 	int mode = 'b'; // e, p, b, ...
@@ -5245,6 +5474,10 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	}
 	if (skipblocks < 0) {
 		skipblocks = 0;
+	}
+	if (empty_zoom_boundaries && submode == 'j') {
+		r_cons_println (core->cons, "{}");
+		goto beach;
 	}
 	if (totalsize == UT64_MAX) {
 		if (r_config_get_b (core->config, "cfg.debug")) {
@@ -5342,6 +5575,13 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		break;
 	case 'd': // "p=d"
 		ptr = NULL;
+		if (submode == 'j' || submode == 'q') {
+			ptr = compute_bar_blocks (core, mode, from, nblocks, blocksize, skipblocks);
+			if (ptr) {
+				print_bars = true;
+			}
+			break;
+		}
 		{
 			ut64 bufsz = (input[2])
 				? r_num_math (core->num, input + 3)
@@ -5357,7 +5597,6 @@ static void cmd_print_bars(RCore *core, const char *input) {
 		}
 		break;
 	case '0': // "p=0" 0x00 bytes
-	case 'e': // "p=e" entropy
 	case 'F': // "p=F" 0xff bytes
 	case 'p': // "p=p" printable chars
 	case 'z': // "p=z" zero terminated strings
@@ -5369,6 +5608,14 @@ static void cmd_print_bars(RCore *core, const char *input) {
 	case 'i': // "p=i" invalid
 	case 's': // "p=s" syscalls
 		ptr = compute_bar_blocks (core, mode, from, nblocks, blocksize, skipblocks);
+		if (ptr) {
+			print_bars = true;
+		}
+		break;
+	case 'e': // "p=e" entropy
+		ptr = bar_blocks_too_big (core, nblocks, blocksize)
+			? compute_bar_entropy_blocks (core, list, from, nblocks, blocksize, skipblocks)
+			: compute_bar_blocks (core, mode, from, nblocks, blocksize, skipblocks);
 		if (ptr) {
 			print_bars = true;
 		}
@@ -5406,7 +5653,7 @@ static void cmd_print_bars(RCore *core, const char *input) {
 				pj_kn (pj, "blocksize", blocksize);
 				pj_kn (pj, "address", from);
 				pj_kn (pj, "size", totalsize);
-				pj_k (pj, "entropy");
+				pj_k (pj, bar_json_key (mode));
 				pj_a (pj);
 				for (i = 0; i < nblocks; i++) {
 					ut8 ep = ptr[i];
