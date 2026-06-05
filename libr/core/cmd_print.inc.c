@@ -2129,14 +2129,16 @@ static void pfb(RCore *core, const char *arg, int mode) {
 		pj_a (pj);
 	}
 
-	RBitmap *bm = r_bitmap_new (core->blocksize * 8);
+	const ut32 bsize = core->blocksize;
+	const ut8 *bytes = core->block;
+	RBitmap *bm = r_bitmap_new ((size_t)bsize * 8);
 	if (!bm) {
 		R_LOG_ERROR ("Cannot allocate bitmap");
 		r_list_free (lnames);
 		pj_free (pj);
 		return;
 	}
-	r_bitmap_set_bytes (bm, core->block, core->blocksize);
+	r_bitmap_set_bytes (bm, bytes, bsize);
 	RList *lart = lart_new ();
 
 	if (mode == PFB_COD) {
