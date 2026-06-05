@@ -3157,10 +3157,7 @@ R_API char *r_str_utf16_encode(const char *s, int len) {
 	if (len < 0) {
 		len = strlen (s);
 	}
-	if ((len * 7) + 1 < len) {
-		return NULL;
-	}
-	od = d = malloc (1 + (len * 7));
+	od = d = malloc (1 + (size_t) len * 7);
 	if (!d) {
 		return NULL;
 	}
