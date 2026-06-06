@@ -2933,6 +2933,45 @@ static const char *v850_flags_to_cpu(ut32 type) {
 	return NULL;
 }
 
+#define PPC_APU_ISEL 0x40
+#define PPC_APU_SPE  0x100
+#define PPC_APU_EFS  0x101
+
+static char *ppc_apuinfo_to_cpu(ELFOBJ *eo) {
+	if (eo->ehdr.e_machine != EM_PPC) {
+		return NULL;
+	}
+	RBinElfSection *sec = get_section_by_name (eo, ".PPC.EMB.apuinfo");
+	if (!sec || sec->offset > eo->size || sec->size < sizeof (Elf_(Nhdr))
+		|| sec->size > eo->size - sec->offset) {
+		return NULL;
+	}
+	const ut64 base = sec->offset;
+	const ut32 namesz = r_buf_read_ble32_at (eo->b, base, eo->endian);
+	const ut32 descsz = r_buf_read_ble32_at (eo->b, base + 4, eo->endian);
+	const ut64 desc_off = base + sizeof (Elf_(Nhdr)) + round_up (namesz);
+	if (namesz > sec->size || desc_off + descsz > base + sec->size) {
+		return NULL;
+	}
+	bool has_isel = false, has_spe = false;
+	ut32 off;
+	for (off = 0; off + 4 <= descsz; off += 4) {
+		switch (r_buf_read_ble32_at (eo->b, desc_off + off, eo->endian) >> 16) {
+		case PPC_APU_SPE:
+		case PPC_APU_EFS:
+			has_spe = true;
+			break;
+		case PPC_APU_ISEL:
+			has_isel = true;
+			break;
+		}
+	}
+	if (has_spe) {
+		return strdup ("e500");
+	}
+	return has_isel? strdup ("e500mc"): NULL;
+}
+
 char* Elf_(get_cpu)(ELFOBJ *eo) {
 	char *cpu = NULL;
 
@@ -2958,6 +2997,9 @@ char* Elf_(get_cpu)(ELFOBJ *eo) {
 		break;
 	case EM_SBPF:
 		cpu = r_str_newf ("sbpfv%d", eo->ehdr.e_flags);
+		break;
+	case EM_PPC:
+		cpu = ppc_apuinfo_to_cpu (eo);
 		break;
 	default:
 		break;
