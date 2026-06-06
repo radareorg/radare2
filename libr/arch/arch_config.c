@@ -41,6 +41,151 @@ R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cp
 	config->cpu = R_STR_ISNOTEMPTY (cpu) ? strdup (cpu) : NULL;
 }
 
+static void set_cpu_canonical(char **canonical, const char *cpu) {
+	if (canonical) {
+		*canonical = strdup (cpu);
+	}
+}
+
+static void set_cpu_canonical_n(char **canonical, const char *cpu, size_t len) {
+	if (canonical) {
+		*canonical = r_str_ndup (cpu, len);
+	}
+}
+
+static RArchCpuMatch match_cpu_name(const char *name, const char *cpu, char **canonical) {
+	R_RETURN_VAL_IF_FAIL (name && cpu, R_ARCH_CPU_MATCH_INVALID);
+	if (!strcmp (name, cpu)) {
+		set_cpu_canonical (canonical, name);
+		return R_ARCH_CPU_MATCH_VALID;
+	}
+	if (!r_str_casecmp (name, cpu)) {
+		set_cpu_canonical (canonical, name);
+		return R_ARCH_CPU_MATCH_CANONICALIZED;
+	}
+	return R_ARCH_CPU_MATCH_INVALID;
+}
+
+static RArchCpuMatch match_cpu_aliases(const char **aliases, const char *cpu, char **canonical, const char *name) {
+	R_RETURN_VAL_IF_FAIL (name && cpu, R_ARCH_CPU_MATCH_INVALID);
+	if (!aliases) {
+		return R_ARCH_CPU_MATCH_INVALID;
+	}
+	int i;
+	for (i = 0; aliases[i]; i++) {
+		RArchCpuMatch match = match_cpu_name (aliases[i], cpu, NULL);
+		if (match != R_ARCH_CPU_MATCH_INVALID) {
+			set_cpu_canonical (canonical, name);
+			return R_ARCH_CPU_MATCH_CANONICALIZED;
+		}
+	}
+	return R_ARCH_CPU_MATCH_INVALID;
+}
+
+static RArchCpuMatch match_cpu_csv(const char *cpus, const char *cpu, char **canonical) {
+	R_RETURN_VAL_IF_FAIL (cpu, R_ARCH_CPU_MATCH_INVALID);
+	if (R_STR_ISEMPTY (cpus)) {
+		return R_ARCH_CPU_MATCH_UNKNOWN_DOMAIN;
+	}
+	const size_t cpu_len = strlen (cpu);
+	const char *p = cpus;
+	while (*p) {
+		const char *q = strchr (p, ',');
+		size_t len = q? q - p: strlen (p);
+		if (len && cpu_len == len && !r_str_ncasecmp (p, cpu, len)) {
+			set_cpu_canonical_n (canonical, p, len);
+			return !strncmp (p, cpu, len)? R_ARCH_CPU_MATCH_VALID: R_ARCH_CPU_MATCH_CANONICALIZED;
+		}
+		p = q? q + 1: p + len;
+	}
+	return R_ARCH_CPU_MATCH_INVALID;
+}
+
+R_API RList *r_arch_plugin_cpus(RArchPlugin *plugin) {
+	R_RETURN_VAL_IF_FAIL (plugin, NULL);
+	RList *list = r_list_newf (free);
+	if (!list) {
+		return NULL;
+	}
+	if (plugin->cpu_models && plugin->cpu_models_count > 0) {
+		size_t i;
+		for (i = 0; i < plugin->cpu_models_count; i++) {
+			const char *name = plugin->cpu_models[i].name;
+			if (R_STR_ISNOTEMPTY (name)) {
+				r_list_append (list, strdup (name));
+			}
+		}
+	} else if (plugin->cpus) {
+		char *c = strdup (plugin->cpus);
+		int i, n = r_str_split (c, ',');
+		for (i = 0; i < n; i++) {
+			const char *word = r_str_word_get0 (c, i);
+			if (R_STR_ISNOTEMPTY (word)) {
+				r_list_append (list, strdup (word));
+			}
+		}
+		free (c);
+	}
+	return list;
+}
+
+R_API RArchCpuMatch r_arch_plugin_match_cpu(RArchPlugin *plugin, const char *cpu, char **canonical) {
+	R_RETURN_VAL_IF_FAIL (plugin, R_ARCH_CPU_MATCH_INVALID);
+	if (canonical) {
+		*canonical = NULL;
+	}
+	if (R_STR_ISEMPTY (cpu)) {
+		if (canonical) {
+			*canonical = strdup ("");
+		}
+		return R_ARCH_CPU_MATCH_VALID;
+	}
+	RArchCpuMatch match = R_ARCH_CPU_MATCH_INVALID;
+	if (plugin->meta.name) {
+		match = match_cpu_name (plugin->meta.name, cpu, canonical);
+		if (match != R_ARCH_CPU_MATCH_INVALID) {
+			return match;
+		}
+	}
+	if (plugin->arch) {
+		match = match_cpu_name (plugin->arch, cpu, canonical);
+		if (match != R_ARCH_CPU_MATCH_INVALID) {
+			return match;
+		}
+	}
+	if (plugin->cpu_models && plugin->cpu_models_count > 0) {
+		size_t i;
+		for (i = 0; i < plugin->cpu_models_count; i++) {
+			const RArchCpu *model = &plugin->cpu_models[i];
+			if (model->name) {
+				match = match_cpu_name (model->name, cpu, canonical);
+				if (match != R_ARCH_CPU_MATCH_INVALID) {
+					return match;
+				}
+				match = match_cpu_aliases (model->aliases, cpu, canonical, model->name);
+				if (match != R_ARCH_CPU_MATCH_INVALID) {
+					return match;
+				}
+			}
+		}
+		return R_ARCH_CPU_MATCH_INVALID;
+	}
+	return match_cpu_csv (plugin->cpus, cpu, canonical);
+}
+
+R_API char *r_arch_plugin_cpu_match(RArchPlugin *plugin, const char *cpu) {
+	char *canonical = NULL;
+	RArchCpuMatch match = r_arch_plugin_match_cpu (plugin, cpu, &canonical);
+	if (match == R_ARCH_CPU_MATCH_INVALID) {
+		free (canonical);
+		return NULL;
+	}
+	if (match == R_ARCH_CPU_MATCH_UNKNOWN_DOMAIN && !canonical) {
+		return strdup (r_str_get (cpu));
+	}
+	return canonical;
+}
+
 R_API bool r_arch_config_set_bits(RArchConfig *config, int bits) {
 	R_RETURN_VAL_IF_FAIL (config, false);
 	// if the config is tied to a session, there must be a callback to notify the plugin

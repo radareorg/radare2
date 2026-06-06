@@ -4982,6 +4982,11 @@ static bool fini(RArchSession *as) {
 	return true;
 }
 
+static const RArchCpu arm_cpu_models[] = {
+	{ "cortex", "ARM Cortex", NULL, 0 },
+	{ "v8", "ARMv8", NULL, 0 },
+};
+
 const RArchPlugin r_arch_plugin_arm_cs = {
 	.meta = {
 		.name = "arm",
@@ -4992,6 +4997,8 @@ const RArchPlugin r_arch_plugin_arm_cs = {
 	.endian = R_SYS_ENDIAN_LITTLE | R_SYS_ENDIAN_BIG,
 	.bits = R_SYS_BITS_PACK3 (16, 32, 64),
 	.cpus = "cortex,v8",
+	.cpu_models = arm_cpu_models,
+	.cpu_models_count = R_ARRAY_SIZE (arm_cpu_models),
 #if 0
 	// made obsolete by "e anal.mask = true"
 	.anal_mask = anal_mask,

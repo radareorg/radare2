@@ -153,6 +153,20 @@ typedef bool (*RArchPluginInitCallback)(RArchSession *s);
 typedef bool (*RArchPluginFiniCallback)(RArchSession *s);
 typedef bool (*RArchPluginEsilCallback)(RArchSession *s, REsil *esil, RArchEsilAction action);
 
+typedef struct r_arch_cpu_t {
+	const char *name;
+	const char *desc;
+	const char **aliases;
+	ut32 flags;
+} RArchCpu;
+
+typedef enum r_arch_cpu_match_t {
+	R_ARCH_CPU_MATCH_INVALID = 0,
+	R_ARCH_CPU_MATCH_VALID,
+	R_ARCH_CPU_MATCH_CANONICALIZED,
+	R_ARCH_CPU_MATCH_UNKNOWN_DOMAIN,
+} RArchCpuMatch;
+
 // TODO: use `const char *const` instead of `char*`
 typedef struct r_arch_plugin_t {
 	RPluginMeta meta;
@@ -174,6 +188,8 @@ typedef struct r_arch_plugin_t {
 	const RArchPluginMnemonicsCallback mnemonics;
 	const RArchPluginPreludesCallback preludes;
 	const RArchPluginEsilCallback esilcb;
+	const RArchCpu *cpu_models;
+	size_t cpu_models_count;
 } RArchPlugin;
 
 R_API char *r_arch_platform_unset(RArch *arch, const char *name);
@@ -216,6 +232,9 @@ R_API void r_arch_free(RArch *arch);
 // aconfig.c
 R_API void r_arch_config_use(RArchConfig *config, const char * R_NULLABLE arch);
 R_API void r_arch_config_set_cpu(RArchConfig *config, const char * R_NULLABLE cpu);
+R_API RList *r_arch_plugin_cpus(RArchPlugin *plugin);
+R_API RArchCpuMatch r_arch_plugin_match_cpu(RArchPlugin *plugin, const char *cpu, char **canonical);
+R_API char *r_arch_plugin_cpu_match(RArchPlugin *plugin, const char *cpu);
 R_API bool r_arch_config_set_syntax(RArchConfig *config, int syntax);
 R_API bool r_arch_config_set_bits(RArchConfig *c, int bits);
 R_API RArchConfig *r_arch_config_new(void);

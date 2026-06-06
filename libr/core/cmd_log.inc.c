@@ -539,15 +539,15 @@ static int cmd_plugins(void *data, const char *input) {
 						pj_ks (pj, "arch", item->arch);
 					}
 					pj_ks (pj, "endian", (item->endian == R_SYS_ENDIAN_BIG)? "big": "little");
-					if (item->cpus) {
+					list = r_arch_plugin_cpus (item);
+					if (!r_list_empty (list)) {
 						pj_ka (pj, "cpus");
-						list = r_str_split_list (strdup (item->cpus), ",", 0);
 						r_list_foreach (list, iter2, cpu) {
 							pj_s (pj, cpu);
 						}
-						r_list_free (list);
 						pj_end (pj);
 					}
+					r_list_free (list);
 					pj_ka (pj, "bits");
 					int i;
 					for (i = 0; i < 8; i++) {
