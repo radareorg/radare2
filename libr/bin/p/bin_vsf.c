@@ -39,6 +39,27 @@ static bool check(RBinFile *bf, RBuffer *b) {
 	return false;
 }
 
+static bool read_maincpu(RBuffer *buf, ut64 offset, struct vsf_maincpu *cpu) {
+	ut8 raw[sizeof (*cpu)];
+	if (r_buf_read_at (buf, offset, raw, sizeof (raw)) != sizeof (raw)) {
+		return false;
+	}
+	const ut8 *p = raw;
+	cpu->clk = r_read_le32 (p);
+	p += sizeof (ut32);
+	cpu->ac = *p++;
+	cpu->xr = *p++;
+	cpu->yr = *p++;
+	cpu->sp = *p++;
+	cpu->pc = r_read_le16 (p);
+	p += sizeof (ut16);
+	cpu->st = *p++;
+	cpu->lastopcode = r_read_le32 (p);
+	p += sizeof (ut32);
+	cpu->ba_low_flags = r_read_le32 (p);
+	return true;
+}
+
 // XXX b vs bf->buf
 static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 	if (!check (bf, bf->buf)) {
@@ -101,7 +122,10 @@ static bool load(RBinFile *bf, RBuffer *b, ut64 loadaddr) {
 			}
 		} else if (module.major == 1 && !CMP_MODULE (VICE_MAINCPU)) {
 			res->maincpu = R_NEW0 (struct vsf_maincpu);
-			r_buf_read_at (bf->buf, offset + rd, (ut8 *)res->maincpu, sizeof (*res->maincpu));
+			if (!read_maincpu (bf->buf, offset + rd, res->maincpu)) {
+				R_LOG_ERROR ("Truncated MAINCPU module");
+				R_FREE (res->maincpu);
+			}
 		}
 #undef CMP_MODULE
 		offset += module.length;
