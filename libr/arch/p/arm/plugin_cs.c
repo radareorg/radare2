@@ -4867,8 +4867,10 @@ static bool plugin_changed(RArchSession *as) {
 	if (R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config) != pd->bigendian) {
 		return true;
 	}
-	if (pd->cpu && as->config->cpu && strcmp (pd->cpu, as->config->cpu)) {
-		return true;
+	if (pd->cpu || as->config->cpu) {
+		if (!pd->cpu || !as->config->cpu || strcmp (pd->cpu, as->config->cpu)) {
+			return true;
+		}
 	}
 	return false;
 }
