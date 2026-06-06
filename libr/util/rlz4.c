@@ -14,15 +14,15 @@
 
 #define EXCESS (16 + (BLOCK_SIZE / 255))
 
-#define LOAD_16(p) *(ut16*)&g_buf[(p)]
-#define LOAD_32(p) *(ut32*)&g_buf[(p)]
-#define LOAD_32_FROM(p, x)     *(ut32 *)&x[(p)]
-#define COPY_32(d, s) *(ut32*)&g_buf[(d)] = LOAD_32((s))
+#define LOAD_16(p) r_read_le16 (&g_buf[(p)])
+#define LOAD_32(p) r_read_le32 (&g_buf[(p)])
+#define LOAD_32_FROM(p, x) r_read_le32 (&x[(p)])
+#define COPY_32(d, s) r_write_le32 (&g_buf[(d)], LOAD_32 ((s)))
 
 // Using memcpy for these two because they make ASAN happy
 // Avoids the 'misaligned address' error
 #define COPY_32_TO(d, s, x, y) memcpy (&x[d], &y[s], 4)
-#define LOAD_16_TO(p, x)       memcpy (&x, &g_buf[p], 2)
+#define LOAD_16_TO(p, x)       (x) = LOAD_16 (p)
 
 #define HASH_BITS 12
 #define HASH_SIZE (1 << HASH_BITS)
