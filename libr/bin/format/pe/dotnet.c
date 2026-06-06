@@ -91,6 +91,37 @@ static ut32 dotnet_max_rows_at(PE *pe, const ut8 *row_ptr, ut32 row_size) {
 	return (ut32)(remaining_size / row_size);
 }
 
+static ut64 dotnet_tilde_valid(PTILDE_HEADER tilde_header) {
+	return r_read_le64 ((const ut8 *)&tilde_header->Valid);
+}
+
+static ut32 dotnet_row_count_at(const ut32 *row_offset, int matched_bits) {
+	return r_read_le32 ((const ut8 *)(row_offset + matched_bits));
+}
+
+static bool dotnet_metadata_magic_at(const ut8 *metadata) {
+	return r_read_le32 (metadata) == NET_METADATA_MAGIC;
+}
+
+static ut32 dotnet_metadata_length(PNET_METADATA metadata) {
+	return r_read_le32 ((const ut8 *)&metadata->Length);
+}
+
+static ut32 dotnet_stream_offset(PSTREAM_HEADER stream) {
+	return r_read_le32 ((const ut8 *)&stream->Offset);
+}
+
+static const ut8 *dotnet_stream_data(PE *pe, ut64 metadata_root, PSTREAM_HEADER stream) {
+	if (!pe || !stream || metadata_root >= pe->data_size) {
+		return NULL;
+	}
+	ut32 offset = dotnet_stream_offset (stream);
+	if (offset >= pe->data_size - metadata_root) {
+		return NULL;
+	}
+	return pe->data + metadata_root + offset;
+}
+
 static bool dotnet_parse_tilde_rows(PE *pe, PTILDE_HEADER tilde_header, R_OUT ROWS *rows, R_OUT INDEX_SIZES *index_sizes) {
 	int bit_check, matched_bits = 0;
 
@@ -116,13 +147,13 @@ static bool dotnet_parse_tilde_rows(PE *pe, PTILDE_HEADER tilde_header, R_OUT RO
 		ut32 *row = NULL;
 		ut8 *index_size = NULL;
 
-		if (!((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (!((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 		if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (ut32))) {
 			return false;
 		}
-		ut32 row_count = *(row_offset + matched_bits);
+		ut32 row_count = dotnet_row_count_at (row_offset, matched_bits);
 		switch (bit_check) {
 		case BIT_MODULE:
 			row = &rows->module;
@@ -397,7 +428,7 @@ static const ut8 *dotnet_tilde_table_offset(PE *pe, PTILDE_HEADER tilde_header, 
 
 	ut32 *row_offset = (ut32 *)(tilde_header + 1);
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		valid_tables += ((tilde_header->Valid >> bit_check) & 0x01);
+		valid_tables += ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01);
 	}
 	ut64 table_offset = (const ut8 *)row_offset - pe->data;
 	table_offset += (ut64)sizeof (ut32) * valid_tables;
@@ -406,14 +437,14 @@ static const ut8 *dotnet_tilde_table_offset(PE *pe, PTILDE_HEADER tilde_header, 
 		ut32 num_rows;
 		ut32 table_size;
 
-		if (!((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (!((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 		if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (ut32))) {
 			return NULL;
 		}
 
-		num_rows = *(row_offset + matched_bits);
+		num_rows = dotnet_row_count_at (row_offset, matched_bits);
 		if (!dotnet_tilde_table_size (rows, index_sizes, bit_check, num_rows, &table_size)) {
 			return NULL;
 		}
@@ -506,23 +537,23 @@ static void dotnet_parse_tilde_assemblyref(
 
 	// Number of rows is the number of bits set to 1 in Valid
 	for (i = 0; i < 64; i++) {
-		matched_bits += ((tilde_header->Valid >> i) & 0x01);
+		matched_bits += ((dotnet_tilde_valid (tilde_header) >> i) & 0x01);
 	}
 
 	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
-	if (metadata_root + streams->string->Offset >= pe->data_size) {
+	const uint8_t *string_offset = dotnet_stream_data (pe, metadata_root, streams->string);
+	if (!string_offset) {
 		return;
 	}
-	const uint8_t *string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
 
 	// Parse AssemblyRef table
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
@@ -533,7 +564,7 @@ static void dotnet_parse_tilde_assemblyref(
 		if (!fits_in_pe (pe, (uint8_t *)row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
 			return;
 		}
-		num_rows = *(row_offset + matched_bits);
+		num_rows = dotnet_row_count_at (row_offset, matched_bits);
 
 		if (bit_check == BIT_ASSEMBLYREF) {
 			// AssemblyRef structure: MajorVersion (2) MinorVersion (2) BuildNumber (2) RevisionNumber (2)
@@ -673,7 +704,7 @@ static void dotnet_parse_tilde_field(
 
 	// Number of rows is the number of bits set to 1 in Valid
 	for (i = 0; i < 64; i++) {
-		matched_bits += ((tilde_header->Valid >> i) & 0x01);
+		matched_bits += ((dotnet_tilde_valid (tilde_header) >> i) & 0x01);
 	}
 
 	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
@@ -682,14 +713,14 @@ static void dotnet_parse_tilde_field(
 
 	matched_bits = 0;
 
-	if (metadata_root + streams->string->Offset >= pe->data_size) {
+	string_offset = dotnet_stream_data (pe, metadata_root, streams->string);
+	if (!string_offset) {
 		return;
 	}
-	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	// Iterate through tables, looking for Field
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
@@ -697,7 +728,7 @@ static void dotnet_parse_tilde_field(
 			return;
 		}
 
-		num_rows = *(row_offset + matched_bits);
+		num_rows = dotnet_row_count_at (row_offset, matched_bits);
 
 		if (bit_check == BIT_FIELD) {
 			// Parse Field table
@@ -828,23 +859,23 @@ static void dotnet_parse_tilde_typedef(
 
 	// Number of rows is the number of bits set to 1 in Valid
 	for (i = 0; i < 64; i++) {
-		matched_bits += ((tilde_header->Valid >> i) & 0x01);
+		matched_bits += ((dotnet_tilde_valid (tilde_header) >> i) & 0x01);
 	}
 
 	row_offset = (uint32_t *) (tilde_header + 1);
 	table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
-	if (metadata_root + streams->string->Offset >= pe->data_size) {
+	string_offset = dotnet_stream_data (pe, metadata_root, streams->string);
+	if (!string_offset) {
 		return;
 	}
-	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
 
 	// Parse TypeDef table
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
@@ -852,7 +883,7 @@ static void dotnet_parse_tilde_typedef(
 			return;
 		}
 
-		num_rows = *(row_offset + matched_bits);
+		num_rows = dotnet_row_count_at (row_offset, matched_bits);
 
 		if (bit_check == BIT_TYPEDEF) {
 			// TypeDef structure: Flags (4) Name (string) Namespace (string) Extends (coded_idx) FieldList (field) MethodList (methoddef)
@@ -897,7 +928,7 @@ static void dotnet_parse_tilde_typedef(
 			return;
 		} else if (bit_check < BIT_TYPEDEF) {
 			// Skip tables that come before TypeDef
-			num_rows = *(row_offset + matched_bits);
+			num_rows = dotnet_row_count_at (row_offset, matched_bits);
 			switch (bit_check) {
 			case BIT_MODULE:
 				table_offset += (2 + index_sizes.string + (index_sizes.guid * 3)) * num_rows;
@@ -989,11 +1020,10 @@ static ut32 dotnet_method_param_count(PE *pe, PSTREAM_HEADER blob_hdr, ut64 meta
 	if (!blob_hdr || blob_index == 0) {
 		return 0;
 	}
-	ut64 blob_heap_off = metadata_root + blob_hdr->Offset;
-	if (blob_heap_off >= pe->data_size) {
+	const ut8 *blob_heap = dotnet_stream_data (pe, metadata_root, blob_hdr);
+	if (!blob_heap) {
 		return 0;
 	}
-	const ut8 *blob_heap = pe->data + blob_heap_off;
 	const ut8 *end = pe->data + pe->data_size;
 	if (blob_index >= (ut32)(end - blob_heap)) {
 		return 0;
@@ -1058,23 +1088,23 @@ static void dotnet_parse_tilde_methoddef(
 
 	// Number of rows is the number of bits set to 1 in Valid
 	for (i = 0; i < 64; i++) {
-		matched_bits += ((tilde_header->Valid >> i) & 0x01);
+		matched_bits += ((dotnet_tilde_valid (tilde_header) >> i) & 0x01);
 	}
 
 	row_offset = (uint32_t *) (tilde_header + 1);
 	table_offset = (uint8_t *)row_offset;
 	table_offset += sizeof (uint32_t) * matched_bits;
 
-	if (metadata_root + streams->string->Offset >= pe->data_size) {
+	string_offset = dotnet_stream_data (pe, metadata_root, streams->string);
+	if (!string_offset) {
 		return;
 	}
-	string_offset = pe->data + metadata_root + streams->string->Offset;
 
 	matched_bits = 0;
 
 	// Iterate through tables in order, looking for MethodDef
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
@@ -1082,7 +1112,7 @@ static void dotnet_parse_tilde_methoddef(
 			return;
 		}
 
-		num_rows = *(row_offset + matched_bits);
+		num_rows = dotnet_row_count_at (row_offset, matched_bits);
 		if (bit_check == BIT_METHODDEF) {
 			// Parse MethodDef table
 			// Structure: RVA (4) ImplFlags (2) Flags (2) Name (string) Signature (blob) ParamList (param)
@@ -1418,18 +1448,22 @@ static void dotnet_typedef_free(void *p) {
 }
 
 static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS streams, ROWS rows, INDEX_SIZES index_sizes) {
-	if (metadata_root + streams->tilde->Offset >= pe->data_size) {
+	if (!streams->tilde || !streams->string) {
 		return r_list_newf ((RListFree)dotnet_typedef_free);
 	}
-	PTILDE_HEADER tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + streams->tilde->Offset);
+	const ut8 *tilde_data = dotnet_stream_data (pe, metadata_root, streams->tilde);
+	if (!tilde_data) {
+		return r_list_newf ((RListFree)dotnet_typedef_free);
+	}
+	PTILDE_HEADER tilde_header = (PTILDE_HEADER)tilde_data;
 	if (!struct_fits_in_pe (pe, tilde_header, TILDE_HEADER)) {
 		return r_list_newf ((RListFree)dotnet_typedef_free);
 	}
 	uint32_t *row_offset = (uint32_t *) (tilde_header + 1);
-	if (metadata_root + streams->string->Offset >= pe->data_size) {
+	const uint8_t *string_offset = dotnet_stream_data (pe, metadata_root, streams->string);
+	if (!string_offset) {
 		return r_list_newf ((RListFree)dotnet_typedef_free);
 	}
-	const uint8_t *string_offset = pe->data + metadata_root + streams->string->Offset;
 	uint8_t *table_offset = (uint8_t *)row_offset;
 	int j, bit_check, matched_bits = 0;
 	uint32_t num_rows;
@@ -1438,13 +1472,13 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 	// Calculate offset to TypeDef table
 	// First count how many tables are present so we can skip the row-counts array
 	for (j = 0; j < 64; j++) {
-		matched_bits += ((tilde_header->Valid >> j) & 0x01);
+		matched_bits += ((dotnet_tilde_valid (tilde_header) >> j) & 0x01);
 	}
 	// Advance past the row-count array (one uint32_t per present table)
 	table_offset += sizeof (uint32_t) * matched_bits;
 	matched_bits = 0;
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
@@ -1457,7 +1491,7 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 			if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
 				return typedef_info;
 			}
-			num_rows = *(row_offset + matched_bits);
+			num_rows = dotnet_row_count_at (row_offset, matched_bits);
 
 			uint8_t *row_ptr = table_offset;
 
@@ -1534,7 +1568,7 @@ static RList *dotnet_collect_typedefs(PE *pe, ut64 metadata_root, PSTREAMS strea
 			if (!fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
 				return typedef_info;
 			}
-			num_rows = *(row_offset + matched_bits);
+			num_rows = dotnet_row_count_at (row_offset, matched_bits);
 			// Calculate row size for this table and skip it
 			switch (bit_check) {
 			case BIT_MODULE:
@@ -1594,12 +1628,11 @@ static void dotnet_parse_tilde(PE *pe, ut64 metadata_root, PSTREAMS streams, RLi
 	// Default index sizes are 2. Will be bumped to 4 if necessary.
 	memset (&index_sizes, 2, sizeof (index_sizes));
 
-	if (metadata_root + streams->tilde->Offset >= pe->data_size) {
+	const ut8 *tilde_data = dotnet_stream_data (pe, metadata_root, streams->tilde);
+	if (!tilde_data) {
 		return;
 	}
-	tilde_header = (PTILDE_HEADER) (pe->data +
-		metadata_root +
-		streams->tilde->Offset);
+	tilde_header = (PTILDE_HEADER)tilde_data;
 
 	if (!struct_fits_in_pe (pe, tilde_header, TILDE_HEADER)) {
 		return;
@@ -1620,13 +1653,13 @@ static void dotnet_parse_tilde(PE *pe, ut64 metadata_root, PSTREAMS streams, RLi
 
 	// Walk all the bits first to collect row counts
 	for (bit_check = 0; bit_check < 64; bit_check++) {
-		if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+		if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 			continue;
 		}
 
 #define ROW_CHECK(name) \
 	if (fits_in_pe (pe, row_offset, (matched_bits + 1) * sizeof (uint32_t))) \
-		rows.name = *(row_offset + matched_bits);
+		rows.name = dotnet_row_count_at (row_offset, matched_bits);
 
 #define ROW_CHECK_WITH_INDEX(name) \
 	ROW_CHECK (name); \
@@ -1737,8 +1770,7 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 	// The metadata can be anywhere in the file, so scan the entire file
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
-			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
-			if (test_metadata->Magic == NET_METADATA_MAGIC) {
+			if (dotnet_metadata_magic_at (pe->data + i)) {
 				metadata_offset = i;
 				break;
 			}
@@ -1757,20 +1789,21 @@ static RList *dotnet_parse_com(PE *pe, ut64 baddr) {
 
 	metadata = (PNET_METADATA) (pe->data + metadata_root);
 
-	if (metadata->Magic != NET_METADATA_MAGIC) {
+	if (!dotnet_metadata_magic_at ((const ut8 *)metadata)) {
 		return symbols;
 	}
 
+	ut32 metadata_length = dotnet_metadata_length (metadata);
 	// Version length must be between 1 and 255, and be a multiple of 4.
-	if (metadata->Length == 0 ||
-		metadata->Length > 255 ||
-		metadata->Length % 4 != 0 ||
-		!fits_in_pe (pe, pe->data + metadata_root, metadata->Length)) {
+	if (metadata_length == 0 ||
+		metadata_length > 255 ||
+		metadata_length % 4 != 0 ||
+		!fits_in_pe (pe, pe->data + metadata_root, metadata_length)) {
 		return symbols;
 	}
 
 	// The metadata structure has some variable length records after the version.
-	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
+	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata_length + 2;
 
 	// 2 bytes for Streams.
 	if (!fits_in_pe (pe, pe->data + stream_offset, 2)) {
@@ -1824,8 +1857,7 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 	// Find the .NET metadata by searching for the magic number
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
-			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
-			if (test_metadata->Magic == NET_METADATA_MAGIC) {
+			if (dotnet_metadata_magic_at (pe->data + i)) {
 				metadata_offset = i;
 				break;
 			}
@@ -1844,18 +1876,19 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 
 	metadata = (PNET_METADATA) (pe->data + metadata_root);
 
-	if (metadata->Magic != NET_METADATA_MAGIC) {
+	if (!dotnet_metadata_magic_at ((const ut8 *)metadata)) {
 		return libraries;
 	}
 
-	if (metadata->Length == 0 ||
-		metadata->Length > 255 ||
-		metadata->Length % 4 != 0 ||
-		! (fits_in_pe (pe, pe->data + metadata_root, metadata->Length))) {
+	ut32 metadata_length = dotnet_metadata_length (metadata);
+	if (metadata_length == 0 ||
+		metadata_length > 255 ||
+		metadata_length % 4 != 0 ||
+		! (fits_in_pe (pe, pe->data + metadata_root, metadata_length))) {
 		return libraries;
 	}
 
-	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
+	st64 stream_offset = metadata_root + sizeof (NET_METADATA) + metadata_length + 2;
 
 	if (! (fits_in_pe (pe, pe->data + stream_offset, 2))) {
 		return libraries;
@@ -1881,10 +1914,11 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 		memset (&rows, '\0', sizeof (ROWS));
 		memset (&index_sizes, 2, sizeof (index_sizes));
 
-		if (metadata_root + headers.tilde->Offset >= pe->data_size) {
+		const ut8 *tilde_data = dotnet_stream_data (pe, metadata_root, headers.tilde);
+		if (!tilde_data) {
 			return libraries;
 		}
-		tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + headers.tilde->Offset);
+		tilde_header = (PTILDE_HEADER)tilde_data;
 
 		if (fits_in_pe (pe, (uint8_t *)tilde_header, sizeof (TILDE_HEADER))) {
 			if (tilde_header->HeapSizes & 0x01) {
@@ -1901,12 +1935,12 @@ RList *dotnet_parse_libs(const ut8 *buf, int size) {
 
 			// Walk all the bits first to collect row counts
 			for (bit_check = 0; bit_check < 64; bit_check++) {
-				if (! ((tilde_header->Valid >> bit_check) & 0x01)) {
+				if (! ((dotnet_tilde_valid (tilde_header) >> bit_check) & 0x01)) {
 					continue;
 				}
 
 				if (fits_in_pe (pe, (uint8_t *)row_offset, (matched_bits + 1) * sizeof (uint32_t))) {
-					rows.assemblyref = *(row_offset + matched_bits);
+					rows.assemblyref = dotnet_row_count_at (row_offset, matched_bits);
 				}
 
 				matched_bits++;
@@ -1946,10 +1980,12 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	if (pe->data_size > 0x100) {
 		int search_limit = (pe->data_size > 0x2000)? 0x2000: (int)pe->data_size;
 		for (i = 0x100; i < search_limit - (int)sizeof (CLI_HEADER); i++) {
-			PCLI_HEADER cli = (PCLI_HEADER) (pe->data + i);
-			if ((cli->Size == 0x48 || cli->Size == 0x44) &&
-				cli->MajorRuntimeVersion >= 1 && cli->MajorRuntimeVersion <= 5 &&
-				cli->MinorRuntimeVersion <= 10) {
+			ut32 cli_size = r_read_le32 (pe->data + i);
+			ut16 cli_major = r_read_le16 (pe->data + i + 4);
+			ut16 cli_minor = r_read_le16 (pe->data + i + 6);
+			if ((cli_size == 0x48 || cli_size == 0x44) &&
+				cli_major >= 1 && cli_major <= 5 &&
+				cli_minor <= 10) {
 				cli_offset = i;
 				break;
 			}
@@ -1959,8 +1995,7 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	// Find the metadata magic
 	if (pe->data_size > 0x100) {
 		for (i = 0x40; i < (int)pe->data_size - (int)sizeof (NET_METADATA); i++) {
-			PNET_METADATA test_metadata = (PNET_METADATA) (pe->data + i);
-			if (test_metadata->Magic == NET_METADATA_MAGIC) {
+			if (dotnet_metadata_magic_at (pe->data + i)) {
 				metadata_offset = i;
 				break;
 			}
@@ -1975,9 +2010,8 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	DotNetVersionInfo *version_info = R_NEW0 (DotNetVersionInfo);
 	// Get CLI header version if we found it
 	if (cli_offset >= 0 && struct_fits_in_pe (pe, pe->data + cli_offset, CLI_HEADER)) {
-		PCLI_HEADER cli = (PCLI_HEADER) (pe->data + cli_offset);
-		version_info->cli_major = cli->MajorRuntimeVersion;
-		version_info->cli_minor = cli->MinorRuntimeVersion;
+		version_info->cli_major = r_read_le16 (pe->data + cli_offset + 4);
+		version_info->cli_minor = r_read_le16 (pe->data + cli_offset + 6);
 	}
 
 	if (metadata_offset < 0) {
@@ -1992,13 +2026,14 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 	if (struct_fits_in_pe (pe, pe->data + metadata_root, NET_METADATA)) {
 		metadata = (PNET_METADATA) (pe->data + metadata_root);
 
-		if (metadata->Magic == NET_METADATA_MAGIC &&
-			metadata->Length > 0 &&
-			metadata->Length <= 255 &&
-			metadata->Length % 4 == 0 &&
-			fits_in_pe (pe, pe->data + metadata_root, metadata->Length)) {
+		ut32 metadata_length = dotnet_metadata_length (metadata);
+		if (dotnet_metadata_magic_at ((const ut8 *)metadata) &&
+			metadata_length > 0 &&
+			metadata_length <= 255 &&
+			metadata_length % 4 == 0 &&
+			fits_in_pe (pe, pe->data + metadata_root, metadata_length)) {
 
-			st64 offset_2 = metadata_root + sizeof (NET_METADATA) + metadata->Length + 2;
+			st64 offset_2 = metadata_root + sizeof (NET_METADATA) + metadata_length + 2;
 			if (fits_in_pe (pe, pe->data + offset_2, 2)) {
 				ut16 num_streams = r_read_le16 (pe->data + offset_2);
 				offset_2 += 2;
@@ -2015,13 +2050,14 @@ DotNetVersionInfo *dotnet_parse_version_info(const ut8 *buf, int size) {
 					INDEX_SIZES index_sizes;
 					ut32 num_rows = 0;
 
-					if (metadata_root + headers.tilde->Offset >= pe->data_size) {
+					const ut8 *tilde_data = dotnet_stream_data (pe, metadata_root, headers.tilde);
+					if (!tilde_data) {
 						return version_info;
 					}
-					tilde_header = (PTILDE_HEADER) (pe->data + metadata_root + headers.tilde->Offset);
+					tilde_header = (PTILDE_HEADER)tilde_data;
 
 					if (dotnet_parse_tilde_rows (pe, tilde_header, &rows, &index_sizes) &&
-						((tilde_header->Valid >> BIT_ASSEMBLY) & 0x01)) {
+						((dotnet_tilde_valid (tilde_header) >> BIT_ASSEMBLY) & 0x01)) {
 						assembly_row = dotnet_tilde_table_offset (pe, tilde_header, &rows, &index_sizes, BIT_ASSEMBLY, &num_rows);
 						if (assembly_row && num_rows > 0 && fits_in_pe (pe, assembly_row, 12)) {
 							version_info->asm_major = r_read_le16 (assembly_row + 4);

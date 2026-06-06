@@ -799,16 +799,15 @@ static bool haschr(const RBinFile* bf, ut16 dllCharacteristic) {
 	}
 	ut64 sz;
 	const ut8 *buf = r_buf_data (bf->buf, &sz);
-	if (!buf) {
+	if (!buf || sz < 0x40) {
 		return false;
 	}
-	size_t idx = (buf[0x3c] | (buf[0x3d]<<8));
-	if (idx + 0x5E + 1 >= sz ) {
+	ut32 idx = r_read_le32 (buf + 0x3c);
+	ut64 off = idx + 0x5e;
+	if (off > sz || off + sizeof (ut16) > sz) {
 		return false;
 	}
-	//it's funny here idx+0x5E can be 158 and sz 159 but with
-	//the cast it reads two bytes until 160
-	return ((*(ut16*)(buf + idx + 0x5E)) & dllCharacteristic);
+	return r_read_le16 (buf + off) & dllCharacteristic;
 }
 
 static const char *normalized_visibility_name(const char *name) {

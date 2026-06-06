@@ -1981,6 +1981,40 @@ void PE_(free_VS_VERSIONINFO)(PE_VS_VERSIONINFO *vs_VersionInfo) {
 	free_VS_VERSIONINFO (vs_VersionInfo);
 }
 
+static bool read_vs_fixed_file_info(RBuffer *b, ut64 addr, PE_VS_FIXEDFILEINFO *info) {
+	ut8 buf[sizeof (*info)];
+	if (r_buf_read_at (b, addr, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	const ut8 *p = buf;
+	info->dwSignature = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwStrucVersion = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileVersionMS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileVersionLS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwProductVersionMS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwProductVersionLS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileFlagsMask = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileFlags = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileOS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileType = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileSubtype = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileDateMS = r_read_le32 (p);
+	p += sizeof (ut32);
+	info->dwFileDateLS = r_read_le32 (p);
+	return true;
+}
+
 static Var *Pe_r_bin_pe_parse_var(RBinPEObj *pe, PE_DWord *curAddr) {
 	Var *var = calloc (1, sizeof (*var));
 	if (!var) {
@@ -2035,17 +2069,29 @@ static Var *Pe_r_bin_pe_parse_var(RBinPEObj *pe, PE_DWord *curAddr) {
 		free_Var (var);
 		return NULL;
 	}
-	var->Value = (ut32 *)malloc (var->wValueLength);
+	var->Value = (ut32 *)malloc (var->numOfValues * sizeof (*var->Value));
 	if (!var->Value) {
 		R_LOG_WARN ("malloc (Var Value)");
 		free_Var (var);
 		return NULL;
 	}
-	if (r_buf_read_at (pe->b, *curAddr, (ut8 *)var->Value, var->wValueLength) != var->wValueLength) {
-		R_LOG_WARN ("read (Var Value)");
+	ut8 *value = (ut8 *)malloc (var->wValueLength);
+	if (!value) {
+		R_LOG_WARN ("malloc (Var Value buffer)");
 		free_Var (var);
 		return NULL;
 	}
+	if (r_buf_read_at (pe->b, *curAddr, value, var->wValueLength) != var->wValueLength) {
+		R_LOG_WARN ("read (Var Value)");
+		free (value);
+		free_Var (var);
+		return NULL;
+	}
+	int i;
+	for (i = 0; i < var->numOfValues; i++) {
+		var->Value[i] = r_read_le32 (value + (i * sizeof (ut32)));
+	}
+	free (value);
 	*curAddr += var->wValueLength;
 	return var;
 }
@@ -2169,24 +2215,25 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 	}
 
 	for (i = 0; *curAddr < begAddr + string->wLength; i++, *curAddr += sizeof (ut16)) {
-		ut16 utf16_char;
+		ut8 utf16_char[sizeof (ut16)];
 		ut16 *tmpKey;
 		if (*curAddr > pe->size || *curAddr + sizeof (ut16) > pe->size) {
 			goto out_error;
 		}
-		if (r_buf_read_at (pe->b, *curAddr, (ut8 *)&utf16_char, sizeof (ut16)) != sizeof (ut16)) {
+		if (r_buf_read_at (pe->b, *curAddr, utf16_char, sizeof (utf16_char)) != sizeof (utf16_char)) {
 			R_LOG_WARN ("check (String szKey)");
 			goto out_error;
 		}
+		ut16 ch = r_read_le16 (utf16_char);
 		tmpKey = (ut16 *)realloc (string->szKey, (i + 1) * sizeof (ut16));
 		if (!tmpKey) {
 			R_LOG_WARN ("realloc (String szKey)");
 			goto out_error;
 		}
 		string->szKey = tmpKey;
-		string->szKey[i] = utf16_char;
+		string->szKey[i] = ch;
 		string->wKeyLen += sizeof (ut16);
-		if (!utf16_char) {
+		if (!ch) {
 			*curAddr += sizeof (ut16);
 			break;
 		}
@@ -2197,7 +2244,7 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 	if (len_value < 0) {
 		len_value = 0;
 	}
-	string->Value = (ut16 *)calloc (len_value + 1, 1);
+	string->Value = (ut16 *)calloc (len_value + sizeof (ut16), 1);
 	if (!string->Value) {
 		R_LOG_WARN ("malloc (String Value)");
 		goto out_error;
@@ -2205,9 +2252,21 @@ static String *Pe_r_bin_pe_parse_string(RBinPEObj *pe, PE_DWord *curAddr) {
 	if (*curAddr > pe->size || *curAddr + len_value > pe->size) {
 		goto out_error;
 	}
-	if (r_buf_read_at (pe->b, *curAddr, (ut8 *)string->Value, len_value) != len_value) {
-		R_LOG_WARN ("read (String Value)");
-		goto out_error;
+	if (len_value > 0) {
+		ut8 *value = (ut8 *)malloc (len_value);
+		if (!value) {
+			R_LOG_WARN ("malloc (String Value buffer)");
+			goto out_error;
+		}
+		if (r_buf_read_at (pe->b, *curAddr, value, len_value) != len_value) {
+			R_LOG_WARN ("read (String Value)");
+			free (value);
+			goto out_error;
+		}
+		for (i = 0; i + 1 < len_value; i += sizeof (ut16)) {
+			string->Value[i / sizeof (ut16)] = r_read_le16 (value + i);
+		}
+		free (value);
 	}
 	*curAddr += len_value;
 	return string;
@@ -2455,7 +2514,7 @@ static PE_VS_VERSIONINFO *Pe_r_bin_pe_parse_version_info(RBinPEObj *pe, PE_DWord
 		}
 		sz = sizeof (PE_VS_FIXEDFILEINFO);
 		EXIT_ON_OVERFLOW (sz);
-		if (r_buf_read_at (pe->b, curAddr, (ut8 *)vs_VersionInfo->Value, sz) != sz) {
+		if (!read_vs_fixed_file_info (pe->b, curAddr, vs_VersionInfo->Value)) {
 			R_LOG_WARN ("read (VS_VERSIONINFO Value)");
 			goto out_error;
 		}
@@ -3774,7 +3833,12 @@ static bool get_rsds(ut8 *dbg_data, int dbg_data_len, SCV_RSDS_HEADER *res) {
 	if (dbg_data_len < rsds_sz) {
 		return false;
 	}
-	memcpy (res, dbg_data, rsds_sz);
+	memcpy (res->signature, dbg_data, sizeof (res->signature));
+	res->guid.data1 = r_read_le32 (dbg_data + 4);
+	res->guid.data2 = r_read_le16 (dbg_data + 8);
+	res->guid.data3 = r_read_le16 (dbg_data + 10);
+	memcpy (res->guid.data4, dbg_data + 12, sizeof (res->guid.data4));
+	res->age = r_read_le32 (dbg_data + 20);
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + rsds_sz);
 	return true;
 }
@@ -3784,7 +3848,10 @@ static void get_nb10(ut8 *dbg_data, int dbg_data_len, SCV_NB10_HEADER *res) {
 	if (dbg_data_len < nb10sz) {
 		return;
 	}
-	memcpy (res, dbg_data, nb10sz);
+	memcpy (res->signature, dbg_data, sizeof (res->signature));
+	res->offset = r_read_le32 (dbg_data + 4);
+	res->timestamp = r_read_le32 (dbg_data + 8);
+	res->age = r_read_le32 (dbg_data + 12);
 	res->file_name = (ut8 *)strdup ((const char *)dbg_data + nb10sz);
 }
 
