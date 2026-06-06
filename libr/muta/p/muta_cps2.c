@@ -595,7 +595,7 @@ static void optimise_sboxes(struct optimised_sbox *out, const struct sbox *in) {
 	}
 }
 
-static void cps2_crypt(int dir, const ut16 *rom, ut16 *dec, int length, const ut32 *master_key, ut32 upper_limit) {
+static void cps2_crypt(int dir, const ut8 *rom, ut8 *dec, int length, const ut32 *master_key, ut32 upper_limit) {
 	int i;
 	ut32 key1[4];
 	struct optimised_sbox sboxes1[4 * 4];
@@ -657,22 +657,27 @@ static void cps2_crypt(int dir, const ut16 *rom, ut16 *dec, int length, const ut
 
 		// de/en-crypt the opcodes
 		for (a = i; a < length / 2 && a < upper_limit / 2; a += 0x10000) {
+			const int offset = a * 2;
+			ut16 word;
 			switch (dir) {
 			case R_MUTA_OP_DECRYPT:
 				/* decrypt */
-				dec[a] = feistel (rom[a], fn2_groupA, fn2_groupB, &sboxes2[0 * 4], &sboxes2[1 * 4], &sboxes2[2 * 4], &sboxes2[3 * 4], key2[0], key2[1], key2[2], key2[3]);
-				dec[a] = r_read_be16 (&dec[a]);
+				word = r_read_le16 (rom + offset);
+				word = feistel (word, fn2_groupA, fn2_groupB, &sboxes2[0 * 4], &sboxes2[1 * 4], &sboxes2[2 * 4], &sboxes2[3 * 4], key2[0], key2[1], key2[2], key2[3]);
+				r_write_be16 (dec + offset, word);
 				break;
 			case R_MUTA_OP_ENCRYPT:
 				/* encrypt */
-				dec[a] = r_read_be16 (&rom[a]);
-				dec[a] = feistel (dec[a], fn2_groupA, fn2_groupB, &sboxes2[3 * 4], &sboxes2[2 * 4], &sboxes2[1 * 4], &sboxes2[0 * 4], key2[3], key2[2], key2[1], key2[0]);
+				word = r_read_be16 (rom + offset);
+				word = feistel (word, fn2_groupA, fn2_groupB, &sboxes2[3 * 4], &sboxes2[2 * 4], &sboxes2[1 * 4], &sboxes2[0 * 4], key2[3], key2[2], key2[1], key2[0]);
+				r_write_le16 (dec + offset, word);
 				break;
 			}
 		}
 		// copy the unencrypted part
 		while (a < length / 2) {
-			dec[a] = r_read_be16 (&rom[a]);
+			const int offset = a * 2;
+			r_write_le16 (dec + offset, r_read_be16 (rom + offset));
 			a += 0x10000;
 		}
 	}
@@ -718,13 +723,12 @@ static bool set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int 
 
 	if (keylen == 8) { // old hardcoded MAME keys
 		/* fix key endianness */
-		const ut32 *key32 = (const ut32 *)key;
-		cps2_data->cps2key[0] = r_read_be32 (key32);
-		cps2_data->cps2key[1] = r_read_be32 (key32 + 1);
+		cps2_data->cps2key[0] = r_read_be32 (key);
+		cps2_data->cps2key[1] = r_read_be32 (key + 4);
 		return true;
 	} else if (keylen == 20) {
 		const ut8 *key8 = (const ut8 *)key;
-		unsigned short decoded[10] = { 0 };
+		ut16 decoded[10] = { 0 };
 		int b;
 		for (b = 0; b < 10 * 16; b++) {
 			int bit = (317 - b) % 160;
@@ -732,8 +736,8 @@ static bool set_key(RMutaSession *ms, const ut8 *key, int keylen, int mode, int 
 				decoded[b / 16] |= (0x8000 >> (b % 16));
 			}
 		}
-		cps2_data->cps2key[0] = ((uint32_t)decoded[0] << 16) | decoded[1];
-		cps2_data->cps2key[1] = ((uint32_t)decoded[2] << 16) | decoded[3];
+		cps2_data->cps2key[0] = ((ut32)decoded[0] << 16) | decoded[1];
+		cps2_data->cps2key[1] = ((ut32)decoded[2] << 16) | decoded[3];
 		return true;
 	}
 	return false;
@@ -757,7 +761,7 @@ static bool update(RMutaSession *ms, const ut8 *buf, int len) {
 	}
 
 	/* TODO : handle decryption errors */
-	cps2_crypt (ms->dir, (const ut16 *)buf, (ut16 *)output, len, cps2_data->cps2key, UPPER_LIMIT);
+	cps2_crypt (ms->dir, buf, output, len, cps2_data->cps2key, UPPER_LIMIT);
 	r_muta_session_append (ms, output, len);
 	free (output);
 	return true;
