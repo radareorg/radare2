@@ -35,6 +35,44 @@ typedef struct  {
 	ut8 uuid[16];
 }) PebbleAppInfo;
 
+static bool read_pebble_app_info(RBuffer *b, PebbleAppInfo *pai) {
+	ut8 buf[sizeof (*pai)];
+	if (r_buf_read_at (b, 0, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	const ut8 *p = buf;
+	memcpy (pai->header, p, sizeof (pai->header));
+	p += sizeof (pai->header);
+	pai->struct_version.major = *p++;
+	pai->struct_version.minor = *p++;
+	pai->sdk_version.major = *p++;
+	pai->sdk_version.minor = *p++;
+	pai->app_version.major = *p++;
+	pai->app_version.minor = *p++;
+	pai->size = r_read_le16 (p);
+	p += sizeof (ut16);
+	pai->offset = r_read_le32 (p);
+	p += sizeof (ut32);
+	pai->crc = r_read_le32 (p);
+	p += sizeof (ut32);
+	memcpy (pai->name, p, sizeof (pai->name));
+	p += sizeof (pai->name);
+	memcpy (pai->company, p, sizeof (pai->company));
+	p += sizeof (pai->company);
+	pai->icon_resource_id = r_read_le32 (p);
+	p += sizeof (ut32);
+	pai->sym_table_addr = r_read_le32 (p);
+	p += sizeof (ut32);
+	pai->flags = r_read_le32 (p);
+	p += sizeof (ut32);
+	pai->reloc_list_start = r_read_le32 (p);
+	p += sizeof (ut32);
+	pai->num_reloc_entries = r_read_le32 (p);
+	p += sizeof (ut32);
+	memcpy (pai->uuid, p, sizeof (pai->uuid));
+	return !memcmp (pai->header, "PBLAPP\x00\x00", 8);
+}
+
 static bool check(RBinFile *bf, RBuffer *b) {
 	ut8 magic[8];
 	if (r_buf_read_at (b, 0, magic, sizeof (magic)) != sizeof (magic)) {
@@ -53,8 +91,7 @@ static ut64 baddr(RBinFile *bf) {
 
 static RBinInfo* info(RBinFile *bf) {
 	PebbleAppInfo pai = {0};
-	int reat = r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai));
-	if (reat != sizeof (pai)) {
+	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
@@ -79,7 +116,7 @@ static bool sections_vec(RBinFile *bf) {
 	ut64 textsize = UT64_MAX;
 	RBinSection *ptr = NULL;
 	PebbleAppInfo pai = {{0}};
-	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
+	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
 		return false;
 	}
@@ -148,8 +185,8 @@ static RList* relocs(RBinFile *bf) {
 #endif
 
 static RList* entries(RBinFile *bf) {
-	PebbleAppInfo pai;
-	if (!r_buf_read_at (bf->buf, 0, (ut8*)&pai, sizeof (pai))) {
+	PebbleAppInfo pai = {{0}};
+	if (!read_pebble_app_info (bf->buf, &pai)) {
 		R_LOG_ERROR ("Truncated Header");
 		return NULL;
 	}
