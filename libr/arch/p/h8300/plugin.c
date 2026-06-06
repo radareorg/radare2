@@ -41,16 +41,13 @@ https://www.classes.cs.uchicago.edu/archive/2006/winter/23000-1/docs/h8300.pdf
  */
 
 static void h8300_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
-	ut16 ad;
-
 	switch (buf[0]) {
 	case H8300_JMP_1:
 		op->type = R_ANAL_OP_TYPE_UJMP;
 		break;
 	case H8300_JMP_2:
 		op->type = R_ANAL_OP_TYPE_JMP;
-		r_mem_swapendian ((ut8*)&ad, buf + 2, sizeof (ut16));
-		op->jump = ad;
+		op->jump = r_read_at_be16 (buf, 2);
 		break;
 	case H8300_JMP_3:
 		op->type = R_ANAL_OP_TYPE_UJMP;
@@ -60,16 +57,13 @@ static void h8300_anal_jmp(RAnalOp *op, ut64 addr, const ut8 *buf) {
 }
 
 static void h8300_anal_jsr(RAnalOp *op, ut64 addr, const ut8 *buf) {
-	ut16 ad;
-
 	switch (buf[0]) {
 	case H8300_JSR_1:
 		op->type = R_ANAL_OP_TYPE_UCALL;
 		break;
 	case H8300_JSR_2:
 		op->type = R_ANAL_OP_TYPE_CALL;
-		r_mem_swapendian ((ut8*)&ad, buf + 2, sizeof (ut16));
-		op->jump = ad;
+		op->jump = r_read_at_be16 (buf, 2);
 		op->fail = addr + 4;
 		break;
 	case H8300_JSR_3:
