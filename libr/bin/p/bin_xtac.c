@@ -618,10 +618,7 @@ static bool check(RBinFile *file, RBuffer *b) {
 	}
 
 	ut8 buf[sizeof (XTAC_MAGIC) - 1];
-	r_buf_read_at (b, 0, buf, sizeof (buf));
-
-	ut32 magic = r_read_le32 (buf);
-	return memcmp (&magic, XTAC_MAGIC, sizeof (XTAC_MAGIC) - 1) == 0;
+	return r_buf_read_at (b, 0, buf, sizeof (buf)) == sizeof (buf) && !memcmp (buf, XTAC_MAGIC, sizeof (buf));
 }
 
 static bool symbols_vec(RBinFile *bf) {
