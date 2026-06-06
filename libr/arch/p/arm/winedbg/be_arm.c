@@ -76,10 +76,10 @@ static ut32 db_get_inst(const ut8* buf, int size) {
 
 	switch (size) {
 	case 4:
-		result = *(ut32*)buf;
+		result = r_read_le32 (buf);
 		break;
 	case 2:
-		result = *(ut16*)buf;
+		result = r_read_le16 (buf);
 		break;
 	}
 	return result;

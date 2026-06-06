@@ -43,12 +43,10 @@ static int op_thumb(RArchSession *as, RAnalOp *op, ut64 addr, const ut8 *data, i
 	if (len < 2) {
 		return 0;
 	}
-	ut16 *_ins = (ut16 *) data;
-	ut16 ins = *_ins;
+	ut16 ins = r_read_le16 (data);
 	ut32 ins32 = 0;
 	if (len > 3) {
-		ut32 *_ins32 = (ut32 *) data;
-		ins32 = *_ins32;
+		ins32 = r_read_le32 (data);
 	}
 
 	struct winedbg_arm_insn *arminsn = arm_new ();
