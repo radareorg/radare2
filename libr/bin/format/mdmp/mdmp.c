@@ -381,6 +381,11 @@ static bool r_bin_mdmp_init_hdr(struct r_bin_mdmp_obj *obj) {
 	return true;
 }
 
+static bool has_bytes(RBuffer *b, ut64 addr, ut64 size) {
+	ut64 bsz = r_buf_size (b);
+	return addr <= bsz && size <= bsz - addr;
+}
+
 static struct minidump_module *read_module(RBuffer *b, ut64 addr) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	if (r_buf_seek (b, addr, R_BUF_SET) == -1) {
@@ -418,6 +423,16 @@ static struct minidump_module *read_module(RBuffer *b, ut64 addr) {
 	return module;
 }
 
+static bool read_memory_descriptor(RBuffer *b, ut64 addr, struct minidump_memory_descriptor *desc) {
+	if (!has_bytes (b, addr, sizeof (*desc))) {
+		return false;
+	}
+	desc->start_of_memory_range = r_buf_read_le64_at (b, addr);
+	desc->memory.data_size = r_buf_read_le32_at (b, addr + 8);
+	desc->memory.rva = r_buf_read_le32_at (b, addr + 12);
+	return true;
+}
+
 static void read_memory64_list(RBuffer *b, ut64 addr, struct minidump_memory64_list *memory64_list) {
 	st64 o_addr = r_buf_seek (b, 0, R_BUF_CUR);
 	r_buf_seek (b, addr, R_BUF_SET);
@@ -432,6 +447,84 @@ static void read_desc(RBuffer *b, ut64 addr, struct minidump_memory_descriptor64
 	desc->start_of_memory_range = r_buf_read_le64 (b);
 	desc->data_size = r_buf_read_le64 (b);
 	r_buf_seek (b, o_addr, R_BUF_SET);
+}
+
+static bool read_system_info(RBuffer *b, ut64 addr, struct minidump_system_info *info) {
+	if (!has_bytes (b, addr, sizeof (*info))) {
+		return false;
+	}
+	info->processor_architecture = r_buf_read_le16_at (b, addr);
+	info->processor_level = r_buf_read_le16_at (b, addr + 2);
+	info->processor_revision = r_buf_read_le16_at (b, addr + 4);
+	info->number_of_processors = r_buf_read8_at (b, addr + 6);
+	info->product_type = r_buf_read8_at (b, addr + 7);
+	info->major_version = r_buf_read_le32_at (b, addr + 8);
+	info->minor_version = r_buf_read_le32_at (b, addr + 12);
+	info->build_number = r_buf_read_le32_at (b, addr + 16);
+	info->platform_id = r_buf_read_le32_at (b, addr + 20);
+	info->csd_version_rva = r_buf_read_le32_at (b, addr + 24);
+	info->suite_mask = r_buf_read_le16_at (b, addr + 28);
+	info->reserved_2 = r_buf_read_le16_at (b, addr + 30);
+	if (info->processor_architecture == MDMP_PROCESSOR_ARCHITECTURE_INTEL
+			|| info->processor_architecture == MDMP_PROCESSOR_ARCHITECTURE_AMD64) {
+		info->cpu.x86_cpu_info.vendor_id[0] = r_buf_read_le32_at (b, addr + 32);
+		info->cpu.x86_cpu_info.vendor_id[1] = r_buf_read_le32_at (b, addr + 36);
+		info->cpu.x86_cpu_info.vendor_id[2] = r_buf_read_le32_at (b, addr + 40);
+		info->cpu.x86_cpu_info.version_information = r_buf_read_le32_at (b, addr + 44);
+		info->cpu.x86_cpu_info.feature_information = r_buf_read_le32_at (b, addr + 48);
+		info->cpu.x86_cpu_info.amd_extended_cpu_features = r_buf_read_le32_at (b, addr + 52);
+	} else {
+		info->cpu.other_cpu_info.processor_features[0] = r_buf_read_le64_at (b, addr + 32);
+		info->cpu.other_cpu_info.processor_features[1] = r_buf_read_le64_at (b, addr + 40);
+	}
+	return true;
+}
+
+static bool read_memory_info_list(RBuffer *b, ut64 addr, struct minidump_memory_info_list *list) {
+	if (!has_bytes (b, addr, sizeof (*list))) {
+		return false;
+	}
+	list->size_of_header = r_buf_read_le32_at (b, addr);
+	list->size_of_entry = r_buf_read_le32_at (b, addr + 4);
+	list->number_of_entries = r_buf_read_le64_at (b, addr + 8);
+	return true;
+}
+
+static bool read_memory_info(RBuffer *b, ut64 addr, struct minidump_memory_info *info) {
+	if (!has_bytes (b, addr, sizeof (*info))) {
+		return false;
+	}
+	info->base_address = r_buf_read_le64_at (b, addr);
+	info->allocation_base = r_buf_read_le64_at (b, addr + 8);
+	info->allocation_protect = r_buf_read_le32_at (b, addr + 16);
+	info->__alignment_1 = r_buf_read_le32_at (b, addr + 20);
+	info->region_size = r_buf_read_le64_at (b, addr + 24);
+	info->state = r_buf_read_le32_at (b, addr + 32);
+	info->protect = r_buf_read_le32_at (b, addr + 36);
+	info->type = r_buf_read_le32_at (b, addr + 40);
+	info->__alignment_2 = r_buf_read_le32_at (b, addr + 44);
+	return true;
+}
+
+static bool read_thread_info_list(RBuffer *b, ut64 addr, struct minidump_thread_info_list *list) {
+	if (!has_bytes (b, addr, sizeof (*list))) {
+		return false;
+	}
+	list->size_of_header = r_buf_read_le32_at (b, addr);
+	list->size_of_entry = r_buf_read_le32_at (b, addr + 4);
+	list->number_of_entries = r_buf_read_le32_at (b, addr + 8);
+	return true;
+}
+
+static bool read_token_info_list(RBuffer *b, ut64 addr, struct minidump_token_info_list *list) {
+	if (!has_bytes (b, addr, sizeof (*list))) {
+		return false;
+	}
+	list->size_of_list = r_buf_read_le32_at (b, addr);
+	list->number_of_entries = r_buf_read_le32_at (b, addr + 4);
+	list->list_header_size = r_buf_read_le32_at (b, addr + 8);
+	list->element_header_size = r_buf_read_le32_at (b, addr + 12);
+	return true;
 }
 
 static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct minidump_directory *entry) {
@@ -461,10 +554,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 	switch (entry->stream_type) {
 	case THREAD_LIST_STREAM:
-		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&thread_list, "i", 1);
-		if (r != sizeof (thread_list)) {
+		if (!has_bytes (obj->b, entry->location.rva, sizeof (thread_list))) {
 			break;
 		}
+		thread_list.number_of_threads = r_buf_read_le32_at (obj->b, entry->location.rva);
 
 		sdb_set (obj->kv, "mdmp_thread.format", "ddddq?? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -511,10 +604,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		}
 		break;
 	case MEMORY_LIST_STREAM:
-		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&memory_list, "i", 1);
-		if (r != sizeof (memory_list)) {
+		if (!has_bytes (obj->b, entry->location.rva, sizeof (memory_list))) {
 			break;
 		}
+		memory_list.number_of_memory_ranges = r_buf_read_le32_at (obj->b, entry->location.rva);
 
 		sdb_num_set (obj->kv, "mdmp_memory_list.offset",
 			entry->location.rva, 0);
@@ -533,8 +626,8 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			if (!desc) {
 				break;
 			}
-			r = r_buf_fread_at (obj->b, offset, (ut8 *)desc, "lii", 1);
-			if (r != sizeof (*desc)) {
+			if (!read_memory_descriptor (obj->b, offset, desc)) {
+				free (desc);
 				break;
 			}
 			r_list_append (obj->streams.memories, desc);
@@ -574,8 +667,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		if (!obj->streams.system_info) {
 			break;
 		}
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)obj->streams.system_info, sizeof (*obj->streams.system_info));
-		if (r != sizeof (*obj->streams.system_info)) {
+		if (!read_system_info (obj->b, entry->location.rva, obj->streams.system_info)) {
 			break;
 		}
 
@@ -591,10 +683,10 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case THREAD_EX_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = r_buf_fread_at (obj->b, entry->location.rva, (ut8 *)&thread_ex_list, "i", 1);
-		if (r != sizeof (thread_ex_list)) {
+		if (!has_bytes (obj->b, entry->location.rva, sizeof (thread_ex_list))) {
 			break;
 		}
+		thread_ex_list.number_of_threads = r_buf_read_le32_at (obj->b, entry->location.rva);
 
 		sdb_set (obj->kv, "mdmp_thread_ex.format", "ddddq??? "
 			"ThreadId SuspendCount PriorityClass Priority "
@@ -780,8 +872,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 
 		break;
 	case MEMORY_INFO_LIST_STREAM:
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&memory_info_list, sizeof (memory_info_list));
-		if (r != sizeof (memory_info_list)) {
+		if (!read_memory_info_list (obj->b, entry->location.rva, &memory_info_list)) {
 			break;
 		}
 
@@ -806,8 +897,8 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 			if (!info) {
 				break;
 			}
-			r = r_buf_read_at (obj->b, offset, (ut8 *)info, sizeof (*info));
-			if (r != sizeof (*info)) {
+			if (!read_memory_info (obj->b, offset, info)) {
+				free (info);
 				break;
 			}
 			r_list_append (obj->streams.memory_infos, info);
@@ -816,8 +907,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case THREAD_INFO_LIST_STREAM:
 		/* TODO: Not yet fully parsed or utilised */
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&thread_info_list, sizeof (thread_info_list));
-		if (r != sizeof (thread_info_list)) {
+		if (!read_thread_info_list (obj->b, entry->location.rva, &thread_info_list)) {
 			break;
 		}
 
@@ -877,8 +967,7 @@ static bool r_bin_mdmp_init_directory_entry(struct r_bin_mdmp_obj *obj, struct m
 		break;
 	case TOKEN_STREAM:
 		/* TODO: Not fully parsed or utilised */
-		r = r_buf_read_at (obj->b, entry->location.rva, (ut8 *)&token_info_list, sizeof (token_info_list));
-		if (r != sizeof (token_info_list)) {
+		if (!read_token_info_list (obj->b, entry->location.rva, &token_info_list)) {
 			break;
 		}
 
