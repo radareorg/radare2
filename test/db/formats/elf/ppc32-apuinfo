@@ -1,0 +1,15 @@
+NAME=ELF PPC: cpu derived from .PPC.EMB.apuinfo isel APU
+FILE=bins/elf/ppc32-e500mc-isel
+CMDS=iI~cpu[1]
+EXPECT=<<EOF
+e500mc
+EOF
+RUN
+
+NAME=ELF PPC: apuinfo cpu also exposed via ij
+FILE=bins/elf/ppc32-e500mc-isel
+CMDS=ij~{bin.cpu}
+EXPECT=<<EOF
+e500mc
+EOF
+RUN
