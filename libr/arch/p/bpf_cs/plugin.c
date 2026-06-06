@@ -16,16 +16,25 @@ static int get_capstone_mode(RArchSession *as) {
 	int mode = R_ARCH_CONFIG_IS_BIG_ENDIAN (as->config)
 		? CS_MODE_BIG_ENDIAN: CS_MODE_LITTLE_ENDIAN;
 	const char *cpu = as->config->cpu;
-	if (cpu && !strcmp (cpu, "extended")) {
-		mode |= CS_MODE_BPF_EXTENDED;
-	} else if (cpu && !strcmp (cpu, "classic")) {
+	if (cpu && (!strcmp (cpu, "classic") || !strcmp (cpu, "cbpf") || !strcmp (cpu, "cBPF"))) {
 		mode |= CS_MODE_BPF_CLASSIC;
 	} else {
-		mode |= (as->config->bits == 32)? CS_MODE_BPF_CLASSIC: CS_MODE_BPF_EXTENDED;
+		mode |= CS_MODE_BPF_EXTENDED;
 	}
 	return mode;
 }
 #include "../capstone.inc.c"
+
+typedef struct plugin_data_t {
+	CapstonePluginData cpd;
+	int bits;
+	int endian;
+	char *cpu;
+} PluginData;
+
+static bool init(RArchSession *s);
+static bool fini(RArchSession *s);
+static bool plugin_changed(RArchSession *s);
 
 #define OP(n) insn->detail->bpf.operands[n]
 // the "& 0xffffffff" is for some weird CS bug in JMP
@@ -40,8 +49,8 @@ static int get_capstone_mode(RArchSession *as) {
 static void analop_esil(RArchSession *a, RAnalOp *op, cs_insn *insn, ut64 addr);
 
 static char *mnemonics(RArchSession *s, int id, bool json) {
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	return r_arch_cs_mnemonics (s, cpd->cs_handle, id, json);
+	PluginData *pd = (PluginData *)s->data;
+	return r_arch_cs_mnemonics (s, pd->cpd.cs_handle, id, json);
 }
 
 /* Assembler integration (classic + extended via shared parser) */
@@ -312,7 +321,7 @@ static RBpfDialect get_bpf_dialect2(RArchSession *s) {
 			return R_BPF_DIALECT_EXTENDED;
 		}
 	}
-	return (s && s->config && s->config->bits == 64) ? R_BPF_DIALECT_EXTENDED : R_BPF_DIALECT_CLASSIC;
+	return R_BPF_DIALECT_EXTENDED;
 }
 
 static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
@@ -323,7 +332,9 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 	int elen = 0;
 	bool ret = parse_instruction (&f, &p, op->addr, dialect, ebuf, &elen);
 	token_fini (&p);
-	if (!ret) return false;
+	if (!ret) {
+		return false;
+	}
 	if (dialect == R_BPF_DIALECT_EXTENDED) {
 		if (elen == 8 || elen == 16) {
 			r_anal_op_set_bytes (op, op->addr, ebuf, elen);
@@ -344,12 +355,23 @@ static bool encode(RArchSession *s, RAnalOp *op, ut32 mask) {
 }
 
 static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
-	CapstonePluginData *cpd = (CapstonePluginData*)a->data;
+	if (plugin_changed (a)) {
+		if (a->data) {
+			fini (a);
+		}
+		if (!init (a)) {
+			return false;
+		}
+	}
+	PluginData *pd = (PluginData *)a->data;
+	if (!pd) {
+		return false;
+	}
 	const ut8 *buf = op->bytes;
 	const int len = op->size;
 	op->size = 8;
 	RArchCSInsn csi;
-	bool ok = r_arch_cs_disasm_iter (cpd->cs_handle, buf, len, op->addr, &csi);
+	bool ok = r_arch_cs_disasm_iter (pd->cpd.cs_handle, buf, len, op->addr, &csi);
 	cs_insn *insn = &csi.insn;
 	if (!ok) {
 		op->type = R_ANAL_OP_TYPE_ILL;
@@ -957,26 +979,60 @@ static int archinfo(RArchSession *as, ut32 q) {
 	return 0;
 }
 
+static bool plugin_changed(RArchSession *s) {
+	R_RETURN_VAL_IF_FAIL (s, true);
+	PluginData *pd = (PluginData *)s->data;
+	if (!pd) {
+		return true;
+	}
+	if (s->config->bits != pd->bits) {
+		return true;
+	}
+	if (s->config->endian != pd->endian) {
+		return true;
+	}
+	const char *cpu = s->config->cpu;
+	if (pd->cpu || cpu) {
+		if (!pd->cpu || !cpu || strcmp (pd->cpu, cpu)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static bool init(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
 	if (s->data) {
 		R_LOG_WARN ("Already initialized");
 		return false;
 	}
-	s->data = R_NEW0 (CapstonePluginData);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	if (!r_arch_cs_init (s, &cpd->cs_handle)) {
-		R_LOG_ERROR ("Cannot initialize capstone");
-		R_FREE (s->data);
+	PluginData *pd = R_NEW0 (PluginData);
+	if (!pd) {
 		return false;
 	}
+	pd->bits = s->config->bits;
+	pd->endian = s->config->endian;
+	pd->cpu = s->config->cpu? strdup (s->config->cpu): NULL;
+	if (!r_arch_cs_init (s, &pd->cpd.cs_handle)) {
+		R_LOG_ERROR ("Cannot initialize capstone");
+		R_FREE (pd->cpu);
+		R_FREE (pd);
+		return false;
+	}
+	s->data = pd;
 	return true;
 }
 
 static bool fini(RArchSession *s) {
 	R_RETURN_VAL_IF_FAIL (s, false);
-	CapstonePluginData *cpd = (CapstonePluginData*)s->data;
-	cs_close (&cpd->cs_handle);
+	PluginData *pd = (PluginData *)s->data;
+	if (!pd) {
+		return true;
+	}
+	R_FREE (pd->cpu);
+	if (pd->cpd.cs_handle) {
+		cs_close (&pd->cpd.cs_handle);
+	}
 	R_FREE (s->data);
 	return true;
 }

@@ -9,8 +9,308 @@ typedef enum {
 	R_BPF_DIALECT_EXTENDED = 64,
 } RBpfDialect;
 
+static const char *ebpf_abs_load_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x20:
+		return "ldw";
+	case 0x28:
+		return "ldh";
+	case 0x30:
+		return "ldb";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_ind_load_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x40:
+		return "ldw";
+	case 0x48:
+		return "ldh";
+	case 0x50:
+		return "ldb";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_ldx_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x61:
+		return "ldxw";
+	case 0x69:
+		return "ldxh";
+	case 0x71:
+		return "ldxb";
+	case 0x79:
+		return "ldxdw";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_stx_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x63:
+		return "stxw";
+	case 0x6b:
+		return "stxh";
+	case 0x73:
+		return "stxb";
+	case 0x7b:
+		return "stxdw";
+	case 0xc3:
+		return "xaddw";
+	case 0xdb:
+		return "xadddw";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_st_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x62:
+		return "stw";
+	case 0x6a:
+		return "sth";
+	case 0x72:
+		return "stb";
+	case 0x7a:
+		return "stdw";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_jmp_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x15:
+	case 0x1d:
+		return "jeq";
+	case 0x25:
+	case 0x2d:
+		return "jgt";
+	case 0x35:
+	case 0x3d:
+		return "jge";
+	case 0x45:
+	case 0x4d:
+		return "jset";
+	case 0x55:
+	case 0x5d:
+		return "jne";
+	case 0x65:
+	case 0x6d:
+		return "jsgt";
+	case 0x75:
+	case 0x7d:
+		return "jsge";
+	case 0xa5:
+	case 0xad:
+		return "jlt";
+	case 0xb5:
+	case 0xbd:
+		return "jle";
+	case 0xc5:
+	case 0xcd:
+		return "jslt";
+	case 0xd5:
+	case 0xdd:
+		return "jsle";
+	default:
+		return NULL;
+	}
+}
+
+static const char *ebpf_alu_name(ut8 opcode) {
+	switch (opcode) {
+	case 0x04:
+	case 0x0c:
+		return "add";
+	case 0x07:
+	case 0x0f:
+		return "add64";
+	case 0x14:
+	case 0x1c:
+		return "sub";
+	case 0x17:
+	case 0x1f:
+		return "sub64";
+	case 0x24:
+	case 0x2c:
+		return "mul";
+	case 0x27:
+	case 0x2f:
+		return "mul64";
+	case 0x34:
+	case 0x3c:
+		return "div";
+	case 0x37:
+	case 0x3f:
+		return "div64";
+	case 0x44:
+	case 0x4c:
+		return "or";
+	case 0x47:
+	case 0x4f:
+		return "or64";
+	case 0x54:
+	case 0x5c:
+		return "and";
+	case 0x57:
+	case 0x5f:
+		return "and64";
+	case 0x64:
+	case 0x6c:
+		return "lsh";
+	case 0x67:
+	case 0x6f:
+		return "lsh64";
+	case 0x74:
+	case 0x7c:
+		return "rsh";
+	case 0x77:
+	case 0x7f:
+		return "rsh64";
+	case 0x84:
+		return "neg";
+	case 0x87:
+		return "neg64";
+	case 0x94:
+	case 0x9c:
+		return "mod";
+	case 0x97:
+	case 0x9f:
+		return "mod64";
+	case 0xa4:
+	case 0xac:
+		return "xor";
+	case 0xa7:
+	case 0xaf:
+		return "xor64";
+	case 0xb4:
+	case 0xbc:
+		return "mov";
+	case 0xb7:
+	case 0xbf:
+		return "mov64";
+	default:
+		return NULL;
+	}
+}
+
+static void format_ebpf_offset(char *buf, size_t len, st16 off) {
+	const char sign = off >= 0 ? '+' : '-';
+	const int delta = off >= 0 ? off : -off;
+	snprintf (buf, len, "%c0x%x", sign, delta);
+}
+
+static bool is_ebpf_reg_opcode(ut8 opcode) {
+	return (opcode & 0x08) != 0;
+}
+
+static int disassemble_ebpf(RAnalOp *r_op, const ut8 *buf, int len) {
+	if (len < 8) {
+		return 0;
+	}
+	const ut8 opcode = buf[0];
+	const ut8 dst = buf[1] & 0x0f;
+	const ut8 src = (buf[1] >> 4) & 0x0f;
+	const st16 off = (st16)r_read_le16 (buf + 2);
+	const ut32 imm32 = r_read_le32 (buf + 4);
+	char offbuf[32];
+	const char *op = NULL;
+
+	if (opcode == 0x18) {
+		if (len < 16) {
+			return 0;
+		}
+		ut64 imm64 = ((ut64)r_read_le32 (buf + 12) << 32) | imm32;
+		r_op->mnemonic = r_str_newf ("lddw r%u, 0x%" PFMT64x, dst, imm64);
+		return r_op->size = 16;
+	}
+	if ((op = ebpf_abs_load_name (opcode))) {
+		r_op->mnemonic = r_str_newf ("%s [0x%x]", op, imm32);
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_ind_load_name (opcode))) {
+		if (imm32) {
+			r_op->mnemonic = r_str_newf ("%s [r%u+0x%x]", op, src, imm32);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s [r%u]", op, src);
+		}
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_ldx_name (opcode))) {
+		if (off) {
+			format_ebpf_offset (offbuf, sizeof (offbuf), off);
+			r_op->mnemonic = r_str_newf ("%s r%u, [r%u%s]", op, dst, src, offbuf);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s r%u, [r%u]", op, dst, src);
+		}
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_stx_name (opcode))) {
+		if (off) {
+			format_ebpf_offset (offbuf, sizeof (offbuf), off);
+			r_op->mnemonic = r_str_newf ("%s [r%u%s], r%u", op, dst, offbuf, src);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s [r%u], r%u", op, dst, src);
+		}
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_st_name (opcode))) {
+		if (off) {
+			format_ebpf_offset (offbuf, sizeof (offbuf), off);
+			r_op->mnemonic = r_str_newf ("%s [r%u%s], 0x%x", op, dst, offbuf, imm32);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s [r%u], 0x%x", op, dst, imm32);
+		}
+		return r_op->size = 8;
+	}
+	if (opcode == 0x05) {
+		format_ebpf_offset (offbuf, sizeof (offbuf), off);
+		r_op->mnemonic = r_str_newf ("jmp %s", offbuf);
+		return r_op->size = 8;
+	}
+	if (opcode == 0x85) {
+		r_op->mnemonic = r_str_newf ("call 0x%x", imm32);
+		return r_op->size = 8;
+	}
+	if (opcode == 0x95) {
+		r_op->mnemonic = strdup ("exit");
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_jmp_name (opcode))) {
+		format_ebpf_offset (offbuf, sizeof (offbuf), off);
+		if (is_ebpf_reg_opcode (opcode)) {
+			r_op->mnemonic = r_str_newf ("%s r%u, r%u, %s", op, dst, src, offbuf);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s r%u, 0x%x, %s", op, dst, imm32, offbuf);
+		}
+		return r_op->size = 8;
+	}
+	if (opcode == 0xd4 || opcode == 0xdc) {
+		r_op->mnemonic = r_str_newf ("%s%u r%u", opcode == 0xdc ? "be" : "le", imm32, dst);
+		return r_op->size = 8;
+	}
+	if ((op = ebpf_alu_name (opcode))) {
+		if (opcode == 0x84 || opcode == 0x87) {
+			r_op->mnemonic = r_str_newf ("%s r%u", op, dst);
+		} else if (is_ebpf_reg_opcode (opcode)) {
+			r_op->mnemonic = r_str_newf ("%s r%u, r%u", op, dst, src);
+		} else {
+			r_op->mnemonic = r_str_newf ("%s r%u, 0x%x", op, dst, imm32);
+		}
+		return r_op->size = 8;
+	}
+	return 0;
+}
+
 // disassembly
-static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
+static int disassemble(RAnalOp *r_op, const ut8 *buf, int len, bool extended) {
 	const ut64 pc = r_op->addr;
 	const char *op, *fmt;
 	RBpfSockFilter f[1] = {{
@@ -22,148 +322,12 @@ static int disassemble(RAnalOp *r_op, const ut8 *buf, int len) {
 	int val = f->k;
 	char vbuf[256];
 
-	// Minimal eBPF disassembly for common opcodes (disabled here to avoid impacting classic tests)
-#if 0
-	if (len >= 8) {
-		ut8 opc = buf[0];
-		bool ebpf_match = false;
-		switch (opc) {
-			case 0x71: case 0x69: case 0x61: case 0x73: case 0x6b: case 0x63:
-			case 0xc3: case 0x85: case 0x95:
-			case 0x1d: case 0x5d: case 0x2d: case 0x3d: case 0x4d:
-			case 0xad: case 0xbd: case 0x6d: case 0x7d: case 0xcd: case 0xdd:
-			case 0xb7: case 0xbf:
-			case 0x07: case 0x17: case 0x27: case 0x37: case 0x47: case 0x57:
-			case 0x67: case 0x77: case 0x97: case 0xa7:
-			case 0x0f: case 0x1f: case 0x2f: case 0x3f: case 0x4f: case 0x5f:
-			case 0x6f: case 0x7f: case 0x9f: case 0xaf:
-			case 0x84: case 0x87:
-				ebpf_match = true; break;
-			default: break;
-		}
-		if (ebpf_match) {
-			ut8 dst = buf[1] & 0x0f;
-			ut8 src = (buf[1] >> 4) & 0x0f;
-			st16 off = r_read_le16 (buf + 2);
-			ut32 imm32 = r_read_le32 (buf + 4);
-			char tmp[128];
-			switch (opc) {
-				case 0x95:
-					r_op->mnemonic = strdup ("exit");
-					return r_op->size = 8;
-				case 0x85:
-					r_op->mnemonic = r_str_newf ("call %#x", imm32);
-					return r_op->size = 8;
-				case 0x05: {
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   r_op->mnemonic = r_str_newf ("ja %c0x%x", sign, a);
-						   return r_op->size = 8;
-					   }
-				case 0xb7:
-					   r_op->mnemonic = r_str_newf ("mov64 r%u, %#x", dst, imm32);
-					   return r_op->size = 8;
-				case 0xbf:
-					   r_op->mnemonic = r_str_newf ("mov64 r%u, r%u", dst, src);
-					   return r_op->size = 8;
-				case 0x07: case 0x17: case 0x27: case 0x37: case 0x47: case 0x57:
-				case 0x67: case 0x77: case 0x97: case 0xa7:
-					   // imm variants of ALU64
-					   switch (opc) {
-						   case 0x07: op = "add64"; break; case 0x17: op = "sub64"; break;
-						   case 0x27: op = "mul64"; break; case 0x37: op = "div64"; break;
-						   case 0x47: op = "or64"; break;  case 0x57: op = "and64"; break;
-						   case 0x67: op = "lsh64"; break; case 0x77: op = "rsh64"; break;
-						   case 0x97: op = "mod64"; break; case 0xa7: op = "xor64"; break;
-						   default: op = "unk"; break;
-					   }
-					   r_op->mnemonic = r_str_newf ("%s r%u, %#x", op, dst, imm32);
-					   return r_op->size = 8;
-				case 0x0f: case 0x1f: case 0x2f: case 0x3f: case 0x4f: case 0x5f:
-				case 0x6f: case 0x7f: case 0x9f: case 0xaf:
-					   // reg variants of ALU64
-					   switch (opc) {
-						   case 0x0f: op = "add64"; break; case 0x1f: op = "sub64"; break;
-						   case 0x2f: op = "mul64"; break; case 0x3f: op = "div64"; break;
-						   case 0x4f: op = "or64"; break;  case 0x5f: op = "and64"; break;
-						   case 0x6f: op = "lsh64"; break; case 0x7f: op = "rsh64"; break;
-						   case 0x9f: op = "mod64"; break; case 0xaf: op = "xor64"; break;
-						   default: op = "unk"; break;
-					   }
-					   r_op->mnemonic = r_str_newf ("%s r%u, r%u", op, dst, src);
-					   return r_op->size = 8;
-				case 0x84:
-					   r_op->mnemonic = r_str_newf ("neg r%u", dst);
-					   return r_op->size = 8;
-				case 0x87:
-					   r_op->mnemonic = r_str_newf ("neg64 r%u", dst);
-					   return r_op->size = 8;
-				case 0x71: // ldxb rD, [rS+off]
-				case 0x69: // ldxh
-				case 0x61: // ldxw
-					   op = (opc == 0x71) ? "ldxb" : (opc == 0x69) ? "ldxh" : "ldxw";
-					   if (off) {
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   snprintf (tmp, sizeof (tmp), "%s r%u, [r%u%c0x%x]", op, dst, src, sign, a);
-					   } else {
-						   snprintf (tmp, sizeof (tmp), "%s r%u, [r%u]", op, dst, src);
-					   }
-					   r_op->mnemonic = strdup (tmp);
-					   return r_op->size = 8;
-				case 0x73: // stxb [rS+off], rD
-				case 0x6b:
-				case 0x63:
-					   op = (opc == 0x73) ? "stxb" : (opc == 0x6b) ? "stxh" : "stxw";
-					   if (off) {
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   snprintf (tmp, sizeof (tmp), "%s [r%u%c0x%x], r%u", op, dst, sign, a, src);
-					   } else {
-						   snprintf (tmp, sizeof (tmp), "%s [r%u], r%u", op, dst, src);
-					   }
-					   r_op->mnemonic = strdup (tmp);
-					   return r_op->size = 8;
-				case 0xc3: // xaddw [rS+off], rD
-					   if (off) {
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   snprintf (tmp, sizeof (tmp), "xaddw [r%u%c0x%x], r%u", dst, sign, a, src);
-					   } else {
-						   snprintf (tmp, sizeof (tmp), "xaddw [r%u], r%u", dst, src);
-					   }
-					   r_op->mnemonic = strdup (tmp);
-					   return r_op->size = 8;
-				case 0x15: case 0x55: case 0x25: case 0x35: case 0x45:
-				case 0xa5: case 0xb5: case 0x65: case 0x75: case 0xc5: case 0xd5:
-					   {
-						   const char *cc = (opc==0x15)?"jeq":(opc==0x55)?"jne":(opc==0x25)?"jgt":(opc==0x35)?"jge":
-							   (opc==0x45)?"jset":(opc==0xa5)?"jlt":(opc==0xb5)?"jle":(opc==0x65)?"jsgt":
-							   (opc==0x75)?"jsge":(opc==0xc5)?"jslt":"jsle";
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   snprintf (tmp, sizeof (tmp), "%s r%u, %#x, %c0x%x", cc, dst, imm32, sign, a);
-						   r_op->mnemonic = strdup (tmp);
-						   return r_op->size = 8;
-					   }
-				case 0x1d: case 0x5d: case 0x2d: case 0x3d: case 0x4d:
-				case 0xad: case 0xbd: case 0x6d: case 0x7d: case 0xcd: case 0xdd:
-					   {
-						   const char *cc = (opc==0x1d)?"jeq":(opc==0x5d)?"jne":(opc==0x2d)?"jgt":(opc==0x3d)?"jge":
-							   (opc==0x4d)?"jset":(opc==0xad)?"jlt":(opc==0xbd)?"jle":(opc==0x6d)?"jsgt":
-							   (opc==0x7d)?"jsge":(opc==0xcd)?"jslt":"jsle";
-						   char sign = (off >= 0)? '+': '-';
-						   int a = off >= 0? off: -off;
-						   snprintf (tmp, sizeof (tmp), "%s r%u, r%u, %c0x%x", cc, dst, src, sign, a);
-						   r_op->mnemonic = strdup (tmp);
-						   return r_op->size = 8;
-					   }
-				default:
-					   break;
-			}
+	if (extended) {
+		int size = disassemble_ebpf (r_op, buf, len);
+		if (size > 0) {
+			return size;
 		}
 	}
-#endif
 
 	switch (f->code) {
 	case BPF_RET | BPF_K:
@@ -909,7 +1073,16 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 	const ut8 *data = op->bytes;
 	const int len = op->size;
 	// RAnalValue *dst, *src;
-	RBpfSockFilter *f = (RBpfSockFilter *)data;
+	if (len < 8) {
+		return false;
+	}
+	RBpfSockFilter filter = {
+		r_read_le16 (data),
+		data[2],
+		data[3],
+		r_read_le32 (data + 4)
+	};
+	RBpfSockFilter *f = &filter;
 	op->jump = UT64_MAX;
 	op->fail = UT64_MAX;
 	op->ptr = UT64_MAX;
@@ -919,7 +1092,7 @@ static bool decode(RArchSession *a, RAnalOp *op, RArchDecodeMask mask) {
 
 	r_strbuf_init (&op->esil);
 	if (mask & R_ARCH_OP_MASK_DISASM) {
-		(void)disassemble (op, data, len);
+		(void)disassemble (op, data, len, get_bpf_dialect (a) == R_BPF_DIALECT_EXTENDED);
 	}
 	ut64 gp = a->config->gp; // r_reg_getv (r, "gp");
 
