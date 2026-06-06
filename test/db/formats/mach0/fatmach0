@@ -279,7 +279,7 @@ RUN
 
 NAME=fatmach0 objc
 FILE=bins/mach0/modernobjc-noarm64
-ARGS=-a arm
+ARGS=-a arm -b 64
 CMDS=ic
 EXPECT=<<EOF
 0x100009298 [0x100001e90 - 0x100001e90]      0 objc class 0 ViewController :: UIViewController
