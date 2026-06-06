@@ -315,7 +315,7 @@ if want_zydis
   if get_option('use_sys_zydis')
     zydis_dep = dependency('zydis', required: false)
     if not zydis_dep.found()
-      zydis_dep = cc.find_library('zydis', required: true)
+      zydis_dep = cc.find_library('Zydis', required: true)
     endif
     cc.has_header('Zydis/Zydis.h', dependencies: zydis_dep, required: true)
     zydis_dep = declare_dependency(
