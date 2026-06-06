@@ -37,6 +37,15 @@ static int search_old_relocation(struct reloc_struct_t *reloc_table, ut32 addr_t
 	return -1;
 }
 
+static bool read_be32_at(RBuffer *b, ut64 offset, ut32 *out) {
+	ut8 buf[sizeof (ut32)];
+	if (r_buf_read_at (b, offset, buf, sizeof (buf)) != sizeof (buf)) {
+		return false;
+	}
+	*out = r_read_be32 (buf);
+	return true;
+}
+
 static RList *patch_relocs(RBinFile *bf) {
 	R_RETURN_VAL_IF_FAIL (bf && bf->rbin && bf->rbin->iob.io, NULL);
 	RBin *b = bf->rbin;
@@ -98,8 +107,7 @@ static ut32 get_ngot_entries(struct r_bin_bflt_obj *obj) {
 			offset + i + sizeof (ut32) < offset) {
 			return 0;
 		}
-		int len = r_buf_read_at (obj->b, offset + i, (ut8 *)&entry, sizeof (ut32));
-		if (len != sizeof (ut32)) {
+		if (!read_be32_at (obj->b, offset + i, &entry)) {
 			return 0;
 		}
 		if (!VALID_GOT_ENTRY (entry)) {
@@ -136,8 +144,8 @@ static RList *relocs(RBinFile *bf) {
 						obj->hdr->data_start + offset + 4 < offset) {
 						break;
 					}
-					len = r_buf_read_at (obj->b, obj->hdr->data_start + offset, (ut8 *)&got_entry, sizeof (ut32));
-					if (!VALID_GOT_ENTRY (got_entry) || len != sizeof (ut32)) {
+					if (!read_be32_at (obj->b, obj->hdr->data_start + offset, &got_entry) ||
+						!VALID_GOT_ENTRY (got_entry)) {
 						break;
 					}
 					got_table[i].addr_to_patch = got_entry;
