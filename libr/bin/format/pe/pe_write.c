@@ -17,7 +17,7 @@ bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms) {
 		const char *sname = (const char*) shdr[i].Name;
 		if (!strncmp (name, sname, PE_IMAGE_SIZEOF_SHORT_NAME)) {
 			ut32 newperms = shdr[i].Characteristics;
-			ut32 newperms_le;
+			ut8 newperms_le[4];
 
 			/* Apply permission flags */
 			if (perms & R_PERM_X) {
@@ -44,9 +44,9 @@ bool PE_(r_bin_pe_section_perms)(RBinFile *bf, const char *name, int perms) {
 			int patchoff = pe->section_header_offset;
 			patchoff += i * sizeof (PE_(image_section_header));
 			patchoff += r_offsetof (PE_(image_section_header), Characteristics);
-			r_write_le32 (&newperms_le, newperms);
-			printf ("wx %02x @ 0x%x\n", newperms_le, patchoff);
-			int res = r_buf_write_at (bf->buf, patchoff, (ut8*)&newperms_le, sizeof (newperms_le));
+			r_write_le32 (newperms_le, newperms);
+			printf ("wx %08x @ 0x%x\n", newperms, patchoff);
+			int res = r_buf_write_at (bf->buf, patchoff, newperms_le, sizeof (newperms_le));
 			if (res != sizeof (newperms_le)) {
 				return false;
 			}
